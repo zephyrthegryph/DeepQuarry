@@ -74,7 +74,7 @@ GLOBAL_LIST_EMPTY(auxmos_seen_errors)
 // gases by /datum/gas TYPE PATHS (gases[] keys, caller args) — so we register
 // each gas under its type-path TEXT ("/datum/gas/plasma"). DM gas_mixture
 // wrappers then pass the arg stringified ("[gas_type]") and auxmos resolves it
-// via get_string. See doc/auxmos_wiring_plan.md.
+// via get_string. See doc/atmos_migration.md.
 
 /// Lightweight metadata datum shaped for auxmos hook_register_gas.
 /// NOTE: auxmos reads combustion vars via byond_string!("oxidation_temperature")

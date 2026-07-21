@@ -16,6 +16,10 @@
 /proc/verdigris_init()		return VERDIGRIS_CALL("verdigris_init_ffi")
 /proc/verdigris_cleanup()	return VERDIGRIS_CALL("verdigris_cleanup_ffi")
 /proc/verdigris_generate_station_layout(payload)	return VERDIGRIS_CALL("verdigris_generate_station_layout_ffi", payload)
+/proc/verdigris_submit_station_layout(payload)	return VERDIGRIS_CALL("verdigris_submit_station_layout_ffi", payload)
+/proc/verdigris_poll_station_layout(job_id)	return VERDIGRIS_CALL("verdigris_poll_station_layout_ffi", job_id)
+/proc/verdigris_station_layout_section(job_id, section, offset, limit)	return VERDIGRIS_CALL("verdigris_station_layout_section_ffi", job_id, section, offset, limit)
+/proc/verdigris_finish_station_layout(job_id)	return VERDIGRIS_CALL("verdigris_finish_station_layout_ffi", job_id)
 
 // NOTE: verdigris bring-up (verdigris_init/cleanup + version log) lives in the real
 // /world/New() in code/game/world.dm. A duplicate /world/New() here was silently

@@ -37,7 +37,7 @@ serde_json = "1.0"
 # process_turf_heat, turfs carry thermal_conductivity/heat_capacity/temperature +
 # conductivity_blocked_directions, world dims are pushed via auxmos_set_world_dims, and
 # there is a return_temperature hook. reaction_hooks stays OFF (reactions run in DM — see
-# doc/auxmos_wiring_plan.md).
+# doc/atmos_migration.md).
 auxmos = { path = "../atmos", default-features = false, features = ["turf_processing", "katmos", "katmos_slow_decompression", "superconductivity"] }
 # The BYOND FFI framework for verdigris's own binds (verdigris_version/features/init/
 # cleanup + cave-gen generate_automata). Same byondapi as auxmos (workspace-pinned git

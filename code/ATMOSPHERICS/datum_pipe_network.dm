@@ -21,8 +21,10 @@
 		line_member.network = null
 	for(var/obj/machinery/atmospherics/normal_member in normal_members)
 		normal_member.reassign_network(src, null)
-	gases.Cut()  // Do not qdel the gases, we don't own them
-	leaks.Cut()
+	line_members = null
+	normal_members = null
+	gases = null // Do not qdel the gases, we don't own them.
+	leaks = null
 	return ..()
 
 /datum/pipe_network/process()

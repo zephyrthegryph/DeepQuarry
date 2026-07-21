@@ -86,7 +86,10 @@
 			TEST_ASSERT(light.pixel_x || light.pixel_y, "Generated room [module.id] has an unshifted wall light")
 		TEST_ASSERT(room_lights, "Generated room [module.id] has no wall lights")
 		for(var/turf/open/room_turf in room_area)
-			TEST_ASSERT(room_turf.air?.return_pressure() >= 0.9 * ONE_ATMOSPHERE, "Generated room [module.id] has an airless starting tile at [generated_station_coordinate(room_turf)]")
+			var/local_x = room_turf.x - materialized.origin_x + 1
+			var/local_y = room_turf.y - materialized.origin_y + 1
+			var/datum/generated_station_tile_intent/air_intent = materialized.tile_plan.tile(local_x, local_y)
+			TEST_ASSERT(room_turf.air?.return_pressure() >= 0.9 * ONE_ATMOSPHERE, "Generated room [module.id] has an airless starting [room_turf.type] at [generated_station_coordinate(room_turf)]; intent=[air_intent?.owner_id]/[air_intent?.zone_id]/[air_intent?.structure_kind], pressure=[room_turf.air?.return_pressure()]")
 			TEST_ASSERT(!locate(/obj/effect/floor_decal/corner) in room_turf, "Generated room [module.id] has a random center-floor color decal")
 			TEST_ASSERT(!(locate(/obj/structure/table) in room_turf) || !(locate(/obj/structure/bed/chair) in room_turf), "Generated room [module.id] has a chair stacked on a table at [generated_station_coordinate(room_turf)]")
 	// Immediate pressure assertions can pass before Rust publishes rebuilt turf

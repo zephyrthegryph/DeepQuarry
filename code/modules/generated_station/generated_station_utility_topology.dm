@@ -210,6 +210,18 @@
 		parts += "scrubber@[generated_station_coordinate(scrubber)] node=[REF(scrubber.node)] network=[REF(scrubber.network)]"
 	return jointext(parts, "; ")
 
+/datum/generated_station_utility_topology/proc/atmosphere_network_break_summary()
+	var/list/parts = list()
+	for(var/obj/machinery/atmospherics/pipe/pipe in atmos_objects)
+		if(pipe.piping_layer != PIPING_LAYER_SUPPLY || !pipe.parent?.network)
+			continue
+		for(var/direction in GLOB.cardinal)
+			var/turf/neighbor_turf = get_step(pipe, direction)
+			for(var/obj/machinery/atmospherics/pipe/neighbor in neighbor_turf)
+				if(neighbor.piping_layer == PIPING_LAYER_SUPPLY && neighbor.parent?.network && neighbor.parent.network != pipe.parent.network)
+					parts += "[generated_station_coordinate(pipe)] [pipe.type] dir=[pipe.dir] net=[REF(pipe.parent.network)] beside [generated_station_coordinate(neighbor)] [neighbor.type] dir=[neighbor.dir] net=[REF(neighbor.parent.network)]"
+	return jointext(parts, "; ")
+
 /proc/generated_station_utility_topology(station_id)
 	for(var/key in SSexpedition?.sites)
 		var/datum/expedition_site/site = SSexpedition.sites[key]
@@ -229,6 +241,7 @@
 		return FALSE
 	var/list/reserved = list()
 	var/list/route_targets = list()
+	plan.index_utility_floors()
 	var/engineering_owner
 	for(var/datum/generated_station_layout_node/node in spec.layout_nodes)
 		var/datum/generated_station_department_instance/department = department_for_node(node)
@@ -243,10 +256,14 @@
 		if(!apc || !vent || !scrubber || !alarm || !fire_alarm)
 			plan.errors += "No complete utility fixture set for [module.id]."
 			return FALSE
-		if(!plan.claim_utility_fixture(apc.local_x, apc.local_y, module.department_node_id, GENERATED_STATION_UTILITY_APC) || !plan.claim_utility(apc.local_x, apc.local_y, module.department_node_id, GENERATED_STATION_UTILITY_APC_TERMINAL) || !plan.claim_utility_fixture(alarm.local_x, alarm.local_y, module.department_node_id, GENERATED_STATION_UTILITY_AIR_ALARM) || !plan.claim_utility_fixture(fire_alarm.local_x, fire_alarm.local_y, module.department_node_id, GENERATED_STATION_UTILITY_FIRE_ALARM) || !plan.claim_utility_fixture(vent["device"].local_x, vent["device"].local_y, module.department_node_id, GENERATED_STATION_UTILITY_VENT) || !plan.claim_utility_fixture(scrubber["device"].local_x, scrubber["device"].local_y, module.department_node_id, GENERATED_STATION_UTILITY_SCRUBBER))
+		var/datum/generated_station_tile_intent/vent_device = vent["device"]
+		var/datum/generated_station_tile_intent/vent_connector = vent["connector"]
+		var/datum/generated_station_tile_intent/scrubber_device = scrubber["device"]
+		var/datum/generated_station_tile_intent/scrubber_connector = scrubber["connector"]
+		if(!plan.claim_utility_fixture(apc.local_x, apc.local_y, module.department_node_id, GENERATED_STATION_UTILITY_APC) || !plan.claim_utility(apc.local_x, apc.local_y, module.department_node_id, GENERATED_STATION_UTILITY_APC_TERMINAL) || !plan.claim_utility_fixture(alarm.local_x, alarm.local_y, module.department_node_id, GENERATED_STATION_UTILITY_AIR_ALARM) || !plan.claim_utility_fixture(fire_alarm.local_x, fire_alarm.local_y, module.department_node_id, GENERATED_STATION_UTILITY_FIRE_ALARM) || !plan.claim_utility_fixture(vent_device.local_x, vent_device.local_y, module.department_node_id, GENERATED_STATION_UTILITY_VENT) || !plan.claim_utility_fixture(scrubber_device.local_x, scrubber_device.local_y, module.department_node_id, GENERATED_STATION_UTILITY_SCRUBBER))
 			return FALSE
-		route_targets |= vent["connector"]
-		route_targets |= scrubber["connector"]
+		route_targets |= vent_connector
+		route_targets |= scrubber_connector
 		route_targets |= apc
 		if(!plan_generated_station_lights(plan, module.department_node_id, reserved, module.id))
 			return FALSE
@@ -260,12 +277,19 @@
 	if(!smes || !generator || !supply_tank || !scrub_tank)
 		plan.errors += "Engineering has no complete source fixture set."
 		return FALSE
-	if(!plan.claim_utility_fixture(smes["device"].local_x, smes["device"].local_y, engineering_owner, GENERATED_STATION_UTILITY_SMES) || !plan.claim_utility_fixture(generator["device"].local_x, generator["device"].local_y, engineering_owner, GENERATED_STATION_UTILITY_GENERATOR) || !plan.claim_utility_fixture(supply_tank["device"].local_x, supply_tank["device"].local_y, engineering_owner, GENERATED_STATION_UTILITY_SUPPLY_TANK) || !plan.claim_utility_fixture(scrub_tank["device"].local_x, scrub_tank["device"].local_y, engineering_owner, GENERATED_STATION_UTILITY_SCRUB_TANK))
+	var/datum/generated_station_tile_intent/smes_device = smes["device"]
+	var/datum/generated_station_tile_intent/smes_connector = smes["connector"]
+	var/datum/generated_station_tile_intent/generator_device = generator["device"]
+	var/datum/generated_station_tile_intent/supply_device = supply_tank["device"]
+	var/datum/generated_station_tile_intent/supply_connector = supply_tank["connector"]
+	var/datum/generated_station_tile_intent/scrub_device = scrub_tank["device"]
+	var/datum/generated_station_tile_intent/scrub_connector = scrub_tank["connector"]
+	if(!plan.claim_utility_fixture(smes_device.local_x, smes_device.local_y, engineering_owner, GENERATED_STATION_UTILITY_SMES) || !plan.claim_utility_fixture(generator_device.local_x, generator_device.local_y, engineering_owner, GENERATED_STATION_UTILITY_GENERATOR) || !plan.claim_utility_fixture(supply_device.local_x, supply_device.local_y, engineering_owner, GENERATED_STATION_UTILITY_SUPPLY_TANK) || !plan.claim_utility_fixture(scrub_device.local_x, scrub_device.local_y, engineering_owner, GENERATED_STATION_UTILITY_SCRUB_TANK))
 		return FALSE
-	route_targets |= smes["connector"]
-	route_targets |= generator["device"]
-	route_targets |= supply_tank["connector"]
-	route_targets |= scrub_tank["connector"]
+	route_targets |= smes_connector
+	route_targets |= generator_device
+	route_targets |= supply_connector
+	route_targets |= scrub_connector
 	var/list/route = planned_global_utility_route(plan, route_targets)
 	if(!length(route))
 		plan.errors += "The abstract station floor graph cannot connect all utility sockets."
@@ -277,8 +301,8 @@
 	return !length(plan.errors)
 
 /datum/generated_station_materializer/proc/planned_utility_floor(datum/generated_station_tile_plan/plan, owner_id, list/reserved, against_hull = FALSE, zone_id)
-	for(var/key in plan.tiles)
-		var/datum/generated_station_tile_intent/intent = plan.tiles[key]
+	for(var/datum/generated_station_tile_intent/intent in plan.utility_floors(owner_id, zone_id))
+		var/key = plan.coordinate_key(intent.local_x, intent.local_y)
 		if(intent.owner_id != owner_id || (zone_id && intent.zone_id != zone_id) || intent.structure_kind != GENERATED_STATION_TILE_FLOOR || intent.door_type || reserved[key])
 			continue
 		if(against_hull)
@@ -294,8 +318,8 @@
 	return null
 
 /datum/generated_station_materializer/proc/planned_utility_pair(datum/generated_station_tile_plan/plan, owner_id, list/reserved, zone_id)
-	for(var/key in plan.tiles)
-		var/datum/generated_station_tile_intent/device = plan.tiles[key]
+	for(var/datum/generated_station_tile_intent/device in plan.utility_floors(owner_id, zone_id))
+		var/key = plan.coordinate_key(device.local_x, device.local_y)
 		if(device.owner_id != owner_id || (zone_id && device.zone_id != zone_id) || device.structure_kind != GENERATED_STATION_TILE_FLOOR || device.door_type || reserved[key])
 			continue
 		for(var/list/offset in list(list(1, 0), list(-1, 0), list(0, 1), list(0, -1)))
@@ -311,8 +335,8 @@
 /// Wall lights are placed on clear floor sockets directly adjacent to structure.
 /datum/generated_station_materializer/proc/plan_generated_station_lights(datum/generated_station_tile_plan/plan, owner_id, list/reserved, zone_id)
 	var/list/candidates = list()
-	for(var/key in plan.tiles)
-		var/datum/generated_station_tile_intent/intent = plan.tiles[key]
+	for(var/datum/generated_station_tile_intent/intent in plan.utility_floors(owner_id, zone_id))
+		var/key = plan.coordinate_key(intent.local_x, intent.local_y)
 		if(intent.owner_id != owner_id || (zone_id && intent.zone_id != zone_id) || intent.structure_kind != GENERATED_STATION_TILE_FLOOR || intent.door_type)
 			continue
 		// A wall light may share a coordinate with an underfloor/floor atmos
@@ -324,6 +348,7 @@
 			if(plan.tile(intent.local_x + offset[1], intent.local_y + offset[2])?.structure_kind == GENERATED_STATION_TILE_HULL)
 				candidates += intent
 				break
+		generation_checkpoint("Selecting utility fixtures", 32)
 	if(!length(candidates))
 		plan.errors += "No wall light socket is available for [zone_id || owner_id]."
 		return FALSE
@@ -344,6 +369,7 @@
 			if(nearest > best_distance)
 				best_distance = nearest
 				light = candidate
+			generation_checkpoint("Spacing station lights", 32)
 		if(!light)
 			break
 		selected += light
@@ -379,6 +405,7 @@
 					continue
 				came_from[next_key] = current
 				frontier += next
+			generation_checkpoint("Routing station utilities", 33)
 		if(!reached)
 			var/list/neighbor_descriptions = list()
 			var/list/component_zones = list()
@@ -518,10 +545,11 @@
 	var/list/global_path = planned_route_turfs()
 	if(!length(global_path))
 		return fail_global_build("global floor routing failed")
+	var/list/pipe_tree_directions = spanning_path_directions(global_path)
 	build_global_cables(global_path)
 	ensure_global_power_connections(global_path, power_targets)
-	build_global_pipe_network(global_path, supply_connections, TRUE)
-	build_global_pipe_network(global_path, scrub_connections, FALSE)
+	build_global_pipe_network(global_path, pipe_tree_directions, supply_connections, TRUE)
+	build_global_pipe_network(global_path, pipe_tree_directions, scrub_connections, FALSE)
 	build_planned_lights()
 	SSmachines.makepowernets()
 	initialize_global_atmos()
@@ -678,10 +706,33 @@
 		if(!found)
 			result.power_objects += new /obj/structure/cable/generated_station(T, required_state)
 
-/datum/generated_station_utility_builder/proc/build_global_pipe_network(list/path, list/external_connections, supply)
+/datum/generated_station_utility_builder/proc/spanning_path_directions(list/path)
+	var/list/tree_directions = list()
+	var/list/visited = list()
+	var/list/queue = list()
+	for(var/key in path)
+		queue += path[key]
+		visited[key] = TRUE
+		break
+	while(length(queue))
+		var/turf/current = queue[1]
+		queue.Cut(1, 2)
+		var/current_key = REF(current)
+		for(var/direction in GLOB.cardinal)
+			var/turf/neighbor = get_step(current, direction)
+			var/neighbor_key = REF(neighbor)
+			if(!path[neighbor_key] || visited[neighbor_key])
+				continue
+			visited[neighbor_key] = TRUE
+			queue += neighbor
+			tree_directions[current_key] = (tree_directions[current_key] || 0) | direction
+			tree_directions[neighbor_key] = (tree_directions[neighbor_key] || 0) | get_dir(neighbor, current)
+	return tree_directions
+
+/datum/generated_station_utility_builder/proc/build_global_pipe_network(list/path, list/tree_directions, list/external_connections, supply)
 	for(var/key in path)
 		var/turf/T = path[key]
-		var/direction_mask = path_directions(path, T) | (external_connections[key] || 0)
+		var/direction_mask = (tree_directions[key] || 0) | (external_connections[key] || 0)
 		var/list/directions = direction_list(direction_mask)
 		var/obj/machinery/atmospherics/pipe/pipe
 		switch(length(directions))
@@ -703,6 +754,8 @@
 		AM.atmos_init()
 	for(var/obj/machinery/atmospherics/AM in result.atmos_objects)
 		AM.build_network()
+	coalesce_generated_pipe_networks(PIPING_LAYER_SUPPLY)
+	coalesce_generated_pipe_networks(PIPING_LAYER_SCRUBBER)
 	for(var/obj/machinery/atmospherics/pipe/tank/air/full/generated_station/tank in result.supply_tanks)
 		var/datum/pipe_network/network = tank.parent?.network
 		if(!network)
@@ -715,6 +768,24 @@
 				network_air.adjust_multi(GAS_O2, supply_moles * O2STANDARD, GAS_N2, supply_moles * N2STANDARD)
 		network.mark_dirty()
 		network.process()
+
+/datum/generated_station_utility_builder/proc/coalesce_generated_pipe_networks(piping_layer)
+	var/datum/pipe_network/shared
+	for(var/obj/machinery/atmospherics/pipe/pipe in result.atmos_objects)
+		if(pipe.piping_layer != piping_layer || !pipe.parent?.network)
+			continue
+		var/datum/pipe_network/network = pipe.parent.network
+		if(!shared)
+			shared = network
+		else if(network != shared)
+			shared.merge(network)
+			network.normal_members.Cut()
+			network.line_members.Cut()
+			network.gases.Cut()
+			network.leaks.Cut()
+			qdel(network)
+	shared?.update_network_gases()
+	shared?.mark_dirty()
 
 /datum/expedition_site
 	var/datum/generated_station_utility_topology/station_utilities

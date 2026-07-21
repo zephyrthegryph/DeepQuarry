@@ -149,6 +149,12 @@
 	var/origin_y = world.maxy - spec.grid_height + 1
 	var/datum/generated_station_materialization/materialized = materializer.materialize(spec, world.maxz, origin_x, origin_y)
 	TEST_ASSERT_NOTNULL(materialized, "Planned station failed service-aware materialization")
+	TEST_ASSERT(materializer.last_yield_count > 0, "Materialization never yielded despite its bounded generation job")
+	// The monotonic checkpoint timer includes the FFI sampling call and native
+	// GC pauses. Keep a hard catastrophic-stall gate here; live MC profiling owns
+	// the stricter whole-tick 90% target without making this unit test flaky.
+	TEST_ASSERT(materializer.last_peak_tick_usage < 300, "Materialization checkpoint exceeded three tick budgets ([materializer.last_peak_tick_usage]%) entering [materializer.last_peak_phase]")
+	TEST_ASSERT(materializer.last_elapsed_seconds < 60, "Materialization exceeded the 60-second focused-test target ([materializer.last_elapsed_seconds]s)")
 	TEST_ASSERT_EQUAL(materialized.transit_area.name, "[spec.name] Transit", "Transit area does not use the station designation")
 	for(var/node_id in materialized.department_areas)
 		var/area/generated_station/department_area = materialized.department_areas[node_id]
@@ -157,11 +163,25 @@
 	TEST_ASSERT(materialized.service_validation.is_valid(), "Planned station has missing required service endpoints/routes")
 	var/furnishing_budget = length(spec.departments) * 2 + 1
 	for(var/datum/generated_station_module/module in materialized.modules)
-		furnishing_budget += CEILING(module.footprint_tiles() * 0.55, 1)
-	TEST_ASSERT(length(materialized.furnishings) <= furnishing_budget, "Furnishing pass exceeded its area-scaled atom budget")
+		// Rich authored activity motifs, trim, and mounted infrastructure all
+		// register as furnishings. Keep a hard area-scaled ceiling, but allow the
+		// intentionally denser station-like room corpus rather than enforcing the
+		// old sparse-placeholder budget.
+		furnishing_budget += CEILING(module.footprint_tiles() * 1.15, 1)
+	TEST_ASSERT(length(materialized.furnishings) <= furnishing_budget, "Furnishing pass produced [length(materialized.furnishings)] registered atoms against an area-scaled budget of [furnishing_budget]")
 	for(var/datum/generated_room_solution/solution in materialized.room_solutions)
 		var/list/content_types = list()
 		var/machinery_count = 0
+		for(var/datum/generated_room_fragment_placement/fragment_placement in solution.fragments)
+			var/datum/generated_room_fragment/activity_motif/motif = fragment_placement.fragment
+			if(!istype(motif))
+				continue
+			for(var/feature_type in motif.feature_types)
+				var/datum/generated_room_feature/fragment_feature = new feature_type
+				content_types["[fragment_feature.atom_type]"] = TRUE
+				if(ispath(fragment_feature.atom_type, /obj/machinery))
+					machinery_count++
+				qdel(fragment_feature)
 		for(var/datum/generated_room_placement/placement in solution.placements)
 			content_types["[placement.feature.atom_type]"] = TRUE
 			if(ispath(placement.feature.atom_type, /obj/machinery))
@@ -183,7 +203,7 @@
 		if(furnishing_area?.department_id)
 			furnished_departments[furnishing_area.department_id] = TRUE
 	for(var/datum/generated_station_department_instance/department in spec.departments)
-		TEST_ASSERT(furnished_departments[department.id], "[department.id] received no functional furnishings")
+		TEST_ASSERT(furnished_departments[department.definition.id], "[department.id] received no functional furnishings")
 	for(var/datum/generated_station_department_instance/department in spec.departments)
 		for(var/datum/generated_station_capability_requirement/requirement in department.definition.requirements)
 			var/found_endpoint = FALSE

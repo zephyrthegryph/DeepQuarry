@@ -77,7 +77,7 @@ GLOBAL_DATUM_INIT(fire_overlay, /mutable_appearance, mutable_appearance('icons/e
 	// <=0-integrity atom (atom_defense.dm), so stop burning it — put the fire out
 	// instead of re-damaging a wreck every tick (this was crashing repeatedly on
 	// benches/furniture caught in a sustained hotspot once atmos fires actually run).
-	if(atom_parent.uses_integrity && atom_parent.atom_integrity <= 0)
+	if(atom_parent.uses_integrity && atom_parent.get_integrity() <= 0)
 		atom_parent.extinguish()
 		return
 	// Check if the parent somehow became fireproof, remove component if so

@@ -21,7 +21,7 @@
 	var/list/accepted_shuttles
 
 /obj/effect/shuttle_landmark/southern_cross/expedition_station/proc/accepts_shuttle(datum/shuttle/shuttle)
-	return !LAZYLEN(accepted_shuttles) || shuttle?.name in accepted_shuttles
+	return !LAZYLEN(accepted_shuttles) || (shuttle?.name in accepted_shuttles)
 
 /obj/effect/shuttle_landmark/southern_cross/expedition_station/general
 	landmark_tag = "hangar_3_expedition"

@@ -196,6 +196,7 @@ SUBSYSTEM_DEF(flight_operations)
 	qdel(destination)
 
 /datum/controller/subsystem/flight_operations/proc/destination_for_target(atom/target)
+	RETURN_TYPE(/datum/flight_destination)
 	if(!target)
 		return null
 	var/id = destination_by_target[REF(target)]

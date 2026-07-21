@@ -29,6 +29,10 @@ SUBSYSTEM_DEF(machines)
 	var/list/sleeping_gas_devices = list()
 	/// Rust gas arena ID -> assoc list of weakrefs for sleeping gas-dependent devices.
 	var/list/gas_mixture_subscribers = list()
+	/// Dirty-mixture notification batch retained while a Machines fire yields.
+	var/list/pending_dirty_gas_mixtures
+	var/pending_dirty_gas_index = 1
+	var/gas_wake_complete = TRUE
 	/// Resource key -> monotonic generation for non-gas reactive dependencies.
 	var/list/reactive_revisions = list()
 	/// Resource key -> weakref map of sleeping machinery.
@@ -134,10 +138,14 @@ SUBSYSTEM_DEF(machines)
 
 /datum/controller/subsystem/machines/proc/process_machinery(resumed = 0)
 	if (!resumed)
-		wake_dirty_gas_subscribers()
 		src.current_run = processing_machines.Copy()
+		gas_wake_complete = FALSE
 		if(profile_machine_types && !next_machine_profile_dump)
 			next_machine_profile_dump = world.time + 30 SECONDS
+	if(!gas_wake_complete)
+		gas_wake_complete = wake_dirty_gas_subscribers()
+		if(!gas_wake_complete)
+			return
 
 	var/wait = src.wait
 	var/list/current_run = src.current_run
@@ -233,6 +241,16 @@ SUBSYSTEM_DEF(machines)
 	processing_machines = SSmachines.processing_machines
 	powernets = SSmachines.powernets
 	powerobjs = SSmachines.powerobjs
+	current_run = SSmachines.current_run
+	hibernating_vents = SSmachines.hibernating_vents
+	sleeping_gas_devices = SSmachines.sleeping_gas_devices
+	gas_mixture_subscribers = SSmachines.gas_mixture_subscribers
+	pending_dirty_gas_mixtures = SSmachines.pending_dirty_gas_mixtures
+	pending_dirty_gas_index = SSmachines.pending_dirty_gas_index
+	gas_wake_complete = SSmachines.gas_wake_complete
+	reactive_revisions = SSmachines.reactive_revisions
+	reactive_subscribers = SSmachines.reactive_subscribers
+	reactive_sleepers = SSmachines.reactive_sleepers
 
 /// Advances a dependency generation and immediately wakes its exact subscribers.
 /datum/controller/subsystem/machines/proc/publish_reactive_dependency(resource_key)
@@ -308,38 +326,52 @@ SUBSYSTEM_DEF(machines)
 	return problems
 
 /datum/controller/subsystem/machines/proc/wake_dirty_gas_subscribers()
-	var/list/dirty_mixtures = drain_dirty_gas_mixtures()
-	for(var/mixture_index = 1; mixture_index <= length(dirty_mixtures); mixture_index += 2)
-		var/mixture_id = dirty_mixtures[mixture_index]
-		var/change_mask = dirty_mixtures[mixture_index + 1]
+	if(!pending_dirty_gas_mixtures)
+		pending_dirty_gas_mixtures = drain_dirty_gas_mixtures()
+		pending_dirty_gas_index = 1
+	while(pending_dirty_gas_index <= length(pending_dirty_gas_mixtures))
+		var/mixture_id = pending_dirty_gas_mixtures[pending_dirty_gas_index]
+		var/change_mask = pending_dirty_gas_mixtures[pending_dirty_gas_index + 1]
+		pending_dirty_gas_index += 2
 		var/list/subscribers = gas_mixture_subscribers["[mixture_id]"]
-		if(!length(subscribers))
-			continue
-		for(var/key in subscribers.Copy())
-			var/datum/weakref/WR = subscribers[key]
-			if(!sleeping_gas_devices[WR?.reference])
-				continue
-			var/atom/subscriber = WR?.resolve()
-			if(!subscriber)
+		if(length(subscribers))
+			var/list/to_wake
+			for(var/key in subscribers)
+				var/datum/weakref/WR = subscribers[key]
+				if(!sleeping_gas_devices[WR?.reference])
+					continue
+				var/atom/subscriber = WR?.resolve()
+				if(!subscriber)
+					LAZYADD(to_wake, WR)
+				else if(istype(subscriber, /obj/machinery/atmospherics/unary))
+					var/obj/machinery/atmospherics/unary/V = subscriber
+					if(V.gas_dependency_changed(mixture_id, change_mask))
+						LAZYADD(to_wake, WR)
+				else if(istype(subscriber, /obj/machinery/atmospherics/pipe/simple/heat_exchanging))
+					var/obj/machinery/atmospherics/pipe/simple/heat_exchanging/P = subscriber
+					if(P.gas_dependency_changed(mixture_id, change_mask))
+						LAZYADD(to_wake, WR)
+				else if(istype(subscriber, /obj/machinery/alarm))
+					var/obj/machinery/alarm/A = subscriber
+					if(A.gas_dependency_changed(mixture_id, change_mask))
+						LAZYADD(to_wake, WR)
+				else if(istype(subscriber, /obj/machinery/air_sensor))
+					var/obj/machinery/air_sensor/S = subscriber
+					if(S.gas_dependency_changed(mixture_id, change_mask))
+						LAZYADD(to_wake, WR)
+				else if(istype(subscriber, /obj/machinery/airlock_sensor))
+					var/obj/machinery/airlock_sensor/S = subscriber
+					if(S.gas_dependency_changed(mixture_id, change_mask))
+						LAZYADD(to_wake, WR)
+				else
+					LAZYADD(to_wake, WR)
+			for(var/datum/weakref/WR as anything in to_wake)
 				wake_gas_subscriber(WR)
-			else if(istype(subscriber, /obj/machinery/atmospherics/unary))
-				var/obj/machinery/atmospherics/unary/V = subscriber
-				if(V.gas_dependency_changed(mixture_id, change_mask))
-					wake_gas_subscriber(WR)
-			else if(istype(subscriber, /obj/machinery/alarm))
-				var/obj/machinery/alarm/A = subscriber
-				if(A.gas_dependency_changed(mixture_id, change_mask))
-					wake_gas_subscriber(WR)
-			else if(istype(subscriber, /obj/machinery/air_sensor))
-				var/obj/machinery/air_sensor/S = subscriber
-				if(S.gas_dependency_changed(mixture_id, change_mask))
-					wake_gas_subscriber(WR)
-			else if(istype(subscriber, /obj/machinery/airlock_sensor))
-				var/obj/machinery/airlock_sensor/S = subscriber
-				if(S.gas_dependency_changed(mixture_id, change_mask))
-					wake_gas_subscriber(WR)
-			else
-				wake_gas_subscriber(WR)
+		if(MC_TICK_CHECK)
+			return FALSE
+	pending_dirty_gas_mixtures = null
+	pending_dirty_gas_index = 1
+	return TRUE
 
 /datum/controller/subsystem/machines/proc/subscribe_gas_dependency(mixture_id, datum/weakref/WR)
 	if(isnull(mixture_id) || !WR)
@@ -372,6 +404,16 @@ SUBSYSTEM_DEF(machines)
 	sleeping_gas_devices[WR.reference] = WR
 	V.register_gas_dependencies(WR)
 	STOP_MACHINE_PROCESSING(V)
+
+/datum/controller/subsystem/machines/proc/hibernate_heat_pipe(obj/machinery/atmospherics/pipe/simple/heat_exchanging/P)
+	if(!P)
+		return
+	var/datum/weakref/WR = WEAKREF(P)
+	if(!WR)
+		return
+	sleeping_gas_devices[WR.reference] = WR
+	P.register_gas_dependencies(WR)
+	STOP_MACHINE_PROCESSING(P)
 
 /datum/controller/subsystem/machines/proc/hibernate_air_alarm(obj/machinery/alarm/A)
 	if(!A)
@@ -410,6 +452,11 @@ SUBSYSTEM_DEF(machines)
 		var/obj/machinery/atmospherics/unary/V = subscriber
 		V.unregister_gas_dependencies(WR)
 		START_MACHINE_PROCESSING(V)
+	else if(istype(subscriber, /obj/machinery/atmospherics/pipe/simple/heat_exchanging))
+		var/obj/machinery/atmospherics/pipe/simple/heat_exchanging/P = subscriber
+		P.unregister_gas_dependencies(WR)
+		P.stable_temperature_cycles = 0
+		START_MACHINE_PROCESSING(P)
 	else if(istype(subscriber, /obj/machinery/alarm))
 		var/obj/machinery/alarm/A = subscriber
 		A.unregister_gas_dependencies(WR)

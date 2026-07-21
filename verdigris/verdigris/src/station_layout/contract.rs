@@ -75,6 +75,13 @@ pub fn decode_catalog(json: &str) -> Result<(LayoutRequest, CatalogMapping)> {
             max_count: room.max_count,
             entrances: room.max_entrances.max(room.min_entrances),
             content_area: room.minimum_usable_tiles.max(room.content_area),
+            ideal_area: room
+                .ideal_usable_tiles
+                .max(room.minimum_usable_tiles)
+                .max(room.content_area),
+            min_short_side: room.min_short_side.max(3),
+            max_aspect_ratio_millis: room.max_aspect_ratio_millis.max(1000),
+            requires_center_activity: room.requires_center_activity,
         });
         mapped_rooms.insert(numeric, room);
     }

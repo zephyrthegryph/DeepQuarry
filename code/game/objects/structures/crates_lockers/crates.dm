@@ -789,7 +789,7 @@
 				visible_message(span_boldwarning("The anti-tamper mechanism of [src] causes a small fire!"))
 				for(var/atom/movable/A as mob|obj in src) // For every item in the box, we spawn a pile of ash.
 					new /obj/effect/decal/cleanable/ash(src.loc)
-				new /obj/fire(src.loc)
+				new /obj/effect/hotspot(src.loc)
 				qdel(src)
 			if(5)
 				visible_message(span_infoplain(span_green(span_bold("The anti-tamper mechanism of [src] fails!"))))

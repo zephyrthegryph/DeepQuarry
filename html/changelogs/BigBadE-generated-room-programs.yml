@@ -1,0 +1,6 @@
+author: "BigBadE"
+delete-after: true
+changes:
+  - rscadd: "Generated stations now size rooms around authored activity programs and furnish departments with cohesive, role-specific work areas."
+  - bugfix: "Generated station planning no longer hangs, emits unreachable residual pockets, or relies on compact generic room fallbacks."
+  - refactor: "Rust station layout contracts now carry usable-area, aspect, and center-activity requirements from DM."

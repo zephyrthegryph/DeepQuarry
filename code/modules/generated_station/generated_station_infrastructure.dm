@@ -10,9 +10,11 @@
 		return FALSE
 	for(var/gas_type in GLOB.meta_gas_info)
 		air.set_moles(gas_type, 0)
-	air.set_moles(/datum/gas/oxygen, MOLES_O2STANDARD)
-	air.set_moles(/datum/gas/nitrogen, MOLES_N2STANDARD)
 	air.set_temperature(T20C)
+	air.set_volume(CELL_VOLUME)
+	var/standard_moles = ONE_ATMOSPHERE * air.return_volume() / (R_IDEAL_GAS_EQUATION * T20C)
+	air.set_moles(/datum/gas/oxygen, standard_moles * O2STANDARD)
+	air.set_moles(/datum/gas/nitrogen, standard_moles * N2STANDARD)
 	return TRUE
 
 /// Data/camera bridge whose destruction explicitly disconnects its department.
@@ -56,17 +58,34 @@
 /datum/expedition_site/proc/initialize_generated_station_infrastructure()
 	if(!station_spec || !station_materialization || !station_director)
 		return FALSE
+	var/list/pressurized_turfs = list()
+	for(var/key in station_materialization.tile_plan?.tiles)
+		var/datum/generated_station_tile_intent/intent = station_materialization.tile_plan.tiles[key]
+		if(intent.structure_kind != GENERATED_STATION_TILE_FLOOR)
+			continue
+		var/turf/open/planned_floor = station_materialization.world_turf(intent.local_x, intent.local_y)
+		if(istype(planned_floor, /turf/simulated/floor))
+			pressurized_turfs[planned_floor] = TRUE
 	for(var/node_id in station_materialization.department_areas)
 		var/area/generated_station/A = station_materialization.department_areas[node_id]
 		for(var/turf/T in A)
-			generated_station_seed_air(T)
+			if(istype(T, /turf/simulated/floor))
+				pressurized_turfs[T] = TRUE
 	for(var/module_id in station_materialization.module_areas)
 		var/area/generated_station/room_area = station_materialization.module_areas[module_id]
 		for(var/turf/T in room_area)
-			generated_station_seed_air(T)
+			if(istype(T, /turf/simulated/floor))
+				pressurized_turfs[T] = TRUE
 	for(var/turf/T in station_materialization.transit_area)
-		generated_station_seed_air(T)
+		if(istype(T, /turf/simulated/floor))
+			pressurized_turfs[T] = TRUE
 	for(var/turf/T in station_materialization.maintenance_area)
+		if(istype(T, /turf/simulated/floor))
+			pressurized_turfs[T] = TRUE
+	for(var/turf/open/T as anything in pressurized_turfs)
+		generated_station_seed_air(T)
+		T.air_update_turf(TRUE, FALSE)
+	for(var/turf/open/T as anything in pressurized_turfs)
 		generated_station_seed_air(T)
 	for(var/datum/generated_station_layout_node/node in station_spec.layout_nodes)
 		var/datum/generated_station_department_instance/department

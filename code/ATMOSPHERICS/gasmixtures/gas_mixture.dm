@@ -80,7 +80,12 @@ GLOBAL_LIST_INIT(gaslist_cache, init_gaslist_cache())
 /datum/gas_mixture/Destroy()
 	// Free the arena slot for reuse.
 	call_ext(VERDIGRIS, "byond:unregister_gasmixture_hook_ffi")(src)
-	return ..()
+	reaction_results = null
+	..()
+	// Gas mixtures are opaque handles with no post-Destroy cleanup dependency.
+	// Let BYOND collect them naturally instead of retaining tens of thousands of
+	// dead turf handles in SSgarbage's five-minute reference-check queue.
+	return QDEL_HINT_IWILLGC
 
 //gas presence procs — the arena auto-manages gas presence, so the old
 //assert/add/garbage_collect family are no-ops kept for caller compatibility.

@@ -5,19 +5,19 @@
 /proc/generated_station_rust_room_roles(department_id)
 	switch(department_id)
 		if("command")
-			return list("reception", "operations", "communications", "meeting", "briefing", "records", "liaison", "flex")
+			return list("reception", "operations", "communications", "meeting", "briefing", "records", "liaison", "archive")
 		if("ai")
-			return list("foyer", "core", "satellite", "support", "robotics", "monitoring", "secure-storage", "flex")
+			return list("foyer", "core", "satellite", "support", "robotics", "monitoring", "secure-storage", "server-closet")
 		if("security")
-			return list("reception", "operations", "brig", "armory", "interrogation", "evidence", "locker-room", "flex")
+			return list("reception", "operations", "brig", "armory", "interrogation", "evidence", "locker-room", "checkpoint")
 		if("medical")
-			return list("reception", "treatment", "surgery", "ward", "pharmacy", "recovery", "storage", "flex")
+			return list("reception", "treatment", "surgery", "ward", "pharmacy", "recovery", "storage", "exam")
 		if("engineering")
-			return list("foyer", "power", "atmospherics", "workshop", "equipment", "maintenance", "storage", "flex")
+			return list("foyer", "power", "atmospherics", "workshop", "equipment", "maintenance", "storage", "tool-room")
 		if("logistics")
-			return list("reception", "cargo", "processing", "warehouse", "dispatch", "sorting", "storage", "flex")
+			return list("reception", "cargo", "processing", "warehouse", "dispatch", "sorting", "storage", "inventory")
 		if("docking")
-			return list("reception", "control", "berth", "security", "customs", "lounge", "equipment", "flex")
+			return list("reception", "control", "berth", "security", "customs", "lounge", "equipment", "supply")
 	return list("reception", "control", "support")
 
 /proc/generated_station_rust_metadata(seed, width, height)
@@ -38,6 +38,16 @@
 /// Stable catalog/settings request for the Rust geometry planner. DM type paths
 /// are deliberately resolved here and never cross the wire.
 /proc/generated_station_rust_catalog_request(seed, width, height, list/catalog_override, list/settings_override)
+	var/static/list/template_cache = list()
+	var/cache_key = "[width]x[height]"
+	if(!islist(catalog_override) && !islist(settings_override) && template_cache[cache_key])
+		var/list/cached_request = template_cache[cache_key]
+		var/list/cached_instance = cached_request.Copy()
+		cached_instance["seed"] = num2text(round(seed), 20)
+		cached_instance["metadata"] = generated_station_rust_metadata(seed, width, height)
+		var/cached_canonical = json_encode(cached_instance)
+		cached_instance["catalog_hash"] = rustg_hash_string(RUSTG_HASH_SHA256, cached_canonical)
+		return json_encode(cached_instance)
 	var/list/departments = list()
 	var/list/rooms = list()
 	var/owns_catalog = !islist(catalog_override)
@@ -93,10 +103,14 @@
 				"min_entrances" = definition.min_entrances,
 				"max_entrances" = definition.max_entrances,
 				"min_count" = role_index <= 4 ? 1 : 0,
-				"max_count" = role == "flex" ? 16 : 1,
+				"max_count" = role_index <= 4 ? 1 : 3,
 				"entrances" = definition.min_entrances,
-				"content_area" = definition.min_width * definition.min_height,
-				"minimum_usable_tiles" = definition.min_width * definition.min_height,
+				"content_area" = min(definition.min_width * definition.min_height, 21),
+				"minimum_usable_tiles" = min(definition.min_width * definition.min_height, 21),
+				"ideal_usable_tiles" = definition.ideal_usable_tiles,
+				"min_short_side" = definition.min_short_side,
+				"max_aspect_ratio_millis" = definition.max_aspect_ratio_millis,
+				"requires_center_activity" = definition.requires_center_activity,
 				"density_min_micros" = round(definition.density_min * 1000000),
 				"density_max_micros" = round(definition.density_max * 1000000),
 				"circulation_min_micros" = round(definition.circulation_min * 1000000),
@@ -128,6 +142,11 @@
 		"departments" = departments,
 		"rooms" = rooms,
 	)
+	if(!islist(catalog_override) && !islist(settings_override))
+		var/list/template = request.Copy()
+		template["seed"] = null
+		template["metadata"] = null
+		template_cache[cache_key] = template
 	var/canonical = json_encode(request)
 	request["catalog_hash"] = rustg_hash_string(RUSTG_HASH_SHA256, canonical)
 	if(owns_catalog)
@@ -166,11 +185,14 @@
 	if(!islist(errors))
 		return null
 	var/list/root
-	try
-		root = json_decode(payload)
-	catch(var/exception/error)
-		errors += "Rust station response is not valid JSON: [error]"
-		return null
+	if(islist(payload))
+		root = payload
+	else
+		try
+			root = json_decode(payload)
+		catch(var/exception/error)
+			errors += "Rust station response is not valid JSON: [error]"
+			return null
 	if(!islist(root) || root["schema"] != GENERATED_STATION_RUST_SCHEMA || root["major"] != GENERATED_STATION_RUST_MAJOR)
 		errors += "Rust station response has an unsupported schema version."
 		return null

@@ -34,11 +34,12 @@
 	var/origin_y = max(1, round((world.maxy - spec.grid_height) / 2))
 	var/datum/generated_station_materializer/materializer = new
 	var/datum/generated_station_materialization/materialization = materializer.materialize(spec, z, origin_x, origin_y)
+	var/materialization_failure = materializer.last_failure_details
 	qdel(materializer)
 	qdel(planner)
 	if(!materialization?.entry)
 		if(validation_messages)
-			validation_messages += materialization ? "The materialized station has no docking entry." : "Station materialization failed."
+			validation_messages += materialization ? "The materialized station has no docking entry." : "Station materialization failed[materialization_failure ? ": [materialization_failure]" : "."]"
 		qdel(materialization)
 		qdel(spec)
 		wipe_z(z)

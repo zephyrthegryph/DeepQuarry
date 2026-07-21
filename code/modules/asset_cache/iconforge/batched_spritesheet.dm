@@ -7,6 +7,7 @@
 #define SPRITESHEET_SYSTEM_VERSION 1
 
 /datum/asset/spritesheet_batched
+	var/queued_generation_active = FALSE
 	_abstract = /datum/asset/spritesheet_batched
 	var/name
 	/// list("32x32")
@@ -165,6 +166,7 @@
 
 /datum/asset/spritesheet_batched/proc/realize_spritesheets(yield)
 	if(fully_generated)
+		finish_queued_generation()
 		return
 	if(!length(entries))
 		CRASH("Spritesheet [name] ([type]) is empty! What are you doing?")
@@ -178,12 +180,15 @@
 		cache_result = should_refresh(yield)
 		if(cache_result == CACHE_WAIT) // sleep interrupted by MC. We'll get queried again later.
 			cache_result = null
+			finish_queued_generation()
+			SSasset_loading.queue_asset(src)
 			return
 
 	// read_from_cache returns false if config is disabled, otherwise it fully loads the spritesheet.
 	if (cache_result == CACHE_VALID && read_from_cache())
 		SSasset_loading.dequeue_asset(src)
 		fully_generated = TRUE
+		finish_queued_generation()
 		return
 	// Remove the cache, since it's invalid if we get to this point.
 	fdel("[ASSET_CROSS_ROUND_SMART_CACHE_DIRECTORY]/spritesheet_cache.[name].json")
@@ -193,11 +198,9 @@
 	if(yield || !isnull(job_id))
 		if(isnull(job_id))
 			getting_genned = TRUE
-			SSasset_loading.assets_generating++
 			job_id = rustg_iconforge_generate_async("data/spritesheets/", name, entries_json, do_cache, FALSE, TRUE)
 		UNTIL((data_out = rustg_iconforge_check(job_id)) != RUSTG_JOB_NO_RESULTS_YET)
 		getting_genned = FALSE
-		SSasset_loading.assets_generating--
 	else
 		data_out = rustg_iconforge_generate("data/spritesheets/", name, entries_json, do_cache, FALSE, TRUE)
 	if (data_out == RUSTG_JOB_ERROR)
@@ -233,13 +236,24 @@
 	if (do_cache)
 		write_cache_meta(input_hash, dmi_hashes)
 	fully_generated = TRUE
+	finish_queued_generation()
 	// If we were ever in there, remove ourselves
 	SSasset_loading.dequeue_asset(src)
 	if(data["error"] && !(ignore_dir_errors && findtext(data["error"], "is not in the set of valid dirs")))
 		CRASH("Error during spritesheet generation for [name]: [data["error"]]")
 
 /datum/asset/spritesheet_batched/queued_generation()
+	if(queued_generation_active)
+		return
+	queued_generation_active = TRUE
+	SSasset_loading.assets_generating++
 	INVOKE_ASYNC(src, PROC_REF(realize_spritesheets), TRUE) // The proc is called inside a subsystem and waits with an UNTIL
+
+/datum/asset/spritesheet_batched/proc/finish_queued_generation()
+	if(!queued_generation_active)
+		return
+	queued_generation_active = FALSE
+	SSasset_loading.assets_generating = max(SSasset_loading.assets_generating - 1, 0)
 
 /datum/asset/spritesheet_batched/ensure_ready()
 	if(!fully_generated)

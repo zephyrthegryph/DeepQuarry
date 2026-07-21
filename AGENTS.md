@@ -238,15 +238,15 @@ accident or assume they work:
   reference draft and is intentionally **not** `#include`d). The library is `verdigris`
   (`verdigris/atmos/` = vendored auxmos) built on **byondapi 0.6.x** (feature `byond-516-1682`);
   it therefore **requires BYOND 516.1682+** at runtime (older builds crash at atmos init on a missing
-  `ByondValue_DecTempRef` symbol — see `doc/auxmos_cutover_status.md`). Gas **reactions** still run in
+  `ByondValue_DecTempRef` symbol — see `doc/atmos_migration.md`). Gas **reactions** still run in
   DM (the CHOMP roster; `reaction_hooks` is off) — a deliberate split, not a gap. A set of CHOMP/ZAS-era
   atmos callers reach LINDA through a **deliberate, documented compatibility API** — `xgm_compat.dm`
   (`assume_gas`, `c_airblock`, `air_blocked`, `update_nearby_tiles`, `CanZASPass`, gas_mixture helpers)
   and `tg_infra_compat.dm`. These are **not** temporary shims to migrate away: they carry real
   ZAS→LINDA semantic translation (e.g. `assume_gas`'s weighted-temperature mix, `c_airblock`'s BLOCKED
   bitfield), and `CanZASPass` is a hook point dozens of atoms override — there is no "more native" target
-  to point callers at, so treat these as the fork's stable atmos API. See `doc/atmos_migration.md`,
-  `doc/auxmos_cutover_status.md`, `code/ATMOSPHERICS/README.md`.
+  to point callers at, so treat these as the fork's stable atmos API. See `doc/atmos_migration.md`
+  and `code/ATMOSPHERICS/README.md`.
   The **`.air`-on-unsimulated-turf** family (Southern Cross has ~1188 `/turf/unsimulated/floor` that
   inherit `init_air` but are NOT `/turf/open`, so have no `air` var) is now guarded at all three sites:
   `setup_allturfs` append, the difference-pass neighbour loop, AND `add_to_active` (`SSair.dm` — the last

@@ -46,6 +46,11 @@
 /datum/controller/subsystem/air/proc/auxmos_set_world_dims(max_x, max_y)
 	return call_ext(VERDIGRIS, "byond:set_world_dims_ffi")(max_x, max_y)
 
+/// Sizes Rust atmos arenas for the currently allocated world without reserving
+/// capacity for z-levels that may never be loaded.
+/proc/configure_auxmos_world(max_x, max_y, max_z)
+	return call_ext(VERDIGRIS, "byond:configure_world_ffi")(max_x, max_y, max_z)
+
 /// Returns arena capacities, active work, callback backlog, and heat-worker state.
 /datum/controller/subsystem/air/proc/auxmos_diagnostics()
 	return call_ext(VERDIGRIS, "byond:auxmos_diagnostics_ffi")()

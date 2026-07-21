@@ -51,9 +51,11 @@
 		burst()
 
 	else if(pressure_difference > fatigue_pressure)
-		//TODO: leak to turf, doing pfshhhhh
-		if(prob(5))
-			burst()
+		if(!damaged_leak && prob(5))
+			damaged_leak = TRUE
+			set_leaking(TRUE)
+			visible_message(span_warning("Gas begins hissing from a fatigue crack in \the [src]."))
+			playsound(src, 'sound/effects/spray2.ogg', 35, 1)
 
 	else return 1
 
@@ -171,7 +173,7 @@
 	return null
 
 /obj/machinery/atmospherics/pipe/simple/handle_leaking()
-	if(node1 && node2)
+	if(node1 && node2 && !damaged_leak)
 		set_leaking(FALSE)
 	else
 		set_leaking(TRUE)

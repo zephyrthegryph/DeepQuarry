@@ -3590,6 +3590,40 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_walled_turfs)
 	T.air.set_moles(/datum/gas/plasma, 0)
 	qdel(A)
 
+#ifdef DQ_TEST_AIR_ALARM_RADIO
+TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
+#endif
+
+/datum/unit_test/dq_air_alarm_receives_matching_status
+
+/datum/unit_test/dq_air_alarm_receives_matching_status/Run()
+	var/turf/simulated/floor/T
+	for(var/turf/simulated/floor/candidate in world)
+		if(candidate.air && !candidate.blocks_air)
+			T = candidate
+			break
+	TEST_ASSERT_NOTNULL(T, "no floor for air alarm radio test")
+	var/obj/machinery/alarm/A = new(T)
+	TEST_ASSERT_NOTNULL(A.alarm_area, "air alarm radio test has no area")
+	var/tag = "dq-radio-test-[REF(A)]"
+	var/datum/signal/status = new
+	status.data = list(
+		"tag" = tag,
+		"area" = A.area_uid,
+		"sigtype" = "status",
+		"device" = "AVP",
+		"timestamp" = world.time,
+	)
+	A.receive_signal(status)
+	TEST_ASSERT_EQUAL(A.alarm_area.air_vent_info[tag], status.data, \
+		"air alarm discarded a matching vent status packet")
+	TEST_ASSERT(tag in A.alarm_area.air_vent_names, \
+		"air alarm did not register the matching vent status tag")
+	A.alarm_area.air_vent_info.Remove(tag)
+	A.alarm_area.air_vent_names.Remove(tag)
+	qdel(status)
+	qdel(A)
+
 /datum/unit_test/dq_gas_dependencies_wake_exact_devices
 
 /datum/unit_test/dq_gas_dependencies_wake_exact_devices/Run()

@@ -34,6 +34,7 @@
 	return registry[id]
 
 /proc/substance_archetype_registry()
+	RETURN_TYPE(/list)
 	var/static/list/registry
 	if(registry)
 		return registry

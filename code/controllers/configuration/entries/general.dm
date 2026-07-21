@@ -226,7 +226,7 @@
 	integer = FALSE
 
 /datum/config_entry/number/fps
-	default = 20
+	default = 40
 	integer = FALSE
 	min_val = 1
 	max_val = 100 //byond will start crapping out at 50, so this is just ridic

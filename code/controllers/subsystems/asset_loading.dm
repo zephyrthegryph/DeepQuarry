@@ -8,11 +8,14 @@ SUBSYSTEM_DEF(asset_loading)
 	runlevels = RUNLEVEL_LOBBY|RUNLEVELS_DEFAULT
 	var/list/datum/asset/generate_queue = list()
 	var/assets_generating = 0
+	var/max_concurrent_batched_generations = 2
 	var/last_queue_len = 0
 
 /datum/controller/subsystem/asset_loading/fire(resumed)
 	while(length(generate_queue))
 		var/datum/asset/to_load = generate_queue[length(generate_queue)]
+		if(istype(to_load, /datum/asset/spritesheet_batched) && assets_generating >= max_concurrent_batched_generations)
+			return
 
 		last_queue_len = length(generate_queue)
 		generate_queue.len--
@@ -24,6 +27,7 @@ SUBSYSTEM_DEF(asset_loading)
 
 	// We just emptied the queue
 	if(last_queue_len && !length(generate_queue) && !assets_generating)
+		last_queue_len = 0
 		// Clean up cached icons, freeing memory.
 		rustg_iconforge_cleanup()
 

@@ -144,7 +144,8 @@
 /datum/unit_test/dq_generated_station_rust_decoder_rejects_adversarial_payloads/Run()
 	var/list/cases = list()
 	var/list/missing_row = generated_station_rust_valid_fixture()
-	missing_row["tile_rows"].Cut(16, 17)
+	var/list/missing_tile_rows = missing_row["tile_rows"]
+	missing_tile_rows.Cut(16, 17)
 	cases["missing row"] = missing_row
 	var/list/gapped = generated_station_rust_valid_fixture()
 	gapped["tile_rows"][1]["runs"][1]["x"] = 2
@@ -165,7 +166,9 @@
 	oob_door["doors"] += list(list("id" = "door-1", "x" = 33, "y" = 1, "direction" = "N", "kind" = "room", "owner_id" = "node-command", "from_zone" = "room-command", "to_zone" = "outside"))
 	cases["out-of-bounds door"] = oob_door
 	var/list/duplicate_edge = generated_station_rust_valid_fixture()
-	duplicate_edge["edges"] += list(duplicate_edge["edges"][1].Copy())
+	var/list/duplicate_edges = duplicate_edge["edges"]
+	var/list/first_edge = duplicate_edges[1]
+	duplicate_edges += list(first_edge.Copy())
 	cases["duplicate edge id"] = duplicate_edge
 	var/list/fractional_node = generated_station_rust_valid_fixture()
 	fractional_node["nodes"][1]["x"] = 1.5

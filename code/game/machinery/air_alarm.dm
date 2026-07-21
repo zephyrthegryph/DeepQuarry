@@ -449,7 +449,6 @@
 	set_light_on(TRUE)
 
 /obj/machinery/alarm/receive_signal(datum/signal/signal)
-	invalidate_gas_dependencies()
 	if(stat & (NOPOWER|BROKEN))
 		return
 	if(!signal || signal.encryption)

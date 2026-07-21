@@ -62,31 +62,65 @@
 	var/list/errors
 	/// Exclusive fixture ownership keyed by structural wall coordinate and room-facing side.
 	var/list/wall_fixture_edges
+	var/datum/generated_station_materializer/generation_owner
+	var/list/utility_floors_by_owner
+	var/list/utility_floors_by_zone
 
-/datum/generated_station_tile_plan/New(new_width, new_height)
+/datum/generated_station_tile_plan/New(new_width, new_height, datum/generated_station_materializer/new_generation_owner)
 	..()
 	grid_width = new_width
 	grid_height = new_height
 	tiles = list()
 	errors = list()
 	wall_fixture_edges = list()
+	utility_floors_by_owner = list()
+	utility_floors_by_zone = list()
+	generation_owner = new_generation_owner
 	for(var/x in 1 to grid_width)
 		for(var/y in 1 to grid_height)
 			tiles[coordinate_key(x, y)] = new /datum/generated_station_tile_intent(x, y)
+			if(!(y % 8))
+				generation_owner?.generation_checkpoint("Compiling tile grid", 27)
 
 /datum/generated_station_tile_plan/Destroy()
 	QDEL_LIST_ASSOC_VAL(tiles)
 	errors = null
 	wall_fixture_edges = null
+	utility_floors_by_owner = null
+	utility_floors_by_zone = null
+	generation_owner = null
 	return ..()
 
 /datum/generated_station_tile_plan/proc/coordinate_key(local_x, local_y)
 	return "[local_x],[local_y]"
 
-/datum/generated_station_tile_plan/proc/tile(local_x, local_y)
+/datum/generated_station_tile_plan/proc/tile(local_x, local_y) as /datum/generated_station_tile_intent
 	if(local_x < 1 || local_y < 1 || local_x > grid_width || local_y > grid_height)
 		return null
 	return tiles[coordinate_key(local_x, local_y)]
+
+/// Builds the utility candidate index once. Utility planning previously scanned
+/// the complete grid independently for every fixture in every room.
+/datum/generated_station_tile_plan/proc/index_utility_floors()
+	utility_floors_by_owner.Cut()
+	utility_floors_by_zone.Cut()
+	for(var/key in tiles)
+		var/datum/generated_station_tile_intent/intent = tiles[key]
+		if(intent.structure_kind != GENERATED_STATION_TILE_FLOOR)
+			continue
+		if(!utility_floors_by_owner[intent.owner_id])
+			utility_floors_by_owner[intent.owner_id] = list()
+		var/list/owner_floors = utility_floors_by_owner[intent.owner_id]
+		owner_floors += intent
+		if(intent.zone_id)
+			if(!utility_floors_by_zone[intent.zone_id])
+				utility_floors_by_zone[intent.zone_id] = list()
+			var/list/zone_floors = utility_floors_by_zone[intent.zone_id]
+			zone_floors += intent
+		generation_owner?.generation_checkpoint("Indexing utility sockets", 31)
+
+/datum/generated_station_tile_plan/proc/utility_floors(owner_id, zone_id)
+	return zone_id ? utility_floors_by_zone[zone_id] : utility_floors_by_owner[owner_id]
 
 /// Claims a coordinate. Repeating the exact claim is harmless; conflicting claims fail.
 /datum/generated_station_tile_plan/proc/claim(local_x, local_y, owner_id, zone_id, structure_kind, floor_type, access_id)
@@ -184,6 +218,7 @@
 		var/open_x = door_intent.local_x + (door_intent.door_direction == EAST) - (door_intent.door_direction == WEST)
 		var/open_y = door_intent.local_y + (door_intent.door_direction == NORTH) - (door_intent.door_direction == SOUTH)
 		exterior_openings[coordinate_key(open_x, open_y)] = TRUE
+		generation_owner?.generation_checkpoint("Deriving station hull", 29)
 	for(var/key in tiles)
 		var/datum/generated_station_tile_intent/intent = tiles[key]
 		if(intent.structure_kind != GENERATED_STATION_TILE_FLOOR)
@@ -194,6 +229,7 @@
 				continue
 			if(neighbor && neighbor.structure_kind == GENERATED_STATION_TILE_EXTERIOR)
 				hull_coordinates[coordinate_key(neighbor.local_x, neighbor.local_y)] = neighbor
+		generation_owner?.generation_checkpoint("Deriving station hull", 29)
 	for(var/key in hull_coordinates)
 		var/datum/generated_station_tile_intent/intent = hull_coordinates[key]
 		claim(intent.local_x, intent.local_y, wall_owner_id, "hull", GENERATED_STATION_TILE_HULL, null, null)
@@ -211,6 +247,7 @@
 		var/west = tile(intent.local_x - 1, intent.local_y)?.structure_kind == GENERATED_STATION_TILE_HULL
 		if((north || south) && (east || west) && (north + south + east + west == 2))
 			hull_corners += intent
+		generation_owner?.generation_checkpoint("Closing station hull corners", 30)
 	for(var/datum/generated_station_tile_intent/intent in hull_corners)
 		claim(intent.local_x, intent.local_y, wall_owner_id, "hull", GENERATED_STATION_TILE_HULL, null, null)
 	return !length(errors)
@@ -219,24 +256,59 @@
 /datum/generated_station_tile_plan/proc/validate_exterior_seal()
 	var/list/open = list()
 	var/list/visited = list()
+	var/list/queued = list()
+	var/cell_count = grid_width * grid_height
+	while(length(open) < cell_count)
+		open.len = min(length(open) + 512, cell_count)
+		generation_owner?.generation_checkpoint("Allocating pressure-hull work queue", 30, TRUE)
+	while(length(visited) < cell_count)
+		visited.len = min(length(visited) + 512, cell_count)
+		generation_owner?.generation_checkpoint("Allocating pressure-hull visited map", 30, TRUE)
+	while(length(queued) < cell_count)
+		queued.len = min(length(queued) + 512, cell_count)
+		generation_owner?.generation_checkpoint("Allocating pressure-hull queued map", 30, TRUE)
+	var/open_count = 0
 	for(var/x in 1 to grid_width)
-		open |= tile(x, 1)
-		open |= tile(x, grid_height)
+		var/datum/generated_station_tile_intent/south_edge = tile(x, 1)
+		var/datum/generated_station_tile_intent/north_edge = tile(x, grid_height)
+		var/south_key = (south_edge.local_y - 1) * grid_width + south_edge.local_x
+		var/north_key = (north_edge.local_y - 1) * grid_width + north_edge.local_x
+		if(!queued[south_key])
+			queued[south_key] = TRUE
+			open[++open_count] = south_edge
+		if(!queued[north_key])
+			queued[north_key] = TRUE
+			open[++open_count] = north_edge
+	generation_owner?.generation_checkpoint("Seeding pressure-hull work queue", 30, TRUE)
 	for(var/y in 1 to grid_height)
-		open |= tile(1, y)
-		open |= tile(grid_width, y)
-	while(length(open))
-		var/datum/generated_station_tile_intent/current = open[length(open)]
-		open.len--
-		var/key = coordinate_key(current.local_x, current.local_y)
+		var/datum/generated_station_tile_intent/west_edge = tile(1, y)
+		var/datum/generated_station_tile_intent/east_edge = tile(grid_width, y)
+		var/west_key = (west_edge.local_y - 1) * grid_width + west_edge.local_x
+		var/east_key = (east_edge.local_y - 1) * grid_width + east_edge.local_x
+		if(!queued[west_key])
+			queued[west_key] = TRUE
+			open[++open_count] = west_edge
+		if(!queued[east_key])
+			queued[east_key] = TRUE
+			open[++open_count] = east_edge
+	generation_owner?.generation_checkpoint("Seeding pressure-hull work queue", 30, TRUE)
+	while(open_count)
+		var/datum/generated_station_tile_intent/current = open[open_count]
+		open[open_count--] = null
+		var/key = (current.local_y - 1) * grid_width + current.local_x
 		if(visited[key] || current.structure_kind == GENERATED_STATION_TILE_HULL || (current.door_type && ispath(current.door_type, /obj/machinery/door/airlock/generated_station_exterior)))
 			continue
 		visited[key] = TRUE
 		if(current.structure_kind == GENERATED_STATION_TILE_FLOOR)
 			errors += "Exterior vacuum reaches floor at [current.local_x],[current.local_y]."
 			continue
-		for(var/list/offset in list(list(1, 0), list(-1, 0), list(0, 1), list(0, -1)))
-			var/datum/generated_station_tile_intent/neighbor = tile(current.local_x + offset[1], current.local_y + offset[2])
-			if(neighbor && !visited[coordinate_key(neighbor.local_x, neighbor.local_y)])
-				open += neighbor
+		for(var/direction in GLOB.cardinal)
+			var/neighbor_x = current.local_x + (direction == EAST) - (direction == WEST)
+			var/neighbor_y = current.local_y + (direction == NORTH) - (direction == SOUTH)
+			var/datum/generated_station_tile_intent/neighbor = tile(neighbor_x, neighbor_y)
+			var/neighbor_key = neighbor && ((neighbor.local_y - 1) * grid_width + neighbor.local_x)
+			if(neighbor && !visited[neighbor_key] && !queued[neighbor_key])
+				queued[neighbor_key] = TRUE
+				open[++open_count] = neighbor
+		generation_owner?.generation_checkpoint("Validating station pressure hull", 30)
 	return !length(errors)

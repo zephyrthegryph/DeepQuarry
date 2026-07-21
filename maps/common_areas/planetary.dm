@@ -429,7 +429,7 @@
 	name = "Xenoarcheology Long-Term Anomalous Storage"
 
 /area/surface/outpost/research/xenoarcheology/exp_prep
-	name = "Xenoarcheology Expedition Preperation"
+	name = "Xenoarcheology Expedition Preparation"
 
 //Main Outpost
 

@@ -57,15 +57,41 @@ fn world_dims() -> Result<(i32, i32)> {
 #[byondapi::bind("/datum/controller/subsystem/air/proc/auxmos_set_world_dims")]
 #[auxmacros::panic_safe]
 fn set_world_dims(max_x: ByondValue, max_y: ByondValue) -> Result<ByondValue> {
-	*WORLD_DIMS.write() = Some((max_x.get_number()? as i32, max_y.get_number()? as i32));
+	let max_x = max_x.get_number()? as i32;
+	let max_y = max_y.get_number()? as i32;
+	*WORLD_DIMS.write() = Some((max_x, max_y));
+	Ok(ByondValue::null())
+}
+
+pub(super) fn reserve_heat_capacity(nodes: usize, _edges: usize) {
+	let mut heat = TURF_HEAT.write();
+	let heat = heat.as_mut().unwrap();
+	let map_capacity = heat.map.capacity();
+	heat.map.reserve(nodes.saturating_sub(map_capacity));
+}
+
+#[byondapi::bind("/proc/auxmos_configure_world")]
+#[auxmacros::panic_safe]
+fn configure_world(max_x: ByondValue, max_y: ByondValue, max_z: ByondValue) -> Result<ByondValue> {
+	let max_x = max_x.get_number()? as i32;
+	let max_y = max_y.get_number()? as i32;
+	let max_z = max_z.get_number()? as i32;
+	*WORLD_DIMS.write() = Some((max_x, max_y));
+	let tiles = (max_x.max(1) as usize)
+		.saturating_mul(max_y.max(1) as usize)
+		.saturating_mul(max_z.max(1) as usize);
+	let edges = tiles.saturating_mul(4);
+	super::reserve_turf_capacity(tiles, edges);
+	reserve_heat_capacity(tiles, edges);
+	crate::gas::reserve_gas_capacity(tiles.saturating_add(8192));
 	Ok(ByondValue::null())
 }
 
 #[byondapi::init]
 fn initialize_heat_statics() {
 	*TURF_HEAT.write() = Some(TurfHeat {
-		graph: StableDiGraph::with_capacity(650_250, 1_300_500),
-		map: IndexMap::with_capacity_and_hasher(650_250, FxBuildHasher::default()),
+		graph: StableDiGraph::with_capacity(4096, 16_384),
+		map: IndexMap::with_capacity_and_hasher(4096, FxBuildHasher::default()),
 	});
 }
 

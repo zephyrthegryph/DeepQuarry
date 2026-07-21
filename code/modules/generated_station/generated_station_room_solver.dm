@@ -81,6 +81,16 @@
 	var/list/candidates
 	var/last_feature_base_candidates = 0
 	var/last_feature_scored_candidates = 0
+	var/list/planned_wall_directions
+	var/list/candidate_mask
+	var/list/occupied_mask
+	var/list/connectivity_marks
+	var/list/connectivity_queue
+	var/connectivity_generation = 0
+	var/grid_origin_x
+	var/grid_origin_y
+	var/grid_width
+	var/grid_height
 
 /datum/generated_room_solver/Destroy()
 	materializer = null
@@ -91,6 +101,11 @@
 	QDEL_NULL(solution)
 	entrances = null
 	candidates = null
+	planned_wall_directions = null
+	candidate_mask = null
+	occupied_mask = null
+	connectivity_marks = null
+	connectivity_queue = null
 	return ..()
 
 /datum/generated_room_solver/proc/solve(datum/generated_station_materializer/new_materializer, datum/generated_station_module/new_module, datum/generated_room_definition/new_definition, seed, faction_id, style_id)
@@ -99,6 +114,19 @@
 	materializer = new_materializer
 	module = new_module
 	definition = new_definition
+	grid_origin_x = module.footprint_x1 || module.x1
+	grid_origin_y = module.footprint_y1 || module.y1
+	grid_width = (module.footprint_x2 || module.x2) - grid_origin_x + 1
+	grid_height = (module.footprint_y2 || module.y2) - grid_origin_y + 1
+	planned_wall_directions = list()
+	planned_wall_directions.len = grid_width * grid_height
+	candidate_mask = list()
+	candidate_mask.len = length(planned_wall_directions)
+	occupied_mask = list()
+	occupied_mask.len = length(planned_wall_directions)
+	connectivity_marks = list()
+	connectivity_marks.len = length(planned_wall_directions)
+	connectivity_queue = list()
 	if(module.x2 < module.x1 || module.y2 < module.y1)
 		return null
 	prng = new(seed)
@@ -123,12 +151,19 @@
 		solution.issues += "Room definition did not produce a content plan."
 		return solution
 	discover_room_geometry()
+	materializer.generation_checkpoint("Discovering [module.role] geometry", 52)
 	if(!place_fragments())
 		return resolved_solution()
+	materializer.generation_checkpoint("Placing [module.role] fragments", 52)
 	if(!reserve_entrance_routes())
 		solution.issues += "Authored room anchors leave no valid route between an entrance and the functional core."
 		return resolved_solution()
+	materializer.generation_checkpoint("Reserving [module.role] entrances", 52)
+	for(var/list/point in candidates)
+		var/index = grid_index(point[1], point[2])
+		occupied_mask[index] = !!solution.occupied[solution.tile_key(point[1], point[2])]
 	var/list/features = expanded_features()
+	materializer.generation_checkpoint("Expanding [module.role] features", 52)
 	var/list/ordered_features = list()
 	var/list/feature_ids = list()
 	var/list/dependency_targets = list()
@@ -157,6 +192,7 @@
 				placed_ids += placed.feature.id
 			solution.issues += "Required feature '[feature.id]' has no valid placement after [length(placed_ids)] fixtures ([jointext(placed_ids, ", ")]); [last_feature_base_candidates] base candidates and [last_feature_scored_candidates] constraint-valid facings."
 			return solution
+		materializer.generation_checkpoint("Solving [module.role] room", 52)
 	fill_cosmetic_density()
 	measure_solution()
 	// Density is a quality metric for randomized furnishing, not a runtime
@@ -188,6 +224,7 @@
 				continue
 			solution.floor_tiles++
 			candidates += list(list(x, y))
+			candidate_mask[grid_index(x, y)] = TRUE
 			var/on_edge = FALSE
 			for(var/direction in GLOB.cardinal)
 				var/nx = x + (direction == EAST) - (direction == WEST)
@@ -300,6 +337,13 @@
 					constraint.subject_id = feature.id
 					if(assembly_ids[constraint.target_id])
 						constraint.target_id = assembly_ids[constraint.target_id]
+			var/datum/generated_room_feature/module_anchor = length(assembly_features) ? assembly_features[1] : null
+			if(module_anchor && length(assembly_features) > 1)
+				for(var/feature_index in 2 to length(assembly_features))
+					var/datum/generated_room_feature/member = assembly_features[feature_index]
+					var/datum/generated_room_constraint/near_feature/cohesion = new(member.id, module_anchor.id, FALSE, 3)
+					cohesion.radius = group.cohesion_radius
+					member.constraints += cohesion
 			for(var/datum/generated_room_feature/feature in assembly_features)
 				if(feature_ids[feature.id])
 					qdel(feature)
@@ -325,6 +369,15 @@
 	for(var/fragment_type in content_plan.fragment_types)
 		var/datum/generated_room_fragment/fragment = new fragment_type
 		if(!place_fragment(fragment))
+			var/datum/generated_room_fragment/activity_motif/motif = fragment
+			if(istype(motif))
+				for(var/feature_type in motif.feature_types)
+					var/datum/generated_room_feature/fallback_feature = new feature_type
+					if(!place_feature(fallback_feature))
+						solution.issues += "Activity motif '[motif.id]' could not place either cohesively or as individual authored fixtures."
+						qdel(fallback_feature)
+						qdel(fragment)
+						return FALSE
 			qdel(fragment)
 			continue
 	return TRUE
@@ -332,8 +385,12 @@
 /datum/generated_room_solver/proc/place_fragment(datum/generated_room_fragment/fragment)
 	var/best_score = GENERATED_ROOM_SCORE_INVALID
 	var/list/best
+	var/candidates_checked = 0
 	for(var/x in module.x1 to module.x2 - fragment.width + 1)
 		for(var/y in module.y1 to module.y2 - fragment.height + 1)
+			candidates_checked++
+			if(!(candidates_checked % 8))
+				materializer.generation_checkpoint("Scoring [module.role] fragment candidates", 52)
 			if(fragment.anchor_edge == SOUTH && y != module.y1)
 				continue
 			if(fragment.anchor_edge == NORTH && y + fragment.height - 1 != module.y2)
@@ -430,11 +487,13 @@
 		if(blocked[entrance_key])
 			return FALSE
 		var/list/frontier = list(entrance)
+		var/frontier_index = 1
 		var/list/visited = list()
 		visited[entrance_key] = TRUE
-		while(length(frontier) && !visited[core_key])
-			var/list/current = frontier[1]
-			frontier.Cut(1, 2)
+		while(frontier_index <= length(frontier) && !visited[core_key])
+			if(!(frontier_index % 32))
+				materializer.generation_checkpoint("Checking [module.role] fragment access", 52)
+			var/list/current = frontier[frontier_index++]
 			for(var/direction in GLOB.cardinal)
 				var/nx = current[1] + (direction == EAST) - (direction == WEST)
 				var/ny = current[2] + (direction == NORTH) - (direction == SOUTH)
@@ -491,7 +550,9 @@
 	for(var/i in 1 to length(candidates))
 		var/index = ((i + offset - 2) % length(candidates)) + 1
 		var/list/point = candidates[index]
-		if(!feature_position_base_valid(feature, point[1], point[2]))
+		var/base_valid = feature_position_base_valid(feature, point[1], point[2])
+		materializer.generation_checkpoint("Filtering [module.role] furnishing sockets", 52)
+		if(!base_valid)
 			continue
 		last_feature_base_candidates++
 		var/preferred_direction = preferred_facing(point[1], point[2], feature)
@@ -505,11 +566,14 @@
 				best_score = candidate_score
 				best_point = point
 				best_dir = direction
+			materializer.generation_checkpoint("Scoring [module.role] facing", 52)
+		materializer.generation_checkpoint("Scoring [module.role] furnishings", 52)
 	if(best_score <= GENERATED_ROOM_SCORE_INVALID || !best_point)
 		var/list/rejections = list()
 		for(var/list/point in candidates)
 			var/reason = feature_position_base_rejection(feature, point[1], point[2]) || "constraints"
 			rejections[reason] = (rejections[reason] || 0) + 1
+			materializer.generation_checkpoint("Diagnosing room placement", 52)
 		var/list/rejection_text = list()
 		for(var/reason in rejections)
 			rejection_text += "[reason]=[rejections[reason]]"
@@ -524,6 +588,7 @@
 	placement.score = best_score
 	solution.placements += placement
 	solution.occupied[solution.tile_key(placement.x, placement.y)] = placement
+	occupied_mask[grid_index(placement.x, placement.y)] = TRUE
 	reserve_frontage(placement)
 	return TRUE
 
@@ -536,8 +601,9 @@
 	var/datum/generated_station_tile_intent/tile_intent = materializer.result?.tile_plan?.tile(x, y)
 	if(tile_intent?.has_utility_fixture())
 		return "floor-utility"
-	if(feature.placement_kind != "wall" && !ispath(feature.atom_type, /obj/structure/bed/chair) && !placement_preserves_room_connectivity(x, y))
-		return "connectivity"
+	if(feature.placement_kind != "wall" && !ispath(feature.atom_type, /obj/structure/bed/chair))
+		if(!placement_locally_preserves_room_connectivity(x, y) && !placement_preserves_room_connectivity(x, y))
+			return "connectivity"
 	var/turf/T = materializer.world_turf(x, y)
 	if(!T || T.density)
 		return "dense-turf"
@@ -556,6 +622,43 @@
 		return "not-wall-adjacent"
 	return null
 
+/// Proves that removing one furnishing tile cannot split the room by connecting
+/// all of its open cardinal neighbours through the surrounding 3x3 ring. This
+/// constant-size check handles ordinary room floors without running a full-room
+/// flood fill for every candidate socket.
+/datum/generated_room_solver/proc/placement_locally_preserves_room_connectivity(blocked_x, blocked_y)
+	var/list/open_neighbors = list()
+	for(var/direction in GLOB.cardinal)
+		var/nx = blocked_x + (direction == EAST) - (direction == WEST)
+		var/ny = blocked_y + (direction == NORTH) - (direction == SOUTH)
+		var/index = grid_index(nx, ny)
+		if(module.contains_tile(nx, ny) && candidate_mask[index] && !occupied_mask[index])
+			open_neighbors[index] = TRUE
+	if(length(open_neighbors) <= 1)
+		return TRUE
+	var/list/frontier = list(open_neighbors[1])
+	var/list/visited = list()
+	visited[frontier[1]] = TRUE
+	while(length(frontier))
+		var/index = frontier[1]
+		frontier.Cut(1, 2)
+		var/x = ((index - 1) % grid_width) + grid_origin_x
+		var/y = FLOOR((index - 1) / grid_width, 1) + grid_origin_y
+		for(var/direction in GLOB.cardinal)
+			var/nx = x + (direction == EAST) - (direction == WEST)
+			var/ny = y + (direction == NORTH) - (direction == SOUTH)
+			if(abs(nx - blocked_x) > 1 || abs(ny - blocked_y) > 1 || (nx == blocked_x && ny == blocked_y))
+				continue
+			var/next_index = grid_index(nx, ny)
+			if(visited[next_index] || !module.contains_tile(nx, ny) || !candidate_mask[next_index] || occupied_mask[next_index])
+				continue
+			visited[next_index] = TRUE
+			frontier += next_index
+	for(var/index in open_neighbors)
+		if(!visited[index])
+			return FALSE
+	return TRUE
+
 /datum/generated_room_solver/proc/score_feature_position(datum/generated_room_feature/feature, x, y, direction)
 	var/score = 100
 	var/wall_direction = adjacent_planned_wall_direction(x, y)
@@ -565,10 +668,12 @@
 		score += 4
 	if(feature.interaction_clearance > 0)
 		var/turf/front = materializer.world_turf(x + (direction == EAST) - (direction == WEST), y + (direction == NORTH) - (direction == SOUTH))
+		materializer.generation_checkpoint("Checking [module.role] frontage", 52)
 		if(!front || front.density || solution.is_reserved(front.x - materializer.min_x + 1, front.y - materializer.min_y + 1))
 			return GENERATED_ROOM_SCORE_INVALID
 	for(var/datum/generated_room_constraint/constraint in feature.constraints)
 		var/value = score_constraint(constraint, x, y, direction)
+		materializer.generation_checkpoint("Checking [module.role] [constraint.type]", 52)
 		if(value <= GENERATED_ROOM_SCORE_INVALID && constraint.hard)
 			return GENERATED_ROOM_SCORE_INVALID
 		score += max(-100, value) * constraint.weight
@@ -584,35 +689,40 @@
 
 /// Ensures furnishings cannot create sealed pockets of otherwise walkable floor.
 /datum/generated_room_solver/proc/placement_preserves_room_connectivity(blocked_x, blocked_y)
-	var/list/available = list()
-	var/list/first
+	var/blocked_index = grid_index(blocked_x, blocked_y)
+	var/first_index = 0
+	var/available_count = 0
 	for(var/list/point in candidates)
-		var/x = point[1]
-		var/y = point[2]
-		if((x == blocked_x && y == blocked_y) || solution.occupied[solution.tile_key(x, y)])
+		var/index = grid_index(point[1], point[2])
+		var/unavailable = index == blocked_index || occupied_mask[index]
+		materializer.generation_checkpoint("Indexing room circulation", 52)
+		if(unavailable)
 			continue
-		var/key = solution.tile_key(x, y)
-		available[key] = point
-		if(!first)
-			first = point
-	if(!first)
+		available_count++
+		if(!first_index)
+			first_index = index
+	if(!first_index)
 		return TRUE
-	var/list/reached = list()
-	var/list/frontier = list(first)
-	while(length(frontier))
-		var/list/current = frontier[1]
-		frontier.Cut(1, 2)
-		var/current_key = solution.tile_key(current[1], current[2])
-		if(reached[current_key])
-			continue
-		reached[current_key] = TRUE
-		for(var/direction in GLOB.cardinal)
-			var/nx = current[1] + (direction == EAST) - (direction == WEST)
-			var/ny = current[2] + (direction == NORTH) - (direction == SOUTH)
-			var/next_key = solution.tile_key(nx, ny)
-			if(available[next_key] && !reached[next_key])
-				frontier += list(available[next_key])
-	return length(reached) == length(available)
+	connectivity_generation++
+	connectivity_queue.Cut()
+	connectivity_queue += first_index
+	connectivity_marks[first_index] = connectivity_generation
+	var/head = 1
+	var/reached_count = 0
+	while(head <= length(connectivity_queue))
+		var/current_index = connectivity_queue[head++]
+		reached_count++
+		var/current_x = ((current_index - 1) % grid_width) + grid_origin_x
+		for(var/next_index in list(current_index - 1, current_index + 1, current_index - grid_width, current_index + grid_width))
+			if(next_index < 1 || next_index > length(candidate_mask) || next_index == blocked_index || occupied_mask[next_index] || !candidate_mask[next_index] || connectivity_marks[next_index] == connectivity_generation)
+				continue
+			var/next_x = ((next_index - 1) % grid_width) + grid_origin_x
+			if(abs(next_x - current_x) > 1)
+				continue
+			connectivity_marks[next_index] = connectivity_generation
+			connectivity_queue += next_index
+		materializer.generation_checkpoint("Checking room circulation", 52)
+	return reached_count == available_count
 
 /datum/generated_room_solver/proc/score_constraint(datum/generated_room_constraint/constraint, x, y, direction)
 	if(istype(constraint, /datum/generated_room_constraint/against_wall))
@@ -673,13 +783,22 @@
 /// Returns a wall supplied by the authoritative tile plan, rather than treating
 /// temporary density or a furnishing as architectural support for a fixture.
 /datum/generated_room_solver/proc/adjacent_planned_wall_direction(x, y)
+	var/cache_index = grid_index(x, y)
+	var/cached_direction = planned_wall_directions[cache_index]
+	if(cached_direction)
+		return cached_direction - 1
 	for(var/direction in GLOB.cardinal)
 		var/nx = x + (direction == EAST) - (direction == WEST)
 		var/ny = y + (direction == NORTH) - (direction == SOUTH)
 		var/datum/generated_station_tile_intent/intent = materializer.result?.tile_plan?.tile(nx, ny)
 		if(intent?.is_structural_wall())
+			planned_wall_directions[cache_index] = direction + 1
 			return direction
+	planned_wall_directions[cache_index] = 1
 	return 0
+
+/datum/generated_room_solver/proc/grid_index(x, y)
+	return (y - grid_origin_y) * grid_width + (x - grid_origin_x) + 1
 
 /datum/generated_room_solver/proc/preferred_facing(x, y, datum/generated_room_feature/feature)
 	for(var/datum/generated_room_constraint/faces_feature/constraint in feature.constraints)
@@ -797,6 +916,7 @@
 		if(!fragment_placement.fragment.materialize(origin, fragment_placement.rotation, fragment_placement.mirrored, result))
 			rollback_room_materialization(owned_start, furnishing_start, styled_start, accent_start)
 			return FALSE
+		generation_checkpoint("Placing authored room fragments", 53)
 	for(var/datum/generated_room_placement/placement in solution.placements)
 		if(!placement.feature.atom_type)
 			continue
@@ -807,6 +927,7 @@
 		var/atom/movable/created = new placement.feature.atom_type(T)
 		created.set_dir(placement.dir)
 		result.register_furnishing(created)
+		generation_checkpoint("Installing room furnishings", 54)
 	return TRUE
 
 /datum/generated_station_materializer/proc/rollback_room_materialization(owned_start, furnishing_start, styled_start, accent_start)
@@ -845,17 +966,15 @@
 				var/obj/effect/floor_decal/borderfloor/decal = new(T, direction, solution.accent_color)
 				result.register_furnishing(decal)
 				result.accent_decal_count++
+			generation_checkpoint("Styling room floors", 53)
 	return TRUE
 
 /// Synthesizes every functional room from typed definitions rather than palettes.
 /datum/generated_station_materializer/proc/resolve_room_definition(department_id, role)
 	return generated_room_definition_for(department_id, role)
 
-/datum/generated_station_materializer/proc/resolve_compact_room_definition(department_id, role)
-	return generated_compact_room_definition_for(department_id, role)
-
 /datum/generated_station_materializer/proc/resolve_minimum_room_definition(department_id, role)
-	return generated_minimum_room_definition_for(department_id, role)
+	return generated_compact_room_definition_for(department_id, role)
 
 /datum/generated_station_materializer/proc/synthesize_rooms()
 	for(var/datum/generated_station_module/module in result.modules)
@@ -863,30 +982,40 @@
 		var/datum/generated_room_definition/primary_definition = resolve_room_definition(department_id, module.role)
 		if(!primary_definition)
 			continue
-		var/dimensions_fit = (module.width() >= primary_definition.min_width && module.height() >= primary_definition.min_height) || (module.width() >= primary_definition.min_height && module.height() >= primary_definition.min_width)
-		if(module.footprint_tiles() < 9 || !dimensions_fit)
+		var/list/definitions = list()
+		// An irregular footprint may satisfy the solver's geometric ratio while
+		// still being too small for the full activity program. Route those rooms
+		// directly to their authored compact program instead of letting a full
+		// definition masquerade as successful in nine usable tiles.
+		if(module.satisfies(primary_definition) && module.footprint_tiles() >= primary_definition.min_width * primary_definition.min_height)
+			definitions += primary_definition
+		else
 			qdel(primary_definition)
-			primary_definition = resolve_compact_room_definition(department_id, module.role)
-		var/list/definitions = list(primary_definition)
-		if(!findtext(primary_definition.id, "-compact-"))
-			definitions += resolve_compact_room_definition(department_id, module.role)
 		definitions += resolve_minimum_room_definition(department_id, module.role)
+		// Runtime generation must remain playable even if an unexpected footprint
+		// defeats both authored contracts. Strict tests deliberately omit this last
+		// resort so every catalog/solver regression remains visible.
+		if(!strict_room_contracts)
+			definitions += generated_minimum_room_definition_for(department_id, module.role)
 		var/room_seed = spec.seed + length(result.modules) * 7919 + module.x1 * 101 + module.y1 * 313
 		var/resolved = FALSE
 		var/attempt = 0
 		for(var/datum/generated_room_definition/definition in definitions)
 			attempt++
 			var/datum/generated_room_solver/solver = new
+			generation_checkpoint("Starting [module.role] solver", 52, TRUE)
 			var/datum/generated_room_solution/room_solution = solver.solve(src, module, definition, room_seed + attempt * 104729, spec.faction_id, spec.architecture_style)
 			var/materialized = room_solution?.valid && materialize_room_solution(room_solution)
 			if(materialized)
-				if(attempt > 1)
+				if(findtext(definition.id, "-minimum-"))
 					var/degradation = "room [module.id] used [definition.id] after authored content could not fit"
 					result.degradation_events += degradation
 					log_world("Generated station [spec.id] degraded [degradation].")
 				result.room_solutions += room_solution
 				resolved = TRUE
+				generation_checkpoint("Releasing [module.role] solver", 54, TRUE)
 				qdel(solver)
+				generation_checkpoint("Released [module.role] solver", 54, TRUE)
 				break
 			var/details = room_solution ? jointext(room_solution.issues, "; ") : "solver returned no solution"
 			if(!length(details))
@@ -895,13 +1024,13 @@
 			log_world("Generated station room [module.id] ([module.width()]x[module.height()] core, [module.footprint_tiles()] footprint tiles) rejected [definition.id]: [details]")
 			qdel(room_solution)
 			qdel(solver)
-			if(strict_room_contracts)
-				QDEL_LIST(definitions)
-				return FALSE
-		QDEL_LIST(definitions)
+		for(var/datum/generated_room_definition/definition in definitions.Copy())
+			generation_checkpoint("Releasing [module.role] definition", 54, TRUE)
+			qdel(definition)
+		definitions.Cut()
 		if(!resolved)
 			return FALSE
-		CHECK_TICK
+		generation_checkpoint("Completed [module.role] room", 54)
 	return TRUE
 
 #undef GENERATED_ROOM_SCORE_INVALID

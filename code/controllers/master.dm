@@ -87,6 +87,8 @@ GLOBAL_REAL(Master, /datum/controller/master)
 	var/list/perf_tick_usage = list()
 	var/list/perf_tick_realtime = list()
 	var/list/perf_outliers = list()
+	/// Breakdown for the highest-usage tick since the last explicit reset.
+	var/list/perf_worst_tick = list()
 	var/perf_history_limit = 12000
 	var/perf_tick_top_name = "None"
 	var/perf_tick_top_usage = 0
@@ -823,33 +825,49 @@ ADMIN_VERB(cmd_controller_view_ui, R_SERVER|R_DEBUG, "Controller Overview", "Vie
 		var/trim_count = min(1000, perf_tick_usage.len - 1)
 		perf_tick_usage.Cut(1, trim_count + 1)
 		perf_tick_realtime.Cut(1, trim_count + 1)
-	if(usage > 100)
-		var/list/breakdown = list()
-		var/attributed_usage = 0
-		for(var/subsystem_name in perf_tick_breakdown)
-			var/subsystem_usage = perf_tick_breakdown[subsystem_name]
-			attributed_usage += subsystem_usage
-			breakdown += list(list("name" = subsystem_name, "usage" = subsystem_usage))
-		var/unattributed = max(usage - attributed_usage, 0)
-		if(unattributed)
-			breakdown += list(list("name" = "BYOND / pre-MC / external", "usage" = unattributed))
-		perf_outliers += list(list(
+	var/previous_worst_usage = perf_worst_tick["usage"] || 0
+	if(usage > previous_worst_usage || usage > 100)
+		var/list/breakdown = performance_tick_breakdown(usage)
+		var/list/tick_record = list(
 			"world_time" = world.time,
 			"usage" = usage,
-			"overrun" = usage - 100,
+			"overrun" = max(usage - 100, 0),
 			"top_subsystem" = perf_tick_top_name,
 			"top_usage" = perf_tick_top_usage,
 			"maptick" = MAPTICK_LAST_INTERNAL_TICK_USAGE,
 			"breakdown" = breakdown,
-		))
+		)
+		if(usage > previous_worst_usage)
+			perf_worst_tick = tick_record
+		if(usage <= 100)
+			return
+		perf_outliers += list(tick_record)
 		if(perf_outliers.len > 20)
 			perf_outliers.Cut(1, perf_outliers.len - 19)
 
-/datum/controller/master/proc/performance_window(seconds)
-	var/sample_count = min(perf_tick_usage.len, max(round(world.fps * seconds), 1))
+/datum/controller/master/proc/performance_tick_breakdown(usage)
+	var/list/breakdown = list()
+	var/attributed_usage = 0
+	for(var/subsystem_name in perf_tick_breakdown)
+		var/subsystem_usage = perf_tick_breakdown[subsystem_name]
+		attributed_usage += subsystem_usage
+		breakdown += list(list("name" = subsystem_name, "usage" = subsystem_usage))
+	var/unattributed = max(usage - attributed_usage, 0)
+	if(unattributed)
+		breakdown += list(list("name" = "BYOND / pre-MC / external", "usage" = unattributed))
+	return breakdown
+
+/datum/controller/master/proc/performance_window(seconds, start_index_override)
+	var/sample_count
+	var/start_index
+	if(start_index_override)
+		start_index = clamp(start_index_override, 1, perf_tick_usage.len + 1)
+		sample_count = perf_tick_usage.len - start_index + 1
+	else
+		sample_count = min(perf_tick_usage.len, max(round(world.fps * seconds), 1))
+		start_index = perf_tick_usage.len - sample_count + 1
 	if(!sample_count)
 		return list("samples" = 0, "avg" = 0, "p50" = 0, "p95" = 0, "p99" = 0, "max" = 0, "overruns" = 0, "tps" = 0)
-	var/start_index = perf_tick_usage.len - sample_count + 1
 	var/list/samples = perf_tick_usage.Copy(start_index)
 	var/sum = 0
 	var/overruns = 0

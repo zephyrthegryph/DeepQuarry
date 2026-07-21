@@ -1,0 +1,22 @@
+{
+  "source": "maps/deep_quarry/deep_quarry-01.dmm",
+  "measurement": "connected room-floor components bounded by mapped walls and doors",
+  "floor_area": {
+    "p25": 17,
+    "median": 31,
+    "p75": 59
+  },
+  "representative_rooms": {
+    "medical_exam": { "usable_tiles": 15, "unique_fixture_types": 30 },
+    "medical_surgery": { "usable_tiles": 21, "unique_fixture_types": 37 },
+    "engineering_monitoring": { "usable_tiles": 33, "unique_fixture_types": 40 },
+    "medical_chemistry": { "usable_tiles": 41, "unique_fixture_types": 53 },
+    "engineering_workshop": { "usable_tiles": 52, "unique_fixture_types": 56 }
+  },
+  "generator_targets": {
+    "small_support_room_tiles": [9, 21],
+    "standard_activity_room_tiles": [21, 49],
+    "large_operational_room_tiles": [33, 77],
+    "normal_compact_fallback_rate": 0
+  }
+}

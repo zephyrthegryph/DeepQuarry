@@ -29,8 +29,10 @@
 
 	var/list/rows = mission.objective_rows()
 	TEST_ASSERT_EQUAL(length(rows), 8, "Station assault did not expose its strategic and physical objective rows")
-	TEST_ASSERT_EQUAL(mission.objectives[1].state, EXP_OBJ_COMPLETE, "Command objective ignored authoritative offline state")
-	TEST_ASSERT_EQUAL(mission.objectives[2].state, EXP_OBJ_COMPLETE, "Security objective ignored authoritative offline state")
+	var/datum/expedition_objective/command_objective = mission.objectives[1]
+	var/datum/expedition_objective/security_objective = mission.objectives[2]
+	TEST_ASSERT_EQUAL(command_objective.state, EXP_OBJ_COMPLETE, "Command objective ignored authoritative offline state")
+	TEST_ASSERT_EQUAL(security_objective.state, EXP_OBJ_COMPLETE, "Security objective ignored authoritative offline state")
 	var/capture_complete = FALSE
 	var/preserve_complete = FALSE
 	for(var/datum/expedition_objective/objective in mission.objectives)

@@ -25,14 +25,18 @@ mod tests {
                     .map(|room_index| RoomType {
                         id: (department_id - 1) * 6 + room_index,
                         name: format!("room-{department_id}-{room_index}"),
-                        min_width: if room_index == 1 { 7 } else { 4 },
+                        min_width: if room_index == 1 { 7 } else { 3 },
                         max_width: 14,
-                        min_height: if room_index == 1 { 6 } else { 4 },
+                        min_height: if room_index == 1 { 6 } else { 3 },
                         max_height: 14,
                         min_count: u16::from(room_index <= 4),
                         max_count: 6,
                         entrances: 1,
-                        content_area: if room_index == 1 { 42 } else { 24 },
+                        content_area: if room_index == 1 { 21 } else { 9 },
+                        ideal_area: if room_index == 1 { 54 } else { 21 },
+                        min_short_side: 3,
+                        max_aspect_ratio_millis: 4000,
+                        requires_center_activity: room_index == 1,
                     })
                     .collect();
                 DepartmentRequest {

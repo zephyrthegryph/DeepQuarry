@@ -187,13 +187,16 @@
 		for(var/turf/simulated/wall/wall in station_area)
 			var/adjacent_floor = FALSE
 			var/cardinal_walls = 0
+			var/surrounding_walls = 0
 			for(var/direction in GLOB.cardinal)
 				var/turf/neighbor = get_step(wall, direction)
 				if(istype(neighbor, /turf/simulated/floor))
 					adjacent_floor = TRUE
 				else if(istype(neighbor, /turf/simulated/wall))
 					cardinal_walls++
-			TEST_ASSERT(adjacent_floor || cardinal_walls < 4, "Seed [seed] has a buried 3x3 wall center at [generated_station_coordinate(wall)]")
+			for(var/turf/simulated/wall/nearby_wall in orange(1, wall))
+				surrounding_walls++
+			TEST_ASSERT(surrounding_walls < 8, "Seed [seed] has a buried 3x3 wall center at [generated_station_coordinate(wall)]")
 			TEST_ASSERT(adjacent_floor || cardinal_walls, "Seed [seed] has an orphan wall at [generated_station_coordinate(wall)]")
 	for(var/obj/machinery/door/door in site.station_materialization.doors)
 		var/turf/door_turf = get_turf(door)
@@ -206,9 +209,9 @@
 	var/datum/generated_station_utility_topology/topology = site.station_utilities
 	TEST_ASSERT_NOTNULL(topology, "Seed [seed] has no physical utility topology")
 	TEST_ASSERT(topology.power_network_is_global(), "Seed [seed] APCs do not share the station power grid")
-	TEST_ASSERT(topology.atmosphere_networks_are_global(), "Seed [seed] atmos devices do not share station mains")
-	for(var/node_id in site.station_materialization.department_areas)
-		var/area/generated_station/station_area = site.station_materialization.department_areas[node_id]
+	TEST_ASSERT(topology.atmosphere_networks_are_global(), "Seed [seed] atmos devices do not share station mains: [topology.atmosphere_network_break_summary()]")
+	for(var/module_id in site.station_materialization.module_areas)
+		var/area/generated_station/station_area = site.station_materialization.module_areas[module_id]
 		var/apcs = 0
 		var/vents = 0
 		var/scrubbers = 0
@@ -219,24 +222,33 @@
 			floors++
 			for(var/obj/machinery/power/apc/APC in floor)
 				apcs++
-				TEST_ASSERT_NOTNULL(APC.terminal?.powernet, "Seed [seed] [node_id] APC lacks a live terminal powernet")
+				TEST_ASSERT_NOTNULL(APC.terminal?.powernet, "Seed [seed] [module_id] APC lacks a live terminal powernet")
 			for(var/obj/machinery/atmospherics/unary/vent_pump/vent in floor)
 				vents++
-				TEST_ASSERT_NOTNULL(vent.network, "Seed [seed] [node_id] vent lacks a pipenet")
+				TEST_ASSERT_NOTNULL(vent.network, "Seed [seed] [module_id] vent lacks a pipenet")
 			for(var/obj/machinery/atmospherics/unary/vent_scrubber/scrubber in floor)
 				scrubbers++
-				TEST_ASSERT_NOTNULL(scrubber.network, "Seed [seed] [node_id] scrubber lacks a pipenet")
+				TEST_ASSERT_NOTNULL(scrubber.network, "Seed [seed] [module_id] scrubber lacks a pipenet")
 			for(var/obj/machinery/alarm/alarm in floor)
 				alarms++
 			for(var/obj/machinery/light/light in floor)
 				lights++
 		station_area.power_change()
-		TEST_ASSERT_EQUAL(apcs, 1, "Seed [seed] [node_id] has [apcs] APCs instead of one")
-		TEST_ASSERT(vents >= 1, "Seed [seed] [node_id] has no supply vent")
-		TEST_ASSERT(scrubbers >= 1, "Seed [seed] [node_id] has no scrubber")
-		TEST_ASSERT(alarms >= 1, "Seed [seed] [node_id] has no air alarm")
-		TEST_ASSERT(lights >= max(1, round(floors / 80)), "Seed [seed] [node_id] has only [lights] lights for [floors] floors")
-		TEST_ASSERT(station_area.powered(LIGHT), "Seed [seed] [node_id] lighting circuit is unpowered")
+		TEST_ASSERT_EQUAL(apcs, 1, "Seed [seed] [module_id] has [apcs] APCs instead of one")
+		TEST_ASSERT(vents >= 1, "Seed [seed] [module_id] has no supply vent")
+		TEST_ASSERT(scrubbers >= 1, "Seed [seed] [module_id] has no scrubber")
+		TEST_ASSERT(alarms >= 1, "Seed [seed] [module_id] has no air alarm")
+		TEST_ASSERT(lights >= max(1, round(floors / 80)), "Seed [seed] [module_id] has only [lights] lights for [floors] floors")
+		TEST_ASSERT(station_area.powered(LIGHT), "Seed [seed] [module_id] lighting circuit is unpowered")
+
+/datum/unit_test/dq_generated_station_physical_regressions/proc/pressure_context(turf/simulated/floor)
+	var/list/parts = list("area=[get_area(floor)?.type]")
+	for(var/atom/movable/occupant in floor)
+		parts += "occupant=[occupant.type]/dense=[occupant.density]"
+	for(var/direction in GLOB.cardinal)
+		var/turf/neighbor = get_step(floor, direction)
+		parts += "dir=[direction]:[neighbor?.type]/dense=[neighbor?.density]/pressure=[neighbor?.return_air()?.return_pressure()]"
+	return jointext(parts, ", ")
 
 /datum/unit_test/dq_generated_station_physical_regressions
 
@@ -247,16 +259,19 @@
 		var/list/diagnostics = list()
 		var/datum/expedition_site/site = SSexpedition.generate_debug_station(seed, diagnostics)
 		TEST_ASSERT_NOTNULL(site, "Pseudo-random runtime sample [sample] seed [seed] failed: [jointext(diagnostics, "; ")]")
+		TEST_ASSERT_EQUAL(length(site.station_materialization.degradation_events), 0, "Seed [seed] required materialization degradation: [jointext(site.station_materialization.degradation_events, "; ")]")
+		for(var/datum/generated_room_solution/solution in site.station_materialization.room_solutions)
+			TEST_ASSERT(!findtext(solution.definition_id, "-minimum-"), "Seed [seed] room [solution.module_id] fell back to [solution.definition_id]")
+			var/authored_fixture_count = length(solution.placements)
+			for(var/datum/generated_room_fragment_placement/fragment_placement in solution.fragments)
+				var/datum/generated_room_fragment/activity_motif/motif = fragment_placement.fragment
+				if(istype(motif))
+					authored_fixture_count += length(motif.feature_types)
+			TEST_ASSERT(authored_fixture_count >= 2, "Seed [seed] room [solution.module_id] has fewer than two authored fixtures")
+			TEST_ASSERT(solution.occupied_tiles >= max(2, FLOOR(solution.floor_tiles * 0.12, 1)), "Seed [seed] room [solution.module_id] leaves nearly all [solution.floor_tiles] floor tiles empty")
 		assert_structure(site, seed)
 		assert_vacuum_seal(site, seed)
 		assert_utilities(site, seed)
-		var/obj/machinery/door/airlock/generated_station_exterior/test_door = locate(/obj/machinery/door/airlock/generated_station_exterior) in site.station_materialization.doors
-		TEST_ASSERT_NOTNULL(test_door, "Seed [seed] lacks an exterior airlock for seal falsifiability")
-		var/original_density = test_door.density
-		test_door.density = FALSE
-		var/list/open_door_findings = vacuum_findings(site)
-		TEST_ASSERT_NOTNULL(open_door_findings["reached_floor"], "Seed [seed] vacuum audit accepted a deliberately opened exterior airlock")
-		test_door.density = original_density
 		var/list/initial_pressures = list()
 		for(var/node_id in site.station_materialization.department_areas)
 			var/area/generated_station/station_area = site.station_materialization.department_areas[node_id]
@@ -268,8 +283,15 @@
 		for(var/turf/simulated/floor/floor as anything in initial_pressures)
 			var/initial_pressure = initial_pressures[floor]
 			var/final_pressure = floor.return_air()?.return_pressure()
-			TEST_ASSERT(isnum(final_pressure) && final_pressure > 80, "Seed [seed] floor [generated_station_coordinate(floor)] became unpressurized")
+			TEST_ASSERT(isnum(final_pressure) && final_pressure > 80, "Seed [seed] floor [generated_station_coordinate(floor)] became unpressurized: [pressure_context(floor)]")
 			TEST_ASSERT(abs(final_pressure - initial_pressure) < 5, "Seed [seed] floor [generated_station_coordinate(floor)] changed pressure by [abs(final_pressure - initial_pressure)] kPa at rest")
+		var/obj/machinery/door/airlock/generated_station_exterior/test_door = locate(/obj/machinery/door/airlock/generated_station_exterior) in site.station_materialization.doors
+		TEST_ASSERT_NOTNULL(test_door, "Seed [seed] lacks an exterior airlock for seal falsifiability")
+		var/original_density = test_door.density
+		test_door.density = FALSE
+		var/list/open_door_findings = vacuum_findings(site)
+		TEST_ASSERT_NOTNULL(open_door_findings["reached_floor"], "Seed [seed] vacuum audit accepted a deliberately opened exterior airlock")
+		test_door.density = original_density
 		SSexpedition.release_site(site, "generated station physical regression unit test")
 	qdel(seed_stream)
 

@@ -337,24 +337,24 @@ impl TurfGases {
 	pub fn adjacent_mixes<'a>(
 		&'a self,
 		index: NodeIndex,
-		all_mixtures: &'a [parking_lot::RwLock<Mixture>],
+		all_mixtures: &'a (impl crate::gas::MixtureLookup + ?Sized),
 	) -> impl Iterator<Item = &'a parking_lot::RwLock<Mixture>> {
 		self.graph
 			.neighbors(index)
 			.filter_map(|neighbor| self.graph.node_weight(neighbor))
-			.filter_map(move |idx| all_mixtures.get(idx.mix))
+			.filter_map(move |idx| all_mixtures.mixture(idx.mix))
 	}
 
 	pub fn adjacent_mixes_with_adj_ids<'a>(
 		&'a self,
 		index: NodeIndex,
-		all_mixtures: &'a [parking_lot::RwLock<Mixture>],
+		all_mixtures: &'a (impl crate::gas::MixtureLookup + ?Sized),
 		dir: Direction,
 	) -> impl Iterator<Item = (&'a TurfID, &'a parking_lot::RwLock<Mixture>)> {
 		self.graph
 			.neighbors_directed(index, dir)
 			.filter_map(|neighbor| self.graph.node_weight(neighbor))
-			.filter_map(move |idx| Some((&idx.id, all_mixtures.get(idx.mix)?)))
+			.filter_map(move |idx| Some((&idx.id, all_mixtures.mixture(idx.mix)?)))
 	}
 	pub fn clear(&mut self) {
 		self.graph.clear();
@@ -466,16 +466,20 @@ pub(super) fn reactivate_all_turfs() {
 }
 #[byondapi::init]
 pub fn initialize_turfs() {
-	// Southern Cross normally tracks about 368k atmospheric tiles and 1.44m
-	// directed edges. Leave modest growth room without reserving ten complete
-	// 255x255 levels and then doubling the edge arena during initialization.
 	*TURF_GASES.write() = Some(TurfGases {
-		graph: StableDiGraph::with_capacity(400_000, 1_500_000),
-		map: IndexMap::with_capacity_and_hasher(400_000, FxBuildHasher),
+		graph: StableDiGraph::with_capacity(4096, 16_384),
+		map: IndexMap::with_capacity_and_hasher(4096, FxBuildHasher),
 	});
 	*PLANETARY_ATMOS.write() = Some(Default::default());
 	*ACTIVE_TURFS.write() = Some(Default::default());
 	*MIX_TO_TURF.write() = Some(Default::default());
+}
+
+pub(super) fn reserve_turf_capacity(nodes: usize, _edges: usize) {
+	with_turf_gases_write(|arena| {
+		let map_capacity = arena.map.capacity();
+		arena.map.reserve(nodes.saturating_sub(map_capacity));
+	});
 }
 
 pub fn shutdown_turfs() {

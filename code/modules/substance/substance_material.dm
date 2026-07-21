@@ -177,6 +177,7 @@ GLOBAL_LIST_EMPTY(substance_material_dedup)
 
 // Read the substance embodied by a stack (null if it is not a substance material).
 /proc/substance_stack_substance(obj/item/stack/material/stack)
+	RETURN_TYPE(/datum/substance)
 	if(!istype(stack) || !istype(stack.material, /datum/material/substance))
 		return null
 	var/datum/material/substance/M = stack.material

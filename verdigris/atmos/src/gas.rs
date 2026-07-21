@@ -16,6 +16,83 @@ pub type GasIDX = usize;
 /// A static container, with a bunch of helper functions for accessing global data. It's horrible, I know, but video games.
 pub struct GasArena {}
 
+pub(crate) trait MixtureLookup {
+	fn mixture(&self, id: usize) -> Option<&RwLock<Mixture>>;
+}
+
+impl MixtureLookup for [RwLock<Mixture>] {
+	fn mixture(&self, id: usize) -> Option<&RwLock<Mixture>> {
+		self.get(id)
+	}
+}
+
+#[derive(Default)]
+pub(crate) struct MixtureSnapshot {
+	mixtures: Vec<RwLock<Mixture>>,
+	slots: Vec<usize>,
+	ids: Vec<usize>,
+	revisions: Vec<u64>,
+}
+
+impl MixtureSnapshot {
+	fn prepare(&mut self, arena_len: usize, ids: &[usize]) {
+		for &id in &self.ids {
+			if let Some(slot) = self.slots.get_mut(id) {
+				*slot = usize::MAX;
+			}
+		}
+		self.mixtures.clear();
+		self.ids.clear();
+		self.revisions.clear();
+		self.slots.resize(arena_len, usize::MAX);
+		self.mixtures.reserve(ids.len());
+		self.ids.reserve(ids.len());
+		self.revisions.reserve(ids.len());
+		for &id in ids {
+			if id >= arena_len || self.slots[id] != usize::MAX {
+				continue;
+			}
+			self.slots[id] = self.mixtures.len();
+			self.mixtures.push(Default::default());
+			self.ids.push(id);
+			self.revisions.push(0);
+		}
+	}
+
+	fn slot(&self, id: usize) -> Option<usize> {
+		self.slots
+			.get(id)
+			.copied()
+			.filter(|&slot| slot != usize::MAX)
+	}
+
+	pub(crate) fn get(&self, id: usize) -> Option<&RwLock<Mixture>> {
+		self.slot(id).and_then(|slot| self.mixtures.get(slot))
+	}
+
+	fn revision(&self, id: usize) -> Option<u64> {
+		self.slot(id)
+			.and_then(|slot| self.revisions.get(slot).copied())
+	}
+
+	fn set_revision(&mut self, id: usize, revision: u64) {
+		if let Some(slot) = self.slot(id) {
+			self.revisions[slot] = revision;
+		}
+	}
+
+	pub(crate) fn release_values(&mut self) {
+		self.mixtures.clear();
+		self.revisions.clear();
+	}
+}
+
+impl MixtureLookup for MixtureSnapshot {
+	fn mixture(&self, id: usize) -> Option<&RwLock<Mixture>> {
+		self.get(id)
+	}
+}
+
 /*
 	This is where the gases live.
 	This is just a big vector, acting as a gas mixture pool.
@@ -47,11 +124,20 @@ pub(crate) struct GasChangeSignature {
 
 #[byondapi::init]
 pub fn initialize_gases() {
-	*GAS_MIXTURES.write() = Some(Vec::with_capacity(240_000));
+	*GAS_MIXTURES.write() = Some(Vec::with_capacity(4096));
 	*NEXT_GAS_IDS.write() = Some(Vec::with_capacity(2000));
-	*GAS_REVISIONS.write() = Some(Vec::with_capacity(240_000));
+	*GAS_REVISIONS.write() = Some(Vec::with_capacity(4096));
 	*DIRTY_GAS_MIXTURES.write() = Some(FxHashMap::default());
 	*DIRTY_GAS_BASELINES.write() = Some(FxHashMap::default());
+}
+
+pub(crate) fn reserve_gas_capacity(target: usize) {
+	let mut mixtures = GAS_MIXTURES.write();
+	let mixtures = mixtures.as_mut().unwrap();
+	mixtures.reserve(target.saturating_sub(mixtures.capacity()));
+	let mut revisions = GAS_REVISIONS.write();
+	let revisions = revisions.as_mut().unwrap();
+	revisions.reserve(target.saturating_sub(revisions.capacity()));
 }
 
 pub fn shut_down_gases() {
@@ -64,16 +150,12 @@ pub fn shut_down_gases() {
 }
 
 impl GasArena {
-	pub fn snapshot_mixtures_into(
-		ids: &[usize],
-		snapshot: &mut Vec<RwLock<Mixture>>,
-		revisions: &mut Vec<u64>,
-	) {
+	pub(crate) fn snapshot_mixtures_into(ids: &[usize], snapshot: &mut MixtureSnapshot) {
 		let _publication = GAS_PUBLICATION.read();
 		let gases = GAS_MIXTURES.read();
 		let gases = gases.as_ref().unwrap();
-		snapshot.resize_with(gases.len(), Default::default);
-		revisions.resize(gases.len(), 0);
+		snapshot.prepare(gases.len(), ids);
+		let mut captured_revisions = Vec::with_capacity(ids.len());
 		for &id in ids {
 			if let (Some(source), Some(target)) = (gases.get(id), snapshot.get(id)) {
 				loop {
@@ -82,26 +164,28 @@ impl GasArena {
 					let revision_after = Self::revision(id);
 					if revision_before == revision_after {
 						*target.write() = copied;
-						revisions[id] = revision_after;
+						captured_revisions.push((id, revision_after));
 						break;
 					}
 				}
 			}
+		}
+		for (id, revision) in captured_revisions {
+			snapshot.set_revision(id, revision);
 		}
 	}
 
 	/// Publishes a transaction only when none of its input mixtures changed while
 	/// the worker was computing. The publication lock makes the set visible to DM
 	/// readers as one generation.
-	pub fn publish_snapshot(
+	pub(crate) fn publish_snapshot(
 		ids: &[usize],
-		base_revisions: &[u64],
-		snapshot: &[RwLock<Mixture>],
+		snapshot: &MixtureSnapshot,
 	) -> Option<Vec<usize>> {
 		let _publication = GAS_PUBLICATION.write();
 		if ids
 			.iter()
-			.any(|&id| base_revisions.get(id).copied().unwrap_or_default() != Self::revision(id))
+			.any(|&id| snapshot.revision(id).unwrap_or_default() != Self::revision(id))
 		{
 			for &id in ids {
 				crate::turfs::mark_mix_active(id);
@@ -647,9 +731,10 @@ mod tests {
 			.unwrap()
 			.push(AtomicU64::new(0));
 
-		let mut snapshot = Vec::new();
-		let mut revisions = Vec::new();
-		GasArena::snapshot_mixtures_into(&[0], &mut snapshot, &mut revisions);
+		let mut snapshot = MixtureSnapshot::default();
+		GasArena::snapshot_mixtures_into(&[0], &mut snapshot);
+		assert_eq!(snapshot.mixtures.len(), 1);
+		assert_eq!(snapshot.ids, vec![0]);
 		GasArena::with_gas_mixture_mut(0, |mixture| {
 			mixture.set_moles(0, 10.0);
 			Ok(())
@@ -660,16 +745,16 @@ mod tests {
 			vec![(0, GAS_CHANGE_COMPOSITION)]
 		);
 		assert!(GasArena::take_dirty_mixtures().is_empty());
-		snapshot[0].write().set_moles(0, 5.0);
-		assert!(GasArena::publish_snapshot(&[0], &revisions, &snapshot).is_none());
+		snapshot.get(0).unwrap().write().set_moles(0, 5.0);
+		assert!(GasArena::publish_snapshot(&[0], &snapshot).is_none());
 		assert_eq!(
 			GasArena::with_gas_mixture(0, |mixture| Ok(mixture.get_moles(0))).unwrap(),
 			10.0
 		);
 
-		GasArena::snapshot_mixtures_into(&[0], &mut snapshot, &mut revisions);
-		snapshot[0].write().set_moles(0, 20.0);
-		assert!(GasArena::publish_snapshot(&[0], &revisions, &snapshot).is_some());
+		GasArena::snapshot_mixtures_into(&[0], &mut snapshot);
+		snapshot.get(0).unwrap().write().set_moles(0, 20.0);
+		assert!(GasArena::publish_snapshot(&[0], &snapshot).is_some());
 		assert_eq!(
 			GasArena::with_gas_mixture(0, |mixture| Ok(mixture.get_moles(0))).unwrap(),
 			20.0

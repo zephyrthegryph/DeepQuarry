@@ -92,12 +92,24 @@
 		for(var/datum/generated_room_solution/solution in materialized.room_solutions)
 			var/list/content_types = list()
 			var/list/content_paths = list()
+			for(var/datum/generated_room_fragment_placement/fragment_placement in solution.fragments)
+				var/datum/generated_room_fragment/activity_motif/motif = fragment_placement.fragment
+				if(!istype(motif))
+					continue
+				for(var/feature_type in motif.feature_types)
+					var/datum/generated_room_feature/fragment_feature = new feature_type
+					content_types["[fragment_feature.atom_type]"] = TRUE
+					content_paths |= fragment_feature.atom_type
+					if(ispath(fragment_feature.atom_type, /obj/machinery))
+						machinery++
+					qdel(fragment_feature)
 			for(var/datum/generated_room_placement/placement in solution.placements)
 				content_types["[placement.feature.atom_type]"] = TRUE
 				content_paths |= placement.feature.atom_type
 				if(ispath(placement.feature.atom_type, /obj/machinery))
 					machinery++
-			if(solution.floor_tiles < 20)
+			var/compact_solution = findtext(solution.definition_id, "-compact")
+			if(compact_solution)
 				TEST_ASSERT(length(content_types) >= 2, "Compact random room [solution.module_id] collapsed to a token fixture")
 			else
 				large_rooms++
@@ -109,16 +121,22 @@
 					module = candidate
 					break
 			var/department_id = materializer.department_id_for_module(module)
-			var/is_compact_program = findtext(solution.definition_id, "-compact-")
-			for(var/required_type in generated_room_required_signature(department_id, module?.role, is_compact_program))
+			TEST_ASSERT(!findtext(solution.definition_id, "-minimum-"), "Random content sample [sample] room [solution.module_id] degraded to [solution.definition_id]")
+			for(var/required_type in generated_room_required_signature(department_id, module?.role, compact_solution))
 				var/found_signature = FALSE
 				for(var/content_type in content_paths)
 					if(ispath(content_type, required_type))
 						found_signature = TRUE
 						break
+				if(!found_signature)
+					var/area/generated_station/module_area = materialized.module_areas[module?.id]
+					for(var/atom/movable/furnishing in materialized.furnishings)
+						if(istype(furnishing, required_type) && get_area(furnishing) == module_area)
+							found_signature = TRUE
+							break
 				TEST_ASSERT(found_signature, "Materialized [department_id]/[module?.role] room [solution.module_id] lost required authored fixture [required_type]")
 		TEST_ASSERT(large_rooms > 0, "Random content sample [sample] contained no full-sized rooms")
-		TEST_ASSERT(machinery >= length(materialized.room_solutions) * 0.2, "Random content sample [sample] lacks functional machinery")
+		TEST_ASSERT(machinery >= length(materialized.room_solutions), "Random content sample [sample] averages fewer than one functional machine per room")
 		var/datum/generated_station_validation_result/validation = materialized.validate_architecture(spec)
 		var/html = materialized.diagnostic_minimap_html(validation)
 		var/normalized_seed = spec.seed
@@ -156,9 +174,6 @@
 	strict_room_contracts = FALSE
 
 /datum/generated_station_materializer/test_room_fallback/resolve_room_definition(department_id, role)
-	return new /datum/generated_room_definition/test_impossible
-
-/datum/generated_station_materializer/test_room_fallback/resolve_compact_room_definition(department_id, role)
 	return new /datum/generated_room_definition/test_impossible
 
 /datum/unit_test/dq_generated_station_runtime_room_fallback_cannot_abort_station

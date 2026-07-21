@@ -184,7 +184,7 @@ GLOBAL_VAR_INIT(focused_tests, focused_tests())
 	clicker.next_move = -1
 	clicker.ClickOn(clicked_on, list2params(passed_params))
 
-/proc/RunUnitTest(datum/unit_test/test_path, list/test_results)
+/proc/RunUnitTest(datum/unit_test/test_path, list/test_results, current_index, total_tests)
 	if(ispath(test_path, /datum/unit_test/focus_only))
 		return
 
@@ -194,18 +194,19 @@ GLOBAL_VAR_INIT(focused_tests, focused_tests())
 	var/datum/unit_test/test = new test_path
 
 	GLOB.current_test = test
-	var/duration = REALTIMEOFDAY
+	var/duration = 0
 	var/skip_test = (test_path in SSmapping.current_map.skipped_tests)
 	var/test_output_desc = "[test_path]"
 	var/message = ""
 
-	log_world("::group::[test_path]")
+	log_world("::group::([current_index]/[total_tests]) [test_path]")
+	log_test("Running [current_index]/[total_tests]: [test_path]")
 
 	if(skip_test)
 		log_world("[TEST_OUTPUT_YELLOW("SKIPPED")] Skipped run on map [SSmapping.current_map.name].")
 
 	else
-
+		duration = REALTIMEOFDAY
 		test.Run()
 		test.restore_atmos()
 
@@ -240,7 +241,7 @@ GLOBAL_VAR_INIT(focused_tests, focused_tests())
 		log_world("::error::[TEST_OUTPUT_RED("FAIL")] [test_output_desc]")
 
 	var/final_status = skip_test ? UNIT_TEST_SKIPPED : (test.succeeded ? UNIT_TEST_PASSED : UNIT_TEST_FAILED)
-	test_results[test_path] = list("status" = final_status, "message" = message, "name" = test_path)
+	test_results[test_path] = list("status" = final_status, "message" = message, "name" = test_path, "duration_ds" = duration)
 
 	qdel(test)
 
@@ -384,13 +385,18 @@ GLOBAL_VAR_INIT(focused_tests, focused_tests())
 	sortTim(tests_to_run, GLOBAL_PROC_REF(cmp_unit_test_priority))
 
 	var/list/test_results = list()
+	var/total_tests = length(tests_to_run)
+	var/current_test_index = 0
+	log_test("Unit-test suite starting: [total_tests] test types[LAZYLEN(focused_tests) ? " (focused run)" : ""].")
 
 	//Hell code, we're bound to end the round somehow so let's stop if from ending while we work
 	SSticker.delay_end = TRUE
 	for(var/unit_path in tests_to_run)
 		CHECK_TICK //We check tick first because the unit test we run last may be so expensive that checking tick will lock up this loop forever
-		RunUnitTest(unit_path, test_results)
+		current_test_index++
+		RunUnitTest(unit_path, test_results, current_test_index, total_tests)
 	SSticker.delay_end = FALSE
+	log_test("Unit-test suite finished: [total_tests] test types, failures: [GLOB.failed_any_test ? "yes" : "no"].")
 
 	var/file_name = "data/unit_tests.json"
 	fdel(file_name)

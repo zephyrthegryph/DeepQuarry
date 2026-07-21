@@ -395,10 +395,6 @@
 	var/turf/open/current_sound_loc
 	var/datum/looping_sound/fire/sound
 	var/tiles_limit = 80 // arbitrary limit so we dont have one giant group
-	///these lists and average var are to find the average center of a group
-	var/list/x_coord = list()
-	var/list/y_coord = list()
-	var/list/z_coord = list()
 	var/average_x
 	var/average_y
 	var/average_Z
@@ -415,10 +411,6 @@
 
 /datum/hot_group/proc/remove_from_group(obj/effect/hotspot/target)
 	spot_list -= target
-	var/turf/open/target_turf = target.loc
-	if(target_turf)
-		x_coord -= target_turf.x
-		y_coord -= target_turf.y
 	if(!length(spot_list))
 		qdel(src)
 		return
@@ -428,10 +420,6 @@
 		return
 	spot_list += target
 	target.our_hot_group = src
-	var/turf/open/target_turf = target.loc
-	x_coord += target_turf.x
-	y_coord += target_turf.y
-	z_coord += target_turf.z
 	if(COOLDOWN_FINISHED(src, update_sound_center) && length(spot_list) > MIN_SIZE_SOUND)//arbitrary size to start playing the sound
 		update_sound()
 		COOLDOWN_START(src, update_sound_center, 5 SECONDS)
@@ -450,8 +438,6 @@
 	for(var/obj/effect/hotspot/reference as anything in sacrificial_group.spot_list)
 		reference.our_hot_group = saving_group
 	saving_group.spot_list += sacrificial_group.spot_list
-	saving_group.x_coord += sacrificial_group.x_coord
-	saving_group.y_coord += sacrificial_group.y_coord
 	qdel(sacrificial_group)
 	if(COOLDOWN_FINISHED(src, update_sound_center) && length(spot_list) > MIN_SIZE_SOUND)//arbitrary size to start playing the sound
 		update_sound()
@@ -459,10 +445,28 @@
 
 /datum/hot_group/proc/update_sound()
 	//we can draw a cross around the average middle of any globs of group, curves or hollow groups may cause issues with this
-	average_x = round((max(x_coord) + min(x_coord))/2)
-	average_y = round((max(y_coord) + min(y_coord))/2)
-	average_Z = round((min(z_coord) + max(z_coord))/2)
-	drop_off_dist = max((max(y_coord) - min(y_coord)), (max(x_coord) - min(x_coord)), 1)// pick the largest value between the width and length of the group to determine sound drop off
+	var/min_x = INFINITY
+	var/max_x = 0
+	var/min_y = INFINITY
+	var/max_y = 0
+	var/min_z = INFINITY
+	var/max_z = 0
+	for(var/obj/effect/hotspot/spot as anything in spot_list)
+		var/turf/open/spot_turf = spot.loc
+		if(!istype(spot_turf))
+			continue
+		min_x = min(min_x, spot_turf.x)
+		max_x = max(max_x, spot_turf.x)
+		min_y = min(min_y, spot_turf.y)
+		max_y = max(max_y, spot_turf.y)
+		min_z = min(min_z, spot_turf.z)
+		max_z = max(max_z, spot_turf.z)
+	if(min_x == INFINITY)
+		return
+	average_x = round((max_x + min_x) / 2)
+	average_y = round((max_y + min_y) / 2)
+	average_Z = round((min_z + max_z) / 2)
+	drop_off_dist = max(max_y - min_y, max_x - min_x, 1)// pick the largest value between the width and length of the group to determine sound drop off
 	var/turf/open/sound_turf = locate(average_x, average_y, average_Z)
 	if(sound)
 		sound.falloff_distance = drop_off_dist

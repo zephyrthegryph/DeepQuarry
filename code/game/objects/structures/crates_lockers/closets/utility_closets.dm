@@ -77,6 +77,7 @@
 		/obj/item/tank/oxygen/red,
 		/obj/item/extinguisher,
 		/obj/item/clothing/head/hardhat/red)
+	var/add_emergency_toolbox = TRUE
 
 /obj/structure/closet/firecloset/full
 	starts_with = list(
@@ -86,6 +87,10 @@
 		/obj/item/tank/oxygen/red,
 		/obj/item/extinguisher,
 		/obj/item/clothing/head/hardhat/red)
+
+/obj/structure/closet/firecloset/full/generated_station
+	starts_with = list()
+	add_emergency_toolbox = FALSE
 
 /obj/structure/closet/firecloset/full/double
 	starts_with = list(
@@ -238,7 +243,8 @@
 
 // === merged from utility_closets_vr.dm during hard-fork de-suffix (verified no override-order change) ===
 /obj/structure/closet/firecloset/Initialize(mapload)
-	starts_with += /obj/item/storage/toolbox/emergency
+	if(add_emergency_toolbox)
+		starts_with += /obj/item/storage/toolbox/emergency
 	return ..()
 
 /obj/structure/closet/hydrant/Initialize(mapload)

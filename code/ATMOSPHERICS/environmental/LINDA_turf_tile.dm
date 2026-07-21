@@ -327,15 +327,18 @@
 // hit a NonExistentString / missing-proc and panic the FFI call. These are defined on the
 // base /turf (not just /turf/open) so the string resolves for any turf the arena hands us.
 //
-// STUB: safe no-ops. DeepQuarry's firedoors (Baystation/Polaris lineage) don't use /tg's
-// automatic pressure-triggered firelock closing, and this fork doesn't rip up floor tiles
-// on decompression, so doing nothing preserves current behavior. Give either real behavior
-// later if desired — the contract is just "must not runtime/panic when called".
+// Pressure boundaries close adjacent firelocks. Floor ripping remains disabled because
+// this fork does not model decompression damage to floor tiles.
 
 /// Rust katmos hook: called on a turf when an adjacent turf has a large enough pressure
-/// delta that /tg would auto-close firelocks between them. No-op stub (see note above).
+/// delta that should close firelocks between them.
 /turf/proc/consider_firelocks(turf/other)
-	return
+	if(!other || get_dist(src, other) != 1)
+		return
+	for(var/turf/boundary in list(src, other))
+		for(var/obj/machinery/door/firedoor/firelock in boundary)
+			if(!firelock.density && !firelock.blocked)
+				INVOKE_ASYNC(firelock, TYPE_PROC_REF(/obj/machinery/door/firedoor, close))
 
 /// Rust katmos hook: called during explosive depressurization; /tg rips up floor tiles
 /// under strong decompression. No-op stub (see note above). `sum` is the summed transfer.

@@ -40,6 +40,10 @@ SUBSYSTEM_DEF(air)
 	var/async_compute_cost = 0
 	/// Turfs in the connected components considered by the last generation.
 	var/async_active_turfs = 0
+	/// Explicit active seeds consumed by the latest worker generation.
+	var/async_seed_turfs = 0
+	/// Turfs still materially divergent after the latest worker generation.
+	var/async_retained_turfs = 0
 	/// Turfs queued for the next local-frontier generation.
 	var/async_pending_turfs = 0
 	/// Mixtures copied into the latest worker snapshot.

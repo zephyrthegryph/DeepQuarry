@@ -518,8 +518,8 @@ gated files exported non-atmos helpers too. The DME edits are now captured in
 `tools/verdigris/apply_linda_dme_edits.py` (idempotent, reapplies the
 hand-curated gate set).
 
-Latest snapshot: `modular_dq/doc/linda_compile_errors_by_file.txt` and
-`linda_compile_errors_by_message.txt`.
+Run DreamChecker locally for the current diagnostic set; historical compile-error
+snapshots are intentionally not maintained.
 
 ### Why iteration plateaued
 

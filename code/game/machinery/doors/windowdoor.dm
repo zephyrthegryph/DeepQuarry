@@ -154,6 +154,7 @@
 // base door uses, so we deliberately do NOT chain to /obj/machinery/door's
 // atom_destruction (which calls set_broken()). Fire the destruction signal here.
 /obj/machinery/door/window/atom_destruction(damage_flag)
+	SHOULD_CALL_PARENT(FALSE)
 	SEND_SIGNAL(src, COMSIG_ATOM_DESTRUCTION, damage_flag)
 	shatter()
 

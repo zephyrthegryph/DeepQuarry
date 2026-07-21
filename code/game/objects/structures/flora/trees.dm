@@ -95,6 +95,7 @@
 // Felling the tree at 0 integrity turns it into a persistent stump rather than
 // deleting it, so we handle it here instead of letting the base qdel the tree.
 /obj/structure/flora/tree/atom_destruction(damage_flag)
+	SHOULD_CALL_PARENT(FALSE)
 	if(is_stump || indestructable)
 		return
 	die()

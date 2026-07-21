@@ -101,6 +101,9 @@ GLOBAL_LIST_EMPTY(preferences_datums)
 	var/list/dq_editor_static_versions
 	/// window id -> (editor key -> last delivered version)
 	var/list/dq_window_editor_versions
+	/// Window ids that explicitly requested their active editor catalogs. Cold
+	/// opens render the category shell first and request these on the next update.
+	var/list/dq_force_catalogs_by_window
 	/// Cached static category structures, indexed by category name.
 	var/list/dq_category_static_cache
 	/// Ordered category names matching dq_category_static_cache.

@@ -17,6 +17,7 @@
 
 	if(air && air.return_volume())
 		temporarily_store_air()
+	QDEL_NULL(air)
 	for(var/obj/machinery/atmospherics/pipe/P in members)
 		P.parent = null
 	members = null

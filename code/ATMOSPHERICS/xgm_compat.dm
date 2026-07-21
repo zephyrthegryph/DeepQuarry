@@ -474,18 +474,6 @@ GLOBAL_DATUM_INIT(gas_data, /datum/xgm_gas_data, new())
 		return
 	call_ext(VERDIGRIS, "byond:multiply_hook_ffi")(src, num_val)
 
-// /obj/fire — ZAS-era fire effect. LINDA uses /obj/effect/hotspot at runtime;
-// CHOMP code that still references the legacy /obj/fire path (closet contents,
-// fusion core field, fire alarm spawn lists) resolves through this lightweight
-// declaration. It's an explicit placeholder until the legacy references are
-// migrated to /obj/effect/hotspot.
-/obj/fire
-	name = "fire (deprecated)"
-	icon = 'icons/effects/fire.dmi'
-	icon_state = "1"
-	anchored = TRUE
-	mouse_opacity = 0
-
 // /obj/item/tank exposed return_pressure/return_temperature as forwarding
 // methods to air_contents. Re-declare for callers that still use them.
 /obj/item/tank/proc/return_pressure()

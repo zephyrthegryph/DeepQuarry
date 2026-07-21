@@ -93,6 +93,10 @@ pub struct RoomType {
     pub max_count: u16,
     pub entrances: u16,
     pub content_area: u32,
+    pub ideal_area: u32,
+    pub min_short_side: u16,
+    pub max_aspect_ratio_millis: u32,
+    pub requires_center_activity: bool,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -343,6 +347,14 @@ pub struct CatalogRoomWire {
     pub max_entrances: u16,
     pub content_area: u32,
     pub minimum_usable_tiles: u32,
+    #[serde(default)]
+    pub ideal_usable_tiles: u32,
+    #[serde(default)]
+    pub min_short_side: u16,
+    #[serde(default)]
+    pub max_aspect_ratio_millis: u32,
+    #[serde(default, deserialize_with = "deserialize_boolish")]
+    pub requires_center_activity: bool,
     pub density_min_micros: u32,
     pub density_max_micros: u32,
     pub circulation_min_micros: u32,

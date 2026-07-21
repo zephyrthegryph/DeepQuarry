@@ -7,6 +7,7 @@
 	var/datum/pipeline/parent
 	var/volume = 0
 	var/leaking = FALSE // Do not set directly, use set_leaking(TRUE/FALSE)
+	var/damaged_leak = FALSE
 
 	layer = PIPES_LAYER
 	use_power = USE_POWER_OFF
@@ -33,10 +34,26 @@
 	return level != 2
 
 /obj/machinery/atmospherics/pipe/proc/set_leaking(new_leaking)
-	return // N O P E - pipe leaking is disabled fork-wide
+	new_leaking = !!new_leaking
+	if(leaking == new_leaking)
+		return
+	leaking = new_leaking
+	if(parent)
+		if(leaking)
+			parent.leaks |= src
+		else
+			parent.leaks -= src
+		if(parent.network)
+			if(leaking)
+				parent.network.leaks |= src
+			else
+				parent.network.leaks -= src
+			parent.network.mark_dirty()
+	if(leaking)
+		START_MACHINE_PROCESSING(src)
 
 /obj/machinery/atmospherics/pipe/proc/handle_leaking()	// Used specifically to update leaking status on different pipes.
-	return
+	set_leaking(damaged_leak)
 
 /obj/machinery/atmospherics/pipe/pipeline_expansion() // was proc/; base in xgm_compat_shim now
 	return null
@@ -107,6 +124,18 @@
 /obj/machinery/atmospherics/pipe/attackby(obj/item/W as obj, mob/user as mob)
 	if (istype(src, /obj/machinery/atmospherics/pipe/tank))
 		return ..()
+
+	if(damaged_leak && W.has_tool_quality(TOOL_WELDER))
+		var/obj/item/weldingtool/welder = W.get_welder()
+		if(!welder.remove_fuel(1, user))
+			return TRUE
+		to_chat(user, span_notice("You begin welding the fatigue crack in \the [src]."))
+		playsound(src, welder.usesound, 50, TRUE)
+		if(do_after(user, 4 SECONDS * welder.toolspeed, target = src) && damaged_leak)
+			damaged_leak = FALSE
+			handle_leaking()
+			to_chat(user, span_notice("You seal the fatigue crack in \the [src]."))
+		return TRUE
 
 	if(istype(W,/obj/item/pipe_painter))
 		return 0

@@ -10,6 +10,45 @@
 // Z-levels are never truly freed in BYOND (world.maxz only grows), so released
 // sites are wiped back to bare substrate and their z pushed onto free_z for the
 // next generate_site() to reuse.
+
+/datum/expedition_teardown_job
+	var/datum/controller/subsystem/expedition/controller
+	var/datum/expedition_site/site
+	var/z_level
+	var/reason
+	var/yield_count = 0
+	var/tick_budget = 60
+
+/datum/expedition_teardown_job/New(datum/controller/subsystem/expedition/new_controller, datum/expedition_site/new_site, new_reason)
+	..()
+	controller = new_controller
+	site = new_site
+	z_level = new_site?.z_level
+	reason = new_reason
+
+/datum/expedition_teardown_job/Destroy()
+	controller = null
+	site = null
+	return ..()
+
+/datum/expedition_teardown_job/proc/checkpoint()
+	if(TICK_USAGE >= tick_budget)
+		yield_count++
+		sleep(0)
+
+/datum/expedition_teardown_job/proc/execute()
+	if(!controller || !site || QDELETED(site))
+		qdel(src)
+		return
+	var/site_name = site.name
+	controller.wipe_z(z_level, src)
+	if(z_level >= 1 && z_level <= world.maxz)
+		controller.free_z |= z_level
+	controller.teardown_z -= "[z_level]"
+	log_world("SSexpedition: released [site_name], z[z_level] recycled after [yield_count] budget yields (reason: [reason]).")
+	qdel(site)
+	qdel(src)
+
 SUBSYSTEM_DEF(expedition)
 	name = "Expedition"
 	wait = 2 SECONDS
@@ -18,8 +57,20 @@ SUBSYSTEM_DEF(expedition)
 	var/list/sites = list()
 	/// Wiped z-levels available for reuse.
 	var/list/free_z = list()
+	/// Z-levels currently being cleared incrementally and unavailable for reuse.
+	var/list/teardown_z = list()
 
 /datum/controller/subsystem/expedition/Initialize()
+	#ifndef CITESTING
+	// Pay world.maxz growth during startup rather than during the first player
+	// jump. The blank vacuum level remains unavailable until generation claims it.
+	var/datum/map_template/expedition_site/template = new
+	var/preallocated_z = template.load_new_z()
+	qdel(template)
+	if(isnum(preallocated_z) && preallocated_z >= 1)
+		free_z |= preallocated_z
+		log_world("SSexpedition: preallocated expedition z[preallocated_z] during startup.")
+	#endif
 	return SS_INIT_SUCCESS
 
 /datum/controller/subsystem/expedition/proc/plot_for_vessel(mob/user, datum/flight_vessel/vessel, atom/payout_source)
@@ -224,7 +275,9 @@ SUBSYSTEM_DEF(expedition)
 	var/datum/generated_station_materializer/materializer = new
 	var/origin_x = max(1, round((world.maxx - station_spec.grid_width) / 2))
 	var/origin_y = max(1, round((world.maxy - station_spec.grid_height) / 2))
-	var/datum/generated_station_materialization/station_materialization = materializer.materialize(station_spec, z, origin_x, origin_y)
+	var/datum/generated_station_materialization/station_materialization = materializer.materialize(station_spec, z, origin_x, origin_y, flight_plan)
+	var/materialization_yields = materializer.last_yield_count
+	var/materialization_elapsed = materializer.last_elapsed_seconds
 	qdel(materializer)
 	if(!station_materialization)
 		log_world("SSexpedition: generated-station materialization failed on z[z] (seed [generation_seed]); releasing.")
@@ -304,6 +357,7 @@ SUBSYSTEM_DEF(expedition)
 	sites["[z]"] = site
 	SSflight_operations?.register_expedition(site)
 	log_world("SSexpedition: generated [site.name] on z[z] (seed [generation_seed], difficulty [difficulty][mission ? ", mission '[mission.name]'" : ""]).")
+	log_world("SSexpedition: incremental materialization used [materialization_yields] budget yields across [materialization_elapsed]s.")
 	// Phase timing (real seconds) — generation is rare, so always log; this is
 	// the first place to look when site generation gets slow.
 	log_world("SSexpedition: timing z-alloc=[(t_zalloc - gen_started) / 10]s station=[(t_biome - t_zalloc) / 10]s multiz=[(t_multiz - t_biome) / 10]s floor-scan=[(t_scan - t_multiz) / 10]s content=[(REALTIMEOFDAY - t_scan) / 10]s total=[(REALTIMEOFDAY - gen_started) / 10]s")
@@ -322,7 +376,7 @@ SUBSYSTEM_DEF(expedition)
 				wipe_z(z)
 			return z
 	// Pool is empty: only allocate a new z if we're under the site-z cap.
-	if((length(sites) + length(free_z)) >= EXP_MAX_SITE_ZLEVELS)
+	if((length(sites) + length(free_z) + length(teardown_z)) >= EXP_MAX_SITE_ZLEVELS)
 		log_world("SSexpedition: at the [EXP_MAX_SITE_ZLEVELS]-z site cap with an empty reuse pool; refusing to allocate a new z-level.")
 		return null
 	var/datum/map_template/expedition_site/template = new()
@@ -389,15 +443,13 @@ SUBSYSTEM_DEF(expedition)
 		site.assigned_flight_vessel.active_expedition = null
 	QDEL_NULL(site.landing_waypoint)
 	QDEL_NULL(site.overmap_sector)
-	wipe_z(z)
-	if(z >= 1 && z <= world.maxz)
-		free_z |= z
-	log_world("SSexpedition: released [site.name], z[z] recycled (reason: [reason]).")
-	qdel(site)
+	teardown_z["[z]"] = TRUE
+	var/datum/expedition_teardown_job/job = new(src, site, reason)
+	INVOKE_ASYNC(job, TYPE_PROC_REF(/datum/expedition_teardown_job, execute))
 
 // Clear every movable off a z and reset it to vacuum for the next generated
 // station. Never deletes a connected player (defensive).
-/datum/controller/subsystem/expedition/proc/wipe_z(z)
+/datum/controller/subsystem/expedition/proc/wipe_z(z, datum/expedition_teardown_job/job)
 	var/wiped = 0
 	var/area/space/space_area = generated_station_space_area()
 	for(var/turf/T in block(locate(1, 1, z), locate(world.maxx, world.maxy, z)))
@@ -407,10 +459,14 @@ SUBSYSTEM_DEF(expedition)
 				if(M.client)
 					continue
 			qdel(AM)
+			job?.checkpoint()
 		if(!istype(T, /turf/space))
 			T.ChangeTurf(/turf/space, tell_universe = FALSE)
 		ChangeArea(T, space_area)
-		if(++wiped % 1000 == 0)
+		wiped++
+		if(job)
+			job.checkpoint()
+		else if(wiped % 1000 == 0)
 			CHECK_TICK
 
 // ---- Helpers --------------------------------------------------------------

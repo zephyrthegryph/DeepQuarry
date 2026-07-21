@@ -48,11 +48,45 @@ fn projected_room_tile_area(cells: &BTreeSet<CellPoint>) -> usize {
     interiors + shared_edges * usize::from(INTERIOR) + shared_vertices
 }
 
+fn projected_room_dimensions(cells: &BTreeSet<CellPoint>) -> (usize, usize) {
+    let Some(min_x) = cells.iter().map(|point| point.x).min() else {
+        return (0, 0);
+    };
+    let max_x = cells.iter().map(|point| point.x).max().unwrap_or(min_x);
+    let min_y = cells.iter().map(|point| point.y).min().unwrap_or(0);
+    let max_y = cells.iter().map(|point| point.y).max().unwrap_or(min_y);
+    (
+        usize::from(max_x - min_x) * usize::from(PITCH) + usize::from(INTERIOR),
+        usize::from(max_y - min_y) * usize::from(PITCH) + usize::from(INTERIOR),
+    )
+}
+
+fn room_shape_fits(room: &RoomType, cells: &BTreeSet<CellPoint>) -> bool {
+    let area = projected_room_tile_area(cells);
+    let (width, height) = projected_room_dimensions(cells);
+    if area < (room.content_area as usize).min(usize::from(INTERIOR).pow(2))
+        || area > usize::from(room.max_width) * usize::from(room.max_height)
+        || width < usize::from(INTERIOR)
+        || height < usize::from(INTERIOR)
+    {
+        return false;
+    }
+    // Irregular rooms are composed from several rectangular lobes. Bounding-box
+    // dimensions are useful for rejecting slivers, but do not describe the
+    // usable dimensions of an L-shaped room well enough to enforce maxima.
+    true
+}
+
+fn room_shape_score(room: &RoomType, cells: &BTreeSet<CellPoint>) -> usize {
+    let area = projected_room_tile_area(cells);
+    let (width, height) = projected_room_dimensions(cells);
+    let area_error = area.abs_diff(room.ideal_area as usize);
+    let aspect_penalty = width.max(height).saturating_sub(width.min(height));
+    area_error * 8 + aspect_penalty
+}
+
 fn room_logical_capacity(room: &RoomType) -> usize {
     let physical_capacity = usize::from(room.max_width) * usize::from(room.max_height);
-    // A logical cell occupies at most its full pitch-square once all shared
-    // boundaries and vertices are opened. This conservative conversion ensures
-    // the allocator creates enough rooms for even compact block-shaped growth.
     (physical_capacity / usize::from(PITCH).pow(2)).max(1)
 }
 
@@ -184,10 +218,29 @@ pub fn generate_station_layout(request: &LayoutRequest) -> Result<StationLayout,
             "structural station generator requires at least a 64x64 canvas".into(),
         ));
     }
-    let logical = build_logical_plan(request)?;
-    let station = rasterize(request, &logical)?;
-    validate_station_structure(&station)?;
-    Ok(station)
+    let public_seed = request.settings.seed;
+    let mut last_error = None;
+    // A catalog-valid seed must not become a hard runtime failure merely
+    // because one randomized center/claim arrangement cannot expose every
+    // required room frontage. Retry a bounded deterministic sequence while
+    // retaining the caller's public seed in the result.
+    for attempt in 0_u64..16 {
+        let mut candidate = request.clone();
+        candidate.settings.seed = public_seed.wrapping_add(attempt.wrapping_mul(0x9e37_79b9));
+        let generated = (|| {
+            let logical = build_logical_plan(&candidate)?;
+            let mut station = rasterize(&candidate, &logical)?;
+            validate_station_structure(&station)?;
+            station.seed = public_seed;
+            Ok(station)
+        })();
+        match generated {
+            Ok(station) => return Ok(station),
+            Err(error) => last_error = Some(error),
+        }
+    }
+    Err(last_error
+        .unwrap_or_else(|| LayoutError("station generation exhausted its candidates".into())))
 }
 
 fn build_logical_plan(request: &LayoutRequest) -> Result<LogicalPlan, LayoutError> {
@@ -1158,9 +1211,7 @@ fn assign_department_common_and_rooms(
             .iter()
             .map(|room| usize::from(room.min_count))
             .sum();
-        let desired_count = room_instances(department, department_cells.len(), 1)
-            .len()
-            .max(required_count);
+        let desired_count = required_count;
         // Grow a real departmental hallway tree before assigning rooms.  A frontage-only
         // strip can expose enough cells to satisfy the door count while leaving the whole
         // department as a handful of oversized rooms.  The coverage constraint forces
@@ -1193,7 +1244,7 @@ fn assign_department_common_and_rooms(
                         .unwrap_or(0)
                 })
                 .unwrap_or(0);
-            if frontage_count >= desired_count && maximum_depth <= 2 {
+            if frontage_count >= desired_count && maximum_depth <= 3 {
                 break;
             }
             let target = farthest.ok_or_else(|| {
@@ -1219,28 +1270,9 @@ fn assign_department_common_and_rooms(
             common.extend(branch);
         }
 
-        let maximum_rooms = department
-            .room_types
-            .iter()
-            .map(|room| usize::from(room.max_count))
-            .sum::<usize>()
-            .max(required_count);
-        let component_budget_before_splitting = required_count.max(maximum_rooms / 2).max(1);
-        loop {
-            let components = connected_components(
-                &department_cells.difference(&common).copied().collect(),
-                plan.width,
-                plan.height,
-            );
-            if components.len() <= component_budget_before_splitting {
-                break;
-            }
-            let lobe = components
-                .into_iter()
-                .min_by_key(|component| component.len())
-                .ok_or_else(|| LayoutError("department lost all room floor".into()))?;
-            common.extend(lobe);
-        }
+        // Every non-circulation lobe becomes a room. Absorbing small lobes into
+        // common floor creates enormous unfurnished departmental voids which are
+        // neither corridors nor purposeful rooms.
         // Each independently seeded room needs its own frontage cell. A large,
         // shallow lobe can be close to a hallway everywhere while exposing only one
         // usable frontage, which forces the entire lobe into one oversized room.
@@ -1249,7 +1281,7 @@ fn assign_department_common_and_rooms(
         let maximum_room_area = department
             .room_types
             .iter()
-            .map(|room| room_logical_capacity(room))
+            .map(|room| usize::from(room.max_width) * usize::from(room.max_height))
             .max()
             .unwrap_or(1);
         for _ in 0..department_cells.len() {
@@ -1259,10 +1291,9 @@ fn assign_department_common_and_rooms(
                 plan.height,
             );
             let deficient = components.into_iter().find(|component| {
-                let required_frontages = component
-                    .len()
-                    .saturating_mul(2)
-                    .div_ceil(maximum_room_area);
+                let required_frontages = projected_room_tile_area(component)
+                    .saturating_mul(5)
+                    .div_ceil(maximum_room_area.saturating_mul(3));
                 let available_frontages = component
                     .iter()
                     .filter(|point| {
@@ -1308,6 +1339,76 @@ fn assign_department_common_and_rooms(
                 ));
             }
         }
+        let minimum_room_area = department
+            .room_types
+            .iter()
+            .filter(|room| room.max_count > 0)
+            .map(|room| room.content_area as usize)
+            .min()
+            .unwrap_or(1);
+        let undersized_lobes = connected_components(
+            &department_cells.difference(&common).copied().collect(),
+            plan.width,
+            plan.height,
+        )
+        .into_iter()
+        .filter(|component| projected_room_tile_area(component) < minimum_room_area)
+        .collect::<Vec<_>>();
+        for lobe in undersized_lobes {
+            common.extend(lobe);
+        }
+        let authored_capacity = department
+            .room_types
+            .iter()
+            .map(|room| {
+                usize::from(room.max_count)
+                    * usize::from(room.max_width)
+                    * usize::from(room.max_height)
+            })
+            .sum::<usize>();
+        for _ in 0..department_cells.len() {
+            let room_territory = department_cells.difference(&common).copied().collect();
+            let components = connected_components(&room_territory, plan.width, plan.height);
+            let projected_area = components
+                .iter()
+                .map(projected_room_tile_area)
+                .sum::<usize>();
+            if projected_area <= authored_capacity {
+                break;
+            }
+            let target = room_territory
+                .iter()
+                .copied()
+                .max_by_key(|point| {
+                    common
+                        .iter()
+                        .map(|hall| cell_distance(*hall, *point))
+                        .min()
+                        .unwrap_or(0)
+                })
+                .ok_or_else(|| LayoutError("department has no room territory".into()))?;
+            let hall_anchor = common
+                .iter()
+                .copied()
+                .min_by_key(|hall| cell_distance(*hall, target))
+                .ok_or_else(|| {
+                    LayoutError("department circulation has no capacity origin".into())
+                })?;
+            let mut relief = shortest_path_in_set(
+                hall_anchor,
+                target,
+                &department_cells,
+                plan.width,
+                plan.height,
+            )
+            .ok_or_else(|| LayoutError("cannot carve department capacity relief".into()))?;
+            relief.remove(&target);
+            let old_len = common.len();
+            common.extend(relief);
+            if common.len() == old_len {
+                common.insert(target);
+            }
+        }
         let mut components = connected_components(
             &department_cells.difference(&common).copied().collect(),
             plan.width,
@@ -1317,10 +1418,9 @@ fn assign_department_common_and_rooms(
         let required_room_slots: usize = components
             .iter()
             .map(|component| {
-                component
-                    .len()
-                    .saturating_mul(2)
-                    .div_ceil(maximum_room_area)
+                projected_room_tile_area(component)
+                    .saturating_mul(5)
+                    .div_ceil(maximum_room_area.saturating_mul(3))
             })
             .sum();
         let room_floor_area = components.iter().map(BTreeSet::len).sum();
@@ -1358,8 +1458,8 @@ fn assign_department_common_and_rooms(
             )));
         }
         instances.truncate(candidates.len().max(components.len()));
-        let seeds = choose_room_seeds(&components, &candidates, instances.len(), rng)?;
-        let mut assignments = grow_rooms(
+        let mut seeds = choose_room_seeds(&components, &candidates, instances.len(), rng)?;
+        let (mut assignments, residual) = grow_rooms(
             &department_cells.difference(&common).copied().collect(),
             &seeds,
             &instances,
@@ -1367,11 +1467,74 @@ fn assign_department_common_and_rooms(
             plan.height,
             rng,
         )?;
-        instances.sort_by_key(|room| {
-            Reverse(usize::from(room.max_width) * usize::from(room.max_height))
-        });
-        assignments.sort_by_key(|cells| Reverse(cells.len()));
-        for (room_type, cells) in instances.drain(..).zip(assignments) {
+        if !residual.is_empty() {
+            for component in connected_components(&residual, plan.width, plan.height) {
+                connect_residual_circulation(
+                    component,
+                    &mut common,
+                    &mut assignments,
+                    &seeds,
+                    plan.width,
+                    plan.height,
+                )?;
+            }
+        }
+        while assignments.len() > required_count {
+            let Some(shape_index) = assignments
+                .iter()
+                .position(|shape| projected_room_tile_area(shape) < minimum_room_area)
+            else {
+                break;
+            };
+            let mut counts = BTreeMap::new();
+            for room in &instances {
+                *counts.entry(room.id).or_insert(0usize) += 1;
+            }
+            let optional_index = instances.iter().position(|room| {
+                counts.get(&room.id).copied().unwrap_or(0) > usize::from(room.min_count)
+            });
+            let Some(optional_index) = optional_index else {
+                break;
+            };
+            common.extend(assignments.remove(shape_index));
+            seeds.remove(shape_index);
+            instances.remove(optional_index);
+        }
+        rebalance_shapes_for_programs(
+            &mut assignments,
+            &instances,
+            &seeds,
+            &mut common,
+            plan.width,
+            plan.height,
+        );
+        let matched_types = match_room_types_to_shapes(&instances, &assignments).ok_or_else(|| {
+            let shapes = assignments
+                .iter()
+                .map(|shape| {
+                    let (width, height) = projected_room_dimensions(shape);
+                    format!("{}:{}x{}", projected_room_tile_area(shape), width, height)
+                })
+                .collect::<Vec<_>>()
+                .join(",");
+            let programs = instances
+                .iter()
+                .map(|room| {
+                    format!(
+                        "{}:{}..{}",
+                        room.name,
+                        room.content_area,
+                        u32::from(room.max_width) * u32::from(room.max_height)
+                    )
+                })
+                .collect::<Vec<_>>()
+                .join(",");
+            LayoutError(format!(
+                "department {} could not match its authored room programs [{programs}] to generated geometry ({shapes})",
+                department.id,
+            ))
+        })?;
+        for (room_type, cells) in matched_types.into_iter().zip(assignments) {
             if cells.is_empty() {
                 return Err(LayoutError(format!(
                     "department {} produced an empty room",
@@ -1401,6 +1564,201 @@ fn assign_department_common_and_rooms(
     Ok(())
 }
 
+fn connect_residual_circulation(
+    component: BTreeSet<CellPoint>,
+    common: &mut BTreeSet<CellPoint>,
+    assignments: &mut [BTreeSet<CellPoint>],
+    seeds: &[CellPoint],
+    width: u16,
+    height: u16,
+) -> Result<(), LayoutError> {
+    let mut circulation = component;
+    while !circulation.iter().any(|point| {
+        cardinal_cells(*point, width, height)
+            .into_iter()
+            .any(|neighbor| common.contains(&neighbor))
+    }) {
+        let mut candidates = Vec::new();
+        for (room_index, room) in assignments.iter().enumerate() {
+            if room.len() <= 1 {
+                continue;
+            }
+            for point in room.iter().copied() {
+                if point == seeds[room_index]
+                    || !cardinal_cells(point, width, height)
+                        .into_iter()
+                        .any(|neighbor| circulation.contains(&neighbor))
+                {
+                    continue;
+                }
+                let mut reduced = room.clone();
+                reduced.remove(&point);
+                if connected_components(&reduced, width, height).len() != 1 {
+                    continue;
+                }
+                let distance = common
+                    .iter()
+                    .map(|target| cell_distance(point, *target))
+                    .min()
+                    .unwrap_or(u16::MAX);
+                candidates.push((distance, room_index, point));
+            }
+        }
+        candidates.sort_unstable();
+        let Some((_, room_index, point)) = candidates.first().copied() else {
+            return Err(LayoutError(
+                "cannot connect residual circulation without disconnecting a room".into(),
+            ));
+        };
+        assignments[room_index].remove(&point);
+        circulation.insert(point);
+    }
+    common.extend(circulation);
+    Ok(())
+}
+
+fn rebalance_shapes_for_programs(
+    shapes: &mut [BTreeSet<CellPoint>],
+    room_types: &[&RoomType],
+    seeds: &[CellPoint],
+    circulation: &mut BTreeSet<CellPoint>,
+    width: u16,
+    height: u16,
+) {
+    let minimum_area = room_types
+        .iter()
+        .map(|room| room.content_area as usize)
+        .min()
+        .unwrap_or(1);
+    let maximum_area = room_types
+        .iter()
+        .map(|room| usize::from(room.max_width) * usize::from(room.max_height))
+        .max()
+        .unwrap_or(usize::MAX);
+    for _ in 0..shapes.len().saturating_mul(32) {
+        if match_room_types_to_shapes(room_types, shapes).is_some() {
+            return;
+        }
+        let mut capacity_order = room_types
+            .iter()
+            .map(|room| usize::from(room.max_width) * usize::from(room.max_height))
+            .collect::<Vec<_>>();
+        capacity_order.sort_by_key(|capacity| Reverse(*capacity));
+        let mut area_order = (0..shapes.len()).collect::<Vec<_>>();
+        area_order.sort_by_key(|index| Reverse(projected_room_tile_area(&shapes[*index])));
+        let oversized = area_order
+            .iter()
+            .enumerate()
+            .filter(|(rank, index)| {
+                projected_room_tile_area(&shapes[**index]) > capacity_order[*rank]
+            })
+            .max_by_key(|(rank, index)| {
+                projected_room_tile_area(&shapes[**index]) - capacity_order[*rank]
+            })
+            .map(|(_, index)| *index);
+        if let Some(donor) = oversized {
+            let mut transfer = None;
+            for cell in shapes[donor].iter().copied() {
+                if cell == seeds[donor] {
+                    continue;
+                }
+                let mut reduced = shapes[donor].clone();
+                reduced.remove(&cell);
+                if connected_components(&reduced, width, height).len() != 1
+                    || projected_room_tile_area(&reduced) < minimum_area
+                {
+                    continue;
+                }
+                for recipient in 0..shapes.len() {
+                    if recipient == donor
+                        || !cardinal_cells(cell, width, height)
+                            .into_iter()
+                            .any(|neighbor| shapes[recipient].contains(&neighbor))
+                    {
+                        continue;
+                    }
+                    let mut expanded = shapes[recipient].clone();
+                    expanded.insert(cell);
+                    if projected_room_tile_area(&expanded) <= maximum_area {
+                        transfer = Some((recipient, cell));
+                        break;
+                    }
+                }
+                if transfer.is_some() {
+                    break;
+                }
+            }
+            if let Some((recipient, cell)) = transfer {
+                shapes[donor].remove(&cell);
+                shapes[recipient].insert(cell);
+                continue;
+            }
+            let circulation_cell = shapes[donor].iter().copied().find(|cell| {
+                if *cell == seeds[donor]
+                    || !cardinal_cells(*cell, width, height)
+                        .into_iter()
+                        .any(|neighbor| circulation.contains(&neighbor))
+                {
+                    return false;
+                }
+                let mut reduced = shapes[donor].clone();
+                reduced.remove(cell);
+                connected_components(&reduced, width, height).len() == 1
+                    && projected_room_tile_area(&reduced) >= minimum_area
+            });
+            let Some(cell) = circulation_cell else {
+                return;
+            };
+            shapes[donor].remove(&cell);
+            circulation.insert(cell);
+            continue;
+        }
+        let mut shape_order: Vec<_> = (0..shapes.len()).collect();
+        shape_order.sort_by_key(|index| Reverse(projected_room_tile_area(&shapes[*index])));
+        let mut demands = room_types
+            .iter()
+            .map(|room| room.content_area as usize)
+            .collect::<Vec<_>>();
+        demands.sort_by_key(|area| Reverse(*area));
+        let Some(recipient) = shape_order.iter().enumerate().find_map(|(rank, index)| {
+            (projected_room_tile_area(&shapes[*index]) < demands[rank]).then_some(*index)
+        }) else {
+            return;
+        };
+        let mut transfer = None;
+        for donor in shape_order {
+            if donor == recipient {
+                continue;
+            }
+            for cell in shapes[donor].iter().copied() {
+                if cell == seeds[donor]
+                    || !cardinal_cells(cell, width, height)
+                        .into_iter()
+                        .any(|neighbor| shapes[recipient].contains(&neighbor))
+                {
+                    continue;
+                }
+                let mut reduced = shapes[donor].clone();
+                reduced.remove(&cell);
+                if connected_components(&reduced, width, height).len() == 1
+                    && projected_room_tile_area(&reduced) >= minimum_area
+                {
+                    transfer = Some((donor, cell));
+                    break;
+                }
+            }
+            if transfer.is_some() {
+                break;
+            }
+        }
+        let Some((donor, cell)) = transfer else {
+            return;
+        };
+        shapes[donor].remove(&cell);
+        shapes[recipient].insert(cell);
+    }
+}
+
 fn room_instances<'a>(
     department: &'a super::model::DepartmentRequest,
     area: usize,
@@ -1412,7 +1770,7 @@ fn room_instances<'a>(
             instances.push(room_type);
         }
     }
-    let maximum = department
+    let catalog_maximum = department
         .room_types
         .iter()
         .map(|room| usize::from(room.max_count))
@@ -1421,6 +1779,7 @@ fn room_instances<'a>(
     for room in &instances {
         *counts.entry(room.id).or_default() += 1;
     }
+    let maximum = catalog_maximum.min(instances.len().saturating_add(4).max(minimum_components));
     // Room programs describe usable floor, while department territory must also
     // pay for its local hallway and partition walls. Allocate no more than two
     // thirds of the territory to declared room minima; growth distributes the
@@ -1431,14 +1790,16 @@ fn room_instances<'a>(
         / 3;
     let mut committed_content: usize = instances
         .iter()
-        .map(|room| room.content_area.max(1) as usize)
+        .map(|room| room.ideal_area.max(room.content_area).max(1) as usize)
         .sum();
     let mut committed_capacity: usize = instances
         .iter()
         .map(|room| room_logical_capacity(room))
         .sum();
     while instances.len() < maximum.max(instances.len()) {
-        if instances.len() >= minimum_components && committed_capacity >= area {
+        if instances.len() >= minimum_components
+            && (committed_capacity >= area || committed_content >= content_budget)
+        {
             break;
         }
         let Some(room) = department
@@ -1448,12 +1809,13 @@ fn room_instances<'a>(
             .filter(|room| {
                 instances.len() < minimum_components
                     || committed_capacity < area
-                    || committed_content + room.content_area.max(1) as usize <= content_budget
+                    || committed_content + room.ideal_area.max(room.content_area).max(1) as usize
+                        <= content_budget
             })
             .min_by_key(|room| {
                 (
                     counts.get(&room.id).copied().unwrap_or(0),
-                    room.content_area,
+                    Reverse(u32::from(room.max_width) * u32::from(room.max_height)),
                     room.id,
                 )
             })
@@ -1461,12 +1823,82 @@ fn room_instances<'a>(
             break;
         };
         *counts.entry(room.id).or_default() += 1;
-        committed_content += room.content_area.max(1) as usize;
+        committed_content += room.ideal_area.max(room.content_area).max(1) as usize;
         committed_capacity += room_logical_capacity(room);
         instances.push(room);
     }
-    instances.sort_by_key(|room| Reverse(room.content_area));
+    instances.sort_by_key(|room| Reverse(room.ideal_area));
     instances
+}
+
+fn match_room_types_to_shapes<'a>(
+    room_types: &[&'a RoomType],
+    shapes: &[BTreeSet<CellPoint>],
+) -> Option<Vec<&'a RoomType>> {
+    if room_types.len() != shapes.len() {
+        return None;
+    }
+    let mut shape_order: Vec<usize> = (0..shapes.len()).collect();
+    shape_order.sort_by_key(|shape_index| {
+        room_types
+            .iter()
+            .filter(|room| room_shape_fits(room, &shapes[*shape_index]))
+            .count()
+    });
+    let candidates = shapes
+        .iter()
+        .map(|shape| {
+            let mut choices = room_types
+                .iter()
+                .enumerate()
+                .filter_map(|(index, room)| room_shape_fits(room, shape).then_some(index))
+                .collect::<Vec<_>>();
+            choices.sort_by_key(|index| room_shape_score(room_types[*index], shape));
+            choices
+        })
+        .collect::<Vec<_>>();
+    let mut type_to_shape = vec![None; room_types.len()];
+    fn augment(
+        shape_index: usize,
+        candidates: &[Vec<usize>],
+        type_to_shape: &mut [Option<usize>],
+        visited_types: &mut [bool],
+    ) -> bool {
+        for &type_index in &candidates[shape_index] {
+            if visited_types[type_index] {
+                continue;
+            }
+            visited_types[type_index] = true;
+            let can_claim = type_to_shape[type_index].is_none()
+                || augment(
+                    type_to_shape[type_index].unwrap(),
+                    candidates,
+                    type_to_shape,
+                    visited_types,
+                );
+            if can_claim {
+                type_to_shape[type_index] = Some(shape_index);
+                return true;
+            }
+        }
+        false
+    }
+    for shape_index in shape_order {
+        let mut visited_types = vec![false; room_types.len()];
+        if !augment(
+            shape_index,
+            &candidates,
+            &mut type_to_shape,
+            &mut visited_types,
+        ) {
+            return None;
+        }
+    }
+    let mut result = vec![None; shapes.len()];
+    for (type_index, shape_index) in type_to_shape.into_iter().enumerate() {
+        result[shape_index?] = Some(room_types[type_index]);
+    }
+    Some(result.into_iter().map(Option::unwrap).collect())
 }
 
 fn choose_room_seeds(
@@ -1537,7 +1969,7 @@ fn grow_rooms(
     width: u16,
     height: u16,
     rng: &mut Rng,
-) -> Result<Vec<BTreeSet<CellPoint>>, LayoutError> {
+) -> Result<(Vec<BTreeSet<CellPoint>>, BTreeSet<CellPoint>), LayoutError> {
     let mut rooms: Vec<BTreeSet<_>> = seeds.iter().map(|seed| BTreeSet::from([*seed])).collect();
     let mut owner: BTreeMap<_, _> = seeds
         .iter()
@@ -1546,7 +1978,21 @@ fn grow_rooms(
         .collect();
     let mut frontiers: Vec<VecDeque<_>> =
         seeds.iter().map(|seed| VecDeque::from([*seed])).collect();
+    let mut growth_iterations = 0usize;
+    let maximum_growth_iterations = available
+        .len()
+        .saturating_mul(rooms.len().max(1))
+        .saturating_mul(8);
     while owner.len() < available.len() {
+        growth_iterations += 1;
+        if growth_iterations > maximum_growth_iterations {
+            return Err(LayoutError(format!(
+                "room growth exceeded its {}-iteration structural bound with {} of {} logical cells assigned",
+                maximum_growth_iterations,
+                owner.len(),
+                available.len()
+            )));
+        }
         let mut order: Vec<_> = (0..rooms.len())
             .filter(|index| {
                 projected_room_tile_area(&rooms[*index])
@@ -1555,8 +2001,13 @@ fn grow_rooms(
             })
             .collect();
         order.sort_by_key(|index| {
-            let target = room_types[*index].content_area.max(1) as usize;
+            let target = room_types[*index]
+                .ideal_area
+                .max(room_types[*index].content_area)
+                .max(1) as usize;
             (
+                projected_room_tile_area(&rooms[*index])
+                    >= room_types[*index].content_area as usize,
                 projected_room_tile_area(&rooms[*index]) * 1000 / target,
                 hash_cell(rng.0 ^ owner.len() as u64, seeds[*index]),
             )
@@ -1590,7 +2041,10 @@ fn grow_rooms(
                         available.contains(neighbor) && !owner.contains_key(neighbor)
                     })
                     .count();
+                let mut projected = rooms[index].clone();
+                projected.insert(*point);
                 (
+                    room_shape_score(room_types[index], &projected),
                     unclaimed_neighbors,
                     Reverse(same_neighbors),
                     cell_distance(*point, seeds[index]),
@@ -1606,9 +2060,6 @@ fn grow_rooms(
             }
         }
         if !progressed {
-            if frontiers.iter().any(|frontier| !frontier.is_empty()) {
-                continue;
-            }
             let candidate = available
                 .iter()
                 .filter(|point| !owner.contains_key(point))
@@ -1680,23 +2131,53 @@ fn grow_rooms(
             if repaired {
                 continue;
             }
-            return Err({
-                let remaining = available.len().saturating_sub(owner.len());
-                let spare_capacity = rooms
-                    .iter()
-                    .zip(room_types)
-                    .map(|(room, room_type)| {
-                        usize::from(room_type.max_width) * usize::from(room_type.max_height)
-                            - projected_room_tile_area(room)
+            let unclaimed: BTreeSet<_> = available
+                .iter()
+                .copied()
+                .filter(|point| !owner.contains_key(point))
+                .collect();
+            let mut absorbed_component = false;
+            let maximum_program_area = room_types
+                .iter()
+                .map(|room| usize::from(room.max_width) * usize::from(room.max_height))
+                .max()
+                .unwrap_or(1);
+            for component in connected_components(&unclaimed, width, height) {
+                let recipient = (0..rooms.len())
+                    .filter(|index| {
+                        let touches = component.iter().any(|point| {
+                            cardinal_cells(*point, width, height)
+                                .into_iter()
+                                .any(|neighbor| rooms[*index].contains(&neighbor))
+                        });
+                        touches
                     })
-                    .sum::<usize>();
-                LayoutError(format!(
-                    "room growth exhausted authored capacities with {remaining} logical cells and {spare_capacity} projected tiles remaining"
-                ))
-            });
+                    .min_by_key(|index| {
+                        let mut combined = rooms[*index].clone();
+                        combined.extend(component.iter().copied());
+                        (
+                            projected_room_tile_area(&combined) > maximum_program_area,
+                            projected_room_tile_area(&combined),
+                            *index,
+                        )
+                    });
+                let Some(recipient) = recipient else {
+                    continue;
+                };
+                for point in component {
+                    owner.insert(point, recipient);
+                    rooms[recipient].insert(point);
+                    frontiers[recipient].push_back(point);
+                }
+                absorbed_component = true;
+            }
+            if absorbed_component {
+                continue;
+            }
+            return Ok((rooms, unclaimed));
         }
     }
-    Ok(rooms)
+    Ok((rooms, BTreeSet::new()))
 }
 
 fn assign_portals(plan: &mut LogicalPlan, request: &LayoutRequest) -> Result<(), LayoutError> {

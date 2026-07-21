@@ -19,6 +19,27 @@ export const TGS_MODE = process.env.CBT_BUILD_MODE === 'TGS';
 // DQEdit — renamed from 'vorestation'
 export const DME_NAME = 'deepquarry';
 
+function findDreamChecker(): string | null {
+  const candidates = [
+    process.env.DREAMCHECKER_EXE,
+    'dreamchecker',
+    process.env.USERPROFILE
+      ? `${process.env.USERPROFILE}\\SpacemanDMM\\dreamchecker.exe`
+      : null,
+  ].filter((candidate): candidate is string => !!candidate);
+
+  for (const candidate of candidates) {
+    const probe = spawnSync(candidate, ['--version'], {
+      stdio: 'ignore',
+      shell: candidate === 'dreamchecker',
+    });
+    if (!probe.error && probe.status === 0) {
+      return candidate;
+    }
+  }
+  return null;
+}
+
 Juke.chdir('../..', import.meta.url);
 
 export const DefineParameter = new Juke.Parameter({
@@ -307,6 +328,22 @@ export const DmTestTarget = new Juke.Target({
     VerdigrisTarget, // tests boot the world, which loads the FFI lib
   ],
   executes: async ({ get }) => {
+    const focusSource = fs.readFileSync(
+      'code/modules/unit_tests/dq_focus.dm',
+      'utf-8',
+    );
+    const focusedTests = focusSource
+      .split(/\r?\n/)
+      .map((line) => line.trim())
+      .filter((line) => line.startsWith('TEST_FOCUS('));
+    if (focusedTests.length) {
+      Juke.logger.warn(
+        `Focused unit-test run (${focusedTests.length}): ${focusedTests.join(', ')}`,
+      );
+    } else {
+      Juke.logger.info('Full unit-test suite selected.');
+    }
+
     fs.copyFileSync(`${DME_NAME}.dme`, `${DME_NAME}.test.dme`);
     await DreamMaker(`${DME_NAME}.test.dme`, {
       defines: ['CBT', 'CIBUILDING', 'CITESTING', ...get(DefineParameter)],
@@ -348,10 +385,34 @@ export const DmTestTarget = new Juke.Target({
     try {
       cleanRun = fs.readFileSync('data/logs/ci/clean_run.lk', 'utf-8');
     } catch (err) {
+      for (const logFile of [
+        'data/logs/ci/tests.log',
+        'data/logs/ci/runtime.log',
+      ]) {
+        if (!fs.existsSync(logFile)) {
+          continue;
+        }
+        const lines = fs.readFileSync(logFile, 'utf-8').trim().split(/\r?\n/);
+        Juke.logger.error(`Last output from ${logFile}:`);
+        console.error(lines.slice(-80).join('\n'));
+      }
       Juke.logger.error('Test run was not clean, exiting');
       throw new Juke.ExitCode(1);
     }
     console.log(cleanRun);
+
+    const results = JSON.parse(
+      fs.readFileSync('data/unit_tests.json', 'utf-8'),
+    ) as Record<string, { status: number }>;
+    const counts = { passed: 0, failed: 0, skipped: 0 };
+    for (const result of Object.values(results)) {
+      if (result.status === 0) counts.passed++;
+      else if (result.status === 1) counts.failed++;
+      else counts.skipped++;
+    }
+    Juke.logger.info(
+      `Unit-test summary: ${counts.passed} passed, ${counts.failed} failed, ${counts.skipped} skipped.`,
+    );
 
     // DreamDaemon may take a moment to release its dynamic resource file after
     // the watchdog observes unit_tests.json and terminates the process. Cleanup
@@ -616,18 +677,41 @@ export const TguiLintTarget = new Juke.Target({
 export const DreamCheckerTarget = new Juke.Target({
   inputs: ['code/**/*.dm', 'deepquarry.dme'],
   onlyWhen: () => {
-    const probe = spawnSync('dreamchecker', ['--version'], {
-      stdio: 'ignore',
-      shell: true,
-    });
-    if (probe.error || probe.status !== 0) {
-      Juke.logger.info('dreamchecker not found on PATH — skipping DM lint (install via tools/ci/install_spaceman_dmm.sh)');
+    if (!findDreamChecker()) {
+      Juke.logger.info(
+        'dreamchecker not found on PATH, DREAMCHECKER_EXE, or ~/SpacemanDMM — skipping DM lint (install via tools/ci/install_spaceman_dmm.sh)',
+      );
       return false;
     }
     return true;
   },
   executes: async () => {
-    await Juke.exec('dreamchecker', [`${DME_NAME}.dme`]);
+    const dreamChecker = findDreamChecker();
+    if (!dreamChecker) {
+      throw new Error('DreamChecker disappeared after dependency detection.');
+    }
+    // DreamChecker 1.11 auto-selects a root-level DME when multiple manifests
+    // are present, even though SpacemanDMM.toml names deepquarry.dme. Local
+    // profiling creates audit*.dme copies concurrently, which previously made
+    // release builds lint a UNIT_TESTS manifest instead of production code.
+    const stashDirectory = 'data/.dreamchecker-dme-stash';
+    fs.mkdirSync(stashDirectory, { recursive: true });
+    const stashed = fs.readdirSync('.')
+      .filter((name) => name.endsWith('.dme') && name !== `${DME_NAME}.dme`)
+      .map((name) => {
+        const destination = `${stashDirectory}/${name}`;
+        fs.renameSync(name, destination);
+        return { destination, name };
+      });
+    try {
+      await Juke.exec(dreamChecker, []);
+    } finally {
+      for (const { destination, name } of stashed) {
+        if (fs.existsSync(destination) && !fs.existsSync(name)) {
+          fs.renameSync(destination, name);
+        }
+      }
+    }
   },
 });
 // DQAdd End

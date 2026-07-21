@@ -1,5 +1,5 @@
 use super::*;
-use crate::{react_hook, GasArena};
+use crate::{gas::MixtureSnapshot, react_hook, GasArena};
 use auxcallback::{byond_callback_sender, process_callbacks_for_millis};
 use byondapi::{byond_string, prelude::*};
 use coarsetime::{Duration, Instant};
@@ -28,6 +28,8 @@ struct TurfProcessResult {
 	low_pressure_turfs: usize,
 	high_pressure_turfs: usize,
 	active_turfs: usize,
+	seed_turfs: usize,
+	retained_turfs: usize,
 	pending_turfs: usize,
 	snapshot_mixtures: usize,
 	published_mixtures: usize,
@@ -114,6 +116,14 @@ fn process_turf_hook(mut src: ByondValue, remaining: ByondValue) -> Result<Byond
 			&(result.active_turfs as f32).into(),
 		)?;
 		src.write_var_id(
+			byond_string!("async_seed_turfs"),
+			&(result.seed_turfs as f32).into(),
+		)?;
+		src.write_var_id(
+			byond_string!("async_retained_turfs"),
+			&(result.retained_turfs as f32).into(),
+		)?;
+		src.write_var_id(
 			byond_string!("async_pending_turfs"),
 			&(result.pending_turfs as f32).into(),
 		)?;
@@ -174,8 +184,7 @@ fn process_turf_hook(mut src: ByondValue, remaining: ByondValue) -> Result<Byond
 #[byondapi::init]
 fn start_turf_process_worker() {
 	rayon::spawn(|| {
-		let mut snapshot = Vec::new();
-		let mut base_revisions = Vec::new();
+		let mut snapshot = MixtureSnapshot::default();
 		loop {
 			let request = match turf_process_channel().1.recv() {
 				Ok(request) => request,
@@ -184,13 +193,12 @@ fn start_turf_process_worker() {
 			let _task_lock = TASKS.read();
 			apply_pending_topology_updates();
 			let result = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
-				process_turf(request, &mut snapshot, &mut base_revisions)
+				process_turf(request, &mut snapshot)
 			}))
 			.unwrap_or_else(|panic| {
 				TURF_REJECTED_GENERATIONS.fetch_add(1, Ordering::AcqRel);
 				super::reactivate_all_turfs();
-				snapshot.clear();
-				base_revisions.clear();
+				snapshot.release_values();
 				let message = panic
 					.downcast_ref::<&str>()
 					.copied()
@@ -213,14 +221,11 @@ fn start_turf_process_worker() {
 }
 
 #[cfg_attr(feature = "tracy", tracing::instrument(skip_all))]
-fn process_turf(
-	request: TurfProcessRequest,
-	snapshot: &mut Vec<RwLock<Mixture>>,
-	base_revisions: &mut Vec<u64>,
-) -> TurfProcessResult {
+fn process_turf(request: TurfProcessRequest, snapshot: &mut MixtureSnapshot) -> TurfProcessResult {
 	let total_start = Instant::now();
-	let active_nodes = with_turf_gases_read(|arena| {
+	let (active_nodes, seed_turfs) = with_turf_gases_read(|arena| {
 		let seeds = take_active_turfs();
+		let seed_count = seeds.len();
 		let mut nodes = rustc_hash::FxHashSet::default();
 		for turf_id in seeds {
 			if let Some(node) = arena.get_id(turf_id) {
@@ -228,7 +233,7 @@ fn process_turf(
 				nodes.extend(arena.adjacent_node_ids(node));
 			}
 		}
-		nodes
+		(nodes, seed_count)
 	});
 	if active_nodes.is_empty() {
 		return TurfProcessResult {
@@ -252,7 +257,7 @@ fn process_turf(
 		}
 		ids.into_iter().collect::<Vec<_>>()
 	});
-	GasArena::snapshot_mixtures_into(&snapshot_mix_ids, snapshot, base_revisions);
+	GasArena::snapshot_mixtures_into(&snapshot_mix_ids, snapshot);
 	//this will block until process_turfs is called
 	let (low_pressure_turfs, high_pressure_turfs, pressure_events, turf_cost_ms) = {
 		let start_time = Instant::now();
@@ -280,11 +285,11 @@ fn process_turf(
 					.get(node)
 					.is_some_and(|mixture| should_process(node, mixture, snapshot, arena))
 			})
-			.flat_map_iter(|&node| std::iter::once(node).chain(arena.adjacent_node_ids(node)))
-			.filter_map(|node| arena.get(node).map(|mixture| mixture.id))
+			.filter_map(|&node| arena.get(node).map(|mixture| mixture.id))
 			.collect::<rustc_hash::FxHashSet<_>>()
 	});
-	let published_ids = GasArena::publish_snapshot(&snapshot_mix_ids, base_revisions, snapshot);
+	let retained_turfs = next_active.len();
+	let published_ids = GasArena::publish_snapshot(&snapshot_mix_ids, snapshot);
 	let published = published_ids.is_some();
 	if !published {
 		TURF_REJECTED_GENERATIONS.fetch_add(1, Ordering::AcqRel);
@@ -314,16 +319,7 @@ fn process_turf(
 	// not retain their heap-backed gas arrays. The first generation snapshots the
 	// whole station; keeping those clones would permanently duplicate the gas arena
 	// even after the active frontier shrinks to a few hundred mixtures.
-	snapshot_mix_ids.par_iter().for_each(|&id| {
-		if let Some(mixture) = snapshot.get(id) {
-			*mixture.write() = Mixture::default();
-		}
-	});
-	for &id in &snapshot_mix_ids {
-		if let Some(revision) = base_revisions.get_mut(id) {
-			*revision = 0;
-		}
-	}
+	snapshot.release_values();
 	TurfProcessResult {
 		generation: TURF_GENERATION.fetch_add(1, Ordering::AcqRel) + 1,
 		turf_cost_ms,
@@ -332,6 +328,8 @@ fn process_turf(
 		low_pressure_turfs: low_pressure_turfs.len(),
 		high_pressure_turfs: high_pressure_turfs.len(),
 		active_turfs: active_nodes.len(),
+		seed_turfs,
+		retained_turfs,
 		pending_turfs: super::pending_active_turfs(),
 		snapshot_mixtures: snapshot_mix_ids.len(),
 		published_mixtures: published_ids.as_ref().map_or(0, Vec::len),
@@ -345,7 +343,7 @@ fn process_turf(
 #[cfg_attr(feature = "tracy", tracing::instrument(skip_all))]
 fn planet_process(
 	planet_share_ratio: f32,
-	all_mixtures: &[RwLock<Mixture>],
+	all_mixtures: &MixtureSnapshot,
 	active_nodes: &rustc_hash::FxHashSet<NodeIndex>,
 ) {
 	with_turf_gases_read(|arena| {
@@ -388,7 +386,7 @@ fn planet_process(
 fn should_process(
 	index: NodeIndex,
 	mixture: &TurfMixture,
-	all_mixtures: &[RwLock<Mixture>],
+	all_mixtures: &MixtureSnapshot,
 	arena: &TurfGases,
 ) -> bool {
 	mixture.enabled()
@@ -417,7 +415,7 @@ fn should_process(
 #[allow(clippy::type_complexity)]
 fn process_cell(
 	index: NodeIndex,
-	all_mixtures: &[RwLock<Mixture>],
+	all_mixtures: &MixtureSnapshot,
 	arena: &TurfGases,
 ) -> Option<(NodeIndex, Mixture, TinyVec<[(TurfID, f32); 6]>, i32)> {
 	let mut adj_amount = 0;
@@ -477,7 +475,7 @@ fn fdm(
 	(start_time, remaining_time): (&Instant, Duration),
 	fdm_max_steps: i32,
 	equalize_enabled: bool,
-	all_mixtures: &[RwLock<Mixture>],
+	all_mixtures: &MixtureSnapshot,
 	active_nodes: &rustc_hash::FxHashSet<NodeIndex>,
 ) -> (
 	BTreeSet<TurfID>,

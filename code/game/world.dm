@@ -133,6 +133,7 @@ GLOBAL_VAR(restart_counter)
 	// _verdigris.dm that the compiler silently discarded; folded in here.)
 	verdigris_init()
 	verdigris_cleanup()
+	configure_auxmos_world(world.maxx, world.maxy, world.maxz)
 	log_world("Verdigris loaded: [verdigris_version()] | features: [verdigris_features()]")
 
 	GLOB.world_startup_time = world.timeofday
@@ -678,10 +679,11 @@ GLOBAL_VAR_INIT(world_topic_spam_protect_time, world.timeofday)
 /world/proc/increment_max_z()
 	maxz++
 	. = maxz
+	configure_auxmos_world(maxx, maxy, maxz)
 	max_z_changed()
 
 // Call this to change world.fps, don't modify it directly.
-/world/proc/change_fps(new_value = 20)
+/world/proc/change_fps(new_value = 40)
 	if(new_value <= 0)
 		CRASH("change_fps() called with [new_value] new_value.")
 	if(fps == new_value)

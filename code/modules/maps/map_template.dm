@@ -61,12 +61,14 @@
 				cables += A
 			else if(istype(A, /obj/machinery/atmospherics))
 				atmos_machines += A
-	atoms |= areas
 	for(var/obj/machinery/atmospherics/atmos_to_reenable as anything in atmos_machines)
 		atmos_to_reenable.being_loaded = TRUE
 
 	admin_notice(span_danger("Initializing newly created atom(s) in submap."), R_DEBUG)
-	SSatoms.InitializeAtoms(areas + turfs + atoms)
+	var/list/initialization_targets = areas.Copy()
+	initialization_targets.Add(turfs)
+	initialization_targets.Add(atoms)
+	SSatoms.InitializeAtoms(initialization_targets)
 
 	admin_notice(span_danger("Initializing atmos pipenets and machinery in submap."), R_DEBUG)
 	// SSmachines.setup_atmos_machinery was stubbed by the LINDA

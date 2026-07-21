@@ -127,6 +127,62 @@ GLOBAL_LIST_INIT(dq_human_mode_hidden_groups, list(
 GLOBAL_LIST_INIT(dq_human_mode_hidden_pref_keys, list(
 ))
 
+// Category names are invariant for each play mode. Keep this structural index
+// globally instead of making every preferences datum discover it by invoking
+// contextual widget/choice providers across the complete preference registry.
+/proc/dq_character_category_index(play_mode)
+	var/static/list/index_by_mode = list()
+	if(islist(index_by_mode[play_mode]))
+		return index_by_mode[play_mode].Copy()
+
+	var/playing_as_robot = (play_mode == "robot")
+	var/playing_as_pai = (play_mode == "pai")
+	var/list/categories = list()
+	for(var/pref_type in GLOB.preference_entries)
+		var/datum/preference/pref = GLOB.preference_entries[pref_type]
+		if(pref.savefile_identifier != PREFERENCE_CHARACTER || pref.widget == PREF_WIDGET_HIDDEN)
+			continue
+		var/cat = pref.category || "misc"
+		if(cat == PREFERENCE_CATEGORY_MANUALLY_RENDERED || cat == PREFERENCE_CATEGORY_NON_CONTEXTUAL)
+			continue
+		var/grp = pref.group || ""
+		if(playing_as_pai)
+			if(cat in GLOB.dq_pai_mode_hidden_categories || grp in GLOB.dq_pai_mode_hidden_groups || GLOB.dq_pai_mode_hidden_pref_keys[pref.savefile_key])
+				continue
+		else if(playing_as_robot)
+			if(cat in GLOB.dq_robot_mode_hidden_categories || grp in GLOB.dq_robot_mode_hidden_groups || GLOB.dq_robot_mode_hidden_pref_keys[pref.savefile_key])
+				continue
+		else if(grp in GLOB.dq_human_mode_hidden_groups || GLOB.dq_human_mode_hidden_pref_keys[pref.savefile_key])
+			continue
+		categories[cat] = TRUE
+
+	for(var/datum/preference_editor/editor as anything in GLOB.preference_editors)
+		if(editor.hidden)
+			continue
+		if(editor.key != "species_picker")
+			if(playing_as_pai)
+				if(editor.category in GLOB.dq_pai_mode_hidden_categories || (editor.group && (editor.group in GLOB.dq_pai_mode_hidden_groups)))
+					continue
+			else if(playing_as_robot)
+				if(editor.category in GLOB.dq_robot_mode_hidden_categories || (editor.group && (editor.group in GLOB.dq_robot_mode_hidden_groups)))
+					continue
+			else if(editor.group && (editor.group in GLOB.dq_human_mode_hidden_groups))
+				continue
+		categories[editor.category] = TRUE
+
+	var/list/result = list()
+	for(var/ordered_category in GLOB.dq_category_order)
+		if(categories[ordered_category])
+			result += ordered_category
+			categories -= ordered_category
+	var/list/remainder = list()
+	for(var/category in categories)
+		remainder += category
+	sortTim(remainder, GLOBAL_PROC_REF(cmp_text_asc))
+	result += remainder
+	index_by_mode[play_mode] = result
+	return result.Copy()
+
 // Reverse-index of editor.static_invalidator_keys: maps a pref
 // savefile_key → list(/datum/preference_editor) that should be rebuilt when
 // that key changes. Built once at world init from the editors' declarations
@@ -336,10 +392,8 @@ GLOBAL_LIST_INIT(dq_group_order, list(
 	if(!islist(preferences.dq_category_static_cache))
 		preferences.dq_category_static_cache = list()
 	if(!islist(preferences.dq_category_index))
-		preferences.dq_category_index = list()
-		var/list/category_skeletons = dq_build_category_structure(null, FALSE)
-		for(var/list/category as anything in category_skeletons)
-			preferences.dq_category_index += category["category"]
+		var/play_mode = preferences.read_preference(/datum/preference/text/human/play_mode) || "human"
+		preferences.dq_category_index = dq_character_category_index(play_mode)
 	if(!category_key || (category_key in preferences.dq_category_static_cache))
 		return
 	var/list/categories_data = dq_build_category_structure(category_key, TRUE)
@@ -392,6 +446,9 @@ GLOBAL_LIST_INIT(dq_group_order, list(
 	data["dq_structure_version"] = preferences.dq_category_structure_version
 
 	var/window_id = ui?.window?.id || "unpooled"
+	var/force_catalogs = !!preferences.dq_force_catalogs_by_window?[window_id]
+	if(force_catalogs)
+		preferences.dq_force_catalogs_by_window -= window_id
 	LAZYINITLIST(preferences.dq_window_category_versions)
 	if(!islist(preferences.dq_window_category_versions[window_id]))
 		preferences.dq_window_category_versions[window_id] = list()
@@ -406,13 +463,14 @@ GLOBAL_LIST_INIT(dq_group_order, list(
 	// immediately. Large editor state and catalogs are restricted to the active
 	// category so unopened tabs cost nothing.
 	var/list/widget_values = list()
-	for(var/pref_type in GLOB.preference_entries)
-		var/datum/preference/pref = GLOB.preference_entries[pref_type]
-		if(pref.savefile_identifier != PREFERENCE_CHARACTER)
-			continue
-		if(pref.get_widget(preferences) == PREF_WIDGET_HIDDEN)
-			continue
-		widget_values[pref.savefile_key] = preferences.read_preference(pref_type)
+	var/list/active_category = preferences.dq_category_static_cache[preferences.dq_active_category]
+	for(var/list/group as anything in active_category?["groups"])
+		for(var/list/item as anything in group["items"])
+			if(item["type"] != "widget")
+				continue
+			var/datum/preference/pref = GLOB.preference_entries_by_key[item["key"]]
+			if(pref)
+				widget_values[pref.savefile_key] = preferences.read_preference(pref.type)
 	data["dq_values"] = widget_values
 
 	var/list/editor_data = list()
@@ -429,6 +487,11 @@ GLOBAL_LIST_INIT(dq_group_order, list(
 		var/editor_version = dq_editor_version(editor.key)
 		editor_versions[editor.key] = editor_version
 		if(window_editor_versions[editor.key] == editor_version)
+			continue
+		// Let the first payload reveal the already-warm generic shell. React sees
+		// the version mismatch and requests catalogs immediately afterward, moving
+		// editor-specific construction off the window-opening critical path.
+		if(!force_catalogs)
 			continue
 		if(!islist(preferences.dq_editor_static_cache) || !(editor.key in preferences.dq_editor_static_cache))
 			preferences.dq_rebuild_editor_static_entry(editor)
@@ -486,6 +549,8 @@ GLOBAL_LIST_INIT(dq_group_order, list(
 			preferences.dq_active_category = category_key
 			if(params["force_catalogs"])
 				var/window_id = ui?.window?.id || "unpooled"
+				LAZYINITLIST(preferences.dq_force_catalogs_by_window)
+				preferences.dq_force_catalogs_by_window[window_id] = TRUE
 				if(islist(preferences.dq_window_category_versions?[window_id]))
 					preferences.dq_window_category_versions[window_id] -= category_key
 				if(islist(preferences.dq_window_editor_versions?[window_id]))

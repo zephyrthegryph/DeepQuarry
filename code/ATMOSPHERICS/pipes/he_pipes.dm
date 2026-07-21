@@ -16,6 +16,11 @@
 	var/initialize_directions_he
 	var/surface = 2	//surface area in m^2
 	var/icon_temperature = T20C //stop small changes in temperature causing an icon refresh
+	var/stable_temperature_cycles = 0
+	var/sleeping_turf_mixture_id
+	var/sleeping_turf_revision = -1
+	var/sleeping_pipe_mixture_id
+	var/sleeping_pipe_revision = -1
 
 	minimum_temperature_difference = 20
 	thermal_conductivity = OPEN_HEAT_TRANSFER_COEFFICIENT
@@ -35,6 +40,50 @@
 
 /obj/machinery/atmospherics/pipe/simple/heat_exchanging/get_init_dirs()
 	return ..() | initialize_directions_he
+
+/obj/machinery/atmospherics/pipe/simple/heat_exchanging/proc/register_gas_dependencies(datum/weakref/WR)
+	var/datum/gas_mixture/environment = loc?.return_air()
+	var/datum/gas_mixture/pipe_air = parent?.air
+	sleeping_turf_mixture_id = environment?.arena_id()
+	sleeping_turf_revision = environment?.revision() || -1
+	sleeping_pipe_mixture_id = pipe_air?.arena_id()
+	sleeping_pipe_revision = pipe_air?.revision() || -1
+	SSmachines.subscribe_gas_dependency(sleeping_turf_mixture_id, WR)
+	SSmachines.subscribe_gas_dependency(sleeping_pipe_mixture_id, WR)
+
+/obj/machinery/atmospherics/pipe/simple/heat_exchanging/proc/unregister_gas_dependencies(datum/weakref/WR)
+	SSmachines.unsubscribe_gas_dependency(sleeping_turf_mixture_id, WR)
+	SSmachines.unsubscribe_gas_dependency(sleeping_pipe_mixture_id, WR)
+	sleeping_turf_mixture_id = null
+	sleeping_turf_revision = -1
+	sleeping_pipe_mixture_id = null
+	sleeping_pipe_revision = -1
+
+/obj/machinery/atmospherics/pipe/simple/heat_exchanging/proc/gas_dependency_changed(mixture_id, change_mask)
+	if(!(change_mask & GAS_DEPENDENCY_TEMPERATURE))
+		return FALSE
+	if(mixture_id == sleeping_turf_mixture_id)
+		var/datum/gas_mixture/environment = loc?.return_air()
+		return !environment || environment.arena_id() != sleeping_turf_mixture_id || environment.revision() != sleeping_turf_revision
+	if(mixture_id == sleeping_pipe_mixture_id)
+		var/datum/gas_mixture/pipe_air = parent?.air
+		return !pipe_air || pipe_air.arena_id() != sleeping_pipe_mixture_id || pipe_air.revision() != sleeping_pipe_revision
+	return TRUE
+
+/obj/machinery/atmospherics/pipe/simple/heat_exchanging/Destroy()
+	unregister_gas_dependencies(WEAKREF(src))
+	return ..()
+
+/obj/machinery/atmospherics/pipe/simple/heat_exchanging/Moved(atom/old_loc, direction, forced = FALSE)
+	. = ..()
+	SSmachines.wake_gas_subscriber(WEAKREF(src))
+
+/obj/machinery/atmospherics/pipe/simple/heat_exchanging/set_leaking(new_leaking)
+	return // Heat-exchange pipes cannot leak.
+
+/obj/machinery/atmospherics/pipe/simple/heat_exchanging/disconnect(obj/machinery/atmospherics/reference)
+	SSmachines.wake_gas_subscriber(WEAKREF(src))
+	return ..()
 
 // Use initialize_directions_he to connect to neighbors instead.
 /obj/machinery/atmospherics/pipe/simple/heat_exchanging/can_be_node(obj/machinery/atmospherics/pipe/simple/heat_exchanging/target)
@@ -70,27 +119,30 @@
 	handle_leaking()
 	return
 
-/obj/machinery/atmospherics/pipe/simple/heat_exchanging/set_leaking(new_leaking)
-	return	//Nope - pipe leaking is disabled fork-wide
-
 /obj/machinery/atmospherics/pipe/simple/heat_exchanging/process()
 	if(!parent)
-		..()
+		stable_temperature_cycles = 0
+		return ..()
 	else
+		var/can_hibernate = !leaking && !has_buckled_mobs()
 		if(leaking)
 			parent.mingle_with_turf(loc, volume)
 		var/datum/gas_mixture/pipe_air = return_air()
+		var/pipe_temperature = pipe_air.return_temperature()
 		if(istype(loc, /turf/simulated/))
 			var/turf/simulated/loc_as_turf = loc
 			var/environment_temperature = 0
 			if(loc_as_turf.blocks_air)
 				environment_temperature = loc_as_turf.temperature
+				can_hibernate = FALSE
 			else
 				var/datum/gas_mixture/environment = loc_as_turf.return_air()
 				environment_temperature = environment.return_temperature()
-			if((abs(environment_temperature-pipe_air.return_temperature()) > minimum_temperature_difference) || (loc_as_turf.special_temperature))
+			if((abs(environment_temperature-pipe_temperature) > minimum_temperature_difference) || (loc_as_turf.special_temperature))
+				can_hibernate = FALSE
 				parent.temperature_interact(loc, volume, thermal_conductivity)
 		else if(istype(loc, /turf/space/))
+			can_hibernate = FALSE
 			parent.radiate_heat_to_space(surface, 1)
 
 		if(has_buckled_mobs())
@@ -110,9 +162,10 @@
 					L.apply_damage(4 * log(pipe_air.return_temperature() - heat_limit), BURN, BP_TORSO)
 
 		//fancy radiation glowing
-		if(pipe_air.return_temperature() && (icon_temperature > 500 || pipe_air.return_temperature() > 500)) //start glowing at 500K
-			if(abs(pipe_air.return_temperature() - icon_temperature) > 10)
-				icon_temperature = pipe_air.return_temperature()
+		pipe_temperature = pipe_air.return_temperature()
+		if(pipe_temperature && (icon_temperature > 500 || pipe_temperature > 500)) //start glowing at 500K
+			if(abs(pipe_temperature - icon_temperature) > 10)
+				icon_temperature = pipe_temperature
 
 				var/h_r = heat2color_r(icon_temperature)
 				var/h_g = heat2color_g(icon_temperature)
@@ -125,6 +178,14 @@
 					h_b = 64 + (h_b - 64)*scale
 
 				animate(src, color = rgb(h_r, h_g, h_b), time = 20, easing = SINE_EASING)
+
+		if(can_hibernate)
+			stable_temperature_cycles++
+			if(stable_temperature_cycles >= 5)
+				SSmachines.hibernate_heat_pipe(src)
+				return PROCESS_KILL
+		else
+			stable_temperature_cycles = 0
 
 //
 // Heat Exchange Junction - Interfaces HE pipes to normal pipes

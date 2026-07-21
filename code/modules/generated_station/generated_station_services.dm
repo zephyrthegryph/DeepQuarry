@@ -411,6 +411,7 @@
 				var/turf/candidate = world_turf(local_x, local_y)
 				if(candidate && !candidate.density)
 					available_turfs += candidate
+				generation_checkpoint("Indexing service endpoints", 48)
 		for(var/i in 1 to length(services))
 			var/service_id = services[i]
 			var/datum/generated_station_service_endpoint/endpoint = new
@@ -426,6 +427,7 @@
 				endpoint.landmark.department_node_id = node.id
 				endpoint.landmark.service_id = service_id
 			result.service_endpoints += endpoint
+		generation_checkpoint("Building service endpoints", 48)
 
 /datum/generated_station_materializer/proc/endpoint_for(node_id, service_id)
 	for(var/datum/generated_station_service_endpoint/endpoint in result.service_endpoints)
@@ -460,14 +462,18 @@
 		if(y == start_endpoint.y)
 			continue
 		route.path += list(list(end_endpoint.x, y))
+	var/point_index = 0
 	for(var/list/point in route.path)
+		point_index++
 		var/turf/T = world_turf(point[1], point[2])
 		if(!T || istype(T, /turf/space))
 			continue
-		var/obj/effect/landmark/generated_station_service_route/marker = new(T)
-		marker.station_id = spec.id
-		marker.service_id = service_id
-		route.physical_markers += marker
+		if(point_index == 1 || point_index == length(route.path) || !(point_index % 8))
+			var/obj/effect/landmark/generated_station_service_route/marker = new(T)
+			marker.station_id = spec.id
+			marker.service_id = service_id
+			route.physical_markers += marker
+		generation_checkpoint("Building service routes", 49)
 	result.service_routes += route
 
 /datum/generated_station_materializer/proc/build_services()
@@ -475,15 +481,18 @@
 	var/datum/generated_station_service_route/maintenance_route = new
 	maintenance_route.id = "maintenance-physical"
 	maintenance_route.service_id = GENERATED_STATION_SERVICE_MAINTENANCE
+	var/maintenance_index = 0
 	for(var/key in spec.maintenance_tiles)
+		maintenance_index++
 		var/list/parts = splittext(key, ",")
 		maintenance_route.path += list(list(text2num(parts[1]), text2num(parts[2])))
 		var/turf/T = world_turf(text2num(parts[1]), text2num(parts[2]))
-		if(T)
+		if(T && (maintenance_index == 1 || maintenance_index == length(spec.maintenance_tiles) || !(maintenance_index % 8)))
 			var/obj/effect/landmark/generated_station_service_route/marker = new(T)
 			marker.station_id = spec.id
 			marker.service_id = GENERATED_STATION_SERVICE_MAINTENANCE
 			maintenance_route.physical_markers += marker
+		generation_checkpoint("Publishing maintenance routes", 49)
 	result.service_routes += maintenance_route
 	for(var/datum/generated_station_layout_edge/edge in spec.layout_edges)
 		if(edge.kind == GENERATED_STATION_EDGE_UTILITY)
@@ -491,7 +500,7 @@
 			if(service_id)
 				build_service_route("service-[edge.id]", service_id, endpoint_for(edge.from_node_id, service_id), endpoint_for(edge.to_node_id, service_id))
 
-/datum/generated_station_materialization/proc/validate_services(datum/generated_station_spec/spec)
+/datum/generated_station_materialization/proc/validate_services(datum/generated_station_spec/spec, datum/generated_station_materializer/materializer)
 	var/datum/generated_station_validation_result/validation = new
 	var/list/maintenance_floors = list()
 	for(var/key in spec.maintenance_tiles)
@@ -503,6 +512,7 @@
 		maintenance_floors[T] = TRUE
 		if(spec.maintenance_doors[key] && !(locate(/obj/machinery/door/airlock/maintenance) in T))
 			validation.add(GENERATED_STATION_ISSUE_ERROR, "maintenance-door-missing", "Planned maintenance access has no maintenance airlock.", key)
+		materializer?.generation_checkpoint("Validating maintenance services", 56)
 	if(length(maintenance_floors))
 		var/list/reached = list()
 		var/list/frontier = list(maintenance_floors[1])
@@ -516,6 +526,7 @@
 				var/turf/neighbor = get_step(current, direction)
 				if(maintenance_floors[neighbor] && !reached[neighbor])
 					frontier += neighbor
+			materializer?.generation_checkpoint("Validating maintenance connectivity", 56)
 		if(length(reached) != length(maintenance_floors))
 			validation.add(GENERATED_STATION_ISSUE_ERROR, "maintenance-disconnected", "Physical maintenance contains [length(maintenance_floors) - length(reached)] unreachable floor tiles.", spec.id)
 	else
@@ -533,6 +544,7 @@
 				break
 		if(!has_maintenance_access)
 			validation.add(GENERATED_STATION_ISSUE_ERROR, "department-without-maintenance", "Department has no physical access to the maintenance network.", node.id)
+		materializer?.generation_checkpoint("Validating department maintenance", 56)
 	for(var/datum/generated_station_department_instance/department in spec.departments)
 		var/node_id = department.layout_node_id
 		for(var/datum/generated_station_capability_requirement/requirement in department.definition.requirements)
@@ -556,6 +568,7 @@
 				validation.add(requirement.optional ? GENERATED_STATION_ISSUE_WARNING : GENERATED_STATION_ISSUE_ERROR, "service-endpoint-missing", "Department has no physical [requirement.capability_id] endpoint.", department.id)
 			if(!has_route)
 				validation.add(requirement.optional ? GENERATED_STATION_ISSUE_WARNING : GENERATED_STATION_ISSUE_ERROR, "service-route-missing", "Department has no physical [requirement.capability_id] route.", department.id)
+			materializer?.generation_checkpoint("Validating station services", 57)
 	return validation
 
 #undef GENERATED_STATION_SERVICE_MAINTENANCE

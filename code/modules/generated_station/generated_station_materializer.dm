@@ -185,7 +185,12 @@
 	var/datum/generated_station_materialization/result
 	var/datum/generated_station_validation_result/last_architecture_validation
 	var/datum/generated_station_tile_plan/tile_plan
+	var/datum/generated_station_materialization_job/active_job
 	var/last_failure_details
+	var/last_yield_count = 0
+	var/last_elapsed_seconds = 0
+	var/last_peak_tick_usage = 0
+	var/last_peak_phase
 #ifdef CITESTING
 	var/strict_room_contracts = TRUE
 #else
@@ -202,9 +207,27 @@
 	result = null
 	QDEL_NULL(last_architecture_validation)
 	QDEL_NULL(tile_plan)
+	active_job = null
 	return ..()
 
-/datum/generated_station_materializer/proc/materialize(datum/generated_station_spec/new_spec, new_z, origin_x = 1, origin_y = 1)
+/datum/generated_station_materializer/proc/materialize(datum/generated_station_spec/new_spec, new_z, origin_x = 1, origin_y = 1, datum/flight_plan/flight_plan = null, fast_mode = FALSE)
+	var/datum/generated_station_materialization_job/job = new(src, flight_plan, fast_mode)
+	var/datum/generated_station_materialization/materialization = job.execute(new_spec, new_z, origin_x, origin_y)
+	last_yield_count = job.yield_count
+	last_elapsed_seconds = (job.finished_at - job.started_at) / 10
+	last_peak_tick_usage = job.peak_tick_usage
+	last_peak_phase = job.peak_phase
+	log_world("Generated station materialization telemetry: [last_elapsed_seconds]s, [last_yield_count] yields, peak [last_peak_tick_usage]% during [last_peak_phase].")
+	qdel(job)
+	return materialization
+
+/datum/generated_station_materializer/proc/generation_checkpoint(phase, progress, force_yield = FALSE)
+	if(active_job)
+		active_job.checkpoint(phase, progress, force_yield)
+	else
+		CHECK_TICK
+
+/datum/generated_station_materializer/proc/materialize_incremental(datum/generated_station_spec/new_spec, new_z, origin_x = 1, origin_y = 1, datum/generated_station_materialization_job/job)
 	last_failure_details = null
 	if(!istype(new_spec) || !isnum(new_z) || new_z < 1 || new_z > world.maxz)
 		return null
@@ -212,6 +235,7 @@
 		return null
 
 	spec = new_spec
+	active_job = job
 	z_level = new_z
 	min_x = origin_x
 	min_y = origin_y
@@ -243,17 +267,23 @@
 			department_area.name = "[spec.name] [department.definition.name]"
 			department_areas[node.id] = department_area
 			result.department_areas[node.id] = department_area
+		generation_checkpoint("Allocating station areas", 25)
 
 	var/materialization_stage
+	generation_checkpoint("Compiling structural ownership", 27)
 	if(!build_tile_plan())
 		materialization_stage = "tile-plan"
 	else if(!build_planned_modules())
 		materialization_stage = "planned-modules"
 	else if(!build_room_areas())
 		materialization_stage = "room-areas"
-	else if(!plan_generated_station_utilities())
+	else
+		generation_checkpoint("Planning station utilities", 31)
+	if(!materialization_stage && !plan_generated_station_utilities())
 		materialization_stage = "utilities"
-	else if(!apply_tile_plan())
+	else if(!materialization_stage)
+		generation_checkpoint("Changing structural turfs", 35, TRUE)
+	if(!materialization_stage && !apply_tile_plan())
 		materialization_stage = "tile-application"
 	if(materialization_stage)
 		last_failure_details = "[materialization_stage]: [jointext(result?.tile_plan?.errors, "; ")]"
@@ -262,38 +292,58 @@
 			log_world("Generated station [spec.id] materialization rejected: [plan_error]")
 		qdel(result)
 		result = null
+		active_job = null
 		return null
+	generation_checkpoint("Installing doors and station services", 46, TRUE)
+	place_exterior_airlocks()
+	generation_checkpoint("Installing exterior airlocks", 47)
 	place_planned_control_landmarks()
+	generation_checkpoint("Installing control landmarks", 47)
 	furnish_transit_alcoves()
+	generation_checkpoint("Furnishing transit alcoves", 48)
 	place_entry()
+	generation_checkpoint("Installing station entry", 48)
 	build_services()
+	generation_checkpoint("Furnishing functional rooms", 50, TRUE)
 	if(!synthesize_rooms())
 		last_failure_details ||= "room synthesis"
 		log_world("Generated station [spec.id] materialization failed during room synthesis.")
 		qdel(result)
 		result = null
+		active_job = null
 		return null
+	generation_checkpoint("Installing emergency equipment", 55, TRUE)
 	if(!place_emergency_equipment())
 		if(strict_room_contracts)
 			last_failure_details = "emergency equipment"
 			log_world("Generated station [spec.id] materialization failed during emergency equipment placement.")
 			qdel(result)
 			result = null
+			active_job = null
 			return null
 		result.degradation_events += "one or more rooms could not place emergency equipment"
 		log_world("Generated station [spec.id] continued without complete emergency equipment placement.")
+	generation_checkpoint("Validating furnishing access", 55, TRUE)
 	if(!finalize_furnishing_access())
 		if(strict_room_contracts)
 			last_failure_details = "furnishing access"
 			log_world("Generated station [spec.id] materialization failed during furnishing access validation.")
 			qdel(result)
 			result = null
+			active_job = null
 			return null
 		result.degradation_events += "one or more furnishings could not be relocated away from access routes"
 		log_world("Generated station [spec.id] continued after furnishing access degradation.")
-	result.service_validation = result.validate_services(spec)
+	result.service_validation = result.validate_services(spec, src)
+	generation_checkpoint("Finalizing walls and atmosphere", 57, TRUE)
 	finalize_wall_adjacencies()
+	for(var/key in result.tile_plan.tiles)
+		var/datum/generated_station_tile_intent/intent = result.tile_plan.tiles[key]
+		if(intent.structure_kind == GENERATED_STATION_TILE_FLOOR)
+			generated_station_seed_air(world_turf(intent.local_x, intent.local_y))
+		generation_checkpoint("Seeding station atmosphere", 60)
 	finalize()
+	active_job = null
 	return result
 
 /datum/generated_station_materializer/proc/world_turf(local_x, local_y)
@@ -302,24 +352,29 @@
 /// Compiles planner geometry into one ownership map before touching live turfs.
 /datum/generated_station_materializer/proc/build_tile_plan()
 	QDEL_NULL(tile_plan)
-	tile_plan = new(spec.grid_width, spec.grid_height)
+	tile_plan = new(spec.grid_width, spec.grid_height, src)
 	var/floor_type = /turf/simulated/floor/tiled
 	if(spec.architecture_style == "sterile")
 		floor_type = /turf/simulated/floor/tiled/eris/white
 	else if(spec.architecture_style == "fortified")
 		floor_type = /turf/simulated/floor/tiled/eris/steel/techfloor
 	for(var/datum/generated_station_layout_node/node in spec.layout_nodes)
+		var/datum/generated_station_department_instance/node_department = department_for_node(node)
+		var/department_id = node_department?.definition?.id
 		for(var/key in node.territory)
 			var/list/parts = splittext(key, ",")
-			tile_plan.claim(text2num(parts[1]), text2num(parts[2]), node.id, node.id, GENERATED_STATION_TILE_FLOOR, floor_type, department_for_node(node)?.definition?.id)
+			tile_plan.claim(text2num(parts[1]), text2num(parts[2]), node.id, node.id, GENERATED_STATION_TILE_FLOOR, floor_type, department_id)
+			generation_checkpoint("Compiling department territory", 28)
 		for(var/key in node.local_circulation)
 			var/list/parts = splittext(key, ",")
 			tile_plan.refine(text2num(parts[1]), text2num(parts[2]), node.id, GENERATED_STATION_TILE_FLOOR, floor_type)
+			generation_checkpoint("Compiling department circulation", 28)
 		for(var/key in node.partition_walls)
 			var/list/parts = splittext(key, ",")
 			tile_plan.refine(text2num(parts[1]), text2num(parts[2]), node.id, GENERATED_STATION_TILE_HULL, null)
+			generation_checkpoint("Compiling department partitions", 28)
 		for(var/datum/generated_station_room_allocation/room in node.room_program)
-			var/datum/generated_room_definition/definition = generated_room_definition_for(department_for_node(node)?.definition?.id, room.role)
+			var/datum/generated_room_definition/definition = generated_room_definition_for(department_id, room.role)
 			var/room_floor_type = definition?.room_style?.floor_type || floor_type
 			for(var/key in room.tiles)
 				var/list/parts = splittext(key, ",")
@@ -327,8 +382,9 @@
 				if(intent?.owner_id == node.id)
 					intent.zone_id = room.id
 					intent.floor_type = room_floor_type
+				generation_checkpoint("Compiling room ownership", 28)
 			for(var/datum/generated_station_door_socket/socket in room.door_sockets)
-				tile_plan.claim_door(socket.x, socket.y, node.id, /obj/machinery/door/airlock, socket.direction, department_for_node(node)?.definition?.id)
+				tile_plan.claim_door(socket.x, socket.y, node.id, /obj/machinery/door/airlock, socket.direction, department_id)
 			qdel(definition)
 		for(var/datum/generated_station_eva_vestibule/vestibule in node.eva_vestibules)
 			for(var/key in vestibule.tiles)
@@ -338,12 +394,14 @@
 					intent.zone_id = vestibule.id
 			for(var/datum/generated_station_door_socket/socket in vestibule.door_sockets)
 				var/door_type = socket.kind == "eva-exterior" ? /obj/machinery/door/airlock/generated_station_exterior : /obj/machinery/door/airlock
-				tile_plan.claim_door(socket.x, socket.y, node.id, door_type, socket.direction, department_for_node(node)?.definition?.id)
+				tile_plan.claim_door(socket.x, socket.y, node.id, door_type, socket.direction, department_id)
 		for(var/datum/generated_station_door_socket/socket in node.frontage_sockets)
-			tile_plan.claim_door(socket.x, socket.y, node.id, /obj/machinery/door/airlock, socket.direction, department_for_node(node)?.definition?.id)
+			tile_plan.claim_door(socket.x, socket.y, node.id, /obj/machinery/door/airlock, socket.direction, department_id)
+		generation_checkpoint("Compiling department ownership", 28)
 	for(var/key in spec.circulation_tiles)
 		var/list/parts = splittext(key, ",")
 		claim_transit_tile(text2num(parts[1]), text2num(parts[2]), floor_type)
+		generation_checkpoint("Compiling public circulation", 28)
 	for(var/key in spec.maintenance_tiles)
 		var/list/parts = splittext(key, ",")
 		var/x = text2num(parts[1])
@@ -355,9 +413,11 @@
 			if(maintenance_door.to_zone_id != "maintenance" && maintenance_door.to_zone_id != "public-circulation")
 				access_id = department_for_node(door_node)?.definition?.id
 			tile_plan.claim_door(x, y, "maintenance", /obj/machinery/door/airlock/maintenance/generated_station, maintenance_door.direction, access_id)
+		generation_checkpoint("Compiling maintenance circulation", 29)
 	for(var/key in spec.structural_tiles)
 		var/list/parts = splittext(key, ",")
 		tile_plan.claim(text2num(parts[1]), text2num(parts[2]), "station-structure", "structure", GENERATED_STATION_TILE_HULL, null, null)
+		generation_checkpoint("Compiling structural walls", 29)
 	tile_plan.derive_hull()
 	if(!tile_plan.validate_exterior_seal())
 		for(var/error in tile_plan.errors)
@@ -403,6 +463,7 @@
 				if(generated_station_architectural_passable(front))
 					furnishing.set_dir(direction)
 					break
+		generation_checkpoint("Validating furnishing access", 55)
 	return TRUE
 
 /// Returns whether a generated furnishing can move here without consuming an
@@ -514,7 +575,6 @@
 		switch(intent.structure_kind)
 			if(GENERATED_STATION_TILE_FLOOR)
 				T = T.ChangeTurf(intent.floor_type, tell_universe = FALSE)
-				generated_station_seed_air(T)
 				if(intent.owner_id == "transit")
 					ChangeArea(T, transit_area)
 					result.corridor_count++
@@ -531,7 +591,7 @@
 			else
 				T = T.ChangeTurf(/turf/space, tell_universe = FALSE)
 				ChangeArea(T, space_area)
-		CHECK_TICK
+		generation_checkpoint("Changing structural turfs", 42)
 	for(var/key in result.tile_plan.tiles)
 		var/datum/generated_station_tile_intent/intent = result.tile_plan.tiles[key]
 		if(!intent.door_type)
@@ -545,6 +605,7 @@
 			configure_airlock_access(airlock, intent.access_id)
 		result.doors += airlock
 		result.door_count++
+		generation_checkpoint("Installing planned doors", 45)
 	return TRUE
 
 /// Installs baseline fire detection and emergency supplies independently of room decoration.
@@ -552,13 +613,13 @@
 	for(var/module_id in module_areas)
 		var/area/generated_station/A = module_areas[module_id]
 		var/turf/alarm_turf
-		for(var/key in result.tile_plan.tiles)
-			var/datum/generated_station_tile_intent/intent = result.tile_plan.tiles[key]
+		for(var/datum/generated_station_tile_intent/intent in result.tile_plan.utility_floors(null, module_id))
 			if(intent.zone_id == module_id && (GENERATED_STATION_UTILITY_FIRE_ALARM in intent.utility_intents))
 				alarm_turf = world_turf(intent.local_x, intent.local_y)
 				break
 		if(!alarm_turf)
 			return FALSE
+		generation_checkpoint("Installing fire detection", 55, TRUE)
 		var/obj/machinery/firealarm/alarm = new(alarm_turf)
 		var/wall_direction = generated_station_adjacent_wall_direction(alarm_turf)
 		alarm.set_dir(turn(wall_direction, 180))
@@ -566,11 +627,27 @@
 		result.register_furnishing(alarm)
 		var/turf/closet_turf = find_emergency_fixture_turf(A, list(alarm_turf))
 		if(closet_turf)
-			result.register_furnishing(new /obj/structure/closet/firecloset/full(closet_turf))
+			generation_checkpoint("Installing emergency closet", 55, TRUE)
+			var/obj/structure/closet/firecloset/full/generated_station/fire_closet = new(closet_turf)
+			var/static/list/emergency_supply_types = list(
+				/obj/item/clothing/suit/fire,
+				/obj/item/clothing/mask/gas/clear,
+				/obj/item/flashlight,
+				/obj/item/tank/oxygen/red,
+				/obj/item/extinguisher,
+				/obj/item/clothing/head/hardhat/red,
+				/obj/item/storage/toolbox/emergency,
+			)
+			// Closet contents are created by the budgeted late-initialization pass.
+			// Instantiating this equipment inline can monopolize several game ticks.
+			fire_closet.starts_with = emergency_supply_types.Copy()
+			result.register_furnishing(fire_closet)
+		generation_checkpoint("Installing emergency equipment", 55)
 	return TRUE
 
 /datum/generated_station_materializer/proc/find_emergency_fixture_turf(area/generated_station/A, list/excluded)
 	for(var/turf/simulated/floor/T in A)
+		generation_checkpoint("Selecting emergency closet position", 55)
 		if((excluded && (T in excluded)) || T.density || locate(/obj/machinery/door) in T)
 			continue
 		var/datum/generated_station_tile_intent/intent = result.tile_plan?.tile(T.x - min_x + 1, T.y - min_y + 1)
@@ -597,7 +674,7 @@
 			return direction
 	return null
 
-/datum/generated_station_materializer/proc/department_for_node(datum/generated_station_layout_node/node)
+/datum/generated_station_materializer/proc/department_for_node(datum/generated_station_layout_node/node) as /datum/generated_station_department_instance
 	for(var/datum/generated_station_department_instance/department in spec.departments)
 		if(department.id == node.department_instance_id)
 			return department
@@ -943,6 +1020,24 @@
 		var/area/generated_station/A = department_areas[node.id]
 		var/turf/chamber = get_step(hull_turf, outward)
 		var/turf/outer = get_step(chamber, outward)
+		var/hull_local_x = hull_turf.x - result.origin_x + 1
+		var/hull_local_y = hull_turf.y - result.origin_y + 1
+		var/chamber_local_x = chamber.x - result.origin_x + 1
+		var/chamber_local_y = chamber.y - result.origin_y + 1
+		var/outer_local_x = outer.x - result.origin_x + 1
+		var/outer_local_y = outer.y - result.origin_y + 1
+		var/datum/generated_station_tile_intent/hull_intent = result.tile_plan.tile(hull_local_x, hull_local_y)
+		var/datum/generated_station_tile_intent/chamber_intent = result.tile_plan.tile(chamber_local_x, chamber_local_y)
+		var/datum/generated_station_tile_intent/outer_intent = result.tile_plan.tile(outer_local_x, outer_local_y)
+		for(var/datum/generated_station_tile_intent/floor_intent in list(hull_intent, chamber_intent, outer_intent))
+			floor_intent.owner_id = node.id
+			floor_intent.zone_id = node.id
+			floor_intent.structure_kind = GENERATED_STATION_TILE_FLOOR
+			floor_intent.floor_type = /turf/simulated/floor/tiled/steel_ridged
+		hull_intent.door_type = /obj/machinery/door/airlock/maintenance
+		hull_intent.door_direction = (outward in list(EAST, WEST)) ? EAST : NORTH
+		outer_intent.door_type = /obj/machinery/door/airlock/generated_station_exterior
+		outer_intent.door_direction = (outward in list(EAST, WEST)) ? EAST : NORTH
 		hull_turf.ChangeTurf(/turf/simulated/floor/tiled/steel_ridged, tell_universe = FALSE)
 		chamber.ChangeTurf(/turf/simulated/floor/tiled/steel_ridged, tell_universe = FALSE)
 		outer.ChangeTurf(/turf/simulated/floor/tiled/steel_ridged, tell_universe = FALSE)
@@ -951,6 +1046,12 @@
 		ChangeArea(outer, A)
 		for(var/side in list(turn(outward, 90), turn(outward, -90)))
 			for(var/turf/side_turf in list(get_step(chamber, side), get_step(outer, side)))
+				var/side_local_x = side_turf.x - result.origin_x + 1
+				var/side_local_y = side_turf.y - result.origin_y + 1
+				var/datum/generated_station_tile_intent/side_intent = result.tile_plan.tile(side_local_x, side_local_y)
+				side_intent.owner_id = "station-structure"
+				side_intent.zone_id = "station-structure"
+				side_intent.structure_kind = GENERATED_STATION_TILE_HULL
 				side_turf.ChangeTurf(spec.architecture_style == "fortified" ? /turf/simulated/wall/r_wall : /turf/simulated/wall, tell_universe = FALSE)
 				ChangeArea(side_turf, A)
 		var/obj/machinery/door/airlock/maintenance/inner = new(hull_turf)
@@ -997,8 +1098,11 @@
 			continue
 		var/turf/simulated/wall/wall = result.world_turf(intent.local_x, intent.local_y)
 		if(istype(wall))
-			wall.update_connections(TRUE)
+			// Every generated wall is visited by this pass; propagating here would
+			// recompute and redraw each neighbour repeatedly.
+			wall.update_connections(FALSE)
 			wall.update_icon()
+		generation_checkpoint("Updating wall adjacencies", 58)
 
 /datum/generated_station_materializer/proc/finalize()
 	// All topology changes are complete before publishing the new z topology or

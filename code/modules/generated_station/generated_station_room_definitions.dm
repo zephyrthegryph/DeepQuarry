@@ -273,6 +273,8 @@
 	var/max_instances = 1
 	/// Approximate usable floor area supported by one complete activity cluster.
 	var/tiles_per_instance = 0
+	/// Maximum walking distance between fixtures in one activity module.
+	var/cohesion_radius = 5
 
 /datum/generated_room_feature_group/New()
 	..()
@@ -556,6 +558,13 @@
 	var/obj/structure/bed/chair/office/seat = new(seat_turf)
 	seat.set_dir(SOUTH)
 	owner.register_furnishing(seat)
+	var/turf/access_turf = locate(origin.x + 4, origin.y + 1, origin.z)
+	if(!access_turf)
+		return FALSE
+	var/obj/machinery/door/window/access = new(access_turf)
+	access.set_dir(EAST)
+	owner.register_furnishing(access)
+	owner.doors |= access
 	return TRUE
 
 /datum/generated_room_fragment/reception_corner/build_constraints()
@@ -803,6 +812,10 @@
 	var/max_width = 12
 	var/min_height = 5
 	var/max_height = 12
+	var/ideal_usable_tiles = 36
+	var/min_short_side = 3
+	var/max_aspect_ratio_millis = 3000
+	var/requires_center_activity = FALSE
 	var/min_entrances = 1
 	var/max_entrances = 2
 	var/density_min = 0.12
@@ -862,6 +875,8 @@
 /datum/generated_room_definition/proc/is_contract_valid()
 	if(!id || min_width < 3 || min_height < 3 || max_width < min_width || max_height < min_height)
 		return FALSE
+	if(ideal_usable_tiles <= 0 || ideal_usable_tiles > max_width * max_height || min_short_side < 3 || max_aspect_ratio_millis < 1000)
+		return FALSE
 	if(min_entrances < 1 || max_entrances < min_entrances)
 		return FALSE
 	if(density_min < 0 || density_max > 1 || density_max < density_min)
@@ -885,13 +900,27 @@
 	plan.definition_id = id
 	plan.feature_types = required_features.Copy()
 	plan.group_types = required_groups.Copy()
-	// Fragment options are optional alternatives, not a list of mandatory pieces.
-	// Selecting one here keeps the content request small while allowing the room
-	// solver to omit it when an irregular footprint has no legal anchor.
+	var/cohesive_fragment = FALSE
+	// Every authored room receives one cohesive motif. The solver may reject a
+	// footprint that cannot preserve the motif and its circulation contract;
+	// Rust should have assigned that program to compatible geometry instead.
 	if(length(fragment_options))
 		var/datum/generated_station_prng/fragment_prng = new(seed + 3571)
-		if(fragment_prng.next_range(0, 1))
-			plan.fragment_types += fragment_options[fragment_prng.next_range(1, length(fragment_options))]
+		var/fragment_type = fragment_options[fragment_prng.next_range(1, length(fragment_options))]
+		plan.fragment_types += fragment_type
+		if(ispath(fragment_type, /datum/generated_room_fragment/activity_motif))
+			cohesive_fragment = TRUE
+			plan.group_types = list()
+			var/datum/generated_room_fragment/activity_motif/motif = new fragment_type
+			for(var/required_type in plan.feature_types.Copy())
+				var/datum/generated_room_feature/required_feature = new required_type
+				for(var/motif_type in motif.feature_types)
+					var/datum/generated_room_feature/motif_feature = new motif_type
+					if(motif_feature.atom_type == required_feature.atom_type)
+						plan.feature_types -= required_type
+					qdel(motif_feature)
+				qdel(required_feature)
+			qdel(motif)
 		qdel(fragment_prng)
 	var/list/matches = list()
 	var/total_weight = 0
@@ -916,7 +945,7 @@
 			plan.fragment_types |= variant.added_fragment_types
 			break
 	QDEL_LIST(matches)
-	if(length(optional_groups))
+	if(length(optional_groups) && !cohesive_fragment)
 		var/datum/generated_station_prng/optional_prng = new(seed + 7919)
 		plan.group_types |= optional_groups[optional_prng.next_range(1, length(optional_groups))]
 		qdel(optional_prng)
@@ -1201,41 +1230,122 @@
 		new /datum/generated_room_definition/docking_berth,
 	)
 
+/// Physical program envelope derived from authored Southern Cross room scale.
+/// Rust consumes the same values used by the DM solver, so a semantic room is
+/// never assigned to an incompatible anonymous footprint.
+/proc/generated_room_geometry_for(department_id, role)
+	var/list/geometry = list(
+		"min_width" = 3,
+		"min_height" = 7,
+		"max_width" = 11,
+		"max_height" = 11,
+		"ideal_area" = 21,
+		"min_short_side" = 3,
+		"max_aspect_ratio_millis" = 2400,
+		"center_activity" = FALSE,
+	)
+	switch("[department_id]/[role]")
+		if("command/operations", "command/communications", "command/meeting", "command/briefing", "ai/core", "ai/robotics", "security/operations", "medical/ward", "engineering/power", "engineering/atmospherics", "logistics/cargo", "logistics/processing", "docking/control", "docking/berth")
+			geometry["min_width"] = 7
+			geometry["min_height"] = 7
+			geometry["max_width"] = 11
+			geometry["max_height"] = 11
+			geometry["ideal_area"] = 61
+			geometry["max_aspect_ratio_millis"] = 1800
+			geometry["center_activity"] = TRUE
+		if("security/brig")
+			geometry["min_width"] = 7
+			geometry["min_height"] = 7
+			geometry["max_width"] = 11
+			geometry["max_height"] = 15
+			geometry["ideal_area"] = 77
+			geometry["max_aspect_ratio_millis"] = 2200
+			geometry["center_activity"] = TRUE
+		if("medical/pharmacy", "medical/recovery", "engineering/workshop", "engineering/equipment", "logistics/warehouse", "logistics/sorting", "docking/lounge", "security/armory", "security/locker-room")
+			geometry["min_width"] = 7
+			geometry["min_height"] = 7
+			geometry["max_width"] = 11
+			geometry["max_height"] = 11
+			geometry["ideal_area"] = 49
+			geometry["max_aspect_ratio_millis"] = 1900
+			geometry["center_activity"] = TRUE
+		if("medical/treatment", "medical/surgery")
+			geometry["min_height"] = 7
+			geometry["max_width"] = 7
+			geometry["max_height"] = 11
+			geometry["ideal_area"] = 25
+			geometry["max_aspect_ratio_millis"] = 2600
+			geometry["center_activity"] = TRUE
+		if("command/reception", "ai/foyer", "security/reception", "medical/reception", "engineering/foyer", "logistics/reception", "docking/reception")
+			geometry["max_width"] = 11
+			geometry["max_height"] = 7
+			geometry["ideal_area"] = 33
+			geometry["max_aspect_ratio_millis"] = 3800
+		if("command/records", "command/liaison", "ai/satellite", "ai/support", "ai/monitoring", "security/interrogation", "security/evidence", "medical/storage", "engineering/maintenance", "engineering/storage", "logistics/dispatch", "logistics/storage", "docking/security", "docking/customs", "docking/equipment")
+			geometry["max_width"] = 11
+			geometry["max_height"] = 7
+			geometry["ideal_area"] = 29
+			geometry["max_aspect_ratio_millis"] = 3800
+		if("command/archive", "ai/secure-storage", "ai/server-closet", "security/checkpoint", "medical/exam", "engineering/tool-room", "logistics/inventory", "docking/supply")
+			geometry["max_width"] = 11
+			geometry["max_height"] = 11
+			geometry["ideal_area"] = 15
+			geometry["max_aspect_ratio_millis"] = 2400
+	return geometry
+
+/proc/generated_room_finalize_definition(datum/generated_room_definition/definition, department_id, role)
+	if(!definition)
+		return null
+	var/list/geometry = generated_room_geometry_for(department_id, role)
+	definition.min_width = geometry["min_width"]
+	definition.min_height = geometry["min_height"]
+	definition.max_width = geometry["max_width"]
+	definition.max_height = geometry["max_height"]
+	definition.ideal_usable_tiles = geometry["ideal_area"]
+	definition.min_short_side = geometry["min_short_side"]
+	definition.max_aspect_ratio_millis = geometry["max_aspect_ratio_millis"]
+	definition.requires_center_activity = geometry["center_activity"]
+	definition.allow_narrow_irregular = definition.min_short_side <= 3
+	var/list/semantic_fragments = generated_room_semantic_fragment_options(department_id, role)
+	if(length(semantic_fragments))
+		definition.fragment_options = semantic_fragments
+	return definition
+
 /// Returns a fresh functional contract for a department module when one is authored.
 /proc/generated_room_definition_for(department_id, role)
 	if(!(role in generated_station_rust_room_roles(department_id)))
 		return null
 	switch("[department_id]/[role]")
 		if("command/operations")
-			return new /datum/generated_room_definition/command_operations
+			return generated_room_finalize_definition(new /datum/generated_room_definition/command_operations, department_id, role)
 		if("command/communications")
-			return new /datum/generated_room_definition/command_communications
+			return generated_room_finalize_definition(new /datum/generated_room_definition/command_communications, department_id, role)
 		if("ai/core")
-			return new /datum/generated_room_definition/ai_core
+			return generated_room_finalize_definition(new /datum/generated_room_definition/ai_core, department_id, role)
 		if("ai/support")
-			return new /datum/generated_room_definition/ai_support
+			return generated_room_finalize_definition(new /datum/generated_room_definition/ai_support, department_id, role)
 		if("security/operations")
-			return new /datum/generated_room_definition/security_operations
+			return generated_room_finalize_definition(new /datum/generated_room_definition/security_operations, department_id, role)
 		if("security/brig")
-			return new /datum/generated_room_definition/security_brig
+			return generated_room_finalize_definition(new /datum/generated_room_definition/security_brig, department_id, role)
 		if("medical/treatment")
-			return new /datum/generated_room_definition/surgery
+			return generated_room_finalize_definition(new /datum/generated_room_definition/surgery, department_id, role)
 		if("medical/surgery")
-			return new /datum/generated_room_definition/surgery/dedicated
+			return generated_room_finalize_definition(new /datum/generated_room_definition/surgery/dedicated, department_id, role)
 		if("medical/ward")
-			return new /datum/generated_room_definition/medical_ward
+			return generated_room_finalize_definition(new /datum/generated_room_definition/medical_ward, department_id, role)
 		if("engineering/power")
-			return new /datum/generated_room_definition/engineering_power
+			return generated_room_finalize_definition(new /datum/generated_room_definition/engineering_power, department_id, role)
 		if("engineering/atmospherics")
-			return new /datum/generated_room_definition/engineering_atmospherics
+			return generated_room_finalize_definition(new /datum/generated_room_definition/engineering_atmospherics, department_id, role)
 		if("logistics/cargo")
-			return new /datum/generated_room_definition/logistics_cargo
+			return generated_room_finalize_definition(new /datum/generated_room_definition/logistics_cargo, department_id, role)
 		if("logistics/processing")
-			return new /datum/generated_room_definition/logistics_processing
+			return generated_room_finalize_definition(new /datum/generated_room_definition/logistics_processing, department_id, role)
 		if("docking/control")
-			return new /datum/generated_room_definition/docking_control
+			return generated_room_finalize_definition(new /datum/generated_room_definition/docking_control, department_id, role)
 		if("docking/berth")
-			return new /datum/generated_room_definition/docking_berth
+			return generated_room_finalize_definition(new /datum/generated_room_definition/docking_berth, department_id, role)
 	var/datum/generated_room_definition/fallback = new
 	fallback.id = "[department_id]-[role]"
 	fallback.name = capitalize(replacetext(role, "-", " "))
@@ -1270,14 +1380,14 @@
 		if("command/records")
 			fallback.required_features = list(/datum/generated_room_feature/internals_crate)
 			fallback.required_groups = list(/datum/generated_room_feature_group/workstation_bank, /datum/generated_room_feature_group/cargo_stack)
-		if("command/liaison", "command/flex")
+		if("command/liaison", "command/archive")
 			fallback.required_groups = list(/datum/generated_room_feature_group/workstation_bank, /datum/generated_room_feature_group/communications_bank)
 			fallback.fragment_options = list(/datum/generated_room_fragment/operator_nook)
 		if("ai/satellite", "ai/monitoring")
 			fallback.required_features = list(/datum/generated_room_feature/recharger)
 			fallback.required_groups = list(/datum/generated_room_feature_group/security_console_bank, /datum/generated_room_feature_group/electrical_storage_bank)
 			fallback.fragment_options = list(/datum/generated_room_fragment/operator_nook)
-		if("ai/robotics", "ai/flex")
+		if("ai/robotics", "ai/server-closet")
 			fallback.required_groups = list(/datum/generated_room_feature_group/engineering_bench, /datum/generated_room_feature_group/workstation_bank)
 		if("ai/secure-storage")
 			fallback.required_groups = list(/datum/generated_room_feature_group/electrical_storage_bank)
@@ -1286,7 +1396,7 @@
 			fallback.required_features = list(/datum/generated_room_feature/recharger)
 			fallback.required_groups = list(/datum/generated_room_feature_group/security_storage_bank, /datum/generated_room_feature_group/cargo_stack)
 			fallback.fragment_options = list(/datum/generated_room_fragment/storage_bay)
-		if("security/interrogation", "security/flex")
+		if("security/interrogation", "security/checkpoint")
 			fallback.required_groups = list(/datum/generated_room_feature_group/workstation_bank, /datum/generated_room_feature_group/security_console_bank)
 		if("medical/pharmacy", "medical/storage")
 			fallback.required_groups = list(/datum/generated_room_feature_group/medical_storage_bank, /datum/generated_room_feature_group/workstation_bank)
@@ -1294,15 +1404,15 @@
 		if("medical/recovery")
 			fallback.required_groups = list(/datum/generated_room_feature_group/patient_bay, /datum/generated_room_feature_group/medical_storage_bank)
 			fallback.fragment_options = list(/datum/generated_room_fragment/treatment_bay)
-		if("medical/flex")
+		if("medical/exam")
 			fallback.required_features = list(/datum/generated_room_feature/medical_storage)
 			fallback.required_groups = list(/datum/generated_room_feature_group/workstation_bank)
-		if("engineering/workshop", "engineering/equipment", "engineering/maintenance", "engineering/flex")
+		if("engineering/workshop", "engineering/equipment", "engineering/maintenance", "engineering/tool-room")
 			fallback.required_groups = list(/datum/generated_room_feature_group/engineering_bench, /datum/generated_room_feature_group/electrical_storage_bank)
 		if("engineering/storage")
 			fallback.required_groups = list(/datum/generated_room_feature_group/electrical_storage_bank, /datum/generated_room_feature_group/cargo_stack)
 			fallback.fragment_options = list(/datum/generated_room_fragment/storage_bay)
-		if("logistics/warehouse", "logistics/sorting", "logistics/storage", "logistics/flex")
+		if("logistics/warehouse", "logistics/sorting", "logistics/storage", "logistics/inventory")
 			fallback.required_groups = list(/datum/generated_room_feature_group/cargo_stack, /datum/generated_room_feature_group/cargo_workstation)
 			fallback.fragment_options = list(/datum/generated_room_fragment/storage_bay)
 		if("logistics/dispatch")
@@ -1316,7 +1426,7 @@
 			fallback.required_groups = list(/datum/generated_room_feature_group/workstation_bank, /datum/generated_room_feature_group/security_console_bank)
 		if("docking/lounge")
 			fallback.required_groups = list(/datum/generated_room_feature_group/berth_seating, /datum/generated_room_feature_group/waiting_area)
-		if("docking/equipment", "docking/flex")
+		if("docking/equipment", "docking/supply")
 			fallback.required_features = list(/datum/generated_room_feature/internals_crate)
 			fallback.required_groups = list(/datum/generated_room_feature_group/cargo_stack, /datum/generated_room_feature_group/berth_seating)
 			fallback.fragment_options = list(/datum/generated_room_fragment/storage_bay)
@@ -1328,8 +1438,20 @@
 		if("storage", "warehouse", "equipment", "secure-storage", "armory", "evidence") fallback.room_style.floor_type = /turf/simulated/floor/tiled/eris/steel/cargo
 		if("treatment", "recovery", "pharmacy") fallback.room_style.floor_type = /turf/simulated/floor/tiled/white
 		if("maintenance", "workshop", "sorting", "processing") fallback.room_style.floor_type = /turf/simulated/floor/tiled/steel_grid
+	// The authored role program is authoritative. Legacy generic bundles combined
+	// unrelated workstation, cargo, and storage groups and routinely overfilled
+	// Southern Cross-sized rooms.
+	fallback.required_features = list()
+	fallback.required_groups = list()
+	fallback.optional_groups = list()
+	fallback.fragment_options = list()
 	generated_room_apply_authored_role_program(fallback, department_id, role)
-	return fallback
+	switch(role)
+		if("reception", "foyer") fallback.fragment_options = list(/datum/generated_room_fragment/reception_corner)
+		if("meeting", "briefing", "monitoring", "dispatch", "control") fallback.fragment_options = list(/datum/generated_room_fragment/operator_nook)
+		if("storage", "warehouse", "equipment", "secure-storage", "armory", "evidence", "supply") fallback.fragment_options = list(/datum/generated_room_fragment/storage_bay)
+		if("treatment", "recovery", "pharmacy", "exam") fallback.fragment_options = list(/datum/generated_room_fragment/treatment_bay)
+	return generated_room_finalize_definition(fallback, department_id, role)
 
 /// Returns a lightweight department-styled contract for a footprint too small
 /// to support the full functional room assigned to that space.

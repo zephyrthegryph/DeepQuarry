@@ -37,6 +37,7 @@
 
 // Reaching 0 integrity shatters the front glass into a passable, looted shell.
 /obj/structure/displaycase/atom_destruction(damage_flag)
+	SHOULD_CALL_PARENT(FALSE)
 	if(!destroyed)
 		density = FALSE
 		destroyed = 1

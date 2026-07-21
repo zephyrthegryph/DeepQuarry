@@ -128,6 +128,7 @@
 // DQ fork tests — need TEST_ASSERT* macros in scope, which are #undef'd at
 // the bottom of this file.
 #include "dq_atmos_tests.dm"
+#include "dq_performance_profile_tests.dm"
 #include "dq_audit_tests.dm"
 #include "dq_bodyscanner_tests.dm"
 #include "dq_combat_ai_tests.dm"
@@ -148,7 +149,9 @@
 #include "dq_generated_station_architecture_tests.dm"
 #include "dq_generated_station_rust_contract_tests.dm"
 #include "dq_generated_station_objective_tests.dm"
+#if !defined(DQ_PERF_ATMOS) && !defined(DQ_PERF_ATMOS_BASELINE) && !defined(DQ_PERF_GENERATION) && !defined(DQ_PERF_MAJOR_EVENTS)
 #include "dq_focus.dm"
+#endif
 #include "dq_gc_tests.dm"
 #include "dq_medical_tests.dm"
 #include "dq_melee_swing_tests.dm"

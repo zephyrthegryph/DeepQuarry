@@ -63,16 +63,57 @@
 	seed = max(1, abs(round(seed || 1)) % 16000000)
 	var/list/errors = list()
 	var/request_json = generated_station_rust_catalog_request(seed, width, height)
+	#ifdef CITESTING
+	rustg_file_write(request_json, "[GLOB.log_directory]/generated-station-rust-request-[num2text(round(seed), 20)].json")
+	#endif
 	var/list/request = json_decode(request_json)
-	var/response_json
+	var/job_id
+	var/list/response
 	try
-		response_json = verdigris_generate_station_layout(request_json)
+		job_id = verdigris_submit_station_layout(request_json)
+		if(!job_id)
+			throw EXCEPTION("Rust planner did not return a job handle")
+		while(TRUE)
+			var/status = verdigris_poll_station_layout(job_id)
+			if(status == "PENDING")
+				// The worker owns only immutable Rust data. BYOND remains free to
+				// service ordinary ticks until the serialized result is ready.
+				sleep(0)
+				continue
+			if(findtext(status, "ERROR:") == 1)
+				throw EXCEPTION(copytext(status, 7))
+			break
+		response = generated_station_fetch_rust_plan(job_id)
+		verdigris_finish_station_layout(job_id)
+		job_id = null
 	catch(var/exception/error)
+		if(job_id)
+			verdigris_finish_station_layout(job_id)
 		rustg_file_write(request_json, "[GLOB.log_directory]/generated-station-rust-request-[num2text(round(seed), 20)].json")
 		log_world("Generated station Rust planner failed for seed [seed]: [error]")
 		return null
-	var/datum/generated_station_spec/spec = generated_station_spec_from_rust_json(response_json, request["catalog_hash"], errors)
+	var/datum/generated_station_spec/spec = generated_station_spec_from_rust_json(response, request["catalog_hash"], errors)
 	if(!spec)
 		log_world("Generated station Rust plan rejected for seed [seed]: [jointext(errors, "; ")]")
 		return null
 	return spec
+
+/// Pull bounded slices from a completed Rust job so no json_decode call can
+/// monopolize a BYOND tick. Tile rows use smaller pages because they contain
+/// the dense run-length encoded tile plan.
+/proc/generated_station_fetch_rust_plan(job_id)
+	var/list/root = json_decode(verdigris_station_layout_section(job_id, "header", "0", "0"))
+	var/static/list/sections = list("departments", "nodes", "rooms", "doors", "edges", "tile_rows")
+	for(var/section in sections)
+		var/list/rows = list()
+		var/offset = 0
+		var/page_size = section == "tile_rows" ? 4 : 24
+		while(TRUE)
+			var/list/page = json_decode(verdigris_station_layout_section(job_id, section, num2text(offset, 20), num2text(page_size, 20)))
+			if(!length(page))
+				break
+			rows += page
+			offset += length(page)
+			sleep(0)
+		root[section] = rows
+	return root

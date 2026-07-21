@@ -261,6 +261,8 @@
 		var/turf/planned_turf = world_turf(intent.local_x, intent.local_y)
 		if(intent.structure_kind == GENERATED_STATION_TILE_FLOOR && !istype(planned_turf, /turf/simulated/floor))
 			validation.add(GENERATED_STATION_ISSUE_ERROR, "plan-floor-mismatch", "Planned floor materialized as [planned_turf?.type || "null"].", "[intent.local_x],[intent.local_y]")
+		else if(intent.structure_kind == GENERATED_STATION_TILE_FLOOR && !istype(planned_turf.loc, /area/generated_station))
+			validation.add(GENERATED_STATION_ISSUE_ERROR, "plan-floor-area-mismatch", "Planned floor belongs to [planned_turf.loc?.type || "null"] instead of a generated-station area.", "[intent.local_x],[intent.local_y]")
 		else if(intent.structure_kind == GENERATED_STATION_TILE_HULL && !istype(planned_turf, /turf/simulated/wall))
 			validation.add(GENERATED_STATION_ISSUE_ERROR, "plan-wall-mismatch", "Planned structural wall materialized as [planned_turf?.type || "null"].", "[intent.local_x],[intent.local_y]")
 		else if(intent.structure_kind == GENERATED_STATION_TILE_EXTERIOR && !istype(planned_turf, /turf/space))
@@ -397,13 +399,12 @@
 		if(!definition)
 			validation.add(GENERATED_STATION_ISSUE_ERROR, "unknown-room-definition", "Functional room references an unknown definition.", module.id)
 			continue
-		var/room_width = module.x2 - module.x1 + 1
-		var/room_height = module.y2 - module.y1 + 1
-		var/dimensions_fit = (room_width >= definition.min_width && room_height >= definition.min_height) || (room_width >= definition.min_height && room_height >= definition.min_width)
-		if(!dimensions_fit && findtext(solution.definition_id, "-compact-"))
-			validation.add(GENERATED_STATION_ISSUE_WARNING, "compact-room", "[definition.name] uses the compact [room_width]x[room_height] furnishing contract for this footprint.", module.id)
-		else if(!dimensions_fit)
-			validation.add(GENERATED_STATION_ISSUE_ERROR, "room-below-minimum-size", "[definition.name] is [room_width]x[room_height], below its [definition.min_width]x[definition.min_height] minimum in either orientation.", module.id)
+		if(findtext(solution.definition_id, "-compact"))
+			qdel(definition)
+			definition = generated_compact_room_definition_for(module_department_id, module.role)
+		var/minimum_usable_tiles = min(definition.min_width * definition.min_height, 21)
+		if(module.footprint_tiles() < minimum_usable_tiles)
+			validation.add(GENERATED_STATION_ISSUE_ERROR, "room-below-minimum-size", "[definition.name] has [module.footprint_tiles()] usable tiles, below its [minimum_usable_tiles]-tile content contract.", module.id)
 		qdel(definition)
 
 	for(var/obj/machinery/door/door in doors)
