@@ -10,7 +10,7 @@ mod structural;
 pub use contract::{decode_catalog, encode_plan};
 pub use error::LayoutError;
 pub use model::*;
-pub use render::render_svg;
+pub use render::{render_png, render_svg};
 pub use structural::{generate_station_layout as generate, validate_station_structure};
 
 #[cfg(test)]
@@ -43,6 +43,9 @@ mod tests {
                     id: department_id,
                     name: format!("Department {department_id}"),
                     weight: 10,
+                    minimum_area: 36,
+                    maximum_area: 100,
+                    desired_area: 64,
                     room_types,
                 }
             })

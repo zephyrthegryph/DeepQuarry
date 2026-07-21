@@ -1,5 +1,5 @@
 use std::{env, fs, process};
-use verdigris::station_layout::{decode_catalog, encode_plan, generate, render_svg};
+use verdigris::station_layout::{decode_catalog, encode_plan, generate, render_png, render_svg};
 
 fn main() {
     let Some(path) = env::args().nth(1) else {
@@ -16,6 +16,9 @@ fn main() {
     }
     if let Some(svg_path) = env::args().nth(3) {
         fs::write(svg_path, render_svg(&layout, 6)).expect("failed to write station SVG");
+    }
+    if let Some(png_path) = env::args().nth(4) {
+        fs::write(png_path, render_png(&layout, 8)).expect("failed to write station PNG");
     }
     println!(
         "generated {} rooms, {} doors, {} bytes in {:.3}s",

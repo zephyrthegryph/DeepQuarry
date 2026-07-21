@@ -95,6 +95,9 @@ pub fn decode_catalog(json: &str) -> Result<(LayoutRequest, CatalogMapping)> {
             id: numeric,
             name: semantic.name.clone(),
             weight: semantic.weight,
+            minimum_area: semantic.minimum_area,
+            maximum_area: semantic.maximum_area,
+            desired_area: bounded_desired_area(semantic),
             room_types,
         });
     }

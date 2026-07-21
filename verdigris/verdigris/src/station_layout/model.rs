@@ -104,6 +104,9 @@ pub struct DepartmentRequest {
     pub id: u16,
     pub name: String,
     pub weight: u16,
+    pub minimum_area: u32,
+    pub maximum_area: u32,
+    pub desired_area: u32,
     pub room_types: Vec<RoomType>,
 }
 
