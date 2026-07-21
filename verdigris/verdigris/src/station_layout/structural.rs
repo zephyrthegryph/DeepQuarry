@@ -1122,6 +1122,82 @@ fn insert_internal_maintenance(
             }
         }
     }
+
+    // Pull short service fingers into larger departments.  These remain part
+    // of the single maintenance network, but create useful internal service
+    // frontage instead of confining every access door to the outer perimeter.
+    // Each claimed cell is checked independently so a spur can never sever the
+    // department it enters.
+    for department in &request.departments {
+        let mut department_cells: BTreeSet<_> = plan
+            .points()
+            .filter(|point| plan.get(*point).department() == Some(department.id))
+            .collect();
+        if department_cells.len() < 32 {
+            continue;
+        }
+        let center = nearest_in_set(plan.department_centers[&department.id], &department_cells)
+            .ok_or_else(|| {
+                LayoutError(format!(
+                    "department {} has no service center",
+                    department.id
+                ))
+            })?;
+        let mut anchors: Vec<_> = department_cells
+            .iter()
+            .copied()
+            .filter(|point| {
+                plan.neighbors(*point)
+                    .any(|neighbor| plan.get(neighbor) == Space::Maintenance)
+            })
+            .collect();
+        anchors.sort_by_key(|point| {
+            (
+                hash_cell(
+                    request.settings.seed ^ 0x7365_7276_6963_65 ^ u64::from(department.id),
+                    *point,
+                ),
+                *point,
+            )
+        });
+        let mut selected = Vec::new();
+        for anchor in anchors {
+            if selected.len() >= 2
+                || selected
+                    .iter()
+                    .any(|chosen| cell_distance(*chosen, anchor) < 6)
+            {
+                continue;
+            }
+            let Some(path) = ordered_shortest_path_in_set(
+                anchor,
+                center,
+                &department_cells,
+                plan.width,
+                plan.height,
+            ) else {
+                continue;
+            };
+            let depth = 2 + usize::try_from(
+                hash_cell(request.settings.seed ^ 0x6669_6e67_6572, anchor) % 3,
+            )
+            .unwrap_or(0);
+            let mut carved_any = false;
+            for point in path.into_iter().take(depth) {
+                let mut remaining = department_cells.clone();
+                remaining.remove(&point);
+                if remaining.len() < 16 || !cells_connected(&remaining, plan.width, plan.height) {
+                    break;
+                }
+                plan.set(point, Space::Maintenance);
+                department_cells = remaining;
+                carved_any = true;
+            }
+            if carved_any {
+                selected.push(anchor);
+            }
+        }
+    }
     for department in &request.departments {
         let cells: BTreeSet<_> = plan
             .points()
@@ -2293,11 +2369,11 @@ fn assign_portals(plan: &mut LogicalPlan, request: &LayoutRequest) -> Result<(),
         });
         let mut selected_access: Vec<(CellPoint, CellPoint)> = Vec::new();
         for edge in access_edges {
-            if selected_access.len() >= 2
+            if selected_access.len() >= 4
                 || used_edges.contains(&normalize_edge(edge.0, edge.1))
                 || selected_access
                     .iter()
-                    .any(|selected| cell_distance(selected.0, edge.0) < 3)
+                    .any(|selected| cell_distance(selected.0, edge.0) < 2)
             {
                 continue;
             }
@@ -3303,6 +3379,42 @@ fn shortest_path_in_set(
         }
         cursor = previous[&cursor];
     }
+    Some(path)
+}
+
+fn ordered_shortest_path_in_set(
+    start: CellPoint,
+    goal: CellPoint,
+    allowed: &BTreeSet<CellPoint>,
+    width: u16,
+    height: u16,
+) -> Option<Vec<CellPoint>> {
+    let mut frontier = VecDeque::from([start]);
+    let mut previous = BTreeMap::from([(start, start)]);
+    while let Some(point) = frontier.pop_front() {
+        if point == goal {
+            break;
+        }
+        for neighbor in cardinal_cells(point, width, height) {
+            if allowed.contains(&neighbor) && !previous.contains_key(&neighbor) {
+                previous.insert(neighbor, point);
+                frontier.push_back(neighbor);
+            }
+        }
+    }
+    if !previous.contains_key(&goal) {
+        return None;
+    }
+    let mut path = Vec::new();
+    let mut cursor = goal;
+    loop {
+        path.push(cursor);
+        if cursor == start {
+            break;
+        }
+        cursor = previous[&cursor];
+    }
+    path.reverse();
     Some(path)
 }
 
