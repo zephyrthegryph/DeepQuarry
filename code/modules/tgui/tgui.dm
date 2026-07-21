@@ -353,12 +353,13 @@
 			"ckey" = user.client.ckey,
 			"address" = user.client.address,
 			"computer_id" = user.client.computer_id,
-			// DEBUG builds are development builds and profile every attached client.
-			// Production builds retain the loopback-only safety boundary.
+			// This fork defines DEBUG in normal builds too, so use the development
+			// cache handshake as the explicit live-profiling switch. A normal server
+			// running production assets therefore pays no browser-profiler overhead.
 			#ifdef DEBUG
-			"profiling" = TRUE,
+			"profiling" = user.client.tgui_cache_reloaded ? TRUE : FALSE,
 			#else
-			"profiling" = user.client.address == "127.0.0.1" || user.client.address == "::1",
+			"profiling" = FALSE,
 			#endif
 		),
 		"user" = list(
