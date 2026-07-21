@@ -31,6 +31,8 @@ export type StartupStage =
   | 'profiler_loaded'
   | 'backend_received'
   | 'backend_applied'
+  | 'interface_preparation_started'
+  | 'interface_preparation_finished'
   | 'route_requested'
   | 'chunk_load_started'
   | 'chunk_load_finished'

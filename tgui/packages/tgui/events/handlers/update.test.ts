@@ -1,4 +1,5 @@
 import { afterEach, describe, expect, test } from 'bun:test';
+import { registerInterfacePreparer } from '../../interfacePreparation';
 import {
   configAtom,
   gameDataAtom,
@@ -14,6 +15,7 @@ type UpdatePayload = Omit<BackendState<Record<string, unknown>>, 'act'> & {
 };
 
 afterEach(() => {
+  registerInterfacePreparer(undefined);
   store.set(configAtom, {} as Config);
   store.set(gameDataAtom, {});
   store.set(gameStaticDataAtom, {});
@@ -62,5 +64,60 @@ describe('backend resume ordering', () => {
       },
     ]);
     expect(store.get(gameStaticDataAtom)).toEqual({ catalog: 'ready' });
+  });
+
+  test('keeps a cold interface suspended until its module is prepared', async () => {
+    let finishPreparation: (() => void) | undefined;
+    registerInterfacePreparer(
+      () =>
+        new Promise<void>((resolve) => {
+          finishPreparation = resolve;
+        }),
+    );
+
+    update({
+      config: {
+        interface: { name: 'ColdInterface' },
+        window: { generation: 3, size: [700, 500] },
+      } as Config,
+      data: { fresh: true },
+      static_data: {},
+    } as unknown as UpdatePayload);
+
+    expect(Boolean(store.get(suspendedAtom))).toBeTrue();
+    finishPreparation?.();
+    await Promise.resolve();
+    expect(store.get(suspendedAtom)).toBeFalse();
+  });
+
+  test('does not resume a superseded cold interface', async () => {
+    const resolvers = new Map<string, () => void>();
+    registerInterfacePreparer(
+      (name) =>
+        new Promise<void>((resolve) => {
+          resolvers.set(name, resolve);
+        }),
+    );
+
+    const coldUpdate = (name: string, generation: number) =>
+      update({
+        config: {
+          interface: { name },
+          window: { generation, size: [700, 500] },
+        } as Config,
+        data: { name },
+        static_data: {},
+      } as unknown as UpdatePayload);
+
+    coldUpdate('FirstInterface', 4);
+    coldUpdate('SecondInterface', 5);
+    resolvers.get('FirstInterface')?.();
+    await Promise.resolve();
+    expect(Boolean(store.get(suspendedAtom))).toBeTrue();
+    expect(store.get(configAtom).interface?.name).toBe('SecondInterface');
+
+    resolvers.get('SecondInterface')?.();
+    await Promise.resolve();
+    expect(store.get(suspendedAtom)).toBeFalse();
   });
 });

@@ -10,6 +10,7 @@ import {
   suspendedAtom,
   suspendingAtom,
 } from '../store';
+import { cancelPendingResume } from './update';
 
 /// --------- Handlers ------------------------------------------------------///
 
@@ -17,6 +18,7 @@ let suspendInterval: NodeJS.Timeout | null = null;
 
 /** Resets all state and refocuses byond window */
 export function suspend(): void {
+  cancelPendingResume();
   profileTransition('browser-suspend-received');
   suspendRenderer();
   resetStore();

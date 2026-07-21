@@ -15,6 +15,7 @@ import {
   useEffect,
 } from 'react';
 import { backendStateAtom, configAtom, store } from './events/store';
+import { registerInterfacePreparer } from './interfacePreparation';
 import { LoadingScreen } from './interfaces/common/LoadingScreen';
 import { LobbyMenu } from './interfaces/LobbyMenu';
 import { MediaPlayer } from './interfaces/MediaPlayer';
@@ -133,6 +134,7 @@ function resolveInterfacePath(name: string): string | null {
 // across re-renders (otherwise React would unmount/remount and re-fetch every time).
 const componentCache = new Map<string, ComponentType>();
 const moduleCache = new Map<string, Promise<any>>();
+const resolvedComponentCache = new Map<string, ComponentType>();
 
 function loadInterfaceModule(name: string, path: string): Promise<any> {
   const cached = moduleCache.get(name);
@@ -146,12 +148,41 @@ function loadInterfaceModule(name: string, path: string): Promise<any> {
   return pending;
 }
 
+/**
+ * Loads exactly the interface that the backend has just requested while its
+ * pooled window remains hidden. Already-resolved interfaces return synchronously,
+ * avoiding both a Promise turn and React Suspense's delayed cold retry.
+ */
+function prepareInterface(name: string): Promise<void> | undefined {
+  if (EAGER_INTERFACES[name] || resolvedComponentCache.has(name)) return;
+  const path = resolveInterfacePath(name);
+  if (!path) return;
+  return loadInterfaceModule(name, path)
+    .then((esModule) => {
+      const Resolved = esModule[name];
+      resolvedComponentCache.set(
+        name,
+        Resolved ||
+          (() => <RoutingErrorWindow type="missingExport" name={name} />),
+      );
+    })
+    .catch((error) => {
+      moduleCache.delete(name);
+      throw error;
+    });
+}
+
+registerInterfacePreparer(prepareInterface);
+
 function getRoutedComponent(name: string): ComponentType {
   // Eager interfaces are in the main bundle — return them directly, no lazy/Suspense.
   const eager = EAGER_INTERFACES[name];
   if (eager) {
     return eager;
   }
+
+  const resolved = resolvedComponentCache.get(name);
+  if (resolved) return resolved;
 
   const cached = componentCache.get(name);
   if (cached) {

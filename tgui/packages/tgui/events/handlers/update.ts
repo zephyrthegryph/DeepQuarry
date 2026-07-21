@@ -1,5 +1,6 @@
 import { perf } from 'common/perf';
 import { setupDrag } from '../../drag';
+import { prepareRequestedInterface } from '../../interfacePreparation';
 import { logger } from '../../logging';
 import { profileStartup, profileUpdate } from '../../profiling/hooks';
 import { profileTransition } from '../../profiling/transitions';
@@ -21,6 +22,13 @@ import type { BackendState } from '../types';
 type UpdatePayload = Omit<BackendState<Record<string, unknown>>, 'act'> & {
   static_data: Record<string, unknown>;
 };
+
+let resumeRequest = 0;
+
+/** Invalidates an on-demand load when the server suspends or reuses the shell. */
+export function cancelPendingResume(): void {
+  resumeRequest++;
+}
 
 export function update(payload: UpdatePayload): void {
   const wasSuspended = Boolean(store.get(suspendedAtom));
@@ -72,9 +80,37 @@ export function update(payload: UpdatePayload): void {
   // which appears as a wrong-sized/positioned cold-open flash.
   updateData(payload);
   if (wasSuspended) {
-    resume(payload);
-    store.set(suspendedAtom, false);
-    if (profiling) profileTransition('backend-applied-and-unsuspended');
+    const request = ++resumeRequest;
+    const generation = payload.config?.window?.generation;
+    const preparation = prepareRequestedInterface(interfaceName);
+    const finishResume = () => {
+      const currentConfig = store.get(configAtom);
+      if (
+        request !== resumeRequest ||
+        !store.get(suspendedAtom) ||
+        currentConfig.interface?.name !== interfaceName ||
+        currentConfig.window?.generation !== generation
+      ) {
+        return;
+      }
+      if (profiling) {
+        profileStartup('interface_preparation_finished', interfaceName);
+      }
+      resume(payload);
+      store.set(suspendedAtom, false);
+      if (profiling) profileTransition('backend-applied-and-unsuspended');
+    };
+    if (preparation) {
+      if (profiling) {
+        profileStartup('interface_preparation_started', interfaceName);
+      }
+      preparation.then(finishResume, (error) => {
+        logger.error(`failed to prepare interface ${interfaceName}`, error);
+        finishResume();
+      });
+    } else {
+      finishResume();
+    }
   }
   if (profiling) {
     const profileFinish = performance.now?.() ?? Date.now();
