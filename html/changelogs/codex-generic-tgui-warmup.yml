@@ -3,4 +3,5 @@ delete-after: true
 changes:
   - qol: "Reduced first-open TGUI delays by warming shared UI infrastructure in hidden pooled windows."
   - qol: "Cold interfaces now finish loading while their pooled window is hidden, avoiding a delayed blank render retry."
+  - bugfix: "Development TGUI reloads now publish matching bundles, chunks, and manifests atomically."
   - code_imp: "Removed interface-specific TGUI preloading; named interfaces remain demand-loaded."

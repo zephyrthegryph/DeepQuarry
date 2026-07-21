@@ -61,12 +61,25 @@ SUBSYSTEM_DEF(tgui)
 	// before SSassets is ready, and hashing the files that early runtimes ("bad index").
 	load_chunk_manifest()
 
-/datum/controller/subsystem/tgui/proc/load_chunk_manifest()
-	var/manifest_path = "tgui/public/tgui-chunk-manifest.json"
+/datum/controller/subsystem/tgui/proc/load_chunk_manifest(manifest_path = "tgui/public/tgui-chunk-manifest.json")
 	if(fexists(manifest_path))
 		var/raw = file2text(manifest_path)
 		if(raw)
 			chunk_manifest = json_decode(raw)
+
+/// Atomically advances the development manifest and its registered chunk files.
+/datum/controller/subsystem/tgui/proc/reload_development_chunks()
+	var/development_directory = "tgui/public/.tmp"
+	var/development_manifest = "[development_directory]/tgui-chunk-manifest.json"
+	if(!fexists(development_manifest))
+		return
+	load_chunk_manifest(development_manifest)
+	var/list/chunk_filenames = list()
+	for(var/interface_name in chunk_manifest)
+		for(var/filename in chunk_manifest[interface_name])
+			chunk_filenames[filename] = TRUE
+	var/datum/asset/simple/tgui_chunks/chunks = get_asset_datum(/datum/asset/simple/tgui_chunks)
+	chunks.reload_from_directory(development_directory, chunk_filenames)
 
 /datum/controller/subsystem/tgui/OnConfigLoad()
 	var/storage_iframe = CONFIG_GET(string/storage_cdn_iframe)

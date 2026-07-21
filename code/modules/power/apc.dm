@@ -877,7 +877,7 @@ GLOBAL_LIST_EMPTY(apcs)
 		if("breaker")
 			toggle_breaker()
 		if("nightshift")
-			if(last_nightshift_switch > world.time - 10 SECONDS)
+			if(last_nightshift_switch > world.time - 1 SECOND)
 				to_chat(ui.user, span_warning("[src]'s night lighting circuit breaker is still cycling!"))
 				return 0
 			var/requested_nightshift = text2num("[params["nightshift"]]")

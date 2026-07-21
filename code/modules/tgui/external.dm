@@ -248,9 +248,16 @@
 			context = context)
 	// Reload all tgui windows
 	if(type == "cacheReloaded")
-		// Debugging should work, it can be bypassed anyway
-		if(/*!check_rights(R_ADMIN) ||*/ usr.client.tgui_cache_reloaded)
+		#ifdef DEBUG
+		if(usr.client.address != "127.0.0.1" && usr.client.address != "::1")
 			return TRUE
+		// Every development build may assign new async chunk ids. Refresh the
+		// manifest and registrations before any browser is told to reload.
+		SStgui.reload_development_chunks()
+		#else
+		if(usr.client.tgui_cache_reloaded)
+			return TRUE
+		#endif
 		// Mark as reloaded
 		usr.client.tgui_cache_reloaded = TRUE
 		// Notify windows

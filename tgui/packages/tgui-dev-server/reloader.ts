@@ -4,6 +4,7 @@
  * @license MIT
  */
 
+import { rename } from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
 
@@ -93,25 +94,31 @@ export async function reloadByondCache(bundleDir: string): Promise<void> {
   const dssPromise = DreamSeeker.getInstancesByPids(pids);
   // Copy assets
   const assets = await resolveGlob(bundleDir, bundleGlob);
+  // Publish runtime/entry bundles last. A running browser may request an async
+  // chunk as soon as it observes the new runtime, so every dependency must
+  // already be present by the time an entry bundle becomes visible.
+  assets.sort((left, right) => {
+    const isEntry = (file: string) =>
+      /(?:^|[/\\])tgui(?:-panel|-say)?\.bundle\.(?:js|css|map)$/.test(file);
+    return Number(isEntry(left)) - Number(isEntry(right));
+  });
 
   for (const cacheDir of cacheDirs) {
-    // Clear garbage
-    const garbage = await resolveGlob(cacheDir, bundleGlob);
-    for (const file of garbage) {
-      await Bun.file(file).delete();
-    }
-
     try {
       // Plant a dummy browser window file, we'll be using this to avoid world topic. For byond 515-516.
       await Bun.write(`${cacheDir}/dummy.htm`, '');
 
       // Copy assets
-      for (const asset of assets) {
+      for (const [index, asset] of assets.entries()) {
         const destination = resolvePath(cacheDir, path.basename(asset));
+        const staged = `${destination}.tgui-stage-${process.pid}-${index}`;
         const input = Bun.file(asset);
-        const output = Bun.file(destination);
+        const output = Bun.file(staged);
 
         await Bun.write(output, input);
+        // Same-volume rename is atomic: browsers see either the complete old file
+        // or the complete new file, never a missing or partially-written chunk.
+        await rename(staged, destination);
       }
       logger.log(`copied ${assets.length} files to '${cacheDir}'`);
     } catch (err) {

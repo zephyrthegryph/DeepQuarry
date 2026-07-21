@@ -18,13 +18,22 @@
 /datum/asset/simple/tgui_chunks
 	keep_local_name = TRUE
 	cross_round_cachable = TRUE
+	var/asset_directory = "tgui/public"
+	var/list/allowed_assets
 
 /datum/asset/simple/tgui_chunks/register()
-	for(var/filename in flist("tgui/public/"))
+	for(var/filename in flist("[asset_directory]/"))
 		// match `*.chunk.js` (9 chars) and `*.chunk.css` (10 chars)
-		if(copytext(filename, -9) == ".chunk.js" || copytext(filename, -10) == ".chunk.css")
-			assets[filename] = file("tgui/public/[filename]")
+		if((allowed_assets && allowed_assets[filename]) || (!allowed_assets && (copytext(filename, -9) == ".chunk.js" || copytext(filename, -10) == ".chunk.css")))
+			assets[filename] = file("[asset_directory]/[filename]")
 	return ..()
+
+/datum/asset/simple/tgui_chunks/proc/reload_from_directory(directory, list/filenames)
+	unregister()
+	assets = list()
+	asset_directory = directory
+	allowed_assets = filenames
+	register()
 
 /datum/asset/simple/tgui_panel
 	keep_local_name = TRUE
