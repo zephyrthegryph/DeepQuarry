@@ -133,7 +133,8 @@ GLOBAL_LIST_INIT(dq_human_mode_hidden_pref_keys, list(
 /proc/dq_character_category_index(play_mode)
 	var/static/list/index_by_mode = list()
 	if(islist(index_by_mode[play_mode]))
-		return index_by_mode[play_mode].Copy()
+		var/list/cached_index = index_by_mode[play_mode]
+		return cached_index.Copy()
 
 	var/playing_as_robot = (play_mode == "robot")
 	var/playing_as_pai = (play_mode == "pai")
@@ -147,10 +148,10 @@ GLOBAL_LIST_INIT(dq_human_mode_hidden_pref_keys, list(
 			continue
 		var/grp = pref.group || ""
 		if(playing_as_pai)
-			if(cat in GLOB.dq_pai_mode_hidden_categories || grp in GLOB.dq_pai_mode_hidden_groups || GLOB.dq_pai_mode_hidden_pref_keys[pref.savefile_key])
+			if((cat in GLOB.dq_pai_mode_hidden_categories) || (grp in GLOB.dq_pai_mode_hidden_groups) || GLOB.dq_pai_mode_hidden_pref_keys[pref.savefile_key])
 				continue
 		else if(playing_as_robot)
-			if(cat in GLOB.dq_robot_mode_hidden_categories || grp in GLOB.dq_robot_mode_hidden_groups || GLOB.dq_robot_mode_hidden_pref_keys[pref.savefile_key])
+			if((cat in GLOB.dq_robot_mode_hidden_categories) || (grp in GLOB.dq_robot_mode_hidden_groups) || GLOB.dq_robot_mode_hidden_pref_keys[pref.savefile_key])
 				continue
 		else if(grp in GLOB.dq_human_mode_hidden_groups || GLOB.dq_human_mode_hidden_pref_keys[pref.savefile_key])
 			continue

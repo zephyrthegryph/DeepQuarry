@@ -1,0 +1,5 @@
+author: "codex"
+delete-after: true
+changes:
+  - qol: "Made the character editor reveal before constructing its active editor catalogs, substantially reducing cold-open delay."
+  - code_imp: "Cached character-editor category indexes and limited preference value collection to the active category."
