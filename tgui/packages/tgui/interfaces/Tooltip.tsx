@@ -111,7 +111,7 @@ const parseSemiParams = (s: string): Record<string, string> => {
 };
 
 export const Tooltip = () => {
-  const { data } = useBackend<Data>();
+  const { act, data } = useBackend<Data>();
   const boxRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -291,7 +291,7 @@ export const Tooltip = () => {
   // the element to it. width: max-content keeps its measured size independent of
   // the element viewport.
   return (
-    <div className="TooltipRoot">
+    <div className="TooltipRoot" onMouseEnter={() => act('dismiss')}>
       <style>{TOOLTIP_RESET_CSS}</style>
       <div
         ref={boxRef}

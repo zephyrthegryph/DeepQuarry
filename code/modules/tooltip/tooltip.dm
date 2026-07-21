@@ -92,6 +92,7 @@
 	RegisterSignal(thing, COMSIG_QDELETING, PROC_REF(on_target_qdel))
 	last_target = thing
 	_revision++
+	queueHide = FALSE
 
 	showing = 1
 
@@ -132,14 +133,19 @@
 
 
 /datum/tooltip/proc/hide(atom/expected_target)
-	if(expected_target && expected_target != last_target)
-		return FALSE
+	// BYOND can report MouseExited through a different appearance/screen atom
+	// than MouseEntered used. Do not reject dismissal based on object identity;
+	// doing so leaves the native browser permanently visible.
 	var/hide_revision = _revision
 	// Hide the native control synchronously. Waiting for a TGUI update here can
 	// leave the old tooltip painted indefinitely when MouseExited is the last
 	// mouse event received.
 	if(owner)
 		winset(owner, control, "is-visible=false")
+	// A previously-started Byond.winget() can finish after the immediate winset
+	// and briefly show the browser again. Reassert hidden after that async turn,
+	// but only if no newer hover has superseded this revision.
+	addtimer(CALLBACK(src, PROC_REF(ensure_hidden), hide_revision), 0.1 SECONDS)
 	queueHide = showing ? TRUE : FALSE
 	if(queueHide)
 		addtimer(CALLBACK(src, PROC_REF(do_hide), hide_revision), 0.1 SECONDS)
@@ -156,6 +162,7 @@
 
 /datum/tooltip/proc/do_hide(hide_revision)
 	if(hide_revision != _revision)
+		queueHide = FALSE
 		return
 	queueHide = FALSE
 	if(!owner)
@@ -165,6 +172,22 @@
 	last_target = null
 	_visible = FALSE
 	SStgui.update_uis(src)
+
+
+/datum/tooltip/proc/ensure_hidden(hide_revision)
+	if(hide_revision != _revision || _visible)
+		return
+	if(owner)
+		winset(owner, control, "is-visible=false")
+
+
+/datum/tooltip/tgui_act(action, list/params, datum/tgui/ui, datum/tgui_state/state)
+	. = ..()
+	if(.)
+		return
+	if(action == "dismiss")
+		hide()
+		return TRUE
 
 
 //Open a tooltip for user, at a location based on params
