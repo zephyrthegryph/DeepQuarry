@@ -50,12 +50,12 @@ GLOBAL_LIST_EMPTY(env_messages)
 	..()
 
 /obj/effect/env_message/MouseDown()
-	closeToolTip(usr) //No reason not to, really
+	closeToolTip(usr, src) //No reason not to, really
 
 	..()
 
 /obj/effect/env_message/MouseExited()
-	closeToolTip(usr) //No reason not to, really
+	closeToolTip(usr, src) //No reason not to, really
 
 	..()
 

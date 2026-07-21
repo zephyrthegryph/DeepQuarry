@@ -233,12 +233,12 @@
 	..()
 
 /obj/effect/overmap/visitable/MouseDown()
-	closeToolTip(usr) //No reason not to, really
+	closeToolTip(usr, src) //No reason not to, really
 
 	..()
 
 /obj/effect/overmap/visitable/MouseExited()
-	closeToolTip(usr) //No reason not to, really
+	closeToolTip(usr, src) //No reason not to, really
 
 	..()
 

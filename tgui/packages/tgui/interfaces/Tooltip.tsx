@@ -58,6 +58,7 @@ type Data = {
   view_w: number;
   view_h: number;
   tile_size: number;
+  revision: number;
 };
 
 const themeStyles: Record<string, React.CSSProperties> = {
@@ -223,13 +224,20 @@ export const Tooltip = () => {
         // pos + size + show in one winset; box pinned to element top-left so a
         // later shrink never moves it. Bottom-edge flip matches the legacy.
         const placeAndShow = (w: number, h: number) => {
+          // Keep the browser control itself within the map. The old code only
+          // flipped at the bottom edge, allowing right-edge and tall tooltips
+          // to extend beyond the map pane.
+          const boundedW = Math.min(w, mapPxW);
+          const boundedH = Math.min(h, mapPxH);
+          const px = Math.max(0, Math.min(posX, mapPxW - boundedW));
           let py = posY;
-          if (posY + h > mapPxH) {
-            py = posY - h - realIconSizeY - PAD;
+          if (py + boundedH > mapPxH) {
+            py = posY - boundedH - realIconSizeY - PAD;
           }
+          py = Math.max(0, Math.min(py, mapPxH - boundedH));
           Byond.winset(winId, {
-            pos: `${posX},${py}`,
-            size: `${w}x${h}`,
+            pos: `${px},${py}`,
+            size: `${boundedW}x${boundedH}`,
             'is-visible': true,
           });
         };
@@ -274,6 +282,7 @@ export const Tooltip = () => {
     data.view_w,
     data.view_h,
     data.tile_size,
+    data.revision,
   ]);
 
   const themeStyle = themeStyles[data.theme] ?? themeStyles.default;

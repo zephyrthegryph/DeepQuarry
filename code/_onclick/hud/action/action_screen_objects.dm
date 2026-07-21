@@ -92,7 +92,7 @@
 		openToolTip(usr, src, params, title = name, content = desc, theme = actiontooltipstyle)
 
 /atom/movable/screen/movable/action_button/MouseExited(location, control, params)
-	closeToolTip(usr)
+	closeToolTip(usr, src)
 	return ..()
 
 /atom/movable/screen/movable/action_button/MouseDrop(over_object)
@@ -301,7 +301,7 @@
 	show_tooltip(params)
 
 /atom/movable/screen/button_palette/MouseExited()
-	closeToolTip(usr)
+	closeToolTip(usr, src)
 	return ..()
 
 /atom/movable/screen/button_palette/proc/show_tooltip(params)
@@ -377,7 +377,7 @@ GLOBAL_LIST_INIT(palette_removed_matrix, list(1.4,0,0,0, 0.7,0.4,0,0, 0.4,0,0.6,
 	else
 		UnregisterSignal(usr.client, COMSIG_CLIENT_CLICK)
 
-	closeToolTip(usr) //Our tooltips are now invalid, can't seem to update them in one frame, so here, just close them
+	closeToolTip(usr, src) //Our tooltips are now invalid, can't seem to update them in one frame, so here, just close them
 
 /atom/movable/screen/palette_scroll
 	icon = 'icons/hud/screen_gen.dmi'
@@ -418,7 +418,7 @@ GLOBAL_LIST_INIT(palette_removed_matrix, list(1.4,0,0,0, 0.7,0.4,0,0, 0.4,0,0.6,
 	openToolTip(usr, src, params, title = name, content = desc)
 
 /atom/movable/screen/palette_scroll/MouseExited()
-	closeToolTip(usr)
+	closeToolTip(usr, src)
 	return ..()
 
 /atom/movable/screen/palette_scroll/down

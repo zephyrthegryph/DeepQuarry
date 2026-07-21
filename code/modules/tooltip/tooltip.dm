@@ -35,6 +35,9 @@
 	var/_screen_loc = ""
 	var/_view_w = 0
 	var/_view_h = 0
+	// Monotonically identifies a hover. It prevents a queued MouseExited from an
+	// older atom from hiding a newer tooltip that reused the same browser.
+	var/_revision = 0
 
 
 /datum/tooltip/New(client/C)
@@ -72,6 +75,7 @@
 		"screen_loc" = _screen_loc,
 		"view_w" = _view_w,
 		"view_h" = _view_h,
+		"revision" = _revision,
 		// Native BYOND tile size; the legacy JS hard-coded 32 unless
 		// world.icon_size was overridden, so we ship it directly.
 		"tile_size" = isnum(world.icon_size) ? world.icon_size : 32,
@@ -87,6 +91,7 @@
 		UnregisterSignal(last_target, COMSIG_QDELETING)
 	RegisterSignal(thing, COMSIG_QDELETING, PROC_REF(on_target_qdel))
 	last_target = thing
+	_revision++
 
 	showing = 1
 
@@ -126,12 +131,20 @@
 	return TRUE
 
 
-/datum/tooltip/proc/hide()
+/datum/tooltip/proc/hide(atom/expected_target)
+	if(expected_target && expected_target != last_target)
+		return FALSE
+	var/hide_revision = _revision
+	// Hide the native control synchronously. Waiting for a TGUI update here can
+	// leave the old tooltip painted indefinitely when MouseExited is the last
+	// mouse event received.
+	if(owner)
+		winset(owner, control, "is-visible=false")
 	queueHide = showing ? TRUE : FALSE
 	if(queueHide)
-		addtimer(CALLBACK(src, PROC_REF(do_hide)), 0.1 SECONDS)
+		addtimer(CALLBACK(src, PROC_REF(do_hide), hide_revision), 0.1 SECONDS)
 	else
-		do_hide()
+		do_hide(hide_revision)
 	return TRUE
 
 
@@ -141,13 +154,17 @@
 	last_target = null
 
 
-/datum/tooltip/proc/do_hide()
+/datum/tooltip/proc/do_hide(hide_revision)
+	if(hide_revision != _revision)
+		return
 	queueHide = FALSE
 	if(!owner)
 		return
+	if(last_target)
+		UnregisterSignal(last_target, COMSIG_QDELETING)
+	last_target = null
 	_visible = FALSE
 	SStgui.update_uis(src)
-	winset(owner, control, "is-visible=false")
 
 
 //Open a tooltip for user, at a location based on params
@@ -166,7 +183,7 @@
 
 //Arbitrarily close a user's tooltip
 //Includes sanity checks.
-/proc/closeToolTip(mob/user)
+/proc/closeToolTip(mob/user, atom/tip_src)
 	if(!istype(user) || !user.client?.tooltips)
 		return
-	user.client.tooltips.hide()
+	user.client.tooltips.hide(tip_src)

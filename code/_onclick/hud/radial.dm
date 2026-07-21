@@ -50,7 +50,7 @@ GLOBAL_LIST_EMPTY(radial_menus)
 	else
 		icon_state = parent.radial_slice_icon
 	if(tooltips)
-		closeToolTip(usr)
+		closeToolTip(usr, src)
 
 /atom/movable/screen/radial/slice/Click(location, control, params)
 	if(usr.client == parent.current_user)

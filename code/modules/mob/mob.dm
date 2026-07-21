@@ -1363,11 +1363,11 @@
 	. = ..()
 
 /mob/MouseDown()
-	closeToolTip(usr) //No reason not to, really
+	closeToolTip(usr, src) //No reason not to, really
 	. = ..()
 
 /mob/MouseExited()
-	closeToolTip(usr) //No reason not to, really
+	closeToolTip(usr, src) //No reason not to, really
 	. = ..()
 
 // Manages a global list of mobs with clients attached, indexed by z-level.

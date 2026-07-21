@@ -6,10 +6,10 @@
 	openToolTip(usr, src, params, title = name, content = desc)
 
 /atom/movable/screen/ghost/MouseExited()
-	closeToolTip(usr)
+	closeToolTip(usr, src)
 
 /atom/movable/screen/ghost/Click()
-	closeToolTip(usr)
+	closeToolTip(usr, src)
 
 /atom/movable/screen/ghost/returntomenu
 	name = "Return to menu"

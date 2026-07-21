@@ -6,10 +6,10 @@
 	openToolTip(usr, src, params, title = name, content = desc)
 
 /atom/movable/screen/nifsc/MouseExited()
-	closeToolTip(usr)
+	closeToolTip(usr, src)
 
 /atom/movable/screen/nifsc/Click()
-	closeToolTip(usr)
+	closeToolTip(usr, src)
 
 /atom/movable/screen/nifsc/reenter
 	name = "Re-enter NIF"

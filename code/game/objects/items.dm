@@ -1070,7 +1070,7 @@ GLOBAL_LIST_EMPTY(blood_overlays_by_type)
 /obj/item/MouseExited()
 	. = ..()
 	deltimer(tip_timer)
-	closeToolTip(usr)
+	closeToolTip(usr, src)
 
 /obj/item/proc/openTip(location, control, params, user)
 	openToolTip(user, src, params, title = name, content = desc)

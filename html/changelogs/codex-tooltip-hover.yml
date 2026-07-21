@@ -1,0 +1,4 @@
+author: "codex"
+delete-after: true
+changes:
+  - bugfix: "Fixed map hover tooltips sticking after the cursor leaves their target or extending beyond the map window."
