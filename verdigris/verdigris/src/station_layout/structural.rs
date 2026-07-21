@@ -6,7 +6,11 @@ use super::model::{
 use std::cmp::Reverse;
 use std::collections::{BTreeMap, BTreeSet, VecDeque};
 
-const PITCH: u16 = 4;
+const MAINTENANCE_WIDTH: u16 = 2;
+// A logical cell contains its walkable interior followed by one structural
+// boundary tile. Main and local corridors deliberately share this compact
+// module so intersections cannot accidentally widen maintenance.
+const PITCH: u16 = MAINTENANCE_WIDTH + 1;
 const INTERIOR: u16 = PITCH - 1;
 const DOOR_FLAG: u32 = 1;
 
@@ -3500,6 +3504,13 @@ fn mix(mut value: u64) -> u64 {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn maintenance_module_has_exactly_two_walkable_tiles() {
+        assert_eq!(MAINTENANCE_WIDTH, 2);
+        assert_eq!(INTERIOR, MAINTENANCE_WIDTH);
+        assert_eq!(PITCH, MAINTENANCE_WIDTH + 1);
+    }
 
     #[test]
     fn every_mixed_logical_vertex_requires_a_wall_post() {
