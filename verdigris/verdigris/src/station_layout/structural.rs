@@ -401,64 +401,8 @@ fn build_logical_plan(request: &LayoutRequest) -> Result<LogicalPlan, LayoutErro
         carve_logical_segment(&mut public, from, bend, &silhouette, &outer_maintenance);
         carve_logical_segment(&mut public, bend, to, &silhouette, &outer_maintenance);
     }
-    // A compact service core breaks the cross-map sightline. Public circulation
-    // wraps it as a square roundabout; the maintenance connector pass joins the
-    // core to the exterior service loop without sacrificing a department.
-    for dy in -1i32..=1 {
-        for dx in -1i32..=1 {
-            let point = CellPoint {
-                x: (i32::from(hub.x) + dx) as u16,
-                y: (i32::from(hub.y) + dy) as u16,
-            };
-            if dx.abs().max(dy.abs()) == 1
-                && silhouette.contains(&point)
-                && !outer_maintenance.contains(&point)
-            {
-                public.insert(point);
-            }
-        }
-    }
-    let nearest_frontage = frontages
-        .iter()
-        .copied()
-        .min_by_key(|point| cell_distance(*point, hub))
-        .ok_or_else(|| LayoutError("public hall has no department frontage".into()))?;
-    let hub_dx = i32::from(nearest_frontage.x) - i32::from(hub.x);
-    let hub_dy = i32::from(nearest_frontage.y) - i32::from(hub.y);
-    let hub_port = if hub_dx.abs() >= hub_dy.abs() {
-        CellPoint {
-            x: (i32::from(hub.x) + hub_dx.signum()) as u16,
-            y: hub.y,
-        }
-    } else {
-        CellPoint {
-            x: hub.x,
-            y: (i32::from(hub.y) + hub_dy.signum()) as u16,
-        }
-    };
-    let hub_bend = CellPoint {
-        x: hub_port.x,
-        y: nearest_frontage.y,
-    };
-    carve_logical_segment(
-        &mut public,
-        nearest_frontage,
-        hub_bend,
-        &silhouette,
-        &outer_maintenance,
-    );
-    carve_logical_segment(
-        &mut public,
-        hub_bend,
-        hub_port,
-        &silhouette,
-        &outer_maintenance,
-    );
     for point in &public {
         plan.set(*point, Space::Public);
-    }
-    if silhouette.contains(&hub) {
-        plan.set(hub, Space::Maintenance);
     }
     for index in 0..centers.len() {
         if public.contains(&centers[index]) || cell_distance(centers[index], hub) <= 4 {
@@ -1437,58 +1381,6 @@ fn assign_department_common_and_rooms(
         for lobe in undersized_lobes {
             common.extend(lobe);
         }
-        let authored_capacity = department
-            .room_types
-            .iter()
-            .map(|room| {
-                usize::from(room.max_count)
-                    * usize::from(room.max_width)
-                    * usize::from(room.max_height)
-            })
-            .sum::<usize>();
-        for _ in 0..department_cells.len() {
-            let room_territory = department_cells.difference(&common).copied().collect();
-            let components = connected_components(&room_territory, plan.width, plan.height);
-            let projected_area = components
-                .iter()
-                .map(projected_room_tile_area)
-                .sum::<usize>();
-            if projected_area <= authored_capacity {
-                break;
-            }
-            let target = room_territory
-                .iter()
-                .copied()
-                .max_by_key(|point| {
-                    common
-                        .iter()
-                        .map(|hall| cell_distance(*hall, *point))
-                        .min()
-                        .unwrap_or(0)
-                })
-                .ok_or_else(|| LayoutError("department has no room territory".into()))?;
-            let hall_anchor = common
-                .iter()
-                .copied()
-                .min_by_key(|hall| cell_distance(*hall, target))
-                .ok_or_else(|| {
-                    LayoutError("department circulation has no capacity origin".into())
-                })?;
-            let mut relief = shortest_path_in_set(
-                hall_anchor,
-                target,
-                &department_cells,
-                plan.width,
-                plan.height,
-            )
-            .ok_or_else(|| LayoutError("cannot carve department capacity relief".into()))?;
-            relief.remove(&target);
-            let old_len = common.len();
-            common.extend(relief);
-            if common.len() == old_len {
-                common.insert(target);
-            }
-        }
         let mut components = connected_components(
             &department_cells.difference(&common).copied().collect(),
             plan.width,
@@ -1614,6 +1506,13 @@ fn assign_department_common_and_rooms(
                 department.id,
             ))
         })?;
+        compact_department_circulation(
+            plan,
+            department.id,
+            &mut common,
+            &mut assignments,
+            &matched_types,
+        );
         for (room_type, cells) in matched_types.into_iter().zip(assignments) {
             if cells.is_empty() {
                 return Err(LayoutError(format!(
@@ -1642,6 +1541,76 @@ fn assign_department_common_and_rooms(
         }
     }
     Ok(())
+}
+
+fn compact_department_circulation(
+    plan: &LogicalPlan,
+    department: u16,
+    common: &mut BTreeSet<CellPoint>,
+    rooms: &mut [BTreeSet<CellPoint>],
+    room_types: &[&RoomType],
+) {
+    loop {
+        let mut changed = false;
+        let candidates: Vec<_> = common.iter().copied().collect();
+        for point in candidates {
+            // These cells are explicit interfaces and must remain circulation.
+            if plan
+                .neighbors(point)
+                .any(|neighbor| matches!(plan.get(neighbor), Space::Public | Space::Maintenance))
+            {
+                continue;
+            }
+            let adjacent_rooms: Vec<_> = rooms
+                .iter()
+                .enumerate()
+                .filter(|(_, room)| {
+                    plan.neighbors(point)
+                        .any(|neighbor| room.contains(&neighbor))
+                })
+                .map(|(index, _)| index)
+                .collect();
+            let mut reduced_common = common.clone();
+            reduced_common.remove(&point);
+            if reduced_common.is_empty()
+                || !cells_connected(&reduced_common, plan.width, plan.height)
+            {
+                continue;
+            }
+            let Some(recipient) = adjacent_rooms.into_iter().find(|index| {
+                let mut enlarged = rooms[*index].clone();
+                enlarged.insert(point);
+                if !room_shape_fits(room_types[*index], &enlarged) {
+                    return false;
+                }
+                rooms.iter().enumerate().all(|(room_index, room)| {
+                    let candidate = if room_index == *index {
+                        &enlarged
+                    } else {
+                        room
+                    };
+                    candidate.iter().any(|room_point| {
+                        plan.neighbors(*room_point)
+                            .any(|neighbor| reduced_common.contains(&neighbor))
+                    })
+                })
+            }) else {
+                continue;
+            };
+            common.remove(&point);
+            rooms[recipient].insert(point);
+            changed = true;
+        }
+        if !changed {
+            break;
+        }
+    }
+
+    debug_assert!(
+        common
+            .iter()
+            .all(|point| { plan.get(*point).department() == Some(department) })
+    );
 }
 
 fn connect_residual_circulation(
