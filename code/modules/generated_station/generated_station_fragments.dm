@@ -25,8 +25,30 @@
 /datum/generated_room_fragment/activity_motif/proc/build_feature_types()
 	return list()
 
+/datum/generated_room_fragment/activity_motif/composition_atom_types()
+	var/list/atom_types = list()
+	for(var/feature_type in feature_types)
+		var/datum/generated_room_feature/feature = new feature_type
+		if(feature.atom_type)
+			atom_types += feature.atom_type
+		qdel(feature)
+	return atom_types
+
 /datum/generated_room_fragment/activity_motif/build_occupied_offsets()
-	return list(list(1, 1), list(2, 1), list(3, 1), list(2, 2))
+	// The semantic motif types are authored compositions, not aliases for one
+	// universal T-shaped furniture stamp. Spread the catalog across five stable
+	// arrangements so adjacent rooms with different purposes also have visibly
+	// different silhouettes.
+	switch(length(id) % 5)
+		if(0)
+			return list(list(1, 1), list(2, 1), list(3, 1), list(2, 2))
+		if(1)
+			return list(list(1, 1), list(1, 2), list(2, 2), list(3, 2))
+		if(2)
+			return list(list(1, 1), list(2, 1), list(3, 1), list(3, 2))
+		if(3)
+			return list(list(1, 1), list(1, 2), list(2, 1), list(3, 1))
+	return list(list(1, 1), list(2, 1), list(2, 2), list(3, 2))
 
 /datum/generated_room_fragment/activity_motif/build_constraints()
 	return list(
@@ -38,12 +60,11 @@
 /datum/generated_room_fragment/activity_motif/materialize(turf/origin, rotation, mirrored, datum/generated_station_materialization/owner)
 	if(!origin || !owner || rotation || mirrored || !length(feature_types))
 		return FALSE
-	var/static/list/offsets = list(list(0, 0), list(1, 0), list(2, 0), list(1, 1))
-	for(var/i in 1 to min(length(feature_types), length(offsets)))
+	for(var/i in 1 to min(length(feature_types), length(occupied_offsets)))
 		var/feature_type = feature_types[i]
 		var/datum/generated_room_feature/feature = new feature_type
-		var/list/offset = offsets[i]
-		var/turf/target = locate(origin.x + offset[1], origin.y + offset[2], origin.z)
+		var/list/offset = occupied_offsets[i]
+		var/turf/target = locate(origin.x + offset[1] - 1, origin.y + offset[2] - 1, origin.z)
 		if(!target || target.density || !feature.atom_type)
 			qdel(feature)
 			return FALSE
@@ -238,8 +259,6 @@
 /// Returns role-appropriate authored motifs. Each department has six distinct
 /// arrangements, and every generated role receives two meaningful alternatives.
 /proc/generated_room_semantic_fragment_options(department_id, role)
-	if(role in list("reception", "foyer"))
-		return list(/datum/generated_room_fragment/activity_motif/command_service)
 	switch(department_id)
 		if("command")
 			switch(role)
@@ -250,6 +269,7 @@
 			return list(/datum/generated_room_fragment/activity_motif/command_admin, /datum/generated_room_fragment/activity_motif/command_comms)
 		if("ai")
 			switch(role)
+				if("foyer") return list(/datum/generated_room_fragment/activity_motif/ai_operator, /datum/generated_room_fragment/activity_motif/ai_monitoring)
 				if("robotics") return list(/datum/generated_room_fragment/activity_motif/ai_robotics, /datum/generated_room_fragment/activity_motif/ai_operator)
 				if("server-closet", "support") return list(/datum/generated_room_fragment/activity_motif/ai_server, /datum/generated_room_fragment/activity_motif/ai_robotics)
 				if("secure-storage") return list(/datum/generated_room_fragment/activity_motif/ai_secure, /datum/generated_room_fragment/activity_motif/ai_server)
@@ -257,6 +277,7 @@
 			return list(/datum/generated_room_fragment/activity_motif/ai_operator, /datum/generated_room_fragment/activity_motif/ai_monitoring)
 		if("security")
 			switch(role)
+				if("reception") return list(/datum/generated_room_fragment/activity_motif/security_desk, /datum/generated_room_fragment/activity_motif/security_interview)
 				if("armory", "locker-room") return list(/datum/generated_room_fragment/activity_motif/security_armory, /datum/generated_room_fragment/activity_motif/security_equipment)
 				if("evidence") return list(/datum/generated_room_fragment/activity_motif/security_evidence, /datum/generated_room_fragment/activity_motif/security_desk)
 				if("interrogation", "checkpoint") return list(/datum/generated_room_fragment/activity_motif/security_interview, /datum/generated_room_fragment/activity_motif/security_desk)
@@ -264,6 +285,7 @@
 			return list(/datum/generated_room_fragment/activity_motif/security_desk, /datum/generated_room_fragment/activity_motif/security_equipment)
 		if("medical")
 			switch(role)
+				if("reception") return list(/datum/generated_room_fragment/activity_motif/medical_exam, /datum/generated_room_fragment/activity_motif/medical_stores)
 				if("surgery") return list(/datum/generated_room_fragment/activity_motif/medical_surgery, /datum/generated_room_fragment/treatment_bay)
 				if("treatment", "exam") return list(/datum/generated_room_fragment/activity_motif/medical_exam, /datum/generated_room_fragment/activity_motif/medical_treatment)
 				if("pharmacy") return list(/datum/generated_room_fragment/activity_motif/medical_pharmacy, /datum/generated_room_fragment/activity_motif/medical_stores)
@@ -271,6 +293,7 @@
 			return list(/datum/generated_room_fragment/activity_motif/medical_stores, /datum/generated_room_fragment/activity_motif/medical_exam)
 		if("engineering")
 			switch(role)
+				if("foyer") return list(/datum/generated_room_fragment/activity_motif/engineering_tools, /datum/generated_room_fragment/activity_motif/engineering_fabrication)
 				if("power") return list(/datum/generated_room_fragment/activity_motif/engineering_power, /datum/generated_room_fragment/activity_motif/engineering_fabrication)
 				if("atmospherics") return list(/datum/generated_room_fragment/activity_motif/engineering_atmos, /datum/generated_room_fragment/activity_motif/engineering_maintenance)
 				if("workshop", "equipment") return list(/datum/generated_room_fragment/activity_motif/engineering_fabrication, /datum/generated_room_fragment/activity_motif/engineering_tools)

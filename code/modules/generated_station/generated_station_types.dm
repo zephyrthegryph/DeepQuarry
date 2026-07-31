@@ -108,27 +108,87 @@
 /// A room allocation is geometry owned by the planner, not a live-map carving instruction.
 /datum/generated_station_room_allocation
 	var/id
+	/// Native numeric identifier used by the Rust content blueprint.
+	var/rust_room_id
 	var/department_node_id
 	var/role
+	/// Exact authored program selected by Rust for this footprint.
+	var/definition_id
 	var/frontage_x
 	var/frontage_y
 	/// Walkable room cells; walls and door cells are represented separately.
 	var/list/tiles
 	/// Openings through the room boundary into department-local circulation.
 	var/list/door_sockets
+	/// Exact content program emitted by Rust. DM materialization must not
+	/// re-solve these positions.
+	var/selected_variant
+	var/area_name
+	var/aesthetic_id
+	var/floor_style
+	var/accent_style
+	var/activity_center_x
+	var/activity_center_y
+	var/list/content_circulation
+	var/list/fixture_ids
+	var/occupancy_micros
 
 /datum/generated_station_room_allocation/New()
 	..()
 	tiles = list()
 	door_sockets = list()
+	content_circulation = list()
+	fixture_ids = list()
 
 /datum/generated_station_room_allocation/Destroy()
 	tiles = null
 	QDEL_LIST(door_sockets)
+	content_circulation = null
+	fixture_ids = null
 	return ..()
 
 /datum/generated_station_room_allocation/proc/add_tile(x, y)
 	tiles["[x],[y]"] = TRUE
+
+/// One exact Rust-authored furnishing or service endpoint.
+/datum/generated_station_fixture_placement
+	var/id
+	var/fixture_id
+	var/x
+	var/y
+	var/direction
+	var/layer
+	var/department_numeric_id
+	var/room_numeric_id
+	var/network_id
+	var/variant
+	var/blocks_movement = FALSE
+	var/list/required_access
+
+/datum/generated_station_fixture_placement/New()
+	..()
+	required_access = list()
+
+/datum/generated_station_fixture_placement/Destroy()
+	required_access = null
+	return ..()
+
+/// Exact utility topology emitted with the Rust content blueprint.
+/datum/generated_station_network_blueprint
+	var/id
+	var/kind
+	var/list/backbone
+	var/list/endpoint_fixture_ids
+
+/datum/generated_station_network_blueprint/New()
+	..()
+	backbone = list()
+	endpoint_fixture_ids = list()
+
+/datum/generated_station_network_blueprint/Destroy()
+	backbone = null
+	endpoint_fixture_ids = null
+	return ..()
 
 /// Planner-owned opening through a structural boundary.
 /datum/generated_station_door_socket
@@ -272,6 +332,13 @@
 	var/list/maintenance_doors
 	/// Interstitial coordinates deliberately classified as structural mass.
 	var/list/structural_tiles
+	/// Rust-authored exact furnishing and service network instructions.
+	var/list/fixture_blueprint
+	var/list/network_blueprint
+	var/list/content_quality
+	/// Stable Rust fixture ID -> compile-time DM type path. This registry never
+	/// crosses JSON; it is rebuilt from the authored catalog on the DM side.
+	var/list/fixture_type_registry
 
 /datum/generated_station_spec/New()
 	..()
@@ -283,6 +350,10 @@
 	maintenance_tiles = list()
 	maintenance_doors = list()
 	structural_tiles = list()
+	fixture_blueprint = list()
+	network_blueprint = list()
+	content_quality = list()
+	fixture_type_registry = list()
 
 /datum/generated_station_spec/Destroy()
 	QDEL_LIST(departments)
@@ -293,6 +364,10 @@
 	maintenance_tiles = null
 	QDEL_LIST_ASSOC_VAL(maintenance_doors)
 	structural_tiles = null
+	QDEL_LIST(fixture_blueprint)
+	QDEL_LIST(network_blueprint)
+	content_quality = null
+	fixture_type_registry = null
 	return ..()
 
 /datum/generated_station_spec/proc/validate()

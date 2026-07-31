@@ -347,13 +347,35 @@ Bitmap allocation is chunked across scheduler ticks. Emergency-closet contents
 are also deferred through the normal budgeted `LateInitialize` path instead of
 being spawned synchronously.
 
-The final BYOND 516.1684 focused run completed materialization successfully in
-22.69 seconds with 2,466 cooperative yields. The monotonic generator probe's
-largest sample was 107.84% of a 25 ms tick (26.96 ms) during hull validation;
-the master controller recorded zero overruns. That isolated sample remained
-constant as validation operations were split below the tick budget, consistent
-with a BYOND/GC scheduling pause captured by the wall-clock probe rather than an
-unbounded generator loop. The focused unit-test subsystem sleeps on the master-
-controller stack, so its derived TPS field is not a valid production TPS sample;
-the relevant acceptance measurements are the 10 ms generator budget and the
-absence of master-controller overruns.
+The original focused run used `sleep(0)` at generator checkpoints. That can
+resume a sleeping proc again in BYOND's current scheduler tick, starving the
+master controller and client map sending. Its 22.69-second completion and sparse
+MC samples therefore did **not** establish 40 TPS; the earlier conclusion was
+incorrect.
+
+With checkpoints changed to a real `sleep(world.tick_lag)`, BYOND 516.1684
+produced 2,535 genuine MC samples during a successful 70.75-second generation.
+It sustained 36.00 TPS, with 3.41% average recorded MC usage, 6.72% p95, 41.68%
+p99, 80.15% maximum, and zero MC overruns. This removes same-tick starvation and
+the associated hard client freeze, but it does not yet meet the 40 TPS target.
+The remaining loss is scheduler drift from materialization running in a sleeping
+asynchronous proc outside the MC subsystem queue. Reaching a true 40 TPS while
+generation is active requires converting materialization into resumable jobs
+owned and budgeted directly by an MC subsystem, rather than further tuning sleep
+durations.
+
+A follow-up conservative cadence left one complete MC tick between generator
+slices (`sleep(world.tick_lag * 2)`). It completed successfully in 146.69 seconds
+and improved measured throughput to 37.32 TPS over 5,297 MC samples. It recorded
+one 101.98% tick, with 58.87% attributed to BYOND/pre-MC work. This confirms that
+sleep throttling can trade generation latency for smaller drift, but cannot meet
+the 40 TPS requirement; it is a safety fallback, not the final architecture.
+
+A follow-up experiment used BYOND's native `background` scheduling and
+`sleep(-1)` backlog checks. A focused functional run completed in 32.44 seconds,
+but it produced only three MC samples, so it did not measure live TPS. In a real
+round, the same generator stalled after allocating its z-level: continuously
+pending MC work can starve a background proc indefinitely. The experiment was
+therefore rejected and removed. Native background execution is appropriate for
+optional work that may be deferred, but not for this must-complete transactional
+job.

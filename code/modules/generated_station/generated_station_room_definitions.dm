@@ -497,6 +497,12 @@
 			offsets += list(list(x, y))
 	return offsets
 
+/// Atom types contributed by an authored fragment for composition/diversity
+/// validation. Map-backed fragments may leave this empty when their contents
+/// are not statically described.
+/datum/generated_room_fragment/proc/composition_atom_types()
+	return list()
+
 /// Fragments reserve and score their footprint even when their authored map is unavailable.
 /datum/generated_room_fragment/proc/materialize(turf/origin, rotation, mirrored, datum/generated_station_materialization/owner)
 	if(!origin || !owner || !template_path || rotation || mirrored)
@@ -885,7 +891,10 @@
 
 /// Returns whether an inclusive room footprint obeys this program's geometry contract.
 /datum/generated_room_definition/proc/accepts_dimensions(width, height)
-	return width >= min_width && width <= max_width && height >= min_height && height <= max_height
+	var/grid_slack = 3
+	var/direct = width >= min_width - 1 && width <= max_width + grid_slack && height >= min_height - 1 && height <= max_height + grid_slack
+	var/rotated = height >= min_width - 1 && height <= max_width + grid_slack && width >= min_height - 1 && width <= max_height + grid_slack
+	return direct || rotated
 
 /// Prefers balanced footprints near the center of the authored size range.
 /datum/generated_room_definition/proc/dimension_score(width, height)
@@ -910,7 +919,6 @@
 		plan.fragment_types += fragment_type
 		if(ispath(fragment_type, /datum/generated_room_fragment/activity_motif))
 			cohesive_fragment = TRUE
-			plan.group_types = list()
 			var/datum/generated_room_fragment/activity_motif/motif = new fragment_type
 			for(var/required_type in plan.feature_types.Copy())
 				var/datum/generated_room_feature/required_feature = new required_type
@@ -1306,6 +1314,11 @@
 	definition.max_aspect_ratio_millis = geometry["max_aspect_ratio_millis"]
 	definition.requires_center_activity = geometry["center_activity"]
 	definition.allow_narrow_irregular = definition.min_short_side <= 3
+	// A functional station room should read as a deliberately composed workplace,
+	// not a four-object motif floating in an empty footprint. Individual room
+	// definitions may ask for more, but never less than this visual baseline.
+	definition.density_min = max(definition.density_min, 0.3)
+	definition.density_max = max(definition.density_max, 0.56)
 	var/list/semantic_fragments = generated_room_semantic_fragment_options(department_id, role)
 	if(length(semantic_fragments))
 		definition.fragment_options = semantic_fragments
@@ -1459,8 +1472,8 @@
 	var/datum/generated_room_definition/compact = generated_room_definition_for(department_id, role)
 	compact.id = "[department_id]-compact-[role]"
 	compact.name = "Compact [capitalize(replacetext(role, "-", " "))]"
-	compact.min_width = 2
-	compact.min_height = 2
+	compact.min_width = 3
+	compact.min_height = 3
 	compact.max_width = 12
 	compact.max_height = 12
 	compact.allow_narrow_irregular = TRUE
@@ -1484,54 +1497,36 @@
 	compact.required_groups = list()
 	compact.optional_groups = list()
 	compact.fragment_options = list()
-	compact.density_min = 0.12
-	compact.density_max = 0.36
+	// A 2xN service room can have all but two tiles reserved by its door path
+	// and utility sockets. Two role-defining fixtures are intentionally dense
+	// in that geometry even when they occupy only 20% of the full footprint.
+	compact.density_min = 0.25
+	compact.density_max = 0.7
 	compact.circulation_min = 0.2
 	return compact
 
-/// Authored contract for a true 2x2 service pocket. Door circulation and the
-/// room's required utility socket can consume its complete walkable footprint,
-/// so dense furniture would make the room physically impossible. Its department
-/// floor treatment, named area, access, alarm, and atmos/power fixtures remain
-/// its intentional station function; this is not the emergency runtime shell.
+/// Authored contract for a true 2x2 service pocket. It retains the role's
+/// signature fixture rather than becoming an empty, department-colored shell.
 /proc/generated_micro_room_definition_for(department_id, role)
 	var/datum/generated_room_definition/micro = generated_room_definition_for(department_id, role)
 	if(!micro)
-		micro = new
+		return null
+	var/list/signature_features = generated_room_compact_authored_features(department_id, role)
+	if(!length(signature_features))
+		qdel(micro)
+		return null
 	micro.id = "[department_id]-micro-[role]"
 	micro.name = "Micro [capitalize(replacetext(role, "-", " "))]"
 	micro.min_width = 1
 	micro.min_height = 1
-	micro.max_width = 2
-	micro.max_height = 2
+	micro.max_width = 5
+	micro.max_height = 5
 	micro.allow_narrow_irregular = TRUE
-	micro.required_features = list()
+	micro.required_features = list(signature_features[1])
 	micro.required_groups = list()
 	micro.optional_groups = list()
 	micro.fragment_options = list()
-	micro.density_min = 0
-	micro.density_max = 0
+	micro.density_min = 0.1
+	micro.density_max = 0.75
 	micro.circulation_min = 0
 	return micro
-
-/// Guaranteed room shell used only after authored and compact content cannot
-/// satisfy a runtime footprint. Tests keep strict contracts and never accept it.
-/proc/generated_minimum_room_definition_for(department_id, role)
-	var/datum/generated_room_definition/minimum = generated_room_definition_for(department_id, role)
-	if(!minimum)
-		minimum = new
-	minimum.id = "[department_id]-minimum-[role]"
-	minimum.name = "Minimum [capitalize(replacetext(role, "-", " "))]"
-	minimum.min_width = 1
-	minimum.min_height = 1
-	minimum.max_width = 255
-	minimum.max_height = 255
-	minimum.allow_narrow_irregular = TRUE
-	minimum.required_features = list()
-	minimum.required_groups = list()
-	minimum.optional_groups = list()
-	minimum.fragment_options = list()
-	minimum.density_min = 0
-	minimum.density_max = 0
-	minimum.circulation_min = 0
-	return minimum

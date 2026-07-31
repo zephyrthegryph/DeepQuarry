@@ -26,15 +26,18 @@
 	var/door_type
 	var/door_direction
 	var/list/utility_intents
+	var/list/utility_wall_directions
 
 /datum/generated_station_tile_intent/New(new_x, new_y)
 	..()
 	local_x = new_x
 	local_y = new_y
 	utility_intents = list()
+	utility_wall_directions = list()
 
 /datum/generated_station_tile_intent/Destroy()
 	utility_intents = null
+	utility_wall_directions = null
 	return ..()
 
 /// Returns whether this coordinate is authoritative structural support for a wall fixture.
@@ -44,7 +47,7 @@
 /datum/generated_station_tile_intent/proc/has_utility_fixture()
 	for(var/utility_id in utility_intents)
 		switch(utility_id)
-			if(GENERATED_STATION_UTILITY_VENT, GENERATED_STATION_UTILITY_SCRUBBER, GENERATED_STATION_UTILITY_SMES, GENERATED_STATION_UTILITY_GENERATOR, GENERATED_STATION_UTILITY_SUPPLY_TANK, GENERATED_STATION_UTILITY_SCRUB_TANK)
+			if(GENERATED_STATION_UTILITY_APC, GENERATED_STATION_UTILITY_AIR_ALARM, GENERATED_STATION_UTILITY_FIRE_ALARM, GENERATED_STATION_UTILITY_LIGHT, GENERATED_STATION_UTILITY_VENT, GENERATED_STATION_UTILITY_SCRUBBER, GENERATED_STATION_UTILITY_SMES, GENERATED_STATION_UTILITY_GENERATOR, GENERATED_STATION_UTILITY_SUPPLY_TANK, GENERATED_STATION_UTILITY_SCRUB_TANK)
 				return TRUE
 	return FALSE
 
@@ -185,25 +188,28 @@
 			var/existing_is_floor_atmos = existing_id in list(GENERATED_STATION_UTILITY_VENT, GENERATED_STATION_UTILITY_SCRUBBER)
 			if((new_is_wall_fixture && existing_is_floor_atmos) || (new_is_floor_atmos && existing_is_wall_fixture))
 				continue
+			if(new_is_wall_fixture && existing_is_wall_fixture)
+				continue
 			errors += "Utility fixture [utility_id] conflicts with [existing_id] at [local_x],[local_y]."
 			return FALSE
 	if(utility_id in list(GENERATED_STATION_UTILITY_APC, GENERATED_STATION_UTILITY_AIR_ALARM, GENERATED_STATION_UTILITY_FIRE_ALARM, GENERATED_STATION_UTILITY_LIGHT))
 		var/wall_direction
+		var/wall_edge_key
 		for(var/direction in GLOB.cardinal)
 			var/datum/generated_station_tile_intent/support = tile(local_x + (direction == EAST) - (direction == WEST), local_y + (direction == NORTH) - (direction == SOUTH))
-			if(support?.is_structural_wall())
-				wall_direction = direction
-				break
+			if(!support?.is_structural_wall())
+				continue
+			var/candidate_edge_key = "[support.local_x],[support.local_y],[direction]"
+			if(wall_fixture_edges[candidate_edge_key])
+				continue
+			wall_direction = direction
+			wall_edge_key = candidate_edge_key
+			break
 		if(!wall_direction)
-			errors += "Wall fixture [utility_id] has no structural support at [local_x],[local_y]."
+			errors += "Wall fixture [utility_id] has no unclaimed structural edge at [local_x],[local_y]."
 			return FALSE
-		var/wall_x = local_x + (wall_direction == EAST) - (wall_direction == WEST)
-		var/wall_y = local_y + (wall_direction == NORTH) - (wall_direction == SOUTH)
-		var/edge_key = "[wall_x],[wall_y],[wall_direction]"
-		if(wall_fixture_edges[edge_key])
-			errors += "Wall fixture [utility_id] conflicts with [wall_fixture_edges[edge_key]] on wall edge [edge_key]."
-			return FALSE
-		wall_fixture_edges[edge_key] = utility_id
+		wall_fixture_edges[wall_edge_key] = utility_id
+		intent.utility_wall_directions[utility_id] = wall_direction
 	intent.utility_intents += utility_id
 	return TRUE
 

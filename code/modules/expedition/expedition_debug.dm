@@ -8,19 +8,18 @@
 /datum/controller/subsystem/expedition/proc/generate_debug_station(seed, list/validation_messages)
 	seed = round(seed)
 	var/datum/generated_station_planner/planner = new
-	var/datum/generated_station_spec/spec = planner.plan(seed, 112, 112)
+	var/datum/generated_station_spec/spec = planner.plan(seed, 160, 160)
 	var/datum/generated_station_validation_result/validation = spec?.validate()
 	if(!spec || !validation?.is_valid())
 		if(validation_messages)
 			if(!spec)
-				validation_messages += "The planner returned no station specification."
+				var/error_suffix = planner.error_message ? ": [planner.error_message]" : "."
+				validation_messages += "The planner returned no station specification[error_suffix]"
 			else
 				for(var/datum/generated_station_validation_issue/issue in validation.issues)
 					validation_messages += "[issue.severity == GENERATED_STATION_ISSUE_ERROR ? "error" : "warning"] [issue.code][issue.subject_id ? " ([issue.subject_id])" : ""]: [issue.message]"
-		qdel(validation)
-		qdel(spec)
-		qdel(planner)
-		return null
+		if(!spec)
+			spec = generated_station_emergency_spec(seed)
 	qdel(validation)
 
 	var/z = acquire_z()
@@ -32,32 +31,43 @@
 		return null
 	var/origin_x = max(1, round((world.maxx - spec.grid_width) / 2))
 	var/origin_y = max(1, round((world.maxy - spec.grid_height) / 2))
-	var/datum/generated_station_materializer/materializer = new
-	var/datum/generated_station_materialization/materialization = materializer.materialize(spec, z, origin_x, origin_y)
-	var/materialization_failure = materializer.last_failure_details
-	qdel(materializer)
+	var/datum/generated_station_materialization/materialization
+	var/materialization_failure
+	if(spec.size_class == "emergency")
+		materialization = generated_station_emergency_materialization(spec, z)
+	else
+		var/datum/generated_station_materializer/materializer = new
+		// This verb exercises the live publication policy. Quality defects are
+		// returned as degradation diagnostics, not as a discarded playable map.
+		materializer.strict_room_contracts = FALSE
+		materialization = materializer.materialize(spec, z, origin_x, origin_y)
+		materialization_failure = materializer.last_failure_details
+		qdel(materializer)
 	qdel(planner)
 	if(!materialization?.entry)
 		if(validation_messages)
 			validation_messages += materialization ? "The materialized station has no docking entry." : "Station materialization failed[materialization_failure ? ": [materialization_failure]" : "."]"
 		qdel(materialization)
-		qdel(spec)
 		wipe_z(z)
-		free_z |= z
-		return null
+		qdel(spec)
+		spec = generated_station_emergency_spec(seed)
+		materialization = generated_station_emergency_materialization(spec, z)
 
 	var/datum/expedition_site/site = new(z, EXP_DIFF_LOW, get_turf(materialization.entry))
 	site.name = spec.name
 	site.generation_seed = seed
 	site.station_spec = spec
 	site.station_materialization = materialization
-	if(!site.initialize_generated_station_runtime() || !site.initialize_generated_station_utilities() || !site.initialize_generated_station_infrastructure() || !site.initialize_generated_station_defenders())
-		if(validation_messages)
-			validation_messages += "Station runtime initialization failed."
-		qdel(site)
-		wipe_z(z)
-		free_z |= z
-		return null
+	if(!site.initialize_generated_station_utilities())
+		materialization.degradation_events += "utility initialization failed"
+	if(!site.initialize_generated_station_runtime())
+		materialization.degradation_events += "strategic runtime initialization failed"
+	if(site.station_director && !site.initialize_generated_station_infrastructure())
+		materialization.degradation_events += "strategic infrastructure initialization failed"
+	if(!site.repair_generated_station_runtime_access())
+		materialization.degradation_events += "post-utility access repair was incomplete"
+	if(site.station_director && !site.initialize_generated_station_defenders())
+		materialization.degradation_events += "defender initialization failed"
 	site.floors = scan_floors(z)
 	site.status = EXP_STATUS_ACTIVE
 	site.deployed_at = world.time

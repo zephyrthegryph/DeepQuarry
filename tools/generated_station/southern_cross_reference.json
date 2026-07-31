@@ -1,22 +1,4357 @@
 {
-  "source": "maps/deep_quarry/deep_quarry-01.dmm",
-  "measurement": "connected room-floor components bounded by mapped walls and doors",
-  "floor_area": {
-    "p25": 17,
-    "median": 31,
-    "p75": 59
+  "source": [
+    "maps/southern_cross/southern_cross-1.dmm",
+    "maps/southern_cross/southern_cross-7.dmm",
+    "maps/southern_cross/southern_cross-6.dmm"
+  ],
+  "measurement": "connected non-wall floor components sharing an exact mapped area; functional floor fixtures exclude utilities, doors, windows, pipes, lights, and decals",
+  "rooms_measured": 420,
+  "profiles": {
+    "ai": {
+      "samples": 49,
+      "occupancy_p25_micros": 357616,
+      "occupancy_median_micros": 500000,
+      "largest_empty_region_p75_micros": 500000,
+      "unique_fixture_types_p25": 10,
+      "fixture_count_p25": 16
+    },
+    "armory": {
+      "samples": 3,
+      "occupancy_p25_micros": 437500,
+      "occupancy_median_micros": 464286,
+      "largest_empty_region_p75_micros": 562500,
+      "unique_fixture_types_p25": 12,
+      "fixture_count_p25": 42
+    },
+    "atmospherics": {
+      "samples": 2,
+      "occupancy_p25_micros": 76923,
+      "occupancy_median_micros": 371795,
+      "largest_empty_region_p75_micros": 923077,
+      "unique_fixture_types_p25": 3,
+      "fixture_count_p25": 5
+    },
+    "brig": {
+      "samples": 2,
+      "occupancy_p25_micros": 133858,
+      "occupancy_median_micros": 243852,
+      "largest_empty_region_p75_micros": 866142,
+      "unique_fixture_types_p25": 11,
+      "fixture_count_p25": 18
+    },
+    "cargo": {
+      "samples": 10,
+      "occupancy_p25_micros": 214286,
+      "occupancy_median_micros": 378816,
+      "largest_empty_region_p75_micros": 785714,
+      "unique_fixture_types_p25": 4,
+      "fixture_count_p25": 8
+    },
+    "docking": {
+      "samples": 51,
+      "occupancy_p25_micros": 4762,
+      "occupancy_median_micros": 257576,
+      "largest_empty_region_p75_micros": 995238,
+      "unique_fixture_types_p25": 1,
+      "fixture_count_p25": 1
+    },
+    "general": {
+      "samples": 182,
+      "occupancy_p25_micros": 175000,
+      "occupancy_median_micros": 325658,
+      "largest_empty_region_p75_micros": 825000,
+      "unique_fixture_types_p25": 3,
+      "fixture_count_p25": 12
+    },
+    "laboratory": {
+      "samples": 11,
+      "occupancy_p25_micros": 292929,
+      "occupancy_median_micros": 395833,
+      "largest_empty_region_p75_micros": 615385,
+      "unique_fixture_types_p25": 6,
+      "fixture_count_p25": 9
+    },
+    "office": {
+      "samples": 5,
+      "occupancy_p25_micros": 384615,
+      "occupancy_median_micros": 406250,
+      "largest_empty_region_p75_micros": 615385,
+      "unique_fixture_types_p25": 15,
+      "fixture_count_p25": 25
+    },
+    "operations": {
+      "samples": 5,
+      "occupancy_p25_micros": 312500,
+      "occupancy_median_micros": 493976,
+      "largest_empty_region_p75_micros": 500000,
+      "unique_fixture_types_p25": 15,
+      "fixture_count_p25": 34
+    },
+    "reception": {
+      "samples": 7,
+      "occupancy_p25_micros": 210526,
+      "occupancy_median_micros": 336538,
+      "largest_empty_region_p75_micros": 789474,
+      "unique_fixture_types_p25": 6,
+      "fixture_count_p25": 8
+    },
+    "robotics": {
+      "samples": 2,
+      "occupancy_p25_micros": 492063,
+      "occupancy_median_micros": 515262,
+      "largest_empty_region_p75_micros": 492063,
+      "unique_fixture_types_p25": 4,
+      "fixture_count_p25": 7
+    },
+    "security": {
+      "samples": 22,
+      "occupancy_p25_micros": 384615,
+      "occupancy_median_micros": 468864,
+      "largest_empty_region_p75_micros": 538462,
+      "unique_fixture_types_p25": 11,
+      "fixture_count_p25": 20
+    },
+    "storage": {
+      "samples": 16,
+      "occupancy_p25_micros": 354839,
+      "occupancy_median_micros": 441520,
+      "largest_empty_region_p75_micros": 645161,
+      "unique_fixture_types_p25": 9,
+      "fixture_count_p25": 19
+    },
+    "surgery": {
+      "samples": 4,
+      "occupancy_p25_micros": 571429,
+      "occupancy_median_micros": 571429,
+      "largest_empty_region_p75_micros": 157895,
+      "unique_fixture_types_p25": 11,
+      "fixture_count_p25": 18
+    },
+    "treatment": {
+      "samples": 15,
+      "occupancy_p25_micros": 571429,
+      "occupancy_median_micros": 727273,
+      "largest_empty_region_p75_micros": 375000,
+      "unique_fixture_types_p25": 8,
+      "fixture_count_p25": 14
+    },
+    "ward": {
+      "samples": 5,
+      "occupancy_p25_micros": 402597,
+      "occupancy_median_micros": 432432,
+      "largest_empty_region_p75_micros": 454545,
+      "unique_fixture_types_p25": 13,
+      "fixture_count_p25": 15
+    },
+    "workshop": {
+      "samples": 27,
+      "occupancy_p25_micros": 357143,
+      "occupancy_median_micros": 407407,
+      "largest_empty_region_p75_micros": 618421,
+      "unique_fixture_types_p25": 3,
+      "fixture_count_p25": 4
+    }
   },
-  "representative_rooms": {
-    "medical_exam": { "usable_tiles": 15, "unique_fixture_types": 30 },
-    "medical_surgery": { "usable_tiles": 21, "unique_fixture_types": 37 },
-    "engineering_monitoring": { "usable_tiles": 33, "unique_fixture_types": 40 },
-    "medical_chemistry": { "usable_tiles": 41, "unique_fixture_types": 53 },
-    "engineering_workshop": { "usable_tiles": 52, "unique_fixture_types": 56 }
-  },
-  "generator_targets": {
-    "small_support_room_tiles": [9, 21],
-    "standard_activity_room_tiles": [21, 49],
-    "large_operational_room_tiles": [33, 77],
-    "normal_compact_fallback_rate": 0
-  }
+  "rooms": [
+    {
+      "area": "/area/maintenance/firstdeck/centralport",
+      "role": "ai",
+      "tiles": 66,
+      "occupied_tiles": 37,
+      "occupancy_micros": 560606,
+      "largest_empty_region_micros": 181818,
+      "unique_fixture_types": 20,
+      "fixture_count": 61
+    },
+    {
+      "area": "/area/shuttle/large_escape_pod2/station",
+      "role": "docking",
+      "tiles": 36,
+      "occupied_tiles": 25,
+      "occupancy_micros": 694444,
+      "largest_empty_region_micros": 305556,
+      "unique_fixture_types": 18,
+      "fixture_count": 41
+    },
+    {
+      "area": "/area/hallway/primary/firstdeck/port",
+      "role": "general",
+      "tiles": 180,
+      "occupied_tiles": 21,
+      "occupancy_micros": 116667,
+      "largest_empty_region_micros": 883333,
+      "unique_fixture_types": 14,
+      "fixture_count": 24
+    },
+    {
+      "area": "/area/quartermaster/storage",
+      "role": "storage",
+      "tiles": 280,
+      "occupied_tiles": 29,
+      "occupancy_micros": 103571,
+      "largest_empty_region_micros": 896429,
+      "unique_fixture_types": 26,
+      "fixture_count": 47
+    },
+    {
+      "area": "/area/hallway/secondary/escape/firstdeck/ep_port",
+      "role": "general",
+      "tiles": 22,
+      "occupied_tiles": 7,
+      "occupancy_micros": 318182,
+      "largest_empty_region_micros": 454545,
+      "unique_fixture_types": 9,
+      "fixture_count": 9
+    },
+    {
+      "area": "/area/construction/firstdeck/construction2",
+      "role": "general",
+      "tiles": 22,
+      "occupied_tiles": 9,
+      "occupancy_micros": 409091,
+      "largest_empty_region_micros": 590909,
+      "unique_fixture_types": 9,
+      "fixture_count": 25
+    },
+    {
+      "area": "/area/hangar/one",
+      "role": "docking",
+      "tiles": 187,
+      "occupied_tiles": 19,
+      "occupancy_micros": 101604,
+      "largest_empty_region_micros": 898396,
+      "unique_fixture_types": 11,
+      "fixture_count": 40
+    },
+    {
+      "area": "/area/construction/firstdeck/construction1",
+      "role": "general",
+      "tiles": 19,
+      "occupied_tiles": 6,
+      "occupancy_micros": 315789,
+      "largest_empty_region_micros": 684211,
+      "unique_fixture_types": 8,
+      "fixture_count": 20
+    },
+    {
+      "area": "/area/maintenance/firstdeck/aftport",
+      "role": "ai",
+      "tiles": 151,
+      "occupied_tiles": 54,
+      "occupancy_micros": 357616,
+      "largest_empty_region_micros": 364238,
+      "unique_fixture_types": 26,
+      "fixture_count": 105
+    },
+    {
+      "area": "/area/shuttle/shuttle1/start",
+      "role": "docking",
+      "tiles": 61,
+      "occupied_tiles": 40,
+      "occupancy_micros": 655738,
+      "largest_empty_region_micros": 311475,
+      "unique_fixture_types": 18,
+      "fixture_count": 46
+    },
+    {
+      "area": "/area/quartermaster/hallway",
+      "role": "cargo",
+      "tiles": 44,
+      "occupied_tiles": 7,
+      "occupancy_micros": 159091,
+      "largest_empty_region_micros": 840909,
+      "unique_fixture_types": 8,
+      "fixture_count": 8
+    },
+    {
+      "area": "/area/hangar/onecontrol",
+      "role": "docking",
+      "tiles": 10,
+      "occupied_tiles": 6,
+      "occupancy_micros": 600000,
+      "largest_empty_region_micros": 400000,
+      "unique_fixture_types": 8,
+      "fixture_count": 8
+    },
+    {
+      "area": "/area/quartermaster/mininglockerroom",
+      "role": "cargo",
+      "tiles": 35,
+      "occupied_tiles": 17,
+      "occupancy_micros": 485714,
+      "largest_empty_region_micros": 514286,
+      "unique_fixture_types": 24,
+      "fixture_count": 36
+    },
+    {
+      "area": "/area/maintenance/substation/firstdeck/cargo",
+      "role": "cargo",
+      "tiles": 11,
+      "occupied_tiles": 2,
+      "occupancy_micros": 181818,
+      "largest_empty_region_micros": 818182,
+      "unique_fixture_types": 4,
+      "fixture_count": 7
+    },
+    {
+      "area": "/area/maintenance/firstdeck/foreport",
+      "role": "ai",
+      "tiles": 94,
+      "occupied_tiles": 31,
+      "occupancy_micros": 329787,
+      "largest_empty_region_micros": 510638,
+      "unique_fixture_types": 18,
+      "fixture_count": 75
+    },
+    {
+      "area": "/area/storage/emergency_storage/firstdeck/fp_emergency",
+      "role": "treatment",
+      "tiles": 14,
+      "occupied_tiles": 10,
+      "occupancy_micros": 714286,
+      "largest_empty_region_micros": 71429,
+      "unique_fixture_types": 8,
+      "fixture_count": 18
+    },
+    {
+      "area": "/area/storage/emergency_storage/firstdeck/ap_emergency",
+      "role": "treatment",
+      "tiles": 13,
+      "occupied_tiles": 10,
+      "occupancy_micros": 769231,
+      "largest_empty_region_micros": 76923,
+      "unique_fixture_types": 5,
+      "fixture_count": 11
+    },
+    {
+      "area": "/area/hallway/secondary/escape/firstdeck/ep_aftport",
+      "role": "general",
+      "tiles": 20,
+      "occupied_tiles": 9,
+      "occupancy_micros": 450000,
+      "largest_empty_region_micros": 200000,
+      "unique_fixture_types": 8,
+      "fixture_count": 9
+    },
+    {
+      "area": "/area/hallway/primary/firstdeck/auxdockaft",
+      "role": "docking",
+      "tiles": 134,
+      "occupied_tiles": 32,
+      "occupancy_micros": 238806,
+      "largest_empty_region_micros": 388060,
+      "unique_fixture_types": 14,
+      "fixture_count": 39
+    },
+    {
+      "area": "/area/hallway/primary/firstdeck/fpcenter",
+      "role": "general",
+      "tiles": 71,
+      "occupied_tiles": 5,
+      "occupancy_micros": 70423,
+      "largest_empty_region_micros": 929577,
+      "unique_fixture_types": 4,
+      "fixture_count": 5
+    },
+    {
+      "area": "/area/hallway/primary/firstdeck/apcenter",
+      "role": "general",
+      "tiles": 74,
+      "occupied_tiles": 7,
+      "occupancy_micros": 94595,
+      "largest_empty_region_micros": 905405,
+      "unique_fixture_types": 4,
+      "fixture_count": 7
+    },
+    {
+      "area": "/area/crew_quarters/firstdeck/gym",
+      "role": "general",
+      "tiles": 52,
+      "occupied_tiles": 21,
+      "occupancy_micros": 403846,
+      "largest_empty_region_micros": 326923,
+      "unique_fixture_types": 16,
+      "fixture_count": 28
+    },
+    {
+      "area": "/area/hallway/primary/firstdeck/fore",
+      "role": "general",
+      "tiles": 150,
+      "occupied_tiles": 29,
+      "occupancy_micros": 193333,
+      "largest_empty_region_micros": 733333,
+      "unique_fixture_types": 13,
+      "fixture_count": 29
+    },
+    {
+      "area": "/area/construction/firstdeck/construction5",
+      "role": "general",
+      "tiles": 41,
+      "occupied_tiles": 17,
+      "occupancy_micros": 414634,
+      "largest_empty_region_micros": 585366,
+      "unique_fixture_types": 19,
+      "fixture_count": 42
+    },
+    {
+      "area": "/area/storage/tech",
+      "role": "storage",
+      "tiles": 57,
+      "occupied_tiles": 25,
+      "occupancy_micros": 438596,
+      "largest_empty_region_micros": 561404,
+      "unique_fixture_types": 25,
+      "fixture_count": 95
+    },
+    {
+      "area": "/area/hallway/primary/firstdeck/aft",
+      "role": "general",
+      "tiles": 160,
+      "occupied_tiles": 30,
+      "occupancy_micros": 187500,
+      "largest_empty_region_micros": 812500,
+      "unique_fixture_types": 17,
+      "fixture_count": 38
+    },
+    {
+      "area": "/area/maintenance/substation/firstdeck",
+      "role": "ai",
+      "tiles": 15,
+      "occupied_tiles": 3,
+      "occupancy_micros": 200000,
+      "largest_empty_region_micros": 800000,
+      "unique_fixture_types": 2,
+      "fixture_count": 4
+    },
+    {
+      "area": "/area/ai_monitored/storage/eva/pilot",
+      "role": "storage",
+      "tiles": 22,
+      "occupied_tiles": 8,
+      "occupancy_micros": 363636,
+      "largest_empty_region_micros": 636364,
+      "unique_fixture_types": 7,
+      "fixture_count": 17
+    },
+    {
+      "area": "/area/medical/first_aid_station/firstdeck",
+      "role": "ai",
+      "tiles": 21,
+      "occupied_tiles": 14,
+      "occupancy_micros": 666667,
+      "largest_empty_region_micros": 238095,
+      "unique_fixture_types": 24,
+      "fixture_count": 37
+    },
+    {
+      "area": "/area/hallway/primary/firstdeck/elevator",
+      "role": "general",
+      "tiles": 86,
+      "occupied_tiles": 17,
+      "occupancy_micros": 197674,
+      "largest_empty_region_micros": 802326,
+      "unique_fixture_types": 18,
+      "fixture_count": 23
+    },
+    {
+      "area": "/area/crew_quarters/toilet/firstdeck",
+      "role": "general",
+      "tiles": 17,
+      "occupied_tiles": 8,
+      "occupancy_micros": 470588,
+      "largest_empty_region_micros": 529412,
+      "unique_fixture_types": 12,
+      "fixture_count": 18
+    },
+    {
+      "area": "/area/storage/emergency_storage/firstdeck/aft_emergency",
+      "role": "treatment",
+      "tiles": 8,
+      "occupied_tiles": 5,
+      "occupancy_micros": 625000,
+      "largest_empty_region_micros": 375000,
+      "unique_fixture_types": 8,
+      "fixture_count": 9
+    },
+    {
+      "area": "/area/hallway/primary/firstdeck/auxdockfore",
+      "role": "docking",
+      "tiles": 56,
+      "occupied_tiles": 15,
+      "occupancy_micros": 267857,
+      "largest_empty_region_micros": 410714,
+      "unique_fixture_types": 12,
+      "fixture_count": 17
+    },
+    {
+      "area": "/area/storage/emergency_storage/firstdeck/fore_emergency",
+      "role": "treatment",
+      "tiles": 7,
+      "occupied_tiles": 4,
+      "occupancy_micros": 571429,
+      "largest_empty_region_micros": 428571,
+      "unique_fixture_types": 7,
+      "fixture_count": 8
+    },
+    {
+      "area": "/area/tcomm/chamber",
+      "role": "general",
+      "tiles": 60,
+      "occupied_tiles": 31,
+      "occupancy_micros": 516667,
+      "largest_empty_region_micros": 466667,
+      "unique_fixture_types": 7,
+      "fixture_count": 33
+    },
+    {
+      "area": "/area/hallway/primary/firstdeck/fscenter",
+      "role": "general",
+      "tiles": 71,
+      "occupied_tiles": 4,
+      "occupancy_micros": 56338,
+      "largest_empty_region_micros": 943662,
+      "unique_fixture_types": 3,
+      "fixture_count": 4
+    },
+    {
+      "area": "/area/tcomm/entrance",
+      "role": "general",
+      "tiles": 23,
+      "occupied_tiles": 14,
+      "occupancy_micros": 608696,
+      "largest_empty_region_micros": 173913,
+      "unique_fixture_types": 19,
+      "fixture_count": 24
+    },
+    {
+      "area": "/area/hallway/primary/firstdeck/ascenter",
+      "role": "general",
+      "tiles": 71,
+      "occupied_tiles": 5,
+      "occupancy_micros": 70423,
+      "largest_empty_region_micros": 929577,
+      "unique_fixture_types": 4,
+      "fixture_count": 5
+    },
+    {
+      "area": "/area/engineering/auxiliary_engineering",
+      "role": "workshop",
+      "tiles": 69,
+      "occupied_tiles": 28,
+      "occupancy_micros": 405797,
+      "largest_empty_region_micros": 594203,
+      "unique_fixture_types": 18,
+      "fixture_count": 40
+    },
+    {
+      "area": "/area/security/checkpoint3",
+      "role": "security",
+      "tiles": 25,
+      "occupied_tiles": 14,
+      "occupancy_micros": 560000,
+      "largest_empty_region_micros": 320000,
+      "unique_fixture_types": 13,
+      "fixture_count": 20
+    },
+    {
+      "area": "/area/tcomm/tcomstorage",
+      "role": "storage",
+      "tiles": 36,
+      "occupied_tiles": 16,
+      "occupancy_micros": 444444,
+      "largest_empty_region_micros": 527778,
+      "unique_fixture_types": 9,
+      "fixture_count": 60
+    },
+    {
+      "area": "/area/tcomm/computer",
+      "role": "general",
+      "tiles": 26,
+      "occupied_tiles": 14,
+      "occupancy_micros": 538462,
+      "largest_empty_region_micros": 346154,
+      "unique_fixture_types": 19,
+      "fixture_count": 24
+    },
+    {
+      "area": "/area/security/nuke_storage",
+      "role": "security",
+      "tiles": 21,
+      "occupied_tiles": 10,
+      "occupancy_micros": 476190,
+      "largest_empty_region_micros": 523810,
+      "unique_fixture_types": 15,
+      "fixture_count": 42
+    },
+    {
+      "area": "/area/tcomm/tcomfoyer",
+      "role": "reception",
+      "tiles": 13,
+      "occupied_tiles": 6,
+      "occupancy_micros": 461538,
+      "largest_empty_region_micros": 538462,
+      "unique_fixture_types": 6,
+      "fixture_count": 8
+    },
+    {
+      "area": "/area/hallway/secondary/escape/firstdeck/ep_aftstarboard",
+      "role": "general",
+      "tiles": 20,
+      "occupied_tiles": 8,
+      "occupancy_micros": 400000,
+      "largest_empty_region_micros": 300000,
+      "unique_fixture_types": 7,
+      "fixture_count": 8
+    },
+    {
+      "area": "/area/hallway/primary/firstdeck/starboard",
+      "role": "general",
+      "tiles": 177,
+      "occupied_tiles": 18,
+      "occupancy_micros": 101695,
+      "largest_empty_region_micros": 898305,
+      "unique_fixture_types": 15,
+      "fixture_count": 25
+    },
+    {
+      "area": "/area/maintenance/firstdeck/forestarboard",
+      "role": "ai",
+      "tiles": 95,
+      "occupied_tiles": 43,
+      "occupancy_micros": 452632,
+      "largest_empty_region_micros": 189474,
+      "unique_fixture_types": 34,
+      "fixture_count": 123
+    },
+    {
+      "area": "/area/maintenance/firstdeck/aftstarboard",
+      "role": "ai",
+      "tiles": 85,
+      "occupied_tiles": 49,
+      "occupancy_micros": 576471,
+      "largest_empty_region_micros": 282353,
+      "unique_fixture_types": 23,
+      "fixture_count": 91
+    },
+    {
+      "area": "/area/storage/emergency_storage/firstdeck/fs_emergency",
+      "role": "treatment",
+      "tiles": 14,
+      "occupied_tiles": 8,
+      "occupancy_micros": 571429,
+      "largest_empty_region_micros": 214286,
+      "unique_fixture_types": 8,
+      "fixture_count": 14
+    },
+    {
+      "area": "/area/storage/emergency_storage/firstdeck/as_emergency",
+      "role": "treatment",
+      "tiles": 14,
+      "occupied_tiles": 12,
+      "occupancy_micros": 857143,
+      "largest_empty_region_micros": 71429,
+      "unique_fixture_types": 10,
+      "fixture_count": 20
+    },
+    {
+      "area": "/area/hangar/three",
+      "role": "docking",
+      "tiles": 289,
+      "occupied_tiles": 20,
+      "occupancy_micros": 69204,
+      "largest_empty_region_micros": 930796,
+      "unique_fixture_types": 11,
+      "fixture_count": 20
+    },
+    {
+      "area": "/area/hangar/two",
+      "role": "docking",
+      "tiles": 187,
+      "occupied_tiles": 19,
+      "occupancy_micros": 101604,
+      "largest_empty_region_micros": 898396,
+      "unique_fixture_types": 12,
+      "fixture_count": 40
+    },
+    {
+      "area": "/area/hangar/threecontrol",
+      "role": "docking",
+      "tiles": 11,
+      "occupied_tiles": 5,
+      "occupancy_micros": 454545,
+      "largest_empty_region_micros": 363636,
+      "unique_fixture_types": 7,
+      "fixture_count": 7
+    },
+    {
+      "area": "/area/hangar/twocontrol",
+      "role": "docking",
+      "tiles": 11,
+      "occupied_tiles": 5,
+      "occupancy_micros": 454545,
+      "largest_empty_region_micros": 363636,
+      "unique_fixture_types": 7,
+      "fixture_count": 7
+    },
+    {
+      "area": "/area/shuttle/shuttle2/start",
+      "role": "docking",
+      "tiles": 61,
+      "occupied_tiles": 40,
+      "occupancy_micros": 655738,
+      "largest_empty_region_micros": 311475,
+      "unique_fixture_types": 18,
+      "fixture_count": 46
+    },
+    {
+      "area": "/area/construction/firstdeck/construction4",
+      "role": "general",
+      "tiles": 19,
+      "occupied_tiles": 8,
+      "occupancy_micros": 421053,
+      "largest_empty_region_micros": 578947,
+      "unique_fixture_types": 7,
+      "fixture_count": 19
+    },
+    {
+      "area": "/area/construction/firstdeck/construction3",
+      "role": "general",
+      "tiles": 17,
+      "occupied_tiles": 8,
+      "occupancy_micros": 470588,
+      "largest_empty_region_micros": 411765,
+      "unique_fixture_types": 12,
+      "fixture_count": 26
+    },
+    {
+      "area": "/area/rnd/research/firstdeck/hallway",
+      "role": "laboratory",
+      "tiles": 99,
+      "occupied_tiles": 29,
+      "occupancy_micros": 292929,
+      "largest_empty_region_micros": 616162,
+      "unique_fixture_types": 17,
+      "fixture_count": 36
+    },
+    {
+      "area": "/area/hallway/secondary/escape/firstdeck/ep_starboard1",
+      "role": "general",
+      "tiles": 22,
+      "occupied_tiles": 6,
+      "occupancy_micros": 272727,
+      "largest_empty_region_micros": 454545,
+      "unique_fixture_types": 8,
+      "fixture_count": 8
+    },
+    {
+      "area": "/area/hallway/secondary/escape/firstdeck/ep_starboard2",
+      "role": "general",
+      "tiles": 22,
+      "occupied_tiles": 7,
+      "occupancy_micros": 318182,
+      "largest_empty_region_micros": 454545,
+      "unique_fixture_types": 9,
+      "fixture_count": 9
+    },
+    {
+      "area": "/area/shuttle/large_escape_pod1/station",
+      "role": "docking",
+      "tiles": 36,
+      "occupied_tiles": 24,
+      "occupancy_micros": 666667,
+      "largest_empty_region_micros": 333333,
+      "unique_fixture_types": 18,
+      "fixture_count": 50
+    },
+    {
+      "area": "/area/rnd/xenobiology/xenoflora",
+      "role": "general",
+      "tiles": 113,
+      "occupied_tiles": 38,
+      "occupancy_micros": 336283,
+      "largest_empty_region_micros": 530973,
+      "unique_fixture_types": 36,
+      "fixture_count": 74
+    },
+    {
+      "area": "/area/maintenance/firstdeck/centralstarboard",
+      "role": "ai",
+      "tiles": 53,
+      "occupied_tiles": 27,
+      "occupancy_micros": 509434,
+      "largest_empty_region_micros": 169811,
+      "unique_fixture_types": 14,
+      "fixture_count": 40
+    },
+    {
+      "area": "/area/rnd/xenobiology",
+      "role": "general",
+      "tiles": 227,
+      "occupied_tiles": 69,
+      "occupancy_micros": 303965,
+      "largest_empty_region_micros": 651982,
+      "unique_fixture_types": 46,
+      "fixture_count": 143
+    },
+    {
+      "area": "/area/rnd/xenobiology/xenoflora_isolation",
+      "role": "general",
+      "tiles": 59,
+      "occupied_tiles": 21,
+      "occupancy_micros": 355932,
+      "largest_empty_region_micros": 593220,
+      "unique_fixture_types": 11,
+      "fixture_count": 23
+    },
+    {
+      "area": "/area/engineering/engine_room",
+      "role": "workshop",
+      "tiles": 172,
+      "occupied_tiles": 0,
+      "occupancy_micros": 0,
+      "largest_empty_region_micros": 1000000,
+      "unique_fixture_types": 0,
+      "fixture_count": 0
+    },
+    {
+      "area": "/area/maintenance/disposal",
+      "role": "ai",
+      "tiles": 34,
+      "occupied_tiles": 17,
+      "occupancy_micros": 500000,
+      "largest_empty_region_micros": 352941,
+      "unique_fixture_types": 14,
+      "fixture_count": 21
+    },
+    {
+      "area": "/area/engineering/engine_waste",
+      "role": "workshop",
+      "tiles": 36,
+      "occupied_tiles": 0,
+      "occupancy_micros": 0,
+      "largest_empty_region_micros": 1000000,
+      "unique_fixture_types": 0,
+      "fixture_count": 0
+    },
+    {
+      "area": "/area/engineering/engine_airlock",
+      "role": "workshop",
+      "tiles": 13,
+      "occupied_tiles": 5,
+      "occupancy_micros": 384615,
+      "largest_empty_region_micros": 461538,
+      "unique_fixture_types": 7,
+      "fixture_count": 9
+    },
+    {
+      "area": "/area/engineering/engine_monitoring",
+      "role": "workshop",
+      "tiles": 33,
+      "occupied_tiles": 16,
+      "occupancy_micros": 484848,
+      "largest_empty_region_micros": 333333,
+      "unique_fixture_types": 15,
+      "fixture_count": 26
+    },
+    {
+      "area": "/area/engineering/engine_smes",
+      "role": "workshop",
+      "tiles": 12,
+      "occupied_tiles": 8,
+      "occupancy_micros": 666667,
+      "largest_empty_region_micros": 250000,
+      "unique_fixture_types": 11,
+      "fixture_count": 17
+    },
+    {
+      "area": "/area/maintenance/cargo",
+      "role": "cargo",
+      "tiles": 182,
+      "occupied_tiles": 57,
+      "occupancy_micros": 313187,
+      "largest_empty_region_micros": 296703,
+      "unique_fixture_types": 29,
+      "fixture_count": 106
+    },
+    {
+      "area": "/area/engineering/drone_fabrication",
+      "role": "workshop",
+      "tiles": 56,
+      "occupied_tiles": 20,
+      "occupancy_micros": 357143,
+      "largest_empty_region_micros": 607143,
+      "unique_fixture_types": 20,
+      "fixture_count": 31
+    },
+    {
+      "area": "/area/maintenance/apmaint",
+      "role": "ai",
+      "tiles": 94,
+      "occupied_tiles": 40,
+      "occupancy_micros": 425532,
+      "largest_empty_region_micros": 329787,
+      "unique_fixture_types": 10,
+      "fixture_count": 50
+    },
+    {
+      "area": "/area/engineering/atmos",
+      "role": "workshop",
+      "tiles": 319,
+      "occupied_tiles": 76,
+      "occupancy_micros": 238245,
+      "largest_empty_region_micros": 736677,
+      "unique_fixture_types": 30,
+      "fixture_count": 106
+    },
+    {
+      "area": "/area/engineering/atmos",
+      "role": "workshop",
+      "tiles": 8,
+      "occupied_tiles": 4,
+      "occupancy_micros": 500000,
+      "largest_empty_region_micros": 500000,
+      "unique_fixture_types": 3,
+      "fixture_count": 4
+    },
+    {
+      "area": "/area/engineering/atmos",
+      "role": "workshop",
+      "tiles": 8,
+      "occupied_tiles": 4,
+      "occupancy_micros": 500000,
+      "largest_empty_region_micros": 500000,
+      "unique_fixture_types": 3,
+      "fixture_count": 4
+    },
+    {
+      "area": "/area/engineering/atmos",
+      "role": "workshop",
+      "tiles": 8,
+      "occupied_tiles": 4,
+      "occupancy_micros": 500000,
+      "largest_empty_region_micros": 500000,
+      "unique_fixture_types": 3,
+      "fixture_count": 4
+    },
+    {
+      "area": "/area/engineering/atmos",
+      "role": "workshop",
+      "tiles": 8,
+      "occupied_tiles": 4,
+      "occupancy_micros": 500000,
+      "largest_empty_region_micros": 500000,
+      "unique_fixture_types": 3,
+      "fixture_count": 4
+    },
+    {
+      "area": "/area/engineering/atmos",
+      "role": "workshop",
+      "tiles": 8,
+      "occupied_tiles": 4,
+      "occupancy_micros": 500000,
+      "largest_empty_region_micros": 500000,
+      "unique_fixture_types": 3,
+      "fixture_count": 4
+    },
+    {
+      "area": "/area/engineering/atmos",
+      "role": "workshop",
+      "tiles": 8,
+      "occupied_tiles": 3,
+      "occupancy_micros": 375000,
+      "largest_empty_region_micros": 625000,
+      "unique_fixture_types": 3,
+      "fixture_count": 4
+    },
+    {
+      "area": "/area/engineering/atmos",
+      "role": "workshop",
+      "tiles": 8,
+      "occupied_tiles": 3,
+      "occupancy_micros": 375000,
+      "largest_empty_region_micros": 625000,
+      "unique_fixture_types": 3,
+      "fixture_count": 4
+    },
+    {
+      "area": "/area/engineering/hallway/engineer_hallway",
+      "role": "workshop",
+      "tiles": 75,
+      "occupied_tiles": 15,
+      "occupancy_micros": 200000,
+      "largest_empty_region_micros": 306667,
+      "unique_fixture_types": 10,
+      "fixture_count": 17
+    },
+    {
+      "area": "/area/storage/emergency_storage/seconddeck/port_emergency",
+      "role": "treatment",
+      "tiles": 10,
+      "occupied_tiles": 5,
+      "occupancy_micros": 500000,
+      "largest_empty_region_micros": 500000,
+      "unique_fixture_types": 10,
+      "fixture_count": 16
+    },
+    {
+      "area": "/area/engineering/storage",
+      "role": "storage",
+      "tiles": 43,
+      "occupied_tiles": 43,
+      "occupancy_micros": 1000000,
+      "largest_empty_region_micros": 0,
+      "unique_fixture_types": 17,
+      "fixture_count": 57
+    },
+    {
+      "area": "/area/engineering/workshop",
+      "role": "workshop",
+      "tiles": 52,
+      "occupied_tiles": 23,
+      "occupancy_micros": 442308,
+      "largest_empty_region_micros": 557692,
+      "unique_fixture_types": 27,
+      "fixture_count": 73
+    },
+    {
+      "area": "/area/construction/seconddeck/construction1",
+      "role": "general",
+      "tiles": 15,
+      "occupied_tiles": 10,
+      "occupancy_micros": 666667,
+      "largest_empty_region_micros": 200000,
+      "unique_fixture_types": 8,
+      "fixture_count": 27
+    },
+    {
+      "area": "/area/hallway/primary/seconddeck/port",
+      "role": "general",
+      "tiles": 143,
+      "occupied_tiles": 17,
+      "occupancy_micros": 118881,
+      "largest_empty_region_micros": 881119,
+      "unique_fixture_types": 11,
+      "fixture_count": 20
+    },
+    {
+      "area": "/area/quartermaster/warehouse",
+      "role": "storage",
+      "tiles": 31,
+      "occupied_tiles": 11,
+      "occupancy_micros": 354839,
+      "largest_empty_region_micros": 645161,
+      "unique_fixture_types": 13,
+      "fixture_count": 19
+    },
+    {
+      "area": "/area/engineering/hallway/atmos_hallway",
+      "role": "workshop",
+      "tiles": 72,
+      "occupied_tiles": 16,
+      "occupancy_micros": 222222,
+      "largest_empty_region_micros": 652778,
+      "unique_fixture_types": 18,
+      "fixture_count": 42
+    },
+    {
+      "area": "/area/crew_quarters/heads/sc/chief",
+      "role": "general",
+      "tiles": 38,
+      "occupied_tiles": 18,
+      "occupancy_micros": 473684,
+      "largest_empty_region_micros": 473684,
+      "unique_fixture_types": 31,
+      "fixture_count": 52
+    },
+    {
+      "area": "/area/quartermaster/delivery",
+      "role": "cargo",
+      "tiles": 26,
+      "occupied_tiles": 15,
+      "occupancy_micros": 576923,
+      "largest_empty_region_micros": 307692,
+      "unique_fixture_types": 22,
+      "fixture_count": 37
+    },
+    {
+      "area": "/area/engineering/atmos/monitoring",
+      "role": "workshop",
+      "tiles": 27,
+      "occupied_tiles": 11,
+      "occupancy_micros": 407407,
+      "largest_empty_region_micros": 222222,
+      "unique_fixture_types": 9,
+      "fixture_count": 17
+    },
+    {
+      "area": "/area/quartermaster/office",
+      "role": "office",
+      "tiles": 114,
+      "occupied_tiles": 27,
+      "occupancy_micros": 236842,
+      "largest_empty_region_micros": 701754,
+      "unique_fixture_types": 32,
+      "fixture_count": 53
+    },
+    {
+      "area": "/area/quartermaster/foyer",
+      "role": "cargo",
+      "tiles": 39,
+      "occupied_tiles": 9,
+      "occupancy_micros": 230769,
+      "largest_empty_region_micros": 769231,
+      "unique_fixture_types": 10,
+      "fixture_count": 12
+    },
+    {
+      "area": "/area/engineering/foyer",
+      "role": "workshop",
+      "tiles": 76,
+      "occupied_tiles": 21,
+      "occupancy_micros": 276316,
+      "largest_empty_region_micros": 618421,
+      "unique_fixture_types": 23,
+      "fixture_count": 39
+    },
+    {
+      "area": "/area/engineering/engineer_eva",
+      "role": "workshop",
+      "tiles": 40,
+      "occupied_tiles": 16,
+      "occupancy_micros": 400000,
+      "largest_empty_region_micros": 500000,
+      "unique_fixture_types": 15,
+      "fixture_count": 53
+    },
+    {
+      "area": "/area/engineering/break_room",
+      "role": "workshop",
+      "tiles": 47,
+      "occupied_tiles": 26,
+      "occupancy_micros": 553191,
+      "largest_empty_region_micros": 361702,
+      "unique_fixture_types": 25,
+      "fixture_count": 46
+    },
+    {
+      "area": "/area/maintenance/engineering",
+      "role": "workshop",
+      "tiles": 226,
+      "occupied_tiles": 88,
+      "occupancy_micros": 389381,
+      "largest_empty_region_micros": 300885,
+      "unique_fixture_types": 38,
+      "fixture_count": 204
+    },
+    {
+      "area": "/area/maintenance/emergencyeva",
+      "role": "treatment",
+      "tiles": 11,
+      "occupied_tiles": 8,
+      "occupancy_micros": 727273,
+      "largest_empty_region_micros": 272727,
+      "unique_fixture_types": 7,
+      "fixture_count": 13
+    },
+    {
+      "area": "/area/maintenance/substation/atmospherics",
+      "role": "atmospherics",
+      "tiles": 12,
+      "occupied_tiles": 8,
+      "occupancy_micros": 666667,
+      "largest_empty_region_micros": 166667,
+      "unique_fixture_types": 6,
+      "fixture_count": 14
+    },
+    {
+      "area": "/area/quartermaster/qm",
+      "role": "cargo",
+      "tiles": 32,
+      "occupied_tiles": 16,
+      "occupancy_micros": 500000,
+      "largest_empty_region_micros": 500000,
+      "unique_fixture_types": 26,
+      "fixture_count": 37
+    },
+    {
+      "area": "/area/maintenance/substation/engineering",
+      "role": "workshop",
+      "tiles": 11,
+      "occupied_tiles": 6,
+      "occupancy_micros": 545455,
+      "largest_empty_region_micros": 272727,
+      "unique_fixture_types": 4,
+      "fixture_count": 8
+    },
+    {
+      "area": "/area/engineering/locker_room",
+      "role": "workshop",
+      "tiles": 25,
+      "occupied_tiles": 12,
+      "occupancy_micros": 480000,
+      "largest_empty_region_micros": 480000,
+      "unique_fixture_types": 11,
+      "fixture_count": 20
+    },
+    {
+      "area": "/area/ai_monitored/storage/emergency/eva",
+      "role": "treatment",
+      "tiles": 23,
+      "occupied_tiles": 11,
+      "occupancy_micros": 478261,
+      "largest_empty_region_micros": 478261,
+      "unique_fixture_types": 17,
+      "fixture_count": 41
+    },
+    {
+      "area": "/area/quartermaster/lockerroom",
+      "role": "cargo",
+      "tiles": 18,
+      "occupied_tiles": 8,
+      "occupancy_micros": 444444,
+      "largest_empty_region_micros": 555556,
+      "unique_fixture_types": 12,
+      "fixture_count": 17
+    },
+    {
+      "area": "/area/engineering/engi_restroom",
+      "role": "workshop",
+      "tiles": 21,
+      "occupied_tiles": 10,
+      "occupancy_micros": 476190,
+      "largest_empty_region_micros": 523810,
+      "unique_fixture_types": 12,
+      "fixture_count": 22
+    },
+    {
+      "area": "/area/maintenance/bar",
+      "role": "ai",
+      "tiles": 189,
+      "occupied_tiles": 71,
+      "occupancy_micros": 375661,
+      "largest_empty_region_micros": 380952,
+      "unique_fixture_types": 30,
+      "fixture_count": 154
+    },
+    {
+      "area": "/area/maintenance/substation/cargo",
+      "role": "cargo",
+      "tiles": 11,
+      "occupied_tiles": 7,
+      "occupancy_micros": 636364,
+      "largest_empty_region_micros": 272727,
+      "unique_fixture_types": 4,
+      "fixture_count": 8
+    },
+    {
+      "area": "/area/shuttle/cryo/station",
+      "role": "docking",
+      "tiles": 24,
+      "occupied_tiles": 16,
+      "occupancy_micros": 666667,
+      "largest_empty_region_micros": 333333,
+      "unique_fixture_types": 6,
+      "fixture_count": 18
+    },
+    {
+      "area": "/area/hallway/secondary/entry/D1",
+      "role": "general",
+      "tiles": 143,
+      "occupied_tiles": 39,
+      "occupancy_micros": 272727,
+      "largest_empty_region_micros": 384615,
+      "unique_fixture_types": 14,
+      "fixture_count": 49
+    },
+    {
+      "area": "/area/maintenance/security_port",
+      "role": "security",
+      "tiles": 52,
+      "occupied_tiles": 16,
+      "occupancy_micros": 307692,
+      "largest_empty_region_micros": 480769,
+      "unique_fixture_types": 16,
+      "fixture_count": 34
+    },
+    {
+      "area": "/area/medical/first_aid_station/seconddeck/port",
+      "role": "ai",
+      "tiles": 12,
+      "occupied_tiles": 7,
+      "occupancy_micros": 583333,
+      "largest_empty_region_micros": 333333,
+      "unique_fixture_types": 16,
+      "fixture_count": 21
+    },
+    {
+      "area": "/area/security/prison",
+      "role": "security",
+      "tiles": 133,
+      "occupied_tiles": 57,
+      "occupancy_micros": 428571,
+      "largest_empty_region_micros": 323308,
+      "unique_fixture_types": 50,
+      "fixture_count": 101
+    },
+    {
+      "area": "/area/security/security_cell_hallway",
+      "role": "brig",
+      "tiles": 65,
+      "occupied_tiles": 23,
+      "occupancy_micros": 353846,
+      "largest_empty_region_micros": 369231,
+      "unique_fixture_types": 13,
+      "fixture_count": 46
+    },
+    {
+      "area": "/area/security/riot_control",
+      "role": "security",
+      "tiles": 13,
+      "occupied_tiles": 5,
+      "occupancy_micros": 384615,
+      "largest_empty_region_micros": 461538,
+      "unique_fixture_types": 9,
+      "fixture_count": 9
+    },
+    {
+      "area": "/area/hallway/secondary/docking_hallway2",
+      "role": "docking",
+      "tiles": 66,
+      "occupied_tiles": 13,
+      "occupancy_micros": 196970,
+      "largest_empty_region_micros": 787879,
+      "unique_fixture_types": 7,
+      "fixture_count": 14
+    },
+    {
+      "area": "/area/hallway/primary/seconddeck/dockhallway",
+      "role": "docking",
+      "tiles": 167,
+      "occupied_tiles": 44,
+      "occupancy_micros": 263473,
+      "largest_empty_region_micros": 383234,
+      "unique_fixture_types": 13,
+      "fixture_count": 49
+    },
+    {
+      "area": "/area/library",
+      "role": "general",
+      "tiles": 162,
+      "occupied_tiles": 71,
+      "occupancy_micros": 438272,
+      "largest_empty_region_micros": 456790,
+      "unique_fixture_types": 44,
+      "fixture_count": 133
+    },
+    {
+      "area": "/area/hallway/primary/seconddeck/fpcenter",
+      "role": "general",
+      "tiles": 146,
+      "occupied_tiles": 39,
+      "occupancy_micros": 267123,
+      "largest_empty_region_micros": 664384,
+      "unique_fixture_types": 19,
+      "fixture_count": 48
+    },
+    {
+      "area": "/area/storage/emergency_storage/seconddeck/ap_emergency",
+      "role": "treatment",
+      "tiles": 12,
+      "occupied_tiles": 10,
+      "occupancy_micros": 833333,
+      "largest_empty_region_micros": 83333,
+      "unique_fixture_types": 11,
+      "fixture_count": 19
+    },
+    {
+      "area": "/area/crew_quarters/kitchen",
+      "role": "general",
+      "tiles": 74,
+      "occupied_tiles": 37,
+      "occupancy_micros": 500000,
+      "largest_empty_region_micros": 500000,
+      "unique_fixture_types": 35,
+      "fixture_count": 71
+    },
+    {
+      "area": "/area/hydroponics",
+      "role": "general",
+      "tiles": 61,
+      "occupied_tiles": 29,
+      "occupancy_micros": 475410,
+      "largest_empty_region_micros": 442623,
+      "unique_fixture_types": 26,
+      "fixture_count": 53
+    },
+    {
+      "area": "/area/hallway/secondary/entry/docking_lounge",
+      "role": "docking",
+      "tiles": 47,
+      "occupied_tiles": 20,
+      "occupancy_micros": 425532,
+      "largest_empty_region_micros": 276596,
+      "unique_fixture_types": 22,
+      "fixture_count": 37
+    },
+    {
+      "area": "/area/ai_monitored/storage/eva",
+      "role": "storage",
+      "tiles": 79,
+      "occupied_tiles": 32,
+      "occupancy_micros": 405063,
+      "largest_empty_region_micros": 367089,
+      "unique_fixture_types": 21,
+      "fixture_count": 97
+    },
+    {
+      "area": "/area/storage/emergency_storage/seconddeck/fp_emergency",
+      "role": "treatment",
+      "tiles": 12,
+      "occupied_tiles": 10,
+      "occupancy_micros": 833333,
+      "largest_empty_region_micros": 83333,
+      "unique_fixture_types": 11,
+      "fixture_count": 18
+    },
+    {
+      "area": "/area/security/detectives_office",
+      "role": "security",
+      "tiles": 75,
+      "occupied_tiles": 44,
+      "occupancy_micros": 586667,
+      "largest_empty_region_micros": 253333,
+      "unique_fixture_types": 40,
+      "fixture_count": 104
+    },
+    {
+      "area": "/area/hallway/primary/seconddeck/apcenter",
+      "role": "general",
+      "tiles": 194,
+      "occupied_tiles": 45,
+      "occupancy_micros": 231959,
+      "largest_empty_region_micros": 484536,
+      "unique_fixture_types": 14,
+      "fixture_count": 53
+    },
+    {
+      "area": "/area/crew_quarters/bar",
+      "role": "general",
+      "tiles": 39,
+      "occupied_tiles": 23,
+      "occupancy_micros": 589744,
+      "largest_empty_region_micros": 384615,
+      "unique_fixture_types": 29,
+      "fixture_count": 52
+    },
+    {
+      "area": "/area/storage/primary",
+      "role": "storage",
+      "tiles": 38,
+      "occupied_tiles": 18,
+      "occupancy_micros": 473684,
+      "largest_empty_region_micros": 447368,
+      "unique_fixture_types": 17,
+      "fixture_count": 62
+    },
+    {
+      "area": "/area/crew_quarters/cafeteria",
+      "role": "general",
+      "tiles": 98,
+      "occupied_tiles": 43,
+      "occupancy_micros": 438776,
+      "largest_empty_region_micros": 540816,
+      "unique_fixture_types": 21,
+      "fixture_count": 62
+    },
+    {
+      "area": "/area/security/brig",
+      "role": "brig",
+      "tiles": 127,
+      "occupied_tiles": 17,
+      "occupancy_micros": 133858,
+      "largest_empty_region_micros": 866142,
+      "unique_fixture_types": 11,
+      "fixture_count": 18
+    },
+    {
+      "area": "/area/storage/emergency_storage/seconddeck/central_emergency",
+      "role": "treatment",
+      "tiles": 9,
+      "occupied_tiles": 4,
+      "occupancy_micros": 444444,
+      "largest_empty_region_micros": 555556,
+      "unique_fixture_types": 8,
+      "fixture_count": 14
+    },
+    {
+      "area": "/area/maintenance/substation/central",
+      "role": "ai",
+      "tiles": 13,
+      "occupied_tiles": 7,
+      "occupancy_micros": 538462,
+      "largest_empty_region_micros": 307692,
+      "unique_fixture_types": 5,
+      "fixture_count": 9
+    },
+    {
+      "area": "/area/maintenance/central",
+      "role": "ai",
+      "tiles": 65,
+      "occupied_tiles": 45,
+      "occupancy_micros": 692308,
+      "largest_empty_region_micros": 107692,
+      "unique_fixture_types": 18,
+      "fixture_count": 72
+    },
+    {
+      "area": "/area/security/armoury",
+      "role": "armory",
+      "tiles": 56,
+      "occupied_tiles": 26,
+      "occupancy_micros": 464286,
+      "largest_empty_region_micros": 517857,
+      "unique_fixture_types": 17,
+      "fixture_count": 108
+    },
+    {
+      "area": "/area/security/security_equiptment_storage",
+      "role": "security",
+      "tiles": 17,
+      "occupied_tiles": 9,
+      "occupancy_micros": 529412,
+      "largest_empty_region_micros": 470588,
+      "unique_fixture_types": 8,
+      "fixture_count": 19
+    },
+    {
+      "area": "/area/security/warden",
+      "role": "ward",
+      "tiles": 37,
+      "occupied_tiles": 16,
+      "occupancy_micros": 432432,
+      "largest_empty_region_micros": 540541,
+      "unique_fixture_types": 24,
+      "fixture_count": 34
+    },
+    {
+      "area": "/area/hallway/primary/seconddeck/stairwell",
+      "role": "ai",
+      "tiles": 20,
+      "occupied_tiles": 6,
+      "occupancy_micros": 300000,
+      "largest_empty_region_micros": 700000,
+      "unique_fixture_types": 11,
+      "fixture_count": 13
+    },
+    {
+      "area": "/area/hallway/primary/seconddeck/aft",
+      "role": "general",
+      "tiles": 165,
+      "occupied_tiles": 22,
+      "occupancy_micros": 133333,
+      "largest_empty_region_micros": 866667,
+      "unique_fixture_types": 15,
+      "fixture_count": 33
+    },
+    {
+      "area": "/area/security/checkpoint2",
+      "role": "security",
+      "tiles": 23,
+      "occupied_tiles": 12,
+      "occupancy_micros": 521739,
+      "largest_empty_region_micros": 260870,
+      "unique_fixture_types": 16,
+      "fixture_count": 23
+    },
+    {
+      "area": "/area/hallway/secondary/entry/D2",
+      "role": "general",
+      "tiles": 153,
+      "occupied_tiles": 34,
+      "occupancy_micros": 222222,
+      "largest_empty_region_micros": 771242,
+      "unique_fixture_types": 15,
+      "fixture_count": 45
+    },
+    {
+      "area": "/area/security/lobby",
+      "role": "security",
+      "tiles": 51,
+      "occupied_tiles": 18,
+      "occupancy_micros": 352941,
+      "largest_empty_region_micros": 588235,
+      "unique_fixture_types": 15,
+      "fixture_count": 25
+    },
+    {
+      "area": "/area/hallway/primary/seconddeck/fscenter",
+      "role": "general",
+      "tiles": 146,
+      "occupied_tiles": 41,
+      "occupancy_micros": 280822,
+      "largest_empty_region_micros": 650685,
+      "unique_fixture_types": 15,
+      "fixture_count": 49
+    },
+    {
+      "area": "/area/hallway/primary/seconddeck/fore",
+      "role": "general",
+      "tiles": 40,
+      "occupied_tiles": 7,
+      "occupancy_micros": 175000,
+      "largest_empty_region_micros": 825000,
+      "unique_fixture_types": 6,
+      "fixture_count": 8
+    },
+    {
+      "area": "/area/security/evidence_storage",
+      "role": "security",
+      "tiles": 17,
+      "occupied_tiles": 9,
+      "occupancy_micros": 529412,
+      "largest_empty_region_micros": 470588,
+      "unique_fixture_types": 8,
+      "fixture_count": 13
+    },
+    {
+      "area": "/area/security/security_processing",
+      "role": "security",
+      "tiles": 32,
+      "occupied_tiles": 14,
+      "occupancy_micros": 437500,
+      "largest_empty_region_micros": 437500,
+      "unique_fixture_types": 19,
+      "fixture_count": 30
+    },
+    {
+      "area": "/area/hallway/secondary/eva_hallway",
+      "role": "general",
+      "tiles": 63,
+      "occupied_tiles": 13,
+      "occupancy_micros": 206349,
+      "largest_empty_region_micros": 714286,
+      "unique_fixture_types": 12,
+      "fixture_count": 16
+    },
+    {
+      "area": "/area/maintenance/research",
+      "role": "laboratory",
+      "tiles": 204,
+      "occupied_tiles": 64,
+      "occupancy_micros": 313725,
+      "largest_empty_region_micros": 254902,
+      "unique_fixture_types": 35,
+      "fixture_count": 163
+    },
+    {
+      "area": "/area/teleporter",
+      "role": "general",
+      "tiles": 30,
+      "occupied_tiles": 18,
+      "occupancy_micros": 600000,
+      "largest_empty_region_micros": 266667,
+      "unique_fixture_types": 18,
+      "fixture_count": 28
+    },
+    {
+      "area": "/area/maintenance/medbay",
+      "role": "ai",
+      "tiles": 118,
+      "occupied_tiles": 35,
+      "occupancy_micros": 296610,
+      "largest_empty_region_micros": 559322,
+      "unique_fixture_types": 22,
+      "fixture_count": 76
+    },
+    {
+      "area": "/area/medical/first_aid_station/seconddeck/aft",
+      "role": "ai",
+      "tiles": 17,
+      "occupied_tiles": 7,
+      "occupancy_micros": 411765,
+      "largest_empty_region_micros": 411765,
+      "unique_fixture_types": 14,
+      "fixture_count": 20
+    },
+    {
+      "area": "/area/chapel/main",
+      "role": "ai",
+      "tiles": 119,
+      "occupied_tiles": 47,
+      "occupancy_micros": 394958,
+      "largest_empty_region_micros": 571429,
+      "unique_fixture_types": 19,
+      "fixture_count": 55
+    },
+    {
+      "area": "/area/construction/seconddeck/construction2",
+      "role": "general",
+      "tiles": 143,
+      "occupied_tiles": 73,
+      "occupancy_micros": 510490,
+      "largest_empty_region_micros": 363636,
+      "unique_fixture_types": 39,
+      "fixture_count": 107
+    },
+    {
+      "area": "/area/hallway/secondary/entry/D2/arrivals",
+      "role": "general",
+      "tiles": 8,
+      "occupied_tiles": 4,
+      "occupancy_micros": 500000,
+      "largest_empty_region_micros": 375000,
+      "unique_fixture_types": 4,
+      "fixture_count": 5
+    },
+    {
+      "area": "/area/hallway/secondary/entry/D2/arrivals",
+      "role": "general",
+      "tiles": 8,
+      "occupied_tiles": 4,
+      "occupancy_micros": 500000,
+      "largest_empty_region_micros": 375000,
+      "unique_fixture_types": 4,
+      "fixture_count": 5
+    },
+    {
+      "area": "/area/security/tactical",
+      "role": "security",
+      "tiles": 21,
+      "occupied_tiles": 11,
+      "occupancy_micros": 523810,
+      "largest_empty_region_micros": 476190,
+      "unique_fixture_types": 12,
+      "fixture_count": 46
+    },
+    {
+      "area": "/area/medical/first_aid_station/seconddeck/fore",
+      "role": "ai",
+      "tiles": 12,
+      "occupied_tiles": 8,
+      "occupancy_micros": 666667,
+      "largest_empty_region_micros": 333333,
+      "unique_fixture_types": 16,
+      "fixture_count": 23
+    },
+    {
+      "area": "/area/crew_quarters/heads/sc/hop",
+      "role": "general",
+      "tiles": 35,
+      "occupied_tiles": 20,
+      "occupancy_micros": 571429,
+      "largest_empty_region_micros": 342857,
+      "unique_fixture_types": 29,
+      "fixture_count": 43
+    },
+    {
+      "area": "/area/hallway/primary/seconddeck/ascenter",
+      "role": "general",
+      "tiles": 146,
+      "occupied_tiles": 40,
+      "occupancy_micros": 273973,
+      "largest_empty_region_micros": 643836,
+      "unique_fixture_types": 20,
+      "fixture_count": 49
+    },
+    {
+      "area": "/area/crew_quarters/locker/locker_toilet",
+      "role": "general",
+      "tiles": 25,
+      "occupied_tiles": 13,
+      "occupancy_micros": 520000,
+      "largest_empty_region_micros": 280000,
+      "unique_fixture_types": 14,
+      "fixture_count": 28
+    },
+    {
+      "area": "/area/crew_quarters/locker",
+      "role": "general",
+      "tiles": 133,
+      "occupied_tiles": 40,
+      "occupancy_micros": 300752,
+      "largest_empty_region_micros": 699248,
+      "unique_fixture_types": 20,
+      "fixture_count": 53
+    },
+    {
+      "area": "/area/crew_quarters/heads/sc/hos",
+      "role": "general",
+      "tiles": 31,
+      "occupied_tiles": 18,
+      "occupancy_micros": 580645,
+      "largest_empty_region_micros": 193548,
+      "unique_fixture_types": 31,
+      "fixture_count": 44
+    },
+    {
+      "area": "/area/janitor",
+      "role": "general",
+      "tiles": 29,
+      "occupied_tiles": 16,
+      "occupancy_micros": 551724,
+      "largest_empty_region_micros": 448276,
+      "unique_fixture_types": 25,
+      "fixture_count": 40
+    },
+    {
+      "area": "/area/security/security_restroom",
+      "role": "security",
+      "tiles": 22,
+      "occupied_tiles": 9,
+      "occupancy_micros": 409091,
+      "largest_empty_region_micros": 590909,
+      "unique_fixture_types": 13,
+      "fixture_count": 22
+    },
+    {
+      "area": "/area/security/main",
+      "role": "security",
+      "tiles": 63,
+      "occupied_tiles": 28,
+      "occupancy_micros": 444444,
+      "largest_empty_region_micros": 539683,
+      "unique_fixture_types": 24,
+      "fixture_count": 44
+    },
+    {
+      "area": "/area/chapel/office",
+      "role": "office",
+      "tiles": 27,
+      "occupied_tiles": 14,
+      "occupancy_micros": 518519,
+      "largest_empty_region_micros": 444444,
+      "unique_fixture_types": 19,
+      "fixture_count": 24
+    },
+    {
+      "area": "/area/lawoffice",
+      "role": "office",
+      "tiles": 41,
+      "occupied_tiles": 23,
+      "occupancy_micros": 560976,
+      "largest_empty_region_micros": 292683,
+      "unique_fixture_types": 27,
+      "fixture_count": 69
+    },
+    {
+      "area": "/area/holodeck/alphadeck",
+      "role": "general",
+      "tiles": 100,
+      "occupied_tiles": 0,
+      "occupancy_micros": 0,
+      "largest_empty_region_micros": 1000000,
+      "unique_fixture_types": 0,
+      "fixture_count": 0
+    },
+    {
+      "area": "/area/storage/auxillary",
+      "role": "storage",
+      "tiles": 29,
+      "occupied_tiles": 13,
+      "occupancy_micros": 448276,
+      "largest_empty_region_micros": 551724,
+      "unique_fixture_types": 22,
+      "fixture_count": 62
+    },
+    {
+      "area": "/area/crew_quarters/sleep/vistor_room_1",
+      "role": "general",
+      "tiles": 10,
+      "occupied_tiles": 6,
+      "occupancy_micros": 600000,
+      "largest_empty_region_micros": 200000,
+      "unique_fixture_types": 10,
+      "fixture_count": 13
+    },
+    {
+      "area": "/area/security/security_lockerroom",
+      "role": "security",
+      "tiles": 19,
+      "occupied_tiles": 10,
+      "occupancy_micros": 526316,
+      "largest_empty_region_micros": 263158,
+      "unique_fixture_types": 17,
+      "fixture_count": 44
+    },
+    {
+      "area": "/area/security/aid_station",
+      "role": "security",
+      "tiles": 13,
+      "occupied_tiles": 6,
+      "occupancy_micros": 461538,
+      "largest_empty_region_micros": 538462,
+      "unique_fixture_types": 13,
+      "fixture_count": 20
+    },
+    {
+      "area": "/area/storage/emergency_storage/seconddeck/fs_emergency",
+      "role": "treatment",
+      "tiles": 12,
+      "occupied_tiles": 10,
+      "occupancy_micros": 833333,
+      "largest_empty_region_micros": 83333,
+      "unique_fixture_types": 9,
+      "fixture_count": 20
+    },
+    {
+      "area": "/area/storage/emergency_storage/seconddeck/as_emergency",
+      "role": "treatment",
+      "tiles": 12,
+      "occupied_tiles": 10,
+      "occupancy_micros": 833333,
+      "largest_empty_region_micros": 83333,
+      "unique_fixture_types": 12,
+      "fixture_count": 18
+    },
+    {
+      "area": "/area/crew_quarters/sleep/vistor_room_2",
+      "role": "general",
+      "tiles": 10,
+      "occupied_tiles": 6,
+      "occupancy_micros": 600000,
+      "largest_empty_region_micros": 200000,
+      "unique_fixture_types": 11,
+      "fixture_count": 15
+    },
+    {
+      "area": "/area/hallway/secondary/entry/D3",
+      "role": "general",
+      "tiles": 141,
+      "occupied_tiles": 37,
+      "occupancy_micros": 262411,
+      "largest_empty_region_micros": 390071,
+      "unique_fixture_types": 14,
+      "fixture_count": 46
+    },
+    {
+      "area": "/area/security/range",
+      "role": "security",
+      "tiles": 63,
+      "occupied_tiles": 15,
+      "occupancy_micros": 238095,
+      "largest_empty_region_micros": 761905,
+      "unique_fixture_types": 19,
+      "fixture_count": 48
+    },
+    {
+      "area": "/area/maintenance/substation/civilian",
+      "role": "ai",
+      "tiles": 8,
+      "occupied_tiles": 5,
+      "occupancy_micros": 625000,
+      "largest_empty_region_micros": 250000,
+      "unique_fixture_types": 4,
+      "fixture_count": 7
+    },
+    {
+      "area": "/area/maintenance/security_starboard",
+      "role": "security",
+      "tiles": 23,
+      "occupied_tiles": 8,
+      "occupancy_micros": 347826,
+      "largest_empty_region_micros": 391304,
+      "unique_fixture_types": 14,
+      "fixture_count": 34
+    },
+    {
+      "area": "/area/security/security_ses",
+      "role": "security",
+      "tiles": 18,
+      "occupied_tiles": 10,
+      "occupancy_micros": 555556,
+      "largest_empty_region_micros": 444444,
+      "unique_fixture_types": 10,
+      "fixture_count": 31
+    },
+    {
+      "area": "/area/maintenance/substation/security",
+      "role": "security",
+      "tiles": 8,
+      "occupied_tiles": 4,
+      "occupancy_micros": 500000,
+      "largest_empty_region_micros": 250000,
+      "unique_fixture_types": 2,
+      "fixture_count": 5
+    },
+    {
+      "area": "/area/hallway/primary/seconddeck/starboard",
+      "role": "general",
+      "tiles": 151,
+      "occupied_tiles": 18,
+      "occupancy_micros": 119205,
+      "largest_empty_region_micros": 880795,
+      "unique_fixture_types": 10,
+      "fixture_count": 20
+    },
+    {
+      "area": "/area/medical/medbay_emt_bay",
+      "role": "general",
+      "tiles": 28,
+      "occupied_tiles": 13,
+      "occupancy_micros": 464286,
+      "largest_empty_region_micros": 535714,
+      "unique_fixture_types": 21,
+      "fixture_count": 39
+    },
+    {
+      "area": "/area/maintenance/locker",
+      "role": "ai",
+      "tiles": 39,
+      "occupied_tiles": 9,
+      "occupancy_micros": 230769,
+      "largest_empty_region_micros": 589744,
+      "unique_fixture_types": 5,
+      "fixture_count": 14
+    },
+    {
+      "area": "/area/maintenance/chapel",
+      "role": "ai",
+      "tiles": 33,
+      "occupied_tiles": 13,
+      "occupancy_micros": 393939,
+      "largest_empty_region_micros": 484848,
+      "unique_fixture_types": 17,
+      "fixture_count": 33
+    },
+    {
+      "area": "/area/medical/medbay",
+      "role": "general",
+      "tiles": 63,
+      "occupied_tiles": 15,
+      "occupancy_micros": 238095,
+      "largest_empty_region_micros": 317460,
+      "unique_fixture_types": 9,
+      "fixture_count": 16
+    },
+    {
+      "area": "/area/maintenance/substation/medical",
+      "role": "ai",
+      "tiles": 11,
+      "occupied_tiles": 6,
+      "occupancy_micros": 545455,
+      "largest_empty_region_micros": 181818,
+      "unique_fixture_types": 5,
+      "fixture_count": 8
+    },
+    {
+      "area": "/area/maintenance/substation/research",
+      "role": "laboratory",
+      "tiles": 11,
+      "occupied_tiles": 6,
+      "occupancy_micros": 545455,
+      "largest_empty_region_micros": 181818,
+      "unique_fixture_types": 6,
+      "fixture_count": 9
+    },
+    {
+      "area": "/area/rnd/research",
+      "role": "laboratory",
+      "tiles": 173,
+      "occupied_tiles": 41,
+      "occupancy_micros": 236994,
+      "largest_empty_region_micros": 410405,
+      "unique_fixture_types": 25,
+      "fixture_count": 54
+    },
+    {
+      "area": "/area/rnd/lab",
+      "role": "laboratory",
+      "tiles": 43,
+      "occupied_tiles": 21,
+      "occupancy_micros": 488372,
+      "largest_empty_region_micros": 488372,
+      "unique_fixture_types": 32,
+      "fixture_count": 70
+    },
+    {
+      "area": "/area/maintenance/medbay_fore",
+      "role": "ai",
+      "tiles": 24,
+      "occupied_tiles": 15,
+      "occupancy_micros": 625000,
+      "largest_empty_region_micros": 250000,
+      "unique_fixture_types": 15,
+      "fixture_count": 34
+    },
+    {
+      "area": "/area/crew_quarters/heads/sc/cmo",
+      "role": "general",
+      "tiles": 35,
+      "occupied_tiles": 18,
+      "occupancy_micros": 514286,
+      "largest_empty_region_micros": 314286,
+      "unique_fixture_types": 27,
+      "fixture_count": 44
+    },
+    {
+      "area": "/area/medical/exam_room",
+      "role": "treatment",
+      "tiles": 15,
+      "occupied_tiles": 11,
+      "occupancy_micros": 733333,
+      "largest_empty_region_micros": 266667,
+      "unique_fixture_types": 20,
+      "fixture_count": 30
+    },
+    {
+      "area": "/area/crew_quarters/heads/sc/hor",
+      "role": "general",
+      "tiles": 35,
+      "occupied_tiles": 19,
+      "occupancy_micros": 542857,
+      "largest_empty_region_micros": 400000,
+      "unique_fixture_types": 35,
+      "fixture_count": 51
+    },
+    {
+      "area": "/area/rnd/research_foyer",
+      "role": "laboratory",
+      "tiles": 18,
+      "occupied_tiles": 5,
+      "occupancy_micros": 277778,
+      "largest_empty_region_micros": 722222,
+      "unique_fixture_types": 5,
+      "fixture_count": 6
+    },
+    {
+      "area": "/area/medical/reception",
+      "role": "reception",
+      "tiles": 46,
+      "occupied_tiles": 29,
+      "occupancy_micros": 630435,
+      "largest_empty_region_micros": 347826,
+      "unique_fixture_types": 28,
+      "fixture_count": 57
+    },
+    {
+      "area": "/area/medical/ward",
+      "role": "ward",
+      "tiles": 77,
+      "occupied_tiles": 31,
+      "occupancy_micros": 402597,
+      "largest_empty_region_micros": 454545,
+      "unique_fixture_types": 19,
+      "fixture_count": 73
+    },
+    {
+      "area": "/area/medical/sleeper",
+      "role": "general",
+      "tiles": 59,
+      "occupied_tiles": 16,
+      "occupancy_micros": 271186,
+      "largest_empty_region_micros": 728814,
+      "unique_fixture_types": 18,
+      "fixture_count": 33
+    },
+    {
+      "area": "/area/assembly/robotics",
+      "role": "robotics",
+      "tiles": 63,
+      "occupied_tiles": 31,
+      "occupancy_micros": 492063,
+      "largest_empty_region_micros": 492063,
+      "unique_fixture_types": 43,
+      "fixture_count": 125
+    },
+    {
+      "area": "/area/maintenance/robotics",
+      "role": "robotics",
+      "tiles": 13,
+      "occupied_tiles": 7,
+      "occupancy_micros": 538462,
+      "largest_empty_region_micros": 384615,
+      "unique_fixture_types": 4,
+      "fixture_count": 7
+    },
+    {
+      "area": "/area/medical/surgery",
+      "role": "surgery",
+      "tiles": 21,
+      "occupied_tiles": 12,
+      "occupancy_micros": 571429,
+      "largest_empty_region_micros": 142857,
+      "unique_fixture_types": 18,
+      "fixture_count": 33
+    },
+    {
+      "area": "/area/medical/foyer",
+      "role": "reception",
+      "tiles": 38,
+      "occupied_tiles": 8,
+      "occupancy_micros": 210526,
+      "largest_empty_region_micros": 789474,
+      "unique_fixture_types": 7,
+      "fixture_count": 12
+    },
+    {
+      "area": "/area/medical/surgeryobs",
+      "role": "surgery",
+      "tiles": 19,
+      "occupied_tiles": 11,
+      "occupancy_micros": 578947,
+      "largest_empty_region_micros": 157895,
+      "unique_fixture_types": 11,
+      "fixture_count": 17
+    },
+    {
+      "area": "/area/rnd/research_lockerroom",
+      "role": "laboratory",
+      "tiles": 13,
+      "occupied_tiles": 5,
+      "occupancy_micros": 384615,
+      "largest_empty_region_micros": 615385,
+      "unique_fixture_types": 6,
+      "fixture_count": 9
+    },
+    {
+      "area": "/area/assembly/chargebay",
+      "role": "general",
+      "tiles": 18,
+      "occupied_tiles": 7,
+      "occupancy_micros": 388889,
+      "largest_empty_region_micros": 500000,
+      "unique_fixture_types": 12,
+      "fixture_count": 16
+    },
+    {
+      "area": "/area/medical/chemistry",
+      "role": "pharmacy",
+      "tiles": 41,
+      "occupied_tiles": 23,
+      "occupancy_micros": 560976,
+      "largest_empty_region_micros": 341463,
+      "unique_fixture_types": 30,
+      "fixture_count": 60
+    },
+    {
+      "area": "/area/medical/cryo",
+      "role": "general",
+      "tiles": 31,
+      "occupied_tiles": 9,
+      "occupancy_micros": 290323,
+      "largest_empty_region_micros": 677419,
+      "unique_fixture_types": 14,
+      "fixture_count": 16
+    },
+    {
+      "area": "/area/medical/surgery2",
+      "role": "surgery",
+      "tiles": 21,
+      "occupied_tiles": 12,
+      "occupancy_micros": 571429,
+      "largest_empty_region_micros": 142857,
+      "unique_fixture_types": 17,
+      "fixture_count": 32
+    },
+    {
+      "area": "/area/rnd/research_restroom_sc",
+      "role": "laboratory",
+      "tiles": 18,
+      "occupied_tiles": 8,
+      "occupancy_micros": 444444,
+      "largest_empty_region_micros": 388889,
+      "unique_fixture_types": 14,
+      "fixture_count": 23
+    },
+    {
+      "area": "/area/maintenance/research_medical",
+      "role": "laboratory",
+      "tiles": 52,
+      "occupied_tiles": 30,
+      "occupancy_micros": 576923,
+      "largest_empty_region_micros": 192308,
+      "unique_fixture_types": 19,
+      "fixture_count": 69
+    },
+    {
+      "area": "/area/rnd/misc_lab",
+      "role": "laboratory",
+      "tiles": 48,
+      "occupied_tiles": 19,
+      "occupancy_micros": 395833,
+      "largest_empty_region_micros": 604167,
+      "unique_fixture_types": 24,
+      "fixture_count": 38
+    },
+    {
+      "area": "/area/medical/surgery_storage",
+      "role": "surgery",
+      "tiles": 10,
+      "occupied_tiles": 5,
+      "occupancy_micros": 500000,
+      "largest_empty_region_micros": 500000,
+      "unique_fixture_types": 7,
+      "fixture_count": 18
+    },
+    {
+      "area": "/area/medical/medbay2",
+      "role": "general",
+      "tiles": 84,
+      "occupied_tiles": 29,
+      "occupancy_micros": 345238,
+      "largest_empty_region_micros": 595238,
+      "unique_fixture_types": 16,
+      "fixture_count": 35
+    },
+    {
+      "area": "/area/medical/genetics_cloning",
+      "role": "general",
+      "tiles": 17,
+      "occupied_tiles": 9,
+      "occupancy_micros": 529412,
+      "largest_empty_region_micros": 294118,
+      "unique_fixture_types": 14,
+      "fixture_count": 16
+    },
+    {
+      "area": "/area/medical/medbay_primary_storage",
+      "role": "storage",
+      "tiles": 20,
+      "occupied_tiles": 11,
+      "occupancy_micros": 550000,
+      "largest_empty_region_micros": 250000,
+      "unique_fixture_types": 13,
+      "fixture_count": 40
+    },
+    {
+      "area": "/area/medical/psych",
+      "role": "general",
+      "tiles": 18,
+      "occupied_tiles": 13,
+      "occupancy_micros": 722222,
+      "largest_empty_region_micros": 222222,
+      "unique_fixture_types": 19,
+      "fixture_count": 30
+    },
+    {
+      "area": "/area/medical/patient_wing",
+      "role": "ward",
+      "tiles": 37,
+      "occupied_tiles": 6,
+      "occupancy_micros": 162162,
+      "largest_empty_region_micros": 432432,
+      "unique_fixture_types": 5,
+      "fixture_count": 6
+    },
+    {
+      "area": "/area/rnd/storage",
+      "role": "storage",
+      "tiles": 36,
+      "occupied_tiles": 21,
+      "occupancy_micros": 583333,
+      "largest_empty_region_micros": 416667,
+      "unique_fixture_types": 10,
+      "fixture_count": 26
+    },
+    {
+      "area": "/area/medical/patient_a",
+      "role": "ward",
+      "tiles": 15,
+      "occupied_tiles": 8,
+      "occupancy_micros": 533333,
+      "largest_empty_region_micros": 266667,
+      "unique_fixture_types": 13,
+      "fixture_count": 15
+    },
+    {
+      "area": "/area/rnd/test_area",
+      "role": "general",
+      "tiles": 172,
+      "occupied_tiles": 11,
+      "occupancy_micros": 63953,
+      "largest_empty_region_micros": 936047,
+      "unique_fixture_types": 5,
+      "fixture_count": 11
+    },
+    {
+      "area": "/area/medical/biostorage",
+      "role": "storage",
+      "tiles": 19,
+      "occupied_tiles": 12,
+      "occupancy_micros": 631579,
+      "largest_empty_region_micros": 368421,
+      "unique_fixture_types": 20,
+      "fixture_count": 54
+    },
+    {
+      "area": "/area/server",
+      "role": "general",
+      "tiles": 18,
+      "occupied_tiles": 10,
+      "occupancy_micros": 555556,
+      "largest_empty_region_micros": 277778,
+      "unique_fixture_types": 10,
+      "fixture_count": 12
+    },
+    {
+      "area": "/area/medical/morgue",
+      "role": "general",
+      "tiles": 26,
+      "occupied_tiles": 15,
+      "occupancy_micros": 576923,
+      "largest_empty_region_micros": 423077,
+      "unique_fixture_types": 16,
+      "fixture_count": 26
+    },
+    {
+      "area": "/area/hallway/secondary/seconddeck/research_medical",
+      "role": "laboratory",
+      "tiles": 58,
+      "occupied_tiles": 24,
+      "occupancy_micros": 413793,
+      "largest_empty_region_micros": 465517,
+      "unique_fixture_types": 17,
+      "fixture_count": 41
+    },
+    {
+      "area": "/area/medical/patient_b",
+      "role": "ward",
+      "tiles": 15,
+      "occupied_tiles": 7,
+      "occupancy_micros": 466667,
+      "largest_empty_region_micros": 266667,
+      "unique_fixture_types": 13,
+      "fixture_count": 15
+    },
+    {
+      "area": "/area/rnd/toxins_launch",
+      "role": "general",
+      "tiles": 29,
+      "occupied_tiles": 16,
+      "occupancy_micros": 551724,
+      "largest_empty_region_micros": 103448,
+      "unique_fixture_types": 17,
+      "fixture_count": 24
+    },
+    {
+      "area": "/area/rnd/mixing",
+      "role": "general",
+      "tiles": 95,
+      "occupied_tiles": 33,
+      "occupancy_micros": 347368,
+      "largest_empty_region_micros": 252632,
+      "unique_fixture_types": 23,
+      "fixture_count": 41
+    },
+    {
+      "area": "/area/rnd/workshop",
+      "role": "workshop",
+      "tiles": 16,
+      "occupied_tiles": 11,
+      "occupancy_micros": 687500,
+      "largest_empty_region_micros": 250000,
+      "unique_fixture_types": 19,
+      "fixture_count": 27
+    },
+    {
+      "area": "/area/medical/genetics",
+      "role": "general",
+      "tiles": 40,
+      "occupied_tiles": 13,
+      "occupancy_micros": 325000,
+      "largest_empty_region_micros": 675000,
+      "unique_fixture_types": 9,
+      "fixture_count": 14
+    },
+    {
+      "area": "/area/medical/medical_restroom",
+      "role": "general",
+      "tiles": 21,
+      "occupied_tiles": 9,
+      "occupancy_micros": 428571,
+      "largest_empty_region_micros": 571429,
+      "unique_fixture_types": 14,
+      "fixture_count": 23
+    },
+    {
+      "area": "/area/medical/medical_lockerroom",
+      "role": "general",
+      "tiles": 19,
+      "occupied_tiles": 11,
+      "occupancy_micros": 578947,
+      "largest_empty_region_micros": 157895,
+      "unique_fixture_types": 13,
+      "fixture_count": 36
+    },
+    {
+      "area": "/area/medical/virology",
+      "role": "general",
+      "tiles": 113,
+      "occupied_tiles": 44,
+      "occupancy_micros": 389381,
+      "largest_empty_region_micros": 371681,
+      "unique_fixture_types": 34,
+      "fixture_count": 87
+    },
+    {
+      "area": "/area/thirddeck/roof",
+      "role": "general",
+      "tiles": 9497,
+      "occupied_tiles": 59,
+      "occupancy_micros": 6212,
+      "largest_empty_region_micros": 981678,
+      "unique_fixture_types": 5,
+      "fixture_count": 59
+    },
+    {
+      "area": "/area/thirddeck/roof",
+      "role": "general",
+      "tiles": 20,
+      "occupied_tiles": 0,
+      "occupancy_micros": 0,
+      "largest_empty_region_micros": 1000000,
+      "unique_fixture_types": 0,
+      "fixture_count": 0
+    },
+    {
+      "area": "/area/thirddeck/roof",
+      "role": "general",
+      "tiles": 20,
+      "occupied_tiles": 0,
+      "occupancy_micros": 0,
+      "largest_empty_region_micros": 1000000,
+      "unique_fixture_types": 0,
+      "fixture_count": 0
+    },
+    {
+      "area": "/area/thirddeck/roof",
+      "role": "general",
+      "tiles": 20,
+      "occupied_tiles": 0,
+      "occupancy_micros": 0,
+      "largest_empty_region_micros": 1000000,
+      "unique_fixture_types": 0,
+      "fixture_count": 0
+    },
+    {
+      "area": "/area/thirddeck/roof",
+      "role": "general",
+      "tiles": 20,
+      "occupied_tiles": 0,
+      "occupancy_micros": 0,
+      "largest_empty_region_micros": 1000000,
+      "unique_fixture_types": 0,
+      "fixture_count": 0
+    },
+    {
+      "area": "/area/thirddeck/roof",
+      "role": "general",
+      "tiles": 20,
+      "occupied_tiles": 0,
+      "occupancy_micros": 0,
+      "largest_empty_region_micros": 1000000,
+      "unique_fixture_types": 0,
+      "fixture_count": 0
+    },
+    {
+      "area": "/area/thirddeck/roof",
+      "role": "general",
+      "tiles": 20,
+      "occupied_tiles": 0,
+      "occupancy_micros": 0,
+      "largest_empty_region_micros": 1000000,
+      "unique_fixture_types": 0,
+      "fixture_count": 0
+    },
+    {
+      "area": "/area/thirddeck/roof",
+      "role": "general",
+      "tiles": 8,
+      "occupied_tiles": 0,
+      "occupancy_micros": 0,
+      "largest_empty_region_micros": 1000000,
+      "unique_fixture_types": 0,
+      "fixture_count": 0
+    },
+    {
+      "area": "/area/thirddeck/roof",
+      "role": "general",
+      "tiles": 20,
+      "occupied_tiles": 0,
+      "occupancy_micros": 0,
+      "largest_empty_region_micros": 1000000,
+      "unique_fixture_types": 0,
+      "fixture_count": 0
+    },
+    {
+      "area": "/area/thirddeck/roof",
+      "role": "general",
+      "tiles": 8,
+      "occupied_tiles": 0,
+      "occupancy_micros": 0,
+      "largest_empty_region_micros": 1000000,
+      "unique_fixture_types": 0,
+      "fixture_count": 0
+    },
+    {
+      "area": "/area/solar/foreportsolar",
+      "role": "general",
+      "tiles": 185,
+      "occupied_tiles": 153,
+      "occupancy_micros": 827027,
+      "largest_empty_region_micros": 172973,
+      "unique_fixture_types": 3,
+      "fixture_count": 154
+    },
+    {
+      "area": "/area/solar/aftportsolar",
+      "role": "general",
+      "tiles": 185,
+      "occupied_tiles": 153,
+      "occupancy_micros": 827027,
+      "largest_empty_region_micros": 172973,
+      "unique_fixture_types": 3,
+      "fixture_count": 154
+    },
+    {
+      "area": "/area/maintenance/solars/foreportsolar",
+      "role": "ai",
+      "tiles": 24,
+      "occupied_tiles": 8,
+      "occupancy_micros": 333333,
+      "largest_empty_region_micros": 541667,
+      "unique_fixture_types": 11,
+      "fixture_count": 14
+    },
+    {
+      "area": "/area/maintenance/solars/aftportsolar",
+      "role": "ai",
+      "tiles": 24,
+      "occupied_tiles": 8,
+      "occupancy_micros": 333333,
+      "largest_empty_region_micros": 541667,
+      "unique_fixture_types": 10,
+      "fixture_count": 14
+    },
+    {
+      "area": "/area/hallway/primary/thirddeck/port",
+      "role": "general",
+      "tiles": 70,
+      "occupied_tiles": 15,
+      "occupancy_micros": 214286,
+      "largest_empty_region_micros": 728571,
+      "unique_fixture_types": 10,
+      "fixture_count": 15
+    },
+    {
+      "area": "/area/maintenance/thirddeck/foreport",
+      "role": "ai",
+      "tiles": 44,
+      "occupied_tiles": 21,
+      "occupancy_micros": 477273,
+      "largest_empty_region_micros": 250000,
+      "unique_fixture_types": 20,
+      "fixture_count": 47
+    },
+    {
+      "area": "/area/maintenance/thirddeck/aftport",
+      "role": "ai",
+      "tiles": 48,
+      "occupied_tiles": 25,
+      "occupancy_micros": 520833,
+      "largest_empty_region_micros": 208333,
+      "unique_fixture_types": 20,
+      "fixture_count": 55
+    },
+    {
+      "area": "/area/crew_quarters/heads/sc/restroom",
+      "role": "general",
+      "tiles": 17,
+      "occupied_tiles": 10,
+      "occupancy_micros": 588235,
+      "largest_empty_region_micros": 235294,
+      "unique_fixture_types": 11,
+      "fixture_count": 15
+    },
+    {
+      "area": "/area/bridge/meeting_room",
+      "role": "operations",
+      "tiles": 83,
+      "occupied_tiles": 41,
+      "occupancy_micros": 493976,
+      "largest_empty_region_micros": 301205,
+      "unique_fixture_types": 26,
+      "fixture_count": 69
+    },
+    {
+      "area": "/area/crew_quarters/heads/sc/hop/quarters",
+      "role": "general",
+      "tiles": 14,
+      "occupied_tiles": 8,
+      "occupancy_micros": 571429,
+      "largest_empty_region_micros": 214286,
+      "unique_fixture_types": 13,
+      "fixture_count": 16
+    },
+    {
+      "area": "/area/maintenance/substation/command",
+      "role": "operations",
+      "tiles": 10,
+      "occupied_tiles": 7,
+      "occupancy_micros": 700000,
+      "largest_empty_region_micros": 100000,
+      "unique_fixture_types": 6,
+      "fixture_count": 9
+    },
+    {
+      "area": "/area/crew_quarters/heads/sc/chief/quarters",
+      "role": "general",
+      "tiles": 11,
+      "occupied_tiles": 7,
+      "occupancy_micros": 636364,
+      "largest_empty_region_micros": 363636,
+      "unique_fixture_types": 12,
+      "fixture_count": 15
+    },
+    {
+      "area": "/area/bridge",
+      "role": "operations",
+      "tiles": 112,
+      "occupied_tiles": 35,
+      "occupancy_micros": 312500,
+      "largest_empty_region_micros": 500000,
+      "unique_fixture_types": 28,
+      "fixture_count": 68
+    },
+    {
+      "area": "/area/ai/ai_server_room",
+      "role": "ai",
+      "tiles": 12,
+      "occupied_tiles": 7,
+      "occupancy_micros": 583333,
+      "largest_empty_region_micros": 333333,
+      "unique_fixture_types": 10,
+      "fixture_count": 13
+    },
+    {
+      "area": "/area/hallway/primary/thirddeck/central",
+      "role": "general",
+      "tiles": 143,
+      "occupied_tiles": 26,
+      "occupancy_micros": 181818,
+      "largest_empty_region_micros": 818182,
+      "unique_fixture_types": 12,
+      "fixture_count": 27
+    },
+    {
+      "area": "/area/ai",
+      "role": "ai",
+      "tiles": 66,
+      "occupied_tiles": 23,
+      "occupancy_micros": 348485,
+      "largest_empty_region_micros": 181818,
+      "unique_fixture_types": 14,
+      "fixture_count": 40
+    },
+    {
+      "area": "/area/ai/ai_upload",
+      "role": "ai",
+      "tiles": 35,
+      "occupied_tiles": 17,
+      "occupancy_micros": 485714,
+      "largest_empty_region_micros": 257143,
+      "unique_fixture_types": 12,
+      "fixture_count": 34
+    },
+    {
+      "area": "/area/ai/ai_upload_foyer",
+      "role": "reception",
+      "tiles": 7,
+      "occupied_tiles": 4,
+      "occupancy_micros": 571429,
+      "largest_empty_region_micros": 142857,
+      "unique_fixture_types": 6,
+      "fixture_count": 6
+    },
+    {
+      "area": "/area/ai/ai_cyborg_station",
+      "role": "ai",
+      "tiles": 12,
+      "occupied_tiles": 8,
+      "occupancy_micros": 666667,
+      "largest_empty_region_micros": 333333,
+      "unique_fixture_types": 10,
+      "fixture_count": 12
+    },
+    {
+      "area": "/area/hallway/primary/thirddeck/starboard",
+      "role": "general",
+      "tiles": 72,
+      "occupied_tiles": 14,
+      "occupancy_micros": 194444,
+      "largest_empty_region_micros": 750000,
+      "unique_fixture_types": 10,
+      "fixture_count": 14
+    },
+    {
+      "area": "/area/crew_quarters/heads/sc/cmo/quarters",
+      "role": "general",
+      "tiles": 14,
+      "occupied_tiles": 7,
+      "occupancy_micros": 500000,
+      "largest_empty_region_micros": 285714,
+      "unique_fixture_types": 12,
+      "fixture_count": 15
+    },
+    {
+      "area": "/area/crew_quarters/heads/sc/hos/quarters",
+      "role": "general",
+      "tiles": 11,
+      "occupied_tiles": 7,
+      "occupancy_micros": 636364,
+      "largest_empty_region_micros": 363636,
+      "unique_fixture_types": 12,
+      "fixture_count": 15
+    },
+    {
+      "area": "/area/crew_quarters/heads/sc/sd",
+      "role": "general",
+      "tiles": 71,
+      "occupied_tiles": 40,
+      "occupancy_micros": 563380,
+      "largest_empty_region_micros": 323944,
+      "unique_fixture_types": 47,
+      "fixture_count": 86
+    },
+    {
+      "area": "/area/crew_quarters/heads/sc/hor/quarters",
+      "role": "general",
+      "tiles": 14,
+      "occupied_tiles": 7,
+      "occupancy_micros": 500000,
+      "largest_empty_region_micros": 285714,
+      "unique_fixture_types": 12,
+      "fixture_count": 15
+    },
+    {
+      "area": "/area/crew_quarters/heads/sc/bs",
+      "role": "general",
+      "tiles": 11,
+      "occupied_tiles": 7,
+      "occupancy_micros": 636364,
+      "largest_empty_region_micros": 363636,
+      "unique_fixture_types": 12,
+      "fixture_count": 15
+    },
+    {
+      "area": "/area/maintenance/thirddeck/forestarboard",
+      "role": "ai",
+      "tiles": 44,
+      "occupied_tiles": 21,
+      "occupancy_micros": 477273,
+      "largest_empty_region_micros": 227273,
+      "unique_fixture_types": 19,
+      "fixture_count": 40
+    },
+    {
+      "area": "/area/maintenance/thirddeck/aftstarboard",
+      "role": "ai",
+      "tiles": 48,
+      "occupied_tiles": 22,
+      "occupancy_micros": 458333,
+      "largest_empty_region_micros": 229167,
+      "unique_fixture_types": 24,
+      "fixture_count": 70
+    },
+    {
+      "area": "/area/maintenance/solars/forestarboardsolar",
+      "role": "ai",
+      "tiles": 24,
+      "occupied_tiles": 8,
+      "occupancy_micros": 333333,
+      "largest_empty_region_micros": 541667,
+      "unique_fixture_types": 11,
+      "fixture_count": 15
+    },
+    {
+      "area": "/area/maintenance/solars/aftstarboardsolar",
+      "role": "ai",
+      "tiles": 24,
+      "occupied_tiles": 8,
+      "occupancy_micros": 333333,
+      "largest_empty_region_micros": 541667,
+      "unique_fixture_types": 11,
+      "fixture_count": 16
+    },
+    {
+      "area": "/area/solar/forestarboardsolar",
+      "role": "general",
+      "tiles": 185,
+      "occupied_tiles": 153,
+      "occupancy_micros": 827027,
+      "largest_empty_region_micros": 172973,
+      "unique_fixture_types": 3,
+      "fixture_count": 154
+    },
+    {
+      "area": "/area/solar/aftstarboardsolar",
+      "role": "general",
+      "tiles": 185,
+      "occupied_tiles": 153,
+      "occupancy_micros": 827027,
+      "largest_empty_region_micros": 172973,
+      "unique_fixture_types": 3,
+      "fixture_count": 154
+    },
+    {
+      "area": "/area/expoutpost/portuppermaint",
+      "role": "ai",
+      "tiles": 105,
+      "occupied_tiles": 66,
+      "occupancy_micros": 628571,
+      "largest_empty_region_micros": 133333,
+      "unique_fixture_types": 13,
+      "fixture_count": 75
+    },
+    {
+      "area": "/area/expoutpost/portexplomaint",
+      "role": "ai",
+      "tiles": 66,
+      "occupied_tiles": 45,
+      "occupancy_micros": 681818,
+      "largest_empty_region_micros": 90909,
+      "unique_fixture_types": 11,
+      "fixture_count": 53
+    },
+    {
+      "area": "/area/expoutpost/portlowermaint",
+      "role": "ai",
+      "tiles": 68,
+      "occupied_tiles": 44,
+      "occupancy_micros": 647059,
+      "largest_empty_region_micros": 191176,
+      "unique_fixture_types": 15,
+      "fixture_count": 54
+    },
+    {
+      "area": "/area/expoutpost/exploarmory",
+      "role": "armory",
+      "tiles": 32,
+      "occupied_tiles": 14,
+      "occupancy_micros": 437500,
+      "largest_empty_region_micros": 562500,
+      "unique_fixture_types": 12,
+      "fixture_count": 83
+    },
+    {
+      "area": "/area/expoutpost/explobriefroom",
+      "role": "general",
+      "tiles": 128,
+      "occupied_tiles": 53,
+      "occupancy_micros": 414062,
+      "largest_empty_region_micros": 585938,
+      "unique_fixture_types": 25,
+      "fixture_count": 89
+    },
+    {
+      "area": "/area/expoutpost/portsternairlock",
+      "role": "ai",
+      "tiles": 22,
+      "occupied_tiles": 18,
+      "occupancy_micros": 818182,
+      "largest_empty_region_micros": 45455,
+      "unique_fixture_types": 8,
+      "fixture_count": 20
+    },
+    {
+      "area": "/area/expoutpost/hangarone",
+      "role": "docking",
+      "tiles": 191,
+      "occupied_tiles": 1,
+      "occupancy_micros": 5236,
+      "largest_empty_region_micros": 994764,
+      "unique_fixture_types": 1,
+      "fixture_count": 1
+    },
+    {
+      "area": "/area/expoutpost/miningfoyer",
+      "role": "reception",
+      "tiles": 104,
+      "occupied_tiles": 35,
+      "occupancy_micros": 336538,
+      "largest_empty_region_micros": 663462,
+      "unique_fixture_types": 21,
+      "fixture_count": 59
+    },
+    {
+      "area": "/area/expoutpost/hangarthree",
+      "role": "docking",
+      "tiles": 194,
+      "occupied_tiles": 1,
+      "occupancy_micros": 5155,
+      "largest_empty_region_micros": 994845,
+      "unique_fixture_types": 1,
+      "fixture_count": 1
+    },
+    {
+      "area": "/area/expoutpost/lowersternhallway",
+      "role": "general",
+      "tiles": 420,
+      "occupied_tiles": 39,
+      "occupancy_micros": 92857,
+      "largest_empty_region_micros": 907143,
+      "unique_fixture_types": 8,
+      "fixture_count": 40
+    },
+    {
+      "area": "/area/shuttle/shuttle3/start",
+      "role": "docking",
+      "tiles": 61,
+      "occupied_tiles": 41,
+      "occupancy_micros": 672131,
+      "largest_empty_region_micros": 295082,
+      "unique_fixture_types": 21,
+      "fixture_count": 60
+    },
+    {
+      "area": "/area/expoutpost/portfuelstorage",
+      "role": "storage",
+      "tiles": 50,
+      "occupied_tiles": 7,
+      "occupancy_micros": 140000,
+      "largest_empty_region_micros": 840000,
+      "unique_fixture_types": 4,
+      "fixture_count": 7
+    },
+    {
+      "area": "/area/expoutpost/hangarfive",
+      "role": "docking",
+      "tiles": 210,
+      "occupied_tiles": 1,
+      "occupancy_micros": 4762,
+      "largest_empty_region_micros": 995238,
+      "unique_fixture_types": 1,
+      "fixture_count": 1
+    },
+    {
+      "area": "/area/expoutpost/explodorm2",
+      "role": "general",
+      "tiles": 13,
+      "occupied_tiles": 8,
+      "occupancy_micros": 615385,
+      "largest_empty_region_micros": 307692,
+      "unique_fixture_types": 9,
+      "fixture_count": 10
+    },
+    {
+      "area": "/area/expoutpost/engoffice",
+      "role": "office",
+      "tiles": 52,
+      "occupied_tiles": 20,
+      "occupancy_micros": 384615,
+      "largest_empty_region_micros": 615385,
+      "unique_fixture_types": 15,
+      "fixture_count": 25
+    },
+    {
+      "area": "/area/expoutpost/engstorage",
+      "role": "storage",
+      "tiles": 93,
+      "occupied_tiles": 46,
+      "occupancy_micros": 494624,
+      "largest_empty_region_micros": 505376,
+      "unique_fixture_types": 29,
+      "fixture_count": 106
+    },
+    {
+      "area": "/area/shuttle/needle",
+      "role": "docking",
+      "tiles": 36,
+      "occupied_tiles": 27,
+      "occupancy_micros": 750000,
+      "largest_empty_region_micros": 138889,
+      "unique_fixture_types": 26,
+      "fixture_count": 64
+    },
+    {
+      "area": "/area/shuttle/needle",
+      "role": "docking",
+      "tiles": 11,
+      "occupied_tiles": 1,
+      "occupancy_micros": 90909,
+      "largest_empty_region_micros": 909091,
+      "unique_fixture_types": 1,
+      "fixture_count": 1
+    },
+    {
+      "area": "/area/shuttle/ursula",
+      "role": "docking",
+      "tiles": 46,
+      "occupied_tiles": 32,
+      "occupancy_micros": 695652,
+      "largest_empty_region_micros": 217391,
+      "unique_fixture_types": 32,
+      "fixture_count": 93
+    },
+    {
+      "area": "/area/shuttle/ursula",
+      "role": "docking",
+      "tiles": 9,
+      "occupied_tiles": 1,
+      "occupancy_micros": 111111,
+      "largest_empty_region_micros": 444444,
+      "unique_fixture_types": 1,
+      "fixture_count": 1
+    },
+    {
+      "area": "/area/expoutpost/midsternhallway",
+      "role": "general",
+      "tiles": 180,
+      "occupied_tiles": 9,
+      "occupancy_micros": 50000,
+      "largest_empty_region_micros": 950000,
+      "unique_fixture_types": 4,
+      "fixture_count": 9
+    },
+    {
+      "area": "/area/expoutpost/explodorm1",
+      "role": "general",
+      "tiles": 13,
+      "occupied_tiles": 8,
+      "occupancy_micros": 615385,
+      "largest_empty_region_micros": 307692,
+      "unique_fixture_types": 9,
+      "fixture_count": 10
+    },
+    {
+      "area": "/area/expoutpost/pathfinderroom",
+      "role": "general",
+      "tiles": 37,
+      "occupied_tiles": 20,
+      "occupancy_micros": 540541,
+      "largest_empty_region_micros": 243243,
+      "unique_fixture_types": 27,
+      "fixture_count": 36
+    },
+    {
+      "area": "/area/expoutpost/breakroom",
+      "role": "general",
+      "tiles": 78,
+      "occupied_tiles": 24,
+      "occupancy_micros": 307692,
+      "largest_empty_region_micros": 679487,
+      "unique_fixture_types": 11,
+      "fixture_count": 31
+    },
+    {
+      "area": "/area/expoutpost/atmospherics",
+      "role": "atmospherics",
+      "tiles": 65,
+      "occupied_tiles": 5,
+      "occupancy_micros": 76923,
+      "largest_empty_region_micros": 923077,
+      "unique_fixture_types": 3,
+      "fixture_count": 5
+    },
+    {
+      "area": "/area/expoutpost/suite1",
+      "role": "general",
+      "tiles": 38,
+      "occupied_tiles": 18,
+      "occupancy_micros": 473684,
+      "largest_empty_region_micros": 500000,
+      "unique_fixture_types": 21,
+      "fixture_count": 30
+    },
+    {
+      "area": "/area/expoutpost/portqpadjunction",
+      "role": "general",
+      "tiles": 18,
+      "occupied_tiles": 5,
+      "occupancy_micros": 277778,
+      "largest_empty_region_micros": 722222,
+      "unique_fixture_types": 2,
+      "fixture_count": 5
+    },
+    {
+      "area": "/area/expoutpost/stationqpad",
+      "role": "general",
+      "tiles": 19,
+      "occupied_tiles": 2,
+      "occupancy_micros": 105263,
+      "largest_empty_region_micros": 894737,
+      "unique_fixture_types": 2,
+      "fixture_count": 2
+    },
+    {
+      "area": "/area/expoutpost/restrooms",
+      "role": "general",
+      "tiles": 25,
+      "occupied_tiles": 8,
+      "occupancy_micros": 320000,
+      "largest_empty_region_micros": 680000,
+      "unique_fixture_types": 9,
+      "fixture_count": 17
+    },
+    {
+      "area": "/area/expoutpost/washroom",
+      "role": "general",
+      "tiles": 54,
+      "occupied_tiles": 16,
+      "occupancy_micros": 296296,
+      "largest_empty_region_micros": 666667,
+      "unique_fixture_types": 14,
+      "fixture_count": 27
+    },
+    {
+      "area": "/area/expoutpost/portbowairlock",
+      "role": "ai",
+      "tiles": 29,
+      "occupied_tiles": 19,
+      "occupancy_micros": 655172,
+      "largest_empty_region_micros": 137931,
+      "unique_fixture_types": 7,
+      "fixture_count": 23
+    },
+    {
+      "area": "/area/expoutpost/eva",
+      "role": "general",
+      "tiles": 85,
+      "occupied_tiles": 31,
+      "occupancy_micros": 364706,
+      "largest_empty_region_micros": 635294,
+      "unique_fixture_types": 17,
+      "fixture_count": 107
+    },
+    {
+      "area": "/area/expoutpost/uppersternhallway",
+      "role": "general",
+      "tiles": 159,
+      "occupied_tiles": 12,
+      "occupancy_micros": 75472,
+      "largest_empty_region_micros": 924528,
+      "unique_fixture_types": 5,
+      "fixture_count": 12
+    },
+    {
+      "area": "/area/expoutpost/portbowhallway",
+      "role": "general",
+      "tiles": 78,
+      "occupied_tiles": 7,
+      "occupancy_micros": 89744,
+      "largest_empty_region_micros": 910256,
+      "unique_fixture_types": 2,
+      "fixture_count": 7
+    },
+    {
+      "area": "/area/expoutpost/slingcarrierdock",
+      "role": "docking",
+      "tiles": 214,
+      "occupied_tiles": 81,
+      "occupancy_micros": 378505,
+      "largest_empty_region_micros": 471963,
+      "unique_fixture_types": 8,
+      "fixture_count": 83
+    },
+    {
+      "area": "/area/expoutpost/medbaylobby",
+      "role": "reception",
+      "tiles": 53,
+      "occupied_tiles": 9,
+      "occupancy_micros": 169811,
+      "largest_empty_region_micros": 830189,
+      "unique_fixture_types": 7,
+      "fixture_count": 11
+    },
+    {
+      "area": "/area/expoutpost/reactoraccess",
+      "role": "general",
+      "tiles": 19,
+      "occupied_tiles": 10,
+      "occupancy_micros": 526316,
+      "largest_empty_region_micros": 157895,
+      "unique_fixture_types": 4,
+      "fixture_count": 10
+    },
+    {
+      "area": "/area/expoutpost/reactorroom",
+      "role": "general",
+      "tiles": 155,
+      "occupied_tiles": 26,
+      "occupancy_micros": 167742,
+      "largest_empty_region_micros": 832258,
+      "unique_fixture_types": 9,
+      "fixture_count": 42
+    },
+    {
+      "area": "/area/expoutpost/medicalbay",
+      "role": "general",
+      "tiles": 95,
+      "occupied_tiles": 31,
+      "occupancy_micros": 326316,
+      "largest_empty_region_micros": 610526,
+      "unique_fixture_types": 32,
+      "fixture_count": 54
+    },
+    {
+      "area": "/area/expoutpost/surgical1",
+      "role": "general",
+      "tiles": 23,
+      "occupied_tiles": 11,
+      "occupancy_micros": 478261,
+      "largest_empty_region_micros": 434783,
+      "unique_fixture_types": 12,
+      "fixture_count": 20
+    },
+    {
+      "area": "/area/expoutpost/cic",
+      "role": "general",
+      "tiles": 126,
+      "occupied_tiles": 45,
+      "occupancy_micros": 357143,
+      "largest_empty_region_micros": 317460,
+      "unique_fixture_types": 15,
+      "fixture_count": 68
+    },
+    {
+      "area": "/area/expoutpost/staginghangar",
+      "role": "docking",
+      "tiles": 393,
+      "occupied_tiles": 117,
+      "occupancy_micros": 297710,
+      "largest_empty_region_micros": 653944,
+      "unique_fixture_types": 27,
+      "fixture_count": 233
+    },
+    {
+      "area": "/area/expoutpost/reactorcr",
+      "role": "general",
+      "tiles": 35,
+      "occupied_tiles": 13,
+      "occupancy_micros": 371429,
+      "largest_empty_region_micros": 257143,
+      "unique_fixture_types": 11,
+      "fixture_count": 22
+    },
+    {
+      "area": "/area/shuttle/expoutpost/site",
+      "role": "docking",
+      "tiles": 35,
+      "occupied_tiles": 0,
+      "occupancy_micros": 0,
+      "largest_empty_region_micros": 1000000,
+      "unique_fixture_types": 0,
+      "fixture_count": 0
+    },
+    {
+      "area": "/area/expoutpost/botany",
+      "role": "general",
+      "tiles": 108,
+      "occupied_tiles": 46,
+      "occupancy_micros": 425926,
+      "largest_empty_region_micros": 462963,
+      "unique_fixture_types": 25,
+      "fixture_count": 71
+    },
+    {
+      "area": "/area/expoutpost/starboardbowairlock",
+      "role": "ai",
+      "tiles": 29,
+      "occupied_tiles": 19,
+      "occupancy_micros": 655172,
+      "largest_empty_region_micros": 137931,
+      "unique_fixture_types": 7,
+      "fixture_count": 23
+    },
+    {
+      "area": "/area/expoutpost/civaccesshallway",
+      "role": "general",
+      "tiles": 22,
+      "occupied_tiles": 0,
+      "occupancy_micros": 0,
+      "largest_empty_region_micros": 1000000,
+      "unique_fixture_types": 0,
+      "fixture_count": 0
+    },
+    {
+      "area": "/area/expoutpost/bar",
+      "role": "general",
+      "tiles": 78,
+      "occupied_tiles": 38,
+      "occupancy_micros": 487179,
+      "largest_empty_region_micros": 512821,
+      "unique_fixture_types": 11,
+      "fixture_count": 41
+    },
+    {
+      "area": "/area/expoutpost/starbowhallway",
+      "role": "general",
+      "tiles": 46,
+      "occupied_tiles": 4,
+      "occupancy_micros": 86957,
+      "largest_empty_region_micros": 913043,
+      "unique_fixture_types": 2,
+      "fixture_count": 4
+    },
+    {
+      "area": "/area/expoutpost/hangarsix",
+      "role": "docking",
+      "tiles": 182,
+      "occupied_tiles": 1,
+      "occupancy_micros": 5495,
+      "largest_empty_region_micros": 994505,
+      "unique_fixture_types": 1,
+      "fixture_count": 1
+    },
+    {
+      "area": "/area/expoutpost/hangarfour",
+      "role": "docking",
+      "tiles": 178,
+      "occupied_tiles": 2,
+      "occupancy_micros": 11236,
+      "largest_empty_region_micros": 988764,
+      "unique_fixture_types": 2,
+      "fixture_count": 2
+    },
+    {
+      "area": "/area/expoutpost/janitorial",
+      "role": "general",
+      "tiles": 13,
+      "occupied_tiles": 9,
+      "occupancy_micros": 692308,
+      "largest_empty_region_micros": 307692,
+      "unique_fixture_types": 12,
+      "fixture_count": 23
+    },
+    {
+      "area": "/area/expoutpost/kitchen",
+      "role": "general",
+      "tiles": 19,
+      "occupied_tiles": 13,
+      "occupancy_micros": 684211,
+      "largest_empty_region_micros": 315789,
+      "unique_fixture_types": 14,
+      "fixture_count": 34
+    },
+    {
+      "area": "/area/expoutpost/techstorage",
+      "role": "storage",
+      "tiles": 67,
+      "occupied_tiles": 19,
+      "occupancy_micros": 283582,
+      "largest_empty_region_micros": 716418,
+      "unique_fixture_types": 4,
+      "fixture_count": 19
+    },
+    {
+      "area": "/area/expoutpost/aicore",
+      "role": "ai",
+      "tiles": 26,
+      "occupied_tiles": 13,
+      "occupancy_micros": 500000,
+      "largest_empty_region_micros": 500000,
+      "unique_fixture_types": 4,
+      "fixture_count": 16
+    },
+    {
+      "area": "/area/expoutpost/disposals",
+      "role": "general",
+      "tiles": 49,
+      "occupied_tiles": 44,
+      "occupancy_micros": 897959,
+      "largest_empty_region_micros": 20408,
+      "unique_fixture_types": 12,
+      "fixture_count": 54
+    },
+    {
+      "area": "/area/expoutpost/suite2",
+      "role": "general",
+      "tiles": 38,
+      "occupied_tiles": 18,
+      "occupancy_micros": 473684,
+      "largest_empty_region_micros": 500000,
+      "unique_fixture_types": 21,
+      "fixture_count": 30
+    },
+    {
+      "area": "/area/expoutpost/commanderroom",
+      "role": "operations",
+      "tiles": 37,
+      "occupied_tiles": 19,
+      "occupancy_micros": 513514,
+      "largest_empty_region_micros": 486486,
+      "unique_fixture_types": 23,
+      "fixture_count": 34
+    },
+    {
+      "area": "/area/expoutpost/starqpadjunction",
+      "role": "general",
+      "tiles": 18,
+      "occupied_tiles": 5,
+      "occupancy_micros": 277778,
+      "largest_empty_region_micros": 722222,
+      "unique_fixture_types": 2,
+      "fixture_count": 5
+    },
+    {
+      "area": "/area/expoutpost/secbowcheckpoint",
+      "role": "security",
+      "tiles": 22,
+      "occupied_tiles": 12,
+      "occupancy_micros": 545455,
+      "largest_empty_region_micros": 454545,
+      "unique_fixture_types": 11,
+      "fixture_count": 19
+    },
+    {
+      "area": "/area/shuttle/echidna",
+      "role": "docking",
+      "tiles": 81,
+      "occupied_tiles": 37,
+      "occupancy_micros": 456790,
+      "largest_empty_region_micros": 358025,
+      "unique_fixture_types": 28,
+      "fixture_count": 72
+    },
+    {
+      "area": "/area/shuttle/stargazer",
+      "role": "docking",
+      "tiles": 63,
+      "occupied_tiles": 44,
+      "occupancy_micros": 698413,
+      "largest_empty_region_micros": 158730,
+      "unique_fixture_types": 30,
+      "fixture_count": 87
+    },
+    {
+      "area": "/area/expoutpost/hangartwo",
+      "role": "docking",
+      "tiles": 158,
+      "occupied_tiles": 1,
+      "occupancy_micros": 6329,
+      "largest_empty_region_micros": 993671,
+      "unique_fixture_types": 1,
+      "fixture_count": 1
+    },
+    {
+      "area": "/area/expoutpost/gatewayeva",
+      "role": "general",
+      "tiles": 62,
+      "occupied_tiles": 18,
+      "occupancy_micros": 290323,
+      "largest_empty_region_micros": 709677,
+      "unique_fixture_types": 13,
+      "fixture_count": 68
+    },
+    {
+      "area": "/area/expoutpost/secoffice",
+      "role": "office",
+      "tiles": 32,
+      "occupied_tiles": 13,
+      "occupancy_micros": 406250,
+      "largest_empty_region_micros": 562500,
+      "unique_fixture_types": 14,
+      "fixture_count": 30
+    },
+    {
+      "area": "/area/expoutpost/rndlobby",
+      "role": "reception",
+      "tiles": 31,
+      "occupied_tiles": 4,
+      "occupancy_micros": 129032,
+      "largest_empty_region_micros": 870968,
+      "unique_fixture_types": 4,
+      "fixture_count": 5
+    },
+    {
+      "area": "/area/expoutpost/starfuelstorage",
+      "role": "storage",
+      "tiles": 50,
+      "occupied_tiles": 7,
+      "occupancy_micros": 140000,
+      "largest_empty_region_micros": 840000,
+      "unique_fixture_types": 4,
+      "fixture_count": 7
+    },
+    {
+      "area": "/area/shuttle/baby_mammoth",
+      "role": "docking",
+      "tiles": 79,
+      "occupied_tiles": 52,
+      "occupancy_micros": 658228,
+      "largest_empty_region_micros": 291139,
+      "unique_fixture_types": 38,
+      "fixture_count": 118
+    },
+    {
+      "area": "/area/expoutpost/telecomms",
+      "role": "communications",
+      "tiles": 26,
+      "occupied_tiles": 11,
+      "occupancy_micros": 423077,
+      "largest_empty_region_micros": 576923,
+      "unique_fixture_types": 4,
+      "fixture_count": 14
+    },
+    {
+      "area": "/area/expoutpost/rnd",
+      "role": "general",
+      "tiles": 82,
+      "occupied_tiles": 26,
+      "occupancy_micros": 317073,
+      "largest_empty_region_micros": 682927,
+      "unique_fixture_types": 26,
+      "fixture_count": 44
+    },
+    {
+      "area": "/area/expoutpost/secureaccess",
+      "role": "general",
+      "tiles": 26,
+      "occupied_tiles": 1,
+      "occupancy_micros": 38462,
+      "largest_empty_region_micros": 961538,
+      "unique_fixture_types": 1,
+      "fixture_count": 1
+    },
+    {
+      "area": "/area/expoutpost/gateway",
+      "role": "general",
+      "tiles": 42,
+      "occupied_tiles": 19,
+      "occupancy_micros": 452381,
+      "largest_empty_region_micros": 547619,
+      "unique_fixture_types": 10,
+      "fixture_count": 42
+    },
+    {
+      "area": "/area/expoutpost/secarmory",
+      "role": "armory",
+      "tiles": 23,
+      "occupied_tiles": 11,
+      "occupancy_micros": 478261,
+      "largest_empty_region_micros": 521739,
+      "unique_fixture_types": 13,
+      "fixture_count": 42
+    },
+    {
+      "area": "/area/expoutpost/starlowermaint",
+      "role": "ai",
+      "tiles": 49,
+      "occupied_tiles": 30,
+      "occupancy_micros": 612245,
+      "largest_empty_region_micros": 142857,
+      "unique_fixture_types": 10,
+      "fixture_count": 42
+    },
+    {
+      "area": "/area/expoutpost/starsciencemaint",
+      "role": "ai",
+      "tiles": 65,
+      "occupied_tiles": 41,
+      "occupancy_micros": 630769,
+      "largest_empty_region_micros": 92308,
+      "unique_fixture_types": 10,
+      "fixture_count": 52
+    },
+    {
+      "area": "/area/expoutpost/starsternairlock",
+      "role": "ai",
+      "tiles": 22,
+      "occupied_tiles": 18,
+      "occupancy_micros": 818182,
+      "largest_empty_region_micros": 45455,
+      "unique_fixture_types": 8,
+      "fixture_count": 20
+    },
+    {
+      "area": "/area/expoutpost/staruppermaint",
+      "role": "ai",
+      "tiles": 109,
+      "occupied_tiles": 64,
+      "occupancy_micros": 587156,
+      "largest_empty_region_micros": 229358,
+      "unique_fixture_types": 16,
+      "fixture_count": 87
+    },
+    {
+      "area": "/area/virtual_reality",
+      "role": "general",
+      "tiles": 489,
+      "occupied_tiles": 76,
+      "occupancy_micros": 155419,
+      "largest_empty_region_micros": 844581,
+      "unique_fixture_types": 9,
+      "fixture_count": 88
+    },
+    {
+      "area": "/area/tdome/tdomeadmin",
+      "role": "general",
+      "tiles": 60,
+      "occupied_tiles": 31,
+      "occupancy_micros": 516667,
+      "largest_empty_region_micros": 450000,
+      "unique_fixture_types": 10,
+      "fixture_count": 53
+    },
+    {
+      "area": "/area/tdome",
+      "role": "general",
+      "tiles": 186,
+      "occupied_tiles": 6,
+      "occupancy_micros": 32258,
+      "largest_empty_region_micros": 967742,
+      "unique_fixture_types": 3,
+      "fixture_count": 6
+    },
+    {
+      "area": "/area/tdome",
+      "role": "general",
+      "tiles": 67,
+      "occupied_tiles": 5,
+      "occupancy_micros": 74627,
+      "largest_empty_region_micros": 910448,
+      "unique_fixture_types": 3,
+      "fixture_count": 30
+    },
+    {
+      "area": "/area/tdome",
+      "role": "general",
+      "tiles": 15,
+      "occupied_tiles": 5,
+      "occupancy_micros": 333333,
+      "largest_empty_region_micros": 666667,
+      "unique_fixture_types": 3,
+      "fixture_count": 30
+    },
+    {
+      "area": "/area/tdome",
+      "role": "general",
+      "tiles": 10,
+      "occupied_tiles": 5,
+      "occupancy_micros": 500000,
+      "largest_empty_region_micros": 500000,
+      "unique_fixture_types": 3,
+      "fixture_count": 30
+    },
+    {
+      "area": "/area/tdome",
+      "role": "general",
+      "tiles": 26,
+      "occupied_tiles": 5,
+      "occupancy_micros": 192308,
+      "largest_empty_region_micros": 769231,
+      "unique_fixture_types": 3,
+      "fixture_count": 30
+    },
+    {
+      "area": "/area/tdome",
+      "role": "general",
+      "tiles": 10,
+      "occupied_tiles": 5,
+      "occupancy_micros": 500000,
+      "largest_empty_region_micros": 500000,
+      "unique_fixture_types": 3,
+      "fixture_count": 20
+    },
+    {
+      "area": "/area/tdome/tdome2",
+      "role": "general",
+      "tiles": 40,
+      "occupied_tiles": 4,
+      "occupancy_micros": 100000,
+      "largest_empty_region_micros": 900000,
+      "unique_fixture_types": 2,
+      "fixture_count": 8
+    },
+    {
+      "area": "/area/tdome/tdome1",
+      "role": "general",
+      "tiles": 40,
+      "occupied_tiles": 4,
+      "occupancy_micros": 100000,
+      "largest_empty_region_micros": 900000,
+      "unique_fixture_types": 2,
+      "fixture_count": 8
+    },
+    {
+      "area": "/area/centcom/security",
+      "role": "security",
+      "tiles": 237,
+      "occupied_tiles": 74,
+      "occupancy_micros": 312236,
+      "largest_empty_region_micros": 675105,
+      "unique_fixture_types": 23,
+      "fixture_count": 104
+    },
+    {
+      "area": "/area/centcom/terminal",
+      "role": "general",
+      "tiles": 748,
+      "occupied_tiles": 49,
+      "occupancy_micros": 65508,
+      "largest_empty_region_micros": 918449,
+      "unique_fixture_types": 4,
+      "fixture_count": 49
+    },
+    {
+      "area": "/area/tdome/tdomeobserve",
+      "role": "general",
+      "tiles": 48,
+      "occupied_tiles": 19,
+      "occupancy_micros": 395833,
+      "largest_empty_region_micros": 604167,
+      "unique_fixture_types": 8,
+      "fixture_count": 32
+    },
+    {
+      "area": "/area/centcom/main_hall",
+      "role": "ai",
+      "tiles": 898,
+      "occupied_tiles": 38,
+      "occupancy_micros": 42316,
+      "largest_empty_region_micros": 953229,
+      "unique_fixture_types": 15,
+      "fixture_count": 44
+    },
+    {
+      "area": "/area/shuttle/escape/centcom",
+      "role": "docking",
+      "tiles": 175,
+      "occupied_tiles": 89,
+      "occupancy_micros": 508571,
+      "largest_empty_region_micros": 485714,
+      "unique_fixture_types": 19,
+      "fixture_count": 134
+    },
+    {
+      "area": "/area/centcom/bar",
+      "role": "general",
+      "tiles": 334,
+      "occupied_tiles": 145,
+      "occupancy_micros": 434132,
+      "largest_empty_region_micros": 523952,
+      "unique_fixture_types": 43,
+      "fixture_count": 214
+    },
+    {
+      "area": "/area/centcom/medical",
+      "role": "general",
+      "tiles": 251,
+      "occupied_tiles": 82,
+      "occupancy_micros": 326693,
+      "largest_empty_region_micros": 657371,
+      "unique_fixture_types": 32,
+      "fixture_count": 150
+    },
+    {
+      "area": "/area/centcom/specops",
+      "role": "general",
+      "tiles": 772,
+      "occupied_tiles": 222,
+      "occupancy_micros": 287565,
+      "largest_empty_region_micros": 703368,
+      "unique_fixture_types": 86,
+      "fixture_count": 925
+    },
+    {
+      "area": "/area/centcom/command",
+      "role": "operations",
+      "tiles": 646,
+      "occupied_tiles": 68,
+      "occupancy_micros": 105263,
+      "largest_empty_region_micros": 893189,
+      "unique_fixture_types": 15,
+      "fixture_count": 76
+    },
+    {
+      "area": "/area/centcom/living",
+      "role": "general",
+      "tiles": 91,
+      "occupied_tiles": 25,
+      "occupancy_micros": 274725,
+      "largest_empty_region_micros": 725275,
+      "unique_fixture_types": 9,
+      "fixture_count": 33
+    },
+    {
+      "area": "/area/centcom/creed",
+      "role": "general",
+      "tiles": 53,
+      "occupied_tiles": 15,
+      "occupancy_micros": 283019,
+      "largest_empty_region_micros": 641509,
+      "unique_fixture_types": 10,
+      "fixture_count": 25
+    },
+    {
+      "area": "/area/shuttle/response_ship/start",
+      "role": "docking",
+      "tiles": 29,
+      "occupied_tiles": 15,
+      "occupancy_micros": 517241,
+      "largest_empty_region_micros": 448276,
+      "unique_fixture_types": 8,
+      "fixture_count": 19
+    },
+    {
+      "area": "/area/centcom/suppy",
+      "role": "general",
+      "tiles": 37,
+      "occupied_tiles": 0,
+      "occupancy_micros": 0,
+      "largest_empty_region_micros": 1000000,
+      "unique_fixture_types": 0,
+      "fixture_count": 0
+    },
+    {
+      "area": "/area/shuttle/transport1/centcom",
+      "role": "docking",
+      "tiles": 37,
+      "occupied_tiles": 21,
+      "occupancy_micros": 567568,
+      "largest_empty_region_micros": 378378,
+      "unique_fixture_types": 5,
+      "fixture_count": 28
+    },
+    {
+      "area": "/area/shuttle/administration/centcom",
+      "role": "docking",
+      "tiles": 134,
+      "occupied_tiles": 51,
+      "occupancy_micros": 380597,
+      "largest_empty_region_micros": 589552,
+      "unique_fixture_types": 28,
+      "fixture_count": 63
+    },
+    {
+      "area": "/area/shuttle/supply",
+      "role": "cargo",
+      "tiles": 42,
+      "occupied_tiles": 9,
+      "occupancy_micros": 214286,
+      "largest_empty_region_micros": 785714,
+      "unique_fixture_types": 2,
+      "fixture_count": 9
+    },
+    {
+      "area": "/area/centcom/evac",
+      "role": "general",
+      "tiles": 587,
+      "occupied_tiles": 204,
+      "occupancy_micros": 347530,
+      "largest_empty_region_micros": 635434,
+      "unique_fixture_types": 47,
+      "fixture_count": 341
+    },
+    {
+      "area": "/area/shuttle/cryo/centcom",
+      "role": "docking",
+      "tiles": 56,
+      "occupied_tiles": 0,
+      "occupancy_micros": 0,
+      "largest_empty_region_micros": 1000000,
+      "unique_fixture_types": 0,
+      "fixture_count": 0
+    },
+    {
+      "area": "/area/shuttle/escape_pod7/centcom",
+      "role": "docking",
+      "tiles": 15,
+      "occupied_tiles": 0,
+      "occupancy_micros": 0,
+      "largest_empty_region_micros": 1000000,
+      "unique_fixture_types": 0,
+      "fixture_count": 0
+    },
+    {
+      "area": "/area/shuttle/escape_pod4/centcom",
+      "role": "docking",
+      "tiles": 15,
+      "occupied_tiles": 0,
+      "occupancy_micros": 0,
+      "largest_empty_region_micros": 1000000,
+      "unique_fixture_types": 0,
+      "fixture_count": 0
+    },
+    {
+      "area": "/area/shuttle/escape_pod3/centcom",
+      "role": "docking",
+      "tiles": 15,
+      "occupied_tiles": 0,
+      "occupancy_micros": 0,
+      "largest_empty_region_micros": 1000000,
+      "unique_fixture_types": 0,
+      "fixture_count": 0
+    },
+    {
+      "area": "/area/shuttle/escape_pod1/centcom",
+      "role": "docking",
+      "tiles": 15,
+      "occupied_tiles": 0,
+      "occupancy_micros": 0,
+      "largest_empty_region_micros": 1000000,
+      "unique_fixture_types": 0,
+      "fixture_count": 0
+    },
+    {
+      "area": "/area/shuttle/escape_pod2/centcom",
+      "role": "docking",
+      "tiles": 15,
+      "occupied_tiles": 0,
+      "occupancy_micros": 0,
+      "largest_empty_region_micros": 1000000,
+      "unique_fixture_types": 0,
+      "fixture_count": 0
+    },
+    {
+      "area": "/area/shuttle/large_escape_pod2/centcom",
+      "role": "docking",
+      "tiles": 58,
+      "occupied_tiles": 0,
+      "occupancy_micros": 0,
+      "largest_empty_region_micros": 1000000,
+      "unique_fixture_types": 0,
+      "fixture_count": 0
+    },
+    {
+      "area": "/area/shuttle/large_escape_pod1/centcom",
+      "role": "docking",
+      "tiles": 58,
+      "occupied_tiles": 0,
+      "occupancy_micros": 0,
+      "largest_empty_region_micros": 1000000,
+      "unique_fixture_types": 0,
+      "fixture_count": 0
+    },
+    {
+      "area": "/area/shuttle/escape_pod8/centcom",
+      "role": "docking",
+      "tiles": 15,
+      "occupied_tiles": 0,
+      "occupancy_micros": 0,
+      "largest_empty_region_micros": 1000000,
+      "unique_fixture_types": 0,
+      "fixture_count": 0
+    },
+    {
+      "area": "/area/shuttle/escape_pod6/centcom",
+      "role": "docking",
+      "tiles": 15,
+      "occupied_tiles": 0,
+      "occupancy_micros": 0,
+      "largest_empty_region_micros": 1000000,
+      "unique_fixture_types": 0,
+      "fixture_count": 0
+    },
+    {
+      "area": "/area/shuttle/escape_pod5/centcom",
+      "role": "docking",
+      "tiles": 15,
+      "occupied_tiles": 0,
+      "occupancy_micros": 0,
+      "largest_empty_region_micros": 1000000,
+      "unique_fixture_types": 0,
+      "fixture_count": 0
+    },
+    {
+      "area": "/area/holodeck/source_chess",
+      "role": "general",
+      "tiles": 100,
+      "occupied_tiles": 32,
+      "occupancy_micros": 320000,
+      "largest_empty_region_micros": 680000,
+      "unique_fixture_types": 1,
+      "fixture_count": 32
+    },
+    {
+      "area": "/area/skipjack_station",
+      "role": "general",
+      "tiles": 330,
+      "occupied_tiles": 62,
+      "occupancy_micros": 187879,
+      "largest_empty_region_micros": 700000,
+      "unique_fixture_types": 34,
+      "fixture_count": 86
+    },
+    {
+      "area": "/area/skipjack_station",
+      "role": "general",
+      "tiles": 21,
+      "occupied_tiles": 17,
+      "occupancy_micros": 809524,
+      "largest_empty_region_micros": 142857,
+      "unique_fixture_types": 5,
+      "fixture_count": 62
+    },
+    {
+      "area": "/area/skipjack_station/start",
+      "role": "general",
+      "tiles": 199,
+      "occupied_tiles": 110,
+      "occupancy_micros": 552764,
+      "largest_empty_region_micros": 301508,
+      "unique_fixture_types": 51,
+      "fixture_count": 210
+    },
+    {
+      "area": "/area/holodeck/source_desert",
+      "role": "general",
+      "tiles": 100,
+      "occupied_tiles": 12,
+      "occupancy_micros": 120000,
+      "largest_empty_region_micros": 880000,
+      "unique_fixture_types": 1,
+      "fixture_count": 12
+    },
+    {
+      "area": "/area/holodeck/source_space",
+      "role": "general",
+      "tiles": 100,
+      "occupied_tiles": 0,
+      "occupancy_micros": 0,
+      "largest_empty_region_micros": 1000000,
+      "unique_fixture_types": 0,
+      "fixture_count": 0
+    },
+    {
+      "area": "/area/holodeck/source_picnicarea",
+      "role": "general",
+      "tiles": 100,
+      "occupied_tiles": 84,
+      "occupancy_micros": 840000,
+      "largest_empty_region_micros": 120000,
+      "unique_fixture_types": 3,
+      "fixture_count": 84
+    },
+    {
+      "area": "/area/holodeck/source_snowfield",
+      "role": "general",
+      "tiles": 100,
+      "occupied_tiles": 18,
+      "occupancy_micros": 180000,
+      "largest_empty_region_micros": 820000,
+      "unique_fixture_types": 1,
+      "fixture_count": 18
+    },
+    {
+      "area": "/area/ninja_dojo/dojo",
+      "role": "general",
+      "tiles": 752,
+      "occupied_tiles": 58,
+      "occupancy_micros": 77128,
+      "largest_empty_region_micros": 922872,
+      "unique_fixture_types": 34,
+      "fixture_count": 90
+    },
+    {
+      "area": "/area/holodeck/source_theatre",
+      "role": "general",
+      "tiles": 100,
+      "occupied_tiles": 29,
+      "occupancy_micros": 290000,
+      "largest_empty_region_micros": 710000,
+      "unique_fixture_types": 4,
+      "fixture_count": 31
+    },
+    {
+      "area": "/area/holodeck/source_meetinghall",
+      "role": "general",
+      "tiles": 100,
+      "occupied_tiles": 26,
+      "occupancy_micros": 260000,
+      "largest_empty_region_micros": 740000,
+      "unique_fixture_types": 3,
+      "fixture_count": 26
+    },
+    {
+      "area": "/area/shuttle/merchant/home",
+      "role": "docking",
+      "tiles": 345,
+      "occupied_tiles": 160,
+      "occupancy_micros": 463768,
+      "largest_empty_region_micros": 481159,
+      "unique_fixture_types": 69,
+      "fixture_count": 408
+    },
+    {
+      "area": "/area/syndicate_station",
+      "role": "general",
+      "tiles": 300,
+      "occupied_tiles": 90,
+      "occupancy_micros": 300000,
+      "largest_empty_region_micros": 690000,
+      "unique_fixture_types": 44,
+      "fixture_count": 347
+    },
+    {
+      "area": "/area/holodeck/source_courtroom",
+      "role": "general",
+      "tiles": 100,
+      "occupied_tiles": 48,
+      "occupancy_micros": 480000,
+      "largest_empty_region_micros": 520000,
+      "unique_fixture_types": 2,
+      "fixture_count": 48
+    },
+    {
+      "area": "/area/holodeck/source_basketball",
+      "role": "general",
+      "tiles": 100,
+      "occupied_tiles": 19,
+      "occupancy_micros": 190000,
+      "largest_empty_region_micros": 810000,
+      "unique_fixture_types": 3,
+      "fixture_count": 19
+    },
+    {
+      "area": "/area/syndicate_station/start",
+      "role": "general",
+      "tiles": 273,
+      "occupied_tiles": 113,
+      "occupancy_micros": 413919,
+      "largest_empty_region_micros": 516484,
+      "unique_fixture_types": 52,
+      "fixture_count": 199
+    },
+    {
+      "area": "/area/syndicate_station/start",
+      "role": "general",
+      "tiles": 8,
+      "occupied_tiles": 8,
+      "occupancy_micros": 1000000,
+      "largest_empty_region_micros": 0,
+      "unique_fixture_types": 2,
+      "fixture_count": 10
+    },
+    {
+      "area": "/area/syndicate_station/start",
+      "role": "general",
+      "tiles": 8,
+      "occupied_tiles": 8,
+      "occupancy_micros": 1000000,
+      "largest_empty_region_micros": 0,
+      "unique_fixture_types": 1,
+      "fixture_count": 8
+    },
+    {
+      "area": "/area/shuttle/trade",
+      "role": "docking",
+      "tiles": 198,
+      "occupied_tiles": 51,
+      "occupancy_micros": 257576,
+      "largest_empty_region_micros": 737374,
+      "unique_fixture_types": 20,
+      "fixture_count": 87
+    },
+    {
+      "area": "/area/wizard_station",
+      "role": "general",
+      "tiles": 276,
+      "occupied_tiles": 109,
+      "occupancy_micros": 394928,
+      "largest_empty_region_micros": 554348,
+      "unique_fixture_types": 64,
+      "fixture_count": 184
+    },
+    {
+      "area": "/area/ninja_dojo/start",
+      "role": "general",
+      "tiles": 39,
+      "occupied_tiles": 21,
+      "occupancy_micros": 538462,
+      "largest_empty_region_micros": 384615,
+      "unique_fixture_types": 17,
+      "fixture_count": 30
+    },
+    {
+      "area": "/area/holodeck/source_wildlife",
+      "role": "general",
+      "tiles": 100,
+      "occupied_tiles": 0,
+      "occupancy_micros": 0,
+      "largest_empty_region_micros": 1000000,
+      "unique_fixture_types": 0,
+      "fixture_count": 0
+    },
+    {
+      "area": "/area/holodeck/source_beach",
+      "role": "general",
+      "tiles": 100,
+      "occupied_tiles": 3,
+      "occupancy_micros": 30000,
+      "largest_empty_region_micros": 970000,
+      "unique_fixture_types": 3,
+      "fixture_count": 3
+    },
+    {
+      "area": "/area/syndicate_mothership/elite_squad",
+      "role": "general",
+      "tiles": 58,
+      "occupied_tiles": 11,
+      "occupancy_micros": 189655,
+      "largest_empty_region_micros": 810345,
+      "unique_fixture_types": 3,
+      "fixture_count": 11
+    },
+    {
+      "area": "/area/holodeck/source_plating",
+      "role": "general",
+      "tiles": 100,
+      "occupied_tiles": 0,
+      "occupancy_micros": 0,
+      "largest_empty_region_micros": 1000000,
+      "unique_fixture_types": 0,
+      "fixture_count": 0
+    },
+    {
+      "area": "/area/holodeck/source_thunderdomecourt",
+      "role": "general",
+      "tiles": 100,
+      "occupied_tiles": 30,
+      "occupancy_micros": 300000,
+      "largest_empty_region_micros": 700000,
+      "unique_fixture_types": 5,
+      "fixture_count": 72
+    },
+    {
+      "area": "/area/beach",
+      "role": "general",
+      "tiles": 651,
+      "occupied_tiles": 17,
+      "occupancy_micros": 26114,
+      "largest_empty_region_micros": 973886,
+      "unique_fixture_types": 9,
+      "fixture_count": 28
+    },
+    {
+      "area": "/area/ai_multicam_room",
+      "role": "ai",
+      "tiles": 289,
+      "occupied_tiles": 0,
+      "occupancy_micros": 0,
+      "largest_empty_region_micros": 1000000,
+      "unique_fixture_types": 0,
+      "fixture_count": 0
+    },
+    {
+      "area": "/area/shuttle/syndicate_elite/mothership",
+      "role": "docking",
+      "tiles": 28,
+      "occupied_tiles": 11,
+      "occupancy_micros": 392857,
+      "largest_empty_region_micros": 607143,
+      "unique_fixture_types": 3,
+      "fixture_count": 11
+    },
+    {
+      "area": "/area/holodeck/source_emptycourt",
+      "role": "general",
+      "tiles": 100,
+      "occupied_tiles": 16,
+      "occupancy_micros": 160000,
+      "largest_empty_region_micros": 840000,
+      "unique_fixture_types": 1,
+      "fixture_count": 16
+    },
+    {
+      "area": "/area/holodeck/source_boxingcourt",
+      "role": "general",
+      "tiles": 100,
+      "occupied_tiles": 18,
+      "occupancy_micros": 180000,
+      "largest_empty_region_micros": 820000,
+      "unique_fixture_types": 3,
+      "fixture_count": 22
+    }
+  ]
 }

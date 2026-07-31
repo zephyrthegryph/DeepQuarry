@@ -252,6 +252,49 @@ SUBSYSTEM_DEF(expedition)
 
 // ---- Generation -----------------------------------------------------------
 
+/// Minimal sealed publication target used only after every rich-layout attempt
+/// fails. It deliberately has no department simulation contract: its job is to
+/// guarantee a pressurized, walkable destination and preserve the expedition.
+/proc/generated_station_emergency_spec(seed)
+	var/datum/generated_station_spec/spec = new
+	spec.seed = seed
+	spec.id = "station-emergency-[seed]"
+	spec.name = "[generated_station_designation(seed)] Emergency Annex"
+	spec.grid_width = 17
+	spec.grid_height = 17
+	spec.maximum_area = 225
+	spec.size_class = "emergency"
+	spec.layout_archetype = "fallback_annex"
+	return spec
+
+/proc/generated_station_emergency_materialization(datum/generated_station_spec/spec, z)
+	var/datum/generated_station_materialization/materialization = new
+	materialization.station_id = spec.id
+	materialization.z_level = z
+	materialization.origin_x = max(1, round((world.maxx - spec.grid_width) / 2))
+	materialization.origin_y = max(1, round((world.maxy - spec.grid_height) / 2))
+	var/area/generated_station/transit/emergency_area = new
+	emergency_area.station_id = spec.id
+	emergency_area.department_id = "emergency"
+	emergency_area.name = "[spec.name] Habitable Annex"
+	materialization.transit_area = emergency_area
+	for(var/local_x in 1 to spec.grid_width)
+		for(var/local_y in 1 to spec.grid_height)
+			var/turf/T = materialization.world_turf(local_x, local_y)
+			if(local_x == 1 || local_y == 1 || local_x == spec.grid_width || local_y == spec.grid_height)
+				T = T.ChangeTurf(/turf/simulated/wall, tell_universe = FALSE)
+				materialization.wall_count++
+			else
+				T = T.ChangeTurf(/turf/simulated/floor/tiled, tell_universe = FALSE)
+				generated_station_seed_air(T)
+				materialization.floor_count++
+			ChangeArea(T, emergency_area)
+	var/turf/arrival = materialization.world_turf(round(spec.grid_width / 2), round(spec.grid_height / 2))
+	materialization.entry = new(arrival)
+	materialization.entry.station_id = spec.id
+	materialization.degradation_events += "rich station generation exhausted; published sealed emergency annex"
+	return materialization
+
 // Generate a site, optionally bound to a mission. Returns the site (or null).
 /datum/controller/subsystem/expedition/proc/generate_site(datum/expedition_mission/mission = null, difficulty = EXP_DIFF_LOW, datum/shuttle/autodock/overmap/assigned_shuttle = null, obj/machinery/computer/shuttle_control/explore/origin_console = null, datum/flight_plan/flight_plan = null)
 	if(mission)
@@ -269,22 +312,43 @@ SUBSYSTEM_DEF(expedition)
 
 	// Build a reproducible station instead of seeding legacy biome content.
 	var/generation_seed = max(1, round((world.realtime + world.time * 1009 + z * 7919) % 2147483646))
-	var/datum/generated_station_planner/planner = new
-	var/datum/generated_station_spec/station_spec = planner.plan(generation_seed)
-	qdel(planner)
-	var/datum/generated_station_materializer/materializer = new
-	var/origin_x = max(1, round((world.maxx - station_spec.grid_width) / 2))
-	var/origin_y = max(1, round((world.maxy - station_spec.grid_height) / 2))
-	var/datum/generated_station_materialization/station_materialization = materializer.materialize(station_spec, z, origin_x, origin_y, flight_plan)
-	var/materialization_yields = materializer.last_yield_count
-	var/materialization_elapsed = materializer.last_elapsed_seconds
-	qdel(materializer)
-	if(!station_materialization)
-		log_world("SSexpedition: generated-station materialization failed on z[z] (seed [generation_seed]); releasing.")
+	var/datum/generated_station_spec/station_spec
+	var/datum/generated_station_materialization/station_materialization
+	var/materialization_yields = 0
+	var/materialization_elapsed = 0
+	// A live destination is monotonic once its z-level has been reserved. Retry
+	// the rich planner with deterministic alternate seeds, then publish a small
+	// emergency station instead of returning no destination.
+	for(var/attempt in 1 to 3)
+		var/attempt_seed = ((generation_seed + (attempt - 1) * 104729 - 1) % 16000000) + 1
+		var/datum/generated_station_planner/planner = new
+		station_spec = planner.plan(attempt_seed)
+		var/planner_error = planner.error_message
+		qdel(planner)
+		if(!station_spec)
+			log_world("SSexpedition: generated-station planning attempt [attempt] failed on z[z] (seed [attempt_seed]): [planner_error || "no specification"].")
+			continue
+		var/datum/generated_station_materializer/materializer = new
+		materializer.strict_room_contracts = FALSE
+		var/origin_x = max(1, round((world.maxx - station_spec.grid_width) / 2))
+		var/origin_y = max(1, round((world.maxy - station_spec.grid_height) / 2))
+		station_materialization = materializer.materialize(station_spec, z, origin_x, origin_y, flight_plan)
+		materialization_yields += materializer.last_yield_count
+		materialization_elapsed += materializer.last_elapsed_seconds
+		var/materialization_error = materializer.last_failure_details
+		qdel(materializer)
+		if(station_materialization)
+			generation_seed = attempt_seed
+			break
+		log_world("SSexpedition: generated-station materialization attempt [attempt] failed on z[z] (seed [attempt_seed]): [materialization_error || "no result"].")
 		qdel(station_spec)
+		station_spec = null
 		wipe_z(z)
-		free_z |= z
-		return null
+	if(!station_materialization)
+		generation_seed = max(1, generation_seed % 16000000)
+		station_spec = generated_station_emergency_spec(generation_seed)
+		station_materialization = generated_station_emergency_materialization(station_spec, z)
+		log_world("SSexpedition: rich generation exhausted on z[z]; publishing emergency station [station_spec.name].")
 	var/t_biome = REALTIMEOFDAY
 	if(flight_plan && !QDELETED(flight_plan))
 		flight_plan.generation_progress = 55
@@ -302,12 +366,16 @@ SUBSYSTEM_DEF(expedition)
 	site.generation_seed = generation_seed
 	site.station_spec = station_spec
 	site.station_materialization = station_materialization
-	if(!site.initialize_generated_station_runtime() || !site.initialize_generated_station_utilities() || !site.initialize_generated_station_infrastructure() || !site.initialize_generated_station_defenders())
-		log_world("SSexpedition: generated station runtime initialization failed on z[z] (seed [generation_seed]); releasing.")
-		qdel(site)
-		wipe_z(z)
-		free_z |= z
-		return null
+	if(!site.initialize_generated_station_utilities())
+		station_materialization.degradation_events += "utility initialization failed; station published with local emergency services"
+	if(!site.initialize_generated_station_runtime())
+		station_materialization.degradation_events += "strategic runtime initialization failed"
+	if(site.station_director && !site.initialize_generated_station_infrastructure())
+		station_materialization.degradation_events += "strategic infrastructure initialization failed"
+	if(!site.repair_generated_station_runtime_access())
+		station_materialization.degradation_events += "post-utility access repair was incomplete"
+	if(site.station_director && !site.initialize_generated_station_defenders())
+		station_materialization.degradation_events += "defender initialization failed"
 	site.size = expedition_roll_size()
 	// Roll (or take the mission's pinned) enemy faction — themes every hostile here.
 	site.faction = mission?.faction_type || expedition_pick_faction(difficulty)
@@ -317,18 +385,19 @@ SUBSYSTEM_DEF(expedition)
 		flight_plan.generation_progress = 72
 		flight_plan.generation_stage = "Selecting landing zone"
 	if(!length(site.floors))
-		log_world("SSexpedition: site on z[z] carved no walkable floor; releasing.")
-		wipe_z(z)
-		free_z |= z
-		qdel(site)
-		return null
+		var/turf/fallback_floor = locate(round(world.maxx / 2), round(world.maxy / 2), z)
+		fallback_floor = fallback_floor.ChangeTurf(/turf/simulated/floor/tiled, tell_universe = FALSE)
+		ChangeArea(fallback_floor, station_materialization.transit_area)
+		generated_station_seed_air(fallback_floor)
+		site.floors += fallback_floor
+		station_materialization.degradation_events += "no planned floor survived; installed an emergency landing floor"
 	site.landing = get_turf(station_materialization.entry)
 	if(!site.landing || site.landing.density)
-		log_world("SSexpedition: generated station on z[z] has no walkable docking entry (seed [generation_seed]); releasing.")
-		wipe_z(z)
-		free_z |= z
-		qdel(site)
-		return null
+		site.landing = site.floors[1]
+		QDEL_NULL(station_materialization.entry)
+		station_materialization.entry = new(site.landing)
+		station_materialization.entry.station_id = station_spec.id
+		station_materialization.degradation_events += "planned docking entry was unusable; moved arrival to the first walkable floor"
 	site.name = station_spec.name
 	site.name += " — [expedition_faction_name(site.faction)]"
 	site.assigned_shuttle = assigned_shuttle
@@ -344,11 +413,8 @@ SUBSYSTEM_DEF(expedition)
 		site.mission = mission
 		mission.populate(site)
 		if(!mission.has_viable_objectives())
-			log_world("SSexpedition: [site.name] generated without viable mission content; releasing.")
-			wipe_z(z)
-			free_z |= z
-			qdel(site)
-			return null
+			station_materialization.degradation_events += "mission objective population was incomplete"
+			log_world("SSexpedition: [site.name] published without complete mission objectives; destination remains playable.")
 	if(flight_plan && !QDELETED(flight_plan))
 		flight_plan.generation_progress = 92
 		flight_plan.generation_stage = "Validating objectives and approach"

@@ -108,10 +108,11 @@
 				content_paths |= placement.feature.atom_type
 				if(ispath(placement.feature.atom_type, /obj/machinery))
 					machinery++
+			var/micro_solution = findtext(solution.definition_id, "-micro-")
 			var/compact_solution = findtext(solution.definition_id, "-compact")
 			if(compact_solution)
 				TEST_ASSERT(length(content_types) >= 2, "Compact random room [solution.module_id] collapsed to a token fixture")
-			else
+			else if(!micro_solution)
 				large_rooms++
 				TEST_ASSERT(solution.occupied_tiles >= CEILING(solution.floor_tiles * 0.22, 1), "Random room [solution.module_id] is visibly sparse")
 				TEST_ASSERT(length(content_types) >= 3, "Random room [solution.module_id] lacks visual diversity")
@@ -122,7 +123,8 @@
 					break
 			var/department_id = materializer.department_id_for_module(module)
 			TEST_ASSERT(!findtext(solution.definition_id, "-minimum-"), "Random content sample [sample] room [solution.module_id] degraded to [solution.definition_id]")
-			for(var/required_type in generated_room_required_signature(department_id, module?.role, compact_solution))
+			var/list/required_signature = micro_solution ? list() : generated_room_required_signature(department_id, module?.role, compact_solution)
+			for(var/required_type in required_signature)
 				var/found_signature = FALSE
 				for(var/content_type in content_paths)
 					if(ispath(content_type, required_type))
@@ -170,28 +172,24 @@
 /datum/generated_room_definition/test_impossible/build_required_features()
 	return list(/datum/generated_room_feature/test_impossible_dependency)
 
-/datum/generated_station_materializer/test_room_fallback
-	strict_room_contracts = FALSE
+/datum/generated_station_materializer/test_impossible_room
 
-/datum/generated_station_materializer/test_room_fallback/resolve_room_definition(department_id, role)
+/datum/generated_station_materializer/test_impossible_room/resolve_room_definition(department_id, role)
 	return new /datum/generated_room_definition/test_impossible
 
-/datum/unit_test/dq_generated_station_runtime_room_fallback_cannot_abort_station
+/datum/unit_test/dq_generated_station_runtime_rejects_generic_room_fallback
 
-/datum/unit_test/dq_generated_station_runtime_room_fallback_cannot_abort_station/Run()
+/datum/unit_test/dq_generated_station_runtime_rejects_generic_room_fallback/Run()
 	var/datum/generated_station_prng/seed_stream = new(908172635)
 	var/datum/generated_station_planner/planner = new
 	var/datum/generated_station_spec/spec = planner.plan(seed_stream.next(), 96, 96)
-	TEST_ASSERT_NOTNULL(spec, "Fallback behavior test produced no Rust station plan")
-	var/datum/generated_station_materializer/test_room_fallback/materializer = new
+	TEST_ASSERT_NOTNULL(spec, "Fail-closed room test produced no Rust station plan")
+	var/datum/generated_station_materializer/test_impossible_room/materializer = new
 	var/origin_x = max(1, round((world.maxx - spec.grid_width) / 2))
 	var/origin_y = max(1, round((world.maxy - spec.grid_height) / 2))
 	var/datum/generated_station_materialization/materialized = materializer.materialize(spec, world.maxz, origin_x, origin_y)
-	TEST_ASSERT_NOTNULL(materialized, "An intentionally impossible room program aborted runtime station materialization: [materializer.last_failure_details]")
-	TEST_ASSERT_EQUAL(length(materialized.degradation_events), length(materialized.modules), "Not every impossible authored room recorded its minimum-shell degradation")
-	for(var/datum/generated_room_solution/solution in materialized.room_solutions)
-		TEST_ASSERT(findtext(solution.definition_id, "-minimum-"), "Impossible room [solution.module_id] did not resolve through the guaranteed minimum shell")
-	qdel(materialized)
+	TEST_ASSERT_NULL(materialized, "An intentionally impossible authored program silently materialized through a generic room fallback")
+	TEST_ASSERT(findtext(materializer.last_failure_details, "room "), "Fail-closed materialization did not report the rejected room contract")
 	qdel(materializer)
 	qdel(spec)
 	qdel(planner)

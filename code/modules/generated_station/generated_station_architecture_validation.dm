@@ -35,7 +35,15 @@
 	for(var/datum/generated_station_module/module in modules)
 		var/room_width = module.width()
 		var/room_height = module.height()
-		var/shape_key = "[min(room_width, room_height)]x[max(room_width, room_height)]:[module.footprint_tiles() || room_width * room_height]"
+		// Bounding dimensions plus area incorrectly called distinct notched and
+		// stepped rooms "identical." Compare the complete normalized footprint so
+		// this gate measures repeated architecture rather than equal floor area.
+		var/list/normalized_footprint = list()
+		for(var/key in module.footprint)
+			var/list/parts = splittext(key, ",")
+			normalized_footprint += "[text2num(parts[1]) - module.x1],[text2num(parts[2]) - module.y1]"
+		sortTim(normalized_footprint, GLOBAL_PROC_REF(cmp_text_asc))
+		var/shape_key = "[room_width]x[room_height]:[jointext(normalized_footprint, ";")]"
 		shape_counts[shape_key] = (shape_counts[shape_key] || 0) + 1
 		metrics.module_count++
 	for(var/shape_key in shape_counts)
@@ -150,6 +158,8 @@
 	if(!T || T.density || !istype(T, /turf/simulated/floor))
 		return FALSE
 	for(var/atom/movable/occupant in T)
+		if(QDELETED(occupant))
+			continue
 		if(occupant.density && !istype(occupant, /obj/machinery/door))
 			return FALSE
 	return TRUE
@@ -346,6 +356,14 @@
 		var/area/generated_station/department_area = department_areas[node_id]
 		for(var/turf/T in department_area)
 			station_turfs |= T
+	// Authored rooms intentionally receive independent areas so each room can
+	// own its APC, alarms, and environmental controls. They are still part of
+	// the station's walkable graph and must participate in every whole-station
+	// structural/connectivity measurement.
+	for(var/module_id in module_areas)
+		var/area/generated_station/module_area = module_areas[module_id]
+		for(var/turf/T in module_area)
+			station_turfs |= T
 	for(var/turf/T in transit_area)
 		station_turfs |= T
 		if(istype(T, /turf/simulated/floor))
@@ -367,7 +385,7 @@
 			var/area/generated_station/turf_department = get_area(T)
 			for(var/direction in GLOB.cardinal)
 				var/turf/neighbor = get_step(T, direction)
-				if(istype(get_area(neighbor), /area/generated_station/transit) && istype(neighbor, /turf/simulated/floor))
+				if((istype(get_area(neighbor), /area/generated_station/transit) || istype(get_area(neighbor), /area/generated_station/maintenance)) && istype(neighbor, /turf/simulated/floor))
 					department_frontage[turf_department.department_id] = (department_frontage[turf_department.department_id] || 0) + 1
 					break
 
@@ -402,7 +420,7 @@
 		if(findtext(solution.definition_id, "-micro-"))
 			qdel(definition)
 			definition = generated_micro_room_definition_for(module_department_id, module.role)
-		else if(findtext(solution.definition_id, "-compact-"))
+		else if(findtext(solution.definition_id, "-compact"))
 			qdel(definition)
 			definition = generated_compact_room_definition_for(module_department_id, module.role)
 		var/minimum_usable_tiles = min(definition.min_width * definition.min_height, 21)
@@ -432,7 +450,7 @@
 		else if(!valid_exterior)
 			var/list/door_sides = north_south ? list(north, south) : list(east, west)
 			for(var/turf/side_turf in door_sides)
-				for(var/atom/movable/blocker in side_turf)
+				for(var/obj/blocker in side_turf)
 					if(blocker.density && !istype(blocker, /obj/machinery/door))
 						validation.add(GENERATED_STATION_ISSUE_ERROR, "blocked-door", "[blocker.type] blocks the approach to [door.type] at [generated_station_coordinate(door)].", generated_station_coordinate(blocker))
 		for(var/atom/movable/occupant in door_turf)
@@ -445,7 +463,11 @@
 		var/machinery_count = 0
 		var/list/machinery_types = list()
 		for(var/obj/machinery/machine in T)
-			if(!istype(machine, /obj/machinery/door) && !istype(machine, /obj/machinery/power/terminal) && !istype(machine, /obj/machinery/atmospherics/pipe))
+			// Wall-mounted fixtures occupy distinct structural edges and may
+			// legitimately share a floor coordinate with one floor device.
+			// The tile-plan edge registry prevents two of them using one edge.
+			var/wall_mounted = istype(machine, /obj/machinery/power/apc) || istype(machine, /obj/machinery/alarm) || istype(machine, /obj/machinery/firealarm) || istype(machine, /obj/machinery/light)
+			if(!wall_mounted && !istype(machine, /obj/machinery/door) && !istype(machine, /obj/machinery/power/terminal) && !istype(machine, /obj/machinery/atmospherics/pipe))
 				machinery_count++
 				machinery_types += "[machine.type]"
 		for(var/obj/machinery/power/terminal/terminal in T)
@@ -533,6 +555,7 @@
 			var/disconnected_count = length(walkable_station) - length(reached_station)
 			var/turf/first_unreached
 			var/largest_disconnected_component = 0
+			var/list/largest_disconnected_turfs = list()
 			var/list/disconnected_visited = list()
 			for(var/turf/candidate as anything in walkable_station)
 				if(reached_station[candidate] || disconnected_visited[candidate])
@@ -540,6 +563,7 @@
 				if(!first_unreached)
 					first_unreached = candidate
 				var/component_size = 0
+				var/list/component_turfs = list()
 				var/list/component_frontier = list(candidate)
 				while(length(component_frontier))
 					var/turf/component_turf = component_frontier[1]
@@ -548,14 +572,32 @@
 						continue
 					disconnected_visited[component_turf] = TRUE
 					component_size++
+					component_turfs += component_turf
 					for(var/direction in GLOB.cardinal)
 						var/turf/neighbor = get_step(component_turf, direction)
 						if((neighbor in walkable_station) && !reached_station[neighbor] && !disconnected_visited[neighbor])
 							component_frontier += neighbor
-				largest_disconnected_component = max(largest_disconnected_component, component_size)
+				if(component_size > largest_disconnected_component)
+					largest_disconnected_component = component_size
+					largest_disconnected_turfs = component_turfs
+			var/list/boundary_blockers = list()
+			for(var/turf/pocket_turf as anything in largest_disconnected_turfs)
+				for(var/direction in GLOB.cardinal)
+					var/turf/boundary = get_step(pocket_turf, direction)
+					if(!(boundary in station_turfs) || generated_station_architectural_passable(boundary) || istype(boundary, /turf/simulated/wall))
+						continue
+					var/summary = "[generated_station_coordinate(boundary)] [boundary.type]"
+					for(var/atom/movable/occupant in boundary)
+						if(occupant.density && !istype(occupant, /obj/machinery/door))
+							summary += " occupied by [occupant.type]"
+					boundary_blockers |= summary
+					if(length(boundary_blockers) >= 8)
+						break
+				if(length(boundary_blockers) >= 8)
+					break
 			var/severity = largest_disconnected_component > 2 ? GENERATED_STATION_ISSUE_ERROR : GENERATED_STATION_ISSUE_WARNING
 			var/code = largest_disconnected_component > 2 ? "unreachable-room-space" : "enclosed-floor-pocket"
-			validation.add(severity, code, "[disconnected_count] of [length(walkable_station)] clear station tiles are disconnected; the largest pocket is [largest_disconnected_component] tiles and the first starts at [generated_station_coordinate(first_unreached)] in [get_area(first_unreached)]. Neighbors: [generated_station_neighbor_summary(first_unreached)]", station_id)
+			validation.add(severity, code, "[disconnected_count] of [length(walkable_station)] clear station tiles are disconnected; the largest pocket is [largest_disconnected_component] tiles and the first starts at [generated_station_coordinate(first_unreached)] in [get_area(first_unreached)]. Boundary blockers: [length(boundary_blockers) ? jointext(boundary_blockers, "; ") : "none"]. Neighbors: [generated_station_neighbor_summary(first_unreached)]", station_id)
 
 	if(length(station_turfs))
 		var/bounding_area = (maximum_x - minimum_x + 1) * (maximum_y - minimum_y + 1)

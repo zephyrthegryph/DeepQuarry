@@ -4,3 +4,5 @@ changes:
   - bugfix: "Made Rust-planned compact station rooms materialize with complete, non-overlapping power, atmospherics, alarms, and lighting."
   - bugfix: "Fixed generated-room furnishing connectivity checks producing list-index runtimes."
   - refactor: "Added an explicit authored micro-room contract and randomized end-to-end station materialization coverage."
+  - maptweak: "Reworked generated rooms around purpose-specific workflow zones and authored room fragments, with tighter Southern Cross-like sizing and substantially less generic furnishing."
+  - maptweak: "Matched generated-room furnishing density and empty-space distribution against measurements from the live Southern Cross decks, adding coherent secondary work zones to sparse rooms."

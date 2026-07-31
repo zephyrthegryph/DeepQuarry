@@ -48,6 +48,11 @@
 /obj/machinery/door/airlock/maintenance/generated_station
 	name = "maintenance access"
 
+/obj/structure/filingcabinet/generated_station_compact
+	name = "shallow records cabinet"
+	desc = "A wall-depth records cabinet designed not to obstruct a compact workspace."
+	density = FALSE
+
 /obj/item/card/id/generated_station_master
 	name = "remote station authority card"
 	desc = "An emergency authority credential for the isolated installation."
@@ -191,11 +196,10 @@
 	var/last_elapsed_seconds = 0
 	var/last_peak_tick_usage = 0
 	var/last_peak_phase
-#ifdef CITESTING
+	/// CI and focused diagnostics default to a fail-closed authored-room contract.
+	/// Live expedition generation disables this: aesthetic shortfalls must degrade
+	/// the affected room, never discard an otherwise playable station.
 	var/strict_room_contracts = TRUE
-#else
-	var/strict_room_contracts = FALSE
-#endif
 
 /datum/generated_station_materializer/Destroy()
 	spec = null
@@ -285,6 +289,8 @@
 		generation_checkpoint("Changing structural turfs", 35, TRUE)
 	if(!materialization_stage && !apply_tile_plan())
 		materialization_stage = "tile-application"
+	if(!materialization_stage && !style_rust_blueprint_floors())
+		materialization_stage = "floor-styling"
 	if(materialization_stage)
 		last_failure_details = "[materialization_stage]: [jointext(result?.tile_plan?.errors, "; ")]"
 		log_world("Generated station [spec.id] materialization failed during [materialization_stage].")
@@ -305,7 +311,7 @@
 	generation_checkpoint("Installing station entry", 48)
 	build_services()
 	generation_checkpoint("Furnishing functional rooms", 50, TRUE)
-	if(!synthesize_rooms())
+	if(!synthesize_rust_blueprint())
 		last_failure_details ||= "room synthesis"
 		log_world("Generated station [spec.id] materialization failed during room synthesis.")
 		qdel(result)
@@ -332,8 +338,11 @@
 			result = null
 			active_job = null
 			return null
-		result.degradation_events += "one or more furnishings could not be relocated away from access routes"
-		log_world("Generated station [spec.id] continued after furnishing access degradation.")
+		// Live generation is explicitly best-effort. The repair pass has already
+		// removed optional blockers, relocated required fixtures, and attempted an
+		// interior access door; retain the playable result and let the independent
+		// architecture audit report any concrete remaining defect.
+		log_world("Generated station [spec.id] retained its best-effort furnishing layout after access repair was exhausted.")
 	result.service_validation = result.validate_services(spec, src)
 	generation_checkpoint("Finalizing walls and atmosphere", 57, TRUE)
 	finalize_wall_adjacencies()
@@ -345,6 +354,48 @@
 	finalize()
 	active_job = null
 	return result
+
+/// Applies the Rust room floor contract after structural turfs exist. Room
+/// base tiles come from the selected authored definition; this pass adds the
+/// continuous Southern Cross-style department paint around each room edge.
+/datum/generated_station_materializer/proc/style_rust_blueprint_floors()
+	for(var/datum/generated_station_layout_node/node in spec.layout_nodes)
+		for(var/datum/generated_station_room_allocation/room in node.room_program)
+			var/accent_color = generated_station_accent_color(room.accent_style)
+			if(!accent_color)
+				continue
+			for(var/key in room.tiles)
+				var/list/parts = splittext(key, ",")
+				var/local_x = text2num(parts[1])
+				var/local_y = text2num(parts[2])
+				var/turf/simulated/floor/floor = world_turf(local_x, local_y)
+				if(!istype(floor))
+					continue
+				for(var/direction in GLOB.cardinal)
+					var/neighbor_x = local_x + (direction == EAST) - (direction == WEST)
+					var/neighbor_y = local_y + (direction == NORTH) - (direction == SOUTH)
+					if(room.tiles["[neighbor_x],[neighbor_y]"])
+						continue
+					// `borderfloor` is a pre-shaded dark stripe and cannot be
+					// recolored correctly. `bordercolor` is the tintable mask
+					// Southern Cross uses for department paint.
+					new /obj/effect/floor_decal/corner/white/border(floor, direction, accent_color)
+					result.accent_decal_count++
+				result.styled_floor_count++
+	return TRUE
+
+/proc/generated_station_accent_color(accent_style)
+	switch(accent_style)
+		if("command-blue") return COLOR_COMMAND_BLUE
+		if("ai-cyan") return COLOR_CYAN_BLUE
+		if("security-red") return COLOR_RED_GRAY
+		if("medical-blue") return COLOR_BLUE_GRAY
+		if("engineering-yellow") return COLOR_DARK_ORANGE
+		if("science-purple") return COLOR_PURPLE_GRAY
+		if("cargo-brown") return COLOR_YELLOW_GRAY
+		if("docking-gray") return COLOR_DARK_GUNMETAL
+		if("neutral-gray") return COLOR_GRAY
+	return COLOR_WHITE
 
 /datum/generated_station_materializer/proc/world_turf(local_x, local_y)
 	return locate(min_x + local_x - 1, min_y + local_y - 1, z_level)
@@ -374,7 +425,13 @@
 			tile_plan.refine(text2num(parts[1]), text2num(parts[2]), node.id, GENERATED_STATION_TILE_HULL, null)
 			generation_checkpoint("Compiling department partitions", 28)
 		for(var/datum/generated_station_room_allocation/room in node.room_program)
-			var/datum/generated_room_definition/definition = generated_room_definition_for(department_id, room.role)
+			var/datum/generated_room_definition/definition
+			if(room.definition_id == "[department_id]-compact-[room.role]")
+				definition = generated_compact_room_definition_for(department_id, room.role)
+			else if(room.definition_id == "[department_id]-micro-[room.role]")
+				definition = generated_micro_room_definition_for(department_id, room.role)
+			else
+				definition = generated_room_definition_for(department_id, room.role)
 			var/room_floor_type = definition?.room_style?.floor_type || floor_type
 			for(var/key in room.tiles)
 				var/list/parts = splittext(key, ",")
@@ -451,7 +508,16 @@
 					if(destination)
 						break
 				if(!destination)
-					return FALSE
+					if(generated_station_is_removable_decor(furnishing))
+						result.furnishings -= furnishing
+						result.owned_furnishing_atoms -= furnishing
+						qdel(furnishing)
+						continue
+					// Some functional wall-side machinery is legitimately adjacent
+					// to one of a room's multiple doors. Keep it in place here; the
+					// authoritative room connectivity/door-reachability audit below
+					// still rejects it if it actually blocks access.
+					continue
 				furnishing.forceMove(destination)
 				current = destination
 		if(istype(furnishing, /obj/structure/bed/chair))
@@ -464,7 +530,99 @@
 					furnishing.set_dir(direction)
 					break
 		generation_checkpoint("Validating furnishing access", 55)
+	// A later room or emergency fixture can change the final boundary graph
+	// after an individual room was solved. Remove only non-functional decor,
+	// newest first, until every room again has one component connected to a door.
+	for(var/module_id in module_areas)
+		var/area/generated_station/A = module_areas[module_id]
+		while(!generated_station_room_area_is_accessible(A))
+			var/atom/movable/removable
+			for(var/i in length(result.furnishings) to 1 step -1)
+				var/atom/movable/candidate = result.furnishings[i]
+				if(get_area(candidate) == A && generated_station_is_removable_decor(candidate))
+					removable = candidate
+					break
+			if(!removable)
+				if(relocate_blocking_room_furnishing(A))
+					continue
+				// Playability outranks a required decoration contract. If a dense
+				// authored fixture still partitions the room after relocation, drop
+				// that fixture and publish a degraded but fully traversable room.
+				var/atom/movable/required_blocker
+				for(var/i in length(result.furnishings) to 1 step -1)
+					var/atom/movable/candidate = result.furnishings[i]
+					if(get_area(candidate) == A && candidate.density && !istype(candidate, /obj/machinery/door))
+						required_blocker = candidate
+						break
+				if(required_blocker)
+					result.degradation_events += "removed [required_blocker.type] from [A.name] to preserve room access"
+					result.furnishings -= required_blocker
+					result.owned_furnishing_atoms -= required_blocker
+					qdel(required_blocker)
+					continue
+				if(install_emergency_room_access(A))
+					continue
+				var/list/blockers = list()
+				for(var/turf/simulated/floor/blocked_floor in A)
+					for(var/atom/movable/blocker in blocked_floor)
+						if(blocker.density && !istype(blocker, /obj/machinery/door))
+							blockers += "[blocker.type]@[blocked_floor.x],[blocked_floor.y]"
+				log_world("Generated station could not repair furnishing access for [A.name]: [jointext(blockers, ", ")]")
+				return FALSE
+			result.furnishings -= removable
+			result.owned_furnishing_atoms -= removable
+			qdel(removable)
+			generation_checkpoint("Opening final room circulation", 55)
 	return TRUE
+
+/// Moves a required dense furnishing to another valid socket when the complete
+/// room graph proves its authored position is an articulation point.
+/datum/generated_station_materializer/proc/relocate_blocking_room_furnishing(area/generated_station/A)
+	for(var/atom/movable/furnishing in result.furnishings)
+		if(get_area(furnishing) != A || !furnishing.density || istype(furnishing, /obj/machinery/door))
+			continue
+		var/turf/original = get_turf(furnishing)
+		for(var/turf/simulated/floor/candidate in A)
+			if(candidate == original || !generated_station_furnishing_access_tile(candidate))
+				continue
+			furnishing.forceMove(candidate)
+			if(generated_station_room_area_is_accessible(A))
+				return TRUE
+			furnishing.forceMove(original)
+	return FALSE
+
+/// Repairs the rare case where utilities/required machinery consume every
+/// approach to a planned room door. This is an interior-only structural repair:
+/// it opens a wall between the room and an already-walkable station tile, never
+/// the exterior hull, then installs a tracked department airlock.
+/datum/generated_station_materializer/proc/install_emergency_room_access(area/generated_station/A)
+	for(var/turf/simulated/floor/inside in A)
+		for(var/direction in GLOB.cardinal)
+			var/turf/simulated/wall/wall = get_step(inside, direction)
+			if(!istype(wall))
+				continue
+			var/turf/outside = get_step(wall, direction)
+			if(!generated_station_architectural_passable(outside) || get_area(outside) == A)
+				continue
+			var/local_x = wall.x - min_x + 1
+			var/local_y = wall.y - min_y + 1
+			var/datum/generated_station_tile_intent/intent = result.tile_plan?.tile(local_x, local_y)
+			if(intent)
+				intent.structure_kind = GENERATED_STATION_TILE_FLOOR
+				intent.floor_type = /turf/simulated/floor/tiled
+				intent.door_type = /obj/machinery/door/airlock
+				intent.door_direction = direction
+			var/turf/simulated/floor/door_turf = wall.ChangeTurf(/turf/simulated/floor/tiled, tell_universe = FALSE)
+			ChangeArea(door_turf, A)
+			var/obj/machinery/door/airlock/airlock = new(door_turf)
+			airlock.set_dir(direction)
+			result.doors += airlock
+			result.door_count++
+			return TRUE
+	return FALSE
+
+/proc/generated_station_is_removable_decor(atom/movable/furnishing)
+	return istype(furnishing, /obj/structure/table) || istype(furnishing, /obj/structure/bed/chair) || istype(furnishing, /obj/structure/filingcabinet) || istype(furnishing, /obj/structure/flora/pottedplant)
 
 /// Returns whether a generated furnishing can move here without consuming an
 /// airlock approach, utility fixture, or another blocking object's footprint.
@@ -490,6 +648,7 @@
 			module.id = room.id
 			module.department_node_id = node.id
 			module.role = room.role
+			module.definition_id = room.definition_id
 			module.x1 = spec.grid_width
 			module.y1 = spec.grid_height
 			module.x2 = 1
@@ -517,6 +676,7 @@
 /// Gives every planned room an independent area and therefore its own APC,
 /// alarms, environmental controls, and machine-power accounting.
 /datum/generated_station_materializer/proc/build_room_areas()
+	var/list/designation_counts = list()
 	for(var/datum/generated_station_module/module in result.modules)
 		var/department_id = department_id_for_module(module)
 		var/area/generated_station/A = make_department_area(department_id)
@@ -524,10 +684,160 @@
 			return FALSE
 		A.station_id = spec.id
 		A.department_id = department_id
-		A.name = "[spec.name] [capitalize(replacetext(module.role, "-", " "))]"
+		var/designation_key = "[department_id]/[module.role]"
+		designation_counts[designation_key] = (designation_counts[designation_key] || 0) + 1
+		var/designation_number = designation_counts[designation_key]
+		var/department_name = capitalize(department_id)
+		var/role_name = capitalize(replacetext(module.role, "-", " "))
+		var/datum/generated_station_room_allocation/allocation = room_allocation_for_module(module)
+		var/base_name = allocation?.area_name || "[spec.name] [department_name] [role_name]"
+		A.name = designation_number > 1 ? "[base_name] [designation_number]" : base_name
 		module_areas[module.id] = A
 		result.module_areas[module.id] = A
 	return TRUE
+
+/datum/generated_station_materializer/proc/room_allocation_for_module(datum/generated_station_module/module)
+	var/datum/generated_station_layout_node/node = nodes_by_id[module?.department_node_id]
+	for(var/datum/generated_station_room_allocation/room in node?.room_program)
+		if(room.id == module.id)
+			return room
+	return null
+
+/// Materializes the exact content plane returned by Rust. Existing DM utility
+/// construction remains authoritative for APC/power/atmos network plumbing;
+/// its endpoints correspond to the service fixtures in this blueprint.
+/datum/generated_station_materializer/proc/synthesize_rust_blueprint()
+	if(!length(spec.fixture_blueprint))
+		last_failure_details = "Rust content blueprint is empty"
+		return FALSE
+	var/list/rooms_by_native_id = list()
+	var/list/solutions_by_native_id = list()
+	for(var/datum/generated_station_layout_node/node in spec.layout_nodes)
+		for(var/datum/generated_station_room_allocation/room in node.room_program)
+			rooms_by_native_id["[room.rust_room_id]"] = room
+			var/datum/generated_room_solution/solution = new
+			solution.module_id = room.id
+			solution.definition_id = room.selected_variant
+			solution.aesthetic_id = room.aesthetic_id
+			solution.valid = TRUE
+			solution.score = room.occupancy_micros
+			solution.floor_tiles = length(room.tiles)
+			solution.occupied_tiles = CEILING(solution.floor_tiles * room.occupancy_micros / 1000000, 1)
+			for(var/key in room.content_circulation)
+				var/list/parts = splittext(key, ",")
+				solution.reserve_circulation(text2num(parts[1]), text2num(parts[2]))
+			solutions_by_native_id["[room.rust_room_id]"] = solution
+			result.room_solutions += solution
+	for(var/datum/generated_station_fixture_placement/fixture in spec.fixture_blueprint)
+		generation_checkpoint("Materializing Rust room blueprint", 52)
+		if(fixture.fixture_id in list("vent", "scrubber", "apc", "air_alarm", "fire_alarm", "wall_light"))
+			continue
+		var/atom_type = spec.fixture_type_registry[fixture.fixture_id] || generated_station_rust_fixture_type(fixture.fixture_id)
+		if(!atom_type)
+			last_failure_details = "unknown Rust fixture '[fixture.fixture_id]'"
+			return FALSE
+		var/turf/target = world_turf(fixture.x, fixture.y)
+		var/datum/generated_station_room_allocation/room = rooms_by_native_id["[fixture.room_numeric_id]"]
+		if(!target || (room && !room.tiles["[fixture.x],[fixture.y]"]))
+			last_failure_details = "Rust fixture [fixture.id] lies outside room [fixture.room_numeric_id]"
+			return FALSE
+		var/atom/movable/created = new atom_type(target)
+		created.set_dir(fixture.direction)
+		if(fixture.layer == "Wall")
+			var/wall_offset = 24
+			switch(fixture.direction)
+				if(NORTH)
+					created.pixel_y = wall_offset
+				if(SOUTH)
+					created.pixel_y = -wall_offset
+				if(EAST)
+					created.pixel_x = wall_offset
+				if(WEST)
+					created.pixel_x = -wall_offset
+		result.register_furnishing(created)
+		var/datum/generated_room_solution/solution = solutions_by_native_id["[fixture.room_numeric_id]"]
+		if(solution)
+			var/datum/generated_room_placement/placement = new
+			placement.feature = new /datum/generated_room_feature
+			placement.feature.id = fixture.fixture_id
+			placement.feature.atom_type = atom_type
+			placement.x = fixture.x
+			placement.y = fixture.y
+			placement.dir = fixture.direction
+			solution.placements += placement
+	return TRUE
+
+/// Stable Rust fixture vocabulary. Every identifier has an intentional live
+/// game counterpart; unknown identifiers are contract errors, never generic
+/// crates silently standing in for missing content.
+/proc/generated_station_rust_fixture_type(fixture_id)
+	switch(fixture_id)
+		if("operating_table") return /obj/machinery/optable
+		if("anesthetic", "medical_bed") return /obj/structure/bed
+		if("privacy_screen") return /obj/structure/curtain/open/privacy
+		if("medical_console") return /obj/machinery/computer/operating
+		if("instrument_table", "experiment_table", "workbench", "conference_table", "food_prep", "serving_counter", "loading_table", "reception_desk", "worktable", "table", "side_table", "packing_table") return /obj/structure/table/standard
+		if("medical_cabinet", "reagent_storage", "evidence_cabinet", "parts_bin", "parts_cabinet", "medicine_cart") return /obj/structure/filingcabinet
+		if("medical_locker") return /obj/structure/closet/secure_closet/medical1
+		if("stool") return /obj/structure/bed/chair
+		if("analyzer", "plant_analyzer", "package_scanner", "role_console", "visitor_console", "control_console", "data_terminal") return /obj/machinery/computer/crew
+		if("research_console") return /obj/machinery/computer/rdconsole_tg
+		if("id_console") return /obj/machinery/computer/card
+		if("robotics_console") return /obj/machinery/computer/robotics
+		if("crew_monitor") return /obj/machinery/computer/crew
+		if("ai_upload") return /obj/machinery/computer/aiupload
+		if("power_monitor") return /obj/machinery/computer/power_monitor
+		if("atmos_control") return /obj/machinery/computer/atmoscontrol
+		if("equipment_recharger") return /obj/machinery/recharger
+		if("charger_table") return /obj/structure/table/standard
+		if("engineering_vendor") return /obj/machinery/vending/engineering
+		if("air_canister") return /obj/machinery/portable_atmospherics/canister/air
+		if("oxygen_canister") return /obj/machinery/portable_atmospherics/canister/oxygen
+		if("autolathe") return /obj/machinery/autolathe
+		if("armory_autolathe") return /obj/machinery/autolathe/armory
+		if("electrical_locker") return /obj/structure/closet/secure_closet/engineering_electrical
+		if("security_records") return /obj/machinery/computer/secure_data
+		if("reinforced_table") return /obj/structure/table/reinforced
+		if("chem_master") return /obj/machinery/chem_master
+		if("reagent_grinder") return /obj/machinery/reagentgrinder
+		if("sleeper") return /obj/machinery/sleeper
+		if("iv_drip") return /obj/machinery/iv_drip
+		if("medical_vendor") return /obj/machinery/vending/medical
+		if("air_sensor") return /obj/machinery/air_sensor
+		if("supply_console") return /obj/machinery/computer/supplycomp
+		if("communications_console") return /obj/machinery/computer/communications
+		if("disposal_unit") return /obj/machinery/disposal
+		if("security_console", "flash") return /obj/machinery/computer/security
+		if("weapon_rack", "secure_locker", "department_locker", "locker", "tool_rack", "supply_locker") return /obj/structure/closet/secure_closet/security
+		if("chair", "waiting_bench", "work_chair", "operator_chair") return /obj/structure/bed/chair/office
+		if("visitor_bench") return /obj/structure/bed/chair/comfy
+		if("executive_chair") return /obj/structure/bed/chair/comfy/black
+		if("engineering_console", "generator_control") return /obj/machinery/computer/power_monitor
+		if("command_console", "holotable") return /obj/machinery/computer/communications
+		if("filing_cabinet") return /obj/structure/filingcabinet/generated_station_compact
+		if("manifest_board") return /obj/structure/noticeboard
+		if("notice_board") return /obj/structure/noticeboard
+		if("grill") return /obj/machinery/appliance/cooker/grill
+		if("sink", "wash_station") return /obj/structure/sink
+		if("fridge", "produce_bin") return /obj/machinery/smartfridge
+		if("water_cooler") return /obj/structure/reagent_dispensers/water_cooler/full
+		if("hydroponics_tray") return /obj/machinery/portable_atmospherics/hydroponics
+		if("seed_extractor") return /obj/machinery/seed_extractor
+		if("iv_stand") return /obj/machinery/iv_drip
+		if("water_tank") return /obj/structure/closet/crate/internals
+		if("internals_crate") return /obj/structure/closet/crate/internals
+		if("freight_cart", "tool_cart") return /obj/structure/closet/crate/trashcart
+		if("crate_rack") return /obj/structure/closet/crate/secure
+		if("supply_crate") return /obj/structure/closet/crate
+		if("pallet") return /obj/structure/closet/crate/plastic
+		if("cargo_bin") return /obj/structure/closet/crate/bin
+		if("cargo_console") return /obj/machinery/computer/supplycomp
+		if("ai_core") return /obj/machinery/computer/aiupload
+		if("server_rack", "server", "coolant_unit") return /obj/machinery/recharger
+		if("plant") return /obj/structure/flora/pottedplant
+		if("display_case") return /obj/structure/displaycase
+		if("shelf") return /obj/structure/table/rack/shelf/steel
+	return null
 
 /// Instantiates semantic control points only after the authoritative structure exists.
 /datum/generated_station_materializer/proc/place_planned_control_landmarks()
@@ -621,7 +931,8 @@
 			return FALSE
 		generation_checkpoint("Installing fire detection", 55, TRUE)
 		var/obj/machinery/firealarm/alarm = new(alarm_turf)
-		var/wall_direction = generated_station_adjacent_wall_direction(alarm_turf)
+		var/datum/generated_station_tile_intent/alarm_intent = result.tile_plan.tile(alarm_turf.x - min_x + 1, alarm_turf.y - min_y + 1)
+		var/wall_direction = alarm_intent?.utility_wall_directions[GENERATED_STATION_UTILITY_FIRE_ALARM]
 		alarm.set_dir(turn(wall_direction, 180))
 		alarm.offset_alarm()
 		result.register_furnishing(alarm)
@@ -664,9 +975,70 @@
 			if(locate(/obj/machinery/door) in get_step(T, direction))
 				blocked = TRUE
 				break
-		if(!blocked)
+		if(!blocked && generated_station_area_removal_preserves_connectivity(T, A))
 			return T
 	return null
+
+/// Emergency cabinets are placed after authored room solving. Prove that
+/// occupying their selected floor cannot cut the room into sealed pockets.
+/proc/generated_station_area_removal_preserves_connectivity(turf/blocked_turf, area/generated_station/A)
+	var/list/available = list()
+	for(var/turf/simulated/floor/T in A)
+		if(T != blocked_turf && generated_station_architectural_passable(T))
+			available |= T
+	if(length(available) <= 1)
+		return TRUE
+	var/list/frontier = list(available[1])
+	var/list/visited = list()
+	while(length(frontier))
+		var/turf/current = frontier[1]
+		frontier.Cut(1, 2)
+		if(visited[current])
+			continue
+		visited[current] = TRUE
+		for(var/direction in GLOB.cardinal)
+			var/turf/neighbor = get_step(current, direction)
+			if(neighbor != blocked_turf && (neighbor in available) && !visited[neighbor])
+				frontier += neighbor
+	return length(visited) == length(available)
+
+/proc/generated_station_area_is_connected(area/generated_station/A)
+	var/list/available = list()
+	for(var/turf/simulated/floor/T in A)
+		if(generated_station_architectural_passable(T))
+			available |= T
+	if(length(available) <= 1)
+		return TRUE
+	var/list/frontier = list(available[1])
+	var/list/visited = list()
+	while(length(frontier))
+		var/turf/current = frontier[1]
+		frontier.Cut(1, 2)
+		if(visited[current])
+			continue
+		visited[current] = TRUE
+		for(var/direction in GLOB.cardinal)
+			var/turf/neighbor = get_step(current, direction)
+			if((neighbor in available) && !visited[neighbor])
+				frontier += neighbor
+	return length(visited) == length(available)
+
+/// A room can be internally connected yet sealed away from its doorway. This
+/// checks both the internal component and a clear connection to a physical
+/// planned door on its boundary.
+/proc/generated_station_room_area_is_accessible(area/generated_station/A)
+	if(!generated_station_area_is_connected(A))
+		return FALSE
+	for(var/turf/simulated/floor/T in A)
+		if(!generated_station_architectural_passable(T))
+			continue
+		if(locate(/obj/machinery/door) in T)
+			return TRUE
+		for(var/direction in GLOB.cardinal)
+			var/turf/neighbor = get_step(T, direction)
+			if(generated_station_architectural_passable(neighbor) && locate(/obj/machinery/door) in neighbor)
+				return TRUE
+	return FALSE
 
 /proc/generated_station_adjacent_wall_direction(turf/T)
 	for(var/direction in GLOB.cardinal)

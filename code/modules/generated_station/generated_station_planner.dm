@@ -55,8 +55,10 @@
 /// DM supplies semantic room and department contracts; Rust exclusively owns
 /// every spatial decision in the returned station specification.
 /datum/generated_station_planner
+	var/error_message
 
-/datum/generated_station_planner/proc/plan(seed, width = 96, height = 96)
+/datum/generated_station_planner/proc/plan(seed, width = 160, height = 160)
+	error_message = null
 	// BYOND numbers cannot preserve every integer above 24 bits or serialize
 	// them without scientific notation. Keep the public seed in its exact range
 	// before it crosses the strict Rust JSON contract.
@@ -91,11 +93,14 @@
 			verdigris_finish_station_layout(job_id)
 		rustg_file_write(request_json, "[GLOB.log_directory]/generated-station-rust-request-[num2text(round(seed), 20)].json")
 		log_world("Generated station Rust planner failed for seed [seed]: [error]")
+		error_message = "[error]"
 		return null
 	var/datum/generated_station_spec/spec = generated_station_spec_from_rust_json(response, request["catalog_hash"], errors)
 	if(!spec)
 		log_world("Generated station Rust plan rejected for seed [seed]: [jointext(errors, "; ")]")
+		error_message = jointext(errors, "; ")
 		return null
+	spec.fixture_type_registry = generated_station_rust_fixture_registry()
 	return spec
 
 /// Pull bounded slices from a completed Rust job so no json_decode call can
@@ -103,7 +108,7 @@
 /// the dense run-length encoded tile plan.
 /proc/generated_station_fetch_rust_plan(job_id)
 	var/list/root = json_decode(verdigris_station_layout_section(job_id, "header", "0", "0"))
-	var/static/list/sections = list("departments", "nodes", "rooms", "doors", "edges", "tile_rows")
+	var/static/list/sections = list("departments", "nodes", "rooms", "doors", "edges", "tile_rows", "content_rooms", "fixtures", "networks")
 	for(var/section in sections)
 		var/list/rows = list()
 		var/offset = 0

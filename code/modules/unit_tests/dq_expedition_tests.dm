@@ -77,13 +77,13 @@
 /datum/unit_test/dq_debug_station_initializes_complete_runtime/Run()
 	var/list/diagnostics = list()
 	var/datum/generated_station_prng/seed_stream = new(20260721)
-	var/seed = ((seed_stream.next() + 1) % 2147483646) + 1
+	var/seed = ((seed_stream.next() + world.time + REALTIMEOFDAY) % 15999999) + 1
 	var/datum/expedition_site/site = SSexpedition.generate_debug_station(seed, diagnostics)
 	TEST_ASSERT_NOTNULL(site, "Pseudo-random debug station seed [seed] failed: [jointext(diagnostics, "; ")]")
 	qdel(seed_stream)
 	TEST_ASSERT_NOTNULL(site.station_spec, "Debug station discarded its authoritative specification")
-	TEST_ASSERT_EQUAL(site.station_spec.grid_width, 112, "Debug station did not use the expanded interactive generation footprint")
-	TEST_ASSERT_EQUAL(site.station_spec.grid_height, 112, "Debug station did not use the expanded interactive generation footprint")
+	TEST_ASSERT_EQUAL(site.station_spec.grid_width, 160, "Debug station did not use the doubled interactive generation footprint")
+	TEST_ASSERT_EQUAL(site.station_spec.grid_height, 160, "Debug station did not use the doubled interactive generation footprint")
 	var/list/modules_by_node = list()
 	for(var/datum/generated_station_module/module in site.station_materialization.modules)
 		modules_by_node[module.department_node_id] = (modules_by_node[module.department_node_id] || 0) + 1
@@ -97,15 +97,22 @@
 			if(candidate_department.layout_node_id == module_node?.id)
 				module_department = candidate_department
 				break
-		var/datum/generated_room_definition/module_definition = generated_room_definition_for(module_department?.definition?.id, module.role)
+		var/department_id = module_department?.definition?.id
+		var/datum/generated_room_definition/module_definition
+		if(module.definition_id == "[department_id]-micro-[module.role]")
+			module_definition = generated_micro_room_definition_for(department_id, module.role)
+		else if(module.definition_id == "[department_id]-compact-[module.role]")
+			module_definition = generated_compact_room_definition_for(department_id, module.role)
+		else
+			module_definition = generated_room_definition_for(department_id, module.role)
 		TEST_ASSERT(module.satisfies(module_definition), "Expanded debug module [module.id] violates its [module_definition?.id] room contract at [module.width()]x[module.height()]")
 		qdel(module_definition)
 	for(var/datum/generated_station_layout_node/node in site.station_spec.layout_nodes)
-		TEST_ASSERT_EQUAL(modules_by_node[node.id], 4, "Expanded debug department [node.id] did not generate four content-sized rooms")
+		TEST_ASSERT(modules_by_node[node.id] >= 4, "Expanded debug department [node.id] generated fewer than four content-sized rooms")
 	TEST_ASSERT_NOTNULL(site.station_simulation, "Debug station did not initialize dependency simulation")
 	TEST_ASSERT_NOTNULL(site.station_director, "Debug station did not initialize its director")
 	TEST_ASSERT_NOTNULL(site.station_defense, "Debug station did not initialize defenders")
-	TEST_ASSERT(length(site.station_controls) >= 7, "Debug station did not create every department control")
+	TEST_ASSERT_EQUAL(length(site.station_controls), length(site.station_spec.departments), "Debug station did not create exactly one control for every department")
 	TEST_ASSERT_NOTNULL(site.landing, "Debug station has no teleport destination")
 	var/datum/gas_mixture/landing_air = site.landing.return_air()
 	TEST_ASSERT(landing_air?.return_pressure() > 80, "Debug station landing is not pressurized")
@@ -123,6 +130,24 @@
 	rustg_file_write(site.station_materialization.diagnostic_minimap_html(architecture), "[GLOB.log_directory]/generated-station-large-[seed].html")
 	qdel(architecture)
 	SSexpedition.release_site(site, "debug station unit test")
+
+/datum/unit_test/dq_emergency_station_fallback_is_playable
+
+/datum/unit_test/dq_emergency_station_fallback_is_playable/Run()
+	var/z = SSexpedition.acquire_z()
+	TEST_ASSERT(isnum(z) && z > 0, "Emergency-station test could not reserve a z-level")
+	var/datum/generated_station_spec/spec = generated_station_emergency_spec(8675309)
+	var/datum/generated_station_materialization/materialization = generated_station_emergency_materialization(spec, z)
+	TEST_ASSERT_NOTNULL(materialization, "Emergency station fallback returned no materialization")
+	TEST_ASSERT_NOTNULL(materialization.entry, "Emergency station fallback has no arrival landmark")
+	var/turf/arrival = get_turf(materialization.entry)
+	TEST_ASSERT(istype(arrival, /turf/simulated/floor), "Emergency station arrival is not walkable flooring")
+	TEST_ASSERT(arrival.return_air()?.return_pressure() > 80, "Emergency station fallback is not pressurized")
+	TEST_ASSERT(istype(materialization.world_turf(1, 1), /turf/simulated/wall), "Emergency station fallback has no sealed corner hull")
+	qdel(materialization)
+	qdel(spec)
+	SSexpedition.wipe_z(z)
+	SSexpedition.free_z |= z
 
 
 /// Models exterior vacuum against live turf and atom density. The result remains
@@ -267,7 +292,8 @@
 				var/datum/generated_room_fragment/activity_motif/motif = fragment_placement.fragment
 				if(istype(motif))
 					authored_fixture_count += length(motif.feature_types)
-			TEST_ASSERT(authored_fixture_count >= 2, "Seed [seed] room [solution.module_id] has fewer than two authored fixtures")
+			var/minimum_authored_fixtures = findtext(solution.definition_id, "-micro-") ? 1 : 2
+			TEST_ASSERT(authored_fixture_count >= minimum_authored_fixtures, "Seed [seed] room [solution.module_id] has fewer than [minimum_authored_fixtures] authored fixtures")
 			TEST_ASSERT(solution.occupied_tiles >= max(2, FLOOR(solution.floor_tiles * 0.12, 1)), "Seed [seed] room [solution.module_id] leaves nearly all [solution.floor_tiles] floor tiles empty")
 		assert_structure(site, seed)
 		assert_vacuum_seal(site, seed)

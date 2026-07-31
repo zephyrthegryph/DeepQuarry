@@ -117,12 +117,31 @@
 	var/list/station_controls
 
 /// Finds a clear, inspectable department position for the destructible control.
-/proc/generated_station_control_turf(obj/effect/landmark/generated_station_department_core/core)
+/proc/generated_station_control_turf(atom/core)
 	var/turf/origin = get_turf(core)
 	var/area/department_area = get_area(origin)
 	var/turf/fallback
 	for(var/turf/simulated/floor/T in range(8, origin))
 		if(get_area(T) != department_area || T.density || locate(/obj/machinery/door) in T)
+			continue
+		var/blocked = FALSE
+		for(var/atom/movable/occupant in T)
+			if(occupant.density || istype(occupant, /obj/machinery))
+				blocked = TRUE
+				break
+		if(blocked)
+			continue
+		if(!fallback)
+			fallback = T
+		if(generated_station_adjacent_wall_direction(T))
+			return T
+	// A department core is a semantic anchor, not a promise that an otherwise
+	// suitable control tile exists within eight tiles. Large and irregular
+	// departments can put their authored core farther from the nearest free wall.
+	// Search the complete department before accepting the local fallback so every
+	// planned department deterministically receives its control node.
+	for(var/turf/simulated/floor/T in department_area)
+		if(T.density || locate(/obj/machinery/door) in T)
 			continue
 		var/blocked = FALSE
 		for(var/atom/movable/occupant in T)
@@ -143,6 +162,7 @@
 	station_simulation = new(station_spec)
 	station_director = new(station_simulation)
 	station_controls = list()
+	var/list/controlled_departments = list()
 	for(var/obj/effect/landmark/generated_station_department_core/core in station_materialization?.control_landmarks)
 		var/datum/generated_station_layout_node/node
 		for(var/datum/generated_station_layout_node/candidate in station_spec.layout_nodes)
@@ -166,8 +186,59 @@
 		control.station_id = station_spec.id
 		control.department_id = department.id
 		station_controls += control
+		controlled_departments[department.id] = TRUE
 		qdel(core)
+	// Landmarks are useful publication anchors, but they must not be a failure
+	// route for a required gameplay object. A late structural/furnishing pass can
+	// legitimately replace a landmark's original turf. Reconstruct any missing
+	// department anchor from the authoritative module footprint instead.
+	for(var/datum/generated_station_department_instance/department in station_spec.departments)
+		if(controlled_departments[department.id])
+			continue
+		var/datum/generated_station_layout_node/department_node
+		for(var/datum/generated_station_layout_node/candidate_node in station_spec.layout_nodes)
+			if(candidate_node.department_instance_id == department.id)
+				department_node = candidate_node
+				break
+		if(!department_node)
+			continue
+		var/turf/control_turf
+		for(var/datum/generated_station_module/module in station_materialization.modules)
+			if(module.department_node_id != department_node.id)
+				continue
+			for(var/key in module.footprint)
+				var/list/parts = splittext(key, ",")
+				var/turf/module_turf = station_materialization.world_turf(text2num(parts[1]), text2num(parts[2]))
+				control_turf = generated_station_control_turf(module_turf)
+				if(control_turf)
+					break
+			if(control_turf)
+				break
+		if(!control_turf)
+			continue
+		var/obj/machinery/generated_station_department_control/control = new(control_turf)
+		control.station_id = station_spec.id
+		control.department_id = department.id
+		station_controls += control
+		controlled_departments[department.id] = TRUE
 	return TRUE
+
+/// Re-runs the room-access solver after utility and strategic machinery exists.
+/// Utility sockets are authoritative and remain fixed; authored furnishings are
+/// relocated or degraded when their combination with those sockets creates an
+/// articulation pocket. This makes the published live map playable by
+/// construction rather than merely detecting the defect afterward.
+/datum/expedition_site/proc/repair_generated_station_runtime_access()
+	if(!station_materialization)
+		return FALSE
+	var/datum/generated_station_materializer/repairer = new
+	repairer.result = station_materialization
+	repairer.min_x = station_materialization.origin_x
+	repairer.min_y = station_materialization.origin_y
+	var/succeeded = repairer.finalize_furnishing_access()
+	repairer.result = null
+	qdel(repairer)
+	return succeeded
 
 /datum/expedition_site/proc/generated_station_status_text()
 	if(!station_simulation)

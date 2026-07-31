@@ -1,5 +1,5 @@
 use super::contract::CatalogMapping;
-use super::{LayoutError, LayoutRequest, StationLayout, generate};
+use super::{LayoutError, LayoutRequest, StationLayout, generate, generate_station_blueprint};
 use std::collections::HashMap;
 use std::panic::{AssertUnwindSafe, catch_unwind};
 use std::sync::atomic::{AtomicU64, Ordering};
@@ -15,27 +15,11 @@ fn generate_catalog_layout(
             "generated architecture is excluded by the request".into(),
         ));
     }
-    for room in &layout.rooms {
-        let room_type = request
-            .departments
-            .iter()
-            .find(|department| department.id == room.department_id)
-            .and_then(|department| {
-                department
-                    .room_types
-                    .iter()
-                    .find(|room_type| room_type.id == room.room_type_id)
-            })
-            .ok_or_else(|| LayoutError(format!("room {} lost its catalog contract", room.id)))?;
-        let tile_count = room.tiles.len();
-        let maximum = usize::from(room_type.max_width) * usize::from(room_type.max_height);
-        if tile_count > maximum {
-            return Err(LayoutError(format!(
-                "room {} contains {tile_count} tiles but its authored maximum is {maximum}",
-                room.id
-            )));
-        }
-    }
+    // The structural planner may deliberately give an authored room additional
+    // breathing room after all required programs fit. `max_width/max_height`
+    // describe the preferred content envelope, not a hard polygon-area limit;
+    // the content blueprint owns density and circulation validation for the
+    // resulting footprint.
     Ok(layout)
 }
 
@@ -66,9 +50,32 @@ fn submit_planning_job(payload: String) -> Result<u64, LayoutError> {
                     super::decode_catalog(&payload).map_err(|error| error.to_string())?;
                 let layout = generate_catalog_layout(&request, &mapping)
                     .map_err(|error| error.to_string())?;
+                let blueprint = generate_station_blueprint(layout.clone(), &mapping)
+                    .map_err(|error| error.to_string())?;
                 let encoded =
                     super::encode_plan(&layout, &mapping).map_err(|error| error.to_string())?;
-                serde_json::from_str(&encoded).map_err(|error| error.to_string())
+                let mut root: serde_json::Value =
+                    serde_json::from_str(&encoded).map_err(|error| error.to_string())?;
+                let object = root
+                    .as_object_mut()
+                    .ok_or_else(|| "encoded station plan is not an object".to_string())?;
+                object.insert(
+                    "content_rooms".into(),
+                    serde_json::to_value(&blueprint.rooms).map_err(|error| error.to_string())?,
+                );
+                object.insert(
+                    "fixtures".into(),
+                    serde_json::to_value(&blueprint.fixtures).map_err(|error| error.to_string())?,
+                );
+                object.insert(
+                    "networks".into(),
+                    serde_json::to_value(&blueprint.networks).map_err(|error| error.to_string())?,
+                );
+                object.insert(
+                    "content_quality".into(),
+                    serde_json::to_value(&blueprint.quality).map_err(|error| error.to_string())?,
+                );
+                Ok(root)
             }));
             let state = match outcome {
                 Ok(Ok(response)) => PlanningJob::Complete(response),

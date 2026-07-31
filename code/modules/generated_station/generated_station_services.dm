@@ -5,6 +5,7 @@
 	var/id
 	var/department_node_id
 	var/role
+	var/definition_id
 	var/x1
 	var/y1
 	var/x2
@@ -55,7 +56,11 @@
 	if(!length(footprint))
 		return definition.accepts_dimensions(width(), height())
 	var/usable_tiles = footprint_tiles()
-	var/minimum_irregular_area = ceil(definition.min_width * definition.min_height * GENERATED_STATION_IRREGULAR_ROOM_MINIMUM_AREA_RATIO)
+	// Irregularity changes shape, not capacity. A full authored program still
+	// needs its declared usable area; smaller footprints select the explicit
+	// compact/micro definition instead of silently squeezing a full room into
+	// 45% of its contract.
+	var/minimum_irregular_area = definition.min_width * definition.min_height
 	var/minimum_short_side = definition.allow_narrow_irregular ? 2 : 3
 	return usable_tiles >= minimum_irregular_area && usable_tiles <= definition.max_width * definition.max_height && min(width(), height()) >= minimum_short_side
 
@@ -537,7 +542,9 @@
 			var/list/parts = splittext(key, ",")
 			var/turf/door_turf = world_turf(text2num(parts[1]), text2num(parts[2]))
 			for(var/direction in GLOB.cardinal)
-				if(get_area(get_step(door_turf, direction)) == department_areas[node.id])
+				var/area/generated_station/neighbor_area = get_area(get_step(door_turf, direction))
+				var/datum/generated_station_department_instance/node_department = materializer?.department_for_node(node)
+				if(istype(neighbor_area) && neighbor_area.department_id == node_department?.definition?.id)
 					has_maintenance_access = TRUE
 					break
 			if(has_maintenance_access)

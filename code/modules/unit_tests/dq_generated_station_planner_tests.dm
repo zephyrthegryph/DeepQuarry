@@ -2,18 +2,24 @@
 
 /datum/unit_test/dq_generated_station_planner_many_seeds/Run()
 	var/datum/generated_station_planner/planner = new
-	var/static/list/widths = list(72, 80, 88, 96)
-	var/static/list/heights = list(72, 84, 92, 96)
+	var/static/list/widths = list(80, 88, 96, 104)
+	var/static/list/heights = list(80, 88, 96, 104)
 	var/list/styles_seen = list()
 	var/list/factions_seen = list()
 	var/list/security_tiers_seen = list()
 	var/datum/generated_station_prng/seed_stream = new(20260716)
-	for(var/sample in 1 to 384)
+	// Rust owns the exhaustive layout sweep; DM samples the serialized FFI
+	// boundary broadly enough to cover every metadata/layout variant without
+	// turning a focused integration test into hundreds of native jobs.
+	for(var/sample in 1 to 32)
 		var/seed = ((seed_stream.next() + sample) % 2147483646) + 1
 		var/width = widths[((sample * 7) % length(widths)) + 1]
 		var/height = heights[((sample * 11) % length(heights)) + 1]
 		var/datum/generated_station_spec/spec = planner.plan(seed, width, height)
 		var/config = "sample=[sample] seed=[seed] size=[width]x[height] style=[spec?.architecture_style] faction=[spec?.faction_id] security=[spec?.security_tier]"
+		TEST_ASSERT_NOTNULL(spec, "Rust planner returned no station specification ([config]): [planner.error_message]")
+		if(!spec)
+			continue
 		var/datum/generated_station_validation_result/result = spec.validate()
 		if(!result.is_valid())
 			for(var/datum/generated_station_validation_issue/issue in result.issues)

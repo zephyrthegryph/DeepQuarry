@@ -173,6 +173,83 @@ pub struct StationLayout {
     pub metadata: BTreeMap<String, String>,
 }
 
+#[derive(Clone, Copy, Debug, Eq, PartialEq, Serialize, Deserialize)]
+pub enum Facing {
+    North,
+    East,
+    South,
+    West,
+}
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq, Serialize, Deserialize)]
+pub enum FixtureLayer {
+    Floor,
+    Furniture,
+    Machine,
+    Wall,
+    Ceiling,
+}
+
+/// One exact instruction in the authoritative Rust station blueprint. DM is
+/// expected to instantiate this instruction verbatim rather than re-solving it.
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct FixturePlacement {
+    pub id: u32,
+    pub fixture_id: String,
+    pub at: Point,
+    pub facing: Facing,
+    pub layer: FixtureLayer,
+    pub department_id: u16,
+    pub room_id: Option<u16>,
+    pub network_id: Option<String>,
+    pub variant: u16,
+    /// True when the spawned atom occupies its turf for pathing purposes.
+    pub blocks_movement: bool,
+    /// Floor turfs that must remain clear so this fixture can be approached
+    /// and operated. For directional machines this is normally the front tile.
+    pub required_access: Vec<Point>,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct RoomBlueprint {
+    pub allocation_id: String,
+    pub room_id: u16,
+    pub department_id: u16,
+    pub semantic_role: String,
+    pub selected_variant: String,
+    pub area_name: String,
+    pub aesthetic_id: String,
+    pub floor_style: String,
+    pub accent_style: String,
+    pub activity_center: Point,
+    pub circulation: Vec<Point>,
+    pub fixture_ids: Vec<u32>,
+    pub occupancy_micros: u32,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct UtilityNetworkBlueprint {
+    pub id: String,
+    pub kind: String,
+    pub backbone: Vec<Point>,
+    pub endpoint_fixture_ids: Vec<u32>,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct StationBlueprint {
+    pub schema: String,
+    pub major: u16,
+    pub minor: u16,
+    pub catalog_hash: String,
+    pub layout: StationLayout,
+    pub rooms: Vec<RoomBlueprint>,
+    pub fixtures: Vec<FixturePlacement>,
+    pub networks: Vec<UtilityNetworkBlueprint>,
+    pub quality: BTreeMap<String, u32>,
+    #[serde(default)]
+    pub sprite_previews: BTreeMap<String, SpritePreview>,
+}
+
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct TileRun {
     pub x: u16,
@@ -245,6 +322,7 @@ pub struct WireNode {
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct WireRoom {
     pub id: String,
+    pub rust_room_id: u16,
     pub node_id: String,
     pub definition_id: String,
     pub role: String,
@@ -288,6 +366,8 @@ pub struct CatalogWire {
     pub settings: CatalogSettingsWire,
     pub departments: Vec<CatalogDepartmentWire>,
     pub rooms: Vec<CatalogRoomWire>,
+    #[serde(default)]
+    pub sprite_previews: BTreeMap<String, SpritePreview>,
 }
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct CatalogMetadataWire {
@@ -385,6 +465,27 @@ pub struct FragmentWire {
     pub anchors: Vec<[i16; 2]>,
     #[serde(default)]
     pub occupied_offsets: Vec<[i16; 2]>,
+    #[serde(default)]
+    pub features: Vec<FragmentFeatureWire>,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct FragmentFeatureWire {
+    pub id: String,
+    pub dx: i16,
+    pub dy: i16,
+    #[serde(default)]
+    pub placement_kind: String,
+    #[serde(default)]
+    pub icon_file: String,
+    #[serde(default)]
+    pub icon_state: String,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct SpritePreview {
+    pub icon_file: String,
+    pub icon_state: String,
 }
 
 fn deserialize_boolish<'de, D>(deserializer: D) -> Result<bool, D::Error>
@@ -468,6 +569,7 @@ impl StationLayout {
             .iter()
             .map(|r| WireRoom {
                 id: format!("room-{}", r.id),
+                rust_room_id: r.id,
                 node_id: format!("node-{}", r.department_id),
                 definition_id: format!("room-definition-{}", r.room_type_id),
                 role: format!("room-type-{}", r.room_type_id),

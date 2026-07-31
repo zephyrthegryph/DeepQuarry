@@ -352,15 +352,29 @@
 	for(var/datum/generated_station_tile_intent/intent in plan.utility_floors(owner_id, zone_id))
 		if(intent.owner_id != owner_id || (zone_id && intent.zone_id != zone_id) || intent.structure_kind != GENERATED_STATION_TILE_FLOOR || intent.door_type)
 			continue
-		// A wall light may share a coordinate with an underfloor/floor atmos
-		// device, but never a wall edge with an APC or alarm. Tile occupancy and
-		// wall-edge occupancy are independent typed slots.
-		if(intent.has_wall_utility_fixture())
-			continue
+		// Wall fixtures are owned per structural edge, not per floor tile. A
+		// corner floor may therefore support (for example) an alarm on one wall
+		// and a light on the other; claim_utility_fixture selects a free edge.
+		var/has_free_wall_edge = FALSE
 		for(var/list/offset in list(list(1, 0), list(-1, 0), list(0, 1), list(0, -1)))
-			if(plan.tile(intent.local_x + offset[1], intent.local_y + offset[2])?.structure_kind == GENERATED_STATION_TILE_HULL)
-				candidates += intent
+			var/datum/generated_station_tile_intent/support = plan.tile(intent.local_x + offset[1], intent.local_y + offset[2])
+			if(!support?.is_structural_wall())
+				continue
+			var/direction
+			if(offset[1] > 0)
+				direction = EAST
+			else if(offset[1] < 0)
+				direction = WEST
+			else if(offset[2] > 0)
+				direction = NORTH
+			else
+				direction = SOUTH
+			var/edge_key = "[support.local_x],[support.local_y],[direction]"
+			if(!plan.wall_fixture_edges[edge_key])
+				has_free_wall_edge = TRUE
 				break
+		if(has_free_wall_edge)
+			candidates += intent
 		generation_checkpoint("Selecting utility fixtures", 32)
 	if(!length(candidates))
 		plan.errors += "No wall light socket is available for [zone_id || owner_id]."
@@ -468,7 +482,7 @@
 		var/turf/apc_turf = planned_fixture_turf(module.department_node_id, GENERATED_STATION_UTILITY_APC, module.id)
 		if(!apc_turf)
 			return fail_global_build("no APC floor in [A]")
-		var/apc_wall_direction = generated_station_adjacent_wall_direction(apc_turf)
+		var/apc_wall_direction = planned_fixture_direction(module.department_node_id, GENERATED_STATION_UTILITY_APC, module.id)
 		if(!apc_wall_direction)
 			return fail_global_build("APC socket in [A] is not wall-mounted")
 		var/obj/machinery/power/apc/APC = new(apc_turf)
@@ -506,7 +520,7 @@
 		var/turf/alarm_turf = planned_fixture_turf(module.department_node_id, GENERATED_STATION_UTILITY_AIR_ALARM, module.id)
 		if(!alarm_turf)
 			return fail_global_build("no alarm floor in [A]")
-		var/alarm_wall_direction = generated_station_adjacent_wall_direction(alarm_turf)
+		var/alarm_wall_direction = planned_fixture_direction(module.department_node_id, GENERATED_STATION_UTILITY_AIR_ALARM, module.id)
 		if(!alarm_wall_direction)
 			return fail_global_build("air alarm socket in [A] is not wall-mounted")
 		var/obj/machinery/alarm/alarm = new(alarm_turf)
@@ -596,6 +610,13 @@
 			return materialization.world_turf(intent.local_x, intent.local_y)
 	return null
 
+/datum/generated_station_utility_builder/proc/planned_fixture_direction(owner_id, utility_id, zone_id)
+	for(var/key in materialization.tile_plan.tiles)
+		var/datum/generated_station_tile_intent/intent = materialization.tile_plan.tiles[key]
+		if(intent.owner_id == owner_id && (!zone_id || intent.zone_id == zone_id) && (utility_id in intent.utility_intents))
+			return intent.utility_wall_directions[utility_id]
+	return 0
+
 /datum/generated_station_utility_builder/proc/planned_fixture_pair(owner_id, utility_id, zone_id)
 	var/datum/generated_station_tile_intent/device_intent
 	for(var/key in materialization.tile_plan.tiles)
@@ -633,7 +654,7 @@
 		if(!(GENERATED_STATION_UTILITY_LIGHT in intent.utility_intents))
 			continue
 		var/turf/T = materialization.world_turf(intent.local_x, intent.local_y)
-		var/wall_direction = generated_station_adjacent_wall_direction(T)
+		var/wall_direction = intent.utility_wall_directions[GENERATED_STATION_UTILITY_LIGHT]
 		if(!wall_direction)
 			continue
 		var/obj/machinery/light/light = new(T)

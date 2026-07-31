@@ -152,16 +152,17 @@
 		return solution
 	discover_room_geometry()
 	materializer.generation_checkpoint("Discovering [module.role] geometry", 52)
+	if(!reserve_entrance_routes())
+		solution.issues += "The room footprint has no valid route between an entrance and its functional core."
+		return resolved_solution()
+	materializer.generation_checkpoint("Reserving [module.role] entrances", 52)
 	if(!place_fragments())
 		return resolved_solution()
 	materializer.generation_checkpoint("Placing [module.role] fragments", 52)
-	if(!reserve_entrance_routes())
-		solution.issues += "Authored room anchors leave no valid route between an entrance and the functional core."
-		return resolved_solution()
-	materializer.generation_checkpoint("Reserving [module.role] entrances", 52)
 	for(var/list/point in candidates)
 		var/index = grid_index(point[1], point[2])
-		occupied_mask[index] = !!solution.occupied[solution.tile_key(point[1], point[2])]
+		var/datum/generated_station_tile_intent/intent = materializer.result?.tile_plan?.tile(point[1], point[2])
+		occupied_mask[index] = !!solution.occupied[solution.tile_key(point[1], point[2])] || !!intent?.has_utility_fixture()
 	var/list/features = expanded_features()
 	materializer.generation_checkpoint("Expanding [module.role] features", 52)
 	var/list/ordered_features = list()
@@ -173,9 +174,32 @@
 		for(var/datum/generated_room_constraint/constraint in feature.constraints)
 			if(feature_ids[constraint.target_id])
 				dependency_targets[constraint.target_id] = TRUE
+	// A chair has both a facing relationship and an access requirement, making
+	// its anchor pair more constrained than loose storage. Reserve those pairs
+	// before unrelated dependency targets consume their only valid facing.
+	for(var/datum/generated_room_feature/feature in features)
+		if(!ispath(feature.atom_type, /obj/structure/bed/chair))
+			continue
+		for(var/datum/generated_room_constraint/constraint in feature.constraints)
+			if(!feature_ids[constraint.target_id])
+				continue
+			for(var/datum/generated_room_feature/target in features)
+				if(target.id == constraint.target_id)
+					ordered_features |= target
+					break
+			ordered_features |= feature
+			break
 	for(var/datum/generated_room_feature/feature in features)
 		if(dependency_targets[feature.id])
 			ordered_features |= feature
+	// Place the constrained half of an authored pair immediately after its
+	// anchor. Leaving chairs/consoles until after unrelated storage and tables
+	// could consume every valid facing even though the pair itself fit cleanly.
+	for(var/datum/generated_room_feature/feature in features)
+		for(var/datum/generated_room_constraint/constraint in feature.constraints)
+			if(feature_ids[constraint.target_id])
+				ordered_features |= feature
+				break
 	for(var/datum/generated_room_feature/feature in features)
 		if(feature.placement_kind == "wall" && ispath(feature.atom_type, /obj/machinery))
 			ordered_features |= feature
@@ -195,10 +219,7 @@
 		materializer.generation_checkpoint("Solving [module.role] room", 52)
 	fill_cosmetic_density()
 	measure_solution()
-	// Density is a quality metric for randomized furnishing, not a runtime
-	// materialization invariant. Small footprints cannot represent every target
-	// ratio exactly, so the architecture tests audit it with suitable tolerance.
-	solution.valid = circulation_is_valid()
+	solution.valid = circulation_is_valid() && density_is_valid() && empty_region_is_valid() && composition_is_valid()
 	if(!solution.valid && !length(solution.issues))
 		solution.issues += "Room solution failed density or circulation constraints."
 	return resolved_solution()
@@ -261,9 +282,20 @@
 			best_distance = distance
 	if(!center_x || !center_y)
 		return FALSE
+	// Reserve one readable route into the room core plus every doorway tile.
+	// The full-room connectivity check on each dense placement guarantees all
+	// additional entrances remain connected without painting long overlapping
+	// spokes through irregular rooms and consuming most of their usable floor.
 	for(var/list/entrance in entrances)
-		if(!reserve_path(entrance[1], entrance[2], center_x, center_y))
-			return FALSE
+		solution.reserve_circulation(entrance[1], entrance[2])
+	// A micro room's entire envelope may be four tiles. Its single doorway is
+	// already a circulation anchor, and reserving a second route to an arbitrary
+	// "center" can consume every fixture socket in an irregular 2x2 pocket.
+	if(findtext(definition.id, "-micro-"))
+		return TRUE
+	var/list/primary_entrance = entrances[1]
+	if(!reserve_path(primary_entrance[1], primary_entrance[2], center_x, center_y))
+		return FALSE
 	return TRUE
 
 /// Reserves a shortest room-local route around authored fragment occupancy.
@@ -305,12 +337,18 @@
 /datum/generated_room_solver/proc/expanded_features()
 	var/list/features = list()
 	var/list/feature_ids = list()
+	var/list/machinery_types = list()
+	var/machinery_count = 0
+	var/machinery_budget = max(2, FLOOR(solution.floor_tiles / 5, 1))
 	for(var/feature_type in content_plan.feature_types)
 		var/datum/generated_room_feature/feature = new feature_type
 		if(feature_ids[feature.id])
 			qdel(feature)
 			continue
 		feature_ids[feature.id] = TRUE
+		if(ispath(feature.atom_type, /obj/machinery))
+			machinery_types["[feature.atom_type]"] = TRUE
+			machinery_count++
 		features += feature
 	var/feature_budget = max(length(features), FLOOR(solution.floor_tiles * definition.density_max, 1))
 	for(var/group_type in content_plan.group_types)
@@ -345,10 +383,14 @@
 					cohesion.radius = group.cohesion_radius
 					member.constraints += cohesion
 			for(var/datum/generated_room_feature/feature in assembly_features)
-				if(feature_ids[feature.id])
+				var/machinery_key = ispath(feature.atom_type, /obj/machinery) ? "[feature.atom_type]" : null
+				if(feature_ids[feature.id] || (machinery_key && (machinery_types[machinery_key] || machinery_count >= machinery_budget)))
 					qdel(feature)
 					continue
 				feature_ids[feature.id] = TRUE
+				if(machinery_key)
+					machinery_types[machinery_key] = TRUE
+					machinery_count++
 				features += feature
 		qdel(group)
 	return features
@@ -385,6 +427,7 @@
 /datum/generated_room_solver/proc/place_fragment(datum/generated_room_fragment/fragment)
 	var/best_score = GENERATED_ROOM_SCORE_INVALID
 	var/list/best
+	var/equal_best_count = 0
 	var/candidates_checked = 0
 	for(var/x in module.x1 to module.x2 - fragment.width + 1)
 		for(var/y in module.y1 to module.y2 - fragment.height + 1)
@@ -403,6 +446,11 @@
 			if(score > best_score)
 				best_score = score
 				best = list(x, y)
+				equal_best_count = 1
+			else if(score == best_score && score > GENERATED_ROOM_SCORE_INVALID)
+				equal_best_count++
+				if(prng.next_range(1, equal_best_count) == 1)
+					best = list(x, y)
 	if(!best)
 		return FALSE
 	var/datum/generated_room_fragment_placement/placement = new
@@ -414,6 +462,7 @@
 		var/x = placement.x + offset[1] - 1
 		var/y = placement.y + offset[2] - 1
 		solution.occupied[solution.tile_key(x, y)] = placement
+		occupied_mask[grid_index(x, y)] = TRUE
 	return TRUE
 
 /datum/generated_room_solver/proc/fragment_candidate_score(datum/generated_room_fragment/fragment, start_x, start_y)
@@ -430,8 +479,13 @@
 	for(var/list/offset in fragment.occupied_offsets)
 		var/occupied_x = start_x + offset[1] - 1
 		var/occupied_y = start_y + offset[2] - 1
+		if(solution.is_reserved(occupied_x, occupied_y))
+			return GENERATED_ROOM_SCORE_INVALID
+		var/datum/generated_station_tile_intent/occupied_intent = materializer.result?.tile_plan?.tile(occupied_x, occupied_y)
+		if(occupied_intent?.has_utility_fixture())
+			return GENERATED_ROOM_SCORE_INVALID
 		for(var/list/entrance in entrances)
-			if(entrance[1] == occupied_x && entrance[2] == occupied_y)
+			if(abs(entrance[1] - occupied_x) + abs(entrance[2] - occupied_y) <= 1)
 				return GENERATED_ROOM_SCORE_INVALID
 	if(!fragment_preserves_access(fragment, start_x, start_y))
 		return GENERATED_ROOM_SCORE_INVALID
@@ -466,48 +520,46 @@
 
 /datum/generated_room_solver/proc/fragment_preserves_access(datum/generated_room_fragment/fragment, start_x, start_y)
 	var/list/blocked = solution.occupied.Copy()
+	for(var/list/point in candidates)
+		var/datum/generated_station_tile_intent/intent = materializer.result?.tile_plan?.tile(point[1], point[2])
+		if(intent?.has_utility_fixture())
+			blocked[solution.tile_key(point[1], point[2])] = TRUE
 	for(var/list/offset in fragment.occupied_offsets)
 		blocked[solution.tile_key(start_x + offset[1] - 1, start_y + offset[2] - 1)] = TRUE
-	var/centroid_x = round((module.x1 + module.x2) / 2)
-	var/centroid_y = round((module.y1 + module.y2) / 2)
-	var/list/core
-	var/best_distance = 1.0e31
+	var/list/start
+	var/available_count = 0
 	for(var/list/point in candidates)
 		if(blocked[solution.tile_key(point[1], point[2])])
 			continue
-		var/distance = abs(point[1] - centroid_x) + abs(point[2] - centroid_y)
-		if(distance < best_distance)
-			core = point
-			best_distance = distance
-	if(!core)
+		available_count++
+		if(!start)
+			start = point
+	if(!start)
 		return FALSE
-	var/core_key = solution.tile_key(core[1], core[2])
 	for(var/list/entrance in entrances)
 		var/entrance_key = solution.tile_key(entrance[1], entrance[2])
 		if(blocked[entrance_key])
 			return FALSE
-		var/list/frontier = list(entrance)
-		var/frontier_index = 1
-		var/list/visited = list()
-		visited[entrance_key] = TRUE
-		while(frontier_index <= length(frontier) && !visited[core_key])
-			if(!(frontier_index % 32))
-				materializer.generation_checkpoint("Checking [module.role] fragment access", 52)
-			var/list/current = frontier[frontier_index++]
-			for(var/direction in GLOB.cardinal)
-				var/nx = current[1] + (direction == EAST) - (direction == WEST)
-				var/ny = current[2] + (direction == NORTH) - (direction == SOUTH)
-				var/next_key = solution.tile_key(nx, ny)
-				if(visited[next_key] || blocked[next_key] || !module.contains_tile(nx, ny))
-					continue
-				var/turf/T = materializer.world_turf(nx, ny)
-				if(!T || T.density)
-					continue
-				visited[next_key] = TRUE
-				frontier += list(list(nx, ny))
-		if(!visited[core_key])
-			return FALSE
-	return TRUE
+	var/list/frontier = list(start)
+	var/frontier_index = 1
+	var/list/visited = list()
+	visited[solution.tile_key(start[1], start[2])] = TRUE
+	while(frontier_index <= length(frontier))
+		if(!(frontier_index % 32))
+			materializer.generation_checkpoint("Checking [module.role] fragment access", 52)
+		var/list/current = frontier[frontier_index++]
+		for(var/direction in GLOB.cardinal)
+			var/nx = current[1] + (direction == EAST) - (direction == WEST)
+			var/ny = current[2] + (direction == NORTH) - (direction == SOUTH)
+			var/next_key = solution.tile_key(nx, ny)
+			if(visited[next_key] || blocked[next_key] || !module.contains_tile(nx, ny))
+				continue
+			var/turf/T = materializer.world_turf(nx, ny)
+			if(!T || T.density)
+				continue
+			visited[next_key] = TRUE
+			frontier += list(list(nx, ny))
+	return length(visited) == available_count
 
 /datum/generated_room_solver/proc/fill_cosmetic_density()
 	var/target_density = min(definition.density_max, definition.density_min + solution.decoration_density)
@@ -538,6 +590,18 @@
 	var/count = length(solution.placements)
 	for(var/datum/generated_room_fragment_placement/placement in solution.fragments)
 		count += length(placement.fragment.occupied_offsets)
+	// Planned APCs, alarms, lights, and atmos devices are visible room content
+	// too. Counting their reserved sockets avoids trying to satisfy an authored
+	// density target by stacking decoration onto those same tiles.
+	count += planned_utility_occupancy_count()
+	return count
+
+/datum/generated_room_solver/proc/planned_utility_occupancy_count()
+	var/count = 0
+	for(var/list/point in candidates)
+		var/datum/generated_station_tile_intent/intent = materializer.result?.tile_plan?.tile(point[1], point[2])
+		if(intent?.has_utility_fixture())
+			count++
 	return count
 
 /datum/generated_room_solver/proc/place_feature(datum/generated_room_feature/feature)
@@ -601,9 +665,8 @@
 	var/datum/generated_station_tile_intent/tile_intent = materializer.result?.tile_plan?.tile(x, y)
 	if(tile_intent?.has_utility_fixture())
 		return "floor-utility"
-	if(feature.placement_kind != "wall" && !ispath(feature.atom_type, /obj/structure/bed/chair))
-		if(!placement_locally_preserves_room_connectivity(x, y) && !placement_preserves_room_connectivity(x, y))
-			return "connectivity"
+	if(feature.placement_kind != "wall" && !ispath(feature.atom_type, /obj/structure/bed/chair) && !placement_locally_preserves_room_connectivity(x, y) && !placement_preserves_room_connectivity(x, y))
+		return "connectivity"
 	var/turf/T = materializer.world_turf(x, y)
 	if(!T || T.density)
 		return "dense-turf"
@@ -616,6 +679,8 @@
 		if(materializer.result?.tile_plan?.tile(neighbor_x, neighbor_y)?.door_type)
 			return "planned-door-adjacent"
 	for(var/atom/movable/occupant in T)
+		if(QDELETED(occupant))
+			continue
 		if(occupant.density || istype(occupant, /obj/machinery/door))
 			return "dense-occupant"
 	if(feature.placement_kind == "wall" && !adjacent_planned_wall_direction(x, y))
@@ -689,6 +754,11 @@
 		score += center_distance
 	else
 		score -= center_distance * 2
+	if(istype(feature, /datum/generated_room_feature/cosmetic) && length(solution.placements))
+		var/nearest_fixture = 1.0e31
+		for(var/datum/generated_room_placement/existing in solution.placements)
+			nearest_fixture = min(nearest_fixture, abs(x - existing.x) + abs(y - existing.y))
+		score += min(nearest_fixture, 8) * 5
 	return score
 
 /// Ensures furnishings cannot create sealed pockets of otherwise walkable floor.
@@ -860,6 +930,54 @@
 			return FALSE
 	return TRUE
 
+/// Verifies the objects that will actually be dense leave every clear room
+/// tile in one component. Activity motifs may reserve more layout offsets than
+/// they instantiate, so this derives blocking cells from their concrete
+/// feature list instead of the solver's conservative anti-stacking mask.
+/datum/generated_room_solver/proc/room_floor_is_connected()
+	var/list/blocked = list()
+	for(var/datum/generated_room_placement/placement in solution.placements)
+		if(ispath(placement.feature.atom_type, /obj/structure/bed/chair))
+			continue
+		blocked[solution.tile_key(placement.x, placement.y)] = TRUE
+	for(var/datum/generated_room_fragment_placement/fragment_placement in solution.fragments)
+		var/datum/generated_room_fragment/activity_motif/motif = fragment_placement.fragment
+		if(istype(motif))
+			for(var/i in 1 to min(length(motif.feature_types), length(motif.occupied_offsets)))
+				if(ispath(motif.feature_types[i], /obj/structure/bed/chair))
+					continue
+				var/list/offset = motif.occupied_offsets[i]
+				blocked[solution.tile_key(fragment_placement.x + offset[1] - 1, fragment_placement.y + offset[2] - 1)] = TRUE
+		else
+			for(var/list/offset in fragment_placement.fragment.occupied_offsets)
+				blocked[solution.tile_key(fragment_placement.x + offset[1] - 1, fragment_placement.y + offset[2] - 1)] = TRUE
+	var/list/available = list()
+	var/list/start
+	for(var/list/point in candidates)
+		if(!blocked[solution.tile_key(point[1], point[2])])
+			available[solution.tile_key(point[1], point[2])] = point
+			if(!start)
+				start = point
+	if(!start)
+		return FALSE
+	var/list/frontier = list(start)
+	var/list/visited = list()
+	while(length(frontier))
+		var/list/current = frontier[1]
+		frontier.Cut(1, 2)
+		var/current_key = solution.tile_key(current[1], current[2])
+		if(visited[current_key])
+			continue
+		visited[current_key] = TRUE
+		for(var/direction in GLOB.cardinal)
+			var/next_key = solution.tile_key(current[1] + (direction == EAST) - (direction == WEST), current[2] + (direction == NORTH) - (direction == SOUTH))
+			if(available[next_key] && !visited[next_key])
+				frontier += list(available[next_key])
+	if(length(visited) != length(available))
+		solution.issues += "Authored dense fixtures split the room's walkable floor into multiple components."
+		return FALSE
+	return TRUE
+
 /datum/generated_room_solver/proc/measure_solution()
 	solution.occupied_tiles = visual_occupancy_count()
 	for(var/datum/generated_room_placement/placement in solution.placements)
@@ -875,8 +993,47 @@
 	if(!solution.floor_tiles)
 		return FALSE
 	var/density = solution.occupied_tiles / solution.floor_tiles
-	if(density < definition.density_min || density > definition.density_max)
-		solution.issues += "Occupied density [density] is outside [definition.density_min]-[definition.density_max]."
+	var/effective_maximum = min(1, definition.density_max + planned_utility_occupancy_count() / solution.floor_tiles)
+	if(density < definition.density_min || density > effective_maximum)
+		solution.issues += "Occupied density [density] is outside [definition.density_min]-[effective_maximum] after planned utilities."
+		return FALSE
+	return TRUE
+
+/datum/generated_room_solver/proc/empty_region_is_valid()
+	// Furnishings must preserve one connected circulation graph, so the empty
+	// floor necessarily remains connected in many open rooms. Density and the
+	// spread-biased filler handle visual emptiness; this gate catches truly
+	// dominant blank lobes without contradicting the access invariant.
+	var/compact_program = findtext(definition.id, "-compact-") || findtext(definition.id, "-micro-")
+	var/maximum_empty_fraction = compact_program ? 0.6 : 0.5
+	var/maximum_empty_region = max(4, FLOOR(solution.floor_tiles * maximum_empty_fraction, 1))
+	if(solution.largest_empty_region > maximum_empty_region)
+		solution.issues += "Largest undecorated region [solution.largest_empty_region] exceeds [maximum_empty_region] tiles."
+		return FALSE
+	return TRUE
+
+/datum/generated_room_solver/proc/composition_is_valid()
+	var/list/type_counts = list()
+	var/most_repeated = 0
+	for(var/datum/generated_room_placement/placement in solution.placements)
+		var/type_key = "[placement.feature.atom_type]"
+		type_counts[type_key] = (type_counts[type_key] || 0) + 1
+		most_repeated = max(most_repeated, type_counts[type_key])
+	var/composed_count = length(solution.placements)
+	for(var/datum/generated_room_fragment_placement/fragment_placement in solution.fragments)
+		composed_count += length(fragment_placement.fragment.occupied_offsets)
+		for(var/atom_type in fragment_placement.fragment.composition_atom_types())
+			var/fragment_type_key = "[atom_type]"
+			type_counts[fragment_type_key] = (type_counts[fragment_type_key] || 0) + 1
+			most_repeated = max(most_repeated, type_counts[fragment_type_key])
+	var/compact_program = findtext(definition.id, "-compact-") || findtext(definition.id, "-micro-")
+	var/minimum_types = compact_program ? 2 : 4
+	if(composed_count >= 8 && length(type_counts) < minimum_types)
+		solution.issues += "Room composition has only [length(type_counts)] distinct fixture types; [minimum_types] are required by [definition.id]."
+		return FALSE
+	var/repetition_limit = (findtext(definition.id, "inventory") || findtext(definition.id, "storage") || findtext(definition.id, "warehouse")) ? 0.65 : 0.45
+	if(!compact_program && composed_count >= 10 && most_repeated / composed_count > repetition_limit)
+		solution.issues += "One fixture type occupies more than [round(repetition_limit * 100)]% of the room composition."
 		return FALSE
 	return TRUE
 
@@ -885,7 +1042,8 @@
 	var/largest = 0
 	for(var/list/point in candidates)
 		var/key = solution.tile_key(point[1], point[2])
-		if(visited[key] || solution.is_reserved(point[1], point[2]))
+		var/datum/generated_station_tile_intent/start_intent = materializer.result?.tile_plan?.tile(point[1], point[2])
+		if(visited[key] || solution.is_reserved(point[1], point[2]) || solution.occupied[key] || start_intent?.has_utility_fixture())
 			continue
 		var/size = 0
 		var/list/frontier = list(point)
@@ -898,7 +1056,8 @@
 				var/nx = current[1] + (direction == EAST) - (direction == WEST)
 				var/ny = current[2] + (direction == NORTH) - (direction == SOUTH)
 				var/next_key = solution.tile_key(nx, ny)
-				if(!module.contains_tile(nx, ny) || visited[next_key] || solution.is_reserved(nx, ny))
+				var/datum/generated_station_tile_intent/next_intent = materializer.result?.tile_plan?.tile(nx, ny)
+				if(!module.contains_tile(nx, ny) || visited[next_key] || solution.is_reserved(nx, ny) || solution.occupied[next_key] || next_intent?.has_utility_fixture())
 					continue
 				visited[next_key] = TRUE
 				frontier += list(list(nx, ny))
@@ -906,20 +1065,29 @@
 	return largest
 
 /// Instantiates a solved feature set after every hard constraint has passed.
-/datum/generated_station_materializer/proc/materialize_room_solution(datum/generated_room_solution/solution)
-	if(!solution?.valid)
+/datum/generated_station_materializer/proc/materialize_room_solution(datum/generated_room_solution/solution, allow_quality_degradation = FALSE)
+	if(!solution || (!solution.valid && !allow_quality_degradation))
+		return FALSE
+	var/area/generated_station/room_area = module_areas[solution.module_id]
+	if(!room_area)
 		return FALSE
 	var/owned_start = length(result.owned_furnishing_atoms)
 	var/furnishing_start = length(result.furnishings)
 	var/styled_start = result.styled_floor_count
 	var/accent_start = result.accent_decal_count
+	var/list/optional_furnishings = list()
 	if(!style_room_solution(solution))
 		return FALSE
 	for(var/datum/generated_room_fragment_placement/fragment_placement in solution.fragments)
+		var/fragment_furnishing_start = length(result.furnishings)
 		var/turf/origin = world_turf(fragment_placement.x, fragment_placement.y)
 		if(!fragment_placement.fragment.materialize(origin, fragment_placement.rotation, fragment_placement.mirrored, result))
 			rollback_room_materialization(owned_start, furnishing_start, styled_start, accent_start)
 			return FALSE
+		for(var/i in fragment_furnishing_start + 1 to length(result.furnishings))
+			var/atom/movable/fragment_furnishing = result.furnishings[i]
+			if(istype(fragment_furnishing, /obj/structure/table) || istype(fragment_furnishing, /obj/structure/bed/chair) || istype(fragment_furnishing, /obj/structure/filingcabinet) || istype(fragment_furnishing, /obj/structure/flora/pottedplant))
+				optional_furnishings += fragment_furnishing
 		generation_checkpoint("Placing authored room fragments", 53)
 	for(var/datum/generated_room_placement/placement in solution.placements)
 		if(!placement.feature.atom_type)
@@ -931,7 +1099,13 @@
 		var/atom/movable/created = new placement.feature.atom_type(T)
 		created.set_dir(placement.dir)
 		result.register_furnishing(created)
+		if(istype(placement.feature, /datum/generated_room_feature/cosmetic))
+			optional_furnishings += created
 		generation_checkpoint("Installing room furnishings", 54)
+	// Whole-station furnishing access is validated after every room and the
+	// emergency fixtures exist. Doing a partial-room check here compared against
+	// an incomplete map state and incorrectly rolled back valid authored rooms;
+	// `validate_furnishing_access()` performs the authoritative final trim/audit.
 	return TRUE
 
 /datum/generated_station_materializer/proc/rollback_room_materialization(owned_start, furnishing_start, styled_start, accent_start)
@@ -977,9 +1151,6 @@
 /datum/generated_station_materializer/proc/resolve_room_definition(department_id, role)
 	return generated_room_definition_for(department_id, role)
 
-/datum/generated_station_materializer/proc/resolve_minimum_room_definition(department_id, role)
-	return generated_compact_room_definition_for(department_id, role)
-
 /datum/generated_station_materializer/proc/synthesize_rooms()
 	for(var/datum/generated_station_module/module in result.modules)
 		var/department_id = department_id_for_module(module)
@@ -987,26 +1158,26 @@
 		if(!primary_definition)
 			continue
 		var/list/definitions = list()
-		if(module.footprint_tiles() <= 4)
+		var/compact_definition_id = "[department_id]-compact-[module.role]"
+		var/micro_definition_id = "[department_id]-micro-[module.role]"
+		if(module.definition_id == micro_definition_id)
 			qdel(primary_definition)
-			definitions += generated_micro_room_definition_for(department_id, module.role)
+			for(var/i in 1 to 8)
+				definitions += generated_micro_room_definition_for(department_id, module.role)
+		else if(module.definition_id == compact_definition_id)
+			qdel(primary_definition)
+			for(var/i in 1 to 8)
+				definitions += generated_compact_room_definition_for(department_id, module.role)
 		else
-			// An irregular footprint may satisfy the solver's geometric ratio while
-			// still being too small for the full activity program. Route those rooms
-			// directly to their authored compact program instead of letting a full
-			// definition masquerade as successful in nine usable tiles.
-			if(module.satisfies(primary_definition) && module.footprint_tiles() >= primary_definition.min_width * primary_definition.min_height)
-				definitions += primary_definition
-			else
-				qdel(primary_definition)
-			definitions += resolve_minimum_room_definition(department_id, module.role)
-		// Runtime generation must remain playable even if an unexpected footprint
-		// defeats both authored contracts. Strict tests deliberately omit this last
-		// resort so every catalog/solver regression remains visible.
-		if(!strict_room_contracts)
-			definitions += generated_minimum_room_definition_for(department_id, module.role)
+			// Rust selected the complete authored program. Retry that exact program
+			// with independent seeds; never substitute compact or generic content.
+			definitions += primary_definition
+			for(var/i in 2 to 8)
+				definitions += resolve_room_definition(department_id, module.role)
 		var/room_seed = spec.seed + length(result.modules) * 7919 + module.x1 * 101 + module.y1 * 313
 		var/resolved = FALSE
+		var/datum/generated_room_solution/best_degraded_solution
+		var/best_degraded_score = -1.0e31
 		var/attempt = 0
 		for(var/datum/generated_room_definition/definition in definitions)
 			attempt++
@@ -1015,12 +1186,9 @@
 			var/datum/generated_room_solution/room_solution = solver.solve(src, module, definition, room_seed + attempt * 104729, spec.faction_id, spec.architecture_style)
 			var/materialized = room_solution?.valid && materialize_room_solution(room_solution)
 			if(materialized)
-				if(findtext(definition.id, "-minimum-"))
-					var/degradation = "room [module.id] used [definition.id] after authored content could not fit"
-					result.degradation_events += degradation
-					log_world("Generated station [spec.id] degraded [degradation].")
 				result.room_solutions += room_solution
 				resolved = TRUE
+				solver.solution = null
 				generation_checkpoint("Releasing [module.role] solver", 54, TRUE)
 				qdel(solver)
 				generation_checkpoint("Released [module.role] solver", 54, TRUE)
@@ -1030,12 +1198,41 @@
 				details = "room solution could not be committed"
 			last_failure_details = "room [module.id] ([definition.id]): [details]"
 			log_world("Generated station room [module.id] ([module.width()]x[module.height()] core, [module.footprint_tiles()] footprint tiles) rejected [definition.id]: [details]")
+			if(!strict_room_contracts && room_solution)
+				// Prefer the most complete authored attempt. The solver has already
+				// enforced hard placement constraints for every committed fixture;
+				// invalid here commonly means an aesthetic density/empty-region target.
+				var/degraded_score = length(room_solution.placements) * 1000 + room_solution.occupied_tiles * 10 + room_solution.score
+				if(!best_degraded_solution || degraded_score > best_degraded_score)
+					qdel(best_degraded_solution)
+					best_degraded_solution = room_solution
+					best_degraded_score = degraded_score
+					solver.solution = null
+					room_solution = null
 			qdel(room_solution)
 			qdel(solver)
 		for(var/datum/generated_room_definition/definition in definitions.Copy())
 			generation_checkpoint("Releasing [module.role] definition", 54, TRUE)
 			qdel(definition)
 		definitions.Cut()
+		if(!resolved && !strict_room_contracts && best_degraded_solution)
+			var/degradation = "room [module.id] ([best_degraded_solution.definition_id]) published below its aesthetic contract: [jointext(best_degraded_solution.issues, "; ")]"
+			if(materialize_room_solution(best_degraded_solution, TRUE))
+				result.room_solutions += best_degraded_solution
+				result.degradation_events += degradation
+				log_world("Generated station [spec.id] degraded instead of failing: [degradation]")
+				best_degraded_solution = null
+				resolved = TRUE
+			else
+				// Even if optional furnishings cannot be committed, preserve the
+				// structurally complete, powered and atmospheric room shell.
+				style_room_solution(best_degraded_solution)
+				result.room_solutions += best_degraded_solution
+				result.degradation_events += "[degradation]; furnishings could not be committed, so the authored room shell was retained"
+				log_world("Generated station [spec.id] retained an unfurnished authored room shell instead of failing: [module.id].")
+				best_degraded_solution = null
+				resolved = TRUE
+		qdel(best_degraded_solution)
 		if(!resolved)
 			return FALSE
 		generation_checkpoint("Completed [module.role] room", 54)

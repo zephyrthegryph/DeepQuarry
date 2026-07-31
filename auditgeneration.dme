@@ -1,4 +1,0 @@
-#define CITESTING
-#define UNIT_TESTS
-#define DQ_PERF_GENERATION
-#include "deepquarry.dme"

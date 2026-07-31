@@ -5,6 +5,7 @@
 	var/second = generated_station_rust_catalog_request(987654, 96, 96)
 	TEST_ASSERT_EQUAL(first, second, "Identical Rust planner requests did not serialize canonically")
 	var/list/request = json_decode(first)
+	rustg_file_write(first, "[GLOB.log_directory]/generated-station-rust-catalog-fixture.json")
 	var/list/large_seed_request = json_decode(generated_station_rust_catalog_request(900059001, 96, 96))
 	TEST_ASSERT_EQUAL(large_seed_request["seed"], num2text(round(900059001), 20), "Large station seeds must serialize as canonical decimal integers")
 	TEST_ASSERT_EQUAL(request["schema"], "dq.station.catalog", "Catalog request has the wrong schema")
@@ -25,6 +26,14 @@
 	TEST_ASSERT(room["content_area"] >= room["min_width"] * room["min_height"], "Room content area is smaller than its minimum footprint")
 	TEST_ASSERT(room["minimum_usable_tiles"] >= room["min_width"] * room["min_height"], "Room usable-tile requirement is smaller than its minimum footprint")
 	TEST_ASSERT(room["min_entrances"] >= 1 && room["max_entrances"] >= room["min_entrances"], "Room entrance constraints were not exported")
+	var/list/sprite_previews = request["sprite_previews"]
+	TEST_ASSERT(length(sprite_previews) >= 80, "Catalog omitted the complete live fixture appearance vocabulary")
+	TEST_ASSERT(sprite_previews["operating_table"]["icon_file"] && sprite_previews["operating_table"]["icon_state"], "Operating table preview lacks its real icon/state")
+	var/authored_feature_count = 0
+	for(var/list/room_contract in request["rooms"])
+		for(var/list/fragment in room_contract["fragments"])
+			authored_feature_count += length(fragment["features"])
+	TEST_ASSERT(authored_feature_count >= 100, "Authored room motifs did not export enough exact fixture placements")
 	TEST_ASSERT(!findtext(first, "/datum/"), "Catalog leaked DM type paths across the Rust boundary")
 
 /datum/unit_test/dq_generated_station_rust_catalog_accepts_callers
@@ -70,6 +79,8 @@
 	var/list/departments = list()
 	var/list/nodes = list()
 	var/list/rooms = list()
+	var/list/content_rooms = list()
+	var/list/fixtures = list()
 	var/list/edges = list()
 	var/list/x_starts = list(1, 6, 11, 16, 21, 25, 29)
 	var/list/widths = list(5, 5, 5, 5, 4, 4, 4)
@@ -81,7 +92,35 @@
 		var/datum/generated_room_definition/definition = generated_room_definition_for(department_id, role_ids[i])
 		departments += list(list("id" = instance_id, "definition_id" = department_id, "desired_area" = 48, "node_id" = node_id))
 		nodes += list(list("id" = node_id, "department_id" = instance_id, "desired_area" = 48, "x" = x_starts[i], "y" = 1, "width" = widths[i], "height" = 16, "frontage_x" = x_starts[i], "frontage_y" = 1, "frontage_spine_vertical" = TRUE, "frontage_spine_coordinate" = x_starts[i]))
-		rooms += list(list("id" = room_id, "node_id" = node_id, "definition_id" = definition.id, "role" = role_ids[i], "frontage_x" = x_starts[i], "frontage_y" = 1))
+		rooms += list(list("id" = room_id, "rust_room_id" = i, "node_id" = node_id, "definition_id" = definition.id, "role" = role_ids[i], "frontage_x" = x_starts[i], "frontage_y" = 1))
+		content_rooms += list(list(
+			"allocation_id" = room_id,
+			"room_id" = i,
+			"department_id" = i,
+			"semantic_role" = role_ids[i],
+			"selected_variant" = definition.id,
+			"area_name" = "Station Fixture [capitalize(department_id)]",
+			"aesthetic_id" = "fixture",
+			"floor_style" = "fixture",
+			"accent_style" = "fixture",
+			"activity_center" = list("x" = x_starts[i] - 1, "y" = 1),
+			"circulation" = list(list("x" = x_starts[i] - 1, "y" = 1)),
+			"fixture_ids" = list(i),
+			"occupancy_micros" = 100000,
+		))
+		fixtures += list(list(
+			"id" = i,
+			"fixture_id" = "chair",
+			"at" = list("x" = x_starts[i] - 1, "y" = 1),
+			"facing" = "South",
+			"layer" = "Furniture",
+			"department_id" = i,
+			"room_id" = i,
+			"network_id" = null,
+			"variant" = 0,
+			"blocks_movement" = TRUE,
+			"required_access" = list(),
+		))
 		qdel(definition)
 		if(i > 1)
 			edges += list(list("id" = "edge-[i]", "from_node" = "node-[department_ids[i - 1]]", "to_node" = node_id, "kind" = "transit", "service_id" = null, "minimum_width" = 1, "required" = TRUE, "corridor_class" = "connector", "path" = list(list(x_starts[i], 1))))
@@ -95,6 +134,7 @@
 		"schema" = "dq.station.plan", "major" = 1, "minor" = 0, "catalog_hash" = "fixture-hash", "seed" = "42", "width" = 32, "height" = 16,
 		"metadata" = list("station_id" = "station-fixture", "name" = "Station Fixture", "architecture_style" = "industrial", "faction_id" = "corporate", "security_tier" = 1, "size_class" = "compact", "layout_archetype" = "fixture", "aesthetic_score" = 0),
 		"departments" = departments, "nodes" = nodes, "rooms" = rooms, "doors" = list(), "edges" = edges, "tile_rows" = tile_rows,
+		"content_rooms" = content_rooms, "fixtures" = fixtures, "networks" = list(), "content_quality" = list(),
 	)
 
 /datum/unit_test/dq_generated_station_rust_decoder_reconstructs_ownership

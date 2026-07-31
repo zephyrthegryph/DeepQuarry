@@ -37,7 +37,6 @@ GLOBAL_REAL(Master, /datum/controller/master)
 
 	/// How long is the MC sleeping between runs, read only (set by Loop() based off of anti-tick-contention heuristics)
 	var/sleep_delta = 1
-
 	/// Only run ticker subsystems for the next n ticks.
 	var/skip_ticks = 0
 

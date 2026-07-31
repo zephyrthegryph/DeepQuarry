@@ -56,6 +56,37 @@
 	id = "compact-cargo-crate"
 	atom_type = /obj/structure/closet/crate
 
+/// Constraint-light functional fixtures for compact authored rooms. Their
+/// surrounding room is already circulation-validated, so these do not require
+/// the multi-tile frontage used by full workstation programs.
+/datum/generated_room_feature/compact_command_machine
+	id = "compact-command-machine"
+	atom_type = /obj/machinery/computer/crew
+
+/datum/generated_room_feature/compact_ai_machine
+	id = "compact-ai-machine"
+	atom_type = /obj/machinery/computer/aiupload
+
+/datum/generated_room_feature/compact_security_machine
+	id = "compact-security-machine"
+	atom_type = /obj/machinery/recharger
+
+/datum/generated_room_feature/compact_medical_machine
+	id = "compact-medical-machine"
+	atom_type = /obj/machinery/sleeper
+
+/datum/generated_room_feature/compact_engineering_machine
+	id = "compact-engineering-machine"
+	atom_type = /obj/machinery/autolathe
+
+/datum/generated_room_feature/compact_logistics_machine
+	id = "compact-logistics-machine"
+	atom_type = /obj/machinery/computer/supplycomp
+
+/datum/generated_room_feature/compact_docking_machine
+	id = "compact-docking-machine"
+	atom_type = /obj/machinery/computer/communications
+
 /datum/generated_room_feature/crew_monitor
 	id = "crew-monitor"
 	atom_type = /obj/machinery/computer/crew
@@ -337,7 +368,7 @@
 			definition.required_features |= list(/datum/generated_room_feature/security_records, /datum/generated_room_feature/security_locker)
 		if("security/locker-room")
 			definition.required_groups |= list(/datum/generated_room_feature_group/security_storage_bank)
-			definition.required_features |= list(/datum/generated_room_feature/recharger)
+			definition.required_features |= list(/datum/generated_room_feature/recharger, /datum/generated_room_feature/work_table)
 		if("security/interrogation", "security/checkpoint")
 			definition.required_groups |= list(/datum/generated_room_feature_group/interrogation_suite)
 			definition.required_features |= list(/datum/generated_room_feature/reinforced_table, /datum/generated_room_feature/security_records)
@@ -349,7 +380,7 @@
 			definition.required_features |= list(/datum/generated_room_feature/sleeper, /datum/generated_room_feature/iv_drip)
 		if("medical/storage")
 			definition.required_groups |= list(/datum/generated_room_feature_group/medical_storage_bank)
-			definition.required_features |= list(/datum/generated_room_feature/oxygen_canister)
+			definition.required_features |= list(/datum/generated_room_feature/oxygen_canister, /datum/generated_room_feature/medical_vendor)
 		if("medical/exam")
 			definition.required_groups |= list(/datum/generated_room_feature_group/clinical_bay)
 			definition.required_features |= list(/datum/generated_room_feature/sink, /datum/generated_room_feature/medical_vendor)
@@ -386,18 +417,14 @@
 /// materialized room. Tests and runtime diagnostics consume the same contract.
 /proc/generated_room_required_signature(department_id, role, compact = FALSE)
 	if(compact)
-		switch("[department_id]/[role]")
-			if("command/records", "command/liaison", "command/archive", "ai/satellite", "ai/monitoring", "ai/robotics", "ai/server-closet", "docking/customs") return list(/obj/structure/filingcabinet, /obj/structure/table/standard)
-			if("security/armory", "security/evidence", "security/interrogation", "security/checkpoint", "docking/security") return list(/obj/structure/closet/secure_closet/security, /obj/structure/filingcabinet)
-			if("medical/pharmacy", "medical/exam", "medical/recovery") return list(/obj/structure/closet/secure_closet/medical1, /obj/structure/table/standard)
-			if("engineering/workshop", "engineering/equipment", "engineering/tool-room", "engineering/maintenance") return list(/obj/structure/closet/secure_closet/engineering_electrical, /obj/structure/table/standard)
-			if("logistics/warehouse", "logistics/sorting", "logistics/inventory", "logistics/dispatch") return list(/obj/structure/closet/crate, /obj/structure/closet/secure_closet/cargotech)
 		switch(department_id)
-			if("security", "docking") return list(/obj/structure/closet/secure_closet/security, /obj/structure/filingcabinet)
-			if("medical") return list(/obj/structure/closet/secure_closet/medical1, /obj/structure/table/standard)
-			if("engineering") return list(/obj/structure/closet/secure_closet/engineering_electrical, /obj/structure/table/standard)
-			if("logistics") return list(/obj/structure/closet/crate, /obj/structure/closet/secure_closet/cargotech)
-			else return list(/obj/structure/filingcabinet, /obj/structure/table/standard)
+			if("command") return list(/obj/machinery/computer/crew, /obj/structure/filingcabinet)
+			if("ai") return list(/obj/machinery/computer/aiupload, /obj/structure/filingcabinet)
+			if("security") return list(/obj/machinery/recharger, /obj/structure/closet/secure_closet/security)
+			if("medical") return list(/obj/machinery/sleeper, /obj/structure/closet/secure_closet/medical1)
+			if("engineering") return list(/obj/machinery/autolathe, /obj/structure/closet/secure_closet/engineering_electrical)
+			if("logistics") return list(/obj/machinery/computer/supplycomp, /obj/structure/closet/crate)
+			if("docking") return list(/obj/machinery/computer/communications, /obj/structure/closet/secure_closet/security)
 	switch("[department_id]/[role]")
 		if("command/records") return list(/obj/structure/filingcabinet, /obj/machinery/computer/card)
 		if("ai/robotics", "ai/server-closet") return list(/obj/machinery/computer/robotics, /obj/machinery/autolathe)
@@ -405,7 +432,8 @@
 		if("security/armory") return list(/obj/machinery/autolathe/armory, /obj/structure/closet/secure_closet/security)
 		if("security/evidence") return list(/obj/machinery/computer/secure_data, /obj/structure/filingcabinet)
 		if("security/interrogation", "security/checkpoint") return list(/obj/structure/table/reinforced, /obj/machinery/computer/secure_data)
-		if("medical/pharmacy", "medical/exam") return list(/obj/machinery/chem_master, /obj/machinery/reagentgrinder)
+		if("medical/pharmacy") return list(/obj/machinery/chem_master, /obj/machinery/reagentgrinder)
+		if("medical/exam") return list(/obj/structure/sink, /obj/machinery/vending/medical)
 		if("medical/recovery") return list(/obj/machinery/sleeper, /obj/machinery/iv_drip)
 		if("engineering/workshop", "engineering/equipment", "engineering/tool-room") return list(/obj/machinery/autolathe, /obj/structure/closet/secure_closet/engineering_electrical)
 		if("engineering/maintenance") return list(/obj/machinery/autolathe, /obj/machinery/air_sensor)
@@ -418,15 +446,12 @@
 /// Minimal two-fixture compositions for pockets too small to host a complete
 /// activity cluster. These are authored reductions, not generic substitutes.
 /proc/generated_room_compact_authored_features(department_id, role)
-	switch("[department_id]/[role]")
-		if("command/records", "command/liaison", "command/archive", "ai/satellite", "ai/monitoring", "ai/robotics", "ai/server-closet", "docking/customs") return list(/datum/generated_room_feature/compact_filing_cabinet, /datum/generated_room_feature/compact_work_table)
-		if("security/armory", "security/evidence", "security/interrogation", "security/checkpoint", "docking/security") return list(/datum/generated_room_feature/compact_security_locker, /datum/generated_room_feature/compact_filing_cabinet)
-		if("medical/pharmacy", "medical/exam", "medical/recovery") return list(/datum/generated_room_feature/compact_medical_locker, /datum/generated_room_feature/compact_work_table)
-		if("engineering/workshop", "engineering/equipment", "engineering/tool-room", "engineering/maintenance") return list(/datum/generated_room_feature/compact_engineering_locker, /datum/generated_room_feature/compact_work_table)
-		if("logistics/warehouse", "logistics/sorting", "logistics/inventory", "logistics/dispatch") return list(/datum/generated_room_feature/compact_cargo_crate, /datum/generated_room_feature/compact_cargo_locker)
 	switch(department_id)
-		if("security", "docking") return list(/datum/generated_room_feature/compact_security_locker, /datum/generated_room_feature/compact_filing_cabinet)
-		if("medical") return list(/datum/generated_room_feature/compact_medical_locker, /datum/generated_room_feature/compact_work_table)
-		if("engineering") return list(/datum/generated_room_feature/compact_engineering_locker, /datum/generated_room_feature/compact_work_table)
-		if("logistics") return list(/datum/generated_room_feature/compact_cargo_crate, /datum/generated_room_feature/compact_cargo_locker)
-	return list(/datum/generated_room_feature/compact_filing_cabinet, /datum/generated_room_feature/compact_work_table)
+		if("command") return list(/datum/generated_room_feature/compact_command_machine, /datum/generated_room_feature/compact_filing_cabinet)
+		if("ai") return list(/datum/generated_room_feature/compact_ai_machine, /datum/generated_room_feature/compact_filing_cabinet)
+		if("security") return list(/datum/generated_room_feature/compact_security_machine, /datum/generated_room_feature/compact_security_locker)
+		if("medical") return list(/datum/generated_room_feature/compact_medical_machine, /datum/generated_room_feature/compact_medical_locker)
+		if("engineering") return list(/datum/generated_room_feature/compact_engineering_machine, /datum/generated_room_feature/compact_engineering_locker)
+		if("logistics") return list(/datum/generated_room_feature/compact_logistics_machine, /datum/generated_room_feature/compact_cargo_crate)
+		if("docking") return list(/datum/generated_room_feature/compact_docking_machine, /datum/generated_room_feature/compact_security_locker)
+	return list()

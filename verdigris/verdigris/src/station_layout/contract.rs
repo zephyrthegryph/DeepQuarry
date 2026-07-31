@@ -1,4 +1,5 @@
 use super::model::*;
+use super::program::{compact_room_program, room_program};
 use eyre::{Result, WrapErr, bail};
 use std::collections::{BTreeMap, BTreeSet, VecDeque};
 
@@ -9,6 +10,7 @@ pub struct CatalogMapping {
     pub architecture_choices: Vec<MacroArchetype>,
     pub departments: BTreeMap<u16, CatalogDepartmentWire>,
     pub rooms: BTreeMap<u16, CatalogRoomWire>,
+    pub sprite_previews: BTreeMap<String, SpritePreview>,
 }
 
 pub fn decode_catalog(json: &str) -> Result<(LayoutRequest, CatalogMapping)> {
@@ -56,10 +58,67 @@ pub fn decode_catalog(json: &str) -> Result<(LayoutRequest, CatalogMapping)> {
         validate_capabilities(&department)?;
         mapped_departments.insert(numeric, department);
     }
+    let mut catalog_rooms = wire.rooms;
+    // Catalog minor 0 omitted micro contracts even though DM already knew how
+    // to materialize them. Preserve old logged catalogs and rolling upgrades by
+    // deriving the same one-signature-fixture contract from each compact role.
+    let known_micro_roles = catalog_rooms
+        .iter()
+        .filter(|room| room.definition_id.contains("-micro-"))
+        .map(|room| (room.department_id.clone(), room.role.clone()))
+        .collect::<BTreeSet<_>>();
+    let synthesized_micro = catalog_rooms
+        .iter()
+        .filter(|room| room.definition_id.contains("-compact-"))
+        .filter(|room| {
+            !known_micro_roles.contains(&(room.department_id.clone(), room.role.clone()))
+        })
+        .cloned()
+        .map(|mut room| {
+            room.id = format!("{}-{}-micro", room.department_id, room.role);
+            room.definition_id = format!("{}-micro-{}", room.department_id, room.role);
+            room.min_width = 1;
+            room.max_width = 5;
+            room.min_height = 1;
+            room.max_height = 5;
+            room.min_count = 0;
+            room.max_count = 12;
+            room.min_entrances = 1;
+            room.max_entrances = 1;
+            room.content_area = 1;
+            room.minimum_usable_tiles = 1;
+            room.ideal_usable_tiles = 4;
+            room.min_short_side = 1;
+            room.max_aspect_ratio_millis = 9000;
+            room.requires_center_activity = false;
+            room.density_min_micros = 100_000;
+            room.density_max_micros = 750_000;
+            room.circulation_min_micros = 0;
+            room.wall_utilization_micros = 0;
+            room.fragments.clear();
+            room
+        })
+        .collect::<Vec<_>>();
+    catalog_rooms.extend(synthesized_micro);
+    let mut sprite_previews = wire.sprite_previews;
+    for room in &catalog_rooms {
+        for fragment in &room.fragments {
+            for feature in &fragment.features {
+                if !feature.id.is_empty() && !feature.icon_file.is_empty() {
+                    sprite_previews
+                        .entry(feature.id.clone())
+                        .or_insert_with(|| SpritePreview {
+                            icon_file: feature.icon_file.clone(),
+                            icon_state: feature.icon_state.clone(),
+                        });
+                }
+            }
+        }
+    }
     let mut grouped: BTreeMap<u16, Vec<RoomType>> = BTreeMap::new();
     let mut mapped_rooms = BTreeMap::new();
     let mut room_ids = BTreeSet::new();
-    for (index, room) in wire.rooms.into_iter().enumerate() {
+    for (index, room) in catalog_rooms.into_iter().enumerate() {
         if room.id.is_empty() || !room_ids.insert(room.id.clone()) {
             bail!("empty or duplicate room semantic ID {}", room.id);
         }
@@ -67,6 +126,12 @@ pub fn decode_catalog(json: &str) -> Result<(LayoutRequest, CatalogMapping)> {
             eyre::eyre!("room references unknown department {}", room.department_id)
         })?;
         let numeric = u16::try_from(index + 1)?;
+        let content_program =
+            if room.definition_id.contains("-compact-") || room.definition_id.contains("-micro-") {
+                compact_room_program(&room.department_id, &room.role, seed ^ u64::from(numeric))
+            } else {
+                room_program(&room.department_id, &room.role, seed ^ u64::from(numeric))
+            };
         grouped.entry(department).or_default().push(RoomType {
             id: numeric,
             name: room.role.clone(),
@@ -77,18 +142,58 @@ pub fn decode_catalog(json: &str) -> Result<(LayoutRequest, CatalogMapping)> {
             min_count: room.min_count,
             max_count: room.max_count,
             entrances: room.max_entrances.max(room.min_entrances),
-            content_area: room.minimum_usable_tiles.max(room.content_area),
+            content_area: room
+                .minimum_usable_tiles
+                .max(room.content_area)
+                .max(content_program.minimum_area),
             ideal_area: room
                 .ideal_usable_tiles
                 .max(room.minimum_usable_tiles)
-                .max(room.content_area),
-            min_short_side: room.min_short_side.max(3),
+                .max(room.content_area)
+                .max(content_program.ideal_area)
+                .min(content_program.maximum_area),
+            min_short_side: room.min_short_side.max(1),
             max_aspect_ratio_millis: room.max_aspect_ratio_millis.max(1000),
             requires_center_activity: room.requires_center_activity,
         });
         mapped_rooms.insert(numeric, room);
     }
     let mut departments = Vec::new();
+    // A semantic room requirement is satisfied by one of its geometry
+    // variants, not by every variant independently. Preserve the exact variant
+    // DM marked as required: a full reception contract must not silently become
+    // a compact reception merely because both share one semantic role.
+    for room_types in grouped.values_mut() {
+        let mut required_roles = BTreeSet::new();
+        for room in room_types.iter() {
+            if room.min_count > 0 {
+                required_roles.insert(room.name.clone());
+            }
+        }
+        for role in required_roles {
+            let candidates: Vec<usize> = room_types
+                .iter()
+                .enumerate()
+                .filter_map(|(index, room)| (room.name == role).then_some(index))
+                .collect();
+            let required = candidates
+                .iter()
+                .map(|index| room_types[*index].min_count)
+                .max()
+                .unwrap_or(1);
+            let required_variant = candidates
+                .iter()
+                .copied()
+                .filter(|index| room_types[*index].min_count > 0)
+                .min_by_key(|index| room_types[*index].content_area);
+            for index in &candidates {
+                room_types[*index].min_count = 0;
+            }
+            if let Some(index) = required_variant {
+                room_types[index].min_count = required;
+            }
+        }
+    }
     for (&numeric, semantic) in &mapped_departments {
         let room_types = grouped.remove(&numeric).unwrap_or_default();
         if room_types.is_empty() {
@@ -125,6 +230,7 @@ pub fn decode_catalog(json: &str) -> Result<(LayoutRequest, CatalogMapping)> {
             architecture_choices,
             departments: mapped_departments,
             rooms: mapped_rooms,
+            sprite_previews,
         },
     ))
 }
@@ -193,8 +299,28 @@ pub fn encode_plan(layout: &StationLayout, mapping: &CatalogMapping) -> Result<S
             .iter()
             .find(|door| door.id == department.frontage_door)
         {
-            node.frontage_x = door.at.x + 1;
-            node.frontage_y = door.at.y + 1;
+            // A doorway occupies the boundary and may be rasterized on the
+            // public/maintenance side. DM's node frontage is an owned anchor,
+            // so export the adjacent department tile rather than blindly
+            // exporting the door coordinate.
+            let frontage = layout
+                .tiles
+                .iter()
+                .enumerate()
+                .filter(|(_, tile)| {
+                    tile.owner == Some(numeric) && tile.class != TileClass::Maintenance
+                })
+                .map(|(index, _)| {
+                    (
+                        (index % usize::from(layout.width)) as u16,
+                        (index / usize::from(layout.width)) as u16,
+                    )
+                })
+                .min_by_key(|(x, y)| (x.abs_diff(door.at.x) + y.abs_diff(door.at.y), *x, *y));
+            if let Some((x, y)) = frontage {
+                node.frontage_x = x + 1;
+                node.frontage_y = y + 1;
+            }
         }
     }
     let mut room_ids = BTreeMap::new();
@@ -278,6 +404,39 @@ pub fn encode_plan(layout: &StationLayout, mapping: &CatalogMapping) -> Result<S
             };
         }
         door.direction = door_direction(layout, native);
+    }
+
+    // The rasterized public corridor is authoritative, but DM also consumes a
+    // semantic transit graph for capability and service validation. Ensure
+    // every department participates in one explicit backbone instead of
+    // relying on the smaller set of aesthetic/candidate-scoring edges.
+    let mut department_ids = layout
+        .departments
+        .iter()
+        .map(|department| department.id)
+        .collect::<Vec<_>>();
+    department_ids.sort_unstable();
+    for pair in department_ids.windows(2) {
+        let from = format!("node-{}", pair[0]);
+        let to = format!("node-{}", pair[1]);
+        let already_connected = wire.edges.iter().any(|edge| {
+            edge.kind == "transit"
+                && ((edge.from_node == from && edge.to_node == to)
+                    || (edge.from_node == to && edge.to_node == from))
+        });
+        if !already_connected {
+            wire.edges.push(WireEdge {
+                id: format!("transit-backbone-{}-{}", pair[0], pair[1]),
+                from_node: from,
+                to_node: to,
+                kind: "transit".into(),
+                service_id: None,
+                minimum_width: 2,
+                required: true,
+                corridor_class: "connector".into(),
+                path: Vec::new(),
+            });
+        }
     }
 
     // Capability dependencies are part of the macro plan.  Emit one physical

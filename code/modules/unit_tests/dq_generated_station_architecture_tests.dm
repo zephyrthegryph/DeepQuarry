@@ -171,8 +171,8 @@
 	for(var/sample in 1 to 256)
 		var/seed = ((seed_stream.next() + sample) % 2147483646) + 1
 		var/datum/generated_station_planner/planner = new
-		var/width = 72 + ((sample * 7) % 4) * 8
-		var/height = 72 + ((sample * 11) % 4) * 8
+		var/width = 80 + ((sample * 7) % 4) * 8
+		var/height = 80 + ((sample * 11) % 4) * 8
 		var/datum/generated_station_spec/spec = planner.plan(seed, width, height)
 		var/config = "sample=[sample] seed=[seed] size=[width]x[height] style=[spec?.architecture_style] faction=[spec?.faction_id] security=[spec?.security_tier]"
 		for(var/key in spec.maintenance_tiles)
