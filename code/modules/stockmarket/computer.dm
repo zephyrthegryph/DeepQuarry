@@ -41,7 +41,7 @@
 /obj/machinery/computer/stockexchange/proc/balance()
 	if (!logged_in)
 		return 0
-	return SSsupply.points
+	return SSsupply.budget_balance()
 
 ///// MAIN TGUI SCREEN /////
 
@@ -268,7 +268,7 @@
 	if (!li)
 		to_chat(user, span_danger("No active account on the console!"))
 		return
-	var/b = SSsupply.points
+	var/b = SSsupply.budget_balance()
 	var/avail = S.shareholders[logged_in]
 	if (!avail)
 		to_chat(user, span_danger("This account does not own any shares of [S.name]!"))
@@ -283,7 +283,7 @@
 		return
 	if (li != logged_in)
 		return
-	b = SSsupply.points
+	b = SSsupply.budget_balance()
 	if (!isnum(b))
 		to_chat(user, span_danger("No active account on the console!"))
 		return

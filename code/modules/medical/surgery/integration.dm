@@ -110,7 +110,7 @@ GLOBAL_PROTECT(dq_surgery_by_step)
 			if(drop >= 100 || drop >= C.severity)
 				C.cure_issue()
 			else
-				C.severity = max(0, C.severity - drop)
+				C.adjust_severity(-drop)
 				// Force the symptom set to refresh on the next tick — a
 				// post-surgery patient should stop presenting Critical-stage
 				// symptoms once their severity has dropped, not wait until

@@ -126,6 +126,15 @@
 	return ..()
 
 /obj/machinery/power/supermatter/Destroy()
+	if(SScontracts?.has_event_subscribers(CONTRACT_EVENT_MACHINE_RESULT))
+		emit_contract_event(CONTRACT_EVENT_MACHINE_RESULT, list(
+			"department" = DEPARTMENT_ENGINEERING,
+			"machine_kind" = "supermatter",
+			"station_machine" = stationcrystal && (z in using_map.station_levels),
+			"machine_id" = REF(src),
+			"metrics" = list("eer" = -1, "integrity" = 0),
+			"detail" = "Supermatter telemetry ended",
+		), "supermatter-destroyed:[REF(src)]:[world.time]", src)
 	STOP_PROCESSING(SSobj, src)
 	QDEL_NULL(soundloop)
 	return ..()
@@ -469,6 +478,27 @@
 	)
 
 	power -= (power/DECAY_FACTOR)**3		//energy losses due to radiation
+	if(SScontracts?.has_event_subscribers(CONTRACT_EVENT_MACHINE_RESULT))
+		var/list/telemetry_metrics = list(
+			"eer" = power,
+			"epr" = get_epr(),
+			"integrity" = get_integrity(),
+		)
+		if(env)
+			telemetry_metrics["temperature"] = env.return_temperature()
+			telemetry_metrics["pressure"] = env.return_pressure()
+			var/total_environment_moles = env.total_moles()
+			telemetry_metrics["gas_count"] = length(env.get_gases())
+			telemetry_metrics["plasma_fraction"] = total_environment_moles > 0 ? env.get_moles(/datum/gas/plasma) / total_environment_moles : 0
+			telemetry_metrics["oxygen_fraction"] = total_environment_moles > 0 ? env.get_moles(/datum/gas/oxygen) / total_environment_moles : 0
+		emit_contract_event(CONTRACT_EVENT_MACHINE_RESULT, list(
+			"department" = DEPARTMENT_ENGINEERING,
+			"machine_kind" = "supermatter",
+			"station_machine" = stationcrystal && (z in using_map.station_levels),
+			"machine_id" = REF(src),
+			"metrics" = telemetry_metrics,
+			"detail" = "Supermatter telemetry reported [round(power)] Relative EER at [round(get_integrity())]% integrity",
+		), "supermatter-telemetry:[REF(src)]:[world.time]", src)
 
 	return 1
 

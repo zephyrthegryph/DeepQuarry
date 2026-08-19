@@ -8,6 +8,10 @@
 	dir = 4 //Spawn facing 'forward' by default.
 	var/points_per_crate = 5
 	var/rigged = 0
+	/// Ordinary paper carrying the currently sealed freight ledger.
+	var/obj/item/paper/shipping_ledger
+	/// Refs of the exact cargo present when the ledger was sealed.
+	var/list/shipping_ledger_snapshot
 
 	open_sound = 'sound/effects/crate_open.ogg'
 	close_sound = 'sound/effects/crate_close.ogg'
@@ -25,6 +29,7 @@
 		return 0
 	if(!src.can_open())
 		return 0
+	void_shipping_ledger("crate opened")
 
 	var/mob/user = istype(usr, /mob) ? usr : null
 	if(rigged && locate(/obj/item/radio/electropack) in src)

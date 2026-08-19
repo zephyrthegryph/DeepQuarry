@@ -14,6 +14,7 @@
 // `category` field tag_pref writes onto singletons (see _pref_metadata.dm).
 GLOBAL_LIST_INIT(dq_category_order, list(
 	"identity",
+	"factions",
 	"appearance",
 	"size_voice",
 	"loadout",

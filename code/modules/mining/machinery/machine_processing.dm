@@ -61,10 +61,11 @@
 	data["unclaimedPoints"] = machine.points
 
 	if(inserted_id)
+		var/datum/money_account/account = get_account(inserted_id.associated_account_number)
 		data["has_id"] = TRUE
 		data["id"] = list(
 			"name" = inserted_id.registered_name,
-			"points" = inserted_id.mining_points,
+			"points" = account?.money || 0,
 		)
 	else
 		data["has_id"] = FALSE
@@ -125,8 +126,9 @@
 		if("claim")
 			if(istype(inserted_id))
 				if(ACCESS_MINING_STATION in inserted_id.GetAccess())
-					inserted_id.adjust_mining_points(machine.points)
-					machine.points = 0
+					var/datum/money_account/account = get_account(inserted_id.associated_account_number)
+					if(account?.credit(machine.points, name, "Processed ore proceeds", name))
+						machine.points = 0
 				else
 					to_chat(ui.user, span_warning("Required access not found."))
 			. = TRUE

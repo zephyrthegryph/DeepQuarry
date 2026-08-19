@@ -1,5 +1,6 @@
 import { useBackend } from 'tgui/backend';
 import {
+  Box,
   Button,
   Divider,
   NumberInput,
@@ -11,7 +12,7 @@ import type { Data } from './types';
 
 export const CurrentTransaction = (model) => {
   const { act, data } = useBackend<Data>();
-  const { current_transactioon, cash_locked, locked } = data;
+  const { current_transactioon, cash_locked, locked, subsidized_checkout } = data;
 
   const { items, prices } = current_transactioon;
 
@@ -45,6 +46,12 @@ export const CurrentTransaction = (model) => {
         </Stack>
       }
     >
+      {!!subsidized_checkout && !!Object.keys(current_transactioon).length && (
+        <Box mb={1} color="label">
+          The customer will see an itemized personal/subsidy quote and
+          must explicitly confirm after presenting their ID or PDA.
+        </Box>
+      )}
       <Table>
         {items && prices && (
           <>

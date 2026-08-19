@@ -43,7 +43,7 @@
 
 	var/butcherable = TRUE
 	var/meat_type	// What does butchering, if possible, make?
-	var/list/medical_issues = list()
+	var/list/medical_issues
 
 	///Var for attack_self chain
 	var/special_handling = FALSE

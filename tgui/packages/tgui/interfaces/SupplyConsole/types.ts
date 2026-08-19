@@ -5,12 +5,93 @@ export type Data = {
   order_auth: BooleanLike;
   shuttle: ShuttleStatus;
   supply_points: number;
+  personal_balance: number;
+  can_personal_order: BooleanLike;
   orders: Order[];
   receipts: Receipt[];
   contraband: BooleanLike;
+  market_auth: BooleanLike;
+  market: CargoMarket;
   modal: ModalData;
   supply_packs: SupplyPack[];
   categories: string[];
+};
+
+export type CargoMarketCounterparty = {
+  id: string;
+  name: string;
+  description: string;
+  faction: string;
+  color: string;
+  standing: number;
+  standing_tier: string;
+  covert: BooleanLike;
+};
+
+export type CargoMarketListing = {
+  id: string;
+  counterparty_id: string;
+  counterparty: string;
+  name: string;
+  description: string;
+  group: string;
+  price: number;
+  stock: number;
+  contraband: BooleanLike;
+  reserved: BooleanLike;
+  can_department: BooleanLike;
+  can_personal: BooleanLike;
+  can_contract: BooleanLike;
+  contract_allowance: number;
+  expires: string;
+};
+
+export type CargoMarketBid = {
+  id: string;
+  counterparty_id: string;
+  counterparty: string;
+  name: string;
+  description: string;
+  fulfilled: number;
+  target: number;
+  remaining: number;
+  multiplier: number;
+  reserved: BooleanLike;
+  can_route: BooleanLike;
+  expires: string;
+};
+
+export type CargoMarketTransaction = {
+  id: string;
+  type: string;
+  counterparty: string;
+  description: string;
+  value: number;
+  time: string;
+  covert: BooleanLike;
+  auditable: BooleanLike;
+  detected: BooleanLike;
+  suspect?: string;
+  trace: number;
+};
+
+export type CargoMarketCrate = {
+  ref: string;
+  name: string;
+  contents: number;
+  bid_id?: string;
+  route: string;
+};
+
+export type CargoMarket = {
+  generation: number;
+  refresh_in: string;
+  counterparties: CargoMarketCounterparty[];
+  listings: CargoMarketListing[];
+  bids: CargoMarketBid[];
+  transactions: CargoMarketTransaction[];
+  outbound_crates: CargoMarketCrate[];
+  is_auditor: BooleanLike;
 };
 
 export type ModalData = {
@@ -51,6 +132,7 @@ type Order = {
   ref: string;
   status: string;
   cost: number;
+  can_approve: BooleanLike;
   entries: { field: string; entry: string }[];
 };
 

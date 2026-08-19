@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Section, Stack, Tabs } from 'tgui-core/components';
-
+import { SupplyConsoleMarket } from './SupplyConsoleMarket';
 import { SupplyConsoleMenuHistoryExport } from './SupplyConsoleMenuHistoryExport';
 import { SupplyConsoleMenuOrder } from './SupplyConsoleMenuOrder';
 import { SupplyConsoleMenuOrderList } from './SupplyConsoleMenuOrderList';
@@ -15,6 +15,7 @@ export const SupplyConsoleMenu = (props) => {
   tab[2] = <SupplyConsoleMenuOrderList mode="Requested" />;
   tab[3] = <SupplyConsoleMenuOrderList mode="All" />;
   tab[4] = <SupplyConsoleMenuHistoryExport />;
+  tab[5] = <SupplyConsoleMarket />;
 
   return (
     <Section fill title="Menu">
@@ -27,6 +28,13 @@ export const SupplyConsoleMenu = (props) => {
               onClick={() => setTabIndex(0)}
             >
               Request
+            </Tabs.Tab>
+            <Tabs.Tab
+              icon="handshake"
+              selected={tabIndex === 5}
+              onClick={() => setTabIndex(5)}
+            >
+              Market
             </Tabs.Tab>
             <Tabs.Tab
               icon="check-circle-o"

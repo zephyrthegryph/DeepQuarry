@@ -58,7 +58,7 @@ export const SupplyConsoleShuttleStatus = (props) => {
   return (
     <>
       <LabeledList>
-        <LabeledList.Item label="Supply Points">
+        <LabeledList.Item label="Department Budget (Thalers)">
           <AnimatedNumber value={supply_points} />
         </LabeledList.Item>
       </LabeledList>

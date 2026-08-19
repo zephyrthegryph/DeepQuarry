@@ -64,9 +64,13 @@
 			"you apply \the [src] to [M]." \
 		)
 		use(1)
+		if(user != M && department_for_mob(user) == DEPARTMENT_MEDICAL)
+			charge_mob_for_department_service(M, DEPARTMENT_MEDICAL, 2, "Medical treatment with [name]", user.real_name)
 		return ITEM_INTERACT_SUCCESS
 
 	M.updatehealth()
+	if(user != M && department_for_mob(user) == DEPARTMENT_MEDICAL)
+		charge_mob_for_department_service(M, DEPARTMENT_MEDICAL, 2, "Medical treatment with [name]", user.real_name)
 	return ITEM_INTERACT_SUCCESS
 
 /obj/item/stack/medical/proc/upgrade_stack(upgrade_amount)

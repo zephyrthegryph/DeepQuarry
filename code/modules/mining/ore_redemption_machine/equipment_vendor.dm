@@ -210,10 +210,12 @@
 /obj/machinery/mineral/equipment_vendor/proc/get_points(obj/item/card/id/target)
 	if(!istype(target))
 		return 0
-	return target.mining_points
+	var/datum/money_account/account = get_account(target.associated_account_number)
+	return account?.money || 0
 
 /obj/machinery/mineral/equipment_vendor/proc/remove_points(obj/item/card/id/target, amt)
-	target.adjust_mining_points(-amt)
+	var/datum/money_account/account = get_account(target.associated_account_number)
+	return account?.debit(amt, name, "Equipment purchase", name)
 
 /obj/machinery/mineral/equipment_vendor/tgui_static_data(mob/user)
 	var/list/static_data[0]
@@ -271,11 +273,14 @@
 				return
 			var/datum/data/mining_equipment/prize = prize_list[category][name]
 			if(prize.cost > get_points(inserted_id)) // shouldn't be able to access this since the button is greyed out, but..
-				to_chat(ui.user, span_danger("You have insufficient points."))
+				to_chat(ui.user, span_danger("You have insufficient Thalers."))
 				flick(icon_deny, src)
 				return
 
-			remove_points(inserted_id, prize.cost)
+			if(!remove_points(inserted_id, prize.cost))
+				to_chat(ui.user, span_danger("The account transaction was declined."))
+				flick(icon_deny, src)
+				return
 			var/obj/item/I = new prize.equipment_path(loc)
 			if(isitem(I))
 				I.persist_storable = FALSE

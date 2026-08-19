@@ -79,6 +79,20 @@ export const GeneralRecordsNavigation = (props) => {
         <Icon name="wrench" />
         Record Maintenance
       </Tabs.Tab>
+      <Tabs.Tab
+        selected={screen === 5}
+        onClick={() => act('screen', { screen: 5 })}
+      >
+        <Icon name="chart-pie" />
+        Department Finances
+      </Tabs.Tab>
+      <Tabs.Tab
+        selected={screen === 6}
+        onClick={() => act('screen', { screen: 6 })}
+      >
+        <Icon name="file-signature" />
+        Contracts
+      </Tabs.Tab>
     </Tabs>
   );
 };

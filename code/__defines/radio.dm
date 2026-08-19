@@ -123,6 +123,8 @@ On the map:
 
 #define RADIO_TO_AIRALARM "radio_airalarm" //air alarms
 #define RADIO_FROM_AIRALARM "radio_airalarm_rcvr" //devices interested in recieving signals from air alarms
+/// Area-scoped device-control channel; prevents every vent status from visiting every alarm station-wide.
+#define AIRALARM_AREA_FILTER(base_filter, area_id) "[base_filter]:[area_id]"
 #define RADIO_CHAT "radio_telecoms"
 #define RADIO_ATMOSIA "radio_atmos"
 #define RADIO_NAVBEACONS "radio_navbeacon"

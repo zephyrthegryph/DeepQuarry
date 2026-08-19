@@ -156,6 +156,16 @@
 		else
 			H.reagents.add_reagent(t, injection_amount)
 		visible_message(span_warning("[src] injects [H] with the syringe!"))
+		if(SScontracts)
+			emit_contract_event(CONTRACT_EVENT_AUTOMATION_TASK_COMPLETED, list(
+				"department" = DEPARTMENT_SYNTHETIC,
+				"bot_id" = REF(src),
+				"task_kind" = "medical_assistance",
+				"target_id" = SScontracts.subject_identity(H)?.id,
+				"successful" = TRUE,
+				"work_units" = injection_amount,
+				"detail" = "[src] completed an autonomous treatment for [H].",
+			), "automation:[REF(src)]:medical:[REF(H)]:[world.time]", src, null, H)
 
 	if(H.stat == DEAD) // This is down here because this proc won't be called again due to losing a target because of parent AI loop.
 		target = null

@@ -74,6 +74,25 @@ const ALLOWED_BLOCK = new Set([
   'th',
 ]);
 
+export const isSafeHtmlImageSrc = (src: string): boolean =>
+  /^(?:data:image\/(?:png|gif|jpe?g|webp);base64,[a-z0-9+/=]+|[a-z0-9._\-/?&=%]+)$/i.test(
+    src,
+  );
+
+export const safeHtmlColor = (value: string | null): string | undefined => {
+  const color = value?.trim() ?? '';
+  return /^(?:#[0-9a-f]{3}(?:[0-9a-f]{3})?|[a-z]+)$/i.test(color)
+    ? color
+    : undefined;
+};
+
+export const safeHtmlFontFace = (
+  value: string | null,
+): string | undefined => {
+  const face = value?.trim() ?? '';
+  return /^[a-z0-9 _,-]{1,80}$/i.test(face) ? face : undefined;
+};
+
 const parseByondLink = (
   href: string,
 ): { action: string; params: Record<string, string> } | null => {
@@ -86,12 +105,16 @@ const parseByondLink = (
   for (const part of qs.split('&')) {
     if (!part) continue;
     const eq = part.indexOf('=');
-    if (eq < 0) {
-      params[decodeURIComponent(part)] = '';
-    } else {
-      params[decodeURIComponent(part.slice(0, eq))] = decodeURIComponent(
-        part.slice(eq + 1),
-      );
+    try {
+      if (eq < 0) {
+        params[decodeURIComponent(part)] = '';
+      } else {
+        params[decodeURIComponent(part.slice(0, eq))] = decodeURIComponent(
+          part.slice(eq + 1),
+        );
+      }
+    } catch {
+      return null;
     }
   }
   // Topic-style links: the action key is whichever non-src key has a
@@ -122,7 +145,7 @@ const renderNode = (node: ChildNode, key: number, props: Props): ReactNode => {
   if (tag === 'hr') return <hr key={key} />;
   if (tag === 'img') {
     const src = el.getAttribute('src');
-    if (!src) return null;
+    if (!src || !isSafeHtmlImageSrc(src)) return null;
     return <img key={key} src={src} alt="" />;
   }
 
@@ -188,7 +211,7 @@ const renderNode = (node: ChildNode, key: number, props: Props): ReactNode => {
     }
     // Class-based color spans we expect (span_red, span_blue, etc.) —
     // best-effort color extraction.
-    if (cls.startsWith('span_')) {
+    if (/^span_[a-z]+$/i.test(cls)) {
       const color = cls.slice('span_'.length);
       return (
         <Box inline color={color} key={key}>
@@ -200,8 +223,8 @@ const renderNode = (node: ChildNode, key: number, props: Props): ReactNode => {
   }
 
   if (tag === 'font') {
-    const color = el.getAttribute('color') || undefined;
-    const face = el.getAttribute('face') || undefined;
+    const color = safeHtmlColor(el.getAttribute('color'));
+    const face = safeHtmlFontFace(el.getAttribute('face'));
     const size = el.getAttribute('size') || undefined;
     return (
       <span

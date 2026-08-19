@@ -44,7 +44,7 @@ export const Cataloguer = () => {
     <Window width={520} height={620} title="Cataloguer">
       <Window.Content scrollable>
         <Section
-          title={`Exploration Points: ${points_stored}`}
+          title={`Unclaimed Thalers: ${points_stored}`}
           buttons={
             <>
               <Button icon="bullseye" onClick={() => act('pulse_scan')}>
@@ -90,7 +90,7 @@ export const Cataloguer = () => {
               )}
             </Box>
             <Box>
-              Worth <b>{detail.value}</b> exploration points.
+              Worth <b>{detail.value}</b> Thalers.
             </Box>
           </Section>
         ) : (

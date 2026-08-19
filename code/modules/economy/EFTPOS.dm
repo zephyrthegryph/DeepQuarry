@@ -125,19 +125,8 @@
 						src.visible_message("[icon2html(src,viewers(src))] \The [src] chimes.")
 						transaction_paid = 1
 
-						//transfer the money
 						E.worth -= transaction_amount
-						linked_account.money += transaction_amount
-
-						//create entry in the EFTPOS linked account transaction log
-						var/datum/transaction/T = new()
-						T.target_name = E.owner_name //D.owner_name
-						T.purpose = (transaction_purpose ? transaction_purpose : "None supplied.")
-						T.amount = transaction_amount
-						T.source_terminal = machine_id
-						T.date = GLOB.current_date_string
-						T.time = stationtime2text()
-						linked_account.transaction_log.Add(T)
+						linked_account.credit(transaction_amount, E.owner_name, transaction_purpose || "None supplied.", machine_id)
 					else
 						to_chat(user, "[icon2html(src, user.client)]" + span_warning("\The [O] doesn't have that much money!"))
 			else
@@ -267,31 +256,9 @@
 								src.visible_message("[icon2html(src,viewers(src))] \The [src] chimes.")
 								transaction_paid = 1
 
-								//transfer the money
-								D.money -= charge_amount
-								linked_account.money += charge_amount
-
-								//create entries in the two account transaction logs
-								var/datum/transaction/T = new()
-								T.target_name = "[linked_account.owner_name] (via [eftpos_name])"
-								T.purpose = transaction_purpose
-								if(charge_amount > 0)
-									T.amount = "([charge_amount])"
-								else
-									T.amount = "[charge_amount]"
-								T.source_terminal = machine_id
-								T.date = GLOB.current_date_string
-								T.time = stationtime2text()
-								D.transaction_log.Add(T)
-								//
-								T = new()
-								T.target_name = D.owner_name
-								T.purpose = transaction_purpose
-								T.amount = "[charge_amount]"
-								T.source_terminal = machine_id
-								T.date = GLOB.current_date_string
-								T.time = stationtime2text()
-								linked_account.transaction_log.Add(T)
+								if(!transfer_account_funds(D, linked_account, charge_amount, transaction_purpose, machine_id))
+									transaction_paid = 0
+									return
 							else
 								to_chat(usr, "[icon2html(src, usr.client)]" + span_warning("You don't have that much money!"))
 						else

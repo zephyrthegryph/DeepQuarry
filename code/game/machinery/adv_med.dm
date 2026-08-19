@@ -185,7 +185,7 @@
 	// Implementation lives in code/modules/medical/bodyscanner/.
 	return dq_build_tgui_data()
 
-/obj/machinery/bodyscanner/tgui_act(action, params)
+/obj/machinery/bodyscanner/tgui_act(action, params, datum/tgui/ui)
 	if(..())
 		return TRUE
 
@@ -202,8 +202,34 @@
 			P.info = "<CENTER>" + span_bold("Body Scan - [name]") + "</CENTER><BR>"
 			P.info += span_bold("Time of scan:") + " [stationtime2text()]<br><br>"
 			P.info += "[generate_printing_text()]"
+			var/mob/living/carbon/human/scanned_human = occupant
+			if(istype(scanned_human))
+				P.info += scanned_human.clinical_exposure_printout()
 			P.info += "<br><br>" + span_bold("Notes:") + "<br>"
 			P.name = "Body Scan - [name] ([stationtime2text()])"
+			if(istype(scanned_human))
+				var/datum/money_account/operator_account = medical_trial_account_for_mob(ui?.user)
+				var/datum/contract_subject_identity/identity = SScontracts.subject_identity(scanned_human)
+				P.medical_scan_evidence = list(
+					"subject_ref" = identity.id,
+					"subject_id" = identity.id,
+					"subject_name" = scanned_human.real_name,
+					"scan_time" = world.time,
+					"snapshot" = medical_trial_snapshot(scanned_human),
+					"trial_markers" = scanned_human.medical_trial_marker_snapshot(),
+					"operator_account" = operator_account?.account_number,
+				)
+				var/evidence_id = SScontracts.register_evidence(CONTRACT_EVIDENCE_MEDICAL_SCAN, identity.id, operator_account?.account_number, P, P.medical_scan_evidence)
+				P.attach_contract_evidence(evidence_id)
+				emit_contract_event(CONTRACT_EVENT_MEDICAL_SCAN_CREATED, list(
+					"subject_id" = identity.id,
+					"subject_name" = scanned_human.real_name,
+					"actor_account" = operator_account?.account_number,
+					"department" = DEPARTMENT_MEDICAL,
+					"evidence_ids" = list(evidence_id),
+					"scan_time" = world.time,
+					"detail" = "Authenticated body scan printed",
+				), "medical-scan:[evidence_id]", src, ui?.user, scanned_human)
 		else
 			return FALSE
 

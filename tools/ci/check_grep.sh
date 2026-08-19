@@ -125,6 +125,27 @@ if $grep -nE '(\bair|air_contents|\bair[0-9]|cabin_air|\benvironment)\.(temperat
 	FAILED=1
 fi;
 
+part "medical condition severity writes"
+# Condition severity is observable contract state. All writes, including
+# pre-attachment initialization, go through set_severity()/adjust_severity()
+# so a later refactor cannot silently bypass eligibility invalidation.
+if grep -RInE --include='*.dm' '\.severity[[:space:]]*[-+*/]?=[^=]' code/modules/medical code/modules/contracts; then
+	echo
+	echo -e "${RED}ERROR: direct medical-condition severity write detected. Use set_severity() or adjust_severity() so condition-dependent systems receive invalidation signals.${NC}"
+	FAILED=1
+fi;
+
+part "contract-only physical types"
+# Contracts may observe or extend ordinary world objects, but must not define
+# dedicated items, machines, mobs, turfs, or areas. Physical play goes through
+# existing paper, fax, scanner, chemistry, Cargo, PDA, and console systems.
+if grep -RHnE --include='*.dm' '^/(obj|mob|turf|area)/' code/modules/contracts |
+	grep -vE ':(/obj/item/paper/(proc/attach_contract_evidence|on_signature|on_field_written)|/mob/living/carbon/human(/proc/(refresh_contract_medical_eligibility|record_clinical_exposure|clinical_exposure_printout|medical_trial_marker_snapshot))?)($|\()'; then
+	echo
+	echo -e "${RED}ERROR: contract-only physical type detected. Store contract identity in generic evidence/components/reagent provenance and use an existing world object.${NC}"
+	FAILED=1
+fi;
+
 part "space indentation"
 if grep -P '(^ {2})|(^ [^ * ])|(^    +)' $code_files; then
 	echo

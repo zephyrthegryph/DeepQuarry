@@ -81,17 +81,17 @@
 			var/span = max(1, 100 - min_thresh)
 			var/target_severity = clamp((metric - min_thresh) / span * 100, 0, 100)
 			if(existing)
-				existing.severity = target_severity
+				existing.set_severity(target_severity)
 				if(active_outcome.tier && active_outcome.tier != existing.stage)
 					existing._apply_stage(active_outcome.tier)
 			else
 				var/datum/medical_issue/condition/N = new condition_type()
 				N.owner = src
 				N.affectedorgan = host
-				N.severity = target_severity
+				N.set_severity(target_severity)
 				if(active_outcome.tier)
 					N._apply_stage(active_outcome.tier)
-				LAZYADD(host.medical_issues, N)
+				host.add_medical_issue(N, src)
 		else if(existing)
 			existing.cure_issue()
 
@@ -195,7 +195,7 @@
 			if(!targets)
 				continue
 			for(var/datum/medical_issue/condition/target as anything in targets)
-				target.severity = max(0, target.severity - drop_per_tick)
+				target.adjust_severity(-drop_per_tick)
 
 
 /// Binary (presence-gated) chem condition: spawn at severity 50 when
@@ -213,8 +213,8 @@
 			var/datum/medical_issue/condition/N = new condition_type()
 			N.owner = src
 			N.affectedorgan = host
-			N.severity = 50
-			LAZYADD(host.medical_issues, N)
+			N.set_severity(50)
+			host.add_medical_issue(N, src)
 	else if(existing)
 		existing.cure_issue()
 
@@ -242,10 +242,10 @@
 			var/datum/medical_issue/condition/N = new condition_type()
 			N.owner = src
 			N.affectedorgan = host
-			N.severity = 0
-			LAZYADD(host.medical_issues, N)
+			N.set_severity(0)
+			host.add_medical_issue(N, src)
 			existing = N
-		existing.severity = min(100, existing.severity + proto.chem_climb_per_unit * min_over_amount)
+		existing.adjust_severity(proto.chem_climb_per_unit * min_over_amount)
 		_dq_apply_od_stage(existing)
 		return
 
@@ -253,7 +253,7 @@
 	// If it has nothing to decay, cure it; otherwise tick it down.
 	if(!existing)
 		return
-	existing.severity -= proto.chem_decay_per_tick
+	existing.adjust_severity(-proto.chem_decay_per_tick)
 	if(existing.severity <= 0)
 		existing.cure_issue()
 		return

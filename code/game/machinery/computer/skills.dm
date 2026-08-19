@@ -3,12 +3,14 @@
 #define GENERAL_RECORD_LIST 2
 #define GENERAL_RECORD_MAINT 3
 #define GENERAL_RECORD_DATA 4
+#define GENERAL_RECORD_FINANCES 5
+#define GENERAL_RECORD_CONTRACTS 6
 
 #define FIELD(N, V, E) list(field = N, value = V, edit = E)
 
 /obj/machinery/computer/skills//TODO:SANITY //[TO DO] Change name to PCU and update mapdata to include replacement computers
-	name = "\improper Employment Records PCU"
-	desc = "A personal computer unit that's used to view, edit and maintain employment records."
+	name = "department management console"
+	desc = "A secure management console for employment records, departmental finances, and station budget allocation."
 	icon_screen = "pcu_generic"
 	icon_state = "pcu"
 	icon_keyboard = "pcu_key"
@@ -43,7 +45,7 @@
 		"birthplace" = "Please input new birthplace:",
 		"citizenship" = "Please input new citizenship:",
 		"languages" = "Please input known languages:",
-		"faction" = "Please input new employer:",
+		"faction" = "Please input the corrected employer:",
 		"religion" = "Please input new religion:",
 	)
 	field_edit_choices = list(
@@ -56,6 +58,72 @@
 /obj/machinery/computer/skills/Destroy()
 	active1 = null
 	return ..()
+
+/obj/machinery/computer/skills/proc/can_allocate_station_budget()
+	return scan && ((ACCESS_CAPTAIN in scan.access) || (ACCESS_HOP in scan.access) || (ACCESS_CENT_CAPTAIN in scan.access))
+
+/obj/machinery/computer/skills/proc/can_view_department(department)
+	if(!scan || !(department in GLOB.department_accounts))
+		return FALSE
+	if(can_allocate_station_budget())
+		return TRUE
+	var/datum/job/job = SSjob.get_job(scan.rank || scan.assignment)
+	return istype(job) && (department in job.department_accounts)
+
+/obj/machinery/computer/skills/proc/finance_transaction_rows(datum/money_account/account)
+	var/list/rows = list()
+	var/start = max(1, length(account.transaction_log) - 49)
+	for(var/index = length(account.transaction_log), index >= start, index--)
+		var/datum/transaction/transaction = account.transaction_log[index]
+		rows.Add(list(list(
+			"date" = transaction.date,
+			"time" = transaction.time,
+			"target" = transaction.target_name,
+			"purpose" = transaction.purpose,
+			"amount" = transaction.amount,
+			"terminal" = transaction.source_terminal
+		)))
+	return rows
+
+/obj/machinery/computer/skills/proc/finance_income_source_rows(datum/money_account/account)
+	var/list/rows = list()
+	for(var/source in account.monthly_income_sources)
+		rows.Add(list(list(
+			"source" = source,
+			"amount" = account.monthly_income_sources[source]
+		)))
+	return rows
+
+/obj/machinery/computer/skills/proc/set_department_wage(department, new_multiplier)
+	var/datum/money_account/budget = GLOB.department_accounts[department]
+	if(!budget || !isnum(new_multiplier) || new_multiplier < 0.5 || new_multiplier > 2 || !can_view_department(department))
+		return FALSE
+	budget.wage_multiplier = new_multiplier
+	budget.record_transaction(authenticated, "Department wage policy set to x[budget.wage_multiplier]", 0, name)
+	return TRUE
+
+/obj/machinery/computer/skills/proc/set_department_allocation(department, amount, mob/living/user = null)
+	if(!can_allocate_station_budget() || !isnum(amount) || amount < 0 || amount > 1000000)
+		return FALSE
+	var/datum/money_account/budget = GLOB.department_accounts[department]
+	if(!budget || department == "Vendor")
+		return FALSE
+	var/old_allocation = budget.monthly_allocation
+	budget.monthly_allocation = amount
+	budget.allocation_configured = TRUE
+	SSsupply.set_allocation_policy("manual")
+	budget.record_transaction(authenticated, "Monthly allocation set to [amount] Thalers", 0, name)
+	if(old_allocation != amount)
+		emit_contract_event(CONTRACT_EVENT_BUDGET_ALLOCATION_CHANGED, list(
+			"department" = DEPARTMENT_COMMAND,
+			"source_department" = "Station",
+			"target_department" = department,
+			"target_account" = budget.account_number,
+			"target_is_department" = budget.is_department_budget(),
+			"metrics" = list("amount" = amount),
+			"detail" = "Published a [amount]-Thaler monthly allocation for [department]",
+		), "budget-allocation:[REF(budget)]:[world.time]:[amount]", src, user)
+	return TRUE
 
 /obj/machinery/computer/skills/attackby(obj/item/O as obj, mob/user)
 	if(istype(O, /obj/item/card/id) && !scan && user.unEquip(O))
@@ -81,7 +149,7 @@
 /obj/machinery/computer/skills/tgui_interact(mob/user, datum/tgui/ui = null)
 	ui = SStgui.try_update_ui(user, src, ui)
 	if(!ui)
-		ui = new(user, src, "GeneralRecords", "Employee Records") // 800, 380
+		ui = new(user, src, "GeneralRecords", "Department Management") // 800, 380
 		ui.open()
 		ui.set_autoupdate(FALSE)
 
@@ -96,6 +164,56 @@
 	data["isAI"] = isAI(user)
 	data["isRobot"] = isrobot(user)
 	if(authenticated)
+		data["can_allocate_station_budget"] = can_allocate_station_budget()
+		data["station_balance"] = can_allocate_station_budget() ? GLOB.station_account.money : null
+		data["station_monthly_income"] = can_allocate_station_budget() ? GLOB.station_account.monthly_income : null
+		data["station_monthly_expenses"] = can_allocate_station_budget() ? GLOB.station_account.monthly_expenses : null
+		data["station_income_sources"] = can_allocate_station_budget() ? finance_income_source_rows(GLOB.station_account) : list()
+		data["nt_salary_support"] = can_allocate_station_budget() ? SSsupply.nt_salary_support : null
+		data["allocation_policy"] = can_allocate_station_budget() ? SSsupply.allocation_policy : null
+		var/list/department_finances = list()
+		for(var/department in GLOB.department_accounts)
+			if(department == "Vendor" || !can_view_department(department))
+				continue
+			var/datum/money_account/budget = GLOB.department_accounts[department]
+			var/projected_payroll = SSsupply.projected_department_payroll(department)
+			var/payroll_resources = budget.money + budget.savings + budget.monthly_allocation
+			department_finances.Add(list(list(
+				"department" = department,
+				"balance" = budget.money,
+				"savings" = budget.savings,
+				"monthly_allocation" = budget.monthly_allocation,
+				"monthly_income" = budget.monthly_income,
+				"monthly_expenses" = budget.monthly_expenses,
+				"last_month_income" = budget.last_month_income,
+				"last_month_expenses" = budget.last_month_expenses,
+				"projected_payroll" = projected_payroll,
+				"payroll_resources" = payroll_resources,
+				"payroll_coverage" = projected_payroll ? min(1, payroll_resources / projected_payroll) : 1,
+				"last_payroll_due" = budget.last_payroll_due,
+				"last_payroll_paid" = budget.last_payroll_paid,
+				"last_payroll_shortfall" = max(0, budget.last_payroll_due - budget.last_payroll_paid),
+				"revenue" = budget.total_revenue,
+				"expenses" = budget.total_expenses,
+				"wage_multiplier" = budget.wage_multiplier,
+				"service_subsidy" = budget.service_subsidy,
+				"service_invoices" = SSsupply.service_invoice_summary(department),
+				"transactions" = finance_transaction_rows(budget)
+			)))
+		data["department_finances"] = department_finances
+		data["station_transactions"] = can_allocate_station_budget() ? finance_transaction_rows(GLOB.station_account) : list()
+		var/list/contracts = list()
+		for(var/id in SScontracts.contracts_by_id)
+			var/datum/contract/contract = SScontracts.contracts_by_id[id]
+			if(contract.scope == CONTRACT_SCOPE_PERSONAL)
+				continue
+			if(contract.scope == CONTRACT_SCOPE_STATION && !can_allocate_station_budget())
+				continue
+			if(contract.scope == CONTRACT_SCOPE_DEPARTMENT && !can_view_department(contract.department))
+				continue
+			var/list/row = SScontracts.contract_row(user, contract, contract.state == CONTRACT_OFFERED)
+			contracts.Add(list(row))
+		data["contracts"] = contracts
 		switch(screen)
 			if(GENERAL_RECORD_LIST)
 				if(!isnull(GLOB.data_core.general))
@@ -122,7 +240,7 @@
 					fields[++fields.len] = FIELD("Home", active1.fields["home_system"], "home_system")
 					fields[++fields.len] = FIELD("Birthplace", active1.fields["birthplace"], "birthplace")
 					fields[++fields.len] = FIELD("Citizenship", active1.fields["citizenship"], "citizenship")
-					fields[++fields.len] = FIELD("Faction", active1.fields["faction"], "faction")
+					fields[++fields.len] = FIELD("Employer", active1.fields["faction"], "faction")
 					fields[++fields.len] = FIELD("Religion", active1.fields["religion"], "religion")
 					fields[++fields.len] = FIELD("Known Languages", active1.fields["languages"], "languages")
 					fields[++fields.len] = FIELD("Physical Status", active1.fields["p_stat"], null)
@@ -142,6 +260,50 @@
 
 	data["modal"] = tgui_modal_data(src)
 	return data
+
+/obj/machinery/computer/skills/proc/accept_management_contract(datum/contract/contract, mob/living/user)
+	if(!contract || contract.scope == CONTRACT_SCOPE_PERSONAL)
+		return FALSE
+	if(contract.scope == CONTRACT_SCOPE_STATION && !can_allocate_station_budget())
+		return FALSE
+	if(contract.scope == CONTRACT_SCOPE_DEPARTMENT && !can_view_department(contract.department))
+		return FALSE
+	return contract.accept(scan ? get_account(scan.associated_account_number) : null, user, src)
+
+/obj/machinery/computer/skills/proc/decline_management_contract(datum/contract/contract, mob/living/user)
+	if(!contract || contract.scope == CONTRACT_SCOPE_PERSONAL)
+		return FALSE
+	if(contract.scope == CONTRACT_SCOPE_STATION && !can_allocate_station_budget())
+		return FALSE
+	if(contract.scope == CONTRACT_SCOPE_DEPARTMENT && !can_view_department(contract.department))
+		return FALSE
+	return contract.decline(user)
+
+/obj/machinery/computer/skills/proc/negotiate_management_contract(datum/contract/contract, clause_id, option_id, mob/living/user)
+	if(!contract || contract.scope == CONTRACT_SCOPE_PERSONAL)
+		return FALSE
+	if(contract.scope == CONTRACT_SCOPE_STATION && !can_allocate_station_budget())
+		return FALSE
+	if(contract.scope == CONTRACT_SCOPE_DEPARTMENT && !can_view_department(contract.department))
+		return FALSE
+	return contract.select_negotiation_option(clause_id, option_id, user?.real_name || authenticated)
+
+/obj/machinery/computer/skills/proc/can_manage_social_contract(datum/contract/social/contract)
+	if(!istype(contract))
+		return FALSE
+	if(contract.scope == CONTRACT_SCOPE_STATION)
+		return can_allocate_station_budget()
+	return contract.scope == CONTRACT_SCOPE_DEPARTMENT && can_view_department(contract.department)
+
+/obj/machinery/computer/skills/proc/decide_contract_stakeholder(datum/contract/social/contract, account_number, role_id, approved, mob/living/user)
+	if(!can_manage_social_contract(contract))
+		return FALSE
+	return contract.decide_stakeholder(account_number, role_id, approved, user?.real_name || authenticated)
+
+/obj/machinery/computer/skills/proc/finalize_social_contract(datum/contract/social/contract, mob/living/user)
+	if(!can_manage_social_contract(contract))
+		return FALSE
+	return contract.finalize_graded_outcome(user?.real_name || authenticated)
 
 /obj/machinery/computer/skills/tgui_act(action, params, datum/tgui/ui)
 	if(..())
@@ -206,8 +368,87 @@
 				screen = null
 				active1 = null
 			if("screen")
-				screen = clamp(text2num(params["screen"]) || 0, GENERAL_RECORD_LIST, GENERAL_RECORD_MAINT)
+				var/requested_screen = text2num(params["screen"])
+				if(requested_screen in list(GENERAL_RECORD_FINANCES, GENERAL_RECORD_CONTRACTS))
+					screen = requested_screen
+				else
+					screen = clamp(requested_screen || 0, GENERAL_RECORD_LIST, GENERAL_RECORD_MAINT)
 				active1 = null
+			if("contract_accept")
+				var/datum/contract/contract = SScontracts.contracts_by_id[params["id"]]
+				return accept_management_contract(contract, ui.user)
+			if("contract_decline")
+				var/datum/contract/contract = SScontracts.contracts_by_id[params["id"]]
+				return decline_management_contract(contract, ui.user)
+			if("contract_negotiate")
+				var/datum/contract/contract = SScontracts.contracts_by_id[params["id"]]
+				return negotiate_management_contract(contract, params["clause"], params["option"], ui.user)
+			if("contract_stakeholder_decide")
+				var/datum/contract/social/contract = SScontracts.contracts_by_id[params["id"]]
+				return decide_contract_stakeholder(contract, text2num(params["account"]), params["role"], !!text2num(params["approved"]), ui.user)
+			if("contract_finalize_outcome")
+				var/datum/contract/social/contract = SScontracts.contracts_by_id[params["id"]]
+				return finalize_social_contract(contract, ui.user)
+			if("contract_print_trial_packet")
+				var/datum/contract/medical_trial/trial = SScontracts.contracts_by_id[params["id"]]
+				if(!istype(trial) || !can_view_department(trial.department))
+					return FALSE
+				var/datum/money_account/account = scan ? get_account(scan.associated_account_number) : null
+				return trial.print_clinical_packet(get_turf(src), account?.account_number)
+			if("contract_print_trial_report")
+				var/datum/contract/medical_trial/trial = SScontracts.contracts_by_id[params["id"]]
+				if(!istype(trial) || !can_view_department(trial.department))
+					return FALSE
+				return trial.print_final_report(get_turf(src), params["adverse"])
+			if("contract_resupply_trial")
+				var/datum/contract/medical_trial/trial = SScontracts.contracts_by_id[params["id"]]
+				if(!istype(trial) || !can_view_department(trial.department))
+					return FALSE
+				return trial.request_resupply(get_turf(src))
+			if("contract_reissue_trial_packet")
+				var/datum/contract/medical_trial/trial = SScontracts.contracts_by_id[params["id"]]
+				if(!istype(trial) || !can_view_department(trial.department))
+					return FALSE
+				var/datum/money_account/account = scan ? get_account(scan.associated_account_number) : null
+				return trial.reissue_clinical_packet(get_turf(src), params["subject_id"], account?.account_number)
+			if("contract_print_trial_revocation")
+				var/datum/contract/medical_trial/trial = SScontracts.contracts_by_id[params["id"]]
+				if(!istype(trial) || !can_view_department(trial.department))
+					return FALSE
+				var/datum/money_account/account = scan ? get_account(scan.associated_account_number) : null
+				return trial.print_consent_revocation(get_turf(src), params["subject_id"], account?.account_number)
+			if("contract_print_case_forms")
+				var/datum/contract/medical_case_report/report = SScontracts.contracts_by_id[params["id"]]
+				if(!istype(report) || !can_view_department(report.department))
+					return FALSE
+				var/datum/money_account/account = scan ? get_account(scan.associated_account_number) : null
+				return report.print_case_forms(get_turf(src), account?.account_number)
+			if("contract_print_case_revocation")
+				var/datum/contract/medical_case_report/report = SScontracts.contracts_by_id[params["id"]]
+				if(!istype(report) || !can_view_department(report.department))
+					return FALSE
+				var/datum/money_account/account = scan ? get_account(scan.associated_account_number) : null
+				return report.print_consent_revocation(get_turf(src), account?.account_number)
+			if("set_department_wages")
+				var/department = params["department"]
+				var/new_multiplier = text2num(params["multiplier"])
+				return set_department_wage(department, new_multiplier)
+			if("set_department_allocation")
+				var/department = params["department"]
+				var/amount = text2num(params["amount"])
+				return set_department_allocation(department, amount, ui.user)
+			if("set_allocation_policy")
+				if(!can_allocate_station_budget())
+					return FALSE
+				return SSsupply.set_allocation_policy(params["policy"])
+			if("set_service_subsidy")
+				if(!can_view_department(DEPARTMENT_CIVILIAN))
+					return FALSE
+				var/subsidy = text2num(params["subsidy"])
+				if(!isnum(subsidy) || subsidy < 0 || subsidy > 1)
+					return FALSE
+				GLOB.department_accounts[DEPARTMENT_CIVILIAN].service_subsidy = subsidy
+				return TRUE
 			if("del_all")
 				if(GLOB.PDA_Manifest)
 					GLOB.PDA_Manifest.Cut()
@@ -337,7 +578,7 @@
 		<br>\nHome: [active1.fields["home_system"]]
 		<br>\nBirthplace: [active1.fields["birthplace"]]
 		<br>\nCitizenship: [active1.fields["citizenship"]]
-		<br>\nFaction: [active1.fields["faction"]]
+		<br>\nEmployer: [active1.fields["faction"]]
 		<br>\nReligion: [active1.fields["religion"]]
 		<br>\nKnown Languages: [active1.fields["languages"]]
 		<br>\nPhysical Status: [active1.fields["p_stat"]]

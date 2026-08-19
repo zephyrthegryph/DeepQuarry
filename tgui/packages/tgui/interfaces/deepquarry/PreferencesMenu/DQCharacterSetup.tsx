@@ -132,6 +132,7 @@ const PreviewPane = ({ assets }: { assets: CharacterPreviewAssets }) => {
 // an override here fall back to titleCase(category).
 const CATEGORY_LABELS: Record<string, string> = {
   identity: 'Identity',
+  factions: 'Factions',
   appearance: 'Looks',
   // Renamed from "Body" so the new Mind & Body specialty tab can own that word; the
   // size_voice category is really size sliders + voice prefs, "Size" is closer anyway.
@@ -159,7 +160,11 @@ const labelForCategory = (key: string) =>
 // active page hosts one of these, the wrapping Section drops `scrollable` so we don't
 // get a redundant outer scrollbar on top of the editor's own (and the editor gets to
 // use the full available height instead of a measured-content height).
-const FULL_HEIGHT_EDITORS = new Set<string>(['loadout', 'mind_body']);
+const FULL_HEIGHT_EDITORS = new Set<string>([
+  'loadout',
+  'mind_body',
+  'faction_affiliations',
+]);
 
 export const DQCharacterSetup = () => {
   const { act, data } = useBackend<CharacterSetupData>();

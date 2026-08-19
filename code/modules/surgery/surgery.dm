@@ -223,6 +223,8 @@
 
 	if(success)
 		selected_surgery.end_step(user, M, zone, src)
+		if(user != M && department_for_mob(user) == DEPARTMENT_MEDICAL)
+			charge_mob_for_department_service(M, DEPARTMENT_MEDICAL, 5, "Surgical care: [selected_surgery.surgery_name]", user.real_name)
 		// surgery completion cures matching cascading conditions
 		if(ishuman(M))
 			dq_apply_surgery_cures(selected_surgery, M, zone)

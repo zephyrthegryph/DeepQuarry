@@ -121,7 +121,9 @@
 /obj/machinery/mineral/equipment_vendor/survey/get_points(obj/item/card/id/target)
 	if(!istype(target))
 		return 0
-	return target.survey_points
+	var/datum/money_account/account = get_account(target.associated_account_number)
+	return account?.money || 0
 
 /obj/machinery/mineral/equipment_vendor/survey/remove_points(obj/item/card/id/target, amt)
-	target.survey_points -= amt
+	var/datum/money_account/account = get_account(target.associated_account_number)
+	return account?.debit(amt, name, "Exploration equipment purchase", name)

@@ -856,6 +856,17 @@
 				product.visible_message(span_notice("The pod disgorges [product]!"))
 				handle_living_product(product)
 
+		if(SScontracts && total_yield > 0)
+			var/mob/living/harvester = user
+			emit_contract_event(CONTRACT_EVENT_CROP_HARVESTED, list(
+				"department" = DEPARTMENT_CIVILIAN,
+				"crop_id" = name,
+				"crop_name" = display_name,
+				"yield" = total_yield,
+				"potency" = get_trait(TRAIT_POTENCY),
+				"detail" = "Harvested [total_yield] [display_name].",
+			), "crop-harvest:[REF(src)]:[REF(user)]:[world.time]", get_turf(user), harvester)
+
 // When the seed in this machine mutates/is modified, the tray seed value
 // is set to a new datum copied from the original. This datum won't actually
 // be put into the global datum list until the product is harvested, though.

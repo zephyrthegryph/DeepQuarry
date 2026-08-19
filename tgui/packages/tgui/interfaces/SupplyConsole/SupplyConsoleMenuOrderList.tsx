@@ -6,7 +6,7 @@ import type { Data } from './types';
 export const SupplyConsoleMenuOrderList = (props) => {
   const { act, data } = useBackend<Data>();
   const { mode } = props;
-  const { orders, order_auth, supply_points } = data;
+  const { orders, order_auth } = data;
 
   const displayedOrders = orders.filter(
     (val) => val.status === mode || mode === 'All',
@@ -85,21 +85,22 @@ export const SupplyConsoleMenuOrderList = (props) => {
               ''
             )}
           </LabeledList>
-          {order_auth && mode === 'Requested' ? (
+          {order.can_approve && mode === 'Requested' ? (
             <>
               <Button
                 icon="check"
-                disabled={order.cost > supply_points}
                 onClick={() => act('approve_order', { ref: order.ref })}
               >
                 Approve
               </Button>
-              <Button
-                icon="times"
-                onClick={() => act('deny_order', { ref: order.ref })}
-              >
-                Deny
-              </Button>
+              {!!order_auth && (
+                <Button
+                  icon="times"
+                  onClick={() => act('deny_order', { ref: order.ref })}
+                >
+                  Deny
+                </Button>
+              )}
             </>
           ) : (
             ''

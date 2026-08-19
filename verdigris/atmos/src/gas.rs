@@ -7,7 +7,7 @@ use byondapi::prelude::*;
 use eyre::Result;
 pub use mixture::Mixture;
 use parking_lot::{const_rwlock, RwLock};
-use rustc_hash::FxHashMap;
+use rustc_hash::{FxHashMap, FxHashSet};
 use std::sync::atomic::{AtomicU64, Ordering};
 pub use types::*;
 
@@ -106,6 +106,9 @@ static NEXT_GAS_IDS: RwLock<Option<Vec<usize>>> = const_rwlock(None);
 static GAS_REVISIONS: RwLock<Option<Vec<AtomicU64>>> = const_rwlock(None);
 static GAS_PUBLICATION: RwLock<()> = const_rwlock(());
 static DIRTY_GAS_MIXTURES: RwLock<Option<FxHashMap<usize, u8>>> = const_rwlock(None);
+/// Mixtures with a sleeping DM device subscribed to their change notifications.
+/// Keeping this in Rust prevents constructing enormous BYOND lists for irrelevant turf gases.
+static WATCHED_GAS_MIXTURES: RwLock<Option<FxHashSet<usize>>> = const_rwlock(None);
 static DIRTY_GAS_BASELINES: RwLock<Option<FxHashMap<usize, GasChangeSignature>>> =
 	const_rwlock(None);
 const PRESSURE_DIRTY_EPSILON: f32 = 0.1;
@@ -128,6 +131,7 @@ pub fn initialize_gases() {
 	*NEXT_GAS_IDS.write() = Some(Vec::with_capacity(2000));
 	*GAS_REVISIONS.write() = Some(Vec::with_capacity(4096));
 	*DIRTY_GAS_MIXTURES.write() = Some(FxHashMap::default());
+	*WATCHED_GAS_MIXTURES.write() = Some(FxHashSet::default());
 	*DIRTY_GAS_BASELINES.write() = Some(FxHashMap::default());
 }
 
@@ -146,6 +150,7 @@ pub fn shut_down_gases() {
 	NEXT_GAS_IDS.write().as_mut().unwrap().clear();
 	GAS_REVISIONS.write().as_mut().unwrap().clear();
 	DIRTY_GAS_MIXTURES.write().as_mut().unwrap().clear();
+	WATCHED_GAS_MIXTURES.write().as_mut().unwrap().clear();
 	DIRTY_GAS_BASELINES.write().as_mut().unwrap().clear();
 }
 
@@ -292,8 +297,31 @@ impl GasArena {
 	}
 
 	fn mark_dirty(id: usize, mask: u8) {
+		if !WATCHED_GAS_MIXTURES
+			.read()
+			.as_ref()
+			.is_some_and(|watched| watched.contains(&id))
+		{
+			return;
+		}
 		if let Some(dirty) = DIRTY_GAS_MIXTURES.write().as_mut() {
 			*dirty.entry(id).or_default() |= mask;
+		}
+	}
+
+	pub fn watch_dirty_mixture(id: usize) {
+		if let Some(watched) = WATCHED_GAS_MIXTURES.write().as_mut() {
+			watched.insert(id);
+		}
+	}
+
+	pub fn unwatch_dirty_mixture(id: usize) {
+		if let Some(watched) = WATCHED_GAS_MIXTURES.write().as_mut() {
+			watched.remove(&id);
+		}
+		// Drop notifications queued before the final subscriber disappeared.
+		if let Some(dirty) = DIRTY_GAS_MIXTURES.write().as_mut() {
+			dirty.remove(&id);
 		}
 	}
 
@@ -717,6 +745,7 @@ mod tests {
 		register_gas_manually("test", 20.0);
 		register_gas_manually("test2", 20.0);
 		initialize_gases();
+		GasArena::watch_dirty_mixture(0);
 		crate::turfs::initialize_turfs();
 		let mut initial = Mixture::from_vol(2_500.0);
 		initial.set_moles(0, 1.0);
@@ -787,6 +816,13 @@ mod tests {
 			GasArena::take_dirty_mixtures(),
 			vec![(0, GAS_CHANGE_COMPOSITION)]
 		);
+		GasArena::unwatch_dirty_mixture(0);
+		GasArena::with_gas_mixture_mut(0, |mixture| {
+			mixture.set_moles(1, 21.0);
+			Ok(())
+		})
+		.unwrap();
+		assert!(GasArena::take_dirty_mixtures().is_empty());
 		destroy_gas_statics();
 	}
 }

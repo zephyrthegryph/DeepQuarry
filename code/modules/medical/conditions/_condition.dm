@@ -215,7 +215,38 @@
 	if(progression_rate <= 0)
 		return
 	var/delta = CONDITION_BASE_PROGRESSION * progression_rate
-	severity = clamp(severity + delta, 0, CONDITION_SEVERITY_TERMINAL)
+	set_severity(severity + delta)
+
+/// The sole runtime boundary for condition severity changes. Initial values may
+/// be assigned before attachment; attached conditions must use this proc.
+/datum/medical_issue/condition/proc/set_severity(new_severity)
+	var/old_severity = severity
+	severity = clamp(new_severity, 0, CONDITION_SEVERITY_TERMINAL)
+	if(severity == old_severity)
+		return FALSE
+	update_contract_eligibility()
+	var/mob/living/carbon/human/patient = owner
+	var/improvement = old_severity - severity
+	if(istype(patient) && improvement >= 1 && old_severity >= MEDICAL_TRIAL_MINIMUM_BASELINE)
+		var/datum/contract_subject_identity/identity = SScontracts?.subject_identity(patient)
+		if(identity)
+			emit_contract_event(CONTRACT_EVENT_MEDICAL_TREATMENT_OUTCOME, list(
+				"department" = DEPARTMENT_MEDICAL,
+				"subject_id" = identity.id,
+				"subject_name" = patient.real_name,
+				"condition_type" = type,
+				"condition_name" = name,
+				"metrics" = list(
+					"improvement" = improvement,
+					"initial_severity" = old_severity,
+					"final_severity" = severity,
+				),
+				"detail" = "[patient.real_name]'s [name] improved by [round(improvement, 0.1)] severity.",
+			), "medical-treatment:[REF(src)]:[world.time]:[severity]", patient, null, patient)
+	return TRUE
+
+/datum/medical_issue/condition/proc/adjust_severity(delta)
+	return set_severity(severity + delta)
 
 /// Returns the vital-effects table for this condition. Subtypes with
 /// fixed effects should override to return a `var/static/list/` so the
@@ -342,7 +373,7 @@
 	// declares what "damage" means for it (brute on this organ, burn
 	// across all organs, blood volume below threshold, etc).
 	delta *= damage_scaling()
-	severity = clamp(severity + delta, 0, CONDITION_SEVERITY_TERMINAL)
+	set_severity(severity + delta)
 
 	// Cure: dropped back to zero.
 	if(severity <= 0)
@@ -503,7 +534,7 @@
 	var/datum/medical_issue/condition/C = new typepath()
 	C.owner = owner
 	C.affectedorgan = target_organ
-	LAZYADD(target_organ.medical_issues, C)
+	target_organ.add_medical_issue(C, owner)
 
 /datum/medical_issue/condition/proc/pick_spawn_target(child_typepath)
 	return affectedorgan

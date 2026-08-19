@@ -7,6 +7,7 @@ import { AntagOptInEditor } from './AntagOptInEditor';
 import { BirthdayEditor } from './BirthdayEditor';
 import { BodyMarkingsEditor } from './BodyMarkingsEditor';
 import { FlavorTextEditor } from './FlavorTextEditor';
+import { FactionAffiliationsEditor } from './FactionAffiliationsEditor';
 import { LanguagePicker } from './LanguagePicker';
 import { LoadoutBuilder } from './LoadoutBuilder';
 import { MindBodyEditor } from './MindBodyEditor';
@@ -30,6 +31,7 @@ export const PREF_EDITORS: Record<string, ComponentType<EditorProps>> = {
   birthday: BirthdayEditor,
   body_markings: BodyMarkingsEditor,
   flavor: FlavorTextEditor,
+  faction_affiliations: FactionAffiliationsEditor,
   language: LanguagePicker,
   loadout: LoadoutBuilder,
   mind_body: MindBodyEditor,

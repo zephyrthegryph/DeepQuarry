@@ -68,6 +68,11 @@
 		to_chat(user, span_warning("You must remain still for the device to complete its work."))
 		return 0
 
+	// Contract evidence is authenticated by its ordinary paper/shipment
+	// metadata, not by a bespoke scanner mode. This runs before the traditional
+	// fingerprint early return so a clean document remains investigable.
+	process_agent_forensic_scan(A, user)
+
 	//General
 	if (!A.forensic_data?.has_prints() && !A.forensic_data?.has_fibres() && !A.forensic_data?.has_blooddna())
 		user.visible_message("\The [user] scans \the [A] with \a [src], the air around [user.gender == MALE ? "him" : "her"] humming[prob(70) ? " gently." : "."]" ,\

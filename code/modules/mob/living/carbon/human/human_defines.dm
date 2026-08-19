@@ -59,7 +59,8 @@
 	var/home_system = ""
 	var/birthplace = ""
 	var/citizenship = ""
-	var/personal_faction = ""
+	/// Employer recorded in the station's personnel database. This is not a social reputation faction.
+	var/personal_faction = "NanoTrasen"
 	var/religion = ""
 	var/antag_faction = ""
 	var/antag_vis = ""

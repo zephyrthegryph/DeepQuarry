@@ -415,7 +415,7 @@
 	od.owner = H
 	var/obj/item/organ/internal/brain/B = H.internal_organs_by_name[O_BRAIN]
 	od.affectedorgan = B
-	LAZYADD(B.medical_issues, od)
+	B.add_medical_issue(od, H)
 	od.od_boost = list("speed" = 1.0, "pain_resist" = 0.5)
 
 	// At severity 0, no boost.

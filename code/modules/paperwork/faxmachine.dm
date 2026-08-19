@@ -243,7 +243,7 @@ GLOBAL_LIST_EMPTY(adminfaxes)	//cache for faxes that have been sent to admins
 						return
 					send_admin_fax(ui.user, destination)
 				else
-					sendfax(destination)
+					sendfax(destination, ui.user)
 
 				if (sendcooldown)
 					spawn(sendcooldown) // cooldown time
@@ -319,22 +319,29 @@ Extracted to its own procedure for easier logic handling with paper bundles.
 
 	return ..()
 
-/obj/machinery/photocopier/faxmachine/proc/sendfax(destination)
+/obj/machinery/photocopier/faxmachine/proc/sendfax(destination, mob/living/sender)
 	if(stat & (BROKEN|NOPOWER))
 		return
 
 	use_power(200)
 
-	var/success = 0
+	var/obj/item/card/id/authenticated_id = scan
+	var/success = process_contract_fax(copyitem, destination, authenticated_id?.associated_account_number, sender)
 	for(var/obj/machinery/photocopier/faxmachine/F in GLOB.allfaxes)
 		if( F.department == destination )
-			success = F.receivefax(copyitem)
+			success = F.receivefax(copyitem) || success
 
 	if (success)
+		emit_contract_event(CONTRACT_EVENT_FAX_ACCEPTED, list(
+			"actor_account" = authenticated_id?.associated_account_number,
+			"destination" = destination,
+			"detail" = "Accepted fax transmission to [destination]",
+		), "fax-accepted:[REF(copyitem)]:[destination]", copyitem, sender)
 		visible_message("[src] beeps, \"Message transmitted successfully.\"")
 		//sendcooldown = 600
 	else
 		visible_message("[src] beeps, \"Error transmitting message.\"")
+	return success
 
 /obj/machinery/photocopier/faxmachine/proc/receivefax(obj/item/incoming)
 	if(stat & (BROKEN|NOPOWER))

@@ -63,8 +63,29 @@
 	// still get called via the condition's own progression path before
 	// the qdel chain runs).
 	if(affectedorgan)
-		LAZYREMOVE(affectedorgan.medical_issues, src)
+		affectedorgan.remove_medical_issue(src)
 	qdel(src)
+
+/// Authoritative mutation boundary for attaching a medical issue to an organ.
+/// Callers must configure the issue before attachment so observers see its
+/// complete initial state.
+/obj/item/organ/proc/add_medical_issue(datum/medical_issue/issue, mob/living/carbon/human/subject = owner)
+	if(!issue || !istype(subject) || (issue in medical_issues))
+		return FALSE
+	issue.owner = subject
+	issue.affectedorgan = src
+	LAZYADD(medical_issues, issue)
+	SEND_SIGNAL(subject, COMSIG_MOB_MEDICAL_ISSUES_CHANGED)
+	return TRUE
+
+/// Authoritative inverse of add_medical_issue().
+/obj/item/organ/proc/remove_medical_issue(datum/medical_issue/issue)
+	if(!issue || !(issue in medical_issues))
+		return FALSE
+	var/mob/living/carbon/human/subject = issue.owner
+	LAZYREMOVE(medical_issues, issue)
+	SEND_SIGNAL(subject, COMSIG_MOB_MEDICAL_ISSUES_CHANGED)
+	return TRUE
 
 /datum/medical_issue/proc/handle_damage()
 	if(damagestrength)
@@ -199,7 +220,6 @@
 	var/advscan_cure = tgui_input_number(user, "What level of health analyser is required to display the cure? 0 for standard, 1 for improved, 2 for advanced, 3 for phasic and 4 for impossible.","Diagnosis",0)
 
 	var/datum/medical_issue/M = new()
-	LAZYADD(issue_organ.medical_issues,M)
 	M.affectedorgan = issue_organ
 	M.name = issue_name
 	M.owner = src
@@ -225,6 +245,7 @@
 		M.symptom_text = symptom_text
 	if(symptom_affect != "None")
 		M.symptom_affect = symptom_affect
+	issue_organ.add_medical_issue(M, src)
 
 	to_chat(user,"[issue_name] applied to [issue_organ] inside of [src]!")
 	if(damage == "Yes")

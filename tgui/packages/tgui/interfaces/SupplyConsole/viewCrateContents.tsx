@@ -19,7 +19,7 @@ export const viewCrateContents = (modal: ModalData) => {
           disabled={cost > supply_points}
           onClick={() => act('request_crate', { ref: ref })}
         >
-          {`Buy - ${cost} points`}
+          {`Request - ${cost} Thalers`}
         </Button>
       }
     >

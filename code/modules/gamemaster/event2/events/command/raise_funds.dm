@@ -48,14 +48,14 @@
 			just half an hour. We highly recommend rectifying this issue before the end of the shift, otherwise a \
 			discussion regarding your future employment prospects will occur.<br><br>\
 			Your facility's current balance of requisition tokens has been revoked."
-			SSsupply.points = 0
+			SSsupply.adjust_budget(-SSsupply.budget_balance(), "Funding drive penalty")
 			log_game("Funding Drive event ended with an abyssmal response, and the loss of all cargo points.")
 
 		if(0.02 to 0.98) // Bad response.
 			message = "We're very disappointed that \the [location_name()] has ran a deficit since our request. \
 			As such, we will be taking away some requisition tokens to cover the cost of operating your facility."
-			var/points_lost = round(SSsupply.points * rand(0.5, 0.8))
-			SSsupply.points -= points_lost
+			var/points_lost = round(SSsupply.budget_balance() * rand(0.5, 0.8))
+			SSsupply.adjust_budget(-points_lost, "Funding drive penalty")
 			log_game("Funding Drive event ended with a bad response, and [points_lost] cargo points was taken away.")
 
 		if(0.98 to 1.02) // Neutral response.
@@ -72,8 +72,8 @@
 
 			// If cargo is ever made to use station funds instead of cargo points, then a new kind of reward will be needed.
 			// Otherwise it would be weird for centcom to go 'thanks for not spending money, your reward is money to spend'.
-			var/point_reward = rand(100, 200)
-			SSsupply.points += point_reward
+			var/point_reward = SSsupply.export_revenue(rand(100, 200))
+			SSsupply.adjust_budget(point_reward, "Funding drive reward")
 			log_game("Funding Drive event ended with a good response and a bonus of [point_reward] cargo points.")
 
 	send_command_report("Budget Followup", message)

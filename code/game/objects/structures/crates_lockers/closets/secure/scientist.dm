@@ -47,6 +47,7 @@
 		/obj/item/radio/headset/heads/rd,
 		/obj/item/radio/headset/alt/heads/rd,
 		/obj/item/radio/headset/earbud/heads/rd,
+		/obj/item/retail_scanner/science,
 		/obj/item/tank/air,
 		/obj/item/clothing/mask/gas/clear,
 		/obj/item/flash,

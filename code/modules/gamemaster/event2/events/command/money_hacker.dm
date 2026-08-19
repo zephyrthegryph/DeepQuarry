@@ -64,7 +64,7 @@
 /datum/event2/event/money_hacker/proc/hack_account(datum/money_account/A)
 	// Subtract the money.
 	var/lost = A.money * 0.8 + (rand(2,4) - 2) / 10
-	A.money -= lost
+	A.debit(lost, "Unknown attacker", "Account intrusion loss", "Compromised GalaxyNet terminal")
 
 	// Create a taunting log entry.
 	var/datum/transaction/T = new()

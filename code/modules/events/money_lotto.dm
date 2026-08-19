@@ -9,7 +9,7 @@
 		var/datum/money_account/D = pick(GLOB.all_money_accounts)
 		winner_name = D.owner_name
 		if(!D.suspended)
-			D.money += winner_sum
+			D.credit(winner_sum, "Stellar Slam Lottery", "Lottery winnings", "External lottery network")
 
 			var/datum/transaction/T = new()
 			T.target_name = "The [using_map.starsys_name] Times Grand Slam -Stellar- Lottery"

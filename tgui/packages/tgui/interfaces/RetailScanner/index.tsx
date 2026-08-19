@@ -30,7 +30,7 @@ export const RetailScanner = (model) => {
                 selected={selected === 0}
                 onClick={() => setSelectedTab(0)}
               >
-                Active Transcation
+                Active Transaction
               </Tabs.Tab>
 
               <Tabs.Tab

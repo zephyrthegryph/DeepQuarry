@@ -12,8 +12,8 @@
 /**********************Mining Point Card**********************/
 
 /obj/item/card/mining_point_card
-	name = "mining point card"
-	desc = "A small card preloaded with mining points. Swipe your ID card over it to transfer the points, then discard."
+	name = "mining payment card"
+	desc = "A small card preloaded with Thalers. Swipe your ID card over it to deposit them, then discard it."
 	icon_state = "data"
 	var/mine_points = 500
 	var/survey_points = 0
@@ -21,17 +21,18 @@
 /obj/item/card/mining_point_card/attackby(obj/item/I, mob/user, params)
 	if(istype(I, /obj/item/card/id))
 		var/obj/item/card/id/C = I
+		var/datum/money_account/account = get_account(C.associated_account_number)
 		if(mine_points)
-			C.mining_points += mine_points
-			to_chat(user, span_info("You transfer [mine_points] excavation points to [C]."))
-			mine_points = 0
+			if(account?.credit(mine_points, name, "Mining payment card", name))
+				to_chat(user, span_info("You transfer [mine_points] Thalers to [C]."))
+				mine_points = 0
 		else
 			to_chat(user, span_info("There's no excavation points left on [src]."))
 
 		if(survey_points)
-			C.survey_points += survey_points
-			to_chat(user, span_info("You transfer [survey_points] survey points to [C]."))
-			survey_points = 0
+			if(account?.credit(survey_points, name, "Survey payment card", name))
+				to_chat(user, span_info("You transfer [survey_points] Thalers to [C]."))
+				survey_points = 0
 		else
 			to_chat(user, span_info("There's no survey points left on [src]."))
 
@@ -39,8 +40,7 @@
 
 /obj/item/card/mining_point_card/examine(mob/user)
 	. = ..()
-	. += "There's [mine_points] excavation points on the card."
-	. += "There's [survey_points] survey points on the card."
+	. += "There are [mine_points + survey_points] Thalers on the card."
 
 /obj/item/card/mining_point_card/survey
 	mine_points = 0

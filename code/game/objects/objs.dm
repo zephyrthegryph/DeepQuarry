@@ -17,6 +17,14 @@
 	var/micro_accepted_scale = 0.5
 	var/micro_target = FALSE
 	var/explosion_resistance
+	/// Department and value attribution used when station-made goods are exported.
+	var/economic_department
+	var/economic_export_value = 0
+	var/economic_producer_account = 0
+	var/economic_sellable_attached = FALSE
+	/// The finalized department checkout which last sold this physical item.
+	/// Prevents one object being presented repeatedly as several distinct sales.
+	var/economic_sale_invoice_id = 0
 
 	/// Cached custom fire overlay
 	var/custom_fire_overlay
@@ -26,6 +34,26 @@
 	var/obj_flags = CAN_BE_HIT
 
 	uses_integrity = TRUE
+
+/obj/proc/set_economic_provenance(department, export_value, producer_account = 0)
+	economic_department = department
+	economic_export_value = max(1, round(export_value))
+	economic_producer_account = producer_account
+	emit_contract_event(CONTRACT_EVENT_ITEM_PRODUCED, list(
+		"actor_account" = producer_account,
+		"department" = department,
+		"origin_department" = department,
+		"item_type" = type,
+		"item_name" = name,
+		"fact_id" = "production:[REF(src)]",
+		"fact_revision" = 1,
+		"fact_active" = TRUE,
+		"metrics" = list("value" = economic_export_value),
+		"detail" = "Fabricated [name] for [department].",
+	), "item-produced:[REF(src)]", src)
+	// Preserve specialized export valuation and never count an object twice.
+	if(!economic_sellable_attached)
+		AddElement(/datum/element/sellable/manufactured)
 
 /obj/Destroy()
 	STOP_PROCESSING(SSobj, src)

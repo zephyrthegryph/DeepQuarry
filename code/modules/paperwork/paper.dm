@@ -35,6 +35,14 @@
 	var/spam_flag = 0
 	var/age = 0
 	var/last_modified_ckey
+	/// Machine-authenticated clinical evidence embedded by a medical scanner.
+	/// This is deliberately separate from visible paper text so fax receivers can
+	/// validate a genuine scan without trusting player-editable markup.
+	var/list/medical_scan_evidence
+	/// Machine-readable freight routing attached by a crate ledger. Visible text
+	/// remains ordinary editable paper; this signed payload is invalidated if the
+	/// paper or sealed cargo changes.
+	var/list/shipping_ledger_data
 
 	///Occult check. Used for do_after
 	var/occult = FALSE
@@ -263,6 +271,7 @@
 	else if(loc != user && !Adjacent(user))
 		return
 	var/last_fields_value = fields
+	var/contains_signature = findtext(t, "\[sign\]")
 	t = replacetext(t, "\n", "<BR>")
 	t = parsepencode(t, i, user, iscrayon)
 	was_maploaded = FALSE
@@ -272,13 +281,22 @@
 		return
 	if(id != "end")
 		addtofield(text2num(id), t)
+		on_field_written(user, text2num(id), i)
 	else
 		info += t
 		updateinfolinks()
 	last_modified_ckey = user.ckey
 	update_space(t)
+	if(contains_signature)
+		on_signature(user, get_signature(i, user))
 	playsound(src, pick('sound/bureaucracy/pen1.ogg', 'sound/bureaucracy/pen2.ogg'), 10)
 	update_icon()
+
+/obj/item/paper/proc/on_signature(mob/living/user, signature)
+	return
+
+/obj/item/paper/proc/on_field_written(mob/living/user, field_id, obj/item/pen/writing_implement)
+	return
 
 /obj/item/paper/verb/rename()
 	set name = "Rename paper"

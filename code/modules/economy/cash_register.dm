@@ -16,12 +16,19 @@
 	var/list/transaction_logs = list() // list of strings using html code to visualise data
 	var/list/item_list = list()  // entities and according
 	var/list/price_list = list() // prices for each purchase
+	/// Physical objects scanned into this ticket, keyed by object with scanned price.
+	var/list/verified_sale_items
+	/// Monotonic identity for the complete itemized ticket.
+	var/ticket_revision = 1
 	var/manipulating = 0
 
 	var/cash_stored = 0
 	var/obj/item/confirm_item
+	var/confirm_revision = 0
 	var/datum/money_account/linked_account
 	var/account_to_connect = null
+	var/service_staff_account_number = 0
+	var/service_staff_name
 
 
 // Claim machine ID
@@ -30,6 +37,8 @@
 	. = ..()
 	cash_stored = rand(10, 70)*10
 	GLOB.transaction_devices += src // Global reference list to be properly set up by /proc/setup_economy()
+	if(GLOB.economy_init && account_to_connect)
+		linked_account = GLOB.department_accounts[account_to_connect]
 
 /obj/machinery/cash_register/Destroy()
 	GLOB.transaction_devices -= src
@@ -71,12 +80,15 @@
 		ui.open()
 
 /obj/machinery/cash_register/tgui_data(mob/user, datum/tgui/ui, datum/tgui_state/state)
+	var/department_checkout = linked_account?.is_department_budget()
 	return list(
 		"locked" = locked,
 		"cash_locked" = cash_locked,
 		"linked_account" = linked_account?.owner_name,
 		"machine_id" = machine_id,
-		"transaction_logs" = transaction_logs,
+		"department_checkout" = department_checkout,
+		"subsidized_checkout" = linked_account?.department_id == DEPARTMENT_CIVILIAN,
+		"transaction_logs" = linked_account?.is_department_budget() ? SSsupply.service_invoice_rows(0, linked_account.department_id) : transaction_logs,
 		"current_transactioon" = get_current_transaction()
 	)
 
@@ -92,6 +104,11 @@
 				return TRUE
 			to_chat(ui.user, "[icon2html(src, ui.user.client)]" + span_warning("Insufficient access."))
 			return FALSE
+		if("refund_transaction")
+			if(locked || !linked_account?.is_department_budget() || !service_refund_authorized(ui.user, linked_account))
+				return FALSE
+			var/datum/service_invoice/invoice = SSsupply.get_service_invoice(text2num(params["invoice_id"] || params["log_id"]))
+			return SSsupply.refund_service_invoice(invoice, linked_account, machine_id, ui.user)
 	return access_action(action, params, ui.user)
 
 /obj/machinery/cash_register/proc/access_action(action, list/params, mob/user)
@@ -108,12 +125,17 @@
 			var/attempt_pin = text2num(params["pin"])
 			if(isnull(attempt_pin))
 				return FALSE
-			linked_account = attempt_account_access(attempt_account_num, attempt_pin, 1)
-			if(linked_account)
-				if(linked_account.suspended)
-					linked_account = null
+			var/datum/money_account/new_account = attempt_account_access(attempt_account_num, attempt_pin, 1)
+			if(new_account)
+				if(new_account.suspended)
 					visible_message("[icon2html(src, viewers(src))]" + span_warning("Account has been suspended."))
 					return FALSE
+				var/provider_changed = linked_account != new_account
+				linked_account = new_account
+				if(provider_changed)
+					reset_memory()
+				else
+					ticket_changed()
 				return TRUE
 			to_chat(user, "[icon2html(src, user.client)]" + span_warning("Account not found."))
 			return FALSE
@@ -121,20 +143,28 @@
 			var/t_purpose = sanitize(params["purpose"], 200)
 			if (!t_purpose)
 				return FALSE
-			transaction_purpose = t_purpose
 			var/amount = params["amount"]
 			if(!isnum(amount))
 				return FALSE
-			amount = CLAMP(amount, 1, 20)
-			item_list[t_purpose] = amount
+			amount = CLAMP(round(amount), 1, 20)
 			var/price = params["price"]
 			if(!isnum(price) || price <= 0)
 				return FALSE
 			price = CLAMP(round(price), 1, 1000000)
-			transaction_amount = max(0, transaction_amount + amount * price)
+			if(item_list[t_purpose])
+				if(price_list[t_purpose] != price || item_list[t_purpose] + amount > 20)
+					return FALSE
+				item_list[t_purpose] += amount
+			else
+				if(length(item_list) >= 10)
+					return FALSE
+				item_list[t_purpose] = amount
 			price_list[t_purpose] = price
+			capture_service_staff(user)
+			rebuild_ticket()
+			ticket_changed()
 			playsound(src, 'sound/machines/twobeep.ogg', 25)
-			visible_message("[icon2html(src, viewers(src))][transaction_purpose][amount > 1 ? "[amount] x" : ""]: [amount * price] Thaler\s.")
+			visible_message("[icon2html(src, viewers(src))][t_purpose][amount > 1 ? " [amount] x" : ""]: [amount * price] Thaler\s.")
 			return TRUE
 		if("set_amount")
 			var/item_name = params["item"]
@@ -146,46 +176,56 @@
 			n_amount = CLAMP(n_amount, 0, 20)
 			if(!item_list[item_name])
 				return FALSE
-			transaction_amount = max(0, transaction_amount + (n_amount - item_list[item_name]) * price_list[item_name])
 			if(!n_amount)
 				item_list -= item_name
 				price_list -= item_name
+				rebuild_ticket()
+				ticket_changed()
 				return TRUE
 			item_list[item_name] = n_amount
+			rebuild_ticket()
+			ticket_changed()
 			return TRUE
 		if("subtract")
 			var/item_name = params["item"]
-			if(!item_name)
+			if(!item_name || !item_list[item_name] || !isnum(price_list[item_name]))
 				return FALSE
-			transaction_amount = max(0, transaction_amount - price_list[item_name])
 			item_list[item_name]--
 			if(item_list[item_name] <= 0)
 				item_list -= item_name
 				price_list -= item_name
+			rebuild_ticket()
+			ticket_changed()
 			return TRUE
 		if("add")
 			var/item_name = params["item"]
-			if(!item_name)
+			if(!item_name || !item_list[item_name] || !isnum(price_list[item_name]))
 				return FALSE
 			if(item_list[item_name] >= 20)
 				return FALSE
-			transaction_amount = max(0, transaction_amount + price_list[item_name])
 			item_list[item_name]++
+			rebuild_ticket()
+			ticket_changed()
 			return TRUE
 		if("clear")
 			var/item_name = params["item"]
-			if(!item_name)
+			if(!item_name || !item_list[item_name] || !isnum(price_list[item_name]))
 				return FALSE
-			transaction_amount = max(0, transaction_amount - price_list[item_name] * item_list[item_name])
 			item_list -= item_name
 			price_list -= item_name
+			rebuild_ticket()
+			ticket_changed()
 			return TRUE
 		if("clear_entry")
-			transaction_amount = 0
 			item_list.Cut()
 			price_list.Cut()
+			verified_sale_items = null
+			rebuild_ticket()
+			ticket_changed()
 			return TRUE
 		if("reset_log")
+			if(linked_account?.department_id == DEPARTMENT_CIVILIAN)
+				return FALSE
 			transaction_logs.Cut()
 			to_chat(user, "[icon2html(src, user.client)]" + span_notice("Transaction log reset."))
 			return TRUE
@@ -228,17 +268,18 @@
 
 
 /obj/machinery/cash_register/proc/confirm(obj/item/I)
-	if(confirm_item == I)
+	if(confirm_item == I && confirm_revision == ticket_revision)
 		return 1
 	else
 		confirm_item = I
+		confirm_revision = ticket_revision
 		src.visible_message(span_infoplain("[icon2html(src,viewers(src))]" + span_bold("Total price:") + " [transaction_amount] Thaler\s. Swipe again to confirm."))
 		playsound(src, 'sound/machines/twobeep.ogg', 25)
 		return 0
 
 
 /obj/machinery/cash_register/proc/scan_card(obj/item/card/id/I, obj/item/ID_container, mob/user)
-	if (!transaction_amount)
+	if(!transaction_amount || !ticket_is_valid())
 		return
 
 	if (cash_open)
@@ -246,23 +287,27 @@
 		to_chat(user, "[icon2html(src, user.client)]" + span_warning("The cash box is open."))
 		return
 
-	if((item_list.len > 1 || item_list[item_list[1]] > 1) && !confirm(I))
+	if(linked_account?.department_id != DEPARTMENT_CIVILIAN && (item_list.len > 1 || item_list[item_list[1]] > 1) && !confirm(I))
 		return
 
 	if (!linked_account)
 		user.visible_message("[icon2html(src,viewers(src))]" + span_warning("Unable to connect to linked account."))
 		return
+	var/snapshot_amount = transaction_amount
+	var/snapshot_revision = ticket_revision
+	var/datum/money_account/snapshot_provider = linked_account
+	var/snapshot_payer_account = I.associated_account_number
+	var/snapshot_staff_account = service_staff_account_number
 
 	// Access account for transaction
 	if(check_account(user))
-		var/snapshot_amount = transaction_amount
 		var/datum/money_account/D = get_account(I.associated_account_number)
 		var/attempt_pin = ""
 		if(D && D.security_level)
 			attempt_pin = tgui_input_number(user, "Enter PIN", "Transaction")
 			D = null
-		// Re-validate after the (sleeping) PIN prompt so the charged amount can't be altered mid-transaction.
-		if(QDELETED(src) || transaction_amount != snapshot_amount)
+		// Re-validate the complete ticket after the sleeping PIN prompt.
+		if(!service_checkout_confirmation_valid(src, user, snapshot_revision, ticket_revision, snapshot_amount, transaction_amount, snapshot_payer_account, I.associated_account_number, snapshot_provider, linked_account, snapshot_staff_account, service_staff_account_number))
 			return
 		D = attempt_account_access(I.associated_account_number, attempt_pin, 2)
 
@@ -272,41 +317,37 @@
 			if(D.suspended)
 				src.visible_message("[icon2html(src, viewers(src))]" + span_warning("Your account has been suspended."))
 			else
-				if(transaction_amount > D.money)
+				if(linked_account.department_id == DEPARTMENT_CIVILIAN)
+					var/list/quote = department_service_quote(D, DEPARTMENT_CIVILIAN, transaction_amount)
+					if(!quote || !user)
+						return
+					var/tip = service_tip_choice(user, D, quote, transaction_purpose)
+					if(isnull(tip) || !service_checkout_confirmation_valid(src, user, snapshot_revision, ticket_revision, snapshot_amount, transaction_amount, D.account_number, I.associated_account_number, snapshot_provider, linked_account, snapshot_staff_account, service_staff_account_number))
+						return
+					if(!complete_service_checkout(D, linked_account, transaction_amount, transaction_purpose, machine_id, item_list, price_list, service_staff_account_number, service_staff_name, tip, verified_sale_items))
+						return
+				else if(transaction_amount > D.money)
 					src.visible_message("[icon2html(src, viewers(src))]" + span_warning("Not enough funds."))
-				else
-					// Transfer the money
-					D.money -= transaction_amount
-					linked_account.money += transaction_amount
+					return
+				else if(!transfer_account_funds(D, linked_account, transaction_amount, transaction_purpose, machine_id))
+					return
 
-					// Create log entry in client's account
-					var/datum/transaction/T = new()
-					T.target_name = "[linked_account.owner_name]"
-					T.purpose = transaction_purpose
-					T.amount = "([transaction_amount])"
-					T.source_terminal = machine_id
-					T.date = GLOB.current_date_string
-					T.time = stationtime2text()
-					D.transaction_log.Add(T)
+				if(linked_account.department_id != DEPARTMENT_CIVILIAN)
+					var/list/department_result = list(
+						"total" = transaction_amount,
+						"subsidy" = 0,
+						"personal" = transaction_amount,
+						"tip" = 0,
+						"staff_tip" = 0,
+						"service_tip" = 0,
+					)
+					SSsupply.create_service_invoice(D, linked_account, machine_id, item_list, price_list, department_result, service_staff_account_number, service_staff_name, null, "ID account", verified_sale_items)
 
-					// Create log entry in owner's account
-					T = new()
-					T.target_name = D.owner_name
-					T.purpose = transaction_purpose
-					T.amount = "[transaction_amount]"
-					T.source_terminal = machine_id
-					T.date = GLOB.current_date_string
-					T.time = stationtime2text()
-					linked_account.transaction_log.Add(T)
-
-					// Save log
-					add_transaction_log(I.registered_name ? I.registered_name : "n/A", "ID Card", transaction_amount)
-
-					// Confirm and reset
-					transaction_complete()
+				// Confirm and reset
+				transaction_complete()
 
 /obj/machinery/cash_register/proc/scan_wallet(obj/item/spacecash/ewallet/E, mob/user)
-	if (!transaction_amount)
+	if(!transaction_amount || !ticket_is_valid())
 		return
 
 	if (cash_open)
@@ -324,31 +365,22 @@
 		else
 			// Transfer the money
 			E.worth -= transaction_amount
-			linked_account.money += transaction_amount
+			linked_account.credit(transaction_amount, E.owner_name, transaction_purpose, machine_id, FALSE)
 
-			// Create log entry in owner's account
-			var/datum/transaction/T = new()
-			T.target_name = E.owner_name
-			T.purpose = transaction_purpose
-			T.amount = "[transaction_amount]"
-			T.source_terminal = machine_id
-			T.date = GLOB.current_date_string
-			T.time = stationtime2text()
-			linked_account.transaction_log.Add(T)
-
-			// Save log
-			add_transaction_log(E.owner_name, "E-Wallet", transaction_amount)
+			SSsupply.create_service_external_invoice(linked_account, machine_id, item_list, price_list, E.owner_name, transaction_amount, "E-Wallet", verified_sale_items)
 
 			// Confirm and reset
 			transaction_complete()
 
 /obj/machinery/cash_register/proc/scan_cash(obj/item/spacecash/SC, mob/user)
-	if (!transaction_amount)
+	if(!transaction_amount || !ticket_is_valid())
 		return
 
 	if (cash_open)
 		playsound(src, 'sound/machines/buzz-sigh.ogg', 25)
 		to_chat(user, "[icon2html(src, user.client)]" + span_warning("The cash box is open."))
+		return
+	if(!check_account(user))
 		return
 
 	if((item_list.len > 1 || item_list[item_list[1]] > 1) && !confirm(SC))
@@ -365,17 +397,18 @@
 				var/mob/living/carbon/human/H = SC.loc
 				H.drop_from_inventory(SC)
 			qdel(SC)
-		cash_stored += transaction_amount
-
 		// Save log
-		add_transaction_log("n/A", "Cash", transaction_amount)
+		// Department cash is deposited immediately so the invoice and account
+		// books agree and any same-period refund has authoritative funding.
+		linked_account.credit(transaction_amount, "Cash customer", transaction_purpose, machine_id, FALSE)
+		SSsupply.create_service_external_invoice(linked_account, machine_id, item_list, price_list, "Cash customer", transaction_amount, "Cash", verified_sale_items)
 
 		// Confirm and reset
 		transaction_complete()
 
 /obj/machinery/cash_register/proc/scan_item_price(obj/O, mob/user)
 	if(!istype(O))	return
-	if(item_list.len > 10)
+	if(length(item_list) >= 10 && !item_list[O.name])
 		src.visible_message("[icon2html(src, viewers(src))]" + span_warning("Only up to ten different items allowed per purchase."))
 		return
 	if (cash_open)
@@ -385,16 +418,19 @@
 
 	// First check if item has a valid price
 	var/price = O.get_item_cost()
+	if(isnull(price) && O.economic_export_value > 0)
+		price = SSsupply.export_revenue(O.economic_export_value)
+	if(isnull(price) && istype(O, /obj/item/stack))
+		var/obj/item/stack/material_stack = O
+		var/datum/material/material = material_stack.get_material()
+		if(material?.supply_conversion_value)
+			price = SSsupply.export_revenue(material_stack.get_amount() * material.supply_conversion_value)
 	if(isnull(price))
 		src.visible_message("[icon2html(src, viewers(src))]" + span_warning("Unable to find item in database."))
 		return
+	capture_service_staff(user)
 	// Call out item cost
 	src.visible_message("[icon2html(src, viewers(src))]\A [O]: [price ? "[price] Thaler\s" : "free of charge"].")
-	// Note the transaction purpose for later use
-	if(transaction_purpose)
-		transaction_purpose += "<br>"
-	transaction_purpose += "[O]: [price] Thaler\s"
-	transaction_amount += price
 	for(var/previously_scanned in item_list)
 		if(price == price_list[previously_scanned] && O.name == previously_scanned)
 			. = item_list[previously_scanned]++
@@ -402,10 +438,17 @@
 		item_list[O.name] = 1
 		price_list[O.name] = price
 		. = 1
+	rebuild_ticket()
+	if(!O.economic_sale_invoice_id)
+		LAZYSET(verified_sale_items, O, price)
+	ticket_changed()
 	// Animation and sound
 	playsound(src, 'sound/machines/twobeep.ogg', 25)
-	// Reset confirmation
+
+/obj/machinery/cash_register/proc/ticket_changed()
+	ticket_revision++
 	confirm_item = null
+	confirm_revision = 0
 
 /obj/machinery/cash_register/proc/get_current_transaction()
 	if(!length(item_list))
@@ -419,7 +462,7 @@
 	)
 	return current_transactioon
 
-/obj/machinery/cash_register/proc/add_transaction_log(c_name, p_method, t_amount)
+/obj/machinery/cash_register/proc/add_transaction_log(c_name, p_method, t_amount, account_number = 0, list/service_result)
 	var/list/new_entry = list(
 		"log_id" = length(transaction_logs) + 1,
 		"customer" = c_name,
@@ -427,8 +470,16 @@
 		"trans_time" = stationtime2text(),
 		"items" = item_list,
 		"prices" = price_list,
-		"amount" = transaction_amount
+		"amount" = transaction_amount,
+		"account_number" = account_number,
+		"subsidy" = service_result ? service_result["subsidy"] : 0,
+		"personal" = service_result ? service_result["personal"] : 0,
+		"refunded" = FALSE,
+		"refund_time" = null,
+		"refund_by" = null
 	)
+	new_entry["items"] = item_list.Copy()
+	new_entry["prices"] = price_list.Copy()
 	UNTYPED_LIST_ADD(transaction_logs, new_entry)
 
 
@@ -442,6 +493,26 @@
 		return FALSE
 	return TRUE
 
+/obj/machinery/cash_register/proc/capture_service_staff(mob/user)
+	service_staff_account_number = 0
+	service_staff_name = null
+	if(!linked_account?.is_department_budget() || !user)
+		return
+	var/datum/money_account/staff_account = user.mind?.initial_account
+	if(!staff_account || department_for_mob(user) != linked_account.department_id)
+		return
+	service_staff_account_number = staff_account.account_number
+	service_staff_name = user.real_name
+
+/obj/machinery/cash_register/proc/rebuild_ticket()
+	var/total = service_ticket_total(item_list, price_list)
+	transaction_amount = isnull(total) ? 0 : total
+	transaction_purpose = service_ticket_description(item_list, price_list)
+
+/obj/machinery/cash_register/proc/ticket_is_valid()
+	var/total = service_ticket_total(item_list, price_list)
+	return !isnull(total) && total == transaction_amount
+
 /obj/machinery/cash_register/proc/transaction_complete()
 	/// Visible confirmation
 	playsound(src, 'sound/machines/chime.ogg', 25)
@@ -454,7 +525,10 @@
 	transaction_purpose = ""
 	item_list.Cut()
 	price_list.Cut()
-	confirm_item = null
+	verified_sale_items = null
+	service_staff_account_number = 0
+	service_staff_name = null
+	ticket_changed()
 
 /obj/machinery/cash_register/verb/open_cash_box(mob/user)
 	set category = "Object"
@@ -525,7 +599,7 @@
 	account_to_connect = "Engineering"
 
 /obj/machinery/cash_register/science
-	account_to_connect = "Science"
+	account_to_connect = DEPARTMENT_RESEARCH
 
 /obj/machinery/cash_register/security
 	account_to_connect = "Security"

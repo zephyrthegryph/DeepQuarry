@@ -9,6 +9,16 @@ export type Data = {
   printing: BooleanLike;
   isAI: BooleanLike;
   isRobot: BooleanLike;
+  can_allocate_station_budget: BooleanLike;
+  station_balance: number | null;
+  station_monthly_income: number | null;
+  station_monthly_expenses: number | null;
+  station_income_sources: financeIncomeSource[];
+  nt_salary_support: number | null;
+  allocation_policy: string | null;
+  department_finances: departmentFinance[];
+  station_transactions: financeTransaction[];
+  contracts: managementContract[];
   records: record[] | undefined;
   general:
     | {
@@ -20,6 +30,186 @@ export type Data = {
         empty: BooleanLike;
       }
     | undefined;
+};
+
+export type contractRequirement = {
+  name: string;
+  description: string;
+  state: string;
+  required: boolean;
+  progress: number;
+  target: number;
+  progress_text: string;
+};
+
+export type managementContract = {
+  id: string;
+  title: string;
+  description: string;
+  scope: string;
+  state: string;
+  issuer: string;
+  issuer_color: string;
+  department?: string;
+  reward: number;
+  standing_score: number;
+  standing_tier: string;
+  repeat_index: number;
+  round_demand_remaining: number;
+  reward_distribution: contractDistribution;
+  reputation_distribution: contractDistribution;
+  negotiation_locked: BooleanLike;
+  negotiation_clauses: contractNegotiationClause[];
+  can_accept: boolean;
+  can_decline: boolean;
+  offer_kind: string;
+  closure_code?: string;
+  offer_time_remaining?: string;
+  deadline_remaining?: string;
+  grace_time_remaining?: string;
+  requirements: contractRequirement[];
+  details?: medicalTrialDetails | medicalCaseReportDetails | socialOutcomeDetails;
+};
+
+export type contractDistribution = {
+  station: number;
+  department: number;
+  staff: number;
+};
+
+export type contractClauseOption = {
+  id: string;
+  title: string;
+  description: string;
+  station_money: number;
+  department_money: number;
+  staff_money: number;
+  station_reputation: number;
+  department_reputation: number;
+  staff_reputation: number;
+  deadline_minutes: number;
+};
+
+export type contractNegotiationClause = {
+  id: string;
+  title: string;
+  description: string;
+  selected: string;
+  options: contractClauseOption[];
+};
+
+export type medicalTrialSubject = {
+  name: string;
+  subject_ref: string;
+  cohort_class: string;
+  status: string;
+  next_step: string;
+  marker_detected: BooleanLike;
+  can_reissue: BooleanLike;
+  can_revoke: BooleanLike;
+};
+
+export type medicalTrialDetails = {
+  kind: 'medical_trial';
+  code_name: string;
+  cohort: string;
+  protocol: string;
+  indication: string;
+  adverse_choices: string[];
+  subjects: medicalTrialSubject[];
+  analysis_ready: BooleanLike;
+  resupplies_remaining: number;
+  resupply_cost: number;
+};
+
+export type medicalCaseReportDetails = {
+  kind: 'medical_case_report';
+  patient: string;
+  condition: string;
+  consented: BooleanLike;
+};
+
+export type socialStakeholderProposal = {
+  account: number;
+  name: string;
+  department?: string;
+  weight: number;
+  status: string;
+  contribution: number;
+};
+
+export type socialStakeholderRole = {
+  id: string;
+  title: string;
+  description: string;
+  departments: string[];
+  minimum: number;
+  maximum: number;
+  approved: number;
+  viewer_eligible: BooleanLike;
+  proposals: socialStakeholderProposal[];
+};
+
+export type socialOutcomeDetails = {
+  kind: 'social_outcome';
+  grade: string;
+  projected_grade: string;
+  projected_reward: number;
+  score: number;
+  can_finalize: BooleanLike;
+  stakeholders_ready: BooleanLike;
+  roles: socialStakeholderRole[];
+};
+
+export type financeTransaction = {
+  date: string;
+  time: string;
+  target: string;
+  purpose: string;
+  amount: string | number;
+  terminal: string;
+};
+
+export type financeIncomeSource = {
+  source: string;
+  amount: number;
+};
+
+export type departmentFinance = {
+  department: string;
+  balance: number;
+  savings: number;
+  monthly_allocation: number;
+  monthly_income: number;
+  monthly_expenses: number;
+  last_month_income: number;
+  last_month_expenses: number;
+  projected_payroll: number;
+  payroll_resources: number;
+  payroll_coverage: number;
+  last_payroll_due: number;
+  last_payroll_paid: number;
+  last_payroll_shortfall: number;
+  revenue: number;
+  expenses: number;
+  wage_multiplier: number;
+  service_subsidy: number;
+  service_invoices: serviceInvoiceSummary;
+  transactions: financeTransaction[];
+};
+
+export type serviceInvoiceSummary = {
+  invoice_count: number;
+  refund_count: number;
+  gross_billed: number;
+  refunded_total: number;
+  net_billed: number;
+  account_sales: number;
+  cash_sales: number;
+  ewallet_sales: number;
+  tips: number;
+  staff_tips: number;
+  service_tips: number;
 };
 
 export type record = { ref: string; id: string; name: string; b_dna: string };

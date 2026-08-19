@@ -59,13 +59,13 @@ export const Paper = () => {
                   key={i}
                   onClick={() => act('write_field', { id: seg.id })}
                 >
-                  {filled ? seg.text : '_______'}
+                  {filled ? <HtmlRenderer html={seg.text} /> : '_______'}
                 </Button>
               );
             }
             return (
               <Box inline key={i} italic color={filled ? undefined : 'label'}>
-                {filled ? seg.text : '_______'}
+                {filled ? <HtmlRenderer html={seg.text} /> : '_______'}
               </Box>
             );
           })}

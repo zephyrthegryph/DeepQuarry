@@ -67,6 +67,8 @@ GLOBAL_VAR_INIT(economy_init, 0)
 		GLOB.station_account.account_number = rand(111111, 999999)
 		GLOB.station_account.remote_access_pin = rand(1111, 111111)
 		GLOB.station_account.money = 75000
+		GLOB.station_account.department_id = "Station"
+		GLOB.station_account.is_budget_account = TRUE
 
 		//create an entry in the account transaction log for when it was created
 		var/datum/transaction/T = new()
@@ -89,6 +91,8 @@ GLOBAL_VAR_INIT(economy_init, 0)
 	department_account.account_number = rand(111111, 999999)
 	department_account.remote_access_pin = rand(1111, 111111)
 	department_account.money = 5000
+	department_account.department_id = department
+	department_account.is_budget_account = TRUE
 
 	//create an entry in the account transaction log for when it was created
 	var/datum/transaction/T = new()

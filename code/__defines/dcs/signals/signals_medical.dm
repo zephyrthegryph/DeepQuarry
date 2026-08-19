@@ -7,6 +7,9 @@
 /// From /datum/surgery_step/success(): (datum/surgery_step/step, mob/living/target, target_zone, obj/item/tool, datum/surgery/surgery, default_display_results)
 #define COMSIG_MOB_SURGERY_STEP_SUCCESS "mob_surgery_step_success"
 
+/// A condition was attached, removed, or crossed a clinically meaningful threshold.
+#define COMSIG_MOB_MEDICAL_ISSUES_CHANGED "mob_medical_issues_changed"
+
 /// From /obj/item/shockpaddles/do_help, after the defib do_after is complete, but before any effects are applied: (mob/living/defibber, obj/item/shockpaddles/source)
 #define COMSIG_DEFIBRILLATOR_PRE_HELP_ZAP "carbon_being_defibbed"
 	/// Return to stop default defib handling

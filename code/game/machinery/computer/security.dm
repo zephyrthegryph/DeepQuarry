@@ -195,7 +195,7 @@
 		active2 = null
 
 	. = TRUE
-	if(tgui_act_modal(action, params))
+	if(tgui_act_modal(action, params, ui.user))
 		return
 
 	switch(action)
@@ -367,7 +367,7 @@
  * * action - The action passed by tgui
  * * params - The params passed by tgui
  */
-/obj/machinery/computer/secure_data/proc/tgui_act_modal(action, params)
+/obj/machinery/computer/secure_data/proc/tgui_act_modal(action, params, mob/living/user)
 	. = TRUE
 	var/id = params["id"] // The modal's ID
 	var/list/arguments = istext(params["arguments"]) ? json_decode(params["arguments"]) : params["arguments"]
@@ -406,7 +406,9 @@
 						if(answer in SSjob.occupations_by_name)
 							active1.fields["real_rank"] = answer
 
+					var/old_criminal_status
 					if(field == "criminal")
+						old_criminal_status = active2?.fields?["criminal"]
 						for(var/mob/living/carbon/human/H in GLOB.player_list)
 							BITSET(H.hud_updateflag, WANTED_HUD)
 
@@ -414,6 +416,8 @@
 						active2.fields[field] = answer
 					if(istype(active1) && (field in active1.fields))
 						active1.fields[field] = answer
+					if(field == "criminal" && old_criminal_status != answer)
+						record_security_disposition(old_criminal_status, answer, user)
 				if("add_c")
 					if(!length(answer) || !istype(active2) || !length(authenticated))
 						return
@@ -425,6 +429,51 @@
 					return FALSE
 		else
 			return FALSE
+
+/obj/machinery/computer/secure_data/proc/record_security_disposition(old_status, new_status, mob/living/user)
+	if(!istype(active2, /datum/data/record) || !istext(new_status))
+		return FALSE
+	var/record_id = active1?.fields?["id"] || active2.fields["id"] || REF(active2)
+	var/subject_name = active1?.fields?["name"] || active2.fields["name"]
+	var/list/custody = SScontracts.physical_custody_snapshot(record_id, subject_name)
+	var/custody_duration = custody["duration"] || 0
+	var/list/event_tags = list()
+	if(old_status == "Incarcerated" && (new_status in list("Released", "Parolled")) && custody["verified"])
+		event_tags += "custody_resolution"
+	else if(new_status == "None" && old_status == "Incarcerated" && custody["verified"])
+		event_tags += "record_cleared"
+	LAZYINITLIST(active2.disposition_history)
+	active2.disposition_history.Add(list(list(
+		"occurred_at" = world.time,
+		"actor_account" = contract_account_for_mob(user)?.account_number,
+		"actor_name" = user?.real_name,
+		"previous_status" = old_status,
+		"disposition" = new_status,
+		"physical_subject_id" = custody["subject_id"],
+		"physical_custody_verified" = custody["verified"],
+		"custody_duration" = custody_duration,
+	)))
+	emit_contract_event(CONTRACT_EVENT_SECURITY_DISPOSITION_CHANGED, list(
+		"department" = DEPARTMENT_SECURITY,
+		// Subject identity is physical and round-stable. The independently
+		// editable record remains the fact identity below, so duplicate records
+		// for one prisoner cannot masquerade as distinct custodial cases.
+		"subject_id" = custody["subject_id"],
+		"subject_name" = subject_name,
+		"physical_subject_id" = custody["subject_id"],
+		"physical_custody_verified" = custody["verified"],
+		"physical_custody_active" = custody["active"],
+		"record_id" = record_id,
+		"previous_status" = old_status,
+		"disposition" = new_status,
+		"tags" = event_tags,
+		"fact_id" = "security-record:[record_id]",
+		"fact_revision" = length(active2.disposition_history),
+		"fact_active" = new_status != "None",
+		"metrics" = list("custody_duration" = custody_duration),
+		"detail" = "Recorded [new_status] disposition with [DisplayTimeText(custody_duration)] of physically verified custody",
+	), "security-disposition:[REF(active2)]:[length(active2.disposition_history)]", src, user)
+	return TRUE
 
 
 /**

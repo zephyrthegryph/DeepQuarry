@@ -47,7 +47,7 @@ export const MiningOreProcessingConsole = (props) => {
                   >
                     Insert ID
                   </Button>
-                  in order to claim points.
+                  in order to claim Thalers.
                 </Box>
               }
             />
@@ -80,7 +80,7 @@ export const MiningOreProcessingConsole = (props) => {
             >
               <LabeledList>
                 <LabeledList.Item
-                  label="Current unclaimed points"
+                  label="Current unclaimed Thalers"
                   buttons={
                     <Button
                       disabled={unclaimedPoints < 1}

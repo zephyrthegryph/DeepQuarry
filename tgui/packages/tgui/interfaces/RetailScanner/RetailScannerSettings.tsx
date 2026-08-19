@@ -77,11 +77,11 @@ export const RetailScannerSettings = (model) => {
                 </Stack.Item>
               </Stack>
             </LabeledList.Item>
-            <LabeledList.Item label="Custom Order">
+            <LabeledList.Item label="Custom Service">
               <Stack vertical fill>
                 <Stack.Item>
                   <Stack>
-                    <Stack.Item>Order Purpose:</Stack.Item>
+                    <Stack.Item>Service Description:</Stack.Item>
                     <Stack.Item>
                       <Input
                         fluid
@@ -131,7 +131,7 @@ export const RetailScannerSettings = (model) => {
                       setOrderPrice(0);
                     }}
                   >
-                    Create Order
+                    Add Service
                   </Button>
                 </Stack.Item>
               </Stack>

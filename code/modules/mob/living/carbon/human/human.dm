@@ -681,7 +681,7 @@
 								emp_hud_text += span_bold("Home System:") + " [R.fields["home_system"]]"
 								emp_hud_text += span_bold("Birthplace:") + " [R.fields["birthplace"]]"
 								emp_hud_text += span_bold("Citizenship:") + " [R.fields["citizenship"]]"
-								emp_hud_text += span_bold("Primary Employer:") + " [R.fields["personal_faction"]]"
+								emp_hud_text += span_bold("Primary Employer:") + " [R.fields["faction"]]"
 								emp_hud_text += span_bold("Religious Beliefs:") + " [R.fields["religion"]]"
 								emp_hud_text += span_bold("Known Languages:") + " [R.fields["languages"]]"
 								emp_hud_text += span_bold("Notes:") + " [R.fields["notes"]]"

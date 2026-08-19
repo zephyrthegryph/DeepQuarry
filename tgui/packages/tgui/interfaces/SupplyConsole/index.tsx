@@ -12,7 +12,7 @@ import { viewCrateContents } from './viewCrateContents';
 export const SupplyConsole = (props) => {
   modalRegisterBodyOverride('view_crate', viewCrateContents);
   return (
-    <Window width={700} height={620}>
+    <Window width={820} height={680}>
       <Window.Content>
         <Stack vertical fill>
           <Stack.Item>

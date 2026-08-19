@@ -42,8 +42,8 @@
 	var/datum/medical_issue/condition/C = new condition_type()
 	C.owner = H
 	C.affectedorgan = target
-	C.severity = severity
-	LAZYADD(target.medical_issues, C)
+	C.set_severity(severity)
+	target.add_medical_issue(C, H)
 	return C
 
 /// Apply real damage to an external organ — goes through the same

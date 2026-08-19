@@ -455,7 +455,7 @@ ADMIN_VERB(spawn_mail, R_SPAWN, "Spawn Mail", "Spawn mail for a specific player,
 		cargo_points = rand(5, 10)
 		to_chat(user, span_notice("Succesful delivery acknowledged! [cargo_points] points added to Supply."))
 		playsound(loc, 'sound/items/mail/mailapproved.ogg', 50, TRUE)
-		SSsupply.points += cargo_points
+		SSsupply.adjust_budget(SSsupply.export_revenue(cargo_points), "Mail delivery proceeds")
 
 // JUNK MAIL STUFF
 

@@ -35,6 +35,15 @@ GLOBAL_LIST_EMPTY_TYPED(running_demand_events, /datum/event/supply_demand)
 				choose_bar_items(roll(severity, 2))
 	if(required_items.len == 0)
 		choose_bar_items(rand(5, 10)) // Really? Well add drinks. If a crew can't even get the bar open they suck.
+	var/total_quantity = 0
+	for(var/datum/supply_demand_order/order in required_items)
+		total_quantity += order.qty_orig
+	emit_contract_event(CONTRACT_EVENT_SUPPLY_SHORTAGE_DECLARED, list(
+		"shortage_id" = REF(src),
+		"quantity_target" = max(4, total_quantity),
+		"variety_target" = max(2, min(length(required_items), 6)),
+		"detail" = "A live supply-shortage request opened for [total_quantity] units across [length(required_items)] categories.",
+	), "supply-shortage-declared:[REF(src)]")
 
 /datum/event/supply_demand/announce()
 	var/message = "[using_map.company_short] is comparing accounts and the bean counters found our division "
@@ -70,7 +79,7 @@ GLOBAL_LIST_EMPTY_TYPED(running_demand_events, /datum/event/supply_demand)
 	// Check if the crew succeeded or failed!
 	if(required_items.len == 0)
 		// Success!
-		SSsupply.points += 100 * severity
+		SSsupply.adjust_budget(SSsupply.export_revenue(100 * severity), "Supply demand windfall")
 		var/msg = "Great work! With those items you delivered our inventory levels all match up. "
 		msg += "[capitalize(pick(GLOB.first_names_female))] from accounting will have nothing to complain about. "
 		msg += "I think you'll find a little something in your supply account."
@@ -126,7 +135,17 @@ GLOBAL_LIST_EMPTY_TYPED(running_demand_events, /datum/event/supply_demand)
  */
 /datum/event/supply_demand/proc/match_item(atom/I)
 	for(var/datum/supply_demand_order/meta in required_items)
+		var/quantity_before = meta.qty_need
 		if(meta.match_item(I))
+			var/delivered_quantity = max(1, quantity_before - meta.qty_need)
+			emit_contract_event(CONTRACT_EVENT_SUPPLY_SHORTAGE_DELIVERY, list(
+				"department" = DEPARTMENT_CARGO,
+				"shortage_id" = REF(src),
+				"item_type" = meta.type,
+				"item_name" = meta.name,
+				"metrics" = list("quantity" = delivered_quantity),
+				"detail" = "Delivered [delivered_quantity] [meta.name] toward the live shortage response.",
+			), "supply-shortage-delivery:[REF(src)]:[REF(meta)]:[quantity_before]:[meta.qty_need]")
 			if(meta.qty_need <= 0)
 				required_items -= meta
 			return 1

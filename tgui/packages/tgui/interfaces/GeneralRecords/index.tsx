@@ -7,6 +7,8 @@ import { LoginInfo } from '../common/LoginInfo';
 import { LoginScreen } from '../common/LoginScreen';
 import { TemporaryNotice } from '../common/TemporaryNotice';
 import { GeneralRecordsList } from './GeneralRecordsList';
+import { DepartmentFinances } from './DepartmentFinances';
+import { ManagementContracts } from './ManagementContracts';
 import {
   GeneralRecordsMaintenance,
   GeneralRecordsNavigation,
@@ -31,6 +33,8 @@ export const GeneralRecords = (props) => {
   body[2] = <GeneralRecordsList />;
   body[3] = <GeneralRecordsMaintenance />;
   body[4] = <GeneralRecordsView />;
+  body[5] = <DepartmentFinances />;
+  body[6] = <ManagementContracts />;
 
   return (
     <Window width={800} height={640}>

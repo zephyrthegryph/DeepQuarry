@@ -321,13 +321,8 @@ GLOBAL_LIST_EMPTY(vending_products)
 /obj/machinery/vending/proc/pay_with_card(obj/item/card/id/I, mob/M)
 	visible_message(span_info("[M] swipes a card through [src]."))
 	playsound(src, 'sound/machines/id_swipe.ogg', 50, 1)
-	if(!purchase_with_id_card(I, M, GLOB.vendor_account.owner_name, name, "Purchase of [currently_vending.item_name]", currently_vending.price))
+	if(!purchase_with_id_card(I, M, GLOB.vendor_account.owner_name, name, "Purchase of [currently_vending.item_name]", currently_vending.price, GLOB.vendor_account))
 		return FALSE
-	// Give the vendor the money. We use the account owner name, which means
-	// that purchases made with stolen/borrowed card will look like the card
-	// owner made them
-	var/datum/money_account/customer_account = get_account(I.associated_account_number)
-	credit_purchase(customer_account.owner_name)
 	return 1
 
 /**
@@ -336,16 +331,7 @@ GLOBAL_LIST_EMPTY(vending_products)
  *  Called after the money has already been taken from the customer.
  */
 /obj/machinery/vending/proc/credit_purchase(target as text)
-	GLOB.vendor_account.money += currently_vending.price
-
-	var/datum/transaction/T = new()
-	T.target_name = target
-	T.purpose = "Purchase of [currently_vending.item_name]"
-	T.amount = "[currently_vending.price]"
-	T.source_terminal = name
-	T.date = GLOB.current_date_string
-	T.time = stationtime2text()
-	GLOB.vendor_account.transaction_log.Add(T)
+	GLOB.vendor_account.credit(currently_vending.price, target, "Purchase of [currently_vending.item_name]", name)
 
 /obj/machinery/vending/attack_ghost(mob/user)
 	return attack_hand(user)

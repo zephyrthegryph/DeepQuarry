@@ -517,7 +517,7 @@
 	return list(
 			"shuttle_auth" = (internal_data["supply_controls"] & SUP_SEND_SHUTTLE),
 			"order_auth" = (internal_data["supply_controls"] & SUP_ACCEPT_ORDERS),
-			"supply_points" = SSsupply.points,
+			"supply_points" = SSsupply.budget_balance(),
 			"supply_categories" = GLOB.all_supply_groups
 		)
 

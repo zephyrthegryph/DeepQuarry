@@ -15,15 +15,25 @@ import type { Data, SupplyPack } from './types';
 export const SupplyConsoleMenuOrder = (props) => {
   const { act, data } = useBackend<Data>();
 
-  const { categories, supply_packs, contraband, supply_points } = data;
+  const {
+    categories,
+    supply_packs,
+    contraband,
+    supply_points,
+    personal_balance,
+    can_personal_order,
+  } = data;
 
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
   const [searchCategory, setSearchCategory] = useState<string>('');
   const [searchContent, setSearchContent] = useState<string>('');
+  const [personalFunding, setPersonalFunding] = useState(false);
+
+  const availableFunds = personalFunding ? personal_balance : supply_points;
 
   function sortPack(a: SupplyPack, b: SupplyPack) {
-    if (a.cost < supply_points && b.cost > supply_points) return -1;
-    if (a.cost > supply_points && b.cost < supply_points) return 1;
+    if (a.cost < availableFunds && b.cost > availableFunds) return -1;
+    if (a.cost > availableFunds && b.cost < availableFunds) return 1;
 
     return a.name.localeCompare(b.name);
   }
@@ -70,11 +80,24 @@ export const SupplyConsoleMenuOrder = (props) => {
         </Section>
       </Stack.Item>
       <Stack.Item grow ml={2}>
-        <Section title="Contents" fill>
+        <Section
+          title="Contents"
+          buttons={
+            <Button.Checkbox
+              checked={personalFunding}
+              disabled={!can_personal_order}
+              tooltip="Charge requested crates to your personal account immediately. Denied orders are refunded."
+              onClick={() => setPersonalFunding(!personalFunding)}
+            >
+              Personal funds: {personal_balance} Thalers
+            </Button.Checkbox>
+          }
+          fill
+        >
           <Input
             fluid
             placeholder={'Search for pack...'}
-            value={searchCategory}
+            value={searchContent}
             onChange={(val) => setSearchContent(val)}
           />
           <Divider />
@@ -87,17 +110,25 @@ export const SupplyConsoleMenuOrder = (props) => {
                       fluid
                       icon="shopping-cart"
                       ellipsis
-                      color={pack.cost > supply_points ? 'red' : undefined}
-                      onClick={() => act('request_crate', { ref: pack.ref })}
+                      color={pack.cost > availableFunds ? 'red' : undefined}
+                      onClick={() =>
+                        act('request_crate', {
+                          ref: pack.ref,
+                          personal: personalFunding,
+                        })
+                      }
                     >
                       {pack.name}
                     </Button>
                   </Stack.Item>
                   <Stack.Item>
                     <Button
-                      color={pack.cost > supply_points ? 'red' : undefined}
+                      color={pack.cost > availableFunds ? 'red' : undefined}
                       onClick={() =>
-                        act('request_crate_multi', { ref: pack.ref })
+                        act('request_crate_multi', {
+                          ref: pack.ref,
+                          personal: personalFunding,
+                        })
                       }
                     >
                       #
@@ -111,7 +142,7 @@ export const SupplyConsoleMenuOrder = (props) => {
                       Info
                     </Button>
                   </Stack.Item>
-                  <Stack.Item grow>{pack.cost} points</Stack.Item>
+                  <Stack.Item grow>{pack.cost} Thalers</Stack.Item>
                 </Stack>
               </Box>
             ))}
@@ -128,7 +159,7 @@ export const SupplyConsoleMenuOrder = (props) => {
                     fluid
                     color="green"
                   >
-                    {"Buy - " + pack.cost + " points"}
+                    {"Request - " + pack.cost + " Thalers"}
                   </Button>
                 </center>
               </Collapsible>

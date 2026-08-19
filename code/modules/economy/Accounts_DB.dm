@@ -126,22 +126,32 @@
 /obj/machinery/account_database/tgui_act(action, list/params, datum/tgui/ui, datum/tgui_state/state)
 	if(..())
 		return TRUE
+	var/access_level = get_access_level()
+	if(action != "insert_card" && !access_level)
+		return FALSE
 
 	switch(action)
 		if("create_account")
 			creating_new_account = 1
 
 		if("add_funds")
+			if(access_level < 2)
+				return FALSE
 			var/amount = tgui_input_number(ui.user, "Enter the amount you wish to add", "Silently add funds")
-			if(detailed_account_view)
-				detailed_account_view.money = min(detailed_account_view.money + amount, fund_cap)
+			if(detailed_account_view && isnum(amount) && amount > 0)
+				var/allowed_amount = min(amount, fund_cap - detailed_account_view.money)
+				detailed_account_view.credit(allowed_amount, ui.user.real_name, "Authorized account adjustment", machine_id)
 
 		if("remove_funds")
+			if(access_level < 2)
+				return FALSE
 			var/amount = tgui_input_number(ui.user, "Enter the amount you wish to remove", "Silently remove funds")
-			if(detailed_account_view)
-				detailed_account_view.money = max(detailed_account_view.money - amount, -fund_cap)
+			if(detailed_account_view && isnum(amount) && amount > 0)
+				detailed_account_view.debit(min(amount, detailed_account_view.money), ui.user.real_name, "Authorized account adjustment", machine_id)
 
 		if("toggle_suspension")
+			if(access_level < 2)
+				return FALSE
 			if(detailed_account_view)
 				detailed_account_view.suspended = !detailed_account_view.suspended
 				SEND_GLOBAL_SIGNAL(COMSIG_GLOB_PAYMENT_ACCOUNT_STATUS, detailed_account_view)
@@ -153,17 +163,10 @@
 			starting_funds = CLAMP(starting_funds, 0, GLOB.station_account.money)	// Not authorized to put the station in debt.
 			starting_funds = min(starting_funds, fund_cap)						// Not authorized to give more than the fund cap.
 
-			create_account(account_name, starting_funds, src)
-			if(starting_funds > 0)
-				//subtract the money
-				GLOB.station_account.money -= starting_funds
-
-				//create a transaction log entry
-				var/trx = create_transation(account_name, "New account activation", "([starting_funds])")
-				GLOB.station_account.transaction_log.Add(trx)
-
-				creating_new_account = 0
-
+			if(!account_name)
+				return FALSE
+			if(!create_station_funded_account(account_name, starting_funds, src))
+				return FALSE
 			creating_new_account = 0
 		if("insert_card")
 			if(held_card)
@@ -191,15 +194,11 @@
 			creating_new_account = 0
 
 		if("revoke_payroll")
+			if(access_level < 2 || !detailed_account_view || detailed_account_view.is_budget_account)
+				return FALSE
 			var/funds = detailed_account_view.money
-			var/account_trx = create_transation(GLOB.station_account.owner_name, "Revoke payroll", "([funds])")
-			var/station_trx = create_transation(detailed_account_view.owner_name, "Revoke payroll", funds)
-
-			GLOB.station_account.money += funds
-			detailed_account_view.money = 0
-
-			detailed_account_view.transaction_log.Add(account_trx)
-			GLOB.station_account.transaction_log.Add(station_trx)
+			if(funds > 0)
+				transfer_account_funds(detailed_account_view, GLOB.station_account, funds, "Revoke payroll", machine_id)
 
 			SEND_GLOBAL_SIGNAL(COMSIG_GLOB_PAYMENT_ACCOUNT_REVOKE, detailed_account_view)
 

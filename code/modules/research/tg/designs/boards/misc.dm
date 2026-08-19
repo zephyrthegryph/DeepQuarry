@@ -112,7 +112,7 @@
 // TODO - non-pcu skill console, id = "skill_data"
 
 /datum/design_techweb/board/skill_pcu
-	SET_CIRCUIT_DESIGN_NAMEDESC("employment records PCU")
+	SET_CIRCUIT_DESIGN_NAMEDESC("department management console")
 	id = "skill_pcu"
 	build_path = /obj/item/circuitboard/skills/pcu
 	category = list(
@@ -198,7 +198,7 @@
 	departmental_flags = DEPARTMENT_BITFLAG_COMMAND | DEPARTMENT_BITFLAG_SCIENCE
 
 /datum/design_techweb/board/emp_data
-	SET_CIRCUIT_DESIGN_NAMEDESC("employment records console")
+	SET_CIRCUIT_DESIGN_NAMEDESC("department management console")
 	id = "emp_data"
 	build_path = /obj/item/circuitboard/skills
 	category = list(

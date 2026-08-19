@@ -67,28 +67,6 @@
 /datum/preference/text/human/citizenship/apply_to_human(mob/living/carbon/human/target, value)
 	target.citizenship = value
 
-/datum/preference/text/human/faction
-	savefile_key = "faction"
-	savefile_identifier = PREFERENCE_CHARACTER
-	category = PREFERENCE_CATEGORY_NON_CONTEXTUAL
-	can_randomize = FALSE
-	maximum_value_length = MAX_NAME_LEN
-
-/datum/preference/text/human/faction/create_default_value()
-	return "None"
-
-/datum/preference/text/human/faction/pref_deserialize(input, datum/preferences/preferences)
-	if(!input || !istext(input))
-		return create_default_value()
-	return sanitize_input(input)
-
-// dropdown choices from the same global the Bay UI used.
-/datum/preference/text/human/faction/get_pref_choices(datum/preferences/preferences)
-	return GLOB.faction_choices + list("None")
-
-/datum/preference/text/human/faction/apply_to_human(mob/living/carbon/human/target, value)
-	target.personal_faction = value
-
 /datum/preference/text/human/religion
 	savefile_key = "religion"
 	savefile_identifier = PREFERENCE_CHARACTER

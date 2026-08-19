@@ -11,6 +11,10 @@
 	name = "Mulebot"
 	desc = "A Multiple Utility Load Effector bot."
 	icon_state = "mulebot0"
+	/// Last accountable operator for generic automation-contract attribution.
+	var/contract_operator_account
+	var/contract_operator_name
+	var/contract_operator_department
 	anchored = TRUE
 	density = TRUE
 	health = 150
@@ -145,6 +149,12 @@
 	update_icons()
 
 /mob/living/bot/mulebot/proc/obeyCommand(mob/user, command)
+	var/mob/living/living_user = user
+	var/datum/money_account/operator_account = contract_account_for_mob(living_user)
+	if(operator_account)
+		contract_operator_account = operator_account.account_number
+		contract_operator_name = operator_account.owner_name
+		contract_operator_department = operator_account.department_id
 	switch(command)
 		if("Home")
 			resetTarget()
@@ -194,9 +204,26 @@
 
 /mob/living/bot/mulebot/handleAdjacentTarget()
 	if(target == src.loc)
+		var/completed_target = targetName
+		var/completed_target_id = target ? REF(target) : completed_target
+		var/cargo_type = load?.type
 		automatic_custom_emote(AUDIBLE_MESSAGE, "makes a chiming sound.")
 		playsound(src, 'sound/machines/chime.ogg', 50, 0)
 		UnarmedAttack(target)
+		if(SScontracts && completed_target != "Home")
+			emit_contract_event(CONTRACT_EVENT_AUTOMATION_TASK_COMPLETED, list(
+				"department" = DEPARTMENT_SYNTHETIC,
+				"actor_account" = contract_operator_account,
+				"actor_name" = contract_operator_name,
+				"actor_department" = contract_operator_department,
+				"bot_id" = REF(src),
+				"task_kind" = "cargo_delivery",
+				"target_id" = completed_target_id,
+				"successful" = TRUE,
+				"work_units" = 1,
+				"cargo_type" = cargo_type,
+				"detail" = "[src] completed an autonomous delivery to [completed_target].",
+			), "automation:[REF(src)]:delivery:[world.time]", src)
 		resetTarget()
 		if(auto_return && home && (loc != home))
 			target = home

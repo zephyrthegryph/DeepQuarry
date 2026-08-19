@@ -61,7 +61,8 @@
 		BITSET(player.current.hud_updateflag, SPECIALROLE_HUD)
 		if(!is_special_character(player))
 			remove_verb(player.current, /mob/living/proc/write_ambition)
-			remove_verb(player.current.client, /client/proc/aooc)
+			if(player.current.client)
+				remove_verb(player.current.client, /client/proc/aooc)
 			player.ambitions = ""
 		return 1
 	return 0

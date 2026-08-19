@@ -120,6 +120,8 @@ GLOBAL_LIST_EMPTY(apcs)
 	var/lastused_charging = 0
 	var/lastused_total    = 0
 	var/main_status = APC_EXTERNAL_POWER_NOTCONNECTED
+	/// Monotonic revision for correction-aware contract power telemetry.
+	var/contract_power_revision = 0
 	/// Legacy icon-diff state retained for queue_icon_update().
 	var/update_state   = -1
 	var/update_overlay = -1
@@ -806,7 +808,22 @@ GLOBAL_LIST_EMPTY(apcs)
 	area.power_equip = new_power_equip
 	area.power_environ = new_power_environ
 	area.power_change()
-
+	contract_power_revision++
+	var/powered_channels = new_power_light + new_power_equip + new_power_environ
+	if(SScontracts)
+		emit_contract_event(CONTRACT_EVENT_POWER_SERVICE_CHANGED, list(
+			"department" = DEPARTMENT_ENGINEERING,
+			"fact_id" = "power-service:[REF(src)]",
+			"fact_revision" = contract_power_revision,
+			"service_id" = REF(src),
+			"operational" = powered_channels == 3,
+			"metrics" = list(
+				"powered_channels" = powered_channels,
+				"cell_percent" = cell ? cell.percent() : 0,
+				"load" = lastused_total,
+			),
+			"detail" = "[area] electrical service reports [powered_channels]/3 powered channels.",
+		), "power-service:[REF(src)]:[contract_power_revision]", src)
 /obj/machinery/power/apc/proc/can_use(mob/user, loud = 0)
 	if(!user.client)
 		return 0

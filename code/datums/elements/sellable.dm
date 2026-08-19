@@ -6,12 +6,19 @@
 	. = ..()
 	if(!isobj(target))
 		return ELEMENT_INCOMPATIBLE
+	var/obj/sellable_object = target
+	if(sellable_object.economic_sellable_attached)
+		return ELEMENT_INCOMPATIBLE
+	sellable_object.economic_sellable_attached = TRUE
 	RegisterSignal(target, COMSIG_ITEM_EXPORTED, PROC_REF(sell))
 	RegisterSignal(target, COMSIG_ITEM_SCAN_PROFIT, PROC_REF(calculate_sell_value))
 	RegisterSignal(target, COMSIG_ATOM_EXAMINE, PROC_REF(on_examine))
 	return
 
 /datum/element/sellable/Detach(datum/source)
+	var/obj/sellable_object = source
+	if(istype(sellable_object))
+		sellable_object.economic_sellable_attached = FALSE
 	UnregisterSignal(source, COMSIG_ITEM_EXPORTED)
 	UnregisterSignal(source, COMSIG_ITEM_SCAN_PROFIT)
 	UnregisterSignal(source, COMSIG_ATOM_EXAMINE)
@@ -46,7 +53,38 @@
 		"value" = calculate_sell_value(source),
 		"quantity" = calculate_sell_quantity(source)
 	)
-	EC.value += EC.contents[EC.contents.len]["value"]
+	var/list/export_row = EC.contents[EC.contents.len]
+	SSsupply.apply_market_demand(source, EC, export_row)
+	EC.value += export_row["value"]
+	if(EC.sales_ledger_valid && source.economic_department == EC.sales_department)
+		EC.sales_eligible_value += export_row["value"]
+	else if(source.economic_department)
+		LAZYINITLIST(EC.revenue_by_department)
+		EC.revenue_by_department[source.economic_department] += export_row["value"]
+		if(source.economic_producer_account)
+			LAZYINITLIST(EC.revenue_by_producer)
+			var/producer_key = "[source.economic_producer_account]"
+			EC.revenue_by_producer[producer_key] += export_row["value"]
+	emit_contract_event(CONTRACT_EVENT_ITEM_EXPORTED, list(
+		"actor_account" = source.economic_producer_account,
+		"department" = source.economic_department,
+		"origin_department" = source.economic_department,
+		// All accepted shuttle freight is handled by Cargo, including salvage,
+		// raw materials, and another department's manufactured goods.
+		"handling_department" = DEPARTMENT_CARGO,
+		"freight_ledger_id" = EC.sales_ledger_id,
+		"freight_destination" = EC.sales_destination,
+		"routed_department" = EC.sales_department,
+		"item_type" = source.type,
+		"item_name" = source.name,
+		"quantity" = export_row["quantity"],
+		"in_crate" = in_crate,
+		"fact_id" = "export:[REF(source)]",
+		"fact_revision" = 1,
+		"fact_active" = TRUE,
+		"metrics" = list("value" = SSsupply.export_revenue(export_row["value"])),
+		"detail" = "Accepted export of [source.name]",
+	), "item-exported:[REF(source)]", source)
 	return TRUE
 
 /datum/element/sellable/proc/on_examine(datum/source, mob/user, list/examine_texts)
@@ -88,6 +126,9 @@
 /datum/element/sellable/spacecash/calculate_sell_quantity(obj/source)
 	var/obj/item/spacecash/cashmoney = source
 	return cashmoney.worth
+
+/datum/element/sellable/manufactured/calculate_sell_value(obj/source)
+	return max(1, source.economic_export_value)
 
 
 // Research samples

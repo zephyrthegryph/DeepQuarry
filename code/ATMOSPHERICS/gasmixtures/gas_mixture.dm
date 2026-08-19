@@ -137,6 +137,12 @@ GLOBAL_LIST_INIT(gaslist_cache, init_gaslist_cache())
 /proc/drain_dirty_gas_mixtures()
 	return call_ext(VERDIGRIS, "byond:drain_dirty_gas_mixtures_ffi")()
 
+/proc/watch_dirty_gas_mixture(mixture_id)
+	return call_ext(VERDIGRIS, "byond:watch_dirty_gas_mixture_ffi")(mixture_id)
+
+/proc/unwatch_dirty_gas_mixture(mixture_id)
+	return call_ext(VERDIGRIS, "byond:unwatch_dirty_gas_mixture_ffi")(mixture_id)
+
 /datum/gas_mixture/proc/total_moles()
 	return call_ext(VERDIGRIS, "byond:total_moles_hook_ffi")(src)
 

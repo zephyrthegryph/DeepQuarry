@@ -138,6 +138,15 @@
 				beaker.on_reagent_change()
 				beaker.reagents.handle_reactions()
 				update_icon()
+				if(SScontracts)
+					emit_contract_event(CONTRACT_EVENT_BLOOD_DONATED, list(
+						"department" = DEPARTMENT_MEDICAL,
+						"subject_id" = SScontracts.subject_identity(T)?.id,
+						"container_id" = REF(beaker),
+						"blood_type" = B.data?["blood_type"] || "unknown",
+						"amount" = amount,
+						"detail" = "Collected [amount] units of [B.data?["blood_type"] || "untyped"] blood from [T].",
+					), "blood-donation:[REF(beaker)]:[round(beaker.reagents.total_volume, 0.1)]", src, null, T)
 
 /obj/machinery/iv_drip/attack_hand(mob/user as mob)
 	if(beaker)

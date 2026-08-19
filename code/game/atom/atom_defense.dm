@@ -42,6 +42,7 @@
 	var/previous_atom_integrity = atom_integrity
 
 	update_integrity(atom_integrity - damage_amount)
+	contract_report_station_damage(src, previous_atom_integrity - atom_integrity)
 
 	var/integrity_failure_amount = integrity_failure * max_integrity
 
@@ -91,6 +92,7 @@
 	var/integrity_failure_amount = integrity_failure * max_integrity
 	var/previous_atom_integrity = atom_integrity
 	update_integrity(min(max_integrity, atom_integrity + repair_amount))
+	contract_report_station_repair(src, atom_integrity - previous_atom_integrity)
 	if(integrity_failure && previous_atom_integrity <= integrity_failure_amount && atom_integrity > integrity_failure_amount)
 		atom_fix()
 	return atom_integrity

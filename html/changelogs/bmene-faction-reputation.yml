@@ -1,0 +1,8 @@
+author: "BigBadE"
+delete-after: true
+changes:
+  - rscadd: "Added station-wide, departmental, and personal reputation tracking for nine major factions."
+  - rscadd: "Added persistent faction affiliation choices and lore summaries to character creation."
+  - rscdel: "Removed the legacy single primary-faction character setting in favor of multi-faction affiliations."
+  - qol: "Added a dedicated visual faction profile page to character creation."
+  - balance: "Faction affiliations now use a zero-sum reputation budget: negative standings fund positive ones without changing other factions automatically."

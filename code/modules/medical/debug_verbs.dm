@@ -11,11 +11,7 @@ ADMIN_VERB(dq_spawn_medical_dummy, R_DEBUG, "DQ Spawn Medical Dummy", "Spawn a d
 	var/mob/living/carbon/human/dummy = new /mob/living/carbon/human(T)
 	dummy.real_name = "Test Patient #[rand(1000, 9999)]"
 	dummy.name = dummy.real_name
-	// Knock it out so it doesn't wander. Patient is alive but
-	// unconscious — clean substrate for damage / condition application
-	// without AI noise.
-	dummy.Sleeping(60 SECONDS)
-	to_chat(user.mob, span_notice("Spawned [dummy] at [T]. Sleeping for 60s."))
+	to_chat(user.mob, span_notice("Spawned conscious medical patient [dummy] at [T]."))
 	log_admin("[key_name(user)] spawned a medical dummy at [T].")
 
 
@@ -59,7 +55,7 @@ ADMIN_VERB(dq_apply_condition, R_DEBUG, "DQ Apply Medical Condition", "Apply a /
 	var/datum/medical_issue/condition/C = new condition_type()
 	C.owner = target
 	C.affectedorgan = picked_organ
-	LAZYADD(picked_organ.medical_issues, C)
+	picked_organ.add_medical_issue(C, target)
 	to_chat(user.mob, span_notice("Applied [initial(C.name)] to [target]'s [picked_organ.name]."))
 	log_admin("[key_name(user)] applied condition [condition_type] to [target] / [picked_organ.name].")
 

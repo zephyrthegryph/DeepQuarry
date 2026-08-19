@@ -217,6 +217,9 @@
 	c.ico = copy.ico
 	c.offset_x = copy.offset_x
 	c.offset_y = copy.offset_y
+	var/evidence_id = copy.medical_scan_evidence?["evidence_id"]
+	if(evidence_id)
+		c.attach_contract_evidence(evidence_id)
 	var/list/temp_overlays = copy.overlays       //Iterates through stamps
 	var/image/img                                //and puts a matching
 	for (var/j = 1, j <= min(temp_overlays.len, copy.ico.len), j++) //gray overlay onto the copy

@@ -5577,3 +5577,49 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	TEST_ASSERT(tracked >= eligible / 2, \
 		"only [tracked]/[eligible] heat-eligible floors reached the heat arena — turf registration is partially broken")
 	log_test("Superconductivity: [tracked]/[eligible] eligible floors heat-tracked; sample arena temp [sample_temp] K")
+
+/datum/unit_test/dq_dirty_gas_publication_is_watch_scoped
+
+/datum/unit_test/dq_dirty_gas_publication_is_watch_scoped/Run()
+	var/datum/gas_mixture/air = new(2500)
+	var/mixture_id = air.arena_id()
+	drain_dirty_gas_mixtures()
+	air.set_temperature(T20C + 5)
+	var/list/changes = drain_dirty_gas_mixtures()
+	for(var/index in 1 to length(changes) step 2)
+		TEST_ASSERT(changes[index] != mixture_id, "unwatched mixture was published to DM")
+	watch_dirty_gas_mixture(mixture_id)
+	air.set_temperature(T20C + 10)
+	changes = drain_dirty_gas_mixtures()
+	var/found_watched = FALSE
+	for(var/index in 1 to length(changes) step 2)
+		if(changes[index] == mixture_id)
+			found_watched = TRUE
+			break
+	TEST_ASSERT(found_watched, "watched mixture mutation was not published to DM")
+	unwatch_dirty_gas_mixture(mixture_id)
+	air.set_temperature(T20C + 15)
+	changes = drain_dirty_gas_mixtures()
+	for(var/index in 1 to length(changes) step 2)
+		TEST_ASSERT(changes[index] != mixture_id, "unwatched mixture resumed publication after unsubscribe")
+	qdel(air)
+
+/datum/unit_test/dq_airalarm_radio_is_area_scoped
+
+/datum/unit_test/dq_airalarm_radio_is_area_scoped/Run()
+	var/turf/test_turf
+	for(var/turf/simulated/floor/candidate in world)
+		test_turf = candidate
+		break
+	TEST_ASSERT_NOTNULL(test_turf, "no simulated floor available for area-scoped radio test")
+	var/obj/machinery/alarm/alarm = new(test_turf)
+	var/obj/machinery/atmospherics/unary/vent_pump/vent = new(test_turf)
+	vent.set_frequency(PUMPS_FREQ)
+	var/expected_status_filter = AIRALARM_AREA_FILTER(RADIO_TO_AIRALARM, alarm.area_uid)
+	var/expected_command_filter = AIRALARM_AREA_FILTER(RADIO_FROM_AIRALARM, alarm.area_uid)
+	TEST_ASSERT_EQUAL(vent.radio_filter_out, expected_status_filter, "vent status radio was not scoped to its area")
+	TEST_ASSERT_EQUAL(vent.radio_filter_in, expected_command_filter, "vent command radio was not scoped to its area")
+	TEST_ASSERT(alarm in alarm.radio_connection.devices[expected_status_filter], "air alarm did not subscribe to its area status filter")
+	TEST_ASSERT(!(alarm in alarm.radio_connection.devices[RADIO_TO_AIRALARM]), "air alarm remained on the station-wide status filter")
+	qdel(vent)
+	qdel(alarm)

@@ -14,6 +14,9 @@
 
 	/// Current items in the build queue.
 	var/list/datum/design_techweb/queue = list()
+	/// Producer account parallel to each queued design.
+	var/list/queue_producer_accounts = list()
+	var/current_producer_account = 0
 
 	/// Whether or not the machine is building the entire queue automagically.
 	var/process_queue = FALSE
@@ -79,6 +82,7 @@
 /obj/machinery/mecha_part_fabricator_tg/Destroy()
 	QDEL_NULL(print_sound)
 	rmat = null
+	queue_producer_accounts = null
 	return ..()
 
 /obj/machinery/mecha_part_fabricator_tg/proc/connect_techweb(datum/techweb/new_techweb)
@@ -218,7 +222,7 @@
 		return FALSE
 
 	var/datum/design_techweb/D = queue[1]
-	if(build_part(D, verbose))
+	if(build_part(D, verbose, queue_producer_accounts[1]))
 		remove_from_queue(1)
 		return TRUE
 
@@ -232,7 +236,7 @@
  * * D - Design datum to attempt to print.
  * * verbose - Whether the machine should use atom_say() procs. Set to FALSE to disable the machine saying reasons for failure to build.
  */
-/obj/machinery/mecha_part_fabricator_tg/proc/build_part(datum/design_techweb/D, verbose = TRUE)
+/obj/machinery/mecha_part_fabricator_tg/proc/build_part(datum/design_techweb/D, verbose = TRUE, producer_account = 0)
 	if(!D || length(D.reagents_list))
 		return FALSE
 
@@ -258,6 +262,7 @@
 
 	rmat.use_materials(D.materials, component_coeff, 1, "built", "[D.name]")
 	being_built = D
+	current_producer_account = producer_account
 	build_finish = world.time + get_construction_time_w_coeff(initial(D.construction_time))
 	build_start = world.time
 	desc = "It's building \a [D.name]."
@@ -311,6 +316,8 @@
 /obj/machinery/mecha_part_fabricator_tg/proc/dispense_built_part(datum/design_techweb/dispensed_design)
 	var/obj/item/built_part = create_new_part(dispensed_design)
 	split_materials_uniformly(dispensed_design.materials, component_coeff, built_part)
+	built_part.set_economic_provenance(DEPARTMENT_RESEARCH, max(25, dispensed_design.construction_time), current_producer_account)
+	current_producer_account = 0
 
 	being_built = null
 
@@ -340,12 +347,13 @@
  * Returns TRUE if successful and FALSE if the design was not added to the queue.
  * * D - Datum design to add to the queue.
  */
-/obj/machinery/mecha_part_fabricator_tg/proc/add_to_queue(datum/design_techweb/D)
+/obj/machinery/mecha_part_fabricator_tg/proc/add_to_queue(datum/design_techweb/D, producer_account = 0)
 	if(!istype(queue))
 		queue = list()
 
 	if(D)
 		queue[++queue.len] = D
+		queue_producer_accounts += producer_account
 		return TRUE
 
 	return FALSE
@@ -359,7 +367,9 @@
 /obj/machinery/mecha_part_fabricator_tg/proc/remove_from_queue(index)
 	if(!isnum(index) || !ISINTEGER(index) || !istype(queue) || (index<1 || index>length(queue)))
 		return FALSE
-	queue.Cut(index,++index)
+	var/end_index = index + 1
+	queue.Cut(index, end_index)
+	queue_producer_accounts.Cut(index, end_index)
 	return TRUE
 
 /**
@@ -467,6 +477,8 @@
 	switch(action)
 		if("build")
 			var/designs = params["designs"]
+			var/obj/item/card/id/producer_id = ui.user.GetIdCard()
+			var/producer_account = producer_id?.associated_account_number || 0
 
 			if(!islist(designs))
 				return
@@ -483,7 +495,7 @@
 				if(!(design.build_type & fab_type) || design.id != design_id)
 					continue
 
-				add_to_queue(design)
+				add_to_queue(design, producer_account)
 
 			if(params["now"])
 				if(process_queue)
@@ -502,6 +514,7 @@
 		if("clear_queue")
 			// Delete everything from queue
 			queue.Cut()
+			queue_producer_accounts.Cut()
 
 			return
 

@@ -112,6 +112,16 @@ Nothing else in the console has ID requirements.
 		// 	SSblackbox.record_feedback("associative", "science_techweb_unlock", 1, list("id" = "[id]", "name" = TN.display_name, "price" = "[json_encode(price)]", "time" = ISOtime()))
 		if(stored_research.research_node_id(id, research_source = src))
 			atom_say("Successfully researched [TN.display_name].")
+			if(SScontracts)
+				var/mob/living/researcher = user
+				emit_contract_event(CONTRACT_EVENT_RESEARCH_MILESTONE, list(
+					"department" = DEPARTMENT_RESEARCH,
+					"node_id" = TN.id,
+					"node_name" = TN.display_name,
+					"point_cost" = price[TECHWEB_POINT_TYPE_GENERIC] || 0,
+					"design_count" = length(TN.design_ids),
+					"detail" = "Unlocked the [TN.display_name] research node.",
+				), "research-node:[REF(stored_research)]:[TN.id]", src, researcher)
 			var/logname = "Unknown"
 			if(isAI(user))
 				logname = "AI [user.name]"

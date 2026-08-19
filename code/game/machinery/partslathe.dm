@@ -34,6 +34,8 @@
 	var/obj/item/circuitboard/copy_board // Inserted board
 
 	var/list/datum/category_item/partslathe/queue = list() // Queue of things to build
+	/// Producer account parallel to each queued design.
+	var/list/queue_producer_accounts = list()
 	var/busy = 0			// Currently building stuff y/n
 	var/progress = 0		// How many machine ticks have we spent building current thing?
 	var/mat_efficiency = 3	// Material usage efficiency (less efficient than protolathe)
@@ -148,7 +150,7 @@
 		update_use_power(USE_POWER_ACTIVE)
 		progress += speed
 		if(progress >= D.time)
-			build(D)
+			build(D, queue_producer_accounts[1])
 			progress = 0
 			removeFromQueue(1)
 		update_icon()
@@ -159,13 +161,15 @@
 		update_icon()
 		playsound(src, 'sound/machines/chime.ogg', 50, 0)
 
-/obj/machinery/partslathe/proc/addToQueue(datum/category_item/partslathe/D)
+/obj/machinery/partslathe/proc/addToQueue(datum/category_item/partslathe/D, producer_account = 0)
 	queue += D
+	queue_producer_accounts += producer_account
 	return
 
 /obj/machinery/partslathe/proc/removeFromQueue(index)
 	if(queue.len >= index)
 		queue.Cut(index, index + 1)
+		queue_producer_accounts.Cut(index, index + 1)
 		return
 
 /obj/machinery/partslathe/proc/canBuild(datum/category_item/partslathe/D)
@@ -183,16 +187,18 @@
 			ret += "[CEILING((D.resources[M] * mat_efficiency), 1) - materials[M]] [M]"
 	return ret
 
-/obj/machinery/partslathe/proc/build(datum/category_item/partslathe/D)
+/obj/machinery/partslathe/proc/build(datum/category_item/partslathe/D, producer_account = 0)
 	for(var/M in D.resources)
 		materials[M] = max(0, materials[M] - CEILING((D.resources[M] * mat_efficiency), 1))
 	var/obj/item/new_item = D.build(loc);
 	if(new_item)
+		new_item.set_economic_provenance(DEPARTMENT_RESEARCH, 15, producer_account)
 		new_item.loc = loc
 		if(mat_efficiency < 1) // No matter out of nowhere
 			if(new_item.matter && new_item.matter.len > 0)
 				for(var/i in new_item.matter)
 					new_item.matter[i] = CEILING((new_item.matter[i] * mat_efficiency), 1)
+	return new_item
 
 // 0 amount = 0 means ejecting a full stack; -1 means eject everything
 /obj/machinery/partslathe/proc/eject_materials(material, amount)
@@ -289,13 +295,15 @@
 		return TRUE
 
 	add_fingerprint(ui.user)
+	var/obj/item/card/id/producer_id = ui.user.GetIdCard()
+	var/producer_account = producer_id?.associated_account_number || 0
 	switch(action)
 		// Queue management can be done even while busy
 		if("queue")
 			var/type_to_build = text2path(params["queue"])
 			var/datum/category_item/partslathe/to_build = partslathe_recipies[type_to_build]
 			if(to_build)
-				addToQueue(to_build)
+				addToQueue(to_build, producer_account)
 			return TRUE
 
 		if("queueBoard")
@@ -309,7 +317,7 @@
 				if(!to_build)
 					continue // We don't support building whatever this is
 				for(var/i in 1 to comp_amt)
-					addToQueue(to_build)
+					addToQueue(to_build, producer_account)
 			return TRUE
 
 		if("cancel")

@@ -89,7 +89,7 @@ export const SupplyConsoleMenuHistoryExport = (props) => {
                     )
                   }
                 >
-                  {item.quantity}x -&gt; {item.value} points
+                  {item.quantity}x -&gt; {item.value} Thalers
                 </LabeledList.Item>
               ))
             )}

@@ -381,6 +381,7 @@ SUBSYSTEM_DEF(machines)
 	if(!subscribers)
 		subscribers = list()
 		gas_mixture_subscribers[key] = subscribers
+		watch_dirty_gas_mixture(mixture_id)
 	subscribers[WR.reference] = WR
 
 /datum/controller/subsystem/machines/proc/unsubscribe_gas_dependency(mixture_id, datum/weakref/WR)
@@ -393,6 +394,7 @@ SUBSYSTEM_DEF(machines)
 	subscribers.Remove(WR.reference)
 	if(!length(subscribers))
 		gas_mixture_subscribers.Remove(key)
+		unwatch_dirty_gas_mixture(mixture_id)
 
 /datum/controller/subsystem/machines/proc/hibernate_vent(obj/machinery/atmospherics/unary/V)
 	if(!V)

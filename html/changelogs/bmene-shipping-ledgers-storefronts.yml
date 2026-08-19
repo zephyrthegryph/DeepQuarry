@@ -1,0 +1,8 @@
+author: "BigBadE"
+delete-after: true
+changes:
+  - rscadd: "Added tamper-evident ordinary-paper freight ledgers for explicit external-sale revenue routing."
+  - rscadd: "Added crew-stocked departmental storefronts with suggested prices, configurable markup, receipts, and contract-verifiable sales."
+  - bugfix: "Departmental service checkouts now charge the correct department and retain verified merchandise evidence."
+  - qol: "Retail scanners now print authenticated freight ledgers from loaded ordinary paper, with cargo valuation, contributor allocation, and visible tamper voiding."
+  - qol: "Department storefronts consolidate identical stock while preserving physical item delivery, and are available to every station department."

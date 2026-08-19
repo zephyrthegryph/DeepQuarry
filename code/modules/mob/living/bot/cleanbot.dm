@@ -123,12 +123,30 @@
 		if(prob(20))
 			automatic_custom_emote(AUDIBLE_MESSAGE, "begins to clean up \the [D]")
 		if(do_after(src, cleantime * cTimeMult, target = D))
+			var/cleaned_target_id = REF(D)
 			if(istype(loc, /turf/simulated))
 				var/turf/simulated/f = loc
 				f.dirt = 0
 			if(!D)
 				return
 			qdel(D)
+			if(SScontracts)
+				emit_contract_event(CONTRACT_EVENT_SANITATION_COMPLETED, list(
+					"department" = DEPARTMENT_CIVILIAN,
+					"target_id" = cleaned_target_id,
+					"method" = "cleanbot",
+					"cleaned_units" = 1,
+					"detail" = "[src] removed a station contaminant.",
+				), "sanitation-bot:[REF(src)]:[cleaned_target_id]:[world.time]", src)
+				emit_contract_event(CONTRACT_EVENT_AUTOMATION_TASK_COMPLETED, list(
+					"department" = DEPARTMENT_SYNTHETIC,
+					"bot_id" = REF(src),
+					"task_kind" = "sanitation",
+					"target_id" = cleaned_target_id,
+					"successful" = TRUE,
+					"work_units" = 1,
+					"detail" = "[src] completed an autonomous sanitation task.",
+				), "automation:[REF(src)]:sanitation:[world.time]", src)
 			if(D == target)
 				GLOB.cleanbot_reserved_turfs -= target
 				target = null
@@ -142,6 +160,7 @@
 			if(prob(20))
 				automatic_custom_emote(AUDIBLE_MESSAGE, "begins to clean up \the [loc]")
 			if(do_after(src, cleantime * cTimeMult, target = loc))
+				var/cleaned_turf_id = REF(loc)
 				if(blood)
 					wash(CLEAN_TYPE_BLOOD)
 				if(istype(loc, /turf/simulated))
@@ -150,6 +169,23 @@
 				for(var/obj/effect/O in loc)
 					if(istype(O,/obj/effect/rune) || istype(O,/obj/effect/decal/cleanable) || istype(O,/obj/effect/overlay))
 						qdel(O)
+				if(SScontracts)
+					emit_contract_event(CONTRACT_EVENT_SANITATION_COMPLETED, list(
+						"department" = DEPARTMENT_CIVILIAN,
+						"target_id" = cleaned_turf_id,
+						"method" = "cleanbot",
+						"cleaned_units" = 1,
+						"detail" = "[src] sanitized a station floor.",
+					), "sanitation-bot:[REF(src)]:[cleaned_turf_id]:[world.time]", src)
+					emit_contract_event(CONTRACT_EVENT_AUTOMATION_TASK_COMPLETED, list(
+						"department" = DEPARTMENT_SYNTHETIC,
+						"bot_id" = REF(src),
+						"task_kind" = "sanitation",
+						"target_id" = cleaned_turf_id,
+						"successful" = TRUE,
+						"work_units" = 1,
+						"detail" = "[src] completed an autonomous sanitation task.",
+					), "automation:[REF(src)]:sanitation:[world.time]", src)
 		else
 			handleIdle()
 	busy = 0

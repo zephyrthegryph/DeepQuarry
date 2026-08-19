@@ -28,6 +28,8 @@
 	/// Generally applied during modification cooking with oven/fryer
 	/// Used to stop deepfried meat from looking like slightly tanned raw meat, and make it actually look cooked
 	var/cooked_icon = null
+	/// Monotonic serving sequence used by the generic contract event ledger.
+	var/contract_consumption_sequence = 0
 
 	/// If this has a wrapper on it. If true, it will print a message and ask you to remove it
 	var/package = FALSE
@@ -62,6 +64,17 @@
 //Placeholder for effect that trigger on eating that aren't tied to reagents.
 /obj/item/reagent_containers/food/snacks/proc/On_Consume(mob/living/eater, mob/living/feeder)
 	SEND_SIGNAL(src, COMSIG_FOOD_EATEN, eater, feeder)
+	if(SScontracts && eater)
+		contract_consumption_sequence++
+		emit_contract_event(CONTRACT_EVENT_FOOD_CONSUMED, list(
+			"department" = DEPARTMENT_CIVILIAN,
+			"subject_id" = SScontracts.subject_identity(eater)?.id,
+			"item_type" = type,
+			"food_kind" = "meal",
+			"portion" = 1,
+			"finished" = !reagents.total_volume,
+			"detail" = "[eater] consumed a serving of [src].",
+		), "food-consumed:[REF(src)]:[contract_consumption_sequence]", src, feeder, eater)
 	if(food_inserted_micros && food_inserted_micros.len)
 		for(var/mob/living/micro in food_inserted_micros)
 			if(!can_food_vore(eater, micro))

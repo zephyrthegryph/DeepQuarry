@@ -1,0 +1,9 @@
+author: "BigBadE"
+delete-after: true
+changes:
+  - bugfix: "Bound incident-response contracts to their actual affected assets and withdraws resolved calls before acceptance."
+  - qol: "Urgent opportunity contracts can temporarily displace lower-priority standing offers on full boards."
+  - rscadd: "Added an event-driven opportunity broker that turns sustained, diverse station activity and incidents into contextual contract offers."
+  - rscadd: "Added thirteen new follow-up contracts across Engineering, Medical, Research, Security, Cargo, Service, Command, and synthetic operations."
+  - bugfix: "Contract opportunities now reject duplicate and stale facts, cap repeated contributions, require independent evidence, latch per incident, and enforce cooldowns."
+  - refactor: "Replaced single-APC, single-air-alarm, single-damage, and direct covert-threshold offer callbacks with the shared rolling broker."

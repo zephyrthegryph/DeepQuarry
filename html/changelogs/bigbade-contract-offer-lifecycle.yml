@@ -1,0 +1,7 @@
+author: "BigBadE"
+delete-after: true
+changes:
+  - rscadd: "Contract offers now use bounded station, department, and personal boards with event-driven eligibility, cooldowns, one-click decline, and evidence grace periods."
+  - qol: "Contract dashboards now distinguish standing offers from limited opportunities and accept the selected negotiated terms directly."
+  - admin: "Added a contract-board inspector with candidate, cooldown, and lifecycle diagnostics."
+  - bugfix: "Accepted contracts now reserve finite sponsor demand, preventing simultaneous offers and follow-ups from exceeding round completion or reward limits."

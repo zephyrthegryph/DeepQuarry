@@ -1,0 +1,13 @@
+author: "BigBadE"
+delete-after: true
+changes:
+  - rscadd: "Cargo now has a rotating faction market with external sellers, buyer bids, quoted procurement, routed exports, demand premiums, and reputation-backed pricing."
+  - rscadd: "Faction agency now progresses through candidate vetting, accreditation, trusted status, negotiated per-contract Cargo contacts, faction-specific commissions, stable contract market routes, and explicit opt-in red contracts for every faction."
+  - rscadd: "Contacts negotiate registered, confidential, or deniable terms on ordinary signed paper, earning progressively larger reward cuts and sales commissions while accepting progressively greater exposure."
+  - rscadd: "Agent fieldwork now includes cross-department sourcing, reciprocal trade, rush and confidential brokerage, departmental endorsements, and faction-specific red commissions. Reserved freight is routed by putting its signed agreement in the outgoing crate instead of pressing a console button."
+  - rscadd: "Security can investigate covert commerce with existing forensic scanners, preserving physical paperwork and fingerprints, correlating Supply-console ledgers, exposing principals and contacts, and burning active hostile routes."
+  - rscadd: "Faction commissions now generate multi-department sourcing, demonstration, service, custody, and influence operations driven by existing Engineering, Medical, Science, Security, Service, economy, and Cargo gameplay."
+  - rscadd: "Agents physically select registered, compartmentalized, or explicitly hostile operating charters. Outcomes are graded for both completion and discovery, changing payment, institutional funding, reputation, and failure liability."
+  - rscadd: "Authenticated performers share operation awards, department-head endorsements require distinct stakeholder departments, and contacts may physically withdraw and surrender their agreement to Security at the cost of their faction payment."
+  - rscdel: "Removed the repetitive legacy agent shipment definitions from the live contract catalog in favor of compositional faction operations."
+  - admin: "The Economy Observatory now reports market demand, agency tiers, covert exposure, traces, and audit detections."

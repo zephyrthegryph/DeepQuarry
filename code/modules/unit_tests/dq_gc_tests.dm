@@ -36,7 +36,7 @@
 	var/datum/medical_issue/condition/tissue_hypoxia/C = new
 	C.owner = H
 	C.affectedorgan = chest
-	chest.medical_issues += C
+	chest.add_medical_issue(C, H)
 	C.roll_symptoms()
 	var/list/symptoms = C.active_symptoms?.Copy() || list()
 	TEST_ASSERT(length(symptoms), "condition rolled no symptoms; cycle test is vacuous")
@@ -45,7 +45,7 @@
 	TEST_ASSERT(isnull(C.owner), "condition kept its owner ref after Destroy()")
 	for(var/datum/medical_symptom/S as anything in symptoms)
 		TEST_ASSERT(isnull(S.source_condition), "[S.type] kept source_condition after the condition was destroyed — refcount cycle")
-	chest.medical_issues -= C
+	chest.remove_medical_issue(C)
 
 // Items that build an /obj/item/storage/internal must release it on Destroy —
 // the un-nulled forward var was the GC pin for 22 leaked internals per run.

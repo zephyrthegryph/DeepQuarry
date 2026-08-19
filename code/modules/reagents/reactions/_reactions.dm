@@ -108,6 +108,15 @@
 		// #endif
 
 	on_reaction(holder, amt_produced)
+	if(SScontracts && result && amt_produced > 0)
+		emit_contract_event(CONTRACT_EVENT_CHEMISTRY_RESULT, list(
+			"department" = DEPARTMENT_RESEARCH,
+			"reaction_id" = type,
+			"product_id" = result,
+			"amount" = amt_produced,
+			"reactant_count" = length(required_reagents),
+			"detail" = "Produced [round(amt_produced, 0.1)] units of [result] through [name].",
+		), "chemistry-result:[REF(holder)]:[type]:[world.time]:[round(amt_produced, 0.01)]", holder.my_atom)
 
 	return reaction_progress
 

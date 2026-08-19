@@ -23,7 +23,7 @@
 	var/datum/medical_issue/condition/internal_hemorrhage/C = new()
 	C.owner = H
 	C.affectedorgan = chest
-	LAZYADD(chest.medical_issues, C)
+	chest.add_medical_issue(C, H)
 
 	var/list/found = H.get_all_conditions()
 	TEST_ASSERT_EQUAL(length(found), 1, "expected exactly one condition after spawn")
@@ -41,7 +41,7 @@
 	var/datum/medical_issue/condition/internal_hemorrhage/C = new()
 	C.owner = H
 	C.affectedorgan = chest
-	LAZYADD(chest.medical_issues, C)
+	chest.add_medical_issue(C, H)
 
 	var/start = C.severity
 	C.tick_condition()
@@ -75,7 +75,7 @@
 	var/datum/medical_issue/condition/internal_hemorrhage/C = new()
 	C.owner = H
 	C.affectedorgan = chest
-	LAZYADD(chest.medical_issues, C)
+	chest.add_medical_issue(C, H)
 
 	var/start = C.severity
 	// Hit the full attached-limb process path.
@@ -93,7 +93,7 @@
 	var/datum/medical_issue/condition/internal_hemorrhage/C = new()
 	C.owner = H
 	C.affectedorgan = chest
-	LAZYADD(chest.medical_issues, C)
+	chest.add_medical_issue(C, H)
 
 	var/start = C.severity
 	// handle_effects is what /obj/item/organ/process() iterates per tick.
@@ -114,7 +114,7 @@
 	var/datum/medical_issue/condition/internal_hemorrhage/C = new()
 	C.owner = H
 	C.affectedorgan = chest
-	LAZYADD(chest.medical_issues, C)
+	chest.add_medical_issue(C, H)
 
 	// Bring severity up first.
 	for(var/i in 1 to 10)
@@ -192,7 +192,7 @@
 	var/datum/medical_issue/condition/heart_damage/C = new()
 	C.owner = H
 	C.affectedorgan = chest
-	LAZYADD(chest.medical_issues, C)
+	chest.add_medical_issue(C, H)
 	C.severity = 90
 
 	var/heart_dmg_before = heart.damage
@@ -210,7 +210,7 @@
 	var/datum/medical_issue/condition/hypovolemic_shock/C = new()
 	C.owner = H
 	C.affectedorgan = chest
-	LAZYADD(chest.medical_issues, C)
+	chest.add_medical_issue(C, H)
 	C.severity = 90
 
 	var/oxy_before = H.getOxyLoss()
@@ -231,7 +231,7 @@
 	var/datum/medical_issue/condition/C = new condition_type()
 	C.owner = H
 	C.affectedorgan = O
-	LAZYADD(O.medical_issues, C)
+	O.add_medical_issue(C, H)
 	return C
 
 /datum/unit_test/proc/_dq_tick_n(datum/medical_issue/condition/C, n)

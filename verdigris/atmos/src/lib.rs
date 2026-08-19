@@ -51,6 +51,20 @@ fn drain_dirty_gas_mixtures() -> Result<ByondValue> {
 	Ok(list)
 }
 
+#[byondapi::bind("/proc/watch_dirty_gas_mixture")]
+#[auxmacros::panic_safe]
+fn watch_dirty_gas_mixture(id: ByondValue) -> Result<ByondValue> {
+	GasArena::watch_dirty_mixture(id.get_number()? as usize);
+	Ok(ByondValue::null())
+}
+
+#[byondapi::bind("/proc/unwatch_dirty_gas_mixture")]
+#[auxmacros::panic_safe]
+fn unwatch_dirty_gas_mixture(id: ByondValue) -> Result<ByondValue> {
+	GasArena::unwatch_dirty_mixture(id.get_number()? as usize);
+	Ok(ByondValue::null())
+}
+
 #[cfg(feature = "turf_processing")]
 #[byondapi::bind("/datum/controller/subsystem/air/proc/auxmos_diagnostics")]
 #[auxmacros::panic_safe]

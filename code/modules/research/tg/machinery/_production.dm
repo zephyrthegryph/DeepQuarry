@@ -25,6 +25,8 @@
 	var/datum/looping_sound/lathe_print/print_sound
 	///made so we dont call addtimer() 40,000 times in on_techweb_update(). only allows addtimer() to be called on the first update
 	var/techweb_updating = FALSE
+	/// Personal account credited for the current print run's production bonus.
+	var/current_producer_account = 0
 
 /obj/machinery/rnd/production/Initialize(mapload)
 	print_sound = new(list(src), FALSE)
@@ -374,6 +376,8 @@
 			var/build_time_per_item = (design.construction_time * design.lathe_time_factor * efficiency_coeff) ** 0.8
 
 			//start production
+			var/obj/item/card/id/producer_id = ui.user.GetIdCard()
+			current_producer_account = producer_id?.associated_account_number || 0
 			busy = TRUE
 			SStgui.update_uis(src)
 			print_sound.start()
@@ -446,6 +450,8 @@
 			if(isitem(created))
 				created.pixel_x = rand(-6, 6)
 				created.pixel_y = rand(-6, 6)
+				var/obj/created_stack = created
+				created_stack.set_economic_provenance(DEPARTMENT_RESEARCH, max(10, build_time_per_item / 10), current_producer_account)
 			created.forceMove(target)
 			number_to_make -= max_stack_amount
 
@@ -457,6 +463,8 @@
 	if(isitem(created))
 		created.pixel_x = rand(-6, 6)
 		created.pixel_y = rand(-6, 6)
+		var/obj/created_object = created
+		created_object.set_economic_provenance(DEPARTMENT_RESEARCH, max(10, build_time_per_item / 10), current_producer_account)
 	// SSblackbox.record_feedback("nested tally", "lathe_printed_items", 1, list("[type]", "[created.type]"))
 	created.forceMove(target)
 
@@ -476,6 +484,7 @@
 	PROTECTED_PROC(TRUE)
 	print_sound.stop()
 	busy = FALSE
+	current_producer_account = 0
 	SStgui.update_uis(src)
 	icon_state = initial(icon_state)
 

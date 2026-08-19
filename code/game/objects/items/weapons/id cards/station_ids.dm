@@ -28,8 +28,6 @@
 	var/rank = null			//actual job
 	var/dorm = 0			// determines if this ID has claimed a dorm already
 
-	var/mining_points = 0	// For redeeming at mining equipment vendors
-	var/survey_points = 0	// For redeeming at explorer equipment vendors.
 
 /obj/item/card/id/examine(mob/user)
 	. = ..()
@@ -57,12 +55,6 @@
 	M.ImmediateOverlayUpdate()
 	var/icon/F = getFlatIcon(M, defdir = SOUTH, no_anim = TRUE)
 	front = "'data:image/png;base64,[icon2base64(F)]'"
-
-/obj/item/card/id/proc/adjust_mining_points(points)
-	if(mining_points + points < 0)
-		return FALSE
-	mining_points += points
-	return TRUE
 
 /mob/proc/set_id_info(obj/item/card/id/id_card)
 	id_card.age = 0
@@ -442,8 +434,6 @@
 		access |= O.GetAccess()
 		desc = I.desc
 		rank = O.rank
-		mining_points = O.mining_points
-		survey_points = O.survey_points
 		to_chat(user, span_notice("You copy the access from \the [I] to \the [src]."))
 		user.drop_from_inventory(I)
 		qdel(I)

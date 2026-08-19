@@ -19,7 +19,7 @@ export const MiningUser = (props) => {
             }}
           >
             Logged in as {id.name}.<br />
-            You have {id.points.toLocaleString('en-US')} points.
+            You have {id.points.toLocaleString('en-US')} Thalers.
           </Box>
           <Button
             icon="eject"

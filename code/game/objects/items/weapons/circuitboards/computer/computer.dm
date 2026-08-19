@@ -48,7 +48,7 @@
 	build_path = /obj/machinery/computer/secure_data
 
 /obj/item/circuitboard/skills/pcu
-	name = T_BOARD("employment records PCU")
+	name = T_BOARD("department management console")
 	build_path = /obj/machinery/computer/skills // this needs to be fixed someday, a pcu subtype needs to be made, but it affects all maps...
 
 /obj/item/circuitboard/stationalert_engineering

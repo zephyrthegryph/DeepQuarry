@@ -102,22 +102,12 @@ log transactions
 	else if(authenticated_account)
 		if(istype(I,/obj/item/spacecash))
 			var/obj/item/spacecash/cash = I
-			//consume the money
-			authenticated_account.money += cash.worth
+			// Convert physical cash into an audited account deposit.
+			authenticated_account.credit(cash.worth, user.real_name, "Cash deposit", machine_id)
 			if(prob(50))
 				playsound(src, 'sound/items/polaroid1.ogg', 50, 1)
 			else
 				playsound(src, 'sound/items/polaroid2.ogg', 50, 1)
-
-			//create a transaction log entry
-			var/datum/transaction/T = new()
-			T.target_name = authenticated_account.owner_name
-			T.purpose = "Credit deposit"
-			T.amount = cash.worth
-			T.source_terminal = machine_id
-			T.date = GLOB.current_date_string
-			T.time = stationtime2text()
-			authenticated_account.transaction_log.Add(T)
 
 			to_chat(user, span_info("You insert [I] into [src]."))
 			src.attack_hand(user)
@@ -371,19 +361,9 @@ log transactions
 			else if(transfer_amount <= authenticated_account.money)
 				var/target_account_number = text2num(params["target_acc_number"])
 				var/transfer_purpose = params["purpose"]
-				if(charge_to_account(target_account_number, authenticated_account.owner_name, transfer_purpose, machine_id, transfer_amount))
+				var/datum/money_account/target_account = get_account(target_account_number)
+				if(transfer_account_funds(authenticated_account, target_account, transfer_amount, transfer_purpose, machine_id))
 					to_chat(ui.user, "[icon2html(src, ui.user.client)]" + span_info("Funds transfer successful."))
-					authenticated_account.money -= transfer_amount
-
-					//create an entry in the account transaction log
-					var/datum/transaction/T = new()
-					T.target_name = "Account #[target_account_number]"
-					T.purpose = transfer_purpose
-					T.source_terminal = machine_id
-					T.date = GLOB.current_date_string
-					T.time = stationtime2text()
-					T.amount = "([transfer_amount])"
-					authenticated_account.transaction_log.Add(T)
 				else
 					to_chat(ui.user, "[icon2html(src, ui.user.client)]" + span_warning("Funds transfer failed."))
 
@@ -401,24 +381,9 @@ log transactions
 			if(!authenticated_account)
 				return
 
-			if(amount <= authenticated_account.money)
+			if(authenticated_account.debit(amount, authenticated_account.owner_name, "E-wallet withdrawal", machine_id))
 				playsound(src, 'sound/machines/chime.ogg', 50, 1)
-
-				//remove the money
-				authenticated_account.money -= amount
-
-				//	spawn_money(amount,src.loc)
 				spawn_ewallet(amount,src.loc,ui.user)
-
-				//create an entry in the account transaction log
-				var/datum/transaction/T = new()
-				T.target_name = authenticated_account.owner_name
-				T.purpose = "Credit withdrawal"
-				T.amount = "([amount])"
-				T.source_terminal = machine_id
-				T.date = GLOB.current_date_string
-				T.time = stationtime2text()
-				authenticated_account.transaction_log.Add(T)
 			else
 				to_chat(ui.user, "[icon2html(src, ui.user.client)]" + span_warning("You don't have enough funds to do that!"))
 			. = TRUE
@@ -433,23 +398,9 @@ log transactions
 			if(!authenticated_account)
 				return
 
-			if(amount <= authenticated_account.money)
+			if(authenticated_account.debit(amount, authenticated_account.owner_name, "Cash withdrawal", machine_id))
 				playsound(src, 'sound/machines/chime.ogg', 50, 1)
-
-				//remove the money
-				authenticated_account.money -= amount
-
 				spawn_money(amount,src.loc,ui.user)
-
-				//create an entry in the account transaction log
-				var/datum/transaction/T = new()
-				T.target_name = authenticated_account.owner_name
-				T.purpose = "Credit withdrawal"
-				T.amount = "([amount])"
-				T.source_terminal = machine_id
-				T.date = GLOB.current_date_string
-				T.time = stationtime2text()
-				authenticated_account.transaction_log.Add(T)
 			else
 				to_chat(ui.user, "[icon2html(src, ui.user.client)]" + span_warning("You don't have enough funds to do that!"))
 			. = TRUE

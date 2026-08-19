@@ -111,6 +111,8 @@
 	var/atmoswarn = FALSE // Looping Alarms
 	var/sleeping_mixture_id
 	var/sleeping_mixture_revision = -1
+	/// Monotonic revision for correction-aware contract atmosphere telemetry.
+	var/contract_atmos_revision = 0
 
 /obj/machinery/alarm/nobreach
 	breach_detection = 0
@@ -203,6 +205,22 @@
 			mode = AALARM_MODE_OFF
 			apply_mode()
 
+	if(SScontracts && (old_level != danger_level || old_pressurelevel != pressure_dangerlevel))
+		contract_atmos_revision++
+		var/current_pressure = environment.return_pressure()
+		var/current_temperature = environment.return_temperature()
+		emit_contract_event(CONTRACT_EVENT_ATMOS_SERVICE_CHANGED, list(
+			"department" = DEPARTMENT_ENGINEERING,
+			"fact_id" = "atmos-service:[REF(src)]",
+			"fact_revision" = contract_atmos_revision,
+			"service_id" = REF(src),
+			"danger_level" = danger_level,
+			"metrics" = list(
+				"pressure" = current_pressure,
+				"temperature" = current_temperature,
+			),
+			"detail" = "[alarm_area] atmospheric service reports danger level [danger_level], [round(current_pressure, 0.1)] kPa, and [round(current_temperature, 0.1)] K.",
+		), "atmos-service:[REF(src)]:[contract_atmos_revision]", src)
 	if(mode == AALARM_MODE_CYCLE && environment.return_pressure() < ONE_ATMOSPHERE * 0.05)
 		mode = AALARM_MODE_FILL
 		apply_mode()
@@ -496,7 +514,7 @@
 /obj/machinery/alarm/proc/set_frequency(new_frequency)
 	SSradio.remove_object(src, frequency)
 	frequency = new_frequency
-	radio_connection = SSradio.add_object(src, frequency, RADIO_TO_AIRALARM)
+	radio_connection = SSradio.add_object(src, frequency, AIRALARM_AREA_FILTER(RADIO_TO_AIRALARM, area_uid))
 
 /obj/machinery/alarm/proc/send_signal(target, list/command)//sends signal 'command' to 'target'. Returns 0 if no radio connection, 1 otherwise
 	if(!radio_connection)
@@ -510,7 +528,7 @@
 	signal.data["tag"] = target
 	signal.data["sigtype"] = "command"
 
-	radio_connection.post_signal(src, signal, RADIO_FROM_AIRALARM)
+	radio_connection.post_signal(src, signal, AIRALARM_AREA_FILTER(RADIO_FROM_AIRALARM, area_uid))
 //			to_world("Signal [command] Broadcasted to [target]")
 
 	return 1

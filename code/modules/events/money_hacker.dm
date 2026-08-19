@@ -39,7 +39,7 @@ GLOBAL_VAR_INIT(account_hack_attempted, 0)
 
 		//subtract the money
 		var/lost = affected_account.money * 0.8 + (rand(2,4) - 2) / 10
-		affected_account.money -= lost
+		affected_account.debit(lost, "Unknown attacker", "Account intrusion loss", "Compromised GalaxyNet terminal")
 
 		//create a taunting log entry
 		var/datum/transaction/T = new()

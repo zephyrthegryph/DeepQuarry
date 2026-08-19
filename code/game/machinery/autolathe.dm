@@ -22,6 +22,9 @@
 	var/shocked = FALSE
 	///Are we currently printing something
 	var/busy = FALSE
+	/// Personal account credited for the current print run's production bonus.
+	var/current_producer_account = 0
+	var/current_producer_department
 
 	///Coefficient applied to consumed materials. Lower values result in lower material consumption.
 	var/creation_efficiency = 1
@@ -284,6 +287,9 @@
 	var/build_time_per_item = (design.construction_time * (design.lathe_time_factor)) ** lathe_build_rate
 
 	//do the printing sequentially
+	var/obj/item/card/id/producer_id = ui.user.GetIdCard()
+	current_producer_account = producer_id?.associated_account_number || 0
+	current_producer_department = department_for_mob(ui.user) || DEPARTMENT_ENGINEERING
 	busy = TRUE
 	icon_state = "autolathe_n"
 	SStgui.update_uis(src)
@@ -352,6 +358,8 @@
 			if(isitem(created))
 				created.pixel_x = rand(-6, 6)
 				created.pixel_y = rand(-6, 6)
+				var/obj/created_stack = created
+				created_stack.set_economic_provenance(current_producer_department, max(5, build_time_per_item / 10), current_producer_account)
 			created.forceMove(target)
 			number_to_make -= max_stack_amount
 
@@ -363,6 +371,8 @@
 	if(isitem(created))
 		created.pixel_x = rand(-6, 6)
 		created.pixel_y = rand(-6, 6)
+		var/obj/created_object = created
+		created_object.set_economic_provenance(current_producer_department || DEPARTMENT_ENGINEERING, max(5, build_time_per_item / 10), current_producer_account)
 
 	if(is_stack)
 		items_remaining = 0
@@ -383,6 +393,8 @@
 	print_sound.stop()
 	icon_state = initial(icon_state)
 	busy = FALSE
+	current_producer_account = 0
+	current_producer_department = null
 	SStgui.update_uis(src)
 
 /obj/machinery/autolathe/MouseDrop(over_object, src_location, over_location)

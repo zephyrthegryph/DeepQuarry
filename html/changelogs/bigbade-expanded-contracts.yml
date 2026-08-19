@@ -1,0 +1,10 @@
+author: "BigBadE"
+delete-after: true
+changes:
+  - rscadd: "Added outcome-driven contracts for Engineering, Research, Cargo, Service, Security, and Command, with reputation-sensitive terms and linked personal counter-offers."
+  - rscadd: "Supermatter telemetry, service sales, security dispositions, and budget allocations now provide generic event evidence to active contracts."
+  - rscadd: "Contract sponsors now have finite shift demand, diminishing repeat awards, standing-gated negotiation terms, and allied follow-up commissions."
+  - bugfix: "Service contracts now settle after refunds, Command contracts require funded budget and payroll cycles, and Security contracts verify physical custody instead of trusting record edits."
+  - balance: "Export portfolios cap repeated item contributions, and mutually exclusive personal counter-offers now resolve against their public contract."
+  - bugfix: "Security contracts now identify unique cases by the physically verified prisoner rather than by editable security-record IDs."
+  - bugfix: "Contract evidence now preserves patient identity when a previously mindless body receives its first mind."

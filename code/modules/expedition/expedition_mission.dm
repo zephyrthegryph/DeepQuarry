@@ -124,19 +124,20 @@
 		if(!O.required && O.state == EXP_OBJ_COMPLETE)
 			pts += O.bonus_points
 			cash += O.bonus_cash
-	var/turf/payout_turf = site?.payout_turf || get_turf(site?.origin_console)
 	if(site && length(site.participants))
 		for(var/mob/living/L in site.participants)
 			if(QDELETED(L) || L.stat == DEAD)
 				continue
 			var/obj/item/card/id/id = L.GetIdCard()
 			if(id)
-				id.survey_points += pts
+				var/datum/money_account/account = get_account(id.associated_account_number)
+				account?.credit(pts, "Exploration program", "Expedition crew bonus")
 				to_chat(L, span_notice("Expedition complete — [pts] survey points credited to [id]."))
 			else
 				to_chat(L, span_notice("Expedition complete — but you have no ID to credit survey points to."))
-	if(payout_turf && cash > 0)
-		spawn_money(cash, payout_turf)
+	if(cash > 0)
+		var/datum/money_account/exploration_budget = GLOB.department_accounts[DEPARTMENT_PLANET]
+		exploration_budget?.credit(cash, "Exploration program", "Expedition mission proceeds")
 
 // Per-objective rows for the console.
 /datum/expedition_mission/proc/objective_rows()

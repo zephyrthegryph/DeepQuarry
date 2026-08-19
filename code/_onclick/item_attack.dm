@@ -92,7 +92,7 @@ avoid code duplication. This includes items that may sometimes act as a standard
 		attacker.begin_melee_swing(src, I)
 		return ITEM_INTERACT_SUCCESS // suppress afterattack; the swing applies its own hit
 
-	return I.attack(src, user, user.zone_sel.selecting, attack_modifier)
+	return I.attack(src, user, user.zone_sel?.selecting || BP_TORSO, attack_modifier)
 
 // Used to get how fast a mob should attack, and influences click delay.
 // This is just for inheritence.

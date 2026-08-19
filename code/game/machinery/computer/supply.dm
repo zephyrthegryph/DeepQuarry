@@ -47,6 +47,26 @@
 		can_order_contraband = TRUE
 		return 1
 
+/obj/machinery/computer/supplycomp/proc/can_manage_budget(mob/user, department)
+	if(issilicon(user))
+		return department == DEPARTMENT_CARGO && (authorization & SUP_ACCEPT_ORDERS)
+	if(!ishuman(user))
+		return FALSE
+	var/mob/living/carbon/human/human_user = user
+	var/datum/job/job = SSjob.get_job(human_user.job)
+	return istype(job) && (department in job.department_accounts)
+
+/obj/machinery/computer/supplycomp/proc/can_trade_market(mob/user)
+	if(!(authorization & SUP_ACCEPT_ORDERS))
+		return FALSE
+	if(issilicon(user))
+		return TRUE
+	var/mob/living/carbon/human/human_user = user
+	if(!istype(human_user))
+		return FALSE
+	var/obj/item/card/id/id_card = human_user.GetIdCard()
+	return id_card && ((ACCESS_CARGO in id_card.access) || (ACCESS_HEADS in id_card.access) || can_manage_budget(user, DEPARTMENT_CARGO))
+
 
 // TGUI
 /obj/machinery/computer/supplycomp/tgui_interact(mob/user, datum/tgui/ui)
@@ -118,13 +138,20 @@
 	// List is nested so both the list of orders, and the list of elements in each order, can be iterated over
 	var/list/orders = list()
 	for(var/datum/supply_order/S in SSsupply.order_history)
+		var/can_fund = S.personal_order ? (authorization & SUP_ACCEPT_ORDERS) : can_manage_budget(user, S.funding_department)
+		var/funding_label = S.market_contract_funded ? "Principal contract allowance" : (S.personal_order ? "Personal: [S.ordered_by]" : S.funding_department)
+		var/datum/cargo_market_counterparty/market_seller = SSsupply.market_counterparties?[S.market_counterparty_id]
 		orders.Add(list(list(
 			"ref" = "\ref[S]",
 			"status" = S.status,
-			"cost" = S.cost,
+			"cost" = SSsupply.order_price(S),
+			"can_approve" = can_fund,
 			"entries" = list(
 				list("field" = "Supply Pack", "entry" = S.name),
-				list("field" = "Cost", "entry" = S.cost),
+				list("field" = "Funding Source", "entry" = funding_label),
+				list("field" = "Charged", "entry" = S.paid_amount ? "[S.paid_amount] Thalers" : "Unpaid"),
+				list("field" = "Cost", "entry" = "[SSsupply.order_price(S)] Thalers"),
+				list("field" = "Seller", "entry" = SSsupply.market_display_name(market_seller, user, S.market_cover_name) || "NanoTrasen catalog"),
 				list("field" = "Index", "entry" = S.index),
 				list("field" = "Reason", "entry" = S.comment),
 				list("field" = "Ordered by", "entry" = S.ordered_by),
@@ -137,23 +164,38 @@
 	// Compile exported crates
 	var/list/receipts = list()
 	for(var/datum/exported_crate/E in SSsupply.exported_crates)
+		var/datum/cargo_market_counterparty/market_buyer = SSsupply.market_counterparties?[E.market_counterparty_id]
 		receipts.Add(list(list(
 			"ref" = "\ref[E]",
 			"contents" = E.contents,
 			"error" = E.contents["error"],
 			"title" = list(
 				list("field" = "Name", "entry" = E.name),
-				list("field" = "Value", "entry" = E.value)
+				list("field" = "Value", "entry" = E.value),
+				list("field" = "Buyer", "entry" = SSsupply.market_display_name(market_buyer, user, E.market_cover_name) || "Spot market"),
+				list("field" = "Market premium", "entry" = E.market_premium)
 			)
 		)))
 
 	data["shuttle_auth"] = (authorization & SUP_SEND_SHUTTLE) // Whether this ui is permitted to control the supply shuttle
 	data["order_auth"] = (authorization & SUP_ACCEPT_ORDERS)   // Whether this ui is permitted to accept/deny requested orders
 	data["shuttle"] = shuttle_status
-	data["supply_points"] = SSsupply.points
+	var/department = DEPARTMENT_CARGO
+	if(ishuman(user))
+		var/mob/living/carbon/human/human_user = user
+		var/datum/department/primary_department = SSjob.get_primary_department_of_job(human_user.job)
+		if(primary_department?.name in GLOB.department_accounts)
+			department = primary_department.name
+	var/datum/money_account/requester_budget = GLOB.department_accounts[department]
+	data["supply_points"] = requester_budget?.available_funds() || 0
+	var/datum/money_account/personal_account = user?.mind?.initial_account
+	data["can_personal_order"] = !!personal_account
+	data["personal_balance"] = personal_account?.money || 0
 	data["orders"] = orders
 	data["receipts"] = receipts
 	data["contraband"] = can_order_contraband || (authorization & SUP_CONTRABAND)
+	data["market_auth"] = can_trade_market(user)
+	data["market"] = SSsupply.cargo_market_ui_data(user, can_order_contraband || (authorization & SUP_CONTRABAND), can_trade_market(user))
 	data["modal"] = tgui_modal_data(src)
 	return data
 
@@ -166,7 +208,7 @@
 		var/list/pack = list(
 				"name" = P.name,
 				"desc" = P.desc,
-				"cost" = P.cost,
+				"cost" = SSsupply.pack_price(P),
 				"group" = P.group,
 				"contraband" = P.contraband,
 				"manifest" = uniqueList(P.manifest),
@@ -194,6 +236,34 @@
 		return TRUE
 
 	switch(action)
+		if("market_request")
+			var/datum/cargo_market_listing/listing = SSsupply.market_listing(params["id"])
+			if(!listing)
+				return FALSE
+			var/personal_funding = !!params["personal"]
+			var/contract_funding = !!params["contract"]
+			if(!personal_funding && !contract_funding && !can_trade_market(ui.user))
+				return FALSE
+			var/reason = tgui_input_text(ui.user, "Procurement justification", "Why should the station purchase this market listing?", "External market procurement", MAX_MESSAGE_LEN)
+			if(!reason)
+				return FALSE
+			if(!SSsupply.request_market_order(listing, ui.user, reason, can_order_contraband || (authorization & SUP_CONTRABAND), personal_funding, contract_funding))
+				to_chat(ui.user, span_warning("The market listing is no longer available."))
+				return FALSE
+			to_chat(ui.user, span_notice("The quoted market order was submitted[contract_funding ? " against the contract allowance" : (personal_funding ? " with personal funding" : " for departmental approval")]."))
+			. = TRUE
+		if("market_route")
+			var/datum/cargo_market_bid/bid = SSsupply.market_bid(params["bid"])
+			var/datum/cargo_market_counterparty/counterparty = SSsupply.market_counterparties?[bid?.counterparty_id]
+			if(!can_trade_market(ui.user) && !has_faction_market_access(ui.user, counterparty?.faction_id))
+				return FALSE
+			var/obj/structure/closet/crate/crate = locate(params["crate"])
+			if(!istype(crate))
+				return FALSE
+			if(!SSsupply.route_market_crate(crate, params["bid"], ui.user, can_order_contraband || (authorization & SUP_CONTRABAND)))
+				to_chat(ui.user, span_warning("That route is no longer valid for this crate."))
+				return FALSE
+			. = TRUE
 		if("view_crate")
 			var/datum/supply_pack/P = locate(params["crate"])
 			if(!istype(P))
@@ -234,8 +304,15 @@
 			if(!reason)
 				return FALSE
 
+			var/personal_funding = !!params["personal"]
+			var/orders_created = 0
 			for(var/i in 1 to amount)
-				SSsupply.create_order(S, ui.user, reason)
+				if(!SSsupply.create_order(S, ui.user, reason, personal_funding))
+					break
+				orders_created++
+			if(!orders_created)
+				to_chat(ui.user, span_warning("The order could not be funded."))
+				return FALSE
 
 			var/idname = "*None Provided*"
 			var/idrank = "*None Provided*"
@@ -256,7 +333,7 @@
 			reqform.info += "REASON: [reason]<br>"
 			reqform.info += "SUPPLY CRATE TYPE: [S.name]<br>"
 			reqform.info += "ACCESS RESTRICTION: [SSaccess.get_access_desc(S.access)]<br>"
-			reqform.info += "AMOUNT: [amount]<br>"
+			reqform.info += "AMOUNT: [orders_created]<br>"
 			reqform.info += "CONTENTS:<br>"
 			reqform.info +=  S.get_html_manifest()
 			reqform.info += "<hr>"
@@ -288,7 +365,9 @@
 			if(!reason)
 				return FALSE
 
-			SSsupply.create_order(S, ui.user, reason)
+			if(!SSsupply.create_order(S, ui.user, reason, !!params["personal"]))
+				to_chat(ui.user, span_warning("The order could not be funded."))
+				return FALSE
 
 			var/idname = "*None Provided*"
 			var/idrank = "*None Provided*"
@@ -361,7 +440,7 @@
 			var/datum/supply_order/O = locate(params["ref"])
 			if(!istype(O))
 				return FALSE
-			if(!(authorization & SUP_ACCEPT_ORDERS))
+			if(O.personal_order ? !(authorization & SUP_ACCEPT_ORDERS) : !can_manage_budget(ui.user, O.funding_department))
 				return FALSE
 			SSsupply.approve_order(O, ui.user)
 			. = TRUE

@@ -1143,32 +1143,12 @@
 		// Okay to move the money at this point
 		if(emagged)
 			gameprice = customer_account.money
-		// debit money from the purchaser's account
-		customer_account.money -= gameprice
-
-		// create entry in the purchaser's account log
-		var/datum/transaction/T = new()
-		T.target_name = "[GLOB.vendor_account.owner_name] (via [name])"
-		T.purpose = "Purchase of arcade game([name])"
-		if(gameprice > 0)
-			T.amount = "([gameprice])"
-		else
-			T.amount = "[gameprice]"
-		T.source_terminal = name
-		T.date = GLOB.current_date_string
-		T.time = stationtime2text()
-		customer_account.transaction_log.Add(T)
-
-		// Give the vendor the money. We use the account owner name, which means
-		// that purchases made with stolen/borrowed card will look like the card
-		// owner made them
-		credit_purchase(customer_account.owner_name)
-		return 1
+		return transfer_account_funds(customer_account, GLOB.vendor_account, gameprice, "Arcade play", name)
 
 /// Add to vendor account
 
 /obj/machinery/computer/arcade/clawmachine/proc/credit_purchase(target as text)
-	GLOB.vendor_account.money += gameprice
+	GLOB.vendor_account.credit(gameprice, name, "Arcade play", name)
 
 	var/datum/transaction/T = new()
 	T.target_name = target

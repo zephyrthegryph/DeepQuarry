@@ -14244,6 +14244,7 @@
 /obj/structure/table/steel_reinforced,
 /obj/item/clothing/accessory/armband/cargo,
 /obj/item/retail_scanner/cargo,
+/obj/machinery/department_storefront/cargo,
 /obj/machinery/requests_console{
 	department = "Cargo Bay";
 	departmentType = 2;
@@ -27491,6 +27492,7 @@
 /obj/item/radio/off,
 /obj/item/tool/wrench,
 /obj/item/retail_scanner/security,
+/obj/machinery/department_storefront/security,
 /obj/effect/floor_decal/industrial/outline/grey,
 /obj/machinery/light{
 	dir = 1
@@ -51530,6 +51532,8 @@
 	dir = 8
 	},
 /obj/structure/table/steel,
+/obj/item/retail_scanner/engineering,
+/obj/machinery/department_storefront/engineering,
 /obj/effect/floor_decal/industrial/outline/yellow,
 /obj/item/floor_painter,
 /obj/item/multitool{
@@ -64034,6 +64038,8 @@
 /area/medical/reception)
 "cwk" = (
 /obj/structure/table/reinforced,
+/obj/item/retail_scanner/medical,
+/obj/machinery/department_storefront/medical,
 /obj/structure/window/reinforced{
 	dir = 4;
 	max_integrity = 1e+006
@@ -75963,6 +75969,8 @@
 /area/maintenance/bar)
 "cSs" = (
 /obj/structure/table/marble,
+/obj/item/retail_scanner/service,
+/obj/machinery/department_storefront/service,
 /obj/machinery/chemical_dispenser/bar_alc/full,
 /obj/structure/sign/double/barsign{
 	pixel_y = 32
@@ -100930,6 +100938,7 @@
 /obj/structure/table/wooden_reinforced,
 /obj/item/hand_labeler,
 /obj/item/retail_scanner/command,
+/obj/machinery/department_storefront/command,
 /obj/item/radio/intercom{
 	name = "Station Intercom (General)";
 	pixel_y = -21
@@ -107219,6 +107228,8 @@
 /area/rnd/research)
 "ebC" = (
 /obj/structure/table/glass,
+/obj/item/retail_scanner/science,
+/obj/machinery/department_storefront/research,
 /obj/machinery/atmospherics/pipe/simple/hidden/supply,
 /obj/item/paper_bin{
 	pixel_x = -3;

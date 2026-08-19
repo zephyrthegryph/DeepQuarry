@@ -84,6 +84,22 @@
 	victim.attackby(weapon, attacker) // harm-intent item attack -> divert -> windup -> swing
 	TEST_ASSERT(victim.health < before, "a victim in the swing tile should take damage (before [before], after [victim.health])")
 
+/datum/unit_test/dq_melee_swing_kitchen_knife
+
+/datum/unit_test/dq_melee_swing_kitchen_knife/Run()
+	var/turf/base = _swing_arena()
+	var/turf/north = get_step(base, NORTH)
+	var/mob/living/carbon/human/attacker = allocate(/mob/living/carbon/human, base)
+	var/mob/living/carbon/human/victim = allocate(/mob/living/carbon/human, north)
+	var/obj/item/material/knife/knife = new(base)
+	attacker.put_in_active_hand(knife)
+	attacker.a_intent = I_HURT
+	TEST_ASSERT(knife.force > 0, "a newly initialized kitchen knife has no melee force")
+	TEST_ASSERT_EQUAL(attacker.get_active_hand(), knife, "the kitchen knife was not held in the active hand")
+	var/before = victim.getBruteLoss()
+	TEST_ASSERT(attacker.begin_melee_swing(victim, knife), "the kitchen knife swing did not commit")
+	TEST_ASSERT(victim.getBruteLoss() > before, "a real kitchen knife on harm intent did not deal brute damage")
+
 
 // Committed-but-dodgeable: a target that steps out of the telegraphed tiles during the
 // windup takes no damage (the swing hits tiles, not a locked-on target).

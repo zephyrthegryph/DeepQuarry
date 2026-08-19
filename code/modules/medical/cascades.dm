@@ -97,4 +97,4 @@
 	var/datum/medical_issue/condition/C = new condition_type()
 	C.owner = owner
 	C.affectedorgan = target
-	LAZYADD(target.medical_issues, C)
+	target.add_medical_issue(C, owner)

@@ -15,6 +15,8 @@
 	var/trash = null
 	var/cant_open = 0
 	var/cant_chance = 0
+	/// Monotonic serving sequence used by the generic contract event ledger.
+	var/contract_consumption_sequence = 0
 
 	var/is_can = FALSE
 
@@ -93,6 +95,18 @@
 
 /obj/item/reagent_containers/food/drinks/proc/On_Consume(mob/living/eater, mob/feeder, changed = FALSE)
 	SEND_SIGNAL(src, COMSIG_GLASS_DRANK, eater, feeder)
+	if(SScontracts && eater && changed)
+		contract_consumption_sequence++
+		var/mob/living/living_feeder = feeder
+		emit_contract_event(CONTRACT_EVENT_FOOD_CONSUMED, list(
+			"department" = DEPARTMENT_CIVILIAN,
+			"subject_id" = SScontracts.subject_identity(eater)?.id,
+			"item_type" = type,
+			"food_kind" = "drink",
+			"portion" = 1,
+			"finished" = !reagents.total_volume,
+			"detail" = "[eater] consumed a serving from [src].",
+		), "drink-consumed:[REF(src)]:[contract_consumption_sequence]", src, living_feeder, eater)
 	if(!feeder)
 		feeder = eater
 

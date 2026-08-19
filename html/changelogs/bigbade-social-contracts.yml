@@ -1,0 +1,9 @@
+author: "BigBadE"
+delete-after: true
+changes:
+  - rscadd: "Added twelve social station and department contracts spanning procurement, Research licensing, reconstruction, restorative justice, hospitality, manufacturing, labor, clinical access, freight auctions, patents, development grants, and live supply shortages."
+  - rscadd: "Added thirty-two more graded social contracts: four each for Engineering, Medical, Research, Security, Cargo, Civilian, Command, and Synthetic operations."
+  - rscadd: "Power recovery, atmosphere recovery, blood donation, research milestones, chemistry, meals, harvests, sanitation, and station-bot work now publish reusable contract evidence from their ordinary gameplay systems."
+  - rscadd: "Added graded contract outcomes with minimum, successful, and exceptional settlement tiers."
+  - rscadd: "Added PDA stakeholder proposals and head-approved subcontract participation with contribution-weighted staff payouts."
+  - refactor: "Standardized contract gameplay on ordinary chemistry containers, papers, fax machines, scanners, Cargo shipping, PDAs, and department consoles; contracts no longer define dedicated physical items or machinery."
