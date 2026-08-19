@@ -36,6 +36,7 @@ type Batch = {
   costBreakdown: Record<string, number>;
   hazard: number;
   roles: Record<string, boolean>;
+  capabilities: { id: string; name: string; potency: number }[];
   melting: number;
 };
 
@@ -161,6 +162,24 @@ export const MaterialScience = () => {
                   </Section>
                 </Stack.Item>
               </Stack>
+            </Stack.Item>
+            <Stack.Item>
+              <Section title="Emergent capabilities">
+                {batch.capabilities.length ? batch.capabilities.map((capability) => (
+                  <ProgressBar
+                    key={capability.id}
+                    value={capability.potency / 100}
+                    ranges={{ bad: [0, 0], average: [0, 0.5], good: [0.5, 1] }}
+                    mb={0.5}
+                  >
+                    {capability.name} — {capability.potency}%
+                  </ProgressBar>
+                )) : (
+                  <Box color="label">
+                    No capability lattice has emerged from this composition and process route yet.
+                  </Box>
+                )}
+              </Section>
             </Stack.Item>
             <Stack.Item>
               <Section title="Production expense ledger">

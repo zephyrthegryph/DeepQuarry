@@ -71,8 +71,9 @@ Protectiveness | Armor %
 	// Substance-alloy armour discharges its effect when the wearer is struck — through the
 	// shared form-trigger emitter (IMPACT+PRESSURE), the same conditions a strike presents on a
 	// blade or bullet, instead of a one-off raw signal that only fired IMPACT.
-	if(istype(material, /datum/material/substance))
-		substance_emit_form_trigger(src, get_turf(src), source, SUB_TRIG_IMPACT, SUB_TRIG_PRESSURE)
+	substance_emit_form_trigger(src, get_turf(src), source, SUB_TRIG_IMPACT, SUB_TRIG_PRESSURE)
+	material_capability_form_trigger(SUB_TRIG_IMPACT, get_turf(src), source)
+	material_capability_form_trigger(SUB_TRIG_PRESSURE, get_turf(src), source)
 
 	if(istype(source, /obj/item/projectile))
 		var/obj/item/projectile/P = source
@@ -84,6 +85,11 @@ Protectiveness | Armor %
 		health = 0
 	else if(!prob(material.hardness))
 		health--
+	if(material.has_material_capability(MATERIAL_CAP_SHAPE_MEMORY))
+		var/turf/turf = get_turf(src)
+		var/datum/gas_mixture/air = turf?.return_air()
+		if(air && air.return_temperature() >= T0C + 80)
+			health = min(round(material.integrity / 10), health + 1)
 
 	if(health <= 0)
 		shatter()
@@ -107,6 +113,10 @@ Protectiveness | Armor %
 /obj/item/clothing/suit/armor/handle_shield(mob/user, damage, atom/damage_source = null, mob/attacker = null, def_zone = null, attack_text = "the attack")
 	if(!material) // No point checking for reflection.
 		return ..()
+
+	if(material_capability_activate(MATERIAL_CAP_REACTIVE_ARMOR))
+		user.visible_message(span_danger("The reactive lattice in [src] flashes and disrupts [attack_text]!"))
+		return TRUE
 
 	if(material.negation && prob(material.negation)) // Strange and Alien materials, or just really strong materials.
 		user.visible_message(span_danger("\The [src] completely absorbs [attack_text]!"))

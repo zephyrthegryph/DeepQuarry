@@ -120,6 +120,7 @@
 	if(rigged && amount > 0)
 		explode()
 		return 0
+	amount = material_cell_use_cost(amount)
 	var/used = min(charge, amount)
 	charge -= used
 	last_use = world.time

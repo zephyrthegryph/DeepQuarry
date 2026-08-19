@@ -55,6 +55,34 @@
 #define MATERIAL_APPLICATION_ARMOR "armor"
 #define MATERIAL_APPLICATION_PRESSURE "pressure service"
 
+// Emergent capabilities carried by processed materials into every manufactured form.
+#define MATERIAL_CAP_THERMOELECTRIC "thermoelectric"
+#define MATERIAL_CAP_PIEZOELECTRIC "piezoelectric"
+#define MATERIAL_CAP_ELECTROGENIC "electrogenic"
+#define MATERIAL_CAP_SHAPE_MEMORY "shape_memory"
+#define MATERIAL_CAP_SUPERCONDUCTING "superconducting"
+#define MATERIAL_CAP_CATALYTIC "catalytic"
+#define MATERIAL_CAP_ANTIMICROBIAL "antimicrobial"
+#define MATERIAL_CAP_HEMOSTATIC "hemostatic"
+#define MATERIAL_CAP_BIOMIMETIC "biomimetic"
+#define MATERIAL_CAP_RADIOVOLTAIC "radiovoltaic"
+#define MATERIAL_CAP_SCINTILLATING "scintillating"
+#define MATERIAL_CAP_MAGNETOSTRICTIVE "magnetostrictive"
+#define MATERIAL_CAP_REACTIVE_ARMOR "reactive_armor"
+#define MATERIAL_CAP_PHASE_CHANGE "phase_change"
+#define MATERIAL_CAP_GAS_GETTER "gas_getter"
+#define MATERIAL_CAP_POROUS_REAGENT "porous_reagent"
+#define MATERIAL_CAP_OPTICAL "optical_metamaterial"
+#define MATERIAL_CAP_RESONANT "resonant"
+
+#define MATERIAL_CAPABILITY_COOLDOWN (2 SECONDS)
+#define MATERIAL_CAPABILITY_MAX_CHARGES 12
+
+/// Generic material gameplay hooks. Mutable numeric arguments are one-entry lists.
+#define COMSIG_MATERIAL_CELL_USE "material_cell_use"
+#define COMSIG_MATERIAL_SURGERY "material_surgery"
+#define COMSIG_MATERIAL_ACTIVATE "material_activate"
+
 #define CONTRACT_EVENT_MATERIAL_PROCESSED "material_processed"
 #define CONTRACT_EVENT_MATERIAL_CERTIFIED "material_certified"
 

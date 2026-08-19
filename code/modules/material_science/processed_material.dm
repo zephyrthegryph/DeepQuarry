@@ -40,6 +40,7 @@ GLOBAL_LIST_EMPTY(material_specifications)
 
 /datum/material/processed_alloy/dq_apply_material_behaviors(obj/item/item)
 	. = ..()
+	dq_apply_material_capabilities(item)
 	if(batch_template?.infused_substance)
 		item.AddComponent(/datum/component/substance_infusion, batch_template.infused_substance, effect_charges)
 
@@ -115,6 +116,7 @@ GLOBAL_LIST_EMPTY(material_specifications)
 	if(dominant)
 		material.icon_colour = dominant.icon_colour
 		material.material_class = dominant.material_class
+	material.derive_material_capabilities()
 	GLOB.name_to_material[key] = material
 	GLOB.processed_material_dedup[fingerprint] = key
 	return key

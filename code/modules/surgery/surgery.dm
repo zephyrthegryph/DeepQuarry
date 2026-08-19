@@ -224,6 +224,7 @@
 
 	if(success)
 		selected_surgery.end_step(user, M, zone, src)
+		SEND_SIGNAL(src, COMSIG_MATERIAL_SURGERY, M, zone, TRUE)
 		if(user != M && department_for_mob(user) == DEPARTMENT_MEDICAL)
 			charge_mob_for_department_service(M, DEPARTMENT_MEDICAL, 5, "Surgical care: [selected_surgery.surgery_name]", user.real_name)
 		// surgery completion cures matching cascading conditions
@@ -233,6 +234,7 @@
 			affected.adjust_germ_level(rand(10,20))
 	else
 		selected_surgery.fail_step(user, M, zone, src)
+		SEND_SIGNAL(src, COMSIG_MATERIAL_SURGERY, M, zone, FALSE)
 		user.setClickCooldown(DEFAULT_ATTACK_COOLDOWN) //Gets rid of instakill mechanics.
 
 	M.op_stage.in_progress -= zone 									// Clear the in-progress flag.

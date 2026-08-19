@@ -38,7 +38,7 @@
 /datum/material/proc/purity_equivalent()
 	if(istype(src, /datum/material/processed_alloy))
 		var/datum/material/processed_alloy/processed = src
-		return processed.batch_template.purity
+		return processed.batch_template?.purity || 80
 	return 80
 
 /obj/item/get_material()

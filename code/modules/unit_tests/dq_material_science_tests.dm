@@ -188,3 +188,116 @@
 	qdel(scalpel)
 	qdel(tool)
 	qdel(batch)
+
+/datum/unit_test/dq_material_capability_derivation
+
+/datum/unit_test/dq_material_capability_derivation/Run()
+	var/datum/material_batch/electrical_batch = new
+	electrical_batch.composition = list(MAT_QUARTZ = 1, MAT_METALHYDROGEN = 1, MAT_URANIUM = 1, MAT_IRON = 1)
+	electrical_batch.impurities = list("thermal phase catalyst" = 4, "cryogenic stabilizer" = 3, "conductive dopant" = 4)
+	electrical_batch.conductivity = 95
+	electrical_batch.heat_resistance = 90
+	electrical_batch.homogeneity = 95
+	electrical_batch.purity = 98
+	electrical_batch.corrosion_resistance = 80
+	electrical_batch.hardness = 80
+	electrical_batch.toughness = 80
+	electrical_batch.structure[MATERIAL_STRUCTURE_HARDENED] = 30
+	var/datum/material/processed_alloy/electrical = new
+	electrical.batch_template = electrical_batch
+	electrical.reflectivity = 0.7
+	electrical.radioactivity = 80
+	electrical.derive_material_capabilities()
+	TEST_ASSERT(electrical.has_material_capability(MATERIAL_CAP_THERMOELECTRIC), "Thermal catalyst and conductive structure must create thermoelectric behavior")
+	TEST_ASSERT(electrical.has_material_capability(MATERIAL_CAP_PIEZOELECTRIC), "A homogeneous electroactive crystal must create piezoelectric behavior")
+	TEST_ASSERT(electrical.has_material_capability(MATERIAL_CAP_ELECTROGENIC), "A yellow-slime conductive dopant must create a self-charging electrogenic matrix")
+	TEST_ASSERT(electrical.has_material_capability(MATERIAL_CAP_SUPERCONDUCTING), "Pure cryogenic conductor stock must create superconducting behavior")
+	TEST_ASSERT(electrical.has_material_capability(MATERIAL_CAP_RADIOVOLTAIC), "A conductive radioisotope lattice must create radiovoltaic behavior")
+	TEST_ASSERT(electrical.has_material_capability(MATERIAL_CAP_SCINTILLATING), "A homogeneous radioactive crystal must scintillate")
+	TEST_ASSERT(electrical.has_material_capability(MATERIAL_CAP_MAGNETOSTRICTIVE), "A hardened conductive ferrous lattice must be magnetostrictive")
+
+	var/datum/material_batch/medical_batch = new
+	medical_batch.composition = list(MAT_BIOMASS = 1, MAT_MORPHIUM = 1, MAT_IRON = 1, MAT_SILVER = 1, MAT_PLATINUM = 1)
+	medical_batch.purity = 95
+	medical_batch.corrosion_resistance = 90
+	medical_batch.homogeneity = 90
+	medical_batch.toughness = 85
+	medical_batch.surface_protection = 15
+	medical_batch.structure[MATERIAL_STRUCTURE_AMORPHOUS] = 30
+	var/datum/material/processed_alloy/medical = new
+	medical.batch_template = medical_batch
+	medical.derive_material_capabilities()
+	TEST_ASSERT(medical.has_material_capability(MATERIAL_CAP_CATALYTIC), "Protected precious-metal surfaces must be catalytic")
+	TEST_ASSERT(medical.has_material_capability(MATERIAL_CAP_ANTIMICROBIAL), "Corrosion-resistant silver stock must be antimicrobial")
+	TEST_ASSERT(medical.has_material_capability(MATERIAL_CAP_HEMOSTATIC), "Biological ferrous interfaces must be hemostatic")
+	TEST_ASSERT(medical.has_material_capability(MATERIAL_CAP_BIOMIMETIC), "Amorphous biological morphium must be biomimetic")
+	TEST_ASSERT(medical.has_material_capability(MATERIAL_CAP_SHAPE_MEMORY), "Tough morphium stock must retain shape memory")
+
+	var/datum/material_batch/structural_batch = new
+	structural_batch.composition = list(MAT_PLASTEEL = 1, MAT_TITANIUM = 1, MAT_ALUMINIUM = 1, MAT_GRAPHITE = 1, MAT_GLASS = 1)
+	structural_batch.impurities = list("thermal phase catalyst" = 4, "bluespace homogenizer" = 3)
+	structural_batch.porosity = 30
+	structural_batch.corrosion_resistance = 85
+	structural_batch.homogeneity = 95
+	structural_batch.heat_resistance = 90
+	structural_batch.toughness = 85
+	structural_batch.hardness = 85
+	structural_batch.conductivity = 60
+	structural_batch.structure[MATERIAL_STRUCTURE_PRECIPITATE] = 30
+	structural_batch.structure[MATERIAL_STRUCTURE_HARDENED] = 30
+	var/datum/substance/resonance = new
+	resonance.family = SUBFAM_FIELD
+	resonance.affinity = 90
+	structural_batch.infused_substance = resonance
+	var/datum/material/processed_alloy/structural = new
+	structural.batch_template = structural_batch
+	structural.reflectivity = 0.8
+	structural.derive_material_capabilities()
+	TEST_ASSERT(structural.has_material_capability(MATERIAL_CAP_REACTIVE_ARMOR), "Precipitation-hardened plasteel must create reactive armor behavior")
+	TEST_ASSERT(structural.has_material_capability(MATERIAL_CAP_PHASE_CHANGE), "A heat-resistant thermal catalyst must create phase-change behavior")
+	TEST_ASSERT(structural.has_material_capability(MATERIAL_CAP_GAS_GETTER), "Porous titanium or aluminium must create a gas getter")
+	TEST_ASSERT(structural.has_material_capability(MATERIAL_CAP_POROUS_REAGENT), "A corrosion-resistant porous lattice must hold reagents")
+	TEST_ASSERT(structural.has_material_capability(MATERIAL_CAP_OPTICAL), "A homogeneous reflective glass lattice must become an optical metamaterial")
+	TEST_ASSERT(structural.has_material_capability(MATERIAL_CAP_RESONANT), "A bluespace-homogenized infusion must retain a resonant signature")
+
+	qdel(structural)
+	qdel(medical)
+	qdel(electrical)
+
+/datum/unit_test/dq_material_capability_runtime
+
+/datum/unit_test/dq_material_capability_runtime/Run()
+	var/datum/material/processed_alloy/material = new
+	material.name = "unit_test_capability_material"
+	material.display_name = "capability test alloy"
+	material.icon_colour = "#88ccff"
+	material.material_capabilities = list(
+		MATERIAL_CAP_PIEZOELECTRIC = 90,
+		MATERIAL_CAP_SUPERCONDUCTING = 90,
+		MATERIAL_CAP_REACTIVE_ARMOR = 80,
+		MATERIAL_CAP_POROUS_REAGENT = 80,
+	)
+	GLOB.name_to_material[material.name] = material
+	var/obj/item/cell/cell = new(run_loc_floor_bottom_left)
+	var/turf/cell_turf = get_turf(run_loc_floor_bottom_left)
+	if(!cell_turf)
+		cell_turf = locate(1, 1, 1)
+	cell.forceMove(cell_turf)
+	cell.apply_engineered_material(material, MATERIAL_APPLICATION_CELL)
+	var/datum/component/material_capabilities/component = cell.GetComponent(/datum/component/material_capabilities)
+	TEST_ASSERT(istype(component), "Manufacturing must install the generic capability component")
+	TEST_ASSERT_NOTNULL(cell.reagents, "Porous capability stock must create a fillable reservoir")
+	TEST_ASSERT_EQUAL(component.capability(MATERIAL_CAP_PIEZOELECTRIC), 90, "The manufactured form must retain capability potency")
+	cell.charge = 0
+	cell.material_capability_form_trigger(SUB_TRIG_IMPACT, get_turf(cell), cell)
+	TEST_ASSERT(cell.charge > 0, "Piezoelectric forms must turn an impact into stored charge")
+	var/datum/gas_mixture/air = cell_turf.return_air()
+	var/original_temperature = air.return_temperature()
+	air.set_temperature(T0C - 20)
+	TEST_ASSERT(cell.material_cell_use_cost(100) < 100, "A cold superconducting cell must spend less charge for the same load")
+	air.set_temperature(original_temperature)
+	TEST_ASSERT(cell.material_capability_activate(MATERIAL_CAP_REACTIVE_ARMOR), "Reactive capability must actively discharge")
+	TEST_ASSERT(!cell.material_capability_activate(MATERIAL_CAP_REACTIVE_ARMOR), "Reactive discharge must obey its cooldown")
+	qdel(cell)
+	GLOB.name_to_material -= material.name
+	qdel(material)

@@ -8,3 +8,4 @@ changes:
   - rscadd: "Material qualification now carries an auditable expense ledger for market-valued inputs, electricity, media, process time, equipment wear, waste handling, recovery credits, and cost per usable sheet."
   - rscadd: "Engineered materials now provide application-specific performance in medical instruments, engineering tools and parts, power cells, pressure vessels, armor, and ammunition."
   - rscdel: "Removed the obsolete exotic_dynamic sheet path; all dynamic alloys now use the traceable processed-material system."
+  - rscadd: "Processed alloys can now develop emergent mechanics including self-charging electrogenic cells, impact charging, thermoelectric and radiovoltaic generation, superconductivity, shape memory, catalytic air cleaning, antimicrobial and hemostatic surgery, biomimetic healing, reactive armor, optical and resonant responses, gas capture, reagent reservoirs, and phase-change heat buffering."

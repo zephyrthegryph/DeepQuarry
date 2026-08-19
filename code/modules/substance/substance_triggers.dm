@@ -27,7 +27,7 @@
 		where = get_turf(A)
 	if(!where)
 		return
-	for(var/i in 4 to length(args))
+	for(var/i = 4, i <= length(args), i++)
 		SEND_SIGNAL(A, COMSIG_SUBSTANCE_FORM_TRIGGER, args[i], where, cause)
 
 // Convenience wrapper for /obj/item/material forms (blades, thrown charges, armour):
