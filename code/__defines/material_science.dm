@@ -48,3 +48,17 @@
 
 #define MATERIAL_SCIENCE_MAX_BATCH 50
 #define MATERIAL_SCIENCE_REAGENT_SAMPLE 10
+
+#define MATERIAL_COST_FEEDSTOCK "feedstock"
+#define MATERIAL_COST_CHEMICALS "chemical additives"
+#define MATERIAL_COST_CATALYSTS "catalysts"
+#define MATERIAL_COST_ELECTRICITY "electricity"
+#define MATERIAL_COST_MEDIA "process media"
+#define MATERIAL_COST_LABOR "process time"
+#define MATERIAL_COST_EQUIPMENT "equipment wear"
+#define MATERIAL_COST_WASTE_HANDLING "waste handling"
+#define MATERIAL_COST_RECOVERY "byproduct recovery"
+#define MATERIAL_COST_WASTE "waste value"
+#define MATERIAL_POWER_UNITS_PER_THALER 1000
+#define MATERIAL_LABOR_COST_PER_SECOND 0.25
+#define MATERIAL_EQUIPMENT_COST_PER_SECOND 0.1

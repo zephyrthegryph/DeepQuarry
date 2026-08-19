@@ -106,3 +106,28 @@
 	feedstock.ensure_feedstock_lot()
 	TEST_ASSERT_EQUAL(feedstock.feedstock_lot_id, original_lot, "Inspecting a feedstock source must not reroll it")
 	qdel(feedstock)
+
+/datum/unit_test/dq_material_science_cost_accounting
+
+/datum/unit_test/dq_material_science_cost_accounting/Run()
+	var/datum/material_batch/batch = new
+	batch.add_material(MAT_STEEL, 4, null, 95, "COSTLOT")
+	batch.add_additive("priced reagent", 3, 2, MATERIAL_COST_CHEMICALS)
+	batch.add_additive("priced catalyst", 5, 4, MATERIAL_COST_CATALYSTS)
+	batch.record_electricity(2000)
+	batch.record_cost(MATERIAL_COST_MEDIA, 3)
+	var/initial_total = batch.total_production_cost()
+	TEST_ASSERT(initial_total > 30, "Feedstock, chemicals, catalysts, electricity, and media must all enter total expense")
+	var/initial_unit = batch.unit_production_cost()
+	batch.yield_fraction = 0.5
+	batch.record_yield_loss(0.5)
+	var/post_waste_total = batch.total_production_cost()
+	TEST_ASSERT_EQUAL(post_waste_total, initial_total + 1, "Waste may add handling cost but must not double-charge feedstock already purchased")
+	TEST_ASSERT(batch.unit_production_cost() >= initial_unit * 1.99, "Lower yield must increase cost per usable sheet")
+	TEST_ASSERT(batch.cost_ledger[MATERIAL_COST_WASTE] > 0, "Lost yield must remain visible in the audit ledger")
+	batch.record_recovery(5)
+	TEST_ASSERT_EQUAL(batch.total_production_cost(), post_waste_total - 5, "Recovered byproducts must credit production expense")
+	var/datum/material_batch/copy = batch.copy_batch()
+	TEST_ASSERT_EQUAL(copy.total_production_cost(), batch.total_production_cost(), "Batch transfers must preserve their complete cost ledger")
+	qdel(copy)
+	qdel(batch)

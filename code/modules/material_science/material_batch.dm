@@ -8,6 +8,18 @@
 	var/list/feedstock_lots = list()
 	var/list/test_results = list()
 	var/list/process_counts = list()
+	var/list/cost_ledger = list(
+		MATERIAL_COST_FEEDSTOCK = 0,
+		MATERIAL_COST_CHEMICALS = 0,
+		MATERIAL_COST_CATALYSTS = 0,
+		MATERIAL_COST_ELECTRICITY = 0,
+		MATERIAL_COST_MEDIA = 0,
+		MATERIAL_COST_LABOR = 0,
+		MATERIAL_COST_EQUIPMENT = 0,
+		MATERIAL_COST_WASTE_HANDLING = 0,
+		MATERIAL_COST_RECOVERY = 0,
+		MATERIAL_COST_WASTE = 0,
+	)
 	var/list/structure = list(
 		MATERIAL_STRUCTURE_SOFT = 70,
 		MATERIAL_STRUCTURE_HARDENED = 0,
@@ -50,6 +62,7 @@
 	feedstock_lots = null
 	test_results = null
 	process_counts = null
+	cost_ledger = null
 	structure = null
 	return ..()
 
@@ -63,7 +76,9 @@
 	purity = round((purity * old_amount + clamp(source_purity, 20, 100) * sheets) / max(amount, 1))
 	if(lot_id)
 		feedstock_lots[lot_id] = (feedstock_lots[lot_id] || 0) + sheets
-	cost_basis += max(material.supply_conversion_value, 1) * sheets
+	var/feedstock_cost = max(material.supply_conversion_value, 0.1) * sheets
+	cost_basis += feedstock_cost
+	record_cost(MATERIAL_COST_FEEDSTOCK, feedstock_cost)
 	if(producer)
 		contributors[producer.account_number] = (contributors[producer.account_number] || 0) + sheets
 	if(istype(material, /datum/material/substance))
@@ -73,14 +88,16 @@
 	recalculate()
 	return TRUE
 
-/datum/material_batch/proc/add_additive(additive_name, units)
+/datum/material_batch/proc/add_additive(additive_name, units, unit_cost = 1, cost_category = MATERIAL_COST_CHEMICALS)
 	if(!additive_name || units <= 0)
 		return FALSE
 	impurities[additive_name] = (impurities[additive_name] || 0) + units
 	purity = clamp(purity - round(units * 0.4), 20, 100)
 	homogeneity = clamp(homogeneity - round(units * 0.2), 0, 100)
 	process_history += "alloyed with [units]u [additive_name]"
-	cost_basis += units
+	var/additive_cost = max(unit_cost, 0) * units
+	cost_basis += additive_cost
+	record_cost(cost_category, additive_cost)
 	recalculate()
 	return TRUE
 
@@ -89,11 +106,11 @@
 		return FALSE
 	if(!can_process(process))
 		return FALSE
+	var/old_yield = yield_fraction
 	switch(process)
 		if(MATERIAL_PROCESS_HEAT)
 			var/heat_step = text2num(option) || 400
 			temperature = clamp(temperature + heat_step, T20C, melting_temperature() + 800)
-			energy_spent += round(heat_step * max(amount, 1) / 25)
 			if(atmosphere == MATERIAL_ATMOSPHERE_AIR && temperature > melting_temperature() * 0.55)
 				oxidation = clamp(oxidation + 3, 0, 100)
 				yield_fraction = clamp(yield_fraction - 0.01, 0.5, 1)
@@ -234,10 +251,50 @@
 			return FALSE
 	process_history += option ? "[process] ([option])" : process
 	process_counts[process] = (process_counts[process] || 0) + 1
+	if(yield_fraction < old_yield)
+		record_yield_loss(old_yield - yield_fraction)
 	normalize_structure()
 	recalculate()
 	emit_contract_event(CONTRACT_EVENT_MATERIAL_PROCESSED, evidence_context(process))
 	return TRUE
+
+/datum/material_batch/proc/record_cost(category, value)
+	if(!category || !isnum(value) || value == 0)
+		return
+	cost_ledger[category] = (cost_ledger[category] || 0) + value
+
+/datum/material_batch/proc/record_electricity(power_units)
+	if(power_units <= 0)
+		return
+	energy_spent += power_units
+	record_cost(MATERIAL_COST_ELECTRICITY, power_units / MATERIAL_POWER_UNITS_PER_THALER)
+
+/datum/material_batch/proc/record_yield_loss(fraction_lost)
+	if(fraction_lost <= 0 || amount <= 0)
+		return
+	var/feedstock_per_sheet = (cost_ledger[MATERIAL_COST_FEEDSTOCK] || 0) / amount
+	record_cost(MATERIAL_COST_WASTE, amount * fraction_lost * feedstock_per_sheet)
+	record_cost(MATERIAL_COST_WASTE_HANDLING, amount * fraction_lost * 0.5)
+
+/datum/material_batch/proc/record_recovery(value)
+	if(value > 0)
+		record_cost(MATERIAL_COST_RECOVERY, value)
+
+/datum/material_batch/proc/usable_output()
+	return max(0.01, amount * yield_fraction)
+
+/datum/material_batch/proc/total_production_cost()
+	return max(0, (cost_ledger[MATERIAL_COST_FEEDSTOCK] || 0) + (cost_ledger[MATERIAL_COST_CHEMICALS] || 0) + (cost_ledger[MATERIAL_COST_CATALYSTS] || 0) + (cost_ledger[MATERIAL_COST_ELECTRICITY] || 0) + (cost_ledger[MATERIAL_COST_MEDIA] || 0) + (cost_ledger[MATERIAL_COST_LABOR] || 0) + (cost_ledger[MATERIAL_COST_EQUIPMENT] || 0) + (cost_ledger[MATERIAL_COST_WASTE_HANDLING] || 0) - (cost_ledger[MATERIAL_COST_RECOVERY] || 0))
+
+/datum/material_batch/proc/unit_production_cost()
+	return total_production_cost() / usable_output()
+
+/datum/material_batch/proc/cost_breakdown()
+	var/list/result = cost_ledger.Copy()
+	result["total"] = total_production_cost()
+	result["usable_output"] = usable_output()
+	result["per_sheet"] = unit_production_cost()
+	return result
 
 /datum/material_batch/proc/can_process(process)
 	if(!length(composition))
@@ -429,8 +486,11 @@
 		"composition_count" = length(composition),
 		"amount" = max(1, round(amount * yield_fraction)),
 		"yield" = round(yield_fraction * 100),
-		"energy_cost" = energy_spent,
-		"production_cost" = round(cost_basis + energy_spent / 20),
+		"energy_cost" = round(cost_ledger[MATERIAL_COST_ELECTRICITY], 0.01),
+		"production_cost" = round(total_production_cost(), 0.01),
+		"unit_cost" = round(unit_production_cost(), 0.01),
+		"waste_value" = round(cost_ledger[MATERIAL_COST_WASTE], 0.01),
+		"recovery_value" = round(cost_ledger[MATERIAL_COST_RECOVERY], 0.01),
 		"defect_fraction" = structure[MATERIAL_STRUCTURE_DEFECT],
 		"oxidation" = oxidation,
 	)
@@ -444,6 +504,7 @@
 	copy.feedstock_lots = feedstock_lots.Copy()
 	copy.test_results = test_results.Copy()
 	copy.process_counts = process_counts.Copy()
+	copy.cost_ledger = cost_ledger.Copy()
 	copy.structure = structure.Copy()
 	copy.amount = amount
 	copy.phase = phase

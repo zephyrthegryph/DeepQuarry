@@ -32,6 +32,8 @@ type Batch = {
   yield: number;
   energy: number;
   cost: number;
+  unitCost: number;
+  costBreakdown: Record<string, number>;
   hazard: number;
   roles: Record<string, boolean>;
   melting: number;
@@ -117,7 +119,8 @@ export const MaterialScience = () => {
                   <Metric label="Corrosion resistance" value={batch.corrosion} />
                       <LabeledList.Item label="Usable yield">{batch.yield}%</LabeledList.Item>
                       <LabeledList.Item label="Process energy">{batch.energy}</LabeledList.Item>
-                      <LabeledList.Item label="Estimated cost">{batch.cost} Th</LabeledList.Item>
+                      <LabeledList.Item label="Total expense">{batch.cost} Th</LabeledList.Item>
+                      <LabeledList.Item label="Cost / usable sheet">{batch.unitCost} Th</LabeledList.Item>
                       <LabeledList.Item label="Process hazard">
                         <Box color={batch.hazard >= 75 ? 'bad' : batch.hazard >= 45 ? 'average' : 'good'}>{batch.hazard}%</Box>
                       </LabeledList.Item>
@@ -150,6 +153,23 @@ export const MaterialScience = () => {
                   </Section>
                 </Stack.Item>
               </Stack>
+            </Stack.Item>
+            <Stack.Item>
+              <Section title="Production expense ledger">
+                <Table>
+                  {Object.entries(batch.costBreakdown).map(([category, value]) => (
+                    <Table.Row key={category}>
+                      <Table.Cell>{category}</Table.Cell>
+                      <Table.Cell textAlign="right">
+                        {category === 'usable_output' ? `${value} sheets` : `${value} Th`}
+                      </Table.Cell>
+                    </Table.Row>
+                  ))}
+                </Table>
+                <Box color="label" mt={1}>
+                  Waste value is informational: the lost material is already included in purchased feedstock. Recovery is credited against total expense.
+                </Box>
+              </Section>
             </Stack.Item>
             <Stack.Item>
               <Section title="Physical operations">

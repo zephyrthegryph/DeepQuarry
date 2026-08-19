@@ -14,6 +14,7 @@
 	var/process_timer
 	var/pending_process
 	var/pending_option
+	var/pending_duration_seconds
 
 /obj/machinery/material_processor/Destroy()
 	if(process_timer)
@@ -52,8 +53,15 @@
 		if(istype(stack.material, /datum/material/processed_alloy))
 			var/datum/material/processed_alloy/processed = stack.material
 			var/datum/material_batch/source = processed.batch_template
+			var/feedstock_before = batch.cost_ledger[MATERIAL_COST_FEEDSTOCK] || 0
 			for(var/component in source.composition)
 				batch.add_material(component, source.composition[component] / max(source.amount, 1), null, source.purity, stack.feedstock_lot_id)
+			var/recorded_feedstock = (batch.cost_ledger[MATERIAL_COST_FEEDSTOCK] || 0) - feedstock_before
+			var/historical_unit_cost = source.unit_production_cost()
+			if(historical_unit_cost > recorded_feedstock)
+				var/carry_cost = historical_unit_cost - recorded_feedstock
+				batch.cost_basis += carry_cost
+				batch.record_cost(MATERIAL_COST_FEEDSTOCK, carry_cost)
 			batch.purity = round((batch.purity + source.purity) * 0.5)
 			batch.grain_size = round((batch.grain_size + source.grain_size) * 0.5)
 			batch.internal_stress = round((batch.internal_stress + source.internal_stress) * 0.5)
@@ -62,7 +70,7 @@
 		else
 			batch.add_material(stack.material.name, 1, null, stack.feedstock_purity, stack.feedstock_lot_id)
 			if(stack.feedstock_trace)
-				batch.add_additive(stack.feedstock_trace, stack.feedstock_trace_units)
+				batch.add_additive(stack.feedstock_trace, stack.feedstock_trace_units, 0)
 		stack.use(1)
 		batch.recalculate()
 		to_chat(user, span_notice("You load one sheet into [src]."))
@@ -75,34 +83,34 @@
 		var/specialized_catalyst = FALSE
 		if(istype(extract, /obj/item/slime_extract/metal))
 			specialized_catalyst = TRUE
-			batch.add_additive("metallic grain refiner", 4)
+			batch.add_additive("metallic grain refiner", 4, 8, MATERIAL_COST_CATALYSTS)
 			batch.structure[MATERIAL_STRUCTURE_REINFORCEMENT] += 14
 		if(istype(extract, /obj/item/slime_extract/blue))
 			specialized_catalyst = TRUE
-			batch.add_additive("cryogenic stabilizer", 3)
+			batch.add_additive("cryogenic stabilizer", 3, 8, MATERIAL_COST_CATALYSTS)
 			batch.internal_stress = clamp(batch.internal_stress - 18, 0, 100)
 		if(istype(extract, /obj/item/slime_extract/orange))
 			specialized_catalyst = TRUE
-			batch.add_additive("thermal phase catalyst", 4)
+			batch.add_additive("thermal phase catalyst", 4, 8, MATERIAL_COST_CATALYSTS)
 			batch.heat_resistance = clamp(batch.heat_resistance + 10, 0, 100)
 		if(istype(extract, /obj/item/slime_extract/yellow))
 			specialized_catalyst = TRUE
-			batch.add_additive("conductive dopant", 4)
+			batch.add_additive("conductive dopant", 4, 8, MATERIAL_COST_CATALYSTS)
 			batch.conductivity = clamp(batch.conductivity + 12, 0, 100)
 		if(istype(extract, /obj/item/slime_extract/dark_purple))
 			specialized_catalyst = TRUE
-			batch.add_additive("corrosion inhibitor", 4)
+			batch.add_additive("corrosion inhibitor", 4, 8, MATERIAL_COST_CATALYSTS)
 			batch.corrosion_resistance = clamp(batch.corrosion_resistance + 12, 0, 100)
 		if(istype(extract, /obj/item/slime_extract/gold))
 			specialized_catalyst = TRUE
-			batch.add_additive("precipitation catalyst", 4)
+			batch.add_additive("precipitation catalyst", 4, 8, MATERIAL_COST_CATALYSTS)
 			batch.structure[MATERIAL_STRUCTURE_PRECIPITATE] += 16
 		if(istype(extract, /obj/item/slime_extract/bluespace))
 			specialized_catalyst = TRUE
-			batch.add_additive("bluespace homogenizer", 3)
+			batch.add_additive("bluespace homogenizer", 3, 12, MATERIAL_COST_CATALYSTS)
 			batch.homogeneity = clamp(batch.homogeneity + 24, 0, 100)
 		if(!specialized_catalyst)
-			batch.add_additive("[extract.name] organic matrix", 5)
+			batch.add_additive("[extract.name] organic matrix", 5, 6, MATERIAL_COST_CATALYSTS)
 			batch.structure[MATERIAL_STRUCTURE_AMORPHOUS] += 12
 		batch.purity = clamp(batch.purity + 4, 0, 100)
 		batch.normalize_structure()
@@ -120,7 +128,7 @@
 				break
 			var/taken = min(reagent.volume, remaining)
 			if(taken > 0)
-				batch.add_additive(reagent.name, taken)
+				batch.add_additive(reagent.name, taken, max(reagent.supply_conversion_value, 0.05), MATERIAL_COST_CHEMICALS)
 				item.reagents.remove_reagent(reagent.id, taken)
 				remaining -= taken
 		to_chat(user, span_notice("You meter chemical additives into the batch."))
@@ -151,7 +159,8 @@
 			"corrosion" = batch.test_results[MATERIAL_TEST_CORROSION], "composition" = batch.test_results[MATERIAL_TEST_SPECTROMETRY] ? composition_data : list(),
 			"structure" = batch.test_results[MATERIAL_TEST_MICROSCOPY] ? batch.structure.Copy() : null,
 			"history" = batch.process_history.Copy(), "atmosphere" = batch.atmosphere, "yield" = round(batch.yield_fraction * 100),
-			"energy" = batch.energy_spent, "cost" = round(batch.cost_basis + batch.energy_spent / 20),
+			"energy" = batch.energy_spent, "cost" = round(batch.total_production_cost(), 0.01), "unitCost" = round(batch.unit_production_cost(), 0.01),
+			"costBreakdown" = batch.cost_breakdown(),
 			"hazard" = batch.hazard_score(),
 			"roles" = batch.functional_roles(),
 			"melting" = batch.melting_temperature(),
@@ -176,10 +185,13 @@
 			if(!batch.can_process(process))
 				to_chat(user, span_warning("That operation is unavailable at the batch's current phase, temperature, form, or prior treatment state."))
 				return FALSE
-			use_power(active_power_usage)
 			pending_process = process
 			pending_option = params["option"]
-			process_timer = addtimer(CALLBACK(src, PROC_REF(finish_process)), clamp(round(batch.amount), 1, 8) SECONDS, TIMER_STOPPABLE)
+			pending_duration_seconds = clamp(round(batch.amount), 1, 8)
+			var/cycle_power = process_power_units(pending_process, pending_option, pending_duration_seconds)
+			use_power(cycle_power)
+			batch.record_electricity(cycle_power)
+			process_timer = addtimer(CALLBACK(src, PROC_REF(finish_process)), pending_duration_seconds SECONDS, TIMER_STOPPABLE)
 			visible_message(span_notice("[src] begins a [process] cycle."))
 			return TRUE
 		if("atmosphere")
@@ -233,6 +245,8 @@
 			separated.process_history += "electrolytically separated from [batch.display_name()]"
 			separated.recalculate()
 			processed_spawn_stack(get_turf(src), separated, separated.amount)
+			var/datum/material/recovered_material = get_material_by_name(component)
+			batch.record_recovery(max(recovered_material?.supply_conversion_value, 0.1) * component_amount)
 			qdel(separated)
 			batch.composition -= component
 			batch.amount -= component_amount
@@ -254,11 +268,16 @@
 		return
 	var/completed_process = pending_process
 	var/completed_option = pending_option
+	var/completed_duration_seconds = pending_duration_seconds
 	pending_process = null
 	pending_option = null
+	pending_duration_seconds = 0
 	if(!batch.apply_process(completed_process, completed_option))
 		visible_message(span_warning("[src] rejects the cycle because the batch is outside its valid phase or temperature window."))
 		return
+	batch.record_cost(MATERIAL_COST_MEDIA, process_media_cost(completed_process, completed_option))
+	batch.record_cost(MATERIAL_COST_LABOR, completed_duration_seconds * MATERIAL_LABOR_COST_PER_SECOND)
+	batch.record_cost(MATERIAL_COST_EQUIPMENT, completed_duration_seconds * MATERIAL_EQUIPMENT_COST_PER_SECOND)
 	if(batch.hazard_score() >= 75)
 		var/datum/effect/effect/system/spark_spread/sparks = new
 		sparks.set_up(3, FALSE, src)
@@ -266,11 +285,38 @@
 		qdel(sparks)
 		batch.structure[MATERIAL_STRUCTURE_DEFECT] = clamp(batch.structure[MATERIAL_STRUCTURE_DEFECT] + 8, 0, 100)
 		batch.yield_fraction = clamp(batch.yield_fraction - 0.05, 0.5, 1)
+		batch.record_yield_loss(0.05)
 		batch.normalize_structure()
 		batch.recalculate()
 		visible_message(span_warning("[src] vents a reactive process upset; usable yield falls."))
 	else
 		visible_message(span_notice("[src] completes a [completed_process] cycle."))
+
+/obj/machinery/material_processor/proc/process_media_cost(process, option)
+	if(!batch)
+		return 0
+
+	var/per_sheet = 0
+	if(process == MATERIAL_PROCESS_QUENCH)
+		per_sheet += option == "cryo" ? 6 : (option == "oil" ? 2 : 0.5)
+	if(process in list(MATERIAL_PROCESS_HEAT, MATERIAL_PROCESS_MELT, MATERIAL_PROCESS_HOMOGENIZE, MATERIAL_PROCESS_SOLUTION_TREAT, MATERIAL_PROCESS_ANNEAL, MATERIAL_PROCESS_TEMPER))
+		per_sheet += batch.atmosphere == MATERIAL_ATMOSPHERE_REDUCING ? 3 : (batch.atmosphere == MATERIAL_ATMOSPHERE_VACUUM ? 2 : (batch.atmosphere == MATERIAL_ATMOSPHERE_INERT ? 1 : 0))
+	if(process in list(MATERIAL_PROCESS_DISSOLVE, MATERIAL_PROCESS_ELECTROLYZE, MATERIAL_PROCESS_PLATE, MATERIAL_PROCESS_CRYSTALLIZE))
+		per_sheet += 1.5
+	if(process == MATERIAL_PROCESS_SINTER)
+		per_sheet += 1
+	return per_sheet * batch.amount
+
+/obj/machinery/material_processor/proc/process_power_units(process, option, duration_seconds)
+	var/power_units = active_power_usage * duration_seconds
+	if(process == MATERIAL_PROCESS_HEAT)
+		var/heat_step = text2num(option)
+		if(!heat_step)
+			heat_step = 400
+		power_units += round(heat_step * max(batch?.amount, 1) * 4)
+	else if(process in list(MATERIAL_PROCESS_MELT, MATERIAL_PROCESS_HOMOGENIZE, MATERIAL_PROCESS_ELECTROLYZE, MATERIAL_PROCESS_SINTER))
+		power_units += active_power_usage * duration_seconds
+	return max(power_units, 0)
 
 /obj/machinery/material_processor/proc/run_material_test(test, mob/user)
 	if(!batch || !(test in list(MATERIAL_TEST_SPECTROMETRY, MATERIAL_TEST_MICROSCOPY, MATERIAL_TEST_HARDNESS, MATERIAL_TEST_CONDUCTIVITY, MATERIAL_TEST_TENSILE, MATERIAL_TEST_CORROSION)))
@@ -284,6 +330,7 @@
 		for(var/component in batch.composition)
 			batch.composition[component] *= batch.amount / old_amount
 		batch.yield_fraction = clamp(batch.yield_fraction - 0.03, 0.5, 1)
+		batch.record_yield_loss(0.03)
 	switch(test)
 		if(MATERIAL_TEST_SPECTROMETRY)
 			batch.test_results[test] = batch.purity
@@ -298,7 +345,12 @@
 		if(MATERIAL_TEST_CORROSION)
 			batch.test_results[test] = batch.corrosion_resistance
 	batch.process_history += "[test] performed"
-	use_power(active_power_usage)
+	var/test_seconds = (test in list(MATERIAL_TEST_TENSILE, MATERIAL_TEST_CORROSION)) ? 4 : 2
+	var/test_power = active_power_usage * test_seconds
+	use_power(test_power)
+	batch.record_electricity(test_power)
+	batch.record_cost(MATERIAL_COST_LABOR, test_seconds * MATERIAL_LABOR_COST_PER_SECOND)
+	batch.record_cost(MATERIAL_COST_EQUIPMENT, test_seconds * MATERIAL_EQUIPMENT_COST_PER_SECOND)
 	return TRUE
 
 /obj/machinery/material_processor/proc/certify_batch(mob/user)
@@ -309,8 +361,9 @@
 			to_chat(user, span_warning("Certification requires a complete spectroscopy, microscopy, mechanical, conductivity, and corrosion test portfolio."))
 			return FALSE
 	var/obj/item/paper/report = new(get_turf(src))
-	var/license_value = clamp(round((batch.hardness + batch.toughness + batch.conductivity + batch.heat_resistance + batch.corrosion_resistance) * 0.8 + length(batch.composition) * 45 + (batch.test_results[MATERIAL_TEST_FIELD] ? 100 : 0) - (batch.cost_basis + batch.energy_spent / 20) * 0.2), 100, 900)
-	report.set_content("MATERIAL QUALIFICATION AND LICENSE REPORT\nBatch: [batch.display_name()]\nFingerprint: [batch.fingerprint()]\nComposition: [json_encode(batch.composition)]\nSource lots: [json_encode(batch.feedstock_lots)]\nPurity: [batch.purity]%\nHardness: [batch.hardness]\nToughness: [batch.toughness]\nConductivity: [batch.conductivity]\nHeat resistance: [batch.heat_resistance]\nCorrosion resistance: [batch.corrosion_resistance]\nUsable yield: [round(batch.yield_fraction * 100)]%\nEstimated production cost: [round(batch.cost_basis + batch.energy_spent / 20)] Th\nProcess route: [jointext(batch.process_history, " -> ")]\nCertified by: [user.real_name]\n\nThis ordinary signed report may be shipped as a licensable process specification. Its external value is based on measured performance, novelty, field validation, and production cost.", "material qualification and license - [copytext(batch.fingerprint(), 1, 9)]")
+	var/license_value = clamp(round((batch.hardness + batch.toughness + batch.conductivity + batch.heat_resistance + batch.corrosion_resistance) * 0.8 + length(batch.composition) * 45 + (batch.test_results[MATERIAL_TEST_FIELD] ? 100 : 0) - batch.unit_production_cost() * 2), 100, 900)
+	var/list/costs = batch.cost_breakdown()
+	report.set_content("MATERIAL QUALIFICATION AND LICENSE REPORT\nBatch: [batch.display_name()]\nFingerprint: [batch.fingerprint()]\nComposition: [json_encode(batch.composition)]\nSource lots: [json_encode(batch.feedstock_lots)]\nPurity: [batch.purity]%\nHardness: [batch.hardness]\nToughness: [batch.toughness]\nConductivity: [batch.conductivity]\nHeat resistance: [batch.heat_resistance]\nCorrosion resistance: [batch.corrosion_resistance]\nUsable output: [round(batch.usable_output(), 0.01)] sheets ([round(batch.yield_fraction * 100)]% yield)\nFeedstock: [round(costs[MATERIAL_COST_FEEDSTOCK], 0.01)] Th\nChemical additives: [round(costs[MATERIAL_COST_CHEMICALS], 0.01)] Th\nCatalysts: [round(costs[MATERIAL_COST_CATALYSTS], 0.01)] Th\nElectricity: [round(costs[MATERIAL_COST_ELECTRICITY], 0.01)] Th\nProcess media: [round(costs[MATERIAL_COST_MEDIA], 0.01)] Th\nProcess-time allocation: [round(costs[MATERIAL_COST_LABOR], 0.01)] Th\nEquipment wear: [round(costs[MATERIAL_COST_EQUIPMENT], 0.01)] Th\nWaste handling: [round(costs[MATERIAL_COST_WASTE_HANDLING], 0.01)] Th\nByproduct recovery credit: -[round(costs[MATERIAL_COST_RECOVERY], 0.01)] Th\nWaste value: [round(costs[MATERIAL_COST_WASTE], 0.01)] Th (already included in purchased inputs)\nTotal batch expense: [round(costs["total"], 0.01)] Th\nCost per usable sheet: [round(costs["per_sheet"], 0.01)] Th\nProcess route: [jointext(batch.process_history, " -> ")]\nCertified by: [user.real_name]\n\nThis ordinary signed report may be shipped as a licensable process specification. Its external value is based on measured performance, novelty, field validation, and cost per usable output.", "material qualification and license - [copytext(batch.fingerprint(), 1, 9)]")
 	report.set_economic_provenance(DEPARTMENT_RESEARCH, license_value)
 	report.AddElement(/datum/element/sellable/manufactured)
 	emit_contract_event(CONTRACT_EVENT_MATERIAL_CERTIFIED, batch.evidence_context("certification"), batch.fingerprint(), src, user)
