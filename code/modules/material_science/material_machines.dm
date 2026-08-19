@@ -150,6 +150,11 @@
 		var/list/composition_data = list()
 		for(var/component in batch.composition)
 			composition_data += list(list("id" = component, "name" = material_display_name(component) || component, "amount" = round(batch.composition[component], 0.01)))
+		var/list/all_capabilities = batch.material_capability_preview(FALSE)
+		var/list/qualified_capabilities = list()
+		for(var/list/capability_data as anything in all_capabilities)
+			if(material_capability_discovered(capability_data["id"], batch))
+				qualified_capabilities += list(capability_data)
 		data["batch"] = list(
 			"name" = batch.display_name(), "amount" = round(batch.amount, 0.01), "phase" = batch.phase,
 			"temperature" = round(batch.temperature), "purity" = batch.purity, "grain" = batch.grain_size,
@@ -163,7 +168,8 @@
 			"costBreakdown" = batch.cost_breakdown(),
 			"hazard" = batch.hazard_score(),
 			"roles" = batch.functional_roles(),
-			"capabilities" = batch.material_capability_preview(),
+			"capabilities" = qualified_capabilities,
+			"unqualifiedCapabilities" = length(all_capabilities) - length(qualified_capabilities),
 			"melting" = batch.melting_temperature(),
 		)
 	for(var/spec_name in GLOB.material_specifications)

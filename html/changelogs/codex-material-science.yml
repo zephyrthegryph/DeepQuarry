@@ -9,3 +9,5 @@ changes:
   - rscadd: "Engineered materials now provide application-specific performance in medical instruments, engineering tools and parts, power cells, pressure vessels, armor, and ammunition."
   - rscdel: "Removed the obsolete exotic_dynamic sheet path; all dynamic alloys now use the traceable processed-material system."
   - rscadd: "Processed alloys can now develop emergent mechanics including self-charging electrogenic cells, impact charging, thermoelectric and radiovoltaic generation, superconductivity, shape memory, catalytic air cleaning, antimicrobial and hemostatic surgery, biomimetic healing, reactive armor, optical and resonant responses, gas capture, reagent reservoirs, and phase-change heat buffering."
+  - balance: "Emergent alloy capabilities now apply only to physically suitable product forms, reveal through relevant material tests, conserve stored heat and gas, and use finite or event-driven activation instead of continuous free processing."
+  - code_imp: "Added end-to-end tests for reachable capability recipes, form gating, atmospheric conservation, progressive discovery, and real surgical organ effects."

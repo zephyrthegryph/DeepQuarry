@@ -37,6 +37,7 @@ type Batch = {
   hazard: number;
   roles: Record<string, boolean>;
   capabilities: { id: string; name: string; potency: number }[];
+  unqualifiedCapabilities: number;
   melting: number;
 };
 
@@ -174,11 +175,16 @@ export const MaterialScience = () => {
                   >
                     {capability.name} — {capability.potency}%
                   </ProgressBar>
-                )) : (
+                )) : !batch.unqualifiedCapabilities ? (
                   <Box color="label">
                     No capability lattice has emerged from this composition and process route yet.
                   </Box>
-                )}
+                ) : null}
+                {batch.unqualifiedCapabilities ? (
+                  <Box color="average" mt={0.5}>
+                    {batch.unqualifiedCapabilities} anomalous material response{batch.unqualifiedCapabilities === 1 ? '' : 's'} remain unqualified. Run the relevant composition, microscopy, conductivity, mechanical, corrosion, or fabricated-article tests to characterize them.
+                  </Box>
+                ) : null}
               </Section>
             </Stack.Item>
             <Stack.Item>

@@ -271,11 +271,13 @@
 	material.name = "unit_test_capability_material"
 	material.display_name = "capability test alloy"
 	material.icon_colour = "#88ccff"
+	material.batch_template = new
+	material.batch_template.form = "wire stock"
 	material.material_capabilities = list(
 		MATERIAL_CAP_PIEZOELECTRIC = 90,
 		MATERIAL_CAP_SUPERCONDUCTING = 90,
-		MATERIAL_CAP_REACTIVE_ARMOR = 80,
-		MATERIAL_CAP_POROUS_REAGENT = 80,
+		MATERIAL_CAP_RADIOVOLTAIC = 80,
+		MATERIAL_CAP_ELECTROGENIC = 80,
 	)
 	GLOB.name_to_material[material.name] = material
 	var/obj/item/cell/cell = new(run_loc_floor_bottom_left)
@@ -286,18 +288,170 @@
 	cell.apply_engineered_material(material, MATERIAL_APPLICATION_CELL)
 	var/datum/component/material_capabilities/component = cell.GetComponent(/datum/component/material_capabilities)
 	TEST_ASSERT(istype(component), "Manufacturing must install the generic capability component")
-	TEST_ASSERT_NOTNULL(cell.reagents, "Porous capability stock must create a fillable reservoir")
 	TEST_ASSERT_EQUAL(component.capability(MATERIAL_CAP_PIEZOELECTRIC), 90, "The manufactured form must retain capability potency")
+	TEST_ASSERT(!(component in SSobj.processing), "Stable capability items must never enter continuous SSobj processing")
 	cell.charge = 0
 	cell.material_capability_form_trigger(SUB_TRIG_IMPACT, get_turf(cell), cell)
 	TEST_ASSERT(cell.charge > 0, "Piezoelectric forms must turn an impact into stored charge")
+	var/after_first_impact = cell.charge
+	cell.material_capability_form_trigger(SUB_TRIG_IMPACT, get_turf(cell), cell)
+	TEST_ASSERT_EQUAL(cell.charge, after_first_impact, "Piezoelectric generation must be rate-limited")
+	cell.charge = 0
+	component.apply_radiation_energy(50)
+	TEST_ASSERT(cell.charge > 0, "Radiovoltaic cells must generate charge from a radiation event")
 	var/datum/gas_mixture/air = cell_turf.return_air()
 	var/original_temperature = air.return_temperature()
 	air.set_temperature(T0C - 20)
 	TEST_ASSERT(cell.material_cell_use_cost(100) < 100, "A cold superconducting cell must spend less charge for the same load")
 	air.set_temperature(original_temperature)
-	TEST_ASSERT(cell.material_capability_activate(MATERIAL_CAP_REACTIVE_ARMOR), "Reactive capability must actively discharge")
-	TEST_ASSERT(!cell.material_capability_activate(MATERIAL_CAP_REACTIVE_ARMOR), "Reactive discharge must obey its cooldown")
 	qdel(cell)
+	GLOB.name_to_material -= material.name
+	qdel(material)
+
+/datum/unit_test/dq_material_capability_form_gating
+
+/datum/unit_test/dq_material_capability_form_gating/Run()
+	var/datum/material/processed_alloy/material = new
+	material.name = "unit_test_form_material"
+	material.display_name = "form gate alloy"
+	material.batch_template = new
+	material.batch_template.form = "sheet"
+	material.material_capabilities = list(
+		MATERIAL_CAP_REACTIVE_ARMOR = 80,
+		MATERIAL_CAP_ANTIMICROBIAL = 80,
+		MATERIAL_CAP_ELECTROGENIC = 80,
+		MATERIAL_CAP_PHASE_CHANGE = 80,
+	)
+	GLOB.name_to_material[material.name] = material
+	var/obj/item/surgical/scalpel/scalpel = new(run_loc_floor_bottom_left)
+	scalpel.apply_engineered_material(material, MATERIAL_APPLICATION_SURGICAL)
+	var/datum/component/material_capabilities/scalpel_component = scalpel.GetComponent(/datum/component/material_capabilities)
+	TEST_ASSERT(scalpel_component.capability(MATERIAL_CAP_ANTIMICROBIAL), "A surgical form must retain medical surface behavior")
+	TEST_ASSERT(!scalpel_component.capability(MATERIAL_CAP_REACTIVE_ARMOR), "A scalpel must not inherit armor-only behavior")
+	TEST_ASSERT(!scalpel_component.capability(MATERIAL_CAP_ELECTROGENIC), "A scalpel must not become a self-charging generator")
+	var/obj/item/material/armor_plating/plate = new(run_loc_floor_bottom_left, material.name)
+	var/datum/component/material_capabilities/plate_component = plate.GetComponent(/datum/component/material_capabilities)
+	TEST_ASSERT(plate_component.capability(MATERIAL_CAP_REACTIVE_ARMOR), "Armor stock must retain reactive protection")
+	TEST_ASSERT(plate_component.capability(MATERIAL_CAP_PHASE_CHANGE), "Armor stock must retain a structural heat reservoir")
+	TEST_ASSERT(!plate_component.capability(MATERIAL_CAP_ANTIMICROBIAL), "Armor stock must not inherit surgery-only behavior")
+	qdel(plate)
+	qdel(scalpel)
+	GLOB.name_to_material -= material.name
+	qdel(material)
+
+/datum/unit_test/dq_material_capability_conservation
+
+/datum/unit_test/dq_material_capability_conservation/Run()
+	var/turf/test_turf = get_turf(run_loc_floor_bottom_left)
+	if(!istype(test_turf, /turf/simulated/floor))
+		test_turf = locate(/turf/simulated/floor) in world
+	TEST_ASSERT_NOTNULL(test_turf, "Conservation testing requires a mutable simulated turf")
+	var/datum/gas_mixture/air = test_turf.return_air()
+	air.clear()
+	air.adjust_moles(/datum/gas/oxygen, 20)
+	air.adjust_moles(/datum/gas/nitrogen, 60)
+	air.adjust_moles(/datum/gas/miasma, 2)
+	air.adjust_moles(/datum/gas/plasma, 3)
+	air.set_temperature(T0C + 200)
+	var/datum/material/processed_alloy/material = new
+	material.name = "unit_test_conservation_material"
+	material.display_name = "conservation alloy"
+	material.batch_template = new
+	material.batch_template.form = "sintered stock"
+	material.material_capabilities = list(
+		MATERIAL_CAP_PHASE_CHANGE = 80,
+		MATERIAL_CAP_GAS_GETTER = 80,
+		MATERIAL_CAP_CATALYTIC = 80,
+	)
+	GLOB.name_to_material[material.name] = material
+	var/obj/item/material/armor_plating/plate = new(test_turf, material.name)
+	var/datum/component/material_capabilities/component = plate.GetComponent(/datum/component/material_capabilities)
+	var/initial_energy = air.thermal_energy()
+	var/absorbed = component.absorb_ambient_heat()
+	TEST_ASSERT(absorbed > 0, "A hot atmosphere must charge a phase-change reservoir")
+	TEST_ASSERT(abs((air.thermal_energy() + component.stored_phase_energy) - initial_energy) < 5, "Phase-change absorption must conserve thermal energy")
+	component.release_stored_heat()
+	TEST_ASSERT(abs(air.thermal_energy() - initial_energy) < 5, "Releasing a phase reservoir must return the stored thermal energy")
+	var/initial_moles = air.total_moles()
+	var/miasma_before = air.get_moles(/datum/gas/miasma)
+	var/carbon_dioxide_before = air.get_moles(/datum/gas/carbon_dioxide)
+	component.activate_catalyst(null)
+	TEST_ASSERT(abs(air.total_moles() - initial_moles) < 0.001, "Catalysis must conserve total gas moles")
+	TEST_ASSERT(air.get_moles(/datum/gas/miasma) < miasma_before && air.get_moles(/datum/gas/carbon_dioxide) > carbon_dioxide_before, "Catalysis must convert contamination into carbon dioxide")
+	var/plasma_before = air.get_moles(/datum/gas/plasma)
+	component.capture_hazardous_gas(null)
+	TEST_ASSERT(air.get_moles(/datum/gas/plasma) < plasma_before && component.stored_gas_moles > 0, "A getter must move hazardous gas into finite storage")
+	component.release_stored_gas()
+	TEST_ASSERT(abs(air.get_moles(/datum/gas/plasma) - plasma_before) < 0.001, "Releasing a getter must return exactly the captured gas")
+	qdel(plate)
+	GLOB.name_to_material -= material.name
+	qdel(material)
+
+/datum/unit_test/dq_material_capability_discovery
+
+/datum/unit_test/dq_material_capability_discovery/Run()
+	var/datum/material_batch/batch = new
+	batch.add_material(MAT_COPPER, 3, null, 98, "DISCOVERY")
+	batch.add_additive("conductive dopant", 4)
+	var/list/all_capabilities = batch.material_capability_preview(FALSE)
+	TEST_ASSERT(length(all_capabilities) > 0, "A reachable doped conductor must contain a latent capability")
+	TEST_ASSERT_EQUAL(length(batch.material_capability_preview(TRUE)), 0, "Untested capability behavior must remain unqualified")
+	batch.test_results[MATERIAL_TEST_CONDUCTIVITY] = batch.conductivity
+	batch.test_results[MATERIAL_TEST_SPECTROMETRY] = batch.purity
+	TEST_ASSERT(length(batch.material_capability_preview(TRUE)) > 0, "Relevant physical tests must reveal the latent capability")
+	qdel(batch)
+
+/datum/unit_test/dq_material_capability_reachable_routes
+
+/datum/unit_test/dq_material_capability_reachable_routes/Run()
+	var/datum/material_batch/conductor = new
+	TEST_ASSERT(conductor.add_material(MAT_COPPER, 3, null, 98, "ROUTE"), "Copper feedstock must enter the normal batch route")
+	TEST_ASSERT(conductor.add_additive("conductive dopant", 4), "The normal additive route must accept conductive dopant")
+	var/list/conductor_caps = conductor.material_capability_preview(FALSE)
+	var/found_electrical = FALSE
+	for(var/list/capability in conductor_caps)
+		if(capability["id"] in list(MATERIAL_CAP_ELECTROGENIC, MATERIAL_CAP_PIEZOELECTRIC, MATERIAL_CAP_THERMOELECTRIC))
+			found_electrical = TRUE
+			break
+	TEST_ASSERT(found_electrical, "A player-reachable doped conductor must develop an electrical capability")
+	var/datum/material_batch/getter = new
+	TEST_ASSERT(getter.add_material(MAT_TITANIUM, 3, null, 98, "ROUTE"), "Titanium feedstock must enter the normal batch route")
+	TEST_ASSERT(getter.apply_process(MATERIAL_PROCESS_PULVERIZE), "The normal process route must produce porous powder")
+	var/found_getter = FALSE
+	for(var/list/capability in getter.material_capability_preview(FALSE))
+		if(capability["id"] == MATERIAL_CAP_GAS_GETTER)
+			found_getter = TRUE
+			break
+	TEST_ASSERT(found_getter, "Player-reachable porous titanium must develop gas-getter behavior")
+	qdel(getter)
+	qdel(conductor)
+
+/datum/unit_test/dq_material_capability_medical_runtime
+
+/datum/unit_test/dq_material_capability_medical_runtime/Run()
+	var/turf/test_turf = get_turf(run_loc_floor_bottom_left)
+	if(!istype(test_turf, /turf/simulated/floor))
+		test_turf = locate(/turf/simulated/floor) in world
+	TEST_ASSERT_NOTNULL(test_turf, "Medical capability testing requires a valid turf")
+	var/datum/material/processed_alloy/material = new
+	material.name = "unit_test_medical_capability_material"
+	material.display_name = "medical capability alloy"
+	material.batch_template = new
+	material.batch_template.form = "surgical stock"
+	material.material_capabilities = list(MATERIAL_CAP_ANTIMICROBIAL = 80, MATERIAL_CAP_BIOMIMETIC = 80)
+	GLOB.name_to_material[material.name] = material
+	var/obj/item/surgical/scalpel/scalpel = new(test_turf)
+	scalpel.apply_engineered_material(material, MATERIAL_APPLICATION_SURGICAL)
+	var/mob/living/carbon/human/patient = new(test_turf)
+	var/obj/item/organ/external/affected = patient.get_organ(BP_TORSO)
+	TEST_ASSERT_NOTNULL(affected, "A generated patient must have a torso organ")
+	affected.germ_level = 200
+	patient.germ_level = 100
+	affected.brute_dam = 20
+	SEND_SIGNAL(scalpel, COMSIG_MATERIAL_SURGERY, patient, BP_TORSO, TRUE)
+	TEST_ASSERT(affected.germ_level < 200 && patient.germ_level < 100, "An antimicrobial surgical form must sanitize both patient and site")
+	TEST_ASSERT(affected.brute_dam < 20, "A biomimetic surgical form must repair real organ damage")
+	qdel(patient)
+	qdel(scalpel)
 	GLOB.name_to_material -= material.name
 	qdel(material)

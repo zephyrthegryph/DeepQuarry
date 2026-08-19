@@ -33,6 +33,26 @@ SUBSYSTEM_DEF(radiation)
 	var/list/cached_turfs_to_process = pulse_information.turfs_to_process
 	var/turfs_iterated = 0
 	var/pulse_strength = pulse_information.strength
+	// Radiovoltaic products are a compact explicit registry, so radiation wakes only
+	// those items instead of scanning every item on every irradiated turf.
+	for(var/obj/item/radiovoltaic as anything in GLOB.material_radiovoltaic_items)
+		if(QDELETED(radiovoltaic))
+			continue
+		if(get_dist(source, radiovoltaic) > pulse_information.max_range)
+			continue
+		var/current_material_insulation = 1
+		for(var/turf/turf_in_between in get_line(source, radiovoltaic) - get_turf(source))
+			var/material_insulation = cached_rad_insulations[turf_in_between]
+			if(isnull(material_insulation))
+				material_insulation = turf_in_between.rad_insulation
+				for(var/atom/on_turf as anything in turf_in_between.contents)
+					material_insulation *= on_turf.rad_insulation
+				cached_rad_insulations[turf_in_between] = material_insulation
+			current_material_insulation *= material_insulation
+			if(current_material_insulation <= pulse_information.threshold)
+				break
+		if(current_material_insulation > pulse_information.threshold)
+			SEND_SIGNAL(radiovoltaic, COMSIG_IN_RANGE_OF_IRRADIATION, pulse_information, current_material_insulation)
 	for (var/turf/turf_to_irradiate as anything in cached_turfs_to_process)
 		turfs_iterated += 1
 
