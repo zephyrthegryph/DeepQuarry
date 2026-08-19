@@ -245,14 +245,21 @@
 
 /datum/contract_definition/social/program/advanced_alloy_trial/configure_contract(datum/contract/social/contract, list/context)
 	..()
+	var/list/profiles = list(
+		list("name" = "Surgical Instrument Stock", "purpose" = "corrosion-safe, tough stock for reusable surgical tools", "checks" = list(list("key" = "toughness", "comparator" = CONTRACT_EVIDENCE_COMPARE_AT_LEAST, "expected" = 62), list("key" = "corrosion_resistance", "comparator" = CONTRACT_EVIDENCE_COMPARE_AT_LEAST, "expected" = 70), list("key" = "hardness", "comparator" = CONTRACT_EVIDENCE_COMPARE_AT_MOST, "expected" = 72))),
+		list("name" = "Pressure Vessel Stock", "purpose" = "low-defect, corrosion-resistant pressure containment", "checks" = list(list("key" = "toughness", "comparator" = CONTRACT_EVIDENCE_COMPARE_AT_LEAST, "expected" = 65), list("key" = "corrosion_resistance", "comparator" = CONTRACT_EVIDENCE_COMPARE_AT_LEAST, "expected" = 60), list("key" = "defect_fraction", "comparator" = CONTRACT_EVIDENCE_COMPARE_AT_MOST, "expected" = 15))),
+		list("name" = "Disposable Cutter Stock", "purpose" = "extreme hardness at an economical unit cost", "checks" = list(list("key" = "hardness", "comparator" = CONTRACT_EVIDENCE_COMPARE_AT_LEAST, "expected" = 76), list("key" = "production_cost", "comparator" = CONTRACT_EVIDENCE_COMPARE_AT_MOST, "expected" = 180), list("key" = "brittleness", "comparator" = CONTRACT_EVIDENCE_COMPARE_AT_MOST, "expected" = 70))),
+		list("name" = "Light Armor Plate", "purpose" = "balanced armor stock with practical production yield", "checks" = list(list("key" = "hardness", "comparator" = CONTRACT_EVIDENCE_COMPARE_AT_LEAST, "expected" = 62), list("key" = "toughness", "comparator" = CONTRACT_EVIDENCE_COMPARE_AT_LEAST, "expected" = 55), list("key" = "yield", "comparator" = CONTRACT_EVIDENCE_COMPARE_AT_LEAST, "expected" = 78))),
+	)
+	var/list/profile = pick(profiles)
+	contract.title = profile["name"]
+	contract.description = "Produce and certify [profile["purpose"]]. The issuer evaluates outcomes rather than prescribing ingredients or a process route."
 	add_social_role(contract, "metallurgist", "Process metallurgist", "Selects feedstock and develops a reproducible treatment route.", list(DEPARTMENT_RESEARCH), 1, 4)
 	add_social_role(contract, "evaluator", "Operational evaluator", "Reviews the physical certificate and proposes a station use for the alloy.", list(DEPARTMENT_ENGINEERING, DEPARTMENT_CARGO, DEPARTMENT_SECURITY), 1, 4)
 	add_program_count(contract, CONTRACT_EVENT_MATERIAL_PROCESSED, 4, "Controlled processing", "Complete four distinct physical processing stages on station material.", null, CONTRACT_EVIDENCE_SCOPE_DEPARTMENT, "process")
-	add_program_count(contract, CONTRACT_EVENT_MATERIAL_CERTIFIED, 1, "Balanced qualification", "Certify a multi-component alloy with at least 55 hardness and 55 toughness.", null, CONTRACT_EVIDENCE_SCOPE_DEPARTMENT, "fingerprint", null, list(
-		list("key" = "composition_count", "comparator" = CONTRACT_EVIDENCE_COMPARE_AT_LEAST, "expected" = 2),
-		list("key" = "hardness", "comparator" = CONTRACT_EVIDENCE_COMPARE_AT_LEAST, "expected" = 55),
-		list("key" = "toughness", "comparator" = CONTRACT_EVIDENCE_COMPARE_AT_LEAST, "expected" = 55),
-	))
+	var/list/checks = profile["checks"]
+	checks += list(list("key" = "composition_count", "comparator" = CONTRACT_EVIDENCE_COMPARE_AT_LEAST, "expected" = 2))
+	add_program_count(contract, CONTRACT_EVENT_MATERIAL_CERTIFIED, 1, "Application qualification", "Certify a batch meeting the complete application envelope shown above.", null, CONTRACT_EVIDENCE_SCOPE_DEPARTMENT, "fingerprint", null, checks)
 
 /datum/contract_definition/social/program/extreme_service_material
 	id = "extreme_service_material"
@@ -266,13 +273,19 @@
 
 /datum/contract_definition/social/program/extreme_service_material/configure_contract(datum/contract/social/contract, list/context)
 	..()
+	var/list/profiles = list(
+		list("name" = "Reactor Liner Qualification", "purpose" = "high-temperature corrosion service without excessive heat conduction", "checks" = list(list("key" = "heat_resistance", "comparator" = CONTRACT_EVIDENCE_COMPARE_AT_LEAST, "expected" = 68), list("key" = "corrosion_resistance", "comparator" = CONTRACT_EVIDENCE_COMPARE_AT_LEAST, "expected" = 64), list("key" = "conductivity", "comparator" = CONTRACT_EVIDENCE_COMPARE_AT_MOST, "expected" = 48))),
+		list("name" = "High-Temperature Power Bus", "purpose" = "conductive stock that retains useful thermal performance", "checks" = list(list("key" = "conductivity", "comparator" = CONTRACT_EVIDENCE_COMPARE_AT_LEAST, "expected" = 68), list("key" = "heat_resistance", "comparator" = CONTRACT_EVIDENCE_COMPARE_AT_LEAST, "expected" = 52), list("key" = "oxidation", "comparator" = CONTRACT_EVIDENCE_COMPARE_AT_MOST, "expected" = 12))),
+		list("name" = "Precision Sensor Crystal", "purpose" = "low-defect stock inside a narrow conductivity window", "checks" = list(list("key" = "conductivity", "comparator" = CONTRACT_EVIDENCE_COMPARE_AT_LEAST, "expected" = 42), list("key" = "conductivity", "comparator" = CONTRACT_EVIDENCE_COMPARE_AT_MOST, "expected" = 62), list("key" = "defect_fraction", "comparator" = CONTRACT_EVIDENCE_COMPARE_AT_MOST, "expected" = 10))),
+	)
+	var/list/profile = pick(profiles)
+	contract.title = profile["name"]
+	contract.description = "Develop [profile["purpose"]] from available station feedstock and deliver a qualified batch."
 	add_social_role(contract, "scientist", "Materials scientist", "Develops the composition and documents the process history.", list(DEPARTMENT_RESEARCH), 1, 4)
 	add_social_role(contract, "engineer", "Service engineer", "Reviews whether the certified properties suit a credible station application.", list(DEPARTMENT_ENGINEERING), 1, 4)
-	add_program_count(contract, CONTRACT_EVENT_MATERIAL_CERTIFIED, 1, "Extreme-service certificate", "Certify stock with at least 60 conductivity, 55 heat resistance, and 85 percent purity.", null, CONTRACT_EVIDENCE_SCOPE_DEPARTMENT, "fingerprint", null, list(
-		list("key" = "conductivity", "comparator" = CONTRACT_EVIDENCE_COMPARE_AT_LEAST, "expected" = 60),
-		list("key" = "heat_resistance", "comparator" = CONTRACT_EVIDENCE_COMPARE_AT_LEAST, "expected" = 55),
-		list("key" = "purity", "comparator" = CONTRACT_EVIDENCE_COMPARE_AT_LEAST, "expected" = 85),
-	))
+	var/list/checks = profile["checks"]
+	checks += list(list("key" = "purity", "comparator" = CONTRACT_EVIDENCE_COMPARE_AT_LEAST, "expected" = 84), list("key" = "amount", "comparator" = CONTRACT_EVIDENCE_COMPARE_AT_LEAST, "expected" = 4))
+	add_program_count(contract, CONTRACT_EVENT_MATERIAL_CERTIFIED, 1, "Extreme-service certificate", "Certify at least four sheets meeting the complete application envelope.", null, CONTRACT_EVIDENCE_SCOPE_DEPARTMENT, "fingerprint", null, checks)
 
 /datum/contract_definition/social/program/replication_study
 	id = "independent_replication_study"

@@ -170,11 +170,11 @@
 		),
 		CONTRACT_EVENT_MATERIAL_PROCESSED = list(
 			"required" = list("department", "process", "fingerprint", "amount"),
-			"numeric" = list("amount", "purity", "hardness", "toughness", "conductivity", "heat_resistance", "corrosion_resistance", "composition_count"),
+			"numeric" = list("amount", "purity", "hardness", "toughness", "brittleness", "conductivity", "heat_resistance", "corrosion_resistance", "composition_count", "yield", "energy_cost", "production_cost", "defect_fraction", "oxidation"),
 		),
 		CONTRACT_EVENT_MATERIAL_CERTIFIED = list(
 			"required" = list("department", "fingerprint", "purity", "hardness", "toughness"),
-			"numeric" = list("amount", "purity", "hardness", "toughness", "conductivity", "heat_resistance", "corrosion_resistance", "composition_count"),
+			"numeric" = list("amount", "purity", "hardness", "toughness", "brittleness", "conductivity", "heat_resistance", "corrosion_resistance", "composition_count", "yield", "energy_cost", "production_cost", "defect_fraction", "oxidation"),
 		),
 		CONTRACT_EVENT_SUPPLY_ORDER_FULFILLED = list(
 			"required" = list("fact_id", "fact_revision", "order_id", "pack_type", "funding_department", "value"),

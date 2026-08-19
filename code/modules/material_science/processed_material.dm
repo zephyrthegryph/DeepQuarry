@@ -1,6 +1,34 @@
 GLOBAL_LIST_EMPTY(processed_material_dedup)
 GLOBAL_LIST_EMPTY(material_specifications)
 
+/obj/item/stack/material
+	/// Source variability lives on the physical feedstock lot; material laws remain deterministic.
+	var/feedstock_purity
+	var/feedstock_lot_id
+	var/feedstock_trace
+	var/feedstock_trace_units = 0
+
+/obj/item/stack/material/proc/ensure_feedstock_lot()
+	if(feedstock_purity)
+		return
+	if(istype(material, /datum/material/processed_alloy))
+		var/datum/material/processed_alloy/processed = material
+		feedstock_purity = processed.batch_template.purity
+		feedstock_lot_id = copytext(processed.batch_template.fingerprint(), 1, 9)
+		return
+	feedstock_purity = rand(78, 99)
+	feedstock_lot_id = uppertext(copytext(md5("[world.realtime]-[REF(src)]-[rand()]"), 1, 9))
+	if(feedstock_purity < 96)
+		feedstock_trace = pick("carbon trace", "silicon trace", "sulfur contamination", "copper trace", "oxide inclusion")
+		feedstock_trace_units = rand(2, max(2, 100 - feedstock_purity)) / 10
+
+/obj/item/stack/material/examine(mob/user)
+	. = ..()
+	ensure_feedstock_lot()
+	. += span_notice("Feedstock lot [feedstock_lot_id], assay purity [feedstock_purity]%.")
+	if(feedstock_trace)
+		. += span_notice("Trace assay: [feedstock_trace_units]u [feedstock_trace] per sheet.")
+
 /datum/material/processed_alloy
 	stack_type = /obj/item/stack/material/processed_alloy
 	var/datum/material_batch/batch_template
@@ -29,6 +57,7 @@ GLOBAL_LIST_EMPTY(material_specifications)
 	material.display_name = batch.display_name()
 	material.use_name = material.display_name
 	material.batch_template = batch.copy_batch()
+	material.effect_charges = clamp(round(1 + batch.purity / 25 - batch.structure[MATERIAL_STRUCTURE_DEFECT] / 20), 1, 6)
 	material.hardness = batch.hardness
 	material.integrity = batch.toughness
 	material.elasticity = clamp(batch.toughness - batch.brittleness * 0.25, 1, 100)
@@ -99,8 +128,16 @@ GLOBAL_LIST_EMPTY(material_specifications)
 		return
 	var/datum/material/processed_alloy/processed = material
 	var/datum/material_batch/batch = processed.batch_template
-	. += span_notice("Form: <b>[batch.form]</b>; purity [batch.purity]%; [batch.phase] at [round(batch.temperature)] K.")
-	. += span_notice("Hardness [batch.hardness], toughness [batch.toughness], conductivity [batch.conductivity], heat resistance [batch.heat_resistance].")
+	. += span_notice("Form: <b>[batch.form]</b>; [batch.phase] at [round(batch.temperature)] K.")
+	if(batch.test_results[MATERIAL_TEST_SPECTROMETRY])
+		. += span_notice("Certified assay purity: [batch.purity]%.")
+	if(length(batch.test_results))
+		var/list/disclosed = list()
+		for(var/test in batch.test_results)
+			disclosed += "[test]: [batch.test_results[test]]"
+		. += span_notice("Recorded tests: [jointext(disclosed, "; ")].")
+	else
+		. += span_notice("No qualified properties are marked on this stock; use a materials test stand.")
 	. += span_notice("Batch fingerprint: [batch.fingerprint()].")
 
 /datum/material_specification
@@ -110,6 +147,9 @@ GLOBAL_LIST_EMPTY(material_specifications)
 	var/list/composition
 	var/created_by
 	var/created_at
+	var/list/process_route
+	var/atmosphere
+	var/tolerance = 5
 
 /datum/material_specification/New(spec_name, datum/material_batch/batch, author)
 	..()
@@ -119,3 +159,13 @@ GLOBAL_LIST_EMPTY(material_specifications)
 	composition = batch.composition.Copy()
 	created_by = author
 	created_at = world.time
+	process_route = batch.process_history.Copy()
+	atmosphere = batch.atmosphere
+
+/datum/material_specification/proc/matches(datum/material_batch/batch)
+	if(!istype(batch))
+		return FALSE
+	for(var/property in list("purity", "hardness", "toughness", "conductivity", "heat_resistance", "corrosion_resistance"))
+		if(abs(requirements[property] - batch.evidence_context("comparison")[property]) > tolerance)
+			return FALSE
+	return TRUE

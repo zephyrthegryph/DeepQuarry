@@ -3,3 +3,5 @@ delete-after: true
 changes:
   - rscadd: "Added physical material science: player-composed alloys, melting, casting, heat treatment, forming, electrochemistry, qualification reports, and reusable specifications."
   - rscadd: "Processed alloys retain measurable structure and performance through fabrication, sales, contracts, chemical dopants, slime catalysts, and substance effects."
+  - rscadd: "Expanded alloy science with deterministic phase structures, variable feedstock assays, real processing windows, differentiated destructive testing, licensable specifications, and application-driven contracts."
+  - balance: "Repeated or physically invalid material treatments no longer provide free improvements; reactive processing can reduce usable yield."
