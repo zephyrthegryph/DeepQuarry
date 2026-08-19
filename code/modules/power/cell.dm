@@ -25,6 +25,8 @@
 	var/connector_type = "standard" //What connector sprite to use when in a cell charger, null if no connectors
 	var/charge_delay = 0  // How long it takes for the cell to start recharging after last use
 	var/robot_durability = 50
+	/// Material-derived resistance to EMP charge loss, as a percentage.
+	var/material_emp_resistance = 0
 
 	matter = list(MAT_STEEL = 700, MAT_GLASS = 50)
 
@@ -249,7 +251,7 @@
 		var/mob/living/silicon/robot/R = loc
 		severity *= R.cell_emp_mult
 
-	charge -= charge / severity
+	charge -= (charge / severity) * (1 - material_emp_resistance / 100)
 	if (charge < 0)
 		charge = 0
 

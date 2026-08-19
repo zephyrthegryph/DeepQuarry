@@ -131,3 +131,60 @@
 	TEST_ASSERT_EQUAL(copy.total_production_cost(), batch.total_production_cost(), "Batch transfers must preserve their complete cost ledger")
 	qdel(copy)
 	qdel(batch)
+
+/datum/unit_test/dq_material_science_forms
+
+/datum/unit_test/dq_material_science_forms/Run()
+	var/datum/material_batch/batch = new
+	batch.add_material(MAT_STEEL, 2, null, 95, "FORMLOT")
+	batch.form = "sheet"
+	TEST_ASSERT(batch.form_compatible(MATERIAL_FORM_PLATE), "Sheet stock must satisfy plate applications")
+	TEST_ASSERT(!batch.form_compatible(MATERIAL_FORM_WIRE), "Sheet stock must not silently substitute for drawn wire")
+	batch.form = "wire stock"
+	TEST_ASSERT(batch.form_compatible(MATERIAL_FORM_WIRE), "Drawn stock must satisfy conductor applications")
+	TEST_ASSERT(!batch.form_compatible(MATERIAL_FORM_FORGED), "Drawn stock must not silently substitute for forged stock")
+	batch.form = "forged billet"
+	TEST_ASSERT(batch.form_compatible(MATERIAL_FORM_FORGED), "A forged billet must satisfy forged applications")
+	TEST_ASSERT(batch.form_compatible(MATERIAL_FORM_PRECISION), "A forged billet must be valid precision feedstock")
+	qdel(batch)
+
+/datum/unit_test/dq_material_science_applications
+
+/datum/unit_test/dq_material_science_applications/Run()
+	var/datum/material_batch/batch = new
+	batch.add_material(MAT_STEEL, 2, null, 98, "APPLICATIONLOT")
+	batch.add_material(MAT_COPPER, 1, null, 98, "APPLICATIONLOT")
+	batch.form = "forged billet"
+	batch.hardness = 90
+	batch.toughness = 85
+	batch.conductivity = 75
+	batch.heat_resistance = 80
+	batch.corrosion_resistance = 85
+	batch.recalculate()
+	var/material_key = register_processed_material(batch)
+	var/datum/material/processed_alloy/material = get_material_by_name(material_key)
+	TEST_ASSERT(istype(material), "Application test alloy must register")
+	TEST_ASSERT(material.density > 0 && material.protectiveness > 0 && material.thermal_insulation >= 0, "Processed alloys must publish the complete material property model")
+
+	var/obj/item/tool/wrench/tool = new(run_loc_floor_bottom_left)
+	var/original_force = tool.force
+	TEST_ASSERT(tool.apply_engineered_material(material, MATERIAL_APPLICATION_TOOL), "Ordinary tools must accept an engineered material profile")
+	TEST_ASSERT_EQUAL(tool.get_material(), material, "An engineered item must retain its actual material identity")
+	TEST_ASSERT(tool.force >= original_force && tool.toolspeed < 1.25, "Tool performance must derive from alloy properties")
+
+	var/obj/item/surgical/scalpel/scalpel = new(run_loc_floor_bottom_left)
+	TEST_ASSERT(scalpel.apply_engineered_material(material, MATERIAL_APPLICATION_SURGICAL), "Surgical instruments must accept an engineered material profile")
+	TEST_ASSERT(scalpel.material_surgery_cleanliness_bonus > 0 && scalpel.material_tool_quality_bonus > 0, "Surgical alloys must affect cleanliness and procedure quality")
+
+	batch.form = "wire stock"
+	var/wire_key = register_processed_material(batch)
+	var/datum/material/processed_alloy/wire_material = get_material_by_name(wire_key)
+	var/obj/item/cell/cell = new(run_loc_floor_bottom_left)
+	var/base_capacity = cell.maxcharge
+	TEST_ASSERT(cell.apply_engineered_material(wire_material, MATERIAL_APPLICATION_CELL), "Power cells must accept engineered conductor cores")
+	TEST_ASSERT(cell.maxcharge != base_capacity && cell.material_emp_resistance > 0, "Cell capacity and EMP resistance must derive from conductor properties")
+
+	qdel(cell)
+	qdel(scalpel)
+	qdel(tool)
+	qdel(batch)

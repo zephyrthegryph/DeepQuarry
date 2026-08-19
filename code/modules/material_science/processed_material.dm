@@ -59,7 +59,7 @@ GLOBAL_LIST_EMPTY(material_specifications)
 	material.batch_template = batch.copy_batch()
 	material.effect_charges = clamp(round(1 + batch.purity / 25 - batch.structure[MATERIAL_STRUCTURE_DEFECT] / 20), 1, 6)
 	material.hardness = batch.hardness
-	material.integrity = batch.toughness
+	material.integrity = clamp(round(batch.toughness * 2), 5, 250)
 	material.elasticity = clamp(batch.toughness - batch.brittleness * 0.25, 1, 100)
 	material.brittleness = batch.brittleness
 	material.heat_resistance = batch.heat_resistance
@@ -67,10 +67,45 @@ GLOBAL_LIST_EMPTY(material_specifications)
 	material.corrosion_resistance = batch.corrosion_resistance
 	material.reactivity = clamp(100 - batch.purity + length(batch.impurities) * 5, 0, 100)
 	material.melting_point = batch.melting_temperature()
-	material.supply_conversion_value = clamp(round((batch.hardness + batch.toughness + batch.conductivity + batch.purity) / 20), 5, 30)
+	var/weighted_density = 0
+	var/weighted_magnetism = 0
+	var/weighted_reflectivity = 0
+	var/weighted_opacity = 0
+	var/weighted_luminescence = 0
+	var/weighted_radioactivity = 0
+	var/weighted_toxicity = 0
+	var/weighted_radiation_resistance = 0
 	material.composite_material = list()
 	for(var/component in batch.composition)
-		material.composite_material[component] = round(SHEET_MATERIAL_AMOUNT * batch.composition[component] / max(batch.amount, 1))
+		var/share = batch.composition[component] / max(batch.amount, 1)
+		material.composite_material[component] = round(SHEET_MATERIAL_AMOUNT * share)
+		var/datum/material/component_material = get_material_by_name(component)
+		if(!component_material)
+			continue
+		weighted_density += component_material.density * share
+		weighted_magnetism += component_material.magnetism * share
+		weighted_reflectivity += component_material.reflectivity * share
+		weighted_opacity += component_material.opacity * share
+		weighted_luminescence += dq_material_luminescence(component_material) * share
+		weighted_radioactivity += dq_material_radioactivity(component_material) * share
+		weighted_toxicity += dq_material_toxicity(component_material) * share
+		weighted_radiation_resistance += component_material.radiation_resistance * share
+	material.density = clamp(round(max(weighted_density, batch.hardness * 0.35 + batch.toughness * 0.25)), 1, 120)
+	material.protectiveness = clamp(round(batch.toughness * 0.48 + batch.hardness * 0.28 - batch.brittleness * 0.2), 1, 75)
+	material.explosion_resistance = clamp(round(batch.toughness / 8 + batch.hardness / 14 - batch.brittleness / 20), 1, 25)
+	material.thermal_insulation = clamp(round(batch.heat_resistance * 0.65 + (100 - batch.conductivity) * 0.35), 0, 100)
+	material.magnetism = clamp(round(weighted_magnetism), 0, 100)
+	material.reflectivity = clamp(weighted_reflectivity + batch.purity / 500, 0, 1)
+	material.opacity = clamp(weighted_opacity > 0 ? weighted_opacity : 1, 0, 1)
+	material.luminescence = max(0, round(weighted_luminescence))
+	material.radioactivity = max(0, round(weighted_radioactivity))
+	material.toxicity = max(0, round(weighted_toxicity * (1 - batch.corrosion_resistance / 200)))
+	material.radiation_resistance = max(0, round(weighted_radiation_resistance + material.density / 12))
+	material.conductive = batch.conductivity >= 15
+	if(batch.brittleness >= 70)
+		material.flags |= MATERIAL_BRITTLE
+	var/performance_value = (batch.hardness + batch.toughness + batch.conductivity + batch.heat_resistance + batch.corrosion_resistance + batch.purity) / 24
+	material.supply_conversion_value = clamp(round(max(performance_value, batch.unit_production_cost() * 1.15)), 5, 80)
 	var/datum/material/dominant
 	var/dominant_amount = 0
 	for(var/component in batch.composition)
@@ -149,6 +184,7 @@ GLOBAL_LIST_EMPTY(material_specifications)
 	var/created_at
 	var/list/process_route
 	var/atmosphere
+	var/form
 	var/tolerance = 5
 
 /datum/material_specification/New(spec_name, datum/material_batch/batch, author)
@@ -161,6 +197,7 @@ GLOBAL_LIST_EMPTY(material_specifications)
 	created_at = world.time
 	process_route = batch.process_history.Copy()
 	atmosphere = batch.atmosphere
+	form = batch.form
 
 /datum/material_specification/proc/matches(datum/material_batch/batch)
 	if(!istype(batch))
@@ -169,3 +206,33 @@ GLOBAL_LIST_EMPTY(material_specifications)
 		if(abs(requirements[property] - batch.evidence_context("comparison")[property]) > tolerance)
 			return FALSE
 	return TRUE
+
+/datum/material_specification/proc/print_order(turf/location, requester, quantity)
+	var/obj/item/paper/order = new(location)
+	var/req_purity = requirements["purity"]
+	var/req_hardness = requirements["hardness"]
+	var/req_toughness = requirements["toughness"]
+	var/req_conductivity = requirements["conductivity"]
+	var/req_heat = requirements["heat_resistance"]
+	var/req_corrosion = requirements["corrosion_resistance"]
+	var/route_text = jointext(process_route, " -> ")
+	var/list/lines = list(
+		"MATERIAL PRODUCTION ORDER",
+		"Specification: [name]",
+		"Requested by: [requester]",
+		"Quantity: [quantity] usable sheets",
+		"Required form: [form]",
+		"Controlled atmosphere: [atmosphere]",
+		"Composition: [json_encode(composition)]",
+		"Acceptance tolerance: +/-[tolerance] points",
+		"Purity: [req_purity]",
+		"Hardness: [req_hardness]",
+		"Toughness: [req_toughness]",
+		"Conductivity: [req_conductivity]",
+		"Heat resistance: [req_heat]",
+		"Corrosion resistance: [req_corrosion]",
+		"Qualified route: [route_text]",
+		"Acceptance requires a matching batch fingerprint comparison and ordinary certification paperwork.",
+	)
+	order.set_content(jointext(lines, "\n"), "material production order - [name]")
+	return order

@@ -40,6 +40,10 @@ other types of metals and chemistry for reagents).
 	var/selectable_amount = 0
 	/// Optional MATCLASS_* the chosen material must belong to (null = any).
 	var/selectable_class = null
+	/// Optional application bridge for ordinary items that do not implement set_material.
+	var/material_application = null
+	/// Optional physical form required when the selected material is a processed alloy.
+	var/material_required_form = MATERIAL_FORM_ANY
 	/// The amount of time required to create one unit of the product.
 	var/construction_time = 3.2 SECONDS
 	/// The typepath of the object produced by this design
@@ -106,6 +110,13 @@ other types of metals and chemistry for reagents).
 	// Material items (and material clothing) take a material key as their second
 	// Initialize arg, so passing the chosen material makes the product be made of it.
 	if(material_selectable && chosen_material)
+		if(material_application)
+			var/obj/item/product = new build_path(target)
+			var/datum/material/material = GET_MATERIAL_REF(chosen_material)
+			if(!product.apply_engineered_material(material, material_application))
+				qdel(product)
+				return null
+			return product
 		return new build_path(target, chosen_material)
 	return new build_path(target)
 
@@ -129,4 +140,8 @@ other types of metals and chemistry for reagents).
 		return FALSE
 	if(selectable_class && cm.material_class != selectable_class)
 		return FALSE
+	if(material_required_form != MATERIAL_FORM_ANY && istype(cm, /datum/material/processed_alloy))
+		var/datum/material/processed_alloy/processed = cm
+		if(!processed.batch_template.form_compatible(material_required_form))
+			return FALSE
 	return TRUE

@@ -43,6 +43,18 @@
 #define MATERIAL_ATMOSPHERE_VACUUM "vacuum"
 #define MATERIAL_ATMOSPHERE_REDUCING "hydrogen"
 
+#define MATERIAL_FORM_ANY "general stock"
+#define MATERIAL_FORM_PLATE "plate or sheet stock"
+#define MATERIAL_FORM_WIRE "drawn wire stock"
+#define MATERIAL_FORM_FORGED "forged stock"
+#define MATERIAL_FORM_PRECISION "precision stock"
+
+#define MATERIAL_APPLICATION_TOOL "engineering tool"
+#define MATERIAL_APPLICATION_SURGICAL "surgical instrument"
+#define MATERIAL_APPLICATION_CELL "power cell"
+#define MATERIAL_APPLICATION_ARMOR "armor"
+#define MATERIAL_APPLICATION_PRESSURE "pressure service"
+
 #define CONTRACT_EVENT_MATERIAL_PROCESSED "material_processed"
 #define CONTRACT_EVENT_MATERIAL_CERTIFIED "material_certified"
 

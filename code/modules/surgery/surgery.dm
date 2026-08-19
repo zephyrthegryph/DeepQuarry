@@ -37,22 +37,22 @@
 /datum/surgery_step/proc/tool_quality(obj/item/tool)
 	for (var/T in allowed_tools)
 		if (istype(tool,T))
-			return allowed_tools[T]
+			return clamp(allowed_tools[T] + tool.material_tool_quality_bonus, 0, 100)
 
 	for(var/P in allowed_procs)
 		switch(P)
 			if(IS_SCREWDRIVER)
 				if(tool.has_tool_quality(TOOL_SCREWDRIVER))
-					return allowed_procs[P]
+					return clamp(allowed_procs[P] + tool.material_tool_quality_bonus, 0, 100)
 			if(IS_CROWBAR)
 				if(tool.has_tool_quality(TOOL_CROWBAR))
-					return allowed_procs[P]
+					return clamp(allowed_procs[P] + tool.material_tool_quality_bonus, 0, 100)
 			if(IS_WIRECUTTER)
 				if(tool.has_tool_quality(TOOL_WIRECUTTER))
-					return allowed_procs[P]
+					return clamp(allowed_procs[P] + tool.material_tool_quality_bonus, 0, 100)
 			if(IS_WRENCH)
 				if(tool.has_tool_quality(TOOL_WRENCH))
-					return allowed_procs[P]
+					return clamp(allowed_procs[P] + tool.material_tool_quality_bonus, 0, 100)
 	return 0
 
 
@@ -151,6 +151,7 @@
 	var/cleanliness = M.get_surgery_cleanliness(user)
 	if(isnull(cleanliness)) //They're standing upright.
 		return FALSE
+	cleanliness = clamp(cleanliness + material_surgery_cleanliness_bonus, 0, 100)
 
 	var/list/datum/surgery_step/available_surgeries = list()
 	for(var/datum/surgery_step/S in GLOB.surgery_steps)

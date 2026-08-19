@@ -26,9 +26,11 @@
 		return
 	forged_material = M
 	name = "[M.display_name] [initial(name)]"
-	if(BB && istype(M, /datum/material/substance))
-		var/datum/material/substance/sm = M
-		sm.apply_substance_infusion(BB)
+	color = M.icon_colour
+	if(BB)
+		BB.damage = max(1, round(BB.damage * clamp(0.75 + M.density / 240 + M.hardness / 400, 0.75, 1.25)))
+		BB.armor_penetration = max(0, BB.armor_penetration + round((M.hardness - M.brittleness * 0.35) / 12))
+		M.dq_apply_material_behaviors(BB)
 
 // ---- Magazine: propagate the forged material to its rounds -----------------------
 /obj/item/ammo_magazine
@@ -46,6 +48,11 @@
 
 // Shared examine line for a forged round / magazine (called from the base examine procs).
 /proc/substance_round_examine(datum/material/forged, list/examine_text)
+	if(!istype(forged))
+		return
+	if(istype(forged, /datum/material/processed_alloy))
+		var/datum/material/processed_alloy/processed = forged
+		examine_text += span_notice("Forged projectile stock: hardness [processed.hardness], density [processed.density], brittleness [processed.brittleness].")
 	if(!istype(forged, /datum/material/substance))
 		return
 	var/datum/material/substance/sm = forged

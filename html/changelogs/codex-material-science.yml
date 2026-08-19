@@ -6,3 +6,5 @@ changes:
   - rscadd: "Expanded alloy science with deterministic phase structures, variable feedstock assays, real processing windows, differentiated destructive testing, licensable specifications, and application-driven contracts."
   - balance: "Repeated or physically invalid material treatments no longer provide free improvements; reactive processing can reduce usable yield."
   - rscadd: "Material qualification now carries an auditable expense ledger for market-valued inputs, electricity, media, process time, equipment wear, waste handling, recovery credits, and cost per usable sheet."
+  - rscadd: "Engineered materials now provide application-specific performance in medical instruments, engineering tools and parts, power cells, pressure vessels, armor, and ammunition."
+  - rscdel: "Removed the obsolete exotic_dynamic sheet path; all dynamic alloys now use the traceable processed-material system."

@@ -264,6 +264,31 @@ update_flag
 	..()
 
 /obj/machinery/portable_atmospherics/canister/attackby(obj/item/W as obj, mob/user as mob)
+	if(istype(W, /obj/item/stack/material/processed_alloy))
+		var/obj/item/stack/material/processed_alloy/stock = W
+		if(pressure_liner_material_id)
+			to_chat(user, span_warning("[src] already has an engineered pressure liner."))
+			return
+		if(destroyed || air_contents.return_pressure() > ONE_ATMOSPHERE * 0.1)
+			to_chat(user, span_warning("Drain and restore [src] before installing a pressure liner."))
+			return
+		if(stock.get_amount() < 2)
+			to_chat(user, span_warning("A pressure liner requires two sheets."))
+			return
+		var/datum/material/processed_alloy/processed = stock.material
+		if(!processed.batch_template.form_compatible(MATERIAL_FORM_PLATE))
+			to_chat(user, span_warning("A pressure liner requires plate or sheet stock, not [processed.batch_template.form]."))
+			return
+		pressure_liner_material_id = processed.name
+		stock.use(2)
+		max_integrity = max(max_integrity, round(processed.integrity * 1.5))
+		update_integrity(max_integrity)
+		pressure_resistance = max(pressure_resistance, ONE_ATMOSPHERE * (5 + processed.integrity / 18))
+		temperature_resistance = max(temperature_resistance, T0C + 500 + processed.heat_resistance * 20)
+		name = "[processed.display_name]-lined [initial(name)]"
+		color = processed.icon_colour
+		to_chat(user, span_notice("You install a [processed.display_name] pressure liner in [src]."))
+		return
 	if(W.has_tool_quality(TOOL_WELDER)) //Vorestart: Deconstructable Canisters
 		var/obj/item/weldingtool/WT = W.get_welder()
 		if(!WT.remove_fuel(0, user))

@@ -16,8 +16,12 @@
 	desc = "A steel bar with a wedge, designed specifically for opening unpowered doors in an emergency."
 	id = "crowbar"
 	build_type = AUTOLATHE | PROTOLATHE
-	materials = list(MAT_STEEL = 60)
+	materials = list()
 	build_path = /obj/item/tool/crowbar
+	material_selectable = TRUE
+	selectable_amount = SHEET_MATERIAL_AMOUNT
+	material_application = MATERIAL_APPLICATION_TOOL
+	material_required_form = MATERIAL_FORM_FORGED
 	category = list(
 		RND_CATEGORY_INITIAL,
 		RND_CATEGORY_TOOLS + RND_SUBCATEGORY_TOOLS_ENGINEERING
@@ -93,8 +97,12 @@
 	desc = "This cuts wires."
 	id = "wirecutters"
 	build_type = AUTOLATHE | PROTOLATHE
-	materials = list(MAT_STEEL = 100)
+	materials = list()
 	build_path = /obj/item/tool/wirecutters
+	material_selectable = TRUE
+	selectable_amount = SHEET_MATERIAL_AMOUNT
+	material_application = MATERIAL_APPLICATION_TOOL
+	material_required_form = MATERIAL_FORM_FORGED
 	category = list(
 		RND_CATEGORY_INITIAL,
 		RND_CATEGORY_TOOLS + RND_SUBCATEGORY_TOOLS_ENGINEERING
@@ -106,8 +114,12 @@
 	desc = "A wrench with many common uses."
 	id = "wrench"
 	build_type = AUTOLATHE | PROTOLATHE
-	materials = list(MAT_STEEL = 200)
+	materials = list()
 	build_path = /obj/item/tool/wrench
+	material_selectable = TRUE
+	selectable_amount = SHEET_MATERIAL_AMOUNT
+	material_application = MATERIAL_APPLICATION_TOOL
+	material_required_form = MATERIAL_FORM_FORGED
 	category = list(
 		RND_CATEGORY_INITIAL,
 		RND_CATEGORY_TOOLS + RND_SUBCATEGORY_TOOLS_ENGINEERING

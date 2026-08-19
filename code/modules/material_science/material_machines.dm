@@ -167,7 +167,7 @@
 		)
 	for(var/spec_name in GLOB.material_specifications)
 		var/datum/material_specification/specification = GLOB.material_specifications[spec_name]
-		data["specifications"] += list(list("name" = specification.name, "fingerprint" = specification.fingerprint, "matches" = batch ? specification.matches(batch) : FALSE, "route" = specification.process_route))
+		data["specifications"] += list(list("name" = specification.name, "fingerprint" = specification.fingerprint, "matches" = batch ? specification.matches(batch) : FALSE, "route" = specification.process_route, "form" = specification.form, "atmosphere" = specification.atmosphere, "requirements" = specification.requirements))
 	return data
 
 /obj/machinery/material_processor/tgui_act(action, list/params, datum/tgui/ui, datum/tgui_state/state)
@@ -230,6 +230,16 @@
 			if(!spec_name || !batch)
 				return FALSE
 			GLOB.material_specifications[lowertext(spec_name)] = new /datum/material_specification(spec_name, batch, user.ckey)
+			return TRUE
+		if("print_spec")
+			var/spec_name = lowertext(params["name"])
+			var/datum/material_specification/specification = GLOB.material_specifications[spec_name]
+			if(!istype(specification))
+				return FALSE
+			var/quantity = tgui_input_number(user, "How many usable sheets are requested?", "Material production order", 10, MATERIAL_SCIENCE_MAX_BATCH, 1)
+			if(!quantity || !Adjacent(user))
+				return FALSE
+			specification.print_order(get_turf(src), user.real_name, round(quantity))
 			return TRUE
 		if("separate")
 			if(processor_kind != "electrochemical" || !batch || length(batch.composition) < 2)

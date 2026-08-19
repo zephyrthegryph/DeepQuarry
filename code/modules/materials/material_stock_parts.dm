@@ -8,7 +8,7 @@
 //
 // Unimbued parts (material_id = null) ride the upstream `rating = 1`
 // baseline — they work, they're just bad. Players upgrade a part by
-// striking it with an exotic material sheet (see attackby below).
+// applying a real material sheet; processed alloys retain their batch identity.
 //
 // Per-part-type formulas live in dq_part_rating_for. They're calibrated
 // so a stat in the 50-range yields ~rating 2, stats in the 80-range
@@ -17,7 +17,7 @@
 
 /obj/item/stock_parts
 	// name of the /datum/material this part is made from
-	// (lowertext, e.g. "exotic_mat_5"). Null = unimbued baseline.
+	// (lowertext, e.g. "processed_alloy_a1b2c3"). Null = unmodified baseline.
 	var/material_id
 
 
@@ -77,21 +77,26 @@
 	return clamp(round(raw, 0.1), 1, 5)
 
 
-// --- Material imbue --------------------------------------------------------
+// --- Material core ---------------------------------------------------------
 //
-// Players upgrade a part by striking it with an exotic-material sheet.
-// One sheet is consumed; the part absorbs the material id, takes on
-// the material's color, and re-derives its rating via the formula.
+// One sheet is consumed; the part absorbs the material id, takes on its
+// color, and re-derives its rating. Processed stock must have the right form.
 
 /obj/item/stock_parts/attackby(obj/item/W, mob/user)
-	if(istype(W, /obj/item/stack/material/exotic_dynamic))
-		var/obj/item/stack/material/exotic_dynamic/S = W
+	if(istype(W, /obj/item/stack/material))
+		var/obj/item/stack/material/S = W
 		if(material_id)
-			to_chat(user, span_warning("\The [src] is already imbued. Strip it first or use a fresh frame."))
+			to_chat(user, span_warning("\The [src] already has a material core. Use a fresh part."))
 			return ..()
 		if(!S.material || S.get_amount() < 1)
 			return ..()
-		material_id = S.default_type
+		if(istype(S.material, /datum/material/processed_alloy))
+			var/datum/material/processed_alloy/processed = S.material
+			var/required_form = stock_part_required_form()
+			if(!processed.batch_template.form_compatible(required_form))
+				to_chat(user, span_warning("[processed.batch_template.form] cannot serve as [required_form] for [src]."))
+				return
+		material_id = S.material.name
 		S.use(1)
 		var/datum/material/M = dq_get_material()
 		if(M)
@@ -105,9 +110,18 @@
 			// Apply any component-driven behaviors (luminescent
 			// glow etc.) from the imbued material.
 			M.dq_apply_material_behaviors(src)
-			to_chat(user, span_notice("You imbue \the [initial(name)] with \the [M.display_name]. Effective rating: [rating]."))
+			to_chat(user, span_notice("You install a [M.display_name] material core in \the [initial(name)]. Effective rating: [rating]."))
 		return ..() // Chain so upstream attackby side-effects (sound, fingerprint, etc.) still run
 	return ..()
+
+/obj/item/stock_parts/proc/stock_part_required_form()
+	if(istype(src, /obj/item/stock_parts/capacitor) || istype(src, /obj/item/stock_parts/micro_laser))
+		return MATERIAL_FORM_WIRE
+	if(istype(src, /obj/item/stock_parts/scanning_module))
+		return MATERIAL_FORM_PRECISION
+	if(istype(src, /obj/item/stock_parts/manipulator))
+		return MATERIAL_FORM_FORGED
+	return MATERIAL_FORM_PLATE
 
 
 /obj/item/stock_parts/examine(mob/user)
@@ -115,6 +129,6 @@
 	if(material_id)
 		var/datum/material/M = dq_get_material()
 		if(M)
-			. += span_notice("Imbued with <b>[M.display_name]</b>. Effective rating: [get_rating()].")
+			. += span_notice("Material core: <b>[M.display_name]</b>. Effective rating: [get_rating()].")
 	else
-		. += span_notice("Unimbued — baseline rating [rating]. Strike with an exotic-material sheet to upgrade.")
+		. += span_notice("Unmodified — baseline rating [rating]. Apply a suitably formed material sheet to upgrade it.")

@@ -44,7 +44,15 @@ type Data = {
   batch: Batch | null;
   operations: string[];
   operationAvailability: Record<string, boolean>;
-  specifications: { name: string; fingerprint: string; matches: boolean; route: string[] }[];
+  specifications: {
+    name: string;
+    fingerprint: string;
+    matches: boolean;
+    route: string[];
+    form: string;
+    atmosphere: string;
+    requirements: Record<string, number | string>;
+  }[];
   processing: boolean;
 };
 
@@ -253,9 +261,20 @@ export const MaterialScience = () => {
         <Section title="Saved material specifications" mt={1}>
           {specifications.length
             ? specifications.map((spec) => (
-                <Box key={spec.fingerprint} color={spec.matches ? 'good' : undefined}>
-                  {spec.name} — {spec.fingerprint} {spec.matches ? '(within tolerance)' : ''}
-                </Box>
+                <Section
+                  key={spec.fingerprint}
+                  title={spec.name}
+                  color={spec.matches ? 'good' : undefined}
+                  buttons={(
+                    <Button icon="print" onClick={() => act('print_spec', { name: spec.name })}>
+                      Print production order
+                    </Button>
+                  )}
+                >
+                  <Box>{spec.fingerprint} {spec.matches ? '— current batch is within tolerance' : ''}</Box>
+                  <Box color="label">{spec.form} • {spec.atmosphere}</Box>
+                  <Box color="label">Qualified route: {spec.route.join(' → ') || 'unrecorded'}</Box>
+                </Section>
               ))
             : <Box color="label">No specifications saved this shift.</Box>}
         </Section>

@@ -423,6 +423,20 @@
 			roles["phase catalyst"] = TRUE
 	return roles
 
+/datum/material_batch/proc/form_compatible(required_form)
+	if(!required_form || required_form == MATERIAL_FORM_ANY)
+		return phase == MATERIAL_PHASE_SOLID
+	switch(required_form)
+		if(MATERIAL_FORM_PLATE)
+			return form in list("sheet", "electroplated laminate", "forged billet")
+		if(MATERIAL_FORM_WIRE)
+			return form == "wire stock"
+		if(MATERIAL_FORM_FORGED)
+			return form in list("forged billet", "sintered stock")
+		if(MATERIAL_FORM_PRECISION)
+			return form in list("forged billet", "crystalline stock", "electroplated laminate", "electrolytic deposit")
+	return FALSE
+
 /datum/material_batch/proc/normalize_structure()
 	var/total = 0
 	for(var/structure_name in structure)

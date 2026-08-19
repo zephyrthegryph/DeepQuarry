@@ -39,8 +39,12 @@
 	name = "Scalpel"
 	id = "scalpel"
 	build_type = AUTOLATHE | PROTOLATHE
-	materials = list(MAT_STEEL = 500, MAT_GLASS = 500)
+	materials = list(MAT_GLASS = 500)
 	build_path = /obj/item/surgical/scalpel
+	material_selectable = TRUE
+	selectable_amount = SHEET_MATERIAL_AMOUNT
+	material_application = MATERIAL_APPLICATION_SURGICAL
+	material_required_form = MATERIAL_FORM_PRECISION
 	category = list(
 		RND_CATEGORY_INITIAL,
 		RND_CATEGORY_TOOLS + RND_SUBCATEGORY_TOOLS_MEDICAL,
@@ -51,8 +55,12 @@
 	name = "Circular Saw"
 	id = "circular_saw"
 	build_type = AUTOLATHE | PROTOLATHE
-	materials = list(MAT_STEEL = 1000, MAT_GLASS = 1000)
+	materials = list(MAT_GLASS = 1000)
 	build_path = /obj/item/surgical/circular_saw
+	material_selectable = TRUE
+	selectable_amount = SHEET_MATERIAL_AMOUNT * 2
+	material_application = MATERIAL_APPLICATION_SURGICAL
+	material_required_form = MATERIAL_FORM_FORGED
 	category = list(
 		RND_CATEGORY_INITIAL,
 		RND_CATEGORY_TOOLS + RND_SUBCATEGORY_TOOLS_MEDICAL,
@@ -63,8 +71,12 @@
 	name = "Bonesetter"
 	id = "bonesetter"
 	build_type = AUTOLATHE | PROTOLATHE
-	materials = list(MAT_STEEL = 1000,  MAT_GLASS = 1000)
+	materials = list(MAT_GLASS = 1000)
 	build_path = /obj/item/surgical/bonesetter
+	material_selectable = TRUE
+	selectable_amount = SHEET_MATERIAL_AMOUNT
+	material_application = MATERIAL_APPLICATION_SURGICAL
+	material_required_form = MATERIAL_FORM_FORGED
 	category = list(
 		RND_CATEGORY_INITIAL,
 		RND_CATEGORY_TOOLS + RND_SUBCATEGORY_TOOLS_MEDICAL,
@@ -75,7 +87,7 @@
 	name = "Surgical Drill"
 	id = "surgicaldrill"
 	build_type = AUTOLATHE | PROTOLATHE
-	materials = list(MAT_STEEL = 500, MAT_GLASS = 500)
+	materials = list(MAT_GLASS = 500)
 	build_path = /obj/item/surgical/surgicaldrill
 	category = list(
 		RND_CATEGORY_INITIAL,
@@ -87,8 +99,12 @@
 	name = "Retractor"
 	id = "retractor"
 	build_type = AUTOLATHE | PROTOLATHE
-	materials = list(MAT_STEEL = 500, MAT_GLASS = 500)
+	materials = list(MAT_GLASS = 500)
 	build_path = /obj/item/surgical/retractor
+	material_selectable = TRUE
+	selectable_amount = SHEET_MATERIAL_AMOUNT
+	material_application = MATERIAL_APPLICATION_SURGICAL
+	material_required_form = MATERIAL_FORM_PRECISION
 	category = list(
 		RND_CATEGORY_INITIAL,
 		RND_CATEGORY_TOOLS + RND_SUBCATEGORY_TOOLS_MEDICAL,
@@ -99,8 +115,12 @@
 	name = "Cautery"
 	id = "cautery"
 	build_type = AUTOLATHE | PROTOLATHE
-	materials = list(MAT_STEEL = 500, MAT_GLASS = 500)
+	materials = list(MAT_GLASS = 500)
 	build_path = /obj/item/surgical/cautery
+	material_selectable = TRUE
+	selectable_amount = SHEET_MATERIAL_AMOUNT
+	material_application = MATERIAL_APPLICATION_SURGICAL
+	material_required_form = MATERIAL_FORM_PRECISION
 	category = list(
 		RND_CATEGORY_INITIAL,
 		RND_CATEGORY_TOOLS + RND_SUBCATEGORY_TOOLS_MEDICAL,
@@ -113,6 +133,10 @@
 	build_type = AUTOLATHE | PROTOLATHE
 	materials = list(MAT_STEEL = 500, MAT_GLASS = 500)
 	build_path = /obj/item/surgical/hemostat
+	material_selectable = TRUE
+	selectable_amount = SHEET_MATERIAL_AMOUNT
+	material_application = MATERIAL_APPLICATION_SURGICAL
+	material_required_form = MATERIAL_FORM_PRECISION
 	category = list(
 		RND_CATEGORY_INITIAL,
 		RND_CATEGORY_TOOLS + RND_SUBCATEGORY_TOOLS_MEDICAL,
