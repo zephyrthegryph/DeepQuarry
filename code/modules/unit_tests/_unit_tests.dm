@@ -158,6 +158,7 @@
 #include "dq_gc_tests.dm"
 #include "dq_medical_tests.dm"
 #include "dq_melee_swing_tests.dm"
+#include "dq_material_science_tests.dm"
 #include "dq_preferences_tests.dm"
 #include "dq_shuttle_tests.dm"
 #include "dq_surgery_tests.dm"

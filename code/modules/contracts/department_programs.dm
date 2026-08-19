@@ -233,6 +233,47 @@
 	add_program_portfolio(contract, CONTRACT_EVENT_ITEM_PRODUCED, 2200, "item_type", "value", 7, "Qualified production", "Produce 2,200 Thalers of station equipment across seven product classes.", CONTRACT_EVIDENCE_SCOPE_DEPARTMENT, null, null, 500, 700)
 	add_program_portfolio(contract, CONTRACT_EVENT_ITEM_EXPORTED, 1200, "item_type", "value", 4, "External qualification", "Export 1,200 Thalers across four qualified product classes.", CONTRACT_EVIDENCE_SCOPE_DEPARTMENT, null, null, 400, 500)
 
+/datum/contract_definition/social/program/advanced_alloy_trial
+	id = "advanced_alloy_trial"
+	title = "Advanced Alloy Trial"
+	description = "Chimera Applied Materials requests a traceable multi-component alloy with balanced mechanical performance, qualified through ordinary station equipment."
+	scope = CONTRACT_SCOPE_DEPARTMENT
+	department = DEPARTMENT_RESEARCH
+	issuer_name = "Chimera Applied Materials"
+	issuer_faction = REPUTATION_FACTION_CHIMERA
+	reward = 3400
+
+/datum/contract_definition/social/program/advanced_alloy_trial/configure_contract(datum/contract/social/contract, list/context)
+	..()
+	add_social_role(contract, "metallurgist", "Process metallurgist", "Selects feedstock and develops a reproducible treatment route.", list(DEPARTMENT_RESEARCH), 1, 4)
+	add_social_role(contract, "evaluator", "Operational evaluator", "Reviews the physical certificate and proposes a station use for the alloy.", list(DEPARTMENT_ENGINEERING, DEPARTMENT_CARGO, DEPARTMENT_SECURITY), 1, 4)
+	add_program_count(contract, CONTRACT_EVENT_MATERIAL_PROCESSED, 4, "Controlled processing", "Complete four distinct physical processing stages on station material.", null, CONTRACT_EVIDENCE_SCOPE_DEPARTMENT, "process")
+	add_program_count(contract, CONTRACT_EVENT_MATERIAL_CERTIFIED, 1, "Balanced qualification", "Certify a multi-component alloy with at least 55 hardness and 55 toughness.", null, CONTRACT_EVIDENCE_SCOPE_DEPARTMENT, "fingerprint", null, list(
+		list("key" = "composition_count", "comparator" = CONTRACT_EVIDENCE_COMPARE_AT_LEAST, "expected" = 2),
+		list("key" = "hardness", "comparator" = CONTRACT_EVIDENCE_COMPARE_AT_LEAST, "expected" = 55),
+		list("key" = "toughness", "comparator" = CONTRACT_EVIDENCE_COMPARE_AT_LEAST, "expected" = 55),
+	))
+
+/datum/contract_definition/social/program/extreme_service_material
+	id = "extreme_service_material"
+	title = "Extreme-Service Material Qualification"
+	description = "NanoTrasen Engineering requests a certified material for harsh thermal and electrical service."
+	scope = CONTRACT_SCOPE_DEPARTMENT
+	department = DEPARTMENT_RESEARCH
+	issuer_name = "NanoTrasen Engineering Assurance"
+	issuer_faction = REPUTATION_FACTION_NANOTRASEN
+	reward = 3600
+
+/datum/contract_definition/social/program/extreme_service_material/configure_contract(datum/contract/social/contract, list/context)
+	..()
+	add_social_role(contract, "scientist", "Materials scientist", "Develops the composition and documents the process history.", list(DEPARTMENT_RESEARCH), 1, 4)
+	add_social_role(contract, "engineer", "Service engineer", "Reviews whether the certified properties suit a credible station application.", list(DEPARTMENT_ENGINEERING), 1, 4)
+	add_program_count(contract, CONTRACT_EVENT_MATERIAL_CERTIFIED, 1, "Extreme-service certificate", "Certify stock with at least 60 conductivity, 55 heat resistance, and 85 percent purity.", null, CONTRACT_EVIDENCE_SCOPE_DEPARTMENT, "fingerprint", null, list(
+		list("key" = "conductivity", "comparator" = CONTRACT_EVIDENCE_COMPARE_AT_LEAST, "expected" = 60),
+		list("key" = "heat_resistance", "comparator" = CONTRACT_EVIDENCE_COMPARE_AT_LEAST, "expected" = 55),
+		list("key" = "purity", "comparator" = CONTRACT_EVIDENCE_COMPARE_AT_LEAST, "expected" = 85),
+	))
+
 /datum/contract_definition/social/program/replication_study
 	id = "independent_replication_study"
 	title = "Independent Replication Study"

@@ -1,0 +1,5 @@
+author: "Codex"
+delete-after: true
+changes:
+  - rscadd: "Added physical material science: player-composed alloys, melting, casting, heat treatment, forming, electrochemistry, qualification reports, and reusable specifications."
+  - rscadd: "Processed alloys retain measurable structure and performance through fabrication, sales, contracts, chemical dopants, slime catalysts, and substance effects."

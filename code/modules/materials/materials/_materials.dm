@@ -142,6 +142,11 @@ GLOBAL_LIST_INIT(name_to_material, populate_material_list())
 
 	if(!ispath(key, /datum/material))
 		CRASH("Attempted to fetch material ref with invalid key [key]")
+	// Runtime-minted material bases (substances, processed alloys) deliberately have
+	// no static registry identity. Generic subtype audits may encounter the abstract
+	// path; it is not a missing material and must not be encoded into a bogus key.
+	if(!initial(key.name))
+		return null
 
 	key = GetIdFromArguments(arguments)
 	. = GLOB.name_to_material[key]

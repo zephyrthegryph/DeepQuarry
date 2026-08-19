@@ -1,0 +1,23 @@
+#define MATERIAL_PHASE_SOLID "solid"
+#define MATERIAL_PHASE_MOLTEN "molten"
+#define MATERIAL_PHASE_POWDER "powder"
+#define MATERIAL_PHASE_SOLUTION "solution"
+
+#define MATERIAL_PROCESS_MELT "melt"
+#define MATERIAL_PROCESS_CAST "cast"
+#define MATERIAL_PROCESS_ANNEAL "anneal"
+#define MATERIAL_PROCESS_QUENCH "quench"
+#define MATERIAL_PROCESS_TEMPER "temper"
+#define MATERIAL_PROCESS_SINTER "sinter"
+#define MATERIAL_PROCESS_ROLL "roll"
+#define MATERIAL_PROCESS_FORGE "forge"
+#define MATERIAL_PROCESS_DRAW "wire draw"
+#define MATERIAL_PROCESS_PURIFY "purify"
+#define MATERIAL_PROCESS_ELECTROLYZE "electrolyze"
+#define MATERIAL_PROCESS_CRYSTALLIZE "crystallize"
+
+#define CONTRACT_EVENT_MATERIAL_PROCESSED "material_processed"
+#define CONTRACT_EVENT_MATERIAL_CERTIFIED "material_certified"
+
+#define MATERIAL_SCIENCE_MAX_BATCH 50
+#define MATERIAL_SCIENCE_REAGENT_SAMPLE 10
