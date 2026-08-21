@@ -20,7 +20,7 @@
 	var/image/reagent_layer		// Holds the image used for showing a contained beaker.
 	var/energy = 0				// How many 'energy' units does this have? Acquired by a Particle Accelerator like a Singularity.
 	var/max_energy = 600
-	var/obj/item/stack/material/target	// The material being bombarded.
+	var/obj/item/target	// The material or persistent workpiece being bombarded.
 	var/obj/item/reagent_containers/reagent_container		// Holds the beaker. The process will consume ALL reagents inside it.
 	var/beaker_type = /obj/item/reagent_containers/glass/beaker
 	var/list/storage		// Holds references to items allowed to be used in the fabrication phase.
@@ -52,7 +52,18 @@
 /obj/machinery/particle_smasher/attackby(obj/item/W as obj, mob/user as mob)
 	if(W.type == /obj/item/analyzer)
 		return
+	else if(istype(W, /obj/item/material_workpiece))
+		if(target)
+			to_chat(user, span_notice("\The [src] already contains a target."))
+			return
+		user.drop_from_inventory(W)
+		target = W
+		target.forceMove(src)
+		update_icon()
 	else if(istype(W, /obj/item/stack/material))
+		if(target)
+			to_chat(user, span_notice("\The [src] already contains a target."))
+			return
 		var/obj/item/stack/material/M = W
 		if(M.uses_charge)
 			to_chat(user, span_notice("You cannot fill \the [src] with a synthesizer!"))
@@ -113,10 +124,11 @@
 	if(anchored)
 		icon_state = "[initial(icon_state)]-o"
 		if(target)
-			material_layer.color = target.material.icon_colour
+			var/target_color = target_material_color()
+			material_layer.color = target_color
 			add_overlay(material_layer)
 			if(successful_craft)
-				material_glow.color = target.material.icon_colour
+				material_glow.color = target_color
 				add_overlay(material_glow)
 		if(reagent_container)
 			add_overlay(reagent_layer)
@@ -125,7 +137,7 @@
 
 	if(target && energy)
 		var/power_percent = round((energy / max_energy) * 100)
-		light_color = target.material.icon_colour
+		light_color = target_material_color()
 		switch(power_percent)
 			if(0 to 25)
 				light_range = 1
@@ -138,6 +150,15 @@
 		set_light(light_range, 2, light_color)
 	else
 		set_light(0, 0, "#FFFFFF")
+
+/obj/machinery/particle_smasher/proc/target_material_color()
+	if(istype(target, /obj/item/stack/material))
+		var/obj/item/stack/material/material_stack = target
+		return material_stack.material?.icon_colour || "#aaaaaa"
+	if(istype(target, /obj/item/material_workpiece))
+		var/obj/item/material_workpiece/workpiece = target
+		return workpiece.batch?.dominant_color() || "#aaaaaa"
+	return "#aaaaaa"
 
 /obj/machinery/particle_smasher/bullet_act(obj/item/projectile/Proj)
 	if(istype(Proj, /obj/item/projectile/beam))
@@ -161,6 +182,8 @@
 		return
 
 	if(energy)
+		if(istype(target, /obj/item/material_workpiece))
+			try_material_workpiece_conditioning()
 		// A loaded substance stack refines once it charges past the threshold (substance_particle_refine.dm).
 		if(istype(target, /obj/item/stack/material/substance))
 			try_substance_refine()
@@ -195,6 +218,10 @@
 
 	if(!target)	// You are just blasting an empty machine.
 		visible_message(span_infoplain(span_bold("\The [src]") + " shudders."))
+		update_icon()
+		return
+	if(istype(target, /obj/item/material_workpiece))
+		try_material_workpiece_conditioning()
 		update_icon()
 		return
 

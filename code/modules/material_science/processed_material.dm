@@ -1,5 +1,4 @@
 GLOBAL_LIST_EMPTY(processed_material_dedup)
-GLOBAL_LIST_EMPTY(material_specifications)
 
 /obj/item/stack/material
 	/// Source variability lives on the physical feedstock lot; material laws remain deterministic.
@@ -165,76 +164,18 @@ GLOBAL_LIST_EMPTY(material_specifications)
 		return
 	var/datum/material/processed_alloy/processed = material
 	var/datum/material_batch/batch = processed.batch_template
-	. += span_notice("Form: <b>[batch.form]</b>; [batch.phase] at [round(batch.temperature)] K.")
-	if(batch.test_results[MATERIAL_TEST_SPECTROMETRY])
-		. += span_notice("Certified assay purity: [batch.purity]%.")
+	. += span_notice("Finished solid stock at [round(batch.temperature)] K, produced at [round(batch.yield_fraction * 100)]% retained yield.")
+	if(length(batch.surface_layers))
+		. += span_notice("Persistent surface treatments: [jointext(batch.surface_layers, ", ")].")
+	if(length(batch.dissolved_gases))
+		. += span_notice("Entrained gas signatures: [jointext(batch.dissolved_gases, ", ")].")
+	if(length(batch.field_treatments))
+		. += span_notice("Field-conditioned lattice: [jointext(batch.field_treatments, ", ")].")
 	if(length(batch.test_results))
 		var/list/disclosed = list()
 		for(var/test in batch.test_results)
 			disclosed += "[test]: [batch.test_results[test]]"
 		. += span_notice("Recorded tests: [jointext(disclosed, "; ")].")
 	else
-		. += span_notice("No qualified properties are marked on this stock; use a materials test stand.")
+		. += span_notice("No physical observations have been recorded; its behavior remains experimental.")
 	. += span_notice("Batch fingerprint: [batch.fingerprint()].")
-
-/datum/material_specification
-	var/name
-	var/fingerprint
-	var/list/requirements
-	var/list/composition
-	var/created_by
-	var/created_at
-	var/list/process_route
-	var/atmosphere
-	var/form
-	var/tolerance = 5
-
-/datum/material_specification/New(spec_name, datum/material_batch/batch, author)
-	..()
-	name = spec_name
-	fingerprint = batch.fingerprint()
-	requirements = batch.evidence_context(MATERIAL_PROCESS_CAST)
-	composition = batch.composition.Copy()
-	created_by = author
-	created_at = world.time
-	process_route = batch.process_history.Copy()
-	atmosphere = batch.atmosphere
-	form = batch.form
-
-/datum/material_specification/proc/matches(datum/material_batch/batch)
-	if(!istype(batch))
-		return FALSE
-	for(var/property in list("purity", "hardness", "toughness", "conductivity", "heat_resistance", "corrosion_resistance"))
-		if(abs(requirements[property] - batch.evidence_context("comparison")[property]) > tolerance)
-			return FALSE
-	return TRUE
-
-/datum/material_specification/proc/print_order(turf/location, requester, quantity)
-	var/obj/item/paper/order = new(location)
-	var/req_purity = requirements["purity"]
-	var/req_hardness = requirements["hardness"]
-	var/req_toughness = requirements["toughness"]
-	var/req_conductivity = requirements["conductivity"]
-	var/req_heat = requirements["heat_resistance"]
-	var/req_corrosion = requirements["corrosion_resistance"]
-	var/route_text = jointext(process_route, " -> ")
-	var/list/lines = list(
-		"MATERIAL PRODUCTION ORDER",
-		"Specification: [name]",
-		"Requested by: [requester]",
-		"Quantity: [quantity] usable sheets",
-		"Required form: [form]",
-		"Controlled atmosphere: [atmosphere]",
-		"Composition: [json_encode(composition)]",
-		"Acceptance tolerance: +/-[tolerance] points",
-		"Purity: [req_purity]",
-		"Hardness: [req_hardness]",
-		"Toughness: [req_toughness]",
-		"Conductivity: [req_conductivity]",
-		"Heat resistance: [req_heat]",
-		"Corrosion resistance: [req_corrosion]",
-		"Qualified route: [route_text]",
-		"Acceptance requires a matching batch fingerprint comparison and ordinary certification paperwork.",
-	)
-	order.set_content(jointext(lines, "\n"), "material production order - [name]")
-	return order

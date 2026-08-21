@@ -80,7 +80,7 @@
 // --- Material core ---------------------------------------------------------
 //
 // One sheet is consumed; the part absorbs the material id, takes on its
-// color, and re-derives its rating. Processed stock must have the right form.
+// color, and re-derives its rating. The part creates its own required geometry.
 
 /obj/item/stock_parts/attackby(obj/item/W, mob/user)
 	if(istype(W, /obj/item/stack/material))
@@ -90,12 +90,6 @@
 			return ..()
 		if(!S.material || S.get_amount() < 1)
 			return ..()
-		if(istype(S.material, /datum/material/processed_alloy))
-			var/datum/material/processed_alloy/processed = S.material
-			var/required_form = stock_part_required_form()
-			if(!processed.batch_template.form_compatible(required_form))
-				to_chat(user, span_warning("[processed.batch_template.form] cannot serve as [required_form] for [src]."))
-				return
 		material_id = S.material.name
 		S.use(1)
 		var/datum/material/M = dq_get_material()
@@ -113,15 +107,6 @@
 			to_chat(user, span_notice("You install a [M.display_name] material core in \the [initial(name)]. Effective rating: [rating]."))
 		return ..() // Chain so upstream attackby side-effects (sound, fingerprint, etc.) still run
 	return ..()
-
-/obj/item/stock_parts/proc/stock_part_required_form()
-	if(istype(src, /obj/item/stock_parts/capacitor) || istype(src, /obj/item/stock_parts/micro_laser))
-		return MATERIAL_FORM_WIRE
-	if(istype(src, /obj/item/stock_parts/scanning_module))
-		return MATERIAL_FORM_PRECISION
-	if(istype(src, /obj/item/stock_parts/manipulator))
-		return MATERIAL_FORM_FORGED
-	return MATERIAL_FORM_PLATE
 
 
 /obj/item/stock_parts/examine(mob/user)

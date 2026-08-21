@@ -40,7 +40,8 @@
 	var/energy_ceiling = clamp(round((energy / max_energy) * SUBSTANCE_ATTR_MAX), 40, SUBSTANCE_ATTR_MAX)
 	var/datum/substance/refined = S.Clone()
 	apply_refine(refined, substance_refine_op, substance_env_context(src, energy_ceiling))
-	var/amount = target.amount
+	var/obj/item/stack/material/substance/substance_target = target
+	var/amount = substance_target.amount
 	var/turf/T = get_turf(src)
 	QDEL_NULL(target)
 	substance_spawn_stack(T, refined, amount)

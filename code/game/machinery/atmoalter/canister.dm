@@ -276,9 +276,6 @@ update_flag
 			to_chat(user, span_warning("A pressure liner requires two sheets."))
 			return
 		var/datum/material/processed_alloy/processed = stock.material
-		if(!processed.batch_template.form_compatible(MATERIAL_FORM_PLATE))
-			to_chat(user, span_warning("A pressure liner requires plate or sheet stock, not [processed.batch_template.form]."))
-			return
 		pressure_liner_material_id = processed.name
 		stock.use(2)
 		max_integrity = max(max_integrity, round(processed.integrity * 1.5))

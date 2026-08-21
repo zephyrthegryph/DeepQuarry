@@ -253,18 +253,18 @@
 	)
 	var/list/profile = pick(profiles)
 	contract.title = profile["name"]
-	contract.description = "Produce and certify [profile["purpose"]]. The issuer evaluates outcomes rather than prescribing ingredients or a process route."
+	contract.description = "Produce [profile["purpose"]]. The issuer evaluates the finished physical stock rather than prescribing ingredients or a process route."
 	add_social_role(contract, "metallurgist", "Process metallurgist", "Selects feedstock and develops a reproducible treatment route.", list(DEPARTMENT_RESEARCH), 1, 4)
-	add_social_role(contract, "evaluator", "Operational evaluator", "Reviews the physical certificate and proposes a station use for the alloy.", list(DEPARTMENT_ENGINEERING, DEPARTMENT_CARGO, DEPARTMENT_SECURITY), 1, 4)
+	add_social_role(contract, "evaluator", "Operational evaluator", "Examines the physical workpiece and proposes a station use for the alloy.", list(DEPARTMENT_ENGINEERING, DEPARTMENT_CARGO, DEPARTMENT_SECURITY), 1, 4)
 	add_program_count(contract, CONTRACT_EVENT_MATERIAL_PROCESSED, 4, "Controlled processing", "Complete four distinct physical processing stages on station material.", null, CONTRACT_EVIDENCE_SCOPE_DEPARTMENT, "process")
 	var/list/checks = profile["checks"]
 	checks += list(list("key" = "composition_count", "comparator" = CONTRACT_EVIDENCE_COMPARE_AT_LEAST, "expected" = 2))
-	add_program_count(contract, CONTRACT_EVENT_MATERIAL_CERTIFIED, 1, "Application qualification", "Certify a batch meeting the complete application envelope shown above.", null, CONTRACT_EVIDENCE_SCOPE_DEPARTMENT, "fingerprint", null, checks)
+	add_program_count(contract, CONTRACT_EVENT_MATERIAL_CERTIFIED, 1, "Application qualification", "Finish a physical batch meeting the complete application envelope shown above.", null, CONTRACT_EVIDENCE_SCOPE_DEPARTMENT, "fingerprint", null, checks)
 
 /datum/contract_definition/social/program/extreme_service_material
 	id = "extreme_service_material"
 	title = "Extreme-Service Material Qualification"
-	description = "NanoTrasen Engineering requests a certified material for harsh thermal and electrical service."
+	description = "NanoTrasen Engineering requests finished material for harsh thermal and electrical service."
 	scope = CONTRACT_SCOPE_DEPARTMENT
 	department = DEPARTMENT_RESEARCH
 	issuer_name = "NanoTrasen Engineering Assurance"
@@ -282,10 +282,10 @@
 	contract.title = profile["name"]
 	contract.description = "Develop [profile["purpose"]] from available station feedstock and deliver a qualified batch."
 	add_social_role(contract, "scientist", "Materials scientist", "Develops the composition and documents the process history.", list(DEPARTMENT_RESEARCH), 1, 4)
-	add_social_role(contract, "engineer", "Service engineer", "Reviews whether the certified properties suit a credible station application.", list(DEPARTMENT_ENGINEERING), 1, 4)
+	add_social_role(contract, "engineer", "Service engineer", "Reviews whether the observed properties suit a credible station application.", list(DEPARTMENT_ENGINEERING), 1, 4)
 	var/list/checks = profile["checks"]
 	checks += list(list("key" = "purity", "comparator" = CONTRACT_EVIDENCE_COMPARE_AT_LEAST, "expected" = 84), list("key" = "amount", "comparator" = CONTRACT_EVIDENCE_COMPARE_AT_LEAST, "expected" = 4))
-	add_program_count(contract, CONTRACT_EVENT_MATERIAL_CERTIFIED, 1, "Extreme-service certificate", "Certify at least four sheets meeting the complete application envelope.", null, CONTRACT_EVIDENCE_SCOPE_DEPARTMENT, "fingerprint", null, checks)
+	add_program_count(contract, CONTRACT_EVENT_MATERIAL_CERTIFIED, 1, "Extreme-service qualification", "Finish at least four sheets meeting the complete application envelope.", null, CONTRACT_EVIDENCE_SCOPE_DEPARTMENT, "fingerprint", null, checks)
 
 /datum/contract_definition/social/program/replication_study
 	id = "independent_replication_study"

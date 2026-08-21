@@ -14,7 +14,6 @@
 	build_path = /obj/item/material/knife
 	material_selectable = TRUE
 	selectable_amount = SHEET_MATERIAL_AMOUNT
-	material_required_form = MATERIAL_FORM_FORGED
 	construction_time = 2 SECONDS
 	category = list(
 		RND_CATEGORY_INITIAL,
@@ -29,7 +28,6 @@
 	build_path = /obj/item/material/sword
 	material_selectable = TRUE
 	selectable_amount = SHEET_MATERIAL_AMOUNT * 2
-	material_required_form = MATERIAL_FORM_FORGED
 	construction_time = 4 SECONDS
 	category = list(
 		RND_CATEGORY_INITIAL,
@@ -48,7 +46,6 @@
 	build_path = /obj/item/ammo_magazine/m9mm
 	material_selectable = TRUE
 	selectable_amount = SHEET_MATERIAL_AMOUNT
-	material_required_form = MATERIAL_FORM_FORGED
 	materials = list()
 	construction_time = 3 SECONDS
 	category = list(
@@ -64,7 +61,6 @@
 	build_path = /obj/item/material/armor_plating
 	material_selectable = TRUE
 	selectable_amount = SHEET_MATERIAL_AMOUNT
-	material_required_form = MATERIAL_FORM_PLATE
 	construction_time = 3 SECONDS
 	category = list(RND_CATEGORY_INITIAL, RND_CATEGORY_EQUIPMENT + RND_SUBCATEGORY_EQUIPMENT_SECURITY)
 	departmental_flags = DEPARTMENT_BITFLAG_SECURITY | DEPARTMENT_BITFLAG_SCIENCE
@@ -77,21 +73,19 @@
 	build_path = /obj/item/material/armor_plating/insert
 	material_selectable = TRUE
 	selectable_amount = SHEET_MATERIAL_AMOUNT * 2
-	material_required_form = MATERIAL_FORM_PLATE
 	construction_time = 4 SECONDS
 	category = list(RND_CATEGORY_INITIAL, RND_CATEGORY_EQUIPMENT + RND_SUBCATEGORY_EQUIPMENT_SECURITY)
 	departmental_flags = DEPARTMENT_BITFLAG_SECURITY | DEPARTMENT_BITFLAG_SCIENCE
 
 /datum/design_techweb/material_power_cell
 	name = "Material-Core Power Cell"
-	desc = "A standard power cell whose capacity, EMP tolerance, and durability derive from selected drawn conductor stock."
+	desc = "A standard power cell whose capacity, EMP tolerance, and durability derive from the selected finished solid material."
 	id = "material_power_cell"
 	build_type = AUTOLATHE | PROTOLATHE
 	build_path = /obj/item/cell
 	material_selectable = TRUE
 	selectable_amount = SHEET_MATERIAL_AMOUNT * 2
 	material_application = MATERIAL_APPLICATION_CELL
-	material_required_form = MATERIAL_FORM_WIRE
 	materials = list(MAT_GLASS = 500)
 	construction_time = 5 SECONDS
 	category = list(RND_CATEGORY_INITIAL, RND_CATEGORY_EQUIPMENT + RND_SUBCATEGORY_EQUIPMENT_ENGINEERING)
@@ -103,6 +97,8 @@
 	description = "Forge weapons and ammunition from any loaded material — exotic and substance alloys included, carrying their properties."
 	starting_node = TRUE
 	design_ids = list(
+		"board_material_furnace",
+		"material_crucible",
 		"material_knife",
 		"material_sword",
 		"material_rounds_9mm",

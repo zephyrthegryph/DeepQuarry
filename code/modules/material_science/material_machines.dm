@@ -1,477 +1,781 @@
-/obj/machinery/material_processor
-	name = "integrated materials workstation"
-	desc = "A modular workstation for physically processing, forming, and certifying material batches."
-	icon = 'icons/obj/machines/research.dmi'
-	icon_state = "protolathe"
-	anchored = TRUE
-	density = TRUE
-	use_power = USE_POWER_IDLE
-	idle_power_usage = 75
-	active_power_usage = 1500
-	circuit = /obj/item/circuitboard/machine/material_processor
-	var/datum/material_batch/batch
-	var/processor_kind = "thermal"
-	var/process_timer
-	var/pending_process
-	var/pending_option
-	var/pending_duration_seconds
+/// Physical material-science workshop. One workpiece owns its batch from the
+/// crucible charge until finished stock is struck free on the anvil.
 
-/obj/machinery/material_processor/Destroy()
-	if(process_timer)
-		deltimer(process_timer)
-		process_timer = null
+/datum/material_batch/proc/dominant_color()
+	var/datum/material/dominant
+	var/dominant_amount = 0
+	for(var/material_name in composition)
+		if(composition[material_name] <= dominant_amount)
+			continue
+		dominant = get_material_by_name(material_name)
+		dominant_amount = composition[material_name]
+	return dominant?.icon_colour || "#8b8b8b"
+
+/proc/material_batch_absorb_sheet(datum/material_batch/batch, obj/item/stack/material/stack)
+	if(!istype(batch) || !istype(stack) || !stack.material || stack.amount < 1 || batch.amount >= MATERIAL_SCIENCE_MAX_BATCH)
+		return FALSE
+	stack.ensure_feedstock_lot()
+	if(istype(stack.material, /datum/material/processed_alloy))
+		var/datum/material/processed_alloy/processed = stack.material
+		var/datum/material_batch/source = processed.batch_template
+		for(var/component in source.composition)
+			batch.add_material(component, source.composition[component] / max(source.amount, 1), null, source.purity, stack.feedstock_lot_id)
+		for(var/additive in source.impurities)
+			batch.impurities[additive] = (batch.impurities[additive] || 0) + source.impurities[additive] / max(source.amount, 1)
+		batch.process_history += "remelted reclaimed [source.display_name()]"
+	else
+		batch.add_material(stack.material.name, 1, null, stack.feedstock_purity, stack.feedstock_lot_id)
+		if(stack.feedstock_trace)
+			batch.add_additive(stack.feedstock_trace, stack.feedstock_trace_units, 0)
+	stack.use(1)
+	batch.recalculate()
+	return TRUE
+
+/obj/item/reagent_containers/glass/material_crucible
+	name = "refractory alloy crucible"
+	desc = "A heavy open crucible. Feedstock and ordinary reagents placed inside become one persistent physical batch."
+	icon = 'icons/obj/chemical.dmi'
+	icon_state = "beakerlarge"
+	item_state = "beakerlarge"
+	volume = 120
+	amount_per_transfer_from_this = 10
+	max_transfer_amount = 120
+	w_class = ITEMSIZE_NORMAL
+	flags = OPENCONTAINER
+	resistance_flags = FIRE_PROOF | ACID_PROOF
+	var/datum/material_batch/batch
+
+/obj/item/reagent_containers/glass/material_crucible/Initialize(mapload)
+	. = ..()
+	batch = new
+	update_icon()
+
+/obj/item/reagent_containers/glass/material_crucible/Destroy()
 	QDEL_NULL(batch)
 	return ..()
 
-/obj/machinery/material_processor/attack_hand(mob/user)
-	if(..())
-		return TRUE
-	tgui_interact(user)
-	return TRUE
+/obj/item/reagent_containers/glass/material_crucible/examine(mob/user)
+	. = ..()
+	if(!batch?.amount)
+		. += span_notice("It has no solid feedstock loaded.")
+		return
+	. += span_notice("It holds [round(batch.amount, 0.01)] sheets of [batch.display_name()] in the [batch.phase] phase at [round(batch.temperature)] K.")
+	if(reagents.total_volume)
+		. += span_notice("[round(reagents.total_volume, 0.1)] units of ordinary chemical medium surround the charge.")
 
-/obj/machinery/material_processor/attackby(obj/item/item, mob/user)
-	if(processor_kind == "testing" && batch && !istype(item, /obj/item/stack/material))
-		var/datum/material/item_material = item.get_material()
-		if(istype(item_material, /datum/material/processed_alloy))
-			var/datum/material/processed_alloy/processed_item_material = item_material
-			if(processed_item_material.batch_template.fingerprint() == batch.fingerprint())
-				batch.test_results[MATERIAL_TEST_FIELD] = 100 - batch.structure[MATERIAL_STRUCTURE_DEFECT]
-				batch.process_history += "fabricated article [item.type] destructively field-tested"
-				to_chat(user, span_notice("[src] destructively loads [item] through its service envelope and records the result."))
-				qdel(item)
-				return
+/obj/item/reagent_containers/glass/material_crucible/attackby(obj/item/item, mob/user)
 	if(istype(item, /obj/item/stack/material))
 		var/obj/item/stack/material/stack = item
-		if(!stack.material || stack.amount < 1)
-			return
-		if(!batch)
-			batch = new
-		stack.ensure_feedstock_lot()
-		if(batch.amount >= MATERIAL_SCIENCE_MAX_BATCH)
-			to_chat(user, span_warning("The chamber is full."))
-			return
-		if(istype(stack.material, /datum/material/processed_alloy))
-			var/datum/material/processed_alloy/processed = stack.material
-			var/datum/material_batch/source = processed.batch_template
-			var/feedstock_before = batch.cost_ledger[MATERIAL_COST_FEEDSTOCK] || 0
-			for(var/component in source.composition)
-				batch.add_material(component, source.composition[component] / max(source.amount, 1), null, source.purity, stack.feedstock_lot_id)
-			var/recorded_feedstock = (batch.cost_ledger[MATERIAL_COST_FEEDSTOCK] || 0) - feedstock_before
-			var/historical_unit_cost = source.unit_production_cost()
-			if(historical_unit_cost > recorded_feedstock)
-				var/carry_cost = historical_unit_cost - recorded_feedstock
-				batch.cost_basis += carry_cost
-				batch.record_cost(MATERIAL_COST_FEEDSTOCK, carry_cost)
-			batch.purity = round((batch.purity + source.purity) * 0.5)
-			batch.grain_size = round((batch.grain_size + source.grain_size) * 0.5)
-			batch.internal_stress = round((batch.internal_stress + source.internal_stress) * 0.5)
-			batch.porosity = round((batch.porosity + source.porosity) * 0.5)
-			batch.homogeneity = round((batch.homogeneity + source.homogeneity) * 0.5)
+		if(material_batch_absorb_sheet(batch, stack))
+			user.visible_message(span_notice("[user] places a sheet into [src]."), span_notice("You add a sheet to the persistent crucible charge."))
+			update_icon()
 		else
-			batch.add_material(stack.material.name, 1, null, stack.feedstock_purity, stack.feedstock_lot_id)
-			if(stack.feedstock_trace)
-				batch.add_additive(stack.feedstock_trace, stack.feedstock_trace_units, 0)
-		stack.use(1)
-		batch.recalculate()
-		to_chat(user, span_notice("You load one sheet into [src]."))
+			to_chat(user, span_warning("The crucible cannot accept that feedstock."))
 		return
-	if(istype(item, /obj/item/slime_extract))
-		if(!batch)
-			to_chat(user, span_warning("Load material before adding a catalyst."))
+	if(istype(item, /obj/item/ore/coal))
+		if(!batch?.amount)
+			to_chat(user, span_warning("There is no metal charge to pack in carbon."))
 			return
-		var/obj/item/slime_extract/extract = item
-		var/specialized_catalyst = FALSE
-		if(istype(extract, /obj/item/slime_extract/metal))
-			specialized_catalyst = TRUE
-			batch.add_additive("metallic grain refiner", 4, 8, MATERIAL_COST_CATALYSTS)
-			batch.structure[MATERIAL_STRUCTURE_REINFORCEMENT] += 14
-		if(istype(extract, /obj/item/slime_extract/blue))
-			specialized_catalyst = TRUE
-			batch.add_additive("cryogenic stabilizer", 3, 8, MATERIAL_COST_CATALYSTS)
-			batch.internal_stress = clamp(batch.internal_stress - 18, 0, 100)
-		if(istype(extract, /obj/item/slime_extract/orange))
-			specialized_catalyst = TRUE
-			batch.add_additive("thermal phase catalyst", 4, 8, MATERIAL_COST_CATALYSTS)
-			batch.heat_resistance = clamp(batch.heat_resistance + 10, 0, 100)
-		if(istype(extract, /obj/item/slime_extract/yellow))
-			specialized_catalyst = TRUE
-			batch.add_additive("conductive dopant", 4, 8, MATERIAL_COST_CATALYSTS)
-			batch.conductivity = clamp(batch.conductivity + 12, 0, 100)
-		if(istype(extract, /obj/item/slime_extract/dark_purple))
-			specialized_catalyst = TRUE
-			batch.add_additive("corrosion inhibitor", 4, 8, MATERIAL_COST_CATALYSTS)
-			batch.corrosion_resistance = clamp(batch.corrosion_resistance + 12, 0, 100)
-		if(istype(extract, /obj/item/slime_extract/gold))
-			specialized_catalyst = TRUE
-			batch.add_additive("precipitation catalyst", 4, 8, MATERIAL_COST_CATALYSTS)
-			batch.structure[MATERIAL_STRUCTURE_PRECIPITATE] += 16
-		if(istype(extract, /obj/item/slime_extract/bluespace))
-			specialized_catalyst = TRUE
-			batch.add_additive("bluespace homogenizer", 3, 12, MATERIAL_COST_CATALYSTS)
-			batch.homogeneity = clamp(batch.homogeneity + 24, 0, 100)
-		if(!specialized_catalyst)
-			batch.add_additive("[extract.name] organic matrix", 5, 6, MATERIAL_COST_CATALYSTS)
-			batch.structure[MATERIAL_STRUCTURE_AMORPHOUS] += 12
-		batch.purity = clamp(batch.purity + 4, 0, 100)
-		batch.normalize_structure()
-		batch.recalculate()
-		qdel(extract)
-		to_chat(user, span_notice("The extractor matrix dissolves into the batch as a catalytic dopant."))
-		return
-	if(item.reagents?.total_volume)
-		if(!batch)
-			to_chat(user, span_warning("Load material before adding chemical dopants."))
-			return
-		var/remaining = MATERIAL_SCIENCE_REAGENT_SAMPLE
-		for(var/datum/reagent/reagent in item.reagents.reagent_list)
-			if(remaining <= 0)
-				break
-			var/taken = min(reagent.volume, remaining)
-			if(taken > 0)
-				batch.add_additive(reagent.name, taken, max(reagent.supply_conversion_value, 0.05), MATERIAL_COST_CHEMICALS)
-				item.reagents.remove_reagent(reagent.id, taken)
-				remaining -= taken
-		to_chat(user, span_notice("You meter chemical additives into the batch."))
+		batch.add_additive("carbon", 4, 0.5, MATERIAL_COST_CHEMICALS)
+		batch.process_history += "packed in solid carbon"
+		qdel(item)
+		user.visible_message(span_notice("[user] packs coal around the charge in [src]."), span_notice("You pack the charge in carbon for diffusion during heating."))
+		update_icon()
 		return
 	return ..()
 
-/obj/machinery/material_processor/tgui_interact(mob/user, datum/tgui/ui)
-	ui = SStgui.try_update_ui(user, src, ui)
-	if(!ui)
-		ui = new(user, src, "MaterialScience", name)
-		ui.open()
-
-/obj/machinery/material_processor/tgui_data(mob/user)
-	var/list/operation_availability = list()
-	for(var/operation in available_operations())
-		operation_availability[operation] = batch?.can_process(operation) || FALSE
-	var/list/data = list("kind" = processor_kind, "batch" = null, "operations" = available_operations(), "operationAvailability" = operation_availability, "specifications" = list(), "processing" = !!process_timer)
-	if(batch)
-		var/list/composition_data = list()
-		for(var/component in batch.composition)
-			composition_data += list(list("id" = component, "name" = material_display_name(component) || component, "amount" = round(batch.composition[component], 0.01)))
-		var/list/all_capabilities = batch.material_capability_preview(FALSE)
-		var/list/qualified_capabilities = list()
-		for(var/list/capability_data as anything in all_capabilities)
-			if(material_capability_discovered(capability_data["id"], batch))
-				qualified_capabilities += list(capability_data)
-		data["batch"] = list(
-			"name" = batch.display_name(), "amount" = round(batch.amount, 0.01), "phase" = batch.phase,
-			"temperature" = round(batch.temperature), "purity" = batch.purity, "grain" = batch.grain_size,
-			"stress" = batch.internal_stress, "porosity" = batch.porosity, "homogeneity" = batch.homogeneity,
-			"hardness" = batch.test_results[MATERIAL_TEST_HARDNESS], "toughness" = batch.test_results[MATERIAL_TEST_TENSILE],
-			"conductivity" = batch.test_results[MATERIAL_TEST_CONDUCTIVITY], "heat" = batch.test_results[MATERIAL_TEST_TENSILE] ? batch.heat_resistance : null,
-			"corrosion" = batch.test_results[MATERIAL_TEST_CORROSION], "composition" = batch.test_results[MATERIAL_TEST_SPECTROMETRY] ? composition_data : list(),
-			"structure" = batch.test_results[MATERIAL_TEST_MICROSCOPY] ? batch.structure.Copy() : null,
-			"history" = batch.process_history.Copy(), "atmosphere" = batch.atmosphere, "yield" = round(batch.yield_fraction * 100),
-			"energy" = batch.energy_spent, "cost" = round(batch.total_production_cost(), 0.01), "unitCost" = round(batch.unit_production_cost(), 0.01),
-			"costBreakdown" = batch.cost_breakdown(),
-			"hazard" = batch.hazard_score(),
-			"roles" = batch.functional_roles(),
-			"capabilities" = qualified_capabilities,
-			"unqualifiedCapabilities" = length(all_capabilities) - length(qualified_capabilities),
-			"melting" = batch.melting_temperature(),
-		)
-	for(var/spec_name in GLOB.material_specifications)
-		var/datum/material_specification/specification = GLOB.material_specifications[spec_name]
-		data["specifications"] += list(list("name" = specification.name, "fingerprint" = specification.fingerprint, "matches" = batch ? specification.matches(batch) : FALSE, "route" = specification.process_route, "form" = specification.form, "atmosphere" = specification.atmosphere, "requirements" = specification.requirements))
-	return data
-
-/obj/machinery/material_processor/tgui_act(action, list/params, datum/tgui/ui, datum/tgui_state/state)
-	. = ..()
-	if(.)
-		return
-	if(stat & (BROKEN | NOPOWER))
-		return FALSE
-	var/mob/user = ui.user
-	switch(action)
-		if("process")
-			var/process = params["process"]
-			if(!(process in available_operations()) || !batch || process_timer)
-				return FALSE
-			if(!batch.can_process(process))
-				to_chat(user, span_warning("That operation is unavailable at the batch's current phase, temperature, form, or prior treatment state."))
-				return FALSE
-			pending_process = process
-			pending_option = params["option"]
-			pending_duration_seconds = clamp(round(batch.amount), 1, 8)
-			var/cycle_power = process_power_units(pending_process, pending_option, pending_duration_seconds)
-			use_power(cycle_power)
-			batch.record_electricity(cycle_power)
-			process_timer = addtimer(CALLBACK(src, PROC_REF(finish_process)), pending_duration_seconds SECONDS, TIMER_STOPPABLE)
-			visible_message(span_notice("[src] begins a [process] cycle."))
-			return TRUE
-		if("atmosphere")
-			if(!batch || processor_kind != "thermal")
-				return FALSE
-			var/selected = params["value"]
-			if(!(selected in list(MATERIAL_ATMOSPHERE_AIR, MATERIAL_ATMOSPHERE_INERT, MATERIAL_ATMOSPHERE_VACUUM, MATERIAL_ATMOSPHERE_REDUCING)))
-				return FALSE
-			batch.atmosphere = selected
-			return TRUE
-		if("test")
-			if(processor_kind != "testing")
-				return FALSE
-			return run_material_test(params["test"], user)
-		if("eject")
-			if(!batch || process_timer)
-				return FALSE
-			if(batch.phase != MATERIAL_PHASE_SOLID)
-				to_chat(user, span_warning("Cast, crystallize, or solidify the batch before ejecting it."))
-				return FALSE
-			processed_spawn_stack(get_turf(src), batch, max(1, round(batch.amount * batch.yield_fraction)))
-			QDEL_NULL(batch)
-			return TRUE
-		if("discard")
-			QDEL_NULL(batch)
-			return TRUE
-		if("certify")
-			return certify_batch(user)
-		if("save_spec")
-			if(!batch)
-				return FALSE
-			if(!batch.test_results[MATERIAL_TEST_TENSILE] || !batch.test_results[MATERIAL_TEST_CORROSION])
-				to_chat(user, span_warning("Run and certify a complete qualification portfolio before releasing a production specification."))
-				return FALSE
-			var/spec_name = stripped_input(user, "Name this material specification.", "Save specification", batch.display_name(), MAX_NAME_LEN)
-			if(!spec_name || !batch)
-				return FALSE
-			GLOB.material_specifications[lowertext(spec_name)] = new /datum/material_specification(spec_name, batch, user.ckey)
-			return TRUE
-		if("print_spec")
-			var/spec_name = lowertext(params["name"])
-			var/datum/material_specification/specification = GLOB.material_specifications[spec_name]
-			if(!istype(specification))
-				return FALSE
-			var/quantity = tgui_input_number(user, "How many usable sheets are requested?", "Material production order", 10, MATERIAL_SCIENCE_MAX_BATCH, 1)
-			if(!quantity || !Adjacent(user))
-				return FALSE
-			specification.print_order(get_turf(src), user.real_name, round(quantity))
-			return TRUE
-		if("separate")
-			if(processor_kind != "electrochemical" || !batch || length(batch.composition) < 2)
-				return FALSE
-			var/component = params["component"]
-			var/component_amount = batch.composition[component]
-			if(!component_amount)
-				return FALSE
-			var/datum/material_batch/separated = new
-			separated.add_material(component, component_amount)
-			separated.purity = clamp(batch.purity + 8, 0, 100)
-			separated.form = "electrolytic deposit"
-			separated.process_history += "electrolytically separated from [batch.display_name()]"
-			separated.recalculate()
-			processed_spawn_stack(get_turf(src), separated, separated.amount)
-			var/datum/material/recovered_material = get_material_by_name(component)
-			batch.record_recovery(max(recovered_material?.supply_conversion_value, 0.1) * component_amount)
-			qdel(separated)
-			batch.composition -= component
-			batch.amount -= component_amount
-			batch.purity = clamp(batch.purity + 6, 0, 100)
-			batch.process_history += "electrolytic separation of [component]"
-			batch.recalculate()
-			emit_contract_event(CONTRACT_EVENT_MATERIAL_PROCESSED, batch.evidence_context(MATERIAL_PROCESS_ELECTROLYZE))
-			return TRUE
-	return FALSE
-
-/obj/machinery/material_processor/proc/available_operations()
-	return list(MATERIAL_PROCESS_HEAT, MATERIAL_PROCESS_COOL, MATERIAL_PROCESS_MELT, MATERIAL_PROCESS_CAST, MATERIAL_PROCESS_HOMOGENIZE, MATERIAL_PROCESS_SOLUTION_TREAT, MATERIAL_PROCESS_ANNEAL, MATERIAL_PROCESS_QUENCH, MATERIAL_PROCESS_TEMPER, MATERIAL_PROCESS_SINTER)
-
-/obj/machinery/material_processor/proc/finish_process()
-	process_timer = null
-	if(!batch || !pending_process)
-		pending_process = null
-		pending_option = null
-		return
-	var/completed_process = pending_process
-	var/completed_option = pending_option
-	var/completed_duration_seconds = pending_duration_seconds
-	pending_process = null
-	pending_option = null
-	pending_duration_seconds = 0
-	if(!batch.apply_process(completed_process, completed_option))
-		visible_message(span_warning("[src] rejects the cycle because the batch is outside its valid phase or temperature window."))
-		return
-	batch.record_cost(MATERIAL_COST_MEDIA, process_media_cost(completed_process, completed_option))
-	batch.record_cost(MATERIAL_COST_LABOR, completed_duration_seconds * MATERIAL_LABOR_COST_PER_SECOND)
-	batch.record_cost(MATERIAL_COST_EQUIPMENT, completed_duration_seconds * MATERIAL_EQUIPMENT_COST_PER_SECOND)
-	if(batch.hazard_score() >= 75)
-		var/datum/effect/effect/system/spark_spread/sparks = new
-		sparks.set_up(3, FALSE, src)
-		sparks.start()
-		qdel(sparks)
-		batch.structure[MATERIAL_STRUCTURE_DEFECT] = clamp(batch.structure[MATERIAL_STRUCTURE_DEFECT] + 8, 0, 100)
-		batch.yield_fraction = clamp(batch.yield_fraction - 0.05, 0.5, 1)
-		batch.record_yield_loss(0.05)
-		batch.normalize_structure()
-		batch.recalculate()
-		visible_message(span_warning("[src] vents a reactive process upset; usable yield falls."))
+/obj/item/reagent_containers/glass/material_crucible/update_icon()
+	cut_overlays()
+	name = initial(name)
+	color = batch?.amount ? batch.dominant_color() : null
+	if(reagents?.total_volume)
+		var/mutable_appearance/filling = mutable_appearance('icons/obj/reagentfillings.dmi', "beakerlarge-40")
+		filling.color = reagents.get_color()
+		filling.alpha = 150
+		add_overlay(filling)
+	if(batch?.phase == MATERIAL_PHASE_MOLTEN)
+		name = "glowing molten-alloy crucible"
+		var/mutable_appearance/glow = mutable_appearance('icons/effects/effects.dmi', "shieldsparkles")
+		glow.color = batch.dominant_color()
+		glow.alpha = 150
+		add_overlay(glow)
+		set_light(2, 2, batch.dominant_color())
+	else if(batch?.phase == MATERIAL_PHASE_SOLUTION)
+		name = "reactive material-solution crucible"
+		var/mutable_appearance/solution = mutable_appearance('icons/obj/reagentfillings.dmi', "beakerlarge-80")
+		solution.color = "#79c9c2"
+		solution.alpha = 190
+		add_overlay(solution)
+		set_light(1, 1, "#79c9c2")
 	else
-		visible_message(span_notice("[src] completes a [completed_process] cycle."))
+		set_light(0)
 
-/obj/machinery/material_processor/proc/process_media_cost(process, option)
+/obj/item/reagent_containers/glass/material_crucible/proc/release_batch()
+	var/datum/material_batch/released = batch
+	batch = null
+	return released
+
+/obj/item/reagent_containers/glass/material_crucible/proc/reset_batch()
+	QDEL_NULL(batch)
+	batch = new
+	reagents.clear_reagents()
+	update_icon()
+
+/obj/item/material_workpiece
+	name = "alloy workpiece"
+	desc = "A persistent material workpiece. Its heat, structure, coatings, atmosphere, and field history remain physically attached to it."
+	icon = 'icons/obj/mining.dmi'
+	icon_state = "sheet-plastic"
+	item_state = "sheet-metal"
+	w_class = ITEMSIZE_NORMAL
+	resistance_flags = FIRE_PROOF | ACID_PROOF
+	var/datum/material_batch/batch
+	var/cooling_timer
+
+/obj/item/material_workpiece/Initialize(mapload, datum/material_batch/source_batch)
+	. = ..()
+	batch = source_batch || new
+	update_icon()
+
+/obj/item/material_workpiece/Destroy()
+	if(cooling_timer)
+		deltimer(cooling_timer)
+		cooling_timer = null
+	QDEL_NULL(batch)
+	return ..()
+
+/obj/item/material_workpiece/proc/release_batch()
+	var/datum/material_batch/released = batch
+	batch = null
+	return released
+
+/obj/item/material_workpiece/proc/material_is_hot()
+	return batch?.temperature >= max(T0C + 180, batch.melting_temperature() * 0.35)
+
+/obj/item/material_workpiece/proc/coating_color()
+	if(batch.surface_layers[MATERIAL_SURFACE_SLIME_BLUESPACE]) return "#735cff"
+	if(batch.surface_layers[MATERIAL_SURFACE_SLIME_CONDUCTIVE]) return "#ffe75c"
+	if(batch.surface_layers[MATERIAL_SURFACE_SLIME_CRYO]) return "#63b8ff"
+	if(batch.surface_layers[MATERIAL_SURFACE_SLIME_THERMAL]) return "#ff7b32"
+	if(batch.surface_layers[MATERIAL_SURFACE_SLIME_CORROSION]) return "#72268f"
+	if(batch.surface_layers[MATERIAL_SURFACE_SLIME_CATALYTIC]) return "#e0bd45"
+	if(batch.surface_layers[MATERIAL_SURFACE_SLIME_METAL]) return "#a7abb4"
+	if(batch.impurities["silver plating"]) return "#d9e3e8"
+	if(batch.impurities["gold plating"]) return "#e6b93f"
+	if(batch.impurities["platinum plating"]) return "#b9d7dc"
+	if(batch.surface_layers[MATERIAL_SURFACE_CARBON]) return "#242424"
+	if(batch.surface_layers[MATERIAL_SURFACE_OXIDE]) return "#8b4b2c"
+	return null
+
+/obj/item/material_workpiece/update_icon()
+	cut_overlays()
 	if(!batch)
-		return 0
+		return
+	icon_state = batch.phase == MATERIAL_PHASE_POWDER ? "ore2" : "sheet-plastic"
+	var/base_color = batch.dominant_color()
+	var/heat_ratio = batch.temperature / max(batch.melting_temperature(), 1)
+	if(heat_ratio >= 0.9)
+		color = "#fff2bd"
+	else if(heat_ratio >= 0.72)
+		color = "#ffb12b"
+	else if(heat_ratio >= 0.5)
+		color = "#e74820"
+	else
+		color = coating_color() || base_color
+	if(material_is_hot())
+		var/mutable_appearance/heat = mutable_appearance('icons/effects/effects.dmi', "shieldsparkles")
+		heat.color = color
+		heat.alpha = 120
+		add_overlay(heat)
+		set_light(clamp(round(heat_ratio * 3), 1, 3), 2, color)
+	else
+		set_light(0)
+	if(length(batch.field_treatments))
+		var/mutable_appearance/field = mutable_appearance('icons/effects/effects.dmi', "lightning")
+		field.color = "#8fbaff"
+		field.alpha = 90
+		add_overlay(field)
+	if(batch.phase == MATERIAL_PHASE_POWDER)
+		name = "granular material charge"
+	else
+		name = material_is_hot() ? "glowing alloy workpiece" : "alloy workpiece"
+	schedule_natural_cooling()
 
-	var/per_sheet = 0
-	if(process == MATERIAL_PROCESS_QUENCH)
-		per_sheet += option == "cryo" ? 6 : (option == "oil" ? 2 : 0.5)
-	if(process in list(MATERIAL_PROCESS_HEAT, MATERIAL_PROCESS_MELT, MATERIAL_PROCESS_HOMOGENIZE, MATERIAL_PROCESS_SOLUTION_TREAT, MATERIAL_PROCESS_ANNEAL, MATERIAL_PROCESS_TEMPER))
-		per_sheet += batch.atmosphere == MATERIAL_ATMOSPHERE_REDUCING ? 3 : (batch.atmosphere == MATERIAL_ATMOSPHERE_VACUUM ? 2 : (batch.atmosphere == MATERIAL_ATMOSPHERE_INERT ? 1 : 0))
-	if(process in list(MATERIAL_PROCESS_DISSOLVE, MATERIAL_PROCESS_ELECTROLYZE, MATERIAL_PROCESS_PLATE, MATERIAL_PROCESS_CRYSTALLIZE))
-		per_sheet += 1.5
-	if(process == MATERIAL_PROCESS_SINTER)
-		per_sheet += 1
-	return per_sheet * batch.amount
+/obj/item/material_workpiece/proc/schedule_natural_cooling()
+	if(cooling_timer || !batch || batch.temperature <= T20C + 3)
+		return
+	cooling_timer = addtimer(CALLBACK(src, PROC_REF(natural_cooling_tick)), 2 SECONDS, TIMER_STOPPABLE)
 
-/obj/machinery/material_processor/proc/process_power_units(process, option, duration_seconds)
-	var/power_units = active_power_usage * duration_seconds
-	if(process == MATERIAL_PROCESS_HEAT)
-		var/heat_step = text2num(option)
-		if(!heat_step)
-			heat_step = 400
-		power_units += round(heat_step * max(batch?.amount, 1) * 4)
-	else if(process in list(MATERIAL_PROCESS_MELT, MATERIAL_PROCESS_HOMOGENIZE, MATERIAL_PROCESS_ELECTROLYZE, MATERIAL_PROCESS_SINTER))
-		power_units += active_power_usage * duration_seconds
-	return max(power_units, 0)
+/obj/item/material_workpiece/proc/natural_cooling_tick()
+	cooling_timer = null
+	if(!batch)
+		return
+	if(istype(loc, /obj/machinery/material_furnace))
+		var/obj/machinery/material_furnace/furnace = loc
+		if(furnace.firing)
+			schedule_natural_cooling()
+			return
+	var/turf/work_turf = get_turf(src)
+	var/datum/gas_mixture/air = work_turf?.return_air()
+	var/ambient_temperature = air?.return_temperature() || TCMB
+	var/temperature_difference = batch.temperature - ambient_temperature
+	if(temperature_difference <= 3)
+		return
+	var/workpiece_capacity = max(batch.amount * 1000, 1000)
+	var/air_capacity = air?.heat_capacity() || 0
+	if(air_capacity > 0)
+		var/transfer = temperature_difference * ((workpiece_capacity * air_capacity) / (workpiece_capacity + air_capacity)) * 0.15
+		batch.temperature -= transfer / workpiece_capacity
+		air.set_temperature((air.thermal_energy() + transfer) / air_capacity)
+	else
+		batch.temperature = max(ambient_temperature, batch.temperature - 20)
+	batch.temperature = max(ambient_temperature, batch.temperature)
+	update_icon()
 
-/obj/machinery/material_processor/proc/run_material_test(test, mob/user)
-	if(!batch || !(test in list(MATERIAL_TEST_SPECTROMETRY, MATERIAL_TEST_MICROSCOPY, MATERIAL_TEST_HARDNESS, MATERIAL_TEST_CONDUCTIVITY, MATERIAL_TEST_TENSILE, MATERIAL_TEST_CORROSION)))
-		return FALSE
-	if(test in list(MATERIAL_TEST_TENSILE, MATERIAL_TEST_CORROSION))
-		if(batch.amount <= 1)
-			to_chat(user, span_warning("A destructive test needs a spare sheet beyond the retained reference sample."))
-			return FALSE
-		var/old_amount = batch.amount
-		batch.amount--
-		for(var/component in batch.composition)
-			batch.composition[component] *= batch.amount / old_amount
-		batch.yield_fraction = clamp(batch.yield_fraction - 0.03, 0.5, 1)
-		batch.record_yield_loss(0.03)
-	switch(test)
-		if(MATERIAL_TEST_SPECTROMETRY)
-			batch.test_results[test] = batch.purity
-		if(MATERIAL_TEST_MICROSCOPY)
-			batch.test_results[test] = 100 - batch.structure[MATERIAL_STRUCTURE_DEFECT]
-		if(MATERIAL_TEST_HARDNESS)
-			batch.test_results[test] = batch.hardness
-		if(MATERIAL_TEST_CONDUCTIVITY)
-			batch.test_results[test] = batch.conductivity
-		if(MATERIAL_TEST_TENSILE)
-			batch.test_results[test] = batch.toughness
-		if(MATERIAL_TEST_CORROSION)
-			batch.test_results[test] = batch.corrosion_resistance
-	batch.process_history += "[test] performed"
-	var/test_seconds = (test in list(MATERIAL_TEST_TENSILE, MATERIAL_TEST_CORROSION)) ? 4 : 2
-	var/test_power = active_power_usage * test_seconds
-	use_power(test_power)
-	batch.record_electricity(test_power)
-	batch.record_cost(MATERIAL_COST_LABOR, test_seconds * MATERIAL_LABOR_COST_PER_SECOND)
-	batch.record_cost(MATERIAL_COST_EQUIPMENT, test_seconds * MATERIAL_EQUIPMENT_COST_PER_SECOND)
+/obj/item/material_workpiece/examine(mob/user)
+	. = ..()
+	if(!batch)
+		return
+	. += span_notice("[batch.display_name()], [batch.phase], [round(batch.temperature)] K; [round(batch.yield_fraction * 100)]% retained yield.")
+	if(length(batch.surface_layers))
+		. += span_notice("Visible surface layers: [jointext(batch.surface_layers, ", ")].")
+	if(length(batch.dissolved_gases))
+		. += span_notice("Entrained gas signatures: [jointext(batch.dissolved_gases, ", ")].")
+	if(length(batch.field_treatments))
+		. += span_notice("The lattice carries [jointext(batch.field_treatments, ", ")].")
+	if(length(batch.test_results))
+		var/list/observations = list()
+		for(var/observation in batch.test_results)
+			observations += "[observation]: [batch.test_results[observation]]"
+		. += span_notice("Physical observations: [jointext(observations, "; ")].")
+	. += span_notice("Batch fingerprint [copytext(batch.fingerprint(), 1, 9)].")
+
+/obj/item/material_workpiece/attackby(obj/item/item, mob/user)
+	if(istype(item, /obj/item/slime_extract))
+		return apply_slime_skin(item, user)
+	if(istype(item, /obj/item/ore/coal))
+		if(!material_is_hot())
+			to_chat(user, span_warning("The workpiece must be glowing before carbon will diffuse into its surface."))
+			return
+		batch.add_surface_layer(MATERIAL_SURFACE_CARBON, 35, "carbon", 3)
+		qdel(item)
+		visible_message(span_notice("Carbon blackens, then visibly diffuses into [src]'s glowing surface."))
+		update_icon()
+		return
+	if(item.type == /obj/item/analyzer)
+		batch.test_results[MATERIAL_TEST_SPECTROMETRY] = batch.purity
+		batch.test_results[MATERIAL_TEST_MICROSCOPY] = 100 - batch.structure[MATERIAL_STRUCTURE_DEFECT]
+		to_chat(user, span_notice("The analyzer resolves [json_encode(batch.composition)] at [batch.purity]% purity and [batch.temperature] K. Surface and lattice discontinuities are recorded on the workpiece."))
+		return
+	if(istype(item, /obj/item/multitool))
+		batch.test_results[MATERIAL_TEST_CONDUCTIVITY] = batch.conductivity
+		to_chat(user, span_notice("The probes report [batch.conductivity]% relative conductivity. The observation is written into the workpiece's field notes."))
+		if(material_is_hot() && (batch.composition[MAT_IRON] || batch.composition[MAT_STEEL]))
+			batch.add_field_treatment(MATERIAL_FIELD_MAGNETIC, 15)
+			visible_message(span_notice("Fine ferrous lines visibly align across [src] under the multitool's field."))
+			update_icon()
+		return
+	return ..()
+
+/obj/item/material_workpiece/proc/apply_slime_skin(obj/item/slime_extract/extract, mob/user)
+	if(!batch || !extract.uses)
+		to_chat(user, span_warning("The extract is inert."))
+		return TRUE
+	if(!material_is_hot())
+		to_chat(user, span_warning("The workpiece must be glowing for the slime matrix to bond."))
+		return TRUE
+	var/layer_name
+	var/additive_name
+	if(istype(extract, /obj/item/slime_extract/metal))
+		layer_name = MATERIAL_SURFACE_SLIME_METAL
+		additive_name = "metallic grain refiner"
+		batch.structure[MATERIAL_STRUCTURE_REINFORCEMENT] += 14
+	else if(istype(extract, /obj/item/slime_extract/blue))
+		layer_name = MATERIAL_SURFACE_SLIME_CRYO
+		additive_name = "cryogenic stabilizer"
+		batch.internal_stress = clamp(batch.internal_stress - 18, 0, 100)
+	else if(istype(extract, /obj/item/slime_extract/orange))
+		layer_name = MATERIAL_SURFACE_SLIME_THERMAL
+		additive_name = "thermal phase catalyst"
+	else if(istype(extract, /obj/item/slime_extract/yellow))
+		layer_name = MATERIAL_SURFACE_SLIME_CONDUCTIVE
+		additive_name = "conductive dopant"
+	else if(istype(extract, /obj/item/slime_extract/dark_purple))
+		layer_name = MATERIAL_SURFACE_SLIME_CORROSION
+		additive_name = "corrosion inhibitor"
+	else if(istype(extract, /obj/item/slime_extract/gold))
+		layer_name = MATERIAL_SURFACE_SLIME_CATALYTIC
+		additive_name = "precipitation catalyst"
+		batch.structure[MATERIAL_STRUCTURE_PRECIPITATE] += 16
+	else if(istype(extract, /obj/item/slime_extract/bluespace))
+		layer_name = MATERIAL_SURFACE_SLIME_BLUESPACE
+		additive_name = "bluespace homogenizer"
+		batch.homogeneity = clamp(batch.homogeneity + 24, 0, 100)
+	else
+		layer_name = "[extract.name] organic skin"
+		additive_name = "[extract.name] organic matrix"
+		batch.structure[MATERIAL_STRUCTURE_AMORPHOUS] += 12
+	batch.add_surface_layer(layer_name, 35, additive_name, 4)
+	batch.normalize_structure()
+	batch.purity = clamp(batch.purity + 2, 0, 100)
+	batch.recalculate()
+	extract.uses--
+	if(extract.uses <= 0)
+		extract.name = "inert [initial(extract.name)]"
+	visible_message(span_notice("[extract] liquefies over [src], leaving a moving [layer_name] bonded to the surface."))
+	update_icon()
 	return TRUE
 
-/obj/machinery/material_processor/proc/certify_batch(mob/user)
-	if(!batch)
-		return FALSE
-	for(var/required_test in list(MATERIAL_TEST_SPECTROMETRY, MATERIAL_TEST_MICROSCOPY, MATERIAL_TEST_HARDNESS, MATERIAL_TEST_CONDUCTIVITY, MATERIAL_TEST_TENSILE, MATERIAL_TEST_CORROSION))
-		if(isnull(batch.test_results[required_test]))
-			to_chat(user, span_warning("Certification requires a complete spectroscopy, microscopy, mechanical, conductivity, and corrosion test portfolio."))
-			return FALSE
-	var/obj/item/paper/report = new(get_turf(src))
-	var/license_value = clamp(round((batch.hardness + batch.toughness + batch.conductivity + batch.heat_resistance + batch.corrosion_resistance) * 0.8 + length(batch.composition) * 45 + (batch.test_results[MATERIAL_TEST_FIELD] ? 100 : 0) - batch.unit_production_cost() * 2), 100, 900)
-	var/list/costs = batch.cost_breakdown()
-	var/list/capability_names = list()
-	for(var/list/capability_data as anything in batch.material_capability_preview())
-		var/capability_name = capability_data["name"]
-		var/capability_potency = capability_data["potency"]
-		capability_names += "[capability_name] ([capability_potency]%)"
-	report.set_content("MATERIAL QUALIFICATION AND LICENSE REPORT\nBatch: [batch.display_name()]\nFingerprint: [batch.fingerprint()]\nComposition: [json_encode(batch.composition)]\nSource lots: [json_encode(batch.feedstock_lots)]\nPurity: [batch.purity]%\nHardness: [batch.hardness]\nToughness: [batch.toughness]\nConductivity: [batch.conductivity]\nHeat resistance: [batch.heat_resistance]\nCorrosion resistance: [batch.corrosion_resistance]\nEmergent capabilities: [length(capability_names) ? jointext(capability_names, ", ") : "none"]\nUsable output: [round(batch.usable_output(), 0.01)] sheets ([round(batch.yield_fraction * 100)]% yield)\nFeedstock: [round(costs[MATERIAL_COST_FEEDSTOCK], 0.01)] Th\nChemical additives: [round(costs[MATERIAL_COST_CHEMICALS], 0.01)] Th\nCatalysts: [round(costs[MATERIAL_COST_CATALYSTS], 0.01)] Th\nElectricity: [round(costs[MATERIAL_COST_ELECTRICITY], 0.01)] Th\nProcess media: [round(costs[MATERIAL_COST_MEDIA], 0.01)] Th\nProcess-time allocation: [round(costs[MATERIAL_COST_LABOR], 0.01)] Th\nEquipment wear: [round(costs[MATERIAL_COST_EQUIPMENT], 0.01)] Th\nWaste handling: [round(costs[MATERIAL_COST_WASTE_HANDLING], 0.01)] Th\nByproduct recovery credit: -[round(costs[MATERIAL_COST_RECOVERY], 0.01)] Th\nWaste value: [round(costs[MATERIAL_COST_WASTE], 0.01)] Th (already included in purchased inputs)\nTotal batch expense: [round(costs["total"], 0.01)] Th\nCost per usable sheet: [round(costs["per_sheet"], 0.01)] Th\nProcess route: [jointext(batch.process_history, " -> ")]\nCertified by: [user.real_name]\n\nThis ordinary signed report may be shipped as a licensable process specification. Its external value is based on measured performance, novelty, field validation, and cost per usable output.", "material qualification and license - [copytext(batch.fingerprint(), 1, 9)]")
-	report.set_economic_provenance(DEPARTMENT_RESEARCH, license_value)
-	report.AddElement(/datum/element/sellable/manufactured)
-	emit_contract_event(CONTRACT_EVENT_MATERIAL_CERTIFIED, batch.evidence_context("certification"), batch.fingerprint(), src, user)
+/obj/machinery/material_furnace
+	name = "controlled-atmosphere alloy hearth"
+	desc = "A physical alloy hearth. Its open chamber uses the room's real pressure and gas mixture during every firing."
+	icon = 'icons/obj/props/decor.dmi'
+	icon_state = "nt_cruciforge"
+	anchored = TRUE
+	density = TRUE
+	use_power = USE_POWER_IDLE
+	idle_power_usage = 20
+	active_power_usage = 5000
+	circuit = /obj/item/circuitboard/machine/material_furnace
+	var/obj/item/reagent_containers/glass/material_crucible/crucible
+	var/obj/item/material_workpiece/workpiece
+	var/firing
+	var/firing_timer
+
+/obj/machinery/material_furnace/Destroy()
+	if(firing_timer)
+		deltimer(firing_timer)
+		firing_timer = null
+	crucible = null
+	workpiece = null
+	return ..()
+
+/obj/machinery/material_furnace/examine(mob/user)
+	. = ..()
+	if(crucible)
+		. += span_notice("A [crucible] is seated in the chamber.")
+	else if(workpiece)
+		. += span_notice("A [workpiece] is seated in the chamber.")
+	else
+		. += span_notice("The chamber is empty. Insert a crucible or solid workpiece.")
+	var/turf/furnace_turf = get_turf(src)
+	var/datum/gas_mixture/air = furnace_turf?.return_air()
+	if(air)
+		. += span_notice("The open chamber reads [round(air.return_pressure(), 0.1)] kPa at [round(air.return_temperature(), 0.1)] K.")
+
+/obj/machinery/material_furnace/attackby(obj/item/item, mob/user)
+	if(istype(item, /obj/item/reagent_containers/glass/material_crucible))
+		if(crucible || workpiece || firing)
+			to_chat(user, span_warning("The hearth is already occupied."))
+			return
+		user.drop_from_inventory(item)
+		item.forceMove(src)
+		crucible = item
+		to_chat(user, span_notice("You seat [item] in the exposed chamber."))
+		return
+	if(istype(item, /obj/item/material_workpiece))
+		if(crucible || workpiece || firing)
+			to_chat(user, span_warning("The hearth is already occupied."))
+			return
+		user.drop_from_inventory(item)
+		item.forceMove(src)
+		workpiece = item
+		to_chat(user, span_notice("You seat [item] in the hearth for structural heat treatment."))
+		return
+	if(item.has_tool_quality(TOOL_CROWBAR) && !firing)
+		eject_contents(user)
+		return
+	return ..()
+
+/obj/machinery/material_furnace/attack_hand(mob/user)
+	if(..())
+		return TRUE
+	if(firing || (!crucible && !workpiece) || (stat & (BROKEN | NOPOWER)))
+		to_chat(user, span_warning(firing ? "The hearth is already roaring." : "The hearth cannot begin a firing."))
+		return TRUE
+	firing = TRUE
+	icon_state = "nt_cruciforge_work"
+	use_power(active_power_usage * 6)
+	visible_message(span_notice("[src]'s exposed chamber closes around the charge and blooms with visible heat."))
+	set_light(3, 3, "#ff7b22")
+	firing_timer = addtimer(CALLBACK(src, PROC_REF(finish_firing)), 6 SECONDS, TIMER_STOPPABLE)
 	return TRUE
 
-/obj/machinery/material_processor/forming
-	name = "materials forming press"
-	desc = "A programmable rolling, forging, and wire-drawing press."
-	icon_state = "circuit_imprinter"
-	processor_kind = "forming"
-	circuit = /obj/item/circuitboard/machine/material_processor/forming
+/obj/machinery/material_furnace/proc/finish_firing()
+	firing_timer = null
+	firing = FALSE
+	icon_state = "nt_cruciforge"
+	set_light(0)
+	var/datum/material_batch/batch = crucible?.batch || workpiece?.batch
+	if(!batch?.amount)
+		visible_message(span_warning("[src] opens on an empty charge."))
+		return
+	if(crucible)
+		var/entered_solution = process_crucible_chemistry(batch)
+		if(batch.phase == MATERIAL_PHASE_SOLUTION && !entered_solution)
+			batch.temperature = max(batch.temperature, T20C + 100)
+			batch.apply_process(MATERIAL_PROCESS_CRYSTALLIZE)
+		else if(batch.phase == MATERIAL_PHASE_POWDER)
+			batch.apply_process(MATERIAL_PROCESS_SINTER)
+		else if(batch.phase == MATERIAL_PHASE_SOLID)
+			batch.temperature = batch.melting_temperature() + 50
+			batch.apply_process(MATERIAL_PROCESS_MELT)
+		else if(batch.phase == MATERIAL_PHASE_MOLTEN)
+			batch.apply_process(MATERIAL_PROCESS_HOMOGENIZE)
+		crucible.update_icon()
+	else
+		if(batch.phase == MATERIAL_PHASE_POWDER)
+			batch.temperature = round(batch.melting_temperature() * 0.6)
+			batch.apply_process(MATERIAL_PROCESS_SINTER)
+		else if(batch.structure[MATERIAL_STRUCTURE_HARDENED] >= 15)
+			batch.temperature = round(batch.melting_temperature() * 0.32)
+			batch.apply_process(MATERIAL_PROCESS_TEMPER)
+		else
+			batch.temperature = round(batch.melting_temperature() * 0.72)
+			batch.apply_process(MATERIAL_PROCESS_SOLUTION_TREAT)
+		workpiece.update_icon()
+	apply_real_atmosphere(batch)
+	visible_message(span_notice("[src] opens, revealing the visibly transformed [crucible || workpiece]."))
 
-/obj/machinery/material_processor/forming/available_operations()
-	return list(MATERIAL_PROCESS_PULVERIZE, MATERIAL_PROCESS_ROLL, MATERIAL_PROCESS_FORGE, MATERIAL_PROCESS_DRAW)
+/obj/machinery/material_furnace/proc/process_crucible_chemistry(datum/material_batch/batch)
+	if(!crucible?.reagents?.total_volume)
+		return FALSE
+	var/entered_solution = FALSE
+	var/acid = crucible.reagents.get_reagent_amount(REAGENT_ID_SACID) + crucible.reagents.get_reagent_amount(REAGENT_ID_PACID)
+	var/carbon = crucible.reagents.get_reagent_amount(REAGENT_ID_CARBON)
+	var/silicon = crucible.reagents.get_reagent_amount(REAGENT_ID_SILICON)
+	if(carbon) batch.add_additive("carbon", min(carbon, 8), 1, MATERIAL_COST_CHEMICALS)
+	if(silicon) batch.add_additive("silicon", min(silicon, 6), 1, MATERIAL_COST_CHEMICALS)
+	if(acid >= 5 && batch.phase == MATERIAL_PHASE_SOLID)
+		batch.apply_process(MATERIAL_PROCESS_DISSOLVE)
+		batch.purity = clamp(batch.purity + min(round(acid / 2), 12), 0, 100)
+		entered_solution = TRUE
+	for(var/datum/reagent/reagent in crucible.reagents.reagent_list)
+		if(reagent.id in list(REAGENT_ID_CARBON, REAGENT_ID_SILICON, REAGENT_ID_SACID, REAGENT_ID_PACID))
+			continue
+		batch.add_additive(reagent.name, min(reagent.volume, 6), max(reagent.supply_conversion_value, 0.05), MATERIAL_COST_CHEMICALS)
+	batch.process_history += "chemically treated in [round(crucible.reagents.total_volume, 0.1)]u ordinary reagent medium"
+	crucible.reagents.clear_reagents()
+	return entered_solution
 
-/obj/machinery/material_processor/electrochemical
-	name = "electrochemical materials cell"
-	desc = "A sealed cell for purification, electrolysis, deposition, and crystallization."
-	icon_state = "protolathe"
-	processor_kind = "electrochemical"
-	circuit = /obj/item/circuitboard/machine/material_processor/electrochemical
+/obj/machinery/material_furnace/proc/apply_real_atmosphere(datum/material_batch/batch)
+	var/turf/furnace_turf = get_turf(src)
+	var/datum/gas_mixture/air = furnace_turf?.return_air()
+	if(!air)
+		return
+	var/pressure = air.return_pressure()
+	var/oxygen = air.get_moles(/datum/gas/oxygen)
+	var/nitrogen = air.get_moles(/datum/gas/nitrogen)
+	var/hydrogen = air.get_moles(/datum/gas/hydrogen)
+	var/phoron = air.get_moles(/datum/gas/plasma)
+	var/uptake_scale = clamp(pressure / ONE_ATMOSPHERE, 0, 5)
+	if(pressure < 20)
+		batch.atmosphere = MATERIAL_ATMOSPHERE_VACUUM
+		batch.purity = clamp(batch.purity + 3, 0, 100)
+		batch.porosity = clamp(batch.porosity - 4, 0, 100)
+		batch.process_history += "vacuum degassed"
+	else if(hydrogen > oxygen * 0.25)
+		var/hydrogen_used = min(hydrogen, 0.08 * uptake_scale)
+		batch.atmosphere = MATERIAL_ATMOSPHERE_REDUCING
+		batch.add_dissolved_gas("hydrogen", hydrogen_used * 25)
+		batch.oxidation = clamp(batch.oxidation - 8, 0, 100)
+		air.adjust_moles(/datum/gas/hydrogen, -hydrogen_used)
+	else
+		batch.atmosphere = MATERIAL_ATMOSPHERE_AIR
+	if(nitrogen > 0.1 && pressure >= 40)
+		var/nitrogen_used = min(nitrogen, 0.04 * uptake_scale)
+		batch.add_dissolved_gas("nitrogen", nitrogen_used * 25)
+		air.adjust_moles(/datum/gas/nitrogen, -nitrogen_used)
+	if(oxygen > 0.1 && batch.temperature >= batch.melting_temperature() * 0.5)
+		var/oxygen_used = min(oxygen, 0.03 * uptake_scale)
+		batch.add_dissolved_gas("oxygen", oxygen_used * 20)
+		batch.oxidation = clamp(batch.oxidation + round(oxygen_used * 80), 0, 100)
+		batch.add_surface_layer(MATERIAL_SURFACE_OXIDE, max(1, round(oxygen_used * 100)))
+		air.adjust_moles(/datum/gas/oxygen, -oxygen_used)
+		air.adjust_moles(/datum/gas/carbon_dioxide, oxygen_used)
+	if(phoron > 0.05)
+		var/phoron_used = min(phoron, 0.025 * uptake_scale)
+		batch.add_dissolved_gas("phoron", phoron_used * 40)
+		batch.add_additive("phoron interstitial", phoron_used * 20, 3, MATERIAL_COST_CHEMICALS)
+		air.adjust_moles(/datum/gas/plasma, -phoron_used)
+	batch.recalculate()
 
-/obj/machinery/material_processor/electrochemical/available_operations()
-	return list(MATERIAL_PROCESS_DISSOLVE, MATERIAL_PROCESS_PURIFY, MATERIAL_PROCESS_ELECTROLYZE, MATERIAL_PROCESS_PLATE, MATERIAL_PROCESS_CRYSTALLIZE)
+/obj/machinery/material_furnace/proc/eject_contents(mob/user)
+	var/turf/furnace_turf = get_turf(src)
+	if(crucible)
+		crucible.forceMove(furnace_turf)
+		crucible = null
+	else if(workpiece)
+		workpiece.forceMove(furnace_turf)
+		workpiece = null
+	else
+		return
+	to_chat(user, span_notice("You lever the physical charge out of [src]."))
 
-/obj/machinery/material_processor/tester
-	name = "materials test stand"
-	desc = "A metrology stand for material qualification and repeatable specifications."
-	icon_state = "circuit_imprinter"
-	processor_kind = "testing"
-	circuit = /obj/item/circuitboard/machine/material_processor/tester
+/obj/structure/material_anvil
+	name = "materials anvil"
+	desc = "A massive anvil for pouring, forging, and finally striking processed stock free."
+	icon = 'icons/obj/props/fantasy.dmi'
+	icon_state = "anvil"
+	anchored = TRUE
+	density = TRUE
+	var/obj/item/material_workpiece/workpiece
 
-/obj/machinery/material_processor/tester/available_operations()
-	return list()
+/obj/structure/material_anvil/Destroy()
+	workpiece = null
+	return ..()
 
-/obj/item/circuitboard/machine/material_processor
-	name = T_BOARD("materials thermal processor")
-	build_path = /obj/machinery/material_processor
+/obj/structure/material_anvil/attackby(obj/item/item, mob/user)
+	if(istype(item, /obj/item/reagent_containers/glass/material_crucible))
+		var/obj/item/reagent_containers/glass/material_crucible/crucible = item
+		if(workpiece || crucible.batch?.phase != MATERIAL_PHASE_MOLTEN)
+			to_chat(user, span_warning(workpiece ? "The anvil already holds a workpiece." : "Only a molten charge can be poured into a workpiece."))
+			return
+		var/datum/material_batch/poured_batch = crucible.release_batch()
+		poured_batch.apply_process(MATERIAL_PROCESS_CAST, "workpiece")
+		workpiece = new /obj/item/material_workpiece(src, poured_batch)
+		crucible.reset_batch()
+		visible_message(span_notice("[user] pours a glowing charge from [crucible] across [src], forming one persistent workpiece."))
+		playsound(src, 'sound/effects/clang.ogg', 50, TRUE)
+		return
+	if(istype(item, /obj/item/material_workpiece))
+		if(workpiece)
+			to_chat(user, span_warning("The anvil already holds a workpiece."))
+			return
+		user.drop_from_inventory(item)
+		item.forceMove(src)
+		workpiece = item
+		return
+	if(istype(item, /obj/item/melee/hammer))
+		if(!workpiece?.batch)
+			to_chat(user, span_warning("There is no workpiece to strike."))
+			return
+		if(workpiece.material_is_hot() && workpiece.batch.can_process(MATERIAL_PROCESS_FORGE))
+			workpiece.batch.apply_process(MATERIAL_PROCESS_FORGE)
+			workpiece.batch.test_results[MATERIAL_TEST_HARDNESS] = workpiece.batch.hardness
+			workpiece.batch.test_results[MATERIAL_TEST_TENSILE] = workpiece.batch.toughness
+			workpiece.batch.temperature = max(T20C, workpiece.batch.temperature - 80)
+			workpiece.update_icon()
+			visible_message(span_notice("[user] drives a deliberate blow through [workpiece]; sparks trace the grain as voids close."))
+			playsound(src, 'sound/effects/clang2.ogg', 70, TRUE)
+			return
+		if(workpiece.batch.temperature > T0C + 120)
+			to_chat(user, span_warning("The workpiece is outside its forging window. Let it cool or heat-treat it correctly."))
+			return
+		var/datum/material_batch/finished_batch = workpiece.release_batch()
+		processed_spawn_stack(get_turf(src), finished_batch, max(1, round(finished_batch.amount * finished_batch.yield_fraction)))
+		emit_contract_event(CONTRACT_EVENT_MATERIAL_PROCESSED, finished_batch.evidence_context("physical workshop finish"))
+		emit_contract_event(CONTRACT_EVENT_MATERIAL_CERTIFIED, finished_batch.evidence_context("finished physical stock"), finished_batch.fingerprint(), src, user)
+		qdel(finished_batch)
+		qdel(workpiece)
+		workpiece = null
+		visible_message(span_notice("[user] strikes away the final scale; finished material stock separates from [src]."))
+		playsound(src, 'sound/effects/clang.ogg', 60, TRUE)
+		return
+	return ..()
+
+/obj/structure/material_anvil/attack_hand(mob/user)
+	if(!workpiece)
+		return ..()
+	workpiece.forceMove(get_turf(src))
+	workpiece = null
+	to_chat(user, span_notice("You lift the workpiece from [src]."))
+	return TRUE
+
+/obj/structure/material_grindstone
+	name = "materials grindstone"
+	desc = "A physical grinding wheel for reducing a cool workpiece to particulate feedstock. Powder can be sintered into porous structures in the hearth."
+	icon = 'icons/obj/props/fantasy.dmi'
+	icon_state = "grindstone"
+	anchored = TRUE
+	density = TRUE
+	var/obj/item/material_workpiece/workpiece
+
+/obj/structure/material_grindstone/Destroy()
+	workpiece = null
+	return ..()
+
+/obj/structure/material_grindstone/attackby(obj/item/item, mob/user)
+	if(!istype(item, /obj/item/material_workpiece))
+		return ..()
+	if(workpiece)
+		to_chat(user, span_warning("The grindstone already holds a workpiece."))
+		return
+	var/obj/item/material_workpiece/new_workpiece = item
+	if(new_workpiece.material_is_hot() || new_workpiece.batch.phase != MATERIAL_PHASE_SOLID)
+		to_chat(user, span_warning("Only a cool solid workpiece can be ground."))
+		return
+	user.drop_from_inventory(new_workpiece)
+	new_workpiece.forceMove(src)
+	workpiece = new_workpiece
+	to_chat(user, span_notice("You brace [workpiece] against [src]. Turn the wheel to grind it."))
+
+/obj/structure/material_grindstone/attack_hand(mob/user)
+	if(!workpiece)
+		return ..()
+	if(!do_after(user, 4 SECONDS, target = src) || !workpiece)
+		return TRUE
+	if(!workpiece.batch.apply_process(MATERIAL_PROCESS_PULVERIZE))
+		to_chat(user, span_warning("The workpiece cannot be reduced in its present state."))
+		return TRUE
+	workpiece.update_icon()
+	visible_message(span_notice("[user] works [src]; the workpiece becomes a visibly granular particulate charge."))
+	playsound(src, 'sound/effects/clang.ogg', 30, TRUE)
+	return TRUE
+
+/obj/structure/material_grindstone/click_alt(mob/user)
+	if(!workpiece)
+		return CLICK_ACTION_BLOCKING
+	workpiece.forceMove(get_turf(src))
+	workpiece = null
+	return CLICK_ACTION_SUCCESS
+
+/obj/structure/bed/bath/material_treatment
+	name = "open material-treatment trough"
+	desc = "An open bath using ordinary reagents for quenching, etching, and electroplating. Its contents, not a menu, determine the treatment."
+	can_buckle = FALSE
+	buckle_lying = FALSE
+	flippable = FALSE
+	amount_per_transfer_from_this = 10
+	var/obj/item/cell/electrode_cell
+
+/obj/structure/bed/bath/material_treatment/Destroy()
+	electrode_cell = null
+	return ..()
+
+/obj/structure/bed/bath/material_treatment/attackby(obj/item/item, mob/user)
+	if(istype(item, /obj/item/cell))
+		if(electrode_cell)
+			to_chat(user, span_warning("The trough already has an electrode cell clipped in."))
+			return
+		user.drop_from_inventory(item)
+		item.forceMove(src)
+		electrode_cell = item
+		to_chat(user, span_notice("You clip [item] across the trough's exposed electrodes."))
+		return
+	if(!istype(item, /obj/item/material_workpiece))
+		return ..()
+	var/obj/item/material_workpiece/workpiece = item
+	if(!reagents?.total_volume)
+		to_chat(user, span_warning("The treatment trough is empty."))
+		return
+	if(workpiece.material_is_hot())
+		return quench_workpiece(workpiece, user)
+	return chemically_treat_workpiece(workpiece, user)
+
+/obj/structure/bed/bath/material_treatment/proc/quench_workpiece(obj/item/material_workpiece/workpiece, mob/user)
+	var/medium
+	var/reagent_id
+	if(reagents.has_reagent(REAGENT_ID_FROSTOIL, 5))
+		medium = "cryo"; reagent_id = REAGENT_ID_FROSTOIL
+	else if(reagents.has_reagent(REAGENT_ID_COOKINGOIL, 5))
+		medium = "oil"; reagent_id = REAGENT_ID_COOKINGOIL
+	else if(reagents.has_reagent(REAGENT_ID_WATER, 5))
+		medium = "water"; reagent_id = REAGENT_ID_WATER
+	else
+		to_chat(user, span_warning("The bath has no usable water, cooking oil, or frostoil quench medium."))
+		return TRUE
+	if(!workpiece.batch.solution_treated)
+		to_chat(user, span_warning("The lattice was not brought through a solution-treatment heat; immersion only cools it."))
+		workpiece.batch.temperature = T20C
+		workpiece.update_icon()
+		return TRUE
+	reagents.remove_reagent(reagent_id, 5)
+	workpiece.batch.apply_process(MATERIAL_PROCESS_QUENCH, medium)
+	workpiece.batch.test_results[MATERIAL_TEST_HARDNESS] = workpiece.batch.hardness
+	workpiece.update_icon()
+	playsound(src, 'sound/effects/slosh.ogg', 40, TRUE)
+	visible_message(span_notice(medium == "cryo" ? "Frost races over [workpiece] in a blue-white flash." : (medium == "oil" ? "A brief sheet of flame rolls across [workpiece]." : "A dense cloud of steam erupts around [workpiece].")))
+	update_icon()
+	return TRUE
+
+/obj/structure/bed/bath/material_treatment/proc/chemically_treat_workpiece(obj/item/material_workpiece/workpiece, mob/user)
+	var/datum/material_batch/batch = workpiece.batch
+	var/plating_id
+	var/plating_name
+	if(reagents.has_reagent(REAGENT_ID_SILVER, 5))
+		plating_id = REAGENT_ID_SILVER; plating_name = "silver plating"
+	else if(reagents.has_reagent(REAGENT_ID_PLATINUM, 5))
+		plating_id = REAGENT_ID_PLATINUM; plating_name = "platinum plating"
+	else if(reagents.has_reagent(REAGENT_ID_GOLD, 5))
+		plating_id = REAGENT_ID_GOLD; plating_name = "gold plating"
+	if(plating_id)
+		if(!electrode_cell || electrode_cell.use(100) < 100)
+			to_chat(user, span_warning("Electroplating requires a charged power cell clipped across the trough's exposed electrodes."))
+			return TRUE
+		reagents.remove_reagent(plating_id, 5)
+		batch.add_surface_layer(MATERIAL_SURFACE_PLATING, 25, plating_name, 5)
+		batch.surface_protection = clamp(batch.surface_protection + 12, 0, 30)
+		batch.test_results[MATERIAL_TEST_CORROSION] = batch.corrosion_resistance
+		visible_message(span_notice("Current crawls through the open bath as a visible [plating_name] grows across [workpiece]."))
+		workpiece.update_icon(); update_icon()
+		return TRUE
+	var/acid = reagents.get_reagent_amount(REAGENT_ID_SACID) + reagents.get_reagent_amount(REAGENT_ID_PACID)
+	if(acid >= 5)
+		var/used_sacid = min(5, reagents.get_reagent_amount(REAGENT_ID_SACID))
+		if(used_sacid) reagents.remove_reagent(REAGENT_ID_SACID, used_sacid)
+		if(used_sacid < 5) reagents.remove_reagent(REAGENT_ID_PACID, 5 - used_sacid)
+		batch.porosity = clamp(batch.porosity + 8, 0, 100)
+		batch.surface_layers -= MATERIAL_SURFACE_OXIDE
+		batch.process_history += "acid etched in an open chemical bath"
+		batch.test_results[MATERIAL_TEST_CORROSION] = batch.corrosion_resistance
+		batch.recalculate()
+		visible_message(span_notice("Acid fizzes across [workpiece], stripping scale and opening a visibly porous surface."))
+		workpiece.update_icon(); update_icon()
+		return TRUE
+	to_chat(user, span_warning("Those ordinary reagents do not produce a stable treatment on this cool workpiece."))
+	return TRUE
+
+/obj/structure/bed/bath/material_treatment/click_alt(mob/user)
+	if(!electrode_cell)
+		return CLICK_ACTION_BLOCKING
+	electrode_cell.forceMove(get_turf(src))
+	electrode_cell = null
+	to_chat(user, span_notice("You unclip the trough's electrode cell."))
+	return CLICK_ACTION_SUCCESS
+
+/obj/machinery/particle_smasher/proc/try_material_workpiece_conditioning()
+	if(energy < 350 || !istype(target, /obj/item/material_workpiece))
+		return FALSE
+	var/obj/item/material_workpiece/workpiece = target
+	if(!workpiece.batch || workpiece.batch.field_treatments[MATERIAL_FIELD_PARTICLE] >= 100)
+		return FALSE
+	var/strength = clamp(round(energy / 6), 20, 100)
+	workpiece.batch.add_field_treatment(MATERIAL_FIELD_PARTICLE, strength)
+	if(workpiece.batch.composition[MAT_IRON] || workpiece.batch.composition[MAT_STEEL])
+		workpiece.batch.add_field_treatment(MATERIAL_FIELD_MAGNETIC, round(strength / 2))
+	workpiece.batch.homogeneity = clamp(workpiece.batch.homogeneity + round(strength / 8), 0, 100)
+	workpiece.batch.test_results[MATERIAL_TEST_FIELD] = strength
+	workpiece.batch.recalculate()
+	workpiece.update_icon()
+	energy = max(0, energy - 300)
+	visible_message(span_notice("Particle arcs lock into [workpiece]; luminous lines remain suspended through its conditioned lattice."))
+	update_icon()
+	return TRUE
+
+/obj/item/circuitboard/machine/material_furnace
+	name = T_BOARD("controlled-atmosphere alloy hearth")
+	build_path = /obj/machinery/material_furnace
 	board_type = new /datum/frame/frame_types/machine
-	req_components = list(/obj/item/stock_parts/matter_bin = 2, /obj/item/stock_parts/manipulator = 2, /obj/item/stock_parts/micro_laser = 2)
+	req_components = list(
+		/obj/item/stock_parts/matter_bin = 2,
+		/obj/item/stock_parts/manipulator = 1,
+		/obj/item/stock_parts/micro_laser = 2,
+	)
 
-/obj/item/circuitboard/machine/material_processor/forming
-	name = T_BOARD("materials forming press")
-	build_path = /obj/machinery/material_processor/forming
-
-/obj/item/circuitboard/machine/material_processor/electrochemical
-	name = T_BOARD("electrochemical materials cell")
-	build_path = /obj/machinery/material_processor/electrochemical
-	req_components = list(/obj/item/stock_parts/matter_bin = 2, /obj/item/stock_parts/manipulator = 2, /obj/item/reagent_containers/glass/beaker = 2)
-
-/obj/item/circuitboard/machine/material_processor/tester
-	name = T_BOARD("materials test stand")
-	build_path = /obj/machinery/material_processor/tester
-	req_components = list(/obj/item/stock_parts/scanning_module = 2, /obj/item/stock_parts/manipulator = 1, /obj/item/stock_parts/console_screen = 1)
-
-/datum/design_techweb/board/material_processor
-	SET_CIRCUIT_DESIGN_NAMEDESC("materials thermal processor")
-	id = "board_material_processor"
-	build_path = /obj/item/circuitboard/machine/material_processor
+/datum/design_techweb/board/material_furnace
+	SET_CIRCUIT_DESIGN_NAMEDESC("controlled-atmosphere alloy hearth")
+	id = "board_material_furnace"
+	build_path = /obj/item/circuitboard/machine/material_furnace
 	category = list(RND_CATEGORY_COMPUTER + RND_SUBCATEGORY_MACHINE_RESEARCH)
-	departmental_flags = DEPARTMENT_BITFLAG_SCIENCE
+	departmental_flags = DEPARTMENT_BITFLAG_SCIENCE | DEPARTMENT_BITFLAG_ENGINEERING
 
-/datum/design_techweb/board/material_forming
-	SET_CIRCUIT_DESIGN_NAMEDESC("materials forming press")
-	id = "board_material_forming"
-	build_path = /obj/item/circuitboard/machine/material_processor/forming
-	category = list(RND_CATEGORY_COMPUTER + RND_SUBCATEGORY_MACHINE_RESEARCH)
-	departmental_flags = DEPARTMENT_BITFLAG_SCIENCE
-
-/datum/design_techweb/board/material_electrochemical
-	SET_CIRCUIT_DESIGN_NAMEDESC("electrochemical materials cell")
-	id = "board_material_electrochemical"
-	build_path = /obj/item/circuitboard/machine/material_processor/electrochemical
-	category = list(RND_CATEGORY_COMPUTER + RND_SUBCATEGORY_MACHINE_RESEARCH)
-	departmental_flags = DEPARTMENT_BITFLAG_SCIENCE
-
-/datum/design_techweb/board/material_tester
-	SET_CIRCUIT_DESIGN_NAMEDESC("materials test stand")
-	id = "board_material_tester"
-	build_path = /obj/item/circuitboard/machine/material_processor/tester
-	category = list(RND_CATEGORY_COMPUTER + RND_SUBCATEGORY_MACHINE_RESEARCH)
-	departmental_flags = DEPARTMENT_BITFLAG_SCIENCE
-
-/datum/techweb_node/material_science
-	id = "material_science"
-	display_name = "Applied Material Science"
-	description = "Physical alloy production, heat treatment, electrochemistry, forming, and qualification."
-	starting_node = TRUE
-	design_ids = list("board_material_processor", "board_material_forming", "board_material_electrochemical", "board_material_tester")
+/datum/design_techweb/material_crucible
+	name = "Refractory Alloy Crucible"
+	desc = "A reusable open crucible for physically carrying persistent material charges and ordinary chemical media."
+	id = "material_crucible"
+	build_type = AUTOLATHE | PROTOLATHE
+	materials = list(MAT_STEEL = 1000, MAT_GLASS = 500)
+	category = list(RND_CATEGORY_INITIAL, RND_CATEGORY_EQUIPMENT + RND_SUBCATEGORY_EQUIPMENT_CHEMISTRY)
+	build_path = /obj/item/reagent_containers/glass/material_crucible
+	departmental_flags = DEPARTMENT_BITFLAG_SCIENCE | DEPARTMENT_BITFLAG_ENGINEERING

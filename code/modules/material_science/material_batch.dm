@@ -8,6 +8,12 @@
 	var/list/feedstock_lots = list()
 	var/list/test_results = list()
 	var/list/process_counts = list()
+	/// Persistent physical surface treatments. These are layers, not bulk ingredients.
+	var/list/surface_layers = list()
+	/// Gases incorporated from the real processing atmosphere, in abstract retained units.
+	var/list/dissolved_gases = list()
+	/// High-energy or field treatments applied to the lattice.
+	var/list/field_treatments = list()
 	var/list/cost_ledger = list(
 		MATERIAL_COST_FEEDSTOCK = 0,
 		MATERIAL_COST_CHEMICALS = 0,
@@ -36,7 +42,6 @@
 	var/internal_stress = 15
 	var/porosity = 10
 	var/homogeneity = 75
-	var/form = "stock"
 	var/atmosphere = MATERIAL_ATMOSPHERE_AIR
 	var/quench_medium = "water"
 	var/solution_treated = FALSE
@@ -62,6 +67,9 @@
 	feedstock_lots = null
 	test_results = null
 	process_counts = null
+	surface_layers = null
+	dissolved_gases = null
+	field_treatments = null
 	cost_ledger = null
 	structure = null
 	return ..()
@@ -101,6 +109,32 @@
 	recalculate()
 	return TRUE
 
+/datum/material_batch/proc/add_surface_layer(layer_name, strength, additive_name, additive_units = 0)
+	if(!layer_name || strength <= 0)
+		return FALSE
+	surface_layers[layer_name] = clamp((surface_layers[layer_name] || 0) + strength, 0, 100)
+	if(additive_name && additive_units > 0)
+		impurities[additive_name] = (impurities[additive_name] || 0) + additive_units
+	process_history += "applied [layer_name]"
+	recalculate()
+	return TRUE
+
+/datum/material_batch/proc/add_dissolved_gas(gas_name, units)
+	if(!gas_name || units <= 0)
+		return FALSE
+	dissolved_gases[gas_name] = clamp((dissolved_gases[gas_name] || 0) + units, 0, 100)
+	process_history += "infused with [gas_name]"
+	recalculate()
+	return TRUE
+
+/datum/material_batch/proc/add_field_treatment(treatment_name, strength)
+	if(!treatment_name || strength <= 0)
+		return FALSE
+	field_treatments[treatment_name] = clamp((field_treatments[treatment_name] || 0) + strength, 0, 100)
+	process_history += treatment_name
+	recalculate()
+	return TRUE
+
 /datum/material_batch/proc/apply_process(process, option)
 	if(!length(composition))
 		return FALSE
@@ -137,7 +171,6 @@
 			grain_size = 72
 			internal_stress = 28
 			porosity = clamp(porosity + 8, 0, 100)
-			form = option || "billet"
 			structure[MATERIAL_STRUCTURE_SOFT] = 65
 			structure[MATERIAL_STRUCTURE_AMORPHOUS] = 10
 			structure[MATERIAL_STRUCTURE_DEFECT] = 25
@@ -175,32 +208,19 @@
 			structure[MATERIAL_STRUCTURE_PRECIPITATE] = clamp(structure[MATERIAL_STRUCTURE_PRECIPITATE] + 12, 0, 100)
 			structure[MATERIAL_STRUCTURE_DEFECT] = clamp(structure[MATERIAL_STRUCTURE_DEFECT] - 12, 0, 100)
 		if(MATERIAL_PROCESS_SINTER)
-			if(phase != MATERIAL_PHASE_POWDER && form != "powder")
+			if(phase != MATERIAL_PHASE_POWDER)
 				return FALSE
 			phase = MATERIAL_PHASE_SOLID
 			porosity = clamp(porosity - 28, 0, 100)
 			homogeneity = clamp(homogeneity + 10, 0, 100)
-			form = "sintered stock"
 			structure[MATERIAL_STRUCTURE_REINFORCEMENT] = clamp(structure[MATERIAL_STRUCTURE_REINFORCEMENT] + 18, 0, 100)
-		if(MATERIAL_PROCESS_ROLL)
-			if(phase != MATERIAL_PHASE_SOLID || temperature > melting_temperature() * 0.8)
-				return FALSE
-			porosity = clamp(porosity - 16, 0, 100)
-			internal_stress = clamp(internal_stress + 12, 0, 100)
-			form = "sheet"
 		if(MATERIAL_PROCESS_FORGE)
 			if(phase != MATERIAL_PHASE_SOLID || temperature < melting_temperature() * 0.45 || temperature > melting_temperature() * 0.9)
 				return FALSE
 			porosity = clamp(porosity - 22, 0, 100)
 			grain_size = clamp(grain_size - 8, 1, 100)
 			homogeneity = clamp(homogeneity + 8, 0, 100)
-			form = "forged billet"
 			structure[MATERIAL_STRUCTURE_DEFECT] = clamp(structure[MATERIAL_STRUCTURE_DEFECT] - 14, 0, 100)
-		if(MATERIAL_PROCESS_DRAW)
-			if(phase != MATERIAL_PHASE_SOLID || form != "sheet")
-				return FALSE
-			internal_stress = clamp(internal_stress + 20, 0, 100)
-			form = "wire stock"
 		if(MATERIAL_PROCESS_PURIFY, MATERIAL_PROCESS_ELECTROLYZE)
 			if(process == MATERIAL_PROCESS_ELECTROLYZE && phase != MATERIAL_PHASE_SOLUTION)
 				return FALSE
@@ -218,13 +238,11 @@
 			if(phase != MATERIAL_PHASE_SOLID)
 				return FALSE
 			phase = MATERIAL_PHASE_POWDER
-			form = "powder"
 			porosity = clamp(porosity + 18, 0, 100)
 		if(MATERIAL_PROCESS_PLATE)
 			if(phase != MATERIAL_PHASE_SOLUTION)
 				return FALSE
 			phase = MATERIAL_PHASE_SOLID
-			form = "electroplated laminate"
 			surface_protection = clamp(surface_protection + 15, 0, 30)
 			yield_fraction = clamp(yield_fraction - 0.06, 0.5, 1)
 		if(MATERIAL_PROCESS_CRYSTALLIZE)
@@ -233,7 +251,6 @@
 			phase = MATERIAL_PHASE_SOLID
 			grain_size = 35
 			porosity = clamp(porosity - 12, 0, 100)
-			form = "crystalline stock"
 			structure[MATERIAL_STRUCTURE_AMORPHOUS] = 5
 			structure[MATERIAL_STRUCTURE_PRECIPITATE] = clamp(structure[MATERIAL_STRUCTURE_PRECIPITATE] + 25, 0, 100)
 		if(MATERIAL_PROCESS_HOMOGENIZE)
@@ -317,13 +334,9 @@
 		if(MATERIAL_PROCESS_TEMPER)
 			return phase == MATERIAL_PHASE_SOLID && structure[MATERIAL_STRUCTURE_HARDENED] >= 15 && temperature >= melting_temperature() * 0.18 && temperature <= melting_temperature() * 0.48
 		if(MATERIAL_PROCESS_SINTER)
-			return phase == MATERIAL_PHASE_POWDER || form == "powder"
-		if(MATERIAL_PROCESS_ROLL)
-			return phase == MATERIAL_PHASE_SOLID && temperature <= melting_temperature() * 0.8
+			return phase == MATERIAL_PHASE_POWDER
 		if(MATERIAL_PROCESS_FORGE)
 			return phase == MATERIAL_PHASE_SOLID && temperature >= melting_temperature() * 0.45 && temperature <= melting_temperature() * 0.9
-		if(MATERIAL_PROCESS_DRAW)
-			return phase == MATERIAL_PHASE_SOLID && form == "sheet"
 		if(MATERIAL_PROCESS_ELECTROLYZE, MATERIAL_PROCESS_PLATE)
 			return phase == MATERIAL_PHASE_SOLUTION
 		if(MATERIAL_PROCESS_CRYSTALLIZE)
@@ -372,6 +385,11 @@
 	var/thermal_catalyst = additive_units_matching("thermal phase")
 	var/corrosion_inhibitor = additive_units_matching("corrosion inhibitor")
 	var/grain_refiner = additive_units_matching("grain refiner")
+	var/nitrogen_infusion = dissolved_gases["nitrogen"] || 0
+	var/hydrogen_infusion = dissolved_gases["hydrogen"] || 0
+	var/oxygen_infusion = dissolved_gases["oxygen"] || 0
+	var/phoron_infusion = dissolved_gases["phoron"] || 0
+	var/carbon_case = surface_layers[MATERIAL_SURFACE_CARBON] || 0
 	var/effective_porosity = max(0, porosity - min(flux_units, 8))
 	var/carbon_window = max(0, 18 - abs(carbon_units - 6) * 3)
 	var/silicon_window = max(0, 14 - abs(silicon_units - 4) * 2)
@@ -381,12 +399,12 @@
 	var/effective_precipitate = clamp(structure[MATERIAL_STRUCTURE_PRECIPITATE] + round((carbon_window + silicon_window) / 4), 0, 100)
 	var/precipitate_fraction = effective_precipitate / 100
 	var/defect_fraction = structure[MATERIAL_STRUCTURE_DEFECT] / 100
-	hardness = clamp(round(base_hardness * (0.62 + quality / 280) + hardened_fraction * (30 + hardener * 0.25) + precipitate_fraction * 18 + carbon_window + grain_refiner - grain_size * 0.08), 1, 100)
-	brittleness = clamp(round((100 - base_toughness) * 0.28 + internal_stress * 0.38 + effective_porosity * 0.28 + defect_fraction * 35 + max(carbon_units - 10, 0) * 3), 0, 100)
+	hardness = clamp(round(base_hardness * (0.62 + quality / 280) + hardened_fraction * (30 + hardener * 0.25) + precipitate_fraction * 18 + carbon_window + grain_refiner + nitrogen_infusion * 0.3 + carbon_case * 0.16 - grain_size * 0.08), 1, 100)
+	brittleness = clamp(round((100 - base_toughness) * 0.28 + internal_stress * 0.38 + effective_porosity * 0.28 + defect_fraction * 35 + max(carbon_units - 10, 0) * 3 + hydrogen_infusion * 0.18 + oxygen_infusion * 0.2), 0, 100)
 	toughness = clamp(round(base_toughness * (0.62 + quality / 300) + structure[MATERIAL_STRUCTURE_SOFT] * 0.14 + precipitate_fraction * 12 + grain_refiner * 0.5 - brittleness * 0.3), 1, 100)
 	conductivity = clamp(round(base_conductivity * (0.55 + purity / 180) - effective_porosity * 0.12 + conductive_dopant * 3), 0, 100)
-	heat_resistance = clamp(round(base_heat * (0.65 + purity / 260) + stabilizer * 0.15 + silicon_window * 0.4 + thermal_catalyst * 2), 1, 100)
-	corrosion_resistance = clamp(round(base_corrosion * (0.6 + purity / 240) + stabilizer * 0.12 - oxidation * 0.25 + surface_protection + corrosion_inhibitor * 3), 1, 100)
+	heat_resistance = clamp(round(base_heat * (0.65 + purity / 260) + stabilizer * 0.15 + silicon_window * 0.4 + thermal_catalyst * 2 + phoron_infusion * 0.25), 1, 100)
+	corrosion_resistance = clamp(round(base_corrosion * (0.6 + purity / 240) + stabilizer * 0.12 - oxidation * 0.25 + surface_protection + corrosion_inhibitor * 3 - oxygen_infusion * 0.12), 1, 100)
 
 /datum/material_batch/proc/additive_units_matching(fragment)
 	var/total = 0
@@ -423,20 +441,6 @@
 			roles["phase catalyst"] = TRUE
 	return roles
 
-/datum/material_batch/proc/form_compatible(required_form)
-	if(!required_form || required_form == MATERIAL_FORM_ANY)
-		return phase == MATERIAL_PHASE_SOLID
-	switch(required_form)
-		if(MATERIAL_FORM_PLATE)
-			return form in list("sheet", "electroplated laminate", "forged billet")
-		if(MATERIAL_FORM_WIRE)
-			return form == "wire stock"
-		if(MATERIAL_FORM_FORGED)
-			return form in list("forged billet", "sintered stock")
-		if(MATERIAL_FORM_PRECISION)
-			return form in list("forged billet", "crystalline stock", "electroplated laminate", "electrolytic deposit")
-	return FALSE
-
 /datum/material_batch/proc/normalize_structure()
 	var/total = 0
 	for(var/structure_name in structure)
@@ -472,9 +476,15 @@
 		parts += "[material_name]=[round(composition[material_name], 0.01)]"
 	for(var/impurity in sortList(impurities.Copy()))
 		parts += "+[impurity]=[round(impurities[impurity], 0.01)]"
+	for(var/layer_name in sortList(surface_layers.Copy()))
+		parts += "l[layer_name]=[surface_layers[layer_name]]"
+	for(var/gas_name in sortList(dissolved_gases.Copy()))
+		parts += "g[gas_name]=[dissolved_gases[gas_name]]"
+	for(var/treatment_name in sortList(field_treatments.Copy()))
+		parts += "t[treatment_name]=[field_treatments[treatment_name]]"
 	for(var/structure_name in sortList(structure.Copy()))
 		parts += "#[structure_name]=[structure[structure_name]]"
-	parts += "p[purity]g[grain_size]s[internal_stress]o[porosity]h[homogeneity]f[form]a[atmosphere]x[oxidation]"
+	parts += "p[purity]g[grain_size]s[internal_stress]o[porosity]h[homogeneity]a[atmosphere]x[oxidation]"
 	return md5(jointext(parts, ";"))
 
 /datum/material_batch/proc/display_name()
@@ -518,6 +528,9 @@
 	copy.feedstock_lots = feedstock_lots.Copy()
 	copy.test_results = test_results.Copy()
 	copy.process_counts = process_counts.Copy()
+	copy.surface_layers = surface_layers.Copy()
+	copy.dissolved_gases = dissolved_gases.Copy()
+	copy.field_treatments = field_treatments.Copy()
 	copy.cost_ledger = cost_ledger.Copy()
 	copy.structure = structure.Copy()
 	copy.amount = amount
@@ -528,7 +541,6 @@
 	copy.internal_stress = internal_stress
 	copy.porosity = porosity
 	copy.homogeneity = homogeneity
-	copy.form = form
 	copy.atmosphere = atmosphere
 	copy.quench_medium = quench_medium
 	copy.solution_treated = solution_treated

@@ -82,18 +82,90 @@
 /datum/unit_test/dq_material_science_physical_testing
 
 /datum/unit_test/dq_material_science_physical_testing/Run()
-	var/obj/machinery/material_processor/tester/tester = new(run_loc_floor_bottom_left)
-	tester.batch = new
-	tester.batch.add_material(MAT_STEEL, 4, null, 92, "TESTLOT")
-	TEST_ASSERT(tester.run_material_test(MATERIAL_TEST_SPECTROMETRY, null), "Spectrometry must run non-destructively")
-	TEST_ASSERT(tester.run_material_test(MATERIAL_TEST_MICROSCOPY, null), "Microscopy must expose structure")
-	TEST_ASSERT(tester.run_material_test(MATERIAL_TEST_HARDNESS, null), "Hardness testing must expose hardness")
-	TEST_ASSERT(tester.run_material_test(MATERIAL_TEST_CONDUCTIVITY, null), "Conductivity testing must expose conductivity")
-	TEST_ASSERT(tester.run_material_test(MATERIAL_TEST_TENSILE, null), "A spare coupon must support destructive tensile testing")
-	TEST_ASSERT(tester.run_material_test(MATERIAL_TEST_CORROSION, null), "A second coupon must support destructive corrosion testing")
-	TEST_ASSERT_EQUAL(tester.batch.amount, 2, "Two destructive tests must consume exactly two sheets")
-	TEST_ASSERT_EQUAL(length(tester.batch.test_results), 6, "Each test must reveal only its own tracked result")
-	qdel(tester)
+	var/obj/item/reagent_containers/glass/material_crucible/crucible = new(run_loc_floor_bottom_left)
+	var/obj/item/stack/material/steel/feedstock = new(run_loc_floor_bottom_left, 4)
+	TEST_ASSERT(material_batch_absorb_sheet(crucible.batch, feedstock), "Physical feedstock must enter the crucible")
+	var/datum/material_batch/original_batch = crucible.batch
+	var/datum/material_batch/transferred_batch = crucible.release_batch()
+	var/obj/item/material_workpiece/workpiece = new(run_loc_floor_bottom_left, transferred_batch)
+	TEST_ASSERT_EQUAL(workpiece.batch, original_batch, "Casting must transfer the authoritative batch instead of reconstructing it")
+	workpiece.batch.add_surface_layer(MATERIAL_SURFACE_CARBON, 30, "carbon", 3)
+	workpiece.batch.add_dissolved_gas("nitrogen", 4)
+	workpiece.batch.add_field_treatment(MATERIAL_FIELD_PARTICLE, 40)
+	var/datum/material_batch/copy = workpiece.batch.copy_batch()
+	TEST_ASSERT_EQUAL(copy.surface_layers[MATERIAL_SURFACE_CARBON], 30, "Physical surface treatments must survive batch copying")
+	TEST_ASSERT_EQUAL(copy.dissolved_gases["nitrogen"], 4, "Real-atmos gas infusion must survive batch copying")
+	TEST_ASSERT_EQUAL(copy.field_treatments[MATERIAL_FIELD_PARTICLE], 40, "Field treatments must survive batch copying")
+	qdel(copy)
+	qdel(workpiece)
+	qdel(crucible)
+	qdel(feedstock)
+
+/datum/unit_test/dq_material_science_real_atmosphere
+
+/datum/unit_test/dq_material_science_real_atmosphere/Run()
+	var/turf/test_turf = get_turf(run_loc_floor_bottom_left)
+	if(!istype(test_turf, /turf/simulated/floor))
+		test_turf = locate(/turf/simulated/floor) in world
+	TEST_ASSERT_NOTNULL(test_turf, "Real-atmos material testing requires a simulated floor")
+	var/datum/gas_mixture/air = test_turf.return_air()
+	air.clear()
+	air.adjust_moles(/datum/gas/oxygen, 10)
+	air.adjust_moles(/datum/gas/nitrogen, 60)
+	air.adjust_moles(/datum/gas/plasma, 2)
+	air.set_temperature(T20C)
+	var/oxygen_before = air.get_moles(/datum/gas/oxygen)
+	var/nitrogen_before = air.get_moles(/datum/gas/nitrogen)
+	var/phoron_before = air.get_moles(/datum/gas/plasma)
+	var/obj/machinery/material_furnace/furnace = new(test_turf)
+	var/datum/material_batch/batch = new
+	batch.add_material(MAT_STEEL, 3, null, 96, "ATMOSLOT")
+	batch.temperature = batch.melting_temperature()
+	furnace.apply_real_atmosphere(batch)
+	TEST_ASSERT(air.get_moles(/datum/gas/oxygen) < oxygen_before, "A hot open firing must consume real oxygen")
+	TEST_ASSERT(air.get_moles(/datum/gas/nitrogen) < nitrogen_before, "A pressurized firing must consume real nitrogen")
+	TEST_ASSERT(air.get_moles(/datum/gas/plasma) < phoron_before, "A phoron atmosphere must physically dope and consume real phoron")
+	TEST_ASSERT(batch.dissolved_gases["nitrogen"] && batch.dissolved_gases["oxygen"] && batch.dissolved_gases["phoron"], "Consumed gases must remain represented in the physical batch")
+	TEST_ASSERT(batch.surface_layers[MATERIAL_SURFACE_OXIDE], "Oxygen firing must leave visible oxide scale")
+	qdel(batch)
+	qdel(furnace)
+
+/datum/unit_test/dq_material_science_solution_and_bath
+
+/datum/unit_test/dq_material_science_solution_and_bath/Run()
+	var/turf/test_turf = get_turf(run_loc_floor_bottom_left)
+	if(!istype(test_turf, /turf/simulated/floor))
+		test_turf = locate(/turf/simulated/floor) in world
+	TEST_ASSERT_NOTNULL(test_turf, "Physical chemistry testing requires a simulated floor")
+	var/obj/machinery/material_furnace/furnace = new(test_turf)
+	var/obj/item/reagent_containers/glass/material_crucible/crucible = new(furnace)
+	crucible.batch.add_material(MAT_STEEL, 3, null, 96, "CHEMLOT")
+	crucible.reagents.add_reagent(REAGENT_ID_SACID, 10)
+	furnace.crucible = crucible
+	TEST_ASSERT(furnace.process_crucible_chemistry(crucible.batch), "Ordinary acid must move a solid charge into the solution route")
+	TEST_ASSERT_EQUAL(crucible.batch.phase, MATERIAL_PHASE_SOLUTION, "A newly dissolved charge must persist as a physical solution instead of immediately becoming stock")
+
+	var/datum/material_batch/workpiece_batch = new
+	workpiece_batch.add_material(MAT_STEEL, 3, null, 96, "BATHLOT")
+	workpiece_batch.temperature = round(workpiece_batch.melting_temperature() * 0.72)
+	workpiece_batch.solution_treated = TRUE
+	var/obj/item/material_workpiece/workpiece = new(test_turf, workpiece_batch)
+	var/obj/structure/bed/bath/material_treatment/bath = new(test_turf)
+	bath.reagents.add_reagent(REAGENT_ID_WATER, 10)
+	var/water_before = bath.reagents.get_reagent_amount(REAGENT_ID_WATER)
+	TEST_ASSERT(bath.quench_workpiece(workpiece, null), "A real water bath must quench a prepared hot workpiece")
+	TEST_ASSERT(bath.reagents.get_reagent_amount(REAGENT_ID_WATER) < water_before, "Quenching must consume its ordinary reagent medium")
+	TEST_ASSERT(workpiece.batch.structure[MATERIAL_STRUCTURE_HARDENED] > 0, "The physical quench must harden the lattice")
+
+	workpiece.batch.temperature = T20C
+	bath.reagents.add_reagent(REAGENT_ID_SILVER, 10)
+	var/obj/item/cell/high/cell = new(bath)
+	bath.electrode_cell = cell
+	TEST_ASSERT(bath.chemically_treat_workpiece(workpiece, null), "A powered ordinary silver bath must plate a cool workpiece")
+	TEST_ASSERT(workpiece.batch.impurities["silver plating"] && workpiece.batch.surface_layers[MATERIAL_SURFACE_PLATING], "Plating must remain a visible surface layer rather than silently altering bulk composition")
+	qdel(bath)
+	qdel(workpiece)
+	qdel(furnace)
 
 /datum/unit_test/dq_material_science_feedstock_lots
 
@@ -132,29 +204,12 @@
 	qdel(copy)
 	qdel(batch)
 
-/datum/unit_test/dq_material_science_forms
-
-/datum/unit_test/dq_material_science_forms/Run()
-	var/datum/material_batch/batch = new
-	batch.add_material(MAT_STEEL, 2, null, 95, "FORMLOT")
-	batch.form = "sheet"
-	TEST_ASSERT(batch.form_compatible(MATERIAL_FORM_PLATE), "Sheet stock must satisfy plate applications")
-	TEST_ASSERT(!batch.form_compatible(MATERIAL_FORM_WIRE), "Sheet stock must not silently substitute for drawn wire")
-	batch.form = "wire stock"
-	TEST_ASSERT(batch.form_compatible(MATERIAL_FORM_WIRE), "Drawn stock must satisfy conductor applications")
-	TEST_ASSERT(!batch.form_compatible(MATERIAL_FORM_FORGED), "Drawn stock must not silently substitute for forged stock")
-	batch.form = "forged billet"
-	TEST_ASSERT(batch.form_compatible(MATERIAL_FORM_FORGED), "A forged billet must satisfy forged applications")
-	TEST_ASSERT(batch.form_compatible(MATERIAL_FORM_PRECISION), "A forged billet must be valid precision feedstock")
-	qdel(batch)
-
 /datum/unit_test/dq_material_science_applications
 
 /datum/unit_test/dq_material_science_applications/Run()
 	var/datum/material_batch/batch = new
 	batch.add_material(MAT_STEEL, 2, null, 98, "APPLICATIONLOT")
 	batch.add_material(MAT_COPPER, 1, null, 98, "APPLICATIONLOT")
-	batch.form = "forged billet"
 	batch.hardness = 90
 	batch.toughness = 85
 	batch.conductivity = 75
@@ -176,7 +231,6 @@
 	TEST_ASSERT(scalpel.apply_engineered_material(material, MATERIAL_APPLICATION_SURGICAL), "Surgical instruments must accept an engineered material profile")
 	TEST_ASSERT(scalpel.material_surgery_cleanliness_bonus > 0 && scalpel.material_tool_quality_bonus > 0, "Surgical alloys must affect cleanliness and procedure quality")
 
-	batch.form = "wire stock"
 	var/wire_key = register_processed_material(batch)
 	var/datum/material/processed_alloy/wire_material = get_material_by_name(wire_key)
 	var/obj/item/cell/cell = new(run_loc_floor_bottom_left)
@@ -195,6 +249,11 @@
 	var/datum/material_batch/electrical_batch = new
 	electrical_batch.composition = list(MAT_QUARTZ = 1, MAT_METALHYDROGEN = 1, MAT_URANIUM = 1, MAT_IRON = 1)
 	electrical_batch.impurities = list("thermal phase catalyst" = 4, "cryogenic stabilizer" = 3, "conductive dopant" = 4)
+	electrical_batch.surface_layers[MATERIAL_SURFACE_SLIME_THERMAL] = 40
+	electrical_batch.surface_layers[MATERIAL_SURFACE_SLIME_CRYO] = 40
+	electrical_batch.surface_layers[MATERIAL_SURFACE_SLIME_CONDUCTIVE] = 40
+	electrical_batch.field_treatments[MATERIAL_FIELD_PARTICLE] = 80
+	electrical_batch.field_treatments[MATERIAL_FIELD_MAGNETIC] = 40
 	electrical_batch.conductivity = 95
 	electrical_batch.heat_resistance = 90
 	electrical_batch.homogeneity = 95
@@ -236,6 +295,8 @@
 	var/datum/material_batch/structural_batch = new
 	structural_batch.composition = list(MAT_PLASTEEL = 1, MAT_TITANIUM = 1, MAT_ALUMINIUM = 1, MAT_GRAPHITE = 1, MAT_GLASS = 1)
 	structural_batch.impurities = list("thermal phase catalyst" = 4, "bluespace homogenizer" = 3)
+	structural_batch.surface_layers[MATERIAL_SURFACE_SLIME_THERMAL] = 40
+	structural_batch.surface_layers[MATERIAL_SURFACE_SLIME_BLUESPACE] = 40
 	structural_batch.porosity = 30
 	structural_batch.corrosion_resistance = 85
 	structural_batch.homogeneity = 95
@@ -272,7 +333,6 @@
 	material.display_name = "capability test alloy"
 	material.icon_colour = "#88ccff"
 	material.batch_template = new
-	material.batch_template.form = "wire stock"
 	material.material_capabilities = list(
 		MATERIAL_CAP_PIEZOELECTRIC = 90,
 		MATERIAL_CAP_SUPERCONDUCTING = 90,
@@ -308,14 +368,13 @@
 	GLOB.name_to_material -= material.name
 	qdel(material)
 
-/datum/unit_test/dq_material_capability_form_gating
+/datum/unit_test/dq_material_capability_application_gating
 
-/datum/unit_test/dq_material_capability_form_gating/Run()
+/datum/unit_test/dq_material_capability_application_gating/Run()
 	var/datum/material/processed_alloy/material = new
-	material.name = "unit_test_form_material"
-	material.display_name = "form gate alloy"
+	material.name = "unit_test_application_material"
+	material.display_name = "application gate alloy"
 	material.batch_template = new
-	material.batch_template.form = "sheet"
 	material.material_capabilities = list(
 		MATERIAL_CAP_REACTIVE_ARMOR = 80,
 		MATERIAL_CAP_ANTIMICROBIAL = 80,
@@ -357,7 +416,6 @@
 	material.name = "unit_test_conservation_material"
 	material.display_name = "conservation alloy"
 	material.batch_template = new
-	material.batch_template.form = "sintered stock"
 	material.material_capabilities = list(
 		MATERIAL_CAP_PHASE_CHANGE = 80,
 		MATERIAL_CAP_GAS_GETTER = 80,
@@ -393,6 +451,7 @@
 	var/datum/material_batch/batch = new
 	batch.add_material(MAT_COPPER, 3, null, 98, "DISCOVERY")
 	batch.add_additive("conductive dopant", 4)
+	batch.add_surface_layer(MATERIAL_SURFACE_SLIME_CONDUCTIVE, 35)
 	var/list/all_capabilities = batch.material_capability_preview(FALSE)
 	TEST_ASSERT(length(all_capabilities) > 0, "A reachable doped conductor must contain a latent capability")
 	TEST_ASSERT_EQUAL(length(batch.material_capability_preview(TRUE)), 0, "Untested capability behavior must remain unqualified")
@@ -407,6 +466,7 @@
 	var/datum/material_batch/conductor = new
 	TEST_ASSERT(conductor.add_material(MAT_COPPER, 3, null, 98, "ROUTE"), "Copper feedstock must enter the normal batch route")
 	TEST_ASSERT(conductor.add_additive("conductive dopant", 4), "The normal additive route must accept conductive dopant")
+	TEST_ASSERT(conductor.add_surface_layer(MATERIAL_SURFACE_SLIME_CONDUCTIVE, 35), "The reachable yellow-slime route must leave a physical conductive skin")
 	var/list/conductor_caps = conductor.material_capability_preview(FALSE)
 	var/found_electrical = FALSE
 	for(var/list/capability in conductor_caps)
@@ -437,7 +497,6 @@
 	material.name = "unit_test_medical_capability_material"
 	material.display_name = "medical capability alloy"
 	material.batch_template = new
-	material.batch_template.form = "surgical stock"
 	material.material_capabilities = list(MATERIAL_CAP_ANTIMICROBIAL = 80, MATERIAL_CAP_BIOMIMETIC = 80)
 	GLOB.name_to_material[material.name] = material
 	var/obj/item/surgical/scalpel/scalpel = new(test_turf)

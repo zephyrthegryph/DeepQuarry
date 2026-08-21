@@ -1,0 +1,7 @@
+author: "BigBadE"
+delete-after: true
+changes:
+  - rscadd: "Rebuilt material science as a physical workshop using persistent crucibles, workpieces, forging, real reagent baths, slime coatings, and particle conditioning."
+  - rscadd: "Alloy hearth firings now consume and respond to the real local atmospheric mixture, while hot workpieces exchange heat with room air."
+  - rscdel: "Removed the four menu-driven material processor consoles, material certification UI, and obsolete stock-form gates."
+  - maptweak: "Replaced Southern Cross's material consoles with an alloy hearth, anvil, treatment trough, grindstone, crucible, and starter hand tools."

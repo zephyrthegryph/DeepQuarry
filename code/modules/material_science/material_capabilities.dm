@@ -28,33 +28,41 @@ GLOBAL_LIST_EMPTY(material_radiovoltaic_items)
 	var/has_precious_catalyst = composition[MAT_PLATINUM] || composition[MAT_GOLD] || composition[MAT_SILVER]
 	var/has_radioisotope = composition[MAT_URANIUM] || composition[MAT_TRITIUM]
 
-	if(additives["thermal phase catalyst"] && batch.conductivity >= 45)
+	var/particle_conditioned = batch.field_treatments[MATERIAL_FIELD_PARTICLE] || 0
+	var/magnetic_alignment = batch.field_treatments[MATERIAL_FIELD_MAGNETIC] || 0
+	var/conductive_skin = batch.surface_layers[MATERIAL_SURFACE_SLIME_CONDUCTIVE] || 0
+	var/cryo_skin = batch.surface_layers[MATERIAL_SURFACE_SLIME_CRYO] || 0
+	var/thermal_skin = batch.surface_layers[MATERIAL_SURFACE_SLIME_THERMAL] || 0
+	var/catalytic_skin = batch.surface_layers[MATERIAL_SURFACE_SLIME_CATALYTIC] || 0
+	var/bluespace_skin = batch.surface_layers[MATERIAL_SURFACE_SLIME_BLUESPACE] || 0
+
+	if(additives["thermal phase catalyst"] && thermal_skin && batch.conductivity >= 45)
 		result[MATERIAL_CAP_THERMOELECTRIC] = clamp(round((batch.conductivity + batch.heat_resistance) / 2), 25, 100)
 	if(has_crystal && batch.conductivity >= 30 && batch.homogeneity >= 70)
 		result[MATERIAL_CAP_PIEZOELECTRIC] = clamp(round((batch.conductivity + batch.homogeneity - batch.porosity) / 2), 20, 100)
-	if(additives["conductive dopant"] && batch.conductivity >= 40 && batch.homogeneity >= 60)
+	if(additives["conductive dopant"] && conductive_skin && batch.conductivity >= 40 && batch.homogeneity >= 60)
 		result[MATERIAL_CAP_ELECTROGENIC] = clamp(round((batch.conductivity + batch.homogeneity) / 2), 25, 100)
 	if((composition[MAT_MORPHIUM] || (composition[MAT_TITANIUM] && batch.structure[MATERIAL_STRUCTURE_HARDENED] >= 20)) && batch.toughness >= 55)
 		result[MATERIAL_CAP_SHAPE_MEMORY] = clamp(round((batch.toughness + batch.homogeneity - batch.internal_stress) / 2), 20, 100)
-	if((composition[MAT_METALHYDROGEN] || additives["cryogenic stabilizer"]) && batch.conductivity >= 75 && batch.purity >= 90)
+	if((composition[MAT_METALHYDROGEN] || (additives["cryogenic stabilizer"] && cryo_skin)) && batch.conductivity >= 75 && batch.purity >= 90)
 		result[MATERIAL_CAP_SUPERCONDUCTING] = clamp(round((batch.conductivity + batch.purity) / 2), 40, 100)
-	if(has_precious_catalyst && batch.purity >= 80 && batch.surface_protection >= 5)
+	if((has_precious_catalyst || additives["platinum plating"] || additives["gold plating"]) && batch.purity >= 80 && (batch.surface_protection >= 5 || catalytic_skin))
 		result[MATERIAL_CAP_CATALYTIC] = clamp(round((batch.purity + batch.corrosion_resistance) / 2), 20, 100)
-	if(composition[MAT_SILVER] && batch.corrosion_resistance >= 50)
+	if((composition[MAT_SILVER] || additives["silver plating"]) && batch.corrosion_resistance >= 50)
 		result[MATERIAL_CAP_ANTIMICROBIAL] = clamp(round((batch.corrosion_resistance + batch.purity) / 2), 25, 100)
 	if(has_biological && (composition[MAT_IRON] || additives["precipitation catalyst"]))
 		result[MATERIAL_CAP_HEMOSTATIC] = clamp(round((batch.homogeneity + batch.purity) / 2), 20, 100)
 	if(has_biological && (composition[MAT_MORPHIUM] || batch.structure[MATERIAL_STRUCTURE_AMORPHOUS] >= 20))
 		result[MATERIAL_CAP_BIOMIMETIC] = clamp(round((batch.toughness + batch.homogeneity) / 2), 20, 100)
-	if(has_radioisotope && batch.conductivity >= 35)
+	if(has_radioisotope && batch.conductivity >= 35 && particle_conditioned >= 20)
 		result[MATERIAL_CAP_RADIOVOLTAIC] = clamp(round((batch.conductivity + radioactivity) / 2), 20, 100)
-	if(has_radioisotope && has_crystal && batch.homogeneity >= 65)
+	if(has_radioisotope && has_crystal && batch.homogeneity >= 65 && particle_conditioned >= 20)
 		result[MATERIAL_CAP_SCINTILLATING] = clamp(round((batch.homogeneity + reflectivity * 100) / 2), 20, 100)
-	if(has_ferrous && batch.conductivity >= 45 && batch.structure[MATERIAL_STRUCTURE_HARDENED] >= 15)
+	if(has_ferrous && batch.conductivity >= 45 && batch.structure[MATERIAL_STRUCTURE_HARDENED] >= 15 && magnetic_alignment >= 15)
 		result[MATERIAL_CAP_MAGNETOSTRICTIVE] = clamp(round((batch.hardness + batch.conductivity) / 2), 20, 100)
 	if((batch.infused_substance?.family == SUBFAM_FIELD) || (composition[MAT_PLASTEEL] && batch.structure[MATERIAL_STRUCTURE_PRECIPITATE] >= 20))
 		result[MATERIAL_CAP_REACTIVE_ARMOR] = clamp(round((batch.toughness + batch.hardness) / 2), 25, 100)
-	if(additives["thermal phase catalyst"] && batch.heat_resistance >= 60)
+	if(additives["thermal phase catalyst"] && thermal_skin && batch.heat_resistance >= 60)
 		result[MATERIAL_CAP_PHASE_CHANGE] = clamp(round((batch.heat_resistance + batch.toughness) / 2), 25, 100)
 	if(batch.porosity >= 18 && (composition[MAT_TITANIUM] || composition[MAT_ALUMINIUM] || composition[MAT_GRAPHITE]))
 		result[MATERIAL_CAP_GAS_GETTER] = clamp(round(batch.porosity * 2 + batch.corrosion_resistance / 3), 20, 100)
@@ -62,7 +70,7 @@ GLOBAL_LIST_EMPTY(material_radiovoltaic_items)
 		result[MATERIAL_CAP_POROUS_REAGENT] = clamp(round(batch.porosity * 2 + batch.corrosion_resistance / 3), 20, 100)
 	if(has_crystal && batch.homogeneity >= 80 && reflectivity >= 0.25)
 		result[MATERIAL_CAP_OPTICAL] = clamp(round(batch.homogeneity * 0.6 + reflectivity * 40), 20, 100)
-	if(batch.infused_substance && additives["bluespace homogenizer"])
+	if(batch.infused_substance && additives["bluespace homogenizer"] && bluespace_skin)
 		result[MATERIAL_CAP_RESONANT] = clamp(round((batch.homogeneity + batch.infused_substance.affinity) / 2), 25, 100)
 	material_capabilities = length(result) ? result : null
 
@@ -130,7 +138,6 @@ GLOBAL_LIST_EMPTY(material_radiovoltaic_items)
 
 /proc/material_capability_applicable(capability_id, obj/item/item, datum/material/processed_alloy/material)
 	var/profile = item.engineered_material_profile
-	var/form = material.batch_template?.form
 	switch(capability_id)
 		if(MATERIAL_CAP_THERMOELECTRIC, MATERIAL_CAP_PIEZOELECTRIC, MATERIAL_CAP_ELECTROGENIC, MATERIAL_CAP_SUPERCONDUCTING, MATERIAL_CAP_RADIOVOLTAIC)
 			return istype(item, /obj/item/cell)
@@ -141,13 +148,13 @@ GLOBAL_LIST_EMPTY(material_radiovoltaic_items)
 		if(MATERIAL_CAP_PHASE_CHANGE)
 			return istype(item, /obj/item/clothing) || istype(item, /obj/item/material/armor_plating) || profile == MATERIAL_APPLICATION_PRESSURE
 		if(MATERIAL_CAP_GAS_GETTER)
-			return form == "sintered stock" || form == "powder" || profile == MATERIAL_APPLICATION_PRESSURE
+			return profile == MATERIAL_APPLICATION_PRESSURE || profile == MATERIAL_APPLICATION_TOOL || istype(item, /obj/item/material)
 		if(MATERIAL_CAP_POROUS_REAGENT)
 			return profile == MATERIAL_APPLICATION_SURGICAL || profile == MATERIAL_APPLICATION_TOOL || istype(item, /obj/item/material)
 		if(MATERIAL_CAP_MAGNETOSTRICTIVE)
 			return profile == MATERIAL_APPLICATION_TOOL || istype(item, /obj/item/material)
 		if(MATERIAL_CAP_CATALYTIC)
-			return profile == MATERIAL_APPLICATION_SURGICAL || profile == MATERIAL_APPLICATION_TOOL || (form in list("electroplated laminate", "sintered stock"))
+			return profile == MATERIAL_APPLICATION_SURGICAL || profile == MATERIAL_APPLICATION_TOOL || istype(item, /obj/item/material)
 	return TRUE
 
 /datum/material/proc/dq_apply_material_capabilities(obj/item/item)
