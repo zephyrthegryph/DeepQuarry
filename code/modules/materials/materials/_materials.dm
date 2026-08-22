@@ -280,6 +280,21 @@ GLOBAL_LIST_INIT(name_to_material, populate_material_list())
 	var/phase_change_temperature = 0
 	var/phase_change_capacity = 0
 	var/catalytic_activity = 0
+	/// Continuous physical response coefficients. These are constitutive values,
+	/// not named powers: manufactured geometry decides which ones can operate.
+	var/thermoelectric_coefficient = 0
+	var/piezoelectric_coefficient = 0
+	var/electrogenic_rate = 0
+	var/shape_recovery_rate = 0
+	var/shape_recovery_temperature = 0
+	var/radiovoltaic_efficiency = 0
+	var/scintillation_efficiency = 0
+	var/reactive_energy_capacity = 0
+	var/antimicrobial_activity = 0
+	var/hemostatic_activity = 0
+	var/biocompatibility = 0
+	var/gas_sorption_capacity = 0
+	var/reagent_porosity = 0
 	// Trait holder (component-driven behaviors attached at New() or roll
 	// time live as full /datum/component children on this material).
 	var/list/traits

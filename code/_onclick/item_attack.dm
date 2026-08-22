@@ -144,8 +144,7 @@ avoid code duplication. This includes items that may sometimes act as a standard
 /obj/item/proc/apply_hit_effect(mob/living/target, mob/living/user, hit_zone, attack_modifier)
 	user.break_cloak()
 	substance_emit_form_trigger(src, get_turf(target), target, SUB_TRIG_IMPACT, SUB_TRIG_CONTACT)
-	material_capability_form_trigger(SUB_TRIG_IMPACT, get_turf(target), target)
-	material_capability_form_trigger(SUB_TRIG_CONTACT, get_turf(target), target)
+	material_response_impact(SUB_TRIG_IMPACT, get_turf(target), target)
 	if(hitsound)
 		playsound(src, hitsound, 50, 1, -1)
 

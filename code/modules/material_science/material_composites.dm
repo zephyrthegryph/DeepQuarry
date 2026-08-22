@@ -44,10 +44,14 @@ GLOBAL_LIST_EMPTY(composite_material_dedup)
 	var/functional_material_id
 	var/liner_material_id
 	var/jacket_material_id
-	var/core_fraction = MATERIAL_COMPOSITE_DEFAULT_CORE_FRACTION
-	var/functional_fraction = MATERIAL_COMPOSITE_DEFAULT_FUNCTIONAL_FRACTION
-	var/liner_fraction = MATERIAL_COMPOSITE_DEFAULT_LINER_FRACTION
-	var/jacket_fraction = MATERIAL_COMPOSITE_DEFAULT_JACKET_FRACTION
+	var/core_fraction = 1
+	var/functional_fraction = 0
+	var/liner_fraction = 0
+	var/jacket_fraction = 0
+	var/core_sheets = 1
+	var/functional_sheets = 0
+	var/liner_sheets = 0
+	var/jacket_sheets = 0
 	var/thermal_buffer_capacity = 0
 	var/thermal_buffer_temperature = 0
 
@@ -130,11 +134,16 @@ GLOBAL_LIST_EMPTY(composite_material_dedup)
 			transmission *= layer.material_radiation_transmission(thickness_mm * layers[material_id])
 	return clamp(transmission, 0, 1)
 
-/proc/register_composite_material(core_id, functional_id, liner_id, jacket_id)
+/proc/register_composite_material(core_id, core_amount, functional_id, functional_amount, liner_id, liner_amount, jacket_id, jacket_amount)
 	var/datum/material/core = get_material_by_name(core_id)
-	if(!core)
+	core_amount = max(0, round(core_amount))
+	functional_amount = max(0, round(functional_amount))
+	liner_amount = max(0, round(liner_amount))
+	jacket_amount = max(0, round(jacket_amount))
+	var/total_amount = core_amount + functional_amount + liner_amount + jacket_amount
+	if(!core || core_amount <= 0 || total_amount <= 0)
 		return null
-	var/fingerprint = md5("[core_id]|[functional_id]|[liner_id]|[jacket_id]")
+	var/fingerprint = md5("[core_id]:[core_amount]|[functional_id]:[functional_amount]|[liner_id]:[liner_amount]|[jacket_id]:[jacket_amount]")
 	var/existing = GLOB.composite_material_dedup[fingerprint]
 	if(existing && GLOB.name_to_material[existing])
 		return existing
@@ -150,10 +159,18 @@ GLOBAL_LIST_EMPTY(composite_material_dedup)
 	composite.functional_material_id = functional_id
 	composite.liner_material_id = liner_id
 	composite.jacket_material_id = jacket_id
+	composite.core_sheets = core_amount
+	composite.functional_sheets = functional_amount
+	composite.liner_sheets = liner_amount
+	composite.jacket_sheets = jacket_amount
+	composite.core_fraction = core_amount / total_amount
+	composite.functional_fraction = functional_amount / total_amount
+	composite.liner_fraction = liner_amount / total_amount
+	composite.jacket_fraction = jacket_amount / total_amount
 	var/list/bulk_materials = list()
-	bulk_materials[core] = MATERIAL_COMPOSITE_DEFAULT_CORE_FRACTION
+	bulk_materials[core] = composite.core_fraction
 	if(functional)
-		bulk_materials[functional] = MATERIAL_COMPOSITE_DEFAULT_FUNCTIONAL_FRACTION
+		bulk_materials[functional] = composite.functional_fraction
 	composite.hardness = 0
 	composite.integrity = 0
 	composite.elasticity = 0
@@ -195,6 +212,22 @@ GLOBAL_LIST_EMPTY(composite_material_dedup)
 	composite.thermal_buffer_temperature = functional?.phase_change_temperature || 0
 	composite.phase_change_capacity = composite.thermal_buffer_capacity
 	composite.phase_change_temperature = composite.thermal_buffer_temperature
+	// Product responses remain layered. The core carries electrical work, the
+	// functional layer stores heat, the liner contacts patients/chemistry, and
+	// the jacket takes impacts and environmental exposure.
+	composite.thermoelectric_coefficient = core.thermoelectric_coefficient
+	composite.piezoelectric_coefficient = core.piezoelectric_coefficient
+	composite.electrogenic_rate = core.electrogenic_rate
+	composite.radiovoltaic_efficiency = core.radiovoltaic_efficiency
+	composite.scintillation_efficiency = max(core.scintillation_efficiency, jacket?.scintillation_efficiency || 0)
+	composite.shape_recovery_rate = jacket?.shape_recovery_rate || core.shape_recovery_rate
+	composite.shape_recovery_temperature = jacket?.shape_recovery_temperature || core.shape_recovery_temperature
+	composite.reactive_energy_capacity = jacket?.reactive_energy_capacity || 0
+	composite.antimicrobial_activity = liner?.antimicrobial_activity || 0
+	composite.hemostatic_activity = liner?.hemostatic_activity || 0
+	composite.biocompatibility = liner?.biocompatibility || 0
+	composite.gas_sorption_capacity = liner?.gas_sorption_capacity || 0
+	composite.reagent_porosity = liner?.reagent_porosity || 0
 	composite.icon_colour = jacket?.icon_colour || core.icon_colour
 	composite.material_class = core.material_class
 	composite.composite_material = list()
@@ -210,7 +243,7 @@ GLOBAL_LIST_EMPTY(composite_material_dedup)
 	for(var/material_id in layer_fractions)
 		present_fraction += layer_fractions[material_id]
 	for(var/material_id in layer_fractions)
-		composite.composite_material[material_id] = round(SHEET_MATERIAL_AMOUNT * layer_fractions[material_id] / max(present_fraction, 0.01))
+		composite.composite_material[material_id] = SHEET_MATERIAL_AMOUNT * layer_fractions[material_id] / max(present_fraction, 0.01)
 	composite.supply_conversion_value = max(0.01, core.supply_conversion_value * composite.core_fraction + (functional?.supply_conversion_value || 0) * composite.functional_fraction + (liner?.supply_conversion_value || 0) * composite.liner_fraction + (jacket?.supply_conversion_value || 0) * composite.jacket_fraction)
 	GLOB.name_to_material[key] = composite
 	GLOB.composite_material_dedup[fingerprint] = key
@@ -258,6 +291,11 @@ GLOBAL_LIST_EMPTY(composite_material_dedup)
 	var/functional_material_id
 	var/liner_material_id
 	var/jacket_material_id
+	var/core_sheets = 0
+	var/functional_sheets = 0
+	var/liner_sheets = 0
+	var/jacket_sheets = 0
+	var/active_layer = MATERIAL_LAYER_CORE
 
 /obj/structure/material_composite_press/examine(mob/user)
 	. = ..()
@@ -265,56 +303,119 @@ GLOBAL_LIST_EMPTY(composite_material_dedup)
 	var/datum/material/functional = functional_material_id ? get_material_by_name(functional_material_id) : null
 	var/datum/material/liner = liner_material_id ? get_material_by_name(liner_material_id) : null
 	var/datum/material/jacket = jacket_material_id ? get_material_by_name(jacket_material_id) : null
-	. += span_notice("Core: [core?.display_name || "empty"].")
-	. += span_notice("Functional layer: [functional?.display_name || "empty"].")
-	. += span_notice("Liner: [liner?.display_name || "empty"]. Jacket: [jacket?.display_name || "empty"].")
+	. += span_notice("Core: [core?.display_name || "empty"] x[core_sheets].")
+	. += span_notice("Functional layer: [functional?.display_name || "empty"] x[functional_sheets].")
+	. += span_notice("Liner: [liner?.display_name || "empty"] x[liner_sheets]. Jacket: [jacket?.display_name || "empty"] x[jacket_sheets].")
+	. += span_notice("Active layup position: [active_layer]. Use a screwdriver to advance or a crowbar to recover every loaded sheet.")
 
 /obj/structure/material_composite_press/attackby(obj/item/item, mob/user)
 	if(item.has_tool_quality(TOOL_WRENCH))
 		finish_layup(user)
+		return
+	if(item.has_tool_quality(TOOL_SCREWDRIVER))
+		advance_layer(user)
+		return
+	if(item.has_tool_quality(TOOL_CROWBAR))
+		eject_layup(user)
 		return
 	if(!istype(item, /obj/item/stack/material))
 		return ..()
 	var/obj/item/stack/material/stock = item
 	if(stock.get_amount() < 1 || !stock.material)
 		return
-	var/role
-	if(!core_material_id)
-		core_material_id = stock.material.name
-		role = MATERIAL_LAYER_CORE
-	else if(!functional_material_id)
-		functional_material_id = stock.material.name
-		role = MATERIAL_LAYER_FUNCTIONAL
-	else if(!liner_material_id)
-		liner_material_id = stock.material.name
-		role = MATERIAL_LAYER_LINER
-	else if(!jacket_material_id)
-		jacket_material_id = stock.material.name
-		role = MATERIAL_LAYER_JACKET
-	else
-		to_chat(user, span_warning("All four physical layer positions are occupied."))
+	if(istype(stock.material, /datum/material/composite))
+		to_chat(user, span_warning("Nested composites cannot be laid up; recover their constituent stock first."))
 		return
+	var/current_id
+	switch(active_layer)
+		if(MATERIAL_LAYER_CORE)
+			current_id = core_material_id
+		if(MATERIAL_LAYER_FUNCTIONAL)
+			current_id = functional_material_id
+		if(MATERIAL_LAYER_LINER)
+			current_id = liner_material_id
+		if(MATERIAL_LAYER_JACKET)
+			current_id = jacket_material_id
+	if(current_id && current_id != stock.material.name)
+		to_chat(user, span_warning("The [active_layer] already contains a different stock. Advance the layup or recover it."))
+		return
+	switch(active_layer)
+		if(MATERIAL_LAYER_CORE)
+			core_material_id = stock.material.name
+			core_sheets++
+		if(MATERIAL_LAYER_FUNCTIONAL)
+			functional_material_id = stock.material.name
+			functional_sheets++
+		if(MATERIAL_LAYER_LINER)
+			liner_material_id = stock.material.name
+			liner_sheets++
+		if(MATERIAL_LAYER_JACKET)
+			jacket_material_id = stock.material.name
+			jacket_sheets++
 	var/material_name = stock.material.display_name
 	stock.use(1)
-	visible_message(span_notice("[user] lays a sheet of [material_name] into [src] as the [role]."))
+	visible_message(span_notice("[user] lays a sheet of [material_name] into [src] as the [active_layer]."))
+
+/obj/structure/material_composite_press/proc/advance_layer(mob/user)
+	switch(active_layer)
+		if(MATERIAL_LAYER_CORE)
+			if(!core_sheets)
+				to_chat(user, span_warning("The load-bearing core cannot be skipped."))
+				return
+			active_layer = MATERIAL_LAYER_FUNCTIONAL
+		if(MATERIAL_LAYER_FUNCTIONAL)
+			active_layer = MATERIAL_LAYER_LINER
+		if(MATERIAL_LAYER_LINER)
+			active_layer = MATERIAL_LAYER_JACKET
+		else
+			to_chat(user, span_notice("The layup is already at its external jacket."))
+			return
+	to_chat(user, span_notice("You advance [src] to its [active_layer] position."))
 
 /obj/structure/material_composite_press/proc/finish_layup(mob/user)
-	if(!core_material_id || !functional_material_id)
-		to_chat(user, span_warning("A composite requires at least a core and a functional layer."))
+	if(!core_material_id || !core_sheets)
+		to_chat(user, span_warning("A composite requires a load-bearing core."))
 		return FALSE
-	var/composite_key = register_composite_material(core_material_id, functional_material_id, liner_material_id, jacket_material_id)
+	var/composite_key = register_composite_material(core_material_id, core_sheets, functional_material_id, functional_sheets, liner_material_id, liner_sheets, jacket_material_id, jacket_sheets)
 	if(!composite_key)
 		to_chat(user, span_warning("The loaded layers cannot be consolidated."))
 		return FALSE
-	var/output_amount = 2 + !!liner_material_id + !!jacket_material_id
+	var/output_amount = core_sheets + functional_sheets + liner_sheets + jacket_sheets
 	var/obj/item/stack/material/composite/output = new(get_turf(src), output_amount, composite_key)
 	visible_message(span_notice("[user] wrenches [src] through a full cycle; it ejects [output] with every layer visibly bonded but physically distinct."))
 	playsound(src, 'sound/machines/hiss.ogg', 45, TRUE)
+	clear_layup()
+	return output
+
+/obj/structure/material_composite_press/proc/eject_layup(mob/user)
+	var/turf/output_turf = get_turf(src)
+	spawn_material_stock(output_turf, core_material_id, core_sheets)
+	spawn_material_stock(output_turf, functional_material_id, functional_sheets)
+	spawn_material_stock(output_turf, liner_material_id, liner_sheets)
+	spawn_material_stock(output_turf, jacket_material_id, jacket_sheets)
+	visible_message(span_notice("[user] releases [src]; every unconsolidated sheet is recovered."))
+	clear_layup()
+
+/obj/structure/material_composite_press/proc/clear_layup()
 	core_material_id = null
 	functional_material_id = null
 	liner_material_id = null
 	jacket_material_id = null
-	return output
+	core_sheets = 0
+	functional_sheets = 0
+	liner_sheets = 0
+	jacket_sheets = 0
+	active_layer = MATERIAL_LAYER_CORE
+
+/proc/spawn_material_stock(atom/location, material_id, amount)
+	if(!material_id || amount <= 0)
+		return
+	var/datum/material/material = get_material_by_name(material_id)
+	if(!material?.stack_type)
+		return
+	if(istype(material, /datum/material/processed_alloy))
+		return new /obj/item/stack/material/processed_alloy(location, amount, material_id)
+	return new material.stack_type(location, amount)
 
 /obj/item/reagent_containers/glass/beaker/composite
 	name = "composite reaction vessel"

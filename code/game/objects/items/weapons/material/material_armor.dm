@@ -72,8 +72,7 @@ Protectiveness | Armor %
 	// shared form-trigger emitter (IMPACT+PRESSURE), the same conditions a strike presents on a
 	// blade or bullet, instead of a one-off raw signal that only fired IMPACT.
 	substance_emit_form_trigger(src, get_turf(src), source, SUB_TRIG_IMPACT, SUB_TRIG_PRESSURE)
-	material_capability_form_trigger(SUB_TRIG_IMPACT, get_turf(src), source)
-	material_capability_form_trigger(SUB_TRIG_PRESSURE, get_turf(src), source)
+	material_response_impact(SUB_TRIG_IMPACT, get_turf(src), source)
 
 	if(istype(source, /obj/item/projectile))
 		var/obj/item/projectile/P = source
@@ -85,10 +84,10 @@ Protectiveness | Armor %
 		health = 0
 	else if(!prob(material.hardness))
 		health--
-	if(material.has_material_capability(MATERIAL_CAP_SHAPE_MEMORY))
+	if(material.shape_recovery_rate > 0)
 		var/turf/turf = get_turf(src)
 		var/datum/gas_mixture/air = turf?.return_air()
-		if(air && air.return_temperature() >= T0C + 80)
+		if(air && air.return_temperature() >= material.shape_recovery_temperature)
 			health = min(round(material.integrity / 10), health + 1)
 
 	if(health <= 0)
@@ -114,7 +113,7 @@ Protectiveness | Armor %
 	if(!material) // No point checking for reflection.
 		return ..()
 
-	if(material_capability_activate(MATERIAL_CAP_REACTIVE_ARMOR))
+	if(material_reactive_absorb(damage))
 		user.visible_message(span_danger("The reactive lattice in [src] flashes and disrupts [attack_text]!"))
 		return TRUE
 

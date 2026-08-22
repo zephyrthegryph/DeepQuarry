@@ -53,13 +53,6 @@
 		var/internal_temperature = parent?.air?.return_temperature() || T20C
 		effective_maximum = material.material_pressure_limit(MATERIAL_PIPE_REFERENCE_RADIUS, MATERIAL_PIPE_REFERENCE_THICKNESS, internal_temperature)
 		effective_fatigue = effective_maximum * 0.78
-		var/plasma_fraction = parent?.air ? parent.air.get_moles(/datum/gas/plasma) / max(parent.air.total_moles(), 0.001) : 0
-		if(plasma_fraction > 0.01)
-			material_liner_integrity = max(0, material_liner_integrity - material.material_corrosion_rate(REAGENT_ID_PHORON, internal_temperature) * plasma_fraction)
-			if(material_liner_integrity <= 0 && !damaged_leak)
-				damaged_leak = TRUE
-				set_leaking(TRUE)
-				visible_message(span_warning("The breached liner inside [src] begins leaking through its structural shell."))
 
 	if(pressure_difference > effective_maximum)
 		burst()
@@ -72,6 +65,30 @@
 			playsound(src, 'sound/effects/spray2.ogg', 35, 1)
 
 	else return 1
+
+/// Returns TRUE only while a physical exposure requires another timed sample.
+/obj/machinery/atmospherics/pipe/proc/process_engineered_material_exposure(datum/gas_mixture/mixture)
+	var/datum/material/material = engineered_material()
+	if(!material || !mixture)
+		return FALSE
+	var/now = world.time
+	var/elapsed_seconds = material_last_exposure ? clamp((now - material_last_exposure) / 10, 0, 30) : 0
+	material_last_exposure = now
+	var/total_moles = max(mixture.total_moles(), 0.001)
+	var/plasma_moles = mixture.get_moles(/datum/gas/plasma)
+	var/plasma_fraction = plasma_moles / total_moles
+	var/active = plasma_fraction > 0.01
+	if(active && elapsed_seconds > 0)
+		var/corrosion = material.material_corrosion_rate(REAGENT_ID_PHORON, mixture.return_temperature()) * plasma_fraction * elapsed_seconds
+		material_liner_integrity = max(0, material_liner_integrity - corrosion)
+		if(material.gas_sorption_capacity > material_sorbed_moles && plasma_moles > 0)
+			var/captured = min(plasma_moles, material.gas_sorption_capacity - material_sorbed_moles, elapsed_seconds * 0.1)
+			mixture.adjust_moles(/datum/gas/plasma, -captured)
+			material_sorbed_moles += captured
+		if(material_liner_integrity <= 0 && !leaking)
+			set_leaking(TRUE)
+			visible_message(span_warning("The breached liner inside [src] begins leaking through its structural shell."))
+	return active
 
 /obj/machinery/atmospherics/pipe/simple/init_dir()
 	switch(dir)

@@ -133,7 +133,7 @@
 /datum/unit_test/dq_material_composite_geometry
 
 /datum/unit_test/dq_material_composite_geometry/Run()
-	var/composite_key = register_composite_material(MAT_COPPER, MAT_LEAD, MAT_GLASS, MAT_PLASTIC)
+	var/composite_key = register_composite_material(MAT_COPPER, 13, MAT_LEAD, 4, MAT_GLASS, 1, MAT_PLASTIC, 2)
 	TEST_ASSERT_NOTNULL(composite_key, "A valid four-layer layup must register")
 	var/datum/material/composite/composite = get_material_by_name(composite_key)
 	TEST_ASSERT(istype(composite), "A registered layup must retain its physical layers")
@@ -162,7 +162,7 @@
 	buffer_batch.add_material(MAT_STEEL, 3, null, 99, "CRYOBUFFER")
 	buffer_batch.add_surface_layer(MATERIAL_SURFACE_SLIME_CRYO, 60, "cryogenic slime extract", 1)
 	var/buffer_key = register_processed_material(buffer_batch)
-	var/composite_key = register_composite_material(conductor_key, buffer_key, MAT_GLASS, MAT_PLASTIC)
+	var/composite_key = register_composite_material(conductor_key, 13, buffer_key, 4, MAT_GLASS, 1, MAT_PLASTIC, 2)
 	var/datum/material/composite/composite = get_material_by_name(composite_key)
 	TEST_ASSERT(composite.phase_change_capacity > 0, "A cryogenic functional layer must provide a conserved thermal buffer")
 	var/cold_resistance = composite.material_electrical_resistance(1, MATERIAL_CABLE_REFERENCE_AREA, conductor.critical_temperature - 5, 1)
@@ -175,12 +175,16 @@
 /datum/unit_test/dq_material_composite_physical_products
 
 /datum/unit_test/dq_material_composite_physical_products/Run()
-	var/composite_key = register_composite_material(MAT_COPPER, MAT_LEAD, MAT_GLASS, MAT_PLASTIC)
+	var/composite_key = register_composite_material(MAT_COPPER, 13, MAT_LEAD, 4, MAT_GLASS, 1, MAT_PLASTIC, 2)
 	var/obj/structure/material_composite_press/press = new(run_loc_floor_bottom_left)
 	press.core_material_id = MAT_COPPER
+	press.core_sheets = 1
 	press.functional_material_id = MAT_LEAD
+	press.functional_sheets = 1
 	press.liner_material_id = MAT_GLASS
+	press.liner_sheets = 1
 	press.jacket_material_id = MAT_PLASTIC
+	press.jacket_sheets = 1
 	var/obj/item/stack/material/composite/pressed_stock = press.finish_layup(null)
 	TEST_ASSERT_NOTNULL(pressed_stock, "The press must eject tangible composite stock")
 	TEST_ASSERT_EQUAL(pressed_stock.get_amount(), 4, "Composite layup must conserve all four input sheets")
@@ -202,7 +206,7 @@
 	if(!test_turf)
 		test_turf = locate(/turf/simulated/floor) in world
 	TEST_ASSERT_NOTNULL(test_turf, "Composite power response requires a real turf")
-	var/composite_key = register_composite_material(MAT_COPPER, MAT_LEAD, MAT_GLASS, MAT_PLASTIC)
+	var/composite_key = register_composite_material(MAT_COPPER, 13, MAT_LEAD, 4, MAT_GLASS, 1, MAT_PLASTIC, 2)
 	var/obj/structure/cable/cable = new(test_turf)
 	cable.set_engineered_material(composite_key)
 	var/datum/powernet/network = new
@@ -328,274 +332,71 @@
 	qdel(tool)
 	qdel(batch)
 
-/datum/unit_test/dq_material_capability_derivation
 
-/datum/unit_test/dq_material_capability_derivation/Run()
-	var/datum/material_batch/electrical_batch = new
-	electrical_batch.composition = list(MAT_QUARTZ = 1, MAT_METALHYDROGEN = 1, MAT_URANIUM = 1, MAT_IRON = 1)
-	electrical_batch.impurities = list("thermal phase catalyst" = 4, "cryogenic stabilizer" = 3, "conductive dopant" = 4)
-	electrical_batch.surface_layers[MATERIAL_SURFACE_SLIME_THERMAL] = 40
-	electrical_batch.surface_layers[MATERIAL_SURFACE_SLIME_CRYO] = 40
-	electrical_batch.surface_layers[MATERIAL_SURFACE_SLIME_CONDUCTIVE] = 40
-	electrical_batch.field_treatments[MATERIAL_FIELD_PARTICLE] = 80
-	electrical_batch.field_treatments[MATERIAL_FIELD_MAGNETIC] = 40
-	electrical_batch.conductivity = 95
-	electrical_batch.heat_resistance = 90
-	electrical_batch.homogeneity = 95
-	electrical_batch.purity = 98
-	electrical_batch.corrosion_resistance = 80
-	electrical_batch.hardness = 80
-	electrical_batch.toughness = 80
-	electrical_batch.structure[MATERIAL_STRUCTURE_HARDENED] = 30
-	var/datum/material/processed_alloy/electrical = new
-	electrical.batch_template = electrical_batch
-	electrical.reflectivity = 0.7
-	electrical.radioactivity = 80
-	electrical.derive_material_capabilities()
-	TEST_ASSERT(electrical.has_material_capability(MATERIAL_CAP_THERMOELECTRIC), "Thermal catalyst and conductive structure must create thermoelectric behavior")
-	TEST_ASSERT(electrical.has_material_capability(MATERIAL_CAP_PIEZOELECTRIC), "A homogeneous electroactive crystal must create piezoelectric behavior")
-	TEST_ASSERT(electrical.has_material_capability(MATERIAL_CAP_ELECTROGENIC), "A yellow-slime conductive dopant must create a self-charging electrogenic matrix")
-	TEST_ASSERT(electrical.has_material_capability(MATERIAL_CAP_SUPERCONDUCTING), "Pure cryogenic conductor stock must create superconducting behavior")
-	TEST_ASSERT(electrical.has_material_capability(MATERIAL_CAP_RADIOVOLTAIC), "A conductive radioisotope lattice must create radiovoltaic behavior")
-	TEST_ASSERT(electrical.has_material_capability(MATERIAL_CAP_SCINTILLATING), "A homogeneous radioactive crystal must scintillate")
-	TEST_ASSERT(electrical.has_material_capability(MATERIAL_CAP_MAGNETOSTRICTIVE), "A hardened conductive ferrous lattice must be magnetostrictive")
+/datum/unit_test/dq_material_response_derivation
 
-	var/datum/material_batch/medical_batch = new
-	medical_batch.composition = list(MAT_BIOMASS = 1, MAT_MORPHIUM = 1, MAT_IRON = 1, MAT_SILVER = 1, MAT_PLATINUM = 1)
-	medical_batch.purity = 95
-	medical_batch.corrosion_resistance = 90
-	medical_batch.homogeneity = 90
-	medical_batch.toughness = 85
-	medical_batch.surface_protection = 15
-	medical_batch.structure[MATERIAL_STRUCTURE_AMORPHOUS] = 30
-	var/datum/material/processed_alloy/medical = new
-	medical.batch_template = medical_batch
-	medical.derive_material_capabilities()
-	TEST_ASSERT(medical.has_material_capability(MATERIAL_CAP_CATALYTIC), "Protected precious-metal surfaces must be catalytic")
-	TEST_ASSERT(medical.has_material_capability(MATERIAL_CAP_ANTIMICROBIAL), "Corrosion-resistant silver stock must be antimicrobial")
-	TEST_ASSERT(medical.has_material_capability(MATERIAL_CAP_HEMOSTATIC), "Biological ferrous interfaces must be hemostatic")
-	TEST_ASSERT(medical.has_material_capability(MATERIAL_CAP_BIOMIMETIC), "Amorphous biological morphium must be biomimetic")
-	TEST_ASSERT(medical.has_material_capability(MATERIAL_CAP_SHAPE_MEMORY), "Tough morphium stock must retain shape memory")
+/datum/unit_test/dq_material_response_derivation/Run()
+	var/datum/material_batch/batch = new
+	batch.composition = list(MAT_QUARTZ = 2, MAT_COPPER = 3, MAT_URANIUM = 1)
+	batch.impurities = list("thermal phase catalyst" = 4, "conductive dopant" = 4)
+	batch.surface_layers[MATERIAL_SURFACE_SLIME_THERMAL] = 35
+	batch.surface_layers[MATERIAL_SURFACE_SLIME_CONDUCTIVE] = 35
+	batch.field_treatments[MATERIAL_FIELD_PARTICLE] = 60
+	batch.conductivity = 90
+	batch.heat_resistance = 85
+	batch.homogeneity = 92
+	batch.purity = 96
+	batch.corrosion_resistance = 80
+	batch.recalculate()
+	var/material_key = register_processed_material(batch)
+	var/datum/material/processed_alloy/material = get_material_by_name(material_key)
+	TEST_ASSERT_NOTNULL(material, "A tested physical batch must register as a material")
+	TEST_ASSERT(material.thermoelectric_coefficient > 0, "A thermally catalyzed conductor must derive a thermoelectric coefficient")
+	TEST_ASSERT(material.piezoelectric_coefficient > 0, "A homogeneous crystal conductor must derive a piezoelectric coefficient")
+	TEST_ASSERT(material.electrogenic_rate > 0, "A conductive surface treatment must derive an electrogenic rate")
+	TEST_ASSERT(length(material.material_response_summary()) >= 3, "Measured coefficients must produce an inspectable response summary")
+	qdel(batch)
 
-	var/datum/material_batch/structural_batch = new
-	structural_batch.composition = list(MAT_PLASTEEL = 1, MAT_TITANIUM = 1, MAT_ALUMINIUM = 1, MAT_GRAPHITE = 1, MAT_GLASS = 1)
-	structural_batch.impurities = list("thermal phase catalyst" = 4, "bluespace homogenizer" = 3)
-	structural_batch.surface_layers[MATERIAL_SURFACE_SLIME_THERMAL] = 40
-	structural_batch.surface_layers[MATERIAL_SURFACE_SLIME_BLUESPACE] = 40
-	structural_batch.porosity = 30
-	structural_batch.corrosion_resistance = 85
-	structural_batch.homogeneity = 95
-	structural_batch.heat_resistance = 90
-	structural_batch.toughness = 85
-	structural_batch.hardness = 85
-	structural_batch.conductivity = 60
-	structural_batch.structure[MATERIAL_STRUCTURE_PRECIPITATE] = 30
-	structural_batch.structure[MATERIAL_STRUCTURE_HARDENED] = 30
-	var/datum/substance/resonance = new
-	resonance.family = SUBFAM_FIELD
-	resonance.affinity = 90
-	structural_batch.infused_substance = resonance
-	var/datum/material/processed_alloy/structural = new
-	structural.batch_template = structural_batch
-	structural.reflectivity = 0.8
-	structural.derive_material_capabilities()
-	TEST_ASSERT(structural.has_material_capability(MATERIAL_CAP_REACTIVE_ARMOR), "Precipitation-hardened plasteel must create reactive armor behavior")
-	TEST_ASSERT(structural.has_material_capability(MATERIAL_CAP_PHASE_CHANGE), "A heat-resistant thermal catalyst must create phase-change behavior")
-	TEST_ASSERT(structural.has_material_capability(MATERIAL_CAP_GAS_GETTER), "Porous titanium or aluminium must create a gas getter")
-	TEST_ASSERT(structural.has_material_capability(MATERIAL_CAP_POROUS_REAGENT), "A corrosion-resistant porous lattice must hold reagents")
-	TEST_ASSERT(structural.has_material_capability(MATERIAL_CAP_OPTICAL), "A homogeneous reflective glass lattice must become an optical metamaterial")
-	TEST_ASSERT(structural.has_material_capability(MATERIAL_CAP_RESONANT), "A bluespace-homogenized infusion must retain a resonant signature")
+/datum/unit_test/dq_material_response_application
 
-	qdel(structural)
-	qdel(medical)
-	qdel(electrical)
-
-/datum/unit_test/dq_material_capability_runtime
-
-/datum/unit_test/dq_material_capability_runtime/Run()
+/datum/unit_test/dq_material_response_application/Run()
 	var/datum/material/processed_alloy/material = new
-	material.name = "unit_test_capability_material"
-	material.display_name = "capability test alloy"
-	material.icon_colour = "#88ccff"
+	material.name = "unit_test_response_material"
+	material.display_name = "response test alloy"
 	material.batch_template = new
-	material.material_capabilities = list(
-		MATERIAL_CAP_PIEZOELECTRIC = 90,
-		MATERIAL_CAP_SUPERCONDUCTING = 90,
-		MATERIAL_CAP_RADIOVOLTAIC = 80,
-		MATERIAL_CAP_ELECTROGENIC = 80,
-	)
+	material.piezoelectric_coefficient = 0.8
+	material.electrogenic_rate = 10
+	material.antimicrobial_activity = 80
+	material.reactive_energy_capacity = 2000
 	GLOB.name_to_material[material.name] = material
 	var/obj/item/cell/cell = new(run_loc_floor_bottom_left)
-	var/turf/cell_turf = get_turf(run_loc_floor_bottom_left)
-	if(!cell_turf)
-		cell_turf = locate(1, 1, 1)
-	cell.forceMove(cell_turf)
-	cell.apply_engineered_material(material, MATERIAL_APPLICATION_CELL)
-	var/datum/component/material_capabilities/component = cell.GetComponent(/datum/component/material_capabilities)
-	TEST_ASSERT(istype(component), "Manufacturing must install the generic capability component")
-	TEST_ASSERT_EQUAL(component.capability(MATERIAL_CAP_PIEZOELECTRIC), 90, "The manufactured form must retain capability potency")
-	TEST_ASSERT(!(component in SSobj.processing), "Stable capability items must never enter continuous SSobj processing")
+	TEST_ASSERT(cell.apply_engineered_material(material, MATERIAL_APPLICATION_CELL), "A cell must accept an engineered conductor")
+	var/datum/component/material_response/cell_response = cell.GetComponent(/datum/component/material_response)
+	TEST_ASSERT_NOTNULL(cell_response, "Numeric electrical responses must attach to an electrical form")
 	cell.charge = 0
-	cell.material_capability_form_trigger(SUB_TRIG_IMPACT, get_turf(cell), cell)
-	TEST_ASSERT(cell.charge > 0, "Piezoelectric forms must turn an impact into stored charge")
-	var/after_first_impact = cell.charge
-	cell.material_capability_form_trigger(SUB_TRIG_IMPACT, get_turf(cell), cell)
-	TEST_ASSERT_EQUAL(cell.charge, after_first_impact, "Piezoelectric generation must be rate-limited")
-	cell.charge = 0
-	component.apply_radiation_energy(50)
-	TEST_ASSERT(cell.charge > 0, "Radiovoltaic cells must generate charge from a radiation event")
-	var/datum/gas_mixture/air = cell_turf.return_air()
-	var/original_temperature = air.return_temperature()
-	air.set_temperature(T0C - 20)
-	TEST_ASSERT(cell.material_cell_use_cost(100) < 100, "A cold superconducting cell must spend less charge for the same load")
-	air.set_temperature(original_temperature)
+	cell.material_response_impact(SUB_TRIG_IMPACT, get_turf(cell), cell)
+	TEST_ASSERT(cell.charge > 0, "A piezoelectric coefficient must create charge from a physical impact")
+	var/obj/item/surgical/scalpel/scalpel = new(run_loc_floor_bottom_left)
+	TEST_ASSERT(scalpel.apply_engineered_material(material, MATERIAL_APPLICATION_SURGICAL), "A scalpel must accept an engineered material")
+	TEST_ASSERT_NOTNULL(scalpel.GetComponent(/datum/component/material_response), "A medical coefficient must attach to surgical geometry")
+	qdel(scalpel)
 	qdel(cell)
 	GLOB.name_to_material -= material.name
 	qdel(material)
 
-/datum/unit_test/dq_material_capability_application_gating
+/datum/unit_test/dq_material_composite_conservation
 
-/datum/unit_test/dq_material_capability_application_gating/Run()
-	var/datum/material/processed_alloy/material = new
-	material.name = "unit_test_application_material"
-	material.display_name = "application gate alloy"
-	material.batch_template = new
-	material.material_capabilities = list(
-		MATERIAL_CAP_REACTIVE_ARMOR = 80,
-		MATERIAL_CAP_ANTIMICROBIAL = 80,
-		MATERIAL_CAP_ELECTROGENIC = 80,
-		MATERIAL_CAP_PHASE_CHANGE = 80,
-	)
-	GLOB.name_to_material[material.name] = material
-	var/obj/item/surgical/scalpel/scalpel = new(run_loc_floor_bottom_left)
-	scalpel.apply_engineered_material(material, MATERIAL_APPLICATION_SURGICAL)
-	var/datum/component/material_capabilities/scalpel_component = scalpel.GetComponent(/datum/component/material_capabilities)
-	TEST_ASSERT(scalpel_component.capability(MATERIAL_CAP_ANTIMICROBIAL), "A surgical form must retain medical surface behavior")
-	TEST_ASSERT(!scalpel_component.capability(MATERIAL_CAP_REACTIVE_ARMOR), "A scalpel must not inherit armor-only behavior")
-	TEST_ASSERT(!scalpel_component.capability(MATERIAL_CAP_ELECTROGENIC), "A scalpel must not become a self-charging generator")
-	var/obj/item/material/armor_plating/plate = new(run_loc_floor_bottom_left, material.name)
-	var/datum/component/material_capabilities/plate_component = plate.GetComponent(/datum/component/material_capabilities)
-	TEST_ASSERT(plate_component.capability(MATERIAL_CAP_REACTIVE_ARMOR), "Armor stock must retain reactive protection")
-	TEST_ASSERT(plate_component.capability(MATERIAL_CAP_PHASE_CHANGE), "Armor stock must retain a structural heat reservoir")
-	TEST_ASSERT(!plate_component.capability(MATERIAL_CAP_ANTIMICROBIAL), "Armor stock must not inherit surgery-only behavior")
-	qdel(plate)
-	qdel(scalpel)
-	GLOB.name_to_material -= material.name
-	qdel(material)
-
-/datum/unit_test/dq_material_capability_conservation
-
-/datum/unit_test/dq_material_capability_conservation/Run()
-	var/turf/test_turf = get_turf(run_loc_floor_bottom_left)
-	if(!istype(test_turf, /turf/simulated/floor))
-		test_turf = locate(/turf/simulated/floor) in world
-	TEST_ASSERT_NOTNULL(test_turf, "Conservation testing requires a mutable simulated turf")
-	var/datum/gas_mixture/air = test_turf.return_air()
-	air.clear()
-	air.adjust_moles(/datum/gas/oxygen, 20)
-	air.adjust_moles(/datum/gas/nitrogen, 60)
-	air.adjust_moles(/datum/gas/miasma, 2)
-	air.adjust_moles(/datum/gas/plasma, 3)
-	air.set_temperature(T0C + 200)
-	var/datum/material/processed_alloy/material = new
-	material.name = "unit_test_conservation_material"
-	material.display_name = "conservation alloy"
-	material.batch_template = new
-	material.material_capabilities = list(
-		MATERIAL_CAP_PHASE_CHANGE = 80,
-		MATERIAL_CAP_GAS_GETTER = 80,
-		MATERIAL_CAP_CATALYTIC = 80,
-	)
-	GLOB.name_to_material[material.name] = material
-	var/obj/item/material/armor_plating/plate = new(test_turf, material.name)
-	var/datum/component/material_capabilities/component = plate.GetComponent(/datum/component/material_capabilities)
-	var/initial_energy = air.thermal_energy()
-	var/absorbed = component.absorb_ambient_heat()
-	TEST_ASSERT(absorbed > 0, "A hot atmosphere must charge a phase-change reservoir")
-	TEST_ASSERT(abs((air.thermal_energy() + component.stored_phase_energy) - initial_energy) < 5, "Phase-change absorption must conserve thermal energy")
-	component.release_stored_heat()
-	TEST_ASSERT(abs(air.thermal_energy() - initial_energy) < 5, "Releasing a phase reservoir must return the stored thermal energy")
-	var/initial_moles = air.total_moles()
-	var/miasma_before = air.get_moles(/datum/gas/miasma)
-	var/carbon_dioxide_before = air.get_moles(/datum/gas/carbon_dioxide)
-	component.activate_catalyst(null)
-	TEST_ASSERT(abs(air.total_moles() - initial_moles) < 0.001, "Catalysis must conserve total gas moles")
-	TEST_ASSERT(air.get_moles(/datum/gas/miasma) < miasma_before && air.get_moles(/datum/gas/carbon_dioxide) > carbon_dioxide_before, "Catalysis must convert contamination into carbon dioxide")
-	var/plasma_before = air.get_moles(/datum/gas/plasma)
-	component.capture_hazardous_gas(null)
-	TEST_ASSERT(air.get_moles(/datum/gas/plasma) < plasma_before && component.stored_gas_moles > 0, "A getter must move hazardous gas into finite storage")
-	component.release_stored_gas()
-	TEST_ASSERT(abs(air.get_moles(/datum/gas/plasma) - plasma_before) < 0.001, "Releasing a getter must return exactly the captured gas")
-	qdel(plate)
-	GLOB.name_to_material -= material.name
-	qdel(material)
-
-/datum/unit_test/dq_material_capability_discovery
-
-/datum/unit_test/dq_material_capability_discovery/Run()
-	var/datum/material_batch/batch = new
-	batch.add_material(MAT_COPPER, 3, null, 98, "DISCOVERY")
-	batch.add_additive("conductive dopant", 4)
-	batch.add_surface_layer(MATERIAL_SURFACE_SLIME_CONDUCTIVE, 35)
-	var/list/all_capabilities = batch.material_capability_preview(FALSE)
-	TEST_ASSERT(length(all_capabilities) > 0, "A reachable doped conductor must contain a latent capability")
-	TEST_ASSERT_EQUAL(length(batch.material_capability_preview(TRUE)), 0, "Untested capability behavior must remain unqualified")
-	batch.test_results[MATERIAL_TEST_CONDUCTIVITY] = batch.conductivity
-	batch.test_results[MATERIAL_TEST_SPECTROMETRY] = batch.purity
-	TEST_ASSERT(length(batch.material_capability_preview(TRUE)) > 0, "Relevant physical tests must reveal the latent capability")
-	qdel(batch)
-
-/datum/unit_test/dq_material_capability_reachable_routes
-
-/datum/unit_test/dq_material_capability_reachable_routes/Run()
-	var/datum/material_batch/conductor = new
-	TEST_ASSERT(conductor.add_material(MAT_COPPER, 3, null, 98, "ROUTE"), "Copper feedstock must enter the normal batch route")
-	TEST_ASSERT(conductor.add_additive("conductive dopant", 4), "The normal additive route must accept conductive dopant")
-	TEST_ASSERT(conductor.add_surface_layer(MATERIAL_SURFACE_SLIME_CONDUCTIVE, 35), "The reachable yellow-slime route must leave a physical conductive skin")
-	var/list/conductor_caps = conductor.material_capability_preview(FALSE)
-	var/found_electrical = FALSE
-	for(var/list/capability in conductor_caps)
-		if(capability["id"] in list(MATERIAL_CAP_ELECTROGENIC, MATERIAL_CAP_PIEZOELECTRIC, MATERIAL_CAP_THERMOELECTRIC))
-			found_electrical = TRUE
-			break
-	TEST_ASSERT(found_electrical, "A player-reachable doped conductor must develop an electrical capability")
-	var/datum/material_batch/getter = new
-	TEST_ASSERT(getter.add_material(MAT_TITANIUM, 3, null, 98, "ROUTE"), "Titanium feedstock must enter the normal batch route")
-	TEST_ASSERT(getter.apply_process(MATERIAL_PROCESS_PULVERIZE), "The normal process route must produce porous powder")
-	var/found_getter = FALSE
-	for(var/list/capability in getter.material_capability_preview(FALSE))
-		if(capability["id"] == MATERIAL_CAP_GAS_GETTER)
-			found_getter = TRUE
-			break
-	TEST_ASSERT(found_getter, "Player-reachable porous titanium must develop gas-getter behavior")
-	qdel(getter)
-	qdel(conductor)
-
-/datum/unit_test/dq_material_capability_medical_runtime
-
-/datum/unit_test/dq_material_capability_medical_runtime/Run()
-	var/turf/test_turf = get_turf(run_loc_floor_bottom_left)
-	if(!istype(test_turf, /turf/simulated/floor))
-		test_turf = locate(/turf/simulated/floor) in world
-	TEST_ASSERT_NOTNULL(test_turf, "Medical capability testing requires a valid turf")
-	var/datum/material/processed_alloy/material = new
-	material.name = "unit_test_medical_capability_material"
-	material.display_name = "medical capability alloy"
-	material.batch_template = new
-	material.material_capabilities = list(MATERIAL_CAP_ANTIMICROBIAL = 80, MATERIAL_CAP_BIOMIMETIC = 80)
-	GLOB.name_to_material[material.name] = material
-	var/obj/item/surgical/scalpel/scalpel = new(test_turf)
-	scalpel.apply_engineered_material(material, MATERIAL_APPLICATION_SURGICAL)
-	var/mob/living/carbon/human/patient = new(test_turf)
-	var/obj/item/organ/external/affected = patient.get_organ(BP_TORSO)
-	TEST_ASSERT_NOTNULL(affected, "A generated patient must have a torso organ")
-	affected.germ_level = 200
-	patient.germ_level = 100
-	affected.brute_dam = 20
-	SEND_SIGNAL(scalpel, COMSIG_MATERIAL_SURGERY, patient, BP_TORSO, TRUE)
-	TEST_ASSERT(affected.germ_level < 200 && patient.germ_level < 100, "An antimicrobial surgical form must sanitize both patient and site")
-	TEST_ASSERT(affected.brute_dam < 20, "A biomimetic surgical form must repair real organ damage")
-	qdel(patient)
-	qdel(scalpel)
-	GLOB.name_to_material -= material.name
-	qdel(material)
+/datum/unit_test/dq_material_composite_conservation/Run()
+	var/composite_key = register_composite_material(MAT_COPPER, 7, MAT_LEAD, 3, MAT_GLASS, 2, MAT_PLASTIC, 1)
+	var/datum/material/composite/composite = get_material_by_name(composite_key)
+	TEST_ASSERT_NOTNULL(composite, "A complete layup must register")
+	TEST_ASSERT_EQUAL(composite.core_sheets, 7, "The composite must retain its actual core input")
+	TEST_ASSERT_EQUAL(composite.functional_sheets, 3, "The composite must retain its actual functional input")
+	TEST_ASSERT_EQUAL(composite.liner_sheets, 2, "The composite must retain its actual liner input")
+	TEST_ASSERT_EQUAL(composite.jacket_sheets, 1, "The composite must retain its actual jacket input")
+	var/total_sheets = composite.core_sheets + composite.functional_sheets + composite.liner_sheets + composite.jacket_sheets
+	TEST_ASSERT(abs(composite.core_fraction * total_sheets - 7) < 0.0001, "Core matter must be exactly conserved")
+	TEST_ASSERT(abs(composite.functional_fraction * total_sheets - 3) < 0.0001, "Functional matter must be exactly conserved")
+	TEST_ASSERT(abs(composite.liner_fraction * total_sheets - 2) < 0.0001, "Liner matter must be exactly conserved")
+	TEST_ASSERT(abs(composite.jacket_fraction * total_sheets - 1) < 0.0001, "Jacket matter must be exactly conserved")
+	TEST_ASSERT(abs(composite.core_fraction + composite.functional_fraction + composite.liner_fraction + composite.jacket_fraction - 1) < 0.0001, "Layer fractions must sum to one")

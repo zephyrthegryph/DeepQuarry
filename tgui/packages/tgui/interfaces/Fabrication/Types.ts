@@ -92,6 +92,15 @@ export type MaterialChoice = {
   label: string;
   /** How many whole sheets are loaded. */
   sheets: number;
+  color: string;
+  layers: { role: string; name: string; share: number }[];
+  responses: string[];
+  hardness: number;
+  toughness: number;
+  conductivity: number;
+  heatResistance: number;
+  corrosionResistance: number;
+  pressureLimit: number;
 };
 
 /**

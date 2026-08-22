@@ -39,7 +39,6 @@ GLOBAL_LIST_EMPTY(processed_material_dedup)
 
 /datum/material/processed_alloy/dq_apply_material_behaviors(obj/item/item)
 	. = ..()
-	dq_apply_material_capabilities(item)
 	if(batch_template?.infused_substance)
 		item.AddComponent(/datum/component/substance_infusion, batch_template.infused_substance, effect_charges)
 
@@ -82,6 +81,30 @@ GLOBAL_LIST_EMPTY(processed_material_dedup)
 		material.phase_change_capacity = clamp(round((cryo_skin + thermal_skin) * material.specific_heat * 4), 1000, 500000)
 	if(batch.surface_layers[MATERIAL_SURFACE_SLIME_CATALYTIC] || batch.additive_units_matching("platinum plating") || batch.additive_units_matching("gold plating"))
 		material.catalytic_activity = clamp(round(batch.purity * 0.7 + batch.corrosion_resistance * 0.3), 1, 100)
+	var/has_crystal = batch.composition[MAT_QUARTZ] || batch.composition[MAT_DIAMOND] || batch.composition[MAT_GLASS]
+	var/has_biological = batch.composition[MAT_BIOMASS] || batch.composition[MAT_FLESH] || batch.composition[MAT_CHITIN] || batch.composition[MAT_ALIENCHITIN]
+	var/particle_conditioned = batch.field_treatments[MATERIAL_FIELD_PARTICLE] || 0
+	if(batch.additive_units_matching("thermal phase catalyst") && thermal_skin && batch.conductivity >= 45)
+		material.thermoelectric_coefficient = clamp((batch.conductivity + batch.heat_resistance) / 200, 0, 1)
+	if(has_crystal && batch.conductivity >= 30 && batch.homogeneity >= 70)
+		material.piezoelectric_coefficient = clamp((batch.conductivity + batch.homogeneity - batch.porosity) / 200, 0, 1)
+	if(batch.additive_units_matching("conductive dopant") && batch.surface_layers[MATERIAL_SURFACE_SLIME_CONDUCTIVE] && batch.conductivity >= 40 && batch.homogeneity >= 60)
+		material.electrogenic_rate = clamp((batch.conductivity + batch.homogeneity) / 4, 0, 50)
+	if((batch.composition[MAT_MORPHIUM] || (batch.composition[MAT_TITANIUM] && batch.structure[MATERIAL_STRUCTURE_HARDENED] >= 20)) && batch.toughness >= 55)
+		material.shape_recovery_rate = clamp((batch.toughness + batch.homogeneity - batch.internal_stress) / 40, 0, 5)
+		material.shape_recovery_temperature = T0C + 80
+	if((batch.infused_substance?.family == SUBFAM_FIELD) || (batch.composition[MAT_PLASTEEL] && batch.structure[MATERIAL_STRUCTURE_PRECIPITATE] >= 20))
+		material.reactive_energy_capacity = clamp((batch.toughness + batch.hardness) * 25, 0, 5000)
+	if((batch.composition[MAT_SILVER] || batch.additive_units_matching("silver plating")) && batch.corrosion_resistance >= 50)
+		material.antimicrobial_activity = clamp((batch.corrosion_resistance + batch.purity) / 2, 0, 100)
+	if(has_biological && (batch.composition[MAT_IRON] || batch.additive_units_matching("precipitation catalyst")))
+		material.hemostatic_activity = clamp((batch.homogeneity + batch.purity) / 2, 0, 100)
+	if(has_biological && (batch.composition[MAT_MORPHIUM] || batch.structure[MATERIAL_STRUCTURE_AMORPHOUS] >= 20))
+		material.biocompatibility = clamp((batch.toughness + batch.homogeneity) / 2, 0, 100)
+	if(batch.porosity >= 18 && (batch.composition[MAT_TITANIUM] || batch.composition[MAT_ALUMINIUM] || batch.composition[MAT_GRAPHITE]))
+		material.gas_sorption_capacity = clamp(batch.porosity / 5 + batch.corrosion_resistance / 20, 0, 25)
+	if(batch.porosity >= 22 && batch.corrosion_resistance >= 45)
+		material.reagent_porosity = clamp(batch.porosity / 4, 0, 25)
 	var/weighted_density = 0
 	var/weighted_magnetism = 0
 	var/weighted_reflectivity = 0
@@ -114,6 +137,10 @@ GLOBAL_LIST_EMPTY(processed_material_dedup)
 	material.opacity = clamp(weighted_opacity > 0 ? weighted_opacity : 1, 0, 1)
 	material.luminescence = max(0, round(weighted_luminescence))
 	material.radioactivity = max(0, round(weighted_radioactivity))
+	if((batch.composition[MAT_URANIUM] || batch.composition[MAT_TRITIUM]) && batch.conductivity >= 35 && particle_conditioned >= 20)
+		material.radiovoltaic_efficiency = clamp((batch.conductivity + material.radioactivity) / 200, 0, 1)
+	if((batch.composition[MAT_URANIUM] || batch.composition[MAT_TRITIUM]) && has_crystal && batch.homogeneity >= 65 && particle_conditioned >= 20)
+		material.scintillation_efficiency = clamp((batch.homogeneity + material.reflectivity * 100) / 200, 0, 1)
 	material.toxicity = max(0, round(weighted_toxicity * (1 - batch.corrosion_resistance / 200)))
 	material.radiation_resistance = max(0, round(weighted_radiation_resistance + material.density / 12))
 	material.conductive = batch.conductivity >= 15
@@ -130,7 +157,6 @@ GLOBAL_LIST_EMPTY(processed_material_dedup)
 	if(dominant)
 		material.icon_colour = dominant.icon_colour
 		material.material_class = dominant.material_class
-	material.derive_material_capabilities()
 	GLOB.name_to_material[key] = material
 	GLOB.processed_material_dedup[fingerprint] = key
 	return key

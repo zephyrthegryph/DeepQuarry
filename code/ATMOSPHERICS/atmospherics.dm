@@ -38,9 +38,17 @@ Pipelines + Other Objects -> Pipe network
 	/// Optional material or layered composite retained through construction/deconstruction.
 	var/engineered_material_id
 	var/material_liner_integrity = 100
+	var/material_sorbed_moles = 0
+	var/material_last_exposure = 0
 
 /obj/machinery/atmospherics/proc/engineered_material()
 	return engineered_material_id ? get_material_by_name(engineered_material_id) : null
+
+/obj/machinery/atmospherics/proc/supports_engineered_material()
+	return FALSE
+
+/obj/machinery/atmospherics/pipe/supports_engineered_material()
+	return TRUE
 
 /obj/machinery/atmospherics/examine(mob/user)
 	. = ..()
@@ -94,6 +102,8 @@ Pipelines + Other Objects -> Pipe network
 
 /obj/machinery/atmospherics/attackby(atom/A, mob/user as mob)
 	if(istype(A, /obj/item/stack/material))
+		if(!supports_engineered_material())
+			return ..()
 		var/obj/item/stack/material/stock = A
 		if(engineered_material_id)
 			to_chat(user, span_warning("[src] already has an engineered material shell."))

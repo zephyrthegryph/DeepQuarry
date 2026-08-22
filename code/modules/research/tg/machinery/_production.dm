@@ -289,10 +289,29 @@
 		var/amount = cont.materials[mat]
 		if(amount < SHEET_MATERIAL_AMOUNT)
 			continue
+		var/list/layers = list()
+		if(istype(mat, /datum/material/composite))
+			var/datum/material/composite/composite = mat
+			layers += list(list("role" = "Core", "name" = composite.core_material()?.display_name, "share" = round(composite.core_fraction * 100)))
+			if(composite.functional_material_id)
+				layers += list(list("role" = "Buffer", "name" = composite.functional_material()?.display_name, "share" = round(composite.functional_fraction * 100)))
+			if(composite.liner_material_id)
+				layers += list(list("role" = "Liner", "name" = composite.liner_material()?.display_name, "share" = round(composite.liner_fraction * 100)))
+			if(composite.jacket_material_id)
+				layers += list(list("role" = "Jacket", "name" = composite.jacket_material()?.display_name, "share" = round(composite.jacket_fraction * 100)))
 		out += list(list(
 			"id" = mat.name,
 			"label" = mat.display_name || mat.name,
 			"sheets" = round(amount / SHEET_MATERIAL_AMOUNT),
+			"color" = mat.icon_colour || "#aaaaaa",
+			"layers" = layers,
+			"responses" = mat.material_response_summary(),
+			"hardness" = round(mat.hardness),
+			"toughness" = round(mat.fracture_toughness),
+			"conductivity" = round(mat.conductivity),
+			"heatResistance" = round(mat.heat_resistance),
+			"corrosionResistance" = round(mat.corrosion_resistance),
+			"pressureLimit" = round(mat.material_pressure_limit(MATERIAL_PIPE_REFERENCE_RADIUS, MATERIAL_PIPE_REFERENCE_THICKNESS, T20C) / ONE_ATMOSPHERE, 0.1),
 		))
 	return out
 

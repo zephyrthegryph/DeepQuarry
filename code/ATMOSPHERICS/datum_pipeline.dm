@@ -11,8 +11,12 @@
 	var/datum/pipe_network/network
 
 	var/alert_pressure = 0
+	var/engineered_exposure_timer
 
 /datum/pipeline/Destroy()
+	if(engineered_exposure_timer)
+		deltimer(engineered_exposure_timer)
+		engineered_exposure_timer = null
 	QDEL_NULL(network)
 
 	if(air && air.return_volume())
@@ -38,11 +42,20 @@
 /// mutated. Ordinary mapped pipes retain the old cheap path.
 /datum/pipeline/proc/process_engineered_materials()
 	var/pressure = air.return_pressure()
+	var/needs_followup = FALSE
 	for(var/obj/machinery/atmospherics/pipe/member in members)
 		if(!member.engineered_material_id)
 			continue
+		if(member.process_engineered_material_exposure(air))
+			needs_followup = TRUE
 		if(!member.check_pressure(pressure))
 			break
+	if(needs_followup && !engineered_exposure_timer)
+		engineered_exposure_timer = addtimer(CALLBACK(src, PROC_REF(wake_engineered_exposure)), 5 SECONDS, TIMER_STOPPABLE)
+
+/datum/pipeline/proc/wake_engineered_exposure()
+	engineered_exposure_timer = null
+	network?.mark_dirty()
 
 /datum/pipeline/proc/temporarily_store_air()
 	//Update individual gas_mixtures by volume ratio

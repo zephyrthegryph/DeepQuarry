@@ -4237,7 +4237,7 @@
 #include "code\modules\material_science\material_batch.dm"
 #include "code\modules\material_science\processed_material.dm"
 #include "code\modules\material_science\material_composites.dm"
-#include "code\modules\material_science\material_capabilities.dm"
+#include "code\modules\material_science\material_responses.dm"
 #include "code\modules\material_science\material_applications.dm"
 #include "code\modules\material_science\material_machines.dm"
 #include "code\modules\random_map\building\building.dm"

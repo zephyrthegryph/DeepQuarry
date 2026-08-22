@@ -32,6 +32,7 @@
 	I.rad_insulation = material_radiation_transmission(5)
 	if(luminescence > 0 || radioactivity > 0 || toxicity > 0)
 		I.AddComponent(/datum/component/material_behaviors, luminescence, radioactivity, toxicity, icon_colour)
+	dq_apply_material_responses(I)
 
 // ---- The behaviour component -----------------------------------------------
 // Lights the item once, and (if it irradiates or poisons) self-processes to do

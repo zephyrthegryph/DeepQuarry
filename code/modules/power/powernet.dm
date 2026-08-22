@@ -31,6 +31,10 @@
 	var/list/material_segments
 	var/material_safe_load = INFINITY
 	var/material_base_resistance = 0
+	/// Engineered conductors integrate energy once per second, independent of
+	/// the power subsystem's tick rate. Ordinary networks do no extra work.
+	var/next_material_process = 0
+	var/last_material_process = 0
 
 /datum/powernet/New()
 	START_PROCESSING_POWERNET(src)
@@ -143,6 +147,11 @@
 		material_base_resistance = hotspot_material.material_electrical_resistance(1, MATERIAL_CABLE_REFERENCE_AREA, material_hotspot.material_temperature, 0)
 
 /datum/powernet/proc/process_material_network()
+	if(world.time < next_material_process)
+		return
+	var/elapsed_seconds = last_material_process ? clamp((world.time - last_material_process) / 10, 0.1, 5) : 1
+	last_material_process = world.time
+	next_material_process = world.time + 1 SECOND
 	if(material_cache_dirty)
 		rebuild_material_cache()
 	if(!material_hotspot || QDELETED(material_hotspot) || !length(material_segments) || load <= 0)
@@ -158,7 +167,7 @@
 		if(!material || !air)
 			continue
 		var/resistance = material.material_electrical_resistance(1, MATERIAL_CABLE_REFERENCE_AREA, cable.material_temperature, current_density)
-		var/loss_energy = max(0, load * min(resistance, 5) * 0.5)
+		var/loss_energy = max(0, load * min(resistance, 5) * elapsed_seconds)
 		var/cable_safe_load = material.critical_current_density > 0 ? material.critical_current_density * MATERIAL_CABLE_REFERENCE_AREA * 1000 : max(material.conductivity, 1) * 20000
 		if(load > cable_safe_load)
 			var/overload_ratio = load / max(cable_safe_load, 1)
@@ -176,7 +185,7 @@
 			loss_energy -= buffered
 		cable.material_temperature += loss_energy / thermal_mass
 		var/conductance = material.material_thermal_conductance(0.05, 0.004, cable.material_temperature)
-		var/exchange = clamp((cable.material_temperature - air.return_temperature()) * conductance * 0.5, -thermal_mass * 20, thermal_mass * 20)
+		var/exchange = clamp((cable.material_temperature - air.return_temperature()) * conductance * elapsed_seconds, -thermal_mass * 20, thermal_mass * 20)
 		cable.material_temperature -= exchange / thermal_mass
 		air.add_thermal_energy(exchange)
 		if(material.critical_temperature > 0 && cable.material_temperature >= material.critical_temperature)

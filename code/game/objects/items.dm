@@ -419,8 +419,7 @@
 /obj/item/throw_impact(atom/hit_atom)
 	..()
 	substance_emit_form_trigger(src, get_turf(hit_atom) || get_turf(src), hit_atom, SUB_TRIG_IMPACT, SUB_TRIG_PRESSURE)
-	material_capability_form_trigger(SUB_TRIG_IMPACT, get_turf(hit_atom) || get_turf(src), hit_atom)
-	material_capability_form_trigger(SUB_TRIG_PRESSURE, get_turf(hit_atom) || get_turf(src), hit_atom)
+	material_response_impact(SUB_TRIG_IMPACT, get_turf(hit_atom) || get_turf(src), hit_atom)
 	if(isliving(hit_atom) && !hit_atom.is_incorporeal()) //Living mobs handle hit sounds differently.
 		var/volume = get_volume_by_throwforce_and_or_w_class()
 		if (throwforce > 0)

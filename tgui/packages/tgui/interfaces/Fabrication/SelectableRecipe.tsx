@@ -1,5 +1,13 @@
 import { useState } from 'react';
-import { Box, Button, Dropdown, Icon, Tooltip } from 'tgui-core/components';
+import {
+  Box,
+  Button,
+  Dropdown,
+  Icon,
+  ProgressBar,
+  Stack,
+  Tooltip,
+} from 'tgui-core/components';
 import { classes } from 'tgui-core/react';
 import { TechWebRecipeIcon } from '../common/TechWebRecipeIcon';
 import type { Design, MaterialChoice, MaterialMap } from './Types';
@@ -22,14 +30,15 @@ export const SelectableRecipe = (props: Props) => {
   const { design, available, materialChoices, SHEET_MATERIAL_AMOUNT, onBuild } =
     props;
 
-  // Build collision-safe option strings mapped back to material ids.
+  // Registry ids are globally unique. Labels carry a short id suffix only when
+  // two independently processed stocks happen to have the same display name.
   const options: string[] = [];
   const labelToId: Record<string, string> = {};
   for (let index = 0; index < materialChoices.length; index++) {
     const choice = materialChoices[index];
     let label = `${choice.label} (${choice.sheets})`;
     if (labelToId[label] !== undefined) {
-      label = `${label} #${index}`;
+      label = `${label} · ${choice.id.slice(-6)}`;
     }
     labelToId[label] = choice.id;
     options.push(label);
@@ -37,6 +46,7 @@ export const SelectableRecipe = (props: Props) => {
 
   const [selectedLabel, setSelectedLabel] = useState(options[0] ?? '');
   const selectedId = labelToId[selectedLabel] ?? '';
+  const selected = materialChoices.find((choice) => choice.id === selectedId);
   const hasMaterial = selectedId !== '';
 
   const perItem = design.selectableAmount ?? 0;
@@ -67,54 +77,100 @@ export const SelectableRecipe = (props: Props) => {
   };
 
   return (
-    <div className="FabricatorRecipe">
-      <Tooltip content={design.desc} position="right">
+    <div>
+      <div className="FabricatorRecipe">
+        <Tooltip content={design.desc} position="right">
+          <div
+            className={classes([
+              'FabricatorRecipe__Button',
+              'FabricatorRecipe__Button--icon',
+              !hasMaterial && 'FabricatorRecipe__Button--disabled',
+            ])}
+          >
+            <Icon name="layer-group" />
+          </div>
+        </Tooltip>
+        <TechWebRecipeIcon
+          icon={design.icon}
+          name={design.name}
+          design={design}
+          availableMaterials={available}
+          canPrint={hasMaterial && maxMult >= 1}
+          action={() => hasMaterial && maxMult >= 1 && onBuild(selectedId, 1)}
+        />
+        <div
+          style={{ display: 'flex', alignItems: 'center', padding: '0 4px' }}
+        >
+          {options.length === 0 ? (
+            <Box color="bad">No material</Box>
+          ) : (
+            <Dropdown
+              width="11em"
+              selected={selectedLabel}
+              options={options}
+              onSelected={(value) => setSelectedLabel(value)}
+            />
+          )}
+        </div>
+        <QuantityButton quantity={5} />
+        <QuantityButton quantity={10} />
         <div
           className={classes([
             'FabricatorRecipe__Button',
-            'FabricatorRecipe__Button--icon',
             !hasMaterial && 'FabricatorRecipe__Button--disabled',
           ])}
         >
-          <Icon name="layer-group" />
-        </div>
-      </Tooltip>
-      <TechWebRecipeIcon
-        icon={design.icon}
-        name={design.name}
-        design={design}
-        availableMaterials={available}
-        canPrint={hasMaterial && maxMult >= 1}
-        action={() => hasMaterial && maxMult >= 1 && onBuild(selectedId, 1)}
-      />
-      <div style={{ display: 'flex', alignItems: 'center', padding: '0 4px' }}>
-        {options.length === 0 ? (
-          <Box color="bad">No material</Box>
-        ) : (
-          <Dropdown
-            width="11em"
-            selected={selectedLabel}
-            options={options}
-            onSelected={(value) => setSelectedLabel(value)}
+          <Button.Input
+            color="transparent"
+            buttonText={`[Max: ${maxMult}]`}
+            onCommit={(value) =>
+              hasMaterial && onBuild(selectedId, Number(value))
+            }
           />
-        )}
+        </div>
       </div>
-      <QuantityButton quantity={5} />
-      <QuantityButton quantity={10} />
-      <div
-        className={classes([
-          'FabricatorRecipe__Button',
-          !hasMaterial && 'FabricatorRecipe__Button--disabled',
-        ])}
-      >
-        <Button.Input
-          color="transparent"
-          buttonText={`[Max: ${maxMult}]`}
-          onCommit={(value) =>
-            hasMaterial && onBuild(selectedId, Number(value))
-          }
-        />
-      </div>
+      {selected && (
+        <Box backgroundColor="rgba(0, 0, 0, 0.25)" p={0.5} mb={0.5} ml={5}>
+          {!!selected.layers.length && (
+            <Stack mb={0.5} wrap>
+              {selected.layers.map((layer) => (
+                <Stack.Item key={layer.role}>
+                  <Box inline color="label">
+                    {layer.role}:
+                  </Box>{' '}
+                  {layer.name} ({layer.share}%)
+                </Stack.Item>
+              ))}
+            </Stack>
+          )}
+          <Stack>
+            {[
+              ['Hardness', selected.hardness],
+              ['Toughness', selected.toughness],
+              ['Conductivity', selected.conductivity],
+              ['Heat', selected.heatResistance],
+              ['Corrosion', selected.corrosionResistance],
+            ].map(([name, value]) => (
+              <Stack.Item grow key={String(name)}>
+                <Box color="label" fontSize="10px">
+                  {name}
+                </Box>
+                <ProgressBar
+                  value={Number(value)}
+                  minValue={0}
+                  maxValue={100}
+                  color="good"
+                />
+              </Stack.Item>
+            ))}
+          </Stack>
+          <Box mt={0.5} color="label">
+            Pressure geometry: {selected.pressureLimit} atm
+            {selected.responses.length > 0 &&
+              ` · ${selected.responses.join(' · ')}`}
+          </Box>
+        </Box>
+      )}
     </div>
   );
 };

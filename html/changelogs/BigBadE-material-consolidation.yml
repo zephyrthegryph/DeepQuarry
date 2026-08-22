@@ -1,0 +1,8 @@
+author: "BigBadE"
+delete-after: true
+changes:
+  - refactor: "Consolidated engineered materials and layered composites onto one physical, numeric property model."
+  - rscadd: "Composite layups now conserve every loaded sheet and support recoverable, variable-thickness layers."
+  - rscadd: "Fabricators now display layer construction, engineering properties, and physical responses for selectable materials."
+  - balance: "Engineered power cables and pressure pipes now integrate heat, corrosion, sorption, and failure over elapsed time without continuously scanning stable networks."
+  - rscdel: "Removed the separate material capability tag system and its abstract activation menu."
