@@ -56,10 +56,12 @@
 	var/heat_resistance = 0
 	var/corrosion_resistance = 0
 	var/brittleness = 0
-	var/datum/substance/infused_substance
+	/// Every triggered response carried by the feedstock. Multiple substance
+	/// sources remain distinct and are conserved through alloying.
+	var/list/material_effects
 
 /datum/material_batch/Destroy()
-	QDEL_NULL(infused_substance)
+	QDEL_LIST(material_effects)
 	composition = null
 	impurities = null
 	process_history = null
@@ -89,11 +91,20 @@
 	record_cost(MATERIAL_COST_FEEDSTOCK, feedstock_cost)
 	if(producer)
 		contributors[producer.account_number] = (contributors[producer.account_number] || 0) + sheets
-	if(istype(material, /datum/material/substance))
-		var/datum/material/substance/substance_material = material
-		if(!infused_substance && substance_material.infused_substance)
-			infused_substance = substance_material.infused_substance.Clone()
+	for(var/datum/substance/effect as anything in material.material_effects)
+		add_material_effect(effect)
 	recalculate()
+	return TRUE
+
+/datum/material_batch/proc/add_material_effect(datum/substance/effect)
+	if(!istype(effect))
+		return FALSE
+	LAZYINITLIST(material_effects)
+	var/key = substance_material_content_key(effect)
+	for(var/datum/substance/existing as anything in material_effects)
+		if(substance_material_content_key(existing) == key)
+			return TRUE
+	material_effects += effect.Clone()
 	return TRUE
 
 /datum/material_batch/proc/add_additive(additive_name, units, unit_cost = 1, cost_category = MATERIAL_COST_CHEMICALS)
@@ -482,6 +493,11 @@
 		parts += "g[gas_name]=[dissolved_gases[gas_name]]"
 	for(var/treatment_name in sortList(field_treatments.Copy()))
 		parts += "t[treatment_name]=[field_treatments[treatment_name]]"
+	var/list/effect_keys = list()
+	for(var/datum/substance/effect as anything in material_effects)
+		effect_keys += substance_material_content_key(effect)
+	for(var/effect_key in sortList(effect_keys))
+		parts += "e[effect_key]"
 	for(var/structure_name in sortList(structure.Copy()))
 		parts += "#[structure_name]=[structure[structure_name]]"
 	parts += "p[purity]g[grain_size]s[internal_stress]o[porosity]h[homogeneity]a[atmosphere]x[oxidation]"
@@ -549,7 +565,7 @@
 	copy.oxidation = oxidation
 	copy.cost_basis = cost_basis
 	copy.surface_protection = surface_protection
-	if(infused_substance)
-		copy.infused_substance = infused_substance.Clone()
+	for(var/datum/substance/effect as anything in material_effects)
+		copy.add_material_effect(effect)
 	copy.recalculate()
 	return copy

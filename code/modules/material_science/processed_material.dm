@@ -37,11 +37,6 @@ GLOBAL_LIST_EMPTY(processed_material_dedup)
 	QDEL_NULL(batch_template)
 	return ..()
 
-/datum/material/processed_alloy/dq_apply_material_behaviors(obj/item/item)
-	. = ..()
-	if(batch_template?.infused_substance)
-		item.AddComponent(/datum/component/substance_infusion, batch_template.infused_substance, effect_charges)
-
 /proc/register_processed_material(datum/material_batch/batch)
 	if(!istype(batch) || !length(batch.composition))
 		return null
@@ -57,6 +52,9 @@ GLOBAL_LIST_EMPTY(processed_material_dedup)
 	material.use_name = material.display_name
 	material.batch_template = batch.copy_batch()
 	material.effect_charges = clamp(round(1 + batch.purity / 25 - batch.structure[MATERIAL_STRUCTURE_DEFECT] / 20), 1, 6)
+	material.material_effect_charges = material.effect_charges
+	for(var/datum/substance/effect as anything in batch.material_effects)
+		material.add_material_effect(effect)
 	material.hardness = batch.hardness
 	material.integrity = clamp(round(batch.toughness * 2), 5, 250)
 	material.elasticity = clamp(batch.toughness - batch.brittleness * 0.25, 1, 100)
@@ -93,7 +91,12 @@ GLOBAL_LIST_EMPTY(processed_material_dedup)
 	if((batch.composition[MAT_MORPHIUM] || (batch.composition[MAT_TITANIUM] && batch.structure[MATERIAL_STRUCTURE_HARDENED] >= 20)) && batch.toughness >= 55)
 		material.shape_recovery_rate = clamp((batch.toughness + batch.homogeneity - batch.internal_stress) / 40, 0, 5)
 		material.shape_recovery_temperature = T0C + 80
-	if((batch.infused_substance?.family == SUBFAM_FIELD) || (batch.composition[MAT_PLASTEEL] && batch.structure[MATERIAL_STRUCTURE_PRECIPITATE] >= 20))
+	var/has_field_effect = FALSE
+	for(var/datum/substance/effect as anything in batch.material_effects)
+		if(effect.family == SUBFAM_FIELD)
+			has_field_effect = TRUE
+			break
+	if(has_field_effect || (batch.composition[MAT_PLASTEEL] && batch.structure[MATERIAL_STRUCTURE_PRECIPITATE] >= 20))
 		material.reactive_energy_capacity = clamp((batch.toughness + batch.hardness) * 25, 0, 5000)
 	if((batch.composition[MAT_SILVER] || batch.additive_units_matching("silver plating")) && batch.corrosion_resistance >= 50)
 		material.antimicrobial_activity = clamp((batch.corrosion_resistance + batch.purity) / 2, 0, 100)
@@ -116,7 +119,7 @@ GLOBAL_LIST_EMPTY(processed_material_dedup)
 	material.composite_material = list()
 	for(var/component in batch.composition)
 		var/share = batch.composition[component] / max(batch.amount, 1)
-		material.composite_material[component] = round(SHEET_MATERIAL_AMOUNT * share)
+		material.composite_material[component] = SHEET_MATERIAL_AMOUNT * share
 		var/datum/material/component_material = get_material_by_name(component)
 		if(!component_material)
 			continue

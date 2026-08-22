@@ -250,6 +250,7 @@
 			"icon" = "[size == size32x32 ? "" : "[size] "][css_id]",
 			"materialSelectable" = design.material_selectable,
 			"selectableAmount" = design.selectable_amount,
+			"materialProfile" = design.material_preview_profile || design.material_application,
 		)
 
 	data["designs"] = designs
@@ -307,9 +308,14 @@
 			"layers" = layers,
 			"responses" = mat.material_response_summary(),
 			"hardness" = round(mat.hardness),
+			"density" = round(mat.density),
+			"integrity" = round(mat.integrity),
+			"elasticity" = round(mat.elasticity),
+			"brittleness" = round(mat.brittleness),
 			"toughness" = round(mat.fracture_toughness),
 			"conductivity" = round(mat.conductivity),
 			"heatResistance" = round(mat.heat_resistance),
+			"thermalInsulation" = round(mat.thermal_insulation),
 			"corrosionResistance" = round(mat.corrosion_resistance),
 			"pressureLimit" = round(mat.material_pressure_limit(MATERIAL_PIPE_REFERENCE_RADIUS, MATERIAL_PIPE_REFERENCE_THICKNESS, T20C) / ONE_ATMOSPHERE, 0.1),
 		))

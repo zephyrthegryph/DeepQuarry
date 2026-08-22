@@ -42,6 +42,8 @@ other types of metals and chemistry for reagents).
 	var/selectable_class = null
 	/// Optional application bridge for ordinary items that do not implement set_material.
 	var/material_application = null
+	/// UI-only geometry hint for designs with a custom create_item path.
+	var/material_preview_profile = null
 	/// The amount of time required to create one unit of the product.
 	var/construction_time = 3.2 SECONDS
 	/// The typepath of the object produced by this design

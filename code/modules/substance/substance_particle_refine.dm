@@ -8,6 +8,45 @@
 // (substance stacks included) and already accumulates `energy` from the PA beam, so this
 // only adds the substance branch; non-substance targets keep their recipe behaviour.
 
+GLOBAL_LIST_INIT(substance_refine_ops, list(
+	"Concentrate — Energy up, Volatility up, Purity down",
+	"Stabilize — Volatility down, Energy down",
+	"Bond — Affinity up, Energy down",
+	"Purify — Purity up, Energy down",
+	"Tune resonance + (Purity down)",
+	"Tune resonance − (Purity down)",
+))
+
+/proc/apply_refine(datum/substance/substance, choice, datum/substance_context/context = null)
+	switch(choice)
+		if("Concentrate — Energy up, Volatility up, Purity down")
+			substance.energy = clamp(substance.energy + 15, 0, SUBSTANCE_ATTR_MAX)
+			substance.volatility = clamp(substance.volatility + 10, 0, SUBSTANCE_ATTR_MAX)
+			substance.purity = clamp(substance.purity - 10, 0, SUBSTANCE_ATTR_MAX)
+		if("Stabilize — Volatility down, Energy down")
+			substance.volatility = clamp(substance.volatility - 15, 0, SUBSTANCE_ATTR_MAX)
+			substance.energy = clamp(substance.energy - 8, 0, SUBSTANCE_ATTR_MAX)
+		if("Bond — Affinity up, Energy down")
+			substance.affinity = clamp(substance.affinity + 15, 0, SUBSTANCE_ATTR_MAX)
+			substance.energy = clamp(substance.energy - 6, 0, SUBSTANCE_ATTR_MAX)
+		if("Purify — Purity up, Energy down")
+			substance.purity = clamp(substance.purity + 15, 0, SUBSTANCE_ATTR_MAX)
+			substance.energy = clamp(substance.energy - 10, 0, SUBSTANCE_ATTR_MAX)
+		if("Tune resonance + (Purity down)")
+			substance.resonance = (substance.resonance + 30) % SUBSTANCE_RES_MAX
+			substance.purity = clamp(substance.purity - 8, 0, SUBSTANCE_ATTR_MAX)
+		if("Tune resonance − (Purity down)")
+			substance.resonance = (substance.resonance - 30 + SUBSTANCE_RES_MAX) % SUBSTANCE_RES_MAX
+			substance.purity = clamp(substance.purity - 8, 0, SUBSTANCE_ATTR_MAX)
+	if(!context)
+		return
+	if(context.energy_ceiling && substance.energy > context.energy_ceiling)
+		var/overdrive = substance.energy - context.energy_ceiling
+		substance.energy = context.energy_ceiling
+		substance.volatility = clamp(substance.volatility + round(overdrive / 2), 0, SUBSTANCE_ATTR_MAX)
+	if(context.volatility_mod)
+		substance.volatility = clamp(substance.volatility + round(context.volatility_mod / 3), 0, SUBSTANCE_ATTR_MAX)
+
 /// Energy (of the smasher's max_energy 600) a substance must reach before the refine fires.
 #define SUBSTANCE_REFINE_ENERGY 300
 

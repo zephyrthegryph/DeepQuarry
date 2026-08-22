@@ -75,8 +75,8 @@
 // ---- Manufacturing integration ---------------------------------------------
 // A material item forged from a substance material emits this when one of its
 // form's trigger conditions is met (a melee strike, a thrown impact, ...). The
-// /datum/component/substance_infusion on the item listens and fires the effect if
-// the substance's own trigger matches the condition.
+// The item's canonical /datum/component/material_response listens and fires every
+// material effect whose trigger matches the condition.
 // Args: (datum/source, condition /* SUB_TRIG_* */, turf/where, atom/cause)
 #define COMSIG_SUBSTANCE_FORM_TRIGGER "substance_form_trigger"
 // Default number of times a forged item can discharge its infused effect before

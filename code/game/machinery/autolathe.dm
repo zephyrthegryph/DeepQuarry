@@ -182,6 +182,7 @@
 			"icon" = "[size == size32x32 ? "" : "[size] "][css_id]",
 			"materialSelectable" = design.material_selectable,
 			"selectableAmount" = design.selectable_amount,
+			"materialProfile" = design.material_preview_profile || design.material_application,
 		)
 
 		output += list(design_data)

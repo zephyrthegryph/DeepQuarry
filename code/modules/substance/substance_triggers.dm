@@ -3,8 +3,8 @@
 // A substance forged into a material item discharges its effect wherever its
 // trigger condition is met in that form. This file is the single home for mapping
 // real game events on /obj/item/material to the substance trigger conditions; the
-// /datum/component/substance_infusion on the item only reacts to the one condition
-// matching its substance's trigger, so emitting several per event is safe and cheap.
+// /datum/component/material_response only reacts to matching material effects, so
+// emitting several conditions per event is safe and cheap.
 //
 // Event -> condition map (so every SUB_TRIG_* has a way to fire):
 //   melee strike        -> IMPACT + CONTACT      (apply_hit_effect, material_weapons.dm)
@@ -15,9 +15,8 @@
 //   handled bare-handed  -> CONTACT
 
 // General emitter: announce one or more SUB_TRIG_* conditions on any atom A. The
-// /datum/component/substance_infusion (present only on infused forms — a blade, a
-// forged round's bullet, ...) reacts to the one condition matching its substance's
-// trigger; an atom with no infusion just ignores the signal, so this is cheap to call
+// /datum/component/material_response (present only on responsive forms) reacts to
+// each matching effect; an atom without responses ignores the signal, so this is cheap to call
 // from any form. `where` is the effect turf (defaults to A's turf); `cause` is the
 // responsible atom (for logs / blowback).
 /proc/substance_emit_form_trigger(atom/A, turf/where, atom/cause, ...)
@@ -34,7 +33,7 @@
 // fast-out when the item isn't a substance material, then delegate to the general
 // emitter on src. Keeps the many existing material call sites unchanged.
 /obj/item/material/proc/substance_form_trigger(turf/where, atom/cause, ...)
-	if(!istype(material, /datum/material/substance))
+	if(!length(material?.material_effects))
 		return
 	substance_emit_form_trigger(arglist(list(src) + args))
 
@@ -71,18 +70,10 @@
 
 // Fire a material's embodied substance effect on a turf (used by destruction hooks).
 /proc/substance_discharge_from_material(turf/T, datum/material/m, atom/cause)
-	if(!isturf(T) || !istype(m, /datum/material/substance))
+	if(!isturf(T) || !length(m?.material_effects))
 		return
-	var/datum/material/substance/sm = m
-	if(!sm.infused_substance)
-		return
-	var/datum/substance/S = sm.infused_substance
-	// Deferred: this fires from destruction hooks (walls.dm, /atom/atom_destruction).
-	// The effect can destroy other substance objs, which re-enter this proc — so a
-	// room of substance structures collapsing in one explosion() must not cascade
-	// synchronously through a single call stack. INVOKE_ASYNC breaks the recursion for
-	// every family (the corrode/blast in-effect deferral only covered those two).
-	INVOKE_ASYNC(GLOBAL_PROC_REF(substance_apply_effect), T, S.family, S.energy, S.volatility, cause)
+	for(var/datum/substance/effect as anything in m.material_effects)
+		INVOKE_ASYNC(GLOBAL_PROC_REF(substance_apply_effect), T, effect.family, effect.energy, effect.volatility, cause)
 
 // Called from /atom/atom_destruction for any obj made of a substance material.
 /proc/substance_on_destruction(atom/A)

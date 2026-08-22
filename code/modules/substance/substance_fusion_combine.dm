@@ -2,14 +2,14 @@
 //
 // Alloying isn't a standalone combiner: you feed two substance stacks into the R-UST
 // Tokamak core's reactant slots and let the live field fuse them. While the field is hot,
-// the core periodically consumes a sheet from each, runs the same substance_combine resolver
-// the bench used, casts the resulting alloy (+ byproducts) at the core, and turns the
+// the core periodically consumes a sheet from each, runs the shared substance_combine resolver,
+// casts the resulting alloy (+ byproducts) at the core, and turns the
 // reaction's magnitude into reactor energy. A clean, high-yield fuse stabilises the field
 // (AddEnergy bleeds instability); a hazardous one destabilises it toward a breach — so the
 // danger of a volatile mix lands as reactor instability, the reactor's own failure model.
 //
-// The two-slot load + resolver plumbing mirrors substance_combiner/do_combine; the only
-// new coupling is to the field's AddEnergy() (power) and tick_instability (hazard).
+// The two-slot load feeds the shared resolver; the field couples its result to AddEnergy()
+// (power) and tick_instability (hazard).
 
 /// Minimum delay between fuses while the field runs (one sheet-pair per interval).
 #define FUSION_COMBINE_INTERVAL (5 SECONDS)

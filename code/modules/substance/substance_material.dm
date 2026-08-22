@@ -4,8 +4,7 @@
 // game by being cast into a material. This wraps a substance's hidden profile in a
 // /datum/material so it flows through the entire existing manufacturing pipeline —
 // stack recipes, the autolathe/protolathe, walls, weapons, armour — and any item
-// forged from it carries the substance's effect (via /datum/component/substance_infusion,
-// applied through the standard material-behaviour seam).
+// forged from it carries the substance's effect through the standard material-response seam.
 //
 // It mirrors the round-rolled /datum/material/dynamic pattern exactly: a unique
 // generated `name` registered at runtime in GLOB.name_to_material, so every reader
@@ -17,7 +16,7 @@
 	stack_type = /obj/item/stack/material/substance
 	/// The substance this material embodies (its effect + hidden profile). Shared
 	/// across every item made of this material; per-item state lives in the
-	/// infusion component.
+	/// material-response component.
 	var/datum/substance/infused_substance
 	/// How many times an item forged from this material can discharge the effect.
 	var/effect_charges = SUBSTANCE_INFUSION_CHARGES
@@ -32,7 +31,7 @@
 // otherwise every substance_spawn_stack (loot fields, refiner output, and above all the
 // auto-firing fusion core, once per interval) mints a fresh /datum/material/substance
 // pinned forever in GLOB.name_to_material. Per-item state lives in the infusion
-// component (which clones), so sharing is safe.
+// component, so sharing is safe.
 //
 // resonance is DELIBERATELY excluded: it is the combine-relationship axis only (the
 // resolver's res_delta) and feeds NOTHING in the material — not the derived stats, not
@@ -60,6 +59,7 @@ GLOBAL_LIST_EMPTY(substance_material_dedup)
 	var/datum/material/substance/M = new()
 	M.name = key
 	M.infused_substance = S.Clone()
+	M.add_material_effect(S)
 	var/fam = substance_family_name(S.family)
 	M.display_name = "[lowertext(fam)] alloy"
 	M.use_name = M.display_name
@@ -131,20 +131,6 @@ GLOBAL_LIST_EMPTY(substance_material_dedup)
 		if(SUBFAM_RADIANT)   return "#fff36f"
 		if(SUBFAM_VOID)      return "#a86fff"
 	return "#888888"
-
-// Apply this material's behaviours to a forged item: the standard component
-// behaviours first (light/rad/tox), then the substance infusion that makes the
-// item discharge its effect at its form's trigger.
-/datum/material/substance/dq_apply_material_behaviors(obj/item/I)
-	. = ..()
-	apply_substance_infusion(I)
-
-// Attach ONLY the discharge infusion (no persistent light/rad/tox processing). Used
-// for forms where the item is a transient effect-carrier rather than carried gear —
-// e.g. a forged round's bullet, which fires the effect on impact then is destroyed.
-/datum/material/substance/proc/apply_substance_infusion(obj/item/I)
-	if(I && infused_substance)
-		I.AddComponent(/datum/component/substance_infusion, infused_substance, effect_charges)
 
 // ---- The manufacturing feedstock -------------------------------------------
 // A stack of cast substance. Works with every existing material stack recipe and

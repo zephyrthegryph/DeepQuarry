@@ -107,6 +107,7 @@
 	return parent.return_network(reference)
 
 /obj/machinery/atmospherics/pipe/Destroy()
+	release_sorbed_material_gas()
 	if(parent)
 		parent.members -= src
 		parent.edges -= src
@@ -120,6 +121,25 @@
 			meter.transfer_fingerprints_to(PM)
 			qdel(meter)
 	. = ..()
+
+/obj/machinery/atmospherics/pipe/proc/release_sorbed_material_gas(datum/gas_mixture/release_target)
+	if(material_sorbed_moles <= 0)
+		return
+	var/datum/gas_mixture/environment = release_target
+	if(!environment)
+		var/turf/turf = get_turf(src)
+		environment = turf?.return_air()
+	if(!environment)
+		return
+	var/datum/gas_mixture/released = new(1)
+	released.adjust_moles(/datum/gas/plasma, material_sorbed_moles)
+	var/released_capacity = released.heat_capacity()
+	if(released_capacity > 0 && material_sorbed_thermal_energy > 0)
+		released.set_temperature(material_sorbed_thermal_energy / released_capacity)
+	environment.merge(released)
+	qdel(released)
+	material_sorbed_moles = 0
+	material_sorbed_thermal_energy = 0
 
 /obj/machinery/atmospherics/pipe/attackby(obj/item/W as obj, mob/user as mob)
 	if (istype(src, /obj/machinery/atmospherics/pipe/tank))

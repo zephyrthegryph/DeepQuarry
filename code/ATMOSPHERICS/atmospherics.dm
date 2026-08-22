@@ -39,6 +39,7 @@ Pipelines + Other Objects -> Pipe network
 	var/engineered_material_id
 	var/material_liner_integrity = 100
 	var/material_sorbed_moles = 0
+	var/material_sorbed_thermal_energy = 0
 	var/material_last_exposure = 0
 
 /obj/machinery/atmospherics/proc/engineered_material()

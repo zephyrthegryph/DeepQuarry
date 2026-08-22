@@ -22,7 +22,16 @@
 			batch.add_material(component, source.composition[component] / max(source.amount, 1), null, source.purity, stack.feedstock_lot_id)
 		for(var/additive in source.impurities)
 			batch.impurities[additive] = (batch.impurities[additive] || 0) + source.impurities[additive] / max(source.amount, 1)
+		for(var/datum/substance/effect as anything in processed.material_effects)
+			batch.add_material_effect(effect)
 		batch.process_history += "remelted reclaimed [source.display_name()]"
+	else if(length(stack.material.composite_material))
+		for(var/component in stack.material.composite_material)
+			var/component_sheets = stack.material.composite_material[component] / SHEET_MATERIAL_AMOUNT
+			batch.add_material(component, component_sheets, null, stack.feedstock_purity, stack.feedstock_lot_id)
+		for(var/datum/substance/effect as anything in stack.material.material_effects)
+			batch.add_material_effect(effect)
+		batch.process_history += "disassembled reclaimed [stack.material.display_name]"
 	else
 		batch.add_material(stack.material.name, 1, null, stack.feedstock_purity, stack.feedstock_lot_id)
 		if(stack.feedstock_trace)

@@ -228,6 +228,18 @@ GLOBAL_LIST_EMPTY(composite_material_dedup)
 	composite.biocompatibility = liner?.biocompatibility || 0
 	composite.gas_sorption_capacity = liner?.gas_sorption_capacity || 0
 	composite.reagent_porosity = liner?.reagent_porosity || 0
+	var/list/effect_layers = list(core, functional, liner, jacket)
+	for(var/datum/material/effect_layer as anything in effect_layers)
+		if(!effect_layer)
+			continue
+		for(var/datum/substance/effect as anything in effect_layer.material_effects)
+			composite.add_material_effect(effect)
+	composite.material_effect_charges = clamp(round(
+		core.material_effect_charges * composite.core_fraction + \
+		(functional?.material_effect_charges || 0) * composite.functional_fraction + \
+		(liner?.material_effect_charges || 0) * composite.liner_fraction + \
+		(jacket?.material_effect_charges || 0) * composite.jacket_fraction
+	), 1, 12)
 	composite.icon_colour = jacket?.icon_colour || core.icon_colour
 	composite.material_class = core.material_class
 	composite.composite_material = list()

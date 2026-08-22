@@ -1,9 +1,9 @@
 // Substance ammunition — material as an effect-payload on ANY round, built on the
-// existing material/infusion machinery rather than a bespoke ammo type.
+// existing material-response machinery rather than a bespoke ammo type.
 //
 // Forging a magazine from an alloy at a lathe (any material-selectable ammo design)
 // stamps every round with that material. For a substance alloy, the round's chambered
-// bullet is given the SAME /datum/component/substance_infusion a blade or thrown charge
+// bullet receives the same /datum/component/material_response a blade or thrown charge
 // carries, and the base projectile's on_impact() emits the shared form-trigger — so the
 // round discharges its substance where it strikes, only when the substance's own trigger
 // is one a bullet presents (IMPACT/PRESSURE, + ENERGY for energy shots).
@@ -53,10 +53,9 @@
 	if(istype(forged, /datum/material/processed_alloy))
 		var/datum/material/processed_alloy/processed = forged
 		examine_text += span_notice("Forged projectile stock: hardness [processed.hardness], density [processed.density], brittleness [processed.brittleness].")
-	if(!istype(forged, /datum/material/substance))
+	if(!length(forged.material_effects))
 		return
-	var/datum/material/substance/sm = forged
-	var/datum/substance/S = sm.infused_substance
-	if(!S)
-		return
-	examine_text += span_notice("Forged from <b>[substance_family_name(S.family)]</b> alloy — discharges [substance_trigger_name(S.trigger)] on impact.")
+	var/list/effects = list()
+	for(var/datum/substance/effect as anything in forged.material_effects)
+		effects += "[substance_family_name(effect.family)] on [substance_trigger_name(effect.trigger)]"
+	examine_text += span_notice("Forged material responses: [jointext(effects, "; ")].")

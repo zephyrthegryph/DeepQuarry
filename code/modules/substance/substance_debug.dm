@@ -86,8 +86,8 @@
 	out += "Hazards: [hazards]/[runs]. Round salt is fixed, so the relationship is stable; magnitude/byproducts wobble with purity."
 	to_chat(usr, jointext(out, "<br>"))
 
-// Drop the substance machines plus a forge-ready stack of every source archetype at
-// the admin's feet, so the whole loop can be exercised without flying an expedition.
+// Drop forge-ready feedstocks. Processing uses the same physical furnace, fusion
+// core, particle accelerator, bath, anvil, and layup press as every other material.
 /client/verb/substance_spawn_kit()
 	set name = "Substance: Spawn Test Kit"
 	set category = "Debug"
@@ -98,12 +98,9 @@
 	var/turf/T = get_turf(mob)
 	if(!T)
 		return
-	new /obj/machinery/substance_combiner(T)
-	new /obj/machinery/substance_refiner(T)
-	new /obj/machinery/substance_extractor(T)
-	// A forge-ready stack of each source archetype's material (combine/refine/forge).
+	// A forge-ready stack of each source archetype's material.
 	for(var/id in substance_archetype_ids())
 		var/datum/substance/S = substance_from_archetype(id, 10)
 		substance_spawn_stack(T, S, 20)
 		qdel(S)
-	to_chat(usr, span_notice("Spawned combiner/refiner/extractor and a forge-ready stack of each source substance."))
+	to_chat(usr, span_notice("Spawned forge-ready substance feedstocks for the canonical physical workshop."))

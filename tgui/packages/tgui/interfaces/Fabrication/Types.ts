@@ -80,6 +80,8 @@ export type Design = {
    * Units of the chosen material consumed per item (material-selectable designs).
    */
   selectableAmount?: number;
+  /** Product geometry used to choose relevant material diagnostics. */
+  materialProfile?: string;
 };
 
 /**
@@ -96,9 +98,14 @@ export type MaterialChoice = {
   layers: { role: string; name: string; share: number }[];
   responses: string[];
   hardness: number;
+  density: number;
+  integrity: number;
+  elasticity: number;
+  brittleness: number;
   toughness: number;
   conductivity: number;
   heatResistance: number;
+  thermalInsulation: number;
   corrosionResistance: number;
   pressureLimit: number;
 };

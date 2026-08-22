@@ -400,3 +400,96 @@
 	TEST_ASSERT(abs(composite.liner_fraction * total_sheets - 2) < 0.0001, "Liner matter must be exactly conserved")
 	TEST_ASSERT(abs(composite.jacket_fraction * total_sheets - 1) < 0.0001, "Jacket matter must be exactly conserved")
 	TEST_ASSERT(abs(composite.core_fraction + composite.functional_fraction + composite.liner_fraction + composite.jacket_fraction - 1) < 0.0001, "Layer fractions must sum to one")
+
+/datum/unit_test/dq_material_composite_remelt_conservation
+
+/datum/unit_test/dq_material_composite_remelt_conservation/Run()
+	var/composite_key = register_composite_material(MAT_COPPER, 7, MAT_LEAD, 3, MAT_GLASS, 2, MAT_PLASTIC, 1)
+	var/obj/item/stack/material/composite/stock = new(run_loc_floor_bottom_left, 13, composite_key)
+	var/datum/material_batch/reclaimed = new
+	for(var/index in 1 to 13)
+		TEST_ASSERT(material_batch_absorb_sheet(reclaimed, stock), "Every physical composite sheet must be reclaimable")
+	TEST_ASSERT(abs(reclaimed.composition[MAT_COPPER] - 7) < 0.0001, "Remelting must recover every copper sheet without rounding loss")
+	TEST_ASSERT(abs(reclaimed.composition[MAT_LEAD] - 3) < 0.0001, "Remelting must recover every lead sheet without rounding loss")
+	TEST_ASSERT(abs(reclaimed.composition[MAT_GLASS] - 2) < 0.0001, "Remelting must recover every glass sheet without rounding loss")
+	TEST_ASSERT(abs(reclaimed.composition[MAT_PLASTIC] - 1) < 0.0001, "Remelting must recover every plastic sheet without rounding loss")
+	TEST_ASSERT(abs(reclaimed.amount - 13) < 0.0001, "Reclamation must conserve the total physical sheet count")
+	qdel(stock)
+	qdel(reclaimed)
+
+/datum/unit_test/dq_material_effect_unification
+
+/datum/unit_test/dq_material_effect_unification/Run()
+	var/datum/substance/impact = new
+	impact.name = "impact test response"
+	impact.family = SUBFAM_DISCHARGE
+	impact.trigger = SUB_TRIG_IMPACT
+	impact.energy = 60
+	impact.purity = 90
+	var/datum/substance/heat = new
+	heat.name = "heat test response"
+	heat.family = SUBFAM_THERMAL
+	heat.trigger = SUB_TRIG_HEAT
+	heat.energy = 55
+	heat.purity = 88
+	var/datum/material_batch/batch = new
+	batch.add_material(MAT_STEEL, 4)
+	batch.add_material_effect(impact)
+	batch.add_material_effect(heat)
+	batch.recalculate()
+	var/material_key = register_processed_material(batch)
+	var/datum/material/material = get_material_by_name(material_key)
+	TEST_ASSERT_EQUAL(length(material.material_effects), 2, "A processed alloy must preserve every triggered material response")
+	var/composite_key = register_composite_material(material_key, 4, MAT_COPPER, 1, MAT_GLASS, 1, MAT_PLASTIC, 1)
+	var/datum/material/composite/composite = get_material_by_name(composite_key)
+	TEST_ASSERT_EQUAL(length(composite.material_effects), 2, "Layering must preserve all effects through the canonical material response architecture")
+	var/obj/item/material/knife/knife = new(run_loc_floor_bottom_left)
+	knife.set_material(composite.name)
+	TEST_ASSERT_NOTNULL(knife.GetComponent(/datum/component/material_response), "An effected material form must use the shared material response component")
+	qdel(knife)
+	qdel(batch)
+	qdel(heat)
+	qdel(impact)
+
+/datum/unit_test/dq_material_stock_part_designs
+
+/datum/unit_test/dq_material_stock_part_designs/Run()
+	var/datum/design_techweb/material_stock_part/capacitor/design = new
+	var/obj/item/stock_parts/capacitor/part = design.create_item(run_loc_floor_bottom_left, MAT_COPPER)
+	TEST_ASSERT_NOTNULL(part, "The material-selectable stock-part family must create a physical part")
+	TEST_ASSERT_EQUAL(part.material_id, MAT_COPPER, "The selected material identity must survive fabrication")
+	TEST_ASSERT_EQUAL(part.rating, part.get_rating(), "The legacy rating field and material-derived rating must agree")
+	qdel(part)
+
+/datum/unit_test/dq_material_gas_sorption_conservation
+
+/datum/unit_test/dq_material_gas_sorption_conservation/Run()
+	var/datum/material/processed_alloy/sorbent = new
+	sorbent.name = "unit_test_sorbent"
+	sorbent.display_name = "test sorbent"
+	sorbent.gas_sorption_capacity = 5
+	GLOB.name_to_material[sorbent.name] = sorbent
+	var/obj/machinery/atmospherics/pipe/pipe = locate() in world
+	TEST_ASSERT_NOTNULL(pipe, "The focused map must contain a physical pipe for the sorption integration test")
+	var/original_material_id = pipe.engineered_material_id
+	pipe.engineered_material_id = sorbent.name
+	pipe.material_last_exposure = world.time - 10
+	var/datum/gas_mixture/test_gas = new(2500)
+	test_gas.adjust_moles(/datum/gas/plasma, 10)
+	test_gas.set_temperature(T0C + 200)
+	var/initial_moles = test_gas.get_moles(/datum/gas/plasma)
+	var/initial_energy = test_gas.thermal_energy()
+	TEST_ASSERT(pipe.process_engineered_material_exposure(test_gas), "A sorbent liner must react to a real plasma atmosphere")
+	TEST_ASSERT(pipe.material_sorbed_moles > 0, "Sorption must retain captured matter on the physical pipe")
+	TEST_ASSERT(abs(test_gas.get_moles(/datum/gas/plasma) + pipe.material_sorbed_moles - initial_moles) < 0.0001, "Sorption must conserve plasma moles")
+	TEST_ASSERT(abs(test_gas.thermal_energy() + pipe.material_sorbed_thermal_energy - initial_energy) < 0.01, "Sorption must conserve thermal energy")
+	var/datum/gas_mixture/environment = new(2500)
+	var/environment_plasma = environment.get_moles(/datum/gas/plasma)
+	pipe.release_sorbed_material_gas(environment)
+	TEST_ASSERT(abs(environment.get_moles(/datum/gas/plasma) - environment_plasma - (initial_moles - test_gas.get_moles(/datum/gas/plasma))) < 0.0001, "Dismantling must return captured gas to the world")
+	TEST_ASSERT_EQUAL(pipe.material_sorbed_moles, 0, "Released gas must not remain duplicated in pipe storage")
+	qdel(test_gas)
+	qdel(environment)
+	pipe.engineered_material_id = original_material_id
+	GLOB.name_to_material -= sorbent.name
+	qdel(sorbent)

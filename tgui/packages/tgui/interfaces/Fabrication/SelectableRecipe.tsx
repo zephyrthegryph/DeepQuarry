@@ -34,6 +34,7 @@ export const SelectableRecipe = (props: Props) => {
   // two independently processed stocks happen to have the same display name.
   const options: string[] = [];
   const labelToId: Record<string, string> = {};
+  const idToLabel: Record<string, string> = {};
   for (let index = 0; index < materialChoices.length; index++) {
     const choice = materialChoices[index];
     let label = `${choice.label} (${choice.sheets})`;
@@ -41,11 +42,16 @@ export const SelectableRecipe = (props: Props) => {
       label = `${label} · ${choice.id.slice(-6)}`;
     }
     labelToId[label] = choice.id;
+    idToLabel[choice.id] = label;
     options.push(label);
   }
 
-  const [selectedLabel, setSelectedLabel] = useState(options[0] ?? '');
-  const selectedId = labelToId[selectedLabel] ?? '';
+  const [requestedId, setRequestedId] = useState(materialChoices[0]?.id ?? '');
+  const selectedId = idToLabel[requestedId]
+    ? requestedId
+    : (materialChoices[0]?.id ?? '');
+  const selectedLabel = idToLabel[selectedId] ?? '';
+  const [showDetails, setShowDetails] = useState(false);
   const selected = materialChoices.find((choice) => choice.id === selectedId);
   const hasMaterial = selectedId !== '';
 
@@ -108,10 +114,16 @@ export const SelectableRecipe = (props: Props) => {
               width="11em"
               selected={selectedLabel}
               options={options}
-              onSelected={(value) => setSelectedLabel(value)}
+              onSelected={(value) => setRequestedId(labelToId[value] ?? '')}
             />
           )}
         </div>
+        <Button
+          color="transparent"
+          icon={showDetails ? 'chevron-up' : 'flask'}
+          tooltip="Inspect product-relevant material behavior"
+          onClick={() => setShowDetails(!showDetails)}
+        />
         <QuantityButton quantity={5} />
         <QuantityButton quantity={10} />
         <div
@@ -129,7 +141,7 @@ export const SelectableRecipe = (props: Props) => {
           />
         </div>
       </div>
-      {selected && (
+      {selected && showDetails && (
         <Box backgroundColor="rgba(0, 0, 0, 0.25)" p={0.5} mb={0.5} ml={5}>
           {!!selected.layers.length && (
             <Stack mb={0.5} wrap>
@@ -144,13 +156,41 @@ export const SelectableRecipe = (props: Props) => {
             </Stack>
           )}
           <Stack>
-            {[
-              ['Hardness', selected.hardness],
-              ['Toughness', selected.toughness],
-              ['Conductivity', selected.conductivity],
-              ['Heat', selected.heatResistance],
-              ['Corrosion', selected.corrosionResistance],
-            ].map(([name, value]) => (
+            {(design.materialProfile === 'pressure service'
+              ? [
+                  ['Strength', selected.hardness],
+                  ['Toughness', selected.toughness],
+                  ['Corrosion', selected.corrosionResistance],
+                  ['Insulation', selected.thermalInsulation],
+                ]
+              : design.materialProfile === 'machine component'
+                ? [
+                    ['Conductivity', selected.conductivity],
+                    ['Density', selected.density],
+                    ['Integrity', selected.integrity],
+                    ['Elasticity', selected.elasticity],
+                  ]
+                : design.materialProfile === 'surgical instrument'
+                  ? [
+                      ['Hardness', selected.hardness],
+                      ['Corrosion', selected.corrosionResistance],
+                      ['Integrity', selected.integrity],
+                      ['Elasticity', selected.elasticity],
+                    ]
+                  : design.materialProfile === 'projectile'
+                    ? [
+                        ['Hardness', selected.hardness],
+                        ['Density', selected.density],
+                        ['Toughness', selected.toughness],
+                        ['Brittleness', selected.brittleness],
+                      ]
+                    : [
+                        ['Hardness', selected.hardness],
+                        ['Toughness', selected.toughness],
+                        ['Conductivity', selected.conductivity],
+                        ['Heat', selected.heatResistance],
+                        ['Corrosion', selected.corrosionResistance],
+                      ]).map(([name, value]) => (
               <Stack.Item grow key={String(name)}>
                 <Box color="label" fontSize="10px">
                   {name}
@@ -165,9 +205,10 @@ export const SelectableRecipe = (props: Props) => {
             ))}
           </Stack>
           <Box mt={0.5} color="label">
-            Pressure geometry: {selected.pressureLimit} atm
+            {design.materialProfile === 'pressure service' &&
+              `Pressure geometry: ${selected.pressureLimit} atm · `}
             {selected.responses.length > 0 &&
-              ` · ${selected.responses.join(' · ')}`}
+              selected.responses.join(' · ')}
           </Box>
         </Box>
       )}

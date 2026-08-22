@@ -1,0 +1,7 @@
+author: "BigBadE"
+delete-after: true
+changes:
+  - refactor: "Unified exotic and processed alloy effects under the canonical material-response architecture and removed the obsolete standalone substance benches."
+  - rscadd: "Added material-selectable pressure pipes, stock parts, and additional ammunition families with product-specific fabrication previews."
+  - bugfix: "Made composite remelting and sorbent pipe dismantling conserve their constituent matter and captured gas energy."
+  - qol: "Improved fabrication material selection with stable choices and collapsible, product-relevant property details."

@@ -83,8 +83,10 @@
 		material_liner_integrity = max(0, material_liner_integrity - corrosion)
 		if(material.gas_sorption_capacity > material_sorbed_moles && plasma_moles > 0)
 			var/captured = min(plasma_moles, material.gas_sorption_capacity - material_sorbed_moles, elapsed_seconds * 0.1)
+			var/energy_before = mixture.thermal_energy()
 			mixture.adjust_moles(/datum/gas/plasma, -captured)
 			material_sorbed_moles += captured
+			material_sorbed_thermal_energy += max(0, energy_before - mixture.thermal_energy())
 		if(material_liner_integrity <= 0 && !leaking)
 			set_leaking(TRUE)
 			visible_message(span_warning("The breached liner inside [src] begins leaking through its structural shell."))

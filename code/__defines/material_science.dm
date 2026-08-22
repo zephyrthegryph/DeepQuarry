@@ -60,6 +60,8 @@
 #define MATERIAL_APPLICATION_CELL "power cell"
 #define MATERIAL_APPLICATION_ARMOR "armor"
 #define MATERIAL_APPLICATION_PRESSURE "pressure service"
+#define MATERIAL_APPLICATION_MACHINE_PART "machine component"
+#define MATERIAL_APPLICATION_PROJECTILE "projectile"
 
 #define MATERIAL_LAYER_CORE "conductive/load-bearing core"
 #define MATERIAL_LAYER_FUNCTIONAL "functional buffer"

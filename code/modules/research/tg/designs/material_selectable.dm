@@ -45,6 +45,7 @@
 	build_type = AUTOLATHE | PROTOLATHE
 	build_path = /obj/item/ammo_magazine/m9mm
 	material_selectable = TRUE
+	material_preview_profile = MATERIAL_APPLICATION_PROJECTILE
 	selectable_amount = SHEET_MATERIAL_AMOUNT
 	materials = list()
 	construction_time = 3 SECONDS
@@ -52,6 +53,45 @@
 		RND_CATEGORY_INITIAL,
 		RND_CATEGORY_WEAPONS + RND_SUBCATEGORY_WEAPONS_AMMO
 	)
+
+/datum/design_techweb/material_rounds_45
+	name = "Material Rounds (.45)"
+	desc = "A .45 magazine whose projectile behavior derives from the selected material."
+	id = "material_rounds_45"
+	build_type = AUTOLATHE | PROTOLATHE
+	build_path = /obj/item/ammo_magazine/m45
+	material_selectable = TRUE
+	material_preview_profile = MATERIAL_APPLICATION_PROJECTILE
+	selectable_amount = SHEET_MATERIAL_AMOUNT
+	materials = list()
+	construction_time = 3 SECONDS
+	category = list(RND_CATEGORY_INITIAL, RND_CATEGORY_WEAPONS + RND_SUBCATEGORY_WEAPONS_AMMO)
+
+/datum/design_techweb/material_rounds_10mm
+	name = "Material Rounds (10mm)"
+	desc = "A 10mm magazine whose projectile behavior derives from the selected material."
+	id = "material_rounds_10mm"
+	build_type = AUTOLATHE | PROTOLATHE
+	build_path = /obj/item/ammo_magazine/m10mm
+	material_selectable = TRUE
+	material_preview_profile = MATERIAL_APPLICATION_PROJECTILE
+	selectable_amount = SHEET_MATERIAL_AMOUNT
+	materials = list()
+	construction_time = 3 SECONDS
+	category = list(RND_CATEGORY_INITIAL, RND_CATEGORY_WEAPONS + RND_SUBCATEGORY_WEAPONS_AMMO)
+
+/datum/design_techweb/material_rounds_12g
+	name = "Material Shells (12g)"
+	desc = "A box of shotgun shells whose payload behavior derives from the selected material."
+	id = "material_rounds_12g"
+	build_type = AUTOLATHE | PROTOLATHE
+	build_path = /obj/item/ammo_magazine/ammo_box/b12g
+	material_selectable = TRUE
+	material_preview_profile = MATERIAL_APPLICATION_PROJECTILE
+	selectable_amount = SHEET_MATERIAL_AMOUNT * 2
+	materials = list()
+	construction_time = 4 SECONDS
+	category = list(RND_CATEGORY_INITIAL, RND_CATEGORY_WEAPONS + RND_SUBCATEGORY_WEAPONS_AMMO)
 
 /datum/design_techweb/material_armor_plate
 	name = "Material Armor Plate"
@@ -131,6 +171,81 @@
 		return null
 	return new /obj/item/reagent_containers/glass/beaker/composite(target, chosen_material)
 
+/datum/design_techweb/material_pipe
+	name = "Material Pressure Pipe"
+	desc = "A bendable pipe fitting whose pressure, corrosion, sorption, and thermal behavior derive from the selected material."
+	id = "material_pipe"
+	build_type = AUTOLATHE | PROTOLATHE
+	build_path = /obj/item/pipe/binary/bendable
+	material_selectable = TRUE
+	material_preview_profile = MATERIAL_APPLICATION_PRESSURE
+	selectable_amount = SHEET_MATERIAL_AMOUNT
+	materials = list()
+	construction_time = 3 SECONDS
+	category = list(RND_CATEGORY_INITIAL, RND_CATEGORY_EQUIPMENT + RND_SUBCATEGORY_EQUIPMENT_ENGINEERING)
+	departmental_flags = DEPARTMENT_BITFLAG_ENGINEERING | DEPARTMENT_BITFLAG_SCIENCE
+
+/datum/design_techweb/material_pipe/create_item(target, chosen_material)
+	if(!chosen_material)
+		return null
+	var/obj/item/pipe/binary/bendable/pipe = new(target, /obj/machinery/atmospherics/pipe/simple, NORTH)
+	pipe.engineered_material_id = chosen_material
+	var/datum/material/material = get_material_by_name(chosen_material)
+	pipe.color = material?.icon_colour
+	return pipe
+
+/datum/design_techweb/material_stock_part
+	build_type = AUTOLATHE | PROTOLATHE
+	material_selectable = TRUE
+	material_preview_profile = MATERIAL_APPLICATION_MACHINE_PART
+	selectable_amount = SHEET_MATERIAL_AMOUNT
+	materials = list()
+	construction_time = 2 SECONDS
+	category = list(RND_CATEGORY_INITIAL, RND_CATEGORY_STOCK_PARTS + RND_SUBCATEGORY_STOCK_PARTS_1)
+	departmental_flags = DEPARTMENT_BITFLAG_ENGINEERING | DEPARTMENT_BITFLAG_SCIENCE
+
+/datum/design_techweb/material_stock_part/create_item(target, chosen_material)
+	if(!chosen_material)
+		return null
+	var/obj/item/stock_parts/part = new build_path(target)
+	var/datum/material/material = get_material_by_name(chosen_material)
+	part.material_id = chosen_material
+	part.rating = part.get_rating()
+	part.name = "[material?.display_name] [initial(part.name)]"
+	part.color = material?.icon_colour
+	material?.dq_apply_material_behaviors(part)
+	return part
+
+/datum/design_techweb/material_stock_part/capacitor
+	name = "Material Capacitor"
+	desc = "A capacitor whose machine rating and energy responses derive from the selected conductor."
+	id = "material_capacitor"
+	build_path = /obj/item/stock_parts/capacitor
+
+/datum/design_techweb/material_stock_part/manipulator
+	name = "Material Manipulator"
+	desc = "A manipulator whose machine rating derives from the selected material's density and elasticity."
+	id = "material_manipulator"
+	build_path = /obj/item/stock_parts/manipulator
+
+/datum/design_techweb/material_stock_part/matter_bin
+	name = "Material Matter Bin"
+	desc = "A matter bin whose machine rating derives from the selected material's density and integrity."
+	id = "material_matter_bin"
+	build_path = /obj/item/stock_parts/matter_bin
+
+/datum/design_techweb/material_stock_part/scanner
+	name = "Material Scanning Module"
+	desc = "A sensor whose machine rating derives from the selected material's magnetic and reactive response."
+	id = "material_scanner"
+	build_path = /obj/item/stock_parts/scanning_module
+
+/datum/design_techweb/material_stock_part/laser
+	name = "Material Micro-Laser"
+	desc = "A laser whose machine rating derives from the selected material's luminescence and conductivity."
+	id = "material_micro_laser"
+	build_path = /obj/item/stock_parts/micro_laser
+
 /datum/techweb_node/material_fabrication
 	id = "material_fabrication"
 	display_name = "Material Fabrication"
@@ -142,9 +257,18 @@
 		"material_knife",
 		"material_sword",
 		"material_rounds_9mm",
+		"material_rounds_45",
+		"material_rounds_10mm",
+		"material_rounds_12g",
 		"material_armor_plate",
 		"material_armor_insert",
 		"material_power_cell",
 		"material_composite_cable",
 		"material_reaction_vessel",
+		"material_pipe",
+		"material_capacitor",
+		"material_manipulator",
+		"material_matter_bin",
+		"material_scanner",
+		"material_micro_laser",
 	)
