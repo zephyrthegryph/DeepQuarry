@@ -58,6 +58,21 @@ GLOBAL_LIST_INIT(possible_cable_coil_colours, list(
 	layer = WIRES_LAYER
 	color = COLOR_RED
 	var/obj/machinery/power/breakerbox/breaker_box
+	/// Optional registered composite. Ordinary mapped cable retains baseline behavior.
+	var/engineered_material_id
+	/// The cached conductor temperature is owned by the powernet's selected hotspot.
+	var/material_temperature = T20C
+	var/material_buffer_energy = 0
+
+/obj/structure/cable/proc/engineered_material()
+	return engineered_material_id ? get_material_by_name(engineered_material_id) : null
+
+/obj/structure/cable/proc/set_engineered_material(material_id)
+	engineered_material_id = material_id
+	var/datum/material/material = engineered_material()
+	if(material?.icon_colour)
+		color = material.icon_colour
+	powernet?.invalidate_material_cache()
 
 /obj/structure/cable/drain_power(drain_check, surge, amount = 0)
 	if(drain_check)
@@ -121,6 +136,11 @@ GLOBAL_LIST_INIT(possible_cable_coil_colours, list(
 	. = ..()
 	if(isobserver(user))
 		. += span_warning("[powernet?.avail > 0 ? "[DisplayPower(powernet.avail)] in power network." : "The cable is not powered."]")
+	if(engineered_material_id)
+		var/datum/material/material = engineered_material()
+		. += span_notice("Composite conductor: [material?.display_name || engineered_material_id], currently [round(material_temperature, 0.1)] K.")
+		if(material?.critical_temperature)
+			. += span_notice("Superconducting envelope: below [round(material.critical_temperature, 0.1)] K and [round(material.critical_current_density)] relative current density.")
 
 // Rotating cables requires d1 and d2 to be rotated
 /obj/structure/cable/set_dir(new_dir)
@@ -201,9 +221,9 @@ GLOBAL_LIST_INIT(possible_cable_coil_colours, list(
 			return
 
 		if(src.d1)	// 0-X cables are 1 unit, X-X cables are 2 units long
-			CC = new/obj/item/stack/cable_coil(T, 2, color)
+			CC = new/obj/item/stack/cable_coil(T, 2, color, engineered_material_id)
 		else
-			CC = new/obj/item/stack/cable_coil(T, 1, color)
+			CC = new/obj/item/stack/cable_coil(T, 1, color, engineered_material_id)
 
 		src.add_fingerprint(user)
 		src.transfer_fingerprints_to(CC)
@@ -266,12 +286,12 @@ GLOBAL_LIST_INIT(possible_cable_coil_colours, list(
 			qdel(src)
 		if(2.0)
 			if (prob(50))
-				new/obj/item/stack/cable_coil(src.loc, src.d1 ? 2 : 1, color)
+				new/obj/item/stack/cable_coil(src.loc, src.d1 ? 2 : 1, color, engineered_material_id)
 				qdel(src)
 
 		if(3.0)
 			if (prob(25))
-				new/obj/item/stack/cable_coil(src.loc, src.d1 ? 2 : 1, color)
+				new/obj/item/stack/cable_coil(src.loc, src.d1 ? 2 : 1, color, engineered_material_id)
 				qdel(src)
 	return
 
@@ -567,15 +587,26 @@ GLOBAL_LIST_INIT(possible_cable_coil_colours, list(
 	tool_qualities = list(TOOL_CABLE_COIL)
 	singular_name = "cable"
 
-/obj/item/stack/cable_coil/Initialize(mapload, length = MAXCOIL, param_color = null)
+/obj/item/stack/cable_coil/Initialize(mapload, length = MAXCOIL, param_color = null, material_id)
 	. = ..()
 	amount = length
+	engineered_material_id = material_id
 	if (param_color) // It should be red by default, so only recolor it if parameter was specified.
 		color = param_color
 	pixel_x = rand(-2,2)
 	pixel_y = rand(-2,2)
 	update_icon()
 	update_wclass()
+	if(engineered_material_id)
+		var/datum/material/material = get_material_by_name(engineered_material_id)
+		name = "[material?.display_name || "engineered"] cable coil"
+		desc = "A layered power conductor. Its core carries current while its functional layer and jacket govern thermal stability."
+
+/obj/item/stack/cable_coil/examine(mob/user)
+	. = ..()
+	if(engineered_material_id)
+		var/datum/material/material = get_material_by_name(engineered_material_id)
+		. += span_notice("Conductor construction: [material?.display_name || engineered_material_id].")
 
 ///////////////////////////////////
 // General procedures
@@ -674,6 +705,8 @@ GLOBAL_LIST_INIT(possible_cable_coil_colours, list(
 /obj/item/stack/cable_coil/transfer_to(obj/item/stack/cable_coil/S)
 	if(!istype(S))
 		return
+	if(engineered_material_id != S.engineered_material_id)
+		return
 	..()
 
 /obj/item/stack/cable_coil/use()
@@ -739,6 +772,7 @@ GLOBAL_LIST_INIT(possible_cable_coil_colours, list(
 		C = new /obj/structure/cable/heavyduty(F)
 	else
 		C = new /obj/structure/cable(F)
+	C.set_engineered_material(engineered_material_id)
 	C.cableColor(color)
 	C.d1 = d1
 	C.d2 = d2
@@ -762,12 +796,15 @@ GLOBAL_LIST_INIT(possible_cable_coil_colours, list(
 	use(1)
 	if (C.shock(user, 50))
 		if (prob(50)) //fail
-			new/obj/item/stack/cable_coil(C.loc, 1, C.color)
+			new/obj/item/stack/cable_coil(C.loc, 1, C.color, C.engineered_material_id)
 			qdel(C)
 
 // called when cable_coil is click on an installed obj/cable
 // or click on a turf that already contains a "node" cable
 /obj/item/stack/cable_coil/proc/cable_join(obj/structure/cable/C, mob/user)
+	if(C.engineered_material_id && C.engineered_material_id != engineered_material_id)
+		to_chat(user, span_warning("The two conductor constructions cannot be spliced without a transition terminal."))
+		return
 	var/turf/U = user.loc
 	if(!isturf(U))
 		return
@@ -826,6 +863,7 @@ GLOBAL_LIST_INIT(possible_cable_coil_colours, list(
 
 
 		C.cableColor(color)
+		C.set_engineered_material(engineered_material_id)
 
 		C.d1 = nd1
 		C.d2 = nd2
@@ -848,7 +886,7 @@ GLOBAL_LIST_INIT(possible_cable_coil_colours, list(
 
 		if (C.shock(user, 50))
 			if (prob(50)) //fail
-				new/obj/item/stack/cable_coil(C.loc, 2, C.color)
+				new/obj/item/stack/cable_coil(C.loc, 2, C.color, C.engineered_material_id)
 				qdel(C)
 				return
 

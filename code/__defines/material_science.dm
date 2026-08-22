@@ -61,6 +61,24 @@
 #define MATERIAL_APPLICATION_ARMOR "armor"
 #define MATERIAL_APPLICATION_PRESSURE "pressure service"
 
+#define MATERIAL_LAYER_CORE "conductive/load-bearing core"
+#define MATERIAL_LAYER_FUNCTIONAL "functional buffer"
+#define MATERIAL_LAYER_LINER "internal liner"
+#define MATERIAL_LAYER_JACKET "external jacket"
+
+#define MATERIAL_COMPONENT_CABLE "power cable"
+#define MATERIAL_COMPONENT_PIPE "pressure pipe"
+#define MATERIAL_COMPONENT_VESSEL "chemical vessel"
+#define MATERIAL_COMPONENT_STRUCTURE "structural panel"
+
+#define MATERIAL_COMPOSITE_DEFAULT_CORE_FRACTION 0.65
+#define MATERIAL_COMPOSITE_DEFAULT_FUNCTIONAL_FRACTION 0.2
+#define MATERIAL_COMPOSITE_DEFAULT_LINER_FRACTION 0.05
+#define MATERIAL_COMPOSITE_DEFAULT_JACKET_FRACTION 0.1
+#define MATERIAL_CABLE_REFERENCE_AREA 12
+#define MATERIAL_PIPE_REFERENCE_RADIUS 40
+#define MATERIAL_PIPE_REFERENCE_THICKNESS 4
+
 // Emergent capabilities carried by processed materials into every manufactured form.
 #define MATERIAL_CAP_THERMOELECTRIC "thermoelectric"
 #define MATERIAL_CAP_PIEZOELECTRIC "piezoelectric"

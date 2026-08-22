@@ -11,6 +11,11 @@
 		material = get_material_by_name(DEFAULT_WALL_MATERIAL)
 	if(material)
 		explosion_resistance = material.explosion_resistance
+		// A wall is geometry around a material, not a hard-coded thermal type.
+		var/material_temperature = SSair?.initialized ? return_temperature() : temperature
+		thermal_conductivity = clamp(material.material_thermal_conductance(2.5, 0.25, material_temperature), 0.001, 0.25)
+		heat_capacity = max(10000, material.density * material.specific_heat * 25)
+		rad_insulation = material.material_radiation_transmission(250)
 	if(reinf_material && reinf_material.explosion_resistance > explosion_resistance)
 		explosion_resistance = reinf_material.explosion_resistance
 
@@ -28,6 +33,8 @@
 
 	update_connections(1)
 	update_icon()
+	if(SSair?.initialized)
+		update_air_ref(0)
 
 
 /turf/simulated/wall/proc/set_material(datum/material/newmaterial, datum/material/newrmaterial, datum/material/newgmaterial)

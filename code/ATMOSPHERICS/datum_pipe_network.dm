@@ -32,6 +32,8 @@
 	if(update)
 		update = 0
 		reconcile_air() //equalize_gases(gases)
+		for(var/datum/pipeline/line_member in line_members)
+			line_member.process_engineered_materials()
 
 	if(length(leaks))
 		listclearnulls(leaks) // Let's not have forever-seals.

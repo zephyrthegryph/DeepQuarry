@@ -35,6 +35,18 @@ Pipelines + Other Objects -> Pipe network
 
 	var/obj/machinery/atmospherics/node1
 	var/obj/machinery/atmospherics/node2
+	/// Optional material or layered composite retained through construction/deconstruction.
+	var/engineered_material_id
+	var/material_liner_integrity = 100
+
+/obj/machinery/atmospherics/proc/engineered_material()
+	return engineered_material_id ? get_material_by_name(engineered_material_id) : null
+
+/obj/machinery/atmospherics/examine(mob/user)
+	. = ..()
+	if(engineered_material_id)
+		var/datum/material/material = engineered_material()
+		. += span_notice("Pressure construction: [material?.display_name || engineered_material_id]; exposed liner integrity [round(material_liner_integrity)]%.")
 
 /obj/machinery/atmospherics/Initialize(mapload, newdir)
 	. = ..()
@@ -81,6 +93,18 @@ Pipelines + Other Objects -> Pipe network
 	return (src.connect_types & target.connect_types)
 
 /obj/machinery/atmospherics/attackby(atom/A, mob/user as mob)
+	if(istype(A, /obj/item/stack/material))
+		var/obj/item/stack/material/stock = A
+		if(engineered_material_id)
+			to_chat(user, span_warning("[src] already has an engineered material shell."))
+			return
+		if(stock.get_amount() < 1 || !stock.material)
+			return
+		var/datum/material/material = stock.material
+		engineered_material_id = material.name
+		stock.use(1)
+		to_chat(user, span_notice("You fit [material.display_name] onto [src]. Its actual geometry and operating conditions will determine performance."))
+		return
 	if(istype(A, /obj/item/pipe_painter))
 		return
 	..()

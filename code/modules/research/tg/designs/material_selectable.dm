@@ -91,6 +91,46 @@
 	category = list(RND_CATEGORY_INITIAL, RND_CATEGORY_EQUIPMENT + RND_SUBCATEGORY_EQUIPMENT_ENGINEERING)
 	departmental_flags = DEPARTMENT_BITFLAG_ENGINEERING | DEPARTMENT_BITFLAG_SCIENCE
 
+/obj/item/stack/cable_coil/engineered
+	name = "engineered cable coil"
+	desc = "A fabricated layered conductor whose installed segments retain their material construction."
+
+/datum/design_techweb/material_composite_cable
+	name = "Material Power Cable"
+	desc = "Ten lengths of power cable made from a selected material or layered composite. Composite cores, buffers, and jackets remain physically meaningful after installation."
+	id = "material_composite_cable"
+	build_type = AUTOLATHE | PROTOLATHE
+	build_path = /obj/item/stack/cable_coil/engineered
+	material_selectable = TRUE
+	selectable_amount = SHEET_MATERIAL_AMOUNT
+	materials = list()
+	construction_time = 3 SECONDS
+	category = list(RND_CATEGORY_INITIAL, RND_CATEGORY_EQUIPMENT + RND_SUBCATEGORY_EQUIPMENT_ENGINEERING)
+	departmental_flags = DEPARTMENT_BITFLAG_ENGINEERING | DEPARTMENT_BITFLAG_SCIENCE
+
+/datum/design_techweb/material_composite_cable/create_item(target, chosen_material)
+	if(!chosen_material)
+		return null
+	return new /obj/item/stack/cable_coil/engineered(target, 10, null, chosen_material)
+
+/datum/design_techweb/material_reaction_vessel
+	name = "Material Reaction Vessel"
+	desc = "A reusable reaction vessel whose exposed liner controls corrosion and catalytic reaction rate."
+	id = "material_reaction_vessel"
+	build_type = AUTOLATHE | PROTOLATHE
+	build_path = /obj/item/reagent_containers/glass/beaker/composite
+	material_selectable = TRUE
+	selectable_amount = SHEET_MATERIAL_AMOUNT
+	materials = list(MAT_GLASS = 250)
+	construction_time = 3 SECONDS
+	category = list(RND_CATEGORY_INITIAL, RND_CATEGORY_EQUIPMENT + RND_SUBCATEGORY_EQUIPMENT_SCIENCE)
+	departmental_flags = DEPARTMENT_BITFLAG_SCIENCE | DEPARTMENT_BITFLAG_MEDICAL
+
+/datum/design_techweb/material_reaction_vessel/create_item(target, chosen_material)
+	if(!chosen_material)
+		return null
+	return new /obj/item/reagent_containers/glass/beaker/composite(target, chosen_material)
+
 /datum/techweb_node/material_fabrication
 	id = "material_fabrication"
 	display_name = "Material Fabrication"
@@ -105,4 +145,6 @@
 		"material_armor_plate",
 		"material_armor_insert",
 		"material_power_cell",
+		"material_composite_cable",
+		"material_reaction_vessel",
 	)

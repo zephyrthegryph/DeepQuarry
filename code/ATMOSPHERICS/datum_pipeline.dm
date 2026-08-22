@@ -34,6 +34,16 @@
 			if(!member.check_pressure(pressure))
 				break //Only delete 1 pipe per process
 
+/// Engineered pipes are evaluated whenever their authoritative network gas is
+/// mutated. Ordinary mapped pipes retain the old cheap path.
+/datum/pipeline/proc/process_engineered_materials()
+	var/pressure = air.return_pressure()
+	for(var/obj/machinery/atmospherics/pipe/member in members)
+		if(!member.engineered_material_id)
+			continue
+		if(!member.check_pressure(pressure))
+			break
+
 /datum/pipeline/proc/temporarily_store_air()
 	//Update individual gas_mixtures by volume ratio
 

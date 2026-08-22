@@ -27,8 +27,8 @@
 	pickup_sound = 'sound/items/pickup/axe.ogg'
 	custom_handling = TRUE
 
-/obj/item/stack/material/Initialize(mapload)
-	. = ..()
+/obj/item/stack/material/Initialize(mapload, starting_amount)
+	. = ..(mapload, starting_amount)
 
 	randpixel_xy()
 

@@ -25,6 +25,12 @@
 	var/list/sleeping_apc_dynamic_loads = list()
 	var/sleeping_apc_load_total = 0
 	var/revision = 1
+	/// Composite cable topology is scanned only when the network changes.
+	var/material_cache_dirty = TRUE
+	var/obj/structure/cable/material_hotspot
+	var/list/material_segments
+	var/material_safe_load = INFINITY
+	var/material_base_resistance = 0
 
 /datum/powernet/New()
 	START_PROCESSING_POWERNET(src)
@@ -42,6 +48,7 @@
 		nodes -= M
 		M.powernet = null
 	STOP_PROCESSING_POWERNET(src)
+	material_segments = null
 	return ..()
 
 /datum/powernet/proc/reserve_sleeping_apc_load(obj/machinery/power/apc/A, amount)
@@ -95,6 +102,7 @@
 /datum/powernet/proc/remove_cable(obj/structure/cable/C)
 	cables -= C
 	C.powernet = null
+	invalidate_material_cache()
 	publish_dependency()
 	if(is_empty())
 		qdel(src)
@@ -108,7 +116,77 @@
 		C.powernet.remove_cable(C)
 	C.powernet = src
 	cables += C
+	invalidate_material_cache()
 	publish_dependency()
+
+/datum/powernet/proc/invalidate_material_cache()
+	material_cache_dirty = TRUE
+	material_hotspot = null
+
+/datum/powernet/proc/rebuild_material_cache()
+	material_cache_dirty = FALSE
+	material_hotspot = null
+	material_segments = null
+	material_safe_load = INFINITY
+	material_base_resistance = 0
+	for(var/obj/structure/cable/cable in cables)
+		var/datum/material/material = cable.engineered_material()
+		if(!material)
+			continue
+		LAZYADD(material_segments, cable)
+		var/candidate_safe_load = material.critical_current_density > 0 ? material.critical_current_density * MATERIAL_CABLE_REFERENCE_AREA * 1000 : max(material.conductivity, 1) * 20000
+		if(candidate_safe_load < material_safe_load)
+			material_safe_load = candidate_safe_load
+			material_hotspot = cable
+	if(material_hotspot)
+		var/datum/material/hotspot_material = material_hotspot.engineered_material()
+		material_base_resistance = hotspot_material.material_electrical_resistance(1, MATERIAL_CABLE_REFERENCE_AREA, material_hotspot.material_temperature, 0)
+
+/datum/powernet/proc/process_material_network()
+	if(material_cache_dirty)
+		rebuild_material_cache()
+	if(!material_hotspot || QDELETED(material_hotspot) || !length(material_segments) || load <= 0)
+		return
+	var/current_density = (load / 1000) / MATERIAL_CABLE_REFERENCE_AREA
+	var/list/cables_to_delete
+	for(var/obj/structure/cable/cable as anything in material_segments)
+		if(QDELETED(cable))
+			continue
+		var/datum/material/material = cable.engineered_material()
+		var/turf/cable_turf = get_turf(cable)
+		var/datum/gas_mixture/air = cable_turf?.return_air()
+		if(!material || !air)
+			continue
+		var/resistance = material.material_electrical_resistance(1, MATERIAL_CABLE_REFERENCE_AREA, cable.material_temperature, current_density)
+		var/loss_energy = max(0, load * min(resistance, 5) * 0.5)
+		var/cable_safe_load = material.critical_current_density > 0 ? material.critical_current_density * MATERIAL_CABLE_REFERENCE_AREA * 1000 : max(material.conductivity, 1) * 20000
+		if(load > cable_safe_load)
+			var/overload_ratio = load / max(cable_safe_load, 1)
+			loss_energy *= overload_ratio * overload_ratio
+			trigger_warning()
+		var/thermal_mass = max(material.specific_heat * 8, 1000)
+		if(cable.material_buffer_energy > 0 && material.phase_change_temperature > 0 && cable.material_temperature < material.phase_change_temperature - 5)
+			var/released = min(cable.material_buffer_energy, thermal_mass * (material.phase_change_temperature - cable.material_temperature))
+			cable.material_buffer_energy -= released
+			cable.material_temperature += released / thermal_mass
+		var/buffer_available = max(material.phase_change_capacity - cable.material_buffer_energy, 0)
+		if(buffer_available > 0 && material.phase_change_temperature > 0 && cable.material_temperature <= material.phase_change_temperature + 15)
+			var/buffered = min(loss_energy, buffer_available)
+			cable.material_buffer_energy += buffered
+			loss_energy -= buffered
+		cable.material_temperature += loss_energy / thermal_mass
+		var/conductance = material.material_thermal_conductance(0.05, 0.004, cable.material_temperature)
+		var/exchange = clamp((cable.material_temperature - air.return_temperature()) * conductance * 0.5, -thermal_mass * 20, thermal_mass * 20)
+		cable.material_temperature -= exchange / thermal_mass
+		air.add_thermal_energy(exchange)
+		if(material.critical_temperature > 0 && cable.material_temperature >= material.critical_temperature)
+			trigger_warning()
+		if(cable.material_temperature >= material.melting_point)
+			cable.visible_message(span_danger("[cable]'s composite conductor melts through after a thermal runaway!"))
+			air.add_thermal_energy(thermal_mass * 50)
+			LAZYADD(cables_to_delete, cable)
+	for(var/obj/structure/cable/failed_cable as anything in cables_to_delete)
+		qdel(failed_cable)
 
 /// remove_machine() — remove a power machine; deletes the net if now empty.
 /// Caller must verify the machine is in this net before calling.
@@ -165,6 +243,7 @@
 				numapc++
 
 	netexcess = avail - load
+	process_material_network()
 
 	if(numapc)
 		// Simple load balancing: if net surplus existed this tick some APCs used less

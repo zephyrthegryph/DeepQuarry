@@ -267,6 +267,19 @@ GLOBAL_LIST_INIT(name_to_material, populate_material_list())
 	// Chemical
 	var/reactivity = 0
 	var/corrosion_resistance = 0
+	// Constitutive properties consumed by the shared composite-material simulation.
+	// Object geometry turns these intrinsic values into cable, pipe, vessel, and
+	// structural ratings; do not store an object's final rating on the material.
+	var/electrical_resistivity = 1
+	var/specific_heat = 450
+	var/yield_strength = 150
+	var/fracture_toughness = 50
+	var/dielectric_strength = 10
+	var/critical_temperature = 0
+	var/critical_current_density = 0
+	var/phase_change_temperature = 0
+	var/phase_change_capacity = 0
+	var/catalytic_activity = 0
 	// Trait holder (component-driven behaviors attached at New() or roll
 	// time live as full /datum/component children on this material).
 	var/list/traits
@@ -322,6 +335,17 @@ GLOBAL_LIST_INIT(name_to_material, populate_material_list())
 // Make sure we have a display name and shard icon even if they aren't explicitly set.
 /datum/material/New()
 	..()
+	// Backfill physical coefficients from the long-standing material data. New
+	// materials may override any coefficient explicitly; ordinary materials still
+	// gain distinct constitutive behavior without a parallel lookup table.
+	if(electrical_resistivity == initial(electrical_resistivity))
+		electrical_resistivity = 100 / max(conductivity, 0.1)
+	if(yield_strength == initial(yield_strength))
+		yield_strength = max(hardness * 5, integrity * 0.75, 25)
+	if(fracture_toughness == initial(fracture_toughness))
+		fracture_toughness = max(10, elasticity * 0.5 + integrity * 0.15 - brittleness * 0.2)
+	if(dielectric_strength == initial(dielectric_strength) && !conductive)
+		dielectric_strength = max(25, 110 - conductivity)
 	if(!display_name)
 		display_name = name
 	if(!use_name)

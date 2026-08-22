@@ -67,6 +67,21 @@ GLOBAL_LIST_EMPTY(processed_material_dedup)
 	material.corrosion_resistance = batch.corrosion_resistance
 	material.reactivity = clamp(100 - batch.purity + length(batch.impurities) * 5, 0, 100)
 	material.melting_point = batch.melting_temperature()
+	material.electrical_resistivity = max(0.02, (105 - batch.conductivity) / max(batch.conductivity, 1))
+	material.specific_heat = clamp(round(250 + batch.heat_resistance * 5 + batch.porosity * 2), 200, 1200)
+	material.yield_strength = clamp(round(batch.hardness * 8 + batch.toughness * 3 - batch.porosity * 2), 25, 1200)
+	material.fracture_toughness = clamp(round(batch.toughness - batch.brittleness * 0.5), 5, 150)
+	material.dielectric_strength = clamp(round((100 - batch.conductivity) * 1.2 + batch.corrosion_resistance * 0.25), 1, 150)
+	var/cryo_skin = batch.surface_layers[MATERIAL_SURFACE_SLIME_CRYO] || 0
+	var/thermal_skin = batch.surface_layers[MATERIAL_SURFACE_SLIME_THERMAL] || 0
+	if((batch.composition[MAT_METALHYDROGEN] || (batch.additive_units_matching("cryogenic stabilizer") && cryo_skin)) && batch.conductivity >= 75 && batch.purity >= 90)
+		material.critical_temperature = clamp(T0C - 120 + cryo_skin * 0.8, 40, T0C - 5)
+		material.critical_current_density = clamp(batch.conductivity * batch.purity / 8, 100, 1500)
+	if(cryo_skin || thermal_skin)
+		material.phase_change_temperature = cryo_skin ? max(60, T0C - cryo_skin) : T0C + thermal_skin * 2
+		material.phase_change_capacity = clamp(round((cryo_skin + thermal_skin) * material.specific_heat * 4), 1000, 500000)
+	if(batch.surface_layers[MATERIAL_SURFACE_SLIME_CATALYTIC] || batch.additive_units_matching("platinum plating") || batch.additive_units_matching("gold plating"))
+		material.catalytic_activity = clamp(round(batch.purity * 0.7 + batch.corrosion_resistance * 0.3), 1, 100)
 	var/weighted_density = 0
 	var/weighted_magnetism = 0
 	var/weighted_reflectivity = 0

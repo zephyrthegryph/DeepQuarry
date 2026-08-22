@@ -46,11 +46,25 @@
 	var/datum/gas_mixture/environment = loc.return_air()
 
 	var/pressure_difference = pressure - environment.return_pressure()
+	var/datum/material/material = engineered_material()
+	var/effective_maximum = maximum_pressure
+	var/effective_fatigue = fatigue_pressure
+	if(material)
+		var/internal_temperature = parent?.air?.return_temperature() || T20C
+		effective_maximum = material.material_pressure_limit(MATERIAL_PIPE_REFERENCE_RADIUS, MATERIAL_PIPE_REFERENCE_THICKNESS, internal_temperature)
+		effective_fatigue = effective_maximum * 0.78
+		var/plasma_fraction = parent?.air ? parent.air.get_moles(/datum/gas/plasma) / max(parent.air.total_moles(), 0.001) : 0
+		if(plasma_fraction > 0.01)
+			material_liner_integrity = max(0, material_liner_integrity - material.material_corrosion_rate(REAGENT_ID_PHORON, internal_temperature) * plasma_fraction)
+			if(material_liner_integrity <= 0 && !damaged_leak)
+				damaged_leak = TRUE
+				set_leaking(TRUE)
+				visible_message(span_warning("The breached liner inside [src] begins leaking through its structural shell."))
 
-	if(pressure_difference > maximum_pressure)
+	if(pressure_difference > effective_maximum)
 		burst()
 
-	else if(pressure_difference > fatigue_pressure)
+	else if(pressure_difference > effective_fatigue)
 		if(!damaged_leak && prob(5))
 			damaged_leak = TRUE
 			set_leaking(TRUE)

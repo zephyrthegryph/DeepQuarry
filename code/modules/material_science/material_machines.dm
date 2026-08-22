@@ -328,7 +328,7 @@
 
 /obj/machinery/material_furnace
 	name = "controlled-atmosphere alloy hearth"
-	desc = "A physical alloy hearth. Its open chamber uses the room's real pressure and gas mixture during every firing."
+	desc = "A physical alloy hearth with a sealable gas chamber. Tank-fed fuel, oxidizer, pressure, combustion, and conserved heat determine every firing."
 	icon = 'icons/obj/props/decor.dmi'
 	icon_state = "nt_cruciforge"
 	anchored = TRUE
@@ -341,6 +341,13 @@
 	var/obj/item/material_workpiece/workpiece
 	var/firing
 	var/firing_timer
+	/// A real LINDA mixture. Heat must exist in this chamber; the hearth never
+	/// assigns a recipe temperature to the workpiece.
+	var/datum/gas_mixture/chamber_air
+
+/obj/machinery/material_furnace/Initialize(mapload)
+	. = ..()
+	chamber_air = new(500)
 
 /obj/machinery/material_furnace/Destroy()
 	if(firing_timer)
@@ -348,6 +355,7 @@
 		firing_timer = null
 	crucible = null
 	workpiece = null
+	QDEL_NULL(chamber_air)
 	return ..()
 
 /obj/machinery/material_furnace/examine(mob/user)
@@ -358,12 +366,24 @@
 		. += span_notice("A [workpiece] is seated in the chamber.")
 	else
 		. += span_notice("The chamber is empty. Insert a crucible or solid workpiece.")
-	var/turf/furnace_turf = get_turf(src)
-	var/datum/gas_mixture/air = furnace_turf?.return_air()
-	if(air)
-		. += span_notice("The open chamber reads [round(air.return_pressure(), 0.1)] kPa at [round(air.return_temperature(), 0.1)] K.")
+	if(chamber_air)
+		. += span_notice("The closed chamber reads [round(chamber_air.return_pressure(), 0.1)] kPa at [round(chamber_air.return_temperature(), 0.1)] K.")
+		. += span_notice("Charge it from an ordinary gas tank. Its real fuel, oxidizer, pressure, and heat determine what processing is physically possible.")
 
 /obj/machinery/material_furnace/attackby(obj/item/item, mob/user)
+	if(istype(item, /obj/item/tank))
+		if(firing)
+			to_chat(user, span_warning("The chamber is sealed during firing."))
+			return
+		var/obj/item/tank/tank = item
+		var/datum/gas_mixture/charge = tank.air_contents?.remove(5)
+		if(!charge)
+			to_chat(user, span_warning("[tank] contains no transferable chamber charge."))
+			return
+		chamber_air.merge(charge)
+		qdel(charge)
+		visible_message(span_notice("[user] couples [tank] to [src] and meters a real gas charge into its chamber."))
+		return
 	if(istype(item, /obj/item/reagent_containers/glass/material_crucible))
 		if(crucible || workpiece || firing)
 			to_chat(user, span_warning("The hearth is already occupied."))
@@ -396,6 +416,11 @@
 	firing = TRUE
 	icon_state = "nt_cruciforge_work"
 	use_power(active_power_usage * 6)
+	// The electric elements provide a modest, conserved heat input. High-tier
+	// temperatures require a deliberately prepared combustible chamber charge.
+	chamber_air.add_thermal_energy(active_power_usage * 6)
+	for(var/ignition_step in 1 to 3)
+		chamber_air.react()
 	visible_message(span_notice("[src]'s exposed chamber closes around the charge and blooms with visible heat."))
 	set_light(3, 3, "#ff7b22")
 	firing_timer = addtimer(CALLBACK(src, PROC_REF(finish_firing)), 6 SECONDS, TIMER_STOPPABLE)
@@ -410,29 +435,40 @@
 	if(!batch?.amount)
 		visible_message(span_warning("[src] opens on an empty charge."))
 		return
+	var/chamber_temperature = chamber_air.return_temperature()
+	var/batch_capacity = max(batch.amount * 5000, 1000)
+	var/chamber_capacity = chamber_air.heat_capacity()
+	if(chamber_capacity > 0)
+		var/equilibrium_temperature = (chamber_temperature * chamber_capacity + batch.temperature * batch_capacity) / (chamber_capacity + batch_capacity)
+		chamber_air.set_temperature(equilibrium_temperature)
+		batch.temperature = equilibrium_temperature
+	else
+		visible_message(span_warning("[src] opens without transferring useful heat; its chamber had no thermal mass."))
+		return
 	if(crucible)
 		var/entered_solution = process_crucible_chemistry(batch)
 		if(batch.phase == MATERIAL_PHASE_SOLUTION && !entered_solution)
-			batch.temperature = max(batch.temperature, T20C + 100)
-			batch.apply_process(MATERIAL_PROCESS_CRYSTALLIZE)
+			if(batch.temperature >= T20C + 100)
+				batch.apply_process(MATERIAL_PROCESS_CRYSTALLIZE)
 		else if(batch.phase == MATERIAL_PHASE_POWDER)
-			batch.apply_process(MATERIAL_PROCESS_SINTER)
+			if(batch.temperature >= batch.melting_temperature() * 0.45)
+				batch.apply_process(MATERIAL_PROCESS_SINTER)
 		else if(batch.phase == MATERIAL_PHASE_SOLID)
-			batch.temperature = batch.melting_temperature() + 50
-			batch.apply_process(MATERIAL_PROCESS_MELT)
+			if(batch.temperature >= batch.melting_temperature())
+				batch.apply_process(MATERIAL_PROCESS_MELT)
 		else if(batch.phase == MATERIAL_PHASE_MOLTEN)
 			batch.apply_process(MATERIAL_PROCESS_HOMOGENIZE)
 		crucible.update_icon()
 	else
 		if(batch.phase == MATERIAL_PHASE_POWDER)
-			batch.temperature = round(batch.melting_temperature() * 0.6)
-			batch.apply_process(MATERIAL_PROCESS_SINTER)
-		else if(batch.structure[MATERIAL_STRUCTURE_HARDENED] >= 15)
-			batch.temperature = round(batch.melting_temperature() * 0.32)
+			if(batch.temperature >= batch.melting_temperature() * 0.45)
+				batch.apply_process(MATERIAL_PROCESS_SINTER)
+		else if(batch.structure[MATERIAL_STRUCTURE_HARDENED] >= 15 && batch.can_process(MATERIAL_PROCESS_TEMPER))
 			batch.apply_process(MATERIAL_PROCESS_TEMPER)
-		else
-			batch.temperature = round(batch.melting_temperature() * 0.72)
+		else if(batch.can_process(MATERIAL_PROCESS_SOLUTION_TREAT))
 			batch.apply_process(MATERIAL_PROCESS_SOLUTION_TREAT)
+		else if(batch.can_process(MATERIAL_PROCESS_ANNEAL))
+			batch.apply_process(MATERIAL_PROCESS_ANNEAL)
 		workpiece.update_icon()
 	apply_real_atmosphere(batch)
 	visible_message(span_notice("[src] opens, revealing the visibly transformed [crucible || workpiece]."))
@@ -459,8 +495,7 @@
 	return entered_solution
 
 /obj/machinery/material_furnace/proc/apply_real_atmosphere(datum/material_batch/batch)
-	var/turf/furnace_turf = get_turf(src)
-	var/datum/gas_mixture/air = furnace_turf?.return_air()
+	var/datum/gas_mixture/air = chamber_air
 	if(!air)
 		return
 	var/pressure = air.return_pressure()
@@ -499,6 +534,20 @@
 		batch.add_additive("phoron interstitial", phoron_used * 20, 3, MATERIAL_COST_CHEMICALS)
 		air.adjust_moles(/datum/gas/plasma, -phoron_used)
 	batch.recalculate()
+
+/obj/machinery/material_furnace/click_alt(mob/user)
+	if(firing)
+		to_chat(user, span_warning("The firing chamber cannot be vented while sealed."))
+		return CLICK_ACTION_BLOCKING
+	var/turf/furnace_turf = get_turf(src)
+	var/datum/gas_mixture/environment = furnace_turf?.return_air()
+	if(!environment || !chamber_air?.total_moles())
+		return CLICK_ACTION_BLOCKING
+	var/datum/gas_mixture/vented = chamber_air.remove(chamber_air.total_moles())
+	environment.merge(vented)
+	qdel(vented)
+	visible_message(span_warning("[user] opens [src]'s chamber vent, releasing its real gas charge into the room."))
+	return CLICK_ACTION_SUCCESS
 
 /obj/machinery/material_furnace/proc/eject_contents(mob/user)
 	var/turf/furnace_turf = get_turf(src)

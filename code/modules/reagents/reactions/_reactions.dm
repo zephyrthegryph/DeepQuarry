@@ -53,6 +53,9 @@
 
 /datum/decl/chemical_reaction/proc/calc_reaction_progress(datum/reagents/holder, reaction_limit)
 	var/progress = reaction_limit * reaction_rate //simple exponential progression
+	// Catalytic material surfaces alter the ordinary reaction rate; no recipe
+	// knows an alloy name and no special catalyst item is injected.
+	progress *= holder.my_atom?.material_reaction_rate_multiplier() || 1
 
 	//calculate yield
 	if(1-yield > 0.001) //if yield ratio is big enough just assume it goes to completion

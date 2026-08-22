@@ -27,6 +27,9 @@
 /datum/material/proc/dq_apply_material_behaviors(obj/item/I)
 	if(!I)
 		return
+	// Geometry-specific consumers can override thickness; ordinary fabricated
+	// items use a five-millimeter representative path through their material.
+	I.rad_insulation = material_radiation_transmission(5)
 	if(luminescence > 0 || radioactivity > 0 || toxicity > 0)
 		I.AddComponent(/datum/component/material_behaviors, luminescence, radioactivity, toxicity, icon_colour)
 

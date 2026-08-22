@@ -17,6 +17,7 @@ Buildable meters
 	level = 2
 	var/piping_layer = PIPING_LAYER_DEFAULT
 	var/dispenser_class // Tells the dispenser what orientations we support, so RPD can show previews.
+	var/material_liner_integrity = 100
 
 // One subtype for each way components connect to neighbors
 /obj/item/pipe/directional
@@ -60,6 +61,8 @@ Buildable meters
 		src.req_one_access = make_from.req_one_access
 	color = make_from.pipe_color
 	pipe_type = make_from.type
+	engineered_material_id = make_from.engineered_material_id
+	material_liner_integrity = make_from.material_liner_integrity
 
 /obj/item/pipe/trinary/flippable/make_from_existing(obj/machinery/atmospherics/trinary/make_from)
 	..()
@@ -164,6 +167,19 @@ Buildable meters
 		return ..()
 
 /obj/item/pipe/attackby(obj/item/W as obj, mob/user as mob)
+	if(istype(W, /obj/item/stack/material))
+		var/obj/item/stack/material/stock = W
+		if(engineered_material_id)
+			to_chat(user, span_warning("[src] already has a material liner and shell."))
+			return
+		if(stock.get_amount() < 1 || !stock.material)
+			return
+		var/datum/material/material = stock.material
+		engineered_material_id = material.name
+		stock.use(1)
+		color = material.icon_colour
+		to_chat(user, span_notice("You form [material.display_name] around [src]. Its installed geometry will determine pressure strength, heat transfer, and chemical exposure."))
+		return
 	if(W.has_tool_quality(TOOL_WRENCH))
 		return wrench_act(user, W)
 	return ..()
@@ -206,6 +222,8 @@ Buildable meters
 	qdel(src)
 
 /obj/item/pipe/proc/build_pipe(obj/machinery/atmospherics/A)
+	A.engineered_material_id = engineered_material_id
+	A.material_liner_integrity = material_liner_integrity
 	A.set_dir(dir)
 	A.init_dir()
 	if(pipename)

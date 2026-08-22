@@ -1,0 +1,7 @@
+author: "BigBadE"
+delete-after: true
+changes:
+  - rscadd: "Added physical layered composites with distinct cores, functional buffers, liners, and jackets."
+  - rscadd: "Engineering materials now affect cable heating, pipe pressure/corrosion, heat exchange, chemistry, radiation, and wall heat flow through actual operating conditions and geometry."
+  - rscadd: "Added a composite layup press and material-selectable cable and reaction-vessel fabrication."
+  - refactor: "Reworked the alloy hearth to use a conserved gas chamber, real combustion, and thermal equilibration instead of granting recipe temperatures."

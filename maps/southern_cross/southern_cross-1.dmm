@@ -108606,6 +108606,7 @@
 /obj/item/melee/hammer,
 /obj/item/ore/coal,
 /obj/item/reagent_containers/glass/material_crucible,
+/obj/structure/material_composite_press,
 /obj/structure/material_grindstone,
 /obj/structure/cable/green{
 	icon_state = "4-8"

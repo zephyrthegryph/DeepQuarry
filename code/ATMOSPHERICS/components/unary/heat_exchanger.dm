@@ -62,8 +62,15 @@
 		var/combined_energy = other_old_temperature*other_air_heat_capacity + air_heat_capacity*old_temperature
 
 		var/new_temperature = combined_energy/combined_heat_capacity
-		air_contents.set_temperature(new_temperature)
-		partner.air_contents.set_temperature(new_temperature)
+		var/datum/material/our_material = engineered_material()
+		var/datum/material/their_material = partner.engineered_material()
+		var/transfer_fraction = 1
+		if(our_material || their_material)
+			var/our_conductance = our_material ? our_material.material_thermal_conductance(1, 0.005, old_temperature) / 1000 : 50
+			var/their_conductance = their_material ? their_material.material_thermal_conductance(1, 0.005, other_old_temperature) / 1000 : 50
+			transfer_fraction = clamp(min(our_conductance, their_conductance) / 50, 0.02, 1)
+		air_contents.set_temperature(old_temperature + (new_temperature - old_temperature) * transfer_fraction)
+		partner.air_contents.set_temperature(other_old_temperature + (new_temperature - other_old_temperature) * transfer_fraction)
 
 	if(network)
 		if(abs(old_temperature-air_contents.return_temperature()) > 1)

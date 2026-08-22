@@ -108,7 +108,8 @@
 	if(!istype(test_turf, /turf/simulated/floor))
 		test_turf = locate(/turf/simulated/floor) in world
 	TEST_ASSERT_NOTNULL(test_turf, "Real-atmos material testing requires a simulated floor")
-	var/datum/gas_mixture/air = test_turf.return_air()
+	var/obj/machinery/material_furnace/furnace = new(test_turf)
+	var/datum/gas_mixture/air = furnace.chamber_air
 	air.clear()
 	air.adjust_moles(/datum/gas/oxygen, 10)
 	air.adjust_moles(/datum/gas/nitrogen, 60)
@@ -117,7 +118,6 @@
 	var/oxygen_before = air.get_moles(/datum/gas/oxygen)
 	var/nitrogen_before = air.get_moles(/datum/gas/nitrogen)
 	var/phoron_before = air.get_moles(/datum/gas/plasma)
-	var/obj/machinery/material_furnace/furnace = new(test_turf)
 	var/datum/material_batch/batch = new
 	batch.add_material(MAT_STEEL, 3, null, 96, "ATMOSLOT")
 	batch.temperature = batch.melting_temperature()
@@ -129,6 +129,91 @@
 	TEST_ASSERT(batch.surface_layers[MATERIAL_SURFACE_OXIDE], "Oxygen firing must leave visible oxide scale")
 	qdel(batch)
 	qdel(furnace)
+
+/datum/unit_test/dq_material_composite_geometry
+
+/datum/unit_test/dq_material_composite_geometry/Run()
+	var/composite_key = register_composite_material(MAT_COPPER, MAT_LEAD, MAT_GLASS, MAT_PLASTIC)
+	TEST_ASSERT_NOTNULL(composite_key, "A valid four-layer layup must register")
+	var/datum/material/composite/composite = get_material_by_name(composite_key)
+	TEST_ASSERT(istype(composite), "A registered layup must retain its physical layers")
+	TEST_ASSERT_EQUAL(composite.core_material_id, MAT_COPPER, "The conductor core must not be averaged away")
+	TEST_ASSERT_EQUAL(composite.functional_material_id, MAT_LEAD, "The functional layer must remain addressable")
+	TEST_ASSERT_EQUAL(composite.liner_material_id, MAT_GLASS, "Chemistry must see the inner liner")
+	TEST_ASSERT_EQUAL(composite.jacket_material_id, MAT_PLASTIC, "The exterior jacket must remain addressable")
+	var/datum/material/copper = get_material_by_name(MAT_COPPER)
+	var/datum/material/plastic = get_material_by_name(MAT_PLASTIC)
+	var/datum/material/glass = get_material_by_name(MAT_GLASS)
+	TEST_ASSERT(composite.material_thermal_conductance(1, 0.01, T20C) < copper.material_thermal_conductance(1, 0.01, T20C), "A series insulating jacket must reduce heat flow instead of being averaged into the core")
+	TEST_ASSERT(composite.material_pressure_limit(20, 4, T20C) > composite.material_pressure_limit(20, 2, T20C), "Pressure strength must derive from wall geometry")
+	TEST_ASSERT(composite.material_radiation_transmission(20) < composite.material_radiation_transmission(5), "Radiation attenuation must derive from actual thickness")
+	TEST_ASSERT_EQUAL(composite.material_corrosion_rate(REAGENT_ID_SACID, T20C), glass.material_corrosion_rate(REAGENT_ID_SACID, T20C), "Reagents must contact the liner rather than an averaged bulk")
+	TEST_ASSERT(composite.material_electrical_resistance(1, MATERIAL_CABLE_REFERENCE_AREA, T20C, 0) < plastic.material_electrical_resistance(1, MATERIAL_CABLE_REFERENCE_AREA, T20C, 0), "Electrical current must follow the conductive core")
+
+/datum/unit_test/dq_material_composite_superconductor_stack
+
+/datum/unit_test/dq_material_composite_superconductor_stack/Run()
+	var/datum/material_batch/conductor_batch = new
+	conductor_batch.add_material(MAT_METALHYDROGEN, 3, null, 99, "SUPERCONDUCTOR")
+	var/conductor_key = register_processed_material(conductor_batch)
+	var/datum/material/processed_alloy/conductor = get_material_by_name(conductor_key)
+	TEST_ASSERT(conductor.critical_temperature > 0, "A qualified physical conductor must publish a critical temperature")
+	var/datum/material_batch/buffer_batch = new
+	buffer_batch.add_material(MAT_STEEL, 3, null, 99, "CRYOBUFFER")
+	buffer_batch.add_surface_layer(MATERIAL_SURFACE_SLIME_CRYO, 60, "cryogenic slime extract", 1)
+	var/buffer_key = register_processed_material(buffer_batch)
+	var/composite_key = register_composite_material(conductor_key, buffer_key, MAT_GLASS, MAT_PLASTIC)
+	var/datum/material/composite/composite = get_material_by_name(composite_key)
+	TEST_ASSERT(composite.phase_change_capacity > 0, "A cryogenic functional layer must provide a conserved thermal buffer")
+	var/cold_resistance = composite.material_electrical_resistance(1, MATERIAL_CABLE_REFERENCE_AREA, conductor.critical_temperature - 5, 1)
+	var/warm_resistance = composite.material_electrical_resistance(1, MATERIAL_CABLE_REFERENCE_AREA, conductor.critical_temperature + 20, 1)
+	TEST_ASSERT(cold_resistance < warm_resistance, "The core may superconduct only while the real composite remains below its critical temperature")
+	TEST_ASSERT(composite.material_thermal_conductance(1, 0.01, T20C) < conductor.material_thermal_conductance(1, 0.01, T20C), "The outer insulating jacket must limit heat leaking through the finished conductor")
+	qdel(buffer_batch)
+	qdel(conductor_batch)
+
+/datum/unit_test/dq_material_composite_physical_products
+
+/datum/unit_test/dq_material_composite_physical_products/Run()
+	var/composite_key = register_composite_material(MAT_COPPER, MAT_LEAD, MAT_GLASS, MAT_PLASTIC)
+	var/obj/structure/material_composite_press/press = new(run_loc_floor_bottom_left)
+	press.core_material_id = MAT_COPPER
+	press.functional_material_id = MAT_LEAD
+	press.liner_material_id = MAT_GLASS
+	press.jacket_material_id = MAT_PLASTIC
+	var/obj/item/stack/material/composite/pressed_stock = press.finish_layup(null)
+	TEST_ASSERT_NOTNULL(pressed_stock, "The press must eject tangible composite stock")
+	TEST_ASSERT_EQUAL(pressed_stock.get_amount(), 4, "Composite layup must conserve all four input sheets")
+	var/obj/item/stack/cable_coil/engineered/coil = new(run_loc_floor_bottom_left, 10, null, composite_key)
+	TEST_ASSERT_EQUAL(coil.engineered_material_id, composite_key, "Fabricated cable must retain its selected composite")
+	var/obj/item/reagent_containers/glass/beaker/composite/vessel = new(run_loc_floor_bottom_left, composite_key)
+	TEST_ASSERT_EQUAL(vessel.engineered_material_id, composite_key, "A reaction vessel must retain the same canonical material identity")
+	var/datum/material/glass = get_material_by_name(MAT_GLASS)
+	TEST_ASSERT_EQUAL(vessel.material_reaction_rate_multiplier(), 1 + glass.catalytic_activity / 100, "Vessel kinetics must be controlled by its exposed liner")
+	qdel(vessel)
+	qdel(coil)
+	qdel(pressed_stock)
+	qdel(press)
+
+/datum/unit_test/dq_material_composite_power_response
+
+/datum/unit_test/dq_material_composite_power_response/Run()
+	var/turf/test_turf = get_turf(run_loc_floor_bottom_left)
+	if(!test_turf)
+		test_turf = locate(/turf/simulated/floor) in world
+	TEST_ASSERT_NOTNULL(test_turf, "Composite power response requires a real turf")
+	var/composite_key = register_composite_material(MAT_COPPER, MAT_LEAD, MAT_GLASS, MAT_PLASTIC)
+	var/obj/structure/cable/cable = new(test_turf)
+	cable.set_engineered_material(composite_key)
+	var/datum/powernet/network = new
+	network.add_cable(cable)
+	network.load = 500000
+	var/start_temperature = cable.material_temperature
+	network.process_material_network()
+	TEST_ASSERT(network.material_hotspot == cable, "Powernet topology must select the engineered conductor without rescanning stable networks")
+	TEST_ASSERT(cable.material_temperature > start_temperature || cable.material_buffer_energy > 0, "Real electrical load must become conductor heat or conserved phase-buffer energy")
+	qdel(network)
+	qdel(cable)
 
 /datum/unit_test/dq_material_science_solution_and_bath
 
