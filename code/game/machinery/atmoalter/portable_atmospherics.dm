@@ -63,6 +63,9 @@
 	if(ref_key)
 		SSmachines.sleeping_gas_devices.Remove(ref_key)
 
+/obj/machinery/portable_atmospherics/proc/gas_dependency_changed(mixture_id, change_mask)
+	return mixture_id == sleeping_mixture_id && (change_mask & GAS_DEPENDENCY_ALL)
+
 /obj/machinery/portable_atmospherics/blob_act()
 	qdel(src)
 

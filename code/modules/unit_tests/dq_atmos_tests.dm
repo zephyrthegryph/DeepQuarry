@@ -4152,6 +4152,15 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	regulator.on = TRUE
 	regulator.wake_for_state_change()
 	TEST_ASSERT(regulator in SSmachines.processing_machines, "enabling a thermoregulator did not wake it")
+	var/obj/machinery/portable_atmospherics/canister/air/airlock/airlock_canister = new(T)
+	var/obj/machinery/atmospherics/portables_connector/test_port = new(T)
+	airlock_canister.connected_port = test_port
+	airlock_canister.update_flag = airlock_canister.desired_update_flag()
+	airlock_canister.hibernate_until_gas_changes()
+	var/canister_mixture_id = airlock_canister.air_contents.arena_id()
+	TEST_ASSERT(!airlock_canister.gas_dependency_changed(canister_mixture_id, GAS_DEPENDENCY_PRESSURE), "minor connected-canister pressure change caused an irrelevant wake")
+	airlock_canister.air_contents.clear()
+	TEST_ASSERT(airlock_canister.gas_dependency_changed(canister_mixture_id, GAS_DEPENDENCY_PRESSURE), "connected canister did not wake when its gauge band changed")
 	var/obj/machinery/computer/operating/operating_console = new(T)
 	operating_console.table = operating_table
 	operating_table.computer = operating_console

@@ -112,26 +112,39 @@
 
 /obj/machinery/portable_atmospherics/canister/proc/check_change()
 	var/old_flag = update_flag
-	update_flag = 0
-	if(holding)
-		update_flag |= 1
-	if(connected_port)
-		update_flag |= 2
-
-	var/tank_pressure = air_contents.return_pressure()
-	if(tank_pressure < 10)
-		update_flag |= 4
-	else if(tank_pressure < ONE_ATMOSPHERE)
-		update_flag |= 8
-	else if(tank_pressure < 15*ONE_ATMOSPHERE)
-		update_flag |= 16
-	else
-		update_flag |= 32
+	update_flag = desired_update_flag()
 
 	if(update_flag == old_flag)
 		return 1
 	else
 		return 0
+
+/obj/machinery/portable_atmospherics/canister/proc/desired_update_flag()
+	. = 0
+	if(holding)
+		. |= 1
+	if(connected_port)
+		. |= 2
+
+	var/tank_pressure = air_contents.return_pressure()
+	if(tank_pressure < 10)
+		. |= 4
+	else if(tank_pressure < ONE_ATMOSPHERE)
+		. |= 8
+	else if(tank_pressure < 15*ONE_ATMOSPHERE)
+		. |= 16
+	else
+		. |= 32
+
+/obj/machinery/portable_atmospherics/canister/gas_dependency_changed(mixture_id, change_mask)
+	if(!..())
+		return FALSE
+	// An attached closed canister's gas reactions and pipe membership are owned
+	// by the pipenet. Its machinery process only needs to refresh the gauge when
+	// the pressure crosses a displayed band.
+	if(connected_port && !valve_open)
+		return desired_update_flag() != update_flag
+	return TRUE
 
 /obj/machinery/portable_atmospherics/canister/update_icon()
 /*

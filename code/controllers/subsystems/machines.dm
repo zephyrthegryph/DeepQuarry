@@ -422,6 +422,10 @@ SUBSYSTEM_DEF(machines)
 					var/obj/machinery/atmospherics/portables_connector/C = subscriber
 					if(C.gas_dependency_changed(mixture_id, change_mask))
 						LAZYADD(to_wake, WR)
+				else if(istype(subscriber, /obj/machinery/portable_atmospherics))
+					var/obj/machinery/portable_atmospherics/P = subscriber
+					if(P.gas_dependency_changed(mixture_id, change_mask))
+						LAZYADD(to_wake, WR)
 				else if(istype(subscriber, /obj/machinery/disposal))
 					var/obj/machinery/disposal/D = subscriber
 					if(D.gas_dependency_changed(mixture_id, change_mask))
