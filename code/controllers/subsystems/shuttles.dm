@@ -61,8 +61,7 @@ SUBSYSTEM_DEF(shuttles)
 			log_world("## ERROR Bad entry in SSshuttles.process_shuttles - [log_info_line(S)] ")
 			process_shuttles -= S
 			continue
-		// NOTE - In old system, /datum/shuttle/ferry was processed only if (F.process_state || F.always_process)
-		if(S.process_state && (S.process(wait, times_fired, src) == PROCESS_KILL))
+		if((S.process_state || S.always_process) && (S.process(wait, times_fired, src) == PROCESS_KILL))
 			process_shuttles -= S
 
 		if(MC_TICK_CHECK)

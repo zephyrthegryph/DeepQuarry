@@ -11,6 +11,7 @@
 	var/tmp/arrive_time = 0	//the time at which the shuttle arrives when long jumping
 	var/flags = SHUTTLE_FLAGS_NONE
 	var/process_state = IDLE_STATE // Used with SHUTTLE_FLAGS_PROCESS, as well as to store current state.
+	var/always_process = FALSE // Automated shuttles may need idle-state checks.
 	var/category = /datum/shuttle
 	var/multiz = 0	//how many multiz levels, starts at 0 TODO Leshana - Are we porting this?
 

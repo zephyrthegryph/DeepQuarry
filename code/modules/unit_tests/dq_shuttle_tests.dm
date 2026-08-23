@@ -1,4 +1,18 @@
 // Web-shuttle configuration sanity.
+
+/datum/unit_test/dq_arrivals_idle_automation_owned_by_shuttles
+
+/datum/shuttle/autodock/ferry/arrivals/unit_test
+	defer_initialisation = TRUE
+	shuttle_area = /area
+
+/datum/unit_test/dq_arrivals_idle_automation_owned_by_shuttles/Run()
+	var/datum/shuttle/autodock/ferry/arrivals/shuttle = new /datum/shuttle/autodock/ferry/arrivals/unit_test("Unit Test Arrivals")
+	TEST_ASSERT(shuttle.always_process, "arrivals shuttle does not request idle processing from SSshuttles")
+	var/obj/machinery/computer/shuttle_control/arrivals/console = new(null)
+	TEST_ASSERT_EQUAL(console.process(), PROCESS_KILL, "arrivals console still polls an idle shuttle")
+	qdel(console)
+	qdel(shuttle)
 //
 // A web-shuttle destination whose map landmark doesn't exist (e.g. it lived on
 // a z-level this map no longer loads) used to survive init with a null
@@ -175,6 +189,11 @@
 /datum/unit_test/dq_arrivals_shuttle_preserves_air/Run()
 	var/datum/shuttle/autodock/ferry/arrivals/shuttle = SSshuttles.shuttles["Arrivals"]
 	TEST_ASSERT_NOTNULL(shuttle, "Southern Cross arrivals shuttle was not registered")
+	TEST_ASSERT(shuttle.always_process, "arrivals shuttle is not configured for subsystem-owned idle automation")
+	TEST_ASSERT(shuttle in SSshuttles.process_shuttles, "arrivals shuttle is absent from the shuttle processing set")
+	var/obj/machinery/computer/shuttle_control/arrivals/console = locate() in world
+	TEST_ASSERT_NOTNULL(console, "Southern Cross arrivals control console was not mapped")
+	TEST_ASSERT_EQUAL(console.process(), PROCESS_KILL, "arrivals console still performs idle polling instead of hibernating")
 	TEST_ASSERT_NOTNULL(shuttle.landmark_station, "arrivals shuttle has no station landmark")
 	var/total_o2_before = 0
 	var/pressurized_turfs_before = 0

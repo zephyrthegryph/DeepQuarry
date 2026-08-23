@@ -20,13 +20,10 @@
 	req_access = list(ACCESS_CENT_GENERAL)
 	shuttle_tag = "Arrivals"
 
-// Unlike most shuttles, the arrivals shuttle is completely automated, so we need to put some additional code here.
-// Process the arrivals shuttle even when idle.
+// The shuttle subsystem owns arrivals automation through always_process. The
+// mapped console is only a debugging/control surface and has no idle work.
 /obj/machinery/computer/shuttle_control/arrivals/process()
-	var/datum/shuttle/autodock/ferry/arrivals/shuttle = SSshuttles.shuttles[shuttle_tag]
-	if(shuttle && shuttle.process_state == IDLE_STATE)
-		shuttle.process()
-	return
+	return PROCESS_KILL
 
 // This proc checks if anyone is on the shuttle.
 /datum/shuttle/autodock/ferry/arrivals/proc/check_for_passengers()
