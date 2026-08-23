@@ -48,6 +48,7 @@ SUBSYSTEM_DEF(machines)
 	var/list/machine_profile_cost = list()
 	var/list/machine_profile_calls = list()
 	var/list/machine_profile_kills = list()
+	var/list/machine_profile_productive = list()
 	var/next_machine_profile_dump = 0
 
 	// Wait to rebuild powernets
@@ -160,6 +161,10 @@ SUBSYSTEM_DEF(machines)
 				process_result = M.process(wait)
 				machine_profile_cost[machine_type] += TICK_DELTA_TO_MS(TICK_USAGE_REAL - profile_start)
 				machine_profile_calls[machine_type]++
+				if(istype(M, /obj/machinery/atmospherics))
+					var/obj/machinery/atmospherics/atmos_machine = M
+					if(abs(atmos_machine.last_flow_rate) > 0.001 || atmos_machine.last_power_draw > 0)
+						machine_profile_productive[machine_type]++
 				if(process_result == PROCESS_KILL)
 					machine_profile_kills[machine_type]++
 			else
@@ -200,7 +205,7 @@ SUBSYSTEM_DEF(machines)
 	sortTim(sorted_cost, /proc/cmp_numeric_desc, TRUE)
 	var/rank = 0
 	for(var/machine_type in sorted_cost)
-		log_runtime("MACHINE_PROFILE type=[machine_type] cost_ms=[round(machine_profile_cost[machine_type], 0.01)] calls=[machine_profile_calls[machine_type]] active=[current_counts[machine_type] || 0] killed=[machine_profile_kills[machine_type] || 0]")
+		log_runtime("MACHINE_PROFILE type=[machine_type] cost_ms=[round(machine_profile_cost[machine_type], 0.01)] calls=[machine_profile_calls[machine_type]] productive=[machine_profile_productive[machine_type] || 0] active=[current_counts[machine_type] || 0] killed=[machine_profile_kills[machine_type] || 0]")
 		if(++rank >= 25)
 			break
 	var/list/sorted_counts = current_counts.Copy()
@@ -215,6 +220,7 @@ SUBSYSTEM_DEF(machines)
 	machine_profile_cost.Cut()
 	machine_profile_calls.Cut()
 	machine_profile_kills.Cut()
+	machine_profile_productive.Cut()
 	next_machine_profile_dump = world.time + 30 SECONDS
 
 /datum/controller/subsystem/machines/proc/process_powernets(resumed = 0)
