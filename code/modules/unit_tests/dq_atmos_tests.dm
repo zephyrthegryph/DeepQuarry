@@ -6303,7 +6303,18 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	TEST_ASSERT(!program.signal_requires_processing(unrelated), "airlock controller accepted an unrelated station-wide radio update")
 	var/datum/signal/relevant = new
 	relevant.data["tag"] = program.tag_chamber_sensor
-	TEST_ASSERT(program.signal_requires_processing(relevant), "airlock controller rejected its own chamber sensor update")
+	relevant.data["pressure"] = 42
+	program.receive_signal(relevant)
+	TEST_ASSERT_EQUAL(program.memory["chamber_sensor_pressure"], 42, "idle airlock controller did not retain its chamber pressure update")
+	TEST_ASSERT(!program.signal_requires_processing(relevant), "idle airlock controller scheduled work for a passive sensor update")
+	program.begin_cycle_in()
+	TEST_ASSERT(program.signal_requires_processing(relevant), "cycling airlock controller rejected its chamber sensor update")
+	program.stop_cycling()
+	var/datum/signal/running_pump = new
+	running_pump.data = list("tag" = program.tag_airpump, "power" = 1, "direction" = 1)
+	program.receive_signal(running_pump)
+	TEST_ASSERT(program.signal_requires_processing(running_pump), "idle airlock controller did not wake for an unexpectedly running pump")
 	qdel(unrelated)
 	qdel(relevant)
+	qdel(running_pump)
 	qdel(controller)

@@ -114,7 +114,14 @@
 
 /datum/embedded_program/airlock/signal_requires_processing(datum/signal/signal, receive_method, receive_param)
 	var/receive_tag = signal.data["tag"]
-	return receive_tag == tag_chamber_sensor || receive_tag == tag_exterior_sensor || receive_tag == tag_interior_sensor || receive_tag == tag_exterior_door || receive_tag == tag_interior_door || receive_tag == tag_airpump || receive_tag == tag_pump_out_internal || receive_tag == id_tag
+	if(receive_tag == id_tag)
+		return TRUE
+	var/cycle_active = state != target_state
+	if(receive_tag == tag_airpump || receive_tag == tag_pump_out_internal)
+		return cycle_active || memory["pump_status"] != "off"
+	if(receive_tag == tag_chamber_sensor || receive_tag == tag_exterior_sensor || receive_tag == tag_interior_sensor || receive_tag == tag_exterior_door || receive_tag == tag_interior_door)
+		return cycle_active
+	return FALSE
 
 
 /datum/embedded_program/airlock/receive_user_command(command)
