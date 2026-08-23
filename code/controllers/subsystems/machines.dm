@@ -426,6 +426,10 @@ SUBSYSTEM_DEF(machines)
 					var/obj/machinery/disposal/D = subscriber
 					if(D.gas_dependency_changed(mixture_id, change_mask))
 						LAZYADD(to_wake, WR)
+				else if(istype(subscriber, /obj/machinery/power/thermoregulator))
+					var/obj/machinery/power/thermoregulator/T = subscriber
+					if(T.gas_dependency_changed(mixture_id, change_mask))
+						LAZYADD(to_wake, WR)
 				else
 					LAZYADD(to_wake, WR)
 			for(var/datum/weakref/WR as anything in to_wake)
@@ -570,6 +574,10 @@ SUBSYSTEM_DEF(machines)
 		var/obj/machinery/disposal/D = subscriber
 		D.clear_gas_dependency()
 		START_MACHINE_PROCESSING(D)
+	else if(istype(subscriber, /obj/machinery/power/thermoregulator))
+		var/obj/machinery/power/thermoregulator/T = subscriber
+		T.clear_gas_dependency()
+		START_MACHINE_PROCESSING(T)
 	if(WR.reference)
 		sleeping_gas_devices.Remove(WR.reference)
 		hibernating_vents[WR.reference] = null

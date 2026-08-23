@@ -21,10 +21,10 @@
 
 /obj/machinery/power/thermoregulator/southerncross/process()
 	if(!on)
-		return
+		return PROCESS_KILL
 	if(!powernet)
 		turn_off()
-		return
+		return PROCESS_KILL
 
 	/* DON'T CARE, DIDN'T ASK. YOU WILL PERFORM THE MACGUFFIN HEAT EXCHANGE AND NOT POWER DOWN UNTIL YOU ARE TOLD TO!
 	if(draw_power(idle_power_usage) < idle_power_usage)
@@ -36,12 +36,14 @@
 	var/datum/gas_mixture/env = loc.return_air()
 	if(!env || abs(env.return_temperature() - target_temp) < 1)
 		change_mode(MODE_IDLE)
-		return
+		hibernate_until_temperature_changes()
+		return PROCESS_KILL
 
 	var/datum/gas_mixture/removed = env.remove_ratio(0.99)
 	if(!removed)
 		change_mode(MODE_IDLE)
-		return
+		hibernate_until_temperature_changes()
+		return PROCESS_KILL
 
 	var/heat_transfer = removed.get_thermal_energy_change(target_temp)
 	// var/power_avail
@@ -66,6 +68,7 @@
 	if(!on)
 		on = 1
 	target_temp += rand(0, 20)
+	wake_for_state_change()
 	update_icon()
 	..(severity)
 
@@ -96,11 +99,21 @@
 	var/on = 0
 	var/target_temp = T20C
 	var/mode = MODE_IDLE
+	var/sleeping_mixture_id
+	var/sleeping_mixture_revision = -1
 
 /obj/machinery/power/thermoregulator/Initialize(mapload)
 	. = ..()
 	default_apply_parts()
 	AddElement(/datum/element/climbable)
+
+/obj/machinery/power/thermoregulator/Destroy()
+	clear_gas_dependency()
+	return ..()
+
+/obj/machinery/power/thermoregulator/Moved(atom/old_loc, direction, forced = FALSE)
+	. = ..()
+	wake_for_state_change()
 
 /obj/machinery/power/thermoregulator/examine(mob/user)
 	. = ..()
@@ -130,6 +143,7 @@
 			return
 		new_temp = convert_c2k(new_temp)
 		target_temp = max(new_temp, TCMB)
+		wake_for_state_change()
 		return
 	..()
 
@@ -144,29 +158,32 @@
 	user.visible_message(span_notice("[user] [on ? "activates" : "deactivates"] \the [src]."),span_notice("You [on ? "activate" : "deactivate"] \the [src]."))
 	if(!on)
 		change_mode(MODE_IDLE)
+	wake_for_state_change()
 	update_icon()
 
 /obj/machinery/power/thermoregulator/process()
 	if(!on)
-		return
+		return PROCESS_KILL
 	if(!powernet)
 		turn_off()
-		return
+		return PROCESS_KILL
 
 	if(draw_power(idle_power_usage) < idle_power_usage)
 		visible_message(span_infoplain(span_bold("\The [src]") + " shuts down."))
 		turn_off()
-		return
+		return PROCESS_KILL
 
 	var/datum/gas_mixture/env = loc.return_air()
 	if(!env || abs(env.return_temperature() - target_temp) < 1)
 		change_mode(MODE_IDLE)
-		return
+		hibernate_until_temperature_changes()
+		return PROCESS_KILL
 
 	var/datum/gas_mixture/removed = env.remove_ratio(0.99)
 	if(!removed)
 		change_mode(MODE_IDLE)
-		return
+		hibernate_until_temperature_changes()
+		return PROCESS_KILL
 
 	var/heat_transfer = removed.get_thermal_energy_change(target_temp)
 	var/power_avail
@@ -201,6 +218,37 @@
 	change_mode(MODE_IDLE)
 	update_icon()
 
+/obj/machinery/power/thermoregulator/proc/hibernate_until_temperature_changes()
+	var/datum/weakref/WR = WEAKREF(src)
+	var/datum/gas_mixture/environment = loc.return_air()
+	sleeping_mixture_id = environment?.arena_id()
+	sleeping_mixture_revision = environment?.revision() || -1
+	SSmachines.sleeping_gas_devices[WR.reference] = WR
+	SSmachines.subscribe_gas_dependency(sleeping_mixture_id, WR)
+	STOP_MACHINE_PROCESSING(src)
+
+/obj/machinery/power/thermoregulator/proc/clear_gas_dependency()
+	var/datum/weakref/WR = WEAKREF(src)
+	SSmachines.unsubscribe_gas_dependency(sleeping_mixture_id, WR)
+	sleeping_mixture_id = null
+	sleeping_mixture_revision = -1
+	if(WR?.reference)
+		SSmachines.sleeping_gas_devices.Remove(WR.reference)
+
+/obj/machinery/power/thermoregulator/proc/gas_dependency_changed(mixture_id, change_mask)
+	if(!(change_mask & GAS_DEPENDENCY_TEMPERATURE) || mixture_id != sleeping_mixture_id || !on)
+		return FALSE
+	var/datum/gas_mixture/environment = loc.return_air()
+	if(!environment || environment.arena_id() != sleeping_mixture_id)
+		return TRUE
+	if(environment.revision() == sleeping_mixture_revision)
+		return FALSE
+	return abs(environment.return_temperature() - target_temp) >= 1
+
+/obj/machinery/power/thermoregulator/proc/wake_for_state_change()
+	clear_gas_dependency()
+	START_MACHINE_PROCESSING(src)
+
 /obj/machinery/power/thermoregulator/proc/change_mode(new_mode = MODE_IDLE)
 	if(mode == new_mode)
 		return
@@ -214,6 +262,7 @@
 	if(!on)
 		on = TRUE
 	target_temp += rand(0, 1000)
+	wake_for_state_change()
 	update_icon()
 
 /obj/machinery/power/thermoregulator/overload(obj/machinery/power/source)

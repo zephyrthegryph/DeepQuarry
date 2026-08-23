@@ -4145,6 +4145,13 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	var/obj/machinery/atmospherics/unary/heater/gas_heater = new(T)
 	gas_heater.update_use_power(USE_POWER_OFF)
 	TEST_ASSERT_EQUAL(gas_heater.process(), PROCESS_KILL, "switched-off gas heater remained scheduled")
+	var/obj/machinery/power/thermoregulator/regulator = new(T)
+	regulator.on = FALSE
+	TEST_ASSERT_EQUAL(regulator.process(), PROCESS_KILL, "switched-off thermoregulator remained scheduled")
+	STOP_MACHINE_PROCESSING(regulator)
+	regulator.on = TRUE
+	regulator.wake_for_state_change()
+	TEST_ASSERT(regulator in SSmachines.processing_machines, "enabling a thermoregulator did not wake it")
 	var/obj/machinery/computer/operating/operating_console = new(T)
 	operating_console.table = operating_table
 	operating_table.computer = operating_console
