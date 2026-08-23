@@ -4010,6 +4010,13 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	var/obj/machinery/power/emitter/emitter = new(T)
 	emitter.active = FALSE
 	TEST_ASSERT_EQUAL(emitter.process(), PROCESS_KILL, "inactive emitter remained scheduled")
+	var/obj/machinery/shieldwallgen/shieldwall_generator = new(T)
+	shieldwall_generator.active = FALSE
+	shieldwall_generator.storedpower = shieldwall_generator.max_stored_power
+	TEST_ASSERT_EQUAL(shieldwall_generator.process(), PROCESS_KILL, "full inactive shieldwall generator remained scheduled")
+	var/obj/machinery/shield_capacitor/shield_capacitor = new(T)
+	shield_capacitor.stored_charge = shield_capacitor.max_charge
+	TEST_ASSERT_EQUAL(shield_capacitor.process(), PROCESS_KILL, "full shield capacitor remained scheduled")
 	var/obj/machinery/sleeper/sleeper = new(T)
 	sleeper.stat = 0
 	TEST_ASSERT_EQUAL(sleeper.process(), PROCESS_KILL, "empty sleeper remained scheduled")
@@ -4078,6 +4085,8 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	qdel(heater)
 	qdel(floodlight)
 	qdel(emitter)
+	qdel(shieldwall_generator)
+	qdel(shield_capacitor)
 	qdel(sleeper)
 	qdel(drip)
 	qdel(floor_light)

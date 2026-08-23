@@ -55,6 +55,7 @@
 		src.visible_message(span_blue("[icon2html(src,viewers(src))] [src] has been [anchored ? "bolted to the floor" : "unbolted from the floor"] by [user]."))
 
 		if(anchored)
+			START_MACHINE_PROCESSING(src)
 			spawn(0)
 				for(var/obj/machinery/shield_gen/gen in range(1, src))
 					if(get_dir(src, gen) == src.dir)
@@ -115,6 +116,9 @@
 	if(stored_charge < last_stored_charge)
 		time_since_fail = 0 //losing charge faster than we can draw from PN
 	last_stored_charge = stored_charge
+	if(stored_charge >= max_charge)
+		stored_charge = max_charge
+		return PROCESS_KILL
 
 /obj/machinery/shield_capacitor/tgui_act(action, params, datum/tgui/ui)
 	if(..())
@@ -129,6 +133,8 @@
 			. = TRUE
 		if("charge_rate")
 			charge_rate = clamp(text2num(params["rate"]), 10000, max_charge_rate)
+			if(stored_charge < max_charge)
+				START_MACHINE_PROCESSING(src)
 			. = TRUE
 
 /obj/machinery/shield_capacitor/power_change()

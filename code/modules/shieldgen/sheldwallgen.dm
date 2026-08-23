@@ -42,6 +42,8 @@
 
 	if(src.active >= 1)
 		src.active = 0
+		if(storedpower >= max_stored_power)
+			STOP_MACHINE_PROCESSING(src)
 		icon_state = "Shield_Gen"
 
 		user.visible_message("[user] turned the shield generator off.", \
@@ -50,6 +52,7 @@
 		for(var/dir in list(1,2,4,8)) src.cleanup(dir)
 	else
 		src.active = 1
+		START_MACHINE_PROCESSING(src)
 		icon_state = "Shield_Gen_on"
 		user.visible_message("[user] turned the shield generator on.", \
 			"You turn on the shield generator.", \
@@ -114,6 +117,8 @@
 			icon_state = "Shield_Gen"
 			src.active = 0
 			for(var/dir in list(1,2,4,8)) src.cleanup(dir)
+	if(!active && storedpower >= max_stored_power)
+		return PROCESS_KILL
 
 /obj/machinery/shieldwallgen/proc/setup_field(NSEW = 0)
 	var/turf/T = src.loc

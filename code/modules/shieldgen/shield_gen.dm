@@ -174,6 +174,7 @@
 
 			for(var/obj/machinery/shield_capacitor/capacitor in active_capacitors)
 				capacitor.stored_charge -= max(assumed_charge / active_capacitors.len, 0) // Drain from all active capacitors evenly.
+				START_MACHINE_PROCESSING(capacitor)
 
 		else
 			renwick_upkeep_per_field = max(renwick_upkeep_per_field, 0.5)
