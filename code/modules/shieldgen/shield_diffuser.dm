@@ -35,10 +35,11 @@
 		alarm--
 		if(!alarm)
 			update_icon()
-		return
+		else
+			return
 
 	if(!enabled)
-		return
+		return PROCESS_KILL
 	for(var/direction in GLOB.cardinal)
 		var/turf/simulated/shielded_tile = get_step(get_turf(src), direction)
 		for(var/obj/effect/shield/S in shielded_tile)
@@ -46,6 +47,7 @@
 		// Legacy shield support
 		for(var/obj/effect/energy_field/S in shielded_tile)
 			qdel(S)
+	return PROCESS_KILL
 
 /obj/machinery/shield_diffuser/update_icon()
 	if(alarm)
@@ -65,6 +67,7 @@
 		update_icon()
 		return
 	enabled = !enabled
+	START_MACHINE_PROCESSING(src)
 	update_use_power(enabled ? USE_POWER_ACTIVE : USE_POWER_IDLE)
 	update_icon()
 	to_chat(user, "You turn \the [src] [enabled ? "on" : "off"].")
@@ -82,7 +85,21 @@
 	if(!duration)
 		return
 	alarm = round(max(alarm, duration))
+	START_MACHINE_PROCESSING(src)
 	update_icon()
+
+/// Shield segments call this when they regenerate or appear, so stable
+/// diffusers do not need to scan their four neighboring turfs forever.
+/proc/nearby_active_shield_diffuser(atom/target)
+	var/turf/center = get_turf(target)
+	if(!center)
+		return FALSE
+	for(var/direction in GLOB.cardinal)
+		var/turf/neighbor = get_step(center, direction)
+		for(var/obj/machinery/shield_diffuser/D in neighbor)
+			if(D.enabled && !D.alarm && !(D.stat & (NOPOWER | BROKEN)))
+				return TRUE
+	return FALSE
 
 /obj/machinery/shield_diffuser/examine(mob/user)
 	. = ..()

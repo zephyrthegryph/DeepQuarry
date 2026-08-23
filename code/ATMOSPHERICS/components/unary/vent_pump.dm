@@ -214,7 +214,8 @@
 	if (!node)
 		update_use_power(USE_POWER_OFF)
 	if(!can_pump())
-		return 0
+		SSmachines.hibernate_vent(src)
+		return PROCESS_KILL
 
 	var/datum/gas_mixture/environment = return_air() // Use our own proc
 

@@ -27,6 +27,8 @@
 /obj/effect/energy_field/Initialize(mapload, new_gen)
 	. = ..()
 	my_gen = new_gen
+	if(nearby_active_shield_diffuser(src))
+		return INITIALIZE_HINT_QDEL
 	update_nearby_tiles()
 
 /obj/effect/energy_field/Destroy()

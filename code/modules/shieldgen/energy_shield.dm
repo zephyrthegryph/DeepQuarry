@@ -91,6 +91,9 @@
 /obj/effect/shield/proc/regenerate()
 	if(!gen)
 		return
+	if(nearby_active_shield_diffuser(src))
+		diffuse(5)
+		return
 
 	disabled_for = max(0, disabled_for - 1)
 	diffused_for = max(0, diffused_for - 1)

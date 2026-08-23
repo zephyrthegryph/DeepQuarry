@@ -1022,14 +1022,14 @@ GLOBAL_LIST_EMPTY(apcs)
 	// Stable APCs retain their demand in the powernet and wait for an exact
 	// dependency change. Charging batteries use one coarse elapsed-time wakeup
 	// instead of polling on every machinery tick.
-	if(!changed && !force_update && !failure_timer && connected_powernet && cell && charging)
+	if(!changed && !force_update && !failure_timer && connected_powernet)
 		connected_powernet.reserve_sleeping_apc_load(src, lastused_total)
 		SSmachines.hibernate_reactive_machine(src, list(
 			"powernet:[REF(connected_powernet)]",
 			"area_power:[REF(area)]",
 			"apc:[REF(src)]"
 		))
-		if(charging == 1 && !charging_wake_timer)
+		if(cell && charging == 1 && !charging_wake_timer)
 			charging_wake_timer = addtimer(CALLBACK(src, PROC_REF(wake_for_charging)), 10 SECONDS, TIMER_STOPPABLE)
 
 /obj/machinery/power/apc/proc/wake_for_charging()

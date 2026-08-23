@@ -35,15 +35,20 @@
 
 /obj/machinery/recharge_station/process()
 	if(stat & (BROKEN))
-		return
+		return PROCESS_KILL
 	if(!cell) // Shouldn't be possible, but sanity check
-		return
+		return PROCESS_KILL
 
 	if((stat & NOPOWER) && !has_cell_power()) // No power and cell is dead.
 		if(icon_update_tick)
 			icon_update_tick = 0 //just rebuild the overlay once more only
 			update_icon()
-		return
+		return PROCESS_KILL
+
+	// With no occupant and a full buffer there is no time-dependent work. Power
+	// changes, part replacement, or somebody entering explicitly wake the station.
+	if(!occupant && cell.fully_charged())
+		return PROCESS_KILL
 
 	//First, draw from the internal power cell to recharge/repair/etc the occupant
 	if(occupant)
@@ -179,6 +184,7 @@
 
 /obj/machinery/recharge_station/RefreshParts()
 	..()
+	START_MACHINE_PROCESSING(src)
 	var/man_rating = 0
 	var/cap_rating = 0
 
@@ -259,6 +265,7 @@
 		add_fingerprint(R)
 		R.forceMove(src)
 		occupant = R
+		START_MACHINE_PROCESSING(src)
 		update_icon()
 		return 1
 
@@ -271,6 +278,7 @@
 		add_fingerprint(P)
 		P.forceMove(src)
 		occupant = P
+		START_MACHINE_PROCESSING(src)
 		update_icon()
 		return 1
 
@@ -280,6 +288,7 @@
 			add_fingerprint(H)
 			H.forceMove(src)
 			occupant = H
+			START_MACHINE_PROCESSING(src)
 			update_icon()
 			return 1
 	else
@@ -291,6 +300,11 @@
 	occupant.forceMove(get_turf(src))
 	occupant = null
 	update_icon()
+
+/obj/machinery/recharge_station/power_change()
+	. = ..()
+	if(.)
+		START_MACHINE_PROCESSING(src)
 
 /obj/machinery/recharge_station/verb/move_eject()
 	set category = "Object"

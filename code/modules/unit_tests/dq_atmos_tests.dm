@@ -2631,6 +2631,31 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_air_snapshots)
 		"waking APC left its reserved load double-counted")
 	qdel(P)
 
+/datum/unit_test/dq_stable_full_apc_hibernates
+
+/datum/unit_test/dq_stable_full_apc_hibernates/Run()
+	var/obj/machinery/power/apc/A
+	for(var/obj/machinery/power/apc/candidate as anything in GLOB.apcs)
+		if(candidate.terminal?.powernet && candidate.cell)
+			A = candidate
+			break
+	TEST_ASSERT_NOTNULL(A, "tiny map has no grid-connected APC for hibernation test")
+	if(!A)
+		return
+	A.cell.charge = A.cell.maxcharge
+	A.charging = 0
+	A.power_distributor.charging = 0
+	START_MACHINE_PROCESSING(A)
+	for(var/i in 1 to 5)
+		A.process()
+		if(!(A in SSmachines.processing_machines))
+			break
+	TEST_ASSERT(!(A in SSmachines.processing_machines), \
+		"stable full APC remained in timed machinery processing")
+	var/datum/weakref/apc_ref = WEAKREF(A)
+	TEST_ASSERT(SSmachines.reactive_sleepers[apc_ref.reference], \
+		"stable full APC did not capture dependency revisions before sleeping")
+
 
 /datum/unit_test/dq_airlock_sensor_wakes_on_pressure
 
@@ -3711,6 +3736,53 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	qdel(V)
 	qdel(A)
 	qdel(S)
+
+/datum/unit_test/dq_inactive_vents_hibernate
+
+/datum/unit_test/dq_inactive_vents_hibernate/Run()
+	var/turf/simulated/floor/T
+	for(var/turf/simulated/floor/candidate in world)
+		if(candidate.air && !candidate.blocks_air)
+			T = candidate
+			break
+	TEST_ASSERT_NOTNULL(T, "no floor for inactive vent hibernation test")
+	var/obj/machinery/atmospherics/unary/vent_pump/V = new(T)
+	V.update_use_power(USE_POWER_OFF)
+	TEST_ASSERT_EQUAL(V.process(), PROCESS_KILL, "inactive vent pump did not stop timed processing")
+	var/datum/weakref/vent_ref = WEAKREF(V)
+	TEST_ASSERT(SSmachines.hibernating_vents[vent_ref.reference], \
+		"inactive vent pump did not register dependency wakeups")
+	var/obj/machinery/atmospherics/unary/vent_scrubber/S = new(T)
+	S.update_use_power(USE_POWER_OFF)
+	TEST_ASSERT_EQUAL(S.process(), PROCESS_KILL, "inactive vent scrubber did not stop timed processing")
+	var/datum/weakref/scrubber_ref = WEAKREF(S)
+	TEST_ASSERT(SSmachines.hibernating_vents[scrubber_ref.reference], \
+		"inactive vent scrubber did not register dependency wakeups")
+	qdel(V)
+	qdel(S)
+
+/datum/unit_test/dq_idle_recharge_station_hibernates
+
+/datum/unit_test/dq_idle_recharge_station_hibernates/Run()
+	var/turf/test_turf = get_turf(run_loc_floor_bottom_left ? run_loc_floor_bottom_left : locate(1, 1, 1))
+	var/obj/machinery/recharge_station/R = new(test_turf)
+	TEST_ASSERT_NOTNULL(R.cell, "recharge station did not construct its internal cell")
+	R.cell.charge = R.cell.maxcharge
+	R.occupant = null
+	TEST_ASSERT_EQUAL(R.process(), PROCESS_KILL, "idle full recharge station did not stop timed processing")
+	qdel(R)
+
+/datum/unit_test/dq_shield_diffuser_is_event_driven
+
+/datum/unit_test/dq_shield_diffuser_is_event_driven/Run()
+	var/list/pair = dq_atmos_test_find_clear_pipe_run(2)
+	TEST_ASSERT_NOTNULL(pair, "no adjacent floors for shield diffuser test")
+	var/obj/machinery/shield_diffuser/D = new(pair[1])
+	var/obj/effect/shield/S = new(pair[2])
+	TEST_ASSERT_EQUAL(D.process(), PROCESS_KILL, "stable shield diffuser retained timed polling")
+	TEST_ASSERT(S.diffused_for > 0, "event-driven shield diffuser did not suppress an adjacent shield")
+	qdel(S)
+	qdel(D)
 
 /datum/unit_test/dq_idle_meter_and_fire_alarm_hibernate
 

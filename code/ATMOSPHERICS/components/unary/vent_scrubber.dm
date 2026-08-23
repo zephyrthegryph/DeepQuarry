@@ -142,10 +142,11 @@
 		update_use_power(USE_POWER_OFF)
 	//broadcast_status()
 	if(!use_power || (stat & (NOPOWER|BROKEN)))
-		return 0
+		SSmachines.hibernate_vent(src)
+		return PROCESS_KILL
 	if(welded) // Don't do anything if welded
 		SSmachines.hibernate_vent(src)
-		return 0
+		return PROCESS_KILL
 
 	var/datum/gas_mixture/environment = loc.return_air()
 

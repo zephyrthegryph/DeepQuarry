@@ -1,0 +1,4 @@
+author: "Codex"
+delete-after: true
+changes:
+  - code_imp: "Stable APCs, inactive vents, full recharge stations, and shield diffusers now leave timed machinery processing until their actual dependencies change."
