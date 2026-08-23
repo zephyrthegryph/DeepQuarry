@@ -55,30 +55,32 @@ GLOBAL_LIST_EMPTY(all_waypoints)
 
 /obj/machinery/computer/ship/helm/process()
 	..()
-	if(autopilot && dx && dy && !autopilot_disabled)
-		var/turf/T = locate(dx,dy,using_map.overmap_z)
-		if(linked.loc == T)
-			if(linked.is_still())
-				autopilot = 0
-			else
-				linked.decelerate()
+	if(!autopilot || !dx || !dy || autopilot_disabled || !linked || !using_map)
+		return PROCESS_KILL
+	var/turf/T = locate(dx,dy,using_map.overmap_z)
+	if(linked.loc == T)
+		if(linked.is_still())
+			autopilot = 0
 		else
-			var/brake_path = linked.get_brake_path()
-			var/direction = get_dir(linked.loc, T)
-			var/acceleration = min(linked.get_acceleration(), accellimit)
-			var/speed = linked.get_speed()
-			var/heading = linked.get_heading()
+			linked.decelerate()
+	else
+		var/brake_path = linked.get_brake_path()
+		var/direction = get_dir(linked.loc, T)
+		var/acceleration = min(linked.get_acceleration(), accellimit)
+		var/speed = linked.get_speed()
+		var/heading = linked.get_heading()
 
-			// Destination is current grid or speedlimit is exceeded
-			if((get_dist(linked.loc, T) <= brake_path) || speed > speedlimit)
-				linked.decelerate()
-			// Heading does not match direction
-			else if(heading & ~direction)
-				linked.accelerate(turn(heading & ~direction, 180), accellimit)
-			// All other cases, move toward direction
-			else if(speed + acceleration <= speedlimit)
-				linked.accelerate(direction, accellimit)
-		return
+		// Destination is current grid or speedlimit is exceeded
+		if((get_dist(linked.loc, T) <= brake_path) || speed > speedlimit)
+			linked.decelerate()
+		// Heading does not match direction
+		else if(heading & ~direction)
+			linked.accelerate(turn(heading & ~direction, 180), accellimit)
+		// All other cases, move toward direction
+		else if(speed + acceleration <= speedlimit)
+			linked.accelerate(direction, accellimit)
+	if(!autopilot)
+		return PROCESS_KILL
 
 /obj/machinery/computer/ship/helm/relaymove(mob/user, direction)
 	if(viewing_overmap(user) && linked)
@@ -262,6 +264,8 @@ GLOBAL_LIST_EMPTY(all_waypoints)
 				autopilot = FALSE
 			else
 				autopilot = !autopilot
+			if(autopilot)
+				START_MACHINE_PROCESSING(src)
 			. = TRUE
 
 		if("apilot_lock")
