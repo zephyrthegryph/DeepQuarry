@@ -50,12 +50,14 @@
 		if(!src.locked)
 			if(src.active==1)
 				src.active = 0
+				STOP_MACHINE_PROCESSING(src)
 				balloon_alert_visible("turned off")
 				message_admins("Emitter turned off by [key_name(user, user.client)](<A href='byond://?_src_=holder;[HrefToken()];adminmoreinfo=\ref[user]'>?</A>) in ([x],[y],[z] - <A href='byond://?_src_=holder;[HrefToken()];adminplayerobservecoodjump=1;X=[x];Y=[y];Z=[z]'>JMP</a>)",0,1)
 				log_game("EMITTER([x],[y],[z]) OFF by [key_name(user)]")
 				investigate_log("turned " + span_red("off") + " by [user.key]","singulo")
 			else
 				src.active = 1
+				START_MACHINE_PROCESSING(src)
 				balloon_alert_visible("turned on")
 				src.shot_number = 0
 				src.fire_delay = get_initial_fire_delay()
@@ -71,11 +73,13 @@
 
 /obj/machinery/power/emitter/process()
 	if(stat & (BROKEN))
-		return
+		return PROCESS_KILL
 	if(src.state != 2 || (!powernet && active_power_usage))
 		src.active = 0
 		update_icon()
-		return
+		return PROCESS_KILL
+	if(!active)
+		return PROCESS_KILL
 	if(((src.last_shot + src.fire_delay) <= world.time) && (src.active == 1))
 
 		var/actual_load = draw_power(active_power_usage)
