@@ -3902,6 +3902,52 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	qdel(arrival)
 	qdel(turret)
 
+/datum/unit_test/dq_blocked_airlock_wakes_from_blocker_movement
+
+/datum/unit_test/dq_blocked_airlock_wakes_from_blocker_movement/Run()
+	var/obj/machinery/door/airlock/A = locate() in world
+	TEST_ASSERT_NOTNULL(A, "no mapped airlock for blocked airlock hibernation test")
+	var/turf/T = get_turf(A)
+	A.density = FALSE
+	A.operating = FALSE
+	A.locked = FALSE
+	A.frozen = FALSE
+	A.close_door_at = 0
+	A.safe = TRUE
+	A.autoclose = TRUE
+	var/obj/blocker = new(T)
+	blocker.density = TRUE
+	A.close()
+	TEST_ASSERT(!A.close_door_at, "blocked airlock retained a timed polling retry")
+	TEST_ASSERT(LAZYLEN(A.autoclose_blockers), "blocked airlock did not subscribe to its blocker")
+	TEST_ASSERT(blocker._listen_lookup?[COMSIG_MOVABLE_MOVED], "blocked airlock did not register a movement signal on its blocker")
+	TEST_ASSERT(!(A.datum_flags & DF_ISPROCESSING), "blocked airlock remained in machinery processing")
+	blocker.Moved(T, NORTH, TRUE, 0)
+	TEST_ASSERT(A.datum_flags & DF_ISPROCESSING, "blocked airlock did not wake when its blocker moved (flags=[A.datum_flags], listed=[A in SSmachines.processing_machines], close_at=[A.close_door_at], blockers=[LAZYLEN(A.autoclose_blockers)])")
+	TEST_ASSERT(A.close_door_at, "woken airlock did not schedule an immediate close attempt")
+	qdel(blocker)
+	qdel(A)
+
+/datum/unit_test/dq_closed_airlock_clears_stale_autoclose
+
+/datum/unit_test/dq_closed_airlock_clears_stale_autoclose/Run()
+	var/obj/machinery/door/airlock/A = locate() in world
+	TEST_ASSERT_NOTNULL(A, "no mapped airlock for stale autoclose test")
+	A.density = TRUE
+	A.operating = FALSE
+	A.autoclose = TRUE
+	A.close_door_at = world.time
+	TEST_ASSERT_EQUAL(A.process(), PROCESS_KILL, "closed airlock retained its stale autoclose processing deadline")
+	TEST_ASSERT(!A.close_door_at, "closed airlock did not clear its stale autoclose deadline")
+	A.density = FALSE
+	A.operating = FALSE
+	A.locked = TRUE
+	A.close_door_at = world.time
+	TEST_ASSERT_EQUAL(A.process(), PROCESS_KILL, "locked open airlock retained its impossible autoclose processing deadline")
+	TEST_ASSERT(!A.close_door_at, "locked open airlock did not clear its impossible autoclose deadline")
+	A.unlock(TRUE)
+	TEST_ASSERT(A.close_door_at, "unlocking an open airlock did not restore autoclose scheduling")
+
 
 // =====================================================================
 // Supermatter + R-UST fusion engine

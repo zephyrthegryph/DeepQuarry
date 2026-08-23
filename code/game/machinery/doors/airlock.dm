@@ -137,6 +137,8 @@
 
 /obj/machinery/door/airlock/process()
 	// Deliberate no call to parent.
+	if(close_door_at && !density && !operating && (locked || welded || !arePowerSystemsOn() || wires.is_cut(WIRE_OPEN_DOOR)))
+		close_door_at = 0
 	if(main_power_lost_until > 0 && world.time >= main_power_lost_until)
 		regainMainPower()
 
@@ -288,6 +290,7 @@ About the new airlock wires panel:
 			backup_power_lost_until = -1
 
 	update_icon()
+	resume_autoclose_if_possible()
 
 /obj/machinery/door/airlock/proc/regainBackupPower()
 	if(!backupPowerCablesCut())
@@ -295,6 +298,11 @@ About the new airlock wires panel:
 		backup_power_lost_until = main_power_lost_until == 0 ? -1 : 0
 
 	update_icon()
+	resume_autoclose_if_possible()
+
+/obj/machinery/door/airlock/proc/resume_autoclose_if_possible()
+	if(autoclose && !density && !operating && !locked && !welded && arePowerSystemsOn() && !wires.is_cut(WIRE_OPEN_DOOR))
+		autoclose_in(next_close_wait())
 
 /obj/machinery/door/airlock/proc/electrify(duration, feedback = 0)
 	var/message = ""
@@ -1020,6 +1028,7 @@ About the new airlock wires panel:
 /obj/machinery/door/airlock/close(forced= FALSE, ignore_safties = FALSE, crush_damage = DOOR_CRUSH_DAMAGE)
 	if(!can_close(forced))
 		return FALSE
+	clear_autoclose_blockers()
 	if(frozen && !forced)
 		return FALSE
 	if(frozen && forced) // Unfreeze on forced open
@@ -1034,7 +1043,7 @@ About the new airlock wires panel:
 					if(!has_beeped)
 						playsound(src, 'sound/machines/buzz-two.ogg', 50, 0)
 						has_beeped = 1
-					autoclose_in(6)
+					sleep_until_autoclose_blocker_moves(AM)
 					return
 
 	for(var/turf/turf in locs)
@@ -1119,6 +1128,7 @@ About the new airlock wires panel:
 	for(var/mob/M in range(1,src))
 		M.show_message("You hear a click from the bottom of the door.", 2)
 	update_icon()
+	resume_autoclose_if_possible()
 	return TRUE
 
 /obj/machinery/door/airlock/allowed(mob/M)
@@ -1212,6 +1222,7 @@ About the new airlock wires panel:
 		// Keeping door lights on, runs on internal battery or something.
 		electrified_until = 0
 	update_icon()
+	resume_autoclose_if_possible()
 
 /obj/machinery/door/airlock/proc/prison_open()
 	if(arePowerSystemsOn())

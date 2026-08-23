@@ -27,6 +27,7 @@
 	//var/repairing = 0 //VOREstation Edit: We're not using materials anymore
 	var/block_air_zones = 1 //If set, air zones cannot merge across the door even when it is opened.
 	var/close_door_at = 0 //When to automatically close the door, if possible
+	var/list/autoclose_blockers
 
 	var/anim_length_before_density = 0.3 SECONDS
 	var/anim_length_before_finalize = 0.7 SECONDS
@@ -80,6 +81,7 @@
 	update_nearby_tiles(need_rebuild=1)
 
 /obj/machinery/door/Destroy()
+	clear_autoclose_blockers()
 	density = FALSE
 	update_nearby_tiles()
 	. = ..()
@@ -91,7 +93,9 @@
 
 /obj/machinery/door/process()
 	if(close_door_at && world.time >= close_door_at)
-		if(autoclose)
+		if(density && !operating)
+			close_door_at = 0
+		else if(autoclose)
 			close_door_at = world.time + next_close_wait()
 			close()
 		else
@@ -100,8 +104,28 @@
 		return PROCESS_KILL
 
 /obj/machinery/door/proc/autoclose_in(wait)
+	clear_autoclose_blockers()
 	close_door_at = world.time + wait
 	START_MACHINE_PROCESSING(src)
+
+/obj/machinery/door/proc/sleep_until_autoclose_blocker_moves(atom/movable/blocker)
+	if(!blocker)
+		return
+	LAZYADD(autoclose_blockers, blocker)
+	RegisterSignal(blocker, COMSIG_MOVABLE_MOVED, PROC_REF(on_autoclose_blocker_changed))
+	RegisterSignal(blocker, COMSIG_QDELETING, PROC_REF(on_autoclose_blocker_changed))
+	close_door_at = 0
+	STOP_MACHINE_PROCESSING(src)
+
+/obj/machinery/door/proc/clear_autoclose_blockers()
+	for(var/atom/movable/blocker as anything in autoclose_blockers)
+		UnregisterSignal(blocker, list(COMSIG_MOVABLE_MOVED, COMSIG_QDELETING))
+	LAZYCLEARLIST(autoclose_blockers)
+
+/obj/machinery/door/proc/on_autoclose_blocker_changed(datum/source)
+	SIGNAL_HANDLER
+	clear_autoclose_blockers()
+	autoclose_in(0)
 
 /obj/machinery/door/proc/can_open()
 	if(!density || operating || !SSticker)
@@ -554,6 +578,7 @@
 /obj/machinery/door/proc/close(forced = 0, ignore_safties = FALSE, crush_damage = DOOR_CRUSH_DAMAGE)
 	if(!can_close(forced))
 		return
+	clear_autoclose_blockers()
 	operating = 1
 
 	SEND_SIGNAL(src, COMSIG_DOOR_CLOSE, forced)

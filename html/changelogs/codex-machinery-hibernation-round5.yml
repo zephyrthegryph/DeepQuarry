@@ -1,0 +1,5 @@
+author: "Codex"
+delete-after: true
+changes:
+  - code_imp: "Made obstructed autoclosing airlocks sleep until the blocking object moves or is deleted."
+  - server: "Added machinery profiler detail showing why airlocks remain scheduled."

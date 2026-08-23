@@ -174,9 +174,28 @@ SUBSYSTEM_DEF(machines)
 
 /datum/controller/subsystem/machines/proc/dump_machine_profile()
 	var/list/current_counts = list()
+	var/airlocks_processing = 0
+	var/airlocks_autoclose = 0
+	var/airlocks_commanded = 0
+	var/airlocks_power_wait = 0
+	var/airlocks_electrified = 0
+	var/airlocks_other = 0
 	for(var/obj/machinery/M as anything in processing_machines)
 		if(M && !QDELETED(M))
 			current_counts["[M.type]"]++
+			if(istype(M, /obj/machinery/door/airlock))
+				var/obj/machinery/door/airlock/A = M
+				airlocks_processing++
+				if(A.close_door_at)
+					airlocks_autoclose++
+				else if(A.cur_command)
+					airlocks_commanded++
+				else if(A.main_power_lost_until > 0 || A.backup_power_lost_until > 0)
+					airlocks_power_wait++
+				else if(A.electrified_until > 0)
+					airlocks_electrified++
+				else
+					airlocks_other++
 	var/list/sorted_cost = machine_profile_cost.Copy()
 	sortTim(sorted_cost, /proc/cmp_numeric_desc, TRUE)
 	var/rank = 0
@@ -184,6 +203,7 @@ SUBSYSTEM_DEF(machines)
 		log_runtime("MACHINE_PROFILE type=[machine_type] cost_ms=[round(machine_profile_cost[machine_type], 0.01)] calls=[machine_profile_calls[machine_type]] active=[current_counts[machine_type] || 0] killed=[machine_profile_kills[machine_type] || 0]")
 		if(++rank >= 25)
 			break
+	log_runtime("MACHINE_PROFILE_DETAIL airlocks processing=[airlocks_processing] autoclose=[airlocks_autoclose] commanded=[airlocks_commanded] power_wait=[airlocks_power_wait] electrified=[airlocks_electrified] other=[airlocks_other]")
 	machine_profile_cost.Cut()
 	machine_profile_calls.Cut()
 	machine_profile_kills.Cut()
