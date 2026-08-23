@@ -45,11 +45,11 @@
 
 /obj/machinery/media/jukebox/process()
 	if(!playing)
-		return
+		return PROCESS_KILL
 	if(inoperable())
 		disconnect_media_source()
 		playing = 0
-		return
+		return PROCESS_KILL
 	// If the current track isn't finished playing, let it keep going
 	if(current_track && world.time < media_start_time + current_track.duration)
 		return
@@ -72,6 +72,8 @@
 			playing = 0
 			update_icon()
 	start_stop_song()
+	if(!playing)
+		return PROCESS_KILL
 
 // Tells the media manager to start or stop playing based on current settings.
 /obj/machinery/media/jukebox/proc/start_stop_song()
@@ -274,6 +276,7 @@
 
 /obj/machinery/media/jukebox/proc/StopPlaying()
 	playing = 0
+	STOP_MACHINE_PROCESSING(src)
 	update_use_power(USE_POWER_IDLE)
 	update_icon()
 	start_stop_song()
@@ -282,6 +285,7 @@
 	if(!current_track)
 		return
 	playing = 1
+	START_MACHINE_PROCESSING(src)
 	update_use_power(USE_POWER_ACTIVE)
 	update_icon()
 	start_stop_song()
