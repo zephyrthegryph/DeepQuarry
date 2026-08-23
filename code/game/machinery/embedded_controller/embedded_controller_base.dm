@@ -30,8 +30,9 @@
 	if(!signal || signal.encryption) return
 
 	if(program)
-		START_MACHINE_PROCESSING(src)
 		program.receive_signal(signal, receive_method, receive_param)
+		if(program.signal_requires_processing(signal, receive_method, receive_param))
+			START_MACHINE_PROCESSING(src)
 
 /obj/machinery/embedded_controller/Topic()
 	. = ..()

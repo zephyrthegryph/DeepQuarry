@@ -24,6 +24,10 @@
 /datum/embedded_program/proc/receive_signal(datum/signal/signal, receive_method, receive_param)
 	return
 
+/// Whether receiving this signal can require the sleeping controller to process.
+/datum/embedded_program/proc/signal_requires_processing(datum/signal/signal, receive_method, receive_param)
+	return TRUE
+
 /datum/embedded_program/proc/post_signal(datum/signal/signal, comm_line)
 	if(master)
 		master.post_signal(signal, comm_line)

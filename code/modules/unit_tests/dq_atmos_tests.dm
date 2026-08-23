@@ -6035,3 +6035,19 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	TEST_ASSERT(!(alarm in alarm.radio_connection.devices[RADIO_TO_AIRALARM]), "air alarm remained on the station-wide status filter")
 	qdel(vent)
 	qdel(alarm)
+
+/datum/unit_test/dq_airlock_controller_ignores_unrelated_radio
+
+/datum/unit_test/dq_airlock_controller_ignores_unrelated_radio/Run()
+	var/turf/test_turf = locate(1, 1, 1)
+	var/obj/machinery/embedded_controller/radio/airlock/airlock_controller/controller = new(test_turf)
+	var/datum/embedded_program/airlock/program = controller.program
+	var/datum/signal/unrelated = new
+	unrelated.data["tag"] = "another_airlock_sensor"
+	TEST_ASSERT(!program.signal_requires_processing(unrelated), "airlock controller accepted an unrelated station-wide radio update")
+	var/datum/signal/relevant = new
+	relevant.data["tag"] = program.tag_chamber_sensor
+	TEST_ASSERT(program.signal_requires_processing(relevant), "airlock controller rejected its own chamber sensor update")
+	qdel(unrelated)
+	qdel(relevant)
+	qdel(controller)
