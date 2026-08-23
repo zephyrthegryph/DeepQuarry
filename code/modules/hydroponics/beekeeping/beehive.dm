@@ -56,6 +56,7 @@
 			return
 		user.visible_message(span_notice("[user] smokes the bees in \the [src]."), span_notice("You smoke the bees in \the [src]."))
 		smoked = 30
+		START_MACHINE_PROCESSING(src)
 		update_icon()
 		return
 	else if(istype(I, /obj/item/honey_frame))
@@ -92,6 +93,7 @@
 		if(B.full)
 			user.visible_message(span_notice("[user] puts the queen and the bees from \the [I] into \the [src]."), span_notice("You put the queen and the bees from \the [I] into \the [src]."))
 			bee_count = 20
+			START_MACHINE_PROCESSING(src)
 			B.empty()
 		else
 			user.visible_message(span_notice("[user] puts bees and larvae from \the [src] into \the [I]."), span_notice("You put bees and larvae from \the [src] into \the [I]."))
@@ -147,6 +149,8 @@
 		return
 
 /obj/machinery/beehive/process()
+	if(!bee_count && !smoked)
+		return PROCESS_KILL
 	if(closed && !smoked && bee_count)
 		pollinate_flowers()
 		update_icon()
@@ -154,6 +158,8 @@
 	if(!smoked && bee_count)
 		bee_count = min(bee_count * 1.005, 100)
 		update_icon()
+	if(!bee_count && !smoked)
+		return PROCESS_KILL
 
 /obj/machinery/beehive/proc/pollinate_flowers()
 	var/coef = bee_count / 100
