@@ -3646,14 +3646,29 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_air_snapshots)
 	var/datum/weakref/alarm_ref = WEAKREF(A)
 	TEST_ASSERT(SSmachines.sleeping_gas_devices[alarm_ref.reference], \
 		"stable air alarm did not enter dependency sleep")
+	T.air.adjust_moles(/datum/gas/oxygen, 0.01)
+	TEST_ASSERT(!A.gas_dependency_changed(T.air.arena_id(), GAS_DEPENDENCY_ALL), \
+		"air alarm accepted a gas change that crossed no alarm or control threshold")
 	T.air.adjust_moles(/datum/gas/plasma, 50)
-	SSmachines.wake_dirty_gas_subscribers()
+	TEST_ASSERT(A.gas_dependency_changed(T.air.arena_id(), GAS_DEPENDENCY_ALL), \
+		"air alarm rejected a gas change that crossed a danger threshold")
+	SSmachines.wake_gas_subscriber(alarm_ref)
 	TEST_ASSERT(A.datum_flags & DF_ISPROCESSING, \
 		"air alarm did not wake after its gas dependency changed")
 	A.process()
 	TEST_ASSERT(A.danger_level > 0, \
 		"air alarm did not rescan after its gas revision changed")
 	T.air.set_moles(/datum/gas/plasma, 0)
+	T.air.set_temperature(T20C)
+	A.process()
+	TEST_ASSERT(SSmachines.sleeping_gas_devices[alarm_ref.reference], \
+		"air alarm did not return to dependency sleep after atmosphere recovery")
+	T.air.set_temperature(T20C + 0.1)
+	TEST_ASSERT(!A.gas_dependency_changed(T.air.arena_id(), GAS_DEPENDENCY_ALL), \
+		"air alarm accepted a harmless same-band temperature change")
+	T.air.set_temperature(A.target_temperature + 3)
+	TEST_ASSERT(A.gas_dependency_changed(T.air.arena_id(), GAS_DEPENDENCY_ALL), \
+		"air alarm rejected a temperature change requiring active regulation")
 	qdel(A)
 
 #ifdef DQ_TEST_AIR_ALARM_RADIO

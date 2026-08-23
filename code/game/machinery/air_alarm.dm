@@ -111,6 +111,8 @@
 	var/atmoswarn = FALSE // Looping Alarms
 	var/sleeping_mixture_id
 	var/sleeping_mixture_revision = -1
+	/// Control-relevant atmospheric state captured when dependency sleeping begins.
+	var/sleeping_alarm_signature
 	/// Monotonic revision for correction-aware contract atmosphere telemetry.
 	var/contract_atmos_revision = 0
 
@@ -269,17 +271,42 @@
 		sleeping_mixture_id = new_mixture_id
 		SSmachines.subscribe_gas_dependency(sleeping_mixture_id, WR)
 	sleeping_mixture_revision = environment ? environment.revision() : -1
+	sleeping_alarm_signature = environment ? atmospheric_control_signature(environment) : null
 
 /obj/machinery/alarm/proc/unregister_gas_dependencies(datum/weakref/WR)
 	SSmachines.unsubscribe_gas_dependency(sleeping_mixture_id, WR)
 	sleeping_mixture_id = null
 	sleeping_mixture_revision = -1
+	sleeping_alarm_signature = null
 
 /obj/machinery/alarm/proc/gas_dependency_changed(mixture_id, change_mask)
 	if(!(change_mask & GAS_DEPENDENCY_ALL) || mixture_id != sleeping_mixture_id)
 		return FALSE
 	var/datum/gas_mixture/environment = return_air()
-	return !environment || environment.arena_id() != sleeping_mixture_id || environment.revision() != sleeping_mixture_revision
+	if(!environment || environment.arena_id() != sleeping_mixture_id)
+		return TRUE
+	var/current_revision = environment.revision()
+	if(current_revision == sleeping_mixture_revision)
+		return FALSE
+	var/current_signature = atmospheric_control_signature(environment)
+	if(current_signature != sleeping_alarm_signature)
+		return TRUE
+	// Harmless diffusion changed the mixture without crossing a gameplay or
+	// control threshold. Advance the captured revision and remain asleep.
+	sleeping_mixture_revision = current_revision
+	return FALSE
+
+/obj/machinery/alarm/proc/atmospheric_control_signature(datum/gas_mixture/environment)
+	var/list/levels = list()
+	var/current_danger = overall_danger_level(environment, levels, FALSE)
+	var/current_pressure = levels["raw_pressure"]
+	var/temperature_action = 0
+	if(current_pressure >= 1)
+		var/current_temperature = levels["raw_temperature"]
+		if(abs(current_temperature - target_temperature) > 2.0)
+			temperature_action = current_temperature > target_temperature ? 1 : 2
+	var/cycle_ready = mode == AALARM_MODE_CYCLE && current_pressure < ONE_ATMOSPHERE * 0.05
+	return "[current_danger]:[levels["pressure"]]:[temperature_action]:[cycle_ready]"
 
 /obj/machinery/alarm/proc/invalidate_gas_dependencies()
 	SSmachines.wake_gas_subscriber(WEAKREF(src))
@@ -346,7 +373,7 @@
 
 			environment.merge(gas)
 
-/obj/machinery/alarm/proc/overall_danger_level(datum/gas_mixture/environment)
+/obj/machinery/alarm/proc/overall_danger_level(datum/gas_mixture/environment, list/calculated_levels, update_pressure_level = TRUE)
 	var/environment_temperature = environment.return_temperature()
 	var/partial_pressure = R_IDEAL_GAS_EQUATION * environment_temperature/environment.return_volume()
 	var/environment_pressure = environment.return_pressure()
@@ -357,7 +384,9 @@
 
 	DECLARE_TLV_VALUES
 	LOAD_TLV_VALUES(TLV["pressure"], environment_pressure)
-	pressure_dangerlevel = TEST_TLV_VALUES // not local because it's used in process()
+	var/calculated_pressure_level = TEST_TLV_VALUES
+	if(update_pressure_level)
+		pressure_dangerlevel = calculated_pressure_level // not local because it's used in process()
 	LOAD_TLV_VALUES(TLV[GAS_O2], LINDA_GAS_AMT(environment, GAS_O2)*partial_pressure)
 	var/oxygen_dangerlevel = TEST_TLV_VALUES
 	LOAD_TLV_VALUES(TLV[GAS_CO2], LINDA_GAS_AMT(environment, GAS_CO2)*partial_pressure)
@@ -371,8 +400,8 @@
 	LOAD_TLV_VALUES(TLV["other"], other_moles*partial_pressure)
 	var/other_dangerlevel = TEST_TLV_VALUES
 
-	return max(
-		pressure_dangerlevel,
+	var/calculated_danger_level = max(
+		calculated_pressure_level,
 		oxygen_dangerlevel,
 		co2_dangerlevel,
 		phoron_dangerlevel,
@@ -380,6 +409,11 @@
 		other_dangerlevel,
 		temperature_dangerlevel
 		)
+	if(calculated_levels)
+		calculated_levels["pressure"] = calculated_pressure_level
+		calculated_levels["raw_pressure"] = environment_pressure
+		calculated_levels["raw_temperature"] = environment_temperature
+	return calculated_danger_level
 
 // Returns whether this air alarm thinks there is a breach, given the sensors that are available to it.
 /obj/machinery/alarm/proc/breach_detected()
@@ -788,6 +822,7 @@
 			else
 				for(var/obj/machinery/alarm/AA in alarm_area.air_alarms)
 					AA.target_temperature = input_temperature + T0C
+					AA.invalidate_gas_dependencies()
 		return TRUE
 
 	// Account for remote users here.
@@ -847,6 +882,7 @@
 				// investigate_log(" treshold value for [env]:[name] was set to [value] by [key_name(ui.user)]",INVESTIGATE_ATMOS)
 				for(var/obj/machinery/alarm/AA in alarm_area.air_alarms)
 					AA.TLV[env][name] = TLV[env][name]
+					AA.invalidate_gas_dependencies()
 				. = TRUE
 		if("mode")
 			mode = text2num(params["mode"])
