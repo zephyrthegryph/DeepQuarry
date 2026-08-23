@@ -84,12 +84,23 @@
 		heat_up()
 	else
 		var/turf/T = get_turf(src)
-		if (temperature > T.temperature)
+		if (temperature > T.return_temperature())
 			equalize_temperature()
 	..()
+	if(cooking)
+		return
+	if(!stat)
+		if(temperature >= optimal_temp)
+			return PROCESS_KILL
+		return
+	var/turf/ambient_turf = get_turf(src)
+	if(!ambient_turf || temperature <= ambient_turf.return_temperature())
+		return PROCESS_KILL
 
 /obj/machinery/appliance/cooker/power_change()
 	. = ..()
+	if(.)
+		START_MACHINE_PROCESSING(src)
 	update_icon() // this probably won't cause issues, but Aurora used SSIcons and queue_icon_update() instead
 
 /obj/machinery/appliance/cooker/proc/update_cooking_power()

@@ -3938,6 +3938,20 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	TEST_ASSERT_EQUAL(L.process(), PROCESS_KILL, "unpowered light without emergency charge retained timed polling")
 	qdel(L)
 
+/datum/unit_test/dq_idle_cooker_hibernates
+
+/datum/unit_test/dq_idle_cooker_hibernates/Run()
+	var/turf/test_turf = get_turf(run_loc_floor_bottom_left ? run_loc_floor_bottom_left : locate(1, 1, 1))
+	var/obj/machinery/appliance/cooker/oven/O = new(test_turf)
+	O.stat = 0
+	O.cooking = FALSE
+	O.temperature = O.optimal_temp
+	O.loss = 0
+	TEST_ASSERT_EQUAL(O.process(), PROCESS_KILL, "stable empty cooker retained timed polling")
+	O.temperature = O.optimal_temp - 20
+	TEST_ASSERT_NOTEQUAL(O.process(), PROCESS_KILL, "heating cooker hibernated below its target temperature")
+	qdel(O)
+
 /datum/unit_test/dq_idle_meter_and_fire_alarm_hibernate
 
 /datum/unit_test/dq_idle_meter_and_fire_alarm_hibernate/Run()
