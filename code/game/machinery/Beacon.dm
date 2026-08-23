@@ -16,11 +16,13 @@
 	Beacon = new /obj/item/radio/beacon
 	Beacon.invisibility = INVISIBILITY_MAXIMUM
 	Beacon.loc = T
+	RegisterSignals(Beacon, list(COMSIG_MOVABLE_MOVED, COMSIG_QDELETING), PROC_REF(beacon_changed))
 
 	hide(!T.is_plating())
 
 /obj/machinery/bluespace_beacon/Destroy()
 	if(Beacon)
+		UnregisterSignal(Beacon, list(COMSIG_MOVABLE_MOVED, COMSIG_QDELETING))
 		qdel(Beacon)
 	. = ..()
 
@@ -44,8 +46,20 @@
 		Beacon = new /obj/item/radio/beacon
 		Beacon.invisibility = INVISIBILITY_MAXIMUM
 		Beacon.loc = T
+		RegisterSignals(Beacon, list(COMSIG_MOVABLE_MOVED, COMSIG_QDELETING), PROC_REF(beacon_changed))
 	if(Beacon)
 		if(Beacon.loc != src.loc)
 			Beacon.loc = src.loc
 
 	update_icon()
+	return PROCESS_KILL
+
+/obj/machinery/bluespace_beacon/Moved(atom/old_loc, direction, forced = FALSE)
+	. = ..()
+	START_MACHINE_PROCESSING(src)
+
+/obj/machinery/bluespace_beacon/proc/beacon_changed(datum/source)
+	SIGNAL_HANDLER
+	if(source == Beacon && QDELETED(source))
+		Beacon = null
+	START_MACHINE_PROCESSING(src)

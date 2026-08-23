@@ -4105,6 +4105,8 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	TEST_ASSERT_EQUAL(seed_storage.process(), PROCESS_KILL, "stable seed storage remained scheduled")
 	var/obj/machinery/beehive/beehive = new(T)
 	TEST_ASSERT_EQUAL(beehive.process(), PROCESS_KILL, "empty beehive remained scheduled")
+	var/obj/machinery/bluespace_beacon/bluespace_beacon = new(T)
+	TEST_ASSERT_EQUAL(bluespace_beacon.process(), PROCESS_KILL, "stable bluespace beacon remained scheduled")
 	var/obj/machinery/smartfridge/smartfridge = new(T)
 	smartfridge.seconds_electrified = 0
 	smartfridge.shoot_inventory = FALSE
@@ -4144,6 +4146,7 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	qdel(tray)
 	qdel(seed_storage)
 	qdel(beehive)
+	qdel(bluespace_beacon)
 	qdel(smartfridge)
 	qdel(drying_rack)
 
