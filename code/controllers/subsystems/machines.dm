@@ -363,6 +363,10 @@ SUBSYSTEM_DEF(machines)
 					var/obj/machinery/airlock_sensor/S = subscriber
 					if(S.gas_dependency_changed(mixture_id, change_mask))
 						LAZYADD(to_wake, WR)
+				else if(istype(subscriber, /obj/machinery/meter))
+					var/obj/machinery/meter/M = subscriber
+					if(M.gas_dependency_changed(mixture_id, change_mask))
+						LAZYADD(to_wake, WR)
 				else
 					LAZYADD(to_wake, WR)
 			for(var/datum/weakref/WR as anything in to_wake)
@@ -441,6 +445,14 @@ SUBSYSTEM_DEF(machines)
 	S.register_gas_dependencies(WR)
 	STOP_MACHINE_PROCESSING(S)
 
+/datum/controller/subsystem/machines/proc/hibernate_meter(obj/machinery/meter/M)
+	if(!M)
+		return
+	var/datum/weakref/WR = WEAKREF(M)
+	sleeping_gas_devices[WR.reference] = WR
+	M.register_gas_dependency(WR)
+	STOP_MACHINE_PROCESSING(M)
+
 /datum/controller/subsystem/machines/proc/wake_vent(datum/weakref/WR)
 	wake_gas_subscriber(WR)
 
@@ -471,6 +483,10 @@ SUBSYSTEM_DEF(machines)
 		var/obj/machinery/airlock_sensor/S = subscriber
 		S.unregister_gas_dependencies(WR)
 		START_MACHINE_PROCESSING(S)
+	else if(istype(subscriber, /obj/machinery/meter))
+		var/obj/machinery/meter/M = subscriber
+		M.unregister_gas_dependency(WR)
+		START_MACHINE_PROCESSING(M)
 	if(WR.reference)
 		sleeping_gas_devices.Remove(WR.reference)
 		hibernating_vents[WR.reference] = null

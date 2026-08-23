@@ -160,8 +160,10 @@ fn excited_group_processing(
 			})
 		});
 		for (mix, before, after) in changes {
-			GasArena::bump_revision(mix);
-			GasArena::mark_dirty_if_changed(mix, before, after);
+			if GasArena::signature_changed(&before, &after) {
+				GasArena::bump_revision(mix);
+				GasArena::mark_dirty_if_changed(mix, before, after);
+			}
 		}
 	}
 	(found_turfs.len(), is_cancelled)

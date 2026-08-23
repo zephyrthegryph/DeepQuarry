@@ -3712,6 +3712,39 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	qdel(A)
 	qdel(S)
 
+/datum/unit_test/dq_idle_meter_and_fire_alarm_hibernate
+
+/datum/unit_test/dq_idle_meter_and_fire_alarm_hibernate/Run()
+	var/turf/simulated/floor/T
+	for(var/turf/simulated/floor/candidate in world)
+		if(candidate.air && !candidate.blocks_air)
+			T = candidate
+			break
+	TEST_ASSERT_NOTNULL(T, "no floor for idle machine hibernation test")
+	var/obj/machinery/atmospherics/pipe/simple/P = new(T)
+	var/datum/gas_mixture/pipe_air = P.return_air()
+	pipe_air.adjust_moles(/datum/gas/oxygen, 10)
+	var/obj/machinery/meter/M = new(T)
+	M.target = P
+	M.process()
+	var/datum/weakref/meter_ref = WEAKREF(M)
+	TEST_ASSERT(SSmachines.sleeping_gas_devices[meter_ref.reference], "idle local meter did not subscribe and hibernate")
+	pipe_air.adjust_moles(/datum/gas/oxygen, 5)
+	// Finish any dirty-gas batch captured by the running subsystem before
+	// consuming the mutation made above. Production does this on successive fires.
+	SSmachines.wake_dirty_gas_subscribers()
+	SSmachines.wake_dirty_gas_subscribers()
+	TEST_ASSERT(M.datum_flags & DF_ISPROCESSING, "meter did not wake after target pressure changed")
+
+	var/obj/machinery/firealarm/F = new(T)
+	var/fire_result = F.process()
+	TEST_ASSERT_EQUAL(fire_result, PROCESS_KILL, "idle fire alarm remained in the machine polling loop")
+	F.fire_act(T.air, T0C + 300, CELL_VOLUME)
+	TEST_ASSERT(F.firewarn, "hibernating fire alarm did not respond to direct hotspot exposure")
+	qdel(F)
+	qdel(M)
+	qdel(P)
+
 
 // =====================================================================
 // Supermatter + R-UST fusion engine

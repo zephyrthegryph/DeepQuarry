@@ -178,6 +178,10 @@ FIRE ALARM
 	if(detecting && (locate(/obj/effect/hotspot) in loc))
 		alarm()
 
+	// Hotspots call fire_act() directly while exposing their turf, so an idle
+	// alarm does not need to poll forever. Timed alarms remain scheduled.
+	if(!timing)
+		return PROCESS_KILL
 	return
 
 /obj/machinery/firealarm/power_change()

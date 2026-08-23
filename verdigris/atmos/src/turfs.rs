@@ -102,6 +102,9 @@ struct TurfMixture {
 	pub generation: u64,
 	pub flags: SimulationFlags,
 	pub planetary_atmos: Option<u32>,
+	/// Structural boundary flag cached on the turf cell. Keeping this beside the
+	/// topology lets the scheduler reject space without taking the gas-arena lock.
+	pub immutable: bool,
 	pub vis_hash: AtomicU64,
 }
 
@@ -120,13 +123,7 @@ impl TurfMixture {
 
 	/// Whether the turf's gas is immutable or not, see [`super::gas::Mixture`]
 	pub fn is_immutable(&self) -> bool {
-		GasArena::with_all_mixtures(|all_mixtures| {
-			all_mixtures
-				.get(self.mix)
-				.unwrap_or_else(|| panic!("Gas mixture not found for turf: {}", self.mix))
-				.read()
-				.is_immutable()
-		})
+		self.immutable
 	}
 	/// Returns the pressure of the turf's gas, see [`super::gas::Mixture`]
 	pub fn return_pressure(&self) -> f32 {
@@ -401,17 +398,6 @@ impl TurfGases {
 			.filter_map(move |idx| all_mixtures.mixture(idx.mix))
 	}
 
-	pub fn adjacent_mixes_with_adj_ids<'a>(
-		&'a self,
-		index: NodeIndex,
-		all_mixtures: &'a (impl crate::gas::MixtureLookup + ?Sized),
-		dir: Direction,
-	) -> impl Iterator<Item = (CellHandle, &'a parking_lot::RwLock<Mixture>)> {
-		self.graph
-			.neighbors_directed(index, dir)
-			.filter_map(|neighbor| self.graph.node_weight(neighbor))
-			.filter_map(move |cell| Some((cell.handle(), all_mixtures.mixture(cell.mix)?)))
-	}
 	pub fn clear(&mut self) {
 		self.graph.clear();
 		self.map.clear();
@@ -554,7 +540,16 @@ pub(crate) fn mark_mix_active(mix: usize) {
 		.read()
 		.as_ref()
 		.and_then(|mapping| mapping.get(&mix).copied());
-	if let Some(handle) = handle {
+	let mutable = handle.is_some_and(|handle| {
+		with_turf_gases_read(|arena| {
+			arena
+				.get_handle(handle)
+				.and_then(|node| arena.get(node))
+				.is_some_and(|mixture| !mixture.is_immutable())
+		})
+	});
+	if mutable {
+		let handle = handle.expect("mutable mapped mixture has a turf handle");
 		ACTIVE_TURFS.write().as_mut().unwrap().insert(handle);
 	}
 }
@@ -575,8 +570,25 @@ fn mark_turf_active(turf: TurfID) {
 	}
 }
 
+const MAX_TURF_SEEDS_PER_GENERATION: usize = 4_096;
+
 fn take_active_turfs() -> FxHashSet<CellHandle> {
-	std::mem::take(ACTIVE_TURFS.write().as_mut().unwrap())
+	let mut active_guard = ACTIVE_TURFS.write();
+	let active = active_guard.as_mut().unwrap();
+	if active.len() <= MAX_TURF_SEEDS_PER_GENERATION {
+		return std::mem::take(active);
+	}
+	// A generation is an optimistic transaction. Taking the entire station made
+	// one legitimate machine write invalidate tens of thousands of unrelated
+	// cells forever. Bounded seed batches keep publication latency short while
+	// the unconsumed work remains queued for subsequent generations.
+	let selected = active
+		.iter()
+		.take(MAX_TURF_SEEDS_PER_GENERATION)
+		.copied()
+		.collect::<FxHashSet<_>>();
+	active.retain(|handle| !selected.contains(handle));
+	selected
 }
 
 fn reactivate_cells(ids: impl IntoIterator<Item = CellHandle>) {
@@ -606,7 +618,10 @@ pub(super) fn reactivate_all_turfs() {
 		arena
 			.map
 			.values()
-			.filter_map(|&node| arena.get(node).map(TurfMixture::handle))
+			.filter_map(|&node| {
+				let mixture = arena.get(node)?;
+				(!mixture.is_immutable()).then_some(mixture.handle())
+			})
 			.collect::<Vec<_>>()
 	});
 	reactivate_cells(handles);
@@ -808,6 +823,7 @@ fn register_turf_impl(src: ByondValue, flag: i32, visibility: &[Option<f32>]) ->
 			.unwrap_or(0.0)
 			!= 0.0
 		{
+			to_insert.immutable = true;
 			to_insert.mark_immutable();
 		}
 		to_insert.flags = SimulationFlags::from_bits_truncate(flag as u8);

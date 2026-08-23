@@ -1,0 +1,6 @@
+author: "Codex"
+delete-after: true
+changes:
+  - bugfix: "Prevented immutable atmos boundary cells and stale publications from expanding into whole-station processing jobs."
+  - code_imp: "Added detailed atmos and machinery timing counters to server performance logs."
+  - code_imp: "Made idle local pipe meters and fire alarms dependency-driven instead of continuously processed."

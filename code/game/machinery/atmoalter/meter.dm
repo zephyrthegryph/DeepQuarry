@@ -10,6 +10,8 @@
 	var/frequency = 0
 	var/id
 	var/open = FALSE
+	var/sleeping_mixture_id
+	var/sleeping_pressure_revision = -1
 	use_power = USE_POWER_IDLE
 	idle_power_usage = 15
 
@@ -19,6 +21,7 @@
 		target = select_target()
 
 /obj/machinery/meter/Destroy()
+	unregister_gas_dependency(WEAKREF(src))
 	pipes_on_turf.Cut()
 	target = null
 	return ..()
@@ -31,6 +34,23 @@
 	if(!P)
 		P = locate(/obj/machinery/atmospherics/pipe) in loc
 	return P
+
+/obj/machinery/meter/proc/register_gas_dependency(datum/weakref/WR)
+	var/datum/gas_mixture/environment = target?.return_air()
+	sleeping_mixture_id = environment?.arena_id()
+	sleeping_pressure_revision = environment?.revision() || -1
+	SSmachines.subscribe_gas_dependency(sleeping_mixture_id, WR)
+
+/obj/machinery/meter/proc/unregister_gas_dependency(datum/weakref/WR)
+	SSmachines.unsubscribe_gas_dependency(sleeping_mixture_id, WR)
+	sleeping_mixture_id = null
+	sleeping_pressure_revision = -1
+
+/obj/machinery/meter/proc/gas_dependency_changed(mixture_id, change_mask)
+	if(!(change_mask & GAS_DEPENDENCY_PRESSURE))
+		return FALSE
+	var/datum/gas_mixture/environment = target?.return_air()
+	return !environment || environment.arena_id() != mixture_id || environment.revision() != sleeping_pressure_revision
 
 /obj/machinery/meter/process()
 	if(!target)
@@ -76,6 +96,9 @@
 			"sigtype" = "status"
 		)
 		radio_connection.post_signal(src, signal)
+	else
+		SSmachines.hibernate_meter(src)
+		return PROCESS_KILL
 
 /obj/machinery/meter/examine(mob/user)
 	. = ..()
