@@ -68,6 +68,7 @@
 			user.drop_item()
 			W.loc = src
 			charging = W
+			START_MACHINE_PROCESSING(src)
 			user.visible_message("[user] inserts [charging] into [src].", "You insert [charging] into [src].")
 			chargelevel = -1
 		update_icon()
@@ -112,7 +113,7 @@
 	//to_world("ccpt [charging] [stat]")
 	if((stat & (BROKEN|NOPOWER)) || !anchored)
 		update_use_power(USE_POWER_OFF)
-		return
+		return PROCESS_KILL
 
 	if(charging && !charging.fully_charged())
 		var/newlevel = 	round(charging.percent() * 4.0 / 99)
@@ -122,6 +123,12 @@
 			update_icon()
 	else
 		update_use_power(USE_POWER_IDLE)
+		return PROCESS_KILL
+
+/obj/machinery/cell_charger/power_change()
+	. = ..()
+	if(. && charging)
+		START_MACHINE_PROCESSING(src)
 
 /obj/machinery/cell_charger/RefreshParts()
 	var/E = 0

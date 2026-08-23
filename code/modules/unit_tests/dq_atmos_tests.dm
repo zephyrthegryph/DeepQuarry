@@ -3984,6 +3984,27 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	qdel(S)
 	qdel(P)
 
+/datum/unit_test/dq_idle_auxiliary_machines_hibernate
+
+/datum/unit_test/dq_idle_auxiliary_machines_hibernate/Run()
+	var/turf/simulated/floor/T = locate() in world
+	TEST_ASSERT_NOTNULL(T, "no floor for auxiliary machinery hibernation test")
+	var/obj/machinery/ai_status_display/display = new(T)
+	TEST_ASSERT_EQUAL(display.process(), PROCESS_KILL, "AI status display retained an empty polling loop")
+	var/obj/machinery/cell_charger/charger = new(T)
+	charger.stat = 0
+	charger.anchored = TRUE
+	TEST_ASSERT_EQUAL(charger.process(), PROCESS_KILL, "empty heavy cell charger remained scheduled")
+	var/obj/machinery/mech_recharger/mech_charger = new(T)
+	TEST_ASSERT_EQUAL(mech_charger.process(), PROCESS_KILL, "empty mech charger remained scheduled")
+	var/obj/machinery/space_heater/heater = new(T)
+	heater.state = 0
+	TEST_ASSERT_EQUAL(heater.process(), PROCESS_KILL, "switched-off space heater remained scheduled")
+	qdel(display)
+	qdel(charger)
+	qdel(mech_charger)
+	qdel(heater)
+
 
 // =====================================================================
 // Supermatter + R-UST fusion engine

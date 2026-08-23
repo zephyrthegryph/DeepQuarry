@@ -52,7 +52,7 @@
 /obj/machinery/mech_recharger/process()
 	..()
 	if(!charging)
-		return
+		return PROCESS_KILL
 	if(charging.loc != src.loc) // Could be qdel or teleport or something
 		charging = null
 		return
@@ -81,6 +81,7 @@
 			done = FALSE
 	if(done)
 		charging = null
+		return PROCESS_KILL
 
 /obj/machinery/mech_recharger/attackby(obj/item/I, mob/user)
 	if(default_deconstruction_screwdriver(user, I))
@@ -105,4 +106,10 @@
 		else
 			to_chat(M, span_notice("Now charging..."))
 		charging = M
+		START_MACHINE_PROCESSING(src)
 	return
+
+/obj/machinery/mech_recharger/power_change()
+	. = ..()
+	if(. && charging)
+		START_MACHINE_PROCESSING(src)

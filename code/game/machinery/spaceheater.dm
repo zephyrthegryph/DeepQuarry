@@ -139,6 +139,8 @@
 		tgui_interact(user)
 	else
 		state = state ? SHEATER_OFF : SHEATER_STANDBY
+		if(state)
+			START_MACHINE_PROCESSING(src)
 		user.visible_message(span_notice("[user] switches [state ? "on" : "off"] the [src]."),span_notice("You switch [state ? "on" : "off"] the [src]."))
 		update_icon()
 	return
@@ -179,6 +181,8 @@
 		if("temp")
 			// limit to 0-90 degC
 			set_temperature = clamp(text2num(params["newtemp"]), min_temperature, max_temperature)
+			if(state)
+				START_MACHINE_PROCESSING(src)
 			. = TRUE
 
 		if("cellremove")
@@ -201,12 +205,14 @@
 					C.loc = src
 					C.add_fingerprint(ui.user)
 					power_change()
+					if(state)
+						START_MACHINE_PROCESSING(src)
 					ui.user.visible_message(span_notice("[ui.user] inserts \the [C] into \the [src]."), span_notice("You insert \the [C] into \the [src]."))
 				. = TRUE
 
 /obj/machinery/space_heater/process()
 	if(!state)
-		return
+		return PROCESS_KILL
 
 	if(cell && cell.charge)
 		var/datum/gas_mixture/env = loc.return_air()
@@ -242,6 +248,12 @@
 		state = SHEATER_OFF
 		power_change()
 		update_icon()
+		return PROCESS_KILL
+
+/obj/machinery/space_heater/power_change()
+	. = ..()
+	if(. && state && cell?.charge)
+		START_MACHINE_PROCESSING(src)
 
 #undef SHEATER_OFF
 #undef SHEATER_STANDBY

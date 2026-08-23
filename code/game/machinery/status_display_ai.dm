@@ -91,7 +91,7 @@ GLOBAL_LIST_INIT(ai_status_emotions, list(
 	emotion = emote
 
 /obj/machinery/ai_status_display/process()
-	return
+	return PROCESS_KILL
 
 /obj/machinery/ai_status_display/proc/update()
 	if(mode==0) //Blank
