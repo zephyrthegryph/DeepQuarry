@@ -4123,6 +4123,13 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	gate.unlocked = TRUE
 	gate.wake_for_state_change()
 	TEST_ASSERT(gate in SSmachines.processing_machines, "opening a passive gate did not wake it")
+	var/obj/machinery/atmospherics/binary/dp_vent_pump/dual_vent = new(T)
+	dual_vent.update_use_power(USE_POWER_OFF)
+	TEST_ASSERT_EQUAL(dual_vent.process(), PROCESS_KILL, "switched-off dual-port vent remained scheduled")
+	var/datum/weakref/dual_vent_ref = WEAKREF(dual_vent)
+	TEST_ASSERT(SSmachines.sleeping_gas_devices[dual_vent_ref.reference], "dual-port vent did not subscribe before sleeping")
+	dual_vent.update_use_power(USE_POWER_IDLE)
+	TEST_ASSERT(dual_vent in SSmachines.processing_machines, "enabling a dual-port vent did not wake it")
 	var/obj/machinery/computer/operating/operating_console = new(T)
 	operating_console.table = operating_table
 	operating_table.computer = operating_console
