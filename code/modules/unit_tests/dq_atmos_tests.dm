@@ -4046,6 +4046,13 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	TEST_ASSERT(SSmachines.reactive_sleepers[point_defense_ref.reference], "point defense did not subscribe before sleeping")
 	SSmachines.publish_reactive_dependency("meteors")
 	TEST_ASSERT(point_defense in SSmachines.processing_machines, "meteor dependency did not wake point defense")
+	var/obj/machinery/computer/pod/pod_console = new(T)
+	pod_console.stat = 0
+	pod_console.timing = FALSE
+	TEST_ASSERT_EQUAL(pod_console.process(), PROCESS_KILL, "idle pod console remained scheduled")
+	var/obj/machinery/chemical_dispenser/dispenser = new(T)
+	dispenser._recharge_reagents = FALSE
+	TEST_ASSERT_EQUAL(dispenser.process(), PROCESS_KILL, "non-recharging chemical dispenser remained scheduled")
 	qdel(display)
 	qdel(charger)
 	qdel(mech_charger)
@@ -4061,6 +4068,8 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	qdel(operating_console)
 	qdel(operating_table)
 	qdel(point_defense)
+	qdel(pod_console)
+	qdel(dispenser)
 
 
 // =====================================================================

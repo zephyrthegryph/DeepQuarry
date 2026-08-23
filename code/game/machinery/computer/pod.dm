@@ -150,6 +150,8 @@
 			return TRUE
 		if("start_stop")
 			timing = !timing
+			if(timing)
+				START_MACHINE_PROCESSING(src)
 			return TRUE
 		if("test_alarm")
 			alarm()
@@ -171,15 +173,16 @@
 
 /obj/machinery/computer/pod/process()
 	if(stat & (NOPOWER|BROKEN))
-		return
-	if(timing)
-		if(time > 0)
-			time = round(time) - 1
-		else
-			alarm()
-			time = 0
-			timing = FALSE
-	return
+		return PROCESS_KILL
+	if(!timing)
+		return PROCESS_KILL
+	if(time > 0)
+		time = round(time) - 1
+	else
+		alarm()
+		time = 0
+		timing = FALSE
+		return PROCESS_KILL
 
 /obj/machinery/computer/pod/old
 	icon_state = "oldcomp"

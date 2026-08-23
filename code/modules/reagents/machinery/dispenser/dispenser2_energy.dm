@@ -6,9 +6,9 @@
 
 /obj/machinery/chemical_dispenser/process()
 	if(!_recharge_reagents)
-		return
+		return PROCESS_KILL
 	if(stat & (BROKEN|NOPOWER))
-		return
+		return PROCESS_KILL
 	if(--process_tick <= 0)
 		process_tick = 15
 		. = 0
@@ -26,6 +26,23 @@
 				. = 1
 		if(.)
 			SStgui.update_uis(src)
+		else
+			return PROCESS_KILL
+
+/obj/machinery/chemical_dispenser/proc/needs_recharge()
+	if(!_recharge_reagents)
+		return FALSE
+	for(var/id in dispense_reagents)
+		var/datum/reagent/R = SSchemistry.chemical_reagents[id]
+		var/obj/item/reagent_containers/chem_disp_cartridge/C = R ? cartridges[R.name] : null
+		if(C && C.reagents.total_volume < C.reagents.maximum_volume)
+			return TRUE
+	return FALSE
+
+/obj/machinery/chemical_dispenser/power_change()
+	. = ..()
+	if(. && !(stat & (BROKEN|NOPOWER)) && needs_recharge())
+		START_MACHINE_PROCESSING(src)
 
 /obj/machinery/chemical_dispenser
 	dispense_reagents = list(

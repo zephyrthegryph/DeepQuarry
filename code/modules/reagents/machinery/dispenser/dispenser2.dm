@@ -181,6 +181,7 @@
 				var/obj/item/reagent_containers/chem_disp_cartridge/C = cartridges[label]
 				playsound(src, 'sound/machines/reagent_dispense.ogg', 25, 1)
 				C.reagents.trans_to(container, amount)
+				START_MACHINE_PROCESSING(src)
 			. = TRUE
 
 		if("remove")
@@ -278,6 +279,7 @@
 					// Allows copying recipes
 					playsound(src, 'sound/machines/reagent_dispense.ogg', 25, 1)
 					var/amount_actually_dispensed = C.reagents.trans_to(container, dispense_amount)
+					START_MACHINE_PROCESSING(src)
 					if(dispense_amount != amount_actually_dispensed)
 						visible_message(span_warning("[src] buzzes."), span_warning("You hear a faint buzz."))
 						to_chat(ui.user, span_warning("[src] was only able to dispense [amount_actually_dispensed ? amount_actually_dispensed : 0]u out of [dispense_amount]u requested of <b>[label]</b>!"))
