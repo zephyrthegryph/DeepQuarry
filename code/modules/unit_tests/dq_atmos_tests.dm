@@ -2601,10 +2601,44 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_air_snapshots)
 	D.process()
 	TEST_ASSERT(!(D in SSmachines.processing_machines), \
 		"stable empty disposal did not enter dependency sleep")
+	D.power_change()
+	TEST_ASSERT(!(D in SSmachines.processing_machines), \
+		"unchanged area power state woke a sleeping disposal")
 	var/obj/item/I = new(pair[1])
 	I.forceMove(D)
 	TEST_ASSERT(D in SSmachines.processing_machines, \
 		"disposal contents mutation did not wake the sleeping disposal")
+	qdel(D)
+
+/datum/unit_test/dq_disposal_filters_unpumpable_gas_changes
+
+/datum/unit_test/dq_disposal_filters_unpumpable_gas_changes/Run()
+	var/list/pair = dq_atmos_test_find_clear_pipe_run(1)
+	TEST_ASSERT_NOTNULL(pair, "no clear floor for disposal pump feasibility test")
+	var/obj/machinery/disposal/D = new(pair[1])
+	var/datum/gas_mixture/source = new(CELL_VOLUME)
+	source.set_temperature(T20C)
+	source.adjust_moles(/datum/gas/oxygen, MINIMUM_MOLES_TO_PUMP * 2)
+	TEST_ASSERT(!D.can_pressurize_from(source), "disposal treated a sub-transfer-sized gas trace as actionable")
+	source.adjust_moles(/datum/gas/oxygen, 10)
+	TEST_ASSERT(D.can_pressurize_from(source), "empty disposal rejected an actionable room-air intake")
+	qdel(source)
+	qdel(D)
+
+/datum/unit_test/dq_disposal_staggered_power_retry_wakes
+
+/datum/unit_test/dq_disposal_staggered_power_retry_wakes/Run()
+	var/list/pair = dq_atmos_test_find_clear_pipe_run(1)
+	TEST_ASSERT_NOTNULL(pair, "no clear floor for disposal power retry test")
+	var/turf/open/T = pair[1]
+	var/obj/machinery/disposal/D = new(T)
+	D.mode = 1 // DISPOSALMODE_CHARGING is file-local to disposal_machines.dm.
+	D.stat &= ~(NOPOWER|BROKEN)
+	D.air_contents.clear()
+	TEST_ASSERT(D.can_pressurize_from(T.return_air()), "test floor has no pumpable atmosphere")
+	STOP_MACHINE_PROCESSING(D)
+	D.retry_charge_after_power_restore()
+	TEST_ASSERT(D in SSmachines.processing_machines, "staggered power restoration callback did not wake a pumpable disposal")
 	qdel(D)
 
 

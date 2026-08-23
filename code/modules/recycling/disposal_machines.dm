@@ -38,6 +38,7 @@
 	var/stat_tracking = TRUE
 	var/sleeping_turf_mixture_id
 	var/sleeping_turf_revision = -1
+	var/power_retry_timer
 	flags = REMOTEVIEW_ON_ENTER
 
 // create a new disposal
@@ -65,6 +66,9 @@
 	update_icon()
 
 /obj/machinery/disposal/Destroy()
+	if(power_retry_timer)
+		deltimer(power_retry_timer)
+		power_retry_timer = null
 	clear_gas_dependency()
 	SEND_SIGNAL(src, COMSIG_DISPOSAL_UNLINK) //Just to be safe.
 	eject()
@@ -105,7 +109,16 @@
 		return TRUE
 	if(environment.revision() == sleeping_turf_revision)
 		return FALSE
-	return environment.return_temperature() > 0 && environment.total_moles() >= MINIMUM_MOLES_TO_PUMP
+	return can_pressurize_from(environment)
+
+/obj/machinery/disposal/proc/can_pressurize_from(datum/gas_mixture/environment)
+	if(!air_contents || !environment || environment.return_temperature() <= 0 || environment.total_moles() < MINIMUM_MOLES_TO_PUMP)
+		return FALSE
+	var/transfer_moles = min(environment.total_moles(), (PUMP_MAX_FLOW_RATE / environment.return_volume()) * environment.total_moles())
+	var/specific_power = calculate_specific_power(environment, air_contents) / ATMOS_PUMP_EFFICIENCY
+	if(specific_power > 0)
+		transfer_moles = min(transfer_moles, active_power_usage / specific_power)
+	return transfer_moles >= MINIMUM_MOLES_TO_PUMP
 
 /obj/machinery/disposal/singularity_pull(S, current_size)
 	..()
@@ -609,10 +622,21 @@
 
 // called when area power changes
 /obj/machinery/disposal/power_change()
-	..()	// do default setting/reset of stat NOPOWER bit
-	wake_for_state_change()
-	update_icon()	// update icon
-	return
+	. = ..()	// do default setting/reset of stat NOPOWER bit
+	if(.)
+		update_icon()	// update icon
+		if(flush || length(contents))
+			wake_for_state_change()
+		else if(mode == DISPOSALMODE_CHARGING && !(stat & NOPOWER) && can_pressurize_from(loc.return_air()) && !power_retry_timer)
+			// A station-wide restoration otherwise wakes every empty bin in the
+			// same tick, their combined pump surge drops the grid, and all of them
+			// go back to sleep without charging. Spread retries across the cycle.
+			power_retry_timer = addtimer(CALLBACK(src, PROC_REF(retry_charge_after_power_restore)), rand(1 SECOND, 30 SECONDS), TIMER_STOPPABLE)
+
+/obj/machinery/disposal/proc/retry_charge_after_power_restore()
+	power_retry_timer = null
+	if(mode == DISPOSALMODE_CHARGING && !(stat & (NOPOWER|BROKEN)) && can_pressurize_from(loc.return_air()))
+		wake_for_state_change()
 
 // called when the bin expels items, generally from a disposal network, or trying to flush without a proper connection.
 // should usually only occur if the pipe network if modified or delivering mail
