@@ -147,6 +147,7 @@ fundamental differences
 
 
 /obj/machinery/appliance/mixer/process()
-	if (!stat)
-		for (var/i in cooking_objs)
-			do_cooking_tick(i)
+	if(stat || !cooking || !length(cooking_objs))
+		return PROCESS_KILL
+	for(var/i in cooking_objs)
+		do_cooking_tick(i)

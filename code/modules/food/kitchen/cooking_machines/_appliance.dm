@@ -302,6 +302,7 @@
 
 	get_cooking_work(CI)
 	cooking = TRUE
+	START_MACHINE_PROCESSING(src)
 	return CI
 
 /obj/machinery/appliance/proc/get_cooking_work(datum/cooking_item/CI)
@@ -386,15 +387,17 @@
 	return TRUE
 
 /obj/machinery/appliance/process()
-	if(cooking_power > 0 && cooking)
-		var/all_done_cooking = TRUE
-		for(var/datum/cooking_item/CI in cooking_objs)
-			do_cooking_tick(CI)
-			if(CI.max_cookwork > 0)
-				all_done_cooking = FALSE
-		if(all_done_cooking)
-			cooking = FALSE
-			update_icon()
+	if(cooking_power <= 0 || !cooking)
+		return PROCESS_KILL
+	var/all_done_cooking = TRUE
+	for(var/datum/cooking_item/CI in cooking_objs)
+		do_cooking_tick(CI)
+		if(CI.max_cookwork > 0)
+			all_done_cooking = FALSE
+	if(all_done_cooking)
+		cooking = FALSE
+		update_icon()
+		return PROCESS_KILL
 
 /obj/machinery/appliance/proc/predict_cooking(datum/cooking_item/CI)
 	var/datum/recipe/recipe = null

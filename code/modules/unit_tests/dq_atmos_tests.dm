@@ -3996,6 +3996,12 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	var/obj/machinery/media/jukebox/jukebox = new(T)
 	jukebox.playing = FALSE
 	TEST_ASSERT_EQUAL(jukebox.process(), PROCESS_KILL, "silent jukebox remained scheduled")
+	var/obj/machinery/appliance/appliance = new(T)
+	appliance.cooking = FALSE
+	TEST_ASSERT_EQUAL(appliance.process(), PROCESS_KILL, "idle cooking appliance remained scheduled")
+	var/obj/machinery/appliance/mixer/cereal/mixer = new(T)
+	mixer.cooking = FALSE
+	TEST_ASSERT_EQUAL(mixer.process(), PROCESS_KILL, "idle food mixer remained scheduled")
 	var/obj/machinery/cell_charger/charger = new(T)
 	charger.stat = 0
 	charger.anchored = TRUE
@@ -4095,6 +4101,8 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	qdel(display)
 	qdel(supply_display)
 	qdel(jukebox)
+	qdel(appliance)
+	qdel(mixer)
 	qdel(charger)
 	qdel(mech_charger)
 	qdel(heater)
