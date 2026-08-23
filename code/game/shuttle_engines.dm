@@ -51,6 +51,10 @@
 	name = "engine"
 	density = TRUE
 	anchored = TRUE
+	// Shuttle engines form part of the pressure hull. The legacy atmos engine
+	// implicitly treated dense structures as barriers; LINDA requires that
+	// behavior to be declared explicitly.
+	can_atmos_pass = ATMOS_PASS_DENSITY
 
 /obj/structure/shuttle/engine/heater
 	name = "heater"

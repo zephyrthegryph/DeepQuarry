@@ -116,6 +116,17 @@ GLOBAL_VAR_INIT(focused_tests, focused_tests())
 
 /// Resets the air of our testing room to its default
 /datum/unit_test/proc/restore_atmos()
+	// Expedition release is deliberately asynchronous in production. Do not let
+	// the next test start while a teardown job is still changing thousands of
+	// turfs and publishing atmosphere topology.
+	while(SSexpedition && length(SSexpedition.teardown_z))
+		sleep(1)
+	SSair?.auxmos_topology_barrier()
+	// DQ atmos integration tests operate on mapped turfs because the inherited
+	// per-test reservation is not implemented. Restore every turf they snapshot
+	// after each test so later tests and shuttles never inherit vacuum, test gas,
+	// or temporary sealing geometry.
+	dq_atmos_test_restore_state()
 	// NOT IMPLEMENTED YET, SEE NEW() PROC
 	//var/area/working_area = run_loc_floor_bottom_left.loc
 	//var/list/turf/to_restore = working_area.get_turfs_from_all_zlevels()

@@ -1480,7 +1480,7 @@
 	// All topology changes are complete before publishing the new z topology or
 	// area power state, avoiding partially-built networks becoming observable.
 	if(SSair)
-		SSair.build_multiz_atmos_levels()
+		SSair.update_dynamic_multiz_atmos_level(result.z_level)
 	for(var/node_id in department_areas)
 		var/area/generated_station/A = department_areas[node_id]
 		A.power_change()

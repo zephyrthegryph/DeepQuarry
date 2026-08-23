@@ -34,8 +34,83 @@ struct TurfProcessResult {
 	snapshot_mixtures: usize,
 	published_mixtures: usize,
 	rejected_generations: u64,
+	conservation_rejections: u64,
+	closed_components: usize,
 	group_cost_ms: f32,
 	group_turfs: usize,
+}
+
+#[derive(Default)]
+struct ConservationSignature {
+	gases: rustc_hash::FxHashMap<usize, f64>,
+	energy: f64,
+}
+
+fn conservation_signature(mix_ids: &[usize], mixtures: &MixtureSnapshot) -> ConservationSignature {
+	let mut signature = ConservationSignature::default();
+	for &mix_id in mix_ids {
+		let Some(mixture) = mixtures.get(mix_id) else {
+			continue;
+		};
+		let mixture = mixture.read();
+		for (gas, moles) in mixture.enumerate() {
+			*signature.gases.entry(gas).or_default() += moles as f64;
+		}
+		signature.energy += mixture.thermal_energy() as f64;
+	}
+	signature
+}
+
+fn conserves(before: &ConservationSignature, after: &ConservationSignature) -> bool {
+	let gases_conserve = before.gases.iter().all(|(gas, before_moles)| {
+		let after_moles = after.gases.get(gas).copied().unwrap_or_default();
+		let tolerance = 0.001_f64.max(before_moles.abs() * 0.000_01);
+		(before_moles - after_moles).abs() <= tolerance
+	});
+	let energy_tolerance = 0.01_f64.max(before.energy.abs() * 0.000_01);
+	gases_conserve && (before.energy - after.energy).abs() <= energy_tolerance
+}
+
+/// Returns mutable connected components that have no immutable boundary. Only
+/// those components are closed systems and therefore subject to strict mass and
+/// energy conservation at publication.
+fn closed_component_mixtures(
+	arena: &TurfGases,
+	active_nodes: &rustc_hash::FxHashSet<NodeIndex>,
+) -> Vec<Vec<usize>> {
+	let mut visited = rustc_hash::FxHashSet::default();
+	let mut closed = Vec::new();
+	for &start in active_nodes {
+		if visited.contains(&start) {
+			continue;
+		}
+		let mut frontier = vec![start];
+		let mut component = Vec::new();
+		let mut has_immutable_boundary = false;
+		while let Some(node) = frontier.pop() {
+			if !visited.insert(node) {
+				continue;
+			}
+			let Some(mixture) = arena.get(node) else {
+				continue;
+			};
+			component.push(mixture.mix);
+			for neighbor in arena.adjacent_node_ids(node) {
+				let Some(neighbor_mixture) = arena.get(neighbor) else {
+					continue;
+				};
+				if neighbor_mixture.is_immutable() {
+					has_immutable_boundary = true;
+				} else if active_nodes.contains(&neighbor) && !visited.contains(&neighbor) {
+					frontier.push(neighbor);
+				}
+			}
+		}
+		if !has_immutable_boundary && !component.is_empty() {
+			closed.push(component);
+		}
+	}
+	closed
 }
 
 static TURF_PROCESS_CHANNEL: OnceLock<(
@@ -49,6 +124,7 @@ static TURF_RESULT_CHANNEL: OnceLock<(
 static TURF_PROCESS_RUNNING: AtomicBool = AtomicBool::new(false);
 static TURF_GENERATION: AtomicU64 = AtomicU64::new(0);
 static TURF_REJECTED_GENERATIONS: AtomicU64 = AtomicU64::new(0);
+static TURF_CONSERVATION_REJECTIONS: AtomicU64 = AtomicU64::new(0);
 
 fn turf_process_channel() -> &'static (
 	flume::Sender<TurfProcessRequest>,
@@ -84,6 +160,9 @@ fn finish_process_turfs(time_remaining: ByondValue) -> Result<ByondValue> {
 #[auxmacros::panic_safe]
 fn process_turf_hook(mut src: ByondValue, remaining: ByondValue) -> Result<ByondValue> {
 	let _ = remaining;
+	if TOPOLOGY_TRANSACTION_OPEN.load(Ordering::Acquire) {
+		return Ok(true.into());
+	}
 	if let Ok(result) = turf_result_channel().1.try_recv() {
 		let previous_turf_cost = src.read_number_id(byond_string!("cost_turfs"))?;
 		src.write_var_id(
@@ -138,6 +217,14 @@ fn process_turf_hook(mut src: ByondValue, remaining: ByondValue) -> Result<Byond
 		src.write_var_id(
 			byond_string!("async_rejected_generations"),
 			&(result.rejected_generations as f32).into(),
+		)?;
+		src.write_var_id(
+			byond_string!("async_conservation_rejections"),
+			&(result.conservation_rejections as f32).into(),
+		)?;
+		src.write_var_id(
+			byond_string!("async_closed_components"),
+			&(result.closed_components as f32).into(),
 		)?;
 		let previous_group_cost = src.read_number_id(byond_string!("cost_groups"))?;
 		src.write_var_id(
@@ -223,14 +310,30 @@ fn start_turf_process_worker() {
 #[cfg_attr(feature = "tracy", tracing::instrument(skip_all))]
 fn process_turf(request: TurfProcessRequest, snapshot: &mut MixtureSnapshot) -> TurfProcessResult {
 	let total_start = Instant::now();
+	let topology_generation = super::topology_generation();
 	let (active_nodes, seed_turfs) = with_turf_gases_read(|arena| {
 		let seeds = take_active_turfs();
 		let seed_count = seeds.len();
 		let mut nodes = rustc_hash::FxHashSet::default();
-		for turf_id in seeds {
-			if let Some(node) = arena.get_id(turf_id) {
-				nodes.insert(node);
-				nodes.extend(arena.adjacent_node_ids(node));
+		for handle in seeds {
+			if let Some(node) = arena.get_handle(handle) {
+				let mut frontier = vec![node];
+				while let Some(candidate) = frontier.pop() {
+					if nodes.contains(&candidate) {
+						continue;
+					}
+					let Some(mixture) = arena.get(candidate) else {
+						continue;
+					};
+					// Immutable space/planet cells are boundary conditions. They must be
+					// snapshotted as neighbors, but walking through them would merge every
+					// compartment bordering the same vacuum into one false component.
+					if mixture.is_immutable() {
+						continue;
+					}
+					nodes.insert(candidate);
+					frontier.extend(arena.adjacent_node_ids(candidate));
+				}
 			}
 		}
 		(nodes, seed_count)
@@ -258,6 +361,12 @@ fn process_turf(request: TurfProcessRequest, snapshot: &mut MixtureSnapshot) -> 
 		ids.into_iter().collect::<Vec<_>>()
 	});
 	GasArena::snapshot_mixtures_into(&snapshot_mix_ids, snapshot);
+	let closed_components =
+		with_turf_gases_read(|arena| closed_component_mixtures(arena, &active_nodes));
+	let conservation_baselines = closed_components
+		.iter()
+		.map(|component| conservation_signature(component, snapshot))
+		.collect::<Vec<_>>();
 	//this will block until process_turfs is called
 	let (low_pressure_turfs, high_pressure_turfs, pressure_events, turf_cost_ms) = {
 		let start_time = Instant::now();
@@ -277,6 +386,13 @@ fn process_turf(request: TurfProcessRequest, snapshot: &mut MixtureSnapshot) -> 
 		)
 	};
 	planet_process(request.planet_share_ratio, snapshot, &active_nodes);
+	let conservation_valid = closed_components
+		.iter()
+		.zip(&conservation_baselines)
+		.all(|(component, before)| conserves(before, &conservation_signature(component, snapshot)));
+	if !conservation_valid {
+		TURF_CONSERVATION_REJECTIONS.fetch_add(1, Ordering::AcqRel);
+	}
 	let next_active = with_turf_gases_read(|arena| {
 		active_nodes
 			.par_iter()
@@ -285,16 +401,24 @@ fn process_turf(request: TurfProcessRequest, snapshot: &mut MixtureSnapshot) -> 
 					.get(node)
 					.is_some_and(|mixture| should_process(node, mixture, snapshot, arena))
 			})
-			.filter_map(|&node| arena.get(node).map(|mixture| mixture.id))
+			.filter_map(|&node| arena.get(node).map(TurfMixture::handle))
 			.collect::<rustc_hash::FxHashSet<_>>()
 	});
 	let retained_turfs = next_active.len();
-	let published_ids = GasArena::publish_snapshot(&snapshot_mix_ids, snapshot);
+	let published_ids = if conservation_valid && super::topology_generation() == topology_generation
+	{
+		GasArena::publish_snapshot(&snapshot_mix_ids, snapshot)
+	} else {
+		None
+	};
 	let published = published_ids.is_some();
 	if !published {
 		TURF_REJECTED_GENERATIONS.fetch_add(1, Ordering::AcqRel);
+		// The active seed set was consumed at the start of this generation. A
+		// topology invalidation must put it back so the new graph is processed.
+		super::reactivate_all_turfs();
 	} else {
-		super::reactivate_turfs(next_active);
+		super::reactivate_cells(next_active);
 	}
 	let post_process_cost_ms = {
 		let start_time = Instant::now();
@@ -334,6 +458,8 @@ fn process_turf(request: TurfProcessRequest, snapshot: &mut MixtureSnapshot) -> 
 		snapshot_mixtures: snapshot_mix_ids.len(),
 		published_mixtures: published_ids.as_ref().map_or(0, Vec::len),
 		rejected_generations: TURF_REJECTED_GENERATIONS.load(Ordering::Acquire),
+		conservation_rejections: TURF_CONSERVATION_REJECTIONS.load(Ordering::Acquire),
+		closed_components: closed_components.len(),
 		group_cost_ms,
 		group_turfs,
 	}
@@ -417,7 +543,7 @@ fn process_cell(
 	index: NodeIndex,
 	all_mixtures: &MixtureSnapshot,
 	arena: &TurfGases,
-) -> Option<(NodeIndex, Mixture, TinyVec<[(TurfID, f32); 6]>, i32)> {
+) -> Option<(NodeIndex, Mixture, TinyVec<[(CellHandle, f32); 6]>, i32)> {
 	let mut adj_amount = 0;
 	/*
 		Getting write locks is potential danger zone,
@@ -425,7 +551,7 @@ fn process_cell(
 		absolutely need to. Saving is fast enough.
 	*/
 	let mut end_gas = Mixture::from_vol(crate::constants::CELL_VOLUME);
-	let mut pressure_diffs: TinyVec<[(TurfID, f32); 6]> = Default::default();
+	let mut pressure_diffs: TinyVec<[(CellHandle, f32); 6]> = Default::default();
 	/*
 		The pressure here is negative
 		because we're going to be adding it
@@ -436,7 +562,7 @@ fn process_cell(
 		due to the pressure gradient.
 		Technically that's ρν², but, like, video games.
 	*/
-	for (&loc, entry) in
+	for (loc, entry) in
 		arena.adjacent_mixes_with_adj_ids(index, all_mixtures, petgraph::Direction::Incoming)
 	{
 		match entry.try_read() {
@@ -480,7 +606,7 @@ fn fdm(
 ) -> (
 	BTreeSet<TurfID>,
 	BTreeSet<TurfID>,
-	Vec<(TurfID, TinyVec<[(TurfID, f32); 6]>)>,
+	Vec<(CellHandle, TinyVec<[(CellHandle, f32); 6]>)>,
 ) {
 	/*
 		This is the replacement system for LINDA. LINDA requires a lot of bookkeeping,
@@ -567,7 +693,7 @@ fn fdm(
 						high_pressure
 							.into_par_iter()
 							.filter_map(|(_, pressures, _, node_id)| {
-								Some((arena.get(node_id)?.id, pressures))
+								Some((arena.get(node_id)?.handle(), pressures))
 							})
 							.collect::<Vec<_>>(),
 					);
@@ -580,16 +706,21 @@ fn fdm(
 	(low_pressure_turfs, high_pressure_turfs, pressure_events)
 }
 
-fn dispatch_pressure_events(events: Vec<(TurfID, TinyVec<[(TurfID, f32); 6]>)>) {
-	events.into_par_iter().for_each(|(id, diffs)| {
+fn dispatch_pressure_events(events: Vec<(CellHandle, TinyVec<[(CellHandle, f32); 6]>)>) {
+	events.into_par_iter().for_each(|(handle, diffs)| {
 		let sender = byond_callback_sender();
 		drop(sender.try_send(Box::new(move || {
-			let turf = ByondValue::new_ref(ValueType::Turf, id);
-			for (other_id, diff) in diffs.iter().copied() {
-				if other_id == 0 {
+			if !with_turf_gases_read(|arena| arena.get_handle(handle).is_some()) {
+				return Ok(());
+			}
+			let turf = ByondValue::new_ref(ValueType::Turf, handle.id);
+			for (other_handle, diff) in diffs.iter().copied() {
+				if other_handle.id == 0
+					|| !with_turf_gases_read(|arena| arena.get_handle(other_handle).is_some())
+				{
 					continue;
 				}
-				let other_turf = ByondValue::new_ref(ValueType::Turf, other_id);
+				let other_turf = ByondValue::new_ref(ValueType::Turf, other_handle.id);
 				if diff > 5.0 {
 					turf.call_id(
 						byond_string!("consider_pressure_difference"),
@@ -608,6 +739,35 @@ fn dispatch_pressure_events(events: Vec<(TurfID, TinyVec<[(TurfID, f32); 6]>)>) 
 			Ok(())
 		})));
 	});
+}
+
+#[cfg(test)]
+mod tests {
+	use super::*;
+
+	#[test]
+	fn conservation_gate_rejects_material_loss() {
+		let mut before = ConservationSignature::default();
+		before.gases.insert(0, 440.0);
+		before.gases.insert(1, 1_650.0);
+		before.energy = 50_000.0;
+		let mut after = ConservationSignature::default();
+		after.gases.insert(0, 123.0);
+		after.gases.insert(1, 459.0);
+		after.energy = 16_000.0;
+		assert!(!conserves(&before, &after));
+	}
+
+	#[test]
+	fn conservation_gate_allows_float_noise() {
+		let mut before = ConservationSignature::default();
+		before.gases.insert(0, 440.0);
+		before.energy = 50_000.0;
+		let mut after = ConservationSignature::default();
+		after.gases.insert(0, 440.000_4);
+		after.energy = 50_000.4;
+		assert!(conserves(&before, &after));
+	}
 }
 
 // Checks if the gas can react or can update visuals, returns None if not.

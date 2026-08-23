@@ -1,0 +1,5 @@
+author: "BigBadE"
+delete-after: true
+changes:
+  - bugfix: "Prevented dynamic z-level and shuttle topology changes from draining sealed atmospheres."
+  - refactor: "Made Rust atmos topology updates atomic and protected async publication with generational identities and conservation checks."

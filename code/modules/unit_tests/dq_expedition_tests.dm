@@ -38,6 +38,7 @@
 
 	TEST_ASSERT_NOTNULL(site, "generate_site() returned null — z-alloc, verdigris carve, or content scatter failed")
 	TEST_ASSERT(world.maxz > pre_maxz, "world.maxz did not grow: [pre_maxz] -> [world.maxz]; load_new_z() allocated nothing")
+	TEST_ASSERT(!HasAbove(pre_maxz), "independent expedition z-level activated a vertical connection above the previous world boundary")
 	TEST_ASSERT_EQUAL(site.z_level, world.maxz, "site z-level [site.z_level] is not the newly-allocated top z [world.maxz]")
 
 	// A walkable landing turf only exists if the carver actually opened floors.

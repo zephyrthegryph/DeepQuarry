@@ -9,6 +9,12 @@ pub fn flush_groups_channel() {
 	*GROUPS_CHANNEL.lock() = None;
 }
 
+pub fn retire_turf(id: TurfID) {
+	if let Some(group) = GROUPS_CHANNEL.lock().as_mut() {
+		group.remove(&id);
+	}
+}
+
 fn with_groups<T>(f: impl Fn(Option<BTreeSet<TurfID>>) -> T) -> T {
 	f(GROUPS_CHANNEL.lock().take())
 }

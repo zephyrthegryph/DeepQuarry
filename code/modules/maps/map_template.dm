@@ -98,6 +98,9 @@
 	admin_notice(span_danger("Submap initializations finished."), R_DEBUG)
 
 /datum/map_template/proc/load_new_z(centered = FALSE)
+	var/atmos_transaction = SSair?.initialized
+	if(atmos_transaction)
+		SSair.auxmos_topology_transaction_begin()
 	var/x = 1
 	var/y = 1
 
@@ -110,6 +113,15 @@
 	// would pick up any z allocated meanwhile, building this map onto the
 	// wrong (possibly occupied) z-level. Use new_z everywhere and return it.
 	var/t_start = REALTIMEOFDAY
+	var/old_top_z = world.maxz
+	// A freshly allocated template z is an independent level unless its own
+	// map_data landmarks explicitly describe a multiz stack. While old_top_z
+	// was the top of the world, HasAbove(old_top_z) masked any stale TRUE entry
+	// in GLOB.z_levels. Growing world.maxz would otherwise activate that latent
+	// edge and vertically join an unrelated shuttle/sector z to this template.
+	if(length(GLOB.z_levels) < old_top_z)
+		GLOB.z_levels.len = old_top_z
+	GLOB.z_levels[old_top_z] = FALSE
 	var/new_z = world.increment_max_z()
 	var/t_incz = REALTIMEOFDAY
 
@@ -126,6 +138,8 @@
 	var/t_loadmap = REALTIMEOFDAY
 	var/list/bounds = parsed.bounds
 	if(!bounds)
+		if(atmos_transaction)
+			SSair.auxmos_topology_transaction_commit()
 		return FALSE
 
 //	repopulate_sorted_areas()
@@ -138,6 +152,8 @@
 	log_world("load_new_z timing: maxz++=[(t_incz - t_start) / 10]s load_map=[(t_loadmap - t_incz) / 10]s initTemplateBounds=[(REALTIMEOFDAY - t_loadmap) / 10]s")
 	log_game("Z-level [name] loaded at at [x],[y],[new_z]")
 	on_map_loaded(new_z)
+	if(atmos_transaction)
+		SSair.auxmos_topology_transaction_commit()
 	return new_z
 
 /datum/map_template/proc/load(turf/T, centered = FALSE)

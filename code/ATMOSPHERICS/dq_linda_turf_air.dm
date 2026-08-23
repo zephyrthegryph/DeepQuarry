@@ -55,6 +55,18 @@
 /datum/controller/subsystem/air/proc/auxmos_diagnostics()
 	return call_ext(VERDIGRIS, "byond:auxmos_diagnostics_ffi")()
 
+/// Wait for detached atmos work to release the current topology before a
+/// synchronous shuttle/map mutation begins.
+/datum/controller/subsystem/air/proc/auxmos_topology_barrier()
+	return call_ext(VERDIGRIS, "byond:topology_barrier_ffi")()
+
+/// Begin/commit an atomic Rust-owned atmosphere topology replacement.
+/datum/controller/subsystem/air/proc/auxmos_topology_transaction_begin()
+	return call_ext(VERDIGRIS, "byond:topology_transaction_begin_ffi")()
+
+/datum/controller/subsystem/air/proc/auxmos_topology_transaction_commit()
+	return call_ext(VERDIGRIS, "byond:topology_transaction_commit_ffi")()
+
 /// Returns current and peak bytes requested through Rust's global allocator.
 /datum/controller/subsystem/air/proc/verdigris_allocator_diagnostics()
 	return call_ext(VERDIGRIS, "byond:verdigris_allocator_diagnostics_ffi")()
@@ -127,6 +139,11 @@
 /// Bulk adjacency push: one FFI entry for a whole list of registered turfs.
 /proc/auxmos_update_adjacencies_bulk(list/turf/turfs)
 	return call_ext(VERDIGRIS, "byond:hook_infos_bulk_ffi")(turfs)
+
+/// Test/debug invariant: TRUE when Rust's outgoing edge set exactly matches
+/// the adjacency list DM most recently intended for this turf.
+/proc/auxmos_topology_matches(turf/target)
+	return call_ext(VERDIGRIS, "byond:topology_matches_ffi")(target)
 
 /// Pushes this turf's atmos_adjacent_turfs graph into the Rust arena. Both the
 /// turf and every neighbour must already be registered (update_air_ref) or the

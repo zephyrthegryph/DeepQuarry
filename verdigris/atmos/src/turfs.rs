@@ -16,13 +16,16 @@ use bitflags::bitflags;
 use byondapi::prelude::*;
 use eyre::{Context, Result};
 use indexmap::IndexMap;
-use parking_lot::{const_rwlock, RwLock, RwLockUpgradableReadGuard};
+use parking_lot::{const_mutex, const_rwlock, Mutex, RwLock, RwLockUpgradableReadGuard};
 use petgraph::{graph::NodeIndex, stable_graph::StableDiGraph, visit::EdgeRef, Direction};
 use rayon::prelude::*;
 use rustc_hash::{FxBuildHasher, FxHashMap, FxHashSet};
 use std::hash::{Hash, Hasher};
 use std::time::Duration;
-use std::{mem::drop, sync::atomic::AtomicU64};
+use std::{
+	mem::drop,
+	sync::atomic::{AtomicBool, AtomicU64, Ordering},
+};
 
 bitflags! {
 	#[derive(Default, Debug, Clone, Copy, PartialEq, Eq)]
@@ -44,7 +47,7 @@ bitflags! {
 		const SIMULATION_ANY = Self::SIMULATION_DIFFUSE.bits() | Self::SIMULATION_ALL.bits();
 	}
 
-	#[derive(Default, Debug)]
+	#[derive(Default, Debug, Clone, Copy)]
 	pub struct AdjacentFlags: u8 {
 		const ATMOS_ADJACENT_FIRELOCK = 0b10;
 	}
@@ -85,11 +88,18 @@ const fn idx_to_adj_flag(idx: u8) -> Directions {
 
 type TurfID = u32;
 
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Hash, PartialOrd, Ord)]
+struct CellHandle {
+	id: TurfID,
+	generation: u64,
+}
+
 // TurfMixture can be treated as "immutable" for all intents and purposes--put other data somewhere else
 #[derive(Default, Debug)]
 struct TurfMixture {
 	pub mix: usize,
 	pub id: TurfID,
+	pub generation: u64,
 	pub flags: SimulationFlags,
 	pub planetary_atmos: Option<u32>,
 	pub vis_hash: AtomicU64,
@@ -97,6 +107,12 @@ struct TurfMixture {
 
 #[allow(dead_code)]
 impl TurfMixture {
+	fn handle(&self) -> CellHandle {
+		CellHandle {
+			id: self.id,
+			generation: self.generation,
+		}
+	}
 	/// Whether the turf is processed at all or not
 	pub fn enabled(&self) -> bool {
 		self.flags.intersects(SimulationFlags::SIMULATION_ANY)
@@ -254,14 +270,25 @@ type TurfGraphMap = IndexMap<TurfID, NodeIndex, FxBuildHasher>;
 struct TurfGases {
 	graph: StableDiGraph<TurfMixture, AdjacentFlags>,
 	map: TurfGraphMap,
+	generations: FxHashMap<TurfID, u64>,
 }
 
 impl TurfGases {
-	pub fn insert_turf(&mut self, tmix: TurfMixture) {
+	pub fn insert_turf(&mut self, mut tmix: TurfMixture) {
 		if let Some(&node_id) = self.map.get(&tmix.id) {
 			let thin = self.graph.node_weight_mut(node_id).unwrap();
+			if thin.mix == tmix.mix {
+				tmix.generation = thin.generation;
+			} else {
+				let generation = self.generations.entry(tmix.id).or_default();
+				*generation += 1;
+				tmix.generation = *generation;
+			}
 			*thin = tmix
 		} else {
+			let generation = self.generations.entry(tmix.id).or_default();
+			*generation += 1;
+			tmix.generation = *generation;
 			self.map.insert(tmix.id, self.graph.add_node(tmix));
 		}
 	}
@@ -273,21 +300,45 @@ impl TurfGases {
 	fn update_adjacencies_from_ids(&mut self, idx: TurfID, adjacent: &[(TurfID, u8)]) {
 		if let Some(&this_index) = self.map.get(&idx) {
 			self.remove_adjacencies(this_index);
-			adjacent
+			let resolved = adjacent
 				.iter()
 				.copied()
 				.filter_map(|(adj_ref, flag)| Some((self.map.get(&adj_ref)?, flag)))
-				.for_each(|(adj_index, flag)| {
-					let flags = AdjacentFlags::from_bits_truncate(flag);
-					self.graph.add_edge(this_index, *adj_index, flags);
-				})
+				.map(|(adj_index, flag)| (*adj_index, flag))
+				.collect::<Vec<_>>();
+			// Diffusion across an edge is physically bidirectional even though the
+			// graph stores separately published directed lists. Remove stale reverse
+			// edges from neighbors that DM no longer considers adjacent, while
+			// retaining valid reverse edges regardless of bulk publication order.
+			let stale_incoming = self
+				.graph
+				.edges_directed(this_index, Direction::Incoming)
+				.filter(|edge| !resolved.iter().any(|(node, _)| *node == edge.source()))
+				.map(|edge| edge.id())
+				.collect::<Vec<_>>();
+			for edge in stale_incoming {
+				self.graph.remove_edge(edge);
+			}
+			resolved.into_iter().for_each(|(adj_index, flag)| {
+				let flags = AdjacentFlags::from_bits_truncate(flag);
+				self.graph.add_edge(this_index, adj_index, flags);
+				// Diffusion is physically undirected. Construct the reverse edge in
+				// Rust instead of relying on a second, correctly ordered DM callback.
+				if self.graph.find_edge(adj_index, this_index).is_none() {
+					self.graph.add_edge(adj_index, this_index, flags);
+				}
+			})
 		}
 	}
 
 	pub fn remove_adjacencies(&mut self, index: NodeIndex) {
+		// Each turf publishes its own directed adjacency list. Incoming edges are
+		// owned by neighboring turfs and must survive this replacement; deleting
+		// them here makes a bulk republish order-dependent (each later turf would
+		// erase the reverse edge just installed by an earlier one).
 		let edges = self
 			.graph
-			.edges(index)
+			.edges_directed(index, Direction::Outgoing)
 			.map(|edgeref| edgeref.id())
 			.collect::<Vec<_>>();
 		edges.into_iter().for_each(|edgeindex| {
@@ -309,6 +360,11 @@ impl TurfGases {
 	#[allow(unused)]
 	pub fn get_id(&self, idx: TurfID) -> Option<NodeIndex> {
 		self.map.get(&idx).copied()
+	}
+
+	pub fn get_handle(&self, handle: CellHandle) -> Option<NodeIndex> {
+		let node = self.get_id(handle.id)?;
+		(self.get(node)?.generation == handle.generation).then_some(node)
 	}
 
 	pub fn adjacent_node_ids(&self, index: NodeIndex) -> impl Iterator<Item = NodeIndex> + '_ {
@@ -350,15 +406,16 @@ impl TurfGases {
 		index: NodeIndex,
 		all_mixtures: &'a (impl crate::gas::MixtureLookup + ?Sized),
 		dir: Direction,
-	) -> impl Iterator<Item = (&'a TurfID, &'a parking_lot::RwLock<Mixture>)> {
+	) -> impl Iterator<Item = (CellHandle, &'a parking_lot::RwLock<Mixture>)> {
 		self.graph
 			.neighbors_directed(index, dir)
 			.filter_map(|neighbor| self.graph.node_weight(neighbor))
-			.filter_map(move |idx| Some((&idx.id, all_mixtures.mixture(idx.mix)?)))
+			.filter_map(move |cell| Some((cell.handle(), all_mixtures.mixture(cell.mix)?)))
 	}
 	pub fn clear(&mut self) {
 		self.graph.clear();
 		self.map.clear();
+		self.generations.clear();
 	}
 
 	/*
@@ -395,8 +452,8 @@ static TURF_GASES: RwLock<Option<TurfGases>> = const_rwlock(None);
 
 // We store planetary atmos by hash of the initial atmos string here for speed.
 static PLANETARY_ATMOS: RwLock<Option<IndexMap<u32, Mixture, FxBuildHasher>>> = const_rwlock(None);
-static ACTIVE_TURFS: RwLock<Option<FxHashSet<TurfID>>> = const_rwlock(None);
-static MIX_TO_TURF: RwLock<Option<FxHashMap<usize, TurfID>>> = const_rwlock(None);
+static ACTIVE_TURFS: RwLock<Option<FxHashSet<CellHandle>>> = const_rwlock(None);
+static MIX_TO_TURF: RwLock<Option<FxHashMap<usize, CellHandle>>> = const_rwlock(None);
 
 #[derive(Debug)]
 enum PendingTopologyUpdate {
@@ -407,9 +464,16 @@ enum PendingTopologyUpdate {
 }
 
 static PENDING_TOPOLOGY: RwLock<Vec<PendingTopologyUpdate>> = const_rwlock(Vec::new());
+static TOPOLOGY_TRANSACTION: Mutex<Vec<PendingTopologyUpdate>> = const_mutex(Vec::new());
+static TOPOLOGY_TRANSACTION_OPEN: AtomicBool = AtomicBool::new(false);
+static TURF_TOPOLOGY_GENERATION: AtomicU64 = AtomicU64::new(0);
 
 //whether there is any tasks running
 static TASKS: RwLock<()> = const_rwlock(());
+
+pub(super) fn topology_generation() -> u64 {
+	TURF_TOPOLOGY_GENERATION.load(Ordering::Acquire)
+}
 
 pub fn wait_for_tasks() {
 	match TASKS.try_write_for(Duration::from_secs(5)) {
@@ -420,25 +484,102 @@ pub fn wait_for_tasks() {
 	}
 }
 
+/// Synchronous topology mutations (notably shuttle translation) must begin
+/// with no diffusion/equalization generation still referring to the old turf
+/// graph. These operations are rare, so a bounded barrier is preferable to
+/// publishing any result across a moving topology.
+#[byondapi::bind("/datum/controller/subsystem/air/proc/auxmos_topology_barrier")]
+#[auxmacros::panic_safe]
+fn topology_barrier() -> Result<ByondValue> {
+	wait_for_tasks();
+	apply_pending_topology_updates();
+	groups::flush_groups_channel();
+	#[cfg(feature = "katmos")]
+	katmos::flush_equalize_channel();
+	Ok(ByondValue::null())
+}
+
+/// Opens a synchronous world-topology transaction. Atmos workers are drained
+/// before DM begins mutating turfs and cannot start again until commit.
+#[byondapi::bind("/datum/controller/subsystem/air/proc/auxmos_topology_transaction_begin")]
+#[auxmacros::panic_safe]
+fn topology_transaction_begin() -> Result<ByondValue> {
+	wait_for_tasks();
+	apply_pending_topology_updates();
+	TOPOLOGY_TRANSACTION.lock().clear();
+	TOPOLOGY_TRANSACTION_OPEN.store(true, Ordering::Release);
+	Ok(ByondValue::null())
+}
+
+/// Atomically applies every registration and edge replacement accumulated by
+/// the matching begin call, then exposes one new topology generation.
+#[byondapi::bind("/datum/controller/subsystem/air/proc/auxmos_topology_transaction_commit")]
+#[auxmacros::panic_safe]
+fn topology_transaction_commit() -> Result<ByondValue> {
+	// panic_safe catches unwinds outside this function. This guard ensures a
+	// failed commit can never strand atmos processing in the paused state.
+	struct TransactionReset;
+	impl Drop for TransactionReset {
+		fn drop(&mut self) {
+			TOPOLOGY_TRANSACTION_OPEN.store(false, Ordering::Release);
+		}
+	}
+	let _reset = TransactionReset;
+	let updates = std::mem::take(&mut *TOPOLOGY_TRANSACTION.lock());
+	with_turf_gases_write(|arena| {
+		let (structural, adjacency): (Vec<_>, Vec<_>) = updates.into_iter().partition(|update| {
+			matches!(
+				update,
+				PendingTopologyUpdate::Insert(_) | PendingTopologyUpdate::Remove(_)
+			)
+		});
+		// Register every replacement cell before resolving any edge. This makes
+		// transaction results independent of DM's per-turf ChangeTurf ordering.
+		for update in structural {
+			apply_topology_update(arena, update);
+		}
+		for update in adjacency {
+			apply_topology_update(arena, update);
+		}
+	});
+	TURF_TOPOLOGY_GENERATION.fetch_add(1, Ordering::AcqRel);
+	groups::flush_groups_channel();
+	#[cfg(feature = "katmos")]
+	katmos::flush_equalize_channel();
+	Ok(ByondValue::null())
+}
+
 pub(crate) fn mark_mix_active(mix: usize) {
-	let turf = MIX_TO_TURF
+	let handle = MIX_TO_TURF
 		.read()
 		.as_ref()
 		.and_then(|mapping| mapping.get(&mix).copied());
-	if let Some(turf) = turf {
-		ACTIVE_TURFS.write().as_mut().unwrap().insert(turf);
+	if let Some(handle) = handle {
+		ACTIVE_TURFS.write().as_mut().unwrap().insert(handle);
 	}
 }
 
 fn mark_turf_active(turf: TurfID) {
-	ACTIVE_TURFS.write().as_mut().unwrap().insert(turf);
+	// Immutable space/planet mixtures are boundary conditions, not processing
+	// cells. A mutable neighbor still shares against them through its edge; adding
+	// every freshly wiped space turf to the active set needlessly creates enormous
+	// generations and can starve unrelated components.
+	let handle = with_turf_gases_read(|arena| {
+		arena.get_id(turf).and_then(|node| {
+			let mixture = arena.get(node)?;
+			(!mixture.is_immutable()).then_some(mixture.handle())
+		})
+	});
+	if let Some(handle) = handle {
+		ACTIVE_TURFS.write().as_mut().unwrap().insert(handle);
+	}
 }
 
-fn take_active_turfs() -> FxHashSet<TurfID> {
+fn take_active_turfs() -> FxHashSet<CellHandle> {
 	std::mem::take(ACTIVE_TURFS.write().as_mut().unwrap())
 }
 
-pub(super) fn reactivate_turfs(ids: impl IntoIterator<Item = TurfID>) {
+fn reactivate_cells(ids: impl IntoIterator<Item = CellHandle>) {
 	ACTIVE_TURFS.write().as_mut().unwrap().extend(ids);
 }
 
@@ -461,14 +602,21 @@ pub(super) fn turf_arena_diagnostics() -> (usize, usize, usize, usize, usize, us
 }
 
 pub(super) fn reactivate_all_turfs() {
-	let ids = with_turf_gases_read(|arena| arena.map.keys().copied().collect::<Vec<_>>());
-	ACTIVE_TURFS.write().as_mut().unwrap().extend(ids);
+	let handles = with_turf_gases_read(|arena| {
+		arena
+			.map
+			.values()
+			.filter_map(|&node| arena.get(node).map(TurfMixture::handle))
+			.collect::<Vec<_>>()
+	});
+	reactivate_cells(handles);
 }
 #[byondapi::init]
 pub fn initialize_turfs() {
 	*TURF_GASES.write() = Some(TurfGases {
 		graph: StableDiGraph::with_capacity(4096, 16_384),
 		map: IndexMap::with_capacity_and_hasher(4096, FxBuildHasher),
+		generations: FxHashMap::default(),
 	});
 	*PLANETARY_ATMOS.write() = Some(Default::default());
 	*ACTIVE_TURFS.write() = Some(Default::default());
@@ -509,18 +657,43 @@ fn apply_topology_update(arena: &mut TurfGases, update: PendingTopologyUpdate) {
 		PendingTopologyUpdate::Insert(mixture) => {
 			let id = mixture.id;
 			let mix = mixture.mix;
-			arena.insert_turf(mixture);
-			MIX_TO_TURF.write().as_mut().unwrap().insert(mix, id);
-			mark_turf_active(id);
-		}
-		PendingTopologyUpdate::Remove(id) => {
-			if let Some(mix) = arena
+			let mutable = !mixture.is_immutable();
+			if let Some(previous) = arena
 				.get_id(id)
 				.and_then(|node| arena.get(node))
-				.map(|mixture| mixture.mix)
+				.map(|cell| (cell.mix, cell.handle()))
 			{
+				if previous.0 != mix {
+					MIX_TO_TURF.write().as_mut().unwrap().remove(&previous.0);
+					ACTIVE_TURFS.write().as_mut().unwrap().remove(&previous.1);
+				}
+			}
+			arena.insert_turf(mixture);
+			let handle = arena
+				.get_id(id)
+				.and_then(|node| arena.get(node))
+				.expect("inserted turf missing from arena")
+				.handle();
+			MIX_TO_TURF.write().as_mut().unwrap().insert(mix, handle);
+			if mutable {
+				ACTIVE_TURFS.write().as_mut().unwrap().insert(handle);
+			}
+		}
+		PendingTopologyUpdate::Remove(id) => {
+			// Turf IDs can be reused by BYOND after ChangeTurf. Never leave the old
+			// mutable cell scheduled after its arena node has been removed (notably
+			// when expedition teardown replaces a whole z-level with immutable space).
+			if let Some((mix, handle)) = arena
+				.get_id(id)
+				.and_then(|node| arena.get(node))
+				.map(|mixture| (mixture.mix, mixture.handle()))
+			{
+				ACTIVE_TURFS.write().as_mut().unwrap().remove(&handle);
 				MIX_TO_TURF.write().as_mut().unwrap().remove(&mix);
 			}
+			groups::retire_turf(id);
+			#[cfg(feature = "katmos")]
+			katmos::retire_turf(id);
 			arena.remove_turf(id);
 		}
 		PendingTopologyUpdate::Adjacencies(id, adjacent) => {
@@ -535,6 +708,14 @@ fn apply_topology_update(arena: &mut TurfGases, update: PendingTopologyUpdate) {
 }
 
 fn apply_or_queue_topology_update(update: PendingTopologyUpdate) {
+	if TOPOLOGY_TRANSACTION_OPEN.load(Ordering::Acquire) {
+		TOPOLOGY_TRANSACTION.lock().push(update);
+		return;
+	}
+	// Gas revisions reject stale diffusion writes after synchronous gas changes.
+	// Topology changes need the same protection: a shuttle move or dynamic map
+	// load can otherwise let an in-flight snapshot publish against its old graph.
+	TURF_TOPOLOGY_GENERATION.fetch_add(1, Ordering::AcqRel);
 	if let Some(_task_barrier) = TASKS.try_write() {
 		with_turf_gases_write(|arena| apply_topology_update(arena, update));
 	} else {
@@ -754,6 +935,53 @@ fn infos_impl(src: ByondValue) -> Result<ByondValue> {
 	Ok(ByondValue::null())
 }
 
+/// Diagnostic invariant used by shuttle/atmos tests: Rust's authoritative
+/// outgoing edge set for this turf must exactly match DM's published list.
+#[byondapi::bind("/proc/_auxmos_topology_matches")]
+#[auxmacros::panic_safe]
+fn topology_matches(src: ByondValue) -> Result<ByondValue> {
+	let id = src.get_ref()?;
+	let expected_mix = src
+		.read_var_id(byond_string!("air"))?
+		.read_number_id(byond_string!("_extools_pointer_gasmixture"))? as usize;
+	let mut expected = Vec::new();
+	if let Ok(list) = src.read_var_id(byond_string!("atmos_adjacent_turfs")) {
+		if list.is_list() {
+			for (key, _) in list.iter()? {
+				expected.push(key.get_ref()?);
+			}
+		}
+	}
+	let (mut actual, mut incoming, actual_mix) = with_turf_gases_read(|arena| {
+		let outgoing = arena
+			.get_id(id)
+			.into_iter()
+			.flat_map(|node| arena.graph.edges_directed(node, Direction::Outgoing))
+			.filter_map(|edge| arena.graph.node_weight(edge.target()).map(|mix| mix.id))
+			.collect::<Vec<_>>();
+		let reverse = arena
+			.get_id(id)
+			.into_iter()
+			.flat_map(|node| arena.graph.edges_directed(node, Direction::Incoming))
+			.filter_map(|edge| arena.graph.node_weight(edge.source()).map(|mix| mix.id))
+			.collect::<Vec<_>>();
+		let mix = arena
+			.get_id(id)
+			.and_then(|node| arena.get(node))
+			.map(|turf| turf.mix);
+		(outgoing, reverse, mix)
+	});
+	expected.sort_unstable();
+	expected.dedup();
+	actual.sort_unstable();
+	actual.dedup();
+	incoming.sort_unstable();
+	incoming.dedup();
+	Ok(ByondValue::from(
+		expected == actual && expected == incoming && actual_mix == Some(expected_mix),
+	))
+}
+
 /// Updates the visual overlays for the given turf.
 /// Will use a cached overlay list if one exists.
 /// # Errors
@@ -878,6 +1106,59 @@ fn adjacent_tile_ids(adj: Directions, i: TurfID, max_x: i32, max_y: i32) -> Adja
 #[cfg(test)]
 mod tests {
 	use super::*;
+
+	fn empty_arena() -> TurfGases {
+		TurfGases {
+			graph: StableDiGraph::default(),
+			map: IndexMap::with_hasher(FxBuildHasher),
+			generations: FxHashMap::default(),
+		}
+	}
+
+	#[test]
+	fn recycled_turf_ids_invalidate_old_handles() {
+		let mut arena = empty_arena();
+		arena.insert_turf(TurfMixture {
+			id: 7,
+			mix: 1,
+			..Default::default()
+		});
+		let first = arena.get_from_id(7).unwrap().handle();
+		arena.remove_turf(7);
+		arena.insert_turf(TurfMixture {
+			id: 7,
+			mix: 2,
+			..Default::default()
+		});
+		let second = arena.get_from_id(7).unwrap().handle();
+		assert_ne!(first, second);
+		assert!(arena.get_handle(first).is_none());
+		assert!(arena.get_handle(second).is_some());
+	}
+
+	#[test]
+	fn adjacency_publication_is_symmetric_and_authoritative() {
+		let mut arena = empty_arena();
+		for id in [1, 2, 3] {
+			arena.insert_turf(TurfMixture {
+				id,
+				mix: id as usize,
+				..Default::default()
+			});
+		}
+		arena.update_adjacencies_from_ids(1, &[(2, 0)]);
+		let one = arena.get_id(1).unwrap();
+		let two = arena.get_id(2).unwrap();
+		assert!(arena.graph.find_edge(one, two).is_some());
+		assert!(arena.graph.find_edge(two, one).is_some());
+
+		arena.update_adjacencies_from_ids(1, &[(3, 0)]);
+		let three = arena.get_id(3).unwrap();
+		assert!(arena.graph.find_edge(one, two).is_none());
+		assert!(arena.graph.find_edge(two, one).is_none());
+		assert!(arena.graph.find_edge(one, three).is_some());
+		assert!(arena.graph.find_edge(three, one).is_some());
+	}
 
 	#[test]
 	fn topology_updates_wait_for_generation_barrier() {

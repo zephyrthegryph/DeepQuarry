@@ -356,7 +356,7 @@ SUBSYSTEM_DEF(expedition)
 
 	// Wire the freshly-(re)allocated z into the LINDA multi-z atmos table.
 	if(SSair)
-		SSair.build_multiz_atmos_levels()
+		SSair.update_dynamic_multiz_atmos_level(z)
 	var/t_multiz = REALTIMEOFDAY
 	if(flight_plan && !QDELETED(flight_plan))
 		flight_plan.generation_progress = 65
@@ -516,6 +516,7 @@ SUBSYSTEM_DEF(expedition)
 // Clear every movable off a z and reset it to vacuum for the next generated
 // station. Never deletes a connected player (defensive).
 /datum/controller/subsystem/expedition/proc/wipe_z(z, datum/expedition_teardown_job/job)
+	SSair?.auxmos_topology_transaction_begin()
 	var/wiped = 0
 	var/area/space/space_area = generated_station_space_area()
 	for(var/turf/T in block(locate(1, 1, z), locate(world.maxx, world.maxy, z)))
@@ -534,6 +535,7 @@ SUBSYSTEM_DEF(expedition)
 			job.checkpoint()
 		else if(wiped % 1000 == 0)
 			CHECK_TICK
+	SSair?.auxmos_topology_transaction_commit()
 
 // ---- Helpers --------------------------------------------------------------
 

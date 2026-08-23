@@ -52,6 +52,10 @@ SUBSYSTEM_DEF(air)
 	var/async_published_mixtures = 0
 	/// Transactions discarded because synchronous mutations changed their inputs.
 	var/async_rejected_generations = 0
+	/// Generations rejected specifically because a closed component lost mass or energy.
+	var/async_conservation_rejections = 0
+	/// Closed mutable components checked by the latest async generation.
+	var/async_closed_components = 0
 
 	// === auxmos turf-processing tunables (read by the Rust binds) ===
 	// Every var below is read via read_number_id(byond_string!(...)) in the
@@ -160,6 +164,8 @@ SUBSYSTEM_DEF(air)
 	msg += "|SNAP:[async_snapshot_mixtures]"
 	msg += "|PUB:[async_published_mixtures]"
 	msg += "|REJ:[async_rejected_generations]"
+	msg += "|CREJ:[async_conservation_rejections]"
+	msg += "|CLOSED:[async_closed_components]"
 	msg += "}"
 	if(length(arena_diag) >= 15)
 		msg += "\n  Arena:{MIX:[arena_diag[1]]/[arena_diag[2]]|FREE:[arena_diag[3]]|BASE:[arena_diag[4]]|BCAP:[arena_diag[5]]|DIRTY:[arena_diag[6]]|TURF:[arena_diag[7]]/[arena_diag[8]]|NODE:[arena_diag[9]]|EDGE:[arena_diag[10]]|ACTIVE:[arena_diag[11]]|CB:[arena_diag[12]]|HEAT:[arena_diag[13]]/[arena_diag[14]]/[arena_diag[15]]us}"
@@ -524,6 +530,20 @@ SUBSYSTEM_DEF(air)
 		traits[Z_LEVEL_UP] = HasAbove(z) ? TRUE : FALSE
 		traits[Z_LEVEL_DOWN] = HasBelow(z) ? TRUE : FALSE
 		SSmapping.multiz_levels[z] = traits
+
+/// Update only a newly-added dynamic level and its immediate boundary. A full
+/// rebuild is appropriate during round initialization, but mid-round template
+/// loads must not replace authored traits on unrelated shuttle/sector levels.
+/datum/controller/subsystem/air/proc/update_dynamic_multiz_atmos_level(z)
+	if(!SSmapping || z < 1 || z > world.maxz)
+		return
+	if(length(SSmapping.multiz_levels) < world.maxz)
+		SSmapping.multiz_levels.len = world.maxz
+	for(var/level in max(1, z - 1) to min(world.maxz, z + 1))
+		var/list/traits = new /list(Z_LEVEL_DOWN)
+		traits[Z_LEVEL_UP] = HasAbove(level) ? TRUE : FALSE
+		traits[Z_LEVEL_DOWN] = HasBelow(level) ? TRUE : FALSE
+		SSmapping.multiz_levels[level] = traits
 
 /datum/controller/subsystem/air/proc/setup_allturfs()
 	times_fired++

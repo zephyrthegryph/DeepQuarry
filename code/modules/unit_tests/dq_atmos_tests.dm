@@ -932,6 +932,8 @@
 			if(istype(n, /turf/simulated/floor))
 				var/turf/simulated/floor/floor_n = n
 				if(floor_n.air && !floor_n.blocks_air)
+					dq_atmos_test_snapshot_air(cand)
+					dq_atmos_test_snapshot_air(floor_n)
 					return list(cand, floor_n)
 	return null
 
@@ -1010,6 +1012,8 @@
 					if(istype(n, /turf/simulated/floor))
 						var/turf/simulated/floor/floor_n = n
 						if(floor_n.air && !floor_n.blocks_air)
+							dq_atmos_test_snapshot_air(seed)
+							dq_atmos_test_snapshot_air(floor_n)
 							return list(seed, floor_n)
 	// Fallback: any floor pair with built adjacency.
 	return dq_atmos_test_find_floor_pair_with_real_adjacency()
@@ -1106,6 +1110,26 @@
 /// Globally tracks turfs converted to walls for test isolation. We restore
 /// them to floor after the test that triggered the walling.
 GLOBAL_LIST_EMPTY(dq_atmos_test_walled_turfs)
+GLOBAL_LIST_EMPTY(dq_atmos_test_air_snapshots)
+
+/// Capture a turf's authoritative gas before a test mutates it. The first
+/// snapshot wins so multiple helpers within one test still restore the true
+/// pre-test state.
+/proc/dq_atmos_test_snapshot_air(turf/open/T)
+	if(!istype(T) || !T.air || (T in GLOB.dq_atmos_test_air_snapshots))
+		return
+	GLOB.dq_atmos_test_air_snapshots[T] = T.air.copy()
+
+/// Per-test cleanup invoked by /datum/unit_test/restore_atmos().
+/proc/dq_atmos_test_restore_state()
+	dq_atmos_test_restore_walls()
+	for(var/turf/open/T as anything in GLOB.dq_atmos_test_air_snapshots)
+		var/datum/gas_mixture/original = GLOB.dq_atmos_test_air_snapshots[T]
+		if(T && T.air && original)
+			T.air.copy_from(original)
+			T.air_update_turf(TRUE, FALSE)
+		qdel(original)
+	GLOB.dq_atmos_test_air_snapshots.Cut()
 
 /// Build a REAL sealed environment around A and B by replacing every
 /// non-{A,B} turf currently in their adjacency lists with /turf/simulated/wall
@@ -1185,11 +1209,23 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_walled_turfs)
 /// they were before the test. Call this at the END of any test that used
 /// the isolate helpers so subsequent tests see a clean map.
 /proc/dq_atmos_test_restore_walls()
+	var/list/restored_turfs = list()
 	for(var/turf/T as anything in GLOB.dq_atmos_test_walled_turfs)
 		var/original_type = GLOB.dq_atmos_test_walled_turfs[T]
 		if(T && original_type && T.type != original_type)
-			T.ChangeTurf(original_type)
+			var/turf/restored = T.ChangeTurf(original_type)
+			if(restored)
+				restored_turfs += restored
 	GLOB.dq_atmos_test_walled_turfs.Cut()
+	// ChangeTurf queues production topology work, but the next unit test begins
+	// immediately and can observe the transient Rust edge graph. Reconcile the
+	// restored turf and its neighbors synchronously before handing the map back.
+	for(var/turf/restored as anything in restored_turfs)
+		for(var/turf/open/open_turf as anything in list(restored, get_step(restored, NORTH), get_step(restored, SOUTH), get_step(restored, EAST), get_step(restored, WEST)))
+			if(!istype(open_turf))
+				continue
+			open_turf.immediate_calculate_adjacent_turfs()
+			open_turf.__update_auxtools_turf_adjacency_info()
 
 /// Open a sealed test-room floor up to space by ChangeTurf-ing one of its
 /// cardinal neighbors (a /turf/closed/indestructible test-room wall) into a
@@ -1354,6 +1390,8 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_walled_turfs)
 		if(A)
 			break
 	TEST_ASSERT_NOTNULL(A, "no floor-wall-floor triple on map for barrier test")
+	dq_atmos_test_snapshot_air(A)
+	dq_atmos_test_snapshot_air(B)
 
 	// The wall between A and B is part of the map's init layout.
 	// Verify init didn't wire A↔B (wall blocks adjacency) and W is also
@@ -1366,7 +1404,10 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_walled_turfs)
 	// Isolate the far-side turf from unrelated station routes and ambient test
 	// contamination. The assertions above test the wall topology; this isolates
 	// the Rust publication check so only a stale/phantom Rust edge can reach B.
-	B.atmos_adjacent_turfs.Cut()
+	if(!B.atmos_adjacent_turfs)
+		B.atmos_adjacent_turfs = list()
+	else
+		B.atmos_adjacent_turfs.Cut()
 	B.__update_auxtools_turf_adjacency_info()
 
 	for(var/datum/gas/g as anything in A.air.get_gases())

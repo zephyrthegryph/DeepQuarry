@@ -63,6 +63,19 @@
 			if(!T.blocks_air && T.air)
 				. += T.air.get_moles(/datum/gas/oxygen)
 
+/datum/unit_test/dq_shuttle_repeated_moves_preserve_air/proc/gas_diagnostics(datum/shuttle/shuttle)
+	var/turf_count = 0
+	var/total_moles = 0
+	var/oxygen = 0
+	for(var/area/A as anything in shuttle.shuttle_area)
+		for(var/turf/open/T in A)
+			if(T.blocks_air || !T.air)
+				continue
+			turf_count++
+			total_moles += T.air.total_moles()
+			oxygen += T.air.get_moles(/datum/gas/oxygen)
+	return "turfs=[turf_count], total=[total_moles], oxygen=[oxygen], location=[shuttle.current_location?.landmark_tag] z=[shuttle.current_location?.z]"
+
 /datum/unit_test/dq_shuttle_repeated_moves_preserve_air/proc/wait_for_atmos(cycles)
 	var/target_fires = SSair.times_fired + cycles
 	while(SSair.times_fired < target_fires)
@@ -82,6 +95,14 @@
 		for(var/turf/open/neighbor as anything in current.atmos_adjacent_turfs)
 			if(visited[neighbor])
 				continue
+			if(!(neighbor.loc in shuttle.shuttle_area))
+				var/list/current_contents = list()
+				var/list/neighbor_contents = list()
+				for(var/obj/current_object in current)
+					current_contents += "[current_object.type](density=[current_object.density],atmos=[current_object.can_atmos_pass])"
+				for(var/obj/neighbor_object in neighbor)
+					neighbor_contents += "[neighbor_object.type](density=[neighbor_object.density],atmos=[neighbor_object.can_atmos_pass])"
+				return "[current.x],[current.y],[current.z] [current.type] -> external turf [neighbor.x],[neighbor.y],[neighbor.z] ([neighbor.type], area [neighbor.loc?.type]); current=[current_contents.Join(", ")]; external=[neighbor_contents.Join(", ")]"
 			if(istype(neighbor, /turf/space))
 				var/list/blockers = list()
 				for(var/obj/O in current)
@@ -118,15 +139,24 @@
 	for(var/hop in 1 to 8)
 		var/obj/effect/shuttle_landmark/next_landmark = shuttle.current_location == shuttle.landmark_offsite ? shuttle.landmark_station : shuttle.landmark_offsite
 		TEST_ASSERT(shuttle.attempt_move(next_landmark), "Ferry-Demo repeated move [hop] failed")
+		for(var/area/topology_area as anything in shuttle.shuttle_area)
+			for(var/turf/open/topology_turf in topology_area)
+				if(!topology_turf.blocks_air && topology_turf.air)
+					TEST_ASSERT(auxmos_topology_matches(topology_turf), "Rust/DM atmos topology diverged after shuttle move [hop] at [topology_turf.x],[topology_turf.y],[topology_turf.z]")
 		var/immediate_oxygen = measure_oxygen(shuttle)
 		TEST_ASSERT(immediate_oxygen >= baseline * 0.99, "Ferry-Demo lost oxygen during turf translation on move [hop]: [baseline] -> [immediate_oxygen]")
 		if(next_landmark == shuttle.landmark_offsite)
 			var/leak = find_space_leak(shuttle)
 			TEST_ASSERT(!leak, "Ferry-Demo pressure volume was connected to space after move [hop]: [leak]")
-		wait_for_atmos(5)
+		for(var/cycle in 1 to 5)
+			wait_for_atmos(1)
+			for(var/area/cycle_area as anything in shuttle.shuttle_area)
+				for(var/turf/open/cycle_turf in cycle_area)
+					if(!cycle_turf.blocks_air && cycle_turf.air)
+						TEST_ASSERT(auxmos_topology_matches(cycle_turf), "Rust/DM atmos topology diverged after shuttle move [hop], atmos cycle [cycle], at [cycle_turf.x],[cycle_turf.y],[cycle_turf.z]")
 		var/hop_oxygen = measure_oxygen(shuttle)
 		if(next_landmark == shuttle.landmark_offsite)
-			TEST_ASSERT(hop_oxygen >= baseline * 0.99, "Ferry-Demo lost oxygen after returning offsite on repeated move [hop]: [baseline] -> [hop_oxygen]")
+			TEST_ASSERT(hop_oxygen >= baseline * 0.99, "Ferry-Demo lost oxygen after returning offsite on repeated move [hop]: [baseline] -> [hop_oxygen]; [gas_diagnostics(shuttle)]")
 
 /datum/unit_test/dq_arrivals_shuttle_preserves_air
 

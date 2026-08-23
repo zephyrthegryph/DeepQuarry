@@ -85,6 +85,7 @@
 	return turf_map
 
 /proc/translate_turfs(list/translation, area/base_area = null, turf/base_turf)
+	SSair?.auxmos_topology_transaction_begin()
 	var/list/changed_turfs = list()
 	for(var/turf/source in translation)
 
@@ -104,12 +105,21 @@
 
 	// ChangeTurf initially sees each destination before the shuttle's blocking
 	// objects have been relocated onto it. Rebuild the complete moved footprint
-	// only after every wall, window, and door is in its final location, then
-	// publish the resulting symmetric graph to the Rust arena as one DM operation.
+	// only after every wall, window, and door is in its final location. Include
+	// every neighbor of both footprints: those stationary turfs previously held
+	// Rust edges into the source/destination and must publish their half of the
+	// new symmetric graph too.
+	var/list/topology_turfs = changed_turfs.Copy()
 	for(var/turf/changed as anything in changed_turfs)
+		for(var/direction in GLOB.cardinals_multiz)
+			var/turf/neighbor = get_step_multiz(changed, direction)
+			if(neighbor)
+				topology_turfs |= neighbor
+	for(var/turf/changed as anything in topology_turfs)
 		changed.immediate_calculate_adjacent_turfs()
-	for(var/turf/changed as anything in changed_turfs)
+	for(var/turf/changed as anything in topology_turfs)
 		changed.air_update_turf(FALSE, FALSE)
+	SSair?.auxmos_topology_transaction_commit()
 
 	//change the old turfs (Currently done by translate_turf for us)
 	//for(var/turf/source in translation)

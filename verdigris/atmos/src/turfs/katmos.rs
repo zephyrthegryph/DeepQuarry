@@ -26,6 +26,12 @@ pub fn flush_equalize_channel() {
 	*EQUALIZE_CHANNEL.lock() = None;
 }
 
+pub fn retire_turf(id: TurfID) {
+	if let Some(equalize) = EQUALIZE_CHANNEL.lock().as_mut() {
+		equalize.remove(&id);
+	}
+}
+
 fn with_equalizes<T>(f: impl Fn(Option<BTreeSet<TurfID>>) -> T) -> T {
 	f(EQUALIZE_CHANNEL.lock().take())
 }
