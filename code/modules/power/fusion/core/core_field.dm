@@ -103,6 +103,11 @@
 	catcher.parent = src
 	catcher.SetSize(7)
 	particle_catchers.Add(catcher)
+
+	// Idle traps do not scan their surroundings. Field creation is the dependency
+	// that wakes only traps close enough to use it.
+	for(var/obj/machinery/power/hydromagnetic_trap/trap in range(7, src))
+		START_MACHINE_PROCESSING(trap)
 	catcher = new (locate(src.x+3,src.y,src.z))
 	catcher.parent = src
 	catcher.SetSize(7)

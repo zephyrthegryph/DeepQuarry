@@ -4103,6 +4103,11 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	injector.cur_assembly = new(injector)
 	injector.BeginInjecting()
 	TEST_ASSERT(injector in SSmachines.processing_machines, "starting a fusion fuel injector did not wake it")
+	var/obj/machinery/atmospherics/binary/algae_farm/algae_farm = new(T)
+	algae_farm.update_use_power(USE_POWER_IDLE)
+	TEST_ASSERT_EQUAL(algae_farm.process(), PROCESS_KILL, "inactive algae farm remained scheduled")
+	var/obj/machinery/power/hydromagnetic_trap/magnetic_trap = new(T)
+	TEST_ASSERT_EQUAL(magnetic_trap.process(), PROCESS_KILL, "fieldless hydromagnetic trap remained scheduled")
 	var/obj/machinery/computer/operating/operating_console = new(T)
 	operating_console.table = operating_table
 	operating_table.computer = operating_console

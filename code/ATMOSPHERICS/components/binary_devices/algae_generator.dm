@@ -62,7 +62,7 @@
 			last_power_draw = idle_power_usage
 		else
 			last_power_draw = 0
-		return 0
+		return PROCESS_KILL
 
 	last_power_draw = active_power_usage
 
@@ -213,6 +213,7 @@
 		if("toggle")
 			if(use_power == USE_POWER_IDLE)
 				update_use_power(USE_POWER_ACTIVE)
+				START_MACHINE_PROCESSING(src)
 			else
 				update_use_power(USE_POWER_IDLE)
 			update_icon()

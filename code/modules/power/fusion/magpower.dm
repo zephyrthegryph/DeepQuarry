@@ -25,16 +25,21 @@
 		if(!powernet)
 			src.active = 0
 			connect_to_network()
+			if(!powernet)
+				return PROCESS_KILL
 
-		if(powernet)
-			spawn(1)
-				Active()
-				Search()
+		Search()
+		if(!length(active_field))
+			active = FALSE
+			icon_state = "mag_trap0"
+			return PROCESS_KILL
+		Active()
 
 	else
 		if(powernet)
 			active_field.Cut()
 			disconnect_from_network()
+		return PROCESS_KILL
 
 /obj/machinery/power/hydromagnetic_trap/proc/Search()//let's not have +100 instances of the same field in active_field.
 	things_in_range = range(7, src)
