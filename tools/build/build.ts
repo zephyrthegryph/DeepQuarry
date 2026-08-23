@@ -287,8 +287,9 @@ export const DmTarget = new Juke.Target({
     DreamCheckerTarget, // DQAdd — run SpacemanDMM lint before DM compile if available
   ],
   inputs: [
-    '_maps/map_files/generic/**',
-    'maps/**/*.dm',
+		'_maps/map_files/generic/**',
+		'maps/**/*.dm',
+		'maps/**/*.dmm',
     'code/**',
     'html/**',
     'icons/**',
