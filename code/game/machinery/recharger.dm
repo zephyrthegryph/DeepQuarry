@@ -131,6 +131,7 @@ GLOBAL_LIST_INIT(recharger_battery_exempt, list(
 
 		G.forceMove(src)
 		charging = G
+		START_MACHINE_PROCESSING(src)
 		update_icon()
 		user.visible_message("[user] inserts [charging] into [src].", "You insert [charging] into [src].")
 
@@ -146,6 +147,7 @@ GLOBAL_LIST_INIT(recharger_battery_exempt, list(
 		user.drop_item()
 		G.forceMove(src)
 		charging = G
+		START_MACHINE_PROCESSING(src)
 		update_icon()
 		user.visible_message("[user] inserts [charging] into [src].", "You insert [charging] into [src].")
 
@@ -188,12 +190,17 @@ GLOBAL_LIST_INIT(recharger_battery_exempt, list(
 	if(stat & (NOPOWER|BROKEN) || !anchored)
 		update_use_power(USE_POWER_OFF)
 		icon_state = icon_state_idle
-		return
+		return PROCESS_KILL
 
 	if(!charging)
 		update_use_power(USE_POWER_IDLE)
 		icon_state = icon_state_idle
-		return
+		return PROCESS_KILL
+
+	if(charging_complete())
+		update_use_power(USE_POWER_IDLE)
+		icon_state = icon_state_charged
+		return PROCESS_KILL
 
 	//PAI Cards
 	else if(istype(charging, /obj/item/paicard))
@@ -223,6 +230,36 @@ GLOBAL_LIST_INIT(recharger_battery_exempt, list(
 		else if(istype(charging, /obj/item/ammo_casing/microbattery))
 			charge_microbattery(charging)
 			return
+
+/obj/machinery/recharger/proc/charging_complete()
+	if(!charging || istype(charging, /obj/item/paicard))
+		return FALSE
+	if(istype(charging, /obj/item/ammo_casing/microbattery))
+		var/obj/item/ammo_casing/microbattery/battery = charging
+		return battery.shots_left >= initial(battery.shots_left)
+	if(istype(charging, /obj/item/ammo_magazine/cell_mag))
+		var/obj/item/ammo_magazine/cell_mag/magazine = charging
+		for(var/obj/item/ammo_casing/microbattery/battery in magazine)
+			if(battery.shots_left < initial(battery.shots_left))
+				return FALSE
+		return TRUE
+	if(istype(charging, /obj/item/gun/projectile/cell_loaded))
+		var/obj/item/gun/projectile/cell_loaded/gun = charging
+		var/obj/item/ammo_casing/microbattery/chambered = gun.chambered
+		if(chambered && chambered.shots_left < initial(chambered.shots_left))
+			return FALSE
+		for(var/obj/item/ammo_casing/microbattery/battery in gun.ammo_magazine)
+			if(battery.shots_left < initial(battery.shots_left))
+				return FALSE
+		return TRUE
+	var/obj/item/cell/C = charging.get_cell()
+	return C?.fully_charged()
+
+/obj/machinery/recharger/power_change()
+	var/old_stat = stat
+	. = ..()
+	if(old_stat != stat)
+		START_MACHINE_PROCESSING(src)
 
 ///Charges PAIs.
 /obj/machinery/recharger/proc/charge_pai(obj/item/paicard/pcard)

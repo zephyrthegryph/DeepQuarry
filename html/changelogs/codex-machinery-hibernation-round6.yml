@@ -1,0 +1,4 @@
+author: "Codex"
+delete-after: true
+changes:
+  - code_imp: "Made empty and fully charged weapon/device rechargers leave machinery processing until an item, charge demand, or power change wakes them."

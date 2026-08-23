@@ -3948,6 +3948,21 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	A.unlock(TRUE)
 	TEST_ASSERT(A.close_door_at, "unlocking an open airlock did not restore autoclose scheduling")
 
+/datum/unit_test/dq_idle_recharger_hibernates
+
+/datum/unit_test/dq_idle_recharger_hibernates/Run()
+	var/turf/simulated/floor/T = locate() in world
+	TEST_ASSERT_NOTNULL(T, "no floor for recharger hibernation test")
+	var/obj/machinery/recharger/R = new(T)
+	R.stat = 0
+	R.anchored = TRUE
+	TEST_ASSERT_EQUAL(R.process(), PROCESS_KILL, "empty recharger remained scheduled")
+	var/obj/item/cell/C = new(R)
+	C.charge = C.maxcharge
+	R.charging = C
+	TEST_ASSERT_EQUAL(R.process(), PROCESS_KILL, "recharger holding a full cell remained scheduled")
+	qdel(R)
+
 
 // =====================================================================
 // Supermatter + R-UST fusion engine
