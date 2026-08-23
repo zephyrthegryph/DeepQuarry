@@ -4056,6 +4056,13 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	var/obj/machinery/atm/atm = new(T)
 	atm.stat = 0
 	TEST_ASSERT_EQUAL(atm.process(), PROCESS_KILL, "idle ATM remained scheduled")
+	var/obj/machinery/portable_atmospherics/hydroponics/tray = new(T)
+	tray.lastcycle = world.time
+	TEST_ASSERT_EQUAL(tray.process(), PROCESS_KILL, "stable hydroponics tray polled between growth cycles")
+	TEST_ASSERT(tray.growth_timer, "sleeping hydroponics tray did not schedule its next growth cycle")
+	STOP_MACHINE_PROCESSING(tray)
+	tray.reagents.add_reagent(REAGENT_ID_WATER, 1)
+	TEST_ASSERT(tray in SSmachines.processing_machines, "reagent mutation did not wake hydroponics tray")
 	qdel(display)
 	qdel(charger)
 	qdel(mech_charger)
@@ -4074,6 +4081,7 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	qdel(pod_console)
 	qdel(dispenser)
 	qdel(atm)
+	qdel(tray)
 
 
 // =====================================================================

@@ -52,12 +52,16 @@
 
 /obj/machinery/portable_atmospherics/proc/clear_gas_dependency()
 	var/datum/weakref/WR = WEAKREF(src)
+	var/ref_key = WR?.reference
 	if(isnull(sleeping_mixture_id))
-		SSmachines.sleeping_gas_devices.Remove(WR.reference)
+		if(ref_key)
+			SSmachines.sleeping_gas_devices.Remove(ref_key)
 		return
-	SSmachines.unsubscribe_gas_dependency(sleeping_mixture_id, WR)
+	if(WR)
+		SSmachines.unsubscribe_gas_dependency(sleeping_mixture_id, WR)
 	sleeping_mixture_id = null
-	SSmachines.sleeping_gas_devices.Remove(WR.reference)
+	if(ref_key)
+		SSmachines.sleeping_gas_devices.Remove(ref_key)
 
 /obj/machinery/portable_atmospherics/blob_act()
 	qdel(src)

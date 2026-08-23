@@ -44,6 +44,7 @@
 	var/obj/temp_chem_holder   // Something to hold reagents during process_reagents()
 	var/labelled
 	var/frozen = 0				//Is the plant frozen? -1 is used to define trays that can't be frozen. 0 is unfrozen and 1 is frozen.
+	var/growth_timer
 
 	// Seed details/line data.
 	var/datum/seed/seed = null // The currently planted seed
@@ -193,6 +194,26 @@
 	update_icon()
 	return INITIALIZE_HINT_LATELOAD
 
+/obj/machinery/portable_atmospherics/hydroponics/Destroy()
+	if(growth_timer)
+		deltimer(growth_timer)
+		growth_timer = null
+	QDEL_NULL(temp_chem_holder)
+	seed = null
+	return ..()
+
+/obj/machinery/portable_atmospherics/hydroponics/on_reagent_change()
+	START_MACHINE_PROCESSING(src)
+
+/obj/machinery/portable_atmospherics/hydroponics/proc/schedule_growth_wake()
+	if(growth_timer || frozen == 1)
+		return
+	growth_timer = addtimer(CALLBACK(src, PROC_REF(wake_for_growth)), max(1, lastcycle + cycledelay - world.time), TIMER_STOPPABLE)
+
+/obj/machinery/portable_atmospherics/hydroponics/proc/wake_for_growth()
+	growth_timer = null
+	START_MACHINE_PROCESSING(src)
+
 // Give the seeds time to initialize itself
 /obj/machinery/portable_atmospherics/hydroponics/LateInitialize()
 	. = ..()
@@ -208,6 +229,7 @@
 	//Snowflakey, maybe move this to the seed datum
 	health = (istype(S, /obj/item/seeds/cutting) ? round(seed.get_trait(TRAIT_ENDURANCE)/rand(2,5)) : seed.get_trait(TRAIT_ENDURANCE))
 	lastcycle = world.time
+	START_MACHINE_PROCESSING(src)
 
 	qdel(S)
 
@@ -627,6 +649,8 @@
 			return
 		to_chat(user, span_notice("You [frozen ? "disable" : "enable"] the cryogenic freezing."))
 		frozen = !frozen
+		if(!frozen)
+			START_MACHINE_PROCESSING(src)
 		update_icon()
 		return
 

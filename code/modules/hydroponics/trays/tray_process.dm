@@ -1,10 +1,15 @@
 /obj/machinery/portable_atmospherics/hydroponics/process()
+	if(growth_timer)
+		deltimer(growth_timer)
+		growth_timer = null
 	if(frozen == 1)
-		return
+		return PROCESS_KILL
 
 	// Handle nearby smoke if any.
+	var/nearby_chemical_smoke = FALSE
 	for(var/obj/effect/effect/smoke/chem/smoke in view(1, src))
 		if(smoke.reagents.total_volume)
+			nearby_chemical_smoke = TRUE
 			smoke.reagents.trans_to_obj(src, 5, copy = 1)
 
 	//Do this even if we're not ready for a plant cycle.
@@ -14,6 +19,9 @@
 	if(force_update)
 		force_update = 0
 	else if(world.time < (lastcycle + cycledelay))
+		if(!nearby_chemical_smoke && (!reagents || reagents.total_volume <= 0))
+			schedule_growth_wake()
+			return PROCESS_KILL
 		return
 	lastcycle = world.time
 
@@ -35,6 +43,9 @@
 	// or the plant is dead, process nothing further.
 	if(!seed || dead)
 		if(mechanical) update_icon() //Harvesting would fail to set alert icons properly.
+		if(!nearby_chemical_smoke && (!reagents || reagents.total_volume <= 0))
+			schedule_growth_wake()
+			return PROCESS_KILL
 		return
 
 	// Advance plant age.
@@ -144,4 +155,7 @@
 		harvest()
 
 	check_health()
+	if(!nearby_chemical_smoke && (!reagents || reagents.total_volume <= 0))
+		schedule_growth_wake()
+		return PROCESS_KILL
 	return
