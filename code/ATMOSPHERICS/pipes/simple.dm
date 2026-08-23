@@ -23,6 +23,10 @@
 	var/maximum_pressure = 70*ONE_ATMOSPHERE
 	var/fatigue_pressure = 55*ONE_ATMOSPHERE
 	alert_pressure = 55*ONE_ATMOSPHERE
+	var/leak_sleeping_turf_mixture_id
+	var/leak_sleeping_turf_revision = -1
+	var/leak_sleeping_pipe_mixture_id
+	var/leak_sleeping_pipe_revision = -1
 
 	level = 1
 
@@ -39,8 +43,77 @@
 		..()
 	else if(leaking)
 		parent.mingle_with_turf(loc, volume)
+		var/datum/gas_mixture/environment = loc?.return_air()
+		if(environment && !leak_needs_equalization(parent.air, environment))
+			hibernate_stable_leak()
+			return PROCESS_KILL
 	else
 		. = PROCESS_KILL
+
+/obj/machinery/atmospherics/pipe/simple/proc/hibernate_stable_leak()
+	clear_leak_gas_dependencies()
+	var/datum/weakref/WR = WEAKREF(src)
+	var/datum/gas_mixture/environment = loc?.return_air()
+	var/datum/gas_mixture/pipe_air = parent?.air
+	leak_sleeping_turf_mixture_id = environment?.arena_id()
+	leak_sleeping_turf_revision = environment?.revision() || -1
+	leak_sleeping_pipe_mixture_id = pipe_air?.arena_id()
+	leak_sleeping_pipe_revision = pipe_air?.revision() || -1
+	SSmachines.sleeping_gas_devices[WR.reference] = WR
+	SSmachines.subscribe_gas_dependency(leak_sleeping_turf_mixture_id, WR)
+	SSmachines.subscribe_gas_dependency(leak_sleeping_pipe_mixture_id, WR)
+	STOP_MACHINE_PROCESSING(src)
+
+/obj/machinery/atmospherics/pipe/simple/proc/clear_leak_gas_dependencies()
+	var/datum/weakref/WR = WEAKREF(src)
+	SSmachines.unsubscribe_gas_dependency(leak_sleeping_turf_mixture_id, WR)
+	SSmachines.unsubscribe_gas_dependency(leak_sleeping_pipe_mixture_id, WR)
+	leak_sleeping_turf_mixture_id = null
+	leak_sleeping_turf_revision = -1
+	leak_sleeping_pipe_mixture_id = null
+	leak_sleeping_pipe_revision = -1
+	if(WR?.reference)
+		SSmachines.sleeping_gas_devices.Remove(WR.reference)
+
+/obj/machinery/atmospherics/pipe/simple/proc/leak_gas_dependency_changed(mixture_id, change_mask)
+	if(!(change_mask & GAS_DEPENDENCY_ALL) || !leaking)
+		return FALSE
+	var/datum/gas_mixture/environment = loc?.return_air()
+	var/datum/gas_mixture/pipe_air = parent?.air
+	if(!environment || !pipe_air)
+		return TRUE
+	if(mixture_id == leak_sleeping_turf_mixture_id && environment.revision() == leak_sleeping_turf_revision)
+		return FALSE
+	if(mixture_id == leak_sleeping_pipe_mixture_id && pipe_air.revision() == leak_sleeping_pipe_revision)
+		return FALSE
+	return leak_needs_equalization(pipe_air, environment)
+
+/obj/machinery/atmospherics/pipe/simple/proc/leak_needs_equalization(datum/gas_mixture/pipe_air, datum/gas_mixture/environment)
+	if(!pipe_air || !environment)
+		return TRUE
+	if(abs(pipe_air.return_pressure() - environment.return_pressure()) > 0.1)
+		return TRUE
+	if(abs(pipe_air.return_temperature() - environment.return_temperature()) > 0.5)
+		return TRUE
+	var/pipe_moles = pipe_air.total_moles()
+	var/environment_moles = environment.total_moles()
+	if(pipe_moles < MINIMUM_MOLES_TO_PUMP || environment_moles < MINIMUM_MOLES_TO_PUMP)
+		return (pipe_moles >= MINIMUM_MOLES_TO_PUMP) != (environment_moles >= MINIMUM_MOLES_TO_PUMP)
+	var/list/gases = pipe_air.gas_ids() | environment.gas_ids()
+	for(var/gas_id in gases)
+		var/gas_type = pipe_air.get_xgm_id_for_gas(gas_id)
+		if(gas_type && abs(pipe_air.get_moles(gas_type) / pipe_moles - environment.get_moles(gas_type) / environment_moles) > 0.001)
+			return TRUE
+	return FALSE
+
+/obj/machinery/atmospherics/pipe/simple/Destroy()
+	clear_leak_gas_dependencies()
+	return ..()
+
+/obj/machinery/atmospherics/pipe/simple/set_leaking(new_leaking)
+	if(leaking != !!new_leaking)
+		clear_leak_gas_dependencies()
+	. = ..()
 
 /obj/machinery/atmospherics/pipe/simple/check_pressure(pressure)
 	var/datum/gas_mixture/environment = loc.return_air()

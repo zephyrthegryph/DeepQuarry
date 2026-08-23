@@ -5026,6 +5026,32 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	TEST_ASSERT(M.gas_dependency_changed(first_input.air.arena_id(), GAS_DEPENDENCY_ALL), "fed omni mixer did not become actionable")
 	qdel(M)
 
+/datum/unit_test/dq_stable_open_pipe_hibernates
+
+/datum/unit_test/dq_stable_open_pipe_hibernates/Run()
+	var/turf/simulated/floor/T = locate() in world
+	TEST_ASSERT_NOTNULL(T, "no floor for open-pipe hibernation test")
+	var/obj/machinery/atmospherics/pipe/simple/P = new(T)
+	P.parent = new
+	P.parent.members = list(P)
+	P.parent.edges = list()
+	P.parent.air = T.air.copy()
+	var/environment_volume = T.air.return_volume()
+	P.parent.air.set_volume(P.volume)
+	P.parent.air.multiply(P.volume / environment_volume)
+	P.leaking = TRUE
+	var/process_result
+	for(var/cycle in 1 to 100)
+		process_result = P.process()
+		if(process_result == PROCESS_KILL)
+			break
+	TEST_ASSERT_EQUAL(process_result, PROCESS_KILL, "open pipe leak did not converge and hibernate within 100 cycles")
+	var/datum/weakref/pipe_ref = WEAKREF(P)
+	TEST_ASSERT(SSmachines.sleeping_gas_devices[pipe_ref.reference], "equilibrated open pipe did not subscribe before sleeping")
+	T.air.adjust_moles(/datum/gas/oxygen, 1)
+	TEST_ASSERT(P.leak_gas_dependency_changed(P.leak_sleeping_turf_mixture_id, GAS_DEPENDENCY_ALL), "changed turf gas did not wake an open pipe leak")
+	qdel(P)
+
 
 // =====================================================================
 // Round 6: filter routing, mixer ratios, thruster fuel, pressure pushes,

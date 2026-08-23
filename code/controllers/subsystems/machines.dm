@@ -407,6 +407,10 @@ SUBSYSTEM_DEF(machines)
 					var/obj/machinery/atmospherics/pipe/simple/heat_exchanging/P = subscriber
 					if(P.gas_dependency_changed(mixture_id, change_mask))
 						LAZYADD(to_wake, WR)
+				else if(istype(subscriber, /obj/machinery/atmospherics/pipe/simple))
+					var/obj/machinery/atmospherics/pipe/simple/P = subscriber
+					if(P.leak_gas_dependency_changed(mixture_id, change_mask))
+						LAZYADD(to_wake, WR)
 				else if(istype(subscriber, /obj/machinery/alarm))
 					var/obj/machinery/alarm/A = subscriber
 					if(A.gas_dependency_changed(mixture_id, change_mask))
@@ -558,6 +562,10 @@ SUBSYSTEM_DEF(machines)
 		var/obj/machinery/atmospherics/pipe/simple/heat_exchanging/P = subscriber
 		P.unregister_gas_dependencies(WR)
 		P.stable_temperature_cycles = 0
+		START_MACHINE_PROCESSING(P)
+	else if(istype(subscriber, /obj/machinery/atmospherics/pipe/simple))
+		var/obj/machinery/atmospherics/pipe/simple/P = subscriber
+		P.clear_leak_gas_dependencies()
 		START_MACHINE_PROCESSING(P)
 	else if(istype(subscriber, /obj/machinery/alarm))
 		var/obj/machinery/alarm/A = subscriber
