@@ -187,6 +187,7 @@ SUBSYSTEM_DEF(machines)
 	var/airlocks_other = 0
 	var/list/leaking_pipes = list()
 	var/list/active_vents = list()
+	var/list/active_lights = list()
 	for(var/obj/machinery/M as anything in processing_machines)
 		if(M && !QDELETED(M))
 			current_counts["[M.type]"]++
@@ -209,6 +210,8 @@ SUBSYSTEM_DEF(machines)
 					leaking_pipes += P
 			if(istype(M, /obj/machinery/atmospherics/unary/vent_pump))
 				active_vents += M
+			if(istype(M, /obj/machinery/light))
+				active_lights += M
 	var/list/sorted_cost = machine_profile_cost.Copy()
 	sortTim(sorted_cost, /proc/cmp_numeric_desc, TRUE)
 	var/rank = 0
@@ -235,6 +238,8 @@ SUBSYSTEM_DEF(machines)
 		var/datum/gas_mixture/environment = V.return_air()
 		var/datum/gas_mixture/source = V.pump_direction ? V.air_contents : environment
 		log_runtime("MACHINE_PROFILE_VENT type=[V.type] x=[V.x] y=[V.y] z=[V.z] area=[get_area(V)] direction=[V.pump_direction] environment_kpa=[round(environment ? environment.return_pressure() : 0, 0.01)] pipe_kpa=[round(V.air_contents.return_pressure(), 0.01)] delta_kpa=[round(environment ? V.get_pressure_delta(environment) : 0, 0.01)] source_moles=[round(source ? source.total_moles() : 0, 0.01)]")
+	for(var/obj/machinery/light/L as anything in active_lights)
+		log_runtime("MACHINE_PROFILE_LIGHT type=[L.type] x=[L.x] y=[L.y] z=[L.z] area=[get_area(L)] powered=[L.has_power()] emergency=[L.emergency_mode] auto_flicker=[L.auto_flicker] flickering=[L.flickering] cell=[L.cell ? round(L.cell.charge, 0.01) : -1]/[L.cell ? L.cell.maxcharge : -1]")
 	machine_profile_cost.Cut()
 	machine_profile_calls.Cut()
 	machine_profile_kills.Cut()
