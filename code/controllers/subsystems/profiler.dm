@@ -17,11 +17,17 @@ SUBSYSTEM_DEF(profiler)
 	else
 		StopProfiling() //Stop the early start profiler
 	wait = CONFIG_GET(number/profiler_interval)
-	if(fexists("data/benchmark_sm"))
+	var/run_idle_benchmark = fexists("data/benchmark_idle")
+	var/run_sm_benchmark = fexists("data/benchmark_sm")
+	if(run_idle_benchmark)
+		fdel("data/benchmark_idle")
+	if(run_sm_benchmark)
 		fdel("data/benchmark_sm")
+	if(run_idle_benchmark || run_sm_benchmark)
 		Master.sleep_offline_after_initializations = FALSE
 		SSticker.start_immediately = TRUE
 		SSmachines.profile_machine_types = TRUE
+	if(run_sm_benchmark)
 		SSticker.OnRoundstart(CALLBACK(GLOBAL_PROC, GLOBAL_PROC_REF(schedule_sm_benchmark)))
 	return SS_INIT_SUCCESS
 
