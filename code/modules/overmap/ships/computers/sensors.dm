@@ -206,6 +206,7 @@
 		use_power_oneoff(idle_power_usage*5)
 	update_use_power(!use_power)
 	update_icon()
+	START_MACHINE_PROCESSING(src)
 
 /obj/machinery/shipsensors/process()
 	if(use_power) //can't run in non-vacuum
@@ -223,6 +224,8 @@
 
 	if (heat > 0)
 		heat = max(0, heat - heat_reduction)
+	if(!use_power && heat <= 0)
+		return PROCESS_KILL
 
 /obj/machinery/shipsensors/power_change()
 	. = ..()
