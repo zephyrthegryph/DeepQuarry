@@ -67,8 +67,10 @@
 	SHOULD_NOT_OVERRIDE(TRUE)
 	if(!L)
 		weakref_occupant = null
+		STOP_MACHINE_PROCESSING(src)
 		return
 	weakref_occupant = WEAKREF(L)
+	START_MACHINE_PROCESSING(src)
 
 /obj/machinery/clonepod/proc/get_occupant()
 	RETURN_TYPE(/mob/living)
@@ -172,7 +174,7 @@
 		if(occupant)
 			locked = 0
 			go_out()
-		return
+		return PROCESS_KILL
 
 	if((occupant) && (occupant.loc == src))
 		if((occupant.stat == DEAD) || (occupant.suiciding) || !occupant.key)  //Autoeject corpses and suiciding dudes.
@@ -213,7 +215,7 @@
 		set_occupant(null)
 		if(locked)
 			locked = 0
-		return
+		return PROCESS_KILL
 
 	return
 
