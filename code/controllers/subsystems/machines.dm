@@ -422,6 +422,10 @@ SUBSYSTEM_DEF(machines)
 					var/obj/machinery/atmospherics/portables_connector/C = subscriber
 					if(C.gas_dependency_changed(mixture_id, change_mask))
 						LAZYADD(to_wake, WR)
+				else if(istype(subscriber, /obj/machinery/disposal))
+					var/obj/machinery/disposal/D = subscriber
+					if(D.gas_dependency_changed(mixture_id, change_mask))
+						LAZYADD(to_wake, WR)
 				else
 					LAZYADD(to_wake, WR)
 			for(var/datum/weakref/WR as anything in to_wake)
@@ -562,6 +566,10 @@ SUBSYSTEM_DEF(machines)
 		var/obj/machinery/atmospherics/binary/dp_vent_pump/V = subscriber
 		V.clear_gas_dependencies()
 		START_MACHINE_PROCESSING(V)
+	else if(istype(subscriber, /obj/machinery/disposal))
+		var/obj/machinery/disposal/D = subscriber
+		D.clear_gas_dependency()
+		START_MACHINE_PROCESSING(D)
 	if(WR.reference)
 		sleeping_gas_devices.Remove(WR.reference)
 		hibernating_vents[WR.reference] = null

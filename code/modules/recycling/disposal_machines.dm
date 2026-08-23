@@ -36,6 +36,8 @@
 	active_power_usage = 2200	//the pneumatic pump power. 3 HP ~ 2200W
 	idle_power_usage = 100
 	var/stat_tracking = TRUE
+	var/sleeping_turf_mixture_id
+	var/sleeping_turf_revision = -1
 	flags = REMOTEVIEW_ON_ENTER
 
 // create a new disposal
@@ -63,6 +65,7 @@
 	update_icon()
 
 /obj/machinery/disposal/Destroy()
+	clear_gas_dependency()
 	SEND_SIGNAL(src, COMSIG_DISPOSAL_UNLINK) //Just to be safe.
 	eject()
 	return ..()
@@ -73,8 +76,36 @@
 	wake_for_state_change()
 
 /obj/machinery/disposal/proc/wake_for_state_change()
+	clear_gas_dependency()
 	SSmachines.publish_reactive_dependency("disposal:[REF(src)]")
 	START_MACHINE_PROCESSING(src)
+
+/obj/machinery/disposal/proc/hibernate_until_intake_changes()
+	var/datum/weakref/WR = WEAKREF(src)
+	var/datum/gas_mixture/environment = loc.return_air()
+	sleeping_turf_mixture_id = environment?.arena_id()
+	sleeping_turf_revision = environment?.revision() || -1
+	SSmachines.sleeping_gas_devices[WR.reference] = WR
+	SSmachines.subscribe_gas_dependency(sleeping_turf_mixture_id, WR)
+	STOP_MACHINE_PROCESSING(src)
+
+/obj/machinery/disposal/proc/clear_gas_dependency()
+	var/datum/weakref/WR = WEAKREF(src)
+	SSmachines.unsubscribe_gas_dependency(sleeping_turf_mixture_id, WR)
+	sleeping_turf_mixture_id = null
+	sleeping_turf_revision = -1
+	if(WR?.reference)
+		SSmachines.sleeping_gas_devices.Remove(WR.reference)
+
+/obj/machinery/disposal/proc/gas_dependency_changed(mixture_id, change_mask)
+	if(!(change_mask & GAS_DEPENDENCY_PRESSURE) || mixture_id != sleeping_turf_mixture_id || mode != DISPOSALMODE_CHARGING)
+		return FALSE
+	var/datum/gas_mixture/environment = loc.return_air()
+	if(!environment || environment.arena_id() != sleeping_turf_mixture_id)
+		return TRUE
+	if(environment.revision() == sleeping_turf_revision)
+		return FALSE
+	return environment.return_temperature() > 0 && environment.total_moles() >= MINIMUM_MOLES_TO_PUMP
 
 /obj/machinery/disposal/singularity_pull(S, current_size)
 	..()
@@ -506,12 +537,14 @@
 			SSmachines.hibernate_reactive_machine(src, list("disposal:[REF(src)]"))
 			return
 	else
-		pressurize() //otherwise charge
+		if(!pressurize()) //otherwise charge
+			hibernate_until_intake_changes()
+			return PROCESS_KILL
 
 /obj/machinery/disposal/proc/pressurize()
 	if(stat & NOPOWER)			// won't charge if no power
 		update_use_power(USE_POWER_OFF)
-		return
+		return FALSE
 
 	var/atom/L = loc						// recharging from loc turf
 	var/datum/gas_mixture/env = L.return_air()
@@ -523,6 +556,7 @@
 
 	if (power_draw > 0)
 		use_power(power_draw)
+	return power_draw >= 0
 
 // perform a flush
 /obj/machinery/disposal/proc/flush()
