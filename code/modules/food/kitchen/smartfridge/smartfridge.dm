@@ -60,7 +60,7 @@
 	if(stat & (BROKEN|NOPOWER))
 		soundloop.stop()
 		playing_sound = FALSE
-		return
+		return PROCESS_KILL
 	if(!playing_sound && !stat)
 		soundloop.start()
 		playing_sound = TRUE
@@ -68,6 +68,8 @@
 		src.seconds_electrified--
 	if(src.shoot_inventory && prob(2))
 		src.throw_item()
+	if(seconds_electrified <= 0 && !shoot_inventory)
+		return PROCESS_KILL
 
 /obj/machinery/smartfridge/power_change()
 	var/old_stat = stat
@@ -200,6 +202,7 @@
 	return null
 
 /obj/machinery/smartfridge/proc/stock(obj/item/O)
+	START_MACHINE_PROCESSING(src)
 	var/datum/stored_item/I = find_record(O)
 	if(!istype(I))
 		I = new stored_datum_type(src, O.type, O.name)

@@ -4101,6 +4101,12 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	var/obj/machinery/seed_storage/garden/seed_storage = new(T)
 	seed_storage.seconds_electrified = 0
 	TEST_ASSERT_EQUAL(seed_storage.process(), PROCESS_KILL, "stable seed storage remained scheduled")
+	var/obj/machinery/smartfridge/smartfridge = new(T)
+	smartfridge.seconds_electrified = 0
+	smartfridge.shoot_inventory = FALSE
+	TEST_ASSERT_EQUAL(smartfridge.process(), PROCESS_KILL, "stable smartfridge remained scheduled")
+	var/obj/machinery/smartfridge/drying_rack/drying_rack = new(T)
+	TEST_ASSERT_EQUAL(drying_rack.process(), PROCESS_KILL, "empty drying rack remained scheduled")
 	qdel(display)
 	qdel(supply_display)
 	qdel(jukebox)
@@ -4132,6 +4138,8 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	qdel(atm)
 	qdel(tray)
 	qdel(seed_storage)
+	qdel(smartfridge)
+	qdel(drying_rack)
 
 
 // =====================================================================

@@ -24,10 +24,12 @@
 /obj/machinery/smartfridge/drying_rack/process()
 	..()
 	if(stat & (BROKEN|NOPOWER))
-		return
-	if(contents.len)
+		return PROCESS_KILL
+	if(stored_count())
 		dry()
 		update_icon()
+		return
+	return PROCESS_KILL
 
 /obj/machinery/smartfridge/drying_rack/update_icon()
 	var/not_working = stat & (BROKEN|NOPOWER)

@@ -35,6 +35,10 @@
 			S.seconds_electrified = 30
 		if(WIRE_IDSCAN)
 			S.scan_id = !S.scan_id
+	if(S.shoot_inventory || S.seconds_electrified > 0)
+		START_MACHINE_PROCESSING(S)
+	else
+		STOP_MACHINE_PROCESSING(S)
 	..()
 
 /datum/wires/smartfridge/on_cut(wire, mend)
@@ -49,4 +53,8 @@
 				S.seconds_electrified = -1
 		if(WIRE_IDSCAN)
 			S.scan_id = TRUE
+	if(S.shoot_inventory || S.seconds_electrified > 0)
+		START_MACHINE_PROCESSING(S)
+	else
+		STOP_MACHINE_PROCESSING(S)
 	..()
