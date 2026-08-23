@@ -287,11 +287,12 @@
 
 /obj/machinery/conveyor_switch/process()
 	if(!operated)
-		return
+		return PROCESS_KILL
 	operated = 0
 
 	for(var/obj/machinery/conveyor/C in conveyors)
 		C.set_operating(position)
+	return PROCESS_KILL
 
 // attack with hand, switch position
 /obj/machinery/conveyor_switch/attack_hand(mob/user)
@@ -311,6 +312,7 @@
 		position = 0
 
 	operated = 1
+	START_MACHINE_PROCESSING(src)
 	update()
 
 	// find any switches with same id as this one, and set their positions to match us

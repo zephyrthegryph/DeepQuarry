@@ -4168,6 +4168,9 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	var/obj/item/conveyor_load = new(null)
 	conveyor_load.forceMove(conveyor_turf)
 	TEST_ASSERT(conveyor in SSmachines.processing_machines, "running conveyor did not wake when movable cargo entered its turf")
+	var/obj/machinery/conveyor_switch/conveyor_switch = new(conveyor_turf)
+	conveyor_switch.operated = FALSE
+	TEST_ASSERT_EQUAL(conveyor_switch.process(), PROCESS_KILL, "stable conveyor switch remained scheduled")
 	qdel(display)
 	qdel(supply_display)
 	qdel(jukebox)
@@ -4210,6 +4213,7 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	qdel(drying_rack)
 	qdel(conveyor_load)
 	qdel(conveyor)
+	qdel(conveyor_switch)
 
 
 // =====================================================================
