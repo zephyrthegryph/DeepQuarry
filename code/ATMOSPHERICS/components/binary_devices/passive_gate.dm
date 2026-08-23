@@ -31,6 +31,10 @@
 	var/frequency = ZERO_FREQ
 	var/id = null
 	var/datum/radio_frequency/radio_connection
+	var/sleeping_input_mixture_id
+	var/sleeping_input_revision = -1
+	var/sleeping_output_mixture_id
+	var/sleeping_output_revision = -1
 
 /obj/machinery/atmospherics/binary/passive_gate/Initialize(mapload)
 	. = ..()
@@ -40,8 +44,13 @@
 		set_frequency(frequency)
 
 /obj/machinery/atmospherics/binary/passive_gate/Destroy()
+	clear_gas_dependencies()
 	unregister_radio(src, frequency)
 	. = ..()
+
+/obj/machinery/atmospherics/binary/passive_gate/disconnect(obj/machinery/atmospherics/reference)
+	wake_for_state_change()
+	return ..()
 
 /obj/machinery/atmospherics/binary/passive_gate/update_icon()
 	icon_state = (unlocked && flowing)? "on" : "off"
@@ -64,7 +73,8 @@
 	last_flow_rate = 0
 
 	if(!unlocked)
-		return 0
+		hibernate_until_gas_changes()
+		return PROCESS_KILL
 
 	var/output_starting_pressure = air2.return_pressure()
 	var/input_starting_pressure = air1.return_pressure()
@@ -142,8 +152,65 @@
 
 	if (last_flow_rate)
 		flowing = 1
+	else
+		flowing = 0
+		hibernate_until_gas_changes()
+		update_icon()
+		return PROCESS_KILL
 
 	update_icon()
+	return 1
+
+/obj/machinery/atmospherics/binary/passive_gate/proc/pressure_delta()
+	switch(regulate_mode)
+		if(REGULATE_INPUT)
+			return air1.return_pressure() - target_pressure
+		if(REGULATE_OUTPUT)
+			return target_pressure - air2.return_pressure()
+	return air1.return_pressure() - air2.return_pressure()
+
+/obj/machinery/atmospherics/binary/passive_gate/proc/hibernate_until_gas_changes()
+	var/datum/weakref/WR = WEAKREF(src)
+	sleeping_input_mixture_id = air1?.arena_id()
+	sleeping_input_revision = air1?.revision() || -1
+	sleeping_output_mixture_id = air2?.arena_id()
+	sleeping_output_revision = air2?.revision() || -1
+	SSmachines.sleeping_gas_devices[WR.reference] = WR
+	SSmachines.subscribe_gas_dependency(sleeping_input_mixture_id, WR)
+	SSmachines.subscribe_gas_dependency(sleeping_output_mixture_id, WR)
+	STOP_MACHINE_PROCESSING(src)
+
+/obj/machinery/atmospherics/binary/passive_gate/proc/clear_gas_dependencies()
+	var/datum/weakref/WR = WEAKREF(src)
+	SSmachines.unsubscribe_gas_dependency(sleeping_input_mixture_id, WR)
+	SSmachines.unsubscribe_gas_dependency(sleeping_output_mixture_id, WR)
+	sleeping_input_mixture_id = null
+	sleeping_input_revision = -1
+	sleeping_output_mixture_id = null
+	sleeping_output_revision = -1
+	if(WR?.reference)
+		SSmachines.sleeping_gas_devices.Remove(WR.reference)
+
+/obj/machinery/atmospherics/binary/passive_gate/proc/gas_dependency_changed(mixture_id, change_mask)
+	if(!(change_mask & GAS_DEPENDENCY_PRESSURE) || !unlocked)
+		return FALSE
+	if(mixture_id == sleeping_input_mixture_id)
+		if(!air1 || air1.arena_id() != sleeping_input_mixture_id)
+			return TRUE
+		if(air1.revision() == sleeping_input_revision)
+			return FALSE
+	else if(mixture_id == sleeping_output_mixture_id)
+		if(!air2 || air2.arena_id() != sleeping_output_mixture_id)
+			return TRUE
+		if(air2.revision() == sleeping_output_revision)
+			return FALSE
+	else
+		return FALSE
+	return (regulate_mode == REGULATE_NONE || pressure_delta() > 0.01) && air1.total_moles() >= MINIMUM_MOLES_TO_PUMP
+
+/obj/machinery/atmospherics/binary/passive_gate/proc/wake_for_state_change()
+	clear_gas_dependencies()
+	START_MACHINE_PROCESSING(src)
 
 
 //Radio remote control
@@ -198,7 +265,8 @@
 	if("status" in signal.data)
 		spawn(2)
 			broadcast_status()
-		return //do not update_icon
+			return //do not update_icon
+	wake_for_state_change()
 
 	spawn(2)
 		broadcast_status()
@@ -278,6 +346,8 @@
 					src.set_flow_rate = between(0, new_flow_rate, air1.return_volume())
 
 	update_icon()
+	if(.)
+		wake_for_state_change()
 	add_fingerprint(ui.user)
 
 /obj/machinery/atmospherics/binary/passive_gate/attackby(obj/item/W as obj, mob/user as mob)

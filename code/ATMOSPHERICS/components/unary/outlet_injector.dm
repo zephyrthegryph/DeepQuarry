@@ -62,7 +62,8 @@
 	last_flow_rate = 0
 
 	if((stat & (NOPOWER|BROKEN)) || !use_power)
-		return
+		SSmachines.hibernate_vent(src)
+		return PROCESS_KILL
 
 	var/power_draw = -1
 	var/datum/gas_mixture/environment = loc.return_air()
@@ -84,8 +85,18 @@
 
 		if(network)
 			network.mark_dirty()
+	else
+		SSmachines.hibernate_vent(src)
+		return PROCESS_KILL
 
 	return 1
+
+/obj/machinery/atmospherics/unary/outlet_injector/gas_dependency_changed(mixture_id, change_mask)
+	if(!..())
+		return FALSE
+	if((stat & (NOPOWER|BROKEN)) || !use_power)
+		return FALSE
+	return air_contents && air_contents.return_temperature() > 0 && air_contents.total_moles() >= MINIMUM_MOLES_TO_PUMP
 
 /obj/machinery/atmospherics/unary/outlet_injector/proc/inject()
 	if(injecting || (stat & NOPOWER))

@@ -4108,6 +4108,21 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	TEST_ASSERT_EQUAL(algae_farm.process(), PROCESS_KILL, "inactive algae farm remained scheduled")
 	var/obj/machinery/power/hydromagnetic_trap/magnetic_trap = new(T)
 	TEST_ASSERT_EQUAL(magnetic_trap.process(), PROCESS_KILL, "fieldless hydromagnetic trap remained scheduled")
+	var/obj/machinery/atmospherics/unary/outlet_injector/outlet = new(T)
+	outlet.update_use_power(USE_POWER_OFF)
+	TEST_ASSERT_EQUAL(outlet.process(), PROCESS_KILL, "switched-off outlet injector remained scheduled")
+	var/datum/weakref/outlet_ref = WEAKREF(outlet)
+	TEST_ASSERT(SSmachines.sleeping_gas_devices[outlet_ref.reference], "outlet injector did not subscribe before sleeping")
+	outlet.update_use_power(USE_POWER_IDLE)
+	TEST_ASSERT(outlet in SSmachines.processing_machines, "enabling an outlet injector did not wake it")
+	var/obj/machinery/atmospherics/binary/passive_gate/gate = new(T)
+	gate.unlocked = FALSE
+	TEST_ASSERT_EQUAL(gate.process(), PROCESS_KILL, "closed passive gate remained scheduled")
+	var/datum/weakref/gate_ref = WEAKREF(gate)
+	TEST_ASSERT(SSmachines.sleeping_gas_devices[gate_ref.reference], "passive gate did not subscribe before sleeping")
+	gate.unlocked = TRUE
+	gate.wake_for_state_change()
+	TEST_ASSERT(gate in SSmachines.processing_machines, "opening a passive gate did not wake it")
 	var/obj/machinery/computer/operating/operating_console = new(T)
 	operating_console.table = operating_table
 	operating_table.computer = operating_console
