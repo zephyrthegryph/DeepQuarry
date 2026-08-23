@@ -3834,6 +3834,17 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	var/obj/machinery/atmospherics/portables_connector/C = new(T)
 	C.on = FALSE
 	TEST_ASSERT_EQUAL(C.process(), PROCESS_KILL, "disconnected portable connector remained scheduled")
+	C.connected_device = P
+	C.on = TRUE
+	C.hibernate_until_device_changes()
+	STOP_MACHINE_PROCESSING(C)
+	P.air_contents.adjust_moles(/datum/gas/oxygen, 1)
+	for(var/connector_i in 1 to 4096)
+		SSmachines.wake_dirty_gas_subscribers()
+	TEST_ASSERT(!(C.datum_flags & DF_ISPROCESSING), "connected portable connector scheduled a no-op callback for a device gas change")
+	C.clear_gas_dependency()
+	C.connected_device = null
+	C.on = FALSE
 	var/obj/machinery/portable_atmospherics/canister/oxygen/canister = new(T)
 	TEST_ASSERT_EQUAL(canister.process(), PROCESS_KILL, "closed inert canister remained scheduled")
 	var/datum/weakref/canister_ref = WEAKREF(canister)
@@ -3847,14 +3858,13 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	STOP_MACHINE_PROCESSING(canister)
 	canister.connect(C)
 	TEST_ASSERT_EQUAL(C.process(), PROCESS_KILL, "stable connected portable port remained scheduled")
+	STOP_MACHINE_PROCESSING(C)
 	var/datum/weakref/connector_ref = WEAKREF(C)
 	TEST_ASSERT(SSmachines.sleeping_gas_devices[connector_ref.reference], "connected portable port did not subscribe to device gas")
 	canister.air_contents.adjust_moles(/datum/gas/oxygen, 1)
 	for(var/connector_i in 1 to 4096)
 		SSmachines.wake_dirty_gas_subscribers()
-		if(C.datum_flags & DF_ISPROCESSING)
-			break
-	TEST_ASSERT(C.datum_flags & DF_ISPROCESSING, "portable port did not wake after connected-device gas changed")
+	TEST_ASSERT(!(C.datum_flags & DF_ISPROCESSING), "portable port scheduled a no-op callback after connected-device gas changed")
 	var/obj/machinery/status_display/D = new(T)
 	var/datum/signal/blank = new
 	blank.data["command"] = "blank"

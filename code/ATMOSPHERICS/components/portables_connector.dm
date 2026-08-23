@@ -77,11 +77,27 @@
 /obj/machinery/atmospherics/portables_connector/proc/clear_gas_dependency()
 	var/datum/weakref/WR = WEAKREF(src)
 	if(isnull(sleeping_device_mixture_id))
-		SSmachines.sleeping_gas_devices.Remove(WR.reference)
+		if(WR?.reference)
+			SSmachines.sleeping_gas_devices.Remove(WR.reference)
 		return
 	SSmachines.unsubscribe_gas_dependency(sleeping_device_mixture_id, WR)
 	sleeping_device_mixture_id = null
-	SSmachines.sleeping_gas_devices.Remove(WR.reference)
+	if(WR?.reference)
+		SSmachines.sleeping_gas_devices.Remove(WR.reference)
+
+/obj/machinery/atmospherics/portables_connector/proc/gas_dependency_changed(mixture_id, change_mask)
+	if(!(change_mask & GAS_DEPENDENCY_ALL))
+		return FALSE
+	var/datum/gas_mixture/device_air = connected_device?.air_contents
+	if(!on || !device_air || device_air.arena_id() != mixture_id)
+		return TRUE
+	// The connector has no local work to perform. Its sole responsibility on a
+	// device-side mutation is enrolling the shared pipenet for reconciliation.
+	// Do that directly and leave the connector subscribed instead of scheduling
+	// a machinery callback that immediately goes back to sleep.
+	if(network)
+		network.mark_dirty()
+	return FALSE
 
 // Housekeeping and pipe network stuff below
 /obj/machinery/atmospherics/portables_connector/get_neighbor_nodes_for_init()
