@@ -3801,11 +3801,16 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	M.process()
 	var/datum/weakref/meter_ref = WEAKREF(M)
 	TEST_ASSERT(SSmachines.sleeping_gas_devices[meter_ref.reference], "idle local meter did not subscribe and hibernate")
-	pipe_air.adjust_moles(/datum/gas/oxygen, 5)
+	pipe_air.adjust_moles(/datum/gas/oxygen, 0.0001)
+	TEST_ASSERT(!M.gas_dependency_changed(M.sleeping_mixture_id, GAS_DEPENDENCY_PRESSURE), "sub-display-resolution pressure change woke an idle meter")
+	pipe_air.adjust_moles(/datum/gas/oxygen, 1000)
+	TEST_ASSERT(M.gas_dependency_changed(M.sleeping_mixture_id, GAS_DEPENDENCY_PRESSURE), "display-range pressure change was filtered from an idle meter")
 	// Finish any dirty-gas batch captured by the running subsystem before
 	// consuming the mutation made above. Production does this on successive fires.
-	SSmachines.wake_dirty_gas_subscribers()
-	SSmachines.wake_dirty_gas_subscribers()
+	for(var/meter_i in 1 to 4096)
+		SSmachines.wake_dirty_gas_subscribers()
+		if(M.datum_flags & DF_ISPROCESSING)
+			break
 	TEST_ASSERT(M.datum_flags & DF_ISPROCESSING, "meter did not wake after target pressure changed")
 
 	var/obj/machinery/firealarm/F = new(T)

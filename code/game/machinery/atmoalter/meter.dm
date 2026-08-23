@@ -50,7 +50,28 @@
 	if(!(change_mask & GAS_DEPENDENCY_PRESSURE))
 		return FALSE
 	var/datum/gas_mixture/environment = target?.return_air()
-	return !environment || environment.arena_id() != mixture_id || environment.revision() != sleeping_pressure_revision
+	if(!environment || environment.arena_id() != mixture_id)
+		return TRUE
+	if(environment.revision() == sleeping_pressure_revision)
+		return FALSE
+	return pressure_icon_state(environment) != icon_state
+
+/obj/machinery/meter/proc/pressure_icon_state(datum/gas_mixture/environment)
+	if(!environment)
+		return "meterX"
+	var/env_pressure = environment.return_pressure()
+	if(env_pressure <= 0.15 * ONE_ATMOSPHERE)
+		return "meter0"
+	if(env_pressure <= 1.8 * ONE_ATMOSPHERE)
+		var/val = round(env_pressure / (ONE_ATMOSPHERE * 0.3) + 0.5)
+		return "meter1_[val]"
+	if(env_pressure <= 30 * ONE_ATMOSPHERE)
+		var/val = round(env_pressure / (ONE_ATMOSPHERE * 5) - 0.35) + 1
+		return "meter2_[val]"
+	if(env_pressure <= 59 * ONE_ATMOSPHERE)
+		var/val = round(env_pressure / (ONE_ATMOSPHERE * 5) - 6) + 1
+		return "meter3_[val]"
+	return "meter4"
 
 /obj/machinery/meter/process()
 	if(!target)
@@ -67,19 +88,7 @@
 		return 0
 
 	var/env_pressure = environment.return_pressure()
-	if(env_pressure <= 0.15*ONE_ATMOSPHERE)
-		icon_state = "meter0"
-	else if(env_pressure <= 1.8*ONE_ATMOSPHERE)
-		var/val = round(env_pressure/(ONE_ATMOSPHERE*0.3) + 0.5)
-		icon_state = "meter1_[val]"
-	else if(env_pressure <= 30*ONE_ATMOSPHERE)
-		var/val = round(env_pressure/(ONE_ATMOSPHERE*5)-0.35) + 1
-		icon_state = "meter2_[val]"
-	else if(env_pressure <= 59*ONE_ATMOSPHERE)
-		var/val = round(env_pressure/(ONE_ATMOSPHERE*5) - 6) + 1
-		icon_state = "meter3_[val]"
-	else
-		icon_state = "meter4"
+	icon_state = pressure_icon_state(environment)
 
 	if(frequency)
 		var/datum/radio_frequency/radio_connection = SSradio.return_frequency(frequency)
