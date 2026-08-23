@@ -223,7 +223,11 @@ SUBSYSTEM_DEF(machines)
 	log_runtime("MACHINE_PROFILE_SUMMARY active=[length(processing_machines)] concrete_types=[length(current_counts)]")
 	log_runtime("MACHINE_PROFILE_DETAIL airlocks processing=[airlocks_processing] autoclose=[airlocks_autoclose] commanded=[airlocks_commanded] power_wait=[airlocks_power_wait] electrified=[airlocks_electrified] other=[airlocks_other]")
 	for(var/obj/machinery/atmospherics/pipe/P as anything in leaking_pipes)
-		log_runtime("MACHINE_PROFILE_LEAK type=[P.type] x=[P.x] y=[P.y] z=[P.z] nodes=[length(P.get_neighbor_nodes_for_init())] damaged=[P.damaged_leak]")
+		var/connected_nodes = 0
+		for(var/obj/machinery/atmospherics/node as anything in P.get_neighbor_nodes_for_init())
+			if(node)
+				connected_nodes++
+		log_runtime("MACHINE_PROFILE_LEAK type=[P.type] x=[P.x] y=[P.y] z=[P.z] area=[get_area(P)] nodes=[connected_nodes] damaged=[P.damaged_leak]")
 	machine_profile_cost.Cut()
 	machine_profile_calls.Cut()
 	machine_profile_kills.Cut()
