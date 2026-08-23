@@ -60,10 +60,14 @@
 		direction_out = !direction_out
 
 	target_pressure = rand(0,1300)
+	if(on)
+		START_MACHINE_PROCESSING(src)
 	update_icon()
 
 /obj/machinery/portable_atmospherics/powered/pump/process()
 	..()
+	if(!on)
+		return PROCESS_KILL
 	var/power_draw = -1
 
 	if(on && cell && cell.charge)
@@ -170,6 +174,8 @@
 	switch(action)
 		if("power")
 			on = !on
+			if(on)
+				START_MACHINE_PROCESSING(src)
 			. = 1
 		if("direction")
 			direction_out = !direction_out

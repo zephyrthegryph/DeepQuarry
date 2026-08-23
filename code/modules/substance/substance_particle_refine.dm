@@ -2,9 +2,9 @@
 //
 // Refining isn't a standalone bench: you bombard a loaded substance stack in a particle
 // smasher (the PA's beam target) until it builds enough energy to force the trade. Load a
-// substance sheet into the smasher, click it to pick which axis to push (the same trades
-// the bench offered), then fire the PA at it — when it charges past the threshold, the
-// sheet recasts as the refined alloy. The smasher already accepts /obj/item/stack/material
+// substance sheet, establish the physical atmosphere/temperature/beam/orientation that
+// produces the desired trade, then fire the PA until the sheet recasts as the refined alloy.
+// The smasher already accepts /obj/item/stack/material
 // (substance stacks included) and already accumulates `energy` from the PA beam, so this
 // only adds the substance branch; non-substance targets keep their recipe behaviour.
 
@@ -145,20 +145,39 @@ GLOBAL_LIST_INIT(substance_refine_ops, list(
 	return output
 
 /obj/machinery/particle_smasher
-	/// The refinement to force on a loaded substance once charged (a GLOB.substance_refine_ops entry).
+	/// Last physically predicted refinement, exposed for examination and diagnostics.
 	var/substance_refine_op
 
-// Clicking a smasher holding a substance lets the operator choose the refinement that will
-// be forced once it charges. Falls through to default behaviour for anything else.
-/obj/machinery/particle_smasher/attack_hand(mob/user)
+/// Select the refinement from physical conditions rather than a recipe menu.
+/// Vacuum cleans inclusions, cold suppresses unstable modes, plasma promotes
+/// bonding, and a hard beam concentrates energy. Ordinary conditions tune the
+/// resonance in the accelerator's current polarity.
+/obj/machinery/particle_smasher/proc/physical_substance_refine_op()
+	var/turf/T = get_turf(src)
+	var/datum/gas_mixture/environment = T?.return_air()
+	var/pressure = 0
+	var/temperature = T20C
+	var/phoron = 0
+	if(environment)
+		pressure = environment.return_pressure()
+		temperature = environment.return_temperature()
+		phoron = environment.get_moles(/datum/gas/plasma)
+	if(pressure < 20)
+		return "Purify — Purity up, Energy down"
+	if(temperature < 250)
+		return "Stabilize — Volatility down, Energy down"
+	if(phoron >= 0.5)
+		return "Bond — Affinity up, Energy down"
+	if(energy >= max_energy * 0.75)
+		return "Concentrate — Energy up, Volatility up, Purity down"
+	return dir & (EAST|NORTH) ? "Tune resonance + (Purity down)" : "Tune resonance − (Purity down)"
+
+/obj/machinery/particle_smasher/examine(mob/user)
+	. = ..()
 	if(istype(target, /obj/item/stack/material/substance) && substance_stack_substance(target))
-		var/choice = input(user, "Set the refinement to force once charged.", "Particle Refinement", substance_refine_op) as null|anything in GLOB.substance_refine_ops
-		if(isnull(choice) || !Adjacent(user))
-			return TRUE
-		substance_refine_op = choice
-		to_chat(user, span_notice("\The [src] is set to <b>[choice]</b>. Bombard the stock to force the trade."))
-		return TRUE
-	return ..()
+		substance_refine_op = physical_substance_refine_op()
+		. += span_notice("The loaded stock's field predicts: [substance_refine_op].")
+		. += span_notice("Vacuum purifies; cryogenic surroundings stabilize; phoron-rich air bonds; a beam above 75% charge concentrates. Otherwise accelerator orientation tunes resonance.")
 
 // Called from the smasher's process(): once a loaded substance stack has charged past the
 // threshold and an op is chosen, recast it as the refined alloy and vent the charge.
@@ -166,8 +185,9 @@ GLOBAL_LIST_INIT(substance_refine_ops, list(
 	if(energy < SUBSTANCE_REFINE_ENERGY)
 		return
 	var/datum/substance/S = substance_stack_substance(target)
-	if(!S || !substance_refine_op)
+	if(!S)
 		return
+	substance_refine_op = physical_substance_refine_op()
 	// Engineering axis: how hard the accelerator charged sets the refine's energy ceiling
 	// (fully charged = cleanest). Atmos axis: the smasher room's ambient reading.
 	var/energy_ceiling = clamp(round((energy / max_energy) * SUBSTANCE_ATTR_MAX), 40, SUBSTANCE_ATTR_MAX)

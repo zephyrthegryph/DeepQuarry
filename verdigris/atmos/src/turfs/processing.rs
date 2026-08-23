@@ -320,7 +320,7 @@ fn process_turf(request: TurfProcessRequest, snapshot: &mut MixtureSnapshot) -> 
 	let total_start = Instant::now();
 	let topology_generation = super::topology_generation();
 	let (active_nodes, seed_nodes, seed_turfs) = with_turf_gases_read(|arena| {
-		let seeds = take_active_turfs();
+		let seeds = take_active_turfs(arena);
 		let mut seed_count = 0;
 		let mut nodes = rustc_hash::FxHashSet::default();
 		let mut valid_seeds = rustc_hash::FxHashSet::default();

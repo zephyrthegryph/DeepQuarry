@@ -20,6 +20,7 @@ use parking_lot::{const_mutex, const_rwlock, Mutex, RwLock, RwLockUpgradableRead
 use petgraph::{graph::NodeIndex, stable_graph::StableDiGraph, visit::EdgeRef, Direction};
 use rayon::prelude::*;
 use rustc_hash::{FxBuildHasher, FxHashMap, FxHashSet};
+use std::collections::VecDeque;
 use std::hash::{Hash, Hasher};
 use std::time::Duration;
 use std::{
@@ -572,7 +573,7 @@ fn mark_turf_active(turf: TurfID) {
 
 const MAX_TURF_SEEDS_PER_GENERATION: usize = 4_096;
 
-fn take_active_turfs() -> FxHashSet<CellHandle> {
+fn take_active_turfs(arena: &TurfGases) -> FxHashSet<CellHandle> {
 	let mut active_guard = ACTIVE_TURFS.write();
 	let active = active_guard.as_mut().unwrap();
 	if active.len() <= MAX_TURF_SEEDS_PER_GENERATION {
@@ -582,11 +583,38 @@ fn take_active_turfs() -> FxHashSet<CellHandle> {
 	// one legitimate machine write invalidate tens of thousands of unrelated
 	// cells forever. Bounded seed batches keep publication latency short while
 	// the unconsumed work remains queued for subsequent generations.
-	let selected = active
-		.iter()
-		.take(MAX_TURF_SEEDS_PER_GENERATION)
-		.copied()
-		.collect::<FxHashSet<_>>();
+	let mut selected = FxHashSet::default();
+	let mut frontier = VecDeque::new();
+	// Grow connected batches. Arbitrary hash-order selection scattered 4,096
+	// seeds across the map and inflated their one-edge frontier to 10k-15k cells.
+	// Connected selection keeps snapshot and publication sets spatially local.
+	while selected.len() < MAX_TURF_SEEDS_PER_GENERATION {
+		if frontier.is_empty() {
+			let Some(next) = active
+				.iter()
+				.find(|handle| !selected.contains(*handle))
+				.copied()
+			else {
+				break;
+			};
+			frontier.push_back(next);
+		}
+		let Some(handle) = frontier.pop_front() else {
+			break;
+		};
+		if !active.contains(&handle) || !selected.insert(handle) {
+			continue;
+		}
+		if let Some(node) = arena.get_handle(handle) {
+			for neighbor in arena.adjacent_node_ids(node) {
+				if let Some(neighbor_handle) = arena.get(neighbor).map(TurfMixture::handle) {
+					if active.contains(&neighbor_handle) && !selected.contains(&neighbor_handle) {
+						frontier.push_back(neighbor_handle);
+					}
+				}
+			}
+		}
+	}
 	active.retain(|handle| !selected.contains(handle));
 	selected
 }

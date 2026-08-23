@@ -33,6 +33,8 @@
 
 	if(prob(50/severity))
 		on = !on
+		if(on)
+			START_MACHINE_PROCESSING(src)
 		update_icon()
 
 /obj/machinery/portable_atmospherics/powered/scrubber/update_icon()
@@ -53,6 +55,8 @@
 
 /obj/machinery/portable_atmospherics/powered/scrubber/process()
 	..()
+	if(!on)
+		return PROCESS_KILL
 
 	var/power_draw = -1
 
@@ -137,6 +141,8 @@
 	switch(action)
 		if("power")
 			on = !on
+			if(on)
+				START_MACHINE_PROCESSING(src)
 			. = TRUE
 		if("eject")
 			if(holding)

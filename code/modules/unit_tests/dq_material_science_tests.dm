@@ -516,6 +516,30 @@
 	qdel(output)
 	qdel(focus)
 
+/datum/unit_test/dq_substance_refinement_is_physically_selected
+
+/datum/unit_test/dq_substance_refinement_is_physically_selected/Run()
+	var/turf/T = get_turf(run_loc_floor_bottom_left ? run_loc_floor_bottom_left : locate(1, 1, 1))
+	if(T)
+		T = T.ChangeTurf(/turf/simulated/floor)
+	var/datum/gas_mixture/test_air = T?.return_air()
+	TEST_ASSERT_NOTNULL(test_air, "physical refinement test requires a simulated atmospheric turf")
+	if(!test_air)
+		return
+	var/datum/gas_mixture/original_air = test_air.copy()
+	test_air.clear()
+	var/obj/machinery/particle_smasher/focus = new(T)
+	focus.energy = SUBSTANCE_REFINE_ENERGY
+	TEST_ASSERT_EQUAL(focus.physical_substance_refine_op(), "Purify — Purity up, Energy down", "vacuum did not physically select purification")
+	test_air.adjust_moles(/datum/gas/oxygen, MOLES_O2STANDARD)
+	test_air.adjust_moles(/datum/gas/nitrogen, MOLES_N2STANDARD)
+	test_air.set_temperature(T20C)
+	focus.energy = focus.max_energy
+	TEST_ASSERT_EQUAL(focus.physical_substance_refine_op(), "Concentrate — Energy up, Volatility up, Purity down", "a hard beam in ordinary atmosphere did not physically select concentration")
+	qdel(focus)
+	test_air.copy_from(original_air)
+	qdel(original_air)
+
 /datum/unit_test/dq_material_cell_product_family
 
 /datum/unit_test/dq_material_cell_product_family/Run()

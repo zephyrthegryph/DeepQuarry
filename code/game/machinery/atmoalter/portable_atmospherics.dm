@@ -65,6 +65,7 @@
 	connected_port = new_port
 	connected_port.connected_device = src
 	connected_port.on = 1 //Activate port updates
+	START_MACHINE_PROCESSING(connected_port)
 
 	anchored = TRUE //Prevent movement
 
@@ -86,7 +87,10 @@
 
 	anchored = FALSE
 
-	connected_port.connected_device = null
+	var/obj/machinery/atmospherics/portables_connector/old_port = connected_port
+	old_port.connected_device = null
+	old_port.on = 0
+	STOP_MACHINE_PROCESSING(old_port)
 	connected_port = null
 
 	return 1

@@ -4,6 +4,8 @@ use parking_lot::{const_mutex, Mutex};
 use std::collections::{BTreeSet, HashSet, VecDeque};
 
 static GROUPS_CHANNEL: Mutex<Option<BTreeSet<TurfID>>> = const_mutex(None);
+const GROUP_PROCESS_BUDGET: Duration = Duration::from_millis(50);
+const MAX_GROUP_TURFS_PER_GENERATION: usize = 8_192;
 
 pub fn flush_groups_channel() {
 	*GROUPS_CHANNEL.lock() = None;
@@ -31,7 +33,7 @@ pub(super) fn process_groups(
 	let (processed, _) = excited_group_processing(
 		group_pressure_goal,
 		low_pressure_turfs,
-		(&start_time, Duration::from_secs(60)),
+		(&start_time, GROUP_PROCESS_BUDGET),
 	);
 	(processed, start_time.elapsed().as_millis() as f32)
 }
@@ -81,7 +83,11 @@ fn excited_group_processing(
 ) -> (usize, bool) {
 	let mut found_turfs: HashSet<TurfID, FxBuildHasher> = Default::default();
 	let mut is_cancelled = false;
-	for initial_turf in low_pressure_turfs {
+	for &initial_turf in &low_pressure_turfs {
+		if found_turfs.len() >= MAX_GROUP_TURFS_PER_GENERATION {
+			is_cancelled = true;
+			break;
+		}
 		if found_turfs.contains(&initial_turf) {
 			continue;
 		}
@@ -109,7 +115,11 @@ fn excited_group_processing(
 			found_turfs.insert(initial_turf);
 			GasArena::with_all_mixtures(|all_mixtures| {
 				loop {
-					if turfs.len() >= 2500 {
+					if turfs.len() >= 2500
+						|| found_turfs.len() >= MAX_GROUP_TURFS_PER_GENERATION
+						|| start_time.elapsed() >= remaining_time
+					{
+						is_cancelled = true;
 						break;
 					}
 					if let Some(idx) = border_turfs.pop_front() {
@@ -164,6 +174,14 @@ fn excited_group_processing(
 				GasArena::bump_revision(mix);
 				GasArena::mark_dirty_if_changed(mix, before, after);
 			}
+		}
+	}
+	// A budget interruption must defer work, never discard it. Requeue the
+	// generation's pressure candidates so the ordinary active-turf pipeline
+	// revisits both the unfinished component and the edge of any partial mix.
+	if is_cancelled {
+		for turf in low_pressure_turfs {
+			mark_turf_active(turf);
 		}
 	}
 	(found_turfs.len(), is_cancelled)

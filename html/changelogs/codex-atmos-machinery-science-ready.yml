@@ -1,0 +1,6 @@
+author: "Codex"
+delete-after: true
+changes:
+  - code_imp: "Bounded and spatially localized asynchronous atmos pressure equalization work to prevent large disturbances from monopolizing a generation."
+  - code_imp: "Idle portable atmos machinery and static status displays now leave machine processing until an actual state change wakes them."
+  - qol: "Particle-accelerator substance refinement is now selected by physical beam, atmosphere, temperature, plasma, and orientation conditions instead of a recipe prompt."

@@ -55,10 +55,10 @@
 /obj/machinery/atmospherics/portables_connector/process()
 	..()
 	if(!on)
-		return
+		return PROCESS_KILL
 	if(!connected_device)
 		on = 0
-		return
+		return PROCESS_KILL
 	if(network)
 		network.mark_dirty()
 	return 1
@@ -142,6 +142,9 @@
 	if(reference==node)
 		qdel(network)
 		node = null
+	if(reference == connected_device || !connected_device)
+		on = 0
+		STOP_MACHINE_PROCESSING(src)
 
 	update_underlays()
 

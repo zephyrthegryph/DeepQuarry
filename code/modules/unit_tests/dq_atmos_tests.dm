@@ -3745,6 +3745,33 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	qdel(M)
 	qdel(P)
 
+/datum/unit_test/dq_idle_portables_connectors_and_displays_hibernate
+
+/datum/unit_test/dq_idle_portables_connectors_and_displays_hibernate/Run()
+	var/turf/simulated/floor/T = locate() in world
+	TEST_ASSERT_NOTNULL(T, "no floor for idle machinery hibernation test")
+	var/obj/machinery/portable_atmospherics/powered/pump/P = new(T)
+	TEST_ASSERT_EQUAL(P.process(), PROCESS_KILL, "powered-off portable pump remained scheduled")
+	var/obj/machinery/portable_atmospherics/powered/scrubber/S = new(T)
+	TEST_ASSERT_EQUAL(S.process(), PROCESS_KILL, "powered-off portable scrubber remained scheduled")
+	var/obj/machinery/atmospherics/portables_connector/C = new(T)
+	C.on = FALSE
+	TEST_ASSERT_EQUAL(C.process(), PROCESS_KILL, "disconnected portable connector remained scheduled")
+	var/obj/machinery/status_display/D = new(T)
+	var/datum/signal/blank = new
+	blank.data["command"] = "blank"
+	D.receive_signal(blank)
+	TEST_ASSERT_EQUAL(D.process(), PROCESS_KILL, "blank status display remained scheduled")
+	STOP_MACHINE_PROCESSING(D)
+	var/datum/signal/time_signal = new
+	time_signal.data["command"] = "time"
+	D.receive_signal(time_signal)
+	TEST_ASSERT(D.datum_flags & DF_ISPROCESSING, "time signal did not wake a sleeping status display")
+	qdel(D)
+	qdel(C)
+	qdel(S)
+	qdel(P)
+
 
 // =====================================================================
 // Supermatter + R-UST fusion engine

@@ -75,8 +75,19 @@
 /obj/machinery/status_display/process()
 	if(stat & NOPOWER)
 		remove_display()
-		return
+		return PROCESS_KILL
 	update()
+	if(mode == STATUS_DISPLAY_BLANK || mode == STATUS_DISPLAY_ALERT)
+		return PROCESS_KILL
+	if(mode == STATUS_DISPLAY_MESSAGE && !index1 && !index2)
+		return PROCESS_KILL
+	if(mode == STATUS_DISPLAY_TRANSFER_SHUTTLE_TIME && (!SSemergency_shuttle || !SSemergency_shuttle.has_eta()))
+		return PROCESS_KILL
+
+/obj/machinery/status_display/power_change()
+	. = ..()
+	if(. && !(stat & NOPOWER))
+		START_MACHINE_PROCESSING(src)
 
 /obj/machinery/status_display/emp_act(severity, recursive)
 	if(stat & (BROKEN|NOPOWER))
@@ -185,6 +196,7 @@
 
 // Called when the alert level is changed.
 /obj/machinery/status_display/proc/on_alert_changed(new_level)
+	START_MACHINE_PROCESSING(src)
 	// On most alerts, this will change to a flashing alert picture in a specific color.
 	// Doing that for green alert automatically doesn't really make sense, but it is still available on the comm consoles/PDAs.
 	if(seclevel2num(new_level) == SEC_LEVEL_GREEN)
@@ -241,6 +253,7 @@
 		maptext = ""
 
 /obj/machinery/status_display/receive_signal(datum/signal/signal)
+	START_MACHINE_PROCESSING(src)
 	switch(signal.data["command"])
 		if("blank")
 			mode = STATUS_DISPLAY_BLANK
