@@ -63,6 +63,18 @@ export const SelectableRecipe = (props: Props) => {
   const costLabel = (quantity: number) =>
     `Uses ${((perItem * quantity) / SHEET_MATERIAL_AMOUNT).toFixed(2)} sheet(s)`;
 
+  const requestBuild = (quantity: number) => {
+    const normalized = Math.floor(Number(quantity));
+    if (
+      !hasMaterial ||
+      maxMult < 1 ||
+      !Number.isFinite(normalized) ||
+      normalized < 1
+    )
+      return;
+    onBuild(selectedId, Math.min(normalized, maxMult));
+  };
+
   const QuantityButton = (qprops: { quantity: number }) => {
     const enabled = hasMaterial && maxMult >= qprops.quantity;
     return (
@@ -74,7 +86,7 @@ export const SelectableRecipe = (props: Props) => {
             'FabricatorRecipe__Button',
             !enabled && 'FabricatorRecipe__Button--disabled',
           ])}
-          onClick={() => enabled && onBuild(selectedId, qprops.quantity)}
+          onClick={() => enabled && requestBuild(qprops.quantity)}
         >
           &times;{qprops.quantity}
         </div>
@@ -122,6 +134,7 @@ export const SelectableRecipe = (props: Props) => {
           color="transparent"
           icon={showDetails ? 'chevron-up' : 'flask'}
           tooltip="Inspect product-relevant material behavior"
+          aria-label="Material details"
           onClick={() => setShowDetails(!showDetails)}
         />
         <QuantityButton quantity={5} />
@@ -135,9 +148,7 @@ export const SelectableRecipe = (props: Props) => {
           <Button.Input
             color="transparent"
             buttonText={`[Max: ${maxMult}]`}
-            onCommit={(value) =>
-              hasMaterial && onBuild(selectedId, Number(value))
-            }
+            onCommit={(value) => requestBuild(Number(value))}
           />
         </div>
       </div>

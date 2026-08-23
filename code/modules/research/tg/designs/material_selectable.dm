@@ -131,6 +131,34 @@
 	category = list(RND_CATEGORY_INITIAL, RND_CATEGORY_EQUIPMENT + RND_SUBCATEGORY_EQUIPMENT_ENGINEERING)
 	departmental_flags = DEPARTMENT_BITFLAG_ENGINEERING | DEPARTMENT_BITFLAG_SCIENCE
 
+/datum/design_techweb/material_power_cell/high
+	name = "Material-Core High-Capacity Cell"
+	desc = "A high-capacity equipment cell whose final capacity, EMP tolerance, passive generation, and triggered responses derive from its selected core."
+	id = "material_power_cell_high"
+	build_path = /obj/item/cell/high/empty
+	selectable_amount = SHEET_MATERIAL_AMOUNT * 3
+
+/datum/design_techweb/material_power_cell/device
+	name = "Material-Core Device Cell"
+	desc = "A compact device cell built around the selected material's electrical and field behavior."
+	id = "material_power_cell_device"
+	build_path = /obj/item/cell/device/empty
+	selectable_amount = SHEET_MATERIAL_AMOUNT
+
+/datum/design_techweb/material_power_cell/weapon
+	name = "Material-Core Weapon Cell"
+	desc = "A weapon-format cell whose capacity, EMP response, and triggered material effects derive from its selected core."
+	id = "material_power_cell_weapon"
+	build_path = /obj/item/cell/device/weapon/empty
+	selectable_amount = SHEET_MATERIAL_AMOUNT * 2
+
+/datum/design_techweb/material_power_cell/mech
+	name = "Material-Core Mech Cell"
+	desc = "A large mech cell that turns high-performance alloys into meaningful vehicle endurance and field responses."
+	id = "material_power_cell_mech"
+	build_path = /obj/item/cell/mech/high
+	selectable_amount = SHEET_MATERIAL_AMOUNT * 5
+
 /obj/item/stack/cable_coil/engineered
 	name = "engineered cable coil"
 	desc = "A fabricated layered conductor whose installed segments retain their material construction."
@@ -263,6 +291,10 @@
 		"material_armor_plate",
 		"material_armor_insert",
 		"material_power_cell",
+		"material_power_cell_high",
+		"material_power_cell_device",
+		"material_power_cell_weapon",
+		"material_power_cell_mech",
 		"material_composite_cable",
 		"material_reaction_vessel",
 		"material_pipe",

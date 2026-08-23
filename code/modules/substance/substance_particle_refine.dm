@@ -50,6 +50,100 @@ GLOBAL_LIST_INIT(substance_refine_ops, list(
 /// Energy (of the smasher's max_energy 600) a substance must reach before the refine fires.
 #define SUBSTANCE_REFINE_ENERGY 300
 
+/// Existing biological and archaeological items that the particle focus can
+/// destructively render. This keeps acquisition in physical machines and leaves
+/// ordinary slime chemistry, botany grinding, and anomaly devices intact as
+/// competing uses for the same finite source.
+/proc/substance_source_category(obj/item/source)
+	if(istype(source, /obj/item/slime_extract))
+		return "bio"
+	if(istype(source, /obj/item/reagent_containers/food/snacks/grown))
+		return "botany"
+	if(istype(source, /obj/item/anobattery))
+		return "field"
+	return null
+
+/proc/substance_family_from_artifact_effect(effect_type)
+	switch(effect_type)
+		if(EFFECT_ELECTIC_FIELD, EFFECT_EMP, EFFECT_CELL, EFFECT_GENERATOR)
+			return SUBFAM_DISCHARGE
+		if(EFFECT_TEMPERATURE)
+			return SUBFAM_THERMAL
+		if(EFFECT_GRAVIATIONAL_WAVES, EFFECT_POLTERGEIST, EFFECT_ANIMATE, EFFECT_BERSERK)
+			return SUBFAM_FORCE
+		if(EFFECT_FORCEFIELD)
+			return SUBFAM_FIELD
+		if(EFFECT_GAIA, EFFECT_RESURRECT, EFFECT_VAMPIRE, EFFECT_HEALTH, EFFECT_ROBOT_HEALTH)
+			return SUBFAM_SPORE
+		if(EFFECT_RADIATE)
+			return SUBFAM_RADIANT
+		if(EFFECT_TELEPORT, EFFECT_FEYSIGHT)
+			return SUBFAM_VOID
+		if(EFFECT_GAS, EFFECT_DNASWITCH)
+			return SUBFAM_CORROSIVE
+	return SUBFAM_FIELD
+
+/obj/machinery/particle_smasher/proc/try_substance_source_render()
+	if(energy < SUBSTANCE_REFINE_ENERGY || !target)
+		return FALSE
+	var/category = substance_source_category(target)
+	if(!category)
+		return FALSE
+	var/datum/substance/rendered
+	var/output_amount = 1
+	if(category == "field")
+		var/obj/item/anobattery/battery = target
+		if(!battery.battery_effect)
+			visible_message(span_warning("The particle field rejects [battery]; it contains no harvested anomaly signature."))
+			energy = max(0, energy - 50)
+			return FALSE
+		rendered = new
+		rendered.name = "[substance_family_name(substance_family_from_artifact_effect(battery.battery_effect.effect_type))] anomaly condensate"
+		rendered.family = substance_family_from_artifact_effect(battery.battery_effect.effect_type)
+		rendered.trigger = substance_family_default_trigger(rendered.family)
+		var/charge_fraction = clamp(battery.stored_charge / max(battery.capacity, 1), 0, 1)
+		rendered.energy = clamp(round(55 + charge_fraction * 40), 0, SUBSTANCE_ATTR_MAX)
+		rendered.volatility = rand(45, 90)
+		rendered.affinity = rand(20, 60)
+		rendered.purity = rand(25, 70)
+		rendered.resonance = rand(0, SUBSTANCE_RES_MAX - 1)
+		output_amount = clamp(2 + round(battery.capacity / 1500), 2, 7)
+	else
+		var/list/source_ids = substance_archetype_ids_by_category(category)
+		if(!length(source_ids))
+			return FALSE
+		output_amount = category == "bio" ? 3 : 2
+		if(category == "bio")
+			var/obj/item/slime_extract/extract = target
+			output_amount = clamp(2 + extract.uses, 2, 6)
+		else
+			var/obj/item/reagent_containers/food/snacks/grown/produce = target
+			output_amount = clamp(2 + round(max(produce.potency, 0) / 30), 2, 6)
+		rendered = substance_from_archetype(pick(source_ids), output_amount)
+	if(!rendered)
+		return FALSE
+	var/turf/output_turf = get_turf(src)
+	if(!output_turf)
+		qdel(rendered)
+		return FALSE
+	var/source_name = target.name
+	var/obj/item/stack/material/substance/output = substance_spawn_stack(output_turf, rendered, output_amount)
+	var/rendered_name = rendered.name
+	qdel(rendered)
+	if(!output || QDELETED(output))
+		return FALSE
+	// Do not destroy the finite source until its replacement exists. Registration or
+	// material creation failures therefore leave the player's input recoverable.
+	var/obj/item/consumed_source = src.target
+	src.target = null
+	qdel(consumed_source)
+	energy = max(0, energy - SUBSTANCE_REFINE_ENERGY)
+	successful_craft = FALSE
+	src.target = null
+	visible_message(span_notice("The focused beam strips [source_name] into [output_amount] sheets of [rendered_name], leaving no unprocessed source behind."))
+	update_icon()
+	return output
+
 /obj/machinery/particle_smasher
 	/// The refinement to force on a loaded substance once charged (a GLOB.substance_refine_ops entry).
 	var/substance_refine_op

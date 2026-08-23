@@ -1,0 +1,6 @@
+author: "BigBadE"
+delete-after: true
+changes:
+  - rscadd: "Expanded engineered-material fabrication to additional tools and four practical power-cell formats."
+  - rscadd: "Particle focuses can physically render harvested anomaly batteries, slime extracts, and produce into finite material stock."
+  - qol: "Material fabrication now exposes clearer diagnostics and prevents invalid build requests when inventory changes."

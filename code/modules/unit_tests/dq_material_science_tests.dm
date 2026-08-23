@@ -493,3 +493,44 @@
 	pipe.engineered_material_id = original_material_id
 	GLOB.name_to_material -= sorbent.name
 	qdel(sorbent)
+
+/datum/unit_test/dq_substance_physical_source_rendering
+
+/datum/unit_test/dq_substance_physical_source_rendering/Run()
+	var/turf/test_turf = run_loc_floor_bottom_left ? run_loc_floor_bottom_left : locate(1, 1, 1)
+	TEST_ASSERT_NOTNULL(test_turf, "Physical source rendering requires a real world turf")
+	var/obj/machinery/particle_smasher/focus = new(test_turf)
+	var/obj/item/slime_extract/blue/extract = new(focus)
+	focus.target = extract
+	focus.energy = SUBSTANCE_REFINE_ENERGY
+	TEST_ASSERT_EQUAL(substance_source_category(extract), "bio", "A real slime extract must be recognized as finite biological feedstock")
+	var/obj/item/stack/material/substance/output = focus.try_substance_source_render()
+	TEST_ASSERT(output, "Charged particle bombardment must destructively render a cultivated source")
+	if(!output)
+		qdel(focus)
+		return
+	TEST_ASSERT(istype(output, /obj/item/stack/material/substance), "Physical rendering returned the wrong item type instead of substance sheets")
+	TEST_ASSERT_NULL(focus.target, "Rendering must consume the original source rather than duplicate it")
+	TEST_ASSERT_EQUAL(get_turf(output), get_turf(focus), "Physical rendering must eject ordinary substance material sheets into the world")
+	TEST_ASSERT(output.amount >= 2, "A cultivated source must produce a usable finite stack")
+	qdel(output)
+	qdel(focus)
+
+/datum/unit_test/dq_material_cell_product_family
+
+/datum/unit_test/dq_material_cell_product_family/Run()
+	var/list/design_types = list(
+		/datum/design_techweb/material_power_cell,
+		/datum/design_techweb/material_power_cell/high,
+		/datum/design_techweb/material_power_cell/device,
+		/datum/design_techweb/material_power_cell/weapon,
+		/datum/design_techweb/material_power_cell/mech,
+	)
+	for(var/design_type in design_types)
+		var/datum/design_techweb/material_power_cell/design = new design_type
+		var/obj/item/cell/cell = design.create_item(run_loc_floor_bottom_left, MAT_COPPER)
+		TEST_ASSERT_NOTNULL(cell, "Every material cell geometry must fabricate a real compatible cell")
+		TEST_ASSERT_EQUAL(cell.engineered_material_id, MAT_COPPER, "Every cell geometry must retain the selected canonical material")
+		TEST_ASSERT_EQUAL(cell.engineered_material_profile, MATERIAL_APPLICATION_CELL, "Every cell geometry must receive functional electrical behavior")
+		TEST_ASSERT(cell.maxcharge > 0 && cell.charge == cell.maxcharge, "A fabricated material cell must be immediately usable")
+		qdel(cell)

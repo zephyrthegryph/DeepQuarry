@@ -42,6 +42,7 @@
 /obj/machinery/particle_smasher/examine(mob/user)
 	. = ..()
 	if(Adjacent(user))
+		. += span_notice("It can bombard substance stock to refine it, or destructively render slime extracts, harvested produce, and charged anomaly batteries into material sheets.")
 		. += span_notice("\The [src] contains:")
 		for(var/obj/item/I in contents)
 			. += span_notice("\the [I]")
@@ -52,6 +53,15 @@
 /obj/machinery/particle_smasher/attackby(obj/item/W as obj, mob/user as mob)
 	if(W.type == /obj/item/analyzer)
 		return
+	else if(substance_source_category(W))
+		if(target)
+			to_chat(user, span_notice("\The [src] already contains a target."))
+			return
+		user.drop_from_inventory(W)
+		target = W
+		target.forceMove(src)
+		to_chat(user, span_notice("You clamp [target] into the particle focus for destructive source rendering."))
+		update_icon()
 	else if(istype(W, /obj/item/material_workpiece))
 		if(target)
 			to_chat(user, span_notice("\The [src] already contains a target."))
@@ -158,6 +168,8 @@
 	if(istype(target, /obj/item/material_workpiece))
 		var/obj/item/material_workpiece/workpiece = target
 		return workpiece.batch?.dominant_color() || "#aaaaaa"
+	if(substance_source_category(target))
+		return target.color || "#77c9a8"
 	return "#aaaaaa"
 
 /obj/machinery/particle_smasher/bullet_act(obj/item/projectile/Proj)
@@ -187,6 +199,8 @@
 		// A loaded substance stack refines once it charges past the threshold (substance_particle_refine.dm).
 		if(istype(target, /obj/item/stack/material/substance))
 			try_substance_refine()
+		else if(substance_source_category(target))
+			try_substance_source_render()
 		radiation_pulse(
 			src,
 			max_range = 7,
