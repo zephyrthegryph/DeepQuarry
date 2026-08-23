@@ -86,6 +86,9 @@
 	return 1
 
 /obj/machinery/shieldwallgen/process()
+	if(!active && storedpower >= max_stored_power)
+		storedpower = max_stored_power
+		return PROCESS_KILL
 	power()
 	if(power && active)
 		storedpower -= 2500 //the generator post itself uses some power

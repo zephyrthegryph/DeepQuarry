@@ -3820,6 +3820,18 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	qdel(S)
 	qdel(D)
 
+/datum/unit_test/dq_idle_shieldwall_generator_hibernates
+
+/datum/unit_test/dq_idle_shieldwall_generator_hibernates/Run()
+	var/turf/test_turf = get_turf(run_loc_floor_bottom_left ? run_loc_floor_bottom_left : locate(1, 1, 1))
+	var/obj/machinery/shieldwallgen/G = new(test_turf)
+	G.active = FALSE
+	G.storedpower = G.max_stored_power
+	TEST_ASSERT_EQUAL(G.process(), PROCESS_KILL, "full inactive shieldwall generator retained timed polling")
+	G.active = TRUE
+	TEST_ASSERT_NOTEQUAL(G.process(), PROCESS_KILL, "active shieldwall generator incorrectly hibernated")
+	qdel(G)
+
 /datum/unit_test/dq_idle_meter_and_fire_alarm_hibernate
 
 /datum/unit_test/dq_idle_meter_and_fire_alarm_hibernate/Run()
