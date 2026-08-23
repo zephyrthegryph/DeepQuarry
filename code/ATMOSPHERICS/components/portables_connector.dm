@@ -18,6 +18,7 @@
 	var/datum/pipe_network/network
 
 	var/on = 0
+	var/sleeping_device_mixture_id
 	use_power = USE_POWER_OFF
 	level = 1
 
@@ -61,7 +62,26 @@
 		return PROCESS_KILL
 	if(network)
 		network.mark_dirty()
-	return 1
+	hibernate_until_device_changes()
+	return PROCESS_KILL
+
+/obj/machinery/atmospherics/portables_connector/proc/hibernate_until_device_changes()
+	var/datum/gas_mixture/device_air = connected_device?.air_contents
+	if(!device_air)
+		return
+	var/datum/weakref/WR = WEAKREF(src)
+	sleeping_device_mixture_id = device_air.arena_id()
+	SSmachines.sleeping_gas_devices[WR.reference] = WR
+	SSmachines.subscribe_gas_dependency(sleeping_device_mixture_id, WR)
+
+/obj/machinery/atmospherics/portables_connector/proc/clear_gas_dependency()
+	var/datum/weakref/WR = WEAKREF(src)
+	if(isnull(sleeping_device_mixture_id))
+		SSmachines.sleeping_gas_devices.Remove(WR.reference)
+		return
+	SSmachines.unsubscribe_gas_dependency(sleeping_device_mixture_id, WR)
+	sleeping_device_mixture_id = null
+	SSmachines.sleeping_gas_devices.Remove(WR.reference)
 
 // Housekeeping and pipe network stuff below
 /obj/machinery/atmospherics/portables_connector/get_neighbor_nodes_for_init()
@@ -80,6 +100,7 @@
 	return null
 
 /obj/machinery/atmospherics/portables_connector/Destroy()
+	clear_gas_dependency()
 	// Disconnect/qdel BEFORE ..() so connected_device/node derefs are valid.
 	if(connected_device)
 		connected_device.disconnect()
@@ -139,6 +160,7 @@
 	return results
 
 /obj/machinery/atmospherics/portables_connector/disconnect(obj/machinery/atmospherics/reference)
+	clear_gas_dependency()
 	if(reference==node)
 		qdel(network)
 		node = null

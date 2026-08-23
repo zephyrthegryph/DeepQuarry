@@ -144,8 +144,9 @@
 				var/effective_conductivity = material ? clamp(material.material_thermal_conductance(surface, 0.004, pipe_temperature) / 10000, 0.001, 1) : thermal_conductivity
 				parent.temperature_interact(loc, volume, effective_conductivity)
 		else if(istype(loc, /turf/space/))
-			can_hibernate = FALSE
-			parent.radiate_heat_to_space(surface, 1)
+			if(abs(pipe_temperature - TCMB) > minimum_temperature_difference)
+				can_hibernate = FALSE
+				parent.radiate_heat_to_space(surface, 1)
 
 		if(has_buckled_mobs())
 			for(var/mob/living/L as anything in buckled_mobs)

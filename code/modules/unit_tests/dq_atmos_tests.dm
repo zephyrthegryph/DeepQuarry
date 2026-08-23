@@ -3829,6 +3829,27 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	var/obj/machinery/atmospherics/portables_connector/C = new(T)
 	C.on = FALSE
 	TEST_ASSERT_EQUAL(C.process(), PROCESS_KILL, "disconnected portable connector remained scheduled")
+	var/obj/machinery/portable_atmospherics/canister/oxygen/canister = new(T)
+	TEST_ASSERT_EQUAL(canister.process(), PROCESS_KILL, "closed inert canister remained scheduled")
+	var/datum/weakref/canister_ref = WEAKREF(canister)
+	TEST_ASSERT(SSmachines.sleeping_gas_devices[canister_ref.reference], "closed canister did not subscribe to its gas mixture")
+	canister.air_contents.adjust_moles(/datum/gas/oxygen, 1)
+	for(var/canister_i in 1 to 4096)
+		SSmachines.wake_dirty_gas_subscribers()
+		if(canister.datum_flags & DF_ISPROCESSING)
+			break
+	TEST_ASSERT(canister.datum_flags & DF_ISPROCESSING, "closed canister did not wake after its contents changed")
+	STOP_MACHINE_PROCESSING(canister)
+	canister.connect(C)
+	TEST_ASSERT_EQUAL(C.process(), PROCESS_KILL, "stable connected portable port remained scheduled")
+	var/datum/weakref/connector_ref = WEAKREF(C)
+	TEST_ASSERT(SSmachines.sleeping_gas_devices[connector_ref.reference], "connected portable port did not subscribe to device gas")
+	canister.air_contents.adjust_moles(/datum/gas/oxygen, 1)
+	for(var/connector_i in 1 to 4096)
+		SSmachines.wake_dirty_gas_subscribers()
+		if(C.datum_flags & DF_ISPROCESSING)
+			break
+	TEST_ASSERT(C.datum_flags & DF_ISPROCESSING, "portable port did not wake after connected-device gas changed")
 	var/obj/machinery/status_display/D = new(T)
 	var/datum/signal/blank = new
 	blank.data["command"] = "blank"
@@ -3840,8 +3861,29 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	D.receive_signal(time_signal)
 	TEST_ASSERT(D.datum_flags & DF_ISPROCESSING, "time signal did not wake a sleeping status display")
 	qdel(D)
+	qdel(canister)
 	qdel(C)
 	qdel(S)
+	qdel(P)
+
+/datum/unit_test/dq_stable_binary_pump_hibernates_and_wakes
+
+/datum/unit_test/dq_stable_binary_pump_hibernates_and_wakes/Run()
+	var/turf/simulated/floor/T = locate() in world
+	TEST_ASSERT_NOTNULL(T, "no floor for binary pump hibernation test")
+	var/obj/machinery/atmospherics/binary/pump/P = new(T)
+	P.stat = 0
+	P.use_power = USE_POWER_IDLE
+	P.target_pressure = ONE_ATMOSPHERE
+	TEST_ASSERT_EQUAL(P.process(), PROCESS_KILL, "empty stable binary pump remained scheduled")
+	var/datum/weakref/pump_ref = WEAKREF(P)
+	TEST_ASSERT(SSmachines.sleeping_gas_devices[pump_ref.reference], "stable binary pump did not subscribe to its gas mixtures")
+	P.air1.adjust_moles(/datum/gas/oxygen, 10)
+	for(var/pump_i in 1 to 4096)
+		SSmachines.wake_dirty_gas_subscribers()
+		if(P.datum_flags & DF_ISPROCESSING)
+			break
+	TEST_ASSERT(P.datum_flags & DF_ISPROCESSING, "binary pump did not wake when its input gas changed")
 	qdel(P)
 
 

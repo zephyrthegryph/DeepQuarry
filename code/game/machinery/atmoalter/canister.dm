@@ -201,9 +201,9 @@ update_flag
 
 /obj/machinery/portable_atmospherics/canister/process()
 	if (destroyed)
-		return
+		return PROCESS_KILL
 
-	..()
+	var/reaction_result = ..()
 
 	if(valve_open)
 		var/datum/gas_mixture/environment
@@ -238,6 +238,10 @@ update_flag
 		can_label = 1
 	else
 		can_label = 0
+
+	if(!valve_open && reaction_result == NO_REACTION)
+		hibernate_until_gas_changes()
+		return PROCESS_KILL
 
 
 /obj/machinery/portable_atmospherics/canister/return_air()
@@ -419,6 +423,8 @@ update_flag
 					release_log += "Valve was " + span_bold("opened") + " by [ui.user] ([ui.user.ckey]), starting the transfer into the " + span_red(span_bold("air")) + "<br>"
 					log_open()
 			valve_open = !valve_open
+			clear_gas_dependency()
+			START_MACHINE_PROCESSING(src)
 			. = TRUE
 		if("eject")
 			if(holding)

@@ -36,6 +36,8 @@ Thus, the two variables affect pump operation are set in New():
 	var/frequency = ZERO_FREQ
 	var/id = null
 	var/datum/radio_frequency/radio_connection
+	var/sleeping_input_mixture_id
+	var/sleeping_output_mixture_id
 
 /obj/machinery/atmospherics/binary/pump/Initialize(mapload)
 	. = ..()
@@ -46,8 +48,13 @@ Thus, the two variables affect pump operation are set in New():
 		set_frequency(frequency)
 
 /obj/machinery/atmospherics/binary/pump/Destroy()
+	clear_gas_dependencies()
 	unregister_radio(src, frequency)
 	. = ..()
+
+/obj/machinery/atmospherics/binary/pump/disconnect(obj/machinery/atmospherics/reference)
+	wake_for_state_change()
+	return ..()
 
 /obj/machinery/atmospherics/binary/pump/on
 	icon_state = "map_on"
@@ -96,7 +103,7 @@ Thus, the two variables affect pump operation are set in New():
 	last_flow_rate = 0
 
 	if((stat & (NOPOWER|BROKEN)) || !use_power)
-		return
+		return PROCESS_KILL
 
 	var/power_draw = -1
 	var/pressure_delta = target_pressure - air2.return_pressure()
@@ -116,7 +123,32 @@ Thus, the two variables affect pump operation are set in New():
 		if(network2)
 			network2.mark_dirty()
 
+	if(target_pressure - air2.return_pressure() <= 0.01 || air1.total_moles() < MINIMUM_MOLES_TO_PUMP)
+		hibernate_until_gas_changes()
+		return PROCESS_KILL
+
 	return 1
+
+/obj/machinery/atmospherics/binary/pump/proc/hibernate_until_gas_changes()
+	var/datum/weakref/WR = WEAKREF(src)
+	sleeping_input_mixture_id = air1?.arena_id()
+	sleeping_output_mixture_id = air2?.arena_id()
+	SSmachines.sleeping_gas_devices[WR.reference] = WR
+	SSmachines.subscribe_gas_dependency(sleeping_input_mixture_id, WR)
+	SSmachines.subscribe_gas_dependency(sleeping_output_mixture_id, WR)
+	STOP_MACHINE_PROCESSING(src)
+
+/obj/machinery/atmospherics/binary/pump/proc/clear_gas_dependencies()
+	var/datum/weakref/WR = WEAKREF(src)
+	SSmachines.unsubscribe_gas_dependency(sleeping_input_mixture_id, WR)
+	SSmachines.unsubscribe_gas_dependency(sleeping_output_mixture_id, WR)
+	sleeping_input_mixture_id = null
+	sleeping_output_mixture_id = null
+	SSmachines.sleeping_gas_devices.Remove(WR.reference)
+
+/obj/machinery/atmospherics/binary/pump/proc/wake_for_state_change()
+	clear_gas_dependencies()
+	START_MACHINE_PROCESSING(src)
 
 //Radio remote control
 
@@ -172,6 +204,7 @@ Thus, the two variables affect pump operation are set in New():
 /obj/machinery/atmospherics/binary/pump/receive_signal(datum/signal/signal)
 	if(!signal.data["tag"] || (signal.data["tag"] != id) || (signal.data["sigtype"]!="command"))
 		return 0
+	wake_for_state_change()
 
 	if(signal.data["power"])
 		if(text2num(signal.data["power"]))
@@ -208,6 +241,7 @@ Thus, the two variables affect pump operation are set in New():
 /obj/machinery/atmospherics/binary/pump/tgui_act(action, params, datum/tgui/ui)
 	if(..())
 		return TRUE
+	wake_for_state_change()
 
 	switch(action)
 		if("power")
@@ -232,6 +266,7 @@ Thus, the two variables affect pump operation are set in New():
 	var/old_stat = stat
 	..()
 	if(old_stat != stat)
+		wake_for_state_change()
 		update_icon()
 
 /obj/machinery/atmospherics/binary/pump/attackby(obj/item/W as obj, mob/user as mob)
@@ -261,6 +296,7 @@ Thus, the two variables affect pump operation are set in New():
 
 	to_chat(user, span_notice("You set the [name] to max output"))
 	target_pressure = max_pressure_setting
+	wake_for_state_change()
 	add_fingerprint(user)
 	return CLICK_ACTION_SUCCESS
 
@@ -272,6 +308,7 @@ Thus, the two variables affect pump operation are set in New():
 		return CLICK_ACTION_BLOCKING
 
 	update_use_power(!use_power)
+	wake_for_state_change()
 	update_icon()
 	add_fingerprint(user)
 	to_chat(user, span_notice("You toggle the [name] [use_power ? "on" : "off"]."))

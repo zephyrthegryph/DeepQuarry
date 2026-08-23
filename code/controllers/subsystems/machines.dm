@@ -487,6 +487,18 @@ SUBSYSTEM_DEF(machines)
 		var/obj/machinery/meter/M = subscriber
 		M.unregister_gas_dependency(WR)
 		START_MACHINE_PROCESSING(M)
+	else if(istype(subscriber, /obj/machinery/atmospherics/portables_connector))
+		var/obj/machinery/atmospherics/portables_connector/C = subscriber
+		C.clear_gas_dependency()
+		START_MACHINE_PROCESSING(C)
+	else if(istype(subscriber, /obj/machinery/portable_atmospherics))
+		var/obj/machinery/portable_atmospherics/P = subscriber
+		P.clear_gas_dependency()
+		START_MACHINE_PROCESSING(P)
+	else if(istype(subscriber, /obj/machinery/atmospherics/binary/pump))
+		var/obj/machinery/atmospherics/binary/pump/P = subscriber
+		P.clear_gas_dependencies()
+		START_MACHINE_PROCESSING(P)
 	if(WR.reference)
 		sleeping_gas_devices.Remove(WR.reference)
 		hibernating_vents[WR.reference] = null

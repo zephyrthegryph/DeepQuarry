@@ -9,6 +9,7 @@
 
 	var/volume = 0
 	var/destroyed = 0
+	var/sleeping_mixture_id
 
 	var/start_pressure = ONE_ATMOSPHERE
 	var/maximum_pressure = 90 * ONE_ATMOSPHERE
@@ -27,6 +28,7 @@
 		update_icon()
 
 /obj/machinery/portable_atmospherics/Destroy()
+	clear_gas_dependency()
 	QDEL_NULL(air_contents)
 	QDEL_NULL(holding)
 	return ..()
@@ -34,9 +36,28 @@
 /obj/machinery/portable_atmospherics/process()
 	if(!connected_port) //only react when pipe_network will ont it do it for you
 		//Allow for reactions
-		air_contents.react()
+		return air_contents.react(src)
 	else
 		update_icon()
+	return NO_REACTION
+
+/obj/machinery/portable_atmospherics/proc/hibernate_until_gas_changes()
+	var/datum/weakref/WR = WEAKREF(src)
+	sleeping_mixture_id = air_contents?.arena_id()
+	if(isnull(sleeping_mixture_id))
+		return
+	SSmachines.sleeping_gas_devices[WR.reference] = WR
+	SSmachines.subscribe_gas_dependency(sleeping_mixture_id, WR)
+	STOP_MACHINE_PROCESSING(src)
+
+/obj/machinery/portable_atmospherics/proc/clear_gas_dependency()
+	var/datum/weakref/WR = WEAKREF(src)
+	if(isnull(sleeping_mixture_id))
+		SSmachines.sleeping_gas_devices.Remove(WR.reference)
+		return
+	SSmachines.unsubscribe_gas_dependency(sleeping_mixture_id, WR)
+	sleeping_mixture_id = null
+	SSmachines.sleeping_gas_devices.Remove(WR.reference)
 
 /obj/machinery/portable_atmospherics/blob_act()
 	qdel(src)
@@ -63,6 +84,8 @@
 
 	//Perform the connection
 	connected_port = new_port
+	clear_gas_dependency()
+	START_MACHINE_PROCESSING(src)
 	connected_port.connected_device = src
 	connected_port.on = 1 //Activate port updates
 	START_MACHINE_PROCESSING(connected_port)
@@ -92,6 +115,7 @@
 	old_port.on = 0
 	STOP_MACHINE_PROCESSING(old_port)
 	connected_port = null
+	START_MACHINE_PROCESSING(src)
 
 	return 1
 

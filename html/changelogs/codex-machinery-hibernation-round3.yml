@@ -1,0 +1,4 @@
+author: "Codex"
+delete-after: true
+changes:
+  - code_imp: "Made stable portable atmos connections, closed canisters, radiator pipes, and pressure pumps sleep until their authoritative inputs change."
