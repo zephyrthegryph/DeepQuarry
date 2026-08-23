@@ -6522,3 +6522,36 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	qdel(relevant)
 	qdel(running_pump)
 	qdel(controller)
+
+/datum/unit_test/dq_pda_multicaster_hibernates_between_state_changes
+
+/datum/unit_test/dq_pda_multicaster_hibernates_between_state_changes/Run()
+	var/turf/test_turf = locate(1, 1, 1)
+	var/obj/machinery/pda_multicaster/multicaster = new(test_turf)
+	TEST_ASSERT_EQUAL(multicaster.process(), PROCESS_KILL, "stable PDA multicaster kept polling machinery")
+	multicaster.stat |= EMPED
+	multicaster.update_power()
+	TEST_ASSERT(!multicaster.on, "EMP state did not immediately turn off the multicaster")
+	multicaster.emp_recover()
+	TEST_ASSERT_EQUAL(multicaster.on, multicaster.toggle && !(multicaster.stat & (BROKEN|NOPOWER|EMPED)), "EMP recovery did not immediately reconcile multicaster state")
+	qdel(multicaster)
+
+/datum/unit_test/dq_mineral_stacker_wakes_for_input
+
+/datum/unit_test/dq_mineral_stacker_wakes_for_input/Run()
+	var/turf/center = locate(3, 3, 1)
+	var/turf/input_turf = get_step(center, WEST)
+	var/turf/output_turf = get_step(center, EAST)
+	var/obj/machinery/mineral/input/input = new(input_turf)
+	var/obj/machinery/mineral/output/output = new(output_turf)
+	var/obj/machinery/mineral/stacking_machine/stacker = new(center)
+	TEST_ASSERT_EQUAL(stacker.process(), PROCESS_KILL, "empty mineral stacker kept polling machinery")
+	STOP_MACHINE_PROCESSING(stacker)
+	var/obj/item/stack/material/steel/sheets = new(center)
+	sheets.forceMove(input_turf)
+	TEST_ASSERT(stacker in SSmachines.processing_machines, "mineral stacker did not wake when an item entered its input tile")
+	stacker.process()
+	TEST_ASSERT(QDELETED(sheets), "woken mineral stacker did not consume its input stack")
+	qdel(stacker)
+	qdel(input)
+	qdel(output)

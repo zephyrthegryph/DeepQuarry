@@ -53,6 +53,7 @@
 	switch(action)
 		if("change_stack")
 			machine.stack_amt = clamp(text2num(params["amt"]), 1, 50)
+			machine.wake_processing()
 			. = TRUE
 
 		if("release_stack")
@@ -94,6 +95,27 @@
 	for (var/dir in GLOB.cardinal)
 		src.output = locate(/obj/machinery/mineral/output, get_step(src, dir))
 		if(src.output) break
+	if(input?.loc)
+		RegisterSignal(input.loc, COMSIG_ATOM_ENTERED, PROC_REF(on_input_entered))
+
+/obj/machinery/mineral/stacking_machine/Destroy()
+	if(input?.loc)
+		UnregisterSignal(input.loc, COMSIG_ATOM_ENTERED)
+	input = null
+	output = null
+	console = null
+	return ..()
+
+/obj/machinery/mineral/stacking_machine/proc/on_input_entered(datum/source, atom/movable/arrived)
+	SIGNAL_HANDLER
+	if(isitem(arrived))
+		wake_processing()
+
+/obj/machinery/mineral/stacking_machine/proc/wake_processing()
+	if(speed_process)
+		START_PROCESSING(SSfastprocess, src)
+	else
+		START_MACHINE_PROCESSING(src)
 
 /obj/machinery/mineral/stacking_machine/proc/toggle_speed(forced)
 	if(forced)
@@ -108,10 +130,13 @@
 		START_MACHINE_PROCESSING(src)
 
 /obj/machinery/mineral/stacking_machine/process()
+	var/did_work = FALSE
 	if (src.output && src.input)
 		var/turf/T = get_turf(input)
 		for(var/obj/item/O in T.contents)
-			if(!O) return
+			if(!O)
+				continue
+			did_work = TRUE
 			if(istype(O,/obj/item/stack/material))
 				var/obj/item/stack/material/S = O
 				var/matname = S.material.name
@@ -126,7 +151,9 @@
 	//Output amounts that are past stack_amt.
 	for(var/sheet in stack_storage)
 		if(stack_storage[sheet] >= stack_amt)
+			did_work = TRUE
 			var/stacktype = stack_paths[sheet]
 			new stacktype (get_turf(output), stack_amt)
 			stack_storage[sheet] -= stack_amt
-	return
+	if(!did_work)
+		return PROCESS_KILL

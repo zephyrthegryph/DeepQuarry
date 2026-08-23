@@ -37,7 +37,7 @@
 		else
 			soundloop.mid_sounds = list('sound/machines/tcomms/tcomms_04.ogg' = 1)
 			soundloop.mid_length = 30
-	soundloop.start() // Have to do this here bc it starts on
+	update_power()
 
 /obj/machinery/pda_multicaster/prebuilt/Initialize(mapload)
 	. = ..()
@@ -91,23 +91,31 @@
 			on = 0
 			update_PDAs(1) // 1 being to turn off.
 			update_idle_power_usage(0)
-			soundloop.stop()
+			if(soundloop)
+				soundloop.stop()
 			noisy = FALSE
 		else
 			on = 1
 			update_PDAs(0)
 			update_idle_power_usage(750)
-			soundloop.start()
+			if(soundloop)
+				soundloop.start()
 			noisy = TRUE
 	else
 		on = 0
 		update_PDAs(1)
 		update_idle_power_usage(0)
-		soundloop.stop()
+		if(soundloop)
+			soundloop.stop()
 		noisy = FALSE
 	update_icon()
 
 /obj/machinery/pda_multicaster/process()
+	update_power()
+	return PROCESS_KILL
+
+/obj/machinery/pda_multicaster/power_change()
+	. = ..()
 	update_power()
 
 /obj/machinery/pda_multicaster/emp_act(severity, recursive)
@@ -115,6 +123,7 @@
 	if (. & EMP_PROTECT_SELF || (stat & EMPED))
 		return
 	stat |= EMPED
+	update_power()
 	var/duration = (300 * 10)/severity
 	addtimer(CALLBACK(src, PROC_REF(emp_recover)), rand(duration - 20, duration + 20), TIMER_DELETE_ME)
 	update_icon()
@@ -122,3 +131,4 @@
 
 /obj/machinery/pda_multicaster/proc/emp_recover()
 	stat &= ~EMPED
+	update_power()
