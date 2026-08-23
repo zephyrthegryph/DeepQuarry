@@ -90,7 +90,8 @@
 	if(src.active == 2)
 		calc_power()
 		update_icon()
-	return
+		return
+	return PROCESS_KILL
 
 
 /obj/machinery/field_generator/attack_hand(mob/user as mob)
@@ -192,6 +193,7 @@
 
 /obj/machinery/field_generator/proc/turn_on()
 	active = 1
+	START_MACHINE_PROCESSING(src)
 	warming_up = 1
 	spawn(1)
 		while (warming_up<3 && active)
@@ -265,6 +267,7 @@
 	spawn(4)
 		setup_field(8)
 	src.active = 2
+	START_MACHINE_PROCESSING(src)
 
 
 /obj/machinery/field_generator/proc/setup_field(NSEW)

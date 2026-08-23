@@ -4127,6 +4127,13 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	STOP_MACHINE_PROCESSING(suit_cycler)
 	START_MACHINE_PROCESSING(suit_cycler)
 	TEST_ASSERT(suit_cycler.process() != PROCESS_KILL, "active UV suit cycle hibernated before completion")
+	var/obj/machinery/field_generator/field_generator = new(T)
+	field_generator.active = FALSE
+	field_generator.Varedit_start = FALSE
+	TEST_ASSERT_EQUAL(field_generator.process(), PROCESS_KILL, "inactive field generator remained scheduled")
+	STOP_MACHINE_PROCESSING(field_generator)
+	field_generator.turn_on()
+	TEST_ASSERT(field_generator in SSmachines.processing_machines, "turning on a field generator did not wake machinery processing")
 	var/obj/machinery/smartfridge/smartfridge = new(T)
 	smartfridge.seconds_electrified = 0
 	smartfridge.shoot_inventory = FALSE
@@ -4188,6 +4195,7 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	qdel(bluespace_beacon)
 	qdel(ship_sensors)
 	qdel(suit_cycler)
+	qdel(field_generator)
 	qdel(smartfridge)
 	qdel(drying_rack)
 	qdel(conveyor_load)

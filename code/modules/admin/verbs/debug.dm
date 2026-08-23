@@ -401,6 +401,7 @@ ADMIN_VERB(startSinglo, R_DEBUG|R_ADMIN, "Start Singularity", "Sets up the singu
 	for(var/obj/machinery/field_generator/F in GLOB.machines)
 		if(istype(get_area(F), /area/space))
 			F.Varedit_start = 1
+			START_MACHINE_PROCESSING(F)
 	for(var/obj/machinery/power/grounding_rod/GR in GLOB.machines)
 		GR.anchored = TRUE
 		GR.update_icon()
