@@ -4014,6 +4014,12 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	TEST_ASSERT_EQUAL(drip.process(), PROCESS_KILL, "detached IV drip remained scheduled")
 	var/obj/machinery/floor_light/floor_light = new(T)
 	TEST_ASSERT_EQUAL(floor_light.process(), PROCESS_KILL, "stable floor light remained scheduled")
+	var/obj/machinery/vending/vendor = new(T)
+	vendor.stat = 0
+	vendor.shut_up = TRUE
+	vendor.seconds_electrified = 0
+	vendor.shoot_inventory = FALSE
+	TEST_ASSERT_EQUAL(vendor.process(), PROCESS_KILL, "silent stable vending machine remained scheduled")
 	qdel(display)
 	qdel(charger)
 	qdel(mech_charger)
@@ -4022,6 +4028,7 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	qdel(sleeper)
 	qdel(drip)
 	qdel(floor_light)
+	qdel(vendor)
 
 
 // =====================================================================

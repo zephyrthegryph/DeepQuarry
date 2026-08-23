@@ -528,6 +528,8 @@ GLOBAL_LIST_EMPTY(vending_products)
 			if(!panel_open)
 				return FALSE
 			shut_up = !shut_up
+			if(!shut_up)
+				START_MACHINE_PROCESSING(src)
 
 /obj/machinery/vending/proc/can_buy(datum/stored_item/vending_product/R, mob/user)
 	if(!allowed(user) && !emagged && scan_id)
@@ -652,10 +654,15 @@ GLOBAL_LIST_EMPTY(vending_products)
 
 /obj/machinery/vending/process()
 	if(stat & (BROKEN|NOPOWER))
-		return
+		return PROCESS_KILL
 
 	if(!active)
-		return
+		return PROCESS_KILL
+
+	// Normal silent vendors have no time-dependent state. Hacked vendors and
+	// explicitly enabled advertisers wake through their mutation paths below.
+	if(seconds_electrified <= 0 && !shoot_inventory && (shut_up || !length(slogan_list)))
+		return PROCESS_KILL
 
 	if(seconds_electrified > 0)
 		seconds_electrified--
