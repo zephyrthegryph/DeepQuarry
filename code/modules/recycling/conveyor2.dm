@@ -30,6 +30,8 @@
 	// create a conveyor
 /obj/machinery/conveyor/Initialize(mapload, newdir, on = 0)
 	. = ..()
+	if(loc)
+		RegisterSignal(loc, COMSIG_ATOM_ENTERED, PROC_REF(on_turf_entered))
 	if(newdir)
 		set_dir(newdir)
 
@@ -39,6 +41,23 @@
 		set_operating(FORWARDS)
 
 	default_apply_parts()
+
+/obj/machinery/conveyor/Destroy()
+	if(loc)
+		UnregisterSignal(loc, COMSIG_ATOM_ENTERED)
+	return ..()
+
+/obj/machinery/conveyor/Moved(atom/old_loc, direction, forced = FALSE)
+	if(old_loc)
+		UnregisterSignal(old_loc, COMSIG_ATOM_ENTERED)
+	. = ..()
+	if(loc)
+		RegisterSignal(loc, COMSIG_ATOM_ENTERED, PROC_REF(on_turf_entered))
+
+/obj/machinery/conveyor/proc/on_turf_entered(datum/source, atom/movable/arrived)
+	SIGNAL_HANDLER
+	if(operating && arrived && !arrived.anchored && !istype(arrived, /obj/effect/abstract) && !arrived.is_incorporeal())
+		START_MACHINE_PROCESSING(src)
 
 /obj/machinery/conveyor/proc/toggle_speed(forced)
 	if(forced)
@@ -107,7 +126,14 @@
 	if(!operating)
 		return PROCESS_KILL
 
-	affecting = loc.contents - src		// moved items will be all in loc
+	var/list/movable_contents = list()
+	for(var/atom/movable/A in loc)
+		if(A == src || A.anchored || istype(A, /obj/effect/abstract) || A.is_incorporeal())
+			continue
+		movable_contents += A
+	if(!length(movable_contents))
+		return PROCESS_KILL
+	affecting = movable_contents
 	spawn(1)	// slight delay to prevent infinite propagation due to map order	//TODO: please no spawn() in process(). It's a very bad idea
 		var/items_moved = 0
 		for(var/atom/movable/A in affecting)

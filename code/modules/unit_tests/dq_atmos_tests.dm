@@ -4116,6 +4116,25 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	TEST_ASSERT_EQUAL(smartfridge.process(), PROCESS_KILL, "stable smartfridge remained scheduled")
 	var/obj/machinery/smartfridge/drying_rack/drying_rack = new(T)
 	TEST_ASSERT_EQUAL(drying_rack.process(), PROCESS_KILL, "empty drying rack remained scheduled")
+	var/turf/conveyor_turf
+	for(var/turf/simulated/floor/candidate in world)
+		var/has_movable = FALSE
+		for(var/atom/movable/candidate_content in candidate)
+			if(!candidate_content.anchored && !istype(candidate_content, /obj/effect/abstract) && !candidate_content.is_incorporeal())
+				has_movable = TRUE
+				break
+		if(!has_movable)
+			conveyor_turf = candidate
+			break
+	TEST_ASSERT_NOTNULL(conveyor_turf, "no empty floor for conveyor hibernation test")
+	var/obj/machinery/conveyor/conveyor = new(conveyor_turf)
+	conveyor.operating = 1
+	conveyor.stat = 0
+	TEST_ASSERT_EQUAL(conveyor.process(), PROCESS_KILL, "running empty conveyor remained scheduled")
+	STOP_MACHINE_PROCESSING(conveyor)
+	var/obj/item/conveyor_load = new(null)
+	conveyor_load.forceMove(conveyor_turf)
+	TEST_ASSERT(conveyor in SSmachines.processing_machines, "running conveyor did not wake when movable cargo entered its turf")
 	qdel(display)
 	qdel(supply_display)
 	qdel(jukebox)
@@ -4152,6 +4171,8 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	qdel(bluespace_beacon)
 	qdel(smartfridge)
 	qdel(drying_rack)
+	qdel(conveyor_load)
+	qdel(conveyor)
 
 
 // =====================================================================
