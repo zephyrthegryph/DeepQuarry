@@ -3905,6 +3905,27 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	TEST_ASSERT_EQUAL(G.process(), PROCESS_KILL, "unanchored thermoelectric generator retained timed polling")
 	qdel(G)
 
+/datum/unit_test/dq_closed_firedoor_is_event_driven
+
+/datum/unit_test/dq_closed_firedoor_is_event_driven/Run()
+	var/list/pair = dq_atmos_test_find_clear_pipe_run(2)
+	TEST_ASSERT_NOTNULL(pair, "no adjacent floors for firedoor dependency test")
+	var/turf/simulated/floor/T = pair[1]
+	drain_dirty_gas_mixtures()
+	var/obj/machinery/door/firedoor/F = new(T)
+	F.density = TRUE
+	F.next_process_time = 0
+	TEST_ASSERT_EQUAL(F.process(), PROCESS_KILL, "stable closed firedoor retained timed polling")
+	var/datum/weakref/firedoor_ref = WEAKREF(F)
+	TEST_ASSERT(SSmachines.sleeping_gas_devices[firedoor_ref.reference], "closed firedoor did not register gas dependencies")
+	T.air.set_temperature(T.air.return_temperature() + 10)
+	for(var/firedoor_i in 1 to 4096)
+		SSmachines.wake_dirty_gas_subscribers()
+		if(F in SSmachines.processing_machines)
+			break
+	TEST_ASSERT(F in SSmachines.processing_machines, "temperature change did not wake closed firedoor")
+	qdel(F)
+
 /datum/unit_test/dq_idle_meter_and_fire_alarm_hibernate
 
 /datum/unit_test/dq_idle_meter_and_fire_alarm_hibernate/Run()

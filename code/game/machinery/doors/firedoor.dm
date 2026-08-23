@@ -34,6 +34,7 @@
 	var/list/areas_added
 	var/list/users_to_open = list()
 	var/next_process_time = 0
+	var/list/sleeping_mixture_ids
 
 	var/hatch_open = 0
 
@@ -73,6 +74,7 @@
 			areas_added += A
 
 /obj/machinery/door/firedoor/Destroy()
+	clear_gas_dependencies()
 	for(var/area/A in areas_added)
 		LAZYREMOVE(A.all_doors, src)
 	. = ..()
@@ -398,6 +400,36 @@
 			changed = 1
 		if(changed)
 			update_icon()
+		hibernate_until_air_changes()
+		return PROCESS_KILL
+
+/obj/machinery/door/firedoor/proc/hibernate_until_air_changes()
+	clear_gas_dependencies()
+	var/datum/weakref/WR = WEAKREF(src)
+	var/list/dependency_turfs = list(get_turf(src))
+	for(var/direction in GLOB.cardinal)
+		dependency_turfs += get_step(src, direction)
+	for(var/turf/T as anything in dependency_turfs)
+		var/datum/gas_mixture/air = T.return_air()
+		if(!air)
+			continue
+		var/mixture_id = air.arena_id()
+		LAZYSET(sleeping_mixture_ids, "[mixture_id]", mixture_id)
+		SSmachines.subscribe_gas_dependency(mixture_id, WR)
+	SSmachines.sleeping_gas_devices[WR.reference] = WR
+	STOP_MACHINE_PROCESSING(src)
+
+/obj/machinery/door/firedoor/proc/clear_gas_dependencies()
+	if(!length(sleeping_mixture_ids))
+		return
+	var/datum/weakref/WR = WEAKREF(src)
+	for(var/key in sleeping_mixture_ids)
+		SSmachines.unsubscribe_gas_dependency(sleeping_mixture_ids[key], WR)
+	sleeping_mixture_ids = null
+	SSmachines.sleeping_gas_devices.Remove(WR.reference)
+
+/obj/machinery/door/firedoor/proc/gas_dependency_changed(mixture_id, change_mask)
+	return change_mask & (GAS_DEPENDENCY_PRESSURE|GAS_DEPENDENCY_TEMPERATURE)
 
 /obj/machinery/door/firedoor/proc/latetoggle()
 	if(operating || !nextstate)
@@ -420,9 +452,11 @@
 	// Queue us for processing when we are closed!
 	..()
 	if(density)
+		clear_gas_dependencies()
 		START_MACHINE_PROCESSING(src)
 
 /obj/machinery/door/firedoor/open(forced = 0)
+	clear_gas_dependencies()
 	if(hatch_open)
 		hatch_open = 0
 		visible_message("The maintenance hatch of \the [src] closes.")

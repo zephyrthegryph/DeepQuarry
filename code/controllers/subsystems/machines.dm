@@ -435,6 +435,10 @@ SUBSYSTEM_DEF(machines)
 					var/obj/machinery/airlock_sensor/S = subscriber
 					if(S.gas_dependency_changed(mixture_id, change_mask))
 						LAZYADD(to_wake, WR)
+				else if(istype(subscriber, /obj/machinery/door/firedoor))
+					var/obj/machinery/door/firedoor/F = subscriber
+					if(F.gas_dependency_changed(mixture_id, change_mask))
+						LAZYADD(to_wake, WR)
 				else if(istype(subscriber, /obj/machinery/meter))
 					var/obj/machinery/meter/M = subscriber
 					if(M.gas_dependency_changed(mixture_id, change_mask))
@@ -591,6 +595,10 @@ SUBSYSTEM_DEF(machines)
 		var/obj/machinery/airlock_sensor/S = subscriber
 		S.unregister_gas_dependencies(WR)
 		START_MACHINE_PROCESSING(S)
+	else if(istype(subscriber, /obj/machinery/door/firedoor))
+		var/obj/machinery/door/firedoor/F = subscriber
+		F.clear_gas_dependencies()
+		START_MACHINE_PROCESSING(F)
 	else if(istype(subscriber, /obj/machinery/meter))
 		var/obj/machinery/meter/M = subscriber
 		M.unregister_gas_dependency(WR)
