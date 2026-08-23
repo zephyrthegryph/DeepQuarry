@@ -25,7 +25,17 @@
 	for(var/obj/machinery/shipsensors/S in GLOB.machines)
 		if(linked.check_ownership(S))
 			sensors = S
+			refresh_sensor_light()
 			break
+
+/obj/machinery/computer/ship/sensors/proc/refresh_sensor_light()
+	if(!linked)
+		return
+	if(sensors && sensors.use_power && sensors.powered())
+		var/sensor_range = round(sensors.range * 1.5) + 1
+		linked.set_light(sensor_range + 0.5)
+	else
+		linked.set_light(0)
 
 /obj/machinery/computer/ship/sensors/tgui_interact(mob/user, datum/tgui/ui)
 	if(!linked)
@@ -127,13 +137,8 @@
 
 /obj/machinery/computer/ship/sensors/process()
 	..()
-	if(!linked)
-		return
-	if(sensors && sensors.use_power && sensors.powered())
-		var/sensor_range = round(sensors.range*1.5) + 1
-		linked.set_light(sensor_range + 0.5)
-	else
-		linked.set_light(0)
+	refresh_sensor_light()
+	return PROCESS_KILL
 
 /obj/machinery/shipsensors
 	name = "sensors suite"
@@ -147,6 +152,20 @@
 	var/heat = 0
 	var/range = 1
 	idle_power_usage = 5000
+
+/obj/machinery/shipsensors/Destroy()
+	update_use_power(USE_POWER_OFF)
+	for(var/obj/machinery/computer/ship/sensors/console in GLOB.machines)
+		if(console.sensors != src)
+			continue
+		console.sensors = null
+		console.refresh_sensor_light()
+	return ..()
+
+/obj/machinery/shipsensors/proc/refresh_linked_consoles()
+	for(var/obj/machinery/computer/ship/sensors/console in GLOB.machines)
+		if(console.sensors == src)
+			console.refresh_sensor_light()
 
 /obj/machinery/shipsensors/attackby(obj/item/W, mob/user)
 	var/damage = max_integrity - get_integrity()
@@ -206,6 +225,7 @@
 		use_power_oneoff(idle_power_usage*5)
 	update_use_power(!use_power)
 	update_icon()
+	refresh_linked_consoles()
 	START_MACHINE_PROCESSING(src)
 
 /obj/machinery/shipsensors/process()
@@ -235,6 +255,7 @@
 /obj/machinery/shipsensors/proc/set_range(nrange)
 	range = nrange
 	change_power_consumption(1500 * (range**2), USE_POWER_IDLE) //Exponential increase, also affects speed of overheating
+	refresh_linked_consoles()
 
 /obj/machinery/shipsensors/emp_act(severity, recursive)
 	. = ..()
