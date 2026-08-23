@@ -341,7 +341,9 @@
 
 /obj/machinery/sleeper/process()
 	if(stat & (NOPOWER|BROKEN))
-		return
+		return PROCESS_KILL
+	if(!occupant)
+		return PROCESS_KILL
 	if(occupant)
 		if(auto_eject_dead && occupant.stat == DEAD)
 			playsound(loc, 'sound/machines/buzz-sigh.ogg', 40)
@@ -485,6 +487,7 @@
 		M.forceMove(src)
 		update_use_power(USE_POWER_ACTIVE)
 		occupant = M
+		START_MACHINE_PROCESSING(src)
 		occupant.cozyloop.start() // Cozy Music
 		update_icon()
 
@@ -507,6 +510,12 @@
 	update_icon()
 	toggle_filter()
 	toggle_pump()
+	STOP_MACHINE_PROCESSING(src)
+
+/obj/machinery/sleeper/power_change()
+	. = ..()
+	if(. && occupant)
+		START_MACHINE_PROCESSING(src)
 
 /obj/machinery/sleeper/proc/remove_beaker()
 	if(beaker)

@@ -44,12 +44,14 @@
 	if(attached)
 		visible_message("[attached] is detached from \the [src]")
 		attached = null
+		STOP_MACHINE_PROCESSING(src)
 		update_icon()
 		return
 
 	if(in_range(src, usr) && ishuman(over_object) && get_dist(over_object, src) <= 1)
 		visible_message("[usr] attaches \the [src] to \the [over_object].")
 		attached = over_object
+		START_MACHINE_PROCESSING(src)
 		update_icon()
 
 
@@ -83,6 +85,8 @@
 
 /obj/machinery/iv_drip/process()
 	set background = 1
+	if(!attached)
+		return PROCESS_KILL
 
 	if(attached)
 
@@ -91,7 +95,7 @@
 			attached:apply_damage(3, BRUTE, pick(BP_R_ARM, BP_L_ARM))
 			attached = null
 			update_icon()
-			return
+			return PROCESS_KILL
 
 	if(attached && beaker)
 		// Give blood

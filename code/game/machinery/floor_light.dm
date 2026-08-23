@@ -106,6 +106,7 @@ GLOBAL_LIST_EMPTY(floor_light_cache)
 		need_update = 1
 	if(need_update)
 		update_brightness()
+	return PROCESS_KILL
 
 /obj/machinery/floor_light/proc/update_brightness()
 	if(on && use_power == USE_POWER_ACTIVE)

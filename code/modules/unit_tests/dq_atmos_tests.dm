@@ -4000,10 +4000,28 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	var/obj/machinery/space_heater/heater = new(T)
 	heater.state = 0
 	TEST_ASSERT_EQUAL(heater.process(), PROCESS_KILL, "switched-off space heater remained scheduled")
+	var/obj/machinery/floodlight/floodlight = new(T)
+	floodlight.on = 0
+	TEST_ASSERT_EQUAL(floodlight.process(), PROCESS_KILL, "switched-off floodlight remained scheduled")
+	floodlight.cell.charge = floodlight.cell.maxcharge
+	STOP_MACHINE_PROCESSING(floodlight)
+	TEST_ASSERT(floodlight.turn_on(), "charged floodlight refused to turn on")
+	TEST_ASSERT(floodlight in SSmachines.processing_machines, "turning on a floodlight did not wake it")
+	var/obj/machinery/sleeper/sleeper = new(T)
+	sleeper.stat = 0
+	TEST_ASSERT_EQUAL(sleeper.process(), PROCESS_KILL, "empty sleeper remained scheduled")
+	var/obj/machinery/iv_drip/drip = new(T)
+	TEST_ASSERT_EQUAL(drip.process(), PROCESS_KILL, "detached IV drip remained scheduled")
+	var/obj/machinery/floor_light/floor_light = new(T)
+	TEST_ASSERT_EQUAL(floor_light.process(), PROCESS_KILL, "stable floor light remained scheduled")
 	qdel(display)
 	qdel(charger)
 	qdel(mech_charger)
 	qdel(heater)
+	qdel(floodlight)
+	qdel(sleeper)
+	qdel(drip)
+	qdel(floor_light)
 
 
 // =====================================================================

@@ -25,11 +25,11 @@
 
 /obj/machinery/floodlight/process()
 	if(!on)
-		return
+		return PROCESS_KILL
 
 	if(!cell || (cell.charge < (use * CELLRATE)))
 		turn_off(1)
-		return
+		return PROCESS_KILL
 
 	cell.use(use * CELLRATE)
 
@@ -53,6 +53,7 @@
 		return 0
 
 	on = 1
+	START_MACHINE_PROCESSING(src)
 	set_light_range(brightness_on)
 	set_light_power(brightness_on/2)
 	set_light_on(TRUE)
