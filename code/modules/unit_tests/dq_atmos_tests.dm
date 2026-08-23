@@ -3826,6 +3826,10 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	var/turf/test_turf = get_turf(run_loc_floor_bottom_left ? run_loc_floor_bottom_left : locate(1, 1, 1))
 	var/obj/machinery/shieldwallgen/G = new(test_turf)
 	G.active = FALSE
+	G.anchored = FALSE
+	G.storedpower = 0
+	TEST_ASSERT_EQUAL(G.process(), PROCESS_KILL, "unanchored inactive shieldwall generator retained timed polling")
+	G.anchored = TRUE
 	G.storedpower = G.max_stored_power
 	TEST_ASSERT_EQUAL(G.process(), PROCESS_KILL, "full inactive shieldwall generator retained timed polling")
 	G.active = TRUE
@@ -3846,6 +3850,25 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	TEST_ASSERT_EQUAL(C.process(), PROCESS_KILL, "settled circulator retained timed polling")
 	TEST_ASSERT_EQUAL(C.recent_moles_transferred, 0, "settled circulator retained stale transfer state")
 	qdel(C)
+
+/datum/unit_test/dq_stable_heat_exchanger_hibernates
+
+/datum/unit_test/dq_stable_heat_exchanger_hibernates/Run()
+	var/list/pair = dq_atmos_test_find_clear_pipe_run(2)
+	TEST_ASSERT_NOTNULL(pair, "no adjacent floors for heat exchanger test")
+	var/obj/machinery/atmospherics/unary/heat_exchanger/first = new(pair[1])
+	var/obj/machinery/atmospherics/unary/heat_exchanger/second = new(pair[2])
+	first.partner = second
+	second.partner = first
+	first.air_contents.set_temperature(T20C)
+	second.air_contents.set_temperature(T20C)
+	first.air_contents.set_moles(/datum/gas/oxygen, 10)
+	second.air_contents.set_moles(/datum/gas/oxygen, 10)
+	TEST_ASSERT_EQUAL(first.process(), PROCESS_KILL, "equilibrated heat exchanger retained timed polling")
+	second.air_contents.set_temperature(T20C + 10)
+	TEST_ASSERT(first.gas_dependency_changed(second.air_contents.arena_id(), GAS_DEPENDENCY_TEMPERATURE), "temperature divergence did not wake a heat exchanger")
+	qdel(first)
+	qdel(second)
 
 /datum/unit_test/dq_idle_meter_and_fire_alarm_hibernate
 

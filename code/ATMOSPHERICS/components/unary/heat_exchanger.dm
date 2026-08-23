@@ -15,6 +15,7 @@
 
 	var/obj/machinery/atmospherics/unary/heat_exchanger/partner = null
 	var/update_cycle
+	gas_dependency_mask = GAS_DEPENDENCY_ALL
 
 /obj/machinery/atmospherics/unary/heat_exchanger/Initialize(mapload)
 	. = ..()
@@ -57,6 +58,9 @@
 
 	var/old_temperature = air_contents.return_temperature()
 	var/other_old_temperature = partner.air_contents.return_temperature()
+	if(combined_heat_capacity <= 0 || abs(old_temperature - other_old_temperature) <= 0.1)
+		SSmachines.hibernate_vent(src)
+		return PROCESS_KILL
 
 	if(combined_heat_capacity > 0)
 		var/combined_energy = other_old_temperature*other_air_heat_capacity + air_heat_capacity*old_temperature
@@ -80,7 +84,18 @@
 		if(abs(other_old_temperature-partner.air_contents.return_temperature()) > 1)
 			partner.network.mark_dirty()
 
+	if(abs(air_contents.return_temperature() - partner.air_contents.return_temperature()) <= 0.1)
+		SSmachines.hibernate_vent(src)
+		return PROCESS_KILL
+
 	return 1
+
+/obj/machinery/atmospherics/unary/heat_exchanger/gas_dependency_changed(mixture_id, change_mask)
+	if(!..() || !partner)
+		return FALSE
+	if(air_contents.heat_capacity() <= 0 || partner.air_contents.heat_capacity() <= 0)
+		return FALSE
+	return abs(air_contents.return_temperature() - partner.air_contents.return_temperature()) > 0.1
 
 /obj/machinery/atmospherics/unary/heat_exchanger/attackby(obj/item/W as obj, mob/user as mob)
 	if (!W.has_tool_quality(TOOL_WRENCH))
