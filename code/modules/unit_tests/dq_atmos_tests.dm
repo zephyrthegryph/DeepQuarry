@@ -4038,6 +4038,14 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	operating_console.table = operating_table
 	operating_table.computer = operating_console
 	TEST_ASSERT_EQUAL(operating_console.process(), PROCESS_KILL, "empty operating console remained scheduled")
+	var/obj/machinery/pointdefense/point_defense = new(T)
+	point_defense.stat = 0
+	point_defense.active = TRUE
+	TEST_ASSERT_EQUAL(point_defense.process(), PROCESS_KILL, "point defense polled with no meteors")
+	var/datum/weakref/point_defense_ref = WEAKREF(point_defense)
+	TEST_ASSERT(SSmachines.reactive_sleepers[point_defense_ref.reference], "point defense did not subscribe before sleeping")
+	SSmachines.publish_reactive_dependency("meteors")
+	TEST_ASSERT(point_defense in SSmachines.processing_machines, "meteor dependency did not wake point defense")
 	qdel(display)
 	qdel(charger)
 	qdel(mech_charger)
@@ -4052,6 +4060,7 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	qdel(power_sensor)
 	qdel(operating_console)
 	qdel(operating_table)
+	qdel(point_defense)
 
 
 // =====================================================================

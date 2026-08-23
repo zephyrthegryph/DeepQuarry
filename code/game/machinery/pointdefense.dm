@@ -103,6 +103,7 @@ GLOBAL_LIST_BOILERPLATE(pointdefense_turrets, /obj/machinery/pointdefense)
 					return
 			to_chat(user, span_notice("You register [src] with the [new_ident] network."))
 			id_tag = new_ident
+			START_MACHINE_PROCESSING(src)
 		return
 	if(default_deconstruction_screwdriver(user, W))
 		return
@@ -230,15 +231,18 @@ GLOBAL_LIST_BOILERPLATE(pointdefense_turrets, /obj/machinery/pointdefense)
 /obj/machinery/pointdefense/process()
 	..()
 	if(stat & (BROKEN))
-		return
+		return PROCESS_KILL
 	if(!active)
-		return
+		SSmachines.hibernate_reactive_machine(src, list("meteors"))
+		return PROCESS_KILL
 	var/desiredir = ATAN2(transform.b, transform.a) > 0 ? NORTH : SOUTH
 	if(dir != desiredir)
 		set_dir(desiredir)
 
-	if(LAZYLEN(GLOB.meteor_list) > 0)
-		find_and_shoot()
+	if(!LAZYLEN(GLOB.meteor_list))
+		SSmachines.hibernate_reactive_machine(src, list("meteors"))
+		return PROCESS_KILL
+	find_and_shoot()
 
 /obj/machinery/pointdefense/proc/find_and_shoot()
 	// There ARE meteors to shoot
@@ -311,6 +315,7 @@ GLOBAL_LIST_BOILERPLATE(pointdefense_turrets, /obj/machinery/pointdefense)
 
 	playsound(src, 'sound/weapons/flash.ogg', 100, 0)
 	active = TRUE
+	START_MACHINE_PROCESSING(src)
 	update_icon()
 	return TRUE
 
@@ -319,5 +324,6 @@ GLOBAL_LIST_BOILERPLATE(pointdefense_turrets, /obj/machinery/pointdefense)
 		return FALSE
 	playsound(src, 'sound/machines/apc_nopower.ogg', 50, 0)
 	active = FALSE
+	STOP_MACHINE_PROCESSING(src)
 	update_icon()
 	return TRUE
