@@ -3832,6 +3832,21 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	TEST_ASSERT_NOTEQUAL(G.process(), PROCESS_KILL, "active shieldwall generator incorrectly hibernated")
 	qdel(G)
 
+/datum/unit_test/dq_idle_circulator_hibernates
+
+/datum/unit_test/dq_idle_circulator_hibernates/Run()
+	var/turf/test_turf = get_turf(run_loc_floor_bottom_left ? run_loc_floor_bottom_left : locate(1, 1, 1))
+	var/obj/machinery/atmospherics/binary/circulator/C = new(test_turf)
+	C.recent_moles_transferred = 0
+	TEST_ASSERT_EQUAL(C.process(), PROCESS_KILL, "idle circulator retained timed polling")
+	C.recent_moles_transferred = 1
+	C.last_worldtime_transfer = world.time
+	TEST_ASSERT_NOTEQUAL(C.process(), PROCESS_KILL, "recently active circulator hibernated before its display timeout")
+	C.last_worldtime_transfer = world.time - 51
+	TEST_ASSERT_EQUAL(C.process(), PROCESS_KILL, "settled circulator retained timed polling")
+	TEST_ASSERT_EQUAL(C.recent_moles_transferred, 0, "settled circulator retained stale transfer state")
+	qdel(C)
+
 /datum/unit_test/dq_idle_meter_and_fire_alarm_hibernate
 
 /datum/unit_test/dq_idle_meter_and_fire_alarm_hibernate/Run()

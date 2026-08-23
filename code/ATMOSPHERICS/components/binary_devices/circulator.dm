@@ -58,6 +58,7 @@
 				network1.mark_dirty()
 
 				last_worldtime_transfer = world.time
+				START_MACHINE_PROCESSING(src)
 		else
 			recent_moles_transferred = 0
 
@@ -72,9 +73,12 @@
 /obj/machinery/atmospherics/binary/circulator/process()
 	..()
 
+	if(!recent_moles_transferred)
+		return PROCESS_KILL
 	if(last_worldtime_transfer < world.time - 50)
 		recent_moles_transferred = 0
 		update_icon()
+		return PROCESS_KILL
 
 /obj/machinery/atmospherics/binary/circulator/update_icon()
 	icon_state = anchored ? "circ-assembled" : "circ-unassembled"
