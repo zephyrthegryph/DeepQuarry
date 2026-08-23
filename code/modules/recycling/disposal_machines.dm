@@ -98,7 +98,7 @@
 		SSmachines.sleeping_gas_devices.Remove(WR.reference)
 
 /obj/machinery/disposal/proc/gas_dependency_changed(mixture_id, change_mask)
-	if(!(change_mask & GAS_DEPENDENCY_PRESSURE) || mixture_id != sleeping_turf_mixture_id || mode != DISPOSALMODE_CHARGING)
+	if(!(change_mask & GAS_DEPENDENCY_PRESSURE) || mixture_id != sleeping_turf_mixture_id || mode != DISPOSALMODE_CHARGING || (stat & (NOPOWER|BROKEN)))
 		return FALSE
 	var/datum/gas_mixture/environment = loc.return_air()
 	if(!environment || environment.arena_id() != sleeping_turf_mixture_id)

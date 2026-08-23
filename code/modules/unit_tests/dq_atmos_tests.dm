@@ -4174,6 +4174,8 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	TEST_ASSERT_EQUAL(disposal.process(), PROCESS_KILL, "airless disposal kept retrying pressurization")
 	var/datum/weakref/disposal_ref = WEAKREF(disposal)
 	TEST_ASSERT(SSmachines.sleeping_gas_devices[disposal_ref.reference], "airless disposal did not subscribe before sleeping")
+	disposal.stat |= NOPOWER
+	TEST_ASSERT(!disposal.gas_dependency_changed(disposal.sleeping_turf_mixture_id, GAS_DEPENDENCY_PRESSURE), "powerless disposal woke for ambient pressure churn")
 	disposal_environment.copy_from(saved_disposal_environment)
 	var/obj/machinery/atmospherics/unary/freezer/freezer = new(T)
 	freezer.update_use_power(USE_POWER_OFF)
