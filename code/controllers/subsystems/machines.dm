@@ -185,6 +185,7 @@ SUBSYSTEM_DEF(machines)
 	var/airlocks_power_wait = 0
 	var/airlocks_electrified = 0
 	var/airlocks_other = 0
+	var/list/leaking_pipes = list()
 	for(var/obj/machinery/M as anything in processing_machines)
 		if(M && !QDELETED(M))
 			current_counts["[M.type]"]++
@@ -201,6 +202,10 @@ SUBSYSTEM_DEF(machines)
 					airlocks_electrified++
 				else
 					airlocks_other++
+			if(istype(M, /obj/machinery/atmospherics/pipe))
+				var/obj/machinery/atmospherics/pipe/P = M
+				if(P.leaking)
+					leaking_pipes += P
 	var/list/sorted_cost = machine_profile_cost.Copy()
 	sortTim(sorted_cost, /proc/cmp_numeric_desc, TRUE)
 	var/rank = 0
@@ -217,6 +222,8 @@ SUBSYSTEM_DEF(machines)
 			break
 	log_runtime("MACHINE_PROFILE_SUMMARY active=[length(processing_machines)] concrete_types=[length(current_counts)]")
 	log_runtime("MACHINE_PROFILE_DETAIL airlocks processing=[airlocks_processing] autoclose=[airlocks_autoclose] commanded=[airlocks_commanded] power_wait=[airlocks_power_wait] electrified=[airlocks_electrified] other=[airlocks_other]")
+	for(var/obj/machinery/atmospherics/pipe/P as anything in leaking_pipes)
+		log_runtime("MACHINE_PROFILE_LEAK type=[P.type] x=[P.x] y=[P.y] z=[P.z] nodes=[length(P.get_neighbor_nodes_for_init())] damaged=[P.damaged_leak]")
 	machine_profile_cost.Cut()
 	machine_profile_calls.Cut()
 	machine_profile_kills.Cut()
