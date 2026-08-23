@@ -128,7 +128,17 @@
 		if(output.network)
 			output.network.mark_dirty()
 
+	else
+		hibernate_until_gas_changes()
+		return PROCESS_KILL
+
 	return 1
+
+/obj/machinery/atmospherics/omni/mixer/can_process_gas()
+	var/transfer_moles = 0
+	for(var/datum/omni_port/P in inputs)
+		transfer_moles += (set_flow_rate * P.concentration / P.air.return_volume()) * P.air.total_moles()
+	return transfer_moles > MINIMUM_MOLES_TO_FILTER
 
 /obj/machinery/atmospherics/omni/mixer/tgui_interact(mob/user,datum/tgui/ui = null)
 	ui = SStgui.try_update_ui(user, src, ui)
@@ -172,6 +182,7 @@
 /obj/machinery/atmospherics/omni/mixer/tgui_act(action, params, datum/tgui/ui)
 	if(..())
 		return TRUE
+	wake_for_state_change()
 
 	switch(action)
 		if("power")
@@ -207,9 +218,11 @@
 				return
 			con_lock(dir_flag(params["dir"]))
 
+	wake_for_state_change()
 	update_icon()
 
 /obj/machinery/atmospherics/omni/mixer/proc/switch_mode(port = NORTH, mode = ATM_NONE)
+	wake_for_state_change()
 	if(mode != ATM_INPUT && mode != ATM_OUTPUT)
 		switch(mode)
 			if("in")

@@ -24,6 +24,8 @@
 	var/underlays_current[4]
 
 	var/list/ports = new()
+	var/list/sleeping_mixture_ids
+	var/list/sleeping_mixture_revisions
 
 /obj/machinery/atmospherics/omni/Initialize(mapload)
 	. = ..()
@@ -79,6 +81,54 @@
 	..()
 	if(old_stat != stat)
 		update_icon()
+		wake_for_state_change()
+
+/obj/machinery/atmospherics/omni/proc/hibernate_until_gas_changes()
+	clear_gas_dependencies()
+	var/datum/weakref/WR = WEAKREF(src)
+	sleeping_mixture_ids = list()
+	sleeping_mixture_revisions = list()
+	for(var/datum/omni_port/P in ports)
+		var/mixture_id = P.air?.arena_id()
+		if(isnull(mixture_id))
+			continue
+		var/key = "[mixture_id]"
+		sleeping_mixture_ids[key] = mixture_id
+		sleeping_mixture_revisions[key] = P.air.revision()
+		SSmachines.subscribe_gas_dependency(mixture_id, WR)
+	SSmachines.sleeping_gas_devices[WR.reference] = WR
+	STOP_MACHINE_PROCESSING(src)
+
+/obj/machinery/atmospherics/omni/proc/clear_gas_dependencies()
+	var/datum/weakref/WR = WEAKREF(src)
+	for(var/key in sleeping_mixture_ids)
+		SSmachines.unsubscribe_gas_dependency(sleeping_mixture_ids[key], WR)
+	sleeping_mixture_ids = null
+	sleeping_mixture_revisions = null
+	if(WR?.reference)
+		SSmachines.sleeping_gas_devices.Remove(WR.reference)
+
+/obj/machinery/atmospherics/omni/proc/gas_dependency_changed(mixture_id, change_mask)
+	if(!(change_mask & GAS_DEPENDENCY_ALL) || !use_power || (stat & (NOPOWER|BROKEN)))
+		return FALSE
+	var/key = "[mixture_id]"
+	if(isnull(sleeping_mixture_ids?[key]))
+		return FALSE
+	for(var/datum/omni_port/P in ports)
+		if(P.air?.arena_id() != mixture_id)
+			continue
+		if(P.air.revision() == sleeping_mixture_revisions[key])
+			return FALSE
+		return can_process_gas()
+	return TRUE
+
+/obj/machinery/atmospherics/omni/proc/can_process_gas()
+	return TRUE
+
+/obj/machinery/atmospherics/omni/proc/wake_for_state_change()
+	clear_gas_dependencies()
+	if(use_power && !(stat & (NOPOWER|BROKEN)))
+		START_MACHINE_PROCESSING(src)
 
 /obj/machinery/atmospherics/omni/attackby(obj/item/W as obj, mob/user as mob)
 	if(!W.has_tool_quality(TOOL_WRENCH))
@@ -229,6 +279,7 @@
 	return null
 
 /obj/machinery/atmospherics/omni/Destroy()
+	clear_gas_dependencies()
 	// Disconnect all ports before ..() so node.disconnect(src) runs against
 	// still-valid state.
 	for(var/datum/omni_port/P in ports)
@@ -287,6 +338,7 @@
 	return results
 
 /obj/machinery/atmospherics/omni/disconnect(obj/machinery/atmospherics/reference)
+	wake_for_state_change()
 	for(var/datum/omni_port/P in ports)
 		if(reference == P.node)
 			qdel(P.network)
@@ -303,6 +355,7 @@
 	user.setClickCooldown(DEFAULT_ATTACK_COOLDOWN)
 	if(allowed(user))
 		update_use_power(!use_power)
+		wake_for_state_change()
 		update_icon()
 		add_fingerprint(user)
 		if(use_power)

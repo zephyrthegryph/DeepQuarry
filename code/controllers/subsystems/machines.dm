@@ -424,6 +424,10 @@ SUBSYSTEM_DEF(machines)
 					var/obj/machinery/atmospherics/binary/dp_vent_pump/V = subscriber
 					if(V.gas_dependency_changed(mixture_id, change_mask))
 						LAZYADD(to_wake, WR)
+				else if(istype(subscriber, /obj/machinery/atmospherics/omni))
+					var/obj/machinery/atmospherics/omni/O = subscriber
+					if(O.gas_dependency_changed(mixture_id, change_mask))
+						LAZYADD(to_wake, WR)
 				else if(istype(subscriber, /obj/machinery/atmospherics/portables_connector))
 					var/obj/machinery/atmospherics/portables_connector/C = subscriber
 					if(C.gas_dependency_changed(mixture_id, change_mask))

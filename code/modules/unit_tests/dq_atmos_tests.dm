@@ -4985,6 +4985,45 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	TEST_ASSERT_NOTNULL(M, "atmos_mixer construct failed")
 	qdel(M)
 
+/datum/unit_test/dq_omni_devices_hibernate_without_input
+
+/datum/unit_test/dq_omni_devices_hibernate_without_input/Run()
+	var/turf/T = locate(1, 1, 1)
+	var/obj/machinery/atmospherics/omni/atmos_filter/F = new(T)
+	var/input_mode = F.mode_return_switch("in")
+	var/output_mode = F.mode_return_switch("out")
+	var/filter_mode = F.mode_return_switch(GASNAME_O2)
+	var/none_mode = F.mode_return_switch("None")
+	var/port_index = 0
+	for(var/datum/omni_port/P in F.ports)
+		port_index++
+		P.mode = port_index == 1 ? input_mode : (port_index == 2 ? output_mode : filter_mode)
+		P.update = TRUE
+	F.sort_ports()
+	F.use_power = USE_POWER_IDLE
+	F.stat &= ~(NOPOWER | BROKEN)
+	TEST_ASSERT_EQUAL(F.process(), PROCESS_KILL, "empty omni filter retained timed polling")
+	TEST_ASSERT(F.sleeping_mixture_ids, "empty omni filter did not capture gas dependencies")
+	F.input.air.adjust_gas(/datum/gas/oxygen, 10)
+	TEST_ASSERT(F.gas_dependency_changed(F.input.air.arena_id(), GAS_DEPENDENCY_ALL), "fed omni filter did not become actionable")
+	qdel(F)
+
+	var/obj/machinery/atmospherics/omni/mixer/M = new(T)
+	port_index = 0
+	for(var/datum/omni_port/P in M.ports)
+		port_index++
+		P.mode = port_index <= 2 ? input_mode : (port_index == 3 ? output_mode : none_mode)
+		P.update = TRUE
+	M.sort_ports()
+	M.use_power = USE_POWER_IDLE
+	M.stat &= ~(NOPOWER | BROKEN)
+	TEST_ASSERT_EQUAL(M.process(), PROCESS_KILL, "empty omni mixer retained timed polling")
+	TEST_ASSERT(M.sleeping_mixture_ids, "empty omni mixer did not capture gas dependencies")
+	var/datum/omni_port/first_input = M.inputs[1]
+	first_input.air.adjust_gas(/datum/gas/oxygen, 10)
+	TEST_ASSERT(M.gas_dependency_changed(first_input.air.arena_id(), GAS_DEPENDENCY_ALL), "fed omni mixer did not become actionable")
+	qdel(M)
+
 
 // =====================================================================
 // Round 6: filter routing, mixer ratios, thruster fuel, pressure pushes,
