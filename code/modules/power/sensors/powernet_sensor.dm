@@ -23,6 +23,7 @@
 	var/record_size = 60
 	var/record_interval = 50
 	var/next_record = 0
+	var/record_timer
 	var/is_secret_monitor = FALSE
 
 // Proc: Initialize(mapload)
@@ -44,6 +45,9 @@
 	name = "[name_tag] - Powernet Sensor"
 
 /obj/machinery/power/sensor/Destroy()
+	if(record_timer)
+		deltimer(record_timer)
+		record_timer = null
 	. = ..()
 	// TODO - Switch power_monitor to register deletion events instead of this.
 	for(var/obj/machinery/computer/power_monitor/PM in GLOB.machines)
@@ -73,7 +77,14 @@
 	else
 		use_power = USE_POWER_ACTIVE
 		record()
-	return 1
+	if(!record_timer)
+		var/delay = powernet ? max(1, next_record - world.time) : record_interval
+		record_timer = addtimer(CALLBACK(src, PROC_REF(wake_for_record)), delay, TIMER_STOPPABLE)
+	return PROCESS_KILL
+
+/obj/machinery/power/sensor/proc/wake_for_record()
+	record_timer = null
+	START_MACHINE_PROCESSING(src)
 
 // This tracks historical usage, for TGUI power monitors
 /obj/machinery/power/sensor/proc/record()

@@ -4024,6 +4024,14 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	TEST_ASSERT_EQUAL(security_console.process(), PROCESS_KILL, "passive computer inherited permanent polling")
 	var/obj/machinery/cryopod/cryo = new(T)
 	TEST_ASSERT_EQUAL(cryo.process(), PROCESS_KILL, "empty cryopod remained scheduled")
+	var/obj/machinery/power/sensor/power_sensor = new(T)
+	TEST_ASSERT_EQUAL(power_sensor.process(), PROCESS_KILL, "power sensor polled between history samples")
+	TEST_ASSERT(power_sensor.record_timer, "power sensor did not schedule its next history sample")
+	STOP_MACHINE_PROCESSING(power_sensor)
+	deltimer(power_sensor.record_timer)
+	power_sensor.record_timer = null
+	power_sensor.wake_for_record()
+	TEST_ASSERT(power_sensor in SSmachines.processing_machines, "history timer did not wake the power sensor")
 	qdel(display)
 	qdel(charger)
 	qdel(mech_charger)
@@ -4035,6 +4043,7 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	qdel(vendor)
 	qdel(security_console)
 	qdel(cryo)
+	qdel(power_sensor)
 
 
 // =====================================================================
