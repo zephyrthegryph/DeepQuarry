@@ -186,6 +186,7 @@ SUBSYSTEM_DEF(machines)
 	var/airlocks_electrified = 0
 	var/airlocks_other = 0
 	var/list/leaking_pipes = list()
+	var/list/active_vents = list()
 	for(var/obj/machinery/M as anything in processing_machines)
 		if(M && !QDELETED(M))
 			current_counts["[M.type]"]++
@@ -206,6 +207,8 @@ SUBSYSTEM_DEF(machines)
 				var/obj/machinery/atmospherics/pipe/P = M
 				if(P.leaking)
 					leaking_pipes += P
+			if(istype(M, /obj/machinery/atmospherics/unary/vent_pump))
+				active_vents += M
 	var/list/sorted_cost = machine_profile_cost.Copy()
 	sortTim(sorted_cost, /proc/cmp_numeric_desc, TRUE)
 	var/rank = 0
@@ -228,6 +231,10 @@ SUBSYSTEM_DEF(machines)
 			if(node)
 				connected_nodes++
 		log_runtime("MACHINE_PROFILE_LEAK type=[P.type] x=[P.x] y=[P.y] z=[P.z] area=[get_area(P)] nodes=[connected_nodes] damaged=[P.damaged_leak]")
+	for(var/obj/machinery/atmospherics/unary/vent_pump/V as anything in active_vents)
+		var/datum/gas_mixture/environment = V.return_air()
+		var/datum/gas_mixture/source = V.pump_direction ? V.air_contents : environment
+		log_runtime("MACHINE_PROFILE_VENT type=[V.type] x=[V.x] y=[V.y] z=[V.z] area=[get_area(V)] direction=[V.pump_direction] environment_kpa=[round(environment ? environment.return_pressure() : 0, 0.01)] pipe_kpa=[round(V.air_contents.return_pressure(), 0.01)] delta_kpa=[round(environment ? V.get_pressure_delta(environment) : 0, 0.01)] source_moles=[round(source ? source.total_moles() : 0, 0.01)]")
 	machine_profile_cost.Cut()
 	machine_profile_calls.Cut()
 	machine_profile_kills.Cut()
