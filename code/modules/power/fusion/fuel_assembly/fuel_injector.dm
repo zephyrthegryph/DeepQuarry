@@ -35,11 +35,12 @@ GLOBAL_LIST_EMPTY(fuel_injectors)
 	anchored = TRUE
 
 /obj/machinery/fusion_fuel_injector/process()
-	if(injecting)
-		if(stat & (BROKEN|NOPOWER))
-			StopInjecting()
-		else
-			Inject()
+	if(!injecting)
+		return PROCESS_KILL
+	if(stat & (BROKEN|NOPOWER))
+		StopInjecting()
+		return PROCESS_KILL
+	Inject()
 
 /obj/machinery/fusion_fuel_injector/attackby(obj/item/W, mob/user)
 
@@ -113,6 +114,7 @@ GLOBAL_LIST_EMPTY(fuel_injectors)
 		icon_state = "injector1"
 		injecting = 1
 		update_use_power(USE_POWER_IDLE)
+		START_MACHINE_PROCESSING(src)
 
 /obj/machinery/fusion_fuel_injector/proc/StopInjecting()
 	if(injecting)

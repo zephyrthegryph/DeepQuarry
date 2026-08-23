@@ -151,4 +151,4 @@
 			update_locked = 0
 
 /obj/machinery/power/breakerbox/process()
-	return 1
+	return PROCESS_KILL
