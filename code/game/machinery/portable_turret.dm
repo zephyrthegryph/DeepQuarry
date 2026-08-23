@@ -462,6 +462,7 @@
 		return TRUE
 	if(isLocked(ui.user))
 		return TRUE
+	SSmachines.publish_reactive_dependency("turret:[REF(src)]")
 	. = TRUE
 
 	switch(action)
@@ -490,6 +491,7 @@
 				check_down = !check_down
 
 /obj/machinery/porta_turret/power_change()
+	SSmachines.publish_reactive_dependency("turret:[REF(src)]")
 	if(powered())
 		stat &= ~NOPOWER
 		update_icon()
@@ -665,6 +667,7 @@
 /obj/machinery/porta_turret/proc/emp_reenable()
 	if(!enabled)
 		enabled = TRUE
+	SSmachines.publish_reactive_dependency("turret:[REF(src)]")
 
 /obj/machinery/porta_turret/ai_defense/emp_act(severity, recursive)
 	. = ..()
@@ -701,24 +704,43 @@
 	if(stat & (NOPOWER|BROKEN))
 		//if the turret has no power or is broken, make the turret pop down if it hasn't already
 		popDown()
-		return
+		SSmachines.hibernate_reactive_machine(src, list("turret:[REF(src)]"))
+		return PROCESS_KILL
 
 	if(!enabled)
 		//if the turret is off, make it pop down
 		popDown()
-		return
+		SSmachines.hibernate_reactive_machine(src, list("turret:[REF(src)]"))
+		return PROCESS_KILL
 
 	var/shot_targets = FALSE
 	if(!last_fired) // We cannot fire anyway until our cooldown ends, don't bother checking for targets while in fast mode every 2 frames.
 		var/list/targets = list()			//list of primary targets
 		var/list/secondarytargets = list()	//targets that are least important
+		var/list/nearby_mobs = mobs_in_view(world.view, src)
+		if(!length(nearby_mobs) && !speed_process && !(auto_repair && get_integrity() < max_integrity))
+			popDown()
+			SSmachines.hibernate_reactive_machine(src, reactive_mob_chunk_keys())
+			return PROCESS_KILL
 
-		for(var/mob/M in mobs_in_view(world.view, src))
+		for(var/mob/M in nearby_mobs)
 			assess_and_assign(M, targets, secondarytargets)
 
 		shot_targets = tryToShootAt(targets) || tryToShootAt(secondarytargets)
 
 	slow_process(shot_targets)
+
+/obj/machinery/porta_turret/proc/reactive_mob_chunk_keys()
+	var/list/keys = list("turret:[REF(src)]")
+	var/range = isnum(world.view) ? world.view : 7
+	var/min_x = max(1, x - range)
+	var/max_x = min(world.maxx, x + range)
+	var/min_y = max(1, y - range)
+	var/max_y = min(world.maxy, y + range)
+	for(var/chunk_x = FLOOR(min_x - 1, CHUNK_SIZE); chunk_x <= FLOOR(max_x - 1, CHUNK_SIZE); chunk_x += CHUNK_SIZE)
+		for(var/chunk_y = FLOOR(min_y - 1, CHUNK_SIZE); chunk_y <= FLOOR(max_y - 1, CHUNK_SIZE); chunk_y += CHUNK_SIZE)
+			keys += "mob-chunk:[z]:[chunk_x / CHUNK_SIZE]:[chunk_y / CHUNK_SIZE]"
+	return keys
 
 /obj/machinery/porta_turret/proc/slow_process(shot_targets)
 	SHOULD_NOT_OVERRIDE(TRUE)

@@ -1,0 +1,4 @@
+author: "Codex"
+delete-after: true
+changes:
+  - code_imp: "Made idle defensive turrets sleep until a mob enters their surrounding map region or their controls and power state change."

@@ -3886,6 +3886,22 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	TEST_ASSERT(P.datum_flags & DF_ISPROCESSING, "binary pump did not wake when its input gas changed")
 	qdel(P)
 
+/datum/unit_test/dq_idle_turret_wakes_for_nearby_mob
+
+/datum/unit_test/dq_idle_turret_wakes_for_nearby_mob/Run()
+	var/turf/T = locate(1, 1, 1)
+	TEST_ASSERT_NOTNULL(T, "no isolated turf for turret hibernation test")
+	var/obj/machinery/porta_turret/turret = new(T)
+	turret.stat = 0
+	turret.enabled = TRUE
+	TEST_ASSERT_EQUAL(turret.process(), PROCESS_KILL, "turret with an empty field of view remained scheduled")
+	var/datum/weakref/turret_ref = WEAKREF(turret)
+	TEST_ASSERT(SSmachines.reactive_sleepers[turret_ref.reference], "idle turret did not subscribe to nearby mob chunks")
+	var/mob/living/arrival = new(get_step(T, NORTH))
+	TEST_ASSERT(turret.datum_flags & DF_ISPROCESSING, "idle turret did not wake when a mob appeared nearby")
+	qdel(arrival)
+	qdel(turret)
+
 
 // =====================================================================
 // Supermatter + R-UST fusion engine

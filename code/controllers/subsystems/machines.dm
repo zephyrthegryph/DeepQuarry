@@ -264,6 +264,17 @@ SUBSYSTEM_DEF(machines)
 	for(var/subscriber_key in subscribers.Copy())
 		wake_reactive_machine(subscribers[subscriber_key])
 
+/datum/controller/subsystem/machines/proc/mob_chunk_key(atom/location)
+	var/turf/T = get_turf(location)
+	if(!T)
+		return
+	return "mob-chunk:[T.z]:[FLOOR(T.x - 1, CHUNK_SIZE) / CHUNK_SIZE]:[FLOOR(T.y - 1, CHUNK_SIZE) / CHUNK_SIZE]"
+
+/datum/controller/subsystem/machines/proc/publish_mob_chunk(atom/location)
+	var/resource_key = mob_chunk_key(location)
+	if(resource_key && length(reactive_subscribers[resource_key]))
+		publish_reactive_dependency(resource_key)
+
 /// Atomically subscribes to the supplied resources before removing a machine from polling.
 /datum/controller/subsystem/machines/proc/hibernate_reactive_machine(obj/machinery/M, list/resource_keys)
 	if(!M || QDELETED(M) || !length(resource_keys))

@@ -266,6 +266,8 @@
 
 /mob/Moved(atom/old_loc, direction, forced, movetime)
 	. = ..()
+	SSmachines?.publish_mob_chunk(old_loc)
+	SSmachines?.publish_mob_chunk(src)
 	//If we return focus to our own mob, but we are still inside something with an inherent remote view. Restart it.
 	if(client)
 		restore_remote_views()
