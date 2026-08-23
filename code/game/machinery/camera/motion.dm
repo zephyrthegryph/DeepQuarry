@@ -6,9 +6,13 @@
 
 /obj/machinery/camera/internal_process()
 	// motion camera event loop
-	if (stat & (EMPED|NOPOWER))
+	if(stat & EMPED)
 		return
+	if(stat & NOPOWER)
+		return PROCESS_KILL
 	if(!isMotion())
+		return PROCESS_KILL
+	if(!detectTime && !LAZYLEN(motionTargets))
 		return PROCESS_KILL
 	if (detectTime > 0)
 		var/elapsed = world.time - detectTime
@@ -26,6 +30,7 @@
 
 /obj/machinery/camera/proc/newTarget(mob/target)
 	if (isAI(target)) return 0
+	START_MACHINE_PROCESSING(src)
 	if (detectTime == 0)
 		detectTime = world.time // start the clock
 	if (!(target in motionTargets))

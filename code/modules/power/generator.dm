@@ -92,7 +92,10 @@ GLOBAL_LIST_EMPTY(all_turbines)
 		return 1
 
 /obj/machinery/power/generator/process()
-	if(!circ1 || !circ2 || !anchored || stat & (BROKEN|NOPOWER))
+	if(!anchored)
+		stored_energy = 0
+		return PROCESS_KILL
+	if(!circ1 || !circ2 || stat & (BROKEN|NOPOWER))
 		stored_energy = 0
 		return
 
@@ -176,6 +179,8 @@ GLOBAL_LIST_EMPTY(all_turbines)
 					"You [anchored ? "secure" : "unsecure"] the bolts holding [src] to the floor.", \
 					"You hear a ratchet.")
 		update_use_power(anchored ? USE_POWER_IDLE : USE_POWER_ACTIVE)
+		if(anchored)
+			START_MACHINE_PROCESSING(src)
 		if(anchored) // Powernet connection stuff.
 			connect_to_network()
 		else
@@ -239,6 +244,8 @@ GLOBAL_LIST_EMPTY(all_turbines)
 
 /obj/machinery/power/generator/power_change()
 	..()
+	if(anchored)
+		START_MACHINE_PROCESSING(src)
 	update_icon()
 
 

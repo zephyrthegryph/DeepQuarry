@@ -209,9 +209,8 @@
 		qdel(shield_tile)
 
 /obj/machinery/shieldgen/process()
-	if(!active) //This shouldn't happen
-		shields_down()
-		update_icon()
+	if(!active)
+		return PROCESS_KILL
 
 	if(cell && cell.charge)
 		var/power_usage = 0

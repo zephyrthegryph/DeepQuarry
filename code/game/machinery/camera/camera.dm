@@ -85,6 +85,11 @@
 		update_coverage()
 	return internal_process()
 
+/obj/machinery/camera/power_change()
+	. = ..()
+	if(. && !(stat & NOPOWER) && ((stat & EMPED) || detectTime || LAZYLEN(motionTargets)))
+		START_MACHINE_PROCESSING(src)
+
 /obj/machinery/camera/proc/internal_process()
 	return
 

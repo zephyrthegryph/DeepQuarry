@@ -3870,6 +3870,41 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	qdel(first)
 	qdel(second)
 
+/datum/unit_test/dq_inactive_emergency_shield_hibernates
+
+/datum/unit_test/dq_inactive_emergency_shield_hibernates/Run()
+	var/turf/test_turf = get_turf(run_loc_floor_bottom_left ? run_loc_floor_bottom_left : locate(1, 1, 1))
+	var/obj/machinery/shieldgen/G = new(test_turf)
+	G.active = FALSE
+	TEST_ASSERT_EQUAL(G.process(), PROCESS_KILL, "inactive emergency shield generator retained timed polling")
+	G.shields_up()
+	TEST_ASSERT(G in SSmachines.processing_machines, "raising emergency shields did not wake their generator")
+	qdel(G)
+
+/datum/unit_test/dq_idle_motion_camera_hibernates
+
+/datum/unit_test/dq_idle_motion_camera_hibernates/Run()
+	var/turf/test_turf = get_turf(run_loc_floor_bottom_left ? run_loc_floor_bottom_left : locate(1, 1, 1))
+	var/obj/machinery/camera/C = new(test_turf)
+	C.upgradeMotion()
+	C.motionTargets = null
+	C.detectTime = 0
+	TEST_ASSERT_EQUAL(C.process(), PROCESS_KILL, "idle motion camera retained timed polling")
+	var/mob/living/carbon/human/H = new(test_turf)
+	C.newTarget(H)
+	TEST_ASSERT(C in SSmachines.processing_machines, "motion target did not wake its camera")
+	qdel(H)
+	qdel(C)
+
+/datum/unit_test/dq_unanchored_teg_hibernates
+
+/datum/unit_test/dq_unanchored_teg_hibernates/Run()
+	var/turf/test_turf = get_turf(run_loc_floor_bottom_left ? run_loc_floor_bottom_left : locate(1, 1, 1))
+	var/obj/machinery/power/generator/G = new(test_turf)
+	G.anchored = FALSE
+	TEST_ASSERT_EQUAL(G.process(), PROCESS_KILL, "unanchored thermoelectric generator retained timed polling")
+	qdel(G)
+
 /datum/unit_test/dq_idle_meter_and_fire_alarm_hibernate
 
 /datum/unit_test/dq_idle_meter_and_fire_alarm_hibernate/Run()
