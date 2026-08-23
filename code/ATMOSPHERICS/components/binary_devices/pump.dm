@@ -37,7 +37,9 @@ Thus, the two variables affect pump operation are set in New():
 	var/id = null
 	var/datum/radio_frequency/radio_connection
 	var/sleeping_input_mixture_id
+	var/sleeping_input_revision = -1
 	var/sleeping_output_mixture_id
+	var/sleeping_output_revision = -1
 
 /obj/machinery/atmospherics/binary/pump/Initialize(mapload)
 	. = ..()
@@ -132,7 +134,9 @@ Thus, the two variables affect pump operation are set in New():
 /obj/machinery/atmospherics/binary/pump/proc/hibernate_until_gas_changes()
 	var/datum/weakref/WR = WEAKREF(src)
 	sleeping_input_mixture_id = air1?.arena_id()
+	sleeping_input_revision = air1?.revision() || -1
 	sleeping_output_mixture_id = air2?.arena_id()
+	sleeping_output_revision = air2?.revision() || -1
 	SSmachines.sleeping_gas_devices[WR.reference] = WR
 	SSmachines.subscribe_gas_dependency(sleeping_input_mixture_id, WR)
 	SSmachines.subscribe_gas_dependency(sleeping_output_mixture_id, WR)
@@ -143,8 +147,28 @@ Thus, the two variables affect pump operation are set in New():
 	SSmachines.unsubscribe_gas_dependency(sleeping_input_mixture_id, WR)
 	SSmachines.unsubscribe_gas_dependency(sleeping_output_mixture_id, WR)
 	sleeping_input_mixture_id = null
+	sleeping_input_revision = -1
 	sleeping_output_mixture_id = null
-	SSmachines.sleeping_gas_devices.Remove(WR.reference)
+	sleeping_output_revision = -1
+	if(WR?.reference)
+		SSmachines.sleeping_gas_devices.Remove(WR.reference)
+
+/obj/machinery/atmospherics/binary/pump/proc/gas_dependency_changed(mixture_id, change_mask)
+	if(!(change_mask & GAS_DEPENDENCY_ALL) || !use_power || (stat & (NOPOWER|BROKEN)))
+		return FALSE
+	if(mixture_id == sleeping_input_mixture_id)
+		if(!air1 || air1.arena_id() != sleeping_input_mixture_id)
+			return TRUE
+		if(air1.revision() == sleeping_input_revision)
+			return FALSE
+	else if(mixture_id == sleeping_output_mixture_id)
+		if(!air2 || air2.arena_id() != sleeping_output_mixture_id)
+			return TRUE
+		if(air2.revision() == sleeping_output_revision)
+			return FALSE
+	else
+		return FALSE
+	return target_pressure - air2.return_pressure() > 0.01 && air1.return_temperature() > 0 && air1.total_moles() >= MINIMUM_MOLES_TO_PUMP
 
 /obj/machinery/atmospherics/binary/pump/proc/wake_for_state_change()
 	clear_gas_dependencies()

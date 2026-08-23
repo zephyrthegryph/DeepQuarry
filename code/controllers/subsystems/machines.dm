@@ -406,6 +406,10 @@ SUBSYSTEM_DEF(machines)
 					var/obj/machinery/meter/M = subscriber
 					if(M.gas_dependency_changed(mixture_id, change_mask))
 						LAZYADD(to_wake, WR)
+				else if(istype(subscriber, /obj/machinery/atmospherics/binary/pump))
+					var/obj/machinery/atmospherics/binary/pump/P = subscriber
+					if(P.gas_dependency_changed(mixture_id, change_mask))
+						LAZYADD(to_wake, WR)
 				else
 					LAZYADD(to_wake, WR)
 			for(var/datum/weakref/WR as anything in to_wake)
