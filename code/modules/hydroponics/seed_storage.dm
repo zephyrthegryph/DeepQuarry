@@ -87,7 +87,9 @@
 	..()
 	if(seconds_electrified > 0)
 		seconds_electrified--
-	return
+		if(seconds_electrified > 0)
+			return
+	return PROCESS_KILL
 
 /obj/machinery/seed_storage/random // This is mostly for testing, but I guess admins could spawn it
 	name = "Random seed storage"

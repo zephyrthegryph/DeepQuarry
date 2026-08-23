@@ -4098,6 +4098,9 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	STOP_MACHINE_PROCESSING(tray)
 	tray.reagents.add_reagent(REAGENT_ID_WATER, 1)
 	TEST_ASSERT(tray in SSmachines.processing_machines, "reagent mutation did not wake hydroponics tray")
+	var/obj/machinery/seed_storage/garden/seed_storage = new(T)
+	seed_storage.seconds_electrified = 0
+	TEST_ASSERT_EQUAL(seed_storage.process(), PROCESS_KILL, "stable seed storage remained scheduled")
 	qdel(display)
 	qdel(supply_display)
 	qdel(jukebox)
@@ -4128,6 +4131,7 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	qdel(dispenser)
 	qdel(atm)
 	qdel(tray)
+	qdel(seed_storage)
 
 
 // =====================================================================
