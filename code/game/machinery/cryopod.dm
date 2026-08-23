@@ -327,6 +327,8 @@
 
 //Lifted from Unity stasis.dm and refactored. ~Zuhayr
 /obj/machinery/cryopod/process()
+	if(!occupant)
+		return PROCESS_KILL
 	if(occupant)
 		if(occupant.loc != src)
 			go_out(TRUE)
@@ -669,6 +671,8 @@
 	return
 
 /obj/machinery/cryopod/proc/set_occupant(new_occupant)
+	if(new_occupant)
+		START_MACHINE_PROCESSING(src)
 	occupant = new_occupant
 	name = initial(name)
 	if(occupant)

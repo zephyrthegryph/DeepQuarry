@@ -111,7 +111,7 @@
 	return occupier.health < 100
 
 /obj/machinery/computer/aifixer/process()
-	if(..())
+	if(!(stat & (NOPOWER|BROKEN)))
 		if(restoring)
 			var/oldstat = occupier.stat
 			restoring = Fix()

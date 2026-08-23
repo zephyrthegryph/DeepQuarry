@@ -111,6 +111,7 @@
 			user.client.images |= holomap_datum.station_map
 
 			watching_mob = user
+			START_MACHINE_PROCESSING(src)
 			watching_mob.AddComponent(/datum/component/recursive_move)
 			RegisterSignal(watching_mob, COMSIG_MOVABLE_ATTEMPTED_MOVE, /obj/machinery/station_map/proc/checkPosition)
 			//GLOB.dir_set_event.register(watching_mob, src, /obj/machinery/station_map/proc/checkPosition)
@@ -129,6 +130,8 @@
 /obj/machinery/station_map/process()
 	if((stat & (NOPOWER|BROKEN)) || !anchored)
 		stopWatching()
+	if(!watching_mob)
+		return PROCESS_KILL
 
 /obj/machinery/station_map/proc/checkPosition()
 	SIGNAL_HANDLER
@@ -151,6 +154,8 @@
 
 /obj/machinery/station_map/power_change()
 	. = ..()
+	if(stat & NOPOWER)
+		stopWatching()
 	update_icon()
 	// TODO - Port use_auto_lights from /vg - For now implement it manually here
 	if(stat & NOPOWER)

@@ -4020,6 +4020,10 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	vendor.seconds_electrified = 0
 	vendor.shoot_inventory = FALSE
 	TEST_ASSERT_EQUAL(vendor.process(), PROCESS_KILL, "silent stable vending machine remained scheduled")
+	var/obj/machinery/computer/security/security_console = new(T)
+	TEST_ASSERT_EQUAL(security_console.process(), PROCESS_KILL, "passive computer inherited permanent polling")
+	var/obj/machinery/cryopod/cryo = new(T)
+	TEST_ASSERT_EQUAL(cryo.process(), PROCESS_KILL, "empty cryopod remained scheduled")
 	qdel(display)
 	qdel(charger)
 	qdel(mech_charger)
@@ -4029,6 +4033,8 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	qdel(drip)
 	qdel(floor_light)
 	qdel(vendor)
+	qdel(security_console)
+	qdel(cryo)
 
 
 // =====================================================================

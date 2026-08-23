@@ -170,7 +170,7 @@
 			return TRUE
 
 /obj/machinery/computer/pod/process()
-	if(!..())
+	if(stat & (NOPOWER|BROKEN))
 		return
 	if(timing)
 		if(time > 0)

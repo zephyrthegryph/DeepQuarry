@@ -26,7 +26,7 @@
 	var/datum/shuttle/autodock/ferry/arrivals/shuttle = SSshuttles.shuttles[shuttle_tag]
 	if(shuttle && shuttle.process_state == IDLE_STATE)
 		shuttle.process()
-	..()
+	return
 
 // This proc checks if anyone is on the shuttle.
 /datum/shuttle/autodock/ferry/arrivals/proc/check_for_passengers()

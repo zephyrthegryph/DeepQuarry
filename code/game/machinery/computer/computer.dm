@@ -25,9 +25,7 @@
 	AddElement(/datum/element/climbable)
 
 /obj/machinery/computer/process()
-	if(stat & (NOPOWER|BROKEN))
-		return 0
-	return 1
+	return PROCESS_KILL
 
 /obj/machinery/computer/emp_act(severity, recursive)
 	. = ..()
