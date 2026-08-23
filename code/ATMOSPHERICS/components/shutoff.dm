@@ -1,5 +1,9 @@
 GLOBAL_LIST_EMPTY(shutoff_valves)
 
+/proc/wake_automatic_shutoff_valves()
+	for(var/obj/machinery/atmospherics/valve/shutoff/valve as anything in GLOB.shutoff_valves)
+		START_MACHINE_PROCESSING(valve)
+
 /obj/machinery/atmospherics/valve/shutoff
 	icon = 'icons/atmos/clamp.dmi'
 	icon_state = "map_vclamp0"
@@ -35,6 +39,8 @@ GLOBAL_LIST_EMPTY(shutoff_valves)
 	src.add_fingerprint(user)
 	update_icon(1)
 	close_on_leaks = !close_on_leaks
+	if(close_on_leaks)
+		START_MACHINE_PROCESSING(src)
 	to_chat(user, "You [close_on_leaks ? "enable" : "disable"] the automatic shutoff circuit.")
 	return TRUE
 
@@ -54,7 +60,7 @@ GLOBAL_LIST_EMPTY(shutoff_valves)
 	if(!network_node1 || !network_node2 || !node1 || !node2)
 		if(open && close_on_leaks)
 			close()
-		return
+		return PROCESS_KILL
 
 	if(close_on_leaks)
 		if(open && (network_node1.leaks.len || network_node2.leaks.len))
@@ -62,7 +68,7 @@ GLOBAL_LIST_EMPTY(shutoff_valves)
 							// If we cannot see the leak, then this will not close the valve, and any valves that can see the leak will cut it off from us
 		else if(!open && !network_node1.leaks.len && !network_node2.leaks.len)
 			open()
-	return
+	return PROCESS_KILL
 
 // Breadth-first search for any leaking pipes that we can directly see
 /obj/machinery/atmospherics/valve/shutoff/proc/find_leaks()

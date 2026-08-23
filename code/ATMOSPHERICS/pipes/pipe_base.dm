@@ -38,6 +38,7 @@
 	if(leaking == new_leaking)
 		return
 	leaking = new_leaking
+	wake_automatic_shutoff_valves()
 	if(parent)
 		if(leaking)
 			parent.leaks |= src
@@ -107,6 +108,7 @@
 	return parent.return_network(reference)
 
 /obj/machinery/atmospherics/pipe/Destroy()
+	wake_automatic_shutoff_valves()
 	release_sorbed_material_gas()
 	if(parent)
 		parent.members -= src

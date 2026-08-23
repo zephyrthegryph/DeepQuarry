@@ -210,6 +210,7 @@ Pipelines + Other Objects -> Pipe network
 
 // Called on construction (i.e from pipe item) but not on initialization
 /obj/machinery/atmospherics/proc/on_construction(obj_color, set_layer)
+	wake_automatic_shutoff_valves()
 	pipe_color = obj_color
 	setPipingLayer(set_layer)
 	// TODO - M.connect_types = src.connect_types - Or otherwise copy from item? Or figure it out from piping layer?
