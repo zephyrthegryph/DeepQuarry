@@ -33,6 +33,9 @@
 	auto_set_name()
 	history["supply"] = list()
 	history["demand"] = list()
+	for(var/obj/machinery/computer/power_monitor/PM in GLOB.machines)
+		PM.power_monitor?.refresh_sensors()
+		START_MACHINE_PROCESSING(PM)
 
 // Proc: auto_set_name()
 // Parameters: None
@@ -46,6 +49,7 @@
 	for(var/obj/machinery/computer/power_monitor/PM in GLOB.machines)
 		if(PM.power_monitor)
 			PM.power_monitor.refresh_sensors()
+			START_MACHINE_PROCESSING(PM)
 	history.Cut()
 	history = null
 

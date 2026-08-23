@@ -222,7 +222,10 @@
 
 /// trigger_warning() — flag a powernet problem visible on power monitors.
 /datum/powernet/proc/trigger_warning(duration_ticks = 20)
+	var/was_clear = problem <= 0
 	problem = max(duration_ticks, problem)
+	if(was_clear && problem > 0)
+		publish_dependency()
 
 /// reset() — handle per-tick power accounting.
 /// Called every tick by the powernet controller (SSmachines).
@@ -237,9 +240,12 @@
 /datum/powernet/proc/reset()
 	var/old_avail = avail
 	var/old_netexcess = netexcess
+	var/old_problem = problem
 	// 1. Decay problem warning.
 	if(problem > 0)
 		problem = max(problem - 1, 0)
+		if(old_problem > 0 && problem <= 0)
+			publish_dependency()
 
 	// 2. Count APC terminals and update per-APC ration.
 	var/numapc = 0

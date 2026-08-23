@@ -24,8 +24,15 @@
 /obj/machinery/computer/power_monitor/process()
 	var/alert = check_warnings()
 	if(alert != alerting)
-		alerting = !alerting
+		alerting = alert
 		update_icon()
+	var/list/dependencies = list()
+	for(var/obj/machinery/power/sensor/S as anything in power_monitor.grid_sensors)
+		if(S.powernet)
+			dependencies["powernet:[REF(S.powernet)]"] = TRUE
+	if(length(dependencies))
+		SSmachines.hibernate_reactive_machine(src, dependencies)
+		return PROCESS_KILL
 /* Moved to VR File
 // Updates icon of this computer according to current status.
 /obj/machinery/computer/power_monitor/update_icon()
@@ -40,6 +47,11 @@
 /obj/machinery/computer/power_monitor/Initialize(mapload)
 	. = ..()
 	power_monitor = new(src)
+
+/obj/machinery/computer/power_monitor/Destroy()
+	qdel(power_monitor)
+	power_monitor = null
+	return ..()
 
 // On user click opens the UI of this computer.
 /obj/machinery/computer/power_monitor/attack_hand(mob/user)

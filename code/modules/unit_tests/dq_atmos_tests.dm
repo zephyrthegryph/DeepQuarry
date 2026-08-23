@@ -3963,6 +3963,27 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	TEST_ASSERT_EQUAL(R.process(), PROCESS_KILL, "recharger holding a full cell remained scheduled")
 	qdel(R)
 
+/datum/unit_test/dq_power_monitor_hibernates_until_grid_warning
+
+/datum/unit_test/dq_power_monitor_hibernates_until_grid_warning/Run()
+	var/turf/simulated/floor/T = locate() in world
+	TEST_ASSERT_NOTNULL(T, "no floor for power monitor hibernation test")
+	var/datum/powernet/P = new
+	var/obj/machinery/power/sensor/S = new(T)
+	var/obj/machinery/computer/power_monitor/M = new(T)
+	S.powernet = P
+	M.power_monitor.grid_sensors = list(S)
+	START_MACHINE_PROCESSING(M)
+	M.process()
+	TEST_ASSERT(!(M in SSmachines.processing_machines), "stable power monitor remained scheduled")
+	var/datum/weakref/monitor_ref = WEAKREF(M)
+	TEST_ASSERT(SSmachines.reactive_sleepers[monitor_ref.reference], "power monitor did not subscribe before sleeping")
+	P.trigger_warning()
+	TEST_ASSERT(M in SSmachines.processing_machines, "grid warning did not wake the sleeping power monitor")
+	qdel(M)
+	qdel(S)
+	qdel(P)
+
 
 // =====================================================================
 // Supermatter + R-UST fusion engine

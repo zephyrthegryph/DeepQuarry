@@ -203,6 +203,13 @@ SUBSYSTEM_DEF(machines)
 		log_runtime("MACHINE_PROFILE type=[machine_type] cost_ms=[round(machine_profile_cost[machine_type], 0.01)] calls=[machine_profile_calls[machine_type]] active=[current_counts[machine_type] || 0] killed=[machine_profile_kills[machine_type] || 0]")
 		if(++rank >= 25)
 			break
+	var/list/sorted_counts = current_counts.Copy()
+	sortTim(sorted_counts, /proc/cmp_numeric_desc, TRUE)
+	rank = 0
+	for(var/machine_type in sorted_counts)
+		log_runtime("MACHINE_PROFILE_ACTIVE type=[machine_type] active=[current_counts[machine_type]]")
+		if(++rank >= 50)
+			break
 	log_runtime("MACHINE_PROFILE_DETAIL airlocks processing=[airlocks_processing] autoclose=[airlocks_autoclose] commanded=[airlocks_commanded] power_wait=[airlocks_power_wait] electrified=[airlocks_electrified] other=[airlocks_other]")
 	machine_profile_cost.Cut()
 	machine_profile_calls.Cut()
