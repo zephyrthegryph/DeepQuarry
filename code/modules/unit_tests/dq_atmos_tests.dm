@@ -4032,6 +4032,12 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	power_sensor.record_timer = null
 	power_sensor.wake_for_record()
 	TEST_ASSERT(power_sensor in SSmachines.processing_machines, "history timer did not wake the power sensor")
+	var/obj/machinery/optable/operating_table = new(T)
+	TEST_ASSERT_EQUAL(operating_table.process(), PROCESS_KILL, "empty operating table remained scheduled")
+	var/obj/machinery/computer/operating/operating_console = new(T)
+	operating_console.table = operating_table
+	operating_table.computer = operating_console
+	TEST_ASSERT_EQUAL(operating_console.process(), PROCESS_KILL, "empty operating console remained scheduled")
 	qdel(display)
 	qdel(charger)
 	qdel(mech_charger)
@@ -4044,6 +4050,8 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	qdel(security_console)
 	qdel(cryo)
 	qdel(power_sensor)
+	qdel(operating_console)
+	qdel(operating_table)
 
 
 // =====================================================================

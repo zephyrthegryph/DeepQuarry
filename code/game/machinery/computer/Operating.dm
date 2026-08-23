@@ -163,7 +163,11 @@
 			return FALSE
 
 /obj/machinery/computer/operating/process()
-	if(table && table.check_victim())
+	if(!table || !table.check_victim())
+		victim = null
+		patientName = null
+		return PROCESS_KILL
+	if(table && table.victim)
 		if(verbose)
 			if(patientName!=table.victim.name)
 				patientName=table.victim.name
