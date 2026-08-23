@@ -24,6 +24,7 @@
 	var/set_temperature = T20C		// Thermostat
 	var/cooling = 0
 	var/reagent_cooling = 0
+	gas_dependency_mask = GAS_DEPENDENCY_ALL
 
 /obj/machinery/atmospherics/unary/freezer/Initialize(mapload)
 	. = ..()
@@ -116,6 +117,8 @@
 			set_power_level(new_setting)
 
 	add_fingerprint(ui.user)
+	if(.)
+		invalidate_gas_dependencies()
 
 /obj/machinery/atmospherics/unary/freezer/process()
 	..()
@@ -124,10 +127,11 @@
 	if(stat & (NOPOWER|BROKEN) || !use_power)
 		cooling = 0
 		update_icon()
-		return
+		SSmachines.hibernate_vent(src)
+		return PROCESS_KILL
 
 	var/air_temperature = air_contents.return_temperature()
-	if(network && air_temperature > set_temperature)
+	if(network && air_contents.total_moles() && air_temperature > set_temperature)
 		cooling = 1
 
 		var/heat_transfer = max( -air_contents.get_thermal_energy_change(set_temperature - 5), 0 )
@@ -150,8 +154,17 @@
 		network.mark_dirty()
 	else
 		cooling = 0
+		SSmachines.hibernate_vent(src)
+		update_icon()
+		return PROCESS_KILL
 
 	update_icon()
+	return 1
+
+/obj/machinery/atmospherics/unary/freezer/gas_dependency_changed(mixture_id, change_mask)
+	if(!..())
+		return FALSE
+	return use_power && !(stat & (NOPOWER|BROKEN)) && network && air_contents.total_moles() && air_contents.return_temperature() > set_temperature
 
 //upgrading parts
 /obj/machinery/atmospherics/unary/freezer/RefreshParts()

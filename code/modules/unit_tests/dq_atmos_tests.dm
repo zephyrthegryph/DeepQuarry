@@ -4139,6 +4139,12 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	var/datum/weakref/disposal_ref = WEAKREF(disposal)
 	TEST_ASSERT(SSmachines.sleeping_gas_devices[disposal_ref.reference], "airless disposal did not subscribe before sleeping")
 	disposal_environment.copy_from(saved_disposal_environment)
+	var/obj/machinery/atmospherics/unary/freezer/freezer = new(T)
+	freezer.update_use_power(USE_POWER_OFF)
+	TEST_ASSERT_EQUAL(freezer.process(), PROCESS_KILL, "switched-off gas freezer remained scheduled")
+	var/obj/machinery/atmospherics/unary/heater/gas_heater = new(T)
+	gas_heater.update_use_power(USE_POWER_OFF)
+	TEST_ASSERT_EQUAL(gas_heater.process(), PROCESS_KILL, "switched-off gas heater remained scheduled")
 	var/obj/machinery/computer/operating/operating_console = new(T)
 	operating_console.table = operating_table
 	operating_table.computer = operating_console

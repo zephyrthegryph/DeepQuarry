@@ -25,6 +25,7 @@
 	var/set_temperature = T20C	//thermostat
 	var/heating = 0		//mainly for icon updates
 	var/reagent_cooling = 0
+	gas_dependency_mask = GAS_DEPENDENCY_ALL
 
 /obj/machinery/atmospherics/unary/heater/Initialize(mapload)
 	. = ..()
@@ -70,7 +71,8 @@
 	if(stat & (NOPOWER|BROKEN) || !use_power)
 		heating = 0
 		update_icon()
-		return
+		SSmachines.hibernate_vent(src)
+		return PROCESS_KILL
 
 	if(network && air_contents.total_moles() && air_contents.return_temperature() < set_temperature)
 		air_contents.add_thermal_energy(power_rating * CLAMP(reagent_cooling,REAGENT_COOLING_MINMOD,REAGENT_COOLING_MAXMOD) * HEATER_PERF_MULT * heating_efficiency)
@@ -83,8 +85,17 @@
 		network.mark_dirty()
 	else
 		heating = 0
+		SSmachines.hibernate_vent(src)
+		update_icon()
+		return PROCESS_KILL
 
 	update_icon()
+	return 1
+
+/obj/machinery/atmospherics/unary/heater/gas_dependency_changed(mixture_id, change_mask)
+	if(!..())
+		return FALSE
+	return use_power && !(stat & (NOPOWER|BROKEN)) && network && air_contents.total_moles() && air_contents.return_temperature() < set_temperature
 
 /obj/machinery/atmospherics/unary/heater/attack_ai(mob/user as mob)
 	tgui_interact(user)
@@ -141,6 +152,8 @@
 			set_power_level(new_setting)
 
 	add_fingerprint(ui.user)
+	if(.)
+		invalidate_gas_dependencies()
 
 //upgrading parts
 /obj/machinery/atmospherics/unary/heater/RefreshParts()
