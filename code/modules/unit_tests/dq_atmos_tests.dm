@@ -2659,6 +2659,22 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_air_snapshots)
 
 /datum/unit_test/dq_airlock_sensor_wakes_on_pressure
 
+/obj/machinery/portable_atmospherics/powered/reagent_distillery/unit_test/powered(channel = -1)
+	return TRUE
+
+/datum/unit_test/dq_idle_distillery_hibernates
+
+/datum/unit_test/dq_idle_distillery_hibernates/Run()
+	var/list/pair = dq_atmos_test_find_clear_pipe_run(1)
+	TEST_ASSERT_NOTNULL(pair, "no clear floor for distillery hibernation test")
+	var/obj/machinery/portable_atmospherics/powered/reagent_distillery/unit_test/D = new(pair[1])
+	TEST_ASSERT_EQUAL(D.process(), PROCESS_KILL, "settled switched-off distillery kept polling")
+	STOP_MACHINE_PROCESSING(D)
+	D.toggle_power(null)
+	TEST_ASSERT(D.on, "distillery toggle did not switch heating on")
+	TEST_ASSERT(D.datum_flags & DF_ISPROCESSING, "distillery toggle did not wake the hibernating machine")
+	qdel(D)
+
 /datum/unit_test/dq_airlock_sensor_wakes_on_pressure/Run()
 	var/list/pair = dq_atmos_test_find_clear_pipe_run(1)
 	TEST_ASSERT_NOTNULL(pair, "no clear floor for airlock sensor dependency test")

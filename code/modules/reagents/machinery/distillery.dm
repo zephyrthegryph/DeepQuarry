@@ -135,6 +135,7 @@
 
 	if(powered())
 		on = !on
+		START_MACHINE_PROCESSING(src)
 		to_chat(user, span_notice("You turn \the [src] [on ? "on" : "off"]."))
 	else
 		to_chat(user, span_notice(" Nothing happens."))
@@ -333,6 +334,9 @@
 			reagents.trans_to_holder(OutputBeaker.reagents, amount = rand(1, 5))
 
 	update_icon()
+	if(!on && abs(current_temp - T20C) <= 0.5)
+		current_temp = T20C
+		return PROCESS_KILL
 
 /obj/machinery/portable_atmospherics/powered/reagent_distillery/update_icon()
 	..()
