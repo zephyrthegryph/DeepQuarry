@@ -906,6 +906,9 @@ GLOBAL_LIST_EMPTY(light_type_cache)
 		else
 			seton(FALSE) // Otherwise keep it dark and spooky for when someone shows up.
 
+	if(!has_power() && !emergency_mode && !auto_flicker)
+		return PROCESS_KILL
+
 // called when area power state changes
 /obj/machinery/light/power_change()
 	spawn(10)

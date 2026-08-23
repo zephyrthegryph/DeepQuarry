@@ -3926,6 +3926,18 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	TEST_ASSERT(F in SSmachines.processing_machines, "temperature change did not wake closed firedoor")
 	qdel(F)
 
+/datum/unit_test/dq_unpowered_empty_light_hibernates
+
+/datum/unit_test/dq_unpowered_empty_light_hibernates/Run()
+	var/turf/test_turf = get_turf(run_loc_floor_bottom_left ? run_loc_floor_bottom_left : locate(1, 1, 1))
+	var/obj/machinery/light/L = new(test_turf)
+	L.stat |= NOPOWER
+	L.emergency_mode = FALSE
+	L.auto_flicker = FALSE
+	L.cell.charge = 0
+	TEST_ASSERT_EQUAL(L.process(), PROCESS_KILL, "unpowered light without emergency charge retained timed polling")
+	qdel(L)
+
 /datum/unit_test/dq_idle_meter_and_fire_alarm_hibernate
 
 /datum/unit_test/dq_idle_meter_and_fire_alarm_hibernate/Run()
