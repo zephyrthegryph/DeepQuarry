@@ -39,7 +39,9 @@
 	return ..()
 
 /obj/machinery/computer/cloning/process()
-	if(!scanner || !pods.len || !autoprocess || stat & NOPOWER)
+	if(!autoprocess)
+		return PROCESS_KILL
+	if(!scanner || !pods.len || stat & NOPOWER)
 		return
 
 	if(scanner.get_occupant() && can_autoprocess())
@@ -237,6 +239,10 @@
 				SStgui.update_uis(src)
 		if("autoprocess")
 			autoprocess = text2num(params["on"]) > 0
+			if(autoprocess)
+				START_MACHINE_PROCESSING(src)
+			else
+				STOP_MACHINE_PROCESSING(src)
 		if("lock")
 			if(isnull(scanner) || !scanner_occupant) //No locking an open scanner.
 				return
