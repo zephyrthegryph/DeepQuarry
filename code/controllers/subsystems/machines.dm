@@ -475,6 +475,10 @@ SUBSYSTEM_DEF(machines)
 					var/obj/machinery/power/thermoregulator/T = subscriber
 					if(T.gas_dependency_changed(mixture_id, change_mask))
 						LAZYADD(to_wake, WR)
+				else if(istype(subscriber, /obj/machinery/power/generator))
+					var/obj/machinery/power/generator/G = subscriber
+					if(G.gas_dependency_changed(mixture_id, change_mask))
+						LAZYADD(to_wake, WR)
 				else
 					LAZYADD(to_wake, WR)
 			for(var/datum/weakref/WR as anything in to_wake)
@@ -561,6 +565,14 @@ SUBSYSTEM_DEF(machines)
 	M.register_gas_dependency(WR)
 	STOP_MACHINE_PROCESSING(M)
 
+/datum/controller/subsystem/machines/proc/hibernate_generator(obj/machinery/power/generator/G)
+	if(!G)
+		return
+	var/datum/weakref/WR = WEAKREF(G)
+	sleeping_gas_devices[WR.reference] = WR
+	G.register_gas_dependencies(WR)
+	STOP_MACHINE_PROCESSING(G)
+
 /datum/controller/subsystem/machines/proc/wake_vent(datum/weakref/WR)
 	wake_gas_subscriber(WR)
 
@@ -631,6 +643,10 @@ SUBSYSTEM_DEF(machines)
 		var/obj/machinery/power/thermoregulator/T = subscriber
 		T.clear_gas_dependency()
 		START_MACHINE_PROCESSING(T)
+	else if(istype(subscriber, /obj/machinery/power/generator))
+		var/obj/machinery/power/generator/G = subscriber
+		G.clear_gas_dependencies(WR)
+		START_MACHINE_PROCESSING(G)
 	if(WR.reference)
 		sleeping_gas_devices.Remove(WR.reference)
 		hibernating_vents[WR.reference] = null

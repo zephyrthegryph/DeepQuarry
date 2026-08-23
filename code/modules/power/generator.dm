@@ -26,6 +26,7 @@ GLOBAL_LIST_EMPTY(all_turbines)
 	var/effective_gen = 0
 	var/lastgenlev = 0
 	var/datum/looping_sound/generator/soundloop
+	var/list/sleeping_mixture_ids
 
 /obj/machinery/power/generator/Initialize(mapload)
 	soundloop = new(list(src), FALSE)
@@ -39,6 +40,7 @@ GLOBAL_LIST_EMPTY(all_turbines)
 	reconnect()
 
 /obj/machinery/power/generator/Destroy()
+	clear_gas_dependencies()
 	QDEL_NULL(soundloop)
 	GLOB.all_turbines -= src
 	return ..()
@@ -49,6 +51,7 @@ GLOBAL_LIST_EMPTY(all_turbines)
 //and a circulator to the WEST of the generator connects first to the NORTH, then to the SOUTH
 //note that the circulator's outlet dir is it's always facing dir, and it's inlet is always the reverse
 /obj/machinery/power/generator/proc/reconnect()
+	clear_gas_dependencies()
 	circ1 = null
 	circ2 = null
 	if(src.loc && anchored)
@@ -68,6 +71,30 @@ GLOBAL_LIST_EMPTY(all_turbines)
 			if(circ1 && circ2 && (circ1.dir != EAST || circ2.dir != WEST))
 				circ1 = null
 				circ2 = null
+
+/obj/machinery/power/generator/proc/register_gas_dependencies(datum/weakref/WR)
+	clear_gas_dependencies(WR)
+	if(!circ1 || !circ2)
+		return
+	for(var/datum/gas_mixture/air as anything in list(circ1.air1, circ1.air2, circ2.air1, circ2.air2))
+		var/mixture_id = air?.arena_id()
+		if(isnull(mixture_id) || (mixture_id in sleeping_mixture_ids))
+			continue
+		LAZYADD(sleeping_mixture_ids, mixture_id)
+		SSmachines.subscribe_gas_dependency(mixture_id, WR || WEAKREF(src))
+
+/obj/machinery/power/generator/proc/clear_gas_dependencies(datum/weakref/WR)
+	if(!length(sleeping_mixture_ids))
+		return
+	WR ||= WEAKREF(src)
+	for(var/mixture_id in sleeping_mixture_ids)
+		SSmachines.unsubscribe_gas_dependency(mixture_id, WR)
+	LAZYCLEARLIST(sleeping_mixture_ids)
+
+/obj/machinery/power/generator/proc/gas_dependency_changed(mixture_id, change_mask)
+	if(!(change_mask & GAS_DEPENDENCY_PRESSURE) || !circ1 || !circ2)
+		return FALSE
+	return (circ1.air1.return_pressure() - circ1.air2.return_pressure() > 10) || (circ2.air1.return_pressure() - circ2.air2.return_pressure() > 10)
 
 /obj/machinery/power/generator/update_icon()
 	icon_state = anchored ? "teg-assembled" : "teg-unassembled"
@@ -97,7 +124,7 @@ GLOBAL_LIST_EMPTY(all_turbines)
 		return PROCESS_KILL
 	if(!circ1 || !circ2 || stat & (BROKEN|NOPOWER))
 		stored_energy = 0
-		return
+		return PROCESS_KILL
 
 	var/datum/gas_mixture/air1 = circ1.return_transfer_air()
 	var/datum/gas_mixture/air2 = circ2.return_transfer_air()
@@ -167,6 +194,9 @@ GLOBAL_LIST_EMPTY(all_turbines)
 		lastgenlev = genlev
 		update_icon()
 	add_avail(effective_gen)
+	if(!air1 && !air2 && stored_energy < 0.01 && effective_gen < 0.01)
+		SSmachines.hibernate_generator(src)
+		return PROCESS_KILL
 
 /obj/machinery/power/generator/attack_ai(mob/user)
 	attack_hand(user)
@@ -245,6 +275,7 @@ GLOBAL_LIST_EMPTY(all_turbines)
 /obj/machinery/power/generator/power_change()
 	..()
 	if(anchored)
+		clear_gas_dependencies()
 		START_MACHINE_PROCESSING(src)
 	update_icon()
 

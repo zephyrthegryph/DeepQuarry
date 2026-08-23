@@ -3905,6 +3905,32 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	TEST_ASSERT_EQUAL(G.process(), PROCESS_KILL, "unanchored thermoelectric generator retained timed polling")
 	qdel(G)
 
+/datum/unit_test/dq_idle_teg_wakes_from_pressure
+
+/datum/unit_test/dq_idle_teg_wakes_from_pressure/Run()
+	var/turf/test_turf = get_turf(run_loc_floor_bottom_left ? run_loc_floor_bottom_left : locate(1, 1, 1))
+	var/obj/machinery/atmospherics/binary/circulator/first = new(test_turf)
+	var/obj/machinery/atmospherics/binary/circulator/second = new(test_turf)
+	var/obj/machinery/power/generator/G = new(test_turf)
+	G.anchored = TRUE
+	G.circ1 = first
+	G.circ2 = second
+	G.stat = 0
+	TEST_ASSERT_EQUAL(G.process(), PROCESS_KILL, "idle thermoelectric generator retained timed polling")
+	var/datum/weakref/generator_ref = WEAKREF(G)
+	TEST_ASSERT(SSmachines.sleeping_gas_devices[generator_ref.reference], "idle thermoelectric generator did not subscribe to its circulator gases")
+	first.air1.set_temperature(T20C)
+	first.air1.adjust_moles(/datum/gas/oxygen, 100)
+	TEST_ASSERT(G.gas_dependency_changed(first.air1.arena_id(), GAS_DEPENDENCY_PRESSURE), "actionable circulator pressure did not invalidate sleeping generator")
+	for(var/generator_i in 1 to 4096)
+		SSmachines.wake_dirty_gas_subscribers()
+		if(G.datum_flags & DF_ISPROCESSING)
+			break
+	TEST_ASSERT(G.datum_flags & DF_ISPROCESSING, "circulator pressure change did not wake sleeping generator")
+	qdel(G)
+	qdel(first)
+	qdel(second)
+
 /datum/unit_test/dq_closed_firedoor_is_event_driven
 
 /datum/unit_test/dq_closed_firedoor_is_event_driven/Run()

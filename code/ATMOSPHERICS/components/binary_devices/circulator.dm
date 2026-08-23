@@ -131,6 +131,11 @@
 			node1 = null
 			node2 = null
 
+		for(var/obj/machinery/power/generator/generator in range(1, src))
+			generator.reconnect()
+			if(generator.anchored)
+				START_MACHINE_PROCESSING(generator)
+
 	else
 		..()
 
