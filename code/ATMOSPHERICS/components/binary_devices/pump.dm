@@ -110,7 +110,7 @@ Thus, the two variables affect pump operation are set in New():
 	var/power_draw = -1
 	var/pressure_delta = target_pressure - air2.return_pressure()
 
-	if(pressure_delta > 0.01 && air1.return_temperature() > 0)
+	if(pressure_delta > BINARY_PUMP_PRESSURE_TOLERANCE && air1.return_temperature() > 0)
 		//Figure out how much gas to transfer to meet the target pressure.
 		var/transfer_moles = calculate_transfer_moles(air1, air2, pressure_delta, (network2)? network2.volume : 0)
 		power_draw = pump_gas(src, air1, air2, transfer_moles, power_rating)
@@ -125,7 +125,7 @@ Thus, the two variables affect pump operation are set in New():
 		if(network2)
 			network2.mark_dirty()
 
-	if(target_pressure - air2.return_pressure() <= 0.01 || air1.total_moles() < MINIMUM_MOLES_TO_PUMP)
+	if(target_pressure - air2.return_pressure() <= BINARY_PUMP_PRESSURE_TOLERANCE || air1.total_moles() < MINIMUM_MOLES_TO_PUMP)
 		hibernate_until_gas_changes()
 		return PROCESS_KILL
 
@@ -168,7 +168,7 @@ Thus, the two variables affect pump operation are set in New():
 			return FALSE
 	else
 		return FALSE
-	return target_pressure - air2.return_pressure() > 0.01 && air1.return_temperature() > 0 && air1.total_moles() >= MINIMUM_MOLES_TO_PUMP
+	return target_pressure - air2.return_pressure() > BINARY_PUMP_PRESSURE_TOLERANCE && air1.return_temperature() > 0 && air1.total_moles() >= MINIMUM_MOLES_TO_PUMP
 
 /obj/machinery/atmospherics/binary/pump/proc/wake_for_state_change()
 	clear_gas_dependencies()

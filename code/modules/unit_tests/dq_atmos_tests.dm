@@ -3902,6 +3902,10 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 		if(P.datum_flags & DF_ISPROCESSING)
 			break
 	TEST_ASSERT(P.datum_flags & DF_ISPROCESSING, "binary pump did not wake when its input gas changed")
+	P.clear_gas_dependencies()
+	P.air2.set_moles(/datum/gas/oxygen, 10)
+	P.target_pressure = P.air2.return_pressure() + (BINARY_PUMP_PRESSURE_TOLERANCE * 0.5)
+	TEST_ASSERT_EQUAL(P.process(), PROCESS_KILL, "binary pump remained scheduled for a sub-tolerance pressure error")
 	qdel(P)
 
 /datum/unit_test/dq_idle_turret_wakes_for_nearby_mob

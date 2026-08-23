@@ -136,6 +136,7 @@
 
 // Will not bother pumping or filtering if the gas source as fewer than this amount of moles, to help with performance.
 #define MINIMUM_MOLES_TO_PUMP   0.01
+#define BINARY_PUMP_PRESSURE_TOLERANCE 0.5 // kPa; avoids sub-gauge refill churn around a regulator target.
 #define MINIMUM_MOLES_TO_FILTER 0.04
 
 // The flow rate/effectiveness of various atmos devices is limited by their internal volume,
