@@ -4053,6 +4053,9 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	var/obj/machinery/chemical_dispenser/dispenser = new(T)
 	dispenser._recharge_reagents = FALSE
 	TEST_ASSERT_EQUAL(dispenser.process(), PROCESS_KILL, "non-recharging chemical dispenser remained scheduled")
+	var/obj/machinery/atm/atm = new(T)
+	atm.stat = 0
+	TEST_ASSERT_EQUAL(atm.process(), PROCESS_KILL, "idle ATM remained scheduled")
 	qdel(display)
 	qdel(charger)
 	qdel(mech_charger)
@@ -4070,6 +4073,7 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	qdel(point_defense)
 	qdel(pod_console)
 	qdel(dispenser)
+	qdel(atm)
 
 
 // =====================================================================

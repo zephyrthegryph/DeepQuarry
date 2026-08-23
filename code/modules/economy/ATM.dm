@@ -45,7 +45,7 @@ log transactions
 
 /obj/machinery/atm/process()
 	if(stat & NOPOWER)
-		return
+		return PROCESS_KILL
 
 	if(ticks_left_timeout > 0)
 		ticks_left_timeout--
@@ -63,6 +63,13 @@ log transactions
 		else
 			playsound(src, 'sound/items/polaroid2.ogg', 50, 1)
 		break
+	if(ticks_left_timeout <= 0 && ticks_left_locked_down <= 0 && !(locate(/obj/item/spacecash) in src))
+		return PROCESS_KILL
+
+/obj/machinery/atm/power_change()
+	. = ..()
+	if(. && !(stat & NOPOWER) && (ticks_left_timeout > 0 || ticks_left_locked_down > 0))
+		START_MACHINE_PROCESSING(src)
 
 /obj/machinery/atm/emag_act(remaining_charges, mob/user)
 	if(emagged)
@@ -406,6 +413,8 @@ log transactions
 			. = TRUE
 
 	if(.)
+		if(ticks_left_timeout > 0 || ticks_left_locked_down > 0)
+			START_MACHINE_PROCESSING(src)
 		playsound(src, "keyboard", 50, TRUE)
 
 /obj/machinery/atm/attack_hand(mob/user as mob)
