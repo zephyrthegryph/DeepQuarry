@@ -27,7 +27,7 @@
 	return
 
 /obj/machinery/power/port_gen/proc/handleInactive()
-	return
+	return FALSE
 
 /obj/machinery/power/port_gen/proc/TogglePower()
 	if(active)
@@ -38,6 +38,7 @@
 		active = TRUE
 		update_icon()
 		// soundloop.start()
+	START_MACHINE_PROCESSING(src)
 
 /obj/machinery/power/port_gen/process()
 	if(active && HasFuel() && !IsBroken() && anchored && powernet)
@@ -46,7 +47,8 @@
 	else
 		active = FALSE
 		update_icon()
-		handleInactive()
+		if(!handleInactive())
+			return PROCESS_KILL
 
 /obj/machinery/power/port_gen/update_icon()
 	if(active)
@@ -243,6 +245,7 @@
 	if(overheating)
 		overheating--
 		update_icon() //Port RS PR #484
+	return temperature > cooling_temperature || overheating > 0
 
 /obj/machinery/power/port_gen/pacman/proc/overheat()
 	overheating++

@@ -4134,6 +4134,15 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	STOP_MACHINE_PROCESSING(field_generator)
 	field_generator.turn_on()
 	TEST_ASSERT(field_generator in SSmachines.processing_machines, "turning on a field generator did not wake machinery processing")
+	var/obj/machinery/power/port_gen/pacman/portable_generator = new(T)
+	portable_generator.active = FALSE
+	portable_generator.temperature = 20
+	portable_generator.overheating = 0
+	TEST_ASSERT_EQUAL(portable_generator.process(), PROCESS_KILL, "cold inactive portable generator remained scheduled")
+	portable_generator.sheets = 1
+	STOP_MACHINE_PROCESSING(portable_generator)
+	portable_generator.TogglePower()
+	TEST_ASSERT(portable_generator in SSmachines.processing_machines, "starting a portable generator did not wake machinery processing")
 	var/obj/machinery/smartfridge/smartfridge = new(T)
 	smartfridge.seconds_electrified = 0
 	smartfridge.shoot_inventory = FALSE
@@ -4196,6 +4205,7 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	qdel(ship_sensors)
 	qdel(suit_cycler)
 	qdel(field_generator)
+	qdel(portable_generator)
 	qdel(smartfridge)
 	qdel(drying_rack)
 	qdel(conveyor_load)
