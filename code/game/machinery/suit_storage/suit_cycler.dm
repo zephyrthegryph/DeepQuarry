@@ -416,6 +416,7 @@ GLOBAL_LIST_EMPTY(suit_cycler_typecache)
 
 			active = 1
 			irradiating = 10
+			START_MACHINE_PROCESSING(src)
 
 			sleep(10)
 
@@ -439,20 +440,27 @@ GLOBAL_LIST_EMPTY(suit_cycler_typecache)
 		electrified--
 
 	if(!active)
+		if(electrified <= 0)
+			return PROCESS_KILL
 		return
 
 	if(active && stat & (BROKEN|NOPOWER))
 		active = 0
 		irradiating = 0
 		electrified = 0
-		return
+		return PROCESS_KILL
+
+	// Repair and repaint jobs complete through their existing delayed callbacks;
+	// only UV treatment needs a per-cycle machinery callback.
+	if(irradiating <= 0)
+		return PROCESS_KILL
 
 	if(irradiating == 1)
 		add_overlay("decon")
 		finished_job()
 		irradiating = 0
 		cut_overlays()
-		return
+		return PROCESS_KILL
 
 	irradiating--
 

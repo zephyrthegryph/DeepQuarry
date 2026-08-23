@@ -4118,6 +4118,15 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	STOP_MACHINE_PROCESSING(ship_sensors)
 	ship_sensors.toggle()
 	TEST_ASSERT(ship_sensors in SSmachines.processing_machines, "changing ship sensor power state did not wake machinery processing")
+	var/obj/machinery/suit_cycler/suit_cycler = new(T)
+	suit_cycler.active = FALSE
+	suit_cycler.electrified = 0
+	TEST_ASSERT_EQUAL(suit_cycler.process(), PROCESS_KILL, "inactive suit cycler remained scheduled")
+	suit_cycler.active = TRUE
+	suit_cycler.irradiating = 2
+	STOP_MACHINE_PROCESSING(suit_cycler)
+	START_MACHINE_PROCESSING(suit_cycler)
+	TEST_ASSERT(suit_cycler.process() != PROCESS_KILL, "active UV suit cycle hibernated before completion")
 	var/obj/machinery/smartfridge/smartfridge = new(T)
 	smartfridge.seconds_electrified = 0
 	smartfridge.shoot_inventory = FALSE
@@ -4178,6 +4187,7 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	qdel(beehive)
 	qdel(bluespace_beacon)
 	qdel(ship_sensors)
+	qdel(suit_cycler)
 	qdel(smartfridge)
 	qdel(drying_rack)
 	qdel(conveyor_load)

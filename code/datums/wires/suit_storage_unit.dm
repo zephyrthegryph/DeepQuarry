@@ -29,6 +29,7 @@
 			S.safeties = !S.safeties
 		if(WIRE_ELECTRIFY)
 			S.electrified = 30
+			START_MACHINE_PROCESSING(S)
 		if(WIRE_IDSCAN)
 			S.locked = !S.locked
 
