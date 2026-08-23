@@ -61,9 +61,9 @@
 
 /obj/machinery/atmospherics/unary/cryo_cell/process()
 	..()
-	if(!node)
-		return
 	if(!on)
+		return PROCESS_KILL
+	if(!node)
 		return
 
 	if(occupant)
@@ -151,6 +151,7 @@
 	switch(action)
 		if("switchOn")
 			on = 1
+			START_MACHINE_PROCESSING(src)
 			update_icon()
 		if("switchOff")
 			on = 0
@@ -303,6 +304,8 @@
 	if(M.health > -100 && (M.health < 0 || M.sleeping))
 		to_chat(M, span_boldnotice("You feel a cold liquid surround you. Your skin starts to freeze up."))
 	occupant = M
+	if(on)
+		START_MACHINE_PROCESSING(src)
 	occupant.cozyloop.start() // Cozy Music
 	//ADD_TRAIT(occupant, TRAIT_STASIS, REF(src))  //Stops life almost entirely, so not done here.
 	buckle_mob(occupant, forced = TRUE, check_loc = FALSE)
