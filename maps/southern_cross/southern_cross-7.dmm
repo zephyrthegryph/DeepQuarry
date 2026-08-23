@@ -6044,8 +6044,8 @@
 /area/expoutpost/aicore)
 "eRI" = (
 /obj/effect/catwalk_plated/techfloor,
-/obj/machinery/atmospherics/pipe/simple/hidden/supply{
-	dir = 4
+/obj/machinery/atmospherics/pipe/cap/hidden/supply{
+	dir = 8
 	},
 /obj/machinery/atmospherics/pipe/simple/hidden/scrubbers{
 	dir = 4
@@ -13050,7 +13050,7 @@
 	d2 = 8;
 	icon_state = "2-8"
 	},
-/obj/machinery/atmospherics/pipe/simple/hidden/scrubbers,
+/obj/machinery/atmospherics/pipe/manifold/hidden/scrubbers,
 /turf/simulated/floor/tiled,
 /area/expoutpost/hangarone)
 "kyw" = (
@@ -15551,7 +15551,7 @@
 /obj/machinery/light{
 	dir = 8
 	},
-/obj/machinery/atmospherics/portables_connector{
+/obj/machinery/atmospherics/portables_connector/supply{
 	dir = 4
 	},
 /obj/effect/floor_decal/corner/orange/border{
@@ -16164,7 +16164,7 @@
 	d2 = 8;
 	icon_state = "4-8"
 	},
-/obj/machinery/atmospherics/pipe/simple/hidden/supply{
+/obj/machinery/atmospherics/pipe/cap/hidden/supply{
 	dir = 4
 	},
 /obj/machinery/atmospherics/pipe/simple/hidden/scrubbers{
@@ -17248,7 +17248,6 @@
 	name = "exterior access button";
 	pixel_y = 26
 	},
-/obj/machinery/atmospherics/pipe/simple/hidden/yellow,
 /obj/machinery/door/airlock/voidcraft/vertical{
 	frequency = 1380;
 	id_tag = "echidna_outer";
@@ -19941,6 +19940,9 @@
 	d2 = 8;
 	icon_state = "4-8"
 	},
+/obj/machinery/atmospherics/pipe/simple/hidden/scrubbers{
+	dir = 4
+	},
 /turf/simulated/floor/tiled,
 /area/expoutpost/hangartwo)
 "pHi" = (
@@ -21656,7 +21658,7 @@
 	},
 /obj/machinery/portable_atmospherics/powered/pump/filled,
 /obj/effect/floor_decal/industrial/outline,
-/obj/machinery/atmospherics/portables_connector{
+/obj/machinery/atmospherics/portables_connector/supply{
 	dir = 4
 	},
 /obj/effect/floor_decal/corner/orange/border{
@@ -21876,7 +21878,6 @@
 	d2 = 8;
 	icon_state = "4-8"
 	},
-/obj/machinery/atmospherics/pipe/simple/hidden/yellow,
 /obj/machinery/door/airlock/voidcraft/vertical{
 	frequency = 1380;
 	id_tag = "echidna_outer";
@@ -22158,6 +22159,9 @@
 	d1 = 4;
 	d2 = 8;
 	icon_state = "4-8"
+	},
+/obj/machinery/atmospherics/pipe/simple/hidden/scrubbers{
+	dir = 4
 	},
 /turf/simulated/floor/tiled,
 /area/expoutpost/hangarone)
@@ -22765,7 +22769,7 @@
 	},
 /obj/machinery/portable_atmospherics/powered/scrubber,
 /obj/effect/floor_decal/industrial/outline/red,
-/obj/machinery/atmospherics/portables_connector{
+/obj/machinery/atmospherics/portables_connector/scrubbers{
 	dir = 4
 	},
 /obj/effect/floor_decal/corner/orange/border{
@@ -29203,6 +29207,9 @@
 /obj/machinery/atmospherics/pipe/simple/hidden/scrubbers{
 	dir = 4
 	},
+/obj/machinery/atmospherics/pipe/simple/hidden/supply{
+	dir = 4
+	},
 /obj/machinery/door/blast/regular{
 	id = "aeg_security_armory"
 	},
@@ -29723,6 +29730,9 @@
 	d1 = 4;
 	d2 = 8;
 	icon_state = "4-8"
+	},
+/obj/machinery/atmospherics/pipe/simple/hidden/scrubbers{
+	dir = 4
 	},
 /turf/simulated/floor/tiled,
 /area/expoutpost/hangarone)
@@ -30476,7 +30486,7 @@
 	d2 = 4;
 	icon_state = "2-4"
 	},
-/obj/machinery/atmospherics/pipe/simple/hidden/scrubbers,
+/obj/machinery/atmospherics/pipe/manifold/hidden/scrubbers,
 /turf/simulated/floor/tiled,
 /area/expoutpost/hangartwo)
 "xtT" = (

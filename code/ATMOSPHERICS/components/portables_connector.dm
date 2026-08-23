@@ -36,6 +36,22 @@
 	pipe_flags = PIPING_ONE_PER_TURF
 	connect_types = CONNECT_TYPE_AUX
 
+/obj/machinery/atmospherics/portables_connector/supply
+	icon_state = "map_connector-supply"
+	pipe_state = "connector-supply"
+	icon_connect_type = "-supply"
+	pipe_flags = PIPING_ONE_PER_TURF
+	connect_types = CONNECT_TYPE_SUPPLY
+	piping_layer = PIPING_LAYER_SUPPLY
+
+/obj/machinery/atmospherics/portables_connector/scrubbers
+	icon_state = "map_connector-scrubbers"
+	pipe_state = "connector-scrubbers"
+	icon_connect_type = "-scrubbers"
+	pipe_flags = PIPING_ONE_PER_TURF
+	connect_types = CONNECT_TYPE_SCRUBBER
+	piping_layer = PIPING_LAYER_SCRUBBER
+
 /obj/machinery/atmospherics/portables_connector/init_dir()
 	initialize_directions = dir
 
