@@ -2683,8 +2683,13 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_air_snapshots)
 	S.process()
 	TEST_ASSERT(!(S in SSmachines.processing_machines), \
 		"stable airlock sensor did not enter gas dependency sleep")
+	T.return_air().adjust_moles(/datum/gas/oxygen, 0.001)
+	TEST_ASSERT(!S.gas_dependency_changed(T.return_air().arena_id(), GAS_DEPENDENCY_PRESSURE), \
+		"sub-display-resolution pressure mutation woke a sleeping airlock sensor")
 	T.return_air().adjust_moles(/datum/gas/oxygen, 10)
-	SSmachines.wake_dirty_gas_subscribers()
+	TEST_ASSERT(S.gas_dependency_changed(T.return_air().arena_id(), GAS_DEPENDENCY_PRESSURE), \
+		"visible pressure mutation was rejected by a sleeping airlock sensor")
+	SSmachines.wake_gas_subscriber(WEAKREF(S))
 	TEST_ASSERT(S in SSmachines.processing_machines, \
 		"pressure mutation did not wake sleeping airlock sensor")
 	qdel(S)

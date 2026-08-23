@@ -202,10 +202,20 @@
 	sleeping_mixture_revision = -1
 
 /obj/machinery/airlock_sensor/proc/gas_dependency_changed(mixture_id, change_mask)
-	if(mixture_id != sleeping_mixture_id || !(change_mask & GAS_DEPENDENCY_PRESSURE))
+	if(!on || mixture_id != sleeping_mixture_id || !(change_mask & GAS_DEPENDENCY_PRESSURE))
 		return FALSE
 	var/datum/gas_mixture/environment = return_air()
-	return !environment || environment.arena_id() != sleeping_mixture_id || environment.revision() != sleeping_mixture_revision
+	if(!environment || environment.arena_id() != sleeping_mixture_id)
+		return TRUE
+	var/current_revision = environment.revision()
+	if(current_revision == sleeping_mixture_revision)
+		return FALSE
+	// process() transmits pressure rounded to 0.1 kPa. A change that leaves the
+	// transmitted value identical cannot affect an airlock controller or icon.
+	if(round(environment.return_pressure(), 0.1) == previousPressure)
+		sleeping_mixture_revision = current_revision
+		return FALSE
+	return TRUE
 
 /obj/machinery/airlock_sensor/update_icon()
 	if(panel_open)
