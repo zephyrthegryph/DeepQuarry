@@ -8,7 +8,6 @@ import {
   ProgressBar,
   Section,
   Stack,
-  Tabs,
   Tooltip,
 } from 'tgui-core/components';
 
@@ -16,6 +15,22 @@ import type { contractClauseOption, Data, managementContract } from './types';
 
 const signed = (value: number, suffix = '') =>
   `${value > 0 ? '+' : ''}${value}${suffix}`;
+
+const reputationChange = (value: number) => {
+  const magnitude = Math.abs(value);
+  if (!magnitude) {
+    return '—';
+  }
+  const marks = magnitude <= 2 ? 1 : magnitude <= 4 ? 2 : 3;
+  return (value > 0 ? '+' : '−').repeat(marks);
+};
+
+const reputationDescription = (value: number) => {
+  const magnitude = Math.abs(value);
+  const degree =
+    magnitude <= 2 ? 'small' : magnitude <= 4 ? 'moderate' : 'large';
+  return `${degree} reputation ${value < 0 ? 'decrease' : 'increase'}`;
+};
 
 const TermTooltip = ({ option }: { option: contractClauseOption }) => {
   const effects: [string, number, number][] = [
@@ -32,7 +47,9 @@ const TermTooltip = ({ option }: { option: contractClauseOption }) => {
           <Box inline bold>
             {label}:
           </Box>{' '}
-          {signed(Number(money), ' th')} · {signed(Number(reputation), ' rep')}
+          {signed(Number(money), ' th')} ·{' '}
+          {reputationChange(Number(reputation))}
+          {' rep'}
         </Box>
       ))}
       {!!option.deadline_minutes && (
@@ -76,20 +93,20 @@ const RewardSummary = ({ contract }: { contract: managementContract }) => {
               p={0.5}
               backgroundColor="rgba(255, 255, 255, 0.04)"
             >
-              <Stack.Item grow>
+              <Stack.Item basis="40%" grow>
                 <Box color="label">{label}</Box>
               </Stack.Item>
-              <Stack.Item>
-                <Box bold fontSize={1.1}>
+              <Stack.Item basis="25%" textAlign="right">
+                <Box bold fontSize={1.1} nowrap>
                   {money.toLocaleString()} th
                 </Box>
               </Stack.Item>
-              {!!reputation && (
-                <Stack.Item>
+              <Stack.Item basis="35%">
+                {!!reputation && (
                   <Tooltip
-                    content={`${signed(reputation)} reputation with ${contract.issuer_faction}`}
+                    content={`${reputationDescription(reputation)} with ${contract.issuer_faction}`}
                   >
-                    <Stack align="center">
+                    <Stack align="center" justify="flex-end">
                       <Stack.Item>
                         <Box
                           bold
@@ -101,12 +118,12 @@ const RewardSummary = ({ contract }: { contract: managementContract }) => {
                         </Box>
                       </Stack.Item>
                       <Stack.Item color={reputation < 0 ? 'bad' : 'good'}>
-                        {signed(reputation)} rep
+                        {reputationChange(reputation)} rep
                       </Stack.Item>
                     </Stack>
                   </Tooltip>
-                </Stack.Item>
-              )}
+                )}
+              </Stack.Item>
             </Stack>
           </Stack.Item>
         ))}
@@ -127,11 +144,12 @@ const lifecycleGroups = [
 
 export const ManagementContracts = () => {
   const { act, data } = useBackend<Data>();
-  const [selectedGroup, setSelectedGroup] = useState('offers');
+  const [selectedStatus, setSelectedStatus] = useState('offers');
   const [selectedDepartment, setSelectedDepartment] = useState('All');
+  const [selectedType, setSelectedType] = useState('All');
   const [trialAdverse, setTrialAdverse] = useState('none');
   const lifecycle =
-    lifecycleGroups.find((group) => group.id === selectedGroup) ??
+    lifecycleGroups.find((group) => group.id === selectedStatus) ??
     lifecycleGroups[0];
   const departmentOptions = [
     'All',
@@ -139,35 +157,34 @@ export const ManagementContracts = () => {
     ...(data.contract_departments ?? []),
   ];
   const contracts = (data.contracts ?? []).filter((contract) => {
-    if (!lifecycle.states.includes(contract.state)) {
+    if (
+      selectedStatus !== 'all' &&
+      !lifecycle.states.includes(contract.state)
+    ) {
       return false;
     }
-    if (selectedDepartment === 'All') {
-      return true;
+    if (
+      selectedDepartment !== 'All' &&
+      (selectedDepartment === 'Station-wide'
+        ? contract.scope !== 'station'
+        : contract.department !== selectedDepartment)
+    ) {
+      return false;
     }
-    if (selectedDepartment === 'Station-wide') {
-      return contract.scope === 'station';
+    if (selectedType !== 'All' && contract.term_class !== selectedType) {
+      return false;
     }
-    return contract.department === selectedDepartment;
+    return true;
   });
 
   return (
     <Box>
-      <Tabs fluid>
-        {lifecycleGroups.map((group) => (
-          <Tabs.Tab
-            key={group.id}
-            selected={selectedGroup === group.id}
-            onClick={() => setSelectedGroup(group.id)}
-          >
-            {group.label}
-          </Tabs.Tab>
-        ))}
-      </Tabs>
-      {departmentOptions.length > 3 && (
-        <Stack mb={1} align="center">
-          <Stack.Item color="label">Department</Stack.Item>
-          <Stack.Item grow>
+      <Section title="Filters" fitted mb={1}>
+        <Stack align="center">
+          <Stack.Item basis="33%">
+            <Box color="label" mb={0.25}>
+              Department
+            </Box>
             <Dropdown
               fluid
               selected={selectedDepartment}
@@ -175,8 +192,40 @@ export const ManagementContracts = () => {
               onSelected={(value) => setSelectedDepartment(String(value))}
             />
           </Stack.Item>
+          <Stack.Item basis="33%">
+            <Box color="label" mb={0.25}>
+              Status
+            </Box>
+            <Dropdown
+              fluid
+              selected={selectedStatus}
+              options={[
+                { displayText: 'All', value: 'all' },
+                ...lifecycleGroups.map((group) => ({
+                  displayText: group.label,
+                  value: group.id,
+                })),
+              ]}
+              onSelected={(value) => setSelectedStatus(String(value))}
+            />
+          </Stack.Item>
+          <Stack.Item basis="33%">
+            <Box color="label" mb={0.25}>
+              Contract type
+            </Box>
+            <Dropdown
+              fluid
+              selected={selectedType}
+              options={[
+                { displayText: 'All', value: 'All' },
+                { displayText: 'Short-term', value: 'short' },
+                { displayText: 'Long-term', value: 'long' },
+              ]}
+              onSelected={(value) => setSelectedType(String(value))}
+            />
+          </Stack.Item>
         </Stack>
-      )}
+      </Section>
       {!contracts.length && (
         <Box p={4} textAlign="center" color="label">
           No contracts match this view.
@@ -225,7 +274,7 @@ export const ManagementContracts = () => {
               >
                 {contract.issuer_acronym}
               </Box>
-              {contract.issuer} · {contract.issuer_faction}
+              {contract.issuer}
             </LabeledList.Item>
             <LabeledList.Item label="Scope">
               {contract.offer_kind === 'standing'
@@ -236,7 +285,7 @@ export const ManagementContracts = () => {
               {contract.department ? ` · ${contract.department}` : ''}
             </LabeledList.Item>
             <LabeledList.Item label="Sponsor standing">
-              {contract.standing_tier} ({contract.standing_score})
+              {contract.standing_tier}
             </LabeledList.Item>
             {contract.offer_time_remaining && (
               <LabeledList.Item label="Offer expires">
@@ -292,7 +341,6 @@ export const ManagementContracts = () => {
                                 compact
                                 selected={selected}
                                 color={selected ? 'good' : undefined}
-                                icon={selected ? 'check' : undefined}
                                 disabled={
                                   !!contract.negotiation_locked ||
                                   !contract.can_accept
