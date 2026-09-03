@@ -87,11 +87,13 @@
 		return
 	asset_generation = SStgui.get_current_asset_generation()
 	var/list/resolved_assets = list()
+	var/include_tgui_shell = FALSE
 	for(var/datum/asset/asset in assets)
 		if(asset == get_asset_datum(/datum/asset/simple/tgui) || istype(asset, /datum/asset/simple/tgui_live_generation))
+			include_tgui_shell = TRUE
 			continue
 		resolved_assets += asset
-	if(asset_generation?.shell_assets)
+	if(include_tgui_shell && asset_generation?.shell_assets)
 		resolved_assets += asset_generation.shell_assets
 	src.initial_fancy = fancy
 	src.initial_assets = resolved_assets

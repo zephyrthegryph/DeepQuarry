@@ -364,7 +364,25 @@ SUBSYSTEM_DEF(tgui)
 		user.client.tgui_windows = list()
 		for(var/i in 1 to TGUI_WINDOW_HARD_LIMIT)
 			var/window_id = TGUI_WINDOW_ID(i)
+			if(winexists(user.client, window_id))
+				winset(user.client, window_id, "alpha=0")
+				winshow(user.client, window_id, FALSE)
 			user << browse(null, "window=[window_id]")
+
+/// DreamSeeker keeps cloned native windows across reconnects and server process
+/// restarts. Hide and close those shells before this client builds a fresh pool,
+/// otherwise an old page can surface without a matching server-side datum.
+/datum/controller/subsystem/tgui/proc/reconcile_client_windows(client/client)
+	if(!client)
+		return
+	client.tgui_windows = list()
+	client.tgui_chunk_warm_started = FALSE
+	for(var/index in 1 to TGUI_WINDOW_HARD_LIMIT)
+		var/window_id = TGUI_WINDOW_ID(index)
+		if(winexists(client, window_id))
+			winset(client, window_id, "alpha=0")
+			winshow(client, window_id, FALSE)
+		client << browse(null, "window=[window_id]")
 
 /**
  * public
@@ -381,6 +399,9 @@ SUBSYSTEM_DEF(tgui)
 		if(ui.window && ui.window.id == window_id)
 			ui.close(can_be_suspended = FALSE)
 	// Close window directly just to be sure.
+	if(winexists(user.client, window_id))
+		winset(user.client, window_id, "alpha=0")
+		winshow(user.client, window_id, FALSE)
 	user << browse(null, "window=[window_id]")
 
 /**

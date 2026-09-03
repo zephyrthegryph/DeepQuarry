@@ -390,6 +390,7 @@ GLOBAL_LIST_INIT(blacklisted_builds, list(
 		// end.
 	attempt_auto_fit_viewport()
 	fully_created = TRUE
+	SStgui.reconcile_client_windows(src)
 	SStgui.schedule_client_prewarm(src)
 
 	// Now that we're fully initialized, use our prefs
