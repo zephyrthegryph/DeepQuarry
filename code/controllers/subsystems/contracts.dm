@@ -529,7 +529,14 @@ SUBSYSTEM_DEF(contracts)
 		var/list/options = list()
 		for(var/option_id in clause.options)
 			var/datum/contract_clause_option/option = clause.options[option_id]
-			var/list/other_reputation = faction_reputation_rows(option.effects["other_faction_reputation"])
+			var/station_reputation = option.station_reputation_delta
+			var/list/raw_other_reputation = option.effects["other_faction_reputation"]
+			var/list/distinct_other_reputation = raw_other_reputation?.Copy()
+			var/issuer_reputation = distinct_other_reputation?[contract.issuer_faction]
+			if(isnum(issuer_reputation))
+				station_reputation += issuer_reputation
+				distinct_other_reputation -= contract.issuer_faction
+			var/list/other_reputation = faction_reputation_rows(distinct_other_reputation)
 			options.Add(list(list(
 				"id" = option.id,
 				"title" = option.title,
@@ -537,7 +544,7 @@ SUBSYSTEM_DEF(contracts)
 				"station_money" = option.station_reward_delta,
 				"department_money" = option.department_reward_delta,
 				"staff_money" = option.staff_reward_delta,
-				"station_reputation" = option.station_reputation_delta,
+				"station_reputation" = station_reputation,
 				"department_reputation" = option.department_reputation_delta,
 				"staff_reputation" = option.staff_reputation_delta,
 				"deadline_minutes" = option.deadline_delta / (1 MINUTE),
