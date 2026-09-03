@@ -207,6 +207,17 @@
 			if(department != "Vendor" && can_view_department(department))
 				contract_departments += department
 		data["contract_departments"] = contract_departments
+		var/list/contract_faction_standings = list()
+		for(var/faction_id in GLOB.reputation_factions)
+			var/datum/reputation_faction/faction = GLOB.reputation_factions[faction_id]
+			var/standing = get_station_faction_reputation(faction_id)
+			contract_faction_standings.Add(list(list(
+				"name" = faction.short_name,
+				"acronym" = faction.acronym,
+				"color" = faction.color,
+				"tier" = reputation_rank(standing)
+			)))
+		data["contract_faction_standings"] = contract_faction_standings
 		var/list/contracts = list()
 		for(var/id in SScontracts.contracts_by_id)
 			var/datum/contract/contract = SScontracts.contracts_by_id[id]

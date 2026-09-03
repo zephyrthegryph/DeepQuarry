@@ -237,6 +237,8 @@ export const ManagementContracts = () => {
   const lifecycle =
     lifecycleGroups.find((group) => group.id === selectedStatus) ??
     lifecycleGroups[0];
+  const selectedStatusLabel =
+    selectedStatus === 'all' ? 'All' : lifecycle.label;
   const departmentOptions = [
     'All',
     'Station-wide',
@@ -285,7 +287,7 @@ export const ManagementContracts = () => {
             <Stack.Item grow>
               <Dropdown
                 fluid
-                selected={selectedStatus}
+                selected={selectedStatusLabel}
                 options={[
                   { displayText: 'All', value: 'all' },
                   ...lifecycleGroups.map((group) => ({
@@ -316,12 +318,37 @@ export const ManagementContracts = () => {
           </Stack>
         </Stack.Item>
       </Stack>
+      <Stack
+        align="center"
+        mb={1}
+        px={0.75}
+        py={0.5}
+        backgroundColor="rgba(0,0,0,0.2)"
+      >
+        <Stack.Item color="label" nowrap>
+          Station reputation
+        </Stack.Item>
+        {(data.contract_faction_standings ?? []).map((faction) => (
+          <Stack.Item key={faction.acronym} grow textAlign="center" nowrap>
+            <Tooltip content={faction.name}>
+              <Box inline>
+                <Box inline bold color={faction.color} mr={0.5}>
+                  {faction.acronym}
+                </Box>
+                <Box inline color="label">
+                  {faction.tier}
+                </Box>
+              </Box>
+            </Tooltip>
+          </Stack.Item>
+        ))}
+      </Stack>
       {!contracts.length && (
         <Box p={4} textAlign="center" color="label">
           No contracts match this view.
         </Box>
       )}
-      {contracts.map((contract) => {
+      {contracts.map((contract, index) => {
         const expanded = !!expandedContracts[contract.id];
         const requirementsExpanded = !!expandedRequirements[contract.id];
         const stakeholdersExpanded = !!expandedStakeholders[contract.id];
@@ -363,7 +390,7 @@ export const ManagementContracts = () => {
                 border: '1px solid rgba(255, 255, 255, 0.08)',
                 borderLeft: `4px solid ${contract.issuer_color}`,
                 backgroundColor: 'rgba(8, 10, 12, 0.72)',
-                marginBottom: '6px',
+                marginBottom: index < contracts.length - 1 ? '6px' : undefined,
               }}
             >
               {!expanded && (

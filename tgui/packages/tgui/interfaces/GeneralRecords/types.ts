@@ -18,6 +18,7 @@ export type Data = {
   allocation_policy: string | null;
   department_finances: departmentFinance[];
   contract_departments: string[];
+  contract_faction_standings: factionStanding[];
   station_transactions: financeTransaction[];
   contracts: managementContract[];
   records: record[] | undefined;
@@ -31,6 +32,13 @@ export type Data = {
         empty: BooleanLike;
       }
     | undefined;
+};
+
+export type factionStanding = {
+  name: string;
+  acronym: string;
+  color: string;
+  tier: string;
 };
 
 export type contractRequirement = {
