@@ -459,6 +459,7 @@ export const ManagementContracts = () => {
                                       <Button
                                         fluid
                                         compact
+                                        textAlign="center"
                                         selected={selected}
                                         color={selected ? 'good' : undefined}
                                         disabled={
