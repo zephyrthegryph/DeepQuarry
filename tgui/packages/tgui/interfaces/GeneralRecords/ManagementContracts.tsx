@@ -75,7 +75,7 @@ const TermTooltip = ({
   );
 
   return (
-    <Box width="370px">
+    <Box width="225px">
       <Box mb={0.75}>{option.description}</Box>
       {!!visibleEffects.length && (
         <Box p={0.5} mb={0.5} backgroundColor="rgba(255, 255, 255, 0.055)">
@@ -85,10 +85,10 @@ const TermTooltip = ({
           <Table>
             {visibleEffects.map(([label, money, reputation]) => (
               <Table.Row key={label}>
-                <Table.Cell bold width="92px">
+                <Table.Cell bold width="68px">
                   {label}
                 </Table.Cell>
-                <Table.Cell textAlign="right" width="72px" pr={1} nowrap>
+                <Table.Cell textAlign="right" width="55px" pr={0.5} nowrap>
                   <Box
                     inline
                     color={money < 0 ? 'bad' : money > 0 ? 'good' : 'label'}
@@ -144,31 +144,33 @@ const RewardSummary = ({ contract }: { contract: managementContract }) => {
       'Station',
       contract.reward_distribution.station,
       contract.reputation_distribution.station,
+      true,
     ],
     [
       contract.department || 'Department',
       contract.reward_distribution.department,
       contract.reputation_distribution.department,
+      false,
     ],
     [
       'Contributing staff',
       contract.reward_distribution.staff,
       contract.reputation_distribution.staff,
+      false,
     ],
-  ] as [string, number, number][];
+  ] as [string, number, number, boolean][];
 
   return (
     <Stack align="stretch" mt={1}>
-      {recipients.map(([label, money, reputation]) => (
+      {recipients.map(([label, money, reputation, isStation]) => (
         <Stack.Item key={label} grow>
           <Tooltip
-            content={`${label}: ${money.toLocaleString()} Thalers; ${reputationDescription(reputation)} with ${contract.issuer_faction}`}
+            content={`${label}: ${money.toLocaleString()} Thalers; ${reputationDescription(reputation)} with ${contract.issuer_faction}${isStation && contract.secondary_reputation.length ? `; ${contract.secondary_reputation.map((change) => `${reputationDescription(change.amount)} with ${change.faction}`).join('; ')}` : ''}`}
           >
             <Box
               height="100%"
               p={0.5}
               textAlign="center"
-              nowrap
               backgroundColor="rgba(255, 255, 255, 0.055)"
             >
               <Box color="label" mb={0.25}>
@@ -188,23 +190,18 @@ const RewardSummary = ({ contract }: { contract: managementContract }) => {
                   </Box>
                 </Box>
               )}
-            </Box>
-          </Tooltip>
-        </Stack.Item>
-      ))}
-      {contract.secondary_reputation.map((change) => (
-        <Stack.Item key={change.faction}>
-          <Tooltip
-            content={`${reputationDescription(change.amount)} with ${change.faction}`}
-          >
-            <Box
-              height="100%"
-              p={0.5}
-              nowrap
-              backgroundColor="rgba(255, 255, 255, 0.055)"
-            >
-              <FactionBadge acronym={change.acronym} color={change.color} />{' '}
-              {reputationChange(change.amount)}
+              {isStation &&
+                contract.secondary_reputation.map((change) => (
+                  <Box key={change.faction} inline ml={0.75} nowrap>
+                    <FactionBadge
+                      acronym={change.acronym}
+                      color={change.color}
+                    />{' '}
+                    <Box inline color={change.amount < 0 ? 'bad' : 'good'}>
+                      {reputationChange(change.amount)}
+                    </Box>
+                  </Box>
+                ))}
             </Box>
           </Tooltip>
         </Stack.Item>
