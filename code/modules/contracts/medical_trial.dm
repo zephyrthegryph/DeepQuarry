@@ -7,6 +7,7 @@
 	issuer_name = "VeyMed Clinical Development"
 	issuer_faction = REPUTATION_FACTION_VEYMED
 	reward = 1800
+	expected_duration = 45 MINUTES
 	initial_offers = 1
 	offer_duration = MEDICAL_TRIAL_OFFER_DURATION
 	offer_kind = CONTRACT_OFFER_STANDING

@@ -50,13 +50,14 @@ export type managementContract = {
   scope: string;
   state: string;
   issuer: string;
+  issuer_faction: string;
+  issuer_acronym: string;
   issuer_color: string;
   department?: string;
   reward: number;
   standing_score: number;
   standing_tier: string;
-  repeat_index: number;
-  round_demand_remaining: number;
+  term_class: string;
   reward_distribution: contractDistribution;
   reputation_distribution: contractDistribution;
   negotiation_locked: BooleanLike;

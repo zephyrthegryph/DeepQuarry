@@ -19,8 +19,6 @@ type Contract = {
   reward: number;
   standing_score: number;
   standing_tier: string;
-  repeat_index: number;
-  round_demand_remaining: number;
   can_accept: boolean;
   can_decline: boolean;
   offer_kind: string;
@@ -282,8 +280,8 @@ export const pda_contracts = () => {
                   : 'limited opportunity'}
               </Box>
               <Box color="label">
-                Standing: {contract.standing_tier} ({contract.standing_score}) ·
-                commission #{contract.repeat_index}
+                Sponsor standing: {contract.standing_tier} (
+                {contract.standing_score})
               </Box>
               {contract.offer_time_remaining && (
                 <Box color="average">

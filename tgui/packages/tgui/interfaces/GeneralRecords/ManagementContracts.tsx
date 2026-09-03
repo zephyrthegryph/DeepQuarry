@@ -12,7 +12,7 @@ import {
   Tooltip,
 } from 'tgui-core/components';
 
-import type { contractClauseOption, Data } from './types';
+import type { contractClauseOption, Data, managementContract } from './types';
 
 const signed = (value: number, suffix = '') =>
   `${value > 0 ? '+' : ''}${value}${suffix}`;
@@ -36,6 +36,66 @@ const termEffects = (option: contractClauseOption) => {
   return summaries.length
     ? summaries.join('\n')
     : 'No payout or deadline change';
+};
+
+const RewardSummary = ({ contract }: { contract: managementContract }) => {
+  const recipients = [
+    [
+      'Station',
+      contract.reward_distribution.station,
+      contract.reputation_distribution.station,
+    ],
+    [
+      contract.department || 'Department',
+      contract.reward_distribution.department,
+      contract.reputation_distribution.department,
+    ],
+    [
+      'Contributing staff',
+      contract.reward_distribution.staff,
+      contract.reputation_distribution.staff,
+    ],
+  ] as [string, number, number][];
+
+  return (
+    <Section title="Award" fitted mt={1}>
+      <Stack wrap>
+        {recipients.map(([label, money, reputation]) => (
+          <Stack.Item key={label} grow basis="28%">
+            <Box p={0.5} backgroundColor="rgba(255, 255, 255, 0.04)">
+              <Box color="label" fontSize={0.9}>
+                {label}
+              </Box>
+              <Box bold fontSize={1.2}>
+                {money.toLocaleString()} th
+              </Box>
+              {!!reputation && (
+                <Tooltip
+                  content={`${signed(reputation)} reputation with ${contract.issuer_faction}`}
+                >
+                  <Stack mt={0.25} align="center">
+                    <Stack.Item>
+                      <Box
+                        bold
+                        px={0.5}
+                        backgroundColor={contract.issuer_color}
+                        color="white"
+                      >
+                        {contract.issuer_acronym}
+                      </Box>
+                    </Stack.Item>
+                    <Stack.Item color={reputation < 0 ? 'bad' : 'good'}>
+                      {signed(reputation)} reputation
+                    </Stack.Item>
+                  </Stack>
+                </Tooltip>
+              )}
+            </Box>
+          </Stack.Item>
+        ))}
+      </Stack>
+    </Section>
+  );
 };
 
 const lifecycleGroups = [
@@ -138,26 +198,28 @@ export const ManagementContracts = () => {
         >
           <LabeledList>
             <LabeledList.Item label="Issuer">
-              {contract.issuer}
+              <Box
+                inline
+                bold
+                mr={0.5}
+                px={0.5}
+                backgroundColor={contract.issuer_color}
+                color="white"
+              >
+                {contract.issuer_acronym}
+              </Box>
+              {contract.issuer} · {contract.issuer_faction}
             </LabeledList.Item>
             <LabeledList.Item label="Scope">
               {contract.offer_kind === 'standing'
-                ? 'Standing offer'
+                ? 'Rotating offer'
                 : 'Limited opportunity'}{' '}
-              · {contract.scope}
+              · {contract.term_class === 'short' ? 'Short-term' : 'Long-term'} ·{' '}
+              {contract.scope}
               {contract.department ? ` · ${contract.department}` : ''}
-            </LabeledList.Item>
-            <LabeledList.Item label="Reward">
-              {contract.reward} Thalers
             </LabeledList.Item>
             <LabeledList.Item label="Sponsor standing">
               {contract.standing_tier} ({contract.standing_score})
-            </LabeledList.Item>
-            <LabeledList.Item label="Market demand">
-              Commission #{contract.repeat_index}
-              {contract.round_demand_remaining >= 0
-                ? ` · ${contract.round_demand_remaining} award${contract.round_demand_remaining === 1 ? '' : 's'} remaining this shift`
-                : ' · continuing program'}
             </LabeledList.Item>
             {contract.offer_time_remaining && (
               <LabeledList.Item label="Offer expires">
@@ -176,6 +238,7 @@ export const ManagementContracts = () => {
             )}
           </LabeledList>
           <Box my={1}>{contract.description}</Box>
+          <RewardSummary contract={contract} />
           {!!contract.negotiation_clauses.length && (
             <Section
               mt={1}
@@ -188,29 +251,6 @@ export const ManagementContracts = () => {
                 </Tooltip>
               }
             >
-              <Stack mb={0.5} wrap>
-                <Stack.Item>
-                  <Box inline color="label">
-                    Station{' '}
-                  </Box>
-                  {contract.reward_distribution.station} th ·{' '}
-                  {signed(contract.reputation_distribution.station, ' rep')}
-                </Stack.Item>
-                <Stack.Item>
-                  <Box inline color="label">
-                    {contract.department || 'Department'}{' '}
-                  </Box>
-                  {contract.reward_distribution.department} th ·{' '}
-                  {signed(contract.reputation_distribution.department, ' rep')}
-                </Stack.Item>
-                <Stack.Item>
-                  <Box inline color="label">
-                    Staff{' '}
-                  </Box>
-                  {contract.reward_distribution.staff} th ·{' '}
-                  {signed(contract.reputation_distribution.staff, ' rep')}
-                </Stack.Item>
-              </Stack>
               {contract.negotiation_clauses.map((clause) => (
                 <Stack
                   key={`${contract.id}-${clause.id}`}
@@ -231,6 +271,8 @@ export const ManagementContracts = () => {
                             <Button
                               compact
                               selected={selected}
+                              color={selected ? 'good' : undefined}
+                              icon={selected ? 'check' : undefined}
                               tooltip={`${option.description}\n\n${termEffects(option)}`}
                               disabled={
                                 !!contract.negotiation_locked ||

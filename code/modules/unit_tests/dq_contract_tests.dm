@@ -32,20 +32,6 @@
 	requirement.name = "Lifecycle completion"
 	contract.add_requirement(requirement)
 
-/datum/contract_definition/dq_partial_demand_test
-	id = "dq_partial_demand_test"
-	title = "Partial Demand Test"
-	description = "Exercises reward-budget reconciliation between sibling offers."
-	scope = CONTRACT_SCOPE_STATION
-	reward = 100
-	max_simultaneous = 4
-	max_round_completions = 4
-	round_reward_budget = 150
-	offer_duration = 10 MINUTES
-
-/datum/contract_definition/dq_partial_demand_test/configure_contract(datum/contract/contract, list/context)
-	contract.add_requirement(new /datum/contract_requirement/event_count("dq_partial_demand_result", 1))
-
 /datum/contract_definition/dq_opportunity_guardrail_test
 	id = "dq_opportunity_guardrail_test"
 	title = "Opportunity Guardrail Test"
@@ -75,6 +61,31 @@
 	signal.require_diversity("category", 2)
 
 /datum/unit_test/dq_contract_offer_lifecycle
+
+/datum/unit_test/dq_contract_board_curation
+
+/datum/unit_test/dq_contract_board_curation/Run()
+	var/list/offers_by_board = list()
+	for(var/datum/contract/contract in SScontracts.offered_contracts)
+		if(contract.offer_kind != CONTRACT_OFFER_STANDING || contract.scope == CONTRACT_SCOPE_PERSONAL)
+			continue
+		var/list/board_offers = offers_by_board[contract.board_key]
+		if(!board_offers)
+			board_offers = list()
+			offers_by_board[contract.board_key] = board_offers
+		board_offers += contract
+	for(var/board_key in offers_by_board)
+		var/list/current_board_offers = offers_by_board[board_key]
+		TEST_ASSERT(length(current_board_offers) <= 2, "standing board [board_key] published more than two choices")
+		if(length(current_board_offers) < 2)
+			continue
+		var/datum/contract/first = current_board_offers[1]
+		var/datum/contract/second = current_board_offers[2]
+		var/datum/contract_definition/first_definition = SScontracts.definitions[first.definition_id]
+		var/datum/contract_definition/second_definition = SScontracts.definitions[second.definition_id]
+		TEST_ASSERT(SScontracts.definition_term_class(first_definition) != SScontracts.definition_term_class(second_definition), "standing board [board_key] did not mix short- and long-term work")
+		if(first.issuer_faction && second.issuer_faction)
+			TEST_ASSERT(first.issuer_faction != second.issuer_faction, "standing board [board_key] published duplicate sponsor factions")
 
 /datum/unit_test/dq_contract_offer_lifecycle/Run()
 	var/test_board = "[CONTRACT_SCOPE_DEPARTMENT]:DQ Lifecycle Test"
@@ -107,10 +118,18 @@
 	TEST_ASSERT_EQUAL(length(published), expected_published, "station board did not enforce its published-offer limit alongside existing offers")
 	TEST_ASSERT(SScontracts.find_candidate("dq-lifecycle-4"), "the overflow opportunity was not retained as a lightweight candidate")
 	var/datum/contract/declined = published[1]
+	var/candidates_before_decline = 0
+	for(var/datum/contract_offer_candidate/candidate in SScontracts.offer_candidates)
+		if(candidate.definition_id == "dq_offer_lifecycle_test")
+			candidates_before_decline++
 	TEST_ASSERT(declined.decline(), "one-click decline did not close an offered contract")
 	TEST_ASSERT_EQUAL(declined.closure_code, CONTRACT_CLOSE_DECLINED, "decline did not record its lifecycle outcome")
 	TEST_ASSERT(SScontracts.offer_cooldowns[declined.offer_key] > world.time, "declined offer did not enter cooldown")
-	TEST_ASSERT(!SScontracts.find_candidate("dq-lifecycle-4"), "freeing a board slot did not publish the queued opportunity")
+	var/candidates_after_decline = 0
+	for(var/datum/contract_offer_candidate/candidate in SScontracts.offer_candidates)
+		if(candidate.definition_id == "dq_offer_lifecycle_test")
+			candidates_after_decline++
+	TEST_ASSERT_EQUAL(candidates_after_decline, candidates_before_decline - 1, "freeing a board slot did not publish one queued opportunity")
 	var/published_after_decline = 0
 	for(var/datum/contract/contract in SScontracts.offered_contracts)
 		if(contract.definition_id == "dq_offer_lifecycle_test")
@@ -467,12 +486,14 @@
 		TEST_ASSERT(!trial.validate(), "generated medication study offer was invalid")
 		TEST_ASSERT(trial.profile.cohort in list(MEDICAL_TRIAL_COHORT_HEALTHY, MEDICAL_TRIAL_COHORT_PREVENTATIVE), "normal medication offer unexpectedly required a pre-existing condition")
 		break
-	TEST_ASSERT(found_offer, "round initialization did not publish a medication study offer")
+	TEST_ASSERT(found_offer || SScontracts.find_candidate("experimental_medication_study:initial:1"), "round initialization did not place a medication study in the rotating catalog")
 	var/datum/contract/medical_trial/original_routine
 	for(var/datum/contract/medical_trial/trial in SScontracts.offered_contracts)
 		if(!trial.conditional_offer)
 			original_routine = trial
 			break
+	if(!original_routine)
+		original_routine = trial_terms_definition.create_contract(list("offer_key" = "dq-medical-rotation-test", "board_key" = "[CONTRACT_SCOPE_DEPARTMENT]:[DEPARTMENT_MEDICAL]", "offer_kind" = CONTRACT_OFFER_STANDING))
 	TEST_ASSERT(original_routine?.offer_timer, "routine medical offer had no expiry timer")
 	original_routine.cancel("Lifecycle test")
 	TEST_ASSERT(SScontracts.find_candidate(original_routine.offer_key), "closing a standing medical offer did not queue its cooldown-safe replacement")
@@ -1444,73 +1465,6 @@
 	ChangeArea(test_turf, original_area)
 	qdel(subject)
 	qdel(subject_mind)
-
-/datum/unit_test/dq_contract_demand_is_finite
-
-/datum/unit_test/dq_contract_demand_is_finite/Run()
-	var/datum/contract_definition/definition = SScontracts.definitions["cargo_freight_portfolio"]
-	var/old_completions = SScontracts.completions_by_definition[definition.id]
-	var/old_payout = SScontracts.payout_by_definition[definition.id]
-	var/old_reserved_completions = SScontracts.reserved_completions_by_definition[definition.id]
-	var/old_reserved_payout = SScontracts.reserved_payout_by_definition[definition.id]
-	SScontracts.reserved_completions_by_definition -= definition.id
-	SScontracts.reserved_payout_by_definition -= definition.id
-	SScontracts.completions_by_definition[definition.id] = 1
-	SScontracts.payout_by_definition[definition.id] = 0
-	var/datum/contract/outcome/repeat_offer = definition.create_contract(list("value_target" = 100, "variety_target" = 1))
-	TEST_ASSERT(repeat_offer, "a repeat offer within remaining demand was not created")
-	TEST_ASSERT(repeat_offer.reward < definition.reward, "repeat demand did not reduce the offered reward")
-	qdel(repeat_offer)
-	SScontracts.completions_by_definition[definition.id] = definition.max_round_completions - 1
-	var/datum/contract/outcome/reserved_contract = definition.create_contract(list("offer_kind" = CONTRACT_OFFER_OPPORTUNITY, "value_target" = 100, "variety_target" = 1))
-	var/datum/contract/outcome/overbooked_contract = definition.create_contract(list("offer_kind" = CONTRACT_OFFER_OPPORTUNITY, "value_target" = 100, "variety_target" = 1))
-	dq_contract_test_zero_rewards(reserved_contract)
-	dq_contract_test_zero_rewards(overbooked_contract)
-	TEST_ASSERT(reserved_contract.accept(), "the final available sponsor-demand slot could not be reserved")
-	TEST_ASSERT_EQUAL(SScontracts.reserved_completions_by_definition[definition.id], 1, "accepted contract did not reserve a completion slot")
-	TEST_ASSERT_EQUAL(overbooked_contract.state, CONTRACT_CANCELLED, "an offer left stale after the final sponsor-demand slot was reserved")
-	TEST_ASSERT(!overbooked_contract.accept(), "a second active contract overbooked the final sponsor-demand slot")
-	TEST_ASSERT(reserved_contract.complete(), "reserved contract could not convert its demand reservation into a completion")
-	TEST_ASSERT_EQUAL(SScontracts.completions_by_definition[definition.id], definition.max_round_completions, "completion did not atomically consume its reserved demand")
-	TEST_ASSERT(!SScontracts.reserved_completions_by_definition[definition.id], "completion left a stale sponsor-demand reservation")
-	qdel(reserved_contract)
-	qdel(overbooked_contract)
-	SScontracts.completions_by_definition[definition.id] = definition.max_round_completions
-	TEST_ASSERT(!definition.create_contract(list("value_target" = 100, "variety_target" = 1)), "a contract materialized after round demand was exhausted")
-	var/exhausted_offer_key = "demand-exhausted:[world.time]:[REF(definition)]"
-	TEST_ASSERT(!SScontracts.queue_offer(definition.id, null, "Exhausted demand test", exhausted_offer_key), "the offer lifecycle published an exhausted contract")
-	TEST_ASSERT(!SScontracts.find_candidate(exhausted_offer_key), "exhausted sponsor demand left a dead candidate in the queue")
-	if(isnull(old_completions))
-		SScontracts.completions_by_definition -= definition.id
-	else
-		SScontracts.completions_by_definition[definition.id] = old_completions
-	if(isnull(old_payout))
-		SScontracts.payout_by_definition -= definition.id
-	else
-		SScontracts.payout_by_definition[definition.id] = old_payout
-	if(isnull(old_reserved_completions))
-		SScontracts.reserved_completions_by_definition -= definition.id
-	else
-		SScontracts.reserved_completions_by_definition[definition.id] = old_reserved_completions
-	if(isnull(old_reserved_payout))
-		SScontracts.reserved_payout_by_definition -= definition.id
-	else
-		SScontracts.reserved_payout_by_definition[definition.id] = old_reserved_payout
-
-/datum/unit_test/dq_contract_partial_reward_demand_withdraws_siblings
-
-/datum/unit_test/dq_contract_partial_reward_demand_withdraws_siblings/Run()
-	var/datum/contract_definition/definition = SScontracts.definitions["dq_partial_demand_test"]
-	var/datum/contract/first_offer = definition.create_contract()
-	var/datum/contract/sibling_offer = definition.create_contract()
-	TEST_ASSERT_EQUAL(first_offer.reward, 100, "partial-demand test offer received the wrong initial reward")
-	TEST_ASSERT_EQUAL(sibling_offer.reward, 100, "partial-demand sibling received the wrong initial reward")
-	TEST_ASSERT(first_offer.accept(), "partial-demand test could not reserve its first offer")
-	TEST_ASSERT_EQUAL(sibling_offer.state, CONTRACT_CANCELLED, "offer larger than the remaining sponsor reward budget stayed visible")
-	TEST_ASSERT(!sibling_offer.accept(), "stale partial-budget offer remained acceptable")
-	first_offer.cancel("Partial demand test cleanup")
-	qdel(first_offer)
-	qdel(sibling_offer)
 
 /datum/unit_test/dq_contract_reputation_terms_and_failure
 

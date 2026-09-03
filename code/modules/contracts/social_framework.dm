@@ -350,9 +350,6 @@
 	offer_kind = CONTRACT_OFFER_STANDING
 	auto_replace = TRUE
 	max_simultaneous = 2
-	max_round_completions = CONTRACT_OUTCOME_ROUND_LIMIT
-	round_reward_budget = CONTRACT_OUTCOME_ROUND_REWARD_BUDGET
-	repeat_reward_decay_percent = CONTRACT_OUTCOME_REPEAT_REWARD_DECAY
 	contract_type = /datum/contract/social
 
 /datum/contract_definition/social/configure_contract(datum/contract/social/contract, list/context)

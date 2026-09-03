@@ -13,7 +13,7 @@ ADMIN_VERB(dq_inspect_contract, R_ADMIN, "Inspect Contract", "Inspect contract s
 	html += "<b>State:</b> [html_encode(contract.state)]<br><b>Issuer:</b> [html_encode(contract.issuer_name)]<br><b>Scope:</b> [html_encode(contract.scope)] / [html_encode(contract.department || "none")]<br>"
 	html += "<b>Offer lifecycle:</b> [html_encode(contract.offer_kind)] / [html_encode(contract.offer_key || "direct")] on [html_encode(contract.board_key || "unmanaged")]<br><b>Closure:</b> [html_encode(contract.closure_code || "open")]<br>"
 	html += "<b>Reward:</b> [contract.reward] Thalers<br><b>Evidence:</b> [evidence["consumed"]] consumed for this contract; [evidence["registered"]] registered globally.<br>"
-	html += "<b>Standing/demand:</b> [html_encode(contract.standing_tier)] ([contract.standing_score]); commission #[contract.repeat_index]; [contract.round_demand_remaining < 0 ? "continuing program" : "[contract.round_demand_remaining] round awards remaining"].<br>"
+	html += "<b>Sponsor standing:</b> [html_encode(contract.standing_tier)] ([contract.standing_score]).<br>"
 	html += "<b>Evidence bus:</b> [event_stats["published"]] published, [event_stats["dispatched"]] routed, [event_stats["matched"]] matched, [event_stats["deduplicated"]] duplicates suppressed, [event_stats["rejected"]] invalid rejected.<br>"
 	html += "<h3>Contributions</h3><ul>"
 	for(var/account in contract.contributions)
@@ -37,13 +37,6 @@ ADMIN_VERB(dq_inspect_contract_board, R_ADMIN, "Inspect Contract Board", "Inspec
 	html += "<b>Current:</b> [summary["candidates"]] queued, [summary["offered"]] offered, [summary["active"]] active, [summary["grace"]] in grace, [summary["closed"]] closed.<br>"
 	html += "<b>Outcomes:</b> [summary["materialized"]] materialized, [summary["declined"]] declined, [summary["expired"]] expired, [summary["withdrawn"]] ineligible withdrawals.<br>"
 	html += "<b>Opportunity broker:</b> [opportunity_summary["rules"]] rules, [opportunity_summary["windows"]] rolling windows, [opportunity_summary["events"]] relevant events, [opportunity_summary["triggered"]] offers triggered, [opportunity_summary["suppressed"]] duplicate/cooldown triggers suppressed.<br>"
-	html += "<h3>Round sponsor demand</h3><table border='1' cellspacing='0' cellpadding='4'><tr><th>Definition</th><th>Completed</th><th>Paid</th><th>Limit</th><th>Budget</th></tr>"
-	for(var/definition_id in SScontracts.definitions)
-		var/datum/contract_definition/definition = SScontracts.definitions[definition_id]
-		if(!definition.max_round_completions && !definition.round_reward_budget)
-			continue
-		html += "<tr><td>[html_encode(definition_id)]</td><td>[SScontracts.completions_by_definition[definition_id] || 0]</td><td>[SScontracts.payout_by_definition[definition_id] || 0]</td><td>[definition.max_round_completions || "unlimited"]</td><td>[definition.round_reward_budget || "unlimited"]</td></tr>"
-	html += "</table>"
 	html += "<h3>Candidate queue</h3><table border='1' cellspacing='0' cellpadding='4'><tr><th>ID</th><th>Definition</th><th>Board</th><th>Priority</th><th>Expires</th><th>Reason</th></tr>"
 	for(var/datum/contract_offer_candidate/candidate in SScontracts.offer_candidates)
 		var/expires = candidate.expires_at ? worldtime2stationtime(candidate.expires_at) : "standing"

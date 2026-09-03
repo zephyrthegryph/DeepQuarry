@@ -101,6 +101,9 @@
 			return CONTRACT_BOARD_PERSONAL_LIMIT
 	return 0
 
+/datum/controller/subsystem/contracts/proc/definition_term_class(datum/contract_definition/definition)
+	return definition.expected_duration <= CONTRACT_SHORT_TERM_CUTOFF ? CONTRACT_TERM_SHORT : CONTRACT_TERM_LONG
+
 /datum/controller/subsystem/contracts/proc/definition_live_count(definition_id)
 	var/count = 0
 	for(var/datum/contract/contract in offered_contracts)
@@ -121,15 +124,24 @@
 		return FALSE
 	var/board_count = 0
 	var/faction_count = 0
+	var/same_term_count = 0
+	var/candidate_term = definition_term_class(definition)
 	for(var/datum/contract/contract in offered_contracts)
 		if(contract.board_key != candidate.board_key)
 			continue
 		board_count++
 		if(definition.issuer_faction && contract.issuer_faction == definition.issuer_faction)
 			faction_count++
+		var/datum/contract_definition/offered_definition = definitions[contract.definition_id]
+		if(offered_definition && definition_term_class(offered_definition) == candidate_term)
+			same_term_count++
 	if(board_count >= board_limit(definition))
 		return FALSE
 	if(definition.issuer_faction && faction_count >= CONTRACT_BOARD_FACTION_LIMIT)
+		return FALSE
+	// The second standing slot must complement the first. Time-sensitive
+	// opportunities may still displace a standing offer through priority.
+	if(candidate.offer_kind == CONTRACT_OFFER_STANDING && board_count && same_term_count == board_count)
 		return FALSE
 	return TRUE
 
@@ -158,7 +170,7 @@
 /// candidate remains queued and will be reconsidered when the board changes.
 /datum/controller/subsystem/contracts/proc/queue_offer(definition_id, list/context, reason = "Gameplay eligibility event", offer_key, priority = 50) as /datum/contract
 	var/datum/contract_definition/definition = definitions[definition_id]
-	if(!definition || !definition_has_demand(definition))
+	if(!definition)
 		return null
 	var/list/candidate_context = context ? deepCopyList(context) : list()
 	offer_key ||= definition.candidate_key(candidate_context)
@@ -185,7 +197,7 @@
 	)
 	offer_candidates += candidate
 	record_lifecycle("candidate", null, candidate, reason)
-	var/datum/contract/materialized = try_materialize_candidate(candidate)
+	var/datum/contract/materialized = candidate_context["defer_materialization"] ? null : try_materialize_candidate(candidate)
 	if(materialized)
 		return materialized
 	var/cooldown_until = offer_cooldowns[offer_key] || 0
@@ -200,7 +212,7 @@
 	if(!candidate || !(candidate in offer_candidates))
 		return null
 	var/datum/contract_definition/definition = definitions[candidate.definition_id]
-	if(!definition || !definition_has_demand(definition) || (candidate.expires_at && world.time >= candidate.expires_at) || !definition.is_available(candidate.context))
+	if(!definition || (candidate.expires_at && world.time >= candidate.expires_at) || !definition.is_available(candidate.context))
 		withdraw_candidate(candidate, "Eligibility ended before publication.")
 		return null
 	if((offer_cooldowns[candidate.offer_key] || 0) > world.time || !make_priority_capacity(candidate, definition))
@@ -264,16 +276,15 @@
 /datum/controller/subsystem/contracts/proc/handle_contract_accepted(datum/contract/contract)
 	record_lifecycle("accepted", contract, null, "Negotiated version accepted; terms locked.")
 	notify_contract(contract, "Contract [contract.id] accepted: [contract.title].")
-	// Acceptance may consume the definition's final reserved demand. Withdraw
-	// any now-stale sibling offers immediately rather than leaving a visible
-	// offer which can only fail when another head attempts to accept it.
-	reconcile_offer_eligibility("Offer accepted; sponsor demand and board capacity changed")
+	reconcile_offer_eligibility("Offer accepted; board capacity changed")
 
 /datum/controller/subsystem/contracts/proc/handle_contract_closed(datum/contract/contract)
 	if(!contract?.offer_key)
 		return
 	var/datum/contract_definition/definition = definitions[contract.definition_id]
 	var/cooldown = contract.accepted_at ? definition?.repeat_cooldown : definition?.offer_cooldown
+	if(definition?.auto_replace && contract.offer_kind == CONTRACT_OFFER_STANDING)
+		cooldown = rand(CONTRACT_ROTATION_MIN_DELAY, CONTRACT_ROTATION_MAX_DELAY)
 	if(isnum(cooldown) && cooldown > 0)
 		offer_cooldowns[contract.offer_key] = world.time + cooldown
 	switch(contract.closure_code)

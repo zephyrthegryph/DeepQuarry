@@ -36,11 +36,6 @@ SUBSYSTEM_DEF(contracts)
 	var/events_deduplicated = 0
 	var/list/completions_by_definition
 	var/list/payout_by_definition
-	/// Accepted contracts reserve finite sponsor demand until they close. This
-	/// prevents simultaneous offers, replacements, and follow-ups from
-	/// overcommitting a definition's round completion or payout limits.
-	var/list/reserved_completions_by_definition
-	var/list/reserved_payout_by_definition
 	var/list/custody_started_by_subject
 	var/list/custody_last_duration_by_subject
 	var/list/custody_last_ended_at_by_subject
@@ -79,8 +74,6 @@ SUBSYSTEM_DEF(contracts)
 	event_occurrence_order = list()
 	completions_by_definition = list()
 	payout_by_definition = list()
-	reserved_completions_by_definition = list()
-	reserved_payout_by_definition = list()
 	custody_started_by_subject = list()
 	custody_last_duration_by_subject = list()
 	custody_last_ended_at_by_subject = list()
@@ -100,7 +93,8 @@ SUBSYSTEM_DEF(contracts)
 	for(var/definition_id in definitions)
 		var/datum/contract_definition/definition = definitions[definition_id]
 		for(var/offer_index in 1 to definition.initial_offers)
-			queue_offer(definition.id, list("offer_index" = offer_index), "Initial standing catalog", "[definition.id]:initial:[offer_index]")
+			queue_offer(definition.id, list("offer_index" = offer_index, "defer_materialization" = TRUE), "Initial rotating catalog", "[definition.id]:initial:[offer_index]", rand(20, 60))
+	reconcile_offer_board("Initial randomized contract rotation")
 	GLOB.alldepartments |= list("VeyMed Clinical Development", "VeyMed Clinical Risk", "Worker's Union Advocacy", "Commercial Acquisitions")
 	GLOB.alldepartments |= CONTRACT_FAX_CASE_REGISTRY
 	return SS_INIT_SUCCESS
@@ -224,19 +218,6 @@ SUBSYSTEM_DEF(contracts)
 		"subject_name" = subject.real_name,
 	)
 
-/datum/controller/subsystem/contracts/proc/definition_has_demand(datum/contract_definition/definition, prospective_reward = 0)
-	if(!definition)
-		return FALSE
-	var/committed_completions = (completions_by_definition[definition.id] || 0) + (reserved_completions_by_definition[definition.id] || 0)
-	if(definition.max_round_completions > 0 && committed_completions >= definition.max_round_completions)
-		return FALSE
-	var/committed_payout = (payout_by_definition[definition.id] || 0) + (reserved_payout_by_definition[definition.id] || 0)
-	if(definition.round_reward_budget > 0)
-		var/remaining_payout = definition.round_reward_budget - committed_payout
-		if(remaining_payout <= 0 || max(0, prospective_reward) > remaining_payout)
-			return FALSE
-	return TRUE
-
 /datum/controller/subsystem/contracts/proc/on_payment_account_status(datum/source, datum/money_account/account)
 	SIGNAL_HANDLER
 	if(!account || account.suspended)
@@ -246,70 +227,16 @@ SUBSYSTEM_DEF(contracts)
 	for(var/datum/contract/contract in (active_contracts + grace_contracts).Copy())
 		contract.reconcile_completion()
 
-/datum/controller/subsystem/contracts/proc/apply_definition_demand_terms(datum/contract_definition/definition, datum/contract/contract)
-	if(!definition || !contract)
-		return
-	var/committed_completions = (completions_by_definition[definition.id] || 0) + (reserved_completions_by_definition[definition.id] || 0)
-	contract.repeat_index = committed_completions + 1
-	contract.round_demand_remaining = definition.max_round_completions > 0 ? max(0, definition.max_round_completions - committed_completions) : -1
-	if(definition.repeat_reward_decay_percent > 0 && committed_completions > 0)
-		var/multiplier = max(40, 100 - committed_completions * definition.repeat_reward_decay_percent)
-		contract.reward = round(contract.reward * multiplier / 100)
-		contract.description += " Current sponsor demand prices this repeat commission at [multiplier]% of its initial award."
-	if(definition.round_reward_budget > 0)
-		var/committed_payout = (payout_by_definition[definition.id] || 0) + (reserved_payout_by_definition[definition.id] || 0)
-		contract.reward = min(contract.reward, max(0, definition.round_reward_budget - committed_payout))
-
-/datum/controller/subsystem/contracts/proc/reserve_contract_demand(datum/contract/contract)
-	if(!contract?.definition_id)
-		return TRUE
-	if(contract.demand_reserved)
-		return TRUE
-	var/datum/contract_definition/definition = definitions[contract.definition_id]
-	if(!definition)
-		return TRUE
-	var/completed = completions_by_definition[definition.id] || 0
-	var/reserved = reserved_completions_by_definition[definition.id] || 0
-	if(definition.max_round_completions > 0 && completed + reserved >= definition.max_round_completions)
-		return FALSE
-	var/paid = payout_by_definition[definition.id] || 0
-	var/reward_reserved = reserved_payout_by_definition[definition.id] || 0
-	if(definition.round_reward_budget > 0 && paid + reward_reserved + contract.reward > definition.round_reward_budget)
-		return FALSE
-	reserved_completions_by_definition[definition.id] = reserved + 1
-	reserved_payout_by_definition[definition.id] = reward_reserved + contract.reward
-	contract.demand_reserved = TRUE
-	contract.reserved_reward = contract.reward
-	return TRUE
-
-/datum/controller/subsystem/contracts/proc/release_contract_demand(datum/contract/contract)
-	if(!contract?.definition_id || !contract.demand_reserved)
-		return
-	var/definition_id = contract.definition_id
-	var/reserved = max(0, (reserved_completions_by_definition[definition_id] || 0) - 1)
-	var/reward_reserved = max(0, (reserved_payout_by_definition[definition_id] || 0) - contract.reserved_reward)
-	if(reserved)
-		reserved_completions_by_definition[definition_id] = reserved
-	else
-		reserved_completions_by_definition -= definition_id
-	if(reward_reserved)
-		reserved_payout_by_definition[definition_id] = reward_reserved
-	else
-		reserved_payout_by_definition -= definition_id
-	contract.demand_reserved = FALSE
-	contract.reserved_reward = 0
-
 /datum/controller/subsystem/contracts/proc/record_contract_completion(datum/contract/contract)
 	if(!contract?.definition_id)
 		return
-	release_contract_demand(contract)
 	completions_by_definition[contract.definition_id] = (completions_by_definition[contract.definition_id] || 0) + 1
 	payout_by_definition[contract.definition_id] = (payout_by_definition[contract.definition_id] || 0) + contract.reward
 
 /datum/controller/subsystem/contracts/proc/maybe_queue_reputation_followup(datum/contract/contract)
 	var/datum/contract/outcome/outcome = contract
 	var/datum/contract_definition/outcome/definition = definitions[contract?.definition_id]
-	if(!istype(outcome) || !istype(definition) || !definition_has_demand(definition))
+	if(!istype(outcome) || !istype(definition))
 		return FALSE
 	var/station_standing = get_station_faction_reputation(contract.issuer_faction)
 	var/department_standing = contract.department ? get_department_faction_reputation(contract.department, contract.issuer_faction) : station_standing
@@ -632,6 +559,8 @@ SUBSYSTEM_DEF(contracts)
 		"scope" = contract.scope,
 		"state" = contract.state,
 		"issuer" = contract.issuer_name,
+		"issuer_faction" = faction?.short_name || contract.issuer_name,
+		"issuer_acronym" = faction?.acronym || "EXT",
 		"issuer_color" = faction?.color || "#6ba4c7",
 		"department" = contract.department,
 		"reward" = contract.reward,
@@ -647,8 +576,7 @@ SUBSYSTEM_DEF(contracts)
 		),
 		"standing_score" = contract.standing_score,
 		"standing_tier" = contract.standing_tier,
-		"repeat_index" = contract.repeat_index,
-		"round_demand_remaining" = contract.round_demand_remaining,
+		"term_class" = contract.deadline_duration <= CONTRACT_SHORT_TERM_CUTOFF ? CONTRACT_TERM_SHORT : CONTRACT_TERM_LONG,
 		"negotiation_locked" = contract.negotiation_locked,
 		"negotiation_clauses" = negotiation_rows(contract),
 		"deadline" = contract.deadline,

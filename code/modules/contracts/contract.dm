@@ -98,17 +98,15 @@
 	var/reward = 0
 	var/initial_offers = 0
 	var/offer_duration = 15 MINUTES
+	/// Expected completion window used to curate a mix of quick and strategic
+	/// work before the concrete contract is materialized.
+	var/expected_duration = 40 MINUTES
 	var/offer_kind = CONTRACT_OFFER_OPPORTUNITY
 	var/offer_cooldown = CONTRACT_DEFAULT_OFFER_COOLDOWN
 	var/repeat_cooldown = CONTRACT_DEFAULT_REPEAT_COOLDOWN
 	var/candidate_duration = 15 MINUTES
 	var/auto_replace = FALSE
 	var/max_simultaneous = 1
-	/// Zero means unlimited. Outcome contracts use finite round demand and
-	/// diminishing repeat awards to prevent standing-offer farming.
-	var/max_round_completions = 0
-	var/round_reward_budget = 0
-	var/repeat_reward_decay_percent = 0
 	var/deadline_grace_duration = CONTRACT_DEFAULT_GRACE_DURATION
 	var/contract_type = /datum/contract
 
@@ -130,7 +128,7 @@
 			return owner_account ? "[CONTRACT_SCOPE_PERSONAL]:[owner_account]" : null
 
 /datum/contract_definition/proc/offer_remains_available(datum/contract/contract)
-	return (!SScontracts || SScontracts.definition_has_demand(src, contract.reward)) && is_available(contract.offer_context)
+	return is_available(contract.offer_context)
 
 /datum/contract_definition/proc/active_remains_possible(datum/contract/contract)
 	return TRUE
@@ -146,7 +144,7 @@
 	return FALSE
 
 /datum/contract_definition/proc/create_contract(list/context)
-	if((SScontracts && !SScontracts.definition_has_demand(src)) || !is_available(context))
+	if(!is_available(context))
 		return null
 	var/datum/contract/contract = new contract_type
 	contract.title = title
@@ -164,7 +162,6 @@
 	contract.offer_context = context ? deepCopyList(context) : list()
 	contract.deadline_grace_duration = deadline_grace_duration
 	configure_contract(contract, context)
-	SScontracts?.apply_definition_demand_terms(src, contract)
 	if(!contract.finalize_offer(offer_duration))
 		qdel(contract)
 		return null
@@ -234,10 +231,6 @@
 	var/negotiated_staff_bonus = 0
 	var/standing_score = 0
 	var/standing_tier = AFFILIATION_NEUTRAL
-	var/repeat_index = 0
-	var/round_demand_remaining = 0
-	var/demand_reserved = FALSE
-	var/reserved_reward = 0
 
 /datum/contract/New()
 	. = ..()
@@ -251,7 +244,6 @@
 	negotiated_effects = list()
 
 /datum/contract/Destroy()
-	SScontracts?.release_contract_demand(src)
 	if(state in list(CONTRACT_ACTIVE, CONTRACT_GRACE))
 		unsubscribe_events()
 	if(deadline_timer)
@@ -432,12 +424,8 @@
 		return FALSE
 	if(!id && !SScontracts.register_contract(src))
 		return FALSE
-	if(definition && !SScontracts.reserve_contract_demand(src))
-		withdraw("The sponsor's remaining demand was committed to another accepted contract.")
-		return FALSE
 	if(funding_mode == CONTRACT_FUNDING_INTERNAL && reward > 0)
 		if(!funding_account?.debit(reward, "Contract escrow [id]", title, "Contracts", FALSE))
-			SScontracts?.release_contract_demand(src)
 			return FALSE
 		escrow_balance = reward
 	negotiation_locked = TRUE
@@ -554,8 +542,6 @@
 		audit(CONTRACT_AUDIT_PAYMENT, "Completion is verified, but payment is deferred until every recipient account can accept its share.")
 		SScontracts?.notify_contract(src, "Contract [id] completed its requirements, but payment is waiting on an unavailable recipient account.")
 		return FALSE
-	// Charge finite sponsor demand before close() can schedule an automatic
-	// replacement, otherwise the replacement sees stale full demand.
 	SScontracts?.record_contract_completion(src)
 	close(CONTRACT_COMPLETED, CONTRACT_AUDIT_COMPLETED, "All required conditions completed.", CONTRACT_CLOSE_COMPLETED)
 	if(issuer_faction)
@@ -644,7 +630,6 @@
 
 /datum/contract/proc/close(new_state, category, detail, _closure_code = CONTRACT_CLOSE_CANCELLED)
 	var/old_state = state
-	SScontracts?.release_contract_demand(src)
 	if(old_state in list(CONTRACT_ACTIVE, CONTRACT_GRACE))
 		unsubscribe_events()
 	if(deadline_timer)

@@ -11,8 +11,6 @@
 	candidate_duration = 10 MINUTES
 	offer_cooldown = 8 MINUTES
 	repeat_cooldown = 25 MINUTES
-	max_round_completions = 1
-	repeat_reward_decay_percent = 0
 
 /datum/contract_definition/social/program/opportunity/configure_contract(datum/contract/social/contract, list/context)
 	..()
@@ -38,7 +36,6 @@
 	issuer_name = "NanoTrasen Utilities Dispatch"
 	issuer_faction = REPUTATION_FACTION_NANOTRASEN
 	reward = 3200
-	round_reward_budget = 3200
 
 /datum/contract_definition/social/program/opportunity/grid_restoration/configure_contract(datum/contract/social/contract, list/context)
 	..()
@@ -61,7 +58,6 @@
 	issuer_name = "SolGov Habitat Safety Office"
 	issuer_faction = REPUTATION_FACTION_SOLGOV
 	reward = 3300
-	round_reward_budget = 3300
 
 /datum/contract_definition/social/program/opportunity/atmos_containment/configure_contract(datum/contract/social/contract, list/context)
 	..()
@@ -88,7 +84,6 @@
 	issuer_name = "VeyMed Continuity of Care"
 	issuer_faction = REPUTATION_FACTION_VEYMED
 	reward = 3100
-	round_reward_budget = 3100
 
 /datum/contract_definition/social/program/opportunity/clinical_aftercare/configure_contract(datum/contract/social/contract, list/context)
 	..()
@@ -109,7 +104,6 @@
 	issuer_name = "Eclipse Applied Research"
 	issuer_faction = REPUTATION_FACTION_ECLIPSE
 	reward = 3400
-	round_reward_budget = 3400
 
 /datum/contract_definition/social/program/opportunity/breakthrough_translation/configure_contract(datum/contract/social/contract, list/context)
 	..()
@@ -129,7 +123,6 @@
 	issuer_name = "Chimera Genetics Process Development"
 	issuer_faction = REPUTATION_FACTION_CHIMERA
 	reward = 3150
-	round_reward_budget = 3150
 
 /datum/contract_definition/social/program/opportunity/process_scaleup/configure_contract(datum/contract/social/contract, list/context)
 	..()
@@ -153,7 +146,6 @@
 	issuer_name = "SolGov Justice Standards Office"
 	issuer_faction = REPUTATION_FACTION_SOLGOV
 	reward = 3000
-	round_reward_budget = 3000
 
 /datum/contract_definition/social/program/opportunity/case_review/configure_contract(datum/contract/social/contract, list/context)
 	..()
@@ -173,7 +165,6 @@
 	issuer_name = "Interstellar Traders' Guild"
 	issuer_faction = REPUTATION_FACTION_TRADERS_GUILD
 	reward = 3400
-	round_reward_budget = 3400
 
 /datum/contract_definition/social/program/opportunity/supplier_option/configure_contract(datum/contract/social/contract, list/context)
 	..()
@@ -193,7 +184,6 @@
 	issuer_name = "NanoTrasen Cooperative Purchasing"
 	issuer_faction = REPUTATION_FACTION_NANOTRASEN
 	reward = 3200
-	round_reward_budget = 3200
 
 /datum/contract_definition/social/program/opportunity/procurement_rebate/configure_contract(datum/contract/social/contract, list/context)
 	..()
@@ -216,7 +206,6 @@
 	issuer_name = "TALON Cultural Exchange"
 	issuer_faction = REPUTATION_FACTION_TALON
 	reward = 3100
-	round_reward_budget = 3100
 
 /datum/contract_definition/social/program/opportunity/hospitality_expansion/configure_contract(datum/contract/social/contract, list/context)
 	..()
@@ -236,7 +225,6 @@
 	issuer_name = "Worker's Union Agricultural Exchange"
 	issuer_faction = REPUTATION_FACTION_WORKERS_UNION
 	reward = 2950
-	round_reward_budget = 2950
 
 /datum/contract_definition/social/program/opportunity/crop_forward_order/configure_contract(datum/contract/social/contract, list/context)
 	..()
@@ -255,7 +243,6 @@
 	issuer_name = "NanoTrasen Facilities Dispatch"
 	issuer_faction = REPUTATION_FACTION_NANOTRASEN
 	reward = 2700
-	round_reward_budget = 2700
 
 /datum/contract_definition/social/program/opportunity/facilities_surge/configure_contract(datum/contract/social/contract, list/context)
 	..()
@@ -278,7 +265,6 @@
 	issuer_name = "Kusanagi Robotics Field Support"
 	issuer_faction = REPUTATION_FACTION_NANOTRASEN
 	reward = 3100
-	round_reward_budget = 3100
 
 /datum/contract_definition/social/program/opportunity/automation_expansion/configure_contract(datum/contract/social/contract, list/context)
 	..()
@@ -297,7 +283,6 @@
 	issuer_name = "NanoTrasen Corporate Finance"
 	issuer_faction = REPUTATION_FACTION_NANOTRASEN
 	reward = 3500
-	round_reward_budget = 3500
 
 /datum/contract_definition/social/program/opportunity/operational_dividend/configure_contract(datum/contract/social/contract, list/context)
 	..()

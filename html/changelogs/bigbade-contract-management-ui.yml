@@ -2,3 +2,4 @@ author: "BigBadE"
 delete-after: true
 changes:
   - qol: "Compacted contract negotiation terms, consolidated contract lifecycle views, and added department filtering for multi-department managers."
+  - balance: "Contract boards now offer a rotating short/long-term selection with varied sponsors instead of publishing the full catalog or limiting repeats through sponsor demand."
