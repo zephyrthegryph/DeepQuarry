@@ -133,7 +133,7 @@ const RewardSummary = ({ contract }: { contract: managementContract }) => {
   ] as [string, number, number][];
 
   return (
-    <Stack align="stretch" mt={1} spacing={0.5}>
+    <Stack align="stretch" mt={1}>
       {recipients.map(([label, money, reputation]) => (
         <Stack.Item key={label} grow>
           <Tooltip
@@ -529,11 +529,11 @@ export const ManagementContracts = () => {
                   {contract.details?.kind === 'social_outcome' && (
                     <Section
                       mt={1}
-                      title="Stakeholders and settlement"
+                      title={`Stakeholders and settlement — ${contract.details.stakeholder_summary}`}
                       buttons={
                         <Stack>
                           {stakeholdersExpanded &&
-                            contract.state === 'active' && (
+                            ['active', 'grace'].includes(contract.state) && (
                               <Stack.Item>
                                 <Button
                                   icon="flag-checkered"
@@ -601,14 +601,28 @@ export const ManagementContracts = () => {
                             required dimension and stakeholder role must meet
                             its negotiated minimum.
                           </Box>
+                          <Box mt={0.5} color="label">
+                            Share weights divide the fixed staff award; they do
+                            not increase it. Approval reserves a role, while
+                            attributable contract work qualifies it for
+                            settlement.
+                          </Box>
                           {contract.details.roles.map((role) => (
                             <Section
                               key={`${contract.id}-${role.id}`}
                               mt={1}
-                              title={`${role.title} — ${role.approved}/${role.minimum} approved`}
+                              title={`${role.title} — ${role.qualified}/${role.minimum} qualified · ${role.approved} approved`}
                             >
                               <Box mb={0.5} color="label">
                                 {role.description}
+                                {role.authored_minimum > role.minimum && (
+                                  <>
+                                    {' '}
+                                    Staffing reduced the required slate from{' '}
+                                    {role.authored_minimum} to {role.minimum}.
+                                    Remaining appointments are optional.
+                                  </>
+                                )}
                               </Box>
                               {!role.proposals.length && (
                                 <Box color="label">
@@ -625,42 +639,103 @@ export const ManagementContracts = () => {
                                     <Box bold>{proposal.name}</Box>
                                     <Box color="label">
                                       {proposal.department || 'Independent'} ·
-                                      requested share weight {proposal.weight} ·
-                                      verified contribution{' '}
-                                      {proposal.contribution} ·{' '}
-                                      {proposal.status}
+                                      {proposal.online ? 'online' : 'offline'} ·
+                                      requested {proposal.weight}× share
+                                      {!!proposal.approved_weight &&
+                                        ` · offered ${proposal.approved_weight}×`}
+                                      {' · '}contribution{' '}
+                                      {proposal.contribution}/
+                                      {role.minimum_contribution} ·{' '}
+                                      {proposal.qualified
+                                        ? 'qualified'
+                                        : proposal.status}
                                     </Box>
                                   </Stack.Item>
-                                  {proposal.status === 'pending' && (
+                                  {[
+                                    'pending',
+                                    'countered',
+                                    'approved',
+                                  ].includes(proposal.status) && (
+                                    <Stack.Item>
+                                      <Stack align="center">
+                                        <Stack.Item color="label">
+                                          {proposal.status === 'approved'
+                                            ? 'Share'
+                                            : 'Offer'}
+                                        </Stack.Item>
+                                        {[1, 2, 3].map((weight) => (
+                                          <Stack.Item key={weight}>
+                                            <Button
+                                              compact
+                                              selected={
+                                                proposal.status ===
+                                                  'approved' &&
+                                                proposal.approved_weight ===
+                                                  weight
+                                              }
+                                              tooltip={
+                                                weight === proposal.weight
+                                                  ? 'Approve the requested share'
+                                                  : 'Send this counteroffer'
+                                              }
+                                              onClick={() =>
+                                                act(
+                                                  'contract_stakeholder_decide',
+                                                  {
+                                                    id: contract.id,
+                                                    account: proposal.account,
+                                                    role: role.id,
+                                                    approved: 1,
+                                                    weight,
+                                                  },
+                                                )
+                                              }
+                                            >
+                                              {weight}×
+                                            </Button>
+                                          </Stack.Item>
+                                        ))}
+                                        {proposal.status === 'pending' && (
+                                          <Stack.Item>
+                                            <Button
+                                              compact
+                                              icon="times"
+                                              color="bad"
+                                              tooltip="Reject this application"
+                                              onClick={() =>
+                                                act(
+                                                  'contract_stakeholder_decide',
+                                                  {
+                                                    id: contract.id,
+                                                    account: proposal.account,
+                                                    role: role.id,
+                                                    approved: 0,
+                                                  },
+                                                )
+                                              }
+                                            />
+                                          </Stack.Item>
+                                        )}
+                                      </Stack>
+                                    </Stack.Item>
+                                  )}
+                                  {['approved', 'countered'].includes(
+                                    proposal.status,
+                                  ) && (
                                     <Stack.Item>
                                       <Button
-                                        icon="check"
-                                        color="good"
-                                        onClick={() =>
-                                          act('contract_stakeholder_decide', {
-                                            id: contract.id,
-                                            account: proposal.account,
-                                            role: role.id,
-                                            approved: 1,
-                                          })
-                                        }
-                                      >
-                                        Approve
-                                      </Button>
-                                      <Button
-                                        icon="times"
+                                        compact
+                                        icon="user-minus"
                                         color="bad"
+                                        tooltip="Revoke this appointment so the role can be filled again"
                                         onClick={() =>
-                                          act('contract_stakeholder_decide', {
+                                          act('contract_stakeholder_revoke', {
                                             id: contract.id,
                                             account: proposal.account,
                                             role: role.id,
-                                            approved: 0,
                                           })
                                         }
-                                      >
-                                        Reject
-                                      </Button>
+                                      />
                                     </Stack.Item>
                                   )}
                                 </Stack>

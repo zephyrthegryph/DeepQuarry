@@ -2027,7 +2027,6 @@
 	breadth.unique_field = "category"
 	contract.add_requirement(breadth)
 	TEST_ASSERT(!contract.validate(), "synthetic social contract failed pre-acceptance validation")
-	TEST_ASSERT(contract.accept(), "synthetic social contract could not activate")
 	var/list/accounts = list()
 	for(var/index in 1 to 4)
 		var/datum/money_account/account = new
@@ -2036,24 +2035,39 @@
 		account.department_id = index == 1 ? DEPARTMENT_CARGO : (index <= 3 ? DEPARTMENT_RESEARCH : DEPARTMENT_MEDICAL)
 		GLOB.all_money_accounts += account
 		accounts += account
+	contract.lock_stakeholder_requirements(accounts)
+	TEST_ASSERT(contract.accept(), "synthetic social contract could not activate")
 	var/datum/money_account/lead = accounts[1]
 	var/datum/money_account/partner_one = accounts[2]
 	var/datum/money_account/partner_two = accounts[3]
 	var/datum/money_account/ineligible = accounts[4]
 	TEST_ASSERT(contract.propose_stakeholder(lead, "lead", 3), "eligible Cargo lead could not submit a proposal")
+	TEST_ASSERT(!contract.propose_stakeholder(lead, "partner", 1), "one account could seek multiple stakeholder roles")
 	TEST_ASSERT(contract.propose_stakeholder(partner_one, "partner", 1), "first eligible partner could not submit a proposal")
 	TEST_ASSERT(contract.propose_stakeholder(partner_two, "partner", 2), "second eligible partner could not submit a proposal")
 	TEST_ASSERT(!contract.propose_stakeholder(ineligible, "partner", 3), "ineligible department submitted a stakeholder proposal")
-	TEST_ASSERT(contract.decide_stakeholder(lead.account_number, "lead", TRUE, "Unit test"), "Cargo lead proposal could not be approved")
+	TEST_ASSERT(contract.withdraw_stakeholder(partner_two, "partner"), "partner could not withdraw a pending proposal")
+	TEST_ASSERT(contract.propose_stakeholder(partner_two, "partner", 2), "withdrawn partner could not reapply")
+	TEST_ASSERT(contract.decide_stakeholder(lead.account_number, "lead", TRUE, "Unit test", 2), "Cargo lead proposal could not be countered")
+	var/datum/contract_stakeholder_proposal/lead_proposal = contract.stakeholder_proposals[contract.proposal_key(lead.account_number, "lead")]
+	TEST_ASSERT_EQUAL(lead_proposal.status, CONTRACT_STAKEHOLDER_COUNTERED, "different approved weight bypassed stakeholder counteroffer")
+	TEST_ASSERT(contract.respond_stakeholder_counter(lead, "lead", TRUE), "Cargo lead could not accept the counteroffer")
 	TEST_ASSERT(contract.decide_stakeholder(partner_one.account_number, "partner", TRUE, "Unit test"), "first partner proposal could not be approved")
 	TEST_ASSERT(contract.decide_stakeholder(partner_two.account_number, "partner", TRUE, "Unit test"), "second partner proposal could not be approved")
-	TEST_ASSERT(contract.stakeholders_ready(), "fully approved stakeholder slate remained incomplete")
+	TEST_ASSERT(!contract.stakeholders_ready(), "approval alone qualified stakeholders without attributable work")
 	for(var/index in 1 to 3)
 		emit_contract_event("dq-social-grade", list(
 			"actor_account" = index == 1 ? lead.account_number : partner_one.account_number,
 			"category" = "category-[index]",
 			"metrics" = list("value" = 25),
 		), "dq-social-grade:[REF(contract)]:[index]")
+	contract.record_contribution(partner_two.account_number, 1, "Completed partner review")
+	TEST_ASSERT(contract.stakeholders_ready(), "approved stakeholders with attributable work remained incomplete")
+	TEST_ASSERT(contract.revoke_stakeholder(partner_two.account_number, "partner", "Unit test"), "approved stakeholder could not be revoked")
+	TEST_ASSERT(!contract.stakeholders_ready(), "revoked stakeholder continued satisfying the required slate")
+	TEST_ASSERT(contract.propose_stakeholder(partner_two, "partner", 1), "revoked stakeholder could not submit a replacement application")
+	TEST_ASSERT(contract.decide_stakeholder(partner_two.account_number, "partner", TRUE, "Unit test"), "replacement stakeholder application could not be approved")
+	TEST_ASSERT(contract.stakeholders_ready(), "replacement approval did not retain the stakeholder's attributable work")
 	TEST_ASSERT_EQUAL(contract.grade_for_ratio(contract.current_outcome_ratio()), CONTRACT_OUTCOME_SUCCESSFUL, "75% evidence did not project a successful grade")
 	TEST_ASSERT(contract.can_finalize_outcome(), "successful evidence and stakeholders did not unlock settlement")
 	TEST_ASSERT(contract.finalize_graded_outcome("Unit test"), "graded outcome could not be finalized")
@@ -2063,6 +2077,29 @@
 	qdel(contract)
 	for(var/datum/money_account/account in accounts)
 		GLOB.all_money_accounts -= account
+		qdel(account)
+
+/datum/unit_test/dq_social_contract_population_scaling
+
+/datum/unit_test/dq_social_contract_population_scaling/Run()
+	var/datum/contract/social/contract = new
+	contract.add_stakeholder_role(new /datum/contract_stakeholder_role("crew", "Crew", "Open role.", null, 5, 8))
+	contract.add_stakeholder_role(new /datum/contract_stakeholder_role("specialist", "Specialist", "Restricted role.", list(DEPARTMENT_ENGINEERING), 3, 4))
+	var/list/accounts = list()
+	for(var/index in 1 to 3)
+		var/datum/money_account/account = new
+		account.account_number = 930000 + index
+		account.owner_name = "Scaling Tester [index]"
+		account.department_id = index == 1 ? DEPARTMENT_ENGINEERING : DEPARTMENT_CIVILIAN
+		accounts += account
+	contract.lock_stakeholder_requirements(accounts)
+	var/datum/contract_stakeholder_role/specialist = contract.stakeholder_roles["specialist"]
+	var/datum/contract_stakeholder_role/crew = contract.stakeholder_roles["crew"]
+	TEST_ASSERT_EQUAL(specialist.required_minimum, 1, "population scaling failed to preserve the scarce eligible specialist")
+	TEST_ASSERT_EQUAL(crew.required_minimum, 2, "population scaling required more general participants than remained available")
+	TEST_ASSERT_EQUAL(specialist.required_minimum + crew.required_minimum, 3, "population scaling assigned one account to multiple required roles")
+	qdel(contract)
+	for(var/datum/money_account/account in accounts)
 		qdel(account)
 
 #endif

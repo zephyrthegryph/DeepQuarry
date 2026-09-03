@@ -149,8 +149,11 @@ export type socialStakeholderProposal = {
   name: string;
   department?: string;
   weight: number;
+  approved_weight: number;
   status: string;
   contribution: number;
+  qualified: BooleanLike;
+  online: BooleanLike;
 };
 
 export type socialStakeholderRole = {
@@ -159,9 +162,13 @@ export type socialStakeholderRole = {
   description: string;
   departments: string[];
   minimum: number;
+  authored_minimum: number;
   maximum: number;
   approved: number;
+  qualified: number;
+  minimum_contribution: number;
   viewer_eligible: BooleanLike;
+  viewer_has_other_role: BooleanLike;
   proposals: socialStakeholderProposal[];
 };
 
@@ -176,6 +183,9 @@ export type socialOutcomeDetails = {
   exceptional_percent: number;
   can_finalize: BooleanLike;
   stakeholders_ready: BooleanLike;
+  stakeholder_required: number;
+  stakeholder_qualified: number;
+  stakeholder_summary: string;
   roles: socialStakeholderRole[];
 };
 

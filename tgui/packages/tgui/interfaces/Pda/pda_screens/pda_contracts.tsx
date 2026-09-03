@@ -62,14 +62,23 @@ type Contract = {
       description: string;
       viewer_eligible: boolean;
       minimum: number;
+      authored_minimum: number;
       approved: number;
+      qualified: number;
+      minimum_contribution: number;
+      viewer_has_other_role: boolean;
       proposals: {
         account: number;
         name: string;
         weight: number;
+        approved_weight: number;
         status: string;
+        contribution: number;
+        qualified: boolean;
+        online: boolean;
       }[];
     }[];
+    stakeholder_summary?: string;
   };
 };
 
@@ -366,53 +375,128 @@ export const pda_contracts = () => {
                 </Box>
               ))}
               {contract.details?.kind === 'social_outcome' && (
-                <Section mt={1} title="Stakeholder participation">
+                <Section
+                  mt={1}
+                  title={`Stakeholder participation — ${contract.details.stakeholder_summary}`}
+                >
                   <Box mb={1} color="label">
                     Current graded specification: {contract.details.score}% ·{' '}
                     {contract.details.projected_grade} · projected award{' '}
                     {contract.details.projected_reward} Thalers
                   </Box>
+                  <Box mb={1} color="label">
+                    Share weights divide the fixed staff award. An appointment
+                    qualifies after the stakeholder contributes attributable
+                    work.
+                  </Box>
                   {(contract.details.roles ?? []).map((role) => {
                     const ownProposal = role.proposals.find(
                       (proposal) => proposal.account === data.contract_account,
                     );
+                    const canApply =
+                      !!role.viewer_eligible &&
+                      !role.viewer_has_other_role &&
+                      ['active', 'grace'].includes(contract.state) &&
+                      (!ownProposal ||
+                        ['rejected', 'withdrawn', 'revoked'].includes(
+                          ownProposal.status,
+                        ));
                     return (
                       <Section
                         key={`${contract.id}-${role.id}`}
-                        title={`${role.title} — ${role.approved}/${role.minimum}`}
+                        title={`${role.title} — ${role.qualified}/${role.minimum} qualified`}
                       >
                         <Box mb={0.5}>{role.description}</Box>
-                        {ownProposal ? (
-                          <Box color="label">
-                            Your proposal: {ownProposal.status}, share weight{' '}
-                            {ownProposal.weight}
+                        {ownProposal && (
+                          <Box mb={0.5} color="label">
+                            Your application: {ownProposal.status} · requested{' '}
+                            {ownProposal.weight}×
+                            {!!ownProposal.approved_weight &&
+                              ` · offered ${ownProposal.approved_weight}×`}
+                            {' · '}contribution {ownProposal.contribution}/
+                            {role.minimum_contribution}
+                            {ownProposal.qualified && ' · qualified'}
                           </Box>
-                        ) : (
-                          !!role.viewer_eligible &&
-                          contract.state === 'active' && (
-                            <Stack>
-                              {[1, 2, 3].map((weight) => (
-                                <Stack.Item key={weight}>
-                                  <Button
-                                    icon="handshake"
-                                    onClick={() =>
-                                      act('contract_stakeholder_propose', {
-                                        id: contract.id,
-                                        role: role.id,
-                                        weight,
-                                      })
-                                    }
-                                  >
-                                    {weight === 1
-                                      ? 'Standard share'
-                                      : weight === 2
-                                        ? 'Major share'
-                                        : 'Lead share'}
-                                  </Button>
-                                </Stack.Item>
-                              ))}
-                            </Stack>
-                          )
+                        )}
+                        {ownProposal?.status === 'countered' && (
+                          <Stack mb={0.5}>
+                            <Stack.Item>
+                              <Button
+                                icon="check"
+                                color="good"
+                                onClick={() =>
+                                  act('contract_stakeholder_respond', {
+                                    id: contract.id,
+                                    role: role.id,
+                                    accepted: 1,
+                                  })
+                                }
+                              >
+                                Accept {ownProposal.approved_weight}× share
+                              </Button>
+                            </Stack.Item>
+                            <Stack.Item>
+                              <Button
+                                icon="times"
+                                onClick={() =>
+                                  act('contract_stakeholder_respond', {
+                                    id: contract.id,
+                                    role: role.id,
+                                    accepted: 0,
+                                  })
+                                }
+                              >
+                                Decline
+                              </Button>
+                            </Stack.Item>
+                          </Stack>
+                        )}
+                        {ownProposal &&
+                          ['pending', 'approved'].includes(
+                            ownProposal.status,
+                          ) && (
+                            <Button
+                              mb={0.5}
+                              icon="user-minus"
+                              onClick={() =>
+                                act('contract_stakeholder_withdraw', {
+                                  id: contract.id,
+                                  role: role.id,
+                                })
+                              }
+                            >
+                              Withdraw
+                            </Button>
+                          )}
+                        {canApply && (
+                          <Stack>
+                            {[1, 2, 3].map((weight) => (
+                              <Stack.Item key={weight}>
+                                <Button
+                                  icon="handshake"
+                                  onClick={() =>
+                                    act('contract_stakeholder_propose', {
+                                      id: contract.id,
+                                      role: role.id,
+                                      weight,
+                                    })
+                                  }
+                                >
+                                  {weight === 1
+                                    ? 'Standard share'
+                                    : weight === 2
+                                      ? 'Major share'
+                                      : 'Lead share'}
+                                </Button>
+                              </Stack.Item>
+                            ))}
+                          </Stack>
+                        )}
+                        {!!role.viewer_has_other_role && !ownProposal && (
+                          <Box color="label">
+                            You already hold or are seeking another role on this
+                            contract.
+                          </Box>
                         )}
                       </Section>
                     );

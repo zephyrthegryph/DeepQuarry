@@ -1,0 +1,6 @@
+author: "BigBadE"
+delete-after: true
+changes:
+  - rscadd: "Contract stakeholders now negotiate staff shares, qualify through attributable work, and can withdraw, reapply, or be replaced."
+  - balance: "Social-contract staffing requirements now scale to the eligible crew available when the contract is accepted."
+  - qol: "Contract consoles and PDAs now show qualified stakeholder readiness and missing roles at a glance."

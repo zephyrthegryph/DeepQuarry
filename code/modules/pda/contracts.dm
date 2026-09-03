@@ -27,7 +27,7 @@
 /datum/data/pda/app/contracts/tgui_act(action, list/params, datum/tgui/ui, datum/tgui_state/state)
 	if(..())
 		return TRUE
-	if(!(action in list("contract_accept", "contract_decline", "contract_stakeholder_propose", "contract_agent_apply")) || pda.loc != ui.user || !pda.id)
+	if(!(action in list("contract_accept", "contract_decline", "contract_stakeholder_propose", "contract_stakeholder_withdraw", "contract_stakeholder_respond", "contract_agent_apply")) || pda.loc != ui.user || !pda.id)
 		return FALSE
 	var/datum/money_account/account = get_account(pda.id.associated_account_number)
 	var/datum/contract/contract = SScontracts.contracts_by_id[params["id"]]
@@ -45,6 +45,12 @@
 	if(action == "contract_stakeholder_propose")
 		var/datum/contract/social/social = contract
 		return istype(social) && social.propose_stakeholder(account, params["role"], text2num(params["weight"]))
+	if(action == "contract_stakeholder_withdraw")
+		var/datum/contract/social/social = contract
+		return istype(social) && social.withdraw_stakeholder(account, params["role"])
+	if(action == "contract_stakeholder_respond")
+		var/datum/contract/social/social = contract
+		return istype(social) && social.respond_stakeholder_counter(account, params["role"], !!text2num(params["accepted"]))
 	if(contract.scope != CONTRACT_SCOPE_PERSONAL || contract.owner_account_number != account.account_number)
 		return FALSE
 	if(action == "contract_decline")
