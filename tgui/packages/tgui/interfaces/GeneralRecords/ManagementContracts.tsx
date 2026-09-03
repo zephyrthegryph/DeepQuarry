@@ -239,6 +239,10 @@ export const ManagementContracts = () => {
     lifecycleGroups[0];
   const selectedStatusLabel =
     selectedStatus === 'all' ? 'All' : lifecycle.label;
+  const reputationDepartment =
+    selectedDepartment === 'All' || selectedDepartment === 'Station-wide'
+      ? undefined
+      : selectedDepartment;
   const departmentOptions = [
     'All',
     'Station-wide',
@@ -326,7 +330,9 @@ export const ManagementContracts = () => {
         backgroundColor="rgba(0,0,0,0.2)"
       >
         <Stack.Item color="label" nowrap>
-          Station reputation
+          {reputationDepartment
+            ? `${reputationDepartment} reputation`
+            : 'Station reputation'}
         </Stack.Item>
         {(data.contract_faction_standings ?? []).map((faction) => (
           <Stack.Item key={faction.acronym} grow textAlign="center" nowrap>
@@ -336,7 +342,10 @@ export const ManagementContracts = () => {
                   {faction.acronym}
                 </Box>
                 <Box inline color="label">
-                  {faction.tier}
+                  {reputationDepartment
+                    ? (faction.department_tiers?.[reputationDepartment] ??
+                      faction.tier)
+                    : faction.tier}
                 </Box>
               </Box>
             </Tooltip>

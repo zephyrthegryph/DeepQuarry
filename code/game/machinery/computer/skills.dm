@@ -211,11 +211,16 @@
 		for(var/faction_id in GLOB.reputation_factions)
 			var/datum/reputation_faction/faction = GLOB.reputation_factions[faction_id]
 			var/standing = get_station_faction_reputation(faction_id)
+			var/list/department_tiers = list()
+			for(var/department in contract_departments)
+				var/department_standing = get_department_faction_reputation(department, faction_id)
+				department_tiers[department] = reputation_rank(isnull(department_standing) ? standing : department_standing)
 			contract_faction_standings.Add(list(list(
 				"name" = faction.short_name,
 				"acronym" = faction.acronym,
 				"color" = faction.color,
-				"tier" = reputation_rank(standing)
+				"tier" = reputation_rank(standing),
+				"department_tiers" = department_tiers
 			)))
 		data["contract_faction_standings"] = contract_faction_standings
 		var/list/contracts = list()

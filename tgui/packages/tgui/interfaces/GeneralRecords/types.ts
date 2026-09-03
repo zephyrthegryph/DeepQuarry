@@ -39,6 +39,7 @@ export type factionStanding = {
   acronym: string;
   color: string;
   tier: string;
+  department_tiers: Record<string, string>;
 };
 
 export type contractRequirement = {
