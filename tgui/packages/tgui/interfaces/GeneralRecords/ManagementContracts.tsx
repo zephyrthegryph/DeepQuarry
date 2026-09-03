@@ -9,6 +9,7 @@ import {
   ProgressBar,
   Section,
   Stack,
+  Table,
   Tooltip,
 } from 'tgui-core/components';
 
@@ -59,56 +60,80 @@ const TermTooltip = ({
 }) => {
   const effects: [string, number, number][] = [
     ['Station', option.station_money, option.station_reputation],
-    ['Department', option.department_money, option.department_reputation],
+    [
+      contract.department || 'Department',
+      option.department_money,
+      option.department_reputation,
+    ],
     ['Staff', option.staff_money, option.staff_reputation],
   ];
-  const moneyEffects = effects.filter(([, money]) => !!money);
-  const reputationEffects = effects.filter(([, , reputation]) => !!reputation);
+  const visibleEffects = effects.filter(
+    ([label, money, reputation]) =>
+      !!money ||
+      !!reputation ||
+      (label === 'Station' && !!option.other_reputation.length),
+  );
 
   return (
-    <Box>
-      <Box mb={0.5}>{option.description}</Box>
-      {!!moneyEffects.length && (
-        <Box nowrap>
-          <Box inline bold>
-            Money:
-          </Box>{' '}
-          {moneyEffects.map(([label, money], index) => (
-            <Fragment key={label}>
-              {!!index && ' · '}
-              {label} {signed(money, ' th')}
-            </Fragment>
-          ))}
-        </Box>
-      )}
-      {!!reputationEffects.length && (
-        <Box nowrap>
-          <FactionBadge
-            acronym={contract.issuer_acronym}
-            color={contract.issuer_color}
-          />{' '}
-          {reputationEffects.map(([label, , reputation], index) => (
-            <Fragment key={label}>
-              {!!index && ' · '}
-              {label} {reputationChange(reputation)}
-            </Fragment>
-          ))}
+    <Box width="370px">
+      <Box mb={0.75}>{option.description}</Box>
+      {!!visibleEffects.length && (
+        <Box p={0.5} mb={0.5} backgroundColor="rgba(255, 255, 255, 0.055)">
+          <Box bold mb={0.5} color="label">
+            Award adjustment
+          </Box>
+          <Table>
+            {visibleEffects.map(([label, money, reputation]) => (
+              <Table.Row key={label}>
+                <Table.Cell bold width="92px">
+                  {label}
+                </Table.Cell>
+                <Table.Cell textAlign="right" width="72px" pr={1} nowrap>
+                  <Box
+                    inline
+                    color={money < 0 ? 'bad' : money > 0 ? 'good' : 'label'}
+                  >
+                    {money ? signed(money, ' th') : '—'}
+                  </Box>
+                </Table.Cell>
+                <Table.Cell>
+                  {!!reputation && (
+                    <Box inline mr={0.75} nowrap>
+                      <FactionBadge
+                        acronym={contract.issuer_acronym}
+                        color={contract.issuer_color}
+                      />{' '}
+                      <Box inline color={reputation < 0 ? 'bad' : 'good'}>
+                        {reputationChange(reputation)}
+                      </Box>
+                    </Box>
+                  )}
+                  {label === 'Station' &&
+                    option.other_reputation.map((change) => (
+                      <Box key={change.faction} inline mr={0.75} nowrap>
+                        <FactionBadge
+                          acronym={change.acronym}
+                          color={change.color}
+                        />{' '}
+                        <Box inline color={change.amount < 0 ? 'bad' : 'good'}>
+                          {reputationChange(change.amount)}
+                        </Box>
+                      </Box>
+                    ))}
+                </Table.Cell>
+              </Table.Row>
+            ))}
+          </Table>
         </Box>
       )}
       {!!option.deadline_minutes && (
-        <Box nowrap>
-          <Box inline bold>
-            Deadline:
-          </Box>{' '}
-          {signed(option.deadline_minutes, ' min')}
+        <Box color="label" nowrap>
+          Deadline adjustment:{' '}
+          <Box inline bold color={option.deadline_minutes < 0 ? 'bad' : 'good'}>
+            {signed(option.deadline_minutes, ' min')}
+          </Box>
         </Box>
       )}
-      {option.other_reputation.map((change) => (
-        <Box key={change.faction} nowrap>
-          <FactionBadge acronym={change.acronym} color={change.color} />{' '}
-          {reputationChange(change.amount)}
-        </Box>
-      ))}
     </Box>
   );
 };
