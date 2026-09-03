@@ -38,7 +38,25 @@ const reputationDescription = (value: number) => {
   return `${degree} reputation ${value < 0 ? 'decrease' : 'increase'}`;
 };
 
-const TermTooltip = ({ option }: { option: contractClauseOption }) => {
+const FactionBadge = ({
+  acronym,
+  color,
+}: {
+  acronym: string;
+  color: string;
+}) => (
+  <Box inline bold px={0.5} backgroundColor={color} color="white">
+    {acronym}
+  </Box>
+);
+
+const TermTooltip = ({
+  option,
+  contract,
+}: {
+  option: contractClauseOption;
+  contract: managementContract;
+}) => {
   const effects: [string, number, number][] = [
     ['Station', option.station_money, option.station_reputation],
     ['Department', option.department_money, option.department_reputation],
@@ -65,9 +83,10 @@ const TermTooltip = ({ option }: { option: contractClauseOption }) => {
       )}
       {!!reputationEffects.length && (
         <Box nowrap>
-          <Box inline bold>
-            Issuer reputation:
-          </Box>{' '}
+          <FactionBadge
+            acronym={contract.issuer_acronym}
+            color={contract.issuer_color}
+          />{' '}
           {reputationEffects.map(([label, , reputation], index) => (
             <Fragment key={label}>
               {!!index && ' · '}
@@ -86,17 +105,8 @@ const TermTooltip = ({ option }: { option: contractClauseOption }) => {
       )}
       {option.other_reputation.map((change) => (
         <Box key={change.faction} nowrap>
-          <Box
-            inline
-            bold
-            mr={0.5}
-            px={0.5}
-            backgroundColor={change.color}
-            color="white"
-          >
-            {change.acronym}
-          </Box>
-          {reputationChange(change.amount)} rep
+          <FactionBadge acronym={change.acronym} color={change.color} />{' '}
+          {reputationChange(change.amount)}
         </Box>
       ))}
     </Box>
@@ -123,62 +133,52 @@ const RewardSummary = ({ contract }: { contract: managementContract }) => {
   ] as [string, number, number][];
 
   return (
-    <Stack
-      align="center"
-      mt={1}
-      p={0.75}
-      backgroundColor="rgba(255, 255, 255, 0.04)"
-    >
-      <Stack.Item>
-        <Box bold>Award</Box>
-      </Stack.Item>
+    <Stack align="stretch" mt={1} spacing={0.5}>
       {recipients.map(([label, money, reputation]) => (
         <Stack.Item key={label} grow>
           <Tooltip
             content={`${label}: ${money.toLocaleString()} Thalers; ${reputationDescription(reputation)} with ${contract.issuer_faction}`}
           >
-            <Box textAlign="center" nowrap>
-              <Box inline color="label">
+            <Box
+              height="100%"
+              p={0.5}
+              textAlign="center"
+              nowrap
+              backgroundColor="rgba(255, 255, 255, 0.055)"
+            >
+              <Box color="label" mb={0.25}>
                 {label}
-              </Box>{' '}
+              </Box>
               <Box inline bold>
                 {money.toLocaleString()} th
-              </Box>{' '}
+              </Box>
               {!!reputation && (
-                <Box inline color={reputation < 0 ? 'bad' : 'good'}>
-                  {reputationChange(reputation)} rep
+                <Box inline ml={0.75}>
+                  <FactionBadge
+                    acronym={contract.issuer_acronym}
+                    color={contract.issuer_color}
+                  />{' '}
+                  <Box inline color={reputation < 0 ? 'bad' : 'good'}>
+                    {reputationChange(reputation)}
+                  </Box>
                 </Box>
               )}
             </Box>
           </Tooltip>
         </Stack.Item>
       ))}
-      <Stack.Item>
-        <Box
-          bold
-          px={0.5}
-          backgroundColor={contract.issuer_color}
-          color="white"
-        >
-          {contract.issuer_acronym}
-        </Box>
-      </Stack.Item>
       {contract.secondary_reputation.map((change) => (
         <Stack.Item key={change.faction}>
           <Tooltip
             content={`${reputationDescription(change.amount)} with ${change.faction}`}
           >
-            <Box nowrap>
-              <Box
-                inline
-                bold
-                mr={0.25}
-                px={0.5}
-                backgroundColor={change.color}
-                color="white"
-              >
-                {change.acronym}
-              </Box>
+            <Box
+              height="100%"
+              p={0.5}
+              nowrap
+              backgroundColor="rgba(255, 255, 255, 0.055)"
+            >
+              <FactionBadge acronym={change.acronym} color={change.color} />{' '}
               {reputationChange(change.amount)}
             </Box>
           </Tooltip>
@@ -338,7 +338,10 @@ export const ManagementContracts = () => {
                   </Stack.Item>
                 </Stack>
               }
-              style={{ borderLeft: `4px solid ${contract.issuer_color}` }}
+              style={{
+                borderLeft: `4px solid ${contract.issuer_color}`,
+                backgroundColor: 'rgba(0, 0, 0, 0.32)',
+              }}
             >
               {!expanded && (
                 <Stack align="center">
@@ -446,7 +449,12 @@ export const ManagementContracts = () => {
                                 return (
                                   <Stack.Item key={option.id} grow>
                                     <Tooltip
-                                      content={<TermTooltip option={option} />}
+                                      content={
+                                        <TermTooltip
+                                          option={option}
+                                          contract={contract}
+                                        />
+                                      }
                                     >
                                       <Button
                                         fluid
