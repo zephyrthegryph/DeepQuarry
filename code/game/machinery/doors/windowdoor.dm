@@ -200,21 +200,6 @@
 		return
 
 	if(istype(I))
-		// Fixing.
-		if(I.has_tool_quality(TOOL_WELDER) && user.a_intent == I_HELP)
-			var/obj/item/weldingtool/WT = I.get_welder()
-			if(get_integrity() < max_integrity)
-				if(WT.remove_fuel(1 ,user))
-					to_chat(user, span_notice("You begin repairing [src]..."))
-					playsound(src, WT.usesound, 50, 1)
-					if(do_after(user, 4 SECONDS * WT.toolspeed, target = src))
-						repair_damage(max_integrity)
-						update_icon()
-						to_chat(user, span_notice("You repair [src]."))
-			else
-				to_chat(user, span_warning("[src] is already in good condition!"))
-			return
-
 		//Emags and ninja swords? You may pass.
 		if (istype(I, /obj/item/melee/energy/blade))
 			if(emag_act(10, user))
@@ -225,42 +210,6 @@
 				playsound(src, 'sound/weapons/blade1.ogg', 50, 1)
 				visible_message(span_warning("The glass door was sliced open by [user]!"))
 			return 1
-
-		//If it's opened/emagged, crowbar can pry it out of its frame.
-		if (!density && I.has_tool_quality(TOOL_CROWBAR))
-			playsound(src, I.usesound, 50, 1)
-			user.visible_message("[user] begins prying the windoor out of the frame.", "You start to pry the windoor out of the frame.")
-			if (do_after(user, 4 SECONDS * I.toolspeed, target = src))
-				to_chat(user,span_notice("You pried the windoor out of the frame!"))
-
-				var/obj/structure/windoor_assembly/wa = new/obj/structure/windoor_assembly(src.loc)
-				if (istype(src, /obj/machinery/door/window/brigdoor))
-					wa.secure = "secure_"
-				if (src.base_state == "right" || src.base_state == "rightsecure")
-					wa.facing = "r"
-				wa.set_dir(src.dir)
-				wa.anchored = TRUE
-				wa.created_name = name
-				wa.state = "02"
-				wa.step = 2
-				wa.update_state()
-
-				if(operating == -1)
-					wa.electronics = new/obj/item/circuitboard/broken()
-				else
-					if(!electronics)
-						wa.electronics = new/obj/item/airlock_electronics()
-						if(LAZYLEN(req_access))
-							wa.electronics.conf_access = req_access
-						else if (LAZYLEN(req_one_access))
-							wa.electronics.conf_access = req_one_access
-							wa.electronics.one_access = 1
-					else
-						wa.electronics = electronics
-						electronics = null
-				operating = 0
-				qdel(src)
-				return
 
 		//If it's a weapon, smash windoor. Unless it's an id card, agent card, ect.. then ignore it (Cards really shouldnt damage a door anyway)
 		if(src.density && istype(I, /obj/item) && !istype(I, /obj/item/card))
@@ -285,6 +234,57 @@
 		flick(text("[]deny", src.base_state), src)
 
 	return
+
+/obj/machinery/door/window/welder_act(mob/user, obj/item/tool)
+	if(operating == 1 || user.a_intent != I_HELP)
+		return FALSE
+	var/obj/item/weldingtool/welder = tool.get_welder()
+	if(get_integrity() >= max_integrity)
+		to_chat(user, span_warning("[src] is already in good condition!"))
+		return TRUE
+	if(welder.remove_fuel(1, user))
+		to_chat(user, span_notice("You begin repairing [src]..."))
+		playsound(src, welder.usesound, 50, TRUE)
+		if(do_after(user, 4 SECONDS * welder.toolspeed, target = src))
+			repair_damage(max_integrity)
+			update_icon()
+			to_chat(user, span_notice("You repair [src]."))
+	return TRUE
+
+/obj/machinery/door/window/crowbar_act(mob/user, obj/item/tool)
+	if(operating == 1 || density)
+		return FALSE
+	playsound(src, tool.usesound, 50, TRUE)
+	user.visible_message("[user] begins prying the windoor out of the frame.", "You start to pry the windoor out of the frame.")
+	if(!do_after(user, 4 SECONDS * tool.toolspeed, target = src))
+		return TRUE
+	to_chat(user, span_notice("You pried the windoor out of the frame!"))
+	var/obj/structure/windoor_assembly/assembly = new(loc)
+	if(istype(src, /obj/machinery/door/window/brigdoor))
+		assembly.secure = "secure_"
+	if(base_state == "right" || base_state == "rightsecure")
+		assembly.facing = "r"
+	assembly.set_dir(dir)
+	assembly.anchored = TRUE
+	assembly.created_name = name
+	assembly.state = "02"
+	assembly.step = 2
+	assembly.update_state()
+	if(operating == -1)
+		assembly.electronics = new /obj/item/circuitboard/broken()
+	else if(!electronics)
+		assembly.electronics = new /obj/item/airlock_electronics()
+		if(LAZYLEN(req_access))
+			assembly.electronics.conf_access = req_access
+		else if(LAZYLEN(req_one_access))
+			assembly.electronics.conf_access = req_one_access
+			assembly.electronics.one_access = TRUE
+	else
+		assembly.electronics = electronics
+		electronics = null
+	operating = 0
+	qdel(src)
+	return TRUE
 
 /obj/machinery/door/window/brigdoor
 	name = "secure door"

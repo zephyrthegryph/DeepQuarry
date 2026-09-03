@@ -96,11 +96,7 @@
 				return
 
 /obj/structure/bed/attackby(obj/item/W as obj, mob/user as mob)
-	if(W.has_tool_quality(TOOL_WRENCH))
-		playsound(src, W.usesound, 50, 1)
-		dismantle()
-		qdel(src)
-	else if(istype(W,/obj/item/stack))
+	if(istype(W,/obj/item/stack))
 		if(padding_material)
 			to_chat(user, "\The [src] is already padded.")
 			return
@@ -130,14 +126,6 @@
 		add_padding(padding_type)
 		return
 
-	else if(W.has_tool_quality(TOOL_WIRECUTTER))
-		if(!padding_material)
-			to_chat(user, "\The [src] has no padding to remove.")
-			return
-		to_chat(user, "You remove the padding from \the [src].")
-		playsound(src, W.usesound, 100, 1)
-		remove_padding()
-
 	else if(istype(W, /obj/item/disk) || (istype(W, /obj/item/toy/plushie)))
 		user.drop_from_inventory(W, get_turf(src))
 		W.pixel_x = 10 //make sure they reach the pillow
@@ -158,6 +146,21 @@
 			qdel(W)
 	else
 		..()
+
+/obj/structure/bed/wrench_act(mob/user, obj/item/W)
+	playsound(src, W.usesound, 50, 1)
+	dismantle()
+	qdel(src)
+	return TRUE
+
+/obj/structure/bed/wirecutter_act(mob/user, obj/item/W)
+	if(!padding_material)
+		to_chat(user, "\The [src] has no padding to remove.")
+		return TRUE
+	to_chat(user, "You remove the padding from \the [src].")
+	playsound(src, W.usesound, 100, 1)
+	remove_padding()
+	return TRUE
 
 /obj/structure/bed/proc/deferred_buckle(mob/living/affecting, buckler_name)
 	if(buckle_mob(affecting))
@@ -240,7 +243,7 @@
 	return
 
 /obj/structure/bed/roller/attackby(obj/item/W as obj, mob/user as mob)
-	if(W.has_tool_quality(TOOL_WRENCH) || istype(W,/obj/item/stack) || W.has_tool_quality(TOOL_WIRECUTTER))
+	if(istype(W,/obj/item/stack))
 		return
 	else if(istype(W,/obj/item/roller_holder))
 		if(has_buckled_mobs())
@@ -252,6 +255,12 @@
 			QDEL_IN(src, 0)
 		return
 	..()
+
+/obj/structure/bed/roller/wrench_act(mob/user, obj/item/W)
+	return TRUE
+
+/obj/structure/bed/roller/wirecutter_act(mob/user, obj/item/W)
+	return TRUE
 
 /obj/item/roller
 	name = "roller bed"
@@ -380,6 +389,12 @@
 /obj/structure/bed/alien/attackby(obj/item/W, mob/user)
 	return // No deconning.
 
+/obj/structure/bed/alien/wrench_act(mob/user, obj/item/W)
+	return TRUE
+
+/obj/structure/bed/alien/wirecutter_act(mob/user, obj/item/W)
+	return TRUE
+
 /*
  * Dirty Mattress
  */
@@ -395,19 +410,14 @@
 	buckle_lying = 1
 
 /obj/structure/dirtybed/attackby(obj/item/W as obj, mob/user as mob)
-	if(W.has_tool_quality(TOOL_WRENCH))
-		playsound(src, W.usesound, 100, 1)
-		if(anchored)
-			user.visible_message("[user] begins unsecuring \the [src] from the floor.", "You start unsecuring \the [src] from the floor.")
-		else
-			user.visible_message("[user] begins securing \the [src] to the floor.", "You start securing \the [src] to the floor.")
-
-		if(do_after(user, 2 SECONDS * W.toolspeed, target = src))
-			if(!src) return
-			to_chat(user, span_notice("You [anchored? "un" : ""]secured \the [src]!"))
-			anchored = !anchored
-		return
-
 	if(!anchored)
 		to_chat(user,span_notice(" The bed isn't secured."))
 		return
+
+/obj/structure/dirtybed/wrench_act(mob/user, obj/item/W)
+	playsound(src, W.usesound, 100, 1)
+	user.visible_message("[user] begins [anchored ? "unsecuring \the [src] from" : "securing \the [src] to"] the floor.", "You start [anchored ? "unsecuring \the [src] from" : "securing \the [src] to"] the floor.")
+	if(do_after(user, 2 SECONDS * W.toolspeed, target = src))
+		anchored = !anchored
+		to_chat(user, span_notice("You [anchored ? "secured" : "unsecured"] \the [src]!"))
+	return TRUE

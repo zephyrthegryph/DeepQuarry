@@ -111,11 +111,12 @@ Class Procs:
 	var/clickvol = 40		// volume
 	var/interact_offline = 0 // Can the machine be interacted with while de-powered.
 	var/obj/item/circuitboard/circuit = null
-
-	// 0.0 - 1.0 multipler for prob() based on bullet structure damage
-	// So if this is 1.0 then a 100 damage bullet will always break this structure
-	// If this is 0.5 then a 50 damage bullet will break this structure 25% of the time
-	var/bullet_vulnerability = 0.25
+	/// Bitfield of MACHINE_MAINT_* capabilities handled by the generic tool hooks.
+	var/maintenance_flags = NONE
+	/// Time spent securing or unsecuring this machine; zero is immediate.
+	var/maintenance_wrench_time = 0
+	/// Time spent welding a damaged machine back to full integrity.
+	var/maintenance_weld_time = 2 SECONDS
 
 	var/speed_process = FALSE			//If false, SSmachines. If true, SSfastprocess.
 
@@ -142,6 +143,14 @@ Class Procs:
 	else
 		STOP_PROCESSING(SSfastprocess, src)
 	SSmachines.all_machines -= src
+	// Constructed machinery owns its installed board. Clear the typed reference
+	// immediately when destruction starts; otherwise the board spends an extra GC
+	// generation retained by an already-deleting machine (and reference tracking
+	// turns thousands of those harmless delays into multi-second world freezes).
+	if(circuit)
+		if(circuit.loc == src && !QDELETED(circuit))
+			qdel(circuit)
+		circuit = null
 	if(component_parts)
 		for(var/atom/A in component_parts)
 			if(A.loc == src) // If the components are inside the machine, delete them.
@@ -163,6 +172,65 @@ Class Procs:
 /obj/machinery/process() // Steady power usage is handled separately. If you dont use process why are you here?
 	return PROCESS_KILL
 
+/obj/machinery/screwdriver_act(mob/user, obj/item/tool)
+	if(!(maintenance_flags & MACHINE_MAINT_PANEL))
+		return ..()
+	playsound(src, tool.usesound, 50, TRUE)
+	panel_open = !panel_open
+	to_chat(user, span_notice("You [panel_open ? "open" : "close"] the maintenance hatch of [src]."))
+	update_icon()
+	return ITEM_INTERACT_SUCCESS
+
+/obj/machinery/crowbar_act(mob/user, obj/item/tool)
+	if(!(maintenance_flags & MACHINE_MAINT_FRAME))
+		return ..()
+	if(!panel_open)
+		return ITEM_INTERACT_BLOCKING
+	return dismantle() ? ITEM_INTERACT_SUCCESS : ITEM_INTERACT_BLOCKING
+
+/obj/machinery/wrench_act(mob/user, obj/item/tool)
+	if(!(maintenance_flags & MACHINE_MAINT_WRENCH))
+		return ..()
+	if(panel_open)
+		return ITEM_INTERACT_BLOCKING
+	playsound(src, tool.usesound, 50, TRUE)
+	var/actual_time = tool.toolspeed * maintenance_wrench_time
+	if(actual_time)
+		user.visible_message(span_warning("\The [user] begins [anchored ? "un" : ""]securing \the [src]."), span_notice("You start [anchored ? "un" : ""]securing \the [src]."))
+		if(!do_after(user, actual_time, target = src))
+			return ITEM_INTERACT_BLOCKING
+	user.visible_message(span_warning("\The [user] has [anchored ? "un" : ""]secured \the [src]."), span_notice("You [anchored ? "un" : ""]secure \the [src]."))
+	anchored = !anchored
+	power_change()
+	update_icon()
+	return ITEM_INTERACT_SUCCESS
+
+/obj/machinery/welder_act(mob/user, obj/item/tool)
+	if(!(maintenance_flags & MACHINE_MAINT_WELDER_REPAIR))
+		return ..()
+	if(get_integrity() >= max_integrity)
+		return ITEM_INTERACT_BLOCKING
+	var/obj/item/weldingtool/welder = tool.get_welder()
+	if(!welder?.remove_fuel(0, user))
+		to_chat(user, span_warning("The welding tool must be on to repair [src]."))
+		return ITEM_INTERACT_BLOCKING
+	playsound(src, welder.usesound, 50, TRUE)
+	if(!do_after(user, maintenance_weld_time * welder.toolspeed, target = src) || QDELETED(src) || !welder.isOn())
+		return ITEM_INTERACT_BLOCKING
+	repair_damage(max_integrity)
+	return ITEM_INTERACT_SUCCESS
+
+/// Whether a dirty gas notification makes a sleeping machine actionable.
+/// Gas-dependent subtypes override this; the conservative default preserves
+/// correctness for newly subscribed machinery until it supplies a filter.
+/obj/machinery/proc/gas_dependency_changed(mixture_id, change_mask)
+	return TRUE
+
+/// Change classes this machine can act on while sleeping. Rust uses the
+/// aggregate mask to avoid publishing irrelevant notifications into DM.
+/obj/machinery/proc/gas_dependency_interest_mask()
+	return GAS_DEPENDENCY_ALL
+
 /obj/machinery/emp_act(severity, recursive)
 	. = ..()
 	if (. & EMP_PROTECT_SELF)
@@ -179,19 +247,17 @@ Class Procs:
 		QDEL_IN(pulse2, 1 SECOND)
 
 /obj/machinery/ex_act(severity)
+	if(..())
+		return
+	if(!uses_integrity || (resistance_flags & INDESTRUCTIBLE))
+		return
+	var/explosion_damage = max_integrity
 	switch(severity)
-		if(1.0)
-			fall_apart(severity)
-			return
-		if(2.0)
-			if(prob(50))
-				fall_apart(severity)
-				return
-		if(3.0)
-			if(prob(25))
-				fall_apart(severity)
-				return
-	return
+		if(2)
+			explosion_damage *= 0.5
+		if(3)
+			explosion_damage *= 0.25
+	take_damage(explosion_damage, BRUTE, BOMB, FALSE)
 
 /obj/machinery/vv_edit_var(var_name, new_value)
 	if(var_name == NAMEOF(src, use_power))
@@ -363,76 +429,21 @@ Class Procs:
 /obj/machinery/proc/apply_mapped_upgrades()
 	return
 
-// Default behavior for wrenching down machines.  Supports both delay and instant modes.
-/obj/machinery/proc/default_unfasten_wrench(mob/user, obj/item/W, time = 0)
-	if(!W.has_tool_quality(TOOL_WRENCH))
-		return FALSE
-	if(panel_open)
-		return FALSE // Close panel first!
-	playsound(src, W.usesound, 50, 1)
-	var/actual_time = W.toolspeed * time
-	if(actual_time != 0)
-		user.visible_message( \
-			span_warning("\The [user] begins [anchored ? "un" : ""]securing \the [src]."), \
-			span_notice("You start [anchored ? "un" : ""]securing \the [src]."))
-	if(actual_time == 0 || do_after(user, actual_time, target = src))
-		user.visible_message( \
-			span_warning("\The [user] has [anchored ? "un" : ""]secured \the [src]."), \
-			span_notice("You [anchored ? "un" : ""]secure \the [src]."))
-		anchored = !anchored
-		power_change() //Turn on or off the machine depending on the status of power in the new area.
-		update_icon()
-	return TRUE
-
-/obj/machinery/proc/default_deconstruction_crowbar(mob/user, obj/item/C)
-	if(!C.has_tool_quality(TOOL_CROWBAR))
-		return 0
-	if(!panel_open)
-		return 0
-	. = dismantle()
-
-/obj/machinery/proc/default_deconstruction_screwdriver(mob/user, obj/item/S)
-	if(!S.has_tool_quality(TOOL_SCREWDRIVER))
-		return 0
-	playsound(src, S.usesound, 50, 1)
-	panel_open = !panel_open
-	to_chat(user, span_notice("You [panel_open ? "open" : "close"] the maintenance hatch of [src]."))
-	update_icon()
-	return 1
-
-/obj/machinery/proc/computer_deconstruction_screwdriver(mob/user, obj/item/S)
-	if(!S.has_tool_quality(TOOL_SCREWDRIVER))
-		return 0
+/// Focused-hook implementation for monitor-style machines that dismantle directly
+/// rather than exposing a maintenance panel.
+/obj/machinery/proc/deconstruct_display(mob/user, obj/item/tool)
 	if(!circuit)
-		return 0
+		return ITEM_INTERACT_BLOCKING
 	to_chat(user, span_notice("You start disconnecting the monitor."))
-	playsound(src, S.usesound, 50, 1)
-	if(do_after(user, 2 SECONDS * S.toolspeed, target = src))
-		if(stat & BROKEN)
-			to_chat(user, span_notice("The broken glass falls out."))
-			new /obj/item/material/shard(src.loc)
-		else
-			to_chat(user, span_notice("You disconnect the monitor."))
-		. = dismantle()
-
-/obj/machinery/proc/alarm_deconstruction_screwdriver(mob/user, obj/item/S)
-	if(!S.has_tool_quality(TOOL_SCREWDRIVER))
-		return 0
-	playsound(src, S.usesound, 50, 1)
-	panel_open = !panel_open
-	to_chat(user, "The wires have been [panel_open ? "exposed" : "unexposed"]")
-	update_icon()
-	return 1
-
-/obj/machinery/proc/alarm_deconstruction_wirecutters(mob/user, obj/item/W)
-	if(!W.has_tool_quality(TOOL_WIRECUTTER))
-		return 0
-	if(!panel_open)
-		return 0
-	user.visible_message(span_warning("[user] has cut the wires inside \the [src]!"), "You have cut the wires inside \the [src].")
-	playsound(src, W.usesound, 50, 1)
-	new/obj/item/stack/cable_coil(get_turf(src), 5)
-	. = dismantle()
+	playsound(src, tool.usesound, 50, TRUE)
+	if(!do_after(user, 2 SECONDS * tool.toolspeed, target = src))
+		return ITEM_INTERACT_BLOCKING
+	if(stat & BROKEN)
+		to_chat(user, span_notice("The broken glass falls out."))
+		new /obj/item/material/shard(loc)
+	else
+		to_chat(user, span_notice("You disconnect the monitor."))
+	return dismantle() ? ITEM_INTERACT_SUCCESS : ITEM_INTERACT_BLOCKING
 
 /obj/machinery/proc/dismantle()
 	SEND_SIGNAL(src, COMSIG_OBJ_DECONSTRUCT)
@@ -486,80 +497,27 @@ Class Procs:
 	qdel(src)
 	return 1
 
+/**
+ * Machinery contents are the deterministic salvage from structural destruction.
+ * /obj/deconstruct() moves those contents to the turf after this hook. Detach the
+ * bookkeeping references first so Destroy() neither deletes the salvaged parts
+ * nor reports them as stale component_parts.
+ */
+/obj/machinery/atom_deconstruct(disassembled = TRUE)
+	component_parts = null
+	circuit = null
+	return ..()
+
 /obj/machinery/bullet_act(obj/item/projectile/P, def_zone)
 	. = ..()
-	if(prob(P.get_structure_damage() * bullet_vulnerability))
-		fall_apart()
+	var/structure_damage = P.get_structure_damage()
+	if(structure_damage)
+		take_damage(structure_damage, P.damage_type, BULLET, FALSE)
 
-/**
- * Like an angrier dismantle, where it destroys some of the parts and doesn't give you a frame
- ** severity: Same severities as ex_act (so lower is more destructive)
- ** scatter: If you want the parts to slide around 1 turf in random directions
- */
-/obj/machinery/proc/fall_apart(severity = 3, scatter = TRUE)
-	var/datum/effect/effect/system/spark_spread/spark_system = new /datum/effect/effect/system/spark_spread()
-	spark_system.set_up(5, 0, src)
-	spark_system.attach(src)
-
-	var/atom/droploc = drop_location()
-	if(!droploc || !contents.len) // not even a circuit?
-		playsound(src, 'sound/machines/machine_die_short.ogg')
-		spark_system.start()
-		qdel(spark_system)
-		qdel(src)
-		return
-
-	var/list/surviving_parts = list()
-	// Deleting IDs is lame, unless this is like nuclear severity
-	if(severity != 1)
-		for(var/obj/item/card/id/I in contents)
-			surviving_parts |= I
-
-	// May populate some items to throw around
-	if(!LAZYLEN(component_parts) && circuit)
-		circuit.apply_default_parts(src)
-
-	var/survivability
-	switch(severity)
-		// No survivors
-		if(1)
-			survivability = 0
-
-		// 1 part survives
-		if(2)
-			survivability = 0
-			var/atom/movable/picked_part = pick(contents)
-			if(istype(picked_part))
-				surviving_parts |= picked_part
-
-		// 50% of parts destroyed on average
-		if(3)
-			survivability = 50
-
-		// No parts destroyed, but you lose the frame
-		else
-			survivability = 100
-
-	for(var/atom/movable/P in contents)
-		if(prob(survivability))
-			surviving_parts |= P
-
-	if(circuit && severity >= 2)
-		var/datum/frame/frame_types/FT = circuit.board_type
-		if(istype(FT))
-			// Some steel from the frame, but about half
-			surviving_parts += new /obj/item/stack/material/steel(null, max(1,round(FT.frame_size/2)))
-			// Two bits of cable, but not the 5 required to rebuild
-			surviving_parts += new /obj/item/stack/cable_coil(null, 1)
-			surviving_parts += new /obj/item/stack/cable_coil(null, 1)
-
-	for(var/atom/movable/A as anything in surviving_parts)
-		A.forceMove(droploc)
-		if(scatter && isturf(droploc))
-			var/turf/T = droploc
-			A.Move(get_step(T, pick(GLOB.alldirs)))
-
-	playsound(src, 'sound/machines/machine_die_short.ogg')
-	spark_system.start()
-	qdel(spark_system)
-	qdel(src)
+/obj/machinery/atom_destruction(damage_flag)
+	playsound(src, 'sound/machines/machine_die_short.ogg', 50, TRUE)
+	var/datum/effect/effect/system/spark_spread/sparks = new
+	sparks.set_up(5, 0, src)
+	sparks.start()
+	qdel(sparks)
+	return ..()

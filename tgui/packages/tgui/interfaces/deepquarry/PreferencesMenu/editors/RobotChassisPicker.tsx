@@ -7,7 +7,13 @@
 
 import { useState } from 'react';
 import { useBackend } from 'tgui/backend';
-import { Box, Button, Dropdown, LabeledList, Stack } from 'tgui-core/components';
+import {
+  Box,
+  Button,
+  Dropdown,
+  LabeledList,
+  Stack,
+} from 'tgui-core/components';
 import { ColorizedImage } from '../helper_components';
 import type { EditorProps } from './index';
 

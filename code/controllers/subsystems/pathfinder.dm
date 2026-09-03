@@ -48,7 +48,10 @@ SUBSYSTEM_DEF(pathfinder)
 	return jps_output_turfs(run_pathfinding(instance))
 
 /datum/controller/subsystem/pathfinder/proc/default_bot_pathfinding(mob/living/bot/bot, turf/goal, min_dist = 1, max_path = 128)
-	var/datum/pathfinding/jps/instance = new(bot, get_turf(bot), goal, min_dist, max_path)
+	var/turf/start = get_turf(bot)
+	if(!istype(start) || !istype(goal) || start.z != goal.z)
+		return null
+	var/datum/pathfinding/jps/instance = new(bot, start, goal, min_dist, max_path)
 	instance.ss13_with_access = bot.botcard.access?.Copy()
 	return jps_output_turfs(run_pathfinding(instance))
 

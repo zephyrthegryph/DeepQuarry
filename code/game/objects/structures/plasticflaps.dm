@@ -16,17 +16,14 @@
 		/mob/living/silicon/robot/drone
 		)
 
-/obj/structure/plasticflaps/attackby(obj/item/P, mob/user)
-	if(P.has_tool_quality(TOOL_WIRECUTTER))
-		playsound(src, P.usesound, 50, 1)
-		to_chat(user, span_notice("You start to cut the plastic flaps."))
-		if(do_after(user, 1 SECOND * P.toolspeed, target = src))
-			to_chat(user, span_notice("You cut the plastic flaps."))
-			new /obj/item/stack/material/plastic(src.loc, 4)
-			qdel(src)
-		return
-	else
-		return
+/obj/structure/plasticflaps/wirecutter_act(mob/user, obj/item/P)
+	playsound(src, P.usesound, 50, 1)
+	to_chat(user, span_notice("You start to cut the plastic flaps."))
+	if(do_after(user, 1 SECOND * P.toolspeed, target = src))
+		to_chat(user, span_notice("You cut the plastic flaps."))
+		new /obj/item/stack/material/plastic(loc, 4)
+		qdel(src)
+	return TRUE
 /obj/structure/plasticflaps/can_pathfinding_enter(atom/movable/actor, dir, datum/pathfinding/search)
 	if(isliving(actor))
 		var/mob/living/L = actor

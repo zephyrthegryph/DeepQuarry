@@ -8,6 +8,7 @@
 	anchored = TRUE
 	density = TRUE
 	unacidable = TRUE
+	resistance_flags = INDESTRUCTIBLE
 	use_power = USE_POWER_IDLE
 	idle_power_usage = 10
 
@@ -26,9 +27,6 @@
 	light_color = "#0f8f0f"
 
 	var/obj/effect/overlay/recycler/monitor_screen
-
-/obj/machinery/maint_vendor/fall_apart(severity = 3, scatter = TRUE)
-	return FALSE //don't fall apart. you can't fall apart if you don't consent. it works irl too.
 
 /obj/machinery/maint_vendor/dismantle()
 	return FALSE //we don't want something as important as this to be able to be disassembled. it's a scene tool, technically.

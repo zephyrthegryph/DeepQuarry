@@ -2,6 +2,8 @@
 
 
 /mob/living/silicon/robot
+	/// Internal bridge used only to run the existing crowbar state machine after focused tool dispatch.
+	var/tool_interaction_crowbar = FALSE
 	name = JOB_CYBORG
 	real_name = JOB_CYBORG
 	icon = 'icons/mob/robots.dmi'
@@ -654,27 +656,7 @@
 		M.install(src, user)
 		return
 
-	if(W.has_tool_quality(TOOL_WELDER) && user.a_intent != I_HURT)
-		if(src == user)
-			to_chat(user, span_warning("You lack the reach to be able to repair yourself."))
-			return
-
-		if(!getBruteLoss())
-			to_chat(user, span_filter_notice("Nothing to fix here!"))
-			return
-		var/obj/item/weldingtool/WT = W.get_welder()
-		if(WT.remove_fuel(0))
-			user.setClickCooldown(user.get_attack_speed(WT))
-			adjustBruteLoss(-30)
-			updatehealth()
-			add_fingerprint(user)
-			for(var/mob/O in viewers(user, null))
-				O.show_message(span_filter_notice("[span_red("[user] has fixed some of the dents on [src]!")]"), 1)
-		else
-			to_chat(user, span_filter_warning("Need more welding fuel!"))
-			return
-
-	else if(istype(W, /obj/item/stack/cable_coil) && (wiresexposed || istype(src,/mob/living/silicon/robot/drone)))
+	if(istype(W, /obj/item/stack/cable_coil) && (wiresexposed || istype(src,/mob/living/silicon/robot/drone)))
 		if(!getFireLoss())
 			to_chat(user, span_filter_notice("Nothing to fix here!"))
 			return
@@ -686,7 +668,8 @@
 			for(var/mob/O in viewers(user, null))
 				O.show_message(span_filter_notice("[span_red("[user] has fixed some of the burnt wires on [src]!")]"), 1)
 
-	else if(W.has_tool_quality(TOOL_CROWBAR) && user.a_intent != I_HURT)	// crowbar means open or close the cover
+	else if(tool_interaction_crowbar)
+		tool_interaction_crowbar = FALSE
 		if(opened)
 			if(cell)
 				to_chat(user, span_filter_notice("You close the cover."))
@@ -761,40 +744,6 @@
 			C.brute_damage = 0
 			C.electronics_damage = 0
 
-	else if (W.has_tool_quality(TOOL_WIRECUTTER) || istype(W, /obj/item/multitool))
-		if (wiresexposed)
-			wires.Interact(user)
-		else
-			to_chat(user, span_filter_notice("You can't reach the wiring."))
-
-	else if(W.has_tool_quality(TOOL_SCREWDRIVER) && opened && !cell)	// haxing
-		wiresexposed = !wiresexposed
-		to_chat(user, span_filter_notice("The wires have been [wiresexposed ? "exposed" : "unexposed"]"))
-		playsound(src, W.usesound, 50, 1)
-		update_icon()
-
-	else if(W.has_tool_quality(TOOL_SCREWDRIVER) && opened && cell)	// radio
-		if(radio)
-			radio.attackby(W,user)//Push it to the radio to let it handle everything
-		else
-			to_chat(user, span_filter_notice("Unable to locate a radio."))
-		update_icon()
-
-	else if(W.has_tool_quality(TOOL_WRENCH) && opened && !cell)
-		if(bolt)
-			to_chat(user,span_filter_notice("You begin removing \the [bolt]."))
-
-			if(do_after(user, 2 SECONDS, target = src))
-				bolt.forceMove(get_turf(src))
-				bolt = null
-
-				to_chat(user, span_filter_notice("You remove \the [bolt]."))
-
-		else
-			to_chat(user, span_filter_notice("There is no restraining bolt installed."))
-
-		return
-
 	else if(istype(W, /obj/item/encryptionkey/) && opened)
 		if(radio)//sanityyyyyy
 			radio.attackby(W,user)//GTFO, you have your own procs
@@ -839,6 +788,74 @@
 			if(W.force > 0)
 				spark_system.start()
 		return ..()
+
+/mob/living/silicon/robot/wirecutter_act(mob/user, obj/item/tool)
+	if(!wiresexposed)
+		to_chat(user, span_filter_notice("You can't reach the wiring."))
+		return ITEM_INTERACT_BLOCKING
+	wires.Interact(user)
+	return ITEM_INTERACT_SUCCESS
+
+/mob/living/silicon/robot/crowbar_act(mob/user, obj/item/tool)
+	if(user.a_intent == I_HURT)
+		return ITEM_INTERACT_SKIP_TO_ATTACK
+	tool_interaction_crowbar = TRUE
+	attackby(tool, user)
+	tool_interaction_crowbar = FALSE
+	return ITEM_INTERACT_SUCCESS
+
+/mob/living/silicon/robot/welder_act(mob/user, obj/item/tool)
+	if(user.a_intent == I_HURT)
+		return ITEM_INTERACT_SKIP_TO_ATTACK
+	if(src == user)
+		to_chat(user, span_warning("You lack the reach to be able to repair yourself."))
+		return ITEM_INTERACT_BLOCKING
+	if(!getBruteLoss())
+		to_chat(user, span_filter_notice("Nothing to fix here!"))
+		return ITEM_INTERACT_BLOCKING
+	var/obj/item/weldingtool/welder = tool.get_welder()
+	if(!welder?.remove_fuel(0))
+		to_chat(user, span_filter_warning("Need more welding fuel!"))
+		return ITEM_INTERACT_BLOCKING
+	user.setClickCooldown(user.get_attack_speed(welder))
+	adjustBruteLoss(-30)
+	updatehealth()
+	add_fingerprint(user)
+	visible_message(span_filter_notice("[span_red("[user] has fixed some of the dents on [src]!")]"))
+	return ITEM_INTERACT_SUCCESS
+
+/mob/living/silicon/robot/multitool_act(mob/user, obj/item/tool)
+	return wirecutter_act(user, tool)
+
+/mob/living/silicon/robot/screwdriver_act(mob/user, obj/item/tool)
+	if(!opened)
+		return ITEM_INTERACT_BLOCKING
+	if(!cell)
+		wiresexposed = !wiresexposed
+		to_chat(user, span_filter_notice("The wires have been [wiresexposed ? "exposed" : "unexposed"]."))
+		playsound(src, tool.usesound, 50, TRUE)
+		update_icon()
+		return ITEM_INTERACT_SUCCESS
+	if(radio)
+		radio.attackby(tool, user)
+	else
+		to_chat(user, span_filter_notice("Unable to locate a radio."))
+	update_icon()
+	return ITEM_INTERACT_SUCCESS
+
+/mob/living/silicon/robot/wrench_act(mob/user, obj/item/tool)
+	if(!opened || cell)
+		return ITEM_INTERACT_BLOCKING
+	if(!bolt)
+		to_chat(user, span_filter_notice("There is no restraining bolt installed."))
+		return ITEM_INTERACT_BLOCKING
+	to_chat(user, span_filter_notice("You begin removing \the [bolt]."))
+	if(!do_after(user, 2 SECONDS, target = src))
+		return ITEM_INTERACT_BLOCKING
+	bolt.forceMove(get_turf(src))
+	bolt = null
+	to_chat(user, span_filter_notice("You remove the restraining bolt."))
+	return ITEM_INTERACT_SUCCESS
 
 /mob/living/silicon/robot/GetIdCard()
 	if(bolt && !bolt.malfunction)

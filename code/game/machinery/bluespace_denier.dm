@@ -86,16 +86,15 @@
 	if(ishuman(AM))
 		pulse()
 
-/obj/machinery/bluespace_denier/attackby(obj/item/W as obj, mob/user as mob)
-	if(W.has_tool_quality(TOOL_WRENCH))
-		add_fingerprint(user)
-		anchored = !anchored
-
-		if(!anchored)
-			user.show_message(span_warning("[src] can now be moved."))
-			cut_overlays()
-			unsense_proximity(callback = TYPE_PROC_REF(/atom,HasProximity))
-		else
-			user.show_message(span_warning("[src] is now secured."))
-			add_overlay("[base_state]-s")
-			sense_proximity(callback = TYPE_PROC_REF(/atom,HasProximity))
+/obj/machinery/bluespace_denier/wrench_act(mob/user, obj/item/tool)
+	add_fingerprint(user)
+	anchored = !anchored
+	if(!anchored)
+		user.show_message(span_warning("[src] can now be moved."))
+		cut_overlays()
+		unsense_proximity(callback = TYPE_PROC_REF(/atom,HasProximity))
+	else
+		user.show_message(span_warning("[src] is now secured."))
+		add_overlay("[base_state]-s")
+		sense_proximity(callback = TYPE_PROC_REF(/atom,HasProximity))
+	return ITEM_INTERACT_SUCCESS

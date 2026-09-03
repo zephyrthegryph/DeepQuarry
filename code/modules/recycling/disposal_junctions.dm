@@ -100,17 +100,6 @@
 	if(..())
 		return
 
-	if(I.has_tool_quality(TOOL_SCREWDRIVER)) //Who is screwdriver_act()?
-		panel_open = !panel_open
-		playsound(src, I.usesound, 100, 1)
-		to_chat(user, span_notice("You [panel_open ? "open" : "close"] the wire panel."))
-		update_icon()
-		return
-
-	if(panel_open && is_wire_tool(I))
-		wires.Interact(user)
-		return TRUE
-
 	if(istype(I, /obj/item/destTagger))
 		var/obj/item/destTagger/O = I
 
@@ -124,6 +113,25 @@
 			to_chat(user, span_blue("Changed filter to '[sortType]'."))
 			updatename()
 			updatedesc()
+
+/obj/structure/disposalpipe/sortjunction/screwdriver_act(mob/user, obj/item/I)
+	panel_open = !panel_open
+	playsound(src, I.usesound, 100, 1)
+	to_chat(user, span_notice("You [panel_open ? "open" : "close"] the wire panel."))
+	update_icon()
+	return ITEM_INTERACT_SUCCESS
+
+/obj/structure/disposalpipe/sortjunction/multitool_act(mob/user, obj/item/I)
+	if(!panel_open)
+		return ITEM_INTERACT_BLOCKING
+	wires.Interact(user)
+	return ITEM_INTERACT_SUCCESS
+
+/obj/structure/disposalpipe/sortjunction/wirecutter_act(mob/user, obj/item/I)
+	if(!panel_open)
+		return ITEM_INTERACT_BLOCKING
+	wires.Interact(user)
+	return ITEM_INTERACT_SUCCESS
 
 /obj/structure/disposalpipe/sortjunction/proc/divert_check(checkTag)
 	return sortType == checkTag

@@ -18,6 +18,7 @@
 	anchored = TRUE
 	density = TRUE
 	unacidable = TRUE
+	resistance_flags = INDESTRUCTIBLE
 
 	use_power = USE_POWER_IDLE
 	idle_power_usage = 300
@@ -124,9 +125,6 @@
 
 
 
-/obj/machinery/maint_recycler/fall_apart(severity = 3, scatter = TRUE)
-	return FALSE //don't fall apart
-
 /obj/machinery/maint_recycler/dismantle()
 	return FALSE //we don't want something as important as this to be able to be disassembled. it's a scene tool, technically.
 
@@ -192,19 +190,21 @@
 	else
 		log_and_message_admins("[src] tried to move itself, but there was nowhere for it to go! (<A href='byond://?_src_=holder;[HrefToken()];adminplayerobservecoodjump=1;X=[x];Y=[y];Z=[z]'>JMP</a>)", null)
 
+/obj/machinery/maint_recycler/crowbar_act(mob/user, obj/item/tool)
+	if(door_open)
+		return ..()
+	if(!(stat & (BROKEN | NOPOWER)))
+		to_chat(user, span_warning("\The [src]'s door won't budge!"))
+		return ITEM_INTERACT_BLOCKING
+	to_chat(user, span_warning("You lever \the [src]'s door open!"))
+	open_door(user)
+	eject_item(user)
+	playsound(src, 'sound/machines/door/airlock_creaking.ogg', 4, FALSE)
+	return ITEM_INTERACT_SUCCESS
+
 /obj/machinery/maint_recycler/attackby(obj/item/O, mob/user)
 	if(!door_open)
-		if(O.has_tool_quality(TOOL_CROWBAR))
-			if(stat & (BROKEN|NOPOWER))
-				to_chat(user, span_warning("you lever \the [src]'s door open!"))
-				open_door(user)
-				eject_item(user) //also kick out the item they're looking for
-				playsound(src,"sound/machines/door/airlock_creaking.ogg",4,FALSE)
-
-			else
-				to_chat(user, span_warning("\The [src]'s door won't budge!"))
-		else
-			to_chat(user, span_warning("\The [src] doesn't have its door open!"))
+		to_chat(user, span_warning("\The [src] doesn't have its door open!"))
 		return
 
 	if(inserted_item)

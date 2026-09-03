@@ -3,7 +3,7 @@
 ## The normal way of getting assets to clients is to use the internal byond system. This can be slow and delay the opening of interface windows. It also doesn't allow the internal IE windows byond uses to cache anything.
 ## You can instead have the server save them to a website via a folder within the game server that the web server can read. This could be a simple webserver or something backed by a CDN.
 ## Valid values: simple, webroot. Simple is the default.
-#ASSET_TRANSPORT webroot
+ASSET_TRANSPORT webroot
 
 
 ### Simple asset transport configurable values.
@@ -17,13 +17,13 @@
 
 ## Local folder to save assets to.
 ## Assets will be saved in the format of asset.MD5HASH.EXT or in namespaces/hash/ as ASSET_FILE_NAME or asset.MD5HASH.EXT
-#ASSET_CDN_WEBROOT data/asset-store/
+ASSET_CDN_WEBROOT data/asset-store/
 
 ## URL the folder from above can be accessed from.
-## for best results the webserver powering this should return a long cache validity time, as all assets sent via this transport use hash based urls
+## for best results the webserver powering this should return a long cache validity time, compression, HTTP keep-alive, and Timing-Allow-Origin, as all assets sent via this transport use hash based urls
 ## Encryption (https) is supported here, but linux clients will have issues if you require higher then tls 1.0. Windows clients down to windows 7 can handle tls 1.2 no issue.
 ## if you want to test this locally, you simpily run the `localhost-asset-webroot-server.py` python3 script to host assets stored in `data/asset-store/` via http://localhost:58715/
-#ASSET_CDN_URL http://localhost:58715/
+ASSET_CDN_URL http://localhost:58715/
 
 ## Assets can opt-in to caching their results into `cache/`.
 ## The cache is assumed to be cleared by TGS recompiling, which deletes `cache/`.

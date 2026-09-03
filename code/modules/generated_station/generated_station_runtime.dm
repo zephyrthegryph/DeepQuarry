@@ -13,10 +13,9 @@
 	var/captured = FALSE
 	var/captured_by
 
-/obj/machinery/generated_station_department_control/take_damage(damage_amount, damage_type = BRUTE, damage_flag = "", sound_effect = TRUE, attack_dir, armour_penetration = 0)
+/obj/machinery/generated_station_department_control/on_update_integrity(old_value, new_value)
 	. = ..()
-	if(!QDELETED(src))
-		publish_integrity()
+	publish_integrity()
 
 /obj/machinery/generated_station_department_control/atom_destruction(damage_flag)
 	var/datum/generated_station_simulation/simulation = generated_station_runtime(station_id)

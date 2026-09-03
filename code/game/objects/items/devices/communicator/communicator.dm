@@ -282,7 +282,9 @@
 // Description: Ticks the update_ticks variable, and checks to see if it needs to disconnect communicators every five ticks..
 /obj/item/communicator/process()
 	update_ticks++
-	if(update_ticks % 5)
+	// Connection maintenance is the five-tick watchdog, not four of every five
+	// ticks. State-changing exonet paths update immediately.
+	if(!(update_ticks % 5))
 		if(!node)
 			node = get_exonet_node()
 		if(!get_connection_to_tcomms())

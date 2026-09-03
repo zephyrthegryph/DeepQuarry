@@ -36,7 +36,6 @@
 	name = MAT_FUR
 	icon_colour = "#fff2d3"
 	display_name = MAT_FUR
-	material_class = MATCLASS_ORGANIC
 	icon_base = "sheet-fabric"
 	stack_type = /obj/item/stack/material/fur
 	sheet_collective_name = "pile"

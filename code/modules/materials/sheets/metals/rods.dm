@@ -39,26 +39,6 @@
 		icon_state = "rods"
 
 /obj/item/stack/rods/attackby(obj/item/W, mob/user)
-	if(W.has_tool_quality(TOOL_WELDER))
-		var/obj/item/weldingtool/WT = W.get_welder()
-
-		if(get_amount() < 2)
-			to_chat(user, span_warning("You need at least two rods to do this."))
-			return
-
-		if(WT.remove_fuel(0,user))
-			var/obj/item/stack/material/steel/new_item = new(user.loc)
-			new_item.add_to_stacks(user)
-			for (var/mob/M in viewers(src))
-				M.show_message(span_notice("[src] is shaped into metal by [user.name] with the weldingtool."), 3, span_notice("You hear welding."), 2)
-			var/obj/item/stack/rods/R = src
-			src = null
-			var/replace = (user.get_inactive_hand()==R)
-			R.use(2)
-			if (!R && replace)
-				user.put_in_hands(new_item)
-		return
-
 	if (istype(W, /obj/item/tape_roll))
 		var/obj/item/stack/medical/splint/ghetto/new_splint = new(get_turf(user))
 		new_splint.add_fingerprint(user)
@@ -69,6 +49,22 @@
 		return
 
 	..()
+
+/obj/item/stack/rods/welder_act(mob/user, obj/item/tool)
+	if(get_amount() < 2)
+		to_chat(user, span_warning("You need at least two rods to do this."))
+		return ITEM_INTERACT_BLOCKING
+	var/obj/item/weldingtool/welder = tool.get_welder()
+	if(!welder.remove_fuel(0, user))
+		return ITEM_INTERACT_BLOCKING
+	var/obj/item/stack/material/steel/new_item = new(user.loc)
+	new_item.add_to_stacks(user)
+	visible_message(span_notice("[src] is shaped into metal by [user.name] with the welding tool."), span_notice("You hear welding."))
+	var/replace = user.get_inactive_hand() == src
+	use(2)
+	if(QDELETED(src) && replace)
+		user.put_in_hands(new_item)
+	return ITEM_INTERACT_SUCCESS
 
 /obj/item/stack/rods/reagents_per_sheet()
 	return REAGENTS_PER_ROD

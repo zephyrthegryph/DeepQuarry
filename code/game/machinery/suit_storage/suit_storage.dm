@@ -62,15 +62,9 @@
 			update_icon()
 
 /obj/machinery/suit_storage_unit/ex_act(severity)
-	switch(severity)
-		if(1.0)
-			if(prob(50))
-				dump_everything() //So suits dont survive all the time
-			qdel(src)
-		if(2.0)
-			if(prob(50))
-				dump_everything()
-				qdel(src)
+	if(severity <= 2 && prob(50))
+		dump_everything()
+	return ..()
 
 /obj/machinery/suit_storage_unit/attack_hand(mob/user)
 	if(..())
@@ -379,11 +373,6 @@
 /obj/machinery/suit_storage_unit/attackby(obj/item/I, mob/user)
 	if(!ispowered)
 		return
-	if(I.has_tool_quality(TOOL_SCREWDRIVER))
-		panelopen = !panelopen
-		playsound(src, I.usesound, 100, 1)
-		to_chat(user, span_notice("You [panelopen ? "open up" : "close"] the unit's maintenance panel."))
-		return
 	if(istype(I, /obj/item/grab))
 		var/obj/item/grab/G = I
 		if(!(ismob(G.affecting)))
@@ -451,6 +440,14 @@
 		return
 	update_icon()
 	return
+
+/obj/machinery/suit_storage_unit/screwdriver_act(mob/user, obj/item/tool)
+	if(!ispowered)
+		return ITEM_INTERACT_BLOCKING
+	panelopen = !panelopen
+	playsound(src, tool.usesound, 100, TRUE)
+	to_chat(user, span_notice("You [panelopen ? "open up" : "close"] the unit's maintenance panel."))
+	return ITEM_INTERACT_SUCCESS
 
 
 /obj/machinery/suit_storage_unit/attack_ai(mob/user)

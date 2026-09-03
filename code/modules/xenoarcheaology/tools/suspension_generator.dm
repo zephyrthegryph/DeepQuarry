@@ -1,4 +1,5 @@
 /obj/machinery/suspension_gen
+	maintenance_flags = MACHINE_MAINT_PANEL
 	name = "suspension field generator"
 	desc = "It has stubby bolts up against it's treads for stabilising. Used to hold anomalies stable in place."
 	icon = 'icons/obj/xenoarchaeology.dmi'
@@ -89,28 +90,29 @@
 				locked = !locked
 				return TRUE
 
-/obj/machinery/suspension_gen/attackby(obj/item/W as obj, mob/user as mob)
-	if(!locked && !suspension_field && default_deconstruction_screwdriver(user, W))
-		return
-	else if(W.has_tool_quality(TOOL_WRENCH))
-		if(!suspension_field)
-			if(anchored)
-				anchored = 0
-			else
-				anchored = 1
-			playsound(src, W.usesound, 50, 1)
-			to_chat(user, span_info("You wrench the stabilising bolts [anchored ? "into place" : "loose"]."))
-			if(anchored)
-				desc = "Its tracks are held firmly in place with securing bolts."
-				icon_state = "suspension_wrenched"
-			else
-				desc = "It has stubby bolts aligned along it's tracks for stabilising."
-				icon_state = "suspension"
-			playsound(loc, 'sound/items/Ratchet.ogg', 40)
-			update_icon()
-		else
-			to_chat(user, span_warning("You are unable to secure [src] while it is active!"))
-	else if (istype(W, /obj/item/cell))
+/obj/machinery/suspension_gen/screwdriver_act(mob/user, obj/item/tool)
+	if(locked || suspension_field)
+		return ITEM_INTERACT_BLOCKING
+	return ..()
+
+/obj/machinery/suspension_gen/wrench_act(mob/user, obj/item/tool)
+	if(suspension_field)
+		return ITEM_INTERACT_BLOCKING
+	anchored = !anchored
+	playsound(src, tool.usesound, 50, TRUE)
+	to_chat(user, span_info("You wrench the stabilising bolts [anchored ? "into place" : "loose"]."))
+	if(anchored)
+		desc = "Its tracks are held firmly in place with securing bolts."
+		icon_state = "suspension_wrenched"
+	else
+		desc = "It has stubby bolts aligned along its tracks for stabilising."
+		icon_state = "suspension"
+	playsound(loc, 'sound/items/Ratchet.ogg', 40)
+	update_icon()
+	return ITEM_INTERACT_SUCCESS
+
+/obj/machinery/suspension_gen/attackby(obj/item/W, mob/user)
+	if(istype(W, /obj/item/cell))
 		if(panel_open)
 			if(cell)
 				to_chat(user, span_warning("There is a power cell already installed."))
@@ -129,6 +131,8 @@
 				to_chat(user, span_warning("You swipe [I], console flashes \'<i>Access denied.</i>\'"))
 		else
 			to_chat(user, span_warning("Remove [auth_card] first."))
+	else
+		return ..()
 
 /obj/machinery/suspension_gen/proc/attempt_unlock(obj/item/card/C, mob/user)
 	if(!panel_open)

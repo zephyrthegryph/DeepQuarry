@@ -3,19 +3,19 @@
 ////////////////////////////////
 
 /datum/construction/mecha/custom_action(step, obj/item/I, mob/user)
-	if(I.has_tool_quality(TOOL_WELDER))
+	if((TOOL_WELDER in I.tool_qualities))
 		var/obj/item/weldingtool/W = I.get_welder()
 		if(W.remove_fuel(0, user))
 			playsound(holder, 'sound/items/Welder2.ogg', 50, 1)
 		else
 			return 0
-	else if(I.has_tool_quality(TOOL_WRENCH))
+	else if((TOOL_WRENCH in I.tool_qualities))
 		playsound(holder, 'sound/items/Ratchet.ogg', 50, 1)
 
-	else if(I.has_tool_quality(TOOL_SCREWDRIVER))
+	else if((TOOL_SCREWDRIVER in I.tool_qualities))
 		playsound(holder, 'sound/items/Screwdriver.ogg', 50, 1)
 
-	else if(I.has_tool_quality(TOOL_WIRECUTTER))
+	else if((TOOL_WIRECUTTER in I.tool_qualities))
 		playsound(holder, 'sound/items/Wirecutter.ogg', 50, 1)
 
 	else if(istype(I, /obj/item/stack/cable_coil))
@@ -35,19 +35,19 @@
 	return 1
 
 /datum/construction/reversible/mecha/custom_action(index as num, diff as num, obj/item/I, mob/user as mob)
-	if(I.has_tool_quality(TOOL_WELDER))
+	if((TOOL_WELDER in I.tool_qualities))
 		var/obj/item/weldingtool/W = I.get_welder()
 		if(W.remove_fuel(0, user))
 			playsound(holder, 'sound/items/Welder2.ogg', 50, 1)
 		else
 			return 0
-	else if(I.has_tool_quality(TOOL_WRENCH))
+	else if((TOOL_WRENCH in I.tool_qualities))
 		playsound(holder, 'sound/items/Ratchet.ogg', 50, 1)
 
-	else if(I.has_tool_quality(TOOL_SCREWDRIVER))
+	else if((TOOL_SCREWDRIVER in I.tool_qualities))
 		playsound(holder, 'sound/items/Screwdriver.ogg', 50, 1)
 
-	else if(I.has_tool_quality(TOOL_WIRECUTTER))
+	else if((TOOL_WIRECUTTER in I.tool_qualities))
 		playsound(holder, 'sound/items/Wirecutter.ogg', 50, 1)
 
 	else if(istype(I, /obj/item/stack/cable_coil))

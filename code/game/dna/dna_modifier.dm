@@ -58,6 +58,7 @@
 
 /////////////////////////// DNA MACHINES
 /obj/machinery/dna_scannernew
+	maintenance_flags = MACHINE_MAINT_STANDARD
 	name = "\improper DNA modifier"
 	desc = "It scans DNA structures."
 	icon = 'icons/obj/Cryogenic2.dmi'
@@ -180,11 +181,6 @@
 	SStgui.update_uis(src)
 
 /obj/machinery/dna_scannernew/attackby(obj/item/item as obj, mob/user as mob)
-	// Traitgenes Deconstructable dna scanner
-	if(default_deconstruction_screwdriver(user, item))
-		return
-	if(default_deconstruction_crowbar(user, item))
-		return
 	if(istype(item, /obj/item/reagent_containers/glass))
 		if(beaker)
 			to_chat(user, span_warning("A beaker is already loaded into the machine."))
@@ -283,29 +279,9 @@
 	SStgui.update_uis(src)
 
 /obj/machinery/dna_scannernew/ex_act(severity)
-	var/our_tile = loc //This is done here as if you try to feed loc in the A.forcemove, it will runtime as src id qdel'd before they can be moved.
-	switch(severity)
-		if(1.0)
-			for(var/atom/movable/A as mob|obj in src)
-				A.forceMove(our_tile)
-				ex_act(severity)
-			qdel(src)
-			return
-		if(2.0)
-			if(prob(50))
-				for(var/atom/movable/A as mob|obj in src)
-					A.forceMove(our_tile)
-					ex_act(severity)
-				qdel(src)
-				return
-		if(3.0)
-			if(prob(25))
-				for(var/atom/movable/A as mob|obj in src)
-					A.forceMove(our_tile)
-					ex_act(severity)
-				qdel(src)
-				return
-	return
+	for(var/atom/movable/occupant as mob|obj in src)
+		occupant.ex_act(severity)
+	return ..()
 
 /obj/machinery/computer/scan_consolenew
 	name = "DNA Modifier Access Console"
@@ -350,18 +326,6 @@
 			return
 	else
 		..()
-	return
-
-/obj/machinery/computer/scan_consolenew/ex_act(severity)
-
-	switch(severity)
-		if(1.0)
-			qdel(src)
-			return
-		if(2.0)
-			if(prob(50))
-				qdel(src)
-				return
 	return
 
 /obj/machinery/computer/scan_consolenew/Initialize(mapload)

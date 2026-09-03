@@ -7,7 +7,7 @@
 			return
 
 	// Pass repair items on to the chestpiece.
-	if(chest && (istype(W,/obj/item/stack/material) || W.has_tool_quality(TOOL_WELDER)))
+	if(chest && istype(W, /obj/item/stack/material))
 		return chest.attackby(W,user)
 
 	// Lock or unlock the access panel.
@@ -30,23 +30,7 @@
 		to_chat(user, "You [locked ? "lock" : "unlock"] \the [src] access panel.")
 		return
 
-	else if(W.has_tool_quality(TOOL_CROWBAR))
-		if(!open && locked)
-			to_chat(user, "The access panel is locked shut.")
-			return
-
-		open = !open
-		to_chat(user, "You [open ? "open" : "close"] the access panel.")
-		return
-
 	if(open)
-		// Hacking.
-		if(W.has_tool_quality(TOOL_WIRECUTTER) || istype(W, /obj/item/multitool))
-			if(open)
-				wires.Interact(user)
-			else
-				to_chat(user, "You can't reach the wiring.")
-			return
 		// Air tank.
 		if(istype(W,/obj/item/tank)) //Todo, some kind of check for suits without integrated air supplies.
 
@@ -102,75 +86,6 @@
 			src.cell = W
 			return
 
-		else if(W.has_tool_quality(TOOL_WRENCH))
-
-			if(!air_supply)
-				to_chat(user, "There is no tank to remove.")
-				return
-
-			if(user.r_hand && user.l_hand)
-				air_supply.forceMove(get_turf(user))
-			else
-				user.put_in_hands(air_supply)
-			to_chat(user, "You detach and remove \the [air_supply].")
-			air_supply = null
-			return
-
-		else if(W.has_tool_quality(TOOL_SCREWDRIVER))
-
-			var/list/current_mounts = list()
-			if(cell) current_mounts   += "cell"
-			if(installed_modules && installed_modules.len) current_mounts += "system module"
-
-			var/to_remove = tgui_input_list(user, "Which would you like to modify?", "Removal Choice", current_mounts)
-			if(!to_remove)
-				return
-
-			if(ishuman(src.loc) && to_remove != "cell")
-				var/mob/living/carbon/human/H = src.loc
-				if(H.back == src || H.belt == src)
-					to_chat(user, "You can't remove an installed device while the hardsuit is being worn.")
-					return
-
-			switch(to_remove)
-
-				if("cell")
-
-					if(cell)
-						to_chat(user, "You detach \the [cell] from \the [src]'s battery mount.")
-						for(var/obj/item/rig_module/module in installed_modules)
-							module.deactivate()
-						if(user.r_hand && user.l_hand)
-							cell.forceMove(get_turf(user))
-						else
-							cell.forceMove(user.put_in_hands(cell))
-						cell = null
-					else
-						to_chat(user, "There is nothing loaded in that mount.")
-
-				if("system module")
-
-					var/list/possible_removals = list()
-					for(var/obj/item/rig_module/module in installed_modules)
-						if(module.permanent)
-							continue
-						possible_removals[module.name] = module
-
-					if(!possible_removals.len)
-						to_chat(user, "There are no installed modules to remove.")
-						return
-
-					var/removal_choice = tgui_input_list(user, "Which module would you like to remove?", "Removal Choice", possible_removals)
-					if(!removal_choice)
-						return
-
-					var/obj/item/rig_module/removed = possible_removals[removal_choice]
-					to_chat(user, "You detach \the [removed] from \the [src].")
-					removed.forceMove(get_turf(src))
-					removed.removed()
-					installed_modules -= removed
-					update_icon()
-
 		return
 
 	// If we've gotten this far, all we have left to do before we pass off to root procs
@@ -178,7 +93,81 @@
 	for(var/obj/item/rig_module/module in installed_modules)
 		if(module.accepts_item(W,user)) //Item is handled in this proc
 			return
-	..()
+	return ..()
+
+/obj/item/rig/welder_act(mob/user, obj/item/tool)
+	if(!chest)
+		return ITEM_INTERACT_BLOCKING
+	return chest.welder_act(user, tool)
+
+/obj/item/rig/crowbar_act(mob/user, obj/item/tool)
+	if(!open && locked)
+		to_chat(user, "The access panel is locked shut.")
+		return ITEM_INTERACT_BLOCKING
+	open = !open
+	to_chat(user, "You [open ? "open" : "close"] the access panel.")
+	return ITEM_INTERACT_SUCCESS
+
+/obj/item/rig/wirecutter_act(mob/user, obj/item/tool)
+	if(!open)
+		to_chat(user, "You can't reach the wiring.")
+		return ITEM_INTERACT_BLOCKING
+	wires.Interact(user)
+	return ITEM_INTERACT_SUCCESS
+
+/obj/item/rig/multitool_act(mob/user, obj/item/tool)
+	return wirecutter_act(user, tool)
+
+/obj/item/rig/wrench_act(mob/user, obj/item/tool)
+	if(!open || !air_supply)
+		to_chat(user, open ? "There is no tank to remove." : "You can't reach the tank mount.")
+		return ITEM_INTERACT_BLOCKING
+	var/obj/item/tank/removed_tank = air_supply
+	user.put_in_hands(removed_tank)
+	air_supply = null
+	to_chat(user, "You detach and remove \the [removed_tank].")
+	return ITEM_INTERACT_SUCCESS
+
+/obj/item/rig/screwdriver_act(mob/user, obj/item/tool)
+	if(!open)
+		return ITEM_INTERACT_BLOCKING
+	var/list/current_mounts = list()
+	if(cell)
+		current_mounts += "cell"
+	if(length(installed_modules))
+		current_mounts += "system module"
+	var/to_remove = tgui_input_list(user, "Which would you like to modify?", "Removal Choice", current_mounts)
+	if(!to_remove)
+		return ITEM_INTERACT_BLOCKING
+	if(ishuman(loc) && to_remove != "cell")
+		var/mob/living/carbon/human/wearer = loc
+		if(wearer.back == src || wearer.belt == src)
+			to_chat(user, "You can't remove an installed device while the hardsuit is being worn.")
+			return ITEM_INTERACT_BLOCKING
+	if(to_remove == "cell")
+		to_chat(user, "You detach \the [cell] from \the [src]'s battery mount.")
+		for(var/obj/item/rig_module/module in installed_modules)
+			module.deactivate()
+		user.put_in_hands(cell)
+		cell = null
+		return ITEM_INTERACT_SUCCESS
+	var/list/possible_removals = list()
+	for(var/obj/item/rig_module/module in installed_modules)
+		if(!module.permanent)
+			possible_removals[module.name] = module
+	if(!length(possible_removals))
+		to_chat(user, "There are no installed modules to remove.")
+		return ITEM_INTERACT_BLOCKING
+	var/removal_choice = tgui_input_list(user, "Which module would you like to remove?", "Removal Choice", possible_removals)
+	var/obj/item/rig_module/removed = possible_removals[removal_choice]
+	if(!removed)
+		return ITEM_INTERACT_BLOCKING
+	to_chat(user, "You detach \the [removed] from \the [src].")
+	removed.forceMove(get_turf(src))
+	removed.removed()
+	installed_modules -= removed
+	update_icon()
+	return ITEM_INTERACT_SUCCESS
 
 
 /obj/item/rig/attack_hand(mob/user)

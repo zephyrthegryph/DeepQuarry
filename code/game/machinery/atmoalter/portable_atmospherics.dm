@@ -63,8 +63,14 @@
 	if(ref_key)
 		SSmachines.sleeping_gas_devices.Remove(ref_key)
 
-/obj/machinery/portable_atmospherics/proc/gas_dependency_changed(mixture_id, change_mask)
-	return mixture_id == sleeping_mixture_id && (change_mask & GAS_DEPENDENCY_ALL)
+/obj/machinery/portable_atmospherics/gas_dependency_changed(mixture_id, change_mask)
+	if(!(change_mask & GAS_DEPENDENCY_ALL))
+		return FALSE
+	// A queued notification can race an explicit wake, which clears the local
+	// capture before the old subscriber entry is drained. Treat that stale entry
+	// as actionable so wake_gas_subscriber can clean it; rejecting it strands the
+	// portable asleep until another unrelated mutation.
+	return isnull(sleeping_mixture_id) || mixture_id == sleeping_mixture_id
 
 /obj/machinery/portable_atmospherics/blob_act()
 	qdel(src)
@@ -76,6 +82,13 @@
 
 /obj/machinery/portable_atmospherics/proc/MolesForPressure(target_pressure = start_pressure)
 	return (target_pressure * air_contents.return_volume()) / (R_IDEAL_GAS_EQUATION * air_contents.return_temperature())
+
+/obj/machinery/portable_atmospherics/port_network_air()
+	return air_contents
+
+/obj/machinery/portable_atmospherics/set_port_network_air(datum/gas_mixture/new_air)
+	air_contents = new_air
+	return TRUE
 
 /obj/machinery/portable_atmospherics/update_icon()
 	return null
@@ -100,10 +113,7 @@
 	anchored = TRUE //Prevent movement
 
 	//Actually enforce the air sharing
-	var/datum/pipe_network/network = connected_port.return_network(src)
-	if(network && !network.gases.Find(air_contents))
-		network.gases += air_contents
-		network.mark_dirty()
+	connected_port.rust_attach_external_device(src)
 
 	return 1
 
@@ -111,9 +121,7 @@
 	if(!connected_port)
 		return 0
 
-	var/datum/pipe_network/network = connected_port.return_network(src)
-	if(network)
-		network.gases -= air_contents
+	connected_port.rust_detach_external_device()
 
 	anchored = FALSE
 
@@ -145,28 +153,28 @@
 		update_icon()
 		return
 
-	else if (W.has_tool_quality(TOOL_WRENCH) && !(src.destroyed)) // Make sure it's not broken
-		if(connected_port)
-			disconnect()
-			to_chat(user, span_notice("You disconnect \the [src] from the port."))
-			update_icon()
-			playsound(src, W.usesound, 50, 1)
-			return
-		else
-			var/obj/machinery/atmospherics/portables_connector/possible_port = locate(/obj/machinery/atmospherics/portables_connector/) in loc
-			if(possible_port)
-				if(connect(possible_port))
-					to_chat(user, span_notice("You connect \the [src] to the port."))
-					update_icon()
-					playsound(src, W.usesound, 50, 1)
-					return
-				else
-					to_chat(user, span_notice("\The [src] failed to connect to the port."))
-					return
-			else
-				to_chat(user, span_notice("Nothing happens."))
-				return
 	return
+
+/obj/machinery/portable_atmospherics/wrench_act(mob/user, obj/item/tool)
+	if(destroyed)
+		return ITEM_INTERACT_BLOCKING
+	if(connected_port)
+		disconnect()
+		to_chat(user, span_notice("You disconnect \the [src] from the port."))
+		update_icon()
+		playsound(src, tool.usesound, 50, TRUE)
+		return ITEM_INTERACT_SUCCESS
+	var/obj/machinery/atmospherics/portables_connector/possible_port = locate(/obj/machinery/atmospherics/portables_connector) in loc
+	if(!possible_port)
+		to_chat(user, span_notice("Nothing happens."))
+		return ITEM_INTERACT_BLOCKING
+	if(!connect(possible_port))
+		to_chat(user, span_notice("\The [src] failed to connect to the port."))
+		return ITEM_INTERACT_BLOCKING
+	to_chat(user, span_notice("You connect \the [src] to the port."))
+	update_icon()
+	playsound(src, tool.usesound, 50, TRUE)
+	return ITEM_INTERACT_SUCCESS
 
 
 
@@ -201,19 +209,21 @@
 		power_change()
 		return
 
-	if(I.has_tool_quality(TOOL_SCREWDRIVER) && removeable_cell)
-		if(!cell)
-			to_chat(user, span_warning("There is no power cell installed."))
-			return
-
-		user.visible_message(span_notice("[user] opens the panel on [src] and removes [cell]."), span_notice("You open the panel on [src] and remove [cell]."))
-		playsound(src, I.usesound, 50, 1)
-		cell.add_fingerprint(user)
-		cell.loc = src.loc
-		cell = null
-		power_change()
-		return
 	..()
+
+/obj/machinery/portable_atmospherics/powered/screwdriver_act(mob/user, obj/item/tool)
+	if(!removeable_cell)
+		return ITEM_INTERACT_BLOCKING
+	if(!cell)
+		to_chat(user, span_warning("There is no power cell installed."))
+		return ITEM_INTERACT_BLOCKING
+	user.visible_message(span_notice("[user] opens the panel on [src] and removes [cell]."), span_notice("You open the panel on [src] and remove [cell]."))
+	playsound(src, tool.usesound, 50, TRUE)
+	cell.add_fingerprint(user)
+	cell.forceMove(loc)
+	cell = null
+	power_change()
+	return ITEM_INTERACT_SUCCESS
 
 /obj/machinery/portable_atmospherics/proc/log_open()
 	// was iterating XGM `air_contents.gas` (string-id dict).

@@ -39,6 +39,21 @@
 	icon_state = "quad-frame"
 	pixel_x = -16
 
+/obj/item/vehicle_assembly
+	var/focused_tool_stage
+
+/obj/item/vehicle_assembly/wrench_act(mob/user, obj/item/tool)
+	focused_tool_stage = TOOL_WRENCH
+	attackby(tool, user)
+	focused_tool_stage = null
+	return ITEM_INTERACT_SUCCESS
+
+/obj/item/vehicle_assembly/screwdriver_act(mob/user, obj/item/tool)
+	focused_tool_stage = TOOL_SCREWDRIVER
+	attackby(tool, user)
+	focused_tool_stage = null
+	return ITEM_INTERACT_SUCCESS
+
 /obj/item/vehicle_assembly/quadbike/attackby(obj/item/W as obj, mob/user as mob)
 	..()
 
@@ -129,7 +144,7 @@
 					return
 
 		if(7)
-			if(W.has_tool_quality(TOOL_WRENCH) || W.has_tool_quality(TOOL_SCREWDRIVER))
+			if(focused_tool_stage == TOOL_WRENCH || focused_tool_stage == TOOL_SCREWDRIVER)
 				playsound(src, W.usesound, 50, 1)
 				to_chat(user, span_notice("You begin your finishing touches on \the [src]."))
 				if(do_after(user, 2 SECONDS, target = src) && build_stage == 7)
@@ -179,7 +194,7 @@
 				return
 
 		if(2)
-			if(W.has_tool_quality(TOOL_SCREWDRIVER))
+			if(focused_tool_stage == TOOL_SCREWDRIVER)
 				playsound(src, W.usesound, 50, 1)
 				to_chat(user, span_notice("You close up \the [src]."))
 				var/obj/vehicle/train/trolley/trailer/product = new(src)
@@ -260,7 +275,7 @@
 				return
 
 		if(6)
-			if(W.has_tool_quality(TOOL_WRENCH) || W.has_tool_quality(TOOL_SCREWDRIVER))
+			if(focused_tool_stage == TOOL_WRENCH || focused_tool_stage == TOOL_SCREWDRIVER)
 				playsound(src, W.usesound, 50, 1)
 				to_chat(user, span_notice("You begin your finishing touches on \the [src]."))
 				if(do_after(user, 2 SECONDS, target = src) && build_stage == 6)
@@ -360,7 +375,7 @@
 					return
 
 		if(7)
-			if(W.has_tool_quality(TOOL_WRENCH) || W.has_tool_quality(TOOL_SCREWDRIVER))
+			if(focused_tool_stage == TOOL_WRENCH || focused_tool_stage == TOOL_SCREWDRIVER)
 				playsound(src, W.usesound, 50, 1)
 				to_chat(user, span_notice("You begin your finishing touches on \the [src]."))
 				if(do_after(user, 2 SECONDS, target = src) && build_stage == 7)

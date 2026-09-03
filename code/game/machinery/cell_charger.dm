@@ -12,6 +12,7 @@
 	var/obj/item/cell/charging = null
 	var/chargelevel = -1
 	circuit = /obj/item/circuitboard/cell_charger
+	maintenance_flags = MACHINE_MAINT_STANDARD
 
 /obj/machinery/cell_charger/Initialize(mapload)
 	. = ..()
@@ -72,21 +73,18 @@
 			user.visible_message("[user] inserts [charging] into [src].", "You insert [charging] into [src].")
 			chargelevel = -1
 		update_icon()
-	else if(W.has_tool_quality(TOOL_WRENCH))
-		if(charging)
-			to_chat(user, span_warning("Remove [charging] first!"))
-			return
-
-		anchored = !anchored
-		to_chat(user, "You [anchored ? "attach" : "detach"] [src] [anchored ? "to" : "from"] the ground")
-		playsound(src, W.usesound, 75, 1)
-		update_icon()
-	else if(default_deconstruction_screwdriver(user, W))
-		return
-	else if(default_deconstruction_crowbar(user, W))
-		return
 	else if(default_part_replacement(user, W))
 		return
+
+/obj/machinery/cell_charger/wrench_act(mob/user, obj/item/tool)
+	if(charging)
+		to_chat(user, span_warning("Remove [charging] first!"))
+		return ITEM_INTERACT_BLOCKING
+	anchored = !anchored
+	to_chat(user, "You [anchored ? "attach" : "detach"] [src] [anchored ? "to" : "from"] the ground")
+	playsound(src, tool.usesound, 75, TRUE)
+	update_icon()
+	return ITEM_INTERACT_SUCCESS
 
 /obj/machinery/cell_charger/attack_hand(mob/user)
 	add_fingerprint(user)

@@ -19,9 +19,9 @@
 
 	for(var/obj/machinery/camera/cam in range(camera_range, C))
 		if(is_valid_camera(cam))
-			cam.wires.cut(WIRE_MAIN_POWER1)
+			cam.wires.cut_wire(WIRE_MAIN_POWER1)
 			if(prob(25))
-				cam.wires.cut(WIRE_CAM_ALARM)
+				cam.wires.cut_wire(WIRE_CAM_ALARM)
 
 /datum/event2/event/camera_damage/proc/acquire_random_camera(remaining_attempts = 5)
 	if(!GLOB.cameranet.cameras.len)

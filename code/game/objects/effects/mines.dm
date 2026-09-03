@@ -104,20 +104,25 @@
 		if(!(dq_get_hovering(mob) || mob.flying || mob.is_incorporeal() || mob.mob_size <= MOB_TINY))
 			explode(M)
 
-/obj/effect/mine/attackby(obj/item/W as obj, mob/living/user as mob)
-	if(W.has_tool_quality(TOOL_SCREWDRIVER))
-		panel_open = !panel_open
-		user.visible_message(span_warning("[user] very carefully screws the mine's panel [panel_open ? "open" : "closed"]."),
+/obj/effect/mine/screwdriver_act(mob/living/user, obj/item/tool)
+	panel_open = !panel_open
+	user.visible_message(span_warning("[user] very carefully screws the mine's panel [panel_open ? "open" : "closed"]."),
 		span_notice("You very carefully screw the mine's panel [panel_open ? "open" : "closed"]."))
-		playsound(src, W.usesound, 50, 1)
+	playsound(src, tool.usesound, 50, 1)
+	alpha = camo_net ? (panel_open ? 255 : 50) : 255
+	return ITEM_INTERACT_SUCCESS
 
-		// Panel open, stay uncloaked, or uncloak if already dq_get_cloaked(src). If you don't cloak on place, ignore it and just be normal alpha.
-		alpha = camo_net ? (panel_open ? 255 : 50) : 255
+/obj/effect/mine/wirecutter_act(mob/living/user, obj/item/tool)
+	if(!panel_open)
+		return ITEM_INTERACT_BLOCKING
+	interact(user)
+	return ITEM_INTERACT_SUCCESS
 
-	else if((W.has_tool_quality(TOOL_WIRECUTTER) || istype(W, /obj/item/multitool)) && panel_open)
-		interact(user)
-	else
-		..()
+/obj/effect/mine/multitool_act(mob/living/user, obj/item/tool)
+	if(!panel_open)
+		return ITEM_INTERACT_BLOCKING
+	interact(user)
+	return ITEM_INTERACT_SUCCESS
 
 /obj/effect/mine/interact(mob/living/user as mob)
 	if(!panel_open || isAI(user))
@@ -351,14 +356,6 @@
 	return
 
 /obj/item/mine/attackby(obj/item/W as obj, mob/living/user as mob)
-	if(W.has_tool_quality(TOOL_SCREWDRIVER) && trap)
-		to_chat(user, span_notice("You begin removing \the [trap]."))
-		if(do_after(user, 10 SECONDS, target = src))
-			to_chat(user, span_notice("You finish disconnecting the mine's trigger."))
-			trap.forceMove(get_turf(src))
-			trap = null
-		return
-
 	if(LAZYLEN(allowed_gadgets) && !trap)
 		var/allowed = FALSE
 
@@ -448,6 +445,16 @@
 	if(!(dq_get_hovering(L) || L.flying || L.is_incorporeal() || L.mob_size <= MOB_TINY))
 		return FALSE
 	return ..()
+
+/obj/item/mine/screwdriver_act(mob/living/user, obj/item/tool)
+	if(!trap)
+		return ITEM_INTERACT_BLOCKING
+	to_chat(user, span_notice("You begin removing \the [trap]."))
+	if(do_after(user, 10 SECONDS, target = src) && trap)
+		to_chat(user, span_notice("You finish disconnecting the mine's trigger."))
+		trap.forceMove(get_turf(src))
+		trap = null
+	return ITEM_INTERACT_SUCCESS
 
 //Lasertag mines
 

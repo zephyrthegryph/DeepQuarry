@@ -8,6 +8,8 @@
 	anchored = TRUE
 	unacidable = TRUE
 	req_access = list(ACCESS_KITCHEN,ACCESS_MORGUE)
+	maintenance_flags = MACHINE_MAINT_STANDARD_MOVABLE
+	maintenance_wrench_time = 4 SECONDS
 
 	var/operating = 0 //Is it on?
 	var/dirty = 0 // Does it need cleaning?
@@ -97,14 +99,7 @@
 	return 1
 
 /obj/machinery/gibber/attackby(obj/item/W, mob/user)
-	if(default_deconstruction_screwdriver(user, W)) // Allows for deconstruction
-		return
-	if(default_deconstruction_crowbar(user, W))
-		return
 	if(default_part_replacement(user, W))
-		return
-
-	if(default_unfasten_wrench(user, W, 40))
 		return
 
 	var/obj/item/grab/G = W

@@ -113,7 +113,7 @@ GLOBAL_LIST_EMPTY(tank_gauge_cache)
 		. += span_warning("\The [src] emergency relief valve has been welded shut!")
 
 
-/obj/item/tank/attackby(obj/item/W as obj, mob/user as mob)
+/obj/item/tank/attackby(obj/item/W as obj, mob/user as mob, tool_quality)
 	..()
 	if (istype(src.loc, /obj/item/assembly))
 		icon = src.loc
@@ -130,7 +130,7 @@ GLOBAL_LIST_EMPTY(tank_gauge_cache)
 			to_chat(user, span_notice("You attach the wires to the tank."))
 			src.add_bomb_overlay()
 
-	if(W.has_tool_quality(TOOL_WIRECUTTER))
+	if(tool_quality == TOOL_WIRECUTTER)
 		if(wired && src.proxyassembly.assembly)
 
 			to_chat(user, span_notice("You carefully begin clipping the wires that attach to the tank."))
@@ -185,7 +185,7 @@ GLOBAL_LIST_EMPTY(tank_gauge_cache)
 			to_chat(user, span_notice("You need to wire the device up first."))
 
 
-	if(istype(W, /obj/item/weldingtool))
+	if(tool_quality == TOOL_WELDER)
 		var/obj/item/weldingtool/WT = W
 		if(WT.remove_fuel(1,user))
 			if(!valve_welded)
@@ -208,6 +208,14 @@ GLOBAL_LIST_EMPTY(tank_gauge_cache)
 		add_fingerprint(user)
 
 
+
+/obj/item/tank/wirecutter_act(mob/user, obj/item/tool)
+	attackby(tool, user, TOOL_WIRECUTTER)
+	return TRUE
+
+/obj/item/tank/welder_act(mob/user, obj/item/tool)
+	attackby(tool, user, TOOL_WELDER)
+	return TRUE
 
 /obj/item/tank/attack_self(mob/user)
 	. = ..(user)

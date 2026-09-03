@@ -89,6 +89,8 @@
 
 /// Sent from [atom/proc/item_interaction], when this atom is used as a tool and an event occurs
 #define COMSIG_ITEM_TOOL_ACTED "tool_item_acted"
+/// Sent from [atom/proc/item_interaction_secondary], when this atom is used as a tool and an event occurs
+#define COMSIG_ITEM_TOOL_ACTED_SECONDARY "tool_item_acted_secondary"
 
 /// from /obj/projectile/energy/fisher/on_hit() or /obj/item/gun/energy/recharge/fisher when striking a target
 #define COMSIG_ATOM_SABOTEUR_ACT "hit_by_saboteur"

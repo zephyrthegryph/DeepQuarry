@@ -8,6 +8,7 @@
 	idle_power_usage = 200
 	density = TRUE
 	anchored = TRUE
+	maintenance_flags = MACHINE_MAINT_STANDARD
 
 /obj/machinery/disperser/Initialize(mapload)
 	. = ..()
@@ -18,22 +19,21 @@
 	if(panel_open)
 		to_chat(user, "The maintenance panel is open.")
 
-/obj/machinery/disperser/attackby(obj/item/I, mob/user)
-	if(I && I.has_tool_quality(TOOL_WRENCH))
-		if(panel_open)
-			user.visible_message(span_infoplain(span_bold("\The [user]") + " rotates \the [src] with \the [I]."),
-				span_notice("You rotate \the [src] with \the [I]."))
-			set_dir(turn(dir, 90))
-			playsound(src, 'sound/items/jaws_pry.ogg', 50, 1)
-		else
-			to_chat(user, span_notice("The maintenance panel must be screwed open for this!"))
-		return
-	if(default_deconstruction_screwdriver(user, I))
-		return
-	if(default_deconstruction_crowbar(user, I))
-		return
-	if(default_part_replacement(user, I))
-		return
+/obj/machinery/disperser/wrench_act(mob/user, obj/item/tool)
+	if(!panel_open)
+		to_chat(user, span_notice("The maintenance panel must be screwed open for this!"))
+		return ITEM_INTERACT_BLOCKING
+	user.visible_message(span_infoplain(span_bold("\The [user]") + " rotates \the [src] with \the [tool]."), span_notice("You rotate \the [src] with \the [tool]."))
+	set_dir(turn(dir, 90))
+	playsound(src, 'sound/items/jaws_pry.ogg', 50, 1)
+	return ITEM_INTERACT_SUCCESS
+
+/obj/machinery/disperser/screwdriver_act(mob/user, obj/item/tool)
+	return ..()
+
+/obj/machinery/disperser/crowbar_act(mob/user, obj/item/tool)
+	if(default_part_replacement(user, tool))
+		return ITEM_INTERACT_SUCCESS
 	return ..()
 
 /obj/machinery/disperser/front

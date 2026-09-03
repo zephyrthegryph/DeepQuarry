@@ -121,25 +121,6 @@
 		return attack_hand(user)
 
 /obj/structure/toilet/attackby(obj/item/I, mob/living/user)
-	if(I.has_tool_quality(TOOL_CROWBAR))
-		to_chat(user, span_notice("You start to [cistern ? "replace the lid on the cistern" : "lift the lid off the cistern"]."))
-		playsound(src, 'sound/effects/stonedoor_openclose.ogg', 50, 1)
-		if(do_after(user, 3 SECONDS, target = src))
-			user.visible_message(span_notice("[user] [cistern ? "replaces the lid on the cistern" : "lifts the lid off the cistern"]!"), span_notice("You [cistern ? "replace the lid on the cistern" : "lift the lid off the cistern"]!"), "You hear grinding porcelain.")
-			cistern = !cistern
-			update_icon()
-			return
-
-	if(I.has_tool_quality(TOOL_WRENCH) && cistern) //Kill Toilet.
-		if(refilling)
-			to_chat(user, span_notice("Wait for \the [src] to finish refilling..."))
-		to_chat(user, span_notice("You begin to dismantle \the [src]..."))
-		if(!do_after(user, 5 SECONDS, src))
-			return
-		to_chat(user, span_notice("You dismantle \the [src]."))
-		deconstruct()
-		return
-
 	if(istype(I, /obj/item/grab))
 		user.setClickCooldown(user.get_attack_speed(I))
 		var/obj/item/grab/G = I
@@ -459,6 +440,27 @@
 	QDEL_NULL(reagents)
 	STOP_MACHINE_PROCESSING(src)
 	return ..()
+
+/obj/structure/toilet/crowbar_act(mob/user, obj/item/I)
+	to_chat(user, span_notice("You start to [cistern ? "replace the lid on the cistern" : "lift the lid off the cistern"]."))
+	playsound(src, 'sound/effects/stonedoor_openclose.ogg', 50, 1)
+	if(do_after(user, 3 SECONDS, target = src))
+		user.visible_message(span_notice("[user] [cistern ? "replaces the lid on the cistern" : "lifts the lid off the cistern"]!"), span_notice("You [cistern ? "replace the lid on the cistern" : "lift the lid off the cistern"]!"), "You hear grinding porcelain.")
+		cistern = !cistern
+		update_icon()
+	return TRUE
+
+/obj/structure/toilet/wrench_act(mob/user, obj/item/I)
+	if(!cistern)
+		return TRUE
+	if(refilling)
+		to_chat(user, span_notice("Wait for \the [src] to finish refilling..."))
+		return TRUE
+	to_chat(user, span_notice("You begin to dismantle \the [src]..."))
+	if(do_after(user, 5 SECONDS, src))
+		to_chat(user, span_notice("You dismantle \the [src]."))
+		deconstruct()
+	return TRUE
 
 //add heat controls? when emagged, you can freeze to death in it?
 

@@ -535,32 +535,8 @@
 	if(O.is_open_container())
 		return 0
 
-	if(O.has_tool_quality(TOOL_WIRECUTTER) || istype(O, /obj/item/surgical/scalpel))
-
-		if(!seed)
-			to_chat(user, span_filter_notice("There is nothing to take a sample from in \the [src]."))
-			return
-
-		if(sampled)
-			to_chat(user, span_filter_notice("You have already sampled from this plant."))
-			return
-
-		if(dead)
-			to_chat(user, span_filter_notice("The plant is dead."))
-			return
-
-		// Create a sample.
-		seed.harvest(user,yield_mod,1)
-		health -= (rand(3,5)*10)
-
-		if(prob(30))
-			sampled = 1
-
-		// Bookkeeping.
-		check_health()
-		force_update = 1
-		process()
-
+	if(istype(O, /obj/item/surgical/scalpel))
+		take_plant_sample(user)
 		return
 
 	else if(istype(O, /obj/item/reagent_containers/syringe))
@@ -630,30 +606,6 @@
 		qdel(O)
 		check_health()
 
-	else if(mechanical && O.has_tool_quality(TOOL_WRENCH))
-
-		//If there's a connector here, the portable_atmospherics setup can handle it.
-		if(locate(/obj/machinery/atmospherics/portables_connector/) in loc)
-			return ..()
-
-		playsound(src, O.usesound, 50, 1)
-		anchored = !anchored
-		to_chat(user, span_filter_notice("You [anchored ? "wrench" : "unwrench"] \the [src]."))
-
-	else if(istype(O,/obj/item/multitool))
-		if(!anchored)
-			to_chat(user, span_warning("Anchor it first!"))
-			return
-		if(frozen == -1)
-			to_chat(user, span_warning("You see no way to use \the [O] on [src]."))
-			return
-		to_chat(user, span_notice("You [frozen ? "disable" : "enable"] the cryogenic freezing."))
-		frozen = !frozen
-		if(!frozen)
-			START_MACHINE_PROCESSING(src)
-		update_icon()
-		return
-
 	else if(O.force && seed)
 		user.setClickCooldown(user.get_attack_speed(O))
 		user.visible_message(span_danger("\The [seed.display_name] has been attacked by [user] with \the [O]!"))
@@ -662,6 +614,53 @@
 			check_health()
 
 	return
+
+/obj/machinery/portable_atmospherics/hydroponics/proc/take_plant_sample(mob/user)
+	if(!seed)
+		to_chat(user, span_filter_notice("There is nothing to take a sample from in \the [src]."))
+		return FALSE
+	if(sampled)
+		to_chat(user, span_filter_notice("You have already sampled from this plant."))
+		return FALSE
+	if(dead)
+		to_chat(user, span_filter_notice("The plant is dead."))
+		return FALSE
+	seed.harvest(user, yield_mod, TRUE)
+	health -= rand(3, 5) * 10
+	if(prob(30))
+		sampled = TRUE
+	check_health()
+	force_update = TRUE
+	process()
+	return TRUE
+
+/obj/machinery/portable_atmospherics/hydroponics/wirecutter_act(mob/user, obj/item/tool)
+	take_plant_sample(user)
+	return ITEM_INTERACT_SUCCESS
+
+/obj/machinery/portable_atmospherics/hydroponics/wrench_act(mob/user, obj/item/tool)
+	if(!mechanical)
+		return ..()
+	if(locate(/obj/machinery/atmospherics/portables_connector/) in loc)
+		return ..()
+	playsound(src, tool.usesound, 50, TRUE)
+	anchored = !anchored
+	to_chat(user, span_filter_notice("You [anchored ? "wrench" : "unwrench"] \the [src]."))
+	return ITEM_INTERACT_SUCCESS
+
+/obj/machinery/portable_atmospherics/hydroponics/multitool_act(mob/user, obj/item/tool)
+	if(!anchored)
+		to_chat(user, span_warning("Anchor it first!"))
+		return ITEM_INTERACT_BLOCKING
+	if(frozen == -1)
+		to_chat(user, span_warning("You see no way to use \the [tool] on [src]."))
+		return ITEM_INTERACT_BLOCKING
+	to_chat(user, span_notice("You [frozen ? "disable" : "enable"] the cryogenic freezing."))
+	frozen = !frozen
+	if(!frozen)
+		START_MACHINE_PROCESSING(src)
+	update_icon()
+	return ITEM_INTERACT_SUCCESS
 
 /obj/machinery/portable_atmospherics/hydroponics/attack_tk(mob/user)
 	if(dead)

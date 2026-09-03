@@ -180,43 +180,46 @@
 			to_chat(user, span_notice("You install a cell in \the [src]."))
 			update_icon()
 
-	else if(W.has_tool_quality(TOOL_SCREWDRIVER))
-		if(bcell)
-			if(istype(bcell, /obj/item/cell/device/shield_generator/parry)) // Cannot remove the cell from Parry shields.
-				to_chat(user,span_notice("You cannot remove the cell from this device.")) // No cell removal.
-				return // No cell removal.
-			if(istype(bcell, /obj/item/cell/device/shield_generator)) //No stealing self charging batteries!
-				var/choice = tgui_alert(user, "A popup appears on the device 'REMOVING THE INTERNAL CELL WILL DESTROY THE BATTERY. DO YOU WISH TO CONTINUE?'...Well, do you?", "Selection List", list("Cancel", "Remove"))
-				if(choice == "Remove") //Warned you...
-					var/datum/effect/effect/system/spark_spread/s = new /datum/effect/effect/system/spark_spread
-					s.set_up(5, 1, src)
-					s.start()
-					bcell.forceMove(get_turf(src.loc))
-					qdel(bcell)
-					bcell = null //Sanity.
-					if(active_weapon)
-						reattach_gun() //Put the gun back if it's out. No shooting if we don't have a cell!
-						active_weapon.power_supply = null //No power cell anymore!
-					to_chat(user, span_notice("You remove the cell from \the [src], destroying the battery."))
-					update_icon()
-					return
-				else
-					return
-			else
-				bcell.update_icon()
-				bcell.forceMove(get_turf(src.loc))
-				bcell = null
-				if(active_weapon)
-					reattach_gun() //Put the gun back if it's out. No shooting if we don't have a cell!
-					active_weapon.power_supply = null //No power cell anymore!
-				to_chat(user, span_notice("You remove the cell from \the [src]."))
-				update_icon()
-	else if(istype(W,/obj/item/multitool))
-		var/new_color = tgui_color_picker(usr, "Choose a color to set the shield to!", "", effect_color)
-		if(new_color)
-			effect_color = new_color
 	else
 		return ..()
+
+/obj/item/personal_shield_generator/screwdriver_act(mob/user, obj/item/tool)
+	if(!bcell)
+		return ITEM_INTERACT_BLOCKING
+	if(istype(bcell, /obj/item/cell/device/shield_generator/parry))
+		to_chat(user, span_notice("You cannot remove the cell from this device."))
+		return ITEM_INTERACT_BLOCKING
+	if(istype(bcell, /obj/item/cell/device/shield_generator))
+		var/choice = tgui_alert(user, "A popup appears on the device 'REMOVING THE INTERNAL CELL WILL DESTROY THE BATTERY. DO YOU WISH TO CONTINUE?'...Well, do you?", "Selection List", list("Cancel", "Remove"))
+		if(choice != "Remove")
+			return ITEM_INTERACT_BLOCKING
+		var/datum/effect/effect/system/spark_spread/sparks = new
+		sparks.set_up(5, 1, src)
+		sparks.start()
+		qdel(bcell)
+		bcell = null
+		if(active_weapon)
+			reattach_gun()
+			active_weapon.power_supply = null
+		to_chat(user, span_notice("You remove the cell from \the [src], destroying the battery."))
+		update_icon()
+		return ITEM_INTERACT_SUCCESS
+	bcell.update_icon()
+	bcell.forceMove(get_turf(src))
+	bcell = null
+	if(active_weapon)
+		reattach_gun()
+		active_weapon.power_supply = null
+	to_chat(user, span_notice("You remove the cell from \the [src]."))
+	update_icon()
+	return ITEM_INTERACT_SUCCESS
+
+/obj/item/personal_shield_generator/multitool_act(mob/user, obj/item/tool)
+	var/new_color = tgui_color_picker(user, "Choose a color to set the shield to!", "", effect_color)
+	if(new_color)
+		effect_color = new_color
+		return ITEM_INTERACT_SUCCESS
+	return ITEM_INTERACT_BLOCKING
 
 // TODO: EMAG ACT
 // Perhaps make it so emagging the generator gives two options: One to rig the cell (stealthily) and one to disable the safeties (supercharge it)

@@ -131,8 +131,9 @@ FIRE ALARM
 /obj/machinery/firealarm/attack_ai(mob/user as mob)
 	return attack_hand(user)
 
-/obj/machinery/firealarm/bullet_act()
-	return alarm()
+/obj/machinery/firealarm/bullet_act(obj/item/projectile/Proj, def_zone)
+	alarm()
+	return ..()
 
 /obj/machinery/firealarm/emp_act(severity, recursive)
 	. = ..()
@@ -143,23 +144,30 @@ FIRE ALARM
 
 /obj/machinery/firealarm/attackby(obj/item/W as obj, mob/user as mob)
 	add_fingerprint(user)
-
-	if(alarm_deconstruction_screwdriver(user, W))
-		return
-	if(alarm_deconstruction_wirecutters(user, W))
-		return
-
-	if(panel_open)
-		if(istype(W, /obj/item/multitool))
-			detecting = !(detecting)
-			if(detecting)
-				user.visible_message(span_notice("\The [user] has reconnected [src]'s detecting unit!"), span_notice("You have reconnected [src]'s detecting unit."))
-			else
-				user.visible_message(span_notice("\The [user] has disconnected [src]'s detecting unit!"), span_notice("You have disconnected [src]'s detecting unit."))
-		return
-
 	alarm()
 	return
+
+/obj/machinery/firealarm/screwdriver_act(mob/user, obj/item/tool)
+	playsound(src, tool.usesound, 50, TRUE)
+	panel_open = !panel_open
+	to_chat(user, "The wires have been [panel_open ? "exposed" : "unexposed"]")
+	update_icon()
+	return ITEM_INTERACT_SUCCESS
+
+/obj/machinery/firealarm/wirecutter_act(mob/user, obj/item/tool)
+	if(!panel_open)
+		return ITEM_INTERACT_BLOCKING
+	user.visible_message(span_warning("[user] has cut the wires inside \the [src]!"), "You have cut the wires inside \the [src].")
+	playsound(src, tool.usesound, 50, TRUE)
+	new /obj/item/stack/cable_coil(get_turf(src), 5)
+	return dismantle() ? ITEM_INTERACT_SUCCESS : ITEM_INTERACT_BLOCKING
+
+/obj/machinery/firealarm/multitool_act(mob/user, obj/item/tool)
+	if(!panel_open)
+		return ITEM_INTERACT_BLOCKING
+	detecting = !detecting
+	user.visible_message(span_notice("\The [user] has [detecting ? "reconnected" : "disconnected"] [src]'s detecting unit!"), span_notice("You have [detecting ? "reconnected" : "disconnected"] [src]'s detecting unit."))
+	return ITEM_INTERACT_SUCCESS
 
 /obj/machinery/firealarm/process()//Note: this processing was mostly phased out due to other code, and only runs when needed
 	if(stat & (NOPOWER|BROKEN))

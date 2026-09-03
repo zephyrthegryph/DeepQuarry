@@ -5,6 +5,8 @@
 	icon_state = "launcher01"
 	density = TRUE
 	anchored = TRUE
+	maintenance_flags = MACHINE_MAINT_STANDARD_MOVABLE
+	maintenance_wrench_time = 2 SECONDS
 
 	circuit = /obj/item/circuitboard/firework_launcher
 	var/obj/item/firework_star/loaded_star
@@ -31,18 +33,7 @@
 	icon_state = "launcher[loaded_star ? "1" : "0"][anchored ? "1" : "0"][panel_open ? "_open" : ""]"
 
 /obj/machinery/firework_launcher/attackby(obj/item/O, mob/user)
-	if(default_deconstruction_screwdriver(user, O))
-		update_icon()
-		return
-
-	if(default_deconstruction_crowbar(user, O))
-		return
-
 	if(default_part_replacement(user, O))
-		return
-
-	if(default_unfasten_wrench(user, O, 20))
-		update_icon()
 		return
 
 	if(istype(O, /obj/item/firework_star))
@@ -57,6 +48,16 @@
 			return
 
 	return ..()
+
+/obj/machinery/firework_launcher/screwdriver_act(mob/user, obj/item/tool)
+	. = ..()
+	if(. == ITEM_INTERACT_SUCCESS)
+		update_icon()
+
+/obj/machinery/firework_launcher/wrench_act(mob/user, obj/item/tool)
+	. = ..()
+	if(. == ITEM_INTERACT_SUCCESS)
+		update_icon()
 
 /obj/machinery/firework_launcher/verb/eject()
 	set category = "Object"

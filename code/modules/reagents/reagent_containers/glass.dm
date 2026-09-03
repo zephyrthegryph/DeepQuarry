@@ -313,12 +313,6 @@
 		user.drop_from_inventory(src)
 		qdel(src)
 		return
-	else if(D.has_tool_quality(TOOL_WIRECUTTER))
-		to_chat(user, span_notice("You cut a big hole in \the [src] with \the [D]. It's kinda useless as a bucket now."))
-		user.put_in_hands(new /obj/item/clothing/head/helmet/bucket)
-		user.drop_from_inventory(src)
-		qdel(src)
-		return
 	else if(istype(D, /obj/item/stack/material) && D.get_material_name() == MAT_STEEL)
 		var/obj/item/stack/material/M = D
 		if (M.use(1))
@@ -340,6 +334,13 @@
 			playsound(src, 'sound/effects/slosh.ogg', 25, 1)
 	else
 		return ..()
+
+/obj/item/reagent_containers/glass/bucket/wirecutter_act(mob/user, obj/item/tool)
+	to_chat(user, span_notice("You cut a big hole in \the [src] with \the [tool]. It's kinda useless as a bucket now."))
+	user.put_in_hands(new /obj/item/clothing/head/helmet/bucket)
+	user.drop_from_inventory(src)
+	qdel(src)
+	return ITEM_INTERACT_SUCCESS
 
 /obj/item/reagent_containers/glass/bucket/update_icon()
 	cut_overlays()

@@ -1,0 +1,11 @@
+author: "Codex"
+delete-after: true
+changes:
+  - code_imp: "Made subsystem type profiling account for CPU tick work rather than scheduler sleep time."
+  - code_imp: "Atmospheric unary machines now retain their dependency watches across short wake cycles."
+  - code_imp: "Expanded performance CSVs with complete Atmos, Machines, Objects, Mobs, AI, resume, overrun, and wake metrics."
+  - bugfix: "Prevented Rust atmos panic recovery and permanent candles from repeatedly waking the entire station atmosphere."
+  - code_imp: "Made stock markets, tube-fed welders, and idle mech fabricators avoid unnecessary high-frequency processing."
+  - bugfix: "Made already-deleted machinery ignore projectile damage that was queued before deletion."
+  - refactor: "Converted idle object, combat AI, medical-condition, machine, power, and atmos work to dependency-driven scheduling and added low-overhead per-type diagnostics."
+  - bugfix: "Fixed human HUDs and communicators doing periodic work on inverted modulo conditions."

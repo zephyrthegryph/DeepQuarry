@@ -1,5 +1,6 @@
 #define FUSION_ROD_SHEET_AMT 15
 /obj/machinery/fusion_fuel_compressor
+	maintenance_flags = MACHINE_MAINT_STANDARD
 	var/blitzprogress = 0
 	name = "fuel compressor"
 	icon = 'icons/obj/machines/power/fusion.dmi'
@@ -43,10 +44,6 @@
 
 /obj/machinery/fusion_fuel_compressor/attackby(obj/item/thing, mob/user)
 
-	if(default_deconstruction_screwdriver(user, thing))
-		return
-	if(default_deconstruction_crowbar(user, thing))
-		return
 	if(default_part_replacement(user, thing))
 		return
 	if(istype(thing, /obj/item/stack/material))

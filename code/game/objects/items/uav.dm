@@ -118,14 +118,6 @@
 		visible_message(span_notice("[user] pairs [I] to [nickname]"))
 		toggle_pairing()
 
-	else if(I.has_tool_quality(TOOL_SCREWDRIVER) && cell)
-		if(do_after(user, 3 SECONDS, target = src))
-			to_chat(user, span_notice("You remove [cell] into [nickname]."))
-			playsound(src, I.usesound, 50, 1)
-			power_down()
-			cell.forceMove(get_turf(src))
-			cell = null
-
 	else if(istype(I, /obj/item/cell) && !cell)
 		if(do_after(user, 3 SECONDS, target = src))
 			to_chat(user, span_notice("You insert [I] into [nickname]."))
@@ -145,6 +137,17 @@
 			desc = initial(desc) + " This one has "  + span_notice("'[nickname]'") + " scribbled on the side."
 	else
 		return ..()
+
+/obj/item/uav/screwdriver_act(mob/user, obj/item/tool)
+	if(!cell)
+		return ITEM_INTERACT_BLOCKING
+	if(do_after(user, 3 SECONDS, target = src) && cell)
+		to_chat(user, span_notice("You remove [cell] from [nickname]."))
+		playsound(src, tool.usesound, 50, 1)
+		power_down()
+		cell.forceMove(get_turf(src))
+		cell = null
+	return ITEM_INTERACT_SUCCESS
 
 /obj/item/uav/proc/can_transition_to(new_state, mob/user)
 	switch(state) //Current one

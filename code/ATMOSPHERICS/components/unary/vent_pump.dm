@@ -197,16 +197,15 @@
 		return 0
 	return 1
 
-/obj/machinery/atmospherics/unary/vent_pump/gas_dependency_changed(mixture_id, change_mask)
-	if(!..())
+/obj/machinery/atmospherics/unary/vent_pump/gas_dependency_changed(mixture_id, change_mask, list/observation, observation_index)
+	if(!..(mixture_id, change_mask, observation, observation_index))
 		return FALSE
 	if(!can_pump())
 		return FALSE
-	var/datum/gas_mixture/environment = return_air()
-	if(!environment || get_pressure_delta(environment) <= 0.5)
+	if(get_pressure_delta_values(sleeping_turf_pressure, sleeping_pipe_pressure) <= 0.5)
 		return FALSE
-	var/datum/gas_mixture/source = pump_direction ? air_contents : environment
-	return source && source.total_moles() >= MINIMUM_MOLES_TO_PUMP
+	var/source_moles = pump_direction ? sleeping_pipe_moles : sleeping_turf_moles
+	return source_moles >= MINIMUM_MOLES_TO_PUMP
 
 /obj/machinery/atmospherics/unary/vent_pump/process()
 	..()
@@ -228,13 +227,13 @@
 	if((environment.return_temperature() || air_contents.return_temperature()) && pressure_delta > 0.5)
 		if(pump_direction) //internal -> external
 			var/transfer_moles = calculate_transfer_moles(air_contents, environment, pressure_delta)
-			power_draw = pump_gas(src, air_contents, environment, transfer_moles, power_rating)
+			power_draw = queue_pump_gas(src, air_contents, environment, transfer_moles, power_rating)
 		else //external -> internal
 			var/transfer_moles = calculate_transfer_moles(environment, air_contents, pressure_delta, (network)? network.volume : 0)
 
 			//limit flow rate from turfs
 			transfer_moles = min(transfer_moles, environment.total_moles()*air_contents.return_volume()/environment.return_volume())	//group_multiplier gets divided out here
-			power_draw = pump_gas(src, environment, air_contents, transfer_moles, power_rating)
+			power_draw = queue_pump_gas(src, environment, air_contents, transfer_moles, power_rating)
 
 	// A pressure target can remain actionable while the source mixture is empty.
 	// Both mixtures are subscribed before sleeping, so either new source gas or a
@@ -242,37 +241,35 @@
 	if(power_draw < 0 && Master.iteration > 10)
 		SSmachines.hibernate_vent(src)
 
-	if (power_draw >= 0)
-		last_power_draw = power_draw
-		use_power(power_draw)
-		// pump_gas mutates loc's air mix directly via gas_mixture ref;
-		// it can't tell that the sink is a turf, so it doesn't enroll the turf
-		// in active_turfs or call update_visuals. Without this, the turf never
-		// gets processed by SSair and the gas overlay never updates.
-		if(isturf(loc))
-			var/turf/open/T = loc
-			if(istype(T))
-				T.update_visuals()
-				T.air_update_turf(FALSE, FALSE)
-		if(network)
-			network.mark_dirty()
+	// Power, flow telemetry, turf activation, and pipenet dirtiness are finalized
+	// using the actual shared-source-clamped transfer in the subsystem batch.
 
 	return 1
 
+/obj/machinery/atmospherics/unary/vent_pump/pump_transaction_committed(actual_moles)
+	if(actual_moles >= MINIMUM_MOLES_TO_PUMP)
+		return
+	// The optimistic request lost the shared-source transaction race. Subscribe
+	// to both authoritative mixtures and remain asleep until either can actually
+	// make the pressure predicate actionable again.
+	SSmachines.hibernate_vent(src)
+
 /obj/machinery/atmospherics/unary/vent_pump/proc/get_pressure_delta(datum/gas_mixture/environment)
+	return get_pressure_delta_values(environment.return_pressure(), air_contents.return_pressure())
+
+/obj/machinery/atmospherics/unary/vent_pump/proc/get_pressure_delta_values(environment_pressure, internal_pressure)
 	var/pressure_delta = DEFAULT_PRESSURE_DELTA
-	var/environment_pressure = environment.return_pressure()
 
 	if(pump_direction) //internal -> external
 		if(pressure_checks & PRESSURE_CHECK_EXTERNAL)
 			pressure_delta = min(pressure_delta, external_pressure_bound - environment_pressure) //increasing the pressure here
 		if(pressure_checks & PRESSURE_CHECK_INTERNAL)
-			pressure_delta = min(pressure_delta, air_contents.return_pressure() - internal_pressure_bound) //decreasing the pressure here
+			pressure_delta = min(pressure_delta, internal_pressure - internal_pressure_bound) //decreasing the pressure here
 	else //external -> internal
 		if(pressure_checks & PRESSURE_CHECK_EXTERNAL)
 			pressure_delta = min(pressure_delta, environment_pressure - external_pressure_bound) //decreasing the pressure here
 		if(pressure_checks & PRESSURE_CHECK_INTERNAL)
-			pressure_delta = min(pressure_delta, internal_pressure_bound - air_contents.return_pressure()) //increasing the pressure here
+			pressure_delta = min(pressure_delta, internal_pressure_bound - internal_pressure) //increasing the pressure here
 
 	return pressure_delta
 
@@ -400,46 +397,42 @@
 	update_icon()
 	return
 
-/obj/machinery/atmospherics/unary/vent_pump/attackby(obj/item/W as obj, mob/user as mob)
-	if(W.has_tool_quality(TOOL_WELDER))
-		var/obj/item/weldingtool/WT = W.get_welder()
-		if (WT.remove_fuel(0,user))
-			to_chat(user, span_notice("Now welding the vent."))
-			if(do_after(user, 20 * WT.toolspeed, target = src))
-				if(!src || !WT.isOn()) return
-				playsound(src, WT.usesound, 50, 1)
-				if(!welded)
-					user.visible_message(span_bold("\The [user]") + " welds the vent shut.", span_notice("You weld the vent shut."), "You hear welding.")
-					welded = 1
-					invalidate_gas_dependencies()
-					update_icon()
-				else
-					user.visible_message(span_notice("[user] unwelds the vent."), span_notice("You unweld the vent."), "You hear welding.")
-					welded = 0
-					invalidate_gas_dependencies()
-					update_icon()
+/obj/machinery/atmospherics/unary/vent_pump/welder_act(mob/user, obj/item/W)
+	var/obj/item/weldingtool/WT = W.get_welder()
+	if (WT.remove_fuel(0,user))
+		to_chat(user, span_notice("Now welding the vent."))
+		if(do_after(user, 20 * WT.toolspeed, target = src))
+			if(!src || !WT.isOn()) return ITEM_INTERACT_BLOCKING
+			playsound(src, WT.usesound, 50, 1)
+			if(!welded)
+				user.visible_message(span_bold("\The [user]") + " welds the vent shut.", span_notice("You weld the vent shut."), "You hear welding.")
+				welded = 1
+				invalidate_gas_dependencies()
+				update_icon()
 			else
-				to_chat(user, span_notice("The welding tool needs to be on to start this task."))
+				user.visible_message(span_notice("[user] unwelds the vent."), span_notice("You unweld the vent."), "You hear welding.")
+				welded = 0
+				invalidate_gas_dependencies()
+				update_icon()
 		else
-			to_chat(user, span_warning("You need more welding fuel to complete this task."))
-			return 1
-		return
-	if(W.has_tool_quality(TOOL_MULTITOOL))
-		multitool_act(W, user)
-		return TRUE
-	if (!W.has_tool_quality(TOOL_WRENCH))
-		return ..()
+			to_chat(user, span_notice("The welding tool needs to be on to start this task."))
+	else
+		to_chat(user, span_warning("You need more welding fuel to complete this task."))
+		return ITEM_INTERACT_BLOCKING
+	return ITEM_INTERACT_SUCCESS
+
+/obj/machinery/atmospherics/unary/vent_pump/wrench_act(mob/user, obj/item/W)
 	if (!(stat & NOPOWER) && use_power)
 		to_chat(user, span_warning("You cannot unwrench \the [src], turn it off first."))
-		return 1
+		return ITEM_INTERACT_BLOCKING
 	var/turf/T = src.loc
 	if (node && node.level==1 && isturf(T) && !T.is_plating())
 		to_chat(user, span_warning("You must remove the plating first."))
-		return 1
+		return ITEM_INTERACT_BLOCKING
 	if(!can_unwrench())
 		to_chat(user, span_warning("You cannot unwrench \the [src], it is too exerted due to internal pressure."))
 		add_fingerprint(user)
-		return 1
+		return ITEM_INTERACT_BLOCKING
 	playsound(src, W.usesound, 50, 1)
 	to_chat(user, span_notice("You begin to unfasten \the [src]..."))
 	if (do_after(user, 40 * W.toolspeed, target = src))
@@ -448,6 +441,7 @@
 			span_notice("You have unfastened \the [src]."), \
 			"You hear a ratchet.")
 		atom_deconstruct()
+	return ITEM_INTERACT_SUCCESS
 
 /obj/machinery/atmospherics/unary/vent_pump/examine(mob/user)
 	. = ..()
@@ -465,7 +459,7 @@
 		invalidate_gas_dependencies()
 		update_icon()
 
-/obj/machinery/atmospherics/unary/vent_pump/proc/multitool_act(obj/item/W, mob/user)
+/obj/machinery/atmospherics/unary/vent_pump/multitool_act(mob/user, obj/item/W)
 	var/list/options = list(
 		"ID Tag", "Frequency", "Direction", "-SAVE TO BUFFER-")
 	var/choice = tgui_input_list(user, "[src] has an ID of \"[id_tag]\" and a frequency of [frequency]. What would you like to change?", "[src] Config", options)
@@ -490,6 +484,7 @@
 			invalidate_gas_dependencies()
 			to_chat(user, span_notice("[src] is now [pump_direction ? "pumping in" : "siphoning out"]."))
 			update_icon()
+	return ITEM_INTERACT_SUCCESS
 
 #undef DEFAULT_PRESSURE_DELTA
 

@@ -317,21 +317,24 @@
 		verbs += /obj/item/gun/verb/allow_dna
 		return
 
-	if(A.has_tool_quality(TOOL_SCREWDRIVER))
-		if(dna_lock && attached_lock && !attached_lock.controller_lock)
-			to_chat(user, span_notice("You begin removing \the [attached_lock] from \the [src]."))
-			playsound(src, A.usesound, 50, 1)
-			if(do_after(user, 25 * A.toolspeed, target = src))
-				to_chat(user, span_notice("You remove \the [attached_lock] from \the [src]."))
-				user.put_in_hands(attached_lock)
-				dna_lock = 0
-				attached_lock = null
-				verbs -= /obj/item/gun/verb/remove_dna
-				verbs -= /obj/item/gun/verb/give_dna
-				verbs -= /obj/item/gun/verb/allow_dna
-		else
-			to_chat(user, span_warning("\The [src] is not accepting modifications at this time."))
 	..()
+
+/obj/item/gun/screwdriver_act(mob/user, obj/item/tool)
+	if(!dna_lock || !attached_lock || attached_lock.controller_lock)
+		to_chat(user, span_warning("\The [src] is not accepting modifications at this time."))
+		return ITEM_INTERACT_BLOCKING
+	to_chat(user, span_notice("You begin removing \the [attached_lock] from \the [src]."))
+	playsound(src, tool.usesound, 50, TRUE)
+	if(!do_after(user, 2.5 SECONDS * tool.toolspeed, target = src))
+		return ITEM_INTERACT_BLOCKING
+	to_chat(user, span_notice("You remove \the [attached_lock] from \the [src]."))
+	user.put_in_hands(attached_lock)
+	dna_lock = FALSE
+	attached_lock = null
+	verbs -= /obj/item/gun/verb/remove_dna
+	verbs -= /obj/item/gun/verb/give_dna
+	verbs -= /obj/item/gun/verb/allow_dna
+	return ITEM_INTERACT_SUCCESS
 
 /obj/item/gun/emag_act(remaining_charges, mob/user)
 	if(dna_lock && attached_lock.controller_lock)

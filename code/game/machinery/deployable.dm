@@ -45,19 +45,6 @@ Deployable items
 				visible_message(span_warning("BZZzZZzZZzZT"))
 				return
 		return
-	else if(W.has_tool_quality(TOOL_WRENCH))
-		if(get_integrity() < max_integrity)
-			repair_damage(max_integrity)
-			emagged = 0
-			req_access = list(ACCESS_SECURITY)
-			visible_message(span_warning("[user] repairs \the [src]!"))
-			return
-		else if(emagged > 0)
-			emagged = 0
-			req_access = list(ACCESS_SECURITY)
-			visible_message(span_warning("[user] repairs \the [src]!"))
-			return
-		return
 	else
 		switch(W.damtype)
 			if(BURN)
@@ -67,10 +54,19 @@ Deployable items
 		playsound(src, 'sound/weapons/smash.ogg', 50, 1)
 		..()
 
+/obj/machinery/deployable/barrier/wrench_act(mob/user, obj/item/tool)
+	if(get_integrity() >= max_integrity && !emagged)
+		return ITEM_INTERACT_BLOCKING
+	repair_damage(max_integrity)
+	emagged = FALSE
+	req_access = list(ACCESS_SECURITY)
+	visible_message(span_warning("[user] repairs \the [src]!"))
+	return ITEM_INTERACT_SUCCESS
+
 // At zero integrity the barrier blows apart.
 /obj/machinery/deployable/barrier/atom_destruction(damage_flag)
-	. = ..()
-	explode()
+	explode(FALSE)
+	return ..()
 
 /obj/machinery/deployable/barrier/attack_generic(mob/user, damage, attack_verb)
 	visible_message(span_danger("[user] [attack_verb] the [src]!"))
@@ -78,15 +74,6 @@ Deployable items
 	user.do_attack_animation(src)
 	take_damage(damage, BRUTE, MELEE, sound_effect = FALSE)
 	return
-
-/obj/machinery/deployable/barrier/ex_act(severity)
-	switch(severity)
-		if(1.0)
-			explode()
-			return
-		if(2.0)
-			take_damage(25, BRUTE, BOMB)
-			return
 
 /obj/machinery/deployable/barrier/emp_act(severity, recursive)
 	. = ..()
@@ -102,7 +89,7 @@ Deployable items
 		return TRUE
 	return FALSE
 
-/obj/machinery/deployable/barrier/proc/explode()
+/obj/machinery/deployable/barrier/proc/explode(delete_after = TRUE)
 
 	visible_message(span_danger("[src] blows apart!"))
 	var/turf/Tsec = get_turf(src)
@@ -115,7 +102,7 @@ Deployable items
 	s.start()
 
 	explosion(src.loc,-1,-1,0)
-	if(src)
+	if(delete_after && !QDELETED(src))
 		qdel(src)
 
 /obj/machinery/deployable/barrier/emag_act(remaining_charges, mob/user)

@@ -47,6 +47,17 @@
 		base_area = locate(base_area || world.area)
 	SSshuttles.register_landmark(landmark_tag, src)
 
+/obj/effect/shuttle_landmark/Destroy()
+	// Docking programs are registry-owned. A destroyed landmark must release its
+	// borrowed reference or the controller survives the explosion that removed
+	// its dock.
+	if(docking_controller)
+		UnregisterSignal(docking_controller, COMSIG_QDELETING)
+	docking_controller = null
+	special_dock_targets = null
+	base_area = null
+	return ..()
+
 /obj/effect/shuttle_landmark/LateInitialize()
 	if(!docking_controller)
 		return
@@ -54,10 +65,16 @@
 	docking_controller = SSshuttles.docking_registry[docking_tag]
 	if(!istype(docking_controller))
 		log_mapping("Could not find docking controller for shuttle waypoint '[name]', docking tag was '[docking_tag]'.")
+	else
+		RegisterSignal(docking_controller, COMSIG_QDELETING, PROC_REF(docking_controller_deleted))
 	if(using_map.use_overmap)
 		var/obj/effect/overmap/visitable/location = get_overmap_sector(z)
 		if(location && location.docking_codes && use_docking_codes)
 			docking_controller.docking_codes = location.docking_codes
+
+/obj/effect/shuttle_landmark/proc/docking_controller_deleted()
+	SIGNAL_HANDLER
+	docking_controller = null
 
 /obj/effect/shuttle_landmark/forceMove(atom/destination, direction, movetime)
 	var/obj/effect/overmap/visitable/map_origin = get_overmap_sector(z)

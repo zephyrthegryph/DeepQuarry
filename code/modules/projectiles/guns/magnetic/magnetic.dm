@@ -140,7 +140,11 @@
 			else
 				. += span_notice("The capacitor charge indicator is [span_green("green")].")
 
-/obj/item/gun/magnetic/attackby(obj/item/thing, mob/user)
+/obj/item/gun/magnetic/screwdriver_act(mob/user, obj/item/tool)
+	attackby(tool, user, TOOL_SCREWDRIVER)
+	return TRUE
+
+/obj/item/gun/magnetic/attackby(obj/item/thing, mob/user, tool_quality)
 
 	if(removable_components)
 		if(istype(thing, /obj/item/cell))
@@ -154,7 +158,7 @@
 			update_icon()
 			return
 
-		if(thing.has_tool_quality(TOOL_SCREWDRIVER))
+		if(tool_quality == TOOL_SCREWDRIVER)
 			if(!capacitor)
 				to_chat(user, span_warning("\The [src] has no capacitor installed."))
 				return

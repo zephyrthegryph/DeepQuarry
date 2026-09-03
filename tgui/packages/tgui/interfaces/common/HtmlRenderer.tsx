@@ -86,9 +86,7 @@ export const safeHtmlColor = (value: string | null): string | undefined => {
     : undefined;
 };
 
-export const safeHtmlFontFace = (
-  value: string | null,
-): string | undefined => {
+export const safeHtmlFontFace = (value: string | null): string | undefined => {
   const face = value?.trim() ?? '';
   return /^[a-z0-9 _,-]{1,80}$/i.test(face) ? face : undefined;
 };

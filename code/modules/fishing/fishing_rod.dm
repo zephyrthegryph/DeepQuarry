@@ -51,12 +51,7 @@
 	update_icon()
 
 /obj/item/material/fishing_rod/attackby(obj/item/I as obj, mob/user as mob)
-	if(I.has_tool_quality(TOOL_WIRECUTTER) && strung)
-		strung = FALSE
-		to_chat(user, span_notice("You cut \the [src]'s string!"))
-		update_icon()
-		return
-	else if(istype(I, /obj/item/stack/cable_coil) && !strung)
+	if(istype(I, /obj/item/stack/cable_coil) && !strung)
 		var/obj/item/stack/cable_coil/C = I
 		if(C.get_amount() < 5)
 			to_chat(user, span_warning("You do not have enough length in \the [C] to string this!"))
@@ -76,6 +71,14 @@
 		Bait.forceMove(src)
 		update_bait()
 	return ..()
+
+/obj/item/material/fishing_rod/wirecutter_act(mob/user, obj/item/tool)
+	if(!strung)
+		return ITEM_INTERACT_BLOCKING
+	strung = FALSE
+	to_chat(user, span_notice("You cut \the [src]'s string!"))
+	update_icon()
+	return ITEM_INTERACT_SUCCESS
 
 /obj/item/material/fishing_rod/update_icon()
 	cut_overlays()

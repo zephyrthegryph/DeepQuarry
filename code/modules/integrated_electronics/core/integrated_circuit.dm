@@ -50,6 +50,12 @@ a creative player the means to solve many problems.  Circuits are held inside an
 		qdel(O)
 	for(var/datum/integrated_io/A in activators)
 		qdel(A)
+	// Pins are owned by the circuit. qdel() is deferred, so retaining the owner
+	// lists here keeps every queued pin alive and forces SSgarbage to hard-delete
+	// it later. Break the ownership edge as part of the same lifecycle operation.
+	inputs = null
+	outputs = null
+	activators = null
 	. = ..()
 
 /obj/item/integrated_circuit/emp_act(severity, recursive)

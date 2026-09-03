@@ -8,10 +8,9 @@
 /obj/item/circuitboard/unary_atmos/construct(obj/machinery/atmospherics/unary/U)
 	//TODO: Move this stuff into the relevant constructor when pipe/construction.dm is cleaned up.
 	U.atmos_init()
-	U.build_network()
 	if (U.node)
 		U.node.atmos_init()
-		U.node.build_network()
+	U.rust_register_pipe_topology()
 
 /obj/item/circuitboard/unary_atmos/heater
 	name = T_BOARD("gas heating system")

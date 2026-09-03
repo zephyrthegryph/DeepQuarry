@@ -7,6 +7,72 @@
 // they assert the *synchronous* preconditions of collection: Destroy() really
 // ran (gc_destroyed set) and the known holders really released their refs.
 
+// Dedicated types let the test inspect SSgarbage's queues without confusing
+// its objects with mapped station machinery of the same base type.
+/obj/machinery/atmospherics/pipe/simple/hidden/supply/dq_gc_test
+
+/datum/pipeline/dq_gc_test
+
+/datum/pipe_network/dq_gc_test
+
+// Destroy a real pipe -> pipeline -> network ownership chain and then yield
+// beyond the filter queue.  A retained cycle is moved into GC_QUEUE_CHECK;
+// clean ownership vanishes from every queue on the first collection pass.
+/datum/unit_test/dq_atmos_topology_collects_without_hard_delete
+
+/datum/unit_test/dq_atmos_topology_collects_without_hard_delete/Run()
+	var/turf/test_turf = run_loc_floor_bottom_left ? run_loc_floor_bottom_left : locate(1, 1, 1)
+	TEST_ASSERT_NOTNULL(test_turf, "no turf for atmos topology GC test")
+	var/obj/machinery/atmospherics/pipe/simple/hidden/supply/dq_gc_test/pipe = new(test_turf)
+	dq_atmos_test_publish_rust_pipenets(list(pipe))
+	var/datum/pipeline/line = pipe.parent
+	var/datum/pipe_network/network = pipe.return_network()
+	TEST_ASSERT_NOTNULL(line, "Rust topology did not materialize a pipeline wrapper")
+	TEST_ASSERT_NOTNULL(network, "Rust topology did not materialize a pipenet wrapper")
+
+	qdel(pipe)
+	TEST_ASSERT(QDELETED(pipe), "atmos pipe Destroy() did not run")
+	TEST_ASSERT(QDELETED(line), "pipeline Destroy() did not run")
+	TEST_ASSERT(QDELETED(network), "pipenet Destroy() did not run")
+	TEST_ASSERT_NULL(pipe.parent, "destroyed pipe retained its pipeline")
+	TEST_ASSERT_NULL(line.network, "destroyed pipeline retained its pipenet")
+	TEST_ASSERT_NULL(line.members, "destroyed pipeline retained its pipe members")
+	TEST_ASSERT_NULL(network.line_members, "destroyed pipenet retained its pipelines")
+	TEST_ASSERT_NULL(network.normal_members, "destroyed pipenet retained its machinery")
+	TEST_ASSERT(!(network in SSair.networks), "destroyed pipenet remained in SSair.networks")
+	TEST_ASSERT(!(network in SSair.currentrun), "destroyed pipenet remained in SSair.currentrun")
+
+// Explosion teardown is not a one-pipe case: every member may be qdel'd in the
+// same tick and each neighbour can already be inside Destroy(). Assert that the
+// whole graph loses both directional node references and its shared owners.
+/datum/unit_test/dq_atmos_mass_topology_teardown_breaks_all_cycles
+
+/datum/unit_test/dq_atmos_mass_topology_teardown_breaks_all_cycles/Run()
+	var/turf/test_turf = run_loc_floor_bottom_left ? run_loc_floor_bottom_left : locate(1, 1, 1)
+	var/obj/machinery/atmospherics/pipe/simple/hidden/supply/dq_gc_test/A = new(test_turf)
+	var/obj/machinery/atmospherics/pipe/simple/hidden/supply/dq_gc_test/B = new(test_turf)
+	var/obj/machinery/atmospherics/pipe/simple/hidden/supply/dq_gc_test/C = new(test_turf)
+	A.node2 = B
+	B.node1 = A
+	B.node2 = C
+	C.node1 = B
+	dq_atmos_test_publish_rust_pipenets(list(A, B, C))
+	var/datum/pipeline/line = A.parent
+	var/datum/pipe_network/network = A.return_network()
+	TEST_ASSERT_NOTNULL(line, "Rust topology did not materialize a shared pipeline wrapper")
+	TEST_ASSERT_NOTNULL(network, "Rust topology did not materialize a shared pipenet wrapper")
+	qdel(B)
+	qdel(A)
+	qdel(C)
+	TEST_ASSERT(QDELETED(line), "mass pipe deletion retained its shared pipeline")
+	TEST_ASSERT(QDELETED(network), "mass pipe deletion retained its shared pipenet")
+	TEST_ASSERT_NULL(A.node1, "destroyed first pipe retained node1")
+	TEST_ASSERT_NULL(A.node2, "destroyed first pipe retained node2")
+	TEST_ASSERT_NULL(B.node1, "destroyed middle pipe retained node1")
+	TEST_ASSERT_NULL(B.node2, "destroyed middle pipe retained node2")
+	TEST_ASSERT_NULL(C.node1, "destroyed final pipe retained node1")
+	TEST_ASSERT_NULL(C.node2, "destroyed final pipe retained node2")
+
 // Deleting a human must Destroy() every organ. The organs list is mutated by
 // each organ's own Destroy() (self-removal + children/internal cascades), so a
 // live-list iteration in /mob/living/carbon/human/Destroy skipped entries —
@@ -103,6 +169,37 @@
 	TEST_ASSERT(QDELETED(B), "box Destroy() did not run")
 	for(var/atom/movable/AM as anything in snapshot)
 		TEST_ASSERT(QDELETED(AM), "[AM.type] inside a deleted container was skipped by the contents qdel loop")
+
+// Docking controllers expose typed aliases for the two programs used by their
+// UI. Those aliases must not outlive the base controller's owning `program` var.
+/datum/unit_test/dq_docking_controller_releases_program_aliases
+
+/datum/unit_test/dq_docking_controller_releases_program_aliases/Run()
+	var/turf/test_turf = run_loc_floor_bottom_left ? run_loc_floor_bottom_left : locate(1, 1, 1)
+	var/obj/machinery/embedded_controller/radio/airlock/docking_port/controller = new(test_turf)
+	var/datum/embedded_program/docking/airlock/docking = controller.docking_program
+	var/datum/embedded_program/airlock/docking/airlock = controller.airlock_program
+	TEST_ASSERT_NOTNULL(docking, "docking controller made no docking program")
+	TEST_ASSERT_NOTNULL(airlock, "docking controller made no airlock program")
+	qdel(controller)
+	TEST_ASSERT(QDELETED(docking), "docking program was not destroyed with its controller")
+	TEST_ASSERT(QDELETED(airlock), "airlock program was not destroyed with its controller")
+	TEST_ASSERT_NULL(controller.docking_program, "destroyed controller retained its docking-program alias")
+	TEST_ASSERT_NULL(controller.airlock_program, "destroyed controller retained its airlock-program alias")
+
+// Integrated-electronics cases and their internal device form an ownership
+// pair. Both deletion directions must sever the pair rather than leave the two
+// qdel'd objects retaining one another until a hard delete.
+/datum/unit_test/dq_electronic_assembly_breaks_device_cycle
+
+/datum/unit_test/dq_electronic_assembly_breaks_device_cycle/Run()
+	var/obj/item/assembly/electronic_assembly/case = new(null)
+	var/obj/item/electronic_assembly/device/device = case.EA
+	TEST_ASSERT_NOTNULL(device, "electronic assembly made no internal device")
+	qdel(case)
+	TEST_ASSERT(QDELETED(device), "internal electronic device was not destroyed with its case")
+	TEST_ASSERT_NULL(case.EA, "destroyed electronic assembly retained its internal device")
+	TEST_ASSERT_NULL(device.holder, "destroyed electronic device retained its case")
 
 // A radio whose frequency was changed must not strand itself in SSradio's
 // per-frequency listener list on deletion (registered at old freq, removed at

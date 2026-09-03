@@ -1,5 +1,6 @@
 /obj/item/communicator/proc/analyze_air()
-	return get_gas_mixture_default_scan_data(get_turf(src.loc))
+	var/turf/location = get_turf(src)
+	return get_gas_mixture_default_scan_data(location?.return_air())
 
 // Proc - compile_news()
 // Parameters - none

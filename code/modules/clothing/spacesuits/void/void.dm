@@ -222,7 +222,7 @@
 	removing.canremove = TRUE
 	H.drop_from_inventory(removing)
 
-/obj/item/clothing/suit/space/void/attackby(obj/item/W, mob/user)
+/obj/item/clothing/suit/space/void/attackby(obj/item/W, mob/user, tool_quality)
 
 	if(!isliving(user)) return
 
@@ -233,7 +233,7 @@
 		to_chat(user, span_warning("You cannot modify \the [src] while it is being worn."))
 		return
 
-	if(W.has_tool_quality(TOOL_SCREWDRIVER))
+	if(tool_quality == TOOL_SCREWDRIVER)
 		if(hood || boots || tank)
 			var/choice = tgui_input_list(user, "What component would you like to remove?", "Remove Component", list(hood,boots,tank,cooler))
 			if(!choice) return
@@ -395,7 +395,7 @@
 	hood = new /obj/item/clothing/head/helmet/space/void/autolok //autoinstall the helmet
 
 //override the attackby screwdriver proc so that people can't remove the helmet
-/obj/item/clothing/suit/space/void/autolok/attackby(obj/item/W, mob/user)
+/obj/item/clothing/suit/space/void/autolok/attackby(obj/item/W, mob/user, tool_quality)
 
 	if(!isliving(user))
 		return
@@ -407,7 +407,7 @@
 		to_chat(user, span_warning("You cannot modify \the [src] while it is being worn."))
 		return
 
-	if(W.has_tool_quality(TOOL_SCREWDRIVER))
+	if(tool_quality == TOOL_SCREWDRIVER)
 		if(boots || tank || cooler)
 			var/choice = tgui_input_list(user, "What component would you like to remove?", "Remove Component", list(boots,tank,cooler))
 			if(!choice) return
@@ -432,6 +432,14 @@
 		return
 
 	..()
+
+/obj/item/clothing/suit/space/void/screwdriver_act(mob/user, obj/item/tool)
+	attackby(tool, user, TOOL_SCREWDRIVER)
+	return TRUE
+
+/obj/item/clothing/suit/space/void/autolok/screwdriver_act(mob/user, obj/item/tool)
+	attackby(tool, user, TOOL_SCREWDRIVER)
+	return TRUE
 
 /obj/item/clothing/head/helmet/space/void/autolok
 	name = "AutoLok pressure helmet"

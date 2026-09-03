@@ -1,4 +1,6 @@
 /obj/machinery/seed_extractor
+	maintenance_flags = MACHINE_MAINT_STANDARD_MOVABLE
+	maintenance_wrench_time = 20
 	name = "seed extractor"
 	desc = "Extracts and bags seeds from produce."
 	icon = 'icons/obj/hydroponics_machines.dmi'
@@ -59,12 +61,5 @@
 		qdel(O)
 		return
 
-	// Deconstruction
-	if(default_deconstruction_screwdriver(user, O))
-		return
-	if(default_deconstruction_crowbar(user, O))
-		return
 	if(default_part_replacement(user, O))
-		return
-	if(default_unfasten_wrench(user, O, 20))
 		return

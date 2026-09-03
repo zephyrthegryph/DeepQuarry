@@ -8,6 +8,7 @@
 	circuit = /obj/item/circuitboard/telecomms/pda_multicaster
 	use_power = USE_POWER_IDLE
 	idle_power_usage = 750
+	maintenance_flags = MACHINE_MAINT_STANDARD
 	var/on = 1		// If we're currently active,
 	var/toggle = 1	// If we /should/ be active or not,
 	var/list/internal_PDAs = list() // Assoc list of PDAs inside of this, with the department name being the index,
@@ -55,14 +56,6 @@
 		icon_state = initial(icon_state)
 	else
 		icon_state = "[initial(icon_state)]_off"
-
-/obj/machinery/pda_multicaster/attackby(obj/item/I, mob/user)
-	if(I.has_tool_quality(TOOL_SCREWDRIVER))
-		default_deconstruction_screwdriver(user, I)
-	else if(I.has_tool_quality(TOOL_CROWBAR))
-		default_deconstruction_crowbar(user, I)
-	else
-		..()
 
 /obj/machinery/pda_multicaster/attack_ai(mob/user)
 	attack_hand(user)

@@ -106,6 +106,7 @@
 
 //A power generator that runs on solid plasma sheets.
 /obj/machinery/power/port_gen/pacman
+	maintenance_flags = MACHINE_MAINT_STANDARD
 	name = "\improper P.A.C.M.A.N.-type Portable Generator"
 	desc = "A power generator that runs on solid phoron sheets. Rated for 80 kW max safe output."
 	circuit = /obj/item/circuitboard/pacman
@@ -285,23 +286,32 @@
 		addstack.use(amount)
 		return
 	else if(!active)
-		if(O.has_tool_quality(TOOL_WRENCH))
-			if(!anchored)
-				connect_to_network()
-				to_chat(user, span_notice("You secure the generator to the floor."))
-			else
-				disconnect_from_network()
-				to_chat(user, span_notice("You unsecure the generator from the floor."))
-			playsound(src, 'sound/items/Deconstruct.ogg', 50, 1)
-			anchored = !anchored
-			return
-		else if(default_deconstruction_screwdriver(user, O))
-			return
-		else if(default_deconstruction_crowbar(user, O))
-			return
-		else if(default_part_replacement(user, O))
+		if(default_part_replacement(user, O))
 			return
 	return ..()
+
+/obj/machinery/power/port_gen/pacman/screwdriver_act(mob/user, obj/item/O)
+	if(active)
+		return ITEM_INTERACT_BLOCKING
+	return ..()
+
+/obj/machinery/power/port_gen/pacman/crowbar_act(mob/user, obj/item/O)
+	if(active)
+		return ITEM_INTERACT_BLOCKING
+	return ..()
+
+/obj/machinery/power/port_gen/pacman/wrench_act(mob/user, obj/item/O)
+	if(active)
+		return ITEM_INTERACT_BLOCKING
+	if(!anchored)
+		connect_to_network()
+		to_chat(user, span_notice("You secure the generator to the floor."))
+	else
+		disconnect_from_network()
+		to_chat(user, span_notice("You unsecure the generator from the floor."))
+	playsound(src, 'sound/items/Deconstruct.ogg', 50, 1)
+	anchored = !anchored
+	return ITEM_INTERACT_SUCCESS
 
 /obj/machinery/power/port_gen/pacman/attack_hand(mob/user)
 	..()
@@ -520,6 +530,7 @@
 // Radioisotope Thermoelectric Generator (RTG)
 // Simple power generator that would replace "magic SMES" on various derelicts.
 /obj/machinery/power/rtg
+	maintenance_flags = MACHINE_MAINT_STANDARD
 	name = "radioisotope thermoelectric generator"
 	desc = "A simple nuclear power generator, used in small outposts to reliably provide power for decades."
 	icon = 'icons/obj/power_vr.dmi'
@@ -606,11 +617,7 @@
 		. += span_notice("The status display reads: Power generation now at <b>[power_gen*0.001]</b>kW.")
 
 /obj/machinery/power/rtg/attackby(obj/item/I, mob/user, params)
-	if(default_deconstruction_screwdriver(user, I))
-		return
-	else if(default_deconstruction_crowbar(user, I))
-		return
-	else if(default_part_replacement(user, I))
+	if(default_part_replacement(user, I))
 		return
 	return ..()
 
@@ -681,7 +688,7 @@
 
 /obj/machinery/power/rtg/abductor/bullet_act(obj/item/projectile/Proj)
 	. = ..()
-	if(!going_kaboom && istype(Proj) && !Proj.nodamage && ((Proj.damage_type == BURN) || (Proj.damage_type == BRUTE)))
+	if(!QDELETED(src) && !going_kaboom && istype(Proj) && !Proj.nodamage && ((Proj.damage_type == BURN) || (Proj.damage_type == BRUTE)))
 		log_and_message_admins("[ADMIN_LOOKUPFLW(Proj.firer)] triggered an Abductor Core explosion at [x],[y],[z] via projectile.", Proj.firer)
 		asplod()
 
@@ -729,6 +736,9 @@
 	asplod()
 
 /obj/machinery/power/rtg/abductor/ex_act()
+	// Exception: asplod() is this volatile core's already-armed detonation lifecycle.
+	// qdel here only completes that lifecycle; ordinary shell damage enters through
+	// the inherited obj_integrity projectile path before arming the core.
 	if(going_kaboom)
 		qdel(src)
 	else
@@ -839,10 +849,6 @@
 
 /obj/machinery/power/rtg/reg/attackby(obj/item/I, mob/user, params)
 	pixel_x = -32
-	if(default_deconstruction_screwdriver(user, I))
-		return
-	else if(default_deconstruction_crowbar(user, I))
-		return
 	return ..()
 
 /obj/machinery/power/rtg/reg/update_icon()

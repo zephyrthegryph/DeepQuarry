@@ -1,5 +1,6 @@
 pub mod gas;
 mod parser;
+pub mod pipenets;
 mod reaction;
 #[cfg(feature = "turf_processing")]
 pub mod turfs;
@@ -12,6 +13,7 @@ use gas::{
 	with_gas_info, with_mix, with_mix_mut, with_mixes, with_mixes_custom, with_mixes_mut, GasArena,
 	Mixture,
 };
+use pipenets::PIPE_TOPOLOGY;
 use reaction::react_by_id;
 
 // global_allocator declaration removed (was mimalloc::MiMalloc). A cdylib
@@ -20,6 +22,172 @@ use reaction::react_by_id;
 // applies). See modular_dq/doc/atmos_migration.md decision §4.
 
 static _SIMD_DETECTED: ::std::sync::OnceLock<bool> = ::std::sync::OnceLock::new();
+
+/// Apply one complete DM pipe-topology transaction and return the authoritative
+/// connected regions. Input is compact text with semicolon-delimited,
+/// comma-separated four-number records:
+/// `opcode, first, second_or_mixture, volume` where opcodes are upsert=1,
+/// remove=2, connect=3, disconnect=4, clear=5, bind-region-mixture=6,
+/// remove-to-mixture=7. Output
+/// repeats a variable record:
+/// `region, port_count, prior_count, source_count, volume, ports...,
+/// prior_region/volume pairs...,
+/// source_mixture/ratio pairs...`. No gas rebinding is visible until the entire
+/// batch commits.
+#[byondapi::bind("/proc/auxmos_pipenet_topology_batch")]
+#[auxmacros::panic_safe]
+fn pipenet_topology_batch(operations: ByondValue) -> Result<ByondValue> {
+	let encoded = operations.get_string()?;
+	let mut topology = PIPE_TOPOLOGY.lock();
+	for (operation_index, record) in encoded.split_terminator(';').enumerate() {
+		let fields = record.split(',').collect::<Vec<_>>();
+		if fields.len() != 4 {
+			eyre::bail!(
+				"pipenet operation {operation_index} does not contain four fields: {record}"
+			);
+		}
+		let parse = |index: usize| -> Result<f32> {
+			fields[index].parse::<f32>().map_err(|error| {
+				eyre::eyre!(
+					"invalid pipenet number '{}' at operation {operation_index}: {error}",
+					fields[index]
+				)
+			})
+		};
+		let opcode = parse(0)? as u8;
+		match opcode {
+			1 => topology.upsert_port(parse(1)? as u32, parse(2)? as usize, parse(3)?),
+			2 => topology.remove_port(parse(1)? as u32),
+			3 => {
+				let first = parse(1)? as u32;
+				let second = parse(2)? as u32;
+				if !topology.connect(first, second) {
+					eyre::bail!("invalid pipenet connection {first}<->{second}");
+				}
+			}
+			4 => topology.disconnect(parse(1)? as u32, parse(2)? as u32),
+			5 => topology.clear(),
+			6 => {
+				let first = parse(1)? as u32;
+				let second = parse(2)? as usize;
+				if !topology.bind_region_mixture(first, second) {
+					eyre::bail!("cannot bind missing pipenet region {first}");
+				}
+			}
+			7 => topology.remove_port_to(parse(1)? as u32, parse(2)? as usize, parse(3)?),
+			_ => eyre::bail!(
+				"unknown pipenet topology opcode {opcode} at operation {operation_index}: {record}"
+			),
+		}
+	}
+	let transitions = topology.commit();
+	let mut result = Vec::new();
+	for transition in transitions {
+		if transition.detached_target != 0 {
+			result.extend([
+				ByondValue::from(0.0),
+				ByondValue::from(1.0),
+				ByondValue::from(0.0),
+				ByondValue::from(transition.sources.len() as f32),
+				ByondValue::from(transition.total_volume),
+				ByondValue::from(transition.detached_target as f32),
+			]);
+			result.extend(transition.sources.into_iter().flat_map(|source| {
+				[
+					ByondValue::from(source.mixture as f32),
+					ByondValue::from(source.ratio),
+				]
+			}));
+			continue;
+		}
+		result.extend([
+			ByondValue::from(transition.region as f32),
+			ByondValue::from(transition.ports.len() as f32),
+			ByondValue::from(transition.prior_regions.len() as f32),
+			ByondValue::from(transition.sources.len() as f32),
+			ByondValue::from(if transition.retired {
+				-1.0
+			} else {
+				transition.total_volume
+			}),
+		]);
+		result.extend(
+			transition
+				.ports
+				.into_iter()
+				.map(|value| ByondValue::from(value as f32)),
+		);
+		result.extend(
+			transition
+				.prior_regions
+				.into_iter()
+				.flat_map(|(region, volume)| {
+					[ByondValue::from(region as f32), ByondValue::from(volume)]
+				}),
+		);
+		result.extend(transition.sources.into_iter().flat_map(|source| {
+			[
+				ByondValue::from(source.mixture as f32),
+				ByondValue::from(source.ratio),
+			]
+		}));
+	}
+	let list = ByondValue::new_list()?;
+	list.write_list(&result)?;
+	Ok(list)
+}
+
+/// Materialize the gas recipes returned by `auxmos_pipenet_topology_batch` and
+/// bind their public arena mixtures. Input is semicolon-delimited text and each
+/// comma-separated record repeats:
+/// `region, target_mixture, volume, source_count, source_mixture/ratio pairs...`.
+/// Every source is snapshotted before any target changes and all bindings become
+/// authoritative only after the gas transaction succeeds.
+#[byondapi::bind("/proc/auxmos_pipenet_publish_regions")]
+#[auxmacros::panic_safe]
+fn pipenet_publish_regions(publications: ByondValue) -> Result<ByondValue> {
+	let encoded = publications.get_string()?;
+	let mut recipes = Vec::new();
+	let mut bindings = Vec::new();
+	for (record_index, record) in encoded.split_terminator(';').enumerate() {
+		let fields = record.split(',').collect::<Vec<_>>();
+		if fields.len() < 4 {
+			eyre::bail!("truncated pipenet publication header at record {record_index}");
+		}
+		let parse = |index: usize| -> Result<f32> {
+			fields[index].parse::<f32>().map_err(|error| {
+				eyre::eyre!(
+					"invalid pipenet publication number '{}' at record {record_index}: {error}",
+					fields[index]
+				)
+			})
+		};
+		let region = parse(0)? as u32;
+		let target = parse(1)? as usize;
+		let volume = parse(2)?;
+		let source_count = parse(3)? as usize;
+		if fields.len() != 4 + source_count.saturating_mul(2) {
+			eyre::bail!("pipenet publication {record_index} has the wrong source field count");
+		}
+		let mut sources = Vec::with_capacity(source_count);
+		for source_index in 0..source_count {
+			let offset = 4 + source_index * 2;
+			sources.push((parse(offset)? as usize, parse(offset + 1)?));
+		}
+		recipes.push((target, volume, sources));
+		if region != 0 {
+			bindings.push((region, target));
+		}
+	}
+	let mut topology = PIPE_TOPOLOGY.lock();
+	GasArena::rebalance_pipe_regions(&recipes)?;
+	for (region, mixture) in bindings {
+		if !topology.bind_region_mixture(region, mixture) {
+			eyre::bail!("cannot publish missing pipenet region {region}");
+		}
+	}
+	Ok(ByondValue::from(true))
+}
 
 #[cfg(feature = "tracy")]
 #[byondapi::init]
@@ -51,10 +219,52 @@ fn drain_dirty_gas_mixtures() -> Result<ByondValue> {
 	Ok(list)
 }
 
+/// Drains dirty notifications and captures the control-relevant gas state under
+/// one publication read transaction. This lets hundreds of sleeping air alarms
+/// evaluate thresholds without each crossing the FFI boundary seven times.
+/// Flat stride: id, mask, revision, pressure, temperature, volume,
+/// o2, co2, plasma, methane, n2o, volatile_fuel, total_moles.
+#[byondapi::bind("/proc/drain_dirty_gas_observations")]
+#[auxmacros::panic_safe]
+fn drain_dirty_gas_observations() -> Result<ByondValue> {
+	let changes = GasArena::take_dirty_mixtures();
+	let gas_indices = [
+		gas_idx_from_string("/datum/gas/oxygen")?,
+		gas_idx_from_string("/datum/gas/carbon_dioxide")?,
+		gas_idx_from_string("/datum/gas/plasma")?,
+		gas_idx_from_string("/datum/gas/methane")?,
+		gas_idx_from_string("/datum/gas/nitrous_oxide")?,
+		gas_idx_from_string("/datum/gas/volatile_fuel")?,
+	];
+	let values = GasArena::with_all_mixtures(|gases| {
+		let mut values = Vec::with_capacity(changes.len() * 13);
+		for &(id, mask) in &changes {
+			let Some(mixture) = gases.get(id) else {
+				continue;
+			};
+			let mixture = mixture.read();
+			values.extend([
+				id as f32,
+				mask as f32,
+				GasArena::revision(id) as f32,
+				mixture.return_pressure(),
+				mixture.get_temperature(),
+				mixture.volume,
+			]);
+			values.extend(gas_indices.iter().map(|&gas| mixture.get_moles(gas)));
+			values.push(mixture.total_moles());
+		}
+		values
+	});
+	let list = ByondValue::new_list()?;
+	list.write_list(&values.into_iter().map(ByondValue::from).collect::<Vec<_>>())?;
+	Ok(list)
+}
+
 #[byondapi::bind("/proc/watch_dirty_gas_mixture")]
 #[auxmacros::panic_safe]
-fn watch_dirty_gas_mixture(id: ByondValue) -> Result<ByondValue> {
-	GasArena::watch_dirty_mixture(id.get_number()? as usize);
+fn watch_dirty_gas_mixture(id: ByondValue, interest_mask: ByondValue) -> Result<ByondValue> {
+	GasArena::watch_dirty_mixture(id.get_number()? as usize, interest_mask.get_number()? as u8);
 	Ok(ByondValue::null())
 }
 
@@ -585,6 +795,66 @@ fn transfer_hook(src: ByondValue, other: ByondValue, moles: ByondValue) -> Resul
 	})
 }
 
+/// Flat operation list: source mixture, sink mixture, requested moles. Returns
+/// one actual mole count per operation after shared-source clamping.
+#[byondapi::bind("/proc/auxmos_batch_transfer")]
+#[auxmacros::panic_safe]
+fn batch_transfer_hook(operations: ByondValue) -> Result<ByondValue> {
+	let values = operations
+		.iter()?
+		.map(|(value, _)| value)
+		.collect::<Vec<_>>();
+	let parsed = values
+		.chunks_exact(3)
+		.map(|operation| {
+			let source = operation[0]
+				.read_number_id(byond_string!("_extools_pointer_gasmixture"))
+				.unwrap_or(-1.0) as usize;
+			let sink = operation[1]
+				.read_number_id(byond_string!("_extools_pointer_gasmixture"))
+				.unwrap_or(-1.0) as usize;
+			(source, sink, operation[2].get_number().unwrap_or(0.0))
+		})
+		.collect::<Vec<_>>();
+	let results = GasArena::batch_transfer(&parsed)
+		.into_iter()
+		.map(ByondValue::from)
+		.collect::<Vec<_>>();
+	let list = ByondValue::new_list()?;
+	list.write_list(&results)?;
+	Ok(list)
+}
+
+/// Flat operation list: pipe mixture, environment mixture, exposed pipe
+/// volume. Returns one boolean residual per exposed face.
+#[byondapi::bind("/proc/auxmos_batch_mingle")]
+#[auxmacros::panic_safe]
+fn batch_mingle_hook(operations: ByondValue) -> Result<ByondValue> {
+	let values = operations
+		.iter()?
+		.map(|(value, _)| value)
+		.collect::<Vec<_>>();
+	let parsed = values
+		.chunks_exact(3)
+		.map(|operation| {
+			let pipe = operation[0]
+				.read_number_id(byond_string!("_extools_pointer_gasmixture"))
+				.unwrap_or(-1.0) as usize;
+			let environment = operation[1]
+				.read_number_id(byond_string!("_extools_pointer_gasmixture"))
+				.unwrap_or(-1.0) as usize;
+			(pipe, environment, operation[2].get_number().unwrap_or(0.0))
+		})
+		.collect::<Vec<_>>();
+	let results = GasArena::batch_mingle(&parsed)
+		.into_iter()
+		.map(|residual| ByondValue::from(residual as u8 as f32))
+		.collect::<Vec<_>>();
+	let list = ByondValue::new_list()?;
+	list.write_list(&results)?;
+	Ok(list)
+}
+
 /// Args: (mixture, ratio). Transfers `ratio` of `src` to `mixture`.
 #[byondapi::bind("/datum/gas_mixture/proc/transfer_ratio_to")]
 #[auxmacros::panic_safe]
@@ -694,12 +964,9 @@ fn share_ratio_hook(
 	}
 }
 
-/// Args: (list). Takes every gas in the list and makes them all identical, scaled to their respective volumes. The total heat and amount of substance in all of the combined gases is conserved.
-#[byondapi::bind("/proc/equalize_all_gases_in_list")]
-#[auxmacros::panic_safe]
-fn equalize_all_hook(gas_list: ByondValue) -> Result<ByondValue> {
+fn mixture_ids_from_byond_list(gas_list: ByondValue) -> Result<Vec<usize>> {
 	use std::collections::BTreeSet;
-	let gas_list = gas_list
+	Ok(gas_list
 		.iter()?
 		.filter_map(|(value, _)| {
 			value
@@ -707,7 +974,12 @@ fn equalize_all_hook(gas_list: ByondValue) -> Result<ByondValue> {
 				.ok()
 				.map(|f| f as usize)
 		})
-		.collect::<BTreeSet<_>>();
+		.collect::<BTreeSet<_>>()
+		.into_iter()
+		.collect())
+}
+
+fn equalize_mixture_ids(gas_list: &[usize]) {
 	let changes = GasArena::with_all_mixtures(move |all_mixtures| {
 		let mut tot = gas::Mixture::new();
 		let mut tot_vol: f64 = 0.0;
@@ -739,6 +1011,14 @@ fn equalize_all_hook(gas_list: ByondValue) -> Result<ByondValue> {
 		GasArena::bump_revision(id);
 		GasArena::mark_dirty_if_changed(id, before, after);
 	}
+}
+
+/// Args: (list). Takes every gas in the list and makes them all identical, scaled to their respective volumes. The total heat and amount of substance in all of the combined gases is conserved.
+#[byondapi::bind("/proc/equalize_all_gases_in_list")]
+#[auxmacros::panic_safe]
+fn equalize_all_hook(gas_list: ByondValue) -> Result<ByondValue> {
+	let gas_list = mixture_ids_from_byond_list(gas_list)?;
+	equalize_mixture_ids(&gas_list);
 	Ok(ByondValue::null())
 }
 

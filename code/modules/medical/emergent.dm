@@ -10,6 +10,54 @@
 // (see code/modules/medical/causes/causes.dm). This file
 // just walks those causes each Life tick.
 
+/mob/living/carbon/human
+	/// Exact invalidation domains consumed by Life(). Mutation funnels set bits;
+	/// normal gameplay never relies on a reconciliation scan.
+	var/dq_medical_dirty = DQ_MEDICAL_DIRTY_ALL
+	var/dq_last_oxy_loss
+	var/dq_last_tox_loss
+	var/dq_last_clone_loss
+	var/dq_last_brain_loss
+	var/dq_last_radiation
+	var/dq_last_bodytemperature
+
+/mob/living/carbon/human/proc/dq_invalidate_medical_conditions(domains = DQ_MEDICAL_DIRTY_ALL)
+	dq_medical_dirty |= domains
+
+/mob/living/carbon/human/on_reagent_change(changetype)
+	. = ..()
+	dq_invalidate_medical_conditions(DQ_MEDICAL_DIRTY_CHEMS)
+	reconcile_medical_side_effects()
+
+/// Scalar metrics include environmental values that can be authored outside a
+/// setter. Comparing this small fixed signature is cheaper and safer than
+/// walking every condition/cause when nothing changed.
+/mob/living/carbon/human/proc/dq_refresh_metric_dirty_state()
+	var/current_oxy = getOxyLoss()
+	var/current_tox = getToxLoss()
+	var/current_clone = getCloneLoss()
+	var/current_brain = getBrainLoss()
+	if(current_oxy == dq_last_oxy_loss && current_tox == dq_last_tox_loss && current_clone == dq_last_clone_loss && current_brain == dq_last_brain_loss && radiation == dq_last_radiation && bodytemperature == dq_last_bodytemperature)
+		return
+	dq_last_oxy_loss = current_oxy
+	dq_last_tox_loss = current_tox
+	dq_last_clone_loss = current_clone
+	dq_last_brain_loss = current_brain
+	dq_last_radiation = radiation
+	dq_last_bodytemperature = bodytemperature
+	dq_medical_dirty |= DQ_MEDICAL_DIRTY_METRICS
+
+/mob/living/carbon/human/proc/dq_process_dirty_medical_conditions()
+	dq_refresh_metric_dirty_state()
+	var/dirty = dq_medical_dirty
+	dq_medical_dirty = 0
+	if(dirty & DQ_MEDICAL_DIRTY_ORGANS)
+		dq_check_emergent_conditions()
+	if(dirty & DQ_MEDICAL_DIRTY_METRICS)
+		dq_check_metric_conditions()
+	if(dirty & DQ_MEDICAL_DIRTY_CHEMS)
+		dq_check_chem_conditions()
+
 /mob/living/carbon/human/proc/dq_check_emergent_conditions()
 	if(stat == DEAD)
 		return
@@ -182,6 +230,10 @@
 	for(var/datum/medical_issue/condition/IC as anything in all_conditions)
 		LAZYADDASSOCLIST(conditions_by_type, IC.type, IC)
 	for(var/datum/medical_issue/condition/C as anything in all_conditions)
+		// Scaling conditions own a time-based severity ramp/decay. Keep only this
+		// domain scheduled until the condition reaches a terminal state.
+		if(C.chem_scaling && C.severity > 0)
+			dq_medical_dirty |= DQ_MEDICAL_DIRTY_CHEMS
 		if(!length(C.od_cures_externally))
 			continue
 		var/sev_scale = C.severity / 100

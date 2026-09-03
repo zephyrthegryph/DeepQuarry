@@ -95,10 +95,7 @@ export const resolveOrbitPath = (
   return Array.from({ length: samples + 1 }, (_, sample) =>
     addVec3(
       center,
-      orbitLocalPosition(
-        body,
-        epoch + (sample / samples) * body.orbit_period,
-      ),
+      orbitLocalPosition(body, epoch + (sample / samples) * body.orbit_period),
     ),
   );
 };

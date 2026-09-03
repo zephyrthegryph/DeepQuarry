@@ -199,26 +199,25 @@
 
 //attack by item
 //weldingtool: unfasten and convert to obj/disposalconstruct
-/obj/structure/disposalpipe/attackby(obj/item/I, mob/user)
-
+/obj/structure/disposalpipe/welder_act(mob/user, obj/item/I)
 	var/turf/T = get_turf(src)
 	if(!T.is_plating())
-		return		// prevent interaction with T-scanner revealed pipes
+		return ITEM_INTERACT_BLOCKING // prevent interaction with T-scanner revealed pipes
 	add_fingerprint(user)
-	if(I.has_tool_quality(TOOL_WELDER))
-		var/obj/item/weldingtool/W = I.get_welder()
-		if(W.remove_fuel(0,user))
-			playsound(src, W.usesound, 100, 1)
-			to_chat(user, "You start slicing [src]....")
-			if(do_after(user, 2 SECONDS * W.toolspeed, target = src))
-				if(!src || !W.isOn()) return
-				to_chat(user, "You slice [src]")
-				welded()
-			else
-				to_chat(user, "You must stay still while welding the pipe.")
+	var/obj/item/weldingtool/W = I.get_welder()
+	if(W.remove_fuel(0,user))
+		playsound(src, W.usesound, 100, 1)
+		to_chat(user, "You start slicing [src]....")
+		if(do_after(user, 2 SECONDS * W.toolspeed, target = src))
+			if(!src || !W.isOn()) return ITEM_INTERACT_BLOCKING
+			to_chat(user, "You slice [src]")
+			welded()
 		else
-			to_chat(user, "You need more welding fuel to cut the pipe.")
-			return
+			to_chat(user, "You must stay still while welding the pipe.")
+	else
+		to_chat(user, "You need more welding fuel to cut the pipe.")
+		return ITEM_INTERACT_BLOCKING
+	return ITEM_INTERACT_SUCCESS
 
 // called when pipe is cut with welder
 /obj/structure/disposalpipe/proc/welded()

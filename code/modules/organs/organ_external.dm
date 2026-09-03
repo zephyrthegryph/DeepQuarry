@@ -397,6 +397,7 @@
 	return TRUE
 
 /obj/item/organ/external/take_damage(brute, burn, sharp, edge, used_weapon = null, list/forbidden_limbs = list(), permutation = FALSE, projectile)
+	owner?.dq_invalidate_medical_conditions(DQ_MEDICAL_DIRTY_ORGANS)
 	if(owner)
 		if(SEND_SIGNAL(owner, COMSIG_EXTERNAL_ORGAN_PRE_DAMAGE_APPLICATION, brute, burn, sharp, edge, used_weapon, forbidden_limbs, permutation, projectile) & COMPONENT_CANCEL_EXTERNAL_ORGAN_DAMAGE)
 			return 0 // If the signal returns, we don't apply damage, it's done its own special thing.
@@ -572,6 +573,7 @@
 	return update_icon()
 
 /obj/item/organ/external/proc/heal_damage(brute, burn, internal = FALSE, robo_repair = FALSE)
+	owner?.dq_invalidate_medical_conditions(DQ_MEDICAL_DIRTY_ORGANS)
 	if(robotic >= ORGAN_ROBOT && !robo_repair)
 		return
 

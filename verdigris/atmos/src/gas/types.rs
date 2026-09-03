@@ -522,3 +522,6 @@ pub fn set_gas_statics_manually() {
 pub fn destroy_gas_statics() {
 	destroy_gas_info_structs();
 }
+
+#[cfg(test)]
+pub(crate) static TEST_GAS_GLOBALS_LOCK: std::sync::Mutex<()> = std::sync::Mutex::new(());

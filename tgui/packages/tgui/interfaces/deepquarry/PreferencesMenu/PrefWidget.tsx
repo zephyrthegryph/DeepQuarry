@@ -14,15 +14,16 @@ import {
   Stack,
   TextArea,
 } from 'tgui-core/components';
-import {
-  ColorizedImage,
-  ColorizedImageButton,
-} from './helper_components';
+import { ColorizedImage, ColorizedImageButton } from './helper_components';
 import type { PrefWidgetItem } from './types';
 
 type Props = { item: PrefWidgetItem };
 
-const sendUpdate = (act: ReturnType<typeof useBackend>['act'], key: string, value: unknown) => {
+const sendUpdate = (
+  act: ReturnType<typeof useBackend>['act'],
+  key: string,
+  value: unknown,
+) => {
   act('dq_update_preference', { key, value });
 };
 
@@ -267,9 +268,7 @@ export const PrefWidget = ({ item }: Props) => {
             <ColorBox color={hex} />
           </Stack.Item>
           <Stack.Item>
-            <Button
-              onClick={() => act('dq_pick_color', { key: item.key })}
-            >
+            <Button onClick={() => act('dq_pick_color', { key: item.key })}>
               {hex}
             </Button>
           </Stack.Item>
@@ -279,7 +278,10 @@ export const PrefWidget = ({ item }: Props) => {
 
     case 'dropdown': {
       const choices = normalizeChoices(item.choices);
-      const options = choices.map(([val, label]) => ({ value: val, displayText: label }));
+      const options = choices.map(([val, label]) => ({
+        value: val,
+        displayText: label,
+      }));
       const currentVal = String(item.value ?? '');
       // tgui-core Dropdown doesn't look up the option label from the value on its own —
       // if `selected` is a string it just renders that string. Override with displayText.
@@ -316,7 +318,9 @@ export const PrefWidget = ({ item }: Props) => {
     }
 
     case 'multi': {
-      const selected = Array.isArray(item.value) ? (item.value as string[]) : [];
+      const selected = Array.isArray(item.value)
+        ? (item.value as string[])
+        : [];
       const choices = normalizeChoices(item.choices);
       return (
         <Stack wrap>

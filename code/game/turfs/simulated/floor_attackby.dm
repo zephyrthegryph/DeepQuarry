@@ -1,3 +1,21 @@
+/turf/simulated/floor
+	var/focused_tool_stage
+
+/turf/simulated/floor/proc/run_focused_tool(mob/user, obj/item/tool, quality)
+	focused_tool_stage = quality
+	attackby(tool, user)
+	focused_tool_stage = null
+	return ITEM_INTERACT_SUCCESS
+
+/turf/simulated/floor/screwdriver_act(mob/user, obj/item/tool)
+	return run_focused_tool(user, tool, TOOL_SCREWDRIVER)
+/turf/simulated/floor/crowbar_act(mob/user, obj/item/tool)
+	return run_focused_tool(user, tool, TOOL_CROWBAR)
+/turf/simulated/floor/wrench_act(mob/user, obj/item/tool)
+	return run_focused_tool(user, tool, TOOL_WRENCH)
+/turf/simulated/floor/welder_act(mob/user, obj/item/tool)
+	return run_focused_tool(user, tool, TOOL_WELDER)
+
 /turf/simulated/floor/attackby(obj/item/C, mob/user, attack_modifier, click_parameters)
 
 	if(!C || !user)
@@ -130,7 +148,7 @@
 				playsound(src, 'sound/items/Deconstruct.ogg', 80, 1)
 				return
 		// Plating repairs and removal
-		else if(C.has_tool_quality(TOOL_WELDER))
+		else if(focused_tool_stage == TOOL_WELDER)
 			var/obj/item/weldingtool/welder = C.get_welder()
 			if(welder.isOn())
 				// Needs repairs
@@ -166,7 +184,7 @@
 		W = deconstructor.get_inactive_hand()
 		if(!W || !istype(W, /obj/item))
 			return FALSE
-	if(W.has_tool_quality(TOOL_CROWBAR))
+	if(focused_tool_stage == TOOL_CROWBAR)
 		if(broken || burnt)
 			to_chat(user, span_notice("You remove the broken [flooring.descriptor]."))
 			make_plating(FALSE)
@@ -180,14 +198,14 @@
 			return FALSE
 		playsound(src, W.usesound, 80, 1)
 		return TRUE
-	else if(W.has_tool_quality(TOOL_SCREWDRIVER) && (flooring.flags & TURF_REMOVE_SCREWDRIVER))
+	else if(focused_tool_stage == TOOL_SCREWDRIVER && (flooring.flags & TURF_REMOVE_SCREWDRIVER))
 		if(broken || burnt)
 			return FALSE
 		to_chat(user, span_notice("You unscrew and remove the [flooring.descriptor]."))
 		make_plating(TRUE)
 		playsound(src, W.usesound, 80, 1)
 		return TRUE
-	else if(W.has_tool_quality(TOOL_WRENCH) && (flooring.flags & TURF_REMOVE_WRENCH))
+	else if(focused_tool_stage == TOOL_WRENCH && (flooring.flags & TURF_REMOVE_WRENCH))
 		to_chat(user, span_notice("You unwrench and remove the [flooring.descriptor]."))
 		make_plating(TRUE)
 		playsound(src, W.usesound, 80, 1)
@@ -221,7 +239,7 @@
 	return TRUE
 
 /turf/simulated/floor/proc/do_remove_plating(obj/item/W, mob/user, base_type)
-	if(W.has_tool_quality(TOOL_WELDER))
+	if(focused_tool_stage == TOOL_WELDER)
 		var/obj/item/weldingtool/WT = W.get_welder()
 		if(!WT.remove_fuel(5,user))
 			to_chat(user, span_warning("You don't have enough fuel in [WT] finish cutting through [src]."))

@@ -212,13 +212,6 @@
 	return call_ext(VERDIGRIS, "byond:update_reactions_ffi")()
 
 /// Returns: If this cycle is interrupted by overtiming or not. Starts a katmos equalize cycle, does nothing if process_turfs isn't ran.
-/datum/controller/subsystem/air/proc/process_turf_equalize_auxtools(remaining)
-	return call_ext(VERDIGRIS, "byond:equalize_hook_ffi")(src, remaining)
-
-/// Returns: If this cycle is interrupted by overtiming or not. Starts a processing excited groups cycle, does nothing if process_turfs isn't ran.
-/datum/controller/subsystem/air/proc/process_excited_groups_auxtools(remaining)
-	return call_ext(VERDIGRIS, "byond:groups_hook_ffi")(src, remaining)
-
 /// Returns: If a processing thread is running or not.
 /datum/controller/subsystem/air/proc/thread_running()
 	return call_ext(VERDIGRIS, "byond:thread_running_hook_ffi")()
@@ -238,4 +231,3 @@
 /// Returns: null. Updates turf air infos, whether the turf is closed, is space or a regular turf, or even a planet turf is decided here.
 /turf/proc/update_air_ref(flag)
 	return call_ext(VERDIGRIS, "byond:hook_register_turf_ffi")(src, flag)
-

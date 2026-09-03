@@ -35,7 +35,6 @@ type Material = {
   color: string;
   band: number;
   rarity: number;
-  material_class: string;
   scanned: boolean;
   mechanical: Stat[];
   thermal: Stat[];
@@ -142,8 +141,7 @@ const LoadedPane = () => {
     return (
       <Section fill title="Sample Tray">
         <NoticeBox>
-          No sample loaded. Insert an exotic material sample to begin
-          analysis.
+          No sample loaded. Insert an exotic material sample to begin analysis.
         </NoticeBox>
       </Section>
     );
@@ -176,9 +174,6 @@ const LoadedPane = () => {
       }
     >
       <LabeledList>
-        <LabeledList.Item label="Class">
-          {loaded.material_class || 'Unknown'}
-        </LabeledList.Item>
         <LabeledList.Item label="Depth Band">
           Band {loaded.band} (depths {(loaded.band - 1) * 5 + 1}-
           {loaded.band * 5})
@@ -192,8 +187,8 @@ const LoadedPane = () => {
           <MaterialDetail material={loaded} />
         ) : (
           <NoticeBox info>
-            Properties have not been analyzed. Press <b>Analyze</b> to read
-            the full profile.
+            Properties have not been analyzed. Press <b>Analyze</b> to read the
+            full profile.
           </NoticeBox>
         )}
       </Box>
@@ -237,8 +232,7 @@ const CataloguePane = () => {
                 title={
                   <>
                     <Swatch color={selected.color} />
-                    {selected.name} — {selected.material_class} (
-                    {RARITY_LABEL[selected.rarity]})
+                    {selected.name} — {RARITY_LABEL[selected.rarity]}
                   </>
                 }
               >

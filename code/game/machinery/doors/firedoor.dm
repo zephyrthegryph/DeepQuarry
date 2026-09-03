@@ -8,6 +8,8 @@
 // Not used #define FIREDOOR_ALERT_LOWPRESS 4
 
 /obj/machinery/door/firedoor
+	/// Optional generated-turbolift owner; ordinary mapped firedoors leave null.
+	var/datum/turbolift_floor/turbolift_floor
 	name = "\improper Emergency Shutter"
 	desc = "Emergency air-tight shutter, capable of sealing off breached areas."
 	icon = 'icons/obj/doors/DoorHazard.dmi'
@@ -33,8 +35,13 @@
 	var/net_id
 	var/list/areas_added
 	var/list/users_to_open = list()
-	var/next_process_time = 0
 	var/list/sleeping_mixture_ids
+	var/sleeping_atmos_signature
+	/// Local turf followed by the four cardinal turfs. Null entries are walls.
+	var/list/sleeping_atmos_mixture_slots
+	var/list/sleeping_atmos_pressures
+	var/list/sleeping_atmos_temperatures
+	var/datum/weakref/gas_dependency_weakref
 
 	var/hatch_open = 0
 
@@ -74,7 +81,11 @@
 			areas_added += A
 
 /obj/machinery/door/firedoor/Destroy()
+	if(turbolift_floor)
+		turbolift_floor.doors -= src
+		turbolift_floor = null
 	clear_gas_dependencies()
+	gas_dependency_weakref = null
 	for(var/area/A in areas_added)
 		LAZYREMOVE(A.all_doors, src)
 	. = ..()
@@ -253,68 +264,12 @@
 		return //Don't open the door if we're putting tape on it to tell people 'don't open the door'.
 	if(operating)
 		return//Already doing something.
-	if(C.has_tool_quality(TOOL_WELDER))
-		if(get_integrity() < max_integrity)
-			..()
-			return
-		if(prying)
-			to_chat(user, span_notice("Someone's busy prying that [density ? "open" : "closed"]!"))
-		var/obj/item/weldingtool/W = C.get_welder()
-		if(W.remove_fuel(0, user))
-			blocked = !blocked
-			user.visible_message(span_danger("\The [user] [blocked ? "welds" : "unwelds"] \the [src] with \a [W]."),\
-			"You [blocked ? "weld" : "unweld"] \the [src] with \the [W].",\
-			"You hear something being welded.")
-			playsound(src, W.usesound, 100, 1)
-			update_icon()
-			return
-
-	if(density && C.has_tool_quality(TOOL_SCREWDRIVER))
-		hatch_open = !hatch_open
-		playsound(src, C.usesound, 50, 1)
-		user.visible_message(span_danger("[user] has [hatch_open ? "opened" : "closed"] \the [src] maintenance hatch."),
-									"You have [hatch_open ? "opened" : "closed"] the [src] maintenance hatch.")
-		update_icon()
-		return
-
-	if(blocked && C.has_tool_quality(TOOL_CROWBAR))
-		if(!hatch_open)
-			to_chat(user, span_danger("You must open the maintenance hatch first!"))
-		else
-			user.visible_message(span_danger("[user] is removing the electronics from \the [src]."),
-									"You start to remove the electronics from [src].")
-			if(do_after(user, 3 SECONDS, target = src))
-				if(blocked && density && hatch_open)
-					playsound(src, C.usesound, 50, 1)
-					user.visible_message(span_danger("[user] has removed the electronics from \the [src]."),
-										"You have removed the electronics from [src].")
-
-					if (stat & BROKEN)
-						new /obj/item/circuitboard/broken(src.loc)
-					else
-						new/obj/item/circuitboard/airalarm(src.loc)
-
-					var/obj/structure/firedoor_assembly/FA = new/obj/structure/firedoor_assembly(src.loc)
-					FA.anchored = TRUE
-					FA.density = TRUE
-					FA.wired = 1
-					FA.glass = glass
-					FA.update_icon()
-					qdel(src)
-		return
-
 	if(blocked)
 		to_chat(user, span_danger("\The [src] is welded shut!"))
 		return
 
 	if(C.pry == 1)
 		if(operating)
-			return
-
-		if(blocked && C.has_tool_quality(TOOL_CROWBAR))
-			user.visible_message(span_danger("\The [user] pries at \the [src] with \a [C], but \the [src] is welded in place!"),\
-			"You try to pry \the [src] [density ? "open" : "closed"], but it is welded in place!",\
-			"You hear someone struggle and metal straining.")
 			return
 
 		if(istype(C,/obj/item/material/twohanded/fireaxe))
@@ -333,13 +288,7 @@
 		update_icon()
 		playsound(src, C.usesound, 100, 1)
 		if(do_after(user,3 SECONDS * C.toolspeed, target = src))
-			if(C.has_tool_quality(TOOL_CROWBAR))
-				if(stat & (BROKEN|NOPOWER) || !density)
-					user.visible_message(span_danger("\The [user] forces \the [src] [density ? "open" : "closed"] with \a [C]!"),\
-					"You force \the [src] [density ? "open" : "closed"] with \the [C]!",\
-					"You hear metal strain, and a door [density ? "open" : "close"].")
-			else
-				user.visible_message(span_danger("\The [user] forces \the [ blocked ? "welded" : "" ] [src] [density ? "open" : "closed"] with \a [C]!"),\
+			user.visible_message(span_danger("\The [user] forces \the [ blocked ? "welded" : "" ] [src] [density ? "open" : "closed"] with \a [C]!"),\
 					"You force \the [ blocked ? "welded" : "" ] [src] [density ? "open" : "closed"] with \the [C]!",\
 					"You hear metal strain and groan, and a door [density ? "opening" : "closing"].")
 			if(density)
@@ -354,82 +303,187 @@
 
 	return ..()
 
+/obj/machinery/door/firedoor/welder_act(mob/user, obj/item/tool)
+	if(operating)
+		return TRUE
+	if(get_integrity() < max_integrity)
+		return ..()
+	if(prying)
+		to_chat(user, span_notice("Someone's busy prying that [density ? "open" : "closed"]!"))
+		return TRUE
+	var/obj/item/weldingtool/welder = tool.get_welder()
+	if(welder.remove_fuel(0, user))
+		blocked = !blocked
+		user.visible_message(span_danger("\The [user] [blocked ? "welds" : "unwelds"] \the [src] with \a [welder]."), "You [blocked ? "weld" : "unweld"] \the [src] with \the [welder].", "You hear something being welded.")
+		playsound(src, welder.usesound, 100, TRUE)
+		update_icon()
+	return TRUE
+
+/obj/machinery/door/firedoor/screwdriver_act(mob/user, obj/item/tool)
+	if(operating || !density)
+		return FALSE
+	hatch_open = !hatch_open
+	playsound(src, tool.usesound, 50, TRUE)
+	user.visible_message(span_danger("[user] has [hatch_open ? "opened" : "closed"] \the [src] maintenance hatch."), "You have [hatch_open ? "opened" : "closed"] the [src] maintenance hatch.")
+	update_icon()
+	return TRUE
+
+/obj/machinery/door/firedoor/crowbar_act(mob/user, obj/item/tool)
+	if(operating)
+		return TRUE
+	if(blocked)
+		if(!hatch_open)
+			to_chat(user, span_danger("You must open the maintenance hatch first!"))
+			return TRUE
+		user.visible_message(span_danger("[user] is removing the electronics from \the [src]."), "You start to remove the electronics from [src].")
+		if(do_after(user, 3 SECONDS, target = src) && blocked && density && hatch_open)
+			playsound(src, tool.usesound, 50, TRUE)
+			user.visible_message(span_danger("[user] has removed the electronics from \the [src]."), "You have removed the electronics from [src].")
+			if(stat & BROKEN)
+				new /obj/item/circuitboard/broken(loc)
+			else
+				new /obj/item/circuitboard/airalarm(loc)
+			var/obj/structure/firedoor_assembly/assembly = new(loc)
+			assembly.anchored = TRUE
+			assembly.density = TRUE
+			assembly.wired = TRUE
+			assembly.glass = glass
+			assembly.update_icon()
+			qdel(src)
+		return TRUE
+	if(prying)
+		to_chat(user, span_notice("Someone's already prying that [density ? "open" : "closed"]."))
+		return TRUE
+	user.visible_message(span_danger("\The [user] starts to force \the [src] [density ? "open" : "closed"] with \a [tool]!"), "You start forcing \the [src] [density ? "open" : "closed"] with \the [tool]!", "You hear metal strain.")
+	prying = TRUE
+	update_icon()
+	playsound(src, tool.usesound, 100, TRUE)
+	if(do_after(user, 3 SECONDS * tool.toolspeed, target = src) && (stat & (BROKEN|NOPOWER) || !density))
+		user.visible_message(span_danger("\The [user] forces \the [src] [density ? "open" : "closed"] with \a [tool]!"), "You force \the [src] [density ? "open" : "closed"] with \the [tool]!", "You hear metal strain, and a door [density ? "open" : "close"].")
+		if(density)
+			open(TRUE)
+		else
+			close()
+	prying = FALSE
+	update_icon()
+	return TRUE
+
 // CHECK PRESSURE
 /obj/machinery/door/firedoor/process()
 	..()
 
 	if(!density)
 		return PROCESS_KILL
-	if(next_process_time <= world.time)
-		next_process_time = world.time + 100		// 10 second delays between process updates
-		var/changed = 0
-		lockdown=0
-		// Pressure alerts
-		pdiff = getOPressureDifferential(src.loc)
-		if(pdiff >= FIREDOOR_MAX_PRESSURE_DIFF)
-			lockdown = 1
-			if(!pdiff_alert)
-				pdiff_alert = 1
-				changed = 1 // update_icon()
-		else
-			if(pdiff_alert)
-				pdiff_alert = 0
-				changed = 1 // update_icon()
-
-		tile_info = getCardinalAirInfo(src.loc,list("temperature","pressure"))
-		var/old_alerts = dir_alerts.Copy()
-		for(var/index = 1; index <= 4; index++)
-			var/list/tileinfo=tile_info[index]
-			if(tileinfo==null)
-				continue // Bad data.
-			var/celsius = convert_k2c(tileinfo[1])
-
-			var/alerts=0
-
-			// Temperatures
-			if(celsius >= FIREDOOR_MAX_TEMP)
-				alerts |= FIREDOOR_ALERT_HOT
-				lockdown = 1
-			else if(celsius <= FIREDOOR_MIN_TEMP)
-				alerts |= FIREDOOR_ALERT_COLD
-				lockdown = 1
-
-			dir_alerts[index]=alerts
-
-		if(dir_alerts != old_alerts)
-			changed = 1
-		if(changed)
-			update_icon()
-		hibernate_until_air_changes()
-		return PROCESS_KILL
+	var/changed = FALSE
+	lockdown = FALSE
+	pdiff = getOPressureDifferential(src.loc)
+	var/new_pdiff_alert = pdiff >= FIREDOOR_MAX_PRESSURE_DIFF
+	lockdown ||= new_pdiff_alert
+	if(pdiff_alert != new_pdiff_alert)
+		pdiff_alert = new_pdiff_alert
+		changed = TRUE
+	tile_info = getCardinalAirInfo(src.loc, list("temperature", "pressure"))
+	for(var/index = 1; index <= 4; index++)
+		var/list/tileinfo = tile_info[index]
+		var/alerts = tileinfo ? firedoor_temperature_band(tileinfo[1]) : 0
+		if(dir_alerts[index] != alerts)
+			changed = TRUE
+		dir_alerts[index] = alerts
+		lockdown ||= alerts
+	if(changed)
+		update_icon()
+	hibernate_until_air_changes()
+	return PROCESS_KILL
 
 /obj/machinery/door/firedoor/proc/hibernate_until_air_changes()
 	clear_gas_dependencies()
-	var/datum/weakref/WR = WEAKREF(src)
+	if(!gas_dependency_weakref)
+		gas_dependency_weakref = WEAKREF(src)
+	var/datum/weakref/WR = gas_dependency_weakref
 	var/list/dependency_turfs = list(get_turf(src))
 	for(var/direction in GLOB.cardinal)
 		dependency_turfs += get_step(src, direction)
+	sleeping_atmos_mixture_slots = list()
+	sleeping_atmos_pressures = list()
+	sleeping_atmos_temperatures = list()
 	for(var/turf/T as anything in dependency_turfs)
 		var/datum/gas_mixture/air = T.return_air()
 		if(!air)
+			sleeping_atmos_mixture_slots += null
+			sleeping_atmos_pressures += null
+			sleeping_atmos_temperatures += null
 			continue
 		var/mixture_id = air.arena_id()
-		LAZYSET(sleeping_mixture_ids, "[mixture_id]", mixture_id)
+		sleeping_atmos_mixture_slots += mixture_id
+		sleeping_atmos_pressures += air.return_pressure()
+		sleeping_atmos_temperatures += air.return_temperature()
+		var/key = "[mixture_id]"
+		LAZYSET(sleeping_mixture_ids, key, mixture_id)
 		SSmachines.subscribe_gas_dependency(mixture_id, WR)
+	sleeping_atmos_signature = firedoor_cached_atmos_signature()
 	SSmachines.sleeping_gas_devices[WR.reference] = WR
 	STOP_MACHINE_PROCESSING(src)
 
 /obj/machinery/door/firedoor/proc/clear_gas_dependencies()
-	if(!length(sleeping_mixture_ids))
+	var/datum/weakref/WR = gas_dependency_weakref
+	if(!WR)
+		sleeping_mixture_ids = null
 		return
-	var/datum/weakref/WR = WEAKREF(src)
 	for(var/key in sleeping_mixture_ids)
 		SSmachines.unsubscribe_gas_dependency(sleeping_mixture_ids[key], WR)
 	sleeping_mixture_ids = null
+	sleeping_atmos_signature = null
+	sleeping_atmos_mixture_slots = null
+	sleeping_atmos_pressures = null
+	sleeping_atmos_temperatures = null
 	SSmachines.sleeping_gas_devices.Remove(WR.reference)
 
-/obj/machinery/door/firedoor/proc/gas_dependency_changed(mixture_id, change_mask)
-	return change_mask & (GAS_DEPENDENCY_PRESSURE|GAS_DEPENDENCY_TEMPERATURE)
+/obj/machinery/door/firedoor/gas_dependency_changed(mixture_id, change_mask, list/observation, observation_index)
+	if(!(change_mask & (GAS_DEPENDENCY_PRESSURE | GAS_DEPENDENCY_TEMPERATURE)))
+		return FALSE
+	if(observation && observation_index && sleeping_atmos_mixture_slots)
+		for(var/index = 1; index <= length(sleeping_atmos_mixture_slots); index++)
+			if(sleeping_atmos_mixture_slots[index] != mixture_id)
+				continue
+			sleeping_atmos_pressures[index] = observation[observation_index + 3]
+			sleeping_atmos_temperatures[index] = observation[observation_index + 4]
+		return firedoor_cached_atmos_signature() != sleeping_atmos_signature
+	return firedoor_atmos_signature() != sleeping_atmos_signature
+
+/obj/machinery/door/firedoor/proc/firedoor_cached_atmos_signature()
+	var/min_pressure = 16777216
+	var/max_pressure = 0
+	for(var/index = 2; index <= length(sleeping_atmos_pressures); index++)
+		var/pressure = sleeping_atmos_pressures[index]
+		if(isnull(pressure))
+			continue
+		min_pressure = min(min_pressure, pressure)
+		max_pressure = max(max_pressure, pressure)
+	var/signature = abs(min_pressure - max_pressure) >= FIREDOOR_MAX_PRESSURE_DIFF
+	var/local_temperature = sleeping_atmos_temperatures[1]
+	signature = (signature << 2) | (isnull(local_temperature) ? 0 : firedoor_temperature_band(local_temperature))
+	for(var/index = 2; index <= length(sleeping_atmos_temperatures); index++)
+		var/temperature = sleeping_atmos_temperatures[index]
+		signature = (signature << 2) | (isnull(temperature) ? 0 : firedoor_temperature_band(temperature))
+	return signature
+
+/obj/machinery/door/firedoor/proc/firedoor_atmos_signature()
+	var/signature = getOPressureDifferential(src.loc) >= FIREDOOR_MAX_PRESSURE_DIFF
+	var/datum/gas_mixture/local_air = loc?.return_air()
+	signature = (signature << 2) | (local_air ? firedoor_temperature_band(local_air.return_temperature()) : 0)
+	var/list/cardinal_air = getCardinalAirInfo(src.loc, list("temperature", "pressure"))
+	for(var/index = 1; index <= 4; index++)
+		var/list/tileinfo = cardinal_air[index]
+		signature = (signature << 2) | (tileinfo ? firedoor_temperature_band(tileinfo[1]) : 0)
+	return signature
+
+/obj/machinery/door/firedoor/proc/firedoor_temperature_band(temperature)
+	var/celsius = convert_k2c(temperature)
+	if(celsius >= FIREDOOR_MAX_TEMP)
+		return FIREDOOR_ALERT_HOT
+	if(celsius <= FIREDOOR_MIN_TEMP)
+		return FIREDOOR_ALERT_COLD
+	return 0
 
 /obj/machinery/door/firedoor/proc/latetoggle()
 	if(operating || !nextstate)

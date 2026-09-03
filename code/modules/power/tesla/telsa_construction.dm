@@ -18,26 +18,25 @@
 
 // SPECIAL BOARDS BELOW
 
-/obj/item/circuitboard/tesla_coil/attackby(obj/item/I as obj, mob/user as mob)
-	if(I.has_tool_quality(TOOL_MULTITOOL))
-		var/result = tgui_input_list(user, "What do you want to reconfigure the board to?", "Multitool-Circuitboard interface", list("Standard", "Relay", "Prism", "Amplifier", "Recaster", "Collector"))
-		switch(result)
-			if("Standard")
-				name = T_BOARD("tesla coil")
-				build_path = /obj/machinery/power/tesla_coil
-			if("Relay")
-				name = T_BOARD("tesla relay coil")
-				build_path = /obj/machinery/power/tesla_coil/relay
-			if("Prism")
-				name = T_BOARD("tesla prism coil")
-				build_path = /obj/machinery/power/tesla_coil/splitter
-			if("Amplifier")
-				name = T_BOARD("tesla amplifier coil")
-				build_path = /obj/machinery/power/tesla_coil/amplifier
-			if("Recaster")
-				name = T_BOARD("tesla recaster coil")
-				build_path = /obj/machinery/power/tesla_coil/recaster
-			if("Collector")
-				name = T_BOARD("tesla collector coil")
-				build_path = /obj/machinery/power/tesla_coil/collector
-	return
+/obj/item/circuitboard/tesla_coil/multitool_act(mob/user, obj/item/I)
+	var/result = tgui_input_list(user, "What do you want to reconfigure the board to?", "Multitool-Circuitboard interface", list("Standard", "Relay", "Prism", "Amplifier", "Recaster", "Collector"))
+	switch(result)
+		if("Standard")
+			name = T_BOARD("tesla coil")
+			build_path = /obj/machinery/power/tesla_coil
+		if("Relay")
+			name = T_BOARD("tesla relay coil")
+			build_path = /obj/machinery/power/tesla_coil/relay
+		if("Prism")
+			name = T_BOARD("tesla prism coil")
+			build_path = /obj/machinery/power/tesla_coil/splitter
+		if("Amplifier")
+			name = T_BOARD("tesla amplifier coil")
+			build_path = /obj/machinery/power/tesla_coil/amplifier
+		if("Recaster")
+			name = T_BOARD("tesla recaster coil")
+			build_path = /obj/machinery/power/tesla_coil/recaster
+		if("Collector")
+			name = T_BOARD("tesla collector coil")
+			build_path = /obj/machinery/power/tesla_coil/collector
+	return ITEM_INTERACT_SUCCESS

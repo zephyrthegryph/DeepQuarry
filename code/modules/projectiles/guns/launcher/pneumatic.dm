@@ -175,7 +175,11 @@
 		if(5)
 			. += "It has a transfer valve installed."
 
-/obj/item/cannonframe/attackby(obj/item/W as obj, mob/user as mob)
+/obj/item/cannonframe/welder_act(mob/user, obj/item/tool)
+	attackby(tool, user, TOOL_WELDER)
+	return TRUE
+
+/obj/item/cannonframe/attackby(obj/item/W as obj, mob/user as mob, tool_quality)
 	if(istype(W,/obj/item/pipe))
 		if(buildstate == 0)
 			user.drop_from_inventory(W)
@@ -202,7 +206,7 @@
 			buildstate++
 			update_icon()
 			return
-	else if(W.has_tool_quality(TOOL_WELDER))
+	else if(tool_quality == TOOL_WELDER)
 		var/obj/item/weldingtool/T = W.get_welder()
 		if(buildstate == 1)
 			if(T.remove_fuel(0,user))

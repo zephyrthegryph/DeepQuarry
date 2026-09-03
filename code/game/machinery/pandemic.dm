@@ -1,4 +1,6 @@
 /obj/machinery/computer/pandemic
+	maintenance_flags = MACHINE_MAINT_WRENCH
+	maintenance_wrench_time = 4 SECONDS
 	name = "PanD.E.M.I.C 2200"
 	desc = "Used to work with viruses."
 	circuit = /obj/item/circuitboard/pandemic
@@ -194,11 +196,6 @@
 	tgui_interact(user)
 
 /obj/machinery/computer/pandemic/attackby(obj/item/I, mob/user, params)
-	if(default_unfasten_wrench(user, I, 4 SECONDS))
-		return
-	if(I.has_tool_quality(TOOL_SCREWDRIVER))
-		eject_beaker()
-		return
 	if(istype(I, /obj/item/reagent_containers/glass) && I.is_open_container() || istype(I, /obj/item/reagent_containers/syringe))
 		if(stat & (NOPOWER|BROKEN))
 			return
@@ -214,6 +211,10 @@
 		icon_state = "pandemic1"
 	else
 		return ..()
+
+/obj/machinery/computer/pandemic/screwdriver_act(mob/user, obj/item/tool)
+	eject_beaker()
+	return ITEM_INTERACT_SUCCESS
 
 /obj/machinery/computer/pandemic/proc/get_viruses_data(datum/reagent/blood/blood)
 	. = list()

@@ -5,6 +5,7 @@
 // Used for advanced grid control (read: Substations)
 
 /obj/machinery/power/breakerbox
+	maintenance_flags = MACHINE_MAINT_STANDARD
 	name = "Breaker Box"
 	desc = "Large machine with heavy duty switching circuits used for advanced grid control."
 	icon = 'icons/obj/power.dmi'
@@ -24,6 +25,7 @@
 
 /obj/machinery/power/breakerbox/Destroy()
 	for(var/obj/structure/cable/C in src.loc)
+		C.breaker_box = null
 		qdel(C)
 	. = ..()
 	for(var/datum/tgui_module/rcon/R in SStgui.all_uis)
@@ -103,10 +105,6 @@
 	if(on)
 		to_chat(user, span_red("Disable the breaker before performing maintenance."))
 		return
-	if(default_deconstruction_screwdriver(user, W))
-		return
-	if(default_deconstruction_crowbar(user, W))
-		return
 	if(default_part_replacement(user, W))
 		return
 
@@ -140,6 +138,7 @@
 	else
 		icon_state = icon_state_off
 		for(var/obj/structure/cable/C in src.loc)
+			C.breaker_box = null
 			qdel(C)
 
 // Used by RCON to toggle the breaker box.

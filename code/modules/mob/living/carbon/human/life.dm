@@ -38,7 +38,10 @@
 
 	..()
 
-	if(life_tick % 30)
+	// This used to dirty every HUD on 29 of every 30 Life ticks due to an
+	// inverted modulo condition. The periodic safety refresh is intentionally
+	// rare; state-changing code continues to set its exact HUD dirty bits.
+	if(!(life_tick % 30))
 		hud_updateflag = (1 << TOTAL_HUDS) - 1
 
 	// NOTE: voice/name are recomputed every tick. GetVoice()/get_visible_name() now
@@ -70,10 +73,8 @@
 			SEND_SIGNAL(src,COMSIG_HANDLE_ALLERGENS, chem_effects[CE_ALLERGEN])
 
 			handle_medical_side_effects()
-			dq_check_ischemic_damage() // sustained oxyloss damages liver/kidneys/heart
-			dq_check_emergent_conditions() // spawn/clear damage-emergent conditions based on organ state
-			dq_check_metric_conditions() // spawn/clear metric-driven conditions (radiation, toxloss, temp, cloneloss)
-			dq_check_chem_conditions() // spawn/clear chem side effects and drug interactions
+			dq_check_ischemic_damage()
+			dq_process_dirty_medical_conditions()
 
 			handle_heartbeat()
 			handle_nif()

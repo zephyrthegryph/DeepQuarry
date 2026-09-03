@@ -770,16 +770,14 @@ GLOBAL_LIST_EMPTY(unique_deployable)
 	density = TRUE
 	pixel_y = -32
 
-/obj/item/gps/computer/attackby(obj/item/I, mob/living/user)
-	if(I.has_tool_quality(TOOL_WRENCH))
-		user.visible_message(span_warning("[user] disassembles [src]."),
-			span_notice("You start to disassemble [src]..."), "You hear clanking and banging noises.")
-		if(do_after(user, 4 SECONDS, target = src))
-			new /obj/item/gps(loc)
-			qdel(src)
-			return TRUE
-
-	return FALSE
+/obj/item/gps/computer/wrench_act(mob/user, obj/item/tool)
+	user.visible_message(span_warning("[user] disassembles [src]."),
+		span_notice("You start to disassemble [src]..."), "You hear clanking and banging noises.")
+	if(do_after(user, 4 SECONDS, target = src))
+		new /obj/item/gps(loc)
+		qdel(src)
+		return ITEM_INTERACT_SUCCESS
+	return ITEM_INTERACT_BLOCKING
 
 /obj/item/gps/computer/attack_hand(mob/user)
 	attack_self(user)
@@ -846,15 +844,13 @@ GLOBAL_LIST_EMPTY(unique_deployable)
 	new buildstacktype(loc,buildstackamount)
 	qdel(src)
 
-/obj/structure/fans/attackby(obj/item/I, mob/living/user)
-	if(I.has_tool_quality(TOOL_WRENCH))
-		user.visible_message(span_warning("[user] disassembles [src]."),
-			span_notice("You start to disassemble [src]..."), "You hear clanking and banging noises.")
-		if(do_after(user, 4 SECONDS, target = src))
-			atom_deconstruct(TRUE)
-			return TRUE
-
-	return TRUE
+/obj/structure/fans/wrench_act(mob/user, obj/item/tool)
+	user.visible_message(span_warning("[user] disassembles [src]."),
+		span_notice("You start to disassemble [src]..."), "You hear clanking and banging noises.")
+	if(do_after(user, 4 SECONDS, target = src))
+		atom_deconstruct(TRUE)
+		return ITEM_INTERACT_SUCCESS
+	return ITEM_INTERACT_BLOCKING
 
 /obj/structure/fans/tiny
 	name = "tiny fan"

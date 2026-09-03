@@ -13,13 +13,19 @@
 	EA = new(src)
 	EA.holder = src
 
+/obj/item/assembly/electronic_assembly/Destroy()
+	QDEL_NULL(EA)
+	return ..()
+
 /obj/item/assembly/electronic_assembly/attackby(obj/item/I as obj, mob/user as mob)
-	if (I.has_tool_quality(TOOL_CROWBAR))
-		toggle_open(user)
-	else if (opened)
+	if(opened)
 		EA.attackby(I, user)
 	else
 		..()
+
+/obj/item/assembly/electronic_assembly/crowbar_act(mob/user, obj/item/tool)
+	toggle_open(user)
+	return TRUE
 
 /obj/item/assembly/electronic_assembly/proc/toggle_open(mob/user)
 	playsound(src, 'sound/items/Crowbar.ogg', 50, 1)
@@ -81,6 +87,12 @@
 	var/obj/item/integrated_circuit/built_in/device_output/output = new(src)
 	input.assembly = src
 	output.assembly = src
+
+/obj/item/electronic_assembly/device/Destroy()
+	if(holder?.EA == src)
+		holder.EA = null
+	holder = null
+	return ..()
 
 /obj/item/electronic_assembly/device/check_interactivity(mob/user)
 	if(!CanInteract(user, state = GLOB.tgui_deep_inventory_state))

@@ -1,5 +1,6 @@
 ///SCI TELEPAD///
 /obj/machinery/telepad
+	maintenance_flags = MACHINE_MAINT_STANDARD
 	name = "telepad"
 	desc = "A bluespace telepad used for teleporting objects to and from a location."
 	icon = 'icons/obj/telescience.dmi'
@@ -31,17 +32,14 @@
 /obj/machinery/telepad/attackby(obj/item/W as obj, mob/user as mob)
 	src.add_fingerprint(user)
 
-	if(default_deconstruction_screwdriver(user, W))
-		return
-	if(default_deconstruction_crowbar(user, W))
-		return
 	if(default_part_replacement(user, W))
 		return
-	if(panel_open)
-		if(istype(W, /obj/item/multitool))
-			var/obj/item/multitool/M = W
-			M.connectable = src
-			to_chat(user, span_warning("You save the data in the [M.name]'s buffer."))
-			return 1
-
 	return ..()
+
+/obj/machinery/telepad/multitool_act(mob/user, obj/item/tool)
+	if(!panel_open)
+		return ITEM_INTERACT_BLOCKING
+	var/obj/item/multitool/multitool = tool
+	multitool.connectable = src
+	to_chat(user, span_warning("You save the data in the [multitool.name]'s buffer."))
+	return ITEM_INTERACT_SUCCESS

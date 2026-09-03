@@ -23,6 +23,8 @@
 	var/wrenchable = 0
 	var/persistent = null // Path of persistence datum used to track contents
 	circuit = /obj/item/circuitboard/smartfridge //This one is meant to be uncraftable, however.
+	maintenance_flags = MACHINE_MAINT_FRAME | MACHINE_MAINT_WRENCH
+	maintenance_wrench_time = 2 SECONDS
 
 	var/datum/looping_sound/fridge/soundloop
 	var/playing_sound = FALSE
@@ -125,28 +127,6 @@
 				add_overlay("[icon_base]-[icon_contents]3")
 
 /obj/machinery/smartfridge/attackby(obj/item/O, mob/user)
-	if(O.has_tool_quality(TOOL_SCREWDRIVER))
-		panel_open = !panel_open
-		user.visible_message(span_filter_notice("[user] [panel_open ? "opens" : "closes"] the maintenance panel of \the [src]."), span_filter_notice("You [panel_open ? "open" : "close"] the maintenance panel of \the [src]."))
-		playsound(src, O.usesound, 50, 1)
-		update_icon()
-		return
-
-	if(wrenchable && default_unfasten_wrench(user, O, 20))
-		return
-
-	if(O.has_tool_quality(TOOL_CROWBAR))
-		if(allowed(user))
-			default_deconstruction_crowbar(user, O)
-		else
-			to_chat(user, span_warning("\The [src] smartly denies you access to deconstruct it."))
-		return
-
-	if(istype(O, /obj/item/multitool) || O.has_tool_quality(TOOL_WIRECUTTER))
-		if(panel_open)
-			attack_hand(user)
-		return
-
 	if(stat & NOPOWER)
 		to_chat(user, span_notice("\The [src] is unpowered and useless."))
 		return
@@ -187,6 +167,33 @@
 	else
 		to_chat(user, span_notice("\The [src] smartly refuses [O]."))
 		return TRUE
+
+/obj/machinery/smartfridge/screwdriver_act(mob/user, obj/item/tool)
+	panel_open = !panel_open
+	user.visible_message(span_filter_notice("[user] [panel_open ? "opens" : "closes"] the maintenance panel of \the [src]."), span_notice("You [panel_open ? "open" : "close"] the maintenance panel of \the [src]."))
+	playsound(src, tool.usesound, 50, TRUE)
+	update_icon()
+	return ITEM_INTERACT_SUCCESS
+
+/obj/machinery/smartfridge/wrench_act(mob/user, obj/item/tool)
+	if(!wrenchable)
+		return ..()
+	return ..()
+
+/obj/machinery/smartfridge/crowbar_act(mob/user, obj/item/tool)
+	if(!allowed(user))
+		to_chat(user, span_warning("\The [src] smartly denies you access to deconstruct it."))
+		return ITEM_INTERACT_BLOCKING
+	return ..()
+
+/obj/machinery/smartfridge/wirecutter_act(mob/user, obj/item/tool)
+	if(!panel_open)
+		return ITEM_INTERACT_BLOCKING
+	attack_hand(user)
+	return ITEM_INTERACT_SUCCESS
+
+/obj/machinery/smartfridge/multitool_act(mob/user, obj/item/tool)
+	return wirecutter_act(user, tool)
 
 /obj/machinery/smartfridge/secure/emag_act(remaining_charges, mob/user)
 	if(!emagged)

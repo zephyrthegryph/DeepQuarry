@@ -14,6 +14,7 @@
 	icon_state = "icecream_vat"
 	density = TRUE
 	anchored = FALSE
+	maintenance_flags = MACHINE_MAINT_STANDARD
 	use_power = USE_POWER_OFF
 	flags = OPENCONTAINER | NOREACT
 
@@ -136,11 +137,6 @@
 			return TRUE
 
 /obj/machinery/icecream_vat/attackby(obj/item/O, mob/user)
-	// Allows for deconstruction
-	if(default_deconstruction_screwdriver(user, O))
-		return
-	if(default_deconstruction_crowbar(user, O))
-		return
 	if(default_part_replacement(user, O))
 		return
 	if(istype(O, /obj/item/reagent_containers/food/snacks/icecream))

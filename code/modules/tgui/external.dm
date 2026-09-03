@@ -162,6 +162,12 @@
  */
 /client/var/list/tgui_windows = list()
 
+/// Last successfully revealed native size and position by interface.
+/client/var/list/tgui_resolved_geometries
+/// The all-interface HTTP chunk manifest has been dispatched to one browser
+/// shell for this client. Chromium's cache is shared by that client's shells.
+/client/var/tgui_chunk_warm_started = FALSE
+
 /**
  * global
  *

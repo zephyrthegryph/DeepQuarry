@@ -114,11 +114,11 @@
 		return
 
 
-/obj/machinery/field_generator/attackby(obj/item/W, mob/user)
+/obj/machinery/field_generator/proc/construction_tool_act(mob/user, obj/item/W, tool_quality)
 	if(active)
 		to_chat(user, "The [src] needs to be off.")
-		return
-	else if(W.has_tool_quality(TOOL_WRENCH))
+		return ITEM_INTERACT_BLOCKING
+	if(tool_quality == TOOL_WRENCH)
 		switch(state)
 			if(0)
 				state = 1
@@ -137,7 +137,7 @@
 			if(2)
 				to_chat(user, span_red("The [src.name] needs to be unwelded from the floor."))
 				return
-	else if(W.has_tool_quality(TOOL_WELDER))
+	else if(tool_quality == TOOL_WELDER)
 		var/obj/item/weldingtool/WT = W.get_welder()
 		switch(state)
 			if(0)
@@ -167,15 +167,20 @@
 						to_chat(user, "You cut the [src] free from the floor.")
 				else
 					return
-	else
-		..()
-		return
+	return ITEM_INTERACT_SUCCESS
+
+/obj/machinery/field_generator/wrench_act(mob/user, obj/item/W)
+	return construction_tool_act(user, W, TOOL_WRENCH)
+
+/obj/machinery/field_generator/welder_act(mob/user, obj/item/W)
+	return construction_tool_act(user, W, TOOL_WELDER)
 
 /obj/machinery/field_generator/bullet_act(obj/item/projectile/Proj)
 	if(istype(Proj, /obj/item/projectile/beam))
 		power += Proj.damage * EMITTER_DAMAGE_POWER_TRANSFER
 		update_icon()
-	return 0
+		return 0
+	return ..()
 
 
 /obj/machinery/field_generator/Destroy()

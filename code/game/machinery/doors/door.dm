@@ -21,7 +21,7 @@
 	var/heat_proof = FALSE // For glass airlocks/opacity firedoors
 	var/air_properties_vary_with_direction = 0
 	max_integrity = 300
-	var/destroy_hits = 10 //How many strong hits it takes to destroy the door
+	integrity_failure = 0.25
 	var/min_force = 10 //minimum amount of force needed to damage the door with a melee weapon
 	var/hitsound = 'sound/weapons/smash.ogg' //sound door makes when hit with a weapon
 	//var/repairing = 0 //VOREstation Edit: We're not using materials anymore
@@ -229,26 +229,10 @@
 	return
 
 /obj/machinery/door/bullet_act(obj/item/projectile/Proj)
-	..()
-
 	var/damage = Proj.get_structure_damage()
-
-	// Emitter Blasts - these will eventually completely destroy the door, given enough time.
-	if (damage > 90)
-		destroy_hits--
-		if (destroy_hits <= 0)
-			visible_message(span_danger("\The [name] disintegrates!"))
-			switch (Proj.damage_type)
-				if(BRUTE)
-					new /obj/item/stack/material/steel(loc, 2)
-					new /obj/item/stack/rods(loc, 3)
-				if(BURN)
-					new /obj/effect/decal/cleanable/ash(loc) // Turn it to ashes!
-			qdel(src)
-
-	if(damage)
-		//cap projectile damage so that there's still a minimum number of hits required to break the door
-		take_damage(min(damage, 100))
+	. = ..()
+	if(damage && !QDELETED(src))
+		update_icon()
 
 
 
@@ -317,51 +301,6 @@
 			to_chat(user, span_notice("You fit [amount_given] [singular_name]\s on \the [src]."))
 		return
 
-	if(reinforcing && I.has_tool_quality(TOOL_CROWBAR))
-		var/obj/item/stack/material/plasteel/reinforcing_sheet = new /obj/item/stack/material/plasteel(get_turf(src), reinforcing)
-		reinforcing = 0
-		to_chat(user, span_notice("You remove \the [reinforcing_sheet]."))
-		playsound(src, I.usesound, 100, 1)
-		return
-
-	if(I.has_tool_quality(TOOL_WELDER))
-		if(reinforcing)
-			if(!density)
-				to_chat(user, span_warning("\The [src] must be closed before you can reinforce it."))
-				return
-
-			if(reinforcing < 2)
-				to_chat(user, span_warning("You will need more plasteel to reinforce \the [src]."))
-				return
-
-			var/obj/item/weldingtool/welder = I.get_welder()
-			if(welder.remove_fuel(0,user))
-				to_chat(user, span_notice("You start welding the plasteel into place."))
-				playsound(src, welder.usesound, 50, 1)
-				if(do_after(user, 1 SECOND * welder.toolspeed, target = src) && welder && welder.isOn())
-					to_chat(user, span_notice("You finish reinforcing \the [src]."))
-					heat_proof = TRUE
-					update_icon()
-					reinforcing = 0
-			return
-
-		if(get_integrity() < max_integrity)
-			if(!density)
-				to_chat(user, span_warning("\The [src] must be closed before you can repair it."))
-				return
-
-			var/obj/item/weldingtool/welder = I.get_welder()
-			if(welder.remove_fuel(0,user))
-				to_chat(user, span_notice("You start to fix dents and repair \the [src]."))
-				playsound(src, welder.usesound, 50, 1)
-				var/repairtime = max_integrity - get_integrity() //Since we're not using materials anymore... We'll just calculate how much damage there is to repair.
-				if(do_after(user, repairtime * welder.toolspeed, target = src) && welder && welder.isOn())
-					to_chat(user, span_notice("You finish repairing the damage to \the [src]."))
-					repair_damage(max_integrity)
-					stat &= ~BROKEN
-					update_icon()
-			return
-
 	// Handle signals
 	if(..())
 		return
@@ -381,6 +320,54 @@
 		return
 
 	try_to_activate_door(user)
+
+/obj/machinery/door/crowbar_act(mob/user, obj/item/tool)
+	if(!reinforcing)
+		return NONE
+	var/obj/item/stack/material/plasteel/reinforcing_sheet = new /obj/item/stack/material/plasteel(get_turf(src), reinforcing)
+	reinforcing = 0
+	to_chat(user, span_notice("You remove \the [reinforcing_sheet]."))
+	playsound(src, tool.usesound, 100, 1)
+	return ITEM_INTERACT_SUCCESS
+
+/obj/machinery/door/welder_act(mob/user, obj/item/tool)
+	if(reinforcing)
+		if(!density)
+			to_chat(user, span_warning("\The [src] must be closed before you can reinforce it."))
+			return ITEM_INTERACT_BLOCKING
+
+		if(reinforcing < 2)
+			to_chat(user, span_warning("You will need more plasteel to reinforce \the [src]."))
+			return ITEM_INTERACT_BLOCKING
+
+		var/obj/item/weldingtool/welder = tool.get_welder()
+		if(welder.remove_fuel(0,user))
+			to_chat(user, span_notice("You start welding the plasteel into place."))
+			playsound(src, welder.usesound, 50, 1)
+			if(do_after(user, 1 SECOND * welder.toolspeed, target = src) && welder && welder.isOn())
+				to_chat(user, span_notice("You finish reinforcing \the [src]."))
+				heat_proof = TRUE
+				update_icon()
+				reinforcing = 0
+		return ITEM_INTERACT_SUCCESS
+
+	if(get_integrity() < max_integrity)
+		if(!density)
+			to_chat(user, span_warning("\The [src] must be closed before you can repair it."))
+			return ITEM_INTERACT_BLOCKING
+
+		var/obj/item/weldingtool/welder = tool.get_welder()
+		if(welder.remove_fuel(0,user))
+			to_chat(user, span_notice("You start to fix dents and repair \the [src]."))
+			playsound(src, welder.usesound, 50, 1)
+			var/repairtime = max_integrity - get_integrity()
+			if(do_after(user, repairtime * welder.toolspeed, target = src) && welder && welder.isOn())
+				to_chat(user, span_notice("You finish repairing the damage to \the [src]."))
+				repair_damage(max_integrity)
+				stat &= ~BROKEN
+				update_icon()
+		return ITEM_INTERACT_SUCCESS
+	return NONE
 
 /obj/machinery/door/proc/try_to_activate_door(mob/user)
 	add_fingerprint(user)
@@ -409,14 +396,6 @@
 	open()
 	operating = -1
 
-// A broken door persists as a wrecked-but-present barrier (its real destruction is
-// explicit: ex_act qdel, projectile/fire destroy_hits). So suppress further normal
-// damage once broken — this also keeps us from re-entering take_damage at 0 integrity.
-/obj/machinery/door/take_damage(damage_amount, damage_type = BRUTE, damage_flag = "", sound_effect = TRUE, attack_dir, armour_penetration = 0)
-	if(stat & BROKEN)
-		return
-	return ..()
-
 // Damage-state flavour text as integrity drops.
 /obj/machinery/door/on_update_integrity(old_value, new_value)
 	. = ..()
@@ -429,10 +408,14 @@
 			visible_message("\The [src] shows signs of damage!" )
 	update_icon()
 
-// Integrity hitting zero breaks the door rather than deleting it.
-/obj/machinery/door/atom_destruction(damage_flag)
+/obj/machinery/door/atom_break(damage_flag)
 	. = ..()
 	set_broken()
+
+/obj/machinery/door/atom_fix()
+	. = ..()
+	stat &= ~BROKEN
+	update_icon()
 
 
 /obj/machinery/door/examine(mob/user)
@@ -462,24 +445,6 @@
 		return
 	if(prob(20/severity) && (istype(src,/obj/machinery/door/airlock) || istype(src,/obj/machinery/door/window)) )
 		open()
-
-/obj/machinery/door/ex_act(severity)
-	switch(severity)
-		if(1.0)
-			qdel(src)
-		if(2.0)
-			if(prob(25))
-				qdel(src)
-			else
-				take_damage(300)
-		if(3.0)
-			if(prob(80))
-				var/datum/effect/effect/system/spark_spread/s = new /datum/effect/effect/system/spark_spread
-				s.set_up(2, 1, src)
-				s.start()
-			else
-				take_damage(150)
-	return
 
 /obj/machinery/door/blob_act()
 	if(density) // If it's closed.
@@ -523,6 +488,7 @@
 	operating = 1
 
 	SEND_SIGNAL(src, COMSIG_DOOR_OPEN, forced)
+	SSai?.publish_navigation_change()
 
 	do_animate("opening")
 	icon_state = "door0"
@@ -582,6 +548,7 @@
 	operating = 1
 
 	SEND_SIGNAL(src, COMSIG_DOOR_CLOSE, forced)
+	SSai?.publish_navigation_change()
 
 	close_door_at = 0
 	do_animate("closing")
@@ -668,22 +635,13 @@
 			return
 
 	var/maxtemperature = 1800 //same as a normal steel wall
-	var/destroytime = 20 //effectively gives an airlock 200HP between breaking and completely disintegrating
 	if(heat_proof)
 		maxtemperature = 6000 //same as a plasteel rwall
-		destroytime = 50 //fireproof airlocks need to take 500 damage after breaking before they're destroyed
 
 	if(exposed_temperature > maxtemperature)
 		var/burndamage = log(RAND_F(0.9, 1.1) * (exposed_temperature - maxtemperature))
 		if(burndamage)
-			if(stat & BROKEN) //once they break, start taking damage to destroy_hits
-				destroy_hits -= (burndamage / destroytime)
-				if (destroy_hits <= 0)
-					visible_message(span_danger("\The [src.name] disintegrates!"))
-					new /obj/effect/decal/cleanable/ash(src.loc) // Turn it to ashes!
-					qdel(src)
-			else
-				take_damage(burndamage, BURN)
+			take_damage(burndamage, BURN, FIRE)
 
 	return ..()
 

@@ -1,4 +1,5 @@
 /obj/machinery/recharge_station
+	maintenance_flags = MACHINE_MAINT_STANDARD
 	name = "cyborg recharging station"
 	desc = "A heavy duty rapid charging system, designed to quickly recharge cyborg power reserves."
 	icon = 'icons/obj/objects.dmi'
@@ -161,10 +162,6 @@
 
 /obj/machinery/recharge_station/attackby(obj/item/O as obj, mob/user as mob)
 	if(!occupant)
-		if(default_deconstruction_screwdriver(user, O))
-			return
-		if(default_deconstruction_crowbar(user, O))
-			return
 		if(default_part_replacement(user, O))
 			return
 		if (istype(O, /obj/item/grab) && get_dist(src,user)<2)
@@ -175,6 +172,12 @@
 				go_in(M)
 
 	..()
+
+/obj/machinery/recharge_station/screwdriver_act(mob/user, obj/item/tool)
+	return occupant ? ITEM_INTERACT_BLOCKING : ..()
+
+/obj/machinery/recharge_station/crowbar_act(mob/user, obj/item/tool)
+	return occupant ? ITEM_INTERACT_BLOCKING : ..()
 
 /obj/machinery/recharge_station/MouseDrop_T(mob/target, mob/user)
 	if(user.stat || user.lying || !Adjacent(user) || !target.Adjacent(user))

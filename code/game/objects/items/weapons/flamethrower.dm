@@ -116,27 +116,6 @@
 	if(user.stat || user.restrained() || user.lying)
 		return
 
-	if(W.has_tool_quality(TOOL_WRENCH) && !status)//Taking this apart
-		var/turf/T = get_turf(src)
-		if(weldtool)
-			weldtool.forceMove(T)
-			weldtool = null
-		if(igniter)
-			igniter.forceMove(T)
-			igniter = null
-		if(ptank)
-			ptank.forceMove(T)
-			ptank = null
-		new /obj/item/stack/rods(T)
-		qdel(src)
-		return
-
-	if(W.has_tool_quality(TOOL_SCREWDRIVER) && igniter && !lit)
-		status = !status
-		to_chat(user, span_notice("[igniter] is now [status ? "secured" : "unsecured"]!"))
-		update_icon()
-		return
-
 	if(isigniter(W))
 		var/obj/item/assembly/igniter/I = W
 		if(I.secured)	return
@@ -158,6 +137,31 @@
 		return
 
 	..()
+
+/obj/item/flamethrower/wrench_act(mob/user, obj/item/tool)
+	if(status || user.stat || user.restrained() || user.lying)
+		return ITEM_INTERACT_BLOCKING
+	var/turf/T = get_turf(src)
+	if(weldtool)
+		weldtool.forceMove(T)
+		weldtool = null
+	if(igniter)
+		igniter.forceMove(T)
+		igniter = null
+	if(ptank)
+		ptank.forceMove(T)
+		ptank = null
+	new /obj/item/stack/rods(T)
+	qdel(src)
+	return ITEM_INTERACT_SUCCESS
+
+/obj/item/flamethrower/screwdriver_act(mob/user, obj/item/tool)
+	if(!igniter || lit || user.stat || user.restrained() || user.lying)
+		return ITEM_INTERACT_BLOCKING
+	status = !status
+	to_chat(user, span_notice("[igniter] is now [status ? "secured" : "unsecured"]!"))
+	update_icon()
+	return ITEM_INTERACT_SUCCESS
 
 /obj/item/flamethrower/attack_self(mob/user)
 	. = ..(user)

@@ -1,4 +1,6 @@
 /obj/machinery/chem_master
+	maintenance_flags = MACHINE_MAINT_STANDARD_MOVABLE
+	maintenance_wrench_time = 2 SECONDS
 	name = "ChemMaster 3000"
 	desc = "Used to separate and package chemicals in to patches, pills, or bottles. Warranty void if used to create Space Drugs."
 	density = TRUE
@@ -31,16 +33,6 @@
 	reagents = R	//There should be a nano ui thingy to warn of this.
 	R.my_atom = src
 
-/obj/machinery/chem_master/ex_act(severity)
-	switch(severity)
-		if(1.0)
-			qdel(src)
-			return
-		if(2.0)
-			if (prob(50))
-				qdel(src)
-				return
-
 /obj/machinery/chem_master/update_icon()
 	icon_state = "mixer[beaker ? "1" : "0"]"
 
@@ -68,14 +60,16 @@
 		B.loc = src
 		to_chat(user, "You add \the [loaded_pill_bottle] into the dispenser slot.")
 
-	else if(default_unfasten_wrench(user, B, 20))
-		return
-	if(default_deconstruction_screwdriver(user, B))
-		return
-	if(default_deconstruction_crowbar(user, B))
-		return
-
 	return
+
+/obj/machinery/chem_master/wrench_act(mob/user, obj/item/tool)
+	return ..()
+
+/obj/machinery/chem_master/screwdriver_act(mob/user, obj/item/tool)
+	return ..()
+
+/obj/machinery/chem_master/crowbar_act(mob/user, obj/item/tool)
+	return ..()
 
 /obj/machinery/chem_master/attack_hand(mob/user as mob)
 	if(stat & BROKEN)

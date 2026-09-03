@@ -54,17 +54,17 @@
 /obj/machinery/atmospherics/pipe/manifold/disconnect(obj/machinery/atmospherics/reference)
 	if(reference == node1)
 		if(istype(node1, /obj/machinery/atmospherics/pipe))
-			qdel(parent)
+			rust_invalidate_pipeline_wrapper(parent)
 		node1 = null
 
 	if(reference == node2)
 		if(istype(node2, /obj/machinery/atmospherics/pipe))
-			qdel(parent)
+			rust_invalidate_pipeline_wrapper(parent)
 		node2 = null
 
 	if(reference == node3)
 		if(istype(node3, /obj/machinery/atmospherics/pipe))
-			qdel(parent)
+			rust_invalidate_pipeline_wrapper(parent)
 		node3 = null
 
 	update_icon()
@@ -79,12 +79,7 @@
 		set_leaking(TRUE)
 
 /obj/machinery/atmospherics/pipe/manifold/process()
-	if(!parent)
-		..()
-	else if(leaking)
-		parent.mingle_with_turf(loc, volume)
-	else
-		. = PROCESS_KILL
+	return ..()
 
 /obj/machinery/atmospherics/pipe/manifold/change_color(new_color)
 	..()

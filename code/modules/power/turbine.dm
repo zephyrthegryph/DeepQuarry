@@ -22,6 +22,8 @@
 //
 
 /obj/machinery/compressor
+	maintenance_flags = MACHINE_MAINT_STANDARD_MOVABLE
+	maintenance_wrench_time = 2 SECONDS
 	name = "compressor"
 	desc = "The compressor stage of a gas turbine generator."
 	icon = 'icons/obj/pipes.dmi'
@@ -41,6 +43,8 @@
 	var/efficiency
 
 /obj/machinery/power/turbine
+	maintenance_flags = MACHINE_MAINT_STANDARD_MOVABLE
+	maintenance_wrench_time = 2 SECONDS
 	name = "gas turbine generator"
 	desc = "A gas turbine used for backup power generation."
 	icon = 'icons/obj/pipes.dmi'
@@ -115,13 +119,7 @@
 /obj/machinery/compressor/attackby(obj/item/W, mob/user)
 	src.add_fingerprint(user)
 
-	if(default_deconstruction_screwdriver(user, W))
-		return
 	if(default_part_replacement(user, W))
-		return
-	if(default_unfasten_wrench(user, W))
-		return
-	if(default_deconstruction_crowbar(user, W))
 		return
 	if(istype(W, /obj/item/multitool))
 		var/new_ident = tgui_input_text(user, "Enter a new ident tag.", name, comp_id, MAX_NAME_LEN)
@@ -130,7 +128,7 @@
 		return
 	return ..()
 
-/obj/machinery/compressor/default_unfasten_wrench(mob/user, obj/item/W, time = 20)
+/obj/machinery/compressor/wrench_act(mob/user, obj/item/W)
 	if((. = ..()))
 		turbine = null
 		if(anchored)
@@ -218,17 +216,11 @@
 /obj/machinery/power/turbine/attackby(obj/item/W, mob/user)
 	src.add_fingerprint(user)
 
-	if(default_deconstruction_screwdriver(user, W))
-		return
 	if(default_part_replacement(user, W))
-		return
-	if(default_unfasten_wrench(user, W))
-		return
-	if(default_deconstruction_crowbar(user, W))
 		return
 	return ..()
 
-/obj/machinery/power/turbine/default_unfasten_wrench(mob/user, obj/item/W, time = 20)
+/obj/machinery/power/turbine/wrench_act(mob/user, obj/item/W)
 	if((. = ..()))
 		compressor = null
 		if(anchored)

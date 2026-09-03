@@ -15,6 +15,8 @@
 	density = TRUE
 	unacidable = TRUE
 	clicksound = "button"
+	maintenance_flags = MACHINE_MAINT_WRENCH
+	maintenance_wrench_time = 2 SECONDS
 
 	// Power
 	use_power = USE_POWER_IDLE
@@ -169,21 +171,9 @@ GLOBAL_LIST_EMPTY(vending_products)
 	return ..()
 
 /obj/machinery/vending/ex_act(severity)
-	switch(severity)
-		if(1.0)
-			qdel(src)
-			return
-		if(2.0)
-			if(prob(50))
-				qdel(src)
-				return
-		if(3.0)
-			if(prob(25))
-				spawn(0)
-					malfunction()
-					return
-				return
-	return
+	if(severity == 3 && prob(25))
+		INVOKE_ASYNC(src, PROC_REF(malfunction))
+	return ..()
 
 /obj/machinery/vending/emag_act(remaining_charges, mob/user)
 	if(!emagged)
@@ -220,22 +210,6 @@ GLOBAL_LIST_EMPTY(vending_products)
 		else
 			to_chat(user, span_notice("You cannot refill [src] with [RC]."))
 			return
-	else if(W.has_tool_quality(TOOL_SCREWDRIVER))
-		panel_open = !panel_open
-		to_chat(user, "You [panel_open ? "open" : "close"] the maintenance panel.")
-		playsound(src, W.usesound, 50, 1)
-		if(panel_open)
-			wires.Interact(user)
-			add_overlay("[initial(icon_state)]-panel")
-		else
-			cut_overlay("[initial(icon_state)]-panel")
-
-		SStgui.update_uis(src)  // Speaker switch is on the main UI, not wires UI
-		return
-	else if(istype(W, /obj/item/multitool) || W.has_tool_quality(TOOL_WIRECUTTER))
-		if(panel_open)
-			attack_hand(user)
-		return
 	else if(istype(W, /obj/item/fake_coin) && has_premium)
 		to_chat(user, span_notice("\The [W] doesn't fit into the coin slot on \the [src]."))
 		return
@@ -247,18 +221,6 @@ GLOBAL_LIST_EMPTY(vending_products)
 		to_chat(user, span_notice("You insert \the [W] into \the [src]."))
 		SStgui.update_uis(src)
 		return
-	else if(W.has_tool_quality(TOOL_WRENCH))
-		playsound(src, W.usesound, 100, 1)
-		if(anchored)
-			user.visible_message(span_filter_notice("[user] begins unsecuring \the [src] from the floor."), span_filter_notice("You start unsecuring \the [src] from the floor."))
-		else
-			user.visible_message(span_filter_notice("[user] begins securing \the [src] to the floor."), span_filter_notice("You start securing \the [src] to the floor."))
-
-		if(do_after(user, 2 SECONDS * W.toolspeed, target = src))
-			if(!src) return
-			to_chat(user, span_notice("You [anchored? "un" : ""]secured \the [src]!"))
-			anchored = !anchored
-		return
 	else
 
 		for(var/datum/stored_item/vending_product/R in product_records)
@@ -266,6 +228,27 @@ GLOBAL_LIST_EMPTY(vending_products)
 				stock(W, R, user)
 				return
 		..()
+
+/obj/machinery/vending/screwdriver_act(mob/user, obj/item/tool)
+	playsound(src, tool.usesound, 50, TRUE)
+	panel_open = !panel_open
+	to_chat(user, span_notice("You [panel_open ? "open" : "close"] the maintenance panel."))
+	if(panel_open)
+		wires.Interact(user)
+		add_overlay("[initial(icon_state)]-panel")
+	else
+		cut_overlay("[initial(icon_state)]-panel")
+	SStgui.update_uis(src)
+	return ITEM_INTERACT_SUCCESS
+
+/obj/machinery/vending/wirecutter_act(mob/user, obj/item/tool)
+	if(!panel_open)
+		return ITEM_INTERACT_BLOCKING
+	attack_hand(user)
+	return ITEM_INTERACT_SUCCESS
+
+/obj/machinery/vending/multitool_act(mob/user, obj/item/tool)
+	return wirecutter_act(user, tool)
 
 /**
  *  Receive payment with cashmoney.

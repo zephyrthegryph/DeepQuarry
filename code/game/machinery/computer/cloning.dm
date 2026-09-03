@@ -103,16 +103,20 @@
 			to_chat(user, "You insert [W].")
 			SStgui.update_uis(src)
 			return
-	else if(istype(W, /obj/item/multitool))
-		var/obj/item/multitool/M = W
-		var/obj/machinery/clonepod/P = M.connecting
-		if(P && !(P in pods))
-			pods += P
-			P.connected = src
-			P.name = "[initial(P.name)] #[pods.len]"
-			to_chat(user, span_notice("You connect [P] to [src]."))
 	else
 		return ..()
+
+/obj/machinery/computer/cloning/multitool_act(mob/user, obj/item/tool)
+	if(!istype(tool, /obj/item/multitool))
+		return ITEM_INTERACT_BLOCKING
+	var/obj/item/multitool/multitool = tool
+	var/obj/machinery/clonepod/pod = multitool.connecting
+	if(pod && !(pod in pods))
+		pods += pod
+		pod.connected = src
+		pod.name = "[initial(pod.name)] #[length(pods)]"
+		to_chat(user, span_notice("You connect [pod] to [src]."))
+	return ITEM_INTERACT_SUCCESS
 
 /obj/machinery/computer/cloning/attack_ai(mob/user as mob)
 	return attack_hand(user)

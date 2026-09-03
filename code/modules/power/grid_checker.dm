@@ -1,4 +1,5 @@
 /obj/machinery/power/grid_checker
+	maintenance_flags = MACHINE_MAINT_STANDARD
 	name = "grid checker"
 	desc = "A machine that reacts to unstable conditions in the powernet, by safely shutting everything down.  Probably better \
 	than the alternative."
@@ -34,16 +35,22 @@
 		icon_state = "gridchecker_on"
 		set_light(2, 2, "#A8B0F8")
 
-/obj/machinery/power/grid_checker/attackby(obj/item/W, mob/user)
-	if(!user)
-		return
-	if(W.has_tool_quality(TOOL_SCREWDRIVER))
-		default_deconstruction_screwdriver(user, W)
-		opened = !opened
-	else if(W.has_tool_quality(TOOL_CROWBAR))
-		default_deconstruction_crowbar(user, W)
-	else if(istype(W, /obj/item/multitool) || W.has_tool_quality(TOOL_WIRECUTTER))
-		attack_hand(user)
+/obj/machinery/power/grid_checker/screwdriver_act(mob/user, obj/item/W)
+	var/result = ..()
+	if(ITEM_INTERACT_CONSUMED(result))
+		opened = panel_open
+	return result
+
+/obj/machinery/power/grid_checker/crowbar_act(mob/user, obj/item/W)
+	return ..()
+
+/obj/machinery/power/grid_checker/multitool_act(mob/user, obj/item/W)
+	attack_hand(user)
+	return ITEM_INTERACT_SUCCESS
+
+/obj/machinery/power/grid_checker/wirecutter_act(mob/user, obj/item/W)
+	attack_hand(user)
+	return ITEM_INTERACT_SUCCESS
 
 /obj/machinery/power/grid_checker/attack_hand(mob/user)
 	if(!user)

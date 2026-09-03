@@ -6,6 +6,8 @@
 	density = TRUE
 	anchored = TRUE
 	circuit = /obj/item/circuitboard/pump_relay
+	maintenance_flags = MACHINE_MAINT_STANDARD_MOVABLE
+	maintenance_wrench_time = 2 SECONDS
 
 /obj/machinery/pump_relay/Initialize(mapload)
 	. = ..()
@@ -17,13 +19,7 @@
 	AddComponent(/datum/component/hose_connector/output)
 
 /obj/machinery/pump_relay/attackby(obj/item/O as obj, mob/user as mob)
-	if(default_deconstruction_screwdriver(user, O))
-		return
-	if(default_deconstruction_crowbar(user, O))
-		return
 	if(default_part_replacement(user, O))
-		return
-	if(default_unfasten_wrench(user, O, 20))
 		return
 
 	..()

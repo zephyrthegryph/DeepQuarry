@@ -1,4 +1,5 @@
 /obj/machinery/artifact_harvester
+	maintenance_flags = MACHINE_MAINT_STANDARD
 	name = "Exotic Particle Harvester"
 	icon = 'icons/obj/virology.dmi'
 	icon_state = "incubator"	//incubator_on
@@ -59,13 +60,18 @@
 			to_chat(user, span_red("There is already a battery in [src]."))
 	if(default_part_replacement(user, I))
 		return
-	if(!inserted_battery)
-		if(default_deconstruction_screwdriver(user, I))
-			return
-		if(default_deconstruction_crowbar(user, I))
-			return
-	else
+	if(inserted_battery)
 		return..()
+
+/obj/machinery/artifact_harvester/screwdriver_act(mob/user, obj/item/tool)
+	if(inserted_battery)
+		return ITEM_INTERACT_BLOCKING
+	return ..()
+
+/obj/machinery/artifact_harvester/crowbar_act(mob/user, obj/item/tool)
+	if(inserted_battery)
+		return ITEM_INTERACT_BLOCKING
+	return ..()
 
 /obj/machinery/artifact_harvester/attack_hand(mob/user as mob)
 	if(..())

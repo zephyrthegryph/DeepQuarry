@@ -54,13 +54,12 @@
 			"You hammer the clown right in it's face with your fist",
 			"A honk emits from the punching bag as you hit it")
 
-/obj/machinery/fitness/heavy/attackby(obj/item/W, mob/living/user)
-	if(W.has_tool_quality(TOOL_WRENCH))
-		add_fingerprint(user)
-		user.visible_message(span_warning("[user] has [anchored ? "un" : ""]secured \the [src]."), span_notice("You [anchored ? "un" : ""]secure \the [src]."))
-		anchored = !anchored
-		playsound(src, 'sound/items/Ratchet.ogg', 50, 1)
-		return
+/obj/machinery/fitness/heavy/wrench_act(mob/user, obj/item/tool)
+	add_fingerprint(user)
+	user.visible_message(span_warning("[user] has [anchored ? "un" : ""]secured \the [src]."), span_notice("You [anchored ? "un" : ""]secure \the [src]."))
+	anchored = !anchored
+	playsound(src, tool.usesound, 50, TRUE)
+	return ITEM_INTERACT_SUCCESS
 
 /obj/machinery/fitness/heavy/attack_hand(mob/living/user)
 	if(!anchored)

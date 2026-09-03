@@ -107,26 +107,6 @@
 	update_icon()
 
 /obj/machinery/floodlight/attackby(obj/item/W as obj, mob/user as mob)
-	if(W.has_tool_quality(TOOL_SCREWDRIVER))
-		if(!open)
-			if(unlocked)
-				unlocked = 0
-				to_chat(user, "You screw the battery panel in place.")
-			else
-				unlocked = 1
-				to_chat(user, "You unscrew the battery panel.")
-
-	if(W.has_tool_quality(TOOL_CROWBAR))
-		if(unlocked)
-			if(open)
-				open = 0
-				overlays = null
-				to_chat(user, "You crowbar the battery panel in place.")
-			else
-				if(unlocked)
-					open = 1
-					to_chat(user, "You remove the battery panel.")
-
 	if(istype(W, /obj/item/cell))
 		if(open)
 			if(cell)
@@ -137,6 +117,24 @@
 				cell = W
 				to_chat(user, "You insert the power cell.")
 	update_icon()
+
+/obj/machinery/floodlight/screwdriver_act(mob/user, obj/item/tool)
+	if(open)
+		return ITEM_INTERACT_BLOCKING
+	unlocked = !unlocked
+	to_chat(user, "You [unlocked ? "unscrew" : "screw"] the battery panel [unlocked ? "" : "in place"].")
+	update_icon()
+	return ITEM_INTERACT_SUCCESS
+
+/obj/machinery/floodlight/crowbar_act(mob/user, obj/item/tool)
+	if(!unlocked)
+		return ITEM_INTERACT_BLOCKING
+	open = !open
+	if(!open)
+		overlays = null
+	to_chat(user, "You [open ? "remove" : "crowbar"] the battery panel[open ? "" : " in place"].")
+	update_icon()
+	return ITEM_INTERACT_SUCCESS
 
 /obj/machinery/floodlight/starts_on
 	icon_state = "flood01"

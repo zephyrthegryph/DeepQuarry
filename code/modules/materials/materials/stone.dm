@@ -1,7 +1,6 @@
 /datum/material/stone
 	name = MAT_SANDSTONE
 	stack_type = /obj/item/stack/material/sandstone
-	material_class = MATCLASS_CERAMIC
 	icon_base = "stone"
 	table_icon_base = "stone"
 	icon_reinf = "reinf_stone"

@@ -180,9 +180,12 @@
 	return
 
 /obj/structure/bed/chair/office/attackby(obj/item/W as obj, mob/user as mob)
-	if(istype(W,/obj/item/stack) || W.has_tool_quality(TOOL_WIRECUTTER))
+	if(istype(W,/obj/item/stack))
 		return
 	..()
+
+/obj/structure/bed/chair/office/wirecutter_act(mob/user, obj/item/W)
+	return TRUE
 
 /obj/structure/bed/chair/office/Moved(atom/old_loc, direction, forced = FALSE)
 	. = ..()
@@ -242,9 +245,12 @@
 	return
 
 /obj/structure/bed/chair/wood/attackby(obj/item/W as obj, mob/user as mob)
-	if(istype(W,/obj/item/stack) || W.has_tool_quality(TOOL_WIRECUTTER))
+	if(istype(W,/obj/item/stack))
 		return
 	..()
+
+/obj/structure/bed/chair/wood/wirecutter_act(mob/user, obj/item/W)
+	return TRUE
 
 /obj/structure/bed/chair/wood/Initialize(mapload)
 	. = ..(mapload, MAT_WOOD)

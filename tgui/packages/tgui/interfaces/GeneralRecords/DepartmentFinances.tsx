@@ -247,7 +247,9 @@ const DepartmentDetail = (props: {
                   <LabeledList.Item
                     label="Net Billed"
                     color={
-                      department.service_invoices.net_billed < 0 ? 'bad' : 'good'
+                      department.service_invoices.net_billed < 0
+                        ? 'bad'
+                        : 'good'
                     }
                   >
                     {formatMoney(department.service_invoices.net_billed)}
@@ -266,10 +268,9 @@ const DepartmentDetail = (props: {
                     {formatMoney(department.service_invoices.ewallet_sales)}
                   </LabeledList.Item>
                   <LabeledList.Item label="Tips (Staff / Service)">
-                    {formatMoney(department.service_invoices.tips)} ({
-                      formatMoney(department.service_invoices.staff_tips)
-                    }{' '}
-                    / {formatMoney(department.service_invoices.service_tips)})
+                    {formatMoney(department.service_invoices.tips)} (
+                    {formatMoney(department.service_invoices.staff_tips)} /{' '}
+                    {formatMoney(department.service_invoices.service_tips)})
                   </LabeledList.Item>
                 </LabeledList>
               </Stack.Item>
@@ -465,7 +466,10 @@ export const DepartmentFinances = (props) => {
                   </Table.Cell>
                   <Table.Cell>
                     <ProgressBar
-                      value={(department.balance + department.savings) / largestBudget}
+                      value={
+                        (department.balance + department.savings) /
+                        largestBudget
+                      }
                       ranges={{
                         good: [0.5, Infinity],
                         average: [0.2, 0.5],

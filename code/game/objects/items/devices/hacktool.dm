@@ -32,12 +32,10 @@
 	hack_state = null
 	return ..()
 
-/obj/item/multitool/hacktool/attackby(obj/item/W, mob/user)
-	if(W.has_tool_quality(TOOL_SCREWDRIVER))
-		in_hack_mode = !in_hack_mode
-		playsound(src, W.usesound, 50, 1)
-	else
-		..()
+/obj/item/multitool/hacktool/screwdriver_act(mob/user, obj/item/tool)
+	in_hack_mode = !in_hack_mode
+	playsound(src, tool.usesound, 50, 1)
+	return ITEM_INTERACT_SUCCESS
 
 /obj/item/multitool/hacktool/afterattack(atom/A, mob/user)
 	sanity_check()

@@ -59,11 +59,10 @@
 	return ..()
 
 /obj/machinery/status_display/attackby(I as obj, user as mob)
-	if(computer_deconstruction_screwdriver(user, I))
-		return
-	else
-		attack_hand(user)
-	return
+	return attack_hand(user)
+
+/obj/machinery/status_display/screwdriver_act(mob/user, obj/item/tool)
+	return deconstruct_display(user, tool)
 
 // register for radio system
 /obj/machinery/status_display/Initialize(mapload)

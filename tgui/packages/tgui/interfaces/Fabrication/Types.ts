@@ -29,6 +29,7 @@ export type Material = {
    * The color of the material.
    */
   color: string;
+  materialClass?: string;
 };
 
 /**
@@ -74,14 +75,20 @@ export type Design = {
    * from; `cost` covers only the fixed materials, and `selectableAmount` units of
    * the chosen material are consumed on top.
    */
-  materialSelectable?: BooleanLike;
-
-  /**
-   * Units of the chosen material consumed per item (material-selectable designs).
-   */
-  selectableAmount?: number;
+  materialConfigurable?: BooleanLike;
   /** Product geometry used to choose relevant material diagnostics. */
   materialProfile?: string;
+  /** Functional construction slots stored on the finished object. */
+  materialSlots?: MaterialSlot[];
+};
+
+export type MaterialSlot = {
+  role: string;
+  label: string;
+  amount: number;
+  defaultMaterial?: string;
+  optional: BooleanLike;
+  description?: string;
 };
 
 /**

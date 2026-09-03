@@ -123,6 +123,7 @@
 
 //Synthetic version
 /obj/machinery/transhuman/synthprinter
+	maintenance_flags = MACHINE_MAINT_STANDARD
 	name = "SynthFab 3000"
 	desc = "A rapid fabricator for synthetic bodies."
 	catalogue_data = list(/datum/category_item/catalogue/technology/resleeving)
@@ -248,10 +249,6 @@
 	if(busy)
 		to_chat(user, span_notice("\The [src] is busy. Please wait for completion of previous operation."))
 		return
-	if(default_deconstruction_screwdriver(user, W))
-		return
-	if(default_deconstruction_crowbar(user, W))
-		return
 	if(default_part_replacement(user, W))
 		return
 	if(panel_open)
@@ -290,6 +287,7 @@
 
 /////// Resleever Pod ///////
 /obj/machinery/transhuman/resleever
+	maintenance_flags = MACHINE_MAINT_STANDARD
 	name = "resleeving pod"
 	desc = "Used to combine mind and body into one unit."
 	catalogue_data = list(/datum/category_item/catalogue/technology/resleeving)
@@ -374,10 +372,6 @@
 
 /obj/machinery/transhuman/resleever/attackby(obj/item/W, mob/user)
 	src.add_fingerprint(user)
-	if(default_deconstruction_screwdriver(user, W))
-		return
-	if(default_deconstruction_crowbar(user, W))
-		return
 	if(default_part_replacement(user, W))
 		return
 	if(istype(W, /obj/item/grab))

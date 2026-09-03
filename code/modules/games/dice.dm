@@ -17,19 +17,27 @@
 
 /obj/item/dice/attackby(obj/item/W, mob/user)
 	..()
-	if(W.has_tool_quality(TOOL_WELDER) || istype(W, /obj/item/flame/lighter))
-		if(cheater)
-			to_chat(user, span_warning("Wait, this [name] is already weighted!"))
-		else if(tamper_proof)
-			to_chat(user, span_warning("This [name] is proofed against tampering!"))
+	if(istype(W, /obj/item/flame/lighter))
+		weight_die(user)
+
+/obj/item/dice/welder_act(mob/user, obj/item/tool)
+	weight_die(user)
+	return ITEM_INTERACT_SUCCESS
+
+/obj/item/dice/proc/weight_die(mob/user)
+	if(cheater)
+		to_chat(user, span_warning("Wait, this [name] is already weighted!"))
+	else if(tamper_proof)
+		to_chat(user, span_warning("This [name] is proofed against tampering!"))
+	else
+		var/to_weight = tgui_input_number(user, "What should the [name] be weighted towards? You can't undo this later, only change the number!","Set the desired result", 1, 6, 1)
+		if(isnull(to_weight) || (to_weight < 1) || (to_weight > sides))
+			return FALSE
 		else
-			var/to_weight = tgui_input_number(user, "What should the [name] be weighted towards? You can't undo this later, only change the number!","Set the desired result", 1, 6, 1)
-			if(isnull(to_weight) || (to_weight < 1) || (to_weight > sides)) //You must input a number higher than 0 and no greater than the number of sides
-				return 0
-			else
-				to_chat(user, "You partially melt the [name], weighting it towards [to_weight]...")
-				desc = "[initial(desc)] It looks a little misshapen, somehow..."
-				loaded = to_weight
+			to_chat(user, "You partially melt the [name], weighting it towards [to_weight]...")
+			desc = "[initial(desc)] It looks a little misshapen, somehow..."
+			loaded = to_weight
+	return TRUE
 
 /obj/item/dice/click_alt(mob/user)
 	..()

@@ -794,30 +794,21 @@ GLOBAL_LIST_INIT(ai_verbs_default, list(
 		var/obj/item/aicard/card = W
 		card.grab_ai(src, user)
 
-	else if(W.has_tool_quality(TOOL_WRENCH))
-		if(user == deployed_shell)
-			to_chat(user, span_notice("The shell's subsystems resist your efforts to tamper with your bolts."))
-			return
-		if(anchored)
-			playsound(src, W.usesound, 50, 1)
-			user.visible_message(span_notice("\The [user] starts to unbolt \the [src] from the plating..."))
-			if(!do_after(user, 4 SECONDS * W.toolspeed, target = src))
-				user.visible_message(span_notice("\The [user] decides not to unbolt \the [src]."))
-				return
-			user.visible_message(span_notice("\The [user] finishes unfastening \the [src]!"))
-			anchored = FALSE
-			return
-		else
-			playsound(src, W.usesound, 50, 1)
-			user.visible_message(span_notice("\The [user] starts to bolt \the [src] to the plating..."))
-			if(!do_after(user, 4 SECONDS * W.toolspeed, target = src))
-				user.visible_message(span_notice("\The [user] decides not to bolt \the [src]."))
-				return
-			user.visible_message(span_notice("\The [user] finishes fastening down \the [src]!"))
-			anchored = TRUE
-			return
 	else
 		return ..()
+
+/mob/living/silicon/ai/wrench_act(mob/user, obj/item/tool)
+	if(user == deployed_shell)
+		to_chat(user, span_notice("The shell's subsystems resist your efforts to tamper with your bolts."))
+		return ITEM_INTERACT_BLOCKING
+	playsound(src, tool.usesound, 50, 1)
+	user.visible_message(span_notice("\The [user] starts to [anchored ? "unbolt" : "bolt"] \the [src] [anchored ? "from" : "to"] the plating..."))
+	if(!do_after(user, 4 SECONDS * tool.toolspeed, target = src))
+		user.visible_message(span_notice("\The [user] decides not to [anchored ? "unbolt" : "bolt"] \the [src]."))
+		return ITEM_INTERACT_BLOCKING
+	anchored = !anchored
+	user.visible_message(span_notice("\The [user] finishes [anchored ? "fastening down" : "unfastening"] \the [src]!"))
+	return ITEM_INTERACT_SUCCESS
 
 /mob/living/silicon/ai/proc/control_integrated_radio()
 	set name = "Radio Settings"

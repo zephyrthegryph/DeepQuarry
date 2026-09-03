@@ -336,18 +336,6 @@
 	// - No action was taken in parent function (terminal de/construction atm).
 	if (..())
 
-		// Multitool - change RCON tag
-		if(istype(W, /obj/item/multitool))
-			var/newtag = tgui_input_text(user, "Enter new RCON tag. Use \"NO_TAG\" to disable RCON or leave empty to cancel.", "SMES RCON system", "", MAX_NAME_LEN)
-			if(!newtag)
-				return
-			for(var/obj/machinery/power/smes/buildable/smes in GLOB.smeses)
-				if(smes.RCon_tag == newtag)
-					to_chat(user, span_warning("The entered RCON tag [newtag] already exists. Aborting."))
-					return
-			RCon_tag = newtag
-			to_chat(user, span_notice("You changed the RCON tag to: [newtag]"))
-			return
 		// Charged above 1% and safeties are enabled.
 		if((charge > (capacity/100)) && safeties_enabled)
 			to_chat(user, span_warning("The safety circuit of [src] is preventing modifications while there is charge stored!"))
@@ -364,26 +352,8 @@
 		if (failure_probability < 5)
 			failure_probability = 0
 
-		// Crowbar - Disassemble the SMES.
-		if(W.has_tool_quality(TOOL_CROWBAR))
-			if (terminals.len)
-				to_chat(user, span_warning("You have to disassemble the terminal first!"))
-				return
-
-			playsound(src, W.usesound, 50, 1)
-			to_chat(user, span_warning("You begin to disassemble the [src]!"))
-			if (do_after(user, (10 SECONDS * cur_coils) * W.toolspeed, target = src)) // More coils = takes longer to disassemble. It's complex so largest one with 5 coils will take 50s with a normal crowbar
-
-				if (failure_probability && prob(failure_probability))
-					total_system_failure(failure_probability, user)
-					return
-
-				to_chat(user, span_red("You have disassembled the SMES cell!"))
-				dismantle()
-				return
-
 		// Superconducting Magnetic Coil - Upgrade the SMES
-		else if(istype(W, /obj/item/smes_coil))
+		if(istype(W, /obj/item/smes_coil))
 			if (cur_coils < max_coils)
 
 				if (failure_probability && prob(failure_probability))
@@ -398,3 +368,46 @@
 				recalc_coils()
 			else
 				to_chat(user, span_red("You can't insert more coils into this SMES unit!"))
+
+/obj/machinery/power/smes/buildable/multitool_act(mob/user, obj/item/tool)
+	if(failing || !panel_open)
+		if(failing)
+			to_chat(user, span_warning("The [src]'s indicator lights are flashing wildly. It seems to be overloaded! Touching it now is probably not a good idea."))
+		return ITEM_INTERACT_BLOCKING
+	var/new_tag = tgui_input_text(user, "Enter new RCON tag. Use \"NO_TAG\" to disable RCON or leave empty to cancel.", "SMES RCON system", "", MAX_NAME_LEN)
+	if(!new_tag)
+		return ITEM_INTERACT_BLOCKING
+	for(var/obj/machinery/power/smes/buildable/smes in GLOB.smeses)
+		if(smes.RCon_tag == new_tag)
+			to_chat(user, span_warning("The entered RCON tag [new_tag] already exists. Aborting."))
+			return ITEM_INTERACT_BLOCKING
+	RCon_tag = new_tag
+	to_chat(user, span_notice("You changed the RCON tag to: [new_tag]"))
+	return ITEM_INTERACT_SUCCESS
+
+/obj/machinery/power/smes/buildable/crowbar_act(mob/user, obj/item/tool)
+	if(failing || !panel_open)
+		if(failing)
+			to_chat(user, span_warning("The [src]'s indicator lights are flashing wildly. It seems to be overloaded! Touching it now is probably not a good idea."))
+		return ITEM_INTERACT_BLOCKING
+	if((charge > capacity / 100) && safeties_enabled)
+		to_chat(user, span_warning("The safety circuit of [src] is preventing modifications while there is charge stored!"))
+		return ITEM_INTERACT_BLOCKING
+	if(output_attempt || input_attempt)
+		to_chat(user, span_warning("Turn off [src] first!"))
+		return ITEM_INTERACT_BLOCKING
+	if(length(terminals))
+		to_chat(user, span_warning("You have to disassemble the terminal first!"))
+		return ITEM_INTERACT_BLOCKING
+	var/failure_probability = round(charge / capacity * 100)
+	if(failure_probability < 5)
+		failure_probability = 0
+	playsound(src, tool.usesound, 50, TRUE)
+	to_chat(user, span_warning("You begin to disassemble [src]!"))
+	if(do_after(user, (10 SECONDS * cur_coils) * tool.toolspeed, target = src))
+		if(failure_probability && prob(failure_probability))
+			total_system_failure(failure_probability, user)
+			return ITEM_INTERACT_SUCCESS
+		to_chat(user, span_red("You have disassembled the SMES cell!"))
+		dismantle()
+	return ITEM_INTERACT_SUCCESS

@@ -137,16 +137,15 @@
 
 	flick("poster_being_set", src) // If you don't see this animation, check that the decl/poster's icon_override dmi file has the icon states for poster_being_set and poster_ripped in it.
 
-/obj/structure/sign/poster/attackby(obj/item/W as obj, mob/user as mob)
-	if(W.has_tool_quality(TOOL_WIRECUTTER))
-		playsound(src, W.usesound, 100, 1)
-		if(ruined)
-			to_chat(user, span_notice("You remove the remnants of the poster."))
-			qdel(src)
-		else
-			to_chat(user, span_notice("You carefully remove the poster from the wall."))
-			roll_and_drop(get_turf(user))
-		return
+/obj/structure/sign/poster/wirecutter_act(mob/user, obj/item/tool)
+	playsound(src, tool.usesound, 100, 1)
+	if(ruined)
+		to_chat(user, span_notice("You remove the remnants of the poster."))
+		qdel(src)
+	else
+		to_chat(user, span_notice("You carefully remove the poster from the wall."))
+		roll_and_drop(get_turf(user))
+	return ITEM_INTERACT_SUCCESS
 
 /obj/structure/sign/poster/attack_hand(mob/user as mob)
 	if(ruined)

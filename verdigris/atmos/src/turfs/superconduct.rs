@@ -452,6 +452,10 @@ fn process_heat_start() {
 						})
 						.filter_map(|(id, node_index, has_adjacents)| {
 							let info = arena.get(node_index).unwrap();
+							// Gas ownership must precede the turf-temperature lock. Never
+							// block a Rayon worker here: diffusion uses the same pool, so a
+							// busy gas shard means this heat cell retries on the next pass.
+							let _single_writer = GasArena::try_begin_solver_transaction()?;
 							let mut temp_write = info.temperature.try_write()?;
 
 							/*
@@ -489,7 +493,6 @@ fn process_heat_start() {
 									GasArena::with_all_mixtures(|all_mixtures| {
 										if let Some(entry) = all_mixtures.get(tmix.mix) {
 											if let Some(mut gas) = entry.try_write() {
-												GasArena::bump_revision(tmix.mix);
 												let before = GasArena::change_signature(&gas);
 												*temp_write = gas.temperature_share_non_gas(
 													/*
@@ -503,12 +506,19 @@ fn process_heat_start() {
 													*temp_write,
 													info.heat_capacity,
 												);
-												GasArena::bump_revision(tmix.mix);
-												GasArena::mark_dirty_if_changed(
-													tmix.mix,
-													before,
-													GasArena::change_signature(&gas),
-												);
+												let after = GasArena::change_signature(&gas);
+												let changed =
+													GasArena::signature_changed(&before, &after);
+												if GasArena::mark_dirty_if_changed(
+													tmix.mix, before, after,
+												) {
+													GasArena::bump_revision(tmix.mix);
+												} else if changed {
+													// Preserve exact authoritative revision semantics for
+													// sub-epsilon heat drift without turning it into new
+													// diffusion work.
+													GasArena::bump_revision_only(tmix.mix);
+												}
 											}
 										}
 									})

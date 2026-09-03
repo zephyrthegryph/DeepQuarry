@@ -39,27 +39,33 @@ GLOBAL_LIST_EMPTY(floor_light_cache)
 /obj/machinery/floor_light/prebuilt
 	anchored = TRUE
 
+/obj/machinery/floor_light/screwdriver_act(mob/user, obj/item/tool)
+	anchored = !anchored
+	visible_message(span_notice("\The [user] has [anchored ? "attached" : "detached"] \the [src]."))
+	return ITEM_INTERACT_SUCCESS
+
+/obj/machinery/floor_light/welder_act(mob/user, obj/item/tool)
+	if(!(damaged || (stat & BROKEN)))
+		return ITEM_INTERACT_BLOCKING
+	var/obj/item/weldingtool/WT = tool.get_welder()
+	if(!WT.remove_fuel(0, user))
+		to_chat(user, span_warning("\The [src] must be on to complete this task."))
+		return ITEM_INTERACT_BLOCKING
+	playsound(src, WT.usesound, 50, TRUE)
+	if(!do_after(user, 2 SECONDS * WT.toolspeed, target = src))
+		return ITEM_INTERACT_BLOCKING
+	if(QDELETED(src) || !WT.isOn())
+		return ITEM_INTERACT_BLOCKING
+	visible_message(span_notice("\The [user] has repaired \the [src]."))
+	stat &= ~BROKEN
+	damaged = null
+	update_brightness()
+	return ITEM_INTERACT_SUCCESS
+
 /obj/machinery/floor_light/attackby(obj/item/W, mob/user)
-	if(W.has_tool_quality(TOOL_SCREWDRIVER))
-		anchored = !anchored
-		visible_message(span_notice("\The [user] has [anchored ? "attached" : "detached"] \the [src]."))
-	else if(W.has_tool_quality(TOOL_WELDER) && (damaged || (stat & BROKEN)))
-		var/obj/item/weldingtool/WT = W.get_welder()
-		if(!WT.remove_fuel(0, user))
-			to_chat(user, span_warning("\The [src] must be on to complete this task."))
-			return
-		playsound(src, WT.usesound, 50, 1)
-		if(!do_after(user, 2 SECONDS * WT.toolspeed, target = src))
-			return
-		if(!src || !WT.isOn())
-			return
-		visible_message(span_notice("\The [user] has repaired \the [src]."))
-		stat &= ~BROKEN
-		damaged = null
-		update_brightness()
-	else if(W.force && user.a_intent == "hurt")
+	if(W.force && user.a_intent == "hurt")
 		attack_hand(user)
-	return
+	return ..()
 
 /obj/machinery/floor_light/attack_hand(mob/user)
 
@@ -146,23 +152,9 @@ GLOBAL_LIST_EMPTY(floor_light_cache)
 	return (stat & (BROKEN|NOPOWER))
 
 /obj/machinery/floor_light/ex_act(severity)
-	switch(severity)
-		if(1)
-			qdel(src)
-		if(2)
-			if(prob(50))
-				qdel(src)
-			else if(prob(20))
-				stat |= BROKEN
-			else
-				if(isnull(damaged))
-					damaged = 0
-		if(3)
-			if(prob(5))
-				qdel(src)
-			else if(isnull(damaged))
-				damaged = 0
-	return
+	if(severity >= 2 && isnull(damaged))
+		damaged = 0
+	return ..()
 
 /obj/machinery/floor_light/Destroy()
 	var/area/A = get_area(src)

@@ -16,7 +16,6 @@
 	explosion_resistance = 10
 
 	// Doors do their own stuff
-	bullet_vulnerability = 0
 
 	blocks_emissive = EMISSIVE_BLOCK_GENERIC // Not quite as nice as /tg/'s custom masks. We should make those sometime
 
@@ -301,7 +300,9 @@ About the new airlock wires panel:
 	resume_autoclose_if_possible()
 
 /obj/machinery/door/airlock/proc/resume_autoclose_if_possible()
-	if(autoclose && !density && !operating && !locked && !welded && arePowerSystemsOn() && !wires.is_cut(WIRE_OPEN_DOOR))
+	// Unit-created and partially constructed doors may not have a wire datum yet.
+	// No wire datum means there is no cut open-door wire preventing autoclose.
+	if(autoclose && !density && !operating && !locked && !welded && arePowerSystemsOn() && (!wires || !wires.is_cut(WIRE_OPEN_DOOR)))
 		autoclose_in(next_close_wait())
 
 /obj/machinery/door/airlock/proc/electrify(duration, feedback = 0)
@@ -722,17 +723,6 @@ About the new airlock wires panel:
 
 /obj/machinery/door/airlock/attackby(obj/item/C, mob/user)
 	if(frozen)
-		//Special cases for tools that need more then just a type check.
-		if(istype(C, /obj/item/weldingtool))
-			var/obj/item/weldingtool/welder = C
-			if(welder.remove_fuel(0,user) && welder && welder.isOn())
-				to_chat(user, span_notice("You start to melt the ice off \the [src]"))
-				playsound(src, welder.usesound, 50, 1)
-				if(do_after(user, 5 SECONDS, target = src))
-					to_chat(user, span_notice("You finish melting the ice off \the [src]"))
-					unFreeze()
-					return
-
 		// Melting with hot objects that don't take fuel
 		if(C.is_hot())
 			if(do_after(user, 9 SECONDS, target = src))
@@ -765,37 +755,6 @@ About the new airlock wires panel:
 
 	add_fingerprint(user)
 
-	if(!reinforcing && C.has_tool_quality(TOOL_WELDER) && !(operating > 0) && density && (get_integrity() >= max_integrity || user.a_intent != I_HELP))
-		var/obj/item/weldingtool/W = C.get_welder()
-		if(W.remove_fuel(0,user))
-			if(!welded)
-				welded = TRUE
-			else
-				welded = null
-			playsound(src, C.usesound, 75, 1)
-			update_icon()
-		return
-
-	if(C.has_tool_quality(TOOL_SCREWDRIVER))
-		if(!p_open)
-			p_open = TRUE
-			playsound(src, C.usesound, 50, 1)
-			update_icon()
-			return attack_hand(user)
-		if(stat & BROKEN)
-			to_chat(user, span_warning("The panel is broken and cannot be closed."))
-			return
-		p_open = FALSE
-		playsound(src, C.usesound, 50, 1)
-		update_icon()
-		return
-
-	if(C.has_tool_quality(TOOL_WIRECUTTER))
-		return attack_hand(user)
-
-	if(istype(C, /obj/item/multitool))
-		return attack_hand(user)
-
 	if(istype(C, /obj/item/assembly/signaler))
 		return attack_hand(user)
 
@@ -804,72 +763,135 @@ About the new airlock wires panel:
 		cable.plugin(src, user)
 		return
 
-	if(!reinforcing && C.has_tool_quality(TOOL_CROWBAR) && user.a_intent != I_HURT) // So harm intent can smash airlocks
-		if(can_remove_electronics())
-			playsound(src, C.usesound, 75, 1)
-			user.visible_message("[user] removes the electronics from the airlock assembly.", "You start to remove electronics from the airlock assembly.")
-			if(do_after(user, 4 SECONDS * C.toolspeed, target = src))
-				to_chat(user, span_notice("You removed the airlock electronics!"))
-
-				var/obj/structure/door_assembly/da = new assembly_type(get_turf(src))
-				if (istype(da, /obj/structure/door_assembly/multi_tile))
-					da.set_dir(dir)
-				da.anchored = TRUE
-				if(mineral)
-					da.glass = mineral
-				//else if(glass)
-				else if(glass && !da.glass)
-					da.glass = 1
-				da.state = 1
-				da.created_name = name
-				da.update_state()
-
-				if(operating == -1 || (stat & BROKEN))
-					new /obj/item/circuitboard/broken(get_turf(src))
-					operating = 0
-				else
-					if (!electronics) create_electronics()
-
-					electronics.forceMove(get_turf(src))
-					electronics = null
-				qdel(src)
-			return
-
-		if(arePowerSystemsOn())
-			to_chat(user, span_notice("The airlock's motors resist your efforts to force it."))
-			return
+	// Non-crowbar prying weapons retain their special unpowered-door behavior.
+	if(C.pry && !C.has_tool_quality(TOOL_CROWBAR) && !arePowerSystemsOn())
 		if(locked)
 			to_chat(user, span_notice("The airlock's bolts prevent it from being forced."))
 			return
-
-		// Force doors open/closed
-		if(density)
-			open(TRUE)
-		else
-			close(1)
-		return
-
-	// Check if we're using a crowbar or armblade, and if the airlock's unpowered for whatever reason (off, broken, etc).
-	if(istype(C, /obj/item))
-		var/obj/item/W = C
-		if(W.pry && !arePowerSystemsOn())
-			if(locked)
-				to_chat(user, span_notice("The airlock's bolts prevent it from being forced."))
-				return
-
-			if(!welded && !operating)
-				if(istype(C, /obj/item/material/twohanded/fireaxe)) // If this is a fireaxe, make sure it's held in two hands.
-					var/obj/item/material/twohanded/fireaxe/F = C
-					if(!F.wielded)
-						to_chat(user, span_warning("You need to be wielding \the [F] to do that."))
-						return
-				// At this point, it's an armblade or a fireaxe that passed the wielded test, let's try to open it.
-				if(density)
-					open(TRUE)
-				else
-					close(1)
-				return
+		if(!welded && !operating)
+			if(istype(C, /obj/item/material/twohanded/fireaxe))
+				var/obj/item/material/twohanded/fireaxe/F = C
+				if(!F.wielded)
+					to_chat(user, span_warning("You need to be wielding \the [F] to do that."))
+					return
+			if(density)
+				open(TRUE)
+			else
+				close(1)
+			return
 	. = ..()
+
+/obj/machinery/door/airlock/welder_act(mob/user, obj/item/tool)
+	if(frozen)
+		var/obj/item/weldingtool/welder = tool.get_welder()
+		if(welder.remove_fuel(0,user) && welder.isOn())
+			to_chat(user, span_notice("You start to melt the ice off \the [src]"))
+			playsound(src, welder.usesound, 50, 1)
+			if(do_after(user, 5 SECONDS, target = src))
+				to_chat(user, span_notice("You finish melting the ice off \the [src]"))
+				unFreeze()
+		return ITEM_INTERACT_SUCCESS
+	if(!issilicon(user) && isElectrified() && shock(user, 75))
+		return ITEM_INTERACT_BLOCKING
+	add_fingerprint(user)
+	if(!reinforcing && !(operating > 0) && density && (get_integrity() >= max_integrity || user.a_intent != I_HELP))
+		var/obj/item/weldingtool/welder = tool.get_welder()
+		if(welder.remove_fuel(0,user))
+			welded = !welded
+			playsound(src, tool.usesound, 75, 1)
+			update_icon()
+		return ITEM_INTERACT_SUCCESS
+	return ..()
+
+/obj/machinery/door/airlock/screwdriver_act(mob/user, obj/item/tool)
+	if(frozen)
+		return ITEM_INTERACT_SKIP_TO_ATTACK
+	if(!issilicon(user) && isElectrified() && shock(user, 75))
+		return ITEM_INTERACT_BLOCKING
+	add_fingerprint(user)
+	if(!p_open)
+		p_open = TRUE
+		playsound(src, tool.usesound, 50, 1)
+		update_icon()
+		attack_hand(user)
+		return ITEM_INTERACT_SUCCESS
+	if(stat & BROKEN)
+		to_chat(user, span_warning("The panel is broken and cannot be closed."))
+		return ITEM_INTERACT_BLOCKING
+	p_open = FALSE
+	playsound(src, tool.usesound, 50, 1)
+	update_icon()
+	return ITEM_INTERACT_SUCCESS
+
+/obj/machinery/door/airlock/wirecutter_act(mob/user, obj/item/tool)
+	if(frozen)
+		return ITEM_INTERACT_SKIP_TO_ATTACK
+	if(!issilicon(user) && isElectrified() && shock(user, 75))
+		return ITEM_INTERACT_BLOCKING
+	add_fingerprint(user)
+	attack_hand(user)
+	return ITEM_INTERACT_SUCCESS
+
+/obj/machinery/door/airlock/multitool_act(mob/user, obj/item/tool)
+	if(frozen)
+		return ITEM_INTERACT_SKIP_TO_ATTACK
+	if(!issilicon(user) && isElectrified() && shock(user, 75))
+		return ITEM_INTERACT_BLOCKING
+	add_fingerprint(user)
+	attack_hand(user)
+	return ITEM_INTERACT_SUCCESS
+
+/obj/machinery/door/airlock/crowbar_act(mob/user, obj/item/tool)
+	if(frozen)
+		return ITEM_INTERACT_SKIP_TO_ATTACK
+	if(!issilicon(user) && isElectrified() && shock(user, 75))
+		return ITEM_INTERACT_BLOCKING
+	add_fingerprint(user)
+	if(reinforcing || user.a_intent == I_HURT)
+		return ..()
+	if(can_remove_electronics())
+		playsound(src, tool.usesound, 75, 1)
+		user.visible_message("[user] removes the electronics from the airlock assembly.", "You start to remove electronics from the airlock assembly.")
+		if(do_after(user, 4 SECONDS * tool.toolspeed, target = src))
+			to_chat(user, span_notice("You removed the airlock electronics!"))
+
+			var/obj/structure/door_assembly/da = new assembly_type(get_turf(src))
+			if (istype(da, /obj/structure/door_assembly/multi_tile))
+				da.set_dir(dir)
+			da.anchored = TRUE
+			if(mineral)
+				da.glass = mineral
+				//else if(glass)
+			else if(glass && !da.glass)
+				da.glass = 1
+			da.state = 1
+			da.created_name = name
+			da.update_state()
+
+			if(operating == -1 || (stat & BROKEN))
+				new /obj/item/circuitboard/broken(get_turf(src))
+				operating = 0
+			else
+				if (!electronics) create_electronics()
+
+				electronics.forceMove(get_turf(src))
+				electronics = null
+			qdel(src)
+		return ITEM_INTERACT_SUCCESS
+
+	if(arePowerSystemsOn())
+		to_chat(user, span_notice("The airlock's motors resist your efforts to force it."))
+		return ITEM_INTERACT_BLOCKING
+	if(locked)
+		to_chat(user, span_notice("The airlock's bolts prevent it from being forced."))
+		return ITEM_INTERACT_BLOCKING
+
+	// Force doors open/closed
+	if(density)
+		open(TRUE)
+	else
+		close(1)
+	return ITEM_INTERACT_SUCCESS
 
 /obj/machinery/door/airlock/proc/handleRemoveIce(obj/item/W, mob/user as mob, time = 15)
 	to_chat(user, span_notice("You start to chip at the ice covering \the [src]"))

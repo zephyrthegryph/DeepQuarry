@@ -84,11 +84,15 @@
 		return span_warning("It\'s out of [ammo_material]!")
 
 
-/obj/item/gun/magnetic/matfed/attackby(obj/item/thing, mob/user)
+/obj/item/gun/magnetic/matfed/crowbar_act(mob/user, obj/item/tool)
+	attackby(tool, user, TOOL_CROWBAR)
+	return TRUE
+
+/obj/item/gun/magnetic/matfed/attackby(obj/item/thing, mob/user, tool_quality)
 	. = ..()
 	update_rating_mod()
 	if(removable_components)
-		if(thing.has_tool_quality(TOOL_CROWBAR))
+		if(tool_quality == TOOL_CROWBAR)
 			if(!manipulator)
 				to_chat(user, span_warning("\The [src] has no manipulator installed."))
 				return

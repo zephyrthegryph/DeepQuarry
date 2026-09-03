@@ -25,6 +25,9 @@ type TguiWindow = {
   prewarmed?: BinaryIO;
   generation?: number;
   native_shell?: BinaryIO;
+  default_geometry?: { width: number; height: number };
+  geometry_preapplied?: BinaryIO;
+  preapplied_geometry?: { pos?: string; size?: string };
 };
 
 type User = {
@@ -35,6 +38,8 @@ type User = {
 type MapData = { maxx: number; maxy: number };
 
 export type Config = {
+  chunk_base_url?: string;
+  startup_profile?: Record<string, unknown>;
   client: Client;
   interface: IFace;
   refreshing: BinaryIO;

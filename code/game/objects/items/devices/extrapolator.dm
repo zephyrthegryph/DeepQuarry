@@ -51,15 +51,17 @@
 			to_chat(user, span_notice("[src] already has \the [scanner] installed."))
 		return
 
-	if(item.has_tool_quality(TOOL_SCREWDRIVER) && scanner)
-		if(!scanner) // You never know
-			to_chat(user, span_warning("\The [src] has no scanner to remove!"))
-			return FALSE
-		to_chat(user, span_notice("You remove \the [scanner] from \the [src]."))
-		scanner.forceMove(drop_location())
-		scanner = null
-		playsound(src, item.usesound, 50, 1)
-		return TRUE
+	return ..()
+
+/obj/item/extrapolator/screwdriver_act(mob/user, obj/item/tool)
+	if(!scanner)
+		to_chat(user, span_warning("\The [src] has no scanner to remove!"))
+		return ITEM_INTERACT_BLOCKING
+	to_chat(user, span_notice("You remove \the [scanner] from \the [src]."))
+	scanner.forceMove(drop_location())
+	scanner = null
+	playsound(src, tool.usesound, 50, 1)
+	return ITEM_INTERACT_SUCCESS
 
 /obj/item/extrapolator/attack_self(mob/user)
 	. = ..(user)

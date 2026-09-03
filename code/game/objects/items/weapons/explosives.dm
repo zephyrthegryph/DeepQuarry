@@ -27,14 +27,24 @@
 	return ..()
 
 /obj/item/plastique/attackby(obj/item/I, mob/user)
-	if(I.has_tool_quality(TOOL_SCREWDRIVER))
-		open_panel = !open_panel
-		to_chat(user, span_notice("You [open_panel ? "open" : "close"] the wire panel."))
-		playsound(src, I.usesound, 50, 1)
-	else if(I.has_tool_quality(TOOL_WIRECUTTER) || istype(I, /obj/item/multitool) || istype(I, /obj/item/assembly/signaler ))
+	if(istype(I, /obj/item/multitool) || istype(I, /obj/item/assembly/signaler))
 		wires.Interact(user)
 	else
-		..()
+		return ..()
+
+/obj/item/plastique/screwdriver_act(mob/user, obj/item/tool)
+	open_panel = !open_panel
+	to_chat(user, span_notice("You [open_panel ? "open" : "close"] the wire panel."))
+	playsound(src, tool.usesound, 50, TRUE)
+	return ITEM_INTERACT_SUCCESS
+
+/obj/item/plastique/wirecutter_act(mob/user, obj/item/tool)
+	wires.Interact(user)
+	return ITEM_INTERACT_SUCCESS
+
+/obj/item/plastique/multitool_act(mob/user, obj/item/tool)
+	wires.Interact(user)
+	return ITEM_INTERACT_SUCCESS
 
 /obj/item/plastique/attack_self(mob/user)
 	. = ..(user)

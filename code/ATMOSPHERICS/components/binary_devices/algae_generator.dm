@@ -1,4 +1,5 @@
 /obj/machinery/atmospherics/binary/algae_farm
+	maintenance_flags = MACHINE_MAINT_STANDARD
 	name = "algae oxygen generator"
 	desc = "An oxygen generator using algae to convert carbon dioxide to oxygen."
 	icon = 'icons/obj/machines/algae_vr.dmi'
@@ -123,17 +124,12 @@
 
 /obj/machinery/atmospherics/binary/algae_farm/attackby(obj/item/W as obj, mob/user as mob)
 	add_fingerprint(user)
-	if(default_deconstruction_screwdriver(user, W))
-		return
-	if(default_deconstruction_crowbar(user, W))
-		return
 	if(default_part_replacement(user, W))
 		return
 	if(try_load_materials(user, W))
 		return
-	else
-		to_chat(user, span_notice("You cannot insert this item into \the [src]!"))
-		return
+	to_chat(user, span_notice("You cannot insert this item into \the [src]!"))
+	return
 
 /obj/machinery/atmospherics/binary/algae_farm/attack_hand(mob/user)
 	if(..())
@@ -287,7 +283,6 @@
 /datum/material/algae
 	name = MAT_ALGAE
 	stack_type = /obj/item/stack/material/algae
-	material_class = MATCLASS_ORGANIC
 	icon_colour = "#557722"
 	shard_type = SHARD_STONE_PIECE
 	density = 10 // weight renamed to density.

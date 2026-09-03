@@ -83,6 +83,59 @@ SUBSYSTEM_DEF(garbage)
 	msg += "|F:[fail_counts.Join(",")]"
 	return ..()
 
+/// Bounded snapshot for the lightweight performance logger. The qdel type table
+/// is normally small; only the ten worst failure and hard-delete entries are
+/// serialized so diagnostics cannot become the workload they measure.
+/datum/controller/subsystem/garbage/proc/performance_diagnostics()
+	var/list/queue_counts = list()
+	for(var/list/queue as anything in queues)
+		queue_counts += length(queue)
+	var/list/failure_scores = list()
+	var/list/hard_delete_scores = list()
+	var/list/destroy_scores = list()
+	var/list/destroy_details = list()
+	var/list/hard_delete_details = list()
+	var/total_hard_deletes = 0
+	var/total_hard_delete_ms = 0
+	for(var/type_path in items)
+		var/datum/qdel_item/info = items[type_path]
+		if(info.failures)
+			failure_scores[type_path] = info.failures
+		if(info.hard_deletes)
+			hard_delete_scores[type_path] = info.hard_delete_time
+			total_hard_deletes += info.hard_deletes
+			total_hard_delete_ms += info.hard_delete_time
+		if(info.destroy_time)
+			destroy_scores[type_path] = info.destroy_time
+	sortTim(failure_scores, /proc/cmp_numeric_desc, TRUE)
+	sortTim(hard_delete_scores, /proc/cmp_numeric_desc, TRUE)
+	sortTim(destroy_scores, /proc/cmp_numeric_desc, TRUE)
+	if(length(failure_scores) > 10)
+		failure_scores.Cut(11)
+	if(length(hard_delete_scores) > 10)
+		hard_delete_scores.Cut(11)
+	if(length(destroy_scores) > 10)
+		destroy_scores.Cut(11)
+	for(var/type_path in destroy_scores)
+		var/datum/qdel_item/destroy_info = items[type_path]
+		destroy_details[type_path] = list("count" = destroy_info.destroy_timed, "total_ms" = destroy_info.destroy_time, "average_ms" = destroy_info.destroy_timed ? destroy_info.destroy_time / destroy_info.destroy_timed : 0, "max_ms" = destroy_info.destroy_max)
+	for(var/type_path in hard_delete_scores)
+		var/datum/qdel_item/hard_delete_info = items[type_path]
+		hard_delete_details[type_path] = list("count" = hard_delete_info.hard_deletes, "total_ms" = hard_delete_info.hard_delete_time, "average_ms" = hard_delete_info.hard_delete_time / hard_delete_info.hard_deletes, "max_ms" = hard_delete_info.hard_delete_max)
+	return list(
+		"queues" = queue_counts,
+		"last" = list("hard_deletes" = delslasttick, "collected" = gcedlasttick),
+		"totals" = list("hard_deletes" = totaldels, "collected" = totalgcs, "hard_delete_count" = total_hard_deletes, "hard_delete_ms" = total_hard_delete_ms),
+		"passes" = pass_counts.Copy(),
+		"failures" = fail_counts.Copy(),
+		"top_failed_types" = failure_scores,
+		"top_destroy_types_ms" = destroy_scores,
+		"destroy_type_details" = destroy_details,
+		"top_hard_delete_types_ms" = hard_delete_scores,
+		"hard_delete_type_details" = hard_delete_details,
+		"worst_hard_delete" = list("type" = highest_del_type_string, "ms" = highest_del_ms),
+	)
+
 /datum/controller/subsystem/garbage/Shutdown()
 	//Adds the del() log to the qdel log file
 	var/list/del_log = list()
@@ -330,6 +383,8 @@ SUBSYSTEM_DEF(garbage)
 	var/name = "" //!Holds the type as a string for this type
 	var/qdels = 0 //!Total number of times it's passed thru qdel.
 	var/destroy_time = 0 //!Total amount of milliseconds spent processing this type's Destroy()
+	var/destroy_timed = 0 //!Destroy calls which completed without sleeping and were timed.
+	var/destroy_max = 0 //!Largest synchronous Destroy cost for this type.
 	var/failures = 0 //!Times it was queued for soft deletion but failed to soft delete.
 	var/hard_deletes = 0 //!Different from failures because it also includes QDEL_HINT_HARDDEL deletions
 	var/hard_delete_time = 0 //!Total amount of milliseconds spent hard deleting this type.
@@ -380,7 +435,10 @@ SUBSYSTEM_DEF(garbage)
 	if(world.time != start_time)
 		trash.slept_destroy++
 	else
-		trash.destroy_time += TICK_USAGE_TO_MS(start_tick)
+		var/destroy_elapsed = TICK_USAGE_TO_MS(start_tick)
+		trash.destroy_timed++
+		trash.destroy_time += destroy_elapsed
+		trash.destroy_max = max(trash.destroy_max, destroy_elapsed)
 
 	if(isnull(to_delete))
 		return

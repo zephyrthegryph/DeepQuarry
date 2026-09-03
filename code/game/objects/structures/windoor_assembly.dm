@@ -81,14 +81,14 @@
 	|| istype(user.module,/obj/item/robot_module/drone))) //Only drone (and engiborg) needs this.
 		rename_door(user)
 
-/obj/structure/windoor_assembly/attackby(obj/item/W as obj, mob/user as mob)
+/obj/structure/windoor_assembly/attackby(obj/item/W as obj, mob/user as mob, tool_quality)
 	if(istype(W, /obj/item/pen))
 		rename_door(user)
 		return
 
 	switch(state)
 		if("01")
-			if(W.has_tool_quality(TOOL_WELDER) && !anchored)
+			if(tool_quality == TOOL_WELDER && !anchored)
 				var/obj/item/weldingtool/WT = W.get_welder()
 				if (WT.remove_fuel(0,user))
 					user.visible_message("[user] disassembles the windoor assembly.", "You start to disassemble the windoor assembly.")
@@ -107,7 +107,7 @@
 					return
 
 			//Wrenching an unsecure assembly anchors it in place. Step 4 complete
-			if(W.has_tool_quality(TOOL_WRENCH) && !anchored)
+			if(tool_quality == TOOL_WRENCH && !anchored)
 				playsound(src, W.usesound, 100, 1)
 				user.visible_message("[user] secures the windoor assembly to the floor.", "You start to secure the windoor assembly to the floor.")
 
@@ -118,7 +118,7 @@
 					step = 0
 
 			//Unwrenching an unsecure assembly un-anchors it. Step 4 undone
-			else if(W.has_tool_quality(TOOL_WRENCH) && anchored)
+			else if(tool_quality == TOOL_WRENCH && anchored)
 				playsound(src, W.usesound, 100, 1)
 				user.visible_message("[user] unsecures the windoor assembly to the floor.", "You start to unsecure the windoor assembly to the floor.")
 
@@ -144,7 +144,7 @@
 		if("02")
 
 			//Removing wire from the assembly. Step 5 undone.
-			if(W.has_tool_quality(TOOL_WIRECUTTER) && !src.electronics)
+			if(tool_quality == TOOL_WIRECUTTER && !src.electronics)
 				playsound(src, W.usesound, 100, 1)
 				user.visible_message("[user] cuts the wires from the airlock assembly.", "You start to cut the wires from airlock assembly.")
 
@@ -173,7 +173,7 @@
 					W.loc = src.loc
 
 			//Screwdriver to remove airlock electronics. Step 6 undone.
-			else if(W.has_tool_quality(TOOL_SCREWDRIVER) && src.electronics)
+			else if(tool_quality == TOOL_SCREWDRIVER && src.electronics)
 				playsound(src, W.usesound, 100, 1)
 				user.visible_message("[user] removes the electronics from the airlock assembly.", "You start to uninstall electronics from the airlock assembly.")
 
@@ -186,7 +186,7 @@
 					ae.loc = src.loc
 
 			//Crowbar to complete the assembly, Step 7 complete.
-			else if(W.has_tool_quality(TOOL_CROWBAR))
+			else if(tool_quality == TOOL_CROWBAR)
 				if(!src.electronics)
 					to_chat(user,span_warning("The assembly is missing electronics."))
 					return
@@ -259,6 +259,26 @@
 
 	//Update to reflect changes(if applicable)
 	update_state()
+
+/obj/structure/windoor_assembly/welder_act(mob/user, obj/item/W)
+	attackby(W, user, TOOL_WELDER)
+	return TRUE
+
+/obj/structure/windoor_assembly/wrench_act(mob/user, obj/item/W)
+	attackby(W, user, TOOL_WRENCH)
+	return TRUE
+
+/obj/structure/windoor_assembly/wirecutter_act(mob/user, obj/item/W)
+	attackby(W, user, TOOL_WIRECUTTER)
+	return TRUE
+
+/obj/structure/windoor_assembly/screwdriver_act(mob/user, obj/item/W)
+	attackby(W, user, TOOL_SCREWDRIVER)
+	return TRUE
+
+/obj/structure/windoor_assembly/crowbar_act(mob/user, obj/item/W)
+	attackby(W, user, TOOL_CROWBAR)
+	return TRUE
 
 /obj/structure/windoor_assembly/proc/update_state()
 	update_icon()

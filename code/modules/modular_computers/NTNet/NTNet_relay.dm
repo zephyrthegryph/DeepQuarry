@@ -135,9 +135,5 @@
 	QDEL_NULL(soundloop)
 	. = ..()
 
-/obj/machinery/ntnet_relay/attackby(obj/item/W as obj, mob/user as mob)
-	if(default_deconstruction_screwdriver(user, W))
-		return
-	if(default_deconstruction_crowbar(user, W))
-		return
-	..()
+/obj/machinery/ntnet_relay
+	maintenance_flags = MACHINE_MAINT_STANDARD

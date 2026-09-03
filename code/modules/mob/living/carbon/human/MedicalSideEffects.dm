@@ -31,40 +31,64 @@
 
 // MOB HELPERS
 // ===========
-/mob/living/carbon/human/var/list/datum/medical_effect/side_effects = list()
+/proc/dq_medical_effect_registry()
+	var/static/list/registry
+	if(registry)
+		return registry
+	registry = list()
+	// Explicit catalog: adding an effect requires registering it here, making
+	// discovery deterministic and eliminating runtime subtype-tree reflection.
+	var/static/list/effect_types = list(
+		/datum/medical_effect/headache,
+		/datum/medical_effect/bad_stomach,
+		/datum/medical_effect/cramps,
+		/datum/medical_effect/itch
+	)
+	for(var/effect_type in effect_types)
+		var/datum/medical_effect/prototype = new effect_type
+		registry[prototype.name] = prototype
+	return registry
+
+/mob/living/carbon/human/var/list/datum/medical_effect/side_effects
 /mob/proc/add_side_effect(name, strength = 0)
 /mob/living/carbon/human/add_side_effect(name, strength = 0)
-	for(var/datum/medical_effect/M in src.side_effects)
+	for(var/datum/medical_effect/M in side_effects)
 		if(M.name == name)
 			M.strength = max(M.strength, 10)
 			M.start = life_tick
 			return
-
-
-	// side_effects holds instances, not a name->type map; find the matching type by name.
-	var/datum/medical_effect/new_effect
-	for(var/effect_type in subtypesof(/datum/medical_effect))
-		var/datum/medical_effect/candidate = new effect_type
-		if(candidate.name == name)
-			new_effect = candidate
-			break
-		qdel(candidate)
-	if(!new_effect)
+	var/list/registry = dq_medical_effect_registry()
+	var/datum/medical_effect/prototype = registry[name]
+	if(!prototype)
 		return
+	var/datum/medical_effect/new_effect = new prototype.type
 	new_effect.strength = strength
 	new_effect.start = life_tick
-	side_effects += new_effect
+	LAZYADD(side_effects, new_effect)
+
+/// Reconcile only when the reagent holder changes. The old architecture
+/// allocated every medical-effect subtype for every human every 30 seconds.
+/mob/living/carbon/human/proc/reconcile_medical_side_effects()
+	for(var/datum/medical_effect/active in side_effects)
+		if(active.cure(src))
+			LAZYREMOVE(side_effects, active)
+			qdel(active)
+	var/list/registry = dq_medical_effect_registry()
+	for(var/effect_name in registry)
+		var/datum/medical_effect/prototype = registry[effect_name]
+		if(!prototype.manifest(src))
+			continue
+		var/already_active = FALSE
+		for(var/datum/medical_effect/active in side_effects)
+			if(active.type == prototype.type)
+				already_active = TRUE
+				break
+		if(!already_active)
+			add_side_effect(effect_name)
 
 /mob/living/carbon/human/proc/handle_medical_side_effects()
-	//Going to handle those things only every few ticks.
-	if(life_tick % 15 != 0)
+	if(!LAZYLEN(side_effects) || life_tick % 15 != 0)
 		return 0
-
-	var/list/L = subtypesof(/datum/medical_effect)
-	for(var/T in L)
-		var/datum/medical_effect/M = new T
-		if (M.manifest(src))
-			src.add_side_effect(M.name)
 
 	// One full cycle(in terms of strength) every 10 minutes
 	for (var/datum/medical_effect/M in side_effects)
@@ -74,8 +98,8 @@
 		// Only do anything if the effect is currently strong enough
 		if(strength_percent >= 0.4)
 			if (M.cure(src) || M.strength > 50)
-				side_effects -= M
-				M = null
+				LAZYREMOVE(side_effects, M)
+				qdel(M)
 			else
 				if(life_tick % 45 == 0)
 					M.on_life(src, strength_percent*M.strength)

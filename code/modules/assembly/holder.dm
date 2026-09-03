@@ -13,6 +13,20 @@
 	var/obj/item/assembly/a_right = null
 	var/obj/special_assembly = null
 
+/obj/item/assembly_holder/Destroy()
+	if(a_left)
+		a_left.holder = null
+		if(a_left.loc == src && !QDELETED(a_left))
+			qdel(a_left)
+	if(a_right)
+		a_right.holder = null
+		if(a_right.loc == src && !QDELETED(a_right))
+			qdel(a_right)
+	a_left = null
+	a_right = null
+	special_assembly = null
+	return ..()
+
 /obj/item/assembly_holder/proc/attach(obj/item/assembly/D, obj/item/assembly/D2, mob/user)
 	if(!D || !D2)
 		return FALSE
@@ -105,22 +119,16 @@
 		a_right.holder_movement()
 	..()
 
-/obj/item/assembly_holder/attackby(obj/item/W, mob/user)
-	if(W.has_tool_quality(TOOL_SCREWDRIVER))
-		if(!a_left || !a_right)
-			to_chat(user, span_warning(" BUG:Assembly part missing, please report this!"))
-			return
-		a_left.toggle_secure()
-		a_right.toggle_secure()
-		secured = !secured
-		if(secured)
-			to_chat(user, span_notice("\The [src] is ready!"))
-		else
-			to_chat(user, span_notice("\The [src] can now be taken apart!"))
-		update_icon()
-		return
-	else
-		..()
+/obj/item/assembly_holder/screwdriver_act(mob/user, obj/item/tool)
+	if(!a_left || !a_right)
+		to_chat(user, span_warning(" BUG:Assembly part missing, please report this!"))
+		return ITEM_INTERACT_BLOCKING
+	a_left.toggle_secure()
+	a_right.toggle_secure()
+	secured = !secured
+	to_chat(user, span_notice(secured ? "\The [src] is ready!" : "\The [src] can now be taken apart!"))
+	update_icon()
+	return ITEM_INTERACT_SUCCESS
 
 /obj/item/assembly_holder/attack_self(mob/user)
 	. = ..(user)

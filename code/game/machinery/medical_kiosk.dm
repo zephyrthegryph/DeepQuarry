@@ -18,6 +18,8 @@
 #define WEIRD_ORGANS 0x20000 // malignant
 
 /obj/machinery/medical_kiosk
+	maintenance_flags = MACHINE_MAINT_STANDARD_MOVABLE
+	maintenance_wrench_time = 40
 	name = "medical kiosk"
 	desc = "A helpful kiosk for finding out whatever is wrong with you."
 	icon = 'icons/obj/machines/medical_kiosk.dmi'
@@ -71,12 +73,6 @@
 
 /obj/machinery/medical_kiosk/attackby(obj/item/O, mob/user)
 	. = ..()
-	if(default_unfasten_wrench(user, O, 40))
-		return
-	if(default_deconstruction_screwdriver(user, O))
-		return
-	if(default_deconstruction_crowbar(user, O))
-		return
 	if(default_part_replacement(user, O))
 		return
 

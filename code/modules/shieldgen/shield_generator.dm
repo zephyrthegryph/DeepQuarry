@@ -2,6 +2,8 @@
 // This generator is for the supercool big shields intended for ships that do nice stuff with overmaps.
 //
 /obj/machinery/power/shield_generator
+	maintenance_flags = MACHINE_MAINT_STANDARD_MOVABLE
+	maintenance_wrench_time = 4 SECONDS
 	name = "advanced shield generator"
 	desc = "A heavy-duty shield generator and capacitor, capable of generating energy shields at large distances."
 	icon = 'icons/obj/machines/shielding_vr.dmi'
@@ -352,24 +354,48 @@
 		overloaded = 0
 
 /obj/machinery/power/shield_generator/attackby(obj/item/O as obj, mob/user as mob)
-	if(panel_open && (O?.has_tool_quality(TOOL_MULTITOOL) || O?.has_tool_quality(TOOL_WIRECUTTER)))
-		wires.Interact(user)
-		return TRUE
-	if(default_deconstruction_screwdriver(user, O))
-		return
-	if(O?.has_tool_quality(TOOL_CROWBAR) || O?.has_tool_quality(TOOL_WRENCH) || istype(O, /obj/item/storage/part_replacer))
+	if(istype(O, /obj/item/storage/part_replacer))
 		if(offline_for)
 			to_chat(user, span_warning("Wait until \the [src] cools down from emergency shutdown first!"))
 			return
 		if(running)
 			to_chat(user, span_notice("Turn off \the [src] first!"))
 			return
-	if(default_deconstruction_crowbar(user, O))
-		return
 	if(default_part_replacement(user, O))
 		return
-	if(default_unfasten_wrench(user, O, 40))
-		return
+	return ..()
+
+/obj/machinery/power/shield_generator/screwdriver_act(mob/user, obj/item/O)
+	return ..()
+
+/obj/machinery/power/shield_generator/multitool_act(mob/user, obj/item/O)
+	if(!panel_open)
+		return ITEM_INTERACT_BLOCKING
+	wires.Interact(user)
+	return ITEM_INTERACT_SUCCESS
+
+/obj/machinery/power/shield_generator/wirecutter_act(mob/user, obj/item/O)
+	if(!panel_open)
+		return ITEM_INTERACT_BLOCKING
+	wires.Interact(user)
+	return ITEM_INTERACT_SUCCESS
+
+/obj/machinery/power/shield_generator/crowbar_act(mob/user, obj/item/O)
+	if(offline_for)
+		to_chat(user, span_warning("Wait until \the [src] cools down from emergency shutdown first!"))
+		return ITEM_INTERACT_BLOCKING
+	if(running)
+		to_chat(user, span_notice("Turn off \the [src] first!"))
+		return ITEM_INTERACT_BLOCKING
+	return ..()
+
+/obj/machinery/power/shield_generator/wrench_act(mob/user, obj/item/O)
+	if(offline_for)
+		to_chat(user, span_warning("Wait until \the [src] cools down from emergency shutdown first!"))
+		return ITEM_INTERACT_BLOCKING
+	if(running)
+		to_chat(user, span_notice("Turn off \the [src] first!"))
+		return ITEM_INTERACT_BLOCKING
 	return ..()
 
 /obj/machinery/power/shield_generator/proc/energy_failure()

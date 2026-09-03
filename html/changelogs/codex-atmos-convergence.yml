@@ -1,0 +1,6 @@
+author: "Codex"
+delete-after: true
+changes:
+  - bugfix: "Atmospheric diffusion now settles without self-reactivating stable rooms, and concurrent machine writes only retry their local connected component."
+  - qol: "Open atmospheric sensors and control interfaces refresh rapidly without accelerating the machinery they observe."
+  - admin: "The MC subsystem view now reports complete logical-run wall time across yields, alongside active and suspended time."

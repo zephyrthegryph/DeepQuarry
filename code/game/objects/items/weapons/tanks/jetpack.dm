@@ -140,3 +140,7 @@
 
 /obj/item/tank/jetpack/rig/get_gas_supply()
 	return holder?.air_supply?.air_contents
+
+/obj/item/tank/jetpack/rig/Destroy()
+	holder = null
+	return ..()

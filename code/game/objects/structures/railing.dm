@@ -169,35 +169,6 @@
 	return
 
 /obj/structure/railing/attackby(obj/item/W as obj, mob/user as mob)
-	// Dismantle
-	if(W.has_tool_quality(TOOL_WRENCH) && !anchored)
-		playsound(src, W.usesound, 50, 1)
-		if(do_after(user, 2 SECONDS, target = src))
-			user.visible_message(span_infoplain(span_bold("\The [user]") + " dismantles \the [src]."), span_notice("You dismantle \the [src]."))
-			new /obj/item/stack/material/steel(get_turf(user), 2)
-			qdel(src)
-			return
-
-	// Repair
-	if(get_integrity() < max_integrity && W.has_tool_quality(TOOL_WELDER))
-		var/obj/item/weldingtool/F = W.get_welder()
-		if(F.welding)
-			playsound(src, F.usesound, 50, 1)
-			if(do_after(user, 2 SECONDS, target = src))
-				user.visible_message(span_infoplain(span_bold("\The [user]") + " repairs some damage to \the [src]."), span_notice("You repair some damage to \the [src]."))
-				repair_damage(max_integrity/5) // 20% repair per application
-				return
-
-	// Install
-	if(W.has_tool_quality(TOOL_SCREWDRIVER))
-		user.visible_message(span_info((anchored ? (span_bold("\The [user]") + " begins unscrewing \the [src].") : (span_bold("\The [user]") + "begins fasten \the [src]."))))
-		playsound(src, W.usesound, 75, 1)
-		if(do_after(user, 1 SECOND, target = src))
-			to_chat(user, (anchored ? span_notice("You have unfastened \the [src] from the floor.") : span_notice("You have fastened \the [src] to the floor.")))
-			anchored = !anchored
-			update_icon()
-			return
-
 	// Handle harm intent grabbing/tabling.
 	if(istype(W, /obj/item/grab) && get_dist(src,user)<2)
 		var/obj/item/grab/G = W
@@ -233,6 +204,36 @@
 		user.setClickCooldown(user.get_attack_speed(W))
 
 	return ..()
+
+/obj/structure/railing/wrench_act(mob/user, obj/item/W)
+	if(anchored)
+		return TRUE
+	playsound(src, W.usesound, 50, 1)
+	if(do_after(user, 2 SECONDS, target = src))
+		user.visible_message(span_infoplain(span_bold("\The [user]") + " dismantles \the [src]."), span_notice("You dismantle \the [src]."))
+		new /obj/item/stack/material/steel(get_turf(user), 2)
+		qdel(src)
+	return TRUE
+
+/obj/structure/railing/welder_act(mob/user, obj/item/W)
+	if(get_integrity() >= max_integrity)
+		return TRUE
+	var/obj/item/weldingtool/F = W.get_welder()
+	if(F.welding)
+		playsound(src, F.usesound, 50, 1)
+		if(do_after(user, 2 SECONDS, target = src))
+			user.visible_message(span_infoplain(span_bold("\The [user]") + " repairs some damage to \the [src]."), span_notice("You repair some damage to \the [src]."))
+			repair_damage(max_integrity / 5)
+	return TRUE
+
+/obj/structure/railing/screwdriver_act(mob/user, obj/item/W)
+	user.visible_message(span_info(span_bold("\The [user]") + " begins [anchored ? "unscrewing" : "fastening"] \the [src]."))
+	playsound(src, W.usesound, 75, 1)
+	if(do_after(user, 1 SECOND, target = src))
+		anchored = !anchored
+		to_chat(user, span_notice("You have [anchored ? "fastened \the [src] to" : "unfastened \the [src] from"] the floor."))
+		update_icon()
+	return TRUE
 
 /obj/structure/railing/ex_act(severity)
 	switch(severity)

@@ -1,4 +1,5 @@
 /obj/machinery/reagent_refinery
+	maintenance_flags = MACHINE_MAINT_STANDARD
 	icon = 'icons/obj/machines/refinery_machines.dmi'
 	VAR_PROTECTED/default_max_vol = 120
 	VAR_PROTECTED/amount_per_transfer_from_this = 120
@@ -37,22 +38,6 @@
 		reagents.splash_area(get_turf(src),2)
 
 /obj/machinery/reagent_refinery/attackby(obj/item/O as obj, mob/user as mob)
-	if (istype(O, /obj/item/multitool)) // Solar grubs
-		return ..()
-	if(O.has_tool_quality(TOOL_WRENCH))
-		if(!anchored)
-			for(var/obj/machinery/reagent_refinery/R in loc.contents)
-				if(R != src)
-					to_chat(usr,span_warning("You cannot anchor \the [src] until \The [R] is moved out of the way!"))
-					return
-		playsound(src, O.usesound, 75, 1)
-		anchored = !anchored
-		user.visible_message("[user.name] [anchored ? "secures" : "unsecures"] the bolts holding [src.name] to the floor.", \
-					"You [anchored ? "secure" : "unsecure"] the bolts holding [src] to the floor.", \
-					"You hear a ratchet.")
-		update_neighbours()
-		update_icon()
-		return
 	if(reagents && (istype(O,/obj/item/reagent_containers/glass) || \
 		istype(O,/obj/item/reagent_containers/food/drinks/glass2) || \
 		istype(O,/obj/item/reagent_containers/food/drinks/shaker)))
@@ -66,11 +51,20 @@
 		playsound(src, 'sound/machines/reagent_dispense.ogg', 25, 1)
 		to_chat(usr,"You drain \the [src] into \the [C].")
 		return
-	if(default_deconstruction_screwdriver(user, O))
-		return
-	if(default_deconstruction_crowbar(user, O))
-		return
 	. = ..()
+
+/obj/machinery/reagent_refinery/wrench_act(mob/user, obj/item/tool)
+	if(!anchored)
+		for(var/obj/machinery/reagent_refinery/other in loc.contents)
+			if(other != src)
+				to_chat(user, span_warning("You cannot anchor \the [src] until \the [other] is moved out of the way!"))
+				return ITEM_INTERACT_BLOCKING
+	playsound(src, tool.usesound, 75, TRUE)
+	anchored = !anchored
+	user.visible_message("[user.name] [anchored ? "secures" : "unsecures"] the bolts holding [src.name] to the floor.", "You [anchored ? "secure" : "unsecure"] the bolts holding [src] to the floor.", "You hear a ratchet.")
+	update_neighbours()
+	update_icon()
+	return ITEM_INTERACT_SUCCESS
 
 /// Updates the icons of all neighbour machines, used when connecting.
 /obj/machinery/reagent_refinery/proc/update_neighbours()

@@ -5,6 +5,7 @@
 	icon = 'icons/obj/forensics.dmi'
 	icon_state = "dnaopen"
 	anchored = TRUE
+	maintenance_flags = MACHINE_MAINT_STANDARD
 	density = TRUE
 	circuit = /obj/item/circuitboard/dna_analyzer
 
@@ -26,11 +27,6 @@
 
 	if(scanning)
 		to_chat(user, span_warning("[src] is busy scanning right now."))
-		return
-
-	if(default_deconstruction_screwdriver(user, W))
-		return
-	if(default_deconstruction_crowbar(user, W))
 		return
 
 	var/obj/item/forensics/swab/swab = W

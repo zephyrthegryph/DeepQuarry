@@ -1,0 +1,9 @@
+author: "Codex"
+delete-after: true
+changes:
+  - refactor: "Consolidated anomalous substance sheets into the concrete material-science batch and composite model."
+  - rscadd: "Expeditions now yield measurable exotic feedstocks for thermal buffering, piezoelectric, catalytic, medical, optical, reactive, and sorption applications."
+  - rscdel: "Removed resonance rolls, abstract effect families, substance-triggered blasts, and the separate PA/R-UST substance processing loop."
+  - bugfix: "Fixed atmospheric scans on PDAs, pAIs, and communicators after the LINDA gas-mixture cutover."
+  - bugfix: "Prevented active atmos frontiers from starving behind repeatedly reactivated cells, so released gases continue spreading across rooms."
+  - qol: "Removed the synchronous full-overlay mob render that froze the game when opening the examine panel."

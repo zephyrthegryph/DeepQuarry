@@ -46,16 +46,18 @@ GLOBAL_LIST_EMPTY(navbeacons) // no I don't like putting this in, but it will do
 	if(!T.is_plating())
 		return		// prevent intraction when T-scanner revealed
 
-	if(I.has_tool_quality(TOOL_SCREWDRIVER))
-		open = !open
-		playsound(src, I.usesound, 50, 1)
-		user.visible_message(span_notice("[user] [open ? "opens" : "closes"] the beacon's cover."), span_infoplain("You [open ? "open" : "close"] the beacon's cover."))
-
-		update_icon()
-		return
-
 	if(I.GetID())
 		togglelock(user)
+
+/obj/machinery/navbeacon/screwdriver_act(mob/user, obj/item/tool)
+	var/turf/floor = loc
+	if(!floor.is_plating())
+		return ITEM_INTERACT_BLOCKING
+	open = !open
+	playsound(src, tool.usesound, 50, TRUE)
+	user.visible_message(span_notice("[user] [open ? "opens" : "closes"] the beacon's cover."), span_infoplain("You [open ? "open" : "close"] the beacon's cover."))
+	update_icon()
+	return ITEM_INTERACT_SUCCESS
 
 /obj/machinery/navbeacon/attack_ai(mob/user)
 	tgui_interact(user)

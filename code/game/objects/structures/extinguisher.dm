@@ -18,6 +18,7 @@
 		pixel_y = (dir & 3)? (dir ==1 ? -27 : 27) : 0
 	else
 		has_extinguisher = new/obj/item/extinguisher(src)
+		RegisterSignal(has_extinguisher, COMSIG_QDELETING, PROC_REF(on_extinguisher_deleted))
 
 	update_icon()
 
@@ -29,21 +30,28 @@
 			user.remove_from_mob(O)
 			contents += O
 			has_extinguisher = O
+			RegisterSignal(has_extinguisher, COMSIG_QDELETING, PROC_REF(on_extinguisher_deleted))
 			to_chat(user, span_notice("You place [O] in [src]."))
 		else
 			opened = !opened
-	if(O.has_tool_quality(TOOL_WRENCH))
-		if(!has_extinguisher)
-			to_chat(user, span_notice("You start to unwrench the extinguisher cabinet."))
-			playsound(src, O.usesound, 50, 1)
-			if(do_after(user, 15 * O.toolspeed, target = src))
-				to_chat(user, span_notice("You unwrench the extinguisher cabinet."))
-				new /obj/item/frame/extinguisher_cabinet( src.loc )
-				qdel(src)
-			return
 	else
 		opened = !opened
 	update_icon()
+
+/obj/structure/extinguisher_cabinet/wrench_act(mob/user, obj/item/O)
+	if(isrobot(user))
+		return TRUE
+	if(has_extinguisher)
+		opened = !opened
+		update_icon()
+		return TRUE
+	to_chat(user, span_notice("You start to unwrench the extinguisher cabinet."))
+	playsound(src, O.usesound, 50, 1)
+	if(do_after(user, 1.5 SECONDS * O.toolspeed, target = src))
+		to_chat(user, span_notice("You unwrench the extinguisher cabinet."))
+		new /obj/item/frame/extinguisher_cabinet(loc)
+		qdel(src)
+	return TRUE
 
 
 /obj/structure/extinguisher_cabinet/attack_hand(mob/living/user)
@@ -58,6 +66,7 @@
 			to_chat(user, span_notice("You try to move your [temp.name], but cannot!"))
 			return
 	if(has_extinguisher)
+		UnregisterSignal(has_extinguisher, COMSIG_QDELETING)
 		user.put_in_hands(has_extinguisher)
 		to_chat(user, span_notice("You take [has_extinguisher] from [src]."))
 		has_extinguisher = null
@@ -68,6 +77,7 @@
 
 /obj/structure/extinguisher_cabinet/attack_tk(mob/user)
 	if(has_extinguisher)
+		UnregisterSignal(has_extinguisher, COMSIG_QDELETING)
 		has_extinguisher.loc = loc
 		to_chat(user, span_notice("You telekinetically remove [has_extinguisher] from [src]."))
 		has_extinguisher = null
@@ -75,6 +85,20 @@
 	else
 		opened = !opened
 	update_icon()
+
+/obj/structure/extinguisher_cabinet/proc/on_extinguisher_deleted(datum/source)
+	SIGNAL_HANDLER
+	if(source != has_extinguisher)
+		return
+	has_extinguisher = null
+	opened = TRUE
+	update_icon()
+
+/obj/structure/extinguisher_cabinet/Destroy()
+	if(has_extinguisher)
+		UnregisterSignal(has_extinguisher, COMSIG_QDELETING)
+		has_extinguisher = null
+	return ..()
 
 /obj/structure/extinguisher_cabinet/update_icon()
 	var/suffix = "empty"

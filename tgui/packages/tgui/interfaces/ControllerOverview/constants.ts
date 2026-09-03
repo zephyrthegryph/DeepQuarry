@@ -11,7 +11,7 @@ export const SORTING_TYPES: readonly SortType[] = [
     inDeciseconds: false,
   },
   {
-    label: 'Cost',
+    label: 'Wall Time',
     propName: 'cost_ms',
     inDeciseconds: true,
   },

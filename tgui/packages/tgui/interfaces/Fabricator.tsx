@@ -13,7 +13,10 @@ import { MaterialAccessBar } from './common/MaterialAccessBar';
 import { TechWebRecipeIcon } from './common/TechWebRecipeIcon';
 import { DesignBrowser } from './Fabrication/DesignBrowser';
 import { MaterialCostSequence } from './Fabrication/MaterialCostSequence';
-import { SelectableRecipe } from './Fabrication/SelectableRecipe';
+import {
+  ConfigurableRecipeRow,
+  ProductConfigurator,
+} from './Fabrication/SelectableRecipe';
 import type {
   Design,
   FabricatorData,
@@ -40,7 +43,7 @@ export const Fabricator = (props) => {
   }
 
   return (
-    <Window title={fabName} width={670} height={600}>
+    <Window title={fabName} width={1120} height={720}>
       <Window.Content>
         <Stack vertical fill>
           <Stack.Item grow>
@@ -48,13 +51,39 @@ export const Fabricator = (props) => {
               busy={!!busy}
               designs={Object.values(designs)}
               availableMaterials={availableMaterials}
-              buildRecipeElement={(design, availableMaterials) => (
+              buildRecipeElement={(
+                design,
+                availableMaterials,
+                _onPrint,
+                onSelect,
+                selected,
+              ) => (
                 <Recipe
                   design={design}
                   available={availableMaterials}
                   SHEET_MATERIAL_AMOUNT={SHEET_MATERIAL_AMOUNT}
+                  onSelect={() => onSelect?.(design)}
+                  selected={selected}
                 />
               )}
+              buildDetailElement={(design, availableMaterials) =>
+                design.materialConfigurable ? (
+                  <ProductConfigurator
+                    key={design.id}
+                    design={design}
+                    available={availableMaterials}
+                    materialChoices={data.materialChoices ?? []}
+                    SHEET_MATERIAL_AMOUNT={SHEET_MATERIAL_AMOUNT}
+                    onBuild={(materialSlots, quantity) =>
+                      act('build', {
+                        ref: design.id,
+                        amount: quantity,
+                        materialSlots,
+                      })
+                    }
+                  />
+                ) : null
+              }
             />
           </Stack.Item>
           <Stack.Item>
@@ -164,27 +193,23 @@ type RecipeProps = {
   design: Design;
   available: MaterialMap;
   SHEET_MATERIAL_AMOUNT: number;
+  onSelect?: () => void;
+  selected?: boolean;
 };
 
 const Recipe = (props: RecipeProps) => {
-  const { act, data } = useBackend<FabricatorData>();
-  const { design, available, SHEET_MATERIAL_AMOUNT } = props;
+  const { act } = useBackend<FabricatorData>();
+  const { design, available, SHEET_MATERIAL_AMOUNT, onSelect, selected } =
+    props;
 
   // Material-selectable designs render a material picker instead of fixed costs.
-  if (design.materialSelectable) {
+  if (design.materialConfigurable) {
     return (
-      <SelectableRecipe
+      <ConfigurableRecipeRow
         design={design}
         available={available}
-        materialChoices={data.materialChoices ?? []}
-        SHEET_MATERIAL_AMOUNT={SHEET_MATERIAL_AMOUNT}
-        onBuild={(materialId, quantity) =>
-          act('build', {
-            ref: design.id,
-            amount: quantity,
-            material: materialId,
-          })
-        }
+        selected={selected}
+        onSelect={onSelect ?? (() => undefined)}
       />
     );
   }

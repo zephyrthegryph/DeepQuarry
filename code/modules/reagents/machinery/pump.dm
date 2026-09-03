@@ -1,4 +1,6 @@
 /obj/machinery/pump
+	maintenance_flags = MACHINE_MAINT_WRENCH
+	maintenance_wrench_time = 2 SECONDS
 	name = "fluid pump"
 	desc = "A fluid pumping machine."
 
@@ -140,24 +142,7 @@
 
 /obj/machinery/pump/attackby(obj/item/W, mob/user)
 	. = TRUE
-	if(W.has_tool_quality(TOOL_SCREWDRIVER) && !open)
-		to_chat(user, span_notice("You [unlocked ? "screw" : "unscrew"] the battery panel."))
-		unlocked = !unlocked
-
-	else if(W.has_tool_quality(TOOL_CROWBAR) && unlocked)
-		to_chat(user, open ? \
-			span_notice("You crowbar the battery panel in place.") : \
-			span_notice("You remove the battery panel.") \
-		)
-		open = !open
-
-	else if(W.has_tool_quality(TOOL_WRENCH))
-		if(on)
-			to_chat(user, span_notice("\The [src] is active. Turn it off before trying to move it!"))
-			return FALSE
-		default_unfasten_wrench(user, W, 2 SECONDS)
-
-	else if(istype(W, /obj/item/cell))
+	if(istype(W, /obj/item/cell))
 		if(!open)
 			if(unlocked)
 				to_chat(user, span_notice("The battery panel is screwed shut."))
@@ -176,6 +161,28 @@
 
 	RefreshParts() // Handles cell assignment
 	update_icon()
+
+/obj/machinery/pump/screwdriver_act(mob/user, obj/item/tool)
+	if(open)
+		return ITEM_INTERACT_BLOCKING
+	to_chat(user, span_notice("You [unlocked ? "screw" : "unscrew"] the battery panel."))
+	unlocked = !unlocked
+	update_icon()
+	return ITEM_INTERACT_SUCCESS
+
+/obj/machinery/pump/crowbar_act(mob/user, obj/item/tool)
+	if(!unlocked)
+		return ITEM_INTERACT_BLOCKING
+	to_chat(user, open ? span_notice("You crowbar the battery panel in place.") : span_notice("You remove the battery panel."))
+	open = !open
+	update_icon()
+	return ITEM_INTERACT_SUCCESS
+
+/obj/machinery/pump/wrench_act(mob/user, obj/item/tool)
+	if(on)
+		to_chat(user, span_notice("\The [src] is active. Turn it off before trying to move it!"))
+		return ITEM_INTERACT_BLOCKING
+	return ..()
 
 
 /turf/proc/pump_reagents()

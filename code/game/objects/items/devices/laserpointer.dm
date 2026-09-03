@@ -59,14 +59,16 @@
 		else
 			to_chat(user, span_notice("[src] already has a diode."))
 
-	else if(W.has_tool_quality(TOOL_SCREWDRIVER))
-		if(diode)
-			to_chat(user, span_notice("You remove the [diode.name] from the [src]."))
-			diode.loc = get_turf(src.loc)
-			diode = null
-			return
-		..()
-	return
+	else
+		return ..()
+
+/obj/item/laser_pointer/screwdriver_act(mob/user, obj/item/tool)
+	if(!diode)
+		return ITEM_INTERACT_BLOCKING
+	to_chat(user, span_notice("You remove the [diode.name] from the [src]."))
+	diode.forceMove(get_turf(loc))
+	diode = null
+	return ITEM_INTERACT_SUCCESS
 
 /obj/item/laser_pointer/afterattack(atom/target, mob/living/user, flag, params)
 	if(flag)	//we're placing the object on a table or in backpack

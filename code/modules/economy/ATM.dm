@@ -43,6 +43,12 @@ log transactions
 	spark_system.set_up(5, 0, src)
 	spark_system.attach(src)
 
+/obj/machinery/atm/Destroy()
+	QDEL_NULL(spark_system)
+	held_card = null
+	authenticated_account = null
+	return ..()
+
 /obj/machinery/atm/process()
 	if(stat & NOPOWER)
 		return PROCESS_KILL
@@ -88,8 +94,6 @@ log transactions
 	return 1
 
 /obj/machinery/atm/attackby(obj/item/I as obj, mob/user as mob)
-	if(computer_deconstruction_screwdriver(user, I))
-		return
 	if(istype(I, /obj/item/card))
 		if(emagged > 0)
 			//prevent inserting id into an emagged ATM
@@ -121,6 +125,9 @@ log transactions
 			qdel(I)
 	else
 		..()
+
+/obj/machinery/atm/screwdriver_act(mob/user, obj/item/tool)
+	return deconstruct_display(user, tool)
 
 /obj/machinery/atm/tgui_status(mob/user)
 	. = ..()

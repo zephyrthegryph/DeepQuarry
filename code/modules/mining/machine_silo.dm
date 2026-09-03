@@ -1,4 +1,5 @@
 /obj/machinery/ore_silo
+	maintenance_flags = MACHINE_MAINT_STANDARD
 	name = "ore silo"
 	desc = "An all-in-one bluespace storage and transmission system for the station's mineral distribution needs."
 	icon = 'icons/obj/machines/ore_silo.dmi'
@@ -63,16 +64,19 @@
 	silo_log(context, "ejected", -sheets.amount, "[sheets.singular_name]", list(GET_MATERIAL_REF(sheets.default_type) = sheets.amount * SHEET_MATERIAL_AMOUNT))
 
 /obj/machinery/ore_silo/attackby(obj/item/W, mob/user, attack_modifier, click_parameters)
-	if(default_deconstruction_screwdriver(user, W))
-		return
-	if(default_deconstruction_crowbar(user, W))
-		return
-	if(istype(W, /obj/item/multitool))
-		var/obj/item/multitool/M = W
-		M.buffer = src
-		balloon_alert(user, "saved to multitool buffer")
-		return
 	. = ..()
+
+/obj/machinery/ore_silo/screwdriver_act(mob/user, obj/item/tool)
+	return ..()
+
+/obj/machinery/ore_silo/crowbar_act(mob/user, obj/item/tool)
+	return ..()
+
+/obj/machinery/ore_silo/multitool_act(mob/user, obj/item/tool)
+	var/obj/item/multitool/multitool = tool
+	multitool.buffer = src
+	balloon_alert(user, "saved to multitool buffer")
+	return ITEM_INTERACT_SUCCESS
 
 /obj/machinery/ore_silo/attack_hand(mob/user)
 	return tgui_interact(user)

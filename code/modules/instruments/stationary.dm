@@ -43,13 +43,6 @@
 /obj/structure/musician/allow_pai_interaction(mob/living/silicon/pai/user, proximity_flag)
 	return proximity_flag
 
-/* FIXME
-/obj/structure/musician/wrench_act(mob/living/user, obj/item/tool)
-	. = ..()
-	default_unfasten_wrench(user, tool, time = 4 SECONDS)
-	return ITEM_INTERACT_SUCCESS
-*/
-
 /obj/structure/musician/piano
 	name = "space piano"
 	desc = "This is a space piano, like a regular piano, but always in tune! Even if the musician isn't."
@@ -82,16 +75,11 @@
 
 
 // === merged from stationary_chomp.dm during hard-fork de-suffix (verified no override-order change) ===
-/obj/structure/musician/attackby(obj/item/W, mob/user)
-	if(W.has_tool_quality(TOOL_WRENCH))
-		playsound(src, W.usesound, 100, 1)
-		if(anchored)
-			user.visible_message(span_filter_notice("[user] begins unsecuring \the [src] from the floor."), span_filter_notice("You start unsecuring \the [src] from the floor."))
-		else
-			user.visible_message(span_filter_notice("[user] begins securing \the [src] to the floor."), span_filter_notice("You start securing \the [src] to the floor."))
-
-		if(do_after(user, 20 * W.toolspeed, src))
-			if(!src) return
-			to_chat(user, span_notice("You [anchored? "un" : ""]secured \the [src]!"))
-			anchored = !anchored
-		return
+/obj/structure/musician/wrench_act(mob/user, obj/item/tool)
+	playsound(src, tool.usesound, 100, TRUE)
+	user.visible_message(span_filter_notice("[user] begins [anchored ? "un" : ""]securing \the [src] from the floor."), span_notice("You start [anchored ? "un" : ""]securing \the [src] from the floor."))
+	if(!do_after(user, 2 SECONDS * tool.toolspeed, target = src))
+		return ITEM_INTERACT_BLOCKING
+	to_chat(user, span_notice("You [anchored ? "un" : ""]secured \the [src]!"))
+	anchored = !anchored
+	return ITEM_INTERACT_SUCCESS

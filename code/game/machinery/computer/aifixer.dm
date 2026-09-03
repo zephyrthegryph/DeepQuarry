@@ -15,13 +15,6 @@
 	var/restoring = FALSE
 
 /obj/machinery/computer/aifixer/attackby(obj/item/I, mob/living/user)
-	if(I.has_tool_quality(TOOL_SCREWDRIVER))
-		if(occupier)
-			if(stat & (NOPOWER|BROKEN))
-				to_chat(user, span_warning("The screws on [name]'s screen won't budge."))
-			else
-				to_chat(user, span_warning("The screws on [name]'s screen won't budge and it emits a warning beep."))
-			return
 	if(istype(I, /obj/item/aicard))
 		if(stat & (NOPOWER|BROKEN))
 			to_chat(user, span_warning("This terminal isn't functioning right now."))
@@ -47,6 +40,15 @@
 		else
 			to_chat(user, span_notice("There is no AI loaded onto this computer, and no AI loaded onto [I]. What exactly are you trying to do here?"))
 	return ..()
+
+/obj/machinery/computer/aifixer/screwdriver_act(mob/user, obj/item/tool)
+	if(!occupier)
+		return ..()
+	if(stat & (NOPOWER|BROKEN))
+		to_chat(user, span_warning("The screws on [name]'s screen won't budge."))
+	else
+		to_chat(user, span_warning("The screws on [name]'s screen won't budge and it emits a warning beep."))
+	return ITEM_INTERACT_BLOCKING
 
 /obj/machinery/computer/aifixer/attack_hand(mob/user)
 	if(stat & (NOPOWER|BROKEN))

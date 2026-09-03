@@ -5,7 +5,13 @@ import rspack, { type Configuration } from '@rspack/core';
 import oldConfig, {
   createStats,
   TguiChunkManifestPlugin,
+  TguiWindowManifestPlugin,
 } from './rspack.config';
+import { buildWindowGeometryManifest } from './windowGeometryManifest';
+
+const windowGeometryManifest = buildWindowGeometryManifest(
+  path.resolve(import.meta.dirname, 'packages', 'tgui', 'interfaces'),
+);
 
 export const config = {
   ...oldConfig,
@@ -26,6 +32,9 @@ export const config = {
     new rspack.EnvironmentPlugin({
       NODE_ENV: 'development',
     }),
+    new rspack.DefinePlugin({
+      __TGUI_WINDOW_GEOMETRY_MANIFEST__: JSON.stringify(windowGeometryManifest),
+    }),
     new rspack.HotModuleReplacementPlugin(),
     new TguiChunkManifestPlugin(
       path.resolve(
@@ -33,6 +42,14 @@ export const config = {
         'public',
         '.tmp',
         'tgui-chunk-manifest.json',
+      ),
+    ),
+    new TguiWindowManifestPlugin(
+      path.resolve(
+        import.meta.dirname,
+        'public',
+        '.tmp',
+        'tgui-window-manifest.json',
       ),
     ),
   ],

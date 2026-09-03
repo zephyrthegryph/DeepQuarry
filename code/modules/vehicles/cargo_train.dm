@@ -67,12 +67,12 @@
 
 	return ..()
 
-/obj/vehicle/train/trolley/attackby(obj/item/W as obj, mob/user as mob)
-	if(open && W.has_tool_quality(TOOL_WIRECUTTER))
-		passenger_allowed = !passenger_allowed
-		user.visible_message(span_notice("[user] [passenger_allowed ? "cuts" : "mends"] a cable in [src]."),span_notice("You [passenger_allowed ? "cut" : "mend"] the load limiter cable."))
-	else
-		..()
+/obj/vehicle/train/trolley/wirecutter_act(mob/user, obj/item/tool)
+	if(!open || passenger_allowed)
+		return ITEM_INTERACT_BLOCKING
+	passenger_allowed = TRUE
+	user.visible_message(span_notice("[user] cuts a cable in [src]."), span_notice("You cut the load limiter cable."))
+	return ITEM_INTERACT_SUCCESS
 
 /obj/vehicle/train/engine/attackby(obj/item/W as obj, mob/user as mob)
 	if(istype(W, key_type))

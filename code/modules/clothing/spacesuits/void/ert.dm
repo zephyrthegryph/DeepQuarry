@@ -64,7 +64,7 @@
 
 
 //override the attackby screwdriver proc so that people can't remove the helmet
-/obj/item/clothing/suit/space/void/responseteam/attackby(obj/item/W as obj, mob/user as mob)
+/obj/item/clothing/suit/space/void/responseteam/attackby(obj/item/W as obj, mob/user as mob, tool_quality)
 
 	if(!isliving(user))
 		return
@@ -76,7 +76,7 @@
 		to_chat(user, span_warning("You cannot modify \the [src] while it is being worn."))
 		return
 
-	if(W.has_tool_quality(TOOL_SCREWDRIVER))
+	if(tool_quality == TOOL_SCREWDRIVER)
 		if(boots || tank || cooler)
 			var/choice = tgui_input_list(usr, "What component would you like to remove?", "Remove Component", list(boots,tank,cooler))
 			if(!choice) return

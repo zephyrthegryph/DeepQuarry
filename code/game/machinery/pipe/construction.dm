@@ -180,11 +180,9 @@ Buildable meters
 		color = material.icon_colour
 		to_chat(user, span_notice("You form [material.display_name] around [src]. Its installed geometry will determine pressure strength, heat transfer, and chemical exposure."))
 		return
-	if(W.has_tool_quality(TOOL_WRENCH))
-		return wrench_act(user, W)
 	return ..()
 
-/obj/item/pipe/proc/wrench_act(mob/living/user, obj/item/tool/wrench/W)
+/obj/item/pipe/wrench_act(mob/user, obj/item/W)
 	if(!isturf(loc))
 		return TRUE
 
@@ -220,6 +218,7 @@ Buildable meters
 		span_warningplain("You hear ratcheting."))
 
 	qdel(src)
+	return ITEM_INTERACT_SUCCESS
 
 /obj/item/pipe/proc/build_pipe(obj/machinery/atmospherics/A)
 	A.engineered_material_id = engineered_material_id
@@ -270,12 +269,7 @@ Buildable meters
 	w_class = ITEMSIZE_LARGE
 	var/piping_layer = PIPING_LAYER_DEFAULT
 
-/obj/item/pipe_meter/attackby(obj/item/W as obj, mob/user as mob)
-	if(W.has_tool_quality(TOOL_WRENCH))
-		return wrench_act(user, W)
-	return ..()
-
-/obj/item/pipe_meter/proc/wrench_act(mob/living/user, obj/item/tool/wrench/W)
+/obj/item/pipe_meter/wrench_act(mob/user, obj/item/W)
 	var/obj/machinery/atmospherics/pipe/pipe
 	for(var/obj/machinery/atmospherics/pipe/P in loc)
 		if(P.piping_layer == piping_layer)
@@ -288,6 +282,7 @@ Buildable meters
 	playsound(src, W.usesound, 50, 1)
 	to_chat(user, span_notice("You fasten the meter to the pipe."))
 	qdel(src)
+	return ITEM_INTERACT_SUCCESS
 
 /obj/item/pipe_meter/dropped(mob/user, equipping, slot)
 	. = ..()
@@ -308,15 +303,11 @@ Buildable meters
 	var/id_tag
 	var/output = 3
 
-/obj/item/pipe_gsensor/attackby(obj/item/W, mob/user)
-	if(W.has_tool_quality(TOOL_WRENCH))
-		return wrench_act(user, W)
-	return ..()
-
-/obj/item/pipe_gsensor/proc/wrench_act(mob/living/user, obj/item/tool/wrench/W)
+/obj/item/pipe_gsensor/wrench_act(mob/user, obj/item/W)
 	var/obj/machinery/air_sensor/air_sensor = new /obj/machinery/air_sensor(loc)
 	air_sensor.id_tag = id_tag
 	air_sensor.output = output
 	playsound(src, W.usesound, 50, 1)
 	to_chat(user, span_notice("You fasten the meter to the pipe."))
 	qdel(src)
+	return ITEM_INTERACT_SUCCESS

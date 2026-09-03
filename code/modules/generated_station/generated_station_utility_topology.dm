@@ -787,39 +787,23 @@
 	for(var/obj/machinery/atmospherics/AM in result.atmos_objects)
 		AM.atmos_init()
 	for(var/obj/machinery/atmospherics/AM in result.atmos_objects)
-		AM.build_network()
-	coalesce_generated_pipe_networks(PIPING_LAYER_SUPPLY)
-	coalesce_generated_pipe_networks(PIPING_LAYER_SCRUBBER)
+		AM.rust_allocate_pipe_ports()
+	for(var/obj/machinery/atmospherics/AM in result.atmos_objects)
+		AM.rust_register_pipe_port_data()
+	for(var/obj/machinery/atmospherics/AM in result.atmos_objects)
+		AM.rust_register_pipe_edges()
+	SSair.rust_commit_pending_pipenets()
 	for(var/obj/machinery/atmospherics/pipe/tank/air/full/generated_station/tank in result.supply_tanks)
 		var/datum/pipe_network/network = tank.parent?.network
-		if(!network)
+		if(!network?.air)
 			continue
-		network.update_network_gases()
-		for(var/datum/gas_mixture/network_air in network.gases)
-			if(!network_air.total_moles())
-				network_air.set_temperature(T20C)
-				var/supply_moles = MOLES_CELLSTANDARD * (network_air.return_volume() / CELL_VOLUME) * 50
-				network_air.adjust_multi(GAS_O2, supply_moles * O2STANDARD, GAS_N2, supply_moles * N2STANDARD)
+		var/datum/gas_mixture/network_air = network.air
+		if(!network_air.total_moles())
+			network_air.set_temperature(T20C)
+			var/supply_moles = MOLES_CELLSTANDARD * (network_air.return_volume() / CELL_VOLUME) * 50
+			network_air.adjust_multi(GAS_O2, supply_moles * O2STANDARD, GAS_N2, supply_moles * N2STANDARD)
 		network.mark_dirty()
 		network.process()
-
-/datum/generated_station_utility_builder/proc/coalesce_generated_pipe_networks(piping_layer)
-	var/datum/pipe_network/shared
-	for(var/obj/machinery/atmospherics/pipe/pipe in result.atmos_objects)
-		if(pipe.piping_layer != piping_layer || !pipe.parent?.network)
-			continue
-		var/datum/pipe_network/network = pipe.parent.network
-		if(!shared)
-			shared = network
-		else if(network != shared)
-			shared.merge(network)
-			network.normal_members.Cut()
-			network.line_members.Cut()
-			network.gases.Cut()
-			network.leaks.Cut()
-			qdel(network)
-	shared?.update_network_gases()
-	shared?.mark_dirty()
 
 /datum/expedition_site
 	var/datum/generated_station_utility_topology/station_utilities

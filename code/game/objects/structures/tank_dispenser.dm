@@ -73,14 +73,6 @@
 			phorontanks++
 		else
 			full = TRUE
-	else if(I.has_tool_quality(TOOL_WRENCH))
-		if(anchored)
-			to_chat(user, span_notice("You lean down and unwrench [src]."))
-			anchored = FALSE
-		else
-			to_chat(user, span_notice("You wrench [src] into place."))
-			anchored = TRUE
-		return
 	else if(user.a_intent != I_HURT)
 		to_chat(user, span_notice("[I] does not fit into [src]."))
 		return
@@ -95,6 +87,11 @@
 		return
 	to_chat(user, span_notice("You put [I] in [src]."))
 	update_icon()
+
+/obj/structure/dispenser/wrench_act(mob/user, obj/item/I)
+	anchored = !anchored
+	to_chat(user, span_notice("You [anchored ? "wrench [src] into place" : "lean down and unwrench [src]"]."))
+	return TRUE
 
 #undef TANK_DISPENSER_CAPACITY
 

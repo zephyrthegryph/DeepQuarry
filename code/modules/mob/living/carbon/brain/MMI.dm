@@ -161,6 +161,8 @@
 		var/mob/living/silicon/robot/borg = loc
 		borg.mmi = null
 	QDEL_NULL(radio)
+	if(brainmob?.container == src)
+		brainmob.container = null
 	QDEL_NULL(brainmob)
 	if(brainobj)
 		QDEL_NULL(brainobj)

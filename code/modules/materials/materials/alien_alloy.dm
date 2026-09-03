@@ -3,7 +3,6 @@
 	name = MAT_ALIENALLOY
 	display_name = "durable alloy"
 	stack_type = null
-	material_class = MATCLASS_METAL
 	flags = MATERIAL_UNMELTABLE
 	icon_colour = "#6C7364"
 	integrity = 1200

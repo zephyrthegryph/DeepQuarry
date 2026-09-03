@@ -50,40 +50,15 @@
 /obj/machinery/atmospherics/valve/get_neighbor_nodes_for_init()
 	return list(node1, node2)
 
-/obj/machinery/atmospherics/valve/network_expand(datum/pipe_network/new_network, obj/machinery/atmospherics/pipe/reference)
-	// Idempotency guard: check membership before assigning slot vars.
-	if(new_network.normal_members.Find(src))
-		return 0
-
-	if(reference == node1)
-		network_node1 = new_network
-		if(open)
-			network_node2 = new_network
-	else if(reference == node2)
-		network_node2 = new_network
-		if(open)
-			network_node1 = new_network
-
-	new_network.normal_members += src
-
-	if(open)
-		if(reference == node1)
-			if(node2)
-				return node2.network_expand(new_network, src)
-		else if(reference == node2)
-			if(node1)
-				return node1.network_expand(new_network, src)
-
-	return null
-
 /obj/machinery/atmospherics/valve/Destroy()
+	rust_unregister_pipe_topology()
 	// Disconnect/qdel BEFORE ..() so node derefs are valid.
 	if(node1)
 		node1.disconnect(src)
-		qdel(network_node1)
+		rust_release_network_wrapper(network_node1)
 	if(node2)
 		node2.disconnect(src)
-		qdel(network_node2)
+		rust_release_network_wrapper(network_node2)
 
 	node1 = null
 	node2 = null
@@ -94,17 +69,10 @@
 /obj/machinery/atmospherics/valve/proc/open()
 	if(open) return 0
 
+	var/list/old_edges = rust_pipe_internal_edges()
 	open = 1
 	update_icon()
-
-	if(network_node1&&network_node2)
-		network_node1.merge(network_node2)
-		network_node2 = network_node1
-
-	if(network_node1)
-		network_node1.mark_dirty()
-	else if(network_node2)
-		network_node2.mark_dirty()
+	rust_rewire_internal_ports(old_edges, rust_pipe_internal_edges())
 
 	return 1
 
@@ -112,15 +80,10 @@
 	if(!open)
 		return 0
 
+	var/list/old_edges = rust_pipe_internal_edges()
 	open = 0
 	update_icon()
-
-	if(network_node1)
-		qdel(network_node1)
-	if(network_node2)
-		qdel(network_node2)
-
-	build_network()
+	rust_rewire_internal_ports(old_edges, rust_pipe_internal_edges())
 
 	return 1
 
@@ -164,8 +127,6 @@
 	STANDARD_ATMOS_CHOOSE_NODE(1, node1_dir)
 	STANDARD_ATMOS_CHOOSE_NODE(2, node2_dir)
 
-	build_network()
-
 	update_icon()
 	update_underlays()
 
@@ -174,20 +135,7 @@
 		open()
 		openDuringInit = 0
 
-/obj/machinery/atmospherics/valve/build_network()
-	if(!network_node1 && node1)
-		network_node1 = new /datum/pipe_network()
-		network_node1.normal_members += src
-		network_node1.build_network(node1, src)
-
-	if(!network_node2 && node2)
-		network_node2 = new /datum/pipe_network()
-		network_node2.normal_members += src
-		network_node2.build_network(node2, src)
-
 /obj/machinery/atmospherics/valve/return_network(obj/machinery/atmospherics/reference)
-	build_network()
-
 	if(reference==node1)
 		return network_node1
 
@@ -209,11 +157,11 @@
 
 /obj/machinery/atmospherics/valve/disconnect(obj/machinery/atmospherics/reference)
 	if(reference==node1)
-		qdel(network_node1)
+		rust_release_network_wrapper(network_node1)
 		node1 = null
 
 	else if(reference==node2)
-		qdel(network_node2)
+		rust_release_network_wrapper(network_node2)
 		node2 = null
 
 	update_underlays()
@@ -290,16 +238,14 @@
 			else
 				open()
 
-/obj/machinery/atmospherics/valve/attackby(obj/item/W as obj, mob/user as mob)
-	if (!W.has_tool_quality(TOOL_WRENCH))
-		return ..()
+/obj/machinery/atmospherics/valve/wrench_act(mob/user, obj/item/W)
 	if (istype(src, /obj/machinery/atmospherics/valve/digital) && !src.allowed(user))
 		to_chat(user, span_warning("Access denied."))
-		return 1
+		return ITEM_INTERACT_BLOCKING
 	if(!can_unwrench())
 		to_chat(user, span_warning("You cannot unwrench \the [src], it is too exerted due to internal pressure."))
 		add_fingerprint(user)
-		return 1
+		return ITEM_INTERACT_BLOCKING
 	playsound(src, W.usesound, 50, 1)
 	to_chat(user, span_notice("You begin to unfasten \the [src]..."))
 	if (do_after(user, 40 * W.toolspeed, target = src))
@@ -308,6 +254,7 @@
 			span_notice("You have unfastened \the [src]."), \
 			"You hear a ratchet.")
 		atom_deconstruct()
+	return ITEM_INTERACT_SUCCESS
 
 /obj/machinery/atmospherics/valve/examine(mob/user)
 	. = ..()

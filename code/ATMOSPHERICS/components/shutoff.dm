@@ -1,6 +1,12 @@
 GLOBAL_LIST_EMPTY(shutoff_valves)
 
 /proc/wake_automatic_shutoff_valves()
+	if(SSexplosions?.is_bulk_resolving())
+		SSair.pending_automatic_shutoff_wake = TRUE
+		return
+	wake_all_automatic_shutoff_valves()
+
+/proc/wake_all_automatic_shutoff_valves()
 	for(var/obj/machinery/atmospherics/valve/shutoff/valve as anything in GLOB.shutoff_valves)
 		START_MACHINE_PROCESSING(valve)
 

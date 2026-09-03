@@ -47,9 +47,6 @@
 	AddElement(/datum/element/climbable)
 
 /obj/machinery/account_database/attackby(obj/O, mob/user)
-	if(computer_deconstruction_screwdriver(user, O))
-		return
-
 	if(!istype(O, /obj/item/card/id))
 		return ..()
 
@@ -61,6 +58,9 @@
 		SStgui.update_uis(src)
 
 	attack_hand(user)
+
+/obj/machinery/account_database/screwdriver_act(mob/user, obj/item/tool)
+	return deconstruct_display(user, tool)
 
 /obj/machinery/account_database/attack_hand(mob/user as mob)
 	if(stat & (NOPOWER|BROKEN)) return

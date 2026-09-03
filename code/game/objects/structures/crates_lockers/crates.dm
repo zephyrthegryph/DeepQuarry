@@ -78,11 +78,7 @@
 	return 1
 
 /obj/structure/closet/crate/attackby(obj/item/W as obj, mob/user as mob)
-	if(W.has_tool_quality(TOOL_WRENCH) && istype(src,/obj/structure/closet/crate/bin))
-		return ..()
-	else if(W.has_tool_quality(TOOL_WELDER))
-		return ..()
-	else if(opened)
+	if(opened)
 		if(isrobot(user))
 			return
 		if(W.loc != user) // This should stop mounted modules ending up outside the module.
@@ -109,13 +105,17 @@
 			user.drop_item()
 			W.forceMove(src)
 			return
-	else if(W.has_tool_quality(TOOL_WIRECUTTER))
-		if(rigged)
-			to_chat(user , span_notice("You cut away the wiring."))
-			playsound(src, W.usesound, 100, 1)
-			rigged = 0
-			return
-	else return attack_hand(user)
+	else
+		return ..()
+
+/obj/structure/closet/crate/wirecutter_act(mob/user, obj/item/W)
+	if(rigged)
+		to_chat(user , span_notice("You cut away the wiring."))
+		playsound(src, W.usesound, 100, 1)
+		rigged = FALSE
+		return TRUE
+	attack_hand(user)
+	return TRUE
 
 /obj/structure/closet/crate/ex_act(severity)
 	switch(severity)

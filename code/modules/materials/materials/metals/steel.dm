@@ -1,7 +1,6 @@
 /datum/material/steel
 	name = MAT_STEEL
 	stack_type = /obj/item/stack/material/steel
-	material_class = MATCLASS_METAL
 	hardness = 60
 	density = 20
 	integrity = 150

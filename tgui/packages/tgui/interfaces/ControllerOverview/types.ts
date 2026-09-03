@@ -3,6 +3,11 @@ import type { BooleanLike } from 'tgui-core/react';
 export type SubsystemData = {
   can_fire: BooleanLike;
   cost_ms: number;
+  wall_cost_last_ms: number;
+  cpu_cost_ms: number;
+  cpu_cost_last_ms: number;
+  suspended_cost_last_ms: number;
+  run_slices_last: number;
   doesnt_fire: BooleanLike;
   init_order: number;
   initialization_failure_message: string | undefined;

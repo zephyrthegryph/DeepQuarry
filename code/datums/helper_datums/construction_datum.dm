@@ -49,7 +49,7 @@
 			if(I.has_tool_quality(TOOL_WRENCH))
 				return steps.len
 		if(IS_WELDER)
-			if(I.has_tool_quality(IS_WELDER))
+			if(I.has_tool_quality(TOOL_WELDER))
 				return steps.len
 
 	if(istype(I, L["key"]))
@@ -120,7 +120,7 @@
 			if(I.has_tool_quality(TOOL_WRENCH))
 				return FORWARD
 		if(IS_WELDER)
-			if(I.has_tool_quality(IS_WELDER))
+			if(I.has_tool_quality(TOOL_WELDER))
 				return FORWARD
 
 	switch(L["backkey"])
@@ -137,7 +137,7 @@
 			if(I.has_tool_quality(TOOL_WRENCH))
 				return BACKWARD
 		if(IS_WELDER)
-			if(I.has_tool_quality(IS_WELDER))
+			if(I.has_tool_quality(TOOL_WELDER))
 				return BACKWARD
 
 	if(istype(I, L["key"]))

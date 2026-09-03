@@ -7,7 +7,10 @@ import { useBackend } from 'tgui/backend';
 import { Box, Button, Dropdown } from 'tgui-core/components';
 import type { EditorProps } from './index';
 
-type ExternalState = { status: 'normal' | 'amputated' | 'cyborg'; model?: string | null };
+type ExternalState = {
+  status: 'normal' | 'amputated' | 'cyborg';
+  model?: string | null;
+};
 type Data = {
   externals: Record<string, ExternalState>;
   internals: Record<string, string>;
@@ -21,7 +24,11 @@ type Static = {
   internal_order: string[];
 };
 
-const EXTERNAL_STATES: Array<{ key: 'normal' | 'amputated' | 'cyborg'; label: string; color?: string }> = [
+const EXTERNAL_STATES: Array<{
+  key: 'normal' | 'amputated' | 'cyborg';
+  label: string;
+  color?: string;
+}> = [
   { key: 'normal', label: 'Normal' },
   { key: 'amputated', label: 'Amputated', color: 'orange' },
   { key: 'cyborg', label: 'Cybernetic', color: 'olive' },
@@ -42,8 +49,10 @@ export const OrgansEditor = ({ data, staticData }: EditorProps) => {
   const send = (action: string, params: Record<string, unknown>) =>
     act('dq_editor_action', { editor: 'organs', action, params });
 
-  const externalOrder = s.external_order ?? Object.keys(s.external_labels ?? {});
-  const internalOrder = s.internal_order ?? Object.keys(s.internal_labels ?? {});
+  const externalOrder =
+    s.external_order ?? Object.keys(s.external_labels ?? {});
+  const internalOrder =
+    s.internal_order ?? Object.keys(s.internal_labels ?? {});
   const limbModels = s.limb_models ?? [];
   const modelOptions = limbModels.map((m) => ({ value: m, displayText: m }));
 
@@ -56,7 +65,9 @@ export const OrgansEditor = ({ data, staticData }: EditorProps) => {
       }}
     >
       <Box>
-        <Box bold mb={0.5} color="label">External Limbs</Box>
+        <Box bold mb={0.5} color="label">
+          External Limbs
+        </Box>
         {externalOrder.map((limb) => {
           const state = d.externals?.[limb] ?? { status: 'normal' };
           return (
@@ -105,7 +116,9 @@ export const OrgansEditor = ({ data, staticData }: EditorProps) => {
         })}
       </Box>
       <Box>
-        <Box bold mb={0.5} color="label">Internal Organs</Box>
+        <Box bold mb={0.5} color="label">
+          Internal Organs
+        </Box>
         {internalOrder.map((organ) => {
           const status = d.internals?.[organ] ?? 'normal';
           return (
@@ -130,7 +143,10 @@ export const OrgansEditor = ({ data, staticData }: EditorProps) => {
                     selected={status === opt.key}
                     color={status === opt.key ? opt.color : undefined}
                     onClick={() =>
-                      send('set_internal_status', { limb: organ, status: opt.key })
+                      send('set_internal_status', {
+                        limb: organ,
+                        status: opt.key,
+                      })
                     }
                   >
                     {opt.label}

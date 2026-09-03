@@ -81,7 +81,7 @@
 	. = ..()
 	// A melee strike is an impact + contact form trigger; a substance-infused
 	// weapon discharges here (the infusion ignores it unless its trigger matches).
-	substance_form_trigger(get_turf(target), target, SUB_TRIG_IMPACT, SUB_TRIG_CONTACT)
+	material_response_impact(get_turf(target), target)
 	if(!unbreakable)
 		if(material.is_brittle())
 			health = 0
@@ -91,7 +91,7 @@
 
 /obj/item/material/throw_impact(atom/hit_atom)
 	. = ..()
-	substance_form_trigger(get_turf(hit_atom) || get_turf(src), hit_atom, SUB_TRIG_IMPACT, SUB_TRIG_PRESSURE)
+	material_response_impact(get_turf(hit_atom) || get_turf(src), hit_atom)
 
 /obj/item/material/attackby(obj/item/W, mob/user)
 	if(istype(W, /obj/item/whetstone))
@@ -173,7 +173,6 @@ Commenting this out pending rebalancing of radiation based on small objects.
 // Commenting this out while fires are so spectacularly lethal, as I can't seem to get this balanced appropriately.
 /obj/item/material/fire_act(datum/gas_mixture/air, exposed_temperature, exposed_volume)
 	TemperatureAct(exposed_temperature)
-	substance_form_trigger(get_turf(src), src, SUB_TRIG_HEAT)
 
 // This might need adjustment. Will work that out later.
 /obj/item/material/proc/TemperatureAct(temperature)

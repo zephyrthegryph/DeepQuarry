@@ -91,7 +91,7 @@ GLOBAL_LIST_EMPTY(all_turbines)
 		SSmachines.unsubscribe_gas_dependency(mixture_id, WR)
 	LAZYCLEARLIST(sleeping_mixture_ids)
 
-/obj/machinery/power/generator/proc/gas_dependency_changed(mixture_id, change_mask)
+/obj/machinery/power/generator/gas_dependency_changed(mixture_id, change_mask)
 	if(!(change_mask & GAS_DEPENDENCY_PRESSURE) || !circ1 || !circ2)
 		return FALSE
 	return (circ1.air1.return_pressure() - circ1.air2.return_pressure() > 10) || (circ2.air1.return_pressure() - circ2.air2.return_pressure() > 10)
@@ -201,26 +201,24 @@ GLOBAL_LIST_EMPTY(all_turbines)
 /obj/machinery/power/generator/attack_ai(mob/user)
 	attack_hand(user)
 
-/obj/machinery/power/generator/attackby(obj/item/W as obj, mob/user as mob)
-	if(W.has_tool_quality(TOOL_WRENCH))
-		playsound(src, W.usesound, 75, 1)
-		anchored = !anchored
-		user.visible_message("[user.name] [anchored ? "secures" : "unsecures"] the bolts holding [src.name] to the floor.", \
+/obj/machinery/power/generator/wrench_act(mob/user, obj/item/W)
+	playsound(src, W.usesound, 75, 1)
+	anchored = !anchored
+	user.visible_message("[user.name] [anchored ? "secures" : "unsecures"] the bolts holding [src.name] to the floor.", \
 					"You [anchored ? "secure" : "unsecure"] the bolts holding [src] to the floor.", \
 					"You hear a ratchet.")
-		update_use_power(anchored ? USE_POWER_IDLE : USE_POWER_ACTIVE)
-		if(anchored)
-			START_MACHINE_PROCESSING(src)
-		if(anchored) // Powernet connection stuff.
-			connect_to_network()
-		else
-			disconnect_from_network()
-		reconnect()
-		lastgenlev = 0
-		effective_gen = 0
-		update_icon()
+	update_use_power(anchored ? USE_POWER_IDLE : USE_POWER_ACTIVE)
+	if(anchored)
+		START_MACHINE_PROCESSING(src)
+	if(anchored)
+		connect_to_network()
 	else
-		..()
+		disconnect_from_network()
+	reconnect()
+	lastgenlev = 0
+	effective_gen = 0
+	update_icon()
+	return ITEM_INTERACT_SUCCESS
 
 /obj/machinery/power/generator/attack_hand(mob/user)
 	add_fingerprint(user)

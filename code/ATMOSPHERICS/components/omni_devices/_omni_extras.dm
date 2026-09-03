@@ -43,13 +43,17 @@
 	if(node)
 		return
 	master.atmos_init()
-	master.build_network()
 	if(node)
 		node.atmos_init()
-		node.build_network()
+	master.rust_register_pipe_topology()
 
 /datum/omni_port/proc/disconnect()
 	if(node)
+		var/port_index = master.ports.Find(src)
+		var/neighbor_index = node.rust_pipe_port_index_for_neighbor(master)
+		if(port_index && neighbor_index && length(master.rust_pipe_port_ids) && length(node.rust_pipe_port_ids))
+			SSair.rust_queue_pipe_operation(RUST_PIPE_OP_DISCONNECT, master.rust_pipe_port_ids[port_index], node.rust_pipe_port_ids[neighbor_index])
+			SSair.rust_commit_pending_pipenets()
 		node.disconnect(master)
 		master.disconnect(node)
 

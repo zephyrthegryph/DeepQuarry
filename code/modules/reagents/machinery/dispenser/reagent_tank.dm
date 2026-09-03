@@ -185,10 +185,8 @@
 	icon_state = "barrel3"
 	modded = FALSE
 
-/obj/structure/reagent_dispensers/fueltank/barrel/attackby(obj/item/W as obj, mob/user as mob)
-	if (W.has_tool_quality(TOOL_WRENCH)) //can't wrench it shut, it's always open
-		return
-	return ..()
+/obj/structure/reagent_dispensers/fueltank/barrel/wrench_act(mob/user, obj/item/tool)
+	return ITEM_INTERACT_BLOCKING // Open barrels have no closable faucet.
 
 /obj/structure/reagent_dispensers/fueltank/examine(mob/user)
 	. = ..()
@@ -209,15 +207,6 @@
 
 /obj/structure/reagent_dispensers/fueltank/attackby(obj/item/W as obj, mob/user as mob)
 	src.add_fingerprint(user)
-	if (W.has_tool_quality(TOOL_WRENCH))
-		user.visible_message("[user] wrenches [src]'s faucet [modded ? "closed" : "open"].", \
-			"You wrench [src]'s faucet [modded ? "closed" : "open"]")
-		modded = modded ? 0 : 1
-		playsound(src, W.usesound, 75, 1)
-		if (modded)
-			message_admins("[key_name_admin(user)] opened fueltank at [loc.loc.name] ([loc.x],[loc.y],[loc.z]), leaking fuel. (<A href='byond://?_src_=holder;[HrefToken()];adminplayerobservecoodjump=1;X=[loc.x];Y=[loc.y];Z=[loc.z]'>JMP</a>)")
-			log_game("[key_name(user)] opened fueltank at [loc.loc.name] ([loc.x],[loc.y],[loc.z]), leaking fuel.")
-			leak_fuel(amount_per_transfer_from_this)
 	if (istype(W,/obj/item/assembly_holder))
 		if (rig)
 			to_chat(user, span_warning("There is another device in the way."))
@@ -241,6 +230,17 @@
 			add_overlay(test)
 
 	return ..()
+
+/obj/structure/reagent_dispensers/fueltank/wrench_act(mob/user, obj/item/tool)
+	add_fingerprint(user)
+	user.visible_message("[user] wrenches [src]'s faucet [modded ? "closed" : "open"].", "You wrench [src]'s faucet [modded ? "closed" : "open"]")
+	modded = !modded
+	playsound(src, tool.usesound, 75, TRUE)
+	if(modded)
+		message_admins("[key_name_admin(user)] opened fueltank at [loc.loc.name] ([loc.x],[loc.y],[loc.z]), leaking fuel. (<A href='byond://?_src_=holder;[HrefToken()];adminplayerobservecoodjump=1;X=[loc.x];Y=[loc.y];Z=[loc.z]'>JMP</a>)")
+		log_game("[key_name(user)] opened fueltank at [loc.loc.name] ([loc.x],[loc.y],[loc.z]), leaking fuel.")
+		leak_fuel(amount_per_transfer_from_this)
+	return ITEM_INTERACT_SUCCESS
 
 
 /obj/structure/reagent_dispensers/fueltank/bullet_act(obj/item/projectile/Proj)
@@ -357,52 +357,6 @@
 		. += span_notice("There are [cups] cups in the cup dispenser.")
 
 /obj/structure/reagent_dispensers/water_cooler/attackby(obj/item/I as obj, mob/user as mob)
-	if(I.has_tool_quality(TOOL_WRENCH))
-		src.add_fingerprint(user)
-		if(bottle)
-			playsound(src, I.usesound, 50, 1)
-			if(do_after(user, 2 SECONDS, target = src) && bottle)
-				to_chat(user, span_notice("You unfasten the jug."))
-				var/obj/item/reagent_containers/glass/cooler_bottle/G = new /obj/item/reagent_containers/glass/cooler_bottle( src.loc )
-				for(var/datum/reagent/R in reagents.reagent_list)
-					var/total_reagent = reagents.get_reagent_amount(R.id)
-					G.reagents.add_reagent(R.id, total_reagent)
-				reagents.clear_reagents()
-				bottle = 0
-				update_icon()
-		else
-			if(anchored)
-				user.visible_message("\The [user] begins unsecuring \the [src] from the floor.", "You start unsecuring \the [src] from the floor.")
-			else
-				user.visible_message("\The [user] begins securing \the [src] to the floor.", "You start securing \the [src] to the floor.")
-			if(do_after(user, 2 SECONDS * I.toolspeed, target = src))
-				if(!src) return
-				to_chat(user, span_notice("You [anchored? "un" : ""]secured \the [src]!"))
-				anchored = !anchored
-				playsound(src, I.usesound, 50, 1)
-		return
-
-	if(I.has_tool_quality(TOOL_SCREWDRIVER))
-		if(cupholder)
-			playsound(src, I.usesound, 50, 1)
-			to_chat(user, span_notice("You take the cup dispenser off."))
-			new /obj/item/stack/material/plastic( src.loc )
-			if(cups)
-				for(var/i = 1 to cups)
-					new /obj/item/reagent_containers/food/drinks/sillycup(src.loc)
-			cups = 0
-			cupholder = 0
-			update_icon()
-			return
-		if(!bottle && !cupholder)
-			playsound(src, I.usesound, 50, 1)
-			to_chat(user, span_notice("You start taking the water-cooler apart."))
-			if(do_after(user, 2 SECONDS * I.toolspeed, target = src) && !bottle && !cupholder)
-				to_chat(user, span_notice("You take the water-cooler apart."))
-				new /obj/item/stack/material/plastic( src.loc, 4 )
-				qdel(src)
-		return
-
 	if(istype(I, /obj/item/reagent_containers/glass/cooler_bottle))
 		src.add_fingerprint(user)
 		if(!bottle)
@@ -440,6 +394,49 @@
 		else
 			to_chat(user, span_warning("There is already a cup dispenser there!"))
 		return
+
+/obj/structure/reagent_dispensers/water_cooler/wrench_act(mob/user, obj/item/tool)
+	add_fingerprint(user)
+	if(bottle)
+		playsound(src, tool.usesound, 50, TRUE)
+		if(!do_after(user, 2 SECONDS, target = src) || !bottle)
+			return ITEM_INTERACT_BLOCKING
+		to_chat(user, span_notice("You unfasten the jug."))
+		var/obj/item/reagent_containers/glass/cooler_bottle/jug = new(loc)
+		for(var/datum/reagent/reagent in reagents.reagent_list)
+			jug.reagents.add_reagent(reagent.id, reagents.get_reagent_amount(reagent.id))
+		reagents.clear_reagents()
+		bottle = FALSE
+		update_icon()
+		return ITEM_INTERACT_SUCCESS
+	if(!do_after(user, 2 SECONDS * tool.toolspeed, target = src))
+		return ITEM_INTERACT_BLOCKING
+	to_chat(user, span_notice("You [anchored ? "un" : ""]secure \the [src]."))
+	anchored = !anchored
+	playsound(src, tool.usesound, 50, TRUE)
+	return ITEM_INTERACT_SUCCESS
+
+/obj/structure/reagent_dispensers/water_cooler/screwdriver_act(mob/user, obj/item/tool)
+	if(cupholder)
+		playsound(src, tool.usesound, 50, TRUE)
+		to_chat(user, span_notice("You take the cup dispenser off."))
+		new /obj/item/stack/material/plastic(loc)
+		for(var/i = 1 to cups)
+			new /obj/item/reagent_containers/food/drinks/sillycup(loc)
+		cups = 0
+		cupholder = FALSE
+		update_icon()
+		return ITEM_INTERACT_SUCCESS
+	if(bottle)
+		return ITEM_INTERACT_BLOCKING
+	playsound(src, tool.usesound, 50, TRUE)
+	to_chat(user, span_notice("You start taking the water-cooler apart."))
+	if(!do_after(user, 2 SECONDS * tool.toolspeed, target = src) || bottle || cupholder)
+		return ITEM_INTERACT_BLOCKING
+	to_chat(user, span_notice("You take the water-cooler apart."))
+	new /obj/item/stack/material/plastic(loc, 4)
+	qdel(src)
+	return ITEM_INTERACT_SUCCESS
 
 /obj/structure/reagent_dispensers/water_cooler/attack_hand(mob/user)
 	if(cups)

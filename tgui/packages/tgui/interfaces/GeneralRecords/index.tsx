@@ -6,14 +6,14 @@ import { ComplexModal } from '../common/ComplexModal';
 import { LoginInfo } from '../common/LoginInfo';
 import { LoginScreen } from '../common/LoginScreen';
 import { TemporaryNotice } from '../common/TemporaryNotice';
-import { GeneralRecordsList } from './GeneralRecordsList';
 import { DepartmentFinances } from './DepartmentFinances';
-import { ManagementContracts } from './ManagementContracts';
+import { GeneralRecordsList } from './GeneralRecordsList';
 import {
   GeneralRecordsMaintenance,
   GeneralRecordsNavigation,
   GeneralRecordsView,
 } from './GeneralRecordsOptions';
+import { ManagementContracts } from './ManagementContracts';
 import type { Data } from './types';
 
 export const GeneralRecords = (props) => {

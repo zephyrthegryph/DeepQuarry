@@ -58,19 +58,19 @@
 		var/turf/T = get_turf(src)
 		T.attackby(C, user) //BubbleWrap - hand this off to the underlying turf instead
 		return
-	if(C.has_tool_quality(TOOL_WELDER))
-		var/obj/item/weldingtool/WT = C.get_welder()
-		if(WT.welding == 1)
-			if(WT.remove_fuel(0, user))
-				to_chat(user, span_notice("Slicing lattice joints ..."))
-			new /obj/item/stack/rods(src.loc, 1) //VOREstation Edit: Return the same amount of rods used to build this.
-			qdel(src)
-		return
 	if(istype(C, /obj/item/stack/rods)) //VOREstation Edit: Modernizes upgrading lattices into catwalks.
 		upgrade(C, user)
 		//VOREstation Edit End
 		return
 	return
+
+/obj/structure/lattice/welder_act(mob/user, obj/item/C)
+	var/obj/item/weldingtool/WT = C.get_welder()
+	if(WT.welding && WT.remove_fuel(0, user))
+		to_chat(user, span_notice("Slicing lattice joints ..."))
+		new /obj/item/stack/rods(loc, 1)
+		qdel(src)
+	return TRUE
 
 /obj/structure/lattice/proc/updateOverlays()
 	//if(!(istype(src.loc, /turf/space)))

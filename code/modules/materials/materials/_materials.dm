@@ -234,10 +234,6 @@ GLOBAL_LIST_INIT(name_to_material, populate_material_list())
 
 	// material property system.
 	//
-	// material_class is one of MATCLASS_METAL/CRYSTAL/ORGANIC/CERAMIC and
-	// drives smelter routing, alloy rules, and per-class stat ranges when
-	// this material is rolled dynamically by SSquarry.
-	//
 	// The eleven property vars below are read-heavy numeric stats. Every
 	// material can carry every stat (default 0). Static materials declare
 	// what's gameplay-relevant; /datum/material/dynamic rolls all of them
@@ -251,7 +247,6 @@ GLOBAL_LIST_INIT(name_to_material, populate_material_list())
 	var/luminescence = 0   // passive light range driver (~0-80)
 	var/radioactivity = 0  // per-tick irradiation strength
 	var/toxicity = 0       // per-tick toxin dose to a bare holder
-	var/material_class = MATCLASS_METAL
 	// Mechanical
 	var/hardness = 0
 	var/density = 0                  // Was upstream `weight`.
@@ -295,11 +290,6 @@ GLOBAL_LIST_INIT(name_to_material, populate_material_list())
 	var/biocompatibility = 0
 	var/gas_sorption_capacity = 0
 	var/reagent_porosity = 0
-	/// Canonical triggered material responses. Entries are /datum/substance
-	/// descriptors because that existing datum is the resolver grammar; the
-	/// finished material, not a separate infusion component, owns every entry.
-	var/list/material_effects
-	var/material_effect_charges = SUBSTANCE_INFUSION_CHARGES
 	// Trait holder (component-driven behaviors attached at New() or roll
 	// time live as full /datum/component children on this material).
 	var/list/traits
@@ -372,21 +362,6 @@ GLOBAL_LIST_INIT(name_to_material, populate_material_list())
 		use_name = display_name
 	if(!shard_icon)
 		shard_icon = shard_type
-
-/datum/material/Destroy()
-	QDEL_LIST(material_effects)
-	return ..()
-
-/datum/material/proc/add_material_effect(datum/substance/effect)
-	if(!istype(effect))
-		return FALSE
-	LAZYINITLIST(material_effects)
-	var/key = substance_material_content_key(effect)
-	for(var/datum/substance/existing as anything in material_effects)
-		if(substance_material_content_key(existing) == key)
-			return TRUE
-	material_effects += effect.Clone()
-	return TRUE
 
 // This is a placeholder for proper integration of windows/windoors into the system.
 /datum/material/proc/build_windows(mob/living/user, obj/item/stack/used_stack)

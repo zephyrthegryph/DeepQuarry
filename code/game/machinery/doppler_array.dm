@@ -1,4 +1,5 @@
 /obj/machinery/doppler_array
+	maintenance_flags = MACHINE_MAINT_STANDARD
 	anchored = TRUE
 	name = "tachyon-doppler array"
 	density = TRUE
@@ -80,10 +81,6 @@
 
 /obj/machinery/doppler_array/attackby(obj/item/W, mob/user, attack_modifier, click_parameters)
 	add_fingerprint(user)
-	if(default_deconstruction_screwdriver(user, W))
-		return
-	if(default_deconstruction_crowbar(user, W))
-		return
 	if(default_part_replacement(user, W))
 		return
 

@@ -157,7 +157,7 @@
 
 //Handles repairs (and also upgrades).
 
-/obj/item/clothing/suit/space/attackby(obj/item/W as obj, mob/user as mob)
+/obj/item/clothing/suit/space/attackby(obj/item/W as obj, mob/user as mob, tool_quality)
 	if(istype(W,/obj/item/stack/material))
 		var/repair_power = 0
 		switch(W.get_material_name())
@@ -183,7 +183,7 @@
 			repair_breaches(BURN, use_amt * repair_power, user)
 		return
 
-	else if(W.has_tool_quality(TOOL_WELDER))
+	else if(tool_quality == TOOL_WELDER)
 
 		if(isliving(src.loc))
 			to_chat(user, span_red("How do you intend to patch a hardsuit while someone is wearing it?"))
@@ -202,6 +202,10 @@
 		return
 
 	..()
+
+/obj/item/clothing/suit/space/welder_act(mob/user, obj/item/tool)
+	attackby(tool, user, TOOL_WELDER)
+	return TRUE
 
 /obj/item/clothing/suit/space/examine(mob/user)
 	. = ..()

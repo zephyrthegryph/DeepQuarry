@@ -163,6 +163,14 @@
 			embed_chance = max(5, round(force/(w_class*3)))
 
 /obj/item/Destroy()
+	// Machine components are normally located inside their owner. Detach the
+	// owner's strong bookkeeping reference before qdel continues so a component
+	// queued independently (upgrade, explosion, or bulk teardown) cannot become a
+	// hard delete retained by component_parts.
+	if(istype(loc, /obj/machinery))
+		var/obj/machinery/owner = loc
+		if(owner.component_parts)
+			owner.component_parts -= src
 	d_stage_overlay = null
 	d_stage_overlay_key = null
 	exploit_for = null
@@ -418,8 +426,7 @@
 
 /obj/item/throw_impact(atom/hit_atom)
 	..()
-	substance_emit_form_trigger(src, get_turf(hit_atom) || get_turf(src), hit_atom, SUB_TRIG_IMPACT, SUB_TRIG_PRESSURE)
-	material_response_impact(SUB_TRIG_IMPACT, get_turf(hit_atom) || get_turf(src), hit_atom)
+	material_response_impact(get_turf(hit_atom) || get_turf(src), hit_atom)
 	if(isliving(hit_atom) && !hit_atom.is_incorporeal()) //Living mobs handle hit sounds differently.
 		var/volume = get_volume_by_throwforce_and_or_w_class()
 		if (throwforce > 0)

@@ -68,7 +68,10 @@ export type managementContract = {
   deadline_remaining?: string;
   grace_time_remaining?: string;
   requirements: contractRequirement[];
-  details?: medicalTrialDetails | medicalCaseReportDetails | socialOutcomeDetails;
+  details?:
+    | medicalTrialDetails
+    | medicalCaseReportDetails
+    | socialOutcomeDetails;
 };
 
 export type contractDistribution = {

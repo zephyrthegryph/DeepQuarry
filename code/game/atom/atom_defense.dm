@@ -15,7 +15,10 @@
 	if(!uses_integrity)
 		CRASH("[src] had /atom/proc/take_damage() called on it without it being a type that has uses_integrity = TRUE!")
 	if(QDELETED(src))
-		CRASH("[src] taking damage after deletion")
+		// Hitscan projectiles and explosions can already have queued a second hit
+		// when the first one deletes their target. The target is gone; there is no
+		// state left to damage and turning that race into a runtime only adds lag.
+		return
 	if(atom_integrity <= 0)
 		// Already at zero integrity: destruction has already fired (or another
 		// damage source reached here first this same tick). Further damage is a
@@ -117,7 +120,6 @@
 /atom/proc/atom_destruction(damage_flag)
 	SHOULD_CALL_PARENT(TRUE)
 	SEND_SIGNAL(src, COMSIG_ATOM_DESTRUCTION, damage_flag)
-	substance_on_destruction(src) // a substance-material obj discharges its effect when destroyed
 
 ///returns the damage value of the attack after processing the atom's various armor protections
 ///Damage_flag can be any of the following: "melee" = 0, "bullet" = 0, "laser" = 0,"energy" = 0, "bomb" = 0, "bio" = 0, "rad" = 0

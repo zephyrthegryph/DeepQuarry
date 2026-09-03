@@ -7,6 +7,7 @@
 	icon = 'icons/obj/machines/stationmap.dmi'
 	icon_state = "station_map"
 	layer = ABOVE_WINDOW_LAYER
+	maintenance_flags = MACHINE_MAINT_STANDARD
 	anchored = TRUE
 	density = FALSE
 	use_power = USE_POWER_IDLE
@@ -15,6 +16,7 @@
 	circuit = /obj/item/circuitboard/station_map
 	vis_flags = VIS_HIDE // They have an emissive that looks bad in openspace due to their wall-mounted nature
 	flags = ON_BORDER|WALL_ITEM
+	integrity_failure = 0.5
 
 	// TODO - Port use_auto_lights from /vg - for now declare here
 	var/use_auto_lights = 1
@@ -200,24 +202,16 @@
 
 /obj/machinery/station_map/attackby(obj/item/W as obj, mob/user as mob)
 	src.add_fingerprint(user)
-	if(default_deconstruction_screwdriver(user, W))
-		return
-	if(default_deconstruction_crowbar(user, W))
-		return
 	return ..()
 
-/obj/machinery/station_map/ex_act(severity)
-	switch(severity)
-		if(1)
-			qdel(src)
-		if(2)
-			if (prob(50))
-				qdel(src)
-			else
-				set_broken()
-		if(3)
-			if (prob(25))
-				set_broken()
+/obj/machinery/station_map/atom_break(damage_flag)
+	. = ..()
+	set_broken()
+
+/obj/machinery/station_map/atom_fix()
+	. = ..()
+	stat &= ~BROKEN
+	update_icon()
 
 /datum/frame/frame_types/station_map
 	name = "Station Map Frame"

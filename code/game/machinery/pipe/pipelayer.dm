@@ -1,4 +1,5 @@
 /obj/machinery/pipelayer
+	maintenance_flags = MACHINE_MAINT_PANEL
 	name = "automatic pipe layer"
 	icon = 'icons/obj/stationobjs.dmi'
 	icon_state = "pipe_d"
@@ -75,20 +76,7 @@
 	return
 
 /obj/machinery/pipelayer/attackby(obj/item/W as obj, mob/user as mob)
-	if(default_deconstruction_screwdriver(user, W))
-		return
-	if(default_deconstruction_crowbar(user, W))
-		return
 	if(default_part_replacement(user, W))
-		return
-	if (!panel_open && W.has_tool_quality(TOOL_WRENCH))
-		P_type_t = tgui_input_list(user, "Choose pipe type", "Pipe type", Pipes)
-		P_type = Pipes[P_type_t]
-		user.visible_message(span_notice("[user] has set \the [src] to manufacture [P_type_t]."), span_notice("You set \the [src] to manufacture [P_type_t]."))
-		return
-	if(!panel_open && W.has_tool_quality(TOOL_CROWBAR))
-		a_dis = !a_dis
-		user.visible_message(span_notice("[user] has [!a_dis?"de":""]activated auto-dismantling."), span_notice("You [!a_dis?"de":""]activate auto-dismantling."))
 		return
 	if(istype(W, /obj/item/pipe))
 		// NOTE - We must check for matter, otherwise the (free) pipe dispenser can be used to get infinite steel.
@@ -113,6 +101,23 @@
 		return
 
 	..()
+
+/obj/machinery/pipelayer/wrench_act(mob/user, obj/item/tool)
+	if(panel_open)
+		return ITEM_INTERACT_BLOCKING
+	P_type_t = tgui_input_list(user, "Choose pipe type", "Pipe type", Pipes)
+	if(!P_type_t || !Adjacent(user))
+		return ITEM_INTERACT_BLOCKING
+	P_type = Pipes[P_type_t]
+	user.visible_message(span_notice("[user] has set \the [src] to manufacture [P_type_t]."), span_notice("You set \the [src] to manufacture [P_type_t]."))
+	return ITEM_INTERACT_SUCCESS
+
+/obj/machinery/pipelayer/crowbar_act(mob/user, obj/item/tool)
+	if(panel_open)
+		return dismantle() ? ITEM_INTERACT_SUCCESS : ITEM_INTERACT_BLOCKING
+	a_dis = !a_dis
+	user.visible_message(span_notice("[user] has [!a_dis?"de":""]activated auto-dismantling."), span_notice("You [!a_dis?"de":""]activate auto-dismantling."))
+	return ITEM_INTERACT_SUCCESS
 
 /obj/machinery/pipelayer/examine(mob/user)
 	. = ..()

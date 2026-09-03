@@ -1,7 +1,6 @@
 /datum/material/flesh
 	name = MAT_FLESH
 	display_name = "chunk of " + MAT_FLESH
-	material_class = MATCLASS_ORGANIC
 	icon_colour = "#dd90aa"
 	sheet_singular_name = "meat"
 	sheet_plural_name = "meats"
@@ -27,7 +26,6 @@
 /datum/material/darkglass
 	name = MAT_DARKGLASS
 	display_name = MAT_DARKGLASS
-	material_class = MATCLASS_CERAMIC
 	icon_base = MAT_DARKGLASS
 	table_icon_base = MAT_DARKGLASS
 	icon_colour = "#FFFFFF"

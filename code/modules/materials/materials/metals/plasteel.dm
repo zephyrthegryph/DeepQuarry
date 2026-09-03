@@ -1,7 +1,6 @@
 /datum/material/plasteel
 	name = MAT_PLASTEEL
 	stack_type = /obj/item/stack/material/plasteel
-	material_class = MATCLASS_METAL
 	integrity = 400
 	melting_point = 6000
 	icon_base = "solid"
@@ -53,7 +52,6 @@
 /datum/material/plastitanium
 	name = MAT_PLASTITANIUM
 	stack_type = /obj/item/stack/material/plastitanium
-	material_class = MATCLASS_METAL
 	integrity = 600
 	melting_point = 9000
 	icon_base = "solid"

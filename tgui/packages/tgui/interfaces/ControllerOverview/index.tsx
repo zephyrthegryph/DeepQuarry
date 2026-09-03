@@ -1,13 +1,13 @@
 import { useReducer, useState } from 'react';
 import { Button, Dropdown, Input, Section, Stack } from 'tgui-core/components';
-
+import { useBackend } from '../../backend';
 import { Window } from '../../layouts';
 import { SORTING_TYPES } from './constants';
 import { FilterAction, type FilterState, filterReducer } from './filters';
 import { OverviewSection } from './OverviewSection';
 import { SubsystemDialog } from './SubsystemDialog';
 import { SubsystemViews } from './SubsystemViews';
-import { SortType, type SubsystemData } from './types';
+import { type ControllerData, SortType, type SubsystemData } from './types';
 
 export function ControllerOverview(props) {
   return (
@@ -20,6 +20,7 @@ export function ControllerOverview(props) {
 }
 
 export function ControllerContent(props) {
+  const { data } = useBackend<ControllerData>();
   const [state, dispatch] = useReducer(filterReducer, {
     ascending: true,
     inactive: true,
@@ -29,6 +30,9 @@ export function ControllerContent(props) {
   });
 
   const [selected, setSelected] = useState<SubsystemData>();
+  const liveSelected = selected
+    ? data.subsystems.find((subsystem) => subsystem.ref === selected.ref)
+    : undefined;
 
   const { label, inDeciseconds } =
     SORTING_TYPES?.[state.sortType] || SORTING_TYPES[0];
@@ -50,10 +54,10 @@ export function ControllerContent(props) {
 
   return (
     <Stack fill vertical>
-      {selected && (
+      {liveSelected && (
         <SubsystemDialog
           onClose={() => setSelected(undefined)}
-          subsystem={selected}
+          subsystem={liveSelected}
         />
       )}
       <Stack.Item height="15%">

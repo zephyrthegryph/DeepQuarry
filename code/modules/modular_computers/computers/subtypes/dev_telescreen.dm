@@ -19,37 +19,31 @@
 	broken_damage = 150
 	w_class = ITEMSIZE_HUGE
 
-/obj/item/modular_computer/telescreen/attackby(obj/item/W as obj, mob/user as mob)
-	if(W.has_tool_quality(TOOL_CROWBAR))
-		if(anchored)
-			shutdown_computer()
-			anchored = FALSE
-			screen_on = FALSE
+/obj/item/modular_computer/telescreen/crowbar_act(mob/user, obj/item/tool)
+	if(anchored)
+		shutdown_computer()
+		anchored = FALSE
+		screen_on = FALSE
+		pixel_x = 0
+		pixel_y = 0
+		to_chat(user, "You unsecure \the [src].")
+		return ITEM_INTERACT_SUCCESS
+	var/choice = tgui_input_list(user, "Where do you want to place \the [src]?", "Offset selection", list("North", "South", "West", "East", "This tile", "Cancel"))
+	switch(choice)
+		if("North")
+			pixel_y = 32
+		if("South")
+			pixel_y = -32
+		if("West")
+			pixel_x = -32
+		if("East")
+			pixel_x = 32
+		if("This tile")
 			pixel_x = 0
 			pixel_y = 0
-			to_chat(user, "You unsecure \the [src].")
 		else
-			var/choice = tgui_input_list(user, "Where do you want to place \the [src]?", "Offset selection", list("North", "South", "West", "East", "This tile", "Cancel"))
-			var/valid = FALSE
-			switch(choice)
-				if("North")
-					valid = TRUE
-					pixel_y = 32
-				if("South")
-					valid = TRUE
-					pixel_y = -32
-				if("West")
-					valid = TRUE
-					pixel_x = -32
-				if("East")
-					valid = TRUE
-					pixel_x = 32
-				if("This tile")
-					valid = TRUE
-
-			if(valid)
-				anchored = TRUE
-				screen_on = TRUE
-				to_chat(user, "You secure \the [src].")
-			return
-	..()
+			return ITEM_INTERACT_BLOCKING
+	anchored = TRUE
+	screen_on = TRUE
+	to_chat(user, "You secure \the [src].")
+	return ITEM_INTERACT_SUCCESS

@@ -21,28 +21,27 @@
 	to_chat(user, span_notice("You need a crowbar to pry this open!"))
 	return
 
-/obj/structure/largecrate/attackby(obj/item/W as obj, mob/user as mob)
+/obj/structure/largecrate/crowbar_act(mob/user, obj/item/W)
 	var/turf/T = get_turf(src)
 	if(!T)
 		to_chat(user, span_notice("You can't open this here!"))
-	if(W.has_tool_quality(TOOL_CROWBAR))
-		new /obj/item/stack/material/wood(src)
+		return TRUE
+	new /obj/item/stack/material/wood(src)
 
-		for(var/atom/movable/AM in contents)
-			if(AM.simulated)
-				AM.forceMove(T)
-			if(isanimal(AM))
-				var/mob/living/simple_mob/AMBLINAL = AM
-				if(!AMBLINAL.mind)
-					AMBLINAL.ghostjoin = 1
-					AMBLINAL.ghostjoin_icon()
-					GLOB.active_ghost_pods |= AMBLINAL
-		user.visible_message(span_notice("[user] pries \the [src] open."), \
-								span_notice("You pry open \the [src]."), \
-								span_notice("You hear splitting wood."))
-		qdel(src)
-	else
-		return attack_hand(user)
+	for(var/atom/movable/AM in contents)
+		if(AM.simulated)
+			AM.forceMove(T)
+		if(isanimal(AM))
+			var/mob/living/simple_mob/AMBLINAL = AM
+			if(!AMBLINAL.mind)
+				AMBLINAL.ghostjoin = 1
+				AMBLINAL.ghostjoin_icon()
+				GLOB.active_ghost_pods |= AMBLINAL
+	user.visible_message(span_notice("[user] pries \the [src] open."), \
+		span_notice("You pry open \the [src]."), \
+		span_notice("You hear splitting wood."))
+	qdel(src)
+	return TRUE
 
 /obj/structure/largecrate/mule
 	name = "MULE crate"
@@ -52,16 +51,15 @@
 	desc = "You aren't sure how this crate is so light, but the Wulf Aeronautics logo might be a hint."
 	icon_state = "vehiclecrate"
 
-/obj/structure/largecrate/hoverpod/attackby(obj/item/W as obj, mob/user as mob)
-	if(W.has_tool_quality(TOOL_CROWBAR))
-		var/obj/item/mecha_parts/mecha_equipment/ME
-		var/obj/mecha/working/hoverpod/H = new (loc)
+/obj/structure/largecrate/hoverpod/crowbar_act(mob/user, obj/item/W)
+	var/obj/item/mecha_parts/mecha_equipment/ME
+	var/obj/mecha/working/hoverpod/H = new (loc)
 
-		ME = new /obj/item/mecha_parts/mecha_equipment/tool/hydraulic_clamp
-		ME.attach(H)
-		ME = new /obj/item/mecha_parts/mecha_equipment/tool/passenger
-		ME.attach(H)
-	..()
+	ME = new /obj/item/mecha_parts/mecha_equipment/tool/hydraulic_clamp
+	ME.attach(H)
+	ME = new /obj/item/mecha_parts/mecha_equipment/tool/passenger
+	ME.attach(H)
+	return ..()
 
 /obj/structure/largecrate/donksoftvendor
 	name = "\improper Donk-Soft vendor crate"
@@ -157,39 +155,38 @@
 	name = "Bird crate"
 	desc = "You hear chirping and cawing inside the crate. It sounds like there are a lot of birds in there..."
 
-/obj/structure/largecrate/birds/attackby(obj/item/W as obj, mob/user as mob)
-	if(W.has_tool_quality(TOOL_CROWBAR))
-		new /obj/item/stack/material/wood(src)
-		new /mob/living/simple_mob/animal/passive/bird(src)
-		new /mob/living/simple_mob/animal/passive/bird/parrot/kea(src)
-		new /mob/living/simple_mob/animal/passive/bird/parrot/eclectus(src)
-		new /mob/living/simple_mob/animal/passive/bird/parrot/grey_parrot(src)
-		new /mob/living/simple_mob/animal/passive/bird/parrot/black_headed_caique(src)
-		new /mob/living/simple_mob/animal/passive/bird/parrot/white_caique(src)
-		new /mob/living/simple_mob/animal/passive/bird/parrot/budgerigar(src)
-		new /mob/living/simple_mob/animal/passive/bird/parrot/budgerigar/blue(src)
-		new /mob/living/simple_mob/animal/passive/bird/parrot/budgerigar/bluegreen(src)
-		new /mob/living/simple_mob/animal/passive/bird/black_bird(src)
-		new /mob/living/simple_mob/animal/passive/bird/azure_tit(src)
-		new /mob/living/simple_mob/animal/passive/bird/european_robin(src)
-		new /mob/living/simple_mob/animal/passive/bird/goldcrest(src)
-		new /mob/living/simple_mob/animal/passive/bird/ringneck_dove(src)
-		new /mob/living/simple_mob/animal/passive/bird/parrot/cockatiel(src)
-		new /mob/living/simple_mob/animal/passive/bird/parrot/cockatiel/white(src)
-		new /mob/living/simple_mob/animal/passive/bird/parrot/cockatiel/yellowish(src)
-		new /mob/living/simple_mob/animal/passive/bird/parrot/cockatiel/grey(src)
-		new /mob/living/simple_mob/animal/passive/bird/parrot/sulphur_cockatoo(src)
-		new /mob/living/simple_mob/animal/passive/bird/parrot/white_cockatoo(src)
-		new /mob/living/simple_mob/animal/passive/bird/parrot/pink_cockatoo(src)
-		var/turf/T = get_turf(src)
-		for(var/atom/movable/AM in contents)
-			if(AM.simulated) AM.forceMove(T)
-		user.visible_message(span_notice("[user] pries \the [src] open."), \
-								span_notice("You pry open \the [src]."), \
-								span_notice("You hear splitting wood."))
-		qdel(src)
-	else
-		return attack_hand(user)
+/obj/structure/largecrate/birds/crowbar_act(mob/user, obj/item/W)
+	new /obj/item/stack/material/wood(src)
+	new /mob/living/simple_mob/animal/passive/bird (src)
+	new /mob/living/simple_mob/animal/passive/bird/parrot/kea(src)
+	new /mob/living/simple_mob/animal/passive/bird/parrot/eclectus(src)
+	new /mob/living/simple_mob/animal/passive/bird/parrot/grey_parrot(src)
+	new /mob/living/simple_mob/animal/passive/bird/parrot/black_headed_caique(src)
+	new /mob/living/simple_mob/animal/passive/bird/parrot/white_caique(src)
+	new /mob/living/simple_mob/animal/passive/bird/parrot/budgerigar(src)
+	new /mob/living/simple_mob/animal/passive/bird/parrot/budgerigar/blue(src)
+	new /mob/living/simple_mob/animal/passive/bird/parrot/budgerigar/bluegreen(src)
+	new /mob/living/simple_mob/animal/passive/bird/black_bird(src)
+	new /mob/living/simple_mob/animal/passive/bird/azure_tit(src)
+	new /mob/living/simple_mob/animal/passive/bird/european_robin(src)
+	new /mob/living/simple_mob/animal/passive/bird/goldcrest(src)
+	new /mob/living/simple_mob/animal/passive/bird/ringneck_dove(src)
+	new /mob/living/simple_mob/animal/passive/bird/parrot/cockatiel(src)
+	new /mob/living/simple_mob/animal/passive/bird/parrot/cockatiel/white(src)
+	new /mob/living/simple_mob/animal/passive/bird/parrot/cockatiel/yellowish(src)
+	new /mob/living/simple_mob/animal/passive/bird/parrot/cockatiel/grey(src)
+	new /mob/living/simple_mob/animal/passive/bird/parrot/sulphur_cockatoo(src)
+	new /mob/living/simple_mob/animal/passive/bird/parrot/white_cockatoo(src)
+	new /mob/living/simple_mob/animal/passive/bird/parrot/pink_cockatoo(src)
+	var/turf/T = get_turf(src)
+	for(var/atom/movable/AM in contents)
+		if(AM.simulated)
+			AM.forceMove(T)
+	user.visible_message(span_notice("[user] pries \the [src] open."), \
+		span_notice("You pry open \the [src]."), \
+		span_notice("You hear splitting wood."))
+	qdel(src)
+	return TRUE
 
 /obj/structure/largecrate/animal/pred
 	name = "Predator carrier"

@@ -1,7 +1,6 @@
 /datum/material/leather
 	name = MAT_LEATHER
 	display_name = "plainleather"
-	material_class = MATCLASS_ORGANIC
 	icon_colour = "#5C4831"
 	stack_type = /obj/item/stack/material/leather
 	flags = MATERIAL_PADDING

@@ -31,19 +31,18 @@ other types of metals and chemistry for reagents).
 	var/build_type = null
 	/// List of materials required to create one unit of the product. Format is (typepath or caregory) -> amount
 	var/list/materials = list()
-	/// If TRUE, the lathe lets the user pick which loaded material to build this design
-	/// from, instead of baking in a specific one. The chosen material is consumed
-	/// (selectable_amount units) and applied to the product (set_material on material
-	/// items, so exotic/substance alloys carry their properties + effects).
-	var/material_selectable = FALSE
-	/// Units of the chosen material consumed per item when material_selectable.
-	var/selectable_amount = 0
-	/// Optional MATCLASS_* the chosen material must belong to (null = any).
-	var/selectable_class = null
 	/// Optional application bridge for ordinary items that do not implement set_material.
 	var/material_application = null
-	/// UI-only geometry hint for designs with a custom create_item path.
-	var/material_preview_profile = null
+	/// Functional material slots for this design. When omitted on a legacy
+	/// material-selectable design, sensible slots are synthesized from its
+	/// application profile so existing content receives the universal system.
+	var/list/material_slots
+	/// Original canonical material costs retained for coverage tests, UI
+	/// comparison, and exact standard-configuration accounting.
+	var/list/standard_material_costs
+	/// Total physical feedstock used by the original recipe. Family blueprints
+	/// must conserve this even when they replace abstract ingredients.
+	var/original_material_total = 0
 	/// The amount of time required to create one unit of the product.
 	var/construction_time = 3.2 SECONDS
 	/// The typepath of the object produced by this design
@@ -75,6 +74,9 @@ other types of metals and chemistry for reagents).
 	name = "ERROR"
 	desc = "This usually means something in the database has corrupted. If this doesn't go away automatically, inform Central Command so their techs can fix this ASAP(tm)"
 
+/datum/design_techweb/New()
+	. = ..()
+
 /datum/design_techweb/Destroy()
 	// Designs are immutable global datums registered at startup via SSresearch.
 	// Destroying one at runtime would corrupt every techweb that holds a reference to its ID.
@@ -94,6 +96,113 @@ other types of metals and chemistry for reagents).
 		else
 			temp_list[i] = amount
 	materials = temp_list
+	initialize_material_slots_from_costs()
+
+/proc/material_application_for_product(build_path, explicit_application = null)
+	if(ispath(build_path, /obj/item/material/knife) || ispath(build_path, /obj/item/material/kitchen/utensil) || ispath(build_path, /obj/item/stock_parts/spring) || ispath(build_path, /obj/item/stock_parts/gear) || ispath(build_path, /obj/item/stock_parts/console_screen))
+		return MATERIAL_APPLICATION_MONOLITHIC
+	if(ispath(build_path, /obj/item/cell))
+		return MATERIAL_APPLICATION_CELL
+	if(ispath(build_path, /obj/item/stock_parts/capacitor))
+		return MATERIAL_APPLICATION_CAPACITOR
+	if(ispath(build_path, /obj/item/stock_parts/manipulator))
+		return MATERIAL_APPLICATION_MANIPULATOR
+	if(ispath(build_path, /obj/item/stock_parts/matter_bin))
+		return MATERIAL_APPLICATION_MATTER_BIN
+	if(ispath(build_path, /obj/item/stock_parts/scanning_module))
+		return MATERIAL_APPLICATION_SCANNER
+	if(ispath(build_path, /obj/item/stock_parts/micro_laser))
+		return MATERIAL_APPLICATION_LASER
+	if(ispath(build_path, /obj/item/stock_parts))
+		return MATERIAL_APPLICATION_MECHANICAL
+	if(ispath(build_path, /obj/item/circuitboard))
+		return MATERIAL_APPLICATION_CIRCUIT_BOARD
+	if(ispath(build_path, /obj/item/multitool))
+		return MATERIAL_APPLICATION_ELECTRONICS
+	if(ispath(build_path, /obj/item/analyzer) || ispath(build_path, /obj/item/healthanalyzer) || ispath(build_path, /obj/item/t_scanner) || ispath(build_path, /obj/item/gps) || ispath(build_path, /obj/item/radio) || ispath(build_path, /obj/item/pda) || ispath(build_path, /obj/item/reagent_scanner) || ispath(build_path, /obj/item/slime_scanner) || ispath(build_path, /obj/item/robotanalyzer) || ispath(build_path, /obj/item/motiontracker) || ispath(build_path, /obj/item/flashlight))
+		return MATERIAL_APPLICATION_ELECTRONICS
+	if(ispath(build_path, /obj/item/ammo_casing))
+		return MATERIAL_APPLICATION_PROJECTILE
+	if(ispath(build_path, /obj/item/ammo_magazine))
+		return MATERIAL_APPLICATION_MAGAZINE
+	if(ispath(build_path, /obj/item/gun/energy) || ispath(build_path, /obj/item/gun/magnetic))
+		return MATERIAL_APPLICATION_ENERGY_DEVICE
+	if(ispath(build_path, /obj/item/gun))
+		return MATERIAL_APPLICATION_FIREARM
+	if(ispath(build_path, /obj/item/surgical/bonegel))
+		return null
+	if(ispath(build_path, /obj/item/surgical))
+		return MATERIAL_APPLICATION_SURGICAL
+	if(ispath(build_path, /obj/item/tool))
+		return MATERIAL_APPLICATION_TOOL
+	if(ispath(build_path, /obj/item/material/armor_plating) || ispath(build_path, /obj/item/rig))
+		return MATERIAL_APPLICATION_ARMOR
+	if(ispath(build_path, /obj/item/clothing) || ispath(build_path, /obj/item/storage/backpack) || ispath(build_path, /obj/item/storage/belt) || ispath(build_path, /obj/item/storage/pouch))
+		return MATERIAL_APPLICATION_SOFT_GOODS
+	if(ispath(build_path, /obj/item/tank) || ispath(build_path, /obj/item/pipe))
+		return MATERIAL_APPLICATION_PRESSURE
+	if(ispath(build_path, /obj/item/reagent_containers))
+		return MATERIAL_APPLICATION_CONTAINER
+	if(ispath(build_path, /obj/item/stack/cable_coil))
+		return MATERIAL_APPLICATION_CABLE
+	if(ispath(build_path, /obj/item/light))
+		return MATERIAL_APPLICATION_LIGHT
+	if(ispath(build_path, /obj/item/robot_parts) || ispath(build_path, /obj/item/mecha_parts/part) || ispath(build_path, /obj/item/mecha_parts/component) || ispath(build_path, /obj/item/mecha_parts/chassis) || ispath(build_path, /obj/item/mecha_parts/fighter) || ispath(build_path, /obj/item/smes_coil))
+		return MATERIAL_APPLICATION_MECHANICAL
+	return explicit_application
+
+/datum/design_techweb/proc/inferred_material_application()
+	return material_application_for_product(build_path, material_application)
+
+/// Converts ordinary fixed material costs into configurable construction
+/// parts. The total material quantity is preserved; role-appropriate defaults
+/// make an immediately usable product. Non-material categories remain fixed.
+/datum/design_techweb/proc/initialize_material_slots_from_costs()
+	if(!ispath(build_path, /obj))
+		return
+	var/list/fixed_costs = list()
+	var/list/material_cost_keys = list()
+	for(var/key in materials)
+		var/datum/material/material
+		if(istype(key, /datum/material))
+			material = key
+		else if(istext(key))
+			material = get_material_by_name(key)
+		if(material)
+			fixed_costs[material] = (fixed_costs[material] || 0) + materials[key]
+			material_cost_keys += key
+	if(!length(fixed_costs))
+		return
+	for(var/datum/material/material in fixed_costs)
+		original_material_total += fixed_costs[material]
+	var/application = inferred_material_application()
+	if(!length(material_slots))
+		// A fixed recipe is preferable to fictional placeholder parts. Every
+		// configurable family must have an explicit physical blueprint below.
+		if(!application)
+			return
+		var/total = 0
+		for(var/datum/material/material in fixed_costs)
+			total += fixed_costs[material]
+		material_slots = material_slots_for_product(build_path, application, max(total, 1))
+		if(!length(material_slots))
+			return
+		if(!material_slots_normalize_total(material_slots, total))
+			material_slots = null
+			return
+	// Recognized blueprints replace abstract resource costs with the same total
+	// quantity distributed across real parts and sensible standard materials.
+	// Their standard configuration is therefore defined by the blueprint, not
+	// by arbitrary legacy resource ingredients.
+	for(var/key in material_cost_keys)
+		materials -= key
+	material_application = application
+	standard_material_costs = list()
+	var/list/defaults = material_slot_resolve(material_slots)
+	for(var/role in defaults)
+		var/list/spec = material_slots[role]
+		var/default_material = defaults[role]
+		standard_material_costs[default_material] = (standard_material_costs[default_material] || 0) + spec["amount"]
 
 /datum/design_techweb/proc/icon_html(client/user)
 	var/datum/asset/spritesheet_batched/sheet = get_asset_datum(/datum/asset/spritesheet_batched/research_designs)
@@ -106,38 +215,54 @@ other types of metals and chemistry for reagents).
 
 	return isnull(desc) ? initial(object_build_item_path.desc) : desc
 
-/datum/design_techweb/proc/create_item(target, chosen_material)
+/datum/design_techweb/proc/create_item(target, list/material_choices)
 	// Material items (and material clothing) take a material key as their second
 	// Initialize arg, so passing the chosen material makes the product be made of it.
-	if(material_selectable && chosen_material)
-		if(material_application)
-			var/obj/item/product = new build_path(target)
-			var/datum/material/material = GET_MATERIAL_REF(chosen_material)
-			if(!product.apply_engineered_material(material, material_application))
-				qdel(product)
-				return null
-			return product
-		return new build_path(target, chosen_material)
-	return new build_path(target)
+	var/obj/product = new build_path(target)
+	if(!length(material_slots))
+		return product
+	if(!product.apply_material_construction(material_choices, material_slots, material_application))
+		qdel(product)
+		return null
+	if(istype(product, /obj/item/material))
+		var/obj/item/material/material_item = product
+		var/datum/material/primary = product.primary_construction_material()
+		if(primary)
+			material_item.set_material(primary.name)
+	return product
 
-// Effective per-unit material cost given the user's chosen material (selectable designs
-// fold selectable_amount of the chosen material into the fixed cost).
-/datum/design_techweb/proc/effective_materials(chosen_id)
-	if(!material_selectable)
+// Effective per-unit cost given the user's chosen construction materials.
+/datum/design_techweb/proc/effective_materials(list/material_choices)
+	if(!length(material_slots))
 		return materials
 	var/list/out = materials.Copy()
-	var/datum/material/cm = chosen_id ? GET_MATERIAL_REF(chosen_id) : null
-	if(cm && selectable_amount)
-		out[cm] = (out[cm] || 0) + selectable_amount
+	var/list/resolved = material_slot_resolve(material_slots, material_choices)
+	if(!resolved)
+		return null
+	for(var/role in resolved)
+		var/datum/material/chosen = get_material_by_name(resolved[role])
+		var/list/spec = material_slots[role]
+		var/amount = spec["amount"]
+		if(chosen && amount > 0)
+			out[chosen] = (out[chosen] || 0) + amount
 	return out
 
 // Is the chosen material a valid pick for this design (exists, and matches the class filter)?
-/datum/design_techweb/proc/material_choice_valid(chosen_id)
-	if(!material_selectable)
+/datum/design_techweb/proc/material_choice_valid(list/material_choices)
+	if(!length(material_slots))
 		return TRUE
-	var/datum/material/cm = chosen_id ? GET_MATERIAL_REF(chosen_id) : null
-	if(!cm)
-		return FALSE
-	if(selectable_class && cm.material_class != selectable_class)
-		return FALSE
-	return TRUE
+	return !!material_slot_resolve(material_slots, material_choices)
+
+/datum/design_techweb/proc/material_choices_from_params(list/params)
+	var/list/choices = params?["materialSlots"]
+	if(islist(choices))
+		return choices
+	// Accept the previous single picker during rolling upgrades and tests.
+	var/legacy_material = params?["material"]
+	if(legacy_material && length(material_slots))
+		var/list/legacy = list()
+		for(var/role in material_slots)
+			legacy[role] = legacy_material
+			break
+		return legacy
+	return list()

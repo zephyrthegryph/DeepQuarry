@@ -1,4 +1,5 @@
 /obj/machinery/power/quantumpad
+	maintenance_flags = MACHINE_MAINT_STANDARD
 	name = "quantum pad"
 	desc = "A bluespace quantum-linked telepad used for teleporting objects to other quantum pads."
 	icon = 'icons/obj/telescience.dmi'
@@ -61,28 +62,6 @@
 	teleport_cooldown = max(50, (teleport_cooldown - (E * 100)))
 
 /obj/machinery/power/quantumpad/attackby(obj/item/I, mob/user, params)
-	if(default_deconstruction_screwdriver(user, I))
-		return
-
-	if(istype(I, /obj/item/multitool))
-		// ition Start
-		if(istype(get_area(src), /area/shuttle))
-			to_chat(user, span_warning("This is too unstable a platform for \the [src] to operate on!"))
-			return
-		// ition End
-		if(panel_open)
-			var/obj/item/multitool/M = I
-			M.connectable = src
-			to_chat(user, span_notice("You save the data in [I]'s buffer."))
-			return 1
-		else
-			var/obj/item/multitool/M = I
-			if(istype(M.connectable, /obj/machinery/power/quantumpad))
-				linked_pad = M.connectable
-				to_chat(user, span_notice("You link [src] to the one in [I]'s buffer."))
-				update_icon()
-				return 1
-
 	if(istype(I, /obj/item/quantum_pad_booster))
 		var/obj/item/quantum_pad_booster/booster = I
 		visible_message("[user] violently jams [booster] into the side of [src]. [src] beeps, quietly.", \
@@ -90,15 +69,26 @@
 		playsound(src, 'sound/items/rped.ogg', 25, 1)
 		boosted = TRUE
 		qdel(I)
-
+		return
 	if(default_part_replacement(user, I))
 		return
-
-	if(default_deconstruction_crowbar(user, I))
-		return
-
 	return ..()
 
+/obj/machinery/power/quantumpad/multitool_act(mob/user, obj/item/tool)
+	if(istype(get_area(src), /area/shuttle))
+		to_chat(user, span_warning("This is too unstable a platform for \the [src] to operate on!"))
+		return ITEM_INTERACT_BLOCKING
+	var/obj/item/multitool/multitool = tool
+	if(panel_open)
+		multitool.connectable = src
+		to_chat(user, span_notice("You save the data in [tool]'s buffer."))
+		return ITEM_INTERACT_SUCCESS
+	if(!istype(multitool.connectable, /obj/machinery/power/quantumpad))
+		return ITEM_INTERACT_BLOCKING
+	linked_pad = multitool.connectable
+	to_chat(user, span_notice("You link [src] to the one in [tool]'s buffer."))
+	update_icon()
+	return ITEM_INTERACT_SUCCESS
 /obj/machinery/power/quantumpad/update_icon()
 	. = ..()
 
@@ -113,15 +103,18 @@
 	else
 		icon_state = initial(icon_state)
 
-// Panel flips retry power cable connections so you don't have to decon the whole thing
-/obj/machinery/power/quantumpad/default_deconstruction_screwdriver(mob/user, obj/item/S)
-	if((. = ..()))
-		var/original_powernet = powernet
-		if(powernet)
-			disconnect_from_network()
-		connect_to_network()
-		if(powernet != original_powernet)
-			update_icon()
+// Panel flips retry power cable connections so you don't have to decon the whole thing.
+/obj/machinery/power/quantumpad/screwdriver_act(mob/user, obj/item/tool)
+	var/result = ..()
+	if(!ITEM_INTERACT_CONSUMED(result))
+		return result
+	var/original_powernet = powernet
+	if(powernet)
+		disconnect_from_network()
+	connect_to_network()
+	if(powernet != original_powernet)
+		update_icon()
+	return result
 
 /obj/machinery/power/quantumpad/attack_hand(mob/user)
 	. = ..()

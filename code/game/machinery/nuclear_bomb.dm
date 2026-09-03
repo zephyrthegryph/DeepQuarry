@@ -1,6 +1,8 @@
 GLOBAL_VAR(bomb_set)
 
 /obj/machinery/nuclearbomb
+	// The armed device owns its detonation lifecycle; ambient blasts cannot remove it.
+	resistance_flags = INDESTRUCTIBLE
 	name = "\improper Nuclear Fission Explosive"
 	desc = "Uh oh. RUN!!!!"
 	icon = 'icons/obj/stationobjs.dmi' //chompedit, use the better one
@@ -59,8 +61,8 @@ GLOBAL_VAR(bomb_set)
 				attack_hand(M)
 	return ..()
 
-/obj/machinery/nuclearbomb/attackby(obj/item/O as obj, mob/user as mob)
-	if(O.has_tool_quality(TOOL_SCREWDRIVER))
+/obj/machinery/nuclearbomb/attackby(obj/item/O as obj, mob/user as mob, tool_quality)
+	if(tool_quality == TOOL_SCREWDRIVER)
 		playsound(src, O.usesound, 50, 1)
 		add_fingerprint(user)
 		if(auth)
@@ -83,7 +85,7 @@ GLOBAL_VAR(bomb_set)
 			flick("nuclearbombc", src)
 
 		return
-	if(O.has_tool_quality(TOOL_WIRECUTTER) || istype(O, /obj/item/multitool))
+	if(tool_quality == TOOL_WIRECUTTER || tool_quality == TOOL_MULTITOOL)
 		if(opened == 1)
 			nukehack_win(user)
 		return
@@ -99,7 +101,7 @@ GLOBAL_VAR(bomb_set)
 	if(anchored)
 		switch(removal_stage)
 			if(0)
-				if(O.has_tool_quality(TOOL_WELDER))
+				if(tool_quality == TOOL_WELDER)
 
 					var/obj/item/weldingtool/WT = O.get_welder()
 					if(!WT.isOn()) return
@@ -116,7 +118,7 @@ GLOBAL_VAR(bomb_set)
 				return
 
 			if(1)
-				if(O.has_tool_quality(TOOL_CROWBAR))
+				if(tool_quality == TOOL_CROWBAR)
 					user.visible_message("[user] starts forcing open the bolt covers on [src].", "You start forcing open the anchoring bolt covers with [O]...")
 
 					playsound(src, O.usesound, 50, 1)
@@ -127,7 +129,7 @@ GLOBAL_VAR(bomb_set)
 				return
 
 			if(2)
-				if(O.has_tool_quality(TOOL_WELDER))
+				if(tool_quality == TOOL_WELDER)
 
 					var/obj/item/weldingtool/WT = O.get_welder()
 					if(!WT.isOn()) return
@@ -144,7 +146,7 @@ GLOBAL_VAR(bomb_set)
 				return
 
 			if(3)
-				if(O.has_tool_quality(TOOL_WRENCH))
+				if(tool_quality == TOOL_WRENCH)
 
 					user.visible_message("[user] begins unwrenching the anchoring bolts on [src].", "You begin unwrenching the anchoring bolts...")
 					playsound(src, O.usesound, 50, 1)
@@ -155,7 +157,7 @@ GLOBAL_VAR(bomb_set)
 				return
 
 			if(4)
-				if(O.has_tool_quality(TOOL_CROWBAR))
+				if(tool_quality == TOOL_CROWBAR)
 
 					user.visible_message("[user] begins lifting [src] off of the anchors.", "You begin lifting the device off the anchors...")
 					playsound(src, O.usesound, 50, 1)
@@ -166,6 +168,30 @@ GLOBAL_VAR(bomb_set)
 						removal_stage = 5
 				return
 	..()
+
+/obj/machinery/nuclearbomb/screwdriver_act(mob/user, obj/item/tool)
+	attackby(tool, user, TOOL_SCREWDRIVER)
+	return TRUE
+
+/obj/machinery/nuclearbomb/wirecutter_act(mob/user, obj/item/tool)
+	attackby(tool, user, TOOL_WIRECUTTER)
+	return TRUE
+
+/obj/machinery/nuclearbomb/multitool_act(mob/user, obj/item/tool)
+	attackby(tool, user, TOOL_MULTITOOL)
+	return TRUE
+
+/obj/machinery/nuclearbomb/welder_act(mob/user, obj/item/tool)
+	attackby(tool, user, TOOL_WELDER)
+	return TRUE
+
+/obj/machinery/nuclearbomb/crowbar_act(mob/user, obj/item/tool)
+	attackby(tool, user, TOOL_CROWBAR)
+	return TRUE
+
+/obj/machinery/nuclearbomb/wrench_act(mob/user, obj/item/tool)
+	attackby(tool, user, TOOL_WRENCH)
+	return TRUE
 
 // TGUI migration. attack_hand opens the main control view
 // of NuclearBomb.tsx; nukehack_win switches to the wire-defusion view of

@@ -1,7 +1,6 @@
 /datum/material/snow
 	name = MAT_SNOW
 	stack_type = /obj/item/stack/material/snow
-	material_class = MATCLASS_CERAMIC
 	flags = MATERIAL_BRITTLE
 	icon_base = "solid"
 	icon_reinf = "reinf_over"
@@ -28,7 +27,6 @@
 
 /datum/material/snowbrick //only slightly stronger than snow, used to make igloos mostly
 	name = MAT_SNOWBRICK
-	material_class = MATCLASS_CERAMIC
 	flags = MATERIAL_BRITTLE
 	stack_type = /obj/item/stack/material/snowbrick
 	icon_base = "stone"

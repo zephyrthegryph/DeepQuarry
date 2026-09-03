@@ -7,6 +7,7 @@ GLOBAL_LIST_EMPTY(smeses)
 //# define SMESMAXOUTPUT 250000 Unused
 
 /obj/machinery/power/smes
+	maintenance_flags = MACHINE_MAINT_STANDARD
 	name = "power storage unit"
 	desc = "A high-capacity superconducting magnetic energy storage (SMES) unit."
 	icon_state = "smes"
@@ -16,6 +17,7 @@ GLOBAL_LIST_EMPTY(smeses)
 	use_power = USE_POWER_OFF
 	circuit = /obj/item/circuitboard/smes
 	clicksound = "switch"
+	max_integrity = 500
 
 	var/capacity = 5e6 // maximum charge
 	var/charge = 1e6 // actual charge
@@ -41,9 +43,6 @@ GLOBAL_LIST_EMPTY(smeses)
 	var/last_disp
 	var/last_chrg
 	var/last_onln
-
-	var/damage = 0
-	var/maxdamage = 500 // Relatively resilient, given how expensive it is, but once destroyed produces small explosion.
 
 	var/input_cut = 0
 	var/input_pulsed = 0
@@ -339,29 +338,13 @@ GLOBAL_LIST_EMPTY(smeses)
 
 
 /obj/machinery/power/smes/attackby(obj/item/W as obj, mob/user as mob)
-	if(default_deconstruction_screwdriver(user, W))
-		return FALSE
-
 	if (!panel_open)
 		to_chat(user, span_filter_notice(span_warning("You need to open access hatch on [src] first!")))
 		return FALSE
 
 	// /obj/item/fusion_coil was deleted with the fusion subsystem; the
 	// charge-from-coil branch is removed. SMES still chargeable by other means.
-	if(W.has_tool_quality(TOOL_WELDER))
-		var/obj/item/weldingtool/WT = W.get_welder()
-		if(!WT.isOn())
-			to_chat(user, span_filter_notice("Turn on \the [WT] first!"))
-			return FALSE
-		if(!damage)
-			to_chat(user, span_filter_notice("\The [src] is already fully repaired."))
-			return FALSE
-		if(WT.remove_fuel(0,user) && do_after(user, damage, target = src))
-			to_chat(user, span_filter_notice("You repair all structural damage to \the [src]"))
-			damage = 0
-		return FALSE
-
-	else if(istype(W, /obj/item/stack/cable_coil) && !building_terminal)
+	if(istype(W, /obj/item/stack/cable_coil) && !building_terminal)
 		building_terminal = 1
 		var/obj/item/stack/cable_coil/CC = W
 		if (CC.get_amount() < 10)
@@ -381,41 +364,64 @@ GLOBAL_LIST_EMPTY(smeses)
 			connect_to_network()
 		return FALSE
 
-	else if(W.has_tool_quality(TOOL_WIRECUTTER) && !building_terminal)
-		building_terminal = TRUE
-		var/obj/machinery/power/terminal/term
-		for(var/obj/machinery/power/terminal/T in get_turf(user))
-			if(T.master == src)
-				term = T
-				break
-		if(!term)
-			to_chat(user, span_filter_notice(span_warning("There is no terminal on this tile.")))
-			building_terminal = FALSE
-			return FALSE
-		var/turf/tempTDir = get_turf(term)
-		if (istype(tempTDir))
-			if(!tempTDir.is_plating())
-				to_chat(user, span_filter_notice(span_warning("You must remove the floor plating first.")))
-			else
-				to_chat(user, span_filter_notice(span_notice("You begin to cut the cables...")))
-				playsound(src, 'sound/items/Deconstruct.ogg', 50, 1)
-				if(do_after(user, 5 SECONDS * W.toolspeed, target = src))
-					if (prob(50) && electrocute_mob(user, term.powernet, term))
-						var/datum/effect/effect/system/spark_spread/s = new /datum/effect/effect/system/spark_spread
-						s.set_up(5, 1, src)
-						s.start()
-						building_terminal = FALSE
-						if(user.stunned)
-							return FALSE
-					new /obj/item/stack/cable_coil(loc,10)
-					user.visible_message(\
-						span_filter_notice(span_notice("[user.name] cut the cables and dismantled the power terminal.")),\
-						span_filter_notice(span_notice("You cut the cables and dismantle the power terminal.")))
-					terminals -= term
-					qdel(term)
-		building_terminal = FALSE
-		return FALSE
 	return TRUE
+
+/obj/machinery/power/smes/screwdriver_act(mob/user, obj/item/tool)
+	return ..()
+
+/obj/machinery/power/smes/welder_act(mob/user, obj/item/tool)
+	if(!panel_open)
+		to_chat(user, span_filter_notice(span_warning("You need to open access hatch on [src] first!")))
+		return ITEM_INTERACT_BLOCKING
+	var/obj/item/weldingtool/welder = tool.get_welder()
+	if(!welder.isOn())
+		to_chat(user, span_filter_notice("Turn on \the [welder] first!"))
+		return ITEM_INTERACT_BLOCKING
+	var/missing_integrity = max_integrity - get_integrity()
+	if(!missing_integrity)
+		to_chat(user, span_filter_notice("\The [src] is already fully repaired."))
+		return ITEM_INTERACT_BLOCKING
+	if(welder.remove_fuel(0, user) && do_after(user, missing_integrity, target = src))
+		to_chat(user, span_filter_notice("You repair all structural damage to \the [src]"))
+		repair_damage(missing_integrity)
+	return ITEM_INTERACT_SUCCESS
+
+/obj/machinery/power/smes/wirecutter_act(mob/user, obj/item/tool)
+	if(!panel_open)
+		to_chat(user, span_filter_notice(span_warning("You need to open access hatch on [src] first!")))
+		return ITEM_INTERACT_BLOCKING
+	if(building_terminal)
+		return ITEM_INTERACT_BLOCKING
+	building_terminal = TRUE
+	var/obj/machinery/power/terminal/term
+	for(var/obj/machinery/power/terminal/candidate in get_turf(user))
+		if(candidate.master == src)
+			term = candidate
+			break
+	if(!term)
+		to_chat(user, span_filter_notice(span_warning("There is no terminal on this tile.")))
+		building_terminal = FALSE
+		return ITEM_INTERACT_BLOCKING
+	var/turf/terminal_turf = get_turf(term)
+	if(terminal_turf && !terminal_turf.is_plating())
+		to_chat(user, span_filter_notice(span_warning("You must remove the floor plating first.")))
+	else
+		to_chat(user, span_filter_notice(span_notice("You begin to cut the cables...")))
+		playsound(src, 'sound/items/Deconstruct.ogg', 50, 1)
+		if(do_after(user, 5 SECONDS * tool.toolspeed, target = src))
+			if(prob(50) && electrocute_mob(user, term.powernet, term))
+				var/datum/effect/effect/system/spark_spread/sparks = new
+				sparks.set_up(5, 1, src)
+				sparks.start()
+				building_terminal = FALSE
+				if(user.stunned)
+					return ITEM_INTERACT_SUCCESS
+			new /obj/item/stack/cable_coil(loc, 10)
+			user.visible_message(span_filter_notice(span_notice("[user.name] cut the cables and dismantled the power terminal.")), span_filter_notice(span_notice("You cut the cables and dismantle the power terminal.")))
+			terminals -= term
+			qdel(term)
+	building_terminal = FALSE
+	return ITEM_INTERACT_SUCCESS
 
 /obj/machinery/power/smes/tgui_interact(mob/user, datum/tgui/ui)
 	ui = SStgui.try_update_ui(user, src, ui)
@@ -508,20 +514,16 @@ GLOBAL_LIST_EMPTY(smeses)
 	if(!output_attempt)
 		outputting = 0
 
-/obj/machinery/power/smes/take_damage(amount)
-	amount = max(0, round(amount))
-	damage += amount
-	if(damage > maxdamage)
-		visible_message(span_filter_notice(span_danger("\The [src] explodes in large shower of sparks and smoke!")))
-		// Depending on stored charge percentage cause damage.
-		switch(Percentage())
-			if(75 to INFINITY)
-				explosion(get_turf(src), 1, 2, 4)
-			if(40 to 74)
-				explosion(get_turf(src), 0, 2, 3)
-			if(5 to 39)
-				explosion(get_turf(src), 0, 1, 2)
-		qdel(src) // Either way we want to ensure the SMES is deleted.
+/obj/machinery/power/smes/atom_destruction(damage_flag)
+	visible_message(span_filter_notice(span_danger("\The [src] explodes in large shower of sparks and smoke!")))
+	switch(Percentage())
+		if(75 to INFINITY)
+			explosion(get_turf(src), 1, 2, 4)
+		if(40 to 74)
+			explosion(get_turf(src), 0, 2, 3)
+		if(5 to 39)
+			explosion(get_turf(src), 0, 1, 2)
+	return ..()
 
 /obj/machinery/power/smes/emp_act(severity, recursive)
 	. = ..()
@@ -536,20 +538,13 @@ GLOBAL_LIST_EMPTY(smeses)
 		charge = 0
 	update_icon()
 
-/obj/machinery/power/smes/bullet_act(obj/item/projectile/Proj)
-	take_damage(Proj.get_structure_damage())
-
-/obj/machinery/power/smes/ex_act(severity)
-	// Two strong explosions will destroy a SMES.
-	// Given the SMES creates another explosion on it's destruction it sounds fairly reasonable.
-	take_damage(250 / severity)
-
 /obj/machinery/power/smes/examine(mob/user)
 	. = ..()
 	. += span_filter_notice("The service hatch is [panel_open ? "open" : "closed"].")
-	if(!damage)
+	var/missing_integrity = max_integrity - get_integrity()
+	if(!missing_integrity)
 		return
-	var/damage_percentage = round((damage / maxdamage) * 100)
+	var/damage_percentage = round((missing_integrity / max_integrity) * 100)
 	switch(damage_percentage)
 		if(75 to INFINITY)
 			. += span_filter_notice(span_danger("It's casing is severely damaged, and sparking circuitry may be seen through the holes!"))
@@ -596,10 +591,13 @@ GLOBAL_LIST_EMPTY(smeses)
 	var/recharge_rate = 10000
 	var/overlay_icon = 'icons/obj/power_vr.dmi'
 
-/obj/machinery/power/smes/buildable/hybrid/attackby(obj/item/W as obj, mob/user as mob)
-	if(W.has_tool_quality(TOOL_SCREWDRIVER) || W.has_tool_quality(TOOL_WIRECUTTER))
-		to_chat(user,span_warning("\The [src] full of weird alien technology that's best not messed with."))
-		return 0
+/obj/machinery/power/smes/buildable/hybrid/screwdriver_act(mob/user, obj/item/tool)
+	to_chat(user, span_warning("\The [src] is full of weird alien technology that's best not messed with."))
+	return ITEM_INTERACT_BLOCKING
+
+/obj/machinery/power/smes/buildable/hybrid/wirecutter_act(mob/user, obj/item/tool)
+	to_chat(user, span_warning("\The [src] is full of weird alien technology that's best not messed with."))
+	return ITEM_INTERACT_BLOCKING
 
 /obj/machinery/power/smes/buildable/hybrid/update_icon()
 	cut_overlays()

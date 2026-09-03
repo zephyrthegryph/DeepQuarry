@@ -261,40 +261,13 @@
 	return
 
 /obj/structure/closet/attackby(obj/item/W as obj, mob/user as mob)
-	if(W.has_tool_quality(TOOL_WRENCH))
-		if(opened)
-			if(anchored)
-				user.visible_message("\The [user] begins unsecuring \the [src] from the floor.", "You start unsecuring \the [src] from the floor.")
-			else
-				user.visible_message("\The [user] begins securing \the [src] to the floor.", "You start securing \the [src] to the floor.")
-			if(do_after(user, 2 SECONDS * W.toolspeed, target = src))
-				if(!src) return
-				to_chat(user, span_notice("You [anchored? "un" : ""]secured \the [src]!"))
-				anchored = !anchored
-				return
-		else
-			to_chat(user, span_notice("You can't reach the anchoring bolts when the door is closed!"))
-	else if(opened)
+	if(opened)
 		if(istype(W, /obj/item/grab))
 			var/obj/item/grab/G = W
 			MouseDrop_T(G.affecting, user)      //act like they were dragged onto the closet
 			return 0
 		if(istype(W,/obj/item/tk_grab))
 			return 0
-		if(W.has_tool_quality(TOOL_WELDER))
-			var/obj/item/weldingtool/WT = W.get_welder()
-			if(!WT.remove_fuel(0,user))
-				if(!WT.isOn())
-					return
-				else
-					to_chat(user, span_notice("You need more welding fuel to complete this task."))
-					return
-			playsound(src, WT.usesound, 50)
-			new /obj/item/stack/material/steel(loc)
-			for(var/mob/M in viewers(src))
-				M.show_message(span_notice("\The [src] has been cut apart by [user] with \the [WT]."), 3, "You hear welding.", 2)
-			qdel(src)
-			return
 		if(istype(W, /obj/item/storage/laundry_basket) && W.contents.len)
 			var/obj/item/storage/laundry_basket/LB = W
 			var/turf/T = get_turf(src)
@@ -317,14 +290,6 @@
 	else if(seal_tool)
 		if(istype(W, seal_tool))
 			var/obj/item/S = W
-			if(S.has_tool_quality(TOOL_WELDER))
-				var/obj/item/weldingtool/WT = S.get_welder()
-				if(!WT.remove_fuel(0,user))
-					if(!WT.isOn())
-						return
-					else
-						to_chat(user, span_notice("You need more welding fuel to complete this task."))
-						return
 			if(do_after(user, 2 SECONDS * S.toolspeed, target = src))
 				if(opened) // cancel weld if opened mid-progress to prevent welder-traps
 					return
@@ -336,6 +301,39 @@
 	else
 		attack_hand(user)
 	return
+
+/obj/structure/closet/wrench_act(mob/user, obj/item/W)
+	if(!opened)
+		to_chat(user, span_notice("You can't reach the anchoring bolts when the door is closed!"))
+		return TRUE
+	user.visible_message("\The [user] begins [anchored ? "unsecuring \the [src] from" : "securing \the [src] to"] the floor.", "You start [anchored ? "unsecuring \the [src] from" : "securing \the [src] to"] the floor.")
+	if(do_after(user, 2 SECONDS * W.toolspeed, target = src))
+		anchored = !anchored
+		to_chat(user, span_notice("You [anchored ? "secured" : "unsecured"] \the [src]!"))
+	return TRUE
+
+/obj/structure/closet/welder_act(mob/user, obj/item/W)
+	var/obj/item/weldingtool/WT = W.get_welder()
+	if(!WT.remove_fuel(0, user))
+		if(WT.isOn())
+			to_chat(user, span_notice("You need more welding fuel to complete this task."))
+		return TRUE
+	if(opened)
+		playsound(src, WT.usesound, 50)
+		new /obj/item/stack/material/steel(loc)
+		for(var/mob/M in viewers(src))
+			M.show_message(span_notice("\The [src] has been cut apart by [user] with \the [WT]."), 3, "You hear welding.", 2)
+		qdel(src)
+		return TRUE
+	if(!seal_tool || !istype(W, seal_tool))
+		return TRUE
+	if(do_after(user, 2 SECONDS * W.toolspeed, target = src) && !opened)
+		playsound(src, W.usesound, 50)
+		sealed = !sealed
+		update_icon()
+		for(var/mob/M in viewers(src))
+			M.show_message(span_warning("[src] has been [sealed ? "sealed" : "unsealed"] by [user.name]."), 3)
+	return TRUE
 
 /obj/structure/closet/MouseDrop_T(atom/movable/O as mob|obj, mob/user as mob)
 	if(istype(O, /atom/movable/screen))	//fix for HUD elements making their way into the world	-Pete

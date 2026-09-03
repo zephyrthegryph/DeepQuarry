@@ -253,11 +253,6 @@
 	if(dead)
 		switch(dead)
 			if(1)
-				if(W.has_tool_quality(TOOL_SCREWDRIVER))
-					playsound(src, W.usesound, 50, 1)
-					if(do_after(user, 5 SECONDS, target = src))
-						to_chat(user, span_notice("You unscrew the maintenace panel on the [src]."))
-						dead +=1
 				return
 			if(2)
 				if(istype(W, /obj/item/protean_reboot))//placeholder
@@ -328,40 +323,6 @@
 		mod.installed(src)
 		update_icon()
 		return 1
-	else if(W.has_tool_quality(TOOL_WRENCH))
-		if(!air_supply)
-			to_chat(user, "There is no tank to remove.")
-			return
-
-		if(user.r_hand && user.l_hand)
-			air_supply.forceMove(get_turf(user))
-		else
-			user.put_in_hands(air_supply)
-		to_chat(user, "You detach and remove \the [air_supply].")
-		air_supply = null
-		return
-	else if(W.has_tool_quality(TOOL_SCREWDRIVER))
-		var/list/possible_removals = list()
-		for(var/obj/item/rig_module/module in installed_modules)
-			if(module.permanent)
-				continue
-			possible_removals[module.name] = module
-
-		if(!possible_removals.len)
-			to_chat(user, "There are no installed modules to remove.")
-			return
-
-		var/removal_choice = tgui_input_list(user, "Which module would you like to remove?", "Removal Choice", possible_removals)
-		if(!removal_choice)
-			return
-
-		var/obj/item/rig_module/removed = possible_removals[removal_choice]
-		to_chat(user, "You detach \the [removed] from \the [src].")
-		removed.forceMove(get_turf(src))
-		removed.removed()
-		installed_modules -= removed
-		update_icon()
-		return
 	for(var/obj/item/rig_module/module in installed_modules)
 		if(module.accepts_item(W,user)) //Item is handled in this proc
 			return
@@ -372,6 +333,52 @@
 	else
 		if(istype(W,/obj/item/storage/backpack))
 			AssimilateBag(user,0,W)
+
+/obj/item/rig/protean/wrench_act(mob/living/user, obj/item/tool)
+	if(dead)
+		return ITEM_INTERACT_BLOCKING
+	if(!air_supply)
+		to_chat(user, "There is no tank to remove.")
+		return ITEM_INTERACT_BLOCKING
+	if(user.r_hand && user.l_hand)
+		air_supply.forceMove(get_turf(user))
+	else
+		user.put_in_hands(air_supply)
+	to_chat(user, "You detach and remove \the [air_supply].")
+	air_supply = null
+	return ITEM_INTERACT_SUCCESS
+
+/obj/item/rig/protean/screwdriver_act(mob/living/user, obj/item/tool)
+	if(dead == 1)
+		playsound(src, tool.usesound, 50, 1)
+		if(do_after(user, 5 SECONDS, target = src) && dead == 1)
+			to_chat(user, span_notice("You unscrew the maintenance panel on the [src]."))
+			dead++
+		return ITEM_INTERACT_SUCCESS
+	if(dead)
+		return ITEM_INTERACT_BLOCKING
+	else
+		var/list/possible_removals = list()
+		for(var/obj/item/rig_module/module in installed_modules)
+			if(module.permanent)
+				continue
+			possible_removals[module.name] = module
+
+		if(!possible_removals.len)
+			to_chat(user, "There are no installed modules to remove.")
+			return ITEM_INTERACT_BLOCKING
+
+		var/removal_choice = tgui_input_list(user, "Which module would you like to remove?", "Removal Choice", possible_removals)
+		if(!removal_choice)
+			return ITEM_INTERACT_BLOCKING
+
+		var/obj/item/rig_module/removed = possible_removals[removal_choice]
+		to_chat(user, "You detach \the [removed] from \the [src].")
+		removed.forceMove(get_turf(src))
+		removed.removed()
+		installed_modules -= removed
+		update_icon()
+		return ITEM_INTERACT_SUCCESS
 
 /obj/item/rig/protean/proc/make_alive(mob/living/carbon/human/H, partial)
 	if(H)

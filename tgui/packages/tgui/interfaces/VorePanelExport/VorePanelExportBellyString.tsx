@@ -589,7 +589,10 @@ export const generateBellyString = (belly: Belly, index: number) => {
             : '<span style="color: orange;">Prey Choice</span>',
     },
     { label: 'Egg Type', value: escapeHtml(egg_type) },
-    { label: 'Selective Mode Preference', value: escapeHtml(selective_preference) },
+    {
+      label: 'Selective Mode Preference',
+      value: escapeHtml(selective_preference),
+    },
   ];
 
   result += formatListItems(settingItem);
@@ -654,7 +657,10 @@ export const generateBellyString = (belly: Belly, index: number) => {
       formatter: getYesNo,
     },
     { label: 'Vore Sprite Size Factor', value: size_factor_for_sprite },
-    { label: 'Belly Sprite to affect', value: escapeHtml(belly_sprite_to_affect) },
+    {
+      label: 'Belly Sprite to affect',
+      value: escapeHtml(belly_sprite_to_affect),
+    },
   ];
 
   result += formatListItems(visualItems);
@@ -747,7 +753,10 @@ export const generateBellyString = (belly: Belly, index: number) => {
   const transferItems = [
     { label: 'Auto-Transfer Time', value: autotransferwait / 10, suffix: 's' },
     { label: 'Auto-Transfer Chance', value: autotransferchance, suffix: '%' },
-    { label: 'Auto-Transfer Location', value: escapeHtml(autotransferlocation) },
+    {
+      label: 'Auto-Transfer Location',
+      value: escapeHtml(autotransferlocation),
+    },
     {
       label: 'Auto-Transfer Chance (Secondary)',
       value: autotransferchance_secondary,

@@ -2,6 +2,7 @@
 GLOBAL_LIST_EMPTY(gyrotrons)
 
 /obj/machinery/power/emitter/gyrotron
+	maintenance_flags = MACHINE_MAINT_STANDARD
 	name = "gyrotron"
 	icon = 'icons/obj/machines/power/fusion.dmi'
 	desc = "It is a heavy duty industrial gyrotron suited for powering fusion reactors."
@@ -58,10 +59,6 @@ GLOBAL_LIST_EMPTY(gyrotrons)
 			id_tag = new_ident
 		return
 
-	if(default_deconstruction_screwdriver(user, W))
-		return
-	if(default_deconstruction_crowbar(user, W))
-		return
 	if(default_part_replacement(user, W))
 		return
 

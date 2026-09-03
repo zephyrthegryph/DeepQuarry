@@ -93,22 +93,6 @@
 	qdel(src)
 
 /obj/structure/catwalk/attackby(obj/item/C as obj, mob/user as mob)
-	if(C.has_tool_quality(TOOL_WELDER))
-		var/obj/item/weldingtool/WT = C.get_welder()
-		if(WT.isOn() && WT.remove_fuel(0, user))
-			atom_deconstruct(TRUE, user)
-			return
-	if(C.has_tool_quality(TOOL_CROWBAR) && plated_tile)
-		hatch_open = !hatch_open
-		if(hatch_open)
-			playsound(src, 'sound/items/Crowbar.ogg', 100, 2)
-			to_chat(user, span_notice("You pry open \the [src]'s maintenance hatch."))
-			update_falling()
-		else
-			playsound(src, 'sound/items/Deconstruct.ogg', 100, 2)
-			to_chat(user, span_notice("You shut \the [src]'s maintenance hatch."))
-		update_icon()
-		return
 	if(istype(C, /obj/item/stack/tile/floor) && !plated_tile)
 		var/obj/item/stack/tile/floor/ST = C
 		to_chat(user, span_notice("Placing tile..."))
@@ -119,11 +103,30 @@
 		to_chat(user, span_notice("You plate \the [src]"))
 		name = "plated catwalk"
 		plated_tile = C.type
-		src.add_fingerprint(user)
+		add_fingerprint(user)
 		for(var/tiletype in plating_colors)
 			if(istype(ST, tiletype))
 				plating_color = plating_colors[tiletype]
 		update_icon()
+
+/obj/structure/catwalk/welder_act(mob/user, obj/item/C)
+	var/obj/item/weldingtool/WT = C.get_welder()
+	if(WT.isOn() && WT.remove_fuel(0, user))
+		atom_deconstruct(TRUE, user)
+	return TRUE
+
+/obj/structure/catwalk/crowbar_act(mob/user, obj/item/C)
+	if(plated_tile)
+		hatch_open = !hatch_open
+		if(hatch_open)
+			playsound(src, 'sound/items/Crowbar.ogg', 100, 2)
+			to_chat(user, span_notice("You pry open \the [src]'s maintenance hatch."))
+			update_falling()
+		else
+			playsound(src, 'sound/items/Deconstruct.ogg', 100, 2)
+			to_chat(user, span_notice("You shut \the [src]'s maintenance hatch."))
+		update_icon()
+	return TRUE
 
 /obj/structure/catwalk/refresh_neighbors()
 	return

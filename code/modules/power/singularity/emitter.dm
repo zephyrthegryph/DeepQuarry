@@ -30,7 +30,7 @@
 	var/burst_delay = 2
 	var/initial_fire_delay = 100
 
-	var/integrity = 80
+	max_integrity = 80
 
 /obj/machinery/power/emitter/Destroy()
 	message_admins("Emitter deleted at ([x],[y],[z] - <A href='byond://?_src_=holder;[HrefToken()];adminplayerobservecoodjump=1;X=[x];Y=[y];Z=[z]'>JMP</a>)")
@@ -120,9 +120,9 @@
 		A.firer = src
 		A.fire(dir2angle(dir))
 
-/obj/machinery/power/emitter/attackby(obj/item/W, mob/user)
+/obj/machinery/power/emitter/proc/construction_tool_act(mob/user, obj/item/W, tool_quality)
 
-	if(W.has_tool_quality(TOOL_WRENCH))
+	if(tool_quality == TOOL_WRENCH)
 		if(active)
 			to_chat(user, "Turn off [src] first.")
 			return
@@ -147,7 +147,7 @@
 		update_icon()
 		return
 
-	if(W.has_tool_quality(TOOL_WELDER))
+	if(tool_quality == TOOL_WELDER)
 		var/obj/item/weldingtool/WT = W.get_welder()
 		if(active)
 			to_chat(user, "Turn off [src] first.")
@@ -182,10 +182,12 @@
 				else
 					to_chat(user, span_warning("You need more welding fuel to complete this task."))
 		update_icon()
-		return
+		return ITEM_INTERACT_SUCCESS
+	return ITEM_INTERACT_SUCCESS
 
+/obj/machinery/power/emitter/attackby(obj/item/W, mob/user)
 	if(istype(W, /obj/item/stack/material) && W.get_material_name() == MAT_STEEL)
-		var/amt = CEILING(( initial(integrity) - integrity)/10, 1)
+		var/amt = CEILING((max_integrity - get_integrity()) / 10, 1)
 		if(!amt)
 			to_chat(user, span_notice("\The [src] is already fully repaired."))
 			return
@@ -197,7 +199,7 @@
 		if(do_after(user, 3 SECONDS, target = src))
 			if(P.use(amt))
 				to_chat(user, span_notice("You have repaired \the [src]."))
-				integrity = initial(integrity)
+				repair_damage(max_integrity)
 				return
 			else
 				to_chat(user, span_warning("You don't have enough sheets to repair this! You need at least [amt] sheets."))
@@ -223,15 +225,24 @@
 		else
 			description_info = initial(description_info)
 		return
-	if(W.has_tool_quality(TOOL_MULTITOOL) && anomalous)
-		var/chosen_particle = tgui_input_list(user, "Select particle type", "Particle Selection", ANOMALY_PARTICLE_ALL)
-		if(!chosen_particle)
-			return
-		particle = chosen_particle
-		balloon_alert_visible("changed to [chosen_particle]")
-		return
 	..()
 	return
+
+/obj/machinery/power/emitter/wrench_act(mob/user, obj/item/W)
+	return construction_tool_act(user, W, TOOL_WRENCH)
+
+/obj/machinery/power/emitter/welder_act(mob/user, obj/item/W)
+	return construction_tool_act(user, W, TOOL_WELDER)
+
+/obj/machinery/power/emitter/multitool_act(mob/user, obj/item/W)
+	if(!anomalous)
+		return ITEM_INTERACT_BLOCKING
+	var/chosen_particle = tgui_input_list(user, "Select particle type", "Particle Selection", ANOMALY_PARTICLE_ALL)
+	if(!chosen_particle)
+		return ITEM_INTERACT_BLOCKING
+	particle = chosen_particle
+	balloon_alert_visible("changed to [chosen_particle]")
+	return ITEM_INTERACT_SUCCESS
 
 /obj/machinery/power/emitter/emag_act(remaining_charges, mob/user)
 	if(!emagged)
@@ -240,25 +251,16 @@
 		user.visible_message("[user.name] emags [src].",span_warning("You short out the lock."))
 		return 1
 
-/obj/machinery/power/emitter/bullet_act(obj/item/projectile/P)
-	if(!P || !P.damage || P.get_structure_damage() <= 0 )
-		return
-
-	adjust_integrity(-P.get_structure_damage())
-
 /obj/machinery/power/emitter/blob_act()
-	adjust_integrity(-1000) // This kills the emitter.
+	take_damage(max_integrity, BRUTE, MELEE, FALSE)
 
-/obj/machinery/power/emitter/proc/adjust_integrity(amount)
-	integrity = between(0, integrity + amount, initial(integrity))
-	if(integrity == 0)
-		if(powernet && avail(active_power_usage)) // If it's powered, it goes boom if killed.
-			visible_message(src, span_danger("\The [src] explodes violently!"), span_danger("You hear an explosion!"))
-			explosion(get_turf(src), 1, 2, 4)
-		else
-			src.visible_message(span_danger("\The [src] crumples apart!"), span_warning("You hear metal collapsing."))
-		if(src)
-			qdel(src)
+/obj/machinery/power/emitter/atom_destruction(damage_flag)
+	if(powernet && avail(active_power_usage))
+		visible_message(src, span_danger("\The [src] explodes violently!"), span_danger("You hear an explosion!"))
+		explosion(get_turf(src), 1, 2, 4)
+	else
+		visible_message(span_danger("\The [src] crumples apart!"), span_warning("You hear metal collapsing."))
+	return ..()
 
 /obj/machinery/power/emitter/examine(mob/user)
 	. = ..()
@@ -269,7 +271,7 @@
 			. += span_warning("It has been bolted down securely, but not welded into place.")
 		if(2)
 			. += span_notice("It has been bolted down securely and welded down into place.")
-	var/integrity_percentage = round((integrity / initial(integrity)) * 100)
+	var/integrity_percentage = round((get_integrity() / max_integrity) * 100)
 	switch(integrity_percentage)
 		if(0 to 30)
 			. += span_danger("It is close to falling apart!")

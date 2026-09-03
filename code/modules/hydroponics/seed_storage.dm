@@ -404,19 +404,31 @@
 		else
 			to_chat(user, span_notice("There are no seeds in \the [O.name]."))
 		return
-	else if(O.has_tool_quality(TOOL_WRENCH))
-		playsound(src, O.usesound, 50, 1)
-		anchored = !anchored
-		to_chat(user, span_filter_notice("You [anchored ? "wrench" : "unwrench"] \the [src]."))
-	else if(O.has_tool_quality(TOOL_SCREWDRIVER))
-		panel_open = !panel_open
-		to_chat(user, span_filter_notice("You [panel_open ? "open" : "close"] the maintenance panel."))
-		playsound(src, O.usesound, 50, 1)
-		cut_overlays()
-		if(panel_open)
-			add_overlay("[initial(icon_state)]-panel")
-	else if((O.has_tool_quality(TOOL_WIRECUTTER) || istype(O, /obj/item/multitool)) && panel_open)
-		wires.Interact(user)
+	return ..()
+
+/obj/machinery/seed_storage/wrench_act(mob/user, obj/item/tool)
+	playsound(src, tool.usesound, 50, TRUE)
+	anchored = !anchored
+	to_chat(user, span_filter_notice("You [anchored ? "wrench" : "unwrench"] \the [src]."))
+	return ITEM_INTERACT_SUCCESS
+
+/obj/machinery/seed_storage/screwdriver_act(mob/user, obj/item/tool)
+	panel_open = !panel_open
+	to_chat(user, span_filter_notice("You [panel_open ? "open" : "close"] the maintenance panel."))
+	playsound(src, tool.usesound, 50, TRUE)
+	cut_overlays()
+	if(panel_open)
+		add_overlay("[initial(icon_state)]-panel")
+	return ITEM_INTERACT_SUCCESS
+
+/obj/machinery/seed_storage/wirecutter_act(mob/user, obj/item/tool)
+	if(!panel_open)
+		return ITEM_INTERACT_BLOCKING
+	wires.Interact(user)
+	return ITEM_INTERACT_SUCCESS
+
+/obj/machinery/seed_storage/multitool_act(mob/user, obj/item/tool)
+	return wirecutter_act(user, tool)
 
 /obj/machinery/seed_storage/emag_act(remaining_charges, mob/user)
 	if(!src.emagged)

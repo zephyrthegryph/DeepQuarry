@@ -142,7 +142,14 @@ export const Tooltip = () => {
         const tilesShownX = data.view_w;
         const tilesShownY = data.view_h;
         // Bail (leave hidden) on missing metrics — legacy returned false here.
-        if (!mapPxW || !mapPxH || !renderedW || !renderedH || !tilesShownX || !tilesShownY) {
+        if (
+          !mapPxW ||
+          !mapPxH ||
+          !renderedW ||
+          !renderedH ||
+          !tilesShownX ||
+          !tilesShownY
+        ) {
           return;
         }
 

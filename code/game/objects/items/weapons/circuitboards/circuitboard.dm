@@ -21,6 +21,13 @@
 	var/hidden = FALSE
 
 /obj/item/circuitboard/Destroy()
+	// Explosions can destroy an installed board before their containing machine.
+	// Sever the owner's typed reference immediately so the board never waits in
+	// GC behind a still-live (or separately queued) machine.
+	if(istype(loc, /obj/machinery))
+		var/obj/machinery/machine = loc
+		if(machine.circuit == src)
+			machine.circuit = null
 	if(isobject(board_type)) // Some boards use text instead of an instance...
 		QDEL_NULL(board_type)
 	return ..()

@@ -293,27 +293,7 @@
 	return 1
 
 /obj/structure/medical_stand/attackby(obj/item/W, mob/user)
-	if(istype (W, /obj/item/tool))
-		if (valve_opened)
-			to_chat(user, span_warning("Close the valve first."))
-			return
-		if (tank)
-			if(!W.has_tool_quality(TOOL_WRENCH))
-				return
-			if (!is_loosen)
-				is_loosen = TRUE
-			else
-				is_loosen = FALSE
-				if (valve_opened)
-					START_PROCESSING(SSobj,src)
-			user.visible_message(
-			span_notice("The [user] [is_loosen == TRUE ? "loosen" : "tighten"] the nut holding [tank] in place."),
-			span_notice("You [is_loosen == TRUE ? "loosen" : "tighten"] the nut holding [tank] in place."))
-
-		else
-			to_chat(user, span_warning("There is no tank in \the [src]."))
-
-	else if(istype(W, /obj/item/tank))
+	if(istype(W, /obj/item/tank))
 		if(tank)
 			to_chat(user, span_warning("\The [src] already has a tank installed!"))
 		else if(!is_loosen)
@@ -337,6 +317,19 @@
 		update_icon()
 	else
 		return ..()
+
+/obj/structure/medical_stand/wrench_act(mob/user, obj/item/W)
+	if(valve_opened)
+		to_chat(user, span_warning("Close the valve first."))
+		return TRUE
+	if(!tank)
+		to_chat(user, span_warning("There is no tank in \the [src]."))
+		return TRUE
+	is_loosen = !is_loosen
+	user.visible_message(
+		span_notice("The [user] [is_loosen ? "loosens" : "tightens"] the nut holding [tank] in place."),
+		span_notice("You [is_loosen ? "loosen" : "tighten"] the nut holding [tank] in place."))
+	return TRUE
 
 /obj/structure/medical_stand/examine(mob/user)
 	. = ..()

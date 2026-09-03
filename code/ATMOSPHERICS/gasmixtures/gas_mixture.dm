@@ -137,8 +137,11 @@ GLOBAL_LIST_INIT(gaslist_cache, init_gaslist_cache())
 /proc/drain_dirty_gas_mixtures()
 	return call_ext(VERDIGRIS, "byond:drain_dirty_gas_mixtures_ffi")()
 
-/proc/watch_dirty_gas_mixture(mixture_id)
-	return call_ext(VERDIGRIS, "byond:watch_dirty_gas_mixture_ffi")(mixture_id)
+/proc/drain_dirty_gas_observations()
+	return call_ext(VERDIGRIS, "byond:drain_dirty_gas_observations_ffi")()
+
+/proc/watch_dirty_gas_mixture(mixture_id, interest_mask = GAS_DEPENDENCY_ALL)
+	return call_ext(VERDIGRIS, "byond:watch_dirty_gas_mixture_ffi")(mixture_id, interest_mask)
 
 /proc/unwatch_dirty_gas_mixture(mixture_id)
 	return call_ext(VERDIGRIS, "byond:unwatch_dirty_gas_mixture_ffi")(mixture_id)
@@ -225,6 +228,16 @@ GLOBAL_LIST_INIT(gaslist_cache, init_gaslist_cache())
 		return FALSE
 	. = call_ext(VERDIGRIS, "byond:merge_hook_ffi")(src, giver)
 	SEND_SIGNAL(src, COMSIG_GASMIX_MERGED)
+
+/// Atomically transfers a mole quantity between two authoritative arena
+/// mixtures. This avoids the temporary DM gas datum and the second FFI crossing
+/// required by remove()+merge().
+/datum/gas_mixture/proc/transfer_to(datum/gas_mixture/other, moles)
+	if(!other || other == src || moles <= 0)
+		return FALSE
+	call_ext(VERDIGRIS, "byond:transfer_hook_ffi")(src, other, moles)
+	SEND_SIGNAL(other, COMSIG_GASMIX_MERGED)
+	return TRUE
 
 // Set the gas specie within the gas mix to a set amount, if there is none it will be created at the target temp
 /datum/gas_mixture/proc/set_gas(gas_specie, amount)

@@ -55,20 +55,7 @@
 		to_chat(user, span_notice("Access Denied"))
 
 /obj/structure/closet/secure_closet/attackby(obj/item/W as obj, mob/user as mob)
-	if(W.has_tool_quality(TOOL_WRENCH))
-		if(opened)
-			if(anchored)
-				user.visible_message("\The [user] begins unsecuring \the [src] from the floor.", "You start unsecuring \the [src] from the floor.")
-			else
-				user.visible_message("\The [user] begins securing \the [src] to the floor.", "You start securing \the [src] to the floor.")
-			if(do_after(user, 2 SECONDS * W.toolspeed, target = src))
-				if(!src) return
-				to_chat(user, span_notice("You [anchored? "un" : ""]secured \the [src]!"))
-				anchored = !anchored
-				return
-		else
-			to_chat(user, span_notice("You can't reach the anchoring bolts when the door is closed!"))
-	else if(opened)
+	if(opened)
 		if(istype(W, /obj/item/storage/laundry_basket))
 			return ..(W,user)
 		if(istype(W, /obj/item/grab))
@@ -91,7 +78,7 @@
 			spark_system.start()
 			playsound(src, 'sound/weapons/blade1.ogg', 50, 1)
 			playsound(src, "sparks", 50, 1)
-	else if(istype(W,/obj/item/packageWrap) || W.has_tool_quality(TOOL_WELDER))
+	else if(istype(W,/obj/item/packageWrap))
 		return ..(W,user)
 	else
 		togglelock(user)

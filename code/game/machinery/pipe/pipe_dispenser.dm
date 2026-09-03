@@ -116,35 +116,27 @@
 		user.drop_item()
 		qdel(W)
 		return
-	else if(W.has_tool_quality(TOOL_WRENCH))
-		if (unwrenched==0)
-			playsound(src, W.usesound, 50, 1)
-			to_chat(user, span_notice("You begin to unfasten \the [src] from the floor..."))
-			if (do_after(user, 4 SECONDS * W.toolspeed, target = src))
-				user.visible_message( \
-					span_notice("[user] unfastens \the [src]."), \
-					span_notice("You have unfastened \the [src]. Now it can be pulled somewhere else."), \
-					"You hear ratchet.")
-				src.anchored = FALSE
-				src.stat |= MAINT
-				src.unwrenched = 1
-				if (user.check_current_machine(src))
-					// close TGUI panel (legacy browse(null))
-					SStgui.close_uis(src)
-		else /*if (unwrenched==1)*/
-			playsound(src, W.usesound, 50, 1)
-			to_chat(user, span_notice("You begin to fasten \the [src] to the floor..."))
-			if (do_after(user, 2 SECONDS * W.toolspeed, target = src))
-				user.visible_message( \
-					span_notice("[user] fastens \the [src]."), \
-					span_notice("You have fastened \the [src]. Now it can dispense pipes."), \
-					"You hear ratchet.")
-				src.anchored = TRUE
-				src.stat &= ~MAINT
-				src.unwrenched = 0
-				power_change()
 	else
 		return ..()
+
+/obj/machinery/pipedispenser/wrench_act(mob/user, obj/item/tool)
+	playsound(src, tool.usesound, 50, TRUE)
+	to_chat(user, span_notice("You begin to [unwrenched ? "fasten" : "unfasten"] \the [src] [unwrenched ? "to" : "from"] the floor..."))
+	var/delay = unwrenched ? 2 SECONDS : 4 SECONDS
+	if(!do_after(user, delay * tool.toolspeed, target = src))
+		return ITEM_INTERACT_BLOCKING
+	unwrenched = !unwrenched
+	anchored = !unwrenched
+	if(unwrenched)
+		stat |= MAINT
+		user.visible_message(span_notice("[user] unfastens \the [src]."), span_notice("You have unfastened \the [src]. Now it can be pulled somewhere else."), "You hear ratchet.")
+		if(user.check_current_machine(src))
+			SStgui.close_uis(src)
+	else
+		stat &= ~MAINT
+		user.visible_message(span_notice("[user] fastens \the [src]."), span_notice("You have fastened \the [src]. Now it can dispense pipes."), "You hear ratchet.")
+		power_change()
+	return ITEM_INTERACT_SUCCESS
 
 /obj/machinery/pipedispenser/disposal
 	name = "Disposal Pipe Dispenser"

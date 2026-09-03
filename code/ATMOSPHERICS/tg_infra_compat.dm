@@ -162,13 +162,47 @@ GLOBAL_LIST_INIT(contrast_colors, list("#ff0000", "#00ff00", "#0000ff", "#ffff00
 	fire_protection = world.time
 
 
-// /proc/get_gas_mixture_default_scan_data — used by /tg/'s gas analyzer to
-// build the default scan readout. CHOMP atmosanalyzer_scan in
-// code/_helpers/atmospherics.dm already does this; just route through.
+// Structured scan data shared by PDA, pAI and communicator TGUI clients.
+// Keep this separate from atmosanalyzer_scan(): that proc deliberately returns
+// chat-ready HTML strings, while these clients consume typed rows.
 /proc/get_gas_mixture_default_scan_data(datum/gas_mixture/air)
 	if(!air)
-		return null
-	return atmosanalyzer_scan(null, air, null)
+		return list()
+	var/list/output = list()
+	var/pressure = air.return_pressure()
+	output += list(list(
+		"entry" = "Pressure",
+		"val" = round(pressure, 0.1),
+		"units" = " kPa",
+		"bad_low" = 20,
+		"poor_low" = 80,
+		"poor_high" = 120,
+		"bad_high" = 300
+	))
+	var/total_moles = air.total_moles()
+	if(total_moles > 0)
+		for(var/gas_id in air.gas_ids())
+			var/percentage = round((LINDA_GAS_AMT(air, gas_id) / total_moles) * 100, 0.1)
+			var/is_oxygen = gas_id == GAS_O2
+			output += list(list(
+				"entry" = GLOB.gas_data.name[gas_id] || "Unknown gas",
+				"val" = percentage,
+				"units" = "%",
+				"bad_low" = is_oxygen ? 16 : -1,
+				"poor_low" = is_oxygen ? 19 : -1,
+				"poor_high" = is_oxygen ? 24 : 5,
+				"bad_high" = is_oxygen ? 30 : 20
+			))
+	output += list(list(
+		"entry" = "Temperature",
+		"val" = round(air.return_temperature() - T0C, 0.1),
+		"units" = "&deg;C",
+		"bad_low" = -100,
+		"poor_low" = 10,
+		"poor_high" = 40,
+		"bad_high" = 100
+	))
+	return output
 
 
 // === /datum/gas_mixture/proc/get_thermal_energy_change ===

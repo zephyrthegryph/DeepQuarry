@@ -298,9 +298,9 @@
 /////////////////////////////SIMULATION///////////////////////////////////
 // The DM turf-sharing engine (process_cell, LAST_SHARE_CHECK/PLANET_SHARE_CHECK
 // macros, archive-based compare/share, the planetary-mix share pass) is DELETED.
-// Turf FDM gas sharing, excited groups and equalize all run in the Rust arena now,
-// driven by SSair.fire() via process_turfs_auxtools / process_excited_groups_auxtools
-// / process_turf_equalize_auxtools. The Rust side dispatches back into DM through
+// Turf FDM gas sharing and pressure equalization run in the Rust arena now,
+// driven by SSair.fire() via the detached process_turfs_auxtools transaction.
+// The Rust side dispatches back into DM through
 // three callbacks that live in this file: consider_pressure_difference (below),
 // air.react(turf) (gas_mixture.dm react bind -> DM /datum/gas_reaction), and
 // turf.set_visuals(overlay_list) (above).
@@ -377,9 +377,8 @@
 
 ///////////////////////////EXCITED GROUPS/////////////////////////////
 // The /datum/excited_group type and its self_breakdown/dismantle/merge_groups/
-// garbage_collect/display machinery are DELETED — excited groups are tracked in
-// the Rust arena (process_excited_groups_auxtools). Nothing in DM references a
-// /datum/excited_group anymore.
+// garbage_collect/display machinery are DELETED. The transactional Rust turf
+// solver owns convergence; nothing references a /datum/excited_group anymore.
 
 ////////////////////////SUPERCONDUCTIVITY/////////////////////////////
 // LINDA's DM superconduction engine (super_conduct, conductivity_directions,

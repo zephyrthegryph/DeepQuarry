@@ -1,4 +1,5 @@
 /obj/machinery/mech_recharger
+	maintenance_flags = MACHINE_MAINT_STANDARD
 	name = "mech recharger"
 	desc = "A mech recharger, built into the floor."
 	icon = 'icons/mecha/mech_bay.dmi'
@@ -84,10 +85,6 @@
 		return PROCESS_KILL
 
 /obj/machinery/mech_recharger/attackby(obj/item/I, mob/user)
-	if(default_deconstruction_screwdriver(user, I))
-		return
-	if(default_deconstruction_crowbar(user, I))
-		return
 	if(default_part_replacement(user, I))
 		return
 

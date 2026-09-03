@@ -42,11 +42,8 @@ type LangStatic = {
 
 type Act = ReturnType<typeof useBackend>['act'];
 
-const send = (
-  act: Act,
-  action: string,
-  params: Record<string, unknown>,
-) => act('dq_editor_action', { editor: 'language', action, params });
+const send = (act: Act, action: string, params: Record<string, unknown>) =>
+  act('dq_editor_action', { editor: 'language', action, params });
 
 export const LanguagePicker = ({ data, staticData }: EditorProps) => {
   const { act } = useBackend();
@@ -80,10 +77,7 @@ export const LanguagePicker = ({ data, staticData }: EditorProps) => {
   return (
     <Stack vertical>
       <Stack.Item>
-        <PrefixPanel
-          prefixes={d.language_prefixes ?? []}
-          act={act}
-        />
+        <PrefixPanel prefixes={d.language_prefixes ?? []} act={act} />
       </Stack.Item>
 
       <Stack.Item>
@@ -165,13 +159,7 @@ export const LanguagePicker = ({ data, staticData }: EditorProps) => {
 
 // ─── Prefix keys panel ────────────────────────────────────────────────────────────
 
-const PrefixPanel = ({
-  prefixes,
-  act,
-}: {
-  prefixes: string[];
-  act: Act;
-}) => (
+const PrefixPanel = ({ prefixes, act }: { prefixes: string[]; act: Act }) => (
   <Section
     title={
       <Stack align="center">
@@ -189,13 +177,8 @@ const PrefixPanel = ({
         {prefixes[0] || ':'}
       </Box>{' '}
       bound, typing{' '}
-      <Box
-        inline
-        bold
-        color="white"
-        style={{ fontFamily: 'monospace' }}
-      >
-        {(prefixes[0] || ':') + 'hello'}
+      <Box inline bold color="white" style={{ fontFamily: 'monospace' }}>
+        {`${prefixes[0] || ':'}hello`}
       </Box>{' '}
       sends "hello" on slot 1's language. Click a slot to rebind.
     </Box>
@@ -248,9 +231,7 @@ const PrefixSlot = ({
         border: `1px solid ${
           char ? 'rgba(52,152,219,0.6)' : 'rgba(255,255,255,0.18)'
         }`,
-        background: char
-          ? 'rgba(52,152,219,0.12)'
-          : 'rgba(255,255,255,0.04)',
+        background: char ? 'rgba(52,152,219,0.12)' : 'rgba(255,255,255,0.04)',
         transition: 'all 120ms',
       }}
     >

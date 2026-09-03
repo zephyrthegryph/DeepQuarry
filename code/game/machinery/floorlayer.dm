@@ -34,34 +34,36 @@
 	return
 
 /obj/machinery/floorlayer/attackby(obj/item/W as obj, mob/user as mob)
-	if(W.has_tool_quality(TOOL_WRENCH))
-		var/m = tgui_input_list(user, "Choose work mode", "Mode", mode)
-		mode[m] = !mode[m]
-		var/O = mode[m]
-		user.visible_message(span_notice("[user] has set \the [src] [m] mode [!O?"off":"on"]."), span_notice("You set \the [src] [m] mode [!O?"off":"on"]."))
-		return
-
 	if(istype(W, /obj/item/stack/tile))
 		to_chat(user, span_notice("\The [W] successfully loaded."))
 		user.drop_item(W)
 		TakeTile(W)
 		return
 
-	if(W.has_tool_quality(TOOL_CROWBAR))
-		if(!length(contents))
-			to_chat(user, span_notice("\The [src] is empty."))
-		else
-			var/obj/item/stack/tile/E = tgui_input_list(user, "Choose remove tile type.", "Tiles", contents)
-			if(E)
-				to_chat(user, span_notice("You remove the [E] from \the [src]."))
-				E.loc = src.loc
-				T = null
-		return
-
-	if(W.has_tool_quality(TOOL_SCREWDRIVER))
-		T = tgui_input_list(user, "Choose tile type.", "Tiles", contents)
-		return
 	..()
+
+/obj/machinery/floorlayer/wrench_act(mob/user, obj/item/tool)
+	var/selected_mode = tgui_input_list(user, "Choose work mode", "Mode", mode)
+	if(!selected_mode)
+		return ITEM_INTERACT_BLOCKING
+	mode[selected_mode] = !mode[selected_mode]
+	user.visible_message(span_notice("[user] has set \the [src] [selected_mode] mode [mode[selected_mode] ? "on" : "off"]."), span_notice("You set \the [src] [selected_mode] mode [mode[selected_mode] ? "on" : "off"]."))
+	return ITEM_INTERACT_SUCCESS
+
+/obj/machinery/floorlayer/crowbar_act(mob/user, obj/item/tool)
+	if(!length(contents))
+		to_chat(user, span_notice("\The [src] is empty."))
+		return ITEM_INTERACT_BLOCKING
+	var/obj/item/stack/tile/selected = tgui_input_list(user, "Choose remove tile type.", "Tiles", contents)
+	if(selected)
+		to_chat(user, span_notice("You remove [selected] from \the [src]."))
+		selected.forceMove(loc)
+		T = null
+	return ITEM_INTERACT_SUCCESS
+
+/obj/machinery/floorlayer/screwdriver_act(mob/user, obj/item/tool)
+	T = tgui_input_list(user, "Choose tile type.", "Tiles", contents)
+	return ITEM_INTERACT_SUCCESS
 
 /obj/machinery/floorlayer/examine(mob/user)
 	. = ..()

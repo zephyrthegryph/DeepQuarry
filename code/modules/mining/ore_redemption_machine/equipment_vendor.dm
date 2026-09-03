@@ -5,6 +5,7 @@
 /**********************Mining Equipment Locker**************************/
 
 /obj/machinery/mineral/equipment_vendor
+	maintenance_flags = MACHINE_MAINT_STANDARD
 	name = "mining equipment vendor"
 	desc = "An equipment vendor for miners, points collected at an ore redemption machine can be spent here."
 	icon = 'icons/obj/vending.dmi'
@@ -292,11 +293,7 @@
 
 
 /obj/machinery/mineral/equipment_vendor/attackby(obj/item/I, mob/user, params)
-	if(default_deconstruction_screwdriver(user, I))
-		return
 	if(default_part_replacement(user, I))
-		return
-	if(default_deconstruction_crowbar(user, I))
 		return
 	if(istype(I, /obj/item/mining_voucher))
 		if(!powered())
@@ -311,6 +308,12 @@
 			inserted_id = I
 			tgui_interact(user)
 		return
+	return ..()
+
+/obj/machinery/mineral/equipment_vendor/screwdriver_act(mob/user, obj/item/tool)
+	return ..()
+
+/obj/machinery/mineral/equipment_vendor/crowbar_act(mob/user, obj/item/tool)
 	return ..()
 
 /obj/machinery/mineral/equipment_vendor/dismantle()
@@ -406,5 +409,4 @@
 	var/datum/effect/effect/system/spark_spread/s = new /datum/effect/effect/system/spark_spread
 	s.set_up(5, 1, src)
 	s.start()
-	if(prob(50 / severity) && severity < 3)
-		qdel(src)
+	return ..()

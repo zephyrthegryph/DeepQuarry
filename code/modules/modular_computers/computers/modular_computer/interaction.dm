@@ -156,58 +156,49 @@
 			try_install_component(user, C)
 		else
 			to_chat(user, "This component is too large for \the [src].")
-	if(W.has_tool_quality(TOOL_WRENCH))
-		var/list/components = get_all_components()
-		if(components.len)
-			to_chat(user, "Remove all components from \the [src] before disassembling it.")
-			return
-		new /obj/item/stack/material/steel( get_turf(src.loc), steel_sheet_cost )
-		src.visible_message("\The [src] has been disassembled by [user].")
-		qdel(src)
-		return
-	if(W.has_tool_quality(TOOL_WELDER))
-		var/obj/item/weldingtool/WT = W.get_welder()
-		if(!WT.isOn())
-			to_chat(user, "\The [W] is off.")
-			return
+	return ..()
 
-		if(!damage)
-			to_chat(user, "\The [src] does not require repairs.")
-			return
+/obj/item/modular_computer/wrench_act(mob/user, obj/item/tool)
+	var/list/components = get_all_components()
+	if(length(components))
+		to_chat(user, "Remove all components from \the [src] before disassembling it.")
+		return ITEM_INTERACT_BLOCKING
+	new /obj/item/stack/material/steel(get_turf(src), steel_sheet_cost)
+	visible_message("\The [src] has been disassembled by [user].")
+	qdel(src)
+	return ITEM_INTERACT_SUCCESS
 
-		to_chat(user, "You begin repairing damage to \the [src]...")
-		if(WT.remove_fuel(round(damage/75)) && do_after(user, damage/10, target = src))
-			damage = 0
-			to_chat(user, "You repair \the [src].")
-		return
+/obj/item/modular_computer/welder_act(mob/user, obj/item/tool)
+	var/obj/item/weldingtool/welder = tool.get_welder()
+	if(!welder.isOn())
+		to_chat(user, "\The [tool] is off.")
+		return ITEM_INTERACT_BLOCKING
+	if(!damage)
+		to_chat(user, "\The [src] does not require repairs.")
+		return ITEM_INTERACT_BLOCKING
+	to_chat(user, "You begin repairing damage to \the [src]...")
+	if(!welder.remove_fuel(round(damage / 75)) || !do_after(user, damage / 10, target = src))
+		return ITEM_INTERACT_BLOCKING
+	damage = 0
+	to_chat(user, "You repair \the [src].")
+	return ITEM_INTERACT_SUCCESS
 
-	if(W.has_tool_quality(TOOL_SCREWDRIVER))
-		var/list/all_components = get_all_components()
-		if(!all_components.len)
-			to_chat(user, "This device doesn't have any components installed.")
-			return
-		var/list/component_names = list()
-		for(var/obj/item/computer_hardware/H in all_components)
-			component_names.Add(H.name)
-
-		var/choice = tgui_input_list(user, "Which component do you want to uninstall?", "Computer maintenance", component_names)
-
-		if(!choice)
-			return
-
-		if(!Adjacent(user))
-			return
-
-		var/obj/item/computer_hardware/H = find_hardware_by_name(choice)
-
-		if(!H)
-			return
-
-		uninstall_component(user, H)
-
-		return
-
-	..()
+/obj/item/modular_computer/screwdriver_act(mob/user, obj/item/tool)
+	var/list/all_components = get_all_components()
+	if(!length(all_components))
+		to_chat(user, "This device doesn't have any components installed.")
+		return ITEM_INTERACT_BLOCKING
+	var/list/component_names = list()
+	for(var/obj/item/computer_hardware/hardware in all_components)
+		component_names += hardware.name
+	var/choice = tgui_input_list(user, "Which component do you want to uninstall?", "Computer maintenance", component_names)
+	if(!choice || !Adjacent(user))
+		return ITEM_INTERACT_BLOCKING
+	var/obj/item/computer_hardware/hardware = find_hardware_by_name(choice)
+	if(!hardware)
+		return ITEM_INTERACT_BLOCKING
+	uninstall_component(user, hardware)
+	return ITEM_INTERACT_SUCCESS
 
 /obj/item/modular_computer/allow_pai_interaction(mob/living/silicon/pai/user, proximity_flag)
 	if(!card_slot?.stored_card?.dna_hash || !user.master_dna)

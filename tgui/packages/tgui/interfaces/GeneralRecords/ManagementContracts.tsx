@@ -305,8 +305,8 @@ export const ManagementContracts = () => {
                       <Stack.Item grow>
                         <Box bold>{proposal.name}</Box>
                         <Box color="label">
-                          {proposal.department || 'Independent'} · requested share
-                          weight {proposal.weight} · verified contribution{' '}
+                          {proposal.department || 'Independent'} · requested
+                          share weight {proposal.weight} · verified contribution{' '}
                           {proposal.contribution} · {proposal.status}
                         </Box>
                       </Stack.Item>

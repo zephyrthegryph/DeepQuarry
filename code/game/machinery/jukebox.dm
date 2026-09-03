@@ -18,6 +18,7 @@
 	circuit = /obj/item/circuitboard/jukebox
 	clicksound = 'sound/machines/buttonbeep.ogg'
 	volume = 0.5
+	maintenance_flags = MACHINE_MAINT_STANDARD
 
 	// Vars for hacking
 	var/hacked = 0 // Whether to show the hidden songs or not
@@ -95,30 +96,30 @@
 
 /obj/machinery/media/jukebox/attackby(obj/item/W as obj, mob/user as mob)
 	src.add_fingerprint(user)
-
-	if(default_deconstruction_screwdriver(user, W))
-		return
-	if(default_deconstruction_crowbar(user, W))
-		return
-	if(W.has_tool_quality(TOOL_WIRECUTTER))
-		return wires.Interact(user)
-	if(istype(W, /obj/item/multitool))
-		return wires.Interact(user)
-	if(W.has_tool_quality(TOOL_WRENCH))
-		if(playing)
-			StopPlaying()
-		user.visible_message(span_warning("[user] has [anchored ? "un" : ""]secured \the [src]."), span_notice("You [anchored ? "un" : ""]secure \the [src]."))
-		anchored = !anchored
-		playsound(src, W.usesound, 50, 1)
-		power_change()
-		update_icon()
-		if(!anchored)
-			playing = 0
-			disconnect_media_source()
-		else
-			update_media_source()
-		return
 	return ..()
+
+/obj/machinery/media/jukebox/wirecutter_act(mob/user, obj/item/tool)
+	wires.Interact(user)
+	return ITEM_INTERACT_SUCCESS
+
+/obj/machinery/media/jukebox/multitool_act(mob/user, obj/item/tool)
+	wires.Interact(user)
+	return ITEM_INTERACT_SUCCESS
+
+/obj/machinery/media/jukebox/wrench_act(mob/user, obj/item/tool)
+	if(playing)
+		StopPlaying()
+	user.visible_message(span_warning("[user] has [anchored ? "un" : ""]secured \the [src]."), span_notice("You [anchored ? "un" : ""]secure \the [src]."))
+	anchored = !anchored
+	playsound(src, tool.usesound, 50, TRUE)
+	power_change()
+	update_icon()
+	if(!anchored)
+		playing = FALSE
+		disconnect_media_source()
+	else
+		update_media_source()
+	return ITEM_INTERACT_SUCCESS
 
 /obj/machinery/media/jukebox/power_change()
 	if(!powered(power_channel) || !anchored)

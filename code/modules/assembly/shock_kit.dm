@@ -14,8 +14,8 @@
 	..()
 	return
 
-/obj/item/assembly/shock_kit/attackby(obj/item/W, mob/user)
-	if(W.has_tool_quality(TOOL_WRENCH) && !status)
+/obj/item/assembly/shock_kit/wrench_act(mob/user, obj/item/tool)
+	if(!status)
 		var/turf/T = loc
 		if(ismob(T))
 			T = T.loc
@@ -26,13 +26,15 @@
 		part1 = null
 		part2 = null
 		qdel(src)
-		return
-	if(W.has_tool_quality(TOOL_SCREWDRIVER))
-		status = !status
-		to_chat(user, span_notice("[src] is now [status ? "secured" : "unsecured"]!"))
-		playsound(src, W.usesound, 50, 1)
+		return ITEM_INTERACT_SUCCESS
+	return ITEM_INTERACT_BLOCKING
+
+/obj/item/assembly/shock_kit/screwdriver_act(mob/user, obj/item/tool)
+	status = !status
+	to_chat(user, span_notice("[src] is now [status ? "secured" : "unsecured"]!"))
+	playsound(src, tool.usesound, 50, 1)
 	add_fingerprint(user)
-	return
+	return ITEM_INTERACT_SUCCESS
 
 /obj/item/assembly/shock_kit/attack_self(mob/user)
 	. = ..(user)

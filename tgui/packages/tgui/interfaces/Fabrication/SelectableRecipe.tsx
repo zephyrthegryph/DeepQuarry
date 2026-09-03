@@ -1,228 +1,431 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import {
   Box,
   Button,
-  Dropdown,
   Icon,
-  ProgressBar,
+  Input,
+  LabeledList,
+  NoticeBox,
+  NumberInput,
+  Section,
   Stack,
-  Tooltip,
 } from 'tgui-core/components';
 import { classes } from 'tgui-core/react';
 import { TechWebRecipeIcon } from '../common/TechWebRecipeIcon';
-import type { Design, MaterialChoice, MaterialMap } from './Types';
+import type {
+  Design,
+  MaterialChoice,
+  MaterialMap,
+  MaterialSlot,
+} from './Types';
 
 type Props = {
   design: Design;
   available: MaterialMap;
   materialChoices: MaterialChoice[];
   SHEET_MATERIAL_AMOUNT: number;
-  /** Fires a build of `quantity` units from the chosen material id. */
-  onBuild: (materialId: string, quantity: number) => void;
+  onBuild: (materials: Record<string, string>, quantity: number) => void;
+  single?: boolean;
+  actionLabel?: string;
 };
 
-/**
- * A recipe row whose material is chosen from the loaded materials at print time.
- * Shared by the protolathe (Fabricator) and the autolathe — each passes its own
- * `onBuild` so the underlying build action differs while the row looks identical.
- */
-export const SelectableRecipe = (props: Props) => {
-  const { design, available, materialChoices, SHEET_MATERIAL_AMOUNT, onBuild } =
-    props;
-
-  // Registry ids are globally unique. Labels carry a short id suffix only when
-  // two independently processed stocks happen to have the same display name.
-  const options: string[] = [];
-  const labelToId: Record<string, string> = {};
-  const idToLabel: Record<string, string> = {};
-  for (let index = 0; index < materialChoices.length; index++) {
-    const choice = materialChoices[index];
-    let label = `${choice.label} (${choice.sheets})`;
-    if (labelToId[label] !== undefined) {
-      label = `${label} · ${choice.id.slice(-6)}`;
-    }
-    labelToId[label] = choice.id;
-    idToLabel[choice.id] = label;
-    options.push(label);
+const initialChoice = (slot: MaterialSlot, choices: MaterialChoice[]) => {
+  if (
+    slot.defaultMaterial &&
+    choices.some((choice) => choice.id === slot.defaultMaterial)
+  ) {
+    return slot.defaultMaterial;
   }
+  return slot.optional ? '' : (choices[0]?.id ?? '');
+};
 
-  const [requestedId, setRequestedId] = useState(materialChoices[0]?.id ?? '');
-  const selectedId = idToLabel[requestedId]
-    ? requestedId
-    : (materialChoices[0]?.id ?? '');
-  const selectedLabel = idToLabel[selectedId] ?? '';
-  const [showDetails, setShowDetails] = useState(false);
-  const selected = materialChoices.find((choice) => choice.id === selectedId);
-  const hasMaterial = selectedId !== '';
+const roleScore = (material: MaterialChoice, role: string) => {
+  switch (role) {
+    case 'conductor':
+    case 'contacts':
+      return material.conductivity * 2 + material.corrosionResistance;
+    case 'insulation':
+    case 'grip':
+    case 'substrate':
+      return (
+        material.thermalInsulation * 1.5 +
+        material.integrity * 0.3 -
+        material.conductivity
+      );
+    case 'working surface':
+    case 'barrel':
+      return (
+        material.hardness +
+        material.heatResistance +
+        material.toughness * 0.5 -
+        material.brittleness
+      );
+    case 'thermal buffer':
+      return material.heatResistance + material.thermalInsulation * 0.25;
+    case 'liner':
+    case 'jacket':
+      return material.corrosionResistance + material.heatResistance * 0.5;
+    default:
+      return (
+        material.integrity +
+        material.toughness -
+        material.brittleness * 0.5 -
+        material.density * 0.05
+      );
+  }
+};
 
-  const perItem = design.selectableAmount ?? 0;
-  const availableUnits = hasMaterial ? (available[selectedId] ?? 0) : 0;
-  const maxMult =
-    perItem > 0 ? Math.min(Math.floor(availableUnits / perItem), 50) : 0;
-
-  const costLabel = (quantity: number) =>
-    `Uses ${((perItem * quantity) / SHEET_MATERIAL_AMOUNT).toFixed(2)} sheet(s)`;
-
-  const requestBuild = (quantity: number) => {
-    const normalized = Math.floor(Number(quantity));
-    if (
-      !hasMaterial ||
-      maxMult < 1 ||
-      !Number.isFinite(normalized) ||
-      normalized < 1
-    )
-      return;
-    onBuild(selectedId, Math.min(normalized, maxMult));
+const performance = (
+  slots: MaterialSlot[],
+  selected: Record<string, string>,
+  choices: MaterialChoice[],
+) => {
+  let total = 0;
+  const values = {
+    integrity: 0,
+    mass: 0,
+    conductivity: 0,
+    heat: 0,
+    insulation: 0,
+    corrosion: 0,
+    pressure: 0,
   };
-
-  const QuantityButton = (qprops: { quantity: number }) => {
-    const enabled = hasMaterial && maxMult >= qprops.quantity;
-    return (
-      <Tooltip
-        content={hasMaterial ? costLabel(qprops.quantity) : 'Select a material'}
-      >
-        <div
-          className={classes([
-            'FabricatorRecipe__Button',
-            !enabled && 'FabricatorRecipe__Button--disabled',
-          ])}
-          onClick={() => enabled && requestBuild(qprops.quantity)}
-        >
-          &times;{qprops.quantity}
-        </div>
-      </Tooltip>
+  for (const slot of slots) {
+    const material = choices.find(
+      (choice) => choice.id === selected[slot.role],
     );
-  };
+    if (!material) continue;
+    total += slot.amount;
+    values.integrity += material.integrity * slot.amount;
+    values.mass += material.density * slot.amount;
+    values.conductivity += material.conductivity * slot.amount;
+    values.heat += material.heatResistance * slot.amount;
+    values.insulation += material.thermalInsulation * slot.amount;
+    values.corrosion += material.corrosionResistance * slot.amount;
+    values.pressure += material.pressureLimit * slot.amount;
+  }
+  if (total > 0) {
+    for (const key of Object.keys(values) as (keyof typeof values)[])
+      values[key] = Math.round(values[key] / total);
+  }
+  return values;
+};
 
+export const ConfigurableRecipeRow = (props: {
+  design: Design;
+  available: MaterialMap;
+  selected?: boolean;
+  onSelect: () => void;
+}) => {
+  const { design, available, selected, onSelect } = props;
   return (
-    <div>
-      <div className="FabricatorRecipe">
-        <Tooltip content={design.desc} position="right">
-          <div
-            className={classes([
-              'FabricatorRecipe__Button',
-              'FabricatorRecipe__Button--icon',
-              !hasMaterial && 'FabricatorRecipe__Button--disabled',
-            ])}
-          >
-            <Icon name="layer-group" />
-          </div>
-        </Tooltip>
-        <TechWebRecipeIcon
-          icon={design.icon}
-          name={design.name}
-          design={design}
-          availableMaterials={available}
-          canPrint={hasMaterial && maxMult >= 1}
-          action={() => hasMaterial && maxMult >= 1 && onBuild(selectedId, 1)}
-        />
-        <div
-          style={{ display: 'flex', alignItems: 'center', padding: '0 4px' }}
-        >
-          {options.length === 0 ? (
-            <Box color="bad">No material</Box>
-          ) : (
-            <Dropdown
-              width="11em"
-              selected={selectedLabel}
-              options={options}
-              onSelected={(value) => setRequestedId(labelToId[value] ?? '')}
-            />
-          )}
-        </div>
-        <Button
-          color="transparent"
-          icon={showDetails ? 'chevron-up' : 'flask'}
-          tooltip="Inspect product-relevant material behavior"
-          aria-label="Material details"
-          onClick={() => setShowDetails(!showDetails)}
-        />
-        <QuantityButton quantity={5} />
-        <QuantityButton quantity={10} />
-        <div
-          className={classes([
-            'FabricatorRecipe__Button',
-            !hasMaterial && 'FabricatorRecipe__Button--disabled',
-          ])}
-        >
-          <Button.Input
-            color="transparent"
-            buttonText={`[Max: ${maxMult}]`}
-            onCommit={(value) => requestBuild(Number(value))}
-          />
-        </div>
+    <div
+      className={classes([
+        'FabricatorRecipe',
+        selected && 'FabricatorRecipe--selected',
+      ])}
+      onClick={onSelect}
+    >
+      <div className="FabricatorRecipe__Button FabricatorRecipe__Button--icon">
+        <Icon name="sliders-h" />
       </div>
-      {selected && showDetails && (
-        <Box backgroundColor="rgba(0, 0, 0, 0.25)" p={0.5} mb={0.5} ml={5}>
-          {!!selected.layers.length && (
-            <Stack mb={0.5} wrap>
-              {selected.layers.map((layer) => (
-                <Stack.Item key={layer.role}>
-                  <Box inline color="label">
-                    {layer.role}:
-                  </Box>{' '}
-                  {layer.name} ({layer.share}%)
-                </Stack.Item>
-              ))}
-            </Stack>
-          )}
-          <Stack>
-            {(design.materialProfile === 'pressure service'
-              ? [
-                  ['Strength', selected.hardness],
-                  ['Toughness', selected.toughness],
-                  ['Corrosion', selected.corrosionResistance],
-                  ['Insulation', selected.thermalInsulation],
-                ]
-              : design.materialProfile === 'machine component'
-                ? [
-                    ['Conductivity', selected.conductivity],
-                    ['Density', selected.density],
-                    ['Integrity', selected.integrity],
-                    ['Elasticity', selected.elasticity],
-                  ]
-                : design.materialProfile === 'surgical instrument'
-                  ? [
-                      ['Hardness', selected.hardness],
-                      ['Corrosion', selected.corrosionResistance],
-                      ['Integrity', selected.integrity],
-                      ['Elasticity', selected.elasticity],
-                    ]
-                  : design.materialProfile === 'projectile'
-                    ? [
-                        ['Hardness', selected.hardness],
-                        ['Density', selected.density],
-                        ['Toughness', selected.toughness],
-                        ['Brittleness', selected.brittleness],
-                      ]
-                    : [
-                        ['Hardness', selected.hardness],
-                        ['Toughness', selected.toughness],
-                        ['Conductivity', selected.conductivity],
-                        ['Heat', selected.heatResistance],
-                        ['Corrosion', selected.corrosionResistance],
-                      ]).map(([name, value]) => (
-              <Stack.Item grow key={String(name)}>
-                <Box color="label" fontSize="10px">
-                  {name}
-                </Box>
-                <ProgressBar
-                  value={Number(value)}
-                  minValue={0}
-                  maxValue={100}
-                  color="good"
-                />
-              </Stack.Item>
-            ))}
-          </Stack>
-          <Box mt={0.5} color="label">
-            {design.materialProfile === 'pressure service' &&
-              `Pressure geometry: ${selected.pressureLimit} atm · `}
-            {selected.responses.length > 0 &&
-              selected.responses.join(' · ')}
-          </Box>
-        </Box>
-      )}
+      <TechWebRecipeIcon
+        icon={design.icon}
+        name={design.name}
+        design={design}
+        availableMaterials={available}
+        canPrint
+        action={onSelect}
+      />
+      <Box color="label" px={1}>
+        {design.materialSlots?.length ?? 0} parts
+      </Box>
+      <Button
+        color={selected ? 'good' : 'transparent'}
+        icon="chevron-right"
+        onClick={onSelect}
+      >
+        Configure
+      </Button>
     </div>
   );
 };
+
+/** Persistent standard/custom product workbench shared by every fabricator. */
+export const ProductConfigurator = (props: Props) => {
+  const { design, available, materialChoices, onBuild, single, actionLabel } =
+    props;
+  const slots = design.materialSlots ?? [];
+  const defaults = useMemo(
+    () =>
+      Object.fromEntries(
+        slots.map((slot) => [slot.role, initialChoice(slot, materialChoices)]),
+      ),
+    [design.id, materialChoices],
+  );
+  const [custom, setCustom] = useState(false);
+  const [requested, setRequested] = useState<Record<string, string>>(defaults);
+  const [activeRole, setActiveRole] = useState(slots[0]?.role ?? '');
+  const [search, setSearch] = useState('');
+  const [quantity, setQuantity] = useState(1);
+  const selected = custom ? requested : defaults;
+  const activeSlot = slots.find((slot) => slot.role === activeRole) ?? slots[0];
+  const totalCost: MaterialMap = { ...design.cost };
+  for (const slot of slots) {
+    const materialId = selected[slot.role];
+    if (materialId)
+      totalCost[materialId] = (totalCost[materialId] ?? 0) + slot.amount;
+  }
+  const complete = slots.every(
+    (slot) => slot.optional || !!selected[slot.role],
+  );
+  const costEntries = Object.entries(totalCost);
+  const maxQuantity =
+    complete && costEntries.length
+      ? Math.min(
+          50,
+          ...costEntries.map(([material, amount]) =>
+            Math.floor((available[material] ?? 0) / amount),
+          ),
+        )
+      : 0;
+  const effectiveMaximum = single ? Math.min(maxQuantity, 1) : maxQuantity;
+  const metrics = performance(slots, selected, materialChoices);
+  const baseline = performance(slots, defaults, materialChoices);
+  const candidates = activeSlot
+    ? [...materialChoices]
+        .filter((material) =>
+          material.label.toLowerCase().includes(search.toLowerCase()),
+        )
+        .sort(
+          (left, right) =>
+            roleScore(right, activeSlot.role) -
+            roleScore(left, activeSlot.role),
+        )
+    : [];
+  const metric = (label: string, value: number, standard: number) => (
+    <LabeledList.Item label={label}>
+      {value}
+      {custom && value !== standard && (
+        <Box inline ml={1} color={value > standard ? 'good' : 'bad'}>
+          {value > standard ? '+' : ''}
+          {value - standard}
+        </Box>
+      )}
+    </LabeledList.Item>
+  );
+
+  return (
+    <Section fill scrollable title={design.name}>
+      <Box color="label" mb={1}>
+        {design.desc}
+      </Box>
+      <Stack mb={1}>
+        <Stack.Item grow>
+          <Button
+            fluid
+            selected={!custom}
+            icon="check"
+            onClick={() => setCustom(false)}
+          >
+            Standard
+          </Button>
+        </Stack.Item>
+        <Stack.Item grow>
+          <Button
+            fluid
+            selected={custom}
+            icon="sliders-h"
+            onClick={() => setCustom(true)}
+          >
+            Custom
+          </Button>
+        </Stack.Item>
+      </Stack>
+      <Section title="Construction" fitted>
+        <Stack vertical>
+          {slots.map((slot) => {
+            const material = materialChoices.find(
+              (choice) => choice.id === selected[slot.role],
+            );
+            return (
+              <Stack.Item key={slot.role}>
+                <Button
+                  fluid
+                  selected={custom && activeSlot?.role === slot.role}
+                  disabled={!custom}
+                  onClick={() => setActiveRole(slot.role)}
+                >
+                  <Stack align="center">
+                    <Stack.Item grow>
+                      <Box bold>{slot.label}</Box>
+                      <Box color="label" fontSize="11px">
+                        {slot.description}
+                      </Box>
+                    </Stack.Item>
+                    <Stack.Item>
+                      {material ? (
+                        <>
+                          <Box
+                            inline
+                            mr={0.5}
+                            style={{
+                              background: material.color,
+                              border: '1px solid #777',
+                              display: 'inline-block',
+                              height: '0.8em',
+                              width: '0.8em',
+                            }}
+                          />
+                          {material.label}
+                        </>
+                      ) : (
+                        'None'
+                      )}
+                    </Stack.Item>
+                  </Stack>
+                </Button>
+              </Stack.Item>
+            );
+          })}
+        </Stack>
+      </Section>
+      {custom && activeSlot && (
+        <Section title={`Choose ${activeSlot.label}`}>
+          <Input
+            fluid
+            value={search}
+            placeholder="Search loaded materials..."
+            onChange={setSearch}
+            mb={1}
+          />
+          {activeSlot.optional && (
+            <Button
+              fluid
+              selected={!selected[activeSlot.role]}
+              onClick={() =>
+                setRequested((previous) => ({
+                  ...previous,
+                  [activeSlot.role]: '',
+                }))
+              }
+            >
+              None
+            </Button>
+          )}
+          <Stack vertical>
+            {candidates.map((material, index) => {
+              const score = roleScore(material, activeSlot.role);
+              return (
+                <Stack.Item key={material.id}>
+                  <Button
+                    fluid
+                    selected={selected[activeSlot.role] === material.id}
+                    color={
+                      score < 20 ? 'bad' : index === 0 ? 'good' : undefined
+                    }
+                    onClick={() =>
+                      setRequested((previous) => ({
+                        ...previous,
+                        [activeSlot.role]: material.id,
+                      }))
+                    }
+                  >
+                    <Stack align="center">
+                      <Stack.Item>
+                        <Box
+                          style={{
+                            background: material.color,
+                            border: '1px solid #777',
+                            height: '1.2em',
+                            width: '1.2em',
+                          }}
+                        />
+                      </Stack.Item>
+                      <Stack.Item grow>{material.label}</Stack.Item>
+                      <Stack.Item color="label">
+                        {material.sheets} sheets
+                      </Stack.Item>
+                      {index === 0 && (
+                        <Stack.Item color="good">Best fit</Stack.Item>
+                      )}
+                    </Stack>
+                  </Button>
+                </Stack.Item>
+              );
+            })}
+          </Stack>
+        </Section>
+      )}
+      <Section title="Predicted performance">
+        <LabeledList>
+          {metric(
+            'Structural integrity',
+            metrics.integrity,
+            baseline.integrity,
+          )}
+          {metric('Relative mass', metrics.mass, baseline.mass)}
+          {metric(
+            'Electrical conductivity',
+            metrics.conductivity,
+            baseline.conductivity,
+          )}
+          {metric('Heat tolerance', metrics.heat, baseline.heat)}
+          {metric('Thermal isolation', metrics.insulation, baseline.insulation)}
+          {metric(
+            'Corrosion resistance',
+            metrics.corrosion,
+            baseline.corrosion,
+          )}
+          {metric('Pressure capability', metrics.pressure, baseline.pressure)}
+        </LabeledList>
+      </Section>
+      {!complete && (
+        <NoticeBox danger>Choose every required component.</NoticeBox>
+      )}
+      {complete && maxQuantity < 1 && (
+        <NoticeBox danger>
+          Insufficient loaded material for this configuration.
+        </NoticeBox>
+      )}
+      <Stack align="center">
+        <Stack.Item grow>
+          {!single && (
+            <NumberInput
+              fluid
+              value={Math.min(quantity, Math.max(effectiveMaximum, 1))}
+              minValue={1}
+              maxValue={Math.max(effectiveMaximum, 1)}
+              step={1}
+              onChange={(value) => setQuantity(Math.round(value))}
+            />
+          )}
+        </Stack.Item>
+        <Stack.Item>
+          <Button
+            icon="cog"
+            color="good"
+            disabled={!complete || effectiveMaximum < 1}
+            onClick={() =>
+              onBuild(
+                selected,
+                single ? 1 : Math.min(quantity, effectiveMaximum),
+              )
+            }
+          >
+            {actionLabel ?? 'Fabricate'}
+          </Button>
+        </Stack.Item>
+      </Stack>
+      <Box color="label" mt={0.5} textAlign="right">
+        {single
+          ? effectiveMaximum
+            ? 'Ready to craft'
+            : 'Missing materials'
+          : `Up to ${effectiveMaximum} available`}
+      </Box>
+    </Section>
+  );
+};
+
+export const SelectableRecipe = ProductConfigurator;

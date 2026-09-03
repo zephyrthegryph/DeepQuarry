@@ -15,25 +15,37 @@
 // The asset list is built dynamically from the build output dir because chunk
 // filenames are content-derived and change every build; flist() enumerates whatever
 // the current build produced. Registered at boot via get_asset_datum() in SStgui.
-/datum/asset/simple/tgui_chunks
+/datum/asset/simple/namespaced/tgui_chunks
 	keep_local_name = TRUE
 	cross_round_cachable = TRUE
 	var/asset_directory = "tgui/public"
 	var/list/allowed_assets
 
-/datum/asset/simple/tgui_chunks/register()
+/datum/asset/simple/namespaced/tgui_chunks/register()
 	for(var/filename in flist("[asset_directory]/"))
 		// match `*.chunk.js` (9 chars) and `*.chunk.css` (10 chars)
 		if((allowed_assets && allowed_assets[filename]) || (!allowed_assets && (copytext(filename, -9) == ".chunk.js" || copytext(filename, -10) == ".chunk.css")))
 			assets[filename] = file("[asset_directory]/[filename]")
 	return ..()
 
-/datum/asset/simple/tgui_chunks/proc/reload_from_directory(directory, list/filenames)
+/datum/asset/simple/namespaced/tgui_chunks/proc/reload_from_directory(directory, list/filenames)
 	unregister()
 	assets = list()
 	asset_directory = directory
 	allowed_assets = filenames
 	register()
+
+/datum/asset/simple/namespaced/tgui_chunks/proc/get_public_base_url()
+	if(!length(assets))
+		return null
+	var/filename
+	for(var/name in assets)
+		filename = name
+		break
+	var/url = SSassets.transport.get_asset_url(filename, assets[filename])
+	if(!url)
+		return null
+	return copytext(url, 1, length(url) - length(url_encode(filename)) + 1)
 
 /datum/asset/simple/tgui_panel
 	keep_local_name = TRUE

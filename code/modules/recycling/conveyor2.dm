@@ -6,6 +6,7 @@
 //note that corner pieces transfer stuff clockwise when running forward, and anti-clockwise backwards.
 
 /obj/machinery/conveyor
+	maintenance_flags = MACHINE_MAINT_STANDARD
 	icon = 'icons/obj/recycling.dmi'
 	icon_state = "conveyor0"
 	name = "conveyor belt"
@@ -45,6 +46,8 @@
 /obj/machinery/conveyor/Destroy()
 	if(loc)
 		UnregisterSignal(loc, COMSIG_ATOM_ENTERED)
+	for(var/obj/machinery/conveyor_switch/conveyor_switch in GLOB.machines)
+		LAZYREMOVE(conveyor_switch.conveyors, src)
 	return ..()
 
 /obj/machinery/conveyor/Moved(atom/old_loc, direction, forced = FALSE)
@@ -153,25 +156,21 @@
 	if(isrobot(user))	return //Carn: fix for borgs dropping their modules on conveyor belts
 	if(I.loc != user)	return // This should stop mounted modules ending up outside the module.
 
-	if(default_deconstruction_screwdriver(user, I))
-		return
-	if(default_deconstruction_crowbar(user, I))
-		return
-
-	if(istype(I, /obj/item/multitool))
-		if(panel_open)
-			var/input = tgui_input_text(user, "What id would you like to give this conveyor?", "Multitool-Conveyor interface", id, MAX_MESSAGE_LEN)
-			if(!input)
-				to_chat(user, "No input found. Please hang up and try your call again.")
-				return
-			id = input
-			for(var/obj/machinery/conveyor_switch/C in GLOB.machines)
-				if(C.id == id)
-					C.conveyors |= src
-			return
-
 	user.drop_item(get_turf(src))
 	return
+
+/obj/machinery/conveyor/multitool_act(mob/user, obj/item/I)
+	if(!panel_open)
+		return ITEM_INTERACT_BLOCKING
+	var/input = tgui_input_text(user, "What id would you like to give this conveyor?", "Multitool-Conveyor interface", id, MAX_MESSAGE_LEN)
+	if(!input)
+		to_chat(user, "No input found. Please hang up and try your call again.")
+		return ITEM_INTERACT_BLOCKING
+	id = input
+	for(var/obj/machinery/conveyor_switch/C in GLOB.machines)
+		if(C.id == id)
+			C.conveyors |= src
+	return ITEM_INTERACT_SUCCESS
 
 // attack with hand, move pulled object onto conveyor
 /obj/machinery/conveyor/attack_hand(mob/user as mob)
@@ -233,6 +232,7 @@
 //
 
 /obj/machinery/conveyor_switch
+	maintenance_flags = MACHINE_MAINT_PANEL
 
 	name = "conveyor switch"
 	desc = "A conveyor control switch."
@@ -261,6 +261,10 @@
 	for(var/obj/machinery/conveyor/C in GLOB.machines)
 		if(C.id == id)
 			conveyors += C
+
+/obj/machinery/conveyor_switch/Destroy()
+	conveyors = null
+	return ..()
 
 /obj/machinery/conveyor_switch/proc/toggle_speed(forced)
 	speed_active = !speed_active // switching gears
@@ -322,53 +326,49 @@
 			S.update()
 
 /obj/machinery/conveyor_switch/attackby(obj/item/I, mob/user)
-	if(default_deconstruction_screwdriver(user, I))
-		return
+	return ..()
 
-	if(!panel_open) //It's probably better to just check this once instead of each time
-		return
+/obj/machinery/conveyor_switch/welder_act(mob/user, obj/item/I)
+	if(!panel_open)
+		return ITEM_INTERACT_BLOCKING
+	var/obj/item/weldingtool/WT = I.get_welder()
+	if(!WT.remove_fuel(0, user))
+		to_chat(user, "The welding tool must be on to complete this task.")
+		return ITEM_INTERACT_BLOCKING
+	playsound(src, WT.usesound, 50, 1)
+	if(do_after(user, 2 SECONDS * WT.toolspeed, target = src))
+		if(!src || !WT.isOn()) return ITEM_INTERACT_BLOCKING
+		to_chat(user, span_notice("You deconstruct the frame."))
+		new /obj/item/stack/material/steel(src.loc, 2)
+		qdel(src)
+	return ITEM_INTERACT_SUCCESS
 
-	if(I.has_tool_quality(TOOL_WELDER))
-		var/obj/item/weldingtool/WT = I.get_welder()
-		if(!WT.remove_fuel(0, user))
-			to_chat(user, "The welding tool must be on to complete this task.")
-			return
-		playsound(src, WT.usesound, 50, 1)
-		if(do_after(user, 2 SECONDS * WT.toolspeed, target = src))
-			if(!src || !WT.isOn()) return
-			to_chat(user, span_notice("You deconstruct the frame."))
-			new /obj/item/stack/material/steel( src.loc, 2 )
-			qdel(src)
-			return
+/obj/machinery/conveyor_switch/multitool_act(mob/user, obj/item/I)
+	if(!panel_open)
+		return ITEM_INTERACT_BLOCKING
+	var/input = tgui_input_text(user, "What id would you like to give this conveyor switch?", "Multitool-Conveyor interface", id, MAX_MESSAGE_LEN)
+	if(!input)
+		to_chat(user, "No input found. Please hang up and try your call again.")
+		return ITEM_INTERACT_BLOCKING
+	id = input
+	conveyors = list()
+	for(var/obj/machinery/conveyor/C in GLOB.machines)
+		if(C.id == id)
+			conveyors += C
+	return ITEM_INTERACT_SUCCESS
 
-	if(I.has_tool_quality(TOOL_MULTITOOL))
-		var/input = tgui_input_text(user, "What id would you like to give this conveyor switch?", "Multitool-Conveyor interface", id, MAX_MESSAGE_LEN)
-		if(!input)
-			to_chat(user, "No input found. Please hang up and try your call again.")
-			return
-		id = input
-		conveyors = list() // Clear list so they aren't double added.
-		for(var/obj/machinery/conveyor/C in GLOB.machines)
-			if(C.id == id)
-				conveyors += C
-		return
+/obj/machinery/conveyor_switch/wrench_act(mob/user, obj/item/I)
+	oneway = !oneway
+	to_chat(user, "You set the switch to [oneway ? "one" : "two"] way operation.")
+	playsound(src, I.usesound, 50, 1)
+	return ITEM_INTERACT_SUCCESS
 
-	if(I.has_tool_quality(TOOL_WRENCH))
-		if(oneway == 1)
-			to_chat(user, "You set the switch to two way operation.")
-			oneway = 0
-			playsound(src, I.usesound, 50, 1)
-			return
-		else
-			to_chat(user, "You set the switch to one way operation.")
-			oneway = 1
-			playsound(src, I.usesound, 50, 1)
-			return
-
-	if(I.has_tool_quality(TOOL_WIRECUTTER))
-		toggle_speed()
-		to_chat(user, "You adjust the speed of the conveyor switch")
-		return
+/obj/machinery/conveyor_switch/wirecutter_act(mob/user, obj/item/I)
+	if(!panel_open)
+		return ITEM_INTERACT_BLOCKING
+	toggle_speed()
+	to_chat(user, "You adjust the speed of the conveyor switch")
+	return ITEM_INTERACT_SUCCESS
 
 /obj/machinery/conveyor_switch/allow_pai_interaction(mob/living/silicon/pai/user, proximity_flag)
 	return proximity_flag

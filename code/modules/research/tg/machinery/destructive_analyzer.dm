@@ -64,10 +64,6 @@ It is used to destroy hand-held objects and advance technological research. Used
 	if(busy)
 		to_chat(user, span_notice("\The [src] is busy right now."))
 		return
-	if(default_deconstruction_screwdriver(user, O))
-		return
-	if(default_deconstruction_crowbar(user, O))
-		return
 	if(default_part_replacement(user, O))
 		return
 	if(!panel_open)

@@ -57,6 +57,18 @@ export type DesignBrowserProps<T extends Design = Design> = {
      * A callback to print the design.
      */
     onPrintDesign: (design: T, amount: number) => void,
+
+    /** Selects this design in the optional product configuration pane. */
+    onSelectDesign?: (design: T) => void,
+
+    /** Whether this design is currently selected. */
+    selected?: boolean,
+  ) => ReactNode;
+
+  /** Optional persistent product configuration pane. */
+  buildDetailElement?: (
+    design: T,
+    availableMaterials: MaterialMap,
   ) => ReactNode;
 
   /**
@@ -131,6 +143,7 @@ export const DesignBrowser = <T extends Design = Design>(
     buildRecipeElement,
     busy,
     categoryButtons,
+    buildDetailElement,
   } = props;
 
   const [selectedCategory, setSelectedCategory] = useSharedState(
@@ -139,6 +152,11 @@ export const DesignBrowser = <T extends Design = Design>(
   );
 
   const [searchText, setSearchText] = useSharedState('search_text', '');
+
+  const [selectedDesignId, setSelectedDesignId] = useSharedState<string | null>(
+    'selected_design',
+    null,
+  );
 
   const onCategorySelected = (newCategory: string) => {
     if (newCategory === selectedCategory) {
@@ -204,6 +222,18 @@ export const DesignBrowser = <T extends Design = Design>(
     }
   }
 
+  const selectedDesign =
+    designs.find((design) => design.id === selectedDesignId) ?? designs[0];
+
+  const recipeElement = (design: T) =>
+    buildRecipeElement(
+      design,
+      availableMaterials || {},
+      onPrintDesign || NOOP,
+      (selected) => setSelectedDesignId(selected.id),
+      selectedDesign?.id === design.id,
+    );
+
   return (
     <Stack fill>
       {/* Left Column */}
@@ -253,85 +283,89 @@ export const DesignBrowser = <T extends Design = Design>(
 
       {/* Right Column */}
       <Stack.Item grow>
-        <Section
-          title={
-            searchText.length > 0
-              ? `Results for "${searchText}"`
-              : selectedCategory === ALL_CATEGORY
-                ? 'All Designs'
-                : selectedCategory
-          }
-          fill
-        >
-          <Stack vertical fill>
-            <Stack.Item>
-              <Section>
-                <SearchBar
-                  expensive
-                  query={searchText}
-                  onSearch={setSearchText}
-                  placeholder={'Search all designs...'}
-                />
-              </Section>
-            </Stack.Item>
-            <Stack.Item grow style={{ overflowY: 'auto', overflowX: 'hidden' }}>
-              <Section fill>
-                {searchText.length > 0 ? (
-                  <VirtualList>
-                    {sortBy(Object.values(root.descendants), [
-                      (design: T) => design.name,
-                    ])
-                      .filter((design) =>
-                        design.name
-                          .toLowerCase()
-                          .includes(searchText.toLowerCase()),
-                      )
-                      .map((design) =>
-                        buildRecipeElement(
-                          design,
-                          availableMaterials || {},
-                          onPrintDesign || NOOP,
-                        ),
-                      )}
-                  </VirtualList>
-                ) : selectedCategory === ALL_CATEGORY ? (
-                  <VirtualList>
-                    {sortBy(Object.values(root.descendants), [
-                      (design: T) => design.name,
-                    ]).map((design) =>
-                      buildRecipeElement(
-                        design,
-                        availableMaterials || {},
-                        onPrintDesign || NOOP,
-                      ),
-                    )}
-                  </VirtualList>
-                ) : (
-                  root.subcategories[selectedCategory] && (
-                    <CategoryView
-                      category={root.subcategories[selectedCategory]}
-                      categoryButtons={categoryButtons}
-                      availableMaterials={availableMaterials}
-                      onPrintDesign={onPrintDesign}
-                      buildRecipeElement={buildRecipeElement}
+        <Stack fill>
+          <Stack.Item grow>
+            <Section
+              title={
+                searchText.length > 0
+                  ? `Results for "${searchText}"`
+                  : selectedCategory === ALL_CATEGORY
+                    ? 'All Designs'
+                    : selectedCategory
+              }
+              fill
+            >
+              <Stack vertical fill>
+                <Stack.Item>
+                  <Section>
+                    <SearchBar
+                      expensive
+                      query={searchText}
+                      onSearch={setSearchText}
+                      placeholder={'Search all designs...'}
                     />
-                  )
+                  </Section>
+                </Stack.Item>
+                <Stack.Item
+                  grow
+                  style={{ overflowY: 'auto', overflowX: 'hidden' }}
+                >
+                  <Section fill>
+                    {searchText.length > 0 ? (
+                      <VirtualList>
+                        {sortBy(Object.values(root.descendants), [
+                          (design: T) => design.name,
+                        ])
+                          .filter((design) =>
+                            design.name
+                              .toLowerCase()
+                              .includes(searchText.toLowerCase()),
+                          )
+                          .map(recipeElement)}
+                      </VirtualList>
+                    ) : selectedCategory === ALL_CATEGORY ? (
+                      <VirtualList>
+                        {sortBy(Object.values(root.descendants), [
+                          (design: T) => design.name,
+                        ]).map(recipeElement)}
+                      </VirtualList>
+                    ) : (
+                      root.subcategories[selectedCategory] && (
+                        <CategoryView
+                          category={root.subcategories[selectedCategory]}
+                          categoryButtons={categoryButtons}
+                          availableMaterials={availableMaterials}
+                          onPrintDesign={onPrintDesign}
+                          buildRecipeElement={buildRecipeElement}
+                          selectedDesignId={selectedDesign?.id}
+                          onSelectDesign={(design) =>
+                            setSelectedDesignId(design.id)
+                          }
+                        />
+                      )
+                    )}
+                  </Section>
+                </Stack.Item>
+                {!!busy && (
+                  <Dimmer
+                    style={{
+                      fontSize: '2em',
+                      textAlign: 'center',
+                    }}
+                  >
+                    <Icon name="cog" spin />
+                    {' Building items...'}
+                  </Dimmer>
                 )}
-              </Section>
+              </Stack>
+            </Section>
+          </Stack.Item>
+          {buildDetailElement && selectedDesign && (
+            <Stack.Item width="430px">
+              {buildDetailElement(selectedDesign, availableMaterials || {})}
             </Stack.Item>
-            {!!busy && (
-              <Dimmer
-                style={{
-                  fontSize: '2em',
-                  textAlign: 'center',
-                }}
-              >
-                <Icon name="cog" spin />
-                {' Building items...'}
-              </Dimmer>
-            )}
-          </Stack>
-        </Section>
+          )}
+        </Stack>
       </Stack.Item>
     </Stack>
   );
@@ -444,7 +478,12 @@ type CategoryViewProps<T extends Design = Design> = {
      * A callback to print the design.
      */
     onPrintDesign: (design: T, amount: number) => void,
+    onSelectDesign?: (design: T) => void,
+    selected?: boolean,
   ) => ReactNode;
+
+  selectedDesignId?: string;
+  onSelectDesign?: (design: T) => void;
 
   /**
    * If provided, renders a node into each category in the output.
@@ -463,6 +502,8 @@ const CategoryView = <T extends Design = Design>(
     onPrintDesign,
     buildRecipeElement,
     categoryButtons,
+    selectedDesignId,
+    onSelectDesign,
   } = props;
 
   depth ??= 0;
@@ -474,6 +515,8 @@ const CategoryView = <T extends Design = Design>(
           design,
           availableMaterials || {},
           onPrintDesign || NOOP,
+          onSelectDesign,
+          selectedDesignId === design.id,
         ),
       )}
 

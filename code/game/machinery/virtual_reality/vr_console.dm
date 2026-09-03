@@ -1,4 +1,5 @@
 /obj/machinery/vr_sleeper
+	maintenance_flags = MACHINE_MAINT_STANDARD
 	name = "virtual reality sleeper"
 	desc = "A fancy bed with built-in sensory I/O ports and connectors to interface users' minds with their bodies in virtual reality."
 	icon = 'icons/obj/Cryogenic2.dmi'
@@ -93,14 +94,15 @@
 		I.attack(occupant, user)
 		return
 
-	if(default_deconstruction_screwdriver(user, I))
-		return
-	else if(default_deconstruction_crowbar(user, I))
-		if(occupant && avatar)
-			avatar.exit_vr()
-			avatar = null
-			perform_exit()
-		return
+
+/obj/machinery/vr_sleeper/crowbar_act(mob/user, obj/item/tool)
+	if(!panel_open)
+		return ITEM_INTERACT_BLOCKING
+	if(occupant && avatar)
+		avatar.exit_vr()
+		avatar = null
+		perform_exit()
+	return ..()
 
 
 /obj/machinery/vr_sleeper/MouseDrop_T(mob/target, mob/user)

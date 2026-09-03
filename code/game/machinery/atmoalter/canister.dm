@@ -196,8 +196,10 @@ update_flag
 		return
 
 	var/atom/location = src.loc
-	var/obj/machinery/atmospherics/portables_connector/port = locate() in location // Finds if there's a port
-	location.assume_air(air_contents)
+	var/obj/machinery/atmospherics/portables_connector/port
+	if(location)
+		port = locate() in location // Finds if there's a port
+		location.assume_air(air_contents)
 
 	if(port && anchored) // if it blew up, frees up the port
 		disconnect()
@@ -303,25 +305,7 @@ update_flag
 		color = processed.icon_colour
 		to_chat(user, span_notice("You install a [processed.display_name] pressure liner in [src]."))
 		return
-	if(W.has_tool_quality(TOOL_WELDER)) //Vorestart: Deconstructable Canisters
-		var/obj/item/weldingtool/WT = W.get_welder()
-		if(!WT.remove_fuel(0, user))
-			to_chat(user, "The welding tool must be on to complete this task.")
-			return
-		if(air_contents.return_pressure() > 1 && !destroyed) // Empty or broken cans are able to be deconstructed
-			to_chat(user, span_warning("\The [src]'s internal pressure is too high! Empty the canister before attempting to weld it apart."))
-			return
-		playsound(src, WT.usesound, 50, 1)
-		if(do_after(user, 2 SECONDS * WT.toolspeed, target = src))
-			if(!src || !WT.isOn()) return
-			to_chat(user, span_notice("You deconstruct the [src]."))
-			new /obj/item/stack/material/steel( src.loc, 10)
-			if(connected_port)
-				disconnect()
-			qdel(src)
-			return
-	//Voreend
-	if(!W.has_tool_quality(TOOL_WRENCH) && !istype(W, /obj/item/tank) && !istype(W, /obj/item/analyzer) && !istype(W, /obj/item/pda))
+	if(!istype(W, /obj/item/tank) && !istype(W, /obj/item/analyzer) && !istype(W, /obj/item/pda))
 		visible_message(span_warning("\The [user] hits \the [src] with \a [W]!"))
 		src.add_fingerprint(user)
 		take_damage(W.force, W.damtype, MELEE)
@@ -343,6 +327,23 @@ update_flag
 	..()
 
 	SStgui.update_uis(src) // Update all NanoUIs attached to src
+
+/obj/machinery/portable_atmospherics/canister/welder_act(mob/user, obj/item/tool)
+	var/obj/item/weldingtool/welder = tool.get_welder()
+	if(!welder.remove_fuel(0, user))
+		to_chat(user, "The welding tool must be on to complete this task.")
+		return ITEM_INTERACT_BLOCKING
+	if(air_contents.return_pressure() > 1 && !destroyed)
+		to_chat(user, span_warning("\The [src]'s internal pressure is too high! Empty the canister before attempting to weld it apart."))
+		return ITEM_INTERACT_BLOCKING
+	playsound(src, welder.usesound, 50, TRUE)
+	if(do_after(user, 2 SECONDS * welder.toolspeed, target = src) && welder.isOn())
+		to_chat(user, span_notice("You deconstruct [src]."))
+		new /obj/item/stack/material/steel(loc, 10)
+		if(connected_port)
+			disconnect()
+		qdel(src)
+	return ITEM_INTERACT_SUCCESS
 
 /obj/machinery/portable_atmospherics/canister/attack_ai(mob/user as mob)
 	return src.attack_hand(user)

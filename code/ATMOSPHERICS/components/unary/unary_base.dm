@@ -15,8 +15,12 @@
 	/// Arena dependencies captured while this device is absent from SSmachines.
 	var/sleeping_turf_mixture_id
 	var/sleeping_turf_revision = -1
+	var/sleeping_turf_pressure = 0
+	var/sleeping_turf_moles = 0
 	var/sleeping_pipe_mixture_id
 	var/sleeping_pipe_revision = -1
+	var/sleeping_pipe_pressure = 0
+	var/sleeping_pipe_moles = 0
 	var/gas_dependency_mask = GAS_DEPENDENCY_PRESSURE
 
 /obj/machinery/atmospherics/unary/Initialize(mapload)
@@ -34,8 +38,12 @@
 		SSmachines.subscribe_gas_dependency(sleeping_turf_mixture_id, WR)
 	if(environment)
 		sleeping_turf_revision = environment.revision()
+		sleeping_turf_pressure = environment.return_pressure()
+		sleeping_turf_moles = environment.total_moles()
 	else
 		sleeping_turf_revision = -1
+		sleeping_turf_pressure = 0
+		sleeping_turf_moles = 0
 	var/new_pipe_mixture_id = air_contents?.arena_id()
 	if(sleeping_pipe_mixture_id != new_pipe_mixture_id)
 		SSmachines.unsubscribe_gas_dependency(sleeping_pipe_mixture_id, WR)
@@ -43,26 +51,46 @@
 		SSmachines.subscribe_gas_dependency(sleeping_pipe_mixture_id, WR)
 	if(air_contents)
 		sleeping_pipe_revision = air_contents.revision()
+		sleeping_pipe_pressure = air_contents.return_pressure()
+		sleeping_pipe_moles = air_contents.total_moles()
 	else
 		sleeping_pipe_revision = -1
+		sleeping_pipe_pressure = 0
+		sleeping_pipe_moles = 0
 
 /obj/machinery/atmospherics/unary/proc/unregister_gas_dependencies(datum/weakref/WR)
 	SSmachines.unsubscribe_gas_dependency(sleeping_turf_mixture_id, WR)
 	SSmachines.unsubscribe_gas_dependency(sleeping_pipe_mixture_id, WR)
 	sleeping_turf_mixture_id = null
 	sleeping_turf_revision = -1
+	sleeping_turf_pressure = 0
+	sleeping_turf_moles = 0
 	sleeping_pipe_mixture_id = null
 	sleeping_pipe_revision = -1
+	sleeping_pipe_pressure = 0
+	sleeping_pipe_moles = 0
 
-/obj/machinery/atmospherics/unary/proc/gas_dependency_changed(mixture_id, change_mask)
+/obj/machinery/atmospherics/unary/gas_dependency_changed(mixture_id, change_mask, list/observation, observation_index)
 	if(!(change_mask & gas_dependency_mask))
 		return FALSE
+	var/observed_revision = observation && observation_index ? observation[observation_index + 2] : null
 	if(mixture_id == sleeping_turf_mixture_id)
+		if(!isnull(observed_revision))
+			sleeping_turf_pressure = observation[observation_index + 3]
+			sleeping_turf_moles = observation[observation_index + 12]
+			return observed_revision != sleeping_turf_revision
 		var/datum/gas_mixture/environment = return_air()
 		return !environment || environment.arena_id() != sleeping_turf_mixture_id || environment.revision() != sleeping_turf_revision
 	if(mixture_id == sleeping_pipe_mixture_id)
+		if(!isnull(observed_revision))
+			sleeping_pipe_pressure = observation[observation_index + 3]
+			sleeping_pipe_moles = observation[observation_index + 12]
+			return observed_revision != sleeping_pipe_revision
 		return !air_contents || air_contents.arena_id() != sleeping_pipe_mixture_id || air_contents.revision() != sleeping_pipe_revision
 	return TRUE
+
+/obj/machinery/atmospherics/unary/gas_dependency_interest_mask()
+	return gas_dependency_mask
 
 /obj/machinery/atmospherics/unary/proc/invalidate_gas_dependencies()
 	SSmachines.wake_vent(WEAKREF(src))
@@ -84,23 +112,20 @@
 /obj/machinery/atmospherics/unary/get_neighbor_nodes_for_init()
 	return list(node)
 
-/obj/machinery/atmospherics/unary/network_expand(datum/pipe_network/new_network, obj/machinery/atmospherics/pipe/reference)
-	// Idempotency guard: check membership before assigning slot vars.
-	if(new_network.normal_members.Find(src))
-		return 0
-
-	if(reference == node)
-		network = new_network
-
-	new_network.normal_members += src
-
-	return null
-
 /obj/machinery/atmospherics/unary/Destroy()
+	rust_unregister_pipe_topology()
+	// Sleeping devices are held through weakrefs, but their subscription buckets
+	// and arena watches must be removed synchronously. Leaving these until the
+	// next dirty publication kept deleted injectors alive in GC diagnostics.
+	unregister_gas_dependencies(WEAKREF(src))
 	// Disconnect/qdel BEFORE ..() so node deref is valid.
+	var/datum/pipe_network/old_network = network
+	if(old_network?.normal_members)
+		old_network.normal_members -= src
+		unregister_network_membership(old_network)
 	if(node)
 		node.disconnect(src)
-		qdel(network)
+		rust_release_network_wrapper(old_network)
 
 	node = null
 	network = null
@@ -121,16 +146,7 @@
 	update_icon()
 	update_underlays()
 
-/obj/machinery/atmospherics/unary/build_network()
-	if(!network && node)
-		network = new /datum/pipe_network()
-		network.normal_members += src
-		network.build_network(node, src)
-
-
 /obj/machinery/atmospherics/unary/return_network(obj/machinery/atmospherics/reference)
-	build_network()
-
 	if(reference==node)
 		return network
 
@@ -151,10 +167,18 @@
 
 	return results
 
+/obj/machinery/atmospherics/unary/bind_network_air(datum/pipe_network/reference, datum/gas_mixture/network_air)
+	if(network == reference)
+		air_contents = network_air
+
+/obj/machinery/atmospherics/unary/detach_network_air(datum/pipe_network/reference, datum/gas_mixture/network_air, network_volume)
+	if(network == reference && air_contents == network_air)
+		air_contents = detached_pipenet_air(network_air, 200, network_volume)
+
 /obj/machinery/atmospherics/unary/disconnect(obj/machinery/atmospherics/reference)
 	invalidate_gas_dependencies()
 	if(reference==node)
-		qdel(network)
+		rust_release_network_wrapper(network)
 		node = null
 
 	update_icon()

@@ -95,6 +95,7 @@
 	idle_power_usage = 500
 
 	circuit = /obj/item/circuitboard/thermoregulator
+	maintenance_flags = MACHINE_MAINT_STANDARD
 
 	var/on = 0
 	var/target_temp = T20C
@@ -120,32 +121,31 @@
 	if(get_dist(user, src) <= 2)
 		. += "There is a small display that reads \"[convert_k2c(target_temp)]C\"."
 
-/obj/machinery/power/thermoregulator/attackby(obj/item/I, mob/user)
-	if(I.has_tool_quality(TOOL_SCREWDRIVER))
-		if(default_deconstruction_screwdriver(user,I))
-			return
-	if(I.has_tool_quality(TOOL_CROWBAR))
-		if(default_deconstruction_crowbar(user,I))
-			return
-	if(I.has_tool_quality(TOOL_WRENCH))
-		anchored = !anchored
-		visible_message(span_notice("\The [src] has been [anchored ? "bolted to the floor" : "unbolted from the floor"] by [user]."))
-		playsound(src, I.usesound, 75, 1)
-		if(anchored)
-			connect_to_network()
-		else
-			disconnect_from_network()
-			turn_off()
-		return
-	if(istype(I, /obj/item/multitool))
-		var/new_temp = tgui_input_number(user, "Input a new target temperature, in degrees C.","Target Temperature", convert_k2c(target_temp), MAX_ATMOS_TEMPERATURE, convert_k2c(TCMB), round_value = FALSE)
-		if(!Adjacent(user) || user.incapacitated())
-			return
-		new_temp = convert_c2k(new_temp)
-		target_temp = max(new_temp, TCMB)
-		wake_for_state_change()
-		return
-	..()
+/obj/machinery/power/thermoregulator/screwdriver_act(mob/user, obj/item/tool)
+	return ..()
+
+/obj/machinery/power/thermoregulator/crowbar_act(mob/user, obj/item/tool)
+	return ..()
+
+/obj/machinery/power/thermoregulator/wrench_act(mob/user, obj/item/tool)
+	anchored = !anchored
+	visible_message(span_notice("\The [src] has been [anchored ? "bolted to the floor" : "unbolted from the floor"] by [user]."))
+	playsound(src, tool.usesound, 75, 1)
+	if(anchored)
+		connect_to_network()
+	else
+		disconnect_from_network()
+		turn_off()
+	return ITEM_INTERACT_SUCCESS
+
+/obj/machinery/power/thermoregulator/multitool_act(mob/user, obj/item/tool)
+	var/new_temp = tgui_input_number(user, "Input a new target temperature, in degrees C.","Target Temperature", convert_k2c(target_temp), MAX_ATMOS_TEMPERATURE, convert_k2c(TCMB), round_value = FALSE)
+	if(!Adjacent(user) || user.incapacitated())
+		return ITEM_INTERACT_BLOCKING
+	new_temp = convert_c2k(new_temp)
+	target_temp = max(new_temp, TCMB)
+	wake_for_state_change()
+	return ITEM_INTERACT_SUCCESS
 
 /obj/machinery/power/thermoregulator/attack_hand(mob/user)
 	add_fingerprint(user)
@@ -235,7 +235,7 @@
 	if(WR?.reference)
 		SSmachines.sleeping_gas_devices.Remove(WR.reference)
 
-/obj/machinery/power/thermoregulator/proc/gas_dependency_changed(mixture_id, change_mask)
+/obj/machinery/power/thermoregulator/gas_dependency_changed(mixture_id, change_mask)
 	if(!(change_mask & GAS_DEPENDENCY_TEMPERATURE) || mixture_id != sleeping_mixture_id || !on)
 		return FALSE
 	var/datum/gas_mixture/environment = loc.return_air()
@@ -244,6 +244,9 @@
 	if(environment.revision() == sleeping_mixture_revision)
 		return FALSE
 	return abs(environment.return_temperature() - target_temp) >= 1
+
+/obj/machinery/power/thermoregulator/gas_dependency_interest_mask()
+	return GAS_DEPENDENCY_TEMPERATURE
 
 /obj/machinery/power/thermoregulator/proc/wake_for_state_change()
 	clear_gas_dependency()

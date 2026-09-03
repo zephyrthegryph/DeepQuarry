@@ -62,22 +62,8 @@
 
 /obj/machinery/shield/bullet_act(obj/item/projectile/Proj)
 	..()
-	take_damage(Proj.get_structure_damage(), Proj.damage_type, BULLET, sound_effect = FALSE)
 	set_opacity(1)
 	spawn(20) if(!QDELETED(src)) set_opacity(0)
-
-/obj/machinery/shield/ex_act(severity)
-	switch(severity)
-		if(1.0)
-			if (prob(75))
-				qdel(src)
-		if(2.0)
-			if (prob(50))
-				qdel(src)
-		if(3.0)
-			if (prob(25))
-				qdel(src)
-	return
 
 /obj/machinery/shield/emp_act(severity, recursive)
 	. = ..()
@@ -238,22 +224,14 @@
 
 // Integrity zero blows the generator apart.
 /obj/machinery/shieldgen/atom_destruction(damage_flag)
-	. = ..()
-	spawn(0)
-		explosion(get_turf(src.loc), 0, 0, 1, 0, 0, 0)
-	qdel(src)
+	var/turf/explosion_turf = get_turf(src)
+	explosion(explosion_turf, 0, 0, 1, 0, 0, 0)
+	return ..()
 
 /obj/machinery/shieldgen/ex_act(severity)
-	switch(severity)
-		if(1.0)
-			take_damage(75, BRUTE, BOMB)
-		if(2.0)
-			if (prob(15))
-				src.malfunction = 1
-			take_damage(30, BRUTE, BOMB)
-		if(3.0)
-			take_damage(10, BRUTE, BOMB)
-	return
+	if(severity == 2 && prob(15))
+		malfunction = TRUE
+	return ..()
 
 /obj/machinery/shieldgen/emp_act(severity, recursive)
 	. = ..()
@@ -299,16 +277,7 @@
 		return 1
 
 /obj/machinery/shieldgen/attackby(obj/item/W as obj, mob/user as mob)
-	if(W.has_tool_quality(TOOL_SCREWDRIVER))
-		playsound(src, W.usesound, 100, 1)
-		if(is_open)
-			to_chat(user, span_blue("You close the panel."))
-			is_open = FALSE
-		else
-			to_chat(user, span_blue("You open the panel and expose the wiring."))
-			is_open = TRUE
-
-	else if(istype(W, /obj/item/stack/cable_coil) && malfunction && is_open)
+	if(istype(W, /obj/item/stack/cable_coil) && malfunction && is_open)
 		var/obj/item/stack/cable_coil/coil = W
 		to_chat(user, span_notice("You begin to replace the wires."))
 		//if(do_after(user, min(60, round( ((getMaxHealth()/health)*10)+(malfunction*10) ))) //Take longer to repair heavier damage
@@ -318,24 +287,6 @@
 				malfunction = 0
 				to_chat(user, span_notice("You repair the [src]!"))
 				update_icon()
-
-	else if(W.has_tool_quality(TOOL_WRENCH))
-		if(locked)
-			to_chat(user, "The bolts are covered, unlocking this would retract the covers.")
-			return
-		if(anchored)
-			playsound(src, W.usesound, 100, 1)
-			to_chat(user, span_blue("You unsecure the [src] from the floor!"))
-			if(active)
-				to_chat(user, span_blue("The [src] shuts off!"))
-				src.shields_down()
-			anchored = FALSE
-		else
-			if(istype(get_turf(src), /turf/space)) return //No wrenching these in space!
-			playsound(src, W.usesound, 100, 1)
-			to_chat(user, span_blue("You secure the [src] to the floor!"))
-			anchored = TRUE
-
 
 	else if(istype(W, /obj/item/card/id) || istype(W, /obj/item/pda))
 		if(src.allowed(user))
@@ -364,6 +315,31 @@
 			return
 	else
 		..()
+
+/obj/machinery/shieldgen/screwdriver_act(mob/user, obj/item/W)
+	playsound(src, W.usesound, 100, 1)
+	is_open = !is_open
+	to_chat(user, span_blue("You [is_open ? "open the panel and expose the wiring" : "close the panel"]."))
+	return ITEM_INTERACT_SUCCESS
+
+/obj/machinery/shieldgen/wrench_act(mob/user, obj/item/W)
+	if(locked)
+		to_chat(user, "The bolts are covered, unlocking this would retract the covers.")
+		return ITEM_INTERACT_BLOCKING
+	if(anchored)
+		playsound(src, W.usesound, 100, 1)
+		to_chat(user, span_blue("You unsecure the [src] from the floor!"))
+		if(active)
+			to_chat(user, span_blue("The [src] shuts off!"))
+			shields_down()
+		anchored = FALSE
+	else
+		if(istype(get_turf(src), /turf/space))
+			return ITEM_INTERACT_BLOCKING
+		playsound(src, W.usesound, 100, 1)
+		to_chat(user, span_blue("You secure the [src] to the floor!"))
+		anchored = TRUE
+	return ITEM_INTERACT_SUCCESS
 
 
 /obj/machinery/shieldgen/update_icon()

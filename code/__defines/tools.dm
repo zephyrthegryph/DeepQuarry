@@ -36,3 +36,14 @@
 	#define ITEM_INTERACT_FAILURE ITEM_INTERACT_BLOCKING
 /// Return to skip the rest of the interaction chain, going straight to attack.
 #define ITEM_INTERACT_SKIP_TO_ATTACK (1<<2)
+
+/// Any result which consumes the click and therefore suppresses afterattack().
+#define ITEM_INTERACT_CONSUMED(result) ((result) & (ITEM_INTERACT_SUCCESS | ITEM_INTERACT_BLOCKING))
+
+// Declarative /obj/machinery maintenance capabilities.
+#define MACHINE_MAINT_PANEL (1<<0)
+#define MACHINE_MAINT_FRAME (1<<1)
+#define MACHINE_MAINT_WRENCH (1<<2)
+#define MACHINE_MAINT_WELDER_REPAIR (1<<3)
+#define MACHINE_MAINT_STANDARD (MACHINE_MAINT_PANEL | MACHINE_MAINT_FRAME)
+#define MACHINE_MAINT_STANDARD_MOVABLE (MACHINE_MAINT_STANDARD | MACHINE_MAINT_WRENCH)

@@ -23,6 +23,10 @@
 	arming_controller = SSshuttles.docking_registry[arming_controller_tag]
 	if(!istype(arming_controller))
 		CRASH("Could not find arming controller for escape pod \"[name]\", tag was '[arming_controller_tag]'.")
+	// Every pod references the shared berth program. Multiple pod listeners are
+	// intentional, so opt into signal fan-out instead of emitting one runtime per
+	// pod during shuttle initialization.
+	RegisterSignal(arming_controller, COMSIG_QDELETING, PROC_REF(arming_controller_deleted), override = TRUE)
 
 	//find the pod's own controller
 	var/datum/embedded_program/docking/simple/prog = SSshuttles.docking_registry[docking_controller_tag]
@@ -30,6 +34,16 @@
 	if(!istype(controller_master))
 		CRASH("Escape pod \"[name]\" could not find it's controller master! docking_controller_tag=[docking_controller_tag]")
 	controller_master.pod = src
+
+/datum/shuttle/autodock/ferry/escape_pod/Destroy()
+	if(arming_controller)
+		UnregisterSignal(arming_controller, COMSIG_QDELETING)
+	arming_controller = null
+	return ..()
+
+/datum/shuttle/autodock/ferry/escape_pod/proc/arming_controller_deleted(datum/source)
+	SIGNAL_HANDLER
+	arming_controller = null
 
 /datum/shuttle/autodock/ferry/escape_pod/can_launch()
 	if(arming_controller && !arming_controller.armed)	//must be armed
@@ -54,6 +68,10 @@
 	program = /datum/embedded_program/docking/simple
 	var/datum/shuttle/autodock/ferry/escape_pod/pod
 	valid_actions = list("toggle_override", "force_door")
+
+/obj/machinery/embedded_controller/radio/simple_docking_controller/escape_pod/Destroy()
+	pod = null
+	return ..()
 
 /obj/machinery/embedded_controller/radio/simple_docking_controller/escape_pod/tgui_data(mob/user)
 	var/datum/embedded_program/docking/simple/docking_program = program // Cast to proper type

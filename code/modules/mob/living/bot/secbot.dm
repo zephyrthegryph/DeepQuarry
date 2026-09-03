@@ -425,6 +425,7 @@
 		return
 
 /obj/item/secbot_assembly
+	var/focused_tool_stage
 	name = "helmet/signaler assembly"
 	desc = "Some sort of bizarre assembly."
 	icon = 'icons/obj/aibots.dmi'
@@ -437,9 +438,21 @@
 	var/build_step = 0
 	var/created_name = "Securitron"
 
+/obj/item/secbot_assembly/welder_act(mob/user, obj/item/tool)
+	focused_tool_stage = TOOL_WELDER
+	attackby(tool, user)
+	focused_tool_stage = null
+	return ITEM_INTERACT_SUCCESS
+
+/obj/item/secbot_assembly/screwdriver_act(mob/user, obj/item/tool)
+	focused_tool_stage = TOOL_SCREWDRIVER
+	attackby(tool, user)
+	focused_tool_stage = null
+	return ITEM_INTERACT_SUCCESS
+
 /obj/item/secbot_assembly/attackby(obj/item/W, mob/user)
 	..()
-	if(W.has_tool_quality(TOOL_WELDER) && !build_step)
+	if(focused_tool_stage == TOOL_WELDER && !build_step)
 		var/obj/item/weldingtool/WT = W.get_welder()
 		if(WT.remove_fuel(0, user))
 			build_step = 1

@@ -6,6 +6,8 @@
 	density = TRUE
 	anchored = TRUE
 	circuit = /obj/item/circuitboard/smart_centrifuge
+	maintenance_flags = MACHINE_MAINT_STANDARD_MOVABLE
+	maintenance_wrench_time = 2 SECONDS
 
 	var/working = FALSE
 
@@ -19,16 +21,6 @@
 	if(working)
 		to_chat(user, "<span class='notice'>\The [src] is still spinning.</span>")
 		return
-	if(default_deconstruction_screwdriver(user, O))
-		update_icon()
-		return
-
-	if(default_deconstruction_crowbar(user, O))
-		return
-
-	if(default_unfasten_wrench(user, O, 20))
-		return
-
 	return ..()
 
 /obj/machinery/smart_centrifuge/attack_hand(mob/user)

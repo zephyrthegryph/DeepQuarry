@@ -9,6 +9,10 @@
  * use of variables at this level
  */
 /datum
+	#ifdef REFERENCE_TRACKING
+	/// Remaining references requested by the debug reference walker.
+	var/references_to_clear
+	#endif
 	/**
 	  * Tick count time when this object was destroyed.
 	  *

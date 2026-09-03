@@ -13,7 +13,8 @@ export const TransactionLog = (model) => {
       fill
       scrollable
       buttons={
-        !!transaction_logs.length && !department_checkout && (
+        !!transaction_logs.length &&
+        !department_checkout && (
           <Button.Confirm
             color="red"
             disabled={locked}
@@ -31,7 +32,8 @@ export const TransactionLog = (model) => {
               <Table>
                 <Table.Row>
                   <Table.Cell colSpan={2} header>
-                    {department_checkout ? 'Invoice' : 'Transaction'} #{transaction.log_id}
+                    {department_checkout ? 'Invoice' : 'Transaction'} #
+                    {transaction.log_id}
                   </Table.Cell>
                 </Table.Row>
                 <Table.Row>
@@ -61,7 +63,9 @@ export const TransactionLog = (model) => {
                       </Table.Cell>
                     </Table.Row>
                     <Table.Row>
-                      <Table.Cell color="label">Tip (Staff / Service)</Table.Cell>
+                      <Table.Cell color="label">
+                        Tip (Staff / Service)
+                      </Table.Cell>
                       <Table.Cell>
                         {transaction.tip} ({transaction.staff_tip} /{' '}
                         {transaction.service_tip}) Thalers
@@ -92,29 +96,35 @@ export const TransactionLog = (model) => {
                   <Table.Cell textAlign="right" color="label">
                     Total Amount
                   </Table.Cell>
-                  <Table.Cell collapsing>{`${transaction.amount} Th`}</Table.Cell>
+                  <Table.Cell
+                    collapsing
+                  >{`${transaction.amount} Th`}</Table.Cell>
                 </Table.Row>
               </Table>
-              {!!department_checkout && !transaction.refunded && !!transaction.refundable && (
-                <Button.Confirm
-                  mt={1}
-                  icon="undo"
-                  color="bad"
-                  disabled={locked}
-                  onClick={() =>
-                    act('refund_transaction', {
-                      invoice_id: transaction.invoice_id,
-                    })
-                  }
-                >
-                  Refund Transaction
-                </Button.Confirm>
-              )}
-              {!!department_checkout && !transaction.refunded && !transaction.refundable && (
-                <Button mt={1} icon="lock" disabled>
-                  Accounting Period Finalized
-                </Button>
-              )}
+              {!!department_checkout &&
+                !transaction.refunded &&
+                !!transaction.refundable && (
+                  <Button.Confirm
+                    mt={1}
+                    icon="undo"
+                    color="bad"
+                    disabled={locked}
+                    onClick={() =>
+                      act('refund_transaction', {
+                        invoice_id: transaction.invoice_id,
+                      })
+                    }
+                  >
+                    Refund Transaction
+                  </Button.Confirm>
+                )}
+              {!!department_checkout &&
+                !transaction.refunded &&
+                !transaction.refundable && (
+                  <Button mt={1} icon="lock" disabled>
+                    Accounting Period Finalized
+                  </Button>
+                )}
             </Stack.Item>
             <Stack.Item />
             <Stack.Divider />

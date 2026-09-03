@@ -1,4 +1,5 @@
 /obj/machinery/reagentgrinder
+	maintenance_flags = MACHINE_MAINT_STANDARD
 	name = "All-In-One Grinder"
 	desc = "Grinds stuff into itty bitty bits."
 	icon = 'icons/obj/kitchen.dmi'
@@ -53,17 +54,6 @@
 	return
 
 /obj/machinery/reagentgrinder/attackby(obj/item/O, mob/user)
-	if(beaker)
-		if(default_deconstruction_screwdriver(user, O))
-			return
-		if(default_deconstruction_crowbar(user, O))
-			return
-
-	// start - for solargrubs
-	if (istype(O, /obj/item/multitool))
-		return ..()
-	// end
-
 	if (istype(O,/obj/item/reagent_containers/glass) || \
 		istype(O,/obj/item/reagent_containers/food/drinks/glass2) || \
 		istype(O,/obj/item/reagent_containers/food/drinks/shaker))
@@ -73,6 +63,7 @@
 		else
 			beaker =  O
 			user.drop_item()
+
 			O.loc = src
 			update_icon()
 			return 0
@@ -132,6 +123,16 @@
 		addtimer(CALLBACK(src, PROC_REF(puny_protons)), 30 SECONDS)
 	// end
 	return 0
+
+/obj/machinery/reagentgrinder/screwdriver_act(mob/user, obj/item/tool)
+	if(!beaker)
+		return ..()
+	return ..()
+
+/obj/machinery/reagentgrinder/crowbar_act(mob/user, obj/item/tool)
+	if(!beaker)
+		return ..()
+	return ..()
 
 /obj/machinery/reagentgrinder/click_alt(mob/user)
 	. = ..()

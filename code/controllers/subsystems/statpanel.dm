@@ -212,13 +212,23 @@ SUBSYSTEM_DEF(statpanels)
 	var/atom/atom_icon = description_holders["icon"]
 	var/shown_icon = target.examine_icon
 	if(!shown_icon && atom_icon)
-		if(ismob(atom_icon) || length(atom_icon.overlays) > 0)
+		if(ismob(atom_icon))
+			// Flattening a human's dozens of overlays synchronously took 0.8-1.0s
+			// per examine and froze the entire BYOND thread. Use an already-cached
+			// composite when one exists; otherwise the base mob appearance is a
+			// deliberately cheap portrait fallback.
+			var/icon/cached_mob_icon = get_cached_examine_icon(atom_icon)
+			shown_icon = cached_mob_icon \
+				? icon2html(cached_mob_icon, target, sourceonly = TRUE) \
+				: icon2html(atom_icon, target, sourceonly = TRUE)
+		else if(length(atom_icon.overlays) > 0)
 			var/force_south = FALSE
 			if(isliving(atom_icon))
 				force_south = TRUE
 			shown_icon = costly_icon2html(atom_icon, target, sourceonly=TRUE, force_south = force_south)
 		else
 			shown_icon = icon2html(atom_icon, target, sourceonly=TRUE)
+		target.examine_icon = shown_icon
 	examine_update += "<img src=\"[shown_icon]\" />&emsp;" + span_giant("[description_holders["name"]]") //The name, written in big letters.
 	examine_update += "[description_holders["desc"]]" //the default examine text.
 	if(description_holders["info"])

@@ -21,8 +21,10 @@
 	var/window_size
 	/// The interface (template) to be used for this UI.
 	var/interface
-	/// Update the UI every MC tick.
-	var/autoupdate = TRUE
+	/// Whether this interface explicitly opts into periodic server refreshes.
+	/// Normal interfaces are event-driven through SStgui.update_uis(); continuous
+	/// monitors must opt in with set_autoupdate(TRUE).
+	var/autoupdate = FALSE
 	/// If the UI has been initialized yet.
 	var/initialized = FALSE
 	/// Time of opening the window.
@@ -123,7 +125,8 @@
 	if(!window)
 		return FALSE
 	opened_at = world.time
-	window.acquire_lock(src)
+	var/list/default_geometry = SStgui.get_default_geometry(interface)
+	window.acquire_lock(src, default_geometry)
 	if(!window.is_ready() && !preinitialized)
 		window.initialize(
 			strict_mode = TRUE,
@@ -142,12 +145,14 @@
 		startup_profile = startup_profile,
 		startup_timer = startup_timer)
 	startup_profile["payload_ready_ms"] = rustg_time_milliseconds(startup_timer)
+	startup_payload["config"]["startup_profile"] = startup_profile.Copy()
 	window.send_message("update", startup_payload)
 	startup_profile["update_sent_ms"] = rustg_time_milliseconds(startup_timer)
 	startup_profile["interface"] = interface
 	startup_profile["prewarmed"] = window.prewarmed ? TRUE : FALSE
 	startup_profile["native_shell"] = window.native_shell ? TRUE : FALSE
 	startup_profile["generation"] = window.generation
+	startup_profile["browser_profiling"] = client_profiling_enabled() ? TRUE : FALSE
 	log_tgui(user, "Automatic TGUI server startup telemetry: [json_encode(startup_profile)]", window = window)
 	#else
 	send_assets()
@@ -161,6 +166,11 @@
 
 
 /datum/tgui/proc/send_assets(list/startup_profile, startup_timer)
+	#ifdef DEBUG
+	var/assets_started_ms = startup_profile ? rustg_time_milliseconds(startup_timer) : 0
+	var/flush_started_ms = 0
+	#endif
+
 	var/flush_queue = window.send_asset(get_asset_datum(
 		/datum/asset/simple/namespaced/fontawesome))
 	flush_queue |= window.send_asset(get_asset_datum(
@@ -188,11 +198,21 @@
 	if(interface_chunks)
 		flush_queue |= SSassets.transport.send_assets(user.client, interface_chunks)
 	if (flush_queue)
+		#ifdef DEBUG
+		flush_started_ms = rustg_time_milliseconds(startup_timer)
+		#endif
 		user.client.browse_queue_flush()
 	#ifdef DEBUG
 	if(startup_profile)
 		startup_profile["assets_flushed_ms"] = rustg_time_milliseconds(startup_timer)
+		startup_profile["asset_delivery_ms"] = startup_profile["assets_flushed_ms"] - assets_started_ms
+		startup_profile["asset_flush_required"] = flush_queue ? TRUE : FALSE
+		startup_profile["asset_flush_ms"] = flush_queue ? startup_profile["assets_flushed_ms"] - flush_started_ms : 0
+		startup_profile["interface_chunk_count"] = length(interface_chunks)
 	#endif
+
+/datum/tgui/proc/client_profiling_enabled()
+	return FALSE
 
 /**
  * public
@@ -325,7 +345,10 @@
  */
 /datum/tgui/proc/get_payload(custom_data, with_data, with_static_data, list/startup_profile, startup_timer)
 	var/list/json_data = list()
+	var/datum/asset/simple/namespaced/tgui_chunks/chunk_assets = get_asset_datum(/datum/asset/simple/namespaced/tgui_chunks)
+	var/list/default_geometry = SStgui.get_default_geometry(interface)
 	json_data["config"] = list(
+		"chunk_base_url" = chunk_assets.get_public_base_url(),
 		"title" = title,
 		"status" = status,
 		"interface" = list(
@@ -348,6 +371,9 @@
 			"prewarmed" = window?.prewarmed ? TRUE : FALSE,
 			"generation" = window?.generation || 0,
 			"native_shell" = window?.native_shell ? TRUE : FALSE,
+			"default_geometry" = default_geometry,
+			"geometry_preapplied" = window?.geometry_preapplied ? TRUE : FALSE,
+			"preapplied_geometry" = window?.preapplied_geometry,
 		),
 		"client" = list(
 			"ckey" = user.client.ckey,
@@ -356,11 +382,7 @@
 			// This fork defines DEBUG in normal builds too, so use the development
 			// cache handshake as the explicit live-profiling switch. A normal server
 			// running production assets therefore pays no browser-profiler overhead.
-			#ifdef DEBUG
-			"profiling" = user.client.tgui_cache_reloaded ? TRUE : FALSE,
-			#else
-			"profiling" = FALSE,
-			#endif
+			"profiling" = client_profiling_enabled() ? TRUE : FALSE,
 		),
 		"user" = list(
 			"name" = "[user]",
@@ -461,8 +483,10 @@
 			initialized = TRUE
 		if("suspend")
 			close(can_be_suspended = TRUE)
+			return TRUE
 		if("close")
 			close(can_be_suspended = FALSE)
+			return TRUE
 		if("log")
 			if(href_list["fatal"])
 				close(can_be_suspended = FALSE)

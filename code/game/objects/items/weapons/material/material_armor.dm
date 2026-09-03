@@ -71,8 +71,7 @@ Protectiveness | Armor %
 	// Substance-alloy armour discharges its effect when the wearer is struck — through the
 	// shared form-trigger emitter (IMPACT+PRESSURE), the same conditions a strike presents on a
 	// blade or bullet, instead of a one-off raw signal that only fired IMPACT.
-	substance_emit_form_trigger(src, get_turf(src), source, SUB_TRIG_IMPACT, SUB_TRIG_PRESSURE)
-	material_response_impact(SUB_TRIG_IMPACT, get_turf(src), source)
+	material_response_impact(get_turf(src), source)
 
 	if(istype(source, /obj/item/projectile))
 		var/obj/item/projectile/P = source
@@ -334,11 +333,11 @@ Protectiveness | Armor %
 		..()
 
 //Make plating inserts for modular armour.
-/obj/item/material/armor_plating/insert/attackby(obj/item/O, mob/user)
+/obj/item/material/armor_plating/insert/attackby(obj/item/O, mob/user, tool_quality)
 
 	. = ..()
 
-	if(O.has_tool_quality(TOOL_WELDER))
+	if(tool_quality == TOOL_WELDER)
 		var /obj/item/weldingtool/S = O.get_welder()
 		if(S.remove_fuel(0,user))
 			if(!src || !S.isOn()) return
@@ -363,7 +362,7 @@ Protectiveness | Armor %
 		qdel(src)
 		return
 
-	if(istype(O, /obj/item/tool/wirecutters))
+	if(tool_quality == TOOL_WIRECUTTER)
 		to_chat(user, span_notice("You split the plate down the middle, and joint it at the elbow."))
 		user.drop_from_inventory(src)
 		var/obj/item/clothing/accessory/material/makeshift/armguards/new_armor = new(null, src.material.name)
@@ -381,6 +380,14 @@ Protectiveness | Armor %
 				user.put_in_hands(new_armor)
 				qdel(src)
 				return
+
+/obj/item/material/armor_plating/insert/welder_act(mob/user, obj/item/tool)
+	attackby(tool, user, TOOL_WELDER)
+	return TRUE
+
+/obj/item/material/armor_plating/insert/wirecutter_act(mob/user, obj/item/tool)
+	attackby(tool, user, TOOL_WIRECUTTER)
+	return TRUE
 
 // Used to craft the makeshift helmet
 /obj/item/clothing/head/helmet/bucket

@@ -1,6 +1,8 @@
 //This file was auto-corrected by findeclaration.exe on 25.5.2012 20:42:33
 
 /obj/machinery/containment_field
+	// This is an energy field represented as machinery, not a physical machinery shell.
+	resistance_flags = INDESTRUCTIBLE
 	name = "Containment Field"
 	desc = "An energy field."
 	icon = 'icons/obj/machines/field_generator.dmi'

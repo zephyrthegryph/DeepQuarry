@@ -49,7 +49,8 @@ export const BirthdayEditor = ({ data, staticData }: EditorProps) => {
   const monthLabel =
     monthOptions.find((o) => o.value === monthVal)?.displayText ?? monthVal;
   const dayVal = String(d.day ?? 0);
-  const dayLabel = dayOptions.find((o) => o.value === dayVal)?.displayText ?? dayVal;
+  const dayLabel =
+    dayOptions.find((o) => o.value === dayVal)?.displayText ?? dayVal;
 
   return (
     <Stack align="center">

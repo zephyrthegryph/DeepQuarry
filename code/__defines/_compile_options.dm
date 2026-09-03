@@ -34,7 +34,7 @@
 #endif
 
 ///Used to find the sources of harddels, quite laggy, don't be surpised if it freezes your client for a good while
-//#define REFERENCE_TRACKING
+#define REFERENCE_TRACKING
 #ifdef REFERENCE_TRACKING
 
 // #define FIND_REF_NO_CHECK_TICK // new ref tracking
@@ -42,15 +42,17 @@
 #define REFERENCE_TRACKING_LOG
 
 ///Used for doing dry runs of the reference finder, to test for feature completeness
-//#define REFERENCE_TRACKING_DEBUG
+#define REFERENCE_TRACKING_DEBUG
 
 #ifdef FIND_REF_NO_CHECK_TICK
 /world
 	loop_checks = FALSE
 #endif
 
-///Run a lookup on things hard deleting by default.
-//#define GC_FAILURE_HARD_LOOKUP
+/// Dev-server policy: automatically search the complete datum graph for every
+/// object that survives its first GC retry. This is intentionally intrusive and
+/// can freeze the world while an explosion-created deletion backlog is traced.
+#define GC_FAILURE_HARD_LOOKUP
 #ifdef GC_FAILURE_HARD_LOOKUP
 #define FIND_REF_NO_CHECK_TICK
 #endif //ifdef GC_FAILURE_HARD_LOOKUP

@@ -40,13 +40,7 @@
 	. += "\n It reads \"[message]\"."
 
 /obj/effect/decal/writing/attackby(obj/item/thing, mob/user)
-	if(thing.has_tool_quality(TOOL_WELDER))
-		var/obj/item/weldingtool/welder = thing.get_welder()
-		if(welder.isOn() && welder.remove_fuel(0,user) && do_after(user, 5, target = src) && !QDELETED(src))
-			playsound(src.loc, welder.usesound, 50, 1)
-			user.visible_message(span_infoplain(span_bold("\The [user]") + " clears away some graffiti."))
-			qdel(src)
-	else if(thing.sharp)
+	if(thing.sharp)
 
 		if(jobban_isbanned(user, JOB_GRAFFITI))
 			to_chat(user, span_warning("You are banned from leaving persistent information across rounds."))
@@ -63,3 +57,12 @@
 					to_chat(user, span_notice("You feel much safer."))
 	else
 		. = ..()
+
+/obj/effect/decal/writing/welder_act(mob/user, obj/item/tool)
+	var/obj/item/weldingtool/welder = tool.get_welder()
+	if(!welder.isOn() || !welder.remove_fuel(0, user) || !do_after(user, 0.5 SECONDS, target = src) || QDELETED(src))
+		return ITEM_INTERACT_BLOCKING
+	playsound(loc, welder.usesound, 50, 1)
+	user.visible_message(span_infoplain(span_bold("\The [user]") + " clears away some graffiti."))
+	qdel(src)
+	return ITEM_INTERACT_SUCCESS

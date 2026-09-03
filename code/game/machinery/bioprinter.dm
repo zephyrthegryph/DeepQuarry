@@ -2,6 +2,8 @@
 // Flesh and robot printers are defined below this object.
 
 /obj/machinery/organ_printer
+	maintenance_flags = MACHINE_MAINT_STANDARD_MOVABLE
+	maintenance_wrench_time = 20
 	name = "organ printer"
 	desc = "It's a machine that prints organs."
 	icon = 'icons/obj/surgery.dmi'
@@ -80,13 +82,7 @@
 	// end
 
 /obj/machinery/organ_printer/attackby(obj/item/O, mob/user)
-	if(default_deconstruction_screwdriver(user, O))
-		return
-	if(default_deconstruction_crowbar(user, O))
-		return
 	if(default_part_replacement(user, O))
-		return
-	if(default_unfasten_wrench(user, O, 20))
 		return
 	return ..()
 

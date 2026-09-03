@@ -1,3 +1,4 @@
+import { sendByondMessage } from '../events/sendMessage';
 import { configAtom, store } from '../events/store';
 
 let sequence = 0;
@@ -7,7 +8,7 @@ const pendingTransitions: Record<string, unknown>[] = [];
 function flushTransitions(): void {
   flushTimer = undefined;
   if (!pendingTransitions.length) return;
-  Byond.sendMessage('perf/transition', {
+  sendByondMessage('perf/transition', {
     kind: 'window-transition-batch',
     events: pendingTransitions.splice(0, pendingTransitions.length),
   });
@@ -16,11 +17,19 @@ function flushTransitions(): void {
 /** Emit one flat, server-persisted event in the native-window transition timeline. */
 export function profileTransition(
   stage: string,
-  detail: Record<string, string | number | boolean | undefined> = {},
+  detail: Record<string, unknown> = {},
   force = false,
 ): void {
   const config = store.get(configAtom);
   if (!force && !config?.client?.profiling) return;
+  const flatDetail = Object.fromEntries(
+    Object.entries(detail).map(([key, value]) => [
+      key,
+      value !== null && typeof value === 'object'
+        ? JSON.stringify(value)
+        : value,
+    ]),
+  );
   pendingTransitions.push({
     kind: 'window-transition',
     seq: ++sequence,
@@ -29,7 +38,7 @@ export function profileTransition(
     interface: config?.interface?.name,
     generation: config?.window?.generation,
     viewport: `${window.innerWidth}x${window.innerHeight}`,
-    ...detail,
+    ...flatDetail,
   });
   if (pendingTransitions.length >= 40) {
     flushTransitions();

@@ -46,14 +46,14 @@
 		color = "#ffffff"
 		alpha = 255
 
-/obj/item/material/shard/attackby(obj/item/W as obj, mob/user as mob)
-	if(W.has_tool_quality(TOOL_WELDER) && material.shard_can_repair)
-		var/obj/item/weldingtool/WT = W.get_welder()
-		if(WT.remove_fuel(0, user))
-			material.place_sheet(loc, 1)
-			qdel(src)
-			return
-	return ..()
+/obj/item/material/shard/welder_act(mob/user, obj/item/W)
+	if(!material.shard_can_repair)
+		return ..()
+	var/obj/item/weldingtool/WT = W.get_welder()
+	if(WT.remove_fuel(0, user))
+		material.place_sheet(loc, 1)
+		qdel(src)
+	return TRUE
 
 /obj/item/material/shard/afterattack(atom/target, mob/living/carbon/human/user as mob, proximity)
 	if(!proximity)

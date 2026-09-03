@@ -18,6 +18,11 @@ export function SubsystemDialog(props: Props) {
   const { subsystem, onClose } = props;
   const {
     cost_ms,
+    wall_cost_last_ms,
+    cpu_cost_ms,
+    cpu_cost_last_ms,
+    suspended_cost_last_ms,
+    run_slices_last,
     init_order,
     initialization_failure_message,
     last_fire,
@@ -44,8 +49,23 @@ export function SubsystemDialog(props: Props) {
           <LabeledList.Item label="Init Order">{init_order}</LabeledList.Item>
           <LabeledList.Item label="Last Fire">{last_fire}</LabeledList.Item>
           <LabeledList.Item label="Next Fire">{next_fire}</LabeledList.Item>
-          <LabeledList.Item label="Cost">
-            {cost_ms.toFixed(2)}ms
+          <LabeledList.Item label="Average Wall Time">
+            {cost_ms.toFixed(2)} ms
+          </LabeledList.Item>
+          <LabeledList.Item label="Last Wall Time">
+            {wall_cost_last_ms.toFixed(2)} ms
+          </LabeledList.Item>
+          <LabeledList.Item label="Average Active Execution">
+            {cpu_cost_ms.toFixed(2)} ms
+          </LabeledList.Item>
+          <LabeledList.Item label="Last Active Execution">
+            {cpu_cost_last_ms.toFixed(2)} ms
+          </LabeledList.Item>
+          <LabeledList.Item label="Last Suspended Time">
+            {suspended_cost_last_ms.toFixed(2)} ms
+          </LabeledList.Item>
+          <LabeledList.Item label="Last Execution Slices">
+            {run_slices_last}
           </LabeledList.Item>
           <LabeledList.Item label="Tick Usage">
             {tick_usage.toFixed(2)}%

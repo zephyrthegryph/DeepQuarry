@@ -1,0 +1,5 @@
+author: "BigBadE"
+delete-after: true
+changes:
+  - bugfix: "Fixed detached atmosphere diffusion stalling after major pressure events when a disabled turf bordered an active cell."
+  - code_imp: "Atmosphere conservation violations now fail Rust tests, but log detailed component, gas, and energy diagnostics without freezing live diffusion."

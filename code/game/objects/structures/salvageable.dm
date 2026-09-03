@@ -13,21 +13,19 @@
 			new path (loc)
 	return
 
-/obj/structure/salvageable/attackby(obj/item/I, mob/user)
-	if(I.has_tool_quality(TOOL_CROWBAR))
-		playsound(src, I.usesound, 50, 1)
-		var/actual_time = I.toolspeed * 170
+/obj/structure/salvageable/crowbar_act(mob/user, obj/item/I)
+	playsound(src, I.usesound, 50, 1)
+	var/actual_time = I.toolspeed * 170
+	user.visible_message( \
+		span_infoplain(span_bold("\The [user]") + " begins salvaging from \the [src]."), \
+		span_notice("You start salvaging from \the [src]."))
+	if(do_after(user, actual_time, target = src))
 		user.visible_message( \
-			span_infoplain(span_bold("\The [user]") + " begins salvaging from \the [src]."), \
-			span_notice("You start salvaging from \the [src]."))
-		if(do_after(user, actual_time, target = src))
-			user.visible_message( \
-				span_notice("\The [user] has salvaged \the [src]."), \
-				span_notice("You salvage \the [src]."))
-			dismantle()
-			qdel(src)
-			return TRUE
-	return ..()
+			span_notice("\The [user] has salvaged \the [src]."), \
+			span_notice("You salvage \the [src]."))
+		dismantle()
+		qdel(src)
+	return TRUE
 
 //Types themself, use them, but not the parent object
 
@@ -198,8 +196,9 @@
 	. = ..()
 	icon_state = "bliss[rand(0,1)]"
 
-/obj/structure/salvageable/bliss/attackby(obj/item/I, mob/user)
-	if((. = ..()))
+/obj/structure/salvageable/bliss/crowbar_act(mob/user, obj/item/I)
+	. = ..()
+	if(.)
 		playsound(src, 'sound/machines/shutdown.ogg', 60, 1)
 
 ///////////////////

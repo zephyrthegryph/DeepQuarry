@@ -93,12 +93,13 @@
 	. += "The internal temperature is [GM.return_temperature()]k at [GM.return_pressure()]kpa. It is currently in a [toggle_mode ? "pumping cycle, outputting stored chemicals" : "distilling cycle, accepting input chemicals"]."
 	tutorial(REFINERY_TUTORIAL_SINGLEOUTPUT, .)
 
-/obj/machinery/reagent_refinery/reactor/attackby(obj/item/O as obj, mob/user as mob)
+/obj/machinery/reagent_refinery/reactor/wrench_act(mob/user, obj/item/tool)
 	. = ..()
-	if(O.has_tool_quality(TOOL_WRENCH))
-		update_gas_network() // Handles anchoring
-		toggle_mode = REACTOR_MODE_INTAKE
-		next_mode_toggle = world.time + dis_time SECONDS
+	if(. != ITEM_INTERACT_SUCCESS)
+		return
+	update_gas_network()
+	toggle_mode = REACTOR_MODE_INTAKE
+	next_mode_toggle = world.time + dis_time SECONDS
 
 /obj/machinery/reagent_refinery/reactor/proc/update_gas_network()
 	if(!internal_tank)
@@ -112,10 +113,7 @@
 			pad.connected_device = internal_tank
 			pad.on = 1 //Activate port updates
 			// Actually enforce the air sharing
-			var/datum/pipe_network/network = pad.return_network(internal_tank)
-			if(network && !network.gases.Find(internal_tank.air_contents))
-				network.gases += internal_tank.air_contents
-				network.mark_dirty()
+			pad.rust_attach_external_device(internal_tank)
 			// Sfx
 			playsound(src, 'sound/mecha/gasconnected.ogg', 50, 1)
 		else

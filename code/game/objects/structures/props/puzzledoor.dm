@@ -1,6 +1,8 @@
 // An indestructible blast door that can only be opened once its puzzle requirements are completed.
 
 /obj/machinery/door/blast/puzzle
+	// Puzzle geometry is a scenario boundary, not destructible station machinery.
+	resistance_flags = INDESTRUCTIBLE
 	name = "puzzle door"
 	desc = "A large, virtually indestructible door that will not open unless certain requirements are met."
 	icon_state_open = "pdoor0"

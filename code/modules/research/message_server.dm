@@ -46,6 +46,7 @@
 				priority = "Undetermined"
 
 /obj/machinery/message_server
+	maintenance_flags = MACHINE_MAINT_STANDARD
 	icon = 'icons/obj/machines/research.dmi'
 	icon_state = "server"
 	name = "Messaging Server"
@@ -167,12 +168,6 @@
 	return
 
 /obj/machinery/message_server/attackby(obj/item/O, mob/living/user)
-	if(default_deconstruction_screwdriver(user, O))
-		return
-
-	if(default_deconstruction_crowbar(user, O))
-		return
-
 	if (active && !(stat & (BROKEN|NOPOWER)) && (spamfilter_limit < MESSAGE_SERVER_DEFAULT_SPAM_LIMIT*2) && \
 		istype(O,/obj/item/circuitboard/message_monitor))
 		spamfilter_limit += round(MESSAGE_SERVER_DEFAULT_SPAM_LIMIT / 2)

@@ -87,10 +87,6 @@
 
 
 /obj/machinery/appliance/mixer/cereal/attackby(obj/item/O as obj, mob/user as mob)
-	if(default_deconstruction_screwdriver(user, O)) // Allows for deconstruction
-		return
-	if(default_deconstruction_crowbar(user, O))
-		return
 	if(default_part_replacement(user, O))
 		return
 	..()

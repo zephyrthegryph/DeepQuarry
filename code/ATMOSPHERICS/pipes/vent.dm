@@ -17,6 +17,10 @@
 	pipe_flags = PIPING_DEFAULT_LAYER_ONLY
 	construction_type = /obj/item/pipe/directional
 	pipe_state = "passive_vent"
+	// A passive vent is a permanent open face of its pipeline. Treat it exactly
+	// like every other network-owned leak so all faces sharing a reservoir are
+	// transferred in one Rust batch and can dependency-sleep when equalized.
+	leaking = TRUE
 
 	var/build_killswitch = 1
 
@@ -35,8 +39,13 @@
 			build_killswitch--
 		..()
 		return
-	else
-		parent.mingle_with_turf(loc, volume)
+	if(parent.network)
+		parent.network.leaks |= src
+		parent.network.mark_leak_dirty()
+		return PROCESS_KILL
+	// Network construction has not attached this pipeline yet. Preserve the
+	// legacy fallback for this short initialization window only.
+	parent.mingle_with_turf(loc, volume)
 
 /obj/machinery/atmospherics/pipe/vent/Destroy()
 	if(node1)
@@ -70,7 +79,7 @@
 /obj/machinery/atmospherics/pipe/vent/disconnect(obj/machinery/atmospherics/reference)
 	if(reference == node1)
 		if(istype(node1, /obj/machinery/atmospherics/pipe))
-			qdel(parent)
+			rust_invalidate_pipeline_wrapper(parent)
 		node1 = null
 
 	update_icon()

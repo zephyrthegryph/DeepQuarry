@@ -51,13 +51,11 @@
 	if(old_stat != stat)
 		update_icon()
 
-/obj/machinery/atmospherics/trinary/attackby(obj/item/W as obj, mob/user as mob)
-	if (!W.has_tool_quality(TOOL_WRENCH))
-		return ..()
+/obj/machinery/atmospherics/trinary/wrench_act(mob/user, obj/item/W)
 	if(!can_unwrench())
 		to_chat(user, span_warning("You cannot unwrench \the [src], it too exerted due to internal pressure."))
 		add_fingerprint(user)
-		return 1
+		return ITEM_INTERACT_BLOCKING
 	playsound(src, W.usesound, 50, 1)
 	to_chat(user, span_notice("You begin to unfasten \the [src]..."))
 	if (do_after(user, 40 * W.toolspeed, target = src))
@@ -66,38 +64,24 @@
 			span_notice("You have unfastened \the [src]."), \
 			"You hear a ratchet.")
 		atom_deconstruct()
+	return ITEM_INTERACT_SUCCESS
 
 // Housekeeping and pipe network stuff below
 /obj/machinery/atmospherics/trinary/get_neighbor_nodes_for_init()
 	return list(node1, node2, node3)
 
-/obj/machinery/atmospherics/trinary/network_expand(datum/pipe_network/new_network, obj/machinery/atmospherics/pipe/reference)
-	// Idempotency guard: check membership before assigning slot vars.
-	if(new_network.normal_members.Find(src))
-		return 0
-
-	if(reference == node1)
-		network1 = new_network
-	else if(reference == node2)
-		network2 = new_network
-	else if(reference == node3)
-		network3 = new_network
-
-	new_network.normal_members += src
-
-	return null
-
 /obj/machinery/atmospherics/trinary/Destroy()
+	rust_unregister_pipe_topology()
 	// Disconnect/qdel BEFORE ..() so node derefs are valid.
 	if(node1)
 		node1.disconnect(src)
-		qdel(network1)
+		rust_release_network_wrapper(network1)
 	if(node2)
 		node2.disconnect(src)
-		qdel(network2)
+		rust_release_network_wrapper(network2)
 	if(node3)
 		node3.disconnect(src)
-		qdel(network3)
+		rust_release_network_wrapper(network3)
 
 	node1 = null
 	node2 = null
@@ -125,26 +109,7 @@
 	update_icon()
 	update_underlays()
 
-/obj/machinery/atmospherics/trinary/build_network()
-	if(!network1 && node1)
-		network1 = new /datum/pipe_network()
-		network1.normal_members += src
-		network1.build_network(node1, src)
-
-	if(!network2 && node2)
-		network2 = new /datum/pipe_network()
-		network2.normal_members += src
-		network2.build_network(node2, src)
-
-	if(!network3 && node3)
-		network3 = new /datum/pipe_network()
-		network3.normal_members += src
-		network3.build_network(node3, src)
-
-
 /obj/machinery/atmospherics/trinary/return_network(obj/machinery/atmospherics/reference)
-	build_network()
-
 	if(reference==node1)
 		return network1
 
@@ -178,17 +143,33 @@
 
 	return results
 
+/obj/machinery/atmospherics/trinary/bind_network_air(datum/pipe_network/reference, datum/gas_mixture/network_air)
+	if(network1 == reference)
+		air1 = network_air
+	if(network2 == reference)
+		air2 = network_air
+	if(network3 == reference)
+		air3 = network_air
+
+/obj/machinery/atmospherics/trinary/detach_network_air(datum/pipe_network/reference, datum/gas_mixture/network_air, network_volume)
+	if(network1 == reference && air1 == network_air)
+		air1 = detached_pipenet_air(network_air, 200, network_volume)
+	if(network2 == reference && air2 == network_air)
+		air2 = detached_pipenet_air(network_air, 200, network_volume)
+	if(network3 == reference && air3 == network_air)
+		air3 = detached_pipenet_air(network_air, 200, network_volume)
+
 /obj/machinery/atmospherics/trinary/disconnect(obj/machinery/atmospherics/reference)
 	if(reference==node1)
-		qdel(network1)
+		rust_release_network_wrapper(network1)
 		node1 = null
 
 	else if(reference==node2)
-		qdel(network2)
+		rust_release_network_wrapper(network2)
 		node2 = null
 
 	else if(reference==node3)
-		qdel(network3)
+		rust_release_network_wrapper(network3)
 		node3 = null
 
 	update_underlays()

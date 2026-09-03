@@ -523,7 +523,7 @@
 
 // Engines to choose from. Blank means fully random.
 /datum/config_entry/str_list/engine_map
-	default = list("Supermatter Engine", "Edison's Bane")
+	default = list("Supermatter Engine")
 
 /// Event settings
 /datum/config_entry/number/expected_round_length
@@ -809,7 +809,9 @@
 /datum/config_entry/flag/auto_profile
 
 /datum/config_entry/number/profiler_interval
-	default = 300 SECONDS
+	// Compact diagnostic snapshots, not full world.Profile serialization.
+	default = 1 MINUTE
+	min_val = 10 SECONDS
 
 /datum/config_entry/number/drift_dump_threshold
 	default = 4 SECONDS

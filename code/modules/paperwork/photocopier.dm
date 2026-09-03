@@ -1,4 +1,5 @@
 /obj/machinery/photocopier
+	maintenance_flags = MACHINE_MAINT_STANDARD
 	name = "photocopier"
 	desc = "Copy all your important papers here!"
 	icon = 'icons/obj/library.dmi'
@@ -170,34 +171,25 @@
 			to_chat(user, span_notice("This cartridge is not yet ready for replacement! Use up the rest of the toner."))
 			flick("photocopier_notoner", src)
 			playsound(loc, 'sound/machines/buzz-two.ogg', 75, 1)
-	else if(O.has_tool_quality(TOOL_WRENCH))
-		playsound(src, O.usesound, 50, 1)
-		anchored = !anchored
-		to_chat(user, span_notice("You [anchored ? "wrench" : "unwrench"] \the [src]."))
-	else if(default_deconstruction_screwdriver(user, O))
-		return
-	else if(default_deconstruction_crowbar(user, O))
-		return
-
 	return
+
+/obj/machinery/photocopier/screwdriver_act(mob/user, obj/item/tool)
+	return ..()
+
+/obj/machinery/photocopier/crowbar_act(mob/user, obj/item/tool)
+	return ..()
+
+/obj/machinery/photocopier/wrench_act(mob/user, obj/item/tool)
+	playsound(src, tool.usesound, 50, TRUE)
+	anchored = !anchored
+	to_chat(user, span_notice("You [anchored ? "wrench" : "unwrench"] \the [src]."))
+	return ITEM_INTERACT_SUCCESS
 
 /obj/machinery/photocopier/ex_act(severity)
-	switch(severity)
-		if(1.0)
-			qdel(src)
-		if(2.0)
-			if(prob(50))
-				qdel(src)
-			else
-				if(toner > 0)
-					new /obj/effect/decal/cleanable/blood/oil(get_turf(src))
-					toner = 0
-		else
-			if(prob(50))
-				if(toner > 0)
-					new /obj/effect/decal/cleanable/blood/oil(get_turf(src))
-					toner = 0
-	return
+	if(severity >= 2 && prob(50) && toner > 0)
+		new /obj/effect/decal/cleanable/blood/oil(get_turf(src))
+		toner = 0
+	return ..()
 
 /obj/machinery/photocopier/proc/copy(obj/item/paper/copy, need_toner=1)
 	var/obj/item/paper/c = new /obj/item/paper (loc)

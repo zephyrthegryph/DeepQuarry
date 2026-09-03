@@ -6,6 +6,8 @@
 
 // Recipes are stored as a list which alternates between chemical id's and volumes to add, e.g. 1 = 'Carbon', 2 = 20, 3 = 'Silicon', 4 = 20
 /obj/machinery/chemical_synthesizer
+	maintenance_flags = MACHINE_MAINT_WRENCH
+	maintenance_wrench_time = 4 SECONDS
 	name = "chemical synthesizer"
 	desc = "A programmable machine capable of automatically synthesizing medicine."
 	icon = 'icons/obj/chemical_ch.dmi'
@@ -189,25 +191,9 @@
 	SStgui.update_uis(src)
 
 /obj/machinery/chemical_synthesizer/attackby(obj/item/W, mob/user)
-	// Why do so many people code in wrenching when there's already a proc for it?
-	if(!busy && default_unfasten_wrench(user, W, 40))
-		return
-
 	if(istype(W, /obj/item/reagent_containers/chem_disp_cartridge))
 		add_cartridge(W, user)
 		return
-
-	// But we won't use the screwdriver proc because chem dispenser behavior.
-	if(panel_open && W.is_screwdriver())
-		var/label = tgui_input_list(user, "Which cartridge would you like to remove?", "Chemical Synthesizer", cartridges)
-		if(!label)
-			return
-		var/obj/item/reagent_containers/chem_disp_cartridge/C = remove_cartridge(label)
-		if(C)
-			to_chat(user, span_notice("You remove \the [C] from \the [src]."))
-			C.loc = loc
-			playsound(src, W.usesound, 50, 1)
-			return
 
 	// We don't need a busy check here as the catalyst slot must be occupied for the machine to function.
 	if(istype(W, /obj/item/reagent_containers/glass))
@@ -229,9 +215,29 @@
 		RC.loc = src
 		to_chat(user, span_notice("You set \the [RC] on \the [src]."))
 		update_icon()
+
 		return
 
 	return ..()
+
+/obj/machinery/chemical_synthesizer/wrench_act(mob/user, obj/item/tool)
+	if(busy)
+		return ITEM_INTERACT_BLOCKING
+	return ..()
+
+/obj/machinery/chemical_synthesizer/screwdriver_act(mob/user, obj/item/tool)
+	if(!panel_open)
+		return ..()
+	var/label = tgui_input_list(user, "Which cartridge would you like to remove?", "Chemical Synthesizer", cartridges)
+	if(!label)
+		return ITEM_INTERACT_BLOCKING
+	var/obj/item/reagent_containers/chem_disp_cartridge/cartridge = remove_cartridge(label)
+	if(!cartridge)
+		return ITEM_INTERACT_BLOCKING
+	to_chat(user, span_notice("You remove \the [cartridge] from \the [src]."))
+	cartridge.forceMove(loc)
+	playsound(src, tool.usesound, 50, TRUE)
+	return ITEM_INTERACT_SUCCESS
 
 // More stolen chemical_dispenser code.
 /obj/machinery/chemical_synthesizer/process()

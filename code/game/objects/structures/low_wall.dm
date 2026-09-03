@@ -86,22 +86,6 @@
 		handle_glass_use(user, W)
 		return
 
-	// Dismantling the half wall
-	if(W.has_tool_quality(TOOL_WRENCH))
-		for(var/obj/structure/S in loc)
-			if(istype(S, /obj/structure/window))
-				to_chat(user, span_notice("There is still a window on the low wall!"))
-				return
-			else if(istype(S, /obj/structure/grille))
-				to_chat(user, span_notice("There is still a grille on the low wall!"))
-				return
-		playsound(src.loc, 'sound/items/Ratchet.ogg', 100, 1)
-		to_chat(user, span_notice("Now disassembling the low wall..."))
-		if(do_after(user, 4 SECONDS, target = src))
-			to_chat(user, span_notice("You dissasembled the low wall!"))
-			dismantle()
-			return
-
 	// Handle placing things
 	if(isrobot(user))
 		return
@@ -114,6 +98,21 @@
 		return 1
 
 	return ..()
+
+/obj/structure/low_wall/wrench_act(mob/user, obj/item/W)
+	for(var/obj/structure/S in loc)
+		if(istype(S, /obj/structure/window))
+			to_chat(user, span_notice("There is still a window on the low wall!"))
+			return TRUE
+		if(istype(S, /obj/structure/grille))
+			to_chat(user, span_notice("There is still a grille on the low wall!"))
+			return TRUE
+	playsound(loc, 'sound/items/Ratchet.ogg', 100, 1)
+	to_chat(user, span_notice("Now disassembling the low wall..."))
+	if(do_after(user, 4 SECONDS, target = src))
+		to_chat(user, span_notice("You disassembled the low wall!"))
+		dismantle()
+	return TRUE
 
 /obj/structure/low_wall/proc/can_place_items()
 	for(var/obj/structure/S in loc)

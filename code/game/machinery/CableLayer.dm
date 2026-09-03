@@ -34,18 +34,19 @@
 			to_chat(user, "You load [result] lengths of cable into [src].")
 		return
 
-	if(O.has_tool_quality(TOOL_WIRECUTTER))
-		if(cable && cable.get_amount())
-			var/m = tgui_input_number(user, "Please specify the length of cable to cut", "Cut cable", min(cable.get_amount(), 30))
-			m = min(m, cable.get_amount())
-			m = min(m, 30)
-			if(m)
-				playsound(src, O.usesound, 50, 1)
-				use_cable(m)
-				var/obj/item/stack/cable_coil/CC = new (get_turf(src))
-				CC.set_amount(m)
-		else
-			to_chat(user, span_warning("There's no more cable on the reel."))
+
+/obj/machinery/cablelayer/wirecutter_act(mob/user, obj/item/tool)
+	if(!cable || !cable.get_amount())
+		to_chat(user, span_warning("There's no more cable on the reel."))
+		return ITEM_INTERACT_BLOCKING
+	var/amount = tgui_input_number(user, "Please specify the length of cable to cut", "Cut cable", min(cable.get_amount(), 30))
+	amount = min(amount, cable.get_amount(), 30)
+	if(amount)
+		playsound(src, tool.usesound, 50, TRUE)
+		use_cable(amount)
+		var/obj/item/stack/cable_coil/cut_cable = new(get_turf(src))
+		cut_cable.set_amount(amount)
+	return ITEM_INTERACT_SUCCESS
 
 /obj/machinery/cablelayer/examine(mob/user)
 	. = ..()

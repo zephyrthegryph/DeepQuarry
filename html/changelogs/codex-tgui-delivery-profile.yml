@@ -1,0 +1,5 @@
+author: "Codex"
+delete-after: true
+changes:
+  - code_imp: "Moved code-split TGUI interfaces onto the content-addressed HTTP asset path and added shared warm-window geometry manifests."
+  - admin: "Expanded TGUI startup profiling into visible, painted, and stability phases with server delivery timings."

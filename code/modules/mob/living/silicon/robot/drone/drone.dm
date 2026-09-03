@@ -230,10 +230,6 @@ GLOBAL_LIST_EMPTY(mob_hat_cache)
 		to_chat(user, span_danger("\The [src] is not compatible with \the [W]."))
 		return
 
-	else if (W.has_tool_quality(TOOL_CROWBAR))
-		to_chat(user, span_danger("\The [src] is hermetically sealed. You can't open the case."))
-		return
-
 	else if (istype(W, /obj/item/card/id)||istype(W, /obj/item/pda))
 		if(stat == 2)
 
@@ -256,6 +252,10 @@ GLOBAL_LIST_EMPTY(mob_hat_cache)
 		return
 
 	..()
+
+/mob/living/silicon/robot/drone/crowbar_act(mob/user, obj/item/tool)
+	to_chat(user, span_danger("\The [src] is hermetically sealed. You can't open the case."))
+	return ITEM_INTERACT_BLOCKING
 
 /mob/living/silicon/robot/drone/emag_act(remaining_charges, mob/user)
 	if(!client || stat == 2)

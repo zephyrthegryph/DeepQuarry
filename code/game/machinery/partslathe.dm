@@ -17,6 +17,7 @@
 */
 
 /obj/machinery/partslathe
+	maintenance_flags = MACHINE_MAINT_STANDARD
 	name = "parts lathe"
 	icon = 'icons/obj/partslathe_vr.dmi'
 	icon_state = "partslathe-idle"
@@ -84,10 +85,6 @@
 	if(busy)
 		to_chat(user, span_notice("\The [src] is busy. Please wait for completion of previous operation."))
 		return 1
-	if(default_deconstruction_screwdriver(user, O))
-		return
-	if(default_deconstruction_crowbar(user, O))
-		return
 	if(default_part_replacement(user, O))
 		return
 	if(inoperable())

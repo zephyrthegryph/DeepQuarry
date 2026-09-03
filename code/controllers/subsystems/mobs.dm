@@ -8,7 +8,9 @@
 SUBSYSTEM_DEF(mobs)
 	name = "Mobs"
 	priority = FIRE_PRIORITY_MOBS
-	wait = 2 SECONDS
+	// Preserve one Life() call per mob per two seconds, but distribute the
+	// population across eight short slices instead of one large TiDi spike.
+	wait = 0.25 SECONDS
 	flags = SS_KEEP_TIMING|SS_NO_INIT
 	runlevels = RUNLEVEL_GAME | RUNLEVEL_POSTGAME
 
@@ -19,6 +21,11 @@ SUBSYSTEM_DEF(mobs)
 	)
 
 	var/list/currentrun = list()
+	var/life_slices = 8
+	var/slice_budget_remaining = 0
+	/// Logical two-second Life cycle; unlike subsystem times_fired this does
+	/// not advance once per distribution slice.
+	var/life_cycle = 0
 	var/log_extensively = FALSE
 	var/list/timelog = list()
 
@@ -26,6 +33,12 @@ SUBSYSTEM_DEF(mobs)
 	var/list/process_z = list()
 
 	var/list/death_list = list()
+	var/profile_sample_phase = 0
+	var/profile_run_index = 0
+	var/profile_sample_stride = 16
+	var/list/profile_type_cost = list()
+	var/list/profile_type_calls = list()
+	var/profile_next_dump = 0
 
 /datum/controller/subsystem/mobs/stat_entry(msg)
 	msg = "P: [length(GLOB.mob_list)] | S: [slept_mobs] | D: [length(death_list)]"
@@ -33,7 +46,11 @@ SUBSYSTEM_DEF(mobs)
 
 /datum/controller/subsystem/mobs/fire(resumed = 0)
 	if (!resumed)
-		src.currentrun = GLOB.mob_list.Copy()
+		if(!length(src.currentrun))
+			src.currentrun = GLOB.mob_list.Copy()
+			profile_run_index = 0
+			life_cycle++
+		slice_budget_remaining = max(1, CEILING(length(src.currentrun) / life_slices, 1))
 		process_z.len = length(GLOB.living_players_by_zlevel)
 		slept_mobs = 0
 		for(var/level in 1 to length(process_z))
@@ -49,8 +66,8 @@ SUBSYSTEM_DEF(mobs)
 
 	//cache for sanic speed (lists are references anyways)
 	var/list/currentrun = src.currentrun
-	var/times_fired = src.times_fired
-	while(length(currentrun))
+	var/times_fired = src.life_cycle
+	while(length(currentrun) && slice_budget_remaining-- > 0)
 		var/mob/M = currentrun[length(currentrun)]
 		currentrun.len--
 
@@ -65,10 +82,38 @@ SUBSYSTEM_DEF(mobs)
 			slept_mobs++
 			continue
 
-		M.Life(times_fired)
+		profile_run_index++
+		if(!((profile_run_index + profile_sample_phase) % profile_sample_stride))
+			var/mob_type = "[M.type]"
+			// Life() is legacy code and may sleep. Wall-clock timing attributes the
+			// scheduler pause to the sampled mob; tick usage measures actual work.
+			var/profile_start = TICK_USAGE
+			M.Life(times_fired)
+			profile_type_cost[mob_type] += TICK_DELTA_TO_MS(TICK_USAGE - profile_start) * profile_sample_stride
+			profile_type_calls[mob_type] += profile_sample_stride
+		else
+			M.Life(times_fired)
 
 		if (MC_TICK_CHECK)
 			return
+	if(!length(currentrun))
+		profile_sample_phase = (profile_sample_phase + 1) % profile_sample_stride
+	if(!profile_next_dump)
+		profile_next_dump = world.time + 2 MINUTES
+	else if(world.time >= profile_next_dump)
+		dump_type_profile()
+
+/datum/controller/subsystem/mobs/proc/dump_type_profile()
+	var/list/sorted_cost = profile_type_cost.Copy()
+	sortTim(sorted_cost, /proc/cmp_numeric_desc, TRUE)
+	var/rank = 0
+	for(var/mob_type in sorted_cost)
+		log_runtime("MOB_PROFILE type=[mob_type] estimated_cost_ms=[round(profile_type_cost[mob_type], 0.01)] estimated_calls=[profile_type_calls[mob_type]]")
+		if(++rank >= 20)
+			break
+	profile_type_cost.Cut()
+	profile_type_calls.Cut()
+	profile_next_dump = world.time + 2 MINUTES
 
 /datum/controller/subsystem/mobs/proc/log_recent()
 	var/msg = "Debug output from the [name] subsystem:\n"

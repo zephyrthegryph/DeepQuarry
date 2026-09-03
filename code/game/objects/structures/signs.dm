@@ -11,11 +11,12 @@
 /obj/structure/sign/ex_act(severity)
 	qdel(src)
 
-/obj/structure/sign/attackby(obj/item/tool, mob/user)	//deconstruction
-	if(tool.has_tool_quality(TOOL_SCREWDRIVER) && !istype(src, /obj/structure/sign/scenery) && !istype(src, /obj/structure/sign/double))
-		playsound(src, tool.usesound, 50, 1)
-		unfasten(user)
-	else ..()
+/obj/structure/sign/screwdriver_act(mob/user, obj/item/tool)
+	if(istype(src, /obj/structure/sign/scenery) || istype(src, /obj/structure/sign/double))
+		return ..()
+	playsound(src, tool.usesound, 50, 1)
+	unfasten(user)
+	return TRUE
 
 /obj/structure/sign/proc/unfasten(mob/user)
 	user.visible_message(span_notice("\The [user] unfastens \the [src]."), span_notice("You unfasten \the [src]."))
@@ -36,8 +37,8 @@
 	var/sign_state = ""
 	var/original_type
 
-/obj/item/sign/attackby(obj/item/tool as obj, mob/user as mob)	//construction
-	if(tool.has_tool_quality(TOOL_SCREWDRIVER) && isturf(user.loc))
+/obj/item/sign/screwdriver_act(mob/user, obj/item/tool)
+	if(isturf(user.loc))
 		var/direction = tgui_input_list(user, "In which direction?", "Select direction.", list("North", "East", "South", "West", "Cancel"))
 		if(direction == "Cancel") return
 		var/target_type = original_type || /obj/structure/sign
@@ -57,7 +58,8 @@
 		S.icon_state = sign_state
 		to_chat(user, "You fasten \the [S] with your [tool].")
 		qdel(src)
-	else ..()
+		return TRUE
+	return ..()
 
 /obj/structure/sign/scenery/map
 	name = "station map"

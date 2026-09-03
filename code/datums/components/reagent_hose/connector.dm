@@ -28,7 +28,9 @@
 	RegisterSignal(carrier, COMSIG_HOSE_FORCEPUMP, PROC_REF(force_pump))
 	carrier.verbs |= /atom/proc/disconnect_hose
 
-	START_PROCESSING(SSobj, src)
+	// A disconnected, empty connector has no time-based work. connect() wakes it.
+	if(my_hose || reagents.total_volume)
+		START_PROCESSING(SSobj, src)
 
 /datum/component/hose_connector/Destroy()
 	STOP_PROCESSING(SSobj, src)
@@ -65,7 +67,7 @@
 		if(reagents.total_volume)
 			reagents.trans_to_holder(connected_reagents(), reagents.maximum_volume)
 			reagents.clear_reagents() // Wipe it to avoid exploits
-		return
+		return PROCESS_KILL
 	var/datum/reagents/connected_to = connected_reagents()
 	if(!connected_to) // Emergency. the vorebelly was deleted or something. Lets just hard lock that out from maintaining state by disconnecting the tube.
 		reagents.clear_reagents()
@@ -106,6 +108,8 @@
 
 /datum/component/hose_connector/proc/connect(datum/hose/H = null)
 	my_hose = H
+	if(my_hose)
+		START_PROCESSING(SSobj, src)
 
 /datum/component/hose_connector/proc/setup_hoses(datum/component/hose_connector/target, distancetonode, mob/user)
 	if(!target || QDELETED(target))
@@ -157,6 +161,10 @@
 
 /datum/component/hose_connector/proc/remove_hose()
 	my_hose = null
+	// Flush the connector immediately, then leave the object subsystem. There is
+	// no reason to wait up to one SSobj period merely to discover disconnection.
+	process()
+	STOP_PROCESSING(SSobj, src)
 
 /datum/component/hose_connector/proc/on_examine(datum/source, mob/user, list/examine_texts)
 	SIGNAL_HANDLER

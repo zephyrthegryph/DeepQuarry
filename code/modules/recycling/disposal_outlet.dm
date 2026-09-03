@@ -35,46 +35,45 @@
 	if(!I || !user)
 		return
 	src.add_fingerprint(user)
-	if(I.has_tool_quality(TOOL_SCREWDRIVER))
-		if(mode == OUTLET_SCREWED)
-			mode = OUTLET_UNSCREWED
-			to_chat(user, "You remove the screws around the power connection.")
-			playsound(src, I.usesound, 50, 1)
-			return
-		else if(mode == OUTLET_UNSCREWED)
-			mode = OUTLET_SCREWED
-			to_chat(user, "You attach the screws around the power connection.")
-			playsound(src, I.usesound, 50, 1)
-			return
 	if(mode == OUTLET_SCREWED)
 		return ..()
-	if(I.has_tool_quality(TOOL_WELDER) && mode==1)
-		var/obj/item/weldingtool/W = I.get_welder()
-		if(!W.isOn())
-			to_chat(user, span_warning("Your [W] needs to be on to complete this task."))
-		if(W.remove_fuel(0,user))
-			playsound(src, W.usesound, 100, 1)
-			to_chat(user, "You start slicing the floorweld off the disposal outlet.")
-			if(do_after(user, 2 SECONDS * W.toolspeed, target = src))
-				if(!src || !W.isOn()) return
-				to_chat(user, "You sliced the floorweld off the disposal outlet.")
-				SEND_SIGNAL(src, COMSIG_DISPOSAL_UNLINK)
-				var/obj/structure/disposalconstruct/C = new (src.loc/*null, SOUTH, FALSE, src*/)
-				src.transfer_fingerprints_to(C)
-				C.set_dir(dir)
-				C.ptype = 7 // 7 =  outlet
-				C.update()
-				C.anchored = TRUE
-				C.density = TRUE
-				qdel(src)
-			return
-		else
-			to_chat(user, "You need more welding fuel to complete this task.")
-			return
-	else if(I.has_tool_quality(TOOL_MULTITOOL))
-		var/new_range = tgui_input_number(user, "Input a new ejection distance", "Set ejection strength", 3 , 5, 1, round_value = TRUE)
-		eject_range = new_range
-		to_chat(user, span_notice("You set the range on the [src] to [new_range] tiles."))
+
+/obj/structure/disposaloutlet/screwdriver_act(mob/user, obj/item/I)
+	mode = mode == OUTLET_SCREWED ? OUTLET_UNSCREWED : OUTLET_SCREWED
+	to_chat(user, "You [mode == OUTLET_UNSCREWED ? "remove" : "attach"] the screws around the power connection.")
+	playsound(src, I.usesound, 50, 1)
+	return ITEM_INTERACT_SUCCESS
+
+/obj/structure/disposaloutlet/welder_act(mob/user, obj/item/I)
+	if(mode != OUTLET_UNSCREWED)
+		return ITEM_INTERACT_BLOCKING
+	var/obj/item/weldingtool/W = I.get_welder()
+	if(!W.remove_fuel(0,user))
+		to_chat(user, "You need more welding fuel to complete this task.")
+		return ITEM_INTERACT_BLOCKING
+	playsound(src, W.usesound, 100, 1)
+	to_chat(user, "You start slicing the floorweld off the disposal outlet.")
+	if(do_after(user, 2 SECONDS * W.toolspeed, target = src))
+		if(!src || !W.isOn()) return ITEM_INTERACT_BLOCKING
+		to_chat(user, "You sliced the floorweld off the disposal outlet.")
+		SEND_SIGNAL(src, COMSIG_DISPOSAL_UNLINK)
+		var/obj/structure/disposalconstruct/C = new(src.loc)
+		transfer_fingerprints_to(C)
+		C.set_dir(dir)
+		C.ptype = 7
+		C.update()
+		C.anchored = TRUE
+		C.density = TRUE
+		qdel(src)
+	return ITEM_INTERACT_SUCCESS
+
+/obj/structure/disposaloutlet/multitool_act(mob/user, obj/item/I)
+	if(mode == OUTLET_SCREWED)
+		return ITEM_INTERACT_BLOCKING
+	var/new_range = tgui_input_number(user, "Input a new ejection distance", "Set ejection strength", 3, 5, 1, round_value = TRUE)
+	eject_range = new_range
+	to_chat(user, span_notice("You set the range on the [src] to [new_range] tiles."))
+	return ITEM_INTERACT_SUCCESS
 
 /obj/structure/disposaloutlet/proc/packet_expel(datum/source, list/received_items, datum/gas_mixture/gas)
 	SIGNAL_HANDLER

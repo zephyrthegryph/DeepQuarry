@@ -32,13 +32,12 @@
 
 
 
-/obj/item/target/attackby(obj/item/W as obj, mob/user as mob)
-	if (W.has_tool_quality(TOOL_WELDER))
-		var/obj/item/weldingtool/WT = W.get_welder()
-		if(WT.remove_fuel(0, user))
-			cut_overlays()
-			to_chat(user, "You slice off [src]'s uneven chunks of aluminum and scorch marks.")
-			return
+/obj/item/target/welder_act(mob/user, obj/item/W)
+	var/obj/item/weldingtool/WT = W.get_welder()
+	if(WT.remove_fuel(0, user))
+		cut_overlays()
+		to_chat(user, "You slice off [src]'s uneven chunks of aluminum and scorch marks.")
+	return TRUE
 
 
 /obj/item/target/attack_hand(mob/user as mob)

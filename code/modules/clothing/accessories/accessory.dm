@@ -68,13 +68,16 @@
 /obj/item/clothing/accessory/proc/on_removed(mob/user)
 	if(!has_suit)
 		return
-	has_suit.cut_overlay(get_inv_overlay())
-	has_suit.force = initial(has_suit.force)
-	if(istype(has_suit,/obj/item/clothing/gloves))
-		var/obj/item/clothing/gloves/has_gloves = has_suit
+	var/obj/item/clothing/old_suit = has_suit
+	old_suit.cut_overlay(get_inv_overlay())
+	old_suit.force = initial(old_suit.force)
+	if(istype(old_suit,/obj/item/clothing/gloves))
+		var/obj/item/clothing/gloves/has_gloves = old_suit
 		has_gloves.punch_force = initial(has_gloves.punch_force)
-	// Revert any stat modifiers registered by this accessory on has_suit.
-	GLOB.accessory_slot_registry.remove_modifiers(src, has_suit)
+	// Clear both sides of the ownership relation. Qdel may delete an accessory
+	// directly rather than going through clothing.remove_accessory().
+	GLOB.accessory_slot_registry.remove_modifiers(src, old_suit)
+	LAZYREMOVE(old_suit.accessories, src)
 	has_suit = null
 	if(QDELETED(src))
 		return
@@ -1011,13 +1014,6 @@
 	return //For some reason equipping this item was triggering this proc, putting the wearer inside of the collars belly for some reason.
 
 /obj/item/clothing/accessory/collar/shock/bluespace/attackby(obj/item/component, mob/user as mob)
-	if (component.has_tool_quality(TOOL_WRENCH))
-		to_chat(user, span_notice("You crack the bluespace crystal [src]."))
-		var/turf/T = get_turf(src)
-		new /obj/item/clothing/accessory/collar/shock/bluespace/malfunctioning(T)
-		user.drop_from_inventory(src)
-		qdel(src)
-		return
 	if (!istype(component,/obj/item/assembly/signaler))
 		..()
 		return
@@ -1029,6 +1025,13 @@
 	user.drop_from_inventory(src)
 	qdel(src)
 	return
+
+/obj/item/clothing/accessory/collar/shock/bluespace/wrench_act(mob/user, obj/item/tool)
+	to_chat(user, span_notice("You crack the bluespace crystal [src]."))
+	new /obj/item/clothing/accessory/collar/shock/bluespace/malfunctioning(get_turf(src))
+	user.drop_from_inventory(src)
+	qdel(src)
+	return ITEM_INTERACT_SUCCESS
 
 // modified bluespace collar where the size is controlled by the signaller.
 
@@ -1042,18 +1045,18 @@
 	on = 1
 
 /obj/item/clothing/accessory/collar/shock/bluespace/modified/attackby(obj/item/component, mob/user as mob)
-	if (component.has_tool_quality(TOOL_WRENCH))
-		to_chat(user, span_notice("You crack the bluespace crystal [src], the attached signaler disconnects."))
-		var/turf/T = get_turf(src)
-		new /obj/item/clothing/accessory/collar/shock/bluespace/malfunctioning(T)
-		user.drop_from_inventory(src)
-		qdel(src)
-		return
 	if (!istype(component,/obj/item/assembly/signaler))
 		..()
 		return
 	to_chat(user, span_notice("There is already a signaler wired to the [src]."))
 	return
+
+/obj/item/clothing/accessory/collar/shock/bluespace/modified/wrench_act(mob/user, obj/item/tool)
+	to_chat(user, span_notice("You crack the bluespace crystal [src], the attached signaler disconnects."))
+	new /obj/item/clothing/accessory/collar/shock/bluespace/malfunctioning(get_turf(src))
+	user.drop_from_inventory(src)
+	qdel(src)
+	return ITEM_INTERACT_SUCCESS
 
 /obj/item/clothing/accessory/collar/shock/bluespace/modified/tgui_data(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/list/data = ..()

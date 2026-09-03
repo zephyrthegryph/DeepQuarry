@@ -113,14 +113,6 @@
 		else
 			to_chat(user, "Error: The device is linked to another monitor.")
 
-	else if(W.has_tool_quality(TOOL_WRENCH) && user.a_intent != I_HURT)
-		if(isturf(loc))
-			anchored = !anchored
-
-			to_chat(user, span_notice("You [anchored ? "" : "un"]secure \the [src]."))
-
-			update_icon()
-			return
 	else
 		if(W.force >= 5)
 			visible_message("\The [src] lens shatters!")
@@ -130,6 +122,14 @@
 			linkedmonitor = null
 			qdel(src)
 		..()
+
+/obj/item/camerabug/wrench_act(mob/user, obj/item/tool)
+	if(user.a_intent == I_HURT || !isturf(loc))
+		return ..()
+	anchored = !anchored
+	to_chat(user, span_notice("You [anchored ? "" : "un"]secure \the [src]."))
+	update_icon()
+	return ITEM_INTERACT_SUCCESS
 
 /obj/item/camerabug/bullet_act()
 	visible_message("The [src] lens shatters!")

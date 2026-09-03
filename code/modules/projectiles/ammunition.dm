@@ -35,26 +35,10 @@
 	update_icon()
 
 /obj/item/ammo_casing/attackby(obj/item/I as obj, mob/user as mob)
-	if(I.has_tool_quality(TOOL_SCREWDRIVER))
-		if(!BB)
-			to_chat(user, span_blue("There is no bullet in the casing to inscribe anything into."))
-			return
-
-		var/tmp_label = ""
-		var/label_text = sanitizeSafe(tgui_input_text(user, "Inscribe some text into \the [initial(BB.name)]","Inscription",tmp_label,MAX_NAME_LEN, encode = FALSE), MAX_NAME_LEN)
-		if(length(label_text) > 20)
-			to_chat(user, span_red("The inscription can be at most 20 characters long."))
-		else if(!label_text)
-			to_chat(user, span_blue("You scratch the inscription off of [initial(BB)]."))
-			BB.name = initial(BB.name)
-		else
-			to_chat(user, span_blue("You inscribe \"[label_text]\" into \the [initial(BB.name)]."))
-			BB.name = "[initial(BB.name)] (\"[label_text]\")"
-	else if(istype(I, /obj/item/ammo_magazine) && isturf(loc)) // Mass magazine reloading.
+	if(istype(I, /obj/item/ammo_magazine) && isturf(loc)) // Mass magazine reloading.
 		var/obj/item/ammo_magazine/box = I
 		if (!box.can_remove_ammo || box.reloading)
 			return ..()
-
 		box.reloading = TRUE
 		var/boolets = 0
 		var/turf/floor = loc
@@ -96,6 +80,21 @@
 	else
 		return ..()
 
+/obj/item/ammo_casing/screwdriver_act(mob/user, obj/item/tool)
+	if(!BB)
+		to_chat(user, span_blue("There is no bullet in the casing to inscribe anything into."))
+		return ITEM_INTERACT_BLOCKING
+	var/label_text = sanitizeSafe(tgui_input_text(user, "Inscribe some text into \the [initial(BB.name)]", "Inscription", null, MAX_NAME_LEN, encode = FALSE), MAX_NAME_LEN)
+	if(length(label_text) > 20)
+		to_chat(user, span_red("The inscription can be at most 20 characters long."))
+	else if(!label_text)
+		to_chat(user, span_blue("You scratch the inscription off of [initial(BB)]."))
+		BB.name = initial(BB.name)
+	else
+		to_chat(user, span_blue("You inscribe \"[label_text]\" into \the [initial(BB.name)]."))
+		BB.name = "[initial(BB.name)] (\"[label_text]\")"
+	return ITEM_INTERACT_SUCCESS
+
 /obj/item/ammo_casing/update_icon()
 	if(!BB)
 		icon_state = "[initial(icon_state)]-spent"
@@ -104,7 +103,7 @@
 	. = ..()
 	if (!BB)
 		. += "This one is spent."
-	substance_round_examine(forged_material, .)
+	material_round_examine(forged_material, .)
 
 //An item that holds casings and can be used to put them inside guns
 /obj/item/ammo_magazine
@@ -151,7 +150,7 @@
 		for(var/i in 1 to initial_ammo)
 			stored_ammo += new ammo_type(src)
 
-	// A lathe can forge a magazine from a chosen material (material_selectable design),
+	// A lathe can forge a magazine from chosen construction materials,
 	// passing its key as the second Initialize arg — stamp the rounds with it.
 	if(material_key)
 		var/datum/material/forged = get_material_by_name(material_key)
@@ -242,7 +241,7 @@
 /obj/item/ammo_magazine/examine(mob/user)
 	. = ..()
 	. += "There [(stored_ammo.len == 1)? "is" : "are"] [stored_ammo.len] round\s left!"
-	substance_round_examine(forged_material, .)
+	material_round_examine(forged_material, .)
 
 //magazine icon state caching
 GLOBAL_LIST_EMPTY(magazine_icondata_keys)

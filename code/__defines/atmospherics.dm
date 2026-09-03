@@ -45,7 +45,6 @@
 // auxmos turf-processing steps. These run in a fixed order each fire(); the
 // fire() switch checkpoints on them so a mid-tick MC pause resumes correctly.
 #define SSAIR_TURFS 9              // process_turfs_auxtools (Rust FDM sharing)
-#define SSAIR_EQUALIZE 10         // process_turf_equalize_auxtools (katmos)
 #define SSAIR_FINALIZE_TURFS 11   // drain Rust->DM callbacks (react/set_visuals/pressure)
 
 // Milliseconds of tick budget still available to hand an auxmos turf-processing
@@ -104,3 +103,9 @@
 // core_field.dm) still references it. Redeclare globally so the macro is in
 // scope at fusion_reactions.dm:149+.
 #define FUSION_HEAT_CAP 1.57e7
+#define RUST_PIPE_OP_UPSERT 1
+#define RUST_PIPE_OP_REMOVE 2
+#define RUST_PIPE_OP_CONNECT 3
+#define RUST_PIPE_OP_DISCONNECT 4
+#define RUST_PIPE_OP_CLEAR 5
+#define RUST_PIPE_OP_REMOVE_TO_MIXTURE 7

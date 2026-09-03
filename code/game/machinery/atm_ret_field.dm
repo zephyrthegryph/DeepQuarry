@@ -10,6 +10,7 @@
 	use_power = USE_POWER_IDLE
 	idle_power_usage = 10
 	active_power_usage = 2500
+	integrity_failure = 0.5
 	var/ispowered = TRUE
 	var/isactive = FALSE
 	var/wasactive = FALSE		//controls automatic reboot after power-loss
@@ -40,45 +41,48 @@
 	active_power_usage = 1500
 	field_type = /obj/structure/atmospheric_retention_field/impassable
 
-/obj/machinery/atmospheric_field_generator/attackby(obj/item/W as obj, mob/user as mob)
-	if(W.has_tool_quality(TOOL_CROWBAR) && isactive)
-		if(!src) return
+/obj/machinery/atmospheric_field_generator/crowbar_act(mob/user, obj/item/tool)
+	if(isactive)
 		to_chat(user, span_warning("You can't open the ARF-G whilst it's running!"))
-		return
-	if(W.has_tool_quality(TOOL_CROWBAR) && !isactive)
-		if(!src) return
-		to_chat(user, span_notice("You [hatch_open? "close" : "open"] \the [src]'s access hatch."))
-		hatch_open = !hatch_open
-		update_icon()
-		if(alwaysactive && wires_intact)
-			generate_field()
-		return
-	if(hatch_open && W.has_tool_quality(TOOL_MULTITOOL))
-		if(!src) return
-		to_chat(user, span_notice("You toggle \the [src]'s activation behavior to [alwaysactive? "emergency" : "always-on"]."))
-		alwaysactive = !alwaysactive
-		update_icon()
-		return
-	if(hatch_open && W.has_tool_quality(TOOL_WIRECUTTER))
-		if(!src) return
-		to_chat(user, span_warning("You [wires_intact? "cut" : "mend"] \the [src]'s wires!"))
-		wires_intact = !wires_intact
-		update_icon()
-		return
-	if(hatch_open && W.has_tool_quality(TOOL_WELDER))
-		if(!src) return
-		var/obj/item/weldingtool/WT = W.get_welder()
-		if(!WT.isOn()) return
-		if(WT.get_fuel() < 5) // uses up 5 fuel.
-			to_chat(user, span_warning("You need more fuel to complete this task."))
-			return
-		user.visible_message("[user] starts to disassemble \the [src].", "You start to disassemble \the [src].")
-		playsound(src, WT.usesound, 50, 1)
-		if(do_after(user,15 * W.toolspeed, target = src))
-			if(!src || !user || !WT.remove_fuel(5, user)) return
-			to_chat(user, span_notice("You fully disassemble \the [src]. There were no salvageable parts."))
-			qdel(src)
-		return
+		return ITEM_INTERACT_BLOCKING
+	to_chat(user, span_notice("You [hatch_open ? "close" : "open"] \the [src]'s access hatch."))
+	hatch_open = !hatch_open
+	update_icon()
+	if(alwaysactive && wires_intact)
+		generate_field()
+	return ITEM_INTERACT_SUCCESS
+
+/obj/machinery/atmospheric_field_generator/multitool_act(mob/user, obj/item/tool)
+	if(!hatch_open)
+		return ITEM_INTERACT_BLOCKING
+	to_chat(user, span_notice("You toggle \the [src]'s activation behavior to [alwaysactive ? "emergency" : "always-on"]."))
+	alwaysactive = !alwaysactive
+	update_icon()
+	return ITEM_INTERACT_SUCCESS
+
+/obj/machinery/atmospheric_field_generator/wirecutter_act(mob/user, obj/item/tool)
+	if(!hatch_open)
+		return ITEM_INTERACT_BLOCKING
+	to_chat(user, span_warning("You [wires_intact ? "cut" : "mend"] \the [src]'s wires!"))
+	wires_intact = !wires_intact
+	update_icon()
+	return ITEM_INTERACT_SUCCESS
+
+/obj/machinery/atmospheric_field_generator/welder_act(mob/user, obj/item/tool)
+	if(!hatch_open)
+		return NONE
+	var/obj/item/weldingtool/welder = tool.get_welder()
+	if(!welder.isOn())
+		return ITEM_INTERACT_BLOCKING
+	if(welder.get_fuel() < 5)
+		to_chat(user, span_warning("You need more fuel to complete this task."))
+		return ITEM_INTERACT_BLOCKING
+	user.visible_message("[user] starts to disassemble \the [src].", "You start to disassemble \the [src].")
+	playsound(src, welder.usesound, 50, TRUE)
+	if(do_after(user, 1.5 SECONDS * tool.toolspeed, target = src) && welder.remove_fuel(5, user))
+		to_chat(user, span_notice("You fully disassemble \the [src]. There were no salvageable parts."))
+		qdel(src)
+	return ITEM_INTERACT_SUCCESS
 
 /obj/machinery/atmospheric_field_generator/perma/Initialize(mapload)
 	. = ..()
@@ -123,20 +127,16 @@
 		generate_field()
 
 /obj/machinery/atmospheric_field_generator/ex_act(severity)
-	switch(severity)
-		if(1)
-			stat |= BROKEN //ensures that always on generators are set as broken prior to being deleted, thus, off.
-			disable_field()
-			qdel(src)
-			return
-		if(2)
-			stat |= BROKEN
-			update_icon()
-			src.visible_message("The ARF-G cracks and shatters!","You hear an uncomfortable metallic crunch.")
-			disable_field()
-		if(3)
-			emp_act()
-	return
+	if(severity == 3)
+		emp_act(3)
+	return ..()
+
+/obj/machinery/atmospheric_field_generator/atom_break(damage_flag)
+	. = ..()
+	stat |= BROKEN
+	visible_message("The ARF-G cracks and shatters!", "You hear an uncomfortable metallic crunch.")
+	disable_field()
+	update_icon()
 
 /obj/machinery/atmospheric_field_generator/proc/generate_field()
 	if(!ispowered || hatch_open || !wires_intact || isactive) //if it's not powered, the hatch is open, the wires are busted, or it's already on, don't do anything

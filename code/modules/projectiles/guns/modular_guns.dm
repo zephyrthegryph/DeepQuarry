@@ -50,13 +50,21 @@
 		manipulator_rating += MA.rating
 	FireModeModify()
 
-/obj/item/gun/energy/modular/attackby(obj/item/O, mob/user)
-	if(O.has_tool_quality(TOOL_SCREWDRIVER))
+/obj/item/gun/energy/modular/screwdriver_act(mob/user, obj/item/tool)
+	attackby(tool, user, TOOL_SCREWDRIVER)
+	return TRUE
+
+/obj/item/gun/energy/modular/crowbar_act(mob/user, obj/item/tool)
+	attackby(tool, user, TOOL_CROWBAR)
+	return TRUE
+
+/obj/item/gun/energy/modular/attackby(obj/item/O, mob/user, tool_quality)
+	if(tool_quality == TOOL_SCREWDRIVER)
 		to_chat(user, span_notice("You [assembled ? "disassemble" : "assemble"] the gun."))
 		assembled = !assembled
 		playsound(src, O.usesound, 50, 1)
 		return
-	if(O.has_tool_quality(TOOL_CROWBAR))
+	if(tool_quality == TOOL_CROWBAR)
 		if(assembled == 1)
 			to_chat(user, span_warning("Disassemble the [src] first!"))
 			return

@@ -1,6 +1,7 @@
 // Detects reagents inside most containers, and acts as an infinite identification system for reagent-based unidentified objects.
 
 /obj/machinery/chemical_analyzer
+	maintenance_flags = MACHINE_MAINT_STANDARD
 	name = "chem analyzer PRO"
 	desc = "New and improved! Used to precisely scan chemicals and other liquids inside various containers. \
 	It can also identify the liquid contents of unknown objects and their chemical breakdowns."
@@ -28,10 +29,6 @@
 	if(!istype(I))
 		return ..()
 
-	if(default_deconstruction_screwdriver(user, I))
-		return
-	if(default_deconstruction_crowbar(user, I))
-		return
 	if(istype(I,/obj/item/reagent_containers))
 		analyzing = TRUE
 		update_icon()
@@ -63,6 +60,12 @@
 		analyzing = FALSE
 		update_icon()
 		return
+
+/obj/machinery/chemical_analyzer/screwdriver_act(mob/user, obj/item/tool)
+	return ..()
+
+/obj/machinery/chemical_analyzer/crowbar_act(mob/user, obj/item/tool)
+	return ..()
 
 /obj/machinery/chemical_analyzer/attack_hand(mob/user)
 	if(!found_reagents.len)

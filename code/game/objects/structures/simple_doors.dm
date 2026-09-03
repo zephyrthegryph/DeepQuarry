@@ -188,13 +188,17 @@
 		else
 			playsound(src, 'sound/weapons/smash.ogg', 50, 1)
 		CheckHardness()
-	else if(W.has_tool_quality(TOOL_WELDER) && breakable)
-		var/obj/item/weldingtool/WT = W.get_welder()
-		if(material.ignition_point && WT.remove_fuel(0, user))
-			TemperatureAct(150)
 	else
 		attack_hand(user)
 	return
+
+/obj/structure/simple_door/welder_act(mob/user, obj/item/W)
+	if(!breakable)
+		return TRUE
+	var/obj/item/weldingtool/WT = W.get_welder()
+	if(material.ignition_point && WT.remove_fuel(0, user))
+		TemperatureAct(150)
+	return TRUE
 
 /obj/structure/simple_door/bullet_act(obj/item/projectile/Proj)
 	take_damage(Proj.damage/10)
@@ -397,7 +401,6 @@
 /datum/material/flockium
 	name = MAT_FLOKIUM
 	//stack_type = /obj/item/stack/material/sandstone
-	material_class = MATCLASS_CERAMIC
 	icon_base = "flock"
 	icon_reinf = "flock"
 	icon_colour = "#FFFFFF"

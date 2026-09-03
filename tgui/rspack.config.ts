@@ -4,6 +4,12 @@ import path from 'node:path';
 import { defineConfig } from '@rspack/cli';
 import rspack, { type StatsOptions } from '@rspack/core';
 
+import { buildWindowGeometryManifest } from './windowGeometryManifest';
+
+const windowGeometryManifest = buildWindowGeometryManifest(
+  path.resolve(import.meta.dirname, 'packages', 'tgui', 'interfaces'),
+);
+
 /**
  * Emits public/tgui-chunk-manifest.json mapping each routable interface NAME to the
  * async chunk file(s) that must be delivered to render it. The DM side (SStgui) reads
@@ -117,6 +123,18 @@ export class TguiChunkManifestPlugin {
         manifest[iface] = dependencyFiles(choices[0].chunk);
       }
       writeFileSync(this.outFile, JSON.stringify(manifest, null, 0));
+    });
+  }
+}
+
+export class TguiWindowManifestPlugin {
+  private outFile: string;
+  constructor(outFile: string) {
+    this.outFile = outFile;
+  }
+  apply(compiler: any) {
+    compiler.hooks.done.tap('TguiWindowManifestPlugin', () => {
+      writeFileSync(this.outFile, JSON.stringify(windowGeometryManifest));
     });
   }
 }
@@ -263,6 +281,9 @@ export default defineConfig({
     new rspack.EnvironmentPlugin({
       NODE_ENV: 'production',
     }),
+    new rspack.DefinePlugin({
+      __TGUI_WINDOW_GEOMETRY_MANIFEST__: JSON.stringify(windowGeometryManifest),
+    }),
     new rspack.CircularDependencyRspackPlugin({
       failOnError: true,
       exclude: /node_modules/,
@@ -273,6 +294,9 @@ export default defineConfig({
     }),
     new TguiChunkManifestPlugin(
       path.resolve(dirname, 'public', 'tgui-chunk-manifest.json'),
+    ),
+    new TguiWindowManifestPlugin(
+      path.resolve(dirname, 'public', 'tgui-window-manifest.json'),
     ),
   ],
   resolve: {

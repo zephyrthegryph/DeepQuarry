@@ -198,7 +198,6 @@
 
 /turf/simulated/wall/proc/dismantle_wall(devastated, explode, no_product)
 	// A wall built from a substance material discharges its effect when breached.
-	substance_discharge_from_material(src, material, src)
 
 	playsound(src, 'sound/items/Welder.ogg', 100, 1)
 	if(!no_product)

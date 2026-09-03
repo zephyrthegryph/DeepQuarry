@@ -472,7 +472,7 @@
 	change_icons = 0
 	flame_intensity = 1
 	eye_safety_modifier = 1
-	always_process = TRUE
+	always_process = FALSE
 	var/obj/item/weldpack/mounted_pack = null
 
 /obj/item/weldingtool/tubefed/Initialize(mapload)
@@ -490,7 +490,9 @@
 
 /obj/item/weldingtool/tubefed/process()
 	if(!mounted_pack)
-		return
+		return PROCESS_KILL
+	if(loc == mounted_pack)
+		return PROCESS_KILL
 	if(!ishuman(mounted_pack.loc))
 		mounted_pack.return_nozzle()
 	else

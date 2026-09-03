@@ -44,30 +44,24 @@
 			recipes = material.get_recipes()
 			stacktype = material.stack_type
 
-/obj/item/stack/tile/attackby(obj/item/W as obj, mob/user as mob)
-	if (W.has_tool_quality(TOOL_WELDER))
-		var/obj/item/weldingtool/WT = W.get_welder()
-
-		if(can_weld == FALSE)
-			to_chat(user, "You can't reform these into their original components.")
-			return
-
-		if(get_amount() < 4)
-			to_chat(user, span_warning("You need at least four tiles to do this."))
-			return
-
-		if(WT.remove_fuel(0,user))
-			new welds_into(user.loc)
-			user.update_icon()
-			visible_message(span_notice("\The [src] is shaped by [user.name] with the welding tool."),"You hear welding.")
-			var/obj/item/stack/tile/T = src
-			src = null
-			var/replace = (user.get_inactive_hand()==T)
-			T.use(4)
-			if (!T && replace)
-				user.put_in_hands(welds_into)
-		return TRUE
-	return ..()
+/obj/item/stack/tile/welder_act(mob/user, obj/item/tool)
+	if(!can_weld)
+		to_chat(user, "You can't reform these into their original components.")
+		return ITEM_INTERACT_BLOCKING
+	if(get_amount() < 4)
+		to_chat(user, span_warning("You need at least four tiles to do this."))
+		return ITEM_INTERACT_BLOCKING
+	var/obj/item/weldingtool/welder = tool.get_welder()
+	if(!welder.remove_fuel(0, user))
+		return ITEM_INTERACT_BLOCKING
+	new welds_into(user.loc)
+	user.update_icon()
+	visible_message(span_notice("\The [src] is shaped by [user.name] with the welding tool."), "You hear welding.")
+	var/replace = user.get_inactive_hand() == src
+	use(4)
+	if(QDELETED(src) && replace)
+		user.put_in_hands(new welds_into)
+	return ITEM_INTERACT_SUCCESS
 
 /*
  * Grass

@@ -82,32 +82,6 @@
 		icon_state = initial(icon_state) +"_ass"
 		name = "unsecured grenade with [beakers.len] containers[detonator?" and detonator":""]"
 		stage = 1
-	else if(W.has_tool_quality(TOOL_SCREWDRIVER) && path != 2)
-		if(stage == 1)
-			path = 1
-			if(beakers.len)
-				to_chat(user, span_notice("You lock the assembly."))
-				name = "grenade"
-			else
-//					to_chat(user, span_warning("You need to add at least one beaker before locking the assembly."))
-				to_chat(user, span_notice("You lock the empty assembly."))
-				name = "fake grenade"
-			playsound(src, W.usesound, 50, 1)
-			icon_state = initial(icon_state) +"_locked"
-			stage = 2
-		else if(stage == 2)
-			if(active && prob(95))
-				to_chat(user, span_warning("You trigger the assembly!"))
-				detonate()
-			else if(sealed)
-				to_chat(user, span_warning("This grenade lacks a way to disassemble it."))
-			else
-				to_chat(user, span_notice("You unlock the assembly."))
-				playsound(src, W.usesound, 50, -3)
-				name = "unsecured grenade with [beakers.len] containers[detonator?" and detonator":""]"
-				icon_state = initial(icon_state) + (detonator?"_ass":"")
-				stage = 1
-				active = 0
 	else if(is_type_in_list(W, allowed_containers) && (!stage || stage==1) && path != 2)
 		path = 1
 		if(beakers.len == 2)
@@ -123,6 +97,37 @@
 				name = "unsecured grenade with [beakers.len] containers[detonator?" and detonator":""]"
 			else
 				to_chat(user, span_warning("\The [W] is empty."))
+
+/obj/item/grenade/chem_grenade/screwdriver_act(mob/user, obj/item/tool)
+	if(path == 2)
+		return ..()
+	if(stage == 1)
+		path = 1
+		if(beakers.len)
+			to_chat(user, span_notice("You lock the assembly."))
+			name = "grenade"
+		else
+			to_chat(user, span_notice("You lock the empty assembly."))
+			name = "fake grenade"
+		playsound(src, tool.usesound, 50, TRUE)
+		icon_state = "[initial(icon_state)]_locked"
+		stage = 2
+		return ITEM_INTERACT_SUCCESS
+	if(stage != 2)
+		return ..()
+	if(active && prob(95))
+		to_chat(user, span_warning("You trigger the assembly!"))
+		detonate()
+	else if(sealed)
+		to_chat(user, span_warning("This grenade lacks a way to disassemble it."))
+	else
+		to_chat(user, span_notice("You unlock the assembly."))
+		playsound(src, tool.usesound, 50, TRUE)
+		name = "unsecured grenade with [beakers.len] containers[detonator ? " and detonator" : ""]"
+		icon_state = initial(icon_state) + (detonator ? "_ass" : "")
+		stage = 1
+		active = FALSE
+	return ITEM_INTERACT_SUCCESS
 
 /obj/item/grenade/chem_grenade/examine(mob/user)
 	. = ..()

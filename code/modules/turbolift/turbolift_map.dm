@@ -188,6 +188,7 @@
 						cfloor.doors += newdoor
 						newdoor.floor = cfloor
 						cfloor.doors += firedoor //ition for fire doors
+						firedoor.turbolift_floor = cfloor
 						firedoor.glass = cfloor //ition for fire doors
 
 		// Place exterior control panel.

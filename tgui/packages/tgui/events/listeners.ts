@@ -1,5 +1,6 @@
 import { loadStyleSheet } from 'common/assets';
 import { EventBus } from 'tgui-core/eventbus';
+import { warmChunkPublicPath } from '../chunkPublicPath';
 import { handleLoadAssets } from './handlers/assets';
 import {
   acknowledgePayloadChunk,
@@ -21,6 +22,7 @@ const listeners = {
   ping,
   suspend,
   update,
+  'chunk/warm': warmChunkPublicPath,
   // Chunking
   oversizePayloadResponse,
   acknowledgePayloadChunk,

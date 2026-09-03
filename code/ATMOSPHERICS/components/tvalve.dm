@@ -53,56 +53,18 @@
 /obj/machinery/atmospherics/tvalve/get_neighbor_nodes_for_init()
 	return list(node1, node2, node3)
 
-/obj/machinery/atmospherics/tvalve/network_expand(datum/pipe_network/new_network, obj/machinery/atmospherics/pipe/reference)
-	// Idempotency guard: check membership before assigning slot vars.
-	if(new_network.normal_members.Find(src))
-		return 0
-
-	if(reference == node1)
-		network_node1 = new_network
-		if(state)
-			network_node2 = new_network
-		else
-			network_node3 = new_network
-	else if(reference == node2)
-		network_node2 = new_network
-		if(state)
-			network_node1 = new_network
-	else if(reference == node3)
-		network_node3 = new_network
-		if(!state)
-			network_node1 = new_network
-
-	new_network.normal_members += src
-
-	if(state)
-		if(reference == node1)
-			if(node2)
-				return node2.network_expand(new_network, src)
-		else if(reference == node2)
-			if(node1)
-				return node1.network_expand(new_network, src)
-	else
-		if(reference == node1)
-			if(node3)
-				return node3.network_expand(new_network, src)
-		else if(reference == node3)
-			if(node1)
-				return node1.network_expand(new_network, src)
-
-	return null
-
 /obj/machinery/atmospherics/tvalve/Destroy()
+	rust_unregister_pipe_topology()
 	// Disconnect/qdel BEFORE ..() so node derefs are valid.
 	if(node1)
 		node1.disconnect(src)
-		qdel(network_node1)
+		rust_release_network_wrapper(network_node1)
 	if(node2)
 		node2.disconnect(src)
-		qdel(network_node2)
+		rust_release_network_wrapper(network_node2)
 	if(node3)
 		node3.disconnect(src)
-		qdel(network_node3)
+		rust_release_network_wrapper(network_node3)
 
 	node1 = null
 	node2 = null
@@ -116,23 +78,10 @@
 
 	if(state) return 0
 
+	var/list/old_edges = rust_pipe_internal_edges()
 	state = 1
 	update_icon()
-
-	if(network_node1)
-		qdel(network_node1)
-	if(network_node3)
-		qdel(network_node3)
-	build_network()
-
-	if(network_node1&&network_node2)
-		network_node1.merge(network_node2)
-		network_node2 = network_node1
-
-	if(network_node1)
-		network_node1.mark_dirty()
-	else if(network_node2)
-		network_node2.mark_dirty()
+	rust_rewire_internal_ports(old_edges, rust_pipe_internal_edges())
 
 	return 1
 
@@ -141,23 +90,10 @@
 	if(!state)
 		return 0
 
+	var/list/old_edges = rust_pipe_internal_edges()
 	state = 0
 	update_icon()
-
-	if(network_node1)
-		qdel(network_node1)
-	if(network_node2)
-		qdel(network_node2)
-	build_network()
-
-	if(network_node1&&network_node3)
-		network_node1.merge(network_node3)
-		network_node3 = network_node1
-
-	if(network_node1)
-		network_node1.mark_dirty()
-	else if(network_node3)
-		network_node3.mark_dirty()
+	rust_rewire_internal_ports(old_edges, rust_pipe_internal_edges())
 
 	return 1
 
@@ -195,26 +131,7 @@
 	update_icon()
 	update_underlays()
 
-/obj/machinery/atmospherics/tvalve/build_network()
-	if(!network_node1 && node1)
-		network_node1 = new /datum/pipe_network()
-		network_node1.normal_members += src
-		network_node1.build_network(node1, src)
-
-	if(!network_node2 && node2)
-		network_node2 = new /datum/pipe_network()
-		network_node2.normal_members += src
-		network_node2.build_network(node2, src)
-
-	if(!network_node3 && node3)
-		network_node3 = new /datum/pipe_network()
-		network_node3.normal_members += src
-		network_node3.build_network(node3, src)
-
-
 /obj/machinery/atmospherics/tvalve/return_network(obj/machinery/atmospherics/reference)
-	build_network()
-
 	if(reference==node1)
 		return network_node1
 
@@ -241,15 +158,15 @@
 
 /obj/machinery/atmospherics/tvalve/disconnect(obj/machinery/atmospherics/reference)
 	if(reference==node1)
-		qdel(network_node1)
+		rust_release_network_wrapper(network_node1)
 		node1 = null
 
 	else if(reference==node2)
-		qdel(network_node2)
+		rust_release_network_wrapper(network_node2)
 		node2 = null
 
 	else if(reference==node3)
-		qdel(network_node3)
+		rust_release_network_wrapper(network_node3)
 		node3 = null
 
 	update_underlays()
@@ -330,13 +247,11 @@
 			else
 				go_to_side()
 
-/obj/machinery/atmospherics/tvalve/attackby(obj/item/W as obj, mob/user as mob)
-	if (!W.has_tool_quality(TOOL_WRENCH))
-		return ..()
+/obj/machinery/atmospherics/tvalve/wrench_act(mob/user, obj/item/W)
 	if(!can_unwrench())
 		to_chat(user, span_warning("You cannot unwrench \the [src], it too exerted due to internal pressure."))
 		add_fingerprint(user)
-		return 1
+		return ITEM_INTERACT_BLOCKING
 	playsound(src, W.usesound, 50, 1)
 	to_chat(user, span_notice("You begin to unfasten \the [src]..."))
 	if (do_after(user, 40 * W.toolspeed, target = src))
@@ -345,6 +260,7 @@
 			span_notice("You have unfastened \the [src]."), \
 			"You hear a ratchet.")
 		atom_deconstruct()
+	return ITEM_INTERACT_SUCCESS
 
 /obj/machinery/atmospherics/tvalve/mirrored
 	icon_state = "map_tvalvem0"

@@ -57,39 +57,42 @@ describe('flight scene hierarchy', () => {
   });
   const bodies = [vir, sif, carrier, station, mammoth, ursula];
 
-  test.each([0, 125, 800])(
-    'carrier remains exactly on its Sif-relative orbit at epoch %d',
-    (epoch) => {
-      const positions = resolveScenePositions(bodies, epoch);
-      const relative = subtractVec3(
-        positions.get('carrier')!,
-        positions.get('sif')!,
-      );
-      expect(vec3Length(relative)).toBeCloseTo(19, 8);
-    },
-  );
+  test.each([
+    0, 125, 800,
+  ])('carrier remains exactly on its Sif-relative orbit at epoch %d', (epoch) => {
+    const positions = resolveScenePositions(bodies, epoch);
+    const relative = subtractVec3(
+      positions.get('carrier')!,
+      positions.get('sif')!,
+    );
+    expect(vec3Length(relative)).toBeCloseTo(19, 8);
+  });
 
-  test.each([0, 125, 800])(
-    'carrier orbit ring is centered on moving Sif at epoch %d',
-    (epoch) => {
-      const positions = resolveScenePositions(bodies, epoch);
-      const center = positions.get('sif')!;
-      const orbit = resolveOrbitPath(carrier, bodies, epoch);
-      for (const point of orbit)
-        expect(vec3Length(subtractVec3(point, center))).toBeCloseTo(19, 8);
-    },
-  );
+  test.each([
+    0, 125, 800,
+  ])('carrier orbit ring is centered on moving Sif at epoch %d', (epoch) => {
+    const positions = resolveScenePositions(bodies, epoch);
+    const center = positions.get('sif')!;
+    const orbit = resolveOrbitPath(carrier, bodies, epoch);
+    for (const point of orbit)
+      expect(vec3Length(subtractVec3(point, center))).toBeCloseTo(19, 8);
+  });
 
-  test.each([0, 125, 800])(
-    'docked vessels remain in a distinct compact formation around the carrier at epoch %d',
-    (epoch) => {
-      const positions = resolveScenePositions(bodies, epoch);
-      const carrierPosition = positions.get('carrier')!;
-      const mammothPosition = positions.get('baby_mammoth')!;
-      const ursulaPosition = positions.get('ursula')!;
-      expect(vec3Length(subtractVec3(mammothPosition, carrierPosition))).toBeLessThan(12);
-      expect(vec3Length(subtractVec3(ursulaPosition, carrierPosition))).toBeLessThan(12);
-      expect(vec3Length(subtractVec3(mammothPosition, ursulaPosition))).toBeGreaterThan(1);
-    },
-  );
+  test.each([
+    0, 125, 800,
+  ])('docked vessels remain in a distinct compact formation around the carrier at epoch %d', (epoch) => {
+    const positions = resolveScenePositions(bodies, epoch);
+    const carrierPosition = positions.get('carrier')!;
+    const mammothPosition = positions.get('baby_mammoth')!;
+    const ursulaPosition = positions.get('ursula')!;
+    expect(
+      vec3Length(subtractVec3(mammothPosition, carrierPosition)),
+    ).toBeLessThan(12);
+    expect(
+      vec3Length(subtractVec3(ursulaPosition, carrierPosition)),
+    ).toBeLessThan(12);
+    expect(
+      vec3Length(subtractVec3(mammothPosition, ursulaPosition)),
+    ).toBeGreaterThan(1);
+  });
 });

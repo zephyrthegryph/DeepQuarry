@@ -216,23 +216,28 @@
 
 	if(W.flags & NOBLUDGEON) return
 
-	if(W.has_tool_quality(TOOL_SCREWDRIVER))
-		to_chat(user, span_notice("It's a holowindow, you can't unfasten it!"))
-	else if(W.has_tool_quality(TOOL_CROWBAR) && reinf && state <= 1)
-		to_chat(user, span_notice("It's a holowindow, you can't pry it!"))
-	else if(W.has_tool_quality(TOOL_WRENCH) && !anchored && (!state || !reinf))
-		to_chat(user, span_notice("It's a holowindow, you can't dismantle it!"))
+	if(W.damtype == BRUTE || W.damtype == BURN)
+		hit(W.force)
+		if(get_integrity() <= 7)
+			anchored = FALSE
+			update_nearby_icons()
+			step(src, get_dir(user, src))
 	else
-		if(W.damtype == BRUTE || W.damtype == BURN)
-			hit(W.force)
-			if(get_integrity() <= 7)
-				anchored = FALSE
-				update_nearby_icons()
-				step(src, get_dir(user, src))
-		else
-			playsound(src, 'sound/effects/Glasshit.ogg', 75, 1)
-		..()
+		playsound(src, 'sound/effects/Glasshit.ogg', 75, TRUE)
+	..()
 	return
+
+/obj/structure/window/reinforced/holowindow/screwdriver_act(mob/user, obj/item/tool)
+	to_chat(user, span_notice("It's a holowindow, you can't unfasten it!"))
+	return ITEM_INTERACT_BLOCKING
+
+/obj/structure/window/reinforced/holowindow/crowbar_act(mob/user, obj/item/tool)
+	to_chat(user, span_notice("It's a holowindow, you can't pry it!"))
+	return ITEM_INTERACT_BLOCKING
+
+/obj/structure/window/reinforced/holowindow/wrench_act(mob/user, obj/item/tool)
+	to_chat(user, span_notice("It's a holowindow, you can't dismantle it!"))
+	return ITEM_INTERACT_BLOCKING
 
 /obj/structure/window/reinforced/holowindow/shatter(display_message = 1)
 	playsound(src, "shatter", 70, 1)
@@ -276,14 +281,13 @@
 		visible_message("[src] fades away as it shatters!")
 	qdel(src)
 
-/obj/structure/bed/chair/holochair/attackby(obj/item/W as obj, mob/user as mob)
-	if(W.has_tool_quality(TOOL_WRENCH))
-		to_chat(user, span_notice("It's a holochair, you can't dismantle it!"))
-	return
-/obj/structure/bed/holobed/attackby(obj/item/W as obj, mob/user as mob)
-	if(W.has_tool_quality(TOOL_WRENCH))
-		to_chat(user, span_notice("It's a holochair, you can't dismantle it!"))
-	return
+/obj/structure/bed/chair/holochair/wrench_act(mob/user, obj/item/tool)
+	to_chat(user, span_notice("It's a holochair, you can't dismantle it!"))
+	return ITEM_INTERACT_BLOCKING
+
+/obj/structure/bed/holobed/wrench_act(mob/user, obj/item/tool)
+	to_chat(user, span_notice("It's a holobed, you can't dismantle it!"))
+	return ITEM_INTERACT_BLOCKING
 /obj/item/holo
 	damtype = HALLOSS
 	no_attack_log = 1

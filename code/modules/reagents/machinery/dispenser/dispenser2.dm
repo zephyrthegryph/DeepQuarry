@@ -1,4 +1,6 @@
 /obj/machinery/chemical_dispenser
+	maintenance_flags = MACHINE_MAINT_WRENCH
+	maintenance_wrench_time = 2 SECONDS
 	name = "chemical dispenser"
 	desc = "Automagically fabricates chemicals from electricity."
 	icon = 'icons/obj/chemical.dmi'
@@ -74,29 +76,8 @@
 	SStgui.update_uis(src)
 
 /obj/machinery/chemical_dispenser/attackby(obj/item/W, mob/user)
-	if(W.has_tool_quality(TOOL_WRENCH))
-		playsound(src, W.usesound, 50, 1)
-		to_chat(user, span_notice("You begin to [anchored ? "un" : ""]fasten \the [src]."))
-		if (do_after(user, 2 SECONDS * W.toolspeed, target = src))
-			user.visible_message(
-				span_notice("\The [user] [anchored ? "un" : ""]fastens \the [src]."),
-				span_notice("You have [anchored ? "un" : ""]fastened \the [src]."),
-				"You hear a ratchet.")
-			anchored = !anchored
-		else
-			to_chat(user, span_notice("You decide not to [anchored ? "un" : ""]fasten \the [src]."))
-
-	else if(istype(W, /obj/item/reagent_containers/chem_disp_cartridge))
+	if(istype(W, /obj/item/reagent_containers/chem_disp_cartridge))
 		add_cartridge(W, user)
-
-	else if(W.has_tool_quality(TOOL_SCREWDRIVER))
-		var/label = tgui_input_list(user, "Which cartridge would you like to remove?", "Chemical Dispenser", cartridges)
-		if(!label) return
-		var/obj/item/reagent_containers/chem_disp_cartridge/C = remove_cartridge(label)
-		if(C)
-			to_chat(user, span_notice("You remove \the [C] from \the [src]."))
-			C.loc = loc
-			playsound(src, W.usesound, 50, 1)
 
 	else if(istype(W, /obj/item/reagent_containers/glass) || istype(W, /obj/item/reagent_containers/food))
 		if(container)
@@ -112,7 +93,6 @@
 		if(!RC.is_open_container())
 			to_chat(user, span_warning("You don't see how \the [src] could dispense reagents into \the [RC]."))
 			return
-
 		if(istype(RC, /obj/item/reagent_containers/glass/cooler_bottle))
 			to_chat(user, span_warning("You don't see how \the [RC] could fit into \the [src]."))
 			return
@@ -123,6 +103,21 @@
 		to_chat(user, span_notice("You set \the [RC] on \the [src]."))
 	else
 		return ..()
+
+/obj/machinery/chemical_dispenser/wrench_act(mob/user, obj/item/tool)
+	return ..()
+
+/obj/machinery/chemical_dispenser/screwdriver_act(mob/user, obj/item/tool)
+	var/label = tgui_input_list(user, "Which cartridge would you like to remove?", "Chemical Dispenser", cartridges)
+	if(!label)
+		return ITEM_INTERACT_BLOCKING
+	var/obj/item/reagent_containers/chem_disp_cartridge/cartridge = remove_cartridge(label)
+	if(!cartridge)
+		return ITEM_INTERACT_BLOCKING
+	to_chat(user, span_notice("You remove \the [cartridge] from \the [src]."))
+	cartridge.forceMove(loc)
+	playsound(src, tool.usesound, 50, TRUE)
+	return ITEM_INTERACT_SUCCESS
 
 /obj/machinery/chemical_dispenser/tgui_interact(mob/user, datum/tgui/ui = null)
 	ui = SStgui.try_update_ui(user, src, ui)

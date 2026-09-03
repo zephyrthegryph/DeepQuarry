@@ -1,6 +1,5 @@
 /datum/material/wisp
 	name = MAT_WISP
-	material_class = MATCLASS_ORGANIC // class assignment
 	icon_colour = "#F13C00"
 	stack_type = /obj/item/stack/material/wisp
 	icon_base = "solid"
@@ -28,7 +27,6 @@
 
 /datum/material/frostscale
 	name = MAT_FROSCALE
-	material_class = MATCLASS_ORGANIC // class assignment
 	icon_colour = "#0000CC"
 	stack_type = /obj/item/stack/material/frostscale
 	icon_base = "solid"
@@ -56,7 +54,6 @@
 
 /datum/material/crystalscale
 	name = MAT_CRYSCALE
-	material_class = MATCLASS_ORGANIC // class assignment
 	icon_colour = "#006633"
 	stack_type = /obj/item/stack/material/crystalscale
 	icon_base = "solid"
@@ -83,7 +80,6 @@
 
 /datum/material/dreamscale
 	name = MAT_DREAMSCALE
-	material_class = MATCLASS_ORGANIC // class assignment
 	icon_colour = "#006633"
 	stack_type = /obj/item/stack/material/dreamscale
 	icon_base = "solid"
@@ -108,7 +104,6 @@
 
 /datum/material/shellchitin
 	name = MAT_SHELLCHITIN
-	material_class = MATCLASS_ORGANIC // class assignment
 	icon_colour = "#006633"
 	stack_type = /obj/item/stack/material/shellchitin
 	icon_base = "solid"

@@ -58,30 +58,30 @@
 		qdel(src)
 		return
 
-	if(I.has_tool_quality(TOOL_WELDER))
-		var/obj/item/weldingtool/W = I.get_welder()
-		if(W.isOn())
-			if(W.get_fuel() >= 2)
-				var/obj/item/inside = locate() in src
-				if(inside)
-					inside.loc = get_turf(src)
-					visible_message(span_info("\The [src] burns away revealing \the [inside]."))
-				else
-					visible_message(span_info("\The [src] burns away into nothing."))
-				qdel(src)
-				W.remove_fuel(2)
-			else
-				visible_message(span_info("A few sparks fly off \the [src], but nothing else happens."))
-				W.remove_fuel(1)
-			return
-
-	else if(istype(I, /obj/item/core_sampler))
+	if(istype(I, /obj/item/core_sampler))
 		var/obj/item/core_sampler/S = I
 		S.sample_item(src, user)
 		return
 
 	..()
-
 	if(prob(33))
 		src.visible_message(span_warning("[src] crumbles away, leaving some dust and gravel behind."))
 		qdel(src)
+
+/obj/item/strangerock/welder_act(mob/user, obj/item/tool)
+	var/obj/item/weldingtool/welder = tool.get_welder()
+	if(!welder.isOn())
+		return ITEM_INTERACT_BLOCKING
+	if(welder.get_fuel() < 2)
+		visible_message(span_info("A few sparks fly off \the [src], but nothing else happens."))
+		welder.remove_fuel(1)
+		return ITEM_INTERACT_SUCCESS
+	var/obj/item/inside = locate() in src
+	if(inside)
+		inside.forceMove(get_turf(src))
+		visible_message(span_info("\The [src] burns away revealing \the [inside]."))
+	else
+		visible_message(span_info("\The [src] burns away into nothing."))
+	welder.remove_fuel(2)
+	qdel(src)
+	return ITEM_INTERACT_SUCCESS

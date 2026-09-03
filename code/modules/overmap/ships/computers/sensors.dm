@@ -167,26 +167,22 @@
 		if(console.sensors == src)
 			console.refresh_sensor_light()
 
-/obj/machinery/shipsensors/attackby(obj/item/W, mob/user)
+/obj/machinery/shipsensors/welder_act(mob/user, obj/item/tool)
 	var/damage = max_integrity - get_integrity()
-	if(damage && W.has_tool_quality(TOOL_WELDER))
-
-		var/obj/item/weldingtool/WT = W.get_welder()
-
-		if(!WT.isOn())
-			return
-
-		if(WT.remove_fuel(0,user))
-			to_chat(user, span_notice("You start repairing the damage to [src]."))
-			playsound(src, 'sound/items/Welder.ogg', 100, 1)
-			if(do_after(user, max(5, damage / 5), target = src) && WT && WT.isOn())
-				to_chat(user, span_notice("You finish repairing the damage to [src]."))
-				repair_damage(damage)
-		else
-			to_chat(user, span_notice("You need more welding fuel to complete this task."))
-			return
-		return
-	..()
+	if(!damage)
+		return ..()
+	var/obj/item/weldingtool/welder = tool.get_welder()
+	if(!welder?.isOn())
+		return ITEM_INTERACT_BLOCKING
+	if(!welder.remove_fuel(0, user))
+		to_chat(user, span_notice("You need more welding fuel to complete this task."))
+		return ITEM_INTERACT_BLOCKING
+	to_chat(user, span_notice("You start repairing the damage to [src]."))
+	playsound(src, 'sound/items/Welder.ogg', 100, TRUE)
+	if(do_after(user, max(5, damage / 5), target = src) && welder.isOn())
+		to_chat(user, span_notice("You finish repairing the damage to [src]."))
+		repair_damage(damage)
+	return ITEM_INTERACT_SUCCESS
 
 /obj/machinery/shipsensors/proc/in_vacuum()
 	var/turf/T=get_turf(src)
@@ -213,10 +209,6 @@
 		. += span_danger("It looks seriously damaged!")
 	else if(get_integrity() < max_integrity * 0.75)
 		. += "It shows signs of damage!"
-
-/obj/machinery/shipsensors/bullet_act(obj/item/projectile/Proj)
-	take_damage(Proj.get_structure_damage(), Proj.damage_type, BULLET)
-	..()
 
 /obj/machinery/shipsensors/proc/toggle()
 	if(!use_power && (get_integrity() <= 0 || !in_vacuum()))
@@ -263,13 +255,6 @@
 		return
 	take_damage(20/severity)
 	toggle()
-
-// A wrecked sensor array persists (powered off) rather than being deleted; guard against
-// re-entering take_damage at 0 integrity.
-/obj/machinery/shipsensors/take_damage(damage_amount, damage_type = BRUTE, damage_flag = "", sound_effect = TRUE, attack_dir, armour_penetration = 0)
-	if(get_integrity() <= 0)
-		return
-	return ..()
 
 /obj/machinery/shipsensors/atom_destruction(damage_flag)
 	. = ..()

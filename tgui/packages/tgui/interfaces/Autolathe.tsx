@@ -16,7 +16,10 @@ import { Window } from '../layouts';
 import { TechWebRecipeIcon } from './common/TechWebRecipeIcon';
 import { DesignBrowser } from './Fabrication/DesignBrowser';
 import { MaterialCostSequence } from './Fabrication/MaterialCostSequence';
-import { SelectableRecipe } from './Fabrication/SelectableRecipe';
+import {
+  ConfigurableRecipeRow,
+  ProductConfigurator,
+} from './Fabrication/SelectableRecipe';
 import type {
   Design,
   Material,
@@ -35,7 +38,7 @@ type AutolatheData = {
 };
 
 export const Autolathe = (props) => {
-  const { data } = useBackend<AutolatheData>();
+  const { act, data } = useBackend<AutolatheData>();
   const {
     materialtotal,
     materialsmax,
@@ -54,7 +57,7 @@ export const Autolathe = (props) => {
   }
 
   return (
-    <Window title="Autolathe" width={670} height={600}>
+    <Window title="Autolathe" width={1120} height={720}>
       <Window.Content>
         <Stack vertical fill>
           <Stack.Item>
@@ -118,13 +121,35 @@ export const Autolathe = (props) => {
                 design,
                 availableMaterials,
                 _onPrintDesign,
+                onSelect,
+                selected,
               ) => (
                 <AutolatheRecipe
                   design={design}
                   SHEET_MATERIAL_AMOUNT={SHEET_MATERIAL_AMOUNT}
                   availableMaterials={availableMaterials}
+                  onSelect={() => onSelect?.(design)}
+                  selected={selected}
                 />
               )}
+              buildDetailElement={(design, availableMaterials) =>
+                design.materialConfigurable ? (
+                  <ProductConfigurator
+                    key={design.id}
+                    design={design}
+                    available={availableMaterials}
+                    materialChoices={data.materialChoices ?? []}
+                    SHEET_MATERIAL_AMOUNT={SHEET_MATERIAL_AMOUNT}
+                    onBuild={(materialSlots, quantity) =>
+                      act('make', {
+                        id: design.id,
+                        multiplier: quantity,
+                        materialSlots,
+                      })
+                    }
+                  />
+                ) : null
+              }
             />
           </Stack.Item>
         </Stack>
@@ -176,27 +201,28 @@ type AutolatheRecipeProps = {
   design: Design;
   availableMaterials: MaterialMap;
   SHEET_MATERIAL_AMOUNT: number;
+  onSelect?: () => void;
+  selected?: boolean;
 };
 
 const AutolatheRecipe = (props: AutolatheRecipeProps) => {
-  const { act, data } = useBackend<AutolatheData>();
-  const { design, availableMaterials, SHEET_MATERIAL_AMOUNT } = props;
+  const { act } = useBackend<AutolatheData>();
+  const {
+    design,
+    availableMaterials,
+    SHEET_MATERIAL_AMOUNT,
+    onSelect,
+    selected,
+  } = props;
 
   // Material-selectable designs render the shared material picker instead.
-  if (design.materialSelectable) {
+  if (design.materialConfigurable) {
     return (
-      <SelectableRecipe
+      <ConfigurableRecipeRow
         design={design}
         available={availableMaterials}
-        materialChoices={data.materialChoices ?? []}
-        SHEET_MATERIAL_AMOUNT={SHEET_MATERIAL_AMOUNT}
-        onBuild={(materialId, quantity) =>
-          act('make', {
-            id: design.id,
-            multiplier: quantity,
-            material: materialId,
-          })
-        }
+        selected={selected}
+        onSelect={onSelect ?? (() => undefined)}
       />
     );
   }

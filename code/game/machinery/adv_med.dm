@@ -1,6 +1,7 @@
 // Pretty much everything here is stolen from the dna scanner FYI
 
 /obj/machinery/bodyscanner
+	maintenance_flags = MACHINE_MAINT_STANDARD
 	var/mob/living/carbon/human/occupant
 	var/locked
 	name = "Body Scanner"
@@ -68,11 +69,12 @@
 		add_fingerprint(user)
 		qdel(G)
 		SStgui.update_uis(src)
-	if(!occupant)
-		if(default_deconstruction_screwdriver(user, G))
-			return
-		if(default_deconstruction_crowbar(user, G))
-			return
+
+/obj/machinery/bodyscanner/screwdriver_act(mob/user, obj/item/tool)
+	return occupant ? ITEM_INTERACT_BLOCKING : ..()
+
+/obj/machinery/bodyscanner/crowbar_act(mob/user, obj/item/tool)
+	return occupant ? ITEM_INTERACT_BLOCKING : ..()
 
 /obj/machinery/bodyscanner/MouseDrop_T(mob/living/carbon/human/O, mob/user as mob)
 	if(!istype(O))
@@ -138,34 +140,9 @@
 	return
 
 /obj/machinery/bodyscanner/ex_act(severity)
-	switch(severity)
-		if(1.0)
-			for(var/atom/movable/A as mob|obj in src)
-				A.forceMove(get_turf(src))
-				ex_act(severity)
-				//Foreach goto(35)
-			//SN src = null
-			qdel(src)
-			return
-		if(2.0)
-			if (prob(50))
-				for(var/atom/movable/A as mob|obj in src)
-					A.forceMove(get_turf(src))
-					ex_act(severity)
-					//Foreach goto(108)
-				//SN src = null
-				qdel(src)
-				return
-		if(3.0)
-			if (prob(25))
-				for(var/atom/movable/A as mob|obj in src)
-					A.forceMove(get_turf(src))
-					ex_act(severity)
-					//Foreach goto(181)
-				//SN src = null
-				qdel(src)
-				return
-	return
+	for(var/atom/movable/occupant as mob|obj in src)
+		occupant.ex_act(severity)
+	return ..()
 
 /obj/machinery/bodyscanner/tgui_host(mob/user)
 	if(user == occupant)
@@ -536,38 +513,24 @@
 	return ..()
 
 /obj/machinery/body_scanconsole/attackby(obj/item/I, mob/user)
-	if(computer_deconstruction_screwdriver(user, I))
-		return
-	else if(istype(I, /obj/item/multitool)) //Did you want to link it?
-		var/obj/item/multitool/P = I
-		if(P.connectable)
-			if(istype(P.connectable, /obj/machinery/bodyscanner))
-				var/obj/machinery/bodyscanner/C = P.connectable
-				scanner = C
-				C.console = src
-				to_chat(user, span_warning(" You link the [src] to the [P.connectable]!"))
-		else
-			to_chat(user, span_warning(" You store the [src] in the [P]'s buffer!"))
-			P.connectable = src
-		return
+	return attack_hand(user)
+
+/obj/machinery/body_scanconsole/multitool_act(mob/user, obj/item/tool)
+	if(!istype(tool, /obj/item/multitool))
+		return ITEM_INTERACT_BLOCKING
+	var/obj/item/multitool/multitool = tool
+	if(istype(multitool.connectable, /obj/machinery/bodyscanner))
+		var/obj/machinery/bodyscanner/body_scanner = multitool.connectable
+		scanner = body_scanner
+		body_scanner.console = src
+		to_chat(user, span_warning("You link [src] to [body_scanner]!"))
 	else
-		return attack_hand(user)
+		to_chat(user, span_warning("You store [src] in [multitool]'s buffer!"))
+		multitool.connectable = src
+	return ITEM_INTERACT_SUCCESS
 
 /obj/machinery/body_scanconsole/power_change()
 	update_icon()
-
-/obj/machinery/body_scanconsole/ex_act(severity)
-	switch(severity)
-		if(1.0)
-			//SN src = null
-			qdel(src)
-			return
-		if(2.0)
-			if (prob(50))
-				//SN src = null
-				qdel(src)
-				return
-	return
 
 /obj/machinery/body_scanconsole/proc/findscanner()
 	spawn(5)

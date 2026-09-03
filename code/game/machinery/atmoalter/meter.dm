@@ -46,7 +46,7 @@
 	sleeping_mixture_id = null
 	sleeping_pressure_revision = -1
 
-/obj/machinery/meter/proc/gas_dependency_changed(mixture_id, change_mask)
+/obj/machinery/meter/gas_dependency_changed(mixture_id, change_mask)
 	if(!(change_mask & GAS_DEPENDENCY_PRESSURE))
 		return FALSE
 	var/datum/gas_mixture/environment = target?.return_air()
@@ -54,7 +54,15 @@
 		return TRUE
 	if(environment.revision() == sleeping_pressure_revision)
 		return FALSE
+	// Radio meters publish their numeric reading on every material pressure
+	// change. Local-only meters need wake only when their discrete needle sprite
+	// changes. Both paths are event-driven; neither needs a permanent heartbeat.
+	if(frequency)
+		return TRUE
 	return pressure_icon_state(environment) != icon_state
+
+/obj/machinery/meter/gas_dependency_interest_mask()
+	return GAS_DEPENDENCY_PRESSURE
 
 /obj/machinery/meter/proc/pressure_icon_state(datum/gas_mixture/environment)
 	if(!environment)
@@ -76,16 +84,16 @@
 /obj/machinery/meter/process()
 	if(!target)
 		icon_state = "meterX"
-		return 0
+		return PROCESS_KILL
 
 	if(stat & (BROKEN|NOPOWER))
 		icon_state = "meter0"
-		return 0
+		return PROCESS_KILL
 
 	var/datum/gas_mixture/environment = target.return_air()
 	if(!environment)
 		icon_state = "meterX"
-		return 0
+		return PROCESS_KILL
 
 	var/env_pressure = environment.return_pressure()
 	icon_state = pressure_icon_state(environment)
@@ -93,7 +101,9 @@
 	if(frequency)
 		var/datum/radio_frequency/radio_connection = SSradio.return_frequency(frequency)
 
-		if(!radio_connection) return
+		if(!radio_connection)
+			SSmachines.hibernate_meter(src)
+			return PROCESS_KILL
 
 		var/datum/signal/signal = new
 		signal.source = src
@@ -105,9 +115,8 @@
 			"sigtype" = "status"
 		)
 		radio_connection.post_signal(src, signal)
-	else
-		SSmachines.hibernate_meter(src)
-		return PROCESS_KILL
+	SSmachines.hibernate_meter(src)
+	return PROCESS_KILL
 
 /obj/machinery/meter/examine(mob/user)
 	. = ..()
@@ -138,48 +147,45 @@
 
 	return ..()
 
-/obj/machinery/meter/attackby(obj/item/W, mob/user)
-	if(W.has_tool_quality(TOOL_WRENCH))
-		playsound(src, W.usesound, 50, 1)
-		to_chat(user, span_notice("You begin to unfasten \the [src]..."))
-		if(do_after(user, 4 SECONDS * W.toolspeed, target = src))
-			user.visible_message( \
-				span_infoplain(span_bold("\The [user]") + " unfastens \the [src]."), \
-				span_notice("You have unfastened \the [src]."), \
-				"You hear ratchet.")
-			new /obj/item/pipe_meter(get_turf(src))
-			qdel(src)
-			return
+/obj/machinery/meter/wrench_act(mob/user, obj/item/tool)
+	playsound(src, tool.usesound, 50, TRUE)
+	to_chat(user, span_notice("You begin to unfasten \the [src]..."))
+	if(do_after(user, 4 SECONDS * tool.toolspeed, target = src))
+		user.visible_message(span_infoplain(span_bold("\The [user]") + " unfastens \the [src]."), span_notice("You have unfastened \the [src]."), "You hear ratchet.")
+		new /obj/item/pipe_meter(get_turf(src))
+		qdel(src)
+	return ITEM_INTERACT_SUCCESS
 
-	if(W.has_tool_quality(TOOL_SCREWDRIVER))
-		playsound(src, W.usesound, 50, 1)
-		to_chat(user, span_notice("You have [open ? "closed" : "opened"] the maintenance panel for [src]."))
-		open = !open
-		return
+/obj/machinery/meter/screwdriver_act(mob/user, obj/item/tool)
+	playsound(src, tool.usesound, 50, TRUE)
+	to_chat(user, span_notice("You have [open ? "closed" : "opened"] the maintenance panel for [src]."))
+	open = !open
+	return ITEM_INTERACT_SUCCESS
 
-	if(W.has_tool_quality(TOOL_MULTITOOL))
-		if(open) // For setting up the meter to be used by other devices over radio.
-			id = tgui_input_text(user, "Please insert an ID tag for [src], example 'exhaust_pipe'.", "Set ID Tag", id, MAX_NAME_LEN)
-			var/obj/item/multitool/tool = W
-			tool.connectable = src
-			return
-
-		for(var/obj/machinery/atmospherics/pipe/P in loc)
-			pipes_on_turf |= P
-		if(!pipes_on_turf.len)
-			return
-		target = pipes_on_turf[1]
-		pipes_on_turf.Remove(target)
-		pipes_on_turf.Add(target)
-		to_chat(user, span_notice("Pipe meter set to moniter \the [target]."))
-		return
-
-	return ..()
+/obj/machinery/meter/multitool_act(mob/user, obj/item/tool)
+	if(open)
+		id = tgui_input_text(user, "Please insert an ID tag for [src], example 'exhaust_pipe'.", "Set ID Tag", id, MAX_NAME_LEN)
+		if(istype(tool, /obj/item/multitool))
+			var/obj/item/multitool/multitool = tool
+			multitool.connectable = src
+		return ITEM_INTERACT_SUCCESS
+	for(var/obj/machinery/atmospherics/pipe/pipe in loc)
+		pipes_on_turf |= pipe
+	if(!length(pipes_on_turf))
+		return ITEM_INTERACT_BLOCKING
+	target = pipes_on_turf[1]
+	pipes_on_turf.Remove(target)
+	pipes_on_turf.Add(target)
+	to_chat(user, span_notice("Pipe meter set to monitor \the [target]."))
+	return ITEM_INTERACT_SUCCESS
 
 // TURF METER - REPORTS A TILE'S AIR CONTENTS
 
 /obj/machinery/meter/turf/select_target()
 	return loc
 
-/obj/machinery/meter/turf/attackby(obj/item/W as obj, mob/user as mob)
+/obj/machinery/meter/turf/tool_interaction(mob/user, obj/item/tool, list/modifiers, secondary = FALSE)
+	return ITEM_INTERACT_BLOCKING
+
+/obj/machinery/meter/turf/attackby(obj/item/item, mob/user)
 	return

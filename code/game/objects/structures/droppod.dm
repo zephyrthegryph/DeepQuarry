@@ -116,17 +116,16 @@
 			open_pod()
 			user.visible_message(span_infoplain(span_bold("[user]") + " opens \the [src]!"),span_infoplain("You open \the [src]!"))
 
-/obj/structure/drop_pod/attackby(obj/item/O, mob/user)
-	if(O.has_tool_quality(TOOL_WRENCH))
-		if(finished)
-			to_chat(user, span_notice("You start breaking down \the [src]."))
-			if(do_after(user, 10 SECONDS, target = src))
-				new /obj/item/stack/material/plasteel(loc, 10)
-				playsound(user, O.usesound, 50, 1)
-				qdel(src)
-		else
-			to_chat(user, span_warning("\The [src] hasn't been opened yet. Do that first."))
-	return ..()
+/obj/structure/drop_pod/wrench_act(mob/user, obj/item/O)
+	if(!finished)
+		to_chat(user, span_warning("\The [src] hasn't been opened yet. Do that first."))
+		return TRUE
+	to_chat(user, span_notice("You start breaking down \the [src]."))
+	if(do_after(user, 10 SECONDS, target = src))
+		new /obj/item/stack/material/plasteel(loc, 10)
+		playsound(user, O.usesound, 50, 1)
+		qdel(src)
+	return TRUE
 
 /obj/structure/drop_pod/return_air()
 	return return_air_for_internal_lifeform()

@@ -7,7 +7,15 @@
 
 	var/construction_stage = 1
 
-/obj/item/coilgun_assembly/attackby(obj/item/thing, mob/user)
+/obj/item/coilgun_assembly/welder_act(mob/user, obj/item/tool)
+	attackby(tool, user, TOOL_WELDER)
+	return TRUE
+
+/obj/item/coilgun_assembly/screwdriver_act(mob/user, obj/item/tool)
+	attackby(tool, user, TOOL_SCREWDRIVER)
+	return TRUE
+
+/obj/item/coilgun_assembly/attackby(obj/item/thing, mob/user, tool_quality)
 
 	if(istype(thing, /obj/item/stack/material) && construction_stage == 1)
 		var/obj/item/stack/material/reinforcing = thing
@@ -33,7 +41,7 @@
 		increment_construction_stage()
 		return
 
-	if(thing.has_tool_quality(TOOL_WELDER) && construction_stage == 4)
+	if(tool_quality == TOOL_WELDER && construction_stage == 4)
 		var/obj/item/weldingtool/welder = thing.get_welder()
 
 		if(!welder.isOn())
@@ -66,7 +74,7 @@
 		increment_construction_stage()
 		return
 
-	if(thing.has_tool_quality(TOOL_SCREWDRIVER) && construction_stage >= 9)
+	if(tool_quality == TOOL_SCREWDRIVER && construction_stage >= 9)
 		user.visible_message(span_infoplain(span_bold("\The [user]") + " secures \the [src] and finishes it off."))
 		playsound(src, 'sound/items/Screwdriver.ogg', 50, 1)
 		var/obj/item/gun/magnetic/coilgun = new(loc)

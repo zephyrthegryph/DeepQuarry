@@ -49,31 +49,33 @@
 		icon_state = "drone_fab_nopower"
 
 /obj/machinery/drone_fabricator/process()
+	// Readiness is a timestamp, not continuous simulation. The old implementation
+	// polled forever after reaching 100% and was the single most expensive idle
+	// machine in destructive-round profiles.
+	update_drone_progress()
+	return PROCESS_KILL
 
-	if(SSticker.current_state < GAME_STATE_PLAYING)
-		return
-
-	if(stat & NOPOWER || !produce_drones)
-		if(icon_state != "drone_fab_nopower") icon_state = "drone_fab_nopower"
-		return
-
-	if(drone_progress >= 100)
-		icon_state = "drone_fab_idle"
-		return
-
-	icon_state = "drone_fab_active"
-	var/elapsed = world.time - time_last_drone
-	drone_progress = round((elapsed / CONFIG_GET(number/drone_build_time)) * 100)
-
-	if(drone_progress >= 100)
+/obj/machinery/drone_fabricator/proc/update_drone_progress()
+	if(SSticker.current_state < GAME_STATE_PLAYING || !produce_drones)
+		return drone_progress
+	if(stat & NOPOWER)
+		icon_state = "drone_fab_nopower"
+		return drone_progress
+	var/was_ready = drone_progress >= 100
+	drone_progress = clamp(round(((world.time - time_last_drone) / CONFIG_GET(number/drone_build_time)) * 100), 0, 100)
+	icon_state = drone_progress >= 100 ? "drone_fab_idle" : "drone_fab_active"
+	if(!was_ready && drone_progress >= 100)
 		visible_message("\The [src] voices a strident beep, indicating a drone chassis is prepared.")
+	return drone_progress
 
 /obj/machinery/drone_fabricator/examine(mob/user)
 	. = ..()
+	update_drone_progress()
 	if(produce_drones && drone_progress >= 100 && isobserver(user) && CONFIG_GET(flag/allow_drone_spawn) && count_drones() < CONFIG_GET(number/max_maint_drones))
 		. += "<br><B>A drone is prepared. Select 'Join As Drone' from the Ghost tab to spawn as a maintenance drone.</B>"
 
 /obj/machinery/drone_fabricator/proc/create_drone(client/player)
+	update_drone_progress()
 
 	if(stat & NOPOWER)
 		return
@@ -89,6 +91,7 @@
 	drone_progress = 0
 
 	time_last_drone = world.time
+	START_MACHINE_PROCESSING(src)
 
 	var/mob/living/silicon/robot/drone/new_drone = new drone_type(get_turf(src))
 	if(player)

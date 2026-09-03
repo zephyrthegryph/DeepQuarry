@@ -139,6 +139,7 @@ const resolvedComponentCache = new Map<string, ComponentType>();
 function loadInterfaceModule(name: string, path: string): Promise<any> {
   const cached = moduleCache.get(name);
   if (cached) return cached;
+  const loadStarted = performance.now?.() ?? Date.now();
   profileStartup('chunk_load_started', name, { path });
   const load = (attempt: number): Promise<any> =>
     requireInterface(path).catch((error) => {
@@ -152,11 +153,73 @@ function loadInterfaceModule(name: string, path: string): Promise<any> {
       );
     });
   const pending = load(1).then((module) => {
-    profileStartup('chunk_load_finished', name, { path });
+    const loadFinished = performance.now?.() ?? Date.now();
+    const resource = findChunkResource(loadStarted, loadFinished);
+    const resourceEnd = resource?.responseEnd;
+    profileStartup('chunk_load_finished', name, {
+      path,
+      resource_ms: rounded(resource?.duration),
+      request_queue_ms: rounded(
+        resource ? Math.max(0, resource.fetchStart - loadStarted) : undefined,
+      ),
+      ttfb_ms: rounded(
+        resource
+          ? Math.max(0, resource.responseStart - resource.requestStart)
+          : undefined,
+      ),
+      download_ms: rounded(resourceDownloadDuration(resource)),
+      post_resource_ms: rounded(
+        resourceEnd === undefined
+          ? undefined
+          : Math.max(0, loadFinished - resourceEnd),
+      ),
+      transfer_bytes: resource?.transferSize,
+      encoded_bytes: resource?.encodedBodySize,
+      decoded_bytes: resource?.decodedBodySize,
+      cache_hit: resource ? resource.transferSize === 0 : undefined,
+    });
     return module;
   });
   moduleCache.set(name, pending);
   return pending;
+}
+
+function rounded(value?: number): number | undefined {
+  return value === undefined ? undefined : Math.round(value * 10) / 10;
+}
+
+function resourceDownloadDuration(
+  resource?: PerformanceResourceTiming,
+): number | undefined {
+  if (!resource) return undefined;
+  // Chromium may expose responseStart=0 for a force-cache hit while responseEnd
+  // remains an absolute performance timestamp. Treat that as zero transfer,
+  // rather than reporting the page age as a multi-minute download.
+  if (resource.transferSize === 0 && resource.responseStart === 0) return 0;
+  if (
+    resource.responseStart <= 0 ||
+    resource.responseEnd < resource.responseStart
+  ) {
+    return undefined;
+  }
+  return Math.max(0, resource.responseEnd - resource.responseStart);
+}
+
+function findChunkResource(
+  loadStarted: number,
+  loadFinished: number,
+): PerformanceResourceTiming | undefined {
+  const resources = performance.getEntriesByType(
+    'resource',
+  ) as PerformanceResourceTiming[];
+  return resources
+    .filter(
+      (entry) =>
+        entry.initiatorType === 'script' &&
+        entry.startTime >= loadStarted - 1 &&
+        entry.responseEnd <= loadFinished + 1,
+    )
+    .sort((left, right) => right.responseEnd - left.responseEnd)[0];
 }
 
 /**

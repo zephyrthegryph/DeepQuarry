@@ -223,8 +223,6 @@
 			to_chat(user, span_filter_notice("\The [src] has no empty slot for \the [W]"))
 	if(!..())
 		return 0
-	if(default_deconstruction_crowbar(user, W))
-		return
 	if(default_part_replacement(user, W))
 		return
 
@@ -337,12 +335,10 @@
 		var/obj/item/cell/newcell = new cell_type(src.loc)
 		insert_cell(newcell)
 
-/obj/item/module/power_control/attackby(obj/item/I, mob/user)
-	if(I.has_tool_quality(TOOL_MULTITOOL))
-		to_chat(user, span_notice("You begin tweaking the power control circuits to support a power cell rack."))
-		if(do_after(user, 5 SECONDS * I.toolspeed, target = src))
-			var/obj/item/newcircuit = new/obj/item/circuitboard/batteryrack(get_turf(user))
-			qdel(src)
-			user.put_in_hands(newcircuit)
-			return
-	return ..()
+/obj/item/module/power_control/multitool_act(mob/user, obj/item/I)
+	to_chat(user, span_notice("You begin tweaking the power control circuits to support a power cell rack."))
+	if(do_after(user, 5 SECONDS * I.toolspeed, target = src))
+		var/obj/item/newcircuit = new/obj/item/circuitboard/batteryrack(get_turf(user))
+		qdel(src)
+		user.put_in_hands(newcircuit)
+	return ITEM_INTERACT_SUCCESS

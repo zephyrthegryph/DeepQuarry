@@ -74,7 +74,7 @@ export const Pda = (props) => {
 
   if (!owner) {
     return (
-      <Window theme={theme}>
+      <Window width={580} height={670} theme={theme}>
         <Window.Content>
           <Section stretchContents>
             Warning: No ID information found! Please swipe ID!

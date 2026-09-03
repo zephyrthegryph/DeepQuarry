@@ -23,17 +23,22 @@
 	if(display_name)
 		docking_program.display_name = display_name
 
-/obj/machinery/embedded_controller/radio/airlock/docking_port/attackby(obj/item/W, mob/user)
-	if(istype(W,/obj/item/multitool)) //give them part of code, would take few tries to get full
-		var/datum/embedded_program/docking/airlock/docking_program = program
-		var/code = docking_program.docking_codes
-		if(!code)
-			code = "N/A"
-		else
-			code = stars(code)
-		to_chat(user, "[W]'s screen displays '[code]'")
-	else
-		..()
+/obj/machinery/embedded_controller/radio/airlock/docking_port/Destroy()
+	// `program` owns the docking program and that datum in turn owns the airlock
+	// program. These two typed vars are aliases for UI convenience, not additional
+	// owners. Clear them before the base controller queues `program` for deletion
+	// or the still-live, already-destroyed controller retains both datums through
+	// the complete GC grace period.
+	airlock_program = null
+	docking_program = null
+	return ..()
+
+/obj/machinery/embedded_controller/radio/airlock/docking_port/multitool_act(mob/user, obj/item/tool)
+	var/datum/embedded_program/docking/airlock/docking_program = program
+	var/code = docking_program.docking_codes
+	code = code ? stars(code) : "N/A"
+	to_chat(user, "[tool]'s screen displays '[code]'")
+	return ITEM_INTERACT_SUCCESS
 
 /obj/machinery/embedded_controller/radio/airlock/docking_port/tgui_data(mob/user)
 	var/datum/embedded_program/docking/airlock/docking_program = program
@@ -62,6 +67,10 @@
 	..(M)
 	airlock_program = A
 	airlock_program.master_prog = src
+
+/datum/embedded_program/docking/airlock/Destroy()
+	QDEL_NULL(airlock_program)
+	return ..()
 
 /datum/embedded_program/docking/airlock/receive_user_command(command)
 	if (command == "toggle_override")

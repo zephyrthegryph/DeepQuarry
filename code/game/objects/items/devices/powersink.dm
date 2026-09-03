@@ -31,38 +31,31 @@
 	STOP_PROCESSING_POWER_OBJECT(src)
 	. = ..()
 
-/obj/item/powersink/attackby(obj/item/I, mob/user)
-	if(I.has_tool_quality(TOOL_SCREWDRIVER))
-		if(mode == 0)
-			var/turf/T = loc
-			if(isturf(T) && !!T.is_plating())
-				attached = locate() in T
-				if(!attached)
-					to_chat(user, "No exposed cable here to attach to.")
-					return
-				else
-					anchored = TRUE
-					mode = 1
-					src.visible_message(span_notice("[user] attaches [src] to the cable!"))
-					playsound(src, I.usesound, 50, 1)
-					return
-			else
-				to_chat(user, "Device must be placed over an exposed cable to attach to it.")
-				return
-		else
-			if (mode == 2)
-				STOP_PROCESSING(SSobj, src) // Now the power sink actually stops draining the station's power if you unhook it. --NeoFite
-				STOP_PROCESSING_POWER_OBJECT(src)
-			anchored = FALSE
-			mode = 0
-			src.visible_message(span_notice("[user] detaches [src] from the cable!"))
-			set_light(0)
-			playsound(src, I.usesound, 50, 1)
-			icon_state = "powersink0"
-
-			return
-	else
-		..()
+/obj/item/powersink/screwdriver_act(mob/user, obj/item/tool)
+	if(mode == 0)
+		var/turf/T = loc
+		if(!isturf(T) || !T.is_plating())
+			to_chat(user, "Device must be placed over an exposed cable to attach to it.")
+			return ITEM_INTERACT_BLOCKING
+		attached = locate() in T
+		if(!attached)
+			to_chat(user, "No exposed cable here to attach to.")
+			return ITEM_INTERACT_BLOCKING
+		anchored = TRUE
+		mode = 1
+		visible_message(span_notice("[user] attaches [src] to the cable!"))
+		playsound(src, tool.usesound, 50, 1)
+		return ITEM_INTERACT_SUCCESS
+	if(mode == 2)
+		STOP_PROCESSING(SSobj, src)
+		STOP_PROCESSING_POWER_OBJECT(src)
+	anchored = FALSE
+	mode = 0
+	visible_message(span_notice("[user] detaches [src] from the cable!"))
+	set_light(0)
+	playsound(src, tool.usesound, 50, 1)
+	icon_state = "powersink0"
+	return ITEM_INTERACT_SUCCESS
 
 /obj/item/powersink/attack_ai()
 	return

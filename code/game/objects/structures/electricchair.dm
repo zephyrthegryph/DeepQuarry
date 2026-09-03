@@ -11,18 +11,16 @@
 	add_overlay(image('icons/obj/objects.dmi', src, "echair_over", MOB_LAYER + 1, dir))
 	return
 
-/obj/structure/bed/chair/e_chair/attackby(obj/item/W as obj, mob/user as mob)
-	if(W.has_tool_quality(TOOL_WRENCH))
-		var/obj/structure/bed/chair/C = new /obj/structure/bed/chair(loc)
-		playsound(src, W.usesound, 50, 1)
-		C.set_dir(dir)
-		if(part)
-			part.loc = loc
-			part.master = null
-			part = null
-		qdel(src)
-		return
-	return
+/obj/structure/bed/chair/e_chair/wrench_act(mob/user, obj/item/W)
+	var/obj/structure/bed/chair/C = new /obj/structure/bed/chair(loc)
+	playsound(src, W.usesound, 50, 1)
+	C.set_dir(dir)
+	if(part)
+		part.loc = loc
+		part.master = null
+		part = null
+	qdel(src)
+	return TRUE
 
 /obj/structure/bed/chair/e_chair/verb/toggle()
 	set name = "Toggle Electric Chair"

@@ -210,6 +210,11 @@
 	..()
 	holder.visor = src
 
+/obj/item/rig_module/vision/Destroy()
+	if(holder?.visor == src)
+		holder.visor = null
+	return ..()
+
 /obj/item/rig_module/vision/engage()
 
 	if(!..() || !vision_modes)

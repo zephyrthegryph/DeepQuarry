@@ -42,7 +42,7 @@
 /obj/machinery/particle_smasher/examine(mob/user)
 	. = ..()
 	if(Adjacent(user))
-		. += span_notice("It can bombard substance stock to refine it, or destructively render slime extracts, harvested produce, and charged anomaly batteries into material sheets.")
+		. += span_notice("It can particle-condition a physical alloy workpiece or run its established exotic-matter recipes.")
 		. += span_notice("\The [src] contains:")
 		for(var/obj/item/I in contents)
 			. += span_notice("\the [I]")
@@ -53,23 +53,6 @@
 /obj/machinery/particle_smasher/attackby(obj/item/W as obj, mob/user as mob)
 	if(W.type == /obj/item/analyzer)
 		return
-	else if(substance_source_category(W))
-		if(target)
-			to_chat(user, span_notice("\The [src] already contains a target."))
-			return
-		user.drop_from_inventory(W)
-		target = W
-		target.forceMove(src)
-		to_chat(user, span_notice("You clamp [target] into the particle focus for destructive source rendering."))
-		update_icon()
-	else if(istype(W, /obj/item/material_workpiece))
-		if(target)
-			to_chat(user, span_notice("\The [src] already contains a target."))
-			return
-		user.drop_from_inventory(W)
-		target = W
-		target.forceMove(src)
-		update_icon()
 	else if(istype(W, /obj/item/stack/material))
 		if(target)
 			to_chat(user, span_notice("\The [src] already contains a target."))
@@ -95,19 +78,6 @@
 		to_chat(user, span_notice("You add \the [reagent_container] to \the [src]."))
 		update_icon()
 		return
-	else if(W.has_tool_quality(TOOL_WRENCH))
-		anchored = !anchored
-		playsound(src, W.usesound, 75, 1)
-		if(anchored)
-			user.visible_message("[user.name] secures [src.name] to the floor.", \
-				"You secure the [src.name] to the floor.", \
-				"You hear a ratchet.")
-		else
-			user.visible_message("[user.name] unsecures [src.name] from the floor.", \
-				"You unsecure the [src.name] from the floor.", \
-				"You hear a ratchet.")
-		update_icon()
-		return
 	else if(istype(W, /obj/item/card/id))
 		to_chat(user, span_notice("Swiping \the [W] on \the [src] doesn't seem to do anything..."))
 		return ..()
@@ -121,6 +91,15 @@
 		storage += W
 	else
 		return ..()
+
+/obj/machinery/particle_smasher/wrench_act(mob/user, obj/item/W)
+	anchored = !anchored
+	playsound(src, W.usesound, 75, 1)
+	user.visible_message("[user.name] [anchored ? "secures" : "unsecures"] [src.name] to the floor.", \
+		"You [anchored ? "secure" : "unsecure"] the [src.name] to the floor.", \
+		"You hear a ratchet.")
+	update_icon()
+	return ITEM_INTERACT_SUCCESS
 
 /obj/machinery/particle_smasher/update_icon()
 	cut_overlays()
@@ -165,18 +144,14 @@
 	if(istype(target, /obj/item/stack/material))
 		var/obj/item/stack/material/material_stack = target
 		return material_stack.material?.icon_colour || "#aaaaaa"
-	if(istype(target, /obj/item/material_workpiece))
-		var/obj/item/material_workpiece/workpiece = target
-		return workpiece.batch?.dominant_color() || "#aaaaaa"
-	if(substance_source_category(target))
-		return target.color || "#77c9a8"
 	return "#aaaaaa"
 
 /obj/machinery/particle_smasher/bullet_act(obj/item/projectile/Proj)
 	if(istype(Proj, /obj/item/projectile/beam))
 		if(Proj.damage >= 50)
 			TryCraft()
-	return 0
+		return 0
+	return ..()
 
 /obj/machinery/particle_smasher/process()
 	if(!src.anchored)	// Rapidly loses focus.
@@ -194,13 +169,8 @@
 		return
 
 	if(energy)
-		if(istype(target, /obj/item/material_workpiece))
-			try_material_workpiece_conditioning()
-		// A loaded substance stack refines once it charges past the threshold (substance_particle_refine.dm).
-		if(istype(target, /obj/item/stack/material/substance))
-			try_substance_refine()
-		else if(substance_source_category(target))
-			try_substance_source_render()
+		if(istype(target, /obj/item/stack/material/processed_alloy))
+			try_material_stock_conditioning()
 		radiation_pulse(
 			src,
 			max_range = 7,
@@ -234,8 +204,8 @@
 		visible_message(span_infoplain(span_bold("\The [src]") + " shudders."))
 		update_icon()
 		return
-	if(istype(target, /obj/item/material_workpiece))
-		try_material_workpiece_conditioning()
+	if(istype(target, /obj/item/stack/material/processed_alloy))
+		try_material_stock_conditioning()
 		update_icon()
 		return
 

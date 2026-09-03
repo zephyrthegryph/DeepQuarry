@@ -128,28 +128,23 @@
 		to_chat(user, span_danger("You need to screw the beacon to the floor first!"))
 		return
 
-/obj/machinery/power/singularity_beacon/attackby(obj/item/W as obj, mob/user as mob)
-	if(W.has_tool_quality(TOOL_SCREWDRIVER))
-		if(active)
-			to_chat(user, span_danger("You need to deactivate the beacon first!"))
-			return
-
-		if(anchored)
-			anchored = FALSE
-			to_chat(user, span_notice("You unscrew the beacon from the floor."))
-			playsound(src, W.usesound, 50, 1)
-			disconnect_from_network()
-			return
-		else
-			if(!connect_to_network())
-				to_chat(user, "This device must be placed over an exposed cable.")
-				return
-			anchored = TRUE
-			to_chat(user, span_notice("You screw the beacon to the floor and attach the cable."))
-			playsound(src, W.usesound, 50, 1)
-			return
-	..()
-	return
+/obj/machinery/power/singularity_beacon/screwdriver_act(mob/user, obj/item/tool)
+	if(active)
+		to_chat(user, span_danger("You need to deactivate the beacon first!"))
+		return ITEM_INTERACT_BLOCKING
+	if(anchored)
+		anchored = FALSE
+		to_chat(user, span_notice("You unscrew the beacon from the floor."))
+		playsound(src, tool.usesound, 50, TRUE)
+		disconnect_from_network()
+		return ITEM_INTERACT_SUCCESS
+	if(!connect_to_network())
+		to_chat(user, "This device must be placed over an exposed cable.")
+		return ITEM_INTERACT_BLOCKING
+	anchored = TRUE
+	to_chat(user, span_notice("You screw the beacon to the floor and attach the cable."))
+	playsound(src, tool.usesound, 50, TRUE)
+	return ITEM_INTERACT_SUCCESS
 
 /obj/machinery/power/singularity_beacon/Destroy()
 	if(active)

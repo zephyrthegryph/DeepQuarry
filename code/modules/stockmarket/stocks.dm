@@ -180,7 +180,7 @@
 	current_value *= 2
 	last_unification = world.time
 
-/datum/stock/process()
+/datum/stock/process(elapsed_steps = 1)
 	for (var/B in borrows)
 		var/datum/borrow/borrow = B
 		if (world.time > borrow.grace_expires)
@@ -212,9 +212,9 @@
 		if (borrow.offer_expires < world.time)
 			borrow_brokers -= borrow
 			qdel(borrow)
-	if (prob(5))
+	if (prob(100 * (1 - (0.95 ** elapsed_steps))))
 		generateBrokers()
-	fluctuation_counter++
+	fluctuation_counter += elapsed_steps
 	if (fluctuation_counter >= fluctuation_rate)
 		for (var/E in events)
 			var/datum/stockEvent/EV = E

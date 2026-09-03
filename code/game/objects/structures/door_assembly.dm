@@ -166,12 +166,12 @@
 	|| istype(user.module,/obj/item/robot_module/drone))) //Only drone (and engiborg) needs this.
 		rename_door(user)
 
-/obj/structure/door_assembly/attackby(obj/item/W as obj, mob/user as mob)
+/obj/structure/door_assembly/attackby(obj/item/W as obj, mob/user as mob, tool_quality)
 	if(istype(W, /obj/item/pen))
 		rename_door(user)
 		return
 
-	if(W.has_tool_quality(TOOL_WELDER) && ( (istext(glass)) || (glass == 1) || (!anchored) ))
+	if(tool_quality == TOOL_WELDER && ( (istext(glass)) || (glass == 1) || (!anchored) ))
 		var/obj/item/weldingtool/WT = W.get_welder()
 		if (WT.remove_fuel(0, user))
 			playsound(src, WT.usesound, 50, 1)
@@ -201,7 +201,7 @@
 			to_chat(user, span_notice("You need more welding fuel."))
 			return
 
-	else if(W.has_tool_quality(TOOL_WRENCH) && state == 0)
+	else if(tool_quality == TOOL_WRENCH && state == 0)
 		playsound(src, W.usesound, 100, 1)
 		if(anchored)
 			user.visible_message("[user] begins unsecuring the airlock assembly from the floor.", "You starts unsecuring the airlock assembly from the floor.")
@@ -224,7 +224,7 @@
 				src.state = 1
 				to_chat(user, span_notice("You wire the airlock."))
 
-	else if(W.has_tool_quality(TOOL_WIRECUTTER) && state == 1 )
+	else if(tool_quality == TOOL_WIRECUTTER && state == 1 )
 		playsound(src, W.usesound, 100, 1)
 		user.visible_message("[user] cuts the wires from the airlock assembly.", "You start to cut the wires from airlock assembly.")
 
@@ -246,7 +246,7 @@
 			src.state = 2
 			src.electronics = W
 
-	else if(W.has_tool_quality(TOOL_CROWBAR) && state == 2 )
+	else if(tool_quality == TOOL_CROWBAR && state == 2 )
 		//This should never happen, but just in case I guess
 		if (!electronics)
 			to_chat(user, span_notice("There was nothing to remove."))
@@ -288,7 +288,7 @@
 								to_chat(user, span_notice("You installed [material_display_name(material_name)] plating into the airlock assembly."))
 								glass = material_name
 
-	else if(W.has_tool_quality(TOOL_SCREWDRIVER) && state == 2 )
+	else if(tool_quality == TOOL_SCREWDRIVER && state == 2 )
 		playsound(src, W.usesound, 100, 1)
 		to_chat(user, span_notice("Now finishing the airlock."))
 
@@ -308,6 +308,26 @@
 	else
 		..()
 	update_state()
+
+/obj/structure/door_assembly/welder_act(mob/user, obj/item/W)
+	attackby(W, user, TOOL_WELDER)
+	return TRUE
+
+/obj/structure/door_assembly/wrench_act(mob/user, obj/item/W)
+	attackby(W, user, TOOL_WRENCH)
+	return TRUE
+
+/obj/structure/door_assembly/wirecutter_act(mob/user, obj/item/W)
+	attackby(W, user, TOOL_WIRECUTTER)
+	return TRUE
+
+/obj/structure/door_assembly/crowbar_act(mob/user, obj/item/W)
+	attackby(W, user, TOOL_CROWBAR)
+	return TRUE
+
+/obj/structure/door_assembly/screwdriver_act(mob/user, obj/item/W)
+	attackby(W, user, TOOL_SCREWDRIVER)
+	return TRUE
 
 /obj/structure/door_assembly/proc/update_state()
 	icon_state = "door_as_[glass == 1 ? "g" : ""][istext(glass) ? glass : base_icon_state][state]"

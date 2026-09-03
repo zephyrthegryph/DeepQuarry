@@ -77,11 +77,10 @@ GLOBAL_LIST_INIT(ai_status_emotions, list(
 	var/emotion = "Neutral"
 
 /obj/machinery/ai_status_display/attackby(I as obj, user as mob)
-	if(computer_deconstruction_screwdriver(user, I))
-		return
-	else
-		attack_hand(user)
-	return
+	return attack_hand(user)
+
+/obj/machinery/ai_status_display/screwdriver_act(mob/user, obj/item/tool)
+	return deconstruct_display(user, tool)
 
 /obj/machinery/ai_status_display/attack_ai(mob/user as mob)
 	var/list/ai_emotions = get_ai_emotions(user.ckey)

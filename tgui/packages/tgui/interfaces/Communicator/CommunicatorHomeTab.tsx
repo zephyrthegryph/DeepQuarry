@@ -74,11 +74,20 @@ const hasNotifications = (
   app: string | null,
   notifications: Pick<
     Data,
-    'voice_mobs' | 'communicating' | 'requestsReceived' | 'invitesSent' | 'video_comm'
+    | 'voice_mobs'
+    | 'communicating'
+    | 'requestsReceived'
+    | 'invitesSent'
+    | 'video_comm'
   >,
 ) => {
-  const { voice_mobs, communicating, requestsReceived, invitesSent, video_comm } =
-    notifications;
+  const {
+    voice_mobs,
+    communicating,
+    requestsReceived,
+    invitesSent,
+    video_comm,
+  } = notifications;
 
   if (app === 'Phone') {
     if (

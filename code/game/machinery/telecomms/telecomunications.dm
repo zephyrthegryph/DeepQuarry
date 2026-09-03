@@ -34,7 +34,7 @@
 	var/machinetype = 0 // just a hacky way of preventing alike machines from pairing
 	var/toggled = 1 	// Is it toggled on
 	var/on = 1
-	var/integrity = 100 // basically HP, loses integrity by heat
+	max_integrity = 100
 	var/produces_heat = 1	//whether the machine will produce heat when on.
 	var/delay = 10 // how many process() ticks to delay per heat
 	var/long_range_link = 0	// Can you link it across Z levels or on the otherside of the map? (Relay & Hub)
@@ -52,7 +52,7 @@
 	//to_world("[src] ([src.id]) - [signal.debug_print()]")
 	var/send_count = 0
 
-	signal.data["slow"] += rand(0, round((100-integrity))) // apply some lag based on integrity
+	signal.data["slow"] += rand(0, round(100 - (100 * get_integrity() / max_integrity)))
 
 	/*
 	// Edit by Atlantis: Commented out as emergency fix due to causing extreme delays in communications.
@@ -184,9 +184,9 @@
 		icon_state = "[initial(icon_state)]_off"
 
 /obj/machinery/telecomms/proc/update_power()
-
+	var/was_on = on
 	if(toggled)
-		if(stat & (BROKEN|NOPOWER|EMPED) || integrity <= 0) // if powered, on. if not powered, off. if too damaged, off
+		if(stat & (BROKEN|NOPOWER|EMPED) || get_integrity() <= 0)
 			on = FALSE
 			soundloop.stop()
 			noisy = FALSE
@@ -196,18 +196,22 @@
 		on = FALSE
 		soundloop.stop()
 		noisy = FALSE
-	if(!noisy)
+	if(on && !noisy)
 		soundloop.start()
 		noisy = TRUE
+	return was_on != on
 
 /obj/machinery/telecomms/process()
-	update_power()
+	var/power_changed = update_power()
 
 	// Check heat and generate some
 	checkheat()
 
-	// Update the icon
-	update_icon()
+	// Power transitions are the only process-time state that changes this icon.
+	// Reassigning icon_state every machinery tick is surprisingly expensive,
+	// especially while many telecomms machines survive a station-wide blast.
+	if(power_changed)
+		update_icon()
 
 	if(traffic > 0)
 		traffic -= netspeed
@@ -240,7 +244,7 @@
 		if((T0C + 200) to INFINITY)					// More than 200C, INFERNO. Takes damage every tick.
 			damage_chance = 100
 	if (damage_chance && prob(damage_chance))
-		integrity = between(0, integrity - 1, 100)
+		take_damage(1, BURN, FIRE, FALSE)
 
 
 	if(delay > 0)

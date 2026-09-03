@@ -153,7 +153,7 @@
 				icon_state = "edCLN_bucket"
 
 		if(3)
-			if(W.has_tool_quality(TOOL_WELDER))
+			if(focused_tool_stage == TOOL_WELDER)
 				var/obj/item/weldingtool/WT = W.get_welder()
 				if(WT.remove_fuel(0, user))
 					build_step++
@@ -194,7 +194,7 @@
 				qdel(W)
 
 		if(7)
-			if(W.has_tool_quality(TOOL_SCREWDRIVER))
+			if(focused_tool_stage == TOOL_SCREWDRIVER)
 				playsound(src, W.usesound, 100, 1)
 				var/turf/T = get_turf(user)
 				to_chat(user, span_notice("Attatching the mop to the frame..."))

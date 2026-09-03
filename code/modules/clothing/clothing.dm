@@ -383,25 +383,6 @@
 /obj/item/clothing/gloves/proc/Touch(atom/A, proximity)
 	return 0 // return 1 to cancel attack_hand()
 
-/*/obj/item/clothing/gloves/attackby(obj/item/W, mob/user)
-	if(W.has_tool_quality(TOOL_WIRECUTTER) || istype(W, /obj/item/scalpel))
-		if (clipped)
-			to_chat(user, span_notice("The [src] have already been clipped!"))
-			update_icon()
-			return
-
-		playsound(src, W.usesound, 50, 1)
-		user.visible_message(span_red("[user] cuts the fingertips off of the [src]."),span_red("You cut the fingertips off of the [src]."))
-
-		clipped = 1
-		name = "modified [name]"
-		desc = "[desc]<br>They have had the fingertips cut off of them."
-		if("exclude" in species_restricted)
-			species_restricted -= SPECIES_UNATHI
-			species_restricted -= SPECIES_TAJARAN
-		return
-*/
-
 /obj/item/clothing/gloves/wash()
 	. = ..()
 	transfer_blood = 0

@@ -7,6 +7,7 @@ GLOBAL_LIST_BOILERPLATE(pointdefense_controllers, /obj/machinery/pointdefense_co
 GLOBAL_LIST_BOILERPLATE(pointdefense_turrets, /obj/machinery/pointdefense)
 
 /obj/machinery/pointdefense_control
+	maintenance_flags = MACHINE_MAINT_STANDARD
 	name = "fire assist mainframe"
 	desc = "A specialized computer designed to synchronize a variety of weapon systems and a vessel's astronav data."
 	description_info = "To connect the mainframe to turrets, use a multitool to set the ident tag to that of the turrets."
@@ -92,25 +93,22 @@ GLOBAL_LIST_BOILERPLATE(pointdefense_turrets, /obj/machinery/pointdefense)
 	data["turrets"] = turrets
 	return data
 
-/obj/machinery/pointdefense_control/attackby(obj/item/W, mob/user)
-	if(W?.has_tool_quality(TOOL_MULTITOOL))
-		var/new_ident = tgui_input_text(user, "Enter a new ident tag.", "[src]", id_tag, MAX_NAME_LEN)
-		if(new_ident && new_ident != id_tag && user.Adjacent(src) && CanInteract(user, GLOB.tgui_physical_state))
-			// Check for duplicate controllers with this ID
-			for(var/obj/machinery/pointdefense_control/PC as anything in GLOB.pointdefense_controllers)
-				if(PC != src && PC.id_tag == new_ident)
-					to_chat(user, span_warning("The [new_ident] network already has a controller."))
-					return
-			to_chat(user, span_notice("You register [src] with the [new_ident] network."))
-			id_tag = new_ident
-			START_MACHINE_PROCESSING(src)
-		return
-	if(default_deconstruction_screwdriver(user, W))
-		return
-	if(default_deconstruction_crowbar(user, W))
-		return
-	if(default_part_replacement(user, W))
-		return
+/obj/machinery/pointdefense_control/multitool_act(mob/user, obj/item/tool)
+	var/new_ident = tgui_input_text(user, "Enter a new ident tag.", "[src]", id_tag, MAX_NAME_LEN)
+	if(new_ident && new_ident != id_tag && user.Adjacent(src) && CanInteract(user, GLOB.tgui_physical_state))
+		for(var/obj/machinery/pointdefense_control/PC as anything in GLOB.pointdefense_controllers)
+			if(PC != src && PC.id_tag == new_ident)
+				to_chat(user, span_warning("The [new_ident] network already has a controller."))
+				return ITEM_INTERACT_BLOCKING
+		to_chat(user, span_notice("You register [src] with the [new_ident] network."))
+		id_tag = new_ident
+		START_MACHINE_PROCESSING(src)
+		return ITEM_INTERACT_SUCCESS
+	return ITEM_INTERACT_BLOCKING
+
+/obj/machinery/pointdefense_control/attackby(obj/item/item, mob/user)
+	if(default_part_replacement(user, item))
+		return TRUE
 	return ..()
 
 //
@@ -126,6 +124,7 @@ GLOBAL_LIST_BOILERPLATE(pointdefense_turrets, /obj/machinery/pointdefense)
 	density = TRUE
 	anchored = TRUE
 	circuit = /obj/item/circuitboard/pointdefense
+	maintenance_flags = MACHINE_MAINT_STANDARD
 	appearance_flags = PIXEL_SCALE
 	var/active = TRUE
 	var/charge_cooldown = 1 SECOND  //time between it can fire at different targets
@@ -171,19 +170,17 @@ GLOBAL_LIST_BOILERPLATE(pointdefense_turrets, /obj/machinery/pointdefense)
 		if(PDC.id_tag == id_tag && (get_z(PDC) in connected_z_levels))
 			return PDC
 
-/obj/machinery/pointdefense/attackby(obj/item/W, mob/user)
-	if(W?.has_tool_quality(TOOL_MULTITOOL))
-		var/new_ident = tgui_input_text(user, "Enter a new ident tag.", "[src]", id_tag, MAX_NAME_LEN)
-		if(new_ident && new_ident != id_tag && user.Adjacent(src))
-			to_chat(user, span_notice("You register [src] with the [new_ident] network."))
-			id_tag = new_ident
-		return
-	if(default_deconstruction_screwdriver(user, W))
-		return
-	if(default_deconstruction_crowbar(user, W))
-		return
-	if(default_part_replacement(user, W))
-		return
+/obj/machinery/pointdefense/multitool_act(mob/user, obj/item/tool)
+	var/new_ident = tgui_input_text(user, "Enter a new ident tag.", "[src]", id_tag, MAX_NAME_LEN)
+	if(new_ident && new_ident != id_tag && user.Adjacent(src))
+		to_chat(user, span_notice("You register [src] with the [new_ident] network."))
+		id_tag = new_ident
+		return ITEM_INTERACT_SUCCESS
+	return ITEM_INTERACT_BLOCKING
+
+/obj/machinery/pointdefense/attackby(obj/item/item, mob/user)
+	if(default_part_replacement(user, item))
+		return TRUE
 	return ..()
 
 //Guns cannot shoot through hull or generally dense turfs.

@@ -6,6 +6,7 @@
 	layer = MOB_LAYER+0.1 //So it draws over mobs in the tile north of it.
 
 /obj/machinery/mining/drill
+	maintenance_flags = MACHINE_MAINT_STANDARD
 	name = "mining drill head"
 	desc = "An enormous drill."
 	icon_state = "mining_drill"
@@ -236,19 +237,6 @@
 
 /obj/machinery/mining/drill/attackby(obj/item/O as obj, mob/user as mob)
 	if(!active)
-		if(istype(O, /obj/item/multitool))
-			var/newtag = text2num(sanitizeSafe(tgui_input_text(user, "Enter new ID number or leave empty to cancel.", "Assign ID number", null, 4, encode = FALSE), 4))
-			if(newtag)
-				name = "[initial(name)] #[newtag]"
-				to_chat(user, span_notice("You changed the drill ID to: [newtag]"))
-			else
-				name = "[initial(name)]"
-				to_chat(user, span_notice("You removed the drill's ID and any extraneous labels."))
-			return
-		if(default_deconstruction_screwdriver(user, O))
-			return
-		if(default_deconstruction_crowbar(user, O))
-			return
 		if(default_part_replacement(user, O))
 			return
 	if(!panel_open || active) return ..()
@@ -264,6 +252,28 @@
 			balloon_alert(user, "you install \the [O]")
 		return
 	..()
+
+/obj/machinery/mining/drill/multitool_act(mob/user, obj/item/tool)
+	if(active)
+		return ITEM_INTERACT_BLOCKING
+	var/newtag = text2num(sanitizeSafe(tgui_input_text(user, "Enter new ID number or leave empty to cancel.", "Assign ID number", null, 4, encode = FALSE), 4))
+	if(newtag)
+		name = "[initial(name)] #[newtag]"
+		to_chat(user, span_notice("You changed the drill ID to: [newtag]"))
+	else
+		name = initial(name)
+		to_chat(user, span_notice("You removed the drill's ID and any extraneous labels."))
+	return ITEM_INTERACT_SUCCESS
+
+/obj/machinery/mining/drill/screwdriver_act(mob/user, obj/item/tool)
+	if(active)
+		return ITEM_INTERACT_BLOCKING
+	return ..()
+
+/obj/machinery/mining/drill/crowbar_act(mob/user, obj/item/tool)
+	if(active)
+		return ITEM_INTERACT_BLOCKING
+	return ..()
 
 /obj/machinery/mining/drill/attack_hand(mob/user as mob)
 	check_supports()
@@ -433,6 +443,7 @@
 
 
 /obj/machinery/mining/brace
+	maintenance_flags = MACHINE_MAINT_STANDARD
 	name = "mining drill brace"
 	desc = "A machinery brace for an industrial drill. It looks easily two feet thick."
 	icon_state = "mining_brace"
@@ -462,27 +473,35 @@
 		balloon_alert(user, "you can't work with the brace of a running drill.")
 		return
 
-	if(default_deconstruction_screwdriver(user, W))
-		return
-	if(default_deconstruction_crowbar(user, W))
-		return
 	if(default_part_replacement(user,W))
 		return
+	return ..()
 
-	if(W.has_tool_quality(TOOL_WRENCH))
+/obj/machinery/mining/brace/screwdriver_act(mob/user, obj/item/tool)
+	if(connected?.active)
+		return ITEM_INTERACT_BLOCKING
+	return ..()
 
-		if(istype(get_turf(src), /turf/space))
-			balloon_alert(user, "you can't anchor something to empty space. Idiot.")
-			return
+/obj/machinery/mining/brace/crowbar_act(mob/user, obj/item/tool)
+	if(connected?.active)
+		return ITEM_INTERACT_BLOCKING
+	return ..()
 
-		playsound(src, W.usesound, 100, 1)
-		balloon_alert(user, "[anchored ? "una" : "a"]nchored the brace")
-
-		anchored = !anchored
-		if(anchored)
-			connect()
-		else
-			disconnect()
+/obj/machinery/mining/brace/wrench_act(mob/user, obj/item/tool)
+	if(connected?.active)
+		balloon_alert(user, "you can't work with the brace of a running drill.")
+		return ITEM_INTERACT_BLOCKING
+	if(istype(get_turf(src), /turf/space))
+		balloon_alert(user, "you can't anchor something to empty space. Idiot.")
+		return ITEM_INTERACT_BLOCKING
+	playsound(src, tool.usesound, 100, TRUE)
+	balloon_alert(user, "[anchored ? "una" : "a"]nchored the brace")
+	anchored = !anchored
+	if(anchored)
+		connect()
+	else
+		disconnect()
+	return ITEM_INTERACT_SUCCESS
 
 /obj/machinery/mining/brace/proc/connect()
 

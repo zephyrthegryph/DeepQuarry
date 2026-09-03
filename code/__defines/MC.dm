@@ -140,4 +140,22 @@ if(current_step == this_step || (initial_step && !resumed)) /* So we start at st
 	current_step = next_step;\
 }
 
+// Measures one complete logical stage, including every yielded/resumed slice.
+// Updating the EMA for each slice made a heavily-yielding stage look cheaper than
+// an equivalent stage which happened to complete in one tick.
+#define INTERNAL_PROCESS_STEP_PROFILED(this_step, initial_step, proc_to_call, cost_var, last_var, accumulator_var, next_step)\
+if(current_step == this_step || (initial_step && !resumed)) {\
+	timer = TICK_USAGE;\
+	proc_to_call(resumed);\
+	accumulator_var += TICK_DELTA_TO_MS(TICK_USAGE - timer);\
+	if(state != SS_RUNNING){\
+		return;\
+	}\
+	last_var = accumulator_var;\
+	cost_var = cost_var ? MC_AVERAGE(cost_var, last_var) : last_var;\
+	accumulator_var = 0;\
+	resumed = 0;\
+	current_step = next_step;\
+}
+
 #define CURRENT_RUNLEVEL (2 ** (Master.current_runlevel - 1))

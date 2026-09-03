@@ -51,29 +51,29 @@
 		return !density
 	return TRUE
 
-/obj/structure/gravemarker/attackby(obj/item/W, mob/user as mob)
-	if(W.has_tool_quality(TOOL_SCREWDRIVER))
-		var/carving_1 = sanitizeSafe(tgui_input_text(user, "Who is \the [src.name] for?", "Gravestone Naming", null, MAX_NAME_LEN, encode = FALSE), MAX_NAME_LEN)
-		if(carving_1)
-			user.visible_message("[user] starts carving \the [src.name].", "You start carving \the [src.name].")
-			if(do_after(user, material.hardness * W.toolspeed, target = src))
-				user.visible_message("[user] carves something into \the [src.name].", "You carve your message into \the [src.name].")
-				grave_name += carving_1
-				update_icon()
-		var/carving_2 = sanitizeSafe(tgui_input_text(user, "What message should \the [src.name] have?", "Epitaph Carving", null, MAX_NAME_LEN, encode = FALSE), MAX_NAME_LEN)
-		if(carving_2)
-			user.visible_message("[user] starts carving \the [src.name].", "You start carving \the [src.name].")
-			if(do_after(user, material.hardness * W.toolspeed, target = src))
-				user.visible_message("[user] carves something into \the [src.name].", "You carve your message into \the [src.name].")
-				epitaph += carving_2
-				update_icon()
-		return
-	if(W.has_tool_quality(TOOL_WRENCH))
-		user.visible_message("[user] starts taking down \the [src.name].", "You start taking down \the [src.name].")
+/obj/structure/gravemarker/screwdriver_act(mob/user, obj/item/W)
+	var/carving_1 = sanitizeSafe(tgui_input_text(user, "Who is \the [src.name] for?", "Gravestone Naming", null, MAX_NAME_LEN, encode = FALSE), MAX_NAME_LEN)
+	if(carving_1)
+		user.visible_message("[user] starts carving \the [src.name].", "You start carving \the [src.name].")
 		if(do_after(user, material.hardness * W.toolspeed, target = src))
-			user.visible_message("[user] takes down \the [src.name].", "You take down \the [src.name].")
-			dismantle()
-	..()
+			user.visible_message("[user] carves something into \the [src.name].", "You carve your message into \the [src.name].")
+			grave_name += carving_1
+			update_icon()
+	var/carving_2 = sanitizeSafe(tgui_input_text(user, "What message should \the [src.name] have?", "Epitaph Carving", null, MAX_NAME_LEN, encode = FALSE), MAX_NAME_LEN)
+	if(carving_2)
+		user.visible_message("[user] starts carving \the [src.name].", "You start carving \the [src.name].")
+		if(do_after(user, material.hardness * W.toolspeed, target = src))
+			user.visible_message("[user] carves something into \the [src.name].", "You carve your message into \the [src.name].")
+			epitaph += carving_2
+			update_icon()
+	return TRUE
+
+/obj/structure/gravemarker/wrench_act(mob/user, obj/item/W)
+	user.visible_message("[user] starts taking down \the [src.name].", "You start taking down \the [src.name].")
+	if(do_after(user, material.hardness * W.toolspeed, target = src))
+		user.visible_message("[user] takes down \the [src.name].", "You take down \the [src.name].")
+		dismantle()
+	return TRUE
 
 /obj/structure/gravemarker/bullet_act(obj/item/projectile/Proj)
 	var/proj_damage = Proj.get_structure_damage()

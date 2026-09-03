@@ -50,11 +50,15 @@ export const AtmosControlPanel = (props) => {
             <LabeledList.Item label="Times fired">
               {fire_count}
             </LabeledList.Item>
-            <LabeledList.Item label="Active turfs">{active_size}</LabeledList.Item>
+            <LabeledList.Item label="Active turfs">
+              {active_size}
+            </LabeledList.Item>
             <LabeledList.Item label="Excited groups">
               {excited_size}
             </LabeledList.Item>
-            <LabeledList.Item label="Hotspots">{hotspots_size}</LabeledList.Item>
+            <LabeledList.Item label="Hotspots">
+              {hotspots_size}
+            </LabeledList.Item>
             <LabeledList.Item label="Superconducting">
               {conducting_size}
             </LabeledList.Item>
@@ -106,13 +110,17 @@ export const AtmosControlPanel = (props) => {
                     <Button
                       icon="location-arrow"
                       tooltip="Jump to"
-                      onClick={() => act('move-to-target', { spot: group.jump_to })}
+                      onClick={() =>
+                        act('move-to-target', { spot: group.jump_to })
+                      }
                     />
                     <Button
                       icon="eye"
                       selected={group.should_show}
                       tooltip="Toggle overlay"
-                      onClick={() => act('toggle_show_group', { group: group.group })}
+                      onClick={() =>
+                        act('toggle_show_group', { group: group.group })
+                      }
                     />
                   </Table.Cell>
                 </Table.Row>

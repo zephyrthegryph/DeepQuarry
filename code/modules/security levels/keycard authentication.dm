@@ -27,32 +27,33 @@
 	to_chat(user, span_warning("A firewall prevents you from interfacing with this device!"))
 	return
 
-/obj/machinery/keycard_auth/attackby(obj/item/W, mob/user)
-	if(W.has_tool_quality(TOOL_SCREWDRIVER))
-		to_chat(user, "You begin removing the faceplate from the [src]")
-		playsound(src, W.usesound, 50, 1)
-		if(do_after(user, 1 SECOND * W.toolspeed, target = src))
-			to_chat(user, "You remove the faceplate from the [src]")
-			var/obj/structure/frame/A = new /obj/structure/frame(loc)
-			A.circuit = circuit
-			A.frame_type = circuit.board_type
-			circuit = null
-			A.need_circuit = FALSE
-			A.pixel_x = pixel_x
-			A.pixel_y = pixel_y
-			A.set_dir(dir)
-			A.anchored = TRUE
-			for(var/obj/C in src)
-				if(istype(C, /obj/item/circuitboard))
-					C.forceMove(A)
-					continue
-				C.forceMove(loc)
-			A.forensic_data = forensic_data //carry crime data over.
-			A.state = FRAME_WIRED
-			A.update_icon()
-			qdel(src)
-			return
+/obj/machinery/keycard_auth/screwdriver_act(mob/user, obj/item/tool)
+	to_chat(user, "You begin removing the faceplate from the [src]")
+	playsound(src, tool.usesound, 50, 1)
+	if(do_after(user, 1 SECOND * tool.toolspeed, target = src))
+		to_chat(user, "You remove the faceplate from the [src]")
+		var/obj/structure/frame/A = new /obj/structure/frame(loc)
+		A.circuit = circuit
+		A.frame_type = circuit.board_type
+		circuit = null
+		A.need_circuit = FALSE
+		A.pixel_x = pixel_x
+		A.pixel_y = pixel_y
+		A.set_dir(dir)
+		A.anchored = TRUE
+		for(var/obj/C in src)
+			if(istype(C, /obj/item/circuitboard))
+				C.forceMove(A)
+				continue
+			C.forceMove(loc)
+		A.forensic_data = forensic_data //carry crime data over.
+		A.state = FRAME_WIRED
+		A.update_icon()
+		qdel(src)
+		return ITEM_INTERACT_SUCCESS
+	return ITEM_INTERACT_BLOCKING
 
+/obj/machinery/keycard_auth/attackby(obj/item/W, mob/user)
 	if(stat & (NOPOWER|BROKEN))
 		to_chat(user, "This device is not powered.")
 		return

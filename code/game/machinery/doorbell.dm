@@ -1,5 +1,6 @@
 ////////////////////DOORBELL CHIME///////////////////////////////////////
 /obj/machinery/doorbell_chime
+	maintenance_flags = MACHINE_MAINT_PANEL
 	name = "doorbell chime"
 	desc = "Small wall-mounted chime triggered by a doorbell"
 	icon = 'icons/obj/machines/doorbell_vr.dmi'
@@ -46,20 +47,19 @@
 
 /obj/machinery/doorbell_chime/attackby(obj/item/W as obj, mob/user as mob)
 	src.add_fingerprint(user)
-	if(default_deconstruction_screwdriver(user, W))
-		return
-//	else if(default_deconstruction_crowbar(user, W))
-//		return
-	else if(default_part_replacement(user, W))
-		return
-	else if(panel_open && istype(W, /obj/item/multitool))
-		var/obj/item/multitool/M = W
-		if(M.connectable && istype(M.connectable, /obj/machinery/button/doorbell))
-			var/obj/machinery/button/doorbell/B = M.connectable
-			id_tag = B.id
-			to_chat(user, span_notice("You upload the data from \the [W]'s buffer."))
+	if(default_part_replacement(user, W))
 		return
 	..()
+
+/obj/machinery/doorbell_chime/multitool_act(mob/user, obj/item/tool)
+	if(!panel_open)
+		return ITEM_INTERACT_BLOCKING
+	var/obj/item/multitool/multitool = tool
+	if(multitool.connectable && istype(multitool.connectable, /obj/machinery/button/doorbell))
+		var/obj/machinery/button/doorbell/button = multitool.connectable
+		id_tag = button.id
+		to_chat(user, span_notice("You upload the data from \the [tool]'s buffer."))
+	return ITEM_INTERACT_SUCCESS
 
 ////////////////////DOORBELL CHIME CONSTRUCTION///////////////////////////////////////
 // We want these to be constructable so more chimes can be added in departments.
@@ -85,6 +85,7 @@
 ////////////////////DOORBELL SWITCH///////////////////////////////////////
 
 /obj/machinery/button/doorbell
+	maintenance_flags = MACHINE_MAINT_PANEL
 	name = "doorbell switch"
 	desc = "A doorbell, press to chime."
 	icon = 'icons/obj/machines/doorbell_vr.dmi'
@@ -125,24 +126,28 @@
 
 /obj/machinery/button/doorbell/attackby(obj/item/W as obj, mob/user as mob)
 	src.add_fingerprint(user)
-	if(default_deconstruction_screwdriver(user, W))
-		return
-	else if(panel_open && istype(W, /obj/item/pen))
+	if(panel_open && istype(W, /obj/item/pen))
 		var/t = sanitizeSafe(tgui_input_text(user, "Enter the name for \the [src].", src.name, initial(src.name), MAX_NAME_LEN, encode = FALSE), MAX_NAME_LEN)
 		if(t && in_range(src, user))
 			name = t
-	else if(panel_open && istype(W, /obj/item/multitool))
-		var/obj/item/multitool/M = W
-		M.connectable = src
-		to_chat(user, span_notice("You save the data in \the [M]'s buffer."))
-	else if(W.has_tool_quality(TOOL_WRENCH))
-		to_chat(user, span_notice("You start to unwrench \the [src]."))
-		playsound(src, 'sound/items/Ratchet.ogg', 50, 1)
-		if(do_after(user, 15, target = src) && !QDELETED(src))
-			to_chat(user, span_notice("You unwrench \the [src]."))
-			new /obj/item/frame/doorbell(src.loc)
-			qdel(src)
-		return
+
+/obj/machinery/button/doorbell/multitool_act(mob/user, obj/item/tool)
+	if(!panel_open)
+		return ITEM_INTERACT_BLOCKING
+	var/obj/item/multitool/M = tool
+	M.connectable = src
+	to_chat(user, span_notice("You save the data in \the [M]'s buffer."))
+	return ITEM_INTERACT_SUCCESS
+
+/obj/machinery/button/doorbell/wrench_act(mob/user, obj/item/tool)
+	to_chat(user, span_notice("You start to unwrench \the [src]."))
+	playsound(src, 'sound/items/Ratchet.ogg', 50, TRUE)
+	if(!do_after(user, 15, target = src) || QDELETED(src))
+		return ITEM_INTERACT_BLOCKING
+	to_chat(user, span_notice("You unwrench \the [src]."))
+	new /obj/item/frame/doorbell(loc)
+	qdel(src)
+	return ITEM_INTERACT_SUCCESS
 
 ////////////////////DOORBELL SWITCH CONSTRUCTION///////////////////////////////////////
 // Right now they are very simple to construct, just throw them up on the wall

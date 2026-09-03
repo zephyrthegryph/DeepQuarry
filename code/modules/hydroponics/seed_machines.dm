@@ -36,6 +36,7 @@
 		new /obj/item/disk/botany(src)
 
 /obj/machinery/botany
+	maintenance_flags = MACHINE_MAINT_STANDARD
 	icon = 'icons/obj/hydroponics_machines.dmi'
 	icon_state = "hydrotray3"
 	density = TRUE
@@ -113,16 +114,7 @@
 			to_chat(user, span_filter_notice("You load [W] into [src]."))
 		return
 
-	if(default_deconstruction_screwdriver(user, W))
-		return
-	if(W.has_tool_quality(TOOL_WRENCH))
-		playsound(src, W.usesound, 100, 1)
-		to_chat(user, span_notice("You [anchored ? "un" : ""]secure \the [src]."))
-		anchored = !anchored
-		return
 	if(!active)
-		if(default_deconstruction_crowbar(user, W))
-			return
 		if(default_part_replacement(user, W))
 			return
 	if(istype(W,/obj/item/disk/botany))
@@ -148,6 +140,20 @@
 
 		return
 	..()
+
+/obj/machinery/botany/screwdriver_act(mob/user, obj/item/tool)
+	return ..()
+
+/obj/machinery/botany/wrench_act(mob/user, obj/item/tool)
+	playsound(src, tool.usesound, 100, TRUE)
+	to_chat(user, span_notice("You [anchored ? "un" : ""]secure \the [src]."))
+	anchored = !anchored
+	return ITEM_INTERACT_SUCCESS
+
+/obj/machinery/botany/crowbar_act(mob/user, obj/item/tool)
+	if(active)
+		return ITEM_INTERACT_BLOCKING
+	return ..()
 
 // Allows for a trait to be extracted from a seed packet, destroying that seed.
 /obj/machinery/botany/extractor

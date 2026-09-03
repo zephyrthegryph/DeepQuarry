@@ -627,10 +627,7 @@ class ChatRenderer {
           }
           // Security: validate targetName is an own, known key before rendering.
           // Prevents untrusted stored HTML from instantiating arbitrary components.
-          if (
-            !targetName ||
-            !Object.hasOwn(TGUI_CHAT_COMPONENTS, targetName)
-          ) {
+          if (!targetName || !Object.hasOwn(TGUI_CHAT_COMPONENTS, targetName)) {
             continue;
           }
 

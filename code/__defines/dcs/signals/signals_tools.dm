@@ -4,7 +4,7 @@
 ///Called from /atom/proc/tool_act (atom)
 #define COMSIG_TOOL_ATOM_ACTED_PRIMARY(tooltype) "tool_atom_acted_[tooltype]"
 ///Called from /atom/proc/tool_act (atom)
-#define COMSIG_TOOL_ATOM_ACTED_SECONDARY(tooltype) "tool_atom_acted_[tooltype]"
+#define COMSIG_TOOL_ATOM_ACTED_SECONDARY(tooltype) "tool_atom_acted_secondary_[tooltype]"
 
 //Called when a tool attempts to pry open an airlock. Called from /obj/machinery/door/airlock/try_to_crowbar
 #define COMSIG_TOOL_FORCE_OPEN_AIRLOCK "tool_force_open_airlock"

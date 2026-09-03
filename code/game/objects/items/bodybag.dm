@@ -85,7 +85,7 @@
 	item_path = /obj/item/bodybag/large
 //End of Yawn add
 
-/obj/structure/closet/body_bag/attackby(obj/item/W as obj, mob/user as mob)
+/obj/structure/closet/body_bag/attackby(obj/item/W as obj, mob/user as mob, tool_quality)
 	if (istype(W, /obj/item/pen))
 		var/t = tgui_input_text(user, "What would you like the label to be?", text("[]", src.name), null, MAX_NAME_LEN	)
 		if (user.get_active_hand() != W)
@@ -102,7 +102,7 @@
 			src.name = "body bag"
 	//..() //Doesn't need to run the parent. Since when can fucking bodybags be welded shut? -Agouri
 		return
-	else if(W.has_tool_quality(TOOL_WIRECUTTER))
+	else if(tool_quality == TOOL_WIRECUTTER)
 		to_chat(user, "You cut the tag off the bodybag")
 		src.name = "body bag"
 		has_label = FALSE
@@ -269,7 +269,7 @@
 		for(var/mob/living/L in contents)
 			. += L.examine(user)
 
-/obj/structure/closet/body_bag/cryobag/attackby(obj/item/W, mob/user)
+/obj/structure/closet/body_bag/cryobag/attackby(obj/item/W, mob/user, tool_quality)
 	if(opened)
 		..()
 	else //Allows the bag to respond to a health analyzer by analyzing the mob inside without needing to open it.
@@ -291,7 +291,7 @@
 					inject_occupant(H)
 					break
 
-		else if(W.has_tool_quality(TOOL_SCREWDRIVER))
+		else if(tool_quality == TOOL_SCREWDRIVER)
 			if(syringe)
 				if(used)
 					to_chat(user,span_warning("The injector cannot be removed now that the stasis bag has been used!"))
@@ -302,6 +302,14 @@
 
 		else
 			..()
+
+/obj/structure/closet/body_bag/wirecutter_act(mob/user, obj/item/W)
+	attackby(W, user, TOOL_WIRECUTTER)
+	return TRUE
+
+/obj/structure/closet/body_bag/cryobag/screwdriver_act(mob/user, obj/item/W)
+	attackby(W, user, TOOL_SCREWDRIVER)
+	return TRUE
 
 /obj/item/usedcryobag
 	name = "used stasis bag"

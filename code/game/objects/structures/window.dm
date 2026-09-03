@@ -240,22 +240,6 @@
 /obj/structure/window/attackby(obj/item/W as obj, mob/user as mob)
 	if(!istype(W)) return//I really wish I did not need this
 
-	// Fixing.
-	if(W.has_tool_quality(TOOL_WELDER) && user.a_intent == I_HELP)
-		var/obj/item/weldingtool/WT = W.get_welder()
-		if(get_integrity() < max_integrity)
-			if(WT.remove_fuel(1 ,user))
-				to_chat(user, span_notice("You begin repairing [src]..."))
-				playsound(src, WT.usesound, 50, 1)
-				if(do_after(user, 4 SECONDS * WT.toolspeed, target = src))
-					repair_damage(max_integrity)
-			//		playsound(src, 'sound/items/Welder.ogg', 50, 1)
-					update_icon()
-					to_chat(user, span_notice("You repair [src]."))
-		else
-			to_chat(user, span_warning("[src] is already in good condition!"))
-		return
-
 	// Slamming.
 	if (istype(W, /obj/item/grab) && get_dist(src,user)<2)
 		var/obj/item/grab/G = W
@@ -283,41 +267,7 @@
 
 	if(W.flags & NOBLUDGEON) return
 
-	if(W.has_tool_quality(TOOL_SCREWDRIVER))
-		if(reinf && state >= 1)
-			state = 3 - state
-			update_nearby_icons()
-			playsound(src, W.usesound, 75, 1)
-			to_chat(user, span_notice("You have [state == 1 ? "un" : ""]fastened the window [state ? "from" : "to"] the frame."))
-		else if(reinf && state == 0)
-			anchored = !anchored
-			update_nearby_tiles(need_rebuild=1)
-			update_nearby_icons()
-			update_verbs()
-			playsound(src, W.usesound, 75, 1)
-			to_chat(user, span_notice("You have [anchored ? "" : "un"]fastened the frame [anchored ? "to" : "from"] the floor."))
-		else if(!reinf)
-			anchored = !anchored
-			update_nearby_tiles(need_rebuild=1)
-			update_nearby_icons()
-			update_verbs()
-			playsound(src, W.usesound, 75, 1)
-			to_chat(user, span_notice("You have [anchored ? "" : "un"]fastened the window [anchored ? "to" : "from"] the floor."))
-	else if(W.has_tool_quality(TOOL_CROWBAR) && reinf && state <= 1)
-		state = 1 - state
-		playsound(src, W.usesound, 75, 1)
-		to_chat(user, span_notice("You have pried the window [state ? "into" : "out of"] the frame."))
-	else if(W.has_tool_quality(TOOL_WRENCH) && !anchored && (!state || !reinf))
-		if(!glasstype)
-			to_chat(user, span_notice("You're not sure how to dismantle \the [src] properly."))
-		else
-			playsound(src, W.usesound, 75, 1)
-			visible_message(span_notice("[user] dismantles \the [src]."))
-			var/obj/item/stack/material/mats = new glasstype(loc)
-			if(is_fulltile())
-				mats.set_amount(4)
-			qdel(src)
-	else if(istype(W, /obj/item/stack/cable_coil) && reinf && state == 0 && !istype(src, /obj/structure/window/reinforced/polarized))
+	if(istype(W, /obj/item/stack/cable_coil) && reinf && state == 0 && !istype(src, /obj/structure/window/reinforced/polarized))
 		var/obj/item/stack/cable_coil/C = W
 		if (C.use(1))
 			playsound(src, 'sound/effects/sparks1.ogg', 75, 1)
@@ -352,6 +302,59 @@
 			playsound(src, 'sound/effects/Glasshit.ogg', 75, 1)
 		..()
 	return
+
+/obj/structure/window/welder_act(mob/user, obj/item/W)
+	if(user.a_intent != I_HELP)
+		return ..()
+	var/obj/item/weldingtool/WT = W.get_welder()
+	if(get_integrity() >= max_integrity)
+		to_chat(user, span_warning("[src] is already in good condition!"))
+		return TRUE
+	if(WT.remove_fuel(1, user))
+		to_chat(user, span_notice("You begin repairing [src]..."))
+		playsound(src, WT.usesound, 50, 1)
+		if(do_after(user, 4 SECONDS * WT.toolspeed, target = src))
+			repair_damage(max_integrity)
+			update_icon()
+			to_chat(user, span_notice("You repair [src]."))
+	return TRUE
+
+/obj/structure/window/screwdriver_act(mob/user, obj/item/W)
+	if(reinf && state >= 1)
+		state = 3 - state
+		update_nearby_icons()
+		playsound(src, W.usesound, 75, 1)
+		to_chat(user, span_notice("You have [state == 1 ? "un" : ""]fastened the window [state ? "from" : "to"] the frame."))
+	else
+		anchored = !anchored
+		update_nearby_tiles(need_rebuild = TRUE)
+		update_nearby_icons()
+		update_verbs()
+		playsound(src, W.usesound, 75, 1)
+		to_chat(user, span_notice("You have [anchored ? "" : "un"]fastened the [reinf ? "frame" : "window"] [anchored ? "to" : "from"] the floor."))
+	return TRUE
+
+/obj/structure/window/crowbar_act(mob/user, obj/item/W)
+	if(!reinf || state > 1)
+		return ..()
+	state = 1 - state
+	playsound(src, W.usesound, 75, 1)
+	to_chat(user, span_notice("You have pried the window [state ? "into" : "out of"] the frame."))
+	return TRUE
+
+/obj/structure/window/wrench_act(mob/user, obj/item/W)
+	if(anchored || (state && reinf))
+		return ..()
+	if(!glasstype)
+		to_chat(user, span_notice("You're not sure how to dismantle \the [src] properly."))
+		return TRUE
+	playsound(src, W.usesound, 75, 1)
+	visible_message(span_notice("[user] dismantles \the [src]."))
+	var/obj/item/stack/material/mats = new glasstype(loc)
+	if(is_fulltile())
+		mats.set_amount(4)
+	qdel(src)
+	return TRUE
 
 /obj/structure/window/proc/hit(damage, sound_effect = 1)
 	if(damage < force_threshold || force_threshold < 0)
@@ -638,6 +641,7 @@
 	T.recalculate_directional_opacity()
 
 /obj/machinery/button/windowtint
+	maintenance_flags = MACHINE_MAINT_PANEL
 	name = "window tint control"
 	icon = 'icons/obj/stationobjs.dmi'
 	icon_state = "light0"
@@ -670,26 +674,26 @@
 /obj/machinery/button/windowtint/update_icon()
 	icon_state = "light[active]"
 
-/obj/machinery/button/windowtint/attackby(obj/item/W as obj, mob/user as mob)
-	if(default_deconstruction_screwdriver(user, W))
-		return
-	else if(alarm_deconstruction_wirecutters(user, W))
-		return
-	else if(istype(W, /obj/item/multitool))
-		var/obj/item/multitool/MT = W
-		if(!id)
-			// If no ID is set yet (newly built button?) let them select an ID for first-time use!
-			var/t = sanitizeSafe(tgui_input_text(user, "Enter an ID for \the [src].", src.name, null, MAX_NAME_LEN, encode = FALSE), MAX_NAME_LEN)
-			if (t && in_range(src, user))
-				src.id = t
-				to_chat(user, span_notice("The new ID of \the [src] is '[id]'. To reset this, rebuild the control."))
-		if(id)
-			// It already has an ID (or they just set one), buffer it for copying to windows.
-			to_chat(user, span_notice("You store \the [src] ID ('[id]') in \the [MT]'s buffer!"))
-			MT.connectable = src
-			MT.update_icon()
-		return TRUE
-	. = ..()
+/obj/machinery/button/windowtint/multitool_act(mob/user, obj/item/tool)
+	var/obj/item/multitool/multitool = tool
+	if(!id)
+		var/new_id = sanitizeSafe(tgui_input_text(user, "Enter an ID for \the [src].", name, null, MAX_NAME_LEN, encode = FALSE), MAX_NAME_LEN)
+		if(new_id && in_range(src, user))
+			id = new_id
+			to_chat(user, span_notice("The new ID of \the [src] is '[id]'. To reset this, rebuild the control."))
+	if(id)
+		to_chat(user, span_notice("You store \the [src] ID ('[id]') in \the [multitool]'s buffer!"))
+		multitool.connectable = src
+		multitool.update_icon()
+	return ITEM_INTERACT_SUCCESS
+
+/obj/machinery/button/windowtint/wirecutter_act(mob/user, obj/item/tool)
+	if(!panel_open)
+		return ITEM_INTERACT_BLOCKING
+	user.visible_message(span_warning("[user] has cut the wires inside \the [src]!"), "You have cut the wires inside \the [src].")
+	playsound(src, tool.usesound, 50, TRUE)
+	new /obj/item/stack/cable_coil(get_turf(src), 5)
+	return dismantle() ? ITEM_INTERACT_SUCCESS : ITEM_INTERACT_BLOCKING
 
 /* moved this block to code\game\objects\items\weapons\rcd.dm
 /obj/structure/window/rcd_values(mob/living/user, obj/item/rcd/the_rcd, passed_mode)

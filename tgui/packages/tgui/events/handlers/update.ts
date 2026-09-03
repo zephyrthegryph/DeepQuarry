@@ -1,4 +1,5 @@
 import { perf } from 'common/perf';
+import { installChunkPublicPath } from '../../chunkPublicPath';
 import { prepareWindowGeometry, setupDrag } from '../../drag';
 import { prepareRequestedInterface } from '../../interfacePreparation';
 import { logger } from '../../logging';
@@ -24,21 +25,38 @@ type UpdatePayload = Omit<BackendState<Record<string, unknown>>, 'act'> & {
 };
 
 let resumeRequest = 0;
+type PendingResume = {
+  request: number;
+  generation: number | undefined;
+  interfaceName: string | undefined;
+  latestPayload: UpdatePayload;
+};
+let pendingResume: PendingResume | undefined;
 
 /** Invalidates an on-demand load when the server suspends or reuses the shell. */
 export function cancelPendingResume(): void {
   resumeRequest++;
+  pendingResume = undefined;
 }
 
 export function update(payload: UpdatePayload): void {
   const wasSuspended = Boolean(store.get(suspendedAtom));
   const interfaceName = payload.config?.interface?.name;
+  const generation = payload.config?.window?.generation;
   const previousInterface = store.get(configAtom)?.interface?.name;
+  const coalescingResume = Boolean(
+    wasSuspended &&
+      pendingResume &&
+      pendingResume.generation === generation &&
+      pendingResume.interfaceName === interfaceName,
+  );
+  const beginningResume = wasSuspended && !coalescingResume;
+  installChunkPublicPath(payload.config?.chunk_base_url);
   const profiling = Boolean(
     payload.config?.client?.profiling ||
       store.get(configAtom)?.client?.profiling,
   );
-  if (profiling && wasSuspended) {
+  if (profiling && beginningResume) {
     profileTransition(
       'backend-received',
       {
@@ -49,14 +67,31 @@ export function update(payload: UpdatePayload): void {
       },
       true,
     );
+  } else if (profiling && coalescingResume) {
+    profileTransition('backend-update-coalesced-during-resume', {
+      next_interface: interfaceName,
+      next_generation: generation,
+    });
   }
   const profileStart = profiling ? (performance.now?.() ?? Date.now()) : 0;
-  if (profiling && wasSuspended) {
+  if (profiling && beginningResume) {
     profileStartup('backend_received', interfaceName, {
       bytes: JSON.stringify(payload).length,
       prewarmed: Boolean(payload.config?.window?.prewarmed),
       nativeShell: Boolean(payload.config?.window?.native_shell),
       generation: payload.config?.window?.generation,
+    });
+  }
+  if (profiling && beginningResume && payload.config?.startup_profile) {
+    profileStartup('server_profile', interfaceName, {
+      ...Object.fromEntries(
+        Object.entries(payload.config.startup_profile).map(([key, value]) => [
+          key,
+          value !== null && typeof value === 'object'
+            ? JSON.stringify(value)
+            : (value as string | number | boolean | undefined),
+        ]),
+      ),
     });
   }
   if (profiling && payload.data?.dq_server_profile) {
@@ -80,39 +115,51 @@ export function update(payload: UpdatePayload): void {
   // which appears as a wrong-sized/positioned cold-open flash.
   updateData(payload);
   if (wasSuspended) {
-    const request = ++resumeRequest;
-    const generation = payload.config?.window?.generation;
-    // Start storage and route I/O together. Window.tsx will await the already
-    // running geometry request once the route supplies its default dimensions.
-    prepareWindowGeometry(payload.config?.window?.key);
-    const preparation = prepareRequestedInterface(interfaceName);
-    const finishResume = () => {
-      const currentConfig = store.get(configAtom);
-      if (
-        request !== resumeRequest ||
-        !store.get(suspendedAtom) ||
-        currentConfig.interface?.name !== interfaceName ||
-        currentConfig.window?.generation !== generation
-      ) {
-        return;
-      }
-      if (profiling) {
-        profileStartup('interface_preparation_finished', interfaceName);
-      }
-      resume(payload);
-      store.set(suspendedAtom, false);
-      if (profiling) profileTransition('backend-applied-and-unsuspended');
-    };
-    if (preparation) {
-      if (profiling) {
-        profileStartup('interface_preparation_started', interfaceName);
-      }
-      preparation.then(finishResume, (error) => {
-        logger.error(`failed to prepare interface ${interfaceName}`, error);
-        finishResume();
-      });
+    if (coalescingResume && pendingResume) {
+      pendingResume.latestPayload = payload;
     } else {
-      finishResume();
+      const request = ++resumeRequest;
+      const resumeState: PendingResume = {
+        request,
+        generation,
+        interfaceName,
+        latestPayload: payload,
+      };
+      pendingResume = resumeState;
+      // Start storage and route I/O together. Window.tsx will await the already
+      // running geometry request once the route supplies its default dimensions.
+      prepareWindowGeometry(payload.config?.window?.key);
+      const preparation = prepareRequestedInterface(interfaceName);
+      const finishResume = () => {
+        const currentConfig = store.get(configAtom);
+        if (
+          pendingResume !== resumeState ||
+          request !== resumeRequest ||
+          !store.get(suspendedAtom) ||
+          currentConfig.interface?.name !== interfaceName ||
+          currentConfig.window?.generation !== generation
+        ) {
+          return;
+        }
+        pendingResume = undefined;
+        if (profiling) {
+          profileStartup('interface_preparation_finished', interfaceName);
+        }
+        resume(resumeState.latestPayload);
+        store.set(suspendedAtom, false);
+        if (profiling) profileTransition('backend-applied-and-unsuspended');
+      };
+      if (preparation) {
+        if (profiling) {
+          profileStartup('interface_preparation_started', interfaceName);
+        }
+        preparation.then(finishResume, (error) => {
+          logger.error(`failed to prepare interface ${interfaceName}`, error);
+          finishResume();
+        });
+      } else {
+        finishResume();
+      }
     }
   }
   if (profiling) {
@@ -123,7 +170,7 @@ export function update(payload: UpdatePayload): void {
       profileFinish - profileStart,
       payloadFieldBreakdown(payload, payloadJson.length),
     );
-    if (wasSuspended) {
+    if (beginningResume) {
       profileStartup('backend_applied', interfaceName, {
         duration: profileFinish - profileStart,
       });

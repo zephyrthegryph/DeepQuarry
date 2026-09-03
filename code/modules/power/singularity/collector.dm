@@ -73,24 +73,6 @@
 		W.loc = src
 		update_icons()
 		return 1
-	else if(W.has_tool_quality(TOOL_CROWBAR))
-		if(P && !src.locked)
-			eject()
-			return 1
-	else if(W.has_tool_quality(TOOL_WRENCH))
-		if(P)
-			to_chat(user, span_blue("Remove the phoron tank first."))
-			return 1
-		playsound(src, W.usesound, 75, 1)
-		src.anchored = !src.anchored
-		user.visible_message("[user.name] [anchored? "secures":"unsecures"] the [src.name].", \
-			"You [anchored? "secure":"undo"] the external bolts.", \
-			"You hear a ratchet.")
-		if(anchored)
-			connect_to_network()
-		else
-			disconnect_from_network()
-		return 1
 	else if(istype(W, /obj/item/card/id)||istype(W, /obj/item/pda))
 		if (src.allowed(user))
 			if(active)
@@ -103,6 +85,27 @@
 			to_chat(user, span_red("Access denied!"))
 		return 1
 	return ..()
+
+/obj/machinery/power/rad_collector/crowbar_act(mob/user, obj/item/W)
+	if(P && !locked)
+		eject()
+		return ITEM_INTERACT_SUCCESS
+	return ITEM_INTERACT_BLOCKING
+
+/obj/machinery/power/rad_collector/wrench_act(mob/user, obj/item/W)
+	if(P)
+		to_chat(user, span_blue("Remove the phoron tank first."))
+		return ITEM_INTERACT_BLOCKING
+	playsound(src, W.usesound, 75, 1)
+	anchored = !anchored
+	user.visible_message("[user.name] [anchored ? "secures" : "unsecures"] the [src.name].", \
+		"You [anchored ? "secure" : "undo"] the external bolts.", \
+		"You hear a ratchet.")
+	if(anchored)
+		connect_to_network()
+	else
+		disconnect_from_network()
+	return ITEM_INTERACT_SUCCESS
 
 /obj/machinery/power/rad_collector/examine(mob/user)
 	. = ..()

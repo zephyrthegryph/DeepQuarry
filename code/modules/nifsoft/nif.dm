@@ -236,13 +236,7 @@ You can also set the stat of a NIF to NIF_TEMPFAIL without any issues to disable
 
 //Attackby proc, for maintenance
 /obj/item/nif/attackby(obj/item/W, mob/user as mob)
-	if(open == 0 && W.has_tool_quality(TOOL_SCREWDRIVER))
-		if(do_after(user, 4 SECONDS, target = src) && open == 0)
-			user.visible_message("[user] unscrews and pries open \the [src].",span_notice("You unscrew and pry open \the [src]."))
-			playsound(src, 'sound/items/Screwdriver.ogg', 50, 1)
-			open = 1
-			update_icon()
-	else if(open == 1 && istype(W,/obj/item/stack/cable_coil))
+	if(open == 1 && istype(W,/obj/item/stack/cable_coil))
 		var/obj/item/stack/cable_coil/C = W
 		if(C.get_amount() < 3)
 			to_chat(user,span_warning("You need at least three coils of wire to add them to \the [src]."))
@@ -257,19 +251,36 @@ You can also set the stat of a NIF to NIF_TEMPFAIL without any issues to disable
 			playsound(src, 'sound/items/Deconstruct.ogg', 50, 1)
 			open = 2
 			update_icon()
-	else if(open == 2 && istype(W,/obj/item/multitool))
-		if(do_after(user, 8 SECONDS, target = src) && open == 2)
-			user.visible_message("[user] resets several circuits in \the [src].",span_notice("You find and repair any faulty circuits in \the [src]."))
-			open = 3
+	else
+		return ..()
+
+/obj/item/nif/screwdriver_act(mob/user, obj/item/tool)
+	if(open == 0)
+		if(do_after(user, 4 SECONDS, target = src) && open == 0)
+			user.visible_message("[user] unscrews and pries open \the [src].",span_notice("You unscrew and pry open \the [src]."))
+			playsound(src, tool.usesound, 50, 1)
+			open = 1
 			update_icon()
-	else if(open == 3 && W.has_tool_quality(TOOL_SCREWDRIVER))
+		return ITEM_INTERACT_SUCCESS
+	if(open == 3)
 		if(do_after(user, 3 SECONDS, target = src) && open == 3)
 			user.visible_message("[user] closes up \the [src].",span_notice("You re-seal \the [src] for use once more."))
-			playsound(src, 'sound/items/Screwdriver.ogg', 50, 1)
+			playsound(src, tool.usesound, 50, 1)
 			open = FALSE
 			repair(initial(durability))
 			stat = NIF_PREINSTALL
 			update_icon()
+		return ITEM_INTERACT_SUCCESS
+	return ITEM_INTERACT_BLOCKING
+
+/obj/item/nif/multitool_act(mob/user, obj/item/tool)
+	if(open != 2)
+		return ITEM_INTERACT_BLOCKING
+	if(do_after(user, 8 SECONDS, target = src) && open == 2)
+		user.visible_message("[user] resets several circuits in \the [src].",span_notice("You find and repair any faulty circuits in \the [src]."))
+		open = 3
+		update_icon()
+	return ITEM_INTERACT_SUCCESS
 
 //Icon updating
 /obj/item/nif/update_icon()

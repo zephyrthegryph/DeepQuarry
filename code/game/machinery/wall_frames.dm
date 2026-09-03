@@ -17,12 +17,10 @@
 	if(!frame_types_wall)
 		frame_types_wall = GLOB.construction_frame_wall
 
-/obj/item/frame/attackby(obj/item/W as obj, mob/user as mob)
-	if(W.has_tool_quality(TOOL_WRENCH))
-		new refund_type(get_turf(src.loc), refund_amt)
-		qdel(src)
-		return
-	..()
+/obj/item/frame/wrench_act(mob/user, obj/item/tool)
+	new refund_type(get_turf(src), refund_amt)
+	qdel(src)
+	return ITEM_INTERACT_SUCCESS
 
 /obj/item/frame/attack_self(mob/user)
 	. = ..(user)

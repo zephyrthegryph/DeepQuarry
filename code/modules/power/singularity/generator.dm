@@ -24,29 +24,6 @@
 		if(src) qdel(src)
 
 /obj/machinery/the_singularitygen/attackby(obj/item/W, mob/user)
-	if(W.has_tool_quality(TOOL_WRENCH))
-		anchored = !anchored
-		playsound(src, W.usesound, 75, 1)
-		if(anchored)
-			user.visible_message("[user.name] secures [src.name] to the floor.", \
-				"You secure the [src.name] to the floor.", \
-				"You hear a ratchet.")
-		else
-			user.visible_message("[user.name] unsecures [src.name] from the floor.", \
-				"You unsecure the [src.name] from the floor.", \
-				"You hear a ratchet.")
-		return
-	if(W.has_tool_quality(TOOL_SCREWDRIVER))
-		panel_open = !panel_open
-		playsound(src, W.usesound, 50, 1)
-		visible_message(span_infoplain(span_bold("\The [user]") + " adjusts \the [src]'s mechanisms."))
-		if(panel_open && do_after(user, 3 SECONDS, target = src))
-			to_chat(user, span_notice("\The [src] looks like it could be modified."))
-			if(panel_open && do_after(user, 8 SECONDS * W.toolspeed, target = src))	// We don't have skills, so a delayed hint for engineers will have to do for now. (Panel open check for sanity)
-				playsound(src, W.usesound, 50, 1)
-				to_chat(user, span_cult("\The [src] looks like it could be adapted to forge advanced materials via particle acceleration, somehow.."))
-		else
-			to_chat(user, span_notice("\The [src]'s mechanisms look secure."))
 	if(istype(W, /obj/item/smes_coil/super_io) && panel_open)
 		visible_message(span_infoplain(span_bold("\The [user]") + " begins to modify \the [src] with \the [W]."))
 		if(do_after(user, 30 SECONDS, target = src))
@@ -58,3 +35,24 @@
 			new new_machine(T)
 			qdel(src)
 	return ..()
+
+/obj/machinery/the_singularitygen/wrench_act(mob/user, obj/item/W)
+	anchored = !anchored
+	playsound(src, W.usesound, 75, 1)
+	user.visible_message("[user.name] [anchored ? "secures" : "unsecures"] [src.name] to the floor.", \
+		"You [anchored ? "secure" : "unsecure"] the [src.name] to the floor.", \
+		"You hear a ratchet.")
+	return ITEM_INTERACT_SUCCESS
+
+/obj/machinery/the_singularitygen/screwdriver_act(mob/user, obj/item/W)
+	panel_open = !panel_open
+	playsound(src, W.usesound, 50, 1)
+	visible_message(span_infoplain(span_bold("\The [user]") + " adjusts \the [src]'s mechanisms."))
+	if(panel_open && do_after(user, 3 SECONDS, target = src))
+		to_chat(user, span_notice("\The [src] looks like it could be modified."))
+		if(panel_open && do_after(user, 8 SECONDS * W.toolspeed, target = src))
+			playsound(src, W.usesound, 50, 1)
+			to_chat(user, span_cult("\The [src] looks like it could be adapted to forge advanced materials via particle acceleration, somehow.."))
+	else
+		to_chat(user, span_notice("\The [src]'s mechanisms look secure."))
+	return ITEM_INTERACT_SUCCESS

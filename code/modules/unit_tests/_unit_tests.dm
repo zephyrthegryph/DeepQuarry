@@ -100,6 +100,7 @@
 #include "focus_only_tests.dm"
 #include "font_awesome_icons.dm"
 #include "genetics_tests.dm"
+#include "interaction_tests.dm"
 #include "language_tests.dm"
 #include "loadout_tests.dm"
 #include "map_tests.dm"
@@ -158,10 +159,12 @@
 #include "dq_gc_tests.dm"
 #include "dq_medical_tests.dm"
 #include "dq_melee_swing_tests.dm"
+#include "dq_movement_tests.dm"
 #include "dq_material_science_tests.dm"
 #include "dq_preferences_tests.dm"
 #include "dq_shuttle_tests.dm"
 #include "dq_surgery_tests.dm"
+#include "dq_wires_tests.dm"
 #include "xgm_total_moles_test.dm"
 // END_INCLUDE
 #ifdef REFERENCE_TRACKING_DEBUG //Don't try and parse this file if ref tracking isn't turned on. IE: don't parse ref tracking please mr linter

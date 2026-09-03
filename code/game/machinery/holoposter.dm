@@ -80,28 +80,27 @@ GLOBAL_LIST_EMPTY(holoposters)
 	icon_state = pick(postertypes)
 	update_icon()
 
-/obj/machinery/holoposter/attackby(obj/item/W, mob/user)
+/obj/machinery/holoposter/multitool_act(mob/user, obj/item/tool)
 	src.add_fingerprint(user)
 	if(stat & (NOPOWER))
-		return
-	if (W.has_tool_quality(TOOL_MULTITOOL))
-		playsound(src, 'sound/items/penclick.ogg', 60, 1)
-		icon_state = tgui_input_list(user, "Available Posters", "Holographic Poster", postertypes + "random")
-		if(!Adjacent(user))
-			return
-		if(icon_state == "random")
-			stat &= ~BROKEN
-			icon_forced = FALSE
-			if(!mytimer)
-				mytimer = addtimer(CALLBACK(src, PROC_REF(set_rand_sprite)), 30 MINUTES + rand(0, 5 MINUTES), TIMER_STOPPABLE | TIMER_LOOP)
-			set_rand_sprite()
-			return
-		icon_forced = TRUE
-		if(mytimer)
-			deltimer(mytimer)
+		return ITEM_INTERACT_BLOCKING
+	playsound(src, 'sound/items/penclick.ogg', 60, TRUE)
+	icon_state = tgui_input_list(user, "Available Posters", "Holographic Poster", postertypes + "random")
+	if(!Adjacent(user))
+		return ITEM_INTERACT_BLOCKING
+	if(icon_state == "random")
 		stat &= ~BROKEN
-		update_icon()
-		return
+		icon_forced = FALSE
+		if(!mytimer)
+			mytimer = addtimer(CALLBACK(src, PROC_REF(set_rand_sprite)), 30 MINUTES + rand(0, 5 MINUTES), TIMER_STOPPABLE | TIMER_LOOP)
+		set_rand_sprite()
+		return ITEM_INTERACT_SUCCESS
+	icon_forced = TRUE
+	if(mytimer)
+		deltimer(mytimer)
+	stat &= ~BROKEN
+	update_icon()
+	return ITEM_INTERACT_SUCCESS
 
 /obj/machinery/holoposter/attack_ai(mob/user as mob)
 	return attack_hand(user)

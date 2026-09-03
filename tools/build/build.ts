@@ -7,7 +7,7 @@
  * https://github.com/stylemistake/juke-build
  */
 
-import { spawnSync } from 'node:child_process';
+import { spawn, spawnSync } from 'node:child_process';
 import fs from 'node:fs';
 import Juke from './juke/index.js';
 import { bun, bunRoot } from './lib/bun';
@@ -560,6 +560,7 @@ const TGUI_ENTRY_BUNDLES = [
   'tgui/public/tgui-say.bundle.css',
 ];
 const TGUI_CHUNK_MANIFEST = 'tgui/public/tgui-chunk-manifest.json';
+const TGUI_WINDOW_MANIFEST = 'tgui/public/tgui-window-manifest.json';
 
 // True only if the tgui bundle in public/ is COMPLETE: the entry bundles exist and
 // are non-empty, the chunk manifest parses, and every interface chunk it references
@@ -582,9 +583,20 @@ const tguiBundleComplete = (): boolean => {
   if (!nonEmpty(TGUI_CHUNK_MANIFEST)) {
     return false;
   }
+  if (!nonEmpty(TGUI_WINDOW_MANIFEST)) {
+    return false;
+  }
   let manifest: Record<string, string[]>;
   try {
     manifest = JSON.parse(fs.readFileSync(TGUI_CHUNK_MANIFEST, 'utf8'));
+    const geometry = JSON.parse(
+      fs.readFileSync(TGUI_WINDOW_MANIFEST, 'utf8'),
+    ) as Record<string, { width: number; height: number; exact: boolean }>;
+    if (!Object.keys(geometry).length) return false;
+    for (const interfaceName of Object.keys(manifest)) {
+      const entry = geometry[interfaceName];
+      if (!entry || entry.width <= 0 || entry.height <= 0) return false;
+    }
   } catch {
     return false;
   }
@@ -619,6 +631,7 @@ export const TguiTarget = new Juke.Target({
     // files are content-id'd and numerous, so they aren't listed literally — instead
     // tguiBundleComplete() validates them (see onlyWhen / executes below).
     'tgui/public/tgui-chunk-manifest.json',
+    'tgui/public/tgui-window-manifest.json',
   ],
   // Runs before the mtime dirty-check. If the existing bundle is incomplete (a chunk
   // the manifest references is missing/empty), drop the tracked entry bundles so the
@@ -753,7 +766,28 @@ export const ServerTarget = new Juke.Target({
       dmbFile: `${DME_NAME}.dmb`,
       namedDmVersion: get(DmVersionParameter),
     };
-    await DreamDaemon(options, port, '-trusted', '-invisible');
+    const webroot = spawn(
+      process.platform === 'win32' ? 'python' : 'python3',
+      ['tools/localhost-asset-webroot-server.py'],
+      { stdio: 'ignore', windowsHide: true },
+    );
+    webroot.on('error', () => {
+      Juke.logger.warn(
+        'Could not start the local asset webroot; use the configured external webroot.',
+      );
+    });
+    try {
+      await DreamDaemon(
+        options,
+        port,
+        '-trusted',
+        '-invisible',
+        '-params',
+        'config-directory=config/example',
+      );
+    } finally {
+      webroot.kill();
+    }
   },
 });
 

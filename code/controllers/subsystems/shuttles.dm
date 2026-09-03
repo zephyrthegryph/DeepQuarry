@@ -21,6 +21,7 @@ SUBSYSTEM_DEF(shuttles)
 
 	var/list/shuttles = list()                     // Maps shuttle tags to shuttle datums, so that they can be looked up.
 	var/list/process_shuttles = list()             // Simple list of shuttles, for processing
+	var/list/active_process_shuttles = list()      // Event-driven working set; idle shuttles stay in the registry only.
 
 	var/list/registered_shuttle_landmarks = list() // Maps shuttle landmark tags to instances
 	var/last_landmark_registration_time            // world.time of most recent addition to registered_shuttle_landmarks
@@ -35,6 +36,17 @@ SUBSYSTEM_DEF(shuttles)
 	var/block_init_queue = TRUE                    // Block initialization of new shuttles/sectors
 
 	var/tmp/list/current_run                       // Shuttles remaining to process this fire() tick
+
+	// Lightweight cumulative work accounting. Timing only wraps shuttles that
+	// actually process; idle registry scans remain counter-only.
+	var/profile_entries_scanned = 0
+	var/profile_process_calls = 0
+	var/profile_idle_skips = 0
+	var/profile_kills = 0
+	var/profile_bad_entries = 0
+	var/profile_yields = 0
+	var/list/profile_type_cost_ms = list()
+	var/list/profile_type_calls = list()
 
 /datum/controller/subsystem/shuttles/Initialize()
 	last_landmark_registration_time = world.time
@@ -51,21 +63,63 @@ SUBSYSTEM_DEF(shuttles)
 
 /datum/controller/subsystem/shuttles/fire(resumed = 0)
 	if (!resumed)
-		src.current_run = process_shuttles.Copy()
+		src.current_run = active_process_shuttles.Copy()
 
 	var/list/working_shuttles = src.current_run // Cache for sanic speed
 	while(length(working_shuttles))
 		var/datum/shuttle/S = working_shuttles[length(working_shuttles)]
 		working_shuttles.len--
+		profile_entries_scanned++
 		if(!istype(S) || QDELETED(S))
+			profile_bad_entries++
 			log_world("## ERROR Bad entry in SSshuttles.process_shuttles - [log_info_line(S)] ")
 			process_shuttles -= S
+			active_process_shuttles -= S
 			continue
-		if((S.process_state || S.always_process) && (S.process(wait, times_fired, src) == PROCESS_KILL))
-			process_shuttles -= S
+		if(S.process_state || S.always_process)
+			var/profile_start = TICK_USAGE
+			var/process_result = S.process(wait, times_fired, src)
+			var/type_key = "[S.type]"
+			profile_type_cost_ms[type_key] += TICK_DELTA_TO_MS(TICK_USAGE - profile_start)
+			profile_type_calls[type_key]++
+			profile_process_calls++
+			if(process_result == PROCESS_KILL)
+				profile_kills++
+				S.set_process_state(IDLE_STATE)
 
 		if(MC_TICK_CHECK)
+			profile_yields++
 			return
+
+/datum/controller/subsystem/shuttles/proc/performance_diagnostics()
+	var/list/type_costs = profile_type_cost_ms.Copy()
+	sortTim(type_costs, /proc/cmp_numeric_desc, TRUE)
+	if(length(type_costs) > 10)
+		type_costs.Cut(11)
+	var/active = 0
+	var/always = 0
+	for(var/datum/shuttle/S as anything in process_shuttles)
+		if(!S || QDELETED(S))
+			continue
+		if(S.process_state)
+			active++
+		if(S.always_process)
+			always++
+	return list(
+		"counts" = list("registered" = length(shuttles), "processing" = length(process_shuttles), "current" = length(current_run), "ships" = length(ships), "landmarks" = length(registered_shuttle_landmarks), "active" = active, "always" = always),
+		"work" = list("entries_scanned" = profile_entries_scanned, "process_calls" = profile_process_calls, "idle_skips" = profile_idle_skips, "kills" = profile_kills, "bad_entries" = profile_bad_entries, "yields" = profile_yields),
+		"top_type_cost_ms" = type_costs,
+		"type_calls" = profile_type_calls.Copy(),
+	)
+
+/datum/controller/subsystem/shuttles/proc/refresh_processing_shuttle(datum/shuttle/shuttle)
+	if(!shuttle || QDELETED(shuttle) || !(shuttle.flags & SHUTTLE_FLAGS_PROCESS))
+		active_process_shuttles -= shuttle
+		return
+	if(shuttle.always_process || shuttle.process_state != IDLE_STATE)
+		active_process_shuttles |= shuttle
+	else
+		active_process_shuttles -= shuttle
 
 /datum/controller/subsystem/shuttles/proc/process_init_queues()
 	if(block_init_queue)

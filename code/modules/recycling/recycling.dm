@@ -3,6 +3,7 @@
 	active_power_usage = 500
 	density = TRUE
 	anchored = TRUE
+	maintenance_flags = MACHINE_MAINT_STANDARD
 
 	var/working = FALSE
 	var/negative_dir = null // ition
@@ -32,10 +33,6 @@
 		to_chat(user, span_warning("\The [src] is busy! Wait until it's idle."))
 		return
 
-	if(default_deconstruction_screwdriver(user, O))
-		return
-	if(default_deconstruction_crowbar(user, O))
-		return
 	if(default_part_replacement(user, O))
 		return
 	if(!hand_fed)

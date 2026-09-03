@@ -1,7 +1,6 @@
 /datum/material/wood
 	name = MAT_WOOD
 	stack_type = /obj/item/stack/material/wood
-	material_class = MATCLASS_ORGANIC
 	icon_colour = "#9c5930"
 	integrity = 50
 	icon_base = "wood"

@@ -11,10 +11,12 @@ describe('HtmlRenderer sanitizers', () => {
     expect(isSafeHtmlImageSrc('icons/ui/example.png')).toBe(true);
     expect(isSafeHtmlImageSrc('data:image/png;base64,QUJDRA==')).toBe(true);
     expect(isSafeHtmlImageSrc('javascript:alert(1)')).toBe(false);
-    expect(
-      isSafeHtmlImageSrc('data:image/svg+xml,<svg onload=alert(1)>'),
-    ).toBe(false);
-    expect(isSafeHtmlImageSrc('https://attacker.invalid/pixel.png')).toBe(false);
+    expect(isSafeHtmlImageSrc('data:image/svg+xml,<svg onload=alert(1)>')).toBe(
+      false,
+    );
+    expect(isSafeHtmlImageSrc('https://attacker.invalid/pixel.png')).toBe(
+      false,
+    );
   });
 
   it('rejects CSS-bearing color and font values', () => {

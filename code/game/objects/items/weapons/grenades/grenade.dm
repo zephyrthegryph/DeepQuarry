@@ -98,24 +98,22 @@
 		SSmotiontracker.ping(src,100)
 
 
-/obj/item/grenade/attackby(obj/item/W as obj, mob/user as mob)
-	if(W.has_tool_quality(TOOL_SCREWDRIVER))
-		switch(det_time)
-			if (1)
-				det_time = 10
-				to_chat(user, span_notice("You set the [name] for 1 second detonation time."))
-			if (10)
-				det_time = 30
-				to_chat(user, span_notice("You set the [name] for 3 second detonation time."))
-			if (30)
-				det_time = 50
-				to_chat(user, span_notice("You set the [name] for 5 second detonation time."))
-			if (50)
-				det_time = 1
-				to_chat(user, span_notice("You set the [name] for instant detonation."))
-		add_fingerprint(user)
-	..()
-	return
+/obj/item/grenade/screwdriver_act(mob/user, obj/item/tool)
+	switch(det_time)
+		if(1)
+			det_time = 10
+			to_chat(user, span_notice("You set the [name] for 1 second detonation time."))
+		if(10)
+			det_time = 30
+			to_chat(user, span_notice("You set the [name] for 3 second detonation time."))
+		if(30)
+			det_time = 50
+			to_chat(user, span_notice("You set the [name] for 5 second detonation time."))
+		if(50)
+			det_time = 1
+			to_chat(user, span_notice("You set the [name] for instant detonation."))
+	add_fingerprint(user)
+	return ITEM_INTERACT_SUCCESS
 
 /obj/item/grenade/attack_hand()
 	walk(src, null, null)

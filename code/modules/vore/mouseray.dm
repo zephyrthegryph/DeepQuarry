@@ -260,17 +260,16 @@
 	name = "unstable metamorphosis ray"
 	tf_allow_select = FALSE
 
-/obj/item/gun/energy/mouseray/metamorphosis/advanced/random/attackby(obj/item/A as obj, mob/user as mob)
-	if(A.has_tool_quality(TOOL_MULTITOOL))
-		if(tf_allow_select)
-			to_chat(user, span_warning("You scramble the stored data on \the [src], making it less reliable."))
-			tf_allow_select = FALSE
-			name = "unstable metamorphosis ray"
-		else
-			to_chat(user, span_warning("You repair the damage to the \the [src]."))
-			tf_allow_select = TRUE
-			name = "stable metamorphosis ray"
-	..()
+/obj/item/gun/energy/mouseray/metamorphosis/advanced/random/multitool_act(mob/user, obj/item/tool)
+	if(tf_allow_select)
+		to_chat(user, span_warning("You scramble the stored data on \the [src], making it less reliable."))
+		tf_allow_select = FALSE
+		name = "unstable metamorphosis ray"
+	else
+		to_chat(user, span_warning("You repair the damage to \the [src]."))
+		tf_allow_select = TRUE
+		name = "stable metamorphosis ray"
+	return ITEM_INTERACT_SUCCESS
 
 /obj/item/gun/energy/mouseray/metamorphosis/advanced/random/Fire(atom/target, mob/living/user, clickparams, pointblank, reflex)
 	if(world.time < cooldown)

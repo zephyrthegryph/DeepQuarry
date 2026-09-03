@@ -101,7 +101,7 @@
 	if(WR?.reference)
 		SSmachines.sleeping_gas_devices.Remove(WR.reference)
 
-/obj/machinery/disposal/proc/gas_dependency_changed(mixture_id, change_mask)
+/obj/machinery/disposal/gas_dependency_changed(mixture_id, change_mask)
 	if(!(change_mask & GAS_DEPENDENCY_PRESSURE) || mixture_id != sleeping_turf_mixture_id || mode != DISPOSALMODE_CHARGING || (stat & (NOPOWER|BROKEN)))
 		return FALSE
 	var/datum/gas_mixture/environment = loc.return_air()
@@ -110,6 +110,9 @@
 	if(environment.revision() == sleeping_turf_revision)
 		return FALSE
 	return can_pressurize_from(environment)
+
+/obj/machinery/disposal/gas_dependency_interest_mask()
+	return GAS_DEPENDENCY_PRESSURE
 
 /obj/machinery/disposal/proc/can_pressurize_from(datum/gas_mixture/environment)
 	if(!air_contents || !environment || environment.return_temperature() <= 0 || environment.total_moles() < MINIMUM_MOLES_TO_PUMP)
@@ -132,42 +135,6 @@
 		return
 
 	add_fingerprint(user)
-	if(mode <= DISPOSALMODE_OFF) // It's off
-		if(I.has_tool_quality(TOOL_MULTITOOL))
-			alter_bin_type(user)
-			return
-		else if(I.has_tool_quality(TOOL_SCREWDRIVER))
-			if(contents.len > 0)
-				to_chat(user, "Eject the items first!")
-				return
-			if(mode == DISPOSALMODE_OFF) // It's off but still not unscrewed
-				mode = DISPOSALMODE_EJECTONLY // Set it to doubleoff l0l
-				playsound(src, I.usesound, 50, 1)
-				to_chat(user, "You remove the screws around the power connection.")
-				return
-			else if(mode == DISPOSALMODE_EJECTONLY)
-				mode = DISPOSALMODE_OFF
-				playsound(src, I.usesound, 50, 1)
-				to_chat(user, "You attach the screws around the power connection.")
-				return
-		else if(I.has_tool_quality(TOOL_WELDER) && mode == DISPOSALMODE_EJECTONLY)
-			if(contents.len > 0)
-				to_chat(user, "Eject the items first!")
-				return
-			var/obj/item/weldingtool/W = I.get_welder()
-			if(W.remove_fuel(0,user))
-				playsound(src, W.usesound, 100, 1)
-				to_chat(user, "You start slicing the floorweld off the disposal unit.")
-
-				if(do_after(user, 2 SECONDS * W.toolspeed, target = src))
-					if(!src || !W.isOn()) return
-					to_chat(user, "You sliced the floorweld off the disposal unit.")
-					atom_deconstruct(TRUE)
-				return
-			else
-				to_chat(user, "You need more welding fuel to complete this task.")
-				return
-
 
 	if(istype(I, /obj/item/storage/bag/trash))
 		var/obj/item/storage/bag/trash/T = I
@@ -231,6 +198,42 @@
 
 	user.visible_message("[user] places \the [I] into the [src].",  "You place \the [I] into the [src].","Ca-Clunk")
 	update_icon()
+
+/obj/machinery/disposal/multitool_act(mob/user, obj/item/I)
+	wake_for_state_change()
+	if(mode > DISPOSALMODE_OFF)
+		return ITEM_INTERACT_BLOCKING
+	alter_bin_type(user)
+	return ITEM_INTERACT_SUCCESS
+
+/obj/machinery/disposal/screwdriver_act(mob/user, obj/item/I)
+	wake_for_state_change()
+	if(mode > DISPOSALMODE_OFF || length(contents))
+		if(length(contents))
+			to_chat(user, "Eject the items first!")
+		return ITEM_INTERACT_BLOCKING
+	mode = mode == DISPOSALMODE_OFF ? DISPOSALMODE_EJECTONLY : DISPOSALMODE_OFF
+	playsound(src, I.usesound, 50, 1)
+	to_chat(user, "You [mode == DISPOSALMODE_EJECTONLY ? "remove" : "attach"] the screws around the power connection.")
+	return ITEM_INTERACT_SUCCESS
+
+/obj/machinery/disposal/welder_act(mob/user, obj/item/I)
+	wake_for_state_change()
+	if(mode != DISPOSALMODE_EJECTONLY || length(contents))
+		if(length(contents))
+			to_chat(user, "Eject the items first!")
+		return ITEM_INTERACT_BLOCKING
+	var/obj/item/weldingtool/W = I.get_welder()
+	if(!W.remove_fuel(0,user))
+		to_chat(user, "You need more welding fuel to complete this task.")
+		return ITEM_INTERACT_BLOCKING
+	playsound(src, W.usesound, 100, 1)
+	to_chat(user, "You start slicing the floorweld off the disposal unit.")
+	if(do_after(user, 2 SECONDS * W.toolspeed, target = src))
+		if(!src || !W.isOn()) return ITEM_INTERACT_BLOCKING
+		to_chat(user, "You sliced the floorweld off the disposal unit.")
+		atom_deconstruct(TRUE)
+	return ITEM_INTERACT_SUCCESS
 
 /obj/machinery/disposal/allow_pai_interaction(mob/living/silicon/pai/user, proximity_flag)
 	return proximity_flag

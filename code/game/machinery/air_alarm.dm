@@ -41,8 +41,12 @@
 	if(!checks.len)
 		return
 	main_air_alarm = WEAKREF(pick(checks))
+	var/obj/machinery/alarm/new_main = main_air_alarm.resolve()
 	for(var/obj/machinery/alarm/AA in checks)
-		AA.invalidate_gas_dependencies()
+		if(AA == new_main)
+			START_MACHINE_PROCESSING(AA)
+		else
+			AA.invalidate_gas_dependencies()
 		AA.update_icon()
 
 /area/proc/main_air_alarm_is_operating()
@@ -52,6 +56,7 @@
 
 
 /obj/machinery/alarm
+
 	name = "alarm"
 	desc = "Used to control various station atmospheric systems. The light indicates the current air status of the area."
 	icon = 'icons/obj/monitors_vr.dmi'
@@ -113,6 +118,9 @@
 	var/sleeping_mixture_revision = -1
 	/// Control-relevant atmospheric state captured when dependency sleeping begins.
 	var/sleeping_alarm_signature
+	/// Reused scratch output for threshold evaluation. Air alarms are numerous;
+	/// allocating a list for every harmless Rust publication dominated wake scans.
+	var/list/sleeping_signature_levels
 	/// Monotonic revision for correction-aware contract atmosphere telemetry.
 	var/contract_atmos_revision = 0
 
@@ -256,6 +264,12 @@
 	if(!MA || (stat & (NOPOWER|BROKEN)) || shorted || MA.shorted)
 		SSmachines.hibernate_air_alarm(src)
 		return
+	// Only the elected controller scans and regulates. The main alarm publishes
+	// the area's danger/icon state to every display, and elect_main_air_alarm()
+	// explicitly wakes a replacement when ownership changes.
+	if(MA != src)
+		SSmachines.hibernate_air_alarm(src, FALSE)
+		return
 	var/turf/location = get_turf(src)
 	if(!location)
 		return
@@ -279,8 +293,17 @@
 	sleeping_mixture_revision = -1
 	sleeping_alarm_signature = null
 
-/obj/machinery/alarm/proc/gas_dependency_changed(mixture_id, change_mask)
+/obj/machinery/alarm/gas_dependency_changed(mixture_id, change_mask, list/observation, observation_index)
 	if(!(change_mask & GAS_DEPENDENCY_ALL) || mixture_id != sleeping_mixture_id)
+		return FALSE
+	if(observation && observation_index)
+		var/current_revision = observation[observation_index + 2]
+		if(current_revision == sleeping_mixture_revision)
+			return FALSE
+		var/current_signature = atmospheric_control_signature_observation(observation, observation_index)
+		if(current_signature != sleeping_alarm_signature)
+			return TRUE
+		sleeping_mixture_revision = current_revision
 		return FALSE
 	var/datum/gas_mixture/environment = return_air()
 	if(!environment || environment.arena_id() != sleeping_mixture_id)
@@ -297,16 +320,49 @@
 	return FALSE
 
 /obj/machinery/alarm/proc/atmospheric_control_signature(datum/gas_mixture/environment)
-	var/list/levels = list()
-	var/current_danger = overall_danger_level(environment, levels, FALSE)
-	var/current_pressure = levels["raw_pressure"]
+	LAZYINITLIST(sleeping_signature_levels)
+	var/current_danger = overall_danger_level(environment, sleeping_signature_levels, FALSE)
+	var/current_pressure = sleeping_signature_levels["raw_pressure"]
 	var/temperature_action = 0
 	if(current_pressure >= 1)
-		var/current_temperature = levels["raw_temperature"]
+		var/current_temperature = sleeping_signature_levels["raw_temperature"]
 		if(abs(current_temperature - target_temperature) > 2.0)
 			temperature_action = current_temperature > target_temperature ? 1 : 2
 	var/cycle_ready = mode == AALARM_MODE_CYCLE && current_pressure < ONE_ATMOSPHERE * 0.05
-	return "[current_danger]:[levels["pressure"]]:[temperature_action]:[cycle_ready]"
+	// Four tiny enums fit losslessly in one number. This avoids constructing and
+	// comparing a temporary string on every dirty-gas notification.
+	return current_danger | (sleeping_signature_levels["pressure"] << 2) | (temperature_action << 4) | (cycle_ready << 6)
+
+/// Evaluate the same TLVs as overall_danger_level() from the atomic Rust
+/// observation attached to a dirty publication. No gas datum lookup or FFI call
+/// occurs in this path.
+/obj/machinery/alarm/proc/atmospheric_control_signature_observation(list/observation, observation_index)
+	var/environment_pressure = observation[observation_index + 3]
+	var/environment_temperature = observation[observation_index + 4]
+	var/environment_volume = observation[observation_index + 5]
+	var/partial_pressure = environment_volume > 0 ? R_IDEAL_GAS_EQUATION * environment_temperature / environment_volume : 0
+	DECLARE_TLV_VALUES
+	LOAD_TLV_VALUES(TLV["pressure"], environment_pressure)
+	var/calculated_pressure_level = TEST_TLV_VALUES
+	LOAD_TLV_VALUES(TLV[GAS_O2], observation[observation_index + 6] * partial_pressure)
+	var/oxygen_dangerlevel = TEST_TLV_VALUES
+	LOAD_TLV_VALUES(TLV[GAS_CO2], observation[observation_index + 7] * partial_pressure)
+	var/co2_dangerlevel = TEST_TLV_VALUES
+	LOAD_TLV_VALUES(TLV[GAS_PHORON], observation[observation_index + 8] * partial_pressure)
+	var/phoron_dangerlevel = TEST_TLV_VALUES
+	LOAD_TLV_VALUES(TLV[GAS_CH4], observation[observation_index + 9] * partial_pressure)
+	var/methane_dangerlevel = TEST_TLV_VALUES
+	LOAD_TLV_VALUES(TLV["temperature"], environment_temperature)
+	var/temperature_dangerlevel = TEST_TLV_VALUES
+	var/other_moles = observation[observation_index + 10] + observation[observation_index + 11]
+	LOAD_TLV_VALUES(TLV["other"], other_moles * partial_pressure)
+	var/other_dangerlevel = TEST_TLV_VALUES
+	var/current_danger = max(calculated_pressure_level, oxygen_dangerlevel, co2_dangerlevel, phoron_dangerlevel, methane_dangerlevel, temperature_dangerlevel, other_dangerlevel)
+	var/temperature_action = 0
+	if(environment_pressure >= 1 && abs(environment_temperature - target_temperature) > 2.0)
+		temperature_action = environment_temperature > target_temperature ? 1 : 2
+	var/cycle_ready = mode == AALARM_MODE_CYCLE && environment_pressure < ONE_ATMOSPHERE * 0.05
+	return current_danger | (calculated_pressure_level << 2) | (temperature_action << 4) | (cycle_ready << 6)
 
 /obj/machinery/alarm/proc/invalidate_gas_dependencies()
 	SSmachines.wake_gas_subscriber(WEAKREF(src))
@@ -945,14 +1001,28 @@
 /obj/machinery/alarm/attackby(obj/item/W as obj, mob/user)
 	invalidate_gas_dependencies()
 	add_fingerprint(user)
-	if(alarm_deconstruction_screwdriver(user, W))
-		return
-	if(alarm_deconstruction_wirecutters(user, W))
-		return
-
 	if(istype(W, /obj/item/card/id) || istype(W, /obj/item/pda))// trying to unlock the interface with an ID card
 		togglelock(user)
 	return ..()
+
+/obj/machinery/alarm/screwdriver_act(mob/user, obj/item/tool)
+	invalidate_gas_dependencies()
+	add_fingerprint(user)
+	playsound(src, tool.usesound, 50, TRUE)
+	panel_open = !panel_open
+	to_chat(user, "The wires have been [panel_open ? "exposed" : "unexposed"]")
+	update_icon()
+	return ITEM_INTERACT_SUCCESS
+
+/obj/machinery/alarm/wirecutter_act(mob/user, obj/item/tool)
+	invalidate_gas_dependencies()
+	add_fingerprint(user)
+	if(!panel_open)
+		return ITEM_INTERACT_BLOCKING
+	user.visible_message(span_warning("[user] has cut the wires inside \the [src]!"), "You have cut the wires inside \the [src].")
+	playsound(src, tool.usesound, 50, TRUE)
+	new /obj/item/stack/cable_coil(get_turf(src), 5)
+	return dismantle() ? ITEM_INTERACT_SUCCESS : ITEM_INTERACT_BLOCKING
 
 /obj/machinery/alarm/proc/togglelock(mob/user)
 	if(stat & (NOPOWER|BROKEN))

@@ -1,14 +1,7 @@
-// material_class added per subtype so the dynamic-material
-// system (SSquarry rolls) and downstream synergy checks have a coarse
-// classification. The legacy hardness/conductivity/integrity/weight vars
-// are unchanged; classes are purely additive metadata.
-
-
 // Very rare alloy that is reflective, should be used sparingly.
 /datum/material/durasteel
 	name = MAT_DURASTEEL
 	stack_type = /obj/item/stack/material/durasteel
-	material_class = MATCLASS_METAL
 	integrity = 600
 	melting_point = 7000
 	icon_base = "metal"
@@ -24,7 +17,6 @@
 /datum/material/titanium
 	name = MAT_TITANIUM
 	stack_type = /obj/item/stack/material/titanium
-	material_class = MATCLASS_METAL
 	conductivity = 2.38
 	icon_base = "metal"
 	door_icon_base = "metal"
@@ -41,7 +33,6 @@
 /datum/material/iron
 	name = MAT_IRON
 	stack_type = /obj/item/stack/material/iron
-	material_class = MATCLASS_METAL
 	icon_colour = "#5C5454"
 	density = 22
 	conductivity = 10
@@ -52,7 +43,6 @@
 /datum/material/lead
 	name = MAT_LEAD
 	stack_type = /obj/item/stack/material/lead
-	material_class = MATCLASS_METAL
 	icon_colour = "#273956"
 	density = 23 // Lead is a bit more dense than silver IRL, and silver has 22 ingame.
 	conductivity = 10
@@ -64,7 +54,6 @@
 /datum/material/gold
 	name = MAT_GOLD
 	stack_type = /obj/item/stack/material/gold
-	material_class = MATCLASS_METAL
 	icon_colour = "#EDD12F"
 	density = 24
 	hardness = 40
@@ -76,7 +65,6 @@
 /datum/material/silver
 	name = MAT_SILVER
 	stack_type = /obj/item/stack/material/silver
-	material_class = MATCLASS_METAL
 	icon_colour = "#D1E6E3"
 	density = 22
 	hardness = 50
@@ -88,7 +76,6 @@
 /datum/material/platinum
 	name = MAT_PLATINUM
 	stack_type = /obj/item/stack/material/platinum
-	material_class = MATCLASS_METAL
 	icon_colour = "#9999FF"
 	density = 27
 	conductivity = 9.43
@@ -99,7 +86,6 @@
 /datum/material/uranium
 	name = MAT_URANIUM
 	stack_type = /obj/item/stack/material/uranium
-	material_class = MATCLASS_METAL
 	icon_base = "stone"
 	icon_reinf = "reinf_stone"
 	icon_colour = "#007A00"
@@ -115,7 +101,6 @@
 	name = MAT_METALHYDROGEN
 	display_name = "metallic hydrogen"
 	stack_type = /obj/item/stack/material/mhydrogen
-	material_class = MATCLASS_METAL
 	icon_colour = "#E6C5DE"
 	conductivity = 100
 	is_fusion_fuel = 1
@@ -124,7 +109,6 @@
 /datum/material/deuterium
 	name = MAT_DEUTERIUM
 	stack_type = /obj/item/stack/material/deuterium
-	material_class = MATCLASS_METAL
 	icon_colour = "#999999"
 	sheet_singular_name = "ingot"
 	sheet_plural_name = "ingots"
@@ -135,7 +119,6 @@
 /datum/material/tritium
 	name = MAT_TRITIUM
 	stack_type = /obj/item/stack/material/tritium
-	material_class = MATCLASS_METAL
 	icon_colour = "#777777"
 	sheet_singular_name = "ingot"
 	sheet_plural_name = "ingots"
@@ -146,7 +129,6 @@
 /datum/material/osmium
 	name = MAT_OSMIUM
 	stack_type = /obj/item/stack/material/osmium
-	material_class = MATCLASS_METAL
 	icon_colour = "#9999FF"
 	sheet_singular_name = "ingot"
 	sheet_plural_name = "ingots"
@@ -156,7 +138,6 @@
 /datum/material/graphite
 	name = MAT_GRAPHITE
 	stack_type = /obj/item/stack/material/graphite
-	material_class = MATCLASS_METAL
 	flags = MATERIAL_BRITTLE
 	icon_base = "solid"
 	table_icon_base = "stone"
@@ -174,7 +155,6 @@
 /datum/material/bronze
 	name = MAT_BRONZE
 	stack_type = /obj/item/stack/material/bronze
-	material_class = MATCLASS_METAL
 	icon_colour = "#EDD12F"
 	icon_base = "solid"
 	icon_reinf = "reinf_over"
@@ -188,7 +168,6 @@
 	display_name = MAT_TIN
 	use_name = MAT_TIN
 	stack_type = /obj/item/stack/material/tin
-	material_class = MATCLASS_METAL
 	icon_colour = "#b2afaf"
 	sheet_singular_name = "ingot"
 	sheet_plural_name = "ingots"
@@ -201,7 +180,6 @@
 	display_name = MAT_COPPER
 	use_name = MAT_COPPER
 	stack_type = /obj/item/stack/material/copper
-	material_class = MATCLASS_METAL
 	conductivity = 52
 	icon_colour = "#af633e"
 	sheet_singular_name = "ingot"
@@ -216,7 +194,6 @@
 	use_name = MAT_ALUMINIUM
 	icon_colour = "#e5e2d0"
 	stack_type = /obj/item/stack/material/aluminium
-	material_class = MATCLASS_METAL
 	sheet_singular_name = "ingot"
 	sheet_plural_name = "ingots"
 	supply_conversion_value = 1

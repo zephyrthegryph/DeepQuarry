@@ -387,6 +387,7 @@
 
 //Note: external organs have their own version of this proc
 /obj/item/organ/take_damage(amount, silent=0)
+	owner?.dq_invalidate_medical_conditions(DQ_MEDICAL_DIRTY_ORGANS)
 	if(owner)
 		if(SEND_SIGNAL(owner, COMSIG_INTERNAL_ORGAN_PRE_DAMAGE_APPLICATION, amount, silent) & COMPONENT_CANCEL_INTERNAL_ORGAN_DAMAGE)
 			return 0

@@ -185,18 +185,54 @@
 
 	return 1
 
-/obj/machinery/atmospherics/unary/vent_scrubber/gas_dependency_changed(mixture_id, change_mask)
-	if(!..())
+/obj/machinery/atmospherics/unary/vent_scrubber/gas_dependency_changed(mixture_id, change_mask, list/observation, observation_index)
+	if(!..(mixture_id, change_mask, observation, observation_index))
 		return FALSE
 	if(!use_power || (stat & (NOPOWER|BROKEN)) || welded)
 		return FALSE
+	if(observation && observation_index)
+		if(!scrubbing)
+			var/pressure = observation[observation_index + 3]
+			var/temperature = observation[observation_index + 4]
+			var/volume = observation[observation_index + 5]
+			var/total_moles = temperature > 0 ? pressure * volume / (R_IDEAL_GAS_EQUATION * temperature) : 0
+			return total_moles >= MINIMUM_MOLES_TO_PUMP
+		for(var/gas_id in scrubbing_gas)
+			var/observed_moles
+			switch(gas_id)
+				if(GAS_O2)
+					observed_moles = observation[observation_index + 6]
+				if(GAS_CO2)
+					observed_moles = observation[observation_index + 7]
+				if(GAS_PHORON)
+					observed_moles = observation[observation_index + 8]
+				if(GAS_CH4)
+					observed_moles = observation[observation_index + 9]
+				if(GAS_N2O)
+					observed_moles = observation[observation_index + 10]
+				if(GAS_VOLATILE_FUEL)
+					observed_moles = observation[observation_index + 11]
+			if(!isnull(observed_moles) && observed_moles >= MINIMUM_MOLES_TO_FILTER)
+				return TRUE
+		// Custom gases not present in the compact publication are deliberately
+		// checked through the arena below. Normal scrubber configurations never
+		// pay those per-gas FFI crossings.
 	var/datum/gas_mixture/environment = return_air()
 	if(!environment)
 		return FALSE
 	if(!scrubbing)
 		return environment.total_moles() >= MINIMUM_MOLES_TO_PUMP
+	// Composition revisions include accumulated sub-visual changes. Do not put a
+	// sleeping scrubber back through the machinery roster merely because a gas
+	// exists as a floating-point trace: scrub_gas() cannot perform useful work
+	// below this same threshold. This predicate and the transaction therefore
+	// have one definition of "actionable" and cannot form a wake/kill loop.
 	for(var/gas_id in scrubbing_gas)
-		if(LINDA_GAS_AMT(environment, gas_id) > 0)
+		if(observation && observation_index)
+			switch(gas_id)
+				if(GAS_O2, GAS_CO2, GAS_PHORON, GAS_CH4, GAS_N2O, GAS_VOLATILE_FUEL)
+					continue
+		if(LINDA_GAS_AMT(environment, gas_id) >= MINIMUM_MOLES_TO_FILTER)
 			return TRUE
 	return FALSE
 
@@ -299,46 +335,46 @@
 		invalidate_gas_dependencies()
 		update_icon()
 
-/obj/machinery/atmospherics/unary/vent_scrubber/attackby(obj/item/W as obj, mob/user as mob)
-	if(W.has_tool_quality(TOOL_WELDER))
-		var/obj/item/weldingtool/WT = W
-		if (WT.remove_fuel(0,user))
-			to_chat(user, span_notice("Now welding the vent."))
+/obj/machinery/atmospherics/unary/vent_scrubber/welder_act(mob/user, obj/item/W)
+	var/obj/item/weldingtool/WT = W.get_welder()
+	if (WT.remove_fuel(0,user))
+		to_chat(user, span_notice("Now welding the vent."))
 
-			if(do_after(user, 20 * WT.toolspeed, src))
-				if(!src || !WT.isOn()) return
-				playsound(src, WT.usesound, 50, 1)
-				if(!welded)
-					user.visible_message(span_notice("<b>\The [user]</b> welds the vent shut."), span_notice("You weld the vent shut."), "You hear welding.")
-					welded = TRUE
-					invalidate_gas_dependencies()
-					update_icon()
-				else
-					user.visible_message(span_notice("[user] unwelds the vent."), span_notice("You unweld the vent."), "You hear welding.")
-					welded = FALSE
-					invalidate_gas_dependencies()
-					update_icon()
+		if(do_after(user, 20 * WT.toolspeed, src))
+			if(!src || !WT.isOn()) return ITEM_INTERACT_BLOCKING
+			playsound(src, WT.usesound, 50, 1)
+			if(!welded)
+				user.visible_message(span_notice("<b>\The [user]</b> welds the vent shut."), span_notice("You weld the vent shut."), "You hear welding.")
+				welded = TRUE
+				invalidate_gas_dependencies()
+				update_icon()
 			else
-				to_chat(user, span_notice("The welding tool needs to be on to start this task."))
+				user.visible_message(span_notice("[user] unwelds the vent."), span_notice("You unweld the vent."), "You hear welding.")
+				welded = FALSE
+				invalidate_gas_dependencies()
+				update_icon()
 		else
-			to_chat(user, span_warning("You need more welding fuel to complete this task."))
-			return 1
-	if (!W.has_tool_quality(TOOL_WRENCH))
-		return ..()
+			to_chat(user, span_notice("The welding tool needs to be on to start this task."))
+	else
+		to_chat(user, span_warning("You need more welding fuel to complete this task."))
+		return ITEM_INTERACT_BLOCKING
+	return ITEM_INTERACT_SUCCESS
+
+/obj/machinery/atmospherics/unary/vent_scrubber/wrench_act(mob/user, obj/item/W)
 	if (!(stat & NOPOWER) && use_power)
 		to_chat(user, span_warning("You cannot unwrench \the [src], turn it off first."))
-		return 1
+		return ITEM_INTERACT_BLOCKING
 	var/turf/T = src.loc
 	if (node && node.level==1 && isturf(T) && !T.is_plating())
 		to_chat(user, span_warning("You must remove the plating first."))
-		return 1
+		return ITEM_INTERACT_BLOCKING
 	if(welded)
 		to_chat(user, span_warning("You cannot unwrench \the [src], it is welded down firmly."))
-		return 1
+		return ITEM_INTERACT_BLOCKING
 	if(!can_unwrench())
 		to_chat(user, span_warning("You cannot unwrench \the [src], it is too exerted due to internal pressure."))
 		add_fingerprint(user)
-		return 1
+		return ITEM_INTERACT_BLOCKING
 	playsound(src, W.usesound, 50, 1)
 	to_chat(user, span_notice("You begin to unfasten \the [src]..."))
 	if (do_after(user, 40 * W.toolspeed, target = src))
@@ -347,6 +383,7 @@
 			span_notice("You have unfastened \the [src]."), \
 			"You hear a ratchet.")
 		atom_deconstruct()
+	return ITEM_INTERACT_SUCCESS
 
 /obj/machinery/atmospherics/unary/vent_scrubber/examine(mob/user)
 	. = ..()

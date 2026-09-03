@@ -1,4 +1,6 @@
 /obj/machinery/gear_painter
+	maintenance_flags = MACHINE_MAINT_STANDARD_MOVABLE
+	maintenance_wrench_time = 40
 	name = "Color Mate"
 	desc = "A machine to give your apparel a fresh new color!"
 	icon = 'icons/obj/vending_vr.dmi'
@@ -61,13 +63,6 @@
 	if(inserted)
 		to_chat(user, span_warning("The machine is already loaded."))
 		return
-	if(default_deconstruction_screwdriver(user, I))
-		return
-	if(default_deconstruction_crowbar(user, I))
-		return
-	if(default_unfasten_wrench(user, I, 40))
-		return
-
 	if(is_type_in_list(I, allowed_types) && !inoperable())
 		if(istype(I,/obj/item/stack/material/cyborg)) //Needs an exception for borg materials to avoid glitches.
 			return

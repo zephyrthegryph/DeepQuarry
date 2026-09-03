@@ -4,6 +4,7 @@
 
 
 /obj/effect/decal/mecha_wreckage
+	var/focused_tool_stage
 	name = "Exosuit wreckage"
 	desc = "Remains of some unfortunate mecha. Completely unrepairable."
 	icon = 'icons/mecha/mecha.dmi'
@@ -25,8 +26,21 @@
 	return
 
 
+/obj/effect/decal/mecha_wreckage/proc/run_focused_tool(mob/user, obj/item/tool, quality)
+	focused_tool_stage = quality
+	attackby(tool, user)
+	focused_tool_stage = null
+	return ITEM_INTERACT_SUCCESS
+
+/obj/effect/decal/mecha_wreckage/welder_act(mob/user, obj/item/tool)
+	return run_focused_tool(user, tool, TOOL_WELDER)
+/obj/effect/decal/mecha_wreckage/wirecutter_act(mob/user, obj/item/tool)
+	return run_focused_tool(user, tool, TOOL_WIRECUTTER)
+/obj/effect/decal/mecha_wreckage/crowbar_act(mob/user, obj/item/tool)
+	return run_focused_tool(user, tool, TOOL_CROWBAR)
+
 /obj/effect/decal/mecha_wreckage/attackby(obj/item/W as obj, mob/user as mob)
-	if(W.has_tool_quality(TOOL_WELDER))
+	if(focused_tool_stage == TOOL_WELDER)
 		var/obj/item/weldingtool/WT = W.get_welder()
 		if(salvage_num <= 0)
 			to_chat(user, "You don't see anything that can be cut with [W].")
@@ -44,7 +58,7 @@
 		else
 			to_chat(user, span_notice("You need more welding fuel to complete this task."))
 			return
-	if(W.has_tool_quality(TOOL_WIRECUTTER))
+	if(focused_tool_stage == TOOL_WIRECUTTER)
 		if(salvage_num <= 0)
 			to_chat(user, "You don't see anything that can be cut with [W].")
 			return
@@ -56,7 +70,7 @@
 				salvage_num--
 			else
 				to_chat(user, "You failed to salvage anything valuable from [src].")
-	if(W.has_tool_quality(TOOL_CROWBAR))
+	if(focused_tool_stage == TOOL_CROWBAR)
 		if(!isemptylist(crowbar_salvage))
 			var/obj/S = pick(crowbar_salvage)
 			if(S)

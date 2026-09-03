@@ -28,7 +28,7 @@
 		return
 
 	//Initial dock
-	active_docking_controller = current_location.docking_controller
+	set_active_docking_controller(current_location.docking_controller)
 	update_docking_target(current_location)
 	if(active_docking_controller)
 		set_docking_codes(active_docking_controller.docking_codes)
@@ -45,7 +45,8 @@
 /datum/shuttle/autodock/Destroy()
 	in_use = null
 	next_location = null
-	active_docking_controller = null
+	set_active_docking_controller(null)
+	set_shuttle_docking_controller(null)
 	landmark_transition = null
 
 	return ..()
@@ -66,9 +67,34 @@
 		current_dock_target = location.special_dock_targets[name]
 	else
 		current_dock_target = docking_controller_tag
-	shuttle_docking_controller = SSshuttles.docking_registry[current_dock_target]
+	set_shuttle_docking_controller(SSshuttles.docking_registry[current_dock_target])
 	if(current_dock_target && !shuttle_docking_controller)
 		log_shuttle(span_danger("warning: shuttle [src] can't find its controller with tag [current_dock_target]!")) // No toggle because this is an error message that needs to be seen
+
+/datum/shuttle/autodock/proc/set_shuttle_docking_controller(datum/embedded_program/docking/controller)
+	if(shuttle_docking_controller == controller)
+		return
+	if(shuttle_docking_controller && shuttle_docking_controller != active_docking_controller)
+		UnregisterSignal(shuttle_docking_controller, COMSIG_QDELETING)
+	shuttle_docking_controller = controller
+	if(shuttle_docking_controller && shuttle_docking_controller != active_docking_controller)
+		RegisterSignal(shuttle_docking_controller, COMSIG_QDELETING, PROC_REF(docking_controller_deleted))
+
+/datum/shuttle/autodock/proc/set_active_docking_controller(datum/embedded_program/docking/controller)
+	if(active_docking_controller == controller)
+		return
+	if(active_docking_controller && active_docking_controller != shuttle_docking_controller)
+		UnregisterSignal(active_docking_controller, COMSIG_QDELETING)
+	active_docking_controller = controller
+	if(active_docking_controller && active_docking_controller != shuttle_docking_controller)
+		RegisterSignal(active_docking_controller, COMSIG_QDELETING, PROC_REF(docking_controller_deleted))
+
+/datum/shuttle/autodock/proc/docking_controller_deleted(datum/source)
+	SIGNAL_HANDLER
+	if(shuttle_docking_controller == source)
+		shuttle_docking_controller = null
+	if(active_docking_controller == source)
+		active_docking_controller = null
 /*
 	Docking stuff
 */
@@ -126,17 +152,17 @@
 			if (moving_status == SHUTTLE_IDLE)
 				//*** we made it to the destination, update stuff
 				process_arrived()
-				process_state = WAIT_FINISH
+				set_process_state(WAIT_FINISH)
 
 		if (WAIT_FINISH)
 			if (world.time > last_dock_attempt_time + DOCK_ATTEMPT_TIMEOUT || check_docked())
 				//*** all done here
-				process_state = IDLE_STATE
+				set_process_state(IDLE_STATE)
 				arrived()
 
 //not to be confused with the arrived() proc
 /datum/shuttle/autodock/proc/process_arrived()
-	active_docking_controller = next_location.docking_controller
+	set_active_docking_controller(next_location.docking_controller)
 	update_docking_target(next_location)
 	dock()
 
@@ -148,14 +174,14 @@
 
 /datum/shuttle/autodock/proc/process_launch()
 	if(!next_location || !next_location.is_valid(src) || current_location.cannot_depart(src))
-		process_state = IDLE_STATE
+		set_process_state(IDLE_STATE)
 		in_use = null
 		return
 	if (get_travel_time() && landmark_transition)
 		. = long_jump(next_location, landmark_transition, get_travel_time())
 	else
 		. = short_jump(next_location)
-	process_state = WAIT_ARRIVE
+	set_process_state(WAIT_ARRIVE)
 
 /*
 	Guards - (These don't take docking status into account, just the state machine and move safety)
@@ -178,7 +204,7 @@
 
 	in_use = user	//obtain an exclusive lock on the shuttle
 
-	process_state = WAIT_LAUNCH
+	set_process_state(WAIT_LAUNCH)
 	undock()
 
 // Queue shuttle for forced undock and launch by shuttle subsystem.
@@ -187,14 +213,14 @@
 
 	in_use = user	//obtain an exclusive lock on the shuttle
 
-	process_state = FORCE_LAUNCH
+	set_process_state(FORCE_LAUNCH)
 
 // Cancel queued launch.
 /datum/shuttle/autodock/cancel_launch(user)
 	if (!can_cancel()) return
 
 	moving_status = SHUTTLE_IDLE
-	process_state = WAIT_FINISH
+	set_process_state(WAIT_FINISH)
 	in_use = null
 
 	//whatever we were doing with docking: stop it, then redock

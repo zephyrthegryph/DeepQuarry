@@ -55,13 +55,124 @@ avoid code duplication. This includes items that may sometimes act as a standard
 		return TRUE
 	return FALSE //return TRUE to avoid calling attackby after this proc does stuff
 
+/// Right-click pre-interaction hook. Components may cancel, continue the
+/// secondary chain, or explicitly request the normal primary chain.
+/obj/item/proc/pre_attack_secondary(atom/A, mob/user, list/modifiers)
+	var/result = SEND_SIGNAL(src, COMSIG_ITEM_PRE_ATTACK_SECONDARY, A, user, modifiers)
+	if(user)
+		result |= SEND_SIGNAL(user, COMSIG_USER_PRE_ITEM_ATTACK_SECONDARY, src, A, modifiers)
+	return result
+
 //I would prefer to rename this to attack(), but that would involve touching hundreds of files.
 /obj/item/proc/resolve_attackby(atom/A, mob/user, attack_modifier = 1, click_parameters)
 	add_fingerprint(user)
-	. = pre_attack(A, user, click_parameters)
-	if(.)	// We're returning the value of pre_attack, important if it has a special return.
-		return
+	var/list/modifiers = islist(click_parameters) ? click_parameters : params2list(click_parameters)
+	var/secondary = !!LAZYACCESS(modifiers, RIGHT_CLICK)
+	if(secondary)
+		var/secondary_pre_result = pre_attack_secondary(A, user, modifiers)
+		if(secondary_pre_result & COMPONENT_SECONDARY_CANCEL_ATTACK_CHAIN)
+			return ITEM_INTERACT_BLOCKING
+		if(secondary_pre_result & COMPONENT_SECONDARY_CALL_NORMAL_ATTACK_CHAIN)
+			secondary = FALSE
+	if(!secondary)
+		. = pre_attack(A, user, click_parameters)
+		if(.)	// We're returning the value of pre_attack, important if it has a special return.
+			return
+	var/interaction_result
+	if(secondary)
+		interaction_result = A.item_interaction_secondary(user, src, modifiers)
+	else
+		interaction_result = A.item_interaction(user, src, modifiers)
+	if(ITEM_INTERACT_CONSUMED(interaction_result))
+		return interaction_result
+	// SKIP_TO_ATTACK deliberately bypasses the modern interaction hooks but still
+	// enters attackby(), which is the canonical attack/fallback path during migration.
 	return A.attackby(src, user, attack_modifier, click_parameters)
+
+/**
+ * Modern item interaction entry point. Components get first refusal, followed by
+ * every quality offered by a multi-purpose tool. Returning no flags falls through
+ * to the legacy attackby path in resolve_attackby().
+ */
+/atom/proc/item_interaction(mob/user, obj/item/tool, list/modifiers)
+	var/result = SEND_SIGNAL(src, COMSIG_ATOM_ITEM_INTERACTION, user, tool, modifiers)
+	if(user)
+		result |= SEND_SIGNAL(user, COMSIG_USER_ITEM_INTERACTION, src, tool, modifiers)
+	result |= SEND_SIGNAL(tool, COMSIG_ITEM_INTERACTING_WITH_ATOM, user, src, modifiers)
+	if(result & (ITEM_INTERACT_SUCCESS | ITEM_INTERACT_BLOCKING | ITEM_INTERACT_SKIP_TO_ATTACK))
+		return result
+	return tool_interaction(user, tool, modifiers, FALSE)
+
+/// Right-click counterpart to item_interaction().
+/atom/proc/item_interaction_secondary(mob/user, obj/item/tool, list/modifiers)
+	var/result = SEND_SIGNAL(src, COMSIG_ATOM_ITEM_INTERACTION_SECONDARY, user, tool, modifiers)
+	if(user)
+		result |= SEND_SIGNAL(user, COMSIG_USER_ITEM_INTERACTION_SECONDARY, src, tool, modifiers)
+	result |= SEND_SIGNAL(tool, COMSIG_ITEM_INTERACTING_WITH_ATOM_SECONDARY, user, src, modifiers)
+	if(result & (ITEM_INTERACT_SUCCESS | ITEM_INTERACT_BLOCKING | ITEM_INTERACT_SKIP_TO_ATTACK))
+		return result
+	return tool_interaction(user, tool, modifiers, TRUE)
+
+/// Dispatches all qualities on a tool in their declared order.
+/atom/proc/tool_interaction(mob/user, obj/item/tool, list/modifiers, secondary = FALSE)
+	if(!LAZYLEN(tool.tool_qualities))
+		return NONE
+	for(var/tool_quality in tool.tool_qualities)
+		var/result = tool_act(user, tool, tool_quality, secondary)
+		if(result & ITEM_INTERACT_SUCCESS)
+			SEND_SIGNAL(tool, secondary ? COMSIG_ITEM_TOOL_ACTED_SECONDARY : COMSIG_ITEM_TOOL_ACTED, src, user, tool_quality, modifiers)
+			SEND_SIGNAL(tool, secondary ? COMSIG_TOOL_ATOM_ACTED_SECONDARY(tool_quality) : COMSIG_TOOL_ATOM_ACTED_PRIMARY(tool_quality), src, user, modifiers)
+		if(result & (ITEM_INTERACT_SUCCESS | ITEM_INTERACT_BLOCKING | ITEM_INTERACT_SKIP_TO_ATTACK))
+			return result
+	return NONE
+
+/// Sends the quality-specific signal, then invokes the corresponding focused hook.
+/atom/proc/tool_act(mob/user, obj/item/tool, tool_quality, secondary = FALSE)
+	var/result = SEND_SIGNAL(src, secondary ? COMSIG_ATOM_SECONDARY_TOOL_ACT(tool_quality) : COMSIG_ATOM_TOOL_ACT(tool_quality), user, tool)
+	if(result & (ITEM_INTERACT_SUCCESS | ITEM_INTERACT_BLOCKING | ITEM_INTERACT_SKIP_TO_ATTACK))
+		return result
+	if(secondary)
+		switch(tool_quality)
+			if(TOOL_SCREWDRIVER) return screwdriver_act_secondary(user, tool)
+			if(TOOL_CROWBAR) return crowbar_act_secondary(user, tool)
+			if(TOOL_WRENCH) return wrench_act_secondary(user, tool)
+			if(TOOL_WIRECUTTER) return wirecutter_act_secondary(user, tool)
+			if(TOOL_MULTITOOL) return multitool_act_secondary(user, tool)
+			if(TOOL_WELDER) return welder_act_secondary(user, tool)
+	else
+		switch(tool_quality)
+			if(TOOL_SCREWDRIVER) return screwdriver_act(user, tool)
+			if(TOOL_CROWBAR) return crowbar_act(user, tool)
+			if(TOOL_WRENCH) return wrench_act(user, tool)
+			if(TOOL_WIRECUTTER) return wirecutter_act(user, tool)
+			if(TOOL_MULTITOOL) return multitool_act(user, tool)
+			if(TOOL_WELDER) return welder_act(user, tool)
+	return NONE
+
+/atom/proc/screwdriver_act(mob/user, obj/item/tool)
+	return NONE
+/atom/proc/crowbar_act(mob/user, obj/item/tool)
+	return NONE
+/atom/proc/wrench_act(mob/user, obj/item/tool)
+	return NONE
+/atom/proc/wirecutter_act(mob/user, obj/item/tool)
+	return NONE
+/atom/proc/multitool_act(mob/user, obj/item/tool)
+	return NONE
+/atom/proc/welder_act(mob/user, obj/item/tool)
+	return NONE
+/atom/proc/screwdriver_act_secondary(mob/user, obj/item/tool)
+	return NONE
+/atom/proc/crowbar_act_secondary(mob/user, obj/item/tool)
+	return NONE
+/atom/proc/wrench_act_secondary(mob/user, obj/item/tool)
+	return NONE
+/atom/proc/wirecutter_act_secondary(mob/user, obj/item/tool)
+	return NONE
+/atom/proc/multitool_act_secondary(mob/user, obj/item/tool)
+	return NONE
+/atom/proc/welder_act_secondary(mob/user, obj/item/tool)
+	return NONE
 
 // No comment
 /atom/proc/attackby(obj/item/W, mob/user, attack_modifier, click_parameters)
@@ -143,8 +254,7 @@ avoid code duplication. This includes items that may sometimes act as a standard
 //Called when a weapon is used to make a successful melee attack on a mob. Returns the blocked result
 /obj/item/proc/apply_hit_effect(mob/living/target, mob/living/user, hit_zone, attack_modifier)
 	user.break_cloak()
-	substance_emit_form_trigger(src, get_turf(target), target, SUB_TRIG_IMPACT, SUB_TRIG_CONTACT)
-	material_response_impact(SUB_TRIG_IMPACT, get_turf(target), target)
+	material_response_impact(get_turf(target), target)
 	if(hitsound)
 		playsound(src, hitsound, 50, 1, -1)
 

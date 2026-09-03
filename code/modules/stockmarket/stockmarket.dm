@@ -4,12 +4,24 @@
 	var/list/last_read = list()
 	var/list/stockBrokers = list()
 	var/list/logs = list()
+	var/process_timer
 
 /datum/stockMarket/New()
 		..()
 		generateBrokers()
 		generateStocks()
-		START_PROCESSING(SSobj, src)
+		schedule_process()
+
+/datum/stockMarket/Destroy()
+	if(process_timer)
+		deltimer(process_timer)
+		process_timer = null
+	return ..()
+
+/datum/stockMarket/proc/schedule_process()
+	if(QDELETED(src) || process_timer)
+		return
+	process_timer = addtimer(CALLBACK(src, PROC_REF(process)), 10 SECONDS, TIMER_STOPPABLE)
 
 /datum/stockMarket/proc/balanceLog(whose, net)
 	if (!(whose in balances))
@@ -107,9 +119,11 @@
 		last_read[S] = list()
 
 /datum/stockMarket/process()
+	process_timer = null
 	for (var/stock in stocks)
 		var/datum/stock/S = stock
-		S.process()
+		S.process(5)
+	schedule_process()
 
 /datum/stockMarket/proc/add_log(log_type, user, company_name, stocks, shareprice, money)
 	var/datum/stock_log/L = new log_type

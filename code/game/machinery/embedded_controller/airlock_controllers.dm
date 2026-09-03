@@ -1,5 +1,6 @@
 //base type for controllers of two-door systems
 /obj/machinery/embedded_controller/radio/airlock
+	maintenance_flags = MACHINE_MAINT_STANDARD
 	// Setup parameters only
 	radio_filter = RADIO_AIRLOCK
 	program = /datum/embedded_program/airlock
@@ -32,13 +33,11 @@
 	if(!allowed(user))
 		return min(STATUS_UPDATE, .)
 
-/obj/machinery/embedded_controller/radio/airlock/attackby(obj/item/I, mob/user)
-	if(deconstructable)
-		if(default_deconstruction_screwdriver(user, I))
-			return
-		if(default_deconstruction_crowbar(user, I))
-			return
-	. = ..()
+/obj/machinery/embedded_controller/radio/airlock/screwdriver_act(mob/user, obj/item/tool)
+	return deconstructable ? ..() : ITEM_INTERACT_BLOCKING
+
+/obj/machinery/embedded_controller/radio/airlock/crowbar_act(mob/user, obj/item/tool)
+	return deconstructable ? ..() : ITEM_INTERACT_BLOCKING
 
 /obj/machinery/embedded_controller/radio/airlock/tgui_data(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/list/data = ..()

@@ -90,40 +90,6 @@
 	return GLOB.tgui_inventory_state
 
 /obj/item/radio/headset/attackby(obj/item/W as obj, mob/user as mob)
-//	..()
-	if(!(W.has_tool_quality(TOOL_SCREWDRIVER) || istype(W, /obj/item/encryptionkey)))
-		return
-
-	if(W.has_tool_quality(TOOL_SCREWDRIVER))
-		if(keyslot1 || keyslot2)
-
-
-			for(var/ch_name in channels)
-				SSradio.remove_object(src, GLOB.radiochannels[ch_name])
-				secure_radio_connections[ch_name] = null
-
-
-			if(keyslot1)
-				var/turf/T = get_turf(user)
-				if(T)
-					keyslot1.loc = T
-					keyslot1 = null
-
-
-
-			if(keyslot2)
-				var/turf/T = get_turf(user)
-				if(T)
-					keyslot2.loc = T
-					keyslot2 = null
-
-			recalculateChannels()
-			to_chat(user, span_notice("You pop out the encryption keys in the headset!"))
-			playsound(src, W.usesound, 50, 1)
-
-		else
-			to_chat(user, span_notice("This headset doesn't have any encryption keys!  How useless..."))
-
 	if(istype(W, /obj/item/encryptionkey/))
 		if(keyslot1 && keyslot2)
 			to_chat(user, span_notice("The headset can't hold another key!"))
@@ -142,7 +108,27 @@
 
 		recalculateChannels()
 
-	return
+		return
+	return ..()
+
+/obj/item/radio/headset/screwdriver_act(mob/user, obj/item/tool)
+	if(!keyslot1 && !keyslot2)
+		to_chat(user, span_notice("This headset doesn't have any encryption keys! How useless..."))
+		return ITEM_INTERACT_BLOCKING
+	for(var/ch_name in channels)
+		SSradio.remove_object(src, GLOB.radiochannels[ch_name])
+		secure_radio_connections[ch_name] = null
+	var/turf/T = get_turf(user)
+	if(keyslot1)
+		keyslot1.forceMove(T)
+		keyslot1 = null
+	if(keyslot2)
+		keyslot2.forceMove(T)
+		keyslot2 = null
+	recalculateChannels()
+	to_chat(user, span_notice("You pop out the encryption keys in the headset!"))
+	playsound(src, tool.usesound, 50, TRUE)
+	return ITEM_INTERACT_SUCCESS
 
 /obj/item/radio/headset/recalculateChannels(setDescription = FALSE)
 	src.channels = list()

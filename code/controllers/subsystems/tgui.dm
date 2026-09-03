@@ -33,6 +33,12 @@ SUBSYSTEM_DEF(tgui)
 	/// emit a manifest (e.g. an unsplit bundle) — interfaces then rely on whatever is
 	/// already in the main bundle.
 	var/list/chunk_manifest
+	/// Deduplicated sequential list of every file in chunk_manifest. Sent once to
+	/// idle browser shells so Chromium can populate its HTTP cache without importing
+	/// or evaluating every interface module.
+	var/list/chunk_files
+	/// Shared interface default geometry emitted from the same TS registry used by Window.
+	var/list/window_geometry_manifest
 	/// Number of idle reusable browser shells kept warm per client. The reserve
 	/// is replenished as shells are acquired instead of opening the whole pool at
 	/// login, avoiding a Chromium startup burst while keeping normal opens warm.
@@ -60,12 +66,37 @@ SUBSYSTEM_DEF(tgui)
 	// /datum/asset/simple/tgui_chunks). We must NOT register them here: PreInit runs
 	// before SSassets is ready, and hashing the files that early runtimes ("bad index").
 	load_chunk_manifest()
+	load_window_geometry_manifest()
 
 /datum/controller/subsystem/tgui/proc/load_chunk_manifest(manifest_path = "tgui/public/tgui-chunk-manifest.json")
+	chunk_manifest = null
+	chunk_files = null
 	if(fexists(manifest_path))
 		var/raw = file2text(manifest_path)
 		if(raw)
 			chunk_manifest = json_decode(raw)
+	if(!islist(chunk_manifest))
+		return
+	var/list/seen_files = list()
+	chunk_files = list()
+	for(var/interface_name in chunk_manifest)
+		var/list/interface_files = chunk_manifest[interface_name]
+		for(var/filename in interface_files)
+			if(!seen_files[filename])
+				seen_files[filename] = TRUE
+				chunk_files += filename
+
+/datum/controller/subsystem/tgui/proc/load_window_geometry_manifest(manifest_path = "tgui/public/tgui-window-manifest.json")
+	if(fexists(manifest_path))
+		var/raw = file2text(manifest_path)
+		if(raw)
+			window_geometry_manifest = json_decode(raw)
+
+/datum/controller/subsystem/tgui/proc/get_default_geometry(interface_name)
+	var/list/geometry = LAZYACCESS(window_geometry_manifest, interface_name)
+	if(!islist(geometry) || !isnum(geometry["width"]) || !isnum(geometry["height"]))
+		return null
+	return geometry
 
 /// Atomically advances the development manifest and its registered chunk files.
 /datum/controller/subsystem/tgui/proc/reload_development_chunks()
@@ -74,11 +105,12 @@ SUBSYSTEM_DEF(tgui)
 	if(!fexists(development_manifest))
 		return
 	load_chunk_manifest(development_manifest)
+	load_window_geometry_manifest("[development_directory]/tgui-window-manifest.json")
 	var/list/chunk_filenames = list()
 	for(var/interface_name in chunk_manifest)
 		for(var/filename in chunk_manifest[interface_name])
 			chunk_filenames[filename] = TRUE
-	var/datum/asset/simple/tgui_chunks/chunks = get_asset_datum(/datum/asset/simple/tgui_chunks)
+	var/datum/asset/simple/namespaced/tgui_chunks/chunks = get_asset_datum(/datum/asset/simple/namespaced/tgui_chunks)
 	chunks.reload_from_directory(development_directory, chunk_filenames)
 
 /datum/controller/subsystem/tgui/OnConfigLoad()

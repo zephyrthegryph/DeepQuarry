@@ -164,18 +164,13 @@ export const MindBodyEditor = ({ data, staticData }: EditorProps) => {
   if (!s.categories || !s.trees || !s.perks) return null;
 
   return (
-    <Box
-      style={{ height: '100%', display: 'flex', flexDirection: 'column' }}
-    >
+    <Box style={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
       <TopHeader
         age={d.age}
         activeKind={activeKind}
         setActiveKind={setActiveKind}
       />
-      <Box
-        mt={0.5}
-        style={{ flex: 1, minHeight: 0, display: 'flex' }}
-      >
+      <Box mt={0.5} style={{ flex: 1, minHeight: 0, display: 'flex' }}>
         {activeKind === 'body' ? (
           <BodyPane
             categoryIds={bodyCats}
@@ -491,8 +486,7 @@ const MindActiveDepartment = ({
   act: Act;
 }) => {
   const subTrees = useMemo(
-    () =>
-      Object.values(s.trees).filter((t) => t.category === category.id),
+    () => Object.values(s.trees).filter((t) => t.category === category.id),
     [s.trees, category.id],
   );
 
@@ -731,8 +725,7 @@ const CategoryPane = ({
   // Trees in this category. Body cats have 1 tree; Mind cats have multiple
   // sub-role trees.
   const treesInCat = useMemo(
-    () =>
-      Object.values(s.trees).filter((t) => t.category === category.id),
+    () => Object.values(s.trees).filter((t) => t.category === category.id),
     [s.trees, category.id],
   );
 
@@ -783,7 +776,6 @@ const CategoryPane = ({
     </Box>
   );
 };
-
 
 // ─── Pool fill bar (per-category) ─────────────────────────────────────────────────
 
@@ -1260,7 +1252,8 @@ const allPathsInSubtree = (
   childrenOf: Record<string, string[]>,
 ): string[] => {
   const out = [root];
-  for (const c of childrenOf[root] ?? []) out.push(...allPathsInSubtree(c, childrenOf));
+  for (const c of childrenOf[root] ?? [])
+    out.push(...allPathsInSubtree(c, childrenOf));
   return out;
 };
 
@@ -1338,9 +1331,7 @@ const PerkTree = ({
               d={d}
               stroke={accent}
               strokeWidth={bothSelected ? 2.5 : 1.5}
-              strokeOpacity={
-                bothSelected ? 0.9 : parentSelected ? 0.65 : 0.35
-              }
+              strokeOpacity={bothSelected ? 0.9 : parentSelected ? 0.65 : 0.35}
               strokeDasharray={bothSelected ? undefined : '4 3'}
               fill="none"
               strokeLinejoin="round"
@@ -1514,9 +1505,7 @@ const PerkNode = ({
                 : disabled
                   ? 'rgba(255,255,255,0.3)'
                   : accent,
-              filter: selected
-                ? `drop-shadow(0 0 4px ${accent})`
-                : undefined,
+              filter: selected ? `drop-shadow(0 0 4px ${accent})` : undefined,
             }}
           />
           {selected && (

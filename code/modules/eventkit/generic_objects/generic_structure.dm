@@ -100,11 +100,13 @@
 			update_icon()
 	return ..()
 
-/obj/structure/generic_structure/attackby(obj/item/W as obj, mob/user as mob)
-	if(wrenchable && W.has_tool_quality(TOOL_WRENCH))
-		add_fingerprint(user)
-		to_chat(user, span_notice("You [anchored? "un" : ""]secured \the [src]!"))
-		anchored = !anchored
+/obj/structure/generic_structure/wrench_act(mob/user, obj/item/tool)
+	if(!wrenchable)
+		return ITEM_INTERACT_BLOCKING
+	add_fingerprint(user)
+	to_chat(user, span_notice("You [anchored ? "un" : ""]secured \the [src]!"))
+	anchored = !anchored
+	return ITEM_INTERACT_SUCCESS
 
 ADMIN_VERB(generic_structure, R_SPAWN, "Spawn Generic Structure", "Spawn a customisable structure with a range of different options.", ADMIN_CATEGORY_FUN_EVENT_KIT)
 	var/s_wrenchable = 0

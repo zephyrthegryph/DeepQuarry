@@ -37,11 +37,15 @@
 	else
 		failure_chance = 75 // You can't even use it if there's no scanmod, but why not.
 
-/obj/item/bluespace_harpoon/attackby(obj/item/I, mob/living/user)
+/obj/item/bluespace_harpoon/screwdriver_act(mob/user, obj/item/tool)
+	attackby(tool, user, TOOL_SCREWDRIVER)
+	return TRUE
+
+/obj/item/bluespace_harpoon/attackby(obj/item/I, mob/living/user, tool_quality)
 	if(!istype(user))
 		return
 
-	if(I.has_tool_quality(TOOL_SCREWDRIVER))
+	if(tool_quality == TOOL_SCREWDRIVER)
 		if(!scanmod)
 			to_chat(user, span_warning("There's no scanner module installed!"))
 			return

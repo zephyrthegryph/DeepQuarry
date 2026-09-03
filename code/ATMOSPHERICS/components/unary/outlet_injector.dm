@@ -185,36 +185,33 @@
 	update_use_power(injecting ? USE_POWER_IDLE : USE_POWER_OFF)
 	update_icon()
 
-/obj/machinery/atmospherics/unary/outlet_injector/attackby(obj/item/W as obj, mob/user as mob)
-	if (W.has_tool_quality(TOOL_MULTITOOL))
-		var/list/options = list("Frequency", "ID Tag", "-SAVE TO BUFFER-", "Cancel")
-		var/answer = tgui_alert(user, "[src] has an ID of \"[id]\" and a frequency of [frequency]. What would you like to change?", "Options!", options)
-		if(!answer || answer == "Cancel" || !Adjacent(user))
-			return
+/obj/machinery/atmospherics/unary/outlet_injector/multitool_act(mob/user, obj/item/W)
+	var/list/options = list("Frequency", "ID Tag", "-SAVE TO BUFFER-", "Cancel")
+	var/answer = tgui_alert(user, "[src] has an ID of \"[id]\" and a frequency of [frequency]. What would you like to change?", "Options!", options)
+	if(!answer || answer == "Cancel" || !Adjacent(user))
+		return ITEM_INTERACT_BLOCKING
 
-		switch(answer)
-			if("Frequency")
-				var/new_frequency = tgui_input_number(user, "[src] has a frequency of [frequency]. What would you like it to be?", "[src] frequency", frequency, RADIO_HIGH_FREQ, RADIO_LOW_FREQ)
-				if(new_frequency)
-					new_frequency = sanitize_frequency(new_frequency, RADIO_LOW_FREQ, RADIO_HIGH_FREQ)
-					set_frequency(new_frequency)
-					to_chat(user, span_notice("You set the [src]'s frequency to [frequency]."))
+	switch(answer)
+		if("Frequency")
+			var/new_frequency = tgui_input_number(user, "[src] has a frequency of [frequency]. What would you like it to be?", "[src] frequency", frequency, RADIO_HIGH_FREQ, RADIO_LOW_FREQ)
+			if(new_frequency)
+				new_frequency = sanitize_frequency(new_frequency, RADIO_LOW_FREQ, RADIO_HIGH_FREQ)
+				set_frequency(new_frequency)
+				to_chat(user, span_notice("You set the [src]'s frequency to [frequency]."))
 
-			if("ID Tag")
-				id = tgui_input_text(user, "Please insert an ID tag for [src], example 'exhaust_port'.", "Set ID Tag", id, MAX_NAME_LEN)
-				if(id)
-					to_chat(user, span_notice("You set the [src]'s ID Tag to \"[id]\"."))
+		if("ID Tag")
+			id = tgui_input_text(user, "Please insert an ID tag for [src], example 'exhaust_port'.", "Set ID Tag", id, MAX_NAME_LEN)
+			if(id)
+				to_chat(user, span_notice("You set the [src]'s ID Tag to \"[id]\"."))
 
-			if("-SAVE TO BUFFER-")
-				var/obj/item/multitool/tool = W
-				tool.connectable = src
-				to_chat(user, span_notice("You copied the [src] into the [tool]'s buffer!"))
+		if("-SAVE TO BUFFER-")
+			var/obj/item/multitool/tool = W
+			tool.connectable = src
+			to_chat(user, span_notice("You copied the [src] into the [tool]'s buffer!"))
 
-		return ..()
+	return ITEM_INTERACT_SUCCESS
 
-	if (!W.has_tool_quality(TOOL_WRENCH))
-		return ..()
-
+/obj/machinery/atmospherics/unary/outlet_injector/wrench_act(mob/user, obj/item/W)
 	playsound(src, W.usesound, 50, 1)
 	to_chat(user, span_notice("You begin to unfasten \the [src]..."))
 	if (do_after(user, 40 * W.toolspeed, target = src))
@@ -223,6 +220,7 @@
 			span_notice("You have unfastened \the [src]."), \
 			"You hear a ratchet.")
 		atom_deconstruct()
+	return ITEM_INTERACT_SUCCESS
 
 /obj/machinery/atmospherics/unary/outlet_injector/click_ctrl(mob/user)
 	if (volume_rate == ATMOS_DEFAULT_VOLUME_PUMP + 500 || use_power == USE_POWER_OFF)

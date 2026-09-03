@@ -13,6 +13,24 @@
 	TEST_ASSERT_EQUAL(console.process(), PROCESS_KILL, "arrivals console still polls an idle shuttle")
 	qdel(console)
 	qdel(shuttle)
+
+/datum/unit_test/dq_shuttle_active_set_is_event_driven
+
+/datum/shuttle/unit_test_active_set
+	shuttle_area = /area
+	defer_initialisation = TRUE
+
+/datum/unit_test/dq_shuttle_active_set_is_event_driven/Run()
+	var/datum/shuttle/shuttle = new /datum/shuttle/unit_test_active_set
+	shuttle.flags |= SHUTTLE_FLAGS_PROCESS
+	SSshuttles.process_shuttles |= shuttle
+	shuttle.set_process_state(IDLE_STATE)
+	TEST_ASSERT(!(shuttle in SSshuttles.active_process_shuttles), "idle shuttle remained in the active processing set")
+	shuttle.set_process_state(WAIT_LAUNCH)
+	TEST_ASSERT(shuttle in SSshuttles.active_process_shuttles, "launching shuttle did not enter the active processing set")
+	shuttle.set_process_state(IDLE_STATE)
+	TEST_ASSERT(!(shuttle in SSshuttles.active_process_shuttles), "settled shuttle did not leave the active processing set")
+	qdel(shuttle)
 //
 // A web-shuttle destination whose map landmark doesn't exist (e.g. it lived on
 // a z-level this map no longer loads) used to survive init with a null
@@ -191,6 +209,7 @@
 	TEST_ASSERT_NOTNULL(shuttle, "Southern Cross arrivals shuttle was not registered")
 	TEST_ASSERT(shuttle.always_process, "arrivals shuttle is not configured for subsystem-owned idle automation")
 	TEST_ASSERT(shuttle in SSshuttles.process_shuttles, "arrivals shuttle is absent from the shuttle processing set")
+	TEST_ASSERT(shuttle in SSshuttles.active_process_shuttles, "always-processing arrivals shuttle is absent from the active processing set")
 	var/obj/machinery/computer/shuttle_control/arrivals/console = locate() in world
 	TEST_ASSERT_NOTNULL(console, "Southern Cross arrivals control console was not mapped")
 	TEST_ASSERT_EQUAL(console.process(), PROCESS_KILL, "arrivals console still performs idle polling instead of hibernating")

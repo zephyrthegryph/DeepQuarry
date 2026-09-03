@@ -283,7 +283,7 @@
 		stored_part = null
 
 	if(!process_queue)
-		return
+		return PROCESS_KILL
 
 	// If there's nothing being built, try to build something
 	if(!being_built)
@@ -502,6 +502,7 @@
 					return
 
 				process_queue = TRUE
+				START_PROCESSING(SSfastprocess, src)
 			return
 
 		if("del_queue_part")
@@ -524,6 +525,7 @@
 				return
 
 			process_queue = TRUE
+			START_PROCESSING(SSfastprocess, src)
 			return
 
 		if("stop_queue")
@@ -567,14 +569,6 @@
 		to_chat(user, span_warning("\The [src] is currently processing! Please wait until completion."))
 		return FALSE
 
-	if(default_deconstruction_screwdriver(user, W))
-		update_icon()
-		return
-	if(default_deconstruction_crowbar(user, W))
-		return
 	if(default_part_replacement(user, W))
 		return
-	if(default_unfasten_wrench(user, W, 2 SECONDS))
-		return
-
 	return ..()

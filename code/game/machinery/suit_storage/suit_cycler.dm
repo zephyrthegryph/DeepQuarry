@@ -138,11 +138,6 @@ GLOBAL_LIST_EMPTY(suit_cycler_typecache)
 		if(shock(user, 100))
 			return
 
-	//Hacking init.
-	if(istype(I, /obj/item/multitool) || I.has_tool_quality(TOOL_WIRECUTTER))
-		if(panel_open)
-			attack_hand(user)
-		return
 	//Other interface stuff.
 	if(istype(I, /obj/item/grab))
 		var/obj/item/grab/G = I
@@ -170,13 +165,6 @@ GLOBAL_LIST_EMPTY(suit_cycler_typecache)
 			qdel(G)
 
 			return
-	else if(I.has_tool_quality(TOOL_SCREWDRIVER))
-
-		panel_open = !panel_open
-		playsound(src, I.usesound, 50, 1)
-		to_chat(user, "You [panel_open ?  "open" : "close"] the maintenance panel.")
-		return
-
 	else if(istype(I,/obj/item/clothing/head/helmet/space/void) && !istype(I, /obj/item/clothing/head/helmet/space/rig))
 		var/obj/item/clothing/head/helmet/space/void/IH = I
 
@@ -254,6 +242,27 @@ GLOBAL_LIST_EMPTY(suit_cycler_typecache)
 		return
 
 	..()
+
+/obj/machinery/suit_cycler/proc/hacking_tool_act(mob/user)
+	if(electrified && shock(user, 100))
+		return ITEM_INTERACT_BLOCKING
+	if(panel_open)
+		attack_hand(user)
+	return ITEM_INTERACT_SUCCESS
+
+/obj/machinery/suit_cycler/multitool_act(mob/user, obj/item/tool)
+	return hacking_tool_act(user)
+
+/obj/machinery/suit_cycler/wirecutter_act(mob/user, obj/item/tool)
+	return hacking_tool_act(user)
+
+/obj/machinery/suit_cycler/screwdriver_act(mob/user, obj/item/tool)
+	if(electrified && shock(user, 100))
+		return ITEM_INTERACT_BLOCKING
+	panel_open = !panel_open
+	playsound(src, tool.usesound, 50, TRUE)
+	to_chat(user, "You [panel_open ? "open" : "close"] the maintenance panel.")
+	return ITEM_INTERACT_SUCCESS
 
 /obj/machinery/suit_cycler/emag_act(remaining_charges, mob/user)
 	if(emagged)

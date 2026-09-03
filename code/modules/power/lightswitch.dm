@@ -27,11 +27,10 @@
 // Attackby on the lightswitch for deconstruction steps.
 /obj/machinery/light_switch/attackby(obj/item/W, mob/user, params)
 	src.add_fingerprint(user)
-	if(default_deconstruction_screwdriver(user, W))
-		return
-	if(default_deconstruction_crowbar(user, W))
-		return
 	return ..()
+
+/obj/machinery/light_switch
+	maintenance_flags = MACHINE_MAINT_STANDARD
 
 /obj/machinery/light_switch/dismantle()
 	playsound(src, 'sound/items/Crowbar.ogg', 50, 1)
@@ -83,41 +82,7 @@
 
 /obj/structure/construction/attackby(obj/item/W as obj, mob/user as mob)
 	add_fingerprint(user)
-	if(W.has_tool_quality(TOOL_WELDER))
-		if(stage == FRAME_UNFASTENED)
-			var/obj/item/weldingtool/WT = W.get_welder()
-			if(!WT.remove_fuel(0, user))
-				to_chat(user, span_warning("\The [src] must be on to complete this task."))
-				return
-			playsound(src, WT.usesound, 50, 1)
-			user.visible_message( \
-				span_warning("\The [user] begins deconstructing \the [src]."), \
-				span_notice("You start deconstructing \the [src]."))
-			if(do_after(user, 2 SECONDS * WT.toolspeed, target = src) && WT.isOn())
-				new /obj/item/stack/material/steel(get_turf(src), 2)
-				user.visible_message( \
-					span_warning("\The [user] has deconstructed \the [src]."), \
-					span_notice("You deconstruct \the [src]."))
-				playsound(src, 'sound/items/Deconstruct.ogg', 75, 1)
-				qdel(src)
-		else if (stage == FRAME_FASTENED)
-			to_chat(user, "You have to unscrew the case first.")
-		else if (stage == FRAME_WIRED)
-			to_chat(user, "You have to remove the wires first.")
-		return
-
-	else if(W.has_tool_quality(TOOL_WIRECUTTER))
-		if (stage == FRAME_WIRED)
-			stage = FRAME_FASTENED
-			user.update_examine_panel(src)
-			new /obj/item/stack/cable_coil(get_turf(src), 1, "red")
-			user.visible_message("\The [user] removes the wiring from \the [src].", \
-				"You remove the wiring from \the [src].", "You hear a snip.")
-			playsound(src, W.usesound, 50, 1)
-			update_icon()
-		return
-
-	else if(istype(W, /obj/item/stack/cable_coil))
+	if(istype(W, /obj/item/stack/cable_coil))
 		if (stage == FRAME_FASTENED)
 			var/obj/item/stack/cable_coil/coil = W
 			if (coil.use(1))
@@ -129,32 +94,56 @@
 				update_icon()
 		return
 
-	else if(W.has_tool_quality(TOOL_SCREWDRIVER))
-		if (stage == FRAME_UNFASTENED)
-			stage = FRAME_FASTENED
-			user.update_examine_panel(src)
-			user.visible_message("\The [user] screws \the [src] i nplace.", \
-				"You screw \the [src] in place.", "You hear a noise.")
-			playsound(src, W.usesound, 75, 1)
-			update_icon()
-		else if (stage == FRAME_FASTENED)
-			stage = FRAME_UNFASTENED
-			user.update_examine_panel(src)
-			user.visible_message("\The [user] unscrews \the [src].", \
-				"You unscrew \the [src].", "You hear a noise.")
-			playsound(src, W.usesound, 75, 1)
-			update_icon()
-		else if (stage == FRAME_WIRED)
-			user.visible_message("\The [user] closes \the [src]'s casing.", \
-				"You close \the [src]'s casing.", "You hear a click.")
-			playsound(src, W.usesound, 75, 1)
-			var/obj/newmachine = new build_machine_type(get_turf(src), src.dir)
-			newmachine.pixel_x = pixel_x
-			newmachine.pixel_y = pixel_y
-			transfer_fingerprints_to(newmachine)
-			qdel(src)
-		return
 	. = ..()
+
+/obj/structure/construction/welder_act(mob/user, obj/item/W)
+	if(stage != FRAME_UNFASTENED)
+		to_chat(user, stage == FRAME_FASTENED ? "You have to unscrew the case first." : "You have to remove the wires first.")
+		return ITEM_INTERACT_BLOCKING
+	var/obj/item/weldingtool/WT = W.get_welder()
+	if(!WT.remove_fuel(0, user))
+		to_chat(user, span_warning("\The [src] must be on to complete this task."))
+		return ITEM_INTERACT_BLOCKING
+	playsound(src, WT.usesound, 50, 1)
+	user.visible_message(span_warning("\The [user] begins deconstructing \the [src]."), span_notice("You start deconstructing \the [src]."))
+	if(do_after(user, 2 SECONDS * WT.toolspeed, target = src) && WT.isOn())
+		new /obj/item/stack/material/steel(get_turf(src), 2)
+		user.visible_message(span_warning("\The [user] has deconstructed \the [src]."), span_notice("You deconstruct \the [src]."))
+		playsound(src, 'sound/items/Deconstruct.ogg', 75, 1)
+		qdel(src)
+	return ITEM_INTERACT_SUCCESS
+
+/obj/structure/construction/wirecutter_act(mob/user, obj/item/W)
+	if(stage != FRAME_WIRED)
+		return ITEM_INTERACT_BLOCKING
+	stage = FRAME_FASTENED
+	user.update_examine_panel(src)
+	new /obj/item/stack/cable_coil(get_turf(src), 1, "red")
+	user.visible_message("\The [user] removes the wiring from \the [src].", "You remove the wiring from \the [src].", "You hear a snip.")
+	playsound(src, W.usesound, 50, 1)
+	update_icon()
+	return ITEM_INTERACT_SUCCESS
+
+/obj/structure/construction/screwdriver_act(mob/user, obj/item/W)
+	if(stage == FRAME_UNFASTENED)
+		stage = FRAME_FASTENED
+		user.visible_message("\The [user] screws \the [src] in place.", "You screw \the [src] in place.", "You hear a noise.")
+	else if(stage == FRAME_FASTENED)
+		stage = FRAME_UNFASTENED
+		user.visible_message("\The [user] unscrews \the [src].", "You unscrew \the [src].", "You hear a noise.")
+	else
+		user.visible_message("\The [user] closes \the [src]'s casing.", "You close \the [src]'s casing.", "You hear a click.")
+		playsound(src, W.usesound, 75, 1)
+		var/obj/newmachine = new build_machine_type(get_turf(src), src.dir)
+		newmachine.pixel_x = pixel_x
+		newmachine.pixel_y = pixel_y
+		transfer_fingerprints_to(newmachine)
+		qdel(src)
+		return ITEM_INTERACT_SUCCESS
+	user.update_examine_panel(src)
+	playsound(src, W.usesound, 75, 1)
+	update_icon()
+	return ITEM_INTERACT_SUCCESS
 
 /obj/structure/construction/get_description_interaction()
 	. = list()

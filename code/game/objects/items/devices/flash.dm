@@ -49,19 +49,23 @@
 	. = ..()
 	power_supply = new cell_type(src)
 
-/obj/item/flash/attackby(obj/item/W, mob/user)
-	if(W.has_tool_quality(TOOL_SCREWDRIVER) && broken)
-		user.visible_message(span_infoplain(span_bold("\The [user]") + " starts trying to repair \the [src]'s bulb."))
-		if(do_after(user, (40 SECONDS + rand(0, 20 SECONDS)) * W.toolspeed, target = src) && can_repair)
-			if(prob(30))
-				user.visible_message(span_notice("\The [user] successfully repairs \the [src]!"))
-				broken = FALSE
-				update_icon()
-			playsound(src, W.usesound, 50, 1)
-		else
-			user.visible_message(span_infoplain(span_bold("\The [user]") + " fails to repair \the [src]."))
+/obj/item/flash/Destroy()
+	QDEL_NULL(power_supply)
+	return ..()
+
+/obj/item/flash/screwdriver_act(mob/user, obj/item/tool)
+	if(!broken)
+		return ITEM_INTERACT_SKIP_TO_ATTACK
+	user.visible_message(span_infoplain(span_bold("\The [user]") + " starts trying to repair \the [src]'s bulb."))
+	if(do_after(user, (40 SECONDS + rand(0, 20 SECONDS)) * tool.toolspeed, target = src) && can_repair)
+		if(prob(30))
+			user.visible_message(span_notice("\The [user] successfully repairs \the [src]!"))
+			broken = FALSE
+			update_icon()
+		playsound(src, tool.usesound, 50, 1)
 	else
-		..()
+		user.visible_message(span_infoplain(span_bold("\The [user]") + " fails to repair \the [src]."))
+	return ITEM_INTERACT_SUCCESS
 
 /obj/item/flash/update_icon()
 	var/obj/item/cell/battery = power_supply

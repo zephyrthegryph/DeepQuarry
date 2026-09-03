@@ -196,10 +196,8 @@
 // attackby item
 // wrench: (un)anchor
 // weldingtool: convert to real pipe
-/obj/structure/disposalconstruct/attackby(obj/item/I, mob/user)
+/obj/structure/disposalconstruct/proc/construction_name()
 	var/nicetype = "pipe"
-	var/ispipe = 0 // Indicates if we should change the level of this pipe
-	src.add_fingerprint(user)
 	switch(ptype)
 		if(DISPOSAL_PIPE_BIN)
 			nicetype = "disposal bin"
@@ -217,115 +215,107 @@
 					nicetype = "untagged sorting pipe"
 				if(DISPOSAL_SORT_BODIES)
 					nicetype = "body recovery sorting pipe"
-			ispipe = 1
 		if(DISPOSAL_PIPE_TAGGER)
 			nicetype = "tagging pipe"
-			ispipe = 1
 		if(DISPOSAL_PIPE_TAGGER_PARTIAL)
 			nicetype = "partial tagging pipe"
-			ispipe = 1
-		else
-			nicetype = "pipe"
-			ispipe = 1
+	return nicetype
 
+/obj/structure/disposalconstruct/wrench_act(mob/user, obj/item/I)
+	var/nicetype = construction_name()
+	var/ispipe = is_pipe()
+	add_fingerprint(user)
 	var/turf/T = src.loc
 	if(!T.is_plating())
 		to_chat(user, "You can only attach the [nicetype] if the floor plating is removed.")
-		return
+		return ITEM_INTERACT_BLOCKING
 
 	var/obj/structure/disposalpipe/CP = locate() in T
 
-	// wrench: (un)anchor
-	if(I.has_tool_quality(TOOL_WRENCH))
-		if(anchored)
-			anchored = FALSE
-			if(ispipe)
-				level = 2
-				density = FALSE
-			else
-				density = TRUE
-			to_chat(user, "You detach the [nicetype] from the underfloor.")
+	if(anchored)
+		anchored = FALSE
+		if(ispipe)
+			level = 2
+			density = FALSE
 		else
-			if(ptype == DISPOSAL_PIPE_BIN || ptype == DISPOSAL_PIPE_OUTLET || ptype == DISPOSAL_PIPE_CHUTE) // Disposal or outlet
-				if(CP) // There's something there
-					if(!istype(CP,/obj/structure/disposalpipe/trunk))
-						to_chat(user, "The [nicetype] requires a trunk underneath it in order to work.")
-						return
-				else // Nothing under, fuck.
-					to_chat(user, "The [nicetype] requires a trunk underneath it in order to work.")
-					return
-			else
-				if(CP)
-					update()
-					var/pdir = CP.dpdir
-					if(istype(CP, /obj/structure/disposalpipe/broken))
-						pdir = CP.dir
-					if(pdir & dpdir)
-						to_chat(user, "There is already a [nicetype] at that location.")
-						return
+			density = TRUE
+		to_chat(user, "You detach the [nicetype] from the underfloor.")
+	else
+		if(!ispipe)
+			if(!istype(CP, /obj/structure/disposalpipe/trunk))
+				to_chat(user, "The [nicetype] requires a trunk underneath it in order to work.")
+				return ITEM_INTERACT_BLOCKING
+		else if(CP)
+			update()
+			var/pdir = CP.dpdir
+			if(istype(CP, /obj/structure/disposalpipe/broken))
+				pdir = CP.dir
+			if(pdir & dpdir)
+				to_chat(user, "There is already a [nicetype] at that location.")
+				return ITEM_INTERACT_BLOCKING
 
-			anchored = TRUE
-			if(ispipe)
-				level = 1 // We don't want disposal bins to disappear under the floors
-				density = FALSE
-			else
-				density = TRUE // We don't want disposal bins or outlets to go density 0
-			to_chat(user, "You attach the [nicetype] to the underfloor.")
-		playsound(src, I.usesound, 100, 1)
-		update()
-
-	// weldingtool: convert to real pipe
-	else if(I.has_tool_quality(TOOL_WELDER))
-		if(anchored)
-			var/obj/item/weldingtool/W = I.get_welder()
-			if(W.remove_fuel(0,user))
-				playsound(src, W.usesound, 100, 1)
-				to_chat(user, "Welding the [nicetype] in place.")
-				if(do_after(user, 2 SECONDS * W.toolspeed, target = src))
-					if(!src || !W.isOn()) return
-					to_chat(user, "The [nicetype] has been welded in place!")
-					update() // TODO: Make this neat
-					if(ispipe) // Pipe
-
-						var/pipetype = dpipetype()
-						var/obj/structure/disposalpipe/P = new pipetype(src.loc)
-						src.transfer_fingerprints_to(P)
-						P.base_icon_state = base_state
-						P.set_dir(dir)
-						P.dpdir = dpdir
-						P.update_icon()
-
-						//Needs some special treatment ;)
-						if(ptype==DISPOSAL_PIPE_SORTER || ptype==DISPOSAL_PIPE_SORTER_FLIPPED)
-							var/obj/structure/disposalpipe/sortjunction/SortP = P
-							SortP.sortType = sortType
-							SortP.updatedir()
-							SortP.updatedesc()
-							SortP.updatename()
-
-					else if(ptype==DISPOSAL_PIPE_BIN)
-						var/obj/machinery/disposal/P = new /obj/machinery/disposal(src.loc)
-						src.transfer_fingerprints_to(P)
-						P.mode = 0 // start with pump off
-
-					else if(ptype==DISPOSAL_PIPE_OUTLET)
-						var/obj/structure/disposaloutlet/P = new /obj/structure/disposaloutlet(src.loc)
-						src.transfer_fingerprints_to(P)
-						P.set_dir(dir)
-
-					else if(ptype==DISPOSAL_PIPE_CHUTE)
-						var/obj/machinery/disposal/deliveryChute/P = new /obj/machinery/disposal/deliveryChute(src.loc)
-						src.transfer_fingerprints_to(P)
-						P.set_dir(dir)
-
-					qdel(src)
-					return
-			else
-				to_chat(user, "You need more welding fuel to complete this task.")
-				return
+		anchored = TRUE
+		if(ispipe)
+			level = 1
+			density = FALSE
 		else
-			to_chat(user, "You need to attach it to the plating first!")
-			return
+			density = TRUE
+		to_chat(user, "You attach the [nicetype] to the underfloor.")
+	playsound(src, I.usesound, 100, 1)
+	update()
+	return ITEM_INTERACT_SUCCESS
+
+/obj/structure/disposalconstruct/welder_act(mob/user, obj/item/I)
+	var/nicetype = construction_name()
+	var/ispipe = is_pipe()
+	add_fingerprint(user)
+	var/turf/T = src.loc
+	if(!T.is_plating())
+		to_chat(user, "You can only attach the [nicetype] if the floor plating is removed.")
+		return ITEM_INTERACT_BLOCKING
+	if(!anchored)
+		to_chat(user, "You need to attach it to the plating first!")
+		return ITEM_INTERACT_BLOCKING
+	var/obj/item/weldingtool/W = I.get_welder()
+	if(!W.remove_fuel(0,user))
+		to_chat(user, "You need more welding fuel to complete this task.")
+		return ITEM_INTERACT_BLOCKING
+	playsound(src, W.usesound, 100, 1)
+	to_chat(user, "Welding the [nicetype] in place.")
+	if(!do_after(user, 2 SECONDS * W.toolspeed, target = src))
+		return ITEM_INTERACT_SUCCESS
+	if(!src || !W.isOn())
+		return ITEM_INTERACT_BLOCKING
+	to_chat(user, "The [nicetype] has been welded in place!")
+	update()
+	if(ispipe)
+		var/pipetype = dpipetype()
+		var/obj/structure/disposalpipe/P = new pipetype(src.loc)
+		transfer_fingerprints_to(P)
+		P.base_icon_state = base_state
+		P.set_dir(dir)
+		P.dpdir = dpdir
+		P.update_icon()
+		if(ptype == DISPOSAL_PIPE_SORTER || ptype == DISPOSAL_PIPE_SORTER_FLIPPED)
+			var/obj/structure/disposalpipe/sortjunction/SortP = P
+			SortP.sortType = sortType
+			SortP.updatedir()
+			SortP.updatedesc()
+			SortP.updatename()
+	else if(ptype == DISPOSAL_PIPE_BIN)
+		var/obj/machinery/disposal/P = new(src.loc)
+		transfer_fingerprints_to(P)
+		P.mode = 0
+	else if(ptype == DISPOSAL_PIPE_OUTLET)
+		var/obj/structure/disposaloutlet/P = new(src.loc)
+		transfer_fingerprints_to(P)
+		P.set_dir(dir)
+	else if(ptype == DISPOSAL_PIPE_CHUTE)
+		var/obj/machinery/disposal/deliveryChute/P = new(src.loc)
+		transfer_fingerprints_to(P)
+		P.set_dir(dir)
+	qdel(src)
+	return ITEM_INTERACT_SUCCESS
 
 /obj/structure/disposalconstruct/hides_under_flooring()
 	if(anchored)

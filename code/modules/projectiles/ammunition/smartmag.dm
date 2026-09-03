@@ -87,21 +87,24 @@
 				update_icon()
 				return
 
-	else if(I.has_tool_quality(TOOL_SCREWDRIVER))
-		if(attached_cell)
-			to_chat(user, "You begin removing \the [attached_cell] from \the [src].")
-			if(do_after(user, 1 SECOND, target = src))	// Faster than doing it by hand
-				attached_cell.update_icon()
-				attached_cell.forceMove(get_turf(src.loc))
-				attached_cell = null
-				user.visible_message("[user] removes a cell from \the [src].", "You remove \the [attached_cell] from \the [src].")
-				update_icon()
-				return
-
 	else if(istype(I, /obj/item/ammo_magazine) || istype(I, /obj/item/ammo_casing))
 		scan_ammo(I, user)
 
 	..()
+
+/obj/item/ammo_magazine/smart/screwdriver_act(mob/user, obj/item/tool)
+	if(!attached_cell)
+		return ITEM_INTERACT_BLOCKING
+	var/obj/item/cell/device/removed_cell = attached_cell
+	to_chat(user, "You begin removing \the [removed_cell] from \the [src].")
+	if(!do_after(user, 1 SECOND * tool.toolspeed, target = src))
+		return ITEM_INTERACT_BLOCKING
+	removed_cell.update_icon()
+	removed_cell.forceMove(get_turf(src))
+	attached_cell = null
+	user.visible_message("[user] removes a cell from \the [src].", "You remove \the [removed_cell] from \the [src].")
+	update_icon()
+	return ITEM_INTERACT_SUCCESS
 
 /obj/item/ammo_magazine/smart/afterattack(atom/target, mob/user, proximity_flag, click_parameters)
 	if(src.loc == user)

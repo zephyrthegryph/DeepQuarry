@@ -47,16 +47,16 @@
 	name = "supermatter supply beacon"
 	drop_type = "supermatter"
 
-/obj/machinery/power/supply_beacon/attackby(obj/item/W, mob/user)
-	if(!use_power && W.has_tool_quality(TOOL_WRENCH))
-		if(!anchored && !connect_to_network())
-			to_chat(user, span_warning("This device must be placed over an exposed cable."))
-			return
-		anchored = !anchored
-		user.visible_message(span_notice("\The [user] [anchored ? "secures" : "unsecures"] \the [src]."))
-		playsound(src, W.usesound, 50, 1)
-		return
-	return ..()
+/obj/machinery/power/supply_beacon/wrench_act(mob/user, obj/item/tool)
+	if(use_power)
+		return ITEM_INTERACT_BLOCKING
+	if(!anchored && !connect_to_network())
+		to_chat(user, span_warning("This device must be placed over an exposed cable."))
+		return ITEM_INTERACT_BLOCKING
+	anchored = !anchored
+	user.visible_message(span_notice("\The [user] [anchored ? "secures" : "unsecures"] \the [src]."))
+	playsound(src, tool.usesound, 50, TRUE)
+	return ITEM_INTERACT_SUCCESS
 
 /obj/machinery/power/supply_beacon/attack_hand(mob/user)
 

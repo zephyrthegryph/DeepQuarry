@@ -1,4 +1,5 @@
 /obj/machinery/bunsen_burner
+	maintenance_flags = MACHINE_MAINT_PANEL | MACHINE_MAINT_WRENCH
 	name = "bunsen burner"
 	desc = "A small, self-heating device designed for bringing chemical mixtures to a boil."
 	description_info = "Place a beaker into it to begin heating. Reagents will be distilled over time as the mixture heats up. The bunsen burner is only capable of heating reagents up to 600c, and the atmoshere around it will affect what reactions are possible."
@@ -14,23 +15,6 @@
 
 /obj/machinery/bunsen_burner/attackby(obj/item/W, mob/user)
 	add_fingerprint(user)
-	// Anchoring and disassembly
-	if(default_unfasten_wrench(user, W))
-		if(!anchored) // no longer anchored
-			drop_held_container()
-			if(heating)
-				end_boil()
-		return
-	if(default_deconstruction_screwdriver(user, W))
-		return
-	if(W.has_tool_quality(TOOL_CROWBAR) && panel_open && isturf(loc))
-		if(do_after(user, 5 * W.toolspeed, src))
-			// Breaking it down
-			drop_held_container()
-			to_chat(user, span_notice("You dissasemble \the [src]"))
-			new /obj/item/stack/material/steel(get_turf(src), 1)
-			qdel(src)
-		return
 	// Handle container
 	if(!istype(W, /obj/item/reagent_containers))
 		to_chat(user, span_notice("You can't put \the [W] onto \the [src]."))
@@ -51,6 +35,30 @@
 		start_boiling()
 	else
 		update_icon()
+
+/obj/machinery/bunsen_burner/wrench_act(mob/user, obj/item/tool)
+	. = ..()
+	if(. != ITEM_INTERACT_SUCCESS)
+		return .
+	if(!anchored)
+		drop_held_container()
+		if(heating)
+			end_boil()
+	return .
+
+/obj/machinery/bunsen_burner/screwdriver_act(mob/user, obj/item/tool)
+	return ..()
+
+/obj/machinery/bunsen_burner/crowbar_act(mob/user, obj/item/tool)
+	if(!panel_open || !isturf(loc))
+		return ITEM_INTERACT_BLOCKING
+	if(!do_after(user, 5 * tool.toolspeed, target = src))
+		return ITEM_INTERACT_BLOCKING
+	drop_held_container()
+	to_chat(user, span_notice("You disassemble \the [src]."))
+	new /obj/item/stack/material/steel(get_turf(src), 1)
+	qdel(src)
+	return ITEM_INTERACT_SUCCESS
 
 /obj/machinery/bunsen_burner/attack_hand(mob/user)
 	if(..())

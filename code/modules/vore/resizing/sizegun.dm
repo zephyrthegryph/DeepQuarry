@@ -167,17 +167,16 @@
 		return ..()
 
 
-/obj/item/gun/energy/sizegun/attackby(obj/item/A as obj, mob/user as mob)
-	if(A.has_tool_quality(TOOL_WIRECUTTER))
-		if(backfire)
-			to_chat(user, span_warning("You repair the damage to the \the [src]."))
-			backfire = 0
-			name = "size gun"
-		else
-			to_chat(user, span_warning("You snip a wire on \the [src], making it less reliable."))
-			backfire = 1
-			name = "unstable size gun"
-	..()
+/obj/item/gun/energy/sizegun/wirecutter_act(mob/user, obj/item/tool)
+	if(backfire)
+		to_chat(user, span_warning("You repair the damage to \the [src]."))
+		backfire = FALSE
+		name = "size gun"
+	else
+		to_chat(user, span_warning("You snip a wire on \the [src], making it less reliable."))
+		backfire = TRUE
+		name = "unstable size gun"
+	return ITEM_INTERACT_SUCCESS
 
 /obj/item/gun/energy/sizegun/backfire
 	name = "unstable size gun"

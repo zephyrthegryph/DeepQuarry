@@ -1,20 +1,29 @@
 import { afterEach, describe, expect, test } from 'bun:test';
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { ProductConfigurator } from './SelectableRecipe';
 import type { Design, MaterialChoice } from './Types';
-import { SelectableRecipe } from './SelectableRecipe';
 
 afterEach(cleanup);
 
 const design: Design = {
-  name: 'Material Pressure Pipe',
-  desc: 'A selected-material pipe.',
-  id: 'material_pipe',
-  icon: 'design32x32 material_pipe',
+  name: 'Pressure Pipe',
+  desc: 'A standard pressure pipe.',
+  id: 'pressure_pipe',
+  icon: 'design32x32 pressure_pipe',
   categories: ['/Initial'],
   cost: {},
-  materialSelectable: 1,
-  selectableAmount: 100,
+  materialConfigurable: 1,
   materialProfile: 'pressure service',
+  materialSlots: [
+    {
+      role: 'structure',
+      label: 'Pressure shell',
+      amount: 100,
+      defaultMaterial: 'processed_alpha',
+      optional: 0,
+      description: 'Controls pressure strength.',
+    },
+  ],
 };
 
 const choice = (id: string, label: string): MaterialChoice => ({
@@ -37,13 +46,13 @@ const choice = (id: string, label: string): MaterialChoice => ({
   pressureLimit: 42,
 });
 
-describe('material-selectable fabrication interaction', () => {
+describe('material construction workbench', () => {
   test('survives live inventory changes and builds with the valid fallback id', () => {
-    const builds: Array<[string, number]> = [];
+    const builds: Array<[Record<string, string>, number]> = [];
     const alpha = choice('processed_alpha', 'Alpha alloy');
     const beta = choice('processed_beta', 'Beta alloy');
     const view = render(
-      <SelectableRecipe
+      <ProductConfigurator
         design={design}
         available={{ processed_alpha: 1000, processed_beta: 1000 }}
         materialChoices={[alpha, beta]}
@@ -53,7 +62,7 @@ describe('material-selectable fabrication interaction', () => {
     );
 
     view.rerender(
-      <SelectableRecipe
+      <ProductConfigurator
         design={design}
         available={{ processed_beta: 1000 }}
         materialChoices={[beta]}
@@ -61,13 +70,13 @@ describe('material-selectable fabrication interaction', () => {
         onBuild={(id, amount) => builds.push([id, amount])}
       />,
     );
-    fireEvent.click(view.container.querySelector('.FabricatorRecipe__Title')!);
-    expect(builds).toEqual([['processed_beta', 1]]);
+    fireEvent.click(screen.getByText('Fabricate').closest('.Button')!);
+    expect(builds).toEqual([[{ structure: 'processed_beta' }, 1]]);
   });
 
-  test('reveals only product-relevant diagnostics on demand', () => {
+  test('keeps the normal product simple and reveals customization on demand', () => {
     render(
-      <SelectableRecipe
+      <ProductConfigurator
         design={design}
         available={{ processed_alpha: 1000 }}
         materialChoices={[choice('processed_alpha', 'Alpha alloy')]}
@@ -76,10 +85,16 @@ describe('material-selectable fabrication interaction', () => {
       />,
     );
 
-    expect(screen.queryByText('Strength')).toBeNull();
-    fireEvent.click(screen.getByLabelText('Material details'));
-    expect(screen.getByText('Strength')).toBeDefined();
-    expect(screen.getByText(/Pressure geometry: 42 atm/)).toBeDefined();
-    expect(screen.queryByText('Conductivity')).toBeNull();
+    expect(screen.getByText('Pressure shell')).toBeDefined();
+    expect(
+      screen.queryByPlaceholderText('Search loaded materials...'),
+    ).toBeNull();
+    fireEvent.click(screen.getByText('Custom').closest('.Button')!);
+    fireEvent.click(screen.getByText('Pressure shell').closest('.Button')!);
+    expect(screen.getByText('Pressure shell')).toBeDefined();
+    expect(screen.getByText('Controls pressure strength.')).toBeDefined();
+    expect(
+      screen.getByPlaceholderText('Search loaded materials...'),
+    ).toBeDefined();
   });
 });

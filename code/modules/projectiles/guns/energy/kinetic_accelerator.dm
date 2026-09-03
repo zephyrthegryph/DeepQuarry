@@ -111,8 +111,12 @@
 		var/obj/item/borg/upgrade/modkit/M = AM
 		M.uninstall(src, FALSE)
 
-/obj/item/gun/energy/kinetic_accelerator/attackby(obj/item/I, mob/user)
-	if(I.has_tool_quality(TOOL_CROWBAR))
+/obj/item/gun/energy/kinetic_accelerator/crowbar_act(mob/user, obj/item/tool)
+	attackby(tool, user, TOOL_CROWBAR)
+	return TRUE
+
+/obj/item/gun/energy/kinetic_accelerator/attackby(obj/item/I, mob/user, tool_quality)
+	if(tool_quality == TOOL_CROWBAR)
 		if(modkits.len)
 			to_chat(user, span_notice("You pry the modifications out."))
 			playsound(loc, I.usesound, 100, 1)

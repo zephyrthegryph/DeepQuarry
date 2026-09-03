@@ -12,6 +12,7 @@
 	use_power = USE_POWER_IDLE
 	idle_power_usage = 10
 	active_power_usage = 200
+	maintenance_flags = MACHINE_MAINT_STANDARD_MOVABLE
 	power_channel = EQUIP
 	circuit = /obj/item/circuitboard/papershredder
 	var/max_paper = 10
@@ -36,16 +37,7 @@
 	if(istype(W, /obj/item/storage))
 		empty_bin(user, W)
 		return
-	else if(W.has_tool_quality(TOOL_WRENCH))
-		playsound(src, W.usesound, 50, 1)
-		anchored = !anchored
-		to_chat(user, span_notice("You [anchored ? "wrench" : "unwrench"] \the [src]."))
-		return
 	else if(default_part_replacement(user, W))
-		return
-	else if(default_deconstruction_screwdriver(user, W))
-		return
-	else if(default_deconstruction_crowbar(user, W))
 		return
 	else
 		var/paper_result

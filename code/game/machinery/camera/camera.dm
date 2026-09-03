@@ -8,6 +8,9 @@
 	active_power_usage = 10
 	plane = MOB_PLANE
 	layer = BELOW_MOB_LAYER
+	max_integrity = 80
+	integrity_failure = 0.5
+	damage_deflection = 5
 
 	var/list/network = list(NETWORK_DEFAULT)
 	var/c_tag = null
@@ -67,6 +70,10 @@
 		layer = ABOVE_MOB_LAYER
 
 /obj/machinery/camera/Destroy()
+	// cancelCameraAlarm() intentionally respects a cut alarm wire, which is wrong
+	// during destruction: every handler must release source and cached-camera refs.
+	for(var/datum/alarm_handler/handler as anything in SSalarm.all_handlers)
+		handler.release_atom(src)
 	if(isMotion())
 		unsense_proximity(callback = TYPE_PROC_REF(/atom,HasProximity))
 	deactivate(null, 0) //kick anyone viewing out
@@ -75,6 +82,8 @@
 		assembly = null
 	qdel(wires)
 	wires = null
+	client_huds = null
+	network = null
 	return ..()
 
 /obj/machinery/camera/process()
@@ -107,23 +116,16 @@
 			update_coverage()
 			START_PROCESSING(SSobj, src)
 
-/obj/machinery/camera/bullet_act(obj/item/projectile/P)
-	take_damage(P.get_structure_damage())
-
 /obj/machinery/camera/ex_act(severity)
 	if(src.invuln)
 		return
 
-	//camera dies if an explosion touches it!
-	if(severity <= 2 || prob(50))
-		destroy()
-
-	..() //and give it the regular chance of being deleted outright
+	return ..()
 
 /obj/machinery/camera/blob_act()
 	if((stat & BROKEN) || invuln)
 		return
-	destroy()
+	take_damage(max_integrity * (1 - integrity_failure) + DAMAGE_PRECISION, BRUTE, MELEE)
 
 /obj/machinery/camera/hitby(atom/movable/source, datum/thrownthing/throwingdatum)
 	..()
@@ -149,7 +151,7 @@
 		visible_message(span_warning("\The [user] slashes at [src]!"))
 		playsound(src, 'sound/weapons/slash.ogg', 100, 1)
 		add_hiddenprint(user)
-		destroy()
+		take_damage(max_integrity * (1 - integrity_failure) + DAMAGE_PRECISION, BRUTE, MELEE)
 
 /obj/machinery/camera/attack_generic(mob/user as mob)
 	if(isanimal(user))
@@ -160,44 +162,54 @@
 		visible_message(span_warning("\The [user] [pick(S.attacktext)] \the [src]!"))
 		playsound(src, S.attack_sound, 100, 1)
 		add_hiddenprint(user)
-		destroy()
+		take_damage(max_integrity * (1 - integrity_failure) + DAMAGE_PRECISION, BRUTE, MELEE)
 	..()
+
+/obj/machinery/camera/screwdriver_act(mob/user, obj/item/tool)
+	update_coverage()
+	panel_open = !panel_open
+	user.visible_message(span_warning("[user] screws the camera's panel [panel_open ? "open" : "closed"]!"), span_notice("You screw the camera's panel [panel_open ? "open" : "closed"]."))
+	playsound(src, tool.usesound, 50, TRUE)
+	return ITEM_INTERACT_SUCCESS
+
+/obj/machinery/camera/wirecutter_act(mob/user, obj/item/tool)
+	update_coverage()
+	if(!panel_open)
+		return ITEM_INTERACT_BLOCKING
+	interact(user)
+	return ITEM_INTERACT_SUCCESS
+
+/obj/machinery/camera/multitool_act(mob/user, obj/item/tool)
+	return wirecutter_act(user, tool)
+
+/obj/machinery/camera/welder_act(mob/user, obj/item/tool)
+	update_coverage()
+	if(!wires.is_all_cut() && !(stat & BROKEN))
+		return ..()
+	if(!weld(tool, user))
+		return ITEM_INTERACT_BLOCKING
+	if(assembly)
+		assembly.forceMove(loc)
+		assembly.anchored = TRUE
+		assembly.camera_name = c_tag
+		assembly.camera_network = english_list(network, NETWORK_DEFAULT, ",", ",")
+		assembly.update_icon()
+		assembly.set_dir(dir)
+		if(stat & BROKEN)
+			assembly.state = 2
+			to_chat(user, span_notice("You repaired \the [src] frame."))
+		else
+			assembly.state = 1
+			to_chat(user, span_notice("You cut \the [src] free from the wall."))
+			new /obj/item/stack/cable_coil(loc, 2)
+		assembly = null
+	qdel(src)
+	return ITEM_INTERACT_SUCCESS
 
 /obj/machinery/camera/attackby(obj/item/W as obj, mob/living/user as mob)
 	update_coverage()
-	// DECONSTRUCTION
-	if(W.has_tool_quality(TOOL_SCREWDRIVER))
-		//to_chat(user, span_notice("You start to [panel_open ? "close" : "open"] the camera's panel."))
-		//if(toggle_panel(user)) // No delay because no one likes screwdrivers trying to be hip and have a duration cooldown
-		panel_open = !panel_open
-		user.visible_message(span_warning("[user] screws the camera's panel [panel_open ? "open" : "closed"]!"),
-		span_notice("You screw the camera's panel [panel_open ? "open" : "closed"]."))
-		playsound(src, W.usesound, 50, 1)
-
-	else if((W.has_tool_quality(TOOL_WIRECUTTER) || istype(W, /obj/item/multitool)) && panel_open)
-		interact(user)
-
-	else if(W.has_tool_quality(TOOL_WELDER) && (wires.is_all_cut() || (stat & BROKEN)))
-		if(weld(W, user))
-			if(assembly)
-				assembly.loc = src.loc
-				assembly.anchored = TRUE
-				assembly.camera_name = c_tag
-				assembly.camera_network = english_list(network, NETWORK_DEFAULT, ",", ",")
-				assembly.update_icon()
-				assembly.dir = src.dir
-				if(stat & BROKEN)
-					assembly.state = 2
-					to_chat(user, span_notice("You repaired \the [src] frame."))
-				else
-					assembly.state = 1
-					to_chat(user, span_notice("You cut \the [src] free from the wall."))
-					new /obj/item/stack/cable_coil(src.loc, 2)
-				assembly = null //so qdel doesn't eat it.
-			qdel(src)
-
 	// OTHER
-	else if (can_use() && (istype(W, /obj/item/paper) || istype(W, /obj/item/pda)) && isliving(user))
+	if (can_use() && (istype(W, /obj/item/paper) || istype(W, /obj/item/pda)) && isliving(user))
 		var/mob/living/U = user
 		var/obj/item/paper/X = null
 		var/obj/item/pda/P = null
@@ -277,13 +289,8 @@
 		playsound(src, 'sound/items/Wirecutter.ogg', 100, 1)
 		icon_state = initial(icon_state)
 
-/obj/machinery/camera/take_damage(force, message)
-	//prob(25) gives an average of 3-4 hits
-	if (force >= toughness && (force > toughness*4 || prob(25)))
-		destroy()
-
-//Used when someone breaks a camera
-/obj/machinery/camera/proc/destroy()
+/obj/machinery/camera/atom_break(damage_flag)
+	. = ..()
 	stat |= BROKEN
 	wires.cut_all()
 
@@ -296,6 +303,14 @@
 	spark_system.set_up(5, 0, loc)
 	spark_system.start()
 	playsound(src, "sparks", 50, 1)
+
+/obj/machinery/camera/atom_fix()
+	. = ..()
+	wires.mend_all()
+	stat &= ~BROKEN
+	cancelCameraAlarm()
+	update_icon()
+	update_coverage()
 
 /obj/machinery/camera/proc/set_status(newstatus)
 	if (status != newstatus)
@@ -375,8 +390,8 @@
 
 	return null
 
-/obj/machinery/camera/proc/weld(obj/item/weldingtool/WT, mob/user)
-	WT = WT.get_welder()
+/obj/machinery/camera/proc/weld(obj/item/tool, mob/user)
+	var/obj/item/weldingtool/WT = tool.get_welder()
 
 	if(busy)
 		return 0

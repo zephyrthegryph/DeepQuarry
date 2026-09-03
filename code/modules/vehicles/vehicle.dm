@@ -103,32 +103,8 @@
 	if(istype(W, /obj/item/hand_labeler))
 		return
 	if(mechanical)
-		if(W.has_tool_quality(TOOL_SCREWDRIVER))
-			if(!locked)
-				open = !open
-				update_icon()
-				to_chat(user, span_notice("Maintenance panel is now [open ? "opened" : "closed"]."))
-				playsound(src, W.usesound, 50, 1)
-		else if(W.has_tool_quality(TOOL_CROWBAR) && cell && open)
-			remove_cell(user)
-
-		else if(istype(W, /obj/item/cell) && !cell && open)
+		if(istype(W, /obj/item/cell) && !cell && open)
 			insert_cell(W, user)
-		else if(W.has_tool_quality(TOOL_WELDER))
-			var/obj/item/weldingtool/T = W.get_welder()
-			if(T.welding)
-				if(get_integrity() < max_integrity)
-					if(open)
-						repair_damage(10)
-						user.setClickCooldown(user.get_attack_speed(W))
-						playsound(src, T.usesound, 50, 1)
-						user.visible_message(span_red("[user] repairs [src]!"),span_blue("You repair [src]!"))
-					else
-						to_chat(user, span_notice("Unable to repair with the maintenance panel closed."))
-				else
-					to_chat(user, span_notice("[src] does not need a repair."))
-			else
-				to_chat(user, span_notice("Unable to repair while [src] is off."))
 
 	else if(W.force && W.damtype)
 		user.setClickCooldown(user.get_attack_speed(W))
@@ -140,6 +116,39 @@
 		..()
 	else
 		..()
+
+/obj/vehicle/screwdriver_act(mob/user, obj/item/tool)
+	if(!mechanical)
+		return ..()
+	if(locked)
+		return ITEM_INTERACT_BLOCKING
+	open = !open
+	update_icon()
+	to_chat(user, span_notice("Maintenance panel is now [open ? "opened" : "closed"]."))
+	playsound(src, tool.usesound, 50, TRUE)
+	return ITEM_INTERACT_SUCCESS
+
+/obj/vehicle/crowbar_act(mob/user, obj/item/tool)
+	if(!mechanical)
+		return ..()
+	if(!cell || !open)
+		return ITEM_INTERACT_BLOCKING
+	remove_cell(user)
+	return ITEM_INTERACT_SUCCESS
+
+/obj/vehicle/welder_act(mob/user, obj/item/tool)
+	if(!mechanical)
+		return ..()
+	if(!open || get_integrity() >= max_integrity)
+		return ITEM_INTERACT_BLOCKING
+	var/obj/item/weldingtool/welder = tool.get_welder()
+	if(!welder?.remove_fuel(0, user))
+		return ITEM_INTERACT_BLOCKING
+	repair_damage(10)
+	user.setClickCooldown(user.get_attack_speed(tool))
+	playsound(src, welder.usesound, 50, TRUE)
+	user.visible_message(span_red("[user] repairs [src]!"), span_blue("You repair [src]!"))
+	return ITEM_INTERACT_SUCCESS
 
 /obj/vehicle/bullet_act(obj/item/projectile/Proj)
 	take_damage(Proj.get_structure_damage(), Proj.damage_type, BULLET)

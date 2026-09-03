@@ -49,24 +49,26 @@
 			to_chat(user, "Controls are now [src.locked ? "locked." : "unlocked."]")
 		else
 			to_chat(user, span_red("Access denied."))
-	else if(W.has_tool_quality(TOOL_WRENCH))
-		src.anchored = !src.anchored
-		playsound(src, W.usesound, 75, 1)
-		src.visible_message(span_blue("[icon2html(src,viewers(src))] [src] has been [anchored ? "bolted to the floor" : "unbolted from the floor"] by [user]."))
-
-		if(anchored)
-			START_MACHINE_PROCESSING(src)
-			spawn(0)
-				for(var/obj/machinery/shield_gen/gen in range(1, src))
-					if(get_dir(src, gen) == src.dir)
-						owned_gen = gen
-						owned_gen.capacitors |= src
-		else
-			if(owned_gen && (src in owned_gen.capacitors))
-				owned_gen.capacitors -= src
-			owned_gen = null
 	else
 		..()
+
+/obj/machinery/shield_capacitor/wrench_act(mob/user, obj/item/W)
+	anchored = !anchored
+	playsound(src, W.usesound, 75, 1)
+	src.visible_message(span_blue("[icon2html(src,viewers(src))] [src] has been [anchored ? "bolted to the floor" : "unbolted from the floor"] by [user]."))
+
+	if(anchored)
+		START_MACHINE_PROCESSING(src)
+		spawn(0)
+			for(var/obj/machinery/shield_gen/gen in range(1, src))
+				if(get_dir(src, gen) == src.dir)
+					owned_gen = gen
+					owned_gen.capacitors |= src
+	else
+		if(owned_gen && (src in owned_gen.capacitors))
+			owned_gen.capacitors -= src
+		owned_gen = null
+	return ITEM_INTERACT_SUCCESS
 
 /obj/machinery/shield_capacitor/attack_hand(mob/user)
 	if(stat & (BROKEN))

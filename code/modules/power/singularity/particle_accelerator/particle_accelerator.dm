@@ -103,11 +103,19 @@ So, hopefully this is helpful if any more icons are to be added/changed/wonderin
 			. += "It is assembled."
 
 /obj/structure/particle_accelerator/attackby(obj/item/W, mob/user)
-	if(istool(W))
-		if(src.process_tool_hit(W,user))
-			return
+	if(istype(W, /obj/item/stack/cable_coil) && process_tool_hit(W, user))
+		return
 	..()
 	return
+
+/obj/structure/particle_accelerator/wrench_act(mob/user, obj/item/W)
+	return process_tool_hit(W, user, TOOL_WRENCH) ? ITEM_INTERACT_SUCCESS : ITEM_INTERACT_BLOCKING
+
+/obj/structure/particle_accelerator/wirecutter_act(mob/user, obj/item/W)
+	return process_tool_hit(W, user, TOOL_WIRECUTTER) ? ITEM_INTERACT_SUCCESS : ITEM_INTERACT_BLOCKING
+
+/obj/structure/particle_accelerator/screwdriver_act(mob/user, obj/item/W)
+	return process_tool_hit(W, user, TOOL_SCREWDRIVER) ? ITEM_INTERACT_SUCCESS : ITEM_INTERACT_BLOCKING
 
 
 /obj/structure/particle_accelerator/Moved(atom/old_loc, direction, forced = FALSE)
@@ -172,7 +180,7 @@ So, hopefully this is helpful if any more icons are to be added/changed/wonderin
 	return 0
 
 
-/obj/structure/particle_accelerator/proc/process_tool_hit(obj/item/O, mob/user)
+/obj/structure/particle_accelerator/proc/process_tool_hit(obj/item/O, mob/user, tool_quality)
 	if(!(O) || !(user))
 		return 0
 	if(!ismob(user) || !isobj(O))
@@ -181,14 +189,14 @@ So, hopefully this is helpful if any more icons are to be added/changed/wonderin
 
 	switch(src.construction_state)//TODO:Might be more interesting to have it need several parts rather than a single list of steps
 		if(0)
-			if(O.has_tool_quality(TOOL_WRENCH))
+			if(tool_quality == TOOL_WRENCH)
 				playsound(src, O.usesound, 75, 1)
 				src.anchored = TRUE
 				user.visible_message("[user.name] secures the [src.name] to the floor.", \
 					"You secure the external bolts.")
 				temp_state++
 		if(1)
-			if(O.has_tool_quality(TOOL_WRENCH))
+			if(tool_quality == TOOL_WRENCH)
 				playsound(src, O.usesound, 75, 1)
 				src.anchored = FALSE
 				user.visible_message("[user.name] detaches the [src.name] from the floor.", \
@@ -200,16 +208,16 @@ So, hopefully this is helpful if any more icons are to be added/changed/wonderin
 						"You add some wires.")
 					temp_state++
 		if(2)
-			if(O.has_tool_quality(TOOL_WIRECUTTER))//TODO:Shock user if its on?
+			if(tool_quality == TOOL_WIRECUTTER)//TODO:Shock user if its on?
 				user.visible_message("[user.name] removes some wires from the [src.name].", \
 					"You remove some wires.")
 				temp_state--
-			else if(O.has_tool_quality(TOOL_SCREWDRIVER))
+			else if(tool_quality == TOOL_SCREWDRIVER)
 				user.visible_message("[user.name] closes the [src.name]'s access panel.", \
 					"You close the access panel.")
 				temp_state++
 		if(3)
-			if(O.has_tool_quality(TOOL_SCREWDRIVER))
+			if(tool_quality == TOOL_SCREWDRIVER)
 				user.visible_message("[user.name] opens the [src.name]'s access panel.", \
 					"You open the access panel.")
 				temp_state--
@@ -264,31 +272,24 @@ So, hopefully this is helpful if any more icons are to be added/changed/wonderin
 
 
 /obj/machinery/particle_accelerator/attackby(obj/item/W, mob/user)
-	if(istool(W))
-		if(src.process_tool_hit(W,user))
-			return
+	if(istype(W, /obj/item/stack/cable_coil) && process_tool_hit(W, user))
+		return
 	..()
 	return
 
-/obj/machinery/particle_accelerator/ex_act(severity)
-	switch(severity)
-		if(1.0)
-			qdel(src)
-			return
-		if(2.0)
-			if (prob(50))
-				qdel(src)
-				return
-		if(3.0)
-			if (prob(25))
-				qdel(src)
-				return
-	return
+/obj/machinery/particle_accelerator/wrench_act(mob/user, obj/item/W)
+	return process_tool_hit(W, user, TOOL_WRENCH) ? ITEM_INTERACT_SUCCESS : ITEM_INTERACT_BLOCKING
+
+/obj/machinery/particle_accelerator/wirecutter_act(mob/user, obj/item/W)
+	return process_tool_hit(W, user, TOOL_WIRECUTTER) ? ITEM_INTERACT_SUCCESS : ITEM_INTERACT_BLOCKING
+
+/obj/machinery/particle_accelerator/screwdriver_act(mob/user, obj/item/W)
+	return process_tool_hit(W, user, TOOL_SCREWDRIVER) ? ITEM_INTERACT_SUCCESS : ITEM_INTERACT_BLOCKING
 
 /obj/machinery/particle_accelerator/proc/update_state()
 	return 0
 
-/obj/machinery/particle_accelerator/proc/process_tool_hit(obj/item/O, mob/user)
+/obj/machinery/particle_accelerator/proc/process_tool_hit(obj/item/O, mob/user, tool_quality)
 	if(!(O) || !(user))
 		return 0
 	if(!ismob(user) || !isobj(O))
@@ -296,14 +297,14 @@ So, hopefully this is helpful if any more icons are to be added/changed/wonderin
 	var/temp_state = src.construction_state
 	switch(src.construction_state)//TODO:Might be more interesting to have it need several parts rather than a single list of steps
 		if(0)
-			if(O.has_tool_quality(TOOL_WRENCH))
+			if(tool_quality == TOOL_WRENCH)
 				playsound(src, O.usesound, 75, 1)
 				src.anchored = TRUE
 				user.visible_message("[user.name] secures the [src.name] to the floor.", \
 					"You secure the external bolts.")
 				temp_state++
 		if(1)
-			if(O.has_tool_quality(TOOL_WRENCH))
+			if(tool_quality == TOOL_WRENCH)
 				playsound(src, O.usesound, 75, 1)
 				src.anchored = FALSE
 				user.visible_message("[user.name] detaches the [src.name] from the floor.", \
@@ -315,16 +316,16 @@ So, hopefully this is helpful if any more icons are to be added/changed/wonderin
 						"You add some wires.")
 					temp_state++
 		if(2)
-			if(O.has_tool_quality(TOOL_WIRECUTTER))//TODO:Shock user if its on?
+			if(tool_quality == TOOL_WIRECUTTER)//TODO:Shock user if its on?
 				user.visible_message("[user.name] removes some wires from the [src.name].", \
 					"You remove some wires.")
 				temp_state--
-			else if(O.has_tool_quality(TOOL_SCREWDRIVER))
+			else if(tool_quality == TOOL_SCREWDRIVER)
 				user.visible_message("[user.name] closes the [src.name]'s access panel.", \
 					"You close the access panel.")
 				temp_state++
 		if(3)
-			if(O.has_tool_quality(TOOL_SCREWDRIVER))
+			if(tool_quality == TOOL_SCREWDRIVER)
 				user.visible_message("[user.name] opens the [src.name]'s access panel.", \
 					"You open the access panel.")
 				temp_state--

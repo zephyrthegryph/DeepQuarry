@@ -1604,6 +1604,7 @@ GLOBAL_LIST_INIT(global_ammo_types, list(
 //LINDA migration the collectors are stub-only — see code/
 //atmospherics/deleted_engine_stubs.dm).
 GLOBAL_LIST_EMPTY(rad_collectors)
+GLOBAL_LIST_EMPTY(geiger_counters)
 // algae/ten stack stub — used by hydroponics; algae generator was deleted with
 // ZAS but the stack subtype is still referenced.
 

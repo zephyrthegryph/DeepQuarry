@@ -171,25 +171,6 @@
 
 
 /obj/machinery/shieldwallgen/attackby(obj/item/W, mob/user)
-	if(W.has_tool_quality(TOOL_WRENCH))
-		if(active)
-			to_chat(user, "Turn off the field generator first.")
-			return
-
-		else if(state == 0)
-			state = 1
-			playsound(src, W.usesound, 75, 1)
-			to_chat(user, "You secure the external reinforcing bolts to the floor.")
-			src.anchored = TRUE
-			return
-
-		else if(state == 1)
-			state = 0
-			playsound(src, W.usesound, 75, 1)
-			to_chat(user, "You undo the external reinforcing bolts.")
-			src.anchored = FALSE
-			return
-
 	if(istype(W, /obj/item/card/id)||istype(W, /obj/item/pda))
 		if (src.allowed(user))
 			src.locked = !src.locked
@@ -200,6 +181,16 @@
 	else
 		src.add_fingerprint(user)
 		visible_message(span_red("The [src.name] has been hit with \the [W.name] by [user.name]!"))
+
+/obj/machinery/shieldwallgen/wrench_act(mob/user, obj/item/W)
+	if(active)
+		to_chat(user, "Turn off the field generator first.")
+		return ITEM_INTERACT_BLOCKING
+	state = !state
+	anchored = state
+	playsound(src, W.usesound, 75, 1)
+	to_chat(user, "You [anchored ? "secure" : "undo"] the external reinforcing bolts[anchored ? " to" : " from"] the floor.")
+	return ITEM_INTERACT_SUCCESS
 
 /obj/machinery/shieldwallgen/proc/cleanup(NSEW)
 	var/obj/machinery/shieldwall/F

@@ -103,7 +103,7 @@
 	sleeping_mixture_id = null
 	sleeping_mixture_revision = -1
 
-/obj/machinery/air_sensor/proc/gas_dependency_changed(mixture_id, change_mask)
+/obj/machinery/air_sensor/gas_dependency_changed(mixture_id, change_mask)
 	if(!(change_mask & dependency_mask()) || mixture_id != sleeping_mixture_id)
 		return FALSE
 	var/datum/gas_mixture/environment = return_air()
@@ -133,16 +133,7 @@
 		SSradio.remove_object(src,frequency)
 	. = ..()
 
-/obj/machinery/air_sensor/attackby(obj/item/W, mob/user)
-	if(W.has_tool_quality(TOOL_WRENCH))
-		return wrench_act(user, W)
-
-	if(W.has_tool_quality(TOOL_MULTITOOL))
-		return multitool_act(user, W)
-
-	return ..()
-
-/obj/machinery/air_sensor/proc/wrench_act(mob/living/user, obj/item/tool/wrench/W)
+/obj/machinery/air_sensor/wrench_act(mob/user, obj/item/W)
 	playsound(src, W.usesound, 50, 1)
 	user.visible_message("[user] unfastens \the [src].", span_notice("You have unfastened \the [src]."), "You hear ratcheting.")
 	var/obj/item/pipe_gsensor/gsensor = new /obj/item/pipe_gsensor(loc)
@@ -150,9 +141,10 @@
 	gsensor.output = output
 	qdel(src)
 	playsound(src, 'sound/items/Deconstruct.ogg', 50, 1)
+	return ITEM_INTERACT_SUCCESS
 
 #define ONOFF_TOGGLE(flag) "\[[(output & flag) ? "YES" : "NO"]]"
-/obj/machinery/air_sensor/proc/multitool_act(mob/living/user, obj/item/multitool/tool)
+/obj/machinery/air_sensor/multitool_act(mob/user, obj/item/tool)
 	var/list/options = list(
 		"Pressure: [ONOFF_TOGGLE(SENSOR_PRESSURE)]" 		= SENSOR_PRESSURE,
 		"Temperature: [ONOFF_TOGGLE(SENSOR_TEMPERATURE)]" 	= SENSOR_TEMPERATURE,
@@ -207,6 +199,7 @@
 #undef ONOFF_TOGGLE
 
 /obj/machinery/computer/general_air_control
+
 	icon_keyboard = "atmos_key"
 	icon_screen = "tank"
 	name = "Computer"
@@ -227,12 +220,6 @@
 		return
 
 	tgui_interact(user)
-
-/obj/machinery/computer/general_air_control/attackby(obj/item/W, mob/user)
-	if(W.has_tool_quality(TOOL_MULTITOOL))
-		return multitool_act(W, user)
-
-	. = ..(W, user)
 
 /obj/machinery/computer/general_air_control/allow_pai_interaction(mob/living/silicon/pai/user, proximity_flag)
 	return proximity_flag
@@ -271,7 +258,7 @@
 	frequency = new_frequency
 	radio_connection = SSradio.add_object(src, frequency, RADIO_ATMOSIA)
 
-/obj/machinery/computer/general_air_control/proc/multitool_act(obj/item/W, mob/user)
+/obj/machinery/computer/general_air_control/multitool_act(mob/user, obj/item/W)
 	var/list/options = list("Sensors", "Frequency", "Cancel")
 	var/answer = tgui_input_list(user, "[src] has a frequency of [frequency]. What would you like to change?", "Options!", options)
 	. = TRUE
@@ -441,7 +428,8 @@
 	signal.data["sigtype"]="command"
 	radio_connection.post_signal(src, signal, radio_filter = RADIO_ATMOSIA)
 
-/obj/machinery/computer/general_air_control/large_tank_control/multitool_act(obj/item/W, mob/user)
+/obj/machinery/computer/general_air_control/large_tank_control/multitool_act(mob/user, obj/item/W)
+	. = ITEM_INTERACT_SUCCESS
 	var/list/options =  list("Inlet", "Outlet", "Sensors", "Frequency", "Cancel")
 	var/choice = tgui_input_list(user, "[src] has a frequency of [frequency]. What would you like to change?", "Configuration", options)
 	if(!choice || choice == "Cancel" || !Adjacent(user))
@@ -611,7 +599,8 @@
 	signal.data["sigtype"]="command"
 	radio_connection.post_signal(src, signal, radio_filter = RADIO_ATMOSIA)
 
-/obj/machinery/computer/general_air_control/supermatter_core/multitool_act(obj/item/W, mob/user)
+/obj/machinery/computer/general_air_control/supermatter_core/multitool_act(mob/user, obj/item/W)
+	. = ITEM_INTERACT_SUCCESS
 	var/list/options =  list("Inlet", "Outlet", "Sensors", "Frequency")
 	var/choice = tgui_input_list(user, "[src] has a frequency of [frequency]. What would you like to change?", "Configuration", options)
 	if(!choice || choice == "Cancel" || !Adjacent(user))

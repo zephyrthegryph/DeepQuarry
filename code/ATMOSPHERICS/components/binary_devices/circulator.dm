@@ -97,47 +97,43 @@
 
 	return 1
 
-/obj/machinery/atmospherics/binary/circulator/attackby(obj/item/W as obj, mob/user as mob)
-	if(W.has_tool_quality(TOOL_WRENCH))
-		playsound(src, W.usesound, 75, 1)
-		anchored = !anchored
-		user.visible_message("[user.name] [anchored ? "secures" : "unsecures"] the bolts holding [src.name] to the floor.", \
-					"You [anchored ? "secure" : "unsecure"] the bolts holding [src] to the floor.", \
-					"You hear a ratchet.")
+/obj/machinery/atmospherics/binary/circulator/wrench_act(mob/user, obj/item/W)
+	playsound(src, W.usesound, 75, 1)
+	anchored = !anchored
+	user.visible_message("[user.name] [anchored ? "secures" : "unsecures"] the bolts holding [src.name] to the floor.", \
+				"You [anchored ? "secure" : "unsecure"] the bolts holding [src] to the floor.", \
+				"You hear a ratchet.")
 
-		if(anchored)
-			temperature_overlay = null
-			if(dir & (NORTH|SOUTH))
-				initialize_directions = NORTH|SOUTH
-			else if(dir & (EAST|WEST))
-				initialize_directions = EAST|WEST
+	if(anchored)
+		temperature_overlay = null
+		if(dir & (NORTH|SOUTH))
+			initialize_directions = NORTH|SOUTH
+		else if(dir & (EAST|WEST))
+			initialize_directions = EAST|WEST
 
-			atmos_init()
-			build_network()
-			if (node1)
-				node1.atmos_init()
-				node1.build_network()
-			if (node2)
-				node2.atmos_init()
-				node2.build_network()
-		else
-			if(node1)
-				node1.disconnect(src)
-				qdel(network1)
-			if(node2)
-				node2.disconnect(src)
-				qdel(network2)
-
-			node1 = null
-			node2 = null
-
-		for(var/obj/machinery/power/generator/generator in range(1, src))
-			generator.reconnect()
-			if(generator.anchored)
-				START_MACHINE_PROCESSING(generator)
-
+		atmos_init()
+		if (node1)
+			node1.atmos_init()
+		if (node2)
+			node2.atmos_init()
+		rust_register_pipe_topology()
 	else
-		..()
+		rust_unregister_pipe_topology()
+		if(node1)
+			node1.disconnect(src)
+			rust_release_network_wrapper(network1)
+		if(node2)
+			node2.disconnect(src)
+			rust_release_network_wrapper(network2)
+
+		node1 = null
+		node2 = null
+
+	for(var/obj/machinery/power/generator/generator in range(1, src))
+		generator.reconnect()
+		if(generator.anchored)
+			START_MACHINE_PROCESSING(generator)
+	return ITEM_INTERACT_SUCCESS
 
 /obj/machinery/atmospherics/binary/circulator/examine(mob/user, infix, suffix)
 	. = ..()

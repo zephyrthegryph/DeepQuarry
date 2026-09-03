@@ -1,0 +1,9 @@
+author: "BigBadE"
+delete-after: true
+changes:
+  - rscadd: "Replaced special crucible workpieces with physical material stacks and role-based multi-material construction."
+  - qol: "Fabricators and personal crafting now use a shared product configurator with standard presets, searchable loaded materials, role guidance, and predicted performance."
+  - rscadd: "Ordinary fabrication recipes now expose their functional parts for material selection while preserving their original costs and defaults."
+  - rscdel: "Removed material categories, duplicate Material-prefixed recipes, the obsolete material crucible, composite press, workpiece, and special composite-stock architecture."
+  - bugfix: "Replaced placeholder fabrication parts with product-family blueprints for cells, stock parts, tools, surgical instruments, ammunition, firearms, electronics, clothing, vessels, cables, lights, robots, and mechs."
+  - balance: "Configured example servers for four-times-faster running and walking."

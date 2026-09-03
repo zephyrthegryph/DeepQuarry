@@ -133,6 +133,7 @@ GLOBAL_LIST_BOILERPLATE(allCasters, /obj/machinery/newscaster)
 	light_color = "#00ff00"
 	vis_flags = VIS_HIDE // They have an emissive that looks bad in openspace due to their wall-mounted nature
 	flags = WALL_ITEM
+	integrity_failure = 0.5
 	var/isbroken = 0  //1 if someone banged it with something heavy
 	var/ispowered = 1 //starts powered, changes with power_change()
 	//var/list/datum/feed_channel/channel_list = list() //This list will contain the names of the feed channels. Each name will refer to a data region where the messages of the feed channels are stored.
@@ -230,23 +231,15 @@ GLOBAL_LIST_BOILERPLATE(allCasters, /obj/machinery/newscaster)
 			ispowered = 0
 			update_icon()
 
-/obj/machinery/newscaster/ex_act(severity)
-	switch(severity)
-		if(1.0)
-			qdel(src)
-			return
-		if(2.0)
-			isbroken=1
-			if(prob(50))
-				qdel(src)
-			else
-				update_icon() //can't place it above the return and outside the if-else. or we might get runtimes of null.update_icon() if(prob(50)) goes in.
-			return
-		else
-			if(prob(50))
-				isbroken=1
-			update_icon()
-			return
+/obj/machinery/newscaster/atom_break(damage_flag)
+	. = ..()
+	isbroken = TRUE
+	update_icon()
+
+/obj/machinery/newscaster/atom_fix()
+	. = ..()
+	isbroken = FALSE
+	update_icon()
 
 /obj/machinery/newscaster/tgui_status(mob/user)
 	if(!ispowered || isbroken)
@@ -614,11 +607,10 @@ GLOBAL_LIST_BOILERPLATE(allCasters, /obj/machinery/newscaster)
 			return TRUE
 
 /obj/machinery/newscaster/attackby(I as obj, user)
-	if(computer_deconstruction_screwdriver(user, I))
-		return
-	else
-		attack_hand(user)
-	return
+	return attack_hand(user)
+
+/obj/machinery/newscaster/screwdriver_act(mob/user, obj/item/tool)
+	return deconstruct_display(user, tool)
 
 /obj/machinery/newscaster/attack_ai(mob/user)
 	return attack_hand(user) //or maybe it'll have some special functions? No idea.

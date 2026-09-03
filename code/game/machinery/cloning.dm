@@ -26,6 +26,7 @@
 #define MINIMUM_HEAL_LEVEL 40
 
 /obj/machinery/clonepod
+	maintenance_flags = MACHINE_MAINT_STANDARD
 	name = "cloning pod"
 	desc = "An electronically-lockable pod for growing organic tissue."
 	density = TRUE
@@ -57,6 +58,7 @@
 
 /obj/machinery/clonepod/Destroy()
 	for(var/obj/container in containers)
+		UnregisterSignal(container, COMSIG_QDELETING)
 		container.forceMove(get_turf(src))
 	containers.Cut()
 	locked = FALSE
@@ -223,10 +225,6 @@
 /obj/machinery/clonepod/attackby(obj/item/W as obj, mob/user as mob)
 	var/mob/living/occupant = get_occupant()
 	if(isnull(occupant))
-		if(default_deconstruction_screwdriver(user, W))
-			return
-		if(default_deconstruction_crowbar(user, W))
-			return
 		if(default_part_replacement(user, W))
 			return
 	if(istype(W, /obj/item/card/id)||istype(W, /obj/item/pda))
@@ -246,33 +244,47 @@
 			to_chat(user, span_warning("\The [src] has too many containers loaded!"))
 		else if(do_after(user, 1 SECOND, target = src))
 			user.visible_message("[user] has loaded \the [W] into \the [src].", "You load \the [W] into \the [src].")
-			containers += W
+			track_biomass_container(W)
 			user.drop_item()
 			W.forceMove(src)
 		return
-	else if(W.has_tool_quality(TOOL_WRENCH))
-		if(locked && (anchored || occupant))
-			to_chat(user, span_warning("Can not do that while [src] is in use."))
-		else
-			if(anchored)
-				anchored = FALSE
-				connected.pods -= src
-				connected = null
-			else
-				anchored = TRUE
-			playsound(src, W.usesound, 100, 1)
-			if(anchored)
-				user.visible_message("[user] secures [src] to the floor.", "You secure [src] to the floor.")
-			else
-				user.visible_message("[user] unsecures [src] from the floor.", "You unsecure [src] from the floor.")
-	else if(istype(W, /obj/item/multitool))
-		var/obj/item/multitool/M = W
-		M.connecting = src
-		to_chat(user, span_notice("You load connection data from [src] to [M]."))
-		M.update_icon()
-		return
 	else
 		..()
+
+/obj/machinery/clonepod/screwdriver_act(mob/user, obj/item/tool)
+	if(get_occupant())
+		return ITEM_INTERACT_BLOCKING
+	return ..()
+
+/obj/machinery/clonepod/crowbar_act(mob/user, obj/item/tool)
+	if(get_occupant())
+		return ITEM_INTERACT_BLOCKING
+	return ..()
+
+/obj/machinery/clonepod/wrench_act(mob/user, obj/item/tool)
+	var/mob/living/occupant = get_occupant()
+	if(locked && (anchored || occupant))
+		to_chat(user, span_warning("Can not do that while [src] is in use."))
+		return ITEM_INTERACT_BLOCKING
+	if(anchored)
+		anchored = FALSE
+		if(connected)
+			connected.pods -= src
+			connected = null
+	else
+		anchored = TRUE
+	playsound(src, tool.usesound, 100, TRUE)
+	user.visible_message("[user] [anchored ? "secures" : "unsecures"] [src] to the floor.", "You [anchored ? "secure" : "unsecure"] [src] to the floor.")
+	return ITEM_INTERACT_SUCCESS
+
+/obj/machinery/clonepod/multitool_act(mob/user, obj/item/tool)
+	if(!istype(tool, /obj/item/multitool))
+		return ITEM_INTERACT_BLOCKING
+	var/obj/item/multitool/multitool = tool
+	multitool.connecting = src
+	to_chat(user, span_notice("You load connection data from [src] to [multitool]."))
+	multitool.update_icon()
+	return ITEM_INTERACT_SUCCESS
 
 /obj/machinery/clonepod/emag_act(remaining_charges, mob/user)
 	if(isnull(get_occupant()))
@@ -394,6 +406,7 @@
 		var/turf/T = get_turf(src)
 		if(T)
 			for(var/obj/item/reagent_containers/glass/G in containers)
+				UnregisterSignal(G, COMSIG_QDELETING)
 				G.forceMove(T)
 				containers -= G
 		return	1
@@ -421,28 +434,9 @@
 	..()
 
 /obj/machinery/clonepod/ex_act(severity)
-	switch(severity)
-		if(1.0)
-			for(var/atom/movable/A as mob|obj in src)
-				A.forceMove(get_turf(src))
-				ex_act(severity)
-			qdel(src)
-			return
-		if(2.0)
-			if(prob(50))
-				for(var/atom/movable/A as mob|obj in src)
-					A.forceMove(get_turf(src))
-					ex_act(severity)
-				qdel(src)
-				return
-		if(3.0)
-			if(prob(25))
-				for(var/atom/movable/A as mob|obj in src)
-					A.forceMove(get_turf(src))
-					ex_act(severity)
-				qdel(src)
-				return
-	return
+	for(var/atom/movable/occupant as mob|obj in src)
+		occupant.ex_act(severity)
+	return ..()
 
 /obj/machinery/clonepod/update_icon()
 	..()
@@ -456,7 +450,17 @@
 /obj/machinery/clonepod/full/Initialize(mapload)
 	. = ..()
 	for(var/i = 1 to container_limit)
-		containers += new /obj/item/reagent_containers/glass/bottle/biomass(src)
+		track_biomass_container(new /obj/item/reagent_containers/glass/bottle/biomass(src))
+
+/obj/machinery/clonepod/proc/track_biomass_container(obj/item/reagent_containers/glass/container)
+	if(!container || (container in containers))
+		return
+	containers += container
+	RegisterSignal(container, COMSIG_QDELETING, PROC_REF(on_biomass_container_qdel))
+
+/obj/machinery/clonepod/proc/on_biomass_container_qdel(obj/item/reagent_containers/glass/container)
+	SIGNAL_HANDLER
+	containers -= container
 
 //Health Tracker Implant
 

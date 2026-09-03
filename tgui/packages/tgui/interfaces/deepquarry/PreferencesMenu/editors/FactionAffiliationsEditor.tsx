@@ -29,7 +29,10 @@ const AFFILIATION_COLORS: Record<string, string> = {
   Member: '#62c48d',
 };
 
-export const FactionAffiliationsEditor = ({ data, staticData }: EditorProps) => {
+export const FactionAffiliationsEditor = ({
+  data,
+  staticData,
+}: EditorProps) => {
   const { act } = useBackend();
   const affiliations = ((data as Data).affiliations ?? {}) as Record<
     string,
@@ -148,7 +151,9 @@ export const FactionAffiliationsEditor = ({ data, staticData }: EditorProps) => 
                       <Button
                         compact
                         selected={choice === affiliation}
-                        color={choice === affiliation ? undefined : 'transparent'}
+                        color={
+                          choice === affiliation ? undefined : 'transparent'
+                        }
                         onClick={() => setAffiliation(faction.id, choice)}
                         style={{
                           borderBottom: `2px solid ${AFFILIATION_COLORS[choice] ?? '#9aa0aa'}`,

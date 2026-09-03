@@ -25,23 +25,28 @@
 	return FALSE // NEVER
 
 /obj/structure/window/maintenance_panel/attackby(obj/item/W, mob/user)
-	if(W.has_tool_quality(TOOL_SCREWDRIVER))
-		return // Cannot be screwed down
 	if(istype(W, /obj/item/stack/cable_coil))
 		return // Cannot be electrochromed
-	if(W.has_tool_quality(TOOL_WELDER) && (user.a_intent != I_HELP || get_integrity() >= max_integrity)) // If at max health or not on help
-		var/obj/item/weldingtool/WT = W.get_welder()
-		if(WT.remove_fuel(1, user))
-			to_chat(user, span_warning("You begin to [!anchored ? "weld" : "cut"] the [src] [!anchored ? "to" : "off"] the wall."))
-			playsound(src, W.usesound, 75, 1)
-			if(do_after(user, 2 SECONDS, target = src))
-				anchored = !anchored
-				update_nearby_tiles(need_rebuild = 1)
-				update_nearby_icons()
-				update_verbs()
-				to_chat(user, span_info("You [anchored ? "weld" : "cut"] the [src] [anchored ? "to" : "off"] the wall."))
-		return
 	. = ..()
+
+/obj/structure/window/maintenance_panel/screwdriver_act(mob/user, obj/item/tool)
+	return ITEM_INTERACT_BLOCKING
+
+/obj/structure/window/maintenance_panel/welder_act(mob/user, obj/item/tool)
+	if(user.a_intent == I_HELP && get_integrity() < max_integrity)
+		return ..()
+	var/obj/item/weldingtool/welder = tool.get_welder()
+	if(!welder.remove_fuel(1, user))
+		return ITEM_INTERACT_BLOCKING
+	to_chat(user, span_warning("You begin to [!anchored ? "weld" : "cut"] the [src] [!anchored ? "to" : "off"] the wall."))
+	playsound(src, tool.usesound, 75, 1)
+	if(do_after(user, 2 SECONDS, target = src))
+		anchored = !anchored
+		update_nearby_tiles(need_rebuild = 1)
+		update_nearby_icons()
+		update_verbs()
+		to_chat(user, span_info("You [anchored ? "weld" : "cut"] the [src] [anchored ? "to" : "off"] the wall."))
+	return ITEM_INTERACT_SUCCESS
 
 
 // Heavier panel takes a metal-scrape sound on big hits, glass tink on small ones.

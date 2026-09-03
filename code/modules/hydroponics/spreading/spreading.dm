@@ -244,29 +244,35 @@
 	user.setClickCooldown(user.get_attack_speed(W))
 	SSplants.add_plant(src)
 
-	if(W.has_tool_quality(TOOL_WIRECUTTER) || istype(W, /obj/item/surgical/scalpel))
-		if(sampled)
-			to_chat(user, span_warning("\The [src] has already been sampled recently."))
-			return
-		if(!is_mature())
-			to_chat(user, span_warning("\The [src] is not mature enough to yield a sample yet."))
-			return
-		if(!seed)
-			to_chat(user, span_warning("There is nothing to take a sample from."))
-			return
-		if(sampled)
-			to_chat(user, span_danger("You cannot take another sample from \the [src]."))
-			return
-		if(prob(70))
-			sampled = 1
-		seed.harvest(user,0,1)
-		health -= (rand(3,5)*5)
-		sampled = 1
+	if(istype(W, /obj/item/surgical/scalpel))
+		take_plant_sample(user)
 	else
 		..()
 		if(W.force)
 			health -= W.force
+
+/obj/effect/plant/proc/take_plant_sample(mob/user)
+	if(sampled)
+		to_chat(user, span_warning("\The [src] has already been sampled recently."))
+		return FALSE
+	if(!is_mature())
+		to_chat(user, span_warning("\The [src] is not mature enough to yield a sample yet."))
+		return FALSE
+	if(!seed)
+		to_chat(user, span_warning("There is nothing to take a sample from."))
+		return FALSE
+	if(prob(70))
+		sampled = TRUE
+	seed.harvest(user, 0, TRUE)
+	health -= rand(3, 5) * 5
+	sampled = TRUE
 	check_health()
+	return TRUE
+
+/obj/effect/plant/wirecutter_act(mob/user, obj/item/tool)
+	user.setClickCooldown(user.get_attack_speed(tool))
+	SSplants.add_plant(src)
+	return take_plant_sample(user) ? ITEM_INTERACT_SUCCESS : ITEM_INTERACT_BLOCKING
 
 //handles being overrun by vines - note that attacker_parent may be null in some cases
 /obj/effect/plant/proc/vine_overrun(datum/seed/attacker_seed, obj/effect/plant/attacker_parent)

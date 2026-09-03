@@ -82,6 +82,8 @@
 		top.bottom = null
 	if(middle)
 		middle.bottom = null
+	top = null
+	middle = null
 	. = ..()
 
 // These are necessarily fairly similar, but because the positional relations are different, we have to copy-pasta a fair bit
@@ -257,6 +259,8 @@
 		top.middle = null
 	if(bottom)
 		bottom.middle = null
+	top = null
+	bottom = null
 	. = ..()
 
 // These are necessarily fairly similar, but because the positional relations are different, we have to copy-pasta a fair bit
@@ -339,6 +343,8 @@
 		middle.top = null
 	if(bottom)
 		bottom.top = null
+	middle = null
+	bottom = null
 	. = ..()
 
 // These are necessarily fairly similar, but because the positional relations are different, we have to copy-pasta a fair bit

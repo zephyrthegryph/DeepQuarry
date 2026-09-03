@@ -26,11 +26,7 @@
 
 /obj/item/flame/candle/attackby(obj/item/W as obj, mob/user as mob)
 	..()
-	if(W.has_tool_quality(TOOL_WELDER))
-		var/obj/item/weldingtool/WT = W.get_welder()
-		if(WT.isOn()) //Badasses dont get blinded by lighting their candle with a welding tool
-			light(span_notice("\The [user] casually lights the [src] with [W]."))
-	else if(istype(W, /obj/item/flame/lighter))
+	if(istype(W, /obj/item/flame/lighter))
 		var/obj/item/flame/lighter/L = W
 		if(L.lit)
 			light()
@@ -42,6 +38,12 @@
 		var/obj/item/flame/candle/C = W
 		if(C.lit)
 			light()
+
+/obj/item/flame/candle/welder_act(mob/user, obj/item/W)
+	var/obj/item/weldingtool/WT = W.get_welder()
+	if(WT.isOn())
+		light(span_notice("\The [user] casually lights the [src] with [W]."))
+	return TRUE
 
 
 /obj/item/flame/candle/proc/light(flavor_text = span_notice("\The [usr] lights the [src]."))
@@ -126,3 +128,11 @@
 /obj/item/flame/candle/candelabra/everburn/Initialize(mapload)
 	. = ..()
 	light(span_notice("\The [src] mysteriously lights itself!."))
+
+/obj/item/flame/candle/everburn/process()
+	// The permanent light has no fuel state to advance. Leaving it in SSobj also
+	// exposed its turf as a 700 K hotspot forever, keeping whole atmos regions awake.
+	return PROCESS_KILL
+
+/obj/item/flame/candle/candelabra/everburn/process()
+	return PROCESS_KILL

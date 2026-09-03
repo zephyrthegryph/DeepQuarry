@@ -1,6 +1,7 @@
 #define AMPLIFIER_STRENGTH 0.2 //Each tier of capacitor increases the amplifier's strength by this much. At 5 rating, 100% increase per relay.
 
 /obj/machinery/power/tesla_coil
+	maintenance_flags = MACHINE_MAINT_STANDARD_MOVABLE
 	name = "tesla coil"
 	desc = "Balanced power generation and zapping."
 	icon = 'icons/obj/tesla_engine/tesla_coil.dmi'
@@ -71,18 +72,21 @@
 
 /obj/machinery/power/tesla_coil/attackby(obj/item/W, mob/user, params)
 	add_fingerprint(user)
-
-	//if(default_deconstruction_screwdriver(user, "coil_open[anchored]", "coil[anchored]", W))
-	if(default_deconstruction_screwdriver(user, W))
-		return
 	if(default_part_replacement(user, W))
 		return
-	if(default_unfasten_wrench(user, W))
-		return
-	if(default_deconstruction_crowbar(user, W))
-		return
+	return ..()
 
-	if(panel_open && W?.has_tool_quality(TOOL_MULTITOOL))
+/obj/machinery/power/tesla_coil/screwdriver_act(mob/user, obj/item/W)
+	return ..()
+
+/obj/machinery/power/tesla_coil/wrench_act(mob/user, obj/item/W)
+	return ..()
+
+/obj/machinery/power/tesla_coil/crowbar_act(mob/user, obj/item/W)
+	return ..()
+
+/obj/machinery/power/tesla_coil/multitool_act(mob/user, obj/item/W)
+	if(panel_open)
 		var/list/menu_list = list(
 		"Normal",
 		"Relay",
@@ -135,14 +139,9 @@
 
 		to_chat(user, span_notice("You modify \the [src]. It is now a [lowertext(modification_decision)]! You close the access panel."))
 		qdel(src)
-		return
+		return ITEM_INTERACT_SUCCESS
 
-	/* //Tesla wires do literally nothing.
-	if(is_wire_tool(W))
-		return wires.Interact(user)
-	*/
-
-	return ..()
+	return ITEM_INTERACT_BLOCKING
 
 /obj/machinery/power/tesla_coil/attack_hand(mob/user)
 	if(user.a_intent == I_GRAB && user_buckle_mob(user.pulling, user))
@@ -323,6 +322,7 @@
 	playsound(src, 'sound/effects/lightningshock.ogg', 100, 1, extrarange = 5)
 
 /obj/machinery/power/grounding_rod
+	maintenance_flags = MACHINE_MAINT_STANDARD_MOVABLE
 	name = "grounding rod"
 	desc = "Keep an area from being fried from Edison's Bane."
 	icon = 'icons/obj/tesla_engine/tesla_coil.dmi'
@@ -352,14 +352,7 @@
 		icon_state = "grounding_rod[anchored]"
 
 /obj/machinery/power/grounding_rod/attackby(obj/item/W, mob/user, params)
-	//if(default_deconstruction_screwdriver(user, "grounding_rod_open[anchored]", "grounding_rod[anchored]", W))
-	if(default_deconstruction_screwdriver(user, W))
-		return
 	if(default_part_replacement(user, W))
-		return
-	if(default_unfasten_wrench(user, W))
-		return
-	if(default_deconstruction_crowbar(user, W))
 		return
 	return ..()
 

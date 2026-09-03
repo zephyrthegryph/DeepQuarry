@@ -1,7 +1,6 @@
 /datum/material/plastic
 	name = MAT_PLASTIC
 	stack_type = /obj/item/stack/material/plastic
-	material_class = MATCLASS_ORGANIC
 	flags = MATERIAL_BRITTLE
 	icon_base = "solid"
 	icon_reinf = "reinf_over"
@@ -17,7 +16,6 @@
 /datum/material/cardboard
 	name = MAT_CARDBOARD
 	stack_type = /obj/item/stack/material/cardboard
-	material_class = MATCLASS_ORGANIC
 	flags = MATERIAL_BRITTLE
 	integrity = 10
 	icon_base = "solid"
@@ -60,7 +58,6 @@
 	name = MAT_FOAM
 	display_name = MAT_FOAM
 	use_name = MAT_FOAM
-	material_class = MATCLASS_ORGANIC
 	flags = MATERIAL_PADDING
 	ignition_point = T0C+232
 	melting_point = T0C+300

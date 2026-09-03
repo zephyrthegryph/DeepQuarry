@@ -248,9 +248,9 @@
 			"id" = design.id,
 			"categories" = design.category,
 			"icon" = "[size == size32x32 ? "" : "[size] "][css_id]",
-			"materialSelectable" = design.material_selectable,
-			"selectableAmount" = design.selectable_amount,
-			"materialProfile" = design.material_preview_profile || design.material_application,
+			"materialConfigurable" = length(design.material_slots) > 0,
+			"materialProfile" = design.material_application,
+			"materialSlots" = material_slots_tgui(design.material_slots),
 		)
 
 	data["designs"] = designs
@@ -290,22 +290,17 @@
 		var/amount = cont.materials[mat]
 		if(amount < SHEET_MATERIAL_AMOUNT)
 			continue
-		var/list/layers = list()
-		if(istype(mat, /datum/material/composite))
-			var/datum/material/composite/composite = mat
-			layers += list(list("role" = "Core", "name" = composite.core_material()?.display_name, "share" = round(composite.core_fraction * 100)))
-			if(composite.functional_material_id)
-				layers += list(list("role" = "Buffer", "name" = composite.functional_material()?.display_name, "share" = round(composite.functional_fraction * 100)))
-			if(composite.liner_material_id)
-				layers += list(list("role" = "Liner", "name" = composite.liner_material()?.display_name, "share" = round(composite.liner_fraction * 100)))
-			if(composite.jacket_material_id)
-				layers += list(list("role" = "Jacket", "name" = composite.jacket_material()?.display_name, "share" = round(composite.jacket_fraction * 100)))
-		out += list(list(
+		out += list(material_choice_tgui(mat, amount))
+	return out
+
+/// One canonical material presentation for lathes and hand crafting.
+/proc/material_choice_tgui(datum/material/mat, amount)
+	return list(
 			"id" = mat.name,
 			"label" = mat.display_name || mat.name,
 			"sheets" = round(amount / SHEET_MATERIAL_AMOUNT),
 			"color" = mat.icon_colour || "#aaaaaa",
-			"layers" = layers,
+			"layers" = list(),
 			"responses" = mat.material_response_summary(),
 			"hardness" = round(mat.hardness),
 			"density" = round(mat.density),
@@ -318,8 +313,7 @@
 			"thermalInsulation" = round(mat.thermal_insulation),
 			"corrosionResistance" = round(mat.corrosion_resistance),
 			"pressureLimit" = round(mat.material_pressure_limit(MATERIAL_PIPE_REFERENCE_RADIUS, MATERIAL_PIPE_REFERENCE_THICKNESS, T20C) / ONE_ATMOSPHERE, 0.1),
-		))
-	return out
+		)
 
 /obj/machinery/rnd/production/tgui_act(action, list/params, datum/tgui/ui)
 	. = ..()
@@ -377,11 +371,11 @@
 			print_quantity = clamp(print_quantity, 1, 50)
 
 			// Material-selectable designs let the user pick which loaded material to use.
-			var/chosen_material = design.material_selectable ? params["material"] : null
-			if(design.material_selectable && !design.material_choice_valid(chosen_material))
-				atom_say("Select a valid material for this design.")
+			var/list/chosen_materials = design.material_choices_from_params(params)
+			if(length(design.material_slots) && !design.material_choice_valid(chosen_materials))
+				atom_say("Select valid materials for every required construction slot.")
 				return FALSE
-			var/list/effective_mats = design.effective_materials(chosen_material)
+			var/list/effective_mats = design.effective_materials(chosen_materials)
 
 			//efficiency for this design, stacks use exact materials
 			var/coefficient = build_efficiency(design.build_path)
@@ -415,7 +409,7 @@
 					target_location = get_turf(src)
 			else
 				target_location = get_turf(src)
-			addtimer(CALLBACK(src, PROC_REF(do_make_item), design, print_quantity, build_time_per_item, coefficient, charge_per_item, target_location, chosen_material), build_time_per_item)
+			addtimer(CALLBACK(src, PROC_REF(do_make_item), design, print_quantity, build_time_per_item, coefficient, charge_per_item, target_location, chosen_materials), build_time_per_item)
 
 			return TRUE
 
@@ -430,7 +424,7 @@
  * * charge_per_item - the amount of power to print 1 item
  * * turf/target - the location to drop the printed item on
 */
-/obj/machinery/rnd/production/proc/do_make_item(datum/design_techweb/design, items_remaining, build_time_per_item, material_cost_coefficient, charge_per_item, turf/target, chosen_material = null)
+/obj/machinery/rnd/production/proc/do_make_item(datum/design_techweb/design, items_remaining, build_time_per_item, material_cost_coefficient, charge_per_item, turf/target, list/chosen_materials)
 	PROTECTED_PROC(TRUE)
 
 	if(!items_remaining) // how
@@ -458,7 +452,7 @@
 		return
 
 	var/is_stack = ispath(design.build_path, /obj/item/stack)
-	var/list/design_materials = design.effective_materials(chosen_material)
+	var/list/design_materials = design.effective_materials(chosen_materials)
 	if(!materials.mat_container.has_materials(design_materials, material_cost_coefficient, is_stack ? items_remaining : 1))
 		atom_say("Unable to continue production, missing materials.")
 		finalize_build()
@@ -482,7 +476,7 @@
 
 		created = new stack_item(null, number_to_make)
 	else
-		created = design.create_item(null, chosen_material)
+		created = design.create_item(null, chosen_materials)
 		split_materials_uniformly(design_materials, material_cost_coefficient, created)
 
 	if(isitem(created))
@@ -501,7 +495,7 @@
 	if(!items_remaining)
 		finalize_build()
 		return
-	addtimer(CALLBACK(src, PROC_REF(do_make_item), design, items_remaining, build_time_per_item, material_cost_coefficient, charge_per_item, target, chosen_material), build_time_per_item)
+	addtimer(CALLBACK(src, PROC_REF(do_make_item), design, items_remaining, build_time_per_item, material_cost_coefficient, charge_per_item, target, chosen_materials), build_time_per_item)
 
 /// Resets the busy flag
 /// Called at the end of do_make_item's timer loop

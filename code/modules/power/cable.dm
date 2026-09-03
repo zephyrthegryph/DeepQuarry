@@ -121,6 +121,7 @@ GLOBAL_LIST_INIT(possible_cable_coil_colours, list(
 
 
 /obj/structure/cable/Destroy()
+	breaker_box = null
 	// Update powernets before removing from the global list so propagate_network
 	// can still walk the cable graph through us (cut_cable_from_powernet sets
 	// src.loc = null internally to exclude the cut cable from propagation).
@@ -202,70 +203,70 @@ GLOBAL_LIST_INIT(possible_cable_coil_colours, list(
 //
 
 /obj/structure/cable/attackby(obj/item/W, mob/user)
-
 	var/turf/T = src.loc
 	if(!T.is_plating())
 		return
-
-	if(W.has_tool_quality(TOOL_WIRECUTTER))
-		var/obj/item/stack/cable_coil/CC
-		if(d1 == UP || d2 == UP)
-			to_chat(user, span_warning("You must cut this cable from above."))
-			return
-
-		if(breaker_box)
-			to_chat(user, span_warning("This cable is connected to nearby breaker box. Use breaker box to interact with it."))
-			return
-
-		if (shock(user, 50))
-			return
-
-		if(src.d1)	// 0-X cables are 1 unit, X-X cables are 2 units long
-			CC = new/obj/item/stack/cable_coil(T, 2, color, engineered_material_id)
-		else
-			CC = new/obj/item/stack/cable_coil(T, 1, color, engineered_material_id)
-
-		src.add_fingerprint(user)
-		src.transfer_fingerprints_to(CC)
-
-		for(var/mob/O in viewers(src, null))
-			O.show_message(span_warning("[user] cuts the cable."), 1)
-
-		if(d1 == DOWN || d2 == DOWN)
-			var/turf/turf = GetBelow(src)
-			if(turf)
-				for(var/obj/structure/cable/c in turf)
-					if(c.d1 == UP || c.d2 == UP)
-						qdel(c)
-
-		investigate_log("was cut by [key_name(user, user.client)] in [user.loc.loc]","wires")
-
-		qdel(src)
-		return
-
-
-	else if(istype(W, /obj/item/stack/cable_coil))
+	if(istype(W, /obj/item/stack/cable_coil))
 		var/obj/item/stack/cable_coil/coil = W
-		if (coil.get_amount() < 1)
+		if(coil.get_amount() < 1)
 			to_chat(user, "Not enough cable")
 			return
 		coil.cable_join(src, user)
+	else if(!(W.flags & NOCONDUCT))
+		shock(user, 50, 0.7)
+	add_fingerprint(user)
 
-	else if(istype(W, /obj/item/multitool))
+/obj/structure/cable/wirecutter_act(mob/user, obj/item/W)
+	var/turf/T = src.loc
+	if(!T.is_plating())
+		return ITEM_INTERACT_BLOCKING
 
-		if(powernet && (powernet.avail > 0))		// is it powered?
-			to_chat(user, span_warning("[DisplayPower(powernet.avail)] in power network."))
+	var/obj/item/stack/cable_coil/CC
+	if(d1 == UP || d2 == UP)
+		to_chat(user, span_warning("You must cut this cable from above."))
+		return ITEM_INTERACT_BLOCKING
 
-		else
-			to_chat(user, span_warning("The cable is not powered."))
+	if(breaker_box)
+		to_chat(user, span_warning("This cable is connected to nearby breaker box. Use breaker box to interact with it."))
+		return ITEM_INTERACT_BLOCKING
 
-		shock(user, 5, 0.2)
+	if(shock(user, 50))
+		return ITEM_INTERACT_BLOCKING
 
+	if(src.d1)	// 0-X cables are 1 unit, X-X cables are 2 units long
+		CC = new/obj/item/stack/cable_coil(T, 2, color, engineered_material_id)
 	else
-		if(!(W.flags & NOCONDUCT))
-			shock(user, 50, 0.7)
+		CC = new/obj/item/stack/cable_coil(T, 1, color, engineered_material_id)
 
 	src.add_fingerprint(user)
+	src.transfer_fingerprints_to(CC)
+
+	for(var/mob/O in viewers(src, null))
+		O.show_message(span_warning("[user] cuts the cable."), 1)
+
+	if(d1 == DOWN || d2 == DOWN)
+		var/turf/turf = GetBelow(src)
+		if(turf)
+			for(var/obj/structure/cable/c in turf)
+				if(c.d1 == UP || c.d2 == UP)
+					qdel(c)
+
+	investigate_log("was cut by [key_name(user, user.client)] in [user.loc.loc]","wires")
+
+	qdel(src)
+	return ITEM_INTERACT_SUCCESS
+
+/obj/structure/cable/multitool_act(mob/user, obj/item/W)
+	var/turf/T = src.loc
+	if(!T.is_plating())
+		return ITEM_INTERACT_BLOCKING
+	if(powernet && powernet.avail > 0)
+		to_chat(user, span_warning("[DisplayPower(powernet.avail)] in power network."))
+	else
+		to_chat(user, span_warning("The cable is not powered."))
+	shock(user, 5, 0.2)
+	add_fingerprint(user)
+	return ITEM_INTERACT_SUCCESS
 
 // shock the user with probability prb
 /obj/structure/cable/proc/shock(mob/user, prb, siemens_coeff = 1.0)
@@ -674,12 +675,10 @@ GLOBAL_LIST_INIT(possible_cable_coil_colours, list(
 	else
 		w_class = ITEMSIZE_SMALL
 
-/obj/item/stack/cable_coil/attackby(obj/item/W, mob/user)
-	if(istype(W, /obj/item/multitool))
-		var/selected_type = tgui_input_list(user, "Pick new colour.", "Cable Colour", GLOB.possible_cable_coil_colours)
-		set_cable_color(selected_type, user)
-		return
-	return ..()
+/obj/item/stack/cable_coil/multitool_act(mob/user, obj/item/W)
+	var/selected_type = tgui_input_list(user, "Pick new colour.", "Cable Colour", GLOB.possible_cable_coil_colours)
+	set_cable_color(selected_type, user)
+	return ITEM_INTERACT_SUCCESS
 
 /obj/item/stack/cable_coil/verb/make_restraint()
 	set name = "Make Cable Restraints"

@@ -1,6 +1,8 @@
 /datum/powernet
 	var/list/cables = list()   // all cables & junctions
 	var/list/nodes  = list()   // all connected machines
+	var/apc_count = 0
+	var/list/smes_nodes = list()
 
 	var/load     = 0           // current load; increased by each machine during processing
 	var/newavail = 0           // power gathered this tick; becomes avail at tick end
@@ -21,6 +23,9 @@
 	var/problem = 0            // non-zero = some issue; power monitors will display warnings
 	/// Stable demand retained for APCs that are dependency-sleeping.
 	var/list/sleeping_apc_loads = list()
+	/// Last semantic supply class observed by each sleeping APC. Accounting
+	/// jitter which remains inside a class never wakes the APC.
+	var/list/sleeping_apc_power_classes = list()
 	/// One-tick machine usage folded into sleeping APC reservations.
 	var/list/sleeping_apc_dynamic_loads = list()
 	var/sleeping_apc_load_total = 0
@@ -35,8 +40,13 @@
 	/// the power subsystem's tick rate. Ordinary networks do no extra work.
 	var/next_material_process = 0
 	var/last_material_process = 0
+	/// Consecutive accounting windows with no production, demand, warning, or
+	/// engineered-material work. Two windows are required so producer shutdown is
+	/// observed before the network sleeps.
+	var/idle_accounting_windows = 0
 
 /datum/powernet/New()
+	SSmachines.powernets |= src
 	START_PROCESSING_POWERNET(src)
 	..()
 
@@ -44,6 +54,7 @@
 	for(var/obj/machinery/power/apc/A as anything in sleeping_apc_loads)
 		A?.wake_for_power_dependency()
 	sleeping_apc_loads.Cut()
+	sleeping_apc_power_classes.Cut()
 	sleeping_apc_dynamic_loads.Cut()
 	for(var/obj/structure/cable/C in cables)
 		cables -= C
@@ -52,6 +63,7 @@
 		nodes -= M
 		M.powernet = null
 	STOP_PROCESSING_POWERNET(src)
+	SSmachines.powernets -= src
 	material_segments = null
 	return ..()
 
@@ -62,6 +74,8 @@
 	amount = max(amount, 0)
 	sleeping_apc_loads[A] = amount
 	sleeping_apc_load_total += amount
+	sleeping_apc_power_classes[A] = apc_supply_class(amount)
+	mark_accounting_dirty()
 
 /datum/powernet/proc/unreserve_sleeping_apc_load(obj/machinery/power/apc/A)
 	if(!A || !(A in sleeping_apc_loads))
@@ -70,7 +84,9 @@
 	sleeping_apc_load_total -= reserved
 	load = max(load - reserved, 0)
 	sleeping_apc_loads.Remove(A)
+	sleeping_apc_power_classes.Remove(A)
 	sleeping_apc_dynamic_loads.Remove(A)
+	mark_accounting_dirty()
 
 /// Adjust demand in place without waking an APC for routine area accounting.
 /datum/powernet/proc/adjust_sleeping_apc_load(obj/machinery/power/apc/A, delta)
@@ -82,11 +98,45 @@
 	sleeping_apc_dynamic_loads[A] = (sleeping_apc_dynamic_loads[A] || 0) + delta
 	sleeping_apc_load_total += new_amount - old_amount
 	load = max(load + new_amount - old_amount, 0)
+	mark_accounting_dirty()
 	return TRUE
+
+/datum/powernet/proc/mark_accounting_dirty()
+	idle_accounting_windows = 0
+	START_PROCESSING_POWERNET(src)
 
 /datum/powernet/proc/publish_dependency()
 	revision++
+	mark_accounting_dirty()
 	SSmachines.publish_reactive_dependency("powernet:[REF(src)]")
+	// Topology membership really can invalidate every APC on this network. This
+	// path is intentionally separate from routine accounting publication below.
+	for(var/obj/machinery/power/apc/A as anything in sleeping_apc_loads)
+		SSmachines.publish_reactive_dependency("apc-power:[REF(A)]")
+
+/// Publish monitor-visible state without fanning one accounting sample out to
+/// every APC. APCs receive their own semantic supply transition below.
+/datum/powernet/proc/publish_monitor_dependency()
+	revision++
+	mark_accounting_dirty()
+	SSmachines.publish_reactive_dependency("powernet:[REF(src)]")
+
+/datum/powernet/proc/apc_supply_class(demand)
+	if(avail <= 0)
+		return 0
+	if(netexcess < -1 || perapc + 1 < demand)
+		return 1
+	return 2
+
+/datum/powernet/proc/publish_apc_supply_changes()
+	for(var/obj/machinery/power/apc/A as anything in sleeping_apc_loads)
+		if(!A || QDELETED(A))
+			continue
+		var/new_class = apc_supply_class(sleeping_apc_loads[A])
+		if(sleeping_apc_power_classes[A] == new_class)
+			continue
+		sleeping_apc_power_classes[A] = new_class
+		SSmachines.publish_reactive_dependency("apc-power:[REF(A)]")
 
 /// last_surplus() — excess power before refunds to SMESes, from last tick.
 /// Machines may read this to adjust consumption.
@@ -94,6 +144,7 @@
 	return max(avail - load, 0)
 
 /datum/powernet/proc/draw_power(amount)
+	mark_accounting_dirty()
 	var/draw = between(0, amount, avail - load)
 	load += draw
 	return draw
@@ -203,6 +254,14 @@
 	if(istype(M, /obj/machinery/power/apc))
 		var/obj/machinery/power/apc/A = M
 		unreserve_sleeping_apc_load(A)
+	else if(istype(M, /obj/machinery/power/terminal))
+		var/obj/machinery/power/terminal/T = M
+		if(istype(T.master, /obj/machinery/power/apc))
+			var/obj/machinery/power/apc/A = T.master
+			unreserve_sleeping_apc_load(A)
+			apc_count = max(apc_count - 1, 0)
+	else if(istype(M, /obj/machinery/power/smes))
+		smes_nodes -= M
 	nodes -= M
 	M.powernet = null
 	publish_dependency()
@@ -218,6 +277,12 @@
 		M.disconnect_from_network()
 	M.powernet = src
 	nodes[M] = M
+	if(istype(M, /obj/machinery/power/terminal))
+		var/obj/machinery/power/terminal/T = M
+		if(istype(T.master, /obj/machinery/power/apc))
+			apc_count++
+	else if(istype(M, /obj/machinery/power/smes))
+		smes_nodes |= M
 	publish_dependency()
 
 /// trigger_warning() — flag a powernet problem visible on power monitors.
@@ -225,7 +290,7 @@
 	var/was_clear = problem <= 0
 	problem = max(duration_ticks, problem)
 	if(was_clear && problem > 0)
-		publish_dependency()
+		publish_monitor_dependency()
 
 /// reset() — handle per-tick power accounting.
 /// Called every tick by the powernet controller (SSmachines).
@@ -245,17 +310,10 @@
 	if(problem > 0)
 		problem = max(problem - 1, 0)
 		if(old_problem > 0 && problem <= 0)
-			publish_dependency()
+			publish_monitor_dependency()
 
 	// 2. Count APC terminals and update per-APC ration.
-	var/numapc = 0
-	if(nodes && nodes.len)
-		for(var/obj/machinery/power/terminal/term in nodes)
-			// Guard: terminal may have been qdel'd mid-tick.
-			if(!term || QDELETED(term))
-				continue
-			if(istype(term.master, /obj/machinery/power/apc))
-				numapc++
+	var/numapc = apc_count
 
 	netexcess = avail - load
 	process_material_network()
@@ -282,7 +340,7 @@
 	netexcess = avail - load
 	if(netexcess)
 		var/perc = get_percent_load(1)
-		for(var/obj/machinery/power/smes/S in nodes)
+		for(var/obj/machinery/power/smes/S as anything in smes_nodes)
 			if(!S || QDELETED(S))
 				continue
 			S.restore(perc)
@@ -290,6 +348,7 @@
 	// 5. Smooth viewable stats.
 	viewavail = round(0.8 * viewavail + 0.2 * avail)
 	viewload  = round(0.8 * viewload  + 0.2 * load)
+	publish_apc_supply_changes()
 
 	// 6. Reset accumulators for next tick.
 	// Dynamic area usage is reported again by machines next tick. Keep only the
@@ -311,7 +370,15 @@
 	// state change for them while the net remains on the same side of deficit;
 	// charging progress has its own coarse elapsed-time wakeup.
 	if((avail <= 0) != (old_avail <= 0) || ((netexcess < -1) != (old_netexcess < -1)))
-		publish_dependency()
+		publish_monitor_dependency()
+	var/has_live_accounting = avail || newavail || load > sleeping_apc_load_total || inputting.len || smes_demand || problem > 0 || (material_hotspot && length(material_segments))
+	if(has_live_accounting)
+		idle_accounting_windows = 0
+		return
+	idle_accounting_windows++
+	if(idle_accounting_windows >= 2)
+		return PROCESS_KILL
+	return
 
 /datum/powernet/proc/get_percent_load(smes_only = 0)
 	if(smes_only)

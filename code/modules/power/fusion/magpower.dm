@@ -2,6 +2,7 @@
 #define MINIMUM_PLASMA_TEMPERATURE 10000
 
 /obj/machinery/power/hydromagnetic_trap
+	maintenance_flags = MACHINE_MAINT_WRENCH
 	name = "\improper hydromagnetic trap"
 	desc = "A device for extracting power from high-energy plasma in toroidal fields."
 	icon = 'icons/obj/machines/power/fusion.dmi'
@@ -13,12 +14,6 @@
 	var/active = 0 //are we even on?
 	var/id_tag //needed for !!rasins!!
 	circuit = /obj/item/circuitboard/hydromagnetic_trap
-
-/obj/machinery/power/hydromagnetic_trap/attackby(obj/item/W, mob/user)
-	if(default_unfasten_wrench(user, W))
-		return
-
-	return ..()
 
 /obj/machinery/power/hydromagnetic_trap/process()
 	if(anchored)

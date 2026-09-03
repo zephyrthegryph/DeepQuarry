@@ -57,29 +57,6 @@
 	..()
 
 /obj/structure/mirror/attackby(obj/item/I as obj, mob/user as mob)
-	if(I.has_tool_quality(TOOL_WRENCH))
-		if(!glass)
-			playsound(src, I.usesound, 50, 1)
-			if(do_after(user, 2 SECONDS * I.toolspeed, target = src))
-				to_chat(user, span_notice("You unfasten the frame."))
-				new /obj/item/frame/mirror( src.loc )
-				qdel(src)
-		return
-	if(I.has_tool_quality(TOOL_WRENCH))
-		if(shattered && glass)
-			to_chat(user, span_notice("The broken glass falls out."))
-			icon_state = "mirror_frame"
-			glass = !glass
-			new /obj/item/material/shard( src.loc )
-			return
-		if(!shattered && glass)
-			playsound(src, I.usesound, 50, 1)
-			to_chat(user, span_notice("You remove the glass."))
-			glass = !glass
-			icon_state = "mirror_frame"
-			new /obj/item/stack/material/glass( src.loc, 2 )
-			return
-
 	if(istype(I, /obj/item/stack/material/glass))
 		if(!glass)
 			var/obj/item/stack/material/glass/G = I
@@ -106,6 +83,27 @@
 	else
 		visible_message(span_warning("[user] hits [src] with [I]!"))
 		playsound(src, 'sound/effects/Glasshit.ogg', 70, 1)
+
+/obj/structure/mirror/wrench_act(mob/user, obj/item/I)
+	if(!glass)
+		playsound(src, I.usesound, 50, 1)
+		if(do_after(user, 2 SECONDS * I.toolspeed, target = src))
+			to_chat(user, span_notice("You unfasten the frame."))
+			new /obj/item/frame/mirror(loc)
+			qdel(src)
+		return TRUE
+	if(shattered)
+		to_chat(user, span_notice("The broken glass falls out."))
+		icon_state = "mirror_frame"
+		glass = FALSE
+		new /obj/item/material/shard(loc)
+		return TRUE
+	playsound(src, I.usesound, 50, 1)
+	to_chat(user, span_notice("You remove the glass."))
+	glass = FALSE
+	icon_state = "mirror_frame"
+	new /obj/item/stack/material/glass(loc, 2)
+	return TRUE
 
 /obj/structure/mirror/attack_generic(mob/user, damage)
 

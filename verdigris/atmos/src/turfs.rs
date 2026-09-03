@@ -1,4 +1,3 @@
-pub mod groups;
 pub mod processing;
 /*
 #[cfg(feature = "monstermos")]
@@ -6,8 +5,6 @@ mod monstermos;
 #[cfg(feature = "putnamos")]
 mod putnamos;
 */
-#[cfg(feature = "katmos")]
-pub mod katmos;
 #[cfg(feature = "superconductivity")]
 pub(crate) mod superconduct;
 
@@ -25,7 +22,7 @@ use std::hash::{Hash, Hasher};
 use std::time::Duration;
 use std::{
 	mem::drop,
-	sync::atomic::{AtomicBool, AtomicU64, Ordering},
+	sync::atomic::{AtomicBool, AtomicU32, AtomicU64, AtomicUsize, Ordering},
 };
 
 bitflags! {
@@ -158,7 +155,6 @@ impl TurfMixture {
 	}
 	/// Clears the turf's airs, see [`super::gas::Mixture`]
 	pub fn clear_air(&self) {
-		GasArena::bump_revision(self.mix);
 		let (before, after) = GasArena::with_all_mixtures(|all_mixtures| {
 			let mut mixture = all_mixtures
 				.get(self.mix)
@@ -168,24 +164,28 @@ impl TurfMixture {
 			mixture.clear();
 			(before, GasArena::change_signature(&mixture))
 		});
-		GasArena::bump_revision(self.mix);
-		GasArena::mark_dirty_if_changed(self.mix, before, after);
+		if GasArena::signature_changed(&before, &after) {
+			GasArena::bump_revision(self.mix);
+			GasArena::mark_dirty_if_changed(self.mix, before, after);
+		}
 	}
 	/// Prevents diffusion and other gas operations from changing this turf's mixture.
 	pub fn mark_immutable(&self) {
-		GasArena::bump_revision(self.mix);
-		GasArena::with_all_mixtures(|all_mixtures| {
-			all_mixtures
+		let changed = GasArena::with_all_mixtures(|all_mixtures| {
+			let mut mixture = all_mixtures
 				.get(self.mix)
 				.unwrap_or_else(|| panic!("Gas mixture not found for turf: {}", self.mix))
-				.write()
-				.mark_immutable();
+				.write();
+			let changed = !mixture.is_immutable();
+			mixture.mark_immutable();
+			changed
 		});
-		GasArena::bump_revision(self.mix);
+		if changed {
+			GasArena::bump_revision_only(self.mix);
+		}
 	}
 	/// Copies from a given gas mixture to the turf's airs, see [`super::gas::Mixture`]
 	pub fn copy_from_mutable(&self, sample: &Mixture) {
-		GasArena::bump_revision(self.mix);
 		let (before, after) = GasArena::with_all_mixtures(|all_mixtures| {
 			let mut mixture = all_mixtures
 				.get(self.mix)
@@ -195,13 +195,14 @@ impl TurfMixture {
 			mixture.copy_from_mutable(sample);
 			(before, GasArena::change_signature(&mixture))
 		});
-		GasArena::bump_revision(self.mix);
-		GasArena::mark_dirty_if_changed(self.mix, before, after);
+		if GasArena::signature_changed(&before, &after) {
+			GasArena::bump_revision(self.mix);
+			GasArena::mark_dirty_if_changed(self.mix, before, after);
+		}
 	}
 	/// Clears a number of moles from the turf's air
 	/// If the number of moles is greater than the turf's total moles, just clears the turf
 	pub fn clear_moles(&self, amt: f32) {
-		GasArena::bump_revision(self.mix);
 		let (before, after) = GasArena::with_all_mixtures(|all_mixtures| {
 			let before = GasArena::change_signature(
 				&all_mixtures
@@ -237,8 +238,10 @@ impl TurfMixture {
 			);
 			(before, after)
 		});
-		GasArena::bump_revision(self.mix);
-		GasArena::mark_dirty_if_changed(self.mix, before, after);
+		if GasArena::signature_changed(&before, &after) {
+			GasArena::bump_revision(self.mix);
+			GasArena::mark_dirty_if_changed(self.mix, before, after);
+		}
 	}
 	/// Gets a copy of the turf's airs, see [`super::gas::Mixture`]
 	pub fn get_gas_copy(&self) -> Mixture {
@@ -298,11 +301,22 @@ impl TurfGases {
 	fn update_adjacencies_from_ids(&mut self, idx: TurfID, adjacent: &[(TurfID, u8)]) {
 		if let Some(&this_index) = self.map.get(&idx) {
 			self.remove_adjacencies(this_index);
-			let resolved = adjacent
-				.iter()
-				.copied()
-				.filter_map(|(adj_ref, flag)| Some((self.map.get(&adj_ref)?, flag)))
-				.map(|(adj_index, flag)| (*adj_index, flag))
+			// DM callers may report the same neighbor through more than one legacy
+			// adjacency path. Parallel graph edges make the diffusion stencil count
+			// one physical face multiple times, which is both non-conservative and
+			// topology-order dependent. Canonicalize every published face here.
+			let mut resolved_by_node = FxHashMap::default();
+			for (adj_ref, flag) in adjacent.iter().copied() {
+				if let Some(&adj_index) = self.map.get(&adj_ref) {
+					resolved_by_node
+						.entry(adj_index)
+						.and_modify(|existing| *existing |= flag)
+						.or_insert(flag);
+				}
+			}
+			let resolved = resolved_by_node
+				.into_iter()
+				.map(|(adj_index, flag)| (adj_index, flag))
 				.collect::<Vec<_>>();
 			// Diffusion across an edge is physically bidirectional even though the
 			// graph stores separately published directed lists. Remove stale reverse
@@ -439,7 +453,271 @@ static TURF_GASES: RwLock<Option<TurfGases>> = const_rwlock(None);
 
 // We store planetary atmos by hash of the initial atmos string here for speed.
 static PLANETARY_ATMOS: RwLock<Option<IndexMap<u32, Mixture, FxBuildHasher>>> = const_rwlock(None);
-static ACTIVE_TURFS: RwLock<Option<FxHashSet<CellHandle>>> = const_rwlock(None);
+/// The complete activation state lives behind one lock so a cell cannot be in
+/// both queues. External mutations upgrade retained frontier work to fresh work;
+/// solver retention never downgrades or duplicates a fresh activation.
+#[derive(Default)]
+struct ActiveQueue {
+	order: VecDeque<CellHandle>,
+	members: FxHashSet<CellHandle>,
+}
+
+impl ActiveQueue {
+	fn insert(&mut self, handle: CellHandle) {
+		if self.members.insert(handle) {
+			self.order.push_back(handle);
+		}
+	}
+
+	fn remove(&mut self, handle: &CellHandle) {
+		self.members.remove(handle);
+	}
+
+	fn contains(&self, handle: &CellHandle) -> bool {
+		self.members.contains(handle)
+	}
+
+	fn len(&self) -> usize {
+		self.members.len()
+	}
+
+	/// Drain in FIFO order without `IndexSet::shift_remove`'s O(n) compaction.
+	/// Moving a cell between priority lanes leaves a harmless tombstone in the
+	/// old deque; one bounded pass skips tombstones and rotates epoch-excluded
+	/// live entries to the back for the next physical step.
+	fn drain_unseen(
+		&mut self,
+		selected: &mut FxHashSet<CellHandle>,
+		excluded: &FxHashSet<CellHandle>,
+		count: usize,
+	) {
+		let scan_limit = self.order.len();
+		for _ in 0..scan_limit {
+			if selected.len() >= count {
+				break;
+			}
+			let Some(handle) = self.order.pop_front() else {
+				break;
+			};
+			if !self.members.contains(&handle) {
+				continue;
+			}
+			if excluded.contains(&handle) {
+				self.order.push_back(handle);
+				continue;
+			}
+			self.members.remove(&handle);
+			selected.insert(handle);
+		}
+	}
+}
+
+#[derive(Default)]
+struct ActiveTurfs {
+	urgent: ActiveQueue,
+	fresh: ActiveQueue,
+	frontier: ActiveQueue,
+}
+
+impl ActiveTurfs {
+	fn activate_fresh(&mut self, handle: CellHandle) {
+		if self.urgent.contains(&handle) {
+			return;
+		}
+		self.frontier.remove(&handle);
+		self.fresh.insert(handle);
+	}
+
+	fn activate_urgent(&mut self, handle: CellHandle) {
+		self.fresh.remove(&handle);
+		self.frontier.remove(&handle);
+		self.urgent.insert(handle);
+	}
+
+	fn activate_frontier(&mut self, handle: CellHandle) {
+		if !self.fresh.contains(&handle) {
+			self.frontier.insert(handle);
+		}
+	}
+
+	fn remove(&mut self, handle: CellHandle) {
+		self.urgent.remove(&handle);
+		self.fresh.remove(&handle);
+		self.frontier.remove(&handle);
+	}
+
+	fn len(&self) -> usize {
+		self.urgent.len() + self.fresh.len() + self.frontier.len()
+	}
+
+	fn queue_counts(&self) -> (usize, usize, usize) {
+		(self.urgent.len(), self.fresh.len(), self.frontier.len())
+	}
+
+	fn contains(&self, handle: CellHandle) -> bool {
+		self.urgent.contains(&handle)
+			|| self.fresh.contains(&handle)
+			|| self.frontier.contains(&handle)
+	}
+
+	fn take(&mut self, limit: usize) -> FxHashSet<CellHandle> {
+		self.take_unseen(limit, &FxHashSet::default())
+	}
+
+	/// Take work which has not already participated in the current physical
+	/// simulation epoch. Retained gradients stay queued for the following epoch
+	/// instead of cycling back through several microtransactions while older
+	/// regions remain frozen.
+	fn take_unseen(
+		&mut self,
+		limit: usize,
+		excluded: &FxHashSet<CellHandle>,
+	) -> FxHashSet<CellHandle> {
+		let mut selected = FxHashSet::default();
+		self.urgent.drain_unseen(&mut selected, excluded, limit);
+		if selected.len() == limit {
+			return selected;
+		}
+		// Reserve one quarter of a full generation for retained physical work.
+		// A continuously operated machine can no longer starve an older plume.
+		let remaining_limit = limit - selected.len();
+		let eligible_frontier = self
+			.frontier
+			.members
+			.iter()
+			.filter(|handle| !excluded.contains(handle))
+			.count();
+		let frontier_reserve = eligible_frontier.min(remaining_limit / 4);
+		let fresh_target = selected.len() + remaining_limit - frontier_reserve;
+		self.fresh
+			.drain_unseen(&mut selected, excluded, fresh_target);
+		let frontier_count = limit - selected.len();
+		let frontier_target = selected.len() + frontier_count;
+		self.frontier
+			.drain_unseen(&mut selected, excluded, frontier_target);
+		if selected.len() < limit {
+			self.fresh.drain_unseen(&mut selected, excluded, limit);
+		}
+		selected
+	}
+}
+
+static ACTIVE_TURFS: RwLock<Option<ActiveTurfs>> = const_rwlock(None);
+static PRESSURE_URGENCY_MILLIKPA: AtomicU32 = AtomicU32::new(0);
+static PRESSURE_URGENCY_INFLIGHT_MILLIKPA: AtomicU32 = AtomicU32::new(0);
+
+#[cfg(test)]
+mod active_turf_tests {
+	use super::*;
+	static PRESSURE_TEST_LOCK: std::sync::Mutex<()> = std::sync::Mutex::new(());
+
+	fn handle(id: TurfID) -> CellHandle {
+		CellHandle { id, generation: 1 }
+	}
+
+	#[test]
+	fn activation_state_is_exclusive_and_fresh_upgrades_frontier() {
+		let mut active = ActiveTurfs::default();
+		active.activate_frontier(handle(1));
+		active.activate_fresh(handle(1));
+		assert_eq!(active.len(), 1);
+		assert!(active.fresh.contains(&handle(1)));
+		assert!(!active.frontier.contains(&handle(1)));
+		active.activate_frontier(handle(1));
+		assert_eq!(active.len(), 1);
+		assert!(active.fresh.contains(&handle(1)));
+	}
+
+	#[test]
+	fn retained_frontier_has_guaranteed_capacity_under_fresh_load() {
+		let mut active = ActiveTurfs::default();
+		for id in 1..=5_000 {
+			active.activate_fresh(handle(id));
+		}
+		for id in 10_001..=11_500 {
+			active.activate_frontier(handle(id));
+		}
+		let selected = active.take(MAX_TURF_SEEDS_PER_GENERATION);
+		let selected_frontier = selected.iter().filter(|cell| cell.id >= 10_001).count();
+		assert_eq!(selected.len(), MAX_TURF_SEEDS_PER_GENERATION);
+		assert_eq!(selected_frontier, MAX_TURF_SEEDS_PER_GENERATION / 4);
+	}
+
+	#[test]
+	fn an_epoch_never_selects_the_same_cell_twice() {
+		let mut active = ActiveTurfs::default();
+		for id in 1..=12 {
+			active.activate_urgent(handle(id));
+		}
+		let first = active.take_unseen(6, &FxHashSet::default());
+		// A retained gradient is reactivated immediately after publication, but it
+		// must wait until the next epoch rather than starving untouched cells.
+		for cell in &first {
+			active.activate_urgent(*cell);
+		}
+		let second = active.take_unseen(6, &first);
+		assert_eq!(second.len(), 6);
+		assert!(first.is_disjoint(&second));
+		assert_eq!(active.len(), 6);
+	}
+
+	#[test]
+	fn urgent_pressure_work_preempts_routine_and_retained_work() {
+		let mut active = ActiveTurfs::default();
+		for id in 1..=20 {
+			active.activate_fresh(handle(id));
+		}
+		for id in 101..=120 {
+			active.activate_frontier(handle(id));
+		}
+		active.activate_urgent(handle(999));
+		let selected = active.take(4);
+		assert!(selected.contains(&handle(999)));
+		assert_eq!(selected.len(), 4);
+	}
+
+	#[test]
+	fn adaptive_limit_is_bounded_and_moves_toward_latency_target() {
+		TURF_SEED_LIMIT.store(INITIAL_TURF_SEEDS_PER_GENERATION, Ordering::Release);
+		adapt_turf_seed_limit(160.0, 40.0);
+		let reduced = turf_seed_limit();
+		assert!(reduced < INITIAL_TURF_SEEDS_PER_GENERATION);
+		adapt_turf_seed_limit(1.0, 40.0);
+		assert!(turf_seed_limit() > reduced);
+		for _ in 0..100 {
+			adapt_turf_seed_limit(10_000.0, 40.0);
+		}
+		assert_eq!(turf_seed_limit(), MIN_TURF_SEEDS_PER_GENERATION);
+		TURF_SEED_LIMIT.store(INITIAL_TURF_SEEDS_PER_GENERATION, Ordering::Release);
+	}
+
+	#[test]
+	fn pressure_urgency_tracks_the_largest_pending_delta() {
+		let _pressure_test = PRESSURE_TEST_LOCK.lock().unwrap();
+		PRESSURE_URGENCY_MILLIKPA.store(0, Ordering::Release);
+		PRESSURE_URGENCY_INFLIGHT_MILLIKPA.store(0, Ordering::Release);
+		mark_mix_urgent(usize::MAX, 25.0);
+		mark_mix_urgent(usize::MAX, 180.0);
+		assert_eq!(current_pressure_urgency_kpa(), 180.0);
+		assert_eq!(begin_pressure_generation(), 180.0);
+		assert_eq!(current_pressure_urgency_kpa(), 180.0);
+		finish_pressure_generation();
+		assert_eq!(current_pressure_urgency_kpa(), 0.0);
+	}
+
+	#[test]
+	fn cancelled_generation_restores_pressure_urgency() {
+		let _pressure_test = PRESSURE_TEST_LOCK.lock().unwrap();
+		PRESSURE_URGENCY_MILLIKPA.store(0, Ordering::Release);
+		PRESSURE_URGENCY_INFLIGHT_MILLIKPA.store(0, Ordering::Release);
+		mark_mix_urgent(usize::MAX, 75.0);
+		assert_eq!(begin_pressure_generation(), 75.0);
+		abort_pressure_generation();
+		assert_eq!(current_pressure_urgency_kpa(), 75.0);
+		assert_eq!(begin_pressure_generation(), 75.0);
+		finish_pressure_generation();
+	}
+}
 static MIX_TO_TURF: RwLock<Option<FxHashMap<usize, CellHandle>>> = const_rwlock(None);
 
 #[derive(Debug)]
@@ -453,6 +731,7 @@ enum PendingTopologyUpdate {
 static PENDING_TOPOLOGY: RwLock<Vec<PendingTopologyUpdate>> = const_rwlock(Vec::new());
 static TOPOLOGY_TRANSACTION: Mutex<Vec<PendingTopologyUpdate>> = const_mutex(Vec::new());
 static TOPOLOGY_TRANSACTION_OPEN: AtomicBool = AtomicBool::new(false);
+static TOPOLOGY_BATCH_OPEN: AtomicBool = AtomicBool::new(false);
 static TURF_TOPOLOGY_GENERATION: AtomicU64 = AtomicU64::new(0);
 
 //whether there is any tasks running
@@ -480,9 +759,6 @@ pub fn wait_for_tasks() {
 fn topology_barrier() -> Result<ByondValue> {
 	wait_for_tasks();
 	apply_pending_topology_updates();
-	groups::flush_groups_channel();
-	#[cfg(feature = "katmos")]
-	katmos::flush_equalize_channel();
 	Ok(ByondValue::null())
 }
 
@@ -530,9 +806,29 @@ fn topology_transaction_commit() -> Result<ByondValue> {
 		}
 	});
 	TURF_TOPOLOGY_GENERATION.fetch_add(1, Ordering::AcqRel);
-	groups::flush_groups_channel();
-	#[cfg(feature = "katmos")]
-	katmos::flush_equalize_channel();
+	Ok(ByondValue::null())
+}
+
+/// Opens a non-blocking destructive-world batch (explosions). Unlike shuttle
+/// transactions this never waits for the worker: it invalidates its generation,
+/// queues every topology mutation, and lets the worker cancel at its next budget
+/// checkpoint.
+#[byondapi::bind("/datum/controller/subsystem/air/proc/auxmos_topology_batch_begin")]
+#[auxmacros::panic_safe]
+fn topology_batch_begin() -> Result<ByondValue> {
+	TOPOLOGY_BATCH_OPEN.store(true, Ordering::Release);
+	TURF_TOPOLOGY_GENERATION.fetch_add(1, Ordering::AcqRel);
+	Ok(ByondValue::null())
+}
+
+#[byondapi::bind("/datum/controller/subsystem/air/proc/auxmos_topology_batch_commit")]
+#[auxmacros::panic_safe]
+fn topology_batch_commit() -> Result<ByondValue> {
+	TOPOLOGY_BATCH_OPEN.store(false, Ordering::Release);
+	TURF_TOPOLOGY_GENERATION.fetch_add(1, Ordering::AcqRel);
+	if let Some(_task_barrier) = TASKS.try_write() {
+		apply_pending_topology_updates();
+	}
 	Ok(ByondValue::null())
 }
 
@@ -541,17 +837,16 @@ pub(crate) fn mark_mix_active(mix: usize) {
 		.read()
 		.as_ref()
 		.and_then(|mapping| mapping.get(&mix).copied());
-	let mutable = handle.is_some_and(|handle| {
-		with_turf_gases_read(|arena| {
-			arena
-				.get_handle(handle)
-				.and_then(|node| arena.get(node))
-				.is_some_and(|mixture| !mixture.is_immutable())
-		})
-	});
-	if mutable {
-		let handle = handle.expect("mutable mapped mixture has a turf handle");
-		ACTIVE_TURFS.write().as_mut().unwrap().insert(handle);
+	if let Some(handle) = handle {
+		// Do not inspect TURF_GASES here. This proc is called while gas locks are
+		// held by the heat worker; recursively taking TURF_GASES.read() deadlocks
+		// if an explosion/topology writer queued between the two reads. Immutable
+		// boundary cells are harmlessly filtered when the active queue is consumed.
+		ACTIVE_TURFS
+			.write()
+			.as_mut()
+			.unwrap()
+			.activate_fresh(handle);
 	}
 }
 
@@ -567,64 +862,140 @@ fn mark_turf_active(turf: TurfID) {
 		})
 	});
 	if let Some(handle) = handle {
-		ACTIVE_TURFS.write().as_mut().unwrap().insert(handle);
+		ACTIVE_TURFS
+			.write()
+			.as_mut()
+			.unwrap()
+			.activate_fresh(handle);
 	}
 }
 
 const MAX_TURF_SEEDS_PER_GENERATION: usize = 4_096;
+const MIN_TURF_SEEDS_PER_GENERATION: usize = 128;
+const INITIAL_TURF_SEEDS_PER_GENERATION: usize = 1_024;
+static TURF_SEED_LIMIT: AtomicUsize = AtomicUsize::new(INITIAL_TURF_SEEDS_PER_GENERATION);
 
-fn take_active_turfs(arena: &TurfGases) -> FxHashSet<CellHandle> {
-	let mut active_guard = ACTIVE_TURFS.write();
-	let active = active_guard.as_mut().unwrap();
-	if active.len() <= MAX_TURF_SEEDS_PER_GENERATION {
-		return std::mem::take(active);
+fn take_active_turfs(
+	_arena: &TurfGases,
+	limit: usize,
+	excluded: &FxHashSet<CellHandle>,
+) -> FxHashSet<CellHandle> {
+	ACTIVE_TURFS.write().as_mut().unwrap().take_unseen(
+		limit.clamp(MIN_TURF_SEEDS_PER_GENERATION, MAX_TURF_SEEDS_PER_GENERATION),
+		excluded,
+	)
+}
+
+pub(super) fn turf_seed_limit() -> usize {
+	TURF_SEED_LIMIT.load(Ordering::Acquire)
+}
+
+pub(super) fn adapt_turf_seed_limit(elapsed_ms: f32, target_ms: f32) {
+	let old = turf_seed_limit();
+	let ratio = (target_ms / elapsed_ms.max(1.0)).clamp(0.5, 2.0);
+	let proposed = (old as f32 * ratio) as usize;
+	// Smooth the controller so one unusually cheap/expensive generation does not
+	// make the following generation oscillate between the hard bounds.
+	let next = ((old * 3 + proposed) / 4)
+		.clamp(MIN_TURF_SEEDS_PER_GENERATION, MAX_TURF_SEEDS_PER_GENERATION);
+	TURF_SEED_LIMIT.store(next, Ordering::Release);
+}
+
+pub(crate) fn mark_mix_urgent(mix: usize, pressure_delta_kpa: f32) {
+	let severity = (pressure_delta_kpa.max(0.0).min(u32::MAX as f32 / 1_000.0) * 1_000.0) as u32;
+	PRESSURE_URGENCY_MILLIKPA.fetch_max(severity, Ordering::AcqRel);
+	let handle = MIX_TO_TURF
+		.read()
+		.as_ref()
+		.and_then(|mapping| mapping.get(&mix).copied());
+	if let Some(handle) = handle {
+		ACTIVE_TURFS
+			.write()
+			.as_mut()
+			.unwrap()
+			.activate_urgent(handle);
 	}
-	// A generation is an optimistic transaction. Taking the entire station made
-	// one legitimate machine write invalidate tens of thousands of unrelated
-	// cells forever. Bounded seed batches keep publication latency short while
-	// the unconsumed work remains queued for subsequent generations.
-	let mut selected = FxHashSet::default();
-	let mut frontier = VecDeque::new();
-	// Grow connected batches. Arbitrary hash-order selection scattered 4,096
-	// seeds across the map and inflated their one-edge frontier to 10k-15k cells.
-	// Connected selection keeps snapshot and publication sets spatially local.
-	while selected.len() < MAX_TURF_SEEDS_PER_GENERATION {
-		if frontier.is_empty() {
-			let Some(next) = active
-				.iter()
-				.find(|handle| !selected.contains(*handle))
-				.copied()
-			else {
-				break;
-			};
-			frontier.push_back(next);
-		}
-		let Some(handle) = frontier.pop_front() else {
-			break;
-		};
-		if !active.contains(&handle) || !selected.insert(handle) {
-			continue;
-		}
-		if let Some(node) = arena.get_handle(handle) {
-			for neighbor in arena.adjacent_node_ids(node) {
-				if let Some(neighbor_handle) = arena.get(neighbor).map(TurfMixture::handle) {
-					if active.contains(&neighbor_handle) && !selected.contains(&neighbor_handle) {
-						frontier.push_back(neighbor_handle);
-					}
-				}
-			}
-		}
-	}
-	active.retain(|handle| !selected.contains(handle));
-	selected
+}
+
+pub(super) fn begin_pressure_generation() -> f32 {
+	let severity = PRESSURE_URGENCY_MILLIKPA.swap(0, Ordering::AcqRel);
+	PRESSURE_URGENCY_INFLIGHT_MILLIKPA.store(severity, Ordering::Release);
+	severity as f32 / 1_000.0
+}
+
+pub(super) fn finish_pressure_generation() {
+	PRESSURE_URGENCY_INFLIGHT_MILLIKPA.store(0, Ordering::Release);
+}
+
+/// A cancelled topology generation did not consume its pressure event. Return
+/// its urgency to the pending lane so the replacement graph is serviced at the
+/// same cadence instead of silently degrading to routine 1 Hz work.
+pub(super) fn abort_pressure_generation() {
+	let severity = PRESSURE_URGENCY_INFLIGHT_MILLIKPA.swap(0, Ordering::AcqRel);
+	PRESSURE_URGENCY_MILLIKPA.fetch_max(severity, Ordering::AcqRel);
+}
+
+pub(super) fn current_pressure_urgency_kpa() -> f32 {
+	PRESSURE_URGENCY_MILLIKPA
+		.load(Ordering::Acquire)
+		.max(PRESSURE_URGENCY_INFLIGHT_MILLIKPA.load(Ordering::Acquire)) as f32
+		/ 1_000.0
 }
 
 fn reactivate_cells(ids: impl IntoIterator<Item = CellHandle>) {
-	ACTIVE_TURFS.write().as_mut().unwrap().extend(ids);
+	let mut active = ACTIVE_TURFS.write();
+	let active = active.as_mut().unwrap();
+	for handle in ids {
+		active.activate_frontier(handle);
+	}
+}
+
+fn reactivate_urgent_cells(ids: impl IntoIterator<Item = CellHandle>, pressure_delta_kpa: f32) {
+	let severity = (pressure_delta_kpa.max(0.0).min(u32::MAX as f32 / 1_000.0) * 1_000.0) as u32;
+	PRESSURE_URGENCY_MILLIKPA.fetch_max(severity, Ordering::AcqRel);
+	let mut active = ACTIVE_TURFS.write();
+	let active = active.as_mut().unwrap();
+	for handle in ids {
+		active.activate_urgent(handle);
+	}
+}
+
+fn remove_active_handle(handle: CellHandle) {
+	ACTIVE_TURFS.write().as_mut().unwrap().remove(handle);
 }
 
 pub(super) fn pending_active_turfs() -> usize {
-	ACTIVE_TURFS.read().as_ref().map_or(0, FxHashSet::len)
+	ACTIVE_TURFS.read().as_ref().map_or(0, ActiveTurfs::len)
+}
+
+pub(super) fn pending_active_turf_queue_counts() -> (usize, usize, usize) {
+	ACTIVE_TURFS
+		.read()
+		.as_ref()
+		.map_or((0, 0, 0), ActiveTurfs::queue_counts)
+}
+
+/// Diagnostic/test query for one authoritative cell. Gameplay never polls this;
+/// it exists so convergence tests can distinguish their local frontier from
+/// unrelated map activity.
+#[byondapi::bind("/turf/proc/auxmos_is_atmos_active")]
+#[auxmacros::panic_safe]
+fn turf_active_hook(src: ByondValue) -> Result<ByondValue> {
+	let id = src.get_ref()?;
+	let handle = with_turf_gases_read(|arena| {
+		arena
+			.get_id(id)
+			.and_then(|node| arena.get(node))
+			.map(TurfMixture::handle)
+	});
+	Ok(handle
+		.is_some_and(|handle| {
+			ACTIVE_TURFS
+				.read()
+				.as_ref()
+				.is_some_and(|active| active.contains(handle))
+		})
+		.into())
 }
 
 pub(super) fn turf_arena_diagnostics() -> (usize, usize, usize, usize, usize, usize) {
@@ -641,19 +1012,6 @@ pub(super) fn turf_arena_diagnostics() -> (usize, usize, usize, usize, usize, us
 	})
 }
 
-pub(super) fn reactivate_all_turfs() {
-	let handles = with_turf_gases_read(|arena| {
-		arena
-			.map
-			.values()
-			.filter_map(|&node| {
-				let mixture = arena.get(node)?;
-				(!mixture.is_immutable()).then_some(mixture.handle())
-			})
-			.collect::<Vec<_>>()
-	});
-	reactivate_cells(handles);
-}
 #[byondapi::init]
 pub fn initialize_turfs() {
 	*TURF_GASES.write() = Some(TurfGases {
@@ -677,7 +1035,7 @@ pub fn shutdown_turfs() {
 	wait_for_tasks();
 	TURF_GASES.write().as_mut().unwrap().clear();
 	PLANETARY_ATMOS.write().as_mut().unwrap().clear();
-	ACTIVE_TURFS.write().as_mut().unwrap().clear();
+	*ACTIVE_TURFS.write() = Some(Default::default());
 	MIX_TO_TURF.write().as_mut().unwrap().clear();
 }
 
@@ -708,7 +1066,7 @@ fn apply_topology_update(arena: &mut TurfGases, update: PendingTopologyUpdate) {
 			{
 				if previous.0 != mix {
 					MIX_TO_TURF.write().as_mut().unwrap().remove(&previous.0);
-					ACTIVE_TURFS.write().as_mut().unwrap().remove(&previous.1);
+					remove_active_handle(previous.1);
 				}
 			}
 			arena.insert_turf(mixture);
@@ -719,7 +1077,11 @@ fn apply_topology_update(arena: &mut TurfGases, update: PendingTopologyUpdate) {
 				.handle();
 			MIX_TO_TURF.write().as_mut().unwrap().insert(mix, handle);
 			if mutable {
-				ACTIVE_TURFS.write().as_mut().unwrap().insert(handle);
+				ACTIVE_TURFS
+					.write()
+					.as_mut()
+					.unwrap()
+					.activate_fresh(handle);
 			}
 		}
 		PendingTopologyUpdate::Remove(id) => {
@@ -731,16 +1093,40 @@ fn apply_topology_update(arena: &mut TurfGases, update: PendingTopologyUpdate) {
 				.and_then(|node| arena.get(node))
 				.map(|mixture| (mixture.mix, mixture.handle()))
 			{
-				ACTIVE_TURFS.write().as_mut().unwrap().remove(&handle);
+				remove_active_handle(handle);
 				MIX_TO_TURF.write().as_mut().unwrap().remove(&mix);
 			}
-			groups::retire_turf(id);
-			#[cfg(feature = "katmos")]
-			katmos::retire_turf(id);
 			arena.remove_turf(id);
 		}
 		PendingTopologyUpdate::Adjacencies(id, adjacent) => {
-			arena.update_adjacencies_from_ids(id, &adjacent)
+			arena.update_adjacencies_from_ids(id, &adjacent);
+			// A topology change is itself an atmospheric mutation. Activate both
+			// endpoints after the graph is authoritative, and promote a mutable cell
+			// beside a large immutable pressure reservoir directly to the urgent
+			// queue. This makes a newly blasted space boundary impossible to miss even
+			// when DM only republishes the replacement turf's adjacency list.
+			let mut handles = Vec::new();
+			if let Some(node) = arena.get_id(id) {
+				if let Some(cell) = arena.get(node).filter(|cell| !cell.is_immutable()) {
+					handles.push((cell.handle(), topology_pressure_urgency(arena, node)));
+				}
+				for neighbor in arena.adjacent_node_ids(node) {
+					if let Some(cell) = arena.get(neighbor).filter(|cell| !cell.is_immutable()) {
+						handles.push((cell.handle(), topology_pressure_urgency(arena, neighbor)));
+					}
+				}
+			}
+			let mut active = ACTIVE_TURFS.write();
+			let active = active.as_mut().unwrap();
+			for (handle, urgency) in handles {
+				if urgency >= 20.0 {
+					PRESSURE_URGENCY_MILLIKPA
+						.fetch_max((urgency * 1_000.0) as u32, Ordering::AcqRel);
+					active.activate_urgent(handle);
+				} else {
+					active.activate_fresh(handle);
+				}
+			}
 		}
 		PendingTopologyUpdate::RemoveAdjacencies(id) => {
 			if let Some(&node) = arena.map.get(&id) {
@@ -750,9 +1136,34 @@ fn apply_topology_update(arena: &mut TurfGases, update: PendingTopologyUpdate) {
 	}
 }
 
+/// Largest pressure jump from a mutable cell to an immutable boundary in the
+/// already-published topology. Used only on structural updates, not in the hot
+/// solver loop.
+fn topology_pressure_urgency(arena: &TurfGases, node: NodeIndex) -> f32 {
+	let Some(source) = arena.get(node) else {
+		return 0.0;
+	};
+	GasArena::with_all_mixtures(|mixtures| {
+		let Some(source_gas) = mixtures.get(source.mix).and_then(RwLock::try_read) else {
+			return 0.0;
+		};
+		let source_pressure = source_gas.return_pressure();
+		arena
+			.adjacent_node_ids(node)
+			.filter_map(|neighbor| arena.get(neighbor).filter(|cell| cell.is_immutable()))
+			.filter_map(|cell| mixtures.get(cell.mix).and_then(RwLock::try_read))
+			.map(|gas| (source_pressure - gas.return_pressure()).abs())
+			.fold(0.0_f32, f32::max)
+	})
+}
+
 fn apply_or_queue_topology_update(update: PendingTopologyUpdate) {
 	if TOPOLOGY_TRANSACTION_OPEN.load(Ordering::Acquire) {
 		TOPOLOGY_TRANSACTION.lock().push(update);
+		return;
+	}
+	if TOPOLOGY_BATCH_OPEN.load(Ordering::Acquire) {
+		PENDING_TOPOLOGY.write().push(update);
 		return;
 	}
 	// Gas revisions reject stale diffusion writes after synchronous gas changes.
@@ -828,6 +1239,18 @@ fn hook_register_turfs_bulk(list: ByondValue, flag: ByondValue) -> Result<ByondV
 	let visibility = crate::gas::visibility_copies();
 	for (turf, _) in list.iter()? {
 		register_turf_impl(turf, flag, &visibility)?;
+		// Round-start bulk registration precedes adjacency publication. Merely
+		// existing is not atmospheric work, so do not enqueue every station turf.
+		// The following bulk-adjacency pass selectively activates real gradients.
+		let id = turf.get_ref()?;
+		if let Some(handle) = with_turf_gases_read(|arena| {
+			arena
+				.get_id(id)
+				.and_then(|node| arena.get(node))
+				.map(TurfMixture::handle)
+		}) {
+			remove_active_handle(handle);
+		}
 	}
 	Ok(ByondValue::null())
 }
@@ -946,10 +1369,55 @@ fn hook_infos(src: ByondValue) -> Result<ByondValue> {
 #[byondapi::bind("/proc/_auxmos_update_adjacencies_bulk")]
 #[auxmacros::panic_safe]
 fn hook_infos_bulk(list: ByondValue) -> Result<ByondValue> {
-	for (turf, _) in list.iter()? {
-		infos_impl(turf)?;
+	// Publish the entire graph first. infos_impl() activates both endpoints of
+	// each changed edge, so pruning inline is order-dependent: a later neighbor
+	// would re-enqueue an already-pruned stable cell and leave most of the map in
+	// the startup queue. The second pass evaluates the completed graph once.
+	let turfs = list.iter()?.collect::<Vec<_>>();
+	for (turf, _) in &turfs {
+		infos_impl(*turf)?;
+	}
+	for (turf, _) in turfs {
+		let id = turf.get_ref()?;
+		if !turf_has_material_gradient(id) {
+			if let Some(handle) = with_turf_gases_read(|arena| {
+				arena
+					.get_id(id)
+					.and_then(|node| arena.get(node))
+					.map(TurfMixture::handle)
+			}) {
+				remove_active_handle(handle);
+			}
+		}
 	}
 	Ok(ByondValue::null())
+}
+
+/// True when a newly published round-start cell actually differs from one of
+/// its neighbors. This preserves authored pressure/composition/temperature
+/// gradients without scheduling tens of thousands of already-equal cells.
+fn turf_has_material_gradient(id: TurfID) -> bool {
+	with_turf_gases_read(|arena| {
+		let Some(node) = arena.get_id(id) else {
+			return false;
+		};
+		let Some(cell) = arena.get(node) else {
+			return false;
+		};
+		if cell.is_immutable() {
+			return false;
+		}
+		GasArena::with_all_mixtures(|mixtures| {
+			let Some(gas) = mixtures.get(cell.mix).map(|entry| entry.read()) else {
+				return false;
+			};
+			arena.adjacent_mixes(node, mixtures).any(|entry| {
+				let adjacent = entry.read();
+				gas.temperature_compare(&adjacent)
+					|| gas.compare_with(&adjacent, MINIMUM_MOLES_DELTA_TO_MOVE)
+			})
+		})
+	})
 }
 
 fn infos_impl(src: ByondValue) -> Result<ByondValue> {
@@ -1202,6 +1670,24 @@ mod tests {
 		assert!(arena.graph.find_edge(two, one).is_none());
 		assert!(arena.graph.find_edge(one, three).is_some());
 		assert!(arena.graph.find_edge(three, one).is_some());
+	}
+
+	#[test]
+	fn adjacency_publication_cannot_create_parallel_physical_faces() {
+		let mut arena = empty_arena();
+		for id in [1, 2] {
+			arena.insert_turf(TurfMixture {
+				id,
+				mix: id as usize,
+				..Default::default()
+			});
+		}
+		arena.update_adjacencies_from_ids(1, &[(2, 1), (2, 2), (2, 1)]);
+		arena.update_adjacencies_from_ids(2, &[(1, 2), (1, 1)]);
+		let one = arena.get_id(1).unwrap();
+		let two = arena.get_id(2).unwrap();
+		assert_eq!(arena.graph.edges_connecting(one, two).count(), 1);
+		assert_eq!(arena.graph.edges_connecting(two, one).count(), 1);
 	}
 
 	#[test]

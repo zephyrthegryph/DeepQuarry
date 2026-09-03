@@ -20,21 +20,18 @@
 
 	integrated_object_type = /obj/item/gun/energy/laser/mounted/augment
 
-/obj/item/organ/internal/augment/armmounted/attackby(obj/item/I as obj, mob/user as mob)
-	if(I.has_tool_quality(TOOL_SCREWDRIVER))
-		switch(organ_tag)
-			if(O_AUG_L_FOREARM)
-				organ_tag = O_AUG_R_FOREARM
-				parent_organ = BP_R_ARM
-				target_slot = slot_r_hand
-			if(O_AUG_R_FOREARM)
-				organ_tag = O_AUG_L_FOREARM
-				parent_organ = BP_L_ARM
-				target_slot = slot_l_hand
-		to_chat(user, span_notice("You swap \the [src]'s servos to install neatly into \the lower [parent_organ] mount."))
-		return
-
-	. = ..()
+/obj/item/organ/internal/augment/armmounted/screwdriver_act(mob/user, obj/item/tool)
+	switch(organ_tag)
+		if(O_AUG_L_FOREARM)
+			organ_tag = O_AUG_R_FOREARM
+			parent_organ = BP_R_ARM
+			target_slot = slot_r_hand
+		if(O_AUG_R_FOREARM)
+			organ_tag = O_AUG_L_FOREARM
+			parent_organ = BP_L_ARM
+			target_slot = slot_l_hand
+	to_chat(user, span_notice("You swap \the [src]'s servos to install neatly into \the lower [parent_organ] mount."))
+	return ITEM_INTERACT_SUCCESS
 
 /obj/item/organ/internal/augment/armmounted/taser
 	name = "taser implant"
@@ -69,21 +66,18 @@
 
 	integrated_object_type = null
 
-/obj/item/organ/internal/augment/armmounted/hand/attackby(obj/item/I as obj, mob/user as mob)
-	if(I.has_tool_quality(TOOL_SCREWDRIVER))
-		switch(organ_tag)
-			if(O_AUG_L_HAND)
-				organ_tag = O_AUG_R_HAND
-				parent_organ = BP_R_HAND
-				target_slot = slot_r_hand
-			if(O_AUG_R_HAND)
-				organ_tag = O_AUG_L_HAND
-				parent_organ = BP_L_HAND
-				target_slot = slot_l_hand
-		to_chat(user, span_notice("You swap \the [src]'s servos to install neatly into \the upper [parent_organ] mount."))
-		return
-
-	. = ..()
+/obj/item/organ/internal/augment/armmounted/hand/screwdriver_act(mob/user, obj/item/tool)
+	switch(organ_tag)
+		if(O_AUG_L_HAND)
+			organ_tag = O_AUG_R_HAND
+			parent_organ = BP_R_HAND
+			target_slot = slot_r_hand
+		if(O_AUG_R_HAND)
+			organ_tag = O_AUG_L_HAND
+			parent_organ = BP_L_HAND
+			target_slot = slot_l_hand
+	to_chat(user, span_notice("You swap \the [src]'s servos to install neatly into \the upper [parent_organ] mount."))
+	return ITEM_INTERACT_SUCCESS
 
 /obj/item/organ/internal/augment/armmounted/hand/sword
 	name = "energy blade implant"
@@ -115,21 +109,18 @@
 
 	integrated_object_type = null
 
-/obj/item/organ/internal/augment/armmounted/shoulder/attackby(obj/item/I as obj, mob/user as mob)
-	if(I.has_tool_quality(TOOL_SCREWDRIVER))
-		switch(organ_tag)
-			if(O_AUG_L_UPPERARM)
-				organ_tag = O_AUG_R_UPPERARM
-				parent_organ = BP_R_ARM
-				target_slot = slot_r_hand
-			if(O_AUG_R_UPPERARM)
-				organ_tag = O_AUG_L_UPPERARM
-				parent_organ = BP_L_ARM
-				target_slot = slot_l_hand
-		to_chat(user, span_notice("You swap \the [src]'s servos to install neatly into \the upper [parent_organ] mount."))
-		return
-
-	. = ..()
+/obj/item/organ/internal/augment/armmounted/shoulder/screwdriver_act(mob/user, obj/item/tool)
+	switch(organ_tag)
+		if(O_AUG_L_UPPERARM)
+			organ_tag = O_AUG_R_UPPERARM
+			parent_organ = BP_R_ARM
+			target_slot = slot_r_hand
+		if(O_AUG_R_UPPERARM)
+			organ_tag = O_AUG_L_UPPERARM
+			parent_organ = BP_L_ARM
+			target_slot = slot_l_hand
+	to_chat(user, span_notice("You swap \the [src]'s servos to install neatly into \the upper [parent_organ] mount."))
+	return ITEM_INTERACT_SUCCESS
 
 /obj/item/organ/internal/augment/armmounted/shoulder/surge
 	name = "muscle overclocker"

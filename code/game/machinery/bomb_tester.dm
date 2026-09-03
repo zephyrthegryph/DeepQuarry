@@ -3,6 +3,7 @@
 #define MODE_CANISTER 3
 
 /obj/machinery/bomb_tester
+	maintenance_flags = MACHINE_MAINT_STANDARD
 	name = "explosive effect simulator"
 	desc = "A device that can calculate the potential explosive yield of provided gases."
 	icon = 'icons/obj/machines/bomb_tester_vr.dmi'
@@ -86,10 +87,6 @@
 	simulation_delay = 25 SECONDS - scan_rating SECONDS
 
 /obj/machinery/bomb_tester/attackby(obj/item/I, mob/user)
-	if(default_deconstruction_screwdriver(user, I))
-		return
-	if(default_deconstruction_crowbar(user, I))
-		return
 	if(default_part_replacement(user, I))
 		return
 	if(istype(I, /obj/item/tank))

@@ -1,4 +1,6 @@
 /obj/machinery/computer/shuttle_control
+	// Navigation consoles are protected scenario controls and intentionally ignore structural damage.
+	resistance_flags = INDESTRUCTIBLE
 	name = "shuttle control console"
 	desc = "Used to control a linked shuttle."
 	icon_keyboard = "atmos_key"

@@ -17,6 +17,7 @@
 	var/light_power_on = 1
 
 	clicksound = "keyboard"
+	integrity_failure = 0.5
 
 /obj/machinery/computer/Initialize(mapload)
 	. = ..()
@@ -34,30 +35,14 @@
 	if(prob(20/severity))
 		set_broken()
 
-/obj/machinery/computer/ex_act(severity)
-	switch(severity)
-		if(1.0)
-			fall_apart(severity)
-			return
-		if(2.0)
-			if (prob(25))
-				fall_apart(severity)
-				return
-			if (prob(50))
-				for(var/x in verbs)
-					src.verbs -= x
-				set_broken()
-		if(3.0)
-			if (prob(25))
-				for(var/x in verbs)
-					src.verbs -= x
-				set_broken()
-	return
+/obj/machinery/computer/atom_break(damage_flag)
+	. = ..()
+	set_broken()
 
-/obj/machinery/computer/bullet_act(obj/item/projectile/Proj)
-	if(prob(Proj.get_structure_damage()))
-		set_broken()
-	..()
+/obj/machinery/computer/atom_fix()
+	. = ..()
+	stat &= ~BROKEN
+	update_icon()
 
 /obj/machinery/computer/blob_act()
 	ex_act(2)
@@ -117,19 +102,18 @@
 	return text
 
 /obj/machinery/computer/attackby(obj/item/W, mob/user)
-	if(computer_deconstruction_screwdriver(user, W))
-		return
-	else
-		if(istype(W,/obj/item/gripper)) //Behold, Grippers and their horribleness. If ..() is called by any computers' attackby() now or in the future, this should let grippers work with them appropriately.
-			var/obj/item/gripper/B = W	//B, for Borg.
-			var/obj/item/wrapped = B.get_wrapped_item()
-			if(!wrapped)
-				to_chat(user, "\The [B] is not holding anything.")
-				return
-			else
-				var/B_held = wrapped
-				to_chat(user, "You use \the [B] to use \the [B_held] with \the [src].")
-				playsound(src, clicksound, 100, 1, 0)
+	if(istype(W,/obj/item/gripper)) //Behold, Grippers and their horribleness. If ..() is called by any computers' attackby() now or in the future, this should let grippers work with them appropriately.
+		var/obj/item/gripper/B = W	//B, for Borg.
+		var/obj/item/wrapped = B.get_wrapped_item()
+		if(!wrapped)
+			to_chat(user, "\The [B] is not holding anything.")
 			return
-		attack_hand(user)
+		var/B_held = wrapped
+		to_chat(user, "You use \the [B] to use \the [B_held] with \the [src].")
+		playsound(src, clicksound, 100, 1, 0)
 		return
+	attack_hand(user)
+	return
+
+/obj/machinery/computer/screwdriver_act(mob/user, obj/item/tool)
+	return deconstruct_display(user, tool)

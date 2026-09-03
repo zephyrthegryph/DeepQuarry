@@ -55,10 +55,10 @@
 		return tgui_interact(user)
 
 /obj/machinery/sleep_console/attackby(obj/item/I, mob/user)
-	if(computer_deconstruction_screwdriver(user, I))
-		return
-	else
-		return attack_hand(user)
+	return attack_hand(user)
+
+/obj/machinery/sleep_console/screwdriver_act(mob/user, obj/item/tool)
+	return deconstruct_display(user, tool)
 
 /obj/machinery/sleep_console/power_change()
 	..()
@@ -84,6 +84,7 @@
 	return ..()
 
 /obj/machinery/sleeper
+	maintenance_flags = MACHINE_MAINT_STANDARD
 	name = "sleeper"
 	desc = "A stasis pod with built-in injectors, a dialysis machine, and a limited health scanner."
 	icon = 'icons/obj/Cryogenic2.dmi'
@@ -391,12 +392,14 @@
 			to_chat(user, span_warning("\The [src] has a beaker already."))
 		return
 	if(!occupant)
-		if(default_deconstruction_screwdriver(user, I))
-			return
-		if(default_deconstruction_crowbar(user, I))
-			return
 		if(default_part_replacement(user, I))
 			return
+
+/obj/machinery/sleeper/screwdriver_act(mob/user, obj/item/tool)
+	return occupant ? ITEM_INTERACT_BLOCKING : ..()
+
+/obj/machinery/sleeper/crowbar_act(mob/user, obj/item/tool)
+	return occupant ? ITEM_INTERACT_BLOCKING : ..()
 
 /obj/machinery/sleeper/verb/move_eject()
 	set name = "Eject occupant"

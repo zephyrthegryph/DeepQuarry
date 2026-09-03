@@ -21,6 +21,20 @@
 		..()
 	return
 
+/obj/item/mecha_parts/chassis/proc/run_focused_tool(mob/user, obj/item/tool)
+	return construct?.action(tool, user) ? ITEM_INTERACT_SUCCESS : ITEM_INTERACT_BLOCKING
+
+/obj/item/mecha_parts/chassis/screwdriver_act(mob/user, obj/item/tool)
+	return run_focused_tool(user, tool)
+/obj/item/mecha_parts/chassis/crowbar_act(mob/user, obj/item/tool)
+	return run_focused_tool(user, tool)
+/obj/item/mecha_parts/chassis/wrench_act(mob/user, obj/item/tool)
+	return run_focused_tool(user, tool)
+/obj/item/mecha_parts/chassis/wirecutter_act(mob/user, obj/item/tool)
+	return run_focused_tool(user, tool)
+/obj/item/mecha_parts/chassis/welder_act(mob/user, obj/item/tool)
+	return run_focused_tool(user, tool)
+
 /obj/item/mecha_parts/chassis/attack_hand()
 	return
 
@@ -313,6 +327,20 @@
 	if(!construct || !construct.action(W, user))
 		..()
 	return
+
+/obj/item/mecha_parts/fighter/chassis/proc/run_focused_tool(mob/user, obj/item/tool)
+	return construct?.action(tool, user) ? ITEM_INTERACT_SUCCESS : ITEM_INTERACT_BLOCKING
+
+/obj/item/mecha_parts/fighter/chassis/screwdriver_act(mob/user, obj/item/tool)
+	return run_focused_tool(user, tool)
+/obj/item/mecha_parts/fighter/chassis/crowbar_act(mob/user, obj/item/tool)
+	return run_focused_tool(user, tool)
+/obj/item/mecha_parts/fighter/chassis/wrench_act(mob/user, obj/item/tool)
+	return run_focused_tool(user, tool)
+/obj/item/mecha_parts/fighter/chassis/wirecutter_act(mob/user, obj/item/tool)
+	return run_focused_tool(user, tool)
+/obj/item/mecha_parts/fighter/chassis/welder_act(mob/user, obj/item/tool)
+	return run_focused_tool(user, tool)
 
 /obj/item/mecha_parts/fighter/chassis/attack_hand(mob/user, list/params)
 	return

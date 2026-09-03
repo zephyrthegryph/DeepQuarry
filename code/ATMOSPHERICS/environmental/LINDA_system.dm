@@ -37,6 +37,11 @@
 
 	//Can't just return if canpass is false here, we need to set superconductivity
 	for(var/obj/checked_object in contents + target_turf.contents)
+		// qdel runs Destroy() synchronously but BYOND keeps the object in loc.contents
+		// until garbage collection. A destroyed door/pipe must not keep an atmos
+		// edge sealed during that interval, especially inside an explosion epoch.
+		if(QDELETED(checked_object))
+			continue
 		var/turf/other = (checked_object.loc == src ? target_turf : src)
 		if(CANATMOSPASS(checked_object, other, vertical))
 			continue

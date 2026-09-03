@@ -51,21 +51,18 @@
 	if(powernet && (powernet == control.powernet)) //update if we're still in the same powernet
 		control.cdir = angle
 
-/obj/machinery/power/tracker/attackby(obj/item/W, mob/user)
-
-	if(W.has_tool_quality(TOOL_CROWBAR))
-		playsound(src, 'sound/machines/click.ogg', 50, 1)
-		user.visible_message(span_notice("[user] begins to take the glass off the solar tracker."))
-		if(do_after(user, 5 SECONDS, target = src))
-			var/obj/item/solar_assembly/S = new(loc)
-			S.tracker = TRUE
-			S.anchored = TRUE
-			new glass_type(loc, 2)
-			playsound(src, 'sound/items/Deconstruct.ogg', 50, 1)
-			user.visible_message(span_notice("[user] takes the glass off the tracker."))
-			qdel(src)
-		return
-	..()
+/obj/machinery/power/tracker/crowbar_act(mob/user, obj/item/W)
+	playsound(src, 'sound/machines/click.ogg', 50, 1)
+	user.visible_message(span_notice("[user] begins to take the glass off the solar tracker."))
+	if(do_after(user, 5 SECONDS, target = src))
+		var/obj/item/solar_assembly/S = new(loc)
+		S.tracker = TRUE
+		S.anchored = TRUE
+		new glass_type(loc, 2)
+		playsound(src, 'sound/items/Deconstruct.ogg', 50, 1)
+		user.visible_message(span_notice("[user] takes the glass off the tracker."))
+		qdel(src)
+	return ITEM_INTERACT_SUCCESS
 
 // Tracker Electronic
 

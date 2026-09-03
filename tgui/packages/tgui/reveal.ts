@@ -26,7 +26,8 @@
  * a Pane-interface it must fall back to the route-level reveal again.
  */
 
-import type { ResolvedWindowGeometry } from './drag';
+import { getNativeWindowPosition, type ResolvedWindowGeometry } from './drag';
+import { sendByondMessage } from './events/sendMessage';
 import { configAtom, store, suspendedAtom } from './events/store';
 import { profileStartup } from './profiling/hooks';
 import {
@@ -51,8 +52,16 @@ export function buildNativeRevealPayload(
 ): NativeRevealPayload {
   return {
     'is-visible': true,
-    ...(geometry?.pos && { pos: `${geometry.pos[0]},${geometry.pos[1]}` }),
-    ...(geometry?.size && { size: `${geometry.size[0]}x${geometry.size[1]}` }),
+    // DreamSeeker's native window geometry is integral. Sending a centered
+    // half-pixel (common with odd dimensions and fractional display scaling)
+    // is silently truncated by winset(), then our exact winget verification
+    // waits its full timeout for a value the client can never report.
+    ...(geometry?.pos && {
+      pos: `${Math.round(geometry.pos[0])},${Math.round(geometry.pos[1])}`,
+    }),
+    ...(geometry?.size && {
+      size: `${Math.round(geometry.size[0])}x${Math.round(geometry.size[1])}`,
+    }),
   };
 }
 
@@ -107,11 +116,19 @@ function geometryMatches(
 ): boolean {
   const observedSize = observed?.size;
   const observedPos = observed?.pos;
-  const actualSize = observedSize ? `${observedSize.x}x${observedSize.y}` : '';
-  const actualPos = observedPos ? `${observedPos.x},${observedPos.y}` : '';
+  const expectedSize = expected.size?.match(/^(\d+)x(\d+)$/);
+  const expectedPos = expected.pos?.match(/^(-?\d+),(-?\d+)$/);
+  const closeEnough = (actual: number, target: number) =>
+    Math.abs(actual - target) <= 1;
   return (
-    (!expected.size || expected.size === actualSize) &&
-    (!expected.pos || expected.pos === actualPos)
+    (!expectedSize ||
+      (observedSize &&
+        closeEnough(observedSize.x, Number(expectedSize[1])) &&
+        closeEnough(observedSize.y, Number(expectedSize[2])))) &&
+    (!expectedPos ||
+      (observedPos &&
+        closeEnough(observedPos.x, Number(expectedPos[1])) &&
+        closeEnough(observedPos.y, Number(expectedPos[2]))))
   );
 }
 
@@ -148,6 +165,60 @@ function browserViewportSignature(): string {
   return `${window.innerWidth}x${window.innerHeight}`;
 }
 
+function browserPositionMatches(expectedPos?: string): boolean {
+  if (!expectedPos) return true;
+  const match = /^(-?\d+),(-?\d+)$/.exec(expectedPos);
+  if (!match) return false;
+  const actual = getNativeWindowPosition();
+  const tolerance = Math.max(2, Math.ceil((window.devicePixelRatio || 1) * 2));
+  return (
+    Math.abs(actual[0] - Number(match[1])) <= tolerance &&
+    Math.abs(actual[1] - Number(match[2])) <= tolerance
+  );
+}
+
+async function waitForBrowserNativeGeometry(
+  expected: NativeGeometryPayload,
+): Promise<boolean> {
+  const deadline = performance.now() + 32;
+  do {
+    if (
+      browserViewportMatches(expected.size) &&
+      browserPositionMatches(expected.pos)
+    ) {
+      return true;
+    }
+    await new Promise<void>((resolve) => setTimeout(resolve, 8));
+  } while (performance.now() < deadline);
+  return false;
+}
+
+/**
+ * Native BYOND window dimensions are display pixels, while Chromium reports
+ * its viewport in CSS pixels. At 125% display scaling a 400x500 native window
+ * correctly has a 320x400 viewport; comparing the numbers directly imposed a
+ * guaranteed 500 ms timeout on every open.
+ */
+export function browserViewportMatches(
+  expectedSize?: string,
+  viewportWidth = window.innerWidth,
+  viewportHeight = window.innerHeight,
+  pixelRatio = window.devicePixelRatio || 1,
+): boolean {
+  const expected = expectedViewportSize(expectedSize);
+  if (!expected) return true;
+  // Chromium reports integral CSS pixels while DreamSeeker reports integral
+  // display pixels. At fractional DPI, rounding can compound in both directions
+  // (422 CSS px at 125% may legitimately back a 526 px native viewport). Allow
+  // two CSS pixels expressed in native units, while still rejecting a genuinely
+  // stale pooled-window size by a wide margin.
+  const tolerance = Math.max(2, Math.ceil(pixelRatio * 2));
+  return (
+    Math.abs(viewportWidth * pixelRatio - expected[0]) <= tolerance &&
+    Math.abs(viewportHeight * pixelRatio - expected[1]) <= tolerance
+  );
+}
+
 async function waitForBrowserViewport(
   expectedSize?: string,
 ): Promise<{ matched: boolean; observed: string }> {
@@ -160,10 +231,7 @@ async function waitForBrowserViewport(
     // BYOND's native size maps to the browser viewport in this skin. Waiting
     // here prevents showing a correctly-sized OS window whose embedded browser
     // is still painting at the pooled shell's previous dimensions.
-    if (
-      window.innerWidth === expected[0] &&
-      window.innerHeight === expected[1]
-    ) {
+    if (browserViewportMatches(expectedSize)) {
       return { matched: true, observed: browserViewportSignature() };
     }
     await new Promise<void>((resolve) => setTimeout(resolve, 8));
@@ -202,7 +270,7 @@ async function monitorRevealedGeometry(
     changes: Math.max(0, unique.length - 1),
   });
   if (unique.length > 1) {
-    Byond.sendMessage('perf/flicker', {
+    sendByondMessage('perf/flicker', {
       kind: 'post-reveal-geometry-change',
       generation,
       interface: store.get(configAtom)?.interface?.name,
@@ -227,6 +295,10 @@ export async function revealWindow(
     return false;
   }
   const nativeGeometry = buildNativeGeometryPayload(geometry);
+  const warmGeometry =
+    Boolean(config?.window?.geometry_preapplied) &&
+    browserViewportMatches(nativeGeometry.size) &&
+    browserPositionMatches(nativeGeometry.pos);
   profileTransition('reveal-start', {
     requested_size: nativeGeometry.size,
     requested_pos: nativeGeometry.pos,
@@ -239,7 +311,7 @@ export async function revealWindow(
     Byond.winset(Byond.windowId, { alpha: 0, 'is-visible': true });
     profileTransition('transparent-native-show-sent');
   }
-  if (nativeGeometry.size || nativeGeometry.pos) {
+  if ((nativeGeometry.size || nativeGeometry.pos) && !warmGeometry) {
     // Keep the shell hidden while DreamSeeker applies geometry. A single
     // winset containing is-visible can be painted in property order on cold
     // browser windows, exposing the template size for one frame. winget is a
@@ -249,15 +321,20 @@ export async function revealWindow(
       ...nativeGeometry,
       ...(nativeShell ? { alpha: 0 } : { 'is-visible': false }),
     });
-    const verification = await waitForNativeGeometry(nativeGeometry);
+    const browserObservedGeometry =
+      await waitForBrowserNativeGeometry(nativeGeometry);
+    const verification = browserObservedGeometry
+      ? { matched: true, observed: 'browser-observed' }
+      : await waitForNativeGeometry(nativeGeometry);
     profileTransition('native-geometry-verified', {
       matched: verification.matched,
       observed: verification.observed,
+      source: browserObservedGeometry ? 'browser' : 'winget',
       requested_size: nativeGeometry.size,
       requested_pos: nativeGeometry.pos,
     });
     if (!verification.matched && config?.client?.profiling) {
-      Byond.sendMessage('perf/flicker', {
+      sendByondMessage('perf/flicker', {
         kind: 'pre-reveal-geometry-mismatch',
         generation: currentGeneration,
         interface: config?.interface?.name,
@@ -273,7 +350,7 @@ export async function revealWindow(
       requested_size: nativeGeometry.size,
     });
     if (!viewport.matched && config?.client?.profiling) {
-      Byond.sendMessage('perf/flicker', {
+      sendByondMessage('perf/flicker', {
         kind: 'pre-reveal-viewport-mismatch',
         generation: currentGeneration,
         interface: config?.interface?.name,
@@ -288,6 +365,7 @@ export async function revealWindow(
   profileStartup('window_revealed', config?.interface?.name, {
     generation: currentGeneration,
     verifiedGeometry: Boolean(nativeGeometry.size || nativeGeometry.pos),
+    warmGeometry,
   });
   profileTransition('opacity-reveal-sending', {
     requested_size: nativeGeometry.size,

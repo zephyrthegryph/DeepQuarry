@@ -234,13 +234,15 @@
 	if (istype(I, /obj/item/card/id) || istype(I, /obj/item/pda))
 		attack_hand(user)
 		return
-	if(I.has_tool_quality(TOOL_MULTITOOL))
-		var/new_id = tgui_input_number(user, "[src] has an id of \"[id]\". What would you like it to be?", "[src] ID]", id, 9999)
-		if(!Adjacent(user)) //walked away
-			to_chat(user, span_warning(span_warning("You need to be adjacent to the remote to change its id.")))
-			return
-		if(new_id)
-			id = new_id
+
+/obj/machinery/button/remote/driver/multitool_act(mob/user, obj/item/tool)
+	var/new_id = tgui_input_number(user, "[src] has an id of \"[id]\". What would you like it to be?", "[src] ID]", id, 9999)
+	if(!Adjacent(user))
+		to_chat(user, span_warning("You need to be adjacent to the remote to change its id."))
+		return ITEM_INTERACT_BLOCKING
+	if(new_id)
+		id = new_id
+	return ITEM_INTERACT_SUCCESS
 
 /obj/machinery/button/remote/driver/update_icon()
 	if(!active || (stat & NOPOWER))

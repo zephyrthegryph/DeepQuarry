@@ -11,28 +11,19 @@
 	idle_power_usage = 250
 
 	circuit = null
+	maintenance_flags = MACHINE_MAINT_STANDARD
 	/*
 	null so people can not deconstruct them and remake them to normal Regulators,
 	probably should just make a circuit for it but this is pretty much just a proof of concept at the moment.
 	*/
 
-/obj/machinery/power/thermoregulator/cryogaia/attackby(obj/item/I, mob/user)
-	if(I.is_screwdriver())
-		if(default_deconstruction_screwdriver(user,I))
-			return
-	if(I.is_crowbar())
-		if(default_deconstruction_crowbar(user,I))
-			return
-	if(I.is_wrench())
-		anchored = !anchored
-		visible_message(span_notice("\The [src] has been [anchored ? "bolted to the floor" : "unbolted from the floor"] by [user].")) //Does this not need to be disabled?
-		playsound(src, I.usesound, 75, 1)
-		if(anchored)
-			connect_to_network()
-		else
-			disconnect_from_network()
-			turn_off()
-		return
-	if(istype(I, /obj/item/multitool))
-		return
-	..()
+/obj/machinery/power/thermoregulator/cryogaia/wrench_act(mob/user, obj/item/I)
+	anchored = !anchored
+	visible_message(span_notice("\The [src] has been [anchored ? "bolted to the floor" : "unbolted from the floor"] by [user].")) //Does this not need to be disabled?
+	playsound(src, I.usesound, 75, 1)
+	if(anchored)
+		connect_to_network()
+	else
+		disconnect_from_network()
+		turn_off()
+	return ITEM_INTERACT_SUCCESS

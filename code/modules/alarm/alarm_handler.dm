@@ -12,6 +12,12 @@
 		A.process()
 		check_alarm_cleared(A)
 
+/datum/alarm_handler/Destroy()
+	QDEL_LIST(alarms)
+	alarms_assoc = null
+	listeners = null
+	return ..()
+
 /datum/alarm_handler/proc/triggerAlarm(atom/origin, atom/source, duration = 0, severity = 1, hidden = 0)
 	var/new_alarm
 	//Proper origin and source mandatory
@@ -47,6 +53,22 @@
 		existing.clear(source)
 		return check_alarm_cleared(existing)
 
+/// Remove every strong alarm reference to an atom which is being destroyed.
+/// This deliberately does not depend on the caller still occupying its original
+/// alarm origin and also clears cached camera lists.
+/datum/alarm_handler/proc/release_atom(atom/departing)
+	if(!departing)
+		return
+	var/list/datum/alarm/check_alarms = alarms.Copy()
+	for(var/datum/alarm/alarm as anything in check_alarms)
+		if(alarm.origin == departing)
+			alarms_assoc -= alarm.origin
+			alarm.origin = null
+		alarm.clear(departing)
+		if(alarm.cameras)
+			alarm.cameras -= departing
+		check_alarm_cleared(alarm)
+
 /datum/alarm_handler/proc/major_alarms(z)
 	return visible_alarms(z)
 
@@ -64,6 +86,7 @@
 		alarms -= alarm
 		alarms_assoc -= alarm.origin
 		on_alarm_change(alarm, ALARM_CLEARED)
+		qdel(alarm)
 		return 1
 	return 0
 

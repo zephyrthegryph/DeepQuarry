@@ -5,6 +5,7 @@
 #define REAGENT_COOLING_MAXMOD 5
 
 /obj/machinery/atmospherics/unary/heater
+	maintenance_flags = MACHINE_MAINT_STANDARD
 	name = "gas heating system"
 	desc = "Heats gas when connected to a pipe network. Can be filled by hose with coolant to increase efficiency."
 	icon = 'icons/obj/Cryogenic2.dmi'
@@ -182,10 +183,6 @@
 	power_rating = max_power_rating * (power_setting/100)
 
 /obj/machinery/atmospherics/unary/heater/attackby(obj/item/O as obj, mob/user as mob)
-	if(default_deconstruction_screwdriver(user, O))
-		return
-	if(default_deconstruction_crowbar(user, O))
-		return
 	if(default_part_replacement(user, O))
 		return
 

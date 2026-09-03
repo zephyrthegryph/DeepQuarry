@@ -53,10 +53,6 @@
 
 
 /obj/machinery/injector_maker/attackby(obj/item/O, mob/user)
-
-	if (istype(O, /obj/item/multitool))
-		return ..()
-
 	if(istype(O,/obj/item/reagent_containers/glass) || \
 		istype(O,/obj/item/reagent_containers/food/drinks/glass2) || \
 		istype(O,/obj/item/reagent_containers/food/drinks/shaker))

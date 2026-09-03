@@ -37,13 +37,14 @@
 	AddElement(/datum/element/rotatable)
 
 /obj/machinery/atmospherics/pipeturbine/Destroy()
+	rust_unregister_pipe_topology()
 	// disconnect/qdel BEFORE ..() so node derefs are valid.
 	if(node1)
 		node1.disconnect(src)
-		qdel(network1)
+		rust_release_network_wrapper(network1)
 	if(node2)
 		node2.disconnect(src)
-		qdel(network2)
+		rust_release_network_wrapper(network2)
 
 	node1 = null
 	node2 = null
@@ -93,57 +94,40 @@
 	if (kin_energy > 1000000)
 		add_overlay(image('icons/obj/pipeturbine.dmi', "hi-turb"))
 
-/obj/machinery/atmospherics/pipeturbine/attackby(obj/item/W as obj, mob/user as mob)
-	if(W.has_tool_quality(TOOL_WRENCH))
-		anchored = !anchored
-		playsound(src, W.usesound, 50, 1)
-		to_chat(user, span_notice("You [anchored ? "secure" : "unsecure"] the bolts holding \the [src] to the floor."))
+/obj/machinery/atmospherics/pipeturbine/wrench_act(mob/user, obj/item/W)
+	anchored = !anchored
+	playsound(src, W.usesound, 50, 1)
+	to_chat(user, span_notice("You [anchored ? "secure" : "unsecure"] the bolts holding \the [src] to the floor."))
 
-		if(anchored)
-			if(dir & (NORTH|SOUTH))
-				initialize_directions = EAST|WEST
-			else if(dir & (EAST|WEST))
-				initialize_directions = NORTH|SOUTH
+	if(anchored)
+		if(dir & (NORTH|SOUTH))
+			initialize_directions = EAST|WEST
+		else if(dir & (EAST|WEST))
+			initialize_directions = NORTH|SOUTH
 
-			atmos_init()
-			build_network()
-			if (node1)
-				node1.atmos_init()
-				node1.build_network()
-			if (node2)
-				node2.atmos_init()
-				node2.build_network()
-		else
-			if(node1)
-				node1.disconnect(src)
-				qdel(network1)
-			if(node2)
-				node2.disconnect(src)
-				qdel(network2)
+		atmos_init()
+		if (node1)
+			node1.atmos_init()
+		if (node2)
+			node2.atmos_init()
+		rust_register_pipe_topology()
+	else
+		rust_unregister_pipe_topology()
+		if(node1)
+			node1.disconnect(src)
+			rust_release_network_wrapper(network1)
+		if(node2)
+			node2.disconnect(src)
+			rust_release_network_wrapper(network2)
 
-			node1 = null
-			node2 = null
+		node1 = null
+		node2 = null
 
-		return
-	..()
+	return ITEM_INTERACT_SUCCESS
 
 //Goddamn copypaste from binary base class because atmospherics machinery API is not damn flexible
 /obj/machinery/atmospherics/pipeturbine/get_neighbor_nodes_for_init()
 	return list(node1, node2)
-
-/obj/machinery/atmospherics/pipeturbine/network_expand(datum/pipe_network/new_network, obj/machinery/atmospherics/pipe/reference)
-	if(reference == node1)
-		network1 = new_network
-
-	else if(reference == node2)
-		network2 = new_network
-
-	if(new_network.normal_members.Find(src))
-		return 0
-
-	new_network.normal_members += src
-
-	return null
 
 /obj/machinery/atmospherics/pipeturbine/atmos_init()
 	if(node1 && node2)
@@ -162,21 +146,7 @@
 			node2 = target
 			break
 
-/obj/machinery/atmospherics/pipeturbine/build_network()
-	if(!network1 && node1)
-		network1 = new /datum/pipe_network()
-		network1.normal_members += src
-		network1.build_network(node1, src)
-
-	if(!network2 && node2)
-		network2 = new /datum/pipe_network()
-		network2.normal_members += src
-		network2.build_network(node2, src)
-
-
 /obj/machinery/atmospherics/pipeturbine/return_network(obj/machinery/atmospherics/reference)
-	build_network()
-
 	if(reference==node1)
 		return network1
 
@@ -203,13 +173,25 @@
 
 	return results
 
+/obj/machinery/atmospherics/pipeturbine/bind_network_air(datum/pipe_network/reference, datum/gas_mixture/network_air)
+	if(network1 == reference)
+		air_in = network_air
+	if(network2 == reference)
+		air_out = network_air
+
+/obj/machinery/atmospherics/pipeturbine/detach_network_air(datum/pipe_network/reference, datum/gas_mixture/network_air, network_volume)
+	if(network1 == reference && air_in == network_air)
+		air_in = detached_pipenet_air(network_air, 200, network_volume)
+	if(network2 == reference && air_out == network_air)
+		air_out = detached_pipenet_air(network_air, 800, network_volume)
+
 /obj/machinery/atmospherics/pipeturbine/disconnect(obj/machinery/atmospherics/reference)
 	if(reference==node1)
-		qdel(network1)
+		rust_release_network_wrapper(network1)
 		node1 = null
 
 	else if(reference==node2)
-		qdel(network2)
+		rust_release_network_wrapper(network2)
 		node2 = null
 
 	return null
@@ -250,12 +232,10 @@
 	turbine.kin_energy -= power_generated
 	add_avail(power_generated)
 
-/obj/machinery/power/turbinemotor/attackby(obj/item/W as obj, mob/user as mob)
-	if(W.has_tool_quality(TOOL_WRENCH))
-		anchored = !anchored
-		playsound(src, W.usesound, 50, 1)
-		turbine = null
-		to_chat(user, span_notice("You [anchored ? "secure" : "unsecure"] the bolts holding \the [src] to the floor."))
-		updateConnection()
-	else
-		..()
+/obj/machinery/power/turbinemotor/wrench_act(mob/user, obj/item/W)
+	anchored = !anchored
+	playsound(src, W.usesound, 50, 1)
+	turbine = null
+	to_chat(user, span_notice("You [anchored ? "secure" : "unsecure"] the bolts holding \the [src] to the floor."))
+	updateConnection()
+	return ITEM_INTERACT_SUCCESS

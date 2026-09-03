@@ -429,14 +429,7 @@
 
 
 /obj/item/rectape/attackby(obj/item/I, mob/user, params)
-	if(ruined && I.has_tool_quality(TOOL_SCREWDRIVER))
-		to_chat(user, span_notice("You start winding the tape back in..."))
-		playsound(src, I.usesound, 50, 1)
-		if(do_after(user, 12 SECONDS * I.toolspeed, target = src))
-			to_chat(user, span_notice("You wound the tape back in."))
-			fix()
-		return
-	else if(istype(I, /obj/item/pen))
+	if(istype(I, /obj/item/pen))
 		if(loc == user && !user.incapacitated())
 			var/new_name = tgui_input_text(user, "What would you like to label the tape?", "Tape labeling")
 			if(isnull(new_name)) return
@@ -449,6 +442,16 @@
 				to_chat(user, span_notice("You scratch off the label."))
 		return
 	..()
+
+/obj/item/rectape/screwdriver_act(mob/user, obj/item/tool)
+	if(!ruined)
+		return ITEM_INTERACT_BLOCKING
+	to_chat(user, span_notice("You start winding the tape back in..."))
+	playsound(src, tool.usesound, 50, 1)
+	if(do_after(user, 12 SECONDS * tool.toolspeed, target = src) && ruined)
+		to_chat(user, span_notice("You wound the tape back in."))
+		fix()
+	return ITEM_INTERACT_SUCCESS
 
 
 //Random colour tapes

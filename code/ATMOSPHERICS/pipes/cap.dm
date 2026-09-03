@@ -34,7 +34,7 @@
 /obj/machinery/atmospherics/pipe/cap/disconnect(obj/machinery/atmospherics/reference)
 	if(reference == node)
 		if(istype(node, /obj/machinery/atmospherics/pipe))
-			qdel(parent)
+			rust_invalidate_pipeline_wrapper(parent)
 		node = null
 
 	update_icon()

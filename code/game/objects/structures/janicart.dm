@@ -179,12 +179,14 @@ GLOBAL_LIST_BOILERPLATE(all_janitorial_carts, /obj/structure/janitorialcart)
 		//This return will prevent afterattack from executing if the object goes into the trashbag,
 		//This prevents dumb stuff like splashing the cart with the contents of a container, after putting said container into trash
 
-	else if (!has_items)
-		if (I.has_tool_quality(TOOL_WRENCH))
-			if (do_after(user, 5 SECONDS, target = src))
-				dismantle(user)
-			return
 	..()
+
+/obj/structure/janitorialcart/wrench_act(mob/user, obj/item/I)
+	if(has_items)
+		return TRUE
+	if(do_after(user, 5 SECONDS, target = src))
+		dismantle(user)
+	return TRUE
 
 
 //New Altclick functionality!

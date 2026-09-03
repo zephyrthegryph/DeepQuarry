@@ -6,130 +6,154 @@ SUBSYSTEM_DEF(radiation)
 	/// A list of radiation sources (/datum/radiation_pulse_information) that have yet to process.
 	/// Do not interact with this directly, use `radiation_pulse` instead.
 	var/list/datum/radiation_pulse_information/processing = list()
+	/// Cumulative work counters consumed by the lightweight profiler.
+	var/profile_pulse_invocations = 0
+	var/profile_pulses_completed = 0
+	var/profile_dropped_sources = 0
+	var/profile_targets_processed = 0
+	var/profile_ray_turfs = 0
+	var/profile_insulation_cache_hits = 0
+	var/profile_insulation_cache_misses = 0
+	var/profile_signal_dispatches = 0
+	var/profile_irradiations = 0
+	var/profile_yields = 0
+	var/profile_max_queue = 0
+	var/profile_max_targets_remaining = 0
+	var/list/profile_source_cost_ms = list()
+	var/list/profile_source_targets = list()
+	/// Short-lived shielding cache shared by pulses from the same steady source.
+	/// Radiation emitters fire far more often than shielding topology changes;
+	/// bounding this to one second preserves responsive doors while eliminating
+	/// repeated get_line/content scans for the same source/target pair.
+	var/list/path_insulation_cache = list()
+	var/path_insulation_cache_expires = 0
 
 /datum/controller/subsystem/radiation/fire(resumed)
+	profile_max_queue = max(profile_max_queue, processing.len)
 	while (processing.len)
 		var/datum/radiation_pulse_information/pulse_information = processing[1]
 
 		var/datum/weakref/source_ref = pulse_information.source_ref
 		var/atom/source = source_ref.resolve()
 		if (isnull(source))
+			profile_dropped_sources++
 			processing.Cut(1, 2)
 			continue
 
+		profile_pulse_invocations++
+		profile_max_targets_remaining = max(profile_max_targets_remaining, length(pulse_information.targets_to_process))
+		var/source_type = "[source.type]"
+		var/targets_before = length(pulse_information.targets_to_process)
+		var/profile_start = TICK_USAGE
 		pulse(source, pulse_information)
+		profile_source_cost_ms[source_type] += TICK_DELTA_TO_MS(TICK_USAGE - profile_start)
+		profile_source_targets[source_type] += targets_before - length(pulse_information.targets_to_process)
 
 		if (MC_TICK_CHECK)
+			profile_yields++
 			return
 
+		profile_pulses_completed++
 		processing.Cut(1, 2)
+
+/datum/controller/subsystem/radiation/proc/performance_diagnostics()
+	var/current_targets = 0
+	if(length(processing))
+		var/datum/radiation_pulse_information/current = processing[1]
+		current_targets = length(current?.targets_to_process)
+	var/list/source_costs = profile_source_cost_ms.Copy()
+	sortTim(source_costs, /proc/cmp_numeric_desc, TRUE)
+	if(length(source_costs) > 10)
+		source_costs.Cut(11)
+	return list(
+		"queue" = list("pulses" = length(processing), "current_targets" = current_targets, "max_pulses" = profile_max_queue, "max_targets" = profile_max_targets_remaining),
+		"work" = list("pulse_invocations" = profile_pulse_invocations, "pulses_completed" = profile_pulses_completed, "dropped_sources" = profile_dropped_sources, "targets" = profile_targets_processed, "ray_turfs" = profile_ray_turfs, "cache_hits" = profile_insulation_cache_hits, "cache_misses" = profile_insulation_cache_misses, "signals" = profile_signal_dispatches, "irradiations" = profile_irradiations, "yields" = profile_yields),
+		"top_source_cost_ms" = source_costs,
+		"source_targets" = profile_source_targets.Copy(),
+	)
 
 /datum/controller/subsystem/radiation/stat_entry(msg)
 	msg = "Pulses:[processing.len]"
 	return ..()
 
 /datum/controller/subsystem/radiation/proc/pulse(atom/source, datum/radiation_pulse_information/pulse_information)
-	var/list/cached_rad_insulations = list()
-	var/list/cached_turfs_to_process = pulse_information.turfs_to_process
-	var/turfs_iterated = 0
+	if(world.time >= path_insulation_cache_expires)
+		path_insulation_cache.Cut()
+		path_insulation_cache_expires = world.time + 1 SECOND
+	var/list/targets = pulse_information.targets_to_process
 	var/pulse_strength = pulse_information.strength
-	// Radiovoltaic products are a compact explicit registry, so radiation wakes only
-	// those items instead of scanning every item on every irradiated turf.
-	for(var/obj/item/radiovoltaic as anything in GLOB.material_radiovoltaic_items)
-		if(QDELETED(radiovoltaic))
+	while(length(targets))
+		var/atom/target_atom = targets[length(targets)]
+		targets.len--
+		profile_targets_processed++
+		var/turf/target_turf = get_turf(target_atom)
+		if(QDELETED(target_atom) || !target_turf || target_turf.z != source.z || get_dist(source, target_turf) > pulse_information.max_range)
 			continue
-		if(get_dist(source, radiovoltaic) > pulse_information.max_range)
+		if(istype(target_atom, /obj/machinery/power/rad_collector))
+			profile_signal_dispatches++
+			SEND_SIGNAL(target_atom, COMSIG_IN_RANGE_OF_IRRADIATION, pulse_information, 1)
 			continue
-		var/current_material_insulation = 1
-		for(var/turf/turf_in_between in get_line(source, radiovoltaic) - get_turf(source))
-			var/material_insulation = cached_rad_insulations[turf_in_between]
-			if(isnull(material_insulation))
-				material_insulation = turf_in_between.rad_insulation
-				for(var/atom/on_turf as anything in turf_in_between.contents)
-					material_insulation *= on_turf.rad_insulation
-				cached_rad_insulations[turf_in_between] = material_insulation
-			current_material_insulation *= material_insulation
-			if(current_material_insulation <= pulse_information.threshold)
-				break
-		if(current_material_insulation > pulse_information.threshold)
-			SEND_SIGNAL(radiovoltaic, COMSIG_IN_RANGE_OF_IRRADIATION, pulse_information, current_material_insulation)
-	for (var/turf/turf_to_irradiate as anything in cached_turfs_to_process)
-		turfs_iterated += 1
-
-		for(var/obj/machinery/power/rad_collector in turf_to_irradiate)
-			SEND_SIGNAL(rad_collector, COMSIG_IN_RANGE_OF_IRRADIATION, pulse_information, 1) //We just do it here and skip all the math to make it faster. Sure, we could have something blocking the rad collectors, but this is faster and has better CPU gains in exchange for negligible gameplay impact.
+		if(istype(target_atom, /obj/item/geiger))
+			var/obj/item/geiger/geiger_counter = target_atom
+			var/mob/living/holder = get(geiger_counter, /mob/living)
+			geiger_check(source, pulse_information, geiger_counter, holder ? holder : geiger_counter)
 			continue
 
-		for(var/obj/item/geiger/geiger_counter in turf_to_irradiate)
-			geiger_check(source, pulse_information, geiger_counter, geiger_counter)
+		var/current_insulation = cached_path_insulation(source, target_turf, pulse_information.threshold)
 
-		for(var/mob/living/target in turf_to_irradiate)
-			var/list/contents_to_check = target.get_all_contents_type(/obj/item/geiger)
-			for(var/obj/item/geiger/geiger_counter in contents_to_check)
-				geiger_check(source, pulse_information, geiger_counter, target)
+		if(istype(target_atom, /obj/item))
+			if(current_insulation > pulse_information.threshold)
+				profile_signal_dispatches++
+				SEND_SIGNAL(target_atom, COMSIG_IN_RANGE_OF_IRRADIATION, pulse_information, current_insulation)
+			continue
 
-			if(!can_irradiate_basic(target))
-				continue
-
-			var/current_insulation = 1
-			for (var/turf/turf_in_between in get_line(source, target) - get_turf(source))
-				var/insulation = cached_rad_insulations[turf_in_between]
-				if (isnull(insulation))
-					insulation = turf_in_between.rad_insulation
-					for (var/atom/on_turf as anything in turf_in_between.contents)
-						insulation *= on_turf.rad_insulation
-					cached_rad_insulations[turf_in_between] = insulation
-
-				current_insulation *= insulation
-
-				if (current_insulation <= pulse_information.threshold)
-					break
-
-			SEND_SIGNAL(target, COMSIG_IN_RANGE_OF_IRRADIATION, pulse_information, current_insulation)
-
-			// Check a second time, because of TRAIT_BYPASS_EARLY_IRRADIATED_CHECK
-			if (HAS_TRAIT(target, TRAIT_IRRADIATED))
-				continue
-
-			if (current_insulation <= pulse_information.threshold)
-				continue
-
-			/// Perceived chance of target getting irradiated.
-			var/perceived_chance
-			/// Intensity variable which will describe the radiation pulse.
-			/// It is used by perceived intensity, which diminishes over range. The chance of the target getting irradiated is determined by perceived_intensity.
-			/// Intensity is calculated so that the chance of getting irradiated at half of the max range is the same as the chance parameter.
-			var/intensity
-			/// Diminishes over range. Used by perceived chance, which is the actual chance to get irradiated.
-			var/perceived_intensity
-
-			if(pulse_information.chance < 100) // Prevents log(0) runtime if chance is 100%
-				intensity = -log(1 - pulse_information.chance / 100) * (1 + pulse_information.max_range / 2) ** 2
-				perceived_intensity = intensity * INVERSE((1 + get_dist_euclidean(source, target)) ** 2) // Diminishes over range.
-				perceived_intensity *= (current_insulation - pulse_information.threshold) * INVERSE(1 - pulse_information.threshold) // Perceived intensity decreases as objects that absorb radiation block its trajectory.
-				perceived_chance = 100 * (1 - NUM_E ** -perceived_intensity)
-				pulse_strength = pulse_strength * (1 - NUM_E ** -perceived_intensity)
-			else
-				perceived_chance = 100
-
-			var/irradiation_result = SEND_SIGNAL(target, COMSIG_IN_THRESHOLD_OF_IRRADIATION, pulse_information)
-			if (irradiation_result & CANCEL_IRRADIATION)
-				continue
-
-			if (pulse_information.minimum_exposure_time && !(irradiation_result & SKIP_MINIMUM_EXPOSURE_TIME_CHECK))
-				target.AddComponent(/datum/component/radiation_countdown, pulse_information.minimum_exposure_time)
-				continue
-
-			if (!prob(perceived_chance))
-				continue
-
-			if (irradiate_after_basic_checks(target, pulse_strength))
-				target.investigate_log("was irradiated by [source].", INVESTIGATE_RADIATION)
-
+		var/mob/living/target = target_atom
+		if(!istype(target) || !can_irradiate_basic(target))
+			continue
+		profile_signal_dispatches++
+		SEND_SIGNAL(target, COMSIG_IN_RANGE_OF_IRRADIATION, pulse_information, current_insulation)
+		if(HAS_TRAIT(target, TRAIT_IRRADIATED) || current_insulation <= pulse_information.threshold)
+			continue
+		var/perceived_chance = 100
+		var/target_pulse_strength = pulse_strength
+		if(pulse_information.chance < 100)
+			var/intensity = -log(1 - pulse_information.chance / 100) * (1 + pulse_information.max_range / 2) ** 2
+			var/perceived_intensity = intensity * INVERSE((1 + get_dist_euclidean(source, target)) ** 2)
+			perceived_intensity *= (current_insulation - pulse_information.threshold) * INVERSE(1 - pulse_information.threshold)
+			perceived_chance = 100 * (1 - NUM_E ** -perceived_intensity)
+			target_pulse_strength *= (1 - NUM_E ** -perceived_intensity)
+		profile_signal_dispatches++
+		var/irradiation_result = SEND_SIGNAL(target, COMSIG_IN_THRESHOLD_OF_IRRADIATION, pulse_information)
+		if(irradiation_result & CANCEL_IRRADIATION)
+			continue
+		if(pulse_information.minimum_exposure_time && !(irradiation_result & SKIP_MINIMUM_EXPOSURE_TIME_CHECK))
+			target.AddComponent(/datum/component/radiation_countdown, pulse_information.minimum_exposure_time)
+			continue
+		if(prob(perceived_chance) && irradiate_after_basic_checks(target, target_pulse_strength))
+			profile_irradiations++
+			target.investigate_log("was irradiated by [source].", INVESTIGATE_RADIATION)
 		if(MC_TICK_CHECK)
-			break
+			return
 
-	cached_turfs_to_process.Cut(1, turfs_iterated + 1)
+/datum/controller/subsystem/radiation/proc/cached_path_insulation(atom/source, turf/target, threshold)
+	var/cache_key = "\ref[source]|\ref[target]|[threshold]"
+	var/cached = path_insulation_cache[cache_key]
+	if(!isnull(cached))
+		profile_insulation_cache_hits++
+		return cached
+	profile_insulation_cache_misses++
+	var/current_insulation = 1
+	var/list/ray_turfs = get_line(source, target) - get_turf(source)
+	profile_ray_turfs += length(ray_turfs)
+	for(var/turf/turf_in_between in ray_turfs)
+		var/insulation = turf_in_between.rad_insulation
+		for(var/atom/on_turf as anything in turf_in_between.contents)
+			insulation *= on_turf.rad_insulation
+		current_insulation *= insulation
+		if(current_insulation <= threshold)
+			break
+	path_insulation_cache[cache_key] = current_insulation
+	return current_insulation
 
 /// Will attempt to irradiate the given target, limited through IC means, such as radiation protected clothing.
 /datum/controller/subsystem/radiation/proc/irradiate(atom/target, strength)
@@ -200,19 +224,10 @@ SUBSYSTEM_DEF(radiation)
 	if(!target)
 		target = geiger_counter
 
-	var/current_insulation = 1
-	var/list/cached_rad_insulations = list()
-	for(var/turf/turf_in_between in get_line(source, target) - get_turf(source))
-		var/insulation = cached_rad_insulations[turf_in_between]
-		if(isnull(insulation))
-			insulation = turf_in_between.rad_insulation
-			for (var/atom/on_turf as anything in turf_in_between.contents)
-				insulation *= on_turf.rad_insulation
-			cached_rad_insulations[turf_in_between] = insulation
+	var/turf/target_turf = get_turf(target)
+	if(!target_turf)
+		return
+	var/current_insulation = cached_path_insulation(source, target_turf, pulse_information.threshold)
 
-		current_insulation *= insulation
-
-		if(current_insulation <= pulse_information.threshold)
-			continue
-
+	profile_signal_dispatches++
 	SEND_SIGNAL(geiger_counter, COMSIG_IN_RANGE_OF_IRRADIATION, pulse_information, current_insulation)

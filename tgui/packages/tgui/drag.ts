@@ -123,6 +123,11 @@ export function getWindowPosition(): Point {
   return [window.screenLeft * pixelRatio, window.screenTop * pixelRatio];
 }
 
+/** Native-coordinate position observable without a BYOND winget round trip. */
+export function getNativeWindowPosition(): Point {
+  return vecAdd(getWindowPosition(), screenOffset) as Point;
+}
+
 // Get window size
 export function getWindowSize(): Point {
   return [window.innerWidth * pixelRatio, window.innerHeight * pixelRatio];
@@ -219,7 +224,25 @@ type RecallOptions = Partial<{
 // Recall window geometry from local storage and apply it
 export async function recallWindowGeometry(
   options: RecallOptions = {},
+  preapplied?: ResolvedWindowGeometry,
 ): Promise<ResolvedWindowGeometry> {
+  if (preapplied) {
+    // The server has already applied this exact native geometry while the
+    // pooled shell was hidden. Preserve the normal scale/drag initialization,
+    // but skip persistent storage and coordinate recomputation.
+    if (!options.scale) {
+      document.body.style.zoom = `${100 / window.devicePixelRatio}%`;
+      document.documentElement.style.setProperty(
+        '--scaling-amount',
+        window.devicePixelRatio.toString(),
+      );
+    } else {
+      document.body.style.zoom = '';
+      document.documentElement.style.setProperty('--scaling-amount', null);
+    }
+    await setupDrag();
+    return preapplied;
+  }
   let geometry = geometryCache.get(windowKey);
   if (geometry === undefined) {
     geometry =

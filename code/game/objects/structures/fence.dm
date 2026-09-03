@@ -80,34 +80,35 @@
 	if(electric && isliving(user) && !user.is_incorporeal() && !(W.flags & NOCONDUCT))
 		if(electrocute(user))
 			return
-	if(W.has_tool_quality(TOOL_WIRECUTTER))
-		if(!cuttable)
-			to_chat(user, span_warning("This section of the fence can't be cut."))
-			return
-		if(invulnerable)
-			to_chat(user, span_warning("This fence is too strong to cut through."))
-			return
-		var/current_stage = hole_size
-		if(current_stage >= MAX_HOLE_SIZE)
-			to_chat(user, span_notice("This fence has too much cut out of it already."))
-			return
+	return TRUE
 
-		user.visible_message(span_danger("\The [user] starts cutting through \the [src] with \the [W]."),\
-		span_danger("You start cutting through \the [src] with \the [W]."))
-		playsound(src, W.usesound, 50, 1)
-
-		if(do_after(user, CUT_TIME * W.toolspeed, target = src))
-			if(current_stage == hole_size)
-				switch(++hole_size)
-					if(MEDIUM_HOLE)
-						visible_message(span_notice("\The [user] cuts into \the [src] some more."))
-						to_chat(user, span_notice("You could probably fit yourself through that hole now. Although climbing through would be much faster if you made it even bigger."))
-						AddElement(/datum/element/climbable)
-					if(LARGE_HOLE)
-						visible_message(span_notice("\The [user] completely cuts through \the [src]."))
-						to_chat(user, span_notice("The hole in \the [src] is now big enough to walk through."))
-						RemoveElement(/datum/element/climbable)
-				update_cut_status()
+/obj/structure/fence/wirecutter_act(mob/user, obj/item/W)
+	user.setClickCooldown(DEFAULT_ATTACK_COOLDOWN)
+	if(electric && isliving(user) && !user.is_incorporeal() && !(W.flags & NOCONDUCT) && electrocute(user))
+		return TRUE
+	if(!cuttable)
+		to_chat(user, span_warning("This section of the fence can't be cut."))
+		return TRUE
+	if(invulnerable)
+		to_chat(user, span_warning("This fence is too strong to cut through."))
+		return TRUE
+	var/current_stage = hole_size
+	if(current_stage >= MAX_HOLE_SIZE)
+		to_chat(user, span_notice("This fence has too much cut out of it already."))
+		return TRUE
+	user.visible_message(span_danger("\The [user] starts cutting through \the [src] with \the [W]."), span_danger("You start cutting through \the [src] with \the [W]."))
+	playsound(src, W.usesound, 50, 1)
+	if(do_after(user, CUT_TIME * W.toolspeed, target = src) && current_stage == hole_size)
+		switch(++hole_size)
+			if(MEDIUM_HOLE)
+				visible_message(span_notice("\The [user] cuts into \the [src] some more."))
+				to_chat(user, span_notice("You could probably fit yourself through that hole now. Although climbing through would be much faster if you made it even bigger."))
+				AddElement(/datum/element/climbable)
+			if(LARGE_HOLE)
+				visible_message(span_notice("\The [user] completely cuts through \the [src]."))
+				to_chat(user, span_notice("The hole in \the [src] is now big enough to walk through."))
+				RemoveElement(/datum/element/climbable)
+		update_cut_status()
 	return TRUE
 
 /obj/structure/fence/Bumped(AM)

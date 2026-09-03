@@ -33,12 +33,26 @@ import { createLogger } from '../logging';
 import { profileStartup } from '../profiling/hooks';
 import { profileTransition } from '../profiling/transitions';
 import { claimReveal, revealWindow } from '../reveal';
+import { getStaticWindowGeometry } from '../windowGeometry';
 import { Layout } from './Layout';
 import { TitleBar } from './TitleBar';
 
 const logger = createLogger('Window');
 const DEFAULT_SIZE: [number, number] = [400, 600];
 let resetPositionSubscribed = false;
+
+function parsePreappliedGeometry(geometry?: {
+  pos?: string;
+  size?: string;
+}): ResolvedWindowGeometry | undefined {
+  const size = geometry?.size?.match(/^(\d+)x(\d+)$/);
+  const pos = geometry?.pos?.match(/^(-?\d+),(-?\d+)$/);
+  if (!size || !pos) return;
+  return {
+    size: [Number(size[1]), Number(size[2])],
+    pos: [Number(pos[1]), Number(pos[2])],
+  };
+}
 
 function ensureResetPositionSubscription(): void {
   if (resetPositionSubscribed) return;
@@ -68,13 +82,16 @@ export function Window(props: Props) {
     title,
     children,
     buttons,
-    width,
-    height,
+    width: requestedWidth,
+    height: requestedHeight,
     fitted,
     scrollbars = true,
   } = props;
 
   const { config, suspended, debug } = useBackend();
+  const defaultGeometry = getStaticWindowGeometry(config?.interface?.name);
+  const width = requestedWidth ?? defaultGeometry?.width;
+  const height = requestedHeight ?? defaultGeometry?.height;
 
   // Native pooled shells are hidden by the server before their payload is sent,
   // so they can apply geometry in the first commit. Legacy windows retain the
@@ -126,7 +143,10 @@ export function Window(props: Props) {
         let geometry: ResolvedWindowGeometry | undefined;
         try {
           if (!fitted) {
-            geometry = await recallWindowGeometry(options);
+            geometry = await recallWindowGeometry(
+              options,
+              parsePreappliedGeometry(config.window?.preapplied_geometry),
+            );
           }
         } catch (error) {
           logger.error('failed to resolve window geometry', error);

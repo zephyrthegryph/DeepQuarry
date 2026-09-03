@@ -3,13 +3,7 @@
 
 import { useState } from 'react';
 import { useBackend } from 'tgui/backend';
-import {
-  Box,
-  Button,
-  Input,
-  Section,
-  Stack,
-} from 'tgui-core/components';
+import { Box, Button, Input, Section, Stack } from 'tgui-core/components';
 import type { EditorProps } from './index';
 
 type Data = { heat: string[]; cold: string[] };
@@ -35,7 +29,9 @@ const MessageList = ({
 
   return (
     <Section
-      title={which === 'heat' ? 'Hot weather messages' : 'Cold weather messages'}
+      title={
+        which === 'heat' ? 'Hot weather messages' : 'Cold weather messages'
+      }
     >
       <Stack vertical>
         {messages.map((msg, idx) => (
@@ -54,7 +50,10 @@ const MessageList = ({
                     icon="check"
                     color="good"
                     onClick={() => {
-                      send('edit_message', { index: idx + 1, text: editingText });
+                      send('edit_message', {
+                        index: idx + 1,
+                        text: editingText,
+                      });
                       setEditingIdx(null);
                     }}
                   />

@@ -27,8 +27,26 @@
 	var/list/machinery
 	///Should only one object exist on the same turf?
 	var/one_per_turf = FALSE
+	/// Optional universal material-part definitions. Costs are material units;
+	/// the crafting component consumes ordinary nearby material stacks.
+	var/list/material_slots
 
 /datum/crafting_recipe/New()
+	var/list/remaining_requirements = list()
+	var/material_total = 0
+	var/application = material_application_for_product(result)
+	for(var/list/requirement_group in reqs)
+		if(length(requirement_group) == 1)
+			var/obj/item/stack/material/requirement_path = requirement_group[1]
+			if(application && ispath(requirement_path, /obj/item/stack/material))
+				material_total += requirement_group[requirement_path] * SHEET_MATERIAL_AMOUNT
+				continue
+		remaining_requirements += list(requirement_group)
+	if(application && material_total)
+		var/list/inferred_slots = material_slots_for_product(result, application, material_total)
+		if(length(inferred_slots) && material_slots_normalize_total(inferred_slots, material_total))
+			material_slots = inferred_slots
+			reqs = remaining_requirements
 	if(!(result in reqs))
 		blacklist += result
 	if(tool_behaviors)

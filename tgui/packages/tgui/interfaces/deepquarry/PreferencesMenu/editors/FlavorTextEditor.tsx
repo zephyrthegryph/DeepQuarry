@@ -45,7 +45,9 @@ export const FlavorTextEditor = ({ data, staticData }: EditorProps) => {
     <Box>
       {mode === 'robot' ? (
         <>
-          <Box bold mb={0.5} color="label">Robot Flavor</Box>
+          <Box bold mb={0.5} color="label">
+            Robot Flavor
+          </Box>
           <ZoneSwitcher
             zones={robotZones}
             getValue={(z) => d.flavour_texts_robot?.[z] ?? ''}
@@ -55,7 +57,9 @@ export const FlavorTextEditor = ({ data, staticData }: EditorProps) => {
         </>
       ) : (
         <>
-          <Box bold mb={0.5} color="label">Body Flavor</Box>
+          <Box bold mb={0.5} color="label">
+            Body Flavor
+          </Box>
           <ZoneSwitcher
             zones={zones}
             getValue={(z) => d.flavor_texts?.[z] ?? ''}

@@ -602,11 +602,10 @@ GLOBAL_DATUM(autospeaker, /mob/living/silicon/ai/announcer)
 		else
 			. += span_notice("\The [src] can not be modified or attached!")
 
-/obj/item/radio/attackby(obj/item/W as obj, mob/user as mob)
-	..()
-	if (!W.has_tool_quality(TOOL_SCREWDRIVER))
-		return
-	b_stat = !( b_stat )
+/obj/item/radio/screwdriver_act(mob/user, obj/item/tool)
+	if(istype(src, /obj/item/radio/beacon))
+		return ITEM_INTERACT_BLOCKING
+	b_stat = !b_stat
 	if(!istype(src, /obj/item/radio/beacon))
 		if (b_stat)
 			user.show_message(span_notice("\The [src] can now be attached and modified!"))
@@ -614,8 +613,8 @@ GLOBAL_DATUM(autospeaker, /mob/living/silicon/ai/announcer)
 			user.show_message(span_notice("\The [src] can no longer be modified or attached!"))
 			//Foreach goto(83)
 		add_fingerprint(user)
-		return
-	else return
+		return ITEM_INTERACT_SUCCESS
+	return ITEM_INTERACT_BLOCKING
 
 /obj/item/radio/emp_act(severity, recursive)
 	. = ..()
@@ -658,32 +657,6 @@ GLOBAL_DATUM(autospeaker, /mob/living/silicon/ai/announcer)
 		R.cell_use_power(C.active_usage)
 
 /obj/item/radio/borg/attackby(obj/item/W as obj, mob/user as mob)
-//	..()
-	if (!(W.has_tool_quality(TOOL_SCREWDRIVER) || istype(W, /obj/item/encryptionkey)))
-		return
-
-	if(W.has_tool_quality(TOOL_SCREWDRIVER))
-		if(keyslot)
-
-
-			for(var/ch_name in channels)
-				SSradio.remove_object(src, GLOB.radiochannels[ch_name])
-				secure_radio_connections[ch_name] = null
-
-
-			if(keyslot)
-				var/turf/T = get_turf(user)
-				if(T)
-					keyslot.loc = T
-					keyslot = null
-
-			recalculateChannels()
-			to_chat(user, "You pop out the encryption key in the radio!")
-			playsound(src, W.usesound, 50, 1)
-
-		else
-			to_chat(user, "This radio doesn't have any encryption keys!")
-
 	if(istype(W, /obj/item/encryptionkey/))
 		if(keyslot)
 			to_chat(user, "The radio can't hold another key!")
@@ -696,7 +669,22 @@ GLOBAL_DATUM(autospeaker, /mob/living/silicon/ai/announcer)
 
 		recalculateChannels()
 
-	return
+		return
+	return ..()
+
+/obj/item/radio/borg/screwdriver_act(mob/user, obj/item/tool)
+	if(!keyslot)
+		to_chat(user, "This radio doesn't have any encryption keys!")
+		return ITEM_INTERACT_BLOCKING
+	for(var/ch_name in channels)
+		SSradio.remove_object(src, GLOB.radiochannels[ch_name])
+		secure_radio_connections[ch_name] = null
+	keyslot.forceMove(get_turf(user))
+	keyslot = null
+	recalculateChannels()
+	to_chat(user, "You pop out the encryption key in the radio!")
+	playsound(src, tool.usesound, 50, TRUE)
+	return ITEM_INTERACT_SUCCESS
 
 /obj/item/radio/borg/recalculateChannels()
 	src.channels = list()

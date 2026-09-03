@@ -30,6 +30,12 @@
 	. = ..()
 	update_icon()
 
+/obj/item/melee/baton/Destroy()
+	if(bcell?.loc == src && !QDELETED(bcell))
+		qdel(bcell)
+	bcell = null
+	return ..()
+
 /obj/item/melee/baton/get_cell()
 	return bcell
 

@@ -27,7 +27,6 @@
 
 /obj/item/electronic_assembly/Initialize(mapload)
 	battery = new(src)
-	START_PROCESSING(SSobj, src)
 	return ..()
 
 /obj/item/electronic_assembly/Destroy()
@@ -36,6 +35,10 @@
 	return ..()
 
 /obj/item/electronic_assembly/process(seconds_per_tick)
+	if(isnull(power_relevant))
+		recompute_power_relevant()
+	if(!power_relevant)
+		return PROCESS_KILL
 	handle_idle_power(seconds_per_tick)
 
 // Cache invalidation: any circuit entering/leaving contents can change whether
@@ -44,11 +47,13 @@
 	. = ..()
 	if(istype(AM, /obj/item/integrated_circuit) || istype(AM, /obj/item/cell))
 		power_relevant = null
+		START_PROCESSING(SSobj, src)
 
 /obj/item/electronic_assembly/Exited(atom/movable/AM, atom/new_loc)
 	. = ..()
 	if(istype(AM, /obj/item/integrated_circuit) || istype(AM, /obj/item/cell))
 		power_relevant = null
+		START_PROCESSING(SSobj, src)
 
 // (Re)computes whether handle_idle_power() has anything to do: a battery to draw
 // from plus at least one circuit that makes or draws idle power.
@@ -356,17 +361,7 @@
 		G.afterattack(target, user, proximity, null)
 
 /obj/item/electronic_assembly/attackby(obj/item/I, mob/user)
-	if(can_anchor && I.has_tool_quality(TOOL_WRENCH))
-		anchored = !anchored
-		to_chat(user, span_notice("You've [anchored ? "" : "un"]secured \the [src] to \the [get_turf(src)]."))
-		if(anchored)
-			on_anchored()
-		else
-			on_unanchored()
-		playsound(src, I.usesound, 50, 1)
-		return TRUE
-
-	else if(istype(I, /obj/item/integrated_circuit))
+	if(istype(I, /obj/item/integrated_circuit))
 		if(!user.unEquip(I) && !isrobot(user)) //Robots cannot de-equip items in grippers.
 			return FALSE
 		if(add_circuit(I, user))
@@ -374,16 +369,6 @@
 			playsound(src, 'sound/items/Deconstruct.ogg', 50, 1)
 			tgui_interact(user)
 			return TRUE
-
-	else if(I.has_tool_quality(TOOL_CROWBAR))
-		if(locked)
-			to_chat(user, span_warning("\The [src] is locked! You cannot open it with a crowbar."))
-			return FALSE
-		playsound(src, 'sound/items/Crowbar.ogg', 50, 1)
-		opened = !opened
-		to_chat(user, span_notice("You [opened ? "opened" : "closed"] \the [src]."))
-		update_icon()
-		return TRUE
 
 	else if((istype(I, /obj/item/card/id) || istype(I, /obj/item/pda)) && !opened)
 		var/obj/item/card/id/id_card = null
@@ -416,7 +401,7 @@
 			update_icon()
 			return TRUE
 
-	else if(istype(I, /obj/item/integrated_electronics/wirer) || istype(I, /obj/item/integrated_electronics/debugger) || I.has_tool_quality(TOOL_SCREWDRIVER))
+	else if(istype(I, /obj/item/integrated_electronics/wirer) || istype(I, /obj/item/integrated_electronics/debugger))
 		if(opened)
 			tgui_interact(user)
 			return TRUE
@@ -448,6 +433,35 @@
 
 	else
 		return ..()
+
+/obj/item/electronic_assembly/wrench_act(mob/user, obj/item/tool)
+	if(!can_anchor)
+		return FALSE
+	anchored = !anchored
+	to_chat(user, span_notice("You've [anchored ? "" : "un"]secured \the [src] to \the [get_turf(src)]."))
+	if(anchored)
+		on_anchored()
+	else
+		on_unanchored()
+	playsound(src, tool.usesound, 50, TRUE)
+	return TRUE
+
+/obj/item/electronic_assembly/crowbar_act(mob/user, obj/item/tool)
+	if(locked)
+		to_chat(user, span_warning("\The [src] is locked! You cannot open it with a crowbar."))
+		return ITEM_INTERACT_BLOCKING
+	playsound(src, tool.usesound, 50, TRUE)
+	opened = !opened
+	to_chat(user, span_notice("You [opened ? "opened" : "closed"] \the [src]."))
+	update_icon()
+	return ITEM_INTERACT_SUCCESS
+
+/obj/item/electronic_assembly/screwdriver_act(mob/user, obj/item/tool)
+	if(opened)
+		tgui_interact(user)
+		return ITEM_INTERACT_SUCCESS
+	to_chat(user, span_warning("\The [src] isn't opened, so you can't fiddle with the internal components. Try using a crowbar."))
+	return ITEM_INTERACT_BLOCKING
 
 /obj/item/electronic_assembly/attack_self(mob/user)
 	. = ..(user)

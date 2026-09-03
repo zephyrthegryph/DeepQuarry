@@ -1,4 +1,6 @@
 /obj/machinery/anomaly_harvester
+	maintenance_flags = MACHINE_MAINT_STANDARD_MOVABLE
+	maintenance_wrench_time = 2 SECONDS
 	name = "anomaly harvester"
 	desc = "A strange device that condenses anomalous energy into tangible material."
 	icon = 'icons/obj/machines/anomaly_harvester.dmi'
@@ -69,13 +71,7 @@
 /obj/machinery/anomaly_harvester/attackby(obj/item/W, mob/user, attack_modifier, click_parameters)
 	add_fingerprint(user)
 
-	if(default_deconstruction_screwdriver(user, W))
-		return
-	if(default_deconstruction_crowbar(user, W))
-		return
 	if(default_part_replacement(user, W))
-		return
-	if(default_unfasten_wrench(user, W, 2 SECONDS))
 		return
 	if(istype(W, /obj/item/anomaly_scanner))
 		if(!anchored)
@@ -88,9 +84,10 @@
 
 	return ..()
 
-/obj/machinery/anomaly_harvester/default_unfasten_wrench(mob/user, obj/item/W, time)
+/obj/machinery/anomaly_harvester/wrench_act(mob/user, obj/item/tool)
 	. = ..()
-	harvested = null
+	if(. & ITEM_INTERACT_SUCCESS)
+		harvested = null
 
 /obj/machinery/anomaly_harvester/proc/attach_anomaly(datum/weakref/anomaly)
 	var/obj/effect/anomaly/anom = anomaly.resolve()

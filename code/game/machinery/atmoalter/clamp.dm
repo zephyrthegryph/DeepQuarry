@@ -56,17 +56,7 @@
 	if(open || !target)
 		return 0
 
-	target.build_network()
-
-
-	if(network_node1&&network_node2)
-		network_node1.merge(network_node2)
-		network_node2 = network_node1
-
-	if(network_node1)
-		network_node1.mark_dirty()
-	else if(network_node2)
-		network_node2.mark_dirty()
+	target.rust_set_physical_edges(TRUE)
 
 	update_networks()
 
@@ -79,32 +69,7 @@
 	if(!open)
 		return 0
 
-	qdel(target.parent)
-
-	if(network_node1)
-		qdel(network_node1)
-	if(network_node2)
-		qdel(network_node2)
-
-	var/obj/machinery/atmospherics/pipe/node1 = null
-	var/obj/machinery/atmospherics/pipe/node2 = null
-
-	if(target.node1)
-		target.node1.build_network()
-		node1 = target.node1
-	if(target.node2)
-		target.node2.build_network()
-		node2 = target.node2
-	if(istype(node1) && node1.parent)
-		var/datum/pipeline/P1 = node1.parent
-		P1.build_pipeline(node1)
-		qdel(P1)
-	if(istype(node2) && node2.parent)
-		var/datum/pipeline/P2 = node2.parent
-		P2.build_pipeline(node2)
-		qdel(P2)
-//  P1.build_network()
-//  P2.build_network()
+	target.rust_set_physical_edges(FALSE)
 
 	open = 0
 	icon_state = "pclamp1"

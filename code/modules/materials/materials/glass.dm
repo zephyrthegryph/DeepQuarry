@@ -1,7 +1,6 @@
 /datum/material/glass
 	name = MAT_GLASS
 	stack_type = /obj/item/stack/material/glass
-	material_class = MATCLASS_CERAMIC
 	flags = MATERIAL_BRITTLE
 	icon_colour = "#00E1FF"
 	opacity = 0.3

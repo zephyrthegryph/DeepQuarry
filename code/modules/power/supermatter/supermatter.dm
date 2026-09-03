@@ -56,6 +56,10 @@
 	density = TRUE
 	anchored = FALSE
 	unacidable = TRUE
+	// The crystal has its own delamination damage model. Generic obj_integrity
+	// damage (projectiles, hotspots, explosions, machinery fall-apart) must never
+	// destroy it as though it were an ordinary machine.
+	resistance_flags = INDESTRUCTIBLE | LAVA_PROOF | FIRE_PROOF | ACID_PROOF
 	light_range = 4
 
 	var/gasefficency = 0.25
@@ -94,6 +98,8 @@
 
 	// This stops spawning redundand explosions. Also incidentally makes supermatter unexplodable if set to 1.
 	var/exploded = 0
+	/// Set only by the completed delamination path immediately before deletion.
+	var/delamination_delete = FALSE
 
 	var/power = 0
 	var/oxygen = 0
@@ -126,6 +132,9 @@
 	return ..()
 
 /obj/machinery/power/supermatter/Destroy()
+	if(!delamination_delete)
+		log_game("SUPERMATTER([x],[y],[z]) deleted outside its delamination path. Power:[power], Oxygen:[oxygen], Damage:[damage], Integrity:[get_integrity()], QDEL source:[datum_flags]")
+		message_admins("WARNING: A supermatter at ([x],[y],[z]) was deleted without completing its delamination path. Check game and runtime logs.")
 	if(SScontracts?.has_event_subscribers(CONTRACT_EVENT_MACHINE_RESULT))
 		emit_contract_event(CONTRACT_EVENT_MACHINE_RESULT, list(
 			"department" = DEPARTMENT_ENGINEERING,
@@ -260,6 +269,7 @@
 			explosion_power = between(min_explosion_power, (((max_explosion_power - min_explosion_power) * (strength_percentage / 100)) + min_explosion_power), max_explosion_power)
 
 		explosion(TS, explosion_power/2, explosion_power, max_explosion_power, explosion_power * 4, 1)
+		delamination_delete = TRUE
 		qdel(src)
 		// Allow the explosion to finish
 		spawn(5)

@@ -285,7 +285,10 @@ export const PlaneWrapper = () => {
 };
 
 const Circuit = (
-  props: { circuit: CircuitData; act: (action: string, params?: Record<string, unknown>) => void } & Pick<
+  props: {
+    circuit: CircuitData;
+    act: (action: string, params?: Record<string, unknown>) => void;
+  } & Pick<
     PortProps,
     | 'onPortUpdated'
     | 'onPortLoaded'

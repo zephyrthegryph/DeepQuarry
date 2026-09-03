@@ -2,6 +2,7 @@ import { afterEach, describe, expect, mock, test } from 'bun:test';
 import { configAtom, store, suspendedAtom } from './events/store';
 import type { Config } from './events/types';
 import {
+  browserViewportMatches,
   buildNativeRevealPayload,
   hasRevealed,
   resetReveal,
@@ -42,6 +43,26 @@ describe('native window reveal', () => {
       pos: '120,240',
       size: '500x700',
     });
+  });
+
+  test('canonicalizes fractional native geometry to integer pixels', () => {
+    expect(
+      buildNativeRevealPayload({
+        pos: [902.5, 541.25],
+        size: [549.6, 700.2],
+      }),
+    ).toEqual({
+      'is-visible': true,
+      pos: '903,541',
+      size: '550x700',
+    });
+  });
+
+  test('accepts a CSS viewport scaled from native display pixels', () => {
+    expect(browserViewportMatches('400x500', 320, 400, 1.25)).toBe(true);
+    expect(browserViewportMatches('550x700', 440, 560, 1.25)).toBe(true);
+    expect(browserViewportMatches('310x526', 248, 422, 1.25)).toBe(true);
+    expect(browserViewportMatches('550x700', 400, 500, 1.25)).toBe(false);
   });
 
   test('rejects stale generations before touching the native window', async () => {

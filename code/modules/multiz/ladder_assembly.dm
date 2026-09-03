@@ -17,60 +17,55 @@
 			created_name = t
 		return
 
-	else if(istype(get_area(src), /area/shuttle))
-		to_chat(user, span_warning("\The [src] cannot be constructed on a shuttle."))
-		return
-	if(W.has_tool_quality(TOOL_WRENCH))
-		switch(state)
-			if(LADDER_CONSTRUCTION_UNANCHORED)
-				state = LADDER_CONSTRUCTION_WRENCHED
-				playsound(src, 'sound/items/Ratchet.ogg', 75, 1)
-				user.visible_message("\The [user] secures \the [src]'s reinforcing bolts.", \
-					"You secure the reinforcing bolts.", \
-					"You hear a ratchet")
-				src.anchored = TRUE
-			if(LADDER_CONSTRUCTION_WRENCHED)
-				state = LADDER_CONSTRUCTION_UNANCHORED
-				playsound(src, 'sound/items/Ratchet.ogg', 75, 1)
-				user.visible_message("\The [user] unsecures \the [src]'s reinforcing bolts.", \
-					"You undo the reinforcing bolts.", \
-					"You hear a ratchet")
-				src.anchored = FALSE
-			if(LADDER_CONSTRUCTION_WELDED)
-				to_chat(user, span_warning("\The [src] needs to be unwelded."))
-		return
+	return ..()
 
-	if(W.has_tool_quality(TOOL_WELDER))
-		var/obj/item/weldingtool/WT = W.get_welder()
-		switch(state)
-			if(LADDER_CONSTRUCTION_UNANCHORED)
-				to_chat(user, span_warning("The refinforcing bolts need to be secured."))
-			if(LADDER_CONSTRUCTION_WRENCHED)
-				if(WT.remove_fuel(0, user))
-					playsound(src, 'sound/items/Welder2.ogg', 50, 1)
-					user.visible_message("\The [user] starts to weld \the [src] to the floor.", \
-						"You start to weld \the [src] to the floor.", \
-						"You hear welding")
-					if(do_after(user, 2 SECONDS, target = src))
-						if(QDELETED(src) || !WT.isOn()) return
-						state = LADDER_CONSTRUCTION_WELDED
-						to_chat(user, "You weld \the [src] to the floor.")
-						try_construct(user)
-				else
-					to_chat(user, span_warning("You need more welding fuel to complete this task."))
-			if(LADDER_CONSTRUCTION_WELDED)
-				if(WT.remove_fuel(0, user))
-					playsound(src, 'sound/items/Welder2.ogg', 50, 1)
-					user.visible_message("\The [user] starts to cut \the [src] free from the floor.", \
-						"You start to cut \the [src] free from the floor.", \
-						"You hear welding")
-					if(do_after(user, 2 SECONDS, target = src))
-						if(QDELETED(src) || !WT.isOn()) return
-						state = LADDER_CONSTRUCTION_WRENCHED
-						to_chat(user, "You cut \the [src] free from the floor.")
-				else
-					to_chat(user, span_warning("You need more welding fuel to complete this task."))
-		return
+/obj/structure/ladder_assembly/wrench_act(mob/user, obj/item/W)
+	if(istype(get_area(src), /area/shuttle))
+		to_chat(user, span_warning("\The [src] cannot be constructed on a shuttle."))
+		return ITEM_INTERACT_BLOCKING
+	switch(state)
+		if(LADDER_CONSTRUCTION_UNANCHORED)
+			state = LADDER_CONSTRUCTION_WRENCHED
+			playsound(src, 'sound/items/Ratchet.ogg', 75, TRUE)
+			user.visible_message("\The [user] secures \the [src]'s reinforcing bolts.", "You secure the reinforcing bolts.", "You hear a ratchet")
+			anchored = TRUE
+		if(LADDER_CONSTRUCTION_WRENCHED)
+			state = LADDER_CONSTRUCTION_UNANCHORED
+			playsound(src, 'sound/items/Ratchet.ogg', 75, TRUE)
+			user.visible_message("\The [user] unsecures \the [src]'s reinforcing bolts.", "You undo the reinforcing bolts.", "You hear a ratchet")
+			anchored = FALSE
+		if(LADDER_CONSTRUCTION_WELDED)
+			to_chat(user, span_warning("\The [src] needs to be unwelded."))
+	return ITEM_INTERACT_SUCCESS
+
+/obj/structure/ladder_assembly/welder_act(mob/user, obj/item/W)
+	if(istype(get_area(src), /area/shuttle))
+		to_chat(user, span_warning("\The [src] cannot be constructed on a shuttle."))
+		return ITEM_INTERACT_BLOCKING
+	var/obj/item/weldingtool/WT = W.get_welder()
+	switch(state)
+		if(LADDER_CONSTRUCTION_UNANCHORED)
+			to_chat(user, span_warning("The reinforcing bolts need to be secured."))
+		if(LADDER_CONSTRUCTION_WRENCHED)
+			if(!WT.remove_fuel(0, user))
+				to_chat(user, span_warning("You need more welding fuel to complete this task."))
+				return ITEM_INTERACT_BLOCKING
+			playsound(src, 'sound/items/Welder2.ogg', 50, TRUE)
+			user.visible_message("\The [user] starts to weld \the [src] to the floor.", "You start to weld \the [src] to the floor.", "You hear welding")
+			if(do_after(user, 2 SECONDS, target = src) && !QDELETED(src) && WT.isOn())
+				state = LADDER_CONSTRUCTION_WELDED
+				to_chat(user, "You weld \the [src] to the floor.")
+				try_construct(user)
+		if(LADDER_CONSTRUCTION_WELDED)
+			if(!WT.remove_fuel(0, user))
+				to_chat(user, span_warning("You need more welding fuel to complete this task."))
+				return ITEM_INTERACT_BLOCKING
+			playsound(src, 'sound/items/Welder2.ogg', 50, TRUE)
+			user.visible_message("\The [user] starts to cut \the [src] free from the floor.", "You start to cut \the [src] free from the floor.", "You hear welding")
+			if(do_after(user, 2 SECONDS, target = src) && !QDELETED(src) && WT.isOn())
+				state = LADDER_CONSTRUCTION_WRENCHED
+				to_chat(user, "You cut \the [src] free from the floor.")
+	return ITEM_INTERACT_SUCCESS
 
 // Try to construct this into a real stairway.
 // It must have a matching ladder assembly above and/or below, and both must be welded in place

@@ -168,20 +168,20 @@ if (!(DATUM.datum_flags & DF_ISPROCESSING)) {\
 
 // Note - I would prefer these be defined machines.dm, but some are used prior in file order. ~Leshana
 #define START_MACHINE_PROCESSING(Datum) START_PROCESSING_IN_LIST(Datum, SSmachines.processing_machines)
-#define STOP_MACHINE_PROCESSING(Datum) STOP_PROCESSING_IN_LIST(Datum, SSmachines.processing_machines)
+#define STOP_MACHINE_PROCESSING(Datum) STOP_PROCESSING_IN_LIST(Datum, SSmachines.processing_machines);SSmachines.current_run.Remove(Datum)
 
 // LINDA owns pipenets via SSair, not SSmachines.
 // SSmachines.process_pipenets is a stub; SSair.process_pipenets is the live
 // dispatcher. Without this redirect, /datum/pipe_network/process never runs
 // and reconcile_air is silent — multi-pipeline networks don't equalize.
 #define START_PROCESSING_PIPENET(Datum) START_PROCESSING_IN_LIST(Datum, SSair.networks)
-#define STOP_PROCESSING_PIPENET(Datum) STOP_PROCESSING_IN_LIST(Datum, SSair.networks)
+#define STOP_PROCESSING_PIPENET(Datum) STOP_PROCESSING_IN_LIST(Datum, SSair.networks);SSair.currentrun.Remove(Datum)
 
-#define START_PROCESSING_POWERNET(Datum) START_PROCESSING_IN_LIST(Datum, SSmachines.powernets)
-#define STOP_PROCESSING_POWERNET(Datum) STOP_PROCESSING_IN_LIST(Datum, SSmachines.powernets)
+#define START_PROCESSING_POWERNET(Datum) START_PROCESSING_IN_LIST(Datum, SSmachines.active_powernets)
+#define STOP_PROCESSING_POWERNET(Datum) STOP_PROCESSING_IN_LIST(Datum, SSmachines.active_powernets);SSmachines.current_run.Remove(Datum)
 
 #define START_PROCESSING_POWER_OBJECT(Datum) START_PROCESSING_IN_LIST(Datum, SSmachines.powerobjs)
-#define STOP_PROCESSING_POWER_OBJECT(Datum) STOP_PROCESSING_IN_LIST(Datum, SSmachines.powerobjs)
+#define STOP_PROCESSING_POWER_OBJECT(Datum) STOP_PROCESSING_IN_LIST(Datum, SSmachines.powerobjs);SSmachines.current_run.Remove(Datum)
 
 #define GAS_DEPENDENCY_PRESSURE 1
 #define GAS_DEPENDENCY_TEMPERATURE 2

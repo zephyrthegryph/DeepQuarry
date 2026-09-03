@@ -7,19 +7,17 @@
 	density = FALSE
 	anchored = TRUE
 
-/obj/structure/dancepole/attackby(obj/item/O as obj, mob/user as mob)
-	if(O.has_tool_quality(TOOL_SCREWDRIVER))
-		anchored = !anchored
-		playsound(src, O.usesound, 50, 1)
-		if(anchored)
-			to_chat(user, span_blue("You secure \the [src]."))
-		else
-			to_chat(user, span_blue("You unsecure \the [src]."))
-	if(O.has_tool_quality(TOOL_WRENCH))
-		playsound(src, O.usesound, 50, 1)
-		to_chat(user, span_notice("Now disassembling \the [src]..."))
-		if(do_after(user, 3 SECONDS * O.toolspeed, target = src))
-			if(!src) return
-			to_chat(user, span_notice("You dissasembled \the [src]!"))
-			new /obj/item/stack/material/steel(src.loc, 1)
-			qdel(src)
+/obj/structure/dancepole/screwdriver_act(mob/user, obj/item/O)
+	anchored = !anchored
+	playsound(src, O.usesound, 50, 1)
+	to_chat(user, span_blue("You [anchored ? "secure" : "unsecure"] \the [src]."))
+	return TRUE
+
+/obj/structure/dancepole/wrench_act(mob/user, obj/item/O)
+	playsound(src, O.usesound, 50, 1)
+	to_chat(user, span_notice("Now disassembling \the [src]..."))
+	if(do_after(user, 3 SECONDS * O.toolspeed, target = src))
+		to_chat(user, span_notice("You disassembled \the [src]!"))
+		new /obj/item/stack/material/steel(loc, 1)
+		qdel(src)
+	return TRUE

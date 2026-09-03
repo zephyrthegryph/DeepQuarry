@@ -46,6 +46,9 @@
 /obj/item/gun/energy/Destroy()
 	if(self_recharge)
 		STOP_PROCESSING(SSobj, src)
+	if(power_supply?.loc == src && !QDELETED(power_supply))
+		qdel(power_supply)
+	power_supply = null
 	return ..()
 
 /obj/item/gun/energy/get_cell()
@@ -55,7 +58,7 @@
 	if(self_recharge) //Every [recharge_time] ticks, recharge a shot for the battery
 		if(world.time > last_shot + charge_delay)	//Doesn't work if you've fired recently
 			if(!power_supply || power_supply.charge >= power_supply.maxcharge)
-				return 0 // check if we actually need to recharge
+				return PROCESS_KILL
 
 			charge_tick++
 			if(charge_tick < recharge_time) return 0
@@ -117,6 +120,8 @@
 	if(!power_supply) return null
 	if(!ispath(projectile_type)) return null
 	if(!power_supply.checked_use(charge_cost)) return null
+	if(self_recharge)
+		START_PROCESSING(SSobj, src)
 	var/mob/living/M = loc // TGMC Ammo HUD
 	if(istype(M)) // TGMC Ammo HUD
 		M?.hud_used.update_ammo_hud(M, src)

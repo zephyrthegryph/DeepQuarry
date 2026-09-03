@@ -68,7 +68,11 @@
 	if(Adjacent(user))
 		. += "It has [emitter ? emitter : "no micro laser"] installed."
 
-/obj/item/gun/energy/floragun/attackby(obj/item/W, mob/user)
+/obj/item/gun/energy/floragun/screwdriver_act(mob/user, obj/item/tool)
+	attackby(tool, user, TOOL_SCREWDRIVER)
+	return TRUE
+
+/obj/item/gun/energy/floragun/attackby(obj/item/W, mob/user, tool_quality)
 	if(istype(W, /obj/item/stock_parts/micro_laser))
 		if(!emitter)
 			user.drop_item()
@@ -78,7 +82,7 @@
 		else
 			to_chat(user, span_notice("[src] already has a laser."))
 
-	else if(W.has_tool_quality(TOOL_SCREWDRIVER))
+	else if(tool_quality == TOOL_SCREWDRIVER)
 		if(emitter)
 			to_chat(user, span_notice("You remove the [emitter.name] from the [src]."))
 			emitter.loc = get_turf(src.loc)

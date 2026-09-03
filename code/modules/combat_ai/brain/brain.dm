@@ -11,9 +11,6 @@
 // SSai sleeps mobs by calling set_stance(STANCE_IDLE) — we accept the call as
 // a no-op since the brain has no stance enum.
 
-#define DQAI_PROCESSING       (1<<0)
-#define DQAI_FASTPROCESSING   (1<<1)
-
 #define DQAI_START_PROCESSING(B) if (!(B.process_flags & DQAI_PROCESSING)) {B.process_flags |= DQAI_PROCESSING; SSai.processing += B}
 #define DQAI_STOP_PROCESSING(B)  if (B.process_flags & DQAI_PROCESSING) {B.process_flags &= ~DQAI_PROCESSING; SSai.processing -= B}
 #define DQAI_START_FASTPROCESSING(B) if (!(B.process_flags & DQAI_FASTPROCESSING)) {B.process_flags |= DQAI_FASTPROCESSING; SSaifast.processing += B}
@@ -64,6 +61,11 @@
 	/// ai_holder lose_target_timeout: the mob keeps pursuing for
 	/// DQ_LOSE_THREAT_TIMEOUT deciseconds before dropping the target.
 	var/lose_threat_at = 0
+	/// Dependency-driven strategic scheduling. Events set this to zero; a calm
+	/// brain uses a long discovery cadence while combat stays responsive.
+	var/next_strategic_at = 0
+	var/idle_strategic_interval = 10 SECONDS
+	var/sleeping_reference
 
 /datum/ai_brain/New(mob/living/owner)
 	if(!owner)
@@ -85,6 +87,7 @@
 	return ..()
 
 /datum/ai_brain/Destroy()
+	SSai?.forget_brain(src)
 	if(active_behavior_type)
 		var/datum/ai_behavior/B = dq_get_behavior(active_behavior_type)
 		B.stop(src, active_target, active_source, DQ_BEHAVIOR_STOP_QDEL)
@@ -143,6 +146,9 @@
 	expire_personal()
 	update_primary_threat()
 	selection_dirty = TRUE
+	next_strategic_at = world.time + (primary_threat ? 2 SECONDS : idle_strategic_interval)
+	if(!primary_threat)
+		SSai.hibernate_calm_brain(src)
 
 /// Tactical tick. Fast — 250ms.
 /datum/ai_brain/proc/handle_tactics()
@@ -329,6 +335,10 @@
 
 /datum/ai_brain/proc/invalidate_selection()
 	selection_dirty = TRUE
+	next_strategic_at = 0
+	var/datum/weakref/WR = WEAKREF(src)
+	if(SSai.sleeping_brains[WR.reference])
+		SSai.wake_brain(WR)
 	sync_fast_processing()
 
 /// Keeps the quarter-second tactical loop limited to brains with a combat target.

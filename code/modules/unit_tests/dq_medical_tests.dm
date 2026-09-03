@@ -10,6 +10,23 @@
 
 // --- spawn + tick smoke test ----------------------------------------------
 
+/datum/unit_test/dq_medical_dirty_domains_wake_exactly
+
+/datum/unit_test/dq_medical_dirty_domains_wake_exactly/Run()
+	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human)
+	H.dq_medical_dirty = 0
+	var/obj/item/organ/internal/heart = H.internal_organs_by_name[O_HEART]
+	TEST_ASSERT_NOTNULL(heart, "test human has no heart")
+	heart.take_damage(1, TRUE)
+	TEST_ASSERT(H.dq_medical_dirty & DQ_MEDICAL_DIRTY_ORGANS, "organ damage did not invalidate organ conditions")
+	H.dq_medical_dirty = 0
+	H.bloodstr.add_reagent(REAGENT_ID_INAPROVALINE, 1)
+	TEST_ASSERT(H.dq_medical_dirty & DQ_MEDICAL_DIRTY_CHEMS, "bloodstream mutation did not invalidate chem conditions")
+	H.dq_medical_dirty = 0
+	H.dq_last_bodytemperature = -1
+	H.dq_refresh_metric_dirty_state()
+	TEST_ASSERT(H.dq_medical_dirty & DQ_MEDICAL_DIRTY_METRICS, "metric signature change did not invalidate metric conditions")
+
 /datum/unit_test/dq_medical_condition_spawn
 
 /datum/unit_test/dq_medical_condition_spawn/Run()

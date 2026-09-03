@@ -45,14 +45,11 @@
 //		sd_SetLuminosity(0)
 
 //Don't want to render prison breaks impossible
-/obj/machinery/flasher/attackby(obj/item/W as obj, mob/user as mob)
-	if(W.has_tool_quality(TOOL_WIRECUTTER))
-		add_fingerprint(user)
-		disable = !disable
-		if(disable)
-			user.visible_message(span_warning("[user] has disconnected the [src]'s flashbulb!"), span_warning("You disconnect the [src]'s flashbulb!"))
-		if(!disable)
-			user.visible_message(span_warning("[user] has connected the [src]'s flashbulb!"), span_warning("You connect the [src]'s flashbulb!"))
+/obj/machinery/flasher/wirecutter_act(mob/user, obj/item/tool)
+	add_fingerprint(user)
+	disable = !disable
+	user.visible_message(span_warning("[user] has [disable ? "disconnected" : "connected"] [src]'s flashbulb!"), span_warning("You [disable ? "disconnect" : "connect"] [src]'s flashbulb!"))
+	return ITEM_INTERACT_SUCCESS
 
 //Let the AI trigger them directly.
 /obj/machinery/flasher/attack_ai()
@@ -123,20 +120,18 @@
 		if(M.m_intent != I_WALK)
 			flash()
 
-/obj/machinery/flasher/portable/attackby(obj/item/W as obj, mob/user as mob)
-	if(W.has_tool_quality(TOOL_WRENCH))
-		add_fingerprint(user)
-		anchored = !anchored
-
-		if(!anchored)
-			user.show_message(span_warning("[src] can now be moved."))
-			cut_overlays()
-			unsense_proximity(callback = TYPE_PROC_REF(/atom,HasProximity))
-
-		else if(anchored)
-			user.show_message(span_warning("[src] is now secured."))
-			add_overlay("[base_state]-s")
-			sense_proximity(callback = TYPE_PROC_REF(/atom,HasProximity))
+/obj/machinery/flasher/portable/wrench_act(mob/user, obj/item/tool)
+	add_fingerprint(user)
+	anchored = !anchored
+	if(!anchored)
+		user.show_message(span_warning("[src] can now be moved."))
+		cut_overlays()
+		unsense_proximity(callback = TYPE_PROC_REF(/atom,HasProximity))
+	else
+		user.show_message(span_warning("[src] is now secured."))
+		add_overlay("[base_state]-s")
+		sense_proximity(callback = TYPE_PROC_REF(/atom,HasProximity))
+	return ITEM_INTERACT_SUCCESS
 
 /obj/machinery/button/flasher
 	name = "flasher button"

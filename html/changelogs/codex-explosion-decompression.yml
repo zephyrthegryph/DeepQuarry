@@ -1,0 +1,10 @@
+author: "Codex"
+delete-after: true
+changes:
+  - bugfix: "Hull breaches now enter pressure-prioritized explosive decompression, produce spacewind, and update at 10 Hz until the dangerous gradient subsides."
+  - bugfix: "Atmospheric diffusion now ignores transient one-way topology edges and processes large decompression waves as connected components."
+  - code_imp: "Firedoors filter harmless pressure and temperature drift while asleep, and emergency lights discharge from timers instead of polling Objects."
+  - bugfix: "Destroyed pipes now release and redistribute their complete pipeline gas without stale ownership or hard-delete churn."
+  - bugfix: "Destroyed objects no longer continue blocking atmospheric adjacency while awaiting garbage collection."
+  - code_imp: "Explosion chains now batch power and atmospheric topology rebuilds, bound dense-turf work, deduplicate effects, and expose phase diagnostics."
+  - code_imp: "Atmospheric work is grouped by unsettled pressure components and publishes reaction and overlay notifications as compact semantic batches with separate timing diagnostics."

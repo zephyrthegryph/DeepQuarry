@@ -31,6 +31,10 @@
 /// formula. Unimbued parts chain to upstream so any future upstream
 /// get_rating() override stays wired through us.
 /obj/item/stock_parts/get_rating()
+	if(length(construction_materials))
+		var/derived_composite = dq_composite_part_rating(src)
+		if(derived_composite > 0)
+			return derived_composite
 	if(material_id)
 		var/datum/material/M = dq_get_material()
 		if(M)
@@ -38,6 +42,47 @@
 			if(derived > 0)
 				return derived
 	return ..()
+
+/// Every named part of a multipart stock component participates in its rating.
+/// This deliberately uses role-specific physics rather than averaging the
+/// recipe into one decorative "core" material.
+/proc/dq_composite_part_rating(obj/item/stock_parts/part)
+	var/raw = 0
+	if(istype(part, /obj/item/stock_parts/capacitor))
+		var/datum/material/electrode = part.material_for_role(MATERIAL_ROLE_ELECTRODE)
+		var/datum/material/dielectric = part.material_for_role(MATERIAL_ROLE_DIELECTRIC)
+		var/datum/material/contacts = part.material_for_role(MATERIAL_ROLE_CONTACTS)
+		var/datum/material/casing = part.material_for_role(MATERIAL_ROLE_STRUCTURE)
+		if(!electrode || !dielectric || !contacts || !casing) return 0
+		raw = electrode.conductivity * 0.35 + dielectric.dielectric_strength * 0.3 + contacts.conductivity * 0.2 + casing.heat_resistance * 0.15
+	if(istype(part, /obj/item/stock_parts/manipulator))
+		var/datum/material/actuator = part.material_for_role(MATERIAL_ROLE_ACTUATOR)
+		var/datum/material/bearings = part.material_for_role(MATERIAL_ROLE_BEARINGS)
+		var/datum/material/frame = part.material_for_role(MATERIAL_ROLE_FRAME)
+		var/datum/material/insulation = part.material_for_role(MATERIAL_ROLE_INSULATION)
+		if(!actuator || !bearings || !frame || !insulation) return 0
+		raw = actuator.conductivity * 0.3 + bearings.elasticity * 0.25 + frame.integrity * 0.25 + insulation.dielectric_strength * 0.2
+	if(istype(part, /obj/item/stock_parts/matter_bin))
+		var/datum/material/chamber = part.material_for_role(MATERIAL_ROLE_STRUCTURE)
+		var/datum/material/liner = part.material_for_role(MATERIAL_ROLE_LINER)
+		var/datum/material/frame = part.material_for_role(MATERIAL_ROLE_FRAME)
+		if(!chamber || !liner || !frame) return 0
+		raw = chamber.integrity * 0.45 + liner.corrosion_resistance * 0.25 + frame.integrity * 0.3
+	if(istype(part, /obj/item/stock_parts/scanning_module))
+		var/datum/material/sensor = part.material_for_role(MATERIAL_ROLE_SENSOR)
+		var/datum/material/optics = part.material_for_role(MATERIAL_ROLE_OPTICAL)
+		var/datum/material/traces = part.material_for_role(MATERIAL_ROLE_CONDUCTOR)
+		var/datum/material/housing = part.material_for_role(MATERIAL_ROLE_STRUCTURE)
+		if(!sensor || !optics || !traces || !housing) return 0
+		raw = (sensor.magnetism + sensor.reactivity) * 0.2 + optics.purity_equivalent() * 0.25 + traces.conductivity * 0.25 + housing.integrity * 0.1
+	if(istype(part, /obj/item/stock_parts/micro_laser))
+		var/datum/material/emitter = part.material_for_role(MATERIAL_ROLE_EMITTER)
+		var/datum/material/optics = part.material_for_role(MATERIAL_ROLE_OPTICAL)
+		var/datum/material/thermal = part.material_for_role(MATERIAL_ROLE_THERMAL)
+		var/datum/material/mount = part.material_for_role(MATERIAL_ROLE_STRUCTURE)
+		if(!emitter || !optics || !thermal || !mount) return 0
+		raw = (dq_material_luminescence(emitter) + emitter.conductivity) * 0.2 + optics.purity_equivalent() * 0.25 + thermal.conductivity * (1 - thermal.thermal_insulation / 125) * 0.2 + mount.integrity * 0.15
+	return raw > 0 ? _dq_part_rating_value(raw / 25) : 0
 
 
 /// Per-part-type formula. Each part type returns a rating in roughly

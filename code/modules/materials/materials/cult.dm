@@ -1,7 +1,6 @@
 /datum/material/cult
 	name = MAT_CULT
 	display_name = "disturbing stone"
-	material_class = MATCLASS_CERAMIC
 	icon_base = "cult"
 	table_icon_base = "stone"
 	icon_colour = "#402821"

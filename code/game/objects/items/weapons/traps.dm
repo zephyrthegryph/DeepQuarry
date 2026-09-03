@@ -242,7 +242,7 @@
 			anchored = TRUE
 			update_icon()
 
-/obj/item/material/barbedwire/attackby(obj/item/W as obj, mob/user as mob)
+/obj/item/material/barbedwire/attackby(obj/item/W as obj, mob/user as mob, tool_quality)
 	if(!istype(W))
 		return
 
@@ -253,7 +253,7 @@
 
 		var/inc_damage = W.force
 
-		if(W.has_tool_quality(TOOL_WIRECUTTER))
+		if(tool_quality == TOOL_WIRECUTTER)
 			if(!shock(user, 100, pick(BP_L_HAND, BP_R_HAND)))
 				playsound(src, W.usesound, 100, 1)
 				inc_damage *= 3
@@ -266,6 +266,10 @@
 	check_health()
 
 	..()
+
+/obj/item/material/barbedwire/wirecutter_act(mob/user, obj/item/tool)
+	attackby(tool, user, TOOL_WIRECUTTER)
+	return TRUE
 
 /obj/item/material/barbedwire/update_icon()
 	..()

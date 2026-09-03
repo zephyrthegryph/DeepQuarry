@@ -180,7 +180,6 @@
 	switch(action)
 		// Toggles the cut/mend status.
 		if("cut")
-			// if(!I.has_tool_quality(TOOL_WIRECUTTER) && !user.can_admin_interact())
 			if(!istype(I) || !I.has_tool_quality(TOOL_WIRECUTTER))
 				to_chat(ui.user, span_warning("You need wirecutters!"))
 				return
@@ -191,7 +190,6 @@
 
 		// Pulse a wire.
 		if("pulse")
-			// if(!I.has_tool_quality(TOOL_MULTITOOL) && !user.can_admin_interact())
 			if(!istype(I) || !I.has_tool_quality(TOOL_MULTITOOL))
 				to_chat(ui.user, span_warning("You need a multitool!"))
 				return
@@ -340,8 +338,21 @@
 		cut_wires -= wire
 		on_cut(wire, mend = TRUE)
 	else
-		cut_wires += wire
-		on_cut(wire, mend = FALSE)
+		cut_wire(wire)
+
+/**
+ * Cuts an intact wire without ever mending it.
+ *
+ * Scripted damage and sabotage should use this proc. `cut()` remains the
+ * interactive wirecutter toggle used by the wires UI. Returns TRUE only when
+ * this call changed the wire's state.
+ */
+/datum/wires/proc/cut_wire(wire)
+	if(is_cut(wire))
+		return FALSE
+	cut_wires += wire
+	on_cut(wire, mend = FALSE)
+	return TRUE
 
 /**
  * Cut the wire which corresponds with the passed in color.
@@ -356,14 +367,29 @@
  * Cuts a random wire.
  */
 /datum/wires/proc/cut_random()
-	cut(wires[rand(1, length(wires))])
+	var/list/intact_wires = wires - cut_wires
+	if(!length(intact_wires))
+		return FALSE
+	return cut_wire(pick(intact_wires))
 
 /**
  * Cuts all wires.
  */
 /datum/wires/proc/cut_all()
+	var/cut_count = 0
 	for(var/wire in wires)
+		cut_count += cut_wire(wire)
+	return cut_count
+
+/**
+ * Mends every cut wire. Returns the number of wires whose state changed.
+ */
+/datum/wires/proc/mend_all()
+	var/mend_count = 0
+	for(var/wire in cut_wires.Copy())
 		cut(wire)
+		mend_count++
+	return mend_count
 
 /**
  * Proc called when any wire is cut.

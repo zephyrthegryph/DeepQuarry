@@ -1,4 +1,5 @@
 /obj/machinery/exonet_node
+	maintenance_flags = MACHINE_MAINT_STANDARD
 	name = "exonet node"
 	desc = null // Gets written in New()
 	icon = 'icons/obj/stationobjs.dmi'
@@ -108,14 +109,6 @@
 // Proc: attackby()
 // Parameters: 2 (I - the item being whacked against the machine, user - the person doing the whacking)
 // Description: Handles deconstruction.
-/obj/machinery/exonet_node/attackby(obj/item/I, mob/user)
-	if(I.has_tool_quality(TOOL_SCREWDRIVER))
-		default_deconstruction_screwdriver(user, I)
-	else if(I.has_tool_quality(TOOL_CROWBAR))
-		default_deconstruction_crowbar(user, I)
-	else
-		..()
-
 // Proc: attack_ai()
 // Parameters: 1 (user - the AI clicking on the machine)
 // Description: Redirects to attack_hand()

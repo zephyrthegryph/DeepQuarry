@@ -26,15 +26,9 @@
 /datum/controller/subsystem/air/proc/process_turfs_auxtools(remaining)
 	return call_ext(VERDIGRIS, "byond:process_turf_hook_ffi")(src, remaining)
 
-/// Runs one excited-group processing cycle. Reads excited_group_pressure_goal,
-/// writes cost_groups / num_group_turfs_processed. Returns TRUE if overtimed.
-/datum/controller/subsystem/air/proc/process_excited_groups_auxtools(remaining)
-	return call_ext(VERDIGRIS, "byond:groups_hook_ffi")(src, remaining)
-
-/// Runs one katmos equalize cycle. Reads equalize_hard_turf_limit, writes
-/// cost_equalize / num_equalize_processed. Returns TRUE if overtimed.
-/datum/controller/subsystem/air/proc/process_turf_equalize_auxtools(remaining)
-	return call_ext(VERDIGRIS, "byond:equalize_hook_ffi")(src, remaining)
+/// Diagnostic/test query: whether this exact turf is in either Rust activation queue.
+/turf/proc/auxmos_is_atmos_active()
+	return call_ext(VERDIGRIS, "byond:turf_active_hook_ffi")(src)
 
 /// Drains the turf-processing callback queue on the main thread (react /
 /// set_visuals / consider_pressure_difference). Returns TRUE if overtimed.
@@ -66,6 +60,13 @@
 
 /datum/controller/subsystem/air/proc/auxmos_topology_transaction_commit()
 	return call_ext(VERDIGRIS, "byond:topology_transaction_commit_ffi")()
+
+/// Non-blocking destructive topology batch used by explosions.
+/datum/controller/subsystem/air/proc/auxmos_topology_batch_begin()
+	return call_ext(VERDIGRIS, "byond:topology_batch_begin_ffi")()
+
+/datum/controller/subsystem/air/proc/auxmos_topology_batch_commit()
+	return call_ext(VERDIGRIS, "byond:topology_batch_commit_ffi")()
 
 /// Returns current and peak bytes requested through Rust's global allocator.
 /datum/controller/subsystem/air/proc/verdigris_allocator_diagnostics()

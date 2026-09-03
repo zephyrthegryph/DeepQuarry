@@ -119,8 +119,9 @@
 	var/datum/component/antag/changeling/comp = is_changeling(src)
 	if(comp && comp.mimicing)
 		return comp.mimicing
-	if(GetSpecialVoice())
-		return GetSpecialVoice()
+	var/special = GetSpecialVoice()
+	if(special)
+		return special
 	if(absorbed && isbelly(loc)) // If absorbed in a belly, check and apply absorbed rename if applicable.
 		var/obj/belly/B = loc
 		if(B.absorbedrename_enabled)

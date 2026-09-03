@@ -17,6 +17,8 @@
 	use_power = USE_POWER_IDLE
 	idle_power_usage = 10
 	active_power_usage = 100
+	maintenance_flags = MACHINE_MAINT_WRENCH
+	maintenance_wrench_time = 2 SECONDS
 	light_power = 0.9
 	light_range = 2
 	light_color = "#B1FBBFF"
@@ -57,21 +59,15 @@
 			ispowered = 0
 			update_icon()
 
+/obj/machinery/slot_machine/wrench_act(mob/user, obj/item/tool)
+	if(busy)
+		to_chat(user, span_notice("The slot machine is currently running."))
+		return ITEM_INTERACT_BLOCKING
+	return ..()
+
 /obj/machinery/slot_machine/attackby(obj/item/W as obj, mob/user as mob)
 	if(busy)
 		to_chat(user,span_notice("The slot machine is currently running."))
-		return
-	if(W.has_tool_quality(TOOL_WRENCH))
-		playsound(src, W.usesound, 100, 1)
-		if(anchored)
-			user.visible_message("[user] begins unsecuring \the [src] from the floor.", "You start unsecuring \the [src] from the floor.")
-		else
-			user.visible_message("[user] begins securing \the [src] to the floor.", "You start securing \the [src] to the floor.")
-
-		if(do_after(user, 2 SECONDS * W.toolspeed, target = src))
-			if(!src) return
-			to_chat(user, span_notice("You [anchored? "un" : ""]secured \the [src]!"))
-			anchored = !anchored
 		return
 
 	if(!anchored)
@@ -234,6 +230,8 @@
  */
 
 /obj/machinery/station_slot_machine
+	maintenance_flags = MACHINE_MAINT_WRENCH
+	maintenance_wrench_time = 2 SECONDS
 	name = "station slot machine"
 	desc = "A gambling machine owned by NanoTrasen, designed to take Thalers as opposed to casino chips."
 	icon = 'icons/obj/casino.dmi'
@@ -284,21 +282,15 @@
 			ispowered = 0
 			update_icon()
 
+/obj/machinery/station_slot_machine/wrench_act(mob/user, obj/item/tool)
+	if(busy)
+		to_chat(user, span_notice("The slot machine is currently running."))
+		return ITEM_INTERACT_BLOCKING
+	return ..()
+
 /obj/machinery/station_slot_machine/attackby(obj/item/W as obj, mob/user as mob)
 	if(busy)
 		to_chat(user,span_notice("The slot machine is currently running."))
-		return
-	if(W.has_tool_quality(TOOL_WRENCH))
-		playsound(src, W.usesound, 100, 1)
-		if(anchored)
-			user.visible_message("[user] begins unsecuring \the [src] from the floor.", "You start unsecuring \the [src] from the floor.")
-		else
-			user.visible_message("[user] begins securing \the [src] to the floor.", "You start securing \the [src] to the floor.")
-
-		if(do_after(user, 2 SECONDS * W.toolspeed, target = src))
-			if(!src) return
-			to_chat(user, span_notice("You [anchored? "un" : ""]secured \the [src]!"))
-			anchored = !anchored
 		return
 
 	if(!anchored)

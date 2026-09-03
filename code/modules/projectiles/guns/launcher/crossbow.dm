@@ -147,7 +147,11 @@
 		return
 
 
-/obj/item/gun/launcher/crossbow/attackby(obj/item/W as obj, mob/user as mob)
+/obj/item/gun/launcher/crossbow/screwdriver_act(mob/user, obj/item/tool)
+	attackby(tool, user, TOOL_SCREWDRIVER)
+	return TRUE
+
+/obj/item/gun/launcher/crossbow/attackby(obj/item/W as obj, mob/user as mob, tool_quality)
 	if(!bolt)
 		if (istype(W,/obj/item/arrow))
 			user.drop_from_inventory(W, src)
@@ -176,7 +180,7 @@
 		else
 			to_chat(user, span_notice("[src] already has a cell installed."))
 
-	else if(W.has_tool_quality(TOOL_SCREWDRIVER))
+	else if(tool_quality == TOOL_SCREWDRIVER)
 		if(cell)
 			var/obj/item/C = cell
 			C.loc = get_turf(user)
@@ -235,7 +239,15 @@
 		if(5)
 			. += "It has a steel cable loosely strung across the lath."
 
-/obj/item/crossbowframe/attackby(obj/item/W as obj, mob/user as mob)
+/obj/item/crossbowframe/screwdriver_act(mob/user, obj/item/tool)
+	attackby(tool, user, TOOL_SCREWDRIVER)
+	return TRUE
+
+/obj/item/crossbowframe/welder_act(mob/user, obj/item/tool)
+	attackby(tool, user, TOOL_WELDER)
+	return TRUE
+
+/obj/item/crossbowframe/attackby(obj/item/W as obj, mob/user as mob, tool_quality)
 	if(istype(W,/obj/item/stack/rods))
 		if(buildstate == 0)
 			var/obj/item/stack/rods/R = W
@@ -246,7 +258,7 @@
 			else
 				to_chat(user, span_notice("You need at least three rods to complete this task."))
 			return
-	else if(W.has_tool_quality(TOOL_WELDER))
+	else if(tool_quality == TOOL_WELDER)
 		if(buildstate == 1)
 			var/obj/item/weldingtool/T = W.get_welder()
 			if(T.remove_fuel(0,user))
@@ -284,7 +296,7 @@
 			else
 				to_chat(user, span_notice("You need at least three plastic sheets to complete this task."))
 			return
-	else if(W.has_tool_quality(TOOL_SCREWDRIVER))
+	else if(tool_quality == TOOL_SCREWDRIVER)
 		if(buildstate == 5)
 			to_chat(user, span_notice("You secure the crossbow's various parts."))
 			playsound(src, W.usesound, 50, 1)

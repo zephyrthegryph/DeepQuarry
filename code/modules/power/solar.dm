@@ -62,24 +62,24 @@ GLOBAL_LIST_EMPTY(solars_list)
 	control = null
 
 /obj/machinery/power/solar/attackby(obj/item/W, mob/user)
-
-	if(W.has_tool_quality(TOOL_CROWBAR))
-		playsound(src, 'sound/machines/click.ogg', 50, 1)
-		user.visible_message(span_notice("[user] begins to take the glass off the solar panel."))
-		if(do_after(user, 2 SECONDS * W.toolspeed, target = src))
-			var/obj/item/solar_assembly/S = new(loc)
-			S.anchored = TRUE
-			new glass_type(loc, 2)
-			playsound(src, 'sound/items/Deconstruct.ogg', 50, 1)
-			user.visible_message(span_notice("[user] takes the glass off the solar panel."))
-			qdel(src)
-		return
-	else if(W && user.a_intent == I_HURT)
+	if(W && user.a_intent == I_HURT)
 		user.visible_message(span_warning("[user] strikes the solar panel with [W]."))
 		user.setClickCooldown(user.get_attack_speed(W))
 		add_fingerprint(user)
 		take_damage(W.force, W.damtype, MELEE, sound_effect = FALSE)
 	..()
+
+/obj/machinery/power/solar/crowbar_act(mob/user, obj/item/W)
+	playsound(src, 'sound/machines/click.ogg', 50, 1)
+	user.visible_message(span_notice("[user] begins to take the glass off the solar panel."))
+	if(do_after(user, 2 SECONDS * W.toolspeed, target = src))
+		var/obj/item/solar_assembly/S = new(loc)
+		S.anchored = TRUE
+		new glass_type(loc, 2)
+		playsound(src, 'sound/items/Deconstruct.ogg', 50, 1)
+		user.visible_message(span_notice("[user] takes the glass off the solar panel."))
+		qdel(src)
+	return ITEM_INTERACT_SUCCESS
 
 
 // First time integrity bottoms out, the panel flips to its broken (cracked) state.
@@ -141,28 +141,6 @@ GLOBAL_LIST_EMPTY(solars_list)
 	SEND_SIGNAL(src, COMSIG_CLIMBABLE_SHAKE_CLIMBERS, null)
 	return
 
-
-/obj/machinery/power/solar/ex_act(severity)
-	switch(severity)
-		if(1.0)
-			if(prob(15))
-				new /obj/item/material/shard( src.loc )
-			qdel(src)
-			return
-
-		if(2.0)
-			if (prob(25))
-				new /obj/item/material/shard( src.loc )
-				qdel(src)
-				return
-
-			if (prob(50))
-				broken()
-
-		if(3.0)
-			if (prob(25))
-				broken()
-	return
 
 //trace towards sun to see if we're in shadow
 /obj/machinery/power/solar/proc/occlusion()
@@ -237,19 +215,7 @@ GLOBAL_LIST_EMPTY(solars_list)
 /obj/item/solar_assembly/attackby(obj/item/W, mob/user)
 	if (!isturf(loc))
 		return 0
-	if(!anchored)
-		if(W.has_tool_quality(TOOL_WRENCH))
-			anchored = TRUE
-			user.visible_message(span_notice("[user] wrenches the solar assembly into place."))
-			playsound(src, W.usesound, 75, 1)
-			return 1
-	else
-		if(W.has_tool_quality(TOOL_WRENCH))
-			anchored = FALSE
-			user.visible_message(span_notice("[user] unwrenches the solar assembly from it's place."))
-			playsound(src, W.usesound, 75, 1)
-			return 1
-
+	if(anchored)
 		if(istype(W, /obj/item/stack/material) && (W.get_material_name() == MAT_GLASS || W.get_material_name() == MAT_RGLASS))
 			var/obj/item/stack/material/S = W
 			if(S.use(2))
@@ -272,13 +238,23 @@ GLOBAL_LIST_EMPTY(solars_list)
 			qdel(W)
 			user.visible_message(span_notice("[user] inserts the electronics into the solar assembly."))
 			return 1
-	else
-		if(W.has_tool_quality(TOOL_CROWBAR))
-			new /obj/item/tracker_electronics(src.loc)
-			tracker = 0
-			user.visible_message(span_notice("[user] takes out the electronics from the solar assembly."))
-			return 1
 	..()
+
+/obj/item/solar_assembly/wrench_act(mob/user, obj/item/W)
+	if(!isturf(loc))
+		return ITEM_INTERACT_BLOCKING
+	anchored = !anchored
+	user.visible_message(span_notice("[user] [anchored ? "wrenches" : "unwrenches"] the solar assembly [anchored ? "into" : "from"] place."))
+	playsound(src, W.usesound, 75, 1)
+	return ITEM_INTERACT_SUCCESS
+
+/obj/item/solar_assembly/crowbar_act(mob/user, obj/item/W)
+	if(!tracker)
+		return ITEM_INTERACT_BLOCKING
+	new /obj/item/tracker_electronics(src.loc)
+	tracker = 0
+	user.visible_message(span_notice("[user] takes out the electronics from the solar assembly."))
+	return ITEM_INTERACT_SUCCESS
 
 //
 // Solar Control Computer
@@ -293,6 +269,7 @@ GLOBAL_LIST_EMPTY(solars_list)
 	density = TRUE
 	use_power = USE_POWER_IDLE
 	idle_power_usage = 250
+	integrity_failure = 0.5
 	var/id = 0
 	var/cdir = 0
 	var/targetdir = 0		// target angle in manual tracking (since it updates every game minute)
@@ -438,36 +415,33 @@ GLOBAL_LIST_EMPTY(solars_list)
 
 	return data
 
-/obj/machinery/power/solar_control/attackby(obj/item/I, user as mob)
-	if(I.has_tool_quality(TOOL_SCREWDRIVER))
-		playsound(src, I.usesound, 50, 1)
-		if(do_after(user, 2 SECONDS, target = src))
-			if (src.stat & BROKEN)
-				to_chat(user, span_blue("The broken glass falls out."))
-				var/obj/structure/frame/A = new /obj/structure/frame/computer( src.loc )
-				new /obj/item/material/shard( src.loc )
-				var/obj/item/circuitboard/solar_control/M = new /obj/item/circuitboard/solar_control( A )
-				for (var/obj/C in src)
-					C.loc = src.loc
-				A.circuit = M
-				A.state = 3
-				A.icon_state = "computer_3"
-				A.anchored = TRUE
-				qdel(src)
-			else
-				to_chat(user, span_blue("You disconnect the monitor."))
-				var/obj/structure/frame/A = new /obj/structure/frame/computer( src.loc )
-				var/obj/item/circuitboard/solar_control/M = new /obj/item/circuitboard/solar_control( A )
-				for (var/obj/C in src)
-					C.loc = src.loc
-				A.circuit = M
-				A.state = 4
-				A.icon_state = "computer_4"
-				A.anchored = TRUE
-				qdel(src)
-	else
-		src.attack_hand(user)
-	return
+/obj/machinery/power/solar_control/screwdriver_act(mob/user, obj/item/I)
+	playsound(src, I.usesound, 50, 1)
+	if(do_after(user, 2 SECONDS, target = src))
+		if (src.stat & BROKEN)
+			to_chat(user, span_blue("The broken glass falls out."))
+			var/obj/structure/frame/A = new /obj/structure/frame/computer(src.loc)
+			new /obj/item/material/shard(src.loc)
+			var/obj/item/circuitboard/solar_control/M = new /obj/item/circuitboard/solar_control(A)
+			for(var/obj/C in src)
+				C.loc = src.loc
+			A.circuit = M
+			A.state = 3
+			A.icon_state = "computer_3"
+			A.anchored = TRUE
+			qdel(src)
+		else
+			to_chat(user, span_blue("You disconnect the monitor."))
+			var/obj/structure/frame/A = new /obj/structure/frame/computer(src.loc)
+			var/obj/item/circuitboard/solar_control/M = new /obj/item/circuitboard/solar_control(A)
+			for(var/obj/C in src)
+				C.loc = src.loc
+			A.circuit = M
+			A.state = 4
+			A.icon_state = "computer_4"
+			A.anchored = TRUE
+			qdel(src)
+	return ITEM_INTERACT_SUCCESS
 
 /obj/machinery/power/solar_control/process()
 	if(stat & (NOPOWER | BROKEN))
@@ -551,19 +525,14 @@ GLOBAL_LIST_EMPTY(solars_list)
 	update_icon()
 
 
-/obj/machinery/power/solar_control/ex_act(severity)
-	switch(severity)
-		if(1.0)
-			//SN = null
-			qdel(src)
-			return
-		if(2.0)
-			if (prob(50))
-				broken()
-		if(3.0)
-			if (prob(25))
-				broken()
-	return
+/obj/machinery/power/solar_control/atom_break(damage_flag)
+	. = ..()
+	broken()
+
+/obj/machinery/power/solar_control/atom_fix()
+	. = ..()
+	stat &= ~BROKEN
+	update_icon()
 
 //
 // MISC

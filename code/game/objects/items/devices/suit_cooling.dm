@@ -150,17 +150,6 @@
 	to_chat(user, span_notice("You switch \the [src] [on ? "on" : "off"]."))
 
 /obj/item/suit_cooling_unit/attackby(obj/item/W as obj, mob/user as mob)
-	if (W.has_tool_quality(TOOL_SCREWDRIVER))
-		if(cover_open)
-			cover_open = 0
-			to_chat(user, "You screw the panel into place.")
-		else
-			cover_open = 1
-			to_chat(user, "You unscrew the panel.")
-		playsound(src, W.usesound, 50, 1)
-		update_icon()
-		return
-
 	if (istype(W, /obj/item/cell))
 		if(cover_open)
 			if(cell)
@@ -174,6 +163,13 @@
 		return
 
 	return ..()
+
+/obj/item/suit_cooling_unit/screwdriver_act(mob/user, obj/item/tool)
+	cover_open = !cover_open
+	to_chat(user, "You [cover_open ? "unscrew" : "screw"] the panel [cover_open ? "open" : "into place"].")
+	playsound(src, tool.usesound, 50, 1)
+	update_icon()
+	return ITEM_INTERACT_SUCCESS
 
 /obj/item/suit_cooling_unit/update_icon()
 	cut_overlays()
@@ -240,9 +236,6 @@
 		return null // Don't let recharging happen while we're on
 	return cell
 
-/obj/item/suit_cooling_unit/emergency/attackby(obj/item/W as obj, mob/user as mob)
-	if (W.has_tool_quality(TOOL_SCREWDRIVER))
-		to_chat(user, span_warning("This cooler's cell is permanently installed!"))
-		return
-
-	return ..()
+/obj/item/suit_cooling_unit/emergency/screwdriver_act(mob/user, obj/item/tool)
+	to_chat(user, span_warning("This cooler's cell is permanently installed!"))
+	return ITEM_INTERACT_BLOCKING

@@ -2,6 +2,7 @@
 
 // Root type for cooking machines. See following files for specific implementations.
 /obj/machinery/appliance
+	maintenance_flags = MACHINE_MAINT_STANDARD
 	name = "cooker"
 	desc = "You shouldn't be seeing this!"
 	icon = 'icons/obj/cooking_machines.dmi'
@@ -247,8 +248,7 @@
 		if(wrap)
 			var/result = can_insert(wrap, user)
 			if(!result)
-				if(!(default_deconstruction_screwdriver(user, I)))
-					default_part_replacement(user, I)
+				default_part_replacement(user, I)
 				return TRUE
 			add_content(wrap, user)
 			update_icon()
@@ -259,8 +259,7 @@
 
 	var/result = can_insert(I, user)
 	if(!result)
-		if(!(default_deconstruction_screwdriver(user, I)))
-			default_part_replacement(user, I)
+		default_part_replacement(user, I)
 		return
 
 	if(result == 2)

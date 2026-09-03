@@ -29,6 +29,10 @@
 	COOLDOWN_DECLARE(next_activate)
 	var/activation_cooldown = 3 SECONDS
 
+/obj/item/assembly/Destroy()
+	holder = null
+	return ..()
+
 /obj/item/assembly/proc/holder_movement()
 	return
 
@@ -69,13 +73,14 @@
 		if((!A.secured) && (!secured))
 			attach_assembly(A,user)
 			return
-	if(W.has_tool_quality(TOOL_SCREWDRIVER))
-		if(toggle_secure())
-			to_chat(user, span_notice("\The [src] is ready!"))
-		else
-			to_chat(user, span_notice("\The [src] can now be attached!"))
-		return
 	return ..()
+
+/obj/item/assembly/screwdriver_act(mob/user, obj/item/tool)
+	if(toggle_secure())
+		to_chat(user, span_notice("\The [src] is ready!"))
+	else
+		to_chat(user, span_notice("\The [src] can now be attached!"))
+	return ITEM_INTERACT_SUCCESS
 
 /obj/item/assembly/process()
 	return PROCESS_KILL

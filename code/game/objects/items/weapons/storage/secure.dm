@@ -44,35 +44,39 @@
 			playsound(src, "sparks", 50, 1)
 			return
 
-		if (W.has_tool_quality(TOOL_SCREWDRIVER))
-			if (do_after(user, 2 SECONDS * W.toolspeed, target = src))
-				src.open =! src.open
-				playsound(src, W.usesound, 50, 1)
-				user.show_message(span_notice("You [src.open ? "open" : "close"] the service panel."))
-			return
-		if (istype(W, /obj/item/multitool) && (src.open == 1)&& (!src.l_hacking))
-			user.show_message(span_notice("Now attempting to reset internal memory, please hold."), 1)
-			src.l_hacking = 1
-			if (do_after(user, 10 SECONDS, target = src))
-				if (prob(40))
-					src.l_setshort = 1
-					src.l_set = 0
-					src.code = ""
-					user.show_message(span_notice("Internal memory reset. Please give it a few seconds to reinitialize."), 1)
-					sleep(80)
-					src.l_setshort = 0
-					src.l_hacking = 0
-				else
-					user.show_message(span_warning("Unable to reset internal memory."), 1)
-					src.l_hacking = 0
-			else	src.l_hacking = 0
-			return
 		//At this point you have exhausted all the special things to do when locked
 		// ... but it's still locked.
 		return
 
 	// -> storage/attackby() what with handle insertion, etc
 	..()
+
+/obj/item/storage/secure/screwdriver_act(mob/user, obj/item/tool)
+	if(!locked)
+		return ..()
+	if(do_after(user, 2 SECONDS * tool.toolspeed, target = src))
+		open = !open
+		playsound(src, tool.usesound, 50, TRUE)
+		user.show_message(span_notice("You [open ? "open" : "close"] the service panel."))
+	return ITEM_INTERACT_SUCCESS
+
+/obj/item/storage/secure/multitool_act(mob/user, obj/item/tool)
+	if(!locked || !open || l_hacking)
+		return ..()
+	user.show_message(span_notice("Now attempting to reset internal memory, please hold."), 1)
+	l_hacking = TRUE
+	if(do_after(user, 10 SECONDS, target = src))
+		if(prob(40))
+			l_setshort = TRUE
+			l_set = FALSE
+			code = ""
+			user.show_message(span_notice("Internal memory reset. Please give it a few seconds to reinitialize."), 1)
+			sleep(8 SECONDS)
+			l_setshort = FALSE
+		else
+			user.show_message(span_warning("Unable to reset internal memory."), 1)
+	l_hacking = FALSE
+	return ITEM_INTERACT_SUCCESS
 
 
 /obj/item/storage/secure/MouseDrop(over_object, src_location, over_location)

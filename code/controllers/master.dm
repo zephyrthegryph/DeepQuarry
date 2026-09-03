@@ -203,7 +203,12 @@ ADMIN_VERB(cmd_controller_view_ui, R_SERVER|R_DEBUG, "Controller Overview", "Vie
 			"next_fire" = subsystem.next_fire,
 			"can_fire" = subsystem.can_fire,
 			"doesnt_fire" = !!(subsystem.flags & SS_NO_FIRE),
-			"cost_ms" = subsystem.cost,
+			"cost_ms" = subsystem.wall_cost,
+			"wall_cost_last_ms" = subsystem.wall_cost_last,
+			"cpu_cost_ms" = subsystem.cost,
+			"cpu_cost_last_ms" = subsystem.active_cost_last,
+			"suspended_cost_last_ms" = subsystem.suspended_cost_last,
+			"run_slices_last" = subsystem.run_slices_last,
 			"tick_usage" = subsystem.tick_usage,
 			"usage_per_tick" = average,
 			"tick_overrun" = subsystem.tick_overrun,
@@ -999,6 +1004,11 @@ ADMIN_VERB(cmd_controller_view_ui, R_SERVER|R_DEBUG, "Controller Overview", "Vie
 
 			queue_node_paused = (queue_node.state == SS_PAUSED || queue_node.state == SS_PAUSING)
 			last_type_processed = queue_node
+			queue_node.wall_timer_id ||= "mc-subsystem-[REF(queue_node)]"
+			if(!queue_node_paused)
+				rustg_time_reset(queue_node.wall_timer_id)
+				queue_node.current_run_slices = 0
+			queue_node.current_run_slices++
 
 			queue_node.state = SS_RUNNING
 
@@ -1042,9 +1052,14 @@ ADMIN_VERB(cmd_controller_view_ui, R_SERVER|R_DEBUG, "Controller Overview", "Vie
 			queue_node.ticks = MC_AVERAGE(queue_node.ticks, queue_node.paused_ticks)
 			tick_usage += queue_node.paused_tick_usage
 
-			queue_node.tick_usage = MC_AVERAGE_FAST(queue_node.tick_usage, tick_usage)
+			queue_node.tick_usage = queue_node.tick_usage ? MC_AVERAGE_FAST(queue_node.tick_usage, tick_usage) : tick_usage
 
-			queue_node.cost = MC_AVERAGE_FAST(queue_node.cost, TICK_DELTA_TO_MS(tick_usage))
+			queue_node.cost = queue_node.cost ? MC_AVERAGE_FAST(queue_node.cost, TICK_DELTA_TO_MS(tick_usage)) : TICK_DELTA_TO_MS(tick_usage)
+			queue_node.active_cost_last = TICK_DELTA_TO_MS(tick_usage)
+			queue_node.wall_cost_last = max(rustg_time_milliseconds(queue_node.wall_timer_id), queue_node.active_cost_last)
+			queue_node.wall_cost = queue_node.wall_cost ? MC_AVERAGE_FAST(queue_node.wall_cost, queue_node.wall_cost_last) : queue_node.wall_cost_last
+			queue_node.run_slices_last = max(queue_node.current_run_slices, 1)
+			queue_node.suspended_cost_last = max(queue_node.wall_cost_last - queue_node.active_cost_last, 0)
 			queue_node.paused_ticks = 0
 			queue_node.paused_tick_usage = 0
 
@@ -1155,6 +1170,12 @@ ADMIN_VERB(cmd_controller_view_ui, R_SERVER|R_DEBUG, "Controller Overview", "Vie
 /// Attempts to dump our current profile info into a file, triggered if the MC thinks shit is going down
 /// Accepts a delay in deciseconds of how long ago our last dump can be, this saves causing performance problems ourselves
 /datum/controller/master/proc/AttemptProfileDump(delay)
+	// Drift snapshots serialize BYOND's full proc profile synchronously. If the
+	// full profiler is not explicitly enabled, PROFILE_REFRESH can still return
+	// retained startup data and perform the expensive serialization anyway.
+	// Compact PERF_PROFILE diagnostics remain available through SSprofiler.
+	if(!CONFIG_GET(flag/auto_profile) || CONFIG_GET(flag/forbid_all_profiling))
+		return FALSE
 	var/profile_cooldown = max(delay, 2 MINUTES)
 	if(REALTIMEOFDAY - last_profiled <= profile_cooldown)
 		return FALSE

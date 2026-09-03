@@ -66,6 +66,7 @@
 	SSshuttles.shuttles[src.name] = src
 	if(flags & SHUTTLE_FLAGS_PROCESS)
 		SSshuttles.process_shuttles += src
+		SSshuttles.refresh_processing_shuttle(src)
 	if(flags & SHUTTLE_FLAGS_SUPPLY)
 		if(SSsupply.shuttle)
 			CRASH("A supply shuttle is already defined.")
@@ -75,10 +76,15 @@
 	current_location = null
 	SSshuttles.shuttles -= src.name
 	SSshuttles.process_shuttles -= src
+	SSshuttles.active_process_shuttles -= src
 	SSshuttles.shuttle_logs -= src
 	if(SSsupply.shuttle == src)
 		SSsupply.shuttle = null
 	. = ..()
+
+/datum/shuttle/proc/set_process_state(new_state)
+	process_state = new_state
+	SSshuttles?.refresh_processing_shuttle(src)
 
 // This is called after all shuttles have been initialized by SSshuttles, but before sectors have been initialized.
 // Importantly for subtypes, all shuttles will have been initialized and mothershuttles hooked up by the time this is called.

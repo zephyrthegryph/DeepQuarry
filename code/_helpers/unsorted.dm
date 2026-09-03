@@ -1024,13 +1024,6 @@ GLOBAL_LIST_INIT(common_tools, list(
 	return 0
 
 
-/proc/is_wire_tool(obj/item/I)
-	if(istype(I, /obj/item/multitool) || I.has_tool_quality(TOOL_WIRECUTTER))
-		return TRUE
-	if(istype(I, /obj/item/assembly/signaler))
-		return TRUE
-	return
-
 /proc/is_hot(obj/item/W as obj)
 	switch(W.type)
 		if(/obj/item/weldingtool)

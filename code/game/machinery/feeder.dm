@@ -64,15 +64,20 @@
 		update_icon()
 		return
 
-	if(default_deconstruction_screwdriver(user, W))
-		if(do_after(user, 15, src))
-			to_chat(user, "You deconstruct the feeder.")
-			new /obj/item/stack/material/plastic(src.loc, 4)
-			if(beaker)
-				beaker.loc = get_turf(src)
-				beaker = null
-			qdel(src)
-		return
+
+/obj/machinery/feeder/screwdriver_act(mob/user, obj/item/tool)
+	playsound(src, tool.usesound, 50, TRUE)
+	panel_open = !panel_open
+	to_chat(user, span_notice("You [panel_open ? "open" : "close"] the maintenance hatch of [src]."))
+	update_icon()
+	if(do_after(user, 1.5 SECONDS, target = src))
+		to_chat(user, "You deconstruct the feeder.")
+		new /obj/item/stack/material/plastic(loc, 4)
+		if(beaker)
+			beaker.forceMove(get_turf(src))
+			beaker = null
+		qdel(src)
+	return ITEM_INTERACT_SUCCESS
 
 
 /obj/machinery/feeder/process()

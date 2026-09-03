@@ -31,7 +31,6 @@ GLOBAL_LIST_EMPTY(processed_material_dedup)
 /datum/material/processed_alloy
 	stack_type = /obj/item/stack/material/processed_alloy
 	var/datum/material_batch/batch_template
-	var/effect_charges = SUBSTANCE_INFUSION_CHARGES
 
 /datum/material/processed_alloy/Destroy()
 	QDEL_NULL(batch_template)
@@ -51,10 +50,6 @@ GLOBAL_LIST_EMPTY(processed_material_dedup)
 	material.display_name = batch.display_name()
 	material.use_name = material.display_name
 	material.batch_template = batch.copy_batch()
-	material.effect_charges = clamp(round(1 + batch.purity / 25 - batch.structure[MATERIAL_STRUCTURE_DEFECT] / 20), 1, 6)
-	material.material_effect_charges = material.effect_charges
-	for(var/datum/substance/effect as anything in batch.material_effects)
-		material.add_material_effect(effect)
 	material.hardness = batch.hardness
 	material.integrity = clamp(round(batch.toughness * 2), 5, 250)
 	material.elasticity = clamp(batch.toughness - batch.brittleness * 0.25, 1, 100)
@@ -79,24 +74,28 @@ GLOBAL_LIST_EMPTY(processed_material_dedup)
 		material.phase_change_capacity = clamp(round((cryo_skin + thermal_skin) * material.specific_heat * 4), 1000, 500000)
 	if(batch.surface_layers[MATERIAL_SURFACE_SLIME_CATALYTIC] || batch.additive_units_matching("platinum plating") || batch.additive_units_matching("gold plating"))
 		material.catalytic_activity = clamp(round(batch.purity * 0.7 + batch.corrosion_resistance * 0.3), 1, 100)
-	var/has_crystal = batch.composition[MAT_QUARTZ] || batch.composition[MAT_DIAMOND] || batch.composition[MAT_GLASS]
-	var/has_biological = batch.composition[MAT_BIOMASS] || batch.composition[MAT_FLESH] || batch.composition[MAT_CHITIN] || batch.composition[MAT_ALIENCHITIN]
+	var/has_crystal = batch.composition[MAT_QUARTZ] || batch.composition[MAT_DIAMOND] || batch.composition[MAT_GLASS] || batch.composition[MAT_VOLTAIC_CRYSTAL] || batch.composition[MAT_KINETIC_CRYSTAL] || batch.composition[MAT_LUMEN_CRYSTAL] || batch.composition[MAT_RIFT_GLASS]
+	var/has_biological = batch.composition[MAT_BIOMASS] || batch.composition[MAT_FLESH] || batch.composition[MAT_CHITIN] || batch.composition[MAT_ALIENCHITIN] || batch.composition[MAT_SPORE_BIOMASS]
 	var/particle_conditioned = batch.field_treatments[MATERIAL_FIELD_PARTICLE] || 0
 	if(batch.additive_units_matching("thermal phase catalyst") && thermal_skin && batch.conductivity >= 45)
 		material.thermoelectric_coefficient = clamp((batch.conductivity + batch.heat_resistance) / 200, 0, 1)
 	if(has_crystal && batch.conductivity >= 30 && batch.homogeneity >= 70)
 		material.piezoelectric_coefficient = clamp((batch.conductivity + batch.homogeneity - batch.porosity) / 200, 0, 1)
+	if(batch.composition[MAT_KINETIC_CRYSTAL])
+		var/kinetic_share = batch.composition[MAT_KINETIC_CRYSTAL] / max(batch.amount, 1)
+		material.piezoelectric_coefficient = max(material.piezoelectric_coefficient, clamp(0.68 * kinetic_share * batch.homogeneity / 100, 0, 1))
+	if(batch.composition[MAT_THERMIC_CERAMIC])
+		var/thermic_share = batch.composition[MAT_THERMIC_CERAMIC] / max(batch.amount, 1)
+		material.phase_change_temperature = T0C + 40
+		material.phase_change_capacity = max(material.phase_change_capacity, round(65000 * thermic_share * batch.purity / 100))
+	if(batch.composition[MAT_ETCHING_CERAMIC])
+		material.catalytic_activity = max(material.catalytic_activity, clamp(batch.purity * batch.corrosion_resistance / 100, 0, 100))
 	if(batch.additive_units_matching("conductive dopant") && batch.surface_layers[MATERIAL_SURFACE_SLIME_CONDUCTIVE] && batch.conductivity >= 40 && batch.homogeneity >= 60)
 		material.electrogenic_rate = clamp((batch.conductivity + batch.homogeneity) / 4, 0, 50)
 	if((batch.composition[MAT_MORPHIUM] || (batch.composition[MAT_TITANIUM] && batch.structure[MATERIAL_STRUCTURE_HARDENED] >= 20)) && batch.toughness >= 55)
 		material.shape_recovery_rate = clamp((batch.toughness + batch.homogeneity - batch.internal_stress) / 40, 0, 5)
 		material.shape_recovery_temperature = T0C + 80
-	var/has_field_effect = FALSE
-	for(var/datum/substance/effect as anything in batch.material_effects)
-		if(effect.family == SUBFAM_FIELD)
-			has_field_effect = TRUE
-			break
-	if(has_field_effect || (batch.composition[MAT_PLASTEEL] && batch.structure[MATERIAL_STRUCTURE_PRECIPITATE] >= 20))
+	if(batch.composition[MAT_WARD_METAL] || (batch.composition[MAT_PLASTEEL] && batch.structure[MATERIAL_STRUCTURE_PRECIPITATE] >= 20))
 		material.reactive_energy_capacity = clamp((batch.toughness + batch.hardness) * 25, 0, 5000)
 	if((batch.composition[MAT_SILVER] || batch.additive_units_matching("silver plating")) && batch.corrosion_resistance >= 50)
 		material.antimicrobial_activity = clamp((batch.corrosion_resistance + batch.purity) / 2, 0, 100)
@@ -106,6 +105,8 @@ GLOBAL_LIST_EMPTY(processed_material_dedup)
 		material.biocompatibility = clamp((batch.toughness + batch.homogeneity) / 2, 0, 100)
 	if(batch.porosity >= 18 && (batch.composition[MAT_TITANIUM] || batch.composition[MAT_ALUMINIUM] || batch.composition[MAT_GRAPHITE]))
 		material.gas_sorption_capacity = clamp(batch.porosity / 5 + batch.corrosion_resistance / 20, 0, 25)
+	if(batch.composition[MAT_RIFT_GLASS])
+		material.gas_sorption_capacity = max(material.gas_sorption_capacity, clamp(batch.porosity / 4 + batch.purity / 8, 0, 25))
 	if(batch.porosity >= 22 && batch.corrosion_resistance >= 45)
 		material.reagent_porosity = clamp(batch.porosity / 4, 0, 25)
 	var/weighted_density = 0
@@ -144,6 +145,8 @@ GLOBAL_LIST_EMPTY(processed_material_dedup)
 		material.radiovoltaic_efficiency = clamp((batch.conductivity + material.radioactivity) / 200, 0, 1)
 	if((batch.composition[MAT_URANIUM] || batch.composition[MAT_TRITIUM]) && has_crystal && batch.homogeneity >= 65 && particle_conditioned >= 20)
 		material.scintillation_efficiency = clamp((batch.homogeneity + material.reflectivity * 100) / 200, 0, 1)
+	if(batch.composition[MAT_LUMEN_CRYSTAL] && batch.homogeneity >= 60)
+		material.scintillation_efficiency = max(material.scintillation_efficiency, clamp((batch.homogeneity + batch.purity) / 220, 0, 1))
 	material.toxicity = max(0, round(weighted_toxicity * (1 - batch.corrosion_resistance / 200)))
 	material.radiation_resistance = max(0, round(weighted_radiation_resistance + material.density / 12))
 	material.conductive = batch.conductivity >= 15
@@ -159,7 +162,6 @@ GLOBAL_LIST_EMPTY(processed_material_dedup)
 			dominant_amount = batch.composition[component]
 	if(dominant)
 		material.icon_colour = dominant.icon_colour
-		material.material_class = dominant.material_class
 	GLOB.name_to_material[key] = material
 	GLOB.processed_material_dedup[fingerprint] = key
 	return key
@@ -171,7 +173,11 @@ GLOBAL_LIST_EMPTY(processed_material_dedup)
 	if(!material_key)
 		return null
 	var/stack_amount = clamp(round(amount || batch.amount), 1, MATERIAL_SCIENCE_MAX_BATCH)
-	return new /obj/item/stack/material/processed_alloy(location, stack_amount, material_key)
+	// Material stacks require a physical location during atom initialization.
+	// Stack merging is an explicit later interaction, so constructing directly
+	// on the output turf preserves both initialization and the returned ref.
+	var/obj/item/stack/material/processed_alloy/stock = new /obj/item/stack/material/processed_alloy(location, stack_amount, material_key)
+	return stock
 
 /proc/material_batch_from_stack(obj/item/stack/material/stack)
 	if(!istype(stack) || !stack.material)
@@ -201,6 +207,24 @@ GLOBAL_LIST_EMPTY(processed_material_dedup)
 	if(material)
 		color = material.icon_colour
 		set_economic_provenance(DEPARTMENT_RESEARCH, max(material.supply_conversion_value, 1) * amount)
+
+/obj/item/stack/material/processed_alloy/proc/set_processed_material(material_name)
+	var/datum/material/new_material = get_material_by_name(material_name)
+	if(!istype(new_material, /datum/material/processed_alloy))
+		return FALSE
+	default_type = material_name
+	material = new_material
+	recipes = material.get_recipes()
+	stacktype = material.stack_type
+	color = material.icon_colour
+	if(material.conductive)
+		flags &= ~NOCONDUCT
+	else
+		flags |= NOCONDUCT
+	matter = material.get_matter()
+	update_strings()
+	set_economic_provenance(DEPARTMENT_RESEARCH, max(material.supply_conversion_value, 1) * amount)
+	return TRUE
 
 /obj/item/stack/material/processed_alloy/examine(mob/user)
 	. = ..()

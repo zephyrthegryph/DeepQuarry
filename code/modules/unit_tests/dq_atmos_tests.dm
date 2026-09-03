@@ -9,6 +9,18 @@
 //      types initialize with their preset gas content
 //   5. SSair init — gas singleton metadata reached Rust via auxtools_atmos_init
 
+/// Publish a synthetic fixture through the same Rust-authoritative port graph
+/// used by map setup. Allocate every port before queueing edges so fixture order
+/// cannot hide a missing reciprocal connection.
+/proc/dq_atmos_test_publish_rust_pipenets(list/machines)
+	for(var/obj/machinery/atmospherics/machine as anything in machines)
+		machine.rust_allocate_pipe_ports()
+	for(var/obj/machinery/atmospherics/machine as anything in machines)
+		machine.rust_register_pipe_port_data()
+	for(var/obj/machinery/atmospherics/machine as anything in machines)
+		machine.rust_register_pipe_edges()
+	SSair.rust_commit_pending_pipenets()
+
 /// Verifies that verdigris.dll is actually loaded — verdigris_version() should
 /// return a non-empty string. If empty, the Rust library failed to load and
 /// the rest of LINDA is running on /tg/'s pure-DM gas_mixture impl.
@@ -517,6 +529,33 @@
 	TEST_ASSERT(has_pressure_line, "analyzer missing 'Pressure' line: [json_encode(result)]")
 	TEST_ASSERT(has_o2_line, "analyzer missing 'Oxygen' line: [json_encode(result)]")
 	TEST_ASSERT(has_n2_line, "analyzer missing 'Nitrogen' line: [json_encode(result)]")
+
+
+/// Exercises the PDA app's actual update path. Passing its turf directly to the
+/// gas-mixture scanner used to runtime on every UI refresh after the LINDA cutover.
+/datum/unit_test/dq_pda_atmos_scanner_reads_turf_air
+
+/datum/unit_test/dq_pda_atmos_scanner_reads_turf_air/Run()
+	var/turf/simulated/floor/location
+	for(var/turf/simulated/floor/candidate in world)
+		if(candidate.air && !candidate.blocks_air)
+			location = candidate
+			break
+	TEST_ASSERT_NOTNULL(location, "unit-test room has no floor for the PDA atmospheric scanner")
+	var/mob/living/carbon/human/user = allocate(/mob/living/carbon/human, location)
+	var/datum/data/pda/app/atmos_scanner/scanner = allocate(/datum/data/pda/app/atmos_scanner)
+	var/list/data = list()
+
+	scanner.update_ui(user, data)
+
+	var/list/aircontents = data["aircontents"]
+	TEST_ASSERT(islist(aircontents), "PDA atmospheric scanner did not produce a scan-data list")
+	TEST_ASSERT(length(aircontents), "PDA atmospheric scanner produced an empty scan-data list")
+	var/list/pressure_row = aircontents[1]
+	TEST_ASSERT(islist(pressure_row), "PDA atmospheric scanner returned chat text instead of structured rows")
+	TEST_ASSERT_EQUAL(pressure_row["entry"], "Pressure", "PDA atmospheric scanner's first row is not pressure")
+	TEST_ASSERT(isnum(pressure_row["val"]), "PDA atmospheric scanner pressure is not numeric")
+	TEST_ASSERT_NOTNULL(pressure_row["bad_low"], "PDA atmospheric scanner omitted warning thresholds")
 
 
 /// Verifies gas_mixture.merge() (auxmos byondapi-bound) preserves total moles
@@ -1242,12 +1281,21 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_air_snapshots)
 		var/turf/neighbor = get_step(floor, direction)
 		if(!neighbor)
 			continue
+		var/contents_block = FALSE
+		for(var/obj/blocker in neighbor.contents + floor.contents)
+			var/turf/other_side = blocker.loc == neighbor ? floor : neighbor
+			if(!QDELETED(blocker) && !CANATMOSPASS(blocker, other_side, FALSE))
+				contents_block = TRUE
+				break
+		if(contents_block)
+			continue
 		// If a neighbor is already space, just use it (and record so we can put
 		// it back). The test-room walls are /turf/closed/indestructible; isolate
 		// helpers leave /turf/simulated/wall. Either way they block air, so pick
 		// a solid neighbor and breach it.
 		if(istype(neighbor, /turf/space))
 			GLOB.dq_atmos_test_walled_turfs[neighbor] = neighbor.type
+			neighbor.air_update_turf(TRUE, FALSE)
 			floor.air_update_turf(TRUE, FALSE)
 			return neighbor
 		if(neighbor.blocks_air || istype(neighbor, /turf/simulated/wall))
@@ -1255,6 +1303,7 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_air_snapshots)
 			var/turf/space/created = neighbor.ChangeTurf(/turf/space)
 			// Make sure the floor side recomputes its adjacency too, in case the
 			// space turf's own recompute raced the floor's active state.
+			created.air_update_turf(TRUE, FALSE)
 			floor.air_update_turf(TRUE, FALSE)
 			return created
 	return null
@@ -2164,45 +2213,49 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_air_snapshots)
 		"pressure delta didn't shrink: was [initial_delta], now [final_delta]")
 
 
-/// reconcile_air on a /datum/pipe_network: pool gases across all member
-/// mixtures and redistribute proportionally to volume. This is the rewrite of
-/// the deleted equalize_gases — pipe network gas balancing.
+/// A connected pipenet owns exactly one gas mixture. Every pipeline observes a
+/// mutation immediately without a reconciliation pass.
 /datum/unit_test/dq_pipenet_reconcile_air_equalizes
 
 /datum/unit_test/dq_pipenet_reconcile_air_equalizes/Run()
 	var/datum/pipe_network/net = new
-	var/datum/gas_mixture/pipe_a = new(70)
-	pipe_a.adjust_gas(/datum/gas/oxygen, 100)
-	pipe_a.set_temperature(T20C)
-	var/datum/gas_mixture/pipe_b = new(70)
-	pipe_b.set_temperature(T0C + 80) // hotter, empty
-	net.gases += pipe_a
-	net.gases += pipe_b
-	for(var/datum/gas_mixture/m in net.gases)
-		net.volume += m.return_volume()
-	var/initial_total = pipe_a.total_moles() + pipe_b.total_moles()
-	var/initial_thermal = pipe_a.thermal_energy() + pipe_b.thermal_energy()
+	var/datum/pipeline/line_a = new
+	line_a.air = new(70)
+	line_a.volume = 70
+	line_a.members = list()
+	line_a.edges = list()
+	line_a.network = net
+	line_a.air.adjust_gas(/datum/gas/oxygen, 100)
+	line_a.air.set_temperature(T20C)
+	var/datum/pipeline/line_b = new
+	line_b.air = new(70)
+	line_b.volume = 70
+	line_b.members = list()
+	line_b.edges = list()
+	line_b.network = net
+	line_b.air.set_temperature(T0C + 80)
+	var/initial_total = line_a.air.total_moles() + line_b.air.total_moles()
+	var/initial_thermal = line_a.air.thermal_energy() + line_b.air.thermal_energy()
+	net.add_line_member(line_a)
+	net.add_line_member(line_b)
+	net.update_network_gases()
 
-	net.reconcile_air()
-
-	var/final_total = pipe_a.total_moles() + pipe_b.total_moles()
-	var/final_thermal = pipe_a.thermal_energy() + pipe_b.thermal_energy()
+	TEST_ASSERT(line_a.air == net.air && line_b.air == net.air, \
+		"connected pipelines did not share the authoritative network mixture")
+	TEST_ASSERT_EQUAL(length(net.gases), 1, "pipenet compatibility gas list contains member mirrors")
+	var/final_total = net.air.total_moles()
+	var/final_thermal = net.air.thermal_energy()
 	TEST_ASSERT(abs(final_total - initial_total) < 0.5, \
-		"reconcile_air lost mass: [initial_total] → [final_total]")
-	// Both pipes have equal volume → they should hold equal moles after reconcile.
-	var/a_after = pipe_a.total_moles()
-	var/b_after = pipe_b.total_moles()
-	TEST_ASSERT(abs(a_after - b_after) < 0.5, \
-		"reconcile_air didn't equalize equal-volume pipes: A=[a_after] B=[b_after]")
-	// Temperature equalizes to the moles-weighted thermal-energy average.
-	var/pipe_a_temp = pipe_a.return_temperature()
-	var/pipe_b_temp = pipe_b.return_temperature()
-	TEST_ASSERT(abs(pipe_a_temp - pipe_b_temp) < 1, \
-		"reconcile_air didn't equalize temperatures: A=[pipe_a_temp] B=[pipe_b_temp]")
-	// Thermal energy should be approximately conserved (within rounding).
+		"authoritative pipenet pooling lost mass: [initial_total] → [final_total]")
 	TEST_ASSERT(abs(final_thermal - initial_thermal) < (initial_thermal * 0.05), \
-		"reconcile_air lost thermal energy: [initial_thermal] → [final_thermal] (>5% loss)")
+		"authoritative pipenet pooling lost thermal energy: [initial_thermal] → [final_thermal]")
+	var/before_mutation = line_b.air.total_moles()
+	line_a.air.adjust_gas(/datum/gas/nitrogen, 10)
+	TEST_ASSERT_EQUAL(line_b.air.total_moles(), before_mutation + 10, \
+		"a connected pipeline required reconciliation to observe a gas mutation")
 	qdel(net)
+	qdel(line_a)
+	qdel(line_b)
 
 
 /// Vent pump integration: build a real vent_pump on a floor, seed its
@@ -2329,6 +2382,17 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_air_snapshots)
 
 	var/obj/machinery/power/supermatter/SM = new(T)
 	TEST_ASSERT_NOTNULL(SM, "supermatter failed to construct")
+	var/obj/item/projectile/beam/emitter/emitter_shot = new(T)
+	// Live emitters calculate this from their power draw immediately before firing.
+	emitter_shot.damage = 100
+	var/initial_power = SM.power
+	for(var/i in 1 to 100)
+		SM.bullet_act(emitter_shot)
+	TEST_ASSERT(!QDELETED(SM), "repeated emitter impacts deleted the supermatter through generic machinery damage")
+	TEST_ASSERT(SM.power > initial_power, "emitter impacts did not excite the supermatter")
+	SM.take_damage(SM.max_integrity * 2, BURN, LASER, sound_effect = FALSE)
+	TEST_ASSERT(!QDELETED(SM), "generic obj_integrity damage deleted the supermatter instead of using its delamination model")
+	qdel(emitter_shot)
 	qdel(SM)
 
 
@@ -2546,10 +2610,10 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_air_snapshots)
 
 
 // =====================================================================
-// Pipenet auto-build via build_network
+// Rust-authoritative pipenet materialization
 // =====================================================================
 
-/// Two adjacent pipes constructed and linked via build_network should end up
+/// Two adjacent pipes published through Rust should end up
 /// in the same /datum/pipe_network with a shared air mixture. This is the
 /// production "pipes load from map → atmos_init builds the network" flow.
 /datum/unit_test/dq_pipes_build_into_one_network
@@ -2577,7 +2641,7 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_air_snapshots)
 	// Run atmos_init to wire them. Pipes find each other via initialize_directions.
 	P1.atmos_init()
 	P2.atmos_init()
-	P1.build_network()
+	dq_atmos_test_publish_rust_pipenets(list(P1, P2))
 
 	// After build_network, both pipes should share a pipe_network's gas mixture.
 	TEST_ASSERT_NOTNULL(P1.parent, "P1.parent (pipeline) is null after build_network")
@@ -2635,6 +2699,11 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_air_snapshots)
 	D.mode = 1 // DISPOSALMODE_CHARGING is file-local to disposal_machines.dm.
 	D.stat &= ~(NOPOWER|BROKEN)
 	D.air_contents.clear()
+	// Prior atmos tests deliberately evacuate map turfs. Supply a controlled
+	// actionable atmosphere so this test measures retry scheduling, not suite order.
+	T.return_air().clear()
+	T.return_air().set_temperature(T20C)
+	T.return_air().adjust_moles(/datum/gas/oxygen, 10)
 	TEST_ASSERT(D.can_pressurize_from(T.return_air()), "test floor has no pumpable atmosphere")
 	STOP_MACHINE_PROCESSING(D)
 	D.retry_charge_after_power_restore()
@@ -2680,15 +2749,36 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_air_snapshots)
 	A.charging = 0
 	A.power_distributor.charging = 0
 	START_MACHINE_PROCESSING(A)
+	var/process_result
 	for(var/i in 1 to 5)
-		A.process()
+		process_result = A.process()
 		if(!(A in SSmachines.processing_machines))
 			break
 	TEST_ASSERT(!(A in SSmachines.processing_machines), \
 		"stable full APC remained in timed machinery processing")
+	TEST_ASSERT_EQUAL(process_result, PROCESS_KILL, \
+		"stable APC subscribed to dependencies without telling the scheduler to retire its copied entry")
 	var/datum/weakref/apc_ref = WEAKREF(A)
 	TEST_ASSERT(SSmachines.reactive_sleepers[apc_ref.reference], \
 		"stable full APC did not capture dependency revisions before sleeping")
+	var/old_stat = A.stat
+	A.stat |= BROKEN
+	TEST_ASSERT_EQUAL(A.process(), PROCESS_KILL, \
+		"broken APC remained enrolled in machinery processing")
+	A.stat = old_stat
+
+
+/datum/unit_test/dq_opaque_movable_detaches_from_turf_before_delete
+
+/datum/unit_test/dq_opaque_movable_detaches_from_turf_before_delete/Run()
+	var/list/pair = dq_atmos_test_find_clear_pipe_run(1)
+	TEST_ASSERT_NOTNULL(pair, "no clear floor for opaque movable lifecycle test")
+	var/turf/T = pair[1]
+	var/obj/effect/expl_particles/particle = new(T)
+	TEST_ASSERT(particle in T.opacity_sources, "opaque particle did not register as a turf opacity source")
+	qdel(particle)
+	TEST_ASSERT(!(particle in T.opacity_sources), \
+		"deleted opaque particle remained retained by the turf opacity source list")
 
 
 /datum/unit_test/dq_airlock_sensor_wakes_on_pressure
@@ -2764,7 +2854,7 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_air_snapshots)
 // Pipenet dispatch (catches "START_PROCESSING_PIPENET targets wrong list")
 // =====================================================================
 
-/// build_network() registers a /datum/pipe_network through START_PROCESSING_PIPENET.
+/// Rust materialization registers a /datum/pipe_network through START_PROCESSING_PIPENET.
 /// That macro must point at SSair.networks (where SSair.process_pipenets reads),
 /// NOT SSmachines.networks (whose process_pipenets is a stub on this fork).
 /// If the macro is mis-targeted, the network builds but reconcile_air never
@@ -2789,7 +2879,7 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_air_snapshots)
 
 	P1.atmos_init()
 	P2.atmos_init()
-	P1.build_network()
+	dq_atmos_test_publish_rust_pipenets(list(P1, P2))
 
 	TEST_ASSERT_NOTNULL(P1.parent, "P1.parent (pipeline) null after build_network")
 	TEST_ASSERT_NOTNULL(P1.parent.network, "pipeline has no parent network after build_network")
@@ -2802,10 +2892,13 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_air_snapshots)
 	TEST_ASSERT(!(N in SSair.networks), \
 		"clean sealed pipe_network remained scheduled after reconciliation")
 	N.mark_dirty()
-	TEST_ASSERT(N in SSair.networks, \
-		"mark_dirty() did not reenroll a sleeping pipe_network")
+	TEST_ASSERT(!(N in SSair.networks), \
+		"semantic gas revision incorrectly reenrolled a sleeping pipe_network")
 	TEST_ASSERT(N.revision > initial_revision, \
 		"mark_dirty() did not advance the pipe_network mutation generation")
+	N.mark_topology_dirty()
+	TEST_ASSERT(N in SSair.networks, \
+		"mark_topology_dirty() did not reenroll a sleeping pipe_network")
 	// SSmachines.networks was removed entirely (see machines.dm). If
 	// a future merge re-adds it, the macro's redirect should still keep
 	// pipenets out of it.
@@ -2870,8 +2963,7 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_air_snapshots)
 /// Build a 3-pipe straight run A-B-C, destroy B, verify A and C now belong
 /// to separate (or no) pipelines. Then build a replacement bridging pipe
 /// at B's old location, verify A and C re-merge into a single pipeline.
-/// Exercises the lazy-rebuild path in pipe.Destroy → all-members-parent=null
-/// → next return_air rebuilds.
+/// Exercises Rust's atomic persistent-region split and merge transitions.
 /datum/unit_test/dq_pipe_split_then_merge_rebuilds_pipeline
 
 /datum/unit_test/dq_pipe_split_then_merge_rebuilds_pipeline/Run()
@@ -2898,26 +2990,26 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_air_snapshots)
 	PA.atmos_init()
 	PB.atmos_init()
 	PC.atmos_init()
-	PA.build_network()
+	dq_atmos_test_publish_rust_pipenets(list(PA, PB, PC))
 
 	// Sanity: all three share one pipeline.
 	TEST_ASSERT(PA.parent && PA.parent == PB.parent && PB.parent == PC.parent, \
 		"3-pipe straight run didn't form one pipeline: PA=[PA.parent] PB=[PB.parent] PC=[PC.parent]")
 	var/datum/pipeline/initial_pipeline = PA.parent
 
-	// Kill the middle pipe. /datum/pipeline.Destroy nulls every member's
-	// parent. PA and PC should be orphaned, ready to lazy-rebuild.
+	// Kill the middle pipe. Rust must retire the old wrapper once and publish
+	// two replacement regions immediately.
 	qdel(PB)
-	TEST_ASSERT_NULL(PA.parent, "PA.parent not nulled after destroying middle pipe — pipeline didn't tear down properly")
-	TEST_ASSERT_NULL(PC.parent, "PC.parent not nulled after destroying middle pipe")
+	TEST_ASSERT_NOTNULL(PA.parent, "PA did not receive a replacement pipeline after split")
+	TEST_ASSERT_NOTNULL(PC.parent, "PC did not receive a replacement pipeline after split")
+	TEST_ASSERT(PA.parent != PC.parent, "split Rust region left PA and PC in one pipeline")
+	TEST_ASSERT_NULL(PB.parent, "destroyed pipe retained its pipeline back-reference")
+	TEST_ASSERT_NULL(initial_pipeline.members, "destroyed pipeline retained its member roster")
+	TEST_ASSERT_NULL(initial_pipeline.edges, "destroyed pipeline retained its edge roster")
+	TEST_ASSERT_NULL(initial_pipeline.leaks, "destroyed pipeline retained its leak roster")
+	TEST_ASSERT_NULL(initial_pipeline.network, "destroyed pipeline retained its network")
+	TEST_ASSERT_NULL(initial_pipeline.air, "destroyed pipeline retained its gas mixture")
 
-	// Trigger lazy rebuild via return_air().
-	PA.return_air()
-	PC.return_air()
-	TEST_ASSERT_NOTNULL(PA.parent, "PA didn't lazy-rebuild a pipeline after split")
-	TEST_ASSERT_NOTNULL(PC.parent, "PC didn't lazy-rebuild a pipeline after split")
-	TEST_ASSERT(PA.parent != PC.parent, \
-		"PA and PC ended up in the SAME pipeline after middle pipe destroyed — split didn't isolate them")
 	TEST_ASSERT(PA.parent != initial_pipeline, "PA's rebuilt pipeline is the old (destroyed) one — stale reference")
 
 	// Insert a fresh bridging pipe at B's slot.
@@ -2925,11 +3017,7 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_air_snapshots)
 	PB2.dir = axis
 	PB2.initialize_directions = axis
 	PB2.atmos_init()
-	// on_construction would normally fire build_network with new_attachment=TRUE
-	// on every neighbor. Simulate that to merge them back.
-	PA.build_network(TRUE)
-	PC.build_network(TRUE)
-	PB2.build_network(TRUE)
+	dq_atmos_test_publish_rust_pipenets(list(PB2))
 
 	TEST_ASSERT_NOTNULL(PA.parent, "PA.parent null after merge")
 	TEST_ASSERT_NOTNULL(PC.parent, "PC.parent null after merge")
@@ -2940,6 +3028,21 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_air_snapshots)
 	qdel(PA)
 	qdel(PB2)
 	qdel(PC)
+
+/datum/unit_test/dq_pipeline_edge_reverse_ownership
+
+/datum/unit_test/dq_pipeline_edge_reverse_ownership/Run()
+	var/turf/test_turf = get_turf(run_loc_floor_bottom_left ? run_loc_floor_bottom_left : locate(1, 1, 1))
+	var/obj/machinery/atmospherics/pipe/simple/edge = new(test_turf)
+	var/datum/pipeline/first = new
+	var/datum/pipeline/second = new
+	first.add_edge(edge)
+	second.add_edge(edge)
+	TEST_ASSERT((first in edge.edge_pipelines) && (second in edge.edge_pipelines), "A pipe did not record every foreign pipeline edge owner.")
+	qdel(edge)
+	TEST_ASSERT(!(edge in first.edges) && !(edge in second.edges), "A destroyed pipe remained in a foreign pipeline edge roster.")
+	qdel(first)
+	qdel(second)
 
 
 // =====================================================================
@@ -3059,9 +3162,7 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_air_snapshots)
 	PA.atmos_init()
 	VL.atmos_init()
 	PB.atmos_init()
-	PA.build_network()
-	PB.build_network()
-	VL.build_network()
+	dq_atmos_test_publish_rust_pipenets(list(PA, PB, VL))
 
 	// Closed: PA and PB sit in separate pipelines.
 	TEST_ASSERT_NOTNULL(PA.parent, "PA pipeline null after build")
@@ -3072,10 +3173,8 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_air_snapshots)
 	// Open the valve and rebuild — they should merge.
 	VL.open = TRUE
 	VL.update_icon()
-	// Force a network rebuild now that the gate is open.
-	PA.build_network(TRUE)
-	PB.build_network(TRUE)
-	VL.build_network(TRUE)
+	// Publish the valve's newly enabled internal edge.
+	VL.rust_register_pipe_topology()
 
 	// After opening, the valve's two network slots should both reference
 	// the same pipenet, and PA/PB pipelines should land in it together.
@@ -3427,8 +3526,13 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_air_snapshots)
 	// Vacuum is a real /datum/gas_mixture (immutable space mix), never null.
 	TEST_ASSERT_NOTNULL(S.air, "/turf/space.air is null — /turf/open/Initialize didn't create the vacuum mixture")
 	// ChangeTurf + air_update_turf must have wired floor↔space both ways.
+	var/list/space_blockers = list()
+	for(var/obj/blocker in S.contents + A.contents)
+		var/turf/other_side = blocker.loc == S ? A : S
+		if(!QDELETED(blocker) && !CANATMOSPASS(blocker, other_side, FALSE))
+			space_blockers += "[blocker.type](loc=[COORD(blocker)],density=[blocker.density],pass=[blocker.can_atmos_pass])"
 	TEST_ASSERT(A.atmos_adjacent_turfs && A.atmos_adjacent_turfs[S], \
-		"floor↔space adjacency wasn't wired after breaching the wall to space")
+		"floor↔space adjacency wasn't wired after breaching the wall to space (A=[COORD(A)] S=[COORD(S)] dir=[get_dir(A, S)] A.blocks=[A.blocks_air] S.blocks=[S.blocks_air] A.pass=[CANATMOSPASS(A, A, FALSE)] S.pass=[CANATMOSPASS(S, A, FALSE)] blockers=[jointext(space_blockers, ",")] A.adj=[json_encode(A.atmos_adjacent_turfs)] S.adj=[json_encode(S.atmos_adjacent_turfs)])")
 
 	for(var/datum/gas/g as anything in A.air.get_gases())
 		A.air.set_moles(g, 0)
@@ -3452,10 +3556,12 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_air_snapshots)
 	var/started = world.time
 	var/final_pressure
 	var/final_moles
+	var/rapid_cadence_seen = FALSE
 	while(SSair.times_fired < baseline + 15)
 		final_pressure = A.air.return_pressure()
 		final_moles = A.air.total_moles()
-		if(final_pressure < initial_pressure && final_moles < initial_moles)
+		rapid_cadence_seen ||= SSair.wait == 1
+		if(final_pressure < initial_pressure * 0.4 && final_moles < initial_moles * 0.4)
 			break
 		if(world.time - started > max_wait)
 			break
@@ -3463,6 +3569,26 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_air_snapshots)
 
 	final_pressure = A.air.return_pressure()
 	final_moles = A.air.total_moles()
+
+	// A one-cell breach can evacuate completely in one solver generation. That
+	// proves fast drainage but cannot prove scheduling cadence. Hold the pressure
+	// source open for a separate interval and count actual subsystem fires.
+	var/rapid_fire_count = 0
+	var/last_fire_count = SSair.times_fired
+	var/last_fire_time = world.time
+	var/worst_rapid_interval = 0
+	var/cadence_deadline = world.time + 12
+	while(world.time < cadence_deadline && rapid_fire_count < 4)
+		A.air.set_moles(/datum/gas/nitrogen, MOLES_N2STANDARD * 5)
+		A.air.set_temperature(T20C)
+		sleep(1)
+		if(SSair.times_fired != last_fire_count)
+			var/fire_interval = world.time - last_fire_time
+			if(SSair.wait == 1)
+				rapid_fire_count += SSair.times_fired - last_fire_count
+				worst_rapid_interval = max(worst_rapid_interval, fire_interval)
+			last_fire_count = SSair.times_fired
+			last_fire_time = world.time
 
 	// Restore baseline air on A and roll the breached wall + isolation walls back
 	// to their original turf types so later tests see a clean sealed room.
@@ -3473,6 +3599,15 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_air_snapshots)
 		"pressurised floor adjacent to space didn't depressurize: [initial_pressure] → [final_pressure]")
 	TEST_ASSERT(final_moles < initial_moles, \
 		"depressurization didn't drain moles: [initial_moles] → [final_moles]")
+	TEST_ASSERT(final_pressure < initial_pressure * 0.4, \
+		"explosive decompression was too slow: pressure only fell [initial_pressure] → [final_pressure] in [SSair.times_fired - baseline] atmos cycles")
+	TEST_ASSERT(rapid_cadence_seen, \
+		"breach-scale pressure gradient never raised SSair to its 10 Hz cadence (urgency=[SSair.async_pressure_urgency], wait=[SSair.wait])")
+	TEST_ASSERT(rapid_fire_count >= 3, \
+		"10 Hz was only configured, not executed: observed [rapid_fire_count] high-gradient SSair fires (worst interval=[worst_rapid_interval]ds)")
+	TEST_ASSERT(worst_rapid_interval <= 2, \
+		"high-gradient SSair did not sustain a 10 Hz-equivalent cadence: worst observed interval was [worst_rapid_interval]ds")
+	log_runtime("ATMOS_DECOMPRESSION_PROOF pressure=[round(initial_pressure, 0.01)]->[round(final_pressure, 0.01)]kPa moles=[round(initial_moles, 0.01)]->[round(final_moles, 0.01)] cycles=[SSair.times_fired - baseline] sustained_rapid_fires=[rapid_fire_count] worst_interval_ds=[worst_rapid_interval]")
 
 
 /// Full atmos cycle: vent_pump pressurizes a turf, vent_scrubber on the
@@ -3697,6 +3832,7 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_air_snapshots)
 	var/obj/machinery/alarm/A = new(T)
 	A.update_area()
 	A.set_initial_TLV()
+	A.alarm_area.main_air_alarm = WEAKREF(A)
 	A.process()
 	var/datum/weakref/alarm_ref = WEAKREF(A)
 	TEST_ASSERT(SSmachines.sleeping_gas_devices[alarm_ref.reference], \
@@ -3782,10 +3918,13 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	var/turf_mixture_id = V.sleeping_turf_mixture_id
 	var/list/original_subscribers = SSmachines.gas_mixture_subscribers["[turf_mixture_id]"]
 	T.air.adjust_moles(/datum/gas/oxygen, 5)
-	SSmachines.wake_dirty_gas_subscribers()
+	while(!SSmachines.wake_dirty_gas_subscribers())
+		stoplag()
 	TEST_ASSERT(!SSmachines.hibernating_vents[vent_ref.reference], "pressure change did not wake vent")
-	TEST_ASSERT(!original_subscribers[vent_ref.reference], "waking retained a stale gas subscription")
+	TEST_ASSERT(original_subscribers[vent_ref.reference], "waking discarded the vent's reusable gas subscription")
 	SSmachines.hibernate_vent(V)
+	TEST_ASSERT_EQUAL(SSmachines.gas_mixture_subscribers["[turf_mixture_id]"], original_subscribers, \
+		"re-hibernating replaced an unchanged gas subscriber collection")
 	TEST_ASSERT(SSmachines.gas_mixture_subscribers["[turf_mixture_id]"][vent_ref.reference], \
 		"re-hibernating did not restore the gas subscription")
 
@@ -3794,13 +3933,15 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	A.set_initial_TLV()
 	SSmachines.hibernate_air_alarm(A)
 	T.air.adjust_moles(/datum/gas/plasma, 1)
-	SSmachines.wake_dirty_gas_subscribers()
+	while(!SSmachines.wake_dirty_gas_subscribers())
+		stoplag()
 	TEST_ASSERT(A.datum_flags & DF_ISPROCESSING, "composition change did not wake air alarm")
 
 	var/obj/machinery/air_sensor/S = new(T)
 	SSmachines.hibernate_air_sensor(S)
 	T.air.set_temperature(T.air.return_temperature() + 5)
-	SSmachines.wake_dirty_gas_subscribers()
+	while(!SSmachines.wake_dirty_gas_subscribers())
+		stoplag()
 	TEST_ASSERT(S.datum_flags & DF_ISPROCESSING, "temperature change did not wake air sensor")
 
 	qdel(V)
@@ -3974,16 +4115,20 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	drain_dirty_gas_mixtures()
 	var/obj/machinery/door/firedoor/F = new(T)
 	F.density = TRUE
-	F.next_process_time = 0
 	TEST_ASSERT_EQUAL(F.process(), PROCESS_KILL, "stable closed firedoor retained timed polling")
 	var/datum/weakref/firedoor_ref = WEAKREF(F)
 	TEST_ASSERT(SSmachines.sleeping_gas_devices[firedoor_ref.reference], "closed firedoor did not register gas dependencies")
 	T.air.set_temperature(T.air.return_temperature() + 10)
+	SSmachines.wake_dirty_gas_subscribers()
+	TEST_ASSERT(!(F in SSmachines.processing_machines), "harmless in-band temperature drift woke a closed firedoor")
+	T.air.set_temperature(convert_c2k(60))
 	for(var/firedoor_i in 1 to 4096)
 		SSmachines.wake_dirty_gas_subscribers()
 		if(F in SSmachines.processing_machines)
 			break
 	TEST_ASSERT(F in SSmachines.processing_machines, "temperature change did not wake closed firedoor")
+	TEST_ASSERT_EQUAL(F.process(), PROCESS_KILL, "dependency wake left a firedoor polling after evaluating its state")
+	TEST_ASSERT(!(F in SSmachines.processing_machines), "early-woken firedoor did not return to dependency sleep")
 	qdel(F)
 
 /datum/unit_test/dq_unpowered_empty_light_hibernates
@@ -3996,6 +4141,19 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	L.auto_flicker = FALSE
 	L.cell.charge = 0
 	TEST_ASSERT_EQUAL(L.process(), PROCESS_KILL, "unpowered light without emergency charge retained timed polling")
+	qdel(L)
+
+/datum/unit_test/dq_emergency_light_discharge_is_timer_driven
+
+/datum/unit_test/dq_emergency_light_discharge_is_timer_driven/Run()
+	var/turf/test_turf = get_turf(run_loc_floor_bottom_left ? run_loc_floor_bottom_left : locate(1, 1, 1))
+	var/obj/machinery/light/L = new(test_turf)
+	L.stat |= NOPOWER
+	L.emergency_mode = TRUE
+	L.auto_flicker = FALSE
+	L.begin_emergency_discharge()
+	TEST_ASSERT(L.emergency_discharge_timer, "emergency light did not schedule its discharge timer")
+	TEST_ASSERT(!(L in SSobj.processing), "ordinary emergency light retained SSobj polling")
 	qdel(L)
 
 /datum/unit_test/dq_idle_cooker_hibernates
@@ -4082,7 +4240,12 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 		SSmachines.wake_dirty_gas_subscribers()
 		if(canister.datum_flags & DF_ISPROCESSING)
 			break
-	TEST_ASSERT(canister.datum_flags & DF_ISPROCESSING, "closed canister did not wake after its contents changed")
+	// The live subsystem may consume the wake and settle the inert canister back
+	// to its dependency subscription before this test regains execution. Both
+	// states prove delivery; being neither active nor resubscribed is stale.
+	var/canister_active = canister.datum_flags & DF_ISPROCESSING
+	var/canister_resubscribed = SSmachines.sleeping_gas_devices[canister_ref.reference] && !isnull(canister.sleeping_mixture_id)
+	TEST_ASSERT(canister_active || canister_resubscribed, "closed canister was stranded after its contents changed")
 	STOP_MACHINE_PROCESSING(canister)
 	canister.connect(C)
 	TEST_ASSERT_EQUAL(C.process(), PROCESS_KILL, "stable connected portable port remained scheduled")
@@ -4108,6 +4271,70 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	qdel(C)
 	qdel(S)
 	qdel(P)
+
+/datum/unit_test/dq_rust_portable_port_round_trip_conserves_gas
+
+/datum/unit_test/dq_rust_portable_port_round_trip_conserves_gas/Run()
+	var/turf/simulated/floor/T
+	for(var/turf/simulated/floor/candidate in world)
+		if(!locate(/obj/machinery/atmospherics) in candidate && !locate(/obj/machinery/portable_atmospherics) in candidate)
+			T = candidate
+			break
+	TEST_ASSERT_NOTNULL(T, "no floor for Rust portable-port test")
+	var/obj/machinery/atmospherics/portables_connector/C = new(T)
+	TEST_ASSERT(!QDELETED(C), "test connector was deleted during initialization")
+	C.rust_register_pipe_topology()
+	var/turf/simulated/floor/staging_turf
+	for(var/turf/simulated/floor/candidate in world)
+		if(candidate != T && !locate(/obj/machinery/atmospherics) in candidate && !locate(/obj/machinery/portable_atmospherics) in candidate)
+			staging_turf = candidate
+			break
+	TEST_ASSERT_NOTNULL(staging_turf, "no staging floor for Rust portable-port test")
+	var/obj/machinery/portable_atmospherics/canister/P = new(staging_turf)
+	TEST_ASSERT(!P.connected_port, "fresh test portable unexpectedly started connected")
+	TEST_ASSERT(!C.connected_device, "fresh test connector unexpectedly started occupied")
+	P.air_contents.clear()
+	P.air_contents.set_temperature(300)
+	P.air_contents.adjust_moles(/datum/gas/oxygen, 100)
+	var/initial_moles = P.air_contents.total_moles()
+	P.forceMove(T)
+	TEST_ASSERT_EQUAL(P.loc, C.loc, "test portable and connector did not share a turf")
+	TEST_ASSERT(P.connect(C), "portable did not attach to its Rust connector")
+	TEST_ASSERT(C.rust_external_port_id, "connector did not allocate a persistent external Rust port")
+	TEST_ASSERT_EQUAL(P.air_contents, C.network.air, "portable was not rebound to the authoritative Rust region mixture")
+	TEST_ASSERT(P.disconnect(), "portable did not detach from its Rust connector")
+	TEST_ASSERT_NULL(C.rust_external_port_id, "external Rust port survived portable detachment")
+	TEST_ASSERT(abs(P.air_contents.total_moles() - initial_moles) < 0.001, "portable attach/detach changed its gas inventory")
+	TEST_ASSERT_EQUAL(P.air_contents.return_volume(), 1000, "portable detached with the wrong physical volume")
+	qdel(P)
+	qdel(C)
+
+/datum/unit_test/dq_rust_destroyed_pipe_vents_atomically
+
+/datum/unit_test/dq_rust_destroyed_pipe_vents_atomically/Run()
+	var/turf/simulated/floor/T
+	for(var/turf/simulated/floor/candidate in world)
+		var/nearby_atmos = FALSE
+		for(var/turf/nearby in RANGE_TURFS(1, candidate))
+			if(locate(/obj/machinery/atmospherics) in nearby)
+				nearby_atmos = TRUE
+				break
+		if(candidate.air && !nearby_atmos)
+			T = candidate
+			break
+	TEST_ASSERT_NOTNULL(T, "no floor for Rust pipe-removal test")
+	var/initial_turf_oxygen = T.air.get_moles(/datum/gas/oxygen)
+	var/initial_region_count = length(SSair.rust_pipe_region_networks)
+	var/obj/machinery/atmospherics/pipe/simple/P = new(T)
+	P.rust_register_pipe_topology()
+	var/datum/gas_mixture/pipe_air = P.return_air()
+	pipe_air.clear()
+	pipe_air.set_temperature(300)
+	pipe_air.adjust_moles(/datum/gas/oxygen, 25)
+	TEST_ASSERT_EQUAL(length(SSair.rust_pipe_region_networks), initial_region_count + 1, "standalone pipe did not materialize one Rust region")
+	qdel(P)
+	TEST_ASSERT(abs(T.air.get_moles(/datum/gas/oxygen) - initial_turf_oxygen - 25) < 0.001, "destroyed pipe gas was not atomically received by its turf")
+	TEST_ASSERT_EQUAL(length(SSair.rust_pipe_region_networks), initial_region_count, "fully removed Rust region left a compatibility wrapper")
 
 /datum/unit_test/dq_stable_binary_pump_hibernates_and_wakes
 
@@ -4241,6 +4468,11 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	TEST_ASSERT_NOTNULL(T, "no floor for auxiliary machinery hibernation test")
 	var/obj/machinery/ai_status_display/display = new(T)
 	TEST_ASSERT_EQUAL(display.process(), PROCESS_KILL, "AI status display retained an empty polling loop")
+	var/obj/machinery/drone_fabricator/drone_fabricator = new(T)
+	TEST_ASSERT_EQUAL(drone_fabricator.process(), PROCESS_KILL, "drone readiness retained a permanent polling loop")
+	var/obj/machinery/airlock_sensor/airlock_sensor = new(T)
+	airlock_sensor.on = FALSE
+	TEST_ASSERT_EQUAL(airlock_sensor.process(), PROCESS_KILL, "disabled airlock sensor did not explicitly terminate processing")
 	var/obj/machinery/status_display/supply_display/supply_display = new(T)
 	TEST_ASSERT_EQUAL(supply_display.process(), PROCESS_KILL, "stable supply display remained scheduled")
 	var/obj/machinery/media/jukebox/jukebox = new(T)
@@ -4493,6 +4725,8 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	conveyor_switch.operated = FALSE
 	TEST_ASSERT_EQUAL(conveyor_switch.process(), PROCESS_KILL, "stable conveyor switch remained scheduled")
 	qdel(display)
+	qdel(drone_fabricator)
+	qdel(airlock_sensor)
 	qdel(supply_display)
 	qdel(jukebox)
 	qdel(appliance)
@@ -4537,6 +4771,15 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	qdel(conveyor_load)
 	qdel(conveyor)
 	qdel(conveyor_switch)
+	qdel(outlet)
+	TEST_ASSERT(!SSmachines.sleeping_gas_devices[outlet_ref.reference], "deleted outlet injector remained in the sleeping gas-device registry")
+	var/obj/machinery/camera/network/engine/test_camera = new(T)
+	test_camera.update_coverage(1)
+	qdel(test_camera)
+	TEST_ASSERT(!(test_camera in GLOB.cameranet.cameras), "deleted camera remained in the global camera registry")
+	for(var/chunk_key in GLOB.cameranet.chunks)
+		var/datum/chunk/camera/chunk = GLOB.cameranet.chunks[chunk_key]
+		TEST_ASSERT(!(test_camera in chunk.cameras), "deleted camera remained retained by camera chunk [chunk_key]")
 
 
 // =====================================================================
@@ -5241,7 +5484,7 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	var/datum/weakref/pipe_ref = WEAKREF(P)
 	TEST_ASSERT(SSmachines.sleeping_gas_devices[pipe_ref.reference], "equilibrated open pipe did not subscribe before sleeping")
 	T.air.adjust_moles(/datum/gas/oxygen, 1)
-	TEST_ASSERT(P.leak_gas_dependency_changed(P.leak_sleeping_turf_mixture_id, GAS_DEPENDENCY_ALL), "changed turf gas did not wake an open pipe leak")
+	TEST_ASSERT(P.gas_dependency_changed(P.leak_sleeping_turf_mixture_id, GAS_DEPENDENCY_ALL), "changed turf gas did not wake an open pipe leak")
 	qdel(P)
 
 
@@ -5648,10 +5891,8 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 		turf_air.set_moles(g, 0)
 
 
-/// /datum/pipeline.build_pipeline() on a single pipe should: allocate a fresh
-/// gas_mixture as the pipeline.air, set pipe.parent to the pipeline, and size
-/// the pipeline volume to the pipe's volume. Validates the pipenet construction
-/// math LINDA inherited from CHOMP.
+/// A single Rust port should materialize one compatibility pipeline with the
+/// exact physical volume reported by that port.
 /datum/unit_test/dq_pipeline_build_pipeline_single_pipe
 
 /datum/unit_test/dq_pipeline_build_pipeline_single_pipe/Run()
@@ -5666,8 +5907,8 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	TEST_ASSERT_NOTNULL(Pipe, "pipe construct failed")
 	TEST_ASSERT(Pipe.volume > 0, "pipe has zero volume — bad init")
 
-	var/datum/pipeline/Line = new()
-	Line.build_pipeline(Pipe)
+	dq_atmos_test_publish_rust_pipenets(list(Pipe))
+	var/datum/pipeline/Line = Pipe.parent
 
 	TEST_ASSERT_NOTNULL(Line.air, "build_pipeline didn't allocate pipeline.air")
 	TEST_ASSERT(Line.air.return_volume() == Pipe.volume, \
@@ -5677,56 +5918,126 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	TEST_ASSERT(Line.members && (Pipe in Line.members), \
 		"pipe not in pipeline.members after build_pipeline")
 
-	qdel(Line)
 	qdel(Pipe)
 
 
-/// reconcile_air() on a pipe_network with THREE pipes must conserve total
-/// moles and total thermal energy when redistributing. Round 2 covered the
-/// 2-pipe case; this catches off-by-one or per-pipe-loss bugs that only
-/// surface with > 2 pipes.
+/// Pipenet merge and teardown must transfer ownership rather than leave a
+/// donor graph retaining all of the same machinery and pipelines.  This was a
+/// major source of explosion-time hard deletes.
+/datum/unit_test/dq_pipenet_merge_releases_donor_graph
+
+/datum/unit_test/dq_pipenet_merge_releases_donor_graph/Run()
+	var/datum/pipe_network/receiver = new
+	var/datum/pipe_network/donor = new
+	var/datum/pipeline/line = new
+	line.air = new(70)
+	line.members = list()
+	line.edges = list()
+	line.network = donor
+	donor.add_line_member(line)
+	donor.air = line.air
+	donor.gases = list(line.air)
+	donor.volume = line.air.return_volume()
+
+	TEST_ASSERT(receiver.merge(donor), "pipenet merge rejected a valid donor")
+	TEST_ASSERT(line.network == receiver, "merged pipeline did not transfer to the receiving network")
+	TEST_ASSERT(line in receiver.line_members, "receiving network did not acquire the donor pipeline")
+	TEST_ASSERT(receiver in line.network_memberships, "pipeline reverse ownership index did not transfer to receiver")
+	TEST_ASSERT(!(donor in line.network_memberships), "pipeline reverse ownership index retained merged donor")
+	TEST_ASSERT(QDELETED(donor), "merged donor network remained alive")
+	TEST_ASSERT_NULL(donor.line_members, "merged donor retained its pipeline membership list")
+	TEST_ASSERT_NULL(donor.normal_members, "merged donor retained its machinery membership list")
+	TEST_ASSERT_NULL(donor.gases, "merged donor retained its gas list")
+
+	qdel(receiver)
+	TEST_ASSERT_NULL(line.network, "destroyed receiving network remained referenced by its pipeline")
+	qdel(line)
+
+
+/// A machine reached through repeated topology rebuilds must retain a reverse
+/// index of every roster so destruction can synchronously sever all cycles.
+/datum/unit_test/dq_pipenet_member_destroy_clears_every_roster
+
+/datum/unit_test/dq_pipenet_member_destroy_clears_every_roster/Run()
+	var/turf/T
+	for(var/turf/candidate in world)
+		T = candidate
+		break
+	TEST_ASSERT_NOTNULL(T, "no turf for pipenet ownership test")
+	var/obj/machinery/atmospherics/unary/vent_pump/vent = new(T)
+	var/datum/pipe_network/first = new
+	var/datum/pipe_network/second = new
+	first.add_normal_member(vent)
+	second.add_normal_member(vent)
+	TEST_ASSERT(length(vent.network_memberships) == 2, "machine reverse ownership index omitted a retaining network")
+	qdel(vent)
+	TEST_ASSERT(!(vent in first.normal_members), "destroyed machine remained in first network roster")
+	TEST_ASSERT(!(vent in second.normal_members), "destroyed machine remained in second network roster")
+	qdel(first)
+	qdel(second)
+
+
+/// An APC cell can be destroyed independently by an explosion.  Its explicit
+/// owner backlink must be cleared even if the APC itself survives.
+/datum/unit_test/dq_apc_cell_deletion_clears_owner
+
+/datum/unit_test/dq_apc_cell_deletion_clears_owner/Run()
+	var/turf/T
+	for(var/turf/candidate in world)
+		T = candidate
+		break
+	TEST_ASSERT_NOTNULL(T, "no test floor for APC cell ownership test")
+	var/obj/machinery/power/apc/test_apc = new(T)
+	var/obj/item/cell/test_cell = new(test_apc)
+	test_apc.cell = test_cell
+
+	qdel(test_cell)
+	TEST_ASSERT_NULL(test_apc.cell, "destroyed cell remained retained by its APC")
+	qdel(test_apc)
+
+
+/// Three pipelines must pool once, share one handle, and split conservatively
+/// when topology is destroyed.
 /datum/unit_test/dq_reconcile_air_three_pipes_conserves_mass
 
 /datum/unit_test/dq_reconcile_air_three_pipes_conserves_mass/Run()
 	var/datum/pipe_network/net = new
-	var/datum/gas_mixture/p1 = new(70)
-	p1.adjust_gas(/datum/gas/oxygen, 150)
-	p1.set_temperature(T20C)
-	var/datum/gas_mixture/p2 = new(70)
-	p2.adjust_gas(/datum/gas/nitrogen, 50)
-	p2.set_temperature(T0C + 80)
-	var/datum/gas_mixture/p3 = new(70)
-	p3.set_temperature(T0C + 40)
-	net.gases += p1
-	net.gases += p2
-	net.gases += p3
-	for(var/datum/gas_mixture/m in net.gases)
-		net.volume += m.return_volume()
-
-	var/initial_total = p1.total_moles() + p2.total_moles() + p3.total_moles()
-	var/initial_thermal = p1.thermal_energy() + p2.thermal_energy() + p3.thermal_energy()
-
-	net.reconcile_air()
-
-	var/final_total = p1.total_moles() + p2.total_moles() + p3.total_moles()
-	var/final_thermal = p1.thermal_energy() + p2.thermal_energy() + p3.thermal_energy()
-	TEST_ASSERT(abs(final_total - initial_total) < 0.5, \
-		"reconcile_air lost mass with 3 pipes: [initial_total] → [final_total]")
-	// All three equal-volume pipes should hold equal moles after reconcile.
-	var/m1 = p1.total_moles()
-	var/m2 = p2.total_moles()
-	var/m3 = p3.total_moles()
-	TEST_ASSERT(abs(m1 - m2) < 0.5 && abs(m2 - m3) < 0.5, \
-		"reconcile_air didn't equalize 3 pipes: m1=[m1] m2=[m2] m3=[m3]")
-	// Temperatures should all converge.
-	var/p1_temp = p1.return_temperature()
-	var/p2_temp = p2.return_temperature()
-	var/p3_temp = p3.return_temperature()
-	TEST_ASSERT(abs(p1_temp - p2_temp) < 1 && abs(p2_temp - p3_temp) < 1, \
-		"reconcile_air didn't equalize temperatures: T1=[p1_temp] T2=[p2_temp] T3=[p3_temp]")
-	TEST_ASSERT(abs(final_thermal - initial_thermal) < (initial_thermal * 0.05), \
-		"reconcile_air lost thermal energy with 3 pipes: [initial_thermal] → [final_thermal] (>5%)")
+	var/list/lines = list()
+	var/initial_total = 0
+	var/initial_thermal = 0
+	for(var/i = 1 to 3)
+		var/datum/pipeline/line = new
+		line.air = new(70)
+		line.volume = 70
+		line.members = list()
+		line.edges = list()
+		line.network = net
+		line.air.adjust_gas(i == 1 ? /datum/gas/oxygen : /datum/gas/nitrogen, i * 25)
+		line.air.set_temperature(T20C + i * 20)
+		initial_total += line.air.total_moles()
+		initial_thermal += line.air.thermal_energy()
+		net.add_line_member(line)
+		lines += line
+	net.update_network_gases()
+	for(var/datum/pipeline/line as anything in lines)
+		TEST_ASSERT(line.air == net.air, "three-pipeline network retained a member gas mirror")
+	TEST_ASSERT(abs(net.air.total_moles() - initial_total) < 0.5, "three-pipeline pooling lost mass")
+	TEST_ASSERT(abs(net.air.thermal_energy() - initial_thermal) < initial_thermal * 0.05, \
+		"three-pipeline pooling lost thermal energy")
 	qdel(net)
+	var/split_total = 0
+	var/split_thermal = 0
+	var/datum/gas_mixture/first_split
+	for(var/datum/pipeline/line as anything in lines)
+		TEST_ASSERT_NOTNULL(line.air, "topology split left a pipeline without gas")
+		TEST_ASSERT(line.air != first_split, "topology split left pipelines sharing a deleted network gas")
+		first_split ||= line.air
+		split_total += line.air.total_moles()
+		split_thermal += line.air.thermal_energy()
+	TEST_ASSERT(abs(split_total - initial_total) < 0.5, "topology split lost mass")
+	TEST_ASSERT(abs(split_thermal - initial_thermal) < initial_thermal * 0.05, "topology split lost energy")
+	for(var/datum/pipeline/line as anything in lines)
+		qdel(line)
 
 
 // =====================================================================
@@ -5734,9 +6045,8 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 // room propagation, analyzer extremes
 // =====================================================================
 
-/// build_pipeline traverses pipeline_expansion to find connected pipes. Two
-/// pipes connected node1↔node1 should both end up as members of the same
-/// pipeline. Validates the network-traversal path that LINDA inherited.
+/// Rust traverses reciprocal stable-port edges. Two manually connected pipes
+/// must materialize into the same compatibility pipeline.
 /datum/unit_test/dq_pipeline_chains_two_connected_pipes
 
 /datum/unit_test/dq_pipeline_chains_two_connected_pipes/Run()
@@ -5752,13 +6062,12 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	TEST_ASSERT_NOTNULL(PA, "pipe A construct failed")
 	TEST_ASSERT_NOTNULL(PB, "pipe B construct failed")
 
-	// Wire them together manually. pipeline_expansion returns [node1, node2]
-	// per pipe, and build_pipeline walks until no new members appear.
+	// Wire them together manually through their physical port neighbors.
 	PA.node1 = PB
 	PB.node1 = PA
 
-	var/datum/pipeline/Line = new()
-	Line.build_pipeline(PA)
+	dq_atmos_test_publish_rust_pipenets(list(PA, PB))
+	var/datum/pipeline/Line = PA.parent
 
 	TEST_ASSERT(PA in Line.members, "pipe A not in pipeline.members after build_pipeline")
 	TEST_ASSERT(PB in Line.members, "pipe B not in pipeline.members — build_pipeline didn't expand via pipeline_expansion")
@@ -5769,7 +6078,6 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	TEST_ASSERT(Line.air.return_volume() == (PA.volume + PB.volume), \
 		"pipeline volume not sum of pipes: pipeline=[Line.air.return_volume()] expected=[PA.volume + PB.volume]")
 
-	qdel(Line)
 	qdel(PA)
 	qdel(PB)
 
@@ -6356,6 +6664,7 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 		A.air.set_moles(g, 0)
 	for(var/datum/gas/g as anything in B.air.get_gases())
 		B.air.set_moles(g, 0)
+
 	A.air.set_temperature(T20C)
 	B.air.set_temperature(T20C)
 
@@ -6408,6 +6717,57 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 		A.air.set_moles(g, 0)
 	for(var/datum/gas/g as anything in B.air.get_gases())
 		B.air.set_moles(g, 0)
+
+/// A bounded sealed room with one local pressure disturbance must converge and
+/// leave the Rust frontier. This catches self-reactivating publication, duplicate
+/// queue membership, and starvation that a simple "gas reached tile B" test does not.
+/datum/unit_test/dq_local_atmos_disturbance_settles
+
+/datum/unit_test/dq_local_atmos_disturbance_settles/Run()
+	var/test_z = world.maxz + 1
+	world.maxz = test_z
+	var/list/turf/open/room = list()
+	for(var/x in 10 to 14)
+		for(var/y in 10 to 14)
+			var/turf/T = locate(x, y, test_z)
+			if(x == 10 || x == 14 || y == 10 || y == 14)
+				T.ChangeTurf(/turf/simulated/wall)
+				continue
+			var/turf/open/floor = T.ChangeTurf(/turf/simulated/floor)
+			room += floor
+			for(var/datum/gas/g as anything in floor.air.get_gases())
+				floor.air.set_moles(g, 0)
+			floor.air.set_moles(/datum/gas/oxygen, 20)
+			floor.air.set_temperature(T20C)
+
+	stoplag()
+	var/turf/open/center = locate(12, 12, test_z)
+	center.air.adjust_moles(/datum/gas/oxygen, 10)
+	var/start_cycle = SSair.times_fired
+	var/settled = FALSE
+	var/last_pressure_delta = INFINITY
+	var/last_local_active = 0
+	while(SSair.times_fired < start_cycle + 60)
+		stoplag()
+		var/min_pressure = INFINITY
+		var/max_pressure = 0
+		for(var/turf/open/floor as anything in room)
+			var/pressure = floor.air.return_pressure()
+			min_pressure = min(min_pressure, pressure)
+			max_pressure = max(max_pressure, pressure)
+		last_pressure_delta = max_pressure - min_pressure
+		last_local_active = 0
+		for(var/turf/open/floor as anything in room)
+			if(floor.auxmos_is_atmos_active())
+				last_local_active++
+		// The Rust sleep criterion is applied per adjacent edge in moles, while
+		// this diagnostic spans opposite corners in pressure. A sub-0.5 kPa
+		// room-wide range is therefore materially settled; the stronger invariant
+		// is that every local cell has actually left both activation queues.
+		if(last_pressure_delta < 0.5 && !last_local_active)
+			settled = TRUE
+			break
+	TEST_ASSERT(settled, "sealed 3x3 disturbance did not settle and leave its local frontier after [SSair.times_fired - start_cycle] atmos cycles (pressure delta=[last_pressure_delta], local active=[last_local_active]/9, global retained=[SSair.async_retained_turfs], pending=[SSair.async_pending_turfs])")
 
 
 /// After assume_air, update_visuals must produce a visible overlay on the
@@ -6534,6 +6894,38 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	changes = drain_dirty_gas_mixtures()
 	for(var/index in 1 to length(changes) step 2)
 		TEST_ASSERT(changes[index] != mixture_id, "unwatched mixture resumed publication after unsubscribe")
+	qdel(air)
+
+/datum/unit_test/dq_dirty_gas_observation_matches_air_alarm
+
+/datum/unit_test/dq_dirty_gas_observation_matches_air_alarm/Run()
+	var/turf/test_turf
+	for(var/turf/simulated/floor/candidate in world)
+		test_turf = candidate
+		break
+	TEST_ASSERT_NOTNULL(test_turf, "no simulated floor available for gas observation test")
+	var/datum/gas_mixture/air = new(2500)
+	air.set_temperature(T20C + 17)
+	air.set_moles(/datum/gas/oxygen, 18)
+	air.set_moles(/datum/gas/carbon_dioxide, 0.7)
+	air.set_moles(/datum/gas/plasma, 0.2)
+	air.set_moles(/datum/gas/methane, 0.1)
+	air.set_moles(/datum/gas/nitrous_oxide, 0.3)
+	air.set_moles(/datum/gas/volatile_fuel, 0.4)
+	var/mixture_id = air.arena_id()
+	watch_dirty_gas_mixture(mixture_id)
+	drain_dirty_gas_observations()
+	air.adjust_moles(/datum/gas/oxygen, 1)
+	var/list/observation = drain_dirty_gas_observations()
+	TEST_ASSERT_EQUAL(length(observation), 13, "dirty gas observation did not use the documented atomic stride")
+	TEST_ASSERT_EQUAL(observation[1], mixture_id, "dirty gas observation returned the wrong arena mixture")
+	TEST_ASSERT(abs(observation[13] - air.total_moles()) < 0.001, "atomic observation returned the wrong total-moles cache")
+	var/obj/machinery/alarm/alarm = new(test_turf)
+	var/direct_signature = alarm.atmospheric_control_signature(air)
+	var/observed_signature = alarm.atmospheric_control_signature_observation(observation, 1)
+	TEST_ASSERT_EQUAL(observed_signature, direct_signature, "atomic Rust gas observation changed air-alarm threshold semantics")
+	unwatch_dirty_gas_mixture(mixture_id)
+	qdel(alarm)
 	qdel(air)
 
 /datum/unit_test/dq_airalarm_radio_is_area_scoped

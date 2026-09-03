@@ -136,11 +136,6 @@
 /obj/machinery/oxygen_pump/attackby(obj/item/W as obj, mob/user as mob)
 	if(user.is_incorporeal())
 		return
-	if(W.has_tool_quality(TOOL_SCREWDRIVER))
-		stat ^= MAINT
-		user.visible_message(span_notice("\The [user] [(stat & MAINT) ? "opens" : "closes"] \the [src]."), span_notice("You [(stat & MAINT) ? "open" : "close"] \the [src]."))
-		icon_state = (stat & MAINT) ? icon_state_open : icon_state_closed
-		//TO-DO: Open icon
 	if(istype(W, /obj/item/tank) && (stat & MAINT))
 		if(tank)
 			to_chat(user, span_warning("\The [src] already has a tank installed!"))
@@ -152,6 +147,14 @@
 			src.add_fingerprint(user)
 	if(istype(W, /obj/item/tank) && !stat)
 		to_chat(user, span_warning("Please open the maintenance hatch first."))
+
+/obj/machinery/oxygen_pump/screwdriver_act(mob/user, obj/item/tool)
+	if(user.is_incorporeal())
+		return ITEM_INTERACT_BLOCKING
+	stat ^= MAINT
+	user.visible_message(span_notice("\The [user] [(stat & MAINT) ? "opens" : "closes"] \the [src]."), span_notice("You [(stat & MAINT) ? "open" : "close"] \the [src]."))
+	icon_state = (stat & MAINT) ? icon_state_open : icon_state_closed
+	return ITEM_INTERACT_SUCCESS
 
 /obj/machinery/oxygen_pump/examine(mob/user)
 	. = ..()

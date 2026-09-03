@@ -37,6 +37,7 @@ GLOBAL_LIST_INIT(recharger_battery_exempt, list(
 
 //This file was auto-corrected by findeclaration.exe on 25.5.2012 20:42:31
 /obj/machinery/recharger
+	maintenance_flags = MACHINE_MAINT_STANDARD
 	name = "recharger"
 	desc = "A standard recharger for all devices that use power."
 	icon = 'icons/obj/stationobjs.dmi'
@@ -151,19 +152,19 @@ GLOBAL_LIST_INIT(recharger_battery_exempt, list(
 		update_icon()
 		user.visible_message("[user] inserts [charging] into [src].", "You insert [charging] into [src].")
 
-	else if(portable && G.has_tool_quality(TOOL_WRENCH))
-		if(charging)
-			to_chat(user, span_warning("Remove [charging] first!"))
-			return
-		anchored = !anchored
-		to_chat(user, "You [anchored ? "attached" : "detached"] [src].")
-		playsound(src, G.usesound, 75, 1)
-	else if(default_deconstruction_screwdriver(user, G))
-		return
-	else if(default_deconstruction_crowbar(user, G))
-		return
 	else if(default_part_replacement(user, G))
 		return
+
+/obj/machinery/recharger/wrench_act(mob/user, obj/item/tool)
+	if(!portable)
+		return ..()
+	if(charging)
+		to_chat(user, span_warning("Remove [charging] first!"))
+		return ITEM_INTERACT_BLOCKING
+	anchored = !anchored
+	to_chat(user, "You [anchored ? "attached" : "detached"] [src].")
+	playsound(src, tool.usesound, 75, TRUE)
+	return ITEM_INTERACT_SUCCESS
 
 /obj/machinery/recharger/attack_hand(mob/user as mob)
 	if(!Adjacent(user))

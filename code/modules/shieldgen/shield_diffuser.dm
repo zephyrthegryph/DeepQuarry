@@ -11,6 +11,7 @@
 	anchored = TRUE
 	density = FALSE
 	level = 1
+	maintenance_flags = MACHINE_MAINT_STANDARD
 	var/alarm = 0
 	var/enabled = 1
 
@@ -73,10 +74,6 @@
 	to_chat(user, "You turn \the [src] [enabled ? "on" : "off"].")
 
 /obj/machinery/shield_diffuser/attackby(obj/item/W, mob/user)
-	if(default_deconstruction_screwdriver(user, W))
-		return
-	if(default_deconstruction_crowbar(user, W))
-		return
 	if(default_part_replacement(user, W))
 		return
 	return ..()

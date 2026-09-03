@@ -202,31 +202,30 @@ vorestation edit end */
 		if(guesschar != code[i])
 			. = 0
 
-/obj/structure/closet/crate/secure/loot/attackby(obj/item/W as obj, mob/user as mob)
+/obj/structure/closet/crate/secure/loot/multitool_act(mob/user, obj/item/tool)
 	if(locked)
-		if (istype(W, /obj/item/multitool)) // Greetings Urist McProfessor, how about a nice game of cows and bulls?
-			to_chat(user, span_notice("DECA-CODE LOCK ANALYSIS:"))
-			if (attempts == 1)
-				to_chat(user, span_warning("* Anti-Tamper system will activate on the next failed access attempt."))
-			else
-				to_chat(user, span_notice("* Anti-Tamper system will activate after [src.attempts] failed access attempts."))
-			if(lastattempt.len)
-				var/bulls = 0
-				var/cows = 0
+		to_chat(user, span_notice("DECA-CODE LOCK ANALYSIS:"))
+		if(attempts == 1)
+			to_chat(user, span_warning("* Anti-Tamper system will activate on the next failed access attempt."))
+		else
+			to_chat(user, span_notice("* Anti-Tamper system will activate after [src.attempts] failed access attempts."))
+		if(lastattempt.len)
+			var/bulls = 0
+			var/cows = 0
 
-				var/list/code_contents = code.Copy()
-				for(var/i in 1 to codelen)
-					if(lastattempt[i] == code[i])
-						++bulls
-					else if(lastattempt[i] in code_contents)
-						++cows
-					code_contents -= lastattempt[i]
-				var/previousattempt = null //convert back to string for readback
-				for(var/i in 1 to codelen)
-					previousattempt = addtext(previousattempt, lastattempt[i])
-				to_chat(user, span_notice("Last code attempt, [previousattempt], had [bulls] correct digits at correct positions and [cows] correct digits at incorrect positions."))
-			return
-	..()
+			var/list/code_contents = code.Copy()
+			for(var/i in 1 to codelen)
+				if(lastattempt[i] == code[i])
+					++bulls
+				else if(lastattempt[i] in code_contents)
+					++cows
+				code_contents -= lastattempt[i]
+			var/previousattempt = null //convert back to string for readback
+			for(var/i in 1 to codelen)
+				previousattempt = addtext(previousattempt, lastattempt[i])
+			to_chat(user, span_notice("Last code attempt, [previousattempt], had [bulls] correct digits at correct positions and [cows] correct digits at incorrect positions."))
+		return ITEM_INTERACT_SUCCESS
+	return ..()
 
 
 // === merged from abandonedcrates_vr.dm during hard-fork de-suffix (verified no override-order change) ===

@@ -45,29 +45,28 @@
 		source.forceMove(src)
 		flush()
 
-/obj/machinery/disposal/deliveryChute/attackby(obj/item/I, mob/user, attack_modifier, click_parameters, drag_dropped = FALSE)
-	if(!I || !user)
-		return
+/obj/machinery/disposal/deliveryChute/screwdriver_act(mob/user, obj/item/I)
+	c_mode = !c_mode
+	playsound(src, I.usesound, 50, 1)
+	to_chat(user, "You [c_mode ? "remove" : "attach"] the screws around the power connection.")
+	return ITEM_INTERACT_SUCCESS
 
-	if(I.has_tool_quality(TOOL_SCREWDRIVER))
-		c_mode = !c_mode
-		playsound(src, I.usesound, 50, 1)
-		to_chat(user, "You [c_mode ? "remove" : "attach"] the screws around the power connection.")
-		return
-	if(I.has_tool_quality(TOOL_WELDER) && c_mode == TRUE)
-		var/obj/item/weldingtool/W = I.get_welder()
-		if(!W.remove_fuel(0,user))
-			to_chat(user, "You need more welding fuel to complete this task.")
-			return
-		playsound(src, W.usesound, 50, 1)
-		to_chat(user, "You start slicing the floorweld off the delivery chute.")
-		if(do_after(user, 2 SECONDS * W.toolspeed, target = src))
-			if(!src || !W.isOn()) return
-			to_chat(user, "You sliced the floorweld off the delivery chute.")
-			var/obj/structure/disposalconstruct/C = new (src.loc)
-			C.ptype = 8 // 8 =  Delivery chute
-			C.update()
-			C.anchored = TRUE
-			C.density = TRUE
-			qdel(src)
-		return
+/obj/machinery/disposal/deliveryChute/welder_act(mob/user, obj/item/I)
+	if(!c_mode)
+		return ITEM_INTERACT_BLOCKING
+	var/obj/item/weldingtool/W = I.get_welder()
+	if(!W.remove_fuel(0,user))
+		to_chat(user, "You need more welding fuel to complete this task.")
+		return ITEM_INTERACT_BLOCKING
+	playsound(src, W.usesound, 50, 1)
+	to_chat(user, "You start slicing the floorweld off the delivery chute.")
+	if(do_after(user, 2 SECONDS * W.toolspeed, target = src))
+		if(!src || !W.isOn()) return ITEM_INTERACT_BLOCKING
+		to_chat(user, "You sliced the floorweld off the delivery chute.")
+		var/obj/structure/disposalconstruct/C = new(src.loc)
+		C.ptype = 8
+		C.update()
+		C.anchored = TRUE
+		C.density = TRUE
+		qdel(src)
+	return ITEM_INTERACT_SUCCESS

@@ -61,34 +61,7 @@
 	icon_state = "[base_icon_state][LAZYLEN(notices)]"
 
 /obj/structure/noticeboard/attackby(obj/item/I, mob/user)
-	if(I.has_tool_quality(TOOL_SCREWDRIVER))
-		var/choice = tgui_input_list(user, "Which direction do you wish to place the noticeboard?", "Noticeboard Offset", list("North", "South", "East", "West", "No Offset"))
-		if(choice && Adjacent(user) && I.loc == user && !user.incapacitated())
-			playsound(loc, 'sound/items/Screwdriver.ogg', 50, 1)
-			switch(choice)
-				if("North")
-					pixel_x = 0
-					pixel_y = 32
-				if("South")
-					pixel_x = 0
-					pixel_y = -32
-				if("East")
-					pixel_x = 32
-					pixel_y = 0
-				if("West")
-					pixel_x = -32
-					pixel_y = 0
-				if("No Offset")
-					return
-		return
-	else if(I.has_tool_quality(TOOL_WRENCH))
-		visible_message(span_warning("[user] begins dismantling [src]."))
-		playsound(loc, 'sound/items/Ratchet.ogg', 50, 1)
-		if(do_after(user, 5 SECONDS, target = src))
-			visible_message(span_danger("[user] has dismantled [src]!"))
-			dismantle()
-		return
-	else if(istype(I, /obj/item/paper) || istype(I, /obj/item/photo))
+	if(istype(I, /obj/item/paper) || istype(I, /obj/item/photo))
 		if(jobban_isbanned(user, JOB_GRAFFITI))
 			to_chat(user, span_warning("You are banned from leaving persistent information across rounds."))
 		else
@@ -101,6 +74,38 @@
 				to_chat(user, span_warning("You hesitate, certain [I] will not be seen among the many others already attached to \the [src]."))
 		return
 	return ..()
+
+/obj/structure/noticeboard/screwdriver_act(mob/user, obj/item/tool)
+	var/choice = tgui_input_list(user, "Which direction do you wish to place the noticeboard?", "Noticeboard Offset", list("North", "South", "East", "West", "No Offset"))
+	if(!choice || !Adjacent(user) || tool.loc != user || user.incapacitated())
+		return ITEM_INTERACT_BLOCKING
+	playsound(loc, tool.usesound, 50, TRUE)
+	switch(choice)
+		if("North")
+			pixel_x = 0
+			pixel_y = 32
+		if("South")
+			pixel_x = 0
+			pixel_y = -32
+		if("East")
+			pixel_x = 32
+			pixel_y = 0
+		if("West")
+			pixel_x = -32
+			pixel_y = 0
+		if("No Offset")
+			pixel_x = 0
+			pixel_y = 0
+	return ITEM_INTERACT_SUCCESS
+
+/obj/structure/noticeboard/wrench_act(mob/user, obj/item/tool)
+	visible_message(span_warning("[user] begins dismantling [src]."))
+	playsound(loc, tool.usesound, 50, TRUE)
+	if(!do_after(user, 5 SECONDS * tool.toolspeed, target = src))
+		return ITEM_INTERACT_BLOCKING
+	visible_message(span_danger("[user] has dismantled [src]!"))
+	dismantle()
+	return ITEM_INTERACT_SUCCESS
 
 /obj/structure/noticeboard/attack_ai(mob/user)
 	examine(user)

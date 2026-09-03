@@ -1,4 +1,5 @@
 /obj/machinery/food_replicator
+	maintenance_flags = MACHINE_MAINT_STANDARD_MOVABLE
 	name = "Food Replicator"
 	icon = 'icons/obj/machines/food_replicator.dmi'
 	icon_state = "food_replicator"
@@ -119,12 +120,6 @@
 
 
 /obj/machinery/food_replicator/attackby(obj/item/O, mob/user)
-	if(default_deconstruction_screwdriver(user, O))
-		return
-	if(default_deconstruction_crowbar(user, O))
-		return
-	if(default_unfasten_wrench(user, O))
-		return
 	if(default_part_replacement(user, O))
 		return
 	if(istype(O, /obj/item/reagent_containers/food))

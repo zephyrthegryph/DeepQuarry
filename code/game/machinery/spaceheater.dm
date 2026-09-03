@@ -117,18 +117,19 @@
 			return
 	else if(default_part_replacement(user, I))
 		return
-	else if(I.has_tool_quality(TOOL_SCREWDRIVER))
-		panel_open = !panel_open
-		playsound(src, I.usesound, 50, 1)
-		user.visible_message(span_notice("[user] [panel_open ? "opens" : "closes"] the hatch on the [src]."), span_notice("You [panel_open ? "open" : "close"] the hatch on the [src]."))
-		update_icon()
-		if(!panel_open && user.check_current_machine(src))
-			// close TGUI panel (legacy browse(null))
-			SStgui.close_uis(src)
-			user.unset_machine()
 	else
 		..()
 	return
+
+/obj/machinery/space_heater/screwdriver_act(mob/user, obj/item/tool)
+	panel_open = !panel_open
+	playsound(src, tool.usesound, 50, TRUE)
+	user.visible_message(span_notice("[user] [panel_open ? "opens" : "closes"] the hatch on [src]."), span_notice("You [panel_open ? "open" : "close"] the hatch on [src]."))
+	update_icon()
+	if(!panel_open && user.check_current_machine(src))
+		SStgui.close_uis(src)
+		user.unset_machine()
+	return ITEM_INTERACT_SUCCESS
 
 /obj/machinery/space_heater/attack_hand(mob/user as mob)
 	add_fingerprint(user)

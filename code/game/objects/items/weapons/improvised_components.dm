@@ -6,13 +6,12 @@
 	force_divisor = 0.1
 	thrown_force_divisor = 0.1
 
-/obj/item/material/butterflyconstruction/attackby(obj/item/W as obj, mob/user as mob)
-	if(W.has_tool_quality(TOOL_SCREWDRIVER))
-		to_chat(user, "You finish the concealed blade weapon.")
-		playsound(src, W.usesound, 50, 1)
-		new /obj/item/material/butterfly(user.loc, material.name)
-		qdel(src)
-		return
+/obj/item/material/butterflyconstruction/screwdriver_act(mob/user, obj/item/tool)
+	to_chat(user, "You finish the concealed blade weapon.")
+	playsound(src, tool.usesound, 50, 1)
+	new /obj/item/material/butterfly(user.loc, material.name)
+	qdel(src)
+	return ITEM_INTERACT_SUCCESS
 
 /obj/item/material/butterflyblade
 	name = "knife blade"

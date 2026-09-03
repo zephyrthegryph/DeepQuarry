@@ -69,6 +69,19 @@
 	/// Running average of the amount of milliseconds it takes the subsystem to complete a run (including all resumes but not the time spent paused)
 	var/cost = 0
 
+	/// Running average of real monotonic milliseconds from the first execution
+	/// slice of a run until it completes, including time spent paused by the MC.
+	var/wall_cost = 0
+	/// Last completed run's wall-clock span and active execution time.
+	var/wall_cost_last = 0
+	var/active_cost_last = 0
+	/// Last completed run's execution slices and time suspended between them.
+	var/run_slices_last = 1
+	var/suspended_cost_last = 0
+	/// In-progress logical-run accounting. Managed by the master controller.
+	var/current_run_slices = 0
+	var/wall_timer_id
+
 	/// Running average of the amount of tick usage in percents of a tick it takes the subsystem to complete a run
 	var/tick_usage = 0
 

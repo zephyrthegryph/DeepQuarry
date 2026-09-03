@@ -75,3 +75,12 @@ define_sanity_output.txt
 /architectural_findings.md
 /architectural_synthesis.md
 /tgui_audit_findings.md
+
+# Local Codex benchmark/build transcripts and compiler scratch state.
+/.codex-*.out
+/.codex-*.err
+/.codex-*.txt
+/.interaction_machinery_hits.txt
+/.tool_matches.txt
+/.rustydream-*
+/.build-temp/

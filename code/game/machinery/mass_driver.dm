@@ -1,6 +1,7 @@
 //This file was auto-corrected by findeclaration.exe on 25.5.2012 20:42:31
 
 /obj/machinery/mass_driver
+	maintenance_flags = MACHINE_MAINT_STANDARD
 	name = "mass driver"
 	desc = "Shoots things into space."
 	icon = 'icons/obj/stationobjs.dmi'
@@ -20,21 +21,15 @@
 	. = ..()
 	default_apply_parts()
 
-/obj/machinery/mass_driver/attackby(obj/item/I, mob/user)
-	if(default_deconstruction_screwdriver(user, I))
-		return
-	if(default_deconstruction_crowbar(user, I))
-		return
-
-	if(istype(I, /obj/item/multitool))
-		if(panel_open)
-			var/input = tgui_input_number(user, "[src] has an id of \"[id]\". What would you like it to be?", "[src] ID]", id, 9999)
-			if(!input)
-				to_chat(user, "No input found please hang up and try your call again.")
-				return
-			id = input
-			return
-	return
+/obj/machinery/mass_driver/multitool_act(mob/user, obj/item/tool)
+	if(!panel_open)
+		return ITEM_INTERACT_BLOCKING
+	var/new_id = tgui_input_number(user, "[src] has an id of \"[id]\". What would you like it to be?", "[src] ID]", id, 9999)
+	if(!new_id)
+		to_chat(user, "No input found please hang up and try your call again.")
+		return ITEM_INTERACT_BLOCKING
+	id = new_id
+	return ITEM_INTERACT_SUCCESS
 
 /obj/machinery/mass_driver/proc/drive(amount)
 	if(stat & (BROKEN|NOPOWER))

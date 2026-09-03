@@ -24,13 +24,17 @@ ADMIN_VERB(atmos_toggle_debug, R_DEBUG, "Toggle Debug Messages", "Allows to togg
 //transfer_moles - Limits the amount of moles to transfer. The actual amount of gas moved may also be limited by available_power, if given.
 //available_power - the maximum amount of power that may be used when moving gas. If null then the transfer is not limited by power.
 /proc/pump_gas(obj/machinery/M, datum/gas_mixture/source, datum/gas_mixture/sink, transfer_moles = null, available_power = null)
-	if (source.total_moles() < MINIMUM_MOLES_TO_PUMP) //if we cant transfer enough gas just stop to avoid further processing
+	// Each accessor crosses the Rust FFI boundary. Snapshot invariant source
+	// values once for this synchronous transaction instead of fetching the same
+	// totals up to five times per pump.
+	var/source_moles = source.total_moles()
+	if (source_moles < MINIMUM_MOLES_TO_PUMP) //if we cant transfer enough gas just stop to avoid further processing
 		return -1
 
 	if (isnull(transfer_moles))
-		transfer_moles = source.total_moles()
+		transfer_moles = source_moles
 	else
-		transfer_moles = min(source.total_moles(), transfer_moles)
+		transfer_moles = min(source_moles, transfer_moles)
 
 	//Calculate the amount of energy required and limit transfer_moles based on available power
 	var/specific_power = calculate_specific_power(source, sink)/ATMOS_PUMP_EFFICIENCY //this has to be calculated before we modify any gas mixtures
@@ -43,7 +47,7 @@ ADMIN_VERB(atmos_toggle_debug, R_DEBUG, "Toggle Debug Messages", "Allows to togg
 	//Update flow rate meter
 	if (istype(M, /obj/machinery/atmospherics))
 		var/obj/machinery/atmospherics/A = M
-		A.last_flow_rate = (transfer_moles/source.total_moles())*source.return_volume() //group_multiplier gets divided out here
+		A.last_flow_rate = (transfer_moles/source_moles)*source.return_volume() //group_multiplier gets divided out here
 
 		if (A.debug)
 			A.visible_message("[A]: source entropy: [round(source.specific_entropy(), 0.01)] J/Kmol --> sink entropy: [round(sink.specific_entropy(), 0.01)] J/Kmol")
@@ -53,28 +57,41 @@ ADMIN_VERB(atmos_toggle_debug, R_DEBUG, "Toggle Debug Messages", "Allows to togg
 
 	if (istype(M, /obj/machinery/portable_atmospherics))
 		var/obj/machinery/portable_atmospherics/P = M
-		P.last_flow_rate = (transfer_moles/source.total_moles())*source.return_volume() //group_multiplier gets divided out here
+		P.last_flow_rate = (transfer_moles/source_moles)*source.return_volume() //group_multiplier gets divided out here
 
-	var/datum/gas_mixture/removed = source.remove(transfer_moles)
-	if (!removed) //Just in case
+	if(!source.transfer_to(sink, transfer_moles))
 		return -1
-
 	var/power_draw = specific_power*transfer_moles
-
-	sink.merge(removed)
-	qdel(removed)
 
 	return power_draw
 
+/// Deferred variant used by station vents. It performs the same authoritative
+/// flow/power calculation but queues the actual gas mutation into the Machines
+/// subsystem's single Rust transaction.
+/proc/queue_pump_gas(obj/machinery/atmospherics/M, datum/gas_mixture/source, datum/gas_mixture/sink, transfer_moles = null, available_power = null)
+	var/source_moles = source.total_moles()
+	if(source_moles < MINIMUM_MOLES_TO_PUMP)
+		return -1
+	transfer_moles = isnull(transfer_moles) ? source_moles : min(source_moles, transfer_moles)
+	var/specific_power = calculate_specific_power(source, sink) / ATMOS_PUMP_EFFICIENCY
+	if(!isnull(available_power) && specific_power > 0)
+		transfer_moles = min(transfer_moles, available_power / specific_power)
+	if(transfer_moles < MINIMUM_MOLES_TO_PUMP)
+		return -1
+	if(!SSmachines.queue_pump_transfer(M, source, sink, transfer_moles, specific_power, source_moles, source.return_volume()))
+		return -1
+	return specific_power * transfer_moles
+
 //Gas 'pumping' proc for the case where the gas flow is passive and driven entirely by pressure differences (but still one-way).
 /proc/pump_gas_passive(obj/machinery/M, datum/gas_mixture/source, datum/gas_mixture/sink, transfer_moles = null)
-	if (source.total_moles() < MINIMUM_MOLES_TO_PUMP) //if we cant transfer enough gas just stop to avoid further processing
+	var/source_moles = source.total_moles()
+	if (source_moles < MINIMUM_MOLES_TO_PUMP) //if we cant transfer enough gas just stop to avoid further processing
 		return -1
 
 	if (isnull(transfer_moles))
-		transfer_moles = source.total_moles()
+		transfer_moles = source_moles
 	else
-		transfer_moles = min(source.total_moles(), transfer_moles)
+		transfer_moles = min(source_moles, transfer_moles)
 
 	var/equalize_moles = calculate_equalize_moles(source, sink)
 	transfer_moles = min(transfer_moles, equalize_moles)
@@ -85,19 +102,16 @@ ADMIN_VERB(atmos_toggle_debug, R_DEBUG, "Toggle Debug Messages", "Allows to togg
 	//Update flow rate meter
 	if (istype(M, /obj/machinery/atmospherics))
 		var/obj/machinery/atmospherics/A = M
-		A.last_flow_rate = (transfer_moles/source.total_moles())*source.return_volume() //group_multiplier gets divided out here
+		A.last_flow_rate = (transfer_moles/source_moles)*source.return_volume() //group_multiplier gets divided out here
 		if (A.debug)
 			A.visible_message("[A]: moles transferred = [transfer_moles] mol")
 
 	if (istype(M, /obj/machinery/portable_atmospherics))
 		var/obj/machinery/portable_atmospherics/P = M
-		P.last_flow_rate = (transfer_moles/source.total_moles())*source.return_volume() //group_multiplier gets divided out here
+		P.last_flow_rate = (transfer_moles/source_moles)*source.return_volume() //group_multiplier gets divided out here
 
-	var/datum/gas_mixture/removed = source.remove(transfer_moles)
-	if(!removed) //Just in case
+	if(!source.transfer_to(sink, transfer_moles))
 		return -1
-	sink.merge(removed)
-	qdel(removed)
 
 	return 0
 

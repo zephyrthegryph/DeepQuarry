@@ -64,14 +64,17 @@
 			user.unEquip(W)
 			W.forceMove(src)
 			user.visible_message("[user] inserts [W] into \the [src]'s GPS device slot.", span_notice("You insert [W] into \the [src]'s GPS device slot."))
-	else if(istype(W, /obj/item/multitool))
-		var/obj/item/multitool/M = W
-		if(M.connectable && istype(M.connectable, /obj/machinery/telepad))
-			telepad = M.connectable
-			M.connectable = null
-			to_chat(user, span_warning("You upload the data from the [W.name]'s buffer."))
 	else
 		return ..()
+
+/obj/machinery/computer/telescience/multitool_act(mob/user, obj/item/tool)
+	var/obj/item/multitool/multitool = tool
+	if(!istype(multitool.connectable, /obj/machinery/telepad))
+		return ITEM_INTERACT_BLOCKING
+	telepad = multitool.connectable
+	multitool.connectable = null
+	to_chat(user, span_warning("You upload the data from the [tool.name]'s buffer."))
+	return ITEM_INTERACT_SUCCESS
 
 /obj/machinery/computer/telescience/proc/get_max_allowed_distance()
 	return FLOOR((crystals.len * telepad.efficiency * powerCoefficient), 1)

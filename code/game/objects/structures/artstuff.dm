@@ -413,10 +413,14 @@
 		frame_canvas(user, I)
 	else if(current_canvas && current_canvas.painting_name == initial(current_canvas.painting_name) && istype(I,/obj/item/pen))
 		try_rename(user)
-	else if(current_canvas && I.has_tool_quality(TOOL_WIRECUTTER))
-		unframe_canvas(user)
 	else
 		return ..()
+
+/obj/structure/sign/painting/wirecutter_act(mob/user, obj/item/I)
+	if(current_canvas)
+		unframe_canvas(user)
+		return TRUE
+	return ..()
 
 /obj/structure/sign/painting/examine(mob/user)
 	. = ..()

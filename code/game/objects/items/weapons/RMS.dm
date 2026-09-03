@@ -290,14 +290,13 @@ GLOBAL_LIST_INIT(RMS_random_malfunction, list(/obj/item/fbp_backup_cell,
 	to_chat(user, span_notice("Changed mode to '[choice]'."))
 	playsound(src.loc, 'sound/effects/pop.ogg', 50, 0)
 
-/obj/item/rms/attackby(obj/item/W, mob/user)
-	if(W.has_tool_quality(TOOL_MULTITOOL))
-		overcharge = !overcharge
+/obj/item/rms/multitool_act(mob/user, obj/item/tool)
+	overcharge = !overcharge
 	if(overcharge)
 		to_chat(user, span_notice("The Rapid Material Synthesizer quietly whirrs..."))
 	else
 		to_chat(user, span_notice("The Rapid Material Synthesizer resumes normal operation."))
-	return ..()
+	return ITEM_INTERACT_SUCCESS
 
 
 #undef RMS_STEEL

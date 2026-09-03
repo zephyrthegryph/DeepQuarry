@@ -8,6 +8,13 @@
 	var/volume = 0
 	var/leaking = FALSE // Do not set directly, use set_leaking(TRUE/FALSE)
 	var/damaged_leak = FALSE
+	/// Pipelines which cache this pipe as a boundary edge. A pipe can be an edge
+	/// of several foreign pipelines, so `parent` alone is not sufficient ownership.
+	var/list/datum/pipeline/edge_pipelines
+	var/leak_sleeping_turf_mixture_id
+	var/leak_sleeping_turf_revision = -1
+	var/leak_sleeping_pipe_mixture_id
+	var/leak_sleeping_pipe_revision = -1
 
 	layer = PIPES_LAYER
 	use_power = USE_POWER_OFF
@@ -37,6 +44,7 @@
 	new_leaking = !!new_leaking
 	if(leaking == new_leaking)
 		return
+	clear_leak_gas_dependencies()
 	leaking = new_leaking
 	wake_automatic_shutoff_valves()
 	if(parent)
@@ -49,8 +57,8 @@
 				parent.network.leaks |= src
 			else
 				parent.network.leaks -= src
-			parent.network.mark_dirty()
-	if(leaking)
+			parent.network.mark_leak_dirty()
+	if(leaking && !parent?.network)
 		START_MACHINE_PROCESSING(src)
 
 /obj/machinery/atmospherics/pipe/proc/handle_leaking()	// Used specifically to update leaking status on different pipes.
@@ -72,48 +80,47 @@
 /obj/machinery/atmospherics/pipe/return_air()
 	if(QDELETED(src))
 		return
-	if(!parent)
-		parent = new /datum/pipeline()
-		parent.build_pipeline(src)
+	return parent?.air || rust_pipe_port_air(1)
 
-	return parent.air
-
-/obj/machinery/atmospherics/pipe/build_network(new_attachment)
-	if(QDELETED(src))
+/// A neighboring pipe disappeared. Rust owns the connected-region transition
+/// and will retire/rebind the shared compatibility pipeline exactly once at
+/// commit. Legacy pipelines retain their former eager invalidation behavior.
+/obj/machinery/atmospherics/pipe/proc/rust_invalidate_pipeline_wrapper(datum/pipeline/line)
+	if(!line || QDELETED(line))
 		return
-	if(new_attachment)
-		QDEL_NULL(parent)
-	if(!parent)
-		parent = new /datum/pipeline()
-		parent.build_pipeline(src)
-
-	return parent.return_network()
-
-/obj/machinery/atmospherics/pipe/network_expand(datum/pipe_network/new_network, obj/machinery/atmospherics/pipe/reference)
-	if(QDELETED(src))
+	if(line.network?.rust_authoritative)
 		return
-	if(!parent)
-		parent = new /datum/pipeline()
-		parent.build_pipeline(src)
-
-	return parent.network_expand(new_network, reference)
+	qdel(line)
 
 /obj/machinery/atmospherics/pipe/return_network(obj/machinery/atmospherics/reference)
 	if(QDELETED(src))
 		return
-	if(!parent)
-		parent = new /datum/pipeline()
-		parent.build_pipeline(src)
-
-	return parent.return_network(reference)
+	return parent?.network
 
 /obj/machinery/atmospherics/pipe/Destroy()
+	var/datum/pipeline/old_parent = parent
+	var/rust_owned_parent = old_parent?.network?.rust_authoritative
+	rust_unregister_pipe_topology()
+	clear_leak_gas_dependencies()
 	wake_automatic_shutoff_valves()
 	release_sorbed_material_gas()
-	if(parent)
-		parent.members -= src
-		parent.edges -= src
-	QDEL_NULL(parent)
+	var/list/old_edge_pipelines = edge_pipelines
+	edge_pipelines = null
+	for(var/datum/pipeline/edge_owner as anything in old_edge_pipelines)
+		edge_owner.remove_edge(src, FALSE)
+	if(rust_owned_parent)
+		// Rust already captured this port's exact volume share in the queued
+		// remove-to-mixture transaction. The persistent-region commit retires the
+		// old compatibility wrapper once for the whole topology batch. Attempting
+		// to qdel that shared wrapper from every exploded pipe was deliberately
+		// rejected by QDEL_HINT_LETMELIVE and dominated large explosion cost.
+		if(!QDELETED(old_parent))
+			old_parent.members -= src
+			old_parent.leaks -= src
+		parent = null
+	else
+		// Legacy wrappers still own their own gas and teardown semantics.
+		QDEL_NULL(parent)
 	if(air_temporary)
 		loc.assume_air(air_temporary)
 		QDEL_NULL(air_temporary)
@@ -123,6 +130,82 @@
 			meter.transfer_fingerprints_to(PM)
 			qdel(meter)
 	. = ..()
+
+/obj/machinery/atmospherics/pipe/proc/register_edge_pipeline(datum/pipeline/edge_owner)
+	LAZYOR(edge_pipelines, edge_owner)
+
+/obj/machinery/atmospherics/pipe/proc/unregister_edge_pipeline(datum/pipeline/edge_owner)
+	LAZYREMOVE(edge_pipelines, edge_owner)
+
+/obj/machinery/atmospherics/pipe/proc/hibernate_stable_leak()
+	clear_leak_gas_dependencies()
+	var/datum/weakref/WR = WEAKREF(src)
+	var/datum/gas_mixture/environment = loc?.return_air()
+	var/datum/gas_mixture/pipe_air = parent?.air
+	leak_sleeping_turf_mixture_id = environment?.arena_id()
+	leak_sleeping_turf_revision = environment?.revision() || -1
+	leak_sleeping_pipe_mixture_id = pipe_air?.arena_id()
+	leak_sleeping_pipe_revision = pipe_air?.revision() || -1
+	SSmachines.sleeping_gas_devices[WR.reference] = WR
+	SSmachines.subscribe_gas_dependency(leak_sleeping_turf_mixture_id, WR)
+	SSmachines.subscribe_gas_dependency(leak_sleeping_pipe_mixture_id, WR)
+	STOP_MACHINE_PROCESSING(src)
+
+/obj/machinery/atmospherics/pipe/proc/clear_leak_gas_dependencies()
+	var/datum/weakref/WR = WEAKREF(src)
+	SSmachines.unsubscribe_gas_dependency(leak_sleeping_turf_mixture_id, WR)
+	SSmachines.unsubscribe_gas_dependency(leak_sleeping_pipe_mixture_id, WR)
+	leak_sleeping_turf_mixture_id = null
+	leak_sleeping_turf_revision = -1
+	leak_sleeping_pipe_mixture_id = null
+	leak_sleeping_pipe_revision = -1
+	if(WR?.reference)
+		SSmachines.sleeping_gas_devices.Remove(WR.reference)
+
+/obj/machinery/atmospherics/pipe/gas_dependency_changed(mixture_id, change_mask)
+	if(!(change_mask & GAS_DEPENDENCY_ALL) || !leaking)
+		return FALSE
+	var/datum/gas_mixture/environment = loc?.return_air()
+	var/datum/gas_mixture/pipe_air = parent?.air
+	if(!environment || !pipe_air)
+		return TRUE
+	if(mixture_id == leak_sleeping_turf_mixture_id && environment.revision() == leak_sleeping_turf_revision)
+		return FALSE
+	if(mixture_id == leak_sleeping_pipe_mixture_id && pipe_air.revision() == leak_sleeping_pipe_revision)
+		return FALSE
+	return leak_needs_equalization(pipe_air, environment)
+
+/obj/machinery/atmospherics/pipe/proc/leak_needs_equalization(datum/gas_mixture/pipe_air, datum/gas_mixture/environment)
+	if(!pipe_air || !environment)
+		return TRUE
+	if(abs(pipe_air.return_pressure() - environment.return_pressure()) > 0.1)
+		return TRUE
+	if(abs(pipe_air.return_temperature() - environment.return_temperature()) > 0.5)
+		return TRUE
+	var/pipe_moles = pipe_air.total_moles()
+	var/environment_moles = environment.total_moles()
+	if(pipe_moles < MINIMUM_MOLES_TO_PUMP || environment_moles < MINIMUM_MOLES_TO_PUMP)
+		return (pipe_moles >= MINIMUM_MOLES_TO_PUMP) != (environment_moles >= MINIMUM_MOLES_TO_PUMP)
+	var/list/gases = pipe_air.gas_ids() | environment.gas_ids()
+	for(var/gas_id in gases)
+		var/gas_type = pipe_air.get_xgm_id_for_gas(gas_id)
+		if(gas_type && abs(pipe_air.get_moles(gas_type) / pipe_moles - environment.get_moles(gas_type) / environment_moles) > 0.001)
+			return TRUE
+	return FALSE
+
+/// One network-owned leak transaction. Individual pipe objects merely publish
+/// topology/settings changes; the pipenet processes all open faces together.
+/obj/machinery/atmospherics/pipe/proc/process_network_leak()
+	if(!leaking || !parent || !loc)
+		return FALSE
+	var/datum/gas_mixture/environment = loc.return_air()
+	if(!environment)
+		return FALSE
+	parent.mingle_with_turf(loc, volume)
+	if(!leak_needs_equalization(parent.air, environment))
+		hibernate_stable_leak()
+		return FALSE
+	return TRUE
 
 /obj/machinery/atmospherics/pipe/proc/release_sorbed_material_gas(datum/gas_mixture/release_target)
 	if(material_sorbed_moles <= 0)
@@ -146,32 +229,35 @@
 /obj/machinery/atmospherics/pipe/attackby(obj/item/W as obj, mob/user as mob)
 	if (istype(src, /obj/machinery/atmospherics/pipe/tank))
 		return ..()
-
-	if(damaged_leak && W.has_tool_quality(TOOL_WELDER))
-		var/obj/item/weldingtool/welder = W.get_welder()
-		if(!welder.remove_fuel(1, user))
-			return TRUE
-		to_chat(user, span_notice("You begin welding the fatigue crack in \the [src]."))
-		playsound(src, welder.usesound, 50, TRUE)
-		if(do_after(user, 4 SECONDS * welder.toolspeed, target = src) && damaged_leak)
-			damaged_leak = FALSE
-			handle_leaking()
-			to_chat(user, span_notice("You seal the fatigue crack in \the [src]."))
-		return TRUE
-
 	if(istype(W,/obj/item/pipe_painter))
 		return 0
+	return ..()
 
-	if (!W.has_tool_quality(TOOL_WRENCH))
-		return ..()
+/obj/machinery/atmospherics/pipe/welder_act(mob/user, obj/item/W)
+	if(!damaged_leak)
+		return NONE
+	var/obj/item/weldingtool/welder = W.get_welder()
+	if(!welder.remove_fuel(1, user))
+		return ITEM_INTERACT_BLOCKING
+	to_chat(user, span_notice("You begin welding the fatigue crack in \the [src]."))
+	playsound(src, welder.usesound, 50, TRUE)
+	if(do_after(user, 4 SECONDS * welder.toolspeed, target = src) && damaged_leak)
+		damaged_leak = FALSE
+		handle_leaking()
+		to_chat(user, span_notice("You seal the fatigue crack in \the [src]."))
+	return ITEM_INTERACT_SUCCESS
+
+/obj/machinery/atmospherics/pipe/wrench_act(mob/user, obj/item/W)
+	if(istype(src, /obj/machinery/atmospherics/pipe/tank))
+		return NONE
 	var/turf/T = src.loc
 	if (level==1 && isturf(T) && !T.is_plating())
 		to_chat(user, span_warning("You must remove the plating first."))
-		return 1
+		return ITEM_INTERACT_BLOCKING
 	if(!can_unwrench())
 		to_chat(user, span_warning("You cannot unwrench \the [src], it is too exerted due to internal pressure."))
 		add_fingerprint(user)
-		return 1
+		return ITEM_INTERACT_BLOCKING
 
 	//potential yeet
 	var/datum/gas_mixture/int_air = return_air()
@@ -195,6 +281,7 @@
 		if(unsafe_wrenching)
 			unsafe_pressure_release(user, internal_pressure)
 		atom_deconstruct()
+	return ITEM_INTERACT_SUCCESS
 
 /obj/machinery/atmospherics/pipe/proc/change_color(new_color)
 	//only pass valid pipe colors please ~otherwise your pipe will turn invisible
@@ -227,4 +314,6 @@
 	if(!parent) //This should cut back on the overhead calling build_network thousands of times per cycle
 		..()
 	else
+		if(leaking)
+			parent.network?.mark_leak_dirty()
 		. = PROCESS_KILL

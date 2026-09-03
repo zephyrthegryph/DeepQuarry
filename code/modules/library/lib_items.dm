@@ -39,22 +39,26 @@
 			return
 		else
 			name = ("bookcase ([newname])")
-	else if(O.has_tool_quality(TOOL_WRENCH))
-		playsound(src, O.usesound, 100, 1)
-		to_chat(user, (anchored ? span_notice("You unfasten \the [src] from the floor.") : span_notice("You secure \the [src] to the floor.")))
-		anchored = !anchored
-	else if(O.has_tool_quality(TOOL_SCREWDRIVER))
-		playsound(src, O.usesound, 75, 1)
-		to_chat(user, span_notice("You begin dismantling \the [src]."))
-		if(do_after(user, 25 * O.toolspeed, target = src))
-			to_chat(user, span_notice("You dismantle \the [src]."))
-			new /obj/item/stack/material/wood(get_turf(src), 3)
-			for(var/obj/item/book/b in contents)
-				b.loc = (get_turf(src))
-			qdel(src)
-
 	else
 		..()
+
+/obj/structure/bookcase/wrench_act(mob/user, obj/item/tool)
+	playsound(src, tool.usesound, 100, 1)
+	to_chat(user, anchored ? span_notice("You unfasten \the [src] from the floor.") : span_notice("You secure \the [src] to the floor."))
+	anchored = !anchored
+	return ITEM_INTERACT_SUCCESS
+
+/obj/structure/bookcase/screwdriver_act(mob/user, obj/item/tool)
+	playsound(src, tool.usesound, 75, 1)
+	to_chat(user, span_notice("You begin dismantling \the [src]."))
+	if(!do_after(user, 2.5 SECONDS * tool.toolspeed, target = src))
+		return ITEM_INTERACT_BLOCKING
+	to_chat(user, span_notice("You dismantle \the [src]."))
+	new /obj/item/stack/material/wood(get_turf(src), 3)
+	for(var/obj/item/book/book in contents)
+		book.forceMove(get_turf(src))
+	qdel(src)
+	return ITEM_INTERACT_SUCCESS
 
 /obj/structure/bookcase/attack_hand(mob/user)
 	if(contents.len)
@@ -309,17 +313,25 @@ Book Cart End
 							return
 					scanner.computer.inventory.Add(src)
 					to_chat(user, "[W]'s screen flashes: 'Book stored in buffer. Title added to general inventory.'")
-	else if(istype(W, /obj/item/material/knife) || W.has_tool_quality(TOOL_WIRECUTTER))
-		if(carved)	return
-		to_chat(user, span_notice("You begin to carve out [title]."))
-		if(do_after(user, 3 SECONDS, target = src))
-			to_chat(user, span_notice("You carve out the pages from [title]! You didn't want to read it anyway."))
-			playsound(src, 'sound/bureaucracy/papercrumple.ogg', 50, 1)
-			new /obj/item/shreddedp(get_turf(src))
-			carved = 1
-			return
+	else if(istype(W, /obj/item/material/knife))
+		return carve_pages(user)
 	else
 		..()
+
+/obj/item/book/wirecutter_act(mob/user, obj/item/tool)
+	return carve_pages(user) ? ITEM_INTERACT_SUCCESS : ITEM_INTERACT_BLOCKING
+
+/obj/item/book/proc/carve_pages(mob/user)
+	if(carved)
+		return FALSE
+	to_chat(user, span_notice("You begin to carve out [title]."))
+	if(!do_after(user, 3 SECONDS, target = src))
+		return FALSE
+	to_chat(user, span_notice("You carve out the pages from [title]! You didn't want to read it anyway."))
+	playsound(src, 'sound/bureaucracy/papercrumple.ogg', 50, 1)
+	new /obj/item/shreddedp(get_turf(src))
+	carved = TRUE
+	return TRUE
 
 /obj/item/book/attack(mob/living/M, mob/living/user, target_zone, attack_modifier)
 	if(user.zone_sel.selecting == O_EYES)

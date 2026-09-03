@@ -41,9 +41,6 @@
 	build_type = AUTOLATHE | PROTOLATHE
 	materials = list(MAT_GLASS = 500)
 	build_path = /obj/item/surgical/scalpel
-	material_selectable = TRUE
-	selectable_amount = SHEET_MATERIAL_AMOUNT
-	material_application = MATERIAL_APPLICATION_SURGICAL
 	category = list(
 		RND_CATEGORY_INITIAL,
 		RND_CATEGORY_TOOLS + RND_SUBCATEGORY_TOOLS_MEDICAL,
@@ -56,9 +53,6 @@
 	build_type = AUTOLATHE | PROTOLATHE
 	materials = list(MAT_GLASS = 1000)
 	build_path = /obj/item/surgical/circular_saw
-	material_selectable = TRUE
-	selectable_amount = SHEET_MATERIAL_AMOUNT * 2
-	material_application = MATERIAL_APPLICATION_SURGICAL
 	category = list(
 		RND_CATEGORY_INITIAL,
 		RND_CATEGORY_TOOLS + RND_SUBCATEGORY_TOOLS_MEDICAL,
@@ -71,9 +65,6 @@
 	build_type = AUTOLATHE | PROTOLATHE
 	materials = list(MAT_GLASS = 1000)
 	build_path = /obj/item/surgical/bonesetter
-	material_selectable = TRUE
-	selectable_amount = SHEET_MATERIAL_AMOUNT
-	material_application = MATERIAL_APPLICATION_SURGICAL
 	category = list(
 		RND_CATEGORY_INITIAL,
 		RND_CATEGORY_TOOLS + RND_SUBCATEGORY_TOOLS_MEDICAL,
@@ -98,9 +89,6 @@
 	build_type = AUTOLATHE | PROTOLATHE
 	materials = list(MAT_GLASS = 500)
 	build_path = /obj/item/surgical/retractor
-	material_selectable = TRUE
-	selectable_amount = SHEET_MATERIAL_AMOUNT
-	material_application = MATERIAL_APPLICATION_SURGICAL
 	category = list(
 		RND_CATEGORY_INITIAL,
 		RND_CATEGORY_TOOLS + RND_SUBCATEGORY_TOOLS_MEDICAL,
@@ -113,9 +101,6 @@
 	build_type = AUTOLATHE | PROTOLATHE
 	materials = list(MAT_GLASS = 500)
 	build_path = /obj/item/surgical/cautery
-	material_selectable = TRUE
-	selectable_amount = SHEET_MATERIAL_AMOUNT
-	material_application = MATERIAL_APPLICATION_SURGICAL
 	category = list(
 		RND_CATEGORY_INITIAL,
 		RND_CATEGORY_TOOLS + RND_SUBCATEGORY_TOOLS_MEDICAL,
@@ -128,9 +113,6 @@
 	build_type = AUTOLATHE | PROTOLATHE
 	materials = list(MAT_STEEL = 500, MAT_GLASS = 500)
 	build_path = /obj/item/surgical/hemostat
-	material_selectable = TRUE
-	selectable_amount = SHEET_MATERIAL_AMOUNT
-	material_application = MATERIAL_APPLICATION_SURGICAL
 	category = list(
 		RND_CATEGORY_INITIAL,
 		RND_CATEGORY_TOOLS + RND_SUBCATEGORY_TOOLS_MEDICAL,

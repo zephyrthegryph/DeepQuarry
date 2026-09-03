@@ -87,15 +87,17 @@
 /obj/item/deskbell/attackby(obj/item/W, mob/user, params)
 	if(!istype(W))
 		return
-	if(W.has_tool_quality(TOOL_WRENCH) && isturf(loc))
-		if(do_after(user, 0.5 SECONDS, target = src))
-			if(!src) return
-			to_chat(user, span_notice("You dissasemble the desk bell"))
-			new /obj/item/stack/material/steel(get_turf(src), 1)
-			qdel(src)
-			return
 	if(!broken)
 		ring(user)
+
+/obj/item/deskbell/wrench_act(mob/user, obj/item/W)
+	if(!isturf(loc))
+		return TRUE
+	if(do_after(user, 0.5 SECONDS, target = src))
+		to_chat(user, span_notice("You disassemble the desk bell."))
+		new /obj/item/stack/material/steel(get_turf(src), 1)
+		qdel(src)
+	return TRUE
 
 
 /obj/item/deskbell/proc/break_bell(mob/user)

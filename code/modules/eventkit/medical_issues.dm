@@ -84,7 +84,9 @@
 		return FALSE
 	var/mob/living/carbon/human/subject = issue.owner
 	LAZYREMOVE(medical_issues, issue)
-	SEND_SIGNAL(subject, COMSIG_MOB_MEDICAL_ISSUES_CHANGED)
+	if(subject)
+		SEND_SIGNAL(subject, COMSIG_MOB_MEDICAL_ISSUES_CHANGED)
+	issue.affectedorgan = null
 	return TRUE
 
 /datum/medical_issue/proc/handle_damage()

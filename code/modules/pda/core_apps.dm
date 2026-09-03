@@ -222,7 +222,8 @@
 	category = "Utilities"
 
 /datum/data/pda/app/atmos_scanner/update_ui(mob/user, list/data)
-	data["aircontents"] = get_gas_mixture_default_scan_data(get_turf(user))
+	var/turf/location = get_turf(user)
+	data["aircontents"] = get_gas_mixture_default_scan_data(location?.return_air())
 
 /datum/data/pda/app/news
 	name = "News"

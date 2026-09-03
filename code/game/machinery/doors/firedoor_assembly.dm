@@ -31,16 +31,6 @@
 				wired = 1
 				to_chat(user, span_notice("You wire \the [src]."))
 
-	else if(C.has_tool_quality(TOOL_WIRECUTTER) && wired )
-		playsound(src, C.usesound, 100, 1)
-		user.visible_message("[user] cuts the wires from \the [src].", "You start to cut the wires from \the [src].")
-
-		if(do_after(user, 4 SECONDS, target = src))
-			if(!src) return
-			to_chat(user, span_notice("You cut the wires!"))
-			new/obj/item/stack/cable_coil(src.loc, 1)
-			wired = 0
-
 	else if(istype(C, /obj/item/circuitboard/airalarm) && wired)
 		if(anchored)
 			playsound(src, 'sound/items/Deconstruct.ogg', 50, 1)
@@ -54,35 +44,6 @@
 			qdel(src)
 		else
 			to_chat(user, span_warning("You must secure \the [src] first!"))
-	else if(C.has_tool_quality(TOOL_WRENCH))
-		anchored = !anchored
-		playsound(src, C.usesound, 50, 1)
-		user.visible_message(span_warning("[user] has [anchored ? "" : "un" ]secured \the [src]!"),
-							  "You have [anchored ? "" : "un" ]secured \the [src]!")
-		update_icon()
-	else if((glass || !anchored) && C.has_tool_quality(TOOL_WELDER))
-		var/obj/item/weldingtool/WT = C.get_welder()
-		if(WT.remove_fuel(0, user))
-			playsound(src, WT.usesound, 50, 1)
-			if(glass)
-				user.visible_message(span_warning("[user] welds the glass panel out of \the [src]."),
-									span_notice("You start to weld the glass panel out of \the [src]."))
-				if(do_after(user, 4 SECONDS * WT.toolspeed, target = src) && WT.isOn())
-					to_chat(user, span_notice("You welded the glass panel out!"))
-					new /obj/item/stack/material/glass/reinforced(drop_location())
-					glass = FALSE
-					update_icon()
-				return
-			if(!anchored)
-				user.visible_message(span_warning("[user] dissassembles \the [src]."), "You start to dissassemble \the [src].")
-				if(do_after(user, 4 SECONDS * WT.toolspeed, target = src) && WT.isOn())
-					user.visible_message(span_warning("[user] has dissassembled \the [src]."),
-										"You have dissassembled \the [src].")
-					new /obj/item/stack/material/steel(drop_location(), 2)
-					qdel(src)
-				return
-		else
-			to_chat(user, span_notice("You need more welding fuel."))
 	else if(istype(C, /obj/item/stack/material) && C.get_material_name() == MAT_RGLASS && !glass)
 		var/obj/item/stack/S = C
 		if (S.get_amount() >= 1)
@@ -96,3 +57,44 @@
 
 	else
 		..(C, user)
+
+/obj/structure/firedoor_assembly/wirecutter_act(mob/user, obj/item/tool)
+	if(!wired)
+		return FALSE
+	playsound(src, tool.usesound, 100, TRUE)
+	user.visible_message("[user] cuts the wires from \the [src].", "You start to cut the wires from \the [src].")
+	if(do_after(user, 4 SECONDS, target = src) && !QDELETED(src) && wired)
+		to_chat(user, span_notice("You cut the wires!"))
+		new /obj/item/stack/cable_coil(loc, 1)
+		wired = FALSE
+	return TRUE
+
+/obj/structure/firedoor_assembly/wrench_act(mob/user, obj/item/tool)
+	anchored = !anchored
+	playsound(src, tool.usesound, 50, TRUE)
+	user.visible_message(span_warning("[user] has [anchored ? "" : "un"]secured \the [src]!"), "You have [anchored ? "" : "un"]secured \the [src]!")
+	update_icon()
+	return TRUE
+
+/obj/structure/firedoor_assembly/welder_act(mob/user, obj/item/tool)
+	if(!glass && anchored)
+		return FALSE
+	var/obj/item/weldingtool/welder = tool.get_welder()
+	if(!welder.remove_fuel(0, user))
+		to_chat(user, span_notice("You need more welding fuel."))
+		return TRUE
+	playsound(src, welder.usesound, 50, TRUE)
+	if(glass)
+		user.visible_message(span_warning("[user] welds the glass panel out of \the [src]."), span_notice("You start to weld the glass panel out of \the [src]."))
+		if(do_after(user, 4 SECONDS * welder.toolspeed, target = src) && welder.isOn())
+			to_chat(user, span_notice("You welded the glass panel out!"))
+			new /obj/item/stack/material/glass/reinforced(drop_location())
+			glass = FALSE
+			update_icon()
+		return TRUE
+	user.visible_message(span_warning("[user] disassembles \the [src]."), "You start to disassemble \the [src].")
+	if(do_after(user, 4 SECONDS * welder.toolspeed, target = src) && welder.isOn())
+		user.visible_message(span_warning("[user] has disassembled \the [src]."), "You have disassembled \the [src].")
+		new /obj/item/stack/material/steel(drop_location(), 2)
+		qdel(src)
+	return TRUE

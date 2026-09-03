@@ -37,11 +37,11 @@
 	var/weight = 1
 	var/list/qualifiers = list("with ease", "without any trouble", "with great effort")
 
-/obj/structure/fitness/weightlifter/attackby(obj/item/W as obj, mob/user as mob)
-	if(W.has_tool_quality(TOOL_WRENCH))
-		playsound(src, 'sound/items/Deconstruct.ogg', 75, 1)
-		weight = ((weight) % qualifiers.len) + 1
-		to_chat(user, "You set the machine's weight level to [weight].")
+/obj/structure/fitness/weightlifter/wrench_act(mob/user, obj/item/W)
+	playsound(src, 'sound/items/Deconstruct.ogg', 75, 1)
+	weight = ((weight) % qualifiers.len) + 1
+	to_chat(user, "You set the machine's weight level to [weight].")
+	return TRUE
 
 /obj/structure/fitness/weightlifter/attack_hand(mob/living/carbon/human/user)
 	if(!istype(user))

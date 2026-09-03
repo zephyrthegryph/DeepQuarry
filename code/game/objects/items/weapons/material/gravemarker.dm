@@ -11,8 +11,8 @@
 	var/grave_name = ""		//Name of the intended occupant
 	var/epitaph = ""		//A quick little blurb
 
-/obj/item/material/gravemarker/attackby(obj/item/W, mob/user as mob)
-	if(W.has_tool_quality(TOOL_SCREWDRIVER))
+/obj/item/material/gravemarker/attackby(obj/item/W, mob/user as mob, tool_quality)
+	if(tool_quality == TOOL_SCREWDRIVER)
 		var/carving_1 = sanitizeSafe(tgui_input_text(user, "Who is \the [src.name] for?", "Gravestone Naming", null, MAX_NAME_LEN, encode = FALSE), MAX_NAME_LEN)
 		if(carving_1)
 			user.visible_message("[user] starts carving \the [src.name].", "You start carving \the [src.name].")
@@ -27,13 +27,21 @@
 				user.visible_message("[user] carves something into \the [src.name].", "You carve your message into \the [src.name].")
 				epitaph += carving_2
 				update_icon()
-	if(W.has_tool_quality(TOOL_WRENCH))
+	if(tool_quality == TOOL_WRENCH)
 		user.visible_message("[user] starts carving \the [src.name].", "You start carving \the [src.name].")
 		if(do_after(user, material.hardness * W.toolspeed, target = src))
 			material.place_dismantled_product(get_turf(src))
 			user.visible_message("[user] dismantles down \the [src.name].", "You dismantle \the [src.name].")
 			qdel(src)
 	..()
+
+/obj/item/material/gravemarker/screwdriver_act(mob/user, obj/item/W)
+	attackby(W, user, TOOL_SCREWDRIVER)
+	return TRUE
+
+/obj/item/material/gravemarker/wrench_act(mob/user, obj/item/W)
+	attackby(W, user, TOOL_WRENCH)
+	return TRUE
 
 /obj/item/material/gravemarker/examine(mob/user)
 	. = ..()

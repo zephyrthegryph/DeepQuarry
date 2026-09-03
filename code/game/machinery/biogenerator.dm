@@ -13,6 +13,8 @@
 #define BIOGEN_REAGENT(n, o, r, p) n = new /datum/data/biogenerator_reagent(n, o, r, p)
 
 /obj/machinery/biogenerator
+	maintenance_flags = MACHINE_MAINT_STANDARD_MOVABLE
+	maintenance_wrench_time = 40
 	name = "biogenerator"
 	desc = "Converts plants into biomass, which can be used for fertilizer and sort-of-synthetic products."
 	icon = 'icons/obj/biogenerator_vr.dmi'
@@ -219,13 +221,7 @@
 	return
 
 /obj/machinery/biogenerator/attackby(obj/item/O, mob/user)
-	if(default_deconstruction_screwdriver(user, O))
-		return
-	if(default_deconstruction_crowbar(user, O))
-		return
 	if(default_part_replacement(user, O))
-		return
-	if(default_unfasten_wrench(user, O, 40))
 		return
 	if(istype(O, /obj/item/reagent_containers/glass))
 		if(beaker)

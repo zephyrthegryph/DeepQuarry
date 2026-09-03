@@ -234,26 +234,6 @@ GLOBAL_LIST_EMPTY_TYPED(allConsoles, /obj/machinery/requests_console)
 
 					//err... hacking code, which has no reason for existing... but anyway... it was once supposed to unlock priority 3 messaging on that console (EXTREME priority...), but the code for that was removed.
 /obj/machinery/requests_console/attackby(obj/item/O as obj, mob/user as mob)
-	if(computer_deconstruction_screwdriver(user, O))
-		return
-	if(istype(O, /obj/item/multitool))
-		var/input = tgui_input_text(user, "What Department ID would you like to give this request console?", "Multitool-Request Console Interface", department, MAX_MESSAGE_LEN)
-		if(!input)
-			to_chat(user, "No input found. Please hang up and try your call again.")
-			return
-		department = input
-		announcement.title = "[department] announcement"
-		announcement.newscast = 1
-
-		name = "[department] Requests Console"
-		if(departmentType & RC_ASSIST)
-			GLOB.req_console_assistance |= department
-		if(departmentType & RC_SUPPLY)
-			GLOB.req_console_supplies |= department
-		if(departmentType & RC_INFO)
-			GLOB.req_console_information |= department
-		return
-
 	if(istype(O, /obj/item/card/id))
 		if(inoperable(MAINT)) return
 		if(screen == RCS_MESSAUTH)
@@ -276,6 +256,23 @@ GLOBAL_LIST_EMPTY_TYPED(allConsoles, /obj/machinery/requests_console)
 			msgStamped = span_blue(span_bold("Stamped with the [T.name]"))
 			SStgui.update_uis(src)
 	return
+
+/obj/machinery/requests_console/multitool_act(mob/user, obj/item/tool)
+	var/input = tgui_input_text(user, "What Department ID would you like to give this request console?", "Multitool-Request Console Interface", department, MAX_MESSAGE_LEN)
+	if(!input)
+		to_chat(user, "No input found. Please hang up and try your call again.")
+		return ITEM_INTERACT_BLOCKING
+	department = input
+	announcement.title = "[department] announcement"
+	announcement.newscast = TRUE
+	name = "[department] Requests Console"
+	if(departmentType & RC_ASSIST)
+		GLOB.req_console_assistance |= department
+	if(departmentType & RC_SUPPLY)
+		GLOB.req_console_supplies |= department
+	if(departmentType & RC_INFO)
+		GLOB.req_console_information |= department
+	return ITEM_INTERACT_SUCCESS
 
 /obj/machinery/requests_console/proc/reset_message(mainmenu = 0)
 	message = ""

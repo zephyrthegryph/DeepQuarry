@@ -317,6 +317,41 @@ if [ "$pcre2_support" -eq 1 ]; then
 		FAILED=1
 	fi;
 
+	part "legacy machinery structural damage overrides"
+	if $grep -Pn '^/obj/machinery[^\n]*/(take_damage|fall_apart)\(' $code_files; then
+		echo
+		echo -e "${RED}ERROR: machinery must use obj_integrity and atom_break/atom_fix/atom_destruction; private take_damage/fall_apart handlers are forbidden.${NC}"
+		FAILED=1
+	fi;
+
+	part "legacy machinery common-tool dispatch"
+	# Common tools are dispatched by item_interaction() into focused *_act hooks.
+	# attackby() remains valid for ordinary items, but must not rediscover tool
+	# qualities or invoke the old deconstruction dispatcher helpers.
+	if $grep -PUn '(?m)^/obj/machinery[^\n]*/attackby\([^\n]*\)\n(?:(?!^/)[\s\S])*?(?:has_tool_quality\(TOOL_|istype\([^\n]*?/obj/item/multitool|default_(?:deconstruction_screwdriver|deconstruction_crowbar|unfasten_wrench)\(|computer_deconstruction_screwdriver\(|alarm_deconstruction_(?:screwdriver|wirecutters)\()' code --glob '*.dm'; then
+		echo
+		echo -e "${RED}ERROR: machinery attackby() must not dispatch common tools or legacy deconstruction helpers; use focused *_act hooks/declarative maintenance.${NC}"
+		FAILED=1
+	fi;
+	if $grep -Pn '\b(default_deconstruction_screwdriver|default_deconstruction_crowbar|default_unfasten_wrench|computer_deconstruction_screwdriver|alarm_deconstruction_screwdriver|alarm_deconstruction_wirecutters)\s*\(' $code_files; then
+		echo
+		echo -e "${RED}ERROR: removed machinery maintenance helpers must not return; use declarative maintenance flags and focused tool hooks.${NC}"
+		FAILED=1
+	fi;
+	# The volatile abductor RTG's asplod lifecycle is the sole allowlisted scenario
+	# device: its ex_act continues an already-running detonation rather than applying
+	# structural damage. Ordinary machinery must never delete itself from damage handlers.
+	if $grep -PUn '^/obj/machinery[^\n]*/(?:ex_act|bullet_act)\([^\n]*\)\n(?:(?:\t.*|\s*)\n?){0,24}?\t*qdel\(src\)' code --glob '*.dm' --glob '!code/modules/power/port_gen.dm'; then
+		echo
+		echo -e "${RED}ERROR: machinery structural damage handlers must route through obj_integrity, not qdel(src).${NC}"
+		FAILED=1
+	fi;
+	if $grep -PUn '^/obj/machinery[^\n]*/ex_act\([^\n]*\)\n(?:(?:\t.*|\s*)\n?){0,24}?\t*take_damage\(' code --glob '*.dm' --glob '!code/game/machinery/machinery.dm'; then
+		echo
+		echo -e "${RED}ERROR: subtype ex_act must preserve orthogonal effects and chain to generic machinery explosion damage.${NC}"
+		FAILED=1
+	fi;
+
 	part "tag"
 	#Checking for 'tag' set to something on maps
 	(! $grep -Pn '( |\t|;|{)tag( ?)=' $map_files)

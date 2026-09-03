@@ -28,19 +28,16 @@
 	var/custommessage 	= "This is a test, please ignore."
 	var/list/temp = null
 
-/obj/machinery/computer/message_monitor/attackby(obj/item/O as obj, mob/living/user as mob)
+/obj/machinery/computer/message_monitor/screwdriver_act(mob/living/user, obj/item/tool)
 	if(stat & (NOPOWER|BROKEN))
-		..()
-		return
+		return ..()
 	if(!istype(user))
-		return
-	if(O.has_tool_quality(TOOL_SCREWDRIVER) && emag)
+		return ITEM_INTERACT_BLOCKING
+	if(emag)
 		//Stops people from just unscrewing the monitor and putting it back to get the console working again.
 		to_chat(user, span_warning("It is too hot to mess with!"))
-		return
-
-	..()
-	return
+		return ITEM_INTERACT_BLOCKING
+	return ..()
 
 /obj/machinery/computer/message_monitor/emag_act(remaining_charges, mob/user)
 	// Will create sparks and print out the console's password. You will then have to wait a while for the console to be back online.

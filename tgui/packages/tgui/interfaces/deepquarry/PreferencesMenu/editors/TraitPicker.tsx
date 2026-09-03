@@ -249,7 +249,8 @@ const TraitRow = ({
 }) => {
   const { act } = useBackend();
   const [open, setOpen] = useState(false);
-  const costStr = meta.cost === 0 ? '0' : meta.cost > 0 ? `+${meta.cost}` : `${meta.cost}`;
+  const costStr =
+    meta.cost === 0 ? '0' : meta.cost > 0 ? `+${meta.cost}` : `${meta.cost}`;
   return (
     <Box mb={0.1} fontSize="0.85em">
       <Box style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>

@@ -104,12 +104,16 @@
 	if(SSair)
 		SSair.mark_for_update(W)
 
-	if(CONFIG_GET(number/starlight))
+	var/defer_explosion_appearance = SSexplosions?.is_bulk_resolving()
+	if(CONFIG_GET(number/starlight) && !defer_explosion_appearance)
 		for(var/turf/space/S in range(W, 1))
 			S.update_starlight()
-	W.levelupdate()
-	W.update_icon(1)
-	W.post_change()
+	if(defer_explosion_appearance)
+		SSexplosions.defer_turf_update(W)
+	else
+		W.levelupdate()
+		W.update_icon(1)
+		W.post_change()
 	. =  W
 
 	dangerous_objects = old_dangerous_objects
@@ -125,17 +129,18 @@
 		lighting_object = old_lighting_object
 
 		directional_opacity = old_directional_opacity
-		recalculate_directional_opacity()
+		if(!defer_explosion_appearance)
+			recalculate_directional_opacity()
 
-		if (dynamic_lighting != old_dynamic_lighting)
+		if (!defer_explosion_appearance && dynamic_lighting != old_dynamic_lighting)
 			if (IS_DYNAMIC_LIGHTING(src))
 				lighting_build_overlay()
 			else
 				lighting_clear_overlay()
-		else if(lighting_object && !lighting_object.needs_update)
+		else if(!defer_explosion_appearance && lighting_object && !lighting_object.needs_update)
 			lighting_object.update()
 
-		if(CONFIG_GET(number/starlight))
+		if(CONFIG_GET(number/starlight) && !defer_explosion_appearance)
 			for(var/turf/space/space_tile in RANGE_TURFS(1, src))
 				space_tile.update_starlight()
 
@@ -171,6 +176,25 @@
 	if(old_shandler) old_shandler.holder_change()
 	if(preserve_outdoors)
 		outdoors = old_outdoors
+
+/turf/proc/finalize_explosion_deferred_change(update_appearance = TRUE)
+	levelupdate()
+	post_change()
+	if(SSlighting.initialized)
+		recalculate_directional_opacity()
+		if(lighting_object && !lighting_object.needs_update)
+			lighting_object.update()
+	if(update_appearance)
+		finalize_explosion_deferred_appearance()
+
+/turf/proc/finalize_explosion_deferred_appearance()
+	// The subsystem already deduplicated the complete one-tile neighborhood, so
+	// do not recursively update the same nine turfs for every changed floor.
+	update_icon(FALSE)
+	if(CONFIG_GET(number/starlight))
+		if(istype(src, /turf/space))
+			var/turf/space/S = src
+			S.update_starlight()
 
 
 /turf/proc/propogate_sunlight_changes(oldtype, old_density, new_turf, above = FALSE)

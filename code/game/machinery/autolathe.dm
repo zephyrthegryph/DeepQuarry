@@ -9,6 +9,7 @@
 	active_power_usage = 2000
 	clicksound = "keyboard"
 	clickvol = 30
+	maintenance_flags = MACHINE_MAINT_STANDARD
 
 	circuit = /obj/item/circuitboard/autolathe
 
@@ -94,17 +95,29 @@
 	if(panel_open && held_item.tool_behaviour == TOOL_CROWBAR)
 		context[SCREENTIP_CONTEXT_LMB] = "Deconstruct"
 		return CONTEXTUAL_SCREENTIP_SET
+*/
 
 /obj/machinery/autolathe/crowbar_act(mob/living/user, obj/item/tool)
-	. = NONE
-	if(default_deconstruction_crowbar(user, tool))
-		return ITEM_INTERACT_SUCCESS
+	return ..()
 
 /obj/machinery/autolathe/screwdriver_act(mob/living/user, obj/item/tool)
-	. = ITEM_INTERACT_BLOCKING
-	if(default_deconstruction_screwdriver(user, "autolathe_t", "autolathe", tool))
-		return ITEM_INTERACT_SUCCESS
-*/
+	if(busy)
+		return ITEM_INTERACT_BLOCKING
+	. = ..()
+	if(. == ITEM_INTERACT_SUCCESS)
+		interact(user)
+
+/obj/machinery/autolathe/wirecutter_act(mob/user, obj/item/tool)
+	if(!panel_open)
+		return ITEM_INTERACT_BLOCKING
+	wires.Interact(user)
+	return ITEM_INTERACT_SUCCESS
+
+/obj/machinery/autolathe/multitool_act(mob/user, obj/item/tool)
+	if(!panel_open)
+		return ITEM_INTERACT_BLOCKING
+	wires.Interact(user)
+	return ITEM_INTERACT_SUCCESS
 
 /obj/machinery/autolathe/tgui_status(mob/user)
 	if(disabled)
@@ -180,9 +193,9 @@
 			"id" = design.id,
 			"categories" = design.category,
 			"icon" = "[size == size32x32 ? "" : "[size] "][css_id]",
-			"materialSelectable" = design.material_selectable,
-			"selectableAmount" = design.selectable_amount,
-			"materialProfile" = design.material_preview_profile || design.material_application,
+			"materialConfigurable" = length(design.material_slots) > 0,
+			"materialProfile" = design.material_application,
+			"materialSlots" = material_slots_tgui(design.material_slots),
 		)
 
 		output += list(design_data)
@@ -259,11 +272,11 @@
 	build_count = clamp(build_count, 1, 50)
 
 	// Material-selectable designs let the user pick which loaded material to use.
-	var/chosen_material = design.material_selectable ? params["material"] : null
-	if(design.material_selectable && !design.material_choice_valid(chosen_material))
-		atom_say("Select a valid material for this design.")
+	var/list/chosen_materials = design.material_choices_from_params(params)
+	if(length(design.material_slots) && !design.material_choice_valid(chosen_materials))
+		atom_say("Select valid materials for every required construction slot.")
 		return
-	var/list/effective_mats = design.effective_materials(chosen_material)
+	var/list/effective_mats = design.effective_materials(chosen_materials)
 
 	// Check for materials required. For custom material items decode their required materials
 	var/list/materials_needed = list()
@@ -305,7 +318,7 @@
 		target_location = get_turf(src)
 
 
-	addtimer(CALLBACK(src, PROC_REF(do_make_item), design, build_count, build_time_per_item, material_cost_coefficient, charge_per_item, materials_needed, target_location, chosen_material), build_time_per_item)
+	addtimer(CALLBACK(src, PROC_REF(do_make_item), design, build_count, build_time_per_item, material_cost_coefficient, charge_per_item, materials_needed, target_location, chosen_materials), build_time_per_item)
 	return TRUE
 
 /**
@@ -320,7 +333,7 @@
  * * list/materials_needed - the list of materials to print 1 item
  * * turf/target - the location to drop the printed item on
 */
-/obj/machinery/autolathe/proc/do_make_item(datum/design_techweb/design, items_remaining, build_time_per_item, material_cost_coefficient, charge_per_item, list/materials_needed, turf/target, chosen_material = null)
+/obj/machinery/autolathe/proc/do_make_item(datum/design_techweb/design, items_remaining, build_time_per_item, material_cost_coefficient, charge_per_item, list/materials_needed, turf/target, list/chosen_materials)
 	PROTECTED_PROC(TRUE)
 
 	if(items_remaining <= 0) // how
@@ -366,7 +379,7 @@
 
 		created = new stack_item(target, number_to_make)
 	else
-		created = design.create_item(target, chosen_material)
+		created = design.create_item(target, chosen_materials)
 		split_materials_uniformly(materials_needed, material_cost_coefficient, created)
 
 	if(isitem(created))
@@ -383,7 +396,7 @@
 	if(items_remaining <= 0)
 		finalize_build()
 		return
-	addtimer(CALLBACK(src, PROC_REF(do_make_item), design, items_remaining, build_time_per_item, material_cost_coefficient, charge_per_item, materials_needed, target, chosen_material), build_time_per_item)
+	addtimer(CALLBACK(src, PROC_REF(do_make_item), design, items_remaining, build_time_per_item, material_cost_coefficient, charge_per_item, materials_needed, target, chosen_materials), build_time_per_item)
 
 /**
  * Resets the icon state and busy flag
@@ -428,11 +441,6 @@
 		to_chat(user, span_notice("\The [src] is busy. Please wait for completion of previous operation."))
 		return
 
-	if(default_deconstruction_screwdriver(user, O))
-		interact(user)
-		return
-	if(default_deconstruction_crowbar(user, O))
-		return
 	if(default_part_replacement(user, O))
 		return
 
@@ -440,11 +448,7 @@
 		return
 
 	if(panel_open)
-		//Don't eat multitools or wirecutters used on an open lathe.
-		if(O.has_tool_quality(TOOL_MULTITOOL) || O.has_tool_quality(TOOL_WIRECUTTER))
-			wires.Interact(user)
-		else
-			to_chat(user, "close the panel first!")
+		to_chat(user, "close the panel first!")
 		return
 
 	if(!istype(O, /obj/item/disk/design_disk) && !istype(O, /obj/item/disk/tech_disk))

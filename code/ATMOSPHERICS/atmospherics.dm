@@ -41,6 +41,43 @@ Pipelines + Other Objects -> Pipe network
 	var/material_sorbed_moles = 0
 	var/material_sorbed_thermal_energy = 0
 	var/material_last_exposure = 0
+	/// Every pipe-network roster currently retaining this machine. This is the
+	/// authoritative reverse index used to make topology teardown cycle-proof.
+	var/list/datum/pipe_network/network_memberships
+
+/obj/machinery/atmospherics/proc/register_network_membership(datum/pipe_network/network)
+	LAZYOR(network_memberships, network)
+
+/obj/machinery/atmospherics/proc/unregister_network_membership(datum/pipe_network/network)
+	LAZYREMOVE(network_memberships, network)
+
+/obj/machinery/atmospherics/Destroy()
+	rust_unregister_pipe_topology()
+	// Pipe adjacency is a bidirectional ownership edge. Topology destruction can
+	// delete one side first, so sever the common node slots on surviving peers
+	// before this machine enters the GC queue.
+	var/list/adjacent_machines = list()
+	for(var/obj/machinery/atmospherics/neighbour in orange(1, src))
+		adjacent_machines += neighbour
+	if(z > 1)
+		for(var/obj/machinery/atmospherics/neighbour in locate(x, y, z - 1))
+			adjacent_machines |= neighbour
+	if(z < world.maxz)
+		for(var/obj/machinery/atmospherics/neighbour in locate(x, y, z + 1))
+			adjacent_machines |= neighbour
+	for(var/obj/machinery/atmospherics/neighbour as anything in adjacent_machines)
+		if(neighbour.node1 == src)
+			neighbour.node1 = null
+		if(neighbour.node2 == src)
+			neighbour.node2 = null
+	node1 = null
+	node2 = null
+	var/list/old_memberships = network_memberships
+	network_memberships = null
+	for(var/datum/pipe_network/network as anything in old_memberships)
+		if(network?.normal_members)
+			network.normal_members -= src
+	return ..()
 
 /obj/machinery/atmospherics/proc/engineered_material()
 	return engineered_material_id ? get_material_by_name(engineered_material_id) : null
@@ -143,29 +180,53 @@ Pipelines + Other Objects -> Pipe network
 	return node.pipe_color
 
 /obj/machinery/atmospherics/process()
-	if(being_loaded) //If we're being maploaded, don't build the network just yet.
+	if(being_loaded)
 		return
 	last_flow_rate = 0
 	last_power_draw = 0
 
-	build_network()
+/// Completion callback for deferred Rust gas transfers. Devices which queued a
+/// request must make their scheduling decision from the committed amount, not
+/// from the optimistic request calculated before shared-source clamping.
+/obj/machinery/atmospherics/proc/pump_transaction_committed(actual_moles)
+	return
 
-/obj/machinery/atmospherics/proc/network_expand(datum/pipe_network/new_network, obj/machinery/atmospherics/pipe/reference)
-	// Check to see if should be added to network. Add self if so and adjust variables appropriately.
-	// Note don't forget to have neighbors look as well!
+/// Rebind and detach the gas-bearing ports owned by this machine. A connected
+/// pipenet has one authoritative mixture; the concrete component maps the
+/// relevant air1/air2/air_contents slots to it.
+/obj/machinery/atmospherics/proc/bind_network_air(datum/pipe_network/reference, datum/gas_mixture/network_air)
+	return
 
+/obj/machinery/atmospherics/proc/detach_network_air(datum/pipe_network/reference, datum/gas_mixture/network_air, network_volume)
+	return
+
+/// Optional external reservoir (portable canister/mecha) attached through a
+/// connector after the fixed pipe topology has been built.
+/obj/machinery/atmospherics/proc/attach_external_network_air(datum/pipe_network/reference)
+	return
+
+/proc/detached_pipenet_air(datum/gas_mixture/source, port_volume, network_volume)
+	var/datum/gas_mixture/detached = new(max(port_volume, 1))
+	if(source && network_volume > 0 && port_volume > 0)
+		detached.copy_from_ratio(source, min(port_volume / network_volume, 1))
+	detached.set_volume(max(port_volume, 1))
+	return detached
+
+/// Generic connector interface shared by portable atmos devices and mecha.
+/atom/movable/proc/port_network_air()
 	return null
+
+/atom/movable/proc/set_port_network_air(datum/gas_mixture/new_air)
+	return FALSE
 
 /obj/machinery/atmospherics/proc/build_network(new_attachment)
-	// Called to build a network from this node
-
-	return null
+	// Compatibility entry point for construction and older callers. Rust is the
+	// only topology builder; this publishes stable ports and returns its wrapper.
+	rust_register_pipe_topology()
+	return return_network()
 
 /obj/machinery/atmospherics/proc/return_network(obj/machinery/atmospherics/reference)
-	// Returns pipe_network associated with connection to reference
-	// Notes: should create network if necessary
-	// Should never return null
-
+	// Read-only compatibility view. This must never construct topology.
 	return null
 
 /obj/machinery/atmospherics/proc/reassign_network(datum/pipe_network/old_network, datum/pipe_network/new_network)
@@ -204,7 +265,7 @@ Pipelines + Other Objects -> Pipe network
 		transfer_fingerprints_to(I)
 	qdel(src)
 
-// Return a list of nodes which we should call atmos_init() and build_network() during on_construction()
+// Return the neighboring nodes whose physical links must be refreshed during construction.
 /obj/machinery/atmospherics/proc/get_neighbor_nodes_for_init()
 	return null
 
@@ -222,14 +283,7 @@ Pipelines + Other Objects -> Pipe network
 	var/list/nodes = get_neighbor_nodes_for_init()
 	for(var/obj/machinery/atmospherics/A in nodes)
 		A.atmos_init()
-		A.build_network(TRUE)
-	build_network()
-
-	// There was a coder comment her from 7 years ago asking 'tg does it this way, should we?' and the answer was yes.
-	// By building the network BEFORE our nodes build their network, two things happened:
-	// 1. The network was built and none of the pipes got their temporary air vaiables, resulting in the  pipes having no air in them
-	// 2. The previous network was nulled but never deleted, resulting in a memory leak.
-	// So now, we build our network AFTER the nodes build their network AND we delete the previous network.
+	rust_register_pipe_topology()
 
 // This sets our piping layer.  Hopefully its cool.
 /obj/machinery/atmospherics/proc/setPipingLayer(new_layer)

@@ -7,9 +7,11 @@ import {
   useState,
   useSyncExternalStore,
 } from 'react';
+import { sendByondMessage } from '../events/sendMessage';
 import { configAtom, store } from '../events/store';
 import { profileStartup } from './hooks';
 import { appendBounded, summarizeProfiler } from './metrics';
+import { profileTransition } from './transitions';
 import type {
   ActionSample,
   CommitSample,
@@ -51,7 +53,7 @@ function automaticLog(kind: string, detail: Record<string, unknown>): void {
   if (at - lastAutomaticLog < 1000) return;
   lastAutomaticLog = at;
   const config = store.get(configAtom);
-  Byond.sendMessage('perf/flicker', {
+  sendByondMessage('perf/flicker', {
     kind,
     at,
     interface: config?.interface?.name,
@@ -137,7 +139,11 @@ function recordStartupSample(sample: StartupSample): void {
   startupStages.add(key);
   startupSamples.push(sample);
   add('startup', sample);
-  if (sample.stage === 'native_geometry_observed') {
+  if (
+    sample.stage === 'window_revealed' ||
+    sample.stage === 'first_paint' ||
+    sample.stage === 'native_geometry_observed'
+  ) {
     const backend = startupSamples.find(
       (entry) => entry.stage === 'backend_received',
     );
@@ -159,11 +165,26 @@ function recordStartupSample(sample: StartupSample): void {
     const revealed = startupSamples.find(
       (entry) => entry.stage === 'window_revealed',
     );
-    Byond.sendMessage('perf/status', {
-      kind: 'startup-complete',
+    const phase =
+      sample.stage === 'window_revealed'
+        ? 'visible'
+        : sample.stage === 'first_paint'
+          ? 'painted'
+          : 'stability';
+    sendByondMessage('perf/status', {
+      kind: `startup-${phase}`,
       interface: sample.interfaceName || backend?.interfaceName,
       total_ms: backend ? sample.at - backend.at : undefined,
       chunk_ms: chunkStart && chunkEnd ? chunkEnd.at - chunkStart.at : 0,
+      chunk_resource_ms: chunkEnd?.detail?.resource_ms,
+      chunk_request_queue_ms: chunkEnd?.detail?.request_queue_ms,
+      chunk_ttfb_ms: chunkEnd?.detail?.ttfb_ms,
+      chunk_download_ms: chunkEnd?.detail?.download_ms,
+      chunk_post_resource_ms: chunkEnd?.detail?.post_resource_ms,
+      chunk_transfer_bytes: chunkEnd?.detail?.transfer_bytes,
+      chunk_encoded_bytes: chunkEnd?.detail?.encoded_bytes,
+      chunk_decoded_bytes: chunkEnd?.detail?.decoded_bytes,
+      chunk_cache_hit: chunkEnd?.detail?.cache_hit,
       backend_to_commit_ms:
         backend && commit ? commit.at - backend.at : undefined,
       geometry_ms:
@@ -172,11 +193,22 @@ function recordStartupSample(sample: StartupSample): void {
           : undefined,
       backend_to_reveal_ms:
         backend && revealed ? revealed.at - backend.at : undefined,
-      native_changes: sample.detail?.changes,
-      native_first: sample.detail?.first,
-      native_last: sample.detail?.last,
+      native_changes:
+        sample.stage === 'native_geometry_observed'
+          ? sample.detail?.changes
+          : undefined,
+      native_first:
+        sample.stage === 'native_geometry_observed'
+          ? sample.detail?.first
+          : undefined,
+      native_last:
+        sample.stage === 'native_geometry_observed'
+          ? sample.detail?.last
+          : undefined,
     });
-    startupSessionActive = false;
+    if (sample.stage === 'native_geometry_observed') {
+      startupSessionActive = false;
+    }
   }
 }
 
@@ -241,11 +273,8 @@ function installRuntimeObservers(): () => void {
           } else if (moved && lastCursorSignature) {
             const previousCursor = lastCursorSignature.split('|', 1)[0];
             if (cursor !== previousCursor) {
-              Byond.sendMessage('perf/transition', {
-                kind: 'cursor-boundary',
+              profileTransition('cursor-boundary', {
                 at,
-                interface: store.get(configAtom)?.interface?.name,
-                generation: store.get(configAtom)?.window?.generation,
                 x,
                 y,
                 cursor,

@@ -8,6 +8,7 @@ GLOBAL_LIST_EMPTY(fusion_cores)
 #define MIN_FIELD_STR 1
 
 /obj/machinery/power/fusion_core
+	maintenance_flags = MACHINE_MAINT_STANDARD_MOVABLE
 	name = "\improper R-UST Mk. 9 Tokamak core"
 	desc = "An enormous solenoid for generating extremely high power electromagnetic fields. It includes a kinetic energy harvester."
 	icon = 'icons/obj/machines/power/fusion.dmi'
@@ -50,7 +51,6 @@ GLOBAL_LIST_EMPTY(fusion_cores)
 		if(FCC.cur_viewed_device == src)
 			FCC.cur_viewed_device = null
 	GLOB.fusion_cores -= src
-	drop_fuse_slots()
 	return ..()
 
 /obj/machinery/power/fusion_core/proc/check_core_status()
@@ -69,9 +69,6 @@ GLOBAL_LIST_EMPTY(fusion_cores)
 	if(owned_field)
 
 		set_strength(target_field_strength)
-
-		// Fuse any loaded substance reactants while the field is hot (substance_fusion_combine.dm).
-		try_fusion_combine()
 
 		spawn(1)
 			if(!QDELETED(owned_field))
@@ -118,7 +115,8 @@ GLOBAL_LIST_EMPTY(fusion_cores)
 
 /obj/machinery/power/fusion_core/bullet_act(obj/item/projectile/Proj)
 	if(owned_field)
-		. = owned_field.bullet_act(Proj)
+		return owned_field.bullet_act(Proj)
+	return ..()
 
 /obj/machinery/power/fusion_core/proc/set_strength(value)
 	value = CLAMP(value, MIN_FIELD_STR, MAX_FIELD_STR)
@@ -138,19 +136,10 @@ GLOBAL_LIST_EMPTY(fusion_cores)
 
 /obj/machinery/power/fusion_core/attackby(obj/item/W, mob/user)
 
-	// Substance reactant stacks load into the fuse slots even while running (the live
-	// field is what fuses them — see substance_fusion_combine.dm).
-	if(istype(W, /obj/item/stack/material/substance))
-		return load_fuse_substance(W, user)
-
 	if(owned_field)
 		to_chat(user,span_warning("Shut \the [src] off first!"))
 		return
 
-	if(default_deconstruction_screwdriver(user, W))
-		return
-	if(default_deconstruction_crowbar(user, W))
-		return
 	if(default_part_replacement(user, W))
 		return
 
@@ -158,9 +147,6 @@ GLOBAL_LIST_EMPTY(fusion_cores)
 		var/new_ident = tgui_input_text(user, "Enter a new ident tag.", "Fusion Core", id_tag, MAX_NAME_LEN)
 		if(new_ident && user.Adjacent(src))
 			id_tag = new_ident
-		return
-
-	if(default_unfasten_wrench(user, W))
 		return
 
 	return ..()

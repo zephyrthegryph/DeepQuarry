@@ -209,12 +209,15 @@
 		return  ", missing machinery."
 	return
 
-/datum/component/personal_crafting/proc/construct_item(atom/a, datum/crafting_recipe/R)
+/datum/component/personal_crafting/proc/construct_item(atom/a, datum/crafting_recipe/R, list/material_choices)
 	var/list/surroundings = get_surroundings(a,R.blacklist)
 	// var/send_feedback = 1
 	. = check_requirements(a, R, surroundings)
 	if(.)
 		return
+	var/list/resolved_materials = material_slot_resolve(R.material_slots, material_choices)
+	if(length(R.material_slots) && (!resolved_materials || !crafting_materials_available(surroundings, R.material_slots, resolved_materials)))
+		return ", missing selected construction material."
 
 	if(R.one_per_turf)
 		for(var/content in get_turf(a))
@@ -229,13 +232,50 @@
 	. = check_requirements(a, R, surroundings)
 	if(.)
 		return
+	if(length(R.material_slots) && !crafting_materials_available(surroundings, R.material_slots, resolved_materials))
+		return ", selected construction material changed."
 
 	var/list/parts = del_reqs(R, a)
+	if(length(R.material_slots))
+		consume_crafting_materials(surroundings, R.material_slots, resolved_materials)
 	var/atom/movable/I = new R.result (get_turf(a.loc))
 	I.CheckParts(parts, R)
+	if(length(R.material_slots) && isobj(I))
+		var/obj/product = I
+		product.apply_material_construction(resolved_materials, R.material_slots, null)
 	// if(send_feedback)
 		// SSblackbox.record_feedback("tally", "object_crafted", 1, I.type)
 	return I //Send the item back to whatever called this proc so it can handle whatever it wants to do with the new item
+
+/datum/component/personal_crafting/proc/crafting_materials_available(list/surroundings, list/slots, list/resolved)
+	var/list/needed = list()
+	for(var/role in resolved)
+		var/list/spec = slots[role]
+		needed[resolved[role]] = (needed[resolved[role]] || 0) + CEILING(spec["amount"] / SHEET_MATERIAL_AMOUNT, 1)
+	var/list/instances = surroundings["instances"]
+	for(var/instance_path in instances)
+		for(var/obj/item/stack/material/stock in instances[instance_path])
+			if(stock.material?.name in needed)
+				needed[stock.material.name] -= stock.get_amount()
+	for(var/material_id in needed)
+		if(needed[material_id] > 0)
+			return FALSE
+	return TRUE
+
+/datum/component/personal_crafting/proc/consume_crafting_materials(list/surroundings, list/slots, list/resolved)
+	var/list/needed = list()
+	for(var/role in resolved)
+		var/list/spec = slots[role]
+		needed[resolved[role]] = (needed[resolved[role]] || 0) + CEILING(spec["amount"] / SHEET_MATERIAL_AMOUNT, 1)
+	var/list/instances = surroundings["instances"]
+	for(var/instance_path in instances)
+		for(var/obj/item/stack/material/stock in instances[instance_path])
+			var/material_id = stock.material?.name
+			if(!material_id || needed[material_id] <= 0)
+				continue
+			var/used = min(stock.get_amount(), needed[material_id])
+			stock.use(used)
+			needed[material_id] -= used
 
 /*Del reqs works like this:
 
@@ -406,8 +446,24 @@
 	data["subcategory"] = cur_subcategory
 	data["display_craftable_only"] = display_craftable_only
 	data["display_compact"] = display_compact
-
+	var/list/material_choices = list()
+	var/list/seen_materials = list()
 	var/list/surroundings = get_surroundings(user)
+	var/list/nearby_instances = surroundings["instances"]
+	for(var/instance_path in nearby_instances)
+		for(var/obj/item/stack/material/stock in nearby_instances[instance_path])
+			var/datum/material/material = stock.material
+			if(!material)
+				continue
+			var/list/existing = seen_materials[material.name]
+			if(existing)
+				existing["sheets"] += stock.get_amount()
+				continue
+			var/list/choice = material_choice_tgui(material, stock.get_amount() * SHEET_MATERIAL_AMOUNT)
+			seen_materials[material.name] = choice
+			material_choices += list(choice)
+	data["materialChoices"] = material_choices
+
 	var/list/craftability = list()
 	for(var/datum/crafting_recipe/R as anything in GLOB.crafting_recipes)
 
@@ -417,7 +473,11 @@
 		if((R.category != cur_category) || (R.subcategory != cur_subcategory))
 			continue
 
-		craftability["[REF(R)]"] = check_contents(user, R, surroundings)
+		var/can_craft = check_contents(user, R, surroundings)
+		if(can_craft && length(R.material_slots))
+			var/list/defaults = material_slot_resolve(R.material_slots)
+			can_craft = defaults && crafting_materials_available(surroundings, R.material_slots, defaults)
+		craftability["[REF(R)]"] = can_craft
 
 	data["craftability"] = craftability
 	return data
@@ -458,7 +518,7 @@
 		return
 	switch(action)
 		if("make")
-			do_make(ui.user, locate(params["recipe"]) in GLOB.crafting_recipes)
+			do_make(ui.user, locate(params["recipe"]) in GLOB.crafting_recipes, params["materialSlots"])
 		if("toggle_recipes")
 			display_craftable_only = !display_craftable_only
 			. = TRUE
@@ -470,10 +530,10 @@
 			cur_subcategory = params["subcategory"] || ""
 			. = TRUE
 
-/datum/component/personal_crafting/proc/do_make(mob/user, datum/crafting_recipe/TR)
+/datum/component/personal_crafting/proc/do_make(mob/user, datum/crafting_recipe/TR, list/material_choices)
 	busy = TRUE
 	tgui_interact(user)
-	var/atom/movable/result = construct_item(user, TR)
+	var/atom/movable/result = construct_item(user, TR, material_choices)
 	if(!istext(result)) //We made an item and didn't get a fail message
 		if(ismob(user) && isitem(result)) //In case the user is actually possessing a non mob like a machine
 			user.put_in_hands(result)
@@ -516,6 +576,7 @@
 	for(var/obj/item/required_path as anything in R.tool_paths)
 		tool_list += initial(required_path.name)
 	data["tool_text"] = tool_list.Join(", ")
+	data["material_slots"] = material_slots_tgui(R.material_slots)
 
 	return data
 

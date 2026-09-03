@@ -110,11 +110,7 @@
 	qdel(src)
 
 /obj/item/stool/attackby(obj/item/W as obj, mob/user as mob)
-	if(W.has_tool_quality(TOOL_WRENCH))
-		playsound(src, W.usesound, 50, 1)
-		dismantle()
-		qdel(src)
-	else if(istype(W,/obj/item/stack))
+	if(istype(W,/obj/item/stack))
 		if(padding_material)
 			to_chat(user, "\The [src] is already padded.")
 			return
@@ -144,15 +140,23 @@
 		to_chat(user, "You add padding to \the [src].")
 		add_padding(padding_type)
 		return
-	else if (W.has_tool_quality(TOOL_WIRECUTTER))
-		if(!padding_material)
-			to_chat(user, "\The [src] has no padding to remove.")
-			return
-		to_chat(user, "You remove the padding from \the [src].")
-		playsound(src, W.usesound, 50, 1)
-		remove_padding()
 	else
 		..()
+
+/obj/item/stool/wrench_act(mob/user, obj/item/W)
+	playsound(src, W.usesound, 50, 1)
+	dismantle()
+	qdel(src)
+	return TRUE
+
+/obj/item/stool/wirecutter_act(mob/user, obj/item/W)
+	if(!padding_material)
+		to_chat(user, "\The [src] has no padding to remove.")
+		return TRUE
+	to_chat(user, "You remove the padding from \the [src].")
+	playsound(src, W.usesound, 50, 1)
+	remove_padding()
+	return TRUE
 
 
 // === merged from stools_vr.dm during hard-fork de-suffix (verified no override-order change) ===

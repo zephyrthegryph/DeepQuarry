@@ -36,30 +36,28 @@
 	var/list/lastattempt = list()
 	var/codelen = 6
 
-/obj/machinery/door/blast/puzzle/tyrdoor/keypad/attackby(obj/item/W as obj, mob/user as mob)
-	if (istype(W, /obj/item/multitool))
-		to_chat(user, span_notice("The door is locked."))
-		var/input = tgui_input_text(usr, "Enter [codelen] digits. All digits must be unique.", "Deca-Code Lock", "")
-		if(!Adjacent(user))
-			return
-		var/list/sanitised = list()
-		var/sanitycheck = 1
-		for(var/i=1,i<=length(input),i++) //put the guess into a list
-			sanitised += text2num(copytext(input,i,i+1))
-		for(var/i=1,i<=(length(input)-1),i++) //compare each digit in the guess to all those following it
-			for(var/j=(i+1),j<=length(input),j++)
-				if(sanitised[i] == sanitised[j])
-					sanitycheck = null //if a digit is repeated, reject the input
-
-		if(input == null || sanitycheck == null || length(input) != codelen)
-			to_chat(user, span_notice("You leave the lock alone."))
-		else if(check_input(input))
-			to_chat(user, span_notice("The door unlocks and open!"))
-			playsound(src, 'sound/machines/lockreset.ogg', 50, 1)
-			open()
-		else
-			visible_message(span_warning("A red light on \the [src]'s control panel flashes briefly."))
-	..()
+/obj/machinery/door/blast/puzzle/tyrdoor/keypad/multitool_act(mob/user, obj/item/tool)
+	to_chat(user, span_notice("The door is locked."))
+	var/input = tgui_input_text(user, "Enter [codelen] digits. All digits must be unique.", "Deca-Code Lock", "")
+	if(!Adjacent(user))
+		return ITEM_INTERACT_BLOCKING
+	var/list/sanitised = list()
+	var/sanitycheck = TRUE
+	for(var/i in 1 to length(input))
+		sanitised += text2num(copytext(input, i, i + 1))
+	for(var/i in 1 to length(input) - 1)
+		for(var/j in i + 1 to length(input))
+			if(sanitised[i] == sanitised[j])
+				sanitycheck = FALSE
+	if(isnull(input) || !sanitycheck || length(input) != codelen)
+		to_chat(user, span_notice("You leave the lock alone."))
+	else if(check_input(input))
+		to_chat(user, span_notice("The door unlocks and opens!"))
+		playsound(src, 'sound/machines/lockreset.ogg', 50, TRUE)
+		open()
+	else
+		visible_message(span_warning("A red light on \the [src]'s control panel flashes briefly."))
+	return ITEM_INTERACT_SUCCESS
 
 /obj/machinery/door/blast/puzzle/tyrdoor/keypad/proc/check_input(input)
 	if(length(input) != codelen)

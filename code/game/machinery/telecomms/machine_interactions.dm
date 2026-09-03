@@ -11,30 +11,27 @@
 #define TELECOMM_Z 4
 
 /obj/machinery/telecomms
+	maintenance_flags = MACHINE_MAINT_STANDARD
 	var/list/temp = null // output message
 
 /obj/machinery/telecomms/attackby(obj/item/P as obj, mob/user as mob)
 
-	// Using a multitool lets you access the receiver's interface
-	if(istype(P, /obj/item/multitool))
-		attack_hand(user)
-
 	// REPAIRING: Use Nanopaste to repair 10-20 integrity points.
 	if(istype(P, /obj/item/stack/nanopaste))
 		var/obj/item/stack/nanopaste/T = P
-		if (integrity < 100)               								//Damaged, let's repair!
+		if(get_integrity() < max_integrity)
 			if (T.use(1))
-				integrity = between(0, integrity + rand(10,20), 100)
+				repair_damage(rand(10, 20))
 				to_chat(user, "You apply the Nanopaste to [src], repairing some of the damage.")
 		else
 			to_chat(user, "This machine is already in perfect condition.")
 		return
 
 
-	if(default_deconstruction_screwdriver(user, P))
-		return
-	if(default_deconstruction_crowbar(user, P))
-		return
+
+/obj/machinery/telecomms/multitool_act(mob/user, obj/item/tool)
+	attack_hand(user)
+	return ITEM_INTERACT_SUCCESS
 
 /obj/machinery/telecomms/attack_ai(mob/user as mob)
 	attack_hand(user)

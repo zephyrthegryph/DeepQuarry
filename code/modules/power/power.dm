@@ -34,6 +34,7 @@
 
 /obj/machinery/power/proc/add_avail(amount)
 	if(powernet)
+		powernet.mark_accounting_dirty()
 		powernet.newavail += amount
 		return TRUE
 	return FALSE
@@ -109,7 +110,7 @@
 	return
 
 // Power machinery should also connect/disconnect from the network.
-/obj/machinery/power/default_unfasten_wrench(mob/user, obj/item/W, time = 20)
+/obj/machinery/power/wrench_act(mob/user, obj/item/W)
 	if((. = ..()))
 		if(anchored)
 			connect_to_network()

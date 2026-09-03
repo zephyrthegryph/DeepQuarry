@@ -18,6 +18,11 @@
 	var/generation = 0
 	/// TRUE when this pooled shell was cloned from the hidden native skin template.
 	var/native_shell = FALSE
+	/// TRUE when acquire_lock applied a generated or previously observed size while hidden.
+	var/geometry_preapplied = FALSE
+	/// Exact native geometry applied by acquire_lock, included in the initial
+	/// browser payload so React does not repeat an asynchronous storage lookup.
+	var/list/preapplied_geometry
 	/// Rate limit for automatic local-development browser telemetry.
 	var/last_perf_log_at = 0
 	var/datum/tgui/locked_by
@@ -206,17 +211,38 @@
  *
  * optional ui /datum/tgui
  */
-/datum/tgui_window/proc/acquire_lock(datum/tgui/ui)
+/datum/tgui_window/proc/acquire_lock(datum/tgui/ui, list/default_geometry)
 	// A READY pooled window may still be visibly painting its previous interface:
 	// close() sends the browser-side suspend asynchronously, and a rapid reopen can
 	// acquire the shell before that message is processed. Hide it synchronously on
 	// the server before the new owner can send content, otherwise the new content
 	// flashes at the previous interface's geometry and React hides it a frame later.
 	if(client && pooled)
+		geometry_preapplied = FALSE
+		preapplied_geometry = null
 		log_tgui(client, "TGUI transition: stage=server-acquire-hide-sending generation=[generation + 1] previous_visible=[visible] status=[status] native_shell=[native_shell].", window = src)
 		if(native_shell)
 			winset(client, id, "alpha=0")
 		winshow(client, id, FALSE)
+		var/list/resolved_geometry = LAZYACCESS(client.tgui_resolved_geometries, ui?.interface)
+		if(islist(resolved_geometry))
+			var/list/native_settings = list()
+			if(resolved_geometry["size"])
+				native_settings["size"] = resolved_geometry["size"]
+			if(resolved_geometry["pos"])
+				native_settings["pos"] = resolved_geometry["pos"]
+			if(length(native_settings))
+				winset(client, id, native_settings)
+				preapplied_geometry = native_settings.Copy()
+			geometry_preapplied = TRUE
+		else if(islist(default_geometry))
+			var/width = default_geometry["width"]
+			var/height = default_geometry["height"]
+			if(isnum(width) && isnum(height))
+				var/default_size = "[width]x[height]"
+				winset(client, id, "size=[default_size]")
+				preapplied_geometry = list("size" = default_size)
+				geometry_preapplied = TRUE
 		log_tgui(client, "TGUI transition: stage=server-acquire-hide-sent generation=[generation + 1].", window = src)
 	generation++
 	locked = TRUE
@@ -418,6 +444,15 @@
 	if(status != TGUI_WINDOW_READY)
 		status = TGUI_WINDOW_READY
 		flush_message_queue()
+	if(type == "ready" && !client.tgui_chunk_warm_started)
+		var/datum/asset/simple/namespaced/tgui_chunks/chunk_assets = get_asset_datum(/datum/asset/simple/namespaced/tgui_chunks)
+		var/chunk_base_url = chunk_assets.get_public_base_url()
+		if((findtext(chunk_base_url, "http://") == 1 || findtext(chunk_base_url, "https://") == 1) && length(SStgui.chunk_files))
+			client.tgui_chunk_warm_started = TRUE
+			send_message("chunk/warm", list(
+				"url" = chunk_base_url,
+				"files" = SStgui.chunk_files,
+			))
 	if(type == "ready" && prewarmed && !locked)
 		INVOKE_ASYNC(src, PROC_REF(audit_prewarmed_hidden))
 	// Pass message to UI that requested the lock
@@ -442,6 +477,17 @@
 				log_tgui(client, "Ignored stale reveal for generation [reported_generation]; current generation is [generation].", window = src)
 				return
 			visible = TRUE
+			var/reported_size = payload?["geometry"]?["size"]
+			var/reported_pos = payload?["geometry"]?["pos"]
+			if(locked_by?.interface && istext(reported_size))
+				var/static/regex/safe_size = regex(@"^\d+x\d+$")
+				if(safe_size.Find(reported_size))
+					var/list/safe_geometry = list("size" = reported_size)
+					if(istext(reported_pos))
+						var/static/regex/safe_pos = regex(@"^-?\d+,-?\d+$")
+						if(safe_pos.Find(reported_pos))
+							safe_geometry["pos"] = reported_pos
+					LAZYSET(client.tgui_resolved_geometries, locked_by.interface, safe_geometry)
 			SEND_SIGNAL(src, COMSIG_TGUI_WINDOW_VISIBLE, client)
 		if("perf/flicker")
 			#ifndef DEBUG

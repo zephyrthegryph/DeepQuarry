@@ -694,9 +694,9 @@
 	// presents (IMPACT/PRESSURE, plus ENERGY for energy shots); inert otherwise.
 	var/turf/impact_turf = get_turf(A) || get_turf(src)
 	if(damage_type == BURN)
-		substance_emit_form_trigger(src, impact_turf, firer, SUB_TRIG_IMPACT, SUB_TRIG_PRESSURE, SUB_TRIG_ENERGY)
+		material_response_impact(impact_turf, firer)
 	else
-		substance_emit_form_trigger(src, impact_turf, firer, SUB_TRIG_IMPACT, SUB_TRIG_PRESSURE)
+		material_response_impact(impact_turf, firer)
 
 //Checks if the projectile is eligible for embedding. Not that it necessarily will.
 /obj/item/projectile/proc/can_embed()

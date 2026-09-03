@@ -7,6 +7,8 @@
 	anchored = TRUE
 	idle_power_usage = 0
 	active_power_usage = 5
+	maintenance_flags = MACHINE_MAINT_WRENCH
+	maintenance_wrench_time = 1 SECOND
 	var/interference = FALSE
 	var/icon/plant = null
 
@@ -27,12 +29,10 @@
 	else
 		deactivate()
 
-/obj/machinery/holoplant/attackby(obj/item/O as obj, mob/user as mob)
-	if(default_unfasten_wrench(user, O, 10))
-		deactivate()
-		return
-
+/obj/machinery/holoplant/wrench_act(mob/user, obj/item/tool)
 	. = ..()
+	if(. == ITEM_INTERACT_SUCCESS)
+		deactivate()
 
 /obj/machinery/holoplant/proc/activate()
 	if(!anchored || stat & (NOPOWER|BROKEN))

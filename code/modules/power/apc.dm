@@ -43,6 +43,7 @@ GLOBAL_LIST_EMPTY(apcs)
 // Main APC type definition
 // ─────────────────────────────────────────────────────────────────────────────
 /obj/machinery/power/apc
+
 	name = "area power controller"
 	desc = "A control terminal for the area electrical systems."
 	icon = 'icons/obj/power.dmi'
@@ -56,6 +57,7 @@ GLOBAL_LIST_EMPTY(apcs)
 	blocks_emissive = EMISSIVE_BLOCK_NONE
 	vis_flags = VIS_HIDE // They have an emissive that looks bad in openspace due to their wall-mounted nature
 	flags = WALL_ITEM
+	integrity_failure = 0.5
 
 	// ── area/cell wiring ────────────────────────────────────────────────────
 	var/area/area
@@ -89,6 +91,11 @@ GLOBAL_LIST_EMPTY(apcs)
 	var/is_critical = 0
 	var/global/status_overlays = 0
 	var/failure_timer = 0
+	/// Absolute world.time when an EMP/power failure ends. The legacy counter was
+	/// decremented every machinery fire, forcing every disabled APC to poll and
+	/// rebuild its icon for minutes after a large explosion.
+	var/failure_until = 0
+	var/failure_wake_timer
 	var/force_update = 0
 	var/updating_icon = 0
 	var/alarms_hidden = FALSE       // if TRUE, power alarms from this APC are hidden on consoles
@@ -200,6 +207,9 @@ GLOBAL_LIST_EMPTY(apcs)
 	if(charging_wake_timer)
 		deltimer(charging_wake_timer)
 		charging_wake_timer = null
+	if(failure_wake_timer)
+		deltimer(failure_wake_timer)
+		failure_wake_timer = null
 	terminal?.powernet?.unreserve_sleeping_apc_load(src)
 	SSmachines.publish_reactive_dependency("apc:[REF(src)]")
 	update()
@@ -267,7 +277,13 @@ GLOBAL_LIST_EMPTY(apcs)
 	return
 
 /obj/machinery/power/apc/proc/energy_fail(duration)
-	failure_timer = max(failure_timer, round(duration))
+	var/failure_ticks = max(round(duration), 0)
+	failure_until = max(failure_until, world.time + failure_ticks * max(SSmachines.wait, 1))
+	failure_timer = CEILING(max(failure_until - world.time, 0) / max(SSmachines.wait, 1), 1)
+	if(failure_wake_timer)
+		deltimer(failure_wake_timer)
+		failure_wake_timer = null
+	wake_for_power_dependency()
 
 /obj/machinery/power/apc/proc/make_terminal()
 	terminal = new /obj/machinery/power/terminal(loc)
@@ -407,45 +423,132 @@ GLOBAL_LIST_EMPTY(apcs)
 // Interaction — attackby / attack_hand / emag / etc.
 // ─────────────────────────────────────────────────────────────────────────────
 
+/obj/machinery/power/apc/crowbar_act(mob/user, obj/item/tool)
+	wake_for_power_dependency()
+	add_fingerprint(user)
+	if(opened)
+		if(has_electronics == APC_HAS_ELECTRONICS_WIRED)
+			if(terminal)
+				to_chat(user, span_warning("Disconnect the wires first."))
+				return ITEM_INTERACT_BLOCKING
+			playsound(src, tool.usesound, 50, TRUE)
+			to_chat(user, "You begin to remove the power control board...")
+			if(do_after(user, 5 SECONDS * tool.toolspeed, target = src) && has_electronics == APC_HAS_ELECTRONICS_WIRED)
+				has_electronics = APC_HAS_ELECTRONICS_NONE
+				if(stat & BROKEN)
+					user.visible_message(span_warning("[user.name] has broken the charred power control board inside [name]!"), span_notice("You broke the charred power control board and remove the remains."), "You hear a crack!")
+				else
+					user.visible_message(span_warning("[user.name] has removed the power control board from [name]!"), span_notice("You remove the power control board."))
+					new /obj/item/module/power_control(loc)
+		else if(opened != 2)
+			opened = 0
+			update_icon()
+		return ITEM_INTERACT_SUCCESS
+	if(stat & BROKEN)
+		return ITEM_INTERACT_BLOCKING
+	var/remaining_power = cell ? cell.percent() : 0
+	if(coverlocked && !(stat & MAINT) && remaining_power > 15)
+		to_chat(user, span_warning("The cover is locked and cannot be opened."))
+		return ITEM_INTERACT_BLOCKING
+	opened = 1
+	update_icon()
+	return ITEM_INTERACT_SUCCESS
+
+/obj/machinery/power/apc/screwdriver_act(mob/user, obj/item/tool)
+	wake_for_power_dependency()
+	add_fingerprint(user)
+	if(opened)
+		if(cell)
+			to_chat(user, span_warning("Remove the power cell first."))
+			return ITEM_INTERACT_BLOCKING
+		if(has_electronics == APC_HAS_ELECTRONICS_WIRED && terminal)
+			has_electronics = APC_HAS_ELECTRONICS_SECURED
+			stat &= ~MAINT
+			to_chat(user, "You screw the circuit electronics into place.")
+		else if(has_electronics == APC_HAS_ELECTRONICS_SECURED)
+			has_electronics = APC_HAS_ELECTRONICS_WIRED
+			stat |= MAINT
+			to_chat(user, "You unfasten the electronics.")
+		else
+			to_chat(user, span_warning("There is nothing to secure."))
+			return ITEM_INTERACT_BLOCKING
+	else
+		wiresexposed = !wiresexposed
+		to_chat(user, "The wires have been [wiresexposed ? "exposed" : "unexposed"].")
+	playsound(src, tool.usesound, 50, TRUE)
+	update_icon()
+	return ITEM_INTERACT_SUCCESS
+
+/obj/machinery/power/apc/wirecutter_act(mob/user, obj/item/tool)
+	wake_for_power_dependency()
+	add_fingerprint(user)
+	if(!terminal || !opened || has_electronics == APC_HAS_ELECTRONICS_SECURED)
+		if(!opened && wiresexposed)
+			return attack_hand(user) ? ITEM_INTERACT_SUCCESS : ITEM_INTERACT_BLOCKING
+		return ITEM_INTERACT_BLOCKING
+	var/turf/floor = loc
+	if(floor && !floor.is_plating())
+		to_chat(user, span_warning("You must remove the floor plating in front of the APC first."))
+		return ITEM_INTERACT_BLOCKING
+	user.visible_message(span_warning("[user.name] starts dismantling the [src]'s power terminal."), "You begin to cut the cables...")
+	playsound(src, 'sound/items/Deconstruct.ogg', 50, TRUE)
+	if(do_after(user, 5 SECONDS * tool.toolspeed, target = src) && terminal && opened && has_electronics != APC_HAS_ELECTRONICS_SECURED)
+		if(prob(50) && electrocute_mob(user, terminal.powernet, terminal))
+			var/datum/effect/effect/system/spark_spread/sparks = new
+			sparks.set_up(5, 1, src)
+			sparks.start()
+			if(user.stunned)
+				return ITEM_INTERACT_SUCCESS
+		new /obj/item/stack/cable_coil(loc, 10)
+		to_chat(user, span_notice("You cut the cables and dismantle the power terminal."))
+		qdel(terminal)
+	return ITEM_INTERACT_SUCCESS
+
+/obj/machinery/power/apc/welder_act(mob/user, obj/item/tool)
+	wake_for_power_dependency()
+	add_fingerprint(user)
+	if(!opened || has_electronics != APC_HAS_ELECTRONICS_NONE || terminal)
+		return ..()
+	var/obj/item/weldingtool/welder = tool.get_welder()
+	if(welder.get_fuel() < 3)
+		to_chat(user, span_warning("You need more welding fuel to complete this task."))
+		return ITEM_INTERACT_BLOCKING
+	user.visible_message(span_warning("[user.name] begins cutting apart [src] with [welder]."), "You start welding the APC frame...", "You hear welding.")
+	playsound(src, welder.usesound, 25, TRUE)
+	if(!do_after(user, 5 SECONDS * welder.toolspeed, target = src) || !welder.remove_fuel(3, user))
+		return ITEM_INTERACT_SUCCESS
+	if(emagged || (stat & BROKEN) || opened == 2)
+		new /obj/item/stack/material/steel(loc)
+		user.visible_message(span_warning("[src] has been cut apart by [user.name] with [welder]."), span_notice("You disassembled the broken APC frame."), "You hear welding.")
+	else
+		new /obj/item/frame/apc(loc)
+		user.visible_message(span_warning("[src] has been cut from the wall by [user.name] with [welder]."), span_notice("You cut the APC frame from the wall."), "You hear welding.")
+	qdel(src)
+	return ITEM_INTERACT_SUCCESS
+
+/obj/machinery/power/apc/multitool_act(mob/user, obj/item/tool)
+	wake_for_power_dependency()
+	add_fingerprint(user)
+	if(!opened && wiresexposed)
+		return attack_hand(user) ? ITEM_INTERACT_SUCCESS : ITEM_INTERACT_BLOCKING
+	if(!opened || !(hacker || emagged))
+		return ITEM_INTERACT_BLOCKING
+	if(cell)
+		to_chat(user, span_warning("You need to remove the power cell first."))
+		return ITEM_INTERACT_BLOCKING
+	user.visible_message(span_warning("[user.name] connects [tool] to the APC and begins resetting it."), "You begin resetting the APC...")
+	if(do_after(user, 5 SECONDS, target = src))
+		user.visible_message(span_notice("[user.name] resets the APC with a beep from [tool]."), "You finish resetting the APC.")
+		playsound(src, 'sound/machines/chime.ogg', 25, TRUE)
+		reboot()
+	return ITEM_INTERACT_SUCCESS
+
 /obj/machinery/power/apc/attackby(obj/item/W, mob/user)
 	wake_for_power_dependency()
 	if(issilicon(user) && get_dist(src, user) > 1)
 		return attack_hand(user)
 	add_fingerprint(user)
-	if(W.has_tool_quality(TOOL_CROWBAR) && opened)
-		if(has_electronics == APC_HAS_ELECTRONICS_WIRED)
-			if(terminal)
-				to_chat(user, span_warning("Disconnect the wires first."))
-				return
-			playsound(src, W.usesound, 50, 1)
-			to_chat(user, "You begin to remove the power control board...")
-			if(do_after(user, 5 SECONDS * W.toolspeed, target = src))
-				if(has_electronics == APC_HAS_ELECTRONICS_WIRED)
-					has_electronics = APC_HAS_ELECTRONICS_NONE
-					if(stat & BROKEN)
-						user.visible_message(\
-							span_warning("[user.name] has broken the charred power control board inside [name]!"),\
-							span_notice("You broke the charred power control board and remove the remains."),
-							"You hear a crack!")
-					else
-						user.visible_message(\
-							span_warning("[user.name] has removed the power control board from [name]!"),\
-							span_notice("You remove the power control board."))
-						new /obj/item/module/power_control(loc)
-		else if(opened != 2) // cover isn't removed
-			opened = 0
-			update_icon()
-	else if(W.has_tool_quality(TOOL_CROWBAR) && !(stat & BROKEN))
-		var/remaining_power = 0
-		if(cell)
-			remaining_power = cell.percent()
-		if(coverlocked && !(stat & MAINT) && remaining_power > 15)
-			to_chat(user, span_warning("The cover is locked and cannot be opened."))
-			return
-		else
-			opened = 1
-			update_icon()
-	else if(istype(W, /obj/item/cell) && opened)
+	if(istype(W, /obj/item/cell) && opened)
 		if(cell)
 			to_chat(user, "The [name] already has a power cell installed.")
 			return
@@ -465,31 +568,6 @@ GLOBAL_LIST_EMPTY(apcs)
 			power_distributor.chargecount = 0
 		chargecount = 0
 		update_icon()
-	else if(W.has_tool_quality(TOOL_SCREWDRIVER))
-		if(opened)
-			if(cell)
-				to_chat(user, span_warning("Remove the power cell first."))
-				return
-			else
-				if(has_electronics == APC_HAS_ELECTRONICS_WIRED && terminal)
-					has_electronics = APC_HAS_ELECTRONICS_SECURED
-					stat &= ~MAINT
-					playsound(src, W.usesound, 50, 1)
-					to_chat(user, "You screw the circuit electronics into place.")
-				else if(has_electronics == APC_HAS_ELECTRONICS_SECURED)
-					has_electronics = APC_HAS_ELECTRONICS_WIRED
-					stat |= MAINT
-					playsound(src, W.usesound, 50, 1)
-					to_chat(user, "You unfasten the electronics.")
-				else
-					to_chat(user, span_warning("There is nothing to secure."))
-					return
-				update_icon()
-		else
-			wiresexposed = !wiresexposed
-			to_chat(user, "The wires have been [wiresexposed ? "exposed" : "unexposed"].")
-			playsound(src, W.usesound, 50, 1)
-			update_icon()
 	else if(istype(W, /obj/item/card/id) || istype(W, /obj/item/pda))
 		togglelock(user)
 	else if(istype(W, /obj/item/stack/cable_coil) && !terminal && opened && has_electronics != APC_HAS_ELECTRONICS_SECURED)
@@ -519,25 +597,6 @@ GLOBAL_LIST_EMPTY(apcs)
 					"You add cables to the APC frame.")
 				make_terminal()
 				terminal.connect_to_network()
-	else if(W.has_tool_quality(TOOL_WIRECUTTER) && terminal && opened && has_electronics != APC_HAS_ELECTRONICS_SECURED)
-		var/turf/T = loc
-		if(istype(T) && !T.is_plating())
-			to_chat(user, span_warning("You must remove the floor plating in front of the APC first."))
-			return
-		user.visible_message(span_warning("[user.name] starts dismantling the [src]'s power terminal."), \
-			"You begin to cut the cables...")
-		playsound(src, 'sound/items/Deconstruct.ogg', 50, 1)
-		if(do_after(user, 5 SECONDS * W.toolspeed, target = src))
-			if(terminal && opened && has_electronics != APC_HAS_ELECTRONICS_SECURED)
-				if(prob(50) && electrocute_mob(user, terminal.powernet, terminal))
-					var/datum/effect/effect/system/spark_spread/s = new /datum/effect/effect/system/spark_spread
-					s.set_up(5, 1, src)
-					s.start()
-					if(user.stunned)
-						return
-				new /obj/item/stack/cable_coil(loc, 10)
-				to_chat(user, span_notice("You cut the cables and dismantle the power terminal."))
-				qdel(terminal)
 	else if(istype(W, /obj/item/module/power_control) && opened && has_electronics == APC_HAS_ELECTRONICS_NONE && !((stat & BROKEN)))
 		user.visible_message(span_warning("[user.name] inserts the power control board into [src]."), \
 			"You start to insert the power control board into the frame...")
@@ -551,31 +610,6 @@ GLOBAL_LIST_EMPTY(apcs)
 	else if(istype(W, /obj/item/module/power_control) && opened && has_electronics == APC_HAS_ELECTRONICS_NONE && (stat & BROKEN))
 		to_chat(user, span_warning("The [src] is too broken for that. Repair it first."))
 		return
-	else if(W.has_tool_quality(TOOL_WELDER) && opened && has_electronics == APC_HAS_ELECTRONICS_NONE && !terminal)
-		var/obj/item/weldingtool/WT = W.get_welder()
-		if(WT.get_fuel() < 3)
-			to_chat(user, span_warning("You need more welding fuel to complete this task."))
-			return
-		user.visible_message(span_warning("[user.name] begins cutting apart [src] with the [WT.name]."), \
-			"You start welding the APC frame...", \
-			"You hear welding.")
-		playsound(src, WT.usesound, 25, 1)
-		if(do_after(user, 5 SECONDS * WT.toolspeed, target = src))
-			if(!src || !WT.remove_fuel(3, user)) return
-			if(emagged || (stat & BROKEN) || opened == 2)
-				new /obj/item/stack/material/steel(loc)
-				user.visible_message(\
-					span_warning("[src] has been cut apart by [user.name] with the [WT.name]."),\
-					span_notice("You disassembled the broken APC frame."),\
-					"You hear welding.")
-			else
-				new /obj/item/frame/apc(loc)
-				user.visible_message(\
-					span_warning("[src] has been cut from the wall by [user.name] with the [WT.name]."),\
-					span_notice("You cut the APC frame from the wall."),\
-					"You hear welding.")
-			qdel(src)
-			return
 	else if(opened && ((stat & BROKEN) || hacker || emagged))
 		if(istype(W, /obj/item/frame/apc) && (stat & BROKEN))
 			if(cell)
@@ -592,17 +626,6 @@ GLOBAL_LIST_EMPTY(apcs)
 				if(opened == 2)
 					opened = 1
 				update_icon()
-		else if(istype(W, /obj/item/multitool) && (hacker || emagged))
-			if(cell)
-				to_chat(user, span_warning("You need to remove the power cell first."))
-				return
-			user.visible_message(span_warning("[user.name] connects their [W.name] to the APC and begins resetting it."),\
-				"You begin resetting the APC...")
-			if(do_after(user, 5 SECONDS, target = src))
-				user.visible_message(span_notice("[user.name] resets the APC with a beep from their [W.name]."),\
-					"You finish resetting the APC.")
-				playsound(src, 'sound/machines/chime.ogg', 25, 1)
-				reboot()
 	else
 		if((stat & BROKEN) \
 				&& !opened \
@@ -620,7 +643,7 @@ GLOBAL_LIST_EMPTY(apcs)
 		else
 			if(istype(user, /mob/living/silicon))
 				return attack_hand(user)
-			if(!opened && wiresexposed && (istype(W, /obj/item/multitool) || W.has_tool_quality(TOOL_WIRECUTTER) || istype(W, /obj/item/assembly/signaler)))
+			if(!opened && wiresexposed && istype(W, /obj/item/assembly/signaler))
 				return attack_hand(user)
 			to_chat(user, span_notice("The [name] looks too sturdy to bash open with \the [W.name]."))
 
@@ -665,10 +688,9 @@ GLOBAL_LIST_EMPTY(apcs)
 				return 1
 
 /obj/machinery/power/apc/blob_act()
-	if(!wires.is_all_cut())
-		wiresexposed = TRUE
-		wires.cut_all()
-		update_icon()
+	wires.cut_all()
+	wiresexposed = TRUE
+	update_icon()
 
 /obj/machinery/power/apc/attack_hand(mob/user)
 	if(!user)
@@ -682,13 +704,11 @@ GLOBAL_LIST_EMPTY(apcs)
 			user.visible_message(span_warning("[user.name] slashes at the [name]!"), span_notice("You slash at the [name]!"))
 			playsound(src, 'sound/weapons/slash.ogg', 100, 1)
 			add_hiddenprint(H)
-			var/allcut = wires.is_all_cut()
 			if(beenhit >= pick(3, 4) && !wiresexposed)
 				wiresexposed = TRUE
 				update_icon()
 				visible_message(span_warning("The [name]'s cover flies open, exposing the wires!"))
-			else if(wiresexposed && allcut == 0)
-				wires.cut_all()
+			else if(wiresexposed && wires.cut_all())
 				update_icon()
 				visible_message(span_warning("The [name]'s wires are shredded!"))
 			else
@@ -748,7 +768,7 @@ GLOBAL_LIST_EMPTY(apcs)
 		"chargingStatus"  = charging,
 		"totalLoad"       = round(lastused_total),
 		"totalCharging"   = round(lastused_charging),
-		"failTime"        = failure_timer * 2,
+		"failTime"        = failure_until > world.time ? CEILING((failure_until - world.time) / 10, 1) : 0,
 		"gridCheck"       = grid_check,
 		"coverLocked"     = coverlocked,
 		"siliconUser"     = siliconaccess(user) || (isobserver(user) && is_admin(user)),
@@ -933,6 +953,10 @@ GLOBAL_LIST_EMPTY(apcs)
 					update()
 		if("reboot")
 			failure_timer = 0
+			failure_until = 0
+			if(failure_wake_timer)
+				deltimer(failure_wake_timer)
+				failure_wake_timer = null
 			update_icon()
 			update()
 		if("emergency_lighting")
@@ -988,13 +1012,18 @@ GLOBAL_LIST_EMPTY(apcs)
 	if(!area.requires_power)
 		return PROCESS_KILL
 	if(stat & (BROKEN | MAINT))
-		return
+		return PROCESS_KILL
 	if(failure_timer)
-		update()
-		queue_icon_update()
-		failure_timer--
+		if(failure_until > world.time)
+			failure_timer = CEILING((failure_until - world.time) / max(SSmachines.wait, 1), 1)
+			if(!failure_wake_timer)
+				failure_wake_timer = addtimer(CALLBACK(src, PROC_REF(wake_after_failure)), failure_until - world.time, TIMER_STOPPABLE)
+			return PROCESS_KILL
+		failure_timer = 0
+		failure_until = 0
 		force_update = 1
-		return
+		queue_icon_update()
+		update()
 
 	if(!power_distributor)
 		return
@@ -1022,18 +1051,26 @@ GLOBAL_LIST_EMPTY(apcs)
 	// Stable APCs retain their demand in the powernet and wait for an exact
 	// dependency change. Charging batteries use one coarse elapsed-time wakeup
 	// instead of polling on every machinery tick.
-	if(!changed && !force_update && !failure_timer && connected_powernet)
-		connected_powernet.reserve_sleeping_apc_load(src, lastused_total)
+	if(!changed && !force_update && !failure_timer)
+		connected_powernet?.reserve_sleeping_apc_load(src, lastused_total)
 		SSmachines.hibernate_reactive_machine(src, list(
-			"powernet:[REF(connected_powernet)]",
+			"apc-power:[REF(src)]",
 			"area_power:[REF(area)]",
 			"apc:[REF(src)]"
 		))
-		if(cell && charging == 1 && !charging_wake_timer)
+		// Connected, stable APC demand is represented directly in the powernet and
+		// needs no timer. An isolated battery must only wake to integrate elapsed
+		// discharge (or while charging), not poll on every machinery fire.
+		if(cell && (charging == 1 || !connected_powernet) && !charging_wake_timer)
 			charging_wake_timer = addtimer(CALLBACK(src, PROC_REF(wake_for_charging)), 10 SECONDS, TIMER_STOPPABLE)
+		return PROCESS_KILL
 
 /obj/machinery/power/apc/proc/wake_for_charging()
 	charging_wake_timer = null
+	START_MACHINE_PROCESSING(src)
+
+/obj/machinery/power/apc/proc/wake_after_failure()
+	failure_wake_timer = null
 	START_MACHINE_PROCESSING(src)
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -1091,28 +1128,13 @@ GLOBAL_LIST_EMPTY(apcs)
 
 /obj/machinery/power/apc/ex_act(severity)
 	wake_for_power_dependency()
-	switch(severity)
-		if(1)
-			if(cell)
-				cell.ex_act(1)
-			qdel(src)
-			return
-		if(2)
-			if(prob(75))
-				set_broken()
-				if(cell && prob(50))
-					cell.ex_act(2)
-		if(3)
-			if(prob(50))
-				set_broken()
-				if(cell && prob(50))
-					cell.ex_act(3)
-		if(4)
-			if(prob(25))
-				set_broken()
-				if(cell && prob(50))
-					cell.ex_act(3)
-	return
+	if(cell && (severity == 1 || (severity <= 3 && prob(50))))
+		cell.ex_act(severity)
+	return ..()
+
+/obj/machinery/power/apc/atom_break(damage_flag)
+	. = ..()
+	set_broken()
 
 /obj/machinery/power/apc/disconnect_terminal(obj/machinery/power/terminal/term)
 	wake_for_power_dependency()
@@ -1172,6 +1194,10 @@ GLOBAL_LIST_EMPTY(apcs)
 	if(power_distributor)
 		power_distributor.chargemode = 1
 	failure_timer = 0
+	failure_until = 0
+	if(failure_wake_timer)
+		deltimer(failure_wake_timer)
+		failure_wake_timer = null
 	GLOB.power_alarm.clearAlarm(loc, src)
 
 	// Clear malf AI ownership.

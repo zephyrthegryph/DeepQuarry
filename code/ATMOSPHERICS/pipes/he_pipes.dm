@@ -59,16 +59,40 @@
 	sleeping_pipe_mixture_id = null
 	sleeping_pipe_revision = -1
 
-/obj/machinery/atmospherics/pipe/simple/heat_exchanging/proc/gas_dependency_changed(mixture_id, change_mask)
+/obj/machinery/atmospherics/pipe/simple/heat_exchanging/gas_dependency_changed(mixture_id, change_mask)
 	if(!(change_mask & GAS_DEPENDENCY_TEMPERATURE))
 		return FALSE
 	if(mixture_id == sleeping_turf_mixture_id)
 		var/datum/gas_mixture/environment = loc?.return_air()
-		return !environment || environment.arena_id() != sleeping_turf_mixture_id || environment.revision() != sleeping_turf_revision
+		if(!environment || environment.arena_id() != sleeping_turf_mixture_id)
+			return TRUE
+		return heat_exchange_actionable()
 	if(mixture_id == sleeping_pipe_mixture_id)
 		var/datum/gas_mixture/pipe_air = parent?.air
-		return !pipe_air || pipe_air.arena_id() != sleeping_pipe_mixture_id || pipe_air.revision() != sleeping_pipe_revision
+		if(!pipe_air || pipe_air.arena_id() != sleeping_pipe_mixture_id)
+			return TRUE
+		return heat_exchange_actionable()
 	return TRUE
+
+/obj/machinery/atmospherics/pipe/simple/heat_exchanging/proc/heat_exchange_actionable()
+	var/datum/gas_mixture/pipe_air = parent?.air
+	if(!pipe_air)
+		return FALSE
+	var/pipe_temperature = pipe_air.return_temperature()
+	if(istype(loc, /turf/space/))
+		return abs(pipe_temperature - TCMB) > minimum_temperature_difference
+	var/turf/simulated/simulated_turf = loc
+	if(!istype(simulated_turf))
+		return FALSE
+	if(simulated_turf.special_temperature)
+		return TRUE
+	var/environment_temperature
+	if(simulated_turf.blocks_air)
+		environment_temperature = simulated_turf.return_temperature()
+	else
+		var/datum/gas_mixture/environment = simulated_turf.return_air()
+		environment_temperature = environment?.return_temperature()
+	return !isnull(environment_temperature) && abs(environment_temperature - pipe_temperature) > minimum_temperature_difference
 
 /obj/machinery/atmospherics/pipe/simple/heat_exchanging/Destroy()
 	unregister_gas_dependencies(WEAKREF(src))
@@ -184,7 +208,7 @@
 
 		if(can_hibernate)
 			stable_temperature_cycles++
-			if(stable_temperature_cycles >= 5)
+			if(stable_temperature_cycles >= 1)
 				SSmachines.hibernate_heat_pipe(src)
 				return PROCESS_KILL
 		else

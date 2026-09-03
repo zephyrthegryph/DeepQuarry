@@ -179,16 +179,15 @@
 
 	poster_set = TRUE
 
-/obj/structure/sign/poster/attackby(obj/item/W as obj, mob/user as mob)
-	if(W.has_tool_quality(TOOL_WIRECUTTER))
-		playsound(src, W.usesound, 100, 1)
-		if(ruined)
-			to_chat(user, span_notice("You remove the remnants of the poster."))
-			qdel(src)
-		else
-			to_chat(user, span_notice("You carefully remove the poster from the wall."))
-			roll_and_drop(user.loc)
-		return
+/obj/structure/sign/poster/wirecutter_act(mob/user, obj/item/tool)
+	playsound(src, tool.usesound, 100, 1)
+	if(ruined)
+		to_chat(user, span_notice("You remove the remnants of the poster."))
+		qdel(src)
+	else
+		to_chat(user, span_notice("You carefully remove the poster from the wall."))
+		roll_and_drop(user.loc)
+	return ITEM_INTERACT_SUCCESS
 
 /obj/structure/sign/poster/attack_hand(mob/user as mob)
 

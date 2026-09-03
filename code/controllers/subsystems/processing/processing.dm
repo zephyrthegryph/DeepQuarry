@@ -21,6 +21,14 @@ SUBSYSTEM_DEF(processing)
 	var/debug_last_thing
 	var/debug_original_process_proc // initial() does not work with procs
 	var/datum/current_thing
+	/// Always-on, low-overhead accounting. Concrete timing is sampled rather
+	/// than enabled for every call so the profiler does not become the workload.
+	var/profile_sample_cursor = 0
+	var/profile_sample_stride = 32
+	var/list/profile_type_cost = list()
+	var/list/profile_type_calls = list()
+	var/list/profile_type_kills = list()
+	var/profile_next_dump = 0
 
 /datum/controller/subsystem/processing/Recover()
 	log_runtime("[name] subsystem Recover().")
@@ -32,7 +40,7 @@ SUBSYSTEM_DEF(processing)
 			processing |= D
 
 /datum/controller/subsystem/processing/stat_entry(msg)
-	msg = "[stat_tag]:[length(processing)]"
+	msg = "[stat_tag]:[length(processing)] S:1/[profile_sample_stride]"
 	return ..()
 
 /datum/controller/subsystem/processing/fire(resumed = 0)
@@ -47,14 +55,43 @@ SUBSYSTEM_DEF(processing)
 		current_run.len--
 		if(QDELETED(current_thing))
 			processing -= current_thing
-		else if(current_thing.process(process_delta) == PROCESS_KILL)
+		else
+			var/process_result
+			if(!(++profile_sample_cursor % profile_sample_stride))
+				var/profile_type = "[current_thing.type]"
+				var/profile_start = TICK_USAGE
+				process_result = current_thing.process(process_delta)
+				profile_type_cost[profile_type] += TICK_DELTA_TO_MS(TICK_USAGE - profile_start) * profile_sample_stride
+				profile_type_calls[profile_type] += profile_sample_stride
+				if(process_result == PROCESS_KILL)
+					profile_type_kills[profile_type]++
+			else
+				process_result = current_thing.process(process_delta)
+			if(process_result == PROCESS_KILL)
 			// fully stop so that a future START_PROCESSING will work
-			STOP_PROCESSING(src, current_thing)
+				STOP_PROCESSING(src, current_thing)
 		if (MC_TICK_CHECK)
 			current_thing = null
 			return
 
 	current_thing = null
+	if(!profile_next_dump)
+		profile_next_dump = world.time + 2 MINUTES
+	else if(world.time >= profile_next_dump)
+		dump_type_profile()
+
+/datum/controller/subsystem/processing/proc/dump_type_profile()
+	var/list/sorted_cost = profile_type_cost.Copy()
+	sortTim(sorted_cost, /proc/cmp_numeric_desc, TRUE)
+	var/rank = 0
+	for(var/profile_type in sorted_cost)
+		log_runtime("PROCESS_PROFILE subsystem=[name] type=[profile_type] estimated_cost_ms=[round(profile_type_cost[profile_type], 0.01)] estimated_calls=[profile_type_calls[profile_type]] kills=[profile_type_kills[profile_type] || 0]")
+		if(++rank >= 20)
+			break
+	profile_type_cost.Cut()
+	profile_type_calls.Cut()
+	profile_type_kills.Cut()
+	profile_next_dump = world.time + 2 MINUTES
 
 /datum/controller/subsystem/processing/proc/toggle_debug()
 	if(!check_rights(R_DEBUG))

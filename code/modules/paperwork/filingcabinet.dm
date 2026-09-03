@@ -39,23 +39,27 @@
 		P.loc = src
 		open_animation()
 		SStgui.update_uis(src)
-	else if(P.has_tool_quality(TOOL_WRENCH))
-		playsound(src, P.usesound, 50, 1)
-		anchored = !anchored
-		to_chat(user, span_notice("You [anchored ? "wrench" : "unwrench"] \the [src]."))
-	else if(P.has_tool_quality(TOOL_SCREWDRIVER))
-		to_chat(user, span_notice("You begin taking the [name] apart."))
-		playsound(src, P.usesound, 50, 1)
-		if(do_after(user, 1 SECOND * P.toolspeed, target = src))
-			playsound(src, P.usesound, 50, 1)
-			to_chat(user, span_notice("You take the [name] apart."))
-			new /obj/item/stack/material/steel( src.loc, 4 )
-			for(var/obj/item/I in contents)
-				I.forceMove(loc)
-			qdel(src)
-		return
 	else
 		to_chat(user, span_notice("You can't put [P] in [src]!"))
+
+/obj/structure/filingcabinet/wrench_act(mob/user, obj/item/tool)
+	playsound(src, tool.usesound, 50, TRUE)
+	anchored = !anchored
+	to_chat(user, span_notice("You [anchored ? "wrench" : "unwrench"] \the [src]."))
+	return ITEM_INTERACT_SUCCESS
+
+/obj/structure/filingcabinet/screwdriver_act(mob/user, obj/item/tool)
+	to_chat(user, span_notice("You begin taking the [name] apart."))
+	playsound(src, tool.usesound, 50, TRUE)
+	if(!do_after(user, 1 SECOND * tool.toolspeed, target = src))
+		return ITEM_INTERACT_BLOCKING
+	playsound(src, tool.usesound, 50, TRUE)
+	to_chat(user, span_notice("You take the [name] apart."))
+	new /obj/item/stack/material/steel(loc, 4)
+	for(var/obj/item/I in contents)
+		I.forceMove(loc)
+	qdel(src)
+	return ITEM_INTERACT_SUCCESS
 
 /obj/structure/filingcabinet/attack_hand(mob/user as mob)
 	if(contents.len <= 0)

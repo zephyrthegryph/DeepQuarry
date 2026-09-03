@@ -18,6 +18,20 @@
 #include "../combat_ai/_defines.dm"
 
 // --- static: behaviors are flyweights ----------------------------------
+
+/datum/unit_test/dq_combat_ai_spatial_sleep_wakes
+
+/datum/unit_test/dq_combat_ai_spatial_sleep_wakes/Run()
+	var/mob/living/simple_mob/M = allocate(/mob/living/simple_mob)
+	M.forceMove(run_loc_floor_bottom_left ? run_loc_floor_bottom_left : locate(1, 1, 1))
+	var/datum/ai_brain/B = M.ai_brain
+	TEST_ASSERT_NOTNULL(B, "simple mob did not receive an AI brain")
+	B.primary_threat = null
+	B.active_behavior_type = null
+	TEST_ASSERT(SSai.hibernate_calm_brain(B), "calm brain refused spatial hibernation")
+	TEST_ASSERT(!(B in SSai.processing), "hibernating brain remained in strategic processing")
+	SSai.publish_mob_chunk(M)
+	TEST_ASSERT(B in SSai.processing, "movement publication did not wake nearby brain")
 // dq_get_behavior(T) must return the same singleton across calls — the
 // flyweight contract is what makes per-mob state on brain.behavior_state /
 // source items work. A bug that returned a fresh instance per call would

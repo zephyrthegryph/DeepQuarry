@@ -9,9 +9,12 @@ import type { EditorProps } from './index';
 export const PlaceholderEditor = ({ data }: EditorProps) => (
   <Section title="Editor missing">
     <NoticeBox danger>
-      A composite editor was registered server-side but no React component is bound to its
-      key in PREF_EDITORS. Add it to{' '}
-      <code>tgui/packages/tgui/interfaces/deepquarry/PreferencesMenu/editors/index.ts</code>.
+      A composite editor was registered server-side but no React component is
+      bound to its key in PREF_EDITORS. Add it to{' '}
+      <code>
+        tgui/packages/tgui/interfaces/deepquarry/PreferencesMenu/editors/index.ts
+      </code>
+      .
     </NoticeBox>
     <Box as="pre" style={{ overflow: 'auto', maxHeight: '20em' }}>
       {JSON.stringify(data, null, 2)}

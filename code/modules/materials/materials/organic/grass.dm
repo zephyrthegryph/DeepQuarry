@@ -1,7 +1,6 @@
 /datum/material/grass
 	name = MAT_GRASS
 	display_name = "grass"
-	material_class = MATCLASS_ORGANIC
 	stack_type = /obj/item/stack/tile/grass
 	ignition_point = T0C+300
 	melting_point = T0C+300

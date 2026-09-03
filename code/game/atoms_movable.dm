@@ -78,6 +78,11 @@
 		cut_overlay(em_block)
 		UnregisterSignal(em_block, COMSIG_QDELETING)
 		QDEL_NULL(em_block)
+	// The parent datum destructor tears down attached elements. Detach the
+	// light-blocking element first so it can remove this movable from its turf's
+	// opacity_sources while both the element and loc are still valid.
+	if(opacity)
+		RemoveElement(/datum/element/light_blocking)
 	. = ..()
 
 	unbuckle_all_mobs()
@@ -87,9 +92,6 @@
 	// never run Destroy() and keep a loc ref to this deleted container.
 	for(var/atom/movable/AM in contents.Copy())
 		qdel(AM)
-
-	if(opacity)
-		RemoveElement(/datum/element/light_blocking)
 
 	moveToNullspace()
 
@@ -268,6 +270,8 @@
 	. = ..()
 	SSmachines?.publish_mob_chunk(old_loc)
 	SSmachines?.publish_mob_chunk(src)
+	SSai?.publish_mob_chunk(old_loc)
+	SSai?.publish_mob_chunk(src)
 	//If we return focus to our own mob, but we are still inside something with an inherent remote view. Restart it.
 	if(client)
 		restore_remote_views()

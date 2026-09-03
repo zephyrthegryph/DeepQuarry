@@ -9,6 +9,8 @@
 
 
 /obj/machinery/washing_machine
+	maintenance_flags = MACHINE_MAINT_STANDARD_MOVABLE
+	maintenance_wrench_time = 4 SECONDS
 	name = "Washing Machine"
 	desc = "Not a hiding place. Unfit for pets."
 	icon = 'icons/obj/machines/washing_machine_vr.dmi'
@@ -134,16 +136,6 @@
 		add_overlay("panel")
 
 /obj/machinery/washing_machine/attackby(obj/item/W as obj, mob/user as mob)
-	if(state == EMPTY_CLOSED && washing.len < 1)
-		if(default_deconstruction_screwdriver(user, W))
-			return
-		if(default_deconstruction_crowbar(user, W))
-			return
-		if(default_unfasten_wrench(user, W, 40))
-			return
-	/*if(W.has_tool_quality(TOOL_SCREWDRIVER))
-		panel = !panel
-		to_chat(user, span_notice("You [panel ? "open" : "close"] the [src]'s maintenance panel"))*/
 	if(istype(W,/obj/item/pen/crayon) || istype(W,/obj/item/stamp))
 		if(state in list (EMPTY_OPEN, FULL_OPEN, BLOODY_OPEN))
 			if(!crayon)
@@ -155,6 +147,7 @@
 				..()
 		else
 			..()
+
 	else if(istype(W,/obj/item/grab))
 		if((state == EMPTY_OPEN) && hacked)
 			var/obj/item/grab/G = W
@@ -190,6 +183,15 @@
 	else
 		..()
 	update_icon()
+
+/obj/machinery/washing_machine/screwdriver_act(mob/user, obj/item/tool)
+	return (state == EMPTY_CLOSED && !LAZYLEN(washing)) ? ..() : ITEM_INTERACT_BLOCKING
+
+/obj/machinery/washing_machine/crowbar_act(mob/user, obj/item/tool)
+	return (state == EMPTY_CLOSED && !LAZYLEN(washing)) ? ..() : ITEM_INTERACT_BLOCKING
+
+/obj/machinery/washing_machine/wrench_act(mob/user, obj/item/tool)
+	return (state == EMPTY_CLOSED && !LAZYLEN(washing)) ? ..() : ITEM_INTERACT_BLOCKING
 
 /obj/machinery/washing_machine/attack_hand(mob/user, force)
 	if(user.loc == src && !force)

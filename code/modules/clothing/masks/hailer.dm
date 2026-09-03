@@ -101,48 +101,51 @@
 	else
 		return
 
-/obj/item/clothing/mask/gas/sechailer/attackby(obj/item/I, mob/user)
-	if(I.has_tool_quality(TOOL_SCREWDRIVER))
-		switch(aggressiveness)
-			if(1)
-				to_chat(user, span_notice("You set the aggressiveness restrictor to the second position."))
-				aggressiveness = 2
-				phrase = 7
-			if(2)
-				to_chat(user, span_notice("You set the aggressiveness restrictor to the third position."))
-				aggressiveness = 3
-				phrase = 13
-			if(3)
-				to_chat(user, span_notice("You set the aggressiveness restrictor to the fourth position."))
-				aggressiveness = 4
-				phrase = 1
-			if(4)
-				to_chat(user, span_notice("You set the aggressiveness restrictor to the first position."))
-				aggressiveness = 1
-				phrase = 1
-			if(5)
-				to_chat(user, span_warning("You adjust the restrictor but nothing happens, probably because its broken."))
-	if(I.has_tool_quality(TOOL_WIRECUTTER))
-		if(aggressiveness != 5)
-			to_chat(user, span_warning("You broke it!"))
-			aggressiveness = 5
-	if(I.has_tool_quality(TOOL_CROWBAR))
-		if(!hailer)
-			to_chat(user, span_warning("This mask has an integrated hailer, you can't remove it!"))
-		else
-			var/obj/N = new /obj/item/clothing/mask/gas/half(src.loc)
-			playsound(src, 'sound/items/Screwdriver.ogg', 50, 1)
-			transfer_blooddna_to(N)
-			transfer_fingerprints_to(N)
-			transfer_fibres_to(N)
-			if(!isturf(N.loc))
-				user.put_in_hands(hailer)
-				user.put_in_hands(N)
-			else
-				hailer.loc = N.loc
-			qdel(src)
-			return
-	..()
+/obj/item/clothing/mask/gas/sechailer/screwdriver_act(mob/user, obj/item/tool)
+	switch(aggressiveness)
+		if(1)
+			to_chat(user, span_notice("You set the aggressiveness restrictor to the second position."))
+			aggressiveness = 2
+			phrase = 7
+		if(2)
+			to_chat(user, span_notice("You set the aggressiveness restrictor to the third position."))
+			aggressiveness = 3
+			phrase = 13
+		if(3)
+			to_chat(user, span_notice("You set the aggressiveness restrictor to the fourth position."))
+			aggressiveness = 4
+			phrase = 1
+		if(4)
+			to_chat(user, span_notice("You set the aggressiveness restrictor to the first position."))
+			aggressiveness = 1
+			phrase = 1
+		if(5)
+			to_chat(user, span_warning("You adjust the restrictor but nothing happens, probably because its broken."))
+	return ITEM_INTERACT_SUCCESS
+
+/obj/item/clothing/mask/gas/sechailer/wirecutter_act(mob/user, obj/item/tool)
+	if(aggressiveness == 5)
+		return ITEM_INTERACT_BLOCKING
+	to_chat(user, span_warning("You broke it!"))
+	aggressiveness = 5
+	return ITEM_INTERACT_SUCCESS
+
+/obj/item/clothing/mask/gas/sechailer/crowbar_act(mob/user, obj/item/tool)
+	if(!hailer)
+		to_chat(user, span_warning("This mask has an integrated hailer, you can't remove it!"))
+		return ITEM_INTERACT_BLOCKING
+	var/obj/item/clothing/mask/gas/half/mask = new(loc)
+	playsound(src, tool.usesound, 50, TRUE)
+	transfer_blooddna_to(mask)
+	transfer_fingerprints_to(mask)
+	transfer_fibres_to(mask)
+	if(!isturf(mask.loc))
+		user.put_in_hands(hailer)
+		user.put_in_hands(mask)
+	else
+		hailer.forceMove(mask.loc)
+	qdel(src)
+	return ITEM_INTERACT_SUCCESS
 
 /obj/item/clothing/mask/gas/sechailer/verb/halt()
 	set name = "HALT!"

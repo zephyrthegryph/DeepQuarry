@@ -36,7 +36,7 @@
 				/obj/random/contraband = 4,
 				/obj/item/salvage/loot/syndicate = 5,
 				/obj/item/capture_crystal = 4,
-				/obj/item/stack/material/substance/random_field = 7, // raw substance alloy sheets
+				/obj/item/stack/material/exotic_feedstock/random = 7,
 			)
 			return uncommon
 		if(EXP_LOOT_RARE)
@@ -49,7 +49,7 @@
 				/obj/item/bluespace_harpoon = 3,
 				/obj/item/denecrotizer = 4,
 				/obj/fiftyspawner/diamond = 2,
-				/obj/item/stack/material/substance/random_field = 6, // raw substance alloy sheets
+				/obj/item/stack/material/exotic_feedstock/random = 6,
 			)
 			return rare
 		if(EXP_LOOT_EXOTIC)

@@ -162,9 +162,14 @@
 		apc.draw_power(lastused_total)
 	else
 		// The cell covers demand before the grid supplies its available share.
-		var/cellused = min(C.charge, CELLRATE * lastused_total)
+		// An isolated APC may sleep between semantic dependency changes. Account
+		// for every elapsed machinery interval when its coarse battery timer wakes
+		// it, rather than making battery life depend on polling frequency.
+		var/elapsed_demand = lastused_total * elapsed_machine_ticks
+		var/available_cell_energy = C.charge / CELLRATE
+		var/cellused = min(C.charge, CELLRATE * elapsed_demand)
 		C.use(cellused, FALSE)
-		if((C.charge / CELLRATE + excess) >= lastused_total)
+		if((available_cell_energy + excess * elapsed_machine_ticks) >= elapsed_demand)
 			// Cell + grid covers this tick's demand.
 			var/draw = apc.draw_power(excess)
 			C.charge = min(C.maxcharge, C.charge + CELLRATE * draw)
@@ -225,6 +230,8 @@
 
 /// _update_channels() — apply shedding tiers based on cell level + long-term trend.
 /datum/apc_power_distributor/proc/_update_channels()
+	if(!apc?.cell)
+		return
 	if(charging && longtermpower < 10)
 		longtermpower += 1
 	else if(longtermpower > -10)

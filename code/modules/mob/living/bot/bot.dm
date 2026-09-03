@@ -135,33 +135,6 @@
 			else
 				to_chat(user, span_warning("Access denied."))
 		return
-	else if(O.has_tool_quality(TOOL_SCREWDRIVER))
-		if(!locked)
-			open = !open
-			to_chat(user, span_notice("Maintenance panel is now [open ? "opened" : "closed"]."))
-			playsound(src, O.usesound, 50, 1)
-		else
-			to_chat(user, span_notice("You need to unlock the controls first."))
-		return
-	else if(O.has_tool_quality(TOOL_WELDER))
-		if(health < getMaxHealth())
-			if(open)
-				if(getBruteLoss() < 10)
-					bruteloss = 0
-				else
-					bruteloss = bruteloss - 10
-				if(getFireLoss() < 10)
-					fireloss = 0
-				else
-					fireloss = fireloss - 10
-				updatehealth()
-				user.visible_message(span_notice("[user] repairs [src]."),span_notice("You repair [src]."))
-				playsound(src, O.usesound, 50, 1)
-			else
-				to_chat(user, span_notice("Unable to repair with the maintenance panel closed."))
-		else
-			to_chat(user, span_notice("[src] does not need a repair."))
-		return
 	else if(istype(O, /obj/item/assembly/prox_sensor) && emagged)
 		if(open)
 			to_chat(user, span_notice("You repair the bot's systems."))
@@ -175,13 +148,36 @@
 			to_chat(user, span_notice("You slot the card into \the [initial(src.name)]."))
 		else
 			to_chat(user, span_notice("You must open the panel first!"))
-	else if(O.has_tool_quality(TOOL_CROWBAR))
-		if(open && paicard)
-			to_chat(user, span_notice("You are attempting to remove the pAI.."))
-			if(do_after(user, 1 SECOND * O.toolspeed, target = src))
-				ejectpai(user)
 	else
 		..()
+
+/mob/living/bot/screwdriver_act(mob/user, obj/item/tool)
+	if(locked)
+		to_chat(user, span_notice("You need to unlock the controls first."))
+		return ITEM_INTERACT_BLOCKING
+	open = !open
+	to_chat(user, span_notice("Maintenance panel is now [open ? "opened" : "closed"]."))
+	playsound(src, tool.usesound, 50, TRUE)
+	return ITEM_INTERACT_SUCCESS
+
+/mob/living/bot/welder_act(mob/user, obj/item/tool)
+	if(health >= getMaxHealth() || !open)
+		return ITEM_INTERACT_BLOCKING
+	adjustBruteLoss(-min(getBruteLoss(), 10))
+	adjustFireLoss(-min(getFireLoss(), 10))
+	updatehealth()
+	user.visible_message(span_notice("[user] repairs [src]."), span_notice("You repair [src]."))
+	playsound(src, tool.usesound, 50, TRUE)
+	return ITEM_INTERACT_SUCCESS
+
+/mob/living/bot/crowbar_act(mob/user, obj/item/tool)
+	if(!open || !paicard)
+		return ITEM_INTERACT_BLOCKING
+	to_chat(user, span_notice("You are attempting to remove the pAI."))
+	if(!do_after(user, 1 SECOND * tool.toolspeed, target = src))
+		return ITEM_INTERACT_BLOCKING
+	ejectpai(user)
+	return ITEM_INTERACT_SUCCESS
 
 /mob/living/bot/attack_ai(mob/user)
 	return attack_hand(user)
@@ -341,7 +337,7 @@
 /mob/living/bot/proc/startPatrol()
 	var/turf/T = getPatrolTurf()
 	if(T)
-		target_path = SSpathfinder.default_bot_pathfinding(src, T, 1)
+		patrol_path = SSpathfinder.default_bot_pathfinding(src, T, 1)
 		if(!patrol_path)
 			patrol_path = list()
 		obstacle = null

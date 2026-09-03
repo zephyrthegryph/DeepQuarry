@@ -51,19 +51,14 @@
 		return
 	to_chat(user, span_warning("You can't move."))
 
-/obj/effect/spresent/attackby(obj/item/W as obj, mob/user as mob)
-	..()
-
-	if (!W.has_tool_quality(TOOL_WIRECUTTER))
-		to_chat(user, span_warning("I need wirecutters for that."))
-		return
-
+/obj/effect/spresent/wirecutter_act(mob/user, obj/item/tool)
 	to_chat(user, span_notice("You cut open the present."))
 
 	for(var/mob/M in src) //Should only be one but whatever.
 		M.forceMove(src.loc)
 
 	qdel(src)
+	return ITEM_INTERACT_SUCCESS
 
 /obj/item/a_gift/attack_self(mob/M)
 	. = ..(M)

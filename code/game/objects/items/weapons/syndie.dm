@@ -113,8 +113,8 @@
 				user.visible_message(span_rose("You hear a quiet click, as \the [user] shuts off \the [src] without even looking at what they're doing."))
 
 
-/obj/item/flame/lighter/zippo/c4detonator/attackby(obj/item/W, mob/user as mob)
-	if(W.has_tool_quality(TOOL_SCREWDRIVER))
-		detonator_mode = !detonator_mode
-		playsound(src, W.usesound, 50, 1)
-		to_chat(user, span_notice("You unscrew the top panel of \the [src] revealing a button."))
+/obj/item/flame/lighter/zippo/c4detonator/screwdriver_act(mob/user, obj/item/tool)
+	detonator_mode = !detonator_mode
+	playsound(src, tool.usesound, 50, 1)
+	to_chat(user, span_notice("You unscrew the top panel of \the [src] revealing a button."))
+	return ITEM_INTERACT_SUCCESS

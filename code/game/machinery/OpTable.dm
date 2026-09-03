@@ -26,20 +26,9 @@
 //		process()
 
 /obj/machinery/optable/ex_act(severity)
-	switch(severity)
-		if(1.0)
-			//SN src = null
-			qdel(src)
-			return
-		if(2.0)
-			if(prob(50))
-				//SN src = null
-				qdel(src)
-				return
-		if(3.0)
-			if(prob(25))
-				density = FALSE
-	return
+	if(severity == 3 && prob(25))
+		density = FALSE
+	return ..()
 
 /obj/machinery/optable/attack_hand(mob/user as mob)
 	if(HULK in user.mutations)

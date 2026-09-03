@@ -27,7 +27,7 @@
 	build_destinations()
 	if(autopilot)
 		flags |= SHUTTLE_FLAGS_PROCESS
-		process_state = DO_AUTOPILOT
+		set_process_state(DO_AUTOPILOT)
 		if(autopilot_first_delay)
 			autopilot_delay = autopilot_first_delay
 	if(!visible_name)
@@ -65,7 +65,7 @@
 
 /datum/shuttle/autodock/web_shuttle/on_shuttle_arrival()
 	. = ..()
-	active_docking_controller = current_location.docking_controller
+	set_active_docking_controller(current_location.docking_controller)
 	update_docking_target(current_location)
 	web_master.on_shuttle_arrival()
 	update_helmets()
@@ -134,17 +134,21 @@
 		if(autopilot)
 			return
 		autopilot = TRUE
-		autopilot_delay = initial(autopilot_delay)
+		flags |= SHUTTLE_FLAGS_PROCESS
 		SSshuttles.process_shuttles |= src
+		autopilot_delay = initial(autopilot_delay)
 		if(process_state == IDLE_STATE)
-			process_state = DO_AUTOPILOT
+			set_process_state(DO_AUTOPILOT)
+		else
+			SSshuttles.refresh_processing_shuttle(src)
 	else
 		if(!autopilot)
 			return
 		autopilot = FALSE
+		flags &= ~SHUTTLE_FLAGS_PROCESS
 		SSshuttles.process_shuttles -= src
 		if (process_state == DO_AUTOPILOT)
-			process_state = initial(process_state)
+			set_process_state(initial(process_state))
 
 /datum/shuttle/autodock/web_shuttle/proc/autopilot_say(message) // Makes the autopilot 'talk' to the passengers.
 	var/padded_message = span_game(span_say(span_name("shuttle autopilot") + " states, \"[message]\""))

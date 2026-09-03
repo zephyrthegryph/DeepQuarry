@@ -296,14 +296,6 @@ Extracted to its own procedure for easier logic handling with paper bundles.
 		user.drop_from_inventory(O)
 		O.forceMove(src)
 		scan = O
-	else if(O.has_tool_quality(TOOL_MULTITOOL) && panel_open)
-		var/input = tgui_input_text(user, "What Department ID would you like to give this fax machine?", "Multitool-Fax Machine Interface", department, MAX_MESSAGE_LEN)
-		if(!input)
-			to_chat(user, "No input found. Please hang up and try your call again.")
-			return
-		department = input
-		if( !(("[department]" in GLOB.alldepartments) || ("[department]" in GLOB.admin_departments)) && !(department == "Unknown"))
-			GLOB.alldepartments |= department
 	else if(istype(O, /obj/item/toner))
 		if(toner <= 10) //allow replacing when low toner is affecting the print darkness
 			user.drop_item()
@@ -318,6 +310,18 @@ Extracted to its own procedure for easier logic handling with paper bundles.
 		return
 
 	return ..()
+
+/obj/machinery/photocopier/faxmachine/multitool_act(mob/user, obj/item/tool)
+	if(!panel_open)
+		return ITEM_INTERACT_BLOCKING
+	var/input = tgui_input_text(user, "What Department ID would you like to give this fax machine?", "Multitool-Fax Machine Interface", department, MAX_MESSAGE_LEN)
+	if(!input)
+		to_chat(user, "No input found. Please hang up and try your call again.")
+		return ITEM_INTERACT_BLOCKING
+	department = input
+	if(!(("[department]" in GLOB.alldepartments) || ("[department]" in GLOB.admin_departments)) && department != "Unknown")
+		GLOB.alldepartments |= department
+	return ITEM_INTERACT_SUCCESS
 
 /obj/machinery/photocopier/faxmachine/proc/sendfax(destination, mob/living/sender)
 	if(stat & (BROKEN|NOPOWER))

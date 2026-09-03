@@ -79,6 +79,35 @@ impl Mixture {
 	pub(crate) fn composition_moles(&self) -> Vec<f32> {
 		self.moles.to_vec()
 	}
+
+	/// Replace this mixture from conserved extensive quantities. Turf diffusion
+	/// keeps moles and thermal energy in f64 component-local buffers and performs
+	/// this single conversion only when the completed transaction is published
+	/// into its private snapshot. Repeatedly deriving temperature while merging
+	/// neighboring f32 mixtures was the source of measurable energy drift.
+	pub(crate) fn replace_conserved(&mut self, moles: &[f64], thermal_energy: f64) {
+		if self.immutable {
+			return;
+		}
+		self.moles.clear();
+		self.moles.reserve(moles.len());
+		for &amount in moles {
+			// The conservative solver guarantees non-negative values. Clamp only
+			// sub-float numerical residue and retain trace gases instead of invoking
+			// garbage_collect() inside the diffusion transaction.
+			self.moles.push(amount.max(0.0) as f32);
+		}
+		self.cached_heat_capacity.invalidate();
+		let heat_capacity = self.slow_heat_capacity() as f64;
+		if heat_capacity > MINIMUM_HEAT_CAPACITY as f64 {
+			self.temperature = (thermal_energy / heat_capacity)
+				.max(TCMB as f64)
+				.min(f32::MAX as f64) as f32;
+		} else {
+			self.temperature = TCMB;
+		}
+		self.cached_heat_capacity.set(heat_capacity as f32);
+	}
 }
 
 impl Default for Mixture {
@@ -715,6 +744,7 @@ mod tests {
 
 	#[test]
 	fn test_gases() {
+		let _gas_globals = crate::gas::types::TEST_GAS_GLOBALS_LOCK.lock().unwrap();
 		initialize_gases();
 		let mut into = Mixture::new();
 		into.set_moles(0, 82.0);

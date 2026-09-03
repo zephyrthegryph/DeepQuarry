@@ -1,0 +1,6 @@
+author: "Codex"
+delete-after: true
+changes:
+  - refactor: "Completed the hard cutover of machinery damage, deconstruction, and common tool use to the unified integrity and item-interaction systems."
+  - bugfix: "Bulk wire cutting is now one-way and idempotent; scripted damage can no longer accidentally mend already-cut wires."
+  - bugfix: "Machinery breakage, repair, explosions, projectiles, and salvage now consistently use the shared integrity lifecycle."

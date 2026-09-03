@@ -1,4 +1,5 @@
 /obj/machinery/protean_reconstitutor
+	maintenance_flags = MACHINE_MAINT_STANDARD
 	name = "protean reconstitutor"
 	desc = "A complex machine that is most definitely <i>not</i> just a large tub into which one pours a large amount of untethered nanites, then adds a protean positronic brain and orchestrator, in order to reconstitute a disintegrated protean... it's complicated, really!"
 	description_info = "Use a protean positronic brain, orchestrator, refactory, and nanopaste to \'fill\' the machine, then interact with it once it's ready. Protean components can be retrieved using a wrench, but any nanopaste inserted will be converted, cannot be reclaimed, and will be lost if the machine is disassembled!"
@@ -93,10 +94,6 @@
 		playsound(src, buzzsound, 100, 1, -1)
 		return
 
-	if(default_deconstruction_screwdriver(user, W))
-		return
-	if(default_deconstruction_crowbar(user, W))
-		return
 	if(default_part_replacement(user, W))
 		return
 
@@ -132,32 +129,41 @@
 			nanomass_reserve = nanotank_max
 		to_chat(user,span_notice("You fill \the [src] with paste from \the [NP]. The display now reads [nanomass_reserve]/[nanotank_max] units."))
 		qdel(NP)
-
-	if(W.has_tool_quality(TOOL_WRENCH))
-		if(protean_brain || protean_orchestrator || protean_refactory)
-			var/choice = tgui_input_list(user, "What component would you like to remove?", "Remove Component", list(protean_brain,protean_orchestrator,protean_refactory))
-			if(!choice) return
-
-			if(choice == protean_brain)
-				to_chat(user, "You fish \the [protean_brain] out of \the [src].")
-				protean_brain.forceMove(get_turf(src))
-				playsound(src, W.usesound, 50, 1)
-				src.protean_brain = null
-			if(choice == protean_refactory)
-				to_chat(user, "You fish \the [protean_refactory] out of \the [src].")
-				protean_refactory.forceMove(get_turf(src))
-				playsound(src, W.usesound, 50, 1)
-				src.protean_refactory = null
-			else if(choice == protean_orchestrator)
-				to_chat(user, "You fish \the [protean_orchestrator] out of \the [src].")
-				protean_orchestrator.forceMove(get_turf(src))
-				playsound(src, W.usesound, 50, 1)
-				src.protean_orchestrator = null
-		else
-			to_chat(user, "\The [src] does not have any protean components you can retrieve.")
-
 	update_icon()
-	..()
+	return ..()
+
+/obj/machinery/protean_reconstitutor/wrench_act(mob/user, obj/item/tool)
+	if(processing_revive)
+		to_chat(user, span_notice("\The [src] is busy. Please wait for completion of previous operation."))
+		return ITEM_INTERACT_BLOCKING
+	if(!protean_brain && !protean_orchestrator && !protean_refactory)
+		to_chat(user, "\The [src] does not have any protean components you can retrieve.")
+		return ITEM_INTERACT_BLOCKING
+	var/atom/movable/choice = tgui_input_list(user, "What component would you like to remove?", "Remove Component", list(protean_brain, protean_orchestrator, protean_refactory))
+	if(!choice)
+		return ITEM_INTERACT_BLOCKING
+	to_chat(user, "You fish \the [choice] out of \the [src].")
+	choice.forceMove(get_turf(src))
+	playsound(src, tool.usesound, 50, TRUE)
+	if(choice == protean_brain)
+		protean_brain = null
+	else if(choice == protean_refactory)
+		protean_refactory = null
+	else if(choice == protean_orchestrator)
+		protean_orchestrator = null
+	return ITEM_INTERACT_SUCCESS
+
+/obj/machinery/protean_reconstitutor/screwdriver_act(mob/user, obj/item/tool)
+	if(processing_revive)
+		to_chat(user, span_notice("\The [src] is busy. Please wait for completion of previous operation."))
+		return ITEM_INTERACT_BLOCKING
+	return ..()
+
+/obj/machinery/protean_reconstitutor/crowbar_act(mob/user, obj/item/tool)
+	if(processing_revive)
+		to_chat(user, span_notice("\The [src] is busy. Please wait for completion of previous operation."))
+		return ITEM_INTERACT_BLOCKING
+	return ..()
 
 /obj/machinery/protean_reconstitutor/attack_hand(mob/user as mob)
 	if(!protean_brain || !protean_orchestrator || !protean_refactory || (nanomass_reserve < nanomass_required))

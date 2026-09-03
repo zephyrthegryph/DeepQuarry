@@ -165,16 +165,7 @@
 	..()
 
 /obj/structure/fuel_port/attackby(obj/item/W as obj, mob/user as mob)
-	if(W.has_tool_quality(TOOL_CROWBAR))
-		if(opened)
-			to_chat(user, "<spawn class='notice'>You tightly shut \the [src] door.")
-			playsound(src, 'sound/effects/locker_close.ogg', 25, 0, -3)
-			opened = 0
-		else
-			to_chat(user, "<spawn class='notice'>You open up \the [src] door.")
-			playsound(src, 'sound/effects/locker_open.ogg', 15, 1, -3)
-			opened = 1
-	else if(istype(W,/obj/item/tank))
+	if(istype(W,/obj/item/tank))
 		if(!opened)
 			to_chat(user, "<spawn class='warning'>\The [src] door is still closed!")
 			return
@@ -182,6 +173,13 @@
 			user.unEquip(W, src)
 			W.forceMove(src)
 	update_icon()
+
+/obj/structure/fuel_port/crowbar_act(mob/user, obj/item/tool)
+	opened = !opened
+	to_chat(user, span_notice("You [opened ? "open up" : "tightly shut"] \the [src] door."))
+	playsound(src, opened ? 'sound/effects/locker_open.ogg' : 'sound/effects/locker_close.ogg', opened ? 15 : 25, opened, -3)
+	update_icon()
+	return ITEM_INTERACT_SUCCESS
 
 // Walls hide stuff inside them, but we want to be visible.
 /obj/structure/fuel_port/hide()

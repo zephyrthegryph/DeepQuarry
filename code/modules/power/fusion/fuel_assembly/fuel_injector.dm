@@ -1,6 +1,7 @@
 GLOBAL_LIST_EMPTY(fuel_injectors)
 
 /obj/machinery/fusion_fuel_injector
+	maintenance_flags = MACHINE_MAINT_STANDARD_MOVABLE
 	name = "fuel injector"
 	icon = 'icons/obj/machines/power/fusion.dmi'
 	icon_state = "injector0"
@@ -78,19 +79,34 @@ GLOBAL_LIST_EMPTY(fuel_injectors)
 				qdel(src)
 		return
 
-	if(W.has_tool_quality(TOOL_WRENCH) || W.has_tool_quality(TOOL_SCREWDRIVER) || W.has_tool_quality(TOOL_CROWBAR) || istype(W, /obj/item/storage/part_replacer))
+	if(istype(W, /obj/item/storage/part_replacer))
 		if(injecting)
 			to_chat(user, span_warning("Shut \the [src] off first!"))
-			return
-		if(default_unfasten_wrench(user, W))
-			return
-		if(default_deconstruction_screwdriver(user, W))
-			return
-		if(default_deconstruction_crowbar(user, W))
 			return
 		if(default_part_replacement(user, W))
 			return
 
+	return ..()
+
+/obj/machinery/fusion_fuel_injector/proc/maintenance_available(mob/user)
+	if(!injecting)
+		return TRUE
+	to_chat(user, span_warning("Shut \the [src] off first!"))
+	return FALSE
+
+/obj/machinery/fusion_fuel_injector/wrench_act(mob/user, obj/item/W)
+	if(!maintenance_available(user))
+		return ITEM_INTERACT_BLOCKING
+	return ..()
+
+/obj/machinery/fusion_fuel_injector/screwdriver_act(mob/user, obj/item/W)
+	if(!maintenance_available(user))
+		return ITEM_INTERACT_BLOCKING
+	return ..()
+
+/obj/machinery/fusion_fuel_injector/crowbar_act(mob/user, obj/item/W)
+	if(!maintenance_available(user))
+		return ITEM_INTERACT_BLOCKING
 	return ..()
 
 /obj/machinery/fusion_fuel_injector/attack_hand(mob/user)

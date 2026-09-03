@@ -51,18 +51,12 @@ export const pda_service_receipts = () => {
         <LabeledList.Item label="Date">
           {receipt.trans_date} {receipt.trans_time}
         </LabeledList.Item>
-        <LabeledList.Item label="Terminal">
-          {receipt.terminal}
-        </LabeledList.Item>
-        <LabeledList.Item label="Served By">
-          {receipt.staff}
-        </LabeledList.Item>
+        <LabeledList.Item label="Terminal">{receipt.terminal}</LabeledList.Item>
+        <LabeledList.Item label="Served By">{receipt.staff}</LabeledList.Item>
         <LabeledList.Item label="Personal / Subsidy">
           {receipt.personal} / {receipt.subsidy} Thalers
         </LabeledList.Item>
-        <LabeledList.Item label="Tip">
-          {receipt.tip} Thalers
-        </LabeledList.Item>
+        <LabeledList.Item label="Tip">{receipt.tip} Thalers</LabeledList.Item>
       </LabeledList>
       <Table mt={1}>
         {Object.entries(receipt.items).map(([item, quantity]) => (

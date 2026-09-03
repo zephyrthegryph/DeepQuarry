@@ -1,6 +1,9 @@
 
 /datum/pipeline
 	var/datum/gas_mixture/air
+	/// Physical volume contributed by this pipeline, retained while its air slot
+	/// is rebound to the larger authoritative network mixture.
+	var/volume
 
 	var/list/obj/machinery/atmospherics/pipe/members
 	var/list/obj/machinery/atmospherics/pipe/edges //Used for building networks
@@ -9,24 +12,59 @@
 	var/list/leaks = list()
 
 	var/datum/pipe_network/network
-
+	var/list/datum/pipe_network/network_memberships
 	var/alert_pressure = 0
 	var/engineered_exposure_timer
 
+/datum/pipeline/proc/register_network_membership(datum/pipe_network/new_network)
+	LAZYOR(network_memberships, new_network)
+
+/datum/pipeline/proc/unregister_network_membership(datum/pipe_network/old_network)
+	LAZYREMOVE(network_memberships, old_network)
+
+/datum/pipeline/proc/add_edge(obj/machinery/atmospherics/pipe/edge)
+	if(!edge || QDELETED(edge))
+		return FALSE
+	LAZYOR(edges, edge)
+	edge.register_edge_pipeline(src)
+	return TRUE
+
+/datum/pipeline/proc/remove_edge(obj/machinery/atmospherics/pipe/edge, clear_backlink = TRUE)
+	if(edges)
+		edges -= edge
+	if(clear_backlink && edge)
+		edge.unregister_edge_pipeline(src)
+
 /datum/pipeline/Destroy()
+	if(network?.rust_authoritative)
+		return QDEL_HINT_LETMELIVE
 	if(engineered_exposure_timer)
 		deltimer(engineered_exposure_timer)
 		engineered_exposure_timer = null
-	QDEL_NULL(network)
+	// Drop our backlink before invalidating the shared topology.  The network's
+	// Destroy() clears every other member and is deliberately re-entry safe.
+	var/list/old_memberships = network_memberships
+	network_memberships = null
+	for(var/datum/pipe_network/membership as anything in old_memberships)
+		if(membership?.line_members)
+			membership.line_members -= src
+	var/datum/pipe_network/old_network = network
+	network = null
+	qdel(old_network)
 
 	if(air && air.return_volume())
 		temporarily_store_air()
 	QDEL_NULL(air)
-	for(var/obj/machinery/atmospherics/pipe/P in members)
-		P.parent = null
+	var/list/old_members = members
+	var/list/old_edges = edges
 	members = null
 	edges = null
 	leaks = null
+	for(var/obj/machinery/atmospherics/pipe/P in old_members)
+		if(P.parent == src)
+			P.parent = null
+	for(var/obj/machinery/atmospherics/pipe/edge in old_edges)
+		edge.unregister_edge_pipeline(src)
 	. = ..()
 
 /datum/pipeline/process()//This use to be called called from the pipe networks
@@ -41,6 +79,8 @@
 /// Engineered pipes are evaluated whenever their authoritative network gas is
 /// mutated. Ordinary mapped pipes retain the old cheap path.
 /datum/pipeline/proc/process_engineered_materials()
+	if(!air || !length(members))
+		return
 	var/pressure = air.return_pressure()
 	var/needs_followup = FALSE
 	for(var/obj/machinery/atmospherics/pipe/member in members)
@@ -66,87 +106,16 @@
 		member.air_temporary.set_volume(member.volume)
 		member.air_temporary.multiply(member.volume / air.return_volume())
 
-/datum/pipeline/proc/build_pipeline(obj/machinery/atmospherics/pipe/base)
-	air = new
+/datum/pipeline/proc/bind_network_air(datum/pipe_network/reference, datum/gas_mixture/network_air)
+	if(network == reference)
+		air = network_air
 
-	var/list/possible_expansions = list(base)
-	members = list(base)
-	edges = list()
-
-	var/volume = base.volume
-	base.parent = src
-	alert_pressure = base.alert_pressure
-
-	if(base.air_temporary)
-		air = base.air_temporary
-		base.air_temporary = null
-	else
-		air = new
-
-	if(base.leaking)
-		leaks |= base
-
-	while(possible_expansions.len>0)
-		for(var/obj/machinery/atmospherics/pipe/borderline in possible_expansions)
-
-			var/list/result = borderline.pipeline_expansion()
-			var/edge_check = result.len
-
-			if(result.len>0)
-				for(var/obj/machinery/atmospherics/pipe/item in result)
-
-					if(item.in_stasis)
-						continue
-
-					if(!members.Find(item))
-						members += item
-						possible_expansions += item
-
-						volume += item.volume
-						item.parent = src
-
-						alert_pressure = min(alert_pressure, item.alert_pressure)
-
-						if(item.air_temporary)
-							air.merge(item.air_temporary)
-
-						if(item.leaking)
-							leaks |= item
-
-					edge_check--
-
-			if(edge_check>0)
-				edges += borderline
-
-			possible_expansions -= borderline
-
-	air.set_volume(volume)
-
-/datum/pipeline/proc/network_expand(datum/pipe_network/new_network, obj/machinery/atmospherics/pipe/reference)
-
-	if(new_network.line_members.Find(src))
-		return 0
-
-	new_network.line_members += src
-
-	network = new_network
-	network.leaks |= leaks
-
-	for(var/obj/machinery/atmospherics/pipe/edge in edges)
-		for(var/obj/machinery/atmospherics/result in edge.pipeline_expansion())
-			if(!istype(result,/obj/machinery/atmospherics/pipe) && (result!=reference))
-				result.network_expand(new_network, edge)
-
-	return 1
+/datum/pipeline/proc/detach_network_air(datum/pipe_network/reference, datum/gas_mixture/network_air, network_volume)
+	if(network == reference && air == network_air)
+		air = detached_pipenet_air(network_air, volume, network_volume)
 
 /datum/pipeline/proc/return_network(obj/machinery/atmospherics/reference)
-	if(!network)
-		network = new /datum/pipe_network()
-		network.build_network(src, null)
-			//technically passing these parameters should not be allowed
-			//however pipe_network.build_network(..) and pipeline.network_extend(...)
-			//		were setup to properly handle this case
-
+	// Rust materializes this read-only compatibility wrapper.
 	return network
 
 // rewrote off ZAS zones. ZAS branch was `if(target.zone) … modify

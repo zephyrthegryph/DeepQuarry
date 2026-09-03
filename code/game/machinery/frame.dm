@@ -357,8 +357,8 @@ GLOBAL_LIST(construction_frame_floor)
 	AddElement(/datum/element/climbable)
 	AddElement(/datum/element/rotatable)
 
-/obj/structure/frame/attackby(obj/item/P as obj, mob/user as mob)
-	if(P.has_tool_quality(TOOL_WRENCH))
+/obj/structure/frame/attackby(obj/item/P as obj, mob/user as mob, tool_quality)
+	if(tool_quality == TOOL_WRENCH)
 		if(state == FRAME_PLACED && !anchored)
 			to_chat(user, span_notice("You start to wrench the frame into place."))
 			playsound(src, P.usesound, 50, 1)
@@ -378,7 +378,7 @@ GLOBAL_LIST(construction_frame_floor)
 				to_chat(user, span_notice("You unfasten the frame."))
 				anchored = FALSE
 
-	else if(P.has_tool_quality(TOOL_WELDER))
+	else if(tool_quality == TOOL_WELDER)
 		if(state == FRAME_PLACED)
 			var/obj/item/weldingtool/WT = P.get_welder()
 			if(WT.remove_fuel(0, user))
@@ -411,7 +411,7 @@ GLOBAL_LIST(construction_frame_floor)
 				to_chat(user, span_warning("This frame does not accept circuit boards of this type!"))
 				return
 
-	else if(P.has_tool_quality(TOOL_SCREWDRIVER))
+	else if(tool_quality == TOOL_SCREWDRIVER)
 		if(state == FRAME_UNFASTENED)
 			if(need_circuit && circuit)
 				playsound(src, P.usesound, 50, 1)
@@ -513,7 +513,7 @@ GLOBAL_LIST(construction_frame_floor)
 				qdel(src)
 				return
 
-	else if(P.has_tool_quality(TOOL_CROWBAR))
+	else if(tool_quality == TOOL_CROWBAR)
 		if(state == FRAME_UNFASTENED)
 			if(need_circuit && circuit)
 				playsound(src, P.usesound, 50, 1)
@@ -590,7 +590,7 @@ GLOBAL_LIST(construction_frame_floor)
 						break
 				to_chat(user, desc)
 
-	else if(P.has_tool_quality(TOOL_WIRECUTTER))
+	else if(tool_quality == TOOL_WIRECUTTER)
 		if(state == FRAME_WIRED)
 			if( \
 				frame_type.frame_class == FRAME_CLASS_COMPUTER || \
@@ -645,6 +645,26 @@ GLOBAL_LIST(construction_frame_floor)
 					install_part(user,P)
 
 	update_icon()
+
+/obj/structure/frame/wrench_act(mob/user, obj/item/tool)
+	attackby(tool, user, TOOL_WRENCH)
+	return TRUE
+
+/obj/structure/frame/welder_act(mob/user, obj/item/tool)
+	attackby(tool, user, TOOL_WELDER)
+	return TRUE
+
+/obj/structure/frame/screwdriver_act(mob/user, obj/item/tool)
+	attackby(tool, user, TOOL_SCREWDRIVER)
+	return TRUE
+
+/obj/structure/frame/crowbar_act(mob/user, obj/item/tool)
+	attackby(tool, user, TOOL_CROWBAR)
+	return TRUE
+
+/obj/structure/frame/wirecutter_act(mob/user, obj/item/tool)
+	attackby(tool, user, TOOL_WIRECUTTER)
+	return TRUE
 
 /obj/structure/frame/proc/install_part(mob/user, obj/item/P, defer_feedback = FALSE)
 	var/installed_part = FALSE

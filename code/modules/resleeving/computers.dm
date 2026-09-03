@@ -87,15 +87,7 @@
 			P.name = "[initial(P.name)] #[num++]"
 
 /obj/machinery/computer/transhuman/resleeving/attackby(obj/item/W as obj, mob/user as mob)
-	if(istype(W, /obj/item/multitool))
-		var/obj/item/multitool/M = W
-		var/obj/machinery/clonepod/transhuman/P = M.connecting
-		if(istype(P) && !(P in pods))
-			pods += P
-			P.connected = src
-			P.name = "[initial(P.name)] #[pods.len]"
-			to_chat(user, span_notice("You connect [P] to [src]."))
-	else if(istype(W, /obj/item/disk/transcore) && !our_db.core_dumped)
+	if(istype(W, /obj/item/disk/transcore) && !our_db.core_dumped)
 		user.unEquip(W)
 		disk = W
 		disk.forceMove(src)
@@ -113,7 +105,17 @@
 		view_b_rec(REF(brDisk.stored))
 	else
 		..()
-	return
+
+/obj/machinery/computer/transhuman/resleeving/multitool_act(mob/user, obj/item/tool)
+	var/obj/item/multitool/multitool = tool
+	var/obj/machinery/clonepod/transhuman/pod = multitool.connecting
+	if(!istype(pod) || (pod in pods))
+		return ITEM_INTERACT_BLOCKING
+	pods += pod
+	pod.connected = src
+	pod.name = "[initial(pod.name)] #[pods.len]"
+	to_chat(user, span_notice("You connect [pod] to [src]."))
+	return ITEM_INTERACT_SUCCESS
 
 /obj/machinery/computer/transhuman/resleeving/attack_ai(mob/user as mob)
 	return attack_hand(user)

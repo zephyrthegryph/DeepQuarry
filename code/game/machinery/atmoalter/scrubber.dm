@@ -230,21 +230,8 @@
 		update_connected_network()
 
 /obj/machinery/portable_atmospherics/powered/scrubber/huge/attackby(obj/item/I as obj, mob/user as mob)
-	if(I.has_tool_quality(TOOL_WRENCH))
-		if(on)
-			to_chat(user, span_warning("Turn \the [src] off first!"))
-			return
-
-		anchored = !anchored
-		playsound(src, I.usesound, 50, 1)
-		to_chat(user, span_notice("You [anchored ? "wrench" : "unwrench"] \the [src]."))
-
-		return
-
 	//doesn't use power cells
 	if(istype(I, /obj/item/cell))
-		return
-	if(I.has_tool_quality(TOOL_SCREWDRIVER))
 		return
 
 	//doesn't hold tanks
@@ -252,6 +239,18 @@
 		return
 
 	..()
+
+/obj/machinery/portable_atmospherics/powered/scrubber/huge/wrench_act(mob/user, obj/item/tool)
+	if(on)
+		to_chat(user, span_warning("Turn \the [src] off first!"))
+		return ITEM_INTERACT_BLOCKING
+	anchored = !anchored
+	playsound(src, tool.usesound, 50, TRUE)
+	to_chat(user, span_notice("You [anchored ? "wrench" : "unwrench"] \the [src]."))
+	return ITEM_INTERACT_SUCCESS
+
+/obj/machinery/portable_atmospherics/powered/scrubber/huge/screwdriver_act(mob/user, obj/item/tool)
+	return ITEM_INTERACT_BLOCKING
 
 
 /obj/machinery/portable_atmospherics/powered/scrubber/huge/stationary
@@ -261,9 +260,6 @@
 	. = ..()
 	desc += "This one seems to be tightly secured with large bolts."
 
-/obj/machinery/portable_atmospherics/powered/scrubber/huge/stationary/attackby(obj/item/I as obj, mob/user as mob)
-	if(I.has_tool_quality(TOOL_WRENCH))
-		to_chat(user, span_warning("The bolts are too tight for you to unscrew!"))
-		return
-
-	..()
+/obj/machinery/portable_atmospherics/powered/scrubber/huge/stationary/wrench_act(mob/user, obj/item/tool)
+	to_chat(user, span_warning("The bolts are too tight for you to unscrew!"))
+	return ITEM_INTERACT_BLOCKING

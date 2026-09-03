@@ -18,6 +18,7 @@
 	var/charge = 1000	// maximum charge on spawn
 	var/maxcharge = 1000
 	var/rigged = 0		// true if rigged to explode
+	var/detonation_pending = FALSE
 	var/minor_fault = 0 //If not 100% reliable, it will build up faults.
 	var/self_recharge = FALSE // If true, the cell will recharge itself.
 	var/charge_amount = 25 // How much power to give, if self_recharge is true.  The number is in absolute cell charge, as it gets divided by CELLRATE later.
@@ -48,6 +49,12 @@
 /obj/item/cell/Destroy()
 	if(self_recharge)
 		STOP_PROCESSING(SSobj, src)
+	// Cells are normally owned through loc, but APCs also keep an explicit typed
+	// reference.  A blast may delete the cell without deleting its APC first.
+	if(istype(loc, /obj/machinery/power/apc))
+		var/obj/machinery/power/apc/holder = loc
+		if(holder.cell == src)
+			holder.cell = null
 	return ..()
 
 /obj/item/cell/get_cell()
@@ -55,6 +62,8 @@
 
 /obj/item/cell/process()
 	if(self_recharge)
+		if(charge >= maxcharge)
+			return PROCESS_KILL
 		if(world.time >= last_use + charge_delay)
 			give(charge_amount)
 			// TGMC Ammo HUD - Update the HUD every time we're called to recharge.
@@ -121,9 +130,12 @@
 		explode()
 		return 0
 	amount = material_cell_use_cost(amount)
+	amount = min(amount, material_discharge_limit)
 	var/used = min(charge, amount)
 	charge -= used
 	last_use = world.time
+	if(used && self_recharge)
+		START_PROCESSING(SSobj, src)
 	if(used && istype(loc, /obj/machinery/power/apc))
 		var/obj/machinery/power/apc/A = loc
 		if(!(A in SSmachines.processing_machines))
@@ -211,6 +223,10 @@
 		S.reagents.clear_reagents()
 
 /obj/item/cell/proc/explode()
+	// use() and give() can both be reached before qdel drains.  Make detonation
+	// idempotent so one rigged cell contributes exactly one blast to an epoch.
+	if(QDELETED(src) || detonation_pending)
+		return
 	var/turf/T = get_turf(src.loc)
 /*
  * 1000-cell	explosion(T, -1, 0, 1, 1)
@@ -220,19 +236,25 @@
  * */
 	if (charge==0)
 		return
+	detonation_pending = TRUE
 	var/devastation_range = -1 //round(charge/11000)
 	var/heavy_impact_range = round(sqrt(charge)/60)
 	var/light_impact_range = round(sqrt(charge)/30)
 	var/flash_range = light_impact_range
 	if (light_impact_range==0)
+		detonation_pending = FALSE
 		rigged = 0
 		corrupt()
 		return
 	//explosion(T, 0, 1, 2, 2)
 
-	log_admin("LOG: Rigged power cell explosion, last touched by [forensic_data?.get_lastprint()]")
-	message_admins("LOG: Rigged power cell explosion, last touched by [forensic_data?.get_lastprint()]")
+	log_admin("LOG: Rigged power cell explosion at [COORD(T)], charge [charge]/[maxcharge], holder [loc?.type], last touched by [forensic_data?.get_lastprint()]")
+	message_admins("LOG: Rigged power cell explosion at [COORD(T)], charge [charge]/[maxcharge], holder [loc?.type], last touched by [forensic_data?.get_lastprint()]")
 
+	// Clear the trigger before queueing.  Destruction callbacks and machinery
+	// shutdown may attempt another draw while the explosion is pending.
+	rigged = FALSE
+	charge = 0
 	explosion(T, devastation_range, heavy_impact_range, light_impact_range, flash_range)
 
 	qdel(src)

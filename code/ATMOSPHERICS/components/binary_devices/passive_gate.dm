@@ -191,7 +191,7 @@
 	if(WR?.reference)
 		SSmachines.sleeping_gas_devices.Remove(WR.reference)
 
-/obj/machinery/atmospherics/binary/passive_gate/proc/gas_dependency_changed(mixture_id, change_mask)
+/obj/machinery/atmospherics/binary/passive_gate/gas_dependency_changed(mixture_id, change_mask)
 	if(!(change_mask & GAS_DEPENDENCY_PRESSURE) || !unlocked)
 		return FALSE
 	if(mixture_id == sleeping_input_mixture_id)
@@ -350,16 +350,14 @@
 		wake_for_state_change()
 	add_fingerprint(ui.user)
 
-/obj/machinery/atmospherics/binary/passive_gate/attackby(obj/item/W as obj, mob/user as mob)
-	if (!W.has_tool_quality(TOOL_WRENCH))
-		return ..()
+/obj/machinery/atmospherics/binary/passive_gate/wrench_act(mob/user, obj/item/W)
 	if (unlocked)
 		to_chat(user, span_warning("You cannot unwrench \the [src], turn it off first."))
-		return 1
+		return ITEM_INTERACT_BLOCKING
 	if(!can_unwrench())
 		to_chat(user, span_warning("You cannot unwrench \the [src], it too exerted due to internal pressure."))
 		add_fingerprint(user)
-		return 1
+		return ITEM_INTERACT_BLOCKING
 	playsound(src, W.usesound, 50, 1)
 	to_chat(user, span_notice("You begin to unfasten \the [src]..."))
 	if (do_after(user, 40 * W.toolspeed, target = src))
@@ -368,6 +366,7 @@
 			span_notice("You have unfastened \the [src]."), \
 			"You hear ratchet.")
 		atom_deconstruct()
+	return ITEM_INTERACT_SUCCESS
 
 #undef REGULATE_NONE
 #undef REGULATE_INPUT

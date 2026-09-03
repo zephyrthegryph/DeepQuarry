@@ -1,4 +1,6 @@
 /obj/machinery/rnd
+	maintenance_flags = MACHINE_MAINT_STANDARD_MOVABLE
+	maintenance_wrench_time = 2 SECONDS
 	name = "R&D Device"
 	icon = 'icons/obj/machines/research_vr.dmi'
 	density = TRUE
@@ -66,17 +68,15 @@
 /obj/machinery/rnd/attackby(obj/item/W, mob/user, attack_modifier, click_parameters)
 	add_fingerprint(user)
 
-	if(default_deconstruction_screwdriver(user, W))
-		if(wires && panel_open)
-			wires.Interact(user)
-		return
-	if(default_deconstruction_crowbar(user, W))
-		return
 	if(default_part_replacement(user, W))
 		return
-	if(default_unfasten_wrench(user, W, 2 SECONDS))
-		return
 	return ..()
+
+/obj/machinery/rnd/screwdriver_act(mob/user, obj/item/tool)
+	var/result = ..()
+	if(ITEM_INTERACT_CONSUMED(result) && wires && panel_open)
+		wires.Interact(user)
+	return result
 
 /obj/machinery/rnd/dismantle()
 	var/obj/item/our_item = loaded_item?.resolve()

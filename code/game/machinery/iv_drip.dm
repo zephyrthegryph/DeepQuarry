@@ -68,19 +68,19 @@
 		update_icon()
 		return
 
-	if(W.has_tool_quality(TOOL_SCREWDRIVER))
-		playsound(src, W.usesound, 50, 1)
-		to_chat(user, span_notice("You start to dismantle the IV drip."))
-		if(do_after(user, 15, target = src))
-			to_chat(user, span_notice("You dismantle the IV drip."))
-			new /obj/item/stack/rods(src.loc, 6)
-			if(beaker)
-				beaker.loc = get_turf(src)
-				beaker = null
-			qdel(src)
-		return
-	else
-		return ..()
+	return ..()
+
+/obj/machinery/iv_drip/screwdriver_act(mob/user, obj/item/tool)
+	playsound(src, tool.usesound, 50, TRUE)
+	to_chat(user, span_notice("You start to dismantle the IV drip."))
+	if(do_after(user, 1.5 SECONDS, target = src))
+		to_chat(user, span_notice("You dismantle the IV drip."))
+		new /obj/item/stack/rods(loc, 6)
+		if(beaker)
+			beaker.forceMove(get_turf(src))
+			beaker = null
+		qdel(src)
+	return ITEM_INTERACT_SUCCESS
 
 
 /obj/machinery/iv_drip/process()

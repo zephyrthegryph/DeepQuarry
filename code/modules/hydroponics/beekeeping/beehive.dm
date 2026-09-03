@@ -40,17 +40,7 @@
 		. += "The lid is open."
 
 /obj/machinery/beehive/attackby(obj/item/I, mob/user)
-	if(I.has_tool_quality(TOOL_CROWBAR))
-		closed = !closed
-		user.visible_message(span_notice("[user] [closed ? "closes" : "opens"] \the [src]."), span_notice("You [closed ? "close" : "open"] \the [src]."))
-		update_icon()
-		return
-	else if(I.has_tool_quality(TOOL_WRENCH))
-		anchored = !anchored
-		playsound(src, I.usesound, 50, 1)
-		user.visible_message(span_notice("[user] [anchored ? "wrenches" : "unwrenches"] \the [src]."), span_notice("You [anchored ? "wrench" : "unwrench"] \the [src]."))
-		return
-	else if(istype(I, /obj/item/bee_smoker))
+	if(istype(I, /obj/item/bee_smoker))
 		if(closed)
 			to_chat(user, span_notice("You need to open \the [src] with a crowbar before smoking the bees."))
 			return
@@ -113,20 +103,35 @@
 		if(smoked)
 			to_chat(user, "The hive is smoked.")
 		return 1
-	else if(I.has_tool_quality(TOOL_SCREWDRIVER))
-		if(bee_count)
-			to_chat(user, span_notice("You can't dismantle \the [src] with these bees inside."))
-			return
-		if(length(frames))
-			to_chat(user, span_notice("You can't dismantle \the [src] with [length(frames)] frames still inside!"))
-			return
-		to_chat(user, span_notice("You start dismantling \the [src]..."))
-		playsound(src, I.usesound, 50, 1)
-		if(do_after(user, 3 SECONDS, target = src))
-			user.visible_message(span_notice("[user] dismantles \the [src]."), span_notice("You dismantle \the [src]."))
-			new /obj/item/beehive_assembly(loc)
-			qdel(src)
-		return
+	return ..()
+
+/obj/machinery/beehive/crowbar_act(mob/user, obj/item/tool)
+	closed = !closed
+	user.visible_message(span_notice("[user] [closed ? "closes" : "opens"] \the [src]."), span_notice("You [closed ? "close" : "open"] \the [src]."))
+	update_icon()
+	return ITEM_INTERACT_SUCCESS
+
+/obj/machinery/beehive/wrench_act(mob/user, obj/item/tool)
+	anchored = !anchored
+	playsound(src, tool.usesound, 50, TRUE)
+	user.visible_message(span_notice("[user] [anchored ? "wrenches" : "unwrenches"] \the [src]."), span_notice("You [anchored ? "wrench" : "unwrench"] \the [src]."))
+	return ITEM_INTERACT_SUCCESS
+
+/obj/machinery/beehive/screwdriver_act(mob/user, obj/item/tool)
+	if(bee_count)
+		to_chat(user, span_notice("You can't dismantle \the [src] with these bees inside."))
+		return ITEM_INTERACT_BLOCKING
+	if(length(frames))
+		to_chat(user, span_notice("You can't dismantle \the [src] with [length(frames)] frames still inside!"))
+		return ITEM_INTERACT_BLOCKING
+	to_chat(user, span_notice("You start dismantling \the [src]..."))
+	playsound(src, tool.usesound, 50, TRUE)
+	if(do_after(user, 3 SECONDS, target = src))
+		user.visible_message(span_notice("[user] dismantles \the [src]."), span_notice("You dismantle \the [src]."))
+		new /obj/item/beehive_assembly(loc)
+		qdel(src)
+		return ITEM_INTERACT_SUCCESS
+	return ITEM_INTERACT_BLOCKING
 
 /obj/machinery/beehive/attack_hand(mob/user)
 	if(!closed)
@@ -171,6 +176,7 @@
 	honeycombs = min(honeycombs + 0.1 * coef * min(trays, 5), length(frames) * 100)
 
 /obj/machinery/honey_extractor
+	maintenance_flags = MACHINE_MAINT_STANDARD
 	name = "honey extractor"
 	desc = "A machine used to turn honeycombs on the frame into honey and wax."
 	icon = 'icons/obj/beekeeping.dmi'
@@ -221,15 +227,6 @@
 /obj/machinery/honey_extractor/attackby(obj/item/I, mob/user)
 	if(processing)
 		to_chat(user, span_notice("\The [src] is currently spinning, wait until it's finished."))
-		return
-	if(I.has_tool_quality(TOOL_WRENCH))
-		anchored = !anchored
-		playsound(src, I.usesound, 50, 1)
-		user.visible_message(span_notice("[user] [anchored ? "wrenches" : "unwrenches"] \the [src]."), span_notice("You [anchored ? "wrench" : "unwrench"] \the [src]."))
-		return
-	if(default_deconstruction_screwdriver(user, I))
-		return
-	if(default_deconstruction_crowbar(user, I))
 		return
 	if(stat & NOPOWER)
 		to_chat(user, span_notice("\The [src] is powerless and can't grant your wishes"))
@@ -331,7 +328,6 @@
 /datum/material/wax
 	name = MAT_WAX
 	stack_type = /obj/item/stack/material/wax
-	material_class = MATCLASS_ORGANIC
 	icon_colour = "#fff343"
 	melting_point = T0C+300
 	density = 1 // weight renamed to density.
@@ -364,3 +360,22 @@
 	desc = initial(desc)
 	cut_overlays()
 	add_overlay("beepack-full")
+
+/obj/machinery/honey_extractor/wrench_act(mob/user, obj/item/tool)
+	if(processing)
+		to_chat(user, span_notice("\The [src] is currently spinning, wait until it's finished."))
+		return ITEM_INTERACT_BLOCKING
+	anchored = !anchored
+	playsound(src, tool.usesound, 50, TRUE)
+	user.visible_message(span_notice("[user] [anchored ? "wrenches" : "unwrenches"] \the [src]."), span_notice("You [anchored ? "wrench" : "unwrench"] \the [src]."))
+	return ITEM_INTERACT_SUCCESS
+
+/obj/machinery/honey_extractor/screwdriver_act(mob/user, obj/item/tool)
+	if(processing)
+		return ITEM_INTERACT_BLOCKING
+	return ..()
+
+/obj/machinery/honey_extractor/crowbar_act(mob/user, obj/item/tool)
+	if(processing)
+		return ITEM_INTERACT_BLOCKING
+	return ..()

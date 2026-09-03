@@ -40,7 +40,7 @@ toml = "0.8"
 # conductivity_blocked_directions, world dims are pushed via auxmos_set_world_dims, and
 # there is a return_temperature hook. reaction_hooks stays OFF (reactions run in DM — see
 # doc/atmos_migration.md).
-auxmos = { path = "../atmos", default-features = false, features = ["turf_processing", "katmos", "katmos_slow_decompression", "superconductivity"] }
+auxmos = { path = "../atmos", default-features = false, features = ["turf_processing", "fastmos", "explosive_decompression", "superconductivity"] }
 # The BYOND FFI framework for verdigris's own binds (verdigris_version/features/init/
 # cleanup + cave-gen generate_automata). Same byondapi as auxmos (workspace-pinned git
 # rev) so the whole .so links one API. x86-only because byondapi-sys is 32-bit.

@@ -55,6 +55,12 @@
 	. = ..()
 	jets = new(src)
 
+/obj/item/rig_module/maneuvering_jets/Destroy()
+	if(jets)
+		jets.holder = null
+	QDEL_NULL(jets)
+	return ..()
+
 /obj/item/rig_module/maneuvering_jets/installed()
 	..()
 	jets.holder = holder

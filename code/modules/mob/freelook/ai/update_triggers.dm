@@ -54,6 +54,10 @@
 	update_coverage(1)
 
 /obj/machinery/camera/Destroy()
+	// QDELETING cameras fail can_use(), so removeCamera() intentionally becomes a
+	// no-op. Remove the camera from every chunk before the deletion flag can make
+	// that guard hide it; otherwise each covered chunk retains a hard reference.
+	GLOB.cameranet.majorChunkChange(src, 0)
 	clear_all_networks()
 	GLOB.cameranet.cameras -= src
 	return ..()

@@ -90,16 +90,19 @@
 			to_chat(user, span_notice("You install a cell in \the [src]."))
 			update_icon()
 
-	else if(W.has_tool_quality(TOOL_SCREWDRIVER))
-		if(bcell)
-			bcell.update_icon()
-			bcell.forceMove(get_turf(src.loc))
-			user.put_in_any_hand_if_possible(bcell)
-			bcell = null
-			to_chat(user, span_notice("You remove the cell from \the [src]."))
-			update_icon()
 	else
 		return ..()
+
+/obj/item/defib_kit/screwdriver_act(mob/user, obj/item/tool)
+	if(!bcell)
+		return ITEM_INTERACT_BLOCKING
+	bcell.update_icon()
+	bcell.forceMove(get_turf(loc))
+	user.put_in_any_hand_if_possible(bcell)
+	bcell = null
+	to_chat(user, span_notice("You remove the cell from \the [src]."))
+	update_icon()
+	return ITEM_INTERACT_SUCCESS
 
 /obj/item/defib_kit/emag_act(remaining_charges, mob/user)
 	var/obj/item/shockpaddles/linked/paddles = get_paddles()

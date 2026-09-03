@@ -99,35 +99,6 @@ GLOBAL_LIST_EMPTY(light_type_cache)
 			add_fingerprint(user)
 		return
 
-	if (W.has_tool_quality(TOOL_WRENCH))
-		if (src.stage == 1)
-			playsound(src, W.usesound, 75, 1)
-			to_chat(user, "You begin deconstructing [src].")
-			if (!do_after(user, 3 SECONDS * W.toolspeed, target = src))
-				return
-			new /obj/item/stack/material/steel( get_turf(src.loc), sheets_refunded )
-			user.visible_message("[user.name] deconstructs [src].", \
-				"You deconstruct [src].", "You hear a noise.")
-			playsound(src, 'sound/items/Deconstruct.ogg', 75, 1)
-			qdel(src)
-		if (src.stage == 2)
-			to_chat(user, "You have to remove the wires first.")
-			return
-
-		if (src.stage == 3)
-			to_chat(user, "You have to unscrew the case first.")
-			return
-
-	if(W.has_tool_quality(TOOL_WIRECUTTER))
-		if (src.stage != 2) return
-		src.stage = 1
-		src.update_icon()
-		new /obj/item/stack/cable_coil(get_turf(src.loc), 1, "red")
-		user.visible_message("[user.name] removes the wiring from [src].", \
-			"You remove the wiring from [src].", "You hear a noise.")
-		playsound(src, W.usesound, 50, 1)
-		return
-
 	if(istype(W, /obj/item/stack/cable_coil))
 		if (src.stage != 1) return
 		var/obj/item/stack/cable_coil/coil = W
@@ -138,24 +109,51 @@ GLOBAL_LIST_EMPTY(light_type_cache)
 				"You add wires to [src].")
 		return
 
-	if(W.has_tool_quality(TOOL_SCREWDRIVER))
-		if (src.stage == 2)
-			src.stage = 3
-			src.update_icon()
-			user.visible_message("[user.name] closes [src]'s casing.", \
-				"You close [src]'s casing.", "You hear a noise.")
-			playsound(src, W.usesound, 75, 1)
-
-			var/obj/machinery/light/newlight = new fixture_type(src.loc, src)
-			newlight.set_dir(src.dir)
-			src.transfer_fingerprints_to(newlight)
-			if(cell)
-				newlight.cell = cell
-				cell.forceMove(newlight)
-				cell = null
-			qdel(src)
-			return
 	..()
+
+/obj/machinery/light_construct/wrench_act(mob/user, obj/item/tool)
+	if(stage == 2)
+		to_chat(user, "You have to remove the wires first.")
+		return ITEM_INTERACT_BLOCKING
+	if(stage == 3)
+		to_chat(user, "You have to unscrew the case first.")
+		return ITEM_INTERACT_BLOCKING
+	playsound(src, tool.usesound, 75, TRUE)
+	to_chat(user, "You begin deconstructing [src].")
+	if(!do_after(user, 3 SECONDS * tool.toolspeed, target = src))
+		return ITEM_INTERACT_SUCCESS
+	new /obj/item/stack/material/steel(get_turf(src), sheets_refunded)
+	user.visible_message("[user.name] deconstructs [src].", "You deconstruct [src].", "You hear a noise.")
+	playsound(src, 'sound/items/Deconstruct.ogg', 75, TRUE)
+	qdel(src)
+	return ITEM_INTERACT_SUCCESS
+
+/obj/machinery/light_construct/wirecutter_act(mob/user, obj/item/tool)
+	if(stage != 2)
+		return ITEM_INTERACT_BLOCKING
+	stage = 1
+	update_icon()
+	new /obj/item/stack/cable_coil(get_turf(src), 1, "red")
+	user.visible_message("[user.name] removes the wiring from [src].", "You remove the wiring from [src].", "You hear a noise.")
+	playsound(src, tool.usesound, 50, TRUE)
+	return ITEM_INTERACT_SUCCESS
+
+/obj/machinery/light_construct/screwdriver_act(mob/user, obj/item/tool)
+	if(stage != 2)
+		return ITEM_INTERACT_BLOCKING
+	stage = 3
+	update_icon()
+	user.visible_message("[user.name] closes [src]'s casing.", "You close [src]'s casing.", "You hear a noise.")
+	playsound(src, tool.usesound, 75, TRUE)
+	var/obj/machinery/light/finished_light = new fixture_type(loc, src)
+	finished_light.set_dir(dir)
+	transfer_fingerprints_to(finished_light)
+	if(cell)
+		finished_light.cell = cell
+		cell.forceMove(finished_light)
+		cell = null
+	qdel(src)
+	return ITEM_INTERACT_SUCCESS
 
 /obj/machinery/light_construct/small
 	name = "small light fixture frame"
@@ -210,6 +208,8 @@ GLOBAL_LIST_EMPTY(light_type_cache)
 	idle_power_usage = 2
 	active_power_usage = 10
 	power_channel = LIGHT //Lights are calc'd via area so they dont need to be in the machine list
+	max_integrity = 20
+	integrity_failure = 0.5
 	var/obj/item/light/installed_light //What light is currently in the socket! Updated in new()
 	var/on = 0					// 1 if on, 0 if off
 	var/brightness_range
@@ -230,6 +230,9 @@ GLOBAL_LIST_EMPTY(light_type_cache)
 	var/auto_flicker = FALSE // If true, will constantly flicker, so long as someone is around to see it (otherwise its a waste of CPU).
 
 	var/obj/item/cell/emergency_light/cell
+	var/emergency_recharge_timer
+	var/emergency_discharge_timer
+	var/emergency_discharge_started
 	var/start_with_cell = TRUE	// if true, this fixture generates a very weak cell at roundstart
 
 	var/emergency_mode = FALSE	// if true, the light is in emergency mode
@@ -314,6 +317,12 @@ GLOBAL_LIST_EMPTY(light_type_cache)
 	lamp_shade = 0
 
 /obj/machinery/light/Destroy()
+	if(emergency_recharge_timer)
+		deltimer(emergency_recharge_timer)
+		emergency_recharge_timer = null
+	if(emergency_discharge_timer)
+		deltimer(emergency_discharge_timer)
+		emergency_discharge_timer = null
 	var/area/A = get_area(src)
 	if(A)
 		on = 0
@@ -452,11 +461,13 @@ GLOBAL_LIST_EMPTY(light_type_cache)
 				set_light(correct_range, correct_power, correct_color)
 				overlay_color = correct_overlay
 		if(cell?.charge < cell?.maxcharge)
-			START_PROCESSING(SSobj, src)
+			schedule_emergency_recharge()
 	else if(has_emergency_power(LIGHT_EMERGENCY_POWER_USE) && !turned_off())
 		update_use_power(USE_POWER_IDLE)
 		emergency_mode = TRUE
-		START_PROCESSING(SSobj, src)
+		begin_emergency_discharge()
+		if(auto_flicker)
+			START_PROCESSING(SSobj, src)
 	else
 		update_use_power(USE_POWER_IDLE)
 		set_light(0)
@@ -481,21 +492,11 @@ GLOBAL_LIST_EMPTY(light_type_cache)
 		return
 	visible_message(span_danger("[user] smashes the light!"))
 	user.do_attack_animation(src)
-	broken()
-	return 1
-
-/obj/machinery/light/take_damage(damage)
-	if(!damage)
-		return
-	if(status == LIGHT_EMPTY||status == LIGHT_BROKEN)
-		return
-	if(!(status == LIGHT_OK||status == LIGHT_BURNED))
-		return
-	broken()
+	take_damage(max_integrity * (1 - integrity_failure) + DAMAGE_PRECISION, BRUTE, MELEE)
 	return 1
 
 /obj/machinery/light/blob_act()
-	broken()
+	take_damage(max_integrity, BRUTE, MELEE)
 
 // attempt to set the light's on/off status
 // will not switch on if broken/burned/empty
@@ -602,11 +603,7 @@ GLOBAL_LIST_EMPTY(light_type_cache)
 		//If xenos decide they want to smash a light bulb with a toolbox, who am I to stop them? /N
 
 	else if(status != LIGHT_BROKEN && status != LIGHT_EMPTY)
-		if(istype(W, /obj/item/multitool)) //Allow us to swap  the light color.
-			installed_light.attackby(W, user)
-			return
-
-		else if(prob(1+W.force * 5))
+		if(prob(1+W.force * 5))
 
 			to_chat(user, "You hit the light, and it smashes!")
 			for(var/mob/M in viewers(src))
@@ -624,14 +621,6 @@ GLOBAL_LIST_EMPTY(light_type_cache)
 
 	// attempt to stick weapon into light socket
 	else if(status == LIGHT_EMPTY)
-		if(W.has_tool_quality(TOOL_SCREWDRIVER)) //If it's a screwdriver open it.
-			playsound(src, W.usesound, 75, 1)
-			user.visible_message("[user.name] opens [src]'s casing.", \
-				"You open [src]'s casing.", "You hear a noise.")
-			new construct_type(src.loc, src)
-			qdel(src)
-			return
-
 		to_chat(user, "You stick \the [W] into the light socket!")
 		if(has_power() && !(W.flags & NOCONDUCT))
 			var/datum/effect/effect/system/spark_spread/s = new /datum/effect/effect/system/spark_spread
@@ -642,11 +631,6 @@ GLOBAL_LIST_EMPTY(light_type_cache)
 				electrocute_mob(user, get_area(src), src, rand(0.7,1.0))
 
 /obj/machinery/light/flamp/attackby(obj/item/W, mob/user)
-	if(W.has_tool_quality(TOOL_WRENCH))
-		anchored = !anchored
-		playsound(src, W.usesound, 50, 1)
-		to_chat(user, span_notice("You [anchored ? "wrench" : "unwrench"] \the [src]."))
-
 	if(!lamp_shade)
 		if(istype(W, /obj/item/lampshade))
 			lamp_shade = 1
@@ -654,17 +638,37 @@ GLOBAL_LIST_EMPTY(light_type_cache)
 			update_icon()
 			return
 
-	else
-		if(W.has_tool_quality(TOOL_SCREWDRIVER))
-			playsound(src, W.usesound, 75, 1)
-			user.visible_message("[user.name] removes [src]'s lamp shade.", \
-				"You remove [src]'s lamp shade.", "You hear a noise.")
-			lamp_shade = 0
-			new /obj/item/lampshade(src.loc)
-			update_icon()
-			return
-
 	..()
+
+/obj/machinery/light/screwdriver_act(mob/user, obj/item/tool)
+	if(status != LIGHT_EMPTY)
+		return NONE
+	playsound(src, tool.usesound, 75, TRUE)
+	user.visible_message("[user.name] opens [src]'s casing.", "You open [src]'s casing.", "You hear a noise.")
+	new construct_type(loc, src)
+	qdel(src)
+	return ITEM_INTERACT_SUCCESS
+
+/obj/machinery/light/multitool_act(mob/user, obj/item/tool)
+	if(status == LIGHT_BROKEN || status == LIGHT_EMPTY || !installed_light)
+		return NONE
+	return installed_light.multitool_act(user, tool)
+
+/obj/machinery/light/flamp/wrench_act(mob/user, obj/item/tool)
+	anchored = !anchored
+	playsound(src, tool.usesound, 50, TRUE)
+	to_chat(user, span_notice("You [anchored ? "wrench" : "unwrench"] \the [src]."))
+	return ITEM_INTERACT_SUCCESS
+
+/obj/machinery/light/flamp/screwdriver_act(mob/user, obj/item/tool)
+	if(lamp_shade)
+		playsound(src, tool.usesound, 75, TRUE)
+		user.visible_message("[user.name] removes [src]'s lamp shade.", "You remove [src]'s lamp shade.", "You hear a noise.")
+		lamp_shade = FALSE
+		new /obj/item/lampshade(loc)
+		update_icon()
+		return ITEM_INTERACT_SUCCESS
+	return ..()
 
 // returns if the light has power /but/ is manually turned off
 // if a light is turned off, it won't activate emergency power
@@ -856,6 +860,14 @@ GLOBAL_LIST_EMPTY(light_type_cache)
 	installed_light.update_icon()
 	update()
 
+/obj/machinery/light/atom_break(damage_flag)
+	. = ..()
+	broken()
+
+/obj/machinery/light/atom_fix()
+	. = ..()
+	fix()
+
 /obj/machinery/light/proc/fix()
 	if(status == LIGHT_OK)
 		return
@@ -864,22 +876,6 @@ GLOBAL_LIST_EMPTY(light_type_cache)
 		installed_light.status = LIGHT_OK
 	on = 1
 	update()
-
-// explosion effect
-// destroy the whole light fixture or just shatter it
-
-/obj/machinery/light/ex_act(severity)
-	switch(severity)
-		if(1.0)
-			qdel(src)
-			return
-		if(2.0)
-			if (prob(75))
-				broken()
-		if(3.0)
-			if (prob(50))
-				broken()
-	return
 
 //blob effect
 
@@ -893,12 +889,8 @@ GLOBAL_LIST_EMPTY(light_type_cache)
 	if(has_power())
 		emergency_mode = FALSE
 		update(FALSE)
-		if(!cell.give(LIGHT_EMERGENCY_POWER_USE*2)) // Recharge and stop if no more was able to be added
-			return PROCESS_KILL
-	if(emergency_mode && !use_emergency_power(LIGHT_EMERGENCY_POWER_USE))
-		update(FALSE) //Disables emergency mode and sets the color to normal
-		return PROCESS_KILL // Drop out if we're out of cell power. These are often in POIs and there's no point in recharging.
-
+		schedule_emergency_recharge()
+		return PROCESS_KILL
 	if(auto_flicker && !flickering)
 		if(check_for_player_proximity(src, radius = 12, ignore_ghosts = FALSE, ignore_afk = TRUE))
 			seton(TRUE) // Lights must be on to flicker.
@@ -906,11 +898,66 @@ GLOBAL_LIST_EMPTY(light_type_cache)
 		else
 			seton(FALSE) // Otherwise keep it dark and spooky for when someone shows up.
 
-	if(!has_power() && !emergency_mode && !auto_flicker)
+	if(!auto_flicker)
 		return PROCESS_KILL
+
+/obj/machinery/light/proc/begin_emergency_discharge()
+	if(!emergency_mode || !cell || emergency_discharge_timer)
+		return
+	// Set the initial emergency appearance immediately, then account for charge
+	// in coarse time-based batches. Hundreds of fixtures no longer need an SSobj
+	// process call every two seconds during a station-wide outage.
+	use_emergency_power(0)
+	emergency_discharge_started = world.time
+	emergency_discharge_timer = addtimer(CALLBACK(src, PROC_REF(continue_emergency_discharge)), 10 SECONDS, TIMER_STOPPABLE)
+
+/obj/machinery/light/proc/settle_emergency_discharge()
+	if(!emergency_discharge_started || !cell)
+		return
+	var/elapsed = max(0, world.time - emergency_discharge_started)
+	emergency_discharge_started = world.time
+	var/amount = LIGHT_EMERGENCY_POWER_USE * (elapsed / max(1, SSobj.wait))
+	if(amount > 0)
+		use_emergency_power(min(amount, cell.charge))
+
+/obj/machinery/light/proc/continue_emergency_discharge()
+	emergency_discharge_timer = null
+	if(has_power() || !emergency_mode || !cell)
+		emergency_discharge_started = 0
+		update(FALSE)
+		return
+	settle_emergency_discharge()
+	if(!has_emergency_power(LIGHT_EMERGENCY_POWER_USE))
+		emergency_discharge_started = 0
+		update(FALSE)
+		return
+	emergency_discharge_timer = addtimer(CALLBACK(src, PROC_REF(continue_emergency_discharge)), 10 SECONDS, TIMER_STOPPABLE)
+
+/obj/machinery/light/proc/schedule_emergency_recharge()
+	if(!cell || cell.charge >= cell.maxcharge || !has_power() || emergency_recharge_timer)
+		return
+	// Charging is time based, not an SSobj poll. Preserve the historical rate of
+	// 0.4 charge every two seconds while stable power is available.
+	var/charge_steps = CEILING((cell.maxcharge - cell.charge) / (LIGHT_EMERGENCY_POWER_USE * 2), 1)
+	emergency_recharge_timer = addtimer(CALLBACK(src, PROC_REF(finish_emergency_recharge)), max(1, charge_steps * SSobj.wait), TIMER_STOPPABLE)
+
+/obj/machinery/light/proc/finish_emergency_recharge()
+	emergency_recharge_timer = null
+	if(!cell || !has_power())
+		return
+	cell.give(cell.maxcharge - cell.charge)
+	update(FALSE)
 
 // called when area power state changes
 /obj/machinery/light/power_change()
+	if(emergency_discharge_timer && has_power())
+		settle_emergency_discharge()
+		deltimer(emergency_discharge_timer)
+		emergency_discharge_timer = null
+		emergency_discharge_started = 0
+	if(emergency_recharge_timer && !has_power())
+		deltimer(emergency_recharge_timer)
+		emergency_recharge_timer = null
 	spawn(10)
 		seton(has_power())
 
@@ -1077,13 +1124,8 @@ GLOBAL_LIST_EMPTY(light_type_cache)
 
 // attack bulb/tube with object
 // if a syringe, can inject phoron to make it explode
-/obj/item/light/attackby(obj/item/I, mob/user)
-	..()
-	if(isrobot(user))
-		I = user.get_active_hand()
-
-	if(I?.has_tool_quality(TOOL_MULTITOOL))
-		var/list/menu_list = list(
+/obj/item/light/multitool_act(mob/user, obj/item/tool)
+	var/list/menu_list = list(
 		"Normal Range",
 		"Normal Brightness",
 		"Normal Color",
@@ -1092,49 +1134,52 @@ GLOBAL_LIST_EMPTY(light_type_cache)
 		"Nightshift Color",
 		)
 
-		var/modification_decision = tgui_input_list(user, "What do you wish to change about this light?", "Light Adjustment", menu_list)
-		if(!modification_decision)
-			return //They didn't select anything!
-		switch(modification_decision)
-			if("Normal Range")
-				var/new_range = tgui_input_number(user, "Choose the new range of the light! (1-[init_brightness_range])", "", init_brightness_range, init_brightness_range, 1, 0)
-				if(new_range)
-					brightness_range = new_range
+	var/modification_decision = tgui_input_list(user, "What do you wish to change about this light?", "Light Adjustment", menu_list)
+	if(!modification_decision)
+		return ITEM_INTERACT_BLOCKING
+	switch(modification_decision)
+		if("Normal Range")
+			var/new_range = tgui_input_number(user, "Choose the new range of the light! (1-[init_brightness_range])", "", init_brightness_range, init_brightness_range, 1, 0)
+			if(new_range)
+				brightness_range = new_range
 
-			if("Normal Brightness")
-				var/new_power = tgui_input_number(user, "Choose the new brightness of the light! (0.01 - [init_brightness_power])", "", init_brightness_power, init_brightness_power, 0.01, round_value=FALSE)
-				if(new_power)
-					brightness_power = new_power
+		if("Normal Brightness")
+			var/new_power = tgui_input_number(user, "Choose the new brightness of the light! (0.01 - [init_brightness_power])", "", init_brightness_power, init_brightness_power, 0.01, round_value=FALSE)
+			if(new_power)
+				brightness_power = new_power
 
-			if("Normal Color")
-				var/new_color = tgui_color_picker(user, "Choose a color to set the light to!", "", brightness_color)
-				if(new_color)
-					brightness_color = new_color
+		if("Normal Color")
+			var/new_color = tgui_color_picker(user, "Choose a color to set the light to!", "", brightness_color)
+			if(new_color)
+				brightness_color = new_color
 
-			if("Nightshift Range")
-				var/new_range = tgui_input_number(user, "Choose the new range of the light! (1-[init_nightshift_range])", "", init_nightshift_range, init_nightshift_range, 1)
-				if(new_range)
-					nightshift_range = new_range
+		if("Nightshift Range")
+			var/new_range = tgui_input_number(user, "Choose the new range of the light! (1-[init_nightshift_range])", "", init_nightshift_range, init_nightshift_range, 1)
+			if(new_range)
+				nightshift_range = new_range
 
-			if("Nightshift Brightness")
-				var/new_power = tgui_input_number(user, "Choose the new brightness of the light! (0.01 - [init_nightshift_power])", "", init_nightshift_power, init_nightshift_power, 0.01, round_value=FALSE)
-				if(new_power)
-					nightshift_power = new_power
+		if("Nightshift Brightness")
+			var/new_power = tgui_input_number(user, "Choose the new brightness of the light! (0.01 - [init_nightshift_power])", "", init_nightshift_power, init_nightshift_power, 0.01, round_value=FALSE)
+			if(new_power)
+				nightshift_power = new_power
 
-			if("Nightshift Color")
-				var/new_color = tgui_color_picker(user, "Choose a color to set the light to!", "", nightshift_color)
-				if(new_color)
-					nightshift_color = new_color
+		if("Nightshift Color")
+			var/new_color = tgui_color_picker(user, "Choose a color to set the light to!", "", nightshift_color)
+			if(new_color)
+				nightshift_color = new_color
 
-			else //Should never happen.
-				return
-		if(istype(src.loc, /obj/machinery/light))
-			var/obj/machinery/light/L = src.loc
-			L.update_from_bulb(src)
-			L.update()
-			L.update() //Yes it has to double update...Don't ask me why. I think it's stupid.
+		else //Should never happen.
+			return ITEM_INTERACT_BLOCKING
+	if(istype(loc, /obj/machinery/light))
+		var/obj/machinery/light/fixture = loc
+		fixture.update_from_bulb(src)
+		fixture.update()
+		fixture.update() //Yes it has to double update...Don't ask me why. I think it's stupid.
 
-	else if(istype(I, /obj/item/reagent_containers/syringe))
+	return ITEM_INTERACT_SUCCESS
+
+/obj/item/light/attackby(obj/item/I, mob/user)
+	if(istype(I, /obj/item/reagent_containers/syringe))
 		var/obj/item/reagent_containers/syringe/S = I
 
 		to_chat(user, "You inject the solution into the [src].")
@@ -1148,8 +1193,8 @@ GLOBAL_LIST_EMPTY(light_type_cache)
 
 		S.reagents.clear_reagents()
 	else
-		..()
-	return
+		return ..()
+	return TRUE
 
 // called after an attack with a light item
 // shatter light, unless it was an attempt to put it in a light socket

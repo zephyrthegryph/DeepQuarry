@@ -53,14 +53,22 @@
 	for(var/obj/structure/closet/secure_closet/brig/C in GLOB.all_brig_closets)
 		if(C.id == id)
 			LAZYADD(targets,C)
+	for(var/atom/movable/target as anything in targets)
+		RegisterSignal(target, COMSIG_QDELETING, PROC_REF(target_deleted))
 
 	if(!LAZYLEN(targets))
 		stat |= BROKEN
 	update_icon()
 
 /obj/machinery/door_timer/Destroy()
+	for(var/atom/movable/target as anything in targets)
+		UnregisterSignal(target, COMSIG_QDELETING)
 	LAZYCLEARLIST(targets)
 	return ..()
+
+/obj/machinery/door_timer/proc/target_deleted(datum/source)
+	SIGNAL_HANDLER
+	LAZYREMOVE(targets, source)
 
 //Main door timer loop, if it's timing and time is >0 reduce time by 1.
 // if it's less than 0, open door, reset timer

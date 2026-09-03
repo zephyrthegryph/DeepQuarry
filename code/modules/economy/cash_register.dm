@@ -252,12 +252,13 @@
 			scan_cash(SC, user)
 	else if(istype(O, /obj/item/card/emag))
 		return ..()
-	else if(istype(O) && O.has_tool_quality(TOOL_WRENCH))
-		var/obj/item/tool/wrench/W = O
-		toggle_anchors(W, user)
 	// Not paying: Look up price and add it to transaction_amount
 	else
 		scan_item_price(O, user)
+
+/obj/machinery/cash_register/wrench_act(mob/user, obj/item/tool)
+	toggle_anchors(tool, user)
+	return ITEM_INTERACT_SUCCESS
 
 
 /obj/machinery/cash_register/MouseDrop_T(atom/dropping, mob/user)
@@ -553,7 +554,7 @@
 		to_chat(user, span_warning("The cash box is locked."))
 
 
-/obj/machinery/cash_register/proc/toggle_anchors(obj/item/tool/wrench/W, mob/user)
+/obj/machinery/cash_register/proc/toggle_anchors(obj/item/W, mob/user)
 	if(manipulating) return
 	manipulating = 1
 	if(!anchored)

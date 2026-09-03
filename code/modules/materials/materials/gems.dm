@@ -1,7 +1,6 @@
 /datum/material/phoron
 	name = MAT_PHORON
 	stack_type = /obj/item/stack/material/phoron
-	material_class = MATCLASS_CRYSTAL
 	ignition_point = PHORON_MINIMUM_BURN_TEMPERATURE
 	icon_base = "stone"
 	table_icon_base = "stone"
@@ -33,7 +32,6 @@
 /datum/material/diamond
 	name = MAT_DIAMOND
 	stack_type = /obj/item/stack/material/diamond
-	material_class = MATCLASS_CRYSTAL
 	flags = MATERIAL_UNMELTABLE
 	cut_delay = 60
 	icon_colour = "#00FFE1"
@@ -52,7 +50,6 @@
 	name = MAT_QUARTZ
 	display_name = MAT_QUARTZ
 	use_name = MAT_QUARTZ
-	material_class = MATCLASS_CRYSTAL
 	icon_colour = "#e6d7df"
 	stack_type = /obj/item/stack/material/quartz
 	tableslam_noise = 'sound/effects/Glasshit.ogg'
@@ -66,7 +63,6 @@
 	name = MAT_PAINITE
 	display_name = MAT_PAINITE
 	use_name = MAT_PAINITE
-	material_class = MATCLASS_CRYSTAL
 	icon_colour = "#6b4947"
 	stack_type = /obj/item/stack/material/painite
 	flags = MATERIAL_UNMELTABLE
@@ -82,7 +78,6 @@
 	name = MAT_VOPAL
 	display_name = MAT_VOPAL
 	use_name = MAT_VOPAL
-	material_class = MATCLASS_CRYSTAL
 	icon_colour = "#0f0f0f"
 	stack_type = /obj/item/stack/material/void_opal
 	flags = MATERIAL_UNMELTABLE
@@ -102,7 +97,6 @@
 /datum/material/valhollide
 	name = MAT_VALHOLLIDE
 	stack_type = /obj/item/stack/material/valhollide
-	material_class = MATCLASS_CRYSTAL
 	icon_base = "stone"
 	door_icon_base = "stone"
 	icon_reinf = "reinf_mesh"
@@ -126,7 +120,6 @@
 /datum/material/verdantium
 	name = MAT_VERDANTIUM
 	stack_type = /obj/item/stack/material/verdantium
-	material_class = MATCLASS_CRYSTAL
 	icon_base = "metal"
 	door_icon_base = "metal"
 	icon_reinf = "reinf_metal"
@@ -149,7 +142,6 @@
 /datum/material/morphium
 	name = MAT_MORPHIUM
 	stack_type = /obj/item/stack/material/morphium
-	material_class = MATCLASS_CRYSTAL
 	icon_base = "metal"
 	door_icon_base = "metal"
 	icon_colour = "#37115A"
@@ -172,7 +164,6 @@
 /datum/material/glamour
 	name = MAT_GLAMOUR
 	stack_type = /obj/item/stack/material/glamour
-	material_class = MATCLASS_CRYSTAL
 	icon_base = "stone"
 	door_icon_base = "stone"
 	icon_colour = "#fffee7"
@@ -239,7 +230,6 @@
 	name = MAT_EAGATE
 	display_name = "energized agate"
 	use_name = "energized agate"
-	material_class = MATCLASS_CRYSTAL
 	icon_colour = "#FF3300"
 	stack_type = /obj/item/stack/material/weathered_agate
 	ignition_point = 2400

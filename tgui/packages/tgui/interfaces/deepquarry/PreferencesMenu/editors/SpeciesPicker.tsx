@@ -139,7 +139,9 @@ const SpeciesPickerModal = ({
         !lcSearch ||
         meta.name.toLowerCase().includes(lcSearch) ||
         (meta.pitch?.toLowerCase() ?? '').includes(lcSearch) ||
-        stripHtml(meta.blurb ?? '').toLowerCase().includes(lcSearch),
+        stripHtml(meta.blurb ?? '')
+          .toLowerCase()
+          .includes(lcSearch),
     )
     .sort(([keyA, a], [keyB, b]) => {
       // Pin synthetic entries to the top so they're seen first.
@@ -241,7 +243,12 @@ const SpeciesCard = ({
       }}
     >
       <Box
-        style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: '8px',
+          cursor: 'pointer',
+        }}
         onClick={onPick}
       >
         {meta.thumb_b64 && (

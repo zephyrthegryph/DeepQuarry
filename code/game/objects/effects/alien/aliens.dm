@@ -196,14 +196,17 @@
 
 	var/damage = W.force / 4.0
 
-	if(W.has_tool_quality(TOOL_WELDER))
-		var/obj/item/weldingtool/WT = W.get_welder()
-
-		if(WT.remove_fuel(0, user))
-			damage = 15
-			playsound(src, 'sound/items/Welder.ogg', 100, 1)
-
 	take_damage(damage, BRUTE, MELEE, sound_effect = FALSE)
+
+/obj/effect/alien/weeds/welder_act(mob/user, obj/item/tool)
+	var/obj/item/weldingtool/welder = tool.get_welder()
+	if(!welder.remove_fuel(0, user))
+		return ITEM_INTERACT_BLOCKING
+	user.setClickCooldown(user.get_attack_speed(tool))
+	visible_message(span_danger("\The [src] have been burned with \the [tool] by [user]."))
+	playsound(src, 'sound/items/Welder.ogg', 100, TRUE)
+	take_damage(15, BRUTE, MELEE, sound_effect = FALSE)
+	return ITEM_INTERACT_SUCCESS
 
 /obj/effect/alien/weeds/attack_generic(mob/user, damage, attack_verb)
 	visible_message(span_danger("[user] [attack_verb] the [src]!"))

@@ -43,10 +43,16 @@
 	. += IC.examine(user)
 
 /obj/item/implant/integrated_circuit/attackby(obj/item/O, mob/user)
-	if(O.has_tool_quality(TOOL_CROWBAR) || istype(O, /obj/item/integrated_electronics) || istype(O, /obj/item/integrated_circuit) || O.has_tool_quality(TOOL_SCREWDRIVER) || istype(O, /obj/item/cell/device) )
+	if(istype(O, /obj/item/integrated_electronics) || istype(O, /obj/item/integrated_circuit) || istype(O, /obj/item/cell/device))
 		IC.attackby(O, user)
 	else
-		..()
+		return ..()
+
+/obj/item/implant/integrated_circuit/crowbar_act(mob/user, obj/item/tool)
+	return IC.crowbar_act(user, tool)
+
+/obj/item/implant/integrated_circuit/screwdriver_act(mob/user, obj/item/tool)
+	return IC.screwdriver_act(user, tool)
 
 /obj/item/implant/integrated_circuit/attack_self(mob/user)
 	. = ..(user)

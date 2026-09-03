@@ -1095,7 +1095,10 @@
 					canmove = TRUE
 		else
 			lying = incapacitated(INCAPACITATION_KNOCKDOWN)
-			canmove = !incapacitated(INCAPACITATION_DISABLED)
+			// Prone is not immobile. Voluntary rest and conscious knockdown use
+			// movement_delay()'s crawl penalties; knockout, stun, paralysis, and
+			// aggressive grabs are rejected below.
+			canmove = TRUE
 
 	if(incapacitated(INCAPACITATION_KNOCKOUT) || incapacitated(INCAPACITATION_STUNNED)) // Making sure we're in good condition to crawl
 		canmove = FALSE

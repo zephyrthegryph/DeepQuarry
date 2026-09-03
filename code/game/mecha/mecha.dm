@@ -5,6 +5,7 @@
 #define MECHA_CELL_OUT      4
 
 /obj/mecha
+	var/focused_tool_stage
 	name = "Mecha"
 	desc = "Exosuit"
 	description_info = "Alt click to strafe."
@@ -339,6 +340,10 @@
 // mechas, and it's easy enough to modify.
 /obj/mecha/process()
 	var/static/max_ticks = 16
+	// An empty parked mech has no player-visible cabin simulation to advance.
+	// Entry and every active-process transition wake it explicitly.
+	if(!occupant && !(current_processes & (MECHA_PROC_MOVEMENT | MECHA_PROC_DAMAGE)))
+		return PROCESS_KILL
 
 	if (current_processes & MECHA_PROC_MOVEMENT)
 		process_inertial_movement()
@@ -1428,6 +1433,23 @@
 ////// AttackBy //////
 //////////////////////
 
+/obj/mecha/proc/run_focused_tool(mob/user, obj/item/tool, quality)
+	focused_tool_stage = quality
+	attackby(tool, user)
+	focused_tool_stage = null
+	return ITEM_INTERACT_SUCCESS
+
+/obj/mecha/screwdriver_act(mob/user, obj/item/tool)
+	return run_focused_tool(user, tool, TOOL_SCREWDRIVER)
+/obj/mecha/crowbar_act(mob/user, obj/item/tool)
+	return run_focused_tool(user, tool, TOOL_CROWBAR)
+/obj/mecha/wrench_act(mob/user, obj/item/tool)
+	return run_focused_tool(user, tool, TOOL_WRENCH)
+/obj/mecha/welder_act(mob/user, obj/item/tool)
+	if(user.a_intent == I_HURT)
+		return ITEM_INTERACT_SKIP_TO_ATTACK
+	return run_focused_tool(user, tool, TOOL_WELDER)
+
 /obj/mecha/attackby(obj/item/W as obj, mob/user as mob)
 
 	if(istype(W, /obj/item/mmi))
@@ -1481,7 +1503,7 @@
 				to_chat(user, span_warning("Invalid ID: Access denied."))
 		else
 			to_chat(user, span_warning("Maintenance protocols disabled by operator."))
-	else if(W.has_tool_quality(TOOL_WRENCH))
+	else if(focused_tool_stage == TOOL_WRENCH)
 		if(state==MECHA_BOLTS_SECURED)
 			state = MECHA_PANEL_LOOSE
 			to_chat(user, "You undo the securing bolts.")
@@ -1489,7 +1511,7 @@
 			state = MECHA_BOLTS_SECURED
 			to_chat(user, "You tighten the securing bolts.")
 		return
-	else if(W.has_tool_quality(TOOL_CROWBAR))
+	else if(focused_tool_stage == TOOL_CROWBAR)
 		if(state==MECHA_PANEL_LOOSE)
 			state = MECHA_CELL_OPEN
 			to_chat(user, "You open the hatch to the power unit")
@@ -1522,7 +1544,7 @@
 			else
 				to_chat(user, "There's not enough wire to finish the task.")
 		return
-	else if(W.has_tool_quality(TOOL_SCREWDRIVER))
+	else if(focused_tool_stage == TOOL_SCREWDRIVER)
 		if(hasInternalDamage(MECHA_INT_TEMP_CONTROL))
 			clearInternalDamage(MECHA_INT_TEMP_CONTROL)
 			to_chat(user, "You repair the damaged temperature controller.")
@@ -1561,7 +1583,7 @@
 				to_chat(user, "There's already a powercell installed.")
 		return
 
-	else if(W.has_tool_quality(TOOL_WELDER) && user.a_intent != I_HURT)
+	else if(focused_tool_stage == TOOL_WELDER && user.a_intent != I_HURT)
 		var/obj/item/weldingtool/WT = W.get_welder()
 		var/obj/item/mecha_parts/component/hull/HC = internal_components[MECH_HULL]
 		var/obj/item/mecha_parts/component/armor/AC = internal_components[MECH_ARMOR]
@@ -1776,6 +1798,13 @@
 // connect/disconnect plumb the mecha cabin atmosphere into a LINDA
 // portables_connector's pipe network, mirroring the canonical portable
 // atmospherics device (code/game/machinery/atmoalter/portable_atmospherics.dm).
+/obj/mecha/port_network_air()
+	return cabin_air
+
+/obj/mecha/set_port_network_air(datum/gas_mixture/new_air)
+	cabin_air = new_air
+	return TRUE
+
 /obj/mecha/proc/connect(obj/machinery/atmospherics/portables_connector/new_port)
 	// Already connected, or the port is missing/occupied.
 	if(connected_port || !new_port || new_port.connected_device)
@@ -1791,10 +1820,7 @@
 	// Inject cabin_air into the port's pipe network so an external supply can
 	// equalise with it. connected_device is set first so return_network()
 	// recognises src as the reference.
-	var/datum/pipe_network/network = connected_port.return_network(src)
-	if(network && !network.gases.Find(cabin_air))
-		network.gases += cabin_air
-		network.mark_dirty()
+	connected_port.rust_attach_external_device(src)
 
 	playsound(src, 'sound/mecha/gasconnected.ogg', 50, 1)
 	mecha_log_message("Connected to gas port.")
@@ -1804,9 +1830,7 @@
 	if(!connected_port)
 		return 0
 
-	var/datum/pipe_network/network = connected_port.return_network(src)
-	if(network)
-		network.gases -= cabin_air
+	connected_port.rust_detach_external_device()
 
 	connected_port.connected_device = null
 	connected_port = null
@@ -2019,6 +2043,7 @@
 		H.stop_pulling()
 		H.forceMove(src)
 		src.occupant = H
+		START_PROCESSING(SSobj, src)
 		src.add_fingerprint(H)
 		src.verbs += /obj/mecha/verb/eject
 		src.log_append_to_last("[H] moved in as pilot.")
@@ -3061,6 +3086,7 @@
 
 /obj/mecha/proc/start_process(process)
 	current_processes |= process
+	START_PROCESSING(SSobj, src)
 
 
 /////////////

@@ -137,13 +137,6 @@
 	return ..()
 
 /obj/item/melee/energy/attackby(obj/item/W, mob/user)
-	if(istype(W, /obj/item/multitool) && colorable && !active)
-		if(!rainbow)
-			rainbow = TRUE
-		else
-			rainbow = FALSE
-		to_chat(user, span_notice("You manipulate the color controller in [src]."))
-		update_icon()
 	if(use_cell)
 		if(istype(W, cell_type))
 			if(!bcell)
@@ -154,15 +147,26 @@
 				update_icon()
 			else
 				to_chat(user, span_notice("[src] already has a cell."))
-		else if(W.has_tool_quality(TOOL_SCREWDRIVER) && bcell)
-			bcell.update_icon()
-			bcell.forceMove(get_turf(loc))
-			bcell = null
-			to_chat(user, span_notice("You remove the cell from \the [src]."))
-			deactivate()
-			update_icon()
-			return
 	return ..()
+
+/obj/item/melee/energy/multitool_act(mob/user, obj/item/tool)
+	if(!colorable || active)
+		return ..()
+	rainbow = !rainbow
+	to_chat(user, span_notice("You manipulate the color controller in [src]."))
+	update_icon()
+	return ITEM_INTERACT_SUCCESS
+
+/obj/item/melee/energy/screwdriver_act(mob/user, obj/item/tool)
+	if(!use_cell || !bcell)
+		return ..()
+	bcell.update_icon()
+	bcell.forceMove(get_turf(loc))
+	bcell = null
+	to_chat(user, span_notice("You remove the cell from \the [src]."))
+	deactivate()
+	update_icon()
+	return ITEM_INTERACT_SUCCESS
 
 /obj/item/melee/energy/get_cell()
 	return bcell

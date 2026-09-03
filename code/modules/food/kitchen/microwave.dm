@@ -25,6 +25,7 @@
 	clickvol = 30
 	flags = MICROWAVE_FLAGS
 	circuit = /obj/item/circuitboard/microwave
+	maintenance_flags = MACHINE_MAINT_PANEL | MACHINE_MAINT_FRAME
 	var/operating = FALSE
 	var/dirty = 0 // = {0..100} Does it need cleaning?
 	var/broken = NOT_BROKEN // ={0,1,2} How broken is it???
@@ -128,7 +129,7 @@
 /obj/machinery/microwave/attackby(obj/item/O, mob/user)
 	if(handle_broken(O, user)) return TRUE
 	if(handle_dirty(O, user)) return TRUE
-	if(handle_deconstruction(O, user)) return TRUE
+	if(default_part_replacement(user, O)) return TRUE
 	if(try_insert_item(O, user)) return TRUE
 	if(try_insert_reagent(O, user)) return FALSE
 	if(istype(O,/obj/item/grab))
@@ -151,12 +152,6 @@
 /obj/machinery/microwave/proc/handle_broken(obj/item/O, mob/user)
 	if(src.broken <= NOT_BROKEN)
 		return FALSE
-
-	if(src.broken == REALLY_BROKEN && O.has_tool_quality(TOOL_SCREWDRIVER)) // If it's broken and they're using a screwdriver
-		return do_repair_step(user, O, FALSE)
-
-	if(src.broken == KINDA_BROKEN && O.has_tool_quality(TOOL_WRENCH)) // If it's broken and they're doing the wrench
-		return do_repair_step(user, O, TRUE)
 
 	to_chat(user, span_warning("It's broken!"))
 	return TRUE
@@ -263,30 +258,34 @@
 		return TRUE
 	return FALSE
 
-/obj/machinery/microwave/proc/handle_deconstruction(obj/item/O, mob/user)
-	if(O.has_tool_quality(TOOL_SCREWDRIVER))
-		default_deconstruction_screwdriver(user, O)
-		return TRUE
-	if(O.has_tool_quality(TOOL_CROWBAR))
-		if(default_deconstruction_crowbar(user, O))
-			return TRUE
-		else
-			user.visible_message( \
-				span_notice("\The [user] begins [src.anchored ? "unsecuring" : "securing"] \the [src]."), \
-				span_notice("You attempt to [src.anchored ? "unsecure" : "secure"] \the [src].")
-				)
-			if (do_after(user, (2 SECONDS)/O.toolspeed, target = src))
-				user.visible_message( \
-				span_notice("\The [user] [src.anchored ? "unsecures" : "secures"] \the [src]."), \
-				span_notice("You [src.anchored ? "unsecure" : "secure"] \the [src].")
-				)
-				src.anchored = !src.anchored
-			else
-				to_chat(user, span_notice("You decide not to do that."))
-			return TRUE
-	if(default_part_replacement(user, O))
-		return TRUE
-	return FALSE
+/obj/machinery/microwave/screwdriver_act(mob/user, obj/item/tool)
+	if(broken == REALLY_BROKEN)
+		do_repair_step(user, tool, FALSE)
+		return ITEM_INTERACT_SUCCESS
+	return ..()
+
+/obj/machinery/microwave/wrench_act(mob/user, obj/item/tool)
+	if(broken == KINDA_BROKEN)
+		do_repair_step(user, tool, TRUE)
+		return ITEM_INTERACT_SUCCESS
+	return ..()
+
+/obj/machinery/microwave/crowbar_act(mob/user, obj/item/tool)
+	if(panel_open)
+		return ..()
+	user.visible_message(
+		span_notice("\The [user] begins [anchored ? "unsecuring" : "securing"] \the [src]."),
+		span_notice("You attempt to [anchored ? "unsecure" : "secure"] \the [src].")
+	)
+	if(do_after(user, (2 SECONDS) / tool.toolspeed, target = src))
+		user.visible_message(
+			span_notice("\The [user] [anchored ? "unsecures" : "secures"] \the [src]."),
+			span_notice("You [anchored ? "unsecure" : "secure"] \the [src].")
+		)
+		anchored = !anchored
+	else
+		to_chat(user, span_notice("You decide not to do that."))
+	return ITEM_INTERACT_SUCCESS
 
 /obj/machinery/microwave/tgui_status(mob/user)
 	if(user == paicard?.pai)

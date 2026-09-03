@@ -40,7 +40,12 @@
 	pulse_information.threshold = threshold
 	pulse_information.chance = chance
 	pulse_information.minimum_exposure_time = minimum_exposure_time
-	pulse_information.turfs_to_process = RANGE_TURFS(max_range, source)
+	// Radiation only has gameplay consumers in these explicit registries. Do not
+	// allocate and scan thousands of empty turfs for every high-power pulse.
+	pulse_information.targets_to_process = GLOB.living_mob_list.Copy()
+	pulse_information.targets_to_process |= GLOB.rad_collectors
+	pulse_information.targets_to_process |= GLOB.geiger_counters
+	pulse_information.targets_to_process |= GLOB.material_radiovoltaic_items
 	pulse_information.strength = strength
 
 	SSradiation.processing += pulse_information
@@ -53,12 +58,13 @@
 	var/threshold
 	var/chance
 	var/minimum_exposure_time
-	var/list/turfs_to_process
+	var/list/targets_to_process
 	var/strength
 
 /datum/radiation_pulse_information/Destroy(force)
 	. = ..()
 	source_ref = null
+	targets_to_process = null
 
 #define MEDIUM_RADIATION_THRESHOLD_RANGE 0.5
 #define EXTREME_RADIATION_CHANCE 30

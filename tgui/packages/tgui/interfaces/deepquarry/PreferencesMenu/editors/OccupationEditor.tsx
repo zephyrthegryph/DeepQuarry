@@ -13,13 +13,7 @@
 // One job = one tight row. Dept color appears as a 4px left bar on each row.
 
 import { useBackend } from 'tgui/backend';
-import {
-  Box,
-  Button,
-  Dropdown,
-  Stack,
-  Tooltip,
-} from 'tgui-core/components';
+import { Box, Button, Dropdown, Stack, Tooltip } from 'tgui-core/components';
 import type { EditorProps } from './index';
 
 type Priority = 'off' | 'low' | 'med' | 'high';
@@ -74,7 +68,9 @@ const PRIORITY_COLOR: Record<Priority, string | undefined> = {
 const nextPriority = (current: Priority, backward = false): Priority => {
   const idx = PRIORITY_ORDER.indexOf(current);
   const delta = backward ? -1 : 1;
-  return PRIORITY_ORDER[(idx + delta + PRIORITY_ORDER.length) % PRIORITY_ORDER.length];
+  return PRIORITY_ORDER[
+    (idx + delta + PRIORITY_ORDER.length) % PRIORITY_ORDER.length
+  ];
 };
 
 const send = (
@@ -136,11 +132,15 @@ export const OccupationEditor = ({ data, staticData }: EditorProps) => {
         <Box inline color="green" bold>
           HIGH {d.counts?.high ?? 0}
         </Box>
-        <Box inline color="label">·</Box>
+        <Box inline color="label">
+          ·
+        </Box>
         <Box inline color="yellow" bold>
           MED {d.counts?.med ?? 0}
         </Box>
-        <Box inline color="label">·</Box>
+        <Box inline color="label">
+          ·
+        </Box>
         <Box inline color="orange" bold>
           LOW {d.counts?.low ?? 0}
         </Box>

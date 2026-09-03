@@ -145,29 +145,34 @@
 
 /obj/item/radio/intercom/attackby(obj/item/W as obj, mob/user as mob)
 	add_fingerprint(user)
-	if(W.has_tool_quality(TOOL_SCREWDRIVER))  // Opening the intercom up.
-		wiresexposed = !wiresexposed
-		to_chat(user, "The wires have been [wiresexposed ? "exposed" : "unexposed"]")
-		playsound(src, W.usesound, 50, 1)
-		update_icon()
-	else if(wiresexposed && W.has_tool_quality(TOOL_WIRECUTTER))
-		user.visible_message(span_warning("[user] has cut the wires inside \the [src]!"), "You have cut the wires inside \the [src].")
-		playsound(src, W.usesound, 50, 1)
-		new/obj/item/stack/cable_coil(get_turf(src), 5)
-		var/obj/structure/frame/A = new /obj/structure/frame(src.loc)
-		var/obj/item/circuitboard/M = circuit
-		A.frame_type = M.board_type
-		A.pixel_x = pixel_x
-		A.pixel_y = pixel_y
-		A.circuit = M
-		A.set_dir(dir)
-		A.anchored = TRUE
-		A.state = 2
-		A.update_icon()
-		M.atom_deconstruct(TRUE, src)
-		qdel(src)
-	else
-		src.attack_hand(user)
+	return ..()
+
+/obj/item/radio/intercom/screwdriver_act(mob/user, obj/item/tool)
+	wiresexposed = !wiresexposed
+	to_chat(user, "The wires have been [wiresexposed ? "exposed" : "unexposed"]")
+	playsound(src, tool.usesound, 50, TRUE)
+	update_icon()
+	return ITEM_INTERACT_SUCCESS
+
+/obj/item/radio/intercom/wirecutter_act(mob/user, obj/item/tool)
+	if(!wiresexposed)
+		return ITEM_INTERACT_BLOCKING
+	user.visible_message(span_warning("[user] has cut the wires inside \the [src]!"), "You have cut the wires inside \the [src].")
+	playsound(src, tool.usesound, 50, TRUE)
+	new /obj/item/stack/cable_coil(get_turf(src), 5)
+	var/obj/structure/frame/frame = new(loc)
+	var/obj/item/circuitboard/board = circuit
+	frame.frame_type = board.board_type
+	frame.pixel_x = pixel_x
+	frame.pixel_y = pixel_y
+	frame.circuit = board
+	frame.set_dir(dir)
+	frame.anchored = TRUE
+	frame.state = 2
+	frame.update_icon()
+	board.atom_deconstruct(TRUE, src)
+	qdel(src)
+	return ITEM_INTERACT_SUCCESS
 
 /obj/item/radio/intercom/receive_range(freq, level)
 	if (!on)

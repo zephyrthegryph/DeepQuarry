@@ -7,7 +7,7 @@ type Data = {
 };
 
 type aircontent = {
-  val: string;
+  val: number | string;
   units: string;
   entry: string;
   bad_low: number;
@@ -27,10 +27,10 @@ const getItemColor = (
     return 'bad';
   } else if (value < min1) {
     return 'average';
-  } else if (value > max1) {
-    return 'average';
   } else if (value > max2) {
     return 'bad';
+  } else if (value > max1) {
+    return 'average';
   }
   return 'good';
 };
@@ -38,7 +38,7 @@ const getItemColor = (
 export const pda_atmos_scan = (props) => {
   const { act, data } = useBackend<Data>();
 
-  const { aircontents } = data;
+  const { aircontents = [] } = data;
 
   return (
     <Box>

@@ -108,7 +108,7 @@
 	if(WR?.reference)
 		SSmachines.sleeping_gas_devices.Remove(WR.reference)
 
-/obj/machinery/atmospherics/omni/proc/gas_dependency_changed(mixture_id, change_mask)
+/obj/machinery/atmospherics/omni/gas_dependency_changed(mixture_id, change_mask)
 	if(!(change_mask & GAS_DEPENDENCY_ALL) || !use_power || (stat & (NOPOWER|BROKEN)))
 		return FALSE
 	var/key = "[mixture_id]"
@@ -130,14 +130,11 @@
 	if(use_power && !(stat & (NOPOWER|BROKEN)))
 		START_MACHINE_PROCESSING(src)
 
-/obj/machinery/atmospherics/omni/attackby(obj/item/W as obj, mob/user as mob)
-	if(!W.has_tool_quality(TOOL_WRENCH))
-		return ..()
-
+/obj/machinery/atmospherics/omni/wrench_act(mob/user, obj/item/W)
 	if(!can_unwrench())
 		to_chat(user, span_warning("You cannot unwrench \the [src], it is too exerted due to internal pressure."))
 		add_fingerprint(user)
-		return 1
+		return ITEM_INTERACT_BLOCKING
 	to_chat(user, span_notice("You begin to unfasten \the [src]..."))
 	playsound(src, W.usesound, 50, 1)
 	if(do_after(user, 40 * W.toolspeed, target = src))
@@ -146,6 +143,7 @@
 			span_notice("You have unfastened \the [src]."), \
 			"You hear a ratchet.")
 		atom_deconstruct()
+	return ITEM_INTERACT_SUCCESS
 
 /obj/machinery/atmospherics/omni/attack_hand(user as mob)
 	if(..())
@@ -264,28 +262,15 @@
 		neighbor_nodes += P.node
 	return neighbor_nodes
 
-/obj/machinery/atmospherics/omni/network_expand(datum/pipe_network/new_network, obj/machinery/atmospherics/pipe/reference)
-	// Idempotency guard: check membership before assigning port network vars.
-	if(new_network.normal_members.Find(src))
-		return 0
-
-	for(var/datum/omni_port/P in ports)
-		if(reference == P.node)
-			P.network = new_network
-			break
-
-	new_network.normal_members += src
-
-	return null
-
 /obj/machinery/atmospherics/omni/Destroy()
+	rust_unregister_pipe_topology()
 	clear_gas_dependencies()
 	// Disconnect all ports before ..() so node.disconnect(src) runs against
 	// still-valid state.
 	for(var/datum/omni_port/P in ports)
 		if(P.node)
 			P.node.disconnect(src)
-			qdel(P.network)
+			rust_release_network_wrapper(P.network)
 			P.node = null
 		P.network = null
 	ports = null
@@ -305,16 +290,7 @@
 
 	update_ports()
 
-/obj/machinery/atmospherics/omni/build_network()
-	for(var/datum/omni_port/P in ports)
-		if(!P.network && P.node)
-			P.network = new /datum/pipe_network()
-			P.network.normal_members += src
-			P.network.build_network(P.node, src)
-
 /obj/machinery/atmospherics/omni/return_network(obj/machinery/atmospherics/reference)
-	build_network()
-
 	for(var/datum/omni_port/P in ports)
 		if(reference == P.node)
 			return P.network
@@ -337,11 +313,21 @@
 
 	return results
 
+/obj/machinery/atmospherics/omni/bind_network_air(datum/pipe_network/reference, datum/gas_mixture/network_air)
+	for(var/datum/omni_port/P in ports)
+		if(P.network == reference)
+			P.air = network_air
+
+/obj/machinery/atmospherics/omni/detach_network_air(datum/pipe_network/reference, datum/gas_mixture/network_air, network_volume)
+	for(var/datum/omni_port/P in ports)
+		if(P.network == reference && P.air == network_air)
+			P.air = detached_pipenet_air(network_air, 200, network_volume)
+
 /obj/machinery/atmospherics/omni/disconnect(obj/machinery/atmospherics/reference)
 	wake_for_state_change()
 	for(var/datum/omni_port/P in ports)
 		if(reference == P.node)
-			qdel(P.network)
+			rust_release_network_wrapper(P.network)
 			P.node = null
 			P.update = 1
 			break

@@ -17,8 +17,7 @@ GLOBAL_LIST_EMPTY(material_radiovoltaic_items)
 		(electrical_form && (thermoelectric_coefficient || piezoelectric_coefficient || electrogenic_rate || radiovoltaic_efficiency || scintillation_efficiency || critical_temperature)) || \
 		(medical_form && (antimicrobial_activity || hemostatic_activity || biocompatibility || reagent_porosity)) || \
 		(armor_form && (reactive_energy_capacity || shape_recovery_rate || phase_change_capacity)) || \
-		(tool_form && (shape_recovery_rate || piezoelectric_coefficient || reagent_porosity)) || \
-		length(material_effects)
+		(tool_form && (shape_recovery_rate || piezoelectric_coefficient || reagent_porosity))
 	if(needs_response)
 		item.AddComponent(/datum/component/material_response, src, electrical_form, medical_form, armor_form, tool_form)
 
@@ -35,8 +34,6 @@ GLOBAL_LIST_EMPTY(material_radiovoltaic_items)
 	var/stored_phase_energy = 0
 	var/stored_reactive_energy = 0
 	var/scintillation_timer
-	var/list/effect_charges
-	var/list/effect_next_fire
 
 /datum/component/material_response/Initialize(datum/material/material, _electrical_form, _medical_form, _armor_form, _tool_form)
 	. = ..()
@@ -50,12 +47,6 @@ GLOBAL_LIST_EMPTY(material_radiovoltaic_items)
 	last_energy_settlement = world.time
 	reference_temperature = ambient_temperature()
 	stored_reactive_energy = armor_form ? material.reactive_energy_capacity : 0
-	if(length(material.material_effects))
-		effect_charges = list()
-		effect_next_fire = list()
-		for(var/datum/substance/effect as anything in material.material_effects)
-			var/key = substance_material_content_key(effect)
-			effect_charges[key] = material.material_effect_charges
 	if(material.reagent_porosity > 0 && (medical_form || tool_form))
 		var/obj/item/item = parent
 		item.create_reagents(material.reagent_porosity)
@@ -78,10 +69,9 @@ GLOBAL_LIST_EMPTY(material_radiovoltaic_items)
 	RegisterSignal(parent, COMSIG_IN_RANGE_OF_IRRADIATION, PROC_REF(on_radiation))
 	RegisterSignal(parent, COMSIG_ATOM_ATTACKBY, PROC_REF(on_attackby))
 	RegisterSignal(parent, COMSIG_MATERIAL_SURGERY, PROC_REF(on_surgery))
-	RegisterSignal(parent, COMSIG_SUBSTANCE_FORM_TRIGGER, PROC_REF(on_form_trigger))
 
 /datum/component/material_response/UnregisterFromParent()
-	UnregisterSignal(parent, list(COMSIG_ATOM_EXAMINE, COMSIG_ATOM_TAKE_DAMAGE, COMSIG_ATOM_PRE_EMP_ACT, COMSIG_ATOM_FIRE_ACT, COMSIG_ATOM_PROPAGATE_RAD_PULSE, COMSIG_IN_RANGE_OF_IRRADIATION, COMSIG_ATOM_ATTACKBY, COMSIG_MATERIAL_SURGERY, COMSIG_SUBSTANCE_FORM_TRIGGER))
+	UnregisterSignal(parent, list(COMSIG_ATOM_EXAMINE, COMSIG_ATOM_TAKE_DAMAGE, COMSIG_ATOM_PRE_EMP_ACT, COMSIG_ATOM_FIRE_ACT, COMSIG_ATOM_PROPAGATE_RAD_PULSE, COMSIG_IN_RANGE_OF_IRRADIATION, COMSIG_ATOM_ATTACKBY, COMSIG_MATERIAL_SURGERY))
 
 /datum/component/material_response/proc/material() as /datum/material
 	return get_material_by_name(material_id)
@@ -118,31 +108,6 @@ GLOBAL_LIST_EMPTY(material_radiovoltaic_items)
 		examine_text += span_notice("Reactive layer energy: [round(stored_reactive_energy)]/[round(material.reactive_energy_capacity)] J.")
 	if(material.phase_change_capacity > 0 && armor_form)
 		examine_text += span_notice("Thermal buffer: [round(stored_phase_energy)]/[round(material.phase_change_capacity)] J.")
-	if(length(material.material_effects))
-		var/list/effect_text = list()
-		for(var/datum/substance/effect as anything in material.material_effects)
-			var/key = substance_material_content_key(effect)
-			effect_text += "[substance_family_name(effect.family)] on [substance_trigger_name(effect.trigger)] ([effect_charges[key] || 0] charge\s)"
-		examine_text += span_notice("Triggered responses: [jointext(effect_text, "; ")].")
-
-/datum/component/material_response/proc/on_form_trigger(datum/source, condition, turf/where, atom/cause)
-	SIGNAL_HANDLER
-	var/datum/material/material = material()
-	if(!material || !length(material.material_effects))
-		return
-	if(!isturf(where))
-		where = get_turf(parent)
-	if(!where)
-		return
-	for(var/datum/substance/effect as anything in material.material_effects)
-		if(effect.trigger != condition)
-			continue
-		var/key = substance_material_content_key(effect)
-		if((effect_charges[key] || 0) <= 0 || world.time < (effect_next_fire[key] || 0))
-			continue
-		effect_charges[key]--
-		effect_next_fire[key] = world.time + SUBSTANCE_INFUSION_COOLDOWN
-		INVOKE_ASYNC(GLOBAL_PROC_REF(substance_apply_effect), where, effect.family, effect.energy, effect.volatility, cause)
 
 /datum/component/material_response/proc/on_take_damage(datum/source, damage_amount, damage_type, damage_flag, sound_effect, attack_dir, armour_penetration)
 	SIGNAL_HANDLER
@@ -230,9 +195,7 @@ GLOBAL_LIST_EMPTY(material_radiovoltaic_items)
 	if(transferred)
 		to_chat(user, span_notice("[parent]'s open pores absorb [transferred] units from [weapon]."))
 
-/datum/component/material_response/proc/respond_to_impact(condition, atom/cause)
-	if(condition != SUB_TRIG_IMPACT)
-		return
+/datum/component/material_response/proc/respond_to_impact(atom/cause)
 	var/datum/material/material = material()
 	var/obj/item/item = parent
 	if(!material || !istype(item))
@@ -292,9 +255,9 @@ GLOBAL_LIST_EMPTY(material_radiovoltaic_items)
 	if(reagent_porosity > 0) result += "holds [round(reagent_porosity, 0.1)]u reagent"
 	return result
 
-/obj/item/proc/material_response_impact(condition, turf/where, atom/cause)
+/obj/item/proc/material_response_impact(turf/where, atom/cause)
 	var/datum/component/material_response/component = GetComponent(/datum/component/material_response)
-	component?.respond_to_impact(condition, cause)
+	component?.respond_to_impact(cause)
 
 /obj/item/proc/material_reactive_absorb(damage)
 	var/datum/component/material_response/component = GetComponent(/datum/component/material_response)
@@ -303,12 +266,6 @@ GLOBAL_LIST_EMPTY(material_radiovoltaic_items)
 /obj/item/proc/material_cell_use_cost(amount)
 	var/datum/component/material_response/component = GetComponent(/datum/component/material_response)
 	component?.settle_cell_energy()
-	var/datum/material/material = get_material()
-	if(!material?.critical_temperature)
-		return amount
-	var/turf/turf = get_turf(src)
-	var/datum/gas_mixture/air = turf?.return_air()
-	var/temperature = air ? air.return_temperature() : T20C
-	if(temperature >= material.critical_temperature)
-		return amount
-	return amount * 0.2
+	// Superconductors eliminate conductor loss; they do not multiply stored
+	// energy. Throughput and heat are handled by the cell's conductor role.
+	return amount

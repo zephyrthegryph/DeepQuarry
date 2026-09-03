@@ -3,11 +3,8 @@
 	desc = "A steel bar with a wedge, designed specifically for opening unpowered doors in an emergency."
 	id = "prybar"
 	build_type = AUTOLATHE | PROTOLATHE
-	materials = list()
+	materials = list(MAT_STEEL = SHEET_MATERIAL_AMOUNT)
 	build_path = /obj/item/tool/prybar
-	material_selectable = TRUE
-	selectable_amount = SHEET_MATERIAL_AMOUNT
-	material_application = MATERIAL_APPLICATION_TOOL
 	category = list(
 		RND_CATEGORY_INITIAL,
 		RND_CATEGORY_TOOLS + RND_SUBCATEGORY_TOOLS_MISC
@@ -19,11 +16,8 @@
 	desc = "A steel bar with a wedge, designed specifically for opening unpowered doors in an emergency."
 	id = "crowbar"
 	build_type = AUTOLATHE | PROTOLATHE
-	materials = list()
+	materials = list(MAT_STEEL = SHEET_MATERIAL_AMOUNT)
 	build_path = /obj/item/tool/crowbar
-	material_selectable = TRUE
-	selectable_amount = SHEET_MATERIAL_AMOUNT
-	material_application = MATERIAL_APPLICATION_TOOL
 	category = list(
 		RND_CATEGORY_INITIAL,
 		RND_CATEGORY_TOOLS + RND_SUBCATEGORY_TOOLS_ENGINEERING
@@ -37,9 +31,6 @@
 	build_type = AUTOLATHE | PROTOLATHE
 	materials = list(MAT_GLASS = 25)
 	build_path = /obj/item/multitool
-	material_selectable = TRUE
-	selectable_amount = SHEET_MATERIAL_AMOUNT
-	material_application = MATERIAL_APPLICATION_TOOL
 	category = list(
 		RND_CATEGORY_INITIAL,
 		RND_CATEGORY_TOOLS + RND_SUBCATEGORY_TOOLS_ENGINEERING
@@ -53,9 +44,6 @@
 	build_type = AUTOLATHE | PROTOLATHE
 	materials = list(MAT_GLASS = 30)
 	build_path = /obj/item/weldingtool/mini
-	material_selectable = TRUE
-	selectable_amount = SHEET_MATERIAL_AMOUNT
-	material_application = MATERIAL_APPLICATION_TOOL
 	category = list(
 		RND_CATEGORY_INITIAL,
 		RND_CATEGORY_TOOLS + RND_SUBCATEGORY_TOOLS_ENGINEERING
@@ -69,9 +57,6 @@
 	build_type = AUTOLATHE | PROTOLATHE
 	materials = list(MAT_GLASS = 40)
 	build_path = /obj/item/weldingtool
-	material_selectable = TRUE
-	selectable_amount = SHEET_MATERIAL_AMOUNT
-	material_application = MATERIAL_APPLICATION_TOOL
 	category = list(
 		RND_CATEGORY_INITIAL,
 		RND_CATEGORY_TOOLS + RND_SUBCATEGORY_TOOLS_ENGINEERING
@@ -85,9 +70,6 @@
 	build_type = PROTOLATHE
 	materials = list(MAT_GLASS = 250)
 	build_path = /obj/item/weldingtool/largetank
-	material_selectable = TRUE
-	selectable_amount = SHEET_MATERIAL_AMOUNT * 2
-	material_application = MATERIAL_APPLICATION_TOOL
 	category = list(
 		RND_CATEGORY_TOOLS + RND_SUBCATEGORY_TOOLS_ENGINEERING
 	)
@@ -98,11 +80,8 @@
 	desc = "You can be totally screwwy with this."
 	id = "screwdriver"
 	build_type = AUTOLATHE | PROTOLATHE
-	materials = list()
+	materials = list(MAT_STEEL = SHEET_MATERIAL_AMOUNT)
 	build_path = /obj/item/tool/screwdriver
-	material_selectable = TRUE
-	selectable_amount = SHEET_MATERIAL_AMOUNT
-	material_application = MATERIAL_APPLICATION_TOOL
 	category = list(
 		RND_CATEGORY_INITIAL,
 		RND_CATEGORY_TOOLS + RND_SUBCATEGORY_TOOLS_ENGINEERING
@@ -114,11 +93,8 @@
 	desc = "This cuts wires."
 	id = "wirecutters"
 	build_type = AUTOLATHE | PROTOLATHE
-	materials = list()
+	materials = list(MAT_STEEL = SHEET_MATERIAL_AMOUNT)
 	build_path = /obj/item/tool/wirecutters
-	material_selectable = TRUE
-	selectable_amount = SHEET_MATERIAL_AMOUNT
-	material_application = MATERIAL_APPLICATION_TOOL
 	category = list(
 		RND_CATEGORY_INITIAL,
 		RND_CATEGORY_TOOLS + RND_SUBCATEGORY_TOOLS_ENGINEERING
@@ -130,11 +106,8 @@
 	desc = "A wrench with many common uses."
 	id = "wrench"
 	build_type = AUTOLATHE | PROTOLATHE
-	materials = list()
+	materials = list(MAT_STEEL = SHEET_MATERIAL_AMOUNT)
 	build_path = /obj/item/tool/wrench
-	material_selectable = TRUE
-	selectable_amount = SHEET_MATERIAL_AMOUNT
-	material_application = MATERIAL_APPLICATION_TOOL
 	category = list(
 		RND_CATEGORY_INITIAL,
 		RND_CATEGORY_TOOLS + RND_SUBCATEGORY_TOOLS_ENGINEERING

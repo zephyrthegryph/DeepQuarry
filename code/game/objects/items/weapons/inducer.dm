@@ -72,18 +72,6 @@
 
 
 /obj/item/inducer/attackby(obj/item/W, mob/user)
-	if(W.has_tool_quality(TOOL_SCREWDRIVER))
-		playsound(src, W.usesound, 50, 1)
-		if(!opened)
-			to_chat(user, span_notice("You open the battery compartment."))
-			opened = TRUE
-			update_icon()
-			return
-		else
-			to_chat(user, span_notice("You close the battery compartment."))
-			opened = FALSE
-			update_icon()
-			return
 	if(istype(W, /obj/item/cell))
 		if(opened)
 			if(!cell)
@@ -104,6 +92,13 @@
 		return
 
 	return ..()
+
+/obj/item/inducer/screwdriver_act(mob/user, obj/item/tool)
+	playsound(src, tool.usesound, 50, 1)
+	opened = !opened
+	to_chat(user, span_notice("You [opened ? "open" : "close"] the battery compartment."))
+	update_icon()
+	return ITEM_INTERACT_SUCCESS
 
 /obj/item/inducer/proc/recharge(atom/movable/A, mob/user)
 	if(!isturf(A) && user.loc == A)

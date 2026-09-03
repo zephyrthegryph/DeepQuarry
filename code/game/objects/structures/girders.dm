@@ -151,8 +151,8 @@
 	if(reinf_material)
 		reinforce_girder()
 
-/obj/structure/girder/attackby(obj/item/W as obj, mob/user as mob)
-	if(W.has_tool_quality(TOOL_WRENCH) && state == 0)
+/obj/structure/girder/attackby(obj/item/W as obj, mob/user as mob, tool_quality)
+	if(tool_quality == TOOL_WRENCH && state == 0)
 		if(anchored && !reinf_material)
 			playsound(src, W.usesound, 100, 1)
 			to_chat(user, span_notice("Now disassembling the girder..."))
@@ -178,7 +178,7 @@
 		to_chat(user, span_notice("You drill through the girder!"))
 		dismantle()
 
-	else if(W.has_tool_quality(TOOL_SCREWDRIVER))
+	else if(tool_quality == TOOL_SCREWDRIVER)
 		if(state == 2)
 			playsound(src, W.usesound, 100, 1)
 			to_chat(user, span_notice("Now unsecuring support struts..."))
@@ -191,7 +191,7 @@
 			reinforcing = !reinforcing
 			to_chat(user, span_notice("\The [src] can now be [reinforcing? "reinforced" : "constructed"]!"))
 
-	else if(W.has_tool_quality(TOOL_WIRECUTTER) && state == 1)
+	else if(tool_quality == TOOL_WIRECUTTER && state == 1)
 		playsound(src, W.usesound, 100, 1)
 		to_chat(user, span_notice("Now removing support struts..."))
 		if(do_after(user, 4 SECONDS * W.toolspeed, target = src))
@@ -201,7 +201,7 @@
 			reinf_material = null
 			reset_girder()
 
-	else if(W.has_tool_quality(TOOL_CROWBAR) && state == 0 && anchored)
+	else if(tool_quality == TOOL_CROWBAR && state == 0 && anchored)
 		playsound(src, W.usesound, 100, 1)
 		to_chat(user, span_notice("Now dislodging the girder..."))
 		if(do_after(user, 4 SECONDS * W.toolspeed, target = src))
@@ -224,6 +224,22 @@
 
 	else
 		return ..()
+
+/obj/structure/girder/wrench_act(mob/user, obj/item/W)
+	attackby(W, user, TOOL_WRENCH)
+	return TRUE
+
+/obj/structure/girder/screwdriver_act(mob/user, obj/item/W)
+	attackby(W, user, TOOL_SCREWDRIVER)
+	return TRUE
+
+/obj/structure/girder/wirecutter_act(mob/user, obj/item/W)
+	attackby(W, user, TOOL_WIRECUTTER)
+	return TRUE
+
+/obj/structure/girder/crowbar_act(mob/user, obj/item/W)
+	attackby(W, user, TOOL_CROWBAR)
+	return TRUE
 
 // Reaching 0 integrity dismantles the girder back into its material.
 /obj/structure/girder/atom_destruction(damage_flag)
@@ -351,24 +367,23 @@
 	qdel(src)
 
 /obj/structure/girder/cult/attackby(obj/item/W as obj, mob/user as mob)
-	if(W.has_tool_quality(TOOL_WRENCH))
-		playsound(src, W.usesound, 100, 1)
-		to_chat(user, span_notice("Now disassembling the girder..."))
-		if(do_after(user, 4 SECONDS * W.toolspeed, target = src))
-			to_chat(user, span_notice("You dissasembled the girder!"))
-			dismantle()
-
-	else if(istype(W, /obj/item/pickaxe/plasmacutter))
+	if(istype(W, /obj/item/pickaxe/plasmacutter))
 		to_chat(user, span_notice("Now slicing apart the girder..."))
 		if(do_after(user, 3 SECONDS * W.toolspeed, target = src))
 			to_chat(user, span_notice("You slice apart the girder!"))
 		dismantle()
-
 	else if(istype(W, /obj/item/pickaxe/diamonddrill))
 		to_chat(user, span_notice("You drill through the girder!"))
 		new /obj/effect/decal/remains/human(get_turf(src))
 		dismantle()
 
+/obj/structure/girder/cult/wrench_act(mob/user, obj/item/W)
+	playsound(src, W.usesound, 100, 1)
+	to_chat(user, span_notice("Now disassembling the girder..."))
+	if(do_after(user, 4 SECONDS * W.toolspeed, target = src))
+		to_chat(user, span_notice("You disassembled the girder!"))
+		dismantle()
+	return TRUE
 /obj/structure/girder/resin
 	name = "soft girder"
 	icon_state = "girder_resin"

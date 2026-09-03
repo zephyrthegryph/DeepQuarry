@@ -106,23 +106,6 @@ GLOBAL_LIST_EMPTY(table_icon_cache)
 				. += span_notice("It has a few scrapes and dents.")
 
 /obj/structure/table/attackby(obj/item/W, mob/user)
-
-	if(reinforced && W.has_tool_quality(TOOL_SCREWDRIVER))
-		remove_reinforced(W, user)
-		if(!reinforced)
-			update_desc()
-			update_icon()
-			update_material()
-		return 1
-
-	if(carpeted && W.has_tool_quality(TOOL_CROWBAR))
-		user.visible_message(span_infoplain(span_bold("\The [user]") + " removes the carpet from \the [src]."),
-								span_notice("You remove the carpet from \the [src]."))
-		new carpeted_type(loc)
-		carpeted = 0
-		update_icon()
-		return 1
-
 	if(!carpeted && material && istype(W, /obj/item/stack/tile/carpet))
 		var/obj/item/stack/tile/carpet/C = W
 		if(C.use(1))
@@ -135,33 +118,6 @@ GLOBAL_LIST_EMPTY(table_icon_cache)
 		else
 			to_chat(user, span_warning("You don't have enough carpet!"))
 
-	if(!reinforced && !carpeted && material && W.has_tool_quality(TOOL_WRENCH))
-		remove_material(W, user)
-		if(!material)
-			update_connections(1)
-			update_icon()
-			for(var/obj/structure/table/T in oview(src, 1))
-				T.update_icon()
-			update_desc()
-			update_material()
-		return 1
-
-	if(!carpeted && !reinforced && !material && W.has_tool_quality(TOOL_WRENCH))
-		dismantle(W, user)
-		return 1
-
-	if(get_integrity() < max_integrity && W.has_tool_quality(TOOL_WELDER))
-		var/obj/item/weldingtool/F = W.get_welder()
-		if(F.welding)
-			to_chat(user, span_notice("You begin reparing damage to \the [src]."))
-			playsound(src, F.usesound, 50, 1)
-			if(!do_after(user, 2 SECONDS * F.toolspeed, target = src) || !F.remove_fuel(1, user))
-				return
-			user.visible_message(span_infoplain(span_bold("\The [user]") + " repairs some damage to \the [src]."),
-									span_notice("You repair some damage to \the [src]."))
-			repair_damage(max_integrity/5) // 20% repair per application
-			return 1
-
 	if(!material && can_plate && istype(W, /obj/item/stack/material))
 		material = common_material_add(W, user, "plat")
 		if(material)
@@ -172,6 +128,55 @@ GLOBAL_LIST_EMPTY(table_icon_cache)
 		return 1
 
 	return ..()
+
+/obj/structure/table/screwdriver_act(mob/user, obj/item/tool)
+	if(!reinforced)
+		return ITEM_INTERACT_BLOCKING
+	remove_reinforced(tool, user)
+	if(!reinforced)
+		update_desc()
+		update_icon()
+		update_material()
+	return ITEM_INTERACT_SUCCESS
+
+/obj/structure/table/crowbar_act(mob/user, obj/item/tool)
+	if(!carpeted)
+		return ITEM_INTERACT_BLOCKING
+	user.visible_message(span_infoplain(span_bold("\The [user]") + " removes the carpet from \the [src]."), span_notice("You remove the carpet from \the [src]."))
+	new carpeted_type(loc)
+	carpeted = FALSE
+	update_icon()
+	return ITEM_INTERACT_SUCCESS
+
+/obj/structure/table/wrench_act(mob/user, obj/item/tool)
+	if(carpeted || reinforced)
+		return ITEM_INTERACT_BLOCKING
+	if(material)
+		remove_material(tool, user)
+		if(!material)
+			update_connections(TRUE)
+			update_icon()
+			for(var/obj/structure/table/table in oview(src, 1))
+				table.update_icon()
+			update_desc()
+			update_material()
+		return ITEM_INTERACT_SUCCESS
+	dismantle(tool, user)
+	return ITEM_INTERACT_SUCCESS
+
+/obj/structure/table/welder_act(mob/user, obj/item/tool)
+	if(get_integrity() >= max_integrity)
+		return ITEM_INTERACT_BLOCKING
+	var/obj/item/weldingtool/welder = tool.get_welder()
+	if(!welder.welding)
+		return ITEM_INTERACT_BLOCKING
+	to_chat(user, span_notice("You begin repairing damage to \the [src]."))
+	playsound(src, welder.usesound, 50, TRUE)
+	if(!do_after(user, 2 SECONDS * welder.toolspeed, target = src) || !welder.remove_fuel(1, user))
+		return ITEM_INTERACT_BLOCKING
+	user.visible_message(span_infoplain(span_bold("\The [user]") + " repairs some damage to \the [src]."), span_notice("You repair some damage to \the [src]."))
+	repair_damage(max_integrity / 5)
+	return ITEM_INTERACT_SUCCESS
 
 /obj/structure/table/attack_hand(mob/user as mob)
 	if(ishuman(user))

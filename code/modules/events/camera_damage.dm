@@ -15,11 +15,11 @@
 	for(var/obj/machinery/camera/cam in range(severity_range,C))
 		if(is_valid_camera(cam))
 			if(prob(2*severity))
-				cam.destroy()
+				cam.take_damage(cam.max_integrity * (1 - cam.integrity_failure) + DAMAGE_PRECISION, BRUTE, MELEE)
 			else
-				cam.wires.cut(WIRE_MAIN_POWER1)
+				cam.wires.cut_wire(WIRE_MAIN_POWER1)
 				if(prob(5*severity))
-					cam.wires.cut(WIRE_CAM_ALARM)
+					cam.wires.cut_wire(WIRE_CAM_ALARM)
 
 /datum/event/camera_damage/proc/acquire_random_camera(remaining_attempts = 5)
 	if(!GLOB.cameranet.cameras.len)

@@ -200,7 +200,7 @@
 	if(WR?.reference)
 		SSmachines.sleeping_gas_devices.Remove(WR.reference)
 
-/obj/machinery/atmospherics/binary/dp_vent_pump/proc/gas_dependency_changed(mixture_id, change_mask)
+/obj/machinery/atmospherics/binary/dp_vent_pump/gas_dependency_changed(mixture_id, change_mask)
 	if(!(change_mask & GAS_DEPENDENCY_PRESSURE) || !use_power || (stat & (NOPOWER|BROKEN)))
 		return FALSE
 	var/datum/gas_mixture/environment = loc.return_air()

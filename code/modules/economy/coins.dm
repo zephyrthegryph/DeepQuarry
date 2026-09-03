@@ -166,17 +166,18 @@
 		else
 			balloon_alert(user, "the coil seems to be empty...")
 		return
-	else if(W.has_tool_quality(TOOL_WIRECUTTER))
-		if(!string_attached)
-			..()
-			return
+	else
+		return ..()
 
-		var/obj/item/stack/cable_coil/CC = new (user.loc, 1)
-		CC.update_icon()
-		cut_overlays()
-		string_attached = null
-		balloon_alert(user, "string detached")
-	else ..()
+/obj/item/coin/wirecutter_act(mob/user, obj/item/tool)
+	if(!string_attached)
+		return ITEM_INTERACT_SKIP_TO_ATTACK
+	var/obj/item/stack/cable_coil/cable = new(user.loc, 1)
+	cable.update_icon()
+	cut_overlays()
+	string_attached = null
+	balloon_alert(user, "string detached")
+	return ITEM_INTERACT_SUCCESS
 
 /obj/item/coin/attack_self(mob/user)
 	. = ..(user)

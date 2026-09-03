@@ -18,6 +18,7 @@
 	/// How far the goal can drift before recompute. Keeps us from recomputing
 	/// every tick when chasing a moving target.
 	var/path_recompute_tolerance = 2
+	var/path_navigation_revision = 0
 
 /datum/ai_brain/proc/clear_path()
 	cached_path = null
@@ -51,9 +52,12 @@
 		need_recompute = TRUE
 	if(!need_recompute && failed_steps >= 3)
 		need_recompute = TRUE
+	if(!need_recompute && path_navigation_revision != SSai.navigation_revision)
+		need_recompute = TRUE
 	if(need_recompute)
 		cached_path = dq_pathfind(holder, target_turf, get_to)
 		path_goal = target_turf
+		path_navigation_revision = SSai.navigation_revision
 		failed_steps = 0
 		if(!length(cached_path))
 			return FALSE
