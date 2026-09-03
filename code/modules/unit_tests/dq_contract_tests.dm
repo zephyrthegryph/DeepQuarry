@@ -477,7 +477,9 @@
 	TEST_ASSERT(SScontracts.definitions["medical_rare_case_report"], "rare-case report definition was not registered")
 	var/datum/contract_definition/trial_terms_definition = SScontracts.definitions["experimental_medication_study"]
 	var/datum/contract/medical_trial/negotiable_trial = trial_terms_definition.create_contract()
-	TEST_ASSERT_EQUAL(length(negotiable_trial.negotiation_clauses), 6, "medical trial did not expose its full generic negotiation set")
+	TEST_ASSERT_EQUAL(length(negotiable_trial.negotiation_clauses), 2, "medical trial did not expose its focused protocol and award choices")
+	TEST_ASSERT(negotiable_trial.negotiation_clauses["patient_protocol"], "medical trial lacked its patient-record protocol")
+	TEST_ASSERT(negotiable_trial.negotiation_clauses["distribution"], "medical trial lacked its award split")
 	TEST_ASSERT(!negotiable_trial.validate(), "default medical negotiation terms were invalid")
 	qdel(negotiable_trial)
 	var/datum/contract_definition/social_definition = SScontracts.definitions["occupational_recovery_program"]
@@ -489,16 +491,18 @@
 	var/datum/contract_requirement/supporting_requirement = social_offer.requirements[2]
 	TEST_ASSERT_EQUAL(negotiated_floors[primary_requirement.name], 1, "primary emphasis weakened the named primary objective")
 	TEST_ASSERT_EQUAL(negotiated_floors[supporting_requirement.name], 0.65, "primary emphasis did not relax a supporting objective")
-	TEST_ASSERT(social_offer.select_negotiation_option("schedule", "accelerated", "Unit test"), "expedited social warranty could not be negotiated")
-	TEST_ASSERT_EQUAL(social_offer.minimum_grade_ratio, 0.65, "expedited warranty did not strengthen the minimum outcome")
+	TEST_ASSERT_EQUAL(length(social_offer.negotiation_clauses), 2, "social contract exposed more than two ordinary negotiation choices")
 	qdel(social_offer)
 	var/datum/contract_definition/fuel_definition = SScontracts.definitions["alternative_fuel_demonstration"]
 	var/datum/contract/social/alternative_fuel_trial/fuel_offer = fuel_definition.create_contract()
 	TEST_ASSERT(fuel_offer.negotiation_clauses["fuel_protocol"], "alternative-fuel contract lacked its certification protocol")
+	TEST_ASSERT(!fuel_offer.negotiation_clauses["objective_focus"], "alternative-fuel contract duplicated its specific protocol with a generic priority choice")
+	TEST_ASSERT_EQUAL(length(fuel_offer.negotiation_clauses), 2, "alternative-fuel contract exposed more than its award and protocol choices")
 	TEST_ASSERT(fuel_offer.select_negotiation_option("fuel_protocol", "phoron_free", "Unit test"), "phoron-free certification could not be negotiated")
 	TEST_ASSERT_EQUAL(fuel_offer.output_requirement.target, 3, "alternative-fuel protocol did not expose three output stages")
 	TEST_ASSERT(findtext(fuel_offer.output_requirement.description, "0.1% phoron"), "phoron-free negotiation did not update its visible chamber restriction")
 	qdel(fuel_offer)
+
 	var/found_offer = FALSE
 	for(var/datum/contract/medical_trial/trial in SScontracts.offered_contracts)
 		found_offer = TRUE
@@ -517,6 +521,29 @@
 	original_routine.cancel("Lifecycle test")
 	TEST_ASSERT(SScontracts.find_candidate(original_routine.offer_key), "closing a standing medical offer did not queue its cooldown-safe replacement")
 	TEST_ASSERT(SScontracts.offer_cooldowns[original_routine.offer_key] > world.time, "closing a standing offer did not enforce its publication cooldown")
+
+/datum/unit_test/dq_contract_staged_requirement_unique_tiers
+
+/datum/unit_test/dq_contract_staged_requirement_unique_tiers/Run()
+	var/list/stages = list(
+		list("label" = "Rated", "threshold" = 500, "duration" = 1 MINUTE),
+		list("label" = "Frontier", "threshold" = 800, "duration" = 1 MINUTE),
+	)
+	var/datum/contract_requirement/staged_sustained_event/requirement = new("dq_staged_result", "machine", "output", CONTRACT_EVIDENCE_COMPARE_AT_LEAST, stages)
+	requirement.pending_tokens["machine-a:1"] = "token-a"
+	requirement.pending_stage_indices["machine-a:1"] = 1
+	requirement.pending_timers["machine-a:1"] = 0
+	requirement.pending_tokens["machine-b:1"] = "token-b"
+	requirement.pending_stage_indices["machine-b:1"] = 1
+	requirement.pending_timers["machine-b:1"] = 0
+	requirement.complete_stage("machine-a:1", 1, "token-a", 0, "Machine A")
+	TEST_ASSERT_EQUAL(requirement.progress, 1, "first qualifying machine did not complete the first tier")
+	requirement.complete_stage("machine-b:1", 1, "token-b", 0, "Machine B")
+	TEST_ASSERT_EQUAL(requirement.progress, 1, "a second machine completed the same tier twice")
+	var/list/stage_rows = requirement.ui_stage_rows()
+	TEST_ASSERT_EQUAL(stage_rows[1]["status"], "Complete", "completed tier was not exposed clearly to the UI")
+	TEST_ASSERT_EQUAL(stage_rows[2]["status"], "Waiting", "untouched tier was not exposed as waiting")
+	qdel(requirement)
 
 /datum/unit_test/dq_medical_trial_outcome_workflow
 
@@ -1501,9 +1528,8 @@
 	var/datum/contract_definition/definition = SScontracts.definitions["cargo_freight_portfolio"]
 	var/datum/contract/outcome/contract = definition.create_contract(list("value_target" = 100, "variety_target" = 1))
 	TEST_ASSERT(contract, "allied-standing contract was not created")
-	var/datum/contract_negotiation_clause/relationship = contract.negotiation_clauses["relationship"]
-	TEST_ASSERT(relationship, "friendly standing did not unlock relationship negotiation terms")
-	TEST_ASSERT(relationship.options["preferred_rate"], "allied standing did not unlock the preferred-contractor rate")
+	TEST_ASSERT_EQUAL(contract.standing_reward_modifier, 10, "allied standing did not apply its preferred-contractor premium")
+	TEST_ASSERT(contract.negotiation_clauses["distribution"], "allied-standing contract lacked its award choice")
 	TEST_ASSERT(contract.accept(), "allied-standing failure test contract could not be accepted")
 	var/pre_failure_station_reputation = get_station_faction_reputation(faction_id)
 	var/pre_failure_department_reputation = get_department_faction_reputation(DEPARTMENT_CARGO, faction_id)
@@ -1641,8 +1667,7 @@
 	var/datum/contract_definition/definition = SScontracts.definitions["experimental_medication_study"]
 	var/datum/contract/medical_trial/trial = definition.create_contract(list("cohort" = MEDICAL_TRIAL_COHORT_HEALTHY, "target_metric" = "trauma"))
 	TEST_ASSERT(trial, "medical trial for negotiated-effect test was not created")
-	TEST_ASSERT(trial.select_negotiation_option("oversight", "independent", "Unit test"), "independent oversight could not be negotiated")
-	TEST_ASSERT(trial.select_negotiation_option("identity", "anonymous", "Unit test"), "anonymous identity handling could not be negotiated")
+	TEST_ASSERT(trial.select_negotiation_option("patient_protocol", "patient", "Unit test"), "patient-led protocol could not be negotiated")
 	TEST_ASSERT_EQUAL(trial.negotiated_effect("oversight"), "independent", "clinical oversight negotiation did not produce a gameplay effect")
 	TEST_ASSERT_EQUAL(trial.negotiated_effect("identity"), "anonymous", "identity negotiation did not produce a gameplay effect")
 	TEST_ASSERT(trial.accept(), "negotiated-effect trial could not be accepted")

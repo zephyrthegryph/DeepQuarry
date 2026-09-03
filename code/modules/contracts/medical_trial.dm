@@ -45,41 +45,13 @@
 	configure_medical_trial_negotiations(contract)
 
 /proc/configure_medical_trial_negotiations(datum/contract/contract)
-	var/datum/contract_negotiation_clause/disclosure = new("disclosure", "Publication and disclosure", "Determine how the study and its findings may be disclosed after filing.")
-	disclosure.add_option(make_contract_clause_option("public", "Public findings", "VeyMed may publish the protocol and anonymized findings. Transparency improves institutional standing and includes a staff publication stipend.", 100, -100, 100, 5, 3, 2, 0, list("publication" = "public")))
-	disclosure.add_option(make_contract_clause_option("anonymized", "Anonymized summary", "Only an anonymized clinical summary may be published; operational details remain confidential.", 0, 0, 0, 1, 1, 1, 0, list("publication" = "anonymized")), TRUE)
-	disclosure.add_option(make_contract_clause_option("confidential", "Sponsor confidentiality", "All findings remain confidential to VeyMed. The sponsor pays a substantial confidentiality premium.", 250, 250, 0, -4, -5, 0, 0, list("publication" = "confidential")))
-	contract.add_negotiation_clause(disclosure)
-
-	var/datum/contract_negotiation_clause/data_rights = new("data_rights", "Data rights and attribution", "Allocate ownership, reuse rights, and professional credit for the submitted study.")
-	data_rights.add_option(make_contract_clause_option("shared", "Shared clinical license", "The station and VeyMed may both reuse the anonymized dataset. Staff receive a licensing stipend.", 150, 0, 100, 3, 2, 2, 0, list("data_rights" = "shared")))
-	data_rights.add_option(make_contract_clause_option("exclusive", "VeyMed exclusivity", "VeyMed receives exclusive commercial use of the submitted dataset in exchange for a Medical research premium.", 0, 250, 0, -1, 0, 0, 0, list("data_rights" = "exclusive")), TRUE)
-	data_rights.add_option(make_contract_clause_option("attributed", "Named staff attribution", "Contributing staff retain professional attribution and receive the majority of the authorship premium.", 0, -100, 300, 1, 1, 4, 0, list("data_rights" = "attributed")))
-	contract.add_negotiation_clause(data_rights)
-
-	var/datum/contract_negotiation_clause/schedule = new("schedule", "Delivery schedule", "Set the filing deadline and the sponsor premium attached to it.")
-	schedule.add_option(make_contract_clause_option("accelerated", "Accelerated filing", "Complete the study fifteen minutes sooner for a large urgency premium, with reputational risk if the schedule appears aggressive.", 100, 300, 150, -2, -3, -2, -15 MINUTES))
-	schedule.add_option(make_contract_clause_option("standard", "Standard schedule", "Retain the standard forty-five-minute study window and compensation.", 0, 0, 0, 0, 0, 0), TRUE)
-	schedule.add_option(make_contract_clause_option("extended", "Extended observation", "Gain fifteen additional minutes for safer observation. VeyMed reduces the cash award but recognizes the stronger protocol.", -100, -150, 100, 2, 3, 2, 15 MINUTES))
-	contract.add_negotiation_clause(schedule)
-
-	var/datum/contract_negotiation_clause/oversight = new("oversight", "Clinical oversight", "Choose whose interests the study's governance formally prioritizes.")
-	oversight.add_option(make_contract_clause_option("independent", "Independent patient advocate", "Require independent patient representation. The sponsor shifts compensation from Medical to participating staff.", -50, -150, 250, 4, 5, 4, 0, list("oversight" = "independent")))
-	oversight.add_option(make_contract_clause_option("internal", "Medical internal review", "Medical command retains responsibility for protocol review.", 0, 0, 0, 0, 0, 0, 0, list("oversight" = "internal")), TRUE)
-	oversight.add_option(make_contract_clause_option("sponsor", "Sponsor-directed review", "VeyMed directs protocol interpretation and pays Medical an autonomy premium.", 100, 200, 0, -3, -4, -1, 0, list("oversight" = "sponsor")))
-	contract.add_negotiation_clause(oversight)
-
-	var/datum/contract_negotiation_clause/liability = new("liability", "Indemnity and participant protection", "Allocate clinical risk and the compensation paid for accepting it.")
-	liability.add_option(make_contract_clause_option("sponsor", "Sponsor indemnity", "VeyMed accepts study liability under its standard clinical terms.", 0, 0, 0, 0, 0, 0, 0, list("liability" = "sponsor")), TRUE)
-	liability.add_option(make_contract_clause_option("station", "Station assumes liability", "The station assumes clinical liability in return for premiums to the station, Medical, and participating staff.", 250, 250, 100, -3, -3, -2, 0, list("liability" = "station")))
-	liability.add_option(make_contract_clause_option("worker", "Enhanced worker protection", "Reserve the largest risk premium for contributing staff and strengthen the station's standing with patients and labor.", -100, -100, 300, 3, 4, 5, 0, list("liability" = "worker")))
-	contract.add_negotiation_clause(liability)
-
-	var/datum/contract_negotiation_clause/identity = new("identity", "Participant identity", "Determine whether the sponsor receives identifiable clinical records.")
-	identity.add_option(make_contract_clause_option("identified", "Identified records", "VeyMed receives identified records under medical confidentiality and pays an access premium.", 100, 150, 100, -2, -2, -1, 0, list("identity" = "identified")))
-	identity.add_option(make_contract_clause_option("coded", "Coded participant records", "Participants are represented by coded records in sponsor-facing material.", 0, 0, 0, 1, 1, 1, 0, list("identity" = "coded")), TRUE)
-	identity.add_option(make_contract_clause_option("anonymous", "Full sponsor anonymity", "Withhold participant identities from the sponsor. Compensation is lower, but privacy standing improves.", -100, -100, 100, 4, 4, 3, 0, list("identity" = "anonymous")))
-	contract.add_negotiation_clause(identity)
+	var/protocol_shift = max(100, round(contract.reward * 0.1))
+	var/datum/contract_negotiation_clause/protocol = new("patient_protocol", "Patient records", "Choose what VeyMed receives and who controls review.")
+	protocol.add_option(make_contract_clause_option("patient", "Patient-led · anonymous", "Require filed consent and withhold patient identities.", -round(protocol_shift * 0.25), -round(protocol_shift * 0.5), round(protocol_shift * 0.75), 4, 4, 4, 10 MINUTES, list("oversight" = "independent", "identity" = "anonymous")))
+	protocol.add_option(make_contract_clause_option("coded", "Medical review · coded", "Medical reviews the study; VeyMed receives coded records.", 0, 0, 0, 1, 1, 1, 0, list("oversight" = "internal", "identity" = "coded")), TRUE)
+	protocol.add_option(make_contract_clause_option("sponsor", "Sponsor review · identified", "VeyMed directs review and receives identified records.", round(protocol_shift * 0.25), round(protocol_shift * 0.75), 0, -4, -4, -2, -10 MINUTES, list("oversight" = "sponsor", "identity" = "identified")))
+	contract.add_negotiation_clause(protocol)
+	add_contract_payout_negotiation(contract)
 
 /datum/contract/medical_trial
 	var/datum/medical_trial_profile/profile
@@ -363,7 +335,7 @@
 		return FALSE
 	if(!(adverse_metric in medical_trial_adverse_choices()))
 		return FALSE
-	var/document_info = "<h2>Final Clinical Interpretation</h2><b>Study:</b> [profile.code_name]<br><b>Declared indication:</b> [profile.target_metric]<br><b>Primary adverse syndrome:</b> [adverse_metric]<br><b>Publication:</b> [negotiated_effect("publication", "anonymized")]<br><b>Data rights:</b> [negotiated_effect("data_rights", "exclusive")]<br><b>Identity handling:</b> [negotiated_effect("identity", "coded")]<br><b>Oversight:</b> [negotiated_effect("oversight", "internal")]<br><b>Liability:</b> [negotiated_effect("liability", "sponsor")]<br><br>VeyMed Clinical Development will adjudicate efficacy under the accepted contract terms from the submitted scanner evidence and reported adverse syndrome."
+	var/document_info = "<h2>Final Clinical Interpretation</h2><b>Study:</b> [profile.code_name]<br><b>Declared indication:</b> [profile.target_metric]<br><b>Primary adverse syndrome:</b> [adverse_metric]<br><b>Identity handling:</b> [negotiated_effect("identity", "coded")]<br><b>Review:</b> [negotiated_effect("oversight", "internal")]<br><br>VeyMed Clinical Development will adjudicate efficacy from the submitted scanner evidence and reported adverse syndrome."
 	create_contract_document(location, "final clinical interpretation — [profile.code_name]", document_info, id, CONTRACT_DOCUMENT_FINAL_REPORT, CONTRACT_FAX_VEYMED, list("target_metric" = profile.target_metric, "adverse_metric" = adverse_metric))
 	return TRUE
 

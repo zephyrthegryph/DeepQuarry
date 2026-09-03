@@ -185,6 +185,9 @@
 /datum/contract_requirement/proc/progress_text()
 	return "[progress] / [target]"
 
+/datum/contract_requirement/proc/ui_stage_rows()
+	return list()
+
 /// Generic event-driven counter. A definition describes its evidence with
 /// scope, exact values, tags, numeric predicates, and an optional uniqueness
 /// key; no contract-specific polling loop or callback gadget is required.
@@ -347,8 +350,8 @@
 	add_progress(1, contributor_account, detail || "Maintained the qualifying state for [DisplayTimeText(duration)].")
 
 /// A sequence of increasingly demanding sustained states. Every tier listens
-/// to the same authoritative event stream, so progression is event-driven and
-/// a harder result naturally earns credit for the lower tiers at the same time.
+/// to the same authoritative event stream, but only the next tier may advance,
+/// making the authored order a real operational ramp rather than presentation.
 /datum/contract_requirement/staged_sustained_event
 	name = "Staged sustained result"
 	var/event_type
@@ -360,6 +363,7 @@
 	var/list/stages
 	var/list/pending_tokens
 	var/list/pending_timers
+	var/list/pending_stage_indices
 	var/list/completed_stages
 
 /datum/contract_requirement/staged_sustained_event/New(_event_type, _entity_field, _numeric_field, _comparator, list/_stages, _scope_mode = CONTRACT_EVIDENCE_SCOPE_ANY)
@@ -371,6 +375,7 @@
 	filter = new(_scope_mode)
 	pending_tokens = list()
 	pending_timers = list()
+	pending_stage_indices = list()
 	completed_stages = list()
 	set_stages(_stages)
 	if(event_type)
@@ -382,6 +387,7 @@
 	stages = null
 	pending_tokens = null
 	pending_timers = null
+	pending_stage_indices = null
 	completed_stages = null
 	return ..()
 
@@ -408,6 +414,8 @@
 		pending_timers.Cut()
 	if(pending_tokens)
 		pending_tokens.Cut()
+	if(pending_stage_indices)
+		pending_stage_indices.Cut()
 
 /datum/contract_requirement/staged_sustained_event/handle_event(datum/contract_event/event)
 	if(state != CONTRACT_REQUIREMENT_PENDING || event?.event_type != event_type)
@@ -424,36 +432,48 @@
 				deltimer(timer_id)
 				pending_timers -= stage_key
 				pending_tokens -= stage_key
+				pending_stage_indices -= stage_key
 				changed = TRUE
 		return changed
-	for(var/stage_index in 1 to length(stages))
-		var/stage_key = "[entity_value]:[stage_index]"
-		if(stage_key in completed_stages)
-			continue
-		var/list/stage = stages[stage_index]
-		var/qualifies = contract_evidence_compare(event.value(numeric_field), comparator, stage["threshold"])
-		if(!qualifies)
-			var/timer_id = pending_timers[stage_key]
-			if(timer_id)
-				deltimer(timer_id)
-				pending_timers -= stage_key
-				pending_tokens -= stage_key
-				changed = TRUE
-			continue
-		if(pending_timers[stage_key])
-			continue
-		var/token = event.id
-		pending_tokens[stage_key] = token
-		pending_timers[stage_key] = addtimer(CALLBACK(src, PROC_REF(complete_stage), stage_key, stage_index, token, event.actor_account, event.value("detail")), max(1, stage["duration"]), TIMER_STOPPABLE)
-		changed = TRUE
+	// Stages are an actual ramp, not three independent checks that happen to be
+	// displayed in order. Only the next tier may hold or complete.
+	var/stage_index = progress + 1
+	if(stage_index > length(stages))
+		return changed
+	var/stage_key = "[entity_value]:[stage_index]"
+	var/list/stage = stages[stage_index]
+	var/qualifies = contract_evidence_compare(event.value(numeric_field), comparator, stage["threshold"])
+	if(!qualifies)
+		var/timer_id = pending_timers[stage_key]
+		if(timer_id)
+			deltimer(timer_id)
+			pending_timers -= stage_key
+			pending_tokens -= stage_key
+			pending_stage_indices -= stage_key
+			changed = TRUE
+		return changed
+	if(pending_timers[stage_key])
+		return changed
+	var/token = event.id
+	pending_tokens[stage_key] = token
+	pending_stage_indices[stage_key] = stage_index
+	pending_timers[stage_key] = addtimer(CALLBACK(src, PROC_REF(complete_stage), stage_key, stage_index, token, event.actor_account, event.value("detail")), max(1, stage["duration"]), TIMER_STOPPABLE)
+	changed = TRUE
 	return changed
 
 /datum/contract_requirement/staged_sustained_event/proc/complete_stage(stage_key, stage_index, token, contributor_account, detail)
-	if(state != CONTRACT_REQUIREMENT_PENDING || pending_tokens[stage_key] != token)
+	if(state != CONTRACT_REQUIREMENT_PENDING || pending_tokens[stage_key] != token || ("[stage_index]" in completed_stages))
 		return
-	pending_tokens -= stage_key
-	pending_timers -= stage_key
-	completed_stages |= stage_key
+	completed_stages |= "[stage_index]"
+	for(var/other_key in pending_timers.Copy())
+		if(pending_stage_indices[other_key] != stage_index)
+			continue
+		var/timer_id = pending_timers[other_key]
+		if(other_key != stage_key && timer_id)
+			deltimer(timer_id)
+		pending_tokens -= other_key
+		pending_timers -= other_key
+		pending_stage_indices -= other_key
 	var/list/stage = stages[stage_index]
 	add_progress(1, contributor_account, detail || "Completed [stage["label"]] at [stage["threshold"]] for [DisplayTimeText(stage["duration"])].")
 
@@ -461,7 +481,29 @@
 	if(progress >= target)
 		return "All [target] stages certified"
 	var/list/next_stage = stages[min(target, progress + 1)]
-	return "[progress] / [target] stages; next: [next_stage["label"]] ([next_stage["threshold"]])"
+	return "Stage [progress + 1] of [target]: [next_stage["label"]] — [next_stage["threshold"]] for [DisplayTimeText(next_stage["duration"])]"
+
+/datum/contract_requirement/staged_sustained_event/ui_stage_rows()
+	var/list/rows = list()
+	for(var/stage_index in 1 to length(stages))
+		var/list/stage = stages[stage_index]
+		var/status = "Waiting"
+		if("[stage_index]" in completed_stages)
+			status = "Complete"
+		else
+			for(var/stage_key in pending_stage_indices)
+				if(pending_stage_indices[stage_key] == stage_index)
+					status = "Holding"
+					break
+		rows.Add(list(list(
+			"index" = stage_index,
+			"label" = stage["label"],
+			"threshold" = stage["threshold"],
+			"unit" = stage["unit"] || "",
+			"duration" = DisplayTimeText(stage["duration"]),
+			"status" = status,
+		)))
+	return rows
 
 /// Tracks the latest reported value for each stable entity and completes when
 /// their current aggregate reaches the target. Re-reporting one allocation or

@@ -120,39 +120,32 @@
 	if(percent)
 		contract.reward = max(0, round(contract.reward * (100 + percent) / 100))
 
-/proc/configure_outcome_negotiations(datum/contract/contract, deadline = 40 MINUTES)
+/proc/add_contract_payout_negotiation(datum/contract/contract)
+	var/minor_shift = max(50, round(contract.reward * 0.05))
+	var/major_shift = max(100, round(contract.reward * 0.15))
+	var/combined_shift = minor_shift + major_shift
+	var/datum/contract_negotiation_clause/distribution = new("distribution", "Award split", "Choose who receives most of the contract award.")
+	distribution.add_option(make_contract_clause_option("balanced", "Standard split", "Use the listed station, department, and staff shares."), TRUE)
+	distribution.add_option(make_contract_clause_option("staff", "Pay the crew", "Move funding from station and department accounts to participating staff.", -minor_shift, -major_shift, combined_shift, 0, -2, 4, 0, list("other_faction_reputation" = list(REPUTATION_FACTION_WORKERS_UNION = 3))))
+	distribution.add_option(make_contract_clause_option("department", "Fund the department", "Keep most of the flexible funding in the responsible department.", -minor_shift, combined_shift, -major_shift, 0, 4, -2))
+	distribution.add_option(make_contract_clause_option("station", "Fund station reserves", "Keep most of the flexible funding in the station account.", combined_shift, -major_shift, -minor_shift, 4, -2, -1))
+	contract.add_negotiation_clause(distribution)
+
+/proc/configure_outcome_negotiations(datum/contract/contract, deadline = 40 MINUTES, include_schedule = TRUE)
 	contract.station_share = 0.2
 	contract.department_share = 0.6
 	contract.contributor_share = 0.2
 	contract.deadline_duration = deadline
 	apply_contract_standing_terms(contract)
+	add_contract_payout_negotiation(contract)
 
-	var/datum/contract_negotiation_clause/distribution = new("distribution", "Remittance distribution", "Choose how the issuer's award is divided between station reserves, departmental reinvestment, and participating staff.")
-	distribution.add_option(make_contract_clause_option("balanced", "Balanced remittance", "Retain the standard station, department, and staff distribution."), TRUE)
-	distribution.add_option(make_contract_clause_option("staff", "Staff incentive", "Move part of the award to contributors; this also improves labor relations.", -100, -100, 200, 0, -1, 3, 0, list("other_faction_reputation" = list(REPUTATION_FACTION_WORKERS_UNION = 2))))
-	distribution.add_option(make_contract_clause_option("department", "Department reinvestment", "Reserve more of the award for the responsible department's operating account.", -100, 200, -100, 0, 3, -1))
-	distribution.add_option(make_contract_clause_option("station", "Station reserve", "Retain more of the award for Command; NanoTrasen favors the stronger reserve.", 200, -100, -100, 3, -1, -1, 0, list("other_faction_reputation" = list(REPUTATION_FACTION_NANOTRASEN = 2))))
-	contract.add_negotiation_clause(distribution)
-
-	var/is_graded_contract = istype(contract, /datum/contract/social)
-	var/datum/contract_negotiation_clause/schedule = new("schedule", is_graded_contract ? "Delivery standard" : "Delivery schedule", is_graded_contract ? "Negotiate both the reporting window and the minimum outcome the station guarantees." : "Select the reporting window and sponsor premium attached to it.")
-	if(is_graded_contract)
-		schedule.add_option(make_contract_clause_option("accelerated", "Expedited warranty", "Deliver ten minutes sooner and guarantee at least 65% of the full specification for an urgency premium.", 150, 250, 100, -1, -1, -1, -10 MINUTES, list("minimum_grade_ratio" = 0.65, "success_grade_ratio" = 0.85)))
-		schedule.add_option(make_contract_clause_option("standard", "Standard warranty", "Retain the standard window: 50% is acceptable, 75% earns full certification.", 0, 0, 0, 0, 0, 0, 0, list("minimum_grade_ratio" = CONTRACT_GRADE_MINIMUM_RATIO, "success_grade_ratio" = CONTRACT_GRADE_SUCCESS_RATIO)), TRUE)
-		schedule.add_option(make_contract_clause_option("extended", "Best-effort charter", "Add ten minutes and lower the guaranteed floor to 40%; the cash award falls, but careful work earns stronger standing.", -50, -150, 0, 2, 3, 1, 10 MINUTES, list("minimum_grade_ratio" = 0.4, "success_grade_ratio" = 0.7)))
-	else
-		schedule.add_option(make_contract_clause_option("accelerated", "Accelerated delivery", "Shorten the deadline by ten minutes in exchange for an urgency premium.", 100, 200, 100, -1, -1, -1, -10 MINUTES))
-		schedule.add_option(make_contract_clause_option("standard", "Standard delivery", "Retain the sponsor's standard deadline and compensation."), TRUE)
-		schedule.add_option(make_contract_clause_option("extended", "Extended verification", "Add ten minutes for a more conservative operating window; cash falls while institutional standing improves.", -50, -100, 0, 2, 3, 1, 10 MINUTES))
-	contract.add_negotiation_clause(schedule)
-
-	if(contract.standing_score >= REPUTATION_FRIENDLY)
-		var/datum/contract_negotiation_clause/relationship = new("relationship", "Relationship terms", "Established sponsor trust unlocks alternatives unavailable to an unknown contractor.")
-		relationship.add_option(make_contract_clause_option("ordinary", "Standard consideration", "Retain the sponsor's standard cash and standing terms."), TRUE)
-		relationship.add_option(make_contract_clause_option("reputation_bond", "Reputation bond", "Return part of the cash premium in exchange for stronger institutional and staff standing.", -50, -100, -50, 3, 5, 2))
-		if(contract.standing_score >= REPUTATION_ALLIED)
-			relationship.add_option(make_contract_clause_option("preferred_rate", "Preferred-contractor rate", "Invoke allied-contractor status for a larger cash award with a smaller standing gain.", 100, 150, 50, -1, -1, -1))
-		contract.add_negotiation_clause(relationship)
+	if(include_schedule)
+		var/schedule_shift = max(100, round(contract.reward * 0.12))
+		var/datum/contract_negotiation_clause/schedule = new("schedule", "Delivery window", "Trade time against payment and sponsor confidence.")
+		schedule.add_option(make_contract_clause_option("accelerated", "Rush · 10 min sooner", "Finish ten minutes sooner for a larger award.", round(schedule_shift * 0.2), round(schedule_shift * 0.6), round(schedule_shift * 0.2), -2, -2, -1, -10 MINUTES))
+		schedule.add_option(make_contract_clause_option("standard", "Standard window", "Keep the listed deadline and award."), TRUE)
+		schedule.add_option(make_contract_clause_option("extended", "Careful · 10 min longer", "Take ten more minutes for less cash and stronger standing.", -round(schedule_shift * 0.2), -round(schedule_shift * 0.6), -round(schedule_shift * 0.2), 2, 3, 1, 10 MINUTES))
+		contract.add_negotiation_clause(schedule)
 
 /datum/contract_definition/outcome
 	abstract_type = /datum/contract_definition/outcome
@@ -243,32 +236,32 @@
 			primary_target = 600
 			secondary_target = 94
 			stages = list(
-				list("label" = "Baseline", "threshold" = 400, "duration" = 45 SECONDS),
-				list("label" = "Commercial", "threshold" = 500, "duration" = 45 SECONDS),
-				list("label" = "Assured maximum", "threshold" = 600, "duration" = 1 MINUTE),
+				list("label" = "Baseline", "threshold" = 400, "unit" = "EER", "duration" = 45 SECONDS),
+				list("label" = "Commercial", "threshold" = 500, "unit" = "EER", "duration" = 45 SECONDS),
+				list("label" = "Assured maximum", "threshold" = 600, "unit" = "EER", "duration" = 1 MINUTE),
 			)
 		if("frontier")
 			primary_target = 1000
 			secondary_target = 85
 			stages = list(
-				list("label" = "High output", "threshold" = 600, "duration" = 1 MINUTE),
-				list("label" = "Frontier", "threshold" = 800, "duration" = 75 SECONDS),
-				list("label" = "Experimental maximum", "threshold" = 1000, "duration" = 90 SECONDS),
+				list("label" = "High output", "threshold" = 600, "unit" = "EER", "duration" = 1 MINUTE),
+				list("label" = "Frontier", "threshold" = 800, "unit" = "EER", "duration" = 75 SECONDS),
+				list("label" = "Experimental maximum", "threshold" = 1000, "unit" = "EER", "duration" = 90 SECONDS),
 			)
 		else
 			primary_target = 800
 			secondary_target = 90
 			stages = list(
-				list("label" = "Baseline", "threshold" = 500, "duration" = 1 MINUTE),
-				list("label" = "Rated output", "threshold" = 650, "duration" = 1 MINUTE),
-				list("label" = "Maximum output", "threshold" = 800, "duration" = 75 SECONDS),
+				list("label" = "Baseline", "threshold" = 500, "unit" = "EER", "duration" = 1 MINUTE),
+				list("label" = "Rated output", "threshold" = 650, "unit" = "EER", "duration" = 1 MINUTE),
+				list("label" = "Maximum output", "threshold" = 800, "unit" = "EER", "duration" = 75 SECONDS),
 			)
 	if(stage_duration_override > 0)
 		for(var/list/stage as anything in stages)
 			stage["duration"] = stage_duration_override
 	performance_requirement.set_stages(stages)
 	performance_requirement.filter.set_number_requirement("integrity", CONTRACT_EVIDENCE_COMPARE_AT_LEAST, secondary_target)
-	performance_requirement.description = "Certify the three [profile] output stages in order of strength while maintaining at least [secondary_target]% crystal integrity. A stronger stable run can certify several stages concurrently."
+	performance_requirement.description = "Certify the three [profile] output stages in sequence while maintaining at least [secondary_target]% crystal integrity. Each stage begins after the previous stage is certified."
 	description = "Certify progressively stronger supermatter output under the negotiated [profile] charter, culminating at [primary_target] Relative EER while maintaining at least [secondary_target]% integrity."
 
 /datum/contract_definition/outcome/supermatter_performance/configure_contract(datum/contract/outcome/engine_performance/contract, list/context)
@@ -280,13 +273,13 @@
 	contract.station_reputation_reward = 10
 	contract.department_reputation_reward = 28
 	contract.personal_reputation_reward = 8
-	configure_outcome_negotiations(contract, 35 MINUTES)
-	var/datum/contract_negotiation_clause/output = new("engine_output", "Output charter", "Choose how aggressively NanoTrasen will certify the station engine.")
-	output.add_option(make_contract_clause_option("assured", "Assured operation", "Certify 400, 500, and 600 EER stages at 94% integrity. Lower cash, stronger safety standing.", -100, -200, 0, 2, 4, 1, 0, list("engine_output_profile" = "assured")))
-	output.add_option(make_contract_clause_option("rated", "Rated operation", "Certify 500, 650, and 800 EER stages at 90% integrity.", 0, 0, 0, 0, 0, 0, 0, list("engine_output_profile" = "rated")), TRUE)
-	output.add_option(make_contract_clause_option("frontier", "Frontier operation", "Certify 600, 800, and 1,000 EER stages at 85% integrity for a substantial risk premium.", 200, 400, 150, -2, -3, -1, 0, list("engine_output_profile" = "frontier")))
+	configure_outcome_negotiations(contract, 35 MINUTES, FALSE)
+	var/datum/contract_negotiation_clause/output = new("engine_output", "Operating target", "Choose the required output and safety margin.")
+	output.add_option(make_contract_clause_option("assured", "Safe · 600 EER", "Stages: 400 / 500 / 600 EER. Keep 94% integrity.", -100, -200, 0, 2, 4, 1, 0, list("engine_output_profile" = "assured")))
+	output.add_option(make_contract_clause_option("rated", "Rated · 800 EER", "Stages: 500 / 650 / 800 EER. Keep 90% integrity.", 0, 0, 0, 0, 0, 0, 0, list("engine_output_profile" = "rated")), TRUE)
+	output.add_option(make_contract_clause_option("frontier", "Frontier · 1,000 EER", "Stages: 600 / 800 / 1,000 EER. Keep 85% integrity.", 200, 400, 150, -2, -3, -1, 0, list("engine_output_profile" = "frontier")))
 	contract.add_negotiation_clause(output)
-	contract.performance_requirement = new(CONTRACT_EVENT_MACHINE_RESULT, "machine_id", "eer", CONTRACT_EVIDENCE_COMPARE_AT_LEAST, list(list("label" = "Baseline", "threshold" = 500, "duration" = 1 MINUTE)), CONTRACT_EVIDENCE_SCOPE_DEPARTMENT)
+	contract.performance_requirement = new(CONTRACT_EVENT_MACHINE_RESULT, "machine_id", "eer", CONTRACT_EVIDENCE_COMPARE_AT_LEAST, list(list("label" = "Baseline", "threshold" = 500, "unit" = "EER", "duration" = 1 MINUTE)), CONTRACT_EVIDENCE_SCOPE_DEPARTMENT)
 	contract.performance_requirement.name = "Progressive output certification"
 	contract.performance_requirement.filter.require_value("machine_kind", "supermatter")
 	contract.performance_requirement.filter.require_value("station_machine", TRUE)

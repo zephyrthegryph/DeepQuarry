@@ -518,8 +518,19 @@
 
 /datum/contract/social/ui_details(mob/living/user)
 	var/datum/money_account/viewer_account = contract_account_for_mob(user)
-	var/projected_grade = outcome_finalized ? outcome_grade : grade_for_ratio(current_outcome_ratio())
+	var/current_ratio = current_outcome_ratio()
+	var/projected_grade = outcome_finalized ? outcome_grade : grade_for_ratio(current_ratio)
 	var/projected_multiplier = outcome_finalized ? 1 : reward_multiplier_for_grade(projected_grade)
+	var/stage_reward_basis = reward
+	if(outcome_finalized)
+		var/final_multiplier = reward_multiplier_for_grade(outcome_grade)
+		if(final_multiplier > 0)
+			stage_reward_basis = round(reward / final_multiplier)
+	var/list/outcome_stages = list(
+		list("label" = "Minimum", "target" = round(minimum_grade_ratio * 100), "reward" = round(stage_reward_basis * CONTRACT_GRADE_MINIMUM_REWARD), "reached" = current_ratio >= minimum_grade_ratio),
+		list("label" = "Full award", "target" = round(success_grade_ratio * 100), "reward" = round(stage_reward_basis * CONTRACT_GRADE_SUCCESS_REWARD), "reached" = current_ratio >= success_grade_ratio),
+		list("label" = "Exceptional", "target" = round(CONTRACT_GRADE_EXCEPTIONAL_RATIO * 100), "reward" = round(stage_reward_basis * CONTRACT_GRADE_EXCEPTIONAL_REWARD), "reached" = current_ratio >= CONTRACT_GRADE_EXCEPTIONAL_RATIO),
+	)
 	var/list/preview_plan = stakeholder_requirements_locked ? null : stakeholder_minimum_plan()
 	var/list/role_rows = list()
 	var/required_total = 0
@@ -574,7 +585,8 @@
 		"grade" = outcome_grade,
 		"projected_grade" = projected_grade,
 		"projected_reward" = round(reward * projected_multiplier),
-		"score" = round(current_outcome_ratio() * 100, 0.1),
+		"score" = round(current_ratio * 100, 0.1),
+		"outcome_stages" = outcome_stages,
 		"minimum_percent" = round(minimum_grade_ratio * 100),
 		"success_percent" = round(success_grade_ratio * 100),
 		"exceptional_percent" = round(CONTRACT_GRADE_EXCEPTIONAL_RATIO * 100),
@@ -599,7 +611,9 @@
 
 /datum/contract_definition/social/finalize_contract_authoring(datum/contract/social/contract, list/context)
 	..()
-	if(length(contract.requirements) < 2 || contract.negotiation_clauses["objective_focus"])
+	// Keep ordinary offers to two consequential choices. A definition-specific
+	// clause (fuel protocol, engine target, and so on) takes this slot instead.
+	if(length(contract.requirements) < 2 || length(contract.negotiation_clauses) > 1 || contract.negotiation_clauses["objective_focus"])
 		return
 	var/datum/contract_requirement/primary = contract.requirements[1]
 	var/datum/contract_requirement/supporting = contract.requirements[length(contract.requirements)]
@@ -644,17 +658,17 @@
 		if(DEPARTMENT_SYNTHETIC)
 			primary_title = "Automation-led"
 			supporting_title = "Oversight-led"
-	var/datum/contract_negotiation_clause/focus = new("objective_focus", "Operational emphasis", "Choose which part of the specification must be delivered in full; de-emphasized objectives still require 65% completion.")
-	focus.add_option(make_contract_clause_option("balanced", "Balanced specification", "Treat every listed objective as equally binding."), TRUE)
-	focus.add_option(make_contract_clause_option("primary", primary_title, "Require the full '[primary.name]' objective while permitting 65% delivery of the supporting objectives.", 0, 100, -100, 0, 2, -1, 0, list("requirement_floors" = primary_floors)))
-	focus.add_option(make_contract_clause_option("supporting", supporting_title, "Permit 65% delivery of '[primary.name]' while requiring the other objectives in full, including '[supporting.name]'.", 0, -100, 100, 0, -1, 2, 0, list("requirement_floors" = supporting_floors)))
+	var/datum/contract_negotiation_clause/focus = new("objective_focus", "Completion priority", "Choose which objectives must be completed in full.")
+	focus.add_option(make_contract_clause_option("balanced", "Complete every objective", "Every listed objective must reach 100%."), TRUE)
+	focus.add_option(make_contract_clause_option("primary", primary_title, "Complete [primary.name] fully; supporting objectives need 65%.", 0, 100, -100, 0, 2, -1, 0, list("requirement_floors" = primary_floors)))
+	focus.add_option(make_contract_clause_option("supporting", supporting_title, "Complete the supporting objectives fully; [primary.name] needs 65%.", 0, -100, 100, 0, -1, 2, 0, list("requirement_floors" = supporting_floors)))
 	contract.add_negotiation_clause(focus)
 
 /proc/configure_social_contract(datum/contract/social/contract, list/context, deadline = 45 MINUTES)
 	contract.station_reputation_reward = 10
 	contract.department_reputation_reward = 24
 	contract.personal_reputation_reward = 12
-	configure_outcome_negotiations(contract, deadline)
+	configure_outcome_negotiations(contract, deadline, FALSE)
 	contract.station_share = 0.2
 	contract.department_share = 0.55
 	contract.contributor_share = 0.25

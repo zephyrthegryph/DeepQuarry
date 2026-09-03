@@ -86,24 +86,24 @@
 			integrity_floor = 92
 			thermal_ceiling = 4000
 			stages = list(
-				list("label" = "Pilot output", "threshold" = 250, "duration" = 45 SECONDS),
-				list("label" = "Stable output", "threshold" = 350, "duration" = 1 MINUTE),
-				list("label" = "Assured output", "threshold" = 450, "duration" = 75 SECONDS),
+				list("label" = "Pilot output", "threshold" = 250, "unit" = "EER", "duration" = 45 SECONDS),
+				list("label" = "Stable output", "threshold" = 350, "unit" = "EER", "duration" = 1 MINUTE),
+				list("label" = "Assured output", "threshold" = 450, "unit" = "EER", "duration" = 75 SECONDS),
 			)
 		if("phoron_free")
 			max_plasma_fraction = 0.001
 			integrity_floor = 88
 			thermal_ceiling = 4250
 			stages = list(
-				list("label" = "Phoron-free ignition", "threshold" = 200, "duration" = 45 SECONDS),
-				list("label" = "Phoron-free generation", "threshold" = 325, "duration" = 1 MINUTE),
-				list("label" = "Phoron-free maximum", "threshold" = 500, "duration" = 75 SECONDS),
+				list("label" = "Phoron-free ignition", "threshold" = 200, "unit" = "EER", "duration" = 45 SECONDS),
+				list("label" = "Phoron-free generation", "threshold" = 325, "unit" = "EER", "duration" = 1 MINUTE),
+				list("label" = "Phoron-free maximum", "threshold" = 500, "unit" = "EER", "duration" = 75 SECONDS),
 			)
 		else
 			stages = list(
-				list("label" = "Pilot output", "threshold" = 300, "duration" = 45 SECONDS),
-				list("label" = "Commercial output", "threshold" = 450, "duration" = 1 MINUTE),
-				list("label" = "High output", "threshold" = 650, "duration" = 75 SECONDS),
+				list("label" = "Pilot output", "threshold" = 300, "unit" = "EER", "duration" = 45 SECONDS),
+				list("label" = "Commercial output", "threshold" = 450, "unit" = "EER", "duration" = 1 MINUTE),
+				list("label" = "High output", "threshold" = 650, "unit" = "EER", "duration" = 75 SECONDS),
 			)
 	output_requirement.set_stages(stages)
 	output_requirement.filter.set_number_requirement("plasma_fraction", CONTRACT_EVIDENCE_COMPARE_AT_MOST, max_plasma_fraction)
@@ -131,10 +131,10 @@
 	add_social_role(contract, "operator", "Engine operator", "Designs and operates the alternative chamber mixture.", list(DEPARTMENT_ENGINEERING), 1, 3)
 	add_social_role(contract, "observer", "Independent technical observer", "Reviews safety and performance on behalf of another department.", list(DEPARTMENT_RESEARCH, DEPARTMENT_COMMAND), 1, 3)
 	contract.personal_side_definitions = list("engineering_safety_watch")
-	var/datum/contract_negotiation_clause/fuel_protocol = new("fuel_protocol", "Fuel certification", "Choose the chamber restrictions and escalating output schedule submitted for certification.")
-	fuel_protocol.add_option(make_contract_clause_option("conservative", "Conservative blend", "Certify 250, 350, and 450 EER below 10% phoron, 4,000 K, and at 92% integrity.", -100, -150, 50, 2, 4, 2, 0, list("fuel_certification_profile" = "conservative")))
-	fuel_protocol.add_option(make_contract_clause_option("balanced", "Mixed-gas performance", "Certify 300, 450, and 650 EER below 15% phoron, 4,500 K, and at 85% integrity.", 0, 0, 0, 0, 0, 0, 0, list("fuel_certification_profile" = "balanced")), TRUE)
-	fuel_protocol.add_option(make_contract_clause_option("phoron_free", "Phoron-free process", "Certify 200, 325, and 500 EER with effectively no phoron for a research and standing premium.", 100, 250, 50, 2, 5, 2, 5 MINUTES, list("fuel_certification_profile" = "phoron_free")))
+	var/datum/contract_negotiation_clause/fuel_protocol = new("fuel_protocol", "Fuel protocol", "Choose the chamber mixture and required output stages.")
+	fuel_protocol.add_option(make_contract_clause_option("conservative", "Safe · 450 EER", "Stages: 250 / 350 / 450 EER. Under 10% phoron, 4,000 K, and above 92% integrity.", -100, -150, 50, 2, 4, 2, 0, list("fuel_certification_profile" = "conservative")))
+	fuel_protocol.add_option(make_contract_clause_option("balanced", "Mixed gas · 650 EER", "Stages: 300 / 450 / 650 EER. Under 15% phoron, 4,500 K, and above 85% integrity.", 0, 0, 0, 0, 0, 0, 0, list("fuel_certification_profile" = "balanced")), TRUE)
+	fuel_protocol.add_option(make_contract_clause_option("phoron_free", "No phoron · 500 EER", "Stages: 200 / 325 / 500 EER with effectively no phoron.", 100, 250, 50, 2, 5, 2, 5 MINUTES, list("fuel_certification_profile" = "phoron_free")))
 	contract.add_negotiation_clause(fuel_protocol)
 	var/list/output_checks = list(
 		list("key" = "station_machine", "comparator" = CONTRACT_EVIDENCE_COMPARE_AT_LEAST, "expected" = 1),
@@ -142,7 +142,7 @@
 		list("key" = "plasma_fraction", "comparator" = CONTRACT_EVIDENCE_COMPARE_AT_MOST, "expected" = 0.15),
 		list("key" = "integrity", "comparator" = CONTRACT_EVIDENCE_COMPARE_AT_LEAST, "expected" = 85),
 	)
-	contract.output_requirement = new(CONTRACT_EVENT_MACHINE_RESULT, "machine_id", "eer", CONTRACT_EVIDENCE_COMPARE_AT_LEAST, list(list("label" = "Pilot output", "threshold" = 300, "duration" = 45 SECONDS)), CONTRACT_EVIDENCE_SCOPE_DEPARTMENT)
+	contract.output_requirement = new(CONTRACT_EVENT_MACHINE_RESULT, "machine_id", "eer", CONTRACT_EVIDENCE_COMPARE_AT_LEAST, list(list("label" = "Pilot output", "threshold" = 300, "unit" = "EER", "duration" = 45 SECONDS)), CONTRACT_EVIDENCE_SCOPE_DEPARTMENT)
 	contract.output_requirement.name = "Alternative-fuel output stages"
 	for(var/list/check as anything in output_checks)
 		contract.output_requirement.filter.require_number(check["key"], check["comparator"], check["expected"])

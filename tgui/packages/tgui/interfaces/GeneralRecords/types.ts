@@ -50,6 +50,16 @@ export type contractRequirement = {
   progress: number;
   target: number;
   progress_text: string;
+  stages: contractRequirementStage[];
+};
+
+export type contractRequirementStage = {
+  index: number;
+  label: string;
+  threshold: number;
+  unit: string;
+  duration: string;
+  status: string;
 };
 
 export type managementContract = {
@@ -187,6 +197,7 @@ export type socialOutcomeDetails = {
   projected_grade: string;
   projected_reward: number;
   score: number;
+  outcome_stages: contractOutcomeStage[];
   minimum_percent: number;
   success_percent: number;
   exceptional_percent: number;
@@ -196,6 +207,13 @@ export type socialOutcomeDetails = {
   stakeholder_qualified: number;
   stakeholder_summary: string;
   roles: socialStakeholderRole[];
+};
+
+export type contractOutcomeStage = {
+  label: string;
+  target: number;
+  reward: number;
+  reached: BooleanLike;
 };
 
 export type financeTransaction = {

@@ -79,7 +79,7 @@ const TermTooltip = ({
       {!!visibleEffects.length && (
         <Box p={0.5} mb={0.5} backgroundColor="rgba(255, 255, 255, 0.055)">
           <Box bold mb={0.5} color="label">
-            Award adjustment
+            Changes
           </Box>
           <Table>
             {visibleEffects.map(([label, money, reputation]) => (
@@ -206,6 +206,53 @@ const RewardSummary = ({ contract }: { contract: managementContract }) => {
         </Stack.Item>
       ))}
     </Stack>
+  );
+};
+
+const OutcomeStages = ({ contract }: { contract: managementContract }) => {
+  if (contract.details?.kind !== 'social_outcome') {
+    return null;
+  }
+  const details = contract.details;
+  return (
+    <Section mt={1} title={`Outcome stages · ${details.score}% complete`}>
+      <ProgressBar
+        value={details.score}
+        minValue={0}
+        maxValue={details.exceptional_percent}
+      />
+      <Stack mt={0.5} align="stretch">
+        {details.outcome_stages.map((stage, index) => (
+          <Stack.Item key={stage.label} grow>
+            <Box
+              height="100%"
+              p={0.5}
+              textAlign="center"
+              backgroundColor={
+                stage.reached
+                  ? 'rgba(75, 160, 90, 0.18)'
+                  : 'rgba(255, 255, 255, 0.04)'
+              }
+              style={{
+                border: stage.reached
+                  ? '1px solid rgba(90, 190, 105, 0.45)'
+                  : '1px solid rgba(255, 255, 255, 0.08)',
+              }}
+            >
+              <Box bold>
+                {index + 1}. {stage.label}
+              </Box>
+              <Box color="label">
+                {stage.target}% · {stage.reward.toLocaleString()} th
+              </Box>
+              <Box color={stage.reached ? 'good' : 'label'}>
+                {stage.reached ? 'Reached' : 'Pending'}
+              </Box>
+            </Box>
+          </Stack.Item>
+        ))}
+      </Stack>
+    </Section>
   );
 };
 
@@ -477,6 +524,7 @@ export const ManagementContracts = () => {
                   </LabeledList>
                   <Box my={1}>{contract.description}</Box>
                   <RewardSummary contract={contract} />
+                  <OutcomeStages contract={contract} />
                   {!!contract.negotiation_clauses.length && (
                     <Section
                       mt={1}
@@ -581,6 +629,43 @@ export const ManagementContracts = () => {
                               minValue={0}
                               maxValue={requirement.target}
                             />
+                            {!!requirement.stages?.length && (
+                              <Stack mt={0.5} align="stretch">
+                                {requirement.stages.map((stage) => (
+                                  <Stack.Item key={stage.index} grow>
+                                    <Box
+                                      height="100%"
+                                      p={0.5}
+                                      backgroundColor="rgba(255, 255, 255, 0.04)"
+                                      style={{
+                                        border:
+                                          '1px solid rgba(255, 255, 255, 0.08)',
+                                      }}
+                                    >
+                                      <Box bold>
+                                        {stage.index}. {stage.label}
+                                      </Box>
+                                      <Box color="label">
+                                        {stage.threshold}
+                                        {stage.unit && ` ${stage.unit}`} · hold{' '}
+                                        {stage.duration}
+                                      </Box>
+                                      <Box
+                                        color={
+                                          stage.status === 'Complete'
+                                            ? 'good'
+                                            : stage.status === 'Holding'
+                                              ? 'average'
+                                              : 'label'
+                                        }
+                                      >
+                                        {stage.status}
+                                      </Box>
+                                    </Box>
+                                  </Stack.Item>
+                                ))}
+                              </Stack>
+                            )}
                           </Box>
                         ))}
                     </Section>

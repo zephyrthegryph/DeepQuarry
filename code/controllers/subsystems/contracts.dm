@@ -519,6 +519,7 @@ SUBSYSTEM_DEF(contracts)
 			"progress" = requirement.progress,
 			"target" = requirement.target,
 			"progress_text" = requirement.progress_text(),
+			"stages" = requirement.ui_stage_rows(),
 		)))
 	return rows
 
