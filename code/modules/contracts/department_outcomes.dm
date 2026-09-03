@@ -134,10 +134,16 @@
 	distribution.add_option(make_contract_clause_option("station", "Station reserve", "Retain more of the award in the station account for Command priorities.", 200, -100, -100, 3, -1, -1))
 	contract.add_negotiation_clause(distribution)
 
-	var/datum/contract_negotiation_clause/schedule = new("schedule", "Delivery schedule", "Select the reporting window and the sponsor premium attached to it.")
-	schedule.add_option(make_contract_clause_option("accelerated", "Accelerated delivery", "Shorten the deadline by ten minutes in exchange for an urgency premium.", 100, 200, 100, -1, -1, -1, -10 MINUTES))
-	schedule.add_option(make_contract_clause_option("standard", "Standard delivery", "Retain the sponsor's standard deadline and compensation."), TRUE)
-	schedule.add_option(make_contract_clause_option("extended", "Extended verification", "Add ten minutes for a more conservative operating window; the cash award is reduced but institutional standing improves.", -50, -100, 0, 2, 3, 1, 10 MINUTES))
+	var/is_graded_contract = istype(contract, /datum/contract/social)
+	var/datum/contract_negotiation_clause/schedule = new("schedule", is_graded_contract ? "Delivery standard" : "Delivery schedule", is_graded_contract ? "Negotiate both the reporting window and the minimum outcome the station guarantees." : "Select the reporting window and sponsor premium attached to it.")
+	if(is_graded_contract)
+		schedule.add_option(make_contract_clause_option("accelerated", "Expedited warranty", "Deliver ten minutes sooner and guarantee at least 65% of the full specification for an urgency premium.", 150, 250, 100, -1, -1, -1, -10 MINUTES, list("minimum_grade_ratio" = 0.65, "success_grade_ratio" = 0.85)))
+		schedule.add_option(make_contract_clause_option("standard", "Standard warranty", "Retain the standard window: 50% is acceptable, 75% earns full certification.", 0, 0, 0, 0, 0, 0, 0, list("minimum_grade_ratio" = CONTRACT_GRADE_MINIMUM_RATIO, "success_grade_ratio" = CONTRACT_GRADE_SUCCESS_RATIO)), TRUE)
+		schedule.add_option(make_contract_clause_option("extended", "Best-effort charter", "Add ten minutes and lower the guaranteed floor to 40%; the cash award falls, but careful work earns stronger standing.", -50, -150, 0, 2, 3, 1, 10 MINUTES, list("minimum_grade_ratio" = 0.4, "success_grade_ratio" = 0.7)))
+	else
+		schedule.add_option(make_contract_clause_option("accelerated", "Accelerated delivery", "Shorten the deadline by ten minutes in exchange for an urgency premium.", 100, 200, 100, -1, -1, -1, -10 MINUTES))
+		schedule.add_option(make_contract_clause_option("standard", "Standard delivery", "Retain the sponsor's standard deadline and compensation."), TRUE)
+		schedule.add_option(make_contract_clause_option("extended", "Extended verification", "Add ten minutes for a more conservative operating window; cash falls while institutional standing improves.", -50, -100, 0, 2, 3, 1, 10 MINUTES))
 	contract.add_negotiation_clause(schedule)
 
 	if(contract.standing_score >= REPUTATION_FRIENDLY)
@@ -215,23 +221,77 @@
 	issuer_name = "NanoTrasen Power Systems"
 	issuer_faction = REPUTATION_FACTION_NANOTRASEN
 	reward = 2400
+	contract_type = /datum/contract/outcome/engine_performance
 
-/datum/contract_definition/outcome/supermatter_performance/configure_contract(datum/contract/outcome/contract, list/context)
-	contract.primary_target = context?["eer_target"] || pick(500, 550, 600, 650)
-	contract.secondary_target = context?["integrity_target"] || 90
-	contract.outcome_duration = context?["duration"] || 1 MINUTE
-	contract.description = "Maintain a station supermatter crystal at or above [contract.primary_target] Relative EER for [DisplayTimeText(contract.outcome_duration)] while keeping crystal integrity at or above [contract.secondary_target]%. Calibrated crystal telemetry reports the result directly to [issuer_name]."
+/datum/contract/outcome/engine_performance
+	var/datum/contract_requirement/staged_sustained_event/performance_requirement
+	/// Synthetic tests may shorten the timers without weakening live terms.
+	var/stage_duration_override = 0
+
+/datum/contract/outcome/engine_performance/Destroy()
+	performance_requirement = null
+	return ..()
+
+/datum/contract/outcome/engine_performance/on_negotiated_terms_changed()
+	..()
+	if(!performance_requirement)
+		return
+	var/profile = negotiated_effect("engine_output_profile", "rated")
+	var/list/stages
+	switch(profile)
+		if("assured")
+			primary_target = 600
+			secondary_target = 94
+			stages = list(
+				list("label" = "Baseline", "threshold" = 400, "duration" = 45 SECONDS),
+				list("label" = "Commercial", "threshold" = 500, "duration" = 45 SECONDS),
+				list("label" = "Assured maximum", "threshold" = 600, "duration" = 1 MINUTE),
+			)
+		if("frontier")
+			primary_target = 1000
+			secondary_target = 85
+			stages = list(
+				list("label" = "High output", "threshold" = 600, "duration" = 1 MINUTE),
+				list("label" = "Frontier", "threshold" = 800, "duration" = 75 SECONDS),
+				list("label" = "Experimental maximum", "threshold" = 1000, "duration" = 90 SECONDS),
+			)
+		else
+			primary_target = 800
+			secondary_target = 90
+			stages = list(
+				list("label" = "Baseline", "threshold" = 500, "duration" = 1 MINUTE),
+				list("label" = "Rated output", "threshold" = 650, "duration" = 1 MINUTE),
+				list("label" = "Maximum output", "threshold" = 800, "duration" = 75 SECONDS),
+			)
+	if(stage_duration_override > 0)
+		for(var/list/stage as anything in stages)
+			stage["duration"] = stage_duration_override
+	performance_requirement.set_stages(stages)
+	performance_requirement.filter.set_number_requirement("integrity", CONTRACT_EVIDENCE_COMPARE_AT_LEAST, secondary_target)
+	performance_requirement.description = "Certify the three [profile] output stages in order of strength while maintaining at least [secondary_target]% crystal integrity. A stronger stable run can certify several stages concurrently."
+	description = "Certify progressively stronger supermatter output under the negotiated [profile] charter, culminating at [primary_target] Relative EER while maintaining at least [secondary_target]% integrity."
+
+/datum/contract_definition/outcome/supermatter_performance/configure_contract(datum/contract/outcome/engine_performance/contract, list/context)
+	contract.primary_target = 800
+	contract.secondary_target = 90
+	contract.outcome_duration = 1 MINUTE
+	contract.stage_duration_override = contract_unit_test_mode() ? context?["duration"] : 0
+	contract.description = "Certify progressively stronger supermatter output while calibrated station telemetry verifies crystal integrity."
 	contract.station_reputation_reward = 10
 	contract.department_reputation_reward = 28
 	contract.personal_reputation_reward = 8
 	configure_outcome_negotiations(contract, 35 MINUTES)
-	var/datum/contract_requirement/sustained_event/performance = new(CONTRACT_EVENT_MACHINE_RESULT, "machine_id", "eer", CONTRACT_EVIDENCE_COMPARE_AT_LEAST, contract.primary_target, contract.outcome_duration)
-	performance.name = "Sustained Relative EER"
-	performance.description = "Hold at least [contract.primary_target] Relative EER for [DisplayTimeText(contract.outcome_duration)] at [contract.secondary_target]% integrity or better."
-	performance.filter.require_value("machine_kind", "supermatter")
-	performance.filter.require_value("station_machine", TRUE)
-	performance.filter.require_number("integrity", CONTRACT_EVIDENCE_COMPARE_AT_LEAST, contract.secondary_target)
-	contract.add_requirement(performance)
+	var/datum/contract_negotiation_clause/output = new("engine_output", "Output charter", "Choose how aggressively NanoTrasen will certify the station engine.")
+	output.add_option(make_contract_clause_option("assured", "Assured operation", "Certify 400, 500, and 600 EER stages at 94% integrity. Lower cash, stronger safety standing.", -100, -200, 0, 2, 4, 1, 0, list("engine_output_profile" = "assured")))
+	output.add_option(make_contract_clause_option("rated", "Rated operation", "Certify 500, 650, and 800 EER stages at 90% integrity.", 0, 0, 0, 0, 0, 0, 0, list("engine_output_profile" = "rated")), TRUE)
+	output.add_option(make_contract_clause_option("frontier", "Frontier operation", "Certify 600, 800, and 1,000 EER stages at 85% integrity for a substantial risk premium.", 200, 400, 150, -2, -3, -1, 0, list("engine_output_profile" = "frontier")))
+	contract.add_negotiation_clause(output)
+	contract.performance_requirement = new(CONTRACT_EVENT_MACHINE_RESULT, "machine_id", "eer", CONTRACT_EVIDENCE_COMPARE_AT_LEAST, list(list("label" = "Baseline", "threshold" = 500, "duration" = 1 MINUTE)), CONTRACT_EVIDENCE_SCOPE_DEPARTMENT)
+	contract.performance_requirement.name = "Progressive output certification"
+	contract.performance_requirement.filter.require_value("machine_kind", "supermatter")
+	contract.performance_requirement.filter.require_value("station_machine", TRUE)
+	contract.performance_requirement.filter.require_number("integrity", CONTRACT_EVIDENCE_COMPARE_AT_LEAST, contract.secondary_target)
+	contract.add_requirement(contract.performance_requirement)
 	contract.personal_side_definitions = list("engineering_safety_watch")
 
 /datum/contract_definition/outcome/research_export_portfolio

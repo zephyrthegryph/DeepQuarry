@@ -370,6 +370,12 @@
 		for(var/effect_key in option.effects)
 			negotiated_effects[effect_key] = option.effects[effect_key]
 	reward = base_reward + negotiated_station_bonus + negotiated_department_bonus + negotiated_staff_bonus
+	on_negotiated_terms_changed()
+
+/// Content may project declarative clause effects into its visible objectives.
+/// This is called while an offer is mutable and must not create gameplay state.
+/datum/contract/proc/on_negotiated_terms_changed()
+	return
 
 /datum/contract/proc/negotiated_effect(effect_key, fallback)
 	return (effect_key in negotiated_effects) ? negotiated_effects[effect_key] : fallback

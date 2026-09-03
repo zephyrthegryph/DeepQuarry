@@ -346,6 +346,123 @@
 	completed_entities |= entity_key
 	add_progress(1, contributor_account, detail || "Maintained the qualifying state for [DisplayTimeText(duration)].")
 
+/// A sequence of increasingly demanding sustained states. Every tier listens
+/// to the same authoritative event stream, so progression is event-driven and
+/// a harder result naturally earns credit for the lower tiers at the same time.
+/datum/contract_requirement/staged_sustained_event
+	name = "Staged sustained result"
+	var/event_type
+	var/entity_field
+	var/numeric_field
+	var/comparator = CONTRACT_EVIDENCE_COMPARE_AT_LEAST
+	var/datum/contract_event_filter/filter
+	/// Ordered entries: list(list("label" = text, "threshold" = number, "duration" = deciseconds)).
+	var/list/stages
+	var/list/pending_tokens
+	var/list/pending_timers
+	var/list/completed_stages
+
+/datum/contract_requirement/staged_sustained_event/New(_event_type, _entity_field, _numeric_field, _comparator, list/_stages, _scope_mode = CONTRACT_EVIDENCE_SCOPE_ANY)
+	. = ..()
+	event_type = _event_type
+	entity_field = _entity_field
+	numeric_field = _numeric_field
+	comparator = _comparator
+	filter = new(_scope_mode)
+	pending_tokens = list()
+	pending_timers = list()
+	completed_stages = list()
+	set_stages(_stages)
+	if(event_type)
+		event_types += event_type
+
+/datum/contract_requirement/staged_sustained_event/Destroy()
+	cancel_pending_timers()
+	QDEL_NULL(filter)
+	stages = null
+	pending_tokens = null
+	pending_timers = null
+	completed_stages = null
+	return ..()
+
+/datum/contract_requirement/staged_sustained_event/proc/set_stages(list/new_stages)
+	if((contract && contract.state != CONTRACT_OFFERED) || !length(new_stages))
+		return FALSE
+	cancel_pending_timers()
+	stages = deepCopyList(new_stages)
+	target = length(stages)
+	progress = 0
+	state = CONTRACT_REQUIREMENT_PENDING
+	completed_stages.Cut()
+	return TRUE
+
+/datum/contract_requirement/staged_sustained_event/on_contract_closed()
+	cancel_pending_timers()
+
+/datum/contract_requirement/staged_sustained_event/proc/cancel_pending_timers()
+	for(var/key in pending_timers)
+		var/timer_id = pending_timers[key]
+		if(timer_id)
+			deltimer(timer_id)
+	if(pending_timers)
+		pending_timers.Cut()
+	if(pending_tokens)
+		pending_tokens.Cut()
+
+/datum/contract_requirement/staged_sustained_event/handle_event(datum/contract_event/event)
+	if(state != CONTRACT_REQUIREMENT_PENDING || event?.event_type != event_type)
+		return FALSE
+	var/entity_value = event.value(entity_field)
+	if(isnull(entity_value))
+		return FALSE
+	var/changed = FALSE
+	if(!filter.matches(event, contract))
+		for(var/stage_index in 1 to length(stages))
+			var/stage_key = "[entity_value]:[stage_index]"
+			var/timer_id = pending_timers[stage_key]
+			if(timer_id)
+				deltimer(timer_id)
+				pending_timers -= stage_key
+				pending_tokens -= stage_key
+				changed = TRUE
+		return changed
+	for(var/stage_index in 1 to length(stages))
+		var/stage_key = "[entity_value]:[stage_index]"
+		if(stage_key in completed_stages)
+			continue
+		var/list/stage = stages[stage_index]
+		var/qualifies = contract_evidence_compare(event.value(numeric_field), comparator, stage["threshold"])
+		if(!qualifies)
+			var/timer_id = pending_timers[stage_key]
+			if(timer_id)
+				deltimer(timer_id)
+				pending_timers -= stage_key
+				pending_tokens -= stage_key
+				changed = TRUE
+			continue
+		if(pending_timers[stage_key])
+			continue
+		var/token = event.id
+		pending_tokens[stage_key] = token
+		pending_timers[stage_key] = addtimer(CALLBACK(src, PROC_REF(complete_stage), stage_key, stage_index, token, event.actor_account, event.value("detail")), max(1, stage["duration"]), TIMER_STOPPABLE)
+		changed = TRUE
+	return changed
+
+/datum/contract_requirement/staged_sustained_event/proc/complete_stage(stage_key, stage_index, token, contributor_account, detail)
+	if(state != CONTRACT_REQUIREMENT_PENDING || pending_tokens[stage_key] != token)
+		return
+	pending_tokens -= stage_key
+	pending_timers -= stage_key
+	completed_stages |= stage_key
+	var/list/stage = stages[stage_index]
+	add_progress(1, contributor_account, detail || "Completed [stage["label"]] at [stage["threshold"]] for [DisplayTimeText(stage["duration"])].")
+
+/datum/contract_requirement/staged_sustained_event/progress_text()
+	if(progress >= target)
+		return "All [target] stages certified"
+	var/list/next_stage = stages[min(target, progress + 1)]
+	return "[progress] / [target] stages; next: [next_stage["label"]] ([next_stage["threshold"]])"
+
 /// Tracks the latest reported value for each stable entity and completes when
 /// their current aggregate reaches the target. Re-reporting one allocation or
 /// machine cannot inflate progress, while legitimate edits replace the old

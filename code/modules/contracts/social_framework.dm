@@ -75,6 +75,11 @@
 	personal_side_definitions = null
 	return ..()
 
+/datum/contract/social/on_negotiated_terms_changed()
+	..()
+	minimum_grade_ratio = negotiated_effect("minimum_grade_ratio", CONTRACT_GRADE_MINIMUM_RATIO)
+	success_grade_ratio = negotiated_effect("success_grade_ratio", CONTRACT_GRADE_SUCCESS_RATIO)
+
 /datum/contract/social/on_accepted(mob/living/user, atom/source)
 	..()
 	if(!length(personal_side_definitions))

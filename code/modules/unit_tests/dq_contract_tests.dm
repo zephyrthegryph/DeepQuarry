@@ -1148,14 +1148,18 @@
 
 /datum/unit_test/dq_expanded_department_outcomes/Run()
 	var/datum/contract_definition/engineering_definition = SScontracts.definitions["supermatter_performance"]
-	var/datum/contract/outcome/engineering = engineering_definition.create_contract(list("eer_target" = 500, "integrity_target" = 90, "duration" = 1))
+	var/datum/contract/outcome/engine_performance/engineering = engineering_definition.create_contract(list("duration" = 1))
 	dq_contract_test_zero_rewards(engineering)
+	TEST_ASSERT(engineering.negotiation_clauses["engine_output"], "Engineering performance offer lacked its output charter")
+	TEST_ASSERT(engineering.select_negotiation_option("engine_output", "frontier", "Unit test"), "Engineering frontier output charter could not be negotiated")
+	TEST_ASSERT_EQUAL(engineering.performance_requirement.target, 3, "Engineering charter did not expose three progressive stages")
+	TEST_ASSERT_EQUAL(engineering.primary_target, 1000, "Engineering frontier charter did not update its maximum output")
 	TEST_ASSERT(engineering.accept(), "Engineering outcome contract could not be accepted")
 	// An idle reading and a non-station crystal must not qualify.
 	emit_contract_event(CONTRACT_EVENT_MACHINE_RESULT, list("department" = DEPARTMENT_ENGINEERING, "machine_kind" = "supermatter", "machine_id" = "test-sm", "station_machine" = TRUE, "metrics" = list("eer" = 0, "integrity" = 100)), "expanded-engineering-idle:[REF(engineering)]")
-	emit_contract_event(CONTRACT_EVENT_MACHINE_RESULT, list("department" = DEPARTMENT_ENGINEERING, "machine_kind" = "supermatter", "machine_id" = "test-sm", "station_machine" = FALSE, "metrics" = list("eer" = 550, "integrity" = 95)), "expanded-engineering-offstation:[REF(engineering)]")
+	emit_contract_event(CONTRACT_EVENT_MACHINE_RESULT, list("department" = DEPARTMENT_ENGINEERING, "machine_kind" = "supermatter", "machine_id" = "test-sm", "station_machine" = FALSE, "metrics" = list("eer" = 1000, "integrity" = 95)), "expanded-engineering-offstation:[REF(engineering)]")
 	TEST_ASSERT_EQUAL(engineering.state, CONTRACT_ACTIVE, "idle or off-station supermatter telemetry qualified")
-	emit_contract_event(CONTRACT_EVENT_MACHINE_RESULT, list("department" = DEPARTMENT_ENGINEERING, "machine_kind" = "supermatter", "machine_id" = "test-sm", "station_machine" = TRUE, "metrics" = list("eer" = 550, "integrity" = 95)), "expanded-engineering:[REF(engineering)]")
+	emit_contract_event(CONTRACT_EVENT_MACHINE_RESULT, list("department" = DEPARTMENT_ENGINEERING, "machine_kind" = "supermatter", "machine_id" = "test-sm", "station_machine" = TRUE, "metrics" = list("eer" = 1000, "integrity" = 95)), "expanded-engineering:[REF(engineering)]")
 	sleep(2)
 	TEST_ASSERT_EQUAL(engineering.state, CONTRACT_COMPLETED, "qualifying sustained supermatter telemetry did not complete Engineering's contract")
 	qdel(engineering)
