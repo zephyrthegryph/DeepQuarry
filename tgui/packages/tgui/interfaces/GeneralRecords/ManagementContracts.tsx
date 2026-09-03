@@ -207,6 +207,12 @@ export const ManagementContracts = () => {
   const [expandedContracts, setExpandedContracts] = useState<
     Record<string, boolean>
   >({});
+  const [expandedRequirements, setExpandedRequirements] = useState<
+    Record<string, boolean>
+  >({});
+  const [expandedStakeholders, setExpandedStakeholders] = useState<
+    Record<string, boolean>
+  >({});
   const lifecycle =
     lifecycleGroups.find((group) => group.id === selectedStatus) ??
     lifecycleGroups[0];
@@ -296,6 +302,8 @@ export const ManagementContracts = () => {
       )}
       {contracts.map((contract, index) => {
         const expanded = !!expandedContracts[contract.id];
+        const requirementsExpanded = !!expandedRequirements[contract.id];
+        const stakeholdersExpanded = !!expandedStakeholders[contract.id];
         return (
           <Fragment key={contract.id}>
             <Section
@@ -475,132 +483,189 @@ export const ManagementContracts = () => {
                       ))}
                     </Section>
                   )}
-                  {contract.requirements.map((requirement) => (
-                    <Box key={`${contract.id}-${requirement.name}`} mb={1}>
-                      <Box bold>
-                        {requirement.name} — {requirement.progress_text}
-                      </Box>
-                      <Box color="label">{requirement.description}</Box>
-                      <ProgressBar
-                        value={requirement.progress}
-                        minValue={0}
-                        maxValue={requirement.target}
-                      />
-                    </Box>
-                  ))}
+                  {!!contract.requirements.length && (
+                    <Section
+                      mt={1}
+                      title={`Requirements (${contract.requirements.length})`}
+                      buttons={
+                        <Button
+                          compact
+                          icon={
+                            requirementsExpanded ? 'chevron-up' : 'chevron-down'
+                          }
+                          onClick={() =>
+                            setExpandedRequirements((current) => ({
+                              ...current,
+                              [contract.id]: !requirementsExpanded,
+                            }))
+                          }
+                        >
+                          {requirementsExpanded ? 'Hide' : 'Show'}
+                        </Button>
+                      }
+                    >
+                      {requirementsExpanded &&
+                        contract.requirements.map((requirement) => (
+                          <Box
+                            key={`${contract.id}-${requirement.name}`}
+                            mb={1}
+                          >
+                            <Box bold>
+                              {requirement.name} — {requirement.progress_text}
+                            </Box>
+                            <Box color="label">{requirement.description}</Box>
+                            <ProgressBar
+                              value={requirement.progress}
+                              minValue={0}
+                              maxValue={requirement.target}
+                            />
+                          </Box>
+                        ))}
+                    </Section>
+                  )}
                   {contract.details?.kind === 'social_outcome' && (
                     <Section
                       mt={1}
-                      title="Stakeholders and graded settlement"
+                      title="Stakeholders and settlement"
                       buttons={
-                        contract.state === 'active' && (
-                          <Button
-                            icon="flag-checkered"
-                            color="good"
-                            disabled={!contract.details.can_finalize}
-                            tooltip="Settle at the currently projected grade. This cannot be undone."
-                            onClick={() =>
-                              act('contract_finalize_outcome', {
-                                id: contract.id,
-                              })
-                            }
-                          >
-                            Finalize {contract.details.projected_grade} outcome
-                          </Button>
-                        )
+                        <Stack>
+                          {stakeholdersExpanded &&
+                            contract.state === 'active' && (
+                              <Stack.Item>
+                                <Button
+                                  icon="flag-checkered"
+                                  color="good"
+                                  disabled={!contract.details.can_finalize}
+                                  tooltip="Settle at the currently projected grade. This cannot be undone."
+                                  onClick={() =>
+                                    act('contract_finalize_outcome', {
+                                      id: contract.id,
+                                    })
+                                  }
+                                >
+                                  Finalize {contract.details.projected_grade}{' '}
+                                  outcome
+                                </Button>
+                              </Stack.Item>
+                            )}
+                          <Stack.Item>
+                            <Button
+                              compact
+                              icon={
+                                stakeholdersExpanded
+                                  ? 'chevron-up'
+                                  : 'chevron-down'
+                              }
+                              onClick={() =>
+                                setExpandedStakeholders((current) => ({
+                                  ...current,
+                                  [contract.id]: !stakeholdersExpanded,
+                                }))
+                              }
+                            >
+                              {stakeholdersExpanded ? 'Hide' : 'Show'}
+                            </Button>
+                          </Stack.Item>
+                        </Stack>
                       }
                     >
-                      <Box bold>
-                        Current specification: {contract.details.score}% ·
-                        projected {contract.details.projected_grade} ·{' '}
-                        {contract.details.projected_reward} Thalers
-                      </Box>
-                      <ProgressBar
-                        value={contract.details.score}
-                        minValue={0}
-                        maxValue={100}
-                        ranges={{
-                          bad: [0, contract.details.minimum_percent],
-                          average: [
-                            contract.details.minimum_percent,
-                            contract.details.success_percent,
-                          ],
-                          good: [contract.details.success_percent, 100],
-                        }}
-                      />
-                      <Box mt={0.5} color="label">
-                        Minimum settlement begins at{' '}
-                        {contract.details.minimum_percent}
-                        %; certified at {contract.details.success_percent}%;
-                        exceptional at {contract.details.exceptional_percent}%.
-                        Every required dimension and stakeholder role must meet
-                        its negotiated minimum.
-                      </Box>
-                      {contract.details.roles.map((role) => (
-                        <Section
-                          key={`${contract.id}-${role.id}`}
-                          mt={1}
-                          title={`${role.title} — ${role.approved}/${role.minimum} approved`}
-                        >
-                          <Box mb={0.5} color="label">
-                            {role.description}
+                      {stakeholdersExpanded && (
+                        <Box>
+                          <Box bold>
+                            Current specification: {contract.details.score}% ·
+                            projected {contract.details.projected_grade} ·{' '}
+                            {contract.details.projected_reward} Thalers
                           </Box>
-                          {!role.proposals.length && (
-                            <Box color="label">
-                              No participation proposals filed.
-                            </Box>
-                          )}
-                          {role.proposals.map((proposal) => (
-                            <Stack
-                              key={`${role.id}-${proposal.account}`}
-                              align="center"
-                              mb={0.5}
+                          <ProgressBar
+                            value={contract.details.score}
+                            minValue={0}
+                            maxValue={100}
+                            ranges={{
+                              bad: [0, contract.details.minimum_percent],
+                              average: [
+                                contract.details.minimum_percent,
+                                contract.details.success_percent,
+                              ],
+                              good: [contract.details.success_percent, 100],
+                            }}
+                          />
+                          <Box mt={0.5} color="label">
+                            Minimum settlement begins at{' '}
+                            {contract.details.minimum_percent}
+                            %; certified at {contract.details.success_percent}
+                            %; exceptional at{' '}
+                            {contract.details.exceptional_percent}%. Every
+                            required dimension and stakeholder role must meet
+                            its negotiated minimum.
+                          </Box>
+                          {contract.details.roles.map((role) => (
+                            <Section
+                              key={`${contract.id}-${role.id}`}
+                              mt={1}
+                              title={`${role.title} — ${role.approved}/${role.minimum} approved`}
                             >
-                              <Stack.Item grow>
-                                <Box bold>{proposal.name}</Box>
+                              <Box mb={0.5} color="label">
+                                {role.description}
+                              </Box>
+                              {!role.proposals.length && (
                                 <Box color="label">
-                                  {proposal.department || 'Independent'} ·
-                                  requested share weight {proposal.weight} ·
-                                  verified contribution {proposal.contribution}{' '}
-                                  · {proposal.status}
+                                  No participation proposals filed.
                                 </Box>
-                              </Stack.Item>
-                              {proposal.status === 'pending' && (
-                                <Stack.Item>
-                                  <Button
-                                    icon="check"
-                                    color="good"
-                                    onClick={() =>
-                                      act('contract_stakeholder_decide', {
-                                        id: contract.id,
-                                        account: proposal.account,
-                                        role: role.id,
-                                        approved: 1,
-                                      })
-                                    }
-                                  >
-                                    Approve
-                                  </Button>
-                                  <Button
-                                    icon="times"
-                                    color="bad"
-                                    onClick={() =>
-                                      act('contract_stakeholder_decide', {
-                                        id: contract.id,
-                                        account: proposal.account,
-                                        role: role.id,
-                                        approved: 0,
-                                      })
-                                    }
-                                  >
-                                    Reject
-                                  </Button>
-                                </Stack.Item>
                               )}
-                            </Stack>
+                              {role.proposals.map((proposal) => (
+                                <Stack
+                                  key={`${role.id}-${proposal.account}`}
+                                  align="center"
+                                  mb={0.5}
+                                >
+                                  <Stack.Item grow>
+                                    <Box bold>{proposal.name}</Box>
+                                    <Box color="label">
+                                      {proposal.department || 'Independent'} ·
+                                      requested share weight {proposal.weight} ·
+                                      verified contribution{' '}
+                                      {proposal.contribution} ·{' '}
+                                      {proposal.status}
+                                    </Box>
+                                  </Stack.Item>
+                                  {proposal.status === 'pending' && (
+                                    <Stack.Item>
+                                      <Button
+                                        icon="check"
+                                        color="good"
+                                        onClick={() =>
+                                          act('contract_stakeholder_decide', {
+                                            id: contract.id,
+                                            account: proposal.account,
+                                            role: role.id,
+                                            approved: 1,
+                                          })
+                                        }
+                                      >
+                                        Approve
+                                      </Button>
+                                      <Button
+                                        icon="times"
+                                        color="bad"
+                                        onClick={() =>
+                                          act('contract_stakeholder_decide', {
+                                            id: contract.id,
+                                            account: proposal.account,
+                                            role: role.id,
+                                            approved: 0,
+                                          })
+                                        }
+                                      >
+                                        Reject
+                                      </Button>
+                                    </Stack.Item>
+                                  )}
+                                </Stack>
+                              ))}
+                            </Section>
                           ))}
-                        </Section>
-                      ))}
+                        </Box>
+                      )}
                     </Section>
                   )}
                   {contract.details?.kind === 'medical_trial' && (
