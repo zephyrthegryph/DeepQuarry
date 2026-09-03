@@ -3,7 +3,6 @@ import { useBackend } from 'tgui/backend';
 import {
   Box,
   Button,
-  Divider,
   Dropdown,
   LabeledList,
   ProgressBar,
@@ -322,7 +321,7 @@ export const ManagementContracts = () => {
           No contracts match this view.
         </Box>
       )}
-      {contracts.map((contract, index) => {
+      {contracts.map((contract) => {
         const expanded = !!expandedContracts[contract.id];
         const requirementsExpanded = !!expandedRequirements[contract.id];
         const stakeholdersExpanded = !!expandedStakeholders[contract.id];
@@ -361,8 +360,13 @@ export const ManagementContracts = () => {
                 </Stack>
               }
               style={{
+                border: '1px solid rgba(255, 255, 255, 0.08)',
                 borderLeft: `4px solid ${contract.issuer_color}`,
-                backgroundColor: 'rgba(0, 0, 0, 0.32)',
+                backgroundColor: 'rgba(8, 10, 12, 0.72)',
+                boxShadow: expanded
+                  ? `0 0 0 1px ${contract.issuer_color}55`
+                  : 'none',
+                marginBottom: '6px',
               }}
             >
               {!expanded && (
@@ -983,11 +987,6 @@ export const ManagementContracts = () => {
                 </Box>
               )}
             </Section>
-            {index < contracts.length - 1 && (
-              <Box my={2}>
-                <Divider />
-              </Box>
-            )}
           </Fragment>
         );
       })}
