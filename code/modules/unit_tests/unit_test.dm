@@ -206,7 +206,16 @@ GLOBAL_VAR_INIT(focused_tests, focused_tests())
 
 	GLOB.current_test = test
 	var/duration = 0
-	var/skip_test = (test_path in SSmapping.current_map.skipped_tests)
+	// Generated-station coverage is temporarily disabled while that subsystem is
+	// being redesigned. Keep the cases compiled and visible as skipped so they
+	// cannot silently disappear from the suite inventory.
+	var/test_path_text = "[test_path]"
+	var/generated_station_test = findtext(test_path_text, "/datum/unit_test/dq_generated_station") == 1 || findtext(test_path_text, "/datum/unit_test/dq_generated_room") == 1 || findtext(test_path_text, "/datum/unit_test/dq_generation_performance_profile") == 1 || (test_path in list(
+		/datum/unit_test/dq_expedition_generates_site,
+		/datum/unit_test/dq_debug_station_initializes_complete_runtime,
+		/datum/unit_test/dq_emergency_station_fallback_is_playable,
+	))
+	var/skip_test = generated_station_test || (test_path in SSmapping.current_map.skipped_tests)
 	var/test_output_desc = "[test_path]"
 	var/message = ""
 

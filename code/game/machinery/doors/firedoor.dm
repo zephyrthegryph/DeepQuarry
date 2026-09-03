@@ -445,8 +445,15 @@
 		for(var/index = 1; index <= length(sleeping_atmos_mixture_slots); index++)
 			if(sleeping_atmos_mixture_slots[index] != mixture_id)
 				continue
+			var/old_temperature = sleeping_atmos_temperatures[index]
+			var/new_temperature = observation[observation_index + 4]
 			sleeping_atmos_pressures[index] = observation[observation_index + 3]
-			sleeping_atmos_temperatures[index] = observation[observation_index + 4]
+			sleeping_atmos_temperatures[index] = new_temperature
+			// A large thermal transient must not disappear merely because diffusion
+			// carries the sampled value back across the exact alarm threshold before
+			// the dependency queue is consumed.
+			if(!isnull(old_temperature) && (firedoor_temperature_band(old_temperature) != firedoor_temperature_band(new_temperature) || abs(new_temperature - old_temperature) >= 15))
+				return TRUE
 		return firedoor_cached_atmos_signature() != sleeping_atmos_signature
 	return firedoor_atmos_signature() != sleeping_atmos_signature
 
@@ -478,10 +485,12 @@
 	return signature
 
 /obj/machinery/door/firedoor/proc/firedoor_temperature_band(temperature)
+	// Auxmos publishes temperatures as 32-bit floats. Allow a tiny boundary
+	// tolerance so an exact configured threshold survives the FFI round trip.
 	var/celsius = convert_k2c(temperature)
-	if(celsius >= FIREDOOR_MAX_TEMP)
+	if(celsius >= FIREDOOR_MAX_TEMP - 0.01)
 		return FIREDOOR_ALERT_HOT
-	if(celsius <= FIREDOOR_MIN_TEMP)
+	if(celsius <= FIREDOOR_MIN_TEMP + 0.01)
 		return FIREDOOR_ALERT_COLD
 	return 0
 

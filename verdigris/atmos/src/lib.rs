@@ -83,14 +83,14 @@ fn pipenet_topology_batch(operations: ByondValue) -> Result<ByondValue> {
 	let transitions = topology.commit();
 	let mut result = Vec::new();
 	for transition in transitions {
-		if transition.detached_target != 0 {
+		if let Some(detached_target) = transition.detached_target {
 			result.extend([
 				ByondValue::from(0.0),
 				ByondValue::from(1.0),
 				ByondValue::from(0.0),
 				ByondValue::from(transition.sources.len() as f32),
 				ByondValue::from(transition.total_volume),
-				ByondValue::from(transition.detached_target as f32),
+				ByondValue::from(detached_target as f32),
 			]);
 			result.extend(transition.sources.into_iter().flat_map(|source| {
 				[
@@ -795,24 +795,21 @@ fn transfer_hook(src: ByondValue, other: ByondValue, moles: ByondValue) -> Resul
 	})
 }
 
-/// Flat operation list: source mixture, sink mixture, requested moles. Returns
+/// Flat operation list: source arena ID, sink arena ID, requested moles. Returns
 /// one actual mole count per operation after shared-source clamping.
 #[byondapi::bind("/proc/auxmos_batch_transfer")]
 #[auxmacros::panic_safe]
 fn batch_transfer_hook(operations: ByondValue) -> Result<ByondValue> {
-	let values = operations
-		.iter()?
-		.map(|(value, _)| value)
-		.collect::<Vec<_>>();
+	// Arena ID zero is valid. `ByondValue::iter()` also probes each element as
+	// an associative-list key; probing list[0] terminates that iterator, making
+	// any batch whose first source is arena slot zero appear empty. `values()`
+	// walks the numbered list positions directly and accepts every valid ID.
+	let values = operations.values()?.collect::<Vec<_>>();
 	let parsed = values
 		.chunks_exact(3)
 		.map(|operation| {
-			let source = operation[0]
-				.read_number_id(byond_string!("_extools_pointer_gasmixture"))
-				.unwrap_or(-1.0) as usize;
-			let sink = operation[1]
-				.read_number_id(byond_string!("_extools_pointer_gasmixture"))
-				.unwrap_or(-1.0) as usize;
+			let source = operation[0].get_number().unwrap_or(-1.0) as usize;
+			let sink = operation[1].get_number().unwrap_or(-1.0) as usize;
 			(source, sink, operation[2].get_number().unwrap_or(0.0))
 		})
 		.collect::<Vec<_>>();

@@ -538,9 +538,36 @@ pub fn room_program(department: &str, role: &str, variant: u64) -> RoomProgram {
                 ),
             ],
         ),
-        ("ai", "satellite" | "monitoring") => {
-            control_room_program(department, role, program_variant)
-        }
+        ("ai", "satellite" | "monitoring") => program(
+            department,
+            role,
+            program_variant,
+            26,
+            42,
+            vec![
+                zone(
+                    "monitoring-bank",
+                    Perimeter,
+                    true,
+                    vec![
+                        fixture("ai_upload", -2, 0, M),
+                        fixture("crew_monitor", -1, 0, M),
+                        fixture("data_terminal", 0, 0, M),
+                        fixture("communications_console", 1, 0, M),
+                        fixture("server_rack", 2, 0, M),
+                    ],
+                ),
+                zone(
+                    "operator",
+                    Center,
+                    true,
+                    vec![
+                        fixture("worktable", 0, 0, F),
+                        fixture("operator_chair", 0, -1, F),
+                    ],
+                ),
+            ],
+        ),
         ("ai", _) => control_room_program(department, role, program_variant),
         ("security", "armory" | "locker-room") => program(
             department,
@@ -1246,9 +1273,9 @@ pub fn compact_room_program(department: &str, role: &str, variant: u64) -> RoomP
             "evidence_cabinet",
         ),
         ("security", "checkpoint") => (
-            "security_console",
+            "security_records",
             "department_locker",
-            "reception_desk",
+            "reinforced_table",
             "operator_chair",
             "equipment_recharger",
         ),
@@ -1279,6 +1306,13 @@ pub fn compact_room_program(department: &str, role: &str, variant: u64) -> RoomP
             "worktable",
             "stool",
             "medicine_cart",
+        ),
+        ("medical", "exam") => (
+            "sink",
+            "medical_vendor",
+            "medical_bed",
+            "stool",
+            "medical_cabinet",
         ),
         ("medical", "ward" | "recovery") => (
             "medical_bed",
@@ -1340,7 +1374,13 @@ pub fn compact_room_program(department: &str, role: &str, variant: u64) -> RoomP
             "tool_rack",
         ),
         ("engineering", "workshop") => {
-            ("autolathe", "parts_bin", "workbench", "stool", "tool_cart")
+            (
+                "autolathe",
+                "electrical_locker",
+                "workbench",
+                "stool",
+                "tool_cart",
+            )
         }
         ("engineering", _) => (
             "control_console",
@@ -1428,19 +1468,26 @@ pub fn compact_room_program(department: &str, role: &str, variant: u64) -> RoomP
         ),
         ("ai", "robotics") => (
             "robotics_console",
-            "equipment_recharger",
+            "autolathe",
             "workbench",
             "stool",
             "parts_bin",
         ),
         ("ai", "monitoring" | "satellite") => (
+            "ai_upload",
             "crew_monitor",
-            "data_terminal",
             "worktable",
             "operator_chair",
             "server_rack",
         ),
-        ("ai", "server-closet" | "secure-storage") => (
+        ("ai", "server-closet") => (
+            "robotics_console",
+            "autolathe",
+            "workbench",
+            "stool",
+            "server_rack",
+        ),
+        ("ai", "secure-storage") => (
             "server_rack",
             "coolant_unit",
             "workbench",

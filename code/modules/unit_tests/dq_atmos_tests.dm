@@ -1277,6 +1277,7 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_air_snapshots)
 /proc/dq_atmos_test_open_to_space(turf/floor)
 	if(!isturf(floor))
 		return null
+	var/turf/fallback_neighbor
 	for(var/direction in GLOB.cardinal)
 		var/turf/neighbor = get_step(floor, direction)
 		if(!neighbor)
@@ -1289,6 +1290,8 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_air_snapshots)
 				break
 		if(contents_block)
 			continue
+		if(!fallback_neighbor)
+			fallback_neighbor = neighbor
 		// If a neighbor is already space, just use it (and record so we can put
 		// it back). The test-room walls are /turf/closed/indestructible; isolate
 		// helpers leave /turf/simulated/wall. Either way they block air, so pick
@@ -1306,6 +1309,15 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_air_snapshots)
 			created.air_update_turf(TRUE, FALSE)
 			floor.air_update_turf(TRUE, FALSE)
 			return created
+	// Some test maps do not surround the reserved floor with solid hull. A real
+	// floor-to-space ChangeTurf is still the production breach path, so use the
+	// first unobstructed neighbor rather than making the fixture map-dependent.
+	if(fallback_neighbor)
+		GLOB.dq_atmos_test_walled_turfs[fallback_neighbor] = fallback_neighbor.type
+		var/turf/space/created = fallback_neighbor.ChangeTurf(/turf/space)
+		created.air_update_turf(TRUE, FALSE)
+		floor.air_update_turf(TRUE, FALSE)
+		return created
 	return null
 
 /// Legacy entry point — delegates to dq_atmos_test_wait_real_ssair_ticks so
@@ -1752,8 +1764,21 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_air_snapshots)
 	TEST_ASSERT_NOTNULL(lower.air, "scratch floor has no air mixture")
 	TEST_ASSERT_NOTNULL(upper.air, "scratch open turf has no air mixture")
 
-	// Wire vertical atmos adjacency through the production recompute path.
+	// Keep this a vertical-spread test. Scratch levels start as open space, so
+	// without a wall ring the donor vents sideways before the detached solver
+	// has a meaningful opportunity to exercise the multi-z edge.
+	var/list/isolation_walls = list()
+	for(var/direction in GLOB.cardinal)
+		var/turf/lower_neighbor = get_step(lower, direction)
+		var/turf/upper_neighbor = get_step(upper, direction)
+		isolation_walls += lower_neighbor.ChangeTurf(/turf/simulated/wall)
+		isolation_walls += upper_neighbor.ChangeTurf(/turf/simulated/wall)
+
+	// Wire both ends through the production recompute path, then publish the
+	// complete topology batch before expecting the detached solver to use it.
+	lower.immediate_calculate_adjacent_turfs()
 	upper.immediate_calculate_adjacent_turfs()
+	SSair.auxmos_topology_barrier()
 	TEST_ASSERT(upper.atmos_adjacent_turfs && upper.atmos_adjacent_turfs[lower], \
 		"vertical atmos adjacency wasn't wired: the open turf isn't adjacent to the floor below it")
 
@@ -1793,6 +1818,8 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_air_snapshots)
 	// left as inert space, which no later test's floor/open searches match.)
 	upper.air.set_moles(/datum/gas/plasma, 0)
 	lower.air.set_moles(/datum/gas/plasma, 0)
+	for(var/turf/isolation_wall as anything in isolation_walls)
+		isolation_wall.ChangeTurf(/turf/space)
 	upper.ChangeTurf(/turf/space)
 	lower.ChangeTurf(/turf/space)
 	GLOB.z_levels[lower_z] = old_connected
@@ -1994,6 +2021,10 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_air_snapshots)
 			T = candidate
 			break
 	TEST_ASSERT_NOTNULL(T, "no simulated floor is available for the canister release test")
+	dq_atmos_test_snapshot_air(T)
+	dq_atmos_test_isolate_pair(T, T)
+	T.immediate_calculate_adjacent_turfs()
+	SSair.auxmos_topology_barrier()
 	var/datum/gas_mixture/original_air = new(T.air.return_volume())
 	original_air.copy_from(T.air)
 	var/obj/machinery/portable_atmospherics/canister/phoron/C = allocate(/obj/machinery/portable_atmospherics/canister/phoron, T)
@@ -2265,12 +2296,12 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_air_snapshots)
 /datum/unit_test/dq_vent_pump_pushes_to_turf
 
 /datum/unit_test/dq_vent_pump_pushes_to_turf/Run()
-	var/turf/simulated/floor/T = null
-	for(var/turf/simulated/floor/cand in world)
-		if(cand.air && !cand.blocks_air)
-			T = cand
-			break
-	TEST_ASSERT_NOTNULL(T, "no floor on test map for vent_pump test")
+	var/list/run = dq_atmos_test_find_clear_pipe_run(2)
+	TEST_ASSERT_NOTNULL(run, "no clear two-tile pipe run for vent_pump test")
+	var/turf/simulated/floor/T = run[1]
+	var/turf/simulated/floor/pipe_turf = run[2]
+	var/direction = get_dir(T, pipe_turf)
+	var/axis_directions = direction | REVERSE_DIR(direction)
 
 	var/datum/gas_mixture/turf_air = T.return_air()
 	for(var/datum/gas/g as anything in turf_air.get_gases())
@@ -2280,34 +2311,65 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_air_snapshots)
 	var/obj/machinery/atmospherics/unary/vent_pump/V = new(T)
 	TEST_ASSERT_NOTNULL(V, "couldn't construct vent_pump")
 	TEST_ASSERT_NOTNULL(V.air_contents, "vent_pump air_contents null")
+	V.dir = direction
+	V.initialize_directions = direction
+	var/obj/machinery/atmospherics/pipe/simple/P = new(pipe_turf)
+	P.dir = axis_directions
+	P.initialize_directions = axis_directions
+	V.atmos_init()
+	P.atmos_init()
+	dq_atmos_test_publish_rust_pipenets(list(V, P))
+	TEST_ASSERT_NOTNULL(V.node, "vent_pump did not connect to its test supply pipe")
+	TEST_ASSERT_NOTNULL(V.air_contents, "vent_pump did not receive a pipenet mixture")
 
 	// Pressurize the vent's internal supply (the "pipe behind it").
 	V.air_contents.adjust_gas(/datum/gas/nitrogen, 500)
 	V.air_contents.set_temperature(T20C)
-	// Wire up the preconditions process() expects: a node (any non-null), powered.
-	V.node = V // self-ref is enough to bypass the "no node → off" branch
+	// Wire up the remaining process preconditions: powered and unobstructed.
 	V.use_power = USE_POWER_IDLE
 	V.stat &= ~(NOPOWER | BROKEN)
 	V.welded = FALSE
 	V.pump_direction = 1 // release
 	V.external_pressure_bound = ONE_ATMOSPHERE * 2 // ambitious target
 	V.internal_pressure_bound = 0
+	TEST_ASSERT(V.air_contents.arena_id() != turf_air.arena_id(), "vent supply and turf unexpectedly share one Rust mixture")
+	TEST_ASSERT(V.air_contents.total_moles() > 499, "vent supply lost its seeded nitrogen before processing")
+	TEST_ASSERT(V.get_pressure_delta(turf_air) > 0.5, "vent pressure predicate is not actionable after setup")
 
 	var/initial_turf_n2 = turf_air.get_moles(/datum/gas/nitrogen)
+	// Exercise the exact flat-ID ABI independently of the machinery queue. This
+	// catches argument/list marshalling regressions instead of reporting them as
+	// an apparently inert vent.
+	var/list/direct_transfer = call_ext(VERDIGRIS, "byond:batch_transfer_hook_ffi")(list(V.air_contents.arena_id(), turf_air.arena_id(), 1))
+	TEST_ASSERT(islist(direct_transfer) && length(direct_transfer) == 1, \
+		"batch transfer ABI did not return one result: [json_encode(direct_transfer)]")
+	TEST_ASSERT(direct_transfer?[1] > 0.9, \
+		"batch transfer ABI moved no gas for valid arena IDs [V.air_contents.arena_id()] -> [turf_air.arena_id()]: [json_encode(direct_transfer)]")
+	initial_turf_n2 = turf_air.get_moles(/datum/gas/nitrogen)
+	var/initial_vent_n2 = V.air_contents.get_moles(/datum/gas/nitrogen)
 
+	var/queued_transfers = 0
 	for(var/i in 1 to 5)
 		V.process()
+		if(!length(SSmachines.pending_pump_transfers))
+			// Reaching the pressure target in an earlier atomic transfer is normal.
+			TEST_ASSERT(V.get_pressure_delta(turf_air) <= 0.5, "actionable vent did not enqueue a pump transaction")
+			break
+		queued_transfers++
+		SSmachines.flush_pump_transfers()
+	TEST_ASSERT(queued_transfers, "vent never enqueued a pump transaction")
 
 	var/final_turf_n2 = turf_air.get_moles(/datum/gas/nitrogen)
 	TEST_ASSERT(final_turf_n2 > initial_turf_n2 + 5, \
 		"vent_pump didn't push N2 to turf: [initial_turf_n2] → [final_turf_n2]")
 	// Conservation: turf gained == vent_contents lost.
 	var/vent_after = V.air_contents.get_moles(/datum/gas/nitrogen)
-	var/total_delta = abs((500 - vent_after) - (final_turf_n2 - initial_turf_n2))
+	var/total_delta = abs((initial_vent_n2 - vent_after) - (final_turf_n2 - initial_turf_n2))
 	TEST_ASSERT(total_delta < 1, \
-		"vent_pump conservation broken: vent lost [500 - vent_after], turf gained [final_turf_n2 - initial_turf_n2]")
+		"vent_pump conservation broken: vent lost [initial_vent_n2 - vent_after], turf gained [final_turf_n2 - initial_turf_n2]")
 
 	qdel(V)
+	qdel(P)
 
 
 /// Vent scrubber integration: pollute a turf with phoron, run a scrubber
@@ -2803,6 +2865,10 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_air_snapshots)
 	var/list/pair = dq_atmos_test_find_clear_pipe_run(1)
 	TEST_ASSERT_NOTNULL(pair, "no clear floor for airlock sensor dependency test")
 	var/turf/simulated/floor/T = pair[1]
+	dq_atmos_test_snapshot_air(T)
+	dq_atmos_test_isolate_pair(T, T)
+	T.immediate_calculate_adjacent_turfs()
+	SSair.auxmos_topology_barrier()
 	var/obj/machinery/airlock_sensor/S = new(T)
 	S.process()
 	TEST_ASSERT(!(S in SSmachines.processing_machines), \
@@ -2885,12 +2951,9 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_air_snapshots)
 	TEST_ASSERT_NOTNULL(P1.parent.network, "pipeline has no parent network after build_network")
 
 	var/datum/pipe_network/N = P1.parent.network
-	TEST_ASSERT(N in SSair.networks, \
-		"pipe_network NOT in SSair.networks after build_network — START_PROCESSING_PIPENET is targeting the wrong list, reconcile_air will never run in the live game")
-	var/initial_revision = N.revision
-	N.process()
 	TEST_ASSERT(!(N in SSair.networks), \
-		"clean sealed pipe_network remained scheduled after reconciliation")
+		"clean Rust-authoritative pipe_network was needlessly scheduled after topology publication")
+	var/initial_revision = N.revision
 	N.mark_dirty()
 	TEST_ASSERT(!(N in SSair.networks), \
 		"semantic gas revision incorrectly reenrolled a sleeping pipe_network")
@@ -3582,6 +3645,7 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_air_snapshots)
 		A.air.set_moles(/datum/gas/nitrogen, MOLES_N2STANDARD * 5)
 		A.air.set_temperature(T20C)
 		sleep(1)
+		rapid_cadence_seen ||= SSair.wait == 1
 		if(SSair.times_fired != last_fire_count)
 			var/fire_interval = world.time - last_fire_time
 			if(SSair.wait == 1)
@@ -3657,6 +3721,7 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_air_snapshots)
 	for(var/i in 1 to 10)
 		V.process()
 		S.process()
+		SSmachines.flush_pump_transfers()
 
 	var/final_co2 = turf_air.get_moles(/datum/gas/carbon_dioxide)
 	var/final_n2 = turf_air.get_moles(/datum/gas/nitrogen)
@@ -3724,7 +3789,10 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_air_snapshots)
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human, T)
 	TEST_ASSERT_NOTNULL(H, "couldn't allocate human")
 
-	var/datum/gas_mixture/turf_air = T.return_air()
+	// Use a detached mixture: this test exercises human environmental response,
+	// not the concurrently running turf-diffusion worker. A mapped turf mixture
+	// can warm between these synchronous calls under full-suite load.
+	var/datum/gas_mixture/turf_air = new(CELL_VOLUME)
 	for(var/datum/gas/g as anything in turf_air.get_gases())
 		turf_air.set_moles(g, 0)
 	turf_air.adjust_gas(/datum/gas/nitrogen, MOLES_N2STANDARD)
@@ -3744,6 +3812,7 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_air_snapshots)
 	turf_air.adjust_gas(/datum/gas/oxygen, MOLES_O2STANDARD)
 	turf_air.adjust_gas(/datum/gas/nitrogen, MOLES_N2STANDARD)
 	turf_air.set_temperature(T20C)
+	qdel(turf_air)
 
 
 /// Tank pressure: a tank filled past its rupture threshold should report its
@@ -3829,6 +3898,11 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_air_snapshots)
 			T = candidate
 			break
 	TEST_ASSERT_NOTNULL(T, "no floor for event-driven air alarm test")
+	for(var/datum/gas/g as anything in T.air.get_gases())
+		T.air.set_moles(g, 0)
+	T.air.adjust_gas(/datum/gas/oxygen, MOLES_O2STANDARD)
+	T.air.adjust_gas(/datum/gas/nitrogen, MOLES_N2STANDARD)
+	T.air.set_temperature(T20C)
 	var/obj/machinery/alarm/A = new(T)
 	A.update_area()
 	A.set_initial_TLV()
@@ -3905,6 +3979,11 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 			T = candidate
 			break
 	TEST_ASSERT_NOTNULL(T, "no floor for gas dependency test")
+	for(var/datum/gas/g as anything in T.air.get_gases())
+		T.air.set_moles(g, 0)
+	T.air.adjust_gas(/datum/gas/oxygen, MOLES_O2STANDARD)
+	T.air.adjust_gas(/datum/gas/nitrogen, MOLES_N2STANDARD)
+	T.air.set_temperature(T20C)
 	drain_dirty_gas_mixtures()
 
 	var/obj/machinery/atmospherics/unary/vent_pump/V = new(T)
@@ -4112,6 +4191,10 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	var/list/pair = dq_atmos_test_find_clear_pipe_run(2)
 	TEST_ASSERT_NOTNULL(pair, "no adjacent floors for firedoor dependency test")
 	var/turf/simulated/floor/T = pair[1]
+	dq_atmos_test_snapshot_air(T)
+	dq_atmos_test_isolate_pair(T, T)
+	T.immediate_calculate_adjacent_turfs()
+	SSair.auxmos_topology_barrier()
 	drain_dirty_gas_mixtures()
 	var/obj/machinery/door/firedoor/F = new(T)
 	F.density = TRUE
@@ -4323,6 +4406,10 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 			T = candidate
 			break
 	TEST_ASSERT_NOTNULL(T, "no floor for Rust pipe-removal test")
+	dq_atmos_test_snapshot_air(T)
+	dq_atmos_test_isolate_pair(T, T)
+	T.immediate_calculate_adjacent_turfs()
+	SSair.auxmos_topology_barrier()
 	var/initial_turf_oxygen = T.air.get_moles(/datum/gas/oxygen)
 	var/initial_region_count = length(SSair.rust_pipe_region_networks)
 	var/obj/machinery/atmospherics/pipe/simple/P = new(T)
@@ -4689,7 +4776,9 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	TEST_ASSERT_EQUAL(ship_engine.process(), PROCESS_KILL, "passive ship engine nozzle retained a polling loop")
 	var/obj/machinery/power/port_gen/pacman/portable_generator = new(T)
 	portable_generator.active = FALSE
-	portable_generator.temperature = 20
+	var/datum/gas_mixture/generator_environment = T.return_air()
+	var/generator_pressure_ratio = generator_environment ? min(generator_environment.return_pressure() / ONE_ATMOSPHERE, 1) : 0
+	portable_generator.temperature = 20 + (generator_environment ? generator_environment.return_temperature() - T20C : 0) * generator_pressure_ratio
 	portable_generator.overheating = 0
 	TEST_ASSERT_EQUAL(portable_generator.process(), PROCESS_KILL, "cold inactive portable generator remained scheduled")
 	portable_generator.sheets = 1
@@ -5082,20 +5171,27 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 /datum/unit_test/dq_gas_meter_reads_target_pipeline_pressure
 
 /datum/unit_test/dq_gas_meter_reads_target_pipeline_pressure/Run()
-	var/turf/T = null
-	for(var/turf/simulated/floor/cand in world)
-		if(cand.air && !cand.blocks_air)
-			T = cand
-			break
-	TEST_ASSERT_NOTNULL(T, "no floor for meter test")
+	var/list/run = dq_atmos_test_find_clear_pipe_run(2)
+	TEST_ASSERT_NOTNULL(run, "no clear two-tile pipe run for meter test")
+	var/turf/simulated/floor/T = run[1]
+	var/turf/simulated/floor/T2 = run[2]
+	var/direction = get_dir(T, T2)
+	var/axis_directions = direction | REVERSE_DIR(direction)
 
-	// Construct pipe + meter on same tile. Lazy return_air() creates the
-	// pipeline on demand — simpler than wiring atmos_init for a single
-	// stand-alone segment.
+	// Construct and publish a real Rust-authoritative connected network.
+	// return_air() deliberately no longer creates topology as a side effect.
 	var/obj/machinery/atmospherics/pipe/simple/P = new(T)
+	P.dir = axis_directions
+	P.initialize_directions = axis_directions
+	var/obj/machinery/atmospherics/pipe/simple/P2 = new(T2)
+	P2.dir = axis_directions
+	P2.initialize_directions = axis_directions
+	P.atmos_init()
+	P2.atmos_init()
+	dq_atmos_test_publish_rust_pipenets(list(P, P2))
 	var/datum/gas_mixture/pipe_air = P.return_air()
-	TEST_ASSERT_NOTNULL(pipe_air, "pipe return_air() null after lazy build")
-	TEST_ASSERT_NOTNULL(P.parent, "pipe parent (pipeline) null after return_air")
+	TEST_ASSERT_NOTNULL(pipe_air, "pipe return_air() null after topology publication")
+	TEST_ASSERT_NOTNULL(P.parent, "pipe parent (pipeline) null after topology publication")
 	pipe_air.adjust_gas(/datum/gas/nitrogen, 200)
 	pipe_air.set_temperature(T20C)
 
@@ -5115,6 +5211,7 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 
 	qdel(M)
 	qdel(P)
+	qdel(P2)
 
 
 /// Cryo cell constructs without erroring and its initial air_contents are
@@ -5240,6 +5337,7 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	for(var/i in 1 to 10)
 		V.process()
 		S.process()
+		SSmachines.flush_pump_transfers()
 
 	// Vent moved N2 from shared → turf.
 	var/final_shared_n2 = shared.get_moles(/datum/gas/nitrogen)
@@ -5464,28 +5562,40 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 /datum/unit_test/dq_stable_open_pipe_hibernates
 
 /datum/unit_test/dq_stable_open_pipe_hibernates/Run()
-	var/turf/simulated/floor/T = locate() in world
-	TEST_ASSERT_NOTNULL(T, "no floor for open-pipe hibernation test")
+	var/list/run = dq_atmos_test_find_clear_pipe_run(2)
+	TEST_ASSERT_NOTNULL(run, "no clear two-tile pipe run for open-pipe hibernation test")
+	var/turf/simulated/floor/T = run[1]
+	var/turf/simulated/floor/T2 = run[2]
+	var/direction = get_dir(T, T2)
+	var/axis_directions = direction | REVERSE_DIR(direction)
 	var/obj/machinery/atmospherics/pipe/simple/P = new(T)
-	P.parent = new
-	P.parent.members = list(P)
-	P.parent.edges = list()
-	P.parent.air = T.air.copy()
+	P.dir = axis_directions
+	P.initialize_directions = axis_directions
+	var/obj/machinery/atmospherics/pipe/simple/P2 = new(T2)
+	P2.dir = axis_directions
+	P2.initialize_directions = axis_directions
+	P.atmos_init()
+	P2.atmos_init()
+	dq_atmos_test_publish_rust_pipenets(list(P, P2))
+	TEST_ASSERT_NOTNULL(P.parent?.network, "open pipe did not receive a Rust-authoritative network")
+	P.parent.air.copy_from(T.air)
 	var/environment_volume = T.air.return_volume()
 	P.parent.air.set_volume(P.volume)
 	P.parent.air.multiply(P.volume / environment_volume)
-	P.leaking = TRUE
+	P.set_leaking(TRUE)
+	var/datum/weakref/pipe_ref = WEAKREF(P)
+	TEST_ASSERT_NOTNULL(pipe_ref, "open pipe could not create a weak reference")
 	var/process_result
 	for(var/cycle in 1 to 100)
-		process_result = P.process()
+		process_result = P.parent.network.process()
 		if(process_result == PROCESS_KILL)
 			break
 	TEST_ASSERT_EQUAL(process_result, PROCESS_KILL, "open pipe leak did not converge and hibernate within 100 cycles")
-	var/datum/weakref/pipe_ref = WEAKREF(P)
 	TEST_ASSERT(SSmachines.sleeping_gas_devices[pipe_ref.reference], "equilibrated open pipe did not subscribe before sleeping")
 	T.air.adjust_moles(/datum/gas/oxygen, 1)
 	TEST_ASSERT(P.gas_dependency_changed(P.leak_sleeping_turf_mixture_id, GAS_DEPENDENCY_ALL), "changed turf gas did not wake an open pipe leak")
 	qdel(P)
+	qdel(P2)
 
 
 // =====================================================================
@@ -6461,6 +6571,10 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 			T = cand
 			break
 	TEST_ASSERT_NOTNULL(T, "no floor for siphon test")
+	dq_atmos_test_snapshot_air(T)
+	dq_atmos_test_isolate_pair(T, T)
+	T.immediate_calculate_adjacent_turfs()
+	SSair.auxmos_topology_barrier()
 
 	var/datum/gas_mixture/turf_air = T.return_air()
 	for(var/datum/gas/g as anything in turf_air.get_gases())

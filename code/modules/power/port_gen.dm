@@ -238,15 +238,19 @@
 		var/ambient = environment.return_temperature() - T20C
 		cooling_temperature += ambient*ratio
 
-	if(temperature > cooling_temperature)
+	// Ambient temperature crosses the Rust FFI as a float, so tiny rounding
+	// differences must not keep an otherwise cold, inactive generator polling.
+	if(temperature > cooling_temperature + 0.1)
 		var/temp_loss = (temperature - cooling_temperature)/TEMPERATURE_DIVISOR
 		temp_loss = between(2, round(temp_loss, 1), TEMPERATURE_CHANGE_MAX)
 		temperature = max(temperature - temp_loss, cooling_temperature)
+	else
+		temperature = cooling_temperature
 
 	if(overheating)
 		overheating--
 		update_icon() //Port RS PR #484
-	return temperature > cooling_temperature || overheating > 0
+	return temperature > cooling_temperature + 0.1 || overheating > 0
 
 /obj/machinery/power/port_gen/pacman/proc/overheat()
 	overheating++

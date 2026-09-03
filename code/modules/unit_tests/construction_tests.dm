@@ -53,6 +53,7 @@
 
 /datum/unit_test/all_default_circuits_must_match_machines/Run()
 	var/failed = FALSE
+	var/list/mismatches = list()
 
 	// Check the machine deconstructs into the board
 	for(var/obj/machinery/machine_path as anything in subtypesof(/obj/machinery))
@@ -69,7 +70,8 @@
 		// Get to the actual test!
 		if(!(machine_path in typesof(board_path.build_path))) // This should be stricted someday... but not today.
 			TEST_NOTICE(src, "[machine_path]'s default board does not match the machine it constructs. \"[board_path]\".")
+			mismatches += "[machine_path] -> [board_path] (builds [board_path.build_path])"
 			failed = TRUE
 
 	if(failed)
-		TEST_FAIL("machine had an incorrect circuitboard in its definition.")
+		TEST_FAIL("machine had an incorrect circuitboard in its definition: [english_list(mismatches)].")

@@ -8,7 +8,10 @@ use serde::Deserialize;
 use std::collections::{BTreeMap, BTreeSet, VecDeque};
 use std::sync::OnceLock;
 
-const MIN_OCCUPANCY_MICROS: u32 = 300_000;
+// Generate above the acceptance floor so final semantic pruning (for example,
+// removing chairs whose support moved to a wall) cannot leave the live room
+// below 30% visible occupancy.
+const MIN_OCCUPANCY_MICROS: u32 = 360_000;
 const MAX_OCCUPANCY_MICROS: u32 = 520_000;
 
 #[derive(Clone, Copy)]
@@ -362,8 +365,8 @@ pub fn generate_station_blueprint(
             {
                 (placements, true)
             }
-            _ => (
-                place_room_program(
+            _ => {
+                let primary = place_room_program(
                     &layout,
                     &program,
                     &tiles,
@@ -374,9 +377,46 @@ pub fn generate_station_blueprint(
                     &required_access,
                     &occupied,
                     &protected_approaches,
-                )?,
-                false,
-            ),
+                );
+                match primary {
+                    Ok(placements) => (placements, false),
+                    Err(primary_error)
+                        if !room_type.definition_id.contains("-compact-")
+                            && !room_type.definition_id.contains("-micro-") =>
+                    {
+                        // Irregular but structurally valid envelopes can meet a
+                        // full program's area requirement without containing
+                        // its two large fixture clusters. Fall back to the
+                        // role-specific compact workflow, never generic decor
+                        // and never a DM-side materialization failure.
+                        let compact = compact_room_program(
+                            &room_type.department_id,
+                            &room_type.role,
+                            layout.seed ^ u64::from(room.id),
+                        );
+                        let placements = place_room_program(
+                            &layout,
+                            &compact,
+                            &tiles,
+                            &reserved,
+                            &door_tiles,
+                            center,
+                            &blocking,
+                            &required_access,
+                            &occupied,
+                            &protected_approaches,
+                        )
+                        .map_err(|compact_error| {
+                            LayoutError(format!(
+                                "{}; compact role-specific fallback also failed: {}",
+                                primary_error.0, compact_error.0
+                            ))
+                        })?;
+                        (placements, false)
+                    }
+                    Err(error) => return Err(error),
+                }
+            }
         };
         if use_fragments {
             let fixture_offset = room_fixture_ids.len();
@@ -655,6 +695,8 @@ fn prune_orphaned_seats_after_wall_layout(
                 && !snapshot.iter().any(|other| {
                     fixture.room_id == other.room_id
                         && fixture.id != other.id
+                        && other.layer != FixtureLayer::Wall
+                        && other.layer != FixtureLayer::Ceiling
                         && rooms.iter().any(|room| {
                             Some(room.room_id) == other.room_id
                                 && room.fixture_ids.contains(&other.id)
@@ -761,11 +803,20 @@ fn fill_to_counterpart_density(
         fixture.room_id == Some(room.id)
             && fixture.layer != FixtureLayer::Wall
             && fixture.layer != FixtureLayer::Ceiling
-            && !matches!(fixture.fixture_id.as_str(), "vent" | "scrubber")
+            && !matches!(fixture.fixture_id.as_str(), "vent" | "scrubber" | "charger_table")
     };
-    let target_count = (u64::from(profile.target_occupancy_micros) * tiles.len() as u64)
+    let target_density = profile
+        .target_occupancy_micros
+        .clamp(MIN_OCCUPANCY_MICROS, MAX_OCCUPANCY_MICROS);
+    let target_count = (u64::from(target_density) * tiles.len() as u64)
         .div_ceil(1_000_000) as usize;
-    let target_count = target_count.max(profile.minimum_fixture_count);
+    // Leave one non-seat fixture of headroom for final wall-service relocation.
+    // That pass can invalidate and prune a chair/support pairing; without this
+    // reserve an otherwise authored room landed just below its visible-density
+    // floor after finalization.
+    let target_count = target_count
+        .max(profile.minimum_fixture_count)
+        .saturating_add(usize::from(tiles.len() >= 20));
     let mut placed_count = fixtures.iter().filter(functional).count();
     let mut repeat_counts = BTreeMap::<String, usize>::new();
     for fixture in fixtures.iter().filter(functional) {
@@ -3405,13 +3456,17 @@ fn prune_orphaned_seats(
 }
 
 fn fixture_supports_seat(id: &str) -> bool {
-    id.contains("table")
+    // charger_table is a same-tile render support for a recharger, not usable
+    // furniture. Counting it paired nearby chairs that became visibly orphaned
+    // once semantic validation intentionally hid the support object.
+    id != "charger_table"
+        && (id.contains("table")
         || id.contains("desk")
         || id.contains("bench")
         || id.contains("console")
         || id.contains("monitor")
         || id.contains("bed")
-        || matches!(id, "visitor_bench" | "waiting_bench" | "side_table")
+        || matches!(id, "visitor_bench" | "waiting_bench" | "side_table"))
 }
 
 #[allow(clippy::too_many_arguments)]

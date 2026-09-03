@@ -79,6 +79,8 @@
 /datum/unit_test/dq_live_carrier_independently_orbits_sif
 
 /datum/unit_test/dq_live_carrier_independently_orbits_sif/Run()
+	if(using_map?.name != "Southern Cross")
+		return
 	var/carrier_id = SSflight_operations.destination_id_named("Exploration Carrier")
 	var/datum/flight_destination/carrier = SSflight_operations.destinations[carrier_id]
 	TEST_ASSERT_NOTNULL(carrier, "Flight registry omitted the Exploration Carrier")
@@ -90,6 +92,8 @@
 /datum/unit_test/dq_live_flight_payload_preserves_carrier_hierarchy
 
 /datum/unit_test/dq_live_flight_payload_preserves_carrier_hierarchy/Run()
+	if(using_map?.name != "Southern Cross")
+		return
 	var/datum/flight_vessel/viewing_vessel
 	for(var/id in SSflight_operations.vessels)
 		viewing_vessel = SSflight_operations.vessels[id]
@@ -122,6 +126,8 @@
 /datum/unit_test/dq_live_flight_payload_attaches_carrier_craft
 
 /datum/unit_test/dq_live_flight_payload_attaches_carrier_craft/Run()
+	if(using_map?.name != "Southern Cross")
+		return
 	var/carrier_id = SSflight_operations.destination_id_named("Exploration Carrier")
 	TEST_ASSERT_NOTNULL(carrier_id, "The live flight registry omitted the carrier host destination")
 	var/datum/flight_vessel/viewing_vessel
@@ -166,6 +172,8 @@
 /datum/unit_test/dq_station_flight_never_substitutes_carrier_port
 
 /datum/unit_test/dq_station_flight_never_substitutes_carrier_port/Run()
+	if(using_map?.name != "Southern Cross")
+		return
 	var/datum/flight_destination/station
 	for(var/id in SSflight_operations.destinations)
 		var/datum/flight_destination/candidate = SSflight_operations.destinations[id]

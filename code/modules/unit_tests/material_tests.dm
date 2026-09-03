@@ -54,14 +54,16 @@
 
 	// Check all sheets for EXISTANCE
 	var/failed = FALSE
+	var/list/missing_sheets = list()
 	for(var/sheet in required_sheets)
 		if(sheet in sheet_print_designs)
 			continue
 		failed = TRUE
+		missing_sheets += "[sheet]"
 		TEST_NOTICE(src, "[sheet] - Missing an autolathe design, all material sheets must be printable, or materials can get stuck in the lathe forever")
 
 	if(failed)
-		TEST_FAIL("materials missing autolathe print recipies.")
+		TEST_FAIL("materials missing autolathe print recipies: [english_list(missing_sheets)].")
 
 /datum/unit_test/materials_shall_have_sell_prices
 

@@ -5,13 +5,17 @@ use verdigris::station_layout::{
 
 fn main() {
     let Some(path) = env::args().nth(1) else {
-        eprintln!("usage: station_layout_stress <catalog.json> [count]");
+        eprintln!("usage: station_layout_stress <catalog.json> [count] [first-seed]");
         process::exit(2);
     };
     let count: u64 = env::args()
         .nth(2)
         .map(|value| value.parse().expect("count must be a positive integer"))
         .unwrap_or(1_000);
+    let first_seed: u64 = env::args()
+        .nth(3)
+        .map(|value| value.parse().expect("first seed must be an unsigned integer"))
+        .unwrap_or(0);
     let payload = fs::read_to_string(path).expect("failed to read station catalog");
     let (base_request, mapping) =
         decode_catalog(&payload).expect("failed to decode station catalog");
@@ -21,7 +25,7 @@ fn main() {
     let mut minimum_rooms = usize::MAX;
     let mut maximum_rooms = 0usize;
     let mut total_fixtures = 0usize;
-    for seed in 0..count {
+    for seed in first_seed..first_seed.saturating_add(count) {
         let mut request = base_request.clone();
         request.settings.seed = seed;
         let layout = generate(&request).unwrap_or_else(|error| panic!("seed {seed}: {error}"));

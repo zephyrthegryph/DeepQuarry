@@ -9,6 +9,7 @@
 
 /obj/machinery/power/smes/generated_station
 	should_be_mapped = TRUE
+	circuit = null
 	charge = 5e6
 	output_attempt = TRUE
 	output_level = 200000

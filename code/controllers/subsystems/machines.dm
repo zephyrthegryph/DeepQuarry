@@ -272,8 +272,14 @@ SUBSYSTEM_DEF(machines)
 		// pipenet, so append by index to preserve the fixed source/sink/moles tuples.
 		var/operation_offset = length(operations)
 		operations.len += 3
-		operations[operation_offset + 1] = transfer[2]
-		operations[operation_offset + 2] = transfer[3]
+		// Pass stable arena IDs, not DM wrapper datums. Pipenet publication may
+		// replace a member's wrapper while preserving its authoritative Rust mix;
+		// resolving a private wrapper var inside the FFI made otherwise valid
+		// queued transfers silently report zero.
+		var/datum/gas_mixture/source = transfer[2]
+		var/datum/gas_mixture/sink = transfer[3]
+		operations[operation_offset + 1] = source.arena_id()
+		operations[operation_offset + 2] = sink.arena_id()
 		operations[operation_offset + 3] = transfer[4]
 	var/list/actual_moles = call_ext(VERDIGRIS, "byond:batch_transfer_hook_ffi")(operations)
 	var/list/touched_turfs = list()

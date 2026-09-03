@@ -92,6 +92,7 @@
 	default_type = MAT_VOLTAIC_CRYSTAL
 	apply_colour = TRUE
 	no_variants = TRUE
+	exotic_no_autolathe_reprint = TRUE
 
 /obj/item/stack/material/exotic_feedstock/random/Initialize(mapload, _amount, _material_name)
 	if(!_material_name)

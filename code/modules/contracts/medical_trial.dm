@@ -754,6 +754,8 @@
 	color = "#79b7c9"
 	metabolism = REM * 0.5
 	scannable = SCANNABLE_ADVANCED
+	supply_conversion_value = 1
+	industrial_use = REFINERYEXPORT_REASON_MEDSCI
 
 /datum/reagent/medicine/experimental_contract/affect_blood(mob/living/carbon/subject, alien, removed)
 	var/mob/living/carbon/human/human_subject = subject
@@ -787,6 +789,8 @@
 	color = "#55d7c7"
 	metabolism = REM * 0.05
 	scannable = SCANNABLE_ADVANCED
+	supply_conversion_value = 1
+	industrial_use = REFINERYEXPORT_REASON_MEDSCI
 
 /datum/reagent/medical_trial_marker/mix_data(list/newdata, newamount)
 	medical_trial_merge_contract_data(src, newdata, newamount)
@@ -799,6 +803,8 @@
 	color = "#d28d62"
 	metabolism = REM * 0.5
 	scannable = SCANNABLE_ADVANCED
+	supply_conversion_value = 1
+	industrial_use = REFINERYEXPORT_REASON_MEDSCI
 
 /datum/reagent/medicine/experimental_challenge/affect_blood(mob/living/carbon/subject, alien, removed)
 	var/mob/living/carbon/human/human_subject = subject

@@ -207,33 +207,38 @@
 		var/list/content_types = list()
 		var/list/content_type_counts = list()
 		var/most_repeated_content = 0
+		var/content_fixture_count = 0
 		var/machinery_count = 0
 		for(var/datum/generated_room_fragment_placement/fragment_placement in solution.fragments)
 			var/datum/generated_room_fragment/activity_motif/motif = fragment_placement.fragment
 			if(!istype(motif))
 				continue
 			for(var/feature_type in motif.feature_types)
+				content_fixture_count++
 				var/datum/generated_room_feature/fragment_feature = new feature_type
 				var/fragment_type_key = "[fragment_feature.atom_type]"
+				var/fragment_feature_key = fragment_feature.id
 				content_types[fragment_type_key] = TRUE
-				content_type_counts[fragment_type_key] = (content_type_counts[fragment_type_key] || 0) + 1
-				most_repeated_content = max(most_repeated_content, content_type_counts[fragment_type_key])
+				content_type_counts[fragment_feature_key] = (content_type_counts[fragment_feature_key] || 0) + 1
+				most_repeated_content = max(most_repeated_content, content_type_counts[fragment_feature_key])
 				if(ispath(fragment_feature.atom_type, /obj/machinery))
 					machinery_count++
 				qdel(fragment_feature)
 		for(var/datum/generated_room_placement/placement in solution.placements)
+			content_fixture_count++
 			var/placement_type_key = "[placement.feature.atom_type]"
+			var/placement_feature_key = placement.feature.id
 			content_types[placement_type_key] = TRUE
-			content_type_counts[placement_type_key] = (content_type_counts[placement_type_key] || 0) + 1
-			most_repeated_content = max(most_repeated_content, content_type_counts[placement_type_key])
+			content_type_counts[placement_feature_key] = (content_type_counts[placement_feature_key] || 0) + 1
+			most_repeated_content = max(most_repeated_content, content_type_counts[placement_feature_key])
 			if(ispath(placement.feature.atom_type, /obj/machinery))
 				machinery_count++
 		if(solution.floor_tiles >= 20)
 			TEST_ASSERT(solution.occupied_tiles >= CEILING(solution.floor_tiles * 0.3, 1), "Room [solution.module_id] is visibly sparse: [solution.occupied_tiles]/[solution.floor_tiles] occupied tiles")
 			TEST_ASSERT(length(content_types) >= 4, "Room [solution.module_id] lacks furnishing diversity")
 			TEST_ASSERT(!findtext(solution.definition_id, "-compact-"), "Full-sized room [solution.module_id] silently degraded to compact content")
-		if(solution.occupied_tiles >= 10)
-			TEST_ASSERT(most_repeated_content / solution.occupied_tiles <= 0.45, "Room [solution.module_id] repeats one fixture type across more than 45% of its composition")
+		if(content_fixture_count >= 10)
+			TEST_ASSERT(most_repeated_content / content_fixture_count <= 0.45, "Room [solution.module_id] repeats one fixture type across more than 45% of its composition")
 		var/datum/generated_station_module/solution_module
 		for(var/datum/generated_station_module/candidate_module in materialized.modules)
 			if(candidate_module.id == solution.module_id)

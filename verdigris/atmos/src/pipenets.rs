@@ -67,7 +67,7 @@ pub struct PipeRegionTransition {
 	/// carries no gas recipe; the owner of the final port must detach its gas
 	/// before removing that port.
 	pub retired: bool,
-	pub detached_target: usize,
+	pub detached_target: Option<usize>,
 }
 
 #[derive(Clone, Copy, Debug, PartialEq)]
@@ -80,7 +80,7 @@ pub struct PipeGasSource {
 struct PipeRegion {
 	ports: FxHashSet<PipePortId>,
 	total_volume: f32,
-	mixture: usize,
+	mixture: Option<usize>,
 }
 
 #[derive(Clone, Debug)]
@@ -147,11 +147,11 @@ impl PipeTopology {
 		let (source, ratio) = if port.region != 0 {
 			self.regions
 				.get(&port.region)
-				.filter(|region| region.mixture != 0 && region.total_volume > 0.0)
+				.filter(|region| region.mixture.is_some() && region.total_volume > 0.0)
 				.map(|region| (region.mixture, port.volume / region.total_volume))
-				.unwrap_or((0, 0.0))
+				.unwrap_or((None, 0.0))
 		} else {
-			(port.mixture, 1.0)
+			(Some(port.mixture), 1.0)
 		};
 		let receipt = self
 			.pending_detachments
@@ -164,7 +164,7 @@ impl PipeTopology {
 					sources,
 				}
 			});
-		if source != 0 && ratio > 0.0 {
+		if let Some(source) = source.filter(|_| ratio > 0.0) {
 			*receipt.sources.entry(source).or_insert(0.0) += ratio;
 		}
 		self.remove_port(id);
@@ -251,7 +251,7 @@ impl PipeTopology {
 		let Some(existing) = self.regions.get_mut(&region) else {
 			return false;
 		};
-		existing.mixture = mixture;
+		existing.mixture = Some(mixture);
 		for port in &existing.ports {
 			if let Some(entry) = self.ports.get_mut(port) {
 				entry.mixture = mixture;
@@ -345,9 +345,9 @@ impl PipeTopology {
 			let mut sources = Vec::new();
 			for &(prior_region, contributed_volume) in &prior_regions {
 				if let Some(previous) = self.regions.get(&prior_region) {
-					if previous.mixture != 0 && previous.total_volume > 0.0 {
+					if let Some(mixture) = previous.mixture.filter(|_| previous.total_volume > 0.0) {
 						sources.push(PipeGasSource {
-							mixture: previous.mixture,
+							mixture,
 							ratio: (contributed_volume / previous.total_volume).clamp(0.0, 1.0),
 						});
 					}
@@ -373,7 +373,7 @@ impl PipeTopology {
 				sources,
 				total_volume,
 				retired: false,
-				detached_target: 0,
+				detached_target: None,
 			});
 		}
 		let represented_prior_regions = transitions
@@ -391,7 +391,7 @@ impl PipeTopology {
 				sources: Vec::new(),
 				total_volume: 0.0,
 				retired: true,
-				detached_target: 0,
+				detached_target: None,
 			});
 		}
 		for (target, receipt) in std::mem::take(&mut self.pending_detachments) {
@@ -408,7 +408,7 @@ impl PipeTopology {
 				sources,
 				total_volume: receipt.target_volume,
 				retired: false,
-				detached_target: target,
+				detached_target: Some(target),
 			});
 		}
 		for region in affected_regions {
@@ -420,7 +420,7 @@ impl PipeTopology {
 				PipeRegion {
 					ports: transition.ports.iter().copied().collect(),
 					total_volume: transition.total_volume,
-					mixture: 0,
+					mixture: None,
 				},
 			);
 		}
@@ -570,7 +570,7 @@ mod tests {
 		let transitions = topology.commit();
 		let receipt = transitions
 			.iter()
-			.find(|transition| transition.detached_target == 500)
+			.find(|transition| transition.detached_target == Some(500))
 			.unwrap();
 		assert_eq!(receipt.sources.len(), 2);
 		assert_eq!(

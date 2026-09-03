@@ -188,6 +188,29 @@ mod tests {
     }
 
     #[test]
+    fn random_seeds_vary_physical_department_adjacency() {
+        let mut signatures = BTreeSet::new();
+        for seed in 1..=32 {
+            let layout = generate(&request(seed))
+                .unwrap_or_else(|error| panic!("seed {seed}: {error}"));
+            assert_eq!(layout.graph.department_edges.len(), layout.departments.len() - 1);
+            let mut edges = layout
+                .graph
+                .department_edges
+                .iter()
+                .map(|(left, right)| (*left.min(right), *left.max(right)))
+                .collect::<Vec<_>>();
+            edges.sort_unstable();
+            signatures.insert(edges);
+        }
+        assert!(
+            signatures.len() >= 8,
+            "only {} physical department adjacency graphs",
+            signatures.len()
+        );
+    }
+
+    #[test]
     fn every_room_type_minimum_is_instantiated() {
         for seed in 100..116 {
             let request = request(seed);

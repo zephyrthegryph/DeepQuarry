@@ -985,10 +985,29 @@ fn build_architectural_plan(request: &LayoutRequest) -> Result<LogicalPlan, Layo
     // into rectangles made tiny programs inherit huge wings and forced the
     // room allocator to repeat roles merely to consume the excess.
     blocks.sort_by_key(|block| {
-        Reverse(u32::from(block.max_x - block.min_x + 1) * u32::from(block.max_y - block.min_y + 1))
+        (
+            Reverse(
+                u32::from(block.max_x - block.min_x + 1)
+                    * u32::from(block.max_y - block.min_y + 1),
+            ),
+            hash64(
+                request.settings.seed
+                    ^ u64::from(block.min_x).rotate_left(13)
+                    ^ u64::from(block.min_y).rotate_left(29),
+            ),
+        )
     });
     let mut departments = request.departments.iter().collect::<Vec<_>>();
-    departments.sort_by_key(|department| Reverse(department.desired_area));
+    // Preserve capacity matching while varying equally sized wings. Stable
+    // sorting alone assigned the same six major departments to the same six
+    // blocks for every seed, making the adjacency graph canonical despite
+    // visibly different outlines.
+    departments.sort_by_key(|department| {
+        (
+            Reverse(department.desired_area),
+            hash64(request.settings.seed ^ u64::from(department.id)),
+        )
+    });
     for (department, block) in departments.into_iter().zip(blocks) {
         let block = shape_department_block(block, request.settings.seed, department.id);
         pack_architectural_department(
@@ -999,6 +1018,7 @@ fn build_architectural_plan(request: &LayoutRequest) -> Result<LogicalPlan, Layo
             request.settings.seed,
         )?;
     }
+    consolidate_optional_tiny_rooms(&mut plan, request);
     validate_room_envelopes(&plan, "department packing")?;
     add_secondary_public_crosslinks(&mut plan, request.settings.seed);
     validate_room_envelopes(&plan, "public crosslinks")?;
@@ -1016,8 +1036,140 @@ fn build_architectural_plan(request: &LayoutRequest) -> Result<LogicalPlan, Layo
     validate_room_envelopes(&plan, "minimal hall branches")?;
     assign_portals(&mut plan, request)?;
     ensure_maintenance_component_portals(&mut plan)?;
+    derive_department_transit_graph(&mut plan, request.settings.seed);
     validate_logical_plan(&plan, request)?;
     Ok(plan)
+}
+
+/// Describe the physical department arrangement, rather than emitting an
+/// empty/canonical dependency graph. The graph is a minimum spanning tree over
+/// actual suite centers; seed ordering only resolves equally good links.
+fn derive_department_transit_graph(plan: &mut LogicalPlan, seed: u64) {
+    let centers = plan
+        .department_centers
+        .iter()
+        .map(|(id, center)| (*id, *center))
+        .collect::<Vec<_>>();
+    if centers.len() < 2 {
+        plan.department_edges.clear();
+        return;
+    }
+    let points = centers.iter().map(|(_, center)| *center).collect::<Vec<_>>();
+    let mut rng = Rng::new(seed ^ 0x7472_616e_7369_745f);
+    plan.department_edges = minimum_spanning_tree(&points, &mut rng)
+        .into_iter()
+        .map(|(left, right)| (centers[left].0, centers[right].0))
+        .collect();
+}
+
+/// Compact catalog variants are useful for genuine closets, but recursive bay
+/// splitting must not turn them into the dominant station grammar.  Fold an
+/// optional tiny partition into an adjacent authored room whenever their union
+/// has a valid envelope. Required semantic rooms are never removed.
+fn consolidate_optional_tiny_rooms(plan: &mut LogicalPlan, request: &LayoutRequest) {
+    loop {
+        let mut changed = false;
+        let room_ids = plan.rooms.iter().map(|room| room.id).collect::<Vec<_>>();
+        for room_id in room_ids {
+            let Some(room_index) = plan.rooms.iter().position(|room| room.id == room_id) else {
+                continue;
+            };
+            let room = plan.rooms[room_index].clone();
+            let cells = plan
+                .points()
+                .filter(|point| plan.get(*point).room() == Some(room_id))
+                .collect::<BTreeSet<_>>();
+            if projected_room_tile_area(&cells) > 16 {
+                continue;
+            }
+            let Some(department) = request
+                .departments
+                .iter()
+                .find(|department| department.id == room.department)
+            else {
+                continue;
+            };
+            let semantic_count = plan
+                .rooms
+                .iter()
+                .filter(|candidate| {
+                    candidate.department == room.department
+                        && candidate.room_type.name == room.room_type.name
+                })
+                .count();
+            let exact_count = plan
+                .rooms
+                .iter()
+                .filter(|candidate| {
+                    candidate.department == room.department
+                        && candidate.room_type.id == room.room_type.id
+                })
+                .count();
+            if exact_count <= usize::from(room.room_type.min_count) {
+                continue;
+            }
+            let required_count = department
+                .room_types
+                .iter()
+                .filter(|variant| variant.name == room.room_type.name)
+                .map(|variant| usize::from(variant.min_count))
+                .max()
+                .unwrap_or(0);
+            if semantic_count <= required_count {
+                continue;
+            }
+            let adjacent_ids = cells
+                .iter()
+                .flat_map(|point| plan.neighbors(*point))
+                .filter_map(|point| plan.get(point).room())
+                .filter(|other_id| *other_id != room_id)
+                .collect::<BTreeSet<_>>();
+            let replacement = adjacent_ids.into_iter().filter_map(|other_id| {
+                let other_index = plan.rooms.iter().position(|other| {
+                    other.id == other_id && other.department == room.department
+                })?;
+                let mut combined = cells.clone();
+                combined.extend(
+                    plan.points()
+                        .filter(|point| plan.get(*point).room() == Some(other_id)),
+                );
+                department
+                    .room_types
+                    .iter()
+                    .filter(|variant| variant.name == plan.rooms[other_index].room_type.name)
+                    .filter(|variant| room_shape_fits(variant, &combined))
+                    .min_by_key(|variant| room_shape_score(variant, &combined))
+                    .map(|variant| (other_id, other_index, combined, variant.clone()))
+            }).min_by_key(|(_, _, combined, variant)| room_shape_score(variant, combined));
+            let Some((other_id, other_index, combined, variant)) = replacement else {
+                // The partition has real hallway frontage but cannot combine
+                // with a neighbor without violating that neighbor's authored
+                // envelope. It is circulation alcove, not a pretend 2x2 room.
+                for point in cells {
+                    plan.set(point, Space::Common(room.department));
+                }
+                plan.rooms.remove(room_index);
+                changed = true;
+                break;
+            };
+            for point in combined {
+                plan.set(
+                    point,
+                    Space::Room {
+                        department: room.department,
+                        room: other_id,
+                    },
+                );
+            }
+            plan.rooms[other_index].room_type = variant;
+            plan.rooms.remove(room_index);
+            changed = true;
+            break;
+        }
+        if !changed {
+            break;
+        }
+    }
 }
 
 fn validate_room_envelopes(plan: &LogicalPlan, stage: &str) -> Result<(), LayoutError> {
@@ -1615,7 +1767,7 @@ fn pack_architectural_department(
     let horizontal_hall = matches!(block.frontage, BlockFrontage::East | BlockFrontage::West);
     let axis_offset =
         (hash64(seed ^ u64::from(department.id) ^ 0x6861_6c6c_5f61_7869) % 3) as i16 - 1;
-    let hall_axis = if horizontal_hall {
+    let mut hall_axis = if horizontal_hall {
         let margin = ((block.max_y - block.min_y) / 2).min(2);
         u16::try_from(
             (i16::try_from(block.min_y + (block.max_y - block.min_y) / 2).unwrap_or(0)
@@ -1638,6 +1790,26 @@ fn pack_architectural_department(
         )
         .unwrap_or(block.min_x + (block.max_x - block.min_x) / 2)
     };
+    // A centered spine in a shallow department consumes the only depth that
+    // can satisfy real authored rooms (for example a 7x3 reception), leaving
+    // two-tile strips which only compact closets can occupy. Put the spine on
+    // one edge of shallow blocks. The room bay then retains the full remaining
+    // depth and later portal construction connects it without inventing a
+    // second cross-corridor through the department.
+    let shallow_axis_hash = hash64(seed ^ u64::from(department.id) ^ 0x7368_616c_6c6f_775f);
+    if horizontal_hall && block.max_y - block.min_y + 1 <= 6 {
+        hall_axis = if shallow_axis_hash & 1 == 0 {
+            block.min_y
+        } else {
+            block.max_y
+        };
+    } else if !horizontal_hall && block.max_x - block.min_x + 1 <= 6 {
+        hall_axis = if shallow_axis_hash & 1 == 0 {
+            block.min_x
+        } else {
+            block.max_x
+        };
+    }
     // End-cap rooms need enough depth for a real authored activity cluster;
     // two logical cells routinely rasterized into the suite's tiny-room tail.
     let terminal_depth = 2u16;
@@ -1720,28 +1892,58 @@ fn pack_architectural_department(
             }
         }
     }
-
-    // Build the departmental circulation before placing rooms. A single
-    // primary spine carries sparse perpendicular fingers. Each finger is a
-    // dead-end branch of the spine, so the graph stays a tree: maximum room
-    // frontage without parallel corridors, rings, or broad intersections.
-    if horizontal_hall {
-        let x = block.min_x + (block.max_x - block.min_x) / 2;
-        for y in block.min_y..=block.max_y {
-            let point = CellPoint { x, y };
+    // Shallow blocks need a two-module circulation band. With one row, the
+    // remaining five modules rasterize to fourteen floor tiles—deeper than
+    // any authored room envelope—and the splitter is forced to cut across
+    // frontage. Two rows leave an eleven-tile-deep bay that can be divided
+    // only along the hall while every resulting room retains direct frontage.
+    if horizontal_hall && block.max_y - block.min_y + 1 <= 6 {
+        let inner_y = if hall_axis == block.min_y {
+            hall_axis + 1
+        } else {
+            hall_axis - 1
+        };
+        for x in block.min_x..=block.max_x {
+            let point = CellPoint { x, y: inner_y };
             if plan.get(point) != Space::Public {
                 plan.set(point, Space::Common(department.id));
+            }
+        }
+    } else if !horizontal_hall && block.max_x - block.min_x + 1 <= 6 {
+        let inner_x = if hall_axis == block.min_x {
+            hall_axis + 1
+        } else {
+            hall_axis - 1
+        };
+        for y in block.min_y..=block.max_y {
+            let point = CellPoint { x: inner_x, y };
+            if plan.get(point) != Space::Public {
+                plan.set(point, Space::Common(department.id));
+            }
+        }
+    } else if horizontal_hall {
+        for y in block.min_y + 4..=block.max_y.saturating_sub(4) {
+            for x in block.min_x..=block.max_x {
+                let point = CellPoint { x, y };
+                if plan.get(point) != Space::Public {
+                    plan.set(point, Space::Common(department.id));
+                }
             }
         }
     } else {
-        let y = block.min_y + (block.max_y - block.min_y) / 2;
-        for x in block.min_x..=block.max_x {
-            let point = CellPoint { x, y };
-            if plan.get(point) != Space::Public {
-                plan.set(point, Space::Common(department.id));
+        for x in block.min_x + 4..=block.max_x.saturating_sub(4) {
+            for y in block.min_y..=block.max_y {
+                let point = CellPoint { x, y };
+                if plan.get(point) != Space::Public {
+                    plan.set(point, Space::Common(department.id));
+                }
             }
         }
     }
+
+    // Do not pre-carve a perpendicular cross through every department. Room
+    // frontage branches are derived after packing, from actual door demand;
+    // carving them up front fragments otherwise valid authored envelopes.
 
     let mut variants = department
         .room_types
@@ -1766,7 +1968,7 @@ fn pack_architectural_department(
     let mut zones = Vec::new();
     if horizontal_hall {
         if block.min_y < hall_axis {
-            let count = 2 + (hash64(seed ^ u64::from(department.id) ^ 0x6c65_6674) % 3) as usize;
+            let count = 2;
             for (min_x, max_x) in
                 partition_axis_weighted(hall_min_x, hall_max_x, count, seed ^ 0x6c)
             {
@@ -1774,7 +1976,7 @@ fn pack_architectural_department(
             }
         }
         if hall_axis < block.max_y {
-            let count = 3 + (hash64(seed ^ u64::from(department.id) ^ 0x7269_6768_74) % 2) as usize;
+            let count = 2;
             for (min_x, max_x) in
                 partition_axis_weighted(hall_min_x, hall_max_x, count, seed ^ 0x72)
             {
@@ -1783,7 +1985,7 @@ fn pack_architectural_department(
         }
     } else {
         if block.min_x < hall_axis {
-            let count = 2 + (hash64(seed ^ u64::from(department.id) ^ 0x6c6f_7765_72) % 3) as usize;
+            let count = 2;
             for (min_y, max_y) in
                 partition_axis_weighted(hall_min_y, hall_max_y, count, seed ^ 0x6d)
             {
@@ -1791,7 +1993,7 @@ fn pack_architectural_department(
             }
         }
         if hall_axis < block.max_x {
-            let count = 3 + (hash64(seed ^ u64::from(department.id) ^ 0x7570_7065_72) % 2) as usize;
+            let count = 2;
             for (min_y, max_y) in
                 partition_axis_weighted(hall_min_y, hall_max_y, count, seed ^ 0x75)
             {
@@ -1836,7 +2038,7 @@ fn pack_architectural_department(
                 plan.width,
                 plan.height,
                 8,
-                Some(!horizontal_hall),
+                Some(horizontal_hall),
             )
             .or_else(|| {
                 // Unusual clipped bays may not divide along the preferred
@@ -1890,7 +2092,7 @@ fn pack_architectural_department(
                     &department.room_types,
                     plan.width,
                     plan.height,
-                    Some(!horizontal_hall),
+                    Some(horizontal_hall),
                 )
                 .map(|replacement| (index, replacement))
             })
@@ -1924,7 +2126,7 @@ fn pack_architectural_department(
                     &department.room_types,
                     plan.width,
                     plan.height,
-                    Some(!horizontal_hall),
+                    Some(horizontal_hall),
                 )
                 .map(|replacement| (index, replacement))
             })
@@ -1932,7 +2134,10 @@ fn pack_architectural_department(
         let Some((index, replacement)) = candidate else {
             let geometry = room_shapes
                 .iter()
-                .map(|shape| projected_room_tile_area(shape).to_string())
+                .map(|shape| {
+                    let (width, height) = projected_room_dimensions(shape);
+                    format!("{}:{}x{}", projected_room_tile_area(shape), width, height)
+                })
                 .collect::<Vec<_>>()
                 .join(",");
             let required = department
@@ -1943,8 +2148,11 @@ fn pack_architectural_department(
                 .collect::<Vec<_>>()
                 .join(",");
             return Err(LayoutError(format!(
-                "department {} cannot assign required authored programs [{required}] to room geometry [{geometry}]",
+                "department {} block {}x{} {:?} cannot assign required authored programs [{required}] to room geometry [{geometry}]",
                 department.id,
+                block.max_x - block.min_x + 1,
+                block.max_y - block.min_y + 1,
+                block.frontage,
             )));
         };
         room_shapes.remove(index);
@@ -6330,7 +6538,7 @@ fn match_room_variants_to_shapes<'a>(
             let mut variants = department
                 .room_types
                 .iter()
-                .filter(|variant| room_shape_within_maximum(variant, shape))
+                .filter(|variant| room_shape_fits(variant, shape))
                 .collect::<Vec<_>>();
             variants.sort_by_key(|variant| {
                 (
@@ -7269,43 +7477,100 @@ fn extend_common_halls_to_every_room(plan: &mut LogicalPlan) -> Result<(), Layou
                 )
             })
             .collect::<BTreeSet<_>>();
-        let path = shortest_path_between_sets(&starts, &goals, &allowed, plan.width, plan.height)
-            .ok_or_else(|| {
-            LayoutError(format!(
-                "room {} cannot be reached by its department hallway",
-                room.id
-            ))
-        })?;
-        let mut changed = Vec::new();
-        for point in path {
-            if matches!(plan.get(point), Space::Room { room: other, .. } if other != room.id) {
-                changed.push((point, plan.get(point)));
-                plan.set(point, Space::Common(room.department));
-            }
-        }
-        let affected = changed
-            .iter()
-            .filter_map(|(_, space)| space.room())
+        let department_cells = allowed.iter().copied().collect::<Vec<_>>();
+        let min_x = department_cells.iter().map(|point| point.x).min().unwrap_or(0);
+        let max_x = department_cells.iter().map(|point| point.x).max().unwrap_or(0);
+        let min_y = department_cells.iter().map(|point| point.y).min().unwrap_or(0);
+        let max_y = department_cells.iter().map(|point| point.y).max().unwrap_or(0);
+        let safe_allowed = plan
+            .points()
+            .filter(|point| {
+                (point.x >= min_x.saturating_sub(1)
+                    && point.x <= max_x.saturating_add(1).min(plan.width - 1)
+                    && point.y >= min_y.saturating_sub(1)
+                    && point.y <= max_y.saturating_add(1).min(plan.height - 1)
+                    && (plan.get(*point) == Space::Exterior
+                        || matches!(plan.get(*point), Space::Common(department) if department == room.department)))
+                    || plan.get(*point) == room_space
+            })
             .collect::<BTreeSet<_>>();
-        let valid = !boundary_edges(plan, room_space, Space::Common(room.department)).is_empty()
-            && affected.iter().all(|affected_id| {
-                let Some(affected_room) = plan.rooms.iter().find(|other| other.id == *affected_id)
-                else {
-                    return false;
-                };
-                let cells = plan
-                    .points()
-                    .filter(|point| plan.get(*point).room() == Some(*affected_id))
-                    .collect::<BTreeSet<_>>();
-                !cells.is_empty()
-                    && cells_connected(&cells, plan.width, plan.height)
-                    && projected_room_tile_area(&cells)
-                        >= room_minimum_area(&affected_room.room_type).div_ceil(2)
+        // A multi-source BFS commits whichever equally short branch its queue
+        // happens to discover first. In a packed suite that branch can cut an
+        // adjacent room at an articulation point even though another edge of
+        // the orphan room has a completely safe route. Try every room boundary
+        // origin, shortest-first, and commit only a branch which preserves all
+        // neighboring room components and their authored minimum footprint.
+        let mut ordered_starts = starts.iter().copied().collect::<Vec<_>>();
+        ordered_starts.sort_by_key(|start| {
+            (
+                goals
+                    .iter()
+                    .map(|goal| cell_distance(*start, *goal))
+                    .min()
+                    .unwrap_or(u16::MAX),
+                hash_cell(u64::from(room.id), *start),
+            )
+        });
+        let mut connected = false;
+        for start in ordered_starts {
+            let start_set = BTreeSet::from([start]);
+            let path = shortest_path_between_sets(
+                &start_set,
+                &goals,
+                &safe_allowed,
+                plan.width,
+                plan.height,
+            )
+            .or_else(|| {
+                shortest_path_between_sets(
+                    &start_set,
+                    &goals,
+                    &allowed,
+                    plan.width,
+                    plan.height,
+                )
             });
-        if !valid {
+            let Some(path) = path else {
+                continue;
+            };
+            let mut changed = Vec::new();
+            for point in path {
+                if plan.get(point) != room_space
+                    && plan.get(point) != Space::Common(room.department)
+                {
+                    changed.push((point, plan.get(point)));
+                    plan.set(point, Space::Common(room.department));
+                }
+            }
+            let affected = changed
+                .iter()
+                .filter_map(|(_, space)| space.room())
+                .collect::<BTreeSet<_>>();
+            let valid = !boundary_edges(plan, room_space, Space::Common(room.department)).is_empty()
+                && affected.iter().all(|affected_id| {
+                    let Some(affected_room) =
+                        plan.rooms.iter().find(|other| other.id == *affected_id)
+                    else {
+                        return false;
+                    };
+                    let cells = plan
+                        .points()
+                        .filter(|point| plan.get(*point).room() == Some(*affected_id))
+                        .collect::<BTreeSet<_>>();
+                    !cells.is_empty()
+                        && cells_connected(&cells, plan.width, plan.height)
+                        && projected_room_tile_area(&cells)
+                            >= room_minimum_area(&affected_room.room_type).div_ceil(2)
+                });
+            if valid {
+                connected = true;
+                break;
+            }
             for (point, space) in changed {
                 plan.set(point, space);
             }
+        }
+        if !connected {
             return Err(LayoutError(format!(
                 "room {} needs a department hall branch that would disconnect a neighboring room",
                 room.id

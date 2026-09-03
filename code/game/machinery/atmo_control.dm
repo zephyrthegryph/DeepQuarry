@@ -89,6 +89,9 @@
 		mask |= GAS_DEPENDENCY_COMPOSITION
 	return mask
 
+/obj/machinery/air_sensor/gas_dependency_interest_mask()
+	return dependency_mask()
+
 /obj/machinery/air_sensor/proc/register_gas_dependencies(datum/weakref/WR)
 	var/datum/gas_mixture/environment = return_air()
 	var/new_mixture_id = environment?.arena_id()
@@ -103,9 +106,12 @@
 	sleeping_mixture_id = null
 	sleeping_mixture_revision = -1
 
-/obj/machinery/air_sensor/gas_dependency_changed(mixture_id, change_mask)
+/obj/machinery/air_sensor/gas_dependency_changed(mixture_id, change_mask, list/observation, observation_index)
 	if(!(change_mask & dependency_mask()) || mixture_id != sleeping_mixture_id)
 		return FALSE
+	var/observed_revision = observation && observation_index ? observation[observation_index + 2] : null
+	if(!isnull(observed_revision))
+		return observed_revision != sleeping_mixture_revision
 	var/datum/gas_mixture/environment = return_air()
 	return !environment || environment.arena_id() != sleeping_mixture_id || environment.revision() != sleeping_mixture_revision
 

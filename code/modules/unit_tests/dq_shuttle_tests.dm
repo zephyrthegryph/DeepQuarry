@@ -110,8 +110,13 @@
 
 /datum/unit_test/dq_shuttle_repeated_moves_preserve_air/proc/wait_for_atmos(cycles)
 	var/target_fires = SSair.times_fired + cycles
+	var/deadline = world.time + 10 SECONDS
 	while(SSair.times_fired < target_fires)
-		sleep(SSair.wait)
+		if(world.time >= deadline)
+			TEST_FAIL("SSair did not advance [cycles] cycles before the shuttle-test deadline")
+			return FALSE
+		sleep(max(SSair.wait, 1))
+	return TRUE
 
 /datum/unit_test/dq_shuttle_repeated_moves_preserve_air/proc/find_space_leak(datum/shuttle/shuttle)
 	var/list/visited = list()
@@ -201,8 +206,13 @@
 
 /datum/unit_test/dq_arrivals_shuttle_preserves_air/proc/wait_for_atmos(cycles)
 	var/target_fires = SSair.times_fired + cycles
+	var/deadline = world.time + 10 SECONDS
 	while(SSair.times_fired < target_fires)
-		sleep(SSair.wait)
+		if(world.time >= deadline)
+			TEST_FAIL("SSair did not advance [cycles] cycles before the arrivals-test deadline")
+			return FALSE
+		sleep(max(SSair.wait, 1))
+	return TRUE
 
 /datum/unit_test/dq_arrivals_shuttle_preserves_air/Run()
 	var/datum/shuttle/autodock/ferry/arrivals/shuttle = SSshuttles.shuttles["Arrivals"]
@@ -242,8 +252,12 @@
 					visited[neighbor] = TRUE
 					queue += neighbor
 	var/baseline_fires = SSair.times_fired
+	var/soak_deadline = world.time + 30 SECONDS
 	while(SSair.times_fired < baseline_fires + 40)
-		sleep(SSair.wait)
+		if(world.time >= soak_deadline)
+			TEST_FAIL("SSair did not advance during the arrivals soak")
+			break
+		sleep(max(SSair.wait, 1))
 	var/soaked_o2 = 0
 	for(var/area/A as anything in shuttle.shuttle_area)
 		for(var/turf/open/T in A)
@@ -305,8 +319,12 @@
 			visited[neighbor] = TRUE
 			queue += neighbor
 	var/baseline_fires = SSair.times_fired
+	var/soak_deadline = world.time + 30 SECONDS
 	while(SSair.times_fired < baseline_fires + 40)
-		sleep(SSair.wait)
+		if(world.time >= soak_deadline)
+			TEST_FAIL("SSair did not advance during the escape-shuttle soak")
+			break
+		sleep(max(SSair.wait, 1))
 	var/soaked_o2 = 0
 	for(var/area/A as anything in shuttle.shuttle_area)
 		for(var/turf/open/T in A)

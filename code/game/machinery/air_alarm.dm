@@ -296,6 +296,11 @@
 /obj/machinery/alarm/gas_dependency_changed(mixture_id, change_mask, list/observation, observation_index)
 	if(!(change_mask & GAS_DEPENDENCY_ALL) || mixture_id != sleeping_mixture_id)
 		return FALSE
+	// A concrete composition publication is itself player-visible state even if
+	// it has not crossed a danger TLV. GAS_DEPENDENCY_ALL is also used by direct
+	// callers as "unknown class", so those still take the threshold path below.
+	if((change_mask & GAS_DEPENDENCY_COMPOSITION) && change_mask != GAS_DEPENDENCY_ALL)
+		return TRUE
 	if(observation && observation_index)
 		var/current_revision = observation[observation_index + 2]
 		if(current_revision == sleeping_mixture_revision)

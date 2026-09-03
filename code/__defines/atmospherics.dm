@@ -90,7 +90,7 @@
 #define GET_TURF_PLANE_OFFSET(T) 0
 
 // /tg/'s REVERSE_DIR macro. CHOMP has /proc/turn() but no inline macro. Provide one.
-#define REVERSE_DIR(dir) ( ((dir & (NORTH|SOUTH)) << 2) | ((dir & (EAST|WEST)) >> 2) | (dir & (UP|DOWN)) )
+#define REVERSE_DIR(dir) ( ((dir & (NORTH|EAST|UP)) << 1) | ((dir & (SOUTH|WEST|DOWN)) >> 1) )
 
 // xgm_total_moles helper proc. CHOMP consumers that read `mix.total_moles` as
 // a var were hand-rewritten to call this proc, which forwards to LINDA's
