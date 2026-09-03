@@ -257,7 +257,7 @@ export default defineConfig({
     // Async route chunks get a distinct `.chunk.js` suffix (not `.bundle.js`) so the
     // DM asset layer can enumerate them with a single flist("*.chunk.*") glob, and so
     // the dev reloader (which globs *.{bundle,chunk,hot-update}.*) picks them up.
-    chunkFilename: '[name].chunk.js',
+    chunkFilename: '[name].[contenthash].chunk.js',
     chunkLoadTimeout: 15000,
     // MUST be '' (relative), not '/'. The tgui page is loaded via BYOND browse() whose
     // base URL is the per-process BYOND cache dir; async chunks are delivered there by
@@ -275,7 +275,7 @@ export default defineConfig({
     new rspack.CssExtractRspackPlugin({
       // Per-async-chunk CSS gets the same `.chunk.css` treatment as JS chunks so the
       // DM glob enumerates it; entry CSS stays `[name].bundle.css`.
-      chunkFilename: '[name].chunk.css',
+      chunkFilename: '[name].[contenthash].chunk.css',
       filename: '[name].bundle.css',
     }),
     new rspack.EnvironmentPlugin({

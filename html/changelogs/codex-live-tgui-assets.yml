@@ -1,0 +1,5 @@
+author: "Codex"
+delete-after: true
+changes:
+  - code_imp: "TGUI builds now publish immutable live asset generations, allowing complete interface updates without restarting the game server."
+  - bugfix: "Prevented live TGUI reloads from mixing shell and interface chunk versions and producing ChunkLoadError failures."

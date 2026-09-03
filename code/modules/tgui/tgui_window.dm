@@ -16,6 +16,8 @@
 	var/prewarmed = FALSE
 	/// Monotonic token identifying the current use of this reusable shell.
 	var/generation = 0
+	/// Immutable shell/manifest/chunk publication loaded by this browser window.
+	var/datum/tgui_asset_generation/asset_generation
 	/// TRUE when this pooled shell was cloned from the hidden native skin template.
 	var/native_shell = FALSE
 	/// TRUE when acquire_lock applied a generated or previously observed size while hidden.
@@ -83,8 +85,16 @@
 	#endif
 	if(!client)
 		return
+	asset_generation = SStgui.get_current_asset_generation()
+	var/list/resolved_assets = list()
+	for(var/datum/asset/asset in assets)
+		if(asset == get_asset_datum(/datum/asset/simple/tgui) || istype(asset, /datum/asset/simple/tgui_live_generation))
+			continue
+		resolved_assets += asset
+	if(asset_generation?.shell_assets)
+		resolved_assets += asset_generation.shell_assets
 	src.initial_fancy = fancy
-	src.initial_assets = assets
+	src.initial_assets = resolved_assets
 	src.initial_inline_html = inline_html
 	src.initial_inline_js = inline_js
 	src.initial_inline_css = inline_css
@@ -118,12 +128,12 @@
 	// Scoped to pooled windows only — dedicated windows (lobby, media, tooltip)
 	// manage their own visibility and are left alone.
 	// Generate page html
-	var/html = SStgui.basehtml
+	var/html = asset_generation?.basehtml || SStgui.basehtml
 	html = replacetextEx(html, "\[tgui:windowId]", id)
 	html = replacetextEx(html, "\[tgui:strictMode]", strict_mode)
 	// Inject assets
 	var/inline_assets_str = ""
-	for(var/datum/asset/asset in assets)
+	for(var/datum/asset/asset in resolved_assets)
 		var/mappings = asset.get_url_mappings()
 		for(var/name in mappings)
 			var/url = mappings[name]
@@ -445,13 +455,12 @@
 		status = TGUI_WINDOW_READY
 		flush_message_queue()
 	if(type == "ready" && !client.tgui_chunk_warm_started)
-		var/datum/asset/simple/namespaced/tgui_chunks/chunk_assets = get_asset_datum(/datum/asset/simple/namespaced/tgui_chunks)
-		var/chunk_base_url = chunk_assets.get_public_base_url()
-		if((findtext(chunk_base_url, "http://") == 1 || findtext(chunk_base_url, "https://") == 1) && length(SStgui.chunk_files))
+		var/chunk_base_url = asset_generation?.get_chunk_base_url()
+		if((findtext(chunk_base_url, "http://") == 1 || findtext(chunk_base_url, "https://") == 1) && length(asset_generation?.chunk_files))
 			client.tgui_chunk_warm_started = TRUE
 			send_message("chunk/warm", list(
 				"url" = chunk_base_url,
-				"files" = SStgui.chunk_files,
+				"files" = asset_generation.chunk_files,
 			))
 	if(type == "ready" && prewarmed && !locked)
 		INVOKE_ASYNC(src, PROC_REF(audit_prewarmed_hidden))

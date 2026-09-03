@@ -10,6 +10,48 @@
  *
  */
 
+/// One coherent, immutable TGUI publication. Windows retain this datum so a
+/// later live build cannot mix their shell runtime with another build's chunks.
+/datum/tgui_asset_generation
+	var/id
+	var/basehtml
+	var/list/chunk_manifest
+	var/list/chunk_files
+	var/list/window_geometry_manifest
+	var/datum/asset/simple/shell_assets
+	var/datum/asset/simple/namespaced/chunk_assets
+
+/datum/tgui_asset_generation/proc/get_default_geometry(interface_name)
+	var/list/geometry = LAZYACCESS(window_geometry_manifest, interface_name)
+	if(!islist(geometry) || !isnum(geometry["width"]) || !isnum(geometry["height"]))
+		return null
+	return geometry
+
+/datum/tgui_asset_generation/proc/get_interface_chunks(interface_name)
+	return LAZYACCESS(chunk_manifest, interface_name)
+
+/datum/tgui_asset_generation/proc/get_chunk_base_url()
+	if(istype(chunk_assets, /datum/asset/simple/namespaced/tgui_live_generation_chunks))
+		var/datum/asset/simple/namespaced/tgui_live_generation_chunks/live_chunks = chunk_assets
+		return live_chunks.get_public_base_url()
+	if(istype(chunk_assets, /datum/asset/simple/namespaced/tgui_chunks))
+		var/datum/asset/simple/namespaced/tgui_chunks/boot_chunks = chunk_assets
+		return boot_chunks.get_public_base_url()
+	return null
+
+/datum/tgui_asset_generation/proc/get_chunk_assets(list/filenames)
+	if(!islist(filenames) || !length(filenames))
+		return null
+	if(istype(chunk_assets, /datum/asset/simple/namespaced/tgui_live_generation_chunks))
+		var/datum/asset/simple/namespaced/tgui_live_generation_chunks/live_chunks = chunk_assets
+		return live_chunks.get_assets(filenames)
+	var/list/result = list()
+	for(var/filename in filenames)
+		var/datum/asset_cache_item/item = chunk_assets?.assets[filename]
+		if(item)
+			result[filename] = item
+	return result
+
 SUBSYSTEM_DEF(tgui)
 	name = "tgui"
 	wait = 9
@@ -43,6 +85,13 @@ SUBSYSTEM_DEF(tgui)
 	/// is replenished as shells are acquired instead of opening the whole pool at
 	/// login, avoiding a Chromium startup burst while keeping normal opens warm.
 	var/prewarm_window_reserve = 2
+	/// Currently published coherent TGUI generation. New or reinitialized shells
+	/// pin this object; older shells retain the generation they already loaded.
+	var/datum/tgui_asset_generation/current_asset_generation
+	/// All generations remain alive for the process lifetime so old content-addressed
+	/// URLs and browse_rsc resources cannot disappear beneath an open shell.
+	var/list/asset_generations = list()
+	var/asset_generation_sequence = 0
 
 /datum/controller/subsystem/tgui/PreInit()
 	basehtml = file2text('tgui/public/tgui.html')
@@ -93,25 +142,71 @@ SUBSYSTEM_DEF(tgui)
 			window_geometry_manifest = json_decode(raw)
 
 /datum/controller/subsystem/tgui/proc/get_default_geometry(interface_name)
-	var/list/geometry = LAZYACCESS(window_geometry_manifest, interface_name)
-	if(!islist(geometry) || !isnum(geometry["width"]) || !isnum(geometry["height"]))
-		return null
-	return geometry
+	var/datum/tgui_asset_generation/generation = get_current_asset_generation()
+	return generation?.get_default_geometry(interface_name)
 
-/// Atomically advances the development manifest and its registered chunk files.
+/datum/controller/subsystem/tgui/proc/get_current_asset_generation() as /datum/tgui_asset_generation
+	if(current_asset_generation)
+		return current_asset_generation
+	var/datum/tgui_asset_generation/generation = new
+	generation.id = "boot"
+	generation.basehtml = basehtml
+	generation.chunk_manifest = chunk_manifest
+	generation.chunk_files = chunk_files
+	generation.window_geometry_manifest = window_geometry_manifest
+	generation.shell_assets = get_asset_datum(/datum/asset/simple/tgui)
+	generation.chunk_assets = get_asset_datum(/datum/asset/simple/namespaced/tgui_chunks)
+	asset_generations += generation
+	current_asset_generation = generation
+	return generation
+
+/// Validates and atomically publishes a complete live TGUI generation. Nothing
+/// in the current generation is mutated; failure leaves every window untouched.
 /datum/controller/subsystem/tgui/proc/reload_development_chunks()
 	var/development_directory = "tgui/public/.tmp"
 	var/development_manifest = "[development_directory]/tgui-chunk-manifest.json"
-	if(!fexists(development_manifest))
-		return
-	load_chunk_manifest(development_manifest)
-	load_window_geometry_manifest("[development_directory]/tgui-window-manifest.json")
+	var/development_geometry = "[development_directory]/tgui-window-manifest.json"
+	if(!fexists(development_manifest) || !fexists(development_geometry) || !fexists("[development_directory]/tgui.bundle.js") || !fexists("[development_directory]/tgui.bundle.css"))
+		log_tgui(null, "Rejected incomplete live TGUI generation: required shell or manifest file missing.", context = "SStgui/reload_development_chunks")
+		return FALSE
+	var/list/new_manifest = json_decode(file2text(development_manifest))
+	var/list/new_geometry_manifest = json_decode(file2text(development_geometry))
+	if(!islist(new_manifest) || !islist(new_geometry_manifest))
+		log_tgui(null, "Rejected invalid live TGUI generation manifest.", context = "SStgui/reload_development_chunks")
+		return FALSE
 	var/list/chunk_filenames = list()
-	for(var/interface_name in chunk_manifest)
-		for(var/filename in chunk_manifest[interface_name])
+	var/list/new_chunk_files = list()
+	for(var/interface_name in new_manifest)
+		var/list/interface_files = new_manifest[interface_name]
+		if(!islist(interface_files) || !length(interface_files))
+			log_tgui(null, "Rejected live TGUI generation: [interface_name] has no chunk files.", context = "SStgui/reload_development_chunks")
+			return FALSE
+		for(var/filename in interface_files)
+			if(findtext(filename, "/") || findtext(filename, "\\") || !fexists("[development_directory]/[filename]"))
+				log_tgui(null, "Rejected live TGUI generation: unsafe or missing chunk [filename].", context = "SStgui/reload_development_chunks")
+				return FALSE
+			if(!chunk_filenames[filename])
+				new_chunk_files += filename
 			chunk_filenames[filename] = TRUE
-	var/datum/asset/simple/namespaced/tgui_chunks/chunks = get_asset_datum(/datum/asset/simple/namespaced/tgui_chunks)
-	chunks.reload_from_directory(development_directory, chunk_filenames)
+	var/generation_id = "live-[++asset_generation_sequence]"
+	var/datum/asset/simple/tgui_live_generation/new_shell = new(development_directory, generation_id)
+	var/datum/asset/simple/namespaced/tgui_live_generation_chunks/new_chunks = new(development_directory, chunk_filenames)
+	var/datum/tgui_asset_generation/generation = new
+	generation.id = generation_id
+	generation.basehtml = basehtml
+	generation.chunk_manifest = new_manifest
+	generation.chunk_files = new_chunk_files
+	generation.window_geometry_manifest = new_geometry_manifest
+	generation.shell_assets = new_shell
+	generation.chunk_assets = new_chunks
+	asset_generations += generation
+	// The single assignment is the publication point. A window sees the complete
+	// old generation or the complete new one, never partially-updated state.
+	current_asset_generation = generation
+	for(var/client/client in GLOB.clients)
+		client.tgui_chunk_warm_started = FALSE
+	log_tgui(null, "Published immutable TGUI asset generation [generation_id] with [length(new_chunk_files)] chunks.", context = "SStgui/reload_development_chunks")
+	return TRUE
 
 /datum/controller/subsystem/tgui/OnConfigLoad()
 	var/storage_iframe = CONFIG_GET(string/storage_cdn_iframe)
@@ -181,6 +276,10 @@ SUBSYSTEM_DEF(tgui)
 		// Skip windows with acquired locks
 		if(window.locked)
 			continue
+		// An idle shell from an older publication must not be reused with the new
+		// manifest. Mark it for a fresh browse() initialization on acquisition.
+		if(window.status == TGUI_WINDOW_READY && window.asset_generation != get_current_asset_generation())
+			window.status = TGUI_WINDOW_CLOSED
 		if(window.status == TGUI_WINDOW_READY)
 			addtimer(CALLBACK(src, PROC_REF(maintain_client_prewarm), user.client), 1 SECOND, TIMER_UNIQUE)
 			return window
@@ -215,7 +314,7 @@ SUBSYSTEM_DEF(tgui)
 	window.initialize(
 		strict_mode = TRUE,
 		fancy = client.prefs?.read_preference(/datum/preference/toggle/tgui_fancy),
-		assets = list(get_asset_datum(/datum/asset/simple/tgui)),
+		assets = list(get_current_asset_generation().shell_assets),
 	)
 	var/flush_queue = window.send_asset(get_asset_datum(/datum/asset/simple/namespaced/fontawesome))
 	flush_queue |= window.send_asset(get_asset_datum(/datum/asset/simple/namespaced/tgfont))

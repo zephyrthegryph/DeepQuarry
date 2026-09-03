@@ -132,7 +132,7 @@
 			strict_mode = TRUE,
 			fancy = user.read_preference(/datum/preference/toggle/tgui_fancy),
 			assets = list(
-				get_asset_datum(/datum/asset/simple/tgui),
+				SStgui.get_current_asset_generation().shell_assets,
 				))
 	else
 		window.send_message("ping")
@@ -190,13 +190,14 @@
 	// moment it mounts. Each interface chunk is self-contained (rspack splitChunks is
 	// off), so the single manifest entry is the complete set of files needed — no
 	// dependency closure. No-op when the build emitted no manifest (unsplit bundle).
-	var/list/interface_chunks = LAZYACCESS(SStgui.chunk_manifest, interface)
+	var/datum/tgui_asset_generation/asset_generation = window.asset_generation || SStgui.get_current_asset_generation()
+	var/list/interface_chunks = asset_generation.get_interface_chunks(interface)
 	// Directly copying development chunks into BYOND's cache is not sufficient:
 	// Chromium can request a file before BYOND has registered its browse_rsc name,
 	// producing an intermittent ChunkLoadError. The asset transport deduplicates
 	// files already sent to this client, so always use the reliable publication path.
 	if(interface_chunks)
-		flush_queue |= SSassets.transport.send_assets(user.client, interface_chunks)
+		flush_queue |= SSassets.transport.send_assets(user.client, asset_generation.get_chunk_assets(interface_chunks))
 	if (flush_queue)
 		#ifdef DEBUG
 		flush_started_ms = rustg_time_milliseconds(startup_timer)
@@ -345,10 +346,10 @@
  */
 /datum/tgui/proc/get_payload(custom_data, with_data, with_static_data, list/startup_profile, startup_timer)
 	var/list/json_data = list()
-	var/datum/asset/simple/namespaced/tgui_chunks/chunk_assets = get_asset_datum(/datum/asset/simple/namespaced/tgui_chunks)
-	var/list/default_geometry = SStgui.get_default_geometry(interface)
+	var/datum/tgui_asset_generation/asset_generation = window?.asset_generation || SStgui.get_current_asset_generation()
+	var/list/default_geometry = asset_generation.get_default_geometry(interface)
 	json_data["config"] = list(
-		"chunk_base_url" = chunk_assets.get_public_base_url(),
+		"chunk_base_url" = asset_generation.get_chunk_base_url(),
 		"title" = title,
 		"status" = status,
 		"interface" = list(

@@ -259,7 +259,8 @@
 			return TRUE
 		// Every development build may assign new async chunk ids. Refresh the
 		// manifest and registrations before any browser is told to reload.
-		SStgui.reload_development_chunks()
+		if(!SStgui.reload_development_chunks())
+			return TRUE
 		#else
 		if(usr.client.tgui_cache_reloaded)
 			return TRUE
