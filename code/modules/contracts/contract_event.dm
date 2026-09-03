@@ -226,7 +226,7 @@
 		),
 		CONTRACT_EVENT_FOOD_CONSUMED = list(
 			"required" = list("subject_id", "item_type", "food_kind", "portion"),
-			"numeric" = list("portion", "finished"),
+			"numeric" = list("portion", "finished", "sale_invoice_id"),
 		),
 		CONTRACT_EVENT_CROP_HARVESTED = list(
 			"required" = list("crop_id", "crop_name", "yield", "potency"),

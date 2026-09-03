@@ -162,7 +162,7 @@
 	for(var/obj/sale_item as anything in verified_sale_items)
 		if(QDELETED(sale_item) || sale_item.economic_sale_invoice_id || !remaining_by_name[sale_item.name] || remaining_personal_payment <= 0)
 			continue
-		if(provider.department_id != DEPARTMENT_CARGO && sale_item.economic_department != provider.department_id)
+		if(!(provider.department_id in list(DEPARTMENT_CARGO, DEPARTMENT_CIVILIAN)) && sale_item.economic_department != provider.department_id)
 			continue
 		var/scanned_value = verified_sale_items[sale_item]
 		if(!isnum(scanned_value) || scanned_value <= 0)

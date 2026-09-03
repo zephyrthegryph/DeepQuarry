@@ -372,9 +372,15 @@
 		return
 	var/revision = SScontracts.next_infrastructure_revision(source)
 	var/current_damage = max(0, source.max_integrity - source.get_integrity())
+	var/turf/source_turf = get_turf(source)
+	var/asset_label = "[source.name] in [get_area(source)]"
+	if(source_turf)
+		asset_label += " ([source_turf.x], [source_turf.y], [source_turf.z])"
 	emit_contract_event(CONTRACT_EVENT_INFRASTRUCTURE_DAMAGED, list(
 		"department" = DEPARTMENT_ENGINEERING,
 		"atom_id" = REF(source),
+		"asset_name" = source.name,
+		"asset_label" = asset_label,
 		"atom_type" = source.type,
 		"fact_id" = "infrastructure-damage:[REF(source)]",
 		"fact_revision" = revision,
@@ -390,9 +396,15 @@
 /proc/contract_report_station_repair(atom/source, amount)
 	if(!SScontracts || !contract_atom_is_station_infrastructure(source) || !isnum(amount) || amount <= 0)
 		return
+	var/turf/source_turf = get_turf(source)
+	var/asset_label = "[source.name] in [get_area(source)]"
+	if(source_turf)
+		asset_label += " ([source_turf.x], [source_turf.y], [source_turf.z])"
 	emit_contract_event(CONTRACT_EVENT_INFRASTRUCTURE_REPAIRED, list(
 		"department" = DEPARTMENT_ENGINEERING,
 		"atom_id" = REF(source),
+		"asset_name" = source.name,
+		"asset_label" = asset_label,
 		"atom_type" = source.type,
 		"repair_amount" = amount,
 		"integrity" = source.get_integrity(),
@@ -404,6 +416,8 @@
 	emit_contract_event(CONTRACT_EVENT_INFRASTRUCTURE_DAMAGED, list(
 		"department" = DEPARTMENT_ENGINEERING,
 		"atom_id" = REF(source),
+		"asset_name" = source.name,
+		"asset_label" = asset_label,
 		"atom_type" = source.type,
 		"fact_id" = "infrastructure-damage:[REF(source)]",
 		"fact_revision" = revision,

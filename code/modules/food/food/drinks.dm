@@ -103,6 +103,7 @@
 			"subject_id" = SScontracts.subject_identity(eater)?.id,
 			"item_type" = type,
 			"food_kind" = "drink",
+			"sale_invoice_id" = economic_sale_invoice_id,
 			"portion" = 1,
 			"finished" = !reagents.total_volume,
 			"detail" = "[eater] consumed a serving from [src].",

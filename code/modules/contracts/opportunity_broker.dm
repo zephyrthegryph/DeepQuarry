@@ -484,6 +484,8 @@
 	damage.maximum_fact_value = 250
 	damage.require_station_source = TRUE
 	damage.require_diversity("atom_id", 4)
+	// Capture a readable asset roster for the resulting incident contract.
+	damage.require_diversity("asset_label", 1)
 	damage.require_diversity("area_name", 2)
 
 /datum/contract_opportunity_rule/power_disruption
@@ -668,22 +670,6 @@
 	harvest.maximum_actor_value = 35
 	harvest.require_station_source = TRUE
 	harvest.require_diversity("crop_id", 6)
-
-/datum/contract_opportunity_rule/sanitation_demand
-	id = "sanitation_demand"
-	definition_id = "opportunity_facilities_surge"
-	description = "Broad contamination response created a facilities surge commission."
-	window_duration = 8 MINUTES
-
-/datum/contract_opportunity_rule/sanitation_demand/configure()
-	var/datum/contract_opportunity_signal/cleanup = add_signal(new /datum/contract_opportunity_signal("cleanup", CONTRACT_EVENT_SANITATION_COMPLETED, 12, "cleaned_units"))
-	cleanup.minimum_facts = 12
-	cleanup.maximum_fact_value = 1
-	cleanup.maximum_actor_value = 8
-	cleanup.require_station_source = TRUE
-	cleanup.require_diversity("target_id", 12)
-	cleanup.require_diversity("area_name", 4)
-	cleanup.require_diversity("method", 2)
 
 /datum/contract_opportunity_rule/automation_demand
 	id = "automation_demand"

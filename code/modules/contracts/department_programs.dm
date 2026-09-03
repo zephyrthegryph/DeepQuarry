@@ -37,6 +37,14 @@
 	contract.add_requirement(requirement)
 	return requirement
 
+/// Keep social breadth meaningful without making low-population offers impossible.
+/proc/contract_scaled_participant_target(desired, minimum = 2, crew_per_participant = 2)
+	var/active_crew = 0
+	for(var/mob/living/player in GLOB.player_list)
+		if(player.client && player.stat != DEAD)
+			active_crew++
+	return min(desired, max(minimum, CEILING(active_crew / crew_per_participant, 1)))
+
 /datum/contract_definition/social/program
 	abstract_type = /datum/contract_definition/social/program
 	expected_duration = 25 MINUTES
@@ -53,44 +61,6 @@
 // --------------------------------------------------------------------------
 // Engineering
 // --------------------------------------------------------------------------
-
-/datum/contract_definition/social/program/grid_recovery
-	id = "grid_recovery_indemnity"
-	title = "Grid Recovery Indemnity"
-	description = "NanoTrasen Utilities will underwrite a documented recovery of distributed station electrical service."
-	scope = CONTRACT_SCOPE_DEPARTMENT
-	department = DEPARTMENT_ENGINEERING
-	issuer_name = "NanoTrasen Utilities Assurance"
-	issuer_faction = REPUTATION_FACTION_NANOTRASEN
-	reward = 3000
-
-/datum/contract_definition/social/program/grid_recovery/configure_contract(datum/contract/social/contract, list/context)
-	..()
-	contract.description = "Restore and hold full electrical service at several independently monitored APCs, while completing meaningful physical repairs. Partial recovery qualifies for a reduced graded settlement."
-	add_social_role(contract, "engineer", "Grid recovery engineer", "Restores generation, distribution, and damaged electrical assets.", list(DEPARTMENT_ENGINEERING), 1, 4)
-	add_social_role(contract, "liaison", "Service-area liaison", "Confirms operational needs and coordinates safe access in affected departments.", null, 2, 8)
-	contract.personal_side_definitions = list("engineering_safety_watch")
-	add_program_count(contract, CONTRACT_EVENT_POWER_SERVICE_CHANGED, 5, "Restored APC coverage", "Return five distinct APC service zones to all three powered channels.", null, CONTRACT_EVIDENCE_SCOPE_DEPARTMENT, "service_id", null, list(list("key" = "powered_channels", "comparator" = CONTRACT_EVIDENCE_COMPARE_AT_LEAST, "expected" = 3)))
-	add_program_sustained(contract, CONTRACT_EVENT_POWER_SERVICE_CHANGED, "service_id", "powered_channels", CONTRACT_EVIDENCE_COMPARE_AT_LEAST, 3, 3 MINUTES, 3, "Stable restored grid", "Hold three restored APC service zones at full power for three minutes.", CONTRACT_EVIDENCE_SCOPE_DEPARTMENT)
-	add_program_count(contract, CONTRACT_EVENT_INFRASTRUCTURE_REPAIRED, 300, "Physical restoration", "Restore substantial damage across station machinery and structures.", "repair_amount")
-
-/datum/contract_definition/social/program/atmos_recovery
-	id = "atmospheric_recovery_bond"
-	title = "Atmospheric Recovery Bond"
-	description = "Osiris underwriters request the recovery and recertification of multiple unsafe station atmosphere zones."
-	scope = CONTRACT_SCOPE_DEPARTMENT
-	department = DEPARTMENT_ENGINEERING
-	issuer_name = "Osiris Atmospherics Underwriting"
-	issuer_faction = REPUTATION_FACTION_SOLGOV
-	reward = 3100
-
-/datum/contract_definition/social/program/atmos_recovery/configure_contract(datum/contract/social/contract, list/context)
-	..()
-	add_social_role(contract, "atmos", "Atmospheric recovery lead", "Repairs containment and restores safe pressure and temperature.", list(DEPARTMENT_ENGINEERING), 1, 4)
-	add_social_role(contract, "occupant", "Affected-area representative", "Coordinates evacuation, access, and operational acceptance.", null, 2, 8)
-	add_program_count(contract, CONTRACT_EVENT_ATMOS_SERVICE_CHANGED, 5, "Recovered alarm zones", "Return five distinct air-alarm zones to a safe state above 80 kPa.", null, CONTRACT_EVIDENCE_SCOPE_DEPARTMENT, "service_id", null, list(list("key" = "danger_level", "comparator" = CONTRACT_EVIDENCE_COMPARE_AT_MOST, "expected" = 0), list("key" = "pressure", "comparator" = CONTRACT_EVIDENCE_COMPARE_AT_LEAST, "expected" = 80)))
-	add_program_sustained(contract, CONTRACT_EVENT_ATMOS_SERVICE_CHANGED, "service_id", "danger_level", CONTRACT_EVIDENCE_COMPARE_AT_MOST, 0, 3 MINUTES, 3, "Sustained atmosphere", "Hold three recovered zones at safe alarm status for three minutes.", CONTRACT_EVIDENCE_SCOPE_DEPARTMENT, null, list(list("key" = "pressure", "comparator" = CONTRACT_EVIDENCE_COMPARE_AT_LEAST, "expected" = 80)))
-	add_program_count(contract, CONTRACT_EVENT_INFRASTRUCTURE_REPAIRED, 200, "Containment repairs", "Repair substantial containment damage associated with the recovery.", "repair_amount")
 
 /datum/contract_definition/social/program/alternative_fuel
 	id = "alternative_fuel_demonstration"
@@ -116,24 +86,6 @@
 	add_program_sustained(contract, CONTRACT_EVENT_MACHINE_RESULT, "machine_id", "eer", CONTRACT_EVIDENCE_COMPARE_AT_LEAST, 350, 2 MINUTES, 1, "Alternative-fuel output", "Hold at least 350 Relative EER for two minutes with two or more chamber gases, no more than 15% phoron, and at least 80% integrity.", CONTRACT_EVIDENCE_SCOPE_DEPARTMENT, list("machine_kind" = "supermatter"), output_checks)
 	add_program_sustained(contract, CONTRACT_EVENT_MACHINE_RESULT, "machine_id", "temperature", CONTRACT_EVIDENCE_COMPARE_AT_MOST, 4500, 2 MINUTES, 1, "Thermal control", "Keep the qualifying engine below 4,500 K for the full demonstration.", CONTRACT_EVIDENCE_SCOPE_DEPARTMENT, list("machine_kind" = "supermatter"), list(list("key" = "eer", "comparator" = CONTRACT_EVIDENCE_COMPARE_AT_LEAST, "expected" = 350)))
 
-/datum/contract_definition/social/program/preventative_maintenance
-	id = "preventative_maintenance_portfolio"
-	title = "Preventative Maintenance Portfolio"
-	description = "Ward-Takahashi requests a broad portfolio of authentic station infrastructure maintenance."
-	scope = CONTRACT_SCOPE_DEPARTMENT
-	department = DEPARTMENT_ENGINEERING
-	issuer_name = "Ward-Takahashi Reliability Office"
-	issuer_faction = REPUTATION_FACTION_NANOTRASEN
-	reward = 2700
-
-/datum/contract_definition/social/program/preventative_maintenance/configure_contract(datum/contract/social/contract, list/context)
-	..()
-	add_social_role(contract, "maintainer", "Maintenance lead", "Plans and performs the preventative work portfolio.", list(DEPARTMENT_ENGINEERING), 1, 4)
-	add_social_role(contract, "owner", "Asset-area representative", "Identifies operational assets and verifies that work does not disrupt service.", null, 2, 8)
-	add_program_count(contract, CONTRACT_EVENT_INFRASTRUCTURE_REPAIRED, 600, "Restored infrastructure", "Complete a substantial portfolio of station machinery and structural repairs.", "repair_amount")
-	add_program_count(contract, CONTRACT_EVENT_INFRASTRUCTURE_REPAIRED, 7, "Asset diversity", "Repair seven distinct infrastructure classes.", null, CONTRACT_EVIDENCE_SCOPE_ANY, "atom_type")
-	add_program_count(contract, CONTRACT_EVENT_INFRASTRUCTURE_REPAIRED, 5, "Area coverage", "Perform qualifying work in five distinct station areas.", null, CONTRACT_EVIDENCE_SCOPE_ANY, "area_name")
-
 // --------------------------------------------------------------------------
 // Medical
 // --------------------------------------------------------------------------
@@ -150,11 +102,12 @@
 
 /datum/contract_definition/social/program/occupational_recovery/configure_contract(datum/contract/social/contract, list/context)
 	..()
+	var/patient_target = contract_scaled_participant_target(6, 2)
 	add_social_role(contract, "clinician", "Occupational clinician", "Coordinates diagnosis, treatment, and follow-up records.", list(DEPARTMENT_MEDICAL), 1, 4)
 	add_social_role(contract, "patient", "Participating worker", "Participates in care and outcome follow-up.", null, 4, 12)
-	add_program_count(contract, CONTRACT_EVENT_MEDICAL_TREATMENT_OUTCOME, 300, "Clinical improvement", "Deliver substantial, measurable improvement across participating workers.", "improvement", CONTRACT_EVIDENCE_SCOPE_DEPARTMENT)
-	add_program_count(contract, CONTRACT_EVENT_MEDICAL_TREATMENT_OUTCOME, 6, "Workers recovered", "Improve six distinct patients.", null, CONTRACT_EVIDENCE_SCOPE_DEPARTMENT, "subject_id")
-	add_program_count(contract, CONTRACT_EVENT_MEDICAL_SCAN_CREATED, 6, "Documented follow-up", "File body-scanner follow-ups for six distinct patients.", null, CONTRACT_EVIDENCE_SCOPE_ANY, "subject_id")
+	add_program_count(contract, CONTRACT_EVENT_MEDICAL_TREATMENT_OUTCOME, patient_target * 50, "Clinical improvement", "Deliver substantial, measurable improvement across participating workers.", "improvement", CONTRACT_EVIDENCE_SCOPE_DEPARTMENT)
+	add_program_count(contract, CONTRACT_EVENT_MEDICAL_TREATMENT_OUTCOME, patient_target, "Workers recovered", "Improve [patient_target] distinct patients.", null, CONTRACT_EVIDENCE_SCOPE_DEPARTMENT, "subject_id")
+	add_program_count(contract, CONTRACT_EVENT_MEDICAL_SCAN_CREATED, patient_target, "Documented follow-up", "File body-scanner follow-ups for [patient_target] distinct patients.", null, CONTRACT_EVIDENCE_SCOPE_ANY, "subject_id")
 
 /datum/contract_definition/social/program/blood_reserve
 	id = "blood_reserve_campaign"
@@ -168,11 +121,13 @@
 
 /datum/contract_definition/social/program/blood_reserve/configure_contract(datum/contract/social/contract, list/context)
 	..()
+	var/donor_target = contract_scaled_participant_target(4, 2, 3)
+	var/type_target = min(3, donor_target)
 	add_social_role(contract, "clinician", "Transfusion coordinator", "Screens donors and manages safe blood collection.", list(DEPARTMENT_MEDICAL), 1, 3)
 	add_social_role(contract, "donor", "Registered donor", "Contributes to the station reserve under Medical supervision.", null, 4, 12)
-	add_program_count(contract, CONTRACT_EVENT_BLOOD_DONATED, 600, "Reserve volume", "Collect 600 units of blood into the station reserve.", "amount", CONTRACT_EVIDENCE_SCOPE_DEPARTMENT)
-	add_program_count(contract, CONTRACT_EVENT_BLOOD_DONATED, 4, "Donor participation", "Collect from four distinct donors.", null, CONTRACT_EVIDENCE_SCOPE_DEPARTMENT, "subject_id")
-	add_program_count(contract, CONTRACT_EVENT_BLOOD_DONATED, 3, "Blood-type breadth", "Represent three distinct blood types in the campaign.", null, CONTRACT_EVIDENCE_SCOPE_DEPARTMENT, "blood_type")
+	add_program_count(contract, CONTRACT_EVENT_BLOOD_DONATED, donor_target * 150, "Reserve volume", "Collect [donor_target * 150] units of blood into the station reserve.", "amount", CONTRACT_EVIDENCE_SCOPE_DEPARTMENT)
+	add_program_count(contract, CONTRACT_EVENT_BLOOD_DONATED, donor_target, "Donor participation", "Collect from [donor_target] distinct donors.", null, CONTRACT_EVIDENCE_SCOPE_DEPARTMENT, "subject_id")
+	add_program_count(contract, CONTRACT_EVENT_BLOOD_DONATED, type_target, "Blood-type breadth", "Represent [type_target] distinct blood types in the campaign.", null, CONTRACT_EVIDENCE_SCOPE_DEPARTMENT, "blood_type")
 
 /datum/contract_definition/social/program/rehabilitation
 	id = "rehabilitation_return_to_duty"
@@ -183,14 +138,18 @@
 	issuer_name = "NanoTrasen Occupational Health"
 	issuer_faction = REPUTATION_FACTION_NANOTRASEN
 	reward = 2800
+	// Superseded by the population-scaled Occupational Recovery and Clinical
+	// Access programs, which cover the same play without duplicating scan work.
+	initial_offers = 0
 
 /datum/contract_definition/social/program/rehabilitation/configure_contract(datum/contract/social/contract, list/context)
 	..()
+	var/patient_target = contract_scaled_participant_target(5, 2)
 	add_social_role(contract, "rehab", "Rehabilitation clinician", "Coordinates treatment and confirms durable recovery.", list(DEPARTMENT_MEDICAL), 1, 4)
 	add_social_role(contract, "worker", "Returning crew member", "Completes treatment and follow-up assessment.", null, 4, 10)
-	add_program_count(contract, CONTRACT_EVENT_MEDICAL_TREATMENT_OUTCOME, 240, "Condition recovery", "Deliver substantial, measurable recovery across returning crew.", "improvement", CONTRACT_EVIDENCE_SCOPE_DEPARTMENT)
-	add_program_count(contract, CONTRACT_EVENT_MEDICAL_TREATMENT_OUTCOME, 5, "Returned crew", "Improve five distinct crew members.", null, CONTRACT_EVIDENCE_SCOPE_DEPARTMENT, "subject_id")
-	add_program_count(contract, CONTRACT_EVENT_MEDICAL_SCAN_CREATED, 5, "Return-to-duty scans", "Produce follow-up scans for five distinct patients.", null, CONTRACT_EVIDENCE_SCOPE_ANY, "subject_id")
+	add_program_count(contract, CONTRACT_EVENT_MEDICAL_TREATMENT_OUTCOME, patient_target * 48, "Condition recovery", "Deliver substantial, measurable recovery across returning crew.", "improvement", CONTRACT_EVIDENCE_SCOPE_DEPARTMENT)
+	add_program_count(contract, CONTRACT_EVENT_MEDICAL_TREATMENT_OUTCOME, patient_target, "Returned crew", "Improve [patient_target] distinct crew members.", null, CONTRACT_EVIDENCE_SCOPE_DEPARTMENT, "subject_id")
+	add_program_count(contract, CONTRACT_EVENT_MEDICAL_SCAN_CREATED, patient_target, "Return-to-duty scans", "Produce follow-up scans for [patient_target] distinct patients.", null, CONTRACT_EVIDENCE_SCOPE_ANY, "subject_id")
 
 /datum/contract_definition/social/program/public_health
 	id = "public_health_response"
@@ -204,11 +163,13 @@
 
 /datum/contract_definition/social/program/public_health/configure_contract(datum/contract/social/contract, list/context)
 	..()
+	var/patient_target = contract_scaled_participant_target(8, 3)
+	var/condition_target = min(4, max(2, CEILING(patient_target / 2, 1)))
 	add_social_role(contract, "coordinator", "Public-health coordinator", "Coordinates case finding, treatment, and follow-up.", list(DEPARTMENT_MEDICAL), 1, 3)
 	add_social_role(contract, "liaison", "Department health liaison", "Brings department-specific risks and affected staff into the response.", null, 3, 8)
-	add_program_count(contract, CONTRACT_EVENT_MEDICAL_TREATMENT_OUTCOME, 8, "Cases improved", "Improve the diagnosed conditions of eight distinct patients.", null, CONTRACT_EVIDENCE_SCOPE_DEPARTMENT, "subject_id")
-	add_program_count(contract, CONTRACT_EVENT_MEDICAL_TREATMENT_OUTCOME, 4, "Condition breadth", "Treat four distinct condition classes.", null, CONTRACT_EVIDENCE_SCOPE_DEPARTMENT, "condition_type")
-	add_program_count(contract, CONTRACT_EVENT_MEDICAL_SCAN_CREATED, 8, "Case surveillance", "Create medical scans for eight distinct patients.", null, CONTRACT_EVIDENCE_SCOPE_ANY, "subject_id")
+	add_program_count(contract, CONTRACT_EVENT_MEDICAL_TREATMENT_OUTCOME, patient_target, "Cases improved", "Improve the diagnosed conditions of [patient_target] distinct patients.", null, CONTRACT_EVIDENCE_SCOPE_DEPARTMENT, "subject_id")
+	add_program_count(contract, CONTRACT_EVENT_MEDICAL_TREATMENT_OUTCOME, condition_target, "Condition breadth", "Treat [condition_target] distinct condition classes.", null, CONTRACT_EVIDENCE_SCOPE_DEPARTMENT, "condition_type")
+	add_program_count(contract, CONTRACT_EVENT_MEDICAL_SCAN_CREATED, patient_target, "Case surveillance", "Create medical scans for [patient_target] distinct patients.", null, CONTRACT_EVIDENCE_SCOPE_ANY, "subject_id")
 
 // --------------------------------------------------------------------------
 // Research
@@ -359,8 +320,8 @@
 	add_social_role(contract, "officer", "Buyback coordinator", "Records surrendered cases and verifies lawful disposition.", list(DEPARTMENT_SECURITY), 1, 4)
 	add_social_role(contract, "participant", "Program participant", "Participates in a documented voluntary resolution.", null, 3, 10)
 	contract.personal_side_definitions = list("security_record_suppression")
-	add_program_count(contract, CONTRACT_EVENT_SECURITY_DISPOSITION_CHANGED, 5, "Resolved participants", "Close cases concerning five distinct identifiable people.", null, CONTRACT_EVIDENCE_SCOPE_DEPARTMENT, "subject_id")
-	add_program_count(contract, CONTRACT_EVENT_MONEY_TRANSFERRED, 1000, "Documented consideration", "Transfer 1,000 Thalers in genuine participant compensation or restitution.", "amount", CONTRACT_EVIDENCE_SCOPE_ANY, "target_account", null, list(list("key" = "amount", "comparator" = CONTRACT_EVIDENCE_COMPARE_AT_LEAST, "expected" = 50)))
+	add_program_count(contract, CONTRACT_EVENT_SECURITY_DISPOSITION_CHANGED, 5, "Resolved participants", "Close custodial cases concerning five distinct identifiable people.", null, CONTRACT_EVIDENCE_SCOPE_DEPARTMENT, "subject_id", list("physical_custody_verified" = TRUE))
+	add_program_count(contract, CONTRACT_EVENT_MONEY_TRANSFERRED, 1000, "Documented consideration", "Pay 1,000 Thalers to participants using the transfer purpose 'Contraband buyback'.", "amount", CONTRACT_EVIDENCE_SCOPE_ANY, "target_account", list("purpose" = "Contraband buyback"), list(list("key" = "amount", "comparator" = CONTRACT_EVIDENCE_COMPARE_AT_LEAST, "expected" = 50)))
 
 /datum/contract_definition/social/program/forensic_portfolio
 	id = "forensic_case_portfolio"
@@ -376,8 +337,8 @@
 	..()
 	add_social_role(contract, "investigator", "Case investigator", "Develops records and links them to physical subjects.", list(DEPARTMENT_SECURITY), 1, 4)
 	add_social_role(contract, "reviewer", "Independent case reviewer", "Reviews proportionality and record completeness.", list(DEPARTMENT_COMMAND, DEPARTMENT_MEDICAL), 1, 3)
-	add_program_count(contract, CONTRACT_EVENT_SECURITY_DISPOSITION_CHANGED, 7, "Case portfolio", "Resolve seven distinct security records linked to physical subjects.", null, CONTRACT_EVIDENCE_SCOPE_DEPARTMENT, "record_id")
-	add_program_count(contract, CONTRACT_EVENT_SECURITY_DISPOSITION_CHANGED, 5, "Subject breadth", "Resolve cases for five distinct physical subjects.", null, CONTRACT_EVIDENCE_SCOPE_DEPARTMENT, "physical_subject_id")
+	add_program_count(contract, CONTRACT_EVENT_SECURITY_DISPOSITION_CHANGED, 7, "Case portfolio", "Resolve seven distinct custodial records linked to identifiable people.", null, CONTRACT_EVIDENCE_SCOPE_DEPARTMENT, "record_id", list("physical_custody_verified" = TRUE))
+	add_program_count(contract, CONTRACT_EVENT_SECURITY_DISPOSITION_CHANGED, 5, "Subject breadth", "Resolve custodial cases for five distinct people.", null, CONTRACT_EVIDENCE_SCOPE_DEPARTMENT, "physical_subject_id", list("physical_custody_verified" = TRUE))
 	add_program_count(contract, CONTRACT_EVENT_CUSTODY_CHANGED, 3, "Documented custody", "Document custody of three distinct people.", null, CONTRACT_EVIDENCE_SCOPE_DEPARTMENT, "subject_id")
 
 /datum/contract_definition/social/program/community_resolution
@@ -394,8 +355,8 @@
 	..()
 	add_social_role(contract, "mediator", "Security mediator", "Facilitates documented case closure without predetermining the outcome.", list(DEPARTMENT_SECURITY), 1, 3)
 	add_social_role(contract, "party", "Community participant", "Represents an affected party, guarantor, or department.", null, 4, 12)
-	add_program_count(contract, CONTRACT_EVENT_SECURITY_DISPOSITION_CHANGED, 5, "Resolved docket", "Close five distinct case records.", null, CONTRACT_EVIDENCE_SCOPE_DEPARTMENT, "record_id")
-	add_program_count(contract, CONTRACT_EVENT_MONEY_TRANSFERRED, 800, "Restitution and guarantees", "Record 800 Thalers of genuine transfers among distinct recipients.", "amount", CONTRACT_EVIDENCE_SCOPE_ANY, "target_account", null, list(list("key" = "amount", "comparator" = CONTRACT_EVIDENCE_COMPARE_AT_LEAST, "expected" = 50)))
+	add_program_count(contract, CONTRACT_EVENT_SECURITY_DISPOSITION_CHANGED, 5, "Resolved docket", "Close five distinct custodial case records.", null, CONTRACT_EVIDENCE_SCOPE_DEPARTMENT, "record_id", list("physical_custody_verified" = TRUE))
+	add_program_count(contract, CONTRACT_EVENT_MONEY_TRANSFERRED, 800, "Restitution and guarantees", "Transfer 800 Thalers among distinct recipients using the purpose 'Community restitution'.", "amount", CONTRACT_EVIDENCE_SCOPE_ANY, "target_account", list("purpose" = "Community restitution"), list(list("key" = "amount", "comparator" = CONTRACT_EVIDENCE_COMPARE_AT_LEAST, "expected" = 50)))
 
 /datum/contract_definition/social/program/emergency_response
 	id = "emergency_response_accreditation"
@@ -406,14 +367,16 @@
 	issuer_name = "SolGov Emergency Management"
 	issuer_faction = REPUTATION_FACTION_SOLGOV
 	reward = 3200
+	// Reserved for a future multi-system incident trigger; never rotate this
+	// into a healthy station's standing board.
+	initial_offers = 0
 
 /datum/contract_definition/social/program/emergency_response/configure_contract(datum/contract/social/contract, list/context)
 	..()
 	add_social_role(contract, "commander", "Response commander", "Coordinates scene safety and cross-department priorities.", list(DEPARTMENT_SECURITY, DEPARTMENT_COMMAND), 1, 3)
 	add_social_role(contract, "responder", "Specialist responder", "Provides Engineering or Medical response capacity.", list(DEPARTMENT_ENGINEERING, DEPARTMENT_MEDICAL), 2, 6)
-	add_program_count(contract, CONTRACT_EVENT_INFRASTRUCTURE_REPAIRED, 350, "Scene restoration", "Restore substantial damage left by station incidents.", "repair_amount")
 	add_program_count(contract, CONTRACT_EVENT_MEDICAL_TREATMENT_OUTCOME, 4, "Casualty recovery", "Improve four distinct patients through the condition system.", null, CONTRACT_EVIDENCE_SCOPE_ANY, "subject_id")
-	add_program_count(contract, CONTRACT_EVENT_SECURITY_DISPOSITION_CHANGED, 3, "Incident closure", "Close three distinct incident records.", null, CONTRACT_EVIDENCE_SCOPE_DEPARTMENT, "record_id")
+	add_program_count(contract, CONTRACT_EVENT_SECURITY_DISPOSITION_CHANGED, 3, "Incident closure", "Close three distinct custodial incident records.", null, CONTRACT_EVIDENCE_SCOPE_DEPARTMENT, "record_id", list("physical_custody_verified" = TRUE))
 
 // --------------------------------------------------------------------------
 // Cargo
@@ -505,12 +468,15 @@
 
 /datum/contract_definition/social/program/station_festival/configure_contract(datum/contract/social/contract, list/context)
 	..()
+	var/customer_target = contract_scaled_participant_target(16, 4, 1)
 	add_social_role(contract, "host", "Festival host", "Coordinates food, drink, pricing, and participation.", list(DEPARTMENT_CIVILIAN), 2, 6)
 	add_social_role(contract, "patron", "Registered patron", "Participates as a paying customer or event sponsor.", null, 6, 16)
 	contract.personal_side_definitions = list("service_gratuity_drive")
-	add_program_count(contract, CONTRACT_EVENT_SERVICE_PERIOD_SETTLED, 1200, "Festival revenue", "Settle 1,200 Thalers of verified Civilian service sales.", "verified_amount", CONTRACT_EVIDENCE_SCOPE_DEPARTMENT, null, list("rollup" = "department"))
-	add_program_count(contract, CONTRACT_EVENT_FOOD_CONSUMED, 16, "Festival attendance", "Serve food or drink to sixteen distinct consumers.", null, CONTRACT_EVIDENCE_SCOPE_DEPARTMENT, "subject_id")
-	add_program_count(contract, CONTRACT_EVENT_FOOD_CONSUMED, 10, "Menu breadth", "Serve ten distinct meal or drink types.", null, CONTRACT_EVIDENCE_SCOPE_DEPARTMENT, "item_type")
+	add_program_count(contract, CONTRACT_EVENT_SERVICE_PERIOD_SETTLED, customer_target * 75, "Festival revenue", "Settle [customer_target * 75] Thalers of Civilian service sales.", "verified_amount", CONTRACT_EVIDENCE_SCOPE_DEPARTMENT, null, list("rollup" = "department"))
+	var/list/paid_checks = list(list("key" = "sale_invoice_id", "comparator" = CONTRACT_EVIDENCE_COMPARE_AT_LEAST, "expected" = 1))
+	add_program_count(contract, CONTRACT_EVENT_FOOD_CONSUMED, customer_target, "Festival attendance", "Serve invoiced food or drink to [customer_target] distinct consumers.", null, CONTRACT_EVIDENCE_SCOPE_DEPARTMENT, "subject_id", null, paid_checks)
+	var/menu_target = min(10, max(4, CEILING(customer_target * 0.6, 1)))
+	add_program_count(contract, CONTRACT_EVENT_FOOD_CONSUMED, menu_target, "Menu breadth", "Serve [menu_target] distinct invoiced meal or drink types.", null, CONTRACT_EVIDENCE_SCOPE_DEPARTMENT, "item_type", null, paid_checks)
 
 /datum/contract_definition/social/program/nutritional_services
 	id = "nutritional_services_campaign"
@@ -521,14 +487,20 @@
 	issuer_name = "NanoTrasen Personnel Services"
 	issuer_faction = REPUTATION_FACTION_NANOTRASEN
 	reward = 2700
+	// The Festival commission owns the paid-menu participation loop; do not
+	// offer a second contract with the same checklist under another name.
+	initial_offers = 0
 
 /datum/contract_definition/social/program/nutritional_services/configure_contract(datum/contract/social/contract, list/context)
 	..()
+	var/customer_target = contract_scaled_participant_target(20, 5, 1)
 	add_social_role(contract, "provider", "Nutrition-service provider", "Prepares, prices, and sells a varied station menu.", list(DEPARTMENT_CIVILIAN), 1, 5)
 	add_social_role(contract, "participant", "Crew participant", "Purchases and consumes station food or drink.", null, 5, 14)
-	add_program_count(contract, CONTRACT_EVENT_FOOD_CONSUMED, 20, "Crew reached", "Serve twenty distinct consumers.", null, CONTRACT_EVIDENCE_SCOPE_DEPARTMENT, "subject_id")
-	add_program_count(contract, CONTRACT_EVENT_FOOD_CONSUMED, 12, "Menu diversity", "Serve twelve distinct food or drink types.", null, CONTRACT_EVIDENCE_SCOPE_DEPARTMENT, "item_type")
-	add_program_count(contract, CONTRACT_EVENT_SERVICE_PERIOD_SETTLED, 900, "Sustainable service", "Settle 900 Thalers of verified Civilian sales.", "verified_amount", CONTRACT_EVIDENCE_SCOPE_DEPARTMENT, null, list("rollup" = "department"))
+	var/list/paid_checks = list(list("key" = "sale_invoice_id", "comparator" = CONTRACT_EVIDENCE_COMPARE_AT_LEAST, "expected" = 1))
+	add_program_count(contract, CONTRACT_EVENT_FOOD_CONSUMED, customer_target, "Crew reached", "Serve invoiced food or drink to [customer_target] distinct consumers.", null, CONTRACT_EVIDENCE_SCOPE_DEPARTMENT, "subject_id", null, paid_checks)
+	var/menu_target = min(12, max(4, CEILING(customer_target * 0.6, 1)))
+	add_program_count(contract, CONTRACT_EVENT_FOOD_CONSUMED, menu_target, "Menu diversity", "Serve [menu_target] distinct invoiced food or drink types.", null, CONTRACT_EVIDENCE_SCOPE_DEPARTMENT, "item_type", null, paid_checks)
+	add_program_count(contract, CONTRACT_EVENT_SERVICE_PERIOD_SETTLED, customer_target * 50, "Sustainable service", "Settle [customer_target * 50] Thalers of Civilian sales.", "verified_amount", CONTRACT_EVIDENCE_SCOPE_DEPARTMENT, null, list("rollup" = "department"))
 
 /datum/contract_definition/social/program/agricultural_cooperative
 	id = "agricultural_cooperative"
@@ -547,24 +519,6 @@
 	add_program_count(contract, CONTRACT_EVENT_CROP_HARVESTED, 60, "Cooperative yield", "Harvest sixty units of station produce.", "yield", CONTRACT_EVIDENCE_SCOPE_DEPARTMENT)
 	add_program_count(contract, CONTRACT_EVENT_CROP_HARVESTED, 8, "Crop diversity", "Harvest eight distinct crop lines.", null, CONTRACT_EVIDENCE_SCOPE_DEPARTMENT, "crop_id")
 	add_program_count(contract, CONTRACT_EVENT_SERVICE_PERIOD_SETTLED, 700, "Market demand", "Settle 700 Thalers of verified Civilian sales.", "verified_amount", CONTRACT_EVIDENCE_SCOPE_DEPARTMENT, null, list("rollup" = "department"))
-
-/datum/contract_definition/social/program/sanitation_recovery
-	id = "sanitation_recovery_award"
-	title = "Sanitation Recovery Award"
-	description = "NanoTrasen Facilities requests broad manual and automated sanitation of station spaces."
-	scope = CONTRACT_SCOPE_DEPARTMENT
-	department = DEPARTMENT_CIVILIAN
-	issuer_name = "NanoTrasen Facilities Assurance"
-	issuer_faction = REPUTATION_FACTION_NANOTRASEN
-	reward = 2500
-
-/datum/contract_definition/social/program/sanitation_recovery/configure_contract(datum/contract/social/contract, list/context)
-	..()
-	add_social_role(contract, "sanitation", "Sanitation lead", "Coordinates safe cleanup and verifies affected areas.", list(DEPARTMENT_CIVILIAN), 1, 4)
-	add_social_role(contract, "liaison", "Area representative", "Provides access and identifies operational cleanup priorities.", null, 2, 8)
-	add_program_count(contract, CONTRACT_EVENT_SANITATION_COMPLETED, 24, "Sanitized locations", "Clean twenty-four distinct station targets.", null, CONTRACT_EVIDENCE_SCOPE_DEPARTMENT, "target_id")
-	add_program_count(contract, CONTRACT_EVENT_SANITATION_COMPLETED, 2, "Method breadth", "Use both manual and automated sanitation methods.", null, CONTRACT_EVIDENCE_SCOPE_DEPARTMENT, "method")
-	add_program_count(contract, CONTRACT_EVENT_AUTOMATION_TASK_COMPLETED, 6, "Automated assistance", "Complete six cleanbot sanitation tasks.", "work_units", CONTRACT_EVIDENCE_SCOPE_ANY, null, list("task_kind" = "sanitation"))
 
 // --------------------------------------------------------------------------
 // Command
@@ -604,7 +558,7 @@
 	add_social_role(contract, "delegate", "Department compact delegate", "Commits a department to provide or receive meaningful aid.", list(DEPARTMENT_ENGINEERING, DEPARTMENT_MEDICAL, DEPARTMENT_RESEARCH, DEPARTMENT_SECURITY, DEPARTMENT_CARGO, DEPARTMENT_CIVILIAN, DEPARTMENT_SYNTHETIC), 4, 9)
 	add_program_count(contract, CONTRACT_EVENT_BUDGET_ALLOCATION_CHANGED, 10000, "Committed aid", "Commit 10,000 Thalers to departmental aid allocations.", "amount")
 	add_program_count(contract, CONTRACT_EVENT_BUDGET_ALLOCATION_CHANGED, 5, "Recipient breadth", "Fund five distinct departments.", null, CONTRACT_EVIDENCE_SCOPE_ANY, "target_department")
-	add_program_count(contract, CONTRACT_EVENT_INFRASTRUCTURE_REPAIRED, 250, "Delivered aid outcome", "Use the compact's resources to complete substantial station repairs.", "repair_amount")
+	add_program_portfolio(contract, CONTRACT_EVENT_ITEM_PRODUCED, 1200, "department", "value", 3, "Delivered aid", "Produce useful equipment through three departments receiving compact support.", CONTRACT_EVIDENCE_SCOPE_ANY, null, null, 500, 600)
 
 /datum/contract_definition/social/program/emergency_continuity
 	id = "emergency_continuity_award"
@@ -615,6 +569,7 @@
 	issuer_name = "SolGov Continuity Directorate"
 	issuer_faction = REPUTATION_FACTION_SOLGOV
 	reward = 3500
+	initial_offers = 0
 
 /datum/contract_definition/social/program/emergency_continuity/configure_contract(datum/contract/social/contract, list/context)
 	..()
@@ -633,6 +588,9 @@
 	issuer_name = "Worker's Union Bargaining Council"
 	issuer_faction = REPUTATION_FACTION_WORKERS_UNION
 	reward = 3300
+	// Balanced Operations already covers the same payroll-cycle decision with
+	// stronger departmental tradeoffs and a conflicting personal offer.
+	initial_offers = 0
 
 /datum/contract_definition/social/program/workforce_retention/configure_contract(datum/contract/social/contract, list/context)
 	..()
@@ -654,6 +612,7 @@
 	issuer_name = "Kusanagi Robotics Field Support"
 	issuer_faction = REPUTATION_FACTION_NANOTRASEN
 	reward = 2900
+	initial_offers = 0
 
 /datum/contract_definition/social/program/systems_uptime/configure_contract(datum/contract/social/contract, list/context)
 	..()
@@ -671,6 +630,8 @@
 	issuer_name = "Kusanagi Robotics Applications Group"
 	issuer_faction = REPUTATION_FACTION_NANOTRASEN
 	reward = 3000
+	// Human-Synthetic Service Compact is the social version of this task loop.
+	initial_offers = 0
 
 /datum/contract_definition/social/program/automation_logistics/configure_contract(datum/contract/social/contract, list/context)
 	..()
@@ -689,6 +650,7 @@
 	issuer_name = "NanoTrasen Systems Assurance"
 	issuer_faction = REPUTATION_FACTION_NANOTRASEN
 	reward = 2800
+	initial_offers = 0
 
 /datum/contract_definition/social/program/access_safety_audit/configure_contract(datum/contract/social/contract, list/context)
 	..()
@@ -696,7 +658,6 @@
 	add_social_role(contract, "owner", "Department asset owner", "Provides access and accepts the resulting service state.", null, 3, 8)
 	add_program_count(contract, CONTRACT_EVENT_POWER_SERVICE_CHANGED, 6, "Electrical audit", "Verify six distinct APC zones in full service.", null, CONTRACT_EVIDENCE_SCOPE_ANY, "service_id", null, list(list("key" = "powered_channels", "comparator" = CONTRACT_EVIDENCE_COMPARE_AT_LEAST, "expected" = 3)))
 	add_program_count(contract, CONTRACT_EVENT_ATMOS_SERVICE_CHANGED, 6, "Atmospheric audit", "Verify six distinct air-alarm zones at safe status.", null, CONTRACT_EVIDENCE_SCOPE_ANY, "service_id", null, list(list("key" = "danger_level", "comparator" = CONTRACT_EVIDENCE_COMPARE_AT_MOST, "expected" = 0)))
-	add_program_count(contract, CONTRACT_EVENT_INFRASTRUCTURE_REPAIRED, 200, "Corrective work", "Complete substantial corrective repairs discovered during the audit.", "repair_amount")
 
 /datum/contract_definition/social/program/human_synthetic_compact
 	id = "human_synthetic_service_compact"

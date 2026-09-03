@@ -1683,10 +1683,7 @@
 
 /datum/unit_test/dq_department_program_contract_catalog/Run()
 	var/list/definition_ids = list(
-		"grid_recovery_indemnity",
-		"atmospheric_recovery_bond",
 		"alternative_fuel_demonstration",
-		"preventative_maintenance_portfolio",
 		"occupational_recovery_program",
 		"blood_reserve_campaign",
 		"rehabilitation_return_to_duty",
@@ -1706,7 +1703,6 @@
 		"station_festival_commission",
 		"nutritional_services_campaign",
 		"agricultural_cooperative",
-		"sanitation_recovery_award",
 		"balanced_operations_charter",
 		"interdepartmental_mutual_aid_compact",
 		"emergency_continuity_award",
@@ -1717,12 +1713,12 @@
 		"human_synthetic_service_compact",
 	)
 	var/list/expected_departments = list(
-		DEPARTMENT_ENGINEERING = 4,
+		DEPARTMENT_ENGINEERING = 1,
 		DEPARTMENT_MEDICAL = 4,
 		DEPARTMENT_RESEARCH = 4,
 		DEPARTMENT_SECURITY = 4,
 		DEPARTMENT_CARGO = 4,
-		DEPARTMENT_CIVILIAN = 4,
+		DEPARTMENT_CIVILIAN = 3,
 		DEPARTMENT_COMMAND = 4,
 		DEPARTMENT_SYNTHETIC = 4,
 	)
@@ -1887,7 +1883,6 @@
 		"opportunity_procurement_rebate",
 		"opportunity_hospitality_expansion",
 		"opportunity_crop_forward_order",
-		"opportunity_facilities_surge",
 		"opportunity_automation_expansion",
 		"opportunity_operational_dividend",
 	)

@@ -91,28 +91,37 @@
 /datum/contract_definition/social/emergency_reconstruction_bond/configure_contract(datum/contract/social/contract, list/context)
 	..()
 	var/list/affected_assets = opportunity_bound_values(context, "atom_id")
+	var/list/affected_asset_names = opportunity_bound_values(context, "asset_label")
 	var/list/affected_areas = opportunity_bound_values(context, "area_name")
 	configure_social_identity(contract, 12, 30, 16)
-	contract.description = "Restore the station structures and machines identified by the originating incident report. The triggering report originated in [context?["trigger_area"] || "the station"]."
+	var/asset_roster = length(affected_asset_names) ? english_list(affected_asset_names) : "the structures and machines listed in the incident report"
+	var/area_roster = length(affected_areas) ? english_list(affected_areas) : (context?["trigger_area"] || "the affected station areas")
+	contract.description = "Restore these damaged assets: [asset_roster]. The incident spans [area_roster]; repairs to unrelated equipment will not count."
 	add_social_role(contract, "repair", "Engineering repair lead", "Coordinates safe reconstruction and performs or directs repairs.", list(DEPARTMENT_ENGINEERING), 1, 3)
 	add_social_role(contract, "liaison", "Area liaison", "Provides access, priorities, and operational verification for affected departments.", null, 2, 6)
 	contract.personal_side_definitions = list("emergency_exclusive_contractor")
-	var/datum/contract_requirement/event_count/restoration = new(CONTRACT_EVENT_INFRASTRUCTURE_REPAIRED, min(1000, max(200, length(affected_assets) * 100)), null, "repair_amount", TRUE, CONTRACT_EVIDENCE_SCOPE_ANY)
+	var/repair_target = min(1000, max(150, length(affected_assets) * 75))
+	var/datum/contract_requirement/event_count/restoration = new(CONTRACT_EVENT_INFRASTRUCTURE_REPAIRED, repair_target, null, "repair_amount", TRUE, CONTRACT_EVIDENCE_SCOPE_ANY)
 	restoration.name = "Restored integrity"
-	restoration.description = "Restore integrity specifically to assets recorded in the originating incident."
+	restoration.description = "Complete [repair_target] points of repair specifically on assets recorded in the originating incident."
 	if(length(affected_assets))
 		restoration.require_any_value("atom_id", affected_assets)
 	contract.add_requirement(restoration)
-	var/datum/contract_requirement/event_count/assets = new(CONTRACT_EVENT_INFRASTRUCTURE_REPAIRED, min(10, max(1, length(affected_assets))))
+	// A listed asset can be destroyed or repaired before the offer is accepted;
+	// requiring three quarters keeps the commission robust without accepting
+	// unrelated replacement work.
+	var/asset_target = min(10, max(1, FLOOR(length(affected_assets) * 0.75, 1)))
+	var/datum/contract_requirement/event_count/assets = new(CONTRACT_EVENT_INFRASTRUCTURE_REPAIRED, asset_target)
 	assets.name = "Distinct repaired assets"
-	assets.description = "Repair ten distinct station structures or machines."
+	assets.description = "Repair [asset_target] of the damaged assets named in the incident report."
 	assets.unique_field = "atom_id"
 	if(length(affected_assets))
 		assets.require_any_value("atom_id", affected_assets)
 	contract.add_requirement(assets)
-	var/datum/contract_requirement/event_count/areas = new(CONTRACT_EVENT_INFRASTRUCTURE_REPAIRED, min(4, max(1, length(affected_areas))))
+	var/area_target = min(4, max(1, length(affected_areas)))
+	var/datum/contract_requirement/event_count/areas = new(CONTRACT_EVENT_INFRASTRUCTURE_REPAIRED, area_target)
 	areas.name = "Operational reach"
-	areas.description = "Restore infrastructure in four distinct station areas."
+	areas.description = "Restore affected infrastructure across [area_target] incident area[area_target == 1 ? "" : "s"]."
 	areas.unique_field = "area_name"
 	if(length(affected_areas))
 		areas.require_any_value("area_name", affected_areas)
@@ -163,15 +172,18 @@
 
 /datum/contract_definition/social/corporate_hospitality/configure_contract(datum/contract/social/contract, list/context)
 	..()
+	var/customer_target = contract_scaled_participant_target(10, 4, 1)
 	configure_social_identity(contract, 8, 24, 18)
-	contract.description = "Across closed accounting periods, earn up to 2,000 Thalers from ten distinct customers and 300 Thalers in voluntary gratuities. Refund and collusion corrections remain authoritative."
+	var/revenue_target = customer_target * 200
+	var/tip_target = customer_target * 30
+	contract.description = "Across closed accounting periods, earn [revenue_target] Thalers from [customer_target] distinct customers and [tip_target] Thalers in voluntary gratuities. Refunded or circular purchases do not count."
 	add_social_role(contract, "host", "Hospitality host", "Plans, prices, and provides the commissioned service.", list(DEPARTMENT_CIVILIAN), 1, 4)
 	add_social_role(contract, "patron", "Registered patron", "Participates as a paying customer or event sponsor.", null, 4, 12)
 	contract.personal_side_definitions = list("service_gratuity_drive")
 	for(var/list/metric as anything in list(
-		list("amount", 2000, "Hospitality revenue"),
-		list("customer_count", 10, "Distinct patrons"),
-		list("tip", 300, "Voluntary gratuities"),
+		list("amount", revenue_target, "Hospitality revenue"),
+		list("customer_count", customer_target, "Distinct patrons"),
+		list("tip", tip_target, "Voluntary gratuities"),
 	))
 		var/datum/contract_requirement/event_count/requirement = new(CONTRACT_EVENT_SERVICE_PERIOD_SETTLED, metric[2], list("department" = DEPARTMENT_CIVILIAN, "rollup" = "department"), metric[1], TRUE, CONTRACT_EVIDENCE_SCOPE_DEPARTMENT)
 		requirement.name = metric[3]
@@ -247,23 +259,25 @@
 
 /datum/contract_definition/social/clinical_access/configure_contract(datum/contract/social/contract, list/context)
 	..()
+	var/patient_target = contract_scaled_participant_target(6, 2)
+	var/condition_target = min(4, max(2, CEILING(patient_target / 2, 1)))
 	configure_social_identity(contract, 10, 30, 16)
-	contract.description = "Improve diagnosed conditions across six distinct patients and four condition families, with substantial aggregate clinical benefit documented in their records."
+	contract.description = "Improve diagnosed conditions across [patient_target] distinct patients and [condition_target] condition families, with substantial aggregate clinical benefit documented in their records."
 	add_social_role(contract, "clinician", "Clinical coordinator", "Coordinates patient access, diagnosis, treatment, and follow-up.", list(DEPARTMENT_MEDICAL), 1, 4)
 	add_social_role(contract, "patient", "Participating patient", "Agrees to participate in the access program and its outcome accounting.", null, 3, 10)
 	contract.personal_side_definitions = list("clinical_priority_coordinator")
-	var/datum/contract_requirement/event_count/patients = new(CONTRACT_EVENT_MEDICAL_TREATMENT_OUTCOME, 6, null, null, TRUE, CONTRACT_EVIDENCE_SCOPE_DEPARTMENT)
+	var/datum/contract_requirement/event_count/patients = new(CONTRACT_EVENT_MEDICAL_TREATMENT_OUTCOME, patient_target, null, null, TRUE, CONTRACT_EVIDENCE_SCOPE_DEPARTMENT)
 	patients.name = "Distinct improved patients"
-	patients.description = "Improve registered conditions on six distinct living patients."
+	patients.description = "Improve registered conditions on [patient_target] distinct living patients."
 	patients.unique_field = "subject_id"
 	contract.add_requirement(patients)
-	var/datum/contract_requirement/event_count/improvement = new(CONTRACT_EVENT_MEDICAL_TREATMENT_OUTCOME, 240, null, "improvement", TRUE, CONTRACT_EVIDENCE_SCOPE_DEPARTMENT)
+	var/datum/contract_requirement/event_count/improvement = new(CONTRACT_EVENT_MEDICAL_TREATMENT_OUTCOME, patient_target * 40, null, "improvement", TRUE, CONTRACT_EVIDENCE_SCOPE_DEPARTMENT)
 	improvement.name = "Clinical improvement"
-	improvement.description = "Produce 240 points of real condition-severity improvement."
+	improvement.description = "Deliver substantial aggregate improvement across the participating patients."
 	contract.add_requirement(improvement)
-	var/datum/contract_requirement/event_count/breadth = new(CONTRACT_EVENT_MEDICAL_TREATMENT_OUTCOME, 4, null, null, TRUE, CONTRACT_EVIDENCE_SCOPE_DEPARTMENT)
+	var/datum/contract_requirement/event_count/breadth = new(CONTRACT_EVENT_MEDICAL_TREATMENT_OUTCOME, condition_target, null, null, TRUE, CONTRACT_EVIDENCE_SCOPE_DEPARTMENT)
 	breadth.name = "Clinical breadth"
-	breadth.description = "Treat four distinct registered condition types."
+	breadth.description = "Treat [condition_target] distinct registered condition types."
 	breadth.unique_field = "condition_type"
 	contract.add_requirement(breadth)
 
