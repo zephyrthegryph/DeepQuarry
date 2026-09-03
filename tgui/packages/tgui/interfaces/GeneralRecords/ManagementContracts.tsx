@@ -420,17 +420,11 @@ export const ManagementContracts = () => {
                       mt={1}
                       title="Terms"
                       buttons={
-                        <Tooltip content="Selections lock when the offer is accepted. Hover any option for its full explanation and effects.">
-                          <Box
-                            color={
-                              contract.negotiation_locked ? 'label' : 'good'
-                            }
-                          >
-                            {contract.negotiation_locked
-                              ? 'Locked'
-                              : 'Editable'}
-                          </Box>
-                        </Tooltip>
+                        contract.negotiation_locked && (
+                          <Tooltip content="Terms were locked when this contract was accepted.">
+                            <Box color="label">Locked</Box>
+                          </Tooltip>
+                        )
                       }
                     >
                       {contract.negotiation_clauses.map((clause) => (
