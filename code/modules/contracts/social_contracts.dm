@@ -57,7 +57,7 @@
 /datum/contract_definition/social/prototype_field_license/configure_contract(datum/contract/social/contract, list/context)
 	..()
 	configure_social_identity(contract, 8, 28, 16)
-	contract.description = "Close Research accounting periods totaling 1,800 Thalers, with eight fabricated products sold across eight customers and four product types. Signed checkout records establish the sales."
+	contract.description = "Sell 1,800 Thalers of Research-built equipment across eight customers, eight products, and four product types."
 	add_social_role(contract, "inventor", "Research license lead", "Produces and prices the licensed technology.", list(DEPARTMENT_RESEARCH), 1, 3)
 	add_social_role(contract, "tester", "Field customer", "Purchases and evaluates station-made technology in working conditions.", null, 3, 8)
 	contract.personal_side_definitions = list("research_exclusive_export")
@@ -204,7 +204,7 @@
 /datum/contract_definition/social/interdepartmental_manufacturing/configure_contract(datum/contract/social/contract, list/context)
 	..()
 	configure_social_identity(contract, 14, 20, 16)
-	contract.description = "Fabricate a 2,400-Thaler portfolio spanning eight product types and provenance from Engineering, Research, and Cargo. Normal fabricator records provide the evidence."
+	contract.description = "Fabricate a 2,400-Thaler equipment portfolio spanning eight product types, with contributions from Engineering, Research, and Cargo."
 	add_social_role(contract, "engineering", "Engineering fabricator", "Contributes Engineering-built equipment.", list(DEPARTMENT_ENGINEERING), 1, 3)
 	add_social_role(contract, "research", "Research fabricator", "Contributes Research-built equipment.", list(DEPARTMENT_RESEARCH), 1, 3)
 	add_social_role(contract, "cargo", "Cargo integrator", "Sources materials and contributes Cargo-attributed fabrication.", list(DEPARTMENT_CARGO), 1, 3)

@@ -185,7 +185,7 @@
 			for(var/datum/contract_requirement/event_count/requirement in contract.requirements)
 				requirement.filter.set_number_requirement("amount", CONTRACT_EVIDENCE_COMPARE_AT_LEAST, contract.primary_target)
 				requirement.filter.set_number_requirement("customer_count", CONTRACT_EVIDENCE_COMPARE_AT_LEAST, contract.secondary_target)
-				requirement.description = "Close an accounting period with [contract.primary_target] eligible Thalers from [contract.secondary_target] distinct customers after refunds and anti-collusion caps."
+				requirement.description = "Close an accounting period with [contract.primary_target] Thalers in qualifying sales to [contract.secondary_target] distinct customers."
 		if("security_case_resolution")
 			contract.primary_target = min(contract.primary_target, max(1, live_crew - 1))
 			for(var/datum/contract_requirement/event_count/requirement in contract.requirements)
@@ -215,7 +215,7 @@
 /datum/contract_definition/outcome/supermatter_performance
 	id = "supermatter_performance"
 	title = "Supermatter Performance Demonstration"
-	description = "NanoTrasen Power Systems requests a controlled high-output demonstration. The station's calibrated crystal monitor will verify Relative EER and integrity continuously; no separate certification is required."
+	description = "NanoTrasen Power Systems requests a controlled high-output supermatter demonstration monitored by the station's calibrated crystal console."
 	scope = CONTRACT_SCOPE_DEPARTMENT
 	department = DEPARTMENT_ENGINEERING
 	issuer_name = "NanoTrasen Power Systems"
@@ -368,14 +368,14 @@
 /datum/contract_definition/outcome/service_hospitality_census/configure_contract(datum/contract/outcome/contract, list/context)
 	contract.primary_target = context?["revenue_target"] || pick(800, 1000, 1200, 1500)
 	contract.secondary_target = context?["customer_target"] || pick(4, 5, 6)
-	contract.description = "Close one 15-minute accounting period with at least [contract.primary_target] Thalers in eligible paid Civilian services for [contract.secondary_target] distinct account holders. Refunded, anonymous, self-paid, and extreme single-customer invoices are excluded when the ledger closes."
+	contract.description = "Close one 15-minute accounting period with at least [contract.primary_target] Thalers in paid Civilian services for [contract.secondary_target] distinct customers. Refunded, anonymous, and self-paid invoices do not qualify."
 	contract.station_reputation_reward = 7
 	contract.department_reputation_reward = 22
 	contract.personal_reputation_reward = 12
 	configure_outcome_negotiations(contract, 45 MINUTES)
 	var/datum/contract_requirement/event_count/settlement = new(CONTRACT_EVENT_SERVICE_PERIOD_SETTLED, 1, list("rollup" = "department"), null, TRUE, CONTRACT_EVIDENCE_SCOPE_DEPARTMENT)
 	settlement.name = "Closed hospitality ledger"
-	settlement.description = "Close an accounting period with [contract.primary_target] eligible Thalers from [contract.secondary_target] distinct customers after refunds and anti-collusion caps."
+	settlement.description = "Close an accounting period with [contract.primary_target] Thalers in qualifying sales to [contract.secondary_target] distinct customers."
 	settlement.require_number("amount", CONTRACT_EVIDENCE_COMPARE_AT_LEAST, contract.primary_target)
 	settlement.require_number("customer_count", CONTRACT_EVIDENCE_COMPARE_AT_LEAST, contract.secondary_target)
 	contract.add_requirement(settlement)

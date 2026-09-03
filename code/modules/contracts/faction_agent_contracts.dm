@@ -144,7 +144,7 @@
 /datum/contract_definition/faction_agent/vetting
 	id = "agent_vetting"
 	title = "Authenticated Trade Vetting"
-	description = "Complete one personally funded purchase through the principal's authenticated market route. Cargo will deliver the crate; your payment establishes both your identity and a viable settlement channel."
+	description = "Purchase one reserved shipment with personal funds. Cargo will deliver the crate and establish your private trading relationship with the principal."
 	reward = 500
 	required_agent_tier = FACTION_AGENT_TIER_CANDIDATE
 	offer_duration = 20 MINUTES
