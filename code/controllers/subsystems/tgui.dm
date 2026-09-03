@@ -375,10 +375,14 @@ SUBSYSTEM_DEF(tgui)
 /datum/controller/subsystem/tgui/proc/reconcile_client_windows(client/client)
 	if(!client)
 		return
-	client.tgui_windows = list()
 	client.tgui_chunk_warm_started = FALSE
 	for(var/index in 1 to TGUI_WINDOW_HARD_LIMIT)
 		var/window_id = TGUI_WINDOW_ID(index)
+		// Dedicated windows (statbrowser, browseroutput, tgui_say, etc.) share
+		// this registry but do not use TGUI_WINDOW_ID and must remain registered.
+		var/datum/tgui_window/stale_window = client.tgui_windows[window_id]
+		if(stale_window)
+			client.tgui_windows.Remove(window_id)
 		if(winexists(client, window_id))
 			winset(client, window_id, "alpha=0")
 			winshow(client, window_id, FALSE)
