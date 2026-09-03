@@ -283,6 +283,8 @@
 	station_reputation_reward = round(station_reputation_reward * multiplier)
 	department_reputation_reward = round(department_reputation_reward * multiplier)
 	personal_reputation_reward = round(personal_reputation_reward * multiplier)
+	for(var/faction_id in secondary_faction_reputation_rewards)
+		secondary_faction_reputation_rewards[faction_id] = round(secondary_faction_reputation_rewards[faction_id] * multiplier)
 	audit(CONTRACT_AUDIT_COMPLETED, "[actor_name] finalized a [grade] outcome at [outcome_score]% of the exceptional specification.")
 	return complete()
 

@@ -1,0 +1,6 @@
+author: "Codex"
+delete-after: true
+changes:
+  - qol: "Contract offers are now collapsible, use inline filters and a one-line award summary, and no longer show a decline button."
+  - balance: "Negotiated reputation changes use their authored values and selected terms can affect aligned outside factions."
+  - qol: "Contract term explanations now omit zero-value bookkeeping and summarize money and reputation effects compactly."

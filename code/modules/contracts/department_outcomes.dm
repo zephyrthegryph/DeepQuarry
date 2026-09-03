@@ -129,9 +129,9 @@
 
 	var/datum/contract_negotiation_clause/distribution = new("distribution", "Remittance distribution", "Choose how the issuer's award is divided between station reserves, departmental reinvestment, and participating staff.")
 	distribution.add_option(make_contract_clause_option("balanced", "Balanced remittance", "Retain the standard station, department, and staff distribution."), TRUE)
-	distribution.add_option(make_contract_clause_option("staff", "Staff incentive", "Move part of the institutional award into direct contributor compensation.", -100, -100, 200, 0, -1, 3))
+	distribution.add_option(make_contract_clause_option("staff", "Staff incentive", "Move part of the award to contributors; this also improves labor relations.", -100, -100, 200, 0, -1, 3, 0, list("other_faction_reputation" = list(REPUTATION_FACTION_WORKERS_UNION = 2))))
 	distribution.add_option(make_contract_clause_option("department", "Department reinvestment", "Reserve more of the award for the responsible department's operating account.", -100, 200, -100, 0, 3, -1))
-	distribution.add_option(make_contract_clause_option("station", "Station reserve", "Retain more of the award in the station account for Command priorities.", 200, -100, -100, 3, -1, -1))
+	distribution.add_option(make_contract_clause_option("station", "Station reserve", "Retain more of the award for Command; NanoTrasen favors the stronger reserve.", 200, -100, -100, 3, -1, -1, 0, list("other_faction_reputation" = list(REPUTATION_FACTION_NANOTRASEN = 2))))
 	contract.add_negotiation_clause(distribution)
 
 	var/is_graded_contract = istype(contract, /datum/contract/social)

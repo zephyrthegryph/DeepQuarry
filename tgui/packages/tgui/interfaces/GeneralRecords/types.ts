@@ -61,6 +61,7 @@ export type managementContract = {
   term_class: string;
   reward_distribution: contractDistribution;
   reputation_distribution: contractDistribution;
+  secondary_reputation: factionReputationChange[];
   negotiation_locked: BooleanLike;
   negotiation_clauses: contractNegotiationClause[];
   can_accept: boolean;
@@ -94,6 +95,14 @@ export type contractClauseOption = {
   department_reputation: number;
   staff_reputation: number;
   deadline_minutes: number;
+  other_reputation: factionReputationChange[];
+};
+
+export type factionReputationChange = {
+  faction: string;
+  acronym: string;
+  color: string;
+  amount: number;
 };
 
 export type contractNegotiationClause = {

@@ -48,11 +48,9 @@
 	option.station_reward_delta = station_money
 	option.department_reward_delta = department_money
 	option.staff_reward_delta = staff_money
-	// Negotiated reputation is a deliberate institutional tradeoff, not a token
-	// footnote beside the monetary terms.
-	option.station_reputation_delta = station_rep * 2
-	option.department_reputation_delta = department_rep * 2
-	option.staff_reputation_delta = staff_rep * 2
+	option.station_reputation_delta = station_rep
+	option.department_reputation_delta = department_rep
+	option.staff_reputation_delta = staff_rep
 	option.deadline_delta = deadline_change
 	option.effects = effects?.Copy() || list()
 	return option
@@ -240,6 +238,8 @@
 	var/standing_score = 0
 	var/standing_tier = AFFILIATION_NEUTRAL
 	var/standing_reward_modifier = 0
+	/// Additional station-level faction consequences selected by negotiation.
+	var/list/secondary_faction_reputation_rewards
 
 /datum/contract/New()
 	. = ..()
@@ -251,6 +251,7 @@
 	negotiation_clauses = list()
 	negotiation_selections = list()
 	negotiated_effects = list()
+	secondary_faction_reputation_rewards = list()
 
 /datum/contract/Destroy()
 	if(state in list(CONTRACT_ACTIVE, CONTRACT_GRACE))
@@ -278,6 +279,7 @@
 	negotiation_clauses = null
 	negotiation_selections = null
 	negotiated_effects = null
+	secondary_faction_reputation_rewards = null
 	offer_context = null
 	for(var/datum/contract_audit_entry/entry in audit_log)
 		qdel(entry)
@@ -361,6 +363,7 @@
 	personal_reputation_reward = base_personal_reputation_reward
 	deadline_duration = base_deadline_duration
 	negotiated_effects.Cut()
+	secondary_faction_reputation_rewards.Cut()
 	for(var/clause_id in negotiation_clauses)
 		var/datum/contract_negotiation_clause/clause = negotiation_clauses[clause_id]
 		var/datum/contract_clause_option/option = clause.options[negotiation_selections[clause_id]]
@@ -375,6 +378,15 @@
 		deadline_duration += option.deadline_delta
 		for(var/effect_key in option.effects)
 			negotiated_effects[effect_key] = option.effects[effect_key]
+		var/list/other_reputation = option.effects["other_faction_reputation"]
+		for(var/faction_id in other_reputation)
+			var/change = other_reputation[faction_id]
+			if(!isnum(change) || !change)
+				continue
+			if(faction_id == issuer_faction)
+				station_reputation_reward += change
+			else
+				secondary_faction_reputation_rewards[faction_id] = (secondary_faction_reputation_rewards[faction_id] || 0) + change
 	reward = base_reward + negotiated_station_bonus + negotiated_department_bonus + negotiated_staff_bonus
 	on_negotiated_terms_changed()
 
@@ -563,6 +575,8 @@
 		adjust_station_faction_reputation(issuer_faction, station_reputation_reward)
 		if(department)
 			adjust_department_faction_reputation(department, issuer_faction, department_reputation_reward)
+	for(var/faction_id in secondary_faction_reputation_rewards)
+		adjust_station_faction_reputation(faction_id, secondary_faction_reputation_rewards[faction_id])
 	var/list/reputation_recipients = reward_recipient_weights()
 	var/total_reputation_weight = 0
 	for(var/key in reputation_recipients)

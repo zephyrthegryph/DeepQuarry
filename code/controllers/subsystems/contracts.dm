@@ -529,6 +529,7 @@ SUBSYSTEM_DEF(contracts)
 		var/list/options = list()
 		for(var/option_id in clause.options)
 			var/datum/contract_clause_option/option = clause.options[option_id]
+			var/list/other_reputation = faction_reputation_rows(option.effects["other_faction_reputation"])
 			options.Add(list(list(
 				"id" = option.id,
 				"title" = option.title,
@@ -540,6 +541,7 @@ SUBSYSTEM_DEF(contracts)
 				"department_reputation" = option.department_reputation_delta,
 				"staff_reputation" = option.staff_reputation_delta,
 				"deadline_minutes" = option.deadline_delta / (1 MINUTE),
+				"other_reputation" = other_reputation,
 			)))
 		rows.Add(list(list(
 			"id" = clause.id,
@@ -547,6 +549,21 @@ SUBSYSTEM_DEF(contracts)
 			"description" = clause.description,
 			"selected" = contract.negotiation_selections[clause.id],
 			"options" = options,
+		)))
+	return rows
+
+/datum/controller/subsystem/contracts/proc/faction_reputation_rows(list/reputation_changes)
+	var/list/rows = list()
+	for(var/faction_id in reputation_changes)
+		var/change = reputation_changes[faction_id]
+		if(!isnum(change) || !change)
+			continue
+		var/datum/reputation_faction/faction = GLOB.reputation_factions[faction_id]
+		rows.Add(list(list(
+			"faction" = faction?.short_name || faction_id,
+			"acronym" = faction?.acronym || "EXT",
+			"color" = faction?.color || "#6ba4c7",
+			"amount" = change,
 		)))
 	return rows
 
@@ -574,6 +591,7 @@ SUBSYSTEM_DEF(contracts)
 			"department" = contract.department_reputation_reward,
 			"staff" = contract.personal_reputation_reward,
 		),
+		"secondary_reputation" = faction_reputation_rows(contract.secondary_faction_reputation_rewards),
 		"standing_score" = contract.standing_score,
 		"standing_tier" = contract.standing_tier,
 		"standing_reward_modifier" = contract.standing_reward_modifier,
