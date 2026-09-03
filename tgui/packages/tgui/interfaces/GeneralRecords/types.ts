@@ -17,6 +17,7 @@ export type Data = {
   nt_salary_support: number | null;
   allocation_policy: string | null;
   department_finances: departmentFinance[];
+  contract_departments: string[];
   station_transactions: financeTransaction[];
   contracts: managementContract[];
   records: record[] | undefined;

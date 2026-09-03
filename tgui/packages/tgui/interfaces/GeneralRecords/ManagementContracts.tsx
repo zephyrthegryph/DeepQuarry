@@ -9,6 +9,7 @@ import {
   Section,
   Stack,
   Tabs,
+  Tooltip,
 } from 'tgui-core/components';
 
 import type { contractClauseOption, Data } from './types';
@@ -16,77 +17,92 @@ import type { contractClauseOption, Data } from './types';
 const signed = (value: number, suffix = '') =>
   `${value > 0 ? '+' : ''}${value}${suffix}`;
 
-const TermEffects = ({ option }: { option: contractClauseOption }) => {
+const termEffects = (option: contractClauseOption) => {
   const effects: [string, number, number][] = [
     ['Station', option.station_money, option.station_reputation],
     ['Department', option.department_money, option.department_reputation],
     ['Staff', option.staff_money, option.staff_reputation],
   ];
 
-  return (
-    <Stack mt={0.5} wrap>
-      {effects.map(([label, money, reputation]) => (
-        <Stack.Item key={String(label)}>
-          <Box color="label" inline>
-            {label}:{' '}
-          </Box>
-          <Box inline color={Number(money) < 0 ? 'bad' : undefined}>
-            {signed(Number(money), ' th')}
-          </Box>
-          {' / '}
-          <Box inline color={Number(reputation) < 0 ? 'bad' : undefined}>
-            {signed(Number(reputation), ' rep')}
-          </Box>
-        </Stack.Item>
-      ))}
-      {!!option.deadline_minutes && (
-        <Stack.Item>
-          <Box color="label" inline>
-            Deadline:{' '}
-          </Box>
-          <Box inline color={option.deadline_minutes < 0 ? 'bad' : 'good'}>
-            {signed(option.deadline_minutes, ' min')}
-          </Box>
-        </Stack.Item>
-      )}
-    </Stack>
-  );
+  const summaries = effects
+    .filter(([, money, reputation]) => money || reputation)
+    .map(
+      ([label, money, reputation]) =>
+        `${label}: ${signed(Number(money), ' th')} / ${signed(Number(reputation), ' rep')}`,
+    );
+  if (option.deadline_minutes) {
+    summaries.push(`Deadline: ${signed(option.deadline_minutes, ' min')}`);
+  }
+  return summaries.length
+    ? summaries.join('\n')
+    : 'No payout or deadline change';
 };
 
-const states = [
-  'offered',
-  'active',
-  'grace',
-  'completed',
-  'failed',
-  'cancelled',
+const lifecycleGroups = [
+  { id: 'offers', label: 'Offers', states: ['offered'] },
+  { id: 'current', label: 'In Progress', states: ['active', 'grace'] },
+  {
+    id: 'history',
+    label: 'History',
+    states: ['completed', 'failed', 'cancelled'],
+  },
 ];
 
 export const ManagementContracts = () => {
   const { act, data } = useBackend<Data>();
-  const [selectedState, setSelectedState] = useState('offered');
+  const [selectedGroup, setSelectedGroup] = useState('offers');
+  const [selectedDepartment, setSelectedDepartment] = useState('All');
   const [trialAdverse, setTrialAdverse] = useState('none');
-  const contracts = (data.contracts ?? []).filter(
-    (contract) => contract.state === selectedState,
-  );
+  const lifecycle =
+    lifecycleGroups.find((group) => group.id === selectedGroup) ??
+    lifecycleGroups[0];
+  const departmentOptions = [
+    'All',
+    'Station-wide',
+    ...(data.contract_departments ?? []),
+  ];
+  const contracts = (data.contracts ?? []).filter((contract) => {
+    if (!lifecycle.states.includes(contract.state)) {
+      return false;
+    }
+    if (selectedDepartment === 'All') {
+      return true;
+    }
+    if (selectedDepartment === 'Station-wide') {
+      return contract.scope === 'station';
+    }
+    return contract.department === selectedDepartment;
+  });
 
   return (
     <Box>
       <Tabs fluid>
-        {states.map((state) => (
+        {lifecycleGroups.map((group) => (
           <Tabs.Tab
-            key={state}
-            selected={selectedState === state}
-            onClick={() => setSelectedState(state)}
+            key={group.id}
+            selected={selectedGroup === group.id}
+            onClick={() => setSelectedGroup(group.id)}
           >
-            {state.charAt(0).toUpperCase() + state.slice(1)}
+            {group.label}
           </Tabs.Tab>
         ))}
       </Tabs>
+      {departmentOptions.length > 3 && (
+        <Stack mb={1} align="center">
+          <Stack.Item color="label">Department</Stack.Item>
+          <Stack.Item grow>
+            <Dropdown
+              fluid
+              selected={selectedDepartment}
+              options={departmentOptions}
+              onSelected={(value) => setSelectedDepartment(String(value))}
+            />
+          </Stack.Item>
+        </Stack>
+      )}
       {!contracts.length && (
         <Box p={4} textAlign="center" color="label">
-          No {selectedState} station or department contracts are available to
-          this console.
+          No contracts match this view.
         </Box>
       )}
       {contracts.map((contract) => (
@@ -163,71 +179,79 @@ export const ManagementContracts = () => {
           {!!contract.negotiation_clauses.length && (
             <Section
               mt={1}
-              title="Negotiated Terms"
+              title="Terms"
               buttons={
-                <Box color={contract.negotiation_locked ? 'label' : 'good'}>
-                  {contract.negotiation_locked
-                    ? 'Terms locked'
-                    : 'Selections lock immediately when this offer is accepted'}
-                </Box>
+                <Tooltip content="Selections lock when the offer is accepted. Hover any option for its full explanation and effects.">
+                  <Box color={contract.negotiation_locked ? 'label' : 'good'}>
+                    {contract.negotiation_locked ? 'Locked' : 'Editable'}
+                  </Box>
+                </Tooltip>
               }
             >
-              <Stack mb={1} justify="space-around">
+              <Stack mb={0.5} wrap>
                 <Stack.Item>
-                  <Box bold>Station</Box>
-                  {contract.reward_distribution.station} th /{' '}
+                  <Box inline color="label">
+                    Station{' '}
+                  </Box>
+                  {contract.reward_distribution.station} th ·{' '}
                   {signed(contract.reputation_distribution.station, ' rep')}
                 </Stack.Item>
                 <Stack.Item>
-                  <Box bold>{contract.department || 'Department'}</Box>
-                  {contract.reward_distribution.department} th /{' '}
+                  <Box inline color="label">
+                    {contract.department || 'Department'}{' '}
+                  </Box>
+                  {contract.reward_distribution.department} th ·{' '}
                   {signed(contract.reputation_distribution.department, ' rep')}
                 </Stack.Item>
                 <Stack.Item>
-                  <Box bold>Contributing staff</Box>
-                  {contract.reward_distribution.staff} th /{' '}
+                  <Box inline color="label">
+                    Staff{' '}
+                  </Box>
+                  {contract.reward_distribution.staff} th ·{' '}
                   {signed(contract.reputation_distribution.staff, ' rep')}
                 </Stack.Item>
               </Stack>
               {contract.negotiation_clauses.map((clause) => (
-                <Section
+                <Stack
                   key={`${contract.id}-${clause.id}`}
-                  title={clause.title}
-                  fitted
-                  mb={1}
+                  align="center"
+                  mb={0.5}
                 >
-                  <Box mb={1} color="label">
-                    {clause.description}
-                  </Box>
-                  <Stack vertical>
-                    {clause.options.map((option) => {
-                      const selected = clause.selected === option.id;
-                      return (
-                        <Stack.Item key={option.id}>
-                          <Button
-                            fluid
-                            selected={selected}
-                            disabled={
-                              !!contract.negotiation_locked ||
-                              !contract.can_accept
-                            }
-                            onClick={() =>
-                              act('contract_negotiate', {
-                                id: contract.id,
-                                clause: clause.id,
-                                option: option.id,
-                              })
-                            }
-                          >
-                            <Box bold>{option.title}</Box>
-                            <Box color="label">{option.description}</Box>
-                            <TermEffects option={option} />
-                          </Button>
-                        </Stack.Item>
-                      );
-                    })}
-                  </Stack>
-                </Section>
+                  <Stack.Item basis="22%">
+                    <Tooltip content={clause.description}>
+                      <Box bold>{clause.title}</Box>
+                    </Tooltip>
+                  </Stack.Item>
+                  <Stack.Item grow>
+                    <Stack wrap>
+                      {clause.options.map((option) => {
+                        const selected = clause.selected === option.id;
+                        return (
+                          <Stack.Item key={option.id}>
+                            <Button
+                              compact
+                              selected={selected}
+                              tooltip={`${option.description}\n\n${termEffects(option)}`}
+                              disabled={
+                                !!contract.negotiation_locked ||
+                                !contract.can_accept
+                              }
+                              onClick={() =>
+                                act('contract_negotiate', {
+                                  id: contract.id,
+                                  clause: clause.id,
+                                  option: option.id,
+                                })
+                              }
+                            >
+                              {option.title}
+                            </Button>
+                          </Stack.Item>
+                        );
+                      })}
+                    </Stack>
+                  </Stack.Item>
+                </Stack>
               ))}
             </Section>
           )}

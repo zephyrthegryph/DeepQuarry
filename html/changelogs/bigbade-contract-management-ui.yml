@@ -1,0 +1,4 @@
+author: "BigBadE"
+delete-after: true
+changes:
+  - qol: "Compacted contract negotiation terms, consolidated contract lifecycle views, and added department filtering for multi-department managers."

@@ -202,6 +202,11 @@
 			)))
 		data["department_finances"] = department_finances
 		data["station_transactions"] = can_allocate_station_budget() ? finance_transaction_rows(GLOB.station_account) : list()
+		var/list/contract_departments = list()
+		for(var/department in GLOB.department_accounts)
+			if(department != "Vendor" && can_view_department(department))
+				contract_departments += department
+		data["contract_departments"] = contract_departments
 		var/list/contracts = list()
 		for(var/id in SScontracts.contracts_by_id)
 			var/datum/contract/contract = SScontracts.contracts_by_id[id]
