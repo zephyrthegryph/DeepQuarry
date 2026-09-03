@@ -480,6 +480,25 @@
 	TEST_ASSERT_EQUAL(length(negotiable_trial.negotiation_clauses), 6, "medical trial did not expose its full generic negotiation set")
 	TEST_ASSERT(!negotiable_trial.validate(), "default medical negotiation terms were invalid")
 	qdel(negotiable_trial)
+	var/datum/contract_definition/social_definition = SScontracts.definitions["occupational_recovery_program"]
+	var/datum/contract/social/social_offer = social_definition.create_contract()
+	TEST_ASSERT(social_offer.negotiation_clauses["objective_focus"], "multi-objective social contract lacked an operational-emphasis clause")
+	TEST_ASSERT(social_offer.select_negotiation_option("objective_focus", "primary", "Unit test"), "social objective emphasis could not be negotiated")
+	var/list/negotiated_floors = social_offer.negotiated_effect("requirement_floors")
+	var/datum/contract_requirement/primary_requirement = social_offer.requirements[1]
+	var/datum/contract_requirement/supporting_requirement = social_offer.requirements[2]
+	TEST_ASSERT_EQUAL(negotiated_floors[primary_requirement.name], 1, "primary emphasis weakened the named primary objective")
+	TEST_ASSERT_EQUAL(negotiated_floors[supporting_requirement.name], 0.65, "primary emphasis did not relax a supporting objective")
+	TEST_ASSERT(social_offer.select_negotiation_option("schedule", "accelerated", "Unit test"), "expedited social warranty could not be negotiated")
+	TEST_ASSERT_EQUAL(social_offer.minimum_grade_ratio, 0.65, "expedited warranty did not strengthen the minimum outcome")
+	qdel(social_offer)
+	var/datum/contract_definition/fuel_definition = SScontracts.definitions["alternative_fuel_demonstration"]
+	var/datum/contract/social/alternative_fuel_trial/fuel_offer = fuel_definition.create_contract()
+	TEST_ASSERT(fuel_offer.negotiation_clauses["fuel_protocol"], "alternative-fuel contract lacked its certification protocol")
+	TEST_ASSERT(fuel_offer.select_negotiation_option("fuel_protocol", "phoron_free", "Unit test"), "phoron-free certification could not be negotiated")
+	TEST_ASSERT_EQUAL(fuel_offer.output_requirement.target, 3, "alternative-fuel protocol did not expose three output stages")
+	TEST_ASSERT(findtext(fuel_offer.output_requirement.description, "0.1% phoron"), "phoron-free negotiation did not update its visible chamber restriction")
+	qdel(fuel_offer)
 	var/found_offer = FALSE
 	for(var/datum/contract/medical_trial/trial in SScontracts.offered_contracts)
 		found_offer = TRUE

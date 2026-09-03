@@ -62,6 +62,59 @@
 // Engineering
 // --------------------------------------------------------------------------
 
+/datum/contract/social/alternative_fuel_trial
+	var/datum/contract_requirement/staged_sustained_event/output_requirement
+	var/datum/contract_requirement/sustained_event/thermal_requirement
+
+/datum/contract/social/alternative_fuel_trial/Destroy()
+	output_requirement = null
+	thermal_requirement = null
+	return ..()
+
+/datum/contract/social/alternative_fuel_trial/on_negotiated_terms_changed()
+	..()
+	if(!output_requirement)
+		return
+	var/profile = negotiated_effect("fuel_certification_profile", "balanced")
+	var/max_plasma_fraction = 0.15
+	var/integrity_floor = 85
+	var/thermal_ceiling = 4500
+	var/list/stages
+	switch(profile)
+		if("conservative")
+			max_plasma_fraction = 0.1
+			integrity_floor = 92
+			thermal_ceiling = 4000
+			stages = list(
+				list("label" = "Pilot output", "threshold" = 250, "duration" = 45 SECONDS),
+				list("label" = "Stable output", "threshold" = 350, "duration" = 1 MINUTE),
+				list("label" = "Assured output", "threshold" = 450, "duration" = 75 SECONDS),
+			)
+		if("phoron_free")
+			max_plasma_fraction = 0.001
+			integrity_floor = 88
+			thermal_ceiling = 4250
+			stages = list(
+				list("label" = "Phoron-free ignition", "threshold" = 200, "duration" = 45 SECONDS),
+				list("label" = "Phoron-free generation", "threshold" = 325, "duration" = 1 MINUTE),
+				list("label" = "Phoron-free maximum", "threshold" = 500, "duration" = 75 SECONDS),
+			)
+		else
+			stages = list(
+				list("label" = "Pilot output", "threshold" = 300, "duration" = 45 SECONDS),
+				list("label" = "Commercial output", "threshold" = 450, "duration" = 1 MINUTE),
+				list("label" = "High output", "threshold" = 650, "duration" = 75 SECONDS),
+			)
+	output_requirement.set_stages(stages)
+	output_requirement.filter.set_number_requirement("plasma_fraction", CONTRACT_EVIDENCE_COMPARE_AT_MOST, max_plasma_fraction)
+	output_requirement.filter.set_number_requirement("integrity", CONTRACT_EVIDENCE_COMPARE_AT_LEAST, integrity_floor)
+	output_requirement.description = "Certify three increasingly strong [profile] output stages using at least two chamber gases, no more than [round(max_plasma_fraction * 100, 0.1)]% phoron, and at least [integrity_floor]% integrity."
+	if(thermal_requirement)
+		thermal_requirement.threshold = thermal_ceiling
+		thermal_requirement.filter.set_number_requirement("eer", CONTRACT_EVIDENCE_COMPARE_AT_LEAST, stages[1]["threshold"])
+		thermal_requirement.description = "Hold the qualifying alternative-fuel engine below [thermal_ceiling] K for two minutes."
+	description = "Certify progressively stronger output under the negotiated [profile] alternative-fuel protocol while controlling temperature and crystal integrity."
+
 /datum/contract_definition/social/program/alternative_fuel
 	id = "alternative_fuel_demonstration"
 	title = "Alternative Fuel Demonstration"
@@ -71,20 +124,31 @@
 	issuer_name = "Focal Point Energetics"
 	issuer_faction = REPUTATION_FACTION_NANOTRASEN
 	reward = 3400
+	contract_type = /datum/contract/social/alternative_fuel_trial
 
-/datum/contract_definition/social/program/alternative_fuel/configure_contract(datum/contract/social/contract, list/context)
+/datum/contract_definition/social/program/alternative_fuel/configure_contract(datum/contract/social/alternative_fuel_trial/contract, list/context)
 	..()
 	add_social_role(contract, "operator", "Engine operator", "Designs and operates the alternative chamber mixture.", list(DEPARTMENT_ENGINEERING), 1, 3)
 	add_social_role(contract, "observer", "Independent technical observer", "Reviews safety and performance on behalf of another department.", list(DEPARTMENT_RESEARCH, DEPARTMENT_COMMAND), 1, 3)
 	contract.personal_side_definitions = list("engineering_safety_watch")
+	var/datum/contract_negotiation_clause/fuel_protocol = new("fuel_protocol", "Fuel certification", "Choose the chamber restrictions and escalating output schedule submitted for certification.")
+	fuel_protocol.add_option(make_contract_clause_option("conservative", "Conservative blend", "Certify 250, 350, and 450 EER below 10% phoron, 4,000 K, and at 92% integrity.", -100, -150, 50, 2, 4, 2, 0, list("fuel_certification_profile" = "conservative")))
+	fuel_protocol.add_option(make_contract_clause_option("balanced", "Mixed-gas performance", "Certify 300, 450, and 650 EER below 15% phoron, 4,500 K, and at 85% integrity.", 0, 0, 0, 0, 0, 0, 0, list("fuel_certification_profile" = "balanced")), TRUE)
+	fuel_protocol.add_option(make_contract_clause_option("phoron_free", "Phoron-free process", "Certify 200, 325, and 500 EER with effectively no phoron for a research and standing premium.", 100, 250, 50, 2, 5, 2, 5 MINUTES, list("fuel_certification_profile" = "phoron_free")))
+	contract.add_negotiation_clause(fuel_protocol)
 	var/list/output_checks = list(
 		list("key" = "station_machine", "comparator" = CONTRACT_EVIDENCE_COMPARE_AT_LEAST, "expected" = 1),
 		list("key" = "gas_count", "comparator" = CONTRACT_EVIDENCE_COMPARE_AT_LEAST, "expected" = 2),
 		list("key" = "plasma_fraction", "comparator" = CONTRACT_EVIDENCE_COMPARE_AT_MOST, "expected" = 0.15),
-		list("key" = "integrity", "comparator" = CONTRACT_EVIDENCE_COMPARE_AT_LEAST, "expected" = 80),
+		list("key" = "integrity", "comparator" = CONTRACT_EVIDENCE_COMPARE_AT_LEAST, "expected" = 85),
 	)
-	add_program_sustained(contract, CONTRACT_EVENT_MACHINE_RESULT, "machine_id", "eer", CONTRACT_EVIDENCE_COMPARE_AT_LEAST, 350, 2 MINUTES, 1, "Alternative-fuel output", "Hold at least 350 Relative EER for two minutes with two or more chamber gases, no more than 15% phoron, and at least 80% integrity.", CONTRACT_EVIDENCE_SCOPE_DEPARTMENT, list("machine_kind" = "supermatter"), output_checks)
-	add_program_sustained(contract, CONTRACT_EVENT_MACHINE_RESULT, "machine_id", "temperature", CONTRACT_EVIDENCE_COMPARE_AT_MOST, 4500, 2 MINUTES, 1, "Thermal control", "Keep the qualifying engine below 4,500 K for the full demonstration.", CONTRACT_EVIDENCE_SCOPE_DEPARTMENT, list("machine_kind" = "supermatter"), list(list("key" = "eer", "comparator" = CONTRACT_EVIDENCE_COMPARE_AT_LEAST, "expected" = 350)))
+	contract.output_requirement = new(CONTRACT_EVENT_MACHINE_RESULT, "machine_id", "eer", CONTRACT_EVIDENCE_COMPARE_AT_LEAST, list(list("label" = "Pilot output", "threshold" = 300, "duration" = 45 SECONDS)), CONTRACT_EVIDENCE_SCOPE_DEPARTMENT)
+	contract.output_requirement.name = "Alternative-fuel output stages"
+	for(var/list/check as anything in output_checks)
+		contract.output_requirement.filter.require_number(check["key"], check["comparator"], check["expected"])
+	contract.output_requirement.filter.require_value("machine_kind", "supermatter")
+	contract.add_requirement(contract.output_requirement)
+	contract.thermal_requirement = add_program_sustained(contract, CONTRACT_EVENT_MACHINE_RESULT, "machine_id", "temperature", CONTRACT_EVIDENCE_COMPARE_AT_MOST, 4500, 2 MINUTES, 1, "Thermal control", "Keep the qualifying engine below 4,500 K for the full demonstration.", CONTRACT_EVIDENCE_SCOPE_DEPARTMENT, list("machine_kind" = "supermatter"), list(list("key" = "eer", "comparator" = CONTRACT_EVIDENCE_COMPARE_AT_LEAST, "expected" = 300)))
 
 // --------------------------------------------------------------------------
 // Medical

@@ -164,12 +164,18 @@
 	contract.offer_context = context ? deepCopyList(context) : list()
 	contract.deadline_grace_duration = deadline_grace_duration
 	configure_contract(contract, context)
+	finalize_contract_authoring(contract, context)
 	if(!contract.finalize_offer(offer_duration))
 		qdel(contract)
 		return null
 	return contract
 
 /datum/contract_definition/proc/configure_contract(datum/contract/contract, list/context)
+	return
+
+/// Last authoring pass after a concrete definition has added its objectives.
+/// Families use this to derive negotiation choices from the finished contract.
+/datum/contract_definition/proc/finalize_contract_authoring(datum/contract/contract, list/context)
 	return
 
 /datum/contract

@@ -1,0 +1,6 @@
+author: "Codex"
+delete-after: true
+changes:
+  - rscadd: "Multi-objective social contracts can now negotiate which named part of their specification receives full operational priority."
+  - rscadd: "Alternative-fuel engine contracts now offer conservative, mixed-gas, and phoron-free protocols with escalating output stages."
+  - qol: "Graded contract displays now show their negotiated minimum, certified, and exceptional thresholds."

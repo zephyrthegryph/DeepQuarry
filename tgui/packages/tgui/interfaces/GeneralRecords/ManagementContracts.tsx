@@ -419,15 +419,19 @@ export const ManagementContracts = () => {
                 minValue={0}
                 maxValue={100}
                 ranges={{
-                  bad: [0, 50],
-                  average: [50, 75],
-                  good: [75, 100],
+                  bad: [0, contract.details.minimum_percent],
+                  average: [
+                    contract.details.minimum_percent,
+                    contract.details.success_percent,
+                  ],
+                  good: [contract.details.success_percent, 100],
                 }}
               />
               <Box mt={0.5} color="label">
-                Minimum settlement begins at 50%; successful at 75%; exceptional
-                at 100%. Every required dimension and stakeholder role must meet
-                its minimum.
+                Minimum settlement begins at {contract.details.minimum_percent}
+                %; certified at {contract.details.success_percent}%; exceptional
+                at {contract.details.exceptional_percent}%. Every required
+                dimension and stakeholder role must meet its negotiated minimum.
               </Box>
               {contract.details.roles.map((role) => (
                 <Section

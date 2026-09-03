@@ -162,6 +162,9 @@ export type socialOutcomeDetails = {
   projected_grade: string;
   projected_reward: number;
   score: number;
+  minimum_percent: number;
+  success_percent: number;
+  exceptional_percent: number;
   can_finalize: BooleanLike;
   stakeholders_ready: BooleanLike;
   roles: socialStakeholderRole[];
