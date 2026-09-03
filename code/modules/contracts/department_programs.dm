@@ -72,12 +72,12 @@
 	contract.personal_side_definitions = list("engineering_safety_watch")
 	add_program_count(contract, CONTRACT_EVENT_POWER_SERVICE_CHANGED, 5, "Restored APC coverage", "Return five distinct APC service zones to all three powered channels.", null, CONTRACT_EVIDENCE_SCOPE_DEPARTMENT, "service_id", null, list(list("key" = "powered_channels", "comparator" = CONTRACT_EVIDENCE_COMPARE_AT_LEAST, "expected" = 3)))
 	add_program_sustained(contract, CONTRACT_EVENT_POWER_SERVICE_CHANGED, "service_id", "powered_channels", CONTRACT_EVIDENCE_COMPARE_AT_LEAST, 3, 3 MINUTES, 3, "Stable restored grid", "Hold three restored APC service zones at full power for three minutes.", CONTRACT_EVIDENCE_SCOPE_DEPARTMENT)
-	add_program_count(contract, CONTRACT_EVENT_INFRASTRUCTURE_REPAIRED, 300, "Physical restoration", "Complete 300 integrity points of genuine station infrastructure repairs.", "repair_amount")
+	add_program_count(contract, CONTRACT_EVENT_INFRASTRUCTURE_REPAIRED, 300, "Physical restoration", "Restore substantial damage across station machinery and structures.", "repair_amount")
 
 /datum/contract_definition/social/program/atmos_recovery
 	id = "atmospheric_recovery_bond"
 	title = "Atmospheric Recovery Bond"
-	description = "Osiris underwriters request a verified recovery of multiple unsafe station atmosphere zones."
+	description = "Osiris underwriters request the recovery and recertification of multiple unsafe station atmosphere zones."
 	scope = CONTRACT_SCOPE_DEPARTMENT
 	department = DEPARTMENT_ENGINEERING
 	issuer_name = "Osiris Atmospherics Underwriting"
@@ -90,7 +90,7 @@
 	add_social_role(contract, "occupant", "Affected-area representative", "Coordinates evacuation, access, and operational acceptance.", null, 2, 8)
 	add_program_count(contract, CONTRACT_EVENT_ATMOS_SERVICE_CHANGED, 5, "Recovered alarm zones", "Return five distinct air-alarm zones to a safe state above 80 kPa.", null, CONTRACT_EVIDENCE_SCOPE_DEPARTMENT, "service_id", null, list(list("key" = "danger_level", "comparator" = CONTRACT_EVIDENCE_COMPARE_AT_MOST, "expected" = 0), list("key" = "pressure", "comparator" = CONTRACT_EVIDENCE_COMPARE_AT_LEAST, "expected" = 80)))
 	add_program_sustained(contract, CONTRACT_EVENT_ATMOS_SERVICE_CHANGED, "service_id", "danger_level", CONTRACT_EVIDENCE_COMPARE_AT_MOST, 0, 3 MINUTES, 3, "Sustained atmosphere", "Hold three recovered zones at safe alarm status for three minutes.", CONTRACT_EVIDENCE_SCOPE_DEPARTMENT, null, list(list("key" = "pressure", "comparator" = CONTRACT_EVIDENCE_COMPARE_AT_LEAST, "expected" = 80)))
-	add_program_count(contract, CONTRACT_EVENT_INFRASTRUCTURE_REPAIRED, 200, "Containment repairs", "Complete 200 integrity points of station repairs associated with the recovery.", "repair_amount")
+	add_program_count(contract, CONTRACT_EVENT_INFRASTRUCTURE_REPAIRED, 200, "Containment repairs", "Repair substantial containment damage associated with the recovery.", "repair_amount")
 
 /datum/contract_definition/social/program/alternative_fuel
 	id = "alternative_fuel_demonstration"
@@ -130,7 +130,7 @@
 	..()
 	add_social_role(contract, "maintainer", "Maintenance lead", "Plans and performs the preventative work portfolio.", list(DEPARTMENT_ENGINEERING), 1, 4)
 	add_social_role(contract, "owner", "Asset-area representative", "Identifies operational assets and verifies that work does not disrupt service.", null, 2, 8)
-	add_program_count(contract, CONTRACT_EVENT_INFRASTRUCTURE_REPAIRED, 600, "Restored integrity", "Complete 600 integrity points of real station infrastructure repair.", "repair_amount")
+	add_program_count(contract, CONTRACT_EVENT_INFRASTRUCTURE_REPAIRED, 600, "Restored infrastructure", "Complete a substantial portfolio of station machinery and structural repairs.", "repair_amount")
 	add_program_count(contract, CONTRACT_EVENT_INFRASTRUCTURE_REPAIRED, 7, "Asset diversity", "Repair seven distinct infrastructure classes.", null, CONTRACT_EVIDENCE_SCOPE_ANY, "atom_type")
 	add_program_count(contract, CONTRACT_EVENT_INFRASTRUCTURE_REPAIRED, 5, "Area coverage", "Perform qualifying work in five distinct station areas.", null, CONTRACT_EVIDENCE_SCOPE_ANY, "area_name")
 
@@ -150,16 +150,16 @@
 
 /datum/contract_definition/social/program/occupational_recovery/configure_contract(datum/contract/social/contract, list/context)
 	..()
-	add_social_role(contract, "clinician", "Occupational clinician", "Coordinates diagnosis, treatment, and ordinary medical records.", list(DEPARTMENT_MEDICAL), 1, 4)
+	add_social_role(contract, "clinician", "Occupational clinician", "Coordinates diagnosis, treatment, and follow-up records.", list(DEPARTMENT_MEDICAL), 1, 4)
 	add_social_role(contract, "patient", "Participating worker", "Participates in care and outcome follow-up.", null, 4, 12)
-	add_program_count(contract, CONTRACT_EVENT_MEDICAL_TREATMENT_OUTCOME, 300, "Clinical improvement", "Record 300 points of genuine condition-severity improvement.", "improvement", CONTRACT_EVIDENCE_SCOPE_DEPARTMENT)
+	add_program_count(contract, CONTRACT_EVENT_MEDICAL_TREATMENT_OUTCOME, 300, "Clinical improvement", "Deliver substantial, measurable improvement across participating workers.", "improvement", CONTRACT_EVIDENCE_SCOPE_DEPARTMENT)
 	add_program_count(contract, CONTRACT_EVENT_MEDICAL_TREATMENT_OUTCOME, 6, "Workers recovered", "Improve six distinct patients.", null, CONTRACT_EVIDENCE_SCOPE_DEPARTMENT, "subject_id")
-	add_program_count(contract, CONTRACT_EVENT_MEDICAL_SCAN_CREATED, 6, "Documented follow-up", "Produce ordinary medical scans for six distinct patients.", null, CONTRACT_EVIDENCE_SCOPE_ANY, "subject_id")
+	add_program_count(contract, CONTRACT_EVENT_MEDICAL_SCAN_CREATED, 6, "Documented follow-up", "File body-scanner follow-ups for six distinct patients.", null, CONTRACT_EVIDENCE_SCOPE_ANY, "subject_id")
 
 /datum/contract_definition/social/program/blood_reserve
 	id = "blood_reserve_campaign"
 	title = "Blood Reserve Campaign"
-	description = "VeyMed requests a diverse, traceable reserve collected through ordinary IV equipment."
+	description = "VeyMed requests a diverse, traceable blood reserve collected under Medical supervision."
 	scope = CONTRACT_SCOPE_DEPARTMENT
 	department = DEPARTMENT_MEDICAL
 	issuer_name = "VeyMed Transfusion Services"
@@ -168,9 +168,9 @@
 
 /datum/contract_definition/social/program/blood_reserve/configure_contract(datum/contract/social/contract, list/context)
 	..()
-	add_social_role(contract, "clinician", "Transfusion coordinator", "Screens donors and manages ordinary blood collection.", list(DEPARTMENT_MEDICAL), 1, 3)
+	add_social_role(contract, "clinician", "Transfusion coordinator", "Screens donors and manages safe blood collection.", list(DEPARTMENT_MEDICAL), 1, 3)
 	add_social_role(contract, "donor", "Registered donor", "Contributes to the station reserve under Medical supervision.", null, 4, 12)
-	add_program_count(contract, CONTRACT_EVENT_BLOOD_DONATED, 600, "Reserve volume", "Collect 600 units of blood through ordinary IV drips.", "amount", CONTRACT_EVIDENCE_SCOPE_DEPARTMENT)
+	add_program_count(contract, CONTRACT_EVENT_BLOOD_DONATED, 600, "Reserve volume", "Collect 600 units of blood into the station reserve.", "amount", CONTRACT_EVIDENCE_SCOPE_DEPARTMENT)
 	add_program_count(contract, CONTRACT_EVENT_BLOOD_DONATED, 4, "Donor participation", "Collect from four distinct donors.", null, CONTRACT_EVIDENCE_SCOPE_DEPARTMENT, "subject_id")
 	add_program_count(contract, CONTRACT_EVENT_BLOOD_DONATED, 3, "Blood-type breadth", "Represent three distinct blood types in the campaign.", null, CONTRACT_EVIDENCE_SCOPE_DEPARTMENT, "blood_type")
 
@@ -188,7 +188,7 @@
 	..()
 	add_social_role(contract, "rehab", "Rehabilitation clinician", "Coordinates treatment and confirms durable recovery.", list(DEPARTMENT_MEDICAL), 1, 4)
 	add_social_role(contract, "worker", "Returning crew member", "Completes treatment and follow-up assessment.", null, 4, 10)
-	add_program_count(contract, CONTRACT_EVENT_MEDICAL_TREATMENT_OUTCOME, 240, "Condition recovery", "Record 240 points of genuine condition improvement.", "improvement", CONTRACT_EVIDENCE_SCOPE_DEPARTMENT)
+	add_program_count(contract, CONTRACT_EVENT_MEDICAL_TREATMENT_OUTCOME, 240, "Condition recovery", "Deliver substantial, measurable recovery across returning crew.", "improvement", CONTRACT_EVIDENCE_SCOPE_DEPARTMENT)
 	add_program_count(contract, CONTRACT_EVENT_MEDICAL_TREATMENT_OUTCOME, 5, "Returned crew", "Improve five distinct crew members.", null, CONTRACT_EVIDENCE_SCOPE_DEPARTMENT, "subject_id")
 	add_program_count(contract, CONTRACT_EVENT_MEDICAL_SCAN_CREATED, 5, "Return-to-duty scans", "Produce follow-up scans for five distinct patients.", null, CONTRACT_EVIDENCE_SCOPE_ANY, "subject_id")
 
@@ -206,7 +206,7 @@
 	..()
 	add_social_role(contract, "coordinator", "Public-health coordinator", "Coordinates case finding, treatment, and follow-up.", list(DEPARTMENT_MEDICAL), 1, 3)
 	add_social_role(contract, "liaison", "Department health liaison", "Brings department-specific risks and affected staff into the response.", null, 3, 8)
-	add_program_count(contract, CONTRACT_EVENT_MEDICAL_TREATMENT_OUTCOME, 8, "Cases improved", "Improve eight distinct patients through the full medical condition system.", null, CONTRACT_EVIDENCE_SCOPE_DEPARTMENT, "subject_id")
+	add_program_count(contract, CONTRACT_EVENT_MEDICAL_TREATMENT_OUTCOME, 8, "Cases improved", "Improve the diagnosed conditions of eight distinct patients.", null, CONTRACT_EVIDENCE_SCOPE_DEPARTMENT, "subject_id")
 	add_program_count(contract, CONTRACT_EVENT_MEDICAL_TREATMENT_OUTCOME, 4, "Condition breadth", "Treat four distinct condition classes.", null, CONTRACT_EVIDENCE_SCOPE_DEPARTMENT, "condition_type")
 	add_program_count(contract, CONTRACT_EVENT_MEDICAL_SCAN_CREATED, 8, "Case surveillance", "Create medical scans for eight distinct patients.", null, CONTRACT_EVIDENCE_SCOPE_ANY, "subject_id")
 
@@ -235,7 +235,7 @@
 /datum/contract_definition/social/program/advanced_alloy_trial
 	id = "advanced_alloy_trial"
 	title = "Advanced Alloy Trial"
-	description = "Chimera Applied Materials requests a traceable multi-component alloy with balanced mechanical performance, qualified through ordinary station equipment."
+	description = "Chimera Applied Materials requests a traceable multi-component alloy with balanced performance, prepared and qualified aboard the station."
 	scope = CONTRACT_SCOPE_DEPARTMENT
 	department = DEPARTMENT_RESEARCH
 	issuer_name = "Chimera Applied Materials"
@@ -306,7 +306,7 @@
 /datum/contract_definition/social/program/applied_chemistry
 	id = "applied_chemistry_brief"
 	title = "Applied Chemistry Brief"
-	description = "VeyMed requests varied, nontrivial chemistry synthesis through ordinary reagent systems."
+	description = "VeyMed requests a varied portfolio of complex compounds synthesized in the station laboratory."
 	scope = CONTRACT_SCOPE_DEPARTMENT
 	department = DEPARTMENT_RESEARCH
 	issuer_name = "VeyMed Applied Chemistry"
@@ -317,14 +317,14 @@
 	..()
 	add_social_role(contract, "chemist", "Applied chemist", "Plans and performs the synthesis portfolio.", list(DEPARTMENT_RESEARCH, DEPARTMENT_MEDICAL), 1, 4)
 	add_social_role(contract, "customer", "Operational customer", "Defines practical needs and evaluates delivered results.", null, 2, 6)
-	add_program_count(contract, CONTRACT_EVENT_CHEMISTRY_RESULT, 100, "Synthesized volume", "Produce 100 units through genuine chemical reactions.", "amount", CONTRACT_EVIDENCE_SCOPE_DEPARTMENT)
+	add_program_count(contract, CONTRACT_EVENT_CHEMISTRY_RESULT, 100, "Synthesized volume", "Produce 100 units of laboratory-synthesized compounds.", "amount", CONTRACT_EVIDENCE_SCOPE_DEPARTMENT)
 	add_program_count(contract, CONTRACT_EVENT_CHEMISTRY_RESULT, 8, "Product breadth", "Produce eight distinct reaction products.", null, CONTRACT_EVIDENCE_SCOPE_DEPARTMENT, "product_id")
 	add_program_count(contract, CONTRACT_EVENT_CHEMISTRY_RESULT, 5, "Complex synthesis", "Complete five distinct reactions requiring at least three reactants.", null, CONTRACT_EVIDENCE_SCOPE_DEPARTMENT, "reaction_id", null, list(list("key" = "reactant_count", "comparator" = CONTRACT_EVIDENCE_COMPARE_AT_LEAST, "expected" = 3)))
 
 /datum/contract_definition/social/program/publication_consortium
 	id = "publication_consortium"
 	title = "Publication Consortium"
-	description = "A multi-institution consortium requests research milestones, useful outputs, and genuine station adoption."
+	description = "A multi-institution consortium requests research milestones, useful outputs, and demonstrated station adoption."
 	scope = CONTRACT_SCOPE_DEPARTMENT
 	department = DEPARTMENT_RESEARCH
 	issuer_name = "Vir Scientific Publication Consortium"
@@ -359,13 +359,13 @@
 	add_social_role(contract, "officer", "Buyback coordinator", "Records surrendered cases and verifies lawful disposition.", list(DEPARTMENT_SECURITY), 1, 4)
 	add_social_role(contract, "participant", "Program participant", "Participates in a documented voluntary resolution.", null, 3, 10)
 	contract.personal_side_definitions = list("security_record_suppression")
-	add_program_count(contract, CONTRACT_EVENT_SECURITY_DISPOSITION_CHANGED, 5, "Resolved participants", "Close five distinct physical-subject cases.", null, CONTRACT_EVIDENCE_SCOPE_DEPARTMENT, "subject_id")
+	add_program_count(contract, CONTRACT_EVENT_SECURITY_DISPOSITION_CHANGED, 5, "Resolved participants", "Close cases concerning five distinct identifiable people.", null, CONTRACT_EVIDENCE_SCOPE_DEPARTMENT, "subject_id")
 	add_program_count(contract, CONTRACT_EVENT_MONEY_TRANSFERRED, 1000, "Documented consideration", "Transfer 1,000 Thalers in genuine participant compensation or restitution.", "amount", CONTRACT_EVIDENCE_SCOPE_ANY, "target_account", null, list(list("key" = "amount", "comparator" = CONTRACT_EVIDENCE_COMPARE_AT_LEAST, "expected" = 50)))
 
 /datum/contract_definition/social/program/forensic_portfolio
 	id = "forensic_case_portfolio"
 	title = "Forensic Case Portfolio"
-	description = "NanoTrasen Legal requests a varied portfolio of physically grounded case resolutions."
+	description = "NanoTrasen Legal requests a varied portfolio of case resolutions tied to identifiable station personnel."
 	scope = CONTRACT_SCOPE_DEPARTMENT
 	department = DEPARTMENT_SECURITY
 	issuer_name = "NanoTrasen Legal Assurance"
@@ -378,7 +378,7 @@
 	add_social_role(contract, "reviewer", "Independent case reviewer", "Reviews proportionality and record completeness.", list(DEPARTMENT_COMMAND, DEPARTMENT_MEDICAL), 1, 3)
 	add_program_count(contract, CONTRACT_EVENT_SECURITY_DISPOSITION_CHANGED, 7, "Case portfolio", "Resolve seven distinct security records linked to physical subjects.", null, CONTRACT_EVIDENCE_SCOPE_DEPARTMENT, "record_id")
 	add_program_count(contract, CONTRACT_EVENT_SECURITY_DISPOSITION_CHANGED, 5, "Subject breadth", "Resolve cases for five distinct physical subjects.", null, CONTRACT_EVIDENCE_SCOPE_DEPARTMENT, "physical_subject_id")
-	add_program_count(contract, CONTRACT_EVENT_CUSTODY_CHANGED, 3, "Verified custody", "Record three distinct physically verified custody episodes.", null, CONTRACT_EVIDENCE_SCOPE_DEPARTMENT, "subject_id")
+	add_program_count(contract, CONTRACT_EVENT_CUSTODY_CHANGED, 3, "Documented custody", "Document custody of three distinct people.", null, CONTRACT_EVIDENCE_SCOPE_DEPARTMENT, "subject_id")
 
 /datum/contract_definition/social/program/community_resolution
 	id = "community_resolution_docket"
@@ -411,7 +411,7 @@
 	..()
 	add_social_role(contract, "commander", "Response commander", "Coordinates scene safety and cross-department priorities.", list(DEPARTMENT_SECURITY, DEPARTMENT_COMMAND), 1, 3)
 	add_social_role(contract, "responder", "Specialist responder", "Provides Engineering or Medical response capacity.", list(DEPARTMENT_ENGINEERING, DEPARTMENT_MEDICAL), 2, 6)
-	add_program_count(contract, CONTRACT_EVENT_INFRASTRUCTURE_REPAIRED, 350, "Scene restoration", "Complete 350 integrity points of genuine station repairs.", "repair_amount")
+	add_program_count(contract, CONTRACT_EVENT_INFRASTRUCTURE_REPAIRED, 350, "Scene restoration", "Restore substantial damage left by station incidents.", "repair_amount")
 	add_program_count(contract, CONTRACT_EVENT_MEDICAL_TREATMENT_OUTCOME, 4, "Casualty recovery", "Improve four distinct patients through the condition system.", null, CONTRACT_EVIDENCE_SCOPE_ANY, "subject_id")
 	add_program_count(contract, CONTRACT_EVENT_SECURITY_DISPOSITION_CHANGED, 3, "Incident closure", "Close three distinct incident records.", null, CONTRACT_EVIDENCE_SCOPE_DEPARTMENT, "record_id")
 
@@ -432,9 +432,9 @@
 /datum/contract_definition/social/program/budget_procurement/configure_contract(datum/contract/social/contract, list/context)
 	..()
 	add_social_role(contract, "buyer", "Cargo procurement lead", "Coordinates approvals, timing, and budget use.", list(DEPARTMENT_CARGO), 1, 3)
-	add_social_role(contract, "requester", "Department requester", "Defines a genuine operational need and receives the order.", null, 3, 8)
+	add_social_role(contract, "requester", "Department requester", "Defines a departmental need and receives the resulting order.", null, 3, 8)
 	contract.personal_side_definitions = list("cargo_local_priority")
-	add_program_count(contract, CONTRACT_EVENT_SUPPLY_ORDER_FULFILLED, 5000, "Procured value", "Fulfill 5,000 Thalers of ordinary supply orders.", "value", CONTRACT_EVIDENCE_SCOPE_ANY)
+	add_program_count(contract, CONTRACT_EVENT_SUPPLY_ORDER_FULFILLED, 5000, "Procured value", "Deliver 5,000 Thalers of departmental supply orders.", "value", CONTRACT_EVIDENCE_SCOPE_ANY)
 	add_program_count(contract, CONTRACT_EVENT_SUPPLY_ORDER_FULFILLED, 9, "Catalog breadth", "Fulfill nine distinct supply-pack types.", null, CONTRACT_EVIDENCE_SCOPE_ANY, "pack_type")
 	add_program_count(contract, CONTRACT_EVENT_SUPPLY_ORDER_FULFILLED, 4, "Department participation", "Fulfill orders funded by four distinct departments.", null, CONTRACT_EVIDENCE_SCOPE_ANY, "funding_department")
 
@@ -458,7 +458,7 @@
 /datum/contract_definition/social/program/materials_recovery
 	id = "materials_recovery_initiative"
 	title = "Materials Recovery Initiative"
-	description = "NanoTrasen Circular Logistics requests varied recovered value returned through ordinary freight."
+	description = "NanoTrasen Circular Logistics requests a varied portfolio of recovered assets returned by freight."
 	scope = CONTRACT_SCOPE_DEPARTMENT
 	department = DEPARTMENT_CARGO
 	issuer_name = "NanoTrasen Circular Logistics"
@@ -475,7 +475,7 @@
 /datum/contract_definition/social/program/cold_chain
 	id = "cold_chain_logistics"
 	title = "Cold-Chain Logistics"
-	description = "VeyMed requests diverse temperature-controlled supply deliveries through ordinary freezer crates."
+	description = "VeyMed requests diverse medical supplies delivered under documented cold-chain conditions."
 	scope = CONTRACT_SCOPE_DEPARTMENT
 	department = DEPARTMENT_CARGO
 	issuer_name = "VeyMed Cold-Chain Operations"
@@ -506,7 +506,7 @@
 /datum/contract_definition/social/program/station_festival/configure_contract(datum/contract/social/contract, list/context)
 	..()
 	add_social_role(contract, "host", "Festival host", "Coordinates food, drink, pricing, and participation.", list(DEPARTMENT_CIVILIAN), 2, 6)
-	add_social_role(contract, "patron", "Registered patron", "Participates as a genuine customer or sponsor.", null, 6, 16)
+	add_social_role(contract, "patron", "Registered patron", "Participates as a paying customer or event sponsor.", null, 6, 16)
 	contract.personal_side_definitions = list("service_gratuity_drive")
 	add_program_count(contract, CONTRACT_EVENT_SERVICE_PERIOD_SETTLED, 1200, "Festival revenue", "Settle 1,200 Thalers of verified Civilian service sales.", "verified_amount", CONTRACT_EVIDENCE_SCOPE_DEPARTMENT, null, list("rollup" = "department"))
 	add_program_count(contract, CONTRACT_EVENT_FOOD_CONSUMED, 16, "Festival attendance", "Serve food or drink to sixteen distinct consumers.", null, CONTRACT_EVIDENCE_SCOPE_DEPARTMENT, "subject_id")
@@ -524,7 +524,7 @@
 
 /datum/contract_definition/social/program/nutritional_services/configure_contract(datum/contract/social/contract, list/context)
 	..()
-	add_social_role(contract, "provider", "Nutrition-service provider", "Prepares and sells a varied menu through ordinary service checkout.", list(DEPARTMENT_CIVILIAN), 1, 5)
+	add_social_role(contract, "provider", "Nutrition-service provider", "Prepares, prices, and sells a varied station menu.", list(DEPARTMENT_CIVILIAN), 1, 5)
 	add_social_role(contract, "participant", "Crew participant", "Purchases and consumes station food or drink.", null, 5, 14)
 	add_program_count(contract, CONTRACT_EVENT_FOOD_CONSUMED, 20, "Crew reached", "Serve twenty distinct consumers.", null, CONTRACT_EVIDENCE_SCOPE_DEPARTMENT, "subject_id")
 	add_program_count(contract, CONTRACT_EVENT_FOOD_CONSUMED, 12, "Menu diversity", "Serve twelve distinct food or drink types.", null, CONTRACT_EVIDENCE_SCOPE_DEPARTMENT, "item_type")
@@ -533,7 +533,7 @@
 /datum/contract_definition/social/program/agricultural_cooperative
 	id = "agricultural_cooperative"
 	title = "Agricultural Cooperative"
-	description = "The Worker's Union requests a varied harvest tied to genuine station food-service demand."
+	description = "The Worker's Union requests a varied harvest tied to paid station food-service demand."
 	scope = CONTRACT_SCOPE_DEPARTMENT
 	department = DEPARTMENT_CIVILIAN
 	issuer_name = "Worker's Union Agricultural Cooperative"
@@ -602,9 +602,9 @@
 	..()
 	add_social_role(contract, "coordinator", "Mutual-aid coordinator", "Allocates resources and resolves interdepartmental priorities.", list(DEPARTMENT_COMMAND), 1, 2)
 	add_social_role(contract, "delegate", "Department compact delegate", "Commits a department to provide or receive meaningful aid.", list(DEPARTMENT_ENGINEERING, DEPARTMENT_MEDICAL, DEPARTMENT_RESEARCH, DEPARTMENT_SECURITY, DEPARTMENT_CARGO, DEPARTMENT_CIVILIAN, DEPARTMENT_SYNTHETIC), 4, 9)
-	add_program_count(contract, CONTRACT_EVENT_BUDGET_ALLOCATION_CHANGED, 10000, "Committed aid", "Allocate 10,000 Thalers through ordinary department budgeting.", "amount")
+	add_program_count(contract, CONTRACT_EVENT_BUDGET_ALLOCATION_CHANGED, 10000, "Committed aid", "Commit 10,000 Thalers to departmental aid allocations.", "amount")
 	add_program_count(contract, CONTRACT_EVENT_BUDGET_ALLOCATION_CHANGED, 5, "Recipient breadth", "Fund five distinct departments.", null, CONTRACT_EVIDENCE_SCOPE_ANY, "target_department")
-	add_program_count(contract, CONTRACT_EVENT_INFRASTRUCTURE_REPAIRED, 250, "Delivered aid outcome", "Complete 250 integrity points of station repairs after the compact is active.", "repair_amount")
+	add_program_count(contract, CONTRACT_EVENT_INFRASTRUCTURE_REPAIRED, 250, "Delivered aid outcome", "Use the compact's resources to complete substantial station repairs.", "repair_amount")
 
 /datum/contract_definition/social/program/emergency_continuity
 	id = "emergency_continuity_award"
@@ -622,7 +622,7 @@
 	add_social_role(contract, "specialist", "Continuity specialist", "Restores one essential service domain.", list(DEPARTMENT_ENGINEERING, DEPARTMENT_MEDICAL, DEPARTMENT_SECURITY), 3, 8)
 	add_program_count(contract, CONTRACT_EVENT_POWER_SERVICE_CHANGED, 5, "Electrical continuity", "Return five distinct APC zones to full service.", null, CONTRACT_EVIDENCE_SCOPE_ANY, "service_id", null, list(list("key" = "powered_channels", "comparator" = CONTRACT_EVIDENCE_COMPARE_AT_LEAST, "expected" = 3)))
 	add_program_count(contract, CONTRACT_EVENT_ATMOS_SERVICE_CHANGED, 5, "Atmospheric continuity", "Return five distinct alarm zones to safe status.", null, CONTRACT_EVIDENCE_SCOPE_ANY, "service_id", null, list(list("key" = "danger_level", "comparator" = CONTRACT_EVIDENCE_COMPARE_AT_MOST, "expected" = 0)))
-	add_program_count(contract, CONTRACT_EVENT_MEDICAL_TREATMENT_OUTCOME, 4, "Medical continuity", "Improve four distinct patients through the ordinary condition system.", null, CONTRACT_EVIDENCE_SCOPE_ANY, "subject_id")
+	add_program_count(contract, CONTRACT_EVENT_MEDICAL_TREATMENT_OUTCOME, 4, "Medical continuity", "Stabilize and improve four distinct patients' diagnosed conditions.", null, CONTRACT_EVIDENCE_SCOPE_ANY, "subject_id")
 
 /datum/contract_definition/social/program/workforce_retention
 	id = "workforce_retention_agreement"
@@ -648,7 +648,7 @@
 /datum/contract_definition/social/program/systems_uptime
 	id = "systems_uptime_accord"
 	title = "Systems Uptime Accord"
-	description = "Kusanagi field support requests distributed service stability verified by ordinary station controllers."
+	description = "Kusanagi field support requests sustained electrical service across the station's monitored distribution zones."
 	scope = CONTRACT_SCOPE_STATION
 	department = DEPARTMENT_SYNTHETIC
 	issuer_name = "Kusanagi Robotics Field Support"
@@ -665,7 +665,7 @@
 /datum/contract_definition/social/program/automation_logistics
 	id = "automation_logistics_trial"
 	title = "Automation Logistics Trial"
-	description = "Kusanagi Robotics requests a varied portfolio of successful ordinary station-bot tasks."
+	description = "Kusanagi Robotics requests a varied field trial of station bots performing useful work for the crew."
 	scope = CONTRACT_SCOPE_STATION
 	department = DEPARTMENT_SYNTHETIC
 	issuer_name = "Kusanagi Robotics Applications Group"
@@ -674,11 +674,11 @@
 
 /datum/contract_definition/social/program/automation_logistics/configure_contract(datum/contract/social/contract, list/context)
 	..()
-	add_social_role(contract, "automation", "Automation coordinator", "Configures and supervises ordinary station bots.", list(DEPARTMENT_SYNTHETIC, DEPARTMENT_CARGO), 1, 4)
+	add_social_role(contract, "automation", "Automation coordinator", "Configures and supervises station bots in active service.", list(DEPARTMENT_SYNTHETIC, DEPARTMENT_CARGO), 1, 4)
 	add_social_role(contract, "recipient", "Automation-service recipient", "Provides real tasks and confirms operational results.", null, 3, 10)
 	add_program_count(contract, CONTRACT_EVENT_AUTOMATION_TASK_COMPLETED, 15, "Automated workload", "Complete fifteen units of successful automated work.", "work_units", CONTRACT_EVIDENCE_SCOPE_DEPARTMENT)
 	add_program_count(contract, CONTRACT_EVENT_AUTOMATION_TASK_COMPLETED, 3, "Task diversity", "Complete three distinct automation task classes.", null, CONTRACT_EVIDENCE_SCOPE_DEPARTMENT, "task_kind")
-	add_program_count(contract, CONTRACT_EVENT_AUTOMATION_TASK_COMPLETED, 5, "Destination breadth", "Serve five distinct task targets.", null, CONTRACT_EVIDENCE_SCOPE_DEPARTMENT, "target_id")
+	add_program_count(contract, CONTRACT_EVENT_AUTOMATION_TASK_COMPLETED, 5, "Service breadth", "Complete useful work for five distinct recipients or locations.", null, CONTRACT_EVIDENCE_SCOPE_DEPARTMENT, "target_id")
 
 /datum/contract_definition/social/program/access_safety_audit
 	id = "access_safety_audit"
@@ -696,7 +696,7 @@
 	add_social_role(contract, "owner", "Department asset owner", "Provides access and accepts the resulting service state.", null, 3, 8)
 	add_program_count(contract, CONTRACT_EVENT_POWER_SERVICE_CHANGED, 6, "Electrical audit", "Verify six distinct APC zones in full service.", null, CONTRACT_EVIDENCE_SCOPE_ANY, "service_id", null, list(list("key" = "powered_channels", "comparator" = CONTRACT_EVIDENCE_COMPARE_AT_LEAST, "expected" = 3)))
 	add_program_count(contract, CONTRACT_EVENT_ATMOS_SERVICE_CHANGED, 6, "Atmospheric audit", "Verify six distinct air-alarm zones at safe status.", null, CONTRACT_EVIDENCE_SCOPE_ANY, "service_id", null, list(list("key" = "danger_level", "comparator" = CONTRACT_EVIDENCE_COMPARE_AT_MOST, "expected" = 0)))
-	add_program_count(contract, CONTRACT_EVENT_INFRASTRUCTURE_REPAIRED, 200, "Corrective work", "Complete 200 integrity points of corrective station repair.", "repair_amount")
+	add_program_count(contract, CONTRACT_EVENT_INFRASTRUCTURE_REPAIRED, 200, "Corrective work", "Complete substantial corrective repairs discovered during the audit.", "repair_amount")
 
 /datum/contract_definition/social/program/human_synthetic_compact
 	id = "human_synthetic_service_compact"
@@ -714,4 +714,4 @@
 	add_social_role(contract, "delegate", "Crew service delegate", "Represents a department receiving or supervising automated assistance.", list(DEPARTMENT_ENGINEERING, DEPARTMENT_MEDICAL, DEPARTMENT_RESEARCH, DEPARTMENT_SECURITY, DEPARTMENT_CARGO, DEPARTMENT_CIVILIAN, DEPARTMENT_COMMAND), 4, 10)
 	add_program_count(contract, CONTRACT_EVENT_AUTOMATION_TASK_COMPLETED, 18, "Shared automated work", "Complete eighteen units of successful station-bot work.", "work_units", CONTRACT_EVIDENCE_SCOPE_DEPARTMENT)
 	add_program_count(contract, CONTRACT_EVENT_AUTOMATION_TASK_COMPLETED, 3, "Service breadth", "Complete three distinct automation task classes.", null, CONTRACT_EVIDENCE_SCOPE_DEPARTMENT, "task_kind")
-	add_program_count(contract, CONTRACT_EVENT_AUTOMATION_TASK_COMPLETED, 8, "Crew needs served", "Serve eight distinct task targets.", null, CONTRACT_EVIDENCE_SCOPE_DEPARTMENT, "target_id")
+	add_program_count(contract, CONTRACT_EVENT_AUTOMATION_TASK_COMPLETED, 8, "Crew needs served", "Complete useful work for eight distinct recipients or locations.", null, CONTRACT_EVIDENCE_SCOPE_DEPARTMENT, "target_id")

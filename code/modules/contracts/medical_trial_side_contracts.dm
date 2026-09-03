@@ -134,7 +134,7 @@
 /datum/contract_definition/medical_trial_espionage
 	id = "medical_trial_espionage"
 	title = "Competitive Formulation Acquisition"
-	description = "Acquisition payment is authorized upon receipt of at least three units from an authentic coded study bottle, accompanied by the supplied manifest in ordinary outbound freight."
+	description = "Acquisition payment is authorized upon receipt of at least three units from an authentic coded study bottle, accompanied by the supplied manifest in outbound freight."
 	scope = CONTRACT_SCOPE_PERSONAL
 	reward = 800
 	max_simultaneous = 32
@@ -154,7 +154,7 @@
 /datum/contract_definition/medical_trial_autopsy
 	id = "medical_trial_autopsy"
 	title = "Terminal Outcome Recovery"
-	description = "Postmortem recovery payment is authorized upon receipt of the named deceased study subject and supplied manifest in an ordinary body bag or crate. Eligibility requires irreversible neurological loss, defined as 100% brain damage."
+	description = "Postmortem recovery payment is authorized upon receipt of the named deceased study subject and supplied manifest in a sealed body bag or crate. Eligibility requires irreversible neurological loss, defined as 100% brain damage."
 	scope = CONTRACT_SCOPE_PERSONAL
 	issuer_name = "VeyMed Postmortem Research"
 	issuer_faction = REPUTATION_FACTION_VEYMED

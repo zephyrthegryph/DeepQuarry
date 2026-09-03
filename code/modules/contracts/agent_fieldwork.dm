@@ -121,7 +121,7 @@
 	if(!drop_location)
 		return FALSE
 	var/registered_text = red_contract ? "Registered partnership is unavailable for this hostile mandate." : "Registered partnership: declare the relationship to participating departments; 20% of the award funds the station and 20% funds the lead department, with lower failure exposure. <span class=\"paper_field\"></span>"
-	var/discreet_text = red_contract ? "Compartmentalized commission: conceal the principal but retain ordinary custody records; standard award and trace exposure. <span class=\"paper_field\"></span>" : "Compartmentalized commission: disclose only what participating staff need; standard award and trace exposure. <span class=\"paper_field\"></span>"
+	var/discreet_text = red_contract ? "Compartmentalized commission: conceal the principal but retain defensible custody records; standard award and trace exposure. <span class=\"paper_field\"></span>" : "Compartmentalized commission: disclose only what participating staff need; standard award and trace exposure. <span class=\"paper_field\"></span>"
 	var/hostile_text = red_contract ? "Deniable hostile mandate: no institutional protection; 25% risk premium, strongest evidence and failure penalties. <span class=\"paper_field\"></span>" : "Deniable hostile mandate is unavailable without an explicit red contract."
 	var/charter_info = {"<h2>Faction Operation Charter</h2>
 		<b>Commission:</b> [title]<br><b>Principal:</b> [issuer_name]<br>
@@ -163,7 +163,7 @@
 			"signers" = list(),
 			"signer_departments" = list(),
 		))
-	to_chat(user, span_notice("The principal issued ordinary paper fieldwork records for [title]. Recruit and negotiate with players in person; the PDA will only report authenticated outcomes."))
+	to_chat(user, span_notice("The principal issued the fieldwork records for [title]. Recruit and negotiate face-to-face; your PDA will summarize only results the principal can authenticate."))
 	return TRUE
 
 /datum/contract/faction_agent/receive_event(datum/contract_event/event)
@@ -328,7 +328,7 @@
 		return FALSE
 	var/suspicious = contract.red_contract || (contract.approach in list(AGENT_APPROACH_DISCREET, AGENT_APPROACH_HOSTILE)) || contract.agent_faction == REPUTATION_FACTION_SYNDICATE || agent_contact_risk_rank(contract.contact_mode) >= 2
 	if(!suspicious)
-		to_chat(user, span_notice("The document authenticates an ordinary registered agency relationship. Its named parties and fingerprints remain available as normal records, but it contains no encrypted or hostile routing marker."))
+		to_chat(user, span_notice("The document authenticates a registered agency relationship. Its named parties and fingerprints remain on record, but it contains no encrypted or hostile routing marker."))
 		return TRUE
 	var/datum/money_account/auditor = contract_account_for_mob(user)
 	var/auditor_key = "[auditor?.account_number || user.ckey]"
@@ -379,7 +379,7 @@
 		"detail" = "Authenticated physical agency paperwork identified a principal and freight contact.",
 	), "agent-evidence:[fact_id]:[auditor_key]", paper, user, user)
 	var/datum/money_account/principal = get_account(contract.owner_account_number)
-	to_chat(user, span_warning("The document authenticates principal account [principal?.owner_name || contract.owner_account_number][contract.contact_account_number ? " and freight contact [contract.contact_name]" : ""]. Preserve the paper: it is physical evidence and retains ordinary fingerprints."))
+	to_chat(user, span_warning("The document authenticates principal account [principal?.owner_name || contract.owner_account_number][contract.contact_account_number ? " and freight contact [contract.contact_name]" : ""]. Preserve the paper: it retains identifying fingerprints and may be used as evidence."))
 	return TRUE
 
 /datum/controller/subsystem/supply/proc/audit_next_market_transaction(mob/living/user)

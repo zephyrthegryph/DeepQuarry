@@ -65,12 +65,12 @@
 
 	var/datum/contract_negotiation_clause/oversight = new("oversight", "Clinical oversight", "Choose whose interests the study's governance formally prioritizes.")
 	oversight.add_option(make_contract_clause_option("independent", "Independent patient advocate", "Require independent patient representation. The sponsor shifts compensation from Medical to participating staff.", -50, -150, 250, 4, 5, 4, 0, list("oversight" = "independent")))
-	oversight.add_option(make_contract_clause_option("internal", "Medical internal review", "Medical command retains ordinary responsibility for protocol review.", 0, 0, 0, 0, 0, 0, 0, list("oversight" = "internal")), TRUE)
+	oversight.add_option(make_contract_clause_option("internal", "Medical internal review", "Medical command retains responsibility for protocol review.", 0, 0, 0, 0, 0, 0, 0, list("oversight" = "internal")), TRUE)
 	oversight.add_option(make_contract_clause_option("sponsor", "Sponsor-directed review", "VeyMed directs protocol interpretation and pays Medical an autonomy premium.", 100, 200, 0, -3, -4, -1, 0, list("oversight" = "sponsor")))
 	contract.add_negotiation_clause(oversight)
 
 	var/datum/contract_negotiation_clause/liability = new("liability", "Indemnity and participant protection", "Allocate clinical risk and the compensation paid for accepting it.")
-	liability.add_option(make_contract_clause_option("sponsor", "Sponsor indemnity", "VeyMed accepts ordinary study liability under its standard clinical terms.", 0, 0, 0, 0, 0, 0, 0, list("liability" = "sponsor")), TRUE)
+	liability.add_option(make_contract_clause_option("sponsor", "Sponsor indemnity", "VeyMed accepts study liability under its standard clinical terms.", 0, 0, 0, 0, 0, 0, 0, list("liability" = "sponsor")), TRUE)
 	liability.add_option(make_contract_clause_option("station", "Station assumes liability", "The station assumes clinical liability in return for premiums to the station, Medical, and participating staff.", 250, 250, 100, -3, -3, -2, 0, list("liability" = "station")))
 	liability.add_option(make_contract_clause_option("worker", "Enhanced worker protection", "Reserve the largest risk premium for contributing staff and strengthen the station's standing with patients and labor.", -100, -100, 300, 3, 4, 5, 0, list("liability" = "worker")))
 	contract.add_negotiation_clause(liability)

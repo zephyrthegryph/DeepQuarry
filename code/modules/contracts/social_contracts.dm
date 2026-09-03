@@ -17,7 +17,7 @@
 /datum/contract_definition/social/procurement_tender
 	id = "station_procurement_tender"
 	title = "Station Procurement Tender"
-	description = "The Interstellar Traders' Guild requests a transparent station procurement cycle using ordinary Cargo orders and accountable departmental requesters."
+	description = "The Interstellar Traders' Guild requests a transparent procurement cycle with Cargo serving accountable departmental requesters."
 	scope = CONTRACT_SCOPE_DEPARTMENT
 	department = DEPARTMENT_CARGO
 	issuer_name = "Interstellar Traders' Guild Procurement Exchange"
@@ -28,7 +28,7 @@
 	..()
 	configure_social_identity(contract, 8, 26, 14)
 	contract.description = "Fulfill a procurement tender worth 2,400 Thalers across six distinct supply categories. A minimum settlement begins at half of every target; broader and more valuable purchasing earns the successful and exceptional grades."
-	add_social_role(contract, "procurement", "Cargo procurement lead", "Approves requests and coordinates ordinary supply orders.", list(DEPARTMENT_CARGO), 1, 2)
+	add_social_role(contract, "procurement", "Cargo procurement lead", "Approves requests and coordinates supply deliveries.", list(DEPARTMENT_CARGO), 1, 2)
 	add_social_role(contract, "requester", "Departmental requester", "Commits a department to explain and receive part of the tender.", list(DEPARTMENT_ENGINEERING, DEPARTMENT_MEDICAL, DEPARTMENT_RESEARCH, DEPARTMENT_SECURITY, DEPARTMENT_CIVILIAN, DEPARTMENT_COMMAND), 2, 6)
 	contract.personal_side_definitions = list("cargo_local_priority")
 	var/datum/contract_requirement/event_count/value = new(CONTRACT_EVENT_SUPPLY_ORDER_FULFILLED, 2400, null, "value", TRUE, CONTRACT_EVIDENCE_SCOPE_ANY)
@@ -57,9 +57,9 @@
 /datum/contract_definition/social/prototype_field_license/configure_contract(datum/contract/social/contract, list/context)
 	..()
 	configure_social_identity(contract, 8, 28, 16)
-	contract.description = "Close Research accounting periods containing up to 1,800 Thalers, eight verified fabricated items, eight distinct customers, and four product types. Ordinary checkout provenance supplies the field evidence."
+	contract.description = "Close Research accounting periods totaling 1,800 Thalers, with eight fabricated products sold across eight customers and four product types. Signed checkout records establish the sales."
 	add_social_role(contract, "inventor", "Research license lead", "Produces and prices the licensed technology.", list(DEPARTMENT_RESEARCH), 1, 3)
-	add_social_role(contract, "tester", "Field customer", "Purchases and evaluates station-made technology through ordinary crew commerce.", null, 3, 8)
+	add_social_role(contract, "tester", "Field customer", "Purchases and evaluates station-made technology in working conditions.", null, 3, 8)
 	contract.personal_side_definitions = list("research_exclusive_export")
 	var/list/metrics = list(
 		list("amount", 1800, "Licensed sales", "Settle 1,800 Thalers in Research sales."),
@@ -77,7 +77,7 @@
 /datum/contract_definition/social/emergency_reconstruction_bond
 	id = "emergency_reconstruction_bond"
 	title = "Emergency Reconstruction Bond"
-	description = "NanoTrasen Emergency Works offers a graded reconstruction award after station infrastructure sustains meaningful integrity damage."
+	description = "NanoTrasen Emergency Works offers a graded reconstruction award after substantial damage to station infrastructure."
 	scope = CONTRACT_SCOPE_DEPARTMENT
 	department = DEPARTMENT_ENGINEERING
 	issuer_name = "NanoTrasen Emergency Works"
@@ -122,7 +122,7 @@
 /datum/contract_definition/social/restorative_settlement
 	id = "restorative_settlement_program"
 	title = "Restorative Settlement Program"
-	description = "SolGov Justice Administration funds documented restitution and negotiated release outcomes for genuine custodial cases."
+	description = "SolGov Justice Administration funds documented restitution and negotiated release outcomes for custodial cases involving identifiable people."
 	scope = CONTRACT_SCOPE_DEPARTMENT
 	department = DEPARTMENT_SECURITY
 	issuer_name = "SolGov Restorative Justice Office"
@@ -138,7 +138,7 @@
 	contract.personal_side_definitions = list("security_record_suppression")
 	var/datum/contract_requirement/event_count/cases = new(CONTRACT_EVENT_SECURITY_DISPOSITION_CHANGED, 4, null, null, TRUE, CONTRACT_EVIDENCE_SCOPE_DEPARTMENT)
 	cases.name = "Restorative case resolutions"
-	cases.description = "Release or parole four distinct physically verified people after recorded custody."
+	cases.description = "Release or parole four distinct people after their custody has been recorded."
 	cases.unique_field = "physical_subject_id"
 	cases.require_tag("custody_resolution")
 	cases.require_value("previous_status", "Incarcerated")
@@ -146,7 +146,7 @@
 	contract.add_requirement(cases)
 	var/datum/contract_requirement/event_count/restitution = new(CONTRACT_EVENT_MONEY_TRANSFERRED, 800, null, "amount")
 	restitution.name = "Recorded restitution"
-	restitution.description = "Transfer 800 Thalers under the exact ordinary-ledger purpose 'Restorative settlement'."
+	restitution.description = "Transfer 800 Thalers with the payment purpose 'Restorative settlement'."
 	restitution.require_value("purpose", "Restorative settlement")
 	contract.add_requirement(restitution)
 
@@ -154,7 +154,7 @@
 /datum/contract_definition/social/corporate_hospitality
 	id = "corporate_hospitality_commission"
 	title = "Corporate Hospitality Commission"
-	description = "The Traders' Guild commissions a broad, genuinely patronized station hospitality program."
+	description = "The Traders' Guild commissions a station hospitality program supported by broad paid patronage."
 	scope = CONTRACT_SCOPE_DEPARTMENT
 	department = DEPARTMENT_CIVILIAN
 	issuer_name = "Interstellar Traders' Guild Hospitality Bureau"
@@ -166,7 +166,7 @@
 	configure_social_identity(contract, 8, 24, 18)
 	contract.description = "Across closed accounting periods, earn up to 2,000 Thalers from ten distinct customers and 300 Thalers in voluntary gratuities. Refund and collusion corrections remain authoritative."
 	add_social_role(contract, "host", "Hospitality host", "Plans, prices, and provides the commissioned service.", list(DEPARTMENT_CIVILIAN), 1, 4)
-	add_social_role(contract, "patron", "Registered patron", "Participates as a genuine paying customer or event sponsor.", null, 4, 12)
+	add_social_role(contract, "patron", "Registered patron", "Participates as a paying customer or event sponsor.", null, 4, 12)
 	contract.personal_side_definitions = list("service_gratuity_drive")
 	for(var/list/metric as anything in list(
 		list("amount", 2000, "Hospitality revenue"),
@@ -175,7 +175,7 @@
 	))
 		var/datum/contract_requirement/event_count/requirement = new(CONTRACT_EVENT_SERVICE_PERIOD_SETTLED, metric[2], list("department" = DEPARTMENT_CIVILIAN, "rollup" = "department"), metric[1], TRUE, CONTRACT_EVIDENCE_SCOPE_DEPARTMENT)
 		requirement.name = metric[3]
-		requirement.description = "Reach the exceptional [lowertext(metric[3])] target through ordinary paid service."
+		requirement.description = "Reach the exceptional [lowertext(metric[3])] target through paid food and drink service."
 		contract.add_requirement(requirement)
 
 // Cross-department manufacturing
@@ -248,8 +248,8 @@
 /datum/contract_definition/social/clinical_access/configure_contract(datum/contract/social/contract, list/context)
 	..()
 	configure_social_identity(contract, 10, 30, 16)
-	contract.description = "Produce authenticated improvement across six distinct patients, 240 total condition-severity points, and four condition families. Only genuine registered-condition changes are observed."
-	add_social_role(contract, "clinician", "Clinical coordinator", "Coordinates access and treatment through the ordinary medical system.", list(DEPARTMENT_MEDICAL), 1, 4)
+	contract.description = "Improve diagnosed conditions across six distinct patients and four condition families, with substantial aggregate clinical benefit documented in their records."
+	add_social_role(contract, "clinician", "Clinical coordinator", "Coordinates patient access, diagnosis, treatment, and follow-up.", list(DEPARTMENT_MEDICAL), 1, 4)
 	add_social_role(contract, "patient", "Participating patient", "Agrees to participate in the access program and its outcome accounting.", null, 3, 10)
 	contract.personal_side_definitions = list("clinical_priority_coordinator")
 	var/datum/contract_requirement/event_count/patients = new(CONTRACT_EVENT_MEDICAL_TREATMENT_OUTCOME, 6, null, null, TRUE, CONTRACT_EVIDENCE_SCOPE_DEPARTMENT)
@@ -312,7 +312,7 @@
 	configure_social_identity(contract, 9, 28, 18)
 	contract.description = "Produce 1,800 Thalers across six Research product designs, then demonstrate a 1,200-Thaler internal license market serving five account holders across three verified types."
 	add_social_role(contract, "author", "Inventor or author", "Claims professional attribution for the Research portfolio.", list(DEPARTMENT_RESEARCH), 1, 4)
-	add_social_role(contract, "licensee", "Crew licensee", "Uses ordinary station commerce to support an internal-use license.", null, 2, 8)
+	add_social_role(contract, "licensee", "Crew licensee", "Purchases station-made technology under an internal-use license.", null, 2, 8)
 	contract.personal_side_definitions = list("research_exclusive_export")
 	var/datum/contract_requirement/fact_portfolio/production = new(CONTRACT_EVENT_ITEM_PRODUCED, 1800, "item_type", "value", 6, CONTRACT_EVIDENCE_SCOPE_ANY)
 	production.name = "Patentable production portfolio"
@@ -364,7 +364,7 @@
 /datum/contract_definition/social/supply_shortage_response
 	id = "supply_shortage_response"
 	title = "Supply Shortage Response"
-	description = "NanoTrasen Logistics offers an outcome award for resolving a live, mechanically generated supply shortage."
+	description = "NanoTrasen Logistics offers an outcome award for resolving an active supply shortage reported by station departments."
 	scope = CONTRACT_SCOPE_DEPARTMENT
 	department = DEPARTMENT_CARGO
 	issuer_name = "NanoTrasen Logistics Recovery"
@@ -383,7 +383,7 @@
 	configure_social_identity(contract, 10, 28, 16)
 	var/quantity_target = max(4, context?["quantity_target"] || 8)
 	var/variety_target = max(2, context?["variety_target"] || 3)
-	contract.description = "Resolve the live shortage [context?["shortage_id"]] by delivering [quantity_target] requested units across [variety_target] requested categories through the ordinary supply shuttle."
+	contract.description = "Resolve shortage order [context?["shortage_id"]] by delivering [quantity_target] requested units across [variety_target] requested categories aboard the supply shuttle."
 	add_social_role(contract, "coordinator", "Cargo response coordinator", "Organizes collection, manifests, and shuttle delivery.", list(DEPARTMENT_CARGO), 1, 3)
 	add_social_role(contract, "supplier", "Emergency supplier", "Provides requested goods, reagents, gases, food, or equipment.", null, 3, 10)
 	contract.personal_side_definitions = list("cargo_local_priority")

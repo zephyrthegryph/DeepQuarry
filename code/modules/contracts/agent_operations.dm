@@ -65,7 +65,7 @@
 		if(REPUTATION_FACTION_SOLGOV)
 			return "SolGov requests [objective] emphasizing documented custody, public safety, and regulated institutional conduct."
 		if(REPUTATION_FACTION_CHIMERA)
-			return "Chimera Genetics requests [objective] grounded in genuine clinical, chemical, or biological work with independently recorded results."
+			return "Chimera Genetics requests [objective] grounded in clinical, chemical, or biological work with independently documented results."
 		if(REPUTATION_FACTION_ECLIPSE)
 			return "Eclipse requests [objective] demonstrating competitive research, reproducible prototypes, and technically credible evaluation."
 		if(REPUTATION_FACTION_SYNDICATE)
@@ -77,7 +77,7 @@
 		if(REPUTATION_FACTION_WORKERS_UNION)
 			return "The Worker's Union requests [objective] that visibly benefits participating workers through compensation, productive work, or departmental leverage."
 		if(REPUTATION_FACTION_VEYMED)
-			return "VeyMed requests [objective] supported by real treatment outcomes, ordinary scans, and controlled clinical handling."
+			return "VeyMed requests [objective] supported by treatment outcomes, body-scanner records, and controlled clinical handling."
 	return "The principal requests [objective]."
 
 /datum/contract/faction_agent/proc/configure_operation(operation_family)
@@ -139,10 +139,10 @@
 /datum/contract/faction_agent/proc/configure_demonstration_operation(profile_id)
 	switch(agent_faction)
 		if(REPUTATION_FACTION_CHIMERA, REPUTATION_FACTION_VEYMED)
-			add_agent_count(CONTRACT_EVENT_MEDICAL_TREATMENT_OUTCOME, 120, "Measured clinical outcome", "Produce 120 points of genuine condition improvement through the medical condition system.", "improvement")
-			add_agent_count(CONTRACT_EVENT_MEDICAL_SCAN_CREATED, 3, "Documented participants", "Produce ordinary medical scans for three distinct participants.", null, "subject_id")
+			add_agent_count(CONTRACT_EVENT_MEDICAL_TREATMENT_OUTCOME, 120, "Measured clinical outcome", "Deliver substantial measurable improvement across participating patients.", "improvement")
+			add_agent_count(CONTRACT_EVENT_MEDICAL_SCAN_CREATED, 3, "Documented participants", "File body-scanner records for three distinct participants.", null, "subject_id")
 		if(REPUTATION_FACTION_TALON, REPUTATION_FACTION_WORKERS_UNION)
-			add_agent_count(CONTRACT_EVENT_INFRASTRUCTURE_REPAIRED, 250, "Field restoration", "Complete 250 integrity points of genuine station infrastructure repairs.", "repair_amount")
+			add_agent_count(CONTRACT_EVENT_INFRASTRUCTURE_REPAIRED, 250, "Field restoration", "Restore substantial damage across station machinery and structures.", "repair_amount")
 			add_agent_count(CONTRACT_EVENT_INFRASTRUCTURE_REPAIRED, 3, "Distributed field test", "Demonstrate work across three distinct station areas.", null, "area_name")
 		else
 			add_agent_count(CONTRACT_EVENT_RESEARCH_MILESTONE, 2, "Research validation", "Complete two distinct research milestones during the commission.", null, "node_id")
@@ -152,24 +152,24 @@
 	switch(agent_faction)
 		if(REPUTATION_FACTION_TRADERS_GUILD)
 			add_agent_count(CONTRACT_EVENT_SERVICE_PERIOD_SETTLED, 700, "Verified station commerce", "Close Civilian service accounting with 700 Thalers of verified crew purchases.", "verified_amount", null, list("rollup" = "department", "department" = DEPARTMENT_CIVILIAN))
-			add_agent_count(CONTRACT_EVENT_FOOD_CONSUMED, 8, "Customer reach", "Serve eight distinct customers through ordinary food or drink service.", null, "subject_id")
+			add_agent_count(CONTRACT_EVENT_FOOD_CONSUMED, 8, "Customer reach", "Serve food or drink to eight distinct paying customers.", null, "subject_id")
 		if(REPUTATION_FACTION_SOLGOV)
-			add_agent_count(CONTRACT_EVENT_SECURITY_DISPOSITION_CHANGED, 3, "Documented case outcomes", "Resolve three distinct physical-subject security cases through ordinary records.", null, "subject_id")
-			add_agent_count(CONTRACT_EVENT_CUSTODY_CHANGED, 2, "Verified custody", "Record two genuine custody episodes with distinct subjects.", null, "subject_id")
+			add_agent_count(CONTRACT_EVENT_SECURITY_DISPOSITION_CHANGED, 3, "Documented case outcomes", "Resolve three Security cases concerning distinct identifiable people.", null, "subject_id")
+			add_agent_count(CONTRACT_EVENT_CUSTODY_CHANGED, 2, "Documented custody", "Document custody of two distinct people.", null, "subject_id")
 		if(REPUTATION_FACTION_NANOTRASEN)
 			add_agent_count(CONTRACT_EVENT_BUDGET_CYCLE_SETTLED, 1, "Funded operating cycle", "Close a station budget cycle with at least 75% payroll coverage.", null, null, list("rollup" = "station"), list(list("key" = "payroll_coverage", "comparator" = CONTRACT_EVIDENCE_COMPARE_AT_LEAST, "expected" = 0.75)))
 			add_agent_count(CONTRACT_EVENT_MONEY_TRANSFERRED, 600, "Participant consideration", "Move 600 Thalers in real station commerce among distinct recipients.", "amount", "target_account")
 		else
-			add_agent_count(CONTRACT_EVENT_INFRASTRUCTURE_REPAIRED, 180, "Operational service", "Complete 180 integrity points of genuine infrastructure work.", "repair_amount")
+			add_agent_count(CONTRACT_EVENT_INFRASTRUCTURE_REPAIRED, 180, "Operational service", "Complete substantial infrastructure work for station clients.", "repair_amount")
 			add_agent_count(CONTRACT_EVENT_ITEM_PRODUCED, 4, "Service outputs", "Produce four distinct useful station products.", null, "item_type")
 
 /datum/contract/faction_agent/proc/configure_custody_operation(profile_id)
 	switch(agent_faction)
 		if(REPUTATION_FACTION_SOLGOV)
-			add_agent_count(CONTRACT_EVENT_SECURITY_DISPOSITION_CHANGED, 4, "Controlled disposition docket", "Resolve four distinct physical-subject cases with station Security.", null, "record_id")
-			add_agent_count(CONTRACT_EVENT_CUSTODY_CHANGED, 3, "Custody chain", "Establish three physically verified custody episodes.", null, "subject_id")
+			add_agent_count(CONTRACT_EVENT_SECURITY_DISPOSITION_CHANGED, 4, "Controlled disposition docket", "Resolve four Security cases concerning identifiable people.", null, "record_id")
+			add_agent_count(CONTRACT_EVENT_CUSTODY_CHANGED, 3, "Custody chain", "Establish documented custody of three distinct people.", null, "subject_id")
 		if(REPUTATION_FACTION_CHIMERA, REPUTATION_FACTION_VEYMED)
-			add_agent_count(CONTRACT_EVENT_MEDICAL_SCAN_CREATED, 4, "Clinical custody records", "Produce ordinary scans for four distinct clinical subjects.", null, "subject_id")
+			add_agent_count(CONTRACT_EVENT_MEDICAL_SCAN_CREATED, 4, "Clinical custody records", "File body-scanner records for four distinct clinical subjects.", null, "subject_id")
 			add_agent_portfolio(CONTRACT_EVENT_CARGO_MARKET_EXPORT, 1400, "item_type", "value", 2, "Controlled clinical transfer", "Transfer a varied medical portfolio through the signed agreement.", list("faction_id" = agent_faction, "profile_id" = profile_id, "market_contract_key" = offer_key))
 		else
 			add_agent_portfolio(CONTRACT_EVENT_CARGO_MARKET_EXPORT, 2200, "item_type", "value", 3, "Authenticated asset transfer", "Transfer three distinct matching asset types under the operation's signed custody terms.", list("faction_id" = agent_faction, "profile_id" = profile_id, "market_contract_key" = offer_key))
@@ -180,7 +180,7 @@
 	switch(agent_faction)
 		if(REPUTATION_FACTION_WORKERS_UNION)
 			add_agent_count(CONTRACT_EVENT_MONEY_TRANSFERRED, 800, "Worker-directed consideration", "Direct 800 Thalers of genuine compensation across distinct station recipients.", "amount", "target_account")
-			add_agent_count(CONTRACT_EVENT_INFRASTRUCTURE_REPAIRED, 150, "Protected productive work", "Complete 150 integrity points of station repair under the endorsed arrangement.", "repair_amount")
+			add_agent_count(CONTRACT_EVENT_INFRASTRUCTURE_REPAIRED, 150, "Protected productive work", "Complete substantial station repairs under the endorsed arrangement.", "repair_amount")
 		if(REPUTATION_FACTION_TRADERS_GUILD)
 			add_agent_count(CONTRACT_EVENT_CARGO_MARKET_PURCHASE, 1200, "Endorsed procurement", "Receive 1,200 Thalers of goods through the endorsed supplier relationship.", "value", null, list("faction_id" = agent_faction, "market_contract_key" = offer_key))
 			add_agent_count(CONTRACT_EVENT_SERVICE_PERIOD_SETTLED, 500, "Local resale", "Settle 500 Thalers of verified Civilian service sales.", "verified_amount", null, list("department" = DEPARTMENT_CIVILIAN, "rollup" = "department"))
@@ -196,10 +196,10 @@
 			add_agent_portfolio(CONTRACT_EVENT_CARGO_MARKET_EXPORT, 2600, "item_type", "value", 3, "Corporate asset reclamation", "Covertly transfer three station-developed product types.", list("faction_id" = agent_faction, "profile_id" = profile_id, "market_contract_key" = offer_key))
 		if(REPUTATION_FACTION_SOLGOV)
 			add_agent_count(CONTRACT_EVENT_SECURITY_DISPOSITION_CHANGED, 3, "Embargo enforcement docket", "Create three resolved Security dispositions involving physical subjects.", null, "record_id")
-			add_agent_portfolio(CONTRACT_EVENT_CARGO_MARKET_EXPORT, 2400, "item_type", "value", 2, "Embargoed arms seizure", "Transfer two controlled armament types outside ordinary station custody.", list("faction_id" = agent_faction, "profile_id" = profile_id, "market_contract_key" = offer_key))
+			add_agent_portfolio(CONTRACT_EVENT_CARGO_MARKET_EXPORT, 2400, "item_type", "value", 2, "Embargoed arms seizure", "Transfer two controlled armament types outside authorized station custody.", list("faction_id" = agent_faction, "profile_id" = profile_id, "market_contract_key" = offer_key))
 		if(REPUTATION_FACTION_CHIMERA)
 			add_agent_count(CONTRACT_EVENT_CHEMISTRY_RESULT, 5, "Restricted synthesis", "Complete five distinct chemical reactions for the acquisition program.", null, "reaction_id")
-			add_agent_count(CONTRACT_EVENT_MEDICAL_TREATMENT_OUTCOME, 100, "Biological response data", "Record 100 points of genuine condition change through medical treatment.", "improvement")
+			add_agent_count(CONTRACT_EVENT_MEDICAL_TREATMENT_OUTCOME, 100, "Biological response data", "Document a substantial aggregate change in treated patient conditions.", "improvement")
 		if(REPUTATION_FACTION_ECLIPSE)
 			add_agent_count(CONTRACT_EVENT_RESEARCH_MILESTONE, 4, "Competitive research capture", "Advance four distinct research milestones.", null, "node_id")
 			add_agent_portfolio(CONTRACT_EVENT_ITEM_PRODUCED, 2200, "item_type", "value", 4, "Replicated prototype suite", "Produce four distinct valuable prototype classes for covert evaluation.", list())
@@ -211,9 +211,9 @@
 			add_agent_portfolio(CONTRACT_EVENT_CARGO_MARKET_EXPORT, 2200, "item_type", "value", 3, "Contested equipment recovery", "Transfer three classes of field equipment into TALON custody.", list("faction_id" = agent_faction, "profile_id" = profile_id, "market_contract_key" = offer_key))
 		if(REPUTATION_FACTION_WORKERS_UNION)
 			add_agent_count(CONTRACT_EVENT_MONEY_TRANSFERRED, 1200, "Worker-controlled funds", "Redirect 1,200 Thalers across distinct station workers or departments.", "amount", "target_account")
-			add_agent_count(CONTRACT_EVENT_INFRASTRUCTURE_REPAIRED, 250, "Occupied productive work", "Complete 250 integrity points of productive work under the clandestine arrangement.", "repair_amount")
+			add_agent_count(CONTRACT_EVENT_INFRASTRUCTURE_REPAIRED, 250, "Occupied productive work", "Complete substantial productive repair work under the clandestine arrangement.", "repair_amount")
 		if(REPUTATION_FACTION_VEYMED)
-			add_agent_count(CONTRACT_EVENT_MEDICAL_TREATMENT_OUTCOME, 180, "Confidential clinical outcomes", "Record 180 points of genuine condition improvement.", "improvement")
+			add_agent_count(CONTRACT_EVENT_MEDICAL_TREATMENT_OUTCOME, 180, "Confidential clinical outcomes", "Document substantial aggregate improvement across treated patients.", "improvement")
 			add_agent_count(CONTRACT_EVENT_MEDICAL_SCAN_CREATED, 4, "Restricted clinical records", "Produce scans for four distinct clinical subjects.", null, "subject_id")
 		else
 			add_agent_portfolio(CONTRACT_EVENT_CARGO_MARKET_EXPORT, 5000, "item_type", "value", 3, "Deniable exfiltration portfolio", "Exfiltrate 5,000 Thalers across three matching item types.", list("faction_id" = agent_faction, "profile_id" = profile_id, "market_contract_key" = offer_key))

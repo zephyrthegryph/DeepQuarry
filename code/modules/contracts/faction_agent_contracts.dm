@@ -144,7 +144,7 @@
 /datum/contract_definition/faction_agent/vetting
 	id = "agent_vetting"
 	title = "Authenticated Trade Vetting"
-	description = "Complete one personally funded purchase through the principal's authenticated market route. The ordinary crate and Cargo delivery process remains in force; the payment establishes that both the identity and settlement path work."
+	description = "Complete one personally funded purchase through the principal's authenticated market route. Cargo will deliver the crate; your payment establishes both your identity and a viable settlement channel."
 	reward = 500
 	required_agent_tier = FACTION_AGENT_TIER_CANDIDATE
 	offer_duration = 20 MINUTES
@@ -170,7 +170,7 @@
 /datum/contract_definition/faction_agent/red_exfiltration
 	id = "agent_red_exfiltration"
 	title = "RED: Controlled Technology Exfiltration"
-	description = "Route a significant armaments portfolio to a deniable buyer. Acceptance explicitly registers a bounded contract-operative antagonist role for this objective until it closes."
+	description = "Route a significant armaments portfolio to a deniable buyer. Once accepted, the commission authorizes covert action only insofar as required to complete this acquisition."
 	reward = 5000
 	required_agent_tier = FACTION_AGENT_TIER_TRUSTED
 

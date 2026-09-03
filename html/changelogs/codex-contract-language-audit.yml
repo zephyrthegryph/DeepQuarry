@@ -1,0 +1,4 @@
+author: "Codex"
+delete-after: true
+changes:
+  - qol: "Rewrote contract offers and requirements to use concise in-character language instead of implementation terminology."

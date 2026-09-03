@@ -136,13 +136,13 @@
 
 	var/datum/contract_negotiation_clause/schedule = new("schedule", "Delivery schedule", "Select the reporting window and the sponsor premium attached to it.")
 	schedule.add_option(make_contract_clause_option("accelerated", "Accelerated delivery", "Shorten the deadline by ten minutes in exchange for an urgency premium.", 100, 200, 100, -1, -1, -1, -10 MINUTES))
-	schedule.add_option(make_contract_clause_option("standard", "Standard delivery", "Use the ordinary reporting window and compensation."), TRUE)
+	schedule.add_option(make_contract_clause_option("standard", "Standard delivery", "Retain the sponsor's standard deadline and compensation."), TRUE)
 	schedule.add_option(make_contract_clause_option("extended", "Extended verification", "Add ten minutes for a more conservative operating window; the cash award is reduced but institutional standing improves.", -50, -100, 0, 2, 3, 1, 10 MINUTES))
 	contract.add_negotiation_clause(schedule)
 
 	if(contract.standing_score >= REPUTATION_FRIENDLY)
 		var/datum/contract_negotiation_clause/relationship = new("relationship", "Relationship terms", "Established sponsor trust unlocks alternatives unavailable to an unknown contractor.")
-		relationship.add_option(make_contract_clause_option("ordinary", "Ordinary consideration", "Use the sponsor's ordinary cash and standing terms."), TRUE)
+		relationship.add_option(make_contract_clause_option("ordinary", "Standard consideration", "Retain the sponsor's standard cash and standing terms."), TRUE)
 		relationship.add_option(make_contract_clause_option("reputation_bond", "Reputation bond", "Return part of the cash premium in exchange for stronger institutional and staff standing.", -50, -100, -50, 3, 5, 2))
 		if(contract.standing_score >= REPUTATION_ALLIED)
 			relationship.add_option(make_contract_clause_option("preferred_rate", "Preferred-contractor rate", "Invoke allied-contractor status for a larger cash award with a smaller standing gain.", 100, 150, 50, -1, -1, -1))
@@ -237,7 +237,7 @@
 /datum/contract_definition/outcome/research_export_portfolio
 	id = "research_export_portfolio"
 	title = "Applied Prototype Portfolio"
-	description = "Eclipse Corporation requests a commercially useful portfolio of station-fabricated Research products. Export valuation and producer provenance are measured by the ordinary freight ledger."
+	description = "Eclipse Corporation requests a commercially useful portfolio of station-fabricated Research products, accompanied by freight records establishing their value and station provenance."
 	scope = CONTRACT_SCOPE_DEPARTMENT
 	department = DEPARTMENT_RESEARCH
 	issuer_name = "Eclipse Applied Technologies"
@@ -267,7 +267,7 @@
 /datum/contract_definition/outcome/cargo_freight_portfolio
 	id = "cargo_freight_portfolio"
 	title = "Guild Freight Portfolio"
-	description = "The Interstellar Traders' Guild offers a throughput award for valuable, varied Cargo-origin freight accepted through the ordinary supply shuttle."
+	description = "The Interstellar Traders' Guild offers a throughput award for valuable, varied Cargo-origin freight accepted aboard the supply shuttle."
 	scope = CONTRACT_SCOPE_DEPARTMENT
 	department = DEPARTMENT_CARGO
 	issuer_name = "Interstellar Traders' Guild Freight Exchange"
@@ -280,7 +280,7 @@
 	var/default_variety = contract.outcome_variant == "salvage" ? 3 : (contract.outcome_variant == "diversified" ? pick(6, 7) : pick(4, 5))
 	contract.primary_target = context?["value_target"] || default_value
 	contract.secondary_target = context?["variety_target"] || default_variety
-	contract.description = "Complete a [contract.outcome_variant] Cargo portfolio by processing [contract.primary_target] Thalers of accepted outbound freight across at least [contract.secondary_target] distinct product types. Raw materials, salvage, crates, and other departments' goods all count through the ordinary freight ledger."
+	contract.description = "Complete a [contract.outcome_variant] Cargo portfolio by processing [contract.primary_target] Thalers of accepted outbound freight across at least [contract.secondary_target] distinct product types. Raw materials, salvage, crates, and goods consigned by other departments are all eligible."
 	contract.station_reputation_reward = 8
 	contract.department_reputation_reward = 24
 	contract.personal_reputation_reward = 10
@@ -298,7 +298,7 @@
 /datum/contract_definition/outcome/service_hospitality_census
 	id = "service_hospitality_census"
 	title = "Station Hospitality Census"
-	description = "The Interstellar Traders' Guild requests a live market sample from paid station hospitality. Completed register and scanner invoices provide the census without identifying private purchases beyond ordinary receipts."
+	description = "The Interstellar Traders' Guild requests a live market sample from paid station hospitality. Completed register and scanner invoices provide the census without disclosing purchases beyond the receipts customers already receive."
 	scope = CONTRACT_SCOPE_DEPARTMENT
 	department = DEPARTMENT_CIVILIAN
 	issuer_name = "Interstellar Traders' Guild Hospitality Bureau"
@@ -496,7 +496,7 @@
 /datum/contract_definition/personal_outcome/service_gratuity_drive
 	id = "service_gratuity_drive"
 	title = "Premium Hospitality Trial"
-	description = "The Traders' Guild offers a personal market-testing premium for voluntary gratuities earned through ordinary station service invoices."
+	description = "The Traders' Guild offers a personal market-testing premium for voluntary gratuities recorded on station service invoices."
 	issuer_name = "Interstellar Traders' Guild Hospitality Bureau"
 	issuer_faction = REPUTATION_FACTION_TRADERS_GUILD
 	reward = 650
