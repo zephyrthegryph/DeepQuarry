@@ -22,7 +22,9 @@ const reputationChange = (value: number) => {
     return '—';
   }
   const marks = magnitude <= 2 ? 1 : magnitude <= 4 ? 2 : 3;
-  return (value > 0 ? '+' : '−').repeat(marks);
+  return Array(marks)
+    .fill(value > 0 ? '+' : '−')
+    .join('\u2009');
 };
 
 const reputationDescription = (value: number) => {
@@ -93,20 +95,20 @@ const RewardSummary = ({ contract }: { contract: managementContract }) => {
               p={0.5}
               backgroundColor="rgba(255, 255, 255, 0.04)"
             >
-              <Stack.Item basis="40%" grow>
+              <Stack.Item grow>
                 <Box color="label">{label}</Box>
               </Stack.Item>
-              <Stack.Item basis="25%" textAlign="right">
+              <Stack.Item basis="7rem" textAlign="right">
                 <Box bold fontSize={1.1} nowrap>
                   {money.toLocaleString()} th
                 </Box>
               </Stack.Item>
-              <Stack.Item basis="35%">
+              <Stack.Item basis="8.5rem">
                 {!!reputation && (
                   <Tooltip
                     content={`${reputationDescription(reputation)} with ${contract.issuer_faction}`}
                   >
-                    <Stack align="center" justify="flex-end">
+                    <Stack align="center">
                       <Stack.Item>
                         <Box
                           bold
@@ -280,12 +282,21 @@ export const ManagementContracts = () => {
               {contract.offer_kind === 'standing'
                 ? 'Rotating offer'
                 : 'Limited opportunity'}{' '}
-              · {contract.term_class === 'short' ? 'Short-term' : 'Long-term'} ·{' '}
-              {contract.scope}
+              · {contract.term_class === 'short' ? 'Short-term' : 'Long-term'}
+              {contract.scope === 'station' ? ' · Station-wide' : ''}
               {contract.department ? ` · ${contract.department}` : ''}
             </LabeledList.Item>
             <LabeledList.Item label="Sponsor standing">
               {contract.standing_tier}
+              {!!contract.standing_reward_modifier && (
+                <Box
+                  inline
+                  ml={0.75}
+                  color={contract.standing_reward_modifier > 0 ? 'good' : 'bad'}
+                >
+                  {signed(contract.standing_reward_modifier, '%')}
+                </Box>
+              )}
             </LabeledList.Item>
             {contract.offer_time_remaining && (
               <LabeledList.Item label="Offer expires">

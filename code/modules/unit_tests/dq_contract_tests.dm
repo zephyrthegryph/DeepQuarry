@@ -414,9 +414,9 @@
 	TEST_ASSERT_EQUAL(GLOB.station_account.money - station_before, 250, "negotiated station contract payout was incorrect")
 	TEST_ASSERT_EQUAL(medical_account.money - medical_before, 550, "negotiated Medical contract payout was incorrect")
 	TEST_ASSERT_EQUAL(contributor_account.money - personal_before, 300, "negotiated contributor contract payout was incorrect")
-	TEST_ASSERT_EQUAL(get_station_faction_reputation(REPUTATION_FACTION_VEYMED) - station_rep_before, 5, "negotiated station reputation reward was incorrect")
-	TEST_ASSERT_EQUAL(get_department_faction_reputation(DEPARTMENT_MEDICAL, REPUTATION_FACTION_VEYMED) - department_rep_before, 3, "negotiated department reputation reward was incorrect")
-	TEST_ASSERT_EQUAL(contributor.get_faction_reputation(REPUTATION_FACTION_VEYMED) - personal_rep_before, 8, "negotiated personal reputation reward was incorrect")
+	TEST_ASSERT_EQUAL(get_station_faction_reputation(REPUTATION_FACTION_VEYMED) - station_rep_before, 7, "negotiated station reputation reward was incorrect")
+	TEST_ASSERT_EQUAL(get_department_faction_reputation(DEPARTMENT_MEDICAL, REPUTATION_FACTION_VEYMED) - department_rep_before, 2, "negotiated department reputation reward was incorrect")
+	TEST_ASSERT_EQUAL(contributor.get_faction_reputation(REPUTATION_FACTION_VEYMED) - personal_rep_before, 11, "negotiated personal reputation reward was incorrect")
 	GLOB.station_account.money = station_before
 	medical_account.money = medical_before
 	contributor_account.money = personal_before
@@ -457,9 +457,9 @@
 	TEST_ASSERT_EQUAL(contract.negotiated_station_amount(), 300, "negotiation station reward was incorrect")
 	TEST_ASSERT_EQUAL(contract.negotiated_department_amount(), 650, "negotiation department reward was incorrect")
 	TEST_ASSERT_EQUAL(contract.negotiated_staff_amount(), 225, "negotiation staff reward was incorrect")
-	TEST_ASSERT_EQUAL(contract.station_reputation_reward, 4, "negotiation station reputation was incorrect")
-	TEST_ASSERT_EQUAL(contract.department_reputation_reward, 2, "negotiation department reputation was incorrect")
-	TEST_ASSERT_EQUAL(contract.personal_reputation_reward, 7, "negotiation staff reputation was incorrect")
+	TEST_ASSERT_EQUAL(contract.station_reputation_reward, 6, "negotiation station reputation was incorrect")
+	TEST_ASSERT_EQUAL(contract.department_reputation_reward, 1, "negotiation department reputation was incorrect")
+	TEST_ASSERT_EQUAL(contract.personal_reputation_reward, 10, "negotiation staff reputation was incorrect")
 	TEST_ASSERT_EQUAL(contract.deadline_duration, 25 MINUTES, "negotiation deadline adjustment was incorrect")
 	TEST_ASSERT(contract.accept(), "negotiated contract could not be accepted")
 	TEST_ASSERT(contract.negotiation_locked, "accepted negotiation was not locked")

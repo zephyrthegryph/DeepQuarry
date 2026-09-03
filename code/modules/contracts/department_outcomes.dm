@@ -97,18 +97,14 @@
 	else if(standing >= REPUTATION_ALLIED)
 		percent = 10
 	else if(standing >= REPUTATION_FRIENDLY)
-		percent = 5
+		percent = 10
 	else if(standing <= REPUTATION_HOSTILE)
 		percent = -10
 	else if(standing <= REPUTATION_UNFRIENDLY)
 		percent = -5
-	if(!percent)
-		return
-	contract.reward = max(0, round(contract.reward * (100 + percent) / 100))
-	if(percent > 0)
-		contract.description += " Established [contract.issuer_name] standing has secured a [percent]% compensation premium."
-	else
-		contract.description += " Current [contract.issuer_name] standing carries a [abs(percent)]% risk discount."
+	contract.standing_reward_modifier = percent
+	if(percent)
+		contract.reward = max(0, round(contract.reward * (100 + percent) / 100))
 
 /proc/apply_personal_contract_standing_terms(datum/contract/contract)
 	if(!contract?.issuer_faction || !contract.owner_account_number)
@@ -119,7 +115,8 @@
 	var/standing = owner.get_faction_reputation(contract.issuer_faction)
 	contract.standing_score = standing
 	contract.standing_tier = reputation_rank(standing)
-	var/percent = standing >= REPUTATION_ALLIED ? 10 : (standing >= REPUTATION_FRIENDLY ? 5 : (standing <= REPUTATION_HOSTILE ? -10 : (standing <= REPUTATION_UNFRIENDLY ? -5 : 0)))
+	var/percent = standing >= REPUTATION_ALLIED ? 10 : (standing >= REPUTATION_FRIENDLY ? 10 : (standing <= REPUTATION_HOSTILE ? -10 : (standing <= REPUTATION_UNFRIENDLY ? -5 : 0)))
+	contract.standing_reward_modifier = percent
 	if(percent)
 		contract.reward = max(0, round(contract.reward * (100 + percent) / 100))
 

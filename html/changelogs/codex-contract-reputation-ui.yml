@@ -1,0 +1,5 @@
+author: "Codex"
+delete-after: true
+changes:
+  - balance: "Negotiated contract clauses now have stronger reputation consequences, and Friendly sponsor standing grants a 10% premium."
+  - qol: "Contract rewards, scope, reputation changes, and sponsor-standing modifiers are displayed more clearly."

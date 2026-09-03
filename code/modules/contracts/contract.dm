@@ -48,9 +48,11 @@
 	option.station_reward_delta = station_money
 	option.department_reward_delta = department_money
 	option.staff_reward_delta = staff_money
-	option.station_reputation_delta = station_rep
-	option.department_reputation_delta = department_rep
-	option.staff_reputation_delta = staff_rep
+	// Negotiated reputation is a deliberate institutional tradeoff, not a token
+	// footnote beside the monetary terms.
+	option.station_reputation_delta = station_rep * 2
+	option.department_reputation_delta = department_rep * 2
+	option.staff_reputation_delta = staff_rep * 2
 	option.deadline_delta = deadline_change
 	option.effects = effects?.Copy() || list()
 	return option
@@ -231,6 +233,7 @@
 	var/negotiated_staff_bonus = 0
 	var/standing_score = 0
 	var/standing_tier = AFFILIATION_NEUTRAL
+	var/standing_reward_modifier = 0
 
 /datum/contract/New()
 	. = ..()

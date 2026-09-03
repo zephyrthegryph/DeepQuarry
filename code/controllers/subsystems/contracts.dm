@@ -576,6 +576,7 @@ SUBSYSTEM_DEF(contracts)
 		),
 		"standing_score" = contract.standing_score,
 		"standing_tier" = contract.standing_tier,
+		"standing_reward_modifier" = contract.standing_reward_modifier,
 		"term_class" = contract.deadline_duration <= CONTRACT_SHORT_TERM_CUTOFF ? CONTRACT_TERM_SHORT : CONTRACT_TERM_LONG,
 		"negotiation_locked" = contract.negotiation_locked,
 		"negotiation_clauses" = negotiation_rows(contract),

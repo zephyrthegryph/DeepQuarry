@@ -57,6 +57,7 @@ export type managementContract = {
   reward: number;
   standing_score: number;
   standing_tier: string;
+  standing_reward_modifier: number;
   term_class: string;
   reward_distribution: contractDistribution;
   reputation_distribution: contractDistribution;
