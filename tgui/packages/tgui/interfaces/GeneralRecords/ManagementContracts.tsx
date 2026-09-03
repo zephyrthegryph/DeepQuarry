@@ -17,25 +17,34 @@ import type { contractClauseOption, Data, managementContract } from './types';
 const signed = (value: number, suffix = '') =>
   `${value > 0 ? '+' : ''}${value}${suffix}`;
 
-const termEffects = (option: contractClauseOption) => {
+const TermTooltip = ({ option }: { option: contractClauseOption }) => {
   const effects: [string, number, number][] = [
     ['Station', option.station_money, option.station_reputation],
     ['Department', option.department_money, option.department_reputation],
     ['Staff', option.staff_money, option.staff_reputation],
   ];
 
-  const summaries = effects
-    .filter(([, money, reputation]) => money || reputation)
-    .map(
-      ([label, money, reputation]) =>
-        `${label}: ${signed(Number(money), ' th')} / ${signed(Number(reputation), ' rep')}`,
-    );
-  if (option.deadline_minutes) {
-    summaries.push(`Deadline: ${signed(option.deadline_minutes, ' min')}`);
-  }
-  return summaries.length
-    ? summaries.join('\n')
-    : 'No payout or deadline change';
+  return (
+    <Box>
+      <Box mb={0.5}>{option.description}</Box>
+      {effects.map(([label, money, reputation]) => (
+        <Box key={label} nowrap>
+          <Box inline bold>
+            {label}:
+          </Box>{' '}
+          {signed(Number(money), ' th')} · {signed(Number(reputation), ' rep')}
+        </Box>
+      ))}
+      {!!option.deadline_minutes && (
+        <Box nowrap>
+          <Box inline bold>
+            Deadline:
+          </Box>{' '}
+          {signed(option.deadline_minutes, ' min')}
+        </Box>
+      )}
+    </Box>
+  );
 };
 
 const RewardSummary = ({ contract }: { contract: managementContract }) => {
@@ -59,38 +68,46 @@ const RewardSummary = ({ contract }: { contract: managementContract }) => {
 
   return (
     <Section title="Award" fitted mt={1}>
-      <Stack wrap>
+      <Stack vertical>
         {recipients.map(([label, money, reputation]) => (
-          <Stack.Item key={label} grow basis="28%">
-            <Box p={0.5} backgroundColor="rgba(255, 255, 255, 0.04)">
-              <Box color="label" fontSize={0.9}>
-                {label}
-              </Box>
-              <Box bold fontSize={1.2}>
-                {money.toLocaleString()} th
-              </Box>
+          <Stack.Item key={label}>
+            <Stack
+              align="center"
+              p={0.5}
+              backgroundColor="rgba(255, 255, 255, 0.04)"
+            >
+              <Stack.Item grow>
+                <Box color="label">{label}</Box>
+              </Stack.Item>
+              <Stack.Item>
+                <Box bold fontSize={1.1}>
+                  {money.toLocaleString()} th
+                </Box>
+              </Stack.Item>
               {!!reputation && (
-                <Tooltip
-                  content={`${signed(reputation)} reputation with ${contract.issuer_faction}`}
-                >
-                  <Stack mt={0.25} align="center">
-                    <Stack.Item>
-                      <Box
-                        bold
-                        px={0.5}
-                        backgroundColor={contract.issuer_color}
-                        color="white"
-                      >
-                        {contract.issuer_acronym}
-                      </Box>
-                    </Stack.Item>
-                    <Stack.Item color={reputation < 0 ? 'bad' : 'good'}>
-                      {signed(reputation)} reputation
-                    </Stack.Item>
-                  </Stack>
-                </Tooltip>
+                <Stack.Item>
+                  <Tooltip
+                    content={`${signed(reputation)} reputation with ${contract.issuer_faction}`}
+                  >
+                    <Stack align="center">
+                      <Stack.Item>
+                        <Box
+                          bold
+                          px={0.5}
+                          backgroundColor={contract.issuer_color}
+                          color="white"
+                        >
+                          {contract.issuer_acronym}
+                        </Box>
+                      </Stack.Item>
+                      <Stack.Item color={reputation < 0 ? 'bad' : 'good'}>
+                        {signed(reputation)} rep
+                      </Stack.Item>
+                    </Stack>
+                  </Tooltip>
+                </Stack.Item>
               )}
-            </Box>
+            </Stack>
           </Stack.Item>
         ))}
       </Stack>
@@ -255,7 +272,8 @@ export const ManagementContracts = () => {
                 <Stack
                   key={`${contract.id}-${clause.id}`}
                   align="center"
-                  mb={0.5}
+                  minHeight="28px"
+                  py={0.25}
                 >
                   <Stack.Item basis="22%">
                     <Tooltip content={clause.description}>
@@ -263,31 +281,33 @@ export const ManagementContracts = () => {
                     </Tooltip>
                   </Stack.Item>
                   <Stack.Item grow>
-                    <Stack wrap>
+                    <Stack>
                       {clause.options.map((option) => {
                         const selected = clause.selected === option.id;
                         return (
-                          <Stack.Item key={option.id}>
-                            <Button
-                              compact
-                              selected={selected}
-                              color={selected ? 'good' : undefined}
-                              icon={selected ? 'check' : undefined}
-                              tooltip={`${option.description}\n\n${termEffects(option)}`}
-                              disabled={
-                                !!contract.negotiation_locked ||
-                                !contract.can_accept
-                              }
-                              onClick={() =>
-                                act('contract_negotiate', {
-                                  id: contract.id,
-                                  clause: clause.id,
-                                  option: option.id,
-                                })
-                              }
-                            >
-                              {option.title}
-                            </Button>
+                          <Stack.Item key={option.id} grow>
+                            <Tooltip content={<TermTooltip option={option} />}>
+                              <Button
+                                fluid
+                                compact
+                                selected={selected}
+                                color={selected ? 'good' : undefined}
+                                icon={selected ? 'check' : undefined}
+                                disabled={
+                                  !!contract.negotiation_locked ||
+                                  !contract.can_accept
+                                }
+                                onClick={() =>
+                                  act('contract_negotiate', {
+                                    id: contract.id,
+                                    clause: clause.id,
+                                    option: option.id,
+                                  })
+                                }
+                              >
+                                {option.title}
+                              </Button>
+                            </Tooltip>
                           </Stack.Item>
                         );
                       })}
