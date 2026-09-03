@@ -363,9 +363,6 @@ export const ManagementContracts = () => {
                 border: '1px solid rgba(255, 255, 255, 0.08)',
                 borderLeft: `4px solid ${contract.issuer_color}`,
                 backgroundColor: 'rgba(8, 10, 12, 0.72)',
-                boxShadow: expanded
-                  ? `0 0 0 1px ${contract.issuer_color}55`
-                  : 'none',
                 marginBottom: '6px',
               }}
             >
