@@ -1,0 +1,4 @@
+author: "Codex"
+delete-after: true
+changes:
+  - qol: "Added clear spacing and dividers between contracts in the Department Management interface."
