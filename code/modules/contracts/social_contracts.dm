@@ -43,11 +43,11 @@
 	variety.unique_field = "pack_type"
 	contract.add_requirement(variety)
 
-// Research field license
+// Research market trial
 /datum/contract_definition/social/prototype_field_license
 	id = "prototype_field_license"
-	title = "Prototype Field License"
-	description = "Eclipse Applied Technologies seeks a station-market field license for Research-built products sold to real crew customers."
+	title = "Prototype Market Trial"
+	description = "Eclipse Applied Technologies will fund a trial of Research-built equipment with station personnel as paying customers."
 	scope = CONTRACT_SCOPE_DEPARTMENT
 	department = DEPARTMENT_RESEARCH
 	issuer_name = "Eclipse Applied Technologies"
@@ -57,15 +57,15 @@
 /datum/contract_definition/social/prototype_field_license/configure_contract(datum/contract/social/contract, list/context)
 	..()
 	configure_social_identity(contract, 8, 28, 16)
-	contract.description = "Sell 1,800 Thalers of Research-built equipment across eight customers, eight products, and four product types."
-	add_social_role(contract, "inventor", "Research license lead", "Produces and prices the licensed technology.", list(DEPARTMENT_RESEARCH), 1, 3)
-	add_social_role(contract, "tester", "Field customer", "Purchases and evaluates station-made technology in working conditions.", null, 3, 8)
+	contract.description = "Build and sell a varied range of useful Research equipment to station personnel. Eclipse will judge the trial by sales revenue, the number of buyers served, and the breadth of products adopted."
+	add_social_role(contract, "inventor", "Research product lead", "Builds, prices, and supplies equipment for the trial.", list(DEPARTMENT_RESEARCH), 1, 3)
+	add_social_role(contract, "tester", "Trial customer", "Purchases station-made equipment for practical use.", null, 3, 8)
 	contract.personal_side_definitions = list("research_exclusive_export")
 	var/list/metrics = list(
-		list("amount", 1800, "Licensed sales", "Settle 1,800 Thalers in Research sales."),
-		list("customer_count", 8, "Independent customers", "Serve eight distinct account holders."),
-		list("verified_item_count", 8, "Verified prototypes", "Sell eight physically verified Research products."),
-		list("verified_type_count", 4, "Product breadth", "Sell four distinct Research product types."),
+		list("amount", 1800, "Sales revenue", "Earn 1,800 Thalers from Research equipment sales."),
+		list("customer_count", 8, "Customer adoption", "Sell to eight distinct station account holders."),
+		list("verified_item_count", 8, "Equipment delivered", "Deliver eight physically verified Research products."),
+		list("verified_type_count", 4, "Product variety", "Sell equipment from four distinct product types."),
 	)
 	for(var/list/metric as anything in metrics)
 		var/datum/contract_requirement/event_count/requirement = new(CONTRACT_EVENT_SERVICE_PERIOD_SETTLED, metric[2], list("department" = DEPARTMENT_RESEARCH, "rollup" = "department"), metric[1], TRUE, CONTRACT_EVIDENCE_SCOPE_DEPARTMENT)
@@ -310,11 +310,11 @@
 	types.require_value("handling_department", DEPARTMENT_CARGO)
 	contract.add_requirement(types)
 
-// Research publication and patent terms
+// Research production and station adoption
 /datum/contract_definition/social/publication_patent
 	id = "publication_patent_dispute"
-	title = "Publication and Patent Disposition"
-	description = "Eclipse requests a commercially significant Research portfolio with an explicit stakeholder-backed disposition of its internal license."
+	title = "Research Commercialization Portfolio"
+	description = "Eclipse requests a substantial portfolio of Research designs followed by verified adoption among station personnel."
 	scope = CONTRACT_SCOPE_DEPARTMENT
 	department = DEPARTMENT_RESEARCH
 	issuer_name = "Eclipse Intellectual Property Office"
@@ -324,9 +324,9 @@
 /datum/contract_definition/social/publication_patent/configure_contract(datum/contract/social/contract, list/context)
 	..()
 	configure_social_identity(contract, 9, 28, 18)
-	contract.description = "Produce 1,800 Thalers across six Research product designs, then demonstrate a 1,200-Thaler internal license market serving five account holders across three verified types."
-	add_social_role(contract, "author", "Inventor or author", "Claims professional attribution for the Research portfolio.", list(DEPARTMENT_RESEARCH), 1, 4)
-	add_social_role(contract, "licensee", "Crew licensee", "Purchases station-made technology under an internal-use license.", null, 2, 8)
+	contract.description = "Produce a valuable and varied Research portfolio, then prove that station personnel will pay to use it. Production and customer sales are judged separately."
+	add_social_role(contract, "author", "Research designer", "Develops and fabricates products for the portfolio.", list(DEPARTMENT_RESEARCH), 1, 4)
+	add_social_role(contract, "licensee", "Crew customer", "Purchases station-made technology for practical use.", null, 2, 8)
 	contract.personal_side_definitions = list("research_exclusive_export")
 	var/datum/contract_requirement/fact_portfolio/production = new(CONTRACT_EVENT_ITEM_PRODUCED, 1800, "item_type", "value", 6, CONTRACT_EVIDENCE_SCOPE_ANY)
 	production.name = "Patentable production portfolio"
@@ -334,9 +334,9 @@
 	production.require_value("department", DEPARTMENT_RESEARCH)
 	contract.add_requirement(production)
 	for(var/list/metric as anything in list(
-		list("amount", 1200, "Internal license revenue"),
-		list("customer_count", 5, "Crew licensees"),
-		list("verified_type_count", 3, "Licensed product breadth"),
+		list("amount", 1200, "Customer sales"),
+		list("customer_count", 5, "Crew customers"),
+		list("verified_type_count", 3, "Adopted product variety"),
 	))
 		var/datum/contract_requirement/event_count/requirement = new(CONTRACT_EVENT_SERVICE_PERIOD_SETTLED, metric[2], list("department" = DEPARTMENT_RESEARCH, "rollup" = "department"), metric[1], TRUE, CONTRACT_EVIDENCE_SCOPE_DEPARTMENT)
 		requirement.name = metric[3]

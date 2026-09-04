@@ -359,7 +359,7 @@
 /datum/contract_definition/social/program/publication_consortium/configure_contract(datum/contract/social/contract, list/context)
 	..()
 	add_social_role(contract, "author", "Consortium author", "Coordinates milestones and attributes contributors.", list(DEPARTMENT_RESEARCH), 2, 5)
-	add_social_role(contract, "licensee", "Station licensee", "Purchases or evaluates resulting Research goods.", null, 3, 10)
+	add_social_role(contract, "licensee", "Station adopter", "Purchases or evaluates the resulting Research goods in practical use.", null, 3, 10)
 	contract.personal_side_definitions = list("research_exclusive_export")
 	add_program_count(contract, CONTRACT_EVENT_RESEARCH_MILESTONE, 5, "Published milestones", "Unlock five distinct research nodes.", null, CONTRACT_EVIDENCE_SCOPE_DEPARTMENT, "node_id")
 	add_program_portfolio(contract, CONTRACT_EVENT_ITEM_PRODUCED, 2000, "item_type", "value", 7, "Publication outputs", "Produce 2,000 Thalers across seven output classes.", CONTRACT_EVIDENCE_SCOPE_DEPARTMENT, null, null, 450, 600)
