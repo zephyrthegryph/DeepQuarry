@@ -151,7 +151,7 @@
 	return 1
 
 /obj/item/cell/infinite/use(amount, update_appearance = TRUE)
-	return 1
+	return max(amount, 0)
 
 /*
  * Potato

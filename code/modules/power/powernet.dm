@@ -32,13 +32,14 @@
 	var/revision = 1
 	/// Composite cable topology is scanned only when the network changes.
 	var/material_cache_dirty = TRUE
-	var/obj/structure/cable/material_hotspot
-	var/list/material_segments
-	var/material_safe_load = INFINITY
-	var/material_base_resistance = 0
-	/// Engineered conductors integrate energy once per second, independent of
-	/// the power subsystem's tick rate. Ordinary networks do no extra work.
-	var/next_material_process = 0
+	var/datum/material_power_graph/material_graph
+	var/list/material_sources
+	var/list/material_next_sources
+	var/list/material_consumers
+	var/material_paid_losses = 0
+	var/material_loss_watts = 0
+	/// Elapsed wall-clock integration of paid losses; the graph reuses its
+	/// previous solution when injections and material resistance are unchanged.
 	var/last_material_process = 0
 	/// Consecutive accounting windows with no production, demand, warning, or
 	/// engineered-material work. Two windows are required so producer shutdown is
@@ -64,7 +65,10 @@
 		M.powernet = null
 	STOP_PROCESSING_POWERNET(src)
 	SSmachines.powernets -= src
-	material_segments = null
+	QDEL_NULL(material_graph)
+	material_sources = null
+	material_next_sources = null
+	material_consumers = null
 	return ..()
 
 /datum/powernet/proc/reserve_sleeping_apc_load(obj/machinery/power/apc/A, amount)
@@ -143,11 +147,17 @@
 /datum/powernet/proc/last_surplus()
 	return max(avail - load, 0)
 
-/datum/powernet/proc/draw_power(amount)
+/datum/powernet/proc/draw_power(amount, atom/consumer)
 	mark_accounting_dirty()
-	var/draw = between(0, amount, avail - load)
+	var/efficiency = consumer ? (material_graph?.efficiencies?[REF(consumer)] || 1) : 1
+	var/draw = between(0, amount / efficiency, avail - load)
 	load += draw
-	return draw
+	var/delivered = draw * efficiency
+	material_paid_losses += draw - delivered
+	if(consumer)
+		LAZYINITLIST(material_consumers)
+		material_consumers[WEAKREF(consumer)] += delivered
+	return delivered
 
 /datum/powernet/proc/is_empty()
 	return !cables.len && !nodes.len
@@ -176,86 +186,40 @@
 
 /datum/powernet/proc/invalidate_material_cache()
 	material_cache_dirty = TRUE
-	material_hotspot = null
 
 /datum/powernet/proc/rebuild_material_cache()
 	material_cache_dirty = FALSE
-	material_hotspot = null
-	material_segments = null
-	material_safe_load = INFINITY
-	material_base_resistance = 0
-	for(var/obj/structure/cable/cable in cables)
-		var/datum/material/material = cable.engineered_material()
-		if(!material)
-			continue
-		LAZYADD(material_segments, cable)
-		var/candidate_safe_load = material.critical_current_density > 0 ? material.critical_current_density * MATERIAL_CABLE_REFERENCE_AREA * 1000 : max(material.conductivity, 1) * 20000
-		if(candidate_safe_load < material_safe_load)
-			material_safe_load = candidate_safe_load
-			material_hotspot = cable
-	if(material_hotspot)
-		var/datum/material/hotspot_material = material_hotspot.engineered_material()
-		material_base_resistance = hotspot_material.material_electrical_resistance(1, MATERIAL_CABLE_REFERENCE_AREA, material_hotspot.material_temperature, 0)
+	QDEL_NULL(material_graph)
+	material_graph = new
+	material_graph.build(cables)
 
 /datum/powernet/proc/process_material_network()
-	if(world.time < next_material_process)
-		return
-	var/elapsed_seconds = last_material_process ? clamp((world.time - last_material_process) / 10, 0.1, 5) : 1
+	var/elapsed_seconds = last_material_process ? max((world.time - last_material_process) / 10, 0.1) : 1
 	last_material_process = world.time
-	next_material_process = world.time + 1 SECOND
+	LAZYINITLIST(material_consumers)
+	for(var/obj/machinery/power/apc/apc as anything in sleeping_apc_loads)
+		if(apc.terminal)
+			material_consumers[WEAKREF(apc.terminal)] += sleeping_apc_loads[apc]
+			var/efficiency = material_graph?.efficiencies?[REF(apc.terminal)] || 1
+			var/extra = sleeping_apc_loads[apc] * (1 / efficiency - 1)
+			var/paid = min(extra, max(avail - load, 0))
+			load += paid
+			material_paid_losses += paid
+			if(paid + 0.01 < extra)
+				apc.wake_for_power_dependency()
+	material_loss_watts = material_paid_losses
+	// Settle the completed interval against its original flow distribution before
+	// a switched-off load or topology rebuild replaces that distribution.
+	material_graph?.deposit_losses(material_paid_losses * elapsed_seconds, elapsed_seconds)
 	if(material_cache_dirty)
 		rebuild_material_cache()
-	if(!material_hotspot || QDELETED(material_hotspot) || !length(material_segments) || load <= 0)
-		return
-	var/current_density = (load / 1000) / MATERIAL_CABLE_REFERENCE_AREA
-	// A network carries one current, so its weakest segment is the physical
-	// hotspot. Processing every cable repeated identical network math hundreds
-	// of times and made ordinary material-aware station wiring unaffordable.
-	var/obj/structure/cable/cable = material_hotspot
-	if(QDELETED(cable))
-		invalidate_material_cache()
-		return
-	var/datum/material/material = cable.engineered_material()
-	var/datum/material/insulation = cable.insulation_material()
-	var/turf/cable_turf = get_turf(cable)
-	var/datum/gas_mixture/air = cable_turf?.return_air()
-	if(!material || !air)
-		return
-	var/list/cables_to_delete
-	if(material && air)
-		var/resistance = material.material_electrical_resistance(1, MATERIAL_CABLE_REFERENCE_AREA, cable.material_temperature, current_density)
-		var/loss_energy = max(0, load * min(resistance, 5) * elapsed_seconds)
-		var/cable_safe_load = material.critical_current_density > 0 ? material.critical_current_density * MATERIAL_CABLE_REFERENCE_AREA * 1000 : max(material.conductivity, 1) * 20000
-		if(load > cable_safe_load)
-			var/overload_ratio = load / max(cable_safe_load, 1)
-			loss_energy *= overload_ratio * overload_ratio
-			trigger_warning()
-		var/thermal_mass = max(material.specific_heat * 8, 1000)
-		if(cable.material_buffer_energy > 0 && material.phase_change_temperature > 0 && cable.material_temperature < material.phase_change_temperature - 5)
-			var/released = min(cable.material_buffer_energy, thermal_mass * (material.phase_change_temperature - cable.material_temperature))
-			cable.material_buffer_energy -= released
-			cable.material_temperature += released / thermal_mass
-		var/buffer_available = max(material.phase_change_capacity - cable.material_buffer_energy, 0)
-		if(buffer_available > 0 && material.phase_change_temperature > 0 && cable.material_temperature <= material.phase_change_temperature + 15)
-			var/buffered = min(loss_energy, buffer_available)
-			cable.material_buffer_energy += buffered
-			loss_energy -= buffered
-		cable.material_temperature += loss_energy / thermal_mass
-		var/conductance = cable.construction_thermal_conductance(0.05, 0.004, cable.material_temperature)
-		if(isnull(conductance))
-			conductance = material.material_thermal_conductance(0.05, 0.004, cable.material_temperature)
-		var/exchange = clamp((cable.material_temperature - air.return_temperature()) * conductance * elapsed_seconds, -thermal_mass * 20, thermal_mass * 20)
-		cable.material_temperature -= exchange / thermal_mass
-		air.add_thermal_energy(exchange)
-		if(material.critical_temperature > 0 && cable.material_temperature >= material.critical_temperature)
-			trigger_warning()
-		var/insulation_failure = insulation && cable.material_temperature >= insulation.melting_point
-		if(cable.material_temperature >= material.melting_point || insulation_failure)
-			cable.visible_message(span_danger("[cable]'s composite conductor melts through after a thermal runaway!"))
-			air.add_thermal_energy(thermal_mass * 50)
-			LAZYADD(cables_to_delete, cable)
-	for(var/obj/structure/cable/failed_cable as anything in cables_to_delete)
-		qdel(failed_cable)
+	material_graph.resolve_loads(material_sources, material_consumers)
+	material_paid_losses = 0
+	material_consumers = null
+	material_sources = material_next_sources
+	material_next_sources = null
+	if(material_loss_watts > max(load * 0.1, 1000))
+		trigger_warning()
 
 /// remove_machine() — remove a power machine; deletes the net if now empty.
 /// Caller must verify the machine is in this net before calling.
@@ -272,6 +236,7 @@
 	else if(istype(M, /obj/machinery/power/smes))
 		smes_nodes -= M
 	nodes -= M
+	invalidate_material_cache()
 	M.powernet = null
 	publish_dependency()
 	if(is_empty())
@@ -286,6 +251,7 @@
 		M.disconnect_from_network()
 	M.powernet = src
 	nodes[M] = M
+	invalidate_material_cache()
 	if(istype(M, /obj/machinery/power/terminal))
 		var/obj/machinery/power/terminal/T = M
 		if(istype(T.master, /obj/machinery/power/apc))
@@ -325,7 +291,6 @@
 	var/numapc = apc_count
 
 	netexcess = avail - load
-	process_material_network()
 
 	if(numapc)
 		// Simple load balancing: if net surplus existed this tick some APCs used less
@@ -344,6 +309,7 @@
 		var/datum/powernet_balancer/balancer = new(src)
 		balancer.execute()
 		qdel(balancer)
+	process_material_network()
 
 	// 4. Restore excess power to SMESes proportionally.
 	netexcess = avail - load
@@ -380,7 +346,7 @@
 	// charging progress has its own coarse elapsed-time wakeup.
 	if((avail <= 0) != (old_avail <= 0) || ((netexcess < -1) != (old_netexcess < -1)))
 		publish_monitor_dependency()
-	var/has_live_accounting = avail || newavail || load > sleeping_apc_load_total || inputting.len || smes_demand || problem > 0 || (material_hotspot && length(material_segments))
+	var/has_live_accounting = avail || newavail || load > sleeping_apc_load_total || inputting.len || smes_demand || problem > 0
 	if(has_live_accounting)
 		idle_accounting_windows = 0
 		return

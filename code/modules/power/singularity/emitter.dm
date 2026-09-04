@@ -57,6 +57,7 @@
 				investigate_log("turned " + span_red("off") + " by [user.key]","singulo")
 			else
 				src.active = 1
+				material_last_charge = world.time
 				START_MACHINE_PROCESSING(src)
 				balloon_alert_visible("turned on")
 				src.shot_number = 0
@@ -80,10 +81,13 @@
 		return PROCESS_KILL
 	if(!active)
 		return PROCESS_KILL
+	charge_emitter()
 	if(((src.last_shot + src.fire_delay) <= world.time) && (src.active == 1))
-
-		var/actual_load = draw_power(active_power_usage)
-		if(actual_load >= active_power_usage) //does the laser have enough power to shoot?
+		var/burst_time = (min_burst_delay + max_burst_delay)/2 + 2*(burst_shots-1)
+		var/desired_beam = active_power_usage * (burst_time / 10) / burst_shots * material_output_setting
+		var/efficiency = emitter_efficiency()
+		var/required_energy = desired_beam / efficiency
+		if(material_stored_energy >= required_energy)
 			if(!powered)
 				powered = 1
 				update_icon()
@@ -105,9 +109,14 @@
 			src.fire_delay = get_rand_burst_delay() //R-UST port
 			src.shot_number = 0
 
-		//need to calculate the power per shot as the emitter doesn't fire continuously.
-		var/burst_time = (min_burst_delay + max_burst_delay)/2 + 2*(burst_shots-1)
-		var/power_per_shot = active_power_usage * (burst_time/10) / burst_shots
+		fire_delay = max(1, round(fire_delay / material_cadence_setting))
+		material_stored_energy -= required_energy
+		material_beam_joules += desired_beam
+		material_service.output_joules += desired_beam
+		material_service.loss_joules += required_energy - desired_beam
+		material_service.last_output_watts = desired_beam / max(fire_delay / 10, 0.1)
+		material_service.last_work_time = world.time
+		material_service.add_heat(required_energy - desired_beam)
 
 		playsound(src, 'sound/weapons/emitter.ogg', 25, 1)
 		if(prob(35))
@@ -116,7 +125,7 @@
 			s.start()
 
 		var/obj/item/projectile/beam/emitter/A = get_emitter_beam()
-		A.damage = round(power_per_shot/EMITTER_DAMAGE_POWER_TRANSFER)
+		A.damage = round(desired_beam/EMITTER_DAMAGE_POWER_TRANSFER)
 		A.firer = src
 		A.fire(dir2angle(dir))
 
@@ -315,6 +324,7 @@
 
 /obj/machinery/power/emitter/Initialize(mapload)
 	. = ..()
+	ensure_material_construction(MATERIAL_APPLICATION_ENERGY_DEVICE, 10 * SHEET_MATERIAL_AMOUNT)
 	previous_state = state
 	if(state == 2 && anchored)
 		connect_to_network()

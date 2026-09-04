@@ -241,6 +241,10 @@
 		update_icon()
 
 /obj/item/multitool/afterattack(atom/target, mob/living/user, proximity)
+	if(proximity && engineering_reading && istype(target, /obj/machinery/photocopier))
+		var/obj/machinery/photocopier/copier = target
+		copier.print_engineering_reading(src, user)
+		return
 	if(accepting_refs && toolmode == MULTITOOL_MODE_INTCIRCUITS && proximity)
 		weakref_wiring = WEAKREF(target)
 		visible_message(span_notice("[user] slides \a [src]'s over \the [target]."))

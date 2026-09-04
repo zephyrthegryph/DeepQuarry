@@ -115,6 +115,14 @@ export type MaterialChoice = {
   thermalInsulation: number;
   corrosionResistance: number;
   pressureLimit: number;
+  resistivity?: number;
+  criticalTemperature?: number;
+  criticalCurrentDensity?: number;
+  specificHeat?: number;
+  phaseCapacity?: number;
+  phaseTemperature?: number;
+  dielectricStrength?: number;
+  meltingPoint?: number;
 };
 
 /**

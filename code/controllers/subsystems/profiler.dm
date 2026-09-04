@@ -189,6 +189,7 @@ SUBSYSTEM_DEF(profiler)
 	var/list/subsystems = list(
 		"atmos" = subsystem_diagnostics(SSair),
 		"machines" = subsystem_diagnostics(SSmachines),
+		"material_exposure" = subsystem_diagnostics(SSmaterial_services),
 		"mobs" = subsystem_diagnostics(SSmobs),
 		"objects" = subsystem_diagnostics(SSobj),
 		"garbage" = subsystem_diagnostics(SSgarbage),
@@ -196,6 +197,13 @@ SUBSYSTEM_DEF(profiler)
 		"radiation" = subsystem_diagnostics(SSradiation),
 		"explosions" = subsystem_diagnostics(SSexplosions),
 	)
+	subsystems["material_exposure"] += list("pending" = length(SSmaterial_services.scheduled), "current" = length(SSmaterial_services.currentrun))
+	var/list/material_graphs = list()
+	for(var/datum/powernet/network as anything in SSmachines.powernets)
+		var/datum/material_power_graph/graph = network.material_graph
+		if(graph)
+			material_graphs += list(list("cables" = length(network.cables), "vertices" = length(graph.vertices), "core" = length(graph.core_vertices), "edges" = length(graph.edges), "iterations" = graph.iterations, "solve_ms" = graph.solve_ms, "deposit_ms" = graph.deposit_ms, "resistance_ms" = graph.resistance_ms))
+	subsystems["machines"] += list("material_graphs" = material_graphs)
 	subsystems["atmos"] += list(
 		"dm_stage_average_ms" = list(
 			"hotspots" = SSair.cost_hotspots,

@@ -284,7 +284,10 @@
 	network.leaks = null
 	for(var/obj/machinery/atmospherics/member as anything in old_members)
 		member.unregister_network_membership(network)
+		member.material_service?.environment_changed()
 	for(var/datum/pipeline/line as anything in old_lines)
+		for(var/obj/machinery/atmospherics/pipe/pipe as anything in line.members)
+			pipe.material_service?.environment_changed()
 		line.network = null
 		line.network_memberships = null
 		line.air = null
@@ -320,6 +323,9 @@
 		else
 			network.add_normal_member(machine)
 		machine.rust_bind_pipe_port(index, network, region_air)
+		// A region replacement can preserve pressure/composition, so gas-dirty
+		// publication alone cannot tell sleepers to subscribe to the new handle.
+		machine.material_service?.environment_changed()
 
 	if(length(region_pipes))
 		var/datum/pipeline/pipeline = new

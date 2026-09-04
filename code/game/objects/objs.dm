@@ -56,6 +56,7 @@
 		AddElement(/datum/element/sellable/manufactured)
 
 /obj/Destroy()
+	QDEL_NULL(material_service)
 	STOP_PROCESSING(SSobj, src)
 
 	// I really am an idiot why did I make it this way

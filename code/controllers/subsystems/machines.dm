@@ -295,6 +295,8 @@ SUBSYSTEM_DEF(machines)
 		var/source_moles = max(transfer[6], MINIMUM_MOLES_TO_PUMP)
 		M.last_flow_rate = (actual / source_moles) * transfer[7]
 		var/power_draw = transfer[5] * actual
+		var/datum/gas_mixture/destination = transfer[3]
+		M.record_material_pumping(power_draw, destination, actual)
 		M.last_power_draw = power_draw
 		M.use_power(power_draw)
 		if(isturf(M.loc))
@@ -605,6 +607,12 @@ SUBSYSTEM_DEF(machines)
 					continue
 				current_gas_wake_subscribers++
 				var/datum/weakref/WR = subscribers[key]
+				var/datum/observed = WR?.resolve()
+				if(istype(observed, /datum/material_service))
+					var/datum/material_service/service = observed
+					if(!service.timer)
+						service.environment_changed(FALSE)
+					continue
 				if(!sleeping_gas_devices[WR?.reference])
 					continue
 				var/obj/machinery/subscriber = WR?.resolve()
@@ -662,8 +670,11 @@ SUBSYSTEM_DEF(machines)
 		subscriber_masks = list()
 		gas_mixture_subscriber_masks[key] = subscriber_masks
 	var/old_mask = subscriber_masks[WR.reference] || NONE
-	var/obj/machinery/subscriber = WR.resolve()
-	var/new_mask = subscriber ? subscriber.gas_dependency_interest_mask() : GAS_DEPENDENCY_ALL
+	var/datum/subscriber = WR.resolve()
+	var/new_mask = GAS_DEPENDENCY_ALL
+	if(istype(subscriber, /obj/machinery))
+		var/obj/machinery/machine = subscriber
+		new_mask = machine.gas_dependency_interest_mask()
 	subscribers[WR.reference] = WR
 	subscriber_masks[WR.reference] = new_mask
 	adjust_gas_interest_counts(key, old_mask, new_mask)

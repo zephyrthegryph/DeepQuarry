@@ -84,10 +84,6 @@
 	var/pressure = air.return_pressure()
 	var/needs_followup = FALSE
 	for(var/obj/machinery/atmospherics/pipe/member in members)
-		// Standard map pipes share the calibrated station assembly and need no
-		// per-segment chemistry work. Fabricated/retrofitted pipes carry the ID.
-		if(!member.engineered_material_id)
-			continue
 		if(member.process_engineered_material_exposure(air))
 			needs_followup = TRUE
 		if(!member.check_pressure(pressure))

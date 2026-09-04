@@ -1,4 +1,5 @@
 mod allocator;
+pub mod material_power;
 pub mod random_map;
 pub mod station_layout;
 pub mod verdigris;

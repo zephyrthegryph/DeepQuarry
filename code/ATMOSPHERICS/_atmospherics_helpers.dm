@@ -37,7 +37,9 @@ ADMIN_VERB(atmos_toggle_debug, R_DEBUG, "Toggle Debug Messages", "Allows to togg
 		transfer_moles = min(source_moles, transfer_moles)
 
 	//Calculate the amount of energy required and limit transfer_moles based on available power
-	var/specific_power = calculate_specific_power(source, sink)/ATMOS_PUMP_EFFICIENCY //this has to be calculated before we modify any gas mixtures
+	var/specific_power = calculate_specific_power(source, sink) / (ATMOS_PUMP_EFFICIENCY * (M ? M.material_pump_efficiency() / 0.8 : 1))
+	if(M)
+		available_power = M.material_pump_power(available_power)
 	if (!isnull(available_power) && specific_power > 0)
 		transfer_moles = min(transfer_moles, available_power / specific_power)
 
@@ -62,6 +64,7 @@ ADMIN_VERB(atmos_toggle_debug, R_DEBUG, "Toggle Debug Messages", "Allows to togg
 	if(!source.transfer_to(sink, transfer_moles))
 		return -1
 	var/power_draw = specific_power*transfer_moles
+	M?.record_material_pumping(power_draw, sink, transfer_moles)
 
 	return power_draw
 
@@ -73,7 +76,8 @@ ADMIN_VERB(atmos_toggle_debug, R_DEBUG, "Toggle Debug Messages", "Allows to togg
 	if(source_moles < MINIMUM_MOLES_TO_PUMP)
 		return -1
 	transfer_moles = isnull(transfer_moles) ? source_moles : min(source_moles, transfer_moles)
-	var/specific_power = calculate_specific_power(source, sink) / ATMOS_PUMP_EFFICIENCY
+	var/specific_power = calculate_specific_power(source, sink) / (ATMOS_PUMP_EFFICIENCY * M.material_pump_efficiency() / 0.8)
+	available_power = M.material_pump_power(available_power)
 	if(!isnull(available_power) && specific_power > 0)
 		transfer_moles = min(transfer_moles, available_power / specific_power)
 	if(transfer_moles < MINIMUM_MOLES_TO_PUMP)
@@ -121,6 +125,8 @@ ADMIN_VERB(atmos_toggle_debug, R_DEBUG, "Toggle Debug Messages", "Allows to togg
 //total_transfer_moles - Limits the amount of moles to scrub. The actual amount of gas scrubbed may also be limited by available_power, if given.
 //available_power - the maximum amount of power that may be used when scrubbing gas. If null then the scrubbing is not limited by power.
 /proc/scrub_gas(obj/machinery/M, list/filtering, datum/gas_mixture/source, datum/gas_mixture/sink, total_transfer_moles = null, available_power = null)
+	available_power = M ? M.material_pump_power(available_power) : available_power
+	var/efficiency = ATMOS_FILTER_EFFICIENCY * (M ? M.material_pump_efficiency() / 0.8 : 1)
 	if (source.total_moles() < MINIMUM_MOLES_TO_FILTER) //if we cant transfer enough gas just stop to avoid further processing
 		return -1
 
@@ -142,7 +148,7 @@ ADMIN_VERB(atmos_toggle_debug, R_DEBUG, "Toggle Debug Messages", "Allows to togg
 				source.adjust_gas(g, -trace, update=0)
 			continue
 
-		var/specific_power = calculate_specific_power_gas(g, source, sink)/ATMOS_FILTER_EFFICIENCY
+		var/specific_power = calculate_specific_power_gas(g, source, sink)/efficiency
 		specific_power_gas[g] = specific_power
 		total_filterable_moles += LINDA_GAS_AMT(source, g)
 
@@ -190,6 +196,7 @@ ADMIN_VERB(atmos_toggle_debug, R_DEBUG, "Toggle Debug Messages", "Allows to togg
 
 	// sink.update_values() / source.update_values() removed:
 	// LINDA auto-archives on read, so the XGM "remix" step is a no-op.
+	M?.record_material_pumping(power_draw, sink, total_transfer_moles)
 
 	return power_draw
 
@@ -200,6 +207,8 @@ ADMIN_VERB(atmos_toggle_debug, R_DEBUG, "Toggle Debug Messages", "Allows to togg
 //total_transfer_moles - Limits the amount of moles to input. The actual amount of gas filtered may also be limited by available_power, if given.
 //available_power - the maximum amount of power that may be used when filtering gas. If null then the filtering is not limited by power.
 /proc/filter_gas(obj/machinery/M, list/filtering, datum/gas_mixture/source, datum/gas_mixture/sink_filtered, datum/gas_mixture/sink_clean, total_transfer_moles = null, available_power = null)
+	available_power = M ? M.material_pump_power(available_power) : available_power
+	var/efficiency = ATMOS_FILTER_EFFICIENCY * (M ? M.material_pump_efficiency() / 0.8 : 1)
 	if (source.total_moles() < MINIMUM_MOLES_TO_FILTER) //if we cant transfer enough gas just stop to avoid further processing
 		return -1
 
@@ -214,10 +223,10 @@ ADMIN_VERB(atmos_toggle_debug, R_DEBUG, "Toggle Debug Messages", "Allows to togg
 			continue
 
 		if (g in filtering)
-			specific_power_gas[g] = calculate_specific_power_gas(g, source, sink_filtered)/ATMOS_FILTER_EFFICIENCY
+			specific_power_gas[g] = calculate_specific_power_gas(g, source, sink_filtered)/efficiency
 			total_filterable_moles += LINDA_GAS_AMT(source, g)
 		else
-			specific_power_gas[g] = calculate_specific_power_gas(g, source, sink_clean)/ATMOS_FILTER_EFFICIENCY
+			specific_power_gas[g] = calculate_specific_power_gas(g, source, sink_clean)/efficiency
 			total_unfilterable_moles += LINDA_GAS_AMT(source, g)
 
 		var/ratio = LINDA_GAS_AMT(source, g)/source.total_moles() //converts the specific power per mole of pure gas to specific power per mole of input gas mix
@@ -262,16 +271,21 @@ ADMIN_VERB(atmos_toggle_debug, R_DEBUG, "Toggle Debug Messages", "Allows to togg
 			unfiltered_power_used += power_used
 
 	// sink_filtered.update_values() / removed.update_values() removed.
+	var/clean_moles = removed.total_moles()
 
 	sink_clean.merge(removed)
 	qdel(removed)
 
+	M?.record_material_pumping(filtered_power_used, sink_filtered, total_transfer_moles - clean_moles)
+	M?.record_material_pumping(unfiltered_power_used, sink_clean, clean_moles)
 	return filtered_power_used + unfiltered_power_used
 
 //For omni devices. Instead filtering is an associative list mapping gasids to gas mixtures.
 //I don't like the copypasta, but I decided to keep both versions of gas filtering as filter_gas is slightly faster (doesn't create as many temporary lists)
 //filter_gas can be removed and replaced with this proc if need be.
 /proc/filter_gas_multi(obj/machinery/M, list/filtering, datum/gas_mixture/source, datum/gas_mixture/sink_clean, total_transfer_moles = null, available_power = null)
+	available_power = M ? M.material_pump_power(available_power) : available_power
+	var/efficiency = ATMOS_FILTER_EFFICIENCY * (M ? M.material_pump_efficiency() / 0.8 : 1)
 	if (source.total_moles() < MINIMUM_MOLES_TO_FILTER) //if we cant transfer enough gas just stop to avoid further processing
 		return -1
 
@@ -287,10 +301,10 @@ ADMIN_VERB(atmos_toggle_debug, R_DEBUG, "Toggle Debug Messages", "Allows to togg
 
 		if (g in filtering)
 			var/datum/gas_mixture/sink_filtered = filtering[g]
-			specific_power_gas[g] = calculate_specific_power_gas(g, source, sink_filtered)/ATMOS_FILTER_EFFICIENCY
+			specific_power_gas[g] = calculate_specific_power_gas(g, source, sink_filtered)/efficiency
 			total_filterable_moles += LINDA_GAS_AMT(source, g)
 		else
-			specific_power_gas[g] = calculate_specific_power_gas(g, source, sink_clean)/ATMOS_FILTER_EFFICIENCY
+			specific_power_gas[g] = calculate_specific_power_gas(g, source, sink_clean)/efficiency
 			total_unfilterable_moles += LINDA_GAS_AMT(source, g)
 
 		var/ratio = LINDA_GAS_AMT(source, g)/source.total_moles() //converts the specific power per mole of pure gas to specific power per mole of input gas mix
@@ -322,17 +336,19 @@ ADMIN_VERB(atmos_toggle_debug, R_DEBUG, "Toggle Debug Messages", "Allows to togg
 		return -1
 
 	var/list/filtered_power_used = list()		//power used to move filterable gas to the filtered gas mixes
+	var/list/filtered_moles = list()
 	var/unfiltered_power_used = 0	//power used to move unfilterable gas to sink_clean
 	for (var/g in removed.gas_ids()) // removed.gas → removed.gas_ids()
 		var/power_used = specific_power_gas[g]*LINDA_GAS_AMT(removed, g)
 
 		if (g in filtering)
 			var/datum/gas_mixture/sink_filtered = filtering[g]
+			filtered_moles[sink_filtered] += LINDA_GAS_AMT(removed, g)
 			//use update=0. All the filtered gasses are supposed to be added simultaneously, so we update after the for loop.
 			sink_filtered.adjust_gas_temp(g, LINDA_GAS_AMT(removed, g), removed.return_temperature(), update=1)
 			removed.adjust_gas(g, -LINDA_GAS_AMT(removed, g), update=0)
 			if (power_used)
-				filtered_power_used[sink_filtered] = power_used
+				filtered_power_used[sink_filtered] += power_used
 		else
 			unfiltered_power_used += power_used
 
@@ -341,15 +357,20 @@ ADMIN_VERB(atmos_toggle_debug, R_DEBUG, "Toggle Debug Messages", "Allows to togg
 	var/power_draw = unfiltered_power_used
 	for (var/datum/gas_mixture/sink_filtered in filtered_power_used)
 		power_draw += filtered_power_used[sink_filtered]
+		M?.record_material_pumping(filtered_power_used[sink_filtered], sink_filtered, filtered_moles[sink_filtered])
 
+	var/clean_moles = removed.total_moles()
 	sink_clean.merge(removed)
 	qdel(removed)
+	M?.record_material_pumping(unfiltered_power_used, sink_clean, clean_moles)
 
 	return power_draw
 
 //Similar deal as the other atmos process procs.
 //mix_sources maps input gas mixtures to mix ratios. The mix ratios MUST add up to 1.
 /proc/mix_gas(obj/machinery/M, list/mix_sources, datum/gas_mixture/sink, total_transfer_moles = null, available_power = null)
+	available_power = M ? M.material_pump_power(available_power) : available_power
+	var/efficiency = ATMOS_FILTER_EFFICIENCY * (M ? M.material_pump_efficiency() / 0.8 : 1)
 	if (!mix_sources.len)
 		return -1
 
@@ -371,7 +392,7 @@ ADMIN_VERB(atmos_toggle_debug, R_DEBUG, "Toggle Debug Messages", "Allows to togg
 		if (isnull(total_mixing_moles) || total_mixing_moles > this_mixing_moles)
 			total_mixing_moles = this_mixing_moles
 
-		source_specific_power[source] = calculate_specific_power(source, sink)*mix_ratio/ATMOS_FILTER_EFFICIENCY
+		source_specific_power[source] = calculate_specific_power(source, sink)*mix_ratio/efficiency
 		total_specific_power += source_specific_power[source]
 		total_input_volume += source.return_volume()
 		total_input_moles += source.total_moles()
@@ -415,6 +436,7 @@ ADMIN_VERB(atmos_toggle_debug, R_DEBUG, "Toggle Debug Messages", "Allows to togg
 		sink.merge(removed)
 		qdel(removed)
 
+	M?.record_material_pumping(total_power_draw, sink, total_transfer_moles)
 	return total_power_draw
 
 /*

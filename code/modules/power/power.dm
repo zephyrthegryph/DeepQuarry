@@ -30,18 +30,20 @@
 
 	if(powernet && powernet.avail)
 		powernet.trigger_warning()
-		return powernet.draw_power(amount)
+		return powernet.draw_power(amount, src)
 
 /obj/machinery/power/proc/add_avail(amount)
 	if(powernet)
 		powernet.mark_accounting_dirty()
 		powernet.newavail += amount
+		LAZYINITLIST(powernet.material_next_sources)
+		powernet.material_next_sources[WEAKREF(src)] += amount
 		return TRUE
 	return FALSE
 
 /obj/machinery/power/proc/draw_power(amount)
 	if(powernet)
-		return powernet.draw_power(amount)
+		return powernet.draw_power(amount, src)
 	return 0
 
 /obj/machinery/power/proc/surplus()

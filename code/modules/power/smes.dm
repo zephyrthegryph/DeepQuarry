@@ -186,7 +186,7 @@ GLOBAL_LIST_EMPTY(smeses)
 		inputting = 1
 	// else inputting = 0, as set in process()
 
-	var/inputted = term.powernet.draw_power(min(to_input, input_level - input_available))
+	var/inputted = term.powernet.draw_power(min(to_input, input_level - input_available), term)
 	add_charge(inputted)
 	input_available += inputted
 
@@ -324,7 +324,7 @@ GLOBAL_LIST_EMPTY(smeses)
 			continue
 		if((amount - drained) <= 0)
 			return 0
-		drained += term.powernet.draw_power(amount - drained)
+		drained += term.powernet.draw_power(amount - drained, term)
 	return drained
 
 

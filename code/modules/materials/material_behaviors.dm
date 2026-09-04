@@ -30,7 +30,10 @@
 	// Geometry-specific consumers can override thickness; ordinary fabricated
 	// items use a five-millimeter representative path through their material.
 	I.rad_insulation = material_radiation_transmission(5)
-	if(luminescence > 0 || radioactivity > 0 || toxicity > 0)
+	var/datum/component/material_behaviors/behavior = I.GetComponent(/datum/component/material_behaviors)
+	if(behavior)
+		behavior.configure(luminescence, radioactivity, toxicity, icon_colour)
+	else if(luminescence > 0 || radioactivity > 0 || toxicity > 0)
 		I.AddComponent(/datum/component/material_behaviors, luminescence, radioactivity, toxicity, icon_colour)
 	dq_apply_material_responses(I)
 
@@ -49,6 +52,10 @@
 	. = ..()
 	if(!isitem(parent))
 		return COMPONENT_INCOMPATIBLE
+	configure(_lum, _rad, _tox, colour)
+
+/datum/component/material_behaviors/proc/configure(_lum, _rad, _tox, colour)
+	var/old_luminescence = luminescence
 	luminescence = _lum
 	radioactivity = _rad
 	toxicity = _tox
@@ -57,9 +64,14 @@
 		var/range = clamp(luminescence / 20, 0.5, 4)
 		var/power = clamp(luminescence / 30, 0.3, 2)
 		I.set_light(range, power, colour)
-	if(radioactivity > 0 || toxicity > 0)
+	else if(old_luminescence > 0)
+		I.set_light(0)
+	if((radioactivity > 0 || toxicity > 0) && !processing)
 		START_PROCESSING(SSobj, src)
 		processing = TRUE
+	else if(radioactivity <= 0 && toxicity <= 0 && processing)
+		STOP_PROCESSING(SSobj, src)
+		processing = FALSE
 
 /datum/component/material_behaviors/Destroy(force)
 	if(processing)

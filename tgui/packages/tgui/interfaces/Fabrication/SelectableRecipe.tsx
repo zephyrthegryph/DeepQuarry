@@ -39,76 +39,31 @@ const initialChoice = (slot: MaterialSlot, choices: MaterialChoice[]) => {
   return slot.optional ? '' : (choices[0]?.id ?? '');
 };
 
-const roleScore = (material: MaterialChoice, role: string) => {
+// Reference properties belong to the selected *part*, not a weighted average
+// of unrelated casing, liner, and conductor materials.
+const partProperties = (m: MaterialChoice, role: string) => {
   switch (role) {
     case 'conductor':
     case 'contacts':
-      return material.conductivity * 2 + material.corrosionResistance;
+    case 'actuator':
+      return `Resistivity ${m.resistivity ?? '?'} · ${m.criticalTemperature ? `Superconducts below ${m.criticalTemperature} K, up to ${m.criticalCurrentDensity} A/mm²` : `Conductivity ${m.conductivity}`}`;
+    case 'thermal buffer':
+      return `Heat capacity ${m.specificHeat ?? '?'} J/(kg·K) · ${m.phaseCapacity ? `${m.phaseCapacity} J phase storage at ${m.phaseTemperature} K` : 'No phase storage'}`;
     case 'insulation':
     case 'grip':
     case 'substrate':
-      return (
-        material.thermalInsulation * 1.5 +
-        material.integrity * 0.3 -
-        material.conductivity
-      );
-    case 'working surface':
-    case 'barrel':
-      return (
-        material.hardness +
-        material.heatResistance +
-        material.toughness * 0.5 -
-        material.brittleness
-      );
-    case 'thermal buffer':
-      return material.heatResistance + material.thermalInsulation * 0.25;
+    case 'dielectric':
+      return `Thermal isolation ${m.thermalInsulation} · Dielectric strength ${m.dielectricStrength ?? '?'} · Melt ${m.meltingPoint ?? '?'} K`;
     case 'liner':
     case 'jacket':
-      return material.corrosionResistance + material.heatResistance * 0.5;
+      return `Corrosion resistance ${m.corrosionResistance} · Melt ${m.meltingPoint ?? '?'} K`;
+    case 'working surface':
+    case 'barrel':
+    case 'bearings':
+      return `Hardness ${m.hardness} · Toughness ${m.toughness} · Melt ${m.meltingPoint ?? '?'} K`;
     default:
-      return (
-        material.integrity +
-        material.toughness -
-        material.brittleness * 0.5 -
-        material.density * 0.05
-      );
+      return `Strength ${m.integrity} · Density ${m.density} · Melt ${m.meltingPoint ?? '?'} K`;
   }
-};
-
-const performance = (
-  slots: MaterialSlot[],
-  selected: Record<string, string>,
-  choices: MaterialChoice[],
-) => {
-  let total = 0;
-  const values = {
-    integrity: 0,
-    mass: 0,
-    conductivity: 0,
-    heat: 0,
-    insulation: 0,
-    corrosion: 0,
-    pressure: 0,
-  };
-  for (const slot of slots) {
-    const material = choices.find(
-      (choice) => choice.id === selected[slot.role],
-    );
-    if (!material) continue;
-    total += slot.amount;
-    values.integrity += material.integrity * slot.amount;
-    values.mass += material.density * slot.amount;
-    values.conductivity += material.conductivity * slot.amount;
-    values.heat += material.heatResistance * slot.amount;
-    values.insulation += material.thermalInsulation * slot.amount;
-    values.corrosion += material.corrosionResistance * slot.amount;
-    values.pressure += material.pressureLimit * slot.amount;
-  }
-  if (total > 0) {
-    for (const key of Object.keys(values) as (keyof typeof values)[])
-      values[key] = Math.round(values[key] / total);
-  }
-  return values;
 };
 
 export const ConfigurableRecipeRow = (props: {
@@ -190,30 +145,13 @@ export const ProductConfigurator = (props: Props) => {
         )
       : 0;
   const effectiveMaximum = single ? Math.min(maxQuantity, 1) : maxQuantity;
-  const metrics = performance(slots, selected, materialChoices);
-  const baseline = performance(slots, defaults, materialChoices);
   const candidates = activeSlot
     ? [...materialChoices]
         .filter((material) =>
           material.label.toLowerCase().includes(search.toLowerCase()),
         )
-        .sort(
-          (left, right) =>
-            roleScore(right, activeSlot.role) -
-            roleScore(left, activeSlot.role),
-        )
+        .sort((left, right) => left.label.localeCompare(right.label))
     : [];
-  const metric = (label: string, value: number, standard: number) => (
-    <LabeledList.Item label={label}>
-      {value}
-      {custom && value !== standard && (
-        <Box inline ml={1} color={value > standard ? 'good' : 'bad'}>
-          {value > standard ? '+' : ''}
-          {value - standard}
-        </Box>
-      )}
-    </LabeledList.Item>
-  );
 
   return (
     <Section fill scrollable title={design.name}>
@@ -314,16 +252,12 @@ export const ProductConfigurator = (props: Props) => {
             </Button>
           )}
           <Stack vertical>
-            {candidates.map((material, index) => {
-              const score = roleScore(material, activeSlot.role);
+            {candidates.map((material) => {
               return (
                 <Stack.Item key={material.id}>
                   <Button
                     fluid
                     selected={selected[activeSlot.role] === material.id}
-                    color={
-                      score < 20 ? 'bad' : index === 0 ? 'good' : undefined
-                    }
                     onClick={() =>
                       setRequested((previous) => ({
                         ...previous,
@@ -346,10 +280,13 @@ export const ProductConfigurator = (props: Props) => {
                       <Stack.Item color="label">
                         {material.sheets} sheets
                       </Stack.Item>
-                      {index === 0 && (
-                        <Stack.Item color="good">Best fit</Stack.Item>
+                      {material.id === activeSlot.defaultMaterial && (
+                        <Stack.Item color="label">Standard</Stack.Item>
                       )}
                     </Stack>
+                    <Box color="label" mt={0.5}>
+                      {partProperties(material, activeSlot.role)}
+                    </Box>
                   </Button>
                 </Stack.Item>
               );
@@ -357,28 +294,29 @@ export const ProductConfigurator = (props: Props) => {
           </Stack>
         </Section>
       )}
-      <Section title="Predicted performance">
+      <Section title="Component operating properties">
         <LabeledList>
-          {metric(
-            'Structural integrity',
-            metrics.integrity,
-            baseline.integrity,
-          )}
-          {metric('Relative mass', metrics.mass, baseline.mass)}
-          {metric(
-            'Electrical conductivity',
-            metrics.conductivity,
-            baseline.conductivity,
-          )}
-          {metric('Heat tolerance', metrics.heat, baseline.heat)}
-          {metric('Thermal isolation', metrics.insulation, baseline.insulation)}
-          {metric(
-            'Corrosion resistance',
-            metrics.corrosion,
-            baseline.corrosion,
-          )}
-          {metric('Pressure capability', metrics.pressure, baseline.pressure)}
+          {slots.map((slot) => {
+            const material = materialChoices.find(
+              (choice) => choice.id === selected[slot.role],
+            );
+            return (
+              material && (
+                <LabeledList.Item
+                  key={slot.role}
+                  label={`${slot.label} — ${material.label}`}
+                >
+                  {partProperties(material, slot.role)}
+                </LabeledList.Item>
+              )
+            );
+          })}
         </LabeledList>
+        <Box color="label" mt={1}>
+          Reference properties at room temperature. Geometry, operating
+          temperature, current, and wear determine the finished assembly's
+          limits; measure it under load with a multitool.
+        </Box>
       </Section>
       {!complete && (
         <NoticeBox danger>Choose every required component.</NoticeBox>

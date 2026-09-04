@@ -326,7 +326,8 @@
 	return material_id ? get_material_by_name(material_id) : null
 
 /obj/proc/primary_construction_material() as /datum/material
-	for(var/role in list(MATERIAL_ROLE_WORKING, MATERIAL_ROLE_CONDUCTOR, MATERIAL_ROLE_STRUCTURE, MATERIAL_ROLE_FRAME, MATERIAL_ROLE_EMITTER, MATERIAL_ROLE_FABRIC, MATERIAL_ROLE_BODY, MATERIAL_ROLE_JACKET))
+	var/static/list/primary_roles = list(MATERIAL_ROLE_WORKING, MATERIAL_ROLE_CONDUCTOR, MATERIAL_ROLE_STRUCTURE, MATERIAL_ROLE_FRAME, MATERIAL_ROLE_EMITTER, MATERIAL_ROLE_FABRIC, MATERIAL_ROLE_BODY, MATERIAL_ROLE_JACKET)
+	for(var/role in primary_roles)
 		var/datum/material/material = material_for_role(role)
 		if(material)
 			return material
@@ -344,6 +345,7 @@
 	if(isitem(src))
 		var/obj/item/item = src
 		item.apply_material_role_effects(application_profile)
+	material_service_changed()
 	return TRUE
 
 /// Preserve the complete functional assembly when an item becomes an installed
@@ -354,6 +356,16 @@
 		return FALSE
 	construction_materials = source.construction_materials?.Copy()
 	construction_material_amounts = source.construction_material_amounts?.Copy()
+	material_environment_liner_integrity = source.material_environment_liner_integrity
+	material_environment_exterior_integrity = source.material_environment_exterior_integrity
+	material_environment_fatigue = source.material_environment_fatigue
+	material_environment_leaking = source.material_environment_leaking
+	if(!istype(source, /obj/item/stack) && source.material_assembly_id)
+		material_assembly_id = source.material_assembly_id
+	material_service_changed()
+	if(source.material_service && material_service)
+		material_service.temperature = source.material_service.temperature
+		material_service.buffer_energy = source.material_service.buffer_energy
 	return length(construction_materials)
 
 /// Give legacy/map-built infrastructure the same canonical assembly used by
@@ -383,7 +395,8 @@
 	var/conductance = thermal ? thermal.material_thermal_conductance(area_m2, thickness_m, temperature) : null
 	var/datum/material/insulator = material_for_role(MATERIAL_ROLE_INSULATION)
 	if(!isnull(conductance) && insulator)
-		conductance *= clamp(1 - insulator.thermal_insulation / 110, 0.02, 1)
+		var/insulation_conductance = insulator.material_thermal_conductance(area_m2, thickness_m, temperature)
+		conductance = 1 / (1 / conductance + 1 / insulation_conductance)
 	return conductance
 
 /obj/proc/construction_pressure_limit(radius_mm, wall_thickness_mm, temperature)

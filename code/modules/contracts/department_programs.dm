@@ -280,7 +280,6 @@
 	contract.description = "Produce [profile["purpose"]] and submit a qualified batch for Chimera's materials trial. Composition and treatment are at Research's discretion."
 	add_social_role(contract, "metallurgist", "Process metallurgist", "Selects feedstock and develops a reproducible treatment route.", list(DEPARTMENT_RESEARCH), 1, 4)
 	add_social_role(contract, "evaluator", "Operational evaluator", "Examines the physical workpiece and proposes a station use for the alloy.", list(DEPARTMENT_ENGINEERING, DEPARTMENT_CARGO, DEPARTMENT_SECURITY), 1, 4)
-	add_program_count(contract, CONTRACT_EVENT_MATERIAL_PROCESSED, 4, "Controlled processing", "Complete four distinct physical processing stages on station material.", null, CONTRACT_EVIDENCE_SCOPE_DEPARTMENT, "process")
 	var/list/checks = profile["checks"]
 	checks += list(list("key" = "composition_count", "comparator" = CONTRACT_EVIDENCE_COMPARE_AT_LEAST, "expected" = 2))
 	add_program_count(contract, CONTRACT_EVENT_MATERIAL_CERTIFIED, 1, "Application qualification", "Finish a physical batch meeting every listed performance requirement.", null, CONTRACT_EVIDENCE_SCOPE_DEPARTMENT, "fingerprint", null, checks)

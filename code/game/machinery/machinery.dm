@@ -128,6 +128,8 @@ Class Procs:
 
 /obj/machinery/Initialize(mapload, d=0)
 	. = ..()
+	if(!istype(src, /obj/machinery/atmospherics) && !istype(src, /obj/machinery/portable_atmospherics) && !istype(src, /obj/machinery/power/emitter))
+		ensure_material_construction(MATERIAL_APPLICATION_MACHINE_PART, 5 * SHEET_MATERIAL_AMOUNT)
 	if(isnum(d))
 		set_dir(d)
 	SSmachines.all_machines += src

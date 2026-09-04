@@ -313,6 +313,14 @@
 			"thermalInsulation" = round(mat.thermal_insulation),
 			"corrosionResistance" = round(mat.corrosion_resistance),
 			"pressureLimit" = round(mat.material_pressure_limit(MATERIAL_PIPE_REFERENCE_RADIUS, MATERIAL_PIPE_REFERENCE_THICKNESS, T20C) / ONE_ATMOSPHERE, 0.1),
+			"resistivity" = mat.electrical_resistivity,
+			"criticalTemperature" = mat.critical_temperature,
+			"criticalCurrentDensity" = mat.critical_current_density,
+			"specificHeat" = mat.specific_heat,
+			"phaseCapacity" = mat.phase_change_capacity,
+			"phaseTemperature" = mat.phase_change_temperature,
+			"dielectricStrength" = mat.dielectric_strength,
+			"meltingPoint" = mat.melting_point,
 		)
 
 /obj/machinery/rnd/production/tgui_act(action, list/params, datum/tgui/ui)

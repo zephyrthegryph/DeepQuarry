@@ -1,0 +1,7 @@
+author: "Codex"
+delete-after: true
+changes:
+  - rscadd: "Added physical assembly diagnostics, replacement parts, and recorded power, gas-transfer, and emitter qualification trials."
+  - balance: "Material-dependent cells, cable paths, pumps, and emitters now account for delivered work, waste heat, and operating limits."
+  - bugfix: "Material exposure continues while equipment is switched off; rebuilding no longer restores charge or permanent fatigue."
+  - qol: "Fabrication shows component-specific operating properties; multitool measurements print on ordinary paper at photocopiers."

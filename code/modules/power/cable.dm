@@ -60,9 +60,7 @@ GLOBAL_LIST_INIT(possible_cable_coil_colours, list(
 	var/obj/machinery/power/breakerbox/breaker_box
 	/// Optional registered composite. Ordinary mapped cable retains baseline behavior.
 	var/engineered_material_id
-	/// The cached conductor temperature is owned by the powernet's selected hotspot.
-	var/material_temperature = T20C
-	var/material_buffer_energy = 0
+	var/material_current = 0
 
 /obj/structure/cable/proc/engineered_material() as /datum/material
 	return material_for_role(MATERIAL_ROLE_CONDUCTOR) || (engineered_material_id ? get_material_by_name(engineered_material_id) : null)
@@ -92,7 +90,7 @@ GLOBAL_LIST_INIT(possible_cable_coil_colours, list(
 	if(!powernet)
 		return 0
 
-	return powernet.draw_power(amount)
+	return powernet.draw_power(amount, src)
 
 /obj/structure/cable/yellow
 	color = COLOR_YELLOW
@@ -151,7 +149,7 @@ GLOBAL_LIST_INIT(possible_cable_coil_colours, list(
 		. += span_warning("[powernet?.avail > 0 ? "[DisplayPower(powernet.avail)] in power network." : "The cable is not powered."]")
 	if(engineered_material_id)
 		var/datum/material/material = engineered_material()
-		. += span_notice("Composite conductor: [material?.display_name || engineered_material_id], currently [round(material_temperature, 0.1)] K.")
+		. += span_notice("Conductor: [material?.display_name || engineered_material_id], currently [round(material_service?.temperature || T20C, 0.1)] K; [round(material_current, 0.1)] A.")
 		if(material?.critical_temperature)
 			. += span_notice("Superconducting envelope: below [round(material.critical_temperature, 0.1)] K and [round(material.critical_current_density)] relative current density.")
 
@@ -299,12 +297,12 @@ GLOBAL_LIST_INIT(possible_cable_coil_colours, list(
 			qdel(src)
 		if(2.0)
 			if (prob(50))
-				new/obj/item/stack/cable_coil(src.loc, src.d1 ? 2 : 1, color, engineered_material_id)
+				recover_coil(src.loc, src.d1 ? 2 : 1)
 				qdel(src)
 
 		if(3.0)
 			if (prob(25))
-				new/obj/item/stack/cable_coil(src.loc, src.d1 ? 2 : 1, color, engineered_material_id)
+				recover_coil(src.loc, src.d1 ? 2 : 1)
 				qdel(src)
 	return
 
@@ -809,7 +807,7 @@ GLOBAL_LIST_INIT(possible_cable_coil_colours, list(
 	use(1)
 	if (C.shock(user, 50))
 		if (prob(50)) //fail
-			new/obj/item/stack/cable_coil(C.loc, 1, C.color, C.engineered_material_id)
+			C.recover_coil(C.loc, 1)
 			qdel(C)
 
 // called when cable_coil is click on an installed obj/cable
@@ -877,6 +875,7 @@ GLOBAL_LIST_INIT(possible_cable_coil_colours, list(
 
 		C.cableColor(color)
 		C.set_engineered_material(engineered_material_id)
+		C.copy_material_construction_from(src)
 
 		C.d1 = nd1
 		C.d2 = nd2
@@ -899,7 +898,7 @@ GLOBAL_LIST_INIT(possible_cable_coil_colours, list(
 
 		if (C.shock(user, 50))
 			if (prob(50)) //fail
-				new/obj/item/stack/cable_coil(C.loc, 2, C.color, C.engineered_material_id)
+				C.recover_coil(C.loc, 2)
 				qdel(C)
 				return
 

@@ -73,6 +73,8 @@
 #define CONTRACT_AUDIT_OFFER "offer"
 #define CONTRACT_AUDIT_GRACE "grace"
 #define CONTRACT_EVIDENCE_DOCUMENT "document"
+#define CONTRACT_EVIDENCE_ENGINEERING "engineering_measurement"
+#define CONTRACT_FAX_ENGINEERING "NanoTrasen Engineering Assurance"
 #define CONTRACT_EVIDENCE_MEDICAL_SCAN "medical_scan"
 #define CONTRACT_EVIDENCE_RETENTION 30 MINUTES
 

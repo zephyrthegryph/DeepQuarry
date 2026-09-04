@@ -33,40 +33,24 @@
 
 /obj/machinery/portable_atmospherics/canister/proc/effective_maximum_pressure()
 	var/internal_temperature = air_contents?.return_temperature() || T20C
-	var/selected_limit = construction_pressure_limit(MATERIAL_CANISTER_REFERENCE_RADIUS, MATERIAL_CANISTER_REFERENCE_THICKNESS, internal_temperature)
-	var/datum/material/steel = get_material_by_name(MAT_STEEL)
-	var/reference_limit = steel?.material_pressure_limit(MATERIAL_CANISTER_REFERENCE_RADIUS, MATERIAL_CANISTER_REFERENCE_THICKNESS, internal_temperature)
-	if(isnull(selected_limit) || !reference_limit)
-		return maximum_pressure
-	return maximum_pressure * selected_limit / reference_limit
+	return material_environment_pressure_limit(maximum_pressure, MATERIAL_CANISTER_REFERENCE_RADIUS, MATERIAL_CANISTER_REFERENCE_THICKNESS, internal_temperature)
 
 /// Returns TRUE while continued chemical exposure needs another sample.
 /obj/machinery/portable_atmospherics/canister/proc/process_material_vessel()
-	var/pressure = air_contents.return_pressure()
-	var/pressure_limit = effective_maximum_pressure()
-	if(pressure > pressure_limit)
-		var/overstress = pressure / max(pressure_limit, ONE_ATMOSPHERE)
-		visible_message(span_danger("[src]'s shell groans under [round(pressure / ONE_ATMOSPHERE, 0.1)] atmospheres!"))
-		take_damage(max(5, round(20 * overstress)), BRUTE)
-		if(overstress >= 1.25 && !destroyed)
-			atom_destruction(BOMB)
-		return TRUE
-	var/datum/material/liner = material_for_role(MATERIAL_ROLE_LINER)
-	if(!liner)
-		return FALSE
-	var/now = world.time
-	var/elapsed_seconds = material_last_exposure ? clamp((now - material_last_exposure) / 10, 0, 30) : 0
-	material_last_exposure = now
-	var/total_moles = max(air_contents.total_moles(), 0.001)
-	var/phoron_fraction = air_contents.get_moles(/datum/gas/plasma) / total_moles
-	if(phoron_fraction <= 0.01)
-		return FALSE
-	if(elapsed_seconds > 0)
-		material_liner_integrity = max(0, material_liner_integrity - liner.material_corrosion_rate(REAGENT_ID_PHORON, air_contents.return_temperature()) * phoron_fraction * elapsed_seconds)
-		if(material_liner_integrity <= 0)
-			visible_message(span_danger("[src]'s corroded inner liner perforates!"))
-			take_damage(max_integrity, BURN)
-	return TRUE
+	material_liner_integrity = material_environment_liner_integrity
+	return FALSE // Independent material service owns exposure and leak updates.
+
+/obj/machinery/portable_atmospherics/canister/material_environment_begin_leak()
+	if(!material_environment_leaking)
+		visible_message(span_warning("Gas begins hissing through [src]'s compromised vessel wall."))
+	return ..()
+
+/obj/machinery/portable_atmospherics/canister/material_environment_owns_leak()
+	return FALSE
+
+/obj/machinery/portable_atmospherics/canister/material_environment_rupture()
+	if(!destroyed)
+		atom_destruction(BOMB)
 
 /obj/machinery/portable_atmospherics/canister/drain_power()
 	return -1
@@ -225,9 +209,10 @@ update_flag
 		add_overlay("can-o3")
 	return
 
-/obj/machinery/portable_atmospherics/canister/fire_act(datum/gas_mixture/air, exposed_temperature, exposed_volume)
-	if(exposed_temperature > temperature_resistance)
-		take_damage(5, BURN)
+/obj/machinery/portable_atmospherics/canister/fire_act(exposed_temperature, exposed_volume)
+	var/datum/material/exterior = material_for_role(MATERIAL_ROLE_STRUCTURE) || primary_construction_material()
+	if(exterior && exposed_temperature >= exterior.melting_point)
+		take_damage(max(1, round((exposed_temperature - exterior.melting_point) / 100)), BURN, FIRE)
 
 // At zero integrity the canister ruptures: dumps its gas into the environment,
 // frees any connected port, and becomes a non-dense wreck (it is NOT qdel'd).
@@ -343,6 +328,7 @@ update_flag
 		stock.use(2)
 		construction_materials[MATERIAL_ROLE_LINER] = liner.name
 		material_liner_integrity = 100
+		material_environment_liner_integrity = 100
 		name = "[liner.display_name]-lined [initial(name)]"
 		color = liner.icon_colour
 		to_chat(user, span_notice("You install a [liner.display_name] pressure liner in [src]."))

@@ -159,7 +159,7 @@ GLOBAL_LIST_EMPTY(apcs)
 	// Draw from the grid first (like draining from a cable).
 	if(terminal && terminal.powernet)
 		terminal.powernet.trigger_warning()
-		drained_energy += terminal.powernet.draw_power(amount)
+		drained_energy += terminal.powernet.draw_power(amount, terminal)
 
 	// Grid rarely gives the full amount; draw the shortfall from the cell.
 	if((drained_energy < amount) && cell)
@@ -990,7 +990,7 @@ GLOBAL_LIST_EMPTY(apcs)
 
 /obj/machinery/power/apc/draw_power(amount)
 	if(terminal && terminal.powernet)
-		return terminal.powernet.draw_power(amount)
+		return terminal.powernet.draw_power(amount, terminal)
 	return 0
 
 /obj/machinery/power/apc/avail()

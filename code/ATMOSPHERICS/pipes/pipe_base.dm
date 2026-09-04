@@ -77,20 +77,30 @@
 	var/datum/gas_mixture/environment = loc.return_air()
 	var/pressure_difference = pressure - (environment?.return_pressure() || 0)
 	var/internal_temperature = parent?.air?.return_temperature() || T20C
-	var/selected_limit = construction_pressure_limit(MATERIAL_PIPE_REFERENCE_RADIUS, MATERIAL_PIPE_REFERENCE_THICKNESS, internal_temperature)
-	var/datum/material/steel = get_material_by_name(MAT_STEEL)
-	var/reference_limit = steel?.material_pressure_limit(MATERIAL_PIPE_REFERENCE_RADIUS, MATERIAL_PIPE_REFERENCE_THICKNESS, internal_temperature)
-	var/effective_maximum = (!isnull(selected_limit) && reference_limit) ? maximum_pressure * selected_limit / reference_limit : maximum_pressure
-	var/effective_fatigue = min(fatigue_pressure, effective_maximum * 0.78)
+	var/effective_maximum = material_environment_pressure_limit(maximum_pressure, MATERIAL_PIPE_REFERENCE_RADIUS, MATERIAL_PIPE_REFERENCE_THICKNESS, internal_temperature)
 	if(pressure_difference > effective_maximum)
 		burst_from_pressure()
 		return FALSE
-	if(pressure_difference > effective_fatigue && !damaged_leak && prob(5))
+	return TRUE
+
+/obj/machinery/atmospherics/pipe/material_environment_repaired()
+	damaged_leak = FALSE
+	set_leaking(FALSE)
+	return ..()
+
+/obj/machinery/atmospherics/pipe/material_environment_begin_leak()
+	..()
+	if(!damaged_leak)
 		damaged_leak = TRUE
 		set_leaking(TRUE)
 		visible_message(span_warning("Gas begins hissing from a fatigue crack in \the [src]."))
 		playsound(src, 'sound/effects/spray2.ogg', 35, TRUE)
+
+/obj/machinery/atmospherics/pipe/material_environment_owns_leak()
 	return TRUE
+
+/obj/machinery/atmospherics/pipe/material_environment_rupture()
+	burst_from_pressure()
 
 /obj/machinery/atmospherics/pipe/proc/burst_from_pressure()
 	visible_message(span_danger("\The [src] bursts!"))

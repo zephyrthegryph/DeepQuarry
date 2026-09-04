@@ -45,28 +45,28 @@
 
 /// Returns TRUE only while a physical exposure requires another timed sample.
 /obj/machinery/atmospherics/pipe/proc/process_engineered_material_exposure(datum/gas_mixture/mixture)
-	var/datum/material/material = material_for_role(MATERIAL_ROLE_LINER) || engineered_material()
-	if(!material || !mixture)
+	if(!mixture)
 		return FALSE
 	var/now = world.time
 	var/elapsed_seconds = material_last_exposure ? clamp((now - material_last_exposure) / 10, 0, 30) : 0
 	material_last_exposure = now
+	material_service?.schedule(0)
+	var/active = FALSE
+	material_liner_integrity = material_environment_liner_integrity
+	if(QDELETED(src))
+		return FALSE
+	var/datum/material/material = material_for_role(MATERIAL_ROLE_LINER) || engineered_material()
 	var/total_moles = max(mixture.total_moles(), 0.001)
 	var/plasma_moles = mixture.get_moles(/datum/gas/plasma)
 	var/plasma_fraction = plasma_moles / total_moles
-	var/active = plasma_fraction > 0.01
-	if(active && elapsed_seconds > 0)
-		var/corrosion = material.material_corrosion_rate(REAGENT_ID_PHORON, mixture.return_temperature()) * plasma_fraction * elapsed_seconds
-		material_liner_integrity = max(0, material_liner_integrity - corrosion)
+	if(plasma_fraction > 0.01 && elapsed_seconds > 0 && material)
 		if(material.gas_sorption_capacity > material_sorbed_moles && plasma_moles > 0)
 			var/captured = min(plasma_moles, material.gas_sorption_capacity - material_sorbed_moles, elapsed_seconds * 0.1)
 			var/energy_before = mixture.thermal_energy()
 			mixture.adjust_moles(/datum/gas/plasma, -captured)
 			material_sorbed_moles += captured
 			material_sorbed_thermal_energy += max(0, energy_before - mixture.thermal_energy())
-		if(material_liner_integrity <= 0 && !leaking)
-			set_leaking(TRUE)
-			visible_message(span_warning("The breached liner inside [src] begins leaking through its structural shell."))
+			active = material_sorbed_moles < material.gas_sorption_capacity
 	return active
 
 /obj/machinery/atmospherics/pipe/simple/init_dir()

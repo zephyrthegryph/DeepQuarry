@@ -8,6 +8,8 @@
 	/// Effective physical values consumed by integrity, throwing, power and examination.
 	var/material_effective_density = 0
 	var/material_effective_electrical_resistance = 0
+	var/material_accuracy_delta = 0
+	var/material_recoil_delta = 0
 
 /obj/item/proc/apply_engineered_material(datum/material/material, application_profile)
 	if(!istype(material) || !application_profile)
@@ -27,7 +29,6 @@
 	engineered_material_profile = application_profile
 	matter = list()
 	var/total_amount = 0
-	var/weighted_integrity = 0
 	var/weighted_density = 0
 	var/weighted_dielectric = 0
 	for(var/role in construction_materials)
@@ -36,7 +37,6 @@
 		if(!part_material || part_amount <= 0)
 			continue
 		total_amount += part_amount
-		weighted_integrity += part_material.integrity * part_amount
 		weighted_density += part_material.density * part_amount
 		weighted_dielectric += part_material.dielectric_strength * part_amount
 		var/list/part_matter = part_material.get_matter()
@@ -52,12 +52,19 @@
 		siemens_coefficient = clamp(initial(siemens_coefficient) * (1.25 - material_effective_electrical_resistance / 125), 0.05, 2)
 	var/datum/material/structure = material_for_role(MATERIAL_ROLE_STRUCTURE) || material_for_role(MATERIAL_ROLE_FRAME) || material_for_role(MATERIAL_ROLE_BODY) || primary
 	if(max_integrity > 0 && total_amount > 0)
-		// Every fabricated part carries load. A weak spring, liner, contact, or
-		// fastener therefore has a real consequence instead of being cosmetic.
-		var/integrity_factor = clamp((weighted_integrity / total_amount) / 150, 0.2, 4)
+		var/condition = uses_integrity ? get_integrity() / max_integrity : 1
+		var/list/default_slots = default_material_slots(application_profile, SHEET_MATERIAL_AMOUNT)
+		var/reference_id = MAT_STEEL
+		for(var/role in list(MATERIAL_ROLE_STRUCTURE, MATERIAL_ROLE_FRAME, MATERIAL_ROLE_BODY))
+			var/list/spec = default_slots?[role]
+			if(spec)
+				reference_id = spec["default"]
+				break
+		var/datum/material/reference = get_material_by_name(reference_id)
+		var/integrity_factor = clamp(structure.integrity / max(reference.integrity, 1), 0.2, 4)
 		max_integrity = max(1, round(initial(max_integrity) * integrity_factor))
 		if(uses_integrity)
-			update_integrity(max_integrity)
+			update_integrity(max_integrity * condition)
 	primary.dq_apply_material_behaviors(src)
 	switch(application_profile)
 		if(MATERIAL_APPLICATION_TOOL)
@@ -81,9 +88,11 @@
 				var/datum/material/insulation = material_for_role(MATERIAL_ROLE_INSULATION)
 				var/datum/material/thermal = material_for_role(MATERIAL_ROLE_THERMAL) || conductor
 				var/datum/material/casing = material_for_role(MATERIAL_ROLE_STRUCTURE) || primary
-				var/capacity_factor = clamp(0.65 + electrode.conductivity / 140 + electrode.heat_resistance / 350, 0.75, 1.65)
+				var/datum/material/reference_electrode = get_material_by_name(MAT_COPPER)
+				var/reference_capacity = 0.65 + reference_electrode.conductivity / 140 + reference_electrode.heat_resistance / 350
+				var/capacity_factor = clamp((0.65 + electrode.conductivity / 140 + electrode.heat_resistance / 350) / reference_capacity, 0.5, 2)
 				cell.maxcharge = round(initial(cell.maxcharge) * capacity_factor)
-				cell.charge = cell.maxcharge
+				cell.charge = min(cell.charge, cell.maxcharge)
 				cell.material_emp_resistance = clamp(round((insulation?.dielectric_strength || 0) * 0.5 + conductor.magnetism * 0.2 + casing.heat_resistance * 0.2), 0, 90)
 				cell.robot_durability = clamp(round(casing.integrity / 2), 20, 125)
 				cell.material_discharge_limit = max(1, round(initial(cell.maxcharge) * clamp((conductor.conductivity + thermal.heat_resistance * 0.5 + thermal.conductivity * (1 - thermal.thermal_insulation / 125) * 0.5) / 150, 0.1, 2)))
@@ -108,8 +117,12 @@
 				var/datum/material/barrel = material_for_role(MATERIAL_ROLE_BARREL) || primary
 				var/datum/material/receiver = material_for_role(MATERIAL_ROLE_STRUCTURE) || primary
 				var/datum/material/grip = material_for_role(MATERIAL_ROLE_GRIP) || receiver
-				gun.accuracy += clamp(round((barrel.hardness + barrel.heat_resistance + barrel.fracture_toughness - barrel.brittleness) / 35) - 4, -8, 8)
-				gun.recoil = max(0, gun.recoil + clamp(round((receiver.brittleness - receiver.fracture_toughness - grip.elasticity * 0.5) / 35), -3, 3))
+				gun.accuracy -= material_accuracy_delta
+				gun.recoil -= material_recoil_delta
+				material_accuracy_delta = clamp(round((barrel.hardness + barrel.heat_resistance + barrel.fracture_toughness - barrel.brittleness) / 35) - 4, -8, 8)
+				material_recoil_delta = clamp(round((receiver.brittleness - receiver.fracture_toughness - grip.elasticity * 0.5) / 35), -3, 3)
+				gun.accuracy += material_accuracy_delta
+				gun.recoil = max(0, gun.recoil + material_recoil_delta)
 		if(MATERIAL_APPLICATION_PROJECTILE)
 			var/datum/material/projectile_material = material_for_role(MATERIAL_ROLE_WORKING) || primary
 			if(istype(src, /obj/item/ammo_magazine))
@@ -128,7 +141,9 @@
 				var/obj/item/gun/gun = src
 				var/datum/material/emitter = material_for_role(MATERIAL_ROLE_EMITTER) || primary
 				var/datum/material/optics = material_for_role(MATERIAL_ROLE_OPTICAL) || emitter
-				gun.accuracy += clamp(round((emitter.heat_resistance + optics.purity_equivalent() + optics.hardness - optics.brittleness) / 45) - 4, -8, 8)
+				gun.accuracy -= material_accuracy_delta
+				material_accuracy_delta = clamp(round((emitter.heat_resistance + optics.purity_equivalent() + optics.hardness - optics.brittleness) / 45) - 4, -8, 8)
+				gun.accuracy += material_accuracy_delta
 				if(istype(gun, /obj/item/gun/energy))
 					var/obj/item/gun/energy/energy_gun = gun
 					var/datum/material/conductor = material_for_role(MATERIAL_ROLE_CONDUCTOR) || primary

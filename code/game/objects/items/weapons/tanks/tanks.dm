@@ -59,6 +59,7 @@ GLOBAL_LIST_EMPTY(tank_gauge_cache)
 
 /obj/item/tank/Initialize(mapload)
 	. = ..()
+	ensure_material_construction(MATERIAL_APPLICATION_PRESSURE)
 
 	src.init_proxy()
 	src.air_contents = new /datum/gas_mixture()
@@ -77,6 +78,27 @@ GLOBAL_LIST_EMPTY(tank_gauge_cache)
 		TTV.remove_tank(src)
 
 	. = ..()
+
+/obj/item/tank/material_environment_begin_leak()
+	leaking = TRUE
+	START_PROCESSING(SSobj, src)
+	return ..()
+
+/obj/item/tank/material_environment_repaired()
+	leaking = FALSE
+	integrity = initial(integrity)
+	return ..()
+
+/obj/item/tank/material_environment_owns_leak()
+	return TRUE
+
+/obj/item/tank/material_environment_rupture()
+	// The established tank rupture path supplies fragments, gas release, and
+	// explosion strength. Drive it by state instead of bypassing it with qdel.
+	integrity = 0
+	leaking = TRUE
+	START_PROCESSING(SSobj, src)
+	check_status()
 
 /obj/item/tank/equipped() // Note that even grabbing into a hand calls this, so it should be fine as a 'has a player touched this'
 	. = ..()
@@ -401,9 +423,21 @@ GLOBAL_LIST_EMPTY(tank_gauge_cache)
 		return 0
 
 	var/pressure = air_contents.return_pressure()
+	var/datum/gas_mixture/environment = loc?.return_air()
+	if(QDELETED(src))
+		return 0
+	var/material_rupture_pressure = material_environment_pressure_limit(TANK_RUPTURE_PRESSURE, MATERIAL_TANK_REFERENCE_RADIUS, MATERIAL_TANK_REFERENCE_THICKNESS, air_contents.return_temperature())
+	var/pressure_scale = material_rupture_pressure / TANK_RUPTURE_PRESSURE
+	var/material_leak_pressure = TANK_LEAK_PRESSURE * pressure_scale
+	var/material_fragment_pressure = TANK_FRAGMENT_PRESSURE * pressure_scale
+	var/material_fragment_scale = TANK_FRAGMENT_SCALE * pressure_scale
+	var/datum/material/insulation = material_for_role(MATERIAL_ROLE_INSULATION)
+	var/datum/material/plastic = get_material_by_name(MAT_PLASTIC)
+	var/material_failure_temperature = T0C + failure_temp
+	if(insulation && plastic?.melting_point)
+		material_failure_temperature = T0C + failure_temp * insulation.melting_point / plastic.melting_point
 
-
-	if(pressure > TANK_FRAGMENT_PRESSURE)
+	if(pressure > material_fragment_pressure)
 		if(integrity <= 7)
 			if(!istype(src.loc,/obj/item/transfer_valve))
 				message_admins("Explosive tank rupture! last key to touch the tank was [forensic_data?.get_lastprint()].")
@@ -415,7 +449,7 @@ GLOBAL_LIST_EMPTY(tank_gauge_cache)
 			air_contents.react()
 
 			pressure = air_contents.return_pressure()
-			var/strength = ((pressure-TANK_FRAGMENT_PRESSURE)/TANK_FRAGMENT_SCALE)
+			var/strength = ((pressure-material_fragment_pressure)/material_fragment_scale)
 
 			var/mult = ((src.air_contents.return_volume()/140)**(1/2)) * (air_contents.total_moles()**(2/3))/((29*0.64) **(2/3)) //tanks appear to be experiencing a reduction on scale of about 0.64 total moles
 			//tanks appear to be experiencing a reduction on scale of about 0.64 total moles
@@ -453,7 +487,7 @@ GLOBAL_LIST_EMPTY(tank_gauge_cache)
 			integrity -=7
 
 
-	else if(pressure > TANK_RUPTURE_PRESSURE)
+	else if(pressure > material_rupture_pressure)
 		#ifdef FIREDBG
 		log_world(span_warning("[x],[y] tank is rupturing: [pressure] kPa, integrity [integrity]"))
 		#endif
@@ -470,7 +504,7 @@ GLOBAL_LIST_EMPTY(tank_gauge_cache)
 			T.hotspot_expose(air_contents.return_temperature(), 70, 1)
 
 
-			var/strength = 1+((pressure-TANK_LEAK_PRESSURE)/TANK_FRAGMENT_SCALE)
+			var/strength = 1+((pressure-material_leak_pressure)/material_fragment_scale)
 
 			var/mult = (air_contents.total_moles()**2/3)/((29*0.64) **2/3) //tanks appear to be experiencing a reduction on scale of about 0.64 total moles
 
@@ -492,13 +526,13 @@ GLOBAL_LIST_EMPTY(tank_gauge_cache)
 				integrity-= 5
 
 
-	else if(pressure > TANK_LEAK_PRESSURE || air_contents.return_temperature() - T0C > failure_temp)
+	else if(leaking || pressure > material_leak_pressure || air_contents.return_temperature() > material_failure_temperature)
 
 		if((integrity <= 17 || src.leaking) && !valve_welded)
 			var/turf/simulated/T = get_turf(src)
 			if(!T)
 				return
-			var/datum/gas_mixture/environment = loc.return_air()
+			environment = loc.return_air()
 			var/env_pressure = environment.return_pressure()
 			var/tank_pressure = src.air_contents.return_pressure()
 

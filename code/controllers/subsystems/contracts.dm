@@ -97,6 +97,7 @@ SUBSYSTEM_DEF(contracts)
 	reconcile_offer_board("Initial randomized contract rotation")
 	GLOB.alldepartments |= list("VeyMed Clinical Development", "VeyMed Clinical Risk", "Worker's Union Advocacy", "Commercial Acquisitions")
 	GLOB.alldepartments |= CONTRACT_FAX_CASE_REGISTRY
+	GLOB.alldepartments |= CONTRACT_FAX_ENGINEERING
 	return SS_INIT_SUCCESS
 
 /datum/controller/subsystem/contracts/proc/next_infrastructure_revision(atom/source)

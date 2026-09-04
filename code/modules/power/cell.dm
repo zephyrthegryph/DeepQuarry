@@ -28,6 +28,8 @@
 	var/robot_durability = 50
 	/// Material-derived resistance to EMP charge loss, as a percentage.
 	var/material_emp_resistance = 0
+	var/material_discharge_credit
+	var/material_discharge_updated
 
 	matter = list(MAT_STEEL = 700, MAT_GLASS = 50)
 
@@ -40,6 +42,7 @@
 
 /obj/item/cell/Initialize(mapload)
 	. = ..()
+	ensure_material_construction(MATERIAL_APPLICATION_CELL, 2 * SHEET_MATERIAL_AMOUNT)
 	AddElement(/datum/element/electrovoreable)
 	c_uid = cell_uid++
 	update_icon()
@@ -118,7 +121,28 @@
 
 // checks if the power cell is able to provide the specified amount of charge
 /obj/item/cell/proc/check_charge(amount)
-	return (charge >= amount)
+	refresh_material_discharge()
+	return amount >= 0 && charge >= amount / material_delivery_efficiency(amount) && material_discharge_credit >= amount
+
+/obj/item/cell/proc/refresh_material_discharge()
+	if(isnull(material_discharge_credit))
+		material_discharge_credit = material_discharge_limit
+	else
+		material_discharge_credit = min(material_discharge_limit, material_discharge_credit + max(world.time - material_discharge_updated, 0) / 10 * material_discharge_limit)
+	material_discharge_updated = world.time
+
+/obj/item/cell/proc/material_delivery_efficiency(amount)
+	var/temperature = material_service?.temperature || T20C
+	var/current = max(amount / CELLRATE, 0) / MATERIAL_SERVICE_NOMINAL_VOLTAGE
+	var/resistance = construction_electrical_resistance(0.1, MATERIAL_CABLE_REFERENCE_AREA, temperature, current / MATERIAL_CABLE_REFERENCE_AREA) || 0
+	return 1 / (1 + resistance * current / MATERIAL_SERVICE_NOMINAL_VOLTAGE)
+
+/// A conservative preflight budget for consumers that perform physical work
+/// before debiting the cell. Repeated callers share the same discharge credit.
+/obj/item/cell/proc/material_available_output(requested)
+	refresh_material_discharge()
+	requested = max(0, min(requested, material_discharge_credit))
+	return min(requested, charge * material_delivery_efficiency(requested))
 
 // Returns how much charge is missing from the cell, useful to make sure not overdraw from the grid when recharging.
 /obj/item/cell/proc/amount_missing()
@@ -129,10 +153,33 @@
 	if(rigged && amount > 0)
 		explode()
 		return 0
+	material_service?.advance()
+	if(QDELETED(src))
+		return 0
 	amount = material_cell_use_cost(amount)
-	amount = min(amount, material_discharge_limit)
-	var/used = min(charge, amount)
-	charge -= used
+	refresh_material_discharge()
+	amount = clamp(amount, 0, material_discharge_credit)
+	var/efficiency = material_delivery_efficiency(amount)
+	var/used = min(charge * efficiency, amount)
+	var/debited = used / efficiency
+	var/charge_before = charge
+	charge = max(0, min(charge - used, charge - debited))
+	// BYOND uses single-precision numbers. Account the represented change in
+	// stored charge, not a pre-rounding estimate of that change.
+	debited = charge_before - charge
+	if(debited < used)
+		// Pay a representable charge step rather than reporting an affordable
+		// fractional action as failed after already debiting the cell. Any
+		// rounding surplus is included in the actual waste-heat accounting.
+		charge = max(0, charge - max(charge_before * MATERIAL_CHARGE_FLOAT_EPSILON, MATERIAL_CHARGE_FLOAT_EPSILON))
+		debited = charge_before - charge
+	used = min(used, debited)
+	material_discharge_credit -= used
+	if(material_service)
+		material_service.input_joules += debited / CELLRATE
+		material_service.output_joules += used / CELLRATE
+		material_service.loss_joules += (debited - used) / CELLRATE
+		material_service.add_heat((debited - used) / CELLRATE)
 	last_use = world.time
 	if(used && self_recharge)
 		START_PROCESSING(SSobj, src)
@@ -149,8 +196,7 @@
 /obj/item/cell/proc/checked_use(amount)
 	if(!check_charge(amount))
 		return 0
-	use(amount)
-	return 1
+	return use(amount) >= amount
 
 // recharge the cell
 /obj/item/cell/proc/give(amount, update_appearance = TRUE)
@@ -158,8 +204,7 @@
 		explode()
 		return 0
 
-	if(maxcharge < amount)	return 0
-	var/amount_used = min(maxcharge-charge,amount)
+	var/amount_used = clamp(amount, 0, maxcharge - charge)
 	charge += amount_used
 	if(amount_used && istype(loc, /obj/machinery/power/apc))
 		var/obj/machinery/power/apc/A = loc

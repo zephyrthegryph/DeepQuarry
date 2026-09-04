@@ -75,9 +75,7 @@
 		last_flow_rate = 0
 		last_power_draw = 0
 	else
-		power_draw = max(power_draw, power_losses)
-		cell.use(power_draw * CELLRATE)
-		last_power_draw = power_draw
+		last_power_draw = pay_material_pump_energy(power_draw)
 
 		update_connected_network()
 		// scrub_gas pulled from loc.return_air() directly when not

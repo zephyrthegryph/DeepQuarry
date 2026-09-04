@@ -90,6 +90,8 @@ Pipelines + Other Objects -> Pipe network
 
 /obj/machinery/atmospherics/pipe/Initialize(mapload, newdir)
 	ensure_material_construction(MATERIAL_APPLICATION_PRESSURE)
+	if(power_rating > 0)
+		ensure_pump_materials()
 	return ..()
 
 /obj/machinery/atmospherics/examine(mob/user)
@@ -100,6 +102,7 @@ Pipelines + Other Objects -> Pipe network
 
 /obj/machinery/atmospherics/Initialize(mapload, newdir)
 	. = ..()
+	ensure_material_construction(MATERIAL_APPLICATION_PRESSURE)
 	if(!isnull(newdir))
 		set_dir(newdir)
 	if(!pipe_color)

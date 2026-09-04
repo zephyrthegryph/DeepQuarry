@@ -112,7 +112,7 @@ Thus, the two variables affect pump operation are set in New():
 	if((input_starting_moles < MINIMUM_MOLES_TO_PUMP  || output_starting_pressure > VOLUME_PUMP_MAX_OUTPUT_PRESSURE) && !overclocked)
 		return
 
-	var/transfer_ratio = transfer_rate / air1.return_volume()
+	var/transfer_ratio = transfer_rate / air1.return_volume() * material_pump_power(power_rating) / max(power_rating, 1)
 	if(!transfer_ratio)
 		return
 
@@ -139,7 +139,8 @@ Thus, the two variables affect pump operation are set in New():
 
 	// This part is necessary, as the function pump_gas has limits that reduces the volume pump to just a glorified pressure pump.
 	// The gas pump does not care about trying to meet a specific pressure. It will keep moving gas till a pressure limit is reached.
-	power_draw = (transfer_moles/input_starting_moles)*power_rating
+	power_draw = (transfer_moles/input_starting_moles)*power_rating * 0.8 / material_pump_efficiency()
+	record_material_pumping(power_draw, air2, transfer_moles * (overclocked ? 1 - VOLUME_PUMP_LEAK_AMOUNT : 1))
 
 	if (power_draw >= 0)
 		last_power_draw = power_draw

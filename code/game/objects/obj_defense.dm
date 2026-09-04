@@ -3,6 +3,10 @@
 	if(HAS_TRAIT(src, TRAIT_UNDERFLOOR))
 		return
 	var/potential_damage = 0.02 * exposed_temperature
+	var/datum/material/exterior_material = material_for_role(MATERIAL_ROLE_JACKET) || material_for_role(MATERIAL_ROLE_INSULATION) || material_for_role(MATERIAL_ROLE_STRUCTURE) || primary_construction_material()
+	if(exterior_material)
+		var/thermal_load = exposed_temperature / max(exterior_material.melting_point, T20C)
+		potential_damage *= clamp(thermal_load, 0.1, 4)
 	// guard take_damage with uses_integrity; LINDA hotspots iterate
 	// every atom on a turf, including landmarks/effects that opt out of the
 	// damage system. Without this guard, fires runtime-error in CI maps.

@@ -1,0 +1,5 @@
+author: "BigBadE"
+delete-after: true
+changes:
+  - rscadd: "Atmospheric infrastructure now shares a material-driven environmental model for heat transfer, corrosion, pressure fatigue, leaks, and rupture."
+  - rscadd: "Handheld tanks, portable atmos devices, installed atmos components, cables, and machinery now retain and use physical construction materials."

@@ -388,6 +388,8 @@
 	var/obj/item/paper/paper = sent
 	if(!istype(paper))
 		return FALSE
+	if(destination == CONTRACT_FAX_ENGINEERING)
+		return process_engineering_measurement_fax(paper, sender_account, sender)
 	var/datum/component/contract_document/document = paper.GetComponent(/datum/component/contract_document)
 	if(!document)
 		return FALSE

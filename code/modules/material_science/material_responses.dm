@@ -18,7 +18,20 @@ GLOBAL_LIST_EMPTY(material_radiovoltaic_items)
 		(medical_form && (antimicrobial_activity || hemostatic_activity || biocompatibility || reagent_porosity)) || \
 		(armor_form && (reactive_energy_capacity || shape_recovery_rate || phase_change_capacity)) || \
 		(tool_form && (shape_recovery_rate || piezoelectric_coefficient || reagent_porosity))
-	if(needs_response)
+	var/datum/component/material_response/existing = item.GetComponent(/datum/component/material_response)
+	if(existing)
+		// Reconfiguration changes the source material without replacing the
+		// component and refilling its stored energy reservoirs.
+		existing.material_id = name
+		existing.electrical_form = electrical_form
+		existing.medical_form = medical_form
+		existing.armor_form = armor_form
+		existing.tool_form = tool_form
+		existing.stored_reactive_energy = min(existing.stored_reactive_energy, reactive_energy_capacity)
+		GLOB.material_radiovoltaic_items -= item
+		if(electrical_form && (radiovoltaic_efficiency || scintillation_efficiency))
+			GLOB.material_radiovoltaic_items |= item
+	else if(needs_response)
 		item.AddComponent(/datum/component/material_response, src, electrical_form, medical_form, armor_form, tool_form)
 
 /datum/component/material_response
@@ -77,6 +90,9 @@ GLOBAL_LIST_EMPTY(material_radiovoltaic_items)
 	return get_material_by_name(material_id)
 
 /datum/component/material_response/proc/ambient_temperature()
+	var/obj/assembly = parent
+	if(assembly.material_service)
+		return assembly.material_service.temperature
 	var/turf/turf = get_turf(parent)
 	var/datum/gas_mixture/air = turf?.return_air()
 	return air ? air.return_temperature() : T20C
@@ -90,7 +106,8 @@ GLOBAL_LIST_EMPTY(material_radiovoltaic_items)
 	var/elapsed_seconds = min(max(now - last_energy_settlement, 0), 5 MINUTES) / 10
 	var/current_temperature = ambient_temperature()
 	var/generated = material.electrogenic_rate * elapsed_seconds
-	generated += material.thermoelectric_coefficient * abs(current_temperature - reference_temperature) * 2
+	// Thermoelectric conversion is applied to real transferred heat by the
+	// assembly thermal service, never to a difference between UI observations.
 	reference_temperature = current_temperature
 	last_energy_settlement = now
 	return generated > 0 ? cell.give(min(generated, cell.amount_missing())) : 0
