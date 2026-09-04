@@ -1340,25 +1340,24 @@
 	command_id.access |= ACCESS_CAPTAIN
 	management.scan = command_id
 	management.authenticated = actor.real_name
-	var/datum/money_account/engineering_budget = GLOB.department_accounts[DEPARTMENT_ENGINEERING]
-	var/datum/money_account/medical_budget = GLOB.department_accounts[DEPARTMENT_MEDICAL]
-	var/old_engineering_allocation = engineering_budget.monthly_allocation
-	var/old_medical_allocation = medical_budget.monthly_allocation
-	var/old_engineering_percent = engineering_budget.allocation_percent
-	var/old_medical_percent = medical_budget.allocation_percent
-	var/old_engineering_configured = engineering_budget.allocation_configured
-	var/old_medical_configured = medical_budget.allocation_configured
+	var/list/old_allocations = list()
+	var/list/old_percents = list()
+	var/list/old_configured = list()
+	for(var/department in GLOB.department_accounts)
+		var/datum/money_account/department_budget = GLOB.department_accounts[department]
+		old_allocations[department] = department_budget.monthly_allocation
+		old_percents[department] = department_budget.allocation_percent
+		old_configured[department] = department_budget.allocation_configured
 	TEST_ASSERT(management.set_department_allocation_percent(DEPARTMENT_ENGINEERING, 10, actor), "authoritative Engineering allocation edit failed")
 	TEST_ASSERT(management.set_department_allocation_percent(DEPARTMENT_MEDICAL, 10, actor), "authoritative Medical allocation edit failed")
 	TEST_ASSERT_EQUAL(command.state, CONTRACT_ACTIVE, "Department Management policy edits completed Command's contract before funds moved")
 	SSsupply.publish_budget_cycle_settlement(list(DEPARTMENT_ENGINEERING = 2000, DEPARTMENT_MEDICAL = 2000), 99991)
 	TEST_ASSERT_EQUAL(command.state, CONTRACT_COMPLETED, "the authoritative funded budget-cycle settlement did not complete Command's contract")
-	engineering_budget.monthly_allocation = old_engineering_allocation
-	medical_budget.monthly_allocation = old_medical_allocation
-	engineering_budget.allocation_percent = old_engineering_percent
-	medical_budget.allocation_percent = old_medical_percent
-	engineering_budget.allocation_configured = old_engineering_configured
-	medical_budget.allocation_configured = old_medical_configured
+	for(var/department in GLOB.department_accounts)
+		var/datum/money_account/department_budget = GLOB.department_accounts[department]
+		department_budget.monthly_allocation = old_allocations[department]
+		department_budget.allocation_percent = old_percents[department]
+		department_budget.allocation_configured = old_configured[department]
 	qdel(command)
 	qdel(management)
 

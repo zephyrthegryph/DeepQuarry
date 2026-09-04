@@ -74,6 +74,9 @@
 	TEST_ASSERT(console.set_department_allocation_percent(DEPARTMENT_ENGINEERING, 25), "valid recurring allocation share was rejected")
 	TEST_ASSERT_EQUAL(engineering_budget.allocation_percent, 25, "recurring allocation percentage did not update")
 	TEST_ASSERT(engineering_budget.allocation_configured, "explicit allocation was not recorded as a department override")
+	TEST_ASSERT(console.set_department_allocation_percent(DEPARTMENT_ENGINEERING, 15), "lower recurring share was rejected")
+	var/list/custom_plan = SSsupply.department_budget_plan()
+	TEST_ASSERT(custom_plan["unallocated_operating"] > 0, "reducing a custom share did not retain the freed amount as operating reserve")
 	TEST_ASSERT_EQUAL(SSsupply.allocation_policy, old_allocation_policy, "one department override disabled the station-wide automatic policy")
 	TEST_ASSERT(SSsupply.set_allocation_policy("staffing", TRUE), "staffing allocation policy was rejected")
 	TEST_ASSERT_EQUAL(SSsupply.allocation_policy, "staffing", "staffing allocation policy did not update")
@@ -127,6 +130,8 @@
 	TEST_ASSERT_EQUAL(engineering["requested"], engineering["payroll"] + 1000, "default plan did not immediately cover Engineering payroll plus its operating allowance")
 	TEST_ASSERT_EQUAL(engineering["funded"], engineering["requested"], "affordable default plan did not report its exact expected funding")
 	TEST_ASSERT_EQUAL(medical["requested"], 1000, "default plan did not give an unstaffed department its equal recurring operating share")
+	TEST_ASSERT_EQUAL(plan["operating_requested"], plan["operating_pool"], "equal preset did not assign the complete operating pool")
+	TEST_ASSERT_EQUAL(plan["payroll_funded"] + plan["operating_funded"] + plan["remaining"], plan["available"], "waterfall did not reconcile available funds")
 	TEST_ASSERT_EQUAL(plan["requested"], plan["funded"] + plan["shortfall"], "budget preview did not reconcile requested, funded, and shortfall totals")
 	var/datum/money_account/engineering_budget = GLOB.department_accounts[DEPARTMENT_ENGINEERING]
 	engineering_budget.allocation_percent = 25

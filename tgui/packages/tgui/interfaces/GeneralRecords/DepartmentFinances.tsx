@@ -35,6 +35,196 @@ const allocationPolicies = [
 const transactionsPerPage = 10;
 const formatMoney = (amount: number) => `${amount.toLocaleString()} Th`;
 
+const departmentColors: Record<string, string> = {
+  Command: '#d7b447',
+  Security: '#c94f55',
+  Engineering: '#df8f3c',
+  Medical: '#4eb6c2',
+  Research: '#9b6ac9',
+  Cargo: '#a9794f',
+  Civilian: '#66a86d',
+  Exploration: '#4b91a8',
+};
+
+type BudgetSlice = {
+  label: string;
+  amount: number;
+  color: string;
+};
+
+const DonutRing = (props: {
+  slices: BudgetSlice[];
+  total: number;
+  radius: number;
+  width: number;
+}) => {
+  const circumference = 2 * Math.PI * props.radius;
+  let offset = 0;
+  return (
+    <>
+      <circle
+        cx="120"
+        cy="120"
+        r={props.radius}
+        fill="none"
+        stroke="#20252b"
+        strokeWidth={props.width}
+      />
+      {props.slices.map((slice) => {
+        const fraction = Math.max(0, slice.amount) / Math.max(1, props.total);
+        const length = Math.min(circumference, circumference * fraction);
+        const dashOffset = -offset;
+        offset += length;
+        return (
+          <circle
+            key={slice.label}
+            cx="120"
+            cy="120"
+            r={props.radius}
+            fill="none"
+            stroke={slice.color}
+            strokeWidth={props.width}
+            strokeDasharray={`${length} ${circumference - length}`}
+            strokeDashoffset={dashOffset}
+            strokeLinecap="butt"
+            transform="rotate(-90 120 120)"
+          >
+            <title>
+              {slice.label}: {formatMoney(slice.amount)}
+            </title>
+          </circle>
+        );
+      })}
+    </>
+  );
+};
+
+const BudgetChart = (props: {
+  plan: NonNullable<Data['budget_plan']>;
+  departments: departmentFinance[];
+  nextCycle: string | null;
+}) => {
+  const { plan, departments } = props;
+  const innerSlices: BudgetSlice[] = [
+    { label: 'Staff payroll', amount: plan.payroll_funded, color: '#4b8fcc' },
+    {
+      label: 'Department operations',
+      amount: plan.operating_funded,
+      color: '#55a96b',
+    },
+    { label: 'Station reserve', amount: plan.remaining, color: '#69737d' },
+  ];
+  const outerSlices: BudgetSlice[] = departments
+    .filter((department) => department.operating_allocation > 0)
+    .map((department) => ({
+      label: department.department,
+      amount: department.operating_allocation,
+      color: departmentColors[department.department] || '#8793a1',
+    }));
+  if (plan.unallocated_operating > 0) {
+    outerSlices.push({
+      label: 'Unassigned operating reserve',
+      amount: plan.unallocated_operating,
+      color: '#424a52',
+    });
+  }
+  return (
+    <Stack align="center">
+      <Stack.Item basis="280px">
+        <Box textAlign="center">
+          <svg width="240" height="240" viewBox="0 0 240 240">
+            <DonutRing
+              slices={innerSlices}
+              total={plan.available}
+              radius={69}
+              width={30}
+            />
+            <DonutRing
+              slices={outerSlices}
+              total={plan.operating_pool}
+              radius={101}
+              width={12}
+            />
+            <text
+              x="120"
+              y="108"
+              textAnchor="middle"
+              fill="#aeb8c2"
+              fontSize="11"
+            >
+              AVAILABLE
+            </text>
+            <text
+              x="120"
+              y="130"
+              textAnchor="middle"
+              fill="#ffffff"
+              fontSize="17"
+              fontWeight="bold"
+            >
+              {plan.available.toLocaleString()} Th
+            </text>
+            <text
+              x="120"
+              y="147"
+              textAnchor="middle"
+              fill="#8e9aa5"
+              fontSize="10"
+            >
+              in {props.nextCycle || '—'}
+            </text>
+          </svg>
+        </Box>
+        <Box textAlign="center" color="label" fontSize="11px">
+          Inner: funding waterfall · Outer: operating split
+        </Box>
+      </Stack.Item>
+      <Stack.Item grow>
+        <LabeledList>
+          <LabeledList.Item label="Funds on hand">
+            {formatMoney(plan.available - plan.nt_grant)}
+          </LabeledList.Item>
+          <LabeledList.Item label="NT payroll support" color="good">
+            +{formatMoney(plan.nt_grant)}
+          </LabeledList.Item>
+          <LabeledList.Item
+            label="1 · Staff payroll"
+            color={
+              plan.payroll_funded < plan.projected_payroll ? 'bad' : 'good'
+            }
+          >
+            −{formatMoney(plan.payroll_funded)} /{' '}
+            {formatMoney(plan.projected_payroll)} due
+          </LabeledList.Item>
+          <LabeledList.Item
+            label="2 · Department operations"
+            color={
+              plan.operating_funded < plan.operating_requested ? 'bad' : 'good'
+            }
+          >
+            −{formatMoney(plan.operating_funded)} /{' '}
+            {formatMoney(plan.operating_requested)} assigned
+          </LabeledList.Item>
+          <LabeledList.Item label="3 · Station reserve" color="label">
+            {formatMoney(plan.remaining)} retained
+          </LabeledList.Item>
+        </LabeledList>
+        {!!plan.shortfall && (
+          <Box
+            mt={1}
+            p={1}
+            color="bad"
+            backgroundColor="rgba(150, 35, 45, 0.2)"
+          >
+            Funding shortfall: {formatMoney(plan.shortfall)}. Payroll is funded
+            before department operations.
+          </Box>
+        )}
+      </Stack.Item>
+    </Stack>
+  );
+};
+
 const TransactionTable = (props: {
   transactions: financeTransaction[];
   pageKey: string;
@@ -99,7 +289,10 @@ const TransactionTable = (props: {
   );
 };
 
-const AllocationControl = (props: { department: departmentFinance }) => {
+const AllocationControl = (props: {
+  department: departmentFinance;
+  showAmount?: boolean;
+}) => {
   const { act } = useBackend<Data>();
   const { department } = props;
   return (
@@ -124,7 +317,7 @@ const AllocationControl = (props: { department: departmentFinance }) => {
         <Button
           icon="rotate-left"
           disabled={!department.allocation_overridden}
-          tooltip={`Return to the policy amount of ${formatMoney(department.automatic_allocation)}.`}
+          tooltip="Return this department to the selected automatic policy."
           onClick={() =>
             act('clear_department_allocation', {
               department: department.department,
@@ -137,9 +330,11 @@ const AllocationControl = (props: { department: departmentFinance }) => {
       <Stack.Item color={department.allocation_overridden ? 'average' : 'good'}>
         {department.allocation_overridden ? 'Override' : 'Policy'}
       </Stack.Item>
-      <Stack.Item color="label">
-        {formatMoney(department.operating_allocation)} operating
-      </Stack.Item>
+      {props.showAmount !== false && (
+        <Stack.Item color="label">
+          {formatMoney(department.operating_allocation)} operating
+        </Stack.Item>
+      )}
     </Stack>
   );
 };
@@ -465,6 +660,9 @@ export const DepartmentFinances = (props) => {
   );
   const stationMonthlyNet =
     (station_monthly_income || 0) - (station_monthly_expenses || 0);
+  const hasCustomAllocation = department_finances.some(
+    (department) => !!department.allocation_overridden,
+  );
 
   return (
     <Box>
@@ -513,44 +711,12 @@ export const DepartmentFinances = (props) => {
             </Stack.Item>
           </Stack>
           {!!budget_plan && (
-            <Section title={`Settlement in ${next_budget_cycle || '—'}`} mb={2}>
-              <Stack>
-                <Stack.Item grow>
-                  <LabeledList>
-                    <LabeledList.Item label="Projected Payroll">
-                      {formatMoney(budget_plan.projected_payroll)}
-                    </LabeledList.Item>
-                    <LabeledList.Item label="Expected NT Support" color="good">
-                      {formatMoney(budget_plan.nt_grant)}
-                    </LabeledList.Item>
-                    <LabeledList.Item label="Funds Available">
-                      {formatMoney(budget_plan.available)}
-                    </LabeledList.Item>
-                    <LabeledList.Item label="Recurring Operating Pool">
-                      {formatMoney(budget_plan.operating_pool)}
-                    </LabeledList.Item>
-                  </LabeledList>
-                </Stack.Item>
-                <Stack.Item grow>
-                  <LabeledList>
-                    <LabeledList.Item label="Departments Request">
-                      {formatMoney(budget_plan.requested)}
-                    </LabeledList.Item>
-                    <LabeledList.Item label="Expected Funding" color="good">
-                      {formatMoney(budget_plan.funded)}
-                    </LabeledList.Item>
-                    <LabeledList.Item
-                      label="Shortfall"
-                      color={budget_plan.shortfall ? 'bad' : 'good'}
-                    >
-                      {formatMoney(budget_plan.shortfall)}
-                    </LabeledList.Item>
-                    <LabeledList.Item label="Projected Remainder">
-                      {formatMoney(budget_plan.remaining)}
-                    </LabeledList.Item>
-                  </LabeledList>
-                </Stack.Item>
-              </Stack>
+            <Section title="Funding Waterfall" mb={2}>
+              <BudgetChart
+                plan={budget_plan}
+                departments={department_finances}
+                nextCycle={next_budget_cycle}
+              />
             </Section>
           )}
           <Section title="Current Pay-Period Cash Flow" mb={2}>
@@ -596,17 +762,37 @@ export const DepartmentFinances = (props) => {
               </Stack.Item>
             </Stack>
           </Section>
-          <Section title="Automatic Funding Policy" mb={2}>
+          <Section
+            title="Recurring Operating Plan"
+            mb={2}
+            buttons={
+              <Box color="label">
+                {Math.max(
+                  0,
+                  100 -
+                    department_finances.reduce(
+                      (sum, department) => sum + department.allocation_percent,
+                      0,
+                    ),
+                ).toFixed(1)}
+                % unassigned
+              </Box>
+            }
+          >
             <Box color="label" mb={1}>
-              Payroll is calculated separately and funded first. This policy
-              divides the recurring operating pool. Selecting a policy clears
-              percentage overrides and immediately recalculates the preview.
+              First, payroll is funded from available station money. Then each
+              department receives its share of the operating pool. Any
+              unassigned share and all money left afterward remain in the
+              station reserve.
             </Box>
-            <Stack wrap>
+            <Stack align="center" mb={1} wrap>
+              <Stack.Item color="label">Presets</Stack.Item>
               {allocationPolicies.map(([policy, label, description]) => (
                 <Stack.Item key={policy}>
                   <Button
-                    selected={allocation_policy === policy}
+                    selected={
+                      allocation_policy === policy && !hasCustomAllocation
+                    }
                     tooltip={description}
                     onClick={() => act('set_allocation_policy', { policy })}
                   >
@@ -614,62 +800,62 @@ export const DepartmentFinances = (props) => {
                   </Button>
                 </Stack.Item>
               ))}
+              {hasCustomAllocation && (
+                <Stack.Item color="average">Custom plan</Stack.Item>
+              )}
             </Stack>
-          </Section>
-          {department_finances.length ? (
-            <Table>
-              <Table.Row header>
-                <Table.Cell>Department</Table.Cell>
-                <Table.Cell>Funds</Table.Cell>
-                <Table.Cell textAlign="right">Savings</Table.Cell>
-                <Table.Cell>Recurring Share</Table.Cell>
-              </Table.Row>
-              {department_finances.map((department) => (
-                <Table.Row key={department.department}>
-                  <Table.Cell>
-                    <Button
-                      color="transparent"
-                      onClick={() => setRequestedTab(department.department)}
-                    >
-                      {department.department}
-                    </Button>
-                  </Table.Cell>
-                  <Table.Cell>
-                    <ProgressBar
-                      value={
-                        (department.balance + department.savings) /
-                        largestBudget
-                      }
-                      ranges={{
-                        good: [0.5, Infinity],
-                        average: [0.2, 0.5],
-                        bad: [-Infinity, 0.2],
-                      }}
-                    />
-                  </Table.Cell>
-                  <Table.Cell textAlign="right">
-                    {formatMoney(department.savings)}
-                  </Table.Cell>
-                  <Table.Cell>
-                    <Box mb={1} color="label">
-                      Payroll {formatMoney(department.projected_payroll)} · Next
-                      operating {formatMoney(department.operating_allocation)}
-                    </Box>
-                    <AllocationControl department={department} />
-                    {!!department.allocation_shortfall && (
-                      <Box mt={0.5} color="bad">
-                        Short {formatMoney(department.allocation_shortfall)}
-                      </Box>
-                    )}
-                  </Table.Cell>
+            {department_finances.length ? (
+              <Table>
+                <Table.Row header>
+                  <Table.Cell>Department</Table.Cell>
+                  <Table.Cell textAlign="center">Staff</Table.Cell>
+                  <Table.Cell textAlign="right">Payroll</Table.Cell>
+                  <Table.Cell>Operating share</Table.Cell>
+                  <Table.Cell textAlign="right">Expected</Table.Cell>
                 </Table.Row>
-              ))}
-            </Table>
-          ) : (
-            <Box color="bad">
-              No departmental accounts are available to this ID.
-            </Box>
-          )}
+                {department_finances.map((department) => (
+                  <Table.Row key={department.department}>
+                    <Table.Cell>
+                      <Button
+                        color="transparent"
+                        onClick={() => setRequestedTab(department.department)}
+                      >
+                        <Box
+                          inline
+                          mr={0.5}
+                          width="8px"
+                          height="8px"
+                          backgroundColor={
+                            departmentColors[department.department] || '#8793a1'
+                          }
+                        />
+                        {department.department}
+                      </Button>
+                    </Table.Cell>
+                    <Table.Cell textAlign="center">
+                      {department.employee_count}
+                    </Table.Cell>
+                    <Table.Cell textAlign="right">
+                      {formatMoney(department.projected_payroll)}
+                    </Table.Cell>
+                    <Table.Cell>
+                      <AllocationControl
+                        department={department}
+                        showAmount={false}
+                      />
+                    </Table.Cell>
+                    <Table.Cell textAlign="right">
+                      {formatMoney(department.operating_allocation)}
+                    </Table.Cell>
+                  </Table.Row>
+                ))}
+              </Table>
+            ) : (
+              <Box color="bad">
+                No departmental accounts are available to this ID.
+              </Box>
+            )}
+          </Section>
           {!!station_transactions.length && (
             <Section mt={2} title="Station Transactions">
               <TransactionTable

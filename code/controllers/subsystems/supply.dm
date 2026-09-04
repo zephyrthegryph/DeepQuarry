@@ -185,11 +185,19 @@ SUBSYSTEM_DEF(supply)
 		payroll_funded += funded_payroll[department]
 	var/list/funded_operating = proportional_department_allocations(operating_requests, max(0, available - payroll_funded))
 	var/total_funded = 0
+	var/total_operating_requested = 0
+	var/total_operating_funded = 0
 	for(var/department in department_plans)
 		var/list/department_plan = department_plans[department]
-		var/funded = (funded_payroll[department] || 0) + (funded_operating[department] || 0)
+		var/department_payroll_funded = funded_payroll[department] || 0
+		var/department_operating_funded = funded_operating[department] || 0
+		var/funded = department_payroll_funded + department_operating_funded
+		department_plan["payroll_funded"] = department_payroll_funded
+		department_plan["operating_funded"] = department_operating_funded
 		department_plan["funded"] = funded
 		department_plan["shortfall"] = max(0, department_plan["requested"] - funded)
+		total_operating_requested += department_plan["operating_requested"]
+		total_operating_funded += department_operating_funded
 		total_funded += funded
 	return list(
 		"departments" = department_plans,
@@ -198,6 +206,10 @@ SUBSYSTEM_DEF(supply)
 		"available" = available,
 		"operating_pool" = operating_pool,
 		"configured_percent" = configured_percent,
+		"operating_requested" = total_operating_requested,
+		"operating_funded" = total_operating_funded,
+		"payroll_funded" = payroll_funded,
+		"unallocated_operating" = max(0, operating_pool - total_operating_requested),
 		"requested" = total_requested,
 		"funded" = total_funded,
 		"remaining" = max(0, available - total_funded),

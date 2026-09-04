@@ -244,6 +244,8 @@ export type departmentFinance = {
   allocation_percent: number;
   employee_count: number;
   operating_allocation: number;
+  operating_funded: number;
+  payroll_funded: number;
   monthly_income: number;
   monthly_expenses: number;
   last_month_income: number;
@@ -268,6 +270,10 @@ export type budgetPlan = {
   nt_grant: number;
   available: number;
   operating_pool: number;
+  operating_requested: number;
+  operating_funded: number;
+  payroll_funded: number;
+  unallocated_operating: number;
   requested: number;
   funded: number;
   remaining: number;

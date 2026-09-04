@@ -108,15 +108,39 @@
 	var/datum/money_account/budget = GLOB.department_accounts[department]
 	if(!budget || department == "Vendor")
 		return FALSE
-	var/other_configured = 0
+	// The first manual edit freezes the currently previewed policy shares into a
+	// coherent custom plan. Further edits then create or consume an explicit
+	// reserve instead of silently redistributing every other department.
+	var/list/current_plan = SSsupply.department_budget_plan()
+	var/list/current_departments = current_plan["departments"]
+	var/fixed_other_percent = 0
+	var/automatic_other_percent = 0
 	for(var/other_department in GLOB.department_accounts)
-		if(other_department == department)
+		if(other_department == department || other_department == "Vendor")
 			continue
 		var/datum/money_account/other_budget = GLOB.department_accounts[other_department]
-		if(other_budget?.is_department_budget() && other_budget.allocation_configured)
-			other_configured += other_budget.allocation_percent
-	if(other_configured + percent > 100)
+		var/list/other_plan = current_departments?[other_department]
+		if(!other_budget?.is_department_budget())
+			continue
+		if(other_budget.allocation_configured)
+			fixed_other_percent += other_plan?["allocation_percent"] || 0
+		else
+			automatic_other_percent += other_plan?["allocation_percent"] || 0
+	if(fixed_other_percent + percent > 100.001)
 		return FALSE
+	var/automatic_scale = 1
+	if(fixed_other_percent + automatic_other_percent + percent > 100 && automatic_other_percent > 0)
+		automatic_scale = max(0, 100 - fixed_other_percent - percent) / automatic_other_percent
+	for(var/other_department in GLOB.department_accounts)
+		var/datum/money_account/other_budget = GLOB.department_accounts[other_department]
+		var/list/other_plan = current_departments?[other_department]
+		if(!other_budget?.is_department_budget() || !other_plan)
+			continue
+		var/effective_percent = other_plan["allocation_percent"]
+		if(other_department != department && !other_budget.allocation_configured)
+			effective_percent *= automatic_scale
+		other_budget.allocation_percent = effective_percent
+		other_budget.allocation_configured = TRUE
 	var/old_percent = budget.allocation_percent
 	budget.allocation_percent = percent
 	budget.allocation_configured = TRUE
@@ -225,6 +249,10 @@
 			"nt_grant" = budget_plan["nt_grant"],
 			"available" = budget_plan["available"],
 			"operating_pool" = budget_plan["operating_pool"],
+			"operating_requested" = budget_plan["operating_requested"],
+			"operating_funded" = budget_plan["operating_funded"],
+			"payroll_funded" = budget_plan["payroll_funded"],
+			"unallocated_operating" = budget_plan["unallocated_operating"],
 			"requested" = budget_plan["requested"],
 			"funded" = budget_plan["funded"],
 			"remaining" = budget_plan["remaining"],
@@ -252,6 +280,8 @@
 				"allocation_percent" = department_plan?["allocation_percent"] || 0,
 				"employee_count" = department_plan?["staff"] || 0,
 				"operating_allocation" = department_plan?["operating_requested"] || 0,
+				"operating_funded" = department_plan?["operating_funded"] || 0,
+				"payroll_funded" = department_plan?["payroll_funded"] || 0,
 				"monthly_income" = budget.monthly_income,
 				"monthly_expenses" = budget.monthly_expenses,
 				"last_month_income" = budget.last_month_income,

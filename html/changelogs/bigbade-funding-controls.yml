@@ -2,4 +2,5 @@ author: "BigBadE"
 delete-after: true
 changes:
   - qol: "Reworked department funding into recurring percentage shares and separate immediate one-time transfers."
+  - qol: "Added a funding-waterfall chart, operating-allocation ring, automatic presets, explicit reserves, and clearer departmental forecasts."
   - bugfix: "Fixed the department allocation view background clipping expanded funding controls."
