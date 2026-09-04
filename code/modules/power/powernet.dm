@@ -208,15 +208,21 @@
 	if(!material_hotspot || QDELETED(material_hotspot) || !length(material_segments) || load <= 0)
 		return
 	var/current_density = (load / 1000) / MATERIAL_CABLE_REFERENCE_AREA
+	// A network carries one current, so its weakest segment is the physical
+	// hotspot. Processing every cable repeated identical network math hundreds
+	// of times and made ordinary material-aware station wiring unaffordable.
+	var/obj/structure/cable/cable = material_hotspot
+	if(QDELETED(cable))
+		invalidate_material_cache()
+		return
+	var/datum/material/material = cable.engineered_material()
+	var/datum/material/insulation = cable.insulation_material()
+	var/turf/cable_turf = get_turf(cable)
+	var/datum/gas_mixture/air = cable_turf?.return_air()
+	if(!material || !air)
+		return
 	var/list/cables_to_delete
-	for(var/obj/structure/cable/cable as anything in material_segments)
-		if(QDELETED(cable))
-			continue
-		var/datum/material/material = cable.engineered_material()
-		var/turf/cable_turf = get_turf(cable)
-		var/datum/gas_mixture/air = cable_turf?.return_air()
-		if(!material || !air)
-			continue
+	if(material && air)
 		var/resistance = material.material_electrical_resistance(1, MATERIAL_CABLE_REFERENCE_AREA, cable.material_temperature, current_density)
 		var/loss_energy = max(0, load * min(resistance, 5) * elapsed_seconds)
 		var/cable_safe_load = material.critical_current_density > 0 ? material.critical_current_density * MATERIAL_CABLE_REFERENCE_AREA * 1000 : max(material.conductivity, 1) * 20000
@@ -235,13 +241,16 @@
 			cable.material_buffer_energy += buffered
 			loss_energy -= buffered
 		cable.material_temperature += loss_energy / thermal_mass
-		var/conductance = material.material_thermal_conductance(0.05, 0.004, cable.material_temperature)
+		var/conductance = cable.construction_thermal_conductance(0.05, 0.004, cable.material_temperature)
+		if(isnull(conductance))
+			conductance = material.material_thermal_conductance(0.05, 0.004, cable.material_temperature)
 		var/exchange = clamp((cable.material_temperature - air.return_temperature()) * conductance * elapsed_seconds, -thermal_mass * 20, thermal_mass * 20)
 		cable.material_temperature -= exchange / thermal_mass
 		air.add_thermal_energy(exchange)
 		if(material.critical_temperature > 0 && cable.material_temperature >= material.critical_temperature)
 			trigger_warning()
-		if(cable.material_temperature >= material.melting_point)
+		var/insulation_failure = insulation && cable.material_temperature >= insulation.melting_point
+		if(cable.material_temperature >= material.melting_point || insulation_failure)
 			cable.visible_message(span_danger("[cable]'s composite conductor melts through after a thermal runaway!"))
 			air.add_thermal_energy(thermal_mass * 50)
 			LAZYADD(cables_to_delete, cable)

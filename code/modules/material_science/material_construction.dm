@@ -346,6 +346,24 @@
 		item.apply_material_role_effects(application_profile)
 	return TRUE
 
+/// Preserve the complete functional assembly when an item becomes an installed
+/// object (or is taken apart again).  Copying only the visually dominant
+/// material silently discarded liners, insulation, contacts, and similar parts.
+/obj/proc/copy_material_construction_from(obj/source)
+	if(!source)
+		return FALSE
+	construction_materials = source.construction_materials?.Copy()
+	construction_material_amounts = source.construction_material_amounts?.Copy()
+	return length(construction_materials)
+
+/// Give legacy/map-built infrastructure the same canonical assembly used by
+/// fabrication, without pretending that it was a custom engineered product.
+/obj/proc/ensure_material_construction(application_profile, total_amount = SHEET_MATERIAL_AMOUNT)
+	if(length(construction_materials))
+		return TRUE
+	var/list/slots = default_material_slots(application_profile, total_amount)
+	return apply_material_construction(null, slots, application_profile)
+
 /obj/proc/construction_summary()
 	var/list/summary = list()
 	for(var/role in construction_materials)

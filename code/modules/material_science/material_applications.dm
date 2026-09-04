@@ -191,6 +191,6 @@
 
 /obj/machinery/portable_atmospherics/canister/examine(mob/user)
 	. = ..()
-	if(pressure_liner_material_id)
-		var/datum/material/material = get_material_by_name(pressure_liner_material_id)
-		. += span_notice("Pressure liner: <b>[material?.display_name || pressure_liner_material_id]</b>; rated to [round(pressure_resistance / ONE_ATMOSPHERE, 0.1)] atmospheres and [round(temperature_resistance)] K.")
+	var/datum/material/liner = material_for_role(MATERIAL_ROLE_LINER)
+	if(liner)
+		. += span_notice("Pressure liner: <b>[liner.display_name]</b> ([round(material_liner_integrity)]% intact); shell rated to [round(effective_maximum_pressure() / ONE_ATMOSPHERE, 0.1)] atmospheres.")

@@ -17,6 +17,9 @@
 	start_pressure = 45 * ONE_ATMOSPHERE
 	pressure_resistance = 7 * ONE_ATMOSPHERE
 	var/temperature_resistance = 1000 + T0C
+	/// Integrity of the material which actually touches the stored gas.
+	var/material_liner_integrity = 100
+	var/material_last_exposure = 0
 	volume = 1000
 	use_power = USE_POWER_OFF
 	interact_offline = 1 // Allows this to be used when not in powered area.
@@ -25,7 +28,45 @@
 
 /obj/machinery/portable_atmospherics/canister/Initialize(mapload)
 	. = ..()
+	ensure_material_construction(MATERIAL_APPLICATION_PRESSURE, 2 * SHEET_MATERIAL_AMOUNT)
 	AddElement(/datum/element/climbable)
+
+/obj/machinery/portable_atmospherics/canister/proc/effective_maximum_pressure()
+	var/internal_temperature = air_contents?.return_temperature() || T20C
+	var/selected_limit = construction_pressure_limit(MATERIAL_CANISTER_REFERENCE_RADIUS, MATERIAL_CANISTER_REFERENCE_THICKNESS, internal_temperature)
+	var/datum/material/steel = get_material_by_name(MAT_STEEL)
+	var/reference_limit = steel?.material_pressure_limit(MATERIAL_CANISTER_REFERENCE_RADIUS, MATERIAL_CANISTER_REFERENCE_THICKNESS, internal_temperature)
+	if(isnull(selected_limit) || !reference_limit)
+		return maximum_pressure
+	return maximum_pressure * selected_limit / reference_limit
+
+/// Returns TRUE while continued chemical exposure needs another sample.
+/obj/machinery/portable_atmospherics/canister/proc/process_material_vessel()
+	var/pressure = air_contents.return_pressure()
+	var/pressure_limit = effective_maximum_pressure()
+	if(pressure > pressure_limit)
+		var/overstress = pressure / max(pressure_limit, ONE_ATMOSPHERE)
+		visible_message(span_danger("[src]'s shell groans under [round(pressure / ONE_ATMOSPHERE, 0.1)] atmospheres!"))
+		take_damage(max(5, round(20 * overstress)), BRUTE)
+		if(overstress >= 1.25 && !destroyed)
+			atom_destruction(BOMB)
+		return TRUE
+	var/datum/material/liner = material_for_role(MATERIAL_ROLE_LINER)
+	if(!liner)
+		return FALSE
+	var/now = world.time
+	var/elapsed_seconds = material_last_exposure ? clamp((now - material_last_exposure) / 10, 0, 30) : 0
+	material_last_exposure = now
+	var/total_moles = max(air_contents.total_moles(), 0.001)
+	var/phoron_fraction = air_contents.get_moles(/datum/gas/plasma) / total_moles
+	if(phoron_fraction <= 0.01)
+		return FALSE
+	if(elapsed_seconds > 0)
+		material_liner_integrity = max(0, material_liner_integrity - liner.material_corrosion_rate(REAGENT_ID_PHORON, air_contents.return_temperature()) * phoron_fraction * elapsed_seconds)
+		if(material_liner_integrity <= 0)
+			visible_message(span_danger("[src]'s corroded inner liner perforates!"))
+			take_damage(max_integrity, BURN)
+	return TRUE
 
 /obj/machinery/portable_atmospherics/canister/drain_power()
 	return -1
@@ -219,6 +260,9 @@ update_flag
 		return PROCESS_KILL
 
 	var/reaction_result = ..()
+	var/material_active = process_material_vessel()
+	if(destroyed)
+		return PROCESS_KILL
 
 	if(valve_open)
 		var/datum/gas_mixture/environment
@@ -254,7 +298,7 @@ update_flag
 	else
 		can_label = 0
 
-	if(!valve_open && reaction_result == NO_REACTION)
+	if(!valve_open && reaction_result == NO_REACTION && !material_active)
 		hibernate_until_gas_changes()
 		return PROCESS_KILL
 
@@ -283,8 +327,8 @@ update_flag
 	..()
 
 /obj/machinery/portable_atmospherics/canister/attackby(obj/item/W as obj, mob/user as mob)
-	if(istype(W, /obj/item/stack/material/processed_alloy))
-		var/obj/item/stack/material/processed_alloy/stock = W
+	if(istype(W, /obj/item/stack/material))
+		var/obj/item/stack/material/stock = W
 		if(pressure_liner_material_id)
 			to_chat(user, span_warning("[src] already has an engineered pressure liner."))
 			return
@@ -294,16 +338,14 @@ update_flag
 		if(stock.get_amount() < 2)
 			to_chat(user, span_warning("A pressure liner requires two sheets."))
 			return
-		var/datum/material/processed_alloy/processed = stock.material
-		pressure_liner_material_id = processed.name
+		var/datum/material/liner = stock.material
+		pressure_liner_material_id = liner.name
 		stock.use(2)
-		max_integrity = max(max_integrity, round(processed.integrity * 1.5))
-		update_integrity(max_integrity)
-		pressure_resistance = max(pressure_resistance, ONE_ATMOSPHERE * (5 + processed.integrity / 18))
-		temperature_resistance = max(temperature_resistance, T0C + 500 + processed.heat_resistance * 20)
-		name = "[processed.display_name]-lined [initial(name)]"
-		color = processed.icon_colour
-		to_chat(user, span_notice("You install a [processed.display_name] pressure liner in [src]."))
+		construction_materials[MATERIAL_ROLE_LINER] = liner.name
+		material_liner_integrity = 100
+		name = "[liner.display_name]-lined [initial(name)]"
+		color = liner.icon_colour
+		to_chat(user, span_notice("You install a [liner.display_name] pressure liner in [src]."))
 		return
 	if(!istype(W, /obj/item/tank) && !istype(W, /obj/item/analyzer) && !istype(W, /obj/item/pda))
 		visible_message(span_warning("\The [user] hits \the [src] with \a [W]!"))

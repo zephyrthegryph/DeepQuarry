@@ -12,6 +12,7 @@
 	protectiveness = 0 // 0%
 	conductive = 0
 	conductivity = 1 // Glass shards don't conduct.
+	corrosion_resistance = 100
 	door_icon_base = "stone"
 	destruction_desc = "shatters"
 	window_options = list("One Direction" = 1, "Full Window" = 4, "Windoor" = 2)

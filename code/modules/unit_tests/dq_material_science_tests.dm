@@ -164,3 +164,65 @@
 	TEST_ASSERT_EQUAL(bulb.nightshift_power, bulb.init_nightshift_power, "Standard bulb nightshift output must remain calibrated")
 	TEST_ASSERT_EQUAL(bulb.nightshift_range, bulb.init_nightshift_range, "Standard bulb nightshift range must remain calibrated")
 	qdel(bulb)
+
+/datum/unit_test/dq_material_pipe_installation_preserves_layers
+
+/datum/unit_test/dq_material_pipe_installation_preserves_layers/Run()
+	var/turf/test_turf = run_loc_floor_bottom_left || locate(1, 1, 1)
+	var/list/slots = default_material_slots(MATERIAL_APPLICATION_PRESSURE, SHEET_MATERIAL_AMOUNT)
+	var/list/choices = list(
+		MATERIAL_ROLE_STRUCTURE = MAT_DIAMOND,
+		MATERIAL_ROLE_LINER = MAT_GLASS,
+		MATERIAL_ROLE_INSULATION = MAT_PLASTIC,
+	)
+	var/obj/item/pipe/fitting = new(test_turf, /obj/machinery/atmospherics/pipe/simple, NORTH)
+	TEST_ASSERT(fitting.apply_material_construction(choices, slots, MATERIAL_APPLICATION_PRESSURE), "A pipe fitting must accept a complete pressure assembly")
+	var/obj/machinery/atmospherics/pipe/simple/installed = new(test_turf)
+	fitting.build_pipe(installed)
+	TEST_ASSERT_EQUAL(installed.material_for_role(MATERIAL_ROLE_STRUCTURE)?.name, MAT_DIAMOND, "Installation must preserve the load-bearing pipe shell")
+	TEST_ASSERT_EQUAL(installed.material_for_role(MATERIAL_ROLE_LINER)?.name, MAT_GLASS, "Installation must preserve the gas-contact liner")
+	TEST_ASSERT_EQUAL(installed.material_for_role(MATERIAL_ROLE_INSULATION)?.name, MAT_PLASTIC, "Installation must preserve pipe insulation")
+	qdel(fitting)
+	qdel(installed)
+
+/datum/unit_test/dq_material_canister_rating_is_physical
+
+/datum/unit_test/dq_material_canister_rating_is_physical/Run()
+	var/turf/test_turf = run_loc_floor_bottom_left || locate(1, 1, 1)
+	var/list/slots = default_material_slots(MATERIAL_APPLICATION_PRESSURE, 2 * SHEET_MATERIAL_AMOUNT)
+	var/obj/machinery/portable_atmospherics/canister/strong = new(test_turf)
+	var/obj/machinery/portable_atmospherics/canister/weak = new(test_turf)
+	strong.apply_material_construction(list(MATERIAL_ROLE_STRUCTURE = MAT_DIAMOND), slots, MATERIAL_APPLICATION_PRESSURE)
+	weak.apply_material_construction(list(MATERIAL_ROLE_STRUCTURE = MAT_WOOD), slots, MATERIAL_APPLICATION_PRESSURE)
+	TEST_ASSERT(strong.effective_maximum_pressure() > weak.effective_maximum_pressure(), "Canister shell material must change the actual internal rupture rating")
+	TEST_ASSERT_EQUAL(strong.pressure_resistance, weak.pressure_resistance, "Internal vessel strength must not misuse decompression movement resistance")
+	qdel(strong)
+	qdel(weak)
+
+/datum/unit_test/dq_material_cable_installation_preserves_insulation
+
+/datum/unit_test/dq_material_cable_installation_preserves_insulation/Run()
+	var/turf/test_turf = run_loc_floor_bottom_left || locate(1, 1, 1)
+	var/list/slots = default_material_slots(MATERIAL_APPLICATION_CABLE, SHEET_MATERIAL_AMOUNT)
+	var/obj/item/stack/cable_coil/coil = new(test_turf, 1)
+	coil.apply_material_construction(list(MATERIAL_ROLE_CONDUCTOR = MAT_SILVER, MATERIAL_ROLE_INSULATION = MAT_GLASS), slots, MATERIAL_APPLICATION_CABLE)
+	var/obj/structure/cable/cable = new(test_turf)
+	cable.copy_material_construction_from(coil)
+	TEST_ASSERT_EQUAL(cable.engineered_material()?.name, MAT_SILVER, "Installed cable must retain its selected conductor")
+	TEST_ASSERT_EQUAL(cable.insulation_material()?.name, MAT_GLASS, "Installed cable must retain its independently selected insulation")
+	qdel(coil)
+	qdel(cable)
+
+/datum/unit_test/dq_material_machine_retains_component_makeup
+
+/datum/unit_test/dq_material_machine_retains_component_makeup/Run()
+	var/turf/test_turf = run_loc_floor_bottom_left || locate(1, 1, 1)
+	var/obj/machinery/machine = new(test_turf)
+	var/obj/item/stock_parts/capacitor/part = new(machine)
+	var/list/slots = default_material_slots(MATERIAL_APPLICATION_CAPACITOR, SHEET_MATERIAL_AMOUNT)
+	part.apply_material_construction(list(MATERIAL_ROLE_DIELECTRIC = MAT_DIAMOND), slots, MATERIAL_APPLICATION_CAPACITOR)
+	machine.component_parts = list(part)
+	TEST_ASSERT(machine.finalize_material_assembly(), "A constructed machine must retain the material makeup of its installed parts")
+	TEST_ASSERT(length(machine.material_component_manifest), "Machine material composition must remain inspectable after the frame is consumed")
+	TEST_ASSERT(machine.material_emp_resistance > 0, "Installed dielectric parts must affect whole-machine EMP behavior")
+	qdel(machine)

@@ -45,6 +45,7 @@ Buildable meters
 	else
 		pipe_type = _pipe_type
 		set_dir(_dir)
+	ensure_material_construction(MATERIAL_APPLICATION_PRESSURE)
 
 	update()
 	pixel_x += rand(-5, 5)
@@ -63,6 +64,7 @@ Buildable meters
 	pipe_type = make_from.type
 	engineered_material_id = make_from.engineered_material_id
 	material_liner_integrity = make_from.material_liner_integrity
+	copy_material_construction_from(make_from)
 
 /obj/item/pipe/trinary/flippable/make_from_existing(obj/machinery/atmospherics/trinary/make_from)
 	..()
@@ -176,6 +178,8 @@ Buildable meters
 			return
 		var/datum/material/material = stock.material
 		engineered_material_id = material.name
+		var/list/slots = default_material_slots(MATERIAL_APPLICATION_PRESSURE, SHEET_MATERIAL_AMOUNT)
+		apply_material_construction(list(MATERIAL_ROLE_STRUCTURE = material.name, MATERIAL_ROLE_LINER = material.name), slots, MATERIAL_APPLICATION_PRESSURE)
 		stock.use(1)
 		color = material.icon_colour
 		to_chat(user, span_notice("You form [material.display_name] around [src]. Its installed geometry will determine pressure strength, heat transfer, and chemical exposure."))
@@ -223,6 +227,7 @@ Buildable meters
 /obj/item/pipe/proc/build_pipe(obj/machinery/atmospherics/A)
 	A.engineered_material_id = engineered_material_id
 	A.material_liner_integrity = material_liner_integrity
+	A.copy_material_construction_from(src)
 	A.set_dir(dir)
 	A.init_dir()
 	if(pipename)

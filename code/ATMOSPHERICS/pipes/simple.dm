@@ -20,8 +20,6 @@
 	var/minimum_temperature_difference = 300
 	var/thermal_conductivity = 0 //WALL_HEAT_TRANSFER_COEFFICIENT No
 
-	var/maximum_pressure = 70*ONE_ATMOSPHERE
-	var/fatigue_pressure = 55*ONE_ATMOSPHERE
 	alert_pressure = 55*ONE_ATMOSPHERE
 
 	level = 1
@@ -43,32 +41,11 @@
 	. = ..()
 
 /obj/machinery/atmospherics/pipe/simple/check_pressure(pressure)
-	var/datum/gas_mixture/environment = loc.return_air()
-
-	var/pressure_difference = pressure - environment.return_pressure()
-	var/datum/material/material = engineered_material()
-	var/effective_maximum = maximum_pressure
-	var/effective_fatigue = fatigue_pressure
-	if(material)
-		var/internal_temperature = parent?.air?.return_temperature() || T20C
-		effective_maximum = material.material_pressure_limit(MATERIAL_PIPE_REFERENCE_RADIUS, MATERIAL_PIPE_REFERENCE_THICKNESS, internal_temperature)
-		effective_fatigue = effective_maximum * 0.78
-
-	if(pressure_difference > effective_maximum)
-		burst()
-
-	else if(pressure_difference > effective_fatigue)
-		if(!damaged_leak && prob(5))
-			damaged_leak = TRUE
-			set_leaking(TRUE)
-			visible_message(span_warning("Gas begins hissing from a fatigue crack in \the [src]."))
-			playsound(src, 'sound/effects/spray2.ogg', 35, 1)
-
-	else return 1
+	return ..()
 
 /// Returns TRUE only while a physical exposure requires another timed sample.
 /obj/machinery/atmospherics/pipe/proc/process_engineered_material_exposure(datum/gas_mixture/mixture)
-	var/datum/material/material = engineered_material()
+	var/datum/material/material = material_for_role(MATERIAL_ROLE_LINER) || engineered_material()
 	if(!material || !mixture)
 		return FALSE
 	var/now = world.time
@@ -110,14 +87,6 @@
 			initialize_directions = SOUTH|EAST
 		if(SOUTHWEST)
 			initialize_directions = SOUTH|WEST
-
-/obj/machinery/atmospherics/pipe/simple/proc/burst()
-	src.visible_message(span_danger("\The [src] bursts!"));
-	playsound(src, 'sound/effects/bang.ogg', 25, 1)
-	var/datum/effect/effect/system/smoke_spread/smoke = new
-	smoke.set_up(1,0, src.loc, 0)
-	smoke.start()
-	qdel(src)
 
 /obj/machinery/atmospherics/pipe/simple/proc/normalize_dir()
 	if(dir==3)

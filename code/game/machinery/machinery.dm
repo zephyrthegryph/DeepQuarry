@@ -117,6 +117,10 @@ Class Procs:
 	var/maintenance_wrench_time = 0
 	/// Time spent welding a damaged machine back to full integrity.
 	var/maintenance_weld_time = 2 SECONDS
+	/// Inspectable material makeup retained from the frame and installed parts.
+	var/list/material_component_manifest
+	/// Whole-machine EMP rejection supplied by insulating component materials.
+	var/material_emp_resistance = 0
 
 	var/speed_process = FALSE			//If false, SSmachines. If true, SSfastprocess.
 
@@ -232,6 +236,8 @@ Class Procs:
 	return GAS_DEPENDENCY_ALL
 
 /obj/machinery/emp_act(severity, recursive)
+	if(material_emp_resistance && prob(material_emp_resistance))
+		return EMP_PROTECT_ALL
 	. = ..()
 	if (. & EMP_PROTECT_SELF)
 		return
@@ -338,6 +344,36 @@ Class Procs:
 
 /obj/machinery/proc/RefreshParts() //Placeholder proc for machines that are built using frames.
 	return
+
+/// Finalize the physical machine from its real installed parts. Individual
+/// machines still calculate functional ratings in RefreshParts(); this common
+/// pass retains their materials and supplies chassis/EMP behavior.
+/obj/machinery/proc/finalize_material_assembly()
+	material_component_manifest = list()
+	var/total_integrity = 0
+	var/total_dielectric = 0
+	var/part_count = 0
+	for(var/obj/item/part as anything in component_parts)
+		var/datum/material/material = part.primary_construction_material() || part.get_material()
+		if(!material)
+			continue
+		part_count++
+		total_integrity += material.integrity
+		total_dielectric += material.dielectric_strength
+		material_component_manifest += "[part.name]: [material.display_name]"
+	if(!part_count)
+		return FALSE
+	var/integrity_factor = clamp((total_integrity / part_count) / 150, 0.5, 2.5)
+	max_integrity = max(1, round(initial(max_integrity) * integrity_factor))
+	if(uses_integrity)
+		update_integrity(max_integrity)
+	material_emp_resistance = clamp(round(total_dielectric / part_count * 0.6), 0, 75)
+	return TRUE
+
+/obj/machinery/examine(mob/user)
+	. = ..()
+	if(length(material_component_manifest))
+		. += span_notice("Installed material parts: [jointext(material_component_manifest, "; ")].")
 
 /obj/machinery/proc/assign_uid()
 	uid = gl_uid

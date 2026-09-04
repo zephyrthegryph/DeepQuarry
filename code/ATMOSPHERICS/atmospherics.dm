@@ -80,13 +80,17 @@ Pipelines + Other Objects -> Pipe network
 	return ..()
 
 /obj/machinery/atmospherics/proc/engineered_material()
-	return engineered_material_id ? get_material_by_name(engineered_material_id) : null
+	return material_for_role(MATERIAL_ROLE_STRUCTURE) || (engineered_material_id ? get_material_by_name(engineered_material_id) : null)
 
 /obj/machinery/atmospherics/proc/supports_engineered_material()
 	return FALSE
 
 /obj/machinery/atmospherics/pipe/supports_engineered_material()
 	return TRUE
+
+/obj/machinery/atmospherics/pipe/Initialize(mapload, newdir)
+	ensure_material_construction(MATERIAL_APPLICATION_PRESSURE)
+	return ..()
 
 /obj/machinery/atmospherics/examine(mob/user)
 	. = ..()
@@ -150,6 +154,8 @@ Pipelines + Other Objects -> Pipe network
 			return
 		var/datum/material/material = stock.material
 		engineered_material_id = material.name
+		var/list/slots = default_material_slots(MATERIAL_APPLICATION_PRESSURE, SHEET_MATERIAL_AMOUNT)
+		apply_material_construction(list(MATERIAL_ROLE_STRUCTURE = material.name, MATERIAL_ROLE_LINER = material.name), slots, MATERIAL_APPLICATION_PRESSURE)
 		stock.use(1)
 		to_chat(user, span_notice("You fit [material.display_name] onto [src]. Its actual geometry and operating conditions will determine performance."))
 		return

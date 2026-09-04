@@ -329,6 +329,7 @@ GLOBAL_LIST(construction_frame_floor)
 
 /obj/structure/frame/Initialize(mapload, dir, building = 0, datum/frame/frame_types/type, mob/user as mob)
 	. = ..()
+	ensure_material_construction(MATERIAL_APPLICATION_MACHINE_PART, 5 * SHEET_MATERIAL_AMOUNT)
 	if(building)
 		frame_type = type
 		state = FRAME_PLACED
@@ -439,6 +440,7 @@ GLOBAL_LIST(construction_frame_floor)
 				if(component_check)
 					playsound(src, P.usesound, 50, 1)
 					var/obj/machinery/new_machine = new circuit.build_path(src.loc, dir)
+					new_machine.copy_material_construction_from(src)
 					// Handle machines that have allocated default parts in thier constructor.
 					if(new_machine.component_parts)
 						for(var/CP in new_machine.component_parts)
@@ -460,6 +462,7 @@ GLOBAL_LIST(construction_frame_floor)
 					new_machine.circuit = circuit
 
 					new_machine.RefreshParts()
+					new_machine.finalize_material_assembly()
 
 					new_machine.pixel_x = pixel_x
 					new_machine.pixel_y = pixel_y

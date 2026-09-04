@@ -1,0 +1,5 @@
+author: "BigBadE"
+delete-after: true
+changes:
+  - rscadd: "Material-built pipes, canisters, cables, and machinery now retain their complete construction and use it for pressure, corrosion, thermal, overload, and EMP behavior."
+  - bugfix: "Installed infrastructure no longer discards liners and insulation chosen during fabrication."

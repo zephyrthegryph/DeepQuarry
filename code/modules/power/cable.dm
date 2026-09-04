@@ -64,15 +64,26 @@ GLOBAL_LIST_INIT(possible_cable_coil_colours, list(
 	var/material_temperature = T20C
 	var/material_buffer_energy = 0
 
-/obj/structure/cable/proc/engineered_material()
-	return engineered_material_id ? get_material_by_name(engineered_material_id) : null
+/obj/structure/cable/proc/engineered_material() as /datum/material
+	return material_for_role(MATERIAL_ROLE_CONDUCTOR) || (engineered_material_id ? get_material_by_name(engineered_material_id) : null)
+
+/obj/structure/cable/proc/insulation_material() as /datum/material
+	return material_for_role(MATERIAL_ROLE_INSULATION)
 
 /obj/structure/cable/proc/set_engineered_material(material_id)
 	engineered_material_id = material_id
+	if(material_id && !length(construction_materials))
+		var/list/slots = default_material_slots(MATERIAL_APPLICATION_CABLE, SHEET_MATERIAL_AMOUNT)
+		apply_material_construction(list(MATERIAL_ROLE_CONDUCTOR = material_id), slots, MATERIAL_APPLICATION_CABLE)
 	var/datum/material/material = engineered_material()
 	if(material?.icon_colour)
 		color = material.icon_colour
 	powernet?.invalidate_material_cache()
+
+/obj/structure/cable/proc/recover_coil(turf/location, length)
+	var/obj/item/stack/cable_coil/coil = new(location, length, color, engineered_material_id)
+	coil.copy_material_construction_from(src)
+	return coil
 
 /obj/structure/cable/drain_power(drain_check, surge, amount = 0)
 	if(drain_check)
@@ -106,6 +117,7 @@ GLOBAL_LIST_INIT(possible_cable_coil_colours, list(
 
 /obj/structure/cable/Initialize(mapload)
 	. = ..()
+	ensure_material_construction(MATERIAL_APPLICATION_CABLE)
 
 	// ensure d1 & d2 reflect the icon_state for entering and exiting cable
 
@@ -234,9 +246,9 @@ GLOBAL_LIST_INIT(possible_cable_coil_colours, list(
 		return ITEM_INTERACT_BLOCKING
 
 	if(src.d1)	// 0-X cables are 1 unit, X-X cables are 2 units long
-		CC = new/obj/item/stack/cable_coil(T, 2, color, engineered_material_id)
+		CC = recover_coil(T, 2)
 	else
-		CC = new/obj/item/stack/cable_coil(T, 1, color, engineered_material_id)
+		CC = recover_coil(T, 1)
 
 	src.add_fingerprint(user)
 	src.transfer_fingerprints_to(CC)
@@ -590,6 +602,7 @@ GLOBAL_LIST_INIT(possible_cable_coil_colours, list(
 
 /obj/item/stack/cable_coil/Initialize(mapload, length = MAXCOIL, param_color = null, material_id)
 	. = ..()
+	ensure_material_construction(MATERIAL_APPLICATION_CABLE)
 	amount = length
 	engineered_material_id = material_id
 	if (param_color) // It should be red by default, so only recolor it if parameter was specified.
@@ -772,6 +785,7 @@ GLOBAL_LIST_INIT(possible_cable_coil_colours, list(
 	else
 		C = new /obj/structure/cable(F)
 	C.set_engineered_material(engineered_material_id)
+	C.copy_material_construction_from(src)
 	C.cableColor(color)
 	C.d1 = d1
 	C.d2 = d2
