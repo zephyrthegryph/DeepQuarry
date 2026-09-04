@@ -2,7 +2,7 @@
 #define ALLOCATION_POLICY_EQUAL "equal"
 #define ALLOCATION_POLICY_STAFFING "staffing"
 #define ALLOCATION_POLICY_PAYROLL "payroll"
-#define ALLOCATION_POLICY_MANUAL "manual"
+#define DEPARTMENT_BASE_OPERATING_ALLOCATION 1000
 
 //Supply packs are in /code/datums/supplypacks
 //Computers are in /code/game/machinery/computer/supply.dm
@@ -90,45 +90,107 @@ SUBSYSTEM_DEF(supply)
 /datum/controller/subsystem/supply/proc/run_department_budget_cycle()
 	var/list/funded_allocations = list()
 	GLOB.station_account.roll_accounting_period()
-	var/projected_payroll = projected_station_payroll()
-	var/nt_payroll_grant = round(projected_payroll * nt_salary_support)
+	var/list/plan = department_budget_plan()
+	var/nt_payroll_grant = plan["nt_grant"]
 	if(nt_payroll_grant > 0)
-		GLOB.station_account.credit(nt_payroll_grant, "NanoTrasen", "Monthly payroll support (75%)", "NanoTrasen budget office")
-	var/department_count = 0
-	for(var/department in GLOB.department_accounts)
-		if(department != "Vendor")
-			department_count++
-	var/equal_allocation = department_count ? round(projected_payroll / department_count) : 0
-	var/total_staff = active_station_employee_count()
-	var/list/requested_allocations = list()
+		GLOB.station_account.credit(nt_payroll_grant, "NanoTrasen", "Pay-period payroll support (75%)", "NanoTrasen budget office")
+	var/list/department_plans = plan["departments"]
 	for(var/department in GLOB.department_accounts)
 		if(department == "Vendor")
 			continue
 		var/datum/money_account/budget = GLOB.department_accounts[department]
 		if(!budget?.roll_budget_period())
 			continue
-		if(allocation_policy != ALLOCATION_POLICY_MANUAL)
-			switch(allocation_policy)
-				if(ALLOCATION_POLICY_EQUAL)
-					budget.monthly_allocation = equal_allocation
-				if(ALLOCATION_POLICY_STAFFING)
-					budget.monthly_allocation = total_staff ? round(projected_payroll * active_department_employee_count(department) / total_staff) : equal_allocation
-				if(ALLOCATION_POLICY_PAYROLL)
-					budget.monthly_allocation = projected_department_payroll(department)
-		if(budget.monthly_allocation <= 0 || budget.suspended)
-			funded_allocations[department] = 0
+		var/list/department_plan = department_plans[department]
+		if(!department_plan)
 			continue
-		requested_allocations[department] = budget.monthly_allocation
-	var/list/planned_allocations = proportional_department_allocations(requested_allocations, GLOB.station_account?.money || 0)
-	for(var/department in requested_allocations)
+		budget.monthly_allocation = department_plan["requested"]
+	for(var/department in department_plans)
 		var/datum/money_account/budget = GLOB.department_accounts[department]
-		var/funded_amount = planned_allocations[department] || 0
-		if(funded_amount > 0 && transfer_account_funds(GLOB.station_account, budget, funded_amount, "Monthly department allocation", "Automated budget cycle"))
+		var/list/department_plan = department_plans[department]
+		var/funded_amount = department_plan["funded"] || 0
+		if(funded_amount > 0 && transfer_account_funds(GLOB.station_account, budget, funded_amount, "Pay-period department allocation", "Automated budget cycle"))
 			funded_allocations[department] = funded_amount
 		else
 			funded_allocations[department] = 0
 	service_accounting_period++
 	return funded_allocations
+
+/// Build the exact next-cycle allocation plan used by both execution and UI.
+/// Payroll portions are funded before operating allowances, and explicit
+/// department overrides do not disable automatic planning elsewhere.
+/datum/controller/subsystem/supply/proc/department_budget_plan()
+	var/projected_payroll = projected_station_payroll()
+	var/nt_grant = max(0, round(projected_payroll * nt_salary_support))
+	var/available = max(0, round((GLOB.station_account?.money || 0) + nt_grant))
+	var/total_staff = active_station_employee_count()
+	var/active_departments = 0
+	for(var/department in GLOB.department_accounts)
+		if(department != "Vendor" && active_department_employee_count(department) > 0)
+			active_departments++
+	var/operating_pool = active_departments * DEPARTMENT_BASE_OPERATING_ALLOCATION
+	var/list/department_plans = list()
+	var/list/payroll_requests = list()
+	var/list/operating_requests = list()
+	var/total_requested = 0
+	for(var/department in GLOB.department_accounts)
+		if(department == "Vendor")
+			continue
+		var/datum/money_account/budget = GLOB.department_accounts[department]
+		var/staff = active_department_employee_count(department)
+		var/payroll = projected_department_payroll(department)
+		var/operating = 0
+		if(staff > 0)
+			switch(allocation_policy)
+				if(ALLOCATION_POLICY_STAFFING)
+					operating = total_staff ? round(operating_pool * staff / total_staff) : 0
+				if(ALLOCATION_POLICY_PAYROLL)
+					operating = 0
+				else
+					operating = DEPARTMENT_BASE_OPERATING_ALLOCATION
+		var/automatic = payroll + operating
+		var/requested = budget?.allocation_configured ? max(0, round(budget.monthly_allocation)) : automatic
+		if(budget?.suspended)
+			requested = 0
+		var/payroll_request = min(payroll, requested)
+		var/operating_request = max(0, requested - payroll_request)
+		payroll_requests[department] = payroll_request
+		operating_requests[department] = operating_request
+		total_requested += requested
+		department_plans[department] = list(
+			"staff" = staff,
+			"payroll" = payroll,
+			"automatic" = automatic,
+			"requested" = requested,
+			"payroll_requested" = payroll_request,
+			"operating_requested" = operating_request,
+			"overridden" = !!budget?.allocation_configured,
+			"funded" = 0,
+			"shortfall" = requested,
+		)
+	var/list/funded_payroll = proportional_department_allocations(payroll_requests, available)
+	var/payroll_funded = 0
+	for(var/department in funded_payroll)
+		payroll_funded += funded_payroll[department]
+	var/list/funded_operating = proportional_department_allocations(operating_requests, max(0, available - payroll_funded))
+	var/total_funded = 0
+	for(var/department in department_plans)
+		var/list/department_plan = department_plans[department]
+		var/funded = (funded_payroll[department] || 0) + (funded_operating[department] || 0)
+		department_plan["funded"] = funded
+		department_plan["shortfall"] = max(0, department_plan["requested"] - funded)
+		total_funded += funded
+	return list(
+		"departments" = department_plans,
+		"projected_payroll" = projected_payroll,
+		"nt_grant" = nt_grant,
+		"available" = available,
+		"operating_pool" = operating_pool,
+		"requested" = total_requested,
+		"funded" = total_funded,
+		"remaining" = max(0, available - total_funded),
+		"shortfall" = max(0, total_requested - total_funded),
+	)
 
 /// Divide a constrained station allocation pool proportionally. Whole-Thaler
 /// remainders are distributed one at a time without allowing list order to
@@ -247,10 +309,15 @@ SUBSYSTEM_DEF(supply)
 			count += active_department_employee_count(department)
 	return count
 
-/datum/controller/subsystem/supply/proc/set_allocation_policy(policy)
-	if(!(policy in list(ALLOCATION_POLICY_EQUAL, ALLOCATION_POLICY_STAFFING, ALLOCATION_POLICY_PAYROLL, ALLOCATION_POLICY_MANUAL)))
+/datum/controller/subsystem/supply/proc/set_allocation_policy(policy, clear_overrides = FALSE)
+	if(!(policy in list(ALLOCATION_POLICY_EQUAL, ALLOCATION_POLICY_STAFFING, ALLOCATION_POLICY_PAYROLL)))
 		return FALSE
 	allocation_policy = policy
+	if(clear_overrides)
+		for(var/department in GLOB.department_accounts)
+			var/datum/money_account/budget = GLOB.department_accounts[department]
+			if(budget?.is_department_budget())
+				budget.allocation_configured = FALSE
 	return TRUE
 
 /datum/controller/subsystem/supply/proc/record_currency_created(amount, source)
@@ -876,4 +943,4 @@ SUBSYSTEM_DEF(supply)
 #undef ALLOCATION_POLICY_EQUAL
 #undef ALLOCATION_POLICY_STAFFING
 #undef ALLOCATION_POLICY_PAYROLL
-#undef ALLOCATION_POLICY_MANUAL
+#undef DEPARTMENT_BASE_OPERATING_ALLOCATION

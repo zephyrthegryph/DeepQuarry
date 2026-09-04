@@ -3,6 +3,7 @@ import {
   Box,
   Button,
   LabeledList,
+  NumberInput,
   ProgressBar,
   Section,
   Stack,
@@ -12,13 +13,19 @@ import {
 
 import type { Data, departmentFinance, financeTransaction } from './types';
 
-const allocationAmounts = [0, 1000, 2500, 5000, 10000, 25000];
 const wageMultipliers = [0.5, 0.75, 1, 1.25, 1.5, 2];
 const allocationPolicies = [
-  ['equal', 'Equal', 'Divide the payroll pool evenly between departments.'],
-  ['staffing', 'By Staffing', 'Allocate according to active employee count.'],
-  ['payroll', 'By Payroll', 'Match each department’s projected wage bill.'],
-  ['manual', 'Manual', 'Use the fixed amounts configured below.'],
+  [
+    'equal',
+    'Payroll + Equal Operations',
+    'Cover wages, then provide every staffed department the same operating allowance.',
+  ],
+  [
+    'staffing',
+    'Payroll + Staffing',
+    'Cover wages, then divide operating funds according to active staff.',
+  ],
+  ['payroll', 'Payroll Only', 'Allocate projected wages without an operating allowance.'],
 ] as const;
 const transactionsPerPage = 10;
 const formatMoney = (amount: number) => `${amount.toLocaleString()} Th`;
@@ -87,30 +94,44 @@ const TransactionTable = (props: {
   );
 };
 
-const AllocationButtons = (props: {
-  department: string;
-  currentAllocation: number;
-}) => {
+const AllocationControl = (props: { department: departmentFinance }) => {
   const { act } = useBackend<Data>();
+  const { department } = props;
   return (
-    <Stack wrap>
-      {allocationAmounts.map((amount) => (
-        <Stack.Item key={amount}>
-          <Button
-            icon={amount ? 'calendar-plus' : 'ban'}
-            color="good"
-            selected={props.currentAllocation === amount}
-            onClick={() =>
-              act('set_department_allocation', {
-                department: props.department,
-                amount,
-              })
-            }
-          >
-            {amount ? formatMoney(amount) : 'None'}
-          </Button>
-        </Stack.Item>
-      ))}
+    <Stack align="center">
+      <Stack.Item>
+        <NumberInput
+          value={department.monthly_allocation}
+          minValue={0}
+          maxValue={1000000}
+          step={250}
+          unit=" Th"
+          width="110px"
+          onChange={(amount) =>
+            act('set_department_allocation', {
+              department: department.department,
+              amount,
+            })
+          }
+        />
+      </Stack.Item>
+      <Stack.Item>
+        <Button
+          icon="rotate-left"
+          disabled={!department.allocation_overridden}
+          tooltip={`Return to the policy amount of ${formatMoney(department.automatic_allocation)}.`}
+          onClick={() =>
+            act('clear_department_allocation', {
+              department: department.department,
+            })
+          }
+        >
+          Automatic
+        </Button>
+      </Stack.Item>
+      <Stack.Item color={department.allocation_overridden ? 'average' : 'good'}>
+        {department.allocation_overridden ? 'Override' : 'Policy'}
+      </Stack.Item>
     </Stack>
   );
 };
@@ -119,6 +140,7 @@ const DepartmentDetail = (props: {
   department: departmentFinance;
   largestBudget: number;
   canAllocate: boolean;
+  nextCycle: string | null;
 }) => {
   const { act } = useBackend<Data>();
   const { department, largestBudget, canAllocate } = props;
@@ -146,25 +168,37 @@ const DepartmentDetail = (props: {
             <LabeledList.Item label="Savings" color="good">
               {formatMoney(department.savings)}
             </LabeledList.Item>
-            <LabeledList.Item label="Monthly Allocation">
+            <LabeledList.Item label="Next Allocation">
               {formatMoney(department.monthly_allocation)}
             </LabeledList.Item>
-            <LabeledList.Item label="Income This Month" color="good">
+            <LabeledList.Item label="Expected Funding">
+              {formatMoney(department.funded_allocation)}
+            </LabeledList.Item>
+            <LabeledList.Item
+              label="Allocation Shortfall"
+              color={department.allocation_shortfall ? 'bad' : 'good'}
+            >
+              {formatMoney(department.allocation_shortfall)}
+            </LabeledList.Item>
+            <LabeledList.Item label="Income This Period" color="good">
               {formatMoney(department.monthly_income)}
             </LabeledList.Item>
-            <LabeledList.Item label="Expenditure This Month" color="bad">
+            <LabeledList.Item label="Spending This Period" color="bad">
               {formatMoney(department.monthly_expenses)}
             </LabeledList.Item>
             <LabeledList.Item
-              label="Monthly Net"
+              label="Period Net"
               color={monthlyNet < 0 ? 'bad' : 'good'}
             >
               {formatMoney(monthlyNet)}
             </LabeledList.Item>
+            <LabeledList.Item label="Active Employees">
+              {department.employee_count}
+            </LabeledList.Item>
             <LabeledList.Item label="Projected Payroll" color="average">
               {formatMoney(department.projected_payroll)}
             </LabeledList.Item>
-            <LabeledList.Item label="Resources Before Payroll">
+            <LabeledList.Item label="Projected Payroll Resources">
               {formatMoney(department.payroll_resources)}
             </LabeledList.Item>
             <LabeledList.Item
@@ -280,14 +314,28 @@ const DepartmentDetail = (props: {
       )}
 
       {canAllocate && (
-        <Section mt={2} title="Monthly Station Allocation">
+        <Section mt={2} title="Next Pay-Period Allocation">
           <Box mb={1} color="label">
-            Applied every 15 minutes. Unused operating funds roll into savings.
+            This department follows the automatic policy until Command enters an
+            override. Settlement is in {props.nextCycle || '—'}. Unused
+            operating funds roll into savings.
           </Box>
-          <AllocationButtons
-            department={department.department}
-            currentAllocation={department.monthly_allocation}
-          />
+          <AllocationControl department={department} />
+        </Section>
+      )}
+
+      {!!department.income_sources.length && (
+        <Section mt={2} title="Income Sources · Current Period">
+          <Table>
+            {department.income_sources.map((source) => (
+              <Table.Row key={source.source}>
+                <Table.Cell>{source.source}</Table.Cell>
+                <Table.Cell textAlign="right" color="good">
+                  {formatMoney(source.amount)}
+                </Table.Cell>
+              </Table.Row>
+            ))}
+          </Table>
         </Section>
       )}
 
@@ -312,6 +360,9 @@ export const DepartmentFinances = (props) => {
     station_monthly_income,
     nt_salary_support,
     allocation_policy,
+    next_budget_cycle,
+    budget_plan,
+    station_transactions = [],
   } = data;
   const canAllocate = !!can_allocate_station_budget;
   const defaultTab = canAllocate
@@ -368,10 +419,17 @@ export const DepartmentFinances = (props) => {
       </Tabs>
 
       {selectedTab === 'overview' && canAllocate && (
-        <Section title="Station Budget Allocation">
+        <Section
+          title="Next Pay-Period Plan"
+          buttons={
+            <Button icon="refresh" onClick={() => act('refresh')}>
+              Refresh
+            </Button>
+          }
+        >
           <Stack mb={2}>
             <Stack.Item grow>
-              <Box color="label">Unallocated Station Funds</Box>
+              <Box color="label">Current Station Funds</Box>
               <Box bold fontSize="24px" color="good">
                 {formatMoney(station_balance || 0)}
               </Box>
@@ -383,7 +441,48 @@ export const DepartmentFinances = (props) => {
               </Box>
             </Stack.Item>
           </Stack>
-          <Section title="Station Monthly Cash Flow" mb={2}>
+          {!!budget_plan && (
+            <Section title={`Settlement in ${next_budget_cycle || '—'}`} mb={2}>
+              <Stack>
+                <Stack.Item grow>
+                  <LabeledList>
+                    <LabeledList.Item label="Projected Payroll">
+                      {formatMoney(budget_plan.projected_payroll)}
+                    </LabeledList.Item>
+                    <LabeledList.Item label="Expected NT Support" color="good">
+                      {formatMoney(budget_plan.nt_grant)}
+                    </LabeledList.Item>
+                    <LabeledList.Item label="Funds Available">
+                      {formatMoney(budget_plan.available)}
+                    </LabeledList.Item>
+                    <LabeledList.Item label="Operating Allowance">
+                      {formatMoney(budget_plan.operating_pool)}
+                    </LabeledList.Item>
+                  </LabeledList>
+                </Stack.Item>
+                <Stack.Item grow>
+                  <LabeledList>
+                    <LabeledList.Item label="Departments Request">
+                      {formatMoney(budget_plan.requested)}
+                    </LabeledList.Item>
+                    <LabeledList.Item label="Expected Funding" color="good">
+                      {formatMoney(budget_plan.funded)}
+                    </LabeledList.Item>
+                    <LabeledList.Item
+                      label="Shortfall"
+                      color={budget_plan.shortfall ? 'bad' : 'good'}
+                    >
+                      {formatMoney(budget_plan.shortfall)}
+                    </LabeledList.Item>
+                    <LabeledList.Item label="Projected Remainder">
+                      {formatMoney(budget_plan.remaining)}
+                    </LabeledList.Item>
+                  </LabeledList>
+                </Stack.Item>
+              </Stack>
+            </Section>
+          )}
+          <Section title="Current Pay-Period Cash Flow" mb={2}>
             <Stack>
               <Stack.Item grow>
                 <LabeledList>
@@ -421,16 +520,16 @@ export const DepartmentFinances = (props) => {
                     ))}
                   </Table>
                 ) : (
-                  <Box color="label">No income recorded this month.</Box>
+                  <Box color="label">No income recorded this period.</Box>
                 )}
               </Stack.Item>
             </Stack>
           </Section>
-          <Section title="Automatic Allocation Policy" mb={2}>
+          <Section title="Automatic Funding Policy" mb={2}>
             <Box color="label" mb={1}>
-              Automatic policies divide the projected station payroll pool.
-              Selecting a fixed department amount switches the station to
-              Manual.
+              Payroll is always funded before operating allowances. Selecting a
+              policy clears department overrides and immediately recalculates
+              the preview.
             </Box>
             <Stack wrap>
               {allocationPolicies.map(([policy, label, description]) => (
@@ -452,7 +551,7 @@ export const DepartmentFinances = (props) => {
                 <Table.Cell>Department</Table.Cell>
                 <Table.Cell>Funds</Table.Cell>
                 <Table.Cell textAlign="right">Savings</Table.Cell>
-                <Table.Cell>Monthly Allocation</Table.Cell>
+                <Table.Cell>Next Allocation</Table.Cell>
               </Table.Row>
               {department_finances.map((department) => (
                 <Table.Row key={department.department}>
@@ -482,12 +581,15 @@ export const DepartmentFinances = (props) => {
                   </Table.Cell>
                   <Table.Cell>
                     <Box mb={1} color="label">
-                      Current: {formatMoney(department.monthly_allocation)}
+                      Payroll {formatMoney(department.projected_payroll)} · Ops{' '}
+                      {formatMoney(department.operating_allocation)}
                     </Box>
-                    <AllocationButtons
-                      department={department.department}
-                      currentAllocation={department.monthly_allocation}
-                    />
+                    <AllocationControl department={department} />
+                    {!!department.allocation_shortfall && (
+                      <Box mt={0.5} color="bad">
+                        Short {formatMoney(department.allocation_shortfall)}
+                      </Box>
+                    )}
                   </Table.Cell>
                 </Table.Row>
               ))}
@@ -497,6 +599,14 @@ export const DepartmentFinances = (props) => {
               No departmental accounts are available to this ID.
             </Box>
           )}
+          {!!station_transactions.length && (
+            <Section mt={2} title="Station Transactions">
+              <TransactionTable
+                transactions={station_transactions}
+                pageKey="station"
+              />
+            </Section>
+          )}
         </Section>
       )}
 
@@ -505,6 +615,7 @@ export const DepartmentFinances = (props) => {
           department={selectedDepartment}
           largestBudget={largestBudget}
           canAllocate={canAllocate}
+          nextCycle={next_budget_cycle}
         />
       )}
     </Box>

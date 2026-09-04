@@ -72,10 +72,11 @@
 	TEST_ASSERT_EQUAL(engineering_budget.wage_multiplier, 1.25, "department wage policy did not update")
 	TEST_ASSERT(console.set_department_allocation(DEPARTMENT_ENGINEERING, 5000), "valid monthly allocation was rejected")
 	TEST_ASSERT_EQUAL(engineering_budget.monthly_allocation, 5000, "monthly allocation policy did not update")
-	TEST_ASSERT(engineering_budget.allocation_configured, "explicit allocation did not disable automatic equal allocation")
-	TEST_ASSERT_EQUAL(SSsupply.allocation_policy, "manual", "fixed allocation did not select manual policy")
-	TEST_ASSERT(SSsupply.set_allocation_policy("staffing"), "staffing allocation policy was rejected")
+	TEST_ASSERT(engineering_budget.allocation_configured, "explicit allocation was not recorded as a department override")
+	TEST_ASSERT_EQUAL(SSsupply.allocation_policy, old_allocation_policy, "one department override disabled the station-wide automatic policy")
+	TEST_ASSERT(SSsupply.set_allocation_policy("staffing", TRUE), "staffing allocation policy was rejected")
 	TEST_ASSERT_EQUAL(SSsupply.allocation_policy, "staffing", "staffing allocation policy did not update")
+	TEST_ASSERT(!engineering_budget.allocation_configured, "selecting an automatic policy did not clear stale overrides")
 	TEST_ASSERT(!SSsupply.set_allocation_policy("embezzlement"), "invalid allocation policy was accepted")
 	var/list/data_after_policy = console.tgui_data(null)
 	var/list/finance_row = data_after_policy["department_finances"][1]
@@ -92,6 +93,54 @@
 	engineering_budget.allocation_configured = old_allocation_configured
 	SSsupply.allocation_policy = old_allocation_policy
 	qdel(console)
+
+/datum/unit_test/dq_department_budget_plan_is_immediate_and_funded
+
+/datum/unit_test/dq_department_budget_plan_is_immediate_and_funded/Run()
+	var/list/original_players = GLOB.player_list
+	var/original_policy = SSsupply.allocation_policy
+	var/list/original_allocations = list()
+	var/list/original_overrides = list()
+	for(var/department in GLOB.department_accounts)
+		var/datum/money_account/budget = GLOB.department_accounts[department]
+		original_allocations[department] = budget.monthly_allocation
+		original_overrides[department] = budget.allocation_configured
+		budget.allocation_configured = FALSE
+	GLOB.player_list = list()
+	var/mob/living/carbon/human/employee = new(run_loc_floor_bottom_left)
+	employee.job = JOB_ENGINEER
+	var/datum/mind/employee_mind = new("budget_plan_employee")
+	var/datum/money_account/employee_account = new
+	employee_account.account_number = 812345
+	employee_mind.initial_account = employee_account
+	employee_mind.transfer_to(employee)
+	GLOB.player_list += employee
+	SSsupply.allocation_policy = "equal"
+	var/list/plan = SSsupply.department_budget_plan()
+	var/list/departments = plan["departments"]
+	var/list/engineering = departments[DEPARTMENT_ENGINEERING]
+	var/list/medical = departments[DEPARTMENT_MEDICAL]
+	TEST_ASSERT_EQUAL(engineering["requested"], engineering["payroll"] + 1000, "default plan did not immediately cover Engineering payroll plus its operating allowance")
+	TEST_ASSERT_EQUAL(engineering["funded"], engineering["requested"], "affordable default plan did not report its exact expected funding")
+	TEST_ASSERT_EQUAL(medical["requested"], 0, "default plan allocated operating funds to an unstaffed department")
+	TEST_ASSERT_EQUAL(plan["requested"], plan["funded"] + plan["shortfall"], "budget preview did not reconcile requested, funded, and shortfall totals")
+	var/datum/money_account/engineering_budget = GLOB.department_accounts[DEPARTMENT_ENGINEERING]
+	engineering_budget.monthly_allocation = 250
+	engineering_budget.allocation_configured = TRUE
+	plan = SSsupply.department_budget_plan()
+	departments = plan["departments"]
+	engineering = departments[DEPARTMENT_ENGINEERING]
+	TEST_ASSERT_EQUAL(engineering["requested"], 250, "department override did not replace only its automatic plan value")
+	TEST_ASSERT(engineering["overridden"], "budget preview did not identify the department override")
+	GLOB.player_list = original_players
+	SSsupply.allocation_policy = original_policy
+	for(var/department in GLOB.department_accounts)
+		var/datum/money_account/budget = GLOB.department_accounts[department]
+		budget.monthly_allocation = original_allocations[department]
+		budget.allocation_configured = original_overrides[department]
+	qdel(employee_mind)
+	qdel(employee)
+	qdel(employee_account)
 
 /datum/unit_test/dq_payroll_uses_all_available_funds_fairly
 

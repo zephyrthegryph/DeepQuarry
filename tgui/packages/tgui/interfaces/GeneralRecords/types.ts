@@ -16,6 +16,8 @@ export type Data = {
   station_income_sources: financeIncomeSource[];
   nt_salary_support: number | null;
   allocation_policy: string | null;
+  next_budget_cycle: string | null;
+  budget_plan: budgetPlan | null;
   department_finances: departmentFinance[];
   contract_departments: string[];
   contract_faction_standings: factionStanding[];
@@ -235,6 +237,12 @@ export type departmentFinance = {
   balance: number;
   savings: number;
   monthly_allocation: number;
+  automatic_allocation: number;
+  funded_allocation: number;
+  allocation_shortfall: number;
+  allocation_overridden: BooleanLike;
+  employee_count: number;
+  operating_allocation: number;
   monthly_income: number;
   monthly_expenses: number;
   last_month_income: number;
@@ -250,7 +258,19 @@ export type departmentFinance = {
   wage_multiplier: number;
   service_subsidy: number;
   service_invoices: serviceInvoiceSummary;
+  income_sources: financeIncomeSource[];
   transactions: financeTransaction[];
+};
+
+export type budgetPlan = {
+  projected_payroll: number;
+  nt_grant: number;
+  available: number;
+  operating_pool: number;
+  requested: number;
+  funded: number;
+  remaining: number;
+  shortfall: number;
 };
 
 export type serviceInvoiceSummary = {

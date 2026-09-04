@@ -111,8 +111,7 @@
 	var/old_allocation = budget.monthly_allocation
 	budget.monthly_allocation = amount
 	budget.allocation_configured = TRUE
-	SSsupply.set_allocation_policy("manual")
-	budget.record_transaction(authenticated, "Monthly allocation set to [amount] Thalers", 0, name)
+	budget.record_transaction(authenticated, "Pay-period allocation override set to [amount] Thalers", 0, name)
 	if(old_allocation != amount)
 		emit_contract_event(CONTRACT_EVENT_BUDGET_ALLOCATION_CHANGED, list(
 			"department" = DEPARTMENT_COMMAND,
@@ -121,8 +120,30 @@
 			"target_account" = budget.account_number,
 			"target_is_department" = budget.is_department_budget(),
 			"metrics" = list("amount" = amount),
-			"detail" = "Published a [amount]-Thaler monthly allocation for [department]",
+			"detail" = "Published a [amount]-Thaler pay-period allocation for [department]",
 		), "budget-allocation:[REF(budget)]:[world.time]:[amount]", src, user)
+	return TRUE
+
+/obj/machinery/computer/skills/proc/clear_department_allocation(department, mob/living/user = null)
+	if(!can_allocate_station_budget())
+		return FALSE
+	var/datum/money_account/budget = GLOB.department_accounts[department]
+	if(!budget?.is_department_budget() || !budget.allocation_configured)
+		return FALSE
+	budget.allocation_configured = FALSE
+	var/list/plan = SSsupply.department_budget_plan()
+	var/list/department_plan = plan["departments"]?[department]
+	budget.monthly_allocation = department_plan?["requested"] || 0
+	budget.record_transaction(authenticated, "Pay-period allocation returned to automatic policy", 0, name)
+	emit_contract_event(CONTRACT_EVENT_BUDGET_ALLOCATION_CHANGED, list(
+		"department" = DEPARTMENT_COMMAND,
+		"source_department" = "Station",
+		"target_department" = department,
+		"target_account" = budget.account_number,
+		"target_is_department" = TRUE,
+		"metrics" = list("amount" = budget.monthly_allocation),
+		"detail" = "Returned [department] to the automatic funding policy",
+	), "budget-allocation:[REF(budget)]:[world.time]:automatic", src, user)
 	return TRUE
 
 /obj/machinery/computer/skills/attackby(obj/item/O as obj, mob/user)
@@ -164,6 +185,8 @@
 	data["isAI"] = isAI(user)
 	data["isRobot"] = isrobot(user)
 	if(authenticated)
+		var/list/budget_plan = SSsupply.department_budget_plan()
+		var/list/planned_departments = budget_plan["departments"]
 		data["can_allocate_station_budget"] = can_allocate_station_budget()
 		data["station_balance"] = can_allocate_station_budget() ? GLOB.station_account.money : null
 		data["station_monthly_income"] = can_allocate_station_budget() ? GLOB.station_account.monthly_income : null
@@ -171,18 +194,38 @@
 		data["station_income_sources"] = can_allocate_station_budget() ? finance_income_source_rows(GLOB.station_account) : list()
 		data["nt_salary_support"] = can_allocate_station_budget() ? SSsupply.nt_salary_support : null
 		data["allocation_policy"] = can_allocate_station_budget() ? SSsupply.allocation_policy : null
+		data["next_budget_cycle"] = DisplayTimeText(max(0, SSsupply.next_payroll - world.time), 1)
+		data["budget_plan"] = can_allocate_station_budget() ? list(
+			"projected_payroll" = budget_plan["projected_payroll"],
+			"nt_grant" = budget_plan["nt_grant"],
+			"available" = budget_plan["available"],
+			"operating_pool" = budget_plan["operating_pool"],
+			"requested" = budget_plan["requested"],
+			"funded" = budget_plan["funded"],
+			"remaining" = budget_plan["remaining"],
+			"shortfall" = budget_plan["shortfall"],
+		) : null
 		var/list/department_finances = list()
 		for(var/department in GLOB.department_accounts)
 			if(department == "Vendor" || !can_view_department(department))
 				continue
 			var/datum/money_account/budget = GLOB.department_accounts[department]
 			var/projected_payroll = SSsupply.projected_department_payroll(department)
-			var/payroll_resources = budget.money + budget.savings + budget.monthly_allocation
+			var/list/department_plan = planned_departments[department]
+			var/planned_allocation = department_plan?["requested"] || 0
+			var/funded_allocation = department_plan?["funded"] || 0
+			var/payroll_resources = budget.money + budget.savings + funded_allocation
 			department_finances.Add(list(list(
 				"department" = department,
 				"balance" = budget.money,
 				"savings" = budget.savings,
-				"monthly_allocation" = budget.monthly_allocation,
+				"monthly_allocation" = planned_allocation,
+				"automatic_allocation" = department_plan?["automatic"] || 0,
+				"funded_allocation" = funded_allocation,
+				"allocation_shortfall" = department_plan?["shortfall"] || 0,
+				"allocation_overridden" = !!budget.allocation_configured,
+				"employee_count" = department_plan?["staff"] || 0,
+				"operating_allocation" = department_plan?["operating_requested"] || 0,
 				"monthly_income" = budget.monthly_income,
 				"monthly_expenses" = budget.monthly_expenses,
 				"last_month_income" = budget.last_month_income,
@@ -198,6 +241,7 @@
 				"wage_multiplier" = budget.wage_multiplier,
 				"service_subsidy" = budget.service_subsidy,
 				"service_invoices" = SSsupply.service_invoice_summary(department),
+				"income_sources" = finance_income_source_rows(budget),
 				"transactions" = finance_transaction_rows(budget)
 			)))
 		data["department_finances"] = department_finances
@@ -466,10 +510,12 @@
 				var/department = params["department"]
 				var/amount = text2num(params["amount"])
 				return set_department_allocation(department, amount, ui.user)
+			if("clear_department_allocation")
+				return clear_department_allocation(params["department"], ui.user)
 			if("set_allocation_policy")
 				if(!can_allocate_station_budget())
 					return FALSE
-				return SSsupply.set_allocation_policy(params["policy"])
+				return SSsupply.set_allocation_policy(params["policy"], TRUE)
 			if("set_service_subsidy")
 				if(!can_view_department(DEPARTMENT_CIVILIAN))
 					return FALSE
@@ -477,6 +523,8 @@
 				if(!isnum(subsidy) || subsidy < 0 || subsidy > 1)
 					return FALSE
 				GLOB.department_accounts[DEPARTMENT_CIVILIAN].service_subsidy = subsidy
+				return TRUE
+			if("refresh")
 				return TRUE
 			if("del_all")
 				if(GLOB.PDA_Manifest)
