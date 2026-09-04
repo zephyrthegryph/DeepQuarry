@@ -14,18 +14,23 @@ import {
 import type { Data, departmentFinance, financeTransaction } from './types';
 
 const wageMultipliers = [0.5, 0.75, 1, 1.25, 1.5, 2];
+const transferPresets = [250, 500, 1000, 2500, 5000];
 const allocationPolicies = [
   [
     'equal',
-    'Payroll + Equal Operations',
-    'Cover wages, then provide every staffed department the same operating allowance.',
+    'Equal Shares',
+    'Divide recurring operating funds equally. Payroll remains separate and takes priority.',
   ],
   [
     'staffing',
-    'Payroll + Staffing',
-    'Cover wages, then divide operating funds according to active staff.',
+    'By Staffing',
+    'Divide recurring operating funds according to active staff. Payroll remains separate.',
   ],
-  ['payroll', 'Payroll Only', 'Allocate projected wages without an operating allowance.'],
+  [
+    'payroll',
+    'No Operating Pool',
+    'Fund payroll without recurring discretionary allocations.',
+  ],
 ] as const;
 const transactionsPerPage = 10;
 const formatMoney = (amount: number) => `${amount.toLocaleString()} Th`;
@@ -101,16 +106,16 @@ const AllocationControl = (props: { department: departmentFinance }) => {
     <Stack align="center">
       <Stack.Item>
         <NumberInput
-          value={department.monthly_allocation}
+          value={department.allocation_percent}
           minValue={0}
-          maxValue={1000000}
-          step={250}
-          unit=" Th"
-          width="110px"
-          onChange={(amount) =>
-            act('set_department_allocation', {
+          maxValue={100}
+          step={1}
+          unit="%"
+          width="80px"
+          onChange={(percent) =>
+            act('set_department_allocation_percent', {
               department: department.department,
-              amount,
+              percent,
             })
           }
         />
@@ -131,6 +136,60 @@ const AllocationControl = (props: { department: departmentFinance }) => {
       </Stack.Item>
       <Stack.Item color={department.allocation_overridden ? 'average' : 'good'}>
         {department.allocation_overridden ? 'Override' : 'Policy'}
+      </Stack.Item>
+      <Stack.Item color="label">
+        {formatMoney(department.operating_allocation)} operating
+      </Stack.Item>
+    </Stack>
+  );
+};
+
+const OneTimeTransfer = (props: { department: string }) => {
+  const { act } = useBackend<Data>();
+  const [amount, setAmount] = useSharedState(
+    `oneTimeFunding-${props.department}`,
+    1000,
+  );
+  return (
+    <Stack align="center" wrap>
+      <Stack.Item basis="100%">
+        <Stack align="center" wrap>
+          {transferPresets.map((preset) => (
+            <Stack.Item key={preset}>
+              <Button
+                selected={amount === preset}
+                onClick={() => setAmount(preset)}
+              >
+                {preset.toLocaleString()} Th
+              </Button>
+            </Stack.Item>
+          ))}
+        </Stack>
+      </Stack.Item>
+      <Stack.Item mt={1}>
+        <NumberInput
+          value={amount}
+          minValue={1}
+          maxValue={1000000}
+          step={250}
+          unit=" Th"
+          width="110px"
+          onChange={setAmount}
+        />
+      </Stack.Item>
+      <Stack.Item mt={1}>
+        <Button
+          icon="money-bill-transfer"
+          color="good"
+          onClick={() =>
+            act('transfer_department_funds', {
+              department: props.department,
+              amount,
+            })
+          }
+        >
+          Transfer Now
+        </Button>
       </Stack.Item>
     </Stack>
   );
@@ -225,6 +284,9 @@ const DepartmentDetail = (props: {
       </Stack>
 
       <Section mt={2} title="Department Wage Policy">
+        <Box color="label" mb={1}>
+          Percentage of each job’s base wage paid every 15-minute pay period.
+        </Box>
         <Stack wrap>
           {wageMultipliers.map((multiplier) => (
             <Stack.Item key={multiplier}>
@@ -237,7 +299,7 @@ const DepartmentDetail = (props: {
                   })
                 }
               >
-                x{multiplier}
+                {Math.round(multiplier * 100)}%
               </Button>
             </Stack.Item>
           ))}
@@ -314,14 +376,23 @@ const DepartmentDetail = (props: {
       )}
 
       {canAllocate && (
-        <Section mt={2} title="Next Pay-Period Allocation">
-          <Box mb={1} color="label">
-            This department follows the automatic policy until Command enters an
-            override. Settlement is in {props.nextCycle || '—'}. Unused
-            operating funds roll into savings.
-          </Box>
-          <AllocationControl department={department} />
-        </Section>
+        <>
+          <Section mt={2} title="Recurring Operating Share">
+            <Box mb={1} color="label">
+              This percentage divides the station operating pool every pay
+              period. Payroll is calculated separately and funded first. Next
+              settlement: {props.nextCycle || '—'}.
+            </Box>
+            <AllocationControl department={department} />
+          </Section>
+          <Section mt={2} title="One-Time Funding">
+            <Box mb={1} color="label">
+              Transfer station funds immediately. This does not alter future
+              allocations or wages.
+            </Box>
+            <OneTimeTransfer department={department.department} />
+          </Section>
+        </>
       )}
 
       {!!department.income_sources.length && (
@@ -455,7 +526,7 @@ export const DepartmentFinances = (props) => {
                     <LabeledList.Item label="Funds Available">
                       {formatMoney(budget_plan.available)}
                     </LabeledList.Item>
-                    <LabeledList.Item label="Operating Allowance">
+                    <LabeledList.Item label="Recurring Operating Pool">
                       {formatMoney(budget_plan.operating_pool)}
                     </LabeledList.Item>
                   </LabeledList>
@@ -527,9 +598,9 @@ export const DepartmentFinances = (props) => {
           </Section>
           <Section title="Automatic Funding Policy" mb={2}>
             <Box color="label" mb={1}>
-              Payroll is always funded before operating allowances. Selecting a
-              policy clears department overrides and immediately recalculates
-              the preview.
+              Payroll is calculated separately and funded first. This policy
+              divides the recurring operating pool. Selecting a policy clears
+              percentage overrides and immediately recalculates the preview.
             </Box>
             <Stack wrap>
               {allocationPolicies.map(([policy, label, description]) => (
@@ -551,7 +622,7 @@ export const DepartmentFinances = (props) => {
                 <Table.Cell>Department</Table.Cell>
                 <Table.Cell>Funds</Table.Cell>
                 <Table.Cell textAlign="right">Savings</Table.Cell>
-                <Table.Cell>Next Allocation</Table.Cell>
+                <Table.Cell>Recurring Share</Table.Cell>
               </Table.Row>
               {department_finances.map((department) => (
                 <Table.Row key={department.department}>
@@ -581,8 +652,8 @@ export const DepartmentFinances = (props) => {
                   </Table.Cell>
                   <Table.Cell>
                     <Box mb={1} color="label">
-                      Payroll {formatMoney(department.projected_payroll)} · Ops{' '}
-                      {formatMoney(department.operating_allocation)}
+                      Payroll {formatMoney(department.projected_payroll)} · Next
+                      operating {formatMoney(department.operating_allocation)}
                     </Box>
                     <AllocationControl department={department} />
                     {!!department.allocation_shortfall && (

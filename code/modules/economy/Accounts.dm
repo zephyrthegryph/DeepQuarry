@@ -18,7 +18,9 @@
 	var/wage_multiplier = 1
 	/// Station-funded operating budget applied at the start of each 15-minute budget period.
 	var/monthly_allocation = 0
-	/// TRUE once Command has deliberately overridden the automatic equal allocation.
+	/// Percentage of the recurring station operating pool assigned to this department.
+	var/allocation_percent = 0
+	/// TRUE once Command has deliberately overridden the automatic policy share.
 	var/allocation_configured = FALSE
 	/// Results of the most recently completed payroll cycle.
 	var/last_payroll_due = 0

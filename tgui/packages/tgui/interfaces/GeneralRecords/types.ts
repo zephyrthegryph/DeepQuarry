@@ -241,6 +241,7 @@ export type departmentFinance = {
   funded_allocation: number;
   allocation_shortfall: number;
   allocation_overridden: BooleanLike;
+  allocation_percent: number;
   employee_count: number;
   operating_allocation: number;
   monthly_income: number;

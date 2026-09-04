@@ -1,0 +1,5 @@
+author: "BigBadE"
+delete-after: true
+changes:
+  - qol: "Reworked department funding into recurring percentage shares and separate immediate one-time transfers."
+  - bugfix: "Fixed the department allocation view background clipping expanded funding controls."

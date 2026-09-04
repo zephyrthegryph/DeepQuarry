@@ -1344,13 +1344,21 @@
 	var/datum/money_account/medical_budget = GLOB.department_accounts[DEPARTMENT_MEDICAL]
 	var/old_engineering_allocation = engineering_budget.monthly_allocation
 	var/old_medical_allocation = medical_budget.monthly_allocation
-	TEST_ASSERT(management.set_department_allocation(DEPARTMENT_ENGINEERING, 500, actor), "authoritative Engineering allocation edit failed")
-	TEST_ASSERT(management.set_department_allocation(DEPARTMENT_MEDICAL, 500, actor), "authoritative Medical allocation edit failed")
+	var/old_engineering_percent = engineering_budget.allocation_percent
+	var/old_medical_percent = medical_budget.allocation_percent
+	var/old_engineering_configured = engineering_budget.allocation_configured
+	var/old_medical_configured = medical_budget.allocation_configured
+	TEST_ASSERT(management.set_department_allocation_percent(DEPARTMENT_ENGINEERING, 10, actor), "authoritative Engineering allocation edit failed")
+	TEST_ASSERT(management.set_department_allocation_percent(DEPARTMENT_MEDICAL, 10, actor), "authoritative Medical allocation edit failed")
 	TEST_ASSERT_EQUAL(command.state, CONTRACT_ACTIVE, "Department Management policy edits completed Command's contract before funds moved")
 	SSsupply.publish_budget_cycle_settlement(list(DEPARTMENT_ENGINEERING = 2000, DEPARTMENT_MEDICAL = 2000), 99991)
 	TEST_ASSERT_EQUAL(command.state, CONTRACT_COMPLETED, "the authoritative funded budget-cycle settlement did not complete Command's contract")
 	engineering_budget.monthly_allocation = old_engineering_allocation
 	medical_budget.monthly_allocation = old_medical_allocation
+	engineering_budget.allocation_percent = old_engineering_percent
+	medical_budget.allocation_percent = old_medical_percent
+	engineering_budget.allocation_configured = old_engineering_configured
+	medical_budget.allocation_configured = old_medical_configured
 	qdel(command)
 	qdel(management)
 

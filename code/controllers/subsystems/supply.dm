@@ -123,12 +123,22 @@ SUBSYSTEM_DEF(supply)
 	var/projected_payroll = projected_station_payroll()
 	var/nt_grant = max(0, round(projected_payroll * nt_salary_support))
 	var/available = max(0, round((GLOB.station_account?.money || 0) + nt_grant))
-	var/total_staff = active_station_employee_count()
-	var/active_departments = 0
+	var/department_count = 0
+	var/automatic_departments = 0
+	var/automatic_staff = 0
+	var/configured_percent = 0
 	for(var/department in GLOB.department_accounts)
-		if(department != "Vendor" && active_department_employee_count(department) > 0)
-			active_departments++
-	var/operating_pool = active_departments * DEPARTMENT_BASE_OPERATING_ALLOCATION
+		if(department == "Vendor")
+			continue
+		department_count++
+		var/datum/money_account/budget = GLOB.department_accounts[department]
+		if(budget?.allocation_configured)
+			configured_percent += clamp(budget.allocation_percent, 0, 100)
+		else
+			automatic_departments++
+			automatic_staff += active_department_employee_count(department)
+	var/automatic_percent = automatic_departments ? max(0, 100 - configured_percent) / automatic_departments : 0
+	var/operating_pool = department_count * DEPARTMENT_BASE_OPERATING_ALLOCATION
 	var/list/department_plans = list()
 	var/list/payroll_requests = list()
 	var/list/operating_requests = list()
@@ -139,17 +149,17 @@ SUBSYSTEM_DEF(supply)
 		var/datum/money_account/budget = GLOB.department_accounts[department]
 		var/staff = active_department_employee_count(department)
 		var/payroll = projected_department_payroll(department)
-		var/operating = 0
-		if(staff > 0)
+		var/policy_percent = automatic_percent
+		if(!budget?.allocation_configured)
 			switch(allocation_policy)
 				if(ALLOCATION_POLICY_STAFFING)
-					operating = total_staff ? round(operating_pool * staff / total_staff) : 0
+					policy_percent = automatic_staff ? max(0, 100 - configured_percent) * staff / automatic_staff : automatic_percent
 				if(ALLOCATION_POLICY_PAYROLL)
-					operating = 0
-				else
-					operating = DEPARTMENT_BASE_OPERATING_ALLOCATION
+					policy_percent = 0
+		var/allocation_percent = budget?.allocation_configured ? clamp(budget.allocation_percent, 0, 100) : policy_percent
+		var/operating = round(operating_pool * allocation_percent / 100)
 		var/automatic = payroll + operating
-		var/requested = budget?.allocation_configured ? max(0, round(budget.monthly_allocation)) : automatic
+		var/requested = automatic
 		if(budget?.suspended)
 			requested = 0
 		var/payroll_request = min(payroll, requested)
@@ -161,6 +171,7 @@ SUBSYSTEM_DEF(supply)
 			"staff" = staff,
 			"payroll" = payroll,
 			"automatic" = automatic,
+			"allocation_percent" = allocation_percent,
 			"requested" = requested,
 			"payroll_requested" = payroll_request,
 			"operating_requested" = operating_request,
@@ -186,6 +197,7 @@ SUBSYSTEM_DEF(supply)
 		"nt_grant" = nt_grant,
 		"available" = available,
 		"operating_pool" = operating_pool,
+		"configured_percent" = configured_percent,
 		"requested" = total_requested,
 		"funded" = total_funded,
 		"remaining" = max(0, available - total_funded),

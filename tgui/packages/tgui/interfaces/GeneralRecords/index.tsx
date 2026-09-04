@@ -43,9 +43,7 @@ export const GeneralRecords = (props) => {
         <LoginInfo />
         <TemporaryNotice />
         <GeneralRecordsNavigation />
-        <Section height="calc(100% - 5rem)" flexGrow>
-          {(screen && body[screen]) || ''}
-        </Section>
+        <Section flexGrow>{(screen && body[screen]) || ''}</Section>
       </Window.Content>
     </Window>
   );

@@ -102,26 +102,50 @@
 	budget.record_transaction(authenticated, "Department wage policy set to x[budget.wage_multiplier]", 0, name)
 	return TRUE
 
-/obj/machinery/computer/skills/proc/set_department_allocation(department, amount, mob/living/user = null)
-	if(!can_allocate_station_budget() || !isnum(amount) || amount < 0 || amount > 1000000)
+/obj/machinery/computer/skills/proc/set_department_allocation_percent(department, percent, mob/living/user = null)
+	if(!can_allocate_station_budget() || !isnum(percent) || percent < 0 || percent > 100)
 		return FALSE
 	var/datum/money_account/budget = GLOB.department_accounts[department]
 	if(!budget || department == "Vendor")
 		return FALSE
-	var/old_allocation = budget.monthly_allocation
-	budget.monthly_allocation = amount
+	var/other_configured = 0
+	for(var/other_department in GLOB.department_accounts)
+		if(other_department == department)
+			continue
+		var/datum/money_account/other_budget = GLOB.department_accounts[other_department]
+		if(other_budget?.is_department_budget() && other_budget.allocation_configured)
+			other_configured += other_budget.allocation_percent
+	if(other_configured + percent > 100)
+		return FALSE
+	var/old_percent = budget.allocation_percent
+	budget.allocation_percent = percent
 	budget.allocation_configured = TRUE
-	budget.record_transaction(authenticated, "Pay-period allocation override set to [amount] Thalers", 0, name)
-	if(old_allocation != amount)
+	budget.record_transaction(authenticated, "Recurring operating share set to [percent]%", 0, name)
+	if(old_percent != percent)
+		var/list/plan = SSsupply.department_budget_plan()
+		var/list/department_plan = plan["departments"]?[department]
 		emit_contract_event(CONTRACT_EVENT_BUDGET_ALLOCATION_CHANGED, list(
 			"department" = DEPARTMENT_COMMAND,
 			"source_department" = "Station",
 			"target_department" = department,
 			"target_account" = budget.account_number,
 			"target_is_department" = budget.is_department_budget(),
-			"metrics" = list("amount" = amount),
-			"detail" = "Published a [amount]-Thaler pay-period allocation for [department]",
-		), "budget-allocation:[REF(budget)]:[world.time]:[amount]", src, user)
+			"metrics" = list("amount" = department_plan?["requested"] || 0, "allocation_percent" = percent),
+			"detail" = "Assigned [department] [percent]% of the recurring operating pool",
+		), "budget-allocation:[REF(budget)]:[world.time]:[percent]", src, user)
+	return TRUE
+
+/obj/machinery/computer/skills/proc/transfer_department_funds(department, amount, mob/living/user = null)
+	if(!can_allocate_station_budget() || !isnum(amount) || amount <= 0)
+		return FALSE
+	var/datum/money_account/budget = GLOB.department_accounts[department]
+	if(!budget?.is_department_budget())
+		return FALSE
+	amount = round(amount)
+	if(!transfer_account_funds(GLOB.station_account, budget, amount, "One-time Command funding", name))
+		to_chat(user, span_warning("The station account cannot fund that transfer."))
+		return FALSE
+	to_chat(user, span_notice("Transferred [amount] Thalers to [department]."))
 	return TRUE
 
 /obj/machinery/computer/skills/proc/clear_department_allocation(department, mob/living/user = null)
@@ -133,8 +157,9 @@
 	budget.allocation_configured = FALSE
 	var/list/plan = SSsupply.department_budget_plan()
 	var/list/department_plan = plan["departments"]?[department]
+	budget.allocation_percent = 0
 	budget.monthly_allocation = department_plan?["requested"] || 0
-	budget.record_transaction(authenticated, "Pay-period allocation returned to automatic policy", 0, name)
+	budget.record_transaction(authenticated, "Recurring operating share returned to automatic policy", 0, name)
 	emit_contract_event(CONTRACT_EVENT_BUDGET_ALLOCATION_CHANGED, list(
 		"department" = DEPARTMENT_COMMAND,
 		"source_department" = "Station",
@@ -142,7 +167,7 @@
 		"target_account" = budget.account_number,
 		"target_is_department" = TRUE,
 		"metrics" = list("amount" = budget.monthly_allocation),
-		"detail" = "Returned [department] to the automatic funding policy",
+		"detail" = "Returned [department] to the automatic recurring funding policy",
 	), "budget-allocation:[REF(budget)]:[world.time]:automatic", src, user)
 	return TRUE
 
@@ -224,6 +249,7 @@
 				"funded_allocation" = funded_allocation,
 				"allocation_shortfall" = department_plan?["shortfall"] || 0,
 				"allocation_overridden" = !!budget.allocation_configured,
+				"allocation_percent" = department_plan?["allocation_percent"] || 0,
 				"employee_count" = department_plan?["staff"] || 0,
 				"operating_allocation" = department_plan?["operating_requested"] || 0,
 				"monthly_income" = budget.monthly_income,
@@ -506,10 +532,12 @@
 				var/department = params["department"]
 				var/new_multiplier = text2num(params["multiplier"])
 				return set_department_wage(department, new_multiplier)
-			if("set_department_allocation")
+			if("set_department_allocation_percent")
 				var/department = params["department"]
-				var/amount = text2num(params["amount"])
-				return set_department_allocation(department, amount, ui.user)
+				var/percent = text2num(params["percent"])
+				return set_department_allocation_percent(department, percent, ui.user)
+			if("transfer_department_funds")
+				return transfer_department_funds(params["department"], text2num(params["amount"]), ui.user)
 			if("clear_department_allocation")
 				return clear_department_allocation(params["department"], ui.user)
 			if("set_allocation_policy")
