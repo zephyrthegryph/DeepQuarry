@@ -443,8 +443,10 @@
 	var/datum/material_service/service = cell.material_service
 	service.rebind()
 	TEST_ASSERT(length(service.mixture_ids), "The test must actually subscribe to a real atmosphere")
+	for(var/subscribed_id in service.mixture_ids)
+		TEST_ASSERT(REF(service) in SSmachines.material_gas_subscribers["[subscribed_id]"], "Material subscriptions must use the coalesced mixture registry")
 	TEST_ASSERT(length(service.movement_sources), "A stationary assembly must watch movement while sleeping")
-	SSmaterial_services.scheduled -= service
+	SSmaterial_services.unqueue(service)
 	service.timer = FALSE
 	service.active = FALSE
 	service.last_update = world.time - 10 MINUTES
@@ -460,10 +462,68 @@
 	var/reference = REF(service)
 	qdel(cell)
 	TEST_ASSERT(QDELETED(service), "Deleting the assembly must delete its operating state")
-	TEST_ASSERT(!(service in SSmaterial_services.scheduled), "Deleting an assembly must remove its queued exposure work")
+	TEST_ASSERT(!SSmaterial_services.scheduled_indices[reference], "Deleting an assembly must remove its queued exposure work")
 	for(var/id in ids)
 		var/list/subscribers = SSmachines.gas_mixture_subscribers["[id]"]
 		TEST_ASSERT(!(reference in subscribers), "Deleted assemblies must release mixture subscriptions")
+		var/list/material_subscribers = SSmachines.material_gas_subscribers["[id]"]
+		TEST_ASSERT(!(reference in material_subscribers), "Deleted assemblies must release coalesced material subscriptions")
+
+/datum/unit_test/dq_material_gas_publication_filtering
+
+/datum/unit_test/dq_material_gas_publication_filtering/Run()
+	var/obj/machinery/machine = new(run_loc_floor_bottom_left)
+	var/datum/material_service/service = machine.material_service
+	TEST_ASSERT(service, "Ordinary machinery must expose its material service")
+	TEST_ASSERT(!(service.gas_dependency_interest_mask() & GAS_DEPENDENCY_PRESSURE), "An ordinary housing must not subscribe to irrelevant turf pressure churn")
+	var/mixture_id = 12345
+	service.mixture_pressures = list("[mixture_id]" = ONE_ATMOSPHERE)
+	service.mixture_corrosion = list("[mixture_id]" = 0)
+	var/list/pressure_jitter = list(mixture_id, GAS_DEPENDENCY_PRESSURE, 2, ONE_ATMOSPHERE + 5, T20C, CELL_VOLUME, 22, 82, 0, 0, 0, 0, 0, 0, 104)
+	TEST_ASSERT(!service.gas_dependency_changed(mixture_id, GAS_DEPENDENCY_PRESSURE, pressure_jitter, 1), "Harmless pressure-only publication must not wake an ordinary machine")
+	var/list/clean_composition = list(mixture_id, GAS_DEPENDENCY_COMPOSITION, 3, ONE_ATMOSPHERE, T20C, CELL_VOLUME, 21, 83, 0, 0, 0, 0, 0, 0, 104)
+	TEST_ASSERT(!service.gas_dependency_changed(mixture_id, GAS_DEPENDENCY_COMPOSITION, clean_composition, 1), "Non-corrosive room-air mixing must not wake an ordinary machine")
+	var/list/plasma_exposure = list(mixture_id, GAS_DEPENDENCY_COMPOSITION, 4, ONE_ATMOSPHERE, T20C, CELL_VOLUME, 20, 82, 2, 0, 0, 0, 0, 0, 104)
+	TEST_ASSERT(service.gas_dependency_changed(mixture_id, GAS_DEPENDENCY_COMPOSITION, plasma_exposure, 1), "A newly corrosive atmosphere must wake the material service")
+	qdel(machine)
+
+	var/obj/machinery/portable_atmospherics/canister/canister = new(run_loc_floor_bottom_left)
+	service = canister.material_service
+	TEST_ASSERT(service.gas_dependency_interest_mask() & GAS_DEPENDENCY_PRESSURE, "Pressure vessels must retain pressure-change subscriptions")
+	service.mixture_pressures = list("1" = 0, "2" = 0)
+	var/list/dangerous_pressure = list(1, GAS_DEPENDENCY_PRESSURE, 5, 100 * ONE_ATMOSPHERE, T20C, 1000, 0, 0, 0, 0, 0, 0, 0, 0, 100)
+	TEST_ASSERT(service.gas_dependency_changed(1, GAS_DEPENDENCY_PRESSURE, dangerous_pressure, 1), "A pressure vessel must wake when differential load approaches its material limit")
+	qdel(canister)
+
+/datum/unit_test/dq_material_service_due_heap
+
+/datum/unit_test/dq_material_service_due_heap/Run()
+	var/baseline_count = length(SSmaterial_services.scheduled)
+	var/obj/item/cell/a = new(run_loc_floor_bottom_left)
+	var/obj/item/cell/b = new(run_loc_floor_bottom_left)
+	var/obj/item/cell/c = new(run_loc_floor_bottom_left)
+	var/datum/material_service/a_service = a.material_service
+	var/datum/material_service/b_service = b.material_service
+	var/datum/material_service/c_service = c.material_service
+	for(var/datum/material_service/service in list(a_service, b_service, c_service))
+		SSmaterial_services.unqueue(service)
+		service.timer = FALSE
+	a_service.schedule(10 SECONDS)
+	b_service.schedule(5 SECONDS)
+	c_service.schedule(7 SECONDS)
+	var/count = length(SSmaterial_services.scheduled)
+	for(var/index in 2 to count)
+		TEST_ASSERT(SSmaterial_services.scheduled_due[index >> 1] <= SSmaterial_services.scheduled_due[index], "Every exposure heap parent must be due before its children")
+	a_service.schedule(1 SECOND)
+	TEST_ASSERT_EQUAL(length(SSmaterial_services.scheduled), count, "Moving an existing service earlier must not duplicate queue entries")
+	var/a_index = SSmaterial_services.scheduled_indices[REF(a_service)]
+	TEST_ASSERT_EQUAL(SSmaterial_services.scheduled_due[a_index], a_service.next_update, "An accelerated environmental event must update the heap deadline")
+	for(var/index in 2 to count)
+		TEST_ASSERT(SSmaterial_services.scheduled_due[index >> 1] <= SSmaterial_services.scheduled_due[index], "Accelerating an exposure must preserve the heap invariant")
+	qdel(a)
+	qdel(b)
+	qdel(c)
+	TEST_ASSERT_EQUAL(length(SSmaterial_services.scheduled), baseline_count, "Deleting queued assemblies must leave no stale heap entries")
 
 /datum/unit_test/dq_material_corrosion_interval_invariance
 

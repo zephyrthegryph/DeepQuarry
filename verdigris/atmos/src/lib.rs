@@ -223,7 +223,7 @@ fn drain_dirty_gas_mixtures() -> Result<ByondValue> {
 /// one publication read transaction. This lets hundreds of sleeping air alarms
 /// evaluate thresholds without each crossing the FFI boundary seven times.
 /// Flat stride: id, mask, revision, pressure, temperature, volume,
-/// o2, co2, plasma, methane, n2o, volatile_fuel, total_moles.
+/// o2, co2, plasma, methane, n2o, volatile_fuel, miasma, zauker, total_moles.
 #[byondapi::bind("/proc/drain_dirty_gas_observations")]
 #[auxmacros::panic_safe]
 fn drain_dirty_gas_observations() -> Result<ByondValue> {
@@ -235,9 +235,11 @@ fn drain_dirty_gas_observations() -> Result<ByondValue> {
 		gas_idx_from_string("/datum/gas/methane")?,
 		gas_idx_from_string("/datum/gas/nitrous_oxide")?,
 		gas_idx_from_string("/datum/gas/volatile_fuel")?,
+		gas_idx_from_string("/datum/gas/miasma")?,
+		gas_idx_from_string("/datum/gas/zauker")?,
 	];
 	let values = GasArena::with_all_mixtures(|gases| {
-		let mut values = Vec::with_capacity(changes.len() * 13);
+		let mut values = Vec::with_capacity(changes.len() * 15);
 		for &(id, mask) in &changes {
 			let Some(mixture) = gases.get(id) else {
 				continue;

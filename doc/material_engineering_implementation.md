@@ -148,10 +148,11 @@ use. The three focused host Rust tests passed; the 32-bit release DLL also built
 
 The production build passed DreamChecker with zero diagnostics and DM compilation
 with zero errors (the existing unused `itemlist` warning remains). The restarted
-Supermatter-only server listens on port 1337. Logs are under
-`data/logs/material-engineering-native-20260904`.
+Supermatter-only server listens on port 1337. The final measurements are under
+`data/logs/material-engineering-perf-heap-20260904`.
 
-Initialization reported 247.406 seconds on the CPU-saturated development host.
+The initial native run reported 247.406 seconds of initialization; the final,
+more heavily contended run reported 293.524 seconds.
 The first two gameplay profile snapshots contained no DM runtimes. The main
 3,407-cable graph solved in 18.75 ms, then 12.5 ms, compared with approximately
 1,206 ms for the earlier DM numeric solver. Its heat-deposition pass still took
@@ -160,16 +161,30 @@ not a claim that every server tick takes that long. Timers remained around 230,
 with recent timer subsystem averages below 0.25 ms, rather than the earlier
 22,000-timer explosion.
 
-There is a significant remaining performance limitation: approximately 14,000
-assemblies remained scheduled during this short observation. A completed exposure
-generation took approximately 1.2 seconds of accumulated active wall-clock time,
-spread across 137 budgeted slices and 1.9 seconds elapsed. Budgeting prevents one
-monolithic exposure callback; it does not eliminate that aggregate cost. Recent
-machine subsystem logical-run averages were approximately 260–380 ms. This is
-functional live verification, **not** acceptance of an optimized steady state.
-Host contention makes these unsuitable as isolated CPU benchmarks. Further
-batching of physical heat distribution and exposure is the principal performance
-follow-up; multiplayer balancing and longer destructive playtests remain open.
+The follow-up performance pass removed two remaining sources of needless work.
+Material subscriptions now have a mixture-level registry: ordinary room-air
+remixing is classified once and does not fan out across every housing, while
+temperature, corrosive plasma/miasma/zauker/hot oxygen, and dangerous pressure
+changes retain immediate semantic wakeups. Cable heat is conserved in five-second
+batches; grids containing superconductors still settle every accounting cycle.
+Finally, future exposure deadlines use a min-heap rather than rescanning every
+future-due assembly once per second. Four focused regressions cover semantic wake
+filtering, heap ordering/reprioritization/deletion, movement/subscription cleanup,
+and physical cable-loss conservation; all pass with zero failures.
+
+On the final full-map run, the exposure logical run fell from approximately
+3.87 seconds/199 slices before the heap to 0.35 seconds/34 slices as the startup
+thermal transient settled. The roughly 12,000 `pending` entries are future heap
+deadlines, not objects visited every fire. Recent powernet averages were 52–68 ms,
+versus 164–208 ms before batching, and the last complete powernet stage measured
+43 ms. The main graph's native numeric solve remained about 15–18 ms. The most
+recent complete machinery stage was 141 ms, of which the gas dependency scan was
+115 ms; only 83 material/device wakes were accepted from 1,575 dirty mixtures.
+The host was 72–83% busy during sampling and had large unrelated contention, so
+these are comparative smoke-test measurements, not isolated hardware benchmarks.
+Multiplayer balance and destructive playtests remain open, but the material
+system no longer creates the timer, numeric-solver, future-queue, or ordinary-air
+fanout pathologies found during this pass.
 
 At the sampled point DreamDaemon used approximately 1.65 GiB working set and
 1.68 GiB private memory. The server is left running for playtesting. The diagnostic

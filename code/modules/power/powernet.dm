@@ -38,6 +38,10 @@
 	var/list/material_consumers
 	var/material_paid_losses = 0
 	var/material_loss_watts = 0
+	/// Cable heat is conserved here and settled in batches. Per-cable thermal
+	/// state does not need thousands of DM calls every accounting window.
+	var/material_pending_heat = 0
+	var/material_pending_heat_elapsed = 0
 	/// Elapsed wall-clock integration of paid losses; the graph reuses its
 	/// previous solution when injections and material resistance are unchanged.
 	var/last_material_process = 0
@@ -210,7 +214,12 @@
 	material_loss_watts = material_paid_losses
 	// Settle the completed interval against its original flow distribution before
 	// a switched-off load or topology rebuild replaces that distribution.
-	material_graph?.deposit_losses(material_paid_losses * elapsed_seconds, elapsed_seconds)
+	material_pending_heat += material_paid_losses * elapsed_seconds
+	material_pending_heat_elapsed += elapsed_seconds
+	if(material_graph && (material_cache_dirty || material_graph.has_superconductors || material_pending_heat_elapsed >= MATERIAL_POWER_HEAT_SETTLEMENT_INTERVAL))
+		material_graph.deposit_losses(material_pending_heat, material_pending_heat_elapsed)
+		material_pending_heat = 0
+		material_pending_heat_elapsed = 0
 	if(material_cache_dirty)
 		rebuild_material_cache()
 	material_graph.resolve_loads(material_sources, material_consumers)

@@ -105,6 +105,10 @@ GLOBAL_VAR_INIT(next_material_assembly_id, 0)
 /datum/material_service
 	var/obj/owner
 	var/list/mixture_ids
+	/// Last pressure published for each watched mixture. Stable, harmless
+	/// pressure jitter updates this cache without waking the physical model.
+	var/list/mixture_pressures
+	var/list/mixture_corrosion
 	var/list/movement_sources
 	var/turf/watched_turf
 	var/timer
@@ -145,7 +149,7 @@ GLOBAL_VAR_INIT(next_material_assembly_id, 0)
 
 /datum/material_service/Destroy()
 	unregister_diagnostics()
-	SSmaterial_services.scheduled -= src
+	SSmaterial_services.unqueue(src)
 	if(SSmaterial_services.currentrun)
 		SSmaterial_services.currentrun -= src
 	clear_watches()
@@ -162,11 +166,13 @@ GLOBAL_VAR_INIT(next_material_assembly_id, 0)
 		return
 	var/due = world.time + delay
 	if(!timer)
-		SSmaterial_services.scheduled += src
+		SSmaterial_services.queue(src, due)
 		next_update = due
 		timer = TRUE
 	else
-		next_update = min(next_update, due)
+		if(due < next_update)
+			next_update = due
+			SSmaterial_services.queue(src, due)
 
 /datum/material_service/proc/clear_watches()
 	if(watched_turf)
@@ -178,6 +184,8 @@ GLOBAL_VAR_INIT(next_material_assembly_id, 0)
 	for(var/id in mixture_ids)
 		SSmachines.unsubscribe_gas_dependency(id, reference)
 	mixture_ids = null
+	mixture_pressures = null
+	mixture_corrosion = null
 	for(var/atom/movable/source as anything in movement_sources)
 		UnregisterSignal(source, COMSIG_MOVABLE_MOVED)
 	movement_sources = null
@@ -203,9 +211,56 @@ GLOBAL_VAR_INIT(next_material_assembly_id, 0)
 		watches_dirty = TRUE
 	schedule(active && !topology_changed ? MATERIAL_SERVICE_INTERVAL : 0)
 
+/// Environmental assemblies care about thermal/composition changes. Pressure is
+/// relevant only to pressure-rated objects, so ordinary machine housings do not
+/// wake whenever their turf's atmos revision advances.
+/datum/material_service/proc/gas_dependency_interest_mask()
+	var/mask = GAS_DEPENDENCY_TEMPERATURE | GAS_DEPENDENCY_COMPOSITION
+	if(owner.material_service_rating() > 0)
+		mask |= GAS_DEPENDENCY_PRESSURE
+	return mask
+
+/// Filter Rust's compact gas publication before entering the exposure queue.
+/// This is deliberately a semantic threshold, not a timer: cumulative changes
+/// are compared with the cached latest state and a dangerous pressure crossing
+/// wakes immediately.
+/datum/material_service/proc/gas_dependency_changed(mixture_id, change_mask, list/observation, observation_index)
+	if(!observation || !observation_index)
+		return TRUE
+	var/new_pressure = observation[observation_index + 3]
+	var/new_temperature = observation[observation_index + 4]
+	LAZYINITLIST(mixture_pressures)
+	mixture_pressures["[mixture_id]"] = new_pressure
+	if(change_mask & GAS_DEPENDENCY_COMPOSITION)
+		LAZYINITLIST(mixture_corrosion)
+		var/volume = max(observation[observation_index + 5], 1)
+		var/corrosive_moles = observation[observation_index + 8] * 0.03 + observation[observation_index + 12] * 0.01 + observation[observation_index + 13] * 0.1
+		if(new_temperature >= 500)
+			corrosive_moles += observation[observation_index + 6] * 0.02
+		var/new_corrosion = corrosive_moles * R_IDEAL_GAS_EQUATION * new_temperature / volume / ONE_ATMOSPHERE * max(0.25, 1 + (new_temperature - T20C) / 600)
+		var/old_corrosion = mixture_corrosion["[mixture_id]"] || 0
+		mixture_corrosion["[mixture_id]"] = new_corrosion
+		if(abs(new_corrosion - old_corrosion) > 0.000001)
+			return TRUE
+	if((change_mask & GAS_DEPENDENCY_TEMPERATURE) && abs(new_temperature - temperature) >= MATERIAL_THERMAL_RESOLUTION)
+		return TRUE
+	var/rating = owner.material_service_rating()
+	if(!(change_mask & GAS_DEPENDENCY_PRESSURE) || rating <= 0)
+		return FALSE
+	var/lowest = new_pressure
+	var/highest = new_pressure
+	for(var/id in mixture_pressures)
+		var/pressure = mixture_pressures[id]
+		lowest = min(lowest, pressure)
+		highest = max(highest, pressure)
+	var/limit = owner.material_environment_pressure_limit(rating, owner.material_service_radius(), owner.material_service_thickness(), temperature)
+	return owner.material_environment_leaking || (highest - lowest) / max(limit, ONE_ATMOSPHERE) > 0.75
+
 /datum/material_service/proc/rebind()
 	watches_dirty = FALSE
 	var/list/next_ids = list()
+	var/list/next_pressures = list()
+	var/list/next_corrosion = list()
 	var/list/air_ports = owner.material_service_gases()
 	var/turf/location = get_turf(owner)
 	if(location != watched_turf)
@@ -216,9 +271,15 @@ GLOBAL_VAR_INIT(next_material_assembly_id, 0)
 			RegisterSignal(watched_turf, COMSIG_TURF_CHANGE, PROC_REF(changing_turf))
 	var/datum/gas_mixture/ambient = location?.return_air()
 	if(ambient)
-		next_ids |= ambient.arena_id()
+		var/ambient_id = ambient.arena_id()
+		next_ids |= ambient_id
+		next_pressures["[ambient_id]"] = ambient.return_pressure()
+		next_corrosion["[ambient_id]"] = material_gas_corrosion_load(ambient)
 	for(var/datum/gas_mixture/air as anything in air_ports)
-		next_ids |= air.arena_id()
+		var/air_id = air.arena_id()
+		next_ids |= air_id
+		next_pressures["[air_id]"] = air.return_pressure()
+		next_corrosion["[air_id]"] = material_gas_corrosion_load(air)
 	var/datum/weakref/reference = WEAKREF(src)
 	for(var/id in mixture_ids)
 		if(!(id in next_ids))
@@ -227,6 +288,8 @@ GLOBAL_VAR_INIT(next_material_assembly_id, 0)
 		if(!(id in mixture_ids))
 			SSmachines.subscribe_gas_dependency(id, reference)
 	mixture_ids = next_ids
+	mixture_pressures = next_pressures
+	mixture_corrosion = next_corrosion
 	var/list/next_sources = list()
 	var/atom/movable/location_source = owner
 	while(istype(location_source))
@@ -330,7 +393,7 @@ GLOBAL_VAR_INIT(next_material_assembly_id, 0)
 	return accepted
 
 /datum/material_service/proc/tick()
-	SSmaterial_services.scheduled -= src
+	SSmaterial_services.unqueue(src)
 	timer = null
 	advance()
 
@@ -393,7 +456,7 @@ GLOBAL_VAR_INIT(next_material_assembly_id, 0)
 	last_environment_temperature = temperature
 	active = sample_observation() || active
 	if(active)
-		schedule()
+		schedule(monitor_tool ? 1 SECOND : MATERIAL_SERVICE_INTERVAL)
 
 /obj/proc/material_service_conducts_contents()
 	return TRUE

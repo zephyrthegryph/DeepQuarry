@@ -77,14 +77,14 @@
 	if(mixture_id == sleeping_turf_mixture_id)
 		if(!isnull(observed_revision))
 			sleeping_turf_pressure = observation[observation_index + 3]
-			sleeping_turf_moles = observation[observation_index + 12]
+			sleeping_turf_moles = observation[observation_index + 14]
 			return observed_revision != sleeping_turf_revision
 		var/datum/gas_mixture/environment = return_air()
 		return !environment || environment.arena_id() != sleeping_turf_mixture_id || environment.revision() != sleeping_turf_revision
 	if(mixture_id == sleeping_pipe_mixture_id)
 		if(!isnull(observed_revision))
 			sleeping_pipe_pressure = observation[observation_index + 3]
-			sleeping_pipe_moles = observation[observation_index + 12]
+			sleeping_pipe_moles = observation[observation_index + 14]
 			return observed_revision != sleeping_pipe_revision
 		return !air_contents || air_contents.arena_id() != sleeping_pipe_mixture_id || air_contents.revision() != sleeping_pipe_revision
 	return TRUE
