@@ -611,58 +611,9 @@
 
 /datum/contract_definition/social/finalize_contract_authoring(datum/contract/social/contract, list/context)
 	..()
-	// Keep ordinary offers to two consequential choices. A definition-specific
-	// clause (fuel protocol, engine target, and so on) takes this slot instead.
-	if(length(contract.requirements) < 2 || length(contract.negotiation_clauses) > 1 || contract.negotiation_clauses["objective_focus"])
-		return
-	var/datum/contract_requirement/primary = contract.requirements[1]
-	var/datum/contract_requirement/supporting = contract.requirements[length(contract.requirements)]
-	if(primary.name == supporting.name)
-		return
-	var/has_progressive_target = FALSE
-	for(var/datum/contract_requirement/requirement in contract.requirements)
-		if(requirement.target > 1)
-			has_progressive_target = TRUE
-			break
-	if(!has_progressive_target)
-		return
-	var/list/primary_floors = list()
-	var/list/supporting_floors = list()
-	for(var/datum/contract_requirement/requirement in contract.requirements)
-		primary_floors[requirement.name] = requirement == primary ? 1 : 0.65
-		supporting_floors[requirement.name] = requirement == primary ? 0.65 : 1
-	var/primary_title = "Primary emphasis"
-	var/supporting_title = "Supporting emphasis"
-	switch(contract.department)
-		if(DEPARTMENT_ENGINEERING)
-			primary_title = "Performance-led"
-			supporting_title = "Assurance-led"
-		if(DEPARTMENT_MEDICAL)
-			primary_title = "Outcome-led"
-			supporting_title = "Coverage-led"
-		if(DEPARTMENT_RESEARCH)
-			primary_title = "Discovery-led"
-			supporting_title = "Application-led"
-		if(DEPARTMENT_SECURITY)
-			primary_title = "Resolution-led"
-			supporting_title = "Evidence-led"
-		if(DEPARTMENT_CARGO)
-			primary_title = "Throughput-led"
-			supporting_title = "Supplier-led"
-		if(DEPARTMENT_CIVILIAN)
-			primary_title = "Service-led"
-			supporting_title = "Participation-led"
-		if(DEPARTMENT_COMMAND)
-			primary_title = "Capital-led"
-			supporting_title = "Representation-led"
-		if(DEPARTMENT_SYNTHETIC)
-			primary_title = "Automation-led"
-			supporting_title = "Oversight-led"
-	var/datum/contract_negotiation_clause/focus = new("objective_focus", "Completion priority", "Choose which objectives must be completed in full.")
-	focus.add_option(make_contract_clause_option("balanced", "Complete every objective", "Every listed objective must reach 100%."), TRUE)
-	focus.add_option(make_contract_clause_option("primary", primary_title, "Complete [primary.name] fully; supporting objectives need 65%.", 0, 100, -100, 0, 2, -1, 0, list("requirement_floors" = primary_floors)))
-	focus.add_option(make_contract_clause_option("supporting", supporting_title, "Complete the supporting objectives fully; [primary.name] needs 65%.", 0, -100, 100, 0, -1, 2, 0, list("requirement_floors" = supporting_floors)))
-	contract.add_negotiation_clause(focus)
+	// Definitions add their own clause when the choice changes the work,
+	// ownership, disclosure, liability, or delivery conditions. Reordering
+	// generic progress counters is not a negotiation.
 
 /proc/configure_social_contract(datum/contract/social/contract, list/context, deadline = 45 MINUTES)
 	contract.station_reputation_reward = 10

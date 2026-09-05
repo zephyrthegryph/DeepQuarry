@@ -592,6 +592,31 @@
 	if(!QDELETED(net))
 		qdel(net)
 
+/datum/unit_test/dq_material_furnace_prepares_real_heat_treatment
+
+/datum/unit_test/dq_material_furnace_prepares_real_heat_treatment/Run()
+	var/turf/test_turf = run_loc_floor_bottom_left || locate(1, 1, 1)
+	var/datum/material_batch/batch = new
+	batch.add_material(MAT_STEEL, 4)
+	var/obj/item/stack/material/processed_alloy/stock = processed_spawn_stack(test_turf, batch, 4)
+	TEST_ASSERT(stock, "failed to create physical processed stock for heat-treatment test")
+	var/obj/machinery/material_furnace/furnace = new(test_turf)
+	stock.forceMove(furnace)
+	furnace.feedstock = list(stock)
+	furnace.finish_firing()
+	TEST_ASSERT(furnace.output_stock, "furnace failed to return heat-treated stock")
+	var/datum/material/processed_alloy/output_material = furnace.output_stock.material
+	var/datum/material_batch/output_batch = output_material.batch_template
+	TEST_ASSERT(output_batch.solution_treated, "a dedicated furnace heat-treatment firing did not prepare the stock for quenching")
+	TEST_ASSERT(output_batch.can_process(MATERIAL_PROCESS_QUENCH), "furnace output was not physically hot enough to quench")
+	var/datum/material_batch/forge_sample = output_batch.copy_batch()
+	TEST_ASSERT(forge_sample.apply_process(MATERIAL_PROCESS_FORGE), "hot furnace output could not be forged without fictitious anvil heating")
+	TEST_ASSERT(output_batch.apply_process(MATERIAL_PROCESS_QUENCH), "hot solution-treated furnace output could not be physically quenched")
+	TEST_ASSERT_EQUAL(output_batch.temperature, T20C, "quenching did not cool the workpiece")
+	qdel(forge_sample)
+	qdel(batch)
+	qdel(furnace)
+
 /datum/unit_test/dq_material_rebuild_preserves_damage
 
 /datum/unit_test/dq_material_rebuild_preserves_damage/Run()

@@ -139,8 +139,21 @@
 	firing = FALSE
 	icon_state = "nt_cruciforge"
 	set_light(0)
-	var/datum/material_batch/batch = new
+	var/datum/material_batch/batch
+	var/heat_treatment = FALSE
+	if(LAZYLEN(feedstock) == 1 && !LAZYLEN(carbon_feed) && !reagents?.total_volume)
+		var/obj/item/stack/material/processed_alloy/existing_stock = feedstock[1]
+		if(istype(existing_stock) && istype(existing_stock.material, /datum/material/processed_alloy))
+			heat_treatment = TRUE
+			var/datum/material/processed_alloy/existing_material = existing_stock.material
+			batch = existing_material.batch_template.copy_batch()
+			batch.amount = existing_stock.get_amount()
+			qdel(existing_stock)
+	if(!batch)
+		batch = new
 	for(var/obj/item/stack/material/stock as anything in feedstock)
+		if(QDELETED(stock))
+			continue
 		while(stock && stock.get_amount() && batch.amount < MATERIAL_SCIENCE_MAX_BATCH)
 			material_batch_absorb_sheet(batch, stock)
 	feedstock = null
@@ -155,12 +168,14 @@
 	apply_real_atmosphere(batch)
 	var/chamber_temperature = chamber_air.return_temperature()
 	batch.temperature = max(batch.temperature, chamber_temperature)
-	if(batch.can_process(MATERIAL_PROCESS_MELT))
+	if(heat_treatment && batch.phase == MATERIAL_PHASE_SOLID)
+		batch.temperature = max(batch.temperature, batch.melting_temperature() * 0.7)
+		batch.apply_process(MATERIAL_PROCESS_SOLUTION_TREAT)
+	else if(batch.can_process(MATERIAL_PROCESS_MELT))
 		batch.apply_process(MATERIAL_PROCESS_MELT)
-	if(batch.phase == MATERIAL_PHASE_MOLTEN)
+	if(!heat_treatment && batch.phase == MATERIAL_PHASE_MOLTEN)
 		batch.apply_process(MATERIAL_PROCESS_HOMOGENIZE)
 		batch.apply_process(MATERIAL_PROCESS_CAST)
-	batch.temperature = T20C
 	output_stock = processed_spawn_stack(get_turf(src), batch, max(1, round(batch.amount * batch.yield_fraction)))
 	if(output_stock)
 		output_stock.forceMove(src)
@@ -235,8 +250,10 @@
 	if(istype(item, /obj/item/melee/hammer) && stock)
 		var/datum/material/processed_alloy/material = stock.material
 		var/datum/material_batch/batch = material.batch_template.copy_batch()
-		batch.temperature = max(batch.temperature, T0C + 300)
-		batch.apply_process(MATERIAL_PROCESS_FORGE)
+		if(!batch.apply_process(MATERIAL_PROCESS_FORGE))
+			to_chat(user, span_warning("The stock is outside its forging range; heat it in the alloy furnace first."))
+			qdel(batch)
+			return
 		var/obj/item/stack/material/processed_alloy/replacement = replace_processed_stack(stock, batch, src)
 		stock = replacement
 		stock.forceMove(src)
@@ -272,12 +289,16 @@
 	var/datum/material/processed_alloy/material = stock.material
 	var/datum/material_batch/batch = material.batch_template.copy_batch()
 	var/acid = reagents.get_reagent_amount(REAGENT_ID_SACID) + reagents.get_reagent_amount(REAGENT_ID_PACID)
+	var/process_succeeded
 	if(acid)
 		batch.purity = clamp(batch.purity + min(round(acid / 2), 12), 0, 100)
-		batch.apply_process(MATERIAL_PROCESS_PURIFY)
+		process_succeeded = batch.apply_process(MATERIAL_PROCESS_PURIFY)
 	else
-		batch.temperature = max(batch.temperature, T0C + 500)
-		batch.apply_process(MATERIAL_PROCESS_QUENCH)
+		process_succeeded = batch.apply_process(MATERIAL_PROCESS_QUENCH)
+	if(!process_succeeded)
+		to_chat(user, span_warning("The stock is not hot and solution-treated enough to quench. Heat-treat it in the alloy furnace first."))
+		qdel(batch)
+		return
 	var/obj/item/stack/material/processed_alloy/replacement = replace_processed_stack(stock, batch, user.drop_location())
 	user.put_in_hands(replacement)
 	reagents.remove_any(min(10, reagents.total_volume))
@@ -303,8 +324,13 @@
 		batch.add_surface_layer(MATERIAL_SURFACE_CARBON, 35, "carbon", 3)
 		qdel(item)
 		changed = TRUE
-	else if(item.type == /obj/item/analyzer)
+	else if(istype(item, /obj/item/analyzer))
 		to_chat(user, span_notice("Composition [json_encode(batch.composition)]; purity [batch.purity]%; conductivity [batch.conductivity]%; hardness [batch.hardness]."))
+		var/list/certification = batch.evidence_context("physical analyzer assay")
+		certification["amount"] = get_amount()
+		certification["actor_account"] = contract_account_for_mob(user)?.account_number
+		emit_contract_event(CONTRACT_EVENT_MATERIAL_CERTIFIED, certification, "material-certification:[REF(src)]:[world.time]", src, user)
+		to_chat(user, span_notice("The analyzer records a traceable qualification for batch [copytext(batch.fingerprint(), 1, 9)]."))
 	else if(istype(item, /obj/item/multitool))
 		to_chat(user, span_notice("The stock measures [batch.conductivity]% relative conductivity and [batch.homogeneity]% lattice order."))
 	if(changed)

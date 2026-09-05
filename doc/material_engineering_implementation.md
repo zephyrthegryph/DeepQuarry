@@ -73,6 +73,32 @@ generic statistic changes. Each completed item requires observable operation.
   Acceptance time, non-overlapping intervals, configuration revision, immutable
   report identity, measured output, and conversion efficiency constrain progress.
 
+## Contract and workshop cleanup
+
+The design review removed catalog breadth that did not correspond to a real
+player decision. Generic objective-priority negotiation is gone; contracts add
+special terms only for delivery time, payment, disclosure, ownership, liability,
+or an operating protocol. Social roles remain available for credit and payout
+agreements, but ordinary contract completion no longer depends on registering
+nominal participants. Population-dependent Research sales scale their customers,
+product breadth, and revenue together. The former replication offer is out of
+rotation until the game can identify a repeatable experiment and an independent
+operator.
+
+Alloy qualification now comes from applying an ordinary analyzer to the actual
+finished stack. The event records its remaining physical quantity and keeps the
+analyzer operator distinct from any later document handler. Furnace firing a
+finished batch performs a real high-temperature solution treatment; the hot
+stock can then be forged or quenched in the existing bath. Unreachable process
+names and phases were removed rather than retained as unused simulation knobs.
+Bulk-derived special behavior also requires a meaningful fraction of its active
+feedstock, preventing trace-everything mixtures from collecting every ability.
+
+Engineering assembly qualification uses one sustained 45-second operating
+record. A copied report cannot qualify another contract, and configuration
+changes reset the observation. This retains physical setup and measurement
+without asking players to repeat the same run and fax three times.
+
 ## Verification findings fixed during implementation
 
 - Default emitter output must use concrete optical melting temperature, not the

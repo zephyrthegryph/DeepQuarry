@@ -136,18 +136,6 @@
 		return FALSE
 	var/old_yield = yield_fraction
 	switch(process)
-		if(MATERIAL_PROCESS_HEAT)
-			var/heat_step = text2num(option) || 400
-			temperature = clamp(temperature + heat_step, T20C, melting_temperature() + 800)
-			if(atmosphere == MATERIAL_ATMOSPHERE_AIR && temperature > melting_temperature() * 0.55)
-				oxidation = clamp(oxidation + 3, 0, 100)
-				yield_fraction = clamp(yield_fraction - 0.01, 0.5, 1)
-			else if(atmosphere == MATERIAL_ATMOSPHERE_REDUCING)
-				oxidation = clamp(oxidation - 2, 0, 100)
-		if(MATERIAL_PROCESS_COOL)
-			if(phase == MATERIAL_PHASE_MOLTEN)
-				return FALSE
-			temperature = max(T20C, temperature - (text2num(option) || 300))
 		if(MATERIAL_PROCESS_MELT)
 			if(temperature < melting_temperature())
 				return FALSE
@@ -169,16 +157,6 @@
 			structure[MATERIAL_STRUCTURE_AMORPHOUS] = 10
 			structure[MATERIAL_STRUCTURE_DEFECT] = 25
 			solution_treated = FALSE
-		if(MATERIAL_PROCESS_ANNEAL)
-			if(phase != MATERIAL_PHASE_SOLID || temperature < melting_temperature() * 0.4 || temperature > melting_temperature() * 0.75)
-				return FALSE
-			phase = MATERIAL_PHASE_SOLID
-			grain_size = clamp(grain_size + 16, 5, 100)
-			internal_stress = clamp(internal_stress - 35, 0, 100)
-			brittleness = clamp(brittleness - 10, 0, 100)
-			structure[MATERIAL_STRUCTURE_SOFT] = clamp(structure[MATERIAL_STRUCTURE_SOFT] + 24, 0, 100)
-			structure[MATERIAL_STRUCTURE_HARDENED] = clamp(structure[MATERIAL_STRUCTURE_HARDENED] - 18, 0, 100)
-			structure[MATERIAL_STRUCTURE_DEFECT] = clamp(structure[MATERIAL_STRUCTURE_DEFECT] - 8, 0, 100)
 		if(MATERIAL_PROCESS_QUENCH)
 			if(phase != MATERIAL_PHASE_SOLID || !solution_treated || temperature < melting_temperature() * 0.62)
 				return FALSE
@@ -193,21 +171,6 @@
 			structure[MATERIAL_STRUCTURE_DEFECT] = clamp(structure[MATERIAL_STRUCTURE_DEFECT] + round(quench_strength / 8), 0, 100)
 			quench_medium = option || "water"
 			solution_treated = FALSE
-		if(MATERIAL_PROCESS_TEMPER)
-			if(phase != MATERIAL_PHASE_SOLID || structure[MATERIAL_STRUCTURE_HARDENED] < 15 || temperature < melting_temperature() * 0.18 || temperature > melting_temperature() * 0.48)
-				return FALSE
-			internal_stress = clamp(internal_stress - 24, 0, 100)
-			grain_size = clamp(grain_size + 5, 1, 100)
-			structure[MATERIAL_STRUCTURE_HARDENED] = clamp(structure[MATERIAL_STRUCTURE_HARDENED] - 10, 0, 100)
-			structure[MATERIAL_STRUCTURE_PRECIPITATE] = clamp(structure[MATERIAL_STRUCTURE_PRECIPITATE] + 12, 0, 100)
-			structure[MATERIAL_STRUCTURE_DEFECT] = clamp(structure[MATERIAL_STRUCTURE_DEFECT] - 12, 0, 100)
-		if(MATERIAL_PROCESS_SINTER)
-			if(phase != MATERIAL_PHASE_POWDER)
-				return FALSE
-			phase = MATERIAL_PHASE_SOLID
-			porosity = clamp(porosity - 28, 0, 100)
-			homogeneity = clamp(homogeneity + 10, 0, 100)
-			structure[MATERIAL_STRUCTURE_REINFORCEMENT] = clamp(structure[MATERIAL_STRUCTURE_REINFORCEMENT] + 18, 0, 100)
 		if(MATERIAL_PROCESS_FORGE)
 			if(phase != MATERIAL_PHASE_SOLID || temperature < melting_temperature() * 0.45 || temperature > melting_temperature() * 0.9)
 				return FALSE
@@ -215,38 +178,11 @@
 			grain_size = clamp(grain_size - 8, 1, 100)
 			homogeneity = clamp(homogeneity + 8, 0, 100)
 			structure[MATERIAL_STRUCTURE_DEFECT] = clamp(structure[MATERIAL_STRUCTURE_DEFECT] - 14, 0, 100)
-		if(MATERIAL_PROCESS_PURIFY, MATERIAL_PROCESS_ELECTROLYZE)
-			if(process == MATERIAL_PROCESS_ELECTROLYZE && phase != MATERIAL_PHASE_SOLUTION)
-				return FALSE
-			purity = clamp(purity + (process == MATERIAL_PROCESS_ELECTROLYZE ? 18 : 10), 0, 100)
+		if(MATERIAL_PROCESS_PURIFY)
+			purity = clamp(purity + 10, 0, 100)
 			impurities.Cut()
 			homogeneity = clamp(homogeneity + 12, 0, 100)
 			structure[MATERIAL_STRUCTURE_DEFECT] = clamp(structure[MATERIAL_STRUCTURE_DEFECT] - 10, 0, 100)
-		if(MATERIAL_PROCESS_DISSOLVE)
-			if(phase != MATERIAL_PHASE_SOLID)
-				return FALSE
-			phase = MATERIAL_PHASE_SOLUTION
-			temperature = max(temperature, T20C + 80)
-			homogeneity = clamp(homogeneity + 8, 0, 100)
-		if(MATERIAL_PROCESS_PULVERIZE)
-			if(phase != MATERIAL_PHASE_SOLID)
-				return FALSE
-			phase = MATERIAL_PHASE_POWDER
-			porosity = clamp(porosity + 18, 0, 100)
-		if(MATERIAL_PROCESS_PLATE)
-			if(phase != MATERIAL_PHASE_SOLUTION)
-				return FALSE
-			phase = MATERIAL_PHASE_SOLID
-			surface_protection = clamp(surface_protection + 15, 0, 30)
-			yield_fraction = clamp(yield_fraction - 0.06, 0.5, 1)
-		if(MATERIAL_PROCESS_CRYSTALLIZE)
-			if(phase != MATERIAL_PHASE_SOLUTION && phase != MATERIAL_PHASE_MOLTEN)
-				return FALSE
-			phase = MATERIAL_PHASE_SOLID
-			grain_size = 35
-			porosity = clamp(porosity - 12, 0, 100)
-			structure[MATERIAL_STRUCTURE_AMORPHOUS] = 5
-			structure[MATERIAL_STRUCTURE_PRECIPITATE] = clamp(structure[MATERIAL_STRUCTURE_PRECIPITATE] + 25, 0, 100)
 		if(MATERIAL_PROCESS_HOMOGENIZE)
 			if(phase != MATERIAL_PHASE_MOLTEN)
 				return FALSE
@@ -310,37 +246,19 @@
 /datum/material_batch/proc/can_process(process)
 	if(!length(composition))
 		return FALSE
-	if(!(process in list(MATERIAL_PROCESS_HEAT, MATERIAL_PROCESS_COOL)) && (process_counts[process] || 0) >= 2)
-		return FALSE
 	switch(process)
-		if(MATERIAL_PROCESS_HEAT)
-			return temperature < melting_temperature() + 800
-		if(MATERIAL_PROCESS_COOL)
-			return phase != MATERIAL_PHASE_MOLTEN && temperature > T20C
 		if(MATERIAL_PROCESS_MELT)
 			return phase != MATERIAL_PHASE_MOLTEN && temperature >= melting_temperature()
 		if(MATERIAL_PROCESS_CAST)
 			return phase == MATERIAL_PHASE_MOLTEN
-		if(MATERIAL_PROCESS_ANNEAL)
-			return phase == MATERIAL_PHASE_SOLID && temperature >= melting_temperature() * 0.4 && temperature <= melting_temperature() * 0.75
 		if(MATERIAL_PROCESS_QUENCH)
 			return phase == MATERIAL_PHASE_SOLID && solution_treated && temperature >= melting_temperature() * 0.62
-		if(MATERIAL_PROCESS_TEMPER)
-			return phase == MATERIAL_PHASE_SOLID && structure[MATERIAL_STRUCTURE_HARDENED] >= 15 && temperature >= melting_temperature() * 0.18 && temperature <= melting_temperature() * 0.48
-		if(MATERIAL_PROCESS_SINTER)
-			return phase == MATERIAL_PHASE_POWDER
 		if(MATERIAL_PROCESS_FORGE)
 			return phase == MATERIAL_PHASE_SOLID && temperature >= melting_temperature() * 0.45 && temperature <= melting_temperature() * 0.9
-		if(MATERIAL_PROCESS_ELECTROLYZE, MATERIAL_PROCESS_PLATE)
-			return phase == MATERIAL_PHASE_SOLUTION
-		if(MATERIAL_PROCESS_CRYSTALLIZE)
-			return phase == MATERIAL_PHASE_SOLUTION || phase == MATERIAL_PHASE_MOLTEN
 		if(MATERIAL_PROCESS_HOMOGENIZE)
 			return phase == MATERIAL_PHASE_MOLTEN
 		if(MATERIAL_PROCESS_SOLUTION_TREAT)
 			return phase == MATERIAL_PHASE_SOLID && temperature >= melting_temperature() * 0.62 && temperature <= melting_temperature() * 0.9
-		if(MATERIAL_PROCESS_DISSOLVE, MATERIAL_PROCESS_PULVERIZE)
-			return phase == MATERIAL_PHASE_SOLID
 		if(MATERIAL_PROCESS_PURIFY)
 			return TRUE
 	return FALSE

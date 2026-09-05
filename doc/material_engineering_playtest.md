@@ -50,15 +50,15 @@ can reduce charging power, and a hot assembly needs real cooling.
 
 ## Recording a qualification
 
-The contract specifies three successive operating levels. Accept it before
-beginning observations. Record a complete minute with the multitool, then apply
-the tool to a powered photocopier with toner. Fax the ordinary paper report to
-NanoTrasen Engineering Assurance. Begin a fresh observation for the next stage.
+The contract specifies an operating envelope. Accept it before beginning the
+observation. Record a complete 45-second run with the multitool, then apply the
+tool to a powered photocopier with toner. Fax the ordinary paper report to
+NanoTrasen Engineering Assurance.
 
 Measurements include actual delivered output, efficiency, peak temperature, and
 gas receiver pressure where relevant. Copied papers retain the same evidence
-identity and cannot complete additional stages. Observations cannot overlap or
-predate acceptance. Changing parts or settings resets the current observation.
+identity and cannot complete another qualification. Observations cannot predate
+acceptance. Changing parts or settings resets the current observation.
 
 ## Simulation boundaries
 

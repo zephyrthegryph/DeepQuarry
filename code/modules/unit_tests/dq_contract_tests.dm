@@ -484,14 +484,8 @@
 	qdel(negotiable_trial)
 	var/datum/contract_definition/social_definition = SScontracts.definitions["occupational_recovery_program"]
 	var/datum/contract/social/social_offer = social_definition.create_contract()
-	TEST_ASSERT(social_offer.negotiation_clauses["objective_focus"], "multi-objective social contract lacked an operational-emphasis clause")
-	TEST_ASSERT(social_offer.select_negotiation_option("objective_focus", "primary", "Unit test"), "social objective emphasis could not be negotiated")
-	var/list/negotiated_floors = social_offer.negotiated_effect("requirement_floors")
-	var/datum/contract_requirement/primary_requirement = social_offer.requirements[1]
-	var/datum/contract_requirement/supporting_requirement = social_offer.requirements[2]
-	TEST_ASSERT_EQUAL(negotiated_floors[primary_requirement.name], 1, "primary emphasis weakened the named primary objective")
-	TEST_ASSERT_EQUAL(negotiated_floors[supporting_requirement.name], 0.65, "primary emphasis did not relax a supporting objective")
-	TEST_ASSERT_EQUAL(length(social_offer.negotiation_clauses), 2, "social contract exposed more than two ordinary negotiation choices")
+	TEST_ASSERT(!social_offer.negotiation_clauses["objective_focus"], "generic counter-priority negotiation survived contract cleanup")
+	TEST_ASSERT_EQUAL(length(social_offer.negotiation_clauses), 1, "ordinary social contract exposed a fictitious operational choice")
 	qdel(social_offer)
 	var/datum/contract_definition/fuel_definition = SScontracts.definitions["alternative_fuel_demonstration"]
 	var/datum/contract/social/alternative_fuel_trial/fuel_offer = fuel_definition.create_contract()
@@ -2133,5 +2127,14 @@
 	qdel(contract)
 	for(var/datum/money_account/account in accounts)
 		qdel(account)
+
+/datum/unit_test/dq_contract_event_preserves_submitter_and_contributor
+
+/datum/unit_test/dq_contract_event_preserves_submitter_and_contributor/Run()
+	var/list/context = list("actor_account" = 101, "contributor_account" = 202)
+	var/datum/contract_event/event = new("dq_identity_test", null, null, null, context, "dq-identity-test")
+	TEST_ASSERT_EQUAL(event.value("actor_account"), 101, "filing actor was replaced by the credited contributor")
+	TEST_ASSERT_EQUAL(event.value("contributor_account"), 202, "credited contributor was replaced by the filing actor")
+	qdel(event)
 
 #endif

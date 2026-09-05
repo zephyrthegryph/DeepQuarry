@@ -1,0 +1,7 @@
+author: "BigBadE"
+delete-after: true
+changes:
+  - qol: "Contract negotiations now focus on delivery, ownership, and operating choices instead of choosing which progress counter matters."
+  - balance: "Research sales targets now scale to the available crew, and repetitive engineering qualifications use one sustained operating record."
+  - bugfix: "Processed-alloy analyzer readings now qualify material contracts and correctly credit workers separately from paperwork filers."
+  - rscadd: "Processed stock can be furnace heat-treated and physically quenched, and bulk special properties require meaningful ingredient proportions."

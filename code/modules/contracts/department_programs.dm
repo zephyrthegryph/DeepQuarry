@@ -319,6 +319,9 @@
 	issuer_name = "SolGov Open Science Directorate"
 	issuer_faction = REPUTATION_FACTION_SOLGOV
 	reward = 3100
+	// Reproduction needs stable experiment identity and independent operators.
+	// Generic node unlocks and assorted products do not prove replication.
+	initial_offers = 0
 
 /datum/contract_definition/social/program/replication_study/configure_contract(datum/contract/social/contract, list/context)
 	..()

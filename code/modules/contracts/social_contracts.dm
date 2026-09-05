@@ -3,7 +3,10 @@
 /// the minimum settlement threshold so heads can choose when to cash out.
 
 /proc/add_social_role(datum/contract/social/contract, id, title, description, list/departments, minimum = 1, maximum = 0)
-	return contract.add_stakeholder_role(new /datum/contract_stakeholder_role(id, title, description, departments, minimum, maximum))
+	// Roles advertise useful collaborators and let the head approve payout
+	// weights. Ordinary work remains valid when nobody files a role proposal;
+	// hard authorization and consent are enforced by their source mechanics.
+	return contract.add_stakeholder_role(new /datum/contract_stakeholder_role(id, title, description, departments, 0, maximum))
 
 /proc/configure_social_identity(datum/contract/social/contract, station_rep, department_rep, staff_rep)
 	contract.base_station_reputation_reward = station_rep
@@ -56,16 +59,19 @@
 
 /datum/contract_definition/social/prototype_field_license/configure_contract(datum/contract/social/contract, list/context)
 	..()
+	var/customer_target = contract_scaled_participant_target(8, 2, 2)
+	var/product_target = clamp(CEILING(customer_target / 2, 1), 2, 4)
+	var/revenue_target = customer_target * 225
 	configure_social_identity(contract, 8, 28, 16)
 	contract.description = "Build and sell a varied range of useful Research equipment to station personnel. Eclipse will judge the trial by sales revenue, the number of buyers served, and the breadth of products adopted."
 	add_social_role(contract, "inventor", "Research product lead", "Builds, prices, and supplies equipment for the trial.", list(DEPARTMENT_RESEARCH), 1, 3)
 	add_social_role(contract, "tester", "Trial customer", "Purchases station-made equipment for practical use.", null, 3, 8)
 	contract.personal_side_definitions = list("research_exclusive_export")
 	var/list/metrics = list(
-		list("amount", 1800, "Sales revenue", "Earn 1,800 Thalers from Research equipment sales."),
-		list("customer_count", 8, "Customer adoption", "Sell to eight distinct station account holders."),
-		list("verified_item_count", 8, "Equipment delivered", "Deliver eight physically verified Research products."),
-		list("verified_type_count", 4, "Product variety", "Sell equipment from four distinct product types."),
+		list("amount", revenue_target, "Sales revenue", "Earn [revenue_target] Thalers from Research equipment sales."),
+		list("customer_count", customer_target, "Customer adoption", "Sell to [customer_target] distinct station account holders."),
+		list("verified_item_count", customer_target, "Equipment delivered", "Deliver [customer_target] physically verified Research products."),
+		list("verified_type_count", product_target, "Product variety", "Sell equipment from [product_target] distinct product types."),
 	)
 	for(var/list/metric as anything in metrics)
 		var/datum/contract_requirement/event_count/requirement = new(CONTRACT_EVENT_SERVICE_PERIOD_SETTLED, metric[2], list("department" = DEPARTMENT_RESEARCH, "rollup" = "department"), metric[1], TRUE, CONTRACT_EVIDENCE_SCOPE_DEPARTMENT)

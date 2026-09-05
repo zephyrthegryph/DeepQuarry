@@ -13,6 +13,9 @@
 	var/fact_revision = 0
 	var/fact_active = TRUE
 	var/actor_account
+	/// Account credited for the work represented by this event. This may differ
+	/// from the actor who filed, faxed, or otherwise transmitted the evidence.
+	var/contributor_account
 	var/actor_name
 	var/actor_department
 	var/subject_id
@@ -51,7 +54,8 @@
 	tags = context_tags ? deepCopyList(context_tags) : list()
 	metrics = context_metrics ? deepCopyList(context_metrics) : list()
 	evidence_ids = context_evidence_ids ? deepCopyList(context_evidence_ids) : list()
-	actor_account = data["actor_account"] || data["contributor_account"]
+	contributor_account = data["contributor_account"]
+	actor_account = data["actor_account"] || contributor_account
 	actor_name = data["actor_name"]
 	actor_department = data["actor_department"]
 	subject_id = data["subject_id"] || data["subject_ref"]
@@ -299,8 +303,10 @@
 			return fact_revision
 		if("fact_active")
 			return fact_active
-		if("actor_account", "contributor_account")
+		if("actor_account")
 			return actor_account
+		if("contributor_account")
+			return contributor_account || actor_account
 		if("actor_name")
 			return actor_name
 		if("actor_department")
