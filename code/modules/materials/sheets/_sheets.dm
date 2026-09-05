@@ -86,12 +86,29 @@
 	var/obj/item/stack/material/M = S
 	if(!istype(M) || material.name != M.material.name)
 		return 0
+	if(feedstock_lot_id && M.feedstock_lot_id && feedstock_lot_id != M.feedstock_lot_id)
+		return 0
 	var/transfer = ..(S,tamount,1)
 	if(!QDELETED(src))
 		update_strings()
 	if(M)
 		M.update_strings()
 	return transfer
+
+/obj/item/stack/material/split(tamount)
+	var/obj/item/stack/material/new_stack = ..()
+	if(!new_stack)
+		return null
+	new_stack.default_type = material.name
+	new_stack.material = material
+	new_stack.recipes = material.get_recipes()
+	new_stack.stacktype = material.stack_type
+	new_stack.feedstock_purity = feedstock_purity
+	new_stack.feedstock_lot_id = feedstock_lot_id
+	new_stack.feedstock_trace = feedstock_trace
+	new_stack.feedstock_trace_units = feedstock_trace_units
+	new_stack.update_strings()
+	return new_stack
 
 /obj/item/stack/material/attack_self(mob/user)
 	. = ..(user)

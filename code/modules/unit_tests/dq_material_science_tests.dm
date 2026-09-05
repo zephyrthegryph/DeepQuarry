@@ -592,6 +592,70 @@
 	if(!QDELETED(net))
 		qdel(net)
 
+/datum/unit_test/dq_processed_stock_split_preserves_physical_state
+
+/datum/unit_test/dq_processed_stock_split_preserves_physical_state/Run()
+	var/turf/test_turf = run_loc_floor_bottom_left || locate(1, 1, 1)
+	var/datum/material_batch/batch = new
+	batch.add_material(MAT_STEEL, 6)
+	batch.temperature = 900
+	var/obj/item/stack/material/processed_alloy/stock = processed_spawn_stack(test_turf, batch, 6)
+	var/material_name = stock.material.name
+	var/obj/item/stack/material/processed_alloy/split_stock = stock.split(2)
+	TEST_ASSERT(split_stock, "processed stock could not be split through ordinary stack handling")
+	TEST_ASSERT_EQUAL(split_stock.material.name, material_name, "split stock lost its processed alloy definition")
+	TEST_ASSERT_EQUAL(split_stock.physical_batch().temperature, 900, "split stock lost its physical temperature")
+	TEST_ASSERT_EQUAL(split_stock.physical_batch().amount, 2, "split stock retained the wrong quantity state")
+	TEST_ASSERT_EQUAL(stock.physical_batch().amount, 4, "source stock retained the wrong quantity state")
+	split_stock.physical_batch().temperature = 300
+	TEST_ASSERT_EQUAL(split_stock.transfer_to(stock, 2), 2, "compatible processed stocks could not merge")
+	TEST_ASSERT_EQUAL(stock.physical_batch().amount, 6, "merged stock did not conserve quantity")
+	TEST_ASSERT(abs(stock.physical_batch().temperature - 700) < 0.1, "merged stock did not conserve thermal energy")
+	qdel(stock)
+	qdel(batch)
+
+/datum/unit_test/dq_material_furnace_requires_and_performs_real_melt
+
+/datum/unit_test/dq_material_furnace_requires_and_performs_real_melt/Run()
+	var/turf/test_turf = run_loc_floor_bottom_left || locate(1, 1, 1)
+	var/obj/machinery/material_furnace/furnace = new(test_turf)
+	var/obj/item/stack/material/steel/stock = new(test_turf, 4)
+	stock.forceMove(furnace)
+	furnace.feedstock = list(stock)
+	furnace.finish_firing()
+	TEST_ASSERT(furnace.output_stock, "raw stock firing did not produce recoverable processed stock")
+	var/datum/material_batch/output = furnace.output_stock.physical_batch()
+	TEST_ASSERT(MATERIAL_PROCESS_MELT in output.process_history, "furnace produced alloy stock without melting it")
+	TEST_ASSERT(MATERIAL_PROCESS_HOMOGENIZE in output.process_history, "furnace skipped molten homogenization")
+	TEST_ASSERT(MATERIAL_PROCESS_CAST in output.process_history, "furnace did not cast its molten charge")
+	TEST_ASSERT(output.energy_spent > 0, "furnace heating did not record physical energy expense")
+	qdel(furnace)
+
+/datum/unit_test/dq_material_delivery_requires_matching_shipment
+
+/datum/unit_test/dq_material_delivery_requires_matching_shipment/Run()
+	var/datum/contract/social/contract = new
+	contract.title = "Physical material delivery test"
+	contract.description = "Test matching assay and shipment."
+	contract.department = DEPARTMENT_RESEARCH
+	contract.reward = 0
+	var/list/checks = list(list("key" = "hardness", "comparator" = CONTRACT_EVIDENCE_COMPARE_AT_LEAST, "expected" = 50))
+	var/datum/contract_requirement/qualified_material_delivery/requirement = new(checks, 4)
+	contract.add_requirement(requirement)
+	TEST_ASSERT(contract.accept(), "material delivery fixture could not activate")
+	var/datum/contract_event/assay = new(CONTRACT_EVENT_MATERIAL_CERTIFIED, null, null, null, list("department" = DEPARTMENT_RESEARCH, "fingerprint" = "qualified", "hardness" = 60, "amount" = 4, "contributor_account" = 42))
+	TEST_ASSERT(requirement.handle_event(assay), "qualifying assay was rejected")
+	TEST_ASSERT_EQUAL(requirement.state, CONTRACT_REQUIREMENT_PENDING, "assay alone completed a physical stock order")
+	var/datum/contract_event/wrong_shipment = new(CONTRACT_EVENT_ITEM_EXPORTED, null, null, null, list("department" = DEPARTMENT_RESEARCH, "origin_department" = DEPARTMENT_RESEARCH, "material_fingerprint" = "wrong", "material_amount" = 4))
+	TEST_ASSERT(!requirement.handle_event(wrong_shipment), "a different batch satisfied the assayed stock order")
+	var/datum/contract_event/shipment = new(CONTRACT_EVENT_ITEM_EXPORTED, null, null, null, list("department" = DEPARTMENT_RESEARCH, "origin_department" = DEPARTMENT_RESEARCH, "material_fingerprint" = "qualified", "material_amount" = 4))
+	TEST_ASSERT(requirement.handle_event(shipment), "matching assayed cargo shipment was rejected")
+	TEST_ASSERT_EQUAL(requirement.state, CONTRACT_REQUIREMENT_COMPLETE, "matching assay and shipment did not complete the order")
+	qdel(assay)
+	qdel(wrong_shipment)
+	qdel(shipment)
+	qdel(contract)
+
 /datum/unit_test/dq_material_furnace_prepares_real_heat_treatment
 
 /datum/unit_test/dq_material_furnace_prepares_real_heat_treatment/Run()

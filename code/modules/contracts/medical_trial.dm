@@ -59,6 +59,7 @@
 	var/datum/contract_requirement/event_count/observation_requirement
 	var/datum/contract_requirement/event_count/analysis_requirement
 	var/analysis_attempted = FALSE
+	var/analysis_corrections = 0
 	var/conditional_offer = FALSE
 	var/resupplies_used = 0
 
@@ -346,10 +347,12 @@
 		return FALSE
 	if(!(target_metric in medical_trial_target_choices()) || !(adverse_metric in medical_trial_adverse_choices()))
 		return FALSE
-	analysis_attempted = TRUE
 	if(target_metric != profile.target_metric || adverse_metric != profile.adverse_metric)
-		analysis_requirement.fail("The submitted clinical interpretation did not match the observed medication profile.")
-		return FALSE
+		analysis_corrections++
+		reward = max(0, round(reward * 0.9))
+		audit(CONTRACT_AUDIT_PROGRESS, "VeyMed returned clinical interpretation [analysis_corrections] for correction; the final award was reduced by 10%.")
+		return TRUE
+	analysis_attempted = TRUE
 	record_contribution(contributor_account, 2, "Submitted the correct final clinical interpretation")
 	return !!emit_contract_event(CONTRACT_EVENT_MEDICAL_ANALYSIS_ACCEPTED, list(
 		"contract_id" = id,

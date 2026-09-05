@@ -37,6 +37,57 @@
 	contract.add_requirement(requirement)
 	return requirement
 
+/// A physical stock order is complete only when one batch first passes its
+/// assay and that same fingerprint subsequently leaves on the cargo shuttle.
+/datum/contract_requirement/qualified_material_delivery
+	name = "Qualified material delivery"
+	var/datum/contract_event_filter/assay_filter
+	var/minimum_amount = 1
+	var/list/qualified_fingerprints
+
+/datum/contract_requirement/qualified_material_delivery/New(list/checks, amount = 1)
+	. = ..()
+	assay_filter = new(CONTRACT_EVIDENCE_SCOPE_DEPARTMENT)
+	minimum_amount = max(1, amount)
+	qualified_fingerprints = list()
+	for(var/list/check as anything in checks)
+		assay_filter.require_number(check["key"], check["comparator"], check["expected"])
+	assay_filter.require_number("amount", CONTRACT_EVIDENCE_COMPARE_AT_LEAST, minimum_amount)
+	event_types = list(CONTRACT_EVENT_MATERIAL_CERTIFIED, CONTRACT_EVENT_ITEM_EXPORTED)
+
+/datum/contract_requirement/qualified_material_delivery/Destroy()
+	QDEL_NULL(assay_filter)
+	qualified_fingerprints = null
+	return ..()
+
+/datum/contract_requirement/qualified_material_delivery/handle_event(datum/contract_event/event)
+	if(state != CONTRACT_REQUIREMENT_PENDING)
+		return FALSE
+	if(event.event_type == CONTRACT_EVENT_MATERIAL_CERTIFIED)
+		if(!assay_filter.matches(event, contract))
+			return FALSE
+		qualified_fingerprints["[event.value("fingerprint")]"] = event.value("contributor_account")
+		contract.audit(CONTRACT_AUDIT_PROGRESS, "[name]: assay accepted; awaiting physical shipment of batch [copytext(event.value("fingerprint"), 1, 9)].")
+		return TRUE
+	if(event.event_type != CONTRACT_EVENT_ITEM_EXPORTED || event.value("origin_department") != contract.department || event.value("material_amount") < minimum_amount)
+		return FALSE
+	var/fingerprint = "[event.value("material_fingerprint")]"
+	if(!(fingerprint in qualified_fingerprints))
+		return FALSE
+	return add_progress(1, qualified_fingerprints[fingerprint], "Assayed batch [copytext(fingerprint, 1, 9)] was accepted as cargo freight.")
+
+/datum/contract_requirement/qualified_material_delivery/progress_text()
+	if(state == CONTRACT_REQUIREMENT_COMPLETE)
+		return "Assay and delivery complete"
+	return length(qualified_fingerprints) ? "Qualified batch awaiting cargo shipment" : "Batch awaiting assay"
+
+/proc/add_material_delivery(datum/contract/social/contract, list/checks, amount, name, description)
+	var/datum/contract_requirement/qualified_material_delivery/requirement = new(checks, amount)
+	requirement.name = name
+	requirement.description = description
+	contract.add_requirement(requirement)
+	return requirement
+
 /// Keep social breadth meaningful without making low-population offers impossible.
 /proc/contract_scaled_participant_target(desired, minimum = 2, crew_per_participant = 2)
 	var/active_crew = 0
@@ -282,7 +333,7 @@
 	add_social_role(contract, "evaluator", "Operational evaluator", "Examines the physical workpiece and proposes a station use for the alloy.", list(DEPARTMENT_ENGINEERING, DEPARTMENT_CARGO, DEPARTMENT_SECURITY), 1, 4)
 	var/list/checks = profile["checks"]
 	checks += list(list("key" = "composition_count", "comparator" = CONTRACT_EVIDENCE_COMPARE_AT_LEAST, "expected" = 2))
-	add_program_count(contract, CONTRACT_EVENT_MATERIAL_CERTIFIED, 1, "Application qualification", "Finish a physical batch meeting every listed performance requirement.", null, CONTRACT_EVIDENCE_SCOPE_DEPARTMENT, "fingerprint", null, checks)
+	add_material_delivery(contract, checks, 1, "Application stock order", "Assay a batch meeting the application envelope, then ship that exact stock through Cargo.")
 
 /datum/contract_definition/social/program/extreme_service_material
 	id = "extreme_service_material"
@@ -308,7 +359,7 @@
 	add_social_role(contract, "engineer", "Service engineer", "Reviews whether the observed properties suit a credible station application.", list(DEPARTMENT_ENGINEERING), 1, 4)
 	var/list/checks = profile["checks"]
 	checks += list(list("key" = "purity", "comparator" = CONTRACT_EVIDENCE_COMPARE_AT_LEAST, "expected" = 84), list("key" = "amount", "comparator" = CONTRACT_EVIDENCE_COMPARE_AT_LEAST, "expected" = 4))
-	add_program_count(contract, CONTRACT_EVENT_MATERIAL_CERTIFIED, 1, "Extreme-service qualification", "Finish at least four sheets meeting the complete application envelope.", null, CONTRACT_EVIDENCE_SCOPE_DEPARTMENT, "fingerprint", null, checks)
+	add_material_delivery(contract, checks, 4, "Extreme-service stock order", "Assay at least four sheets meeting the complete envelope, then ship that exact batch through Cargo.")
 
 /datum/contract_definition/social/program/replication_study
 	id = "independent_replication_study"
@@ -332,8 +383,8 @@
 
 /datum/contract_definition/social/program/applied_chemistry
 	id = "applied_chemistry_brief"
-	title = "Applied Chemistry Brief"
-	description = "VeyMed requests a varied portfolio of complex compounds synthesized in the station laboratory."
+	title = "Therapeutic Production Commission"
+	description = "VeyMed requests a focused production run of one useful clinical compound selected for this shift."
 	scope = CONTRACT_SCOPE_DEPARTMENT
 	department = DEPARTMENT_RESEARCH
 	issuer_name = "VeyMed Applied Chemistry"
@@ -342,11 +393,21 @@
 
 /datum/contract_definition/social/program/applied_chemistry/configure_contract(datum/contract/social/contract, list/context)
 	..()
-	add_social_role(contract, "chemist", "Applied chemist", "Plans and performs the synthesis portfolio.", list(DEPARTMENT_RESEARCH, DEPARTMENT_MEDICAL), 1, 4)
-	add_social_role(contract, "customer", "Operational customer", "Defines practical needs and evaluates delivered results.", null, 2, 6)
-	add_program_count(contract, CONTRACT_EVENT_CHEMISTRY_RESULT, 100, "Synthesized volume", "Produce 100 units of laboratory-synthesized compounds.", "amount", CONTRACT_EVIDENCE_SCOPE_DEPARTMENT)
-	add_program_count(contract, CONTRACT_EVENT_CHEMISTRY_RESULT, 8, "Product breadth", "Produce eight distinct reaction products.", null, CONTRACT_EVIDENCE_SCOPE_DEPARTMENT, "product_id")
-	add_program_count(contract, CONTRACT_EVENT_CHEMISTRY_RESULT, 5, "Complex synthesis", "Complete five distinct reactions requiring at least three reactants.", null, CONTRACT_EVIDENCE_SCOPE_DEPARTMENT, "reaction_id", null, list(list("key" = "reactant_count", "comparator" = CONTRACT_EVIDENCE_COMPARE_AT_LEAST, "expected" = 3)))
+	var/list/clinical_products = list(
+		REAGENT_ID_BICARIDINE = "bicaridine trauma medicine",
+		REAGENT_ID_KELOTANE = "kelotane burn medicine",
+		REAGENT_ID_DEXALINP = "dexalin plus respiratory medicine",
+		REAGENT_ID_ANTITOXIN = "anti-toxin",
+		REAGENT_ID_SPACEACILLIN = "spaceacillin",
+		REAGENT_ID_TRICORDRAZINE = "tricordrazine",
+	)
+	var/product_id = pick(clinical_products)
+	var/product_name = clinical_products[product_id]
+	contract.title = "[capitalize(product_name)] Commission"
+	contract.description = "VeyMed requires 40 units of freshly synthesized [product_name] for station clinical use. Research may choose its equipment, batch size, and production route."
+	add_social_role(contract, "chemist", "Production chemist", "Synthesizes and packages the commissioned medicine.", list(DEPARTMENT_RESEARCH, DEPARTMENT_MEDICAL), 1, 4)
+	add_social_role(contract, "clinician", "Clinical recipient", "Coordinates the station need and receives the finished medicine.", list(DEPARTMENT_MEDICAL), 1, 4)
+	add_program_count(contract, CONTRACT_EVENT_CHEMISTRY_RESULT, 40, "Commissioned medicine", "Synthesize 40 units of [product_name] after accepting the commission.", "amount", CONTRACT_EVIDENCE_SCOPE_DEPARTMENT, null, list("product_id" = product_id))
 
 /datum/contract_definition/social/program/publication_consortium
 	id = "publication_consortium"
@@ -357,6 +418,9 @@
 	issuer_name = "Vir Scientific Publication Consortium"
 	issuer_faction = REPUTATION_FACTION_SOLGOV
 	reward = 3300
+	// Superseded by the commercialization contract, which couples production to
+	// actual station customers. Keep the datum for saved/audit identity only.
+	initial_offers = 0
 
 /datum/contract_definition/social/program/publication_consortium/configure_contract(datum/contract/social/contract, list/context)
 	..()

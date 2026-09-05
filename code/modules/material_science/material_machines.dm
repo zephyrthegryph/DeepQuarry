@@ -15,8 +15,8 @@
 		return FALSE
 	stack.ensure_feedstock_lot()
 	if(istype(stack.material, /datum/material/processed_alloy))
-		var/datum/material/processed_alloy/processed = stack.material
-		var/datum/material_batch/source = processed.batch_template
+		var/obj/item/stack/material/processed_alloy/processed_stack = stack
+		var/datum/material_batch/source = processed_stack.physical_batch()
 		for(var/component in source.composition)
 			batch.add_material(component, source.composition[component] / max(source.amount, 1), null, source.purity, stack.feedstock_lot_id)
 		for(var/additive in source.impurities)
@@ -145,9 +145,7 @@
 		var/obj/item/stack/material/processed_alloy/existing_stock = feedstock[1]
 		if(istype(existing_stock) && istype(existing_stock.material, /datum/material/processed_alloy))
 			heat_treatment = TRUE
-			var/datum/material/processed_alloy/existing_material = existing_stock.material
-			batch = existing_material.batch_template.copy_batch()
-			batch.amount = existing_stock.get_amount()
+			batch = existing_stock.physical_batch().copy_batch()
 			qdel(existing_stock)
 	if(!batch)
 		batch = new
@@ -156,6 +154,8 @@
 			continue
 		while(stock && stock.get_amount() && batch.amount < MATERIAL_SCIENCE_MAX_BATCH)
 			material_batch_absorb_sheet(batch, stock)
+		if(!QDELETED(stock) && stock.get_amount())
+			stock.forceMove(get_turf(src))
 	feedstock = null
 	for(var/obj/item/ore/coal in carbon_feed)
 		batch.add_additive("carbon", 4, 0.5, MATERIAL_COST_CHEMICALS)
@@ -167,15 +167,24 @@
 	process_chemistry(batch)
 	apply_real_atmosphere(batch)
 	var/chamber_temperature = chamber_air.return_temperature()
-	batch.temperature = max(batch.temperature, chamber_temperature)
+	if(chamber_temperature > batch.temperature)
+		batch.add_thermal_energy((chamber_temperature - batch.temperature) * batch.thermal_capacity())
+	var/target_temperature = batch.melting_temperature() * (heat_treatment ? 0.7 : 1.05)
+	var/heating_energy = max(0, target_temperature - batch.temperature) * batch.thermal_capacity()
+	batch.add_thermal_energy(heating_energy)
+	batch.record_electricity(heating_energy)
 	if(heat_treatment && batch.phase == MATERIAL_PHASE_SOLID)
-		batch.temperature = max(batch.temperature, batch.melting_temperature() * 0.7)
-		batch.apply_process(MATERIAL_PROCESS_SOLUTION_TREAT)
-	else if(batch.can_process(MATERIAL_PROCESS_MELT))
-		batch.apply_process(MATERIAL_PROCESS_MELT)
-	if(!heat_treatment && batch.phase == MATERIAL_PHASE_MOLTEN)
-		batch.apply_process(MATERIAL_PROCESS_HOMOGENIZE)
-		batch.apply_process(MATERIAL_PROCESS_CAST)
+		if(!batch.apply_process(MATERIAL_PROCESS_SOLUTION_TREAT))
+			visible_message(span_warning("[src] opens without completing the requested heat treatment; the recoverable stock remains unchanged."))
+			output_stock = processed_spawn_stack(get_turf(src), batch, batch.amount)
+			qdel(batch)
+			return
+	else
+		if(!batch.apply_process(MATERIAL_PROCESS_MELT) || !batch.apply_process(MATERIAL_PROCESS_HOMOGENIZE) || !batch.apply_process(MATERIAL_PROCESS_CAST))
+			visible_message(span_warning("[src] opens after an incomplete firing; the recoverable charge remains separated."))
+			output_stock = processed_spawn_stack(get_turf(src), batch, batch.amount)
+			qdel(batch)
+			return
 	output_stock = processed_spawn_stack(get_turf(src), batch, max(1, round(batch.amount * batch.yield_fraction)))
 	if(output_stock)
 		output_stock.forceMove(src)
@@ -248,8 +257,7 @@
 		stock = item
 		return
 	if(istype(item, /obj/item/melee/hammer) && stock)
-		var/datum/material/processed_alloy/material = stock.material
-		var/datum/material_batch/batch = material.batch_template.copy_batch()
+		var/datum/material_batch/batch = stock.physical_batch().copy_batch()
 		if(!batch.apply_process(MATERIAL_PROCESS_FORGE))
 			to_chat(user, span_warning("The stock is outside its forging range; heat it in the alloy furnace first."))
 			qdel(batch)
@@ -286,30 +294,40 @@
 		to_chat(user, span_warning("The bath contains no treatment medium."))
 		return
 	var/obj/item/stack/material/processed_alloy/stock = item
-	var/datum/material/processed_alloy/material = stock.material
-	var/datum/material_batch/batch = material.batch_template.copy_batch()
+	var/datum/material_batch/batch = stock.physical_batch().copy_batch()
+	var/required_medium = max(2, stock.get_amount() * 2)
+	if(reagents.total_volume < required_medium)
+		to_chat(user, span_warning("Treating [stock.get_amount()] sheets requires at least [required_medium] units of medium."))
+		qdel(batch)
+		return
 	var/acid = reagents.get_reagent_amount(REAGENT_ID_SACID) + reagents.get_reagent_amount(REAGENT_ID_PACID)
 	var/process_succeeded
+	var/process_description
 	if(acid)
-		batch.purity = clamp(batch.purity + min(round(acid / 2), 12), 0, 100)
 		process_succeeded = batch.apply_process(MATERIAL_PROCESS_PURIFY)
+		process_description = "acid-cleans"
 	else
-		process_succeeded = batch.apply_process(MATERIAL_PROCESS_QUENCH)
+		var/quench_option = "water"
+		if(reagents.get_reagent_amount(REAGENT_ID_FROSTOIL) || reagents.get_reagent_amount(REAGENT_ID_COOLANT))
+			quench_option = "cryo"
+		else if(reagents.get_reagent_amount(REAGENT_ID_OIL) || reagents.get_reagent_amount(REAGENT_ID_COOKINGOIL))
+			quench_option = "oil"
+		process_succeeded = batch.apply_process(MATERIAL_PROCESS_QUENCH, quench_option)
+		process_description = "[quench_option]-quenches"
 	if(!process_succeeded)
 		to_chat(user, span_warning("The stock is not hot and solution-treated enough to quench. Heat-treat it in the alloy furnace first."))
 		qdel(batch)
 		return
 	var/obj/item/stack/material/processed_alloy/replacement = replace_processed_stack(stock, batch, user.drop_location())
 	user.put_in_hands(replacement)
-	reagents.remove_any(min(10, reagents.total_volume))
+	reagents.remove_any(required_medium)
 	qdel(batch)
-	visible_message(span_notice("[user] treats the physical stock in [src]; its surface and grain visibly change."))
+	visible_message(span_notice("[user] [process_description] the physical stock in [src]; its surface and grain visibly change."))
 
 /obj/item/stack/material/processed_alloy/attackby(obj/item/item, mob/user)
 	if(!istype(material, /datum/material/processed_alloy))
 		return ..()
-	var/datum/material/processed_alloy/processed = material
-	var/datum/material_batch/batch = processed.batch_template.copy_batch()
+	var/datum/material_batch/batch = physical_batch().copy_batch()
 	var/changed = FALSE
 	if(istype(item, /obj/item/slime_extract))
 		var/obj/item/slime_extract/extract = item
@@ -345,8 +363,7 @@
 	if(energy < 350 || !istype(target, /obj/item/stack/material/processed_alloy))
 		return FALSE
 	var/obj/item/stack/material/processed_alloy/stock = target
-	var/datum/material/processed_alloy/material = stock.material
-	var/datum/material_batch/batch = material.batch_template.copy_batch()
+	var/datum/material_batch/batch = stock.physical_batch().copy_batch()
 	var/strength = clamp(round(energy / 20), 10, 60)
 	batch.add_field_treatment(MATERIAL_FIELD_PARTICLE, strength)
 	batch.homogeneity = clamp(batch.homogeneity + round(strength / 8), 0, 100)

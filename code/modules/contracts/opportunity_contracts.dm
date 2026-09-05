@@ -126,12 +126,15 @@
 
 /datum/contract_definition/social/program/opportunity/process_scaleup/configure_contract(datum/contract/social/contract, list/context)
 	..()
-	add_social_role(contract, "chemist", "Process chemist", "Develops a varied, reproducible synthesis portfolio.", list(DEPARTMENT_RESEARCH, DEPARTMENT_MEDICAL), 1, 5)
-	add_social_role(contract, "consumer", "Process customer", "Defines an operational use and receives resulting materials or products.", null, 2, 8)
-	add_program_count(contract, CONTRACT_EVENT_CHEMISTRY_RESULT, 120, "Scaled synthesis volume", "Produce 120 fresh units through qualifying reactions.", "amount", CONTRACT_EVIDENCE_SCOPE_DEPARTMENT)
-	add_program_count(contract, CONTRACT_EVENT_CHEMISTRY_RESULT, 7, "Reaction breadth", "Complete seven distinct reaction types after accepting the commission.", null, CONTRACT_EVIDENCE_SCOPE_DEPARTMENT, "reaction_id")
-	add_program_count(contract, CONTRACT_EVENT_CHEMISTRY_RESULT, 5, "Complex processes", "Complete five distinct syntheses using at least three reactants.", null, CONTRACT_EVIDENCE_SCOPE_DEPARTMENT, "reaction_id", null, list(list("key" = "reactant_count", "comparator" = CONTRACT_EVIDENCE_COMPARE_AT_LEAST, "expected" = 3)))
-	add_program_portfolio(contract, CONTRACT_EVENT_ITEM_PRODUCED, 1000, "item_type", "value", 4, "Applied outputs", "Produce 1,000 Thalers of useful equipment across four product classes.", CONTRACT_EVIDENCE_SCOPE_DEPARTMENT, null, null, 350, 500)
+	var/list/scale_products = list(REAGENT_ID_BICARIDINE = "bicaridine", REAGENT_ID_KELOTANE = "kelotane", REAGENT_ID_ANTITOXIN = "anti-toxin", REAGENT_ID_TRICORDRAZINE = "tricordrazine")
+	var/product_id = pick(scale_products)
+	var/product_name = scale_products[product_id]
+	contract.title = "[capitalize(product_name)] Process Scale-Up"
+	contract.description = "Chimera Genetics observed the station's chemistry work and requests a concentrated 80-unit run of [product_name], followed by a Research sale that places station-made equipment with an actual customer."
+	add_social_role(contract, "chemist", "Scale-up chemist", "Runs the commissioned synthesis and controls its output.", list(DEPARTMENT_RESEARCH, DEPARTMENT_MEDICAL), 1, 5)
+	add_social_role(contract, "customer", "Station customer", "Buys station-made Research equipment for practical use.", null, 1, 8)
+	add_program_count(contract, CONTRACT_EVENT_CHEMISTRY_RESULT, 80, "Focused production run", "Synthesize 80 fresh units of [product_name].", "amount", CONTRACT_EVIDENCE_SCOPE_DEPARTMENT, null, list("product_id" = product_id))
+	add_program_count(contract, CONTRACT_EVENT_SERVICE_PERIOD_SETTLED, 250, "Operational customer", "Complete at least 250 Thalers in verified Research sales to station personnel.", "verified_amount", CONTRACT_EVIDENCE_SCOPE_DEPARTMENT, null, list("rollup" = "department"))
 
 // --------------------------------------------------------------------------
 // Security and trade response

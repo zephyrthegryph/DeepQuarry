@@ -139,12 +139,32 @@
 	var/list/parts = list()
 	for(var/role in owner.construction_materials)
 		var/datum/material/material = owner.material_for_role(role)
-		parts += list(list("role" = role, "material" = material.display_name || material.name, "meltingPoint" = material.melting_point, "corrosion" = material.corrosion_resistance))
+		parts += list(list("role" = role, "material" = material.display_name || material.name, "meltingPoint" = material.melting_point, "corrosion" = material.corrosion_resistance, "purpose" = describe_part(role, material)))
 	var/list/data = list("status" = status, "temperature" = temperature, "buffer" = buffer_energy, "input" = last_input_watts, "output" = last_output_watts, "lossEnergy" = loss_joules, "parts" = parts, "limiting" = limiting_role, "configuration" = owner.material_configuration_revision, "liner" = owner.material_environment_liner_integrity, "shell" = owner.material_environment_exterior_integrity, "fatigue" = owner.material_environment_fatigue, "monitoring" = !!monitor_tool, "reading" = last_reading)
 	if(istype(owner, /obj/machinery/power/emitter))
 		var/obj/machinery/power/emitter/emitter = owner
 		data["emitter"] = list("output" = emitter.material_output_setting, "cadence" = emitter.material_cadence_setting, "stored" = emitter.material_stored_energy, "active" = emitter.active)
 	return data
+
+/datum/material_service/proc/describe_part(role, datum/material/material)
+	switch(role)
+		if(MATERIAL_ROLE_CONDUCTOR, MATERIAL_ROLE_CONTACTS, MATERIAL_ROLE_ELECTRODE)
+			var/superconducting = material.critical_temperature ? "; superconducts below [round(material.critical_temperature)] K up to [round(material.critical_current_density)] current density" : ""
+			return "Carries power: [round(material.conductivity)] conductivity[superconducting]."
+		if(MATERIAL_ROLE_THERMAL)
+			var/buffer = material.phase_change_capacity ? "; buffers [round(material.phase_change_capacity)] J near [round(material.phase_change_temperature)] K" : ""
+			return "Controls operating heat: [round(material.specific_heat)] specific heat[buffer]."
+		if(MATERIAL_ROLE_INSULATION, MATERIAL_ROLE_DIELECTRIC, MATERIAL_ROLE_JACKET)
+			return "Limits heat or electrical leakage: [round(material.thermal_insulation)] insulation, [round(material.dielectric_strength)] dielectric strength."
+		if(MATERIAL_ROLE_LINER)
+			return "Touches the working fluid: [round(material.corrosion_resistance)] corrosion resistance."
+		if(MATERIAL_ROLE_STRUCTURE, MATERIAL_ROLE_FRAME, MATERIAL_ROLE_BODY, MATERIAL_ROLE_BARREL)
+			return "Carries mechanical load: [round(material.yield_strength)] yield strength, [round(material.fracture_toughness)] fracture toughness."
+		if(MATERIAL_ROLE_OPTICAL, MATERIAL_ROLE_SENSOR, MATERIAL_ROLE_EMITTER)
+			return "Shapes or measures output: [round(material.reflectivity * 100)]% reflectivity, [round(material.melting_point)] K thermal limit."
+		if(MATERIAL_ROLE_ACTUATOR, MATERIAL_ROLE_BEARINGS, MATERIAL_ROLE_SPRING, MATERIAL_ROLE_FEED)
+			return "Controls motion: [round(material.elasticity)] elasticity, [round(material.hardness)] hardness."
+	return "Functional behavior follows this material's measured physical properties."
 
 /datum/material_service/tgui_act(action, list/params, datum/tgui/ui)
 	if(..())
@@ -221,7 +241,8 @@
 	monitor_last_time = world.time
 	var/duration = (world.time - monitor_started) / 10
 	var/consumed = input_joules - monitor_input + monitor_stored_energy - owner.material_operating_reservoir()
-	last_reading = list("name" = owner.name, "assembly" = owner.material_assembly_id, "configuration" = monitor_configuration, "started" = monitor_started, "ended" = world.time, "duration" = duration, "input_joules" = input_joules - monitor_input, "output_joules" = output_joules - monitor_output, "minimum_output_watts" = monitor_minimum_output, "minimum_flow_moles" = monitor_minimum_flow, "minimum_pressure_kpa" = monitor_minimum_pressure, "maximum_temperature_k" = monitor_maximum_temperature, "efficiency" = (output_joules - monitor_output) / max(consumed, 1), "kind" = owner.material_measurement_kind())
+	var/datum/money_account/observer_account = contract_account_for_mob(user)
+	last_reading = list("name" = owner.name, "assembly" = owner.material_assembly_id, "configuration" = monitor_configuration, "started" = monitor_started, "ended" = world.time, "duration" = duration, "input_joules" = input_joules - monitor_input, "output_joules" = output_joules - monitor_output, "minimum_output_watts" = monitor_minimum_output, "minimum_flow_moles" = monitor_minimum_flow, "minimum_pressure_kpa" = monitor_minimum_pressure, "maximum_temperature_k" = monitor_maximum_temperature, "efficiency" = (output_joules - monitor_output) / max(consumed, 1), "kind" = owner.material_measurement_kind(), "observer_account" = observer_account?.account_number, "observer_name" = user.real_name)
 	tool.set_engineering_reading(last_reading)
 	return TRUE
 
@@ -268,12 +289,12 @@
 		return TRUE
 	var/list/reading = tool.engineering_reading
 	if(!tool.engineering_evidence_id)
-		var/datum/money_account/account = medical_trial_account_for_mob(user)
-		tool.engineering_evidence_id = SScontracts.register_evidence(CONTRACT_EVIDENCE_ENGINEERING, reading["assembly"], account?.account_number, tool, reading)
+		tool.engineering_evidence_id = SScontracts.register_evidence(CONTRACT_EVIDENCE_ENGINEERING, reading["assembly"], reading["observer_account"], tool, reading)
 		SScontracts.retain_evidence(tool.engineering_evidence_id)
 	var/obj/item/paper/report = new(get_turf(src))
 	report.name = "engineering measurement — [reading["name"]]"
 	report.info = "<h3>Engineering measurement</h3>"
+	report.info += "<b>Observer:</b> [html_encode("[reading["observer_name"] || "Unidentified operator"]")]<br>"
 	var/static/list/labels = list("name" = "Assembly", "assembly" = "Serial", "configuration" = "Configuration revision", "duration" = "Observed duration (seconds)", "input_joules" = "Input energy (J)", "output_joules" = "Delivered energy (J)", "minimum_output_watts" = "Minimum delivered power (W)", "minimum_flow_moles" = "Minimum gas transfer (mol/s)", "minimum_pressure_kpa" = "Minimum delivery pressure (kPa)", "maximum_temperature_k" = "Peak temperature (K)")
 	for(var/key in labels)
 		var/value = reading[key]

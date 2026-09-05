@@ -179,8 +179,14 @@
 			homogeneity = clamp(homogeneity + 8, 0, 100)
 			structure[MATERIAL_STRUCTURE_DEFECT] = clamp(structure[MATERIAL_STRUCTURE_DEFECT] - 14, 0, 100)
 		if(MATERIAL_PROCESS_PURIFY)
-			purity = clamp(purity + 10, 0, 100)
-			impurities.Cut()
+			var/removed_contamination = 0
+			for(var/impurity in impurities.Copy())
+				var/lower_impurity = lowertext(impurity)
+				if(findtext(lower_impurity, "oxide") || findtext(lower_impurity, "sulfur"))
+					removed_contamination += impurities[impurity]
+					impurities -= impurity
+			purity = clamp(purity + min(10, 2 + round(removed_contamination)), 0, 100)
+			oxidation = max(0, oxidation - 20)
 			homogeneity = clamp(homogeneity + 12, 0, 100)
 			structure[MATERIAL_STRUCTURE_DEFECT] = clamp(structure[MATERIAL_STRUCTURE_DEFECT] - 10, 0, 100)
 		if(MATERIAL_PROCESS_HOMOGENIZE)
@@ -254,7 +260,7 @@
 		if(MATERIAL_PROCESS_QUENCH)
 			return phase == MATERIAL_PHASE_SOLID && solution_treated && temperature >= melting_temperature() * 0.62
 		if(MATERIAL_PROCESS_FORGE)
-			return phase == MATERIAL_PHASE_SOLID && temperature >= melting_temperature() * 0.45 && temperature <= melting_temperature() * 0.9
+			return phase == MATERIAL_PHASE_SOLID && temperature >= melting_temperature() * 0.45 && temperature <= melting_temperature() * 0.9 && (process_counts[MATERIAL_PROCESS_FORGE] || 0) < 2
 		if(MATERIAL_PROCESS_HOMOGENIZE)
 			return phase == MATERIAL_PHASE_MOLTEN
 		if(MATERIAL_PROCESS_SOLUTION_TREAT)
@@ -463,3 +469,40 @@
 	copy.surface_protection = surface_protection
 	copy.recalculate()
 	return copy
+
+/// Preserve intensive properties while dividing quantity, provenance, energy,
+/// reagents, and expense with a physical piece of stock.
+/datum/material_batch/proc/copy_for_amount(new_amount)
+	var/datum/material_batch/copy = copy_batch()
+	var/ratio = max(0, new_amount / max(amount, 0.01))
+	copy.amount = new_amount
+	for(var/material_name in copy.composition)
+		copy.composition[material_name] *= ratio
+	for(var/impurity in copy.impurities)
+		copy.impurities[impurity] *= ratio
+	for(var/lot_id in copy.feedstock_lots)
+		copy.feedstock_lots[lot_id] *= ratio
+	for(var/account_number in copy.contributors)
+		copy.contributors[account_number] *= ratio
+	for(var/gas_name in copy.dissolved_gases)
+		copy.dissolved_gases[gas_name] *= ratio
+	for(var/category in copy.cost_ledger)
+		copy.cost_ledger[category] *= ratio
+	copy.cost_basis *= ratio
+	copy.energy_spent *= ratio
+	return copy
+
+/datum/material_batch/proc/thermal_capacity()
+	var/weighted_specific_heat = 0
+	for(var/material_name in composition)
+		var/datum/material/material = get_material_by_name(material_name)
+		if(material)
+			weighted_specific_heat += max(material.specific_heat, 100) * composition[material_name] / max(amount, 1)
+	return max(1, amount * weighted_specific_heat / 160)
+
+/datum/material_batch/proc/add_thermal_energy(joules)
+	if(!isnum(joules) || !joules)
+		return 0
+	var/old_temperature = temperature
+	temperature = max(2.7, temperature + joules / thermal_capacity())
+	return temperature - old_temperature

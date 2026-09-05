@@ -5,3 +5,6 @@ changes:
   - balance: "Research sales targets now scale to the available crew, and repetitive engineering qualifications use one sustained operating record."
   - bugfix: "Processed-alloy analyzer readings now qualify material contracts and correctly credit workers separately from paperwork filers."
   - rscadd: "Processed stock can be furnace heat-treated and physically quenched, and bulk special properties require meaningful ingredient proportions."
+  - bugfix: "Processed alloy stacks now preserve their material, temperature, provenance, and proportional costs when split or merged."
+  - rscadd: "Alloy orders now require a matching assayed batch to be physically exported, while hot stock cools in the world and real quench media produce different treatments."
+  - balance: "Applied chemistry now commissions one useful clinical product per offer, duplicate publication work is retired, and incorrect clinical interpretations may be corrected for a reduced award."

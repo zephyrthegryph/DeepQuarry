@@ -28,6 +28,7 @@ type Data = {
     material: string;
     meltingPoint: number;
     corrosion: number;
+    purpose: string;
   }[];
   reading?: Record<string, string | number>;
   emitter?: {
@@ -129,6 +130,9 @@ export const EngineeringAssembly = () => {
                 <Box inline ml={1} color="label">
                   {number(part.meltingPoint)} K melt · {number(part.corrosion)}{' '}
                   corrosion resistance
+                </Box>
+                <Box color="label" mt={0.5}>
+                  {part.purpose}
                 </Box>
               </LabeledList.Item>
             ))}

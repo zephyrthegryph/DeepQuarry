@@ -181,14 +181,17 @@ GLOBAL_LIST_EMPTY(processed_material_dedup)
 	// Stack merging is an explicit later interaction, so constructing directly
 	// on the output turf preserves both initialization and the returned ref.
 	var/obj/item/stack/material/processed_alloy/stock = new /obj/item/stack/material/processed_alloy(location, stack_amount, material_key)
+	QDEL_NULL(stock.batch_state)
+	stock.batch_state = batch.copy_for_amount(stack_amount)
+	stock.update_thermal_processing()
 	return stock
 
 /proc/material_batch_from_stack(obj/item/stack/material/stack)
 	if(!istype(stack) || !stack.material)
 		return null
 	if(istype(stack.material, /datum/material/processed_alloy))
-		var/datum/material/processed_alloy/processed = stack.material
-		return processed.batch_template.copy_batch()
+		var/obj/item/stack/material/processed_alloy/processed_stack = stack
+		return processed_stack.physical_batch()?.copy_batch()
 	var/datum/material_batch/batch = new
 	batch.add_material(stack.material.name, stack.amount)
 	return batch
@@ -203,14 +206,111 @@ GLOBAL_LIST_EMPTY(processed_material_dedup)
 	pass_color = TRUE
 	strict_color_stacking = TRUE
 	exotic_no_autolathe_reprint = TRUE
+	var/datum/material_batch/batch_state
 
 /obj/item/stack/material/processed_alloy/Initialize(mapload, _amount, _material_name)
 	if(_material_name)
 		default_type = _material_name
 	. = ..(mapload, _amount)
-	if(material)
+	if(istype(material, /datum/material/processed_alloy))
 		color = material.icon_colour
 		set_economic_provenance(DEPARTMENT_RESEARCH, max(material.supply_conversion_value, 1) * amount)
+		var/datum/material/processed_alloy/processed = material
+		batch_state = processed.batch_template.copy_for_amount(amount)
+
+/obj/item/stack/material/processed_alloy/Destroy()
+	STOP_PROCESSING(SSobj, src)
+	QDEL_NULL(batch_state)
+	return ..()
+
+/obj/item/stack/material/processed_alloy/proc/physical_batch() as /datum/material_batch
+	if(batch_state)
+		return batch_state
+	var/datum/material/processed_alloy/processed = material
+	batch_state = processed?.batch_template?.copy_for_amount(amount)
+	return batch_state
+
+/obj/item/stack/material/processed_alloy/proc/update_thermal_processing()
+	var/datum/material_batch/batch = physical_batch()
+	if(batch?.temperature > T20C + 40)
+		set_light(2, 1, "#ff7b22")
+		START_PROCESSING(SSobj, src)
+	else
+		set_light(0)
+		STOP_PROCESSING(SSobj, src)
+
+/obj/item/stack/material/processed_alloy/process()
+	var/datum/material_batch/batch = physical_batch()
+	if(!batch)
+		return PROCESS_KILL
+	var/ambient_temperature = T20C
+	var/turf/open/turf = get_turf(src)
+	if(istype(turf) && turf.air)
+		ambient_temperature = turf.air.return_temperature()
+	batch.temperature += (ambient_temperature - batch.temperature) * 0.08
+	if(abs(batch.temperature - ambient_temperature) < 5)
+		batch.temperature = ambient_temperature
+		set_light(0)
+		return PROCESS_KILL
+	return
+
+/obj/item/stack/material/processed_alloy/split(tamount)
+	var/old_amount = get_amount()
+	var/datum/material_batch/original = physical_batch()?.copy_batch()
+	var/obj/item/stack/material/processed_alloy/new_stack = ..()
+	if(!new_stack || !original)
+		qdel(original)
+		return new_stack
+	new_stack.set_processed_material(material.name)
+	QDEL_NULL(new_stack.batch_state)
+	new_stack.batch_state = original.copy_for_amount(new_stack.get_amount())
+	QDEL_NULL(batch_state)
+	batch_state = original.copy_for_amount(max(old_amount - new_stack.get_amount(), 0))
+	qdel(original)
+	return new_stack
+
+/obj/item/stack/material/processed_alloy/transfer_to(obj/item/stack/target, tamount = null, type_verified)
+	var/obj/item/stack/material/processed_alloy/processed_target = target
+	if(!istype(processed_target) || processed_target.material?.name != material?.name)
+		return 0
+	var/source_before = get_amount()
+	var/target_before = processed_target.get_amount()
+	var/datum/material_batch/source_batch = physical_batch()?.copy_batch()
+	var/datum/material_batch/target_batch = processed_target.physical_batch()?.copy_batch()
+	var/transferred = ..(target, tamount, type_verified)
+	if(!transferred)
+		qdel(source_batch)
+		qdel(target_batch)
+		return 0
+	var/datum/material_batch/new_target = target_batch.copy_for_amount(target_before)
+	var/datum/material_batch/source_portion = source_batch.copy_for_amount(transferred)
+	new_target.amount += source_portion.amount
+	for(var/material_name in source_portion.composition)
+		new_target.composition[material_name] = (new_target.composition[material_name] || 0) + source_portion.composition[material_name]
+	for(var/impurity in source_portion.impurities)
+		new_target.impurities[impurity] = (new_target.impurities[impurity] || 0) + source_portion.impurities[impurity]
+	for(var/lot_id in source_portion.feedstock_lots)
+		new_target.feedstock_lots[lot_id] = (new_target.feedstock_lots[lot_id] || 0) + source_portion.feedstock_lots[lot_id]
+	for(var/account_number in source_portion.contributors)
+		new_target.contributors[account_number] = (new_target.contributors[account_number] || 0) + source_portion.contributors[account_number]
+	for(var/category in source_portion.cost_ledger)
+		new_target.cost_ledger[category] = (new_target.cost_ledger[category] || 0) + source_portion.cost_ledger[category]
+	new_target.cost_basis += source_portion.cost_basis
+	new_target.energy_spent += source_portion.energy_spent
+	new_target.temperature = (target_batch.temperature * target_before + source_batch.temperature * transferred) / max(target_before + transferred, 1)
+	new_target.recalculate()
+	QDEL_NULL(processed_target.batch_state)
+	processed_target.batch_state = new_target
+	processed_target.update_thermal_processing()
+	if(!QDELETED(src))
+		var/datum/material_batch/new_source = source_batch.copy_for_amount(source_before - transferred)
+		QDEL_NULL(batch_state)
+		batch_state = new_source
+		update_thermal_processing()
+	qdel(source_portion)
+	qdel(source_batch)
+	qdel(target_batch)
+	return transferred
 
 /obj/item/stack/material/processed_alloy/proc/set_processed_material(material_name)
 	var/datum/material/new_material = get_material_by_name(material_name)
@@ -234,8 +334,7 @@ GLOBAL_LIST_EMPTY(processed_material_dedup)
 	. = ..()
 	if(!istype(material, /datum/material/processed_alloy))
 		return
-	var/datum/material/processed_alloy/processed = material
-	var/datum/material_batch/batch = processed.batch_template
+	var/datum/material_batch/batch = physical_batch()
 	. += span_notice("Finished solid stock at [round(batch.temperature)] K, produced at [round(batch.yield_fraction * 100)]% retained yield.")
 	if(length(batch.surface_layers))
 		. += span_notice("Persistent surface treatments: [jointext(batch.surface_layers, ", ")].")
