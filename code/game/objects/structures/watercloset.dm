@@ -73,13 +73,27 @@
 /obj/structure/toilet/update_icon()
 	icon_state = "[initial(icon_state)][open][cistern]"
 
-/obj/structure/toilet/attack_hand(mob/living/user)
+/obj/structure/toilet/declare_interactions(list/into)
+	into += list(
+		/datum/interaction/entry_hand/toilet_hand,
+		/datum/interaction/entry_item/toilet_item,
+		/datum/interaction/entry_alt/toilet_alt,
+	)
+	..()
+
+/// Old attack_hand: slam the swirlie victim, loot the cistern, or open/close the lid.
+/datum/interaction/entry_hand/toilet_hand
+	id = "toilet_hand"
+	name = "Use"
+	effect = /obj/structure/toilet/proc/interaction_hand
+
+/obj/structure/toilet/proc/interaction_hand(mob/living/user, obj/item/held, datum/interaction/interaction)
 	var/mob/living/swirlie = swirlie_mob?.resolve()
 	if(swirlie)
 		user.setClickCooldown(user.get_attack_speed())
 		user.visible_message(span_danger("[user] slams the toilet seat onto [swirlie.name]'s head!"), span_notice("You slam the toilet seat onto [swirlie.name]'s head!"), "You hear reverberating porcelain.")
 		swirlie.injure(INJURY_BLUNT, 5, BP_HEAD, src)
-		return
+		return TRUE
 
 	if(cistern && !open)
 		var/list/cistern_loot = list()
@@ -100,7 +114,7 @@
 				else
 					to_chat(user, span_notice("You decide to leave it."))
 			to_chat(user, span_notice("The cistern is empty."))
-			return
+			return TRUE
 		var/obj/item/I = pick(cistern_loot)
 		if(ishuman(user))
 			user.put_in_hands(I)
@@ -108,10 +122,11 @@
 			I.loc = get_turf(src)
 		to_chat(user, span_notice("You find \an [I] in the cistern."))
 		w_items -= I.w_class
-		return
+		return TRUE
 
 	open = !open
 	update_icon()
+	return TRUE
 
 /obj/structure/toilet/attack_ai(mob/user)
 	if(isrobot(user))
@@ -120,7 +135,13 @@
 	else
 		return attack_hand(user)
 
-/obj/structure/toilet/attackby(obj/item/I, mob/living/user)
+/// Old attackby: give a grabbed mob a swirlie, insert a crystal/bin, or fill the cistern.
+/datum/interaction/entry_item/toilet_item
+	id = "toilet_item"
+	name = "Use"
+	effect = /obj/structure/toilet/proc/interaction_item
+
+/obj/structure/toilet/proc/interaction_item(mob/living/user, obj/item/I, datum/interaction/interaction)
 	if(istype(I, /obj/item/grab))
 		user.setClickCooldown(user.get_attack_speed(I))
 		var/obj/item/grab/G = I
@@ -130,10 +151,10 @@
 
 			if(G.state <= GRAB_PASSIVE)
 				to_chat(user, span_notice("You need a tighter grip."))
-				return
+				return TRUE
 			if(GM.loc != get_turf(src))
 				to_chat(user, span_notice("[GM.name] needs to be on the toilet."))
-				return
+				return TRUE
 			var/mob/living/swirlie = swirlie_mob?.resolve()
 			if(open && !swirlie)
 				user.visible_message(span_danger("[user] starts to give [GM] a swirlie!"), span_notice("You start to give [GM] a swirlie!"))
@@ -161,7 +182,7 @@
 	if(cistern && !teleplumb_crystal && istype(I, /obj/item/bluespace_crystal))
 		to_chat(user, span_notice("You begin to insert \the [I] into \the [src]..."))
 		if(!do_after(user, 2 SECONDS, src))
-			return
+			return TRUE
 		to_chat(user, span_notice("You insert \the [I] into \the [src]. A deep rumble eminates from within it, and a faint blue glow eminates from the bottom of the bowl for a moment."))
 		user.drop_item()
 		I.forceMove(src)
@@ -169,40 +190,50 @@
 		//TODO: add a way to link this to custom destinations.
 		teleplumb_dest_ref = WEAKREF(locate(/obj/effect/landmark/teleplumb_exit))
 		desc = "The BS-500, a bluespace rift-rotation-based waste disposal unit for small matter. This one seems remarkably clean."
-		return
+		return TRUE
 
 	if(cistern && istype(I, /obj/item/stock_parts/matter_bin))
 		to_chat(user, span_notice("You begin to replace \the [bin] in \the [src] with \the [I]."))
 		if(!do_after(user, 2 SECONDS, src))
-			return
+			return TRUE
 		to_chat(user, span_notice("You replace \the [bin] with \the [I]."))
 		bin.forceMove(src.loc) //Remove the old bin.
 		user.drop_item()
 		I.forceMove(src)
 		bin = I //Set the internally stored bin to the new bin.
-		return
+		return TRUE
 
 	if(cistern && !istype(user,/mob/living/silicon/robot)) //STOP PUTTING YOUR MODULES IN THE TOILET.
 		if(I.w_class > ITEMSIZE_NORMAL) //3
 			to_chat(user, span_notice("\The [I] does not fit."))
-			return
+			return TRUE
 		if(w_items + I.w_class > ITEMSIZE_COST_TINY * 5) // 5 tiny or 2 small and 1 tiny
 			to_chat(user, span_notice("The cistern is full."))
-			return
+			return TRUE
 		user.drop_item()
 		I.forceMove(src)
 		w_items += I.w_class
 		to_chat(user, "You carefully place \the [I] into the cistern.")
-		return
+		return TRUE
 
-/obj/structure/toilet/click_alt(mob/user)
-	if(!isliving(user) || get_dist(user, src) > 1 || user.loc == src )
-		return
+
+/// Old click_alt: pull the flush lever. Not offered at all when the guard clauses would
+/// return NONE (not living, too far, or standing in the toilet); the other early returns
+/// used to answer CLICK_ACTION_BLOCKING specifically, which now just maps to "ran" like
+/// the success case does (interactions only distinguish ran vs not-offered/not-applicable).
+/datum/interaction/entry_alt/toilet_alt
+	id = "toilet_alt"
+	name = "Flush"
+	effect = /obj/structure/toilet/proc/interaction_alt
+
+/obj/structure/toilet/proc/interaction_alt(mob/user, obj/item/held, datum/interaction/interaction)
+	if(!isliving(user) || user.loc == src)
+		return TRUE
 	if(user.stat) //replace with user.canUseTopic() in the future
-		return CLICK_ACTION_BLOCKING
+		return TRUE
 	if(!open)
 		to_chat(user, span_notice("You need to open the lid before flushing \the [src]."))
-		return CLICK_ACTION_BLOCKING
+		return TRUE
 	if(refilling)
 		to_chat(user, span_notice("The toilet is still refilling its tank."))
 		playsound(src, 'sound/machines/door_locked.ogg', 30, 1)
@@ -212,13 +243,13 @@
 				panic_mult++
 				COOLDOWN_START(src, panic_flush, 1 SECOND) //Let's not encourage hitting the click-cap.
 				user.visible_message(span_notice("[user] pulls the flush lever mid-flush!"), span_notice("You full the flush lever mid-flush!"), "you hear the sound of a toilet handle being jiggled.")
-				return CLICK_ACTION_BLOCKING
+				return TRUE
 			to_chat(user, span_notice("You need to wait [round((COOLDOWN_TIMELEFT(src, panic_flush)) / 10, 0.1)] more seconds longer before you can pull the flush lever again!"))
-		return CLICK_ACTION_BLOCKING
+		return TRUE
 	//Flush succeeds
 	user.visible_message(span_notice("[user] flushes the toilet."), span_notice("You flush the toilet."), "you hear a toilet flushing.")
 	flush()
-	return CLICK_ACTION_SUCCESS
+	return TRUE
 
 /obj/structure/toilet/proc/flush()
 	refilling = TRUE
@@ -399,19 +430,31 @@
 	density = FALSE
 	anchored = TRUE
 
-/obj/structure/urinal/attackby(obj/item/I, mob/user)
-	if(istype(I, /obj/item/grab))
-		var/obj/item/grab/G = I
-		if(isliving(G.affecting))
-			var/mob/living/GM = G.affecting
-			if(G.state>1)
-				if(GM.loc != get_turf(src))
-					to_chat(user, span_notice("[GM.name] needs to be on the urinal."))
-					return
-				user.visible_message(span_danger("[user] slams [GM.name] into the [src]!"), span_notice("You slam [GM.name] into the [src]!"))
-				GM.injure(INJURY_BLUNT, 8, BP_HEAD, src)
-			else
-				to_chat(user, span_notice("You need a tighter grip."))
+/obj/structure/urinal/declare_interactions(list/into)
+	into += list(
+		/datum/interaction/entry_item/urinal_item,
+	)
+	..()
+
+/// Old attackby: slam a grabbed mob into the urinal.
+/datum/interaction/entry_item/urinal_item
+	id = "urinal_item"
+	name = "Use"
+	held_type = /obj/item/grab
+	effect = /obj/structure/urinal/proc/interaction_item
+
+/obj/structure/urinal/proc/interaction_item(mob/user, obj/item/grab/G, datum/interaction/interaction)
+	if(isliving(G.affecting))
+		var/mob/living/GM = G.affecting
+		if(G.state>1)
+			if(GM.loc != get_turf(src))
+				to_chat(user, span_notice("[GM.name] needs to be on the urinal."))
+				return TRUE
+			user.visible_message(span_danger("[user] slams [GM.name] into the [src]!"), span_notice("You slam [GM.name] into the [src]!"))
+			GM.injure(INJURY_BLUNT, 8, BP_HEAD, src)
+		else
+			to_chat(user, span_notice("You need a tighter grip."))
+	return TRUE
 
 
 
@@ -965,7 +1008,20 @@
 	thing.reagents.clear_reagents()
 	thing.update_icon()
 
-/obj/structure/sink/attack_hand(mob/user)
+/obj/structure/sink/declare_interactions(list/into)
+	into += list(
+		/datum/interaction/entry_hand/sink_wash,
+		/datum/interaction/entry_item/sink_item,
+	)
+	..()
+
+/// Old attack_hand: wash your hands.
+/datum/interaction/entry_hand/sink_wash
+	id = "sink_wash"
+	name = "Wash hands"
+	effect = /obj/structure/sink/proc/interaction_wash
+
+/obj/structure/sink/proc/interaction_wash(mob/user, obj/item/held, datum/interaction/interaction)
 	if(ishuman(user))
 		var/mob/living/carbon/human/H = user
 		var/obj/item/organ/external/temp = H.organs_by_name[BP_R_HAND]
@@ -973,17 +1029,17 @@
 			temp = H.organs_by_name[BP_L_HAND]
 		if(temp && !temp.is_usable())
 			to_chat(user, span_notice("You try to move your [temp.name], but cannot!"))
-			return
+			return TRUE
 
 	if(isrobot(user) || isAI(user))
-		return
+		return TRUE
 
 	if(!Adjacent(user))
-		return
+		return TRUE
 
 	if(busy)
 		to_chat(user, span_warning("Someone's already washing here."))
-		return
+		return TRUE
 
 	to_chat(user, span_notice("You start washing your hands."))
 	playsound(src, 'sound/effects/sink_long.ogg', 75, 1)
@@ -992,7 +1048,7 @@
 	if(!do_after(user, 4 SECONDS, target = src))
 		busy = 0
 		to_chat(user, span_notice("You stop washing your hands."))
-		return
+		return TRUE
 	busy = 0
 
 	if(ishuman(user))
@@ -1015,11 +1071,18 @@
 		user.wash(CLEAN_SCRUB)
 	for(var/mob/V in viewers(src, null))
 		V.show_message(span_notice("[user] washes their hands using \the [src]."))
+	return TRUE
 
-/obj/structure/sink/attackby(obj/item/O, mob/user)
+/// Old attackby: fill an open container, or charge a baton.
+/datum/interaction/entry_item/sink_item
+	id = "sink_item"
+	name = "Use"
+	effect = /obj/structure/sink/proc/interaction_item
+
+/obj/structure/sink/proc/interaction_item(mob/user, obj/item/O, datum/interaction/interaction)
 	if(busy)
 		to_chat(user, span_warning("Someone's already washing here."))
-		return
+		return TRUE
 
 	var/obj/item/reagent_containers/RG = O
 	if (istype(RG) && RG.is_open_container())
@@ -1049,23 +1112,23 @@
 		O.reagents.add_reagent(REAGENT_ID_WATER, 5)
 		to_chat(user, span_notice("You wet \the [O] in \the [src]."))
 		playsound(src, 'sound/effects/slosh.ogg', 25, 1)
-		return
+		return TRUE
 	else if(istype(O, /obj/item/soap))
 		var/obj/item/soap/soap = O
 		to_chat(user, span_notice("You wet \the [O] in \the [src]"))
 		soap.wet()
 		O.wash(CLEAN_SCRUB)
-		return
+		return TRUE
 
 	var/turf/location = user.loc
-	if(!isturf(location)) return
+	if(!isturf(location)) return TRUE
 
 	var/obj/item/I = O
-	if(!I || !istype(I,/obj/item)) return
+	if(!I || !istype(I,/obj/item)) return TRUE
 
 	if(istype(I, /obj/item/robot_tongue) && isrobot(user))
 		var/obj/item/robot_tongue/J = I
-		if(J.water.energy < J.water.max_energy) return
+		if(J.water.energy < J.water.max_energy) return TRUE
 
 	to_chat(user, span_notice("You start washing \the [I]."))
 
@@ -1073,7 +1136,7 @@
 	if(!do_after(user, 4 SECONDS, target = src))
 		busy = 0
 		to_chat(user, span_notice("You stop washing \the [I]."))
-		return
+		return TRUE
 	busy = 0
 
 	O.wash(CLEAN_SCRUB)
@@ -1081,6 +1144,7 @@
 	user.visible_message( \
 		span_notice("[user] washes \a [I] using \the [src]."), \
 		span_notice("You wash \a [I] using \the [src]."))
+	return TRUE
 
 /obj/structure/sink/kitchen
 	name = "kitchen sink"
@@ -1095,14 +1159,16 @@
 	icon_state = "puddle"
 	desc = "A small pool of some liquid, ostensibly water."
 
-/obj/structure/sink/puddle/attack_hand(mob/M)
+/// Overrides sink's interaction_wash(): splash animation around the wash.
+/obj/structure/sink/puddle/interaction_wash(mob/user, obj/item/held, datum/interaction/interaction)
 	icon_state = "puddle-splash"
-	..()
+	. = ..()
 	icon_state = "puddle"
 
-/obj/structure/sink/puddle/attackby(obj/item/O, mob/user)
+/// Overrides sink's interaction_item(): splash animation around the item use.
+/obj/structure/sink/puddle/interaction_item(mob/user, obj/item/O, datum/interaction/interaction)
 	icon_state = "puddle-splash"
-	..()
+	. = ..()
 	icon_state = "puddle"
 
 #undef SHOWER_FREEZING
@@ -1169,12 +1235,24 @@
 		else
 			muffin_mode = FALSE
 
-/obj/structure/biowaste_tank/attack_hand(mob/user as mob)
+/obj/structure/biowaste_tank/declare_interactions(list/into)
+	into += list(
+		/datum/interaction/entry_hand/biowaste_tank_hand,
+	)
+	..()
+
+/// Old attack_hand: eject a caught item from the filter system.
+/datum/interaction/entry_hand/biowaste_tank_hand
+	id = "biowaste_tank_hand"
+	name = "Use"
+	effect = /obj/structure/biowaste_tank/proc/interaction_hand
+
+/obj/structure/biowaste_tank/proc/interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
 	if(contents.len)
-		var/atom/movable/choice = tgui_input_list(usr, "It appears the machine has caught some items in the lost-and-found filter system. Would you like to eject something?", "Item Retrieval Console", contents)
+		var/atom/movable/choice = tgui_input_list(user, "It appears the machine has caught some items in the lost-and-found filter system. Would you like to eject something?", "Item Retrieval Console", contents)
 		if(choice)
-			if(!usr.canmove || usr.stat || usr.restrained() || !in_range(loc, usr))
-				return
+			if(!user.canmove || user.stat || user.restrained() || !in_range(loc, user))
+				return TRUE
 			if(choice == muffinmonster && muffinmonster.loc == src)
 				muffin_mode = !muffin_mode
 				if(muffin_mode)
@@ -1186,9 +1264,10 @@
 				else
 					muffinmonster.name = "Activate Muffin Monster"
 					muffinmonster.release_vore_contents(include_absorbed = TRUE, silent = TRUE)
-				return
+				return TRUE
 			else
 				choice.forceMove(get_turf(src))
+	return TRUE
 
 /obj/structure/biowaste_tank/emag_act(remaining_charges, mob/user, emag_source)
 	if(muffinmonster && muffin_mode)
