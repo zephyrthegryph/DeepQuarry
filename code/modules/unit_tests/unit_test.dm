@@ -119,7 +119,7 @@ GLOBAL_VAR_INIT(unit_test_block_pool_ready, FALSE)
 /// default air/temperature on every open turf, drops any walls a test put up)
 /// and returns it to the pool. Waits for the world's own async teardown paths
 /// so a block is never recycled mid-cleanup.
-/proc/release_unit_test_block(datum/unit_test_block/block)
+/proc/release_unit_test_block(datum/unit_test_block/block, datum/unit_test/test)
 	if(!block)
 		return
 
@@ -129,10 +129,23 @@ GLOBAL_VAR_INIT(unit_test_block_pool_ready, FALSE)
 	while(SSexpedition && length(SSexpedition.teardown_z))
 		sleep(1)
 
+	// Leak detection: by now QDEL_LIST(allocated) has already run, so anything
+	// still sitting on this block's turfs (besides the corner landmarks) is
+	// something the test spawned without tracking it through allocate() --
+	// directly (new X(run_loc_floor_bottom_left)) or as a side effect (an
+	// item's own inventory, a decal, a temporary effect). Logged, not failed
+	// yet: we don't have a full-suite baseline for how many existing tests
+	// would trip this, and a false-positive mass failure would be worse than
+	// the leak it's meant to catch. Once a baseline run shows it's quiet,
+	// flip the log to test.Fail().
+	var/leaked = 0
+	var/list/leaked_types = list()
 	for(var/turf/T in block_turfs(block))
 		for(var/atom/movable/AM in T)
 			if(istype(AM, /obj/effect/landmark))
 				continue
+			leaked++
+			leaked_types[AM.type] = (leaked_types[AM.type] || 0) + 1
 			qdel(AM)
 
 		if(istype(T, /turf/open))
@@ -147,6 +160,12 @@ GLOBAL_VAR_INIT(unit_test_block_pool_ready, FALSE)
 			// A test isolated a pair of turfs with real walls (dq_atmos_test_isolate_pair
 			// et al) and never got to restore them because it errored out early.
 			T.ChangeTurf(/turf/simulated/floor/tiled/steel)
+
+	if(leaked)
+		var/list/parts = list()
+		for(var/leaked_type in leaked_types)
+			parts += "[leaked_type] x[leaked_types[leaked_type]]"
+		log_world("UNIT TEST LEAK: [test ? test.type : "?"] left [leaked] object(s) on its block: [parts.Join(", ")]")
 
 	block.in_use = FALSE
 
@@ -242,6 +261,19 @@ GLOBAL_VAR_INIT(unit_test_block_pool_ready, FALSE)
 	/// Set by RunWrapped() the moment Run() actually returns.
 	var/tmp/run_finished = FALSE
 
+	/// This test's deterministic RNG seed (see New()), logged on failure so a
+	/// flake involving rand()/pick() is reproducible.
+	var/tmp/seed
+
+/// A stable, deterministic seed for a test's own name: same input, same
+/// output, forever, regardless of process or run order -- unlike rand()'s own
+/// state, which drifts with everything that ran before it.
+/proc/dq_test_seed_for(text)
+	var/hash = 0
+	for(var/i in 1 to length(text))
+		hash = ((hash * 31) + text2ascii(text, i)) & 0x7FFFFFFF
+	return hash || 1
+
 /datum/unit_test/proc/RunWrapped()
 	Run()
 	run_finished = TRUE
@@ -258,12 +290,25 @@ GLOBAL_VAR_INIT(unit_test_block_pool_ready, FALSE)
 	run_loc_floor_bottom_left = test_block.bottom_left
 	run_loc_floor_top_right = test_block.top_right
 
+	// Deterministic per-test RNG: reseed from the test's own type name rather
+	// than leaving the shared world RNG wherever the previous test's rand()
+	// calls left it. That previous position depends on execution order and on
+	// which other tests ran first (worse, on whether this is a full or
+	// focused run), so a rand()/pick() a test relies on can silently see a
+	// different draw between runs -- the "fishing-hat RNG" and unseeded
+	// pick() flakes. Seeding from the type name makes every test's random
+	// sequence reproducible on its own, independent of what ran before it:
+	// re-running just this one test (dq_focused_test.sh) reproduces the exact
+	// same sequence a full-suite failure saw.
+	seed = dq_test_seed_for("[type]")
+	rand_seed(seed)
+
 	TEST_ASSERT(isfloorturf(run_loc_floor_bottom_left), "run_loc_floor_bottom_left was not a floor ([run_loc_floor_bottom_left])")
 	TEST_ASSERT(isfloorturf(run_loc_floor_top_right), "run_loc_floor_top_right was not a floor ([run_loc_floor_top_right])")
 
 /datum/unit_test/Destroy()
 	QDEL_LIST(allocated)
-	release_unit_test_block(test_block)
+	release_unit_test_block(test_block, src)
 	test_block = null
 	return ..()
 
@@ -275,6 +320,11 @@ GLOBAL_VAR_INIT(unit_test_block_pool_ready, FALSE)
 
 	if(!istext(reason))
 		reason = "FORMATTED: [reason != null ? reason : "NULL"]"
+
+	// Seed on the first failure only -- later assertions in the same test
+	// don't need it repeated, and it'd bury the actual failure text.
+	if(!LAZYLEN(fail_reasons) && seed)
+		reason = "[reason] (rng seed [seed]: dq_focused_test.sh reruns this test alone with the same seed)"
 
 	LAZYADD(fail_reasons, list(list(reason, file, line)))
 
