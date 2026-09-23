@@ -9,7 +9,7 @@ points or `tools\build\build.bat`; on Linux (and in Git Bash) use
 | Goal | Command | Typical time |
 |---|---|---|
 | Full unit-test suite on the test map | `bin/test.cmd` · `tools/build/build.sh dm-test` | about 4 minutes plus compile |
-| A few tests only | `bash tools/dq_focused_test.sh /datum/unit_test/<name> [...]` | compile + seconds |
+| A few tests only (use this while developing) | `bash tools/dq_focused_test.sh /datum/unit_test/<name> [...]` | compile + about 25 s |
 | Unit tests on Southern Cross | `tools/build/build.sh dm-test -DCITESTING_FULL_MAP` | much longer |
 | Focused tests on Southern Cross | `bash tools/dq_focused_test.sh --full-map /datum/unit_test/<name>` | |
 | DM lint + TGUI lint and types | `tools/build/build.sh lint` | a few minutes |
@@ -40,10 +40,54 @@ shuts down. It also repacks icons and builds Verdigris first if they are stale.
 
 ### Focused runs
 
-`tools/dq_focused_test.sh` is the fast loop while you work on one area. It adds
-`TEST_FOCUS(...)` lines to `code/modules/unit_tests/dq_focus.dm`, runs `dm-test`,
-and restores the file afterwards, even if the run fails. You can also edit
-`dq_focus.dm` by hand and run `bin/test.cmd`.
+**While developing, run only the tests you are working on. Run the full suite
+only when you integrate** (before merging, or when asked to). A full run costs
+about 3 minutes of compile, 40 seconds of boot and three minutes of tests; a
+focused run costs the compile plus about 25 seconds.
+
+`tools/dq_focused_test.sh` is that loop. It adds `TEST_FOCUS(...)` lines to
+`code/modules/unit_tests/dq_focus.dm`, runs `dm-test`, and restores the file
+afterwards, even if the run fails. It works from any checkout, including a git
+worktree, because it runs from the directory the script lives in. You can also
+edit `dq_focus.dm` by hand and run `bin/test.cmd`.
+
+```sh
+bash tools/dq_focused_test.sh /datum/unit_test/belly_damage /datum/unit_test/spritesheets
+DQ_WIP_TREE=1 bash tools/dq_focused_test.sh /datum/unit_test/<name>   # tree with someone else's unfinished includes
+```
+
+A focused run skips some waits that only matter for the full suite. None of
+them can hide a failure in the full suite, which still does all of them:
+
+| Skipped in focused runs | Full suite | Why it is safe |
+|---|---|---|
+| Round-start settle before the first test: 2 s instead of 10 s (`HandleTestRun`, `code/game/world.dm`) | 10 s | Nothing is skipped, only started sooner. A test that fails only when focused depends on round-start settling and should wait for what it needs itself. |
+| Round-end report delay: 0 s instead of 5 s (`declare_completion`, `code/_helpers/roundend.dm`) | 5 s | The delay lets players read the report; a test world has none. |
+| Generating every asset and spritesheet at boot, about 2.3 s (`SSassets.Initialize`) | all generated | `get_asset_datum()` builds an asset on first use, and the `spritesheets` and `test_asset_smart_cache` tests call it, so focusing those still generates and checks every sheet. |
+
+`unit_test_is_focused_run()` is the switch; add a row here if you add another.
+
+Compile time is not reduced: `dm-test` never runs DreamChecker (only `dm` and
+`lint` do), and the icon repack and Verdigris build are already skipped when
+nothing they read has changed. Boot before `world/New` (about 19 s, DreamDaemon
+loading the `.rsc` and the compiled-in test map) is outside our control.
+
+### Writing fast tests
+
+Drive the thing under test directly instead of sleeping for game time:
+
+- Mob and belly behaviour: call `Life()` and `/obj/belly/process()` a fixed
+  number of times (see `_vore_test_run_cycles` in `vore_tests.dm`). A mob Life
+  tick is 2 s of real time, so ten sleeps cost 20 s.
+- Atmosphere: the Rust worker simulates in wall-clock epochs, so atmos tests
+  must still wait for real `SSair` fires. Use
+  `dq_unit_test_wait_air_until_quiescent(max_fires)`: it returns once the
+  worker has published nothing for a few fires, and a leak keeps it publishing,
+  so a test looking for one still waits the full budget. On the test map the
+  worker has not yet been seen to go idle, so today this saves nothing there;
+  the real fix for slow atmos tests is a way to step the solver directly.
+- Polling for a state change: `sleep(1)` in a loop with the same total budget,
+  not `sleep(1 SECOND)`.
 
 `dq_focus.dm` must be committed empty. CI (`tools/ci/check_misc.sh`) fails if it
 contains a focus line, or if a `TEST_FOCUS` anywhere else is not inside an
@@ -101,6 +145,7 @@ Juke options take `=`: write `--scenario=a,b`, not `--scenario a,b`.
 | `major_events` | Explosion, supermatter, mass fire and decompression on fresh fixtures. | `events` (comma list) |
 | `generation` | Expedition station generation and release; `cycles` > 1 is a leak soak. | `cycles`, `seed` |
 | `sm_soak` | Repeated supermatter-scale blasts plus five minutes of recovery. Use the full map. | `blasts` (4), `profile_types` |
+| `rustg_dispatch` | Per-call cost of rust-g `hash_string`, `json_is_valid` and `log_write` through a cached `load_ext()` handle against by-name `call_ext`. On 2026-09-23 (loaded machine, three boots) the handle showed no consistent gain, so `code/__defines/rust_g.dm` still calls by name. | `calls` (20000), `rounds` (5) |
 
 **What gets recorded.** Each invocation is one file in `data/bench/runs/`
 holding the commit, map, defines, every iteration's raw results (metrics,

@@ -164,6 +164,12 @@ warning.
 
 `doc/testing.md` is the full reference. The short version:
 
+- **While developing, run only the tests you touch**, with
+  `bash tools/dq_focused_test.sh /datum/unit_test/<name> [...]`. It works from
+  a git worktree. It costs the compile plus about 25 seconds.
+- **Run the full suite only at integration** (before merging, or when asked).
+  It costs the compile plus about four minutes.
+
 | What | Command |
 |---|---|
 | Full unit-test suite (test map) | `bin/test.cmd` or `tools/build/build.sh dm-test` |
