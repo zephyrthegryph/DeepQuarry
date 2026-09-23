@@ -103,3 +103,30 @@
 #define RUST_PIPE_OP_DISCONNECT 4
 #define RUST_PIPE_OP_CLEAR 5
 #define RUST_PIPE_OP_REMOVE_TO_MIXTURE 7
+
+// M2 (doc/rewrite/simulation.md §5): pipe-network device edges. Opcodes match
+// verdigris/domains/gas/src/lib.rs's pipenet_device_batch.
+#define RUST_DEVICE_OP_SET 1
+#define RUST_DEVICE_OP_REMOVE 2
+#define RUST_DEVICE_OP_SET_TURF 3
+
+// Flow laws, matching device::DeviceParams::decode's `kind` tag.
+#define RUST_DEVICE_LAW_PUMP 1
+#define RUST_DEVICE_LAW_VOLUME_PUMP 2
+#define RUST_DEVICE_LAW_PASSIVE_GATE 3
+#define RUST_DEVICE_LAW_VALVE 4
+#define RUST_DEVICE_LAW_VENT_PUMP 5
+#define RUST_DEVICE_LAW_SCRUBBER 6
+#define RUST_DEVICE_LAW_INJECTOR 7
+#define RUST_DEVICE_LAW_FILTER 8
+#define RUST_DEVICE_LAW_HEAT_EXCHANGER 9
+#define RUST_DEVICE_LAW_PRESSURE_REGULATOR 10
+
+// device::Regulate's `mode` tag (passive gate).
+#define RUST_REGULATE_INPUT 0
+#define RUST_REGULATE_OUTPUT 1
+#define RUST_REGULATE_EQUALIZE 2
+
+// device::VentMode's `mode` tag (vent pump).
+#define RUST_VENT_MODE_RELEASE 0
+#define RUST_VENT_MODE_SIPHON 1

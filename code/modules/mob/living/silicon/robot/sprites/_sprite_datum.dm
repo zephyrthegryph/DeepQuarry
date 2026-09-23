@@ -119,7 +119,7 @@
 				//vore_capacity_ex list. Finally, if the borg has a red/green light sleeper, it'll use g or r appended to the end.
 				//Bellies with lights should be defined in belly_light_list
 				var/sleeperColor = "g"
-				if(ourborg.sleeper_red_light() || ourborg.vore_light_states[b_class] == 1) // Is our belly safe, or gurgling cuties?
+				if(ourborg.sleeper_red_light() || LAZYACCESS(ourborg.vore_light_states, b_class) == 1) // Is our belly safe, or gurgling cuties?
 					sleeperColor = "r"
 				return "[sprite_icon_state]-[b_class]-[size]-[sleeperColor]"
 

@@ -158,7 +158,7 @@
 	if(instrument)
 		if(H.should_have_organ(O_BRAIN) && (D.fake_death || H.is_brain_dead() || !H.has_brain()))
 			D.add_finding(new /datum/diagnosis_finding("no brain activity", DIAG_FINDING_CONDITION, DIAG_BAND_CRITICAL))
-		if(HUSK in H.mutations)
+		if(H.has_mutation(HUSK))
 			D.add_finding(new /datum/diagnosis_finding("anatomical structure lost", DIAG_FINDING_CONDITION, DIAG_BAND_CRITICAL))
 		for(var/datum/disease/virus in H.GetViruses())
 			if(virus.visibility_flags & (HIDDEN_SCANNER | HIDDEN_PANDEMIC))

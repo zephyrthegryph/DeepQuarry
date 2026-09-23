@@ -1051,10 +1051,10 @@
 
 	var/list/choices = list("Inject")
 
-	if(trait_injection_reagents.len > 1) //Should never happen, but who knows!
+	if(LAZYLEN(trait_injection_reagents) > 1) //Should never happen, but who knows!
 		choices += "Change reagent"
 	else if(!trait_injection_selected)
-		trait_injection_selected = trait_injection_reagents[1]
+		trait_injection_selected = LAZYACCESS(trait_injection_reagents, 1)
 
 	choices += "Change amount"
 	choices += "Change verb"
@@ -1066,7 +1066,7 @@
 		return
 
 	if(choice == "Change reagent")
-		var/reagent_choice = tgui_input_list(src, "Choose which reagent to inject!", "Select reagent", trait_injection_reagents)
+		var/reagent_choice = tgui_input_list(src, "Choose which reagent to inject!", "Select reagent", trait_injection_reagents || list())
 		if(reagent_choice)
 			trait_injection_selected = reagent_choice
 		to_chat(src, span_notice("You prepare to inject [trait_injection_amount] units of [trait_injection_selected ? "[trait_injection_selected]" : "...nothing. Select a reagent before trying to inject anything."]"))

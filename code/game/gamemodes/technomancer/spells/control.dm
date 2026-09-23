@@ -38,7 +38,7 @@
 
 	if(isanimal(L))
 		var/mob/living/simple_mob/SM = L
-		SM.friends |= src.owner
+		LAZYDISTINCTADD(SM.friends, src.owner)
 
 	// Note, this should be refactored to drop priority overlays
 	L.add_overlay(control_overlay, TRUE)
@@ -57,7 +57,7 @@
 
 	if(isanimal(L))
 		var/mob/living/simple_mob/SM = L
-		SM.friends -= owner
+		LAZYREMOVE(SM.friends, owner)
 
 	L.cut_overlay(control_overlay, TRUE)
 	LAZYREMOVE(controlled_mobs, L)

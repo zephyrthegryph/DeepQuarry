@@ -309,13 +309,13 @@
 
 	// Slow natural healing of wounds; cold-resistant bodies shrug off burns.
 	if(self.injury_load(INJURY_CATEGORY_THERMAL))
-		if((COLD_RESISTANCE in self.mutations) || (prob(1)))
+		if((self.has_mutation(COLD_RESISTANCE)) || (prob(1)))
 			self.mend(TREAT_BURN_CARE, 1)
 	if(self.injury_load(INJURY_CATEGORY_PHYSICAL))
 		if(prob(1))
 			self.mend(TREAT_TISSUE_REPAIR, 1)
 
-	if((mRegen in self.mutations))
+	if((self.has_mutation(mRegen)))
 		var/heal = rand(0.2,1.3)
 		if(prob(50))
 			for(var/obj/item/organ/external/O as anything in self.organs)
@@ -614,7 +614,7 @@
 	if(SEND_SIGNAL(self, COMSIG_CHECK_FOR_GODMODE) & COMSIG_GODMODE_CANCEL)
 		return 0	// Cancelled by a component
 
-	if(mNobreath in self.mutations)
+	if(self.has_mutation(mNobreath))
 		return
 
 	if(self.suiciding)
@@ -838,7 +838,7 @@
 	// Hot air hurts :(
 	if(!isbelly(self.loc)) //None of this happens anyway whilst inside of a belly, belly temperatures are all handled as body temperature
 		var/breath_temperature = breath.return_temperature()
-		if((breath_temperature <= self.species.cold_discomfort_level || breath_temperature >= self.species.heat_discomfort_level) && !(COLD_RESISTANCE in self.mutations))
+		if((breath_temperature <= self.species.cold_discomfort_level || breath_temperature >= self.species.heat_discomfort_level) && !(self.has_mutation(COLD_RESISTANCE)))
 
 			if(breath_temperature <= self.species.breath_cold_level_1)
 				if(prob(20))
@@ -1110,7 +1110,7 @@
 	else if(adjusted_pressure >= self.species.hazard_low_pressure)
 		self.throw_alert("pressure", /atom/movable/screen/alert/lowpressure, 1)
 	else
-		if(!(COLD_RESISTANCE in self.mutations) && !istype(self.loc, /obj/structure/closet/body_bag/cryobag))
+		if(!(self.has_mutation(COLD_RESISTANCE)) && !istype(self.loc, /obj/structure/closet/body_bag/cryobag))
 			if(!self.isSynthetic() || !self.nif || !self.nif.flag_check(NIF_O_PRESSURESEAL,NIF_FLAGS_OTHER))
 				var/pressure_damage = LOW_PRESSURE_DAMAGE
 				if(self.stat==DEAD)
@@ -1199,7 +1199,7 @@
 	. = min(., 1.0)
 
 /mob/living/carbon/human/get_cold_protection(temperature)
-	if(COLD_RESISTANCE in mutations)
+	if(has_mutation(COLD_RESISTANCE))
 		return 1 //Fully protected from the cold.
 
 	temperature = max(temperature, 2.7) //There is an occasional bug where the temperature is miscalculated in ares with a small amount of gas on them, so this is necessary to ensure that that bug does not affect this calculation. Space's temperature is 2.7K and most suits that are intended to protect against any cold, protect down to 2.0K.
@@ -1768,7 +1768,7 @@
 		if(A?.flag_check(AREA_NO_SPOILERS))
 			self.disable_spoiler_vision()
 
-		if(XRAY in self.mutations)
+		if(self.has_mutation(XRAY))
 			self.sight |= SEE_TURFS|SEE_MOBS|SEE_OBJS
 			self.see_in_dark = 8
 			if(!self.druggy)		self.see_invisible = SEE_INVISIBLE_LEVEL_TWO
@@ -1803,7 +1803,7 @@
 
 		if(self.get_equipped_item(SLOT_ID_EYES) && !glasses_processed && !self.is_remote_viewing())
 			glasses_processed = self.process_glasses(self.get_equipped_item(SLOT_ID_EYES))
-		if(XRAY in self.mutations)
+		if(self.has_mutation(XRAY))
 			self.sight |= SEE_TURFS|SEE_MOBS|SEE_OBJS
 			self.see_in_dark = 8
 			if(!self.druggy)

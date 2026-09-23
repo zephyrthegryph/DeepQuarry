@@ -32,4 +32,4 @@
 	var/last_taste_text = ""
 
 	///Only used by humans. Kept by the slot signals (inventory_slot_changed()).
-	var/list/worn_clothing = list()	//Contains all CLOTHING items worn
+	var/list/worn_clothing	//Contains all CLOTHING items worn. Lazy.

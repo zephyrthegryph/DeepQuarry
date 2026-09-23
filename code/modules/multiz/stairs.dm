@@ -164,7 +164,7 @@
 	if(isliving(AM))
 		var/mob/living/L = AM
 
-		if(L.grabbed_by.len) // Same as pulledby, whoever's holding you will keep you from going down stairs.
+		if(LAZYLEN(L.grabbed_by)) // Same as pulledby, whoever's holding you will keep you from going down stairs.
 			return
 
 		if(L.buckled)
@@ -207,7 +207,7 @@
 	if(isliving(AM))
 		var/mob/living/L = AM
 
-		if(L.grabbed_by.len) // Same as pulledby, whoever's holding you will keep you from going down stairs.
+		if(LAZYLEN(L.grabbed_by)) // Same as pulledby, whoever's holding you will keep you from going down stairs.
 			return
 
 		if(L.buckled)
@@ -428,7 +428,7 @@
 	if(isliving(AM))
 		var/mob/living/L = AM
 
-		if(L.grabbed_by.len) // Same as pulledby, whoever's holding you will keep you from going down stairs.
+		if(LAZYLEN(L.grabbed_by)) // Same as pulledby, whoever's holding you will keep you from going down stairs.
 			return
 
 		if(L.buckled)
@@ -469,7 +469,7 @@
 	// ition End
 	if(isliving(AM))
 		var/mob/living/L = AM
-		if(L.grabbed_by.len) // Same as pulledby, whoever's holding you will keep you from going down stairs.
+		if(LAZYLEN(L.grabbed_by)) // Same as pulledby, whoever's holding you will keep you from going down stairs.
 			return
 
 		if(L.buckled)

@@ -38,9 +38,10 @@ use vg_core::sim::{Mode, Sim, SimBuilder, SimConfig, WatchKey};
 use vg_core::watch::{Cond, WatchPort, WatchState};
 
 use crate::cell::{flags, heat_capacity, GasCell, GasCmd, TurfGas, N, Q};
+use crate::device;
 use crate::gas::constants::{CELL_VOLUME, GAS_MIN_MOLES, TCMB};
 use crate::gas::Mixture;
-use crate::pipes::{PipeGas, PipeNet};
+use crate::pipes::{self, PipeGas, PipeNet};
 
 // --- Handles -----------------------------------------------------------------
 
@@ -1314,6 +1315,73 @@ impl GasWorld {
 				self.touched(r, after);
 			}
 		}
+	}
+
+	/// Steps device edges with a field-cell (turf) endpoint for `dt` seconds
+	/// (M2, `simulation.md` §5): a vent pump or scrubber facing a turf on
+	/// one side and a pipe region on the other. Region<->region edges are
+	/// [`PipeNet::step_devices`]'s job; this one bridges the pipe network
+	/// and the R6 gas field, each with its own storage, through the same
+	/// [`GasWorld::load`]/[`GasWorld::store`] round trip every other turf
+	/// gas write (DM's `adjust_gas`, `merge`, ...) already uses, so a
+	/// device's turf write is exactly as safe as any other.
+	pub fn step_turf_devices(&mut self, dt: f32) -> Vec<pipes::DeviceStep> {
+		use vg_core::network::{Endpoint, Side};
+
+		let ids: Vec<_> = self.pipes.net.devices().map(|(id, _)| id).collect();
+		let mut out = Vec::with_capacity(ids.len());
+		for id in ids {
+			let Ok(dev) = self.pipes.net.device(id) else {
+				continue;
+			};
+			if matches!(dev.data, device::DeviceParams::None) {
+				continue;
+			}
+			let (cell, node, cell_is_a) = match (dev.a, dev.b) {
+				(Endpoint::Cell(c), Endpoint::Node(n)) => (c, n, true),
+				(Endpoint::Node(n), Endpoint::Cell(c)) => (c, n, false),
+				_ => continue,
+			};
+			let key = dev.key;
+			let params = dev.data.clone();
+			let Side::Region(region) = self.pipes.net.resolve(Endpoint::Node(node)) else {
+				continue;
+			};
+			let Ok(r) = self.pipes.net.region(region) else {
+				continue;
+			};
+			let vol_region = *r.summary();
+			let mut region_gas = r.payload().clone();
+
+			let Some(before_mix) = self.load(MixRef::Turf(cell)) else {
+				continue;
+			};
+			let Some(field) = self.field.as_ref() else {
+				continue;
+			};
+			let Some((_, geom)) = field.read(cell) else {
+				continue;
+			};
+			let vol_cell = f64::from(if geom.capacity > 0.0 { geom.capacity } else { CELL_VOLUME });
+			let mut turf_gas = PipeGas::from_amounts(&amounts_of(&before_mix), before_mix.get_temperature());
+
+			let report = if cell_is_a {
+				device::step(&params, &mut turf_gas, vol_cell, &mut region_gas, vol_region, dt)
+			} else {
+				device::step(&params, &mut region_gas, vol_region, &mut turf_gas, vol_cell, dt)
+			};
+
+			if report.moles != 0.0 {
+				if let Ok(payload) = self.pipes.net.payload_mut(region) {
+					*payload = region_gas;
+				}
+				self.pipes.touch_region(region);
+				let after_mix = mixture_of_pipe(&turf_gas, vol_cell);
+				self.store(MixRef::Turf(cell), &before_mix, &after_mix);
+			}
+			out.push(pipes::DeviceStep { key, report });
+		}
+		out
 	}
 
 	fn touched(&mut self, r: MixRef, after: &Mixture) {

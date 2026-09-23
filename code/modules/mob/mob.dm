@@ -89,6 +89,10 @@
 	else
 		GLOB.living_mob_list += src
 	lastarea = get_area(src)
+	if(speak_emote)
+		speak_emote = shared_type_list(type, "speak_emote", speak_emote)
+	if(shouldnt_see)
+		shouldnt_see = shared_type_list(type, "shouldnt_see", shouldnt_see)
 	set_focus(src) // Key Handling
 	update_transform() // Some mobs may start bigger or smaller than normal.
 	. = ..()
@@ -648,7 +652,7 @@
 		// kind of mob pull value AT ALL, you will be able to pull
 		// them, so don't bother checking that explicitly.
 
-		if(M.grabbed_by.len)
+		if(LAZYLEN(M.grabbed_by))
 			// Only start pulling when nobody else has a grab on them
 			. = 1
 			for(var/obj/item/grab/G in M.grabbed_by)
