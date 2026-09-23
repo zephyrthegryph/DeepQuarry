@@ -156,9 +156,8 @@ GLOBAL_LIST_EMPTY(table_icon_cache)
 	var/obj/item/weldingtool/welder = tool.get_welder()
 	if(!welder.welding)
 		return ITEM_INTERACT_BLOCKING
-	to_chat(user, span_notice("You begin repairing damage to \the [src]."))
-	playsound(src, welder.usesound, 50, TRUE)
-	if(!do_after(user, 2 SECONDS * welder.toolspeed, target = src) || !welder.remove_fuel(1, user))
+	if(!use_tool(user, tool, src, delay = 2 SECONDS, quality = TOOL_WELDER, volume = 50, amount = 1,
+			message_self = "You begin repairing damage to \the [src]."))
 		return ITEM_INTERACT_BLOCKING
 	user.visible_message(span_infoplain(span_bold("\The [user]") + " repairs some damage to \the [src]."), span_notice("You repair some damage to \the [src]."))
 	repair_damage(max_integrity / 5)
@@ -244,7 +243,7 @@ GLOBAL_LIST_EMPTY(table_icon_cache)
 	return M
 
 // Returns the material to set the table to.
-/obj/structure/table/proc/common_material_remove(mob/user, datum/material/M, delay, what, type_holding, sound)
+/obj/structure/table/proc/common_material_remove(mob/user, datum/material/M, delay, what, type_holding, obj/item/tool)
 	if(!M.stack_type)
 		to_chat(user, span_warning("You are unable to remove the [what] from this [src]!"))
 		return M
@@ -253,9 +252,7 @@ GLOBAL_LIST_EMPTY(table_icon_cache)
 	manipulating = 1
 	user.visible_message(span_infoplain(span_bold("\The [user]") + " begins removing the [type_holding] holding \the [src]'s [M.display_name] [what] in place."),
 								span_notice("You begin removing the [type_holding] holding \the [src]'s [M.display_name] [what] in place."))
-	if(sound)
-		playsound(src, sound, 50, 1)
-	if(!do_after(user, delay, target = src))
+	if(!use_tool(user, tool, src, delay = delay, volume = 50))
 		manipulating = 0
 		return M
 	user.visible_message(span_infoplain(span_bold("\The [user]") + " removes the [M.display_name] [what] from \the [src]."),
@@ -265,18 +262,17 @@ GLOBAL_LIST_EMPTY(table_icon_cache)
 	return null
 
 /obj/structure/table/proc/remove_reinforced(obj/item/S, mob/user)
-	reinforced = common_material_remove(user, reinforced, 40 * S.toolspeed, "reinforcements", "screws", S.usesound)
+	reinforced = common_material_remove(user, reinforced, 40, "reinforcements", "screws", S)
 
 /obj/structure/table/proc/remove_material(obj/item/W, mob/user)
-	material = common_material_remove(user, material, 20 * W.toolspeed, "plating", "bolts", W.usesound)
+	material = common_material_remove(user, material, 20, "plating", "bolts", W)
 
 /obj/structure/table/proc/dismantle(obj/item/W, mob/user)
 	if(manipulating) return
 	manipulating = 1
 	user.visible_message(span_infoplain(span_bold("\The [user]") + " begins dismantling \the [src]."),
 							span_notice("You begin dismantling \the [src]."))
-	playsound(src, W.usesound, 50, 1)
-	if(!do_after(user, 2 SECONDS * W.toolspeed, target = src))
+	if(!use_tool(user, W, src, delay = 2 SECONDS, volume = 50))
 		manipulating = 0
 		return
 	user.visible_message(span_infoplain(span_bold("\The [user]") + " dismantles \the [src]."),

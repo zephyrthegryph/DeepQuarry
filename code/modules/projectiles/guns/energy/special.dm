@@ -69,10 +69,16 @@
 		. += "It has [emitter ? emitter : "no micro laser"] installed."
 
 /obj/item/gun/energy/floragun/screwdriver_act(mob/user, obj/item/tool)
-	attackby(tool, user, TOOL_SCREWDRIVER)
-	return TRUE
+	if(emitter)
+		to_chat(user, span_notice("You remove the [emitter.name] from the [src]."))
+		emitter.loc = get_turf(src.loc)
+		playsound(src, tool.usesound, 50, 1)
+		emitter = null
+	else
+		to_chat(user, span_notice("There is no micro laser in this [src]."))
+	return ITEM_INTERACT_SUCCESS
 
-/obj/item/gun/energy/floragun/attackby(obj/item/W, mob/user, tool_quality)
+/obj/item/gun/energy/floragun/attackby(obj/item/W, mob/user)
 	if(istype(W, /obj/item/stock_parts/micro_laser))
 		if(!emitter)
 			user.drop_item()
@@ -81,17 +87,6 @@
 			to_chat(user, span_notice("You install a [emitter.name] in [src]."))
 		else
 			to_chat(user, span_notice("[src] already has a laser."))
-
-	else if(tool_quality == TOOL_SCREWDRIVER)
-		if(emitter)
-			to_chat(user, span_notice("You remove the [emitter.name] from the [src]."))
-			emitter.loc = get_turf(src.loc)
-			playsound(src, W.usesound, 50, 1)
-			emitter = null
-			return
-		else
-			to_chat(user, span_notice("There is no micro laser in this [src]."))
-			return
 
 /obj/item/gun/energy/floragun/afterattack(obj/target, mob/user, adjacent_flag)
 	//allow shooting into adjacent hydrotrays regardless of intent

@@ -51,30 +51,24 @@
 	FireModeModify()
 
 /obj/item/gun/energy/modular/screwdriver_act(mob/user, obj/item/tool)
-	attackby(tool, user, TOOL_SCREWDRIVER)
-	return TRUE
+	to_chat(user, span_notice("You [assembled ? "disassemble" : "assemble"] the gun."))
+	assembled = !assembled
+	playsound(src, tool.usesound, 50, 1)
+	return ITEM_INTERACT_SUCCESS
 
 /obj/item/gun/energy/modular/crowbar_act(mob/user, obj/item/tool)
-	attackby(tool, user, TOOL_CROWBAR)
-	return TRUE
+	if(assembled == 1)
+		to_chat(user, span_warning("Disassemble the [src] first!"))
+		return ITEM_INTERACT_SUCCESS
+	for(var/obj/item/I in guncomponents)
+		to_chat(user, span_notice("You remove the gun's components."))
+		playsound(src, tool.usesound, 50, 1)
+		I.forceMove(get_turf(src))
+		guncomponents.Remove(I)
+		CheckParts()
+	return ITEM_INTERACT_SUCCESS
 
-/obj/item/gun/energy/modular/attackby(obj/item/O, mob/user, tool_quality)
-	if(tool_quality == TOOL_SCREWDRIVER)
-		to_chat(user, span_notice("You [assembled ? "disassemble" : "assemble"] the gun."))
-		assembled = !assembled
-		playsound(src, O.usesound, 50, 1)
-		return
-	if(tool_quality == TOOL_CROWBAR)
-		if(assembled == 1)
-			to_chat(user, span_warning("Disassemble the [src] first!"))
-			return
-		for(var/obj/item/I in guncomponents)
-			to_chat(user, span_notice("You remove the gun's components."))
-			playsound(src, O.usesound, 50, 1)
-			I.forceMove(get_turf(src))
-			guncomponents.Remove(I)
-			CheckParts()
-		return
+/obj/item/gun/energy/modular/attackby(obj/item/O, mob/user)
 	//Someone's attacking us, and it's not anything we have a special case for (i.e. a tool)
 	..()
 	if(assembled) // can't put anything in

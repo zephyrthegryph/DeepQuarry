@@ -85,26 +85,25 @@
 
 
 /obj/item/gun/magnetic/matfed/crowbar_act(mob/user, obj/item/tool)
-	attackby(tool, user, TOOL_CROWBAR)
-	return TRUE
+	update_rating_mod()
+	if(!removable_components)
+		return NONE
+	if(!manipulator)
+		to_chat(user, span_warning("\The [src] has no manipulator installed."))
+		return ITEM_INTERACT_SUCCESS
+	user.put_in_hands(manipulator)
+	user.visible_message(span_infoplain(span_bold("\The [user]") + " levers \the [manipulator] from \the [src]."))
+	playsound(src, tool.usesound, 50, 1)
+	mat_cost = initial(mat_cost)
+	manipulator = null
+	update_icon()
+	update_rating_mod()
+	return ITEM_INTERACT_SUCCESS
 
-/obj/item/gun/magnetic/matfed/attackby(obj/item/thing, mob/user, tool_quality)
+/obj/item/gun/magnetic/matfed/attackby(obj/item/thing, mob/user)
 	. = ..()
 	update_rating_mod()
 	if(removable_components)
-		if(tool_quality == TOOL_CROWBAR)
-			if(!manipulator)
-				to_chat(user, span_warning("\The [src] has no manipulator installed."))
-				return
-			user.put_in_hands(manipulator)
-			user.visible_message(span_infoplain(span_bold("\The [user]") + " levers \the [manipulator] from \the [src]."))
-			playsound(src, thing.usesound, 50, 1)
-			mat_cost = initial(mat_cost)
-			manipulator = null
-			update_icon()
-			update_rating_mod()
-			return
-
 		if(istype(thing, /obj/item/stock_parts/manipulator))
 			if(manipulator)
 				to_chat(user, span_warning("\The [src] already has \a [manipulator] installed."))

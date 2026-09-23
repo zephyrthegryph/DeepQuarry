@@ -97,7 +97,7 @@
 	busy = 0
 
 /obj/machinery/power/breakerbox/attackby(obj/item/W as obj, mob/user as mob)
-	if(istype(W, /obj/item/multitool))
+	if(W.has_tool_quality(TOOL_MULTITOOL))
 		var/newtag = tgui_input_text(user, "Enter new RCON tag. Use \"NO_TAG\" to disable RCON or leave empty to cancel.", "SMES RCON system", "", MAX_NAME_LEN)
 		if(newtag)
 			RCon_tag = newtag

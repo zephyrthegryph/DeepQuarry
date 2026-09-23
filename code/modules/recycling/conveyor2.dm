@@ -331,13 +331,9 @@
 /obj/machinery/conveyor_switch/welder_act(mob/user, obj/item/I)
 	if(!panel_open)
 		return ITEM_INTERACT_BLOCKING
-	var/obj/item/weldingtool/WT = I.get_welder()
-	if(!WT.remove_fuel(0, user))
-		to_chat(user, "The welding tool must be on to complete this task.")
-		return ITEM_INTERACT_BLOCKING
-	playsound(src, WT.usesound, 50, 1)
-	if(do_after(user, 2 SECONDS * WT.toolspeed, target = src))
-		if(!src || !WT.isOn()) return ITEM_INTERACT_BLOCKING
+	if(use_tool(user, I, src, delay = 2 SECONDS, quality = TOOL_WELDER, volume = 50))
+		if(!src)
+			return ITEM_INTERACT_BLOCKING
 		to_chat(user, span_notice("You deconstruct the frame."))
 		new /obj/item/stack/material/steel(src.loc, 2)
 		qdel(src)

@@ -57,7 +57,7 @@
 	if(!broken)
 		return ITEM_INTERACT_SKIP_TO_ATTACK
 	user.visible_message(span_infoplain(span_bold("\The [user]") + " starts trying to repair \the [src]'s bulb."))
-	if(do_after(user, (40 SECONDS + rand(0, 20 SECONDS)) * tool.toolspeed, target = src) && can_repair)
+	if(use_tool(user, tool, src, delay = 40 SECONDS + rand(0, 20 SECONDS), quality = TOOL_SCREWDRIVER, volume = 0) && can_repair)
 		if(prob(30))
 			user.visible_message(span_notice("\The [user] successfully repairs \the [src]!"))
 			broken = FALSE

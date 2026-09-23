@@ -35,8 +35,14 @@
 	var/default_action
 	/// The predicate spec (REQ_* clauses, code/__defines/predicates.dm). `tool` adds its clause in front.
 	var/list/requires
-	/// Cost, tool part: the TOOL_* quality the held item needs. The tool pipeline (I4) takes this over.
+	/// Cost, tool part: the TOOL_* quality the held item needs (use_tool(), tools.dm).
 	var/tool
+	/// The tier of `tool` needed (dq_tool_tier()).
+	var/tool_tier = 1
+	/// Fuel, charge or stack units the tool uses (tool_start_check() / tool_use_resources()).
+	var/tool_amount = 0
+	/// Volume of the tool's usesound; 0 for silence.
+	var/tool_volume = 50
 	/// Cost, time part: how long it takes, scaled by the tool's speed. See duration_for().
 	var/duration = 0
 	/// Proc on the target, called as effect(actor, held, interaction). Returns TRUE when it did something.
@@ -53,7 +59,7 @@
 /datum/interaction/proc/full_spec()
 	var/list/spec = list()
 	if(tool)
-		spec += list(REQ_TOOL(tool))
+		spec += list(REQ_TOOL_TIER(tool, tool_tier))
 	if(length(requires))
 		spec += requires
 	return spec
@@ -81,9 +87,9 @@
 /datum/interaction/proc/display_name(mob/actor, atom/target)
 	return name
 
-/// How long the interaction takes: `duration` scaled by the held tool's speed.
+/// How long the interaction takes: `duration` scaled by the held tool's speed and the actor's skill.
 /datum/interaction/proc/duration_for(mob/actor, atom/target, obj/item/held)
-	return duration * ((tool && held) ? held.toolspeed : 1)
+	return tool ? tool_delay(actor, held, duration, tool) : duration
 
 /// Messages as list(self, others), worked out before the effect changes the target's state.
 /datum/interaction/proc/messages(mob/actor, atom/target, obj/item/held)
@@ -101,21 +107,12 @@
 	return replacetext(text, "%TARGET%", "\the [target]")
 
 /**
- * Pays the cost. This is the stub of the tool pipeline (§9, I4): the tool's
- * sound and a do_after scaled by the tool's speed. Returns FALSE if interrupted.
+ * Pays the cost through the tool pipeline (use_tool(), tools.dm): quality and
+ * tier, fuel or charge, the sound, the scaled wait and the resources. Returns
+ * FALSE if a check failed or the wait was interrupted.
  */
 /datum/interaction/proc/pay_cost(mob/actor, atom/target, obj/item/held)
-	if(tool && held?.usesound)
-		playsound(target, held.usesound, 50, TRUE)
-	var/time = duration_for(actor, target, held)
-	if(time <= 0)
-		return TRUE
-	var/list/start = start_messages(actor, target, held)
-	if(start)
-		var/others_text = fill_message(start[2], actor, target)
-		var/self_text = fill_message(start[1], actor, target)
-		actor.visible_message(others_text ? span_notice(others_text) : null, self_text ? span_notice(self_text) : null)
-	return do_after(actor, time, target = target)
+	return use_tool(actor, tool ? held : null, target, src)
 
 /**
  * Runs the interaction: checks the requirements, pays the cost, checks again

@@ -1046,6 +1046,10 @@ Note: This proc can be overwritten to allow for different types of auto-alignmen
 /obj/item/proc/get_welder()
 	return
 
+/// The multitool this item is or carries (its buffer is read through it), else null. Test for the quality with has_tool_quality(TOOL_MULTITOOL).
+/obj/item/proc/get_multitool()
+	return
+
 /obj/item/verb/toggle_digestable()
 	set category = "Object"
 	set name = "Toggle Digestable"

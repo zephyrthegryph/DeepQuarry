@@ -210,7 +210,7 @@
 	. += span_notice("Alt-click to recolor it.")
 
 /obj/item/toy/sword/attackby(obj/item/W, mob/user)
-	if(istype(W, /obj/item/multitool) && !active)
+	if(W.has_tool_quality(TOOL_MULTITOOL) && !active)
 		if(!rainbow)
 			rainbow = TRUE
 		else
