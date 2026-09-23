@@ -643,8 +643,8 @@
 	var/static/__f = load_ext(VERDIGRIS, "byond:verdigris_station_layout_section_ffi")
 	return call_ext(__f)(job_id, section, offset, limit)
 
-/// Starts a station-layout planning job and returns its id. A new submission
-/// supersedes (cancels) an earlier one still running. Poll with
+/// Starts a station-layout planning job and returns its id. Plans for
+/// different sites may run at once, so there is no supersede key. Poll with
 /// `vg_verdigris_job_poll`, read with `vg_verdigris_station_layout_section`,
 /// release with `vg_verdigris_job_finish`.
 // /proc/verdigris_submit_station_layout (verdigris/ffi/src/layout.rs)
