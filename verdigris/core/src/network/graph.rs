@@ -86,7 +86,24 @@ pub trait NetworkKind:
     fn apply(payload: &mut Self::Payload, summary: &Self::Summary, cmd: &Self::Command) {
         let _ = (payload, summary, cmd);
     }
+
+    /// The topology law (`rust_architecture.md` §4.5): whether a node at
+    /// `a`'s cell and one at `b`'s cell connect. [`super::host::NetworkHost`]
+    /// calls this for every candidate pair sharing or neighboring a cell, so
+    /// DM never sends topology -- binding a node at a cell is enough. The
+    /// default never connects anything (a kind that never calls
+    /// `NetworkHost::bind_node`, or connects nodes itself through
+    /// [`Network::connect`] directly, never needs to implement this).
+    fn connects(a: (&Self::Node, CellId), b: (&Self::Node, CellId)) -> bool {
+        let _ = (a, b);
+        false
+    }
 }
+
+/// A grid cell index (`grid::GridDims`'s turf index): what
+/// [`NetworkKind::connects`] and [`super::host::NetworkHost`]'s occupancy
+/// index key nodes by.
+pub type CellId = u32;
 
 pub type NodeId<K> = Handle<Node<K>>;
 pub type EdgeId<K> = Handle<Edge<K>>;

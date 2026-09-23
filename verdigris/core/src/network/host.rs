@@ -1,641 +1,399 @@
-//! Frame integration for networks: DM-facing [`NetworkPort`], worker-side
-//! [`NetworkState`] and the published [`NetworkView`].
+//! [`NetworkHost`]: entity-keyed topology (`rust_architecture.md` §4.5,
+//! Core C). It owns one [`Network<K>`] (the incremental region graph,
+//! unchanged) and adds the one thing every domain's own network host used
+//! to hand-roll: identity and edge derivation.
 //!
-//! DM names nodes and devices by its own dense keys (registry indices below
-//! [`MAX_KEY`]), so it never waits for a handle. The port queues [`Edit`]s
-//! and sends each [`NetworkPort::commit`] as one transaction; commands
-//! against a node's region payload travel in the same ordered stream. Once
-//! per frame the network's task applies everything received, commits, and
-//! publishes:
-//! - a [`NetworkView`]: copy-on-write stores of node key -> region, region
-//!   slot -> [`RegionEntry`] and device key -> [`DeviceEntry`]; unchanged
-//!   chunks are shared with the previous view;
-//! - an [`Outbox`] of region events ([`EventKind::TopologyChanged`], codes
-//!   in [`topo`]) and, as take results keyed by node key, each removed
-//!   node's released payload.
+//! - **Identity.** A node is named by the entity that bound it (an
+//!   [`entity::EntityTable`](crate::entity::EntityTable) handle), never a
+//!   domain-private key table. There is one lookup, [`NetworkHost::node_of`],
+//!   from entity to the graph's own [`NodeId`]; the reverse direction needs
+//!   no table at all, because the entity's raw bits are already the graph's
+//!   `key` field (see [`Network::add_node`]'s `key` and
+//!   [`RegionEvent::Released`]'s `key`) -- [`decode_key`] reconstructs the
+//!   [`Handle`] from it directly.
+//! - **Edges.** DM never sends topology. Binding a node at a cell is enough:
+//!   [`NetworkHost::bind_node`] derives edges by calling
+//!   [`NetworkKind::connects`] against every other node occupying that cell
+//!   or one of its six grid neighbors (via an occupancy index, not a scan of
+//!   every node), and connects the pairs it accepts.
+//! - **Batching.** [`NetworkHost::commit`] is exactly
+//!   [`Network::commit`]: split-then-merge, so an explosion's edits are one
+//!   batch, unchanged from `graph.rs`.
+//! - **Devices.** [`NetworkHost::devices`] iterates the dense device arena
+//!   directly (no hash lookup), per entity handle.
 //!
-//! Region channels for watches: a kind's region scalars are mirrored into
-//! an ordinary cell [`Domain`](crate::owner::Domain) store with
-//! [`NetworkState::mirror`] (cell = region slot), so `Changed`, `Threshold`
-//! and `Band` watches work on regions unchanged (see `tests/network_sim.rs`).
+//! No region state lives here or in a side map: everything about a region
+//! is in [`NetworkKind::Payload`], carried by `Network<K>` itself.
 
-use std::sync::mpsc::{Receiver, Sender, channel};
-use std::sync::{Arc, Mutex};
+use std::collections::HashMap;
 
-use crate::command::Seq;
-use crate::cow::{ChunkLayout, CowStore};
-use crate::frame::{Res, Task};
-use crate::handle::{MAX_SLOTS, RawHandle};
-use crate::mailbox::Latest;
-use crate::outbox::{Event, EventKind, Outbox, OutboxSlot, TakeResult};
-use crate::sim::SimBuilder;
+use crate::entity::EntitySlots;
+use crate::grid::{Face, GridDims};
+use crate::handle::{Handle, RawHandle};
 
-use super::graph::{DeviceId, Endpoint, Network, NetworkKind, NodeId, RegionEvent, Side};
+use super::graph::{
+    CellId, DeviceId, Endpoint, NetError, Network, NetworkKind, NodeId, RegionEvent, RegionId,
+};
 
-/// Keys are dense indices below this (the view stores are indexed by them).
-pub const MAX_KEY: u32 = MAX_SLOTS;
+/// An entity handle, as [`NetworkHost`] identifies nodes and devices.
+pub type Entity = Handle<EntitySlots>;
 
-/// `value` codes of [`EventKind::TopologyChanged`] events. `key` is the
-/// region's raw handle; `extra` is the other region's (or 0).
-pub mod topo {
-    /// A new region.
-    pub const CREATED: f32 = 1.0;
-    /// `extra` was pooled into `key` and retired.
-    pub const MERGED: f32 = 2.0;
-    /// `extra` was carved out of `key`.
-    pub const SPLIT: f32 = 3.0;
-    /// `key` lost its last node.
-    pub const RETIRED: f32 = 4.0;
-    /// `key`'s summary or payload changed.
-    pub const CHANGED: f32 = 5.0;
-    /// Device `key` (a device key, not a region) lost a node endpoint.
-    pub const DEVICE_DETACHED: f32 = 6.0;
+/// Recovers the entity a graph `key` (`Network::add_node`'s `key` field,
+/// [`RegionEvent::Released`]'s `key`) names. `None` for [`super::NO_KEY`] or
+/// any value [`NetworkHost`] did not itself produce.
+#[must_use]
+pub fn decode_key(key: u32) -> Option<Entity> {
+    RawHandle::from_bits(key).map(Handle::from_raw)
 }
 
-/// One side of a device, by DM key.
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub enum EndKey {
-    Node(u32),
-    Cell(u32),
+fn encode_entity(entity: Entity) -> u32 {
+    entity.raw().bits()
 }
 
-/// A topology or data edit, by DM key.
-#[derive(Clone, Debug, PartialEq)]
-pub enum Edit<K: NetworkKind> {
-    AddNode {
-        key: u32,
-        pos: u32,
-        kind: u16,
-        data: K::Node,
-        payload: K::Payload,
-    },
-    RemoveNode {
-        key: u32,
-    },
-    SetNode {
-        key: u32,
-        data: K::Node,
-    },
-    Connect {
-        a: u32,
-        b: u32,
-    },
-    Disconnect {
-        a: u32,
-        b: u32,
-    },
-    AddDevice {
-        key: u32,
-        a: EndKey,
-        b: EndKey,
-        kind: u16,
-        data: K::Device,
-    },
-    RemoveDevice {
-        key: u32,
-    },
-    SetDevice {
-        key: u32,
-        data: K::Device,
-    },
+/// Entity-keyed topology over one [`NetworkKind`] (`rust_architecture.md`
+/// §4.5). See the module docs.
+pub struct NetworkHost<K: NetworkKind> {
+    net: Network<K>,
+    dims: GridDims,
+    nodes: HashMap<Entity, NodeId<K>>,
+    /// Cell -> entities with a node bound there, for [`bind_node`]'s edge
+    /// search (same cell and the six grid neighbors, not every node).
+    occupants: HashMap<CellId, Vec<Entity>>,
+    devices: HashMap<Entity, DeviceId<K>>,
 }
 
-enum Message<K: NetworkKind> {
-    Batch(Vec<Edit<K>>),
-    Command { node: u32, cmd: K::Command },
-}
-
-/// A region as published.
-#[derive(Clone, Debug, Default, PartialEq)]
-pub struct RegionEntry<K: NetworkKind> {
-    /// The live region in this slot, if any.
-    pub region: Option<RawHandle>,
-    pub members: u32,
-    pub summary: K::Summary,
-    pub payload: K::Payload,
-}
-
-/// A device side as published.
-#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
-pub enum ViewSide {
-    /// No device under this key.
-    #[default]
-    None,
-    Region(RawHandle),
-    Cell(u32),
-    Detached,
-}
-
-/// A device as published: its resolved sides and parameters.
-#[derive(Clone, Debug, Default, PartialEq)]
-pub struct DeviceEntry<K: NetworkKind> {
-    pub a: ViewSide,
-    pub b: ViewSide,
-    pub kind: u16,
-    pub data: K::Device,
-}
-
-/// An immutable snapshot of a network, published once per frame.
-#[derive(Clone, Debug)]
-pub struct NetworkView<K: NetworkKind> {
-    pub version: u64,
-    /// Commits applied so far.
-    pub revision: u64,
-    /// Node key -> region raw bits + 1 (0: no node).
-    nodes: CowStore<u32>,
-    regions: CowStore<RegionEntry<K>>,
-    devices: CowStore<DeviceEntry<K>>,
-}
-
-impl<K: NetworkKind> NetworkView<K> {
-    fn empty() -> Self {
+impl<K: NetworkKind> NetworkHost<K> {
+    #[must_use]
+    pub fn new(dims: GridDims) -> Self {
         Self {
-            version: 0,
-            revision: 0,
-            nodes: CowStore::new(ChunkLayout::linear(MAX_KEY)),
-            regions: CowStore::new(ChunkLayout::linear(MAX_SLOTS)),
-            devices: CowStore::new(ChunkLayout::linear(MAX_KEY)),
+            net: Network::default(),
+            dims,
+            nodes: HashMap::new(),
+            occupants: HashMap::new(),
+            devices: HashMap::new(),
         }
     }
 
-    /// The region node `key` belongs to.
     #[must_use]
-    pub fn region_of(&self, key: u32) -> Option<RawHandle> {
-        let bits = self.nodes.get(key)?;
-        bits.checked_sub(1).and_then(RawHandle::from_bits)
-    }
-
-    /// A live region's entry (`None` for a stale handle).
-    #[must_use]
-    pub fn region(&self, region: RawHandle) -> Option<RegionEntry<K>> {
-        self.regions
-            .get(region.index())
-            .filter(|e| e.region == Some(region))
-    }
-
-    /// Node `key`'s region entry.
-    #[must_use]
-    pub fn region_of_node(&self, key: u32) -> Option<RegionEntry<K>> {
-        self.region(self.region_of(key)?)
-    }
-
-    /// Device `key`'s entry.
-    #[must_use]
-    pub fn device(&self, key: u32) -> Option<DeviceEntry<K>> {
-        self.devices.get(key).filter(|d| d.a != ViewSide::None)
-    }
-
-    /// The region store by slot (for scans and for the replay hash).
-    #[must_use]
-    pub fn regions(&self) -> &CowStore<RegionEntry<K>> {
-        &self.regions
-    }
-}
-
-/// Counters over the network's life.
-#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
-pub struct HostStats {
-    pub batches: u64,
-    pub edits: u64,
-    pub commands: u64,
-    /// Edits or commands naming an unknown key, or otherwise invalid.
-    pub rejected: u64,
-}
-
-/// The worker side: the network and its publication state. Lives in the
-/// frame world as a resource; only the network's task writes it.
-pub struct NetworkState<K: NetworkKind> {
-    pub net: Network<K>,
-    node_keys: Vec<Option<NodeId<K>>>,
-    device_keys: Vec<Option<DeviceId<K>>>,
-    rx: Mutex<Receiver<Message<K>>>,
-    views: Arc<Latest<Arc<NetworkView<K>>>>,
-    view: NetworkView<K>,
-    outbox: Outbox<K::Payload>,
-    outbox_slot: Arc<OutboxSlot<K::Payload>>,
-    /// This frame's events (for kind steps and mirrors that run after).
-    events: Vec<RegionEvent<K>>,
-    /// Region slots whose entry changed this frame.
-    changed_slots: Vec<u32>,
-    stats: HostStats,
-    touched_nodes: Vec<NodeId<K>>,
-    touched_devices: Vec<DeviceId<K>>,
-}
-
-fn slot<T>(keys: &[Option<T>], key: u32) -> Option<T>
-where
-    T: Copy,
-{
-    keys.get(key as usize).copied().flatten()
-}
-
-impl<K: NetworkKind> NetworkState<K> {
-    /// A detached state and port pair (for hosts that drive
-    /// [`NetworkState::step`] themselves; [`add_network`] wires one into a
-    /// sim).
-    #[must_use]
-    pub fn new() -> (Self, NetworkPort<K>) {
-        let (tx, rx) = channel();
-        let views = Arc::new(Latest::new());
-        let outbox_slot = Arc::new(OutboxSlot::default());
-        let state = Self {
-            net: Network::new(),
-            node_keys: Vec::new(),
-            device_keys: Vec::new(),
-            rx: Mutex::new(rx),
-            views: Arc::clone(&views),
-            view: NetworkView::empty(),
-            outbox: Outbox::default(),
-            outbox_slot: Arc::clone(&outbox_slot),
-            events: Vec::new(),
-            changed_slots: Vec::new(),
-            stats: HostStats::default(),
-            touched_nodes: Vec::new(),
-            touched_devices: Vec::new(),
-        };
-        let port = NetworkPort {
-            tx,
-            views,
-            pinned: Arc::new(NetworkView::empty()),
-            outbox_slot,
-            batch: Vec::new(),
-        };
-        (state, port)
+    pub fn network(&self) -> &Network<K> {
+        &self.net
     }
 
     #[must_use]
-    pub fn stats(&self) -> HostStats {
-        self.stats
+    pub fn dims(&self) -> GridDims {
+        self.dims
     }
 
-    /// The handle behind node `key`.
     #[must_use]
-    pub fn node(&self, key: u32) -> Option<NodeId<K>> {
-        slot(&self.node_keys, key)
+    pub fn node_of(&self, entity: Entity) -> Option<NodeId<K>> {
+        self.nodes.get(&entity).copied()
     }
 
-    /// The handle behind device `key`.
     #[must_use]
-    pub fn device(&self, key: u32) -> Option<DeviceId<K>> {
-        slot(&self.device_keys, key)
+    pub fn contains(&self, entity: Entity) -> bool {
+        self.nodes.contains_key(&entity)
     }
 
-    /// This frame's region events, in order.
-    #[must_use]
-    pub fn events(&self) -> &[RegionEvent<K>] {
-        &self.events
+    /// Binds `entity`'s node at `cell` in its own singleton region, and
+    /// connects it to every occupant of `cell` or a neighboring cell that
+    /// [`NetworkKind::connects`] accepts. Replaces whatever `entity` had
+    /// bound before (an edit, not an error).
+    ///
+    /// # Errors
+    /// [`NetError`] if the underlying arena is full.
+    pub fn bind_node(&mut self, entity: Entity, cell: CellId, kind: u16, data: K::Node) -> Result<NodeId<K>, NetError> {
+        if self.nodes.contains_key(&entity) {
+            self.unbind_node(entity);
+        }
+        let node = self
+            .net
+            .add_node(cell, kind, encode_entity(entity), data, K::Payload::default())?;
+        self.nodes.insert(entity, node);
+        self.occupants.entry(cell).or_default().push(entity);
+        self.connect_new_node(entity, node, cell);
+        Ok(node)
     }
 
-    /// The frame task body: applies every received batch and command in
-    /// order, then publishes the view and the outbox.
-    pub fn step(&mut self) {
-        self.events.clear();
-        self.changed_slots.clear();
-        let rx = self
-            .rx
-            .get_mut()
-            .unwrap_or_else(std::sync::PoisonError::into_inner);
-        let messages: Vec<Message<K>> = rx.try_iter().collect();
-        for msg in messages {
-            match msg {
-                Message::Batch(edits) => {
-                    self.stats.batches += 1;
-                    for edit in edits {
-                        self.stats.edits += 1;
-                        if !self.apply_edit(edit) {
-                            self.stats.rejected += 1;
-                        }
-                    }
-                    let events = self.net.commit();
-                    self.events.extend(events);
-                }
-                Message::Command { node, cmd } => {
-                    self.stats.commands += 1;
-                    match self.node(node) {
-                        Some(n) if self.net.command(n, &cmd).is_ok() => {}
-                        _ => self.stats.rejected += 1,
-                    }
-                }
+    fn candidate_cells(&self, cell: CellId) -> Vec<CellId> {
+        let mut cells = vec![cell];
+        for face in Face::ALL {
+            if let Some(n) = self.dims.neighbor(cell, face) {
+                cells.push(n);
             }
         }
-        // Flushes commands' `Changed` events (a no-op commit otherwise).
-        let events = self.net.commit();
-        self.events.extend(events);
-        self.refresh_view();
-        self.publish();
+        cells
     }
 
-    fn apply_edit(&mut self, edit: Edit<K>) -> bool {
-        match edit {
-            Edit::AddNode {
-                key,
-                pos,
-                kind,
-                data,
-                payload,
-            } => {
-                if key >= MAX_KEY || self.node(key).is_some() {
-                    return false;
-                }
-                let Ok(n) = self.net.add_node(pos, kind, key, data, payload) else {
-                    return false;
-                };
-                let i = key as usize;
-                if self.node_keys.len() <= i {
-                    self.node_keys.resize(i + 1, None);
-                }
-                self.node_keys[i] = Some(n);
-                true
-            }
-            Edit::RemoveNode { key } => {
-                let Some(n) = self.node(key) else {
-                    return false;
-                };
-                self.node_keys[key as usize] = None;
-                self.view.nodes.set(key, 0);
-                self.net.remove_node(n).is_ok()
-            }
-            Edit::SetNode { key, data } => self
-                .node(key)
-                .is_some_and(|n| self.net.set_node_data(n, data).is_ok()),
-            Edit::Connect { a, b } => match (self.node(a), self.node(b)) {
-                (Some(a), Some(b)) => self.net.connect(a, b).is_ok(),
-                _ => false,
-            },
-            Edit::Disconnect { a, b } => match (self.node(a), self.node(b)) {
-                (Some(a), Some(b)) => self.net.disconnect(a, b).is_ok(),
-                _ => false,
-            },
-            Edit::AddDevice {
-                key,
-                a,
-                b,
-                kind,
-                data,
-            } => {
-                if key >= MAX_KEY || self.device(key).is_some() {
-                    return false;
-                }
-                let (Some(ea), Some(eb)) = (self.endpoint(a), self.endpoint(b)) else {
-                    return false;
-                };
-                let Ok(d) = self.net.add_device(ea, eb, kind, key, data) else {
-                    return false;
-                };
-                let i = key as usize;
-                if self.device_keys.len() <= i {
-                    self.device_keys.resize(i + 1, None);
-                }
-                self.device_keys[i] = Some(d);
-                true
-            }
-            Edit::RemoveDevice { key } => {
-                let Some(d) = self.device(key) else {
-                    return false;
-                };
-                self.device_keys[key as usize] = None;
-                self.view.devices.set(key, DeviceEntry::default());
-                self.net.remove_device(d).is_ok()
-            }
-            Edit::SetDevice { key, data } => self
-                .device(key)
-                .is_some_and(|d| self.net.set_device_data(d, data).is_ok()),
-        }
-    }
-
-    fn endpoint(&self, end: EndKey) -> Option<Endpoint<K>> {
-        match end {
-            EndKey::Node(k) => self.node(k).map(Endpoint::Node),
-            EndKey::Cell(c) => Some(Endpoint::Cell(c)),
-        }
-    }
-
-    fn view_side(&self, end: Endpoint<K>) -> ViewSide {
-        match self.net.resolve(end) {
-            Side::Region(r) => ViewSide::Region(r.raw()),
-            Side::Cell(c) => ViewSide::Cell(c),
-            Side::Detached => ViewSide::Detached,
-        }
-    }
-
-    fn refresh_view(&mut self) {
-        let mut regions: Vec<RawHandle> = Vec::new();
-        for ev in &self.events {
-            match ev {
-                RegionEvent::Created { region }
-                | RegionEvent::Retired { region }
-                | RegionEvent::Changed { region } => regions.push(region.raw()),
-                RegionEvent::Merged { into, from } => {
-                    regions.extend([into.raw(), from.raw()]);
-                }
-                RegionEvent::Split { from, into } => {
-                    regions.extend([from.raw(), into.raw()]);
-                }
-                RegionEvent::Released { .. } | RegionEvent::DeviceDetached { .. } => {}
-            }
-        }
-        regions.sort_unstable();
-        regions.dedup();
-        for raw in regions {
-            let slot = raw.index();
-            let entry = match self.net.region(crate::handle::Handle::from_raw(raw)) {
-                Ok(reg) => RegionEntry {
-                    region: Some(raw),
-                    members: reg.members(),
-                    summary: reg.summary().clone(),
-                    payload: reg.payload().clone(),
-                },
-                // Retired, or retired and the slot reused by a later region
-                // (which has its own event and wins by generation below).
-                Err(_) => {
-                    if self.view.regions.with(slot, |e| e.region == Some(raw)) == Some(true) {
-                        RegionEntry::default()
-                    } else {
-                        continue;
-                    }
-                }
+    fn connect_new_node(&mut self, entity: Entity, node: NodeId<K>, cell: CellId) {
+        let my_data = self
+            .net
+            .node(node)
+            .expect("just added")
+            .data
+            .clone();
+        let mut peers: Vec<NodeId<K>> = Vec::new();
+        for c in self.candidate_cells(cell) {
+            let Some(occupants) = self.occupants.get(&c) else {
+                continue;
             };
-            self.view.regions.set(slot, entry);
-            self.changed_slots.push(slot);
-        }
-        self.changed_slots.sort_unstable();
-        self.changed_slots.dedup();
-
-        let mut nodes = std::mem::take(&mut self.touched_nodes);
-        let mut devices = std::mem::take(&mut self.touched_devices);
-        self.net.drain_touched(&mut nodes, &mut devices);
-        for &n in &nodes {
-            if let Ok(node) = self.net.node(n) {
-                if node.key < MAX_KEY && slot(&self.node_keys, node.key) == Some(n) {
-                    self.view
-                        .nodes
-                        .set(node.key, node.region().raw().bits() + 1);
-                }
-            }
-        }
-        for &d in &devices {
-            if let Ok(dev) = self.net.device(d) {
-                let entry = DeviceEntry {
-                    a: self.view_side(dev.a),
-                    b: self.view_side(dev.b),
-                    kind: dev.kind,
-                    data: dev.data.clone(),
-                };
-                if dev.key < MAX_KEY && slot(&self.device_keys, dev.key) == Some(d) {
-                    self.view.devices.set(dev.key, entry);
-                }
-            }
-        }
-        nodes.clear();
-        devices.clear();
-        self.touched_nodes = nodes;
-        self.touched_devices = devices;
-        self.view.revision = self.net.revision();
-    }
-
-    fn publish(&mut self) {
-        let frame_seq = Seq(self.view.version + 1);
-        for ev in &self.events {
-            let (key, extra, value) = match ev {
-                RegionEvent::Created { region } => (region.raw().bits(), 0, topo::CREATED),
-                RegionEvent::Merged { into, from } => {
-                    (into.raw().bits(), from.raw().bits(), topo::MERGED)
-                }
-                RegionEvent::Split { from, into } => {
-                    (from.raw().bits(), into.raw().bits(), topo::SPLIT)
-                }
-                RegionEvent::Retired { region } => (region.raw().bits(), 0, topo::RETIRED),
-                RegionEvent::Changed { region } => (region.raw().bits(), 0, topo::CHANGED),
-                RegionEvent::DeviceDetached { device } => {
-                    let key = self.net.device(*device).map_or(u32::MAX, |d| d.key);
-                    (key, 0, topo::DEVICE_DETACHED)
-                }
-                RegionEvent::Released { key, payload, .. } => {
-                    self.outbox.push_take(TakeResult {
-                        seq: frame_seq,
-                        cell: *key,
-                        value: payload.clone(),
-                    });
+            for &other_entity in occupants {
+                if other_entity == entity {
                     continue;
                 }
-            };
-            self.outbox.push_event(Event {
-                kind: EventKind::TopologyChanged,
-                key,
-                value,
-                extra,
-                generation: 0,
-            });
-        }
-        self.view.version += 1;
-        self.views.put(Arc::new(self.view.clone()));
-        let mut outbox = std::mem::take(&mut self.outbox);
-        outbox.stamp(self.view.version);
-        self.outbox_slot.publish(outbox);
-    }
-
-    /// Mirrors region scalars into a cell store (cell = region slot) for the
-    /// region slots that changed this frame; vacated slots get
-    /// `V::default()`. Call from a task that writes the mirror domain, after
-    /// the network's task, so watches see region channels.
-    pub fn mirror<V: Clone + Default>(
-        &self,
-        store: &mut CowStore<V>,
-        f: impl Fn(&RegionEntry<K>) -> V,
-    ) {
-        for &slot in &self.changed_slots {
-            let value = self
-                .view
-                .regions
-                .with(slot, |e| {
-                    if e.region.is_some() {
-                        f(e)
-                    } else {
-                        V::default()
-                    }
-                })
-                .unwrap_or_default();
-            store.set(slot, value);
-        }
-    }
-
-    /// The live (unpublished) view.
-    #[must_use]
-    pub fn live_view(&self) -> &NetworkView<K> {
-        &self.view
-    }
-}
-
-/// The DM-facing side. Lock-free: edits and commands go through an mpsc
-/// channel, views through a single-slot mailbox.
-pub struct NetworkPort<K: NetworkKind> {
-    tx: Sender<Message<K>>,
-    views: Arc<Latest<Arc<NetworkView<K>>>>,
-    pinned: Arc<NetworkView<K>>,
-    outbox_slot: Arc<OutboxSlot<K::Payload>>,
-    batch: Vec<Edit<K>>,
-}
-
-impl<K: NetworkKind> NetworkPort<K> {
-    /// Queues an edit in the open transaction.
-    pub fn edit(&mut self, edit: Edit<K>) {
-        self.batch.push(edit);
-    }
-
-    /// Sends the open transaction as one commit (an explosion is one call).
-    pub fn commit(&mut self) {
-        if !self.batch.is_empty() {
-            let batch = std::mem::take(&mut self.batch);
-            let _ = self.tx.send(Message::Batch(batch));
-        }
-    }
-
-    /// Queues a command against node `node`'s region payload. Commits the
-    /// open transaction first, so the order DM issued things in holds.
-    pub fn command(&mut self, node: u32, cmd: K::Command) {
-        self.commit();
-        let _ = self.tx.send(Message::Command { node, cmd });
-    }
-
-    /// Pins the newest published view, if a new one arrived. Returns
-    /// whether it changed.
-    pub fn refresh(&mut self) -> bool {
-        match self.views.take() {
-            Some(v) => {
-                self.pinned = v;
-                true
+                let Some(&other_node) = self.nodes.get(&other_entity) else {
+                    continue;
+                };
+                let Ok(other) = self.net.node(other_node) else {
+                    continue;
+                };
+                if K::connects((&my_data, cell), (&other.data, other.pos)) {
+                    peers.push(other_node);
+                }
             }
-            None => false,
+        }
+        for peer in peers {
+            let _ = self.net.connect(node, peer);
         }
     }
 
-    #[must_use]
-    pub fn pinned(&self) -> &Arc<NetworkView<K>> {
-        &self.pinned
+    /// Removes `entity`'s node. A no-op if it has none. Its share of the
+    /// region payload is released at once
+    /// ([`RegionEvent::Released`], resolved via [`decode_key`]); a possible
+    /// split waits for [`NetworkHost::commit`].
+    pub fn unbind_node(&mut self, entity: Entity) {
+        let Some(node) = self.nodes.remove(&entity) else {
+            return;
+        };
+        if let Ok(n) = self.net.node(node) {
+            let cell = n.pos;
+            if let Some(occupants) = self.occupants.get_mut(&cell) {
+                occupants.retain(|&e| e != entity);
+                if occupants.is_empty() {
+                    self.occupants.remove(&cell);
+                }
+            }
+        }
+        let _ = self.net.remove_node(node);
     }
 
-    /// Everything published since the last call (region events and
-    /// released payloads).
-    pub fn take_outbox(&mut self) -> Outbox<K::Payload> {
-        self.outbox_slot.collect().unwrap_or_default()
+    /// Adds a device edge between two entities' nodes (a pump between two
+    /// cable/pipe regions). Node endpoints must already be bound.
+    ///
+    /// # Errors
+    /// [`NetError`] for a node not bound here, or a full arena.
+    pub fn bind_device(&mut self, entity: Entity, a: Entity, b: Entity, kind: u16, data: K::Device) -> Result<DeviceId<K>, NetError> {
+        let ea = self.node_of(a).map_or(Endpoint::Detached, Endpoint::Node);
+        let eb = self.node_of(b).map_or(Endpoint::Detached, Endpoint::Node);
+        let d = self.net.add_device(ea, eb, kind, encode_entity(entity), data)?;
+        self.devices.insert(entity, d);
+        Ok(d)
+    }
+
+    pub fn unbind_device(&mut self, entity: Entity) {
+        if let Some(d) = self.devices.remove(&entity) {
+            let _ = self.net.remove_device(d);
+        }
+    }
+
+    /// Every bound device, by its own entity -- dense iteration over the
+    /// device arena (`rust_architecture.md` §4.5's "device iteration is
+    /// dense"), not a hash lookup per device.
+    pub fn devices(&self) -> impl Iterator<Item = Entity> + '_ {
+        self.devices.keys().copied()
+    }
+
+    /// Resolves the split-then-merge batch and returns the events since the
+    /// last commit (unchanged from [`Network::commit`]: an explosion's
+    /// thousand edits are one pass).
+    pub fn commit(&mut self) -> Vec<RegionEvent<K>> {
+        self.net.commit()
+    }
+
+    #[must_use]
+    pub fn region_of(&self, entity: Entity) -> Option<RegionId<K>> {
+        let node = self.node_of(entity)?;
+        self.net.node(node).ok().map(super::graph::Node::region)
+    }
+
+    #[must_use]
+    pub fn payload(&self, region: RegionId<K>) -> Option<&K::Payload> {
+        self.net.region(region).ok().map(super::graph::Region::payload)
+    }
+
+    /// Mutable access to a region's payload -- the kind's own law reads and
+    /// writes it directly; no side ledger.
+    ///
+    /// # Errors
+    /// [`NetError`] for a stale or unknown region.
+    pub fn payload_mut(&mut self, region: RegionId<K>) -> Result<&mut K::Payload, NetError> {
+        self.net.payload_mut(region)
+    }
+
+    /// Every entity with a node on `region`.
+    #[must_use]
+    pub fn members(&self, region: RegionId<K>) -> Vec<Entity> {
+        let Ok(nodes) = self.net.members(region) else {
+            return Vec::new();
+        };
+        nodes
+            .into_iter()
+            .filter_map(|n| self.net.node(n).ok().and_then(|node| decode_key(node.key)))
+            .collect()
+    }
+
+    /// Applies a command to `entity`'s node's region payload.
+    ///
+    /// # Errors
+    /// [`NetError`] if `entity` has no node here.
+    pub fn command(&mut self, entity: Entity, cmd: &K::Command) -> Result<RegionId<K>, NetError> {
+        let node = self.node_of(entity).ok_or(NetError::NoEdge)?;
+        self.net.command(node, cmd)
     }
 }
 
-/// Registers a network with a sim: a `net:<name>` frame resource and a
-/// task that runs [`NetworkState::step`] each frame. Tasks that step the
-/// kind's physics or mirror region channels declare a write or read of the
-/// returned resource after this call.
-pub fn add_network<K: NetworkKind>(
-    builder: &mut SimBuilder,
-    name: &str,
-) -> (Res<NetworkState<K>>, NetworkPort<K>) {
-    let (state, port) = NetworkState::<K>::new();
-    let res = builder.add_resource(format!("net:{name}"), state);
-    builder.add_task(
-        Task::new(format!("net:{name}"), move |ctx| {
-            ctx.write(res).step();
-        })
-        .writes(res.id()),
-    );
-    (res, port)
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::arena::Arena;
+
+    /// A one-dimensional cable-like kind: nodes connect only to a same- or
+    /// adjacent-cell node on the East/West axis (mirroring real cable
+    /// geometry without needing the real power domain here).
+    #[derive(Clone, Copy, Debug, Default, PartialEq)]
+    struct Line;
+
+    impl NetworkKind for Line {
+        const NAME: &'static str = "line";
+        type Node = ();
+        type Summary = f64;
+        type Payload = f64;
+        type Device = ();
+        type Command = f64;
+
+        fn summarize((): &()) -> f64 {
+            1.0
+        }
+        fn split(payload: &mut f64, whole: &f64, part: &f64) -> f64 {
+            if *whole <= 0.0 {
+                return 0.0;
+            }
+            let share = *payload * (*part / *whole);
+            *payload -= share;
+            share
+        }
+        fn merge(into: &mut f64, other: f64) {
+            *into += other;
+        }
+        fn apply(payload: &mut f64, _: &f64, cmd: &f64) {
+            *payload += *cmd;
+        }
+        fn connects((_, a): (&(), CellId), (_, b): (&(), CellId)) -> bool {
+            a.abs_diff(b) == 1
+        }
+    }
+
+    fn entity(i: u32) -> Entity {
+        let mut arena: Arena<()> = Arena::default();
+        // Allocate up to index i so the returned handle's index is exactly
+        // i, generation 0 -- a cheap, deterministic way to mint distinct
+        // test entities without a real EntityTable.
+        let mut last = arena.insert(()).unwrap();
+        for _ in 0..i {
+            last = arena.insert(()).unwrap();
+        }
+        Handle::from_raw(last.raw())
+    }
+
+    fn dims() -> GridDims {
+        GridDims::new(100, 1, 1).unwrap()
+    }
+
+    #[test]
+    fn adjacent_cells_connect_and_share_a_region() {
+        let mut host: NetworkHost<Line> = NetworkHost::new(dims());
+        let a = entity(0);
+        let b = entity(1);
+        host.bind_node(a, 5, 0, ()).unwrap();
+        host.bind_node(b, 6, 0, ()).unwrap();
+        host.commit();
+        assert_eq!(host.region_of(a), host.region_of(b), "adjacent cells connect");
+    }
+
+    #[test]
+    fn distant_cells_do_not_connect() {
+        let mut host: NetworkHost<Line> = NetworkHost::new(dims());
+        let a = entity(0);
+        let b = entity(1);
+        host.bind_node(a, 5, 0, ()).unwrap();
+        host.bind_node(b, 50, 0, ()).unwrap();
+        host.commit();
+        assert_ne!(host.region_of(a), host.region_of(b));
+    }
+
+    #[test]
+    fn unbind_splits_and_releases_a_conserved_share() {
+        let mut host: NetworkHost<Line> = NetworkHost::new(dims());
+        let a = entity(0);
+        let b = entity(1);
+        let c = entity(2);
+        host.bind_node(a, 1, 0, ()).unwrap();
+        host.bind_node(b, 2, 0, ()).unwrap();
+        host.bind_node(c, 3, 0, ()).unwrap();
+        host.commit();
+        let region = host.region_of(a).unwrap();
+        *host.payload_mut(region).unwrap() = 30.0;
+
+        host.unbind_node(b);
+        let events = host.commit();
+
+        let released: f64 = events
+            .iter()
+            .filter_map(|e| match e {
+                RegionEvent::Released { key, payload, .. } if decode_key(*key) == Some(b) => Some(*payload),
+                _ => None,
+            })
+            .sum();
+        assert!((released - 10.0).abs() < 1e-9, "b's third share released, got {released}");
+        assert_ne!(host.region_of(a), host.region_of(c), "removing the middle node splits the line");
+        let total: f64 =
+            *host.payload(host.region_of(a).unwrap()).unwrap() + *host.payload(host.region_of(c).unwrap()).unwrap() + released;
+        assert!((total - 30.0).abs() < 1e-9, "conserved across the split: {total}");
+    }
+
+    #[test]
+    fn members_resolve_back_to_the_entities_that_bound_them() {
+        let mut host: NetworkHost<Line> = NetworkHost::new(dims());
+        let a = entity(0);
+        let b = entity(1);
+        host.bind_node(a, 1, 0, ()).unwrap();
+        host.bind_node(b, 2, 0, ()).unwrap();
+        host.commit();
+        let region = host.region_of(a).unwrap();
+        let mut members = host.members(region);
+        members.sort_by_key(|e| e.index());
+        let mut expect = [a, b];
+        expect.sort_by_key(|e| e.index());
+        assert_eq!(members, expect);
+    }
+
+    #[test]
+    fn rebinding_the_same_entity_replaces_its_node() {
+        let mut host: NetworkHost<Line> = NetworkHost::new(dims());
+        let a = entity(0);
+        let b = entity(1);
+        host.bind_node(a, 1, 0, ()).unwrap();
+        host.bind_node(b, 2, 0, ()).unwrap();
+        host.commit();
+        assert_eq!(host.region_of(a), host.region_of(b));
+
+        // Rebind a far away: it no longer connects to b, and the old
+        // occupancy entry at cell 1 is gone (no ghost edge back).
+        host.bind_node(a, 50, 0, ()).unwrap();
+        host.commit();
+        assert_ne!(host.region_of(a), host.region_of(b));
+        let c = entity(2);
+        host.bind_node(c, 1, 0, ()).unwrap();
+        host.commit();
+        assert_ne!(host.region_of(c), host.region_of(a), "cell 1's old occupant (a) is gone");
+    }
 }

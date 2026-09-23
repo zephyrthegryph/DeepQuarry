@@ -44,18 +44,19 @@
 //! endpoints valid (a removed node detaches them) and resolves them to
 //! [`Side`]s; flow laws are M2's.
 //!
-//! **Frame integration** is in [`host`]: [`host::add_network`] registers the
-//! network as a frame resource with a task that applies DM's batches and
-//! commands and publishes a copy-on-write [`host::NetworkView`] and an
-//! outbox of region events.
+//! **Identity** is in [`host`]: [`host::NetworkHost`] keys nodes and devices
+//! by entity handle and derives edges from [`NetworkKind::connects`] over a
+//! grid-cell occupancy index, so DM never sends topology
+//! (`rust_architecture.md` §4.5).
 
 mod graph;
 pub mod host;
 
 pub use graph::{
-    Additive, CommitStats, Device, DeviceId, Edge, EdgeId, Endpoint, NO_KEY, NetError, Network,
-    NetworkKind, Node, NodeId, Region, RegionEvent, RegionId, Side,
+    Additive, CellId, CommitStats, Device, DeviceId, Edge, EdgeId, Endpoint, NO_KEY, NetError,
+    Network, NetworkKind, Node, NodeId, Region, RegionEvent, RegionId, Side,
 };
+pub use host::{Entity, NetworkHost, decode_key};
 
 #[cfg(test)]
 mod tests;
