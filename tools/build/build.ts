@@ -1002,26 +1002,47 @@ export const BenchBaselineTarget = new Juke.Target({
     } catch {
       // A failing scenario still writes a run; the check below decides.
     }
-    // benchRunsDir() is an absolute path when DQ_BENCH_STORE is set (both
-    // this process and the worktree child resolve it the same way, since the
-    // env var is inherited below), and relative to the worktree otherwise.
+    // Don't assume the child wrote to the shared store just because
+    // DQ_BENCH_STORE is set out here: the baseline commit's OWN checkout is
+    // what actually builds and runs (that's the whole point), and an older
+    // commit's bench.ts may predate the shared-store/--exclusive feature
+    // entirely, in which case it silently ignored --exclusive and wrote to
+    // its own worktree-local data/bench/runs regardless of our env (found by
+    // actually baselining a commit from before this feature existed: the
+    // nested run's own log showed a relative "Saved data/bench/runs/..."
+    // path and no "Acquiring the exclusive bench lock" line at all). So
+    // check both places and identify the right file by its own commit+label
+    // fields, not by which directory we expected it in.
+    const label = `baseline-${commit}`;
     const store = benchStoreDir();
-    const baselineRuns = listRuns(store ? path.join(store, 'runs') : path.join(worktree, BENCH_RUNS_DIR));
-    if (!baselineRuns.length) {
+    const candidateDirs = [path.join(worktree, BENCH_RUNS_DIR), ...(store ? [path.join(store, 'runs')] : [])];
+    const matches = candidateDirs
+      .flatMap((dir) => listRuns(dir))
+      .map((file) => ({ file, run: readJson<BenchRun>(file) }))
+      .filter(({ run }) => run.commit === commit && run.label === label)
+      .sort((a, b) => a.run.timestamp.localeCompare(b.run.timestamp));
+    if (!matches.length) {
       Juke.logger.error('The baseline bench produced no stored run (compile, boot or scenario failure). See the output above.');
       throw new Juke.ExitCode(1);
     }
-    const baselineFile = baselineRuns[baselineRuns.length - 1];
-    // Written directly into the shared store already when DQ_BENCH_STORE is
-    // set (both the worktree and this process resolve the same absolute
-    // path); otherwise copy it out of the throwaway worktree's local store.
-    if (!benchStoreDir()) {
-      const copied = path.join(BENCH_RUNS_DIR, path.basename(baselineFile));
-      fs.mkdirSync(BENCH_RUNS_DIR, { recursive: true });
-      fs.copyFileSync(baselineFile, copied);
-      Juke.logger.info(`Saved baseline to ${copied}`);
+    const { file: baselineFile } = matches[matches.length - 1];
+    // Get it into the shared store if one is configured and it isn't there
+    // already (the child may not have understood DQ_BENCH_STORE at all, as
+    // above; even when it did, copying is a harmless no-op check away).
+    if (store) {
+      const dest = path.join(store, 'runs', path.basename(baselineFile));
+      if (path.resolve(dest) !== path.resolve(baselineFile)) {
+        fs.mkdirSync(path.dirname(dest), { recursive: true });
+        fs.copyFileSync(baselineFile, dest);
+      }
+      Juke.logger.info(`Saved baseline to the shared store: ${dest}`);
     } else {
-      Juke.logger.info(`Saved baseline to the shared store: ${baselineFile}`);
+      const dest = path.join(BENCH_RUNS_DIR, path.basename(baselineFile));
+      if (path.resolve(dest) !== path.resolve(baselineFile)) {
+        fs.mkdirSync(BENCH_RUNS_DIR, { recursive: true });
+        fs.copyFileSync(baselineFile, dest);
+      }
+      Juke.logger.info(`Saved baseline to ${dest}`);
     }
     const record = readJson<BenchRun>(baselineFile);
     Juke.logger.info(`Baseline for ${ref} (${commit}), map ${record.map}: ${Object.keys(record.summary).length} scenario(s) with results.`);
