@@ -9,4 +9,3 @@
 //
 // Automation may append lines here on a build host for a minimal run; nothing
 // in this file should ever be committed non-empty (CI runs the full suite).
-TEST_FOCUS(/datum/unit_test/dq_input_router_per_actor)
