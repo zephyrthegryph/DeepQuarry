@@ -118,10 +118,14 @@
 		TEST_ASSERT(interaction.effect, "[interaction.id] has an effect")
 		TEST_ASSERT(isnull(interaction.category) || (interaction.category in INTERACTION_CATEGORIES), "[interaction.id] has a known category")
 		TEST_ASSERT(isnull(interaction.default_action) || (interaction.default_action in list(INPUT_ACTION_USE, INPUT_ACTION_ALTERNATE)), "[interaction.id] answers Use, Alternate or nothing")
+		TEST_ASSERT(isnull(interaction.entry) || (interaction.entry in list(INTERACTION_ENTRY_ITEM, INTERACTION_ENTRY_HAND, INTERACTION_ENTRY_SELF, INTERACTION_ENTRY_ALT, INTERACTION_ENTRY_DRAG)), "[interaction.id] has a known entry")
+		var/datum/predicate/selector = interaction.selector()
+		if(selector)
+			TEST_ASSERT(!selector.errors, "[interaction.id] selector compiles: [jointext(selector.errors || list(), "; ")]")
 		var/datum/predicate/pred = interaction.predicate()
 		if(pred)
 			TEST_ASSERT(!pred.errors, "[interaction.id] requirements compile: [jointext(pred.errors || list(), "; ")]")
-		TEST_ASSERT(interaction.id in tested_ids, "[interaction.id] has a test (add it to tested_ids with one)")
+		TEST_ASSERT((interaction.id in tested_ids) || (interaction.entry && dq_snapshot_covered_ids()[interaction.id]) || findtext(interaction.id, "dq_entry_") == 1, "[interaction.id] has a test (add it to tested_ids with one, or record a converted domain's snapshot)")
 		TEST_ASSERT_EQUAL(INTERACTION_BY_ID(interaction.id), interaction, "[interaction.id] is found by id")
 
 /// Open and close the maintenance panel.
