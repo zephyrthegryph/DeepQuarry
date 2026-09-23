@@ -56,6 +56,7 @@ place the ordering hazards now scattered through code comments are encoded:
 | # | Phase | Owner | Replaces |
 |---|---|---|---|
 | 0 | **Guard.** Set `gc_destroyed`, send `COMSIG_QDELETING`, mark `DESTROYING`. From here `QDELETED(src)` is true, which stops pair and partner loops. | garbage | paicard/pAI-style hand guards |
+| 0.5 | **Mind.** Resolve every `TRANSFER(mind)` slot in the whole holder tree, **pre-order** (outermost first: body mind slot before head, before brain), while the mob is still fully registered and has a `loc`. Ghost/MMI spawn here. | containment ledger + body plan resolver | ghostize/MMI transfer in Destroy |
 | 1 | **Unbind.** Every R10 entity binding (`vg_entity_unbind`), heat bodies and pipe/cable topology, through the declared `bindings`. Must precede dematerialize. | vg bindings | ~20 atmos/heat Destroy blocks and the hard-ordered heat release in `/atom/Destroy` |
 | 2 | **Dematerialize.** Leave registries (L3) and drop rule bindings, as today. Every remaining `GLOB.x += src` moves into a registry declaration. | registries | ~72 list removals |
 | 3 | **Contents.** Resolve every slot's **declared destroy policy** (§3). This is depth-first post-order through nested holders: children before parents. No holder-managed or leftover `contents` loops remain. | containment ledger | hand spills, `QDEL_LIST` of parts, machinery `component_parts` loops, the movable `contents` sweep |
