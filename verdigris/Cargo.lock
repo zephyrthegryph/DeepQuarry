@@ -1787,6 +1787,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "vg-heat"
+version = "0.1.0"
+dependencies = [
+ "proptest",
+ "rayon",
+ "vg-core",
+]
+
+[[package]]
 name = "vg-layout"
 version = "0.1.0"
 dependencies = [

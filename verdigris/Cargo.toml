@@ -13,6 +13,7 @@ resolver = "2"
 members = [
     "core",
     "domains/gas",
+    "domains/heat",
     "domains/layout",
     "ffi",
     "ffi/macros",
@@ -25,7 +26,7 @@ members = [
 # check` covers the host-buildable crates. The i686 release build
 # (build-{linux,windows}.sh) builds the DLL and everything it links; gas tests run
 # with `cargo test --target i686-pc-windows-msvc -p vg-gas` (or i686-unknown-linux-gnu).
-default-members = ["core", "domains/layout", "verdigris", "tools/bench", "tools/replay"]
+default-members = ["core", "domains/heat", "domains/layout", "verdigris", "tools/bench", "tools/replay"]
 
 # Shared by the gas domain and the FFI crates (auxmos was originally its own
 # workspace; see domains/gas/UPSTREAM.md).
