@@ -217,6 +217,7 @@
 #include "dq_i7_bulk_capture.dm"
 #include "dq_interaction_tests.dm"
 #include "dq_interaction_entry_tests.dm"
+#include "dq_ability_tests.dm"
 #include "dq_tool_tests.dm"
 #include "dq_construction_tests.dm"
 #include "dq_construction_mech_tests.dm"
