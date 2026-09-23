@@ -29,42 +29,35 @@
 	if(locate(/mob) in range(first_range, epicenter))
 		playsound(epicenter, 'sound/effects/EMPulse.ogg', 100, TRUE)
 
-	for(var/atom/T in spiral_range_turfs(fourth_range, epicenter))
+	for(var/list/hit as anything in emp_falloff_turfs(epicenter, first_range, second_range, third_range, fourth_range))
+		var/turf/T = hit[1]
 		#ifdef EMPDEBUG
 		var/time = world.timeofday
 		#endif
-		var/distance = get_dist(epicenter, T)
-		if(distance < 0)
-			distance = 0
-		//Worst effects, really hurts
-		if(distance < first_range)
-			T.emp_act(EMP_HEAVY)
-		else if(distance == first_range)
-			if(prob(50))
-				T.emp_act(EMP_HEAVY)
-			else
-				T.emp_act(EMP_MEDIUM)
-		//Slightly less painful
-		else if(distance < second_range)
-			T.emp_act(EMP_MEDIUM)
-		else if(distance == second_range)
-			if(prob(50))
-				T.emp_act(EMP_MEDIUM)
-			else
-				T.emp_act(EMP_LIGHT)
-		//Even less slightly less painful
-		else if(distance < third_range)
-			T.emp_act(EMP_LIGHT)
-		else if(distance == third_range)
-			if(prob(50))
-				T.emp_act(EMP_MEDIUM)
-			else
-				T.emp_act(EMP_LIGHT)
-		//This should be more or less harmless
-		else if(distance <= fourth_range)
-			T.emp_act(EMP_HARMLESS)
+		T.emp_act(hit[2])
 		#ifdef EMPDEBUG
 		if((world.timeofday - time) >= EMPDEBUG)
 			log_and_message_admins("EMPDEBUG: [T.name] - [T.type] - took [world.timeofday - time]ds to process emp_act()!")
 		#endif
 	return TRUE
+
+/// The turfs an EMP reaches and the severity each gets, as list(list(turf, severity), ...).
+/// Rust computes the falloff bands (rays from the epicentre, so Chebyshev distance,
+/// clipped at the map edge); the coin flip on each band's edge ring happens here.
+/// Ranges must be non-decreasing.
+/proc/emp_falloff_turfs(turf/epicenter, first_range, second_range, third_range, fourth_range)
+	. = list()
+	var/list/falloff = vg_emp_falloff(epicenter.x, epicenter.y, epicenter.z, world.maxx, world.maxy, world.maxz, list(first_range, second_range, third_range, fourth_range))
+	if(!islist(falloff) || length(falloff) < 5)
+		return
+	var/list/turfs = block(locate(falloff[1], falloff[2], epicenter.z), locate(falloff[3], falloff[4], epicenter.z))
+	if(length(turfs) != length(falloff) - 4)
+		CRASH("emp_falloff returned [length(falloff) - 4] severities for [length(turfs)] turfs")
+	for(var/i in 1 to length(turfs))
+		var/severity = falloff[i + 4]
+		if(severity <= 0)
+			continue
+		var/band = round(severity)
+		if(severity != band)
+			severity = prob(50) ? band : band + 1
+		. += list(list(turfs[i], severity))

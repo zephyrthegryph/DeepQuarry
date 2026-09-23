@@ -37,3 +37,7 @@ harness = false
 [[bench]]
 name = "network"
 harness = false
+
+[[bench]]
+name = "field"
+harness = false

@@ -67,6 +67,7 @@ verdigris/                  <- workspace root (this dir)
 | `vg-core` `outbox` | R5 per-frame outbox next to each view: wakes, typed domain events and exact `Take` results; unread batches merge instead of being replaced; merge-by-key on overflow; flat fixed-stride DM encodings. |
 | `vg-core` `timer` / `reactor` | R5 main side: hierarchical timer wheel (O(1) insert/cancel, tick precision), wake lanes (urgent/normal/background, merged per subscriber, once per lane per tick, budgeted), exact rate models (`Linear`, `Relax`, `Sum`) whose crossings go on the wheel, DM-owned keys. |
 | `vg-core` `network` | R7 network framework: nodes/edges/regions in arenas, incremental merges and lockstep multi-source splits, conserving region payloads (`NetworkKind::split`/`merge`), batched commits, device edges between regions and cells, and `network::host` (frame task, `NetworkPort`, copy-on-write `NetworkView`, outbox events, region-channel mirror for watches). |
+| `vg-core` `field` | R6 field framework: a `FieldKind` cells domain plus a `Geometry<K>` domain (capacity, blocked mask, reservoir flag), explicit chunk-parallel exchange with antisymmetric fluxes, stiffness sub-steps, active-chunk sleep/wake, a reservoir ledger; `field::kernel` (conduction, diffusion, pressure flow) and `field::toy` (reference heat and two-component gas). |
 
 ### R5 notes (for S1 and R6/R7)
 
@@ -81,6 +82,13 @@ verdigris/                  <- workspace root (this dir)
 - **Wiring.** `network::host::add_network::<K>(&mut builder, name)` returns the state resource and a `NetworkPort`. The port is not a sim port: S1 calls `port.commit()` before `dispatch_frame` and `port.refresh()` / `take_outbox()` after. Region channels: a task mirrors region scalars into a cell domain with `NetworkState::mirror` (cell = region slot), and ordinary watches run on it (`tests/network_sim.rs`).
 - **Semantics.** A batch equals committing its removals, then its additions. A removed node's payload share is released at once (an outbox `TakeResult` keyed by node key). Merges keep the larger region's ID. Splits keep the parent ID for the side the search left open. Payload results are batch-order independent only for kinds that split proportionally on a positive weight.
 - **Not recorded.** Network batches are not in the flight recorder yet. M3 needs a `Codec` for `Edit<K>` before power replays.
+### R6 notes (for M1b and M4)
+
+- **Wiring.** `field::add_field::<K>(&mut builder, dims, config)` registers the geometry domain, the cells domain `K` and a `field:<name>` task (after the apply tasks, before watches). DM (or boot) writes geometry with `put`/`GeomCmd` through `sim.port(key.geometry)`, and cells with `put`/`submit`/`take` through `sim.port(key.cells)`. `builder.add_watches(key.cells)` works as for any domain.
+- **Physics contract.** `FieldKind::flux(a, b, dt)` is the a-to-b flux; the framework applies it once with each sign, sums a cell's fluxes before applying them, and adds reservoir inflow to `FieldState::ledger`. Kernels must clamp to the pair equilibrium and to `Side::share` of the donor (positivity when sub-steps are capped), and report `stiffness` so `n = ceil(dt * faces * stiffness)` sub-steps are monotone.
+- **Sleep.** Commands, geometry changes and other tasks' writes wake chunks by CoW pointer diff; an edge into a sleeping chunk flows only once it is unsettled (so sleeping chunks are never written); a chunk sleeps when all its live edges are `settled` or the whole step left it `quiet` (the f32 fixed point).
+- **Channels need capacity.** Extractors see only the cell, so a kind caches intensive values (temperature, pressure) in `refresh`, which runs on every touched cell after a step.
+- **Precision.** Cells are f32: each step conserves to rounding (checked per step at 2e-6 relative), and long near-equilibrium runs random-walk at roughly 1e-8 relative per step.
 
 ## Building
 
