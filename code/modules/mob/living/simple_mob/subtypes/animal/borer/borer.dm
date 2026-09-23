@@ -238,7 +238,7 @@
 
 	var/obj/item/organ/external/head = host.get_organ(BP_HEAD)
 	if(head)
-		head.implants -= src
+		LAZYREMOVE(head.implants, src)
 	controlling = FALSE
 
 	host.remove_language("Cortical Link")
@@ -297,7 +297,7 @@
 
 	var/obj/item/organ/external/head = host.get_organ(BP_HEAD)
 	if(head)
-		head.implants -= src
+		LAZYREMOVE(head.implants, src)
 	host.unset_machine()
 	host = null
 

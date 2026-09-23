@@ -422,25 +422,6 @@
 /obj/trader/products # d: the trader's live stock
 /turf/simulated/wall/tgmc/blend_log # rare: tgmc walls are unmapped; debug log
 
-# Medical session areas (not edited here).
-/datum/robolimb/species_alternates # medical session owns code/modules/organs/robolimbs.dm; see memory_lists_audit.md
-/datum/robolimb/species_cannot_use # medical session owns code/modules/organs/robolimbs.dm; see memory_lists_audit.md
-/obj/item/organ/assists_languages # medical session owns code/modules/organs/organ.dm; see memory_lists_audit.md
-/obj/item/organ/autopsy_data # medical session owns code/modules/organs/organ.dm; see memory_lists_audit.md
-/obj/item/organ/external/children # medical session owns code/modules/organs/organ_external.dm; see memory_lists_audit.md
-/obj/item/organ/external/implants # medical session owns code/modules/organs/organ_external.dm; see memory_lists_audit.md
-/obj/item/organ/external/internal_organs # medical session owns code/modules/organs/organ_external.dm; see memory_lists_audit.md
-/obj/item/organ/external/markings # medical session owns code/modules/organs/organ_external.dm; see memory_lists_audit.md
-/obj/item/organ/internal/augment/armmounted/shoulder/multiple/integrated_tools # medical session owns code/modules/organs/internal/augment/armmounted.dm; see memory_lists_audit.md
-/obj/item/organ/internal/augment/armmounted/shoulder/multiple/synth_types # medical session owns code/modules/organs/internal/augment/armmounted.dm; see memory_lists_audit.md
-/obj/item/organ/internal/eyes/eye_colour # medical session owns code/modules/organs/internal/eyes.dm; see memory_lists_audit.md
-/obj/item/organ/internal/lungs/replicant/mending/repair_list # medical session owns code/modules/organs/subtypes/replicant.dm; see memory_lists_audit.md
-/obj/item/organ/internal/nano/refactory/materials # medical session owns code/modules/organs/subtypes/nano.dm; see memory_lists_audit.md
-/obj/item/organ/target_parent_classes # medical session owns code/modules/organs/organ.dm; see memory_lists_audit.md
-/obj/item/organ/trace_chemicals # medical session owns code/modules/organs/organ.dm; see memory_lists_audit.md
-/obj/item/organ/will_assist_languages # medical session owns code/modules/organs/organ.dm; see memory_lists_audit.md
-/obj/item/rig_module/protean/armor/armor_settings # medical session owns code/modules/clothing/spacesuits/rig/modules/protean.dm; see memory_lists_audit.md
-
 # Other active areas (listed in memory_lists_audit.md, not edited here).
 /datum/design_techweb/materials # composition rewrite: design materials are being replaced; not edited here
 /datum/dq_containment_listener/events # containment (C1/C4): landed on master unlisted; not edited here
@@ -456,11 +437,6 @@
 /datum/powernet/nodes # M3 power (Rust): powernet.dm was rewritten on master; not edited here
 /datum/rule_compiler/errors # constraints (P3): compiler state; landed on master unlisted, not edited here
 /datum/rule_compiler/triggers # constraints (P3): compiler state; landed on master unlisted, not edited here
-/obj/effect/decal/cleanable/blood/drip/drips # medical session: merged in code/modules/organs/blood.dm; listed in memory_lists_audit.md, not edited here
-/obj/effect/decal/cleanable/blood/viruses # medical session: disease data on blood decals; listed in memory_lists_audit.md, not edited here
-/obj/effect/decal/cleanable/mucus/viruses # medical session: disease data on decals; listed in memory_lists_audit.md, not edited here
-/obj/effect/decal/cleanable/vomit/viruses # medical session: disease data on decals; listed in memory_lists_audit.md, not edited here
-/obj/item/organ/internal/fruitgland/poison_options # medical session: organ subtype; listed in memory_lists_audit.md, not edited here
 /obj/machinery/atmospherics/omni/atmos_filter/atmos_filters # atmos area (M1a): omni filter pipe device; listed in memory_lists_audit.md, not edited here
 /obj/machinery/atmospherics/omni/atmos_filter/filtering_outputs # atmos area (M1a): omni filter pipe device; listed in memory_lists_audit.md, not edited here
 /obj/machinery/atmospherics/omni/mixer/inputs # atmos area (M1a): omni mixer pipe device; listed in memory_lists_audit.md, not edited here
@@ -475,7 +451,6 @@
 /mob/grabbed_by # mob: 15 mobs at boot; per-instance state, see audit
 /mob/language_keys # mob: 15 mobs at boot; per-instance state, see audit
 /mob/languages # mob: 15 mobs at boot; per-instance state, see audit
-/mob/living/bad_external_organs # mob: 15 mobs at boot; per-instance state, see audit
 /mob/living/bot/botcard_access # mob: 15 mobs at boot; per-instance state, see audit
 /mob/living/bot/cleanbot/target_types # mob: 15 mobs at boot; per-instance state, see audit
 /mob/living/bot/ignore_list # mob: 15 mobs at boot; per-instance state, see audit
@@ -497,11 +472,7 @@
 /mob/living/custom_cold # mob: 15 mobs at boot; per-instance state, see audit
 /mob/living/custom_heat # mob: 15 mobs at boot; per-instance state, see audit
 /mob/living/dominated_brain/prey_langs # mob: 15 mobs at boot; per-instance state, see audit
-/mob/living/internal_organs # mob: 15 mobs at boot; per-instance state, see audit
-/mob/living/internal_organs_by_name # mob: 15 mobs at boot; per-instance state, see audit
 /mob/living/modifiers # mob: 15 mobs at boot; per-instance state, see audit
-/mob/living/organs # mob: 15 mobs at boot; per-instance state, see audit
-/mob/living/organs_by_name # mob: 15 mobs at boot; per-instance state, see audit
 /mob/living/silicon/additional_law_channels # mob: 15 mobs at boot; per-instance state, see audit
 /mob/living/silicon/ai/all_eyes # mob: 15 mobs at boot; per-instance state, see audit
 /mob/living/silicon/ai/connected_robots # mob: 15 mobs at boot; per-instance state, see audit

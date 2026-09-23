@@ -145,7 +145,7 @@
 
 	// If they're in normally, implant removal can get them out.
 	var/obj/item/organ/external/head = host.get_organ(BP_HEAD)
-	head.implants += src
+	LAZYADD(head.implants, src)
 	add_attack_logs(src, host, "infested target (borer)")
 
 /**

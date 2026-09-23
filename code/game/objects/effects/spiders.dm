@@ -89,7 +89,7 @@
 	STOP_PROCESSING(SSobj, src)
 	if(istype(loc, /obj/item/organ/external))
 		var/obj/item/organ/external/O = loc
-		O.implants -= src
+		LAZYREMOVE(O.implants, src)
 
 	return ..()
 
@@ -104,7 +104,7 @@
 		for(var/i=0, i<num, i++)
 			var/obj/effect/spider/spiderling/spiderling = new spider_type(src.loc, src)
 			if(O)
-				O.implants += spiderling
+				LAZYADD(O.implants, spiderling)
 			spiderling.faction = faction
 		qdel(src)
 
@@ -191,7 +191,7 @@
 		if(amount_grown < 0) amount_grown = 1
 		var/obj/item/organ/external/O = loc
 		if(!O.owner || O.owner.stat == DEAD || amount_grown > 80)
-			O.implants -= src
+			LAZYREMOVE(O.implants, src)
 			src.loc = O.owner ? O.owner.loc : O.loc
 			src.visible_message(span_warning("\A [src] makes its way out of [O.owner ? "[O.owner]'s [O.name]" : "\the [O]"]!"))
 			if(O.owner)

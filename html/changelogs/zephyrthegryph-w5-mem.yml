@@ -1,0 +1,6 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - code_imp: "Reagents of the same type share one treatment, factor and filter table instead of each carrying a copy."
+  - code_imp: "Organ, limb, implant, marking and simple-mob organ lists are only allocated when something is in them."
+  - code_imp: "Robolimb, augment tool, replicant repair, fruit gland and protean armor tables are shared constants."

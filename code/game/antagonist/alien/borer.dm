@@ -52,7 +52,7 @@ GLOBAL_DATUM(borers, /datum/antagonist/borer)
 		if(istype(host))
 			var/obj/item/organ/external/head = host.get_organ(BP_HEAD)
 			borer.host = host
-			head.implants += borer
+			LAZYADD(head.implants, borer)
 			borer.forceMove(head)
 			if(!borer.host_brain)
 				borer.host_brain = new(borer)

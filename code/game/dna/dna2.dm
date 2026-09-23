@@ -273,7 +273,7 @@ GLOBAL_LIST_EMPTY_TYPED(dna_genes_bad, /datum/gene/trait)
 
 	LAZYCLEARLIST(body_markings)
 	for(var/obj/item/organ/external/E in character.organs)
-		if(E.markings.len)
+		if(LAZYLEN(E.markings))
 			LAZYSET(body_markings, E.organ_tag, E.markings.Copy())
 
 	UpdateUI()

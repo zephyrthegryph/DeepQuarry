@@ -21,7 +21,7 @@
 		owner.internal_organs -= src
 		owner.internal_organs_by_name -= organ_tag
 		var/obj/item/organ/external/E = owner.organs_by_name[parent_organ]
-		if(istype(E)) E.internal_organs -= src
+		if(istype(E)) LAZYREMOVE(E.internal_organs, src)
 	return ..()
 
 /obj/item/organ/internal/remove_rejuv()
@@ -29,7 +29,7 @@
 		owner.internal_organs -= src
 		owner.internal_organs_by_name -= organ_tag
 		var/obj/item/organ/external/E = owner.organs_by_name[parent_organ]
-		if(istype(E)) E.internal_organs -= src
+		if(istype(E)) LAZYREMOVE(E.internal_organs, src)
 	..()
 
 /obj/item/organ/internal/robotize()

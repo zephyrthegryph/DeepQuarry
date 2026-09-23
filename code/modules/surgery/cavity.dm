@@ -94,7 +94,7 @@
 		to_chat(user, span_danger("You feel something give way as you force \the [placed] into place."))
 		target.injure(INJURY_CUT, 10, part, placed, affliction = /datum/affliction/wound/internal_bleeding, flags = INJURE_IGNORE_RESISTANCE)
 		target.custom_pain("You feel something rip in your [part.name]!", 1)
-	part.implants += placed
+	LAZYADD(part.implants, placed)
 	placed.forceMove(part)
 	if(istype(placed, /obj/item/nif))
 		var/obj/item/nif/N = placed
@@ -124,7 +124,7 @@
 			if(!do_after(user, duration, target, max_distance = tool.reach))
 				to_chat(user, span_warning("\The [imp] slips back out of your grip."))
 				return
-	part.implants -= removed
+	LAZYREMOVE(part.implants, removed)
 	if(!target.has_embedded_objects())
 		target.clear_alert("embeddedobject")
 	BITSET(target.hud_updateflag, IMPLOYAL_HUD)

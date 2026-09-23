@@ -168,8 +168,11 @@ and `blocked` lists (interaction work).
 
 ## For the medical session
 
-These are in `code/modules/body`, `medical`, `organs`, `surgery` and protean,
-and were not edited here:
+Done in wave 5 (branch w5/mem): every item below is converted and its
+allowlist entry removed. Reagents share their constant tables per type in
+`/datum/reagent/New()`; `/mob/living` organ lists are lazy (humans keep them
+eager); animal butchery organs come from `butchery_organ_types()`. The
+original list:
 
 - `/datum/reagent/treatment_tags` (body/treatment.dm): subtype overrides give
   every live reagent datum its own table (246 at minitest boot, the same as

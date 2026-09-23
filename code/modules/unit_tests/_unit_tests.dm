@@ -222,6 +222,7 @@
 #include "dq_construction_tests.dm"
 #include "dq_construction_mech_tests.dm"
 #include "dq_construction_assembly_tests.dm"
+#include "dq_memory_list_tests.dm"
 #include "xgm_total_moles_test.dm"
 #include "dq_harm_time_invariance_tests.dm"
 // END_INCLUDE

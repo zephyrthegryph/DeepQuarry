@@ -16,7 +16,7 @@
 	var/base_icon = 'icons/effects/blood.dmi'
 	var/basecolor="#A10808" // Color when wet.
 	var/synthblood = 0
-	var/list/datum/disease/viruses = list()
+	var/list/datum/disease/viruses
 	var/amount = 5
 	generic_filth = TRUE
 	persistent = FALSE
@@ -158,11 +158,11 @@
 	icon_state = "1"
 	random_icon_states = list("1","2","3","4","5")
 	amount = 0
-	var/list/drips = list()
+	var/list/drips
 
 /obj/effect/decal/cleanable/blood/drip/Initialize(mapload)
 	. = ..()
-	drips |= icon_state
+	LAZYOR(drips, icon_state)
 
 /obj/effect/decal/cleanable/blood/writing
 	icon_state = "tracks"
@@ -254,17 +254,17 @@
 	icon_state = "mucus"
 	random_icon_states = list("mucus")
 
-	var/list/datum/disease/viruses = list()
+	var/list/datum/disease/viruses
 	var/dry = 0 // Keeps the lag down
 	var/sampled = FALSE
 
 //This version should be used for admin spawns and pre-mapped virus vectors (e.g. in PoIs), this version does not dry
 /obj/effect/decal/cleanable/mucus/mapped/Initialize(mapload)
 	. = ..()
-	viruses |= new /datum/disease/advance/random(rand(3, 6), 9, 4, infected = src)
+	LAZYOR(viruses, new /datum/disease/advance/random(rand(3, 6), 9, 4, infected = src))
 
 /obj/effect/decal/cleanable/mucus/mapped/Destroy()
-	viruses.Cut()
+	LAZYCLEARLIST(viruses)
 	return ..()
 
 /obj/effect/decal/cleanable/mucus/Crossed(mob/living/carbon/human/perp)

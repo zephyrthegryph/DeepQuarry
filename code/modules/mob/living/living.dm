@@ -71,14 +71,14 @@
 	temp_languages = null
 
 	if(LAZYLEN(organs))
-		organs_by_name.Cut()
+		organs_by_name?.Cut()
 		while(organs.len)
 			var/obj/item/OR = organs[1]
 			organs -= OR
 			qdel(OR)
 
 	if(LAZYLEN(internal_organs))
-		internal_organs_by_name.Cut()
+		internal_organs_by_name?.Cut()
 		while(internal_organs.len)
 			var/obj/item/OR = internal_organs[1]
 			internal_organs -= OR
@@ -692,7 +692,7 @@
 		if(message)
 			visible_message(span_danger("[src] throws up into the [vomit_goal]!"), span_userdanger("You throw up into the [vomit_goal]!"))
 		if(istype(vomit_goal, /obj/item/reagent_containers/glass/bucket))
-			var/obj/item/organ/internal/stomach/S = organs_by_name[O_STOMACH]
+			var/obj/item/organ/internal/stomach/S = LAZYACCESS(organs_by_name, O_STOMACH)
 			var/obj/item/reagent_containers/glass/bucket/puke_bucket = vomit_goal
 			if(S && S.acidtype)
 				puke_bucket.reagents.add_reagent(S.acidtype, rand(3, 6))
@@ -714,7 +714,7 @@
 	if(!blood && ishuman(src))
 		var/mob/living/carbon/human/H = src
 		if(!H.isSynthetic())
-			var/obj/item/organ/internal/liver/L = H.internal_organs_by_name[O_LIVER]
+			var/obj/item/organ/internal/liver/L = LAZYACCESS(H.internal_organs_by_name, O_LIVER)
 			if(!L || L.is_broken())
 				blood = TRUE
 

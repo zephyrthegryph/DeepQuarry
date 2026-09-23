@@ -19,8 +19,8 @@
 	// Reference data.
 	var/mob/living/carbon/human/owner	// Current mob owning the organ.
 	var/list/transplant_data			// Transplant match data.
-	var/list/autopsy_data = list()		// Trauma data for forensics.
-	var/list/trace_chemicals = list()	// Traces of chemicals in the organ.
+	var/list/autopsy_data		// Trauma data for forensics.
+	var/list/trace_chemicals	// Traces of chemicals in the organ.
 	var/datum/organ_data/data = new()	// Stores data for appearance and investigation
 
 	// Damage vars.
@@ -33,12 +33,12 @@
 	var/preserved = 0					// If this is 1, prevents organ decay.
 
 	// Language vars. Putting them here in case we decide to do something crazy with sign-or-other-nonverbal languages.
-	var/list/will_assist_languages = list()
-	var/list/datum/language/assists_languages = list()
+	var/list/will_assist_languages
+	var/list/datum/language/assists_languages
 
 	// Organ verb vars.
 	var/list/organ_verbs		// Verbs added by the organ when present in the body.
-	var/list/target_parent_classes = list()	// Is the parent supposed to be organic, robotic, assisted?
+	var/list/target_parent_classes	// Is the parent supposed to be organic, robotic, assisted?
 	var/forgiving_class = TRUE	// Will the organ give its verbs when it isn't a perfect match? I.E., assisted in organic, synthetic in organic.
 
 	var/butcherable = TRUE
@@ -377,11 +377,11 @@
 
 //Adds autopsy data for used_weapon.
 /obj/item/organ/proc/add_autopsy_data(used_weapon, damage)
-	var/datum/autopsy_data/W = autopsy_data[used_weapon]
+	var/datum/autopsy_data/W = LAZYACCESS(autopsy_data, used_weapon)
 	if(!W)
 		W = new()
 		W.weapon = used_weapon
-		autopsy_data[used_weapon] = W
+		LAZYSET(autopsy_data, used_weapon, W)
 
 	W.hits += 1
 	W.damage += damage
@@ -470,7 +470,7 @@
 		owner.internal_organs -= src
 
 		var/obj/item/organ/external/affected = owner.get_organ(parent_organ)
-		if(affected) affected.internal_organs -= src
+		if(affected) LAZYREMOVE(affected.internal_organs, src)
 
 		owner.remove_from_mob(src, owner.drop_location())
 		START_PROCESSING(SSobj, src)
@@ -520,7 +520,7 @@
 	loc = owner
 	STOP_PROCESSING(SSobj, src)
 	target.internal_organs |= src
-	affected.internal_organs |= src
+	LAZYOR(affected.internal_organs, src)
 	target.internal_organs_by_name[organ_tag] = src
 
 	handle_organ_mod_special()

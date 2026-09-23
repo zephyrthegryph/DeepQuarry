@@ -250,8 +250,9 @@ GLOBAL_DATUM_INIT(ingame_hud_med_vr, /icon, icon('icons/mob/hud_med_vr.dmi'))
 	var/successful = FALSE
 	for(var/BP in mark_datum.body_parts)
 		var/obj/item/organ/external/O = organs_by_name[BP]
-		if(O)
-			successful = O.markings.Remove(mark_datum.name) || successful
+		if(O && (mark_datum.name in O.markings))
+			LAZYREMOVE(O.markings, mark_datum.name)
+			successful = TRUE
 	if (successful)
 		markings_len -= 1
 		update_dna()
@@ -267,7 +268,7 @@ GLOBAL_DATUM_INIT(ingame_hud_med_vr, /icon, icon('icons/mob/hud_med_vr.dmi'))
 		var/obj/item/organ/external/O = organs_by_name[BP]
 		if(O)
 			success = TRUE
-			O.markings[mark_datum.name] = list("color" = mark_color, "datum" = mark_datum, "priority" = markings_len + 1, "on" = TRUE)
+			LAZYSET(O.markings, mark_datum.name, list("color" = mark_color, "datum" = mark_datum, "priority" = markings_len + 1, "on" = TRUE))
 	if (success)
 		markings_len += 1
 		update_dna()
@@ -282,7 +283,7 @@ GLOBAL_DATUM_INIT(ingame_hud_med_vr, /icon, icon('icons/mob/hud_med_vr.dmi'))
 	for(var/BP in mark_datum.body_parts)
 		var/obj/item/organ/external/O = organs_by_name[BP]
 		if(O)
-			var/index = O.markings.Find(mark_datum.name)
+			var/index = LAZYFIND(O.markings, mark_datum.name)
 			if (!index)
 				continue
 			var/change_from = O.markings[mark_datum.name]["priority"]
@@ -313,7 +314,7 @@ GLOBAL_DATUM_INIT(ingame_hud_med_vr, /icon, icon('icons/mob/hud_med_vr.dmi'))
 	var/success = FALSE
 	for(var/BP in mark_datum.body_parts)
 		var/obj/item/organ/external/O = organs_by_name[BP]
-		if(O && O.markings[mark_datum.name] && O.markings[mark_datum.name]["color"] != mark_color)
+		if(O && LAZYACCESS(O.markings, mark_datum.name) && O.markings[mark_datum.name]["color"] != mark_color)
 			success = TRUE
 			O.markings[mark_datum.name]["color"] = mark_color
 	if (success)
@@ -479,7 +480,7 @@ GLOBAL_DATUM_INIT(ingame_hud_med_vr, /icon, icon('icons/mob/hud_med_vr.dmi'))
 	for(var/N in character.organs_by_name)
 		var/obj/item/organ/external/O = organs_by_name[N]
 		var/obj/item/organ/external/I = character.organs_by_name[N]
-		O.markings = I.markings.Copy()
+		O.markings = I.markings?.Copy()
 
 	markings_len = character.markings_len
 

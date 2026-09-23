@@ -204,7 +204,7 @@
 	//New are added for reagents to random organs.
 	for(var/datum/reagent/A in reagents.reagent_list)
 		var/obj/item/organ/O = pick(organs)
-		O.trace_chemicals[A.name] = 100
+		LAZYSET(O.trace_chemicals, A.name, 100)
 
 // Traitgenes Init genes based on the traits currently active
 /mob/living/carbon/human/proc/sync_dna_traits(refresh_traits, hide_message = TRUE)

@@ -78,20 +78,27 @@ These should come standard with the Protean rigsuit, unless you want them to wor
 	activate_string = "Enable Armor"
 	deactivate_string = "Disable Armor"
 	engage_string = "Configure Armor"
-	var/list/armor_settings = list("melee" = 0, "bullet" = 0, "laser" = 0,"energy" = 0, "bomb" = 0)
+	/// Armor type -> configured value. Lazy: an unset type is 0.
+	var/list/armor_settings
 	var/armor_weight_ratio = 0.01	//This amount of slowdown per 1% of armour. 3 slowdown at the max armour.
 
+/// The armor types the wearer can configure.
+/obj/item/rig_module/protean/armor/proc/armor_types()
+	var/static/list/types = list("melee", "bullet", "laser", "energy", "bomb")
+	return types
+
 /obj/item/rig_module/protean/armor/engage()
-	var/armor_chosen = tgui_input_list(usr, "Which armor to adjust?", "Protean Armor", armor_settings)
+	var/armor_chosen = tgui_input_list(usr, "Which armor to adjust?", "Protean Armor", armor_types())
 	if(armor_chosen)
 		var/armorvalue = tgui_input_number(usr, "Set armour reduction value (Max of 60%)", "Protean Armor",0,60)
 		if(isnum(armorvalue))
-			armor_settings[armor_chosen] = armorvalue
+			LAZYSET(armor_settings, armor_chosen, armorvalue)
 			interface_desc = initial(interface_desc)
 			slowdown = 0
-			for(var/entry in armor_settings)	//This is dumb and ugly but I dont feel like rewriting rig TGUI just to make this a pretty list
-				interface_desc += " [entry]: [armor_settings[entry]]"
-				slowdown += armor_settings[entry]*armor_weight_ratio
+			for(var/entry in armor_types())	//This is dumb and ugly but I dont feel like rewriting rig TGUI just to make this a pretty list
+				var/value = LAZYACCESS(armor_settings, entry) || 0
+				interface_desc += " [entry]: [value]"
+				slowdown += value*armor_weight_ratio
 			interface_desc += " Slowdown: [slowdown]"
 
 /obj/item/rig_module/protean/armor/activate()
@@ -104,8 +111,11 @@ These should come standard with the Protean rigsuit, unless you want them to wor
 
 	var/mob/living/carbon/human/H = holder.wearer
 	if(H)
-		var/list/temparmor = list("bio" = 100, "rad" = 100)
-		temparmor = armor_settings + temparmor
+		var/list/temparmor = list()
+		for(var/entry in armor_types())
+			temparmor[entry] = LAZYACCESS(armor_settings, entry) || 0
+		temparmor["bio"] = 100
+		temparmor["rad"] = 100
 		to_chat(usr, span_boldnotice("You signal the suit to harden."))
 		to_chat(H, span_notice("Your suit hardens in response to physical trauma."))
 		holder.set_armor(dq_armor(temparmor))

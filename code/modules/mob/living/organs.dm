@@ -1,9 +1,11 @@
+// Lazy: most living mobs (simple mobs, silicons) have no organs. Humans always
+// do and keep them eager (human_defines.dm); butchery animals set theirs per type.
 /mob/living
-	var/list/internal_organs = list()
-	var/list/organs = list()
-	var/list/organs_by_name = list() // map organ names to organs
-	var/list/internal_organs_by_name = list() // so internal organs have less ickiness too
-	var/list/bad_external_organs = list()// organs we check until they are good.
+	var/list/internal_organs
+	var/list/organs
+	var/list/organs_by_name // map organ names to organs
+	var/list/internal_organs_by_name // so internal organs have less ickiness too
+	var/list/bad_external_organs // organs we check until they are good.
 
 /mob/living/proc/get_bodypart_name(zone)
 	var/obj/item/organ/external/E = get_organ(zone)
@@ -14,17 +16,26 @@
 		zone = BP_TORSO
 	else if (zone in list( O_EYES, O_MOUTH ))
 		zone = BP_HEAD
-	return organs_by_name[zone]
+	return LAZYACCESS(organs_by_name, zone)
+
+/// Organ types a mob without a body plan yields when butchered or gibbed
+/// (constant per type). Null for mobs whose organs are real from the start.
+/mob/living/proc/butchery_organ_types()
+	return null
+
+/// Create the butchery organs inside the mob, once. Each organ registers
+/// itself in internal_organs on Initialize.
+/mob/living/proc/spawn_butchery_organs()
+	if(LAZYLEN(internal_organs))
+		return
+	for(var/path in butchery_organ_types())
+		var/obj/item/organ/neworg = new path(src, TRUE)
+		neworg.name = "[name] [neworg.name]"
+		neworg.meat_type = meat_type
 
 /mob/living/gib()
 	if(butchery_drops_organs)
-		for(var/path in internal_organs)
-			if(ispath(path))
-				var/obj/item/organ/neworg = new path(src, TRUE)
-				internal_organs -= path
-				neworg.name = "[name] [neworg.name]"
-				neworg.meat_type = meat_type
-				internal_organs |= neworg
+		spawn_butchery_organs()
 
 		for(var/obj/item/organ/I in internal_organs)
 			I.removed()

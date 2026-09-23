@@ -351,7 +351,9 @@
 	var/gen_cost = 0.5
 	var/poison_reagent
 
-	var/list/poison_options = list(
+/// Reagents the gland can lace its fruit with (constant).
+/obj/item/organ/internal/fruitgland/proc/poison_options()
+	var/static/list/options = list(
 								REAGENT_ID_MICROCILLIN,
 								REAGENT_ID_MACROCILLIN,
 								REAGENT_ID_NORMALCILLIN,
@@ -364,6 +366,7 @@
 								REAGENT_ID_PARALYSISTOXIN,
 								REAGENT_ID_PAINENZYME
 	)
+	return options
 
 /obj/item/organ/internal/fruitgland/Initialize(mapload, internal)
 	. = ..()
@@ -478,7 +481,7 @@
 			break
 
 	if(fruit_gland)
-		var/poison_choice = tgui_input_list(src, "Choose which reagent to poison your fruit with! Be aware, this option is intended for use in scenes and ERP. This is not for use as pranks or to change the gender of unsuspecting crew, and you must be aware of the preferences of the people who eat it. Do not just leave it out unattended.", "Select reagent", fruit_gland.poison_options)
+		var/poison_choice = tgui_input_list(src, "Choose which reagent to poison your fruit with! Be aware, this option is intended for use in scenes and ERP. This is not for use as pranks or to change the gender of unsuspecting crew, and you must be aware of the preferences of the people who eat it. Do not just leave it out unattended.", "Select reagent", fruit_gland.poison_options())
 		if(!poison_choice)
 			to_chat(src, span_notice("You have chosen no poison to add, any previously chosen poisons have been cleared and no poison will be added to produced fruits."))
 			fruit_gland.poison_reagent = null

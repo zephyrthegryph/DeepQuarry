@@ -484,7 +484,7 @@
 				for(var/obj/item/organ/external/organ in host.organs)
 					for(var/obj/item/O in organ.implants)
 						if(O == src)
-							organ.implants -= src
+							LAZYREMOVE(organ.implants, src)
 			LAZYREMOVE(host.pinned, src)
 			LAZYREMOVE(host.embedded, src)
 			host.drop_from_inventory(src)
