@@ -293,3 +293,65 @@
 	log_test("dq_latent_closet_types: [tested] latent closet types, [unserializable] hold real things that don't serialize")
 	if(length(failures))
 		TEST_FAIL("[length(failures)] problem(s) across [tested] closet types:\n[jointext(failures, "\n")]")
+
+// ---- Step 2: mapped storage ----
+
+/obj/item/storage/box/dq_latent_test
+	starts_with = list(
+		/obj/item/pen = list(2),
+		/obj/item/paper = list(1),
+		/obj/item/dq_containment_test = list(1),
+	)
+
+/obj/structure/closet/dq_latent_storage_test
+	starts_with = list(/obj/item/storage/box/dq_latent_test = 2)
+
+/// A mapped box keeps its latent-safe contents as data until used, and using
+/// it gives the same contents the old spawn did.
+/datum/unit_test/dq_latent_storage_declared
+
+/datum/unit_test/dq_latent_storage_declared/Run()
+	var/obj/item/storage/box/dq_latent_test/box = allocate(/obj/item/storage/box/dq_latent_test, test_floor())
+	TEST_ASSERT_EQUAL(length(box.contents), 1, "only the non-latent item is real")
+	TEST_ASSERT(box.has_latent(), "the rest is declared")
+	TEST_ASSERT(box.max_storage_space >= dq_type_storage_cost(/obj/item/pen) * 2 + dq_type_storage_cost(/obj/item/paper), "sized for its declared contents")
+	var/list/errors = list()
+	var/list/blob = state_serialize(box, STATE_FULL, errors)
+	TEST_ASSERT(blob, "serialize: [jointext(errors, "; ")]")
+	var/obj/item/storage/box/copy = state_materialize(json_decode(json_encode(blob)), test_floor(), STATE_FULL, errors)
+	TEST_ASSERT(copy, "materialize: [jointext(errors, "; ")]")
+	TEST_ASSERT_EQUAL(state_canonical(state_serialize(copy, STATE_FULL)), state_canonical(blob), "round trip")
+	box.make_contents_real()
+	copy.make_contents_real()
+	TEST_ASSERT_EQUAL(dq_latent_census(box), "/obj/item/dq_containment_test=1;/obj/item/paper=1;/obj/item/pen=2", "used box contents")
+	TEST_ASSERT_EQUAL(dq_latent_census(copy), dq_latent_census(box), "the copy holds the same")
+	qdel(copy)
+
+/// Picking a box up makes its contents real, so mob inventory code sees them.
+/datum/unit_test/dq_latent_storage_pickup
+
+/datum/unit_test/dq_latent_storage_pickup/Run()
+	var/obj/item/storage/box/dq_latent_test/box = allocate(/obj/item/storage/box/dq_latent_test, test_floor())
+	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human, test_floor())
+	TEST_ASSERT(H.put_in_active_hand(box), "picked up")
+	TEST_ASSERT(!box.has_latent(), "nothing latent once held")
+	TEST_ASSERT_EQUAL(length(box.contents), 4, "all four things are real")
+
+/// Boxes as entries in a closet: nothing exists until the closet opens, then
+/// the boxes come out with their own contents declared.
+/datum/unit_test/dq_latent_storage_in_closet
+
+/datum/unit_test/dq_latent_storage_in_closet/Run()
+	var/turf/T = test_floor()
+	for(var/obj/item/I in T)
+		qdel(I)
+	var/obj/structure/closet/dq_latent_storage_test/closet = allocate(/obj/structure/closet/dq_latent_storage_test, T)
+	TEST_ASSERT_EQUAL(length(closet.contents), 0, "the boxes are latent")
+	var/list/before = T.contents.Copy()
+	closet.open()
+	var/list/spilled = dq_latent_new_items(T, before)
+	TEST_ASSERT_EQUAL(dq_latent_census(T, spilled), "/obj/item/storage/box/dq_latent_test=2", "two boxes come out")
+	for(var/obj/item/storage/box/dq_latent_test/box in spilled)
+		box.make_contents_real()
+		TEST_ASSERT_EQUAL(dq_latent_census(box), "/obj/item/dq_containment_test=1;/obj/item/paper=1;/obj/item/pen=2", "each box holds its contents")
+		qdel(box)

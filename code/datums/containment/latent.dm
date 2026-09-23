@@ -158,6 +158,20 @@ GLOBAL_VAR(latent_last_refusal)
 /atom/proc/latent_generator()
 	return null
 
+/// Whether spawn-list entry `path` = `value` may be held latent (e.g. not a variant).
+/atom/proc/latent_spawn_ok(path, value)
+	return TRUE
+
+/// Whether a generator line is held as an entry.
+/proc/dq_latent_line_ok(atom/holder, path, value)
+	return dq_latent_eligible(path) && holder.latent_spawn_ok(path, value)
+
+/// Creates `n` of a generator line for real (variants applied).
+/proc/dq_latent_spawn_real(atom/holder, path, value)
+	var/list/spec = dq_resolve_spawn_value(value)
+	for(var/i in 1 to max(1, spec["count"]))
+		spawn_with_variant(path, holder, spec["variant"])
+
 /// Forget the generator once it has been rolled.
 /atom/proc/latent_generator_clear()
 	return
@@ -175,11 +189,10 @@ GLOBAL_VAR(latent_last_refusal)
 		return
 	var/any = FALSE
 	for(var/path in generator)
-		if(dq_latent_eligible(path))
+		if(dq_latent_line_ok(holder, path, generator[path]))
 			any = TRUE
 			continue
-		for(var/i in 1 to dq_latent_spawn_count(generator[path]))
-			new path(holder)
+		dq_latent_spawn_real(holder, path, generator[path])
 	if(any)
 		holder.latent_declared = TRUE
 	else
@@ -197,12 +210,10 @@ GLOBAL_VAR(latent_last_refusal)
 	holder.latent_generator_clear()
 	holder.latent_declared = FALSE
 	for(var/path in generator)
-		var/n = dq_latent_spawn_count(generator[path])
-		if(dq_latent_eligible(path))
-			L.latent_add(path, n)
+		if(dq_latent_line_ok(holder, path, generator[path]))
+			L.latent_add(path, dq_latent_spawn_count(generator[path]))
 		else if(!declared)
-			for(var/i in 1 to n)
-				new path(holder)
+			dq_latent_spawn_real(holder, path, generator[path])
 
 // ---- Ledger: entries ----
 

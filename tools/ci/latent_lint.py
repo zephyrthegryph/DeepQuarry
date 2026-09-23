@@ -30,7 +30,7 @@ SKIP_DIRS = {"unit_tests"}
 
 TYPE_HEADER = re.compile(r"^(/[\w/]+)\s*$")
 PROC_HEADER = re.compile(r"^(/[\w/]+?)/(?:proc/|verb/)?(\w+)\(")
-LATENT_DECL = re.compile(r"^\s+latent_contents\s*=\s*TRUE")
+LATENT_DECL = re.compile(r"^\s+latent_contents\s*=\s*(TRUE|FALSE)")
 OWN_WALK = re.compile(r"\bin\s+(?:src\.)?contents\b|\bin\s+src\s*\)|(?<![\w.])contents\.len\b|length\(\s*(?:src\.)?contents\s*\)")
 TYPED_VAR = re.compile(r"var/([\w/]+)/(\w+)")
 LEGACY_LOOP = re.compile(r"\bfor\s*\(.*\bin\s+(?:[\w.]+\.)?contents\b")
@@ -50,7 +50,9 @@ def read(path):
 
 
 def latent_holders(files):
+    """Latent holder types, and the subtypes that opt back out."""
     holders = set()
+    eager = set()
     for path in files:
         current = None
         for line in read(path):
@@ -60,13 +62,27 @@ def latent_holders(files):
                 continue
             if line and not line[0].isspace():
                 current = None
-            if current and LATENT_DECL.match(line):
-                holders.add(current)
-    return holders
+            decl = LATENT_DECL.match(line) if current else None
+            if decl:
+                (holders if decl.group(1) == "TRUE" else eager).add(current)
+    return holders, eager
+
+
+def under(path, roots):
+    best = None
+    for root in roots:
+        if path == root or path.startswith(root + "/"):
+            if best is None or len(root) > len(best):
+                best = root
+    return best
 
 
 def is_holder(path, holders):
-    return any(path == h or path.startswith(h + "/") for h in holders)
+    """Nearest declaration wins: a subtype set back to FALSE is not a holder."""
+    holders, eager = holders
+    latent = under(path, holders)
+    opted_out = under(path, eager)
+    return latent is not None and (opted_out is None or len(latent) > len(opted_out))
 
 
 def scan(path, holders):
@@ -138,7 +154,7 @@ def main():
     for rel in sorted(allowed):
         if counts.get(rel, 0) < allowed[rel]:
             print(f"note: {rel} is down to {counts.get(rel, 0)} (allowlist says {allowed[rel]}); lower it")
-    print(f"latent lint: {len(holders)} latent holder types, {sum(counts.values())} allowlisted sites in {len(counts)} files, {legacy} legacy contents loops tree-wide")
+    print(f"latent lint: {len(holders[0])} latent holder roots ({len(holders[1])} opted out), {sum(counts.values())} allowlisted sites in {len(counts)} files, {legacy} legacy contents loops tree-wide")
     return 1 if failed else 0
 
 

@@ -15,6 +15,7 @@
 	w_class = ITEMSIZE_NORMAL
 	show_messages = 1
 	MATERIAL_BULK(MAT_FIBERS, 50)
+	latent_contents = TRUE
 
 	/// List of objects which this item can store (if set, it can't store anything else)
 	var/list/can_hold
@@ -100,18 +101,62 @@
 	orient2hud()
 
 	if(LAZYLEN(starts_with) && !empty)
-		// starts_with values are now list(count, variant). See code/datums/variants/spawn_with_variant.dm.
-		for(var/newtype in starts_with)
-			var/list/spec = dq_resolve_spawn_value(starts_with[newtype])
-			var/count = spec["count"]
-			var/variant = spec["variant"]
-			while(count > 0)
-				count--
-				spawn_with_variant(newtype, src, variant)
-		starts_with = null //Reduce list count.
+		// starts_with values are list(count, variant). See code/datums/variants/spawn_with_variant.dm.
+		// Latent-safe types without a variant stay declared until the storage
+		// is used (C5); the rest are made now.
+		dq_latent_declare(src)
 		update_icon()
+	else
+		starts_with = null
 
 	calibrate_size()
+
+// ---- Latent contents (C5) ----
+// Legacy storage code walks contents directly, so the storage materializes
+// its latent contents before any of it runs: when used, opened, searched,
+// picked up or worn. Until then the starts_with generator is data.
+
+/obj/item/storage/slot_def_types()
+	var/static/list/types = list(/datum/slot_def/storage_interior)
+	return types
+
+/// Until C4 moves storage onto slots, one unlimited slot; storage.dm does its
+/// own capacity checks. Deleted with the storage, as before.
+/datum/slot_def/storage_interior
+	id = CONTAINER_SLOT_STORAGE
+	name = "storage"
+	drop_policy = SLOT_DROP_DELETE
+
+/obj/item/storage/latent_generator()
+	return empty ? null : starts_with
+
+/obj/item/storage/latent_generator_clear()
+	starts_with = null
+
+/// Latent only for plain spawns: a variant needs apply_variant(), so it is made now.
+/obj/item/storage/latent_spawn_ok(path, value)
+	return !(islist(value) && length(value) >= 2 && istext(value[2]))
+
+/// Makes the latent contents real before legacy code reads contents.
+/obj/item/storage/proc/make_contents_real()
+	if(has_latent())
+		latent_materialize_all()
+
+/obj/item/storage/pickup(mob/user)
+	make_contents_real()
+	return ..()
+
+/obj/item/storage/equipped(mob/user, slot)
+	make_contents_real()
+	return ..()
+
+/obj/item/storage/examine(mob/user, infix, suffix)
+	make_contents_real()
+	return ..()
+
+/obj/item/storage/emp_act(severity, recursive)
+	make_contents_real()
+	return ..()
 
 /obj/item/storage/Destroy()
 	close_all()
@@ -129,6 +174,7 @@
 	. = ..()
 
 /obj/item/storage/MouseDrop(obj/over_object as obj)
+	make_contents_real()
 	if(!canremove)
 		return
 
@@ -166,6 +212,7 @@
 		add_fingerprint(user)
 
 /obj/item/storage/click_alt(mob/user)
+	make_contents_real()
 	if(user in is_seeing)
 		src.close(user)
 	// I would think there should be some incap check here or something
@@ -176,6 +223,7 @@
 		return ..()
 
 /obj/item/storage/proc/return_inv()
+	make_contents_real()
 
 	var/list/L = list(  )
 
@@ -190,6 +238,7 @@
 	return L
 
 /obj/item/storage/proc/show_to(mob/user as mob)
+	make_contents_real()
 	if(user.s_active != src)
 		for(var/obj/item/I in src)
 			if(I.on_found(user))
@@ -243,6 +292,7 @@
 		clear_slot_catchers()
 
 /obj/item/storage/proc/open(mob/user as mob)
+	make_contents_real()
 	if (use_sound)
 		var/obj/belly/B = user.loc
 		if(isliving(user) && (!isbelly(B) || !(B.mode_flags & DM_FLAG_MUFFLEITEMS)))
@@ -443,6 +493,7 @@
 //This proc return 1 if the item can be picked up and 0 if it can't.
 //Set the stop_messages to stop it from printing messages
 /obj/item/storage/proc/can_be_inserted(obj/item/W as obj, stop_messages = 0)
+	make_contents_real()
 	if(!istype(W)) return //Not an item
 
 	if(usr && usr.isEquipped(W) && !usr.canUnEquip(W))
@@ -497,6 +548,7 @@
 //The stop_warning parameter will stop the insertion message from being displayed. It is intended for cases where you are inserting multiple items at once,
 //such as when picking up all the items on a tile with one click.
 /obj/item/storage/proc/handle_item_insertion(obj/item/W as obj, prevent_warning = 0)
+	make_contents_real()
 	if(!istype(W)) return 0
 
 	if(!stall_insertion(W, usr)) // Can sleep here and delay removal for slow storage
@@ -533,6 +585,7 @@
 
 //Call this proc to handle the removal of an item from the storage item. The item will be moved to the atom sent as new_target
 /obj/item/storage/proc/remove_from_storage(obj/item/W as obj, atom/new_location)
+	make_contents_real()
 	if(!istype(W)) return 0
 
 	if(!stall_removal(W, usr)) // Can sleep here and delay removal for slow storage
@@ -579,6 +632,7 @@
 
 //This proc is called when you want to place an item into the storage item.
 /obj/item/storage/attackby(obj/item/W as obj, mob/user as mob)
+	make_contents_real()
 	..()
 
 	if(isrobot(user))
@@ -619,6 +673,7 @@
 	return handle_item_insertion(W)
 
 /obj/item/storage/attack_hand(mob/user as mob)
+	make_contents_real()
 	if(ishuman(user) && !pocketable)
 		var/mob/living/carbon/human/H = user
 		if(H.l_store == src && !H.get_active_hand())	//Prevents opening if it's in a pocket.
@@ -641,6 +696,7 @@
 	return
 
 /obj/item/storage/proc/gather_all(turf/T as turf, mob/user as mob)
+	make_contents_real()
 	var/list/rejections = list()
 	var/success = 0
 	var/failure = 0
@@ -697,6 +753,7 @@
 	drop_contents()
 
 /obj/item/storage/proc/drop_contents() // why is this a proc? literally just for RPEDs
+	make_contents_real()
 	hide_from(usr)
 	var/turf/T = get_turf(src)
 	for(var/obj/item/I in contents)
@@ -704,11 +761,16 @@
 
 /obj/item/storage/proc/calibrate_size()
 	var/total_storage_space = 0
-	for(var/obj/item/I in contents)
+	for(var/obj/item/I in contents) // latent-ok: declared contents added below
 		total_storage_space += I.get_storage_cost()
+	var/list/generator = latent_declared ? starts_with : null
+	for(var/path in generator)
+		if(dq_latent_eligible(path) && latent_spawn_ok(path, generator[path]))
+			total_storage_space += dq_type_storage_cost(path) * dq_latent_spawn_count(generator[path])
 	max_storage_space = max(total_storage_space,max_storage_space) //Prevents spawned containers from being too small for their contents.
 
 /obj/item/storage/attack_self(mob/user)
+	make_contents_real()
 	. = ..(user)
 	if(.)
 		return TRUE
@@ -756,6 +818,16 @@
 	return depth
 
 // See inventory_sizes.dm for the defines.
+/// get_storage_cost() of a pristine `path`, from type data (latent entries).
+/proc/dq_type_storage_cost(path)
+	var/static/list/cache = list()
+	. = cache[path]
+	if(isnull(.))
+		var/obj/item/probe = new_unmaterialized(path, null)
+		. = probe.get_storage_cost()
+		qdel(probe)
+		cache[path] = .
+
 /obj/item/proc/get_storage_cost()
 	if (storage_cost)
 		return storage_cost
@@ -775,6 +847,7 @@
 				return ITEMSIZE_COST_NO_CONTAINER
 
 /obj/item/storage/proc/make_exact_fit()
+	make_contents_real()
 	storage_slots = contents.len
 
 	LAZYCLEARLIST(can_hold)
@@ -848,6 +921,7 @@
 
 //Useful for spilling the contents of containers all over the floor
 /obj/item/storage/proc/spill(dist = 2, turf/T = null)
+	make_contents_real()
 	if (!istype(T))//If its not on the floor this might cause issues
 		T = get_turf(src)
 
@@ -888,6 +962,7 @@
 
 // Allows micros to drag themselves into storage items
 /obj/item/storage/MouseDrop_T(mob/living/target, mob/living/user)
+	make_contents_real()
 	if(!istype(user)) return // If the user passed in isn't a living mob, exit
 	if(target != user) return // If the user didn't drag themselves, exit
 	if(user.incapacitated() || user.buckled) return // If user is incapacitated or buckled, exit

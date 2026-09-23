@@ -163,3 +163,440 @@
 
 /obj/item/tool/screwdriver/test_driver
 	latent_safe = FALSE
+
+// ---- C5 step 2: mapped storage ----
+// Storage keeps starts_with latent until used (storage.dm), and may itself be
+// a latent entry in a closet.
+
+/obj/item/storage
+	latent_safe = TRUE
+
+// Their icon or Initialize() reads what they hold, so contents are made eagerly.
+
+/obj/item/storage/bag/santabag
+	latent_contents = FALSE
+
+/obj/item/storage/bag/trash
+	latent_contents = FALSE
+
+/obj/item/storage/box/donut
+	latent_contents = FALSE
+
+/obj/item/storage/box/fancy/chewables/tobacco/nico
+	latent_contents = FALSE
+
+/obj/item/storage/box/tgmc_mre
+	latent_contents = FALSE
+
+/obj/item/storage/box/wings
+	latent_contents = FALSE
+
+/obj/item/storage/box/wormcan
+	latent_contents = FALSE
+
+/obj/item/storage/fancy
+	latent_contents = FALSE
+
+/obj/item/storage/laundry_basket
+	latent_contents = FALSE
+
+/obj/item/storage/lockbox/vials
+	latent_contents = FALSE
+
+/obj/item/storage/mre
+	latent_contents = FALSE
+
+/obj/item/storage/mrebag
+	latent_contents = FALSE
+
+/obj/item/storage/pill_bottle
+	latent_contents = FALSE
+
+/obj/item/storage/pouch/baton
+	latent_contents = FALSE
+
+/obj/item/storage/pouch/flares
+	latent_contents = FALSE
+
+/obj/item/storage/pouch/holster
+	latent_contents = FALSE
+
+/obj/item/storage/sample_container
+	latent_contents = FALSE
+
+/obj/item/storage/trinketbox
+	latent_contents = FALSE
+
+/obj/item/storage/wallet
+	latent_contents = FALSE
+
+/obj/item/storage/box/remote_scene_tools
+	latent_contents = FALSE
+
+/obj/item/storage/backpack/sport/hyd/catchemall
+	latent_contents = FALSE
+
+// Storage whose Initialize() makes real things that don't serialize (guns,
+// radios, PDAs, circuits, food with seeds...), or with Initialize() bugs the
+// sandbox shows. Found by dq_state_latent_round_trip and dq_lifecycle_sandbox;
+// they stay real until their contents are latent-safe.
+
+/obj/item/stack/cable_coil/random_belt
+	latent_safe = FALSE
+
+/obj/item/storage/backpack/clown/loaded
+	latent_safe = FALSE
+
+/obj/item/storage/backpack/dufflebag/cratebooze
+	latent_safe = FALSE
+
+/obj/item/storage/backpack/fluff/stunstaff
+	latent_safe = FALSE
+
+/obj/item/storage/backpack/messenger/sec/fluff/ivymoomoo
+	latent_safe = FALSE
+
+/obj/item/storage/backpack/mime/loaded
+	latent_safe = FALSE
+
+/obj/item/storage/bag/circuits/all
+	latent_safe = FALSE
+
+/obj/item/storage/bag/circuits/basic
+	latent_safe = FALSE
+
+/obj/item/storage/bag/circuits/mini/arithmetic
+	latent_safe = FALSE
+
+/obj/item/storage/bag/circuits/mini/converter
+	latent_safe = FALSE
+
+/obj/item/storage/bag/circuits/mini/input
+	latent_safe = FALSE
+
+/obj/item/storage/bag/circuits/mini/logic
+	latent_safe = FALSE
+
+/obj/item/storage/bag/circuits/mini/manipulation
+	latent_safe = FALSE
+
+/obj/item/storage/bag/circuits/mini/memory
+	latent_safe = FALSE
+
+/obj/item/storage/bag/circuits/mini/output
+	latent_safe = FALSE
+
+/obj/item/storage/bag/circuits/mini/power
+	latent_safe = FALSE
+
+/obj/item/storage/bag/circuits/mini/reagents
+	latent_safe = FALSE
+
+/obj/item/storage/bag/circuits/mini/smart
+	latent_safe = FALSE
+
+/obj/item/storage/bag/circuits/mini/time
+	latent_safe = FALSE
+
+/obj/item/storage/bag/circuits/mini/transfer
+	latent_safe = FALSE
+
+/obj/item/storage/bag/circuits/mini/trig
+	latent_safe = FALSE
+
+/obj/item/storage/bagoplanets
+	latent_safe = FALSE
+
+/obj/item/storage/box/ambrosia
+	latent_safe = FALSE
+
+/obj/item/storage/box/ambrosiadeus
+	latent_safe = FALSE
+
+/obj/item/storage/box/anomaly
+	latent_safe = FALSE
+
+/obj/item/storage/box/backup_kit
+	latent_safe = FALSE
+
+/obj/item/storage/box/bourbon
+	latent_safe = FALSE
+
+/obj/item/storage/box/buns
+	latent_safe = FALSE
+
+/obj/item/storage/box/camerabug
+	latent_safe = FALSE
+
+/obj/item/storage/box/capguntoy
+	latent_safe = FALSE
+
+/obj/item/storage/box/casino/costume_sexyclown
+	latent_safe = FALSE
+
+/obj/item/storage/box/casino/foamcrossbow
+	latent_safe = FALSE
+
+/obj/item/storage/box/custardcream
+	latent_safe = FALSE
+
+/obj/item/storage/box/donkpockets
+	latent_safe = FALSE
+
+/obj/item/storage/box/donut
+	latent_safe = FALSE
+
+/obj/item/storage/box/explorerkeys
+	latent_safe = FALSE
+
+/obj/item/storage/box/fitness_trainer
+	latent_safe = FALSE
+
+/obj/item/storage/box/fluff
+	latent_safe = FALSE
+
+/obj/item/storage/box/fortune_teller
+	latent_safe = FALSE
+
+/obj/item/storage/box/halloween/cowboy
+	latent_safe = FALSE
+
+/obj/item/storage/box/halloween/firefighter
+	latent_safe = FALSE
+
+/obj/item/storage/box/halloween/horrorcop
+	latent_safe = FALSE
+
+/obj/item/storage/box/halloween/lumberjack
+	latent_safe = FALSE
+
+/obj/item/storage/box/halloween/marine
+	latent_safe = FALSE
+
+/obj/item/storage/box/halloween/masked_killer
+	latent_safe = FALSE
+
+/obj/item/storage/box/halloween/professional
+	latent_safe = FALSE
+
+/obj/item/storage/box/halloween/vampirehunter
+	latent_safe = FALSE
+
+/obj/item/storage/box/ids
+	latent_safe = FALSE
+
+/obj/item/storage/box/injectors
+	latent_safe = FALSE
+
+/obj/item/storage/box/jaffacake
+	latent_safe = FALSE
+
+/obj/item/storage/box/old_syringes
+	latent_safe = FALSE
+
+/obj/item/storage/box/rhubarbcustard
+	latent_safe = FALSE
+
+/obj/item/storage/box/saucer
+	latent_safe = FALSE
+
+/obj/item/storage/box/seccarts
+	latent_safe = FALSE
+
+/obj/item/storage/box/shrimpsandbananas
+	latent_safe = FALSE
+
+/obj/item/storage/box/sinpockets
+	latent_safe = FALSE
+
+/obj/item/storage/box/smokes
+	latent_safe = FALSE
+
+/obj/item/storage/box/snakesnackbox
+	latent_safe = FALSE
+
+/obj/item/storage/box/stylist
+	latent_safe = FALSE
+
+/obj/item/storage/box/survival
+	latent_safe = FALSE
+
+/obj/item/storage/box/syndicate
+	latent_safe = FALSE
+
+/obj/item/storage/box/syndie_kit/chameleon
+	latent_safe = FALSE
+
+/obj/item/storage/box/syndie_kit/demolitions
+	latent_safe = FALSE
+
+/obj/item/storage/box/syndie_kit/demolitions_heavy
+	latent_safe = FALSE
+
+/obj/item/storage/box/syndie_kit/demolitions_super_heavy
+	latent_safe = FALSE
+
+/obj/item/storage/box/syndie_kit/g9mm
+	latent_safe = FALSE
+
+/obj/item/storage/box/syndie_kit/space
+	latent_safe = FALSE
+
+/obj/item/storage/box/syndie_kit/spy
+	latent_safe = FALSE
+
+/obj/item/storage/box/syndie_kit/voidsuit
+	latent_safe = FALSE
+
+/obj/item/storage/box/weapon_cells
+	latent_safe = FALSE
+
+/obj/item/storage/box/winegum
+	latent_safe = FALSE
+
+/obj/item/storage/box/wings
+	latent_safe = FALSE
+
+/obj/item/storage/box/wormcan
+	latent_safe = FALSE
+
+/obj/item/storage/box/yoga_teacher
+	latent_safe = FALSE
+
+/obj/item/storage/briefcase/target_toy
+	latent_safe = FALSE
+
+/obj/item/storage/fancy/crackers
+	latent_safe = FALSE
+
+/obj/item/storage/fancy/heartbox
+	latent_safe = FALSE
+
+/obj/item/storage/internal
+	latent_safe = FALSE
+
+/obj/item/storage/mre
+	latent_safe = FALSE
+
+/obj/item/storage/mrebag/dessert
+	latent_safe = FALSE
+
+/obj/item/storage/mrebag/menu4
+	latent_safe = FALSE
+
+/obj/item/storage/mrebag/menu5
+	latent_safe = FALSE
+
+/obj/item/storage/mrebag/menu7
+	latent_safe = FALSE
+
+/obj/item/storage/mrebag/menu8
+	latent_safe = FALSE
+
+/obj/item/storage/mrebag/menu9
+	latent_safe = FALSE
+
+/obj/item/storage/mrebag/side
+	latent_safe = FALSE
+
+/obj/item/storage/pouch/holster/full_stunrevolver
+	latent_safe = FALSE
+
+/obj/item/storage/pouch/holster/full_taser
+	latent_safe = FALSE
+
+/obj/item/storage/secure/briefcase/flamer
+	latent_safe = FALSE
+
+/obj/item/storage/secure/briefcase/nerd_pack_cmo
+	latent_safe = FALSE
+
+/obj/item/storage/secure/briefcase/nerd_pack_med
+	latent_safe = FALSE
+
+/obj/item/storage/secure/briefcase/nsfw_pack
+	latent_safe = FALSE
+
+/obj/item/storage/secure/briefcase/nsfw_pack_hos
+	latent_safe = FALSE
+
+/obj/item/storage/secure/briefcase/nsfw_pack_hybrid
+	latent_safe = FALSE
+
+/obj/item/storage/secure/briefcase/nsfw_pack_hybrid_combat
+	latent_safe = FALSE
+
+/obj/item/storage/toolbox/emergency
+	latent_safe = FALSE
+
+/obj/item/storage/toolbox/lunchbox/cat/filled
+	latent_safe = FALSE
+
+/obj/item/storage/toolbox/lunchbox/cti/filled
+	latent_safe = FALSE
+
+/obj/item/storage/toolbox/lunchbox/filled
+	latent_safe = FALSE
+
+/obj/item/storage/toolbox/lunchbox/heart/filled
+	latent_safe = FALSE
+
+/obj/item/storage/toolbox/lunchbox/mars/filled
+	latent_safe = FALSE
+
+/obj/item/storage/toolbox/lunchbox/nt/filled
+	latent_safe = FALSE
+
+/obj/item/storage/toolbox/lunchbox/nymph/filled
+	latent_safe = FALSE
+
+/obj/item/storage/toolbox/lunchbox/syndicate/filled
+	latent_safe = FALSE
+
+/obj/item/stack/cable_coil
+	latent_safe = FALSE
+
+/obj/item/storage/belt/utility/chief/full
+	latent_safe = FALSE
+
+/obj/item/storage/box/PDAs
+	latent_safe = FALSE
+
+/obj/item/storage/toolbox/electrical
+	latent_safe = FALSE
+
+/obj/item/storage/box/metalfoam
+	latent_safe = FALSE
+
+/obj/item/storage/pill_bottle/sleevingcure
+	latent_safe = FALSE
+
+/obj/item/storage/backpack/dufflebag/cratedrills
+	latent_safe = FALSE
+
+/obj/item/storage/backpack/sport/hyd/catchemall
+	latent_safe = FALSE
+
+/obj/item/storage/belt/utility/alien/full
+	latent_safe = FALSE
+
+/obj/item/storage/belt/utility/spicyfull
+	latent_safe = FALSE
+
+/obj/item/storage/box/dosimeter
+	latent_safe = FALSE
+
+/obj/item/storage/box/paranormal_investigator
+	latent_safe = FALSE
+
+/obj/item/storage/box/private_investigator
+	latent_safe = FALSE
+
+/obj/item/storage/box/syndie_kit/imp_uplink
+	latent_safe = FALSE
+
+/obj/item/storage/box/teargas
+	latent_safe = FALSE
+
+/obj/item/storage/toolbox/syndicate/powertools
+	latent_safe = FALSE
