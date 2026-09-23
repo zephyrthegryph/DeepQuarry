@@ -475,7 +475,7 @@ SUBSYSTEM_DEF(machines)
 		operations[operation_offset + 1] = source.arena_id()
 		operations[operation_offset + 2] = sink.arena_id()
 		operations[operation_offset + 3] = transfer[4]
-	var/list/actual_moles = call_ext(VERDIGRIS, "byond:batch_transfer_hook_ffi")(operations)
+	var/list/actual_moles = vg_batch_transfer_hook(operations)
 	var/list/touched_turfs = list()
 	for(var/i = 1 to length(pending_pump_transfers))
 		var/list/transfer = pending_pump_transfers[i]
@@ -939,7 +939,7 @@ SUBSYSTEM_DEF(machines)
 /datum/controller/subsystem/machines/proc/wake_dirty_gas_subscribers()
 	var/scan_started = TICK_USAGE
 	if(!pending_dirty_gas_mixtures)
-		pending_dirty_gas_mixtures = drain_dirty_gas_observations()
+		pending_dirty_gas_mixtures = vg_drain_dirty_gas_observations()
 		pending_dirty_gas_index = 1
 		pending_leak_network_wakes = list()
 		gas_dirty_last = length(pending_dirty_gas_mixtures) / GAS_DEPENDENCY_OBSERVATION_STRIDE
@@ -1112,7 +1112,7 @@ SUBSYSTEM_DEF(machines)
 		watch_dirty_gas_mixture(mixture_id, aggregate_mask)
 	else
 		gas_mixture_watch_masks.Remove(key)
-		unwatch_dirty_gas_mixture(mixture_id)
+		vg_unwatch_dirty_gas_mixture(mixture_id)
 
 /datum/controller/subsystem/machines/proc/flush_gas_watch_updates()
 	if(!length(pending_gas_watch_updates))

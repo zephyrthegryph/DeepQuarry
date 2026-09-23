@@ -149,7 +149,9 @@ Windows is the supported dev OS. Entry points (`bin/`):
   library (`verdigris.dll` on Windows, `libverdigris.so` on Linux) when its source
   is stale. You can also build it directly with `verdigris/build-windows.sh` /
   `verdigris/build-linux.sh`. The compiled library is a gitignored per-platform
-  artifact; the DM game loads it at runtime via `VERDIGRIS_CALL(...)`.
+  artifact; the DM game calls it through the generated `vg_*` procs in
+  `code/__defines/verdigris/_bindings.dm` (`tools/build/build.sh verdigris-bindings`
+  regenerates them; see `verdigris/README.md`).
 
 Runtime DMI note: because repacked `.dmi` live only in `icons/gen/`, code that reads
 DMI metadata at runtime via rust-g resolves the `icons/gen/` copy automatically
@@ -254,7 +256,8 @@ accident or assume they work:
   `set_temperature()`/`set_volume()`, and cache reads in hot loops because each call crosses
   the FFI. Turf heat works the same way through `/turf/proc/set_temperature()` /
   `return_temperature()`. The `check_grep.sh` "gas mixture mirror writes" lint backs this up.
-  The hand-written FFI routes live in `auxmos_init_bridge.dm` and `dq_linda_turf_air.dm`.
+  The FFI routes are the generated `vg_*` procs; the DM wrappers with real logic live in
+  `gas_mixture.dm`, `auxmos_init_bridge.dm` and `dq_linda_turf_air.dm`.
   Verdigris builds on byondapi 0.6.x and **requires BYOND 516.1682+** (older builds crash at
   atmos init on a missing `ByondValue_DecTempRef`). Gas **reactions** deliberately stay in DM.
   `xgm_compat.dm` and `tg_infra_compat.dm` are the fork's stable compatibility API, not
@@ -364,7 +367,7 @@ accident or assume they work:
   migrated off `meowtonin` onto byondapi so `verdigris` links a single BYOND API.)
 
 Recent hardening (already landed): ban/admin/stats SQL is fully parameterized; every
-Verdigris bind carries `#[auxmacros::panic_safe]`; the tgui Rules-of-Hooks / XSS audit
+Verdigris bind is declared with `#[auxmacros::bind]` (panic-safe, generated DM binding); the tgui Rules-of-Hooks / XSS audit
 findings are fixed; the unit-test suite was audited for fake-passes and made genuinely
 falsifiable.
 

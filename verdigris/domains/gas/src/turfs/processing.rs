@@ -543,21 +543,18 @@ fn turf_result_channel() -> &'static (
 /// Returns: If a processing thread is running or not.
 /// NOTE: the DM caller (SSair.thread_running) was removed as dead code; this
 /// bind is currently unused but kept as a harmless export.
-#[byondapi::bind("/datum/controller/subsystem/air/proc/thread_running")]
-#[auxmacros::panic_safe]
+#[auxmacros::bind("/datum/controller/subsystem/air/proc/thread_running")]
 fn thread_running_hook() -> Result<ByondValue> {
 	Ok(TURF_PROCESS_RUNNING.load(Ordering::Acquire).into())
 }
 
 /// Returns: If this cycle is interrupted by overtiming or not. Calls all outstanding callbacks created by other processes, usually ones that can't run on other threads and only the main thread.
-#[byondapi::bind("/datum/controller/subsystem/air/proc/finish_turf_processing_auxtools")]
-#[auxmacros::panic_safe]
+#[auxmacros::bind("/datum/controller/subsystem/air/proc/finish_turf_processing_auxtools")]
 fn finish_process_turfs(time_remaining: ByondValue) -> Result<ByondValue> {
 	Ok(process_callbacks_for_millis(time_remaining.get_number()? as u64).into())
 }
 /// Returns: If this cycle is interrupted by overtiming or not. Starts a processing turfs cycle.
-#[byondapi::bind("/datum/controller/subsystem/air/proc/process_turfs_auxtools")]
-#[auxmacros::panic_safe]
+#[auxmacros::bind("/datum/controller/subsystem/air/proc/process_turfs_auxtools")]
 fn process_turf_hook(mut src: ByondValue, remaining: ByondValue) -> Result<ByondValue> {
 	let _ = remaining;
 	src.write_var_id(

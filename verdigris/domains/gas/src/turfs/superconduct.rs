@@ -54,8 +54,7 @@ fn world_dims() -> Result<(i32, i32)> {
 
 // Called once by DM (SSair init) with world.maxx / world.maxy before any turf
 // adjacency is registered.
-#[byondapi::bind("/datum/controller/subsystem/air/proc/auxmos_set_world_dims")]
-#[auxmacros::panic_safe]
+#[auxmacros::bind("/datum/controller/subsystem/air/proc/auxmos_set_world_dims")]
 fn set_world_dims(max_x: ByondValue, max_y: ByondValue) -> Result<ByondValue> {
 	let max_x = max_x.get_number()? as i32;
 	let max_y = max_y.get_number()? as i32;
@@ -70,8 +69,7 @@ pub(super) fn reserve_heat_capacity(nodes: usize, _edges: usize) {
 	heat.map.reserve(nodes.saturating_sub(map_capacity));
 }
 
-#[byondapi::bind("/proc/auxmos_configure_world")]
-#[auxmacros::panic_safe]
+#[auxmacros::bind("/proc/auxmos_configure_world")]
 fn configure_world(max_x: ByondValue, max_y: ByondValue, max_z: ByondValue) -> Result<ByondValue> {
 	let max_x = max_x.get_number()? as i32;
 	let max_y = max_y.get_number()? as i32;
@@ -270,8 +268,7 @@ pub fn supercond_update_adjacencies(id: u32) -> Result<()> {
 	Ok(())
 }
 
-#[byondapi::bind("/turf/proc/return_temperature")]
-#[auxmacros::panic_safe]
+#[auxmacros::bind("/turf/proc/return_temperature")]
 fn hook_turf_temperature(src: ByondValue) -> Result<ByondValue> {
 	let id = src.get_ref()?;
 	// Untracked turfs (zero heat capacity, immutable reservoirs, or a topology
@@ -303,8 +300,7 @@ fn hook_turf_temperature(src: ByondValue) -> Result<ByondValue> {
 // isn't tracked (no thermal_conductivity/heat_capacity), this is a no-op and the DM
 // mirror alone stands until the turf next registers. Writes the inner RwLock under an
 // arena read-lock, exactly as the heat-share pass does.
-#[byondapi::bind("/turf/proc/set_turf_temperature")]
-#[auxmacros::panic_safe]
+#[auxmacros::bind("/turf/proc/set_turf_temperature")]
 fn hook_set_turf_temperature(src: ByondValue, temperature: ByondValue) -> Result<ByondValue> {
 	let id = src.get_ref()?;
 	let temp = temperature.get_number()? as f32;
@@ -320,8 +316,7 @@ fn hook_set_turf_temperature(src: ByondValue, temperature: ByondValue) -> Result
 
 // Expected function call: process_turf_heat()
 // Returns: TRUE if thread not done, FALSE otherwise
-#[byondapi::bind("/datum/controller/subsystem/air/proc/process_turf_heat")]
-#[auxmacros::panic_safe]
+#[auxmacros::bind("/datum/controller/subsystem/air/proc/process_turf_heat")]
 fn process_heat_notify(src: ByondValue) -> Result<ByondValue> {
 	/*
 		Replacing LINDA's superconductivity system is this much more brute-force

@@ -85,7 +85,7 @@
 	return turf_map
 
 /proc/translate_turfs(list/translation, area/base_area = null, turf/base_turf)
-	SSair?.auxmos_topology_transaction_begin()
+	vg_topology_transaction_begin()
 	var/list/changed_turfs = list()
 	for(var/turf/source in translation)
 
@@ -119,7 +119,7 @@
 		changed.immediate_calculate_adjacent_turfs()
 	for(var/turf/changed as anything in topology_turfs)
 		changed.air_update_turf(FALSE, FALSE)
-	SSair?.auxmos_topology_transaction_commit()
+	vg_topology_transaction_commit()
 
 	//change the old turfs (Currently done by translate_turf for us)
 	//for(var/turf/source in translation)

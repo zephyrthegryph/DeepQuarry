@@ -1,6 +1,6 @@
 // DQ atmos / LINDA migration tests.
 // Validates the ZAS→LINDA engine swap with CHOMP machinery on top:
-//   1. verdigris.dll loaded — Rust auxmos lib responds to call_ext
+//   1. verdigris.dll loaded — Rust auxmos lib responds to the generated vg_* binds
 //   2. gas_mixture procs work — adjust_gas, total_moles, return_pressure roundtrip
 //   3. /turf/simulated/air persistence — dq_linda_turf_air bridge keeps moles
 //      across return_air() calls (without it CHOMP machinery would mutate
@@ -16,7 +16,7 @@
 /proc/dq_atmos_test_drain_dependency_queue()
 	while(!SSmachines.wake_dirty_gas_subscribers())
 		stoplag()
-	drain_dirty_gas_observations()
+	vg_drain_dirty_gas_observations()
 
 /// Publish a synthetic fixture through the same Rust-authoritative port graph
 /// used by map setup. Allocate every port before queueing edges so fixture order
@@ -30,17 +30,17 @@
 		machine.rust_register_pipe_edges()
 	SSair.rust_commit_pending_pipenets()
 
-/// Verifies that verdigris.dll is actually loaded — verdigris_version() should
+/// Verifies that verdigris.dll is actually loaded — vg_verdigris_version() should
 /// return a non-empty string. If empty, the Rust library failed to load and
 /// the rest of LINDA is running on /tg/'s pure-DM gas_mixture impl.
 /datum/unit_test/dq_verdigris_loaded
 
 /datum/unit_test/dq_verdigris_loaded/Run()
-	var/version = verdigris_version()
-	TEST_ASSERT_NOTNULL(version, "verdigris_version() returned null — DLL did not load")
-	TEST_ASSERT(length("[version]") > 0, "verdigris_version() returned empty — call_ext failed")
-	var/features = verdigris_features()
-	TEST_ASSERT_NOTNULL(features, "verdigris_features() returned null")
+	var/version = vg_verdigris_version()
+	TEST_ASSERT_NOTNULL(version, "vg_verdigris_version() returned null — DLL did not load")
+	TEST_ASSERT(length("[version]") > 0, "vg_verdigris_version() returned empty — the bind failed")
+	var/features = vg_verdigris_features()
+	TEST_ASSERT_NOTNULL(features, "vg_verdigris_features() returned null")
 	// Log to test output so we can see the version in CI logs.
 	log_test("Verdigris loaded: [version] | features: [features]")
 
@@ -1787,7 +1787,7 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_air_snapshots)
 	// complete topology batch before expecting the detached solver to use it.
 	lower.immediate_calculate_adjacent_turfs()
 	upper.immediate_calculate_adjacent_turfs()
-	SSair.auxmos_topology_barrier()
+	vg_topology_barrier()
 	TEST_ASSERT(upper.atmos_adjacent_turfs && upper.atmos_adjacent_turfs[lower], \
 		"vertical atmos adjacency wasn't wired: the open turf isn't adjacent to the floor below it")
 
@@ -2033,7 +2033,7 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_air_snapshots)
 	dq_atmos_test_snapshot_air(T)
 	dq_atmos_test_isolate_pair(T, T)
 	T.immediate_calculate_adjacent_turfs()
-	SSair.auxmos_topology_barrier()
+	vg_topology_barrier()
 	var/datum/gas_mixture/original_air = new(T.air.return_volume())
 	original_air.copy_from(T.air)
 	var/obj/machinery/portable_atmospherics/canister/phoron/C = allocate(/obj/machinery/portable_atmospherics/canister/phoron, T)
@@ -2349,7 +2349,7 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_air_snapshots)
 	// Exercise the exact flat-ID ABI independently of the machinery queue. This
 	// catches argument/list marshalling regressions instead of reporting them as
 	// an apparently inert vent.
-	var/list/direct_transfer = call_ext(VERDIGRIS, "byond:batch_transfer_hook_ffi")(list(V.air_contents.arena_id(), turf_air.arena_id(), 1))
+	var/list/direct_transfer = vg_batch_transfer_hook(list(V.air_contents.arena_id(), turf_air.arena_id(), 1))
 	TEST_ASSERT(islist(direct_transfer) && length(direct_transfer) == 1, \
 		"batch transfer ABI did not return one result: [json_encode(direct_transfer)]")
 	TEST_ASSERT(direct_transfer?[1] > 0.9, \
@@ -2885,7 +2885,7 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_air_snapshots)
 	dq_atmos_test_snapshot_air(T)
 	dq_atmos_test_isolate_pair(T, T)
 	T.immediate_calculate_adjacent_turfs()
-	SSair.auxmos_topology_barrier()
+	vg_topology_barrier()
 	var/obj/machinery/airlock_sensor/S = new(T)
 	S.process()
 	TEST_ASSERT(!(S in SSmachines.processing_machines), \
@@ -4007,7 +4007,7 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	V.update_use_power(USE_POWER_IDLE)
 	V.external_pressure_bound = T.air.return_pressure() + 50
 	V.air_contents.adjust_moles(/datum/gas/oxygen, 10)
-	drain_dirty_gas_mixtures()
+	vg_drain_dirty_gas_mixtures()
 	SSmachines.hibernate_vent(V)
 	var/datum/weakref/vent_ref = WEAKREF(V)
 	TEST_ASSERT(SSmachines.hibernating_vents[vent_ref.reference], "vent did not register as sleeping")
@@ -4222,8 +4222,8 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	dq_atmos_test_snapshot_air(T)
 	dq_atmos_test_isolate_pair(T, T)
 	T.immediate_calculate_adjacent_turfs()
-	SSair.auxmos_topology_barrier()
-	drain_dirty_gas_mixtures()
+	vg_topology_barrier()
+	vg_drain_dirty_gas_mixtures()
 	var/obj/machinery/door/firedoor/F = new(T)
 	F.density = TRUE
 	TEST_ASSERT_EQUAL(F.process(), PROCESS_KILL, "stable closed firedoor retained timed polling")
@@ -4441,7 +4441,7 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	dq_atmos_test_snapshot_air(T)
 	dq_atmos_test_isolate_pair(T, T)
 	T.immediate_calculate_adjacent_turfs()
-	SSair.auxmos_topology_barrier()
+	vg_topology_barrier()
 	var/initial_turf_oxygen = T.air.get_moles(/datum/gas/oxygen)
 	var/initial_region_count = length(SSair.rust_pipe_region_networks)
 	var/obj/machinery/atmospherics/pipe/simple/P = new(T)
@@ -6614,7 +6614,7 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	dq_atmos_test_snapshot_air(T)
 	dq_atmos_test_isolate_pair(T, T)
 	T.immediate_calculate_adjacent_turfs()
-	SSair.auxmos_topology_barrier()
+	vg_topology_barrier()
 
 	var/datum/gas_mixture/turf_air = T.return_air()
 	for(var/datum/gas/g as anything in turf_air.get_gases())
@@ -7044,23 +7044,23 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 /datum/unit_test/dq_dirty_gas_publication_is_watch_scoped/Run()
 	var/datum/gas_mixture/air = new(2500)
 	var/mixture_id = air.arena_id()
-	drain_dirty_gas_mixtures()
+	vg_drain_dirty_gas_mixtures()
 	air.set_temperature(T20C + 5)
-	var/list/changes = drain_dirty_gas_mixtures()
+	var/list/changes = vg_drain_dirty_gas_mixtures()
 	for(var/index in 1 to length(changes) step 2)
 		TEST_ASSERT(changes[index] != mixture_id, "unwatched mixture was published to DM")
 	watch_dirty_gas_mixture(mixture_id)
 	air.set_temperature(T20C + 10)
-	changes = drain_dirty_gas_mixtures()
+	changes = vg_drain_dirty_gas_mixtures()
 	var/found_watched = FALSE
 	for(var/index in 1 to length(changes) step 2)
 		if(changes[index] == mixture_id)
 			found_watched = TRUE
 			break
 	TEST_ASSERT(found_watched, "watched mixture mutation was not published to DM")
-	unwatch_dirty_gas_mixture(mixture_id)
+	vg_unwatch_dirty_gas_mixture(mixture_id)
 	air.set_temperature(T20C + 15)
-	changes = drain_dirty_gas_mixtures()
+	changes = vg_drain_dirty_gas_mixtures()
 	for(var/index in 1 to length(changes) step 2)
 		TEST_ASSERT(changes[index] != mixture_id, "unwatched mixture resumed publication after unsubscribe")
 	qdel(air)
@@ -7083,9 +7083,9 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	air.set_moles(/datum/gas/volatile_fuel, 0.4)
 	var/mixture_id = air.arena_id()
 	watch_dirty_gas_mixture(mixture_id)
-	drain_dirty_gas_observations()
+	vg_drain_dirty_gas_observations()
 	air.adjust_moles(/datum/gas/oxygen, 1)
-	var/list/observation = drain_dirty_gas_observations()
+	var/list/observation = vg_drain_dirty_gas_observations()
 	TEST_ASSERT_EQUAL(length(observation), GAS_DEPENDENCY_OBSERVATION_STRIDE, "dirty gas observation did not use the documented atomic stride")
 	TEST_ASSERT_EQUAL(observation[1], mixture_id, "dirty gas observation returned the wrong arena mixture")
 	TEST_ASSERT(abs(observation[GAS_DEPENDENCY_OBSERVATION_STRIDE] - air.total_moles()) < 0.001, "atomic observation returned the wrong total-moles cache")
@@ -7093,7 +7093,7 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	var/direct_signature = alarm.atmospheric_control_signature(air)
 	var/observed_signature = alarm.atmospheric_control_signature_observation(observation, 1)
 	TEST_ASSERT_EQUAL(observed_signature, direct_signature, "atomic Rust gas observation changed air-alarm threshold semantics")
-	unwatch_dirty_gas_mixture(mixture_id)
+	vg_unwatch_dirty_gas_mixture(mixture_id)
 	qdel(alarm)
 	qdel(air)
 

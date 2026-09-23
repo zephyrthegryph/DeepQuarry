@@ -5,8 +5,7 @@ use vg_layout::{random_map, station_layout};
 
 /// Args: (limit_x, limit_y, iterations, initial_wall_cell). Returns a flat
 /// row-major DM list of 1/0 (wall/floor) of length limit_x * limit_y.
-#[byondapi::bind("/proc/generate_automata")]
-#[auxmacros::panic_safe]
+#[auxmacros::bind("/proc/generate_automata")]
 fn generate_automata(
     limit_x: ByondValue,
     limit_y: ByondValue,
@@ -30,31 +29,27 @@ fn generate_automata(
     Ok(list)
 }
 
-#[byondapi::bind("/proc/verdigris_generate_station_layout")]
-#[auxmacros::panic_safe]
+#[auxmacros::bind("/proc/verdigris_generate_station_layout")]
 fn verdigris_generate_station_layout(payload: ByondValue) -> Result<ByondValue> {
     let response = station_layout::generate_catalog_plan(&payload.get_string()?)?;
     Ok(ByondValue::new_str(response.into_bytes())?)
 }
 
-#[byondapi::bind("/proc/verdigris_submit_station_layout")]
-#[auxmacros::panic_safe]
+#[auxmacros::bind("/proc/verdigris_submit_station_layout")]
 fn verdigris_submit_station_layout(payload: ByondValue) -> Result<ByondValue> {
     let job_id = station_layout::submit_planning_job(payload.get_string()?)
         .map_err(|error| eyre::eyre!(error.to_string()))?;
     Ok(ByondValue::new_str(job_id.to_string().into_bytes())?)
 }
 
-#[byondapi::bind("/proc/verdigris_poll_station_layout")]
-#[auxmacros::panic_safe]
+#[auxmacros::bind("/proc/verdigris_poll_station_layout")]
 fn verdigris_poll_station_layout(job_id: ByondValue) -> Result<ByondValue> {
     let job_id = job_id.get_string()?.parse::<u64>()?;
     let response = station_layout::poll_planning_job(job_id)?;
     Ok(ByondValue::new_str(response.into_bytes())?)
 }
 
-#[byondapi::bind("/proc/verdigris_station_layout_section")]
-#[auxmacros::panic_safe]
+#[auxmacros::bind("/proc/verdigris_station_layout_section")]
 fn verdigris_station_layout_section(
     job_id: ByondValue,
     section: ByondValue,
@@ -69,8 +64,7 @@ fn verdigris_station_layout_section(
     Ok(ByondValue::new_str(serde_json::to_vec(&response)?)?)
 }
 
-#[byondapi::bind("/proc/verdigris_finish_station_layout")]
-#[auxmacros::panic_safe]
+#[auxmacros::bind("/proc/verdigris_finish_station_layout")]
 fn verdigris_finish_station_layout(job_id: ByondValue) -> Result<ByondValue> {
     let job_id = job_id.get_string()?.parse::<u64>()?;
     let removed = station_layout::finish_planning_job(job_id)?;
