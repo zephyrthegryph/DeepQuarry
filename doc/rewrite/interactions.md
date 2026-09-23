@@ -84,7 +84,7 @@ Every interaction is a definition, not a proc override. So every interaction can
 - The adapters produce the hands' actions, filtered by `allows_interaction()`: the AI gets tool-less `INTERACTION_TAG_REMOTE` interactions on what it can see (`has_camera_sight()`: its view, or the camera network when in a core; the rule of its tgui state); cyborgs get everything except observer-only (their modules are their held items, so tool interactions come through `resolve_attackby` as for hands); ghosts get only `INTERACTION_TAG_OBSERVER`; telekinesis gets tool-less ones (`interactions_for()`/`try_interaction()` take an `adapter` argument so telekinesis can act for a human). Every non-hand Use tries the resolver first (`use_interaction()`), then the legacy proc.
 - `/atom/var/silicon_use` (a type var; `code/__defines/interactions.dm`) replaces the forwarding overrides: `SILICON_USE_HAND` (the AI's Use is `attack_hand`; `/obj/machinery` sets it), `SILICON_USE_UI` (the AI's Use opens tgui), `ROBOT_USE_HAND` and `ROBOT_USE_HAND_ADJACENT` (a cyborg's empty-gripper Use is `attack_hand`, always or when adjacent). The base `attack_ai` and `attack_robot` read it, so a type's own override still wins. `/obj/machinery/attack_ai` keeps only its gate (a cyborg without a client, or looking through a camera, can't control machines remotely) and calls `..()`. Ghost UI openers are covered by `/obj/attack_ghost`, which opens tgui.
 - Deleted: 79 `attack_ai`, 9 `attack_robot` and 6 `attack_ghost` overrides that only forwarded. Behaviour changes, all small: machines whose own `attack_ai` forwarded now get the machinery gate for remote-viewing or clientless cyborgs; ghosts with inquisitive ghost on also get the examine on those six types, as on every other object; the privacy switch's `attack_hand()` gets its user.
-- Kept, with real behaviour or owned by another track: the digital and shutoff valves and `light/flamp` (an ancestor overrides `attack_ai` differently); the medical, cloning, cryo, resleeving and sleeper consoles and the medical stand (the body track's files). `tools/ci/actor_forwarding_lint.py` (CI: Check Actor Forwarding) forbids new forwarding-only overrides and allowlists these.
+- Kept, with real behaviour: the digital and shutoff valves and `light/flamp` (an ancestor overrides `attack_ai` differently). `tools/ci/actor_forwarding_lint.py` (CI: Check Actor Forwarding) forbids new forwarding-only overrides and allowlists these. The body track's medical, cloning, cryo, resleeving and sleeper consoles, the PanD.E.M.I.C. and the medical stand were converted in wave 5 (tests: `dq_interact_cleanup_tests.dm`).
 - Tests: `code/modules/unit_tests/dq_actor_adapter_tests.dm` (the filter per actor, Use through the resolver per actor, and parity per actor type on converted types: button, fire alarm, privacy switch, airlock, turret control, ladder, closet).
 
 ## 5. Interaction definitions
@@ -234,20 +234,7 @@ The resolver shows the next steps, and examine explains them ("Next: weld the fr
 **Converted gates.** About 240 reads became `IS_*` checks or `use_stance()` switches in the legacy handlers (routing: attack_hand, attackby, UnarmedAttack, bump swapping, the melee swing divert). About 45 writes became data defaults (`set_use_stance()`, `combat_mode = TRUE`). Two gates compared against `"hurt"`, which never matched `I_HURT`: `floor_light.dm` now smashes in combat mode as intended, and the polymorph (`change.dm`) now turns combat mode on. `whip` read `if(user.a_intent)`, which was always true, and the check is gone. No legacy gate became an interaction requirement: each sits inside a legacy handler, and it moves to an interaction when I7 converts that handler's domain. The Disarm and Grab interactions and the requirement clauses are what those conversions build on.
 
 **Left for other work** (the lint allowlists them; `a_intent` stays as a read-only mirror of `use_stance()` until they convert, then it is deleted):
-- The body rewrite's files. Each gate converts one to one: `a_intent == I_HURT` → `IS_HARMING(user)`, `!= I_HELP` → `!IS_HELPING(user)`, `switch(M.a_intent)` → `switch(M.use_stance())`.
-  - `code/modules/medical/instruments/resuscitation.dm:23,55,89`
-  - `code/modules/surgery/surgery.dm:142`
-  - `code/modules/organs/organ.dm:563`
-  - `code/game/objects/items/weapons/surgery_tools.dm:26`
-  - `code/game/objects/items/devices/scanners/health.dm:36`
-  - `code/modules/reagents/reagent_containers/syringes.dm:103,354` (354 compares against `"hurt"`, which never matches: a latent bug)
-  - `code/modules/reagents/reagent_containers/hypospray.dm:60`
-  - `code/modules/reagents/reagent_containers/blood_pack.dm:126`
-  - `code/modules/mob/living/carbon/human/species/species.dm:624`
-  - `code/modules/mob/living/carbon/human/species/station/teshari.dm:13`
-  - `code/modules/mob/living/carbon/human/species/station/station_special_abilities.dm:98`
-  - `code/modules/mob/living/carbon/human/species/station/traits/weaver_objs.dm:37,84`
-  - `has_a_intent` in `species_hud.dm` still says whether the species draws the combat mode button.
+- The body rewrite's gates (medical instruments, surgery, organs, syringes, hyposprays, blood packs, species) were converted in wave 5: `a_intent == I_HURT` → `IS_HARMING(user)`, `!= I_HELP` → `!IS_HELPING(user)`, `switch(M.a_intent)` → `switch(M.use_stance())`. The lethal-injection syringe's gate compared against `"hurt"` and never matched; it now refuses the stab in combat mode, as its message always said. `has_a_intent` in `species_hud.dm` still says whether the species draws the combat mode button.
 - Tool `*_act` procs, which I4 is migrating: `airlock.dm:797,850`, `windowdoor.dm:238`, `mecha.dm:1459`, `spy_bug.dm:127`, `window.dm:288`, `maintenance_panel.dm:36`, `robot.dm:970,1043`.
 
 ## 13. Migration, one domain at a time (I7)
