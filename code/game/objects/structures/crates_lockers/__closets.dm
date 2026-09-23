@@ -55,16 +55,19 @@
 
 	if(!opened)		// if closed, any item at the crate's loc is put in the contents
 		if(isliving(loc)) return
-		var/obj/item/I
-		for(I in loc)
-			if(I.density || I.anchored || I == src) continue
-			I.forceMove(src)
-		// adjust locker size to hold all items with 5 units of free store room
+		var/list/loose = list()
+		for(var/obj/item/I in loc)
+			if(I.density || I.anchored) continue
+			loose += I
+		// adjust locker size to hold everything with 5 units of free store room.
+		// Summed without the ledger, so an untouched closet never builds one.
 		var/content_size = 0
-		for(I in contents)
-			content_size += CEILING(I.w_class/2, 1)
+		for(var/atom/movable/AM as anything in contents + loose)
+			content_size += storage_cost_of(AM)
 		if(content_size > storage_capacity-5)
 			storage_capacity = content_size + 5
+		for(var/obj/item/I as anything in loose)
+			I.move_into(src)
 
 	if(ispath(closet_appearance))
 		closet_appearance = GLOB.closet_appearances[closet_appearance]
@@ -72,6 +75,53 @@
 			icon = closet_appearance.icon
 			color = null
 	update_icon()
+
+// ---- Containment (C1): one interior slot. The base Destroy() spills it. ----
+
+/obj/structure/closet/slot_def_types()
+	var/static/list/types = list(/datum/slot_def/closet_interior)
+	return types
+
+/datum/slot_def/closet_interior
+	id = CONTAINER_SLOT_INTERIOR
+	name = "interior"
+	capacity_model = SLOT_CAPACITY_UNITS
+	accepts = /datum/predicate/slot_closet_interior
+	drop_policy = SLOT_DROP_SPILL
+
+/datum/slot_def/closet_interior/capacity_for(obj/structure/closet/holder)
+	return holder.storage_capacity
+
+/datum/slot_def/closet_interior/cost(obj/structure/closet/holder, atom/movable/thing)
+	return holder.storage_cost_of(thing)
+
+/datum/predicate/slot_closet_interior
+	name = "closet interior"
+	spec = list(REQ_BECAUSE(REQ_ON(PRED_TARGET, /atom/movable/proc/slot_loose, null), "it is fastened down"))
+
+/// What `thing` takes up inside this closet, in storage_capacity units.
+/obj/structure/closet/proc/storage_cost_of(atom/movable/thing)
+	if(isitem(thing))
+		var/obj/item/I = thing
+		return CEILING(I.w_class / 2, 1)
+	if(isliving(thing))
+		var/mob/living/L = thing
+		return L.mob_size
+	if(istype(thing, /obj/structure/closet))
+		var/obj/structure/closet/C = thing
+		return C.storage_cost
+	return 1
+
+/// Slot acceptance (P2 proc clause): whether this can be put away loose.
+/atom/movable/proc/slot_loose(mob/actor, atom/target, obj/item/held)
+	return !anchored
+
+/mob/living/slot_loose(mob/actor, atom/target, obj/item/held)
+	return !anchored && !buckled && !LAZYLEN(pinned)
+
+//Cham Projector Exception: the dummy is anchored but hides in closets.
+/obj/effect/dummy/chameleon/slot_loose(mob/actor, atom/target, obj/item/held)
+	return TRUE
 
 /obj/structure/closet/Destroy()
 	QDEL_NULL(door_obj)
@@ -81,10 +131,7 @@
 /obj/structure/closet/examine(mob/user)
 	. = ..()
 	if(Adjacent(user) || isobserver(user))
-		var/content_size = 0
-		for(var/obj/item/I in contents)
-			if(!I.anchored)
-				content_size += CEILING(I.w_class/2, 1)
+		var/content_size = slot_used(CONTAINER_SLOT_INTERIOR)
 		if(!content_size)
 			. += "It is empty."
 		else if(storage_capacity > content_size*4)
@@ -120,15 +167,7 @@
 	return 1
 
 /obj/structure/closet/proc/dump_contents()
-	//Cham Projector Exception
-	for(var/obj/effect/dummy/chameleon/AD in src)
-		AD.forceMove(loc)
-
-	for(var/obj/I in src)
-		I.forceMove(loc)
-
-	for(var/mob/M in src)
-		M.forceMove(loc)
+	slot_empty(CONTAINER_SLOT_INTERIOR, loc)
 
 /obj/structure/closet/proc/open()
 	if(opened)
@@ -152,16 +191,15 @@
 	if(!can_close())
 		return 0
 
-	var/stored_units = 0
-
+	// The ledger enforces storage_capacity: whatever doesn't fit stays out.
 	if(store_misc)
-		stored_units += store_misc(stored_units)
+		store_misc()
 	if(store_items)
-		stored_units += store_items(stored_units)
+		store_items()
 	if(store_mobs)
-		stored_units += store_mobs(stored_units)
+		store_mobs()
 	if(max_closets)
-		stored_units += store_closets(stored_units)
+		store_closets()
 
 	opened = 0
 
@@ -172,52 +210,38 @@
 	SEND_SIGNAL(src, COMSIG_CLOSET_CLOSED, contents)
 	return 1
 
+// Each store_* proc moves what it finds on the turf into the interior slot and
+// returns how many went in. The slot refuses anchored or buckled things and
+// anything that would overflow storage_capacity.
+
 //Cham Projector Exception
-/obj/structure/closet/proc/store_misc(stored_units)
-	var/added_units = 0
+/obj/structure/closet/proc/store_misc()
+	. = 0
 	for(var/obj/effect/dummy/chameleon/AD in loc)
-		if((stored_units + added_units) > storage_capacity)
-			break
-		AD.forceMove(src)
-		added_units++
-	return added_units
+		if(AD.move_into(src))
+			.++
 
-/obj/structure/closet/proc/store_items(stored_units)
-	var/added_units = 0
+/obj/structure/closet/proc/store_items()
+	. = 0
 	for(var/obj/item/I in loc)
-		var/item_size = CEILING(I.w_class / 2, 1)
-		if(stored_units + added_units + item_size > storage_capacity)
-			continue
-		if(!I.anchored)
-			I.forceMove(src)
-			added_units += item_size
-	return added_units
+		if(I.move_into(src))
+			.++
 
-/obj/structure/closet/proc/store_mobs(stored_units)
-	var/added_units = 0
+/obj/structure/closet/proc/store_mobs()
+	. = 0
 	for(var/mob/living/M in loc)
-		if(M.buckled || LAZYLEN(M.pinned))
-			continue
-		if(stored_units + added_units + M.mob_size > storage_capacity)
-			break
-		M.forceMove(src)
-		added_units += M.mob_size
-	return added_units
+		if(M.move_into(src))
+			.++
 
-/obj/structure/closet/proc/store_closets(stored_units)
-	var/added_units = 0
+/obj/structure/closet/proc/store_closets()
+	. = 0
 	for(var/obj/structure/closet/C in loc)
 		if(C == src)	//Don't store ourself
 			continue
-		if(C.anchored)	//Don't worry about anchored things on the same tile
-			continue
 		if(C.max_closets)	//Prevents recursive storage
 			continue
-		if(stored_units + added_units + storage_cost > storage_capacity)
-			break
-		C.forceMove(src)
-		added_units += storage_cost
-	return added_units
+		if(C.move_into(src))
+			.++
 
 
 /obj/structure/closet/proc/toggle(mob/user as mob)
@@ -227,25 +251,22 @@
 		to_chat(user, span_notice("It won't budge!"))
 		return
 
-// this should probably use dump_contents()
 /obj/structure/closet/ex_act(severity)
 	switch(severity)
 		if(1)
-			for(var/atom/movable/A as mob|obj in src)//pulls everything out of the locker and hits it with an explosion
-				A.forceMove(loc)
-				A.ex_act(severity + 1)
+			for(var/atom/movable/A as anything in slot_contents(CONTAINER_SLOT_INTERIOR))//pulls everything out of the locker and hits it with an explosion
+				if(slot_remove(A, loc))
+					A.ex_act(severity + 1)
 			qdel(src)
 		if(2)
 			if(prob(50))
-				for (var/atom/movable/A as mob|obj in src)
-					A.forceMove(loc)
-					A.ex_act(severity + 1)
+				for(var/atom/movable/A as anything in slot_contents(CONTAINER_SLOT_INTERIOR))
+					if(slot_remove(A, loc))
+						A.ex_act(severity + 1)
 				qdel(src)
 		if(3)
 			if(prob(5))
-				for(var/atom/movable/A as mob|obj in src)
-					A.forceMove(loc)
-				qdel(src)
+				qdel(src) // the base Destroy() spills the interior
 
 /obj/structure/closet/attackby(obj/item/W as obj, mob/user as mob)
 	if(opened)

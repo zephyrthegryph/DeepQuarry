@@ -133,7 +133,7 @@ GLOBAL_LIST_INIT(state_builtin_vars, list(
 
 /datum/state_context/proc/assign_ids(atom/A, prefix)
 	var/index = 0
-	for(var/atom/movable/child as anything in A.contents)
+	for(var/atom/movable/child as anything in state_children(A))
 		index++
 		var/id = prefix == "" ? "[index]" : "[prefix].[index]"
 		ids[child] = id
@@ -158,7 +158,7 @@ GLOBAL_LIST_INIT(state_builtin_vars, list(
 	if((flags & STATE_CONTENTS) && isatom(D))
 		var/atom/A = D
 		var/list/children = list()
-		for(var/atom/movable/child as anything in A.contents)
+		for(var/atom/movable/child as anything in state_children(A))
 			var/list/child_blob = serialize_datum(child, flags)
 			if(!child_blob)
 				return null
@@ -559,3 +559,10 @@ GLOBAL_LIST_INIT(state_builtin_vars, list(
 	for(var/key in L)
 		var/out_key = copytext(key, 1, 3) == "[STATE_ESCAPE][STATE_ESCAPE]" ? copytext(key, 2) : key
 		.[out_key] = decode_value(L[key])
+
+/// Children in child-ID order. A holder with slots numbers them in its
+/// ledger's order (slots in declaration order, each in insertion order), so a
+/// child's ID doesn't depend on unrelated contents order.
+/proc/state_children(atom/A)
+	var/datum/ledger/L = dq_ledger(A)
+	return L ? L.ordered() : A.contents

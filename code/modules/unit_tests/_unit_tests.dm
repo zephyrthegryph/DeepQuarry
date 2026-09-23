@@ -166,6 +166,7 @@
 #include "dq_harm_mitigation_tests.dm"
 #include "dq_property_tests.dm"
 #include "dq_predicate_tests.dm"
+#include "dq_containment_tests.dm"
 #include "dq_damage_packet_tests.dm"
 #include "dq_robot_machine_tests.dm"
 #include "dq_life_scheduler_tests.dm"

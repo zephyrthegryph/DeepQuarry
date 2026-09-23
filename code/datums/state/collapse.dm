@@ -155,6 +155,11 @@ GLOBAL_LIST_INIT(state_refscan_skip, list("vars", "loc", "locs", "contents", "vi
 		var/atom/movable/movable = node
 		if(movable.loc)
 			. += STATE_REFS_FROM_LOC
+			// A container's ledger lists what it holds. Inside the subtree the
+			// ledger is an owned part and its lists are scanned already.
+			var/datum/ledger/L = movable.loc.ledger
+			if(L && !(movable.loc in internal))
+				. += L.refs_to(movable)
 	if(isatom(node))
 		var/atom/A = node
 		. += STATE_REFS_PER_CONTENT * length(A.contents)

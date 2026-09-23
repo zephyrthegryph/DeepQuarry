@@ -107,7 +107,7 @@
 		cut_overlays()
 		return
 
-/obj/structure/closet/body_bag/store_mobs(stored_units)
+/obj/structure/closet/body_bag/store_mobs()
 	contains_body = ..()
 	return contains_body
 
