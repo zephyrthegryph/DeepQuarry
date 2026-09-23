@@ -275,11 +275,11 @@
 		return
 	var/mob/living/carbon/human/H = owner
 	var/blocks = factors[BF_ACTION_BLOCKS]
-	if((blocks & ACTION_BLOCK_HOLD_LEFT) && H.l_hand)
-		to_chat(H, span_warning("Your left hand won't close around \the [H.l_hand]."))
+	if((blocks & ACTION_BLOCK_HOLD_LEFT) && H.get_equipped_item(SLOT_ID_HAND_L))
+		to_chat(H, span_warning("Your left hand won't close around \the [H.get_equipped_item(SLOT_ID_HAND_L)]."))
 		H.drop_l_hand()
-	if((blocks & ACTION_BLOCK_HOLD_RIGHT) && H.r_hand)
-		to_chat(H, span_warning("Your right hand won't close around \the [H.r_hand]."))
+	if((blocks & ACTION_BLOCK_HOLD_RIGHT) && H.get_equipped_item(SLOT_ID_HAND_R))
+		to_chat(H, span_warning("Your right hand won't close around \the [H.get_equipped_item(SLOT_ID_HAND_R)]."))
 		H.drop_r_hand()
 	var/motor = factors[BF_MOTOR_CONTROL]
 	if(motor < 1 && prob(min(BF_MAX_DROP_CHANCE, (1 - motor) * 100)))
@@ -390,19 +390,6 @@
 /obj/item
 	/// Body factors applied while this item is equipped outside the hands.
 	var/alist/worn_factors
-
-/obj/item/equipped(mob/user, slot)
-	. = ..()
-	if(worn_factors && isliving(user))
-		var/mob/living/L = user
-		L.invalidate_factors()
-
-/obj/item/dropped(mob/user)
-	. = ..()
-	if(worn_factors && isliving(user))
-		var/mob/living/L = user
-		L.invalidate_factors()
-
 
 // --- Book text -------------------------------------------------------------------------
 

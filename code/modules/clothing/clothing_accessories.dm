@@ -42,7 +42,7 @@
 		return
 	if (ishuman(user) && src.loc == user)
 		var/mob/living/carbon/human/H = user
-		if(src == H.w_uniform) // Un-equip on single click, but not on uniform.
+		if(src == H.get_equipped_item(SLOT_ID_UNIFORM)) // Un-equip on single click, but not on uniform.
 			return
 	return ..()
 
@@ -100,6 +100,7 @@
 	src.verbs |= /obj/item/clothing/proc/removetie_verb
 	update_accessory_slowdown()
 	update_clothing_icon()
+	worn_protection_changed()
 
 /obj/item/clothing/proc/remove_accessory(mob/user, obj/item/clothing/accessory/A)
 	if(!LAZYLEN(accessories) || !(A in accessories))
@@ -109,6 +110,7 @@
 	accessories -= A
 	update_accessory_slowdown()
 	update_clothing_icon()
+	worn_protection_changed()
 
 /obj/item/clothing/proc/update_accessory_slowdown()
 	slowdown = initial(slowdown)
@@ -133,7 +135,7 @@
 	// begin
 	if(iscarbon(usr))
 		var/mob/living/carbon/C = usr
-		if(C.handcuffed)
+		if(C.get_equipped_item(SLOT_ID_HANDCUFFED))
 			to_chat(C, span_warning("You cannot remove accessories while handcuffed!"))
 			return
 		else if(istype(C, /mob/living/carbon/human))

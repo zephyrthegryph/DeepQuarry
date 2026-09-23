@@ -125,7 +125,7 @@ GLOBAL_LIST_EMPTY(announced_news_types)
 		sendto.author = news.author
 		sendto.locked = 1
 		sendto.is_admin_channel = 1
-		GLOB.news_network.network_channels += sendto
+		LAZYADD(GLOB.news_network.network_channels, sendto)
 
 	var/author = news.author ? news.author : sendto.author
 	GLOB.news_network.SubmitArticle(news.message, author, news.channel_name, null, !news.can_be_redacted, news.message_type)

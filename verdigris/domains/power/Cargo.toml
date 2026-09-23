@@ -1,0 +1,12 @@
+[package]
+name = "vg-power"
+version = "0.1.0"
+edition = "2024"
+rust-version = "1.85"
+description = "The power domain (M3): cables as an R7 network kind, the power ledger, storage (APC cells, SMES) and generators. Host-buildable: vg-core only."
+
+[dependencies]
+vg-core = { path = "../../core" }
+
+[dev-dependencies]
+proptest = "1.5"

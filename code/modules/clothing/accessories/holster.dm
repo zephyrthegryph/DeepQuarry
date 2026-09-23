@@ -47,7 +47,7 @@
 		// begin
 		if(iscarbon(user))
 			var/mob/living/carbon/C = user
-			if(C.handcuffed)
+			if(C.get_equipped_item(SLOT_ID_HANDCUFFED))
 				to_chat(C, span_warning("You cannot draw \the [holstered] while handcuffed!"))
 				return
 			else if(istype(C, /mob/living/carbon/human))

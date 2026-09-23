@@ -9,7 +9,7 @@
 
 /*
 	Humans:
-	Adds an exception for gloves, to allow special glove types like the ninja ones.
+	Adds an exception for get_equipped_item(SLOT_ID_GLOVES), to allow special glove types like the ninja ones.
 
 	Otherwise pretty standard.
 */
@@ -21,7 +21,7 @@
 	// Special glove functions:
 	// If the gloves do anything, have them return 1 to stop
 	// normal attack_hand() here.
-	var/obj/item/clothing/gloves/G = gloves // not typecast specifically enough in defines
+	var/obj/item/clothing/gloves/G = get_equipped_item(SLOT_ID_GLOVES) // not typecast specifically enough in defines
 	if(istype(G) && G.Touch(A,1))
 		return
 
@@ -53,16 +53,16 @@
 	return TK in mutations
 
 /mob/living/carbon/human/has_telegrip()
-	if(istype(gloves,/obj/item/clothing/gloves/telekinetic))
-		var/obj/item/clothing/gloves/telekinetic/G = gloves
+	if(istype(get_equipped_item(SLOT_ID_GLOVES),/obj/item/clothing/gloves/telekinetic))
+		var/obj/item/clothing/gloves/telekinetic/G = get_equipped_item(SLOT_ID_GLOVES)
 		if(G.has_grip_power())
 			return TRUE
 	return ..()
 
 /mob/living/carbon/human/RangedAttack(atom/A)
-	if(!gloves && !mutations.len && !spitting)
+	if(!get_equipped_item(SLOT_ID_GLOVES) && !mutations.len && !spitting)
 		return
-	var/obj/item/clothing/gloves/G = gloves
+	var/obj/item/clothing/gloves/G = get_equipped_item(SLOT_ID_GLOVES)
 	if((LASER_EYES in mutations) && IS_HARMING(src))
 		LaserEyes(A) // moved into a proc below
 
@@ -70,8 +70,8 @@
 		return
 
 	else if(has_telegrip())
-		if(istype(gloves,/obj/item/clothing/gloves/telekinetic))
-			var/obj/item/clothing/gloves/telekinetic/TKG = gloves
+		if(istype(get_equipped_item(SLOT_ID_GLOVES),/obj/item/clothing/gloves/telekinetic))
+			var/obj/item/clothing/gloves/telekinetic/TKG = get_equipped_item(SLOT_ID_GLOVES)
 			TKG.use_grip_power(src,TRUE)
 		if(is_remote_viewing()) // Extremely bad exploits if allowed to TK while remote viewing
 			to_chat(src, TK_DENIED_MESSAGE)

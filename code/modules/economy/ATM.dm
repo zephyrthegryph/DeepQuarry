@@ -362,7 +362,7 @@ log transactions
 							T.source_terminal = machine_id
 							T.date = GLOB.current_date_string
 							T.time = stationtime2text()
-							failed_account.transaction_log.Add(T)
+							LAZYADD(failed_account.transaction_log, T)
 					else
 						to_chat(ui.user, span_warning("[icon2html(src, ui.user.client)] Incorrect pin/account combination entered, [max_pin_attempts - number_incorrect_tries] attempts remaining."))
 						previous_account_number = tried_account_num
@@ -382,7 +382,7 @@ log transactions
 				T.source_terminal = machine_id
 				T.date = GLOB.current_date_string
 				T.time = stationtime2text()
-				authenticated_account.transaction_log.Add(T)
+				LAZYADD(authenticated_account.transaction_log, T)
 
 				to_chat(ui.user, span_notice("[icon2html(src, ui.user.client)] Access granted. Welcome user '[authenticated_account.owner_name].'"))
 
@@ -465,12 +465,12 @@ log transactions
 //stolen wholesale and then edited a bit from newscasters, which are awesome and by Agouri
 /obj/machinery/atm/proc/scan_user(mob/living/carbon/human/human_user as mob)
 	if(!authenticated_account)
-		if(human_user.wear_id)
+		if(human_user.get_equipped_item(SLOT_ID_ID))
 			var/obj/item/card/id/I
-			if(istype(human_user.wear_id, /obj/item/card/id) )
-				I = human_user.wear_id
-			else if(istype(human_user.wear_id, /obj/item/pda) )
-				var/obj/item/pda/P = human_user.wear_id
+			if(istype(human_user.get_equipped_item(SLOT_ID_ID), /obj/item/card/id) )
+				I = human_user.get_equipped_item(SLOT_ID_ID)
+			else if(istype(human_user.get_equipped_item(SLOT_ID_ID), /obj/item/pda) )
+				var/obj/item/pda/P = human_user.get_equipped_item(SLOT_ID_ID)
 				I = P.id
 			if(I)
 				authenticated_account = attempt_account_access(I.associated_account_number)

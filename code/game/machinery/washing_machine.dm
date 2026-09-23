@@ -25,7 +25,7 @@
 	var/hacked = TRUE //Bleh, screw hacking, let's have it hacked by default.
 	var/gibs_ready = FALSE
 	var/obj/crayon
-	var/list/washing = list()
+	var/list/washing
 	var/static/list/disallowed_types = list(
 		/obj/item/clothing/suit/space,
 		/obj/item/clothing/head/helmet/space
@@ -39,7 +39,7 @@
 /obj/machinery/washing_machine/Destroy()
 	for(var/atom/movable/washed_items in contents)
 		washed_items.forceMove(get_turf(src))
-	washing.Cut()
+	LAZYCLEARLIST(washing)
 	crayon = null
 	. = ..()
 
@@ -101,11 +101,11 @@
 	//Tanning!
 	for(var/obj/item/stack/hairlesshide/HH in washing)
 		var/obj/item/stack/wetleather/WL = new(src, HH.get_amount())
-		washing -= HH
+		LAZYREMOVE(washing, HH)
 		HH.forceMove(get_turf(src))
 		HH.use(HH.get_amount())
 
-		washing += WL
+		LAZYADD(washing, WL)
 	var/has_mobs = FALSE
 	for(var/mob/living/mobs in washing)
 		has_mobs = TRUE
@@ -192,7 +192,7 @@
 					if(state == EMPTY_OPEN) //Checking to make sure nobody closed it before we shoved em in it.
 						user.visible_message("[user] stuffs [G.affecting] into the [src] and shuts the door!", "You stuff [G.affecting] into the [src] and shut the door!")
 						G.affecting.forceMove(src)
-						washing += G.affecting
+						LAZYADD(washing, G.affecting)
 						qdel(G)
 						state = FULL_CLOSED
 					else
@@ -204,11 +204,11 @@
 		return TRUE
 
 	else if(istype(W, /obj/item/clothing) || istype(W, /obj/item/bedsheet) || istype(W, /obj/item/stack/hairlesshide))
-		if(washing.len < 5)
+		if(length(washing) < 5)
 			if(state in list(EMPTY_OPEN, FULL_OPEN))
 				user.drop_item()
 				W.forceMove(src)
-				washing += W
+				LAZYADD(washing, W)
 				state = FULL_OPEN
 			else
 				to_chat(user, span_notice("You can't put the item in right now."))
@@ -242,14 +242,14 @@
 			state = EMPTY_OPEN
 			for(var/atom/movable/O in washing)
 				O.forceMove(get_turf(src))
-			washing.Cut()
+			LAZYCLEARLIST(washing)
 		if(FULL_OPEN)
 			state = FULL_CLOSED
 		if(FULL_CLOSED)
 			for(var/atom/movable/O in washing)
 				O.forceMove(get_turf(src))
 			crayon = null
-			washing.Cut()
+			LAZYCLEARLIST(washing)
 			state = EMPTY_OPEN
 		if(RUNNING)
 			if(user)
@@ -267,7 +267,7 @@
 				O.forceMove(get_turf(src))
 			crayon = null
 			state = EMPTY_OPEN
-			washing.Cut()
+			LAZYCLEARLIST(washing)
 
 	update_icon()
 	return TRUE

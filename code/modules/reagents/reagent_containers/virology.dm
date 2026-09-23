@@ -2,7 +2,7 @@
 	name = "virus culture"
 	desc = "A bottle with a virus culture"
 	var/list/data = list("donor" = null, "viruses" = null, "blood_DNA" = null, "blood_type" = null, "resistances" = null, "trace_chems" = null, "changeling"=FALSE)
-	var/list/diseases = list()
+	var/list/diseases
 
 /obj/item/reagent_containers/glass/beaker/vial/culture/cold
 	name = "cold virus culture"
@@ -10,8 +10,8 @@
 
 /obj/item/reagent_containers/glass/beaker/vial/culture/cold/Initialize(mapload)
 	. = ..()
-	diseases += new /datum/disease/advance/cold
-	data["viruses"] = diseases
+	LAZYADD(diseases, new /datum/disease/advance/cold)
+	data["viruses"] = (diseases || list())
 	reagents.add_reagent(REAGENT_ID_BLOOD, 10, data)
 
 /obj/item/reagent_containers/glass/beaker/vial/culture/flu
@@ -20,8 +20,8 @@
 
 /obj/item/reagent_containers/glass/beaker/vial/culture/flu/Initialize(mapload)
 	. = ..()
-	diseases += new /datum/disease/advance/flu
-	data["viruses"] = diseases
+	LAZYADD(diseases, new /datum/disease/advance/flu)
+	data["viruses"] = (diseases || list())
 	reagents.add_reagent(REAGENT_ID_BLOOD, 10, data)
 
 /obj/item/reagent_containers/glass/beaker/vial/culture/blobspores
@@ -30,8 +30,8 @@
 
 /obj/item/reagent_containers/glass/beaker/vial/culture/blobspores/Initialize(mapload)
 	. = ..()
-	diseases += new /datum/disease/advance/blobspores
-	data["viruses"] = diseases
+	LAZYADD(diseases, new /datum/disease/advance/blobspores)
+	data["viruses"] = (diseases || list())
 	reagents.add_reagent(REAGENT_ID_BLOOD, 10, data)
 
 /obj/item/reagent_containers/glass/beaker/vial/culture/macrophages
@@ -40,8 +40,8 @@
 
 /obj/item/reagent_containers/glass/beaker/vial/culture/macrophages/Initialize(mapload)
 	. = ..()
-	diseases += new /datum/disease/advance/macrophage
-	data["viruses"] = diseases
+	LAZYADD(diseases, new /datum/disease/advance/macrophage)
+	data["viruses"] = (diseases || list())
 	reagents.add_reagent(REAGENT_ID_BLOOD, 10, data)
 
 /obj/item/reagent_containers/glass/beaker/vial/culture/random_virus
@@ -50,8 +50,8 @@
 
 /obj/item/reagent_containers/glass/beaker/vial/culture/random_virus/Initialize(mapload)
 	. = ..()
-	diseases += new /datum/disease/advance/random
-	data["viruses"] = diseases
+	LAZYADD(diseases, new /datum/disease/advance/random)
+	data["viruses"] = (diseases || list())
 	reagents.add_reagent(REAGENT_ID_BLOOD, 10, data)
 
 /obj/item/reagent_containers/glass/beaker/vial/culture/random_virus/minor
@@ -60,6 +60,6 @@
 
 /obj/item/reagent_containers/glass/beaker/vial/culture/random_virus/minor/Initialize(mapload)
 	. = ..()
-	diseases += new /datum/disease/advance/random/minor
-	data["viruses"] = diseases
+	LAZYADD(diseases, new /datum/disease/advance/random/minor)
+	data["viruses"] = (diseases || list())
 	reagents.add_reagent(REAGENT_ID_BLOOD, 10, data)

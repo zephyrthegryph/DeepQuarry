@@ -42,7 +42,7 @@
 	update_nearby_tiles()
 	var/obj/machinery/shieldgen/SG = our_owner?.resolve()
 	if(SG)
-		SG.deployed_shields -= src
+		LAZYREMOVE(SG.deployed_shields, src)
 	our_owner = null
 	. = ..()
 
@@ -107,8 +107,8 @@
 	var/cell_type = /obj/item/cell/high
 	var/active = 0
 	var/malfunction = 0 //Malfunction causes parts of the shield to slowly dissapate
-	var/list/deployed_shields = list()
-	var/list/regenerating = list()
+	var/list/deployed_shields
+	var/list/regenerating
 	var/is_open = 0 //Whether or not the wires are exposed
 	var/locked = 0
 	var/check_delay = 60	//periodically recheck if we need to rebuild a shield
@@ -167,7 +167,7 @@
 		if (is_type_in_list(target_tile,GLOB.shieldgen_blockedturfs) && !(locate(/obj/machinery/shield) in target_tile))
 			if (malfunction && prob(33) || !malfunction)
 				var/obj/machinery/shield/S = new/obj/machinery/shield(target_tile)
-				deployed_shields += S
+				LAZYADD(deployed_shields, S)
 				S.our_owner = WEAKREF(src) //So it knows to remove itself from our list when it gets qdel'd
 				use_power(S.shield_generate_power)
 
@@ -194,8 +194,8 @@
 		update_icon()
 
 	if(malfunction)
-		if(deployed_shields.len && prob(5))
-			qdel(pick(deployed_shields))
+		if(length(deployed_shields) && prob(5))
+			qdel(DEFAULTPICK(deployed_shields, null))
 
 // Dropping below 30% integrity makes the generator start to malfunction.
 /obj/machinery/shieldgen/atom_break(damage_flag)

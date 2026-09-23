@@ -88,7 +88,7 @@
 
 	for(var/obj/effect/overmap/visitable/ship/S as anything in SSshuttles.ships)
 		if(S.check_ownership(src))
-			S.engines |= controller
+			LAZYOR(S.engines, controller)
 			if(dir != S.fore_dir)
 				atom_break()
 			break

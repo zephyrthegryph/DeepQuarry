@@ -2,7 +2,7 @@
 	name = "rolling crematorium"
 	desc = "A large metal tank."
 	endurance = 200
-	armor = list(melee = 60, bullet = 60, laser = 60, energy = 60, bomb = 80, bio = 100, rad = 100)  //High armor, relativly low HP
+	armor_spec = "melee=60;bullet=60;laser=60;energy=60;bomb=80;bio=100;rad=100" //High armor, relativly low HP
 	icon_state = "rex"
 	melee_attack_delay = 2.5 SECONDS
 	melee_damage_lower = 50
@@ -93,7 +93,7 @@
 	name = "expirmental jellyfish"
 	desc = "A glowing green jellyfish"
 	endurance = 600
-	armor = list(melee = 30, bullet = 30, laser = 30, energy = 30, bomb = 50, bio = 100, rad = 100) //So, it's made of jelly. Bullets and melee bounces off of it. The 20 laser and energy are for a smidge extra tankny because I savour endurance fights
+	armor_spec = "melee=30;bullet=30;laser=30;energy=30;bomb=50;bio=100;rad=100" //So, it's made of jelly. Bullets and melee bounces off of it. The 20 laser and energy are for a smidge extra tankny because I savour endurance fights
 	icon = 'icons/mob/tyr.dmi'
 	icon_state = "jellyfish"
 	icon_living = "jellyfish"

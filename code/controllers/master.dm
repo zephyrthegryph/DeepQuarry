@@ -89,14 +89,14 @@ GLOBAL_REAL(Master, /datum/controller/master)
 	var/list/perf_tick_realtime = list()
 	var/list/perf_outliers = list()
 	/// Breakdown for the highest-usage tick since the last explicit reset.
-	var/list/perf_worst_tick = list()
+	var/list/perf_worst_tick
 	var/perf_history_limit = 12000
 	/// Every sample ever recorded, so callers can hold a position that survives trimming.
 	var/perf_samples_total = 0
 	var/perf_tick_top_name = "None"
 	var/perf_tick_top_usage = 0
 	var/perf_tick_peak_usage = 0
-	var/list/perf_tick_breakdown = list()
+	var/list/perf_tick_breakdown
 
 /datum/controller/master/New()
 	// Ensure usr is null, to prevent any potential weirdness resulting from the MC having a usr if it's manually restarted.
@@ -370,7 +370,7 @@ ADMIN_VERB(cmd_controller_view_ui, R_SERVER|R_DEBUG, "Controller Overview", "Vie
 				stack_trace("ERROR: MC: subsystem `[subsystem.type]` has an invalid dependent: `[dependent_type]`. Skipping")
 				continue
 			var/datum/controller/subsystem/dependent = type_to_subsystem[dependent_type]
-			dependent.dependencies |= subsystem.type
+			LAZYOR(dependent.dependencies, subsystem.type)
 		subsystem.dependents = list()
 
 	// Constructs a reverse-dependency graph.
@@ -687,7 +687,7 @@ ADMIN_VERB(cmd_controller_view_ui, R_SERVER|R_DEBUG, "Controller Overview", "Vie
 		perf_tick_top_name = "None"
 		perf_tick_top_usage = 0
 		perf_tick_peak_usage = starting_tick_usage
-		perf_tick_breakdown.Cut()
+		LAZYCLEARLIST(perf_tick_breakdown)
 
 		if (init_stage != init_stage_completed)
 			// Initialization deliberately blocks for long stretches. Establish the
@@ -835,7 +835,7 @@ ADMIN_VERB(cmd_controller_view_ui, R_SERVER|R_DEBUG, "Controller Overview", "Vie
 		var/trim_count = min(1000, perf_tick_usage.len - 1)
 		perf_tick_usage.Cut(1, trim_count + 1)
 		perf_tick_realtime.Cut(1, trim_count + 1)
-	var/previous_worst_usage = perf_worst_tick["usage"] || 0
+	var/previous_worst_usage = LAZYACCESS(perf_worst_tick, "usage") || 0
 	if(usage > previous_worst_usage || usage > 100)
 		var/list/breakdown = performance_tick_breakdown(usage)
 		var/list/tick_record = list(
@@ -859,7 +859,7 @@ ADMIN_VERB(cmd_controller_view_ui, R_SERVER|R_DEBUG, "Controller Overview", "Vie
 	var/list/breakdown = list()
 	var/attributed_usage = 0
 	for(var/subsystem_name in perf_tick_breakdown)
-		var/subsystem_usage = perf_tick_breakdown[subsystem_name]
+		var/subsystem_usage = LAZYACCESS(perf_tick_breakdown, subsystem_name)
 		attributed_usage += subsystem_usage
 		breakdown += list(list("name" = subsystem_name, "usage" = subsystem_usage))
 	var/unattributed = max(usage - attributed_usage, 0)
@@ -1050,7 +1050,7 @@ ADMIN_VERB(cmd_controller_view_ui, R_SERVER|R_DEBUG, "Controller Overview", "Vie
 			var/state = queue_node.ignite(queue_node_paused)
 			tick_usage = TICK_USAGE - tick_usage
 			perf_tick_peak_usage = max(perf_tick_peak_usage, TICK_USAGE)
-			perf_tick_breakdown[queue_node.name] = (perf_tick_breakdown[queue_node.name] || 0) + max(tick_usage, 0)
+			LAZYSET(perf_tick_breakdown, queue_node.name, (LAZYACCESS(perf_tick_breakdown, queue_node.name) || 0) + max(tick_usage, 0))
 			if(tick_usage > perf_tick_top_usage)
 				perf_tick_top_usage = tick_usage
 				perf_tick_top_name = queue_node.name

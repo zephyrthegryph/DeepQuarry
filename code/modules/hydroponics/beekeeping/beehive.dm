@@ -9,7 +9,7 @@
 	var/bee_count = 0 // Percent
 	var/smoked = 0 // Timer
 	var/honeycombs = 0 // Percent
-	var/list/frames = list()	// List of frames inside.
+	var/list/frames	// List of frames inside.
 	var/maxFrames = 5
 
 /obj/machinery/beehive/Initialize(mapload)

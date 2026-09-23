@@ -22,7 +22,7 @@
 	var/mob/living/carbon/human/H = M
 	var/sample_type
 
-	if(H.wear_mask)
+	if(H.get_equipped_item(SLOT_ID_MASK))
 		to_chat(user, span_warning("\The [H] is wearing a mask."))
 		return ITEM_INTERACT_FAILURE
 

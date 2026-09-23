@@ -59,8 +59,8 @@
 	active_power_usage = 100
 	circuit = /obj/item/circuitboard/message_server
 
-	var/list/datum/data_pda_msg/pda_msgs = list()
-	var/list/datum/data_rc_msg/rc_msgs = list()
+	var/list/datum/data_pda_msg/pda_msgs
+	var/list/datum/data_rc_msg/rc_msgs
 	var/active = 1
 	var/decryptkey = "password"
 
@@ -127,11 +127,11 @@ REGISTRY_MEMBERSHIP(/obj/machinery/message_server, REGISTRY_MESSAGE_SERVERS)
 		if (findtextEx(message,token))
 			message = span_red("[message]")	//Rejected messages will be indicated by red color.
 			result = token										//Token caused rejection (if there are multiple, last will be chosen>.
-	pda_msgs += new/datum/data_pda_msg(recipient,sender,message)
+	LAZYADD(pda_msgs, new/datum/data_pda_msg(recipient,sender,message))
 	return result
 
 /obj/machinery/message_server/proc/send_rc_message(recipient = "",sender = "",message = "",stamp = "", id_auth = "", priority = 1)
-	rc_msgs += new/datum/data_rc_msg(recipient,sender,message,stamp,id_auth,priority)
+	LAZYADD(rc_msgs, new/datum/data_rc_msg(recipient,sender,message,stamp,id_auth,priority))
 	var/authmsg = "[message]\n"
 	if (id_auth)
 		authmsg += "([id_auth])\n"
@@ -140,7 +140,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery/message_server, REGISTRY_MESSAGE_SERVERS)
 	for (var/obj/machinery/requests_console/Console in REGISTRY_MEMBERS(REGISTRY_ALARM_CONSOLES))
 		if (ckey(Console.department) == ckey(recipient))
 			if(Console.inoperable())
-				Console.message_log += list(list("Message lost due to console failure.","Please contact [station_name()] system adminsitrator or AI for technical assistance."))
+				LAZYADD(Console.message_log, list(list("Message lost due to console failure.","Please contact [station_name()] system adminsitrator or AI for technical assistance.")))
 				continue
 			if(Console.newmessagepriority < priority)
 				Console.newmessagepriority = priority
@@ -150,12 +150,12 @@ REGISTRY_MEMBERSHIP(/obj/machinery/message_server, REGISTRY_MESSAGE_SERVERS)
 					if(!Console.silent)
 						playsound(Console, 'sound/machines/twobeep.ogg', 50, 1)
 						Console.audible_message(text("[icon2html(Console,hearers(Console))] *The Requests Console beeps: 'PRIORITY Alert in [sender]'"),,5, runemessage = "beep! beep!")
-					Console.message_log += list(list("High Priority message from [sender]", "[authmsg]"))
+					LAZYADD(Console.message_log, list(list("High Priority message from [sender]", "[authmsg]")))
 				else
 					if(!Console.silent)
 						playsound(Console, 'sound/machines/twobeep.ogg', 50, 1)
 						Console.audible_message(text("[icon2html(Console,hearers(Console))] *The Requests Console beeps: 'Message from [sender]'"),,4, runemessage = "beep beep")
-					Console.message_log += list(list("Message from [sender]", "[authmsg]"))
+					LAZYADD(Console.message_log, list(list("Message from [sender]", "[authmsg]")))
 			Console.set_light(2)
 
 
@@ -285,20 +285,20 @@ GLOBAL_DATUM(blackbox, /obj/machinery/blackbox_recorder)
 	idle_power_usage = 10
 	active_power_usage = 100
 	var/list/messages = list()		//Stores messages of non-standard frequencies
-	var/list/messages_admin = list()
+	var/list/messages_admin
 
-	var/list/msg_common = list()
-	var/list/msg_science = list()
-	var/list/msg_command = list()
-	var/list/msg_medical = list()
-	var/list/msg_engineering = list()
-	var/list/msg_security = list()
-	var/list/msg_deathsquad = list()
-	var/list/msg_syndicate = list()
-	var/list/msg_raider = list()
-	var/list/msg_cargo = list()
-	var/list/msg_service = list()
-	var/list/msg_explorer = list()
+	var/list/msg_common
+	var/list/msg_science
+	var/list/msg_command
+	var/list/msg_medical
+	var/list/msg_engineering
+	var/list/msg_security
+	var/list/msg_deathsquad
+	var/list/msg_syndicate
+	var/list/msg_raider
+	var/list/msg_cargo
+	var/list/msg_service
+	var/list/msg_explorer
 
 	var/list/datum/feedback_variable/feedback = new()
 
@@ -346,23 +346,23 @@ GLOBAL_DATUM(blackbox, /obj/machinery/blackbox_recorder)
 	var/rc_msg_amt = 0
 
 	for(var/obj/machinery/message_server/MS in REGISTRY_MEMBERS(REGISTRY_MACHINES))
-		if(MS.pda_msgs.len > pda_msg_amt)
-			pda_msg_amt = MS.pda_msgs.len
-		if(MS.rc_msgs.len > rc_msg_amt)
-			rc_msg_amt = MS.rc_msgs.len
+		if(length(MS.pda_msgs) > pda_msg_amt)
+			pda_msg_amt = length(MS.pda_msgs)
+		if(length(MS.rc_msgs) > rc_msg_amt)
+			rc_msg_amt = length(MS.rc_msgs)
 
 	feedback_set_details("radio_usage","")
 
-	feedback_add_details("radio_usage","COM-[msg_common.len]")
-	feedback_add_details("radio_usage","SCI-[msg_science.len]")
-	feedback_add_details("radio_usage","HEA-[msg_command.len]")
-	feedback_add_details("radio_usage","MED-[msg_medical.len]")
-	feedback_add_details("radio_usage","ENG-[msg_engineering.len]")
-	feedback_add_details("radio_usage","SEC-[msg_security.len]")
-	feedback_add_details("radio_usage","DTH-[msg_deathsquad.len]")
-	feedback_add_details("radio_usage","SYN-[msg_syndicate.len]")
-	feedback_add_details("radio_usage","CAR-[msg_cargo.len]")
-	feedback_add_details("radio_usage","SRV-[msg_service.len]")
+	feedback_add_details("radio_usage","COM-[length(msg_common)]")
+	feedback_add_details("radio_usage","SCI-[length(msg_science)]")
+	feedback_add_details("radio_usage","HEA-[length(msg_command)]")
+	feedback_add_details("radio_usage","MED-[length(msg_medical)]")
+	feedback_add_details("radio_usage","ENG-[length(msg_engineering)]")
+	feedback_add_details("radio_usage","SEC-[length(msg_security)]")
+	feedback_add_details("radio_usage","DTH-[length(msg_deathsquad)]")
+	feedback_add_details("radio_usage","SYN-[length(msg_syndicate)]")
+	feedback_add_details("radio_usage","CAR-[length(msg_cargo)]")
+	feedback_add_details("radio_usage","SRV-[length(msg_service)]")
 	feedback_add_details("radio_usage","OTH-[messages.len]")
 	feedback_add_details("radio_usage","PDA-[pda_msg_amt]")
 	feedback_add_details("radio_usage","RC-[rc_msg_amt]")

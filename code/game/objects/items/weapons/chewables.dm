@@ -9,7 +9,7 @@
 	var/chem_volume = 0
 	var/chewtime = 0
 	var/brand
-	var/list/filling = list()
+	var/list/filling
 	var/wrapped = FALSE
 
 /obj/item/clothing/mask/chewable/attack_self(mob/user)
@@ -33,7 +33,7 @@
 	flags |= NOREACT // so it doesn't react until you light it
 	create_reagents(chem_volume) // making the cigarrete a chemical holder with a maximum volume of 15
 	for(var/R in filling)
-		reagents.add_reagent(R, filling[R])
+		reagents.add_reagent(R, LAZYACCESS(filling, R))
 	if(wrapped)
 		slot_flags = null
 
@@ -59,7 +59,7 @@
 	if(reagents && reagents.total_volume)
 		if(ishuman(loc))
 			var/mob/living/carbon/human/C = loc
-			if (src == C.wear_mask && C.check_has_mouth())
+			if (src == C.get_equipped_item(SLOT_ID_MASK) && C.check_has_mouth())
 				reagents.trans_to_mob(C, REM, CHEM_INGEST, 0.2)
 		else
 			STOP_PROCESSING(SSprocessing, src)
@@ -94,7 +94,7 @@
 			var/mob/living/M = loc
 			if(!no_message)
 				to_chat(M, span_notice("The [name] runs out of flavor."))
-			if(M.wear_mask)
+			if(M.get_equipped_item(SLOT_ID_MASK))
 				M.remove_from_mob(src) //un-equip it so the overlays can update
 				M.update_inv_wear_mask(0)
 				if(!M.equip_to_slot_if_possible(butt, slot_wear_mask))

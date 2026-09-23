@@ -15,12 +15,12 @@
 	data["ownjob"] = ownjob					// ...and what does he do?
 
 	// update list of shortcuts, only if they changed
-	if(!shortcut_cache.len)
+	if(!length(shortcut_cache))
 		shortcut_cache = list()
 		shortcut_cat_order = list()
 		var/prog_list = programs.Copy()
 		if(cartridge)
-			prog_list |= cartridge.programs
+			if(length(cartridge.programs)) prog_list |= cartridge.programs
 
 		for(var/datum/data/pda/P as anything in prog_list)
 
@@ -28,16 +28,16 @@
 				continue
 			var/list/cat
 			if(P.category in shortcut_cache)
-				cat = shortcut_cache[P.category]
+				cat = LAZYACCESS(shortcut_cache, P.category)
 			else
 				cat = list()
-				shortcut_cache[P.category] = cat
-				shortcut_cat_order += P.category
+				LAZYSET(shortcut_cache, P.category, cat)
+				LAZYADD(shortcut_cat_order, P.category)
 			cat |= list(list(name = P.name, icon = P.icon, notify_icon = P.notify_icon, ref = "\ref[P]"))
 
 		// force the order of a few core categories
 		shortcut_cat_order = list("General") \
-			+ sortList(shortcut_cat_order - list("General", "Scanners", "Utilities")) \
+			+ sortList((shortcut_cat_order || list()) - list("General", "Scanners", "Utilities")) \
 			+ list("Scanners", "Utilities")
 
 	data["idInserted"] = (id ? 1 : 0)

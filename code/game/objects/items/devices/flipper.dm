@@ -23,6 +23,7 @@
 /mob/living/silicon/pai/flipper/init_vore(force)
 	var/obj/belly/B = new /obj/belly/flipper/maw(src)
 	B.affects_vore_sprites = FALSE
+	B.own_emote_lists()
 	B.emote_lists[DM_HOLD] = list(
 	"The wet, plush lining of [name]'s maw surrounds you, enveloping you in a soft and slightly sticky embrace. The walls pulse and undulate gently, as if alive, creating a soothing rhythm that lulls you into a sense of calm.",
 	"You're encased in the warm and humid space of [name]'s maw, the slick surfaces glistening around you. The soft movements of the walls feel almost like the caress of a living creature.",
@@ -33,6 +34,7 @@
 
 	B = new /obj/belly/flipper/throat(src)
 	B.affects_vore_sprites = FALSE
+	B.own_emote_lists()
 	B.emote_lists[DM_HOLD] = list(
 		"The narrow passage of [name]'s throat envelops you in its warm embrace, the smooth metallic walls pressing snugly against your body.",
 		"You feel the intricate machinery of [name]'s throat pulse and undulate around you.",
@@ -41,6 +43,7 @@
 		"The warm, inviting space of [name]'s throat wraps snugly around you, providing a sense of comfort and reassurance.")
 
 	B = new /obj/belly/flipper/stomach(src)
+	B.own_emote_lists()
 	B.emote_lists[DM_DIGEST] = list(
 		"The cavernous stomach of the [name] rumbles and churns,.",
 		"The walls of [name]'s stomach squish and squelch around you, the sophisticated machinery working in perfect harmony.",

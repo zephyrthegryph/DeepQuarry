@@ -483,7 +483,7 @@
 				if(!istext(design_id))
 					continue
 
-				if(!(stored_research.researched_designs.Find(design_id) || is_type_in_list(SSresearch.techweb_design_by_id(design_id), illegal_local_designs)))
+				if(!(LAZYFIND(stored_research.researched_designs, design_id) || is_type_in_list(SSresearch.techweb_design_by_id(design_id), illegal_local_designs)))
 					continue
 
 				var/datum/design_techweb/design = SSresearch.techweb_design_by_id(design_id)

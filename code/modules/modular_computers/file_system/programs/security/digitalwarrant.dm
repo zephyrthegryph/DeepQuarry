@@ -1,7 +1,7 @@
 GLOBAL_VAR_INIT(warrant_uid, 0)
 
 /datum/datacore
-	var/list/warrants = list()
+	var/list/warrants
 
 /datum/data/record/warrant
 	var/warrant_id
@@ -100,12 +100,12 @@ GLOBAL_VAR_INIT(warrant_uid, 0)
 
 		if("savewarrant")
 			. = TRUE
-			GLOB.data_core.warrants |= activewarrant
+			LAZYOR(GLOB.data_core.warrants, activewarrant)
 			activewarrant = null
 
 		if("deletewarrant")
 			. = TRUE
-			GLOB.data_core.warrants -= activewarrant
+			LAZYREMOVE(GLOB.data_core.warrants, activewarrant)
 			activewarrant = null
 
 		if("editwarrantname")

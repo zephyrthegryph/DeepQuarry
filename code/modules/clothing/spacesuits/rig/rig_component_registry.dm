@@ -38,7 +38,7 @@
 	if(holder.initial_modules && holder.initial_modules.len)
 		for(var/path in holder.initial_modules)
 			var/obj/item/rig_module/module = new path(holder)
-			holder.installed_modules += module
+			LAZYADD(holder.installed_modules, module)
 			module.installed(holder)
 
 	// Spawn the six physical components
@@ -86,8 +86,8 @@
 			piece.siemens_coefficient = holder.siemens_coefficient
 		piece.permeability_coefficient = holder.permeability_coefficient
 		piece.unacidable = holder.unacidable
-		if(islist(holder.armor))
-			piece.armor = holder.armor.Copy()
+		piece.set_armor(holder.get_armor())
+		piece.worn_protection_changed()
 
 /*
  * proc/destroy_pieces()

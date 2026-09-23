@@ -951,7 +951,7 @@ GLOBAL_LIST_INIT(ai_verbs_default, list(
 	if(ishuman(speaker))
 		var/mob/living/carbon/human/H = speaker
 
-		if(H.wear_mask && istype(H.wear_mask,/obj/item/clothing/mask/gas/voice))
+		if(H.get_equipped_item(SLOT_ID_MASK) && istype(H.get_equipped_item(SLOT_ID_MASK),/obj/item/clothing/mask/gas/voice))
 			changed_voice = 1
 			var/list/impersonated = new()
 			var/mob/living/carbon/human/I = impersonated[speaker_name]
@@ -965,7 +965,7 @@ GLOBAL_LIST_INIT(ai_verbs_default, list(
 
 			// If I's display name is currently different from the voice name and using an agent ID then don't impersonate
 			// as this would allow the AI to track I and realize the mismatch.
-			if(I && !(I.name != speaker_name && I.wear_id && istype(I.wear_id,/obj/item/card/id/syndicate)))
+			if(I && !(I.name != speaker_name && I.get_equipped_item(SLOT_ID_ID) && istype(I.get_equipped_item(SLOT_ID_ID),/obj/item/card/id/syndicate)))
 				impersonating = I
 				jobname = impersonating.get_assignment()
 			else

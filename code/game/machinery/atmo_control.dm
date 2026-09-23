@@ -213,8 +213,8 @@
 	name = "Computer"
 	desc = "Control atmospheric systems, remotely."
 	var/frequency = PUMPS_FREQ
-	var/list/sensors = list()
-	var/list/sensor_information = list()
+	var/list/sensors
+	var/list/sensor_information
 	var/datum/radio_frequency/radio_connection
 	circuit = /obj/item/circuitboard/air_management
 
@@ -236,9 +236,9 @@
 	if(!signal || signal.encryption) return
 
 	var/id_tag = signal.data["tag"]
-	if(!id_tag || !sensors.Find(id_tag)) return
+	if(!id_tag || !LAZYFIND(sensors, id_tag)) return
 
-	sensor_information[id_tag] = signal.data
+	LAZYSET(sensor_information, id_tag, signal.data)
 
 /obj/machinery/computer/general_air_control/tgui_interact(mob/user, datum/tgui/ui)
 	ui = SStgui.try_update_ui(user, src, ui)
@@ -249,10 +249,10 @@
 /obj/machinery/computer/general_air_control/tgui_data(mob/user)
 	var/list/data = list()
 	var/sensors_ui[0]
-	if(sensors.len)
+	if(length(sensors))
 		for(var/id_tag in sensors)
-			var/long_name = sensors[id_tag]
-			var/list/sensor_data = sensor_information[id_tag]
+			var/long_name = LAZYACCESS(sensors, id_tag)
+			var/list/sensor_data = LAZYACCESS(sensor_information, id_tag)
 			sensors_ui[++sensors_ui.len] = list("long_name" = long_name, "sensor_data" = sensor_data)
 	else
 		sensors_ui = null
@@ -306,10 +306,10 @@
 
 			if(istype(device, /obj/machinery/air_sensor))
 				var/obj/machinery/air_sensor/AS = device
-				sensors[AS.id_tag] = device_name
+				LAZYSET(sensors, AS.id_tag, device_name)
 			else
 				var/obj/machinery/meter/M = device
-				sensors[M.id] = device_name
+				LAZYSET(sensors, M.id, device_name)
 
 			to_chat(user, span_notice("You have added the [tool.connectable] to the [src] under the name [device_name]!"))
 
@@ -317,7 +317,7 @@
 			// Creates an associative mapping of Names to Tags, from Tags to Names.
 			var/list/sensor_names = list()
 			for(var/tag in sensors)
-				sensor_names[sensors[tag]] = tag
+				sensor_names[LAZYACCESS(sensors, tag)] = tag
 
 			var/to_remove = tgui_input_list(user, "Select a sensor/meter to remove", "Sensor/Meter Removal", sensor_names)
 			if(!to_remove)
@@ -327,7 +327,7 @@
 			if(confirm != "Yes" || !Adjacent(user))
 				return
 
-			sensors -= sensor_names[to_remove]
+			LAZYREMOVE(sensors, sensor_names[to_remove])
 			to_chat(user, span_notice("Successfully removed sensor/meter with name [to_remove]"))
 
 /obj/machinery/computer/general_air_control/Initialize(mapload)
@@ -694,7 +694,7 @@
 
 		var/injecting = 0
 		for(var/id_tag in sensor_information)
-			var/list/data = sensor_information[id_tag]
+			var/list/data = LAZYACCESS(sensor_information, id_tag)
 			if(data["temperature"])
 				if(data["temperature"] >= cutoff_temperature)
 					injecting = 0

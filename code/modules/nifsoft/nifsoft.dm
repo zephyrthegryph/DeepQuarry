@@ -162,7 +162,7 @@
 //////////////////////
 //A package of NIF software
 /datum/nifsoft/package
-	var/list/software = list()
+	var/list/software
 	wear = 0 //Packages don't cause wear themselves, the software does
 
 //Constructor accepts a NIF and loads all the software
@@ -176,7 +176,7 @@
 
 //Clean self up
 /datum/nifsoft/package/Destroy()
-	software.Cut()
+	LAZYCLEARLIST(software)
 	software = null
 	return ..()
 

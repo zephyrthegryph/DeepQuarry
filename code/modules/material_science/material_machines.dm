@@ -5,9 +5,9 @@
 	var/datum/material/dominant
 	var/dominant_amount = 0
 	for(var/material_name in composition)
-		if(composition[material_name] > dominant_amount)
+		if(LAZYACCESS(composition, material_name) > dominant_amount)
 			dominant = get_material_by_name(material_name)
-			dominant_amount = composition[material_name]
+			dominant_amount = LAZYACCESS(composition, material_name)
 	return dominant?.icon_colour || "#8b8b8b"
 
 /proc/material_batch_absorb_sheet(datum/material_batch/batch, obj/item/stack/material/stack)
@@ -18,14 +18,14 @@
 		var/obj/item/stack/material/processed_alloy/processed_stack = stack
 		var/datum/material_batch/source = processed_stack.physical_batch()
 		for(var/component in source.composition)
-			batch.add_material(component, source.composition[component] / max(source.amount, 1), null, source.purity, stack.feedstock_lot_id)
+			batch.add_material(component, LAZYACCESS(source.composition, component) / max(source.amount, 1), null, source.purity, stack.feedstock_lot_id)
 		for(var/additive in source.impurities)
-			batch.impurities[additive] = (batch.impurities[additive] || 0) + source.impurities[additive] / max(source.amount, 1)
+			LAZYSET(batch.impurities, additive, (LAZYACCESS(batch.impurities, additive) || 0) + LAZYACCESS(source.impurities, additive) / max(source.amount, 1))
 		// Reclaimed stock offsets part of its fresh-feedstock cost. Coatings and
 		// field treatments are deliberately destroyed by remelting, but the
 		// recovered metal is now economically and contractually traceable.
 		batch.record_recovery(max(0.1, source.unit_production_cost() * 0.5))
-		batch.process_history += "remelted reclaimed [source.display_name()]"
+		LAZYADD(batch.process_history, "remelted reclaimed [source.display_name()]")
 	else
 		batch.add_material(stack.material.name, 1, null, stack.feedstock_purity, stack.feedstock_lot_id)
 		if(stack.feedstock_trace)
@@ -316,7 +316,7 @@
 	for(var/datum/reagent/reagent in reagents.reagent_list)
 		if(!(reagent.id in list(REAGENT_ID_CARBON, REAGENT_ID_SILICON, REAGENT_ID_LITHIUM, REAGENT_ID_COOLANT, REAGENT_ID_FROSTOIL, REAGENT_ID_SACID, REAGENT_ID_PACID)))
 			batch.add_additive(reagent.name, min(reagent.volume, 6), max(reagent.supply_conversion_value, 0.05), MATERIAL_COST_CHEMICALS)
-	batch.process_history += "chemically treated in [round(reagents.total_volume, 0.1)]u medium"
+	LAZYADD(batch.process_history, "chemically treated in [round(reagents.total_volume, 0.1)]u medium")
 	reagents.clear_reagents()
 
 /obj/machinery/material_furnace/proc/apply_real_atmosphere(datum/material_batch/batch)
@@ -502,7 +502,7 @@
 	var/beam_energy = max(projectile.damage, 1) * 100
 	batch.add_thermal_energy(beam_energy * 0.65)
 	batch.record_electricity(beam_energy)
-	var/crystal_fraction = ((batch.composition[MAT_GLASS] || 0) + (batch.composition[MAT_QUARTZ] || 0) + (batch.composition[MAT_DIAMOND] || 0) + (batch.composition[MAT_VOLTAIC_CRYSTAL] || 0)) / max(batch.amount, 1)
+	var/crystal_fraction = ((LAZYACCESS(batch.composition, MAT_GLASS) || 0) + (LAZYACCESS(batch.composition, MAT_QUARTZ) || 0) + (LAZYACCESS(batch.composition, MAT_DIAMOND) || 0) + (LAZYACCESS(batch.composition, MAT_VOLTAIC_CRYSTAL) || 0)) / max(batch.amount, 1)
 	if(crystal_fraction >= 0.1 && batch.conductivity >= 25)
 		var/strength = clamp(round(projectile.damage / 5), 2, 20)
 		batch.add_field_treatment(MATERIAL_FIELD_EMITTER, strength)
@@ -526,7 +526,7 @@
 	var/datum/material_batch/batch = stock.physical_batch().copy_batch()
 	var/strength = clamp(round(energy / 20), 10, 60)
 	batch.add_field_treatment(MATERIAL_FIELD_PARTICLE, strength)
-	var/crystal_fraction = ((batch.composition[MAT_GLASS] || 0) + (batch.composition[MAT_QUARTZ] || 0) + (batch.composition[MAT_DIAMOND] || 0) + (batch.composition[MAT_VOLTAIC_CRYSTAL] || 0) + (batch.composition[MAT_LUMEN_CRYSTAL] || 0)) / max(batch.amount, 1)
+	var/crystal_fraction = ((LAZYACCESS(batch.composition, MAT_GLASS) || 0) + (LAZYACCESS(batch.composition, MAT_QUARTZ) || 0) + (LAZYACCESS(batch.composition, MAT_DIAMOND) || 0) + (LAZYACCESS(batch.composition, MAT_VOLTAIC_CRYSTAL) || 0) + (LAZYACCESS(batch.composition, MAT_LUMEN_CRYSTAL) || 0)) / max(batch.amount, 1)
 	if(crystal_fraction >= 0.1 && batch.conductivity >= 25)
 		batch.add_field_treatment(MATERIAL_FIELD_ENERGY_STORAGE, round(strength * crystal_fraction))
 	if(batch.hardness >= 45 && batch.toughness >= 45)

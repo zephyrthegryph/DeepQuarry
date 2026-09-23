@@ -15,7 +15,7 @@
 /obj/item/clothing/mask/synthfacemask/equipped()
 	..()
 	var/mob/living/carbon/human/H = loc
-	if(istype(H) && H.wear_mask == src)
+	if(istype(H) && H.get_equipped_item(SLOT_ID_MASK) == src)
 		canremove = FALSE
 		maskmaster = H
 		START_PROCESSING(SSprocessing, src)
@@ -69,4 +69,4 @@
 
 /datum/gear/mask/synthface/New()
 	..()
-	gear_tweaks += GLOB.gear_tweak_free_color_choice
+	LAZYADD(gear_tweaks, GLOB.gear_tweak_free_color_choice)

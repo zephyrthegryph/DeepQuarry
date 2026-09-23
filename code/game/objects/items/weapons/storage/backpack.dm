@@ -519,7 +519,7 @@
 		return
 	if(H.stat)
 		return
-	if(H.back == src)
+	if(H.get_equipped_item(SLOT_ID_BACK) == src)
 		to_chat(H, span_warning("How do you expect to work on \the [src] while it's on your back?"))
 		return
 

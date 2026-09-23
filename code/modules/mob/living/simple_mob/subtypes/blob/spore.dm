@@ -50,12 +50,12 @@
 /mob/living/simple_mob/blob/spore/Initialize(mapload, obj/structure/blob/factory/my_factory)
 	if(istype(my_factory))
 		factory = my_factory
-		factory.spores += src
+		LAZYADD(factory.spores, src)
 	return ..()
 
 /mob/living/simple_mob/blob/spore/Destroy()
 	if(factory)
-		factory.spores -= src
+		LAZYREMOVE(factory.spores, src)
 	factory = null
 	if(infested)
 		infested.forceMove(get_turf(src))
@@ -116,10 +116,10 @@
 
 /mob/living/simple_mob/blob/spore/proc/infest(mob/living/carbon/human/H)
 	is_infesting = TRUE
-	if(H.wear_suit)
-		var/obj/item/clothing/suit/A = H.wear_suit
-		if(A.armor && A.armor["melee"])
-			endurance += A.armor["melee"] //That zombie's got armor, I want armor!
+	if(H.get_equipped_item(SLOT_ID_SUIT))
+		var/obj/item/clothing/suit/A = H.get_equipped_item(SLOT_ID_SUIT)
+		if(A.get_armor().value("melee"))
+			endurance += A.get_armor().value("melee") //That zombie's got armor, I want armor!
 
 	endurance += 40
 	fully_heal()

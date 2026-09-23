@@ -19,7 +19,7 @@
 
 	var/max_transfer_rate = 0							// Maximal input/output rate. Determined by used capacitors when building the device.
 	var/mode = PSU_OFFLINE								// Current inputting/outputting mode
-	var/list/internal_cells = list()					// Cells stored in this PSU
+	var/list/internal_cells					// Cells stored in this PSU
 	var/max_cells = 3									// Maximal amount of stored cells at once. Capped at 9.
 	var/previous_charge = 0								// Charge previous tick.
 	var/equalise = 0									// If true try to equalise charge between cells
@@ -161,10 +161,10 @@
 	if(!istype(C))
 		return 0
 
-	if(internal_cells.len >= max_cells)
+	if(length(internal_cells) >= max_cells)
 		return 0
 
-	internal_cells.Add(C)
+	LAZYADD(internal_cells, C)
 	if(user)
 		user.drop_from_inventory(C)
 	C.forceMove(src)
@@ -212,7 +212,7 @@
 /obj/machinery/power/smes/batteryrack/dismantle()
 	for(var/obj/item/cell/C in internal_cells)
 		C.forceMove(get_turf(src))
-		internal_cells -= C
+		LAZYREMOVE(internal_cells, C)
 	return ..()
 
 /obj/machinery/power/smes/batteryrack/declare_interactions(list/into)
@@ -266,7 +266,7 @@
 	data["equalise"] = equalise
 	data["blink_tick"] = ui_tick
 	data["cells_max"] = max_cells
-	data["cells_cur"] = internal_cells.len
+	data["cells_cur"] = length(internal_cells)
 	var/list/cells = list()
 	var/cell_index = 0
 	for(var/obj/item/cell/C in internal_cells)
@@ -322,7 +322,7 @@
 				return TRUE
 
 			C.forceMove(get_turf(src))
-			internal_cells -= C
+			LAZYREMOVE(internal_cells, C)
 			update_icon()
 			RefreshParts()
 			update_maxcharge()

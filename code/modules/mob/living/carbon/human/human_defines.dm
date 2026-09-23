@@ -65,16 +65,6 @@
 	var/antag_faction = ""
 	var/antag_vis = ""
 
-	//Equipment slots
-	var/obj/item/wear_suit = null
-	var/obj/item/w_uniform = null
-	var/obj/item/belt = null
-	var/obj/item/head = null
-	var/obj/item/wear_id = null
-	var/obj/item/r_store = null
-	var/obj/item/l_store = null
-	var/obj/item/s_store = null
-
 	var/voice = ""	//Instead of new say code calling GetVoice() over and over and over, we're just going to ask this variable, which gets updated in Life()
 
 	var/special_voice = "" // For changing our voice. Used by a symptom.

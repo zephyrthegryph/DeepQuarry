@@ -6,7 +6,7 @@
 /datum/component/recursive_move
 	dupe_mode = COMPONENT_DUPE_UNIQUE_PASSARGS //This makes it so pretty much nothing happens when a duplicate component is created since we only use it to regenerate our parent list
 	var/atom/movable/holder
-	var/list/parents = list()
+	var/list/parents
 	var/noparents = FALSE
 
 /datum/component/recursive_move/RegisterWithParent()
@@ -39,7 +39,7 @@
 			reset_parents()
 			break
 		recursion++
-		parents += cur_parent
+		LAZYADD(parents, cur_parent)
 		RegisterSignal(cur_parent, COMSIG_ATOM_EXITED, PROC_REF(heirarchy_changed))
 		RegisterSignal(cur_parent, COMSIG_QDELETING, PROC_REF(on_qdel))
 		// Because the turf is not considered to be in the heirarchy by the component, picking
@@ -51,11 +51,11 @@
 	if(recursion >= 64) // If we escaped due to iteration limit, cancel
 		log_runtime("RECURSIVE_MOVE: Parent hit recursion limit. ([holder]) ([holder.type])")
 		reset_parents()
-		parents.Cut()
+		LAZYCLEARLIST(parents)
 
 	if(length(parents))
 		//Only need to watch top parent for movement. Everything is covered by Exited
-		RegisterSignal(parents[parents.len], COMSIG_ATOM_ENTERING, PROC_REF(top_moved))
+		RegisterSignal(parents[length(parents)], COMSIG_ATOM_ENTERING, PROC_REF(top_moved))
 
 	//If we have no parents of type atom/movable then we wait to see if that changes, checking every time our holder moves.
 	if(!length(parents) && !noparents)
@@ -78,7 +78,7 @@
 		UnregisterSignal(cur_parent, COMSIG_ATOM_EXITED)
 		UnregisterSignal(cur_parent, COMSIG_ITEM_EQUIPPED)
 
-	UnregisterSignal(parents[parents.len], COMSIG_ATOM_ENTERING)
+	if(length(parents)) UnregisterSignal(parents[length(parents)], COMSIG_ATOM_ENTERING)
 
 //Parent at top of heirarchy moved.
 /datum/component/recursive_move/proc/top_moved(atom/movable/am, atom/new_loc, atom/old_loc)
@@ -116,7 +116,7 @@
 
 /datum/component/recursive_move/proc/reset_parents()
 	unregister_signals()
-	parents.Cut()
+	LAZYCLEARLIST(parents)
 
 //the banana peel of testing stays
 /obj/item/bananapeel/test

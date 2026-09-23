@@ -76,14 +76,7 @@
 	movement_cooldown = 6
 	see_in_dark = 6
 	grab_resist = 2 //slippery. %  grabwill not work. Should be 10-20%. -Lo
-	armor = list(			// will be determined
-				"melee" = 0, //Changed from 20.They don't have scales or armor. -LO
-				"bullet" = 0,
-				"laser" = 0,
-				"energy" = 0,
-				"bomb" = 0, //Same as above. -LO
-				"bio" = 50, //Nerfed from 100. They should have some protection against these things, but 100 is pushing it. -Lo
-				"rad" = 100) //Keeping 100 rad armor as mobs cannot easily get radiation storm announcements. If this is reduced it'd be a good idea to make it 100 for the ai types.
+	armor_spec = "bio=50;rad=100" // will be determined //Changed from 20.They don't have scales or armor. -LO //Same as above. -LO //Nerfed from 100. They should have some protection against these things, but 100 is pushing it. -Lo //Keeping 100 rad armor as mobs cannot easily get radiation storm announcements. If this is reduced it'd be a good idea to make it 100 for the ai types.
 	has_hands = 1
 	pass_flags = PASSTABLE
 
@@ -153,11 +146,13 @@
 	B.desc	= "You're pulled into the snug stomach of the synx. The walls knead weakly around you, coating you in thick, viscous fluids that cling to your body, that soon starts to tingle and burn..."
 	B.digest_burn = 1
 	B.digest_brute = 0
+	B.own_emote_lists()
 	B.emote_lists[DM_HOLD] = list(
 	"The walls churn around you, soaking you in thick, smelling fluid as you're kneaded and rolled about in the surprisingly roomy, but still snug, space.",
 	"The unusually cool stomach rolls around you slowly and lazily, trying to almost knead you to sleep gently as the synx pulses around you.",
 	"The thick, viscous fluids cling to your body soaking in deep, giving you a full bath with the kneading of the walls helping to make sure you'll be smelling like synx stomach for days."
 	)
+	B.own_emote_lists()
 	B.emote_lists[DM_DIGEST] = list(
 	"The stomach kneads roughly around you, squishing and molding to your shape, with the thick fluids clinging to your body and tingling, making it hard to breathe.",
 	"Firm churns of the stomach roll and knead you around, your body tingling as fur sizzles all around you, your body getting nice and tenderized for the stomach.",
@@ -179,11 +174,13 @@
 	B.desc    = "The synx eagerly swallows you, taking you from its gullet into its long, serpentine stomach. The internals around you greedily press into your from all sides, keeping you coated in a slick coat of numbing fluids..."
 	B.digest_burn = 2
 	B.digest_brute = 0 //no brute should be done. ramping up burn as a result. this is acid. -Lo
+	B.own_emote_lists()
 	B.emote_lists[DM_HOLD] = list(
 	"Your taut prison presses and pads into your body, the synx squeezing around you almost constrictingly tight while the rolling pulses of muscle around you keep your squirms well-contained.",
 	"You can feel parts of you sink and press into the squishy stomach walls as the synx's gut seems to relax, the wet ambience of its stomach muffling the parasite's various heartbeats.",
 	"You can hear the synx teasingly mimic the sounds you've made while it's eaten you, the stomach walls practically massaging more of numbing fluid into you as its innards do their best to tire you out.",
 	)
+	B.own_emote_lists()
 	B.emote_lists[DM_DIGEST] = list(
 	"The stomach gives a crushing squeeze around your frame, its body restraining your movements and pressing digestive fluids deeper into you with overwhelming pressure from all sides..",
 	"The synx's insides greedily press into you all over, kneading around your body and softening you up for the slurry of numbing acid that's pooled around your melting frame.",
@@ -860,14 +857,7 @@
 	biology = BIOLOGY_SYNTHETIC // Metally
 	player_msg = "All systems nominal."
 	/////////////////////ARMOR
-	armor = list(
-			"melee" = 50,
-			"bullet" = 50,
-			"laser" = -50,
-			"energy" = -50,
-			"bomb" = 50,
-			"bio" = 100,
-			"rad" = 100)
+	armor_spec = "melee=50;bullet=50;laser=-50;energy=-50;bomb=50;bio=100;rad=100"
 	////////////////////////////MED INJECTOR
 	poison_type = REAGENT_ID_OXYCODONE //OD effects, eye_blurry | Confuse + for slimes | stuttering
 	poison_chance = 77 //high but not guranteed.

@@ -4,7 +4,7 @@
 
 /area
 	// Turrets use this list to see if individual power/lethal settings are allowed
-	var/list/turret_controls = list()
+	var/list/turret_controls
 
 /obj/machinery/turretid
 	name = "turret control panel"
@@ -48,7 +48,7 @@
 	if(control_area)
 		var/area/A = control_area
 		if(A && istype(A))
-			A.turret_controls -= src
+			LAZYREMOVE(A.turret_controls, src)
 	. = ..()
 
 /obj/machinery/turretid/Initialize(mapload)
@@ -65,7 +65,7 @@
 	if(control_area)
 		var/area/A = control_area
 		if(istype(A))
-			A.turret_controls += src
+			LAZYADD(A.turret_controls, src)
 		else
 			control_area = null
 

@@ -9,7 +9,7 @@
 	var/headquarters = ""		// Location of the organization's HQ.  Currently unused.
 	var/motto = ""				// A motto/jingle/whatever, if they have one.  Currently unused.
 
-	var/list/ship_prefixes = list()	//Some might have more than one! Like NanoTrasen. Value is the mission they perform, e.g. ("ABC" = "mission desc")
+	var/list/ship_prefixes	//Some might have more than one! Like NanoTrasen. Value is the mission they perform, e.g. ("ABC" = "mission desc")
 	var/complex_tasks = FALSE	//enables complex task generation
 
 	//how does it work? simple: if you have complex tasks enabled, it goes; PREFIX + TASK_TYPE + FLIGHT_TYPE
@@ -355,8 +355,8 @@
 			"Unfortunate Son",
 			"Hazard Pay"
 			)
-	var/list/added_ship_names = list()	//List of ship names to add to the above, rather than wholesale replacing
-	var/list/destination_names = list()	//Names of static holdings that the organization's ships visit
+	var/list/added_ship_names	//List of ship names to add to the above, rather than wholesale replacing
+	var/list/destination_names	//Names of static holdings that the organization's ships visit
 	var/append_ship_names = FALSE
 
 	var/org_type = "neutral"		//Valid options are "neutral", "corporate", "government", "system defense", "military, "smuggler", & "pirate"
@@ -368,7 +368,7 @@
 	..()
 
 	if(append_ship_names)
-		ship_names.Add(added_ship_names)
+		if(length(added_ship_names)) ship_names.Add(added_ship_names)
 
 	if(autogenerate_destination_names) // Lets pad out the destination names.
 		var/i = rand(20, 30) //significantly increased from original values due to the greater length of rounds
@@ -466,7 +466,7 @@
 		//patterns; orbital ("an x orbiting y"), surface ("an x on y"), deep space ("an x in y"), the frontier ("an x on the frontier")
 		//biased towards inhabited space sites
 		while(i)
-			destination_names.Add("[pick("[pick(orbitals)] orbiting [pick(planets)]","[pick(surface)] on [pick(planets)]","[pick(deepspace)] in [pick(systems)]",20;"[pick(unique)]",30;"[pick(frontier)] on the frontier")]")
+			LAZYINITLIST(destination_names); destination_names.Add("[pick("[pick(orbitals)] orbiting [pick(planets)]","[pick(surface)] on [pick(planets)]","[pick(deepspace)] in [pick(systems)]",20;"[pick(unique)]",30;"[pick(frontier)] on the frontier")]")
 			i--
 		//extensive rework for a much greater degree of variety compared to the old system, lists now include known exoplanets and star systems currently suspected or confirmed to have exoplanets
 
@@ -560,7 +560,7 @@
 		// Get rid of the current map from the list, so ships flying in don't say they're coming to the current map.
 		var/string_to_test = "[using_map.station_name] in [using_map.starsys_name]"
 		if(string_to_test in destination_names)
-			destination_names.Remove(string_to_test)
+			LAZYREMOVE(destination_names, string_to_test)
 
 /datum/lore/organization/tsc/hephaestus
 	name = "Hephaestus Industries"
@@ -2543,7 +2543,7 @@
 			)
 
 	while(fyrdsgen)
-		destination_names.Add("[pick(location)] [pick(greek)]-[pick(greek)]","[pick(location)] [pick(phoenician)]-[pick(phoenician)]","[pick(location)] [pick(russian)]-[pick(russian)]","[pick(location)] [pick(american)]-[pick(american)]")
+		LAZYINITLIST(destination_names); destination_names.Add("[pick(location)] [pick(greek)]-[pick(greek)]","[pick(location)] [pick(phoenician)]-[pick(phoenician)]","[pick(location)] [pick(russian)]-[pick(russian)]","[pick(location)] [pick(american)]-[pick(american)]")
 		fyrdsgen--
 
 /datum/lore/organization/gov/teshari

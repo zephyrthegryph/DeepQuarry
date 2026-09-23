@@ -53,19 +53,19 @@
 /*
 /obj/item/mecha_parts/mecha_equipment/antiproj_armor_booster/can_attach(obj/mecha/M as obj)
 	if(..())
-		if(!M.proc_res["dynbulletdamage"] && !M.proc_res["dynhitby"])
+		if(!LAZYACCESS(M.proc_res, "dynbulletdamage") && !LAZYACCESS(M.proc_res, "dynhitby"))
 			return 1
 	return 0
 
 /obj/item/mecha_parts/mecha_equipment/antiproj_armor_booster/attach(obj/mecha/M as obj)
 	..()
-	chassis.proc_res["dynbulletdamage"] = src
-	chassis.proc_res["dynhitby"] = src
+	LAZYSET(chassis.proc_res, "dynbulletdamage", src)
+	LAZYSET(chassis.proc_res, "dynhitby", src)
 	return
 
 /obj/item/mecha_parts/mecha_equipment/antiproj_armor_booster/detach()
-	chassis.proc_res["dynbulletdamage"] = null
-	chassis.proc_res["dynhitby"] = null
+	LAZYSET(chassis.proc_res, "dynbulletdamage", null)
+	LAZYSET(chassis.proc_res, "dynhitby", null)
 	..()
 	return
 

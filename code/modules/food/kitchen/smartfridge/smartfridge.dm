@@ -100,10 +100,10 @@
 	if(old_stat != stat)
 		update_icon()
 		if(stat & (NOPOWER | BROKEN))
-			soundloop.stop()
+			soundloop?.stop()
 			playing_sound = FALSE
 		else
-			soundloop.start()
+			soundloop?.start()
 			playing_sound = TRUE
 
 // Number of stored products, used to pick the fill-level overlay. Counts the

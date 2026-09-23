@@ -14,7 +14,7 @@
 	clicksound = "button"
 	circuit = /obj/item/circuitboard/chemical_analyzer
 	var/analyzing = FALSE
-	var/list/found_reagents = list()
+	var/list/found_reagents
 
 /obj/machinery/chemical_analyzer/Initialize(mapload)
 	. = ..()
@@ -122,8 +122,8 @@
 		subdata["overdose"] = R.overdose
 		subdata["flavor"] = R.taste_description
 		subdata["allergen"] = assembly_allergy_list(R.allergen_type, R.medallergen_type)
-		subdata["beakerAmount"] = found_reagents[ID]
-		total_vol += found_reagents[ID]
+		subdata["beakerAmount"] = LAZYACCESS(found_reagents, ID)
+		total_vol += LAZYACCESS(found_reagents, ID)
 		SSinternal_wiki.assemble_reaction_data(subdata, R)
 		// Send as a big list of lists
 		reagents_sent += list(subdata)

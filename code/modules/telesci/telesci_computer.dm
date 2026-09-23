@@ -26,7 +26,7 @@
 	var/max_crystals = 4
 	// Used to adjust OP-ness: (4 crystals * 6 efficiency * 12.5 coefficient) = 300 range.
 	var/powerCoefficient = 12.5
-	var/list/crystals = list()
+	var/list/crystals
 	var/obj/item/gps/inserted_gps
 	var/overmap_range = 3
 
@@ -40,13 +40,13 @@
 /obj/machinery/computer/telescience/examine(mob/user)
 	. = ..()
 	if(Adjacent(user))
-		. += "There are [crystals.len ? crystals.len : "no"] bluespace crystal\s in the crystal slots."
+		. += "There are [length(crystals) ? length(crystals) : "no"] bluespace crystal\s in the crystal slots."
 
 /obj/machinery/computer/telescience/Initialize(mapload)
 	. = ..()
 	recalibrate()
 	for(var/i = 1; i <= starting_crystals; i++)
-		crystals += new /obj/item/bluespace_crystal/artificial(src) // starting crystals
+		LAZYADD(crystals, new /obj/item/bluespace_crystal/artificial(src)) // starting crystals
 
 /obj/machinery/computer/telescience/declare_interactions(list/into)
 	into += list(
@@ -65,12 +65,12 @@
 	effect = /obj/machinery/computer/telescience/proc/interaction_insert_crystal
 
 /obj/machinery/computer/telescience/proc/interaction_insert_crystal(mob/user, obj/item/W, datum/interaction/interaction)
-	if(crystals.len >= max_crystals)
+	if(length(crystals) >= max_crystals)
 		to_chat(user, span_warning("There are not enough crystal slots."))
 		return TRUE
 	if(!user.unEquip(W))
 		return TRUE
-	crystals += W
+	LAZYADD(crystals, W)
 	W.forceMove(src)
 	user.visible_message("[user] inserts [W] into \the [src]'s crystal slot.", span_notice("You insert [W] into \the [src]'s crystal slot."))
 	return TRUE
@@ -101,7 +101,7 @@
 	return ITEM_INTERACT_SUCCESS
 
 /obj/machinery/computer/telescience/proc/get_max_allowed_distance()
-	return FLOOR((crystals.len * telepad.efficiency * powerCoefficient), 1)
+	return FLOOR((length(crystals) * telepad.efficiency * powerCoefficient), 1)
 
 /obj/machinery/computer/telescience/tgui_interact(mob/user, datum/tgui/ui)
 	ui = SStgui.try_update_ui(user, src, ui)
@@ -120,7 +120,7 @@
 		data["rotation"] = rotation
 		data["currentZ"] = z_co
 		data["cooldown"] = max(0, min(100, COOLDOWN_TIMELEFT(src, teleport_cooldown) / 10))
-		data["crystalCount"] = crystals.len
+		data["crystalCount"] = length(crystals)
 		data["maxCrystals"] = max_crystals
 		data["maxPossibleDistance"] = FLOOR((max_crystals * powerCoefficient * 6), 1); // max efficiency is 6
 		data["maxAllowedDistance"] = get_max_allowed_distance()
@@ -390,7 +390,7 @@
 /obj/machinery/computer/telescience/proc/eject()
 	for(var/obj/item/I in crystals)
 		I.forceMove(src.loc)
-		crystals -= I
+		LAZYREMOVE(crystals, I)
 	distance = 0
 
 /obj/machinery/computer/telescience/proc/recalibrate()

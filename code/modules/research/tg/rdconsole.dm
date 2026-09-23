@@ -43,11 +43,11 @@ Nothing else in the console has ID requirements.
 	if(!stored_research)
 		CONNECT_TO_RND_SERVER_ROUNDSTART(stored_research, src)
 	if(stored_research)
-		stored_research.consoles_accessing += src
+		LAZYADD(stored_research.consoles_accessing, src)
 
 /obj/machinery/computer/rdconsole_tg/Destroy()
 	if(stored_research)
-		stored_research.consoles_accessing -= src
+		LAZYREMOVE(stored_research.consoles_accessing, src)
 		stored_research = null
 	if(t_disk)
 		t_disk.forceMove(get_turf(src))
@@ -96,21 +96,21 @@ Nothing else in the console has ID requirements.
 	return TRUE
 
 /obj/machinery/computer/rdconsole_tg/proc/enqueue_node(id, mob/user)
-	if(!stored_research || !stored_research.available_nodes[id] || stored_research.researched_nodes[id])
+	if(!stored_research || !LAZYACCESS(stored_research.available_nodes, id) || LAZYACCESS(stored_research.researched_nodes, id))
 		atom_say("Node enqueue failed: Either no techweb is found, node is already researched or is not available!")
 		return FALSE
 	stored_research.enqueue_node(id, user)
 	return TRUE
 
 /obj/machinery/computer/rdconsole_tg/proc/dequeue_node(id, mob/user)
-	if(!stored_research || !stored_research.available_nodes[id] || stored_research.researched_nodes[id])
+	if(!stored_research || !LAZYACCESS(stored_research.available_nodes, id) || LAZYACCESS(stored_research.researched_nodes, id))
 		atom_say("Node dequeue failed: Either no techweb is found, node is already researched or is not available!")
 		return FALSE
 	stored_research.dequeue_node(id, user)
 	return TRUE
 
 /obj/machinery/computer/rdconsole_tg/proc/research_node(id, mob/user)
-	if(!stored_research || !stored_research.available_nodes[id] || stored_research.researched_nodes[id])
+	if(!stored_research || !LAZYACCESS(stored_research.available_nodes, id) || LAZYACCESS(stored_research.researched_nodes, id))
 		atom_say("Node unlock failed: Either no techweb is found, node is already researched or is not available!")
 		return FALSE
 	var/datum/techweb_node/TN = SSresearch.techweb_node_by_id(id)
@@ -145,12 +145,12 @@ Nothing else in the console has ID requirements.
 					logname = "[idcard.registered_name]"
 			if(ishuman(user))
 				var/mob/living/carbon/human/H = user
-				var/obj/item/I = H.wear_id
+				var/obj/item/I = H.get_equipped_item(SLOT_ID_ID)
 				if(istype(I))
 					var/obj/item/card/id/ID = I.GetID()
 					if(istype(ID))
 						logname = "[ID.registered_name]"
-			stored_research.research_logs += list(list(
+			LAZYINITLIST(stored_research.research_logs); stored_research.research_logs += list(list(
 				"node_name" = TN.display_name,
 				"node_cost" = price[TECHWEB_POINT_TYPE_GENERIC],
 				"node_researcher" = logname,
@@ -197,11 +197,11 @@ Nothing else in the console has ID requirements.
 		return data
 	data += list(
 		"nodes" = list(),
-		"queue_nodes" = stored_research.research_queue_nodes,
+		"queue_nodes" = (stored_research.research_queue_nodes || list()),
 		"experiments" = list(),
-		"researched_designs" = stored_research.researched_designs,
-		"points" = stored_research.research_points,
-		"points_last_tick" = stored_research.last_bitcoins,
+		"researched_designs" = (stored_research.researched_designs || list()),
+		"points" = (stored_research.research_points || list()),
+		"points_last_tick" = (stored_research.last_bitcoins || list()),
 		"web_org" = stored_research.organization,
 		"sec_protocols" = FALSE, // !(obj_flags & EMAGGED),
 		"t_disk" = null,
@@ -210,7 +210,7 @@ Nothing else in the console has ID requirements.
 
 	if(t_disk)
 		data["t_disk"] = list (
-			"stored_research" = t_disk.stored_research.researched_nodes,
+			"stored_research" = (t_disk.stored_research.researched_nodes || list()),
 		)
 	if(d_disk)
 		data["d_disk"] = list("blueprints" = list())
@@ -222,11 +222,11 @@ Nothing else in the console has ID requirements.
 		var/datum/techweb_node/n = SSresearch.techweb_node_by_id(v)
 		var/enqueued_by_user = FALSE
 
-		if((v in stored_research.research_queue_nodes) && stored_research.research_queue_nodes[v] == user)
+		if((v in stored_research.research_queue_nodes) && LAZYACCESS(stored_research.research_queue_nodes, v) == user)
 			enqueued_by_user = TRUE
 
 		// Ensure node is supposed to be visible
-		if (stored_research.hidden_nodes[v])
+		if (LAZYACCESS(stored_research.hidden_nodes, v))
 			continue
 
 		data["nodes"] += list(list(
@@ -234,14 +234,14 @@ Nothing else in the console has ID requirements.
 			"is_free" = n.is_free(stored_research),
 			"can_unlock" = stored_research.can_unlock_node(n),
 			"have_experiments_done" = stored_research.have_experiments_for_node(n),
-			"tier" = stored_research.tiers[n.id],
+			"tier" = LAZYACCESS(stored_research.tiers, n.id),
 			"enqueued_by_user" = enqueued_by_user
 		))
 
 	// Get experiments and serialize them
-	var/list/exp_to_process = stored_research.available_experiments.Copy()
+	var/list/exp_to_process = LAZYCOPY(stored_research.available_experiments)
 	for (var/e in stored_research.completed_experiments)
-		exp_to_process += stored_research.completed_experiments[e]
+		exp_to_process += LAZYACCESS(stored_research.completed_experiments, e)
 	for (var/e in exp_to_process)
 		var/datum/experiment/ex = e
 		data["experiments"][ex.type] = list(
@@ -288,7 +288,7 @@ Nothing else in the console has ID requirements.
 		if (LAZYLEN(node.research_costs))
 			node_cache[compressed_id]["costs"] = list()
 			for (var/node_cost in node.research_costs)
-				node_cache[compressed_id]["costs"]["[compress_id(node_cost)]"] = node.research_costs[node_cost]
+				node_cache[compressed_id]["costs"]["[compress_id(node_cost)]"] = LAZYACCESS(node.research_costs, node_cost)
 		if (LAZYLEN(node.prereq_ids))
 			node_cache[compressed_id]["prereq_ids"] = list()
 			for (var/prerequisite_node in node.prereq_ids)

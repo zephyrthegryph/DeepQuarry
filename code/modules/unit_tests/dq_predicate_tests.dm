@@ -32,11 +32,19 @@
 /mob/living/dq_pred_test
 
 /mob/living/dq_pred_test/dq_has_free_hand()
-	return !l_hand || !r_hand
+	return !get_equipped_item(SLOT_ID_HAND_L) || !get_equipped_item(SLOT_ID_HAND_R)
+
+/mob/living/dq_pred_test/has_hands_to_hold()
+	return TRUE
 
 /mob/living/dq_pred_test/proc/hold(obj/item/right, obj/item/left)
-	r_hand = right
-	l_hand = left
+	for(var/obj/item/held as anything in get_all_held_items())
+		if(loc)
+			held.forceMove(loc)
+		else
+			held.moveToNullspace()
+	right?.move_into(src, SLOT_ID_HAND_R, src)
+	left?.move_into(src, SLOT_ID_HAND_L, src)
 	hand = null
 
 /datum/predicate/dq_test_weld_light

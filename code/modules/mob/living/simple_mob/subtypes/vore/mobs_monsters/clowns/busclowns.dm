@@ -218,15 +218,7 @@
 	movement_sound = 'sound/weapons/heavysmash.ogg'
 	movement_shake_radius = 5
 
-	armor = list(
-				"melee" = 40,
-				"bullet" = 20,
-				"laser" = 10,
-				"energy" = 0,
-				"bomb" = 0,
-				"bio" = 0,
-				"rad" = 0
-				)
+	armor_spec = "melee=40;bullet=20;laser=10"
 
 
 /mob/living/simple_mob/clowns/big/c_shift/chlown

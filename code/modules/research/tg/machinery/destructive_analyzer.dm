@@ -214,7 +214,7 @@ It is used to destroy hand-held objects and advance technological research. Used
 		data["item_icon"] = icon2base64(getFlatIcon(image(icon = current_item.icon, icon_state = current_item.icon_state), no_anim = TRUE))
 		data["indestructible"] = is_type_in_list(current_item, GLOB.item_deconstruction_blacklist)
 		data["loaded_item"] = current_item
-		data["already_deconstructed"] = !!stored_research.deconstructed_items[current_item.type]
+		data["already_deconstructed"] = !!LAZYACCESS(stored_research.deconstructed_items, current_item.type)
 		var/list/points = techweb_item_point_check(current_item)
 		data["recoverable_points"] = techweb_point_display_generic(points)
 
@@ -224,7 +224,7 @@ It is used to destroy hand-held objects and advance technological research. Used
 			var/list/node_data = list()
 			node_data["node_name"] = unlockable_node.display_name
 			node_data["node_id"] = unlockable_node.id
-			node_data["node_hidden"] = !!stored_research.hidden_nodes[unlockable_node.id]
+			node_data["node_hidden"] = !!LAZYACCESS(stored_research.hidden_nodes, unlockable_node.id)
 			data["node_data"] += list(node_data)
 	else
 		data["loaded_item"] = null

@@ -9,6 +9,6 @@
 		else
 			A.fire_reset()
 	// Alarm for AR glasses uses
-	/*var/atom/source = length(alarm.sources_assoc) ? alarm.sources_assoc[1] : alarm.alarm_area()
+	/*var/atom/source = length(alarm.sources_assoc) ? LAZYACCESS(alarm.sources_assoc, 1) : alarm.alarm_area()
 	broadcast_engineering_hud_message("Alarm in [alarm.origin] [was_raised ? "raised!" : "cleared."]", source)*/
 	..()

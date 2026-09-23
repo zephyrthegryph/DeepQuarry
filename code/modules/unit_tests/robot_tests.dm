@@ -94,7 +94,7 @@
 							check_state(robot,"-sleeper-[rest_style]-struggle")
 		else if(robot.belly_capacity_list)
 			for(var/belly in robot.belly_capacity_list)
-				for(var/num = 1 to robot.belly_capacity_list[belly])
+				for(var/num = 1 to LAZYACCESS(robot.belly_capacity_list, belly))
 					// big belly
 					check_state(robot,"-[belly]-[num]")
 					if(robot.has_vore_belly_resting_sprites)
@@ -114,7 +114,7 @@
 								check_state(robot,"-[belly]-[num]-[rest_style]-struggle")
 			if(robot.belly_light_list)
 				for(var/belly in robot.belly_light_list)
-					for(var/num = 1 to robot.belly_light_list[belly])
+					for(var/num = 1 to LAZYACCESS(robot.belly_light_list, belly))
 						// multi belly r/g light
 						check_state(robot,"-[belly]-[num]-r")
 						check_state(robot,"-[belly]-[num]-g")

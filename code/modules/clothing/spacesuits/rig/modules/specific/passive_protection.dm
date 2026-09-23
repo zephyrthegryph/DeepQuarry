@@ -37,28 +37,24 @@
 	var/list/items_to_update = list()
 
 	to_chat(H, span_boldnotice("You activate your suit's powered radiation shielding."))
-	stored_rad_armor = holder.armor["rad"]
+	stored_rad_armor = holder.get_armor().value("rad")
 	if(boots)
-		boots.own_armor()
-		boots.armor["rad"] = 100
+		boots.set_armor_value("rad", 100)
 		items_to_update += boots
 	if(chest)
-		chest.own_armor()
-		chest.armor["rad"] = 100
+		chest.set_armor_value("rad", 100)
 		items_to_update += chest
 	if(helmet)
-		helmet.own_armor()
-		helmet.armor["rad"] = 100
+		helmet.set_armor_value("rad", 100)
 		items_to_update += helmet
 	if(gloves)
-		gloves.own_armor()
-		gloves.armor["rad"] = 100
+		gloves.set_armor_value("rad", 100)
 		items_to_update += gloves
-	holder.own_armor()
-	holder.armor["rad"] = 100
+	holder.set_armor_value("rad", 100)
 	items_to_update += holder
 	for(var/obj/item/part in items_to_update)
 		ADD_TRAIT(part, TRAIT_RADIATION_PROTECTED_CLOTHING, MOD_TRAIT)
+	H?.worn_protection_changed()
 
 /obj/item/rig_module/rad_shield/deactivate()
 
@@ -76,29 +72,25 @@
 	to_chat(H, span_danger("You deactivate your suit's powered radiation shielding."))
 
 	if(boots)
-		boots.own_armor()
-		boots.armor["rad"] = stored_rad_armor
+		boots.set_armor_value("rad", stored_rad_armor)
 		items_to_update += boots
 	if(chest)
-		chest.own_armor()
-		chest.armor["rad"] = stored_rad_armor
+		chest.set_armor_value("rad", stored_rad_armor)
 		items_to_update += chest
 	if(helmet)
-		helmet.own_armor()
-		helmet.armor["rad"] = stored_rad_armor
+		helmet.set_armor_value("rad", stored_rad_armor)
 		items_to_update += helmet
 	if(gloves)
-		gloves.own_armor()
-		gloves.armor["rad"] = stored_rad_armor
+		gloves.set_armor_value("rad", stored_rad_armor)
 		items_to_update += gloves
-	holder.own_armor()
-	holder.armor["rad"] = stored_rad_armor
+	holder.set_armor_value("rad", stored_rad_armor)
 	items_to_update += holder
 
 	stored_rad_armor = 0
 
 	for(var/obj/item/part in items_to_update)
 		REMOVE_TRAIT(part, TRAIT_RADIATION_PROTECTED_CLOTHING, MOD_TRAIT)
+	H?.worn_protection_changed()
 
 /obj/item/rig_module/rad_shield/advanced
 	name = "advanced radiation absorption device"
@@ -162,6 +154,7 @@
 		gloves.max_heat_protection_temperature = INFINITY
 	holder.max_pressure_protection = INFINITY
 	holder.max_heat_protection_temperature = INFINITY
+	H?.worn_protection_changed()
 
 /obj/item/rig_module/atmos_shield/deactivate()
 
@@ -193,6 +186,7 @@
 
 	stored_max_pressure = 0
 	stored_max_temp = 0
+	H?.worn_protection_changed()
 
 /obj/item/rig_module/atmos_shield/advanced
 	name = "advanced atmospheric protection enhancement suite"
@@ -249,6 +243,7 @@
 	if(gloves)
 		gloves.siemens_coefficient = 0
 	holder.siemens_coefficient = 0
+	H?.worn_protection_changed()
 
 /obj/item/rig_module/faraday_shield/deactivate()
 
@@ -274,6 +269,7 @@
 	holder.siemens_coefficient = stored_siemens_coefficient
 
 	stored_siemens_coefficient = 0
+	H?.worn_protection_changed()
 
 /obj/item/rig_module/faraday_shield/advanced
 	name = "advanced faraday protection shield suite"

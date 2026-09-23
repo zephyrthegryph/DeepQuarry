@@ -4,7 +4,7 @@
 	desc = "A lighter, less armoured rig suit."
 	icon_state = "ninja_rig"
 	suit_type = "light suit"
-	armor = list(melee = 50, bullet = 15, laser = 50, energy = 10, bomb = 25, bio = 0, rad = 0)
+	armor_spec = "melee=50;bullet=15;laser=50;energy=10;bomb=25"
 	emp_protection = 10
 	slowdown = 0
 	item_flags = THICKMATERIAL
@@ -83,7 +83,7 @@
 	suit_type = "ominous"
 	desc = "A unique suit of nano-enhanced armor designed for covert operations."
 	icon_state = "ninja_rig"
-	armor = list(melee = 50, bullet = 15, laser = 30, energy = 10, bomb = 25, bio = 100, rad = 30)
+	armor_spec = "melee=50;bullet=15;laser=30;energy=10;bomb=25;bio=100;rad=30"
 	emp_protection = 40 //change this to 30 if too high.
 	slowdown = 0
 

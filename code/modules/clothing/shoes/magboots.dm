@@ -51,7 +51,7 @@
 			if(!ishuman(user))
 				return
 			var/mob/living/carbon/human/H = user
-			if(H.shoes != src)
+			if(H.get_equipped_item(SLOT_ID_SHOES) != src)
 				to_chat(user, "You will have to put on the [src] before you can do that.")
 				return
 			canremove = FALSE
@@ -71,9 +71,9 @@
 
 /// Magboots go on over shoes, but not over other overshoes.
 /obj/item/clothing/shoes/magboots/proc/overshoe_clearance(mob/living/carbon/human/H)
-	if(!istype(H) || !istype(H.shoes, /obj/item/clothing/shoes))
+	if(!istype(H) || !istype(H.get_equipped_item(SLOT_ID_SHOES), /obj/item/clothing/shoes))
 		return TRUE
-	var/obj/item/clothing/shoes/worn = H.shoes
+	var/obj/item/clothing/shoes/worn = H.get_equipped_item(SLOT_ID_SHOES)
 	return worn.overshoes ? "\the [worn] are in the way" : TRUE
 
 /obj/item/clothing/shoes/magboots/equipped(mob/user, slot)
@@ -95,8 +95,8 @@
 
 	//Equipping shoes. If you put it so you can put your shoes somewhere BUT your shoe slot, make sure this shit works.
 	if(equipping && (slot == slot_shoes))
-		if(H.shoes && H.shoes != src)
-			shoes = H.shoes
+		if(H.get_equipped_item(SLOT_ID_SHOES) && H.get_equipped_item(SLOT_ID_SHOES) != src)
+			shoes = H.get_equipped_item(SLOT_ID_SHOES)
 			H.unEquip(shoes, TRUE, src)
 			to_chat(user, "You slip \the [src] on over \the [shoes].")
 		return
@@ -121,7 +121,7 @@
 	mag_disable = "You relax your deathgrip on the flooring."
 	unremovable_when_enabled = TRUE
 	flags = PHORONGUARD
-	armor = list (melee = 40, bullet = 10, laser = 10, energy = 20, bomb = 20, bio = 10, rad = 20) // values of workboots and heavy duty engineering gloves, it's the only option that will ever be taken so may as well give the turkeys some protection //
+	armor_spec = "melee=40;bullet=10;laser=10;energy=20;bomb=20;bio=10;rad=20" // values of workboots and heavy duty engineering gloves, it's the only option that will ever be taken so may as well give the turkeys some protection //
 
 	actions_types = list(/datum/action/item_action/toggle_magclaws)
 

@@ -8,7 +8,7 @@
 	/// Range of effect, if left alone anomaly will convert a 2(range)+1 squared area.
 	var/range = 3
 	/// List of turfs this anomaly will try to transform before relocating
-	var/list/turf/target_turfs = list()
+	var/list/turf/target_turfs
 	/// Current anomaly 'theme', dictates what tiles to create.
 	var/datum/dimension_theme/theme
 	/// Effect displaying on the anomaly to represent the theme.
@@ -43,7 +43,7 @@
 		prepare_area()
 	if(stats)
 		return
-	if(!target_turfs.len)
+	if(!length(target_turfs))
 		if(teleports_left <= 0 && !immortal)
 			detonate()
 			return
@@ -51,9 +51,9 @@
 		relocate()
 		return
 
-	var/turf/affected_turf = target_turfs[1]
+	var/turf/affected_turf = LAZYACCESS(target_turfs, 1)
 	theme.apply_theme(affected_turf, show_effect = TRUE)
-	target_turfs -= affected_turf
+	LAZYREMOVE(target_turfs, affected_turf)
 
 /obj/effect/anomaly/dimensional/proc/prepare_area(new_theme_path)
 	if(!new_theme_path)
@@ -66,7 +66,7 @@
 	target_turfs = list()
 	for(var/turf/turf in spiral_range_turfs(range, src))
 		if(theme.can_convert(turf))
-			target_turfs += turf
+			LAZYADD(target_turfs, turf)
 
 /obj/effect/anomaly/dimensional/proc/apply_theme_icon()
 	overlays -= theme_icon
@@ -114,6 +114,6 @@
 		return
 
 	for(var/i in 1 to count)
-		turf = pick(target_turfs)
+		turf = DEFAULTPICK(target_turfs, null)
 		if(theme.can_convert(turf))
 			theme.apply_theme(turf, show_effect = TRUE)

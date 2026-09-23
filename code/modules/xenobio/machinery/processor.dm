@@ -9,7 +9,7 @@
 	density = TRUE
 	anchored = TRUE
 	var/processing = FALSE // So I heard you like processing.
-	var/list/to_be_processed = list()
+	var/list/to_be_processed
 	var/monkeys_recycled = 0
 
 /obj/item/circuitboard/processor
@@ -33,7 +33,7 @@
 	if(processing)
 		to_chat(user, span_warning("The processor is in the process of processing!"))
 		return TRUE
-	if(to_be_processed.len)
+	if(length(to_be_processed))
 		spawn(1)
 			begin_processing()
 	else
@@ -60,7 +60,7 @@
 // Ejects all the things out of the machine.
 /obj/machinery/processor/proc/empty()
 	for(var/atom/movable/AM in to_be_processed)
-		to_be_processed.Remove(AM)
+		LAZYREMOVE(to_be_processed, AM)
 		AM.forceMove(get_turf(src))
 
 // Ejects all the things out of the machine.
@@ -71,7 +71,7 @@
 		to_chat(user, span_warning("\The [src] cannot process \the [AM] at this time."))
 		playsound(src, 'sound/machines/buzz-sigh.ogg', 50, 1)
 		return
-	to_be_processed.Add(AM)
+	LAZYADD(to_be_processed, AM)
 	AM.forceMove(src)
 	visible_message(span_infoplain(span_bold("\The [user]") + " places [AM] inside \the [src]."))
 
@@ -101,13 +101,13 @@
 			playsound(src, 'sound/effects/splat.ogg', 50, 1)
 			S.cores--
 			sleep(1 SECOND)
-		to_be_processed.Remove(S)
+		LAZYREMOVE(to_be_processed, S)
 		qdel(S)
 
 	if(ishuman(AM))
 		var/mob/living/carbon/human/M = AM
 		playsound(src, 'sound/effects/splat.ogg', 50, 1)
-		to_be_processed.Remove(M)
+		LAZYREMOVE(to_be_processed, M)
 		qdel(M)
 		monkeys_recycled++
 		sleep(1 SECOND)

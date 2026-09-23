@@ -12,7 +12,7 @@
 
 	var/ready = 1
 	var/malfunction = 0
-	var/list/obj/item/implant/loyalty/implant_list = list()
+	var/list/obj/item/implant/loyalty/implant_list
 	var/max_implants = 5
 	var/injection_cooldown = 600
 	var/replenish_cooldown = 6000
@@ -110,7 +110,7 @@
 /obj/machinery/implantchair/proc/implant(mob/M)
 	if (!istype(M, /mob/living/carbon))
 		return
-	if(!implant_list.len)	return
+	if(!length(implant_list))	return
 	for(var/obj/item/implant/loyalty/imp in implant_list)
 		if(!imp)	continue
 		if(istype(imp, /obj/item/implant/loyalty))
@@ -120,7 +120,7 @@
 			if(imp.handle_implant(M, BP_TORSO))
 				imp.post_implant(M)
 
-			implant_list -= imp
+			LAZYREMOVE(implant_list, imp)
 			break
 	return
 
@@ -128,7 +128,7 @@
 /obj/machinery/implantchair/proc/add_implants()
 	for(var/i=0, i<src.max_implants, i++)
 		var/obj/item/implant/loyalty/I = new /obj/item/implant/loyalty(src)
-		implant_list += I
+		LAZYADD(implant_list, I)
 	return
 
 /datum/interaction/machine_verb/implantchair_get_out

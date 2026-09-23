@@ -84,15 +84,7 @@
 	endurance = 450
 	deflect_chance = 25
 	has_repair_droid = TRUE
-	armor = list(
-				"melee"		= 50,
-				"bullet"	= 50,
-				"laser"		= 50,
-				"energy"	= 30,
-				"bomb"		= 30,
-				"bio"		= 100,
-				"rad"		= 100
-				)
+	armor_spec = "melee=50;bullet=50;laser=50;energy=30;bomb=30;bio=100;rad=100"
 
 	special_attack_min_range = 1
 	special_attack_max_range = 7

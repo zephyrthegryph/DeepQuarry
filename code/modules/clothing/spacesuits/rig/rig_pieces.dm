@@ -125,11 +125,11 @@
 		return 0
 
 	var/mob/living/carbon/human/H = loc
-	if(!istype(H) || (!H.back && !H.belt))
+	if(!istype(H) || (!H.get_equipped_item(SLOT_ID_BACK) && !H.get_equipped_item(SLOT_ID_BELT)))
 		return 0
 
-	var/obj/item/rig/suit = H.back
-	if(!suit || !istype(suit) || !suit.installed_modules.len)
+	var/obj/item/rig/suit = H.get_equipped_item(SLOT_ID_BACK)
+	if(!suit || !istype(suit) || !length(suit.installed_modules))
 		return 0
 
 	for(var/obj/item/rig_module/module in suit.installed_modules)

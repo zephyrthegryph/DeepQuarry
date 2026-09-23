@@ -28,7 +28,7 @@
 	var/list/communicators = list()
 	for(var/obj/item/communicator_type as anything in typesof(/obj/item/communicator) - list(/obj/item/communicator/integrated,/obj/item/communicator/commlink)) // Remove Commlink
 		communicators[initial(communicator_type.name)] = communicator_type
-	gear_tweaks += new/datum/gear_tweak/path(sortAssoc(communicators))
+	LAZYADD(gear_tweaks, new/datum/gear_tweak/path(sortAssoc(communicators)))
 
 /datum/gear/utility/camera
 	display_name = "camera"
@@ -110,7 +110,7 @@
 	"Purple Flashlight" = /obj/item/flashlight/color/purple,
 	"Orange Flashlight" = /obj/item/flashlight/color/orange
 	)
-	gear_tweaks += new/datum/gear_tweak/path(flashlights)
+	LAZYADD(gear_tweaks, new/datum/gear_tweak/path(flashlights))
 
 /datum/gear/utility/battery
 	display_name = "cell, device"
@@ -127,7 +127,7 @@
 
 /datum/gear/utility/umbrella/New()
 	..()
-	gear_tweaks += GLOB.gear_tweak_free_color_choice
+	LAZYADD(gear_tweaks, GLOB.gear_tweak_free_color_choice)
 
 /datum/gear/utility/wheelchair
 	display_name = "wheelchair selection"
@@ -136,12 +136,12 @@
 
 /datum/gear/utility/wheelchair/New()
 	..()
-	gear_tweaks += GLOB.gear_tweak_free_color_choice
+	LAZYADD(gear_tweaks, GLOB.gear_tweak_free_color_choice)
 	var/list/wheelchairs = list(
 		"wheelchair" = /obj/item/wheelchair,
 		"motorized wheelchair" = /obj/item/wheelchair/motor
 	)
-	gear_tweaks += new/datum/gear_tweak/path(wheelchairs)
+	LAZYADD(gear_tweaks, new/datum/gear_tweak/path(wheelchairs))
 
 /datum/gear/utility/lantern
 	display_name = "lantern"
@@ -172,7 +172,7 @@ modular computers
 
 /datum/gear/utility/customtablet/New()
 	..()
-	gear_tweaks += new /datum/gear_tweak/tablet()
+	LAZYADD(gear_tweaks, new /datum/gear_tweak/tablet())
 
 /datum/gear/utility/cheaplaptop
 	display_name = "laptop computer, cheap"
@@ -191,7 +191,7 @@ modular computers
 
 /datum/gear/utility/customlaptop/New()
 	..()
-	gear_tweaks += new /datum/gear_tweak/laptop()
+	LAZYADD(gear_tweaks, new /datum/gear_tweak/laptop())
 
 //////////Language Translators
 
@@ -227,7 +227,7 @@ modular computers
 	"akhani" = /obj/item/universal_translator/limited/akhani,
 	"alai" = /obj/item/universal_translator/limited/alai
 	)
-	gear_tweaks += new/datum/gear_tweak/path(translators)
+	LAZYADD(gear_tweaks, new/datum/gear_tweak/path(translators))
 
 /datum/gear/utility/saddlebag
 	display_name = "saddle bag, horse"

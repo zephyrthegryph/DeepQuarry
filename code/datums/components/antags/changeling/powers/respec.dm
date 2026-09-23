@@ -29,4 +29,4 @@
 
 	to_chat(src, span_notice("We have removed our evolutions from this form, and are now ready to readapt."))
 
-	ling_datum.purchased_powers_history.Add("Re-adapt (Reset to [ling_datum.max_geneticpoints])")
+	LAZYADD(ling_datum.purchased_powers_history, "Re-adapt (Reset to [ling_datum.max_geneticpoints])")

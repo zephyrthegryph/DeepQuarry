@@ -2,10 +2,10 @@
 	announceWhen	= 90
 	endWhen			= 200
 	var/spawncount = 1
-	var/list/vents = list()
+	var/list/vents
 	var/give_positions = 0
 	var/active_metroid_event = TRUE
-	var/list/alive_metroids = list()
+	var/list/alive_metroids
 
 /datum/event/metroid_infestation/setup()
 	active_metroid_event = TRUE
@@ -20,14 +20,14 @@
 			continue
 		if(!temp_vent.welded && temp_vent.network && (temp_vent.loc.z in using_map.station_levels))
 			if(temp_vent.network.normal_members.len > 10) //Most our networks are 40. SM is 4 and toxins is 2. This needed to change in order to spawn.
-				vents += temp_vent
+				LAZYADD(vents, temp_vent)
 
 /datum/event/metroid_infestation/announce()
 	GLOB.command_announcement.Announce("High-energy lifeforms detected coming aboard [station_name()]. All crew members, stay alert, and listen to security instructions.", "Lifesign Alert", new_sound = 'sound/misc/alarm1.ogg')
 
 /datum/event/metroid_infestation/start()
-	while((spawncount >= 1) && vents.len)
-		var/obj/vent = pick(vents)
+	while((spawncount >= 1) && length(vents))
+		var/obj/vent = DEFAULTPICK(vents, null)
 		var/spawn_metroids = pickweight(list(
 			/mob/living/simple_mob/metroid/juvenile/baby = 60,
 			/mob/living/simple_mob/metroid/juvenile/super = 30,
@@ -36,10 +36,10 @@
 			/mob/living/simple_mob/metroid/juvenile/zeta = 2,
 			/mob/living/simple_mob/metroid/juvenile/omega = 1,
 			))
-		alive_metroids.Add(new spawn_metroids(get_turf(vent)))
-		vents -= vent
+		LAZYADD(alive_metroids, new spawn_metroids(get_turf(vent)))
+		LAZYREMOVE(vents, vent)
 		spawncount--
-	vents.Cut()
+	LAZYCLEARLIST(vents)
 
 /datum/event/metroid_infestation/end()
 	var/list/area_names = list()

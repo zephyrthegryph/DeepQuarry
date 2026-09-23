@@ -6,8 +6,8 @@
 	var/name = "NOPE"		// Name used in UIs, and the index for the department assoc list in SSjob.
 	var/short_name = "NO"	// Shorter name, used for things like external Topic() responses.
 	var/color = "#000000"	// Color to use in UIs to represent this department.
-	var/list/jobs = list()	// Assoc list. Key is the job title, and the value is a reference to the job datum. Populated by SSjob subsystem.
-	var/list/primary_jobs = list() // Same as above, but only jobs with their 'primary' department are put here. Primary being the first department in their list.
+	var/list/jobs	// Assoc list. Key is the job title, and the value is a reference to the job datum. Populated by SSjob subsystem.
+	var/list/primary_jobs // Same as above, but only jobs with their 'primary' department are put here. Primary being the first department in their list.
 	var/sorting_order = 0	// Used to sort departments, e.g. Command always being on top.
 	var/visible = TRUE		// If false, it should not show up on things like the manifest or ID computer.
 	var/assignable = TRUE	// Similar for above, but only for ID computers and such. Used for silicon department.
@@ -18,12 +18,12 @@
 	/// that lists this department, so adding a new shared access requires only one edit here.
 	/// Must be a strict subset of every member job's full access list so that current behaviour
 	/// is preserved — the union of job.access and department.default_access equals job.access.
-	var/list/default_access = list()
+	var/list/default_access
 
 	/// The full set of access flags associated with this department's facilities.
 	/// Not all jobs receive all of these; the list exists so designers can see the
 	/// complete department access space and choose appropriate subsets per job.
-	var/list/specialized_access = list()
+	var/list/specialized_access
 
 /datum/department/command
 	name = DEPARTMENT_COMMAND

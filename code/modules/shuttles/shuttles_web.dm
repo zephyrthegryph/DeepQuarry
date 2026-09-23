@@ -362,7 +362,7 @@
 				return
 
 			var/index = text2num(params["traverse"])
-			var/datum/shuttle_route/new_route = WS.web_master.current_destination.routes[index]
+			var/datum/shuttle_route/new_route = LAZYACCESS(WS.web_master.current_destination.routes, index)
 			if(!istype(new_route))
 				message_admins("ERROR: Shuttle computer was asked to traverse a nonexistant route.")
 				return
@@ -450,7 +450,7 @@
 			WM.destinations += D
 
 			for(var/type_to_link in D.routes_to_make)
-				var/travel_delay = D.routes_to_make[type_to_link]
+				var/travel_delay = LAZYACCESS(D.routes_to_make, type_to_link)
 				D.link_destinations(WM.get_destination_by_type(type_to_link), D.preferred_interim_tag, travel_delay)
 	else
 		WARNING("[log_info_line()]'s shuttle [global.log_info_line(ES)] initialized but destinations:[destinations]")

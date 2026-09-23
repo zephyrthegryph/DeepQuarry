@@ -9,7 +9,7 @@
 	icon_state = "doppler"
 	circuit = /obj/item/circuitboard/doppler_array
 
-	var/list/detected_explosions = list()
+	var/list/detected_explosions
 
 /obj/machinery/doppler_array/Initialize(mapload)
 	//Explosive analysis
@@ -57,7 +57,7 @@
 		return
 	atom_say("Explosive disturbance detected - Epicenter at: grid ([x0],[y0],[z0]). Epicenter radius: [devastation_range]. Outer radius: [heavy_impact_range]. Shockwave radius: [light_impact_range]. Temporal displacement of tachyons: [seconds_taken] seconds.")
 	SEND_SIGNAL(src, COMSIG_MACHINERY_EXPLOSION_DETECTED, epicenter, devastation_range, heavy_impact_range, light_impact_range, seconds_taken)
-	detected_explosions += list(
+	LAZYINITLIST(detected_explosions); detected_explosions += list(
 		list(
 			"index" = length(detected_explosions),
 			"time" = stationtime2text(),

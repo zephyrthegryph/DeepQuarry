@@ -5,7 +5,7 @@
 	icon_state = "disk"
 	w_class = ITEMSIZE_TINY
 
-	var/list/genes = list()
+	var/list/genes
 	var/genesource = "unknown"
 
 /obj/item/disk/botany/Initialize(mapload)
@@ -296,7 +296,7 @@
 			var/datum/plantgene/P = genetics.get_gene(params["get_gene"])
 			if(!P)
 				return
-			loaded_disk.genes += P
+			LAZYADD(loaded_disk.genes, P)
 
 			loaded_disk.genesource = "[genetics.display_name]"
 			if(!genetics.roundstart)
@@ -344,7 +344,7 @@
 	else
 		data["degradation"] = 0
 
-	if(loaded_disk && loaded_disk.genes.len)
+	if(loaded_disk && length(loaded_disk.genes))
 		data["disk"] = 1
 		data["sourceName"] = loaded_disk.genesource
 		data["locus"] = ""

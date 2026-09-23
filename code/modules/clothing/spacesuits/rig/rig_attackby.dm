@@ -50,13 +50,13 @@
 		else if(istype(W,/obj/item/rig_module))
 			if(ishuman(src.loc))
 				var/mob/living/carbon/human/H = src.loc
-				if(H.back == src || H.belt == src)
+				if(H.get_equipped_item(SLOT_ID_BACK) == src || H.get_equipped_item(SLOT_ID_BELT) == src)
 					to_chat(user, span_danger("You can't install a hardsuit module while the suit is being worn."))
 					return 1
 
 			if(!installed_modules)
 				installed_modules = list()
-			if(installed_modules.len)
+			if(length(installed_modules))
 				for(var/obj/item/rig_module/installed_mod in installed_modules)
 					if(!installed_mod.redundant && istype(installed_mod,W))
 						to_chat(user, "The hardsuit already has a module of that class installed.")
@@ -71,7 +71,7 @@
 			if(!user.unEquip(mod))
 				return
 			to_chat(user, "You install \the [mod] into \the [src].")
-			installed_modules |= mod
+			LAZYOR(installed_modules, mod)
 			mod.forceMove(src)
 			mod.installed(src)
 			update_icon()
@@ -141,7 +141,7 @@
 		return ITEM_INTERACT_BLOCKING
 	if(ishuman(loc) && to_remove != "cell")
 		var/mob/living/carbon/human/wearer = loc
-		if(wearer.back == src || wearer.belt == src)
+		if(wearer.get_equipped_item(SLOT_ID_BACK) == src || wearer.get_equipped_item(SLOT_ID_BELT) == src)
 			to_chat(user, "You can't remove an installed device while the hardsuit is being worn.")
 			return ITEM_INTERACT_BLOCKING
 	if(to_remove == "cell")
@@ -165,7 +165,7 @@
 	to_chat(user, "You detach \the [removed] from \the [src].")
 	removed.forceMove(get_turf(src))
 	removed.removed()
-	installed_modules -= removed
+	LAZYREMOVE(installed_modules, removed)
 	update_icon()
 	return ITEM_INTERACT_SUCCESS
 

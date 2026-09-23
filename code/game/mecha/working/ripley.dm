@@ -47,7 +47,7 @@
 		if(istype(T))
 			T.Entered(A)
 		step_rand(A)
-	cargo.Cut()
+	LAZYCLEARLIST(cargo)
 	QDEL_NULL(orescanner)
 	. = ..()
 

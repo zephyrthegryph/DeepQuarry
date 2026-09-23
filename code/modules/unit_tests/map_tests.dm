@@ -105,10 +105,10 @@
 	var/wire_test_count = 0
 	var/turf/T = null
 	var/obj/structure/cable/C = null
-	var/list/cable_turfs = list()
-	var/list/dirs_checked = list()
+	var/list/cable_turfs
+	var/list/dirs_checked
 
-	var/list/exempt_from_wires = list()
+	var/list/exempt_from_wires
 
 /datum/unit_test/wire_test/Run()
 	set background = 1
@@ -116,7 +116,7 @@
 	if(using_map.skip_map_validity_tests)
 		return // minimal CI harness map — wiring validity runs on the live map
 
-	exempt_from_wires += using_map.unit_test_exempt_from_wires.Copy()
+	LAZYADD(exempt_from_wires, using_map.unit_test_exempt_from_wires.Copy())
 
 	var/list/zs_to_test = using_map.unit_test_z_levels || list(1) //Either you set it, or you just get z1
 
@@ -130,11 +130,11 @@
 			var/area/A = get_area(T)
 			if(T && (T.z in zs_to_test) && !(A.type in exempt_from_wires))
 				if(C.color == GLOB.possible_cable_coil_colours[color])
-					cable_turfs |= get_turf(C)
+					LAZYOR(cable_turfs, get_turf(C))
 
 		for(T in cable_turfs)
 			var/bad_msg = "--------------- [T.name] \[[T.x] / [T.y] / [T.z]\] [color]"
-			dirs_checked.Cut()
+			LAZYCLEARLIST(dirs_checked)
 			for(C in T)
 				wire_test_count++
 				var/combined_dir = "[C.d1]-[C.d2]"
@@ -143,7 +143,7 @@
 				if(C.dir != SOUTH)
 					TEST_FAIL("[bad_msg] Contains wire with dir set, wires MUST face south, use icon_states.")
 
-				dirs_checked.Add(combined_dir)
+				LAZYADD(dirs_checked, combined_dir)
 
 /// Test template no-ops on all maps
 /datum/unit_test/template_noops

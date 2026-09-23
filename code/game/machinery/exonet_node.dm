@@ -15,7 +15,7 @@
 
 	var/opened = 0
 
-	var/list/logs = list() // Gets written to by exonet's send_message() function.
+	var/list/logs // Gets written to by exonet's send_message() function.
 
 	circuit = /obj/item/circuitboard/telecomms/exonet_node
 
@@ -140,7 +140,7 @@
 	data["allowPDAs"] = allow_external_PDAs
 	data["allowCommunicators"] = allow_external_communicators
 	data["allowNewscasters"] = allow_external_newscasters
-	data["logs"] = logs
+	data["logs"] = (logs || list())
 
 	return data
 
@@ -201,4 +201,4 @@
 	//var/timestamp = time2text(station_time_in_ds, "hh:mm:ss")
 	var/timestamp = "[stationdate2text()] [stationtime2text()]"
 	var/msg = "[timestamp] | FROM [origin_address] TO [target_address] | TYPE: [data_type] | CONTENT: [content]"
-	logs.Add(msg)
+	LAZYADD(logs, msg)

@@ -160,7 +160,7 @@
 	description_info = "The capsule contains pockets of compressed space in a super position stabilized by a miniscule supermatter crystal. \
 	NanoTrasen stresses the safety of this model over previous prototypes but assumes no liability for sub-kiloton explosions."
 	template_id = null
-	var/list/template_ids = list()
+	var/list/template_ids
 	var/pod_initialized = FALSE
 
 // Override since the parent proc has a sanity check to delete the capsule if no template is found, which doesn't exactly work with this item considering examining calls this proc.
@@ -176,7 +176,7 @@
 		for(var/datum/map_template/shelter/superpose/shelter_type as anything in subtypesof(/datum/map_template/shelter))
 			if(!(initial(shelter_type.mappath)) || !(initial(shelter_type.superpose))) // Limits map templates to those marked for the superpose capsule.
 				continue
-			template_ids += initial(shelter_type.shelter_id)
+			LAZYADD(template_ids, initial(shelter_type.shelter_id))
 		pod_initialized = TRUE
 	if(!template_id)
 		var/answer = tgui_input_list(user, "Which template would you like to load?","Available Templates", template_ids)
@@ -209,7 +209,7 @@
 		for(var/datum/map_template/shelter/superpose/shelter_type as anything in subtypesof(/datum/map_template/shelter/))
 			if(!(initial(shelter_type.mappath)) || !(initial(shelter_type.shuttle)))
 				continue
-			template_ids += initial(shelter_type.shelter_id)
+			LAZYADD(template_ids, initial(shelter_type.shelter_id))
 		pod_initialized = TRUE
 	if(!template_id)
 		var/answer = tgui_input_list(user, "Which template would you like to load?","Available Templates", template_ids)

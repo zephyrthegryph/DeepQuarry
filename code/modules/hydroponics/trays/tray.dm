@@ -614,8 +614,8 @@
 			var/refusal = S.insert_refusal(G, user)
 			if(refusal)
 				S.refuse_insert(G, user, refusal)
-				return TRUE
-			S.handle_item_insertion(G, 1)
+				return
+			S.insert_item(G, user, TRUE)
 
 	else if ( istype(O, /obj/item/plantspray) )
 

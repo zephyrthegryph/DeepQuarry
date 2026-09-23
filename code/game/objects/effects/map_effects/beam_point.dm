@@ -6,7 +6,7 @@
 	icon_state = "beam_point"
 
 	// General variables.
-	var/list/my_beams = list() // Instances of beams. Deleting one will kill the beam.
+	var/list/my_beams // Instances of beams. Deleting one will kill the beam.
 	var/id = "A" // Two beam_points must share the same ID to be connected to each other.
 	var/max_beams = 10 // How many concurrent beams to seperate beam_points to have at once. Set to zero to only act as targets for other beam_points.
 	var/seek_range = 7 // How far to look for an end beam_point when not having a beam. Defaults to screen height/width. Make sure this is below beam_max_distance.
@@ -46,9 +46,9 @@ REGISTRY_MEMBERSHIP(/obj/effect/map_effect/beam_point, REGISTRY_BEAM_POINTS)
 
 // This is the top level proc to make the magic happen.
 /obj/effect/map_effect/beam_point/proc/create_beams()
-	if(my_beams.len >= max_beams)
+	if(length(my_beams) >= max_beams)
 		return
-	var/beams_to_fill = max_beams - my_beams.len
+	var/beams_to_fill = max_beams - length(my_beams)
 	for(var/i = 1 to beams_to_fill)
 		var/obj/effect/map_effect/beam_point/point = seek_beam_point()
 		if(!point)
@@ -93,7 +93,7 @@ REGISTRY_MEMBERSHIP(/obj/effect/map_effect/beam_point, REGISTRY_BEAM_POINTS)
 		return FALSE
 
 	var/datum/beam/new_beam = Beam(beam_target, beam_icon_state, beam_icon, beam_time, beam_max_distance, beam_type, beam_sleep_time)
-	my_beams += new_beam
+	LAZYADD(my_beams, new_beam)
 	if(beam_creation_sound)
 		playsound(src, beam_creation_sound, 70, 1)
 
@@ -108,7 +108,7 @@ REGISTRY_MEMBERSHIP(/obj/effect/map_effect/beam_point, REGISTRY_BEAM_POINTS)
 		log_mapping("[src] ([src.type] \[[x],[y],[z]\]) was asked to destroy a beam it did not own.")
 		return FALSE
 
-	my_beams -= B
+	LAZYREMOVE(my_beams, B)
 	qdel(B)
 	if(beam_destruction_sound)
 		playsound(src, beam_destruction_sound, 70, 1)
@@ -125,7 +125,7 @@ REGISTRY_MEMBERSHIP(/obj/effect/map_effect/beam_point, REGISTRY_BEAM_POINTS)
 	if(!use_timer || QDELETED(src))
 		return
 
-	if(my_beams.len) // Currently on.
+	if(length(my_beams)) // Currently on.
 		destroy_all_beams()
 		color = "#FF0000"
 

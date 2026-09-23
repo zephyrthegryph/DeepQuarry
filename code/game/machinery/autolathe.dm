@@ -34,7 +34,7 @@
 	///Designs related to the autolathe
 	var/datum/techweb/autounlocking/stored_research
 	///Designs imported from technology disks that we can print.
-	var/list/imported_designs = list()
+	var/list/imported_designs
 	///The container to hold materials
 	var/datum/component/material_container/materials
 	///direction we output onto (if 0, on top of us)
@@ -247,8 +247,8 @@
 	var/design_id = params["id"]
 	if(!design_id)
 		return
-	var/valid_design = stored_research.researched_designs[design_id]
-	valid_design ||= imported_designs[design_id]
+	var/valid_design = LAZYACCESS(stored_research.researched_designs, design_id)
+	valid_design ||= LAZYACCESS(imported_designs, design_id)
 	if(!valid_design)
 		return
 	var/datum/design_techweb/design = SSresearch.techweb_design_by_id(design_id)
@@ -487,10 +487,10 @@
 		for(var/datum/design_techweb/blueprint as anything in disky.blueprints)
 			if(!blueprint)
 				continue
-			if(imported_designs[blueprint.id] || stored_research.researched_designs[blueprint.id])
+			if(LAZYACCESS(imported_designs, blueprint.id) || LAZYACCESS(stored_research.researched_designs, blueprint.id))
 				continue
 			if(blueprint.build_type & AUTOLATHE)
-				imported_designs[blueprint.id] = TRUE
+				LAZYSET(imported_designs, blueprint.id, TRUE)
 				design_count++
 			else
 				LAZYADD(not_imported, blueprint.name)
@@ -501,10 +501,10 @@
 		var/datum/techweb/disk_web = disky.stored_research
 		for(var/design_id in disk_web.researched_designs)
 			var/datum/design_techweb/blueprint = SSresearch.techweb_design_by_id(design_id)
-			if(imported_designs[blueprint.id] || stored_research.researched_designs[blueprint.id])
+			if(LAZYACCESS(imported_designs, blueprint.id) || LAZYACCESS(stored_research.researched_designs, blueprint.id))
 				continue
 			if(blueprint.build_type & AUTOLATHE)
-				imported_designs[blueprint.id] = TRUE
+				LAZYSET(imported_designs, blueprint.id, TRUE)
 				design_count++
 			// Don't report failed designs here, techwebs can be huge and the message would be massive for something like the debug disk
 

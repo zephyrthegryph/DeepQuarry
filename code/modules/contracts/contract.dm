@@ -383,8 +383,8 @@
 		personal_reputation_reward += option.staff_reputation_delta
 		deadline_duration += option.deadline_delta
 		for(var/effect_key in option.effects)
-			negotiated_effects[effect_key] = option.effects[effect_key]
-		var/list/other_reputation = option.effects["other_faction_reputation"]
+			negotiated_effects[effect_key] = LAZYACCESS(option.effects, effect_key)
+		var/list/other_reputation = LAZYACCESS(option.effects, "other_faction_reputation")
 		for(var/faction_id in other_reputation)
 			var/change = other_reputation[faction_id]
 			if(!isnum(change) || !change)

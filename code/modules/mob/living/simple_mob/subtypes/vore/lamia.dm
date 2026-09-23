@@ -109,6 +109,7 @@
 	tail.belly_fullscreen_color2 = "#232300"
 
 	// Belly Lines by killerdragn (@kilo.ego on discord) from Rogue Star
+	B.own_emote_lists()
 	B.emote_lists[DM_HOLD] = list(
 		"You could feel the %pred drum their fingertips atop your head from outside, the walls ever so subtly clenching inwards to smear you in more of that weakly tingling slime inside.",
 		"Ugh, this place wasn't as roomy as you wish it could be, pushing your hands out you found little yield in any direction, but at least you were only along for the ride.",
@@ -118,6 +119,7 @@
 		"%pred lifted their arms above their head and did a little bellydance, smushing and sloshing you around inside.",
 		"The %pred hugs their arms around their gut, giving you a firm squeeze."
 	)
+	B.own_emote_lists()
 	B.emote_lists[DM_DIGEST] = list(
 		"A persistent gnawing ache was making itself known, with the lamia's %belly churning away telling you it was hard at work digesting you down into calories you needed to get out of here before it was too late.",
 		"Everything stings, a prickling tingle wherever %preds stomach acid touched that turned into a dull numbing heat after their stomach melted away your senses. You wondered if anyone was going to help you or if you were destined to become %preds tummyslop.",
@@ -149,6 +151,7 @@
 		"You were far too weak to continue resisting the lamia's %belly, you wanted to rest and nothing more. With no more strength and no fight to give, you submit to the burbling mirepit inside the lamia's %belly , feeling yourself sink below the surface suspended in that dense chyme while suffusing right into it, all those hot tingling sensations just a blurry afterthought as you're completely unmade."
 	)
 	//TAIL TIME!!!~~~
+	tail.own_emote_lists()
 	tail.emote_lists[DM_HOLD] = list(
 		"The walls swaddled your motions, smothering thick flesh idly kneaded and squeezed, conforming to your shapes and keeping you coated in that dull acid.",
 		"Ominous low groans and gluorps echoed around you, %pred squeezing down over the shapes you made on their %belly.",
@@ -158,6 +161,7 @@
 		"Your body twisted and bent this way and that as the lamia slithered along.",
 		"You seemed to be safe here for now, the walls idly and deftly rubbed along you, you could try to struggle and get out, but that might rile their stomach up."
 	)
+	tail.own_emote_lists()
 	tail.emote_lists[DM_DIGEST] = list(
 		"The walls ground firmly into you, smearing and coating you in that tingling acid which burned through your clothing.",
 		"The lamia's %belly was operating as intended, processing down the meat inside it, that would be you.",

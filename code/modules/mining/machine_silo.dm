@@ -8,9 +8,9 @@
 	circuit = /obj/item/circuitboard/machine/ore_silo
 
 	/// List of all connected components that are on hold from accessing materials.
-	var/list/holds = list()
+	var/list/holds
 	/// List of all components that are sharing ores with this silo.
-	var/list/datum/component/remote_materials/ore_connected_machines = list()
+	var/list/datum/component/remote_materials/ore_connected_machines
 	/// Material Container
 	var/datum/component/material_container/materials
 
@@ -106,7 +106,7 @@
 			list(
 				"icon" = icon2base64(icon(initial(parent.icon), initial(parent.icon_state), frame = 1)),
 				"name" = parent.name,
-				"onHold" = !!holds[remote],
+				"onHold" = !!LAZYACCESS(holds, remote),
 				"location" = get_area_name(parent, TRUE),
 			)
 		)
@@ -142,7 +142,7 @@
 			if(isnull(index))
 				return
 
-			var/datum/component/remote_materials/remote = ore_connected_machines[index]
+			var/datum/component/remote_materials/remote = LAZYACCESS(ore_connected_machines, index)
 			if(isnull(remote))
 				return
 
@@ -158,7 +158,7 @@
 			if(isnull(index))
 				return
 
-			var/datum/component/remote_materials/remote = ore_connected_machines[index]
+			var/datum/component/remote_materials/remote = LAZYACCESS(ore_connected_machines, index)
 			if(isnull(remote))
 				return
 

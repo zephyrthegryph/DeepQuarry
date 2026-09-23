@@ -70,6 +70,7 @@
 	B.digestchance = 25
 	B.escape_stun = 5
 
+	B.own_emote_lists()
 	B.emote_lists[DM_HOLD] = list(
 		"A near-constant string of soft, slick noises drift over you as waves of peristalsis slowly drag you further within the possessive serpent.",
 		"\the [name]'s stomach suddenly squishes inwards from everywhere at once, wrapping you up in a warm, doughy embrace before easing back again.",
@@ -77,6 +78,7 @@
 		"Slimy, heat-trapping muscles rhythmically ripple over and knead down into your figure, ensuring the snake's new filling was subdued.",
 		"\the [name] occasionally hisses out in satisfaction as it feels your twitching, filling weight bulge out its scales before giving you a compressing squeeze.",
 		"Hot, viscous ooze clings to and coats your body as time passes, encouraging you to submit and let the snake do all the serpentine, winding slithering.")
+	B.own_emote_lists()
 	B.emote_lists[DM_DIGEST] = list(
 		"A chorus of sordid, slick sounds fill your senses as another wave of peristalsis ripples over you, tugging you a deeper into the serpent's digestive system.",
 		"\the [name]'s all-encompassing stomach closes in tight around your figure, soaking acid into your flesh.",

@@ -262,7 +262,7 @@
 
 /// The measure definition for `id`, or null after reporting why not.
 /datum/predicate_compiler/proc/measure(id)
-	var/datum/property_def/def = registry.defs[id]
+	var/datum/property_def/def = LAZYACCESS(registry.defs, id)
 	if(!def)
 		error("unknown property [id]")
 		return null
@@ -283,7 +283,7 @@
 
 /// Channel-backed properties can become reactor watches (P4).
 /datum/predicate_compiler/proc/channel_backed(id)
-	for(var/datum/property_provider/provider as anything in registry.base_providers[id])
+	for(var/datum/property_provider/provider as anything in LAZYACCESS(registry.base_providers, id))
 		if(provider.source == PROP_SOURCE_DOMAIN)
 			return TRUE
 	return FALSE
@@ -291,7 +291,7 @@
 /datum/predicate_compiler/proc/compile_tag(list/clause, negate)
 	if(!arity(clause, 3) || !valid_subject(clause[2]))
 		return null
-	var/datum/property_def/def = registry.defs[clause[3]]
+	var/datum/property_def/def = LAZYACCESS(registry.defs, clause[3])
 	if(!def)
 		error("unknown tag [clause[3]]")
 		return null
@@ -825,7 +825,7 @@
 	return FALSE
 
 /mob/living/carbon/human/dq_has_free_hand()
-	return !l_hand || !r_hand
+	return !get_equipped_item(SLOT_ID_HAND_L) || !get_equipped_item(SLOT_ID_HAND_R)
 
 /mob/living/simple_mob/dq_has_free_hand()
-	return has_hands && (!l_hand || !r_hand)
+	return has_hands && (!get_equipped_item(SLOT_ID_HAND_L) || !get_equipped_item(SLOT_ID_HAND_R))

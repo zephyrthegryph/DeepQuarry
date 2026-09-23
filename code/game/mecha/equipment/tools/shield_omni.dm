@@ -94,7 +94,7 @@
 /obj/item/shield_projector/rectangle/mecha/create_shield()
 	. = ..()
 	if(shift_x || shift_y)
-		var/obj/effect/directional_shield/newshield = active_shields[active_shields.len]
+		var/obj/effect/directional_shield/newshield = active_shields[length(active_shields)]
 		newshield.pixel_x = shift_x
 		newshield.pixel_y = shift_y
 

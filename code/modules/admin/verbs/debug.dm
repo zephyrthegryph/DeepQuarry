@@ -177,10 +177,10 @@ ADMIN_VERB(cmd_debug_del_all, R_SERVER, "Del-All", "DANGER: Deletes all instance
 		message_admins("[key_name_admin(user)] has deleted all instances of [hsbitem].", 0)
 	feedback_add_details("admin_verb","DELA") //If you are copy-pasting this, ensure the 2nd parameter is unique to the new proc!
 
-ADMIN_VERB(cmd_debug_make_powernets, R_DEBUG, "Make Powernets", "Rebuild all powernets.", ADMIN_CATEGORY_DEBUG_DANGEROUS)
-	SSmachines.makepowernets()
-	log_admin("[key_name(user)] has remade the powernet. SSmachines.makepowernets() called.")
-	message_admins("[key_name_admin(user)] has remade the powernets. SSmachines.makepowernets() called.")
+ADMIN_VERB(cmd_debug_make_powernets, R_DEBUG, "Make Powernets", "Send every cable and power machine to the power network again.", ADMIN_CATEGORY_DEBUG_DANGEROUS)
+	SSmachines.power_reregister_all()
+	log_admin("[key_name(user)] has remade the power network.")
+	message_admins("[key_name_admin(user)] has remade the power network.")
 	feedback_add_details("admin_verb","MPWN") //If you are copy-pasting this, ensure the 2nd parameter is unique to the new proc!
 
 ADMIN_VERB(cmd_debug_tog_aliens, R_DEBUG, "Toggle Aliens", "Toggle if aliens are allowed.", ADMIN_CATEGORY_SERVER_GAME)
@@ -241,10 +241,10 @@ ADMIN_VERB(cmd_admin_grantfullaccess, (R_ADMIN|R_EVENT), "Grant Full Access", "G
 	if (!SSticker)
 		tgui_alert_async(user, "Wait until the game starts")
 		return
-	if (H.wear_id)
-		var/obj/item/card/id/id = H.wear_id
-		if(istype(H.wear_id, /obj/item/pda))
-			var/obj/item/pda/pda = H.wear_id
+	if (H.get_equipped_item(SLOT_ID_ID))
+		var/obj/item/card/id/id = H.get_equipped_item(SLOT_ID_ID)
+		if(istype(H.get_equipped_item(SLOT_ID_ID), /obj/item/pda))
+			var/obj/item/pda/pda = H.get_equipped_item(SLOT_ID_ID)
 			id = pda.id
 		id.icon_state = "gold"
 		id.access = SSaccess.get_all_accesses().Copy()

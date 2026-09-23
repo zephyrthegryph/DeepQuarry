@@ -292,10 +292,10 @@
 			data += " - Radiometric dating shows age of [G.age_thousand * 1000 + G.age] years<br>"
 		data += " - Chromatographic analysis shows the following materials present:<br>"
 		for(var/carrier in G.find_presence)
-			if(G.find_presence[carrier])
+			if(LAZYACCESS(G.find_presence, carrier))
 				var/index = GLOB.responsive_carriers.Find(carrier)
 				if(index > 0 && index <= LAZYLEN(GLOB.finds_as_strings))
-					data += "	> [100 * G.find_presence[carrier]]% [GLOB.finds_as_strings[index]]<br>"
+					data += "	> [100 * LAZYACCESS(G.find_presence, carrier)]% [GLOB.finds_as_strings[index]]<br>"
 
 		if(G.artifact_id && G.artifact_distance >= 0)
 			anom_found = 1

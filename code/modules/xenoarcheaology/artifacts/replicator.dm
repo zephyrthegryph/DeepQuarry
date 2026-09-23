@@ -13,8 +13,8 @@
 	var/max_spawn_time = 50
 	var/last_process_time = 0
 
-	var/list/construction = list()
-	var/list/tgui_construction = list()
+	var/list/construction
+	var/list/tgui_construction
 	var/list/spawning_types = list()
 	var/list/stored_materials = list()
 
@@ -90,8 +90,8 @@
 		var/button_desc = "a [background], [icon] shaped [color]"
 		var/type = pick(viables)
 		viables.Remove(type)
-		construction[button_desc] = type
-		tgui_construction.Add(list(list(
+		LAZYSET(construction, button_desc, type)
+		LAZYINITLIST(tgui_construction); tgui_construction.Add(list(list(
 			"key" = button_desc,
 			"background" = background,
 			"icon" = icons[icon],
@@ -152,7 +152,7 @@
 
 /obj/machinery/replicator/tgui_data(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/list/data = ..()
-	data["tgui_construction"] = tgui_construction
+	data["tgui_construction"] = (tgui_construction || list())
 	return data
 
 /obj/machinery/replicator/tgui_act(action, list/params, datum/tgui/ui, datum/tgui_state/state)
@@ -168,7 +168,7 @@
 						visible_message(span_notice("[icon2html(src,viewers(src))] a [pick("light","dial","display","meter","pad")] on [src]'s front [pick("blinks","flashes")] [pick("red","yellow","blue","orange","purple","green","white")]."))
 					else
 						visible_message(span_notice("[icon2html(src,viewers(src))] [src]'s front compartment slides shut."))
-					spawning_types.Add(construction[key])
+					spawning_types.Add(LAZYACCESS(construction, key))
 					spawn_progress_time = 0
 					update_use_power(USE_POWER_ACTIVE)
 					icon_state = "borgcharger1(old)"
@@ -204,8 +204,8 @@
 	icon = 'icons/obj/xenoarchaeology.dmi'
 	icon_state = "borgcharger0(old)"
 	var/quantity = 18 //This needs to be replaced with a GUI that lets you select the item you want.
-	var/list/created_mobs = list()
-	var/list/tgui_vore_selection = list()
+	var/list/created_mobs
+	var/list/tgui_vore_selection
 	var/list/viable_mobs = list(
 	/mob/living/simple_mob/animal/passive/fox,
 	/mob/living/simple_mob/animal/passive/cow,
@@ -257,8 +257,8 @@
 		var/button_desc = "a [background], [icon] shaped [color]"
 		var/generated_mob = pick(viable_mobs)
 		viable_mobs.Remove(generated_mob)
-		created_mobs[button_desc] = generated_mob
-		tgui_vore_selection.Add(list(list(
+		LAZYSET(created_mobs, button_desc, generated_mob)
+		LAZYINITLIST(tgui_vore_selection); tgui_vore_selection.Add(list(list(
 			"key" = button_desc,
 			"background" = background,
 			"icon" = icons[icon],
@@ -407,7 +407,7 @@
 
 /obj/machinery/replicator/vore/tgui_data(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/list/data = ..()
-	data["tgui_construction"] = tgui_vore_selection
+	data["tgui_construction"] = (tgui_vore_selection || list())
 	return data
 
 /obj/machinery/replicator/vore/tgui_act(action, list/params, datum/tgui/ui, datum/tgui_state/state)
@@ -423,7 +423,7 @@
 						visible_message(span_notice("[icon2html(src,viewers(src))] a [pick("light","dial","display","meter","pad")] on [src]'s front [pick("blinks","flashes")] [pick("red","yellow","blue","orange","purple","green","white")]."))
 					else
 						visible_message(span_notice("[icon2html(src,viewers(src))] [src]'s front compartment slides shut."))
-					spawning_types.Add(created_mobs[key])
+					spawning_types.Add(LAZYACCESS(created_mobs, key))
 					spawn_progress_time = 0
 					update_use_power(USE_POWER_ACTIVE)
 					icon_state = "borgcharger1(old)"
@@ -442,8 +442,8 @@
 	icon = 'icons/obj/xenoarchaeology.dmi'
 	icon_state = "borgcharger0(old)"
 	var/quantity = 35 //This needs to be replaced with a GUI that lets you select the item you want.
-	var/list/created_items = list()
-	var/list/tgui_vore_selection = list()
+	var/list/created_items
+	var/list/tgui_vore_selection
 	var/list/viable_items = list(
 	/obj/item/clothing/accessory/ring,
 	/obj/item/clothing/gloves/evening,
@@ -507,8 +507,8 @@
 		var/button_desc = "a [background], [icon] shaped [color]"
 		var/generated_item = pick(viable_items)
 		viable_items.Remove(generated_item)
-		created_items[button_desc] = generated_item
-		tgui_vore_selection.Add(list(list(
+		LAZYSET(created_items, button_desc, generated_item)
+		LAZYINITLIST(tgui_vore_selection); tgui_vore_selection.Add(list(list(
 			"key" = button_desc,
 			"background" = background,
 			"icon" = icons[icon],
@@ -655,7 +655,7 @@
 
 /obj/machinery/replicator/clothing/tgui_data(mob/user, datum/tgui/ui, datum/tgui_state/state) //Gives data to the menu.
 	var/list/data = ..()
-	data["tgui_construction"] = tgui_vore_selection
+	data["tgui_construction"] = (tgui_vore_selection || list())
 	return data
 
 /obj/machinery/replicator/clothing/tgui_act(action, list/params, datum/tgui/ui, datum/tgui_state/state)
@@ -671,7 +671,7 @@
 						visible_message(span_notice("[icon2html(src,viewers(src))] a [pick("light","dial","display","meter","pad")] on [src]'s front [pick("blinks","flashes")] [pick("red","yellow","blue","orange","purple","green","white")]."))
 					else
 						visible_message(span_notice("[icon2html(src,viewers(src))] [src]'s front compartment slides shut."))
-					spawning_types.Add(created_items[key])
+					spawning_types.Add(LAZYACCESS(created_items, key))
 					spawn_progress_time = 0
 					update_use_power(USE_POWER_ACTIVE)
 					icon_state = "borgcharger1(old)"

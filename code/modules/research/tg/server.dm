@@ -21,12 +21,12 @@
 	if(!stored_research)
 		var/datum/techweb/science_web = locate(/datum/techweb/science) in SSresearch.techwebs
 		connect_techweb(science_web)
-	stored_research.techweb_servers |= src
+	LAZYOR(stored_research.techweb_servers, src)
 	name += " [num2hex(rand(1,65535), -1)]" //gives us a random four-digit hex number as part of the name. Y'know, for fluff.
 
 /obj/machinery/rnd/server/Destroy()
 	if(stored_research)
-		stored_research.techweb_servers -= src
+		LAZYREMOVE(stored_research.techweb_servers, src)
 	return ..()
 
 /obj/machinery/rnd/server/update_icon()

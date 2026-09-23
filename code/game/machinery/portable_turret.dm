@@ -266,8 +266,8 @@
 
 	if(ishuman(L))
 		var/mob/living/carbon/human/M = L
-		if(is_type_in_list(M.wear_suit, vests_to_target)) // Checks if they are a red player
-			var/obj/item/clothing/suit/lasertag/tag_suit = M.wear_suit
+		if(is_type_in_list(M.get_equipped_item(SLOT_ID_SUIT), vests_to_target)) // Checks if they are a red player
+			var/obj/item/clothing/suit/lasertag/tag_suit = M.get_equipped_item(SLOT_ID_SUIT)
 			if(tag_suit.lasertag_health > 0)
 				return TURRET_PRIORITY_TARGET
 		return TURRET_NOT_TARGET
@@ -418,7 +418,7 @@
 
 /obj/machinery/porta_turret/proc/HasController()
 	var/area/A = get_area(src)
-	return A && A.turret_controls.len > 0
+	return A && length(A.turret_controls) > 0
 
 /obj/machinery/porta_turret/tgui_interact(mob/user, datum/tgui/ui = null)
 	if(HasController())

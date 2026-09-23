@@ -54,7 +54,7 @@ GLOBAL_DATUM(traders, /datum/antagonist/trader)
 	id.assignment = "Trader"
 	id.access |= ACCESS_TRADER
 	var/obj/item/storage/wallet/W = new(player)
-	W.handle_item_insertion(id)
+	W.insert_item(id)
 	player.equip_to_slot_or_del(W, slot_wear_id)
 	spawn_money(rand(50,150)*10,W)
 

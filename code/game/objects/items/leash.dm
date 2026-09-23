@@ -94,7 +94,7 @@
 		if (!is_wearing_collar(humantarget))
 			to_chat(user, span_notice("[humantarget] needs a collar before you can attach a leash to it."))
 			return ITEM_INTERACT_FAILURE
-		if(humantarget.handcuffed)
+		if(humantarget.get_equipped_item(SLOT_ID_HANDCUFFED))
 			leashtime = 5
 
 	C.visible_message(span_danger("\The [user] is attempting to put the leash on \the [C]!"), span_danger("\The [user] tries to put a leash on you"))

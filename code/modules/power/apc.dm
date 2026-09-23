@@ -3,8 +3,12 @@
 // one per area, needs wire connection to power network through a terminal
 //
 // All APC #defines live in code/__defines/apc.dm so they are available to the
-// delegate datums (apc_power_distributor, apc_icon_renderer) regardless of
-// include order.
+// icon renderer regardless of include order.
+//
+// M3: the distributor (channels, cell charging, load shedding) runs in Rust
+// (verdigris/domains/power/src/apc.rs) every power step. The APC never polls:
+// power_sync() sends its settings, and power_event() applies what Rust
+// reports (channels, charging, status, alarm, the cell charge).
 
 /obj/machinery/power/apc/critical
 	is_critical = 1
@@ -66,10 +70,6 @@
 	/// 0.0005 means cellcharge is capped to ~0.05% per second.
 	var/chargelevel = 0.0005
 	var/start_charge = 90           // initial cell charge %
-	/// World time of the last power-state update; sleeping APCs charge by elapsed time.
-	var/last_power_process_time = 0
-	/// Coarse timer used only while a stable battery is charging.
-	var/charging_wake_timer
 	var/cell_type = /obj/item/cell/apc
 
 	// ── physical state ──────────────────────────────────────────────────────
@@ -103,14 +103,15 @@
 	var/last_nightshift_switch = 0
 
 	// ── delegate datums ──────────────────────────────────────────────────────
-	/// Manages channel state-machine, cell charging, and load tracking.
-	var/datum/apc_power_distributor/power_distributor = null
+	/// The power alarm is raised (as Rust last reported).
+	var/power_alarm_raised = FALSE
+	/// Power events applied (tests check that a settled APC hears none).
+	var/power_event_count = 0
 	/// Handles icon_state, overlays, and light.
 	var/datum/apc_icon_renderer/icon_renderer = null
 
-	// ── channel state passthrough (read from power_distributor) ──────────────
-	// These vars exist so existing call sites and TGUI work unchanged.
-	// They are always kept in sync with the distributor every process() tick.
+	// ── channel state ────────────────────────────────────────────────────────
+	// Rust reports these after every power step; power_sync() sends edits.
 	var/lighting  = POWERCHAN_ON_AUTO
 	var/equipment = POWERCHAN_ON_AUTO
 	var/environ   = POWERCHAN_ON_AUTO
@@ -136,12 +137,14 @@
 // Powernet integration
 // ─────────────────────────────────────────────────────────────────────────────
 
-/obj/machinery/power/apc/connect_to_network()
+/obj/machinery/power/apc/connect_to_network(bind_now = TRUE)
 	// Override: APC does not directly connect to the network; it goes through a terminal.
 	if(!terminal)
 		make_terminal()
 	if(terminal)
-		terminal.connect_to_network()
+		terminal.connect_to_network(bind_now)
+	power_sync()
+	return !!terminal?.powernet
 
 /obj/machinery/power/apc/drain_power(drain_check, surge, amount = 0)
 	wake_for_power_dependency()
@@ -149,9 +152,7 @@
 		return 1
 
 	// Fully draining an APC cell would break charging; reset charging state.
-	if(power_distributor)
-		power_distributor.charging = 0
-		charging = 0
+	charging = 0
 
 	var/drained_energy = 0
 
@@ -176,7 +177,6 @@ REGISTRY_MEMBERSHIP(/obj/machinery/power/apc, REGISTRY_APCS)
 	. = ..()
 	set_wires(new /datum/wires/apc(src))
 
-	power_distributor = new /datum/apc_power_distributor(src)
 	icon_renderer     = new /datum/apc_icon_renderer()
 
 	// Offset 24 pixels in dir so the APC is embedded in the wall but inside the area.
@@ -203,15 +203,15 @@ REGISTRY_MEMBERSHIP(/obj/machinery/power/apc, REGISTRY_APCS)
 	update()
 
 /obj/machinery/power/apc/Destroy()
-	if(charging_wake_timer)
-		deltimer(charging_wake_timer)
-		charging_wake_timer = null
 	if(failure_wake_timer)
 		deltimer(failure_wake_timer)
 		failure_wake_timer = null
-	terminal?.powernet?.unreserve_sleeping_apc_load(src)
+	if(power_key)
+		SSmachines.power_queue(list(POWER_OP_REMOVE_STORAGE, 1, power_key))
+	if(power_alarm_raised)
+		GLOB.power_alarm.clearAlarm(loc, src)
 	REACT_PUBLISH_OWN(src, REACT_KEY_APC, REACT_APC_STATE)
-	update()
+	apply_area_power()
 
 	if(area)
 		area.apc = null
@@ -234,32 +234,80 @@ REGISTRY_MEMBERSHIP(/obj/machinery/power/apc, REGISTRY_APCS)
 	hacker = null
 
 	// Release delegate datums.
-	QDEL_NULL(power_distributor)
 	QDEL_NULL(icon_renderer)
 
 	return ..()
 
+/// Something about the APC changed (settings, cell, damage): send it to Rust.
 /obj/machinery/power/apc/proc/wake_for_power_dependency()
 	REACT_PUBLISH_OWN(src, REACT_KEY_APC, REACT_APC_STATE)
-	START_MACHINE_PROCESSING(src)
+	power_sync()
 
-/// Fold routine area consumption into this APC's retained grid reservation.
-/obj/machinery/power/apc/proc/adjust_sleeping_area_load(amount, chan)
-	if(!amount)
-		return FALSE
-	switch(chan)
-		if(EQUIP)
-			if(equipment < POWERCHAN_ON)
-				return FALSE
-		if(LIGHT)
-			if(lighting < POWERCHAN_ON)
-				return FALSE
-		if(ENVIRON)
-			if(environ < POWERCHAN_ON)
-				return FALSE
+/// The APC is not a network node: its terminal is.
+/obj/machinery/power/apc/disconnect_from_network()
+	return FALSE
+
+/obj/machinery/power/apc/power_autoconnect()
+	return
+
+/// Sends this APC's settings, cell charge, channel settings and terminal to
+/// the Rust power domain. DM's copies are current (every power step writes
+/// them back), so sending them is always safe.
+/obj/machinery/power/apc/proc/power_sync()
+	if(QDELETED(src))
+		return
+	if(!power_key)
+		power_key = power_key_alloc(src)
+	var/flags = 0
+	if(area?.requires_power && !(stat & (BROKEN | MAINT)) && !failure_timer)
+		flags |= POWER_APC_ACTIVE
+	if(cell)
+		flags |= POWER_APC_HAS_CELL
+	if(failure_timer)
+		flags |= POWER_APC_FAILED
+	if(shorted || grid_check)
+		flags |= POWER_APC_SHORTED
+	if(operating)
+		flags |= POWER_APC_OPERATING
+	if(chargemode)
+		flags |= POWER_APC_CHARGEMODE
+	var/terminal_key = terminal?.power_key || -1
+	SSmachines.power_queue(list(POWER_OP_APC, 10, power_key, terminal_key, flags, cell ? cell.maxcharge : 0, chargelevel, cell ? cell.charge : 0, equipment, lighting, environ, autoflag))
+	area?.power_loads_changed()
+
+/// A POWER_EV_APC record at `at`: key, charge, eqp, lgt, env, charging,
+/// main_status, alarm, autoflag, used eqp/lgt/env/charging/total, area bits.
+/obj/machinery/power/apc/proc/power_event(list/events, at)
+	power_event_count++
+	if(cell)
+		cell.charge = events[at + 1]
+	var/new_equipment = events[at + 2]
+	var/new_lighting = events[at + 3]
+	var/new_environ = events[at + 4]
+	var/new_charging = events[at + 5]
+	var/new_status = events[at + 6]
+	var/shown_changed = new_equipment != equipment || new_lighting != lighting || new_environ != environ || new_charging != charging || new_status != main_status
+	equipment = new_equipment
+	lighting = new_lighting
+	environ = new_environ
+	charging = new_charging
+	main_status = new_status
+	autoflag = events[at + 8]
+	lastused_equip = events[at + 9]
+	lastused_light = events[at + 10]
+	lastused_environ = events[at + 11]
+	lastused_charging = events[at + 12]
+	lastused_total = events[at + 13]
+	var/alarm = !!events[at + 7]
+	if(alarm != power_alarm_raised)
+		power_alarm_raised = alarm
+		if(alarm)
+			GLOB.power_alarm.triggerAlarm(loc, src, hidden = alarms_hidden)
 		else
-			return FALSE
-	return terminal?.powernet?.adjust_sleeping_apc_load(src, amount)
+			GLOB.power_alarm.clearAlarm(loc, src)
+	if(shown_changed)
+		queue_icon_update()
+		apply_area_power()
 
 /obj/machinery/power/apc/proc/offset_apc()
 	pixel_x = (dir & 3) ? 0 : (dir == 4 ? 26 : -26)
@@ -281,8 +329,9 @@ REGISTRY_MEMBERSHIP(/obj/machinery/power/apc, REGISTRY_APCS)
 	failure_timer = CEILING(max(failure_until - world.time, 0) / max(SSmachines.wait, 1), 1)
 	if(failure_wake_timer)
 		deltimer(failure_wake_timer)
-		failure_wake_timer = null
-	wake_for_power_dependency()
+	failure_wake_timer = addtimer(CALLBACK(src, PROC_REF(wake_after_failure)), max(failure_until - world.time, 1), TIMER_STOPPABLE)
+	queue_icon_update()
+	update()
 
 /obj/machinery/power/apc/proc/make_terminal()
 	terminal = new /obj/machinery/power/terminal(loc)
@@ -343,10 +392,8 @@ REGISTRY_MEMBERSHIP(/obj/machinery/power/apc, REGISTRY_APCS)
 // Icon rendering — all visual logic delegated to icon_renderer
 // ─────────────────────────────────────────────────────────────────────────────
 
-// update_icon() — called by interactions; syncs APC vars from distributor then
-// delegates to the renderer.
+// update_icon() — called by interactions; delegates to the renderer.
 /obj/machinery/power/apc/update_icon()
-	_sync_from_distributor()
 	if(icon_renderer)
 		icon_renderer.apply(src)
 
@@ -356,45 +403,9 @@ REGISTRY_MEMBERSHIP(/obj/machinery/power/apc, REGISTRY_APCS)
 	if(!updating_icon)
 		updating_icon = 1
 		spawn(APC_UPDATE_ICON_COOLDOWN)
-			_sync_from_distributor()
 			if(icon_renderer)
 				icon_renderer.apply(src)
 			updating_icon = 0
-
-// _sync_from_distributor() — copies distributor state into APC vars so that
-// icon_renderer, TGUI, and any direct var-readers see consistent values.
-/obj/machinery/power/apc/proc/_sync_from_distributor()
-	if(!power_distributor)
-		return
-	lighting    = power_distributor.lighting
-	equipment   = power_distributor.equipment
-	environ     = power_distributor.environ
-	charging    = power_distributor.charging
-	chargemode  = power_distributor.chargemode
-	chargecount = power_distributor.chargecount
-	autoflag    = power_distributor.autoflag
-	longtermpower = power_distributor.longtermpower
-	lastused_light    = power_distributor.lastused_light
-	lastused_equip    = power_distributor.lastused_equip
-	lastused_environ  = power_distributor.lastused_environ
-	lastused_charging = power_distributor.lastused_charging
-	lastused_total    = power_distributor.lastused_total
-	main_status = power_distributor.main_status
-
-// _sync_to_distributor() — writes APC vars back into the distributor.
-// Called before any proc that reads from the distributor to ensure coherence
-// when direct APC var mutation happens (e.g. reboot()).
-/obj/machinery/power/apc/proc/_sync_to_distributor()
-	if(!power_distributor)
-		return
-	power_distributor.lighting    = lighting
-	power_distributor.equipment   = equipment
-	power_distributor.environ     = environ
-	power_distributor.charging    = charging
-	power_distributor.chargemode  = chargemode
-	power_distributor.chargecount = chargecount
-	power_distributor.autoflag    = autoflag
-	power_distributor.longtermpower = longtermpower
 
 // Legacy check_updates() — retained because wires.dm or other systems may call
 // it directly.  Returns 0 if no change, 1 if icon_state changed, 2 if overlays
@@ -571,8 +582,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery/power/apc, REGISTRY_APCS)
 		user.visible_message(\
 			span_warning("[user.name] has inserted a power cell into [name]!"),\
 			span_notice("You insert the power cell."))
-		if(power_distributor)
-			power_distributor.chargecount = 0
+		power_sync()
 		chargecount = 0
 		update_icon()
 	else if(istype(W, /obj/item/card/id) || istype(W, /obj/item/pda))
@@ -746,9 +756,8 @@ REGISTRY_MEMBERSHIP(/obj/machinery/power/apc, REGISTRY_APCS)
 			cell = null
 			user.visible_message(span_warning("[user.name] removes the power cell from [name]!"),\
 				span_notice("You remove the power cell."))
-			if(power_distributor)
-				power_distributor.charging = 0
 			charging = 0
+			power_sync()
 			update_icon()
 		return TRUE
 	if(stat & (BROKEN | MAINT))
@@ -780,7 +789,6 @@ REGISTRY_MEMBERSHIP(/obj/machinery/power/apc, REGISTRY_APCS)
 		ui.open()
 
 /obj/machinery/power/apc/tgui_data(mob/user)
-	_sync_from_distributor()
 	var/list/data = list(
 		"locked"          = locked,
 		"normallyLocked"  = locked,
@@ -837,8 +845,16 @@ REGISTRY_MEMBERSHIP(/obj/machinery/power/apc, REGISTRY_APCS)
 /obj/machinery/power/apc/proc/report()
 	return "[area.name] : [equipment]/[lighting]/[environ] ([lastused_equip+lastused_light+lastused_environ]) : [cell ? cell.percent() : "N/C"] ([charging])"
 
-// update() — push channel state to the area and fire power_change().
+// update() — send settings to Rust and push channel state to the area.
 /obj/machinery/power/apc/proc/update()
+	power_sync()
+	apply_area_power()
+
+/// Pushes the channel state to the area; fires area.power_change() (the
+/// machinery power signals) only when a channel changed.
+/obj/machinery/power/apc/proc/apply_area_power()
+	if(!area)
+		return
 	var/new_power_light = FALSE
 	var/new_power_equip = FALSE
 	var/new_power_environ = FALSE
@@ -951,30 +967,19 @@ REGISTRY_MEMBERSHIP(/obj/machinery/power/apc, REGISTRY_APCS)
 			update_nightshift()
 		if("charge")
 			chargemode = !chargemode
-			if(power_distributor)
-				power_distributor.chargemode = chargemode
 			if(!chargemode)
-				if(power_distributor)
-					power_distributor.charging = 0
 				charging = 0
 				update_icon()
+			power_sync()
 		if("channel")
-			if(power_distributor)
-				if(params["eqp"])
-					power_distributor.set_channel("eqp", params["eqp"])
-					_sync_from_distributor()
-					update_icon()
-					update()
-				else if(params["lgt"])
-					power_distributor.set_channel("lgt", params["lgt"])
-					_sync_from_distributor()
-					update_icon()
-					update()
-				else if(params["env"])
-					power_distributor.set_channel("env", params["env"])
-					_sync_from_distributor()
-					update_icon()
-					update()
+			if(params["eqp"])
+				equipment = setsubsystem(text2num(params["eqp"]))
+			else if(params["lgt"])
+				lighting = setsubsystem(text2num(params["lgt"]))
+			else if(params["env"])
+				environ = setsubsystem(text2num(params["env"]))
+			update_icon()
+			update()
 		if("reboot")
 			failure_timer = 0
 			failure_until = 0
@@ -1024,102 +1029,45 @@ REGISTRY_MEMBERSHIP(/obj/machinery/power/apc, REGISTRY_APCS)
 		return 0
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Main process() — delegates to power_distributor
+// Main process() — the distributor runs in Rust
 // ─────────────────────────────────────────────────────────────────────────────
 
+/// APCs do not poll: Rust runs the distributor. A wake only resends settings.
 /obj/machinery/power/apc/process()
-	if(charging_wake_timer)
-		deltimer(charging_wake_timer)
-		charging_wake_timer = null
-	var/datum/powernet/connected_powernet = terminal?.powernet
-	connected_powernet?.unreserve_sleeping_apc_load(src)
-	if(!area.requires_power)
-		return PROCESS_KILL
-	if(stat & (BROKEN | MAINT))
-		return PROCESS_KILL
-	if(failure_timer)
-		if(failure_until > world.time)
-			failure_timer = CEILING((failure_until - world.time) / max(SSmachines.wait, 1), 1)
-			if(!failure_wake_timer)
-				failure_wake_timer = addtimer(CALLBACK(src, PROC_REF(wake_after_failure)), failure_until - world.time, TIMER_STOPPABLE)
-			return PROCESS_KILL
-		failure_timer = 0
-		failure_until = 0
-		force_update = 1
-		queue_icon_update()
-		update()
-
-	if(!power_distributor)
-		return
-
-	// Run the distributor's per-tick logic.
-	var/machine_wait = max(SSmachines.wait, 1)
-	var/elapsed_machine_ticks = last_power_process_time ? max(1, round((world.time - last_power_process_time) / machine_wait)) : 1
-	last_power_process_time = world.time
-	var/changed = power_distributor.tick(elapsed_machine_ticks)
-
-	// Sync results back into APC vars for TGUI and icon rendering.
-	_sync_from_distributor()
-
-	if(debug)
-		log_world("[src]: Status: [main_status] - Excess: [surplus()] - Last Equip: [lastused_equip] - Last Light: [lastused_light] - Longterm: [longtermpower]")
-
-	// Update icon & area power if anything changed.
-	if(changed & 1 || force_update)
-		force_update = 0
-		queue_icon_update()
-		update()
-	else if(changed & 2)
-		queue_icon_update()
-
-	// Stable APCs retain their demand in the powernet and wait for an exact
-	// dependency change. Charging batteries use one coarse elapsed-time wakeup
-	// instead of polling on every machinery tick.
-	if(!changed && !force_update && !failure_timer)
-		connected_powernet?.reserve_sleeping_apc_load(src, lastused_total)
-		var/list/wake_keys = list(REACT_KEY_APC, REACT_ID(src), REACT_APC_STATE|REACT_APC_SUPPLY)
-		if(area)
-			wake_keys += list(REACT_KEY_AREA_POWER, REACT_ID(area), REACT_KEY_CHANGED)
-		if(connected_powernet)
-			wake_keys += list(REACT_KEY_POWERNET, REACT_ID(connected_powernet), REACT_POWERNET_TOPOLOGY)
-		sleep_until_keys(wake_keys)
-		// Connected, stable APC demand is represented directly in the powernet and
-		// needs no timer. An isolated battery must only wake to integrate elapsed
-		// discharge (or while charging), not poll on every machinery fire.
-		if(cell && (charging == 1 || !connected_powernet) && !charging_wake_timer)
-			charging_wake_timer = addtimer(CALLBACK(src, PROC_REF(wake_for_charging)), 10 SECONDS, TIMER_STOPPABLE)
-		return PROCESS_KILL
-
-/obj/machinery/power/apc/proc/wake_for_charging()
-	charging_wake_timer = null
-	START_MACHINE_PROCESSING(src)
+	power_sync()
+	return PROCESS_KILL
 
 /obj/machinery/power/apc/proc/wake_after_failure()
 	failure_wake_timer = null
-	START_MACHINE_PROCESSING(src)
+	if(failure_until > world.time)
+		failure_wake_timer = addtimer(CALLBACK(src, PROC_REF(wake_after_failure)), failure_until - world.time, TIMER_STOPPABLE)
+		return
+	failure_timer = 0
+	failure_until = 0
+	queue_icon_update()
+	update()
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Legacy passthrough procs — kept for external call-site compatibility
 // ─────────────────────────────────────────────────────────────────────────────
 
-/// autoset() passthrough — delegates to power_distributor if available.
+/// autoset() — the channel state machine (Rust runs the same table).
+/// on: 0 = force off, 1 = allow on, 2 = auto-off.
 /obj/machinery/power/apc/proc/autoset(cur_state, on)
-	if(power_distributor)
-		return power_distributor.autoset(cur_state, on)
-	// Fallback if called before distributor is ready (shouldn't happen in normal play).
 	switch(cur_state)
 		if(POWERCHAN_OFF_AUTO)
-			if(on == 1) return POWERCHAN_ON_AUTO
+			if(on == 1)
+				return POWERCHAN_ON_AUTO
 		if(POWERCHAN_ON)
-			if(on == 0) return POWERCHAN_OFF
+			if(on == 0)
+				return POWERCHAN_OFF
 		if(POWERCHAN_ON_AUTO)
-			if(on == 0 || on == 2) return POWERCHAN_OFF_AUTO
+			if(on == 0 || on == 2)
+				return POWERCHAN_OFF_AUTO
 	return cur_state
 
-/// setsubsystem() passthrough.
+/// setsubsystem() — maps a UI value to a valid POWERCHAN_* constant.
 /obj/machinery/power/apc/proc/setsubsystem(val)
-	if(power_distributor)
-		return power_distributor.setsubsystem(val)
 	if(cell && cell.charge > 0)
 		return (val == 1) ? POWERCHAN_OFF : val
 	else if(val == POWERCHAN_ON_AUTO)
@@ -1127,12 +1075,9 @@ REGISTRY_MEMBERSHIP(/obj/machinery/power/apc, REGISTRY_APCS)
 	else
 		return POWERCHAN_OFF
 
-/// update_channels() passthrough — called by external code (e.g. wires.dm).
+/// Channel settings changed outside the UI (wires, hacking): send them.
 /obj/machinery/power/apc/proc/update_channels()
-	if(power_distributor)
-		_sync_to_distributor()
-		power_distributor._update_channels()
-		_sync_from_distributor()
+	power_sync()
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Damage / destruction
@@ -1167,10 +1112,10 @@ REGISTRY_MEMBERSHIP(/obj/machinery/power/apc, REGISTRY_APCS)
 	update()
 
 /obj/machinery/power/apc/disconnect_terminal(obj/machinery/power/terminal/term)
-	wake_for_power_dependency()
 	if(terminal)
 		terminal.master = null
 		terminal = null
+	wake_for_power_dependency()
 
 /obj/machinery/power/apc/proc/overload_lighting(chance = 100)
 	if(!operating || shorted || grid_check)
@@ -1202,19 +1147,24 @@ REGISTRY_MEMBERSHIP(/obj/machinery/power/apc, REGISTRY_APCS)
 // ─────────────────────────────────────────────────────────────────────────────
 
 /obj/machinery/power/apc/proc/reboot()
-	// Reset distribute-side state.
-	if(power_distributor)
-		power_distributor.reset()
-		power_distributor.chargemode = chargemode  // preserve user setting
-
-	// Reset APC-side state (mirrored from distributor where needed).
-	_sync_from_distributor()
+	// Reset distribution state.
+	lighting = POWERCHAN_ON_AUTO
+	equipment = POWERCHAN_ON_AUTO
+	environ = POWERCHAN_ON_AUTO
+	charging = 0
+	chargecount = 0
+	autoflag = 0
+	longtermpower = 10
+	lastused_light = 0
+	lastused_equip = 0
+	lastused_environ = 0
+	lastused_charging = 0
+	lastused_total = 0
+	main_status = APC_EXTERNAL_POWER_NOTCONNECTED
 
 	// Breaker off; chargemode in default state; all channels on auto.
 	operating   = 0
 	chargemode  = 1
-	if(power_distributor)
-		power_distributor.chargemode = 1
 	failure_timer = 0
 	failure_until = 0
 	if(failure_wake_timer)
@@ -1296,12 +1246,5 @@ REGISTRY_MEMBERSHIP(/obj/machinery/power/apc, REGISTRY_APCS)
 	return cell
 
 // All APC defines are declared in code/__defines/apc.dm and are not #undef'd
-// here because they are shared with apc_power_distributor and apc_icon_renderer.
+// here because they are shared with apc_icon_renderer.
 
-/// Audit (reactor.md §7): a sleeping APC must not be counting down a power failure.
-/obj/machinery/power/apc/react_sleep_violation()
-	if(!asleep_on_keys())
-		return null
-	if(failure_timer)
-		return "asleep during a power failure countdown"
-	return null

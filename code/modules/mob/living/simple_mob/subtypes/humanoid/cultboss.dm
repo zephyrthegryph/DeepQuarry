@@ -1,7 +1,7 @@
 /mob/living/simple_mob/humanoid/cultist/magus/rift
 	name = "Rift Magus"
 	endurance = 450 //Boss Mobs should be tanky. //Old 225
-	armor = list(melee = 70, bullet = 60, laser = 60, energy = 90, bomb = 30, bio = 100, rad = 100)
+	armor_spec = "melee=70;bullet=60;laser=60;energy=90;bomb=30;bio=100;rad=100"
 
 	melee_damage_lower = 30 //Old 15
 	melee_damage_upper = 45 //Old 22
@@ -148,11 +148,13 @@
 	B.name = "stomach"
 	B.desc = "The fearsome preadtor gets a firm grip upon you, before dunking you into it's maw, then with a powerful swift gulp you're sent tumbling into it's stomach.."
 
+	B.own_emote_lists()
 	B.emote_lists[DM_HOLD] = list(
 		"Your surroundings are momentarily filled with tour predator's pleased rumbling, its hands stroking over the taut swell you make in its belly.",
 		"Your surrondings glow with a neon red, dashes and spirals of pitch black flowing through the red gummy flesh as if it were a strange sky.",
 		"Your satsified predator sways their bloated gullet happily, their warm rumbling vibrarting the stomach, and by extension you.",)
 
+	B.own_emote_lists()
 	B.emote_lists[DM_DIGEST] = list(
 		"Every clench of the predator's stomach grinds powerful digestive fluids into your body, forcibly churning away your strength!",
 		"The caustic red acid splashes, and washes over your frame, your sense of smell being overwhelmed by acid and sulfur as you're turned to nutrion.",
@@ -164,21 +166,21 @@
 /obj/item/clothing/head/culthood/void
 	name = "void magnus hood"
 	color = "#1C1C1C"
-	armor = list(melee = 60, bullet = 50, laser = 50, energy = 80, bomb = 30, bio = 10, rad = 10)
+	armor_spec = "melee=60;bullet=50;laser=50;energy=80;bomb=30;bio=10;rad=10"
 	cold_protection = HEAD
 	heat_protection = HEAD
 
 /obj/item/clothing/suit/cultrobes/void
 	name = "void magnus robes"
 	color = "#1C1C1C"
-	armor = list(melee = 60, bullet = 50, laser = 50, energy = 80, bomb = 30, bio = 10, rad = 10)
+	armor_spec = "melee=60;bullet=50;laser=50;energy=80;bomb=30;bio=10;rad=10"
 	cold_protection = UPPER_TORSO|LOWER_TORSO|LEGS|ARMS
 	heat_protection = UPPER_TORSO|LOWER_TORSO|LEGS|ARMS
 
 /obj/item/clothing/shoes/boots/cult/void
 	name = "void magnus boots"
 	color = "#1C1C1C"
-	armor = list(melee = 60, bullet = 50, laser = 50, energy = 80, bomb = 30, bio = 10, rad = 10)
+	armor_spec = "melee=60;bullet=50;laser=50;energy=80;bomb=30;bio=10;rad=10"
 	cold_protection = UPPER_TORSO|LOWER_TORSO|LEGS|ARMS
 	heat_protection = UPPER_TORSO|LOWER_TORSO|LEGS|ARMS
 
@@ -190,7 +192,7 @@
 	item_state = "wgloves"
 	force = 10
 	punch_force = 8
-	armor = list(melee = 30, bullet = 25, laser = 25, energy = 40, bomb = 30, bio = 10, rad = 10)
+	armor_spec = "melee=30;bullet=25;laser=25;energy=40;bomb=30;bio=10;rad=10"
 
 /obj/item/melee/voidblade
 	name = "cult blade"

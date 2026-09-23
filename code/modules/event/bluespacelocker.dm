@@ -1,7 +1,7 @@
 /datum/event/bluespace_locker
 	var/obj/structure/closet/entry_point
 	var/obj/structure/closet/exit_point
-	var/list/area/excluded = list(
+	var/static/list/area/excluded = list(
 		/area/shuttle,
 		/area/crew_quarters,
 		/area/construction,

@@ -30,7 +30,7 @@
 	var/mob/living/carbon/human/last_touched //The last human that touched us
 	var/stored_blood = 0 //How much energy we have!
 	var/last_special = 0 //How recently our powers were used! Can be admin-set to a high number to keep from having the mode able to be changed.
-	var/list/abilities = list("Consecrate", "Summon")
+	var/static/list/abilities = list("Consecrate", "Summon")
 	var/static/list/summonables = list("Soulstone" = SOULSTONE, "Shell" = SHELL, "Cultic Artifact" = ARTIFACT)
 	var/consecrating = FALSE //If we are consecrating or not!
 	var/consecration_cost = 10 //Ten stored_blood per use!

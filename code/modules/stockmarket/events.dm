@@ -101,7 +101,7 @@
 				current_desc = "The company had gone bankrupt, was not bailed out and could not recover. No further stock trade will take place. All shares in the company are effectively worthless."
 				company.bankrupt = 1
 				for (var/X in company.shareholders)
-					var/amt = company.shareholders[X]
+					var/amt = LAZYACCESS(company.shareholders, X)
 					GLOB.stockExchange.balanceLog(X, -amt * company.current_value)
 				company.shareholders = list()
 				company.current_value = 0

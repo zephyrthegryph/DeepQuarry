@@ -132,7 +132,7 @@
 		icon_state = "grinder_off"
 	else
 		icon_state = "grinder_on"
-		var/image/dot = image(icon, icon_state = "grinder_dot_[holdingitems.len ? "on" : "off" ]")
+		var/image/dot = image(icon, icon_state = "grinder_dot_[length(holdingitems) ? "on" : "off" ]")
 		add_overlay(dot)
 
 /obj/machinery/reagent_refinery/grinder/proc/conveyor_load(atom/movable/AM as mob|obj)
@@ -150,7 +150,7 @@
 
 /obj/machinery/reagent_refinery/grinder/examine(mob/user, infix, suffix)
 	. = ..()
-	. += "The intake cache shows [holdingitems.len] / [limit] grindable items."
+	. += "The intake cache shows [length(holdingitems)] / [limit] grindable items."
 	. += "The meter shows [reagents.total_volume]u / [reagents.maximum_volume]u. It is pumping chemicals at a rate of [amount_per_transfer_from_this]u."
 	tutorial(REFINERY_TUTORIAL_NOINPUT, .)
 

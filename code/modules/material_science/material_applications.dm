@@ -48,6 +48,7 @@
 		throw_speed = max(1, round(initial(throw_speed) * clamp(100 / max(material_effective_density, 10), 0.5, 1.5)))
 		throw_range = max(1, round(initial(throw_range) * clamp(100 / max(material_effective_density, 10), 0.5, 1.5)))
 		siemens_coefficient = clamp(initial(siemens_coefficient) * (1.25 - material_effective_electrical_resistance / 125), 0.05, 2)
+		worn_protection_changed()
 	var/datum/material/structure = material_for_role(MATERIAL_ROLE_STRUCTURE) || material_for_role(MATERIAL_ROLE_FRAME) || material_for_role(MATERIAL_ROLE_BODY) || primary
 	if(max_integrity > 0 && total_amount > 0)
 		var/condition = uses_integrity ? get_integrity() / max_integrity : 1
@@ -107,6 +108,7 @@
 				var/datum/material/liner = material_for_role(MATERIAL_ROLE_LINER) || structure
 				clothing.siemens_coefficient = clamp(initial(clothing.siemens_coefficient) * (1.2 - liner.dielectric_strength / 125), 0.05, 2)
 				clothing.permeability_coefficient = clamp(initial(clothing.permeability_coefficient) * (1.2 - liner.corrosion_resistance / 125), 0.05, 2)
+				clothing.worn_protection_changed()
 		if(MATERIAL_APPLICATION_MACHINE_PART, MATERIAL_APPLICATION_CAPACITOR, MATERIAL_APPLICATION_MANIPULATOR, MATERIAL_APPLICATION_MATTER_BIN, MATERIAL_APPLICATION_SCANNER, MATERIAL_APPLICATION_LASER)
 			if(istype(src, /obj/item/stock_parts))
 				var/obj/item/stock_parts/part = src

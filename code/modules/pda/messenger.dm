@@ -6,13 +6,13 @@
 	template = "pda_messenger"
 
 	var/toff = 0 //If 1, messenger disabled
-	var/list/tnote[0]  //Current Texts
+	var/list/tnote  //Current Texts
 	var/last_text //No text spamming
 
 	var/m_hidden = 0 // Is the PDA hidden from the PDA list?
 	var/active_conversation = null // New variable that allows us to only view a single conversation.
-	var/list/conversations = list()    // For keeping up with who we have PDA messsages from.
-	var/list/fakepdas = list() //So that fake PDAs show up in conversations for props. Namedlist of "fakeName" = fakeRef
+	var/list/conversations    // For keeping up with who we have PDA messsages from.
+	var/list/fakepdas //So that fake PDAs show up in conversations for props. Namedlist of "fakeName" = fakeRef
 
 /datum/data/pda/app/messenger/start()
 	. = ..()
@@ -26,7 +26,7 @@
 
 	has_back = active_conversation
 	if(active_conversation)
-		data["messages"] = tnote
+		data["messages"] = (tnote || list())
 		for(var/c in tnote)
 			if(c["target"] == active_conversation)
 				data["convo_name"] = sanitize(c["owner"])
@@ -40,12 +40,12 @@
 
 			if(!PM || !P.owner || PM.toff || P == pda || PM.m_hidden)
 				continue
-			if(conversations.Find("\ref[P]"))
+			if(LAZYFIND(conversations, "\ref[P]"))
 				convopdas.Add(list(list("Name" = "[P]", "Reference" = "\ref[P]", "Detonate" = "[P.detonate]", "inconvo" = "1")))
 			else
 				pdas.Add(list(list("Name" = "[P]", "Reference" = "\ref[P]", "Detonate" = "[P.detonate]", "inconvo" = "0")))
 		for(var/fakeRef in fakepdas)
-			convopdas.Add(list(list("Name" = "[fakepdas[fakeRef]]", "Reference" = "[fakeRef]", "Detonate" = "0", "inconvo" = "1")))
+			convopdas.Add(list(list("Name" = "[LAZYACCESS(fakepdas, fakeRef)]", "Reference" = "[fakeRef]", "Detonate" = "0", "inconvo" = "1")))
 
 		data["convopdas"] = convopdas
 		data["pdas"] = pdas
@@ -73,15 +73,15 @@
 			notify_silent = !notify_silent
 		if("Clear")//Clears messages
 			if(params["option"] == "All")
-				tnote.Cut()
-				conversations.Cut()
+				LAZYCLEARLIST(tnote)
+				LAZYCLEARLIST(conversations)
 			if(params["option"] == "Convo")
 				var/new_tnote[0]
 				for(var/i in tnote)
 					if(i["target"] != active_conversation)
 						new_tnote[++new_tnote.len] = i
 				tnote = new_tnote
-				conversations.Remove(active_conversation)
+				LAZYREMOVE(conversations, active_conversation)
 
 			active_conversation = null
 		if("Message")
@@ -215,9 +215,9 @@
 	return pda.owner && !toff && !hidden
 
 /datum/data/pda/app/messenger/proc/receive_message(list/data, ref)
-	tnote.Add(list(data))
-	if(!conversations.Find(ref))
-		conversations.Add(ref)
+	LAZYADD(tnote, list(data))
+	if(!LAZYFIND(conversations, ref))
+		LAZYADD(conversations, ref)
 	if(!data["sent"])
 		var/owner = data["owner"]
 		var/job = data["job"]
@@ -253,5 +253,5 @@ Invoked by /obj/item/pda/proc/createPropFakeConversation_admin(var/mob/M)
 */
 /datum/data/pda/app/messenger/proc/createFakeMessage(fakeName, fakeRef, fakeJob, sent, message)
 	receive_message(list("sent" = sent, "owner" = "[fakeName]", "job" = "[fakeJob]", "message" = "[message]", "target" = "[fakeRef]"), fakeRef)
-	if(!fakepdas[fakeRef])
-		fakepdas[fakeRef] = fakeName
+	if(!LAZYACCESS(fakepdas, fakeRef))
+		LAZYSET(fakepdas, fakeRef, fakeName)

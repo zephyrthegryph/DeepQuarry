@@ -243,7 +243,7 @@ part "tools: istype checks on tool types"
 # checks (a particular subtype, not "any tool of this quality"), or belong to domains
 # converted later (mecha: I5; surgery and medical machines: the body rewrite). They
 # must not grow.
-tool_istype_allowlist='code.datums.wires.wires\.dm|code.datums.components.traits.unlucky\.dm|code.game.machinery.recharger\.dm|code.game.mecha.mecha\.dm|code.game.mecha.space.shuttle\.dm|code.game.mecha.combat.fighter\.dm|code.modules.surgery.robotics\.dm|code.modules.surgery.hardsuit\.dm|code.game.machinery.adv_med\.dm|code.game.machinery.cloning\.dm|code.game.machinery.computer.cloning\.dm'
+tool_istype_allowlist='code.modules.surgery.limbs\.dm|code.modules.surgery.operate\.dm|code.datums.wires.wires\.dm|code.datums.components.traits.unlucky\.dm|code.game.machinery.recharger\.dm|code.game.mecha.mecha\.dm|code.game.mecha.space.shuttle\.dm|code.game.mecha.combat.fighter\.dm|code.modules.surgery.robotics\.dm|code.modules.surgery.hardsuit\.dm|code.game.machinery.adv_med\.dm|code.game.machinery.cloning\.dm|code.game.machinery.computer.cloning\.dm'
 if $grep -n 'istype\([^,]+,\s*/obj/item/(tool|weldingtool|multitool)\b' "${code_files[@]}" | grep -vE "^($tool_istype_allowlist):"; then
 	echo
 	echo -e "${RED}ERROR: an istype() check on a tool type. Use has_tool_quality(TOOL_*), or get_welder()/get_multitool() to read the tool.${NC}"
@@ -372,6 +372,17 @@ part "one mitigation pipeline"
 if $grep -n '\b(run_armor_check|getarmor|getarmor_organ|mitigate_injury|factor_armor|get_injury_mod|injury_mod_groups)\b' "${code_files[@]}"; then
 	echo
 	echo -e "${RED}ERROR: a parallel mitigation path detected. Harm goes through injure(); armour is injury_armor(kind, zone); species resistances are factor_baseline BF_INCOMING_*.${NC}"
+	FAILED=1
+fi;
+
+part "interned armour"
+# Armour is an interned /datum/armor (code/game/atom/armor.dm, damage.md §4):
+# a type declares armor_spec = "melee=40;bullet=30", readers call get_armor(),
+# and an instance changes it with set_armor()/set_armor_value(). No per-type or
+# per-instance armour lists, and no second random roll on top of the soak.
+if $grep -n '(^\s*(var/(list/)?)?armor\s*=\s*list\s*\(|\barmor\??\[|\.armor\b\s*(=|\[|\?)|\b(own_armor|roll_armor_variance)\b)' "${code_files[@]}"; then
+	echo
+	echo -e "${RED}ERROR: an armour list detected. Declare armor_spec = \"key=value;...\" and read get_armor().value(key) (code/game/atom/armor.dm).${NC}"
 	FAILED=1
 fi;
 
