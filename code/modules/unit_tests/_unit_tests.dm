@@ -231,6 +231,7 @@
 #include "../balance/_balance_harness.dm"
 #include "../balance/balance_scenarios.dm"
 #include "dq_balance_harness_tests.dm"
+#include "dq_clock_tests.dm"
 // END_INCLUDE
 #if defined(BENCHMARK) || defined(SPACEMAN_DMM)
 #include "../benchmarks/_benchmark.dm"

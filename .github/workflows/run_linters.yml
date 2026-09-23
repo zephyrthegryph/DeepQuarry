@@ -125,6 +125,9 @@ jobs:
       - name: Check Deadline Polling
         if: steps.linter-setup.conclusion == 'success' && !cancelled()
         run: python3 tools/ci/check_deadline_polling.py
+      - name: Check Body Time
+        if: steps.linter-setup.conclusion == 'success' && !cancelled()
+        run: python3 tools/ci/check_body_time.py
       - name: Check Breakpoints
         if: steps.linter-setup.conclusion == 'success' && !cancelled()
         run: python3 tools/ci/breakpoint_lint.py

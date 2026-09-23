@@ -29,12 +29,9 @@ GLOBAL_VAR_INIT(mob_hibernation_trace, MOB_HIBERNATION_TRACE)
 	var/life_in_cycle = FALSE
 	/// Bits woken during the current cycle.
 	var/life_cycle_wakes = NONE
-	/// Bits of the pending timed wake (life_wake_in()).
-	var/life_timer_bits = NONE
-	/// world.time the pending timed wake fires.
-	var/life_timer_at = 0
-	/// The pending timed wake's timer.
-	var/life_timer_id
+	/// Lazy: the pending timed wakes (life_wake_in()), one /datum/life_timed_wake per clock
+	/// kind, indexed by CLOCK_KIND_WORLD / CLOCK_KIND_BODY.
+	var/list/life_timed_wakes
 
 /mob/living/Life(seconds = LIFE_NOMINAL_SECONDS, profile = FALSE)
 	set invisibility = INVISIBILITY_NONE
@@ -125,10 +122,9 @@ GLOBAL_VAR_INIT(mob_hibernation_trace, MOB_HIBERNATION_TRACE)
 			S.detach(src)
 	life_composition = null
 	life_extra_systems = null
-	if(life_timer_id)
-		deltimer(life_timer_id)
-		life_timer_id = null
-	life_timer_bits = NONE
+	for(var/datum/life_timed_wake/W as anything in life_timed_wakes)
+		W.cancel()
+	life_timed_wakes = null
 	if(life_hibernating)
 		life_wake(NONE, "deleted", TRUE)
 
@@ -166,25 +162,64 @@ GLOBAL_VAR_INIT(mob_hibernation_trace, MOB_HIBERNATION_TRACE)
 		log_runtime("MOB_HIBERNATE: [key_name(src)] ([type]) hibernating ([reason || "unspecified"]); [length(SSmobs.hibernating_mobs)] hibernating")
 	return TRUE
 
-/// Wakes `bits` after `delay` (a sleeping system that still drifts slowly). One timer per
-/// mob: the earliest deadline wins and later requests ride along with it.
-/mob/living/proc/life_wake_in(bits, delay)
-	var/at = world.time + delay
-	if(life_timer_id && life_timer_at <= at)
-		life_timer_bits |= bits
-		return
-	if(life_timer_id)
-		deltimer(life_timer_id)
-	life_timer_bits |= bits
-	life_timer_at = at
-	life_timer_id = addtimer(CALLBACK(src, PROC_REF(life_timer_fired)), delay, TIMER_STOPPABLE)
+/// A pending timed wake on one clock (life_wake_in()).
+/datum/life_timed_wake
+	var/datum/clock/clock
+	/// The clock event (the handle), or null when nothing is pending.
+	var/datum/clock_event/handle
+	/// Clock time the pending wake is due.
+	var/at = 0
+	/// The systems it wakes.
+	var/bits = NONE
 
-/// The life_wake_in() timer: wakes only the systems that asked for it.
-/mob/living/proc/life_timer_fired()
-	var/bits = life_timer_bits
-	life_timer_bits = NONE
-	life_timer_id = null
-	life_timer_at = 0
+/datum/life_timed_wake/proc/cancel()
+	if(handle)
+		clock?.cancel(handle)
+	handle = null
+	clock = null
+	bits = NONE
+	at = 0
+
+/// Wakes `bits` after `delay` deciseconds of `clock_kind` time (a sleeping system that still
+/// drifts slowly). World kind is for client-facing rechecks; body kind is for body processes,
+/// so stasis stretches the delay and total stasis parks it. One pending wake per mob per kind:
+/// the earliest deadline wins and later requests ride along with it.
+/mob/living/proc/life_wake_in(bits, delay, clock_kind = CLOCK_KIND_WORLD)
+	var/datum/clock/C = clock_kind == CLOCK_KIND_BODY ? life_body_clock() : GLOB.world_clock
+	var/at = C.now() + CLOCK_SECONDS(max(delay, 0))
+	if(!life_timed_wakes)
+		life_timed_wakes = list(new /datum/life_timed_wake, new /datum/life_timed_wake)
+	var/datum/life_timed_wake/W = life_timed_wakes[clock_kind == CLOCK_KIND_BODY ? CLOCK_KIND_BODY : CLOCK_KIND_WORLD]
+	if(W.handle?.clock == C && W.at <= at)
+		W.bits |= bits
+		return
+	var/carried = W.bits
+	W.cancel()
+	W.bits = carried | bits
+	W.at = at
+	W.clock = C
+	W.handle = C.schedule(src, at, PROC_REF(life_timed_wake_fired), clock_kind)
+
+/// The clock body-kind wakes run on. K2 gives /mob/living a provided_clock() (the body clock);
+/// until then it is the mob's holder clock.
+/mob/living/proc/life_body_clock()
+	return provided_clock() || holder_clock()
+
+/// Bits pending on the `clock_kind` timed wake (NONE when none).
+/mob/living/proc/life_timed_wake_bits(clock_kind = CLOCK_KIND_WORLD)
+	if(!life_timed_wakes)
+		return NONE
+	var/datum/life_timed_wake/W = life_timed_wakes[clock_kind]
+	return W.handle?.clock ? W.bits : NONE
+
+/// A life_wake_in() event: wakes only the systems that asked for it.
+/mob/living/proc/life_timed_wake_fired(clock_kind)
+	var/datum/life_timed_wake/W = life_timed_wakes?[clock_kind]
+	if(!W)
+		return
+	var/bits = W.bits
+	W.handle = null
+	W.cancel()
 	life_wake(bits, "timer", TRUE)
 
 /// The hibernation audit's check: the first sleeping system whose sleep rule no longer
