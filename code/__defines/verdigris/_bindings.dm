@@ -15,7 +15,7 @@
 #define VERDIGRIS (__verdigris || __detect_verdigris())
 
 /// Bind-set hash shared with verdigris/ffi/src/abi.rs; checked by verdigris_init().
-#define VERDIGRIS_ABI "103c482dddb8aa3a"
+#define VERDIGRIS_ABI "7c7bd57e182705e1"
 
 // Numeric registry (@dm-define constants in the Rust sources).
 
@@ -580,11 +580,6 @@
 	var/static/__f = load_ext(VERDIGRIS, "byond:verdigris_features_ffi")
 	return call_ext(__f)()
 
-// /proc/verdigris_finish_station_layout (verdigris/ffi/src/layout.rs)
-/proc/vg_verdigris_finish_station_layout(job_id)
-	var/static/__f = load_ext(VERDIGRIS, "byond:verdigris_finish_station_layout_ffi")
-	return call_ext(__f)(job_id)
-
 // /proc/verdigris_generate_station_layout (verdigris/ffi/src/layout.rs)
 /proc/vg_verdigris_generate_station_layout(payload)
 	var/static/__f = load_ext(VERDIGRIS, "byond:verdigris_generate_station_layout_ffi")
@@ -599,16 +594,59 @@
 	var/static/__f = load_ext(VERDIGRIS, "byond:verdigris_init_ffi")
 	return call_ext(__f)(dm_abi)
 
-// /proc/verdigris_poll_station_layout (verdigris/ffi/src/layout.rs)
-/proc/vg_verdigris_poll_station_layout(job_id)
-	var/static/__f = load_ext(VERDIGRIS, "byond:verdigris_poll_station_layout_ffi")
+/// Asks a job to stop; its result is dropped. Returns 1 if it was pending.
+// /proc/verdigris_job_cancel (verdigris/ffi/src/jobs.rs)
+/proc/vg_verdigris_job_cancel(job_id)
+	var/static/__f = load_ext(VERDIGRIS, "byond:verdigris_job_cancel_ffi")
 	return call_ext(__f)(job_id)
 
+/// Forgets a job and drops its result (cancelling it if still pending).
+/// Returns 1 if the job existed.
+// /proc/verdigris_job_finish (verdigris/ffi/src/jobs.rs)
+/proc/vg_verdigris_job_finish(job_id)
+	var/static/__f = load_ext(VERDIGRIS, "byond:verdigris_job_finish_ffi")
+	return call_ext(__f)(job_id)
+
+/// A job's status: `PENDING`, `READY`, `CANCELLED` or `ERROR:<reason>`
+/// (`ERROR:unknown job` once finished).
+// /proc/verdigris_job_poll (verdigris/ffi/src/jobs.rs)
+/proc/vg_verdigris_job_poll(job_id)
+	var/static/__f = load_ext(VERDIGRIS, "byond:verdigris_job_poll_ffi")
+	return call_ext(__f)(job_id)
+
+/// A job's progress in 0..1 (1 once it has finished; 0 if unknown).
+// /proc/verdigris_job_progress (verdigris/ffi/src/jobs.rs)
+/proc/vg_verdigris_job_progress(job_id)
+	var/static/__f = load_ext(VERDIGRIS, "byond:verdigris_job_progress_ffi")
+	return call_ext(__f)(job_id)
+
+/// Ids (decimal strings) of jobs that finished since the last call, for DM
+/// code that prefers one completion sweep per tick over polling each job.
+// /proc/verdigris_jobs_completed (verdigris/ffi/src/jobs.rs)
+/proc/vg_verdigris_jobs_completed()
+	var/static/__f = load_ext(VERDIGRIS, "byond:verdigris_jobs_completed_ffi")
+	return call_ext(__f)()
+
+/// Every Rust metric in one call: a JSON object mapping each name to a
+/// number (counters, gauges) or `{count,sum,max,bounds,buckets}`
+/// (histograms). Includes `alloc.<tag>.current_bytes` / `peak_bytes` per
+/// allocator tag and `alloc.heap.*` for the whole Rust heap.
+// /proc/verdigris_metrics (verdigris/ffi/src/metrics.rs)
+/proc/vg_verdigris_metrics()
+	var/static/__f = load_ext(VERDIGRIS, "byond:verdigris_metrics_ffi")
+	return call_ext(__f)()
+
+/// One section of a finished plan (JSON): `header`, or rows
+/// `[offset, offset + limit)` of an array section.
 // /proc/verdigris_station_layout_section (verdigris/ffi/src/layout.rs)
 /proc/vg_verdigris_station_layout_section(job_id, section, offset, limit)
 	var/static/__f = load_ext(VERDIGRIS, "byond:verdigris_station_layout_section_ffi")
 	return call_ext(__f)(job_id, section, offset, limit)
 
+/// Starts a station-layout planning job and returns its id. Plans for
+/// different sites may run at once, so there is no supersede key. Poll with
+/// `vg_verdigris_job_poll`, read with `vg_verdigris_station_layout_section`,
+/// release with `vg_verdigris_job_finish`.
 // /proc/verdigris_submit_station_layout (verdigris/ffi/src/layout.rs)
 /proc/vg_verdigris_submit_station_layout(payload)
 	var/static/__f = load_ext(VERDIGRIS, "byond:verdigris_submit_station_layout_ffi")

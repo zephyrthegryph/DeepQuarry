@@ -1751,6 +1751,7 @@ dependencies = [
  "const_format",
  "eyre",
  "serde_json",
+ "vg-core",
  "vg-layout",
 ]
 
@@ -1796,6 +1797,14 @@ dependencies = [
  "serde",
  "serde_json",
  "toml",
+ "vg-core",
+]
+
+[[package]]
+name = "vg-replay"
+version = "0.1.0"
+dependencies = [
+ "vg-core",
 ]
 
 [[package]]

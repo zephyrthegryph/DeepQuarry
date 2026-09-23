@@ -76,7 +76,7 @@
 		if(!job_id)
 			throw EXCEPTION("Rust planner did not return a job handle")
 		while(TRUE)
-			var/status = vg_verdigris_poll_station_layout(job_id)
+			var/status = vg_verdigris_job_poll(job_id)
 			if(status == "PENDING")
 				// The worker owns only immutable Rust data. BYOND remains free to
 				// service ordinary ticks until the serialized result is ready.
@@ -84,13 +84,15 @@
 				continue
 			if(findtext(status, "ERROR:") == 1)
 				throw EXCEPTION(copytext(status, 7))
+			if(status == "CANCELLED")
+				throw EXCEPTION("Rust planning job was cancelled")
 			break
 		response = generated_station_fetch_rust_plan(job_id)
-		vg_verdigris_finish_station_layout(job_id)
+		vg_verdigris_job_finish(job_id)
 		job_id = null
 	catch(var/exception/error)
 		if(job_id)
-			vg_verdigris_finish_station_layout(job_id)
+			vg_verdigris_job_finish(job_id)
 		rustg_file_write(request_json, "[GLOB.log_directory]/generated-station-rust-request-[num2text(round(seed), 20)].json")
 		log_world("Generated station Rust planner failed for seed [seed]: [error]")
 		error_message = "[error]"
