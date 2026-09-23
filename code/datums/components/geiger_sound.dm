@@ -4,6 +4,10 @@
 
 	var/last_parent = null
 	var/wall_mounted = FALSE
+	/// The sound stops this long after the last pulse: world.time of that, and the one REACT_AT
+	/// that checks it (moved forward by pulses without re-arming, S4).
+	var/tmp/silence_at = 0
+	var/tmp/silence_timer
 
 /datum/component/geiger_sound/Initialize(...)
 	if (!isatom(parent))
@@ -47,7 +51,17 @@
 	sound.last_radiation_pulse = pulse_information
 	sound.start(source)
 
-	addtimer(CALLBACK(sound, TYPE_PROC_REF(/datum/looping_sound,stop)), TIME_WITHOUT_RADIATION_BEFORE_RESET, TIMER_UNIQUE | TIMER_OVERRIDE)
+	silence_at = world.time + TIME_WITHOUT_RADIATION_BEFORE_RESET
+	if(isnull(silence_timer))
+		silence_timer = REACT_AT(src, silence_at)
+
+/// No pulse since silence_at was set: stop the sound. A later pulse moved it: wait for that.
+/datum/component/geiger_sound/on_react(reason, source, source_kind)
+	silence_timer = null
+	if(world.time < silence_at)
+		silence_timer = REACT_AT(src, silence_at)
+		return
+	sound?.stop()
 
 /datum/component/geiger_sound/proc/on_moved(atom/source)
 	SIGNAL_HANDLER

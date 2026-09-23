@@ -10,7 +10,8 @@
 	vis_flags = VIS_HIDE // They have an emissive that looks bad in openspace due to their wall-mounted nature
 	var/icon_forced = FALSE
 	var/examine_addon = "It appears to be powered off."
-	var/mytimer
+	/// REACT_AT token of the next random poster change (null: none).
+	var/tmp/mytimer
 	var/alerting = FALSE
 
 	var/static/list/postertypes = list(
@@ -29,11 +30,20 @@ REGISTRY_MEMBERSHIP(/obj/machinery/holoposter, REGISTRY_HOLOPOSTERS)
 /obj/machinery/holoposter/Initialize(mapload)
 	. = ..()
 	set_rand_sprite()
-	mytimer = addtimer(CALLBACK(src, PROC_REF(set_rand_sprite)), 30 MINUTES + rand(0, 5 MINUTES), TIMER_STOPPABLE | TIMER_LOOP)
+	mytimer = REACT_AT(src, world.time + 30 MINUTES + rand(0, 5 MINUTES))
 
 /obj/machinery/holoposter/Destroy()
-	deltimer(mytimer)
+	mytimer = null // REACT_CLEAR in the base Destroy() drops it
 	return ..()
+
+/// The rotation timer: a new random poster, then the next change (was an SStimer TIMER_LOOP).
+/obj/machinery/holoposter/on_react(reason, source, source_kind)
+	if(!(reason & REACT_REASON_TIMER) || source != mytimer)
+		return ..()
+	mytimer = null
+	set_rand_sprite()
+	if(!icon_forced && !QDELETED(src))
+		mytimer = REACT_AT(src, world.time + 30 MINUTES + rand(0, 5 MINUTES))
 
 /obj/machinery/holoposter/process()
 	return PROCESS_KILL
@@ -73,8 +83,8 @@ REGISTRY_MEMBERSHIP(/obj/machinery/holoposter, REGISTRY_HOLOPOSTERS)
 /obj/machinery/holoposter/proc/set_rand_sprite()
 	if(alerting)
 		return
-	if(icon_forced && mytimer)
-		deltimer(mytimer)
+	if(icon_forced && !isnull(mytimer))
+		mytimer = REACT_REARM(src, mytimer, null)
 		return
 	icon_state = pick(postertypes)
 	update_icon()
@@ -90,13 +100,13 @@ REGISTRY_MEMBERSHIP(/obj/machinery/holoposter, REGISTRY_HOLOPOSTERS)
 	if(icon_state == "random")
 		atom_fix()
 		icon_forced = FALSE
-		if(!mytimer)
-			mytimer = addtimer(CALLBACK(src, PROC_REF(set_rand_sprite)), 30 MINUTES + rand(0, 5 MINUTES), TIMER_STOPPABLE | TIMER_LOOP)
+		if(isnull(mytimer))
+			mytimer = REACT_AT(src, world.time + 30 MINUTES + rand(0, 5 MINUTES))
 		set_rand_sprite()
 		return ITEM_INTERACT_SUCCESS
 	icon_forced = TRUE
-	if(mytimer)
-		deltimer(mytimer)
+	if(!isnull(mytimer))
+		mytimer = REACT_REARM(src, mytimer, null)
 	atom_fix()
 	update_icon()
 	return ITEM_INTERACT_SUCCESS

@@ -4,7 +4,8 @@
 	var/list/last_read = list()
 	var/list/stockBrokers = list()
 	var/list/logs = list()
-	var/process_timer
+	/// REACT_AT token of the next market step (null: none).
+	var/tmp/process_timer
 
 /datum/stockMarket/New()
 		..()
@@ -13,15 +14,16 @@
 		schedule_process()
 
 /datum/stockMarket/Destroy()
-	if(process_timer)
-		deltimer(process_timer)
-		process_timer = null
+	process_timer = null // REACT_CLEAR in the base Destroy() drops it
 	return ..()
 
 /datum/stockMarket/proc/schedule_process()
-	if(QDELETED(src) || process_timer)
+	if(QDELETED(src) || !isnull(process_timer))
 		return
-	process_timer = addtimer(CALLBACK(src, PROC_REF(process)), 10 SECONDS, TIMER_STOPPABLE)
+	process_timer = REACT_AT(src, world.time + 10 SECONDS)
+
+/datum/stockMarket/on_react(reason, source, source_kind)
+	process()
 
 /datum/stockMarket/proc/balanceLog(whose, net)
 	if (!(whose in balances))

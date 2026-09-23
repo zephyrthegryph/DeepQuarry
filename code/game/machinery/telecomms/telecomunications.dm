@@ -45,7 +45,8 @@
 	var/noisy = TRUE
 	/// Telecomms thermal wear and idle heat are slow physical processes. They do
 	/// not justify keeping every network node in the two-second machinery roster.
-	var/thermal_timer
+	/// REACT_AT token of the next thermal check (null: none).
+	var/tmp/thermal_timer
 	var/last_thermal_check
 
 /obj/machinery/telecomms/proc/relay_information(datum/signal/signal, filter, copysig, amount = 20)
@@ -165,9 +166,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery/telecomms, REGISTRY_TELECOMMS)
 	soundloop.start()
 
 /obj/machinery/telecomms/Destroy()
-	if(thermal_timer)
-		deltimer(thermal_timer)
-		thermal_timer = null
+	thermal_timer = null // REACT_CLEAR in the base Destroy() drops it
 	for(var/obj/machinery/telecomms/comm in REGISTRY_MEMBERS(REGISTRY_TELECOMMS))
 		comm.links -= src
 	links = list()
@@ -232,9 +231,15 @@ REGISTRY_MEMBERSHIP(/obj/machinery/telecomms, REGISTRY_TELECOMMS)
 	return PROCESS_KILL
 
 /obj/machinery/telecomms/proc/schedule_thermal_check()
-	if(thermal_timer || QDELETED(src))
+	if(!isnull(thermal_timer) || QDELETED(src))
 		return
-	thermal_timer = addtimer(CALLBACK(src, PROC_REF(thermal_check_due)), max((initial(delay) + 1) * SSmachines.wait, 1), TIMER_STOPPABLE)
+	thermal_timer = REACT_AT(src, world.time + max((initial(delay) + 1) * SSmachines.wait, 1))
+
+/obj/machinery/telecomms/on_react(reason, source, source_kind)
+	if((reason & REACT_REASON_TIMER) && source == thermal_timer)
+		thermal_check_due()
+		return
+	return ..()
 
 /obj/machinery/telecomms/proc/thermal_check_due()
 	thermal_timer = null

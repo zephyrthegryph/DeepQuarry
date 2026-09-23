@@ -14,6 +14,10 @@
 	MATERIAL_MIX(list(/datum/material/steel = SHEET_MATERIAL_AMOUNT * 1.5, /datum/material/glass = SHEET_MATERIAL_AMOUNT * 1.5))
 
 	var/last_perceived_radiation_danger = null
+	/// The reading resets this long after the last pulse: world.time of that, and the one REACT_AT
+	/// that checks it (pulses move reset_at without re-arming).
+	var/tmp/reset_at = 0
+	var/tmp/reset_timer
 	///How strong the last radiation pulse was, at the source.
 	var/last_radiation_strength = null
 	///How much insulation we're lacking.
@@ -119,10 +123,22 @@ REGISTRY_MEMBERSHIP(/obj/item/geiger, REGISTRY_GEIGER_COUNTERS)
 		insulation_deficit = round(insulation_to_target - pulse_information.threshold, 0.1)
 	else
 		insulation_deficit = null
-	addtimer(CALLBACK(src, PROC_REF(reset_perceived_danger)), TIME_WITHOUT_RADIATION_BEFORE_RESET, TIMER_UNIQUE | TIMER_OVERRIDE)
+	reset_at = world.time + TIME_WITHOUT_RADIATION_BEFORE_RESET
+	if(isnull(reset_timer))
+		reset_timer = REACT_AT(src, reset_at)
 
 	if (scanning)
 		update_icon()
+
+/// No pulse since reset_at was set: forget the reading. A later pulse moved it: wait for that.
+/obj/item/geiger/on_react(reason, source, source_kind)
+	if(!(reason & REACT_REASON_TIMER) || source != reset_timer)
+		return ..()
+	reset_timer = null
+	if(world.time < reset_at)
+		reset_timer = REACT_AT(src, reset_at)
+		return
+	reset_perceived_danger()
 
 /obj/item/geiger/proc/reset_perceived_danger()
 	last_perceived_radiation_danger = null

@@ -23,7 +23,8 @@
 	var/record_size = 60
 	var/record_interval = 50
 	var/next_record = 0
-	var/record_timer
+	/// REACT_AT token of the next history sample (null: none).
+	var/tmp/record_timer
 	var/is_secret_monitor = FALSE
 
 // Proc: Initialize(mapload)
@@ -47,9 +48,7 @@
 	name = "[name_tag] - Powernet Sensor"
 
 /obj/machinery/power/sensor/Destroy()
-	if(record_timer)
-		deltimer(record_timer)
-		record_timer = null
+	record_timer = null // REACT_CLEAR in the base Destroy() drops it
 	. = ..()
 	// TODO - Switch power_monitor to register deletion events instead of this.
 	for(var/obj/machinery/computer/power_monitor/PM in REGISTRY_MEMBERS(REGISTRY_MACHINES))
@@ -79,10 +78,16 @@
 	else
 		use_power = USE_POWER_ACTIVE
 		record()
-	if(!record_timer)
+	if(isnull(record_timer))
 		var/delay = powernet ? max(1, next_record - world.time) : record_interval
-		record_timer = addtimer(CALLBACK(src, PROC_REF(wake_for_record)), delay, TIMER_STOPPABLE)
+		record_timer = REACT_AT(src, world.time + delay)
 	return PROCESS_KILL
+
+/obj/machinery/power/sensor/on_react(reason, source, source_kind)
+	if((reason & REACT_REASON_TIMER) && source == record_timer)
+		wake_for_record()
+		return
+	return ..()
 
 /obj/machinery/power/sensor/proc/wake_for_record()
 	record_timer = null

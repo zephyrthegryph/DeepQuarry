@@ -45,7 +45,8 @@
 	if(!isnull(rmaterialtype))
 		reinf_material = get_material_by_name(rmaterialtype)
 	update_material()
-	REACT_PROCESS(src, 2 SECONDS, "irradiates nearby atoms every tick while its material is radioactive")
+	if(wall_radioactivity())
+		REACT_PROCESS(src, 2 SECONDS, "irradiates nearby atoms every tick while its material is radioactive")
 
 /turf/simulated/wall/Destroy()
 	REACT_PROCESS_STOP(src)
@@ -291,10 +292,13 @@
 	if(O)
 		qdel(O)
 
+/// How radioactive this wall's materials make it (0: not at all, so it never processes).
+/turf/simulated/wall/proc/wall_radioactivity()
+	return dq_material_radioactivity(material) + (reinf_material ? dq_material_radioactivity(reinf_material) / 2 : 0) + (girder_material ? dq_material_radioactivity(girder_material) / 2 : 0)
+
 /turf/simulated/wall/proc/radiate()
 	SIGNAL_HANDLER
-	// radioactivity moved to a component on /datum/material.
-	var/total_radiation = dq_material_radioactivity(material) + (reinf_material ? dq_material_radioactivity(reinf_material) / 2 : 0) + (girder_material ? dq_material_radioactivity(girder_material) / 2 : 0)
+	var/total_radiation = wall_radioactivity()
 	if(!total_radiation)
 		return
 

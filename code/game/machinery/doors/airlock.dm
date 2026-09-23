@@ -162,6 +162,11 @@
 /obj/machinery/door/airlock/proc/publish_door_mode(mask)
 	REACT_PUBLISH(REACT_KEY_DOOR_MODE, REACT_ID(src), mask)
 
+/obj/machinery/door/airlock
+	/// world.time of the next freeze check (0: none), and its REACT_AT token.
+	var/tmp/freeze_check_at = 0
+	var/tmp/freeze_timer
+
 /obj/machinery/door/airlock/proc/check_for_freeze()
 	SHOULD_NOT_OVERRIDE(TRUE)
 	PRIVATE_PROC(TRUE)
@@ -196,9 +201,21 @@
 			if(frozen && prob(20))
 				unFreeze()
 
-	// Runs in a seperate timer loop, because making every airlock process every tick just to check for unfreezing is a bad idea.
-	// By default airlocks only tick if they are waiting for their opening/closing times to tick down.
-	addtimer(CALLBACK(src, PROC_REF(check_for_freeze)), rand(10,20) SECONDS, TIMER_DELETE_ME)
+	// Runs on its own REACT_AT, because making every airlock process every tick just to check for
+	// unfreezing is a bad idea. By default airlocks only wake for their door deadlines.
+	freeze_check_at = world.time + rand(10, 20) SECONDS
+	freeze_timer = REACT_AT(src, freeze_check_at)
+
+/// The freeze check shares the door's wakes: run it when due, then the door's deadlines.
+/obj/machinery/door/airlock/on_react(reason, source, source_kind)
+	if((reason & REACT_REASON_TIMER) && freeze_check_at && world.time >= freeze_check_at)
+		freeze_check_at = 0
+		freeze_timer = null
+		check_for_freeze()
+		// Only the freeze timer fired: nothing else to do.
+		if(!(reason & ~REACT_REASON_TIMER) && !(door_timer_at && world.time >= door_timer_at))
+			return
+	return ..()
 
 /*
 About the new airlock wires panel:

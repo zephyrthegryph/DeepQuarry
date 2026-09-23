@@ -2,6 +2,8 @@
 // Creates and manages a beam attached to itself and another beam_point.
 // You can do cool things with these such as moving the beam_point to move the beam, turning them on and off on a timer, triggered by external input, and more.
 /obj/effect/map_effect/beam_point
+	/// REACT_AT token of the next beam on/off step (null: none).
+	var/tmp/beam_timer
 	name = "beam point"
 	icon_state = "beam_point"
 
@@ -36,7 +38,7 @@ REGISTRY_MEMBERSHIP(/obj/effect/map_effect/beam_point, REGISTRY_BEAM_POINTS)
 	if(make_beams_on_init)
 		create_beams()
 	if(use_timer)
-		addtimer(CALLBACK(src, PROC_REF(handle_beam_timer)), initial_delay)
+		beam_timer = REACT_AT(src, world.time + initial_delay)
 	return ..()
 
 /obj/effect/map_effect/beam_point/Destroy()
@@ -121,6 +123,11 @@ REGISTRY_MEMBERSHIP(/obj/effect/map_effect/beam_point, REGISTRY_BEAM_POINTS)
 	return TRUE
 
 // This code makes me sad.
+/// The on/off cycle is a REACT_AT chain (it was a self-rescheduling SStimer loop, S4).
+/obj/effect/map_effect/beam_point/on_react(reason, source, source_kind)
+	beam_timer = null
+	handle_beam_timer()
+
 /obj/effect/map_effect/beam_point/proc/handle_beam_timer()
 	if(!use_timer || QDELETED(src))
 		return
@@ -133,12 +140,12 @@ REGISTRY_MEMBERSHIP(/obj/effect/map_effect/beam_point, REGISTRY_BEAM_POINTS)
 		if(timer_off_index > off_duration.len)
 			timer_off_index = 1
 
-		addtimer(CALLBACK(src, PROC_REF(handle_beam_timer)), off_duration[timer_off_index])
+		beam_timer = REACT_AT(src, world.time + off_duration[timer_off_index])
 
 	else // Currently off.
 		// If nobody's around, keep the beams off to avoid wasteful beam process(), if they have one.
 		if(!always_run && !check_for_player_proximity(src, proximity_needed, ignore_ghosts, ignore_afk))
-			addtimer(CALLBACK(src, PROC_REF(handle_beam_timer)), retry_delay)
+			beam_timer = REACT_AT(src, world.time + retry_delay)
 			return
 
 		create_beams()
@@ -148,7 +155,7 @@ REGISTRY_MEMBERSHIP(/obj/effect/map_effect/beam_point, REGISTRY_BEAM_POINTS)
 		if(timer_on_index > on_duration.len)
 			timer_on_index = 1
 
-		addtimer(CALLBACK(src, PROC_REF(handle_beam_timer)), on_duration[timer_on_index])
+		beam_timer = REACT_AT(src, world.time + on_duration[timer_on_index])
 
 
 
