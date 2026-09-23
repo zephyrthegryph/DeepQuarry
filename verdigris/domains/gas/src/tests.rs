@@ -402,7 +402,7 @@ fn a_settled_station_sleeps() {
 /// region and checks the whole world (field + pipes) still conserves.
 #[test]
 fn step_turf_devices_bridges_pipe_and_field_and_conserves() {
-	use crate::device::{DeviceParams, VentMode};
+	use crate::device::DeviceParams;
 	use vg_core::network::Endpoint;
 
 	let mut w = world(Mode::Overlay);
@@ -431,12 +431,10 @@ fn step_turf_devices_bridges_pipe_and_field_and_conserves() {
 			Endpoint::Node(node),
 			0,
 			1,
-			DeviceParams::VentPump {
-				mode: VentMode::Siphon,
-				min_kpa: 0.0,
-				max_kpa: 1_000_000.0,
-				max_rate_l_s: 1000.0,
-			},
+			// Wire-format kind 5 (vent pump), mode 1 (siphon): decode(kind,
+			// [mode, min_kpa, max_kpa, max_rate_l_s]) - see `device.rs`'s
+			// `DeviceParams::decode` for the field layout.
+			DeviceParams::decode(5, [1.0, 0.0, 1_000_000.0, 1000.0]),
 		)
 		.expect("device added");
 

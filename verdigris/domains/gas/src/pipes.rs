@@ -119,6 +119,93 @@ impl PipeGas {
 			self.temperature
 		}
 	}
+
+	/// Total moles of the gases in `mask` (a `1 << gas_id` bitset; 0 means
+	/// every gas). The ideal-gas helpers below are the single
+	/// implementation `device::Flow` uses - the M2 device-law collapse
+	/// moved them off `device.rs` and onto the mixture type they operate
+	/// on, instead of five copies of the same formula.
+	#[must_use]
+	pub fn masked_total(&self, mask: u32) -> f64 {
+		if mask == 0 {
+			return self.total();
+		}
+		(0..N)
+			.filter(|i| mask & (1 << i) != 0)
+			.map(|i| self.moles[i])
+			.sum()
+	}
+
+	/// Pressure (kPa) at volume `volume` (L), `pV = nRT`.
+	#[must_use]
+	pub fn pressure(&self, volume: f64) -> f32 {
+		if volume <= 0.0 {
+			return 0.0;
+		}
+		let t = self.temperature_now();
+		((self.total() * f64::from(crate::gas::constants::R_IDEAL_GAS_EQUATION) * f64::from(t)) / volume) as f32
+	}
+
+	/// The moles a volume (L) at this mixture's current density represents.
+	#[must_use]
+	pub fn moles_for_volume(&self, volume: f64, take_l: f64) -> f64 {
+		if volume <= 0.0 {
+			return 0.0;
+		}
+		self.total() * (take_l / volume).clamp(0.0, 1.0)
+	}
+
+	/// Carves `moles` of the gases in `mask` (0: every gas) out of this
+	/// mixture, splitting energy by the carved gases' share of the total
+	/// heat capacity so both sides keep their own temperature. Clamped to
+	/// what's actually there; conserves mass and energy with the caller
+	/// (whatever it does with the returned share).
+	pub fn carve_masked(&mut self, mask: u32, moles: f64) -> Self {
+		if mask == 0 {
+			let total = self.total();
+			let f = if total > 0.0 { (moles / total).clamp(0.0, 1.0) } else { 0.0 };
+			return self.carve(f);
+		}
+		let masked_total = self.masked_total(mask);
+		let mut out = Self {
+			temperature: self.temperature_now(),
+			..Self::default()
+		};
+		if masked_total <= 0.0 {
+			return out;
+		}
+		let f = (moles / masked_total).clamp(0.0, 1.0);
+		let mut removed_frac_of_total = 0.0f64;
+		for i in 0..N {
+			if mask & (1 << i) != 0 {
+				let amt = self.moles[i] * f;
+				out.moles[i] = amt;
+				self.moles[i] -= amt;
+				removed_frac_of_total += amt;
+			}
+		}
+		let total = self.total() + removed_frac_of_total;
+		let e = if total > 0.0 {
+			self.energy * (removed_frac_of_total / total)
+		} else {
+			0.0
+		};
+		out.energy = e;
+		self.energy -= e;
+		out
+	}
+
+	/// Moves `moles` of the gases in `mask` from `self` into `to`, clamped
+	/// to what's masked and available. Returns the moles actually moved.
+	pub fn transfer_masked(&mut self, to: &mut Self, mask: u32, moles: f64) -> f64 {
+		if moles <= 0.0 || self.masked_total(mask) <= crate::gas::constants::GAS_MIN_MOLES.into() {
+			return 0.0;
+		}
+		let carved = self.carve_masked(mask, moles);
+		let moved = carved.total();
+		to.add(&carved);
+		moved
+	}
 }
 
 /// The pipe network kind.
@@ -198,6 +285,20 @@ pub struct DeviceStep {
 	pub report: StepReport,
 }
 
+/// A device edge's idle-skip state (M2 follow-up: settled regions put their
+/// device edges to sleep the same way M1b's field idle-skip does for
+/// cells). `asleep` once a step moved nothing and drew no power; woken by a
+/// setting change (`add_device`/`add_turf_device`/`set_device`) or by
+/// either endpoint's revision moving since the last step (another device
+/// on the same region, a DM write, or - for a turf endpoint - a dirty
+/// field cell).
+#[derive(Clone, Copy, Debug, Default)]
+struct DeviceActivity {
+	asleep: bool,
+	rev_a: u32,
+	rev_b: u32,
+}
+
 /// The main-owned pipe network: ports by DM id, and stable small slots for
 /// regions (a region's DM gas handle is `PIPE_BASE + slot`).
 #[derive(Default)]
@@ -207,6 +308,8 @@ pub struct PipeNet {
 	targets: HashMap<u32, u32>,
 	/// Device edges (M2) by DM id.
 	devices: HashMap<u32, DeviceId<Pipes>>,
+	/// Idle-skip state per device, keyed the same as `devices`.
+	activity: HashMap<u32, DeviceActivity>,
 	slots: Vec<Option<RawHandle>>,
 	slot_of: HashMap<RawHandle, u32>,
 	free: Vec<u32>,
@@ -372,6 +475,7 @@ impl PipeNet {
 		{
 			Ok(d) => {
 				self.devices.insert(id, d);
+				self.activity.remove(&id);
 				true
 			}
 			Err(_) => false,
@@ -396,6 +500,7 @@ impl PipeNet {
 		{
 			Ok(d) => {
 				self.devices.insert(id, d);
+				self.activity.remove(&id);
 				true
 			}
 			Err(_) => false,
@@ -407,22 +512,60 @@ impl PipeNet {
 		let Some(d) = self.devices.remove(&id) else {
 			return false;
 		};
+		self.activity.remove(&id);
 		self.net.remove_device(d).is_ok()
 	}
 
-	/// Replaces a device's parameters (a setting change).
+	/// Replaces a device's parameters (a setting change): always wakes it,
+	/// so the new setting takes effect on the very next step.
 	pub fn set_device(&mut self, id: u32, params: DeviceParams) -> bool {
 		let Some(&d) = self.devices.get(&id) else {
 			return false;
 		};
+		self.activity.remove(&id);
 		self.net.set_device_data(d, params).is_ok()
 	}
 
-	/// Runs every device edge's flow law once (`device.rs`), moving gas
-	/// between the regions on each side and bumping their DM slot
-	/// revisions. Edges with a field-cell (turf) endpoint are skipped until
-	/// the pipe/turf field bridge lands; that leaves vent pumps and
-	/// scrubbers, whose non-network side is a turf, for a follow-up.
+	/// The change-revision of a region, for device idle-skip: the DM slot
+	/// revision if it has one (bumped on every payload write, including a
+	/// device's own step - see `gas_mut`/`touch_region`), or 0 for a region
+	/// DM has never bound a slot to (rare; treated as "always changed" so a
+	/// brand new region's devices step at least once).
+	#[must_use]
+	pub(crate) fn region_revision(&self, r: RegionId<Pipes>) -> u32 {
+		self.slot_of
+			.get(&r.raw())
+			.map_or(0, |&s| self.revision(s))
+	}
+
+	/// Whether a device edge is asleep given its endpoints' current
+	/// revisions - the same idle-skip state `step_devices` tracks for
+	/// region<->region edges, shared with `GasWorld::step_turf_devices` for
+	/// region<->turf edges (a vent pump or scrubber), which resolves its own
+	/// "region" (`region_revision`) and "turf" (the field cell's own
+	/// revision) sides and calls this directly since it steps outside
+	/// `PipeNet`.
+	#[must_use]
+	pub(crate) fn device_asleep(&self, id: u32, rev_a: u32, rev_b: u32) -> bool {
+		self.activity
+			.get(&id)
+			.is_some_and(|a| a.asleep && a.rev_a == rev_a && a.rev_b == rev_b)
+	}
+
+	/// Records a device edge's idle-skip state after a step (or after
+	/// deciding not to step it because it was already asleep).
+	pub(crate) fn set_device_activity(&mut self, id: u32, asleep: bool, rev_a: u32, rev_b: u32) {
+		self.activity.insert(id, DeviceActivity { asleep, rev_a, rev_b });
+	}
+
+	/// Runs every awake device edge's flow law once (`device.rs`), moving
+	/// gas between the regions on each side and bumping their DM slot
+	/// revisions. A device that settled (moved nothing, drew no power) on
+	/// its last step and whose endpoints haven't changed since is asleep
+	/// and costs nothing but a `HashMap` lookup this tick - the same
+	/// idle-skip M1b's field already does for settled cells. Edges with a
+	/// field-cell (turf) endpoint are skipped; `GasWorld::step_turf_devices`
+	/// runs those.
 	pub fn step_devices(&mut self, dt: f32) -> Vec<DeviceStep> {
 		let ids: Vec<DeviceId<Pipes>> = self.net.devices().map(|(id, _)| id).collect();
 		let mut out = Vec::with_capacity(ids.len());
@@ -437,7 +580,6 @@ impl PipeNet {
 				continue;
 			};
 			let key = dev.key;
-			let params = dev.data.clone();
 			let (Side::Region(ra), Side::Region(rb)) =
 				(self.net.resolve(Endpoint::Node(na)), self.net.resolve(Endpoint::Node(nb)))
 			else {
@@ -446,6 +588,13 @@ impl PipeNet {
 			if ra == rb {
 				continue;
 			}
+			let rev_a = self.region_revision(ra);
+			let rev_b = self.region_revision(rb);
+			let activity = self.activity.entry(key).or_default();
+			if activity.asleep && activity.rev_a == rev_a && activity.rev_b == rev_b {
+				continue;
+			}
+			let params = dev.data.clone();
 			let Ok(region_a) = self.net.region(ra) else { continue };
 			let Ok(region_b) = self.net.region(rb) else { continue };
 			let vol_a = *region_a.summary();
@@ -453,16 +602,28 @@ impl PipeNet {
 			let mut pa = region_a.payload().clone();
 			let mut pb = region_b.payload().clone();
 			let report = device::step(&params, &mut pa, vol_a, &mut pb, vol_b, dt);
-			if report.moles != 0.0 || report.power_w != 0.0 {
+			let settled = report.moles == 0.0 && report.power_w == 0.0;
+			let (mut rev_a, mut rev_b) = (rev_a, rev_b);
+			if !settled {
 				*self.net.payload_mut(ra).expect("resolved above") = pa;
 				*self.net.payload_mut(rb).expect("resolved above") = pb;
 				if let Some(&sa) = self.slot_of.get(&ra.raw()) {
 					self.bump(sa);
+					rev_a = self.revision(sa);
 				}
 				if let Some(&sb) = self.slot_of.get(&rb.raw()) {
 					self.bump(sb);
+					rev_b = self.revision(sb);
 				}
 			}
+			self.activity.insert(
+				key,
+				DeviceActivity {
+					asleep: settled,
+					rev_a,
+					rev_b,
+				},
+			);
 			out.push(DeviceStep { key, report });
 		}
 		out
@@ -645,25 +806,26 @@ mod tests {
 		net.upsert(1, 1, 1000.0, gas(1000.0, 293.0));
 		net.upsert(2, 2, 1000.0, gas(0.0, 293.0));
 		net.commit();
-		assert!(net.add_device(
-			500,
-			1,
-			2,
-			DeviceParams::Pump {
-				target_kpa: 101.325,
-				power_w: 5000.0,
-			},
-		));
+		assert!(net.add_device(500, 1, 2, DeviceParams::decode(1, [101.325, 5000.0, 0.0, 0.0])));
 		let before = net.totals()[GAS_OXYGEN];
 		let mut reached = false;
+		let mut asleep_steps = 0;
 		for _ in 0..200 {
 			let steps = net.step_devices(1.0);
+			// Idle-skip: once settled (target reached, nothing left to move)
+			// and neither region has changed since, the device sleeps and
+			// step_devices reports nothing for it at all.
+			if steps.is_empty() {
+				asleep_steps += 1;
+				continue;
+			}
 			assert_eq!(steps.len(), 1);
 			assert_eq!(steps[0].key, 500);
 			reached |= steps[0].report.target_reached;
 		}
 		assert!((net.totals()[GAS_OXYGEN] - before).abs() < 1e-6, "conserves mass");
 		assert!(reached, "reaches its target pressure");
+		assert!(asleep_steps > 0, "the pump never went to sleep once settled");
 	}
 
 	#[test]
@@ -673,9 +835,52 @@ mod tests {
 		net.upsert(2, 2, 100.0, gas(0.0, 293.0));
 		net.connect(1, 2);
 		net.commit();
-		assert!(net.add_device(9, 1, 2, DeviceParams::Valve { open: true }));
+		assert!(net.add_device(9, 1, 2, DeviceParams::Equalize { open: true }));
 		let steps = net.step_devices(1.0);
 		assert!(steps.is_empty(), "same region already: nothing to move");
+	}
+
+	#[test]
+	fn sleeping_device_wakes_when_a_setting_changes() {
+		let mut net = PipeNet::new();
+		net.upsert(1, 1, 1000.0, gas(1000.0, 293.0));
+		net.upsert(2, 2, 1000.0, gas(0.0, 293.0));
+		net.commit();
+		assert!(net.add_device(1, 1, 2, DeviceParams::decode(1, [50.0, 5000.0, 0.0, 0.0])));
+		for _ in 0..50 {
+			net.step_devices(1.0);
+		}
+		// Settled at its (low) target: should now be asleep.
+		assert!(net.step_devices(1.0).is_empty(), "did not sleep once settled");
+		// Raising the target is a setting change: must wake it and move more gas.
+		assert!(net.set_device(1, DeviceParams::decode(1, [200.0, 5000.0, 0.0, 0.0])));
+		let steps = net.step_devices(1.0);
+		assert_eq!(steps.len(), 1, "a setting change did not wake the device");
+		assert!(steps[0].report.moles > 0.0, "the new target didn't move any gas");
+	}
+
+	#[test]
+	fn sleeping_device_wakes_when_a_shared_region_changes_externally() {
+		let mut net = PipeNet::new();
+		net.upsert(1, 1, 1000.0, gas(1000.0, 293.0));
+		net.upsert(2, 2, 1000.0, gas(0.0, 293.0));
+		net.upsert(3, 3, 1000.0, gas(1000.0, 293.0));
+		net.commit();
+		assert!(net.add_device(1, 1, 2, DeviceParams::decode(1, [50.0, 5000.0, 0.0, 0.0])));
+		for _ in 0..50 {
+			net.step_devices(1.0);
+		}
+		assert!(net.step_devices(1.0).is_empty(), "did not sleep once settled");
+		// Another writer (a second device pumping into the same output
+		// region) bumps port 2's region without touching device 1 at all.
+		assert!(net.add_device(2, 3, 2, DeviceParams::decode(2, [50.0, 0.0, 0.0, 0.0])));
+		// Device iteration order isn't guaranteed, so device 1 may see the
+		// change this tick or the next; either is a correct wake.
+		let mut woke = false;
+		for _ in 0..2 {
+			woke |= net.step_devices(1.0).iter().any(|s| s.key == 1);
+		}
+		assert!(woke, "a shared region's external change did not wake the sleeping device");
 	}
 
 	#[test]
@@ -685,7 +890,7 @@ mod tests {
 		let mut net = PipeNet::new();
 		net.upsert(1, 1, 100.0, gas(50.0, 293.0));
 		net.commit();
-		assert!(net.add_turf_device(7, 1, 42, DeviceParams::Valve { open: true }));
+		assert!(net.add_turf_device(7, 1, 42, DeviceParams::Equalize { open: true }));
 		let &device_id = net.devices.get(&7).expect("device registered under id 7");
 		let device = net.net.device(device_id).expect("device is live");
 		assert_eq!((device.a, device.b), (Endpoint::Cell(42), Endpoint::Node(net.port(1).unwrap())));
@@ -701,7 +906,7 @@ mod tests {
 		net.upsert(1, 1, 100.0, gas(50.0, 293.0));
 		net.upsert(2, 2, 100.0, gas(0.0, 293.0));
 		net.commit();
-		assert!(net.add_device(1, 1, 2, DeviceParams::Valve { open: true }));
+		assert!(net.add_device(1, 1, 2, DeviceParams::Equalize { open: true }));
 		assert!(net.remove_device(1));
 		let steps = net.step_devices(1.0);
 		assert!(steps.is_empty());

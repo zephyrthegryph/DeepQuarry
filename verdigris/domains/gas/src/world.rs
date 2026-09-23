@@ -1347,6 +1347,22 @@ impl GasWorld {
 			let Side::Region(region) = self.pipes.net.resolve(Endpoint::Node(node)) else {
 				continue;
 			};
+
+			// Idle-skip (M2 follow-up): a settled edge whose region and
+			// turf cell haven't changed since its last step costs nothing
+			// but two revision lookups, the same as `PipeNet::step_devices`
+			// does for region<->region edges.
+			let rev_region_before = self.pipes.region_revision(region);
+			let rev_cell_before = self.revision(MixRef::Turf(cell));
+			let (rev_a_before, rev_b_before) = if cell_is_a {
+				(rev_cell_before, rev_region_before)
+			} else {
+				(rev_region_before, rev_cell_before)
+			};
+			if self.pipes.device_asleep(key, rev_a_before, rev_b_before) {
+				continue;
+			}
+
 			let Ok(r) = self.pipes.net.region(region) else {
 				continue;
 			};
@@ -1371,7 +1387,8 @@ impl GasWorld {
 				device::step(&params, &mut region_gas, vol_region, &mut turf_gas, vol_cell, dt)
 			};
 
-			if report.moles != 0.0 {
+			let settled = report.moles == 0.0 && report.power_w == 0.0;
+			if !settled {
 				if let Ok(payload) = self.pipes.net.payload_mut(region) {
 					*payload = region_gas;
 				}
@@ -1379,6 +1396,16 @@ impl GasWorld {
 				let after_mix = mixture_of_pipe(&turf_gas, vol_cell);
 				self.store(MixRef::Turf(cell), &before_mix, &after_mix);
 			}
+
+			let rev_region_after = self.pipes.region_revision(region);
+			let rev_cell_after = self.revision(MixRef::Turf(cell));
+			let (rev_a_after, rev_b_after) = if cell_is_a {
+				(rev_cell_after, rev_region_after)
+			} else {
+				(rev_region_after, rev_cell_after)
+			};
+			self.pipes.set_device_activity(key, settled, rev_a_after, rev_b_after);
+
 			out.push(pipes::DeviceStep { key, report });
 		}
 		out
