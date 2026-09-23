@@ -54,6 +54,10 @@ SUBSYSTEM_DEF(reactor)
 	/// Datums whose on_react() calls are counted (wake tests): datum -> count.
 	var/list/traced
 
+	/// Live REACT_KEY_MOB_CHUNK subscriptions made through sleep_on_keys(). Mob movement
+	/// skips the turf lookup and the bind call while it is 0 (Q12).
+	var/mob_chunk_subscriptions = 0
+
 	/// Missed-wake audit (reactor.md §7), every `audit_interval` while audit_enabled(): always
 	/// under UNIT_TESTS/TESTING (where a finding is a runtime, failing the run), and on servers
 	/// only with the `reactor_audit` config flag (off by default; an admin can set it for a round).
@@ -75,6 +79,7 @@ SUBSYSTEM_DEF(reactor)
 	next_continuous_token = SSreactor.next_continuous_token
 	wake_counts = SSreactor.wake_counts
 	continuous_cost = SSreactor.continuous_cost
+	mob_chunk_subscriptions = SSreactor.mob_chunk_subscriptions
 
 /// The wheel tick for world.time `time`: the first tick at or after it.
 /datum/controller/subsystem/reactor/proc/tick_of(time)
@@ -217,6 +222,41 @@ SUBSYSTEM_DEF(reactor)
 		entry.cancelled = TRUE
 		return TRUE
 	return !!vg_react_cancel(token)
+
+// --- Sleeping on keys (S2) -------------------------------------------------------------------
+
+/// Subscribes `D` to every (kind, id, mask) triple in the flat list `keys`. Returns the flat
+/// list (token, kind, ...) to hand back to cancel_keys() when `D` wakes.
+/datum/controller/subsystem/reactor/proc/sleep_on_keys(datum/D, list/keys)
+	. = list()
+	for(var/i = 1; i <= length(keys); i += 3)
+		var/kind = keys[i]
+		. += on_key(D, kind, keys[i + 1], keys[i + 2])
+		. += kind
+		if(kind == REACT_KEY_MOB_CHUNK)
+			mob_chunk_subscriptions++
+
+/// Drops the subscriptions sleep_on_keys() returned.
+/datum/controller/subsystem/reactor/proc/cancel_keys(datum/D, list/tokens)
+	for(var/i = 1; i <= length(tokens); i += 2)
+		cancel(D, tokens[i])
+		if(tokens[i + 1] == REACT_KEY_MOB_CHUNK)
+			mob_chunk_subscriptions = max(mob_chunk_subscriptions - 1, 0)
+
+/// The mob-chunk key for a location, or null off-map.
+/datum/controller/subsystem/reactor/proc/mob_chunk_id(atom/location)
+	var/turf/T = get_turf(location)
+	if(!T)
+		return
+	return MOB_CHUNK_NUMERIC_KEY(T.z, MOB_CHUNK_COORD(T.x), MOB_CHUNK_COORD(T.y))
+
+/// A mob arrived in, left or moved inside `location`'s chunk.
+/datum/controller/subsystem/reactor/proc/publish_mob_chunk(atom/location)
+	if(!mob_chunk_subscriptions)
+		return
+	var/id = mob_chunk_id(location)
+	if(!isnull(id))
+		REACT_PUBLISH(REACT_KEY_MOB_CHUNK, id, REACT_KEY_CHANGED)
 
 // --- The continuous lane (reactor.md §2) --------------------------------------------------------
 

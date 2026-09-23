@@ -32,6 +32,32 @@
 #define REACT_KEY_AREA_POWER 2
 /// A door's mode (bolts, emergency access, ...) changed. Id: the door's REACT_ID.
 #define REACT_KEY_DOOR_MODE 3
+/// An APC's own state or its grid supply class changed. Id: the APC's REACT_ID.
+#define REACT_KEY_APC 4
+	#define REACT_APC_STATE 1
+	#define REACT_APC_SUPPLY 2
+/// A powernet changed. Id: the powernet's REACT_ID.
+#define REACT_KEY_POWERNET 5
+	/// Supply or load moved (exact-rate consumers).
+	#define REACT_POWERNET_RATE 1
+	/// Cables, warnings or monitor-visible state.
+	#define REACT_POWERNET_STATE 2
+	/// Machine membership (sleeping APCs).
+	#define REACT_POWERNET_TOPOLOGY 4
+/// A turret's settings or power changed. Id: the turret's REACT_ID.
+#define REACT_KEY_TURRET 6
+/// A disposal unit's state changed. Id: the unit's REACT_ID.
+#define REACT_KEY_DISPOSAL 7
+/// A meteor appeared or went away. Id: always 1.
+#define REACT_KEY_METEORS 8
+/// A mob entered, left or moved in a 16x16 chunk. Id: MOB_CHUNK_NUMERIC_KEY (z < 256).
+#define REACT_KEY_MOB_CHUNK 9
+/// The mask for keys with a single meaning.
+#define REACT_KEY_CHANGED 1
+
+/// Publish key (kind, D's id) only if D was ever given a registry id: a subscriber builds
+/// the key with REACT_ID(D), so a datum without one has no subscribers. Saves the bind call.
+#define REACT_PUBLISH_OWN(D, kind, mask) if((D).reactor_id) { REACT_PUBLISH(kind, (D).reactor_id, mask) }
 
 /// Reason classes for the wake metrics (REACT_CLASS_EVERY counts continuous-lane runs,
 /// which call react_every() instead of on_react()).

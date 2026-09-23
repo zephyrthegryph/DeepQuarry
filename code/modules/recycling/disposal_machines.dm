@@ -95,7 +95,7 @@
 
 /obj/machinery/disposal/proc/wake_for_state_change()
 	clear_gas_dependency()
-	SSmachines.publish_reactive_dependency("disposal:[REF(src)]")
+	REACT_PUBLISH_OWN(src, REACT_KEY_DISPOSAL, REACT_KEY_CHANGED)
 	START_MACHINE_PROCESSING(src)
 
 /obj/machinery/disposal/proc/hibernate_until_intake_changes()
@@ -543,7 +543,7 @@
 	if(mode != DISPOSALMODE_CHARGING && !flush && !length(contents))
 		update_use_power(USE_POWER_IDLE)
 		flush_count = 0
-		SSmachines.hibernate_reactive_machine(src, list("disposal:[REF(src)]"))
+		sleep_until_keys(list(REACT_KEY_DISPOSAL, REACT_ID(src), REACT_KEY_CHANGED))
 		return
 
 	flush_count++
@@ -564,7 +564,7 @@
 		mode = DISPOSALMODE_CHARGED //if full enough, switch to ready mode
 		update_icon()
 		if(!flush && !length(contents))
-			SSmachines.hibernate_reactive_machine(src, list("disposal:[REF(src)]"))
+			sleep_until_keys(list(REACT_KEY_DISPOSAL, REACT_ID(src), REACT_KEY_CHANGED))
 			return
 	else
 		if(!pressurize()) //otherwise charge
@@ -774,3 +774,11 @@
 
 /obj/mecha/CanEnterDisposals()
 	return FALSE
+
+/// Audit: a unit sleeping on its own key must be idle and empty.
+/obj/machinery/disposal/react_sleep_violation()
+	if(!asleep_on_keys() || (stat & BROKEN))
+		return null
+	if(flush || length(contents))
+		return "asleep with [flush ? "a flush pending" : "contents"]"
+	return null

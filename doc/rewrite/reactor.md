@@ -96,6 +96,23 @@ State that only DM changes (door modes, area alarms, turret targets) is publishe
 - Keys are numeric, built from registry IDs rather than strings, so publishing costs no string building. Today every `use_power_*` call builds an `area_power:[REF]` string.
 - A key with no subscribers is never stored.
 
+As built (S2): the key kinds are in `code/__defines/reactor.dm` (`REACT_KEY_APC`, `_POWERNET`,
+`_TURRET`, `_DISPOSAL`, `_METEORS`, `_MOB_CHUNK`, with `REACT_KEY_AREA_POWER` from S1). Ids are
+the owner's `REACT_ID`; a mob chunk's id is `MOB_CHUNK_NUMERIC_KEY`, a meteor's is 1.
+- Publishers use `REACT_PUBLISH_OWN(owner, kind, mask)`, which skips the bind call when the
+  owner has no registry id: a subscriber builds the key with `REACT_ID(owner)`, so no id means
+  no subscriber. `use_power_*` no longer builds an `area_power:[REF]` string.
+- A sleeping machine calls `sleep_until_keys(list(kind, id, mask, ...))`, which subscribes,
+  keeps the tokens in `react_sleep_tokens` and stops polling. `/obj/machinery/on_react()`
+  cancels them and restarts polling; `Destroy()` cancels them. Calm AI brains do the same
+  with `hibernate_calm()` / `wake_from_chunks()` on mob-chunk keys.
+- Wakes arrive at the next reactor step, not inside the publishing call. The old
+  revision capture (subscribe, then re-check) is not needed: a publication after the
+  subscription always wakes.
+- `SSreactor.mob_chunk_subscriptions` counts live mob-chunk subscriptions, so mob movement
+  skips the turf lookup and the bind call while nothing sleeps on a chunk (Q12).
+- The wake tests are in `code/modules/unit_tests/dq_reactor_s2_tests.dm`.
+
 ## 5. Rate models for DM-owned quantities
 
 Quantities that change at a known rate use the main-side rate models ([rust_core.md §7](rust_core.md#7-the-main-side-reactor)): item rot, consumable fuel, cooldown meters, digestion progress. DM reads the current value, and thresholds become timers at the exact crossing time.

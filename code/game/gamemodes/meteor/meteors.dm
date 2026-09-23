@@ -135,7 +135,7 @@ GLOBAL_LIST_INIT(meteors_catastrophic, list(
 	. = ..()
 	z_original = z
 	GLOB.meteor_list += src
-	SSmachines.publish_reactive_dependency("meteors")
+	REACT_PUBLISH(REACT_KEY_METEORS, 1, REACT_KEY_CHANGED)
 	SpinAnimation()
 
 /obj/effect/meteor/Move()
@@ -156,7 +156,7 @@ GLOBAL_LIST_INIT(meteors_catastrophic, list(
 /obj/effect/meteor/Destroy()
 	walk(src,FALSE) //this cancels the walk_towards() proc
 	GLOB.meteor_list -= src
-	SSmachines.publish_reactive_dependency("meteors")
+	REACT_PUBLISH(REACT_KEY_METEORS, 1, REACT_KEY_CHANGED)
 	return ..()
 
 /obj/effect/meteor/Bump(atom/A)

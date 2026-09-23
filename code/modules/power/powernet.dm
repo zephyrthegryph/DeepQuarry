@@ -136,7 +136,7 @@
 	// Exact-rate consumers (capacitor chargers, diagnostics) are isolated from
 	// the broad topology/availability dependency. They wake without forcing the
 	// entire cable graph or every APC to process.
-	SSmachines.publish_reactive_dependency("powernet-rate:[REF(src)]")
+	REACT_PUBLISH_OWN(src, REACT_KEY_POWERNET, REACT_POWERNET_RATE)
 	if(old_smes)
 		registered_smes_total -= old_amount
 	if(is_smes)
@@ -333,7 +333,7 @@
 	var/exact_load_matters = material_graph?.has_superconductors
 	var/load_changed = abs(load - published_load_total) > load_threshold
 	if(load_changed)
-		SSmachines.publish_reactive_dependency("powernet-rate:[REF(src)]")
+		REACT_PUBLISH_OWN(src, REACT_KEY_POWERNET, REACT_POWERNET_RATE)
 		// Ordinary steel/copper station wiring has no stateful material response
 		// to a routine load-rate change. Only an engineered conductor needs a new
 		// flow solve and a future thermal settlement.
@@ -365,20 +365,20 @@
 /// topology key, so one publication reaches all of them.
 /datum/powernet/proc/publish_dependency()
 	publish_cable_dependency()
-	SSmachines.publish_reactive_dependency("powernet-topology:[REF(src)]")
+	REACT_PUBLISH_OWN(src, REACT_KEY_POWERNET, REACT_POWERNET_TOPOLOGY)
 
 /// Cable membership changed. That moves line losses but not which machines
 /// share the network, so APCs are left asleep.
 /datum/powernet/proc/publish_cable_dependency()
 	revision++
 	mark_accounting_dirty()
-	SSmachines.publish_reactive_dependency("powernet:[REF(src)]")
+	REACT_PUBLISH_OWN(src, REACT_KEY_POWERNET, REACT_POWERNET_STATE)
 
 /// Publish monitor-visible state without fanning one accounting sample out to
 /// every APC. APCs receive their own semantic supply transition below.
 /datum/powernet/proc/publish_monitor_dependency()
 	revision++
-	SSmachines.publish_reactive_dependency("powernet:[REF(src)]")
+	REACT_PUBLISH_OWN(src, REACT_KEY_POWERNET, REACT_POWERNET_STATE)
 
 /datum/powernet/proc/apc_supply_class(demand)
 	if(avail <= 0)
@@ -395,7 +395,7 @@
 		if(sleeping_apc_power_classes[A] == new_class)
 			continue
 		sleeping_apc_power_classes[A] = new_class
-		SSmachines.publish_reactive_dependency("apc-power:[REF(A)]")
+		REACT_PUBLISH_OWN(A, REACT_KEY_APC, REACT_APC_SUPPLY)
 
 /// last_surplus() — excess power before refunds to SMESes, from last tick.
 /// Machines may read this to adjust consumption.

@@ -45,27 +45,6 @@
 	TEST_ASSERT_EQUAL(SSmachines.processing_machines[middle.machine_processing_index], middle, "restarted machine's slot does not hold it")
 	TEST_ASSERT_EQUAL(middle.machine_processing_pass, SSmachines.machine_run_pass, "machine started mid-pass would be polled in the same pass")
 
-/// B4: revisions for keys nobody sleeps on are not kept, and wake reasons are
-/// only counted while profiling.
-/datum/unit_test/dq_reactive_tables_bounded
-
-/datum/unit_test/dq_reactive_tables_bounded/Run()
-	var/key = "dq-test-unsubscribed:[world.time]"
-	SSmachines.publish_reactive_dependency(key)
-	TEST_ASSERT(isnull(SSmachines.reactive_revisions[key]), "publishing a key with no subscribers left a revision behind")
-
-	var/obj/machinery/M = allocate(/obj/machinery, test_floor())
-	var/sleep_key = "dq-test-subscribed:[REF(M)]"
-	var/was_profiling = SSmachines.profile_machine_types
-	SSmachines.profile_machine_types = FALSE
-	var/list/old_counts = SSmachines.machine_wake_reason_counts.Copy()
-	TEST_ASSERT(SSmachines.hibernate_reactive_machine(M, list(sleep_key)), "machine refused to hibernate")
-	SSmachines.publish_reactive_dependency(sleep_key)
-	SSmachines.profile_machine_types = was_profiling
-	TEST_ASSERT(M.datum_flags & DF_ISPROCESSING, "publication did not wake the subscribed machine")
-	TEST_ASSERT(isnull(SSmachines.reactive_revisions[sleep_key]), "revision outlived its last subscriber")
-	TEST_ASSERT_EQUAL(length(SSmachines.machine_wake_reason_counts), length(old_counts), "wake reasons were counted with profiling off")
-
 /// B8: a wall's heat transfer coefficient follows its material instead of
 /// always clamping to the maximum.
 /datum/unit_test/dq_wall_conductance_uses_material
@@ -97,11 +76,15 @@
 /datum/unit_test/dq_powernet_cable_edit_leaves_apcs_asleep/Run()
 	var/datum/powernet/PN = new()
 	var/obj/machinery/M = allocate(/obj/machinery, test_floor())
-	TEST_ASSERT(SSmachines.hibernate_reactive_machine(M, list("powernet-topology:[REF(PN)]")), "machine refused to hibernate")
+	TEST_ASSERT(M.sleep_until_keys(list(REACT_KEY_POWERNET, REACT_ID(PN), REACT_POWERNET_TOPOLOGY)), "machine refused to hibernate")
+	SSreactor.trace(M)
 	PN.publish_cable_dependency()
-	TEST_ASSERT(!(M.datum_flags & DF_ISPROCESSING), "a cable-only edit woke a topology subscriber")
+	react_test_ticks(4)
+	TEST_ASSERT(!SSreactor.traced_wakes(M), "a cable-only edit woke a topology subscriber")
 	PN.publish_dependency()
-	TEST_ASSERT(M.datum_flags & DF_ISPROCESSING, "a membership change did not wake the topology subscriber")
+	react_test_ticks(4)
+	TEST_ASSERT(SSreactor.traced_wakes(M), "a membership change did not wake the topology subscriber")
+	SSreactor.untrace(M)
 	qdel(PN)
 
 /// Q14: a leak on one pipe network wakes only the shutoff valves on it.

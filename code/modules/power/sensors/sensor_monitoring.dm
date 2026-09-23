@@ -28,9 +28,12 @@
 	var/list/dependencies = list()
 	for(var/obj/machinery/power/sensor/S as anything in power_monitor.grid_sensors)
 		if(S.powernet)
-			dependencies["powernet:[REF(S.powernet)]"] = TRUE
+			dependencies[S.powernet] = TRUE
 	if(length(dependencies))
-		SSmachines.hibernate_reactive_machine(src, dependencies)
+		var/list/keys = list()
+		for(var/datum/powernet/PN as anything in dependencies)
+			keys += list(REACT_KEY_POWERNET, REACT_ID(PN), REACT_POWERNET_STATE)
+		sleep_until_keys(keys)
 		return PROCESS_KILL
 // On creation automatically connects to active sensors. This is delayed to ensure sensors already exist.
 /obj/machinery/computer/power_monitor/Initialize(mapload)
@@ -63,3 +66,11 @@
 		if(S.check_grid_warning())
 			return 1
 	return 0
+
+/// Audit: a sleeping monitor's alert light must match its sensors.
+/obj/machinery/computer/power_monitor/react_sleep_violation()
+	if(!asleep_on_keys())
+		return null
+	if(check_warnings() != alerting)
+		return "asleep with a stale alert ([alerting] vs [check_warnings()])"
+	return null

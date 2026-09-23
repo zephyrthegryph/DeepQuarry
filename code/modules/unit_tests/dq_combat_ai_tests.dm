@@ -65,9 +65,10 @@
 	TEST_ASSERT_NOTNULL(B, "simple mob did not receive an AI brain")
 	B.primary_threat = null
 	B.active_behavior_type = null
-	TEST_ASSERT(SSai.hibernate_calm_brain(B), "calm brain refused spatial hibernation")
+	TEST_ASSERT(B.hibernate_calm(), "calm brain refused spatial hibernation")
 	TEST_ASSERT(!(B in SSai.processing), "hibernating brain remained in strategic processing")
-	SSai.publish_mob_chunk(M)
+	SSreactor.publish_mob_chunk(M)
+	react_test_ticks(4)
 	TEST_ASSERT(B in SSai.processing, "movement publication did not wake nearby brain")
 // dq_get_behavior(T) must return the same singleton across calls — the
 // flyweight contract is what makes per-mob state on brain.behavior_state /

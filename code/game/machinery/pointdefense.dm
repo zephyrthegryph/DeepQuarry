@@ -230,14 +230,14 @@ GLOBAL_LIST_BOILERPLATE(pointdefense_turrets, /obj/machinery/pointdefense)
 	if(stat & (BROKEN))
 		return PROCESS_KILL
 	if(!active)
-		SSmachines.hibernate_reactive_machine(src, list("meteors"))
+		sleep_until_keys(list(REACT_KEY_METEORS, 1, REACT_KEY_CHANGED))
 		return PROCESS_KILL
 	var/desiredir = ATAN2(transform.b, transform.a) > 0 ? NORTH : SOUTH
 	if(dir != desiredir)
 		set_dir(desiredir)
 
 	if(!LAZYLEN(GLOB.meteor_list))
-		SSmachines.hibernate_reactive_machine(src, list("meteors"))
+		sleep_until_keys(list(REACT_KEY_METEORS, 1, REACT_KEY_CHANGED))
 		return PROCESS_KILL
 	find_and_shoot()
 
@@ -324,3 +324,11 @@ GLOBAL_LIST_BOILERPLATE(pointdefense_turrets, /obj/machinery/pointdefense)
 	STOP_MACHINE_PROCESSING(src)
 	update_icon()
 	return TRUE
+
+/// Audit: an active point defense must not sleep through meteors.
+/obj/machinery/pointdefense/react_sleep_violation()
+	if(!asleep_on_keys() || (stat & BROKEN) || !active)
+		return null
+	if(LAZYLEN(GLOB.meteor_list))
+		return "asleep with [LAZYLEN(GLOB.meteor_list)] meteors about"
+	return null
