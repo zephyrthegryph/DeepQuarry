@@ -5,13 +5,26 @@
 	desc = "A happy little snowman smiles back at you!"
 	anchored = TRUE
 
-/obj/structure/snowman/attack_hand(mob/user as mob)
+/obj/structure/snowman/declare_interactions(list/into)
+	into += list(
+		/datum/interaction/entry_hand/snowman_crush,
+	)
+	..()
+
+/// Old attack_hand: crumple the snowman on harm intent.
+/datum/interaction/entry_hand/snowman_crush
+	id = "snowman_crush"
+	name = "Crush"
+	effect = /obj/structure/snowman/proc/interaction_crush
+
+/obj/structure/snowman/proc/interaction_crush(mob/user, obj/item/held, datum/interaction/interaction)
 	if(IS_HARMING(user))
 		to_chat(user, span_notice("In one hit, [src] easily crumples into a pile of snow. You monster."))
 		var/turf/simulated/floor/F = get_turf(src)
 		if (istype(F))
 			new /obj/item/stack/material/snow(F)
 		qdel(src)
+	return TRUE
 
 /obj/structure/snowman/borg
 	name = "snowborg"
