@@ -240,9 +240,28 @@
 /// The types a generated test instantiates for `rule` under `root`: the root
 /// itself when the rule's per-type filter takes it, otherwise every topmost
 /// subtype the filter takes (the types that declare the breakpoint).
+///
+/// Cached per (rule type, root): rules come from the dq_rules()/dq_rule_fixture()
+/// singleton registries, so a rule's applies_to/excludes are fixed for the
+/// world's lifetime and this is a pure function of its two arguments. Only
+/// test code calls this (the generated-threshold-test sweep and breakpoint
+/// tests), but the subtypesof(root) walk plus a per-candidate ancestor walk up
+/// to root is the same cost every time the same (rule, root) pair recurs --
+/// which dq_rule_thresholds does constantly, since many rules share a root
+/// like /obj or /atom/movable.
 /proc/dq_rule_declaring_types(datum/rule/rule, root)
+	var/static/list/cache = list()
+	var/list/by_root = cache[rule.type]
+	if(!by_root)
+		by_root = list()
+		cache[rule.type] = by_root
+	. = by_root[root]
+	if(!isnull(.))
+		return .
 	if(dq_rule_applies(rule, root))
-		return list(root)
+		. = list(root)
+		by_root[root] = .
+		return .
 	. = list()
 	for(var/path in subtypesof(root))
 		if(!dq_rule_applies(rule, path))
@@ -256,6 +275,7 @@
 				break
 		if(topmost)
 			. += path
+	by_root[root] = .
 
 // ---- Subscription lifecycle ----
 
