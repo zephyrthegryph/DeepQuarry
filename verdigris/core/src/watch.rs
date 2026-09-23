@@ -199,9 +199,6 @@ pub enum WatchError {
     StaleWatch(WatchId),
     /// Set entries go on `ThresholdSet` watches only.
     NotASet(WatchId),
-    DuplicatePayload {
-        payload: u32,
-    },
 }
 
 impl fmt::Display for WatchError {
@@ -243,9 +240,6 @@ impl fmt::Display for WatchError {
                 write!(f, "watch {}:{} does not exist", id.index, id.generation)
             }
             Self::NotASet(id) => write!(f, "watch {} is not a ThresholdSet", id.index),
-            Self::DuplicatePayload { payload } => {
-                write!(f, "payload {payload} is already in the set")
-            }
         }
     }
 }
