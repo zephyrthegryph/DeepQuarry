@@ -2347,6 +2347,89 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_air_snapshots)
 	qdel(V)
 	qdel(P)
 
+/// Regression (C6/M2 boot crash, doc/rewrite/roadmap.md): a vent pump whose
+/// turf side has no gas field cell at all -- a /turf/unsimulated/floor (or
+/// /turf/closed/space, or any turf that isn't /turf/open; SSair's
+/// setup_allturfs never registers them, see AGENTS.md's "unsimulated turf"
+/// note) -- falls through to /turf/return_air()'s shared
+/// /datum/gas_mixture/immutable/space singleton instead of a real per-turf
+/// mixture. rust_set_turf_device() used to forward that singleton's
+/// arena_id() straight through as if it were a turf-range Rust handle;
+/// Rust correctly rejected it ("device N's turf side is not a turf gas
+/// handle"), which made setup_rust_pipenets() (SSair's own Initialize())
+/// bail on every boot with a mapped vent pump facing an unsimulated turf --
+/// exactly what killed master's dm-test boot silently right after the
+/// Chemistry subsystem. Verifies the fix instead: rust_set_turf_device()
+/// recognizes an immutable mixture and sends RUST_GAS_HANDLE_VACUUM, and
+/// Rust treats that as a fixed, always-vacuum sink -- registration
+/// succeeds, and gas the pump moves into it is simply gone, never crashing
+/// and never appearing anywhere else.
+/datum/unit_test/dq_vent_pump_facing_unsimulated_turf_is_vacuum
+
+/datum/unit_test/dq_vent_pump_facing_unsimulated_turf_is_vacuum/Run()
+	var/list/run = dq_atmos_test_find_clear_pipe_run(2)
+	TEST_ASSERT_NOTNULL(run, "no clear two-tile pipe run for vent_pump vacuum test")
+	var/turf/simulated/floor/T = run[1]
+	var/turf/simulated/floor/pipe_turf = run[2]
+	var/direction = get_dir(T, pipe_turf)
+	var/axis_directions = direction | REVERSE_DIR(direction)
+	dq_atmos_test_isolate_pair(T, pipe_turf)
+
+	// Convert T into exactly the family of turf that has no Rust field cell:
+	// not /turf/open, so SSair's setup_allturfs() never registers it, and its
+	// return_air() falls through to the base /turf/return_air() singleton.
+	GLOB.dq_atmos_test_walled_turfs[T] = T.type
+	var/turf/unsimulated_turf = T.ChangeTurf(/turf/unsimulated/floor)
+	TEST_ASSERT_NOTNULL(unsimulated_turf, "ChangeTurf to /turf/unsimulated/floor failed")
+	TEST_ASSERT(!istype(unsimulated_turf, /turf/open), "test turf is still /turf/open; picked the wrong regression fixture")
+	var/datum/gas_mixture/vacuum_air = unsimulated_turf.return_air()
+	TEST_ASSERT(istype(vacuum_air, /datum/gas_mixture/immutable), "unsimulated floor's return_air() is not the immutable vacuum singleton")
+
+	var/obj/machinery/atmospherics/unary/vent_pump/V = new(unsimulated_turf)
+	TEST_ASSERT_NOTNULL(V, "couldn't construct vent_pump on an unsimulated turf")
+	V.dir = direction
+	V.initialize_directions = direction
+	var/obj/machinery/atmospherics/pipe/simple/P = new(pipe_turf)
+	P.dir = axis_directions
+	P.initialize_directions = axis_directions
+	V.atmos_init()
+	P.atmos_init()
+	dq_atmos_test_publish_rust_pipenets(list(V, P))
+	TEST_ASSERT_NOTNULL(V.node, "vent_pump did not connect to its test supply pipe")
+	TEST_ASSERT_NOTNULL(V.air_contents, "vent_pump did not receive a pipenet mixture")
+
+	V.air_contents.adjust_gas(/datum/gas/nitrogen, 500)
+	V.air_contents.set_temperature(T20C)
+	V.use_power = USE_POWER_IDLE
+	V.stat &= ~(NOPOWER | BROKEN)
+	V.welded = FALSE
+	V.pump_direction = 1 // release: push into the "turf" (vacuum) side
+	V.external_pressure_bound = 0
+	V.internal_pressure_bound = 0
+
+	// This is the call that used to bail!() every boot: setup_rust_pipenets()
+	// calls it for every mapped vent pump/scrubber during SSair.Initialize().
+	V.update_rust_device()
+	TEST_ASSERT(V.rust_device_id != 0, "vent pump facing an unsimulated turf failed to register its Rust device edge")
+
+	var/initial_vent_n2 = V.air_contents.get_moles(/datum/gas/nitrogen)
+	for(var/i in 1 to 10)
+		SSair.rust_step_pipe_devices()
+		SSair.run_gas_frames(1)
+	var/vent_after = V.air_contents.get_moles(/datum/gas/nitrogen)
+	TEST_ASSERT(vent_after < initial_vent_n2 - 5, \
+		"vent pump did not vent into the fixed vacuum sink: [initial_vent_n2] → [vent_after]")
+
+	// Nowhere else on the map should have gained what vanished into vacuum:
+	// spot-check the supply pipe's own turf, which would show a leak if the
+	// "vacuum" side were silently aliasing a real mixture instead.
+	var/final_pipe_turf_n2 = pipe_turf.return_air().get_moles(/datum/gas/nitrogen)
+	TEST_ASSERT(final_pipe_turf_n2 < 1, \
+		"gas vented to vacuum reappeared on the supply pipe's turf: [final_pipe_turf_n2]")
+
+	qdel(V)
+	qdel(P)
+
 
 /// Vent scrubber integration: pollute a turf with phoron, run a scrubber
 /// configured to filter PHORON, verify turf phoron drops and scrubber's

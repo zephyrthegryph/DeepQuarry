@@ -110,6 +110,15 @@
 #define RUST_DEVICE_OP_REMOVE 2
 #define RUST_DEVICE_OP_SET_TURF 3
 
+// Sentinel "turf side" handle for RUST_DEVICE_OP_SET_TURF: a fixed, immutable
+// vacuum rather than a real turf field cell (a vent pump/scrubber facing a
+// /turf/closed/space or other turf with no gas field cell at all falls
+// through to /turf/return_air()'s /datum/gas_mixture/immutable/space
+// singleton, which has an ordinary Main-owned handle -- not a Turf-range one
+// -- so it can't be passed through as a real field-cell handle). Never a
+// valid gas-mixture handle (those are >= 0), so it can't collide.
+#define RUST_GAS_HANDLE_VACUUM -1
+
 // Flow laws, matching device::DeviceParams::decode's `kind` tag.
 #define RUST_DEVICE_LAW_PUMP 1
 #define RUST_DEVICE_LAW_VOLUME_PUMP 2

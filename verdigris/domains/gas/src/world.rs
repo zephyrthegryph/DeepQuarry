@@ -54,6 +54,18 @@ pub const TURF_BASE: u32 = 4194304;
 /// Every handle is below this (exact as an `f32`).
 pub const ID_LIMIT: u32 = 1 << 24;
 
+/// Sentinel turf-device field-cell id (M2, `simulation.md` §5): a vent pump
+/// or scrubber can face a turf with no gas field cell at all (a
+/// `/turf/closed/space` hull tile, or any other turf whose DM `return_air()`
+/// falls through to the immutable vacuum placeholder rather than a real
+/// per-turf mixture). `PipeNet::add_turf_device`'s `cell` is an opaque `u32`
+/// tag until `GasWorld::step_turf_devices` reads it, so this reserved value
+/// (never a real field-cell index, which the field allocates from 0) marks a
+/// device's turf side as a fixed, always-vacuum sink/source instead of a
+/// field-cell lookup: see `RUST_GAS_HANDLE_VACUUM` in
+/// `code/__defines/atmospherics.dm`, the corresponding DM define.
+pub const VACUUM_CELL: u32 = u32::MAX;
+
 /// What a gas handle names.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
 pub enum MixRef {
@@ -1352,6 +1364,31 @@ impl GasWorld {
 			};
 			let vol_region = *r.summary();
 			let mut region_gas = r.payload().clone();
+
+			// A fixed, always-vacuum turf side (a vent pump/scrubber facing a
+			// turf with no gas field cell at all, e.g. /turf/closed/space):
+			// no field lookup, and whatever the flow law moves into it is
+			// simply discarded -- an infinite sink/source, exactly like an
+			// immutable field cell's writes already are (`store`'s
+			// `cell.is_immutable()` check below), just without a real cell
+			// to route through.
+			if cell == VACUUM_CELL {
+				let mut turf_gas = PipeGas::default();
+				let vol_cell = f64::from(CELL_VOLUME);
+				let report = if cell_is_a {
+					device::step(&params, &mut turf_gas, vol_cell, &mut region_gas, vol_region, dt)
+				} else {
+					device::step(&params, &mut region_gas, vol_region, &mut turf_gas, vol_cell, dt)
+				};
+				if report.moles != 0.0 {
+					if let Ok(payload) = self.pipes.net.payload_mut(region) {
+						*payload = region_gas;
+					}
+					self.pipes.touch_region(region);
+				}
+				out.push(pipes::DeviceStep { key, report });
+				continue;
+			}
 
 			let Some(before_mix) = self.load(MixRef::Turf(cell)) else {
 				continue;

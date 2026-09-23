@@ -455,3 +455,70 @@ fn step_turf_devices_bridges_pipe_and_field_and_conserves() {
 		"the vent pump moved nothing from the turf into the pipe network"
 	);
 }
+
+/// A vent pump/scrubber whose turf side is a turf with no gas field cell at
+/// all (a `/turf/closed/space` hull tile): DM sends `world::VACUUM_CELL`
+/// (see `code/__defines/atmospherics.dm`'s `RUST_GAS_HANDLE_VACUUM`) instead
+/// of a real field-cell id. This used to be rejected outright (a mapped
+/// engine-room vent pump facing space made `pipenet_device_batch` `bail!`
+/// every boot: "device N's turf side is not a turf gas handle"); it must
+/// instead behave as an infinite vacuum sink -- releasing gas from the pipe
+/// region into it every step with no field lookup, no store, and no panic --
+/// and never accumulate or fabricate gas on the pipe side beyond what it
+/// deliberately vented.
+#[test]
+fn step_turf_devices_treats_vacuum_cell_as_a_fixed_sink() {
+	use crate::device::{DeviceParams, VentMode};
+	use vg_core::network::Endpoint;
+
+	let mut w = GasWorld::default();
+	let mut starting_gas = PipeGas::default();
+	starting_gas.moles[GAS_OXYGEN] = 21.8;
+	starting_gas.moles[GAS_NITROGEN] = 82.1;
+	starting_gas.energy = (starting_gas.moles[GAS_OXYGEN] + starting_gas.moles[GAS_NITROGEN]) * 20.0 * 293.0;
+	w.pipes.upsert(1, 0, 1000.0, starting_gas);
+	w.pipes.commit();
+	let node = w.pipes.port(1).expect("port exists");
+	w.pipes
+		.net
+		.add_device(
+			Endpoint::Cell(crate::world::VACUUM_CELL),
+			Endpoint::Node(node),
+			0,
+			1,
+			DeviceParams::VentPump {
+				mode: VentMode::Release,
+				min_kpa: 0.0,
+				max_kpa: 1_000_000.0,
+				max_rate_l_s: 1000.0,
+			},
+		)
+		.expect("device added even with no real field");
+
+	let before = w.pipes.totals();
+	assert!(before[GAS_OXYGEN] > 0.0, "starting pipe gas");
+
+	// No field at all (`w.field` is None): a real Turf cell would make every
+	// `step_turf_devices` iteration `continue` via the `field.as_ref()?`
+	// check. The vacuum path must not depend on a field being present.
+	for _ in 0..20 {
+		let steps = w.step_turf_devices(1.0);
+		assert_eq!(steps.len(), 1, "the vacuum device edge should still be stepped");
+	}
+
+	let after = w.pipes.totals();
+	for i in 0..N {
+		assert!(
+			after[i] <= before[i] + 1e-6,
+			"pipe gas {i} grew venting into vacuum: {} -> {}",
+			before[i],
+			after[i]
+		);
+	}
+	assert!(
+		after[GAS_OXYGEN] < before[GAS_OXYGEN],
+		"releasing into vacuum should have drained the pipe region: {} -> {}",
+		before[GAS_OXYGEN],
+		after[GAS_OXYGEN]
+	);
+}

@@ -178,9 +178,18 @@ fn pipenet_device_batch(operations: ByondValue) -> Result<ByondValue> {
 				}
 				3 => {
 					// A pipe port <-> turf device (a vent pump/scrubber): `port_b`
-					// carries the turf's gas-mixture handle, not a pipe port id.
-					let Some(MixRef::Turf(cell)) = MixRef::from_f32(port_b) else {
-						eyre::bail!("device {id}'s turf side is not a turf gas handle: {port_b}");
+					// carries the turf's gas-mixture handle, not a pipe port id --
+					// or the RUST_GAS_HANDLE_VACUUM sentinel (-1) when the DM side
+					// has no real turf gas cell to hand over (a turf with no gas
+					// field cell at all, e.g. /turf/closed/space) and means a
+					// fixed, always-vacuum turf side instead.
+					let cell = if port_b < 0.0 {
+						world::VACUUM_CELL
+					} else {
+						let Some(MixRef::Turf(cell)) = MixRef::from_f32(port_b) else {
+							eyre::bail!("device {id}'s turf side is not a turf gas handle: {port_b}");
+						};
+						cell
 					};
 					let params = device::DeviceParams::decode(law_kind as u8, [p0, p1, p2, p3]);
 					if !w.pipes.add_turf_device(id, port_a as u32, cell, params) {

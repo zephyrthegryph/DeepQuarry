@@ -20,6 +20,8 @@
 	var/printing = FALSE
 	var/list/products = list()
 
+	circuit = /obj/item/circuitboard/food_replicator
+
 /obj/item/circuitboard/food_replicator
 	name = T_BOARD("food replicator")
 	build_path = /obj/machinery/food_replicator

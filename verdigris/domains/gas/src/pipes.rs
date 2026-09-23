@@ -382,7 +382,10 @@ impl PipeNet {
 	/// (a turf) - a vent pump or scrubber (M2, `simulation.md` §5, stepped
 	/// by `GasWorld::step_turf_devices`, not this network's own
 	/// `step_devices`). `cell` is the Rust field-cell index, from the
-	/// turf's gas-mixture handle (`world::MixRef::Turf`).
+	/// turf's gas-mixture handle (`world::MixRef::Turf`), or
+	/// `world::VACUUM_CELL` for a fixed, always-vacuum turf side (a turf
+	/// with no gas field cell at all). Either way it's an opaque `u32` tag
+	/// here; `GasWorld::step_turf_devices` is what interprets it.
 	pub fn add_turf_device(&mut self, id: u32, port: u32, cell: u32, params: DeviceParams) -> bool {
 		let Some(node) = self.port(port) else {
 			return false;

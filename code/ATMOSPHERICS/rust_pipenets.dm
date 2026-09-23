@@ -208,6 +208,17 @@
 /// `law_kind`/`p0..p3` (`RUST_DEVICE_LAW_*`). Allocates a stable device id
 /// on first use. `device::VentPump`/`Scrubber`'s `a` side is the turf, so
 /// pass mode/bounds with that convention.
+///
+/// `turf_air` is usually a real turf's air, but a device can also face a
+/// turf with no gas field cell at all (a /turf/closed/space hull tile, or
+/// any other turf whose `return_air()` falls through to the base
+/// /turf/return_air() singleton): `/turf/return_air()` hands back the
+/// shared `/datum/gas_mixture/immutable/space` vacuum placeholder in that
+/// case, not a real per-turf mixture. Detect that (any immutable mixture,
+/// not just that one instance) and pass RUST_GAS_HANDLE_VACUUM instead of
+/// its arena_id() -- a fixed, always-vacuum turf side Rust understands
+/// directly, rather than a Main-owned handle it would reject as an invalid
+/// turf reference.
 /obj/machinery/atmospherics/proc/rust_set_turf_device(port_index, datum/gas_mixture/turf_air, law_kind, p0 = 0, p1 = 0, p2 = 0, p3 = 0)
 	if(!rust_pipe_port_ids || port_index > length(rust_pipe_port_ids) || !turf_air)
 		return FALSE
@@ -216,7 +227,8 @@
 		if(!SSair.rust_pipe_devices)
 			SSair.rust_pipe_devices = list()
 		SSair.rust_pipe_devices["[rust_device_id]"] = src
-	SSair.rust_queue_device_operation(RUST_DEVICE_OP_SET_TURF, rust_device_id, rust_pipe_port_ids[port_index], turf_air.arena_id(), law_kind, p0, p1, p2, p3)
+	var/turf_side_handle = istype(turf_air, /datum/gas_mixture/immutable) ? RUST_GAS_HANDLE_VACUUM : turf_air.arena_id()
+	SSair.rust_queue_device_operation(RUST_DEVICE_OP_SET_TURF, rust_device_id, rust_pipe_port_ids[port_index], turf_side_handle, law_kind, p0, p1, p2, p3)
 	SSair.rust_commit_pending_devices()
 	return TRUE
 
