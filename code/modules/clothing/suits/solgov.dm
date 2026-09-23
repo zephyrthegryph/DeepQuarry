@@ -13,7 +13,7 @@
 	item_state = "blackservice"
 	item_state_slots = list(slot_r_hand_str = "suit_black", slot_l_hand_str = "suit_black")
 	body_parts_covered = UPPER_TORSO|ARMS
-	armor = list(melee = 0, bullet = 0, laser = 0,energy = 0, bomb = 0, bio = 0, rad = 0)
+	armor_spec = ""
 	siemens_coefficient = 0.9
 	flags_inv = HIDEHOLSTER
 	valid_accessory_slots = (ACCESSORY_SLOT_ARMBAND|ACCESSORY_SLOT_MEDAL|ACCESSORY_SLOT_INSIGNIA|ACCESSORY_SLOT_RANK|ACCESSORY_SLOT_DEPT)
@@ -187,7 +187,7 @@
 	icon_state = "sgdress_xpl"
 	item_state = "sgdress_xpl"
 	body_parts_covered = UPPER_TORSO|ARMS
-	armor = list(melee = 0, bullet = 0, laser = 0,energy = 0, bomb = 0, bio = 0, rad = 0)
+	armor_spec = ""
 	siemens_coefficient = 0.9
 	valid_accessory_slots = (ACCESSORY_SLOT_MEDAL|ACCESSORY_SLOT_RANK)
 	restricted_accessory_slots = (ACCESSORY_SLOT_ARMBAND)
@@ -246,7 +246,7 @@
 	icon = 'icons/inventory/suit/item.dmi'
 	icon_override = 'icons/inventory/suit/mob.dmi'
 	body_parts_covered = UPPER_TORSO|ARMS
-	armor = list(melee = 0, bullet = 0, laser = 0,energy = 0, bomb = 0, bio = 0, rad = 0)
+	armor_spec = ""
 	siemens_coefficient = 0.9
 	valid_accessory_slots = (ACCESSORY_SLOT_MEDAL|ACCESSORY_SLOT_RANK)
 
@@ -279,19 +279,19 @@
 	icon_state = "coatec"
 	icon = 'icons/inventory/suit/item.dmi'
 	icon_override = 'icons/inventory/suit/mob.dmi'
-	armor = list(melee = 25, bullet = 10, laser = 5, energy = 10, bomb = 20, bio = 0, rad = 10)
+	armor_spec = "melee=25;bullet=10;laser=5;energy=10;bomb=20;rad=10;cold=40"
 	valid_accessory_slots = (ACCESSORY_SLOT_INSIGNIA|ACCESSORY_SLOT_RANK)
 
 /obj/item/clothing/suit/storage/hooded/wintercoat/solgov/army
 	name = "marine winter coat"
 	icon_state = "coatar"
-	armor = list(melee = 30, bullet = 10, laser = 10, energy = 15, bomb = 20, bio = 0, rad = 0)
+	armor_spec = "melee=30;bullet=10;laser=10;energy=15;bomb=20;cold=40"
 	valid_accessory_slots = (ACCESSORY_SLOT_INSIGNIA|ACCESSORY_SLOT_RANK)
 
 /obj/item/clothing/suit/storage/hooded/wintercoat/solgov/fleet
 	name = "fleet winter coat"
 	icon_state = "coatfl"
-	armor = list(melee = 20, bullet = 10, laser = 10, energy = 20, bomb = 20, bio = 0, rad = 10)
+	armor_spec = "melee=20;bullet=10;laser=10;energy=20;bomb=20;rad=10;cold=40"
 	valid_accessory_slots = (ACCESSORY_SLOT_INSIGNIA)
 
 /obj/item/clothing/suit/storage/toggle/dress
@@ -358,7 +358,7 @@
 	icon = 'icons/inventory/suit/item.dmi'
 	icon_override = 'icons/inventory/suit/mob.dmi'
 	body_parts_covered = UPPER_TORSO|ARMS
-	armor = list(melee = 0, bullet = 0, laser = 0,energy = 0, bomb = 0, bio = 0, rad = 0)
+	armor_spec = ""
 	siemens_coefficient = 0.9
 	valid_accessory_slots = (ACCESSORY_SLOT_MEDAL|ACCESSORY_SLOT_RANK)
 

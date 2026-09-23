@@ -31,14 +31,7 @@
 							)
 
 
-	armor = list(
-				"melee" = 70,
-				"bullet" = 30,
-				"laser" = 30,
-				"energy" = 30,
-				"bomb" = 10,
-				"bio" = 100,
-				"rad" = 100)
+	armor_spec = "melee=70;bullet=30;laser=30;energy=30;bomb=10;bio=100;rad=100"
 
 /datum/life_system/type_pre/simple_mob/construct/cardinal
 	mob_type = /mob/living/simple_mob/construct/cardinal

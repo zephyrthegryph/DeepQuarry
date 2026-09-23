@@ -883,7 +883,7 @@
 		SPECIES_VOX = 'icons/inventory/suit/mob_vox.dmi',
 		SPECIES_WEREBEAST = 'icons/inventory/suit/mob_werebeast.dmi')
 	max_heat_protection_temperature = T0C+100
-	armor = list("melee" = 0, "bullet" = 0, "laser" = 0, "energy" = 0, "bomb" = 0, "bio" = 0, "rad" = 0)
+	armor_spec = ""
 	slot_flags = SLOT_OCLOTHING
 	heat_protection = ARMS|LEGS|CHEST //At a minimum. Some might be more covering or less covering!
 	cold_protection = ARMS|LEGS|CHEST //At a minimum. Some might be more covering or less covering!
@@ -1041,7 +1041,7 @@
 	slot_flags = SLOT_ICLOTHING
 	heat_protection = ARMS|LEGS|CHEST
 	cold_protection = ARMS|LEGS|CHEST
-	armor = list(melee = 0, bullet = 0, laser = 0,energy = 0, bomb = 0, bio = 0, rad = 0)
+	armor_spec = ""
 	equip_sound = 'sound/items/jumpsuit_equip.ogg'
 	w_class = ITEMSIZE_NORMAL
 	show_messages = 1

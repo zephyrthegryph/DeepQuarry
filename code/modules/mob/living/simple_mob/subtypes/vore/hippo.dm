@@ -13,14 +13,7 @@
 	movement_cooldown = 1.5
 	see_in_dark = 3
 
-	armor = list(
-		"melee" = 15,//They thick as fuck boi
-		"bullet" = 15,
-		"laser" = 15,
-		"energy" = 0,
-		"bomb" = 0,
-		"bio" = 0,
-		"rad" = 0)
+	armor_spec = "melee=15;bullet=15;laser=15" //They thick as fuck boi
 
 	response_help = "pets"
 	response_disarm = "gently pushes aside"

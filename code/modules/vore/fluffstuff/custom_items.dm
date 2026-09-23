@@ -473,7 +473,7 @@
 	valid_accessory_slots = (ACCESSORY_SLOT_HELM_C)
 	restricted_accessory_slots = (ACCESSORY_SLOT_HELM_C)
 	flags = THICKMATERIAL
-	armor = list(melee = 40, bullet = 30, laser = 30, energy = 10, bomb = 10, bio = 0, rad = 0)
+	armor_spec = "melee=40;bullet=30;laser=30;energy=10;bomb=10"
 	icon_override = 'icons/vore/custom_clothes_vr.dmi'
 	min_cold_protection_temperature = HELMET_MIN_COLD_PROTECTION_TEMPERATURE
 	max_heat_protection_temperature = HELMET_MAX_HEAT_PROTECTION_TEMPERATURE
@@ -1237,7 +1237,7 @@
 	suit_type = "probably not magical"
 	icon_state = "nikkicape"
 	w_class = ITEMSIZE_SMALL // It is after all only a necklace
-	armor = list("melee" = 0, "bullet" = 0, "laser" = 0, "energy" = 0, "bomb" = 0, "bio" = 0, "rad" = 0) // this isn't armor, it's a dorky frickin cape
+	armor_spec = "" // this isn't armor, it's a dorky frickin cape
 	siemens_coefficient = 0.9
 	slowdown = 0
 	offline_slowdown = 0

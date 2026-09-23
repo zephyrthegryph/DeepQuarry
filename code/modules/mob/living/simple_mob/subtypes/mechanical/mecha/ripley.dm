@@ -47,15 +47,7 @@
 
 	endurance = 250
 	heat_resist = 1
-	armor = list(
-				"melee"		= 0,
-				"bullet"	= 20,
-				"laser"		= 50,
-				"energy"	= 0,
-				"bomb"		= 50,
-				"bio"		= 100,
-				"rad"		= 100
-				)
+	armor_spec = "bullet=20;laser=50;bomb=50;bio=100;rad=100"
 
 /mob/living/simple_mob/mechanical/mecha/ripley/firefighter/manned
 	pilot_type = /mob/living/simple_mob/humanoid/merc/ranged

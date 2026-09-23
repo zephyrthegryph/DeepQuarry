@@ -12,7 +12,7 @@
 	flags = PHORONGUARD
 	item_flags = THICKMATERIAL | AIRTIGHT | ALLOW_SURVIVALFOOD
 	permeability_coefficient = 0 // was 0.01, zeroed to test protecting those who are vulnerable to water.
-	armor = list(melee = 0, bullet = 0, laser = 0,energy = 0, bomb = 0, bio = 100, rad = 50)
+	armor_spec = "bio=100;rad=50;cold=60"
 	flags_inv = HIDEMASK|HIDEEARS|HIDEEYES|HIDEFACE|BLOCKHAIR
 	body_parts_covered = HEAD|FACE|EYES
 	min_cold_protection_temperature = SPACE_HELMET_MIN_COLD_PROTECTION_TEMPERATURE
@@ -81,7 +81,7 @@
 	item_flags = THICKMATERIAL
 	body_parts_covered = CHEST|LEGS|FEET|ARMS|HANDS
 	slowdown = 1 // 1.5 to 1. More sane movespeed delay. Voidsuits are still faster.
-	armor = list(melee = 0, bullet = 0, laser = 0,energy = 0, bomb = 0, bio = 100, rad = 50)
+	armor_spec = "bio=100;rad=50;cold=60"
 	flags_inv = HIDEGLOVES|HIDESHOES|HIDEJUMPSUIT|HIDETAIL|HIDETIE|HIDEHOLSTER
 	cold_protection = CHEST|LEGS|FEET|ARMS|HANDS
 	heat_protection = CHEST|LEGS|FEET|ARMS|HANDS

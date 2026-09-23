@@ -25,7 +25,7 @@
 	suit_type = "augmented suit"
 	desc = "The last suit you'll ever wear."
 	icon_state = "internalaffairs_rig"
-	armor = list(melee = 0, bullet = 0, laser = 0,energy = 0, bomb = 0, bio = 0, rad = 0)
+	armor_spec = ""
 	siemens_coefficient = 0.9
 	slowdown = 0
 	offline_slowdown = 0
@@ -64,7 +64,7 @@
 	suit_type = "industrial hardsuit"
 	desc = "A heavy, powerful hardsuit used by construction crews and mining corporations."
 	icon_state = "engineering_rig"
-	armor = list(melee = 60, bullet = 50, laser = 30,energy = 15, bomb = 30, bio = 100, rad = 50)
+	armor_spec = "melee=60;bullet=50;laser=30;energy=15;bomb=30;bio=100;rad=50"
 	slowdown = 0.5
 	offline_slowdown = 5
 	offline_vision_restriction = 2
@@ -98,7 +98,7 @@
 	suit_type = "EVA hardsuit"
 	desc = "A light hardsuit for repairs and maintenance to the outside of habitats and vessels."
 	icon_state = "eva_rig"
-	armor = list(melee = 30, bullet = 10, laser = 20,energy = 25, bomb = 20, bio = 100, rad = 100)
+	armor_spec = "melee=30;bullet=10;laser=20;energy=25;bomb=20;bio=100;rad=100"
 	slowdown = 0
 	offline_slowdown = 0.5
 	offline_vision_restriction = 1
@@ -137,7 +137,7 @@
 	suit_type = "advanced hardsuit" // Hardsuit
 	desc = "An advanced hardsuit that protects against hazardous, low pressure environments. Shines with a high polish." // Hardsuit
 	icon_state = "ce_rig"
-	armor = list(melee = 40, bullet = 10, laser = 30,energy = 25, bomb = 40, bio = 100, rad = 100)
+	armor_spec = "melee=40;bullet=10;laser=30;energy=25;bomb=40;bio=100;rad=100"
 	slowdown = 0
 	offline_slowdown = 0
 	offline_vision_restriction = 0
@@ -190,7 +190,7 @@
 	suit_type = "hazmat hardsuit"
 	desc = "An Anomalous Material Interaction hardsuit that protects against the strangest energies the universe can throw at it."
 	icon_state = "science_rig"
-	armor = list(melee = 45, bullet = 5, laser = 45, energy = 80, bomb = 100, bio = 100, rad = 100)
+	armor_spec = "melee=45;bullet=5;laser=45;energy=80;bomb=100;bio=100;rad=100"
 	slowdown = 0.5
 	offline_vision_restriction = 1
 	siemens_coefficient= 0.75
@@ -235,7 +235,7 @@
 	suit_type = "rescue hardsuit"
 	desc = "A durable suit designed for medical rescue in high risk areas."
 	icon_state = "medical_rig"
-	armor = list(melee = 30, bullet = 15, laser = 20, energy = 60, bomb = 30, bio = 100, rad = 100)
+	armor_spec = "melee=30;bullet=15;laser=20;energy=60;bomb=30;bio=100;rad=100"
 	slowdown = 0.5
 	offline_vision_restriction = 1
 	siemens_coefficient= 0.75
@@ -268,7 +268,7 @@
 	suit_type = "hazard hardsuit"
 	desc = "A Security hardsuit designed for prolonged EVA in dangerous environments."
 	icon_state = "hazard_rig"
-	armor = list(melee = 60, bullet = 40, laser = 30, energy = 15, bomb = 60, bio = 100, rad = 30)
+	armor_spec = "melee=60;bullet=40;laser=30;energy=15;bomb=60;bio=100;rad=30"
 	slowdown = 0.5
 	offline_slowdown = 1.5
 	offline_vision_restriction = 1
@@ -312,7 +312,7 @@
 	rigsuit_min_pressure = 0							  // Min pressure the rig protects against when sealed
 	min_cold_protection_temperature = SPACE_SUIT_MIN_COLD_PROTECTION_TEMPERATURE
 	max_heat_protection_temperature = FIRESUIT_MAX_HEAT_PROTECTION_TEMPERATURE // so it's like a rig firesuit
-	armor = list("melee" = 40, "bullet" = 10, "laser" = 30, "energy" = 55, "bomb" = 70, "bio" = 100, "rad" = 100)
+	armor_spec = "melee=40;bullet=10;laser=30;energy=55;bomb=70;bio=100;rad=100"
 	chest_type = /obj/item/clothing/suit/space/rig/focalpoint
 	helm_type = /obj/item/clothing/head/helmet/space/rig/focalpoint
 	boot_type = /obj/item/clothing/shoes/magboots/rig/ce/focalpoint
@@ -378,7 +378,7 @@
 	suit_type = "\improper Hephaestus hardsuit"
 	cell_type = /obj/item/cell/super
 
-	armor = list("melee" = 70, "bullet" = 70, "laser" = 70, "energy" = 50, "bomb" = 60, "bio" = 100, "rad" = 20)
+	armor_spec = "melee=70;bullet=70;laser=70;energy=50;bomb=60;bio=100;rad=20"
 
 	chest_type = /obj/item/clothing/suit/space/rig/hephaestus
 	helm_type = /obj/item/clothing/head/helmet/space/rig/hephaestus
@@ -452,7 +452,7 @@
 	slowdown = 0
 	offline_slowdown = 1
 	offline_vision_restriction = 2
-	armor = list("melee" = 20, "bullet" = 5, "laser" = 10, "energy" = 5, "bomb" = 35, "bio" = 100, "rad" = 20)
+	armor_spec = "melee=20;bullet=5;laser=10;energy=5;bomb=35;bio=100;rad=20"
 
 /obj/item/rig/zero/suit_storage_constraint()
 	var/list/stores = list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_SUIT_REGULATORS, POCKET_ALL_TANKS, POCKET_BAYSUIT)
@@ -497,7 +497,7 @@
 
 	// speedy paper
 	slowdown = -0.5
-	armor = list("melee" = 10, "bullet" = 5, "laser" = 10, "energy" = 5, "bomb" = 25, "bio" = 100, "rad" = 20)
+	armor_spec = "melee=10;bullet=5;laser=10;energy=5;bomb=25;bio=100;rad=20"
 
 /obj/item/rig/baymed/suit_storage_constraint()
 	var/list/stores = list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_SUIT_REGULATORS, POCKET_ALL_TANKS, POCKET_MEDICAL, POCKET_BAYSUIT, /obj/item/roller)
@@ -557,7 +557,7 @@
 
 	slowdown = 0
 	offline_slowdown = 5 // very bulky
-	armor = list(melee = 60, bullet = 50, laser = 30, energy = 15, bomb = 30, bio = 100, rad = 50)
+	armor_spec = "melee=60;bullet=50;laser=30;energy=15;bomb=30;bio=100;rad=50"
 
 /obj/item/rig/bayeng/suit_storage_constraint()
 	var/list/stores = list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_SUIT_REGULATORS, POCKET_ALL_TANKS, POCKET_MINING, POCKET_CE, POCKET_BAYSUIT)
@@ -619,7 +619,7 @@
 	slowdown = 0.5
 	offline_slowdown = 4 // bulky
 	offline_vision_restriction = 2 // doesn't even have a way to see out without power
-	armor = list(melee = 60, bullet = 50, laser = 30, energy = 15, bomb = 30, bio = 100, rad = 50)
+	armor_spec = "melee=60;bullet=50;laser=30;energy=15;bomb=30;bio=100;rad=50"
 
 /obj/item/rig/pathfinder//equipped
 	initial_modules = list(
@@ -656,7 +656,7 @@
 /obj/item/rig/industrial/vendor
 	name = "discount industrial suit control module"
 	desc = "A heavy, powerful hardsuit used by construction crews and mining corporations. This is a mass production model with reduced armor."
-	armor = list(melee = 50, bullet = 10, laser = 20, energy = 15, bomb = 30, bio = 100, rad = 50)
+	armor_spec = "melee=50;bullet=10;laser=20;energy=15;bomb=30;bio=100;rad=50"
 
 
 //Hardsuits
@@ -697,7 +697,7 @@
 	icon_state = "pursuit_rig"
 	suit_type = "pursuit hardsuit"
 	desc = "A Security hardsuit designed for chasing down the grey tide."
-	armor = list(melee = 60, bullet = 40, laser = 40, energy = 25, bomb = 50, bio = 100, rad = 30)
+	armor_spec = "melee=60;bullet=40;laser=40;energy=25;bomb=50;bio=100;rad=30"
 	slowdown = 1
 	offline_slowdown = 3
 	offline_vision_restriction = 1

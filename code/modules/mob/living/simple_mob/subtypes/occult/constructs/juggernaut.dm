@@ -35,14 +35,7 @@
 							/datum/spell/targeted/construct_advanced/slam
 							)
 
-	armor = list(
-				"melee" = 70,
-				"bullet" = 30,
-				"laser" = 30,
-				"energy" = 30,
-				"bomb" = 10,
-				"bio" = 100,
-				"rad" = 100)
+	armor_spec = "melee=70;bullet=30;laser=30;energy=30;bomb=10;bio=100;rad=100"
 
 /datum/life_system/type_pre/simple_mob/construct/juggernaut
 	mob_type = /mob/living/simple_mob/construct/juggernaut
@@ -110,14 +103,7 @@
 	icon_scale_y = 2
 	var/energy = 0
 	var/max_energy = 1000
-	armor = list(
-				"melee" = 60,
-				"bullet" = 60,
-				"laser" = 60,
-				"energy" = 30,
-				"bomb" = 10,
-				"bio" = 100,
-				"rad" = 100)
+	armor_spec = "melee=60;bullet=60;laser=60;energy=30;bomb=10;bio=100;rad=100"
 	construct_spells = list(/datum/spell/aoe_turf/conjure/forcewall/lesser,
 							/datum/spell/targeted/fortify,
 							/datum/spell/targeted/construct_advanced/slam

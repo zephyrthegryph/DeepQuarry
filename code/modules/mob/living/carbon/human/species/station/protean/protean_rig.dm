@@ -9,7 +9,7 @@
 	default_mob_icon = null	//Actually having a forced sprite for Proteans is ugly af. I'm not gonna make this a toggle
 	icon_state = "nanomachine_rig"
 	interface_intro = "Protean"
-	armor = list(melee = 0, bullet = 0, laser = 0,energy = 0, bomb = 0, bio = 100, rad = 100)
+	armor_spec = "bio=100;rad=100"
 	siemens_coefficient= 1
 	slowdown = 0
 	offline_slowdown = 0
@@ -481,7 +481,7 @@
 		return
 	var/obj/item/organ/external/E = istext(zone) ? source.get_organ(check_zone(zone)) : null
 	var/obj/item/clothing/piece = covering_piece(source, E)
-	var/armor_value = piece?.armor?[armor_key]
+	var/armor_value = piece ? piece.get_armor().value(armor_key) : 0
 	if(!armor_value)
 		return
 	var/soaked = amount_ref[1] * clamp(armor_value, 0, 100) / 100
@@ -555,10 +555,9 @@
 		// Unworn modules refuse a polite shutdown; an inert cluster cuts them anyway.
 		module.active = FALSE
 	reset()
-	var/list/no_armor = list(melee = 0, bullet = 0, laser = 0, energy = 0, bomb = 0, bio = 0, rad = 0)
-	armor = no_armor.Copy()
+	set_armor(dq_armor_none())
 	for(var/obj/item/piece in list(gloves, helmet, boots, chest))
-		piece.armor = no_armor.Copy()
+		piece.set_armor(dq_armor_none())
 	slowdown = PROTEAN_RIG_INERT_SLOWDOWN
 	offline_slowdown = PROTEAN_RIG_INERT_SLOWDOWN
 	wearer?.update_inv_back()
@@ -571,10 +570,10 @@
 		return
 	inert = FALSE
 	var/obj/item/rig/R = assimilated_rig
-	var/list/restored = istype(R) ? R.armor : initial_armor()
-	armor = restored.Copy()
+	var/datum/armor/restored = istype(R) ? R.get_armor() : initial_armor()
+	set_armor(restored)
 	for(var/obj/item/piece in list(gloves, helmet, boots, chest))
-		piece.armor = restored.Copy()
+		piece.set_armor(restored)
 	wearer?.worn_protection_changed()
 	if(istype(R))
 		slowdown = initial(R.slowdown) * 0.5
@@ -585,8 +584,7 @@
 
 /// The unconfigured cluster's armour.
 /obj/item/rig/protean/proc/initial_armor()
-	var/static/list/base_armor = list(melee = 0, bullet = 0, laser = 0, energy = 0, bomb = 0, bio = 100, rad = 100)
-	return base_armor
+	return dq_armor(list(BIO = 100, ARMOR_RAD = 100))
 
 /// An inert cluster runs nothing: no seals, no modules.
 /obj/item/rig/protean/check_power_cost(mob/living/user, cost, use_unconcious, obj/item/rig_module/mod, user_is_ai)
@@ -672,7 +670,7 @@
 
 	rigsuit_max_pressure = R.rigsuit_max_pressure
 	for(var/obj/item/piece in list(gloves,helmet,boots,chest))
-		piece.armor = R.armor.Copy()
+		piece.set_armor(R.get_armor())
 		piece.max_pressure_protection = R.rigsuit_max_pressure
 		piece.max_heat_protection_temperature = R.max_heat_protection_temperature
 	wearer?.worn_protection_changed()
@@ -719,7 +717,7 @@
 	if(assimilated_rig)
 		rigsuit_max_pressure = initial(rigsuit_max_pressure)
 		for(var/obj/item/piece in list(gloves,helmet,boots,chest))
-			piece.armor = armor.Copy()
+			piece.set_armor(get_armor())
 			piece.max_pressure_protection = rigsuit_max_pressure
 			piece.max_heat_protection_temperature = max_heat_protection_temperature
 			piece.icon_state = src.icon_state

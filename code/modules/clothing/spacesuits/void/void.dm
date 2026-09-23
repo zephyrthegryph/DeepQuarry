@@ -4,7 +4,7 @@
 	desc = "A high-tech dark red space suit helmet. Used for AI satellite maintenance."
 	icon_state = "void"
 	item_state_slots = list(slot_r_hand_str = "syndicate", slot_l_hand_str = "syndicate")
-	armor = list(melee = 30, bullet = 5, laser = 20,energy = 5, bomb = 35, bio = 100, rad = 20)
+	armor_spec = "melee=30;bullet=5;laser=20;energy=5;bomb=35;bio=100;rad=20;cold=60"
 	max_heat_protection_temperature = SPACE_SUIT_MAX_HEAT_PROTECTION_TEMPERATURE
 	min_pressure_protection = 0 * ONE_ATMOSPHERE
 	max_pressure_protection = 10 * ONE_ATMOSPHERE
@@ -28,7 +28,7 @@
 	item_state_slots = list(slot_r_hand_str = "space_suit_syndicate", slot_l_hand_str = "space_suit_syndicate")
 	desc = "A high-tech dark red space suit. Used for AI satellite maintenance."
 	slowdown = 0.5
-	armor = list(melee = 30, bullet = 5, laser = 20,energy = 5, bomb = 35, bio = 100, rad = 20)
+	armor_spec = "melee=30;bullet=5;laser=20;energy=5;bomb=35;bio=100;rad=20;cold=60"
 	max_heat_protection_temperature = SPACE_SUIT_MAX_HEAT_PROTECTION_TEMPERATURE
 	min_pressure_protection = 0 * ONE_ATMOSPHERE
 	max_pressure_protection = 10 * ONE_ATMOSPHERE
@@ -301,7 +301,7 @@
 	desc = "Hostile Environiment Cross-Kinetic Helmet: A helmet designed to withstand the wide variety of hazards from \[REDACTED\]. It wasn't enough for its last owner."
 	icon_state = "hostile_env"
 	item_state = "hostile_env"
-	armor = list(melee = 60, bullet = 35, laser = 35, energy = 15, bomb = 55, bio = 100, rad = 20)
+	armor_spec = "melee=60;bullet=35;laser=35;energy=15;bomb=55;bio=100;rad=20;cold=60"
 
 /obj/item/clothing/head/helmet/space/void/heck/Initialize(mapload)
 	. = ..()
@@ -322,14 +322,14 @@
 	icon_state = "hostile_env"
 	item_state = "hostile_env"
 	slowdown = 1.5
-	armor = list(melee = 60, bullet = 35, laser = 35, energy = 15, bomb = 55, bio = 100, rad = 20)
+	armor_spec = "melee=60;bullet=35;laser=35;energy=15;bomb=55;bio=100;rad=20;cold=60"
 
 /obj/item/clothing/head/helmet/space/void/syndicate_contract
 	name = "syndicate contract helmet"
 	desc = "A free helmet, gifted you by your new not-quite-corporate master!"
 	icon_state = "syndicate-contract"
 	item_state = "syndicate-contract"
-	armor = list(melee = 60, bullet = 50, laser = 30,energy = 15, bomb = 35, bio = 100, rad = 60)
+	armor_spec = "melee=60;bullet=50;laser=30;energy=15;bomb=35;bio=100;rad=60;cold=60"
 	siemens_coefficient = 0.6
 	camera_networks = list(NETWORK_MERCENARY)
 
@@ -338,7 +338,7 @@
 	desc = "A free suit, gifted you by your new not-quite-corporate master!"
 	icon_state = "syndicate-contract"
 	item_state = "syndicate-contract"
-	armor = list(melee = 60, bullet = 50, laser = 30,energy = 15, bomb = 35, bio = 100, rad = 60)
+	armor_spec = "melee=60;bullet=50;laser=30;energy=15;bomb=35;bio=100;rad=60;cold=60"
 	siemens_coefficient = 0.6
 
 /obj/item/clothing/head/helmet/space/void/chrono
@@ -359,7 +359,7 @@
 	icon_state = "autoloksuit"
 	item_state = "autoloksuit"
 	item_state_slots = list(slot_r_hand_str = "space_suit_syndicate", slot_l_hand_str = "space_suit_syndicate")
-	armor = list(melee = 15, bullet = 5, laser = 5,energy = 5, bomb = 5, bio = 100, rad = 80)
+	armor_spec = "melee=15;bullet=5;laser=5;energy=5;bomb=5;bio=100;rad=80;cold=60"
 	slowdown = 0.5
 	siemens_coefficient = 1
 	breach_threshold = 6 //this thing is basically tissue paper
@@ -476,6 +476,7 @@
 // is the highest-positioned definer in the override chain for the members it
 // sets, so every override stays after its base definition (resolution preserved). ===
 /obj/item/clothing/suit/space
+	armor_spec = "cold=60"
 
 	can_breach = 0 //disabling breaching as a general mechanic
 

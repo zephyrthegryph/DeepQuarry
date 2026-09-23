@@ -3,7 +3,7 @@
 	desc = "Utilizing cutting edge tech from Hephaestus, the Mark VII is the latest and greatest in semi-powered personal protection systems; like the civilian AutoLok suit, the Mark VII can automatically adapt to fit most species without issue via RFID tags. This significantly reduces the time required for response teams to suit up, as it eliminates the need for dedicated cycler units. It also has an integrated, unremovable helmet. Standard air tanks, suit coolers, and magboots may be installed and removed as needed."
 	icon_state = "ertsuit"
 	item_state = "ertsuit"
-	armor = list(melee = 65, bullet = 55, laser = 55,energy = 15, bomb = 50, bio = 100, rad = 100)
+	armor_spec = "melee=65;bullet=55;laser=55;energy=15;bomb=50;bio=100;rad=100;cold=60"
 	slowdown = 0.5
 	siemens_coefficient = 0.5
 	default_worn_icon = 'icons/inventory/suit/mob.dmi'
@@ -60,7 +60,7 @@
 	name = "Mark VII-J Emergency Cleanup Response Suit"
 	icon_state = "ertsuit_j"
 	item_state = "ertsuit_j"
-	armor = list(melee = 30, bullet = 20, laser = 20, energy = 20, bomb = 20, bio = 100, rad = 100) //awful armor
+	armor_spec = "melee=30;bullet=20;laser=20;energy=20;bomb=20;bio=100;rad=100;cold=60" //awful armor
 	slowdown = 0 //light armor means no slowdown
 	item_flags = NOSLIP //INBUILT NANOGALOSHES
 
@@ -119,7 +119,7 @@
 	desc = "As a vital part of the Mark VII suit, the integral helmet cannot be removed - so don't try."
 	icon_state = "erthelmet"
 	item_state = "erthelmet"
-	armor = list(melee = 60, bullet = 50, laser = 30,energy = 15, bomb = 30, bio = 100, rad = 100)
+	armor_spec = "melee=60;bullet=50;laser=30;energy=15;bomb=30;bio=100;rad=100;cold=60"
 	siemens_coefficient = 0.5
 	enables_planes = list(VIS_CH_ID,VIS_CH_HEALTH_VR,VIS_AUGMENTED)
 	var/away_planes = null

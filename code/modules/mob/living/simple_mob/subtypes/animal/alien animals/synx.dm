@@ -76,14 +76,7 @@
 	movement_cooldown = 6
 	see_in_dark = 6
 	grab_resist = 2 //slippery. %  grabwill not work. Should be 10-20%. -Lo
-	armor = list(			// will be determined
-				"melee" = 0, //Changed from 20.They don't have scales or armor. -LO
-				"bullet" = 0,
-				"laser" = 0,
-				"energy" = 0,
-				"bomb" = 0, //Same as above. -LO
-				"bio" = 50, //Nerfed from 100. They should have some protection against these things, but 100 is pushing it. -Lo
-				"rad" = 100) //Keeping 100 rad armor as mobs cannot easily get radiation storm announcements. If this is reduced it'd be a good idea to make it 100 for the ai types.
+	armor_spec = "bio=50;rad=100" // will be determined //Changed from 20.They don't have scales or armor. -LO //Same as above. -LO //Nerfed from 100. They should have some protection against these things, but 100 is pushing it. -Lo //Keeping 100 rad armor as mobs cannot easily get radiation storm announcements. If this is reduced it'd be a good idea to make it 100 for the ai types.
 	has_hands = 1
 	pass_flags = PASSTABLE
 
@@ -864,14 +857,7 @@
 	biology = BIOLOGY_SYNTHETIC // Metally
 	player_msg = "All systems nominal."
 	/////////////////////ARMOR
-	armor = list(
-			"melee" = 50,
-			"bullet" = 50,
-			"laser" = -50,
-			"energy" = -50,
-			"bomb" = 50,
-			"bio" = 100,
-			"rad" = 100)
+	armor_spec = "melee=50;bullet=50;laser=-50;energy=-50;bomb=50;bio=100;rad=100"
 	////////////////////////////MED INJECTOR
 	poison_type = REAGENT_ID_OXYCODONE //OD effects, eye_blurry | Confuse + for slimes | stuttering
 	poison_chance = 77 //high but not guranteed.

@@ -46,14 +46,7 @@
 	shock_resist = 0.1 //Electricity isn't very effective on stone, especially that from hell.
 	poison_resist = 1.0
 
-	armor = list(
-				"melee" = 10,
-				"bullet" = 10,
-				"laser" = 10,
-				"energy" = 10,
-				"bomb" = 10,
-				"bio" = 100,
-				"rad" = 100)
+	armor_spec = "melee=10;bullet=10;laser=10;energy=10;bomb=10;bio=100;rad=100"
 
 	can_be_antagged = TRUE
 	faction = FACTION_CULT

@@ -1052,7 +1052,7 @@
 	flags_inv = HIDEHOLSTER
 	cold_protection = CHEST|ARMS
 	min_cold_protection_temperature = SPACE_SUIT_MIN_COLD_PROTECTION_TEMPERATURE
-	armor = list(melee = 0, bullet = 0, laser = 0,energy = 0, bomb = 0, bio = 10, rad = 0)
+	armor_spec = "bio=10"
 
 /obj/item/clothing/suit/storage/snowsuit/suit_storage_constraint()
 	var/list/stores = list(POCKET_GENERIC, POCKET_EMERGENCY)
@@ -1072,7 +1072,7 @@
 	w_class = ITEMSIZE_SMALL
 	body_parts_covered = CHEST
 	attack_verb = list("warned", "cautioned", "smashed")
-	armor = list("melee" = 5, "bullet" = 0, "laser" = 0,"energy" = 0, "bomb" = 0, "bio" = 0, "rad" = 0, "fire" = 0, "acid" = 0)
+	armor_spec = "melee=5"
 	special_handling = TRUE
 
 /obj/item/clothing/suit/caution/attack_self(mob/user)
@@ -1227,7 +1227,7 @@
 	item_state_slots = list(slot_r_hand_str = "capjacket", slot_l_hand_str = "capjacket")
 	body_parts_covered = UPPER_TORSO|ARMS|LOWER_TORSO|LEGS
 	pixel_x = -16
-	armor = list(melee = 5, bullet = 5, laser = 5, energy = 5, bomb = 5, bio = 0, rad = 0)//Minor armor for fluff.
+	armor_spec = "melee=5;bullet=5;laser=5;energy=5;bomb=5" //Minor armor for fluff.
 
 /obj/item/clothing/suit/barding/equip_constraint()
 	return dq_spec_join(..(), list(REQ_ON(PRED_TARGET, /obj/item/clothing/suit/barding/proc/taur_fit, "you need a horse-taur half to wear this")))
@@ -1303,7 +1303,7 @@
 	name = "cyberpunk vest"
 	desc = "A red vest with golden streaks. It's made out of tough materials, and can protect fairly well against bullets. Wake the fuck up, Samurai."
 	icon_state = "cyberpunk"
-	armor = list("melee" = 10, "bullet" = 20, "laser" = 10, "energy" = 0, "bomb" = 0, "bio" = 0, "rad" = 0)
+	armor_spec = "melee=10;bullet=20;laser=10"
 
 // Cyberpunk recolorable vest
 /obj/item/clothing/suit/cyberpunk/recolorable

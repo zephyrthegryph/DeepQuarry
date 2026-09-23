@@ -45,16 +45,14 @@
 	var/mob/living/carbon/human/H = make_protean_with_rig()
 	var/datum/component/forms/protean/F = H.GetComponent(/datum/component/forms/protean)
 	var/obj/item/rig/protean/R = F.rig
-	R.armor["melee"] = 40
-	R.chest.armor["melee"] = 40
+	R.set_armor_value("melee", 40)
+	R.chest.set_armor_value("melee", 40)
 	H.injure(INJURY_BLUNT, 1000, BP_TORSO, flags = INJURE_IGNORE_RESISTANCE | INJURE_SILENT)
 	TEST_ASSERT_NOTNULL(H.body.find_affliction(/datum/affliction/core_dormancy), "the protean should be dormant")
 	TEST_ASSERT(R.inert, "a dormant protean's cluster should be inert")
-	for(var/key in R.armor)
-		TEST_ASSERT_EQUAL(R.armor[key], 0, "a dormant cluster has no [key] armour")
+	TEST_ASSERT(R.get_armor().is_empty(), "a dormant cluster has no armour ([R.get_armor().canonical])")
 	for(var/obj/item/piece in list(R.helmet, R.gloves, R.boots, R.chest))
-		for(var/key in piece.armor)
-			TEST_ASSERT_EQUAL(piece.armor[key], 0, "a dormant cluster's [piece.name] has no [key] armour")
+		TEST_ASSERT(piece.get_armor().is_empty(), "a dormant cluster's [piece.name] has no armour ([piece.get_armor().canonical])")
 	TEST_ASSERT(R.canremove, "a dormant cluster is unsealed")
 	for(var/obj/item/rig_module/module in R.installed_modules)
 		TEST_ASSERT(!module.active, "a dormant cluster runs no modules ([module])")
@@ -92,7 +90,7 @@
 	TEST_ASSERT(wearer.equip_to_slot_if_possible(R, slot_back, 0, 1), "the wearer should put the cluster on")
 	R.chest.forceMove(wearer)
 	TEST_ASSERT(wearer.equip_to_slot_if_possible(R.chest, slot_wear_suit, 0, 1), "the chest piece should deploy onto the wearer")
-	R.chest.armor["melee"] = 50
+	R.chest.set_armor_value("melee", 50)
 	R.chest.worn_protection_changed()
 	load_before = H.injury_load(INJURY_CATEGORY_PHYSICAL)
 	wearer.injure(INJURY_BLUNT, 20, BP_TORSO, flags = INJURE_ARMORED | INJURE_SILENT)

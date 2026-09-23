@@ -136,7 +136,7 @@
 	blood_overlay_type = "coat"
 	body_parts_covered = UPPER_TORSO|ARMS
 	flags_inv = HIDEHOLSTER
-	armor = list(melee = 10, bullet = 10, laser = 15, energy = 10, bomb = 0, bio = 0, rad = 0)
+	armor_spec = "melee=10;bullet=10;laser=15;energy=10"
 
 /obj/item/clothing/suit/storage/det_trench/suit_storage_constraint()
 	var/list/stores = list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_SECURITY, POCKET_DETECTIVE)
@@ -154,7 +154,7 @@
 	desc = "A forensics technician jacket."
 	body_parts_covered = UPPER_TORSO|ARMS
 	flags_inv = HIDEHOLSTER
-	armor = list(melee = 10, bullet = 10, laser = 15, energy = 10, bomb = 0, bio = 0, rad = 0)
+	armor_spec = "melee=10;bullet=10;laser=15;energy=10"
 
 /obj/item/clothing/suit/storage/forensics/suit_storage_constraint()
 	var/list/stores = list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_SECURITY, POCKET_DETECTIVE)
@@ -189,7 +189,7 @@
 	icon_state = "hazard"
 	blood_overlay_type = "armor"
 	body_parts_covered = UPPER_TORSO
-	armor = list(melee = 0, bullet = 0, laser = 0,energy = 0, bomb = 0, bio = 0, rad = 20)
+	armor_spec = "rad=20"
 
 /obj/item/clothing/suit/storage/hazardvest/suit_storage_constraint()
 	var/list/stores = list (/obj/item/analyzer, /obj/item/flashlight, /obj/item/multitool, /obj/item/pipe_painter, /obj/item/radio, /obj/item/t_scanner,

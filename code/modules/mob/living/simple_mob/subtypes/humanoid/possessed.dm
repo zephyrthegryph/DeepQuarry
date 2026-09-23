@@ -33,7 +33,7 @@
 	melee_damage_upper = 25
 	attacktext = list("punched", "kicked", "smacked")
 	attack_sound = "punch"
-	armor = list(melee = 30, bullet = 10, laser = 20,energy = 25, bomb = 20, bio = 100, rad = 100) //This should be the same as the base RIG.
+	armor_spec = "melee=30;bullet=10;laser=20;energy=25;bomb=20;bio=100;rad=100" //This should be the same as the base RIG.
 
 	has_hands = 1
 	humanoid_hands = 1
@@ -137,7 +137,7 @@
 	desc = "A heavy, powerful hardsuit used by construction crews and mining corporations. Seems to be worn down and damaged. But it seems to still be moving. Is someone in it?"
 	icon_state = "industrial-rig"
 	loot_list = list(/obj/item/rig/industrial/old = 100)
-	armor = list(melee = 60, bullet = 50, laser = 30,energy = 15, bomb = 30, bio = 100, rad = 100)
+	armor_spec = "melee=60;bullet=50;laser=30;energy=15;bomb=30;bio=100;rad=100"
 
 /obj/item/rig/industrial/old
 	name = "old Industrial hardsuit"
@@ -148,7 +148,7 @@
 	desc = "A blood-red hardsuit featuring some fairly illegal technology. Seems to be worn down and damaged. But it seems to still be moving. Is someone in it?"
 	icon_state = "merc-rig"
 	loot_list = list(/obj/item/rig/merc/old = 100)
-	armor = list(melee = 80, bullet = 65, laser = 50, energy = 15, bomb = 80, bio = 100, rad = 60)
+	armor_spec = "melee=80;bullet=65;laser=50;energy=15;bomb=80;bio=100;rad=60"
 
 /obj/item/rig/merc/old
 	name = "old crimson hardsuit control module"

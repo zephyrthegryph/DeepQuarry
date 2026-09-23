@@ -121,7 +121,7 @@
 	mag_disable = "You relax your deathgrip on the flooring."
 	unremovable_when_enabled = TRUE
 	flags = PHORONGUARD
-	armor = list (melee = 40, bullet = 10, laser = 10, energy = 20, bomb = 20, bio = 10, rad = 20) // values of workboots and heavy duty engineering gloves, it's the only option that will ever be taken so may as well give the turkeys some protection //
+	armor_spec = "melee=40;bullet=10;laser=10;energy=20;bomb=20;bio=10;rad=20" // values of workboots and heavy duty engineering gloves, it's the only option that will ever be taken so may as well give the turkeys some protection //
 
 	actions_types = list(/datum/action/item_action/toggle_magclaws)
 

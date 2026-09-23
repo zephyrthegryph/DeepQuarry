@@ -49,15 +49,7 @@
 	organ_names = /datum/decl/mob_organ_names/kururak
 	meat_amount = 5
 
-	armor = list(
-		"melee" = 30,
-		"bullet" = 15,
-		"laser" = 5,
-		"energy" = 0,
-		"bomb" = 10,
-		"bio" = 100,
-		"rad" = 100
-		)
+	armor_spec = "melee=30;bullet=15;laser=5;bomb=10;bio=100;rad=100"
 
 	say_list_type = /datum/say_list/kururak
 

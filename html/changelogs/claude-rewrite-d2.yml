@@ -1,0 +1,8 @@
+author: "Claude"
+delete-after: true
+changes:
+  - balance: "Armour no longer rolls a random +/-25% on every hit. It now soaks a fixed share equal to the old average, so average damage is unchanged but hits through armour are consistent. Armour of 100 or more (after penetration) always stops the hit."
+  - balance: "Objects made of materials harder, stronger or more heat-resistant than steel (plasteel, titanium, diamond and the like) now shrug off part of blows, cuts, punctures and heat. Steel, glass, wood and plastic objects take the same damage as before."
+  - balance: "Armour penetration now works the same on objects as on people: it subtracts from the armour's points."
+  - rscadd: "Firesuits, atmospherics voidsuits, bio suits, winter coats and space suits carry fire, acid and cold protection values."
+  - code_imp: "Armour is interned: types declare armor_spec and share one immutable armour datum per set of values, read through get_armor(). The per-type armour lists are gone."

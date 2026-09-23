@@ -8,7 +8,7 @@
 	size_multiplier = 2
 	endurance = 500
 	anchored = 1
-	armor = list(melee = 40, bullet = 40, laser = 40, energy = 40, bomb = 50, bio = 100, rad = 100)
+	armor_spec = "melee=40;bullet=40;laser=40;energy=40;bomb=50;bio=100;rad=100"
 	projectiletype = /obj/item/projectile/energy/eclipse_boss/tyrjavelin
 	specialattackprojectile = /obj/item/projectile/energy/eclipse_boss/tyrjavelin
 	loot_list = list(/obj/item/tool/wirecutters/hybrid/alien  = 10,
@@ -51,7 +51,7 @@
 	projectiletype = /obj/item/projectile/energy/wallbreaker/boss
 	wreckage = /obj/structure/loot_pile/surface/alien/engineering
 	anchored = 1
-	armor = list(melee = 60, bullet = 60, laser = 60, energy = 60, bomb = 50, bio = 100, rad = 100)
+	armor_spec = "melee=60;bullet=60;laser=60;energy=60;bomb=50;bio=100;rad=100"
 	loot_list = list(/obj/item/prop/alien/junk = 100,
 		/obj/item/multitool/alien = 30,
 		/obj/item/stack/cable_coil/alien = 30,
