@@ -1146,9 +1146,9 @@
 	return 1 //we applied blood to the item
 
 /mob/living/carbon/human/proc/get_full_print()
-	if(!dna ||!dna.uni_identity)
+	if(!dna || !dna.dna_ready)
 		return
-	return md5(dna.uni_identity)
+	return md5(dna.GetUniIdentity())
 
 /mob/living/carbon/human/wash(clean_types)
 	. = ..()

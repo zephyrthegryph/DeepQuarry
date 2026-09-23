@@ -447,8 +447,8 @@
 		occupantData["maxHealth"] = 100
 		occupantData["minHealth"] = 0
 		occupantData["uniqueEnzymes"] = WC.dna.unique_enzymes
-		occupantData["uniqueIdentity"] = WC.dna.uni_identity
-		occupantData["structuralEnzymes"] = WC.dna.struc_enzymes
+		occupantData["uniqueIdentity"] = WC.dna.GetUniIdentity()
+		occupantData["structuralEnzymes"] = WC.dna.GetStrucEnzymes()
 		occupantData["radiationLevel"] = WC.radiation
 	data["occupant"] = occupantData;
 
