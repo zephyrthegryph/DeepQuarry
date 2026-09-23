@@ -406,6 +406,7 @@ pub struct Reactor {
     by_subscriber: HashMap<Subscriber, Vec<Token>>,
     metrics: ReactorMetrics,
     fired: Vec<(TimerId, Due)>,
+    fired_timers: Vec<(Subscriber, u32)>,
 }
 
 impl Reactor {
@@ -422,6 +423,7 @@ impl Reactor {
             by_subscriber: HashMap::new(),
             metrics: ReactorMetrics::default(),
             fired: Vec::new(),
+            fired_timers: Vec::new(),
         }
     }
 
@@ -445,7 +447,43 @@ impl Reactor {
     }
 
     fn own(&mut self, sub: Subscriber, token: Token) {
-        self.by_subscriber.entry(sub).or_default().push(token);
+        let owned = self.by_subscriber.entry(sub).or_default();
+        if !owned.contains(&token) {
+            owned.push(token);
+        }
+    }
+
+    /// Forgets one owned token, so a long-lived subscriber's bookkeeping
+    /// stays bounded by its live subscriptions (not by every timer it ever
+    /// set).
+    fn disown(&mut self, sub: Subscriber, token: Token) {
+        if let Some(owned) = self.by_subscriber.get_mut(&sub) {
+            if let Some(i) = owned.iter().position(|t| *t == token) {
+                owned.swap_remove(i);
+            }
+            if owned.is_empty() {
+                self.by_subscriber.remove(&sub);
+            }
+        }
+    }
+
+    /// Live subscriptions (timers, key subscriptions, model watches) that
+    /// `sub` owns.
+    #[must_use]
+    pub fn owned(&self, sub: Subscriber) -> usize {
+        self.by_subscriber.get(&sub).map_or(0, Vec::len)
+    }
+
+    /// Subscribers that own at least one live subscription.
+    #[must_use]
+    pub fn subscribers(&self) -> usize {
+        self.by_subscriber.len()
+    }
+
+    /// Timers that fired since the last call, as `(subscriber, token)`, so a
+    /// host that maps tokens to its own handles can release them.
+    pub fn take_fired_timers(&mut self, out: &mut Vec<(Subscriber, u32)>) {
+        out.append(&mut self.fired_timers);
     }
 
     /// Queues watch wakes drained from a domain outbox.
@@ -472,7 +510,14 @@ impl Reactor {
 
     /// Cancels a timer; `false` if it already fired or was cancelled.
     pub fn cancel_timer(&mut self, id: TimerId) -> bool {
-        self.wheel.cancel(id).is_some()
+        match self.wheel.cancel(id) {
+            Some(Due::Timer { subscriber, .. }) => {
+                self.disown(subscriber, Token::Timer(id));
+                true
+            }
+            Some(_) => true,
+            None => false,
+        }
     }
 
     /// `REACT_ON_KEY`.
@@ -500,6 +545,13 @@ impl Reactor {
                 self.key_subs.remove(&key);
             }
         }
+        self.disown(subscriber, Token::Key { key });
+    }
+
+    /// Keys with at least one subscriber.
+    #[must_use]
+    pub fn keys(&self) -> usize {
+        self.key_subs.len()
     }
 
     /// `REACT_PUBLISH`: DM-owned state under `key` changed. Merged per tick
@@ -588,9 +640,18 @@ impl Reactor {
         };
         slot.alive = false;
         slot.generation = slot.generation.wrapping_add(1);
-        let timers: Vec<TimerId> = slot.watches.drain(..).filter_map(|w| w.timer).collect();
-        for t in timers {
-            self.wheel.cancel(t);
+        let watches: Vec<RateWatch> = slot.watches.drain(..).collect();
+        for w in watches {
+            if let Some(t) = w.timer {
+                self.wheel.cancel(t);
+            }
+            self.disown(
+                w.subscriber,
+                Token::Rate {
+                    model: id,
+                    token: w.token,
+                },
+            );
         }
         self.free_models.push(id.index);
         true
@@ -641,6 +702,7 @@ impl Reactor {
         if let Some(t) = w.timer {
             self.wheel.cancel(t);
         }
+        self.disown(w.subscriber, Token::Rate { model: id, token });
         true
     }
 
@@ -704,7 +766,7 @@ impl Reactor {
         self.lanes.begin_tick();
         let mut fired = std::mem::take(&mut self.fired);
         self.wheel.advance(now, &mut fired);
-        for (_, due) in fired.drain(..) {
+        for (id, due) in fired.drain(..) {
             match due {
                 Due::Timer {
                     subscriber,
@@ -712,6 +774,8 @@ impl Reactor {
                     token,
                 } => {
                     self.metrics.timers_fired += 1;
+                    self.disown(subscriber, Token::Timer(id));
+                    self.fired_timers.push((subscriber, token));
                     self.lanes.push(subscriber, lane, reason::TIMER, token);
                 }
                 Due::Crossing { model, token } => {
@@ -753,6 +817,34 @@ impl Reactor {
 mod tests {
     use super::*;
     use proptest::prelude::*;
+
+    #[test]
+    fn owned_tokens_stay_bounded_by_live_subscriptions() {
+        let mut r = Reactor::new(0);
+        for round in 0..100u64 {
+            let t = r.at(9, Lane::Normal, round + 1, 1);
+            if round % 2 == 0 {
+                assert!(r.cancel_timer(t));
+            }
+            r.subscribe_key(9, 5, 1, Lane::Normal);
+            r.tick(round + 1);
+            let mut fired = Vec::new();
+            r.take_fired_timers(&mut fired);
+            assert_eq!(fired.len(), usize::from(round % 2 == 1));
+        }
+        // One key subscription, no timers left.
+        assert_eq!(r.owned(9), 1);
+        r.unsubscribe_key(9, 5);
+        assert_eq!(r.owned(9), 0);
+        assert_eq!(r.subscribers(), 0);
+        let m = r.add_model(RateModel::linear(0.0, 1.0, 0.0));
+        let tok = r
+            .watch_model(m, 9, Lane::Normal, Cmp::Above, 1000.0)
+            .unwrap();
+        assert_eq!(r.owned(9), 1);
+        assert!(r.unwatch_model(m, tok));
+        assert_eq!(r.owned(9), 0);
+    }
 
     #[test]
     fn lanes_merge_per_subscriber_and_deliver_once_per_tick() {
