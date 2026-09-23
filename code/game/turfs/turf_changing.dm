@@ -29,7 +29,7 @@
 /turf/proc/ChangeTurf(turf/N, tell_universe=1, force_lighting_update = 0, preserve_outdoors = FALSE)
 	if (!N)
 		return
-	RAD_SHIELDING_CHANGED
+	RAD_SHIELDING_CHANGED(src)
 
 	if(N == /turf/space)
 		var/turf/below = GetBelow(src)

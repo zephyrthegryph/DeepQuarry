@@ -6,14 +6,18 @@ SUBSYSTEM_DEF(radiation)
 	/// A list of radiation sources (/datum/radiation_pulse_information) that have yet to process.
 	/// Do not interact with this directly, use `radiation_pulse` instead.
 	var/list/datum/radiation_pulse_information/processing = list()
+	/// Turfs whose shielding changed since the last flush to the Rust
+	/// insulation layer (RAD_SHIELDING_CHANGED). Keyed by turf.
+	var/list/turf/dirty_turfs = list()
+	/// world.maxz the Rust layer last saw; a new z-level forces a flush.
+	var/synced_maxz = 0
 	/// Cumulative work counters consumed by the lightweight profiler.
 	var/profile_pulse_invocations = 0
 	var/profile_pulses_completed = 0
 	var/profile_dropped_sources = 0
 	var/profile_targets_processed = 0
-	var/profile_ray_turfs = 0
-	var/profile_insulation_cache_hits = 0
-	var/profile_insulation_cache_misses = 0
+	var/profile_shielding_flushes = 0
+	var/profile_shielding_cells = 0
 	var/profile_signal_dispatches = 0
 	var/profile_irradiations = 0
 	var/profile_yields = 0
@@ -21,17 +25,9 @@ SUBSYSTEM_DEF(radiation)
 	var/profile_max_targets_remaining = 0
 	var/list/profile_source_cost_ms = list()
 	var/list/profile_source_targets = list()
-	/// Shielding cache shared by pulses from the same steady source, keyed by
-	/// source/target/threshold. Valid while shielding_revision is unchanged.
-	var/list/path_insulation_cache = list()
-	/// shielding_revision the cache was filled under.
-	var/path_insulation_cache_revision = -1
-	/// Bumped (RAD_SHIELDING_CHANGED) whenever something that shields radiation
-	/// changes: a turf changes, an insulating movable moves, spawns or is deleted,
-	/// or an atom's rad_insulation is set.
-	var/shielding_revision = 0
 
 /datum/controller/subsystem/radiation/fire(resumed)
+	flush_shielding()
 	profile_max_queue = max(profile_max_queue, processing.len)
 	while (processing.len)
 		var/datum/radiation_pulse_information/pulse_information = processing[1]
@@ -44,10 +40,12 @@ SUBSYSTEM_DEF(radiation)
 			continue
 
 		profile_pulse_invocations++
-		profile_max_targets_remaining = max(profile_max_targets_remaining, pulse_information.remaining_targets())
 		var/source_type = "[source.type]"
-		var/targets_before = pulse_information.remaining_targets()
 		var/profile_start = TICK_USAGE
+		if(isnull(pulse_information.transmissions))
+			trace(source, pulse_information)
+			profile_max_targets_remaining = max(profile_max_targets_remaining, pulse_information.remaining_targets())
+		var/targets_before = pulse_information.remaining_targets()
 		pulse(source, pulse_information)
 		profile_source_cost_ms[source_type] += TICK_DELTA_TO_MS(TICK_USAGE - profile_start)
 		profile_source_targets[source_type] += targets_before - pulse_information.remaining_targets()
@@ -70,7 +68,7 @@ SUBSYSTEM_DEF(radiation)
 		source_costs.Cut(11)
 	return list(
 		"queue" = list("pulses" = length(processing), "current_targets" = current_targets, "max_pulses" = profile_max_queue, "max_targets" = profile_max_targets_remaining),
-		"work" = list("pulse_invocations" = profile_pulse_invocations, "pulses_completed" = profile_pulses_completed, "dropped_sources" = profile_dropped_sources, "targets" = profile_targets_processed, "ray_turfs" = profile_ray_turfs, "cache_hits" = profile_insulation_cache_hits, "cache_misses" = profile_insulation_cache_misses, "signals" = profile_signal_dispatches, "irradiations" = profile_irradiations, "yields" = profile_yields),
+		"work" = list("pulse_invocations" = profile_pulse_invocations, "pulses_completed" = profile_pulses_completed, "dropped_sources" = profile_dropped_sources, "targets" = profile_targets_processed, "shielding_flushes" = profile_shielding_flushes, "shielding_cells" = profile_shielding_cells, "signals" = profile_signal_dispatches, "irradiations" = profile_irradiations, "yields" = profile_yields),
 		"top_source_cost_ms" = source_costs,
 		"source_targets" = profile_source_targets.Copy(),
 	)
@@ -79,40 +77,70 @@ SUBSYSTEM_DEF(radiation)
 	msg = "Pulses:[processing.len]"
 	return ..()
 
+/// Sends every dirty turf's combined transmission (the turf's rad_insulation
+/// times that of everything directly on it) to the Rust insulation layer.
+/datum/controller/subsystem/radiation/proc/flush_shielding()
+	if(!length(dirty_turfs) && synced_maxz == world.maxz)
+		return
+	var/list/cells = list()
+	for(var/turf/T as anything in dirty_turfs)
+		var/transmission = T.rad_insulation
+		for(var/atom/movable/on_turf as anything in T.contents)
+			transmission *= on_turf.rad_insulation
+		cells += T.x
+		cells += T.y
+		cells += T.z
+		cells += transmission
+	dirty_turfs.Cut()
+	synced_maxz = world.maxz
+	profile_shielding_flushes++
+	profile_shielding_cells += length(cells) / 4
+	vg_radiation_set_cells(world.maxx, world.maxy, cells)
+
+/// Collects the pulse's targets on the source's z-level and computes the
+/// shielding to all of them in one Rust call (rays through the insulation layer).
+/datum/controller/subsystem/radiation/proc/trace(atom/source, datum/radiation_pulse_information/pulse_information)
+	flush_shielding()
+	var/list/targets = list()
+	var/list/coords = list()
+	var/turf/source_turf = get_turf(source)
+	if(source_turf)
+		var/z = source_turf.z
+		for(var/list/registry as anything in list(GLOB.rad_collectors, GLOB.geiger_counters, GLOB.material_radiovoltaic_items, GLOB.living_mob_list))
+			for(var/atom/target as anything in registry)
+				var/turf/target_turf = get_turf(target)
+				if(!target_turf || target_turf.z != z)
+					continue
+				targets += target
+				coords += target_turf.x
+				coords += target_turf.y
+				coords += z
+	pulse_information.targets = targets
+	pulse_information.transmissions = length(targets) ? vg_radiation_pulse(source_turf.x, source_turf.y, source_turf.z, pulse_information.max_range, pulse_information.threshold, coords) : list()
+	if(!islist(pulse_information.transmissions) || length(pulse_information.transmissions) != length(targets))
+		pulse_information.targets = list()
+		pulse_information.transmissions = list()
+
+/// Applies a traced pulse to its targets, yielding between them.
 /datum/controller/subsystem/radiation/proc/pulse(atom/source, datum/radiation_pulse_information/pulse_information)
-	if(path_insulation_cache_revision != shielding_revision || length(path_insulation_cache) > RAD_PATH_CACHE_MAX)
-		path_insulation_cache.Cut()
-		path_insulation_cache_revision = shielding_revision
-	var/list/targets = pulse_information.targets_to_process
-	var/list/living = GLOB.living_mob_list
+	var/list/targets = pulse_information.targets
+	var/list/transmissions = pulse_information.transmissions
 	var/pulse_strength = pulse_information.strength
-	while(length(targets) || pulse_information.living_index)
-		var/atom/target_atom
-		if(length(targets))
-			target_atom = targets[length(targets)]
-			targets.len--
-		else
-			// The living list can shrink while we yield; clamp rather than copy it.
-			pulse_information.living_index = min(pulse_information.living_index, length(living))
-			if(!pulse_information.living_index)
-				break
-			target_atom = living[pulse_information.living_index]
-			pulse_information.living_index--
+	while(pulse_information.next_target <= length(targets))
+		var/index = pulse_information.next_target++
+		var/atom/target_atom = targets[index]
+		var/current_insulation = transmissions[index]
 		profile_targets_processed++
-		var/turf/target_turf = get_turf(target_atom)
-		if(QDELETED(target_atom) || !target_turf || target_turf.z != source.z || get_dist(source, target_turf) > pulse_information.max_range)
+		if(current_insulation < 0 || QDELETED(target_atom))
 			continue
 		if(istype(target_atom, /obj/machinery/power/rad_collector))
 			profile_signal_dispatches++
 			SEND_SIGNAL(target_atom, COMSIG_IN_RANGE_OF_IRRADIATION, pulse_information, 1)
 			continue
 		if(istype(target_atom, /obj/item/geiger))
-			var/obj/item/geiger/geiger_counter = target_atom
-			var/mob/living/holder = get(geiger_counter, /mob/living)
-			geiger_check(source, pulse_information, geiger_counter, holder ? holder : geiger_counter)
+			profile_signal_dispatches++
+			SEND_SIGNAL(target_atom, COMSIG_IN_RANGE_OF_IRRADIATION, pulse_information, current_insulation)
 			continue
-
-		var/current_insulation = cached_path_insulation(source, target_turf, pulse_information.threshold)
 
 		if(istype(target_atom, /obj/item))
 			if(current_insulation > pulse_information.threshold)
@@ -147,26 +175,6 @@ SUBSYSTEM_DEF(radiation)
 			target.investigate_log("was irradiated by [source].", INVESTIGATE_RADIATION)
 		if(MC_TICK_CHECK)
 			return
-
-/datum/controller/subsystem/radiation/proc/cached_path_insulation(atom/source, turf/target, threshold)
-	var/cache_key = "\ref[source]|\ref[target]|[threshold]"
-	var/cached = path_insulation_cache[cache_key]
-	if(!isnull(cached))
-		profile_insulation_cache_hits++
-		return cached
-	profile_insulation_cache_misses++
-	var/current_insulation = 1
-	var/list/ray_turfs = get_line(source, target) - get_turf(source)
-	profile_ray_turfs += length(ray_turfs)
-	for(var/turf/turf_in_between in ray_turfs)
-		var/insulation = turf_in_between.rad_insulation
-		for(var/atom/on_turf as anything in turf_in_between.contents)
-			insulation *= on_turf.rad_insulation
-		current_insulation *= insulation
-		if(current_insulation <= threshold)
-			break
-	path_insulation_cache[cache_key] = current_insulation
-	return current_insulation
 
 /// Will attempt to irradiate the given target, limited through IC means, such as radiation protected clothing.
 /datum/controller/subsystem/radiation/proc/irradiate(atom/target, strength)
@@ -231,16 +239,3 @@ SUBSYSTEM_DEF(radiation)
 	if(!limb_count)
 		return 0
 	return (protected_limbs/limb_count)
-
-///Proc for when geiger counter is checked. This is called twice: Once when the geiger counter is in range of a pulse itself and once when a geiger counter is on a mob that is in range of a pulse.
-/datum/controller/subsystem/radiation/proc/geiger_check(atom/source, datum/radiation_pulse_information/pulse_information, obj/item/geiger/geiger_counter, atom/target)
-	if(!target)
-		target = geiger_counter
-
-	var/turf/target_turf = get_turf(target)
-	if(!target_turf)
-		return
-	var/current_insulation = cached_path_insulation(source, target_turf, pulse_information.threshold)
-
-	profile_signal_dispatches++
-	SEND_SIGNAL(geiger_counter, COMSIG_IN_RANGE_OF_IRRADIATION, pulse_information, current_insulation)

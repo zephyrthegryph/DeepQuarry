@@ -115,6 +115,9 @@
 				continue
 			qdel(timer)
 
+	// Reactor subscriptions, timers and continuous declarations (doc/rewrite/reactor.md §1).
+	REACT_CLEAR(src)
+
 	#ifdef REFERENCE_TRACKING
 	#ifdef REFERENCE_TRACKING_DEBUG
 	found_refs = null

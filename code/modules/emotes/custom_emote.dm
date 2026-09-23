@@ -118,3 +118,20 @@
 			if(src.client && O && !(get_z(src) == get_z(O)))
 				final_message = span_multizsay("[final_message]")
 			O.see_emote(src, final_message, m_type)
+
+/// Conjugates the leading verb of a bare phrase to the third person singular:
+/// "shudder" to "shudders", "wince at their arm" to "winces at their arm",
+/// "wipe their brow" to "wipes their brow", "clutch" to "clutches", "cry" to "cries".
+/proc/third_person_phrase(phrase)
+	var/split = findtext(phrase, " ")
+	var/verb_word = split ? copytext(phrase, 1, split) : phrase
+	var/rest = split ? copytext(phrase, split) : ""
+	var/last = copytext(verb_word, -1)
+	var/last_two = copytext(verb_word, -2)
+	if(last == "s" || last == "x" || last == "z" || last_two == "sh" || last_two == "ch")
+		verb_word += "es"
+	else if(last == "y" && !findtext("aeiou", copytext(verb_word, -2, -1)))
+		verb_word = copytext(verb_word, 1, -1) + "ies"
+	else
+		verb_word += "s"
+	return verb_word + rest

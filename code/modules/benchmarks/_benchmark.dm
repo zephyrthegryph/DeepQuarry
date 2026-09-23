@@ -28,6 +28,8 @@
 	var/window_start_position
 	var/window_start_time
 	var/list/window_subsystem_fires
+	/// SSreactor.total_wakes when the window began.
+	var/window_reactor_wakes = 0
 
 /// The scenario body. Call fail() to abort with a reason.
 /datum/benchmark/proc/Run()
@@ -85,6 +87,7 @@
 	window_start_position = Master.perf_samples_total + 1
 	window_start_time = REALTIMEOFDAY
 	window_subsystem_fires = list()
+	window_reactor_wakes = SSreactor.total_wakes
 	for(var/datum/controller/subsystem/subsystem as anything in Master.subsystems)
 		window_subsystem_fires[subsystem] = subsystem.times_fired
 	if(profiling)
@@ -117,6 +120,11 @@
 			"tick_overrun" = subsystem.tick_overrun,
 		)
 	detail("[prefix]_subsystems", subsystems)
+	// Reactor wake reasons by type (cumulative since boot) and this window's wake count.
+	var/list/reactor = SSreactor.performance_diagnostics()
+	reactor["window_wakes"] = SSreactor.total_wakes - window_reactor_wakes
+	metric("[prefix]_reactor_wakes", reactor["window_wakes"], "wakes", "lower")
+	detail("[prefix]_reactor", reactor)
 	detail("[prefix]_outliers", Master.perf_outliers.Copy())
 	detail("[prefix]_worst_tick", Master.perf_worst_tick.Copy())
 	if(profiling)

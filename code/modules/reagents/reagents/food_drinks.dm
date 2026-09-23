@@ -5978,7 +5978,7 @@
 			nif.repair(removed)
 		else if(prob(5))
 			M.SetConfused(max(M.confused, 20))
-			M.emote(pick("shudders", "seems lost", "blanks for a moment"))
+			M.emote(pick("shudder", "seem lost", "blank for a moment"))
 	M.adjust_nutrition(4 * removed)
 
 

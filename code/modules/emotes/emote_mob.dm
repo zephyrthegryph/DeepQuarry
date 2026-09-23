@@ -66,6 +66,7 @@
 					m_type = AUDIBLE_MESSAGE
 			return custom_emote(m_type, message)
 
+	var/full_act = act
 	var/splitpoint = findtext(act, " ")
 	if(splitpoint > 0)
 		var/tempstr = act
@@ -80,11 +81,20 @@
 		return nme(message)
 
 	var/datum/decl/emote/use_emote = get_emote_by_key(act)
+	// Emotes the game makes a mob do (symptoms, reagents, reflexes) aren't typed
+	// by the player: a phrase that isn't a registered key is shown as a custom
+	// emote in the third person, and one the mob can't use is skipped silently.
+	var/involuntary = (usr != src)
 	if(!istype(use_emote))
+		if(involuntary)
+			automatic_custom_emote(VISIBLE_MESSAGE, third_person_phrase(full_act), check_stat = TRUE)
+			return
 		to_chat(src, span_warning("Unknown emote '[act]'. Type " + span_bold("say *help") + " for a list of usable emotes. ([act] [message])")) // Add full message in the event you used * instead of ! or something like that
 		return
 
 	if(!use_emote.mob_can_use(src))
+		if(involuntary)
+			return
 		to_chat(src, span_warning("You cannot use the emote '[act]'. Type <b>say *help</b> for a list of usable emotes."))
 		return
 

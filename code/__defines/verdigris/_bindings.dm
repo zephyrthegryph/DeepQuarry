@@ -15,7 +15,7 @@
 #define VERDIGRIS (__verdigris || __detect_verdigris())
 
 /// Bind-set hash shared with verdigris/ffi/src/abi.rs; checked by verdigris_init().
-#define VERDIGRIS_ABI "7c7bd57e182705e1"
+#define VERDIGRIS_ABI "ab1ce0a75e7a0bbc"
 
 // Numeric registry (@dm-define constants in the Rust sources).
 
@@ -31,6 +31,39 @@
 
 // verdigris/domains/gas/src/gas.rs
 #define GAS_DEPENDENCY_TEMPERATURE 2
+
+/// The probe domain: DM-written test cells (see the module docs).
+// verdigris/ffi/src/reactor.rs
+#define REACT_DOMAIN_PROBE 1
+
+/// Cells in the probe domain.
+// verdigris/ffi/src/reactor.rs
+#define REACT_PROBE_CELLS 256
+
+/// Reason class: a condition watch (Threshold, Band, Difference, ...).
+// verdigris/ffi/src/reactor.rs
+#define REACT_REASON_CONDITION 0x100000
+
+/// The bits below the reason classes: channel bits, or a key's mask.
+// verdigris/ffi/src/reactor.rs
+#define REACT_REASON_DETAIL 0x0FFFFF
+
+/// Reason class: a DM-owned key was published.
+// verdigris/ffi/src/reactor.rs
+#define REACT_REASON_KEY 0x400000
+
+/// Reason class: a rate model crossed a watched level.
+// verdigris/ffi/src/reactor.rs
+#define REACT_REASON_RATE 0x800000
+
+/// Reason class: a `REACT_AT` timer fired.
+// verdigris/ffi/src/reactor.rs
+#define REACT_REASON_TIMER 0x200000
+
+/// Numbers per wake returned by `vg_react_step`:
+/// `subscriber, lane, reason, source, source_kind`.
+// verdigris/ffi/src/reactor.rs
+#define REACT_WAKE_STRIDE 5
 
 /// Registration flag DM passes for a simulated turf (`SimulationFlags::SIMULATION_ANY`).
 // verdigris/domains/gas/src/turfs.rs
@@ -141,6 +174,15 @@
 /proc/vg_drop_material_power_graph(handle)
 	var/static/__f = load_ext(VERDIGRIS, "byond:drop_material_power_graph_ffi")
 	return call_ext(__f)(handle)
+
+/// EMP severity around (`x`, `y`, `z`) with the four band radii in `ranges`
+/// (non-decreasing). Returns `list(min_x, min_y, max_x, max_y, severity...)`
+/// with severities in `block()` order over that square, clipped to the map:
+/// 1 heavy .. 4 harmless, `n.5` a coin flip between `n` and `n + 1`.
+// /proc/emp_falloff (verdigris/ffi/src/propagate.rs)
+/proc/vg_emp_falloff(x, y, z, max_x, max_y, max_z, ranges)
+	var/static/__f = load_ext(VERDIGRIS, "byond:emp_falloff_ffi")
+	return call_ext(__f)(x, y, z, max_x, max_y, max_z, ranges)
 
 /// Args: (list). Takes every gas in the list and makes them all identical, scaled to their respective volumes. The total heat and amount of substance in all of the combined gases is conserved.
 // /proc/equalize_all_gases_in_list (verdigris/domains/gas/src/lib.rs)
@@ -362,11 +404,181 @@
 	var/static/__f = load_ext(VERDIGRIS, "byond:process_turf_hook_ffi")
 	return call_ext(__f)(src_ref, remaining)
 
+/// One radiation pulse from (`x`, `y`, `z`): returns the path transmission
+/// to each target in `targets` (a flat list of `x, y, z`), or -1 for targets
+/// out of `range`, on another z-level or off the grid. Rays stop early once
+/// the transmission drops below `threshold`.
+// /proc/radiation_pulse (verdigris/ffi/src/propagate.rs)
+/proc/vg_radiation_pulse(x, y, z, range, threshold, targets)
+	var/static/__f = load_ext(VERDIGRIS, "byond:radiation_pulse_ffi")
+	return call_ext(__f)(x, y, z, range, threshold, targets)
+
+/// Writes radiation transmission for changed turfs. `cells` is a flat list of
+/// `x, y, z, transmission`. The field is sized to the plane `max_x` by
+/// `max_y` (z-levels are added as written) and reset if the plane changes.
+// /proc/radiation_set_cells (verdigris/ffi/src/propagate.rs)
+/proc/vg_radiation_set_cells(max_x, max_y, cells)
+	var/static/__f = load_ext(VERDIGRIS, "byond:radiation_set_cells_ffi")
+	return call_ext(__f)(max_x, max_y, cells)
+
+/// A linear model starting at `v0` now, changing by `rate` per tick,
+/// clamped to [`min`, `max`] (null for unbounded). Returns the model id.
+// /proc/rate_linear (verdigris/ffi/src/reactor.rs)
+/proc/vg_rate_linear(v0, rate, min, max)
+	var/static/__f = load_ext(VERDIGRIS, "byond:rate_linear_ffi")
+	return call_ext(__f)(v0, rate, min, max)
+
+/// The model's value now.
+// /proc/rate_read (verdigris/ffi/src/reactor.rs)
+/proc/vg_rate_read(model)
+	var/static/__f = load_ext(VERDIGRIS, "byond:rate_read_ffi")
+	return call_ext(__f)(model)
+
+/// A model relaxing from `v0` toward `target` at `k` per tick
+/// (`target + (v0 - target) e^(-k t)`). Returns the model id.
+// /proc/rate_relax (verdigris/ffi/src/reactor.rs)
+/proc/vg_rate_relax(v0, target, k)
+	var/static/__f = load_ext(VERDIGRIS, "byond:rate_relax_ffi")
+	return call_ext(__f)(v0, target, k)
+
+/// Removes a model and its watches. Returns 1 if it was live.
+// /proc/rate_remove (verdigris/ffi/src/reactor.rs)
+/proc/vg_rate_remove(model)
+	var/static/__f = load_ext(VERDIGRIS, "byond:rate_remove_ffi")
+	return call_ext(__f)(model)
+
+/// Sets a linear or sum model's value now (the rate continues from it).
+// /proc/rate_set (verdigris/ffi/src/reactor.rs)
+/proc/vg_rate_set(model, value)
+	var/static/__f = load_ext(VERDIGRIS, "byond:rate_set_ffi")
+	return call_ext(__f)(model, value)
+
+/// Sets a linear model's rate per tick (or a relax model's target).
+// /proc/rate_set_rate (verdigris/ffi/src/reactor.rs)
+/proc/vg_rate_set_rate(model, rate)
+	var/static/__f = load_ext(VERDIGRIS, "byond:rate_set_rate_ffi")
+	return call_ext(__f)(model, rate)
+
+/// Sets (or, with rate 0, removes) term `term` of a sum model.
+// /proc/rate_set_term (verdigris/ffi/src/reactor.rs)
+/proc/vg_rate_set_term(model, term, rate)
+	var/static/__f = load_ext(VERDIGRIS, "byond:rate_set_term_ffi")
+	return call_ext(__f)(model, term, rate)
+
+/// A store with named inflow/outflow terms (`vg_rate_set_term`), clamped.
+// /proc/rate_sum (verdigris/ffi/src/reactor.rs)
+/proc/vg_rate_sum(v0, min, max)
+	var/static/__f = load_ext(VERDIGRIS, "byond:rate_sum_ffi")
+	return call_ext(__f)(v0, min, max)
+
+/// Wakes `subscriber` whenever the model enters `cmp level` (0 above: `v >=
+/// level`, 1 below), at the exact predicted crossing tick; at once if it
+/// already holds. Returns the token.
+// /proc/rate_watch (verdigris/ffi/src/reactor.rs)
+/proc/vg_rate_watch(model, sub, lane_v, cmp_v, level)
+	var/static/__f = load_ext(VERDIGRIS, "byond:rate_watch_ffi")
+	return call_ext(__f)(model, sub, lane_v, cmp_v, level)
+
+/// `REACT_AT`: wakes `subscriber` on `lane` at tick `tick` (a past tick fires
+/// at the next step). Returns the token.
+// /proc/react_at (verdigris/ffi/src/reactor.rs)
+/proc/vg_react_at(sub, lane_v, tick)
+	var/static/__f = load_ext(VERDIGRIS, "byond:react_at_ffi")
+	return call_ext(__f)(sub, lane_v, tick)
+
+/// `REACT_CANCEL`: drops one subscription. Returns 1 if the token was live.
+// /proc/react_cancel (verdigris/ffi/src/reactor.rs)
+/proc/vg_react_cancel(token)
+	var/static/__f = load_ext(VERDIGRIS, "byond:react_cancel_ffi")
+	return call_ext(__f)(token)
+
+/// `REACT_CLEAR`: drops every subscription and pending wake of `subscriber`.
+/// Returns how many subscriptions it had.
+// /proc/react_clear (verdigris/ffi/src/reactor.rs)
+/proc/vg_react_clear(sub)
+	var/static/__f = load_ext(VERDIGRIS, "byond:react_clear_ffi")
+	return call_ext(__f)(sub)
+
 /// Args: (holder). Runs all reactions on this gas mixture. Holder is used by the reactions, and can be any arbitrary datum or null.
 // /datum/gas_mixture/proc/react (verdigris/domains/gas/src/lib.rs)
 /proc/vg_react_hook(src_ref, holder)
 	var/static/__f = load_ext(VERDIGRIS, "byond:react_hook_ffi")
 	return call_ext(__f)(src_ref, holder)
+
+/// `REACT_ON_KEY`: wakes `subscriber` when key (`kind`, `id`) is published
+/// with any bit of `mask`. Returns the token.
+// /proc/react_on_key (verdigris/ffi/src/reactor.rs)
+/proc/vg_react_on_key(sub, kind, id, mask, lane_v)
+	var/static/__f = load_ext(VERDIGRIS, "byond:react_on_key_ffi")
+	return call_ext(__f)(sub, kind, id, mask, lane_v)
+
+/// Writes one probe cell (the probe domain is DM-written; see module docs).
+// /proc/react_probe_set (verdigris/ffi/src/reactor.rs)
+/proc/vg_react_probe_set(cell, kpa, kelvin)
+	var/static/__f = load_ext(VERDIGRIS, "byond:react_probe_set_ffi")
+	return call_ext(__f)(cell, kpa, kelvin)
+
+/// `REACT_PUBLISH`: DM-owned state under key (`kind`, `id`) changed. Merged
+/// per tick; a key nobody subscribes to costs a lookup and is not stored.
+// /proc/react_publish (verdigris/ffi/src/reactor.rs)
+/proc/vg_react_publish(kind, id, mask)
+	var/static/__f = load_ext(VERDIGRIS, "byond:react_publish_ffi")
+	return call_ext(__f)(kind, id, mask)
+
+/// Reactor counters as a flat list: timers pending, timers fired, rate
+/// crossings fired, key publications, rate models, keys with subscribers,
+/// live subscriptions, wakes received, merged, delivered, deferred, watch
+/// wakes, backlog urgent/normal/background, last step microseconds.
+// /proc/react_stats (verdigris/ffi/src/reactor.rs)
+/proc/vg_react_stats()
+	var/static/__f = load_ext(VERDIGRIS, "byond:react_stats_ffi")
+	return call_ext(__f)()
+
+/// SSreactor's one call per tick. Advances to tick `now` (firing timers and
+/// rate crossings, dispatching key publications), evaluates the domain
+/// watches, and returns up to `budget` normal/background wakes (urgent ones
+/// always) as a flat list, `REACT_WAKE_STRIDE` numbers per wake:
+/// `subscriber, lane, reason, source, source_kind`. `source` is the cell of a
+/// watch wake, the key id of a key wake (with `source_kind` its key kind), or
+/// the model of a rate wake.
+// /proc/react_step (verdigris/ffi/src/reactor.rs)
+/proc/vg_react_step(now, budget)
+	var/static/__f = load_ext(VERDIGRIS, "byond:react_step_ffi")
+	return call_ext(__f)(now, budget)
+
+/// Live subscriptions of `subscriber` (tests and the audit).
+// /proc/react_subscriptions (verdigris/ffi/src/reactor.rs)
+/proc/vg_react_subscriptions(sub)
+	var/static/__f = load_ext(VERDIGRIS, "byond:react_subscriptions_ffi")
+	return call_ext(__f)(sub)
+
+/// `REACT_WHEN` band: wakes when `cell`'s channel `ch` moves into a
+/// different band of the increasing `levels` list (and once at registration).
+// /proc/react_watch_band (verdigris/ffi/src/reactor.rs)
+/proc/vg_react_watch_band(domain, sub, lane, cell, ch, levels, hysteresis)
+	var/static/__f = load_ext(VERDIGRIS, "byond:react_watch_band_ffi")
+	return call_ext(__f)(domain, sub, lane, cell, ch, levels, hysteresis)
+
+/// `REACT_ON`: wakes when any channel in `mask` of `cell` moves past its
+/// hysteresis. Returns the token.
+// /proc/react_watch_changed (verdigris/ffi/src/reactor.rs)
+/proc/vg_react_watch_changed(domain, sub, lane, cell, mask)
+	var/static/__f = load_ext(VERDIGRIS, "byond:react_watch_changed_ffi")
+	return call_ext(__f)(domain, sub, lane, cell, mask)
+
+/// `REACT_WHEN` difference: `a - b` (or `|a - b|` with `abs`) on channel
+/// `ch` crosses `value` like a threshold.
+// /proc/react_watch_difference (verdigris/ffi/src/reactor.rs)
+/proc/vg_react_watch_difference(domain, sub, lane, a, b, ch, cmp, value, hysteresis, abs)
+	var/static/__f = load_ext(VERDIGRIS, "byond:react_watch_difference_ffi")
+	return call_ext(__f)(domain, sub, lane, a, b, ch, cmp, value, hysteresis, abs)
+
+/// `REACT_WHEN` threshold: `cmp` 0 above / 1 below `value` on channel `ch`;
+/// `hysteresis` < 0 takes the channel's; `both_edges` also wakes on leaving.
+// /proc/react_watch_threshold (verdigris/ffi/src/reactor.rs)
+/proc/vg_react_watch_threshold(domain, sub, lane, cell, ch, cmp, value, hysteresis, both_edges)
+	var/static/__f = load_ext(VERDIGRIS, "byond:react_watch_threshold_ffi")
+	return call_ext(__f)(domain, sub, lane, cell, ch, cmp, value, hysteresis, both_edges)
 
 /// Fills in the first unused slot in the gas mixtures vector, or adds another one, then sets the argument ByondValue to point to it.
 // /datum/gas_mixture/proc/__gasmixture_register (verdigris/domains/gas/src/lib.rs)
