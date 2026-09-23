@@ -27,7 +27,7 @@ Ask Mothblocks if they're around
 #define RAD_MOB_KNOCKDOWN_AMOUNT 3
 
 /// Invalidates SSradiation's cached shielding paths. Use when anything that shields radiation changes.
-#define RAD_SHIELDING_CHANGED if(SSradiation) { SSradiation.shielding_revision++ }
+#define RAD_SHIELDING_CHANGED if(SSradiation) SSradiation.shielding_revision++
 /// Cached source/target insulation entries kept before the radiation path cache is flushed.
 #define RAD_PATH_CACHE_MAX 4096
 #define RAD_NO_INSULATION 1.0 // For things that shouldn't become irradiated for whatever reason
