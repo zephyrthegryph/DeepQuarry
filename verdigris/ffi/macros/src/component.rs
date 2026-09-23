@@ -538,6 +538,7 @@ fn component_glue(
     let registered_static = format_ident!("__{}_REGISTERED", lower.to_uppercase());
     let with_fn = format_ident!("__{lower}_with");
     let cell_of_fn = format_ident!("__{lower}_cell_of");
+    let index_fn = format_ident!("__{lower}_index");
     let bind_fn = format_ident!("{lower}_bind");
     let bind_path = LitStr::new(&format!("/proc/{lower}_bind"), struct_ident.span());
 
@@ -550,7 +551,11 @@ fn component_glue(
         let name = f.ident.to_string();
         let ident = &f.ident;
         let suffix = f.attr.unit.as_ref().map(|u| format!(" {}", u.value())).unwrap_or_default();
-        quote! { (#name.into(), ::std::format!("{}{}", v.#ident, #suffix)) }
+        if f.array_elem().is_some() {
+            quote! { (#name.into(), ::std::format!("{:?}{}", v.#ident, #suffix)) }
+        } else {
+            quote! { (#name.into(), ::std::format!("{}{}", v.#ident, #suffix)) }
+        }
     });
 
     // --- get_*/set_* (config), get_* (state), get_*/push_* (input) -------
@@ -565,6 +570,38 @@ fn component_glue(
         let set_path = LitStr::new(&format!("{dm_path}/proc/set_{field_str}"), field.span());
         let validate = format_ident!("validate_{field}");
         let variant = pascal_case(field);
+        if let Some(elem) = f.array_elem() {
+            // An enum-keyed array field crosses one element at a time:
+            // `get_<field>(index)`/`set_<field>(index, value)`, the `*At`
+            // command and `validate_<field>_at` (§2).
+            let validate_at = format_ident!("validate_{field}_at");
+            let at_variant = format_ident!("{variant}At");
+            let read_to_byond = value_to_byond(elem, quote! { v.#field.get(idx).copied().unwrap_or_default() });
+            let stored_to_byond = value_to_byond(elem, quote! { v });
+            let from_byond = byond_to_value(elem, quote! { value });
+            procs.extend(quote! {
+                #[cfg(target_arch = "x86")]
+                #[::auxmacros::bind(#get_path)]
+                fn #get_fn(entity: ::byondapi::value::ByondValue, index: ::byondapi::value::ByondValue) -> ::eyre::Result<::byondapi::value::ByondValue> {
+                    let cell = #cell_of_fn(&entity)?;
+                    let idx = #index_fn(&index)?;
+                    let v = #with_fn(|w| w.read(cell).ok_or_else(|| ::eyre::eyre!("{} row {cell} out of range", #dm)))?;
+                    ::std::result::Result::Ok(#read_to_byond)
+                }
+
+                #[cfg(target_arch = "x86")]
+                #[::auxmacros::bind(#set_path)]
+                fn #set_fn(entity: ::byondapi::value::ByondValue, index: ::byondapi::value::ByondValue, value: ::byondapi::value::ByondValue) -> ::eyre::Result<::byondapi::value::ByondValue> {
+                    let cell = #cell_of_fn(&entity)?;
+                    let idx = #index_fn(&index)?;
+                    let raw = #from_byond;
+                    let v = #struct_ident::#validate_at(raw).map_err(|e| ::eyre::eyre!("field `{}`: {}", #field_str, e))?;
+                    #with_fn(|w| w.submit(cell, #command_ident::#at_variant(idx, v)).map_err(|e| ::eyre::eyre!("{e}")))?;
+                    ::std::result::Result::Ok(#stored_to_byond)
+                }
+            });
+            continue;
+        }
         let read_to_byond = value_to_byond(ty, quote! { v.#field });
         let stored_to_byond = value_to_byond(ty, quote! { v });
         let from_byond = byond_to_value(ty, quote! { value });
@@ -642,7 +679,8 @@ fn component_glue(
     }
 
     // --- bind(): entity, init_<config>..., <input>... ---------------------
-    let bind_params = config
+    let scalar_config: Vec<&ParsedField> = config.iter().copied().filter(|f| f.array_elem().is_none()).collect();
+    let bind_params = scalar_config
         .iter()
         .map(|f| {
             let p = format_ident!("init_{}", f.ident);
@@ -652,7 +690,7 @@ fn component_glue(
             let p = &f.ident;
             quote! { #p: ::byondapi::value::ByondValue }
         }));
-    let config_assigns = config.iter().map(|f| {
+    let config_assigns = scalar_config.iter().map(|f| {
         let field = &f.ident;
         let ty = &f.ty;
         let p = format_ident!("init_{}", f.ident);
@@ -724,6 +762,18 @@ fn component_glue(
                 }
             });
             #store_static.with(|s| f(&mut s.borrow_mut()))
+        }
+
+        /// An array field's element index from DM (a whole, non-negative
+        /// number).
+        #[cfg(target_arch = "x86")]
+        #[allow(dead_code, clippy::cast_possible_truncation, clippy::cast_sign_loss)]
+        fn #index_fn(index: &::byondapi::value::ByondValue) -> ::eyre::Result<usize> {
+            let i = index.get_number()?;
+            if !(i >= 0.0 && i.fract() == 0.0) {
+                ::eyre::bail!("bad array index {i}");
+            }
+            ::std::result::Result::Ok(i as usize)
         }
 
         #[cfg(target_arch = "x86")]

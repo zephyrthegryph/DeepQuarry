@@ -135,6 +135,76 @@
 /obj/machinery/atmospherics/binary/pump/vg_dispatch_gas_event(event_id)
 	pump_dispatch_event(event_id)
 
+// ---- GasMix (gas kind 2; verdigris/domains/gas/src/kind/gas_mix.rs) ----
+
+#define VG_GAS_GASMIX 2
+
+/obj/item/gas_mix_holder
+	vg_gas = VG_GAS_GASMIX
+
+/obj/item/gas_mix_holder/var/tmp/init_temperature = T20C
+/obj/item/gas_mix_holder/var/tmp/init_volume = 70.0
+
+#define VG_GASMIX_MOLES_MIN 0
+#define VG_GASMIX_MOLES_MAX 1000000
+#define VG_GASMIX_TEMPERATURE_MIN 2.7
+#define VG_GASMIX_TEMPERATURE_MAX 10000
+#define VG_GASMIX_VOLUME_MIN 0
+#define VG_GASMIX_VOLUME_MAX 100000
+
+/// mol; clamped to VG_GASMIX_MOLES_MIN..MAX.
+/obj/item/gas_mix_holder/proc/get_moles(index)
+	return vg_gas_mix_get_moles(vg_entity, index) // mol
+
+/// Returns the stored value.
+/obj/item/gas_mix_holder/proc/set_moles(index, value)
+	return vg_gas_mix_set_moles(vg_entity, index, value)
+
+/// K; clamped to VG_GASMIX_TEMPERATURE_MIN..MAX.
+/obj/item/gas_mix_holder/proc/get_temperature()
+	return vg_gas_mix_get_temperature(vg_entity) // K
+
+/// Returns the stored value.
+/obj/item/gas_mix_holder/proc/set_temperature(value)
+	return vg_gas_mix_set_temperature(vg_entity, value)
+
+/// L; clamped to VG_GASMIX_VOLUME_MIN..MAX.
+/obj/item/gas_mix_holder/proc/get_volume()
+	return vg_gas_mix_get_volume(vg_entity) // L
+
+/// Returns the stored value.
+/obj/item/gas_mix_holder/proc/set_volume(value)
+	return vg_gas_mix_set_volume(vg_entity, value)
+
+/// temperature, volume in one call.
+/obj/item/gas_mix_holder/proc/gas_mix_query_ui()
+	return vg_gas_mix_query_ui(vg_entity)
+
+/obj/item/gas_mix_holder/vg_bind_gas(entity)
+	return vg_gas_mix_bind(entity, init_temperature, init_volume)
+
+#define VG_GASMIX_EVENT_OVERPRESSURE 0
+#define VG_GASMIX_EVENT_DEPLETED 1
+
+/// Generated no-op default. Override to react to the event.
+/obj/item/gas_mix_holder/proc/on_gas_mix_overpressure()
+	return
+
+/// Generated no-op default. Override to react to the event.
+/obj/item/gas_mix_holder/proc/on_gas_mix_depleted()
+	return
+
+/// Dispatches one drained event (§8) to its named handler.
+/obj/item/gas_mix_holder/proc/gas_mix_dispatch_event(event_id)
+	switch(event_id)
+		if(0)
+			on_gas_mix_overpressure()
+		if(1)
+			on_gas_mix_depleted()
+
+/obj/item/gas_mix_holder/vg_dispatch_gas_event(event_id)
+	gas_mix_dispatch_event(event_id)
+
 // ---- One entry point per bound atom -------------------------------------
 
 /// Binds every component this atom's type declares (base on_materialize(), L2).

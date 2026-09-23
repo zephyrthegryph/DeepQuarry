@@ -61,6 +61,29 @@ pub fn attach(entity: EntityId, domain: usize, comp: ComponentRef) -> Result<(),
     ENTITIES.with_borrow_mut(|t| t.attach(entity, domain, comp))
 }
 
+/// Frees an entity a domain minted for itself (a node DM still names by a
+/// domain key rather than a `vg_entity`), without calling back into that
+/// domain's [`registry::DomainRegistry::detach`]: the caller is the domain,
+/// and has already dropped its own row.
+pub fn release(entity: EntityId) {
+    ENTITIES.with_borrow_mut(|t| {
+        let Ok(slots) = t.components(entity) else {
+            return;
+        };
+        for (domain, _) in slots.iter() {
+            let _ = t.detach(entity, domain);
+        }
+        let _ = t.unbind(entity);
+    });
+}
+
+/// The component `entity` has in `domain`, if it is live and has one of
+/// `kind`.
+#[must_use]
+pub fn component_of(entity: EntityId, domain: usize, kind: u16) -> Option<ComponentRef> {
+    ENTITIES.with_borrow(|t| t.component(entity, domain, kind).ok())
+}
+
 /// The `f32` DM should store in `vg_entity` (the raw id plus one; see
 /// [`decode`]).
 #[must_use]

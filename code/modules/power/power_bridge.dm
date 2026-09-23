@@ -43,7 +43,7 @@ GLOBAL_VAR_INIT(power_next_key, 1)
 /datum/controller/subsystem/machines
 	/// Queued power edits and commands: `op, n, n values` each (POWER_OP_*).
 	var/list/power_ops = list()
-	/// Region id text -> its /datum/powernet.
+	/// Region id (Rust's raw handle bits + 1) -> its /datum/powernet.
 	var/list/power_regions = list()
 	/// While above zero, queued power edits are held (an explosion epoch).
 	var/power_batch_depth = 0
@@ -82,13 +82,13 @@ GLOBAL_VAR_INIT(power_next_key, 1)
 /datum/controller/subsystem/machines/proc/power_facade(id, key)
 	if(!id)
 		return null
-	var/datum/powernet/network = power_regions["[id]"]
+	var/datum/powernet/network = power_regions[id]
 	if(network)
 		if(key)
 			network.anchor_key = key
 		return network
 	network = new(id, key)
-	power_regions["[id]"] = network
+	power_regions[id] = network
 	if(key)
 		var/list/info = vg_power_region(key)
 		if(info && info[1] == id)
@@ -101,7 +101,7 @@ GLOBAL_VAR_INIT(power_next_key, 1)
 		return null
 	power_flush(TRUE)
 	var/list/info = vg_power_region(key)
-	if(!info || (connected_only && info[12] <= 1))
+	if(!info || (connected_only && info[10] <= 1))
 		return null
 	var/datum/powernet/network = power_facade(info[1], key)
 	network.read_info(info)
@@ -148,12 +148,12 @@ GLOBAL_VAR_INIT(power_next_key, 1)
 				if(istype(machine))
 					machine.power_bind(events[at + 1], events[at + 2])
 			if(POWER_EV_REGION)
-				var/datum/powernet/network = power_regions["[events[at]]"]
+				var/datum/powernet/network = power_regions[events[at]]
 				network?.read_step(events, at)
 			if(POWER_EV_RETIRED)
-				var/datum/powernet/network = power_regions["[events[at]]"]
+				var/datum/powernet/network = power_regions[events[at]]
 				if(network)
-					power_regions -= "[events[at]]"
+					power_regions -= events[at]
 					network.retire()
 			if(POWER_EV_APC)
 				var/obj/machinery/power/apc/apc = power_key_owner(events[at])
@@ -164,7 +164,7 @@ GLOBAL_VAR_INIT(power_next_key, 1)
 				if(istype(storage))
 					storage.power_event(events, at)
 			if(POWER_EV_BROWNOUT)
-				var/datum/powernet/network = power_regions["[events[at]]"]
+				var/datum/powernet/network = power_regions[events[at]]
 				network?.set_brownout(events[at + 1])
 	power_last_events = count
 	for(var/id in power_regions)

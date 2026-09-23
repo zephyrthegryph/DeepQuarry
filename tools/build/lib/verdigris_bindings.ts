@@ -226,6 +226,10 @@ type ComponentField = {
   default: string | null;
   onInvalid: 'clamp' | 'reject';
   from: string[];
+  /** A fixed-size, enum-keyed array (`[T; N]`): crosses one element at a
+   * time (`get_<f>(index)`/`set_<f>(index, value)`) and is never a bind
+   * argument (it starts at its default). */
+  array: boolean;
 };
 
 type QueryGroup = { name: string; fields: string[] };
@@ -267,7 +271,7 @@ function stripBrackets(s: string): string[] {
   return splitTopLevel(m[1]).map((x) => x.trim());
 }
 
-function parseFieldAttr(argsText: string, name: string, at: string): ComponentField {
+function parseFieldAttr(argsText: string, name: string, array: boolean, at: string): ComponentField {
   const args = splitTopLevel(argsText);
   const role = args.shift() as FieldRole | undefined;
   if (role !== 'config' && role !== 'state' && role !== 'input') {
@@ -290,6 +294,7 @@ function parseFieldAttr(argsText: string, name: string, at: string): ComponentFi
     default: kv.default ?? null,
     onInvalid: (kv.on_invalid as 'clamp' | 'reject' | undefined) ?? 'clamp',
     from: kv.from ? stripBrackets(kv.from) : [],
+    array,
   };
 }
 
@@ -317,9 +322,9 @@ export function scanComponents(root: string): Component[] {
           if (/^\s*\}\s*$/.test(lines[k])) break;
           const fm = /^\s*#\[vg\((.*)\)\]\s*$/.exec(lines[k]);
           if (!fm) continue;
-          const dm = /^\s*(?:pub\s+)?(\w+)\s*:\s*[\w:<>]+\s*,?\s*$/.exec(lines[k + 1] ?? '');
+          const dm = /^\s*(?:pub\s+)?(\w+)\s*:\s*([\w:<>]+|\[\s*[\w:<>]+\s*;\s*\w+\s*\])\s*,?\s*$/.exec(lines[k + 1] ?? '');
           if (!dm) throw new Error(`${rel}:${k + 2}: expected a field declaration after #[vg(...)]`);
-          fields.push(parseFieldAttr(fm[1], dm[1], `${rel}:${k + 1}`));
+          fields.push(parseFieldAttr(fm[1], dm[1], dm[2].startsWith('['), `${rel}:${k + 1}`));
           k++;
         }
         for (const f of fields) {
@@ -370,8 +375,10 @@ export function scanComponents(root: string): Component[] {
         if (!enumMatch) throw new Error(`${rel}:${i + 1}: #[vg::events] is not followed by an enum`);
         let body = '';
         for (let k = j; k < lines.length; k++) {
-          body += lines[k];
-          if (lines[k].includes('}')) break;
+          // Doc and line comments on variants are not part of the body.
+          const code = lines[k].replace(/\/\/.*$/, '');
+          body += code;
+          if (code.includes('}')) break;
         }
         const inner = /\{([^}]*)\}/.exec(body);
         if (!inner) throw new Error(`${rel}:${i + 1}: could not find the event enum's body`);
@@ -423,8 +430,9 @@ function componentBinds(components: Component[]): Bind[] {
     const state = c.fields.filter((f) => f.role === 'state');
     const input = c.fields.filter((f) => f.role === 'input');
     for (const f of config) {
-      push(`${lower}_get_${f.name}`, ['entity'], `${c.dmType}/proc/get_${f.name}`);
-      push(`${lower}_set_${f.name}`, ['entity', 'value'], `${c.dmType}/proc/set_${f.name}`);
+      const at = f.array ? ['index'] : [];
+      push(`${lower}_get_${f.name}`, ['entity', ...at], `${c.dmType}/proc/get_${f.name}`);
+      push(`${lower}_set_${f.name}`, ['entity', ...at, 'value'], `${c.dmType}/proc/set_${f.name}`);
     }
     for (const f of state) {
       push(`${lower}_get_${f.name}`, ['entity'], `${c.dmType}/proc/get_${f.name}`);
@@ -436,7 +444,11 @@ function componentBinds(components: Component[]): Bind[] {
     // `entity, init_<config>..., <input>...`: the exact order
     // `component_glue()`'s `bind_params` builds (config fields first, then
     // input fields, both in declaration order).
-    const bindArgs = ['entity', ...config.map((f) => `init_${f.name}`), ...input.map((f) => f.name)];
+    const bindArgs = [
+      'entity',
+      ...config.filter((f) => !f.array).map((f) => `init_${f.name}`),
+      ...input.map((f) => f.name),
+    ];
     push(`${lower}_bind`, bindArgs, `/proc/${lower}_bind`);
     for (const g of c.queries) {
       push(`${lower}_query_${g.name}`, ['entity'], `/proc/${lower}_query_${g.name}`);
@@ -557,6 +569,7 @@ function renderComponentsDm(components: Component[]): string {
     const inputFields = comp.fields.filter((f) => f.role === 'input');
 
     for (const f of configFields) {
+      if (f.array) continue;
       const dmDefault = f.default === 'true' ? 'TRUE' : f.default === 'false' ? 'FALSE' : f.default;
       dm += `${dmType}/var/tmp/init_${f.name} = ${dmDefault}\n`;
     }
@@ -576,6 +589,12 @@ function renderComponentsDm(components: Component[]): string {
           ? ` ${f.onInvalid === 'clamp' ? 'clamped' : 'rejected'} to VG_${structName.toUpperCase()}_${f.name.toUpperCase()}_MIN..MAX.`
           : '.';
       dm += `/// ${f.unit ?? 'unitless'};${range}\n`;
+      if (f.array) {
+        dm += `${dmType}/proc/get_${f.name}(index)\n\treturn vg_${lower}_get_${f.name}(vg_entity, index)${unitComment(f)}\n\n`;
+        dm += `/// Returns the stored value.\n`;
+        dm += `${dmType}/proc/set_${f.name}(index, value)\n\treturn vg_${lower}_set_${f.name}(vg_entity, index, value)\n\n`;
+        continue;
+      }
       dm += `${dmType}/proc/get_${f.name}()\n\treturn vg_${lower}_get_${f.name}(vg_entity)${unitComment(f)}\n\n`;
       dm += `/// Returns the stored value.\n`;
       dm += `${dmType}/proc/set_${f.name}(value)\n\treturn vg_${lower}_set_${f.name}(vg_entity, value)\n\n`;
@@ -600,7 +619,7 @@ function renderComponentsDm(components: Component[]): string {
     }
 
     const inputArgs = inputFields.map((f) => `${lower}_input_${f.name}()`);
-    const initArgs = configFields.map((f) => `init_${f.name}`);
+    const initArgs = configFields.filter((f) => !f.array).map((f) => `init_${f.name}`);
     dm += `${dmType}/vg_bind_${domain}(entity)\n\treturn vg_${lower}_bind(entity, ${[...initArgs, ...inputArgs].join(', ')})\n\n`;
 
     if (inputFields.length) {

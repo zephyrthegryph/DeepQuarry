@@ -96,6 +96,8 @@ pub fn expand(attr: proc_macro::TokenStream) -> proc_macro::TokenStream {
                     .iter()
                     .map(|q| match q {
                         ::vg_core::component::QueryValue::F32(x) => ::byondapi::value::ByondValue::from(*x),
+                        #[allow(clippy::cast_possible_truncation)]
+                        ::vg_core::component::QueryValue::F64(x) => ::byondapi::value::ByondValue::from(*x as f32),
                         ::vg_core::component::QueryValue::Bool(b) => {
                             ::byondapi::value::ByondValue::from(if *b { 1.0f32 } else { 0.0f32 })
                         }

@@ -24,7 +24,7 @@
 #endif
 
 /// Bind-set hash shared with verdigris/ffi/src/abi.rs; checked by verdigris_init().
-#define VERDIGRIS_ABI "f1e25b1b3fe15786"
+#define VERDIGRIS_ABI "b86ff0d540bc801c"
 
 // Numeric registry (@dm-define constants in the Rust sources).
 
@@ -316,10 +316,10 @@
 // verdigris/ffi/src/power.rs
 #define POWER_OP_SUPPLY 4
 
-/// Numbers in a `vg_power_region` reply: region, avail, load, viewavail,
-/// viewload, netexcess, supply, eqp, lgt, env, capacity, members.
+/// Numbers in a `vg_power_region` reply: region, avail, load, netexcess,
+/// supply, eqp, lgt, env, capacity, members.
 // verdigris/ffi/src/power.rs
-#define POWER_REGION_STRIDE 12
+#define POWER_REGION_STRIDE 10
 
 /// SMES flags.
 // verdigris/ffi/src/power.rs
@@ -414,6 +414,10 @@
 // verdigris/domains/gas/src/kind/pump.rs
 #define VG_DOMAIN_GAS 0
 
+/// Power's domain index in the entity table (gas is 0).
+// verdigris/ffi/src/power.rs
+#define VG_DOMAIN_POWER 1
+
 /// The bits of a `vg_entity` value (after subtracting the raw-plus-one
 /// offset) that carry the slot index, matching `vg_core::entity::INDEX_BITS`
 /// (checked in this module's tests). DM computes an entity's table index
@@ -421,6 +425,11 @@
 /// know anything else about id packing.
 // verdigris/ffi/src/entity.rs
 #define VG_ENTITY_INDEX_MASK 524287
+
+/// The one component kind a power row uses: a cable piece and a machine
+/// node are both rows of the same store, keyed by DM's power key.
+// verdigris/ffi/src/power.rs
+#define VG_POWER_NODE 1
 
 // Binds.
 
@@ -701,6 +710,66 @@
 	var/static/__f = load_ext(VERDIGRIS, "byond:fuel_amount_hook_ffi")
 	VG_COUNT_FFI_CALL
 	return call_ext(__f)(src_ref, temp)
+
+// /proc/gas_mix_bind (verdigris/domains/gas/src/kind/gas_mix.rs)
+/proc/vg_gas_mix_bind(entity, init_temperature, init_volume)
+	var/static/__f = load_ext(VERDIGRIS, "byond:gas_mix_bind_ffi")
+	VG_COUNT_FFI_CALL
+	return call_ext(__f)(entity, init_temperature, init_volume)
+
+// /obj/item/gas_mix_holder/proc/get_moles (verdigris/domains/gas/src/kind/gas_mix.rs)
+/proc/vg_gas_mix_get_moles(entity, index)
+	var/static/__f = load_ext(VERDIGRIS, "byond:gas_mix_get_moles_ffi")
+	VG_COUNT_FFI_CALL
+	return call_ext(__f)(entity, index)
+
+// /obj/item/gas_mix_holder/proc/get_pressure (verdigris/domains/gas/src/kind/gas_mix.rs)
+/proc/vg_gas_mix_get_pressure(entity)
+	var/static/__f = load_ext(VERDIGRIS, "byond:gas_mix_get_pressure_ffi")
+	VG_COUNT_FFI_CALL
+	return call_ext(__f)(entity)
+
+// /obj/item/gas_mix_holder/proc/get_temperature (verdigris/domains/gas/src/kind/gas_mix.rs)
+/proc/vg_gas_mix_get_temperature(entity)
+	var/static/__f = load_ext(VERDIGRIS, "byond:gas_mix_get_temperature_ffi")
+	VG_COUNT_FFI_CALL
+	return call_ext(__f)(entity)
+
+// /obj/item/gas_mix_holder/proc/get_total (verdigris/domains/gas/src/kind/gas_mix.rs)
+/proc/vg_gas_mix_get_total(entity)
+	var/static/__f = load_ext(VERDIGRIS, "byond:gas_mix_get_total_ffi")
+	VG_COUNT_FFI_CALL
+	return call_ext(__f)(entity)
+
+// /obj/item/gas_mix_holder/proc/get_volume (verdigris/domains/gas/src/kind/gas_mix.rs)
+/proc/vg_gas_mix_get_volume(entity)
+	var/static/__f = load_ext(VERDIGRIS, "byond:gas_mix_get_volume_ffi")
+	VG_COUNT_FFI_CALL
+	return call_ext(__f)(entity)
+
+// /proc/gas_mix_query_ui (verdigris/domains/gas/src/kind/gas_mix.rs)
+/proc/vg_gas_mix_query_ui(entity)
+	var/static/__f = load_ext(VERDIGRIS, "byond:gas_mix_query_ui_ffi")
+	VG_COUNT_FFI_CALL
+	return call_ext(__f)(entity)
+
+// /obj/item/gas_mix_holder/proc/set_moles (verdigris/domains/gas/src/kind/gas_mix.rs)
+/proc/vg_gas_mix_set_moles(entity, index, value)
+	var/static/__f = load_ext(VERDIGRIS, "byond:gas_mix_set_moles_ffi")
+	VG_COUNT_FFI_CALL
+	return call_ext(__f)(entity, index, value)
+
+// /obj/item/gas_mix_holder/proc/set_temperature (verdigris/domains/gas/src/kind/gas_mix.rs)
+/proc/vg_gas_mix_set_temperature(entity, value)
+	var/static/__f = load_ext(VERDIGRIS, "byond:gas_mix_set_temperature_ffi")
+	VG_COUNT_FFI_CALL
+	return call_ext(__f)(entity, value)
+
+// /obj/item/gas_mix_holder/proc/set_volume (verdigris/domains/gas/src/kind/gas_mix.rs)
+/proc/vg_gas_mix_set_volume(entity, value)
+	var/static/__f = load_ext(VERDIGRIS, "byond:gas_mix_set_volume_ffi")
+	VG_COUNT_FFI_CALL
+	return call_ext(__f)(entity, value)
 
 /// Test hook: runs `frames` gas frames to completion, one after another,
 /// deterministically (no wall clock), and returns their events like
@@ -1159,6 +1228,16 @@
 	VG_COUNT_FFI_CALL
 	return call_ext(__f)(ops)
 
+/// This entity's power key, or `null` if it has no power component.
+///
+/// # Errors
+/// A bad `entity` value.
+// /proc/power_key_of (verdigris/ffi/src/power.rs)
+/proc/vg_power_key_of(entity)
+	var/static/__f = load_ext(VERDIGRIS, "byond:power_key_of_ffi")
+	VG_COUNT_FFI_CALL
+	return call_ext(__f)(entity)
+
 /// Keys of every cable and machine on `key`'s region.
 // /proc/power_members (verdigris/ffi/src/power.rs)
 /proc/vg_power_members(key)
@@ -1166,14 +1245,17 @@
 	VG_COUNT_FFI_CALL
 	return call_ext(__f)(key)
 
-/// The region `key` is on, `POWER_REGION_STRIDE` numbers, or null.
+/// The region `key` is on, `POWER_REGION_STRIDE` numbers (region, avail,
+/// load, netexcess, supply, eqp, lgt, env, 0 (reserved), members), or
+/// null.
 // /proc/power_region (verdigris/ffi/src/power.rs)
 /proc/vg_power_region(key)
 	var/static/__f = load_ext(VERDIGRIS, "byond:power_region_ffi")
 	VG_COUNT_FFI_CALL
 	return call_ext(__f)(key)
 
-/// Forgets everything (world start and tests).
+/// Forgets everything (world start and admin repair), freeing every
+/// entity the power rows minted.
 // /proc/power_reset (verdigris/ffi/src/power.rs)
 /proc/vg_power_reset()
 	var/static/__f = load_ext(VERDIGRIS, "byond:power_reset_ffi")

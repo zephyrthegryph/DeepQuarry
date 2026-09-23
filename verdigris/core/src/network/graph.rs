@@ -86,7 +86,49 @@ pub trait NetworkKind:
     fn apply(payload: &mut Self::Payload, summary: &Self::Summary, cmd: &Self::Command) {
         let _ = (payload, summary, cmd);
     }
+
+    /// The topology law (`rust_architecture.md` §4.5): whether a node at
+    /// `a`'s cell and one at `b`'s cell connect. [`super::host::NetworkHost`]
+    /// calls this to confirm every candidate [`NetworkKind::reach`] finds, so
+    /// DM never sends topology -- binding a node at a cell is enough. Must be
+    /// symmetric (`connects(a, b) == connects(b, a)`): [`super::host::NetworkHost`]
+    /// only asks a new node's own `reach`, trusting that a kind whose reach
+    /// rule is direction-symmetric (a reverse of a reverse is the original
+    /// direction) never needs the other side's `reach` re-checked. The
+    /// default never connects anything.
+    fn connects(a: (&Self::Node, CellId), b: (&Self::Node, CellId)) -> bool {
+        let _ = (a, b);
+        false
+    }
+
+    /// Cells a node at `cell` might connect to (`rust_architecture.md`
+    /// §4.5's occupancy index): the domain's own reach rule -- grid-face
+    /// adjacency, a diagonal combination, an explicit cross-z link,
+    /// whatever [`NetworkKind::connects`] cares about. A superset is fine;
+    /// [`NetworkKind::connects`] confirms each one. The default reaches
+    /// nothing beyond `cell` itself, which [`super::host::NetworkHost`]
+    /// always includes regardless (same-cell nodes are candidates too).
+    fn reach(node: &Self::Node, cell: CellId) -> Vec<CellId> {
+        let _ = node;
+        vec![cell]
+    }
+
+    /// A non-geometric connection group (`rust_architecture.md` §4.5: this
+    /// is what replaces power's `links` map): nodes that share a non-`None`
+    /// group id connect wherever they are, in addition to whatever
+    /// [`NetworkKind::reach`] finds. `None` (the default) opts a node out;
+    /// [`NetworkKind::connects`] still confirms every pair a shared group
+    /// produces.
+    fn link_group(node: &Self::Node) -> Option<u32> {
+        let _ = node;
+        None
+    }
 }
+
+/// A grid cell index (`grid::GridDims`'s turf index): what
+/// [`NetworkKind::connects`] and [`super::host::NetworkHost`]'s occupancy
+/// index key nodes by.
+pub type CellId = u32;
 
 pub type NodeId<K> = Handle<Node<K>>;
 pub type EdgeId<K> = Handle<Edge<K>>;

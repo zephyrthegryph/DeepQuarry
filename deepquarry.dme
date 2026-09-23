@@ -5275,6 +5275,7 @@
 #include "code\ATMOSPHERICS\gasmixtures\immutable_mixtures.dm"
 #include "code\ATMOSPHERICS\gasmixtures\reaction_factors.dm"
 #include "code\ATMOSPHERICS\gasmixtures\reactions.dm"
+#include "code\ATMOSPHERICS\gas_mix_holder.dm"
 // atom_flags_1 declares /atom/flags_1 so /atom/Initialize can set INITIALIZED_1
 // for SSair.add_to_active routing.
 #include "code\ATMOSPHERICS\atom_flags_1.dm"

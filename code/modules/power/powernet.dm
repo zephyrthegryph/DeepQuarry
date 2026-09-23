@@ -18,7 +18,10 @@
 
 	var/avail = 0       // supply this step (W)
 	var/load = 0        // delivered this step (W)
-	var/viewavail = 0   // smoothed for power monitors
+	// Rust reports raw avail/load only (rust_core.md §15: no presentation
+	// state in the step); viewavail/viewload are this datum's own display
+	// smoothing for power monitors, eased 80/20 per read.
+	var/viewavail = 0
 	var/viewload = 0
 	var/netexcess = 0   // avail - load at the last step
 	/// Lost supply or overdrawn (Rust brownout event).
@@ -51,8 +54,8 @@
 	if(problem_timer)
 		deltimer(problem_timer)
 		problem_timer = null
-	if(region_id && SSmachines.power_regions["[region_id]"] == src)
-		SSmachines.power_regions -= "[region_id]"
+	if(region_id && SSmachines.power_regions[region_id] == src)
+		SSmachines.power_regions -= region_id
 	for(var/obj/machinery/power/M as anything in nodes)
 		if(M.powernet == src)
 			M.powernet = null
@@ -70,18 +73,24 @@
 /datum/powernet/proc/read_info(list/info)
 	avail = info[2]
 	load = info[3]
-	viewavail = info[4]
-	viewload = info[5]
-	netexcess = info[6]
+	netexcess = info[4]
+	smooth_view()
 
-/// A POWER_EV_REGION record starting at `at`.
+/// A POWER_EV_REGION record starting at `at`: region, avail, load,
+/// netexcess (raw, `POWER_REGION_STRIDE`-independent — see power_bridge.dm).
 /datum/powernet/proc/read_step(list/events, at)
 	avail = events[at + 1]
 	load = events[at + 2]
-	viewavail = events[at + 3]
-	viewload = events[at + 4]
-	netexcess = events[at + 5]
+	netexcess = events[at + 3]
+	smooth_view()
 	REACT_PUBLISH_OWN(src, REACT_KEY_POWERNET, REACT_POWERNET_RATE)
+
+/// Eases `viewavail`/`viewload` toward the raw numbers (80/20 per read):
+/// this datum's own display smoothing, not Rust's — the step reports raw
+/// numbers only (`rust_core.md` §15).
+/datum/powernet/proc/smooth_view()
+	viewavail = round(0.8 * viewavail + 0.2 * avail)
+	viewload = round(0.8 * viewload + 0.2 * load)
 
 /datum/powernet/proc/set_brownout(state)
 	state = !!state
