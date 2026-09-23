@@ -12,7 +12,7 @@
 /datum/chunk
 	var/list/obscuredTurfs = list()
 	var/list/visibleTurfs = list()
-	var/list/obscured = list()
+	var/list/obscured
 	var/list/turfs = list()
 	var/list/seenby
 	var/visible = 0
@@ -29,7 +29,7 @@
 	if(add_images)
 		var/client/client = eye.GetViewerClient()
 		if(client)
-			client.images += obscured
+			if(length(obscured)) client.images += obscured
 	eye.visibleChunks += src
 	visible++
 	LAZYADD(seenby, eye)
@@ -86,7 +86,7 @@
 
 	for(var/turf/t as anything in visAdded)
 		if(LAZYLEN(t.obfuscations) && t.obfuscations[obfuscation.type])
-			obscured -= t.obfuscations[obfuscation.type]
+			LAZYREMOVE(obscured, t.obfuscations[obfuscation.type])
 			for(var/mob/observer/eye/m as anything in seenby)
 				if(!m)
 					continue
@@ -102,7 +102,7 @@
 				ob_image.plane = PLANE_FULLSCREEN
 				t.obfuscations[obfuscation.type] = ob_image
 
-			obscured += t.obfuscations[obfuscation.type]
+			LAZYADD(obscured, t.obfuscations[obfuscation.type])
 			for(var/mob/observer/eye/m as anything in seenby)
 				if(!m)
 					LAZYREMOVE(seenby, m)
@@ -143,6 +143,6 @@
 			var/image/ob_image = image(obfuscation.icon, t, obfuscation.icon_state, OBFUSCATION_LAYER)
 			ob_image.plane = PLANE_FULLSCREEN
 			t.obfuscations[obfuscation.type] = ob_image
-		obscured += t.obfuscations[obfuscation.type]
+		LAZYADD(obscured, t.obfuscations[obfuscation.type])
 
 #undef UPDATE_BUFFER

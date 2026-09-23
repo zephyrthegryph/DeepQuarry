@@ -22,7 +22,7 @@ GLOBAL_REAL(logger, /datum/log_holder)
 	var/human_readable_enabled = FALSE
 
 	/// Cached ui_data
-	var/list/data_cache = list()
+	var/list/data_cache
 
 	/// Last time the ui_data was updated
 	var/last_data_update = 0
@@ -87,11 +87,11 @@ ADMIN_VERB(log_viewer_new, R_ADMIN|R_MOD|R_DEBUG, "View Round Logs", "View the r
 
 		category_map[category.category] = category_data
 
-	data_cache.Cut()
+	LAZYCLEARLIST(data_cache)
 	last_data_update = world.time
 
-	data_cache["categories"] = category_map
-	data_cache["last_data_update"] = last_data_update
+	LAZYSET(data_cache, "categories", category_map)
+	LAZYSET(data_cache, "last_data_update", last_data_update)
 
 /datum/log_holder/tgui_act(action, list/params, datum/tgui/ui, datum/tgui_state/state)
 	. = ..()

@@ -68,7 +68,7 @@ SUBSYSTEM_DEF(job)
 		if(!istype(dept))
 			job_debug_message("Job '[J.title]' is defined as being inside department '[D]', but it does not exist.")
 			continue
-		dept.jobs[J.title] = J
+		LAZYSET(dept.jobs, J.title, J)
 
 	// Now for the 'primary' department for a job, which is defined as being the first department in the list for a job.
 	// This results in no duplicates, which can be useful in some situations.
@@ -78,7 +78,7 @@ SUBSYSTEM_DEF(job)
 		if(!istype(dept))
 			job_debug_message("Job '[J.title]' has their primary department be '[primary_department]', but it does not exist.")
 		else
-			dept.primary_jobs[J.title] = J
+			LAZYSET(dept.primary_jobs, J.title, J)
 
 /datum/controller/subsystem/job/proc/setup_departments()
 	for(var/t in subtypesof(/datum/department))

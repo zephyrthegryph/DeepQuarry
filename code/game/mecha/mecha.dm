@@ -284,7 +284,7 @@
 		LAZYCLEARLIST(special_equipment)
 		for(var/obj/item/mecha_parts/mecha_equipment/E in equipment)
 			if(E.salvageable && prob(30))
-				WR.crowbar_salvage += E
+				LAZYADD(WR.crowbar_salvage, E)
 				E.forceMove(WR)
 				E.equip_ready = TRUE
 			else
@@ -296,15 +296,15 @@
 			if(istype(C))
 				C.damage_part(rand(10, 20))
 				C.detach()
-				WR.crowbar_salvage += C
+				LAZYADD(WR.crowbar_salvage, C)
 				C.forceMove(WR)
 
 		if(cell)
-			WR.crowbar_salvage += cell
+			LAZYADD(WR.crowbar_salvage, cell)
 			cell.forceMove(WR)
 			cell.charge = rand(0, cell.charge)
 		if(internal_tank)
-			WR.crowbar_salvage += internal_tank
+			LAZYADD(WR.crowbar_salvage, internal_tank)
 			internal_tank.forceMove(WR)
 	else
 		for(var/obj/item/mecha_parts/mecha_equipment/E in equipment)
@@ -1252,7 +1252,7 @@
 /obj/mecha/bullet_act(obj/item/projectile/Proj) //wrapper
 	if(istype(Proj, /obj/item/projectile/test))
 		var/obj/item/projectile/test/Test = Proj
-		Test.hit |= occupant // Register a hit on the occupant, for things like turrets, or in simple-mob cases stopping friendly fire in firing line mode.
+		LAZYOR(Test.hit, occupant) // Register a hit on the occupant, for things like turrets, or in simple-mob cases stopping friendly fire in firing line mode.
 		return
 
 	src.mecha_log_message("Hit by projectile. Type: [Proj.name]([armor_kind_name(Proj.injury_kind)]).",1)
@@ -2665,7 +2665,7 @@
 			output += "Micro Utility Module: [W.name] <a href='byond://?src=\ref[W];detach=1'>Detach</a><br>"
 		for(var/obj/item/mecha_parts/mecha_equipment/W in micro_weapon_equipment)
 			output += "Micro Weapon Module: [W.name] <a href='byond://?src=\ref[W];detach=1'>Detach</a><br>"
-	output += {"<b>Available hull slots:</b> [max_hull_equip-hull_equipment.len]<br>
+	output += {"<b>Available hull slots:</b> [max_hull_equip-length(hull_equipment)]<br>
 		<b>Available weapon slots:</b> [max_weapon_equip-weapon_equipment.len]<br>
 		<b>Available micro weapon slots:</b> [max_micro_weapon_equip-micro_weapon_equipment.len]<br>
 		<b>Available utility slots:</b> [max_utility_equip-utility_equipment.len]<br>
@@ -2965,7 +2965,7 @@
 			var/turf/T = get_turf(O)
 			if(T)
 				T.Entered(O)
-			src.mecha_log_message("Unloaded [O]. Cargo compartment capacity: [cargo_capacity - src.cargo.len]")
+			src.mecha_log_message("Unloaded [O]. Cargo compartment capacity: [cargo_capacity - length(src.cargo)]")
 	return
 
 	//debug

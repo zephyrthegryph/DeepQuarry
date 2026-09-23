@@ -39,9 +39,9 @@
 	// Stuff for moving cameras
 	var/turf/last_camera_turf
 
-	var/list/valid_earstyles = list()
-	var/list/valid_tailstyles = list()
-	var/list/valid_wingstyles = list()
+	var/list/valid_earstyles
+	var/list/valid_tailstyles
+	var/list/valid_wingstyles
 	var/list/valid_gradstyles
 	var/list/markings = null
 	var/cooldown //Anti-spam. If spammed, this can be REALLY laggy.
@@ -704,9 +704,9 @@
 			var/datum/sprite_accessory/hair/S = GLOB.hair_styles_list[hair_style]
 			hair_styles[++hair_styles.len] = list("name" = hair_style, "icon" = S.icon, "icon_state" = "[S.icon_state]_s")
 		data["hair_styles"] = hair_styles
-		data["ear_styles"] = valid_earstyles
-		data["tail_styles"] = valid_tailstyles
-		data["wing_styles"] = valid_wingstyles
+		data["ear_styles"] = (valid_earstyles || list())
+		data["tail_styles"] = (valid_tailstyles || list())
+		data["wing_styles"] = (valid_wingstyles || list())
 
 		markings = owner.get_prioritised_markings()
 		var/list/usable_markings = markings.Copy() ^ GLOB.body_marking_styles_list.Copy()
@@ -912,9 +912,9 @@
 	// Making the assumption that the available species remain constant
 	LAZYCLEARLIST(valid_hairstyles)
 	LAZYCLEARLIST(valid_facial_hairstyles)
-	valid_earstyles.Cut()
-	valid_tailstyles.Cut()
-	valid_wingstyles.Cut()
+	LAZYCLEARLIST(valid_earstyles)
+	LAZYCLEARLIST(valid_tailstyles)
+	LAZYCLEARLIST(valid_wingstyles)
 	LAZYCLEARLIST(valid_gradstyles)
 
 /datum/tgui_module/appearance_changer/proc/generate_data(mob/user, mob/living/carbon/human/target)

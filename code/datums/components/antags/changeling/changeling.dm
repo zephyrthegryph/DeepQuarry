@@ -22,7 +22,7 @@ GLOBAL_LIST_EMPTY_TYPED(powerinstances, /datum/power/changeling)
 
 /datum/component/antag/changeling
 	var/list/datum/absorbed_dna/absorbed_dna = list()
-	var/list/absorbed_languages = list() // Necessary because of set_species stuff
+	var/list/absorbed_languages // Necessary because of set_species stuff
 	var/absorbedcount = 0
 	var/lingabsorbedcount = 1	//Starts at one, because that's us
 	var/chem_charges = 20
@@ -131,7 +131,7 @@ GLOBAL_LIST_EMPTY_TYPED(powerinstances, /datum/power/changeling)
 		return
 
 	for(var/language in newDNA.languages)
-		comp.absorbed_languages |= language
+		LAZYOR(comp.absorbed_languages, language)
 
 	changeling_update_languages(comp.absorbed_languages)
 
@@ -176,7 +176,7 @@ GLOBAL_LIST_EMPTY_TYPED(powerinstances, /datum/power/changeling)
 					)
 
 	for(var/language in languages)
-		comp.absorbed_languages |= language
+		LAZYOR(comp.absorbed_languages, language)
 
 	var/mob/living/carbon/human/H = src
 	if(istype(H))

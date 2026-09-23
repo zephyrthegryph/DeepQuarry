@@ -176,7 +176,7 @@
 	var/destination_class = null								// Type to use in typesof(), to build destinations.
 
 	var/datum/shuttle_autopath/autopath = null					// Datum used to direct an autopilot.
-	var/list/autopaths = list()									// Potential autopaths the autopilot can use. The autopath's start var must equal current_destination to be viable.
+	var/list/autopaths									// Potential autopaths the autopilot can use. The autopath's start var must equal current_destination to be viable.
 	var/autopath_class = null									// Similar to destination_class, used for typesof().
 
 /datum/shuttle_web_master/New(new_shuttle, new_destination_class = null)
@@ -254,11 +254,11 @@
 				break
 		if(!valid)
 			log_mapping("Web shuttle autopath [P.type] pruned: references a destination with no landmark on this map.")
-			autopaths -= P
+			LAZYREMOVE(autopaths, P)
 			qdel(P)
 
 /datum/shuttle_web_master/proc/choose_path()
-	if(!autopaths.len || !current_destination)
+	if(!length(autopaths) || !current_destination)
 		return
 	for(var/datum/shuttle_autopath/path in autopaths)
 		if(path.start == current_destination.type)
@@ -290,7 +290,7 @@
 
 /datum/shuttle_web_master/proc/process_autopath()
 	if(!autopath) // If we don't have a path, get one.
-		if(!autopaths.len)
+		if(!length(autopaths))
 			// No flyable route exists from anywhere (e.g. every autopath was pruned
 			// because its destinations aren't on this map). Autopiloting is pointless;
 			// switch it off so the shuttle stops announcing takeoffs it can't make.

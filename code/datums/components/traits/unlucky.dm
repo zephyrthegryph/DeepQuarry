@@ -179,7 +179,7 @@
 			if(evil_washer.state == 1) //Empty and open door
 				our_guy.visible_message(span_danger("[our_guy] slips near the [evil_washer] and falls in, the door shutting!"), span_boldwarning("You slip on a wet spot near the [evil_washer] and fall in, the door shutting! You're stuck!"))
 				our_guy.forceMove(evil_washer)
-				evil_washer.washing += our_guy
+				LAZYADD(evil_washer.washing, our_guy)
 				evil_washer.state = 4
 				evil_washer.visible_message(span_danger("[evil_washer] begins its spin cycle!"))
 				evil_washer.start(TRUE, damage_mod)

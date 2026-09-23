@@ -25,7 +25,7 @@
 	nodamage = TRUE
 	damage = 0
 	bump_targets = FALSE
-	var/list/hit = list()
+	var/list/hit
 
 /obj/item/projectile/test/process_hitscan()
 	. = ..()
@@ -35,19 +35,19 @@
 
 /obj/item/projectile/test/Bump(atom/A)
 	if(A != src)
-		hit |= A
+		LAZYOR(hit, A)
 	if(isturf(A))
 		for(var/obj/O in A)
-			hit |= O
+			LAZYOR(hit, O)
 		for(var/mob/living/M in A)
-			hit |= M
+			LAZYOR(hit, M)
 	return ..()
 
 /obj/item/projectile/test/fire(angle, atom/direct_target)
 	. = ..()
 	if(direct_target)
 		if(direct_target != src)
-			hit |= direct_target
+			LAZYOR(hit, direct_target)
 		. = hit || list()
 
 

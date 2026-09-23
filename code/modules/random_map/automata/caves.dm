@@ -29,7 +29,7 @@
 				LAZYADD(ore_turfs, tmp_cell)
 
 	#ifdef TESTING
-	testing("ASGEN: Found [ore_turfs.len] ore turfs.")
+	testing("ASGEN: Found [length(ore_turfs)] ore turfs.")
 	#endif
 	var/ore_count = round(map.len/20)
 	var/door_count = 0

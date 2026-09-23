@@ -110,7 +110,7 @@
 	if(GLOB.ntnet_global)
 		GLOB.ntnet_global.relays.Add(src)
 		NTNet = GLOB.ntnet_global
-		GLOB.ntnet_global.add_log("New quantum relay activated. Current amount of linked relays: [NTNet.relays.len]")
+		GLOB.ntnet_global.add_log("New quantum relay activated. Current amount of linked relays: [length(NTNet.relays)]")
 	soundloop = new(list(src), FALSE)
 	if(prob(60)) // 60% chance to change the midloop
 		if(prob(40))
@@ -127,7 +127,7 @@
 /obj/machinery/ntnet_relay/Destroy()
 	if(GLOB.ntnet_global)
 		GLOB.ntnet_global.relays.Remove(src)
-		GLOB.ntnet_global.add_log("Quantum relay connection severed. Current amount of linked relays: [NTNet.relays.len]")
+		GLOB.ntnet_global.add_log("Quantum relay connection severed. Current amount of linked relays: [length(NTNet.relays)]")
 		NTNet = null
 	for(var/datum/computer_file/program/ntnet_dos/D in dos_sources)
 		D.target = null

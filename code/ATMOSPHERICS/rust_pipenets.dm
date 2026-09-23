@@ -6,7 +6,7 @@
 	/// Set during a bulk blast when a change of unknown network asked for every valve to wake.
 	var/pending_automatic_shutoff_wake_all = FALSE
 	/// Automatic shutoff valves (as keys) woken by network-local changes during a bulk blast.
-	var/list/pending_automatic_shutoff_valves
+	var/list/pending_automatic_shutoff_valves = list()
 
 /datum/controller/subsystem/air/proc/flush_automatic_shutoff_wake()
 	var/list/valves = pending_automatic_shutoff_valves

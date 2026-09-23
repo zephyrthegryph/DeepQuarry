@@ -115,7 +115,7 @@
 					if(!length(servers))
 						temp = span_red("- FAILED: UNABLE TO LOCATE SERVERS IN \[[network]\] -")
 					else
-						temp = span_blue("- [servers.len] SERVERS PROBED & BUFFERED -")
+						temp = span_blue("- [length(servers)] SERVERS PROBED & BUFFERED -")
 
 					screen = 0
 

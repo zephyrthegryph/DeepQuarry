@@ -296,7 +296,7 @@
 	else if(istype(W,/obj/item/rig_module))
 		if(!installed_modules)
 			installed_modules = list()
-		if(installed_modules.len)
+		if(length(installed_modules))
 			for(var/obj/item/rig_module/installed_mod in installed_modules)
 				if(!installed_mod.redundant && istype(installed_mod,W))
 					to_chat(user, "The hardsuit already has a module of that class installed.")
@@ -311,7 +311,7 @@
 		if(!user.unEquip(mod))
 			return
 		to_chat(user, "You install \the [mod] into \the [src].")
-		installed_modules |= mod
+		LAZYOR(installed_modules, mod)
 		mod.forceMove(src)
 		mod.installed(src)
 		update_icon()
@@ -370,7 +370,7 @@
 		to_chat(user, "You detach \the [removed] from \the [src].")
 		removed.forceMove(get_turf(src))
 		removed.removed()
-		installed_modules -= removed
+		LAZYREMOVE(installed_modules, removed)
 		update_icon()
 		return ITEM_INTERACT_SUCCESS
 

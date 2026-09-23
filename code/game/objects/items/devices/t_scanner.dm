@@ -13,7 +13,7 @@
 	var/scan_range = 1
 
 	var/on = 0
-	var/list/active_scanned = list() //assoc list of objects being scanned, mapped to their overlay
+	var/list/active_scanned //assoc list of objects being scanned, mapped to their overlay
 	var/client/user_client //since making sure overlays are properly added and removed is pretty important, so we track the current user explicitly
 	var/flicker = 0
 
@@ -61,17 +61,17 @@
 	//Add new overlays
 	for(var/obj/O in update_add)
 		var/image/overlay = get_overlay(O)
-		active_scanned[O] = overlay
+		LAZYSET(active_scanned, O, overlay)
 		user_client.images += overlay
 
 	//Remove stale overlays
 	for(var/obj/O in update_remove)
 		user_client.images -= active_scanned[O]
-		active_scanned -= O
+		LAZYREMOVE(active_scanned, O)
 
 	//Flicker effect
 	for(var/obj/O in active_scanned)
-		var/image/overlay = active_scanned[O]
+		var/image/overlay = LAZYACCESS(active_scanned, O)
 		if(flicker)
 			overlay.alpha = 0
 		else
@@ -127,9 +127,9 @@
 			user_client.images -= active_scanned[scanned]
 	if(new_client)
 		for(var/scanned in active_scanned)
-			new_client.images += active_scanned[scanned]
+			new_client.images += LAZYACCESS(active_scanned, scanned)
 	else
-		active_scanned.Cut()
+		LAZYCLEARLIST(active_scanned)
 
 	user_client = new_client
 

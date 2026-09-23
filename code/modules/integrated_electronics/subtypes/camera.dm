@@ -189,7 +189,7 @@
 
 /obj/item/integrated_circuit/input/video_camera_input/examine(mob/user)
 	. = ..()
-	. += span_notice("Paired cameras: [paired_cameras.len]")
+	. += span_notice("Paired cameras: [length(paired_cameras)]")
 	for(var/obj/item/integrated_circuit/output/video_camera/cam in paired_cameras)
 		var/status_text = cam.camera?.can_use() ? "ACTIVE" : "INACTIVE"
 		. += span_notice(" - [cam.camera?.c_tag || "Unknown"] ([status_text])")

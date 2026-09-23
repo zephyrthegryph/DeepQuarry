@@ -24,9 +24,9 @@
 	var/delivery = FALSE
 	var/delivery_tag = "Fuel"
 	var/list/list/deliverylists = list()
-	var/list/deliveryslot_1 = list()
-	var/list/deliveryslot_2 = list()
-	var/list/deliveryslot_3 = list()
+	var/list/deliveryslot_1
+	var/list/deliveryslot_2
+	var/list/deliveryslot_3
 	var/synced = FALSE
 	var/startdrain = 500
 	var/max_item_count = 1
@@ -322,9 +322,9 @@
 		"current_capacity" = current_capacity,
 		"max_ore_storage" = max_ore_storage,
 		"contents" = contents,
-		"deliveryslot_1" = deliveryslot_1,
-		"deliveryslot_2" = deliveryslot_2,
-		"deliveryslot_3" = deliveryslot_3,
+		"deliveryslot_1" = (deliveryslot_1 || list()),
+		"deliveryslot_2" = (deliveryslot_2 || list()),
+		"deliveryslot_3" = (deliveryslot_3 || list()),
 		"items_preserved" = items_preserved,
 		"has_destructive_analyzer" = analyzer,
 		"techweb_name" = handler?.linked_web ? "[handler.linked_web.id] / [handler.linked_web.organization]" : null

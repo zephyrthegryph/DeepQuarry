@@ -180,11 +180,11 @@ GLOBAL_LIST_EMPTY(all_waypoints)
 			. = TRUE
 		if("add")
 			var/datum/computer_file/data/waypoint/R = new()
-			var/sec_name = tgui_input_text(ui.user, "Input navigation entry name", "New navigation entry", "Sector #[known_sectors.len]", MAX_NAME_LEN)
+			var/sec_name = tgui_input_text(ui.user, "Input navigation entry name", "New navigation entry", "Sector #[length(known_sectors)]", MAX_NAME_LEN)
 			if(tgui_status(ui.user, state) != STATUS_INTERACTIVE)
 				return FALSE
 			if(!sec_name)
-				sec_name = "Sector #[known_sectors.len]"
+				sec_name = "Sector #[length(known_sectors)]"
 			R.fields["name"] = sec_name
 			if(sec_name in known_sectors)
 				to_chat(ui.user, span_warning("Sector with that name already exists, please input a different name."))

@@ -80,7 +80,7 @@
 			continue
 		var/list/job_entries = list()
 		for(var/job_title in dept.primary_jobs)
-			var/datum/job/job = dept.primary_jobs[job_title]
+			var/datum/job/job = LAZYACCESS(dept.primary_jobs, job_title)
 			if(!job)
 				continue
 			if(job.title == "AI" || job.title == "Cyborg" || job.title == "NOPE")

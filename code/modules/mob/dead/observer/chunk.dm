@@ -10,7 +10,7 @@
 	if(add_images)
 		var/client/client = ghost.client
 		if(client)
-			client.images += obscured
+			if(length(obscured)) client.images += obscured
 	ghost.visibleChunks += src
 	visible++
 	LAZYADD(seenby, ghost)
@@ -65,7 +65,7 @@
 			var/image/ob_image = image(obfuscation.icon, t, obfuscation.icon_state, OBFUSCATION_LAYER)
 			ob_image.plane = PLANE_FULLSCREEN
 			t.obfuscations[obfuscation.type] = ob_image
-		obscured += t.obfuscations[obfuscation.type]
+		LAZYADD(obscured, t.obfuscations[obfuscation.type])
 
 /datum/chunk/ghost/update()
 
@@ -85,7 +85,7 @@
 
 	for(var/turf/t as anything in visAdded)
 		if(LAZYLEN(t.obfuscations) && t.obfuscations[obfuscation.type])
-			obscured -= t.obfuscations[obfuscation.type]
+			LAZYREMOVE(obscured, t.obfuscations[obfuscation.type])
 			for(var/mob/observer/dead/m as anything in seenby)
 				if(!m)
 					continue
@@ -101,7 +101,7 @@
 				ob_image.plane = PLANE_FULLSCREEN
 				t.obfuscations[obfuscation.type] = ob_image
 
-			obscured += t.obfuscations[obfuscation.type]
+			LAZYADD(obscured, t.obfuscations[obfuscation.type])
 			for(var/mob/observer/dead/m as anything in seenby)
 				if(!m)
 					LAZYREMOVE(seenby, m)

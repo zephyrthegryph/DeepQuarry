@@ -138,7 +138,7 @@
 
 
 /mob/proc/RigPanel(obj/item/rig/R)
-	if(R && !R.canremove && R.installed_modules.len)
+	if(R && !R.canremove && length(R.installed_modules))
 		var/list/L = list()
 		var/cell_status = R.cell ? "[R.cell.charge]/[R.cell.maxcharge]" : "ERROR"
 		L[++L.len] = list("Suit charge: [cell_status]", null, null, null, null)

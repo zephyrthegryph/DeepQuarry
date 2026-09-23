@@ -19,7 +19,7 @@
 
 /datum/alarm
 	var/atom/origin					//Used to identify the alarm area.
-	var/list/sources = new()		//List of sources triggering the alarm. Used to determine when the alarm should be cleared.
+	var/list/sources		//List of sources triggering the alarm. Used to determine when the alarm should be cleared.
 	var/list/sources_assoc	//Associative list of source triggers. Used to efficiently acquire the alarm source.
 	var/list/cameras				//List of cameras that can be switched to, if the player has that capability.
 	var/area/last_area				//The last acquired area, used should origin be lost (for example a destroyed borg containing an alarming camera).
@@ -50,7 +50,7 @@
 	for(var/datum/alarm_source/AS in sources)
 		// Has the alarm passed its best before date?
 		if((AS.end_time && world.time > AS.end_time) || (AS.duration && world.time > (AS.start_time + AS.duration)))
-			sources -= AS
+			LAZYREMOVE(sources, AS)
 		// Has the source gone missing?	Then reset the normal duration and set end_time
 		if(!AS.source && !AS.end_time)	// end_time is used instead of duration to ensure the reset doesn't remain in the future indefinetely.
 			AS.duration = 0
@@ -62,7 +62,7 @@
 	var/datum/alarm_source/AS = LAZYACCESS(sources_assoc, source)
 	if(!AS)
 		AS = new/datum/alarm_source(source)
-		sources += AS
+		LAZYADD(sources, AS)
 		LAZYSET(sources_assoc, source, AS)
 		src.hidden = hidden
 	// Currently only non-0 durations can be altered (normal alarms VS EMP blasts)
@@ -74,7 +74,7 @@
 
 /datum/alarm/proc/clear(source)
 	var/datum/alarm_source/AS = LAZYACCESS(sources_assoc, source)
-	sources -= AS
+	LAZYREMOVE(sources, AS)
 	LAZYREMOVE(sources_assoc, source)
 	if(AS)
 		AS.source = null

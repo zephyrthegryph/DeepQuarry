@@ -22,7 +22,7 @@
 	var/obj/item/perfect_tele_beacon/destination
 	var/datum/effect/effect/system/spark_spread/spk
 	var/list/warned_users
-	var/list/logged_events = list()
+	var/list/logged_events
 
 	var/list/radial_images
 
@@ -349,7 +349,7 @@ This device records all warnings given and teleport events for admin review in c
 	update_icon()
 	addtimer(CALLBACK(src, PROC_REF(translocator_ready)), 30 SECONDS)
 
-	logged_events["[world.time]"] = "[user] teleported [target] to [real_dest] [televored ? "(Belly: [lowertext(real_dest.name)])" : null]"
+	LAZYSET(logged_events, "[world.time]", "[user] teleported [target] to [real_dest] [televored ? "(Belly: [lowertext(real_dest.name)])" : null]")
 
 /obj/item/perfect_tele/proc/translocator_ready()
 	ready = 1

@@ -70,7 +70,7 @@
 /obj/singularity/energy_ball/examine(mob/user)
 	. = ..()
 	if(length(orbiting_balls))
-		. += "The amount of orbiting mini-balls is [orbiting_balls.len]."
+		. += "The amount of orbiting mini-balls is [length(orbiting_balls)]."
 
 /obj/singularity/energy_ball/proc/move_the_basket_ball(move_amount)
 	//we face the last thing we zapped, so this lets us favor that direction a bit

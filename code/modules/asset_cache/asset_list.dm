@@ -158,7 +158,7 @@ GLOBAL_LIST_EMPTY(asset_datums)
 	var/name
 	/// List of arguments to pass into queuedInsert
 	/// Exists so we can queue icon insertion, mostly for stuff like preferences
-	var/list/to_generate = list()
+	var/list/to_generate
 	var/list/sizes    // "32x32" -> list(10, icon/normal, icon/stripped)
 	var/list/sprites  // "foo_bar" -> list("32x32", 5)
 	var/list/cached_spritesheets_needed
@@ -244,7 +244,7 @@ GLOBAL_LIST_EMPTY(asset_datums)
 	if(fully_generated)
 		return
 	while(length(to_generate))
-		var/list/stored_args = to_generate[to_generate.len]
+		var/list/stored_args = to_generate[length(to_generate)]
 		to_generate.len--
 		queuedInsert(arglist(stored_args))
 		if(yield && TICK_CHECK)
@@ -439,7 +439,7 @@ GLOBAL_LIST_EMPTY(asset_datums)
 	if(should_load_immediately())
 		queuedInsert(sprite_name, I, icon_state, dir, frame, moving)
 	else
-		to_generate += list(args.Copy())
+		LAZYADD(to_generate, list(args.Copy()))
 
 /datum/asset/spritesheet/proc/queuedInsert(sprite_name, icon/I, icon_state="", dir=SOUTH, frame=1, moving=FALSE)
 	I = icon(I, icon_state=icon_state, dir=dir, frame=frame, moving=moving)

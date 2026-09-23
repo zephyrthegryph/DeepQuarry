@@ -38,7 +38,7 @@
 	content += "<br>"
 	for(var/mode in my_rcd.modes)
 		content += "     <a href='byond://?src=\ref[src];mode=[i]'>[mode]</a>"
-		if(i < my_rcd.modes.len)
+		if(i < length(my_rcd.modes))
 			content += "<br>"
 		i++
 

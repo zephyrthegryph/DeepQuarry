@@ -16,7 +16,7 @@ GLOBAL_LIST_EMPTY(shutoff_valves)
 		if(valve.network_node1 != network && valve.network_node2 != network)
 			continue
 		if(bulk)
-			LAZYSET(SSair.pending_automatic_shutoff_valves, valve, TRUE)
+			SSair.pending_automatic_shutoff_valves[valve] = TRUE
 		else
 			START_MACHINE_PROCESSING(valve)
 
@@ -50,7 +50,7 @@ GLOBAL_LIST_EMPTY(shutoff_valves)
 
 /obj/machinery/atmospherics/valve/shutoff/Destroy()
 	GLOB.shutoff_valves -= src
-	LAZYREMOVE(SSair.pending_automatic_shutoff_valves, src)
+	SSair.pending_automatic_shutoff_valves -= src
 	. = ..()
 
 /obj/machinery/atmospherics/valve/shutoff/attack_ai(mob/user as mob)

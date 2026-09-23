@@ -212,7 +212,7 @@
 
 		// Update area.
 		if(az > length(areas_to_use))
-			log_mapping("[name] at [ux],[uy],[uz] requires [depth] floor areas but has [areas_to_use.len]; failed while creating z=[cz]. Aborting.")
+			log_mapping("[name] at [ux],[uy],[uz] requires [depth] floor areas but has [length(areas_to_use)]; failed while creating z=[cz]. Aborting.")
 			qdel(src)
 			return
 

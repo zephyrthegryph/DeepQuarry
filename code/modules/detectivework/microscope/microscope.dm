@@ -72,7 +72,7 @@
 			for(var/prints in card.evidence)
 				report.info += span_notice("Fingerprint string: ")
 				if(!is_complete_print(LAZYACCESS(card.evidence, prints)))
-					report.info += "INCOMPLETE PRINT:[card.evidence[prints]]"
+					report.info += "INCOMPLETE PRINT:[LAZYACCESS(card.evidence, prints)]"
 				else
 					report.info += "[prints]"
 				report.info += "<br>"

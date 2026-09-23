@@ -23,7 +23,7 @@
 	if(severity == EVENT_LEVEL_MAJOR)
 		announcement = "Massive migration of unknown biological entities has been detected near [location_name()], please stand-by."
 	else
-		announcement = "Unknown biological [spawned_carp.len == 1 ? "entity has" : "entities have"] been detected near [location_name()], please stand-by."
+		announcement = "Unknown biological [length(spawned_carp) == 1 ? "entity has" : "entities have"] been detected near [location_name()], please stand-by."
 	GLOB.command_announcement.Announce(announcement, "Lifesign Alert")
 
 /datum/event/carp_migration/tick()

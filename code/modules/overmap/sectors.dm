@@ -29,7 +29,7 @@
 	var/list/initial_restricted_waypoints //For use with non-automatic landmarks (automatic ones add themselves).
 
 	var/list/generic_waypoints    //waypoints that any shuttle can use
-	var/list/restricted_waypoints = list() //waypoints for specific shuttles
+	var/list/restricted_waypoints //waypoints for specific shuttles
 	var/docking_codes
 
 	var/start_x			//Coordinates for self placing
@@ -187,13 +187,13 @@
 /obj/effect/overmap/visitable/proc/add_landmark(obj/effect/shuttle_landmark/landmark, shuttle_name)
 	landmark.sector_set(src, shuttle_name)
 	if(shuttle_name)
-		LAZYADD(restricted_waypoints[shuttle_name], landmark)
+		LAZYINITLIST(restricted_waypoints); LAZYADD(restricted_waypoints[shuttle_name], landmark)
 	else
 		LAZYADD(generic_waypoints, landmark)
 
 /obj/effect/overmap/visitable/proc/remove_landmark(obj/effect/shuttle_landmark/landmark, shuttle_name)
 	if(shuttle_name)
-		var/list/shuttles = restricted_waypoints[shuttle_name]
+		var/list/shuttles = LAZYACCESS(restricted_waypoints, shuttle_name)
 		LAZYREMOVE(shuttles, landmark)
 	else
 		LAZYREMOVE(generic_waypoints, landmark)

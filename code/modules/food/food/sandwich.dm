@@ -13,7 +13,7 @@
 	trash = /obj/item/trash/plate
 	bitesize = 2
 
-	var/list/ingredients = list()
+	var/list/ingredients
 
 /obj/item/reagent_containers/food/snacks/csandwich/attackby(obj/item/W as obj, mob/user as mob)
 
@@ -37,7 +37,7 @@
 		F.reagents.trans_to_obj(src, F.reagents.total_volume)
 		user.drop_item()
 		W.loc = src
-		ingredients += W
+		LAZYADD(ingredients, W)
 		update()
 		return
 	..()
@@ -66,12 +66,12 @@
 
 	var/image/T = new(src.icon, "sandwich_top")
 	T.pixel_x = pick(list(-1,0,1))
-	T.pixel_y = (ingredients.len * 2)+1
+	T.pixel_y = (length(ingredients) * 2)+1
 	add_overlay(T)
 
 	name = lowertext("[fullname] sandwich")
 	if(length(name) > 80) name = "[pick(list("absurd","colossal","enormous","ridiculous"))] sandwich"
-	w_class = n_ceil(CLAMP((ingredients.len/2),2,4))
+	w_class = n_ceil(CLAMP((length(ingredients)/2),2,4))
 
 /obj/item/reagent_containers/food/snacks/csandwich/Destroy()
 	for(var/obj/item/O in ingredients)

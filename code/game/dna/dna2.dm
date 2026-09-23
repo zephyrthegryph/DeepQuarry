@@ -42,7 +42,7 @@ GLOBAL_LIST_EMPTY_TYPED(dna_genes_bad, /datum/gene/trait)
 
 	var/custom_species
 	var/base_species = SPECIES_HUMAN
-	var/list/species_traits = list()
+	var/list/species_traits
 	var/blood_color = "#A10808"
 	var/blood_reagents = "iron"
 	var/scale_appearance = 0

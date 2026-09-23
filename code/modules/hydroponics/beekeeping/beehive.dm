@@ -9,7 +9,7 @@
 	var/bee_count = 0 // Percent
 	var/smoked = 0 // Timer
 	var/honeycombs = 0 // Percent
-	var/list/frames = list()	// List of frames inside.
+	var/list/frames	// List of frames inside.
 	var/maxFrames = 5
 
 /obj/machinery/beehive/Initialize(mapload)
@@ -64,7 +64,7 @@
 		update_icon()
 		user.drop_from_inventory(H)
 		H.forceMove(src)
-		frames.Add(H)
+		LAZYADD(frames, H)
 		return
 	else if(istype(I, /obj/item/bee_pack))
 		var/obj/item/bee_pack/B = I

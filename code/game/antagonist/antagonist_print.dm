@@ -1,10 +1,10 @@
 /datum/antagonist/proc/print_player_summary()
 
-	if(!current_antagonists.len)
+	if(!length(current_antagonists))
 		return FALSE
 
 	var/text = "<br><br>"
-	text += span_normal(span_bold("The [current_antagonists.len == 1 ? "[role_text] was" : "[role_text_plural] were"]:"))
+	text += span_normal(span_bold("The [length(current_antagonists) == 1 ? "[role_text] was" : "[role_text_plural] were"]:"))
 	for(var/datum/mind/P in current_antagonists)
 		text += print_player_full(P)
 		text += get_special_objective_text(P)
@@ -88,5 +88,5 @@
 /proc/get_uplink_purchases(datum/mind/M)
 	var/list/refined_log = new()
 	for(var/datum/uplink_item/UI in M.purchase_log)
-		refined_log.Add("[M.purchase_log[UI]]x[UI.log_icon()][UI.name]")
+		refined_log.Add("[LAZYACCESS(M.purchase_log, UI)]x[UI.log_icon()][UI.name]")
 	. = english_list(refined_log, nothing_text = "")

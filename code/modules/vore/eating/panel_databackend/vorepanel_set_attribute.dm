@@ -713,9 +713,9 @@
 			if(!istype(choice))
 				return FALSE
 			else if(choice.name in host.vore_selected.autotransferextralocation)
-				host.vore_selected.autotransferextralocation -= choice.name
+				LAZYREMOVE(host.vore_selected.autotransferextralocation, choice.name)
 			else
-				host.vore_selected.autotransferextralocation += choice.name
+				LAZYADD(host.vore_selected.autotransferextralocation, choice.name)
 			. = TRUE
 		if("b_autotransferchance_secondary")
 			var/autotransferchance_secondary_input = params["val"]
@@ -736,9 +736,9 @@
 			if(!istype(choice)) //They cancelled, no changes
 				return FALSE
 			else if(choice.name in host.vore_selected.autotransferextralocation_secondary)
-				host.vore_selected.autotransferextralocation_secondary -= choice.name
+				LAZYREMOVE(host.vore_selected.autotransferextralocation_secondary, choice.name)
 			else
-				host.vore_selected.autotransferextralocation_secondary += choice.name
+				LAZYADD(host.vore_selected.autotransferextralocation_secondary, choice.name)
 			. = TRUE
 		if("b_autotransfer_whitelist_primary")
 			var/toggle_addon = params["val"]

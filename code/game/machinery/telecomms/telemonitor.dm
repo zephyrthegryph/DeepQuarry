@@ -96,7 +96,7 @@
 			if(!length(machinelist))
 				set_temp("FAILED: UNABLE TO LOCATE NETWORK ENTITIES IN \[[network]\]", "bad")
 			else
-				set_temp("[machinelist.len] ENTITIES LOCATED & BUFFERED", "good")
+				set_temp("[length(machinelist)] ENTITIES LOCATED & BUFFERED", "good")
 			. = TRUE
 
 		if("network")

@@ -33,7 +33,7 @@
 
 	// Bookkeeping
 	var/list/original_languages
-	var/list/added_networks = list()
+	var/list/added_networks
 	var/ui_theme
 	var/idcard_type = /obj/item/card/id/synthetic
 
@@ -171,12 +171,12 @@
 		for(var/network in networks)
 			if(!(network in R.camera.network))
 				R.camera.add_network(network)
-				added_networks |= network
+				LAZYOR(added_networks, network)
 
 /obj/item/robot_module/proc/remove_camera_networks(mob/living/silicon/robot/R)
 	if(R.camera)
-		R.camera.remove_networks(added_networks)
-	added_networks.Cut()
+		if(length(added_networks)) R.camera.remove_networks(added_networks)
+	LAZYCLEARLIST(added_networks)
 
 /obj/item/robot_module/proc/add_subsystems(mob/living/silicon/robot/R)
 	add_verb(R, subsystems)

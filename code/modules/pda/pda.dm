@@ -56,7 +56,7 @@
 		new/datum/data/pda/utility/scanmode/notes,
 		new/datum/data/pda/utility/flashlight)
 	var/list/shortcut_cache
-	var/list/shortcut_cat_order = list()
+	var/list/shortcut_cat_order
 	var/list/notifying_programs
 	var/retro_mode = 0
 

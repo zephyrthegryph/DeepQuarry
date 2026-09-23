@@ -185,7 +185,7 @@ GLOBAL_DATUM(rm_controller, /datum/controller/rogue)
 		ZM_target = DEFAULTPICK(clean_zones, null)
 
 	if(ZM_target)
-		log_world("RM(stats): SCORING [ready_zones.len] zones (if unscored).") //DEBUG code for playtest stats gathering.
+		log_world("RM(stats): SCORING [length(ready_zones)] zones (if unscored).") //DEBUG code for playtest stats gathering.
 		for(var/datum/rogue/zonemaster/ZM_toscore in ready_zones) //Score all the zones first.
 			if(ZM_toscore.scored) continue
 			ZM_toscore.score_zone()

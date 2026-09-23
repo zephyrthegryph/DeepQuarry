@@ -220,8 +220,8 @@ ADMIN_VERB(call_drop_pod, R_FUN, "Call Drop Pod", "Call an immediate drop pod on
 		log_admin("[key_name(user)] dropped a pod containing \the [spawned_mob] ([spawned_mob.key]) at ([user_mob.x],[user_mob.y],[user_mob.z])")
 	else if(spawned_mobs.len)
 		automatic_pod = 1
-		message_admins("[key_name(user)] dropped a pod containing [spawned_mobs.len] [spawned_mobs[1]] at ([user_mob.x],[user_mob.y],[user_mob.z])")
-		log_admin("[key_name(user)] dropped a pod containing [spawned_mobs.len] [spawned_mobs[1]] at ([user_mob.x],[user_mob.y],[user_mob.z])")
+		message_admins("[key_name(user)] dropped a pod containing [length(spawned_mobs)] [LAZYACCESS(spawned_mobs, 1)] at ([user_mob.x],[user_mob.y],[user_mob.z])")
+		log_admin("[key_name(user)] dropped a pod containing [length(spawned_mobs)] [LAZYACCESS(spawned_mobs, 1)] at ([user_mob.x],[user_mob.y],[user_mob.z])")
 	else
 		return
 

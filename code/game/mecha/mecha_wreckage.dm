@@ -13,7 +13,7 @@
 	opacity = 0
 	var/list/welder_salvage = list(/obj/item/stack/material/plasteel,/obj/item/stack/material/steel,/obj/item/stack/rods)
 	var/static/list/wirecutters_salvage = list(/obj/item/stack/cable_coil)
-	var/list/crowbar_salvage = list()
+	var/list/crowbar_salvage
 	var/salvage_num = 5
 
 /obj/effect/decal/mecha_wreckage/ex_act(severity)
@@ -71,11 +71,11 @@
 			else
 				to_chat(user, "You failed to salvage anything valuable from [src].")
 	if(focused_tool_stage == TOOL_CROWBAR)
-		if(!isemptylist(crowbar_salvage))
-			var/obj/S = pick(crowbar_salvage)
+		if(length(crowbar_salvage))
+			var/obj/S = DEFAULTPICK(crowbar_salvage, null)
 			if(S)
 				S.loc = get_turf(user)
-				crowbar_salvage -= S
+				LAZYREMOVE(crowbar_salvage, S)
 				user.visible_message("[user] pries [S] from [src].", "You pry [S] from [src].")
 			return
 		else

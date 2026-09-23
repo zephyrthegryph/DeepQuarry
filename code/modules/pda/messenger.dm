@@ -45,7 +45,7 @@
 			else
 				pdas.Add(list(list("Name" = "[P]", "Reference" = "\ref[P]", "Detonate" = "[P.detonate]", "inconvo" = "0")))
 		for(var/fakeRef in fakepdas)
-			convopdas.Add(list(list("Name" = "[fakepdas[fakeRef]]", "Reference" = "[fakeRef]", "Detonate" = "0", "inconvo" = "1")))
+			convopdas.Add(list(list("Name" = "[LAZYACCESS(fakepdas, fakeRef)]", "Reference" = "[fakeRef]", "Detonate" = "0", "inconvo" = "1")))
 
 		data["convopdas"] = convopdas
 		data["pdas"] = pdas

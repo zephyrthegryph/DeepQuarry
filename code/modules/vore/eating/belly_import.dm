@@ -956,7 +956,7 @@
 				new_belly.autotransferextralocation = list()
 				for(var/extra_belly in new_autotransferextralocation)
 					if(extra_belly in valid_names)
-						new_belly.autotransferextralocation += extra_belly
+						LAZYADD(new_belly.autotransferextralocation, extra_belly)
 
 		if(isnum(belly_data["autotransferchance_secondary"]))
 			var/new_autotransferchance_secondary = belly_data["autotransferchance_secondary"]
@@ -980,7 +980,7 @@
 				new_belly.autotransferextralocation_secondary = list()
 				for(var/extra_belly in new_autotransferextralocation_secondary)
 					if(extra_belly in valid_names)
-						new_belly.autotransferextralocation_secondary += extra_belly
+						LAZYADD(new_belly.autotransferextralocation_secondary, extra_belly)
 
 		if(isnum(belly_data["autotransfer_min_amount"]))
 			var/new_autotransfer_min_amount = belly_data["autotransfer_min_amount"]

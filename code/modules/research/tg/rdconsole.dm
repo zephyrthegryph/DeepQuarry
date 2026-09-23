@@ -268,7 +268,7 @@ Nothing else in the console has ID requirements.
 		if (LAZYLEN(node.research_costs))
 			node_cache[compressed_id]["costs"] = list()
 			for (var/node_cost in node.research_costs)
-				node_cache[compressed_id]["costs"]["[compress_id(node_cost)]"] = node.research_costs[node_cost]
+				node_cache[compressed_id]["costs"]["[compress_id(node_cost)]"] = LAZYACCESS(node.research_costs, node_cost)
 		if (LAZYLEN(node.prereq_ids))
 			node_cache[compressed_id]["prereq_ids"] = list()
 			for (var/prerequisite_node in node.prereq_ids)

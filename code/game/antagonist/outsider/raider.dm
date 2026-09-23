@@ -193,7 +193,7 @@ GLOBAL_DATUM(raiders, /datum/antagonist/raider)
 
 /datum/antagonist/raider/proc/is_raider_crew_safe()
 
-	if(!current_antagonists || current_antagonists.len == 0)
+	if(!current_antagonists || length(current_antagonists) == 0)
 		return 0
 
 	for(var/datum/mind/player in current_antagonists)

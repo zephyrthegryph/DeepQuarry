@@ -70,11 +70,11 @@
 			// Check that our cost and make sure it's more expensive than our prior tier, unless they have a required experiment.
 			if(!length(node.required_experiments) && length(node.prereq_ids))
 				if(!node.starting_node)
-					var/current_cost = node.research_costs.len ? INFINITY : 0
+					var/current_cost = length(node.research_costs) ? INFINITY : 0
 					for(var/check_cost_type in node.research_costs)
 						// Get the LOWEST cost of us
-						if(node.research_costs[check_cost_type] < current_cost)
-							current_cost = node.research_costs[check_cost_type]
+						if(LAZYACCESS(node.research_costs, check_cost_type) < current_cost)
+							current_cost = LAZYACCESS(node.research_costs, check_cost_type)
 
 					for(var/prereq_node_id in node.prereq_ids)
 						var/datum/techweb_node/prereq_node = SSresearch.techweb_nodes[prereq_node_id]
@@ -84,8 +84,8 @@
 
 						for(var/req_cost_type in prereq_node.research_costs)
 							// Get the LOWEST cost of prereq
-							if(prereq_node.research_costs[req_cost_type] < prereq_currentcost)
-								prereq_currentcost = prereq_node.research_costs[req_cost_type]
+							if(LAZYACCESS(prereq_node.research_costs, req_cost_type) < prereq_currentcost)
+								prereq_currentcost = LAZYACCESS(prereq_node.research_costs, req_cost_type)
 
 						if(prereq_currentcost > current_cost)
 							TEST_NOTICE(src, "TECHWEB NODE - [node.type] costs less to make then the previous node, must always be at least the same or more expensive. ours lowest is \[[current_cost]\], prereq lowest is \[[prereq_currentcost]\]. Lesser costs than the previous node is only allowed if the node has a required experiment.")

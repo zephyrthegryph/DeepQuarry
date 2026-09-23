@@ -110,7 +110,7 @@
 			if(!length(servers))
 				set_temp("FAILED: UNABLE TO LOCATE SERVERS IN \[[network]\]", "bad")
 			else
-				set_temp("[servers.len] SERVERS PROBED & BUFFERED", "good")
+				set_temp("[length(servers)] SERVERS PROBED & BUFFERED", "good")
 			. = TRUE
 
 		if("delete")

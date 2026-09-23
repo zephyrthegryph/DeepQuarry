@@ -54,7 +54,7 @@
 	icon_state = "statuette"
 	icon = 'icons/obj/xenoarchaeology.dmi'
 	var/charges = 0
-	var/list/nearby_mobs = list()
+	var/list/nearby_mobs
 	var/last_bloodcall = 0
 	var/bloodcall_interval = 50
 	var/last_eat = 0
@@ -72,12 +72,12 @@
 
 /obj/item/vampiric/process()
 	//see if we've identified anyone nearby
-	if(world.time - last_bloodcall > bloodcall_interval && nearby_mobs.len)
+	if(world.time - last_bloodcall > bloodcall_interval && length(nearby_mobs))
 		var/mob/living/carbon/human/M = pop(nearby_mobs)
 		if((M in view(7,src)) && M.vitality() > 0.6)
 			if(prob(50))
 				bloodcall(M)
-				nearby_mobs.Add(M)
+				LAZYADD(nearby_mobs, M)
 
 	//suck up some blood to gain power
 	if(world.time - last_eat > eat_interval)
@@ -139,7 +139,7 @@
 	last_bloodcall = world.time
 	if(istype(M))
 		playsound(src, pick('sound/hallucinations/wail.ogg','sound/hallucinations/veryfar_noise.ogg','sound/hallucinations/far_noise.ogg'), 50, 1, -3)
-		nearby_mobs.Add(M)
+		LAZYADD(nearby_mobs, M)
 
 		var/target = pick(M.organs_by_name)
 		M.injure(INJURY_CUT, rand(5, 10), target, src)

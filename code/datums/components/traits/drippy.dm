@@ -37,7 +37,7 @@
 	var/list/drips = list()
 	// Only a certain number of drips (or one large splatter) can be on a given turf.
 	for(var/obj/effect/decal/cleanable/blood/drip/drop in T)
-		LAZYOR(drips, drop.drips)
+		drips |= drop.drips
 		qdel(drop)
 	if(drips.len < 4)
 		decal_type = /obj/effect/decal/cleanable/blood/drip
@@ -50,7 +50,7 @@
 	var/obj/effect/decal/cleanable/blood/drip/drop = B
 	if(istype(drop) && drips && drips.len)
 		drop.add_overlay(drips)
-		LAZYOR(drop.drips, drips)
+		drop.drips |= drips
 
 	B.basecolor = blood_color
 	B.update_icon()

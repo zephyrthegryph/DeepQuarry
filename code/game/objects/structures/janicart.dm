@@ -19,7 +19,7 @@ GLOBAL_LIST_BOILERPLATE(all_janitorial_carts, /obj/structure/janitorialcart)
 	var/has_items = FALSE
 	var/dismantled = TRUE
 	var/signs = 0	//maximum capacity hardcoded below
-	var/list/tgui_icons = list()
+	var/list/tgui_icons
 
 	var/static/list/equippable_item_whitelist
 
@@ -97,17 +97,17 @@ GLOBAL_LIST_BOILERPLATE(all_janitorial_carts, /obj/structure/janitorialcart)
 		return
 
 	var/icon/F = getFlatIcon(A, defdir = SOUTH, no_anim = TRUE)
-	tgui_icons["[key]"] = "'data:image/png;base64,[icon2base64(F)]'"
+	LAZYSET(tgui_icons, "[key]", "'data:image/png;base64,[icon2base64(F)]'")
 	SStgui.update_uis(src)
 
 /obj/structure/janitorialcart/proc/nullTguiIcon(key)
 	if(!key)
 		return
-	tgui_icons.Remove(key)
+	LAZYREMOVE(tgui_icons, key)
 	SStgui.update_uis(src)
 
 /obj/structure/janitorialcart/proc/clearTguiIcons()
-	tgui_icons.Cut()
+	LAZYCLEARLIST(tgui_icons)
 	SStgui.update_uis(src)
 
 /obj/structure/janitorialcart/Destroy()
@@ -224,7 +224,7 @@ GLOBAL_LIST_BOILERPLATE(all_janitorial_carts, /obj/structure/janitorialcart)
 	data["myreplacer"] = myreplacer ? capitalize(myreplacer.name) : null
 	data["signs"] = signs ? "[signs] sign\s" : null
 
-	data["icons"] = tgui_icons
+	data["icons"] = (tgui_icons || list())
 	return data
 
 /obj/structure/janitorialcart/tgui_act(action, list/params, datum/tgui/ui, datum/tgui_state/state)

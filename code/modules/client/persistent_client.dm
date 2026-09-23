@@ -77,7 +77,7 @@ GLOBAL_LIST_EMPTY_TYPED(persistent_clients, /datum/persistent_client)
 /datum/persistent_client/proc/get_played_names()
 	var/list/previous_names = list()
 	for(var/previous_name in played_names)
-		previous_names += html_encode("[previous_name] ([played_names[previous_name]])")
+		previous_names += html_encode("[previous_name] ([LAZYACCESS(played_names, previous_name)])")
 	return previous_names.Join("; ")
 
 /// Returns the full version string (i.e 515.1642) of the BYOND version and build.

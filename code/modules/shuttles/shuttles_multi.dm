@@ -2,7 +2,7 @@
 // Formerly /datum/shuttle/multi_shuttle
 /datum/shuttle/autodock/multi
 	var/list/destination_tags
-	var/list/destinations_cache = list()
+	var/list/destinations_cache
 	var/last_cache_rebuild_time = 0
 	category = /datum/shuttle/autodock/multi
 
@@ -30,7 +30,7 @@
 /datum/shuttle/autodock/multi/proc/set_destination(destination_key, mob/user)
 	if(moving_status != SHUTTLE_IDLE)
 		return
-	next_location = destinations_cache[destination_key]
+	next_location = LAZYACCESS(destinations_cache, destination_key)
 	if(!next_location)
 		WARNING("Shuttle [src] set to destination we can't find: [destination_key]")
 
@@ -41,7 +41,7 @@
 
 /datum/shuttle/autodock/multi/proc/build_destinations_cache()
 	last_cache_rebuild_time = world.time
-	destinations_cache.Cut()
+	LAZYCLEARLIST(destinations_cache)
 	for(var/destination_tag in destination_tags)
 		var/obj/effect/shuttle_landmark/landmark = SSshuttles.get_landmark(destination_tag)
 		if (istype(landmark))

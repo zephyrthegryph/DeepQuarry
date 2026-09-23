@@ -20,7 +20,7 @@
 	var/energy_cost_modifier = 1.0	// Multiplier on how much spells will cost.
 	var/spell_power_modifier = 1.0	// Multiplier on how strong spells are.
 	var/cooldown_modifier 	 = 1.0	// Multiplier on cooldowns for spells.
-	var/list/spells = list()		// This contains the buttons used to make spells in the user's hand.
+	var/list/spells		// This contains the buttons used to make spells in the user's hand.
 	var/list/appearances = list(	// Assoc list containing possible icon_states that the wiz can change the core to.
 		"default"			= "technomancer_core",
 		"wizard's cloak"	= "wizard_cloak"
@@ -180,13 +180,13 @@
 		The path supplied was [path].")
 		return
 	var/obj/spellbutton/spell = new(src, path, new_name, ability_icon_state)
-	spells.Add(spell)
+	LAZYADD(spells, spell)
 	if(wearer)
 		wearer.ability_master.add_technomancer_ability(spell, ability_icon_state)
 
 /obj/item/technomancer_core/proc/remove_spell(obj/spellbutton/spell_to_remove)
 	if(spell_to_remove in spells)
-		spells.Remove(spell_to_remove)
+		LAZYREMOVE(spells, spell_to_remove)
 		if(wearer)
 			var/atom/movable/screen/ability/obj_based/technomancer/A = wearer.ability_master.get_ability_by_instance(spell_to_remove)
 			if(A)
@@ -195,7 +195,7 @@
 
 /obj/item/technomancer_core/proc/remove_all_spells()
 	for(var/obj/spellbutton/spell in spells)
-		spells.Remove(spell)
+		LAZYREMOVE(spells, spell)
 		qdel(spell)
 
 /obj/item/technomancer_core/proc/has_spell(datum/technomancer/spell_to_check)

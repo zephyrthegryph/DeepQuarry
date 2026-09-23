@@ -64,7 +64,7 @@ You can also set the stat of a NIF to NIF_TEMPFAIL without any issues to disable
 
 	var/list/save_data
 
-	var/list/planes_visible = list()
+	var/list/planes_visible
 
 //Constructor comes with a free AR HUD
 /obj/item/nif/Initialize(mapload,wear,list/load_data)
@@ -605,12 +605,12 @@ You can also set the stat of a NIF to NIF_TEMPFAIL without any issues to disable
 /obj/item/nif/proc/add_plane(planeid = null)
 	if(!planeid)
 		return
-	planes_visible |= planeid
+	LAZYOR(planes_visible, planeid)
 
 /obj/item/nif/proc/del_plane(planeid = null)
 	if(!planeid)
 		return
-	planes_visible -= planeid
+	LAZYREMOVE(planes_visible, planeid)
 
 /obj/item/nif/proc/vis_update()
 	if(human)

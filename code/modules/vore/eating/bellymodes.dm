@@ -71,7 +71,7 @@
 		if(DM.handle_atoms(src, contents))
 			updateVRPanels()
 		return
-	if(!length(touchable_atoms) && !belly_surrounding.len) // Needed to not exit early for indirect vorefx
+	if(!length(touchable_atoms) && !length(belly_surrounding)) // Needed to not exit early for indirect vorefx
 		return
 
 /////////////////////////// Sound Selections ///////////////////////////

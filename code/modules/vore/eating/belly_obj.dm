@@ -104,14 +104,14 @@
 	var/autotransferchance = 0 				// % Chance of prey being autotransferred to transfer location
 	var/autotransferwait = 10 				// Time between trying to transfer.
 	var/autotransferlocation				// Place to send them
-	var/list/autotransferextralocation = list()	// List of extra places this could go
+	var/list/autotransferextralocation	// List of extra places this could go
 	var/autotransfer_whitelist = 0			// Flags for what can be transferred to the primary location
 	var/autotransfer_blacklist = 2			// Flags for what can not be transferred to the primary location, defaults to Absorbed
 	var/autotransfer_whitelist_items = 0	// Flags for what can be transferred to the primary location
 	var/autotransfer_blacklist_items = 0	// Flags for what can not be transferred to the primary location
 	var/autotransferchance_secondary = 0 	// % Chance of prey being autotransferred to secondary transfer location
 	var/autotransferlocation_secondary		// Second place to send them
-	var/list/autotransferextralocation_secondary = list()	// List of extra places the secondary transfer could go
+	var/list/autotransferextralocation_secondary	// List of extra places the secondary transfer could go
 	var/autotransfer_secondary_whitelist = 0// Flags for what can be transferred to the secondary location
 	var/autotransfer_secondary_blacklist = 2// Flags for what can not be transferred to the secondary location, defaults to Absorbed
 	var/autotransfer_secondary_whitelist_items = 0// Flags for what can be transferred to the secondary location
@@ -266,7 +266,7 @@
 	var/storing_nutrition = FALSE			// Storing gained nutrition as paste instead of absorbing it.
 	var/belchchance = 0						// % Chance of pred belching on prey struggle
 
-	var/tmp/list/belly_surrounding = list()		// A list of living mobs surrounded by this belly, including inside containers, food, on mobs, etc. Exclusing inside other bellies.
+	var/tmp/list/belly_surrounding		// A list of living mobs surrounded by this belly, including inside containers, food, on mobs, etc. Exclusing inside other bellies.
 	var/bellytemperature = T20C				// Temperature applied to humans in the belly.
 	var/temperature_damage = FALSE			// Does temperature damage prey?
 	var/tmp/last_transfer_log = 0				// Prevent server message spam!
@@ -960,9 +960,9 @@
 	var/list/primary_bellies = list()
 	var/list/secondary_bellies = list()
 
-	var/list/primary_locations = autotransferextralocation.Copy()
+	var/list/primary_locations = LAZYCOPY(autotransferextralocation)
 	primary_locations += autotransferlocation
-	var/list/secondary_locations = autotransferextralocation_secondary.Copy()
+	var/list/secondary_locations = LAZYCOPY(autotransferextralocation_secondary)
 	secondary_locations += autotransferlocation_secondary
 	for(var/obj/belly/B in owner.vore_organs)
 		if(B.name in primary_locations)
@@ -1247,11 +1247,11 @@
 	if(!contents.len && !LAZYLEN(owner.soulgem?.brainmobs))
 		// Empty bellies are the common case each tick: reuse the list, don't allocate.
 		if(length(belly_surrounding))
-			belly_surrounding.Cut()
+			LAZYCLEARLIST(belly_surrounding)
 		return
 	belly_surrounding = get_belly_surrounding(contents)
 	if(owner.soulgem?.linked_belly == src)
-		belly_surrounding += owner.soulgem.brainmobs
+		LAZYADD(belly_surrounding, owner.soulgem.brainmobs)
 
 // Recursive proc that returns all living mobs directly and indirectly inside a belly
 // This can also be called more generically to get all living mobs not in bellies within any contents list

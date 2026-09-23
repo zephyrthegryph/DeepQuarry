@@ -561,13 +561,13 @@
 		req_text += L.Join(" OR ")
 
 	for(var/obj/machinery/content as anything in R.machinery)
-		req_text += "[R.reqs[content]] [initial(content.name)]"
+		req_text += "[LAZYACCESS(R.reqs, content)] [initial(content.name)]"
 	if(R.additional_req_text)
 		req_text += R.additional_req_text
 	data["req_text"] = req_text.Join(", ")
 
 	for(var/atom/req_catalyst as anything in R.chem_catalysts)
-		catalyst_text += "[R.chem_catalysts[req_catalyst]] [initial(req_catalyst.name)]"
+		catalyst_text += "[LAZYACCESS(R.chem_catalysts, req_catalyst)] [initial(req_catalyst.name)]"
 	data["catalyst_text"] = catalyst_text.Join(", ")
 
 	for(var/required_quality in R.tool_behaviors)

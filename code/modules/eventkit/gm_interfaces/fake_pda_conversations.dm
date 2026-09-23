@@ -25,23 +25,23 @@ ADMIN_VERB(fake_pdaconvos, R_FUN, "Manage PDA identities", "Creates fake identit
 		FPC.fakeRefs.Add(newRef)
 		FPC.names[newRef] = tgui_input_text(user, "Input fake name",newRef, "", MAX_MESSAGE_LEN)
 		LAZYSET(FPC.fakeJobs, newRef, tgui_input_text(user, "Input fake assignment.",newRef, "", MAX_MESSAGE_LEN))
-		to_chat(user, span_notice("You have created [newRef]. Current name: [FPC.names[newRef]]. Current assignment: [FPC.fakeJobs[newRef]]"))
+		to_chat(user, span_notice("You have created [newRef]. Current name: [FPC.names[newRef]]. Current assignment: [LAZYACCESS(FPC.fakeJobs, newRef)]"))
 		return
 
 	if(choice == "Edit existing identity")
 		var/ref = tgui_input_list(user, "Pick which identity to edit (details are printed to chat)", "identities", FPC.fakeRefs)
-		to_chat(user, span_notice("You are editing [ref]. Current name: [FPC.names[ref]]. Current assignment: [FPC.fakeJobs[ref]]"))
+		to_chat(user, span_notice("You are editing [ref]. Current name: [FPC.names[ref]]. Current assignment: [LAZYACCESS(FPC.fakeJobs, ref)]"))
 		var/editChoice = tgui_alert(user, "What do you wish to edit?", "Details", list("Name", "Job", "Cancel"))
 		if(editChoice == "Name")
 			FPC.names[ref] = tgui_input_text(user, "Input fake name", FPC.names[ref], "", MAX_MESSAGE_LEN)
-			to_chat(user, span_notice("Current data for [ref] are : Current name: [FPC.names[ref]]. Current assignment: [FPC.fakeJobs[ref]]"))
+			to_chat(user, span_notice("Current data for [ref] are : Current name: [FPC.names[ref]]. Current assignment: [LAZYACCESS(FPC.fakeJobs, ref)]"))
 		if(editChoice == "Job")
 			LAZYSET(FPC.fakeJobs, ref, tgui_input_text(user, "Input fake name", LAZYACCESS(FPC.fakeJobs, ref), "", MAX_MESSAGE_LEN))
-			to_chat(user, span_notice("Current data for [ref] are : Current name: [FPC.names[ref]]. Current assignment: [FPC.fakeJobs[ref]]"))
+			to_chat(user, span_notice("Current data for [ref] are : Current name: [FPC.names[ref]]. Current assignment: [LAZYACCESS(FPC.fakeJobs, ref)]"))
 		return
 	if(choice == "Delete existing identity")
 		var/ref = tgui_input_list(user, "Pick which identity to delete (details are printed to chat)", "identities", FPC.fakeRefs)
-		if(tgui_alert(user, "You are deleting [ref]. Current name: [FPC.names[ref]]. Current assignment: [FPC.fakeJobs[ref]]",
+		if(tgui_alert(user, "You are deleting [ref]. Current name: [FPC.names[ref]]. Current assignment: [LAZYACCESS(FPC.fakeJobs, ref)]",
 		"are you sure?", list("Yes", "No"))=="Yes")
 			FPC.fakeRefs -= ref
 			LAZYREMOVE(FPC.fakeJobs, ref)

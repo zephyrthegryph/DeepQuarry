@@ -281,7 +281,7 @@
 
 	GLOB.rm_controller.dbg("ZM(p): Randomizing spawns.")
 	randomize_spawns()
-	GLOB.rm_controller.dbg("ZM(p): [rockspawns.len] picked.")
+	GLOB.rm_controller.dbg("ZM(p): [length(rockspawns)] picked.")
 	for(var/obj/asteroid_spawner/SP in rockspawns)
 		GLOB.rm_controller.dbg("ZM(p): Creating asteroid for [SP.x],[SP.y],[SP.z].")
 		var/datum/rogue/asteroid/A = generate_asteroid()
@@ -313,29 +313,29 @@
 				sleep(delay)
 
 	GLOB.rm_controller.dbg("ZM(p): Zone generation done.")
-	log_world("RM(stats): PREP [myarea] at [world.time] with [spawned_mobs.len] mobs, [mineral_rocks.len] minrocks, total of [rockspawns.len] rockspawns, [mobspawns.len] mobspawns.") //DEBUG code for playtest stats gathering.
+	log_world("RM(stats): PREP [myarea] at [world.time] with [length(spawned_mobs)] mobs, [length(mineral_rocks)] minrocks, total of [length(rockspawns)] rockspawns, [length(mobspawns)] mobspawns.") //DEBUG code for playtest stats gathering.
 	prepared_at = world.time
 	GLOB.rm_controller.mark_ready(src)
 	return myarea
 
 //Randomize the landmarks that are enabled
 /datum/rogue/zonemaster/proc/randomize_spawns(chance = 50)
-	GLOB.rm_controller.dbg("ZM(rs): Previously [rockspawns.len] rockspawns.")
+	GLOB.rm_controller.dbg("ZM(rs): Previously [length(rockspawns)] rockspawns.")
 	LAZYCLEARLIST(rockspawns)
-	GLOB.rm_controller.dbg("ZM(rs): Now [rockspawns.len] rockspawns.")
+	GLOB.rm_controller.dbg("ZM(rs): Now [length(rockspawns)] rockspawns.")
 	for(var/obj/asteroid_spawner/SP in myarea.asteroid_spawns)
 		if(prob(chance))
 			LAZYADD(rockspawns, SP)
-	GLOB.rm_controller.dbg("ZM(rs): Picked [rockspawns.len] new rockspawns with [chance]% chance.")
+	GLOB.rm_controller.dbg("ZM(rs): Picked [length(rockspawns)] new rockspawns with [chance]% chance.")
 
-	GLOB.rm_controller.dbg("ZM(rs): Previously [mobspawns.len] mobspawns.")
+	GLOB.rm_controller.dbg("ZM(rs): Previously [length(mobspawns)] mobspawns.")
 	LAZYCLEARLIST(mobspawns)
-	GLOB.rm_controller.dbg("ZM(rs): Now [mobspawns.len] mobspawns.")
+	GLOB.rm_controller.dbg("ZM(rs): Now [length(mobspawns)] mobspawns.")
 	for(var/obj/rogue_mobspawner/SP in myarea.mob_spawns)
 		if(prob(GLOB.rm_controller.diffstep_chances[GLOB.rm_controller.diffstep]))
 			LAZYADD(mobspawns, SP)
 			original_mobs++
-	GLOB.rm_controller.dbg("ZM(rs): Picked [mobspawns.len] new mobspawns with [chance]% chance.")
+	GLOB.rm_controller.dbg("ZM(rs): Picked [length(mobspawns)] new mobspawns with [chance]% chance.")
 	return myarea
 
 ///////////////////////////////

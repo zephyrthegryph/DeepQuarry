@@ -2,7 +2,7 @@
 
 	// Text shown when becoming this antagonist.
 	var/list/restricted_jobs   // Jobs that cannot be this antagonist (depending on config)
-	var/list/protected_jobs =      list()   // As above.
+	var/list/protected_jobs   // As above.
 	var/list/roundstart_restricted	//Jobs that can be this antag, but not at roundstart
 	var/avoid_silicons = FALSE				// If we won't hand this antag role to silicons (AI, borg, etc)
 
@@ -61,7 +61,7 @@
 	var/cur_max = 0                         // Autotraitor current effective maximum.
 	var/spawned_nuke                        // Has a bomb been spawned?
 	var/nuke_spawn_loc                      // If so, where should it be placed?
-	var/list/current_antagonists = list()   // All marked antagonists for this type.
+	var/list/current_antagonists   // All marked antagonists for this type.
 	var/list/pending_antagonists   // Candidates that are awaiting finalized antag status.
 	var/list/starting_locations   // Spawn points.
 	var/list/global_objectives   // Universal objectives if any.

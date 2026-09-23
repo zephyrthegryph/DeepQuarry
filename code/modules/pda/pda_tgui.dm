@@ -32,12 +32,12 @@
 			else
 				cat = list()
 				LAZYSET(shortcut_cache, P.category, cat)
-				shortcut_cat_order += P.category
+				LAZYADD(shortcut_cat_order, P.category)
 			cat |= list(list(name = P.name, icon = P.icon, notify_icon = P.notify_icon, ref = "\ref[P]"))
 
 		// force the order of a few core categories
 		shortcut_cat_order = list("General") \
-			+ sortList(shortcut_cat_order - list("General", "Scanners", "Utilities")) \
+			+ sortList((shortcut_cat_order || list()) - list("General", "Scanners", "Utilities")) \
 			+ list("Scanners", "Utilities")
 
 	data["idInserted"] = (id ? 1 : 0)

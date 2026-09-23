@@ -393,15 +393,15 @@
 	var/list/parts = list()
 	var/quantity = max(amount, 0.01)
 	for(var/material_name in sortList(LAZYCOPY(composition)))
-		parts += "[material_name]=[round(composition[material_name] / quantity, 0.001)]"
+		parts += "[material_name]=[round(LAZYACCESS(composition, material_name) / quantity, 0.001)]"
 	for(var/impurity in sortList(LAZYCOPY(impurities)))
-		parts += "+[impurity]=[round(impurities[impurity] / quantity, 0.001)]"
+		parts += "+[impurity]=[round(LAZYACCESS(impurities, impurity) / quantity, 0.001)]"
 	for(var/layer_name in sortList(LAZYCOPY(surface_layers)))
-		parts += "l[layer_name]=[surface_layers[layer_name]]"
+		parts += "l[layer_name]=[LAZYACCESS(surface_layers, layer_name)]"
 	for(var/gas_name in sortList(LAZYCOPY(dissolved_gases)))
-		parts += "g[gas_name]=[round(dissolved_gases[gas_name] / quantity, 0.001)]"
+		parts += "g[gas_name]=[round(LAZYACCESS(dissolved_gases, gas_name) / quantity, 0.001)]"
 	for(var/treatment_name in sortList(LAZYCOPY(field_treatments)))
-		parts += "t[treatment_name]=[field_treatments[treatment_name]]"
+		parts += "t[treatment_name]=[LAZYACCESS(field_treatments, treatment_name)]"
 	for(var/structure_name in sortList(structure.Copy()))
 		parts += "#[structure_name]=[structure[structure_name]]"
 	parts += "p[purity]g[grain_size]s[internal_stress]o[porosity]h[homogeneity]a[atmosphere]x[oxidation]"

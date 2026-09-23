@@ -29,7 +29,7 @@
 	/// Boosting this will autounlock this node
 	var/autounlock_by_boost = TRUE
 	/// The points cost to research the node, type = amount
-	var/list/research_costs = list()
+	var/list/research_costs
 	/// The category of the node
 	var/category = "Misc"
 	/// The list of experiments required to research the node
@@ -88,9 +88,9 @@
 
 /datum/techweb_node/proc/get_price(datum/techweb/host)
 	if(!host)
-		return research_costs
+		return research_costs || list()
 
-	var/list/actual_costs = research_costs.Copy()
+	var/list/actual_costs = LAZYCOPY(research_costs)
 
 	for(var/cost_type in actual_costs)
 		for(var/experiment_type in discount_experiments)

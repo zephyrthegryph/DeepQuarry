@@ -56,7 +56,7 @@
 					if(LAZYLEN(V.generic_waypoints))
 						target =  LAZYACCESS(V.generic_waypoints, 1)
 					else if(LAZYLEN(V.restricted_waypoints))
-						target =  V.restricted_waypoints[1]
+						target =  LAZYACCESS(V.restricted_waypoints, 1)
 					else
 						to_chat(C, span_warning("Unable to jump to [V]."))
 						return

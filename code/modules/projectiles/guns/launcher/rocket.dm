@@ -18,7 +18,7 @@
 /obj/item/gun/launcher/rocket/examine(mob/user)
 	. = ..()
 	if(get_dist(user, src) <= 2)
-		. += span_blue("[rockets.len] / [max_rockets] rockets.")
+		. += span_blue("[length(rockets)] / [max_rockets] rockets.")
 
 /obj/item/gun/launcher/rocket/attackby(obj/item/I, mob/user)
 	if(istype(I, /obj/item/ammo_casing/rocket))
@@ -27,7 +27,7 @@
 			I.loc = src
 			LAZYADD(rockets, I)
 			to_chat(user, span_blue("You put the rocket in [src]."))
-			to_chat(user, span_blue("[rockets.len] / [max_rockets] rockets."))
+			to_chat(user, span_blue("[length(rockets)] / [max_rockets] rockets."))
 		else
 			to_chat(user, span_red(">[src] cannot hold more rockets."))
 

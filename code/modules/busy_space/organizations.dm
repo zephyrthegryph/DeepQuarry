@@ -355,7 +355,7 @@
 			"Unfortunate Son",
 			"Hazard Pay"
 			)
-	var/list/added_ship_names = list()	//List of ship names to add to the above, rather than wholesale replacing
+	var/list/added_ship_names	//List of ship names to add to the above, rather than wholesale replacing
 	var/list/destination_names	//Names of static holdings that the organization's ships visit
 	var/append_ship_names = FALSE
 

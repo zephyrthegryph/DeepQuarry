@@ -16,7 +16,7 @@
 	data["loadable"] = !!loadable
 	var/list/path_rows = list()
 	for(var/path in bad_paths)
-		var/list/keys = bad_paths[path]
+		var/list/keys = LAZYACCESS(bad_paths, path)
 		path_rows += list(list("path" = "[path]", "keys" = keys.Copy()))
 	data["bad_paths"] = path_rows
 	var/list/key_rows = list()

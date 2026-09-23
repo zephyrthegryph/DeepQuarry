@@ -532,7 +532,7 @@
 		if(occupant.reagents.get_reagent_amount(chemical) + amount <= max_chem)
 			use_power(amount * CHEM_SYNTH_ENERGY)
 			occupant.reagents.add_reagent(chemical, amount)
-			to_chat(user, "Occupant now has [occupant.reagents.get_reagent_amount(chemical)] units of [available_chemicals[chemical]] in their bloodstream.")
+			to_chat(user, "Occupant now has [occupant.reagents.get_reagent_amount(chemical)] units of [LAZYACCESS(available_chemicals, chemical)] in their bloodstream.")
 		else
 			to_chat(user, "The subject has too many chemicals in their bloodstream.")
 	else

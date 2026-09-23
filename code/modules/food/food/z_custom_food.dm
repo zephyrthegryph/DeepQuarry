@@ -6,7 +6,7 @@
 	bitesize = 2
 
 	var/ingMax = 20000
-	var/list/ingredients = list()
+	var/list/ingredients
 	var/stackIngredients = 0
 	var/fullyCustom = 0
 	var/addTop = 0
@@ -45,7 +45,7 @@
 		if(S.reagents)
 			S.reagents.trans_to_holder(reagents,S.reagents.total_volume)
 
-		ingredients += S
+		LAZYADD(ingredients, S)
 
 		if(src.addTop)
 			cut_overlay(topping)
@@ -78,7 +78,7 @@
 		else
 			I.color = AverageColor(getFlatIcon(S, S.dir, 0), 1, 1)
 		if(src.stackIngredients)
-			I.pixel_y = src.ingredients.len * 2
+			I.pixel_y = length(src.ingredients) * 2
 		else
 			src.overlays.len = 0
 	if(src.fullyCustom || src.stackIngredients)
@@ -121,7 +121,7 @@
 
 /obj/item/reagent_containers/food/snacks/customizable/proc/drawTopping()
 	var/image/I = topping
-	I.pixel_y = (ingredients.len+1)*2
+	I.pixel_y = (length(ingredients)+1)*2
 	add_overlay(I)
 
 // Sandwiches //////////////////////////////////////////////////

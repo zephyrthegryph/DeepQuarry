@@ -15,7 +15,7 @@
 	underlays.Cut()
 	if(syringe)
 		underlays += image(syringe.icon, src, syringe.icon_state)
-		underlays += syringe.filling
+		if(length(syringe.filling)) underlays += syringe.filling
 
 /obj/item/syringe_cartridge/attackby(obj/item/I, mob/user)
 	if(istype(I, /obj/item/reagent_containers/syringe))

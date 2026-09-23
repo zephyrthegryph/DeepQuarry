@@ -23,7 +23,7 @@
 							/obj/item/clothing/head/cowboy/small				= 2,
 							/obj/item/toy/stickhorse								= 2
 							)
-	var/list/special_prizes = list() // Holds instanced objects, intended for admins to shove surprises inside or something.
+	var/list/special_prizes // Holds instanced objects, intended for admins to shove surprises inside or something.
 
 /obj/machinery/computer/arcade/Initialize(mapload)
 	. = ..()
@@ -41,7 +41,7 @@
 	if(LAZYLEN(special_prizes)) // Downstream wanted the 'win things inside contents sans circuitboard' feature kept.
 		var/atom/movable/AM = pick_n_take(special_prizes)
 		AM.forceMove(get_turf(src))
-		special_prizes -= AM
+		LAZYREMOVE(special_prizes, AM)
 
 	else if(LAZYLEN(prizes))
 		var/prizeselect = pickweight(prizes)

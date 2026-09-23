@@ -8,7 +8,7 @@
 	/// type paths of items consumed associated with how many are needed
 	/// Note that stacks have special handling: the logic accounts for having '23' available
 	/// in the case of just having one stack of 23 amount, so stack/steel = 23 is fine
-	var/list/reqs = list()
+	var/list/reqs
 	var/list/blacklist = list() //type paths of items explicitly not allowed as an ingredient
 	var/result //type path of item resulting from this craft
 	/// String defines of items needed but not consumed. Lazy list.
