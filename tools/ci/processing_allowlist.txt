@@ -1,0 +1,6 @@
+# Files still using START_PROCESSING/STOP_PROCESSING (tools/ci/check_reactor_processing.py).
+# Each is a dedicated continuous processor or owned by another track. Format: <file>  # reason
+code/datums/components/burning.dm  # H3: burning becomes a heat-node state in rewrite/h3; SSburning is theirs
+code/datums/position_point_vector.dm  # SSprojectiles: per-tick pixel movement of every live projectile (SS_TICKER), continuous by definition
+code/modules/projectiles/projectile.dm  # SSprojectiles: per-tick pixel movement of every live projectile (SS_TICKER), continuous by definition
+code/modules/instruments/songs/_song.dm  # SSinstruments: note playback at 0.5 ds resolution while a song plays; a dedicated player

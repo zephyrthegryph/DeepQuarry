@@ -122,6 +122,9 @@ jobs:
       - name: Check Deadline Polling
         if: steps.linter-setup.conclusion == 'success' && !cancelled()
         run: python3 tools/ci/check_deadline_polling.py
+      - name: Check Reactor Processing
+        if: steps.linter-setup.conclusion == 'success' && !cancelled()
+        run: python3 tools/ci/check_reactor_processing.py
       - name: Check Breakpoints
         if: steps.linter-setup.conclusion == 'success' && !cancelled()
         run: python3 tools/ci/breakpoint_lint.py

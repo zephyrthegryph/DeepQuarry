@@ -128,6 +128,17 @@
 /// Declared continuous work: D.react_every(seconds) every `period`, until cancelled.
 /// `why` says why this cannot be a watch or a timer; the profiler lists it.
 #define REACT_EVERY(D, period, why) SSreactor.every(D, period, why)
+/// Declared continuous work that runs D.process(delta_deciseconds): the migration target for a
+/// retired START_PROCESSING user whose work really is continuous. Idempotent (DF_ISPROCESSING);
+/// process() returning PROCESS_KILL cancels it. `why` is required, as for REACT_EVERY.
+#define REACT_PROCESS(D, period, why) SSreactor.start_process(D, period, why)
+/// Drops D's REACT_PROCESS declaration.
+#define REACT_PROCESS_STOP(D) SSreactor.stop_process(D)
+/// Whether D has a live REACT_PROCESS declaration (or, for a machine, is on SSmachines).
+#define REACT_PROCESSING(D) ((D).datum_flags & DF_ISPROCESSING)
+/// One timer per purpose: `token = REACT_REARM(D, token, time)` cancels the old one and, for
+/// a non-null time, schedules a new REACT_AT.
+#define REACT_REARM(D, token, time) SSreactor.rearm(D, token, time)
 /// DM-owned state under key (kind, id) changed; `mask` says which parts.
 #define REACT_PUBLISH(kind, id, mask) vg_react_publish(kind, id, mask)
 /// Wake when key (kind, id) is published with any bit of `mask`.

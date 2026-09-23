@@ -40,6 +40,12 @@ SUBSYSTEM_DEF(reactor)
 	/// reactor_id -> list of its continuous tokens (only for datums that declared any).
 	var/list/continuous_by_id = list()
 	var/next_continuous_token = 0
+	/// Continuous entries by due tick: "tick" -> list of /datum/react_every (cancelled ones
+	/// are skipped when their bucket runs).
+	var/list/continuous_due = list()
+	/// The last tick whose bucket was taken, and what is left of it after a pause.
+	var/continuous_tick = 0
+	var/list/continuous_run
 
 	/// Wakes by subscriber type: type -> list(REACT_CLASS_COUNT counts). Bounded by
 	/// max_metric_types; later types count under "other".
@@ -82,6 +88,9 @@ SUBSYSTEM_DEF(reactor)
 	continuous = SSreactor.continuous
 	continuous_by_id = SSreactor.continuous_by_id
 	next_continuous_token = SSreactor.next_continuous_token
+	continuous_due = SSreactor.continuous_due
+	continuous_tick = SSreactor.continuous_tick
+	continuous_run = SSreactor.continuous_run
 	wake_counts = SSreactor.wake_counts
 	continuous_cost = SSreactor.continuous_cost
 	mob_chunk_subscriptions = SSreactor.mob_chunk_subscriptions
@@ -105,7 +114,8 @@ SUBSYSTEM_DEF(reactor)
 		last_dispatch_ms = TICK_DELTA_TO_MS(TICK_USAGE_REAL - start)
 	if(!dispatch_pending())
 		return
-	run_continuous()
+	if(!run_continuous())
+		return
 	if(audit_interval && world.time >= next_audit && audit_enabled())
 		next_audit = world.time + audit_interval
 		audit(audit_sample, TRUE)
@@ -170,6 +180,11 @@ SUBSYSTEM_DEF(reactor)
 	var/list/tokens = continuous_by_id["[id]"]
 	if(tokens)
 		for(var/token in tokens)
+			var/datum/react_every/entry = continuous["[token]"]
+			if(entry)
+				entry.cancelled = TRUE
+				if(entry.process_bridge)
+					D.datum_flags &= ~DF_ISPROCESSING
 			continuous -= "[token]"
 		continuous_by_id -= "[id]"
 	subscribers[id] = null
@@ -317,7 +332,8 @@ SUBSYSTEM_DEF(reactor)
 
 // --- The continuous lane (reactor.md §2) --------------------------------------------------------
 
-/// One declared continuous process. Few exist, so one datum each is fine.
+/// One declared continuous process. One datum per declaration; entries sit in the due
+/// bucket of their next run's tick, so a fire only touches the entries that are due.
 /datum/react_every
 	var/datum/owner
 	var/owner_id
@@ -327,10 +343,13 @@ SUBSYSTEM_DEF(reactor)
 	var/why
 	var/token
 	var/cancelled = FALSE
+	/// REACT_PROCESS: run owner.process(delta) (delta in deciseconds, the unit the retired
+	/// processing subsystems passed), and cancel on PROCESS_KILL.
+	var/process_bridge = FALSE
 
 /// REACT_EVERY: runs D.react_every(seconds) every `period` deciseconds, where `seconds` is the
 /// real time since the last run, until REACT_CANCEL. Returns the (negative) token.
-/datum/controller/subsystem/reactor/proc/every(datum/D, period, why)
+/datum/controller/subsystem/reactor/proc/every(datum/D, period, why, process_bridge = FALSE)
 	if(!istext(why) || !length(why))
 		CRASH("REACT_EVERY needs a justification: why is [D.type] continuous?")
 	var/datum/react_every/entry = new
@@ -340,26 +359,92 @@ SUBSYSTEM_DEF(reactor)
 	entry.last_run = world.time
 	entry.next_run = world.time + entry.period
 	entry.why = why
+	entry.process_bridge = process_bridge
 	entry.token = --next_continuous_token
 	continuous["[entry.token]"] = entry
 	LAZYADD(continuous_by_id["[entry.owner_id]"], entry.token)
+	bucket_continuous(entry)
 	return entry.token
+
+/// Files `entry` under the tick of its next run.
+/datum/controller/subsystem/reactor/proc/bucket_continuous(datum/react_every/entry)
+	if(!continuous_tick)
+		continuous_tick = tick_of(world.time) - 1
+	var/key = "[max(tick_of(entry.next_run), continuous_tick + 1)]"
+	var/list/bucket = continuous_due[key]
+	if(bucket)
+		bucket += entry
+	else
+		continuous_due[key] = list(entry)
+
+/// REACT_PROCESS: declares `D`'s process() as continuous work, once (DF_ISPROCESSING marks
+/// it). The migration target for START_PROCESSING users whose work really is continuous.
+/datum/controller/subsystem/reactor/proc/start_process(datum/D, period, why)
+	if(D.datum_flags & DF_ISPROCESSING)
+		return
+	D.datum_flags |= DF_ISPROCESSING
+	every(D, period, why, TRUE)
+
+/// REACT_PROCESS_STOP: drops `D`'s process() declaration.
+/datum/controller/subsystem/reactor/proc/stop_process(datum/D)
+	if(!(D.datum_flags & DF_ISPROCESSING))
+		return
+	D.datum_flags &= ~DF_ISPROCESSING
+	if(!D.reactor_id)
+		return
+	var/list/tokens = continuous_by_id["[D.reactor_id]"]
+	if(!tokens)
+		return
+	for(var/token in tokens.Copy())
+		var/datum/react_every/entry = continuous["[token]"]
+		if(entry?.process_bridge)
+			cancel(D, token)
+
+/// Keeps one REACT_AT per purpose: cancels `token` (if any) and, with a `time`, schedules a
+/// new one. Returns the new token or null: `timer_token = SSreactor.rearm(src, timer_token, t)`.
+/datum/controller/subsystem/reactor/proc/rearm(datum/D, token, time)
+	if(!isnull(token))
+		cancel(D, token)
+	if(isnull(time))
+		return null
+	return at(D, time)
 
 /datum/controller/subsystem/reactor/proc/run_continuous()
 	var/start = TICK_USAGE_REAL
-	for(var/key in continuous.Copy())
-		var/datum/react_every/entry = continuous[key]
-		if(!entry || entry.cancelled || world.time < entry.next_run)
+	var/now_tick = tick_of(world.time)
+	if(!continuous_tick)
+		continuous_tick = now_tick - 1
+	while(TRUE)
+		if(!length(continuous_run))
+			if(continuous_tick >= now_tick)
+				break
+			continuous_tick++
+			var/key = "[continuous_tick]"
+			continuous_run = continuous_due[key]
+			if(!continuous_run)
+				continue
+			continuous_due -= key
+		var/datum/react_every/entry = continuous_run[length(continuous_run)]
+		continuous_run.len--
+		if(entry.cancelled)
 			continue
 		var/datum/owner = entry.owner
 		if(QDELETED(owner))
+			if(entry.process_bridge)
+				owner.datum_flags &= ~DF_ISPROCESSING
 			cancel(owner, entry.token)
 			continue
 		var/seconds = (world.time - entry.last_run) / (1 SECONDS)
 		entry.last_run = world.time
 		entry.next_run = world.time + entry.period
+		bucket_continuous(entry)
 		var/before = TICK_USAGE_REAL
-		owner.react_every(seconds, entry.token)
+		if(entry.process_bridge)
+			if(owner.process(seconds * 10) == PROCESS_KILL && !entry.cancelled)
+				owner.datum_flags &= ~DF_ISPROCESSING
+				cancel(owner, entry.token)
+		else
+			owner.react_every(seconds, entry.token)
 		var/list/cost = continuous_cost[owner.type]
 		if(!cost)
 			if(length(continuous_cost) >= max_metric_types)
@@ -369,7 +454,11 @@ SUBSYSTEM_DEF(reactor)
 		cost[1]++
 		cost[2] += TICK_DELTA_TO_MS(TICK_USAGE_REAL - before)
 		count_wake(owner.type, 0, REACT_CLASS_EVERY)
+		if(MC_TICK_CHECK)
+			last_continuous_ms = TICK_DELTA_TO_MS(TICK_USAGE_REAL - start)
+			return FALSE
 	last_continuous_ms = TICK_DELTA_TO_MS(TICK_USAGE_REAL - start)
+	return TRUE
 
 // --- Metrics (reactor.md §7) ----------------------------------------------------------------
 
@@ -415,11 +504,20 @@ SUBSYSTEM_DEF(reactor)
 			if(counts[i])
 				named[class_names[i]] = counts[i]
 		by_type["[type]"] = named
+	// Live declarations, grouped by type and justification (hundreds of objects share one).
+	var/list/declared_index = list()
 	var/list/declared = list()
 	for(var/key in continuous)
 		var/datum/react_every/entry = continuous[key]
+		var/group = "[entry.owner.type]|[entry.why]"
+		var/list/row = declared_index[group]
+		if(row)
+			row["live"]++
+			continue
 		var/list/cost = continuous_cost[entry.owner.type]
-		declared += list(list("type" = "[entry.owner.type]", "period_ds" = entry.period, "why" = entry.why, "runs" = cost ? cost[1] : 0, "total_ms" = cost ? cost[2] : 0))
+		row = list("type" = "[entry.owner.type]", "period_ds" = entry.period, "why" = entry.why, "live" = 1, "runs" = cost ? cost[1] : 0, "total_ms" = cost ? cost[2] : 0)
+		declared_index[group] = row
+		declared += list(row)
 	var/list/continuous_by_type = list()
 	for(var/type in continuous_cost)
 		var/list/cost = continuous_cost[type]
