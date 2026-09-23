@@ -342,9 +342,11 @@ GLOBAL_LIST_INIT(gaslist_cache, init_gaslist_cache())
 	var/list/reactions = SSair.gas_reactions
 	if(!length(reactions))
 		return
-	var/temp = return_temperature()
+	// One batched read for the temperature and every gas the requirements name.
+	var/list/readings = vg_read_mixtures(list(src))
+	var/temp = readings[GAS_READ_TEMPERATURE]
 	// Hypernoblium suppresses all reactions (parity with the old react()).
-	if(get_moles(/datum/gas/hypernoblium) >= REACTION_OPPRESSION_THRESHOLD && temp > REACTION_OPPRESSION_MIN_TEMP)
+	if(readings[GAS_READ_MOLES(GAS_ID_HYPERNOBLIUM)] >= REACTION_OPPRESSION_THRESHOLD && temp > REACTION_OPPRESSION_MIN_TEMP)
 		return STOP_REACTIONS
 	var/results_reset = FALSE
 	for(var/datum/gas_reaction/reaction as anything in reactions)
@@ -357,7 +359,7 @@ GLOBAL_LIST_INIT(gaslist_cache, init_gaslist_cache())
 		for(var/id in reqs)
 			if(id == "MIN_TEMP" || id == "MAX_TEMP")
 				continue
-			if(get_moles(id) < reqs[id])
+			if(readings[GAS_READ_MOLES(GAS_IDX(id))] < reqs[id])
 				satisfied = FALSE
 				break
 		if(!satisfied)
@@ -372,6 +374,9 @@ GLOBAL_LIST_INIT(gaslist_cache, init_gaslist_cache())
 		. |= reaction.react(src, holder)
 		if(. & STOP_REACTIONS)
 			return
+		// The reaction changed the mixture: later requirement checks see the new
+		// moles (the temperature stays the one sampled at the start, as before).
+		readings = vg_read_mixtures(list(src))
 
 /**
  * Returns the partial pressure of the gas in the breath based on BREATH_VOLUME

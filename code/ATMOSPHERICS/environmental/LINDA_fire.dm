@@ -278,7 +278,8 @@
 	color = list(LERP(0.3, 1, 1-greyscale_fire) * heat_r,0.3 * heat_g * greyscale_fire,0.3 * heat_b * greyscale_fire, 0.59 * heat_r * greyscale_fire,LERP(0.59, 1, 1-greyscale_fire) * heat_g,0.59 * heat_b * greyscale_fire, 0.11 * heat_r * greyscale_fire,0.11 * heat_g * greyscale_fire,LERP(0.11, 1, 1-greyscale_fire) * heat_b, 0,0,0)
 	alpha = heat_a
 
-#define INSUFFICIENT(path) (location.air.get_moles(path) < 0.5)
+/// Reads a gas's moles from the batched `readings` record (read_gas_mixtures).
+#define INSUFFICIENT(gas_id) (readings[GAS_READ_MOLES(gas_id)] < 0.5)
 
 /**
  * Regular process proc for hotspots governed by the controller.
@@ -309,8 +310,12 @@
 		qdel(src)
 		return
 
-	//Not enough / nothing to burn
-	if(!location.air || (INSUFFICIENT(/datum/gas/plasma) && INSUFFICIENT(/datum/gas/tritium) && INSUFFICIENT(/datum/gas/hydrogen) && INSUFFICIENT(/datum/gas/freon)) || INSUFFICIENT(/datum/gas/oxygen))
+	//Not enough / nothing to burn. One batched read covers every fuel and oxidiser check.
+	if(!location.air)
+		qdel(src)
+		return
+	var/list/readings = read_gas_mixtures(list(location.air))
+	if((INSUFFICIENT(GAS_ID_PLASMA) && INSUFFICIENT(GAS_ID_TRITIUM) && INSUFFICIENT(GAS_ID_HYDROGEN) && INSUFFICIENT(GAS_ID_FREON)) || INSUFFICIENT(GAS_ID_OXYGEN))
 		qdel(src)
 		return
 
