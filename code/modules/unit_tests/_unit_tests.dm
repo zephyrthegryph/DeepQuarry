@@ -163,6 +163,7 @@
 #include "dq_form_tests.dm"
 #include "dq_body_factor_tests.dm"
 #include "dq_harm_mitigation_tests.dm"
+#include "dq_property_tests.dm"
 #include "dq_robot_machine_tests.dm"
 #include "dq_medical_damage_model_tests.dm"
 #include "dq_lesion_tests.dm"
