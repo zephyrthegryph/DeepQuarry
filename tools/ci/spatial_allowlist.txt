@@ -5,7 +5,7 @@
 # the ledger read API or the spatial API (doc/rewrite/containment.md
 # section 2a) and lower the count; `python tools/ci/spatial_lint.py
 # --update` rewrites it.
-# Total: 1272 sites in 557 files.
+# Total: 1248 sites in 556 files.
 code/ATMOSPHERICS/components/binary_devices/pipeturbine.dm 1
 code/ATMOSPHERICS/components/unary/unary_base.dm 1
 code/ATMOSPHERICS/environmental/LINDA_turf_tile.dm 1
@@ -200,7 +200,6 @@ code/game/objects/structures/simple_doors.dm 1
 code/game/objects/structures/stasis_cage.dm 1
 code/game/objects/structures/stool_bed_chair_nest/alien_nests.dm 3
 code/game/objects/structures/tank_dispenser.dm 2
-code/game/objects/structures/transit_tubes.dm 10
 code/game/objects/structures/watercloset.dm 1
 code/game/objects/structures/window_spawner.dm 1
 code/game/shuttle_engines.dm 1
@@ -408,7 +407,7 @@ code/modules/mob/mob.dm 2
 code/modules/mob/mob_helpers.dm 1
 code/modules/mob/mob_movement.dm 4
 code/modules/mob/say.dm 4
-code/modules/mob/transform_procs.dm 11
+code/modules/mob/transform_procs.dm 7
 code/modules/modular_computers/computers/modular_computer/hardware.dm 1
 code/modules/modular_computers/computers/subtypes/dev_laptop.dm 1
 code/modules/multiz/movement.dm 5
@@ -449,7 +448,7 @@ code/modules/power/fusion/_setup.dm 2
 code/modules/power/generator.dm 4
 code/modules/power/port_gen.dm 5
 code/modules/power/power_bridge.dm 2
-code/modules/power/singularity/singularity.dm 11
+code/modules/power/singularity/singularity.dm 1
 code/modules/power/smes.dm 2
 code/modules/power/solar.dm 2
 code/modules/power/supermatter/setup_supermatter.dm 6
