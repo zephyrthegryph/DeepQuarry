@@ -46,7 +46,7 @@
 	emote_sound = 'sound/voice/biamthelaw.ogg'
 
 /datum/decl/emote/audible/synth/security/mob_can_use(mob/living/silicon/robot/user)
-	return ..() && (istype(user) && (istype(user.module, /obj/item/robot_module/robot/security)))
+	return ..() && istype(user) && user.module?.security_emotes
 
 /datum/decl/emote/audible/synth/security/halt
 	key = "halt"

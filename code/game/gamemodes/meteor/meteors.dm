@@ -355,7 +355,6 @@ GLOBAL_LIST_INIT(meteors_catastrophic, list(
 		explosion(src.loc,2,4,6,8)
 
 
-// === merged from meteors_chomp.dm during hard-fork de-suffix (verified no override-order change) ===
 /obj/effect/meteor/dust/meatyore
 	name = "space blood"
 	icon = 'icons/obj/meteor.dmi'

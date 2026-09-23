@@ -1799,7 +1799,6 @@
 			"}
 
 
-// === merged from manuals_ch.dm during hard-fork de-suffix (verified no override-order change) ===
 /obj/item/book/manual/chemistry_guide
 	name = "Chemical Recipes and Refreshers"
 	desc = "A lengthy guide on the most commonly used chemicals on a modern orbital facility"
@@ -1823,7 +1822,6 @@
 			"}
 
 
-// === merged from manuals_vr.dm during hard-fork de-suffix (verified no override-order change) ===
 /obj/item/book/manual/standard_operating_procedure
 	name = "Standard Operating Procedure"
 	desc = "A set of corporate guidelines for keeping space stations running smoothly."

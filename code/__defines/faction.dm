@@ -3,8 +3,6 @@
 #define FACTION_NONE "None"
 #define FACTION_STATION "Station"
 
-#define FACTION_AEROSTAT_INSIDE "aerostat_inside"
-#define FACTION_AEROSTAT_SURFACE "aerostat_surface"
 #define FACTION_ASTEROID_BELT "asteroid_belt"
 #define FACTION_BEACH_OUT "beach_out"
 #define FACTION_BEACH_CAVE "beach_cave"

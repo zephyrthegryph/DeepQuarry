@@ -110,7 +110,7 @@ SUBSYSTEM_DEF(atoms)
 				// smooth for, and under a loaded MC this per-atom stoplag() turns a
 				// 65k-turf template load (expedition z-alloc) into ~35 minutes of
 				// sleeps — the InitAtom work itself is seconds.
-				if(TICK_CHECK)
+				if(length(GLOB.clients) && TICK_CHECK)
 					clear_tracked_initalize(mapload_source)
 					stoplag()
 					if(mapload_source)
@@ -132,7 +132,7 @@ SUBSYSTEM_DEF(atoms)
 				#ifdef TESTING
 				++count
 				#endif
-				if(TICK_CHECK)
+				if(length(GLOB.clients) && TICK_CHECK)
 					clear_tracked_initalize(mapload_source)
 					stoplag()
 					if(mapload_source)

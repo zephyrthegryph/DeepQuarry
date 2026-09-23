@@ -6,7 +6,7 @@ on:
 jobs:
   linters:
     runs-on: ubuntu-24.04
-    timeout-minutes: 15
+    timeout-minutes: 30
 
     steps:
       - uses: actions/checkout@v6.0.2

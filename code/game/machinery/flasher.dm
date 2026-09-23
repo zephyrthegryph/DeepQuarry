@@ -90,7 +90,7 @@
 				return
 			if(E.is_bruised() && prob(E.damage + 50))
 				H.flash_eyes()
-				E.damage += rand(1, 5)
+				H.injure(INJURY_BURN, rand(1, 5), E, src, flags = INJURE_SILENT)
 		else
 			if(!O.blinded && isliving(O))
 				var/mob/living/L = O

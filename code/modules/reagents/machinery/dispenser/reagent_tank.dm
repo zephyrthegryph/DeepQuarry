@@ -268,7 +268,7 @@
 	if(src)
 		qdel(src)
 
-/obj/structure/reagent_dispensers/fueltank/fire_act(datum/gas_mixture/air, temperature, volume)
+/obj/structure/reagent_dispensers/fueltank/fire_act(temperature, volume)
 	if (modded)
 		explode()
 	else if (temperature > T0C+500)
@@ -521,7 +521,6 @@
 	AddElement(/datum/element/climbable)
 
 
-// === merged from reagent_tank_ch.dm during hard-fork de-suffix (verified no override-order change) ===
 /obj/structure/reagent_dispensers/space_cleaner
 	name = "Space Cleaner Dispenser"
 	desc = "A dispenser of space cleaner, every janitor's dream!"

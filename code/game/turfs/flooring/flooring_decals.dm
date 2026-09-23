@@ -1357,7 +1357,6 @@ GLOBAL_LIST_EMPTY(floor_decals)
 	icon_state = "andromeda6"
 
 
-// === merged from flooring_decals_ch.dm during hard-fork de-suffix (verified no override-order change) ===
 /obj/effect/floor_decal/stairs
 	name = "stair decal"
 	icon = 'icons/obj/decals_ch.dmi'
@@ -1373,7 +1372,6 @@ GLOBAL_LIST_EMPTY(floor_decals)
 	icon_state = "dark_stairs"
 
 
-// === merged from flooring_decals_vr.dm during hard-fork de-suffix (verified no override-order change) ===
 /obj/effect/floor_decal/flesh
 	name = "flesh"
 	icon = 'icons/turf/stomach_vr.dmi'
@@ -1845,3 +1843,23 @@ GLOBAL_LIST_EMPTY(floor_decals)
 
 /obj/effect/floor_decal/road/center
 	icon_state = "center_lines"
+
+/obj/effect/floor_decal/snow/floor
+	icon_state = "snowfloor"
+	plane = TURF_PLANE
+	layer = ABOVE_TURF_LAYER
+	mouse_opacity = 0 //Don't block underlying tile interactions
+
+/obj/effect/floor_decal/snow/floor/edges
+	icon_state = "snow_edges"
+
+/obj/effect/floor_decal/snow/floor/edges2
+	icon_state = "snow_edges2"
+/obj/effect/floor_decal/snow/floor/edges3
+	icon_state = "gravsnow_edges"
+
+/obj/effect/floor_decal/snow/floor/surround
+	icon_state = "snow_surround"
+
+/obj/effect/floor_decal/snow/floor/pointy
+	icon_state = "snowfloorpointy"

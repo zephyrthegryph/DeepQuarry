@@ -192,7 +192,6 @@
 	path = /obj/item/storage/box/syndie_kit/concussion_grenade
 
 
-// === merged from visible_weapons_vr.dm during hard-fork de-suffix (verified no override-order change) ===
 /***************************************
 * Highly Visible and Dangerous Weapons *
 ***************************************/

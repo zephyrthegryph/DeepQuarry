@@ -399,10 +399,6 @@ GLOBAL_LIST_BOILERPLATE(all_singularities, /obj/singularity)
 
 
 /obj/singularity/proc/toxmob()
-	var/toxrange = 10
-	var/toxdamage = 4
-	if (src.energy>200)
-		toxdamage = round(((src.energy-150)/50)*4,1)
 	radiation_pulse(
 		src,
 		max_range = 7,
@@ -411,11 +407,6 @@ GLOBAL_LIST_BOILERPLATE(all_singularities, /obj/singularity)
 		minimum_exposure_time = URANIUM_RADIATION_MINIMUM_EXPOSURE_TIME,
 		strength = 250
 	)
-	for(var/mob/living/M in view(toxrange, src.loc))
-		if(SEND_SIGNAL(M, COMSIG_CHECK_FOR_GODMODE) & COMSIG_GODMODE_CANCEL)
-			return 0	// Cancelled by a component
-		toxdamage = (toxdamage - (toxdamage*M.getarmor(null, "rad")))
-		M.apply_effect(toxdamage, TOX)
 	return
 
 

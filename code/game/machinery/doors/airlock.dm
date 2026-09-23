@@ -216,7 +216,7 @@ About the new airlock wires panel:
 		else if(user.hallucination > 50 && prob(10) && operating == 0)
 			to_chat(user, span_danger("You feel a powerful shock course through your body!"))
 			user.playsound_local(get_turf(user), get_sfx("sparks"), vol = 75)
-			user.halloss += 10
+			user.injure(INJURY_PAIN, 10, null, src)
 			user.AdjustStunned(10)
 			return
 	..(user)
@@ -961,7 +961,7 @@ About the new airlock wires panel:
 		var/turf/T = get_turf(M)
 		if(isAI(M)) // AI holograms can listen too
 			var/mob/living/silicon/ai/A = M
-			if(A.holo && istype(A.holo.masters[A],/obj/effect/overlay/aiholo))
+			if(A.holo && istype(LAZYACCESS(A.holo.masters, A),/obj/effect/overlay/aiholo))
 				T = get_turf(A.holo)
 		var/distance = get_dist(T, get_turf(src))
 		if(distance <= world.view * 2)
@@ -1031,7 +1031,7 @@ About the new airlock wires panel:
 		return FALSE
 	. = ..()
 	var/turf/T = get_turf(src)
-	adjustBruteLoss(crush_damage)
+	injure(INJURY_BLUNT, crush_damage)
 	SetStunned(5)
 	SetWeakened(5)
 	if(T)
@@ -1044,7 +1044,7 @@ About the new airlock wires panel:
 		emote("scream")
 
 /mob/living/silicon/robot/airlock_crush(crush_damage)
-	adjustBruteLoss(crush_damage)
+	injure(INJURY_BLUNT, crush_damage)
 	return FALSE
 
 /obj/machinery/door/airlock/close(forced= FALSE, ignore_safties = FALSE, crush_damage = DOOR_CRUSH_DAMAGE)
@@ -1071,7 +1071,7 @@ About the new airlock wires panel:
 	for(var/turf/turf in locs)
 		for(var/atom/movable/AM in turf)
 			if(AM.airlock_crush(crush_damage))
-				take_damage(crush_damage)
+				take_damage(crush_damage, BRUTE, MELEE)
 
 	use_power(360)	//360 W seems much more appropriate for an actuator moving an industrial door capable of crushing people
 	has_beeped = 0
@@ -1107,7 +1107,7 @@ About the new airlock wires panel:
 		var/turf/T = get_turf(M)
 		if(isAI(M)) // AI holograms can listen too
 			var/mob/living/silicon/ai/A = M
-			if(A.holo && istype(A.holo.masters[A],/obj/effect/overlay/aiholo))
+			if(A.holo && istype(LAZYACCESS(A.holo.masters, A),/obj/effect/overlay/aiholo))
 				T = get_turf(A.holo)
 
 		var/distance = get_dist(T, get_turf(src))

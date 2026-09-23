@@ -58,11 +58,12 @@
 		update_icon()
 
 	if(faction != B.faction && B.overmind)
-		adjustBruteLoss(rand(B.overmind.blob_type.damage_lower, B.overmind.blob_type.damage_upper))
+		injure(INJURY_BLUNT, rand(B.overmind.blob_type.damage_lower, B.overmind.blob_type.damage_upper), source = B)
 
-	else if(stat != DEAD && health < maxHealth)
-		adjustBruteLoss(-maxHealth*0.0125)
-		adjustFireLoss(-maxHealth*0.0125)
+	else if(stat != DEAD && is_injured())
+		var/regen = get_endurance() * 0.0125
+		mend(TREAT_TISSUE_REPAIR, regen)
+		mend(TREAT_BURN_CARE, regen)
 
 /mob/living/simple_mob/blob/CanPass(atom/movable/mover, turf/target)
 	if(istype(mover, /obj/structure/blob)) // Don't block blobs from expanding onto a tile occupied by a blob mob.

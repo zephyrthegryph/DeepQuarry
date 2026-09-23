@@ -17,7 +17,7 @@
 
 	var/datum/component/artifact_master/artifact_master = /datum/component/artifact_master
 
-/obj/machinery/artifact/fire_act(datum/gas_mixture/air, exposed_temperature, exposed_volume) //If we get too hot, we burst!
+/obj/machinery/artifact/fire_act(exposed_temperature, exposed_volume) //If we get too hot, we burst!
 	if(exposed_temperature >= ARTIFACT_HEAT_BREAK) ///2500K
 		qdel(src)
 
@@ -89,6 +89,5 @@
 		icon_state = "ano[icon_num]0"
 
 
-// === merged from artifact_vr.dm during hard-fork de-suffix (verified no override-order change) ===
 /obj/machinery/artifact
 	icon = 'icons/obj/xenoarchaeology.dmi'

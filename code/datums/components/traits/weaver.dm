@@ -69,7 +69,6 @@
 		ui = new(user, src, "WeaverConfig", "Weaver Config")
 		ui.open()
 
-
 /mob/living/proc/weaver_control_panel()
 	set name = "Weaver Control Panel"
 	set desc = "Allows you to adjust the settings of various weaver settings!"
@@ -125,11 +124,6 @@
 		if("check_silk_amount")
 			to_chat(owner, span_info("Your silk reserves are at [silk_reserve]/[silk_max_reserve]."))
 			return FALSE
-		/* //Unused.
-		if("weave_item") //The global list of items.
-			weave_item()
-			return TRUE
-		*/
 		if("weave_binding")
 			weave_check(50, /obj/item/clothing/suit/weaversilk_bindings)
 			return TRUE

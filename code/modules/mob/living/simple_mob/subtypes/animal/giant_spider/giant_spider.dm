@@ -12,8 +12,7 @@
 	icon_living = "webslinger"
 	icon_dead = "webslinger_dead"
 
-	maxHealth = 90
-	health = 90
+	endurance = 90
 
 	base_attack_cooldown = 15
 	projectilesound = 'sound/weapons/taser2.ogg'
@@ -38,8 +37,7 @@
 	icon_living = "spider_queen"
 	icon_dead = "spider_queen_dead"
 
-	maxHealth = 320
-	health = 320
+	endurance = 320
 
 	melee_damage_lower = 20
 	melee_damage_upper = 30

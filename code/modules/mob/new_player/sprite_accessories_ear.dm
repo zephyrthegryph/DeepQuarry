@@ -1344,7 +1344,6 @@
 	*/
 
 
-// === merged from sprite_accessories_ear_ch.dm during hard-fork de-suffix (verified no override-order change) ===
 /*/datum/sprite_accessory/ears/alien_slug //Is now a base vorestation feature
 	name = "Alien slug ears"
 	desc = "The ears of a slug from space"
@@ -1556,7 +1555,6 @@
 	extra_overlay2 = "kittyinner"
 
 
-// === merged from sprite_accessories_ear_chomp.dm during hard-fork de-suffix (verified no override-order change) ===
 /datum/sprite_accessory/ears/mizutsune
 	name = "Mizutsune Ears"
 	desc = ""

@@ -5,52 +5,8 @@
 //Add details to planet foods as well as diversify options for cargo ordering.
 //make water turfs stomp and apply to player sprites.
 
-
 //turf items
 
-/turf/simulated/floor/smole
-	name = "toy floor"
-	icon = 'icons/vore/smoleworld_vr.dmi'
-	icon_state = "megablocksturf"
-	var/list/crossed_dirs
-
-/turf/simulated/floor/smole/Entered(atom/A)
-	if(isliving(A))
-		var/mob/living/L = A
-		if(dq_get_hovering(L) || L.flying) // Flying things shouldn't make footprints.
-			if(L.flying)
-				L.adjust_nutrition(-0.5)
-			return ..()
-		if(L.get_effective_size(FALSE) <= RESIZE_NORMAL)
-			return ..()
-		if(L.get_effective_size(FALSE) >= RESIZE_A_BIGNORMAL)
-			playsound(src, 'sound/effects/footstep/giantstep_gigga.ogg', 35, 1, -1, volume_channel = VOLUME_CHANNEL_MASTER)
-			var/mdir = "[A.dir]"
-			LAZYSET(crossed_dirs, mdir, 1)
-			update_icon()
-	. = ..()
-
-/turf/simulated/floor/smole/update_icon()
-	..()
-	for(var/d in crossed_dirs)
-		add_overlay(image(icon = 'icons/vore/smoleworld_vr.dmi', icon_state = "stomp", dir = text2num(d)))
-
-//Extra micro turfs
-/turf/simulated/floor/smole/grass
-	icon = 'icons/turf/outdoors.dmi'
-	name = "grass"
-	icon_state = "grass0"
-	initial_flooring = /datum/decl/flooring/grass/outdoors
-
-/turf/simulated/floor/smole/desert
-	icon = 'icons/turf/desert.dmi'
-	icon_state = "desert"
-	initial_flooring = /datum/decl/flooring/sand/desert
-
-/turf/simulated/floor/smole/megablocks
-	name = "block floor"
-	icon = 'icons/vore/smoleworld_vr.dmi'
-	icon_state = "megablocksturf"
 
 //Used to make smole objects be able to be built from menu
 
@@ -143,7 +99,6 @@
 	color = new_color
 	return
 
-
 // probably redundant, allows for direct way to dismantal without knowing intents
 /obj/structure/smoletrack/verb/menudismantal()
 	set name = "Take Road Apart"
@@ -157,7 +112,6 @@
 		new /obj/item/stack/material/smolebricks(F)
 	qdel(src)
 	return
-
 
 // Road pieces
 
@@ -349,32 +303,8 @@
 //
 //CAR STUFF < WILL BE MESSED WITH IN A LATER UPDATE COMMENTED OUT FOR NOW
 ///obj/item/smolecar
-//	name = "toy car"
-//	desc = "A toy car ready to be snapped together and burn rubber!"
-//	icon = 'icons/vore/smoleworld_vr.dmi'
-//	icon_state = "smolecarA_folded"
-//	item_state = "smolecarA"
-//	unfolded_type = /obj/structure/bed/chair/wheelchair/smolecar
-//
 ///obj/structure/smolecar
-//	name = "Toy Car"
-//	desc = "Lets burn rubber!"
-//	icon = 'icons/vore/smoleworld_vr.dmi'
-//	icon_state = "smolecarA"
-//	anchored = FALSE
-//	buckle_movable = 1
-//	var/carry_type = /obj/item/smolecar
-//
 ///obj/structure/bed/chair/wheelchair/smolecar/can_buckle_check(mob/living/M, forced = FALSE)
-//	. = ..()
-//	if(.)
-//
-//		if(M.get_effective_size(TRUE) > RESIZE_TINY)
-//			to_chat(M, span_warning("You are to big to fit in \the [src]."))
-	//		. = FALSE
-//
-//
-//snack planets, currently just plopped out will be organized later.
 /obj/item/trash/candychunk
 	icon = 'icons/vore/smoleworld_vr.dmi'
 	icon_state = "sp_sugarchunk"

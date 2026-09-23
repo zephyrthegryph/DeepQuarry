@@ -18,7 +18,7 @@
 	harm_intent_damage = 10
 	melee_damage_lower = 10
 	melee_damage_upper = 20
-	maxHealth = 300
+	endurance = 300
 
 	minbodytemp = 0
 

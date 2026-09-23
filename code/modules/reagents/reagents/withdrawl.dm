@@ -1,5 +1,5 @@
 /datum/reagent/proc/handle_addiction(mob/living/carbon/M, alien)
-	// overridable proc for custom withdrawl behaviors, standard is chills, cravings, vomiting, weakness and CE_WITHDRAWL organ damage
+	// overridable proc for custom withdrawl behaviors, standard is chills, cravings, vomiting, weakness and BF_WITHDRAWAL organ damage
 	if(alien == IS_DIONA)
 		return 0
 	var/current_addiction = M.get_addiction_to_reagent(id)
@@ -11,7 +11,7 @@
 		if(prob(2))
 			M.Weaken(1)
 	else if(current_addiction > 10)
-		if(CE_STABLE in M.chem_effects) // Inaprovaline can be used to treat addiction
+		if(M.factor(BF_STABILIZATION)) // Inaprovaline can be used to treat addiction
 			if(prob(1))
 				switch(rand(1,3))
 					if(1)
@@ -45,11 +45,11 @@
 				if(prob(3))
 					M.Weaken(2)
 					M.emote("vomit")
-					M.add_chemical_effect(CE_WITHDRAWL, rand(2,4) * REM)
+					M.add_modifier(/datum/modifier/withdrawal_strain/mild, 3 SECONDS)
 			else if(current_addiction <= 50)
 				if(prob(3))
 					M.emote("vomit")
-					M.add_chemical_effect(CE_WITHDRAWL, rand(1,3) * REM)
+					M.add_modifier(/datum/modifier/withdrawal_strain/mild, 3 SECONDS)
 			else if(current_addiction <= 70)
 				if(prob(2))
 					M.emote("vomit")

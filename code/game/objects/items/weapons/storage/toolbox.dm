@@ -238,7 +238,6 @@
 	filled = TRUE
 
 
-// === merged from toolbox_vr.dm during hard-fork de-suffix (verified no override-order change) ===
 /obj/item/storage/toolbox/lunchbox/survival
 	name = "survival lunchbox"
 	icon = 'icons/obj/storage_vr.dmi'

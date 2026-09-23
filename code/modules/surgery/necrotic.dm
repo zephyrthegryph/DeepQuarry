@@ -62,7 +62,7 @@
 	user.visible_message(span_danger("[user]'s hand slips, slicing an artery inside [target]'s [affected.name] with \the [tool]!"), \
 	span_danger("Your hand slips, slicing an artery inside [target]'s [affected.name] with \the [tool]!"))
 	user.balloon_alert_visible("slips, slicing an artery inside [target]'s [affected.name]", "your hand slips, slicing an artery inside \the [affected.name]")
-	affected.createwound(CUT, 20, 1)
+	target.injure(INJURY_CUT, 20, affected.organ_tag, tool, flags = INJURE_IGNORE_RESISTANCE)
 
 ///////////////////////////////////////////////////////////////
 // Necrosis Surgery Step 2
@@ -172,7 +172,7 @@
 	user.visible_message(span_danger("[user]'s hand slips, bruising the muscle inside of [target]'s [affected.name] with \the [tool]!"), \
 	span_danger("Your hand slips, bruising the muscle inside of [target]'s [affected.name] with \the [tool]!"))
 	user.balloon_alert_visible("slips, bruising the muscle inside of [target]'s [affected.name]", "your hand slips, bruising the muscle inside of \the [affected.name]")
-	affected.createwound(BRUISE, 20, 1)
+	target.injure(INJURY_BLUNT, 20, affected.organ_tag, tool, flags = INJURE_IGNORE_RESISTANCE)
 
 ///////////////////////////////////////////////////////////////
 // Necrosis Surgery Step 3
@@ -211,7 +211,7 @@
 	user.visible_message(span_danger("[user]'s hand slips, slicing the fresh tissue on [target]'s [affected.name] with \the [tool]!"), \
 	span_danger("Your hand slips, slicing the fresh tissue on [target]'s [affected.name] with \the [tool]!"))
 	user.balloon_alert_visible("slips, slicing the fresh tissue on [target]'s [affected.name]", "your hand slips, slicing the fresh tissue on \the [affected.name]")
-	affected.createwound(CUT, 10, 1)
+	target.injure(INJURY_CUT, 10, affected.organ_tag, tool, flags = INJURE_IGNORE_RESISTANCE)
 
 ///////////////////////////////////////////////////////////////
 // Necrosis Surgery Step 4
@@ -256,4 +256,4 @@
 	user.visible_message(span_danger("[user]'s hand slips, slicing the fresh tissue on [target]'s [affected.name] with \the [tool]!"), \
 	span_danger("Your hand slips, slicing the fresh tissue on [target]'s [affected.name] with \the [tool]!"))
 	user.balloon_alert_visible("slips, slicing the fresh tissue on [target]'s [affected.name]", "your hand slips, slicing the fresh tissue on \the [affected.name]")
-	affected.createwound(CUT, 10, 1)
+	target.injure(INJURY_CUT, 10, affected.organ_tag, tool, flags = INJURE_IGNORE_RESISTANCE)

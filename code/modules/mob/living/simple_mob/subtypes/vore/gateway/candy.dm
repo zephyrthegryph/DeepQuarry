@@ -22,8 +22,7 @@
 
 	faction = "candy"
 
-	maxHealth = 20
-	health = 20
+	endurance = 20
 	movement_cooldown = 2
 	melee_attack_delay = 2 SECOND
 	can_be_drop_prey = TRUE
@@ -216,8 +215,7 @@
 	icon_living = "red"
 	icon_dead = "red_dead"
 
-	maxHealth = 50
-	health = 50
+	endurance = 50
 
 	melee_damage_lower = 15
 	melee_damage_upper = 25
@@ -366,37 +364,41 @@
 	if(holder.stat == DEAD)
 		expire()
 
-	if(ishuman(holder)) // Robolimbs need this code sadly.
+	if(ishuman(holder)) // Every limb, organic or robotic.
 		var/mob/living/carbon/human/H = holder
-		for(var/obj/item/organ/external/E in H.organs)
-			var/obj/item/organ/external/O = E
-			O.heal_damage(2, 2, 0, 1)
+		for(var/obj/item/organ/external/E as anything in H.organs)
+			H.mend(TREAT_TISSUE_REPAIR, 2, E.organ_tag)
+			H.mend(TREAT_BURN_CARE, 2, E.organ_tag)
+			H.mend(TREAT_PLATING_REPAIR, 2, E.organ_tag)
+			H.mend(TREAT_WIRING_REPAIR, 2, E.organ_tag)
 	else
-		holder.adjustBruteLoss(-2)
-		holder.adjustFireLoss(-2)
+		holder.mend(TREAT_TISSUE_REPAIR, 2)
+		holder.mend(TREAT_BURN_CARE, 2)
+		holder.mend(TREAT_PLATING_REPAIR, 2)
+		holder.mend(TREAT_WIRING_REPAIR, 2)
 
-	holder.adjustToxLoss(-1)
+	holder.mend(TREAT_ANTITOXIN, 1)
 
 /datum/modifier/aura/candy_orange //melee+
 	name = "candy orange"
 	desc = "You feel somewhat gooey."
 	stacks = MODIFIER_STACK_FORBID
 	aura_max_distance = 5
-	outgoing_melee_damage_percent = 1.5
+	factors = alist(BF_MELEE_DAMAGE = 1.5)
 
 /datum/modifier/aura/candy_yellow //speed
 	name = "candy yellow"
 	desc = "You feel somewhat gooey."
 	stacks = MODIFIER_STACK_FORBID
 	aura_max_distance = 5
-	slowdown = -1
+	factors = alist(BF_SLOWDOWN = -1)
 
 /datum/modifier/aura/candy_blue //defense
 	name = "candy blue"
 	desc = "You feel somewhat gooey."
 	stacks = MODIFIER_STACK_FORBID
 	aura_max_distance = 5
-	incoming_damage_percent	= 0.9
+	factors = alist(BF_INCOMING_ALL = 0.9)
 
 //Boss Fight
 /mob/living/simple_mob/vore/candy/ouroboros
@@ -415,8 +417,7 @@
 	icon_living = "ouroboros"
 	icon_dead = "slainouroboros"
 
-	maxHealth = 200
-	health = 200
+	endurance = 200
 	armor = list(melee = 30, bullet = 30, laser = 30, energy = 30, bomb = 20, bio = 100, rad = 100) //armor cause boss
 	movement_cooldown = 0
 	melee_attack_delay = 1 SECOND
@@ -472,11 +473,11 @@
 	new /obj/random/mob/candycritter (src.loc)
 	visible_message(span_warning("\The [src] begins to heal!"))
 	sleep(3.5 SECONDS)
-	adjustBruteLoss(-35)
-	adjustFireLoss(-35)
-	adjustToxLoss(-35)
-	adjustOxyLoss(-35)
-	adjustCloneLoss(-35)
+	mend(TREAT_TISSUE_REPAIR, 35)
+	mend(TREAT_BURN_CARE, 35)
+	mend(TREAT_ANTITOXIN, 35)
+	mend(TREAT_OXYGENATION, 35)
+	mend(TREAT_GENETIC_REPAIR, 35)
 
 /mob/living/simple_mob/vore/candy/ouroboros/proc/barrage_combo(atom/target)
 	if(prob(50))
@@ -609,15 +610,14 @@
 
 	faction = "candy"
 
-	maxHealth = 10
-	health = 10
+	endurance = 10
 
 /mob/living/simple_mob/vore/candy/peppermint/attackby(obj/item/O as obj, mob/user as mob)
 	if(O.force)
 		if(prob(80))
 			visible_message(span_danger("\The [src] deflects \the [O] with its shell!"))
 			if(user)
-				ai_brain?.react_to_attack(user)
+				ai_brain.react_to_attack(user)
 			return
 		else
 			..()
@@ -636,8 +636,7 @@
 
 	faction = "candy"
 
-	maxHealth = 60
-	health = 60
+	endurance = 60
 
 
 /mob/living/simple_mob/vore/candy/worm/death()
@@ -692,3 +691,5 @@
 
 	B.emote_lists[DM_DIGEST] = list(
 		"Every clench of the predator's stomach grinds powerful digestive fluids into your body, forcibly churning away your strength!")
+
+v

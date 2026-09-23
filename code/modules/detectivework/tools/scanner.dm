@@ -48,15 +48,6 @@
 	if(ismob(A))
 		return
 
-/*
-	if(istype(A,/obj/machinery/computer/forensic_scanning))
-		user.visible_message("[user] takes a cord out of [src] and hooks its end into [A]" ,\
-		span_notice("You download data from [src] to [A]"))
-		var/obj/machinery/computer/forensic_scanning/F = A
-		F.sync_data(stored)
-		return
-*/
-
 	if(istype(A,/obj/item/sample/print))
 		to_chat(user, "The scanner displays on the screen: \"ERROR 43: Object on Excluded Object List.\"")
 		flick("[icon_state]0",src)
@@ -112,7 +103,6 @@
 		if(reveal_incompletes)
 			for(var/i in incomplete_prints)
 				to_chat(user, span_notice("&nbsp;&nbsp;&nbsp;&nbsp;[i]"))
-
 
 	//FIBERS
 	if(A.forensic_data?.has_fibres())

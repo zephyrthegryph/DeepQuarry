@@ -11,8 +11,7 @@
 	icon_state = "bishop"
 	icon_living = "bishop"
 	ui_icons = 'icons/mob/screen1_purity.dmi'
-	maxHealth = 250
-	health = 250
+	endurance = 250
 	melee_damage_lower = 15
 	melee_damage_upper = 20
 	attack_armor_pen = 15
@@ -51,8 +50,7 @@
 	icon_state = "archbishop"
 	icon_living = "archbishop"
 	ui_icons = 'icons/mob/screen1_purity.dmi'
-	maxHealth = 200
-	health = 200
+	endurance = 200
 	melee_damage_lower = 20 //hits much harder then most purity constructs
 	melee_damage_upper = 30
 	attack_armor_pen = 50 //armor is no match against its religious wrath

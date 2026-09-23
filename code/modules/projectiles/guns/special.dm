@@ -3,7 +3,7 @@
 	icon_state = "bola"
 	damage = 5
 	embed_chance = 0 //Nada.
-	damage_type = HALLOSS
+	injury_kind = INJURY_PAIN
 	muzzle_type = null
 	hud_state = "monkey"
 

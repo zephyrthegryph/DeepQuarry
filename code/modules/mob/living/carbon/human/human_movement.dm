@@ -7,52 +7,32 @@
 	if(force_max_speed)
 		return HUMAN_LOWEST_SLOWDOWN
 
-	for(var/datum/modifier/M in modifiers) //Do this before space check in case we're hasted (and use max speed)
-		if(M.haste)
-			return HUMAN_LOWEST_SLOWDOWN // Per haste documentation 'ignore slowdown and move really fast'. Calling ..() here adds slowdown.
-		if(!isnull(M.slowdown))
-			. += M.slowdown
+	// Haste: ignore slowdown and move really fast. Calling ..() here adds slowdown.
+	if(factor(BF_HASTE))
+		return HUMAN_LOWEST_SLOWDOWN
+
+	// Every body factor source at once: species and traits, modifiers,
+	// afflictions, reagents (stimulants are negative), form and worn gear.
+	. += factor(BF_SLOWDOWN)
 
 	if(istype(loc, /turf/space))
 		return ..() - 1
 
-	. += species.slowdown
-
-	//Quick math:
-	//100 max hp w/ 0 damage = 100/100 * 100 = 100HP
-	//100 max hp w/ 50 damage = (50/100) * 100 = 50HP
-	//100 max hp w/ 50 halloss = (50/100) * 100 = 50HP
-	//100 max hp w/ 75 damage = (25/100) * 100 = 75HP
-	//200 max hp w/ 50 damage = (50/200) * 100 = 75HP
-	if(species.pain_mod)
-		var/health_percent = ((health / getMaxHealth()) * 100) / species.pain_mod //Species pain sensitivity does not apply to painkillers, so we apply it before
-
-		var/hal_pain = getHalLoss() * species.pain_mod //trauma_mod is something entirely differently
-		//var/hal_pain = can_feel_pain() ? (getHalLoss() * 2) * species.pain_mod : 0 //Variant for if you want pain immune people to not be affected by halloss slowdown.
-
-		if((health_percent <= 60 || hal_pain >= 25) && !chem_effects[CE_NARCOTICS]) //Have taken 40% of our max health in damage OR we have >=25 halloss pain
-
-			if(health_percent < 0)
-				health_percent = 0 //Crit already has its own negative effects, so
-
-			var/amount_damaged = 100 - health_percent //Get the percent.
-
-			if(chem_effects[CE_PAINKILLER]) //On painkillers? Reduce pain! On anti-painkillers? Increase pain!
-				var/painkiller_strength = chem_effects[CE_PAINKILLER]
-				if(hal_pain > 25)
-					hal_pain = max(0, max(25, hal_pain - (painkiller_strength * 0.33))) //Painkillers are only 33% effective against halloss pain and can never lower your hal_pain below 25. It makes it less noticible at high levels, but it can't completely nullify it (unless on narcotics)
-				amount_damaged = max(0, amount_damaged - painkiller_strength)
-			amount_damaged += hal_pain
-
-			if(amount_damaged >= 25) //Still in enough pain for it to be significant?
-				. += CLAMP((amount_damaged / 25), 0, 4) //Max of 4 slowdown from pain.
+	// Pain slows you down. The body's pain already folds in wounds, agony,
+	// species sensitivity and analgesia; ~1.2 pain per point of damage, so
+	// this is roughly "percent of the species' health lost". Max 4 slowdown.
+	if(species.total_health)
+		var/amount_hurt = current_pain() * 100 / (1.2 * species.total_health)
+		if(amount_hurt >= 25) //In enough pain for it to be significant?
+			. += CLAMP((amount_hurt / 25), 0, 4)
 
 	var/hungry = (500 - nutrition) / 5 //Fixed 500 here instead of our huge MAX_NUTRITION
 	if(hungry >= 70)
 		. += hungry/50
 
 	if(get_feralness() >= 10) //crazy feral animals give less and less of a shit about pain and hunger as they get crazier
-		. = max(species.slowdown, species.slowdown+((.-species.slowdown)/(get_feralness()/10))) // As feral scales to damage, this amounts to an effective +1 slowdown cap
+		var/species_slowdown = species.baseline_factor(BF_SLOWDOWN)
+		. = max(species_slowdown, species_slowdown+((.-species_slowdown)/(get_feralness()/10))) // As feral scales to damage, this amounts to an effective +1 slowdown cap
 		if(shock_stage >= 10)
 			. -= CLAMP((shock_stage / 40), 0.25, 1.5) //Feral creatures get halved shock penalty.
 
@@ -108,26 +88,18 @@
 
 	. += item_tally
 
-	if(CE_SLOWDOWN in chem_effects)
-		if(. >= 0 )
-			. *= 1.25 //Add a quarter of penalties on top.
-		. += chem_effects[CE_SLOWDOWN]
+	// Sedatives add to penalties, stimulants cut them (BF_PENALTY_SCALE).
+	if(. > 0)
+		. *= factor(BF_PENALTY_SCALE)
 
-	//mRun means we don't get slowdown, so we axe the slowdown after all the slowdown stuff has been accounted for, but before speed buffs are applied.
+	//mRun means we don't get slowdown: axe every penalty, keep speed buffs.
 	if(mRun in mutations)
-		. = 0
-
-	if(CE_SPEEDBOOST in chem_effects)
-		if (. >= 0)	// cut any penalties in half
-			. *= 0.5
-		. -= chem_effects[CE_SPEEDBOOST]	// give 'em a buff on top.
+		. = min(., 0)
 
 	if(HAS_TRAIT(src, UNUSUAL_RUNNING) && !get_active_hand() && !get_inactive_hand()) //better not have any items on you mfer
 		. -= 0.5 // ok vibe check passed, take this small movement buff and leave
 
 	. = max(HUMAN_LOWEST_SLOWDOWN, . + CONFIG_GET(number/human_delay))	// Minimum return should be the same as force_max_speed
-	// active medical conditions can slow movement.
-	. += dq_condition_slowdown()
 	. += ..()
 
 /mob/living/carbon/human/Moved()
@@ -189,24 +161,6 @@
 	. += total_item_slowdown
 
 	//ALT-ENCUMBERANCE below here
-	/*
-	if(shoes)	// Shoes can make you go faster.
-		if(!buckled || (buckled && istype(buckled, /obj/machinery/power/rtg/reg)))
-			. += shoes.slowdown
-
-	// Loop through some slots, and add up their slowdowns.
-	// Includes slots which can provide armor, the back slot, and suit storage.
-	for(var/obj/item/I in list(wear_suit, w_uniform, back, gloves, head, s_store))
-		if(istype(I,/obj/item/rig))
-			for(var/obj/item/II in I.contents)
-				. += II.slowdown
-		. += I.slowdown
-
-	// Hands are also included, to make the 'take off your armor instantly and carry it with you to go faster' trick no longer viable.
-	// This is done seperately to disallow negative numbers (so you can't hold shoes in your hands to go faster).
-	for(var/obj/item/I in list(r_hand, l_hand) )
-		. += max(I.slowdown, 0)
-	*/
 	//ALT-ENCUMBERANCE end
 
 // Similar to above, but for turf slowdown.
@@ -240,20 +194,6 @@
 
 	// Wind makes it easier or harder to move, depending on if you're with or against the wind.
 	// I don't like that so I'm commenting it out :)
-/*
-	if((T.is_outdoors()) && (T.z <= SSplanets.z_to_planet.len))
-		var/datum/planet/P = SSplanets.z_to_planet[z]
-		if(P)
-			var/datum/weather_holder/WH = P.weather_holder
-			if(WH && WH.wind_speed) // Is there any wind?
-				// With the wind.
-				if(direct & WH.wind_dir)
-					. = max(. - WH.wind_speed, -1) // Wind speedup is capped to prevent supersonic speeds from a storm.
-				// Against it.
-				else if(direct & GLOB.reverse_dir[WH.wind_dir])
-					. += WH.wind_speed
-
-*/
 #undef HUMAN_LOWEST_SLOWDOWN
 
 ///Gets whatever jetpack we may have and returns it. Checks back -> rig -> suit storage -> suit
@@ -271,7 +211,6 @@
 		var/obj/item/clothing/suit/space/void/v = wear_suit
 		if(v.tank && istype(v.tank, /obj/item/tank/jetpack))
 			return v.tank
-
 
 /mob/living/carbon/human/Process_Spacemove(check_drift = 0)
 	//Can we act?

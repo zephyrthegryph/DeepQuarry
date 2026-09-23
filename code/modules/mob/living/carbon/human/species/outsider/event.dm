@@ -29,11 +29,7 @@ Variables you may want to make use of are:
 
 	total_health					How much damage can they take before entering crit? Default 100.
 
-	brute_mod						Physical damage multiplier.
-	burn_mod						Burn damage multiplier.
-	oxy_mod							Oxyloss modifier
-	toxins_mod						Toxloss modifier
-	radiation_mod					Radiation modifier
+	injury_mod_groups				Injury multipliers by group: list("physical" = x, "thermal" = x, "toxin" = x, "asphyxia" = x, "radiation" = x, ...).
 	flash_mod						Stun from blindness modifier.
 	sound_mod						Stun from sounds, I.E. flashbangs.
 	chemOD_mod						Damage modifier for overdose
@@ -51,7 +47,7 @@ Variables you may want to make use of are:
 
 	speech_bubble_appearance		Part of icon_state to use for speech bubbles when talking.	See talk.dmi for available icons.
 
-	slowdown						Passive movement speed malus (or boost, if negative)
+	factor_baseline				Body factors, e.g. BF_SLOWDOWN (movement malus, or boost if negative)
 	move_trail						What effect marks are left when walking
 	has_floating_eyes				Whether the eyes can be shown above other icons
 	has_glowing_eyes				Whether the eyes are shown above all lighting
@@ -83,11 +79,7 @@ Variables you may want to make use of are:
 	vision_flags = SEE_SELF
 	darksight = 7
 
-	brute_mod = 0.9
-	burn_mod = 0.9
-	oxy_mod = 0.9
-	toxins_mod = 0.9
-	radiation_mod = 0.9
+	injury_mod_groups = list("physical" = 0.9, "thermal" = 0.9, "toxin" = 0.9, "asphyxia" = 0.9, "radiation" = 0.9)
 	flash_mod = 0.9
 	sound_mod = 0.9
 	chemOD_mod = 0.9

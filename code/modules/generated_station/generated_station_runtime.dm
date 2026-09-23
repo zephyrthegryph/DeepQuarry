@@ -69,8 +69,10 @@
 	var/cost = max(1, CEILING(amount / 10, 1))
 	if(!simulation.consume_stockpile("medical-1", "medicine", cost))
 		return FALSE
-	defender.adjustBruteLoss(-amount)
-	defender.adjustFireLoss(-amount)
+	defender.mend(TREAT_TISSUE_REPAIR, amount)
+	defender.mend(TREAT_BURN_CARE, amount)
+	defender.mend(TREAT_PLATING_REPAIR, amount)
+	defender.mend(TREAT_WIRING_REPAIR, amount)
 	on_capabilities_changed()
 	return TRUE
 

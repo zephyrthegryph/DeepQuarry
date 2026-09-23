@@ -72,9 +72,6 @@
 			var/datum/stock/S = locate(params["share"])
 			if(S)
 				current_stock = S
-			//if (logged_in && logged_in != "")
-			//	var/list/LR = GLOB.stockExchange.last_read[S]
-			//	LR[logged_in] = world.time
 				screen = "archive"
 
 		if("stocks_history")

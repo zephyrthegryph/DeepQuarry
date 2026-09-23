@@ -61,7 +61,6 @@
 	var/contains_body = FALSE
 	var/has_label = FALSE
 
-//Yawn add
 /obj/item/bodybag/large
 	name = "mass grave body bag"
 	desc = "A large folded bag designed for the storage and transportation of cadavers."
@@ -83,7 +82,6 @@
 	icon = 'icons/obj/closets/bodybag_large.dmi'
 	storage_capacity = (MOB_MEDIUM * 12) - 1 //Holds 12 bodys
 	item_path = /obj/item/bodybag/large
-//End of Yawn add
 
 /obj/structure/closet/body_bag/attackby(obj/item/W as obj, mob/user as mob, tool_quality)
 	if (istype(W, /obj/item/pen))

@@ -178,13 +178,6 @@
 		next_x = (--cur_x||GLOB.global_map.len)
 		y_arr = GLOB.global_map[next_x]
 		target_z = y_arr[cur_y]
-/*
-		//debug
-		to_world("Src.z = [src.z] in global map X = [cur_x], Y = [cur_y]")
-		to_world("Target Z = [target_z]")
-		to_world("Next X = [next_x]")
-		//debug
-*/
 		if(target_z)
 			A.z = target_z
 			A.x = world.maxx - 2
@@ -203,13 +196,6 @@
 		next_x = (++cur_x > GLOB.global_map.len ? 1 : cur_x)
 		y_arr = GLOB.global_map[next_x]
 		target_z = y_arr[cur_y]
-/*
-		//debug
-		to_world("Src.z = [src.z] in global map X = [cur_x], Y = [cur_y]")
-		to_world("Target Z = [target_z]")
-		to_world("Next X = [next_x]")
-		//debug
-*/
 		if(target_z)
 			A.z = target_z
 			A.x = 3
@@ -227,13 +213,6 @@
 		y_arr = GLOB.global_map[cur_x]
 		next_y = (--cur_y||y_arr.len)
 		target_z = y_arr[next_y]
-/*
-		//debug
-		to_world("Src.z = [src.z] in global map X = [cur_x], Y = [cur_y]")
-		to_world("Next Y = [next_y]")
-		to_world("Target Z = [target_z]")
-		//debug
-*/
 		if(target_z)
 			A.z = target_z
 			A.y = world.maxy - 2
@@ -252,13 +231,6 @@
 		y_arr = GLOB.global_map[cur_x]
 		next_y = (++cur_y > y_arr.len ? 1 : cur_y)
 		target_z = y_arr[next_y]
-/*
-		//debug
-		to_world("Src.z = [src.z] in global map X = [cur_x], Y = [cur_y]")
-		to_world("Next Y = [next_y]")
-		to_world("Target Z = [target_z]")
-		//debug
-*/
 		if(target_z)
 			A.z = target_z
 			A.y = 3

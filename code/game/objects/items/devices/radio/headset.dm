@@ -700,7 +700,6 @@
 	return ..(freq, level, 1)
 
 
-// === merged from headset_chomp.dm during hard-fork de-suffix (verified no override-order change) ===
 //Badmin piece of clothing that applies a few effects to a mob, used specifically for events with "hunters"
 //This just helps me equip the hunters a little easier
 /obj/item/radio/headset/event
@@ -716,9 +715,9 @@
 	//Spells that will be added on equip
 	var/list/spells = list("/spell/targeted/unrestricted/mend", "/spell/targeted/unrestricted/plasmastun")
 	var/list/remove_spells = list()	//Reference to spells that'll get removed
+	/// Movement delay added while worn (a body factor). Admins may edit it in-round.
 	var/slowdown_to_set = 0.5
 	var/item_slowdown_reset = 0	//Vars to copy and reset later
-	var/slowdown_reset = 0
 	light_range = 6
 	light_power = 0				//Set this to 0 if you don't want a light
 	light_color = "#ffaaaa"
@@ -728,6 +727,8 @@
 	var/telez = 0	//Set this in-round if you want a return point with fake health
 
 /obj/item/radio/headset/event/equipped(mob/living/carbon/human/H, slot)
+	worn_factors = slowdown_to_set ? alist(BF_SLOWDOWN = slowdown_to_set) : null
+	. = ..()
 	if(H && ((H.l_ear == src) || (H.r_ear == src)))
 		wearer = H
 		if(light_power)
@@ -744,9 +745,7 @@
 				H.add_spell(SP)
 				remove_spells += SP
 		if(slowdown_to_set != 0)
-			slowdown_reset = H.species.slowdown
 			item_slowdown_reset = H.species.item_slowdown_mod
-			H.species.slowdown = slowdown_to_set
 			H.species.item_slowdown_mod = 0
 
 /obj/item/radio/headset/event/dropped(mob/living/carbon/human/H, equipping, slot)
@@ -762,7 +761,6 @@
 				H.remove_spell(SP)
 				qdel(SP)
 		if(slowdown_to_set != 0)
-			H.species.slowdown = slowdown_reset
 			H.species.item_slowdown_mod = item_slowdown_reset
 
 /obj/item/radio/headset/event/handle_shield(mob/user, damage, atom/damage_source = null, mob/attacker = null, def_zone = null, attack_text = "the attack")

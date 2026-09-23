@@ -41,7 +41,7 @@
 	user.visible_message(span_danger("[user]'s hand slips, scraping around inside [target]'s [affected.name] with \the [tool]!"), \
 	span_danger("Your hand slips, scraping around inside [target]'s [affected.name] with \the [tool]!"))
 	user.balloon_alert_visible("slips, scraping around inside [target]'s [affected.name]", "your hand slips, scraping around inside \the [affected.name]")
-	affected.createwound(CUT, 20)
+	target.injure(INJURY_CUT, 20, affected.organ_tag, tool, flags = INJURE_IGNORE_RESISTANCE)
 
 ///////////////////////////////////////////////////////////////
 // Space Making Surgery
@@ -174,8 +174,7 @@
 	user.balloon_alert_visible("Puts \the [tool] inside [target]'s [get_cavity(affected)]", "\the [tool] placed inside [get_cavity(affected)]")
 	if (tool.w_class > get_max_wclass(affected)/2 && prob(50) && (affected.robotic < ORGAN_ROBOT))
 		to_chat(user, span_danger(" You tear some blood vessels trying to fit such a big object in this cavity."))
-		var/datum/wound/internal_bleeding/I = new (10)
-		affected.wounds += I
+		affected.add_wound(new /datum/affliction/wound/internal_bleeding(affected, 10))
 		affected.update_damages()
 		affected.owner.handle_organs(TRUE) //Force an update so we start processing the internal bleeding.
 		affected.owner.custom_pain("You feel something rip in your [affected.name]!", 1)

@@ -20,8 +20,8 @@
 	if(isliving(hit_atom))
 		var/mob/living/L = hit_atom
 		var/heal_power = calculate_spell_power(40)
-		L.adjustBruteLoss(-heal_power)
-		L.adjustFireLoss(-heal_power)
+		L.mend(TREAT_TISSUE_REPAIR, heal_power)
+		L.mend(TREAT_BURN_CARE, heal_power)
 		user.adjust_instability(5)
 		L.adjust_instability(5)
 
@@ -31,26 +31,24 @@
 			user.adjust_instability(5)
 			L.adjust_instability(5)
 
-			for(var/obj/item/organ/O in H.internal_organs)
+			for(var/obj/item/organ/internal/O in H.internal_organs)
 				if(O.damage > 0) // Fix internal damage
-					O.damage = max(O.damage - (heal_power / 2), 0)
+					H.mend(TREAT_RESTORATION, heal_power / 2, O)
 				if(O.damage <= 5 && O.organ_tag == O_EYES) // Fix eyes
 					H.sdisabilities &= ~BLIND
 
 			for(var/obj/item/organ/external/O in H.organs) // Fix limbs
 				if(O.robotic >= ORGAN_ROBOT) // No robot parts for this.
 					continue
-				O.heal_damage(0, heal_power / 4, internal = 1, robo_repair = 0)
+				H.mend(TREAT_BURN_CARE, heal_power / 4, O)
 
 			for(var/obj/item/organ/E in H.bad_external_organs) // Fix bones
 				var/obj/item/organ/external/affected = E
 				if((affected.damage < affected.min_broken_damage * CONFIG_GET(number/organ_health_multiplier)) && (affected.status & ORGAN_BROKEN))
 					affected.status &= ~ORGAN_BROKEN
 
-				for(var/datum/wound/W in affected.wounds) // Fix IB
-					if(istype(W, /datum/wound/internal_bleeding))
-						affected.wounds -= W
-						affected.update_damages()
+				for(var/datum/affliction/wound/internal_bleeding/W in affected.get_wounds()) // Fix IB
+					affected.remove_wound(W)
 
 			H.restore_blood() // Fix bloodloss
 		qdel(src)

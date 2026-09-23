@@ -39,7 +39,7 @@
 		"Liver"   = list(/obj/item/organ/internal/liver,  20),
 		"Spleen"  = list(/obj/item/organ/internal/spleen, 20),
 		"Stomach"  = list(/obj/item/organ/internal/stomach, 20),
-		"Intestine" = list(/obj/item/organ/internal/intestine, 20), //ChompAdd: this was missing.
+		"Intestine" = list(/obj/item/organ/internal/intestine, 20),
 		"Arm, Left"   = list(/obj/item/organ/external/arm,  40),
 		"Arm, Right"   = list(/obj/item/organ/external/arm/right,  40),
 		"Leg, Left"   = list(/obj/item/organ/external/leg,  40),
@@ -335,67 +335,3 @@
 	return ..()
 // END FLESH ORGAN PRINTER
 
-
-/* Roboprinter is made obsolete by the system already in place and mapped into Robotics
-/obj/item/circuitboard/roboprinter
-	name = "roboprinter circuit"
-	build_path = /obj/machinery/organ_printer/robot
-	board_type = new /datum/frame/frame_types/machine
-	req_components = list(
-							/obj/item/stack/cable_coil = 2,
-							/obj/item/stock_parts/matter_bin = 2,
-							/obj/item/stock_parts/manipulator = 2)
-
-// ROBOT ORGAN PRINTER
-// Still Requires DNA, /obj/machinery/pros_fab is better for limbs
-/obj/machinery/organ_printer/robot
-	name = "prosthetic organ fabricator"
-	desc = "It's a machine that prints prosthetic organs."
-	icon_state = "roboprinter"
-	circuit = /obj/item/circuitboard/roboprinter
-
-	var/matter_amount_per_sheet = 10
-	var/matter_type = MAT_STEEL
-
-/obj/machinery/organ_printer/robot/full/Initialize(mapload)
-	. = ..()
-	stored_matter = max_stored_matter
-
-/obj/machinery/organ_printer/robot/dismantle()
-	if(stored_matter >= matter_amount_per_sheet)
-		new /obj/item/stack/material/steel(get_turf(src), FLOOR(stored_matter/matter_amount_per_sheet, 1))
-	return ..()
-
-/obj/machinery/organ_printer/robot/print_organ(choice)
-	var/obj/item/organ/O = ..()
-	O.robotize()
-	O.status |= ORGAN_CUT_AWAY  // robotize() resets status to 0
-	playsound(src, 'sound/machines/ding.ogg', 50, 1)
-	audible_message(span_info("\The [src] dings, then spits out \a [O]."))
-	return O
-
-/obj/machinery/organ_printer/robot/attackby(obj/item/W, mob/user)
-	if(istype(W, /obj/item/stack/material) && W.get_material_name() == matter_type)
-		if((max_stored_matter-stored_matter) < matter_amount_per_sheet)
-			to_chat(user, span_warning("\The [src] is too full."))
-			return
-		var/obj/item/stack/S = W
-		var/space_left = max_stored_matter - stored_matter
-		var/sheets_to_take = min(S.amount, FLOOR(space_left/matter_amount_per_sheet, 1))
-		if(sheets_to_take <= 0)
-			to_chat(user, span_warning("\The [src] is too full."))
-			return
-		stored_matter = min(max_stored_matter, stored_matter + (sheets_to_take*matter_amount_per_sheet))
-		to_chat(user, span_info("\The [src] processes \the [W]. Levels of stored matter now: [stored_matter]"))
-		S.use(sheets_to_take)
-		return
-	else if(istype(W,/obj/item/reagent_containers/syringe))	//TODO: Make this actuall empty the syringe
-		var/obj/item/reagent_containers/syringe/S = W
-		var/datum/reagent/blood/injected = locate() in S.reagents.reagent_list //Grab some blood
-		if(injected && injected.data)
-			loaded_dna = injected.data
-			to_chat(user, span_info("You scan the blood sample into the bioprinter."))
-		return
-	return ..()
-// END ROBOT ORGAN PRINTER
-*/

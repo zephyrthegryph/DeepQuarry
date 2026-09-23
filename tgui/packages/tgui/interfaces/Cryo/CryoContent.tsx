@@ -47,12 +47,12 @@ export const CryoContent = (props) => {
               <ProgressBar
                 minValue={0}
                 maxValue={1}
-                value={occupant.health / occupant.maxHealth}
-                color={occupant.health > 0 ? 'good' : 'average'}
+                value={occupant.vitality / 100}
+                color={occupant.critical ? 'average' : 'good'}
               >
                 <AnimatedNumber
-                  value={occupant.health}
-                  format={(value) => value.toFixed()}
+                  value={occupant.vitality}
+                  format={(value) => `${value.toFixed()}%`}
                 />
               </ProgressBar>
             </LabeledList.Item>

@@ -103,10 +103,11 @@
 
 	O.UpdateAppearance()
 	domutcheck(O, null)
-	O.setToxLoss(C.getToxLoss())
-	O.adjustBruteLoss(C.getBruteLoss())
-	O.setOxyLoss(C.getOxyLoss())
-	O.adjustFireLoss(C.getFireLoss())
+	// Carry the injury load over to the new form.
+	O.injure(INJURY_TOXIN, C.injury_load(INJURY_CATEGORY_TOXIC), flags = INJURE_IGNORE_RESISTANCE | INJURE_SILENT)
+	O.injure(INJURY_BLUNT, C.injury_load(INJURY_CATEGORY_PHYSICAL), flags = INJURE_IGNORE_RESISTANCE | INJURE_SILENT)
+	O.injure(INJURY_ASPHYXIA, C.injury_load(INJURY_CATEGORY_ASPHYXIA), flags = INJURE_IGNORE_RESISTANCE | INJURE_SILENT)
+	O.injure(INJURY_BURN, C.injury_load(INJURY_CATEGORY_THERMAL), flags = INJURE_IGNORE_RESISTANCE | INJURE_SILENT)
 	O.set_stat(C.stat)
 	for (var/obj/item/implant/I in implants)
 		I.loc = O

@@ -10,8 +10,7 @@
 	faction = "lizard"
 
 
-	maxHealth = 50
-	health = 50
+	endurance = 50
 
 	melee_damage_lower = 5
 	melee_damage_upper = 15

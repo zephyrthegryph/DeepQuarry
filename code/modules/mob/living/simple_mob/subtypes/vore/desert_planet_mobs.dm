@@ -11,8 +11,7 @@
 	icon_rest = "dog"
 	icon_dead = "dog"
 
-	health = 50
-	maxHealth = 50
+	endurance = 50
 
 	mob_size = MOB_SMALL
 	pass_flags = PASSTABLE

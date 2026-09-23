@@ -221,11 +221,12 @@
 			living_guy.radiation -= rads_to_utilize
 			living_guy.accumulated_rads -= rads_to_utilize
 			rads_to_utilize = CLAMP(rads_to_utilize, 1, 10) //Only heal up to 10 rads.
-			living_guy.adjustBruteLoss(-rads_to_utilize)
-			living_guy.adjustFireLoss(-rads_to_utilize)
-			living_guy.adjustOxyLoss(-rads_to_utilize)
-			living_guy.adjustToxLoss(-rads_to_utilize)
-			living_guy.updatehealth()
+			living_guy.mend(TREAT_TISSUE_REPAIR, rads_to_utilize)
+			living_guy.mend(TREAT_PLATING_REPAIR, rads_to_utilize)
+			living_guy.mend(TREAT_BURN_CARE, rads_to_utilize)
+			living_guy.mend(TREAT_WIRING_REPAIR, rads_to_utilize)
+			living_guy.mend(TREAT_OXYGENATION, rads_to_utilize)
+			living_guy.mend(TREAT_ANTITOXIN, rads_to_utilize)
 
 		else if(radiation_dissipation)
 			living_guy.radiation -= rads_to_utilize
@@ -239,11 +240,11 @@
 		if(!rads_to_utilize) //In case we did it above. Save some CPU.
 			rads_to_utilize = rads * rad_removal_mod
 
-		//Special handling for halloss to prevent unfun permastuns. Only lets your halloss damage go to 90% of your maxhealth, crippling but not KOing you.
-		if(damage_type == HALLOSS && ((living_guy.halloss >= living_guy.maxHealth * 0.90) || (living_guy.halloss + (rads_to_utilize * damage_multiplier)) >= living_guy.maxHealth * 0.90))
+		//Special handling for pain to prevent unfun permastuns. Only lets your pain go to 90% of your endurance, crippling but not KOing you.
+		if(injury_kind_for(damage_type) == INJURY_PAIN && (living_guy.current_pain() + (rads_to_utilize * damage_multiplier)) >= living_guy.get_endurance() * 0.90)
 			return COMPONENT_BLOCK_LIVING_RADIATION
 
-		living_guy.apply_damage(rads_to_utilize * damage_multiplier, damage_type)
+		living_guy.injure(injury_kind_for(damage_type), rads_to_utilize * damage_multiplier, flags = INJURE_SILENT)
 
 		living_guy.radiation = CLAMP(living_guy.radiation, 0, RADIATION_CAP)
 		living_guy.accumulated_rads = CLAMP(living_guy.accumulated_rads, 0, RADIATION_CAP)

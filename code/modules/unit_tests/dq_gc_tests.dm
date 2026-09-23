@@ -91,27 +91,27 @@
 		TEST_ASSERT(QDELETED(O), "[O.type] was skipped by human deletion (Destroy never ran) — it will pin the mob against GC")
 		TEST_ASSERT(isnull(O.owner), "[O.type] kept its owner ref after Destroy()")
 
-// A medical condition qdel'd with its host organ must break the
-// condition <-> symptom reference cycle (cure_issue isn't on the qdel path).
-/datum/unit_test/dq_medical_condition_breaks_symptom_cycle
+// An affliction qdel'd outside cure() must leave its body cleanly: no
+// owner/body refs back to the mob, gone from the flat list AND the by-type
+// index, and it holds no symptom instances (symptoms are shared singletons
+// stored as typepaths, so there is no affliction <-> symptom cycle to break).
+/datum/unit_test/dq_affliction_destroy_detaches_from_body
 
-/datum/unit_test/dq_medical_condition_breaks_symptom_cycle/Run()
+/datum/unit_test/dq_affliction_destroy_detaches_from_body/Run()
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human)
-	var/obj/item/organ/external/chest = H.organs_by_name[BP_TORSO]
-	TEST_ASSERT_NOTNULL(chest, "test human has no chest organ")
-	var/datum/medical_issue/condition/tissue_hypoxia/C = new
-	C.owner = H
-	C.affectedorgan = chest
-	chest.add_medical_issue(C, H)
+	var/datum/affliction/tissue_hypoxia/C = H.body.afflict(/datum/affliction/tissue_hypoxia)
+	TEST_ASSERT_NOTNULL(C, "tissue hypoxia could not be afflicted")
 	C.roll_symptoms()
-	var/list/symptoms = C.active_symptoms?.Copy() || list()
-	TEST_ASSERT(length(symptoms), "condition rolled no symptoms; cycle test is vacuous")
+	TEST_ASSERT(length(C.active_symptoms), "affliction rolled no symptoms; test is vacuous")
+	for(var/symptom_type in C.active_symptoms)
+		TEST_ASSERT(ispath(symptom_type, /datum/affliction_symptom), "active_symptoms holds [symptom_type], not a symptom typepath")
 	qdel(C)
-	TEST_ASSERT(QDELETED(C), "condition Destroy() did not run")
-	TEST_ASSERT(isnull(C.owner), "condition kept its owner ref after Destroy()")
-	for(var/datum/medical_symptom/S as anything in symptoms)
-		TEST_ASSERT(isnull(S.source_condition), "[S.type] kept source_condition after the condition was destroyed — refcount cycle")
-	chest.remove_medical_issue(C)
+	TEST_ASSERT(QDELETED(C), "affliction Destroy() did not run")
+	TEST_ASSERT(isnull(C.owner), "affliction kept its owner ref after Destroy()")
+	TEST_ASSERT(isnull(C.body), "affliction kept its body ref after Destroy()")
+	TEST_ASSERT(isnull(C.active_symptoms), "affliction kept its symptoms after Destroy()")
+	TEST_ASSERT(!(C in H.body.afflictions), "destroyed affliction is still in the body's list")
+	TEST_ASSERT(!H.body.has_affliction(/datum/affliction/tissue_hypoxia), "destroyed affliction is still in the body's type index")
 
 // Items that build an /obj/item/storage/internal must release it on Destroy —
 // the un-nulled forward var was the GC pin for 22 leaked internals per run.

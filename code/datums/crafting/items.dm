@@ -286,7 +286,6 @@
 
 /obj/item/clothing/gloves/toxinregen/process()
 	var/mob/living/carbon/human/H = wearer?.resolve()
-	if(!H || H.isSynthetic() || H.stat == DEAD || H.nutrition <= 10)
+	if(!H || H.stat == DEAD || H.nutrition <= 10)
 		return
-	if(H.getToxLoss())
-		H.adjustToxLoss(-0.5)
+	H.mend(TREAT_ANTITOXIN, 0.5) // organic tag: synthetic bodies are unaffected

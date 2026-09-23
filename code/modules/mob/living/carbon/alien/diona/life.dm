@@ -9,10 +9,10 @@
 	adjust_nutrition(light_amount)
 
 	if(light_amount > 2) //if there's enough light, heal
-		adjustBruteLoss(-1)
-		adjustFireLoss(-1)
-		adjustToxLoss(-1)
-		adjustOxyLoss(-1)
+		mend(TREAT_TISSUE_REPAIR, 1)
+		mend(TREAT_BURN_CARE, 1)
+		mend(TREAT_ANTITOXIN, 1)
+		mend(TREAT_OXYGENATION, 1)
 
 
 	if(!client)

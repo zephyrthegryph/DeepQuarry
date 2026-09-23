@@ -94,12 +94,12 @@ GLOBAL_LIST_EMPTY(dq_ooc_notes_panels)
 		return data
 	data["owner"] = host.name
 	data["is_owner"] = (user == host)
-	data["ooc_notes"] = html_decode(host.ooc_notes || "")
-	data["ooc_likes"] = html_decode(host.ooc_notes_likes || "")
-	data["ooc_dislikes"] = html_decode(host.ooc_notes_dislikes || "")
-	data["ooc_favs"] = html_decode(host.ooc_notes_favs || "")
-	data["ooc_maybes"] = html_decode(host.ooc_notes_maybes || "")
-	data["ooc_style"] = !!host.ooc_notes_style
+	data["ooc_notes"] = html_decode(host.identity.ooc_notes || "")
+	data["ooc_likes"] = html_decode(host.identity.ooc_notes_likes || "")
+	data["ooc_dislikes"] = html_decode(host.identity.ooc_notes_dislikes || "")
+	data["ooc_favs"] = html_decode(host.identity.ooc_notes_favs || "")
+	data["ooc_maybes"] = html_decode(host.identity.ooc_notes_maybes || "")
+	data["ooc_style"] = !!host.identity.ooc_notes_style
 	return data
 
 /datum/ooc_notes_panel/tgui_act(action, list/params, datum/tgui/ui)
@@ -148,7 +148,7 @@ GLOBAL_LIST_EMPTY(dq_ooc_notes_panels)
 			return TRUE
 
 /mob/living/proc/ooc_notes_window(mob/user)
-	if(!ooc_notes)
+	if(!identity.ooc_notes)
 		return
 	var/key = "[REF(src)]"
 	var/datum/ooc_notes_panel/panel = LAZYACCESS(GLOB.dq_ooc_notes_panels, key)

@@ -215,7 +215,6 @@
 	icon_state = "pantyhose-stir"
 
 
-// === merged from socks_chomp.dm during hard-fork de-suffix (verified no override-order change) ===
 /datum/category_item/underwear/socks/generate_image(list/metadata, layer = FLOAT_LAYER, digitigrade = FALSE)
 	if(!icon_state)
 		return

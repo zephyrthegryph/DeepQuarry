@@ -1,8 +1,17 @@
 //This file was auto-corrected by findeclaration.exe on 25.5.2012 20:42:32
 
+/// The thin view a client occupies while its mind is held outside a living
+/// body (removed brain, MMI, posibrain, soulcatcher). It has no health of its
+/// own: when it has a mind host with brain tissue, its status is that organ's
+/// (see refresh_host_status() and code/modules/organs/internal/brain.dm).
 /mob/living/carbon/brain
+	// Views without brain tissue (digital hosts, souls) keep a simple body;
+	// the old brainmob death margin stays for them.
+	endurance = 2 * DEFAULT_ENDURANCE
+	/// The object the view lives in (MMI, brain organ, soulcatcher).
 	var/obj/item/container = null
-	var/timeofhostdeath = 0
+	/// The mind host that owns this view, if any.
+	var/datum/component/mind_host/host
 	var/emp_damage = 0//Handles a type of MMI damage
 	var/alert = null
 	use_me = 0 //Can't use the me verb, it's a freaking immobile brain
@@ -10,9 +19,6 @@
 	icon_state = "brain1"
 	no_vore = TRUE
 	can_pain_emote = FALSE // Sanity/safety
-	low_priority = TRUE
-
-	can_pain_emote = FALSE
 	low_priority = TRUE
 
 /mob/living/carbon/brain/Initialize(mapload)
@@ -27,9 +33,48 @@
 		if(stat != DEAD)	//If not dead.
 			death(1)	//Brains can die again. AND THEY SHOULD AHA HA HA HA HA HA
 		ghostize()		//Ghostize checks for key so nothing else is necessary.
-	qdel(dna)
+	if(host)
+		if(host.occupant == src)
+			host.occupant = null
+		host = null
 	container = null
 	return ..()
+
+/// A view names itself after the character it shows and reads the
+/// character's DNA and languages by reference.
+/mob/living/carbon/brain/on_identity_bound()
+	..()
+	if(identity.real_name)
+		real_name = identity.real_name
+		name = real_name
+	if(identity.get_dna())
+		dna = identity.dna
+	if(identity.languages)
+		languages = identity.languages
+	else
+		identity.languages = languages
+
+/// The brain tissue this view shows, if any.
+/mob/living/carbon/brain/proc/host_tissue()
+	return host?.tissue
+
+/// Sync stat with the host: the view is dead exactly when its brain tissue is
+/// brain dead (/obj/item/organ/internal/brain/proc/is_brain_dead()).
+/mob/living/carbon/brain/proc/refresh_host_status()
+	if(!host)
+		return
+	var/obj/item/organ/internal/brain/tissue = host.tissue
+	if(tissue?.is_brain_dead())
+		if(stat != DEAD)
+			death()
+		return
+	if(stat == DEAD)
+		GLOB.dead_mob_list -= src
+		GLOB.living_mob_list |= src
+		timeofdeath = 0
+		set_stat(CONSCIOUS)
+		blinded = 0
+	update_canmove()
 
 /mob/living/carbon/brain/say_understands(other)//Goddamn is this hackish, but this say code is so odd
 	if(istype(container, /obj/item/mmi))
@@ -68,7 +113,7 @@
 	if(db)
 		var/datum/transhuman/mind_record/record = db.backed_up[src.mind.name]
 		if(!(record.dead_state == MR_DEAD))
-			if((world.time - timeofhostdeath ) > 5 MINUTES)	//Allows notify transcore to be used if you have an entry but for some reason weren't marked as dead
+			if((world.time - identity.time_of_death) > 5 MINUTES)	//Allows notify transcore to be used if you have an entry but for some reason weren't marked as dead
 				record.dead_state = MR_DEAD				//Such as if you got scanned but didn't take an implant. It's a little funky, but I mean, you got scanned
 				db.notify(record)						//So you probably will want to let someone know if you die.
 				record.last_notification = world.time

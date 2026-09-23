@@ -1,4 +1,8 @@
-// /datum/medical_symptom — observable presentation of a condition.
+// /datum/affliction_symptom — observable presentation of an affliction.
+//
+// Symptoms are stateless singletons (one per type, from affliction_symptom());
+// afflictions hold typepaths in `active_symptoms` and every proc receives the
+// afflicted mob and the affliction as arguments.
 //
 // A symptom is an *expression* of a condition's effect on the body.
 // One condition has a weighted pool of symptoms; on creation (and at
@@ -17,7 +21,7 @@
 // reads off the parent condition. They CAN cause minor mechanical
 // effects (a "vertigo" symptom might apply a small slowdown), but
 // anything load-bearing belongs on the condition itself.
-/datum/medical_symptom
+/datum/affliction_symptom
 	/// Display name in scanner UI when the symptom is scanner-visible.
 	var/name = "symptom"
 	/// Bitfield of SYMPTOM_AUDIENCE_*.
@@ -65,10 +69,6 @@
 	/// heavily from a limb." Null = fall back to the symptom name.
 	var/examine_line
 
-	/// Back-reference to the condition that spawned us. Set in
-	/// /datum/medical_issue/condition/proc/roll_symptoms.
-	var/datum/medical_issue/condition/source_condition
-
 /// Per-type content procs. Each subtype overrides these to return a
 /// `var/static/list/` local — DM initializes the static once per
 /// subtype on first call, and every instance of that subtype shares
@@ -81,13 +81,13 @@
 /// The cost is one extra proc call per read instead of a direct field
 /// access, which is negligible compared to a list allocation per
 /// instance.
-/datum/medical_symptom/proc/get_patient_messages()
+/datum/affliction_symptom/proc/get_patient_messages()
 	return null
 
-/datum/medical_symptom/proc/get_public_emotes()
+/datum/affliction_symptom/proc/get_public_emotes()
 	return null
 
-/datum/medical_symptom/proc/on_present(mob/living/M, datum/medical_issue/condition/source)
+/datum/affliction_symptom/proc/on_present(mob/living/M, datum/affliction/source)
 	if(!M)
 		return
 	// Initial announcement — a single message when the symptom first
@@ -96,12 +96,12 @@
 	if((audiences & SYMPTOM_AUDIENCE_PATIENT) && length(msgs))
 		send_patient_message(M, initial = TRUE)
 
-/datum/medical_symptom/proc/on_resolve(mob/living/M, datum/medical_issue/condition/source)
+/datum/affliction_symptom/proc/on_resolve(mob/living/M, datum/affliction/source)
 	// Override to undo any persistent effect (e.g. clear a status
 	// effect, remove a movement modifier).
 	return
 
-/datum/medical_symptom/proc/tick(mob/living/M, datum/medical_issue/condition/source)
+/datum/affliction_symptom/proc/tick(mob/living/M, datum/affliction/source)
 	if(!M)
 		return
 	// Patient drip: only while conscious. Unconscious patients lose
@@ -115,12 +115,26 @@
 		if(prob(public_emote_chance))
 			M.emote(pick(emotes))
 
-/datum/medical_symptom/proc/send_patient_message(mob/living/M, initial = FALSE)
+/datum/affliction_symptom/proc/send_patient_message(mob/living/M, initial = FALSE)
 	var/list/msgs = get_patient_messages()
 	if(!length(msgs))
 		return
 	var/msg = pick(msgs)
 	to_chat(M, span_warning(msg))
 
-/datum/medical_symptom/proc/is_scanner_visible()
+/datum/affliction_symptom/proc/is_scanner_visible()
 	return (audiences & SYMPTOM_AUDIENCE_SCANNER) && scanner_phrase
+
+/// The shared singleton for a symptom type.
+/proc/affliction_symptom(symptom_type)
+	var/static/list/singletons = list()
+	. = singletons[symptom_type]
+	if(!.)
+		. = new symptom_type()
+		singletons[symptom_type] = .
+
+/// Singletons for an affliction's presenting symptoms (for iteration).
+/proc/affliction_symptoms_of(datum/affliction/A)
+	. = list()
+	for(var/symptom_type in A?.active_symptoms)
+		. += affliction_symptom(symptom_type)

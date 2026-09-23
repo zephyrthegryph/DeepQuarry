@@ -351,7 +351,6 @@ GLOBAL_LIST_BOILERPLATE(all_crematoriums, /obj/structure/morgue/crematorium)
 		to_chat(user, span_warning("Access denied."))
 
 
-// === merged from morgue_vr.dm during hard-fork de-suffix (verified no override-order change) ===
 /obj/structure/morgue/crematorium/vr
 	var/list/allowed_items = list(/obj/item/organ,
 			/obj/item/implant,

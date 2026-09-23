@@ -2,7 +2,7 @@
 
 ## What is unit testing?
 
-Unit tests are automated code to verify that parts of the game work exactly as they should. For example, [a test to make sure that the amputation surgery actually amputates the limb](https://github.com/tgstation/tgstation/blob/e416283f162b86345a8623125ab866839b1ac40d/code/modules/unit_tests/surgeries.dm#L1-L13). These are ran every time a PR is made, and thus are very helpful for preventing bugs from cropping up in your code that would've otherwise gone unnoticed. For example, would you have thought to check [that beach boys would still work the same after editing pizza](https://github.com/tgstation/tgstation/pull/53641#issuecomment-691384934)? If you value your time, probably not.
+Unit tests are automated code to verify that parts of the game work exactly as they should. For example, [a test to make sure that the amputation surgery actually amputates the limb](https://github.com/tgstation/tgstation/blob/e416283f162b86345a8623125ab866839b1ac40d/code/modules/unit_tests/surgeries.dm#L1-L13). These run on every push and pull request, and thus are very helpful for preventing bugs from cropping up in your code that would've otherwise gone unnoticed. For example, would you have thought to check [that beach boys would still work the same after editing pizza](https://github.com/tgstation/tgstation/pull/53641#issuecomment-691384934)? If you value your time, probably not.
 
 On their most basic level, when `UNIT_TESTS` is defined, all subtypes of `/datum/unit_test` will have their `Run` proc executed. From here, if `Fail` is called at any point, then the tests will report as failed.
 
@@ -34,19 +34,9 @@ As you can hopefully tell, we're simply checking if the output of `square` match
 
 3. Run the unit test
 
-Open `code/_compile_options.dm` and uncomment the following line.
-
-```
-//#define UNIT_TESTS			//If this is uncommented, we do a single run though of the game setup and tear down process with unit tests in between
-```
-
-There are 3 ways to run unit tests
-
-- Run tgstation.dmb in Dream Daemon. Don't bother trying to connect, you won't need to. You'll be able to see the outputs of all the tests. You'll get to see which tests failed and for what reason. If they all pass, you're set!
-
-- Launch game from VS Code. Launch the game as normal & you will see the output of your unit tests in your fancy chat window. This is preferred as you can use the debugger to step through each line of your unit test & can use the games inbuilt debugging tools to further aid in testing
-
-- Use VS Code Tgstation Test Explorer Extension. This allows you to run tests without launching the game & can also run focused tests(either a single or a selected group)
+Run `bin/test.cmd` (Windows) or `tools/build/build.sh dm-test`. To run only your
+test while you work, use `bash tools/dq_focused_test.sh /datum/unit_test/square`.
+`doc/testing.md` covers maps, results, focused runs and CI.
 
 ## How to think about tests
 
@@ -74,7 +64,7 @@ You can find more information about all of these from their respective doc comme
 
 `TEST_ASSERT_NOTEQUAL(a, b, message)` - Same as `TEST_ASSERT_EQUAL`, but reversed.
 
-`TEST_FOCUS(test_path)` - _Only_ run the test provided within the parameters. Useful for reducing noise. For example, if we only want to run our example square test, we can add `TEST_FOCUS(/datum/unit_test/square)`. Should _never_ be pushed in a pull request--you will be laughed at.
+`TEST_FOCUS(test_path)` - _Only_ run the test provided within the parameters. Useful for reducing noise. For example, if we only want to run our example square test, we can add `TEST_FOCUS(/datum/unit_test/square)`. Put it in `dq_focus.dm` (or use `tools/dq_focused_test.sh`); CI rejects a committed focus line.
 
 ## Final Notes
 

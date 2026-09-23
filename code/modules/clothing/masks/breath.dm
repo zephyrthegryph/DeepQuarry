@@ -68,7 +68,6 @@
 	permeability_coefficient = 0.01
 
 
-// === merged from breath_vr.dm during hard-fork de-suffix (verified no override-order change) ===
 /obj/item/clothing/mask/breath/transparent
 	name = "transparent breath mask"
 	item_state = "golem"  //This is dumb and hacky but was here when I got here.

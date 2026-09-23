@@ -47,21 +47,6 @@
 	activation_message="You feel better."
 	primitive_expression_messages=list("'s skin shift's strangely.")
 
-/* Replaced by /datum/trait/positive/speed_fast
-/datum/trait/positive/superpower_increaserun
-	name = "Super Speed"
-	desc = "Remotely communicate"
-	cost = 5
-	custom_only = FALSE
-
-	is_genetrait = TRUE
-	activity_bounds = DNA_HARDER_BOUNDS
-	hidden = TRUE // Cannot start with superpowers
-
-	mutation = mRun
-	activation_message="Your leg muscles pulsate."
-*/
-
 /datum/trait/positive/superpower_remotetalk
 	name = "Telepathy"
 	desc = "Remotely communicate"
@@ -97,7 +82,6 @@
 	mutation = mFingerprints
 	activation_message="Your fingers feel numb."
 	primitive_expression_messages=list("flexes its digits.")
-
 
 /datum/trait/positive/superpower_xray //This is effectively thermals.
 	name = "X-Ray Vision"
@@ -155,7 +139,7 @@
 	deactivation_message=span_warning("You suddenly feel very weak.")
 
 /datum/trait/positive/superpower_hulk/handle_environment_special(mob/living/carbon/human/H)
-	if(H.health <= 25)
+	if(H.vitality() <= 0.25)
 		if(H.dna)
 			H.dna.SetSEState(linked_gene.block, FALSE, FALSE) // Turn this thing off or so help me--
 			domutcheck(H,null,MUTCHK_FORCED)

@@ -50,7 +50,7 @@
 	damage = 35
 	taser_effect = 1
 	agony = 65
-	damage_type = HALLOSS
+	injury_kind = INJURY_PAIN
 	stutter = 10
 	hud_state = "taser"
 

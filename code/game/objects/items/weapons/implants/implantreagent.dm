@@ -144,7 +144,6 @@
 	transfer_amount = 6000
 
 
-// === merged from implantreagent_vr.dm during hard-fork de-suffix (verified no override-order change) ===
 /obj/item/implant/reagent_generator
 	name = "reagent generator implant"
 	desc = "This is an implant that has attached storage and generates a reagent."

@@ -246,7 +246,7 @@ GLOBAL_LIST_INIT(robot_hud_colours, list("#CFCFCF","#AFAFAF","#8F8F8F","#6F6F6F"
 		hud_damage_image.add_overlay(temp)
 
 	// Calculate the required color index.
-	var/dam_state = min(1,((brute_dam+burn_dam)/max_damage))
+	var/dam_state = min(1,((get_trauma() + get_burn())/max_damage))
 	// Apply traumatic shock min damage state.
 	if(!isnull(min_dam_state) && dam_state < min_dam_state)
 		dam_state = min_dam_state

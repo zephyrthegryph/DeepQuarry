@@ -149,14 +149,6 @@
 	return 0
 
 // Debug verb for VVing the chunk that the turf is in.
-/*
-/turf/verb/view_chunk()
-	set src in world
-
-	if(GLOB.cameranet.chunkGenerated(x, y, z))
-		var/datum/chunk/chunk = GLOB.cameranet.getCameraChunk(x, y, z)
-		usr.client.debug_variables(chunk)
-*/
 
 /datum/visualnet/proc/clear_references(list/moved_eyes, client/C)
 	if(!islist(moved_eyes))

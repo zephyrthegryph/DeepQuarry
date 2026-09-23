@@ -13,8 +13,7 @@
 
 	pass_flags = PASSTABLE
 
-	health = 30
-	maxHealth = 30
+	endurance = 30
 	melee_damage_lower = 3
 	melee_damage_upper = 3
 

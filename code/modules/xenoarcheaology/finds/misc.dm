@@ -22,7 +22,6 @@
 		/datum/category_item/catalogue/material/magma_crystal
 		)
 
-
 /datum/category_item/catalogue/material/regular_crystal
 	name = "Crystal - Subterranean"
 	desc = "This is a luminescent crystalline mass, colored green or purple, and is sometimes found \
@@ -93,22 +92,4 @@
 	set_light(3, 3, color)
 
 //large finds
-				/*
-				obj/machinery/syndicate_beacon
-				obj/machinery/wish_granter
-			if(18)
-				item_type = "jagged green crystal"
-				additional_desc = pick("It shines faintly as it catches the light.","It appears to have a faint inner glow.","It seems to draw you inward as you look it at.","Something twinkles faintly as you look at it.","It's mesmerizing to behold.")
-				icon_state = "crystal"
-				apply_material_decorations = 0
-				if(prob(10))
-					apply_image_decorations = 1
-			if(19)
-				item_type = "jagged pink crystal"
-				additional_desc = pick("It shines faintly as it catches the light.","It appears to have a faint inner glow.","It seems to draw you inward as you look it at.","Something twinkles faintly as you look at it.","It's mesmerizing to behold.")
-				icon_state = "crystal2"
-				apply_material_decorations = 0
-				if(prob(10))
-					apply_image_decorations = 1
-				*/
 			//machinery type artifacts?

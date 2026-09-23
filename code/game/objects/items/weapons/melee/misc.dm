@@ -99,7 +99,6 @@
 	GLOB.listening_objects |= src
 
 
-// === merged from misc_vr.dm during hard-fork de-suffix (verified no override-order change) ===
 /obj/item/melee/rapier
 	name = "rapier"
 	desc = "A gleaming steel blade with a gold handguard and inlayed with an outstanding red gem."

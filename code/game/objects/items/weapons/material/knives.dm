@@ -189,7 +189,6 @@
 	fragile = FALSE
 
 
-// === merged from knives_vr.dm during hard-fork de-suffix (verified no override-order change) ===
 /obj/item/material/knife/machete/deluxe
 	name = "deluxe machete"
 	desc = "A fine example of a machete, with a polished blade, wooden handle and a leather cord loop."

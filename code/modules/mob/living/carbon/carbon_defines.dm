@@ -16,7 +16,6 @@
 	var/pose = null
 	var/pose_move = FALSE
 	var/image/pose_indicator
-	var/list/chem_effects = list()
 	var/datum/reagents/metabolism/bloodstream/bloodstr = null
 	var/datum/reagents/metabolism/ingested/ingested = null
 	var/datum/reagents/metabolism/touch/touching = null

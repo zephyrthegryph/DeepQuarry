@@ -1,998 +1,534 @@
-//TODO: Replace ventcrawl with morphing. /mob/living/simple_mob/vore/hostile/morph
+// Protean powers: one registry, one place that decides whether the swarm can
+// act. Each power declares its cost, the forms it can be used from and whether
+// it works while folded into the control cluster. The acting form is resolved
+// once, in try_activate(). Hotkey verbs and the stat panel come from the registry.
+
 #define PER_LIMB_STEEL_COST SHEET_MATERIAL_AMOUNT
-////
-//  One-part Refactor
-////
-/mob/living/carbon/human/proc/nano_partswap()
-	set name = "Ref - Single Limb"
-	set desc = "Allows you to replace and reshape your limbs as you see fit."
-	//set category = "Abilities.Protean"
-	set hidden = 1
+#define TOTAL_REBUILD_STEEL_COST 10000
 
-	var/mob/living/protie = src
-	if(temporary_form)
-		protie = temporary_form
-	if(nano_dead_check(protie))
-		to_chat(protie, span_warning("You need to be repaired first before you can act!"))
-		return
-	if(stat)
-		to_chat(protie,span_warning("You must be awake and standing to perform this action!"))
-		return
+/// Power type -> instance.
+/proc/protean_powers()
+	var/static/list/powers
+	if(powers)
+		return powers
+	powers = list()
+	for(var/power_type in subtypesof(/datum/protean_power))
+		powers[power_type] = new power_type()
+	return powers
 
-	if(!isturf(protie.loc))
-		to_chat(protie,span_warning("You need more space to perform this action!"))
-		return
+/// Every hotkey verb the registry provides; the forms component grants them.
+/proc/protean_power_verbs()
+	var/static/list/power_verbs
+	if(power_verbs)
+		return power_verbs
+	power_verbs = list()
+	for(var/power_type in protean_powers())
+		var/datum/protean_power/P = protean_powers()[power_type]
+		if(P.verb_path)
+			power_verbs += P.verb_path
+	return power_verbs
 
-	var/obj/item/organ/internal/nano/refactory/refactory = nano_get_refactory()
-	//Missing the organ that does this
-	if(!istype(refactory))
-		to_chat(protie,span_warning("You don't have a working refactory module!"))
-		return
+/mob/living/carbon/human/proc/activate_protean_power(power_type)
+	var/datum/protean_power/P = protean_powers()[power_type]
+	return P?.try_activate(src)
 
-	var/choice = tgui_input_list(protie,"Pick the bodypart to change:", "Refactor - One Bodypart", species.has_limbs)
-	if(!choice)
-		return
+/datum/protean_power
+	var/name = "power"
+	var/desc = ""
+	var/icon = 'icons/mob/species/protean/protean_powers.dmi'
+	var/icon_state
+	/// FORM_FLAG_* this power can be used from.
+	var/allowed_forms = FORM_FLAG_HUMAN | FORM_FLAG_PROTEAN_BLOB
+	/// Usable while folded into the control cluster.
+	var/usable_in_rig = FALSE
+	/// ONLY usable while folded into the control cluster.
+	var/rig_only = FALSE
+	/// Needs open space (a turf) around the character.
+	var/needs_turf = FALSE
+	/// Needs the character awake.
+	var/needs_conscious = TRUE
+	/// The hotkey verb that triggers this power.
+	var/verb_path
+	/// Listed in the Protean stat panel.
+	var/in_stat_panel = TRUE
+	/// Stat panel button (an atom, so the panel can click it).
+	var/obj/effect/protean_power_button/button
 
-	//Organ is missing, needs restoring
-	if(!organs_by_name[choice] || istype(organs_by_name[choice], /obj/item/organ/external/stump)) //allows limb stumps to regenerate like removed limbs.
-		if(refactory.get_stored_material(MAT_STEEL) < PER_LIMB_STEEL_COST)
-			to_chat(protie,span_warning("You're missing that limb, and need to store at least [PER_LIMB_STEEL_COST] steel to regenerate it."))
+/datum/protean_power/New()
+	..()
+	if(in_stat_panel)
+		button = new(null, src)
+
+/datum/protean_power/Destroy()
+	QDEL_NULL(button)
+	return ..()
+
+/datum/protean_power/proc/try_activate(mob/living/carbon/human/H)
+	if(!istype(H))
+		return FALSE
+	var/datum/component/forms/protean/F = H.GetComponent(/datum/component/forms/protean)
+	if(!F)
+		to_chat(H, span_warning("You don't have a nanite swarm to do that with."))
+		return FALSE
+	if(!can_use(H, F))
+		return FALSE
+	activate(H, F)
+	return TRUE
+
+/datum/protean_power/proc/can_use(mob/living/carbon/human/H, datum/component/forms/protean/F)
+	if(F.is_dormant())
+		to_chat(H, span_warning("You need to be repaired first before you can act!"))
+		return FALSE
+	if(needs_conscious && H.stat)
+		to_chat(H, span_warning("You must be awake to do that!"))
+		return FALSE
+	var/folded = F.in_rig()
+	if(rig_only && !folded)
+		to_chat(H, span_warning("You need to be folded into your control cluster to do that."))
+		return FALSE
+	if(folded && !usable_in_rig)
+		to_chat(H, span_warning("You can't do that while folded into your control cluster."))
+		return FALSE
+	if(!(F.current.form_flag & allowed_forms))
+		to_chat(H, span_warning("You can't do that in your current form."))
+		return FALSE
+	if(needs_turf && !isturf(H.loc))
+		to_chat(H, span_warning("You need more space to perform this action!"))
+		return FALSE
+	return TRUE
+
+/datum/protean_power/proc/activate(mob/living/carbon/human/H, datum/component/forms/protean/F)
+	return
+
+/obj/effect/protean_power_button
+	name = "Activate"
+	icon = 'icons/mob/species/protean/protean_powers.dmi'
+	var/datum/protean_power/power
+
+/obj/effect/protean_power_button/Initialize(mapload, datum/protean_power/new_power)
+	. = ..()
+	power = new_power
+	name = power.name
+	desc = power.desc
+	icon = power.icon
+	icon_state = power.icon_state
+
+/obj/effect/protean_power_button/Destroy()
+	power = null
+	return ..()
+
+/obj/effect/protean_power_button/Click(location, control, params)
+	var/list/modifiers = params2list(params)
+	var/mob/living/carbon/human/H = usr
+	if(!istype(H) || !power)
+		return
+	if(modifiers["shift"])
+		to_chat(H, span_notice(span_bold("[power.name]") + " - [power.desc]"))
+		return
+	power.try_activate(H)
+
+
+// --- Form ------------------------------------------------------------------------------
+
+/datum/protean_power/blobform
+	name = "Toggle Blobform"
+	desc = "Discard your shape entirely, changing to a low-energy blob. You'll consume steel to repair yourself in this form."
+	icon_state = "blob"
+	needs_turf = TRUE
+	verb_path = /mob/living/carbon/human/proc/nano_blobform
+
+/datum/protean_power/blobform/activate(mob/living/carbon/human/H, datum/component/forms/protean/F)
+	if(F.is_form(/datum/form/protean_blob))
+		if(!do_after(H, 2 SECONDS, target = H))
+			to_chat(H, span_warning("You must remain still to reshape yourself!"))
 			return
-		var/regen = tgui_alert(protie,"That limb is missing, do you want to regenerate it in exchange for [PER_LIMB_STEEL_COST] steel?","Regenerate limb?",list("Yes","No"))
-		if(regen != "Yes")
-			return
-		if(!refactory.use_stored_material(MAT_STEEL,PER_LIMB_STEEL_COST))
-			return
-		if(organs_by_name[choice])
-			var/obj/item/organ/external/oldlimb = organs_by_name[choice]
-			oldlimb.removed()
-			qdel(oldlimb)
-		var/mob/living/simple_mob/protean_blob/blob
-		if(!temporary_form)
-			blob = nano_intoblob()
-		else
-			blob = temporary_form
-		active_regen = 1
-		if(do_after(blob, 5 SECONDS, target = src))
-			var/list/limblist = species.has_limbs[choice]
-			var/limbpath = limblist["path"]
-			var/obj/item/organ/external/new_eo = new limbpath(src)
-			organs_by_name[choice] = new_eo
-			new_eo.robotize(synthetic ? synthetic.company : null) //Use the base we started with
-			new_eo.sync_colour_to_human(src)
-			regenerate_icons()
-		active_regen = 0
+		F.set_form(/datum/form/human)
 		return
-
-	//Organ exists, let's reshape it
-	var/list/usable_manufacturers = list()
-	for(var/company in GLOB.chargen_robolimbs)
-		var/datum/robolimb/M = GLOB.chargen_robolimbs[company]
-		if(!(choice in M.parts))
-			continue
-		if(species?.base_species in M.species_cannot_use)
-			continue
-		if(M.whitelisted_to && !(ckey in M.whitelisted_to))
-			continue
-		usable_manufacturers[company] = M
-	if(!usable_manufacturers.len)
+	if(H.handcuffed)
+		to_chat(H, span_warning("You can't do this while handcuffed!"))
 		return
-	var/manu_choice = tgui_input_list(protie, "Which manufacturer do you wish to mimic for this limb?", "Manufacturer for [choice]", usable_manufacturers)
-
-	if(!manu_choice)
-		return //Changed mind
-
-	var/obj/item/organ/external/eo = organs_by_name[choice]
-	if(!eo)
-		return //Lost it meanwhile
-
-	eo.robotize(manu_choice)
-	update_icons_body()
-
-/mob/living/carbon/human/proc/nano_regenerate()
-	set name = "Total Reassembly"
-	set desc = "Fully repair yourself or reload your appearance from whatever character slot you have loaded."
-	//set category = "Abilities.Protean"
-	set hidden = 1
-	var/mob/living/protie = src
-	if(temporary_form)
-		protie = temporary_form
-	var/input = tgui_alert(protie,{"Do you want to rebuild or reassemble yourself?
-	Rebuilding will cost 10,000 steel and will rebuild all of your limbs as well as repair all damage over a 40s period.
-	Reassembling costs no steel and will copy the appearance data of your currently loaded save slot."},"Reassembly",list("Rebuild","Reassemble","Cancel"))
-	if(input == "Cancel" || !input)
+	to_chat(H, span_notice("You begin to disassociate your form."))
+	if(!do_after(H, 2 SECONDS, target = H))
+		to_chat(H, span_warning("You must remain still to blobform!"))
 		return
-	if(input == "Rebuild")
-		var/obj/item/organ/internal/nano/refactory/refactory = nano_get_refactory()
-		if(refactory.get_stored_material(MAT_STEEL) >= 10000)
-			to_chat(protie, span_notify("You begin to rebuild. You will need to remain still."))
-			if(do_after(protie, 40 SECONDS, target = src))
-				if(species?:OurRig)	//Unsafe, but we should only ever be using this with a Protean
-					species?:OurRig?:make_alive(src,1)	//Re-using this proc
-					refactory.use_stored_material(MAT_STEEL,refactory.get_stored_material(MAT_STEEL))	//Use all of our steel
-				else
-					to_chat(protie, span_userdanger("Somehow, you are missing your protean rig. You are unable to rebuild without one."))
-		else
-			to_chat(protie, span_warning("You do not have enough steel stored for this operation."))
-	else
-		input = tgui_alert(protie,{"Include Flavourtext?"},"Reassembly",list("Yes","No","Cancel"))
-		if(input == "Cancel" || !input)
-			return
-		var/flavour = 0
-		if(input == "Yes")
-			flavour = 1
-		input = tgui_alert(protie,{"Include OOC notes?"},"Reassembly",list("Yes","No","Cancel"))
-		if(input == "Cancel" || !input)
-			return
-		var/oocnotes = 0
-		if(input == "Yes")
-			oocnotes = 1
-		to_chat(protie, span_notify("You begin to reassemble. You will need to remain still."))
-		protie.visible_message(span_notify("[protie] rapidly contorts and shifts!"), span_danger("You begin to reassemble."))
-		if(do_after(protie, 4 SECONDS, target = src))
-			if(protie.client.prefs)	//Make sure we didn't d/c
-				var/obj/item/rig/protean/Rig = species?:OurRig
-				protie.client.prefs.vanity_copy_to(src, FALSE, flavour, oocnotes, TRUE, FALSE)
-				species?:OurRig = Rig	//Get a reference to our Rig and put it back after reassembling
-				protie.visible_message(span_notify("[protie] adopts a new form!"), span_danger("You have reassembled."))
+	F.set_form(/datum/form/protean_blob)
 
-
-/mob/living/carbon/human/proc/nano_copy_body()
-	set name = "Copy Form"
-	set desc = "If you are aggressively grabbing someone, with their consent, you can turn into a copy of them. (Without their name)."
-	//set category = "Abilities.Protean"
-	set hidden = 1
-	var/mob/living/protie = src
-	if(temporary_form)
-		protie = temporary_form
-
-	var/grabbing_but_not_enough
-	var/mob/living/carbon/human/victim = null
-	for(var/obj/item/grab/G in protie)
-		if(G.state < GRAB_AGGRESSIVE)
-			grabbing_but_not_enough = TRUE
-			return
-		else
-			victim = G.affecting
-	if (!victim)
-		if (grabbing_but_not_enough)
-			to_chat(protie, span_warning("You need a better grip to do that!"))
-		else
-			to_chat(protie, span_notice("You need to be aggressively grabbing someone before you can copy their form."))
-		return
-	if (!istype(victim))
-		to_chat(protie, span_warning("You can only perform this on human mobs!"))
-		return
-	if (!victim.client)
-		to_chat(protie, span_notice("The person you try this on must have a client!"))
-		return
-
-
-	to_chat(protie, span_notice("Waiting for other person's consent."))
-	var/consent = tgui_alert(victim, "Allow [src] to copy what you look like?", "Consent", list("Yes", "No"))
-	if (consent != "Yes")
-		to_chat(protie, span_notice("They declined your request."))
-		return
-
-	var/input = tgui_alert(protie,{"Copy [victim]'s flavourtext?"},"Copy Form",list("Yes","No","Cancel"))
-	if(input == "Cancel" || !input)
-		return
-	var/flavour = 0
-	if(input == "Yes")
-		flavour = 1
-
-	var/checking = FALSE
-	for(var/obj/item/grab/G in protie)
-		if(G.affecting == victim && G.state >= GRAB_AGGRESSIVE)
-			checking = TRUE
-	if (!checking)
-		to_chat(protie, span_warning("You lost your grip on [victim]!"))
-		return
-
-	to_chat(protie, span_notify("You begin to reassemble into [victim]. You will need to remain still."))
-	protie.visible_message(span_notify("[protie] rapidly contorts and shifts!"), span_danger("You begin to reassemble into [victim]."))
-	if(do_after(protie, 4 SECONDS, target = src))
-		checking = FALSE
-		for(var/obj/item/grab/G in protie)
-			if(G.affecting == victim && G.state >= GRAB_AGGRESSIVE)
-				checking = TRUE
-		if (!checking)
-			to_chat(protie, span_warning("You lost your grip on [victim]!"))
-			return
-		if(protie.client)	//Make sure we didn't d/c
-			var/obj/item/rig/protean/Rig = species?:OurRig
-			transform_into_other_human(victim, FALSE, flavour, TRUE, FALSE)
-			species?:OurRig = Rig	//Get a reference to our Rig and put it back after reassembling
-			protie.visible_message(span_notify("[protie] adopts the form of [victim]!"), span_danger("You have reassembled into [victim]."))
-
-////
-//  Storing metal
-////
-/mob/living/carbon/human/proc/nano_metalnom()
-	set name = "Ref - Store Metals"
-	set desc = "If you're holding a stack of material, you can consume some and store it for later."
-	//set category = "Abilities.Protean"
-	set hidden = 1
-
-	var/mob/living/protie = src
-	if(temporary_form)
-		protie = temporary_form
-	if(nano_dead_check(protie))
-		to_chat(protie, span_warning("You need to be repaired first before you can act!"))
-		return
-
-	var/obj/item/organ/internal/nano/refactory/refactory = nano_get_refactory()
-	//Missing the organ that does this
-	if(!istype(refactory))
-		to_chat(protie,span_warning("You don't have a working refactory module!"))
-		return
-
-	var/held = protie.get_active_hand()
-	if(!istype(held,/obj/item/stack/material))
-		to_chat(protie,span_warning("You aren't holding a stack of materials in your active hand!"))
-		return
-
-	var/obj/item/stack/material/matstack = held
-	var/substance = matstack.material.name
-	var allowed = 0
-	for(var/material in PROTEAN_EDIBLE_MATERIALS)
-		if(material == substance) allowed = 1
-	if(!allowed)
-		to_chat(protie,span_warning("You can't process [substance]!"))
-		return
-
-	var/howmuch = tgui_input_number(protie,"How much do you want to store? (0-[matstack.get_amount()])","Select amount",null,matstack.get_amount())
-	if(!howmuch || matstack != protie.get_active_hand() || howmuch > matstack.get_amount())
-		return //Quietly fail
-
-	var/actually_added = refactory.add_stored_material(substance,howmuch*matstack.perunit)
-	matstack.use(CEILING((actually_added/matstack.perunit), 1))
-	if(actually_added && actually_added < howmuch)
-		to_chat(protie,span_warning("Your refactory module is now full, so only [actually_added] units were stored."))
-		visible_message(span_notice("[protie] nibbles some of the [substance] right off the stack!"))
-	else if(actually_added)
-		to_chat(protie,span_notice("You store [actually_added] units of [substance]."))
-		visible_message(span_notice("[protie] devours some of the [substance] right off the stack!"))
-	else
-		to_chat(protie,span_notice("You're completely capped out on [substance]!"))
-
-////
-//  Blob Form
-////
-/mob/living/carbon/human/proc/nano_blobform(forced)
+/mob/living/carbon/human/proc/nano_blobform()
 	set name = "Toggle Blobform"
 	set desc = "Switch between amorphous and humanoid forms."
-	//set category = "Abilities.Protean"
-	set hidden = 1
+	set hidden = TRUE
+	activate_protean_power(/datum/protean_power/blobform)
 
-	if(nano_dead_check(src))
-		return
-	if(forced)
-		if(temporary_form)
-			nano_outofblob(temporary_form, forced)
-		else
-			nano_intoblob(forced)
-		return
-	var/atom/movable/to_locate = temporary_form || src
-	if(!isturf(to_locate.loc) && !forced)
-		to_chat(to_locate,span_warning("You need more space to perform this action!"))
-		return
-	//Blob form
-	if(temporary_form)
-		if(temporary_form.stat)
-			to_chat(temporary_form,span_warning("You can only do this while not stunned."))
-		else
-			nano_outofblob(temporary_form)
+/datum/protean_power/change_volume
+	name = "Change Volume"
+	desc = "Alter your size between 25% and 200%."
+	icon_state = "volume"
+	allowed_forms = FORM_FLAG_HUMAN | FORM_FLAG_PROTEAN_BLOB
 
-	//Human form
-	else if(stat)
-		to_chat(src,span_warning("You can only do this while not stunned."))
-		return
-	else if(handcuffed)
-		to_chat(src, span_warning("You can't do this while handcuffed!"))
-		return
-	else
-		nano_intoblob()
+/datum/protean_power/change_volume/activate(mob/living/carbon/human/H, datum/component/forms/protean/F)
+	H.set_size()
 
-////
-//  Change fitting
-////
+/// Species inherent verb: pick which species' clothing fit (and sprites) to use.
 /mob/living/carbon/human/proc/nano_change_fitting()
 	set name = "Change Species Fit"
 	set desc = "Tweak your shape to change what suits you fit into (and their sprites!)."
 	set category = "Abilities.Protean"
 
 	if(stat)
-		to_chat(src,span_warning("You must be awake and standing to perform this action!"))
+		to_chat(src, span_warning("You must be awake and standing to perform this action!"))
 		return
-
-	var/new_species = tgui_input_list(src, "Please select a species to emulate.", "Shapeshifter Body", list(species?.vanity_base_fit)|species?.get_valid_shapeshifter_forms())
-	if(new_species)
-		species?.base_species = new_species // Really though you better have a species
-		regenerate_icons() //Expensive, but we need to recrunch all the icons we're wearing
-
-////
-//	Rig Transform
-////
-/mob/living/carbon/human/proc/nano_rig_transform(forced, devour = FALSE)
-	set name = "Modify Form - Hardsuit"
-	set desc = "Allows a protean to retract its mass into its hardsuit module at will."
-	//set category = "Abilities.Protean"
-	set hidden = 1
-
-	var/mob/living/protie = src
-	if(temporary_form)
-		protie = temporary_form
-	if(nano_dead_check(src))
-		to_chat(protie, span_warning("You need to be repaired first before you can act!"))
+	var/new_species = tgui_input_list(src, "Please select a species to emulate.", "Shapeshifter Body", list(species?.vanity_base_fit) | species?.get_valid_shapeshifter_forms())
+	if(!new_species || stat || !species)
 		return
-	to_chat(protie, span_notice("You rapidly condense into your module."))
-	if(forced || do_after(protie, 2 SECONDS, target = src))
-		if(!temporary_form)	//If you're human, force you into blob form before rig'ing
-			nano_blobform(forced)
-		spawn(2)
+	species.base_species = new_species
+	regenerate_icons()
 
-		if(istype(src.species, /datum/species/protean))
-			var/datum/species/protean/S = src.species
-			var/mob/living/simple_mob/protean_blob/P = temporary_form
-			if(S.OurRig) //Do we even have a RIG?
-				if(P.loc == S.OurRig)	//we're inside our own RIG
-					var/mob/wearer = S.OurRig.wearer
-					if(ismob(S.OurRig.loc))
-						var/mob/m = S.OurRig.loc
-						m.drop_from_inventory(S.OurRig)
-					if(wearer && devour) //We're being worn. Engulf em', if prefs align.. otherwise just drop off.
-						if(P.can_be_drop_pred && wearer.devourable && wearer.can_be_drop_prey && P.vore_selected)
-							begin_instant_nom(P,wearer,P,P.vore_selected)
-						else
-							to_chat(P, span_vwarning("You can't assimilate your current host."))
-					P.forceMove(get_turf(S.OurRig))
-					S.OurRig.forceMove(src)
-					S.OurRig.myprotean = src
-					src.equip_to_slot_if_possible(S.OurRig, slot_back)
-					S.OurRig.Moved()
-					P.has_hands = 1
-				else	//We're not in our own RIG
-					if(P.stat || P.resting && !forced)
-						to_chat(P,span_warning("You can only do this while not stunned."))
-					else
-						if(P.l_hand)
-							P.drop_l_hand()
-						if(P.r_hand)
-							P.drop_r_hand()
-						P.has_hands = 0
-						S.OurRig.myprotean = P
-						src.drop_from_inventory(S.OurRig)
-						P.forceMove(S.OurRig)
-						S.OurRig.canremove = 1
-			else	//Make one if not
-				to_chat(temporary_form, span_warning("Somehow, your RIG got disconnected from your species. This may have been caused by an admin heal. A new one has been created for you, contact a coder."))
-				new /obj/item/rig/protean(src,src)
+/datum/protean_power/hide_self
+	name = "Hide Self"
+	desc = "Disperse your mass into a thin veil, making a trap to snatch prey with, or simply hide."
+	allowed_forms = FORM_FLAG_PROTEAN_BLOB
+	needs_turf = TRUE
+	in_stat_panel = FALSE
+	verb_path = /mob/living/carbon/human/proc/prot_hide
+
+/datum/protean_power/hide_self/activate(mob/living/carbon/human/H, datum/component/forms/protean/F)
+	var/datum/form/protean_blob/B = F.blob_form()
+	if(!B.hiding && H.resting)
+		to_chat(H, span_warning("You can't hide while resting."))
+		return
+	B.set_hiding(H, !B.hiding)
+	if(B.hiding || !H.can_be_drop_pred || !H.vore_selected)
+		return
+	// Springing the trap: engulf something standing on us.
+	var/list/potentials = H.living_mobs(0)
+	potentials -= H
+	if(!length(potentials))
+		return
+	var/mob/living/target = pick(potentials)
+	if(!can_spontaneous_vore(H, target))
+		return
+	if(target.buckled)
+		target.buckled.unbuckle_mob(target, force = TRUE)
+	H.vore_selected.nom_atom(target)
+	to_chat(target, span_warning("\The [H] quickly engulfs you, [H.vore_selected.vore_verb]ing you into their [H.vore_selected.get_belly_name()]!"))
+
+/mob/living/carbon/human/proc/prot_hide()
+	set name = "Hide Self"
+	set desc = "Disperses your mass into a thin veil, making a trap to snatch prey with, or simply hide."
+	set category = "Abilities.Protean"
+	activate_protean_power(/datum/protean_power/hide_self)
+
+
+// --- Refactory ------------------------------------------------------------------------
+
+/datum/protean_power/reform_limb
+	name = "Ref - Single Limb"
+	desc = "Rebuild or replace a single limb, assuming you have 2000 steel."
+	icon_state = "limb"
+	needs_turf = TRUE
+	verb_path = /mob/living/carbon/human/proc/nano_partswap
+
+/datum/protean_power/reform_limb/activate(mob/living/carbon/human/H, datum/component/forms/protean/F)
+	var/obj/item/organ/internal/nano/refactory/refactory = H.nano_get_refactory()
+	if(!refactory)
+		to_chat(H, span_warning("You don't have a working refactory module!"))
+		return
+	var/choice = tgui_input_list(H, "Pick the bodypart to change:", "Refactor - One Bodypart", H.species.has_limbs)
+	if(!choice || !can_use(H, F))
+		return
+	var/obj/item/organ/external/existing = H.organs_by_name[choice]
+	if(!existing || existing.is_stump())
+		regrow_limb(H, F, refactory, choice)
+		return
+	var/list/usable_manufacturers = list()
+	for(var/company in GLOB.chargen_robolimbs)
+		var/datum/robolimb/M = GLOB.chargen_robolimbs[company]
+		if(!(choice in M.parts))
+			continue
+		if(H.species?.base_species in M.species_cannot_use)
+			continue
+		if(M.whitelisted_to && !(H.ckey in M.whitelisted_to))
+			continue
+		usable_manufacturers[company] = M
+	if(!length(usable_manufacturers))
+		return
+	var/manu_choice = tgui_input_list(H, "Which manufacturer do you wish to mimic for this limb?", "Manufacturer for [choice]", usable_manufacturers)
+	if(!manu_choice)
+		return
+	var/obj/item/organ/external/eo = H.organs_by_name[choice]
+	if(!eo)
+		return
+	eo.robotize(manu_choice)
+	H.update_icons_body()
+
+/datum/protean_power/reform_limb/proc/regrow_limb(mob/living/carbon/human/H, datum/component/forms/protean/F, obj/item/organ/internal/nano/refactory/refactory, choice)
+	if(refactory.get_stored_material(MAT_STEEL) < PER_LIMB_STEEL_COST)
+		to_chat(H, span_warning("You're missing that limb, and need to store at least [PER_LIMB_STEEL_COST] steel to regenerate it."))
+		return
+	if(tgui_alert(H, "That limb is missing, do you want to regenerate it in exchange for [PER_LIMB_STEEL_COST] steel?", "Regenerate limb?", list("Yes", "No")) != "Yes")
+		return
+	if(!can_use(H, F) || !refactory.use_stored_material(MAT_STEEL, PER_LIMB_STEEL_COST))
+		return
+	F.set_form(/datum/form/protean_blob)
+	H.active_regen = TRUE
+	if(do_after(H, 5 SECONDS, target = H))
+		var/obj/item/organ/external/oldlimb = H.organs_by_name[choice]
+		if(oldlimb)
+			oldlimb.removed()
+			qdel(oldlimb)
+		var/list/limblist = H.species.has_limbs[choice]
+		var/limbpath = limblist["path"]
+		var/obj/item/organ/external/new_eo = new limbpath(H)
+		H.organs_by_name[choice] = new_eo
+		new_eo.robotize(H.synthetic ? H.synthetic.company : null)
+		new_eo.sync_colour_to_human(H)
+		H.regenerate_icons()
 	else
-		to_chat(protie, span_warning("You must remain still to condense!"))
+		refactory.add_stored_material(MAT_STEEL, PER_LIMB_STEEL_COST)
+	H.active_regen = FALSE
+
+/mob/living/carbon/human/proc/nano_partswap()
+	set name = "Ref - Single Limb"
+	set desc = "Allows you to replace and reshape your limbs as you see fit."
+	set hidden = TRUE
+	activate_protean_power(/datum/protean_power/reform_limb)
+
+/datum/protean_power/reform_body
+	name = "Total Reassembly"
+	desc = "Fully repair yourself or reload your appearance from whatever character slot you have loaded."
+	icon_state = "body"
+	verb_path = /mob/living/carbon/human/proc/nano_regenerate
+
+/datum/protean_power/reform_body/activate(mob/living/carbon/human/H, datum/component/forms/protean/F)
+	var/input = tgui_alert(H, {"Do you want to rebuild or reassemble yourself?
+	Rebuilding will cost [TOTAL_REBUILD_STEEL_COST] steel and will rebuild all of your limbs as well as repair all damage over a 40s period.
+	Reassembling costs no steel and will copy the appearance data of your currently loaded save slot."}, "Reassembly", list("Rebuild", "Reassemble", "Cancel"))
+	if(!input || input == "Cancel" || !can_use(H, F))
+		return
+	if(input == "Rebuild")
+		var/obj/item/organ/internal/nano/refactory/refactory = H.nano_get_refactory()
+		if(!refactory || refactory.get_stored_material(MAT_STEEL) < TOTAL_REBUILD_STEEL_COST)
+			to_chat(H, span_warning("You do not have enough steel stored for this operation."))
+			return
+		to_chat(H, span_notify("You begin to rebuild. You will need to remain still."))
+		if(!do_after(H, 40 SECONDS, target = H))
+			return
+		refactory = H.nano_get_refactory()
+		if(!refactory || !refactory.consume_stored_material(MAT_STEEL, refactory.get_stored_material(MAT_STEEL)))
+			return
+		H.fully_heal()
+		log_game("PROTEAN: [key_name(H)] rebuilt themselves with Total Reassembly.")
+		return
+	var/flavour = tgui_alert(H, "Include Flavourtext?", "Reassembly", list("Yes", "No", "Cancel"))
+	if(!flavour || flavour == "Cancel")
+		return
+	var/oocnotes = tgui_alert(H, "Include OOC notes?", "Reassembly", list("Yes", "No", "Cancel"))
+	if(!oocnotes || oocnotes == "Cancel")
+		return
+	to_chat(H, span_notify("You begin to reassemble. You will need to remain still."))
+	H.visible_message(span_notify("[H] rapidly contorts and shifts!"), span_danger("You begin to reassemble."))
+	if(do_after(H, 4 SECONDS, target = H) && H.client?.prefs)
+		H.client.prefs.vanity_copy_to(H, FALSE, flavour == "Yes", oocnotes == "Yes", TRUE, FALSE)
+		H.visible_message(span_notify("[H] adopts a new form!"), span_danger("You have reassembled."))
+
+/mob/living/carbon/human/proc/nano_regenerate()
+	set name = "Total Reassembly"
+	set desc = "Fully repair yourself or reload your appearance from whatever character slot you have loaded."
+	set hidden = TRUE
+	activate_protean_power(/datum/protean_power/reform_body)
+
+/datum/protean_power/copy_form
+	name = "Copy Form"
+	desc = "If you are aggressively grabbing someone, with their consent, you can turn into a copy of them. (Without their name)."
+	icon_state = "copy_form"
+	verb_path = /mob/living/carbon/human/proc/nano_copy_body
+
+/datum/protean_power/copy_form/proc/aggressive_grab_on(mob/living/carbon/human/H, mob/living/victim)
+	for(var/obj/item/grab/G in H)
+		if(G.state >= GRAB_AGGRESSIVE && (!victim || G.affecting == victim))
+			return G
+	return null
+
+/datum/protean_power/copy_form/activate(mob/living/carbon/human/H, datum/component/forms/protean/F)
+	var/obj/item/grab/G = aggressive_grab_on(H)
+	if(!G)
+		to_chat(H, span_notice("You need to be aggressively grabbing someone before you can copy their form."))
+		return
+	var/mob/living/carbon/human/victim = G.affecting
+	if(!istype(victim))
+		to_chat(H, span_warning("You can only perform this on human mobs!"))
+		return
+	if(!victim.client)
+		to_chat(H, span_notice("The person you try this on must have a client!"))
+		return
+	to_chat(H, span_notice("Waiting for other person's consent."))
+	if(tgui_alert(victim, "Allow [H] to copy what you look like?", "Consent", list("Yes", "No")) != "Yes")
+		to_chat(H, span_notice("They declined your request."))
+		return
+	var/input = tgui_alert(H, "Copy [victim]'s flavourtext?", "Copy Form", list("Yes", "No", "Cancel"))
+	if(!input || input == "Cancel")
+		return
+	if(!aggressive_grab_on(H, victim))
+		to_chat(H, span_warning("You lost your grip on [victim]!"))
+		return
+	to_chat(H, span_notify("You begin to reassemble into [victim]. You will need to remain still."))
+	H.visible_message(span_notify("[H] rapidly contorts and shifts!"), span_danger("You begin to reassemble into [victim]."))
+	if(!do_after(H, 4 SECONDS, target = H))
+		return
+	if(!aggressive_grab_on(H, victim))
+		to_chat(H, span_warning("You lost your grip on [victim]!"))
+		return
+	if(H.client)
+		H.transform_into_other_human(victim, FALSE, input == "Yes", TRUE, FALSE)
+		H.visible_message(span_notify("[H] adopts the form of [victim]!"), span_danger("You have reassembled into [victim]."))
+
+/mob/living/carbon/human/proc/nano_copy_body()
+	set name = "Copy Form"
+	set desc = "If you are aggressively grabbing someone, with their consent, you can turn into a copy of them. (Without their name)."
+	set hidden = TRUE
+	activate_protean_power(/datum/protean_power/copy_form)
+
+/datum/protean_power/metal_nom
+	name = "Ref - Store Metals"
+	desc = "Store the metal you're holding. Your refactory can only store steel."
+	icon_state = "metal"
+	verb_path = /mob/living/carbon/human/proc/nano_metalnom
+
+/datum/protean_power/metal_nom/activate(mob/living/carbon/human/H, datum/component/forms/protean/F)
+	var/obj/item/organ/internal/nano/refactory/refactory = H.nano_get_refactory()
+	if(!refactory)
+		to_chat(H, span_warning("You don't have a working refactory module!"))
+		return
+	var/obj/item/stack/material/matstack = H.get_active_hand()
+	if(!istype(matstack))
+		to_chat(H, span_warning("You aren't holding a stack of materials in your active hand!"))
+		return
+	var/substance = matstack.material.name
+	if(!(substance in PROTEAN_EDIBLE_MATERIALS))
+		to_chat(H, span_warning("You can't process [substance]!"))
+		return
+	var/howmuch = tgui_input_number(H, "How much do you want to store? (0-[matstack.get_amount()])", "Select amount", null, matstack.get_amount())
+	if(!howmuch || matstack != H.get_active_hand() || howmuch > matstack.get_amount())
+		return
+	var/actually_added = refactory.add_stored_material(substance, howmuch * matstack.perunit)
+	matstack.use(CEILING((actually_added / matstack.perunit), 1))
+	if(actually_added && actually_added < howmuch)
+		to_chat(H, span_warning("Your refactory module is now full, so only [actually_added] units were stored."))
+		H.visible_message(span_notice("[H] nibbles some of the [substance] right off the stack!"))
+	else if(actually_added)
+		to_chat(H, span_notice("You store [actually_added] units of [substance]."))
+		H.visible_message(span_notice("[H] devours some of the [substance] right off the stack!"))
+	else
+		to_chat(H, span_notice("You're completely capped out on [substance]!"))
+
+/mob/living/carbon/human/proc/nano_metalnom()
+	set name = "Ref - Store Metals"
+	set desc = "If you're holding a stack of material, you can consume some and store it for later."
+	set hidden = TRUE
+	activate_protean_power(/datum/protean_power/metal_nom)
+
+
+// --- Appearance ------------------------------------------------------------------------
+
+/datum/protean_power/appearance_switch
+	name = "Blob Appearance"
+	desc = "Toggle your blob appearance. Also affects your worn appearance."
+	icon_state = "switch"
+	usable_in_rig = TRUE
+	verb_path = /mob/living/carbon/human/proc/appearance_switch
+
+/datum/protean_power/appearance_switch/activate(mob/living/carbon/human/H, datum/component/forms/protean/F)
+	var/datum/form/protean_blob/B = F.blob_form()
+	if(B.edit_appearance(H) && F.current == B)
+		F.refresh_appearance()
 
 /mob/living/carbon/human/proc/appearance_switch()
 	set name = "Switch Blob Appearance"
 	set desc = "Allows a protean blob to switch its outwards appearance."
-	//set category = "Abilities.Protean"
-	set hidden = 1
-	var/datum/species/protean/S = src.species
-	var/mob/living/protie = src
-	if(temporary_form)
-		protie = temporary_form
-	// Note: Catslug through Dullahan are commented out (Disabled) intentionally, as the ability to have mob icons as a protean is unwanted as of 19-3-2025. Nonetheless, the sprites have been tested and are completely functional at the current moment. If desired to re-enable downstream or at a later time, simply remove the comment tags starting at catslug and ending at Dullahan. These should honestly be split into two lists ('basic_forms' and 'advanced_forms') with a proper toggle instead of commenting it out, but that's for a later date.
-	var/list/icon_choices = list(
-			"Primary" = image(icon = 'icons/mob/species/protean/protean.dmi', icon_state = "primary"),
-			"Highlight" = image(icon = 'icons/mob/species/protean/protean.dmi', icon_state = "highlight"),
-			"puddle1" = image(icon = 'icons/mob/species/protean/protean_powers.dmi', icon_state = "blob"),
-			"puddle0" = image(icon = 'icons/mob/species/protean/protean.dmi', icon_state = "puddle"),
-			"shadow" = image(icon = 'icons/mob/species/protean/protean.dmi', icon_state = "shadow"),
-			"clean" = image(icon = 'icons/mob/species/protean/protean.dmi', icon_state = "clean"),
-			"swarm" = image(icon = 'icons/mob/species/protean/protean.dmi', icon_state = "swarm"),
-			"slime" = image(icon = 'icons/mob/species/protean/protean.dmi', icon_state = "slime"),
-			"chaos" = image(icon = 'icons/mob/species/protean/protean.dmi', icon_state = "chaos"),
-			"cloud" = image(icon = 'icons/mob/species/protean/protean.dmi', icon_state = "cloud"),
-			// CHOMPEnable Start
-			"catslug" = image(icon = 'icons/mob/species/protean/protean.dmi', icon_state = "catslug"),
-			"cat" = image(icon = 'icons/mob/species/protean/protean.dmi', icon_state = "cat"),
-			"mouse" = image(icon = 'icons/mob/species/protean/protean.dmi', icon_state = "mouse"),
-			"rabbit" = image(icon = 'icons/mob/species/protean/protean.dmi', icon_state = "rabbit"),
-			"bear" = image(icon = 'icons/mob/species/protean/protean.dmi', icon_state = "bear"),
-			"fen" = image(icon = 'icons/mob/species/protean/protean.dmi', icon_state = "fen"),
-			"fox" = image(icon = 'icons/mob/species/protean/protean.dmi', icon_state = "fox"),
-			"raptor" = image(icon = 'icons/mob/species/protean/protean.dmi', icon_state = "raptor"),
-			"rat" = image(icon = 'icons/mob/species/protean/protean64x32.dmi', icon_state = "rat", pixel_x = -16),
-			"lizard" = image(icon = 'icons/mob/species/protean/protean64x32.dmi', icon_state = "lizard", pixel_x = -16),
-			"wolf" = image(icon = 'icons/mob/species/protean/protean64x32.dmi', icon_state = "wolf", pixel_x = -16),
-			//"drake" = image(icon = 'icons/mob/species/protean/protean64x64.dmi', icon_state = "drake", pixel_x = -16),
-			"teppi" = image(icon = 'icons/mob/species/protean/protean64x64.dmi', icon_state = "teppi", pixel_x = -16),
-			"panther" = image(icon = 'icons/mob/species/protean/protean64x64.dmi', icon_state = "panther", pixel_x = -16),
-			"robodrgn" = image(icon = 'icons/mob/species/protean/protean128x64.dmi', icon_state = "robodrgn", pixel_x = -48),
-			"Dragon" = image(icon = 'icons/mob/bigdragon_small.dmi', icon_state = "dragon_small"),
-			"Dullahan" = image(icon = 'icons/mob/robot/dullahan/v1/dullahanicon.dmi', icon_state = "proticon")
-			//CHOMPEnable End
-			)
-	var/blobstyle = show_radial_menu(protie, protie, icon_choices, require_near = TRUE, tooltips = FALSE)
-	if(!blobstyle || QDELETED(protie) || protie.incapacitated())
-		return FALSE
-	switch(blobstyle)
-		if("Dragon")	//Fuck it, we ball
-			var/list/options = list("Underbelly","Body","Ears","Mane","Horns","Eyes")
-			for(var/option in options)
-				LAZYSET(options, option, image('icons/effects/bigdragon_labels.dmi', option))
-			var/choice = show_radial_menu(protie, protie, options, radius = 60)
-			if(!choice || QDELETED(protie) || protie.incapacitated())
-				return FALSE
-			. = TRUE
-			var/list/underbelly_styles = list(
-				"dragon_underSmooth",
-				"dragon_underPlated"
-			)
-			var/list/body_styles = list(
-				"dragon_bodySmooth",
-				"dragon_bodyScaled"
-			)
-			var/list/ear_styles = list(
-				"dragon_earsNormal"
-			)
-			var/list/mane_styles = list(
-				"dragon_maneNone",
-				"dragon_maneShaggy",
-				"dragon_maneDorsalfin"
-			)
-			var/list/horn_styles = list(
-				"dragon_hornsPointy",
-				"dragon_hornsCurved",
-				"dragon_hornsCurved2",
-				"dragon_hornsJagged",
-				"dragon_hornsCrown",
-				"dragon_hornsSkull"
-			)
-			var/list/eye_styles = list(
-				"dragon_eyesNormal"
-			)
-			switch(choice)
-				if("Underbelly")
-					options = underbelly_styles
-					for(var/option in options)
-						var/image/I = image('icons/mob/vore128x64.dmi', option, dir = 4, pixel_x = -48)
-						LAZYSET(options, option, I)
-					choice = show_radial_menu(protie, protie, options, radius = 90)
-					if(!choice || QDELETED(protie) || protie.incapacitated())
-						return 0
-					var/new_color = tgui_color_picker(protie, "Pick underbelly color:","Underbelly Color", S.dragon_overlays[1])
-					if(!new_color)
-						return 0
-					S.dragon_overlays[1] = choice
-					S.dragon_overlays[S.dragon_overlays[1]] = new_color
-				if("Body")
-					options = body_styles
-					for(var/option in options)
-						var/image/I = image('icons/mob/vore128x64.dmi', option, dir = 4, pixel_x = -48)
-						LAZYSET(options, option, I)
-					choice = show_radial_menu(protie, protie, options, radius = 90)
-					if(!choice || QDELETED(protie) || protie.incapacitated())
-						return 0
-					var/new_color = tgui_color_picker(protie, "Pick body color:","Body Color", S.dragon_overlays[2])
-					if(!new_color)
-						return 0
-					S.dragon_overlays[2] = choice
-					S.dragon_overlays[S.dragon_overlays[2]] = new_color
-				if("Ears")
-					options = ear_styles
-					for(var/option in options)
-						var/image/I = image('icons/mob/vore128x64.dmi', option, dir = 4, pixel_x = -76, pixel_y = -50)
-						LAZYSET(options, option, I)
-					choice = show_radial_menu(protie, protie, options, radius = 90)
-					if(!choice || QDELETED(protie) || protie.incapacitated())
-						return 0
-					var/new_color = tgui_color_picker(protie, "Pick ear color:","Ear Color", S.dragon_overlays[3])
-					if(!new_color)
-						return 0
-					S.dragon_overlays[3] = choice
-					S.dragon_overlays[S.dragon_overlays[3]] = new_color
-				if("Mane")
-					options = mane_styles
-					for(var/option in options)
-						var/image/I = image('icons/mob/vore128x64.dmi', option, dir = 4, pixel_x = -76, pixel_y = -50)
-						LAZYSET(options, option, I)
-					choice = show_radial_menu(protie, protie, options, radius = 90)
-					if(!choice || QDELETED(protie) || protie.incapacitated())
-						return 0
-					var/new_color = tgui_color_picker(protie, "Pick mane color:","Mane Color", S.dragon_overlays[4])
-					if(!new_color)
-						return 0
-					S.dragon_overlays[4] = choice
-					S.dragon_overlays[S.dragon_overlays[4]] = new_color
-				if("Horns")
-					options = horn_styles
-					for(var/option in options)
-						var/image/I = image('icons/mob/vore128x64.dmi', option, dir = 4, pixel_x = -86, pixel_y = -50)
-						LAZYSET(options, option, I)
-					choice = show_radial_menu(protie, protie, options, radius = 90)
-					if(!choice || QDELETED(protie) || protie.incapacitated())
-						return 0
-					var/new_color = tgui_color_picker(protie, "Pick horn color:","Horn Color", S.dragon_overlays[5])
-					if(!new_color)
-						return 0
-					S.dragon_overlays[5] = choice
-					S.dragon_overlays[S.dragon_overlays[5]] = new_color
-				if("Eyes")
-					options = eye_styles
-					for(var/option in options)
-						var/image/I = image('icons/mob/vore128x64.dmi', option, dir = 2, pixel_x = -48, pixel_y = -50)
-						LAZYSET(options, option, I)
-					choice = show_radial_menu(protie, protie, options, radius = 90)
-					if(!choice || QDELETED(protie) || protie.incapacitated())
-						return 0
-					var/new_color = tgui_color_picker(protie, "Pick eye color:","Eye Color", S.dragon_overlays[6])
-					if(!new_color)
-						return 0
-					S.dragon_overlays[6] = choice
-					S.dragon_overlays[S.dragon_overlays[6]] = new_color
-			S.blob_appearance = "dragon"
-		if("Dullahan") //START OF DULLAHAN PORT.
-			var/list/options = list("Metalshell","Head","Eyes","Lights","Clothes","Import","Export")
-			for(var/option in options)
-				LAZYSET(options, option, image('icons/mob/robot/dullahan/v1/dullahansigns.dmi', option))
-			var/choice = show_radial_menu(protie, protie, options, radius = 60)
-			if(!choice || QDELETED(protie) || protie.incapacitated())
-				return FALSE
-			. = TRUE
-			var/list/dullahanmetal_styles = list(
-				"dullahanmetal",
-				"dullahanmetal2"
-			)
-			if(mind.assigned_role in GLOB.command_positions)
-				dullahanmetal_styles.Add("dullahancommand")
-			var/list/dullahaneyes_styles = list(
-				"dullahaneyes"
-			)
-			var/list/dullahanlights_styles = list(
-				"dullahanlightsempty",
-				"dullahanlights",
-				"dullahanwings",
-				"dullahanlights2",
-				"dullahanwings2",
-				"dullahanwings3"
-			)
-			var/list/dullahanhead_styles = list(
-				"dullahanhead",
-				"dullahanhead2"
-			)
-			var/list/dullahanclothes_styles = list(
-				"dullahanclothesempty",
-				"dullahanclothes",
-				"dullahanclothes2",
-				"dullahanengibreastplate"
-			)
-			var/dmetal
-			var/dlights
-			var/deyes
-			var/dlightscolor
-			var/dclothescolor
-			var/deyescolor
-			var/dmetalcolor
-			switch(choice)
-				if("Metalshell")
-					var/extraon = "dullahanextendedon"
-					var/extraoff = "dullahanextendedoff"
-					options = dullahanmetal_styles
-					for(var/option in options)
-						var/image/I = image('icons/mob/robot/dullahan/v1/Dullahanprotean64x64.dmi', option, dir = 2, pixel_x = -16)
-						LAZYSET(options, option, I)
-					choice = show_radial_menu(protie, protie, options, radius = 90)
-					if(!choice || QDELETED(protie) || protie.incapacitated())
-						return 0
-					var/new_color = tgui_color_picker(protie, "Pick shell color:","Shell Color", S.dullahan_overlays[3])
-					if(!new_color)
-						return 0
-					S.dullahan_overlays[3] = choice //metal overlay is 3, eyes is 4
-					S.dullahan_overlays[S.dullahan_overlays[3]] = new_color
-					if(choice == "dullahanmetal2")
-						S.dullahan_overlays[6] = extraon
-						var/tempcolor ="#FFFFFF"
-						S.dullahan_overlays[S.dullahan_overlays[6]] = tempcolor
-					else
-						S.dullahan_overlays[6] = extraoff
-						S.dullahan_overlays[S.dullahan_overlays[6]] = "#FFFFFF"
-				if("Eyes")
-					options = dullahaneyes_styles
-					for(var/option in options)
-						var/image/I = image('icons/mob/robot/dullahan/v1/Dullahanprotean64x64.dmi', option, dir = 2, pixel_x = -16)
-						LAZYSET(options, option, I)
-					choice = show_radial_menu(protie, protie, options, radius = 90)
-					if(!choice || QDELETED(protie) || protie.incapacitated())
-						return 0
-					var/new_color = tgui_color_picker(protie, "Pick eye color:","Eye Color", S.dullahan_overlays[2])
-					if(!new_color)
-						return 0
-					S.dullahan_overlays[2] = choice
-					S.dullahan_overlays[S.dullahan_overlays[2]] = new_color
-				if("Lights")
-					options = dullahanlights_styles
-					for(var/option in options)
-						var/image/I = image('icons/mob/robot/dullahan/v1/Dullahanprotean64x64.dmi', option, dir = 2, pixel_x = -16, pixel_y = -16)
-						LAZYSET(options, option, I)
-					choice = show_radial_menu(protie, protie, options, radius = 90)
-					if(!choice || QDELETED(protie) || protie.incapacitated())
-						return 0
-					var/new_color = tgui_color_picker(protie, "Pick light color:","Lights Color", S.dullahan_overlays[5])
-					if(!new_color)
-						return 0
-					S.dullahan_overlays[5] = choice
-					S.dullahan_overlays[S.dullahan_overlays[5]] = new_color
-				if("Clothes")
-					options = dullahanclothes_styles
-					for(var/option in options)
-						var/image/I = image('icons/mob/robot/dullahan/v1/Dullahanprotean64x64.dmi', option, dir = 2, pixel_x = -16, pixel_y = -16)
-						LAZYSET(options, option, I)
-					choice = show_radial_menu(protie, protie, options, radius = 90)
-					if(!choice || QDELETED(protie) || protie.incapacitated())
-						return 0
-					var/new_color ="#FFFFFF"
-					if (choice == "dullahanclothesempty" || choice == "dullahanengibreastplate" ||  choice == "dullahanclothes2" || choice =="dullahanclothes")
-						// clothes empty and breastplate have only white as a color
-						new_color = "#FFFFFF"
-					else
-						new_color = tgui_color_picker(protie, "Pick clothes color:","Clothes Color", S.dullahan_overlays[7])
-					if(!new_color)
-						return 0
-					S.dullahan_overlays[7] = choice //clothes overlay is 7
-					S.dullahan_overlays[S.dullahan_overlays[7]] = new_color
-				if("Head")
-					options = dullahanhead_styles
-					var/new_color = "#FFFFFF"
-					for(var/option in options)
-						var/image/I = image('icons/mob/robot/dullahan/v1/Dullahanprotean64x64.dmi', option, dir = 2, pixel_x = -16, pixel_y = -16)
-						LAZYSET(options, option, I)
-					choice = show_radial_menu(protie, protie, options, radius = 90)
-					if(!choice || QDELETED(protie) || protie.incapacitated())
-						return 0
-					if (choice == "dullahanhead" || choice == "dullahanhead2")
-						new_color = "#FFFFFF"
-					else
-						new_color = tgui_color_picker(protie, "Pick clothes color:","Clothes Color", S.dullahan_overlays[4])
-					if(!new_color)
-						return 0
-					S.dullahan_overlays[4] = choice //head overlay is 4
-					S.dullahan_overlays[S.dullahan_overlays[4]] = new_color
-				if("Import")
-					var/dinput_style
-					dinput_style = sanitizeSafe(tgui_input_text(protie,"Paste the style string you exported with Export Style.", "Style loading","", 120, encode = FALSE), 128)
-					if(dinput_style)
-						var/list/dinput_style_list = splittext(dinput_style, ";")
-						if((LAZYLEN(dinput_style_list) == 7) && (dinput_style_list[1] in dullahanmetal_styles) && (dinput_style_list[3] in dullahanlights_styles) && (dinput_style_list[5] in dullahaneyes_styles) && (dinput_style_list[7] in dullahanmetal_styles))
-							try
-								if(dinput_style_list[1] in dullahanmetal_styles)
-									S.dullahan_overlays[3] = dinput_style_list[1]
-									if(dinput_style_list[1] == "dullahanmetal2")
-										S.dullahan_overlays[6] = "dullahanextendedon"
-									else
-										S.dullahan_overlays[6] = "dullahanextendedoff"
-								if(rgb2num(dinput_style_list[2]))
-									S.dullahan_overlays[S.dullahan_overlays[3]] = dinput_style_list[2] //metal shell color -2-
-							catch
-								dmetal = dinput_style_list[1]
-							try
-								if(dinput_style_list[3] in dullahanlights_styles)
-									S.dullahan_overlays[5] = dinput_style_list[3]
-								if(rgb2num(dinput_style_list[4]))
-									S.dullahan_overlays[S.dullahan_overlays[5]] = dinput_style_list[4] // lights color
-							catch
-								dlights = dinput_style_list[3]
-							try
-								if(dinput_style_list[5] in dullahaneyes_styles)
-									S.dullahan_overlays[2] = dinput_style_list[5]
-								if(rgb2num(dinput_style_list[6]))
-									S.dullahan_overlays[S.dullahan_overlays[2]] = dinput_style_list[6] //eyes color
-							catch
-								dlights = dinput_style_list[5]
-							try
-								if(dinput_style_list[7] in dullahanclothes_styles)
-									S.dullahan_overlays[7] = dinput_style_list[7]
-								if(rgb2num(dinput_style_list[7]))
-									S.dullahan_overlays[S.dullahan_overlays[7]] = dinput_style_list[7] //clothes color
-							catch
-								dlights = dinput_style_list[5]
-				if("Export")
-					dmetal = S.dullahan_overlays[3]
-					dlights = S.dullahan_overlays[5]
-					deyes = S.dullahan_overlays[2]
-					dmetalcolor = S.dullahan_overlays[S.dullahan_overlays[3]]
-					dlightscolor = S.dullahan_overlays[S.dullahan_overlays[5]]
-					dclothescolor = S.dullahan_overlays[S.dullahan_overlays[7]]
-					deyescolor = S.dullahan_overlays[S.dullahan_overlays[2]]
-					var/output_style = jointext(list(dmetal,dmetalcolor,dlights,dlightscolor,deyes,deyescolor,dclothescolor), ";")
-					to_chat(protie, span_notice("Exported style string is \" [output_style] \". Use this to get the same style in the future with import style"))
-			S.blob_appearance = "dullahan" //END OF DULLAHAN PORT.
-		if("Primary")
-			var/new_color = tgui_color_picker(protie, "Pick primary color:","Protean Primary", "#FF0000")
-			if(!new_color)
-				return
-			S.blob_color_1 = new_color
-		if("Highlight")
-			var/new_color = tgui_color_picker(protie, "Pick highlight color:","Protean Highlight", "#FF0000")
-			if(!new_color)
-				return
-			S.blob_color_2 = new_color
-		else
-			S.blob_appearance = blobstyle
-	if(temporary_form)
-		if(blobstyle)
-			temporary_form.update_icon()
-			if(istype(temporary_form.loc, /obj/item/holder/protoblob))
-				var/obj/item/holder/protoblob/PB = temporary_form.loc
-				PB.item_state = S.blob_appearance
+	set hidden = TRUE
+	activate_protean_power(/datum/protean_power/appearance_switch)
 
-/mob/living/carbon/human/proc/nano_latch()
-	set name = "Latch/Unlatch host"
-	set desc = "Allows a protean to forcibly latch or unlatch from a host."
-	//set category = "Abilities.Protean"
-	set hidden = 1
-	var/mob/living/protie = src
-	var/mob/living/carbon/human/target
-	var/datum/species/protean/S = src.species
-	if(nano_dead_check(src))
-		return
-	if(temporary_form)
-		protie = temporary_form
-		if(protie.loc == S.OurRig)
-			target = S.OurRig.wearer
-			if(target)
-				target.drop_from_inventory(S.OurRig)
-				to_chat(protie, span_notice("You detach from your host."))
-			else
-				to_chat(protie, span_warning("You aren't being worn, dummy."))
-			return
-	var/obj/held_item = protie.get_active_hand()
-	if(istype(held_item,/obj/item/grab))
-		var/obj/item/grab/G = held_item
-		if(ishuman(G.affecting))
-			target = G.affecting
-			if(istype(target.species, /datum/species/protean))
-				to_chat(protie, span_danger("You can't latch onto a fellow Protean!"))
-				return
-			if(G.loc == protie && G.state >= GRAB_AGGRESSIVE)
-				protie.visible_message(span_warning("[protie] is attempting to latch onto [target]!"), span_danger("You attempt to latch onto [target]!"))
-				if(do_after(protie, 5 SECONDS, target))
-					if(G.loc == protie && G.state >= GRAB_AGGRESSIVE)
-						target.drop_from_inventory(target.back)
-						protie.visible_message(span_danger("[protie] latched onto [target]!"), span_danger("You latch yourself onto [target]!"))
-						target.Weaken(3)
-						nano_rig_transform(1)
-						spawn(5)	//Have to give time for the above proc to resolve
-						//S.OurRig.forceMove(target)
-						target.equip_to_slot(S.OurRig, slot_back)
-						S.OurRig.Moved()
-						spawn(1)	//Same here :(
-						S.OurRig.wearer = target
-			else
-				to_chat(protie, span_warning("You need a more aggressive grab to do this!"))
-		else
-			to_chat(protie, span_warning("You can only latch onto humanoid mobs!"))
-	else
-		to_chat(protie, span_warning("You need to be grabbing a humanoid mob aggressively to latch onto them."))
+/datum/protean_power/chest_transparency
+	name = "body transparency toggle (All but head)"
+	desc = "Makes everything but your head transparent!"
+	icon = 'icons/obj/slimeborg/slimecore.dmi'
+	icon_state = "core"
+	allowed_forms = FORM_FLAG_HUMAN
+	verb_path = /mob/living/carbon/human/proc/chest_transparency_toggle
 
-/mob/living/carbon/human/proc/nano_assimilate()
-	set name = "Assimilate Host"
-	set desc = "Allows a protean to assimilate a latched host, allowing them to devour them right away."
-	set hidden = 1
-
-	var/mob/living/protie = src
-	var/mob/living/carbon/human/target
-	var/datum/species/protean/S = src.species
-	if(nano_dead_check(src))
-		return
-	if(temporary_form)
-		protie = temporary_form
-		if(protie.loc == S.OurRig)
-			target = S.OurRig.wearer
-			if(!target)
-				to_chat(protie, span_vwarning("You need a host to assimilate."))
-				return
-			nano_rig_transform(TRUE, TRUE)
-
-/// /// /// A helper to reuse
-/mob/living/proc/nano_get_refactory(obj/item/organ/internal/nano/refactory/R)
-	if(istype(R))
-		if(!(R.status & ORGAN_DEAD))
-			return R
-	return
-
-/mob/living/simple_mob/protean_blob/nano_get_refactory()
-	if(refactory)
-		return ..(refactory)
-	if(humanform)
-		return humanform.nano_get_refactory()
-
-/mob/living/carbon/human/nano_get_refactory()
-	return ..(locate(/obj/item/organ/internal/nano/refactory) in internal_organs)
-
-//I hate this whole bit but I want proteans to be able to "die" and still be "alive" in their blob as a suit
-/mob/living/carbon/human/proc/nano_dead_check(mob/living/protie)
-	if(istype(src.species, /datum/species/protean))
-		var/datum/species/protean/S = src.species
-		if(S.pseudodead)
-			return 1
-	return 0
-
-/mob/living/carbon/human/proc/nano_set_dead(num)
-	if(istype(src.species, /datum/species/protean))
-		var/datum/species/protean/S = src.species
-		S.pseudodead = num
-
-/// /// /// Ability objects for stat panel
-/obj/effect/protean_ability
-	name = "Activate"
-	desc = ""
-	icon = 'icons/mob/species/protean/protean_powers.dmi'
-	var/ability_name
-	var/to_call
-
-/obj/effect/protean_ability/proc/atom_button_text()
-	return src
-
-/obj/effect/protean_ability/Click(location, control, params)
-	var/list/clickprops = params2list(params)
-	var/opts = clickprops["shift"]
-
-	if(opts)
-		to_chat(usr,span_notice(span_bold("[ability_name]") + " - [desc]"))
-	else
-		//Humanform using it
-		if(ishuman(usr))
-			do_ability(usr)
-		//Blobform using it
-		else
-			var/mob/living/simple_mob/protean_blob/blob = usr
-			do_ability(blob.humanform)
-
-/obj/effect/protean_ability/proc/do_ability(mob/living/L)
-	if(istype(L))
-		call(L,to_call)()
-	return 0
-
-/// The actual abilities
-/obj/effect/protean_ability/into_blob
-	ability_name = "Toggle Blobform"
-	desc = "Discard your shape entirely, changing to a low-energy blob. You'll consume steel to repair yourself in this form."
-	icon_state = "blob"
-	to_call = /mob/living/carbon/human/proc/nano_blobform
-
-/obj/effect/protean_ability/change_volume
-	ability_name = "Change Volume"
-	desc = "Alter your size between 25% and 200%."
-	icon_state = "volume"
-	to_call = /mob/living/proc/set_size
-
-/obj/effect/protean_ability/reform_limb
-	ability_name = "Ref - Single Limb"
-	desc = "Rebuild or replace a single limb, assuming you have 2000 steel."
-	icon_state = "limb"
-	to_call = /mob/living/carbon/human/proc/nano_partswap
-
-/obj/effect/protean_ability/reform_body
-	ability_name = "Total Reassembly"
-	desc = "Fully repair yourself or reload your appearance from whatever character slot you have loaded."
-	icon_state = "body"
-	to_call = /mob/living/carbon/human/proc/nano_regenerate
-
-/obj/effect/protean_ability/metal_nom
-	ability_name = "Ref - Store Metals"
-	desc = "Store the metal you're holding. Your refactory can only store steel."
-	icon_state = "metal"
-	to_call = /mob/living/carbon/human/proc/nano_metalnom
-
-/obj/effect/protean_ability/hardsuit
-	ability_name = "Hardsuit Transform"
-	desc = "Coalesce your nanite swarm into their control module, allowing others to wear you."
-	icon_state = "rig"
-	to_call = /mob/living/carbon/human/proc/nano_rig_transform
-
-/obj/effect/protean_ability/appearance_switch
-	ability_name = "Blob Appearance"
-	desc = "Toggle your blob appearance. Also affects your worn appearance."
-	icon_state = "switch"
-	to_call = /mob/living/carbon/human/proc/appearance_switch
-
-/obj/effect/protean_ability/latch_host
-	ability_name = "Latch Host"
-	desc = "Forcibly latch or unlatch your RIG from a host mob."
-	icon_state = "latch"
-	to_call = /mob/living/carbon/human/proc/nano_latch
-
-/obj/effect/protean_ability/assimilate_host
-	ability_name = "Assimilate Host"
-	desc = "Allows a protean to assimilate a latched host, allowing them to devour them right away."
-	icon_state = "assimilate"
-	to_call = /mob/living/carbon/human/proc/nano_assimilate
-
-/obj/effect/protean_ability/copy_form
-	ability_name = "Copy Form"
-	desc = "If you are aggressively grabbing someone, with their consent, you can turn into a copy of them. (Without their name)."
-	icon_state = "copy_form"
-	to_call = /mob/living/carbon/human/proc/nano_copy_body
-
-#undef PER_LIMB_STEEL_COST
+/datum/protean_power/chest_transparency/activate(mob/living/carbon/human/H, datum/component/forms/protean/F)
+	H.toggle_limb_transparency(include_head = FALSE)
 
 /mob/living/carbon/human/proc/chest_transparency_toggle()
 	set name = "transparency toggle (chest only)"
 	set category = "Abilities.Protean"
-	if(stat || world.time < last_special)
-		return
-	last_special = world.time + 50
-	for(var/obj/item/organ/external/proteanlimbs as anything in src.organs)
-		if(proteanlimbs.organ_tag == BP_HEAD)
-			continue
-		proteanlimbs.transparent = !proteanlimbs.transparent
-	visible_message(span_notice("\The [src]'s internal composition seems to change."))
-	update_icons_body()
-	update_hair()
+	activate_protean_power(/datum/protean_power/chest_transparency)
 
-/obj/effect/protean_ability/chest_transparency
-	ability_name = "body transparency toggle (All but head)"
-	desc = "Makes everything but your head transparent!"
+/datum/protean_power/transparency
+	name = "Toggle Transparency"
+	desc = "transparency toggle for your entire body"
 	icon = 'icons/obj/slimeborg/slimecore.dmi'
 	icon_state = "core"
-	to_call = /mob/living/carbon/human/proc/chest_transparency_toggle
+	allowed_forms = FORM_FLAG_HUMAN
+	verb_path = /mob/living/carbon/human/proc/transparency_toggle
+
+/datum/protean_power/transparency/activate(mob/living/carbon/human/H, datum/component/forms/protean/F)
+	H.toggle_limb_transparency(include_head = TRUE)
 
 /mob/living/carbon/human/proc/transparency_toggle()
 	set name = "Toggle Transparency"
 	set category = "Abilities.Protean"
-	if(stat || world.time < last_special)
-		return
-	last_special = world.time + 50
-	for(var/obj/item/organ/external/proteanlimbs as anything in src.organs)
-		proteanlimbs.transparent = !proteanlimbs.transparent
+	activate_protean_power(/datum/protean_power/transparency)
 
+/mob/living/carbon/human/proc/toggle_limb_transparency(include_head)
+	if(world.time < last_special)
+		return
+	last_special = world.time + 5 SECONDS
+	for(var/obj/item/organ/external/limb as anything in organs)
+		if(!include_head && limb.organ_tag == BP_HEAD)
+			continue
+		limb.transparent = !limb.transparent
 	visible_message(span_notice("\The [src]'s internal composition seems to change."))
 	update_icons_body()
 	update_hair()
 
-/obj/effect/protean_ability/transparency_for_entire_body
-	ability_name = "Toggle Transparency"
-	desc = "transparency toggle for your entire body"
-	icon = 'icons/obj/slimeborg/slimecore.dmi'
-	icon_state = "core"
-	to_call = /mob/living/carbon/human/proc/transparency_toggle
-
-/obj/effect/protean_ability/absorb_implant
-	ability_name = "Absorb Implant"
+/datum/protean_power/absorb_implant
+	name = "Absorb Implant"
 	desc = "Absorb an implant into your system."
 	icon = 'icons/obj/surgery.dmi'
 	icon_state = "heart-on"
-	to_call = /mob/living/carbon/human/proc/absorb_implant
+	allowed_forms = FORM_FLAG_HUMAN
+	verb_path = /mob/living/carbon/human/proc/absorb_implant
+
+/datum/protean_power/absorb_implant/activate(mob/living/carbon/human/H, datum/component/forms/protean/F)
+	if(world.time < H.last_special)
+		return
+	H.last_special = world.time + 5 SECONDS
+	var/obj/item/organ/internal/augment/A = H.get_active_hand()
+	if(!istype(A))
+		to_chat(H, span_danger("You cannot integrate this into your body."))
+		return
+	if(!(ORGAN_NANOFORM in A.target_parent_classes))
+		to_chat(H, span_danger("This implant is incompatible with our nanoform."))
+		return
+	var/obj/item/organ/external/target_organ = H.get_organ(H.zone_sel.selecting)
+	if(!istype(target_organ) || target_organ.is_stump())
+		to_chat(H, span_danger("Your [target_organ] is currently unsuitable for implants."))
+		return
+	if(target_organ.organ_tag != A.parent_organ)
+		to_chat(H, span_danger("[A] does not go in [target_organ]."))
+		return
+	if(!H.unEquip(A))
+		to_chat(H, span_danger("[A] is stuck to your hand."))
+		return
+	A.replaced(H, target_organ)
+	to_chat(H, span_notice("You absorb [A] into your [target_organ]."))
+	log_admin("[key_name(H)] protean self-implanted [A].")
 
 /mob/living/carbon/human/proc/absorb_implant()
 	set name = "Absorb Implant"
 	set category = "Abilities.Protean"
-	if(stat || world.time < last_special)
-		return
-	last_special = world.time + 50
+	activate_protean_power(/datum/protean_power/absorb_implant)
 
-	var/obj/item/organ/internal/augment/A = get_active_hand()
-	if(!istype(A))
-		to_chat(src, span_danger("You cannot integrate this into your body."))
-		return
-
-	if(!(ORGAN_NANOFORM in A.target_parent_classes))
-		to_chat(src, span_danger("This implant is incompatible with our nanoform."))
-		return
-
-	var/obj/item/organ/external/target_organ = get_organ(zone_sel.selecting)
-	if(!istype(target_organ) || target_organ.is_stump())
-		to_chat(src, span_danger("Your [target_organ] is currently unsuitable for implants."))
-		return
-
-	if(target_organ.organ_tag != A.parent_organ)
-		to_chat(src, span_danger("[A] does not go in [target_organ]."))
-		return
-
-	if(!unEquip(A))
-		to_chat(src, span_danger("[A] is stuck to your hand."))
-		return
-
-	A.replaced(src, target_organ)
-	to_chat(src, span_notice("You absorb [A] into your [target_organ]."))
-	log_admin("[key_name(src)] protean self-implanted [A].")
+#undef PER_LIMB_STEEL_COST
+#undef TOTAL_REBUILD_STEEL_COST

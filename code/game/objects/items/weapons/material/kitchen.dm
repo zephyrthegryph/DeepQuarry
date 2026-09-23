@@ -187,7 +187,7 @@
 /obj/item/material/knife/attack(target as mob, mob/living/user as mob)
 	if (CLUMSY_HARM_CHANCE(user))
 		to_chat(user, span_warning("You accidentally cut yourself with \the [src]."))
-		user.take_organ_damage(20)
+		user.injure(INJURY_CUT, 20, source = src)
 		return
 	return ..()
 */
@@ -213,7 +213,7 @@
 /obj/item/material/kitchen/rollingpin/attack(mob/living/M, mob/living/user, target_zone, attack_modifier)
 	if(CLUMSY_HARM_CHANCE(user))
 		to_chat(user, span_warning("\The [src] slips out of your hand and hits your head."))
-		user.take_organ_damage(10)
+		user.injure(INJURY_BLUNT, 10, BP_HEAD, src)
 		user.Paralyse(2)
 		return ITEM_INTERACT_SUCCESS
 	return ..()

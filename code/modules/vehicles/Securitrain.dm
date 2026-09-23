@@ -170,7 +170,7 @@
 
 	M.apply_effects(5, 5)
 	for(var/i = 0, i < rand(1,3), i++)
-		M.apply_damage(rand(1,5), BRUTE, pick(parts))
+		M.injure(INJURY_BLUNT, rand(1,5), pick(parts), src)
 
 /obj/vehicle/train/security/trolley/RunOver(mob/living/M)
 	..()

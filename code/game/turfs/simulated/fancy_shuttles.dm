@@ -59,19 +59,6 @@ INITIALIZE_IMMEDIATE(/obj/effect/fancy_shuttle)
 /turf/simulated/wall/fancy_shuttle/Initialize(mapload, materialtype, rmaterialtype, girdertype)
 	. = ..(mapload,  MAT_STEELHULL, MAT_STEELHULL, MAT_STEELHULL)
 
-/turf/simulated/wall/fancy_shuttle/window
-	opacity = FALSE
-	icon_state = "hull_transparent"
-
-/turf/simulated/wall/fancy_shuttle/window/attack_generic(mob/user, damage, attack_message)
-	take_damage(damage)
-	return damage
-
-/turf/simulated/wall/fancy_shuttle/nondense
-	density = FALSE
-	blocks_air = FALSE
-	opacity = FALSE
-	icon_state = "hull_nondense"
 
 /turf/simulated/wall/fancy_shuttle/pre_translate_A(turf/B)
 	. = ..()

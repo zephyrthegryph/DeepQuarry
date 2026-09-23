@@ -21,7 +21,7 @@
 				if(!T.block_tele)
 					if(mob.vore_selected)
 						exits += mob.vore_selected
-					else if(mob.vore_organs.len)
+					else if(length(mob.vore_organs))
 						exits += pick(mob.vore_organs)
 
 		exits |= pick_turfs

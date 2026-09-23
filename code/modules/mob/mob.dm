@@ -1060,11 +1060,10 @@
 
 		affected.implants -= selection
 		H.shock_stage+=20
-		affected.take_damage((selection.w_class * 3), 0, 0, 1, "Embedded object extraction")
+		H.injure(INJURY_CUT, selection.w_class * 3, affected.organ_tag, selection, 0, null, INJURE_IGNORE_RESISTANCE) // Embedded object extraction
 
 		if(prob(selection.w_class * 5) && (affected.robotic < ORGAN_ROBOT)) //I'M SO ANEMIC I COULD JUST -DIE-.
-			var/datum/wound/internal_bleeding/I = new (min(selection.w_class * 5, 15))
-			affected.wounds += I
+			affected.add_wound(new /datum/affliction/wound/internal_bleeding(affected, min(selection.w_class * 5, 15)))
 			affected.update_damages()
 			H.handle_organs(TRUE) //Force an update so we start processing the internal bleeding.
 			H.custom_pain("Something tears wetly in your [affected] as [selection] is pulled free!", 50)
@@ -1076,8 +1075,8 @@
 	else if(issilicon(src))
 		var/mob/living/silicon/robot/R = src
 		LAZYREMOVE(R.embedded, selection)
-		R.adjustBruteLoss(5)
-		R.adjustFireLoss(10)
+		R.injure(INJURY_CUT, 5, null, selection)
+		R.injure(INJURY_ELECTRIC, 10, null, selection) // Torn wiring shorts out.
 
 	selection.forceMove(get_turf(src))
 	U.put_in_hands(selection)

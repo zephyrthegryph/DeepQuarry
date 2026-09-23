@@ -5,8 +5,7 @@
 /mob/living/simple_mob/animal/crystalbeast/snail
 	name = "Crystal Goliath Snail"
 	desc = "A massive hulking beast made of strange crystal. Normal attacks seem like they will be ineffective. Explosions or piercing might do the trick"
-	health = 150
-	maxHealth = 150
+	endurance = 150
 
 	icon = 'icons/mob/eclipse.dmi'
 	icon_state = "crystal"

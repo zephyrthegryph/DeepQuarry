@@ -21,7 +21,6 @@
 	return proximity_flag
 
 
-// === merged from buttons_vr.dm during hard-fork de-suffix (verified no override-order change) ===
 /obj/machinery/button/attack_hand(obj/item/W, mob/user as mob)
 	if(..()) return 1
 	SEND_GLOBAL_SIGNAL(COMSIG_GLOB_BUTTON_PRESSED, src, user)
@@ -46,7 +45,6 @@
 				D.toggle()
 
 
-// === merged from buttons_chomp.dm during hard-fork de-suffix (verified no override-order change) ===
 /obj/machinery/button/mob_spawner_button
 	name = "Mob spawner"
 	var/mob/living/simple_mob/mobspawned

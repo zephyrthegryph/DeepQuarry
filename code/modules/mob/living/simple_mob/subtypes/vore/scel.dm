@@ -26,7 +26,7 @@
 	harm_intent_damage = 15
 	melee_damage_lower = 5
 	melee_damage_upper = 15
-	maxHealth = 400
+	endurance = 400
 	attacktext = list("slammed")
 	see_in_dark = 8
 	minbodytemp = 0

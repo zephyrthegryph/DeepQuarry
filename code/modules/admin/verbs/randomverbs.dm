@@ -882,7 +882,6 @@ ADMIN_VERB(toggle_vantag_hud_global, R_EVENT|R_SERVER|R_ADMIN, "Toggle Global Ev
 	to_chat(user, span_warning("Global Event HUD has been turned [GLOB.global_vantag_hud ? "on" : "off"]."))
 
 
-// === merged from randomverbs_vr.dm during hard-fork de-suffix (verified no override-order change) ===
 
 ADMIN_VERB(spawn_character_mob, R_SPAWN, "Spawn Character As Mob", "Spawn a specified ckey as a chosen mob.", ADMIN_CATEGORY_FUN_EVENT_KIT)
 	var/client/picked_client = tgui_input_list(user, "Who are we spawning as a mob?", "Client", GLOB.clients)

@@ -54,8 +54,7 @@
 
 	nom_mob = TRUE
 
-	maxHealth = 100
-	health = 100
+	endurance = 100
 
 	allow_mind_transfer = TRUE
 
@@ -106,7 +105,7 @@
 	if(pred && !extra_possessive && !(LAZYFIND(prey_excludes, target)))
 		LAZYSET(prey_excludes, target, world.time)
 		addtimer(CALLBACK(src, PROC_REF(removeMobFromPreyExcludes), WEAKREF(target)), 5 MINUTES)
-	//legacy if-block emptied.
+	// DQEdit: legacy if-block emptied.
 
 /mob/living/simple_mob/vore/pakkun/load_default_bellies()
 	. = ..()

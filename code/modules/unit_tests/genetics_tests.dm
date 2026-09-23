@@ -55,12 +55,6 @@
 		TEST_ASSERT(G.linked_trait.activity_bounds, "[G.name]: Genetics - Has no activation bounds.")
 		TEST_ASSERT(G.linked_trait.activity_bounds.len, "[G.name]: Genetics - Has empty activation bounds.")
 
-		// DNA activation bounds. Usually they are in a list as follows:
-		// [1]DNA_OFF_LOWERBOUND = 1, begining of the threshold where a gene turns off.
-		// [2]DNA_OFF_UPPERBOUND = a number above 1, end of the treshold where a gene turns off.
-		// [3]DNA_ON_LOWERBOUND = a number above DNA_OFF_UPPERBOUND(even if just by 1), threshold where a gene turns on.
-		// [4]DNA_ON_UPPERBOUND = 4095, end of the threshold where a gene turns on.
-
 		var/list/bounds = G.linked_trait.activity_bounds
 		TEST_ASSERT(bounds[1] > 1, "[G.name]: Genetics - DNA_OFF_LOWERBOUND, was smaller than 1.") // lowest value a gene can be to turn off
 		TEST_ASSERT(bounds[2] > bounds[1], "[G.name]: Genetics - DNA_OFF_UPPERBOUND must be larger than DNA_OFF_LOWERBOUND, and never equal.")

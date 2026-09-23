@@ -88,7 +88,6 @@
 	return 1
 
 
-// === merged from silicon_chomp.dm during hard-fork de-suffix (verified no override-order change) ===
 /datum/job/ai
 	camp_protection = TRUE
 

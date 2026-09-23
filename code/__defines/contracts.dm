@@ -93,6 +93,7 @@
 #define CONTRACT_EVENT_SHIPMENT_DEPARTED "shipment_departed"
 #define CONTRACT_EVENT_ITEM_EXPORTED "item_exported"
 #define CONTRACT_EVENT_SERVICE_INVOICE_CHANGED "service_invoice_changed"
+#define CONTRACT_EVENT_EQUIPMENT_ADOPTED "equipment_adopted"
 #define CONTRACT_EVENT_SERVICE_PERIOD_SETTLED "service_period_settled"
 #define CONTRACT_EVENT_MONEY_TRANSFERRED "money_transferred"
 #define CONTRACT_EVENT_BUDGET_ALLOCATION_CHANGED "budget_allocation_changed"

@@ -10,44 +10,11 @@
 
 // Banning areas: Go to global_lists_vr, jump to the GLOB.BUILDABLE_AREA_TYPES and read the comments left there.
 
-
-
-
 // These areas are defined here so they can be blacklisted in global_lists_vr
 /area/tether/elevator
 
 	name = "Tether Elevator"
 
-/area/tether/surfacebase/outside
-	name = "Outside - Surface"
-
-/area/groundbase/unexplored/outdoors
-	name = "\improper Rascal's Pass"
-
-/area/groundbase/mining
-	name = "Mining"
-
-/area/groundbase/unexplored/rock
-	name = "\improper Rascal's Pass"
-
-/area/maintenance/groundbase/level1
-	name = "Groundbase Level One Maint"
-
-/area/submap/groundbase/wilderness
-	name = "Groundbase Wilderness"
-
-/area/offmap/aerostat/surface
-	name = "Aerostat Surface"
-
-/area/tether_away/beach
-	name = "\improper Away Mission - Virgo 4 Beach"
-
-/area/tether_away/cave
-	name = "Tether Away Cave"
-
-/area/offmap/aerostat/surface
-
-	name = "Aerostat Surface"
 
 /area/submap/virgo2
 	name = "Submap Area"
@@ -74,7 +41,6 @@
 	var/can_expand_areas_in = AREA_STATION	// Must be standing in station to expand
 	var/can_expand_areas_into = AREA_SPACE	// Can expand station areas only into space.
 	var/can_rename_areas_in = AREA_STATION	// Only station areas can be reanamed
-
 
 	var/const/ROOM_ERR_LOLWAT = 0 			// Don't touch these three consts or BYOND will literally tear out your throat
 	var/const/ROOM_ERR_SPACE = -1
@@ -138,7 +104,6 @@
 		else
 			. += "Your [src.name] seems like it has enough room for [charges] more edits!"
 
-
 /obj/item/areaeditor/Topic(href, href_list)
 	if(..())
 		return TRUE
@@ -165,9 +130,6 @@
 			return
 		in_use = FALSE
 	updateUsrDialog(usr)
-
-
-
 
 //Station Wire Tool.
 /obj/item/wire_reader //Not really a blueprint, but it's included here as such.
@@ -242,13 +204,9 @@
 	uses_charges = 1
 	can_override = 1 // This will allow easier building on the planets, dont think blueprint grief is too big of a problem. -Lotion
 
-
-
-
 /obj/item/areaeditor/blueprints/Destroy()
 	//clear_viewer()
 	return ..()
-
 
 /obj/item/areaeditor/blueprints/attack_self(mob/user)
 	. = ..(user)
@@ -272,7 +230,6 @@
 	// structured TGUI AdminReport; byond:// links forwarded to host.
 	dq_admin_report_html(user, "[src]", ., src)
 
-
 /obj/item/areaeditor/blueprints/Topic(href, href_list)
 	if(..())
 		return
@@ -294,40 +251,9 @@
 			legend = href_list["view_wireset"];
 	attack_self(usr)
 
-
 //Code for viewing pipes or whatnot. Think t-ray scanner.
 //Code for viewing pipes or whatnot. Think t-ray scanner.
 //Code for viewing pipes or whatnot. Think t-ray scanner.
-/*
-/obj/item/areaeditor/blueprints/proc/get_images(turf/central_turf, viewsize)
-	. = list()
-	var/list/dimensions = getviewsize(viewsize)
-	var/horizontal_radius = dimensions[1] / 2
-	var/vertical_radius = dimensions[2] / 2
-	for(var/turf/nearby_turf as anything in RECT_TURFS(horizontal_radius, vertical_radius, central_turf))
-		if(nearby_turf.blueprint_data)
-			. += nearby_turf.blueprint_data
-*/
-/*
-/obj/item/areaeditor/blueprints/proc/set_viewer(mob/user, message = "")
-	if(user?.client)
-		if(viewing)
-			clear_viewer()
-		viewing = user.client
-		showing = get_images(get_turf(viewing.eye || user), viewing.view)
-		viewing.images |= showing
-		if(message)
-			to_chat(user, message)
-*/
-/*
-/obj/item/areaeditor/blueprints/proc/clear_viewer(mob/user, message = "")
-	if(viewing)
-		viewing.images -= showing
-		viewing = null
-	showing.Cut()
-	if(message)
-		to_chat(user, message)
-*/
 /obj/item/areaeditor/blueprints/dropped(mob/user, equipping, slot)
 	if(equipping)
 		return ..()
@@ -352,7 +278,6 @@
 			return AREA_SPECIAL
 	return AREA_STATION
 
-
 /obj/item/areaeditor/blueprints/proc/view_wire_devices(mob/user)
 	var/message = "<br>You examine the wire legend.<br>"
 	for(var/wireset in GLOB.wire_color_directory)
@@ -374,7 +299,6 @@
 			message += "</p>"
 			return message
 	return ""
-
 
 /obj/item/areaeditor/proc/edit_area()
 	var/area/A = get_area(usr)
@@ -399,7 +323,6 @@
 /obj/item/areaeditor/blueprints/cyborg
 	name = "station schematics"
 	desc = "A digital copy of the station blueprints stored in your memory."
-
 
 /proc/set_area_machinery(area/area, title, oldtitle)
 	if(!oldtitle) // or replacetext goes to infinite loop
@@ -523,7 +446,6 @@
 		newA.contents += thing
 		thing.change_area(oldA, newA)
 
-
 	set_area_machinery(newA, newA.name, oldA.name)// Change the name and area defines of all the machinery to the correct area.
 	oldA.power_check() //Simply makes the area turn the power off if you nicked an APC from it.
 	to_chat(creator, span_notice("You have created a new area, named [newA.name]. It is now weather proof, and constructing an APC will allow it to be powered."))
@@ -541,8 +463,6 @@
 		if(GG.z in zLevels)
 			GG.update_areas()
 	return TRUE
-
-
 
 // USED FOR VARIANT ROOM CREATION.
 // OLD CODE. DON'T TOUCH OR 100 RABID SQUIRRELS WILL DEVOUR YOU.
@@ -608,7 +528,6 @@
 
 	area_choice = areas[area_choice]
 
-
 	if(!isarea(area_choice)) //They chose "New Area"
 		if(!can_make_new_area && !can_override)
 			to_chat(creator, span_warning("Making a new area here would be meaningless. Renaming it would be a better option."))
@@ -666,7 +585,6 @@
 	for(var/T in turfs)
 		ChangeArea(T, A)
 
-
 /obj/item/areaeditor/proc/detect_room_ex(turf/first, allowedAreas = AREA_SPACE, list/forbiddenAreas = list(), visual)
 	if(!istype(first))
 		return ROOM_ERR_LOLWAT
@@ -706,12 +624,6 @@
 		found += T
 	// end while
 	return found
-
-
-
-
-
-
 
 //Nice verbs for the engineer to see where areas start/end.
 
@@ -812,7 +724,6 @@
 		if ( istype(A,type) )
 			return 0
 	return 0 //If it's not a buildable area, don't let them build in it.
-
 
 /proc/detect_new_area(turf/first, user) //Heavily simplified version for creating an area yourself.
 	if(!istype(first)) //Not on a turf.
@@ -931,6 +842,5 @@
 		if(GG.z in zLevels)
 			GG.update_areas()
 	return
-
 
 #undef BP_MAX_ROOM_SIZE

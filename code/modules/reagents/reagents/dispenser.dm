@@ -78,10 +78,10 @@
 	coolant_modifier = 0.15
 
 /datum/reagent/chlorine/affect_blood(mob/living/carbon/M, alien, removed)
-	M.take_organ_damage(1*REM, 0)
+	M.injure(INJURY_CORROSIVE, 1*REM, source = src)
 
 /datum/reagent/chlorine/affect_touch(mob/living/carbon/M, alien, removed)
-	M.take_organ_damage(1*REM, 0)
+	M.injure(INJURY_CORROSIVE, 1*REM, source = src)
 
 /datum/reagent/copper
 	name = REAGENT_COPPER
@@ -124,6 +124,23 @@
 	industrial_use = REFINERYEXPORT_REASON_FOOD
 	coolant_modifier = 1.15
 
+/// Intoxication, and liver toxicity past the toxic threshold: both depend
+/// on the drinker (synthetics, alcohol tolerance), so they are computed per
+/// patient at each factor recompute from the volume in their system.
+/datum/reagent/ethanol/accumulate_special_factors(list/acc, mob/living/L, volume)
+	acc = ..()
+	if(!ishuman(L) || volume <= 0)
+		return acc
+	var/mob/living/carbon/human/H = L
+	if(H.isSynthetic() && !H.species.robo_ethanol_drunk)
+		return acc
+	var/static/alist/intoxication = alist(BF_INTOXICATION = 1)
+	var/static/alist/hepatotoxicity = alist(BF_HEPATOTOXICITY = 1)
+	acc = body_factor_accumulate(acc, intoxication, dq_chem_dose_scale(volume))
+	if(strength && volume >= strength * H.species.chem_strength_alcohol * 6)
+		acc = body_factor_accumulate(acc, hepatotoxicity, toxicity)
+	return acc
+
 /datum/reagent/ethanol/touch_mob(mob/living/L, amount)
 	..()
 	if(istype(L))
@@ -138,7 +155,6 @@
 		return
 
 	if(!(M.isSynthetic()))
-		M.add_chemical_effect(CE_ALCOHOL, 1)
 		var/effective_dose = dose * strength_mod * (1 + volume/60) //drinking a LOT will make you go down faster
 
 		if(effective_dose >= (strength * M.species.chem_strength_alcohol)) // Early warning
@@ -151,8 +167,6 @@
 			M.eye_blurry = max(M.eye_blurry, 30)
 		if(effective_dose >= (strength * M.species.chem_strength_alcohol) * 5) // Drowsyness - periodically falling asleep
 			M.drowsyness = max(M.drowsyness, 60)
-		if(effective_dose >= (strength * M.species.chem_strength_alcohol) * 6) // Toxic dose
-			M.add_chemical_effect(CE_ALCOHOL_TOXIC, toxicity*3)
 		if(effective_dose >= (strength * M.species.chem_strength_alcohol) * 7) // Pass out
 			M.Paralyse(60)
 			M.Sleeping(90)
@@ -185,7 +199,6 @@
 		return
 
 	if(M.species.robo_ethanol_drunk || !(M.isSynthetic()))
-		M.add_chemical_effect(CE_ALCOHOL, 1)
 
 		if(effective_dose >= (strength * M.species.chem_strength_alcohol)) // Early warning
 			M.make_dizzy(6) // It is decreased at the speed of 3 per tick
@@ -197,8 +210,6 @@
 			M.eye_blurry = max(M.eye_blurry, 10)
 		if(effective_dose >= (strength * M.species.chem_strength_alcohol) * 5) // Drowsyness - periodically falling asleep
 			M.drowsyness = max(M.drowsyness, 20)
-		if(effective_dose >= (strength * M.species.chem_strength_alcohol) * 6) // Toxic dose
-			M.add_chemical_effect(CE_ALCOHOL_TOXIC, toxicity)
 		if(effective_dose >= (strength * M.species.chem_strength_alcohol) * 7) // Pass out
 			M.Paralyse(20)
 			M.Sleeping(30)
@@ -240,13 +251,13 @@
 	if(prob(8))
 		current_addiction  -= 1
 	// withdrawl mechanics
-	if(!(CE_STABLE in M.chem_effects)) //Without stabilization effects
+	if(!M.factor(BF_STABILIZATION)) //Without stabilization effects
 		if(current_addiction <= 60)
 			M.pulse = PULSE_2FAST
 		if(prob(2))
 			if(current_addiction < 90 && prob(10))
 				to_chat(M, span_warning("[pick("You feel miserable.","You feel nauseous.","You get a raging headache.")]"))
-				M.adjustHalLoss(7)
+				M.injure(INJURY_PAIN, 7, source = src)
 				M.make_jittery(25) //Restlessness.
 			else if(current_addiction <= 20)
 				to_chat(M, span_danger("You feel absolutely awful. You need some some liquor. Now."))
@@ -271,14 +282,14 @@
 				M.emote(pick("pale","shiver","twitch"))
 				M.drop_item() //Hand tremors
 				if(realistic_addiction)
-					M.add_chemical_effect(CE_WITHDRAWL, rand(4,10) * REM)
+					M.add_modifier(/datum/modifier/withdrawal_strain/moderate, 3 SECONDS)
 	else //Stabilization effects
 		if(current_addiction <= 60)
 			M.pulse = PULSE_FAST
 		if(prob(2))
 			if(current_addiction < 90 && prob(10))
 				to_chat(M, span_warning("[pick("You feel a light throbbing in your head.","Your stomach feels upset.","Your .")]"))
-				M.adjustHalLoss(3)
+				M.injure(INJURY_PAIN, 3, source = src)
 				M.make_jittery(10) //Restlessness.
 			else if(current_addiction <= 20)
 				to_chat(M, span_warning("You feel nauseated."))
@@ -314,10 +325,10 @@
 	industrial_use = REFINERYEXPORT_REASON_RAW
 
 /datum/reagent/fluorine/affect_blood(mob/living/carbon/M, alien, removed)
-	M.adjustToxLoss(removed)
+	M.injure(INJURY_TOXIN, removed, source = src)
 
 /datum/reagent/fluorine/affect_touch(mob/living/carbon/M, alien, removed)
-	M.adjustToxLoss(removed)
+	M.injure(INJURY_TOXIN, removed, source = src)
 
 /datum/reagent/hydrogen
 	name = REAGENT_HYDROGEN
@@ -382,7 +393,8 @@
 			step(M, pick(GLOB.cardinal))
 		if(prob(5))
 			M.emote(pick("twitch", "drool", "moan"))
-		M.adjustBrainLoss(0.5 * removed)
+		M.injure(INJURY_NEURAL, 0.5 * removed, source = src)
+		M.injure(INJURY_TOXIN, 0.25 * removed, source = src, affliction = /datum/affliction/poisoning/heavy_metal)
 
 /datum/reagent/nitrogen
 	name = REAGENT_NITROGEN
@@ -410,7 +422,7 @@
 
 /datum/reagent/oxygen/affect_blood(mob/living/carbon/M, alien, removed)
 	if(alien == IS_VOX)
-		M.adjustToxLoss(removed * 3)
+		M.injure(INJURY_TOXIN, removed * 3, source = src)
 
 /datum/reagent/phosphorus
 	name = REAGENT_PHOSPHORUS
@@ -494,7 +506,7 @@
 	if(alien == IS_GREY)
 		return
 	if(issmall(M)) removed *= 2
-	M.take_organ_damage(0, removed * power * 2)
+	M.injure(INJURY_CORROSIVE, removed * power * 2, source = src)
 
 /datum/reagent/acid/affect_touch(mob/living/carbon/M, alien, removed) // This is the most interesting
 	if(alien == IS_GREY)
@@ -553,22 +565,23 @@
 			else
 				B.owner_adjust_nutrition(removed * (B.nutrition_percent / 100) * power)
 
+	// In a belly the acid is digestion; anywhere else it's a chemical burn.
+	var/injury_kind = isbelly(M.loc) ? INJURY_DIGESTION : INJURY_CORROSIVE
 	if(volume < meltdose) // Not enough to melt anything
-		M.take_organ_damage(0, removed * power * 0.2) //burn damage, since it causes chemical burns. Acid doesn't make bones shatter, like brute trauma would.
+		M.injure(injury_kind, removed * power * 0.2, source = src) //Chemical burns. Acid doesn't make bones shatter, like brute trauma would.
 		return
 	if(!M.unacidable && removed > 0)
 		if(ishuman(M) && volume >= meltdose)
 			var/mob/living/carbon/human/H = M
 			var/obj/item/organ/external/affecting = H.get_organ(BP_HEAD)
 			if(affecting)
-				if(affecting.take_damage(0, removed * power * 0.1))
-					H.UpdateDamageIcon()
+				H.injure(injury_kind, removed * power * 0.1, BP_HEAD, source = src)
 				if(prob(100 * removed / meltdose)) // Applies disfigurement
 					if (affecting.organ_can_feel_pain() && !isbelly(H.loc))
 						H.emote("scream")
 					H.status_flags |= DISFIGURED
 		else
-			M.take_organ_damage(0, removed * power * 0.1) // Balance. The damage is instant, so it's weaker. 10 units -> 5 damage, double for pacid. 120 units beaker could deal 60, but a) it's burn, which is not as dangerous, b) it's a one-use weapon, c) missing with it will splash it over the ground and d) clothes give some protection, so not everything will hit
+			M.injure(injury_kind, removed * power * 0.1, source = src) // Balance. The damage is instant, so it's weaker. 10 units -> 5 damage, double for pacid. 120 units beaker could deal 60, but a) it's burn, which is not as dangerous, b) it's a one-use weapon, c) missing with it will splash it over the ground and d) clothes give some protection, so not everything will hit
 
 /datum/reagent/acid/touch_obj(obj/O, amount)
 	if(istype(O, /obj/item) && O.loc)
@@ -608,7 +621,7 @@
 				B.GenerateBellyReagents_digesting()
 			else
 				B.owner_adjust_nutrition(volume * (B.nutrition_percent / 100) * power)
-	L.adjustFireLoss(volume * power * 0.2)
+	L.injure(isbelly(L.loc) ? INJURY_DIGESTION : INJURY_CORROSIVE, volume * power * 0.2, source = src)
 	remove_self(volume)
 
 /datum/reagent/silicon

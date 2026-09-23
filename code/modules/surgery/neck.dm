@@ -65,7 +65,7 @@
 	user.visible_message(span_danger("[user]'s hand slips, tearing at [target]'s brainstem with \the [tool]!") , \
 	span_danger("Your hand slips, tearing at [target]'s brainstem with \the [tool]!") )
 	user.balloon_alert_visible("slips, tearing at [target]'s brainstem", "your hand slips, tearing at the brainstem")
-	affected.createwound(PIERCE, 10)
+	target.injure(INJURY_PIERCE, 10, affected.organ_tag, tool, flags = INJURE_IGNORE_RESISTANCE)
 	target.AdjustParalysis(10)
 
 /////////////////////////////
@@ -109,10 +109,10 @@
 	user.visible_message(span_danger("[user]'s hand slips, shredding [target]'s brainstem with \the [tool]!") , \
 	span_danger("Your hand slips, shredding [target]'s brainstem with \the [tool]!") )
 	user.balloon_alert_visible("slips, shredding [target]'s brainstem", "your hand slips, shredding the brainstem.")
-	affected.createwound(PIERCE, 10)
+	target.injure(INJURY_PIERCE, 10, affected.organ_tag, tool, flags = INJURE_IGNORE_RESISTANCE)
 	target.AdjustParalysis(15)
 	for(var/obj/item/organ/internal/brain/O in affected.internal_organs)
-		O.take_damage(rand(5,10))
+		target.injure(INJURY_CUT, rand(5,10), O, tool, affliction = /datum/affliction/lesion/laceration, flags = INJURE_IGNORE_RESISTANCE)
 
 /////////////////////////////
 // Bone Cleaning
@@ -151,10 +151,10 @@
 	user.visible_message(span_danger("[user]'s hand slips, gouging [target]'s brainstem with \the [tool]!") , \
 	span_danger("Your hand slips, gouging [target]'s brainstem with \the [tool]!") )
 	user.balloon_alert_visible("slips, gouging [target]'s brainstem", "your hand slips, gouging the brainstem")
-	affected.createwound(CUT, 5)
+	target.injure(INJURY_CUT, 5, affected.organ_tag, tool, flags = INJURE_IGNORE_RESISTANCE)
 	target.AdjustParalysis(10)
 	for(var/obj/item/organ/internal/brain/O in affected.internal_organs) //If there's more than one...
-		O.take_damage(rand(1,10))
+		target.injure(INJURY_CUT, rand(1,10), O, tool, affliction = /datum/affliction/lesion/laceration, flags = INJURE_IGNORE_RESISTANCE)
 
 /////////////////////////////
 // Spinal Cord Repair
@@ -193,10 +193,10 @@
 	user.visible_message(span_danger("[user]'s hand slips, tearing at [target]'s spinal cord with \the [tool]!") , \
 	span_danger("Your hand slips, tearing at [target]'s spinal cord with \the [tool]!") )
 	user.balloon_alert_visible("slips, tearing [target]'s spinal cord", "your hand slips, tearing at the spinal cord")
-	affected.createwound(PIERCE, 5)
+	target.injure(INJURY_PIERCE, 5, affected.organ_tag, tool, flags = INJURE_IGNORE_RESISTANCE)
 	target.AdjustParalysis(20)
 	for(var/obj/item/organ/internal/brain/O in affected.internal_organs)
-		O.take_damage(rand(5,15)) //Down to the wire. Or rather, the cord.
+		target.injure(INJURY_CUT, rand(5,15), O, tool, affliction = /datum/affliction/lesion/laceration, flags = INJURE_IGNORE_RESISTANCE) //Down to the wire. Or rather, the cord.
 
 /////////////////////////////
 // Vertebrae repair
@@ -234,11 +234,11 @@
 	user.visible_message(span_danger("[user]'s hand slips, tearing at [target]'s spinal cord with \the [tool]!") , \
 	span_danger("Your hand slips, tearing at [target]'s spinal cord with \the [tool]!") )
 	user.balloon_alert_visible("slips, tearing at [target]'s spinal cord", "your hand slips, tearing at the spinal cord")
-	affected.createwound(PIERCE, 5)
+	target.injure(INJURY_PIERCE, 5, affected.organ_tag, tool, flags = INJURE_IGNORE_RESISTANCE)
 	target.AdjustParalysis(15)
 	spawn()
 		for(var/obj/item/organ/internal/brain/O in affected.internal_organs)
-			O.take_damage(rand(1,10))
+			target.injure(INJURY_CUT, rand(1,10), O, tool, affliction = /datum/affliction/lesion/laceration, flags = INJURE_IGNORE_RESISTANCE)
 
 /////////////////////////////
 // Realign tissues
@@ -271,10 +271,9 @@
 	span_notice("You have realigned the tissues in [target]'s skull back into place with \the [tool]."),)
 	user.balloon_alert_visible("realigned the tissues in [target]'s skull back in place", "realigned the tissues in the skull back into place")
 	target.AdjustParalysis(5) //I n v a s i v e
-	target.brainloss = 0 //The cycle begins anew.
 	for(var/obj/item/organ/internal/brain/sponge in target.internal_organs) //in case they have multiple brains. weirdo.
 		sponge.status = 0
-		sponge.damage = 0
+		target.surgically_repair_organ(sponge)
 
 
 /datum/surgery_step/brainstem/realign_tissue/fail_step(mob/living/user, mob/living/carbon/human/target, target_zone, obj/item/tool)
@@ -282,7 +281,7 @@
 	user.visible_message(span_danger("[user]'s hand slips, gouging [target]'s brainstem with \the [tool]!") , \
 	span_danger("Your hand slips, gouging [target]'s brainstem with \the [tool]!"))
 	user.balloon_alert_visible("slips, gounging at [target]'s brainstem", "your hand slips, gouging at the brainstem")
-	affected.createwound(CUT, 5)
+	target.injure(INJURY_CUT, 5, affected.organ_tag, tool, flags = INJURE_IGNORE_RESISTANCE)
 	target.AdjustParalysis(30)
 	for(var/obj/item/organ/internal/brain/O in affected.internal_organs)
-		O.take_damage(rand(1,10))
+		target.injure(INJURY_CUT, rand(1,10), O, tool, affliction = /datum/affliction/lesion/laceration, flags = INJURE_IGNORE_RESISTANCE)

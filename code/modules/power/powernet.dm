@@ -15,12 +15,25 @@
 	var/list/inputting = list()// terminals whose SMES masters are demanding input this tick
 	var/smes_avail     = 0     // power (avail) contributed by SMESes
 	var/smes_newavail  = 0     // as above, for newavail
+	/// Persistent source rates. Republishing an unchanged rate is free.
+	var/list/registered_sources = list()
+	var/list/registered_source_refs = list()
+	var/registered_supply_total = 0
+	var/registered_smes_total = 0
+	/// Persistent SMES charge requests keyed by their input terminal. Entry:
+	/// storage, requested rate, currently allocated rate.
+	var/list/registered_storage_demands = list()
+	var/registered_storage_demand_total = 0
+	var/registered_storage_input_total = 0
+	var/last_storage_settlement = 0
 
 	var/perapc       = 0       // per-APC availability ration
 	var/perapc_excess = 0      // accumulated excess fed back to perapc
 	var/netexcess    = 0       // excess power on the net (avail - load), updated each tick
 
 	var/problem = 0            // non-zero = some issue; power monitors will display warnings
+	var/problem_timer
+	var/material_problem = FALSE
 	/// Stable demand retained for APCs that are dependency-sleeping.
 	var/list/sleeping_apc_loads = list()
 	/// Last semantic supply class observed by each sleeping APC. Accounting
@@ -29,12 +42,20 @@
 	/// One-tick machine usage folded into sleeping APC reservations.
 	var/list/sleeping_apc_dynamic_loads = list()
 	var/sleeping_apc_load_total = 0
+	/// Demand solved by the last completed accounting window. Repeated one-off
+	/// area use is compared against this completed value, not against the cleared
+	/// beginning-of-window accumulator.
+	var/published_load_total = 0
+	var/window_start_balance_class = 0
 	var/revision = 1
 	/// Composite cable topology is scanned only when the network changes.
 	var/material_cache_dirty = TRUE
+	/// Source/load vectors are independent from cable topology. Ordinary grids
+	/// coalesce their changes until the physical settlement boundary; engineered
+	/// conductors request an immediate solution.
+	var/material_flow_dirty = TRUE
 	var/datum/material_power_graph/material_graph
 	var/list/material_sources
-	var/list/material_next_sources
 	var/list/material_consumers
 	var/material_paid_losses = 0
 	var/material_loss_watts = 0
@@ -45,10 +66,20 @@
 	/// Elapsed wall-clock integration of paid losses; the graph reuses its
 	/// previous solution when injections and material resistance are unchanged.
 	var/last_material_process = 0
-	/// Consecutive accounting windows with no production, demand, warning, or
-	/// engineered-material work. Two windows are required so producer shutdown is
-	/// observed before the network sleeps.
+	/// Consecutive accounting windows with live state changes. Producer omission
+	/// is resolved before powernets run, so a clean completed transaction can
+	/// sleep immediately rather than paying for a redundant confirmation solve.
 	var/idle_accounting_windows = 0
+	var/accounting_dirty = TRUE
+	var/material_settlement_timer
+	/// Bounded diagnostic provenance for grids that refuse to settle.
+	var/last_accounting_wake_reason = "initial"
+	var/accounting_wake_count = 0
+	/// Set while an edited cable graph is being repartitioned. The old network
+	/// cannot deliver power across a severed edge during this interval.
+	var/topology_pending = FALSE
+	var/topology_generation = 0
+	var/topology_batch_depth = 0
 
 /datum/powernet/New()
 	SSmachines.powernets |= src
@@ -56,6 +87,13 @@
 	..()
 
 /datum/powernet/Destroy()
+	SSmachines.deferred_powernet_splits -= src
+	if(material_settlement_timer)
+		deltimer(material_settlement_timer)
+		material_settlement_timer = null
+	if(problem_timer)
+		deltimer(problem_timer)
+		problem_timer = null
 	for(var/obj/machinery/power/apc/A as anything in sleeping_apc_loads)
 		A?.wake_for_power_dependency()
 	sleeping_apc_loads.Cut()
@@ -71,18 +109,179 @@
 	SSmachines.powernets -= src
 	QDEL_NULL(material_graph)
 	material_sources = null
-	material_next_sources = null
 	material_consumers = null
+	registered_sources = null
+	registered_source_refs = null
+	registered_storage_demands = null
 	return ..()
+
+/datum/powernet/proc/register_power_supply(obj/machinery/power/source, amount, is_smes = FALSE)
+	if(!source)
+		return FALSE
+	amount = max(amount, 0)
+	var/list/entry = registered_sources[source]
+	if(!entry)
+		entry = list(0, is_smes, 0)
+		registered_sources[source] = entry
+		registered_source_refs[source] = WEAKREF(source)
+	var/old_amount = entry[1]
+	var/old_smes = entry[2]
+	if(old_amount == amount && old_smes == is_smes)
+		return FALSE
+	var/old_supply_total = registered_supply_total
+	var/old_balance_class = supply_balance_class(old_supply_total)
+	if(old_smes || is_smes || registered_smes_total > 0 || registered_storage_input_total > 0)
+		settle_registered_storage()
+	registered_supply_total += amount - old_amount
+	// Exact-rate consumers (capacitor chargers, diagnostics) are isolated from
+	// the broad topology/availability dependency. They wake without forcing the
+	// entire cable graph or every APC to process.
+	SSmachines.publish_reactive_dependency("powernet-rate:[REF(src)]")
+	if(old_smes)
+		registered_smes_total -= old_amount
+	if(is_smes)
+		registered_smes_total += amount
+	entry[1] = amount
+	entry[2] = is_smes
+	newavail = registered_supply_total
+	smes_newavail = registered_smes_total
+	rebuild_material_sources()
+	var/new_balance_class = supply_balance_class(registered_supply_total)
+	var/published_amount = entry[3] || 0
+	var/publication_threshold = max(abs(published_amount) * MATERIAL_POWER_LOAD_RELATIVE_EPSILON, MATERIAL_POWER_LOAD_ABSOLUTE_EPSILON)
+	// A healthy ordinary grid is load-led: changing surplus production cannot
+	// alter delivery, cable current, or APC state until it crosses a balance
+	// boundary. Keep monitor totals current in place without waking the complete
+	// material/accounting graph for generator jitter. Engineered conductors and
+	// storage retain magnitude publication because their physical state depends
+	// on the exact source distribution.
+	var/exact_supply_matters = old_smes || is_smes || registered_smes_total > 0 || registered_storage_demand_total > 0 || material_graph?.has_superconductors
+	var/should_publish = !old_amount || !amount || old_smes != is_smes || old_balance_class != new_balance_class || (exact_supply_matters && abs(amount - published_amount) > publication_threshold)
+	if(should_publish)
+		entry[3] = amount
+		mark_accounting_dirty("supply:[source.type]")
+	else if(!(src in SSmachines.active_powernets))
+		avail = registered_supply_total
+		smes_avail = registered_smes_total
+		netexcess = avail - load
+	return TRUE
+
+/datum/powernet/proc/supply_balance_class(supply)
+	if(supply <= 0)
+		return 0
+	var/excess = supply - load
+	if(excess < 0)
+		return 1
+	if(registered_storage_demand_total > 0 && excess + 0.01 < registered_storage_demand_total)
+		return 2
+	return 3
+
+/datum/powernet/proc/unregister_power_supply(obj/machinery/power/source)
+	var/list/entry = registered_sources?[source]
+	if(!entry)
+		return FALSE
+	if(entry[2])
+		settle_registered_storage()
+	registered_supply_total = max(registered_supply_total - entry[1], 0)
+	if(entry[2])
+		registered_smes_total = max(registered_smes_total - entry[1], 0)
+	registered_sources.Remove(source)
+	registered_source_refs.Remove(source)
+	newavail = registered_supply_total
+	smes_newavail = registered_smes_total
+	rebuild_material_sources()
+	mark_accounting_dirty()
+	return TRUE
+
+/datum/powernet/proc/register_storage_demand(obj/machinery/power/smes/storage, obj/machinery/power/terminal/terminal, amount)
+	if(!storage || !terminal || terminal.powernet != src)
+		return FALSE
+	amount = max(amount, 0)
+	var/list/entry = registered_storage_demands[terminal]
+	if(!amount)
+		if(!entry)
+			return FALSE
+		settle_registered_storage()
+		registered_storage_demand_total = max(registered_storage_demand_total - entry[2], 0)
+		registered_storage_input_total = max(registered_storage_input_total - entry[3], 0)
+		load = max(load - entry[3], 0)
+		registered_storage_demands.Remove(terminal)
+		mark_accounting_dirty()
+		return TRUE
+	if(entry && entry[1] == storage && entry[2] == amount)
+		return FALSE
+	settle_registered_storage()
+	if(entry)
+		registered_storage_demand_total -= entry[2]
+		registered_storage_input_total -= entry[3]
+		load = max(load - entry[3], 0)
+	else
+		entry = list(storage, 0, 0)
+		registered_storage_demands[terminal] = entry
+	entry[1] = storage
+	entry[2] = amount
+	entry[3] = 0
+	registered_storage_demand_total += amount
+	mark_accounting_dirty()
+	return TRUE
+
+/datum/powernet/proc/unregister_storage_terminal(obj/machinery/power/terminal/terminal)
+	var/list/entry = registered_storage_demands?[terminal]
+	if(!entry)
+		return FALSE
+	return register_storage_demand(entry[1], terminal, 0)
+
+/datum/powernet/proc/rebuild_material_sources()
+	material_sources = list()
+	for(var/obj/machinery/power/source as anything in registered_sources)
+		var/list/entry = registered_sources[source]
+		if(entry[1] > 0)
+			material_sources[registered_source_refs[source]] = entry[1]
+	material_flow_dirty = TRUE
+
+/// Integrate actual SMES energy usage over elapsed machinery intervals. Stable
+/// SMES output is a registered rate, so an unchanged network needs no debit and
+/// refund cycle on every subsystem fire.
+/datum/powernet/proc/settle_registered_storage()
+	if(!last_storage_settlement)
+		last_storage_settlement = world.time
+		return
+	var/elapsed_ticks = max((world.time - last_storage_settlement) / max(SSmachines.wait, 1), 0)
+	last_storage_settlement = world.time
+	if(elapsed_ticks <= 0 || registered_smes_total <= 0)
+		// Charging-only networks still have elapsed work below.
+		if(elapsed_ticks <= 0 || registered_storage_input_total <= 0)
+			return
+	var/non_smes_supply = max(avail - smes_avail, 0)
+	// `load` is reset to the retained non-storage demand between accounting
+	// windows; the persistent charging allocation remains a real consumer.
+	var/smes_used = clamp(load + registered_storage_input_total - non_smes_supply, 0, registered_smes_total)
+	for(var/obj/machinery/power/smes/storage as anything in registered_sources)
+		var/list/entry = registered_sources[storage]
+		if(!entry[2] || entry[1] <= 0)
+			continue
+		storage.consume_registered_output(smes_used * entry[1] / registered_smes_total, elapsed_ticks)
+	for(var/obj/machinery/power/terminal/terminal as anything in registered_storage_demands)
+		var/list/demand = registered_storage_demands[terminal]
+		if(demand[3] <= 0)
+			continue
+		var/obj/machinery/power/smes/storage = demand[1]
+		storage.receive_registered_input(demand[3], elapsed_ticks)
 
 /datum/powernet/proc/reserve_sleeping_apc_load(obj/machinery/power/apc/A, amount)
 	if(!A)
 		return
+	// An APC briefly leaves the reservation table while integrating a semantic
+	// wake. Preserve the supply class which caused that wake. Recomputing it
+	// against the previous accounting window here made the completed window flip
+	// it back again, waking every APC on the station in an endless two-state loop.
+	var/previous_supply_class = sleeping_apc_power_classes[A]
 	unreserve_sleeping_apc_load(A)
 	amount = max(amount, 0)
 	sleeping_apc_loads[A] = amount
 	sleeping_apc_load_total += amount
-	sleeping_apc_power_classes[A] = apc_supply_class(amount)
+	sleeping_apc_power_classes[A] = isnull(previous_supply_class) ? apc_supply_class(amount) : previous_supply_class
+	material_flow_dirty = TRUE
 	mark_accounting_dirty()
 
 /datum/powernet/proc/unreserve_sleeping_apc_load(obj/machinery/power/apc/A)
@@ -94,39 +293,91 @@
 	sleeping_apc_loads.Remove(A)
 	sleeping_apc_power_classes.Remove(A)
 	sleeping_apc_dynamic_loads.Remove(A)
+	material_flow_dirty = TRUE
 	mark_accounting_dirty()
 
 /// Adjust demand in place without waking an APC for routine area accounting.
 /datum/powernet/proc/adjust_sleeping_apc_load(obj/machinery/power/apc/A, delta)
 	if(!A || !delta || !(A in sleeping_apc_loads))
 		return FALSE
+	SSmachines.touch_accounting_powernet(src)
 	var/old_amount = sleeping_apc_loads[A]
 	var/new_amount = max(old_amount + delta, 0)
 	sleeping_apc_loads[A] = new_amount
 	sleeping_apc_dynamic_loads[A] = (sleeping_apc_dynamic_loads[A] || 0) + delta
 	sleeping_apc_load_total += new_amount - old_amount
 	load = max(load + new_amount - old_amount, 0)
-	mark_accounting_dirty()
 	return TRUE
 
-/datum/powernet/proc/mark_accounting_dirty()
+/// Start a new machine accounting window without waking this grid. Dynamic area
+/// draws are reported again during the machinery pass; clearing the previous
+/// window here lets an identical load compare equal to published_load_total and
+/// keeps an otherwise stable powernet asleep.
+/datum/powernet/proc/begin_accounting_window()
+	window_start_balance_class = supply_balance_class(registered_supply_total)
+	for(var/obj/machinery/power/apc/A as anything in sleeping_apc_dynamic_loads)
+		var/dynamic_amount = sleeping_apc_dynamic_loads[A]
+		if(A in sleeping_apc_loads)
+			sleeping_apc_loads[A] = max(sleeping_apc_loads[A] - dynamic_amount, 0)
+			sleeping_apc_load_total = max(sleeping_apc_load_total - dynamic_amount, 0)
+	load = sleeping_apc_load_total + material_loss_watts
+	sleeping_apc_dynamic_loads.Cut()
+
+/// Publish a completed demand transaction once, after every APC has reported.
+/// Comparing partial accumulation made a healthy grid appear to cross deficit
+/// boundaries hundreds of times per fire and woke every sleeping APC.
+/datum/powernet/proc/finalize_accounting_window()
+	var/new_balance_class = supply_balance_class(registered_supply_total)
+	var/load_threshold = max(abs(published_load_total) * MATERIAL_POWER_LOAD_RELATIVE_EPSILON, MATERIAL_POWER_LOAD_ABSOLUTE_EPSILON)
+	var/material_flow_matters = material_graph?.has_custom_conductors || material_graph?.has_superconductors
+	var/exact_load_matters = material_graph?.has_superconductors
+	var/load_changed = abs(load - published_load_total) > load_threshold
+	if(load_changed)
+		SSmachines.publish_reactive_dependency("powernet-rate:[REF(src)]")
+		// Ordinary steel/copper station wiring has no stateful material response
+		// to a routine load-rate change. Only an engineered conductor needs a new
+		// flow solve and a future thermal settlement.
+		if(material_flow_matters)
+			material_flow_dirty = TRUE
+		if(material_graph?.has_custom_conductors && !exact_load_matters)
+			schedule_material_settlement(MATERIAL_POWER_GRAPH_SETTLEMENT_INTERVAL)
+	if(window_start_balance_class != new_balance_class || (exact_load_matters && abs(load - published_load_total) > load_threshold))
+		mark_accounting_dirty("area-load-window")
+
+/datum/powernet/proc/mark_accounting_dirty(reason = "state")
+	accounting_dirty = TRUE
 	idle_accounting_windows = 0
+	last_accounting_wake_reason = reason
+	accounting_wake_count++
 	START_PROCESSING_POWERNET(src)
 
+/datum/powernet/proc/schedule_material_settlement(delay)
+	if(material_settlement_timer || QDELETED(src))
+		return
+	delay = max(delay, 1)
+	material_settlement_timer = addtimer(CALLBACK(src, PROC_REF(material_settlement_due)), delay, TIMER_STOPPABLE)
+
+/datum/powernet/proc/material_settlement_due()
+	material_settlement_timer = null
+	mark_accounting_dirty()
+
+/// Machine membership changed. Sleeping APCs subscribe to this network's
+/// topology key, so one publication reaches all of them.
 /datum/powernet/proc/publish_dependency()
+	publish_cable_dependency()
+	SSmachines.publish_reactive_dependency("powernet-topology:[REF(src)]")
+
+/// Cable membership changed. That moves line losses but not which machines
+/// share the network, so APCs are left asleep.
+/datum/powernet/proc/publish_cable_dependency()
 	revision++
 	mark_accounting_dirty()
 	SSmachines.publish_reactive_dependency("powernet:[REF(src)]")
-	// Topology membership really can invalidate every APC on this network. This
-	// path is intentionally separate from routine accounting publication below.
-	for(var/obj/machinery/power/apc/A as anything in sleeping_apc_loads)
-		SSmachines.publish_reactive_dependency("apc-power:[REF(A)]")
 
 /// Publish monitor-visible state without fanning one accounting sample out to
 /// every APC. APCs receive their own semantic supply transition below.
 /datum/powernet/proc/publish_monitor_dependency()
 	revision++
-	mark_accounting_dirty()
 	SSmachines.publish_reactive_dependency("powernet:[REF(src)]")
 
 /datum/powernet/proc/apc_supply_class(demand)
@@ -152,7 +403,7 @@
 	return max(avail - load, 0)
 
 /datum/powernet/proc/draw_power(amount, atom/consumer)
-	mark_accounting_dirty()
+	mark_accounting_dirty(consumer ? "draw:[consumer.type]" : "draw:unknown")
 	var/efficiency = consumer ? (material_graph?.efficiencies?[REF(consumer)] || 1) : 1
 	var/draw = between(0, amount / efficiency, avail - load)
 	load += draw
@@ -171,10 +422,60 @@
 /datum/powernet/proc/remove_cable(obj/structure/cable/C)
 	cables -= C
 	C.powernet = null
-	invalidate_material_cache()
-	publish_dependency()
+	if(!topology_batch_depth)
+		invalidate_material_cache()
+		publish_cable_dependency()
 	if(is_empty())
 		qdel(src)
+
+/// Clear accounting membership before a targeted topology transaction rebinds
+/// the affected machines. Cable membership is published separately.
+/datum/powernet/proc/prepare_topology_rebind()
+	if(material_settlement_timer)
+		deltimer(material_settlement_timer)
+		material_settlement_timer = null
+	for(var/obj/machinery/power/apc/apc as anything in sleeping_apc_loads)
+		apc.wake_for_power_dependency()
+	for(var/obj/machinery/power/machine as anything in nodes)
+		machine.powernet = null
+	nodes = list()
+	apc_count = 0
+	smes_nodes = list()
+	registered_sources = list()
+	registered_source_refs = list()
+	registered_storage_demands = list()
+	registered_supply_total = 0
+	registered_smes_total = 0
+	registered_storage_demand_total = 0
+	registered_storage_input_total = 0
+	sleeping_apc_loads = list()
+	sleeping_apc_power_classes = list()
+	sleeping_apc_dynamic_loads = list()
+	sleeping_apc_load_total = 0
+	material_sources = null
+	material_consumers = null
+	material_loss_watts = 0
+	material_pending_heat = 0
+	material_pending_heat_elapsed = 0
+	avail = 0
+	newavail = 0
+	load = 0
+	netexcess = 0
+	QDEL_NULL(material_graph)
+
+/// Bind a machine without emitting per-object topology publications. Its next
+/// process call republishes source, storage, or APC accounting state.
+/datum/powernet/proc/bind_machine_after_topology(obj/machinery/power/machine)
+	machine.powernet = src
+	nodes[machine] = machine
+	if(istype(machine, /obj/machinery/power/terminal))
+		var/obj/machinery/power/terminal/terminal = machine
+		if(istype(terminal.master, /obj/machinery/power/apc))
+			apc_count++
+	else if(istype(machine, /obj/machinery/power/smes))
+		smes_nodes |= machine
+	machine.power_supply_generation = 0
+	START_MACHINE_PROCESSING(machine)
 
 /// add_cable() — add a cable, migrating it from its current net if needed.
 /// Idempotent: safe to call when the cable is already on this net.
@@ -185,11 +486,25 @@
 		C.powernet.remove_cable(C)
 	C.powernet = src
 	cables += C
+	if(!topology_batch_depth)
+		invalidate_material_cache()
+		publish_cable_dependency()
+
+/datum/powernet/proc/begin_topology_batch()
+	topology_batch_depth++
+
+/datum/powernet/proc/end_topology_batch()
+	if(topology_batch_depth <= 0)
+		return
+	topology_batch_depth--
+	if(topology_batch_depth)
+		return
 	invalidate_material_cache()
 	publish_dependency()
 
 /datum/powernet/proc/invalidate_material_cache()
 	material_cache_dirty = TRUE
+	material_flow_dirty = TRUE
 
 /datum/powernet/proc/rebuild_material_cache()
 	material_cache_dirty = FALSE
@@ -198,8 +513,29 @@
 	material_graph.build(cables)
 
 /datum/powernet/proc/process_material_network()
+	// Any accounting wake invalidates the old predicted deadline. Recompute it
+	// from the newly published source/load state below.
+	if(material_settlement_timer)
+		deltimer(material_settlement_timer)
+		material_settlement_timer = null
 	var/elapsed_seconds = last_material_process ? max((world.time - last_material_process) / 10, 0.1) : 1
 	last_material_process = world.time
+	if(material_cache_dirty)
+		rebuild_material_cache()
+	// The standard mapped grid has no stateful conductor behavior to integrate.
+	// Building its topology once keeps it ready for diagnostics and later cable
+	// replacement, but walking every sleeping APC and solving resistive losses on
+	// every accounting event merely feeds ordinary load back into itself. A
+	// custom or superconducting conductor flips these graph flags and enters the
+	// physical path below without any machine-type exception.
+	if(!material_graph?.has_custom_conductors && !material_graph?.has_superconductors)
+		material_consumers = null
+		material_loss_watts = 0
+		material_paid_losses = 0
+		material_pending_heat = 0
+		material_pending_heat_elapsed = 0
+		material_flow_dirty = FALSE
+		return
 	LAZYINITLIST(material_consumers)
 	for(var/obj/machinery/power/apc/apc as anything in sleeping_apc_loads)
 		if(apc.terminal)
@@ -211,33 +547,73 @@
 			material_paid_losses += paid
 			if(paid + 0.01 < extra)
 				apc.wake_for_power_dependency()
-	material_loss_watts = material_paid_losses
+	// Settle the previous solved rate over the interval for which it was valid.
+	if(material_graph?.has_custom_conductors || material_graph?.has_superconductors)
+		material_pending_heat += material_loss_watts * elapsed_seconds
+		material_pending_heat_elapsed += elapsed_seconds
+	else
+		material_pending_heat = 0
+		material_pending_heat_elapsed = 0
 	// Settle the completed interval against its original flow distribution before
 	// a switched-off load or topology rebuild replaces that distribution.
-	material_pending_heat += material_paid_losses * elapsed_seconds
-	material_pending_heat_elapsed += elapsed_seconds
-	if(material_graph && (material_cache_dirty || material_graph.has_superconductors || material_pending_heat_elapsed >= MATERIAL_POWER_HEAT_SETTLEMENT_INTERVAL))
+	if(material_graph && (material_graph.has_custom_conductors || material_graph.has_superconductors) && (material_cache_dirty || material_graph.has_superconductors || material_pending_heat_elapsed >= MATERIAL_POWER_HEAT_SETTLEMENT_INTERVAL))
 		material_graph.deposit_losses(material_pending_heat, material_pending_heat_elapsed)
 		material_pending_heat = 0
 		material_pending_heat_elapsed = 0
-	if(material_cache_dirty)
-		rebuild_material_cache()
-	material_graph.resolve_loads(material_sources, material_consumers)
+	// The base powernet remains authoritative every tick. Its material overlay
+	// only needs a new mesh solution at the physical settlement cadence unless
+	// an engineered conductor has temperature/current-dependent behaviour.
+	if(material_flow_dirty || material_graph.has_superconductors || material_graph.solve_pending)
+		var/solve_result = material_graph.resolve_loads(material_sources, material_consumers)
+		material_flow_dirty = FALSE
+		if(solve_result == 2)
+			schedule_material_settlement(1)
+	material_loss_watts = material_graph.loss_watts
 	material_paid_losses = 0
 	material_consumers = null
-	material_sources = material_next_sources
-	material_next_sources = null
-	if(material_loss_watts > max(load * 0.1, 1000))
-		trigger_warning()
+	var/settlement_delay = 0
+	if(material_graph.has_superconductors)
+		settlement_delay = MATERIAL_POWER_HEAT_SETTLEMENT_INTERVAL
+	else if(material_graph.has_custom_conductors)
+		settlement_delay = MATERIAL_POWER_GRAPH_SETTLEMENT_INTERVAL
+	// Output-only storage needs one wake at the earliest possible depletion
+	// boundary. Stable unused capacity has no passage-of-time work to perform.
+	if(registered_smes_total > 0)
+		var/non_smes_supply = max(avail - smes_avail, 0)
+		var/smes_used = clamp(load - non_smes_supply, 0, registered_smes_total)
+		if(smes_used > 0)
+			for(var/obj/machinery/power/smes/storage as anything in registered_sources)
+				var/list/entry = registered_sources[storage]
+				if(!entry[2] || entry[1] <= 0)
+					continue
+				var/storage_rate = smes_used * entry[1] / registered_smes_total
+				if(storage_rate <= 0)
+					continue
+				var/depletion_delay = CEILING(storage.charge / SMESRATE / storage_rate * SSmachines.wait, 1)
+				if(!settlement_delay || depletion_delay < settlement_delay)
+					settlement_delay = depletion_delay
+	for(var/obj/machinery/power/terminal/terminal as anything in registered_storage_demands)
+		var/list/demand = registered_storage_demands[terminal]
+		if(demand[3] <= 0)
+			continue
+		var/obj/machinery/power/smes/storage = demand[1]
+		var/fill_delay = CEILING((storage.capacity - storage.charge) / SMESRATE / demand[3] * SSmachines.wait, 1)
+		if(!settlement_delay || fill_delay < settlement_delay)
+			settlement_delay = fill_delay
+	if(settlement_delay)
+		schedule_material_settlement(settlement_delay)
+	set_material_warning(material_loss_watts > max(load * 0.1, 1000))
 
 /// remove_machine() — remove a power machine; deletes the net if now empty.
 /// Caller must verify the machine is in this net before calling.
 /datum/powernet/proc/remove_machine(obj/machinery/power/M)
+	unregister_power_supply(M)
 	if(istype(M, /obj/machinery/power/apc))
 		var/obj/machinery/power/apc/A = M
 		unreserve_sleeping_apc_load(A)
 	else if(istype(M, /obj/machinery/power/terminal))
 		var/obj/machinery/power/terminal/T = M
+		unregister_storage_terminal(T)
 		if(istype(T.master, /obj/machinery/power/apc))
 			var/obj/machinery/power/apc/A = T.master
 			unreserve_sleeping_apc_load(A)
@@ -245,9 +621,11 @@
 	else if(istype(M, /obj/machinery/power/smes))
 		smes_nodes -= M
 	nodes -= M
-	invalidate_material_cache()
+	if(!topology_batch_depth)
+		invalidate_material_cache()
 	M.powernet = null
-	publish_dependency()
+	if(!topology_batch_depth)
+		publish_dependency()
 	if(is_empty())
 		qdel(src)
 
@@ -260,20 +638,43 @@
 		M.disconnect_from_network()
 	M.powernet = src
 	nodes[M] = M
-	invalidate_material_cache()
+	if(!topology_batch_depth)
+		invalidate_material_cache()
 	if(istype(M, /obj/machinery/power/terminal))
 		var/obj/machinery/power/terminal/T = M
 		if(istype(T.master, /obj/machinery/power/apc))
 			apc_count++
 	else if(istype(M, /obj/machinery/power/smes))
 		smes_nodes |= M
-	publish_dependency()
+	if(!topology_batch_depth)
+		publish_dependency()
 
 /// trigger_warning() — flag a powernet problem visible on power monitors.
 /datum/powernet/proc/trigger_warning(duration_ticks = 20)
 	var/was_clear = problem <= 0
-	problem = max(duration_ticks, problem)
-	if(was_clear && problem > 0)
+	problem = TRUE
+	if(problem_timer)
+		deltimer(problem_timer)
+	problem_timer = addtimer(CALLBACK(src, PROC_REF(clear_warning)), max(duration_ticks, 1), TIMER_STOPPABLE)
+	if(was_clear)
+		publish_monitor_dependency()
+
+/datum/powernet/proc/clear_warning()
+	problem_timer = null
+	var/was_problem = problem
+	problem = material_problem
+	if(was_problem == problem)
+		return
+	publish_monitor_dependency()
+
+/datum/powernet/proc/set_material_warning(active)
+	active = !!active
+	if(material_problem == active)
+		return
+	material_problem = active
+	var/was_problem = problem
+	problem = material_problem || !!problem_timer
+	if(was_problem != problem)
 		publish_monitor_dependency()
 
 /// reset() — handle per-tick power accounting.
@@ -287,16 +688,13 @@
 ///   5. Smooth the viewable load/avail.
 ///   6. Reset accumulators for the next tick.
 /datum/powernet/proc/reset()
+	if(topology_pending)
+		return PROCESS_KILL
+	accounting_dirty = FALSE
+	settle_registered_storage()
 	var/old_avail = avail
 	var/old_netexcess = netexcess
-	var/old_problem = problem
-	// 1. Decay problem warning.
-	if(problem > 0)
-		problem = max(problem - 1, 0)
-		if(old_problem > 0 && problem <= 0)
-			publish_monitor_dependency()
-
-	// 2. Count APC terminals and update per-APC ration.
+	// 1. Count APC terminals and update per-APC ration.
 	var/numapc = apc_count
 
 	netexcess = avail - load
@@ -311,58 +709,58 @@
 			perapc_excess = 0
 		perapc = (numapc > 0) ? (avail / numapc + perapc_excess) : 0
 
-	// 3. SMES input balancing — delegated to powernet_balancer.
-	//    Only runs when there is actual SMES demand; balancer guards its own
-	//    division-by-zero and validates terminal refs.
+	// 2. Legacy transient SMES input requests remain supported.
 	if(inputting.len && smes_demand > 0)
 		var/datum/powernet_balancer/balancer = new(src)
 		balancer.execute()
 		qdel(balancer)
+	// Stable requests are allocated once and then integrated by elapsed time.
+	registered_storage_input_total = 0
+	if(registered_storage_demand_total > 0)
+		var/storage_excess = max(avail - load, 0)
+		var/storage_fraction = clamp(storage_excess / registered_storage_demand_total, 0, 1)
+		for(var/obj/machinery/power/terminal/terminal as anything in registered_storage_demands)
+			var/list/demand = registered_storage_demands[terminal]
+			var/allocated = demand[2] * storage_fraction
+			demand[3] = allocated
+			registered_storage_input_total += allocated
+			var/obj/machinery/power/smes/storage = demand[1]
+			storage.set_registered_input(allocated, demand[2])
+		load += registered_storage_input_total
 	process_material_network()
 
-	// 4. Restore excess power to SMESes proportionally.
+	// 3. SMES storage was settled above from its registered output rate.
 	netexcess = avail - load
-	if(netexcess)
-		var/perc = get_percent_load(1)
-		for(var/obj/machinery/power/smes/S as anything in smes_nodes)
-			if(!S || QDELETED(S))
-				continue
-			S.restore(perc)
 
-	// 5. Smooth viewable stats.
+	// 4. Smooth viewable stats.
 	viewavail = round(0.8 * viewavail + 0.2 * avail)
 	viewload  = round(0.8 * viewload  + 0.2 * load)
+	published_load_total = load
 	publish_apc_supply_changes()
 
-	// 6. Reset accumulators for next tick.
+	// 5. Reset accumulators for next tick.
 	// Dynamic area usage is reported again by machines next tick. Keep only the
 	// APC's stable base reservation between accounting windows.
-	for(var/obj/machinery/power/apc/A as anything in sleeping_apc_dynamic_loads)
-		var/dynamic_amount = sleeping_apc_dynamic_loads[A]
-		if(A in sleeping_apc_loads)
-			sleeping_apc_loads[A] = max(sleeping_apc_loads[A] - dynamic_amount, 0)
-			sleeping_apc_load_total = max(sleeping_apc_load_total - dynamic_amount, 0)
-	sleeping_apc_dynamic_loads.Cut()
-	load         = sleeping_apc_load_total
+	// Dynamic demand remains as the monitor-visible completed window until
+	// begin_accounting_window() clears it immediately before the next machinery
+	// pass reports current use.
 	avail        = newavail
 	smes_avail   = smes_newavail
 	inputting.Cut()
 	smes_demand  = 0
-	newavail     = 0
-	smes_newavail = 0
+	newavail     = registered_supply_total
+	smes_newavail = registered_smes_total
 	// Sleeping APC demand is already reserved. Generator output jitter is not a
 	// state change for them while the net remains on the same side of deficit;
 	// charging progress has its own coarse elapsed-time wakeup.
 	if((avail <= 0) != (old_avail <= 0) || ((netexcess < -1) != (old_netexcess < -1)))
 		publish_monitor_dependency()
-	var/has_live_accounting = avail || newavail || load > sleeping_apc_load_total || inputting.len || smes_demand || problem > 0
+	var/has_live_accounting = accounting_dirty || inputting.len || smes_demand
 	if(has_live_accounting)
 		idle_accounting_windows = 0
 		return
 	idle_accounting_windows++
-	if(idle_accounting_windows >= 2)
-		return PROCESS_KILL
-	return
+	return PROCESS_KILL
 
 /datum/powernet/proc/get_percent_load(smes_only = 0)
 	if(smes_only)

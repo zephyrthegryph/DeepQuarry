@@ -114,6 +114,8 @@ SUBSYSTEM_DEF(contracts)
 
 /datum/controller/subsystem/contracts/proc/watch_contract_subject(mob/living/carbon/human/subject)
 	RegisterSignal(subject, COMSIG_MOB_MEDICAL_ISSUES_CHANGED, PROC_REF(on_medical_issues_changed), override = TRUE)
+	RegisterSignal(subject, COMSIG_AFFLICTION_SEVERITY_CHANGED, PROC_REF(on_affliction_severity_changed), override = TRUE)
+	RegisterSignal(subject, COMSIG_BODY_AFFLICTIONS_CHANGED, PROC_REF(on_body_afflictions_changed), override = TRUE)
 	RegisterSignal(subject, COMSIG_LIVING_REVIVE, PROC_REF(on_medical_subject_revived), override = TRUE)
 	RegisterSignal(subject, COMSIG_MOB_LOGIN, PROC_REF(on_medical_subject_availability), override = TRUE)
 	RegisterSignal(subject, COMSIG_MOB_LOGOUT, PROC_REF(on_medical_subject_availability), override = TRUE)
@@ -375,8 +377,6 @@ SUBSYSTEM_DEF(contracts)
 				if(participant)
 					medical_trial_offer_corpse_autopsy(linked_trial, participant, medical_side.owner_account_number)
 	if(istype(contract, /datum/contract/outcome))
-		if(contract.state == CONTRACT_COMPLETED)
-			settle_linked_personal_outcomes(contract)
 		// Unaccepted linked counter-offers only make sense while their public
 		// parent is live. Already-accepted personal agreements remain binding.
 		reconcile_offer_eligibility("A linked public contract closed")
@@ -384,15 +384,6 @@ SUBSYSTEM_DEF(contracts)
 		var/datum/contract/medical_trial/trial = contract
 		if(istype(trial) && trial.conditional_offer)
 			reconcile_medical_trial_offers()
-
-/datum/controller/subsystem/contracts/proc/settle_linked_personal_outcomes(datum/contract/outcome/parent_contract)
-	for(var/datum/contract/personal_outcome/personal in offered_contracts.Copy() + active_contracts.Copy() + grace_contracts.Copy())
-		if(personal.linked_parent_id != parent_contract.id)
-			continue
-		if(personal.state == CONTRACT_OFFERED)
-			personal.withdraw("The mutually exclusive public outcome settled first.")
-		else
-			personal.fail("The mutually exclusive public outcome settled first.")
 
 /datum/controller/subsystem/contracts/proc/register_contract(datum/contract/contract)
 	if(!contract || contract.id)
@@ -483,6 +474,40 @@ SUBSYSTEM_DEF(contracts)
 		if(contract.receive_event(event))
 			events_matched++
 	return event.id
+
+/// Incident response begins when the incident happens, not when a head reaches
+/// a console. Replay only authenticated events after the triggering fact; the
+/// trigger itself remains ineligible and every requirement's normal identity,
+/// scope, and deduplication rules still apply.
+/datum/controller/subsystem/contracts/proc/replay_post_trigger_events(datum/contract/contract)
+	var/trigger_event_id = contract?.offer_context?["trigger_event_id"]
+	var/triggered_at = contract?.offer_context?["opportunity_triggered_at"]
+	if(!contract || !trigger_event_id || !isnum(triggered_at))
+		return FALSE
+	var/trigger_in_history = FALSE
+	for(var/datum/contract_event/event in recent_events)
+		if(event.id == trigger_event_id)
+			trigger_in_history = TRUE
+			break
+	var/past_trigger = !trigger_in_history
+	var/replayed = FALSE
+	for(var/datum/contract_event/event in recent_events)
+		if(!past_trigger)
+			if(event.id == trigger_event_id)
+				past_trigger = TRUE
+			continue
+		if(event.id == trigger_event_id || event.occurred_at < triggered_at || !(event.event_type in event_subscriptions))
+			continue
+		var/list/subscribers = event_subscriptions[event.event_type]
+		if(!(contract in subscribers) || !(contract.state in list(CONTRACT_ACTIVE, CONTRACT_GRACE)))
+			continue
+		events_dispatched++
+		if(contract.receive_event(event))
+			events_matched++
+			replayed = TRUE
+	if(replayed)
+		contract.audit(CONTRACT_AUDIT_PROGRESS, "Authenticated response work performed after the originating incident was credited at acceptance.")
+	return replayed
 
 /// Compatibility entry point for older producers while they migrate to typed
 /// event construction. The resulting event still receives full validation,
@@ -590,6 +615,7 @@ SUBSYSTEM_DEF(contracts)
 		"issuer_color" = faction?.color || "#6ba4c7",
 		"department" = contract.department,
 		"reward" = contract.reward,
+		"paid_reward" = contract.paid_reward,
 		"reward_distribution" = list(
 			"station" = contract.negotiated_station_amount(),
 			"department" = contract.negotiated_department_amount(),

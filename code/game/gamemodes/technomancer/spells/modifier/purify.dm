@@ -29,10 +29,9 @@
 	stacks = MODIFIER_STACK_EXTEND
 
 /datum/modifier/technomancer/purify/tick()
-	if(!holder.getToxLoss()) // No point existing if the spell can't heal.
-		expire()
+	if(!holder.mend(TREAT_ANTITOXIN, 4 * spell_power)) // Should heal roughly 120 damage over 1 minute, as tick() is run every 2 seconds.
+		expire() // No point existing if the spell can't heal.
 		return
-	holder.adjustToxLoss(-4 * spell_power) // Should heal roughly 120 damage over 1 minute, as tick() is run every 2 seconds.
 	holder.adjust_instability(1)
 	if(origin)
 		var/mob/living/L = origin.resolve()

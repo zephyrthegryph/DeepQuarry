@@ -14,28 +14,6 @@
 				"exr" = 20,
 				"volchannel" = VOLUME_CHANNEL_SPECIES_SOUNDS
 			)
-	/* // Not sure if needed, screams are a carbon-only thing rn.
-	else
-		var/mob/living/M = user
-		if((M.get_gender() == FEMALE) && female_scream_sound) // If our mob has custom sounds per-gender defined, most won't.
-			return list(
-				"sound" = female_scream_sound,
-				"vol" = 60,
-				"volchannel" = VOLUME_CHANNEL_SPECIES_SOUNDS
-			)
-		else if((M.get_gender() == MALE) && male_scream_sound) // If our mob has custom sounds per-gender defined, most won't.
-			return list(
-				"sound" = male_scream_sound,
-				"vol" = 60,
-				"volchannel" = VOLUME_CHANNEL_SPECIES_SOUNDS
-			)
-		else
-			return list(
-				"sound" = scream_sound,
-				"vol" = 60,
-				"volchannel" = VOLUME_CHANNEL_SPECIES_SOUNDS
-			)
-	*/
 
 /datum/decl/emote/audible/scream/get_emote_message_1p(atom/user, atom/target, extra_params)
 	if(ishuman(user))

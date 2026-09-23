@@ -147,7 +147,7 @@
 	brainmobs |= brainmob
 
 	//Put the mind and player into the mob
-	M.mind.transfer_to(brainmob)
+	transfer_mind(M.mind, brainmob, "caught in [src]") // identity (name, DNA, OOC notes) comes by reference
 	brainmob.name = custom_name ? custom_name : brainmob.mind.name
 	brainmob.real_name = custom_name ? custom_name : brainmob.mind.name
 
@@ -161,18 +161,8 @@
 		add_verb(brainmob, /mob/living/carbon/brain/caught_soul/vore/proc/transfer_self)
 		add_verb(brainmob, /mob/living/carbon/brain/caught_soul/vore/proc/reenter_body)
 
-	//If they have these values, apply them
 	if(isliving(M))
-		var/mob/living/L = M
-		brainmob.dna = L.dna.Clone()
-		brainmob.ooc_notes = L.ooc_notes
-		brainmob.ooc_notes_likes = L.ooc_notes_likes
-		brainmob.ooc_notes_dislikes = L.ooc_notes_dislikes
-		brainmob.ooc_notes_favs = L.ooc_notes_favs
-		brainmob.ooc_notes_maybes = L.ooc_notes_maybes
-		brainmob.ooc_notes_style = L.ooc_notes_style
-		brainmob.timeofhostdeath = L.timeofdeath
-		if(ishuman(L))
+		if(ishuman(M))
 			SStranscore.m_backup(brainmob.mind,0) //It does ONE, so medical will hear about it.
 
 	//Else maybe they're a joining ghost
@@ -468,14 +458,12 @@
 			mate.get_mind(M)
 	else if(istype(target, /obj/item/mmi))
 		var/obj/item/mmi/mm = target
-		if(!mm.brainmob || !mm.brainmob.mind)
+		if(!mm.get_occupant()?.mind)
 			if(M.mind == own_mind)
 				own_mind = null
 			to_chat(owner, span_notice("You transfer the soul into the [target]!"))
 			to_chat(M, span_notice("[transfer_message]"))
-			mm.transfer_identity(M)
-			if(!mm.brainmob.mind && M.mind)
-				M.mind.transfer_to(mm.brainmob)
+			mm.take_identity(M, TRUE)
 	else
 		return
 	brainmobs -= M

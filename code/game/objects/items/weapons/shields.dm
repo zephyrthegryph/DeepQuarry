@@ -157,7 +157,7 @@
 		return TRUE
 	if (CLUMSY_FAIL_CHANCE(user))
 		to_chat(user, span_warning("You beat yourself in the head with [src]."))
-		user.take_organ_damage(5)
+		user.injure(INJURY_BLUNT, 5, source = src)
 	active = !active
 	if (active)
 		force = 10

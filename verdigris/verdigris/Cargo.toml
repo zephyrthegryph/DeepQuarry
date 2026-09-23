@@ -7,49 +7,21 @@ rust-version = "1.85"
 [lib]
 crate-type = ["cdylib", "rlib"]
 
+# The DLL itself: it links the binds (vg-ffi) and the gas domain (vg-gas) and sets
+# the global allocator. byondapi-sys is 32-bit only, so those links are gated on
+# target_arch = "x86"; a host build of this crate is just material_power and its
+# tests. See verdigris/README.md for the crate map.
+
 [dependencies]
-# Pure (target-agnostic) deps. The BYOND FFI itself is byondapi, declared under the
-# x86 target below — byondapi-sys is 32-bit-only, so the FFI binds compile only for the
-# i686 release target while random_map's pure automata logic + its unit tests stay
-# host-buildable. (verdigris used to link meowtonin here for cave-gen; it was migrated
-# onto byondapi so the whole library speaks a single BYOND API.)
-const_format = "0.2.33"
-# eyre is the error type the byondapi binds return (and that random_map's pure
-# validation helpers return). Pure Rust, so it's an all-targets dep even though the
-# binds that use it are i686-only.
 eyre = { workspace = true }
-rand = "0.10.1"
-rand_distr = "0.6"
-rayon = "1.10.0"
-png = "0.18.0"
-serde = { version = "1.0", features = ["derive"] }
-serde_json = "1.0"
-toml = "0.8"
 
-# Auxmos (vendored, rlib) is linked into libverdigris.so. See verdigris/atmos/UPSTREAM.md
-# and doc/atmos_migration.md decision §1, §5, §6 for feature selection.
-#
-# Gated on target_arch = "x86" because byondapi-sys is 32-bit-only by design.
-# Host-arch `cargo check` / `cargo test` skip auxmos; the i686 release build
-# (verdigris/build-linux.sh / build-windows.sh, and CI integration tests) is
-# the real validation.
 [target.'cfg(target_arch = "x86")'.dependencies]
-# superconductivity: turf-to-turf / turf-to-space / turf-to-gas heat conduction,
-# ported to byondapi 0.6.x (see turfs/superconduct.rs). DM wiring: SSair.fire() calls
-# process_turf_heat, turfs carry thermal_conductivity/heat_capacity/temperature +
-# conductivity_blocked_directions, world dims are pushed via auxmos_set_world_dims, and
-# there is a return_temperature hook. reaction_hooks stays OFF (reactions run in DM — see
-# doc/atmos_migration.md).
-auxmos = { path = "../atmos", default-features = false, features = ["turf_processing", "fastmos", "explosive_decompression", "superconductivity"] }
-# The BYOND FFI framework for verdigris's own binds (verdigris_version/features/init/
-# cleanup + cave-gen generate_automata). Same byondapi as auxmos (workspace-pinned git
-# rev) so the whole .so links one API. x86-only because byondapi-sys is 32-bit.
+# Gas features: turf_processing (diffusion + decompression, turfs/processing.rs) and
+# superconductivity (turf heat conduction, turfs/superconduct.rs). Reactions run in
+# DM (see code/ATMOSPHERICS/README.md).
+vg-gas = { path = "../domains/gas", default-features = false, features = ["turf_processing", "superconductivity"] }
+vg-ffi = { path = "../ffi" }
+# material_power.rs still carries its own binds (it belongs to another session and
+# moves to vg-ffi / the power domain with its owner's agreement).
 byondapi = { workspace = true }
-eyre = { workspace = true }
-# auxmos's panic-guard proc macro. verdigris's own binds wear #[auxmacros::panic_safe]
-# too, so the whole library uses ONE panic-isolation mechanism (previously verdigris
-# carried a separate panic_safe! macro_rules; that was collapsed onto this).
-auxmacros = { path = "../atmos/crates/auxmacros" }
-
-[build-dependencies]
-bosion = "2.0.0"
+auxmacros = { path = "../ffi/macros" }

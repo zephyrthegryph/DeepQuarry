@@ -272,8 +272,7 @@
 	if(tre)
 		spawn_treasure(tre)
 	if(heal)
-		adjustFireLoss(-999)
-		adjustBruteLoss(-999)
+		fully_heal()
 	if(delet)
 		qdel(E)
 
@@ -406,13 +405,6 @@
 
 	apply_layer(MOB_WATER_LAYER)
 
-/turf/simulated/floor/outdoors/fur/woof
-	color = "#c69c85"
-	tree_color = "#eeb698"
-
-/turf/simulated/floor/outdoors/fur/woof/no_trees
-	icon_state = "furX"
-	tree_chance = 0
 
 /turf/simulated/floor/outdoors/fur/Initialize(mapload)
 	. = ..()
@@ -423,15 +415,6 @@
 		else
 			tree.color = color
 
-/turf/simulated/floor/outdoors/fur/woof/wall
-	name = "dense fur"
-	desc = "Silky and soft, but too thick to pass or cut!"
-	color = "#92705d"
-	opacity = TRUE
-	tree_color = null
-	tree_chance = 100
-	tree_type = /obj/structure/flora/tree/fur/wall
-	outdoors = FALSE
 
 /turf/simulated/floor/outdoors/fur/verb/pet()
 	set name = "Pet Fur"
@@ -782,213 +765,12 @@
 		if(!Turf.check_density())
 			new F(Turf)
 
-/area/redgate/stardog/flesh_abyss/no_spawn
-	icon_state = "blublacir"
-	semirandom_groups = 0
-	semirandom_group_min = 0
-	semirandom_group_max = 0
-
-	valid_mobs = null
-	spawnstuff = FALSE
-
-/area/redgate/stardog/flesh_abyss/digestive_tract
-	icon_state = "greblacir"
-	semirandom_groups = 1
-	semirandom_group_min = 1
-	semirandom_group_max = 10
-	include_enzyme = TRUE
-	valid_mobs = list(
-		list(
-		/mob/living/simple_mob/vore/vore_hostile/abyss_lurker = 10,
-		/mob/living/simple_mob/vore/vore_hostile/leaper = 20,
-		/mob/living/simple_mob/vore/vore_hostile/gelatinous_cube = 100
-		)
-		)
-	ghostjoin = TRUE
-
-/area/redgate/stardog/flesh_abyss/stomach
-	floracountmax = 3
-	valid_flora = list(
-		/obj/structure/outcrop/coal = 10,
-		/obj/structure/outcrop/diamond = 1,
-		/obj/structure/outcrop/gold = 3,
-		/obj/structure/outcrop/iron = 10,
-		/obj/structure/outcrop/lead = 6,
-		/obj/structure/outcrop/phoron = 10,
-		/obj/structure/outcrop/platinum = 5,
-		/obj/structure/outcrop/silver = 8,
-		/obj/structure/outcrop/uranium = 3,
-		/obj/random/outcrop = 5
-	)
-	semirandom = FALSE
-	semirandom_groups = 1
-	semirandom_group_min = 1
-	semirandom_group_max = 3
-	valid_mobs = list(
-		list(
-			/mob/living/simple_mob/animal/space/carp/event = 100,
-			/mob/living/simple_mob/animal/space/carp/large = 25,
-			/mob/living/simple_mob/animal/space/carp/large/huge = 5,
-			/mob/living/simple_mob/vore/alienanimals/space_jellyfish = 100
-			)
-		)
-	mob_chance = 10
-	treasure_chance = 25
-	treasuremax = 1
-	spawnstuff = TRUE
-	ghostjoin = FALSE
-
-/area/redgate/stardog/flesh_abyss/s_int
-	floracountmax = 1
-	valid_flora = list(
-		/obj/structure/outcrop/coal = 5,
-		/obj/structure/outcrop/diamond = 2,
-		/obj/structure/outcrop/gold = 3,
-		/obj/structure/outcrop/iron = 7,
-		/obj/structure/outcrop/lead = 3,
-		/obj/structure/outcrop/phoron = 5,
-		/obj/structure/outcrop/platinum = 5,
-		/obj/structure/outcrop/silver = 8,
-		/obj/structure/outcrop/uranium = 3,
-		/obj/random/outcrop = 5
-	)
-	semirandom = FALSE
-	semirandom_groups = 1
-	semirandom_group_min = 1
-	semirandom_group_max = 3
-	valid_mobs = list(
-		list(
-			/mob/living/simple_mob/animal/space/carp/event = 100,
-			/mob/living/simple_mob/animal/space/carp/large = 25,
-			/mob/living/simple_mob/animal/space/carp/large/huge = 5,
-			/mob/living/simple_mob/vore/alienanimals/space_jellyfish = 100
-			)
-		)
-	mob_chance = 5
-	treasure_chance = 33
-	treasuremax = 5
-	spawnstuff = TRUE
-	ghostjoin = FALSE
-
-/area/redgate/stardog/flesh_abyss/l_int
-	floracountmax = 5
-	valid_flora = list(
-		/obj/structure/outcrop/diamond = 3,
-		/obj/structure/outcrop/gold = 3,
-		/obj/structure/outcrop/iron = 5,
-		/obj/structure/outcrop/phoron = 1,
-		/obj/structure/outcrop/platinum = 5,
-		/obj/structure/outcrop/silver = 8,
-		/obj/structure/outcrop/uranium = 3,
-		/obj/random/outcrop = 1
-	)
-	semirandom = FALSE
-	semirandom_groups = 1
-	semirandom_group_min = 1
-	semirandom_group_max = 1
-	valid_mobs = list(
-		list(
-			/mob/living/simple_mob/animal/space/carp/event = 100,
-			/mob/living/simple_mob/animal/space/carp/large = 25,
-			/mob/living/simple_mob/animal/space/carp/large/huge = 5,
-			/mob/living/simple_mob/vore/alienanimals/space_jellyfish = 100
-			)
-		)
-	mob_chance = 5
-	treasure_chance = 50
-	treasuremax = 5
-	spawnstuff = TRUE
-	ghostjoin = FALSE
-
-/area/redgate/stardog/flesh_abyss/node
-	enter_message = span_notice("Radical energy hangs as a haze in the air. It's much less hot here than other places within the dog, but the air is thick with alien whispers and desires that you can hardly comprehend.")
-	icon_state = "yelwhisqu"
-	requires_power = 0
-	spawnstuff = FALSE
 
 /area/redgate/stardog/flesh_abyss/play_ambience(mob/living/L, initial = TRUE)
 	if(!L.check_sound_preference(/datum/preference/toggle/digestion_noises))
 		return
 	..()
 
-/area/redgate/stardog/lounge
-	name = "redgate lounge"
-	icon_state = "redwhisqu"
-	requires_power = 0
-	ambience = list(
-		'sound/ambience/star_dog/dougcockpit.ogg',
-		'sound/ambience/otherworldly/otherworldly1.ogg',
-		'sound/ambience/otherworldly/otherworldly2.ogg',
-		'sound/ambience/otherworldly/otherworldly3.ogg',
-		'sound/ambience/boy.ogg',
-		'sound/ambience/expoutpost/expoutpost1.ogg',
-		'sound/ambience/expoutpost/expoutpost2.ogg',
-		'sound/ambience/expoutpost/expoutpost3.ogg',
-		'sound/ambience/expoutpost/expoutpost4.ogg',
-		'sound/ambience/tech_ruins/tech_ruins1.ogg',
-		'sound/ambience/tech_ruins/tech_ruins2.ogg',
-		'sound/ambience/tech_ruins/tech_ruins3.ogg',
-		'sound/ambience/signal.ogg'
-		)
-
-/area/redgate/stardog/outside
-	name = "star dog"
-	icon_state = "redblacir"
-	semirandom = TRUE
-	ghostjoin = TRUE
-	ambience = list(
-		'sound/ambience/star_dog/dark-cold-main-menu-loop-mild-mountain-sickness-marb7e.ogg',
-		'sound/ambience/star_dog/ominous-ambience.ogg',
-		'sound/ambience/star_dog/long_awoo.ogg',
-		'sound/ambience/star_dog/woof.ogg',
-		'sound/ambience/star_dog/woof2.ogg'
-		)
-	sound_env = SOUND_ENVIRONMENT_DIZZY
-
-	valid_mobs = list(	//Dog map spawns the dogs. It's not hard to understand!
-		list(
-			/mob/living/simple_mob/vore/woof
-			) = 100,
-		list(
-			/mob/living/simple_mob/vore/wolf,
-			/mob/living/simple_mob/vore/wolf/direwolf,
-			/mob/living/simple_mob/vore/greatwolf
-			) = 50,
-		list(
-			/mob/living/simple_mob/vore/otie,
-			/mob/living/simple_mob/vore/otie/friendly/chubby,
-			/mob/living/simple_mob/vore/otie/red,
-			/mob/living/simple_mob/vore/otie/red/chubby
-		) = 50,
-		list(
-			/mob/living/simple_mob/animal/passive/dog/corgi,
-			/mob/living/simple_mob/animal/passive/dog/brittany,
-			/mob/living/simple_mob/animal/passive/dog/bullterrier,
-			/mob/living/simple_mob/animal/passive/dog/tamaskan
-		) = 1,
-		list(
-			/mob/living/simple_mob/animal/space/carp = 100,
-			/mob/living/simple_mob/animal/space/carp/large = 25,
-			/mob/living/simple_mob/animal/space/carp/large/huge = 10,
-			/mob/living/simple_mob/animal/space/bats = 5,
-			/mob/living/simple_mob/animal/space/bear = 5,
-			/mob/living/simple_mob/animal/space/gnat = 5,
-			/mob/living/simple_mob/animal/space/ray = 5,
-			/mob/living/simple_mob/animal/space/shark = 5
-		),
-		list(	//The succlets can come too I guess lol
-			/mob/living/simple_mob/vore/alienanimals/succlet = 50,
-			/mob/living/simple_mob/vore/alienanimals/succlet/dark = 50,
-			/mob/living/simple_mob/vore/alienanimals/succlet/moss = 50,
-			/mob/living/simple_mob/vore/alienanimals/succlet/poison = 10,
-			/mob/living/simple_mob/vore/alienanimals/succlet/big = 10,
-			/mob/living/simple_mob/vore/alienanimals/succlet/king = 1
-		) = 10
-		)
-	semirandom_groups = 5
-	semirandom_group_min = 1
-	semirandom_group_max = 10
-	mob_intent = "retaliate"
 
 /obj/structure/control_pod	//god someone is going to try to fuck with this, everyone is going to be angry, I'm so sorry
 	name = "node"
@@ -1084,20 +866,6 @@
 	var/area/a = get_area(src)
 	name = a.name
 
-/obj/effect/landmark/area_gatherer
-	name = "stardog area gatherer"
-
-/obj/effect/landmark/area_gatherer/Initialize(mapload)
-	. = ..()
-	return INITIALIZE_HINT_LATELOAD
-
-/obj/effect/landmark/area_gatherer/LateInitialize()	//I am very afraid
-	var/obj/effect/overmap/visitable/ship/simplemob/stardog/s = get_overmap_sector(z)
-	if(istype(s))
-		var/mob/living/simple_mob/vore/overmap/stardog/dog = s.parent
-		if(istype(dog))
-			dog.weather_areas |= get_area(src)
-	qdel(src)
 
 /obj/machinery/computer/ship/navigation/telescreen/dog_eye
 	name = "visual nexus"
@@ -1543,56 +1311,13 @@
 				linked_mob.adjust_nutrition(how_much)
 			qdel(L) //gloop
 			return
-		L.adjustFireLoss(damage)
+		L.injure(INJURY_DIGESTION, damage, source = src)
 		if(linked_mob)
 			var/how_much = (damage * L.size_multiplier) * L.get_digestion_nutrition_modifier() * linked_mob.get_digestion_efficiency_modifier()
 			if(!L.ckey)
 				how_much = how_much / 10	//Braindead mobs are worth less
 			linked_mob.adjust_nutrition(how_much)
 
-/turf/simulated/floor/flesh/mover
-	icon_state = "flesh_floor_mover"
-	var/movechance = 5
-	var/we_process = FALSE
-	var/move_dir = 2
-
-/turf/simulated/floor/flesh/mover/Initialize(mapload)
-	. = ..()
-	move_dir = dir
-	dir = SOUTH
-
-/turf/simulated/floor/flesh/mover/Entered(atom/movable/AM)
-	if(!we_process)
-		START_PROCESSING(SSturfs, src)
-
-/turf/simulated/floor/flesh/mover/hitby(atom/movable/source, datum/thrownthing/throwingdatum)
-	if(!we_process)
-		START_PROCESSING(SSturfs, src)
-
-/turf/simulated/floor/flesh/mover/process()	//Mostly stolen from conveyor2.dm
-	if(movechance <= 0)
-		we_process = FALSE
-		return PROCESS_KILL
-	we_process = TRUE
-	if(!prob(movechance))	//Let's kind of control the speed that this happens at
-		return
-	var/items_moved = 0
-	for(var/atom/movable/A in contents)
-		if(A.anchored)
-			continue
-		if(!isitem(A) && !isliving(A))
-			continue
-		if(A.loc != src) //Don't move things that aren't here
-			continue
-		step(A,move_dir)
-		items_moved++
-
-		if(items_moved >= 10)
-			break
-
-	if(!items_moved)	//If we didn't move anything let's shut it down
-		we_process = FALSE
-		return PROCESS_KILL
 
 /obj/structure/auto_flesh_door	//It's like a simple door, but it opens and closes automatically now and then!
 	name = "flesh valve"

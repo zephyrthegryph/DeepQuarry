@@ -458,7 +458,7 @@
 		to_chat(src, span_warning("You can't do that in your condition."))
 		return
 
-	if(M.health <= 10)	//We can let it undo the TF, because the person will be dead, but otherwise things get weird.
+	if(M.vitality() <= 0.1)	//We can let it undo the TF, because the person will be dead, but otherwise things get weird.
 		to_chat(src, span_warning("You are too injured to transform into a beast."))
 		return
 
@@ -616,7 +616,7 @@
 		to_chat(src, span_warning("You can't do that in your condition."))
 		return
 
-	if(M.health <= 10)	//We can let it undo the TF, because the person will be dead, but otherwise things get weird.
+	if(M.vitality() <= 0.1)	//We can let it undo the TF, because the person will be dead, but otherwise things get weird.
 		to_chat(src, span_warning("You are too injured to transform into a beast."))
 		return
 

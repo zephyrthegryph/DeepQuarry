@@ -73,7 +73,7 @@
 		data["AI_present"] = TRUE
 		data["name"] = occupier.name
 		data["restoring"] = restoring
-		data["health"] = (occupier.health + 100) / 2
+		data["health"] = occupier.hardware_integrity()
 		data["isDead"] = occupier.stat == DEAD
 		var/list/laws = list()
 		for(var/datum/ai_law/law in occupier.laws.all_laws())
@@ -93,7 +93,7 @@
 
 	switch(action)
 		if("PRG_beginReconstruction")
-			if(occupier?.health < 100)
+			if(occupier && (occupier.vitality() < 1 || occupier.backup_capacitor() < 100))
 				to_chat(ui.user, span_notice("Reconstruction in progress. This will take several minutes."))
 				playsound(src, 'sound/machines/terminal_prompt_confirm.ogg', 25, FALSE)
 				restoring = TRUE
@@ -105,13 +105,15 @@
 
 /obj/machinery/computer/aifixer/proc/Fix()
 	use_power(active_power_usage)
-	occupier.adjustOxyLoss(-5, 0, FALSE)
-	occupier.adjustFireLoss(-5, 0, FALSE)
-	occupier.adjustBruteLoss(-5, 0)
-	if(occupier.health >= 0 && occupier.stat == DEAD)
+	occupier.adjust_backup_charge(5)
+	occupier.mend(TREAT_SYSTEM_RESTORE, 5)
+	occupier.mend(TREAT_WIRING_REPAIR, 5)
+	occupier.mend(TREAT_PLATING_REPAIR, 5)
+	// Old threshold: hardware integrity back above 50%.
+	if(occupier.vitality() >= 0.5 && occupier.stat == DEAD)
 		occupier.revive()
 
-	return occupier.health < 100
+	return occupier.vitality() < 1 || occupier.backup_capacitor() < 100
 
 /obj/machinery/computer/aifixer/process()
 	if(!restoring || !occupier)

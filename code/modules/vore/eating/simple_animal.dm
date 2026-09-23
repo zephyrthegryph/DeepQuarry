@@ -102,7 +102,7 @@
 					LAZYSET(prey_excludes, L, world.time)
 					addtimer(CALLBACK(src, PROC_REF(removeMobFromPreyExcludes), WEAKREF(L)), 5 MINUTES)
 	else if(istype(O, /obj/item/healthanalyzer))
-		var/healthpercent = health/maxHealth*100
+		var/healthpercent = round(vitality() * 100)
 		to_chat(user, span_notice("[src] seems to be [healthpercent]% healthy."))
 	else
 		..()
@@ -120,34 +120,18 @@
 	if(nutrition < 10)
 		to_chat(src, span_warning("You are too hungry to regenerate health."))
 		return
-	var/heal_amount = tgui_input_number(src, "Input the amount of health to regenerate at the rate of 10 nutrition per second per hitpoint. Current health: [health] / [maxHealth]", "Regenerate health.", 1, min_value=1)
+	var/endurance_now = get_endurance()
+	var/heal_amount = tgui_input_number(src, "Input the amount of health to regenerate at the rate of 10 nutrition per second per hitpoint. Current health: [round(vitality() * endurance_now)] / [endurance_now]", "Regenerate health.", 1, min_value=1)
 	if(!heal_amount)
 		return
-	heal_amount = CLAMP(heal_amount, 1, maxHealth - health)
+	var/missing = round((1 - vitality()) * get_endurance()) // re-read after the input prompt
+	heal_amount = CLAMP(heal_amount, 1, max(1, missing))
 	heal_amount = CLAMP(heal_amount, 1, nutrition / 10)
 	if(do_after (src, 10 * heal_amount))
 		nutrition -= 10 * heal_amount
-		if(heal_amount < getBruteLoss())
-			adjustBruteLoss(-heal_amount)
-			return
-		heal_amount = heal_amount - getBruteLoss()
-		adjustBruteLoss(-getBruteLoss())
-		if(heal_amount < getFireLoss())
-			adjustFireLoss(-heal_amount)
-			return
-		heal_amount = heal_amount - getFireLoss()
-		adjustFireLoss(-getFireLoss())
-		if(heal_amount < getOxyLoss())
-			adjustOxyLoss(-heal_amount)
-			return
-		heal_amount = heal_amount - getOxyLoss()
-		adjustOxyLoss(-getOxyLoss())
-		if(heal_amount < getToxLoss())
-			adjustToxLoss(-heal_amount)
-			return
-		heal_amount = heal_amount - getToxLoss()
-		adjustToxLoss(-getToxLoss())
-		if(heal_amount < getCloneLoss())
-			adjustCloneLoss(-heal_amount)
-			return
-		adjustCloneLoss(-getCloneLoss())
+		// Spend the budget mechanism by mechanism, in the old brute > burn > oxy > tox > clone order.
+		// Plating/wiring cover synthetic bodies; the body ignores tags that don't match its biology.
+		for(var/treat_tag in list(TREAT_TISSUE_REPAIR, TREAT_PLATING_REPAIR, TREAT_BURN_CARE, TREAT_WIRING_REPAIR, TREAT_OXYGENATION, TREAT_ANTITOXIN, TREAT_GENETIC_REPAIR))
+			if(heal_amount <= 0)
+				break
+			heal_amount -= mend(treat_tag, heal_amount)

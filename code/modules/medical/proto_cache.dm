@@ -1,8 +1,8 @@
 // Shared proto cache.
 //
 // The book builder, audit tests, and surgery registry all need to read
-// instance vars off every subtype of /datum/medical_issue/condition,
-// /datum/medical_symptom, and /datum/dq_surgery — `name`, `cured_by`,
+// instance vars off every subtype of /datum/affliction,
+// /datum/affliction_symptom, and /datum/dq_surgery — `name`, `cured_by`,
 // `audiences`, etc. DM's `initial()` only reads scalars off compile-time
 // defaults and can't see list literals from outside the type, so the
 // idiom historically has been `var/proto = new T(); ...; qdel(proto)`.

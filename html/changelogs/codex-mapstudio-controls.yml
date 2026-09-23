@@ -1,0 +1,16 @@
+author: "codex"
+delete-after: true
+changes:
+  - qol: "Improved Map Studio selection, layer controls, camera movement, and tile editing."
+  - bugfix: "Rendered mapped pipe and cable colors, offsets, and proposed atom changes."
+  - bugfix: "Removed zoom flicker and square route markers from Map Studio."
+  - qol: "Added a persistent tool palette, tile atom picker, S-key picking, and automatic network joining."
+  - qol: "Made layer selection temporarily reveal hidden layers and added sprite-aware picking and a selection details panel."
+  - bugfix: "Kept consecutive cable strokes together in a single map preview and reduced network preview delay."
+  - qol: "Added shared network blueprints and selection outlines that follow sprite bounds."
+  - qol: "Select connected map networks and extend them directly from the selected network."
+  - bugfix: "Removed the selection flash and previewed updated network endpoints while drawing."
+  - bugfix: "Joined new cable branches to existing powernets using shared cable directions."
+  - qol: "Reworked layer editing and visibility controls and softened network selection and placement previews."
+  - bugfix: "Made leftward cable extensions connect through the correct existing port."
+  - qol: "Added nearest-sprite click tolerance and agent tools for rooms, fills, networks, and placement."

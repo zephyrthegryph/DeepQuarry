@@ -16,8 +16,7 @@
 	icon = 'icons/mob/vore.dmi'
 
 	faction = FACTION_DOG
-	maxHealth = 600
-	health = 600
+	endurance = 600
 	movement_cooldown = -1
 
 	response_help = "pets"
@@ -238,8 +237,7 @@
 GLOBAL_VAR_INIT(woof_maximum, 0)
 GLOBAL_VAR_INIT(woof_current, 0)
 /mob/living/simple_mob/vore/woof/hostile/aweful
-	maxHealth = 100
-	health = 100
+	endurance = 100
 	var/static/killswitch = FALSE
 
 /mob/living/simple_mob/vore/woof/hostile/aweful/Initialize(mapload)

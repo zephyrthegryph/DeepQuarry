@@ -64,6 +64,22 @@
 	name = "stack of osmium"
 	type_to_spawn = /obj/item/stack/material/osmium
 
+/obj/fiftyspawner/nickel
+	name = "stack of nickel"
+	type_to_spawn = /obj/item/stack/material/nickel
+
+/obj/fiftyspawner/chromium
+	name = "stack of chromium"
+	type_to_spawn = /obj/item/stack/material/chromium
+
+/obj/fiftyspawner/tungsten
+	name = "stack of tungsten"
+	type_to_spawn = /obj/item/stack/material/tungsten
+
+/obj/fiftyspawner/technical_ceramic
+	name = "stack of technical ceramic"
+	type_to_spawn = /obj/item/stack/material/technical_ceramic
+
 /obj/fiftyspawner/steel
 	name = "stack of steel"
 	type_to_spawn = /obj/item/stack/material/steel

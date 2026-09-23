@@ -239,7 +239,6 @@
 		slaser = new slaser(src)
 	update_icon()
 
-
 /obj/item/medigun_backpack/Destroy()
 	STOP_PROCESSING(SSobj, src)
 	QDEL_NULL(bcell)
@@ -275,11 +274,6 @@
 			return
 		src.add_fingerprint(usr)
 		M.put_in_any_hand_if_possible(src)
-		/*icon_state = "mg-backpack"
-		item_state = "mg-backpack-onmob"
-		update_icon() //success
-		usr.update_inv_back()*/
-
 
 /obj/item/medigun_backpack/attackby(obj/item/W, mob/user, params)
 	if(refill_reagent(W, user))
@@ -452,7 +446,6 @@
 
 	return ..()
 
-
 /obj/item/medigun_backpack/proc/refill_reagent(obj/item/container, mob/user)
 	. = FALSE
 	if(!maintenance && (istype(container, /obj/item/reagent_containers/glass/beaker) || istype(container, /obj/item/reagent_containers/glass/bottle)))
@@ -487,13 +480,6 @@
 						name = "burnheal"
 						modifier = 8
 						totransfer = chemcap - burnvol
-					/*if("tricordrazine")
-						name = "tricordrazine"
-						modifier = 1
-						if((brutevol != chemcap) && (burnvol != chemcap) && (toxvol != chemcap))
-							totransfer = 1  //tempcheck to get past the totransfer check
-						else
-							totransfer = 0*/
 				if(totransfer <= 0)
 					to_chat(user, span_notice("The [src] cannot accept anymore [name]!"))
 				totransfer = min(totransfer, container.reagents.get_reagent_amount(R.id) * modifier)
@@ -507,40 +493,6 @@
 						burnvol += totransfer
 					if(REAGENT_ID_DERMALINE)
 						burnvol += totransfer
-					/*if("tricordrazine") //Tricord too problematic
-						var/maxamount = container.reagents.get_reagent_amount(R.id)
-						var/amountused
-						var/oldbrute = brutevol
-						var/oldburn = burnvol
-						var/oldtox = toxvol
-
-						while(maxamount > 0)
-							if(brutevol >= chemcap && burnvol >= chemcap && toxvol >= chemcap)
-								break
-							maxamount --
-							amountused++
-							totransfer ++
-							if(brutevol < chemcap)
-								brutevol ++
-							if(burnvol < chemcap)
-								burnvol ++
-							if(toxvol < chemcap)
-								toxvol ++
-						var/readout = "You add [amountused] units of [R.name] to the [src]. \n The [src] Stores "
-						var/readoutadditions = FALSE
-						if(oldbrute != brutevol)
-							readout += "[round(brutevol - oldbrute)] U of bruteheal vol"
-							readoutadditions = TRUE
-						if(oldburn != burnvol)
-							if(readoutadditions)
-								readout += ", "
-							readout += "[round(burnvol - oldburn)] U of burnheal vol"
-							readoutadditions = TRUE
-						if(oldtox != toxvol)
-							if(readoutadditions)
-								readout += ", "
-							readout += "[round(toxvol - oldtox)] U of toxheal vol"
-						if(oldbrute != brutevol || oldburn != burnvol || oldtox != toxvol)to_chat(user, span_notice("[readout]."))*/
 				if(totransfer > 0)
 					if(R.id != "tricordrazine")
 						to_chat(user, span_notice("You add [totransfer / modifier] units of [R.name] to the [src]. \n The [src] stores [round(totransfer)] U of [name]."))

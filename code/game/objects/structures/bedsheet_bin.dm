@@ -287,7 +287,6 @@ LINEN BINS
 	add_fingerprint(user)
 
 
-// === merged from bedsheet_bin_vr.dm during hard-fork de-suffix (verified no override-order change) ===
 /obj/item/bedsheet/cosmos
 	icon = 'icons/obj/items.dmi'
 	icon_state = "sheetcosmos"

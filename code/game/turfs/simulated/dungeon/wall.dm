@@ -1,19 +1,5 @@
 // Special wall type for Point of Interests.
 
-/turf/simulated/wall/dungeon
-	block_tele = TRUE // Anti-cheese.
-
-/turf/simulated/wall/dungeon/Initialize(mapload)
-	. = ..(mapload, MAT_ALIEN_DUNGEON)
-
-/turf/simulated/wall/dungeon/attackby()
-	return
-
-/turf/simulated/wall/dungeon/ex_act()
-	return
-
-/turf/simulated/wall/dungeon/take_damage()	//These things are suppose to be unbreakable
-	return
 
 /turf/simulated/wall/update_icon()
 	if(!material)

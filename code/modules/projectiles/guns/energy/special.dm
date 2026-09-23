@@ -343,7 +343,6 @@
 		to_chat(user, span_notice("\The [src] is already powering up!"))
 
 
-// === merged from special_vr.dm during hard-fork de-suffix (verified no override-order change) ===
 /obj/item/gun/energy/ionrifle/pistol
 	projectile_type = /obj/item/projectile/ion/pistol // still packs a punch but no AoE
 	w_class = ITEMSIZE_NORMAL //.
@@ -448,7 +447,6 @@
 	..()
 
 
-// === merged from special_chomp.dm during hard-fork de-suffix (verified no override-order change) ===
 /obj/item/gun/energy/medigun/mounted
 	name = "mounted directed restoration system"
 	self_recharge = 1
@@ -504,7 +502,6 @@
 
 /datum/modifier/rednet
 	mob_overlay_state = "red_electricity_constant"
-	slowdown = 1
 
 /obj/item/projectile/bullet/magnetic/supercannon
 	name = "railcannon slug"

@@ -121,6 +121,14 @@ Class Procs:
 	var/list/material_component_manifest
 	/// Whole-machine EMP rejection supplied by insulating component materials.
 	var/material_emp_resistance = 0
+	/// Monotonic diagnostic counter for exact dependency-wake assertions.
+	var/gas_dependency_wake_count = 0
+	/// Slot in SSmachines.processing_machines while DF_ISPROCESSING is set; lets
+	/// hibernation swap-remove in O(1).
+	var/tmp/machine_processing_index = 0
+	/// SSmachines pass that last handled this machine. A machine started during a
+	/// pass is stamped with that pass so it waits for the next one.
+	var/tmp/machine_processing_pass = 0
 
 	var/speed_process = FALSE			//If false, SSmachines. If true, SSfastprocess.
 
@@ -330,10 +338,10 @@ Class Procs:
 		return 1
 	if(ishuman(user))
 		var/mob/living/carbon/human/H = user
-		if(H.getBrainLoss() >= 55)
+		if(H.injury_load(INJURY_CATEGORY_NEURAL) >= 55)
 			visible_message(span_warning("[H] stares cluelessly at [src]."))
 			return 1
-		else if(prob(H.getBrainLoss()))
+		else if(prob(H.injury_load(INJURY_CATEGORY_NEURAL)))
 			to_chat(user, span_warning("You momentarily forget how to use [src]."))
 			return 1
 

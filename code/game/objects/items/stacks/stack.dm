@@ -519,7 +519,6 @@
 	src.recipes = recipes
 
 
-// === merged from stack_vr.dm during hard-fork de-suffix (verified no override-order change) ===
 // Porting stack dragging/auto stacking from TG.
 
 /obj/item/stack/proc/merge(obj/item/stack/S) //Merge src into S, as much as possible

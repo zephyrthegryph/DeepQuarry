@@ -1,14 +1,14 @@
 // DQ Medical Reference — Symptoms tab builder.
 //
 // Builds an index from condition prototypes back to the symptoms they
-// can present, then walks every /datum/medical_symptom subtype and
+// can present, then walks every /datum/affliction_symptom subtype and
 // emits one entry per symptom with audiences, scanner phrase, patient
 // messages, public emotes, and the conditions it appears in.
 
 /obj/item/book/dq_medical_reference/proc/_dq_book_symptoms()
 	var/list/condition_index = list()
-	for(var/CT in subtypesof(/datum/medical_issue/condition))
-		var/datum/medical_issue/condition/cproto = dq_proto(CT)
+	for(var/CT in dq_catalogued_affliction_types())
+		var/datum/affliction/cproto = dq_proto(CT)
 		// Track which (condition, symptom) pairs we've already indexed
 		// so a symptom shared across multiple stages of the same
 		// condition shows up once with its strongest frequency, not
@@ -47,8 +47,8 @@
 			))
 
 	var/list/out = list()
-	for(var/T in subtypesof(/datum/medical_symptom))
-		var/datum/medical_symptom/proto = dq_proto(T)
+	for(var/T in subtypesof(/datum/affliction_symptom))
+		var/datum/affliction_symptom/proto = dq_proto(T)
 		var/list/entry = list()
 		entry["id"]          = "[T]"
 		entry["name"]        = proto.name

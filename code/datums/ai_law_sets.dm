@@ -293,7 +293,6 @@
 	..()
 
 
-// === merged from ai_law_sets_vr.dm during hard-fork de-suffix (verified no override-order change) ===
 /******************** Predator ********************/
 // Vore-aimed edition of TYRANT
 /datum/ai_laws/predator

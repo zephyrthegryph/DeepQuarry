@@ -43,7 +43,6 @@
 /datum/component/infective/RegisterWithParent()
 	if(is_weak && isitem(parent))
 		RegisterSignal(parent, COMSIG_FOOD_EATEN, PROC_REF(try_infect_eat))
-		RegisterSignal(parent, COMSIG_PILL_CONSUMED, PROC_REF(try_infect_eat))
 		return
 	var/static/list/disease_connections = list(
 		COMSIG_ATOM_ENTERED = PROC_REF(try_infect_crossed),
@@ -53,46 +52,27 @@
 	RegisterSignal(parent, COMSIG_COMPONENT_CLEAN_ACT, PROC_REF(clean))
 	RegisterSignal(parent, COMSIG_MOVABLE_BUCKLE, PROC_REF(try_infect_buckle))
 	RegisterSignal(parent, COMSIG_MOVABLE_BUMP, PROC_REF(try_infect_collide))
-	RegisterSignal(parent, COMSIG_MOVABLE_IMPACT_ZONE, PROC_REF(try_infect_impact_zone))
 	RegisterSignal(parent, COMSIG_ATOM_EXTRAPOLATOR_ACT, PROC_REF(extrapolation))
 
 	if(isitem(parent))
 		RegisterSignal(parent, COMSIG_ITEM_ATTACK, PROC_REF(try_infect_attack))
-	if(isitem(parent))
-		RegisterSignal(parent, COMSIG_ITEM_ATTACK_ZONE, PROC_REF(try_infect_attack_zone))
-		RegisterSignal(parent, COMSIG_ITEM_ATTACK, PROC_REF(try_infect_attack))
 		RegisterSignal(parent, COMSIG_ITEM_EQUIPPED, PROC_REF(try_infect_equipped))
 		RegisterSignal(parent, COMSIG_FOOD_EATEN, PROC_REF(try_infect_eat))
-		RegisterSignal(parent, COMSIG_PILL_CONSUMED, PROC_REF(try_infect_eat))
 		if(istype(parent, /obj/item/reagent_containers/glass))
 			RegisterSignal(parent, COMSIG_GLASS_DRANK, PROC_REF(try_infect_drink))
-		if(isorgan(parent))
-			RegisterSignal(parent, COMSIG_ORGAN_IMPLANTED, PROC_REF(on_organ_insertion))
 
 /datum/component/infective/UnregisterFromParent()
 	. = ..()
 	UnregisterSignal(parent, list(
 		COMSIG_FOOD_EATEN,
-		COMSIG_PILL_CONSUMED,
 		COMSIG_COMPONENT_CLEAN_ACT,
 		COMSIG_MOVABLE_BUMP,
-		COMSIG_MOVABLE_IMPACT_ZONE,
-		COMSIG_ITEM_ATTACK_ZONE,
 		COMSIG_ITEM_ATTACK,
 		COMSIG_ITEM_EQUIPPED,
 		COMSIG_GLASS_DRANK,
-		COMSIG_ORGAN_IMPLANTED,
 		COMSIG_ATOM_EXTRAPOLATOR_ACT
 	))
 	qdel(GetComponent(/datum/component/connect_loc_behalf))
-
-/datum/component/infective/proc/on_organ_insertion(obj/item/organ/target, mob/living/carbon/receiver)
-	SIGNAL_HANDLER
-
-	for(var/datum/disease/disease in diseases)
-		receiver.ForceContractDisease(disease)
-
-	qdel(src) // once organ is implanted delete the infective component
 
 /datum/component/infective/proc/try_infect_eat(datum/source, mob/living/eater, mob/living/feeder)
 	SIGNAL_HANDLER
@@ -154,22 +134,8 @@
 /datum/component/infective/proc/try_infect_collide(datum/source, atom/A)
 	SIGNAL_HANDLER
 
-	var/atom/movable/P = parent
-	if(P.throwing)
-		//this will be handled by try_infect_impact_zone()
-		return
 	if(isliving(A))
 		try_infect(A)
-
-/datum/component/infective/proc/try_infect_impact_zone(datum/source, mob/living/target, hit_zone)
-	SIGNAL_HANDLER
-
-	try_infect(target, hit_zone)
-
-/datum/component/infective/proc/try_infect_attack_zone(obj/item/source, mob/living/carbon/target, mob/living/user, hit_zone)
-	SIGNAL_HANDLER
-
-	try_infect(target, hit_zone)
 
 /datum/component/infective/proc/try_infect_attack(obj/item/source, mob/living/target, mob/living/user)
 	SIGNAL_HANDLER

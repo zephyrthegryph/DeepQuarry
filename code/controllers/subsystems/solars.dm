@@ -76,6 +76,7 @@ SUBSYSTEM_DEF(solars)
 
 		// Update the controller
 		SC.connected_power = panel_sum[conkey]
+		SC.add_avail(SC.connected_power)
 		SC.update_icon()
 		controller_run.len--
 

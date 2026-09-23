@@ -51,8 +51,8 @@
 	user.visible_message(span_danger("[user]'s hand slips, and the mesh falls, with \the [tool] scraping [target]'s body."), \
 	span_danger("Your hand slips, and the mesh falls, with \the [tool] scraping [target]'s body."))
 	user.balloon_alert_visible("slips, the mesh falls and scrapes [target]'s body", "your hand slips, the mesh falls and scrapes the body")
-	affected.createwound(CUT, 15)
-	affected.createwound(BRUISE, 10)
+	target.injure(INJURY_CUT, 15, affected.organ_tag, tool, flags = INJURE_IGNORE_RESISTANCE)
+	target.injure(INJURY_BLUNT, 10, affected.organ_tag, tool, flags = INJURE_IGNORE_RESISTANCE)
 	..()
 
 /datum/surgery_step/dehusk/relocateflesh
@@ -87,8 +87,8 @@
 	span_danger("You accidentally rip a massive chunk out of [target]'s flesh with \the [tool], causing massive damage."))
 	user.balloon_alert_visible("accidentally rips a massive chunk out of [target]'s flesh, causing massive damage",
 	"you accidentally rip a massive chunk out of the flesh, causing massive damage")
-	affected.createwound(CUT, 25)
-	affected.createwound(BRUISE, 10)
+	target.injure(INJURY_CUT, 25, affected.organ_tag, tool, flags = INJURE_IGNORE_RESISTANCE)
+	target.injure(INJURY_BLUNT, 10, affected.organ_tag, tool, flags = INJURE_IGNORE_RESISTANCE)
 	..()
 
 /datum/surgery_step/dehusk/structfinish
@@ -136,6 +136,6 @@
 	span_danger("You fail to finish the structure over the gaps in [target]'s flesh, doing more damage than good."))
 		user.balloon_alert_visible("fails to finish the structure in [target]'s flesh, doing more damage", "you fail to finish the structur, doing more damage")
 
-	affected.createwound(CUT, 15)
-	affected.createwound(BRUISE, 10)
+	target.injure(INJURY_CUT, 15, affected.organ_tag, tool, flags = INJURE_IGNORE_RESISTANCE)
+	target.injure(INJURY_BLUNT, 10, affected.organ_tag, tool, flags = INJURE_IGNORE_RESISTANCE)
 	..()

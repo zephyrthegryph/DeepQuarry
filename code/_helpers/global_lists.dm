@@ -1363,7 +1363,6 @@ GLOBAL_LIST_INIT(possible_ghost_sprites, list(
 
 GLOBAL_LIST_EMPTY(sparring_attack_cache)
 
-GLOBAL_LIST_EMPTY(protean_abilities)
 
 //PAI stuff
 GLOBAL_LIST_INIT(possible_say_verbs, list(
@@ -1668,7 +1667,6 @@ GLOBAL_LIST(chamelion_accessory_choices)
 #define SPECIES_ALL_CAN_WEAR list(SPECIES_HUMAN, SPECIES_SKRELL, SPECIES_RAPALA, SPECIES_VASILISSAN, SPECIES_ALRAUNE, SPECIES_PROMETHEAN, SPECIES_UNATHI, SPECIES_XENOHYBRID, SPECIES_TAJARAN, SPECIES_XENOCHIMERA, SPECIES_VULPKANIN, SPECIES_ZORREN_HIGH, SPECIES_FENNEC, SPECIES_SERGAL, SPECIES_NEVREAN, SPECIES_TESHARI, SPECIES_VOX, SPECIES_SHADEKIN)
 
 
-// === merged from global_lists_vr.dm during hard-fork de-suffix (manually verified: new global procs/lists, no base symbol collision) ===
 /**
  * VOREStation global lists
 */
@@ -1689,8 +1687,7 @@ GLOBAL_LIST_EMPTY(latejoin_plainspath) //NYI - Used downstream
 GLOBAL_LIST_EMPTY(latejoin_fueldepot) //NYI - Used downstream
 GLOBAL_LIST_EMPTY(latejoin_tyrvillage) //NYI - Used downstream
 GLOBAL_LIST_EMPTY(latejoin_thedark) //NYI - Used downstream
-//Global vars for making the overmap_renamer subsystem.
-//Collects all instances by reference of visitable overmap objects of /obj/effect/overmap/visitable like the debris field.
+// Every visitable overmap object; Flight Operations uses it to list destinations.
 GLOBAL_LIST_EMPTY(visitable_overmap_object_instances)
 
 GLOBAL_LIST_INIT(sensorpreflist, list("Off", "Binary", "Vitals", "Tracking", "No Preference"))
@@ -3080,13 +3077,3 @@ GLOBAL_LIST_INIT(bradycardics, list(
 									REAGENT_ID_AMBROSIAEXTRACT
 									))
 
-///Medications that stop your heart
-GLOBAL_LIST_INIT(heartstopper, list(
-									REAGENT_ID_POTASSIUMCHLOROPHORIDE,
-									REAGENT_ID_ZOMBIEPOWDER
-									))
-
-///Medications that stop your heart under certain conditions.
-GLOBAL_LIST_INIT(cheartstopper, list(
-									REAGENT_ID_POTASSIUMCHLORIDE
-									))

@@ -161,9 +161,9 @@
 	H.visible_message(span_danger("\The [src] flashes as it scorches [H]'s hand!"))
 
 	if(H.hand)
-		H.apply_damage(7, BURN, "l_hand", used_weapon="Blitz Rod")
+		H.injure(INJURY_BURN, 7, BP_L_HAND, src)
 	else
-		H.apply_damage(7, BURN, "r_hand", used_weapon="Blitz Rod")
+		H.injure(INJURY_BURN, 7, BP_R_HAND, src)
 	H.drop_from_inventory(src, get_turf(H))
 	return
 

@@ -47,12 +47,11 @@
 			if(istype(H.internal,/obj/item/tank) && H.internals)
 				H.internals.icon_state = "internal1"
 
-	//Apply damage
+	//Apply damage: the sleeve is grown out of genetic damage in the pod.
 	set_occupant(H)
-	H.adjustCloneLoss(H.getMaxHealth() * 0.75)
+	H.body.afflict(/datum/affliction/genetic_damage, null, DQ_SLEEVE_GROWTH_LOAD)
 	H.Paralyse(4)
 	H.Sleeping(4)
-	H.updatehealth()
 
 	//Machine specific stuff at the end
 	update_icon()
@@ -74,25 +73,25 @@
 			connected_message("Clone Rejected: Deceased.")
 			return
 
-		else if(occupant.health < heal_level && occupant.getCloneLoss() > 0)
+		else if(clone_growth_load(occupant) > clone_release_load())
 
 			//Slowly get that clone healed and finished.
-			occupant.adjustCloneLoss(-2 * heal_rate)
+			occupant.mend(TREAT_GENETIC_REPAIR, (2 * heal_rate) / DQ_CLONE_GROWTH_SCALE)
 
 			//Premature clones may have brain damage.
-			occupant.adjustBrainLoss(-(CEILING((0.5*heal_rate), 1)))
+			occupant.mend(TREAT_NEURAL_REPAIR, CEILING((0.5*heal_rate), 1))
 
 			//So clones don't die of oxyloss in a running pod.
 			if(occupant.reagents.get_reagent_amount(REAGENT_ID_INAPROVALINE) < 30)
 				occupant.reagents.add_reagent(REAGENT_ID_INAPROVALINE, 60)
 
-			//Also heal some oxyloss ourselves because inaprovaline is so bad at preventing it!!
-			occupant.adjustOxyLoss(-4)
+			//Also oxygenate ourselves because inaprovaline is so bad at preventing hypoxia!!
+			occupant.mend(TREAT_OXYGENATION, 4)
 
 			use_power(7500) //This might need tweaking.
 			return
 
-		else if(((occupant.health == occupant.getMaxHealth())) && (!eject_wait))
+		else if(!eject_wait)
 			playsound(src, 'sound/machines/ding.ogg', 50, 1)
 			audible_message("\The [src] signals that the growing process is complete.", runemessage = "ding")
 			connected_message("Growing Process Complete.")
@@ -109,10 +108,8 @@
 
 	return
 
-/obj/machinery/clonepod/transhuman/get_completion()
-	var/mob/living/occupant = get_occupant()
-	if(occupant)
-		return 100 * ((occupant.health + (occupant.getMaxHealth()))) / (occupant.getMaxHealth() + abs(occupant.getMaxHealth()))
+/// Sleeves are grown out completely before release.
+/obj/machinery/clonepod/transhuman/clone_release_load()
 	return 0
 
 /obj/machinery/clonepod/transhuman/examine(mob/user, infix, suffix)
@@ -223,9 +220,8 @@
 	SEND_SIGNAL(H, COMSIG_HUMAN_DNA_FINALIZED)
 
 	//Apply damage
-	H.adjustBruteLoss(brute_value)
-	H.adjustFireLoss(burn_value)
-	H.updatehealth()
+	H.injure(INJURY_BLUNT, brute_value, flags = INJURE_IGNORE_RESISTANCE | INJURE_SILENT)
+	H.injure(INJURY_BURN, burn_value, flags = INJURE_IGNORE_RESISTANCE | INJURE_SILENT)
 
 	//Plonk them here.
 	H.forceMove(get_turf(src))
@@ -363,8 +359,7 @@
 	data["occupied"] = !!H
 	if(H)
 		data["name"] = H.name
-		data["health"] = H.health
-		data["maxHealth"] = H.getMaxHealth()
+		data["health"] = round(H.vitality() * 100)
 		data["stat"] = H.stat
 		data["mindStatus"] = !!H.mind
 		data["mindName"] = H.mind?.name
@@ -445,18 +440,10 @@
 		log_and_message_admins("was resleeve-wiped from their body.",occupant.mind)
 		occupant.ghostize()
 
-	//Attach as much stuff as possible to the mob.
-	for(var/datum/language/L in MR.languages)
-		occupant.add_language(L.name)
+	// The mind brings its identity (languages, OOC notes) by reference.
 	MR.mind_ref.active = 1 //Well, it's about to be.
-	MR.mind_ref.transfer_to(occupant) //Does mind+ckey+client.
+	transfer_mind(MR.mind_ref, occupant, "resleeved") //Does mind+ckey+client.
 	occupant.identifying_gender = MR.id_gender
-	occupant.ooc_notes = MR.mind_oocnotes
-	occupant.ooc_notes_likes = MR.mind_ooclikes
-	occupant.ooc_notes_dislikes = MR.mind_oocdislikes
-	occupant.ooc_notes_favs = MR.mind_oocfavs
-	occupant.ooc_notes_maybes = MR.mind_oocmaybes
-	occupant.ooc_notes_style = MR.mind_oocstyle
 
 	occupant.apply_vore_prefs() //Cheap hack for now to give them SOME bellies.
 	if(MR.one_time)

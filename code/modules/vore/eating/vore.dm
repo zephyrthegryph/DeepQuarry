@@ -151,7 +151,7 @@
 			var/mob/living/simple_mob/SM = O
 			if(SM.vore_active && !SM.voremob_loaded)
 				SM.init_vore(TRUE)
-		if(O.vore_organs.len > 0)
+		if(length(O.vore_organs) > 0)
 			return TRUE
 
 	return FALSE

@@ -40,7 +40,7 @@
 		/obj/item/reagent_containers/spray/windowsealant, // 
 		/obj/item/holosign_creator/combifan,
 		/obj/item/rcd/advanced/loaded,
-		/obj/item/pipe_dispenser) //YW Add
+		/obj/item/pipe_dispenser)
 
 /obj/structure/closet/secure_closet/engineering_chief/Initialize(mapload)
 	if(prob(50))

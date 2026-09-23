@@ -54,21 +54,17 @@
 
 /obj/item/clothing/gloves/regen/process()
 	var/mob/living/carbon/human/H = wearer?.resolve()
-	if(!ishuman(H) || H.isSynthetic() || H.stat == DEAD || H.nutrition <= 10)
-		return // Robots and dead people don't have a metabolism.
+	if(!ishuman(H) || H.stat == DEAD || H.nutrition <= 10)
+		return // Dead people don't have a metabolism.
 
-	if(H.getBruteLoss())
-		H.adjustBruteLoss(-0.1)
+	// Organic treatment tags: synthetic parts are left alone (and don't cost nutrition).
+	if(H.mend(TREAT_TISSUE_REPAIR, 0.1))
 		H.nutrition = max(H.nutrition - 10, 0)
-	if(H.getFireLoss())
-		H.adjustFireLoss(-0.1)
+	if(H.mend(TREAT_BURN_CARE, 0.1))
 		H.nutrition = max(H.nutrition - 10, 0)
-	if(H.getToxLoss())
-		H.adjustToxLoss(-0.1)
+	if(H.mend(TREAT_ANTITOXIN, 0.1))
 		H.nutrition = max(H.nutrition - 10, 0)
-	if(H.getOxyLoss())
-		H.adjustOxyLoss(-0.1)
+	if(H.mend(TREAT_OXYGENATION, 0.1))
 		H.nutrition = max(H.nutrition - 10, 0)
-	if(H.getCloneLoss())
-		H.adjustCloneLoss(-0.1)
+	if(H.mend(TREAT_GENETIC_REPAIR, 0.1))
 		H.nutrition = max(H.nutrition - 20, 0)

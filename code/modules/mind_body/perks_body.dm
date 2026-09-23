@@ -373,7 +373,7 @@
 	icon_name = "shoe-prints"
 	cost = 1
 	tree = PERK_TREE_BODY_SPEED
-	var_changes = list("slowdown" = -0.5)
+	factors = alist(BF_SLOWDOWN = -0.5)
 
 /datum/perk/body/spd_sprinter
 	name = "Sprinter"
@@ -382,7 +382,7 @@
 	cost = 2
 	tree = PERK_TREE_BODY_SPEED
 	requires = list(/datum/perk/body/spd_quick_step)
-	var_changes = list("slowdown" = -1)
+	factors = alist(BF_SLOWDOWN = -1)
 
 /datum/perk/body/spd_blink_step
 	name = "Blink Step"

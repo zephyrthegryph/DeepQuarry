@@ -443,7 +443,6 @@
 	return TRUE
 
 
-// === merged from new_player_vr.dm during hard-fork de-suffix (verified no override-order change) ===
 /mob/new_player/proc/spawn_checks_vr(rank)
 	var/pass = TRUE
 	var/datum/job/J = SSjob.get_job(rank)

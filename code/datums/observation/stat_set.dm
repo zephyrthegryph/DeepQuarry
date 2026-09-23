@@ -7,13 +7,6 @@
 //			/mob/living/stat_mob: The mob whose stat changed
 //			/old_stat: Status before the change.
 //			/new_stat: Status after the change.
-/*
-stat_set_event, /datum/decl/observ/stat_set, new)
-
-/datum/decl/observ/stat_set
-	name = "Stat Set"
-	expected_type = /mob/living
-*/
 //Deprecated in favor of Comsigs
 
 /****************

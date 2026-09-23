@@ -162,7 +162,6 @@
 #undef T_BOARD_FIGHTER
 
 
-// === merged from mecha_ch.dm during hard-fork de-suffix (manually verified) ===
 #ifdef T_BOARD_CHMecha
 #error T_BOARD_CHMECHA already defined elsewhere, we can't use it.
 #endif

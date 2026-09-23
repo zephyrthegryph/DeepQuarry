@@ -21,7 +21,7 @@
 		B.forceMove(src)
 		B.owner = src
 		M.vore_organs -= B
-		src.vore_organs += B
+		LAZYADD(src.vore_organs, B)
 
 /mob/living/proc/transfer_mob_identity(mob/living/new_mob)
 	for(var/obj/belly/B as anything in new_mob.vore_organs)
@@ -137,9 +137,7 @@
 	//For primarily copying vore preference settings from a carbon mob to a simplemob
 	//It can be used for other things, but be advised, if you're using it to put a simplemob into a carbon mob, you're gonna be overriding a bunch of prefs
 
-	new_mob.ooc_notes = ooc_notes
-	new_mob.ooc_notes_likes = ooc_notes_likes
-	new_mob.ooc_notes_dislikes = ooc_notes_dislikes
+	new_mob.share_identity(identity) // the character's OOC notes, by reference
 	new_mob.appendage_color = appendage_color
 	new_mob.appendage_alt_setting = appendage_alt_setting
 

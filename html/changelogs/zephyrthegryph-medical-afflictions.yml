@@ -1,0 +1,13 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - rscdel: "Removed health points entirely, for every living thing. There is no more brute/burn/toxin/oxygen/clone/pain damage; everything that hurts you is now a named affliction with symptoms, stages and treatments."
+  - rscadd: "Treatment is by mechanism (hemostatic, antimicrobial, antitoxin, plating repair, …). Any drug, tool or power with the right mechanism works, so generic medicines like tricordrazine help weakly with many afflictions."
+  - rscadd: "Limb injuries are individual wounds (cuts, punctures, bruises, burns) that bleed, get infected and can be bandaged, salved and sutured. Prosthetic limbs get dents, breaches and scorching instead, repaired with welders, cable and nanopaste."
+  - rscadd: "Full-body prosthetics now have their own diagnosable faults: coolant leaks that overheat into thermal runaway, actuator misalignment (recalibrate with a multitool), processor corruption and power faults."
+  - rscadd: "New named afflictions for venoms, poisons (phoron, cyanide, amatoxin, heavy metals, arachnid venom), disease effects, radiation burns and occult effects."
+  - balance: "Death is organ death: brain death (including from prolonged hypoxia) or a vital body part destroyed. Unconsciousness comes from pain, hypoxia and other afflictions through a consciousness model, not a health threshold."
+  - balance: "Animals and other simple creatures take injury against their endurance. Venoms and poisons keep hurting them over time, and medicines injected into them now work."
+  - balance: "Cyborg damage lands on their components; welder and cable repair them by mechanism. The AI's backup power is its own reserve instead of its oxygen damage."
+  - qol: "Symptoms accumulate as an affliction worsens instead of rerolling, so what you already observed stays true."
+  - code_imp: "New body/affliction architecture (code/modules/body, doc/body_architecture.md) replacing the health/damage-pool API across the whole codebase."

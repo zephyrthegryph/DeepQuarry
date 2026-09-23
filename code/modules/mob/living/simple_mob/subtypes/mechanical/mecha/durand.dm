@@ -23,7 +23,7 @@
 	movement_cooldown = 3
 	wreckage = /obj/structure/loot_pile/mecha/durand
 
-	maxHealth = 400
+	endurance = 400
 	deflect_chance = 20
 	armor = list(
 				"melee"		= 50,

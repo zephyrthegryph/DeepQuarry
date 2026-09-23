@@ -1,7 +1,6 @@
 // Customizable Foods //////////////////////////////////////////
 #define INGREDIENT_LIMIT 20
 
-
 /obj/item/reagent_containers/food/snacks/customizable
 	icon = 'icons/obj/food_custom.dmi'
 	bitesize = 2
@@ -125,7 +124,6 @@
 	I.pixel_y = (ingredients.len+1)*2
 	add_overlay(I)
 
-
 // Sandwiches //////////////////////////////////////////////////
 
 /obj/item/reagent_containers/food/snacks/customizable/sandwich
@@ -244,18 +242,6 @@
 		return ..()
 
 // Custom Meals ////////////////////////////////////////////////
-/*
-/obj/item/trash/plate/attackby(obj/item/I, mob/user)
-	if(istype(I,/obj/item/reagent_containers/food/snacks))
-		if(istype(I,/obj/item/reagent_containers/food/snacks/customizable/fullycustom)) //no platestacking even with recursive food, for now
-			to_chat(user, span_warning("That's already got a plate!"))
-			return
-		var/obj/F = new/obj/item/reagent_containers/food/snacks/customizable/fullycustom(get_turf(src),I)
-		F.attackby(I, user)
-		qdel(src)
-	else
-		return ..()
-*/
 
 /obj/item/trash/bowl
 	name = "bowl"

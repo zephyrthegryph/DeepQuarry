@@ -15,10 +15,10 @@
 	on_expired_text = span_danger("You feel a burning sensation flowing through your veins!")
 
 /datum/modifier/delayed_toxin_sting/on_expire()
-	holder.adjustToxLoss(rand(20, 30))
+	holder.injure(INJURY_TOXIN, rand(20, 30))
 
 /datum/modifier/delayed_toxin_sting/strong/on_expire()
-	holder.adjustToxLoss(rand(40, 60))
+	holder.injure(INJURY_TOXIN, rand(40, 60))
 
 /mob/proc/changeling_delayed_toxic_sting()
 	set category = "Changeling"

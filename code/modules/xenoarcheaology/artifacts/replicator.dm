@@ -181,7 +181,6 @@
 	src.visible_message(span_notice(span_bold("\The [user]") + " inserts \the [W] into \the [src]."))
 
 
-// === merged from replicator_vr.dm during hard-fork de-suffix (verified no override-order change) ===
 
 //////////////////////////////
 //////VORE-MOB REPLICATOR/////
@@ -638,7 +637,7 @@
 /obj/machinery/replicator/clothing/tgui_interact(mob/user, datum/tgui/ui) //This creates the menu.
 	ui = SStgui.try_update_ui(user, src, ui)
 	if(!ui)
-		ui = new(user, src, "XenoarchReplicator_clothing_vr", name) //This is required to prevent UI contamination.
+		ui = new(user, src, "XenoarchReplicatorClothing", name) //This is required to prevent UI contamination.
 		ui.open()
 
 /obj/machinery/replicator/clothing/tgui_data(mob/user, datum/tgui/ui, datum/tgui_state/state) //Gives data to the menu.

@@ -126,7 +126,6 @@ Deployable items
 		return 1
 
 
-// === merged from deployable_vr.dm during hard-fork de-suffix (verified no override-order change) ===
 /obj/structure/barricade/cutout
 	name = "stand-up figure"
 	desc = "Some sort of wooden stand-up figure..."

@@ -34,7 +34,7 @@
 /obj/item/projectile/beam/medical_cell/brute/on_hit(mob/living/carbon/human/target)
 	if(istype(target, /mob/living/carbon/human))
 		if(target.stat != DEAD)
-			target.adjustBruteLoss(-5)
+			target.mend(TREAT_TISSUE_REPAIR, 5)
 	else
 		return 1
 
@@ -47,7 +47,7 @@
 /obj/item/projectile/beam/medical_cell/burn/on_hit(mob/living/carbon/human/target)
 	if(istype(target, /mob/living/carbon/human))
 		if(target.stat != DEAD)
-			target.adjustFireLoss(-5)
+			target.mend(TREAT_BURN_CARE, 5)
 	else
 		return 1
 
@@ -60,12 +60,12 @@
 /obj/item/projectile/beam/medical_cell/stabilize/on_hit(mob/living/carbon/human/target)
 	if(istype(target, /mob/living/carbon/human))
 		if(target.stat != DEAD)
-			target.adjustOxyLoss(-30)
+			target.mend(TREAT_OXYGENATION, 30)
 			for(var/name in list(BP_HEAD, BP_L_HAND, BP_R_HAND, BP_L_ARM, BP_R_ARM, BP_L_FOOT, BP_R_FOOT, BP_L_LEG, BP_R_LEG, BP_GROIN, BP_TORSO))
 				var/obj/item/organ/external/O = target.organs_by_name[name]
 				if(!O)
 					continue
-				for (var/datum/wound/W in O.wounds)
+				for(var/datum/affliction/wound/W as anything in O.get_wounds())
 					if (W.internal)
 						continue
 					W.disinfect()
@@ -78,9 +78,8 @@
 	desc = "Your injuries are stabilized and your pain abates!"
 	mob_overlay_state = "cyan_sparkles"
 	stacks = MODIFIER_STACK_EXTEND
-	pain_immunity = TRUE
-	bleeding_rate_percent = 0.1 //only a little
-	incoming_oxy_damage_percent = 0
+	// only a little
+	factors = alist(BF_BLEEDING = 0.1, BF_INCOMING_ASPHYXIA = 0, BF_PAIN_IMMUNITY = 1)
 
 /obj/item/ammo_casing/microbattery/medical/toxin
 	name = "\'NERD\' nanite cell - TOXIN"
@@ -91,7 +90,7 @@
 /obj/item/projectile/beam/medical_cell/toxin/on_hit(mob/living/carbon/human/target)
 	if(istype(target, /mob/living/carbon/human))
 		if(target.stat != DEAD)
-			target.adjustToxLoss(-5)
+			target.mend(TREAT_ANTITOXIN, 5)
 	else
 		return 1
 
@@ -104,10 +103,10 @@
 /obj/item/projectile/beam/medical_cell/omni/on_hit(mob/living/carbon/human/target)
 	if(istype(target, /mob/living/carbon/human))
 		if(target.stat != DEAD)
-			target.adjustBruteLoss(-2.5)
-			target.adjustFireLoss(-2.5)
-			target.adjustToxLoss(-2.5)
-			target.adjustOxyLoss(-10)
+			target.mend(TREAT_TISSUE_REPAIR, 2.5)
+			target.mend(TREAT_BURN_CARE, 2.5)
+			target.mend(TREAT_ANTITOXIN, 2.5)
+			target.mend(TREAT_OXYGENATION, 10)
 	else
 		return 1
 
@@ -120,7 +119,7 @@
 /obj/item/projectile/beam/medical_cell/antirad/on_hit(mob/living/carbon/human/target)
 	if(istype(target, /mob/living/carbon/human))
 		if(target.stat != DEAD)
-			target.adjustToxLoss(-2.5)
+			target.mend(TREAT_ANTITOXIN, 2.5)
 			target.radiation = max(target.radiation - 150, 0) //same as 5 units of arithrazine, sans the brute damage
 	else
 		return 1
@@ -134,7 +133,7 @@
 /obj/item/projectile/beam/medical_cell/brute2/on_hit(mob/living/carbon/human/target)
 	if(istype(target, /mob/living/carbon/human))
 		if(target.stat != DEAD)
-			target.adjustBruteLoss(-10)
+			target.mend(TREAT_TISSUE_REPAIR, 10)
 	else
 		return 1
 
@@ -147,7 +146,7 @@
 /obj/item/projectile/beam/medical_cell/burn2/on_hit(mob/living/carbon/human/target)
 	if(istype(target, /mob/living/carbon/human))
 		if(target.stat != DEAD)
-			target.adjustFireLoss(-10)
+			target.mend(TREAT_BURN_CARE, 10)
 	else
 		return 1
 
@@ -160,12 +159,12 @@
 /obj/item/projectile/beam/medical_cell/stabilize2/on_hit(mob/living/carbon/human/target)
 	if(istype(target, /mob/living/carbon/human))
 		if(target.stat != DEAD)
-			target.adjustOxyLoss(-200)
+			target.mend(TREAT_OXYGENATION, 200)
 			for(var/name in list(BP_HEAD, BP_L_HAND, BP_R_HAND, BP_L_ARM, BP_R_ARM, BP_L_FOOT, BP_R_FOOT, BP_L_LEG, BP_R_LEG, BP_GROIN, BP_TORSO))
 				var/obj/item/organ/external/O = target.organs_by_name[name]
 				if(!O)
 					continue
-				for (var/datum/wound/W in O.wounds)
+				for(var/datum/affliction/wound/W as anything in O.get_wounds())
 					if(W.internal)
 						continue
 					if(O.is_bandaged() == FALSE)
@@ -186,10 +185,10 @@
 /obj/item/projectile/beam/medical_cell/omni2/on_hit(mob/living/carbon/human/target)
 	if(istype(target, /mob/living/carbon/human))
 		if(target.stat != DEAD)
-			target.adjustBruteLoss(-5)
-			target.adjustFireLoss(-5)
-			target.adjustToxLoss(-5)
-			target.adjustOxyLoss(-30)
+			target.mend(TREAT_TISSUE_REPAIR, 5)
+			target.mend(TREAT_BURN_CARE, 5)
+			target.mend(TREAT_ANTITOXIN, 5)
+			target.mend(TREAT_OXYGENATION, 30)
 	else
 		return 1
 
@@ -202,7 +201,7 @@
 /obj/item/projectile/beam/medical_cell/toxin2/on_hit(mob/living/carbon/human/target)
 	if(istype(target, /mob/living/carbon/human))
 		if(target.stat != DEAD)
-			target.adjustToxLoss(-20)
+			target.mend(TREAT_ANTITOXIN, 20)
 	else
 		return 1
 
@@ -224,8 +223,9 @@
 	desc = "You can move much faster!"
 	mob_overlay_state = "haste"
 	stacks = MODIFIER_STACK_EXTEND
-	slowdown = -0.5 //a little faster!
-	evasion = 1.15 //and a little harder to hit!
+	// a little faster!
+	// and a little harder to hit!
+	factors = alist(BF_SLOWDOWN = -0.5, BF_EVASION = 1.15)
 
 /obj/item/ammo_casing/microbattery/medical/resist
 	name = "\'NERD\' nanite cell - RESIST"
@@ -245,8 +245,7 @@
 	desc = "You resist 15% of all incoming damage and stuns!"
 	mob_overlay_state = "repel_missiles"
 	stacks = MODIFIER_STACK_EXTEND
-	disable_duration_percent = 0.85
-	incoming_damage_percent = 0.85
+	factors = alist(BF_INCOMING_ALL = 0.85, BF_DISABLE_DURATION = 0.85)
 
 /obj/item/ammo_casing/microbattery/medical/corpse_mend
 	name = "\'NERD\' nanite cell - CORPSE MEND"
@@ -257,10 +256,10 @@
 /obj/item/projectile/beam/medical_cell/corpse_mend/on_hit(mob/living/carbon/human/target)
 	if(istype(target, /mob/living/carbon/human))
 		if(target.stat == DEAD)
-			target.adjustBruteLoss(-50)
-			target.adjustFireLoss(-50)
-			target.adjustToxLoss(-50)
-			target.adjustOxyLoss(-200)
+			target.mend(TREAT_TISSUE_REPAIR, 50)
+			target.mend(TREAT_BURN_CARE, 50)
+			target.mend(TREAT_ANTITOXIN, 50)
+			target.mend(TREAT_OXYGENATION, 200)
 	else
 		return 1
 
@@ -273,7 +272,7 @@
 /obj/item/projectile/beam/medical_cell/brute3/on_hit(mob/living/carbon/human/target)
 	if(istype(target, /mob/living/carbon/human))
 		if(target.stat != DEAD)
-			target.adjustBruteLoss(-20)
+			target.mend(TREAT_TISSUE_REPAIR, 20)
 	else
 		return 1
 
@@ -286,7 +285,7 @@
 /obj/item/projectile/beam/medical_cell/burn3/on_hit(mob/living/carbon/human/target)
 	if(istype(target, /mob/living/carbon/human))
 		if(target.stat != DEAD)
-			target.adjustFireLoss(-20)
+			target.mend(TREAT_BURN_CARE, 20)
 	else
 		return 1
 
@@ -299,7 +298,7 @@
 /obj/item/projectile/beam/medical_cell/toxin3/on_hit(mob/living/carbon/human/target)
 	if(istype(target, /mob/living/carbon/human))
 		if(target.stat != DEAD)
-			target.adjustToxLoss(-20)
+			target.mend(TREAT_ANTITOXIN, 20)
 	else
 		return 1
 
@@ -312,10 +311,10 @@
 /obj/item/projectile/beam/medical_cell/omni3/on_hit(mob/living/carbon/human/target)
 	if(istype(target, /mob/living/carbon/human))
 		if(target.stat != DEAD)
-			target.adjustBruteLoss(-10)
-			target.adjustFireLoss(-10)
-			target.adjustToxLoss(-10)
-			target.adjustOxyLoss(-60)
+			target.mend(TREAT_TISSUE_REPAIR, 10)
+			target.mend(TREAT_BURN_CARE, 10)
+			target.mend(TREAT_ANTITOXIN, 10)
+			target.mend(TREAT_OXYGENATION, 60)
 	else
 		return 1
 

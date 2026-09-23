@@ -726,7 +726,6 @@
 	)
 
 
-// === merged from materials_chomp.dm during hard-fork de-suffix (verified no override-order change) ===
 /datum/design_techweb/cloth
 	SET_MATERIAL_DESIGN_NAMEDESC(MAT_CLOTH)
 	id = MAT_CLOTH

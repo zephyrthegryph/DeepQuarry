@@ -40,6 +40,12 @@
 		if(V in other_trait.var_changes_pref)
 			return TRUE
 
+	// Two traits that change the same body factor (two speed traits) conflict,
+	// as two traits changing the same species var do.
+	for(var/id in our_trait.factors)
+		if(!isnull(other_trait.factors?[id]))
+			return TRUE
+
 	return FALSE
 
 #undef POSITIVE_MODE

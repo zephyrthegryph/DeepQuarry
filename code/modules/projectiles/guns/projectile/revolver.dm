@@ -342,7 +342,6 @@
 	update_charge()
 
 
-// === merged from revolver_vr.dm during hard-fork de-suffix (verified no override-order change) ===
 //Dunno why .380 ammo was in here but Im not touching it. Rest was moved to other files.
 
 //.380
@@ -362,7 +361,6 @@
 	multiple_sprites = 1
 
 
-// === merged from revolver_chomp.dm during hard-fork de-suffix (verified no override-order change) ===
 /obj/item/gun/projectile/revolver/slab
 	name = "slab revolver"
 	desc = "No coins. Cope."
@@ -377,3 +375,15 @@
 		slot_l_hand_str = 'icons/obj/guns/altmarksman/lefthand_guns.dmi',
 		slot_r_hand_str = 'icons/obj/guns/altmarksman/righthand_guns.dmi',
 		)
+
+/obj/item/gun/projectile/revolver/nova
+	name = "Nova"
+	desc = "Heavily modified revolver, with alas only 6 round chamber but fiery firepower of 357 calibre. Make it count. Uses .357 rounds." // Yes I'm serious. -Spades
+	icon_state = "nova"
+	icon = 'icons/obj/gun_yw.dmi'
+
+/obj/item/gun/projectile/revolver/cerberus
+	name = "Cerberus"
+	desc = "A high-power, fancy looking revolver that can stop nearly everything it's pointed at. Comes with a standard six-round-cylinder. There is ,Hesphiastos Industries, stamped along it's cylinder." // Yes I'm serious. -Spades
+	icon_state = "cerb"
+	icon = 'icons/obj/gun_yw.dmi'

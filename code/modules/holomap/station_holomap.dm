@@ -246,18 +246,3 @@
 	var/icon = 'icons/holomap_markers.dmi'
 	var/color //used by path rune markers
 
-/obj/effect/landmark/holomarker
-	delete_me = TRUE
-
-	var/filter = HOLOMAP_FILTER_STATIONMAP
-	var/id = "generic"
-
-/obj/effect/landmark/holomarker/Initialize(mapload)
-	. = ..()
-	var/datum/holomap_marker/holomarker = new()
-	holomarker.id = id
-	holomarker.filter = filter
-	holomarker.x = src.x
-	holomarker.y = src.y
-	holomarker.z = src.z
-	GLOB.holomap_markers["[id]_\ref[src]"] = holomarker

@@ -7,7 +7,7 @@
 	issuer_name = "VeyMed Clinical Development"
 	issuer_faction = REPUTATION_FACTION_VEYMED
 	reward = 1800
-	expected_duration = 45 MINUTES
+	expected_duration = 90 MINUTES
 	initial_offers = 1
 	offer_duration = MEDICAL_TRIAL_OFFER_DURATION
 	offer_kind = CONTRACT_OFFER_STANDING
@@ -79,7 +79,7 @@
 /datum/contract/medical_trial/proc/initialize_trial(cohort, target_metric)
 	profile = new(cohort, target_metric)
 	participants = list()
-	deadline_duration = 45 MINUTES
+	deadline_duration = 90 MINUTES
 	title = "Experimental Medication Study: [profile.code_name]"
 	description = "VeyMed requests a [profile.cohort] study of [profile.code_name], provisionally indicated for [profile.target_metric] conditions. [profile.protocol_instructions()] For each of three subjects, fax one packet containing the signed consent form, a pre-exposure body-scanner printout, and a body-scanner printout taken at least one minute after exposure."
 	observation_requirement = new(CONTRACT_EVENT_MEDICAL_OBSERVATION_ACCEPTED, 3, null, null, TRUE, CONTRACT_EVIDENCE_SCOPE_CONTRACT)
@@ -459,18 +459,66 @@
 				available |= family
 	return available
 
-/proc/medical_trial_condition_family(datum/medical_issue/condition/condition)
+/proc/medical_trial_condition_family(datum/affliction/condition)
 	for(var/family in medical_trial_target_choices())
 		for(var/condition_type in medical_trial_target_types(family))
 			if(istype(condition, condition_type))
 				return family
 
-/datum/medical_issue/condition
+/datum/affliction
 	var/contract_eligibility_initialized = FALSE
 	var/contract_eligibility_qualifying = FALSE
 	var/contract_rare_eligibility_qualifying = FALSE
 
-/datum/medical_issue/condition/proc/update_contract_eligibility()
+/// Does this affliction's severity describe a clinical outcome? Wounds,
+/// lesions and injury load mirror physical integrity (autoheal, bandaging,
+/// fighting), so they feed neither trial eligibility nor outcome telemetry.
+/proc/affliction_reports_clinical_outcomes(datum/affliction/A)
+	return !istype(A, /datum/affliction/wound) && !istype(A, /datum/affliction/lesion) && !istype(A, /datum/affliction/load)
+
+/// COMSIG_AFFLICTION_SEVERITY_CHANGED: republish trial eligibility and emit
+/// the measured treatment outcome when a condition improves.
+/datum/controller/subsystem/contracts/proc/on_affliction_severity_changed(mob/living/carbon/human/patient, datum/affliction/A, old_severity)
+	SIGNAL_HANDLER
+	if(!istype(patient) || !affliction_reports_clinical_outcomes(A))
+		return
+	A.update_contract_eligibility()
+	var/improvement = old_severity - A.severity
+	if(improvement < 1 || old_severity < MEDICAL_TRIAL_MINIMUM_BASELINE)
+		return
+	var/datum/contract_subject_identity/identity = subject_identity(patient)
+	if(!identity)
+		return
+	emit_contract_event(CONTRACT_EVENT_MEDICAL_TREATMENT_OUTCOME, list(
+		"department" = DEPARTMENT_MEDICAL,
+		"subject_id" = identity.id,
+		"subject_name" = patient.real_name,
+		"condition_type" = A.type,
+		"condition_name" = A.name,
+		"metrics" = list(
+			"improvement" = improvement,
+			"initial_severity" = old_severity,
+			"final_severity" = A.severity,
+		),
+		"detail" = "[patient.real_name]'s [A.name] improved by [round(improvement, 0.1)] severity.",
+	), "medical-treatment:[REF(A)]:[world.time]:[A.severity]", patient, null, patient)
+
+/// COMSIG_BODY_AFFLICTIONS_CHANGED: an affliction can join or leave a body
+/// without a severity change (an organ carrying afflictions is reattached, an
+/// affliction is cured or cleared outright). Keep eligibility in step.
+/datum/controller/subsystem/contracts/proc/on_body_afflictions_changed(mob/living/carbon/human/patient, datum/affliction/A, added)
+	SIGNAL_HANDLER
+	if(!affliction_reports_clinical_outcomes(A))
+		return
+	if(added)
+		A.update_contract_eligibility()
+		return
+	if(A.contract_eligibility_qualifying || A.contract_rare_eligibility_qualifying)
+		A.contract_eligibility_qualifying = FALSE
+		A.contract_rare_eligibility_qualifying = FALSE
+		SEND_SIGNAL(patient, COMSIG_MOB_MEDICAL_ISSUES_CHANGED)
+
+/datum/affliction/proc/update_contract_eligibility()
 	var/family = medical_trial_condition_family(src)
 	var/qualifying = !!family && severity >= MEDICAL_TRIAL_MINIMUM_BASELINE
 	var/rare_qualifying = medical_rare_case_condition(src)
@@ -540,20 +588,20 @@
 /proc/medical_trial_target_types(family)
 	switch(family)
 		if("trauma")
-			return list(/datum/medical_issue/condition/deep_bruising, /datum/medical_issue/condition/internal_hemorrhage, /datum/medical_issue/condition/untreated_fracture, /datum/medical_issue/condition/burn_shock)
+			return list(/datum/affliction/deep_bruising, /datum/affliction/internal_hemorrhage, /datum/affliction/untreated_fracture, /datum/affliction/burn_shock)
 		if("infection")
-			return list(/datum/medical_issue/condition/wound_infection, /datum/medical_issue/condition/cellulitis, /datum/medical_issue/condition/sepsis, /datum/medical_issue/condition/septic_shock)
+			return list(/datum/affliction/wound_infection, /datum/affliction/cellulitis, /datum/affliction/sepsis, /datum/affliction/septic_shock)
 		if("respiratory")
-			return list(/datum/medical_issue/condition/pulmonary_contusion, /datum/medical_issue/condition/tension_pneumothorax, /datum/medical_issue/condition/airway_burn, /datum/medical_issue/condition/respiratory_failure)
+			return list(/datum/affliction/pulmonary_contusion, /datum/affliction/pneumothorax, /datum/affliction/airway_burn, /datum/affliction/respiratory_failure)
 		if("neurological")
-			return list(/datum/medical_issue/condition/concussion, /datum/medical_issue/condition/subdural_hematoma, /datum/medical_issue/condition/brain_damage)
+			return list(/datum/affliction/concussion, /datum/affliction/subdural_hematoma, /datum/affliction/brain_damage)
 		if("organ failure")
-			return list(/datum/medical_issue/condition/hepatic_failure, /datum/medical_issue/condition/renal_failure, /datum/medical_issue/condition/heart_damage)
+			return list(/datum/affliction/hepatic_failure, /datum/affliction/renal_failure, /datum/affliction/heart_damage)
 	return list()
 
 /proc/medical_trial_condition_burden(mob/living/carbon/human/subject, list/allowed_types)
 	. = 0
-	for(var/datum/medical_issue/condition/condition as anything in subject.get_all_conditions())
+	for(var/datum/affliction/condition as anything in subject.get_afflictions())
 		if(allowed_types)
 			var/type_allowed = FALSE
 			for(var/condition_type in allowed_types)
@@ -566,15 +614,15 @@
 
 /proc/medical_trial_snapshot(mob/living/carbon/human/subject)
 	var/list/conditions = list()
-	for(var/datum/medical_issue/condition/condition as anything in subject.get_all_conditions())
+	for(var/datum/affliction/condition as anything in subject.get_afflictions())
 		var/list/symptoms = list()
-		for(var/datum/medical_symptom/symptom as anything in condition.active_symptoms)
+		for(var/datum/affliction_symptom/symptom as anything in affliction_symptoms_of(condition))
 			symptoms += symptom.name
 		conditions.Add(list(list(
 			"name" = condition.name,
 			"type" = condition.type,
 			"severity" = round(condition.severity, 0.1),
-			"organ" = condition.affectedorgan?.name || "systemic",
+			"organ" = condition.location?.name || "systemic",
 			"symptoms" = symptoms,
 		)))
 	var/list/bp = subject.get_bp_reading()
@@ -588,10 +636,10 @@
 			"temperature" = subject.get_temperature_reading_c(),
 		),
 		"damage" = list(
-			"brute" = round(subject.getBruteLoss(), 0.1),
-			"burn" = round(subject.getFireLoss(), 0.1),
-			"toxin" = round(subject.getToxLoss(), 0.1),
-			"oxygen" = round(subject.getOxyLoss(), 0.1),
+			"brute" = round(subject.injury_load(INJURY_CATEGORY_PHYSICAL), 0.1),
+			"burn" = round(subject.injury_load(INJURY_CATEGORY_THERMAL), 0.1),
+			"toxin" = round(subject.injury_load(INJURY_CATEGORY_TOXIC), 0.1),
+			"oxygen" = round(subject.injury_load(INJURY_CATEGORY_ASPHYXIA), 0.1),
 		),
 		"exposures" = subject.clinical_exposure_history?.Copy() || list(),
 	)
@@ -642,11 +690,11 @@
 
 /datum/contract/medical_trial/proc/apply_therapeutic_effect(mob/living/carbon/human/subject, amount)
 	var/list/target_types = medical_trial_target_types(profile.target_metric)
-	for(var/datum/medical_issue/condition/condition as anything in subject.get_all_conditions())
+	for(var/datum/affliction/condition as anything in subject.get_afflictions())
 		if(condition.type in target_types)
 			condition.adjust_severity(-amount * profile.therapeutic_strength)
 			if(condition.severity <= 0)
-				condition.cure_issue()
+				condition.cure()
 
 /datum/contract/medical_trial/proc/apply_adverse_effect(mob/living/carbon/human/subject, amount)
 	if(profile.adverse_metric == "none")
@@ -655,30 +703,25 @@
 	var/organ_tag
 	switch(profile.adverse_metric)
 		if("respiratory failure")
-			condition_type = /datum/medical_issue/condition/respiratory_failure
+			condition_type = /datum/affliction/respiratory_failure
 			organ_tag = O_LUNGS
 		if("heart damage")
-			condition_type = /datum/medical_issue/condition/heart_damage
+			condition_type = /datum/affliction/heart_damage
 			organ_tag = O_HEART
 		if("concussion")
-			condition_type = /datum/medical_issue/condition/concussion
+			condition_type = /datum/affliction/concussion
 			organ_tag = O_BRAIN
 		if("hepatic failure")
-			condition_type = /datum/medical_issue/condition/hepatic_failure
+			condition_type = /datum/affliction/hepatic_failure
 			organ_tag = O_LIVER
 	var/obj/item/organ/host = subject.internal_organs_by_name?[organ_tag]
 	if(!host || !condition_type)
 		return
-	var/datum/medical_issue/condition/adverse
-	for(var/datum/medical_issue/condition/existing in host.medical_issues)
-		if(existing.type == condition_type)
-			adverse = existing
-			break
+	var/datum/affliction/adverse = subject.body.find_affliction(condition_type, host)
 	if(!adverse)
-		adverse = new condition_type()
-		adverse.owner = subject
-		adverse.affectedorgan = host
-		host.add_medical_issue(adverse, subject)
+		adverse = subject.body.afflict(condition_type, host)
+		if(!adverse)
+			return
 		if(profile.adverse_metric == "heart damage")
 			adverse._apply_stage("Moderate")
 	adverse.adjust_severity(amount * profile.adverse_strength)
@@ -693,32 +736,25 @@
 	var/obj/item/organ/host
 	switch(profile.target_metric)
 		if("trauma")
-			condition_type = /datum/medical_issue/condition/deep_bruising
+			condition_type = /datum/affliction/deep_bruising
 			host = subject.get_organ(BP_TORSO)
 		if("infection")
-			condition_type = /datum/medical_issue/condition/cellulitis
+			condition_type = /datum/affliction/cellulitis
 			host = subject.get_organ(BP_TORSO)
 		if("respiratory")
-			condition_type = /datum/medical_issue/condition/pulmonary_contusion
+			condition_type = /datum/affliction/pulmonary_contusion
 			host = subject.internal_organs_by_name?[O_LUNGS]
 		if("neurological")
-			condition_type = /datum/medical_issue/condition/concussion
+			condition_type = /datum/affliction/concussion
 			host = subject.internal_organs_by_name?[O_BRAIN]
 		if("organ failure")
-			condition_type = /datum/medical_issue/condition/hepatic_failure
+			condition_type = /datum/affliction/hepatic_failure
 			host = subject.internal_organs_by_name?[O_LIVER]
 	if(!host || !condition_type)
 		return
-	var/datum/medical_issue/condition/challenge_condition
-	for(var/datum/medical_issue/condition/existing in host.medical_issues)
-		if(existing.type == condition_type)
-			challenge_condition = existing
-			break
+	var/datum/affliction/challenge_condition = subject.body.afflict(condition_type, host)
 	if(!challenge_condition)
-		challenge_condition = new condition_type()
-		challenge_condition.owner = subject
-		challenge_condition.affectedorgan = host
-		host.add_medical_issue(challenge_condition, subject)
+		return
 	challenge_condition.adjust_severity(amount * 4)
 	challenge_condition.roll_symptoms()
 

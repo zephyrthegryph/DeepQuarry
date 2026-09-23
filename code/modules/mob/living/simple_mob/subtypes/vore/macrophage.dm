@@ -5,8 +5,7 @@
 	icon_state = "macrophage-1"
 
 	faction = FACTION_MACROBACTERIA
-	maxHealth = 20
-	health = 20
+	endurance = 20
 
 	minbodytemp = T0C-30
 	heat_damage_per_tick = 40
@@ -39,7 +38,7 @@
 	attacktext = list("squashed")
 	friendly = list("shoos", "rubs")
 
-	vore_bump_emote = "attempts to absorb"
+	vore_bump_chance = "attempts to absorb"
 
 	vore_active = TRUE
 	vore_capacity = 1
@@ -58,16 +57,14 @@
 
 	size_multiplier = 1.75
 
-	maxHealth = 40
-	health = 40
+	endurance = 40
 
 	pass_flags = PASSTABLE | PASSGRILLE
 
 /mob/living/simple_mob/vore/aggressive/macrophage/Initialize(mapload)
 	. = ..()
 	var/datum/disease/advance/random/macrophage/D = new
-	health += D.resistance
-	maxHealth += D.resistance
+	endurance += D.resistance
 	melee_damage_lower += max(0, D.resistance)
 	melee_damage_upper += max(0, D.resistance)
 	infections += D

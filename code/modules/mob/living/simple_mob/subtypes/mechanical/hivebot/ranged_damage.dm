@@ -1,8 +1,7 @@
 // These hivebots are intended for general damage causing, at range.
 
 /mob/living/simple_mob/mechanical/hivebot/ranged_damage
-	maxHealth = 2 LASERS_TO_KILL // 60 health
-	health = 2 LASERS_TO_KILL
+	endurance = 2 LASERS_TO_KILL // 60 health
 	projectiletype = /obj/item/projectile/bullet/hivebot
 
 // The regular ranged hivebot, that fires somewhat weak projectiles.
@@ -47,8 +46,7 @@
 /mob/living/simple_mob/mechanical/hivebot/ranged_damage/strong
 	name = "strong hivebot"
 	desc = "A robot with a crude ballistic weapon and strong armor."
-	maxHealth = 4 LASERS_TO_KILL // 120 health.
-	health = 4 LASERS_TO_KILL
+	endurance = 4 LASERS_TO_KILL // 120 health.
 	melee_damage_lower = 15
 	melee_damage_upper = 15
 	projectile_dispersion = 5

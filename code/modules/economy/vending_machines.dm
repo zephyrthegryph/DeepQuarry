@@ -465,6 +465,9 @@
 					/obj/item/stack/medical/advanced/bruise_pack = 6,
 					/obj/item/stack/medical/advanced/ointment = 6,
 					/obj/item/stack/medical/splint = 4,
+					/obj/item/bag_valve_mask = 2,
+					/obj/item/airway_kit = 2,
+					/obj/item/decompression_needle = 4,
 					/obj/item/storage/pill_bottle/carbon = 2,
 					/obj/item/clothing/mask/chewable/candy/lolli = 15,
 					/obj/item/backup_implanter = 3,
@@ -1838,7 +1841,6 @@
 	has_logs = 1
 
 
-// === merged from vending_machines_vr.dm during hard-fork de-suffix (verified no override-order change) ===
 // Food Machines (for event/away maps)
 
 //I want this not just as part of the zoo. ;v

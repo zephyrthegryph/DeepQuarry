@@ -15,8 +15,7 @@
 	icon_rest = "lion_rest"
 	icon = 'icons/mob/vore64x32.dmi'
 
-	maxHealth = 200
-	health = 200
+	endurance = 200
 	see_in_dark = 8
 
 	melee_damage_lower = 10

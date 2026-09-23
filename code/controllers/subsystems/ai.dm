@@ -18,11 +18,15 @@ SUBSYSTEM_DEF(ai)
 	var/deferred_brains = 0
 	var/profile_cost = 0
 	var/profile_calls = 0
-	/// Spatial dependency key -> weakrefs of calm brains. Movement into or out
+	/// MOB_CHUNK_NUMERIC_KEY -> weakrefs of calm brains. Movement into or out
 	/// of a watched chunk wakes only nearby brains.
-	var/list/chunk_subscribers = list()
+	var/alist/chunk_subscribers
 	var/list/sleeping_brains = list()
 	var/navigation_revision = 1
+
+/datum/controller/subsystem/ai/New()
+	chunk_subscribers = alist()
+	return ..()
 
 /datum/controller/subsystem/ai/proc/publish_navigation_change()
 	navigation_revision++
@@ -72,9 +76,6 @@ SUBSYSTEM_DEF(ai)
 		if(MC_TICK_CHECK)
 			return
 
-/datum/controller/subsystem/ai/proc/chunk_key(turf/T, chunk_x, chunk_y)
-	return "[T.z]:[chunk_x]:[chunk_y]"
-
 /datum/controller/subsystem/ai/proc/hibernate_calm_brain(datum/ai_brain/A)
 	var/turf/T = get_turf(A?.holder)
 	if(!T || A.primary_threat || A.active_behavior_type || A.holder.client)
@@ -88,7 +89,7 @@ SUBSYSTEM_DEF(ai)
 	var/list/keys = list()
 	for(var/cx in min_chunk_x to max_chunk_x)
 		for(var/cy in min_chunk_y to max_chunk_y)
-			var/key = chunk_key(T, cx, cy)
+			var/key = MOB_CHUNK_NUMERIC_KEY(T.z, cx, cy)
 			keys += key
 			var/list/subscribers = chunk_subscribers[key]
 			if(!subscribers)
@@ -129,10 +130,13 @@ SUBSYSTEM_DEF(ai)
 	A.sleeping_reference = null
 
 /datum/controller/subsystem/ai/proc/publish_mob_chunk(atom/location)
+	// Nothing sleeping means nothing to wake; skip the turf lookup (Q12).
+	if(!length(chunk_subscribers))
+		return
 	var/turf/T = get_turf(location)
 	if(!T)
 		return
-	var/key = chunk_key(T, FLOOR(T.x - 1, CHUNK_SIZE) / CHUNK_SIZE, FLOOR(T.y - 1, CHUNK_SIZE) / CHUNK_SIZE)
+	var/key = MOB_CHUNK_NUMERIC_KEY(T.z, MOB_CHUNK_COORD(T.x), MOB_CHUNK_COORD(T.y))
 	var/list/subscribers = chunk_subscribers[key]
 	if(!length(subscribers))
 		return

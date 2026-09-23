@@ -8,21 +8,6 @@
 
 /datum/supply_pack/randomised/munitions
 	group = "Munitions"
-/* What? This crate costs 40... the crate with just two eguns costs 50... what??? This crate is also like "the armory" and has OFFICER access?
-/datum/supply_pack/munitions/weapons
-	name = "Weapons - Security basic equipment"
-	contains = list(
-			/obj/item/flash = 2,
-			/obj/item/reagent_containers/spray/pepper = 2,
-			/obj/item/melee/baton/loaded = 2,
-			/obj/item/gun/energy/taser = 2,
-			/obj/item/gun/projectile/colt/detective = 2,
-			/obj/item/storage/box/flashbangs = 2
-			)
-	cost = 40
-	containertype = /obj/structure/closet/crate/secure/lawson
-	containername = "Security equipment crate"
-	access = ACCESS_SECURITY*/
 
 /datum/supply_pack/munitions/egunpistol
 	name = "Weapons - Energy sidearms"
@@ -79,36 +64,6 @@
 	containertype = /obj/structure/closet/crate/secure/weapon
 	containername = "Shotgun crate"
 	access = ACCESS_ARMORY
-/* This is a bad idea. -- So is this.
-
-/datum/supply_pack/munitions/shotgunsemi
-	name = "Weapons - Semi-Automatic Shotgun crate"
-	contains = list(
-			/obj/item/ammo_magazine/ammo_box/b12g,
-			/obj/item/ammo_magazine/ammo_box/b12g/pellet,
-			/obj/item/gun/projectile/shotgun/semi = 2
-			)
-	cost = 100
-	containertype = /obj/structure/closet/crate/secure/weapon
-	containername = "Semi-Auto Shotgun crate"
-	access = ACCESS_ARMORY
-
-/datum/supply_pack/munitions/erifle
-	name = "Weapons - Energy marksman"
-	contains = list(/obj/item/gun/energy/sniperrifle = 2)
-	cost = 100
-	containertype = /obj/structure/closet/crate/secure/heph
-	containername = "Energy marksman crate"
-	access = ACCESS_ARMORY
-
-/datum/supply_pack/munitions/burstlaser
-	name = "Weapons - Burst laser"
-	contains = list(/obj/item/gun/energy/gun/burst = 2)
-	cost = 50
-	containertype = /obj/structure/closet/crate/secure/lawson
-	containername = "Burst laser crate"
-	access = ACCESS_ARMORY
-*/
 /datum/supply_pack/munitions/ionweapons
 	name = "Weapons - Electromagnetic Pulse Rifles"
 	desc = "A pair of EMP rifles and low-power EMP grenades. Requires Armory access."
@@ -362,7 +317,6 @@
 	containertype = /obj/structure/closet/crate/secure
 	containername = "phasegun cannon crate"
 	access = ACCESS_EXPLORER
-
 
 /datum/supply_pack/munitions/ofd_charge_emp
 	name = "OFD Charge - EMP"

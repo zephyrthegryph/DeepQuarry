@@ -1,3 +1,7 @@
+/// Area that holds virtual reality mobs; leaving it derezzes them.
+/area/vr
+	name = "Virtual Reality"
+
 // Gross proc which is called on Life() to check for escaped VR mobs. Tried to do this with Exited() on area/vr but ended up being too heavy.
 /mob/living/proc/handle_vr_derez()
 	if(virtual_reality_mob && !istype(get_area(src), /area/vr))

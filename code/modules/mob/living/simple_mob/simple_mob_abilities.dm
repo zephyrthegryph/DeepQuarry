@@ -343,7 +343,7 @@
 		var/mob/living/M = AM
 		M.Weaken(1.5)
 		if(!gentle)
-			M.adjustBruteLoss(damage)
+			M.injure(INJURY_BLUNT, damage, source = src)
 		to_chat(M, span_userdanger("You're thrown back by [src]!"))
 		playsound(src, get_sfx("punch"), 50, 1)
 	AM.throw_at(throwtarget, maxthrow, 3, src)

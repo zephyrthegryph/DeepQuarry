@@ -80,16 +80,15 @@ BONUS
 		phage = new /mob/living/simple_mob/vore/aggressive/macrophage/giant(get_turf((M.loc)))
 		phage.melee_damage_lower = rand(5, 10)
 		phage.melee_damage_upper = rand(10, 15)
-		M.apply_damage(rand(10, 20))
+		M.injure(INJURY_CUT, rand(10, 20))
 		M.emote("scream")
 	else
 		phage = new(get_turf((M.loc)))
-		M.apply_damage(rand(1, 5))
+		M.injure(INJURY_CUT, rand(1, 5))
 
 	playsound(M, 'sound/effects/splat.ogg', 50, 1)
 
-	phage.health += A.resistance
-	phage.maxHealth += A.resistance
+	phage.endurance += A.resistance
 	phage.infections += A
 	phage.base_disease = A
 

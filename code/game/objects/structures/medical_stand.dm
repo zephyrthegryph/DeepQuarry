@@ -157,7 +157,7 @@
 					if(!do_after(user, 5 SECONDS, target))
 						user.visible_message(span_notice("\The [user]'s hand slips and pricks \the [target]."),
 									span_notice("Your hand slips and pricks \the [target]."))
-						target.apply_damage(3, BRUTE, pick(BP_R_ARM, BP_L_ARM))
+						target.injure(INJURY_PIERCE, 3, pick(BP_R_ARM, BP_L_ARM), src)
 						return
 					user.visible_message(span_infoplain(span_bold("\The [user]") + "hooks \the [target] up to \the [src]."),
 									span_notice("You hook \the [target] up to \the [src]."))
@@ -389,7 +389,7 @@
 	if(attached)
 		if(!Adjacent(attached))
 			visible_message("The needle is ripped out of [src.attached], doesn't that hurt?")
-			attached.apply_damage(3, BRUTE, pick(BP_R_ARM, BP_L_ARM))
+			attached.injure(INJURY_PIERCE, 3, pick(BP_R_ARM, BP_L_ARM), src)
 			attached = null
 			update_icon()
 

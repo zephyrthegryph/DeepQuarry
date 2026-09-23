@@ -147,7 +147,7 @@
 	can_hold = list(
 		/obj/item/pen/crayon
 	)
-	// variant-based crayon spawn (see crayon_pilot.dm). The 6
+	// variant-based crayon spawn (see code/datums/variants/crayon_variants.dm). The 6
 	// plain-color subtypes (red/orange/yellow/green/blue/purple) have been
 	// collapsed into the parent type with a `variant` arg.
 	starts_with = list()
@@ -189,7 +189,7 @@
 	can_hold = list(
 		/obj/item/pen/crayon/marker
 	)
-	// variant-based marker spawn (see crayon_pilot.dm).
+	// variant-based marker spawn (see code/datums/variants/crayon_variants.dm).
 	starts_with = list()
 
 /obj/item/storage/fancy/markers/Initialize(mapload)
@@ -550,7 +550,6 @@
 		icon_state = "heartbox_empty"
 
 
-// === merged from fancy_ch.dm during hard-fork de-suffix (verified no override-order change) ===
 /obj/item/storage/fancy/cigar/cohiba
 	name = "cohiban cigar case"
 	starts_with = list(/obj/item/clothing/mask/smokable/cigarette/cigar/cohiba = 5)
@@ -558,3 +557,13 @@
 /obj/item/storage/fancy/cigar/havana
 	name = "havanian cigar case"
 	starts_with = list(/obj/item/clothing/mask/smokable/cigarette/cigar/havana = 5)
+
+/obj/item/storage/fancy/cigarettes/yw
+	icon = 'icons/obj/cigarettes_yw.dmi'
+
+/obj/item/storage/fancy/cigarettes/yw/mauser
+	name = "\improper pack of f13 cigarettes"
+	desc = "A packet of 6 f13 brand cigarettes, they somehow have a faint flavor of gunpowder... And mustard gas."
+	description_fluff = "f13 is a side brand of the Mauser family. The Mauser brand is an old earth, German company that has managed to stay afloat throughout the years, they mainly produce projectile weapons that are known to be extremely efficient and powerful. They are also known for their Gorilla class mech which is a force to be reckoned with. They have a wide range of other branded products, including this cigarette packet."
+	icon_state = "MauserPacket"
+	brand = "\improper Mauser"

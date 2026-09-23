@@ -89,10 +89,8 @@
 				if(0)	//inside a crate or something
 					var/turf/T = get_turf(M)
 					if(T && (T.z in using_map.station_levels))				//we don't use M.death(0) because it calls a for(/mob) loop and
-						M.health = 0
 						M.set_stat(DEAD)
 				if(1)	//on a z-level 1 turf.
-					M.health = 0
 					M.set_stat(DEAD)
 
 	//Now animate the cinematic

@@ -24,8 +24,7 @@
 	icon_dead = "hare_dead"
 	icon_rest = "hare_rest"
 
-	maxHealth = 20
-	health = 20
+	endurance = 20
 
 	armor = list(
 		"melee" = 30,

@@ -179,7 +179,7 @@
 	var/turf/T = get_step(src,exhaust_dir)
 	if(T)
 		T.assume_air(removed)
-		new/obj/effect/engine_exhaust(T, exhaust_dir, air_contents.check_combustability() && air_contents.return_temperature() >= PHORON_MINIMUM_BURN_TEMPERATURE)
+		new/obj/effect/engine_exhaust(T, exhaust_dir, air_contents.check_combustability() && air_contents.return_temperature() >= PLASMA_MINIMUM_BURN_TEMPERATURE)
 
 /obj/machinery/atmospherics/unary/engine/proc/calculate_thrust(datum/gas_mixture/propellant, used_part = 1)
 	return round(sqrt(propellant.get_mass() * used_part * sqrt(air_contents.return_pressure()/200)),0.1)
@@ -231,7 +231,6 @@
 // 	uncreated_component_parts = list(/obj/item/stock_parts/power/terminal/buildable = 1)
 
 
-// === merged from gas_thruster_vr.dm during hard-fork de-suffix (verified no override-order change) ===
 //These connect at the corner 2 steps and 3 steps in the dir from their loc
 /obj/machinery/atmospherics/unary/engine/bigger
 	name = "large rocket nozzle"

@@ -15,7 +15,7 @@
 
 	if(L.add_modifier(/datum/modifier/berserk, 30 SECONDS))
 		to_chat(L, span_danger("An otherworldly feeling seems to enter your mind, and it ignites your mind in fury!"))
-		L.adjustBrainLoss(3) // Playing with berserking alien psychic artifacts isn't good for the mind.
+		L.injure(INJURY_NEURAL, 3) // Playing with berserking alien psychic artifacts isn't good for the mind.
 		to_chat(L, span_danger("The inside of your head hurts..."))
 		return TRUE
 	else

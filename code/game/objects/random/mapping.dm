@@ -2009,7 +2009,6 @@
 				)
 
 
-// === merged from mapping_vr.dm during hard-fork de-suffix (verified no override-order change) ===
 /obj/random/empty_or_lootable_crate
 	name = "random crate"
 	desc = "Spawns a random crate which may or may not have contents. Sometimes spawns nothing."
@@ -2173,7 +2172,6 @@
 			)
 
 
-// === merged from mapping_chomp.dm during hard-fork de-suffix (verified no override-order change) ===
 //Buncha mapping helpers to make some map work easier
 
 /obj/effect/map_helper

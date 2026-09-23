@@ -12,18 +12,9 @@
 	var/list/prey_langs = list()
 	var/mob/living/pred_body		//The body of the person who was dominated
 	var/pred_ckey					//The ckey of the person who was dominated
-	var/pred_ooc_notes
-	var/pred_ooc_likes
-	var/pred_ooc_dislikes
-	var/pred_ooc_favs
-	var/pred_ooc_maybes
-	var/pred_ooc_style
-	var/prey_ooc_favs
-	var/prey_ooc_maybes
-	var/prey_ooc_style
-	var/prey_ooc_notes
-	var/prey_ooc_likes
-	var/prey_ooc_dislikes
+	/// The identities of the two characters, carried by reference across key moves.
+	var/datum/character_identity/pred_identity
+	var/datum/character_identity/prey_identity
 	var/was_mob
 
 /mob/living/dominated_brain/Initialize(mapload, mob/living/pred, preyname, mob/living/prey)
@@ -41,10 +32,8 @@
 	. = ..()
 	if(!isliving(loc))
 		qdel(src)
-		return
 	if(!ckey)
 		qdel(src)
-		return
 
 /mob/living/dominated_brain/say_understands(mob/other, datum/language/speaking = null)
 	if(pred_body.say_understands(other, speaking))
@@ -74,6 +63,8 @@
 
 /mob/living/dominated_brain/Destroy()
 	lets_unregister_our_signals()
+	pred_identity = null
+	prey_identity = null
 	. = ..()
 
 /mob/living/dominated_brain/process_resist()
@@ -113,17 +104,13 @@
 		ndb.name = prey_name
 		ndb.prey_ckey = src.prey_ckey
 		ndb.pred_ckey = src.pred_ckey
+		ndb.prey_identity = prey_identity
+		ndb.pred_identity = pred_identity
 
 		prey_goes_here = ndb
 		prey_goes_here.real_name = src.prey_name
 		src.languages -= src.temp_languages
 		prey_goes_here.languages |= src.prey_langs
-		prey_goes_here.ooc_notes = prey_ooc_notes
-		prey_goes_here.ooc_notes_likes = prey_ooc_likes
-		prey_goes_here.ooc_notes_dislikes = prey_ooc_dislikes
-		prey_goes_here.ooc_notes_favs = prey_ooc_favs
-		prey_goes_here.ooc_notes_maybes = prey_ooc_maybes
-		prey_goes_here.ooc_notes_style = prey_ooc_style
 		add_verb(prey_goes_here, /mob/living/dominated_brain/proc/cease_this_foolishness)
 
 
@@ -132,17 +119,13 @@
 		ndb.name = prey_name
 		ndb.prey_ckey = src.prey_ckey
 		ndb.pred_ckey = src.pred_ckey
+		ndb.prey_identity = prey_identity
+		ndb.pred_identity = pred_identity
 
 		prey_goes_here = ndb
 		src.languages -= src.temp_languages
 		prey_goes_here.languages |= src.prey_langs
 		prey_goes_here.real_name = src.prey_name
-		prey_goes_here.ooc_notes = prey_ooc_notes
-		prey_goes_here.ooc_notes_likes = prey_ooc_likes
-		prey_goes_here.ooc_notes_dislikes = prey_ooc_dislikes
-		prey_goes_here.ooc_notes_favs = prey_ooc_favs
-		prey_goes_here.ooc_notes_maybes = prey_ooc_maybes
-		prey_goes_here.ooc_notes_style = prey_ooc_style
 
 	///////////////////
 
@@ -152,12 +135,8 @@
 	//Now actually put the people in the mobs
 	prey_goes_here.ckey = src.prey_ckey
 	pred_body.ckey = src.pred_ckey
-	pred_body.ooc_notes = pred_ooc_notes
-	pred_body.ooc_notes_likes = pred_ooc_likes
-	pred_body.ooc_notes_dislikes = pred_ooc_dislikes
-	pred_body.ooc_notes_favs = pred_ooc_favs
-	pred_body.ooc_notes_maybes = pred_ooc_maybes
-	pred_body.ooc_notes_style = pred_ooc_style
+	prey_goes_here.share_identity(prey_identity)
+	pred_body.share_identity(pred_identity)
 	log_and_message_admins("is now controlled by [pred_body.ckey]. They were restored to control through prey domination, and had been controlled by [prey_ckey].", pred_body)
 	pred_body.absorb_langs()
 	pred_body.prey_controlled = FALSE
@@ -204,10 +183,6 @@
 		if(isbelly(pocketpal.card.loc))
 			pred = pocketpal.card.loc.loc
 	else
-		to_chat(prey, span_notice("You are not inside anyone."))
-		return
-
-	if(!pred)
 		to_chat(prey, span_notice("You are not inside anyone."))
 		return
 
@@ -268,18 +243,8 @@
 	else
 		pred_brain = new /mob/living/dominated_brain(pred, pred, name, prey)
 
-	pred_brain.prey_ooc_notes = prey.ooc_notes
-	pred_brain.prey_ooc_likes = prey.ooc_notes_likes
-	pred_brain.prey_ooc_dislikes = prey.ooc_notes_dislikes
-	pred_brain.prey_ooc_favs = prey.ooc_notes_favs
-	pred_brain.prey_ooc_maybes = prey.ooc_notes_maybes
-	pred_brain.prey_ooc_style = prey.ooc_notes_style
-	pred_brain.pred_ooc_favs = pred.ooc_notes_favs
-	pred_brain.pred_ooc_maybes = pred.ooc_notes_maybes
-	pred_brain.pred_ooc_style = pred.ooc_notes_style
-	pred_brain.pred_ooc_notes = pred.ooc_notes
-	pred_brain.pred_ooc_likes = pred.ooc_notes_likes
-	pred_brain.pred_ooc_dislikes = pred.ooc_notes_dislikes
+	pred_brain.prey_identity = prey.identity
+	pred_brain.pred_identity = pred.identity
 
 	pred_brain.name = pred.name
 	var/list/preylangs = list()
@@ -289,12 +254,6 @@
 	pred_brain.prey_ckey = prey.ckey
 	pred_brain.pred_ckey = pred.ckey
 	pred_brain.pred_body.absorb_langs()
-	pred.ooc_notes = pred_brain.prey_ooc_notes
-	pred.ooc_notes_likes = pred_brain.prey_ooc_likes
-	pred.ooc_notes_dislikes = pred_brain.prey_ooc_dislikes
-	pred.ooc_notes_favs = pred_brain.prey_ooc_favs
-	pred.ooc_notes_maybes = pred_brain.prey_ooc_maybes
-	pred.ooc_notes_style = pred_brain.prey_ooc_style
 
 	add_verb(pred, /mob/proc/release_predator)
 
@@ -302,6 +261,8 @@
 	pred_brain.ckey = pred_brain.pred_ckey
 	pred_brain.real_name = pred.real_name
 	pred.ckey = pred_brain.prey_ckey
+	pred_brain.share_identity(pred_brain.pred_identity)
+	pred.share_identity(pred_brain.prey_identity)
 	pred.prey_controlled = TRUE
 	log_and_message_admins("is now controlled by [pred.ckey], they were taken over via prey domination, and were originally controlled by [pred_brain.pred_ckey].", pred)
 	if(delete_source)
@@ -423,22 +384,14 @@
 
 	M.languages -= M.temp_languages
 	db.languages |= M.languages
-	db.ooc_notes = M.ooc_notes
-	db.ooc_notes_likes = M.ooc_notes_likes
-	db.ooc_notes_dislikes = M.ooc_notes_dislikes
-	db.ooc_notes_favs = M.ooc_notes_favs
-	db.ooc_notes_maybes = M.ooc_notes_maybes
-	db.ooc_notes_style = M.ooc_notes_style
-	db.prey_ooc_favs = M.ooc_notes_favs
-	db.prey_ooc_maybes = M.ooc_notes_maybes
-	db.prey_ooc_style = M.ooc_notes_style
-	db.prey_ooc_likes = M.ooc_notes_likes
-	db.prey_ooc_dislikes = M.ooc_notes_dislikes
+	db.prey_identity = M.identity
+	db.pred_identity = identity
 	add_verb(db, /mob/living/dominated_brain/proc/cease_this_foolishness)
 
 	absorb_langs()
 
 	db.ckey = db.prey_ckey
+	db.share_identity(db.prey_identity)
 	log_admin("[db] ([db.ckey]) has agreed to [src]'s dominate prey attempt, and so no longer occupies their original body.")
 	to_chat(src, span_notice("You feel your mind expanded as [M] is incorporated into you."))
 	to_chat(M, span_warning("Your mind is gathered into \the [src], becoming part of them..."))
@@ -539,18 +492,8 @@
 	else
 		pred_brain = new /mob/living/dominated_brain(pred, pred, name, prey)
 
-	pred_brain.prey_ooc_notes = prey.ooc_notes
-	pred_brain.prey_ooc_likes = prey.ooc_notes_likes
-	pred_brain.prey_ooc_dislikes = prey.ooc_notes_dislikes
-	pred_brain.prey_ooc_favs = prey.ooc_notes_favs
-	pred_brain.prey_ooc_maybes = prey.ooc_notes_maybes
-	pred_brain.prey_ooc_style = prey.ooc_notes_style
-	pred_brain.pred_ooc_favs = pred.ooc_notes_favs
-	pred_brain.pred_ooc_maybes = pred.ooc_notes_maybes
-	pred_brain.pred_ooc_style = pred.ooc_notes_style
-	pred_brain.pred_ooc_notes = pred.ooc_notes
-	pred_brain.pred_ooc_likes = pred.ooc_notes_likes
-	pred_brain.pred_ooc_dislikes = pred.ooc_notes_dislikes
+	pred_brain.prey_identity = prey.identity
+	pred_brain.pred_identity = pred.identity
 	pred_brain.name = pred.name
 	var/list/preylangs = list()
 	preylangs |= prey.languages
@@ -559,12 +502,6 @@
 	pred_brain.prey_ckey = prey.ckey
 	pred_brain.pred_ckey = pred.ckey
 	pred_brain.pred_body.absorb_langs()
-	pred.ooc_notes = pred_brain.prey_ooc_notes
-	pred.ooc_notes_likes = pred_brain.prey_ooc_likes
-	pred.ooc_notes_dislikes = pred_brain.prey_ooc_dislikes
-	pred.ooc_notes_favs = pred_brain.prey_ooc_favs
-	pred.ooc_notes_maybes = pred_brain.prey_ooc_maybes
-	pred.ooc_notes_style = pred_brain.prey_ooc_style
 
 	add_verb(pred, /mob/proc/release_predator)
 
@@ -572,6 +509,8 @@
 	pred_brain.ckey = pred_brain.pred_ckey
 	pred_brain.real_name = pred.real_name
 	pred.ckey = pred_brain.prey_ckey
+	pred_brain.share_identity(pred_brain.pred_identity)
+	pred.share_identity(pred_brain.prey_identity)
 	pred.prey_controlled = TRUE
 	log_and_message_admins("is now controlled by [pred.ckey], they were taken over via pred submission, and were originally controlled by [pred_brain.pred_ckey].", pred)
 	if(delete_source)

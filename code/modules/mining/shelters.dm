@@ -390,7 +390,6 @@
 	description = "A small dubiously legal surgical site for all your cybernetic needs, may contain some illegal items."
 
 
-// === merged from shelters_vr.dm during hard-fork de-suffix (manually verified) ===
 /datum/map_template/shelter
 	var/shelter_id
 	var/description

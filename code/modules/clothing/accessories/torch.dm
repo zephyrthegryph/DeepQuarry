@@ -142,13 +142,6 @@ ribbons
 /*************
 specialty pins
 *************/
-/* //Lost to time.
-/obj/item/clothing/accessory/solgov/specialty
-	name = "speciality blaze"
-	desc = "A color blaze denoting fleet personnel in some special role. This one is silver."
-	icon_state = "marinerank_command"
-	slot = ACCESSORY_SLOT_INSIGNIA
-*/
 /obj/item/clothing/accessory/solgov/specialty/janitor
 	name = "custodial blazes"
 	desc = "Purple blazes denoting a custodial technician."
@@ -251,18 +244,6 @@ armour attachments
 *****************/
 /obj/item/clothing/accessory/armor/tag
 	name = DEVELOPER_WARNING_NAME
-/*
-/obj/item/clothing/accessory/armor/tag/solgov
-	name = "\improper TCG Flag"
-	desc = "An emblem depicting the Terran Commonwealth's flag."
-	icon_state = "solflag"
-	slot = ACCESSORY_SLOT_ARMOR_M
-
-/obj/item/clothing/accessory/armor/tag/solgov/ec
-	name = "\improper Expeditionary Corps crest"
-	desc = "An emblem depicting the crest of the TCG Expeditionary Corps."
-	icon_state = "ecflag"
-*/
 /obj/item/clothing/accessory/armor/tag/solgov/sec
 	name = "\improper POLICE tag"
 	desc = "An armor tag with the word POLICE printed in silver lettering on it."

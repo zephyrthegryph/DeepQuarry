@@ -50,7 +50,6 @@ SUBSYSTEM_DEF(ticker)
 	/// What is going to be reported to other stations at end of round?
 	var/news_report
 
-
 	var/roundend_check_paused = FALSE
 
 	var/round_start_time = 0
@@ -122,10 +121,6 @@ SUBSYSTEM_DEF(ticker)
 			// Do not count down the time, if the game start is delayed
 			if (GLOB.round_progressing)
 				timeLeft -= wait
-
-			//if(timeLeft <= 300 && !tipped)
-			//	send_tip_of_the_round(world, selected_tip)
-			//	tipped = TRUE
 
 			if(timeLeft <= 0)
 				SEND_SIGNAL(src, COMSIG_TICKER_ENTER_SETTING_UP)
@@ -485,14 +480,6 @@ SUBSYSTEM_DEF(ticker)
 		return
 
 	to_chat(world, span_boldannounce("Rebooting World in [DisplayTimeText(delay)]. [reason]"))
-
-	// We dont have those
-	//var/statspage = CONFIG_GET(string/roundstatsurl)
-	//var/gamelogloc = CONFIG_GET(string/gamelogurl)
-	//if(statspage)
-	//	to_chat(world, span_info("Round statistics and logs can be viewed <a href=\"[statspage][GLOB.round_id]\">at this website!</a>"))
-	//else if(gamelogloc)
-	//	to_chat(world, span_info("Round logs can be located <a href=\"[gamelogloc]\">at this website!</a>"))
 
 	var/start_wait = world.time
 	UNTIL(round_end_sound_sent || (world.time - start_wait) > (delay * 2)) //don't wait forever

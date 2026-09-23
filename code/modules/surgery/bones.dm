@@ -104,7 +104,7 @@
 	user.visible_message(span_danger("[user]'s hand slips, damaging the bone in [target]'s [affected.name] with \the [tool]!") , \
 		span_danger("Your hand slips, damaging the bone in [target]'s [affected.name] with \the [tool]!"))
 	user.balloon_alert_visible("slips, damaging the bone.", "your hand slips, damaging the bone")
-	affected.createwound(BRUISE, 5)
+	target.injure(INJURY_BLUNT, 5, affected.organ_tag, tool, flags = INJURE_IGNORE_RESISTANCE)
 
 ///////////////////////////////////////////////////////////////
 // Skull Mending Surgery
@@ -144,7 +144,7 @@
 		span_danger("Your hand slips, damaging [target]'s face with \the [tool]!"))
 	user.balloon_alert_visible("slips, damaging [target]'s face", "your hand slips, damaging [target]'s face")
 	var/obj/item/organ/external/head/h = affected
-	h.createwound(BRUISE, 10)
+	target.injure(INJURY_BLUNT, 10, h.organ_tag, tool, flags = INJURE_IGNORE_RESISTANCE)
 	h.disfigure()
 
 ///////////////////////////////////////////////////////////////
@@ -233,4 +233,4 @@
 	user.visible_message(span_danger("[user]'s hand slips, damaging the bone in [target]'s [affected.name] with \the [tool]!") , \
 		span_danger("Your hand slips, damaging the bone in [target]'s [affected.name] with \the [tool]!"))
 	user.balloon_alert_visible("slips, damaging [target]'s [affected.name]", "your hand slips, damaging the bone.")
-	affected.createwound(BRUISE, 5)
+	target.injure(INJURY_BLUNT, 5, affected.organ_tag, tool, flags = INJURE_IGNORE_RESISTANCE)

@@ -30,11 +30,6 @@ GLOBAL_LIST_EMPTY(event_last_fired)
 	var/minutes_passed = world.time/600
 
 	var/list/active_with_role = number_active_with_role()
-	//var/engineer_count = number_active_with_role(DEPARTMENT_ENGINEERING)
-	//var/security_count = number_active_with_role(DEPARTMENT_SECURITY)
-	//var/medical_count = number_active_with_role(DEPARTMENT_MEDICAL)
-	//var/AI_count = number_active_with_role(JOB_AI)
-	//var/janitor_count = number_active_with_role(JOB_JANITOR)
 
 	// Maps event names to event chances
 	// For each chance, 100 represents "normal likelihood", anything below 100 is "reduced likelihood", anything above 100 is "increased likelihood"
@@ -54,7 +49,6 @@ GLOBAL_LIST_EMPTY(event_last_fired)
 	possibleEvents[/datum/event/money_lotto] = max(min(5,  GLOB.player_list.len), 50)
 	if(GLOB.account_hack_attempted)
 		possibleEvents[/datum/event/money_hacker] = max(min(25, GLOB.player_list.len) * 4, 200)
-
 
 	possibleEvents[/datum/event/carp_migration] = 20 + 10 * active_with_role[DEPARTMENT_ENGINEERING]
 	possibleEvents[/datum/event/brand_intelligence] = 20 + 25 * active_with_role[JOB_JANITOR]
@@ -112,65 +106,6 @@ GLOBAL_LIST_EMPTY(event_last_fired)
 	new picked_event
 
 	//moved this to proc/check_event()
-	/*var/chance = possibleEvents[picked_event]
-	var/base_chance = 0.4
-	switch(GLOB.player_list.len)
-		if(5 to 10)
-			base_chance = 0.6
-		if(11 to 15)
-			base_chance = 0.7
-		if(16 to 20)
-			base_chance = 0.8
-		if(21 to 25)
-			base_chance = 0.9
-		if(26 to 30)
-			base_chance = 1.0
-		if(30 to 100000)
-			base_chance = 1.1
-
-	// Trigger the event based on how likely it currently is.
-	if(!prob(chance * eventchance * base_chance / 100))
-		return 0*/
-
-	/*switch(picked_event)
-		if("Meteor")
-			command_alert("Meteors have been detected on collision course with the station.", "Meteor Alert")
-			for(var/mob/M in GLOB.player_list)
-				if(!isnewplayer(M))
-					play_simple_announcement(M, ANNOUNCER_MSG_METEORS)
-			spawn(100)
-				meteor_wave(10)
-				spawn_meteors()
-			spawn(700)
-				meteor_wave(10)
-				spawn_meteors()
-		if("Space Ninja")
-			//Handled in space_ninja.dm. Doesn't announce arrival, all sneaky-like.
-			space_ninja_arrival()
-		if("Radiation")
-			high_radiation_event()
-		if("Virus")
-			viral_outbreak()
-		if("Alien")
-			alien_infestation()
-		if("Prison Break")
-			prison_break()
-		if("Carp")
-			carp_migration()
-		if("Lights")
-			lightsout(1,2)
-		if("Appendicitis")
-			appendicitis()
-		if("Ion Storm")
-			IonStorm()
-		if("Spacevine")
-			spacevine_infestation()
-		if("Communications")
-			communications_blackout()
-		if("Grid Check")
-			grid_check()
-		if("Meteor")
-			meteor_shower()*/
 
 	return 1
 
@@ -199,21 +134,9 @@ GLOBAL_LIST_EMPTY(event_last_fired)
 
 		if(isrobot(M))
 			var/mob/living/silicon/robot/R = M
-			if(R.module)
-				if(istype(R.module, /obj/item/robot_module/robot/engineering))
-					active_with_role[DEPARTMENT_ENGINEERING]++
-				else if(istype(R.module, /obj/item/robot_module/robot/security))
-					active_with_role[DEPARTMENT_SECURITY]++
-				else if(istype(R.module, /obj/item/robot_module/robot/medical))
-					active_with_role[DEPARTMENT_MEDICAL]++
-				else if(istype(R.module, /obj/item/robot_module/robot/research))
-					active_with_role[DEPARTMENT_RESEARCH]++
-				else if(istype(R.module, /obj/item/robot_module/robot/janitor))
-					active_with_role[JOB_JANITOR]++
-				else if(istype(R.module, /obj/item/robot_module/robot/clerical/butler))
-					active_with_role[JOB_BOTANIST]++
-				else if(istype(R.module, /obj/item/robot_module/robot/miner))
-					active_with_role[DEPARTMENT_CARGO]++
+			var/role = R.module?.staffing_role
+			if(role)
+				active_with_role[role]++
 
 		if(M.mind.assigned_role in SSjob.get_job_titles_in_department(DEPARTMENT_ENGINEERING))
 			active_with_role[DEPARTMENT_ENGINEERING]++

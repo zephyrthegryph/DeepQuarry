@@ -17,8 +17,7 @@
 	var/contract_operator_department
 	anchored = TRUE
 	density = TRUE
-	health = 150
-	maxHealth = 150
+	endurance = 150
 	mob_bump_flag = HEAVY
 
 	min_target_dist = 0
@@ -261,12 +260,12 @@
 		playsound(src, 'sound/effects/splat.ogg', 50, 1)
 
 		var/damage = rand(5, 7)
-		M.apply_damage(2 * damage, BRUTE, BP_HEAD)
-		M.apply_damage(2 * damage, BRUTE, BP_TORSO)
-		M.apply_damage(0.5 * damage, BRUTE, BP_L_LEG)
-		M.apply_damage(0.5 * damage, BRUTE, BP_R_LEG)
-		M.apply_damage(0.5 * damage, BRUTE, BP_L_ARM)
-		M.apply_damage(0.5 * damage, BRUTE, BP_R_ARM)
+		M.injure(INJURY_BLUNT, 2 * damage, BP_HEAD, src)
+		M.injure(INJURY_BLUNT, 2 * damage, BP_TORSO, src)
+		M.injure(INJURY_BLUNT, 0.5 * damage, BP_L_LEG, src)
+		M.injure(INJURY_BLUNT, 0.5 * damage, BP_R_LEG, src)
+		M.injure(INJURY_BLUNT, 0.5 * damage, BP_L_ARM, src)
+		M.injure(INJURY_BLUNT, 0.5 * damage, BP_R_ARM, src)
 
 		blood_splatter(src, M, 1)
 

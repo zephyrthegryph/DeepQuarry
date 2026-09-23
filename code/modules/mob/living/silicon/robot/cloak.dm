@@ -39,7 +39,7 @@
 		//MATH: CELLRATE = 0.002 CYBORG_POWER_USAGE_MULTIPLIER = 2 and power_use = amount * CYBORG_POWER_USAGE_MULTIPLIER...
 		//So 250W = 1 charge. Syndi battery has 25000 charge.
 		//Let's make it so that 20 charge is used per 2 seconds if we are 100% dq_get_cloaked(src). We subtract 100 since that's the idle power used for a module being selected.
-		if(!R.cell_use_power((cloak_strength * 5000) - 100))
+		if(!R.draw_power(((cloak_strength * 5000) - 100) * CYBORG_POWER_USAGE_MULTIPLIER, src))
 			active = FALSE
 			update_cloak(R) //Update the cloak strength on the robot.
 			return //We ran out of power. RIP.
@@ -110,6 +110,8 @@
 	var/cloaked = TRUE
 	///How much evasion we have when our cloak is up.
 	var/modified_evasion
+	///Body factors while the cloak is up (built once from the module's strength).
+	var/alist/cloaked_factors
 
 	stacks = MODIFIER_STACK_FORBID
 
@@ -123,8 +125,9 @@
 	var/obj/item/borg/cloak/cloak = locate() in R //Find the borg cloak module
 	var/cloak_strength = cloak.cloak_strength
 	visibility = 255 * (1 - cloak_strength)
-	modified_evasion = 60*cloak_strength
-	evasion = modified_evasion //60 at full strength, 30 at half strength.
+	modified_evasion = 60*cloak_strength //60 at full strength, 30 at half strength.
+	cloaked_factors = alist(BF_EVASION = modified_evasion)
+	set_factors(cloaked_factors)
 	animate(holder, alpha = visibility, time = 1 SECOND)
 	RegisterSignal(holder, COMSIG_MOB_APPLY_DAMAGE, PROC_REF(damage_inflicted))
 	RegisterSignal(holder, COMSIG_ROBOT_ITEM_ATTACK, PROC_REF(attacked_in_cloak))
@@ -184,9 +187,9 @@
 /datum/modifier/robot_cloak/proc/drop_cloak()
 	holder.alpha = initial(holder.alpha)
 	dq_set_cloaked(src, FALSE)
-	evasion = 0
+	set_factors(null)
 
 /datum/modifier/robot_cloak/proc/reset_cloak()
 	times_hit = 0
 	dq_set_cloaked(src, TRUE)
-	evasion = modified_evasion
+	set_factors(cloaked_factors)

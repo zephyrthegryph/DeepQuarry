@@ -196,45 +196,6 @@
 
 GLOBAL_LIST_EMPTY(shoreline_icon_cache)
 
-/turf/simulated/floor/water/beach
-	name = "beach shoreline"
-	desc = "The waves look calm and inviting."
-	icon_state = "beach"
-	depth = 0
-
-/turf/simulated/floor/water/beach/update_icon()
-	return
-
-/turf/simulated/floor/water/beach/corner
-	icon_state = "beachcorner"
-
-/turf/simulated/floor/water/shoreline
-	name = "shoreline"
-	desc = "The waves look calm and inviting."
-	icon_state = "shoreline"
-	water_state = "rock" // Water gets generated as an overlay in update_icon()
-	depth = 0
-
-/turf/simulated/floor/water/shoreline/corner
-	icon_state = "shorelinecorner"
-
-// Water sprites are really annoying, so let BYOND sort it out.
-/turf/simulated/floor/water/shoreline/update_icon()
-	underlays.Cut()
-	cut_overlays()
-	..() // Get the underlay first.
-	var/cache_string = "[initial(icon_state)]_[water_state]_[dir]"
-	if(cache_string in GLOB.shoreline_icon_cache) // Check to see if an icon already exists.
-		add_overlay(GLOB.shoreline_icon_cache[cache_string])
-	else // If not, make one, but only once.
-		var/icon/shoreline_water = icon(src.icon, "shoreline_water", src.dir)
-		var/icon/shoreline_subtract = icon(src.icon, "[initial(icon_state)]_subtract", src.dir)
-		shoreline_water.Blend(shoreline_subtract,ICON_SUBTRACT)
-		var/image/final = image(shoreline_water)
-		final.layer = WATER_LAYER
-
-		GLOB.shoreline_icon_cache[cache_string] = final
-		add_overlay(GLOB.shoreline_icon_cache[cache_string])
 
 /turf/simulated/floor/water/is_safe_to_enter(mob/living/L)
 	// Aquatic flags simulated water as safe now
@@ -247,19 +208,6 @@ GLOBAL_LIST_EMPTY(shoreline_icon_cache)
 		return FALSE
 	return ..()
 
-/turf/simulated/floor/water/contaminated
-	desc = "This water smells pretty acrid."
-	var/poisonlevel = 10
-
-/turf/simulated/floor/water/contaminated/Entered(atom/movable/AM, atom/oldloc)
-	..()
-	if(isliving(AM))
-		var/mob/living/L = AM
-		if(L.isSynthetic())
-			return
-		var/applied_poison = poisonlevel * (1 - L.get_water_protection())
-		if(applied_poison > 0)
-			L.adjustToxLoss(applied_poison)
 
 /turf/simulated/floor/water/blood
 	name = REAGENT_ID_BLOOD
@@ -285,18 +233,7 @@ GLOBAL_LIST_EMPTY(shoreline_icon_cache)
 	AM.water_act(5)
 	..()
 
-/turf/simulated/floor/water/glamour
-	name = "glamour"
-	desc = "A body of glamour.  It seems shallow enough to walk through, if needed."
-	icon = 'icons/turf/flooring/glamour.dmi'
-	icon_state = "water"
-	water_icon = 'icons/turf/flooring/glamour.dmi'
-	water_state = "water"
-	under_state = "glamour"
-	reagent_type = REAGENT_ID_WATER
 
-
-// === merged from water_vr.dm during hard-fork de-suffix (verified no override-order change) ===
 /turf/simulated/floor/water/indoors //because it's nice to be able to use these indoors without having a blizzard ignore walls and areas.
 	outdoors = OUTDOORS_NO
 

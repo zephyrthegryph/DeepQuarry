@@ -13,8 +13,7 @@
 
 	movement_cooldown = 1.5
 //	speed = 5
-	maxHealth = 25
-	health = 25
+	endurance = 25
 
 	harm_intent_damage = 4
 	melee_damage_lower = 2

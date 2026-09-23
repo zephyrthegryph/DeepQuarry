@@ -113,7 +113,6 @@
 	)
 	departmental_flags = DEPARTMENT_BITFLAG_SECURITY | DEPARTMENT_BITFLAG_SCIENCE
 
-
 /datum/design_techweb/mechfab/equipment/weapon/taser
 	name = "PBT \"Pacifier\" Mounted Taser"
 	id = "mech_taser"
@@ -347,30 +346,6 @@
 	category = list(
 		RND_CATEGORY_MECHFAB_EQUIPMENT + RND_SUBCATEGORY_MECHFAB_EQUIPMENT_MODULES
 	)
-
-/* These are way too OP to be buildable
-/datum/design_techweb/mechfab/equipment/combat_shield
-	name = "linear combat shield"
-	desc = "Linear shield projector. Deploys a large, familiar, and rectangular shield in one direction at a time."
-	id = "mech_shield_droid"
-	//req_tech = list(TECH_PHORON = 3, TECH_MAGNET = 6, TECH_ILLEGAL = 4)
-	materials = list(MAT_STEEL = 8000, MAT_GOLD = 2000, MAT_SILVER = 3000, MAT_PHORON = 5000, MAT_GLASS = 3750)
-	build_path = /obj/item/mecha_parts/mecha_equipment/combat_shield
-	category = list(
-		RND_CATEGORY_MECHFAB_EQUIPMENT + RND_SUBCATEGORY_MECHFAB_EQUIPMENT_MODULES
-	)
-
-/datum/design_techweb/mechfab/equipment/omni_shield
-	name = "Omni Shield"
-	desc = "Integral shield projector. Can only protect the exosuit, but has no weak angles."
-	id = "mech_shield_omni"
-	//req_tech = list(TECH_PHORON = 3, TECH_MAGNET = 6, TECH_ILLEGAL = 4)
-	materials = list(MAT_STEEL = 8000, MAT_GOLD = 2000, MAT_SILVER = 3000, MAT_PHORON = 5000, MAT_GLASS = 3750)
-	build_path = /obj/item/mecha_parts/mecha_equipment/omni_shield
-	category = list(
-		RND_CATEGORY_MECHFAB_EQUIPMENT + RND_SUBCATEGORY_MECHFAB_EQUIPMENT_MODULES
-	)
-*/
 
 /datum/design_techweb/mechfab/equipment/crisis_drone
 	name = "Crisis Drone"

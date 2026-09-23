@@ -28,7 +28,6 @@
 	battery_module.charge_to_full()
 
 
-// === merged from preset_tablet_vr.dm during hard-fork de-suffix (verified no override-order change) ===
 /obj/item/modular_computer/tablet/preset/custom_loadout/rugged
 	name = "rugged tablet computer"
 	desc = "A rugged tablet computer."

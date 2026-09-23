@@ -21,12 +21,15 @@ SUBSYSTEM_DEF(radiation)
 	var/profile_max_targets_remaining = 0
 	var/list/profile_source_cost_ms = list()
 	var/list/profile_source_targets = list()
-	/// Short-lived shielding cache shared by pulses from the same steady source.
-	/// Radiation emitters fire far more often than shielding topology changes;
-	/// bounding this to one second preserves responsive doors while eliminating
-	/// repeated get_line/content scans for the same source/target pair.
+	/// Shielding cache shared by pulses from the same steady source, keyed by
+	/// source/target/threshold. Valid while shielding_revision is unchanged.
 	var/list/path_insulation_cache = list()
-	var/path_insulation_cache_expires = 0
+	/// shielding_revision the cache was filled under.
+	var/path_insulation_cache_revision = -1
+	/// Bumped (RAD_SHIELDING_CHANGED) whenever something that shields radiation
+	/// changes: a turf changes, an insulating movable moves, spawns or is deleted,
+	/// or an atom's rad_insulation is set.
+	var/shielding_revision = 0
 
 /datum/controller/subsystem/radiation/fire(resumed)
 	profile_max_queue = max(profile_max_queue, processing.len)
@@ -41,13 +44,13 @@ SUBSYSTEM_DEF(radiation)
 			continue
 
 		profile_pulse_invocations++
-		profile_max_targets_remaining = max(profile_max_targets_remaining, length(pulse_information.targets_to_process))
+		profile_max_targets_remaining = max(profile_max_targets_remaining, pulse_information.remaining_targets())
 		var/source_type = "[source.type]"
-		var/targets_before = length(pulse_information.targets_to_process)
+		var/targets_before = pulse_information.remaining_targets()
 		var/profile_start = TICK_USAGE
 		pulse(source, pulse_information)
 		profile_source_cost_ms[source_type] += TICK_DELTA_TO_MS(TICK_USAGE - profile_start)
-		profile_source_targets[source_type] += targets_before - length(pulse_information.targets_to_process)
+		profile_source_targets[source_type] += targets_before - pulse_information.remaining_targets()
 
 		if (MC_TICK_CHECK)
 			profile_yields++
@@ -60,7 +63,7 @@ SUBSYSTEM_DEF(radiation)
 	var/current_targets = 0
 	if(length(processing))
 		var/datum/radiation_pulse_information/current = processing[1]
-		current_targets = length(current?.targets_to_process)
+		current_targets = current?.remaining_targets()
 	var/list/source_costs = profile_source_cost_ms.Copy()
 	sortTim(source_costs, /proc/cmp_numeric_desc, TRUE)
 	if(length(source_costs) > 10)
@@ -77,14 +80,24 @@ SUBSYSTEM_DEF(radiation)
 	return ..()
 
 /datum/controller/subsystem/radiation/proc/pulse(atom/source, datum/radiation_pulse_information/pulse_information)
-	if(world.time >= path_insulation_cache_expires)
+	if(path_insulation_cache_revision != shielding_revision || length(path_insulation_cache) > RAD_PATH_CACHE_MAX)
 		path_insulation_cache.Cut()
-		path_insulation_cache_expires = world.time + 1 SECOND
+		path_insulation_cache_revision = shielding_revision
 	var/list/targets = pulse_information.targets_to_process
+	var/list/living = GLOB.living_mob_list
 	var/pulse_strength = pulse_information.strength
-	while(length(targets))
-		var/atom/target_atom = targets[length(targets)]
-		targets.len--
+	while(length(targets) || pulse_information.living_index)
+		var/atom/target_atom
+		if(length(targets))
+			target_atom = targets[length(targets)]
+			targets.len--
+		else
+			// The living list can shrink while we yield; clamp rather than copy it.
+			pulse_information.living_index = min(pulse_information.living_index, length(living))
+			if(!pulse_information.living_index)
+				break
+			target_atom = living[pulse_information.living_index]
+			pulse_information.living_index--
 		profile_targets_processed++
 		var/turf/target_turf = get_turf(target_atom)
 		if(QDELETED(target_atom) || !target_turf || target_turf.z != source.z || get_dist(source, target_turf) > pulse_information.max_range)

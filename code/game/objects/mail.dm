@@ -70,7 +70,6 @@
 
 /obj/item/mail/Initialize(mapload)
 	. = ..()
-	RegisterSignal(src, COMSIG_MOVABLE_DISPOSING, PROC_REF(disposal_handling))
 
 	// Icons
 	// Add some random stamps.
@@ -274,11 +273,6 @@
 
 	update_icon()
 	return TRUE
-
-/obj/item/mail/proc/disposal_handling(disposal_source, obj/structure/disposalholder/disposal_holder, obj/machinery/disposal/deliveryChute, hasmob)
-	SIGNAL_HANDLER
-	if(!hasmob)
-		disposal_holder.destinationTag = sortTag
 
 // Mail spawn for events
 ADMIN_VERB(spawn_mail, R_SPAWN, "Spawn Mail", "Spawn mail for a specific player, with a specific item.", ADMIN_CATEGORY_FUN_EVENT_KIT, object as text)

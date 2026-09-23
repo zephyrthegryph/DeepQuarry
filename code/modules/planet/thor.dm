@@ -401,7 +401,7 @@ GLOBAL_DATUM(planet_thor, /datum/planet/thor)
 			return // No need to apply damage. Hardhats are 30. They should probably protect you from hail on your head.
 			//Voidsuits are likewise 40, and riot, 80. Clothes are all less than 30.
 
-		H.apply_damage(damage, BRUTE, target_zone, amount_blocked, used_weapon = "hail")
+		H.injure(INJURY_BLUNT, damage, target_zone, null, amount_blocked)
 		if(show_message)
 			to_chat(H, effect_message)
 
@@ -741,7 +741,7 @@ GLOBAL_DATUM(planet_thor, /datum/planet/thor)
 		if(amount_blocked >= 30)
 			return
 
-		L.apply_damage(damage, BRUTE, target_zone, amount_blocked, used_weapon = "rain bludgoning")
+		L.injure(INJURY_BLUNT, damage, target_zone, null, amount_blocked)
 		L.Weaken(3)
 		if(show_message)
 			to_chat(L, effect_message)

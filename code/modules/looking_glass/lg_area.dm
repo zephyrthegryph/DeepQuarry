@@ -62,14 +62,3 @@
 			spawn(3 SECONDS)
 				lgt.activate()
 
-/area/looking_glass/lg_1
-	name = "looking glass one"
-	lg_id = "one"
-
-/area/looking_glass/lg_2
-	name = "looking glass two"
-	lg_id = "two"
-
-/area/looking_glass/lg_3
-	name = "looking glass three"
-	lg_id = "three"

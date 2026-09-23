@@ -48,9 +48,7 @@
 
 	damage_to_do = apply_bonus_melee_damage(A, damage_to_do)
 
-	for(var/datum/modifier/M in modifiers)
-		if(!isnull(M.outgoing_melee_damage_percent))
-			damage_to_do *= M.outgoing_melee_damage_percent
+	damage_to_do *= factor(BF_MELEE_DAMAGE)
 
 	if(isliving(A)) // Check defenses.
 		var/mob/living/L = A
@@ -173,10 +171,8 @@
 /mob/living/simple_mob/proc/calculate_dispersion()
 	. = projectile_dispersion // Start with the basic var.
 
-	// Some modifiers change dispersion. This makes simple_mobs respect that.
-	for(var/datum/modifier/M in modifiers)
-		if(!isnull(M.accuracy_dispersion))
-			. += M.accuracy_dispersion
+	// Body factors change dispersion. This makes simple_mobs respect that.
+	. += factor(BF_DISPERSION)
 
 	// Make sure we don't go under zero dispersion.
 	. = max(., 0)
@@ -184,10 +180,8 @@
 /mob/living/simple_mob/proc/calculate_accuracy()
 	. = projectile_accuracy // Start with the basic var.
 
-	// Some modifiers make it harder or easier to hit things.
-	for(var/datum/modifier/M in modifiers)
-		if(!isnull(M.accuracy))
-			. += M.accuracy
+	// Body factors make it harder or easier to hit things.
+	. += factor(BF_ACCURACY)
 
 // Can we currently do a special attack?
 /mob/living/simple_mob/proc/can_special_attack(atom/A)
@@ -248,10 +242,7 @@
 	if(ai_brain) ai_brain.busy = TRUE
 	// Click delay modifiers also affect telegraphing time.
 	// This means berserked enemies will leave less time to dodge.
-	var/true_attack_delay = delay_amount
-	for(var/datum/modifier/M in modifiers)
-		if(!isnull(M.attack_speed_percent))
-			true_attack_delay *= M.attack_speed_percent
+	var/true_attack_delay = delay_amount * factor(BF_ATTACK_SPEED)
 
 	setClickCooldown(true_attack_delay) // Insurance against a really long attack being longer than default click delay.
 

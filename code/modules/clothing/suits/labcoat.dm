@@ -131,7 +131,6 @@
 	item_state_slots = list(slot_r_hand_str = "talon_labcoat", slot_l_hand_str = "talon_labcoat")
 
 
-// === merged from labcoat_vr.dm during hard-fork de-suffix (verified no override-order change) ===
 // 'Modern' labcoats
 /obj/item/clothing/suit/storage/toggle/labcoat/modern
 	name = "modern labcoat"

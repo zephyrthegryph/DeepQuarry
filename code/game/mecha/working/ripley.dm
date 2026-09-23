@@ -148,6 +148,5 @@
 	cell.charge = rand(0, cell.charge)
 
 
-// === merged from ripley_vr.dm during hard-fork de-suffix (verified no override-order change) ===
 /obj/mecha/working/ripley
 	minimum_penetration = 0

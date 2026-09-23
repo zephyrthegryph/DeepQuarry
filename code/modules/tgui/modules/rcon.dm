@@ -75,21 +75,11 @@
 			var/obj/machinery/power/smes/buildable/SMES = GetSMESByTag(params["smes"])
 			if(SMES)
 				SMES.tgui_set_io(SMES_TGUI_INPUT, params["target"], text2num(params["adjust"]))
-				/* var/inputset = (tgui_input_number(ui.user, "Enter new input level (0-[SMES.input_level_max/1000] kW)", "SMES Input Power Control", SMES.input_level/1000))
-				if(inputset)
-					inputset *= 1000
-					SMES.set_input(inputset)
-				*/
 			. = TRUE
 		if("smes_out_set")
 			var/obj/machinery/power/smes/buildable/SMES = GetSMESByTag(params["smes"])
 			if(SMES)
 				SMES.tgui_set_io(SMES_TGUI_OUTPUT, params["target"], text2num(params["adjust"]))
-				/* var/outputset = (tgui_input_number(ui.user, "Enter new output level (0-[SMES.output_level_max/1000] kW)", "SMES Output Power Control", SMES.output_level/1000))
-				if(outputset)
-					outputset *= 1000
-					SMES.set_input(outputset)
-				SMES.set_output(outputset) */
 			. = TRUE
 		if("toggle_breaker")
 			var/obj/machinery/power/breakerbox/toggle = null
@@ -102,7 +92,6 @@
 				else
 					toggle.auto_toggle()
 			. = TRUE
-
 
 // Proc: GetSMESByTag()
 // Parameters: 1 (tag - RCON tag of SMES we want to look up)

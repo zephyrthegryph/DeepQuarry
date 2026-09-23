@@ -15,8 +15,7 @@
 	icon = 'icons/mob/vore.dmi'
 
 	faction = FACTION_RABBIT
-	maxHealth = 30
-	health = 30
+	endurance = 30
 
 	response_help = "pats"
 	response_disarm = "gently pushes aside"
@@ -64,7 +63,7 @@
 /mob/living/simple_mob/vore/rabbit/Life()
 	. = ..()
 
-	if(grumpiness > 0 && last_pet + grump_decay < world.time)
+	if(grumpiness > 0 && last_pet > (world.time + grump_decay))
 		grumpiness = max(0, grumpiness-rand(5,10)) // Subtract grumpiness randomly in a range of 5-10 if we've not been PAT in the last 5 seconds.
 
 /mob/living/simple_mob/vore/rabbit/examine(mob/user)
@@ -146,8 +145,7 @@
 	icon_dead = "rabbit_killer_dead"
 	icon_rest = "rabbit_killer_rest"
 
-	maxHealth = 2000
-	health = 2000
+	endurance = 2000
 	harm_intent_damage = 5
 	melee_damage_lower = 1
 	melee_damage_upper = 3

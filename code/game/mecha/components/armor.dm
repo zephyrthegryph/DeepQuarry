@@ -32,7 +32,6 @@
 		"rad"=		1
 		)
 
-	//var/damage_minimum = 10 CHOMPremove, mecha nerfs
 	//var/minimum_penetration = 0
 	var/fail_penetration_value = 0.66
 
@@ -77,7 +76,6 @@
 
 	max_integrity = 80
 
-	//minimum_penetration = 10 //CHOMPremove
 
 	damage_absorption = list(
 		"brute"=0.7,
@@ -99,8 +97,6 @@
 
 	required_type = list(/obj/mecha/combat)
 
-	// damage_minimum = 15 //CHOMPremove
-	// minimum_penetration = 20 //chompedit making this less OP, was 25, is now 20 // 2, were removing these
 
 	damage_absorption = list(
 		"brute"=0.5,
@@ -135,7 +131,6 @@
 
 	deflect_chance = 15
 
-	// minimum_penetration = 10 //CHOMPremove
 
 	required_type = list(/obj/mecha/combat)
 
@@ -187,8 +182,6 @@
 	required_type = list(/obj/mecha/combat/marauder)
 
 	deflect_chance = 25
-	// damage_minimum = 30 //CHOMPremove, 30 damage? WTF???
-	// minimum_penetration = 25 //CHOMPremove
 
 	damage_absorption = list(
 		"brute"=0.5,

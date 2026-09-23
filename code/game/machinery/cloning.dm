@@ -24,6 +24,13 @@
 	return selected
 
 #define MINIMUM_HEAL_LEVEL 40
+// Clone growth runs on genetic damage (0..100). The old pool was 1.5x endurance
+// deep; growth rates are scaled by this so cycles take as long as before.
+#define DQ_CLONE_GROWTH_SCALE 1.5
+// Genetic damage above which the pod refuses an early unlock (old: health < -20).
+#define DQ_CLONE_UNLOCK_LOAD 80
+// Genetic damage a resleeving pod grows a new sleeve out of (old: 0.75x endurance).
+#define DQ_SLEEVE_GROWTH_LOAD 75
 
 /obj/machinery/clonepod
 	maintenance_flags = MACHINE_MAINT_STANDARD
@@ -37,7 +44,7 @@
 	icon_state = "pod_0"
 	req_access = list(ACCESS_GENETICS) // For premature unlocking.
 	VAR_PRIVATE/datum/weakref/weakref_occupant = null
-	var/heal_level = 20				// The clone is released once its health reaches this level.
+	var/heal_level = 20				// Growth quality: the clone is released once its genetic damage falls to clone_release_load().
 	var/heal_rate = 1
 	var/locked = 0
 	var/obj/machinery/computer/cloning/connected = null //So we remember the connected clone machine.
@@ -89,8 +96,7 @@
 	if((isnull(occupant)) || (stat & NOPOWER))
 		return
 	if((!isnull(occupant)) && (occupant.stat != 2))
-		var/completion = (100 * ((occupant.health + 50) / (heal_level + 100))) // Clones start at -150 health
-		to_chat(user, "Current clone cycle is [round(completion)]% complete.")
+		to_chat(user, "Current clone cycle is [round(get_completion())]% complete.")
 	return
 
 //Start growing a human clone in the pod!
@@ -134,12 +140,12 @@
 	var/mob/living/carbon/human/H = BR.produce_human_mob(src,FALSE, FALSE, "clone ([rand(0,999)])")
 	SEND_SIGNAL(H, COMSIG_HUMAN_DNA_FINALIZED)
 
-	//Get the clone body ready
-	var/damage_to_deal = H.getMaxHealth() * 1.5 //If you have 100, you get 150. Have 200? Get 300. 25hp? get 37.5
-	H.adjustCloneLoss(damage_to_deal) // New damage var so you can't eject a clone early then stab them to abuse the current damage system --NeoFite
+	//Get the clone body ready: a fresh clone is saturated with genetic damage and
+	// the pod grows it out. Seeded directly (not injure()) so the fresh body
+	// doesn't roll cellular-damage limb mutations.
+	H.body.afflict(/datum/affliction/genetic_damage, null, AFFLICTION_SEVERITY_TERMINAL)
 	H.Paralyse(4)
 	H.Sleeping(4)
-	H.updatehealth()
 	H.set_cloned_appearance()
 
 	// Move mind to body along with key
@@ -185,27 +191,27 @@
 			connected_message("Clone Rejected: Deceased.")
 			return
 
-		else if(occupant.health < heal_level && occupant.getCloneLoss() > 0)
+		else if(clone_growth_load(occupant) > clone_release_load())
 			occupant.Paralyse(4)
 			occupant.Sleeping(4)
 
 			//Slowly get that clone healed and finished.
-			occupant.adjustCloneLoss(-2 * heal_rate)
+			occupant.mend(TREAT_GENETIC_REPAIR, (2 * heal_rate) / DQ_CLONE_GROWTH_SCALE)
 
 			//Premature clones may have brain damage.
-			occupant.adjustBrainLoss(-(CEILING(0.5*heal_rate, 1)))
+			occupant.mend(TREAT_NEURAL_REPAIR, CEILING(0.5*heal_rate, 1))
 
 			//So clones don't die of oxyloss in a running pod.
 			if(occupant.reagents.get_reagent_amount(REAGENT_ID_INAPROVALINE) < 30)
 				occupant.reagents.add_reagent(REAGENT_ID_INAPROVALINE, 60)
 			occupant.Sleeping(30)
-			//Also heal some oxyloss ourselves because inaprovaline is so bad at preventing it!!
-			occupant.adjustOxyLoss(-4)
+			//Also oxygenate ourselves because inaprovaline is so bad at preventing hypoxia!!
+			occupant.mend(TREAT_OXYGENATION, 4)
 
 			use_power(7500) //This might need tweaking.
 			return
 
-		else if((occupant.health >= heal_level || occupant.health == occupant.getMaxHealth()) && (!eject_wait))
+		else if(!eject_wait)
 			playsound(src, 'sound/machines/medbayscanner1.ogg', 50, 1)
 			audible_message("\The [src] signals that the cloning process is complete.", runemessage = "ding")
 			connected_message("Cloning Process Complete.")
@@ -233,7 +239,7 @@
 			return
 		if((!locked) || (isnull(occupant)))
 			return
-		if((occupant.health < -20) && (occupant.stat != 2))
+		if((clone_growth_load(occupant) > DQ_CLONE_UNLOCK_LOAD) && (occupant.stat != DEAD))
 			to_chat(user, span_warning("Access Refused."))
 			return
 		else
@@ -314,8 +320,24 @@
 		speed_coeff += P.rating
 	heal_level = max(min((efficiency * 15) + 10, 100), MINIMUM_HEAL_LEVEL)
 
+/// Genetic damage still to grow out of the clone (0..100).
+/obj/machinery/clonepod/proc/clone_growth_load(mob/living/occupant)
+	return occupant ? occupant.injury_load(INJURY_CATEGORY_GENETIC) : 0
+
+/// The clone is released once its genetic damage falls to this. Better
+/// scanners (higher heal_level) grow the clone out further before release:
+/// heal_level 20 releases at ~53, heal_level 100 only when fully grown.
+/obj/machinery/clonepod/proc/clone_release_load()
+	return clamp((100 - heal_level) / DQ_CLONE_GROWTH_SCALE, 0, AFFLICTION_SEVERITY_TERMINAL)
+
 /obj/machinery/clonepod/proc/get_completion()
-	. = (100 * ((get_occupant().health + 100) / (heal_level + 100)))
+	var/mob/living/occupant = get_occupant()
+	if(!occupant)
+		return 0
+	var/span = AFFLICTION_SEVERITY_TERMINAL - clone_release_load()
+	if(span <= 0)
+		return 100
+	return clamp(100 * (AFFLICTION_SEVERITY_TERMINAL - clone_growth_load(occupant)) / span, 0, 100)
 
 /obj/machinery/clonepod/verb/eject()
 	set name = "Eject Cloner"
@@ -475,7 +497,7 @@
 	else
 		if(isliving(implanted))
 			var/mob/living/L = implanted
-			healthstring = "[round(L.getOxyLoss())] - [round(L.getFireLoss())] - [round(L.getToxLoss())] - [round(L.getBruteLoss())]"
+			healthstring = "[round(L.injury_load(INJURY_CATEGORY_ASPHYXIA))] - [round(L.injury_load(INJURY_CATEGORY_THERMAL))] - [round(L.injury_load(INJURY_CATEGORY_TOXIC))] - [round(L.injury_load(INJURY_CATEGORY_PHYSICAL))]"
 		if(!healthstring)
 			healthstring = "ERROR"
 		return healthstring

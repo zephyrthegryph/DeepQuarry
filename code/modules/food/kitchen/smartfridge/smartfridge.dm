@@ -319,7 +319,6 @@
 	return ..()
 
 
-// === merged from smartfridge_vr.dm during hard-fork de-suffix (verified no override-order change) ===
 /*
  * Expert Jobs
  */

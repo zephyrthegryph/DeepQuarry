@@ -1,4 +1,3 @@
-// tgui-migration (commit 3ec748264e). browse()/datum/browser/admin_log_show panels migrated to TGUI; stale shims (show_browser macro, browse callsites) removed.
 // Bracketed at file-header rather than per-hunk because the
 // edits are mechanical and span the whole file; the commit SHA
 // is the source of truth for per-line diff context.
@@ -87,8 +86,7 @@
 	name = "DONT SPAWN ME"
 	desc = "I'm a bad person I'm sorry"
 
-	maxHealth = 100000
-	health = 100000
+	endurance = 100000
 	movement_cooldown = 10
 
 	see_in_dark = 10

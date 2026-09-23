@@ -490,7 +490,6 @@ AI MODULES
 	laws = new/datum/ai_laws/gravekeeper()
 
 
-// === merged from AI_modules_vr.dm during hard-fork de-suffix (verified no override-order change) ===
 /******************** Predator ********************/
 
 /obj/item/aiModule/predator

@@ -5,8 +5,7 @@
 	desc = "A rather unusual looking synthetic."
 	icon = 'icons/mob/mob.dmi'
 	icon_state = "golem"
-	health = 300
-	maxHealth = 300
+	endurance = 300
 
 	faction = FACTION_GOLEM
 

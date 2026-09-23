@@ -1209,7 +1209,6 @@
 	return pick(subtypesof(/obj/item/assembly/signaler/anomaly))
 
 
-// === merged from misc_vr.dm during hard-fork de-suffix (verified no override-order change) ===
 //This file is for VR only
 
 /obj/random/explorer_shield
@@ -1687,7 +1686,6 @@
 	)
 
 
-// === merged from misc_chomp.dm during hard-fork de-suffix (verified no override-order change) ===
 /obj/random/organ
 	name = "Random Organ"
 	desc = "An amalgamate of meaty things"

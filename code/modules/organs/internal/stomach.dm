@@ -36,8 +36,8 @@
 			owner.custom_pain("There's a twisting pain in your abdomen!",1)
 			owner.apply_effect(2, AGONY, 0)
 	if (. >= 2)
-		if(prob(1) && owner.getToxLoss() < owner.getMaxHealth()*0.2)
-			owner.adjustToxLoss(3)
+		if(prob(1) && owner.injury_load(INJURY_CATEGORY_TOXIC) < owner.get_endurance()*0.2)
+			owner.injure(INJURY_TOXIN, 3, flags = INJURE_SILENT)
 			owner.vomit(FALSE, TRUE)
 
 /obj/item/organ/internal/stomach/xeno

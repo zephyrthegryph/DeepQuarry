@@ -9,8 +9,7 @@
 	desc = "A wicked bladed shell contraption piloted by a bound spirit."
 	icon_state = "floating"
 	icon_living = "floating"
-	maxHealth = 200
-	health = 200
+	endurance = 200
 	melee_damage_lower = 25
 	melee_damage_upper = 30
 	attack_armor_pen = 15

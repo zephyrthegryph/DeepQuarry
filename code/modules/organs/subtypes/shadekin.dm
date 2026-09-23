@@ -2,7 +2,6 @@
 	can_assist = FALSE
 
 
-// === merged from shadekin_vr.dm during hard-fork de-suffix (verified no override-order change) ===
 /obj/item/organ/external/chest/crewkin
 	min_broken_damage = 20
 

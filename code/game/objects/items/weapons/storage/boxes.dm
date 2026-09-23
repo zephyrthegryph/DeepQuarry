@@ -646,7 +646,6 @@
 	starts_with = list(/obj/item/cell/device/weapon = 7)
 
 
-// === merged from boxes_ch.dm during hard-fork de-suffix (verified no override-order change) ===
 /obj/item/storage/box/casino
 	name = "prize box"
 	desc = "It's a lovely golden tinted cardboard box, maybe theres something valuable inside?"

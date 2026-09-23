@@ -38,7 +38,7 @@
 			reagents.add_reagent(reagent, reagent_vol)
 
 /obj/item/projectile/energy/blob/toxic
-	damage_type = TOX
+	injury_kind = INJURY_TOXIN
 	check_armour = "bio"
 	my_chems = list(REAGENT_ID_AMATOXIN)
 

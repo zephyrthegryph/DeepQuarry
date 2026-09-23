@@ -1,5 +1,5 @@
 // Unit tests for the qualitative bodyscanner output — damage bands,
-// health bands, the damage panel, and scanner-audience symptom filtering.
+// vitality bands, the damage panel, and scanner-audience symptom filtering.
 //
 // See dq_surgery_tests.dm for the include scheme and macro scope.
 
@@ -19,17 +19,23 @@
 	TEST_ASSERT_EQUAL(dq_qualitative_damage_band(10, 0), "minor", "zero max defaults to minor when damage present")
 
 
-// --- whole-body health band thresholds -----------------------------
+// --- whole-body vitality band thresholds ----------------------------
 
 /datum/unit_test/dq_bodyscanner_health_bands
 
 /datum/unit_test/dq_bodyscanner_health_bands/Run()
-	TEST_ASSERT_EQUAL(dq_qualitative_health_band(100, 100), "uninjured", "full hp = uninjured")
-	TEST_ASSERT_EQUAL(dq_qualitative_health_band(70, 100), "minor", "70% hp = minor")
-	TEST_ASSERT_EQUAL(dq_qualitative_health_band(45, 100), "moderate", "45% hp = moderate")
-	TEST_ASSERT_EQUAL(dq_qualitative_health_band(20, 100), "severe", "20% hp = severe")
-	TEST_ASSERT_EQUAL(dq_qualitative_health_band(0, 100), "critical", "0 hp = critical")
-	TEST_ASSERT_EQUAL(dq_qualitative_health_band(-50, 100), "critical", "negative hp = critical")
+	TEST_ASSERT_EQUAL(dq_qualitative_vitality_band(1), "uninjured", "full vitality = uninjured")
+	TEST_ASSERT_EQUAL(dq_qualitative_vitality_band(0.7), "minor", "70% vitality = minor")
+	TEST_ASSERT_EQUAL(dq_qualitative_vitality_band(0.45), "moderate", "45% vitality = moderate")
+	TEST_ASSERT_EQUAL(dq_qualitative_vitality_band(0.2), "severe", "20% vitality = severe")
+	TEST_ASSERT_EQUAL(dq_qualitative_vitality_band(0), "critical", "no vitality = critical")
+	TEST_ASSERT_EQUAL(dq_qualitative_vitality_band(0.95, TRUE), "critical", "a patient down from injury reads critical whatever the number")
+
+	// A real patient: healthy reads uninjured, a serious injury drops the band.
+	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human)
+	TEST_ASSERT_EQUAL(dq_qualitative_vitality_band(H.vitality(), H.is_critical()), "uninjured", "a fresh human should read uninjured")
+	H.injure(INJURY_BLUNT, 60, BP_TORSO, flags = INJURE_IGNORE_RESISTANCE | INJURE_SILENT)
+	TEST_ASSERT(_dq_band_rank(dq_qualitative_vitality_band(H.vitality(), H.is_critical())) > _dq_band_rank("uninjured"), "a heavy chest injury should lower the vitality band")
 
 
 // --- damage panel emits every kind ---------------------------------
@@ -55,22 +61,15 @@
 	var/list/empty = dq_qualitative_scanner_findings(H)
 	TEST_ASSERT_EQUAL(length(empty), 0, "no conditions = no findings")
 
-	var/datum/medical_issue/condition/lacerated_artery/C = _dq_spawn_condition_on(H, BP_L_ARM, /datum/medical_issue/condition/lacerated_artery)
+	var/datum/affliction/lacerated_artery/C = _spawn_affliction_on(H, BP_L_ARM, /datum/affliction/lacerated_artery)
 	TEST_ASSERT_NOTNULL(C, "lacerated_artery didn't spawn")
-	C.severity = 80
-	C.tick_condition()
+	C.set_severity(80)
+	C.tick()
 
 	// Force bleeding_visible into the active set so the test doesn't
-	// depend on RNG.
-	var/seen = FALSE
-	for(var/datum/medical_symptom/S as anything in C.active_symptoms)
-		if(istype(S, /datum/medical_symptom/bleeding_visible))
-			seen = TRUE
-			break
-	if(!seen)
-		var/datum/medical_symptom/bleeding_visible/B = new()
-		B.source_condition = C
-		LAZYADD(C.active_symptoms, B)
+	// depend on RNG. Symptoms are singletons: the set holds typepaths.
+	if(!(/datum/affliction_symptom/bleeding_visible in C.active_symptoms))
+		LAZYADD(C.active_symptoms, /datum/affliction_symptom/bleeding_visible)
 
 	var/list/findings = dq_qualitative_scanner_findings(H)
 	TEST_ASSERT(length(findings) > 0, "lacerated_artery with scanner symptom should produce a finding")
@@ -88,14 +87,12 @@
 
 /datum/unit_test/dq_bodyscanner_finding_trend/Run()
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human)
-	var/datum/medical_issue/condition/lacerated_artery/C = _dq_spawn_condition_on(H, BP_L_ARM, /datum/medical_issue/condition/lacerated_artery)
+	var/datum/affliction/lacerated_artery/C = _spawn_affliction_on(H, BP_L_ARM, /datum/affliction/lacerated_artery)
 	TEST_ASSERT_NOTNULL(C, "spawn failed")
 	C.severity = 50
 
 	// Force a SCANNER symptom into the active set so a finding is emitted.
-	var/datum/medical_symptom/bleeding_visible/B = new()
-	B.source_condition = C
-	C.active_symptoms = list(B)
+	C.active_symptoms = list(/datum/affliction_symptom/bleeding_visible)
 
 	// First scan: trend should be "new" — no prior baseline.
 	var/list/findings1 = dq_qualitative_scanner_findings(H)
@@ -128,16 +125,39 @@
 
 /datum/unit_test/dq_bodyscanner_patient_symptoms_hidden/Run()
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human)
-	var/datum/medical_issue/condition/concussion/C = _dq_spawn_condition_on(H, BP_HEAD, /datum/medical_issue/condition/concussion)
+	var/datum/affliction/concussion/C = _spawn_affliction_on(H, BP_HEAD, /datum/affliction/concussion)
 	TEST_ASSERT_NOTNULL(C, "concussion didn't spawn")
 
-	var/datum/medical_symptom/headache/HA = new()
-	HA.source_condition = C
-	C.active_symptoms = list(HA)
+	C.active_symptoms = list(/datum/affliction_symptom/headache)
 
 	var/list/findings = dq_qualitative_scanner_findings(H)
 	for(var/list/f in findings)
 		if(findtext(f["phrase"], "headache"))
 			TEST_FAIL("PATIENT-only symptom 'headache' should not appear in scanner findings")
+
+
+// --- scanner findings: GM custom afflictions honour showscanner --------
+
+/datum/unit_test/dq_bodyscanner_custom_affliction_findings
+
+/datum/unit_test/dq_bodyscanner_custom_affliction_findings/Run()
+	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human)
+	var/obj/item/organ/liver = H.internal_organs_by_name[O_LIVER]
+	TEST_ASSERT_NOTNULL(liver, "test human has no liver")
+	var/datum/affliction/custom/A = H.body.afflict(/datum/affliction/custom, liver, 60)
+	TEST_ASSERT_NOTNULL(A, "custom affliction could not be afflicted")
+	A.name = "glowing liver"
+
+	A.showscanner = FALSE
+	for(var/list/f in dq_qualitative_scanner_findings(H))
+		if(f["phrase"] == "glowing liver")
+			TEST_FAIL("a custom affliction hidden from scanners appeared in the findings")
+
+	A.showscanner = TRUE
+	var/found = FALSE
+	for(var/list/f in dq_qualitative_scanner_findings(H))
+		if(f["phrase"] == "glowing liver" && f["organ"] == liver.name)
+			found = TRUE
+	TEST_ASSERT(found, "a scanner-visible custom affliction was not reported on its organ")
 
 #endif

@@ -28,8 +28,7 @@
 	icon_dead = "savik_dead"
 	icon = 'icons/jungle.dmi'
 
-	maxHealth = 125
-	health = 125
+	endurance = 125
 	minbodytemp = 175
 	movement_cooldown = -1
 	heat_resist = -0.50
@@ -62,7 +61,7 @@
 
 /mob/living/simple_mob/animal/sif/savik/handle_special()
 	if(((ai_brain ? (ai_brain.primary_threat ? STANCE_FIGHT : STANCE_IDLE) : STANCE_IDLE) in list(STANCE_APPROACH, STANCE_FIGHT)) && !(ai_brain && ai_brain.busy) && isturf(loc))
-		if(health <= (maxHealth * 0.5)) // At half health, and fighting someone currently.
+		if(vitality() <= 0.5) // At half health, and fighting someone currently.
 			berserk()
 
 /mob/living/simple_mob/animal/sif/savik/fail_tame(obj/O, mob/user)

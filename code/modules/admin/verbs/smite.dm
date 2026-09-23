@@ -227,10 +227,10 @@
 
 	playsound(T, get_sfx("explosion"), 100, 1, get_rand_frequency(), falloff = 5) // get_sfx() is so that everyone gets the same sound
 
-	if(target.health < 10)
+	if(target.vitality() < 0.1)
 		target.gib()
 	else
-		target.adjustBruteLoss( max( 99 , (target.health - 1) )    )
+		target.injure(INJURY_BLUNT, max(99, target.get_endurance() * target.vitality() - 1), flags = INJURE_IGNORE_RESISTANCE)
 		target.Stun(20)
 		target.Weaken(20)
 		target.stuttering = 20

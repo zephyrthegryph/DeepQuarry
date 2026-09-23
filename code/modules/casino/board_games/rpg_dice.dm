@@ -46,20 +46,6 @@
 			sum += apply_to_all ? modifier * dice_count : modifier
 			UNTYPED_LIST_ADD(last_rolls, list("player" = ui.user, "count" = dice_count, "size" = dice_size, "results" = results, "mod" = modifier, "apply_to_all" = apply_to_all, "sum" = sum))
 			return TRUE
-		/* Requires rust g dice
-		if("custom_roll")
-			var/input = params["custom"]
-			if(length(input) > 200)
-				to_chat(ui.user, span_warning("Your input was too long."))
-				return FALSE
-			var/static/regex/valid_dice_roll = regex(@"^(\d+d\d+(\s*[\+\-\*\/]\s*\d+)?(\s*[\+\-\*\/]\s*\d+d\d+(\s*[\+\-\*\/]\s*\d+)?)*)$")
-			if(!findtext(input, valid_dice_roll))
-				to_chat(ui.user, span_warning("Invalid input, please follow the common pattern e.g.: 2d6 + 3d10 + 5"))
-				return FALSE
-			var/result = rustg_roll_dice("[input]")
-			UNTYPED_LIST_ADD(last_rolls, list("player" = ui.user, "count" = input, "sum" = result))
-			return TRUE
-		*/
 		if("clear_history")
 			last_rolls.Cut()
 			return TRUE

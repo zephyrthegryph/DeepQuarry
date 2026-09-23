@@ -39,16 +39,6 @@
 			*/
 			if(prob(5))
 				penguin_dance(M)
-/*
-/datum/symptom/dance/proc/dance_one(mob/living/M)
-	var/list/dance = list(2,4,8,2,4,8,2,4,8,2,4,8,1,4,1,4,1,4,2,4,8,2)
-
-	for(var/D in dance)
-		M.dir = D
-		animate(M, pixel_x = 5, time = 5)
-		animate(M, pixel_x = -5, time = 5)
-		animate(M, pixel_x = M.default_pixel_x, pixel_y = M.default_pixel_y, time = 2)
-*/
 /datum/symptom/dance/proc/penguin_dance(mob/living/M)
 	if(!M)
 		return

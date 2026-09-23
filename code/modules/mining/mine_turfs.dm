@@ -8,21 +8,8 @@ GLOBAL_LIST_EMPTY(mining_overlay_cache)
 	density = TRUE
 	opacity = 1 //Stops all my unsimulated tiles from being seethrough.
 
-//add start
-/turf/unsimulated/mineral/ice
-	name = "Ice wall"
-	desc = "Frigid Ice that seems to be stronger than most manmade structures."
-	icon = 'icons/turf/snow_new.dmi'
-	icon_state = "Icerock"
 //add end
 
-//For the tram
-/turf/unsimulated/mineral/moving
-	icon = 'icons/turf/transit_vr.dmi'
-	icon_state = "rock"
-
-/turf/unsimulated/mineral/moving/outdoors
-	outdoors = TRUE
 
 /turf/simulated/mineral //wall piece
 	name = "rock"
@@ -86,6 +73,10 @@ GLOBAL_LIST_EMPTY(mining_overlay_cache)
 		ORE_PAINITE = /obj/item/ore/painite,
 		ORE_QUARTZ = /obj/item/ore/quartz,
 		ORE_RUTILE = /obj/item/ore/rutile
+		,ORE_PENTLANDITE = /obj/item/ore/pentlandite
+		,ORE_CHROMITE = /obj/item/ore/chromite
+		,ORE_WOLFRAMITE = /obj/item/ore/wolframite
+		,ORE_KAOLIN = /obj/item/ore/kaolin
 	)
 
 	turf_resource_types = TURF_HAS_MINERALS
@@ -94,37 +85,6 @@ GLOBAL_LIST_EMPTY(mining_overlay_cache)
 	clear_ore_effects()
 	. = ..()
 
-// Alternative rock wall sprites.
-/turf/simulated/mineral/light
-	icon_state = "rock-light"
-	rock_side_icon_state = "rock_side-light"
-	sand_icon_state = "sand-light"
-	rock_icon_state = "rock-light"
-	random_icon = 1
-
-/turf/simulated/mineral/alt
-	icon_state = "rock-alt"
-	rock_side_icon_state = "rock_side-alt"
-	sand_icon_state = "asteroid"
-	rock_icon_state = "rock-alt"
-
-/turf/simulated/mineral/icey
-	icon_state = "rock-icey"
-	rock_side_icon_state = "rock_side-icey"
-	sand_icon_state = "sand-icey" // to be replaced
-	rock_icon_state = "rock-icey"
-
-/turf/simulated/mineral/crystal
-	icon_state = "rock-crystal"
-	rock_side_icon_state = "rock_side-crystal"
-	sand_icon_state = "sand-icey" // to be replaced
-	rock_icon_state = "rock-crystal"
-
-/turf/simulated/mineral/crystal_shiny
-	icon_state = "rock-crystal-shiny"
-	rock_side_icon_state = "rock_side-crystal"
-	sand_icon_state = "sand-icey" // to be replaced
-	rock_icon_state = "rock-crystal-shiny"
 
 /turf/simulated/mineral/ignore_mapgen
 	ignore_mapgen = 1
@@ -138,34 +98,6 @@ GLOBAL_LIST_EMPTY(mining_overlay_cache)
 	blocks_air = 0
 	can_build_into_floor = TRUE
 
-/turf/simulated/mineral/floor/mud
-	icon_state = "mud"
-	sand_icon_state = "mud"
-
-/turf/simulated/mineral/floor/dirt
-	icon_state = "dirt"
-	sand_icon_state = "dirt"
-
-//Alternative sand floor sprite.
-/turf/simulated/mineral/floor/light
-	icon_state = "sand-light"
-	sand_icon_state = "sand-light"
-
-/turf/simulated/mineral/floor/icey
-	icon_state = "sand-icey"
-	sand_icon_state = "sand-icey" // to be replaced
-
-/turf/simulated/mineral/floor/light_border
-	icon_state = "sand-light-border"
-	sand_icon_state = "sand-light-border"
-
-/turf/simulated/mineral/floor/light_nub
-	icon_state = "sand-light-nub"
-	sand_icon_state = "sand-light-nub"
-
-/turf/simulated/mineral/floor/light_corner
-	icon_state = "sand-light-corner"
-	sand_icon_state = "sand-light-corner"
 
 /turf/simulated/mineral/floor/ignore_mapgen
 	ignore_mapgen = 1
@@ -779,54 +711,16 @@ GLOBAL_LIST_EMPTY(mining_overlay_cache)
 
 // V5 turfs
 
-/turf/simulated/mineral/icey/v5
-	temperature = 202
-	oxygen = 8
-	nitrogen = 17
-	carbon_dioxide = 75
-	ignore_cavegen = TRUE
-
-/turf/simulated/mineral/crystal/v5
-	temperature = 202
-	oxygen = 8
-	nitrogen = 17
-	carbon_dioxide = 75
-	ignore_cavegen = TRUE
-
-/turf/simulated/mineral/crystal_shiny/v5
-	temperature = 202
-	oxygen = 8
-	nitrogen = 17
-	carbon_dioxide = 75
-	ignore_cavegen = TRUE
-
 
 // === merged from mine_turfs_vr.dm during hard-fork de-suffix (verified no override-order change) ===
 /turf/simulated/mineral
 	var/ignore_oregen = FALSE
 	var/ignore_cavegen = FALSE
 
-/turf/simulated/mineral/ignore_oregen
-	ignore_oregen = TRUE
-
-/turf/simulated/mineral/floor/ignore_oregen
-	ignore_oregen = TRUE
 
 /turf/simulated/mineral/ignore_cavegen
 	ignore_cavegen = TRUE
 
-/turf/simulated/mineral/floor/ignore_cavegen
-	ignore_cavegen = TRUE
-
-/turf/simulated/mineral/ignore_cavegen/cave
-	oxygen = MOLES_O2STANDARD
-	nitrogen = MOLES_N2STANDARD
-	temperature	= T20C
-
-/turf/simulated/mineral/floor/ignore_cavegen/cave
-	oxygen = MOLES_O2STANDARD
-	nitrogen = MOLES_N2STANDARD
-	temperature	= T20C
 
 /turf/simulated/mineral/vacuum
 	oxygen = 0

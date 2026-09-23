@@ -92,7 +92,6 @@
 	panel.open(tile)
 	return TRUE
 
-
 ///Main proc for secondary alt click
 /mob/proc/AltClickSecondaryOn(atom/target)
 	base_click_alt_secondary(target)
@@ -157,19 +156,3 @@
 	if(istype(living_target) && living_target != src && Adjacent(living_target))
 		living_target.show_inventory_panel(src) //We don't have the loot panel, so...We'll use our inventory panel for now.
 
-	/* //NYI
-	if(!CAN_I_SEE(target) || (is_blind() && !IN_GIVEN_RANGE(src, target, 1)))
-		return FALSE
-
-	// No alt clicking to view turf from beneath
-	if(HAS_TRAIT(src, TRAIT_MOVE_VENTCRAWLING))
-		return FALSE
-
-	/// No loot panel if it's on our person
-	if(isobj(target) && (target in get_all_gear(INCLUDE_PROSTHETICS|INCLUDE_ABSTRACT|INCLUDE_ACCESSORIES)))
-		to_chat(src, span_warning("You can't search for this item, it's already in your inventory![!HAS_TRAIT(target, TRAIT_NODROP) ? " Take it off first." : ""]"))
-		return FALSE
-
-	client.loot_panel.open(get_turf(target))
-	return TRUE
-	*/

@@ -325,9 +325,6 @@ Nothing else in the console has ID requirements.
 
 	switch (action)
 		if ("toggleLock")
-			// if(flags & EMAGGED)
-			// 	to_chat(usr, span_boldwarning("Security protocol error: Unable to access locking protocols."))
-			// 	return TRUE
 			if(allowed(usr))
 				locked = !locked
 			else

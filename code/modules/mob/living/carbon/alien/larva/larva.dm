@@ -5,8 +5,7 @@
 	speak_emote = list("hisses")
 	icon_state = "larva"
 	language = LANGUAGE_HIVEMIND
-	maxHealth = 50
-	health = 50
+	endurance = 50
 	faction = FACTION_XENO
 	max_grown = 325 //Increase larva growth time due to not needing hosts.
 

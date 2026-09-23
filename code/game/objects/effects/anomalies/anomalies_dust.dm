@@ -50,7 +50,7 @@
 			continue
 		person.emote(prob(50) ? "cough" : "sneeze")
 		person.Stun(2)
-		person.adjustOxyLoss(5)
+		person.injure(INJURY_ASPHYXIA, 5, null, src)
 		if(prob(15))
 			person.Stun(2)
 			to_chat(person, span_danger(pick("You have a coughing fit!", "You can't stop coughing!")))

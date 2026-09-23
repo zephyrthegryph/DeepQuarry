@@ -877,7 +877,7 @@
 				failure_msg += "You cannot delete bellies with contents! " //These end with spaces, to be nice looking. Make sure you do the same.
 			if(host.vore_selected.immutable)
 				failure_msg += "This belly is marked as undeletable. "
-			if(host.vore_organs.len == 1)
+			if(length(host.vore_organs) == 1)
 				failure_msg += "You must have at least one belly. "
 
 			if(failure_msg)

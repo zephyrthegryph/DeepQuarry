@@ -189,18 +189,6 @@
 	allowed = list(POCKET_GENERIC, POCKET_EMERGENCY, /obj/item/clothing/head/beret)
 	valid_accessory_slots = (ACCESSORY_SLOT_MEDAL|ACCESSORY_SLOT_RANK)
 	restricted_accessory_slots = (ACCESSORY_SLOT_ARMBAND)
-/* //These two sprites were lost to time. Original PR doesn't appear to have them either.
-/obj/item/clothing/suit/storage/solgov/dress/sifguard
-	name = "\improper NDF dress jacket"
-	desc = "A silver and grey dress jacket belonging to the Nanotrasen Defense Force. Fashionable, for the 25th century at least."
-	icon_state = "sgdress_xpl"
-	item_state = "sgdress_xpl"
-
-/obj/item/clothing/suit/storage/solgov/dress/sifguard/senior
-	name = "\improper NDF senior's dress coat"
-	icon_state = "sgdress_sxpl"
-	item_state = "sgdress_sxpl"
-*/
 /obj/item/clothing/suit/storage/solgov/dress/sifguard/chief
 	name = "\improper NDF chief's dress coat"
 	icon_state = "ecdress_cxpl"
@@ -211,22 +199,6 @@
 	desc = "A gold and black dress peacoat belonging to the Nanotrasen Defense Force. The height of fashion."
 	icon_state = "ecdress_ofcr"
 	item_state = "sgdress_ofcr"
-/* //Sprites lost to time.
-/obj/item/clothing/suit/storage/solgov/dress/sifguard/command/cdr
-	name = "\improper NDF commander's dress coat"
-	icon_state = "sgdress_cdr"
-	item_state = "sgdress_cdr"
-
-/obj/item/clothing/suit/storage/solgov/dress/sifguard/command/capt
-	name = "\improper NDF captain's dress coat"
-	icon_state = "sgdress_capt"
-	item_state = "sgdress_capt"
-
-/obj/item/clothing/suit/storage/solgov/dress/sifguard/command/adm
-	name = "\improper NDF admiral's dress coat"
-	icon_state = "sgdress_adm"
-	item_state = "sgdress_adm"
-*/
 /obj/item/clothing/suit/storage/solgov/dress/fleet
 	name = "fleet dress jacket"
 	desc = "A navy blue USDF Fleet dress jacket. Don't get near pasta sauce or vox."

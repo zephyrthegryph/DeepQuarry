@@ -349,8 +349,6 @@ GLOBAL_LIST_EMPTY(additional_antag_types)
 				if(M_area_type == /area/shuttle/cryo/centcom)
 					escaped_on_cryopod++
 
-
-
 			if(isobserver(M))
 				ghosts++
 
@@ -433,16 +431,6 @@ GLOBAL_LIST_EMPTY(additional_antag_types)
 				players -= player
 
 		// Below is commented out as an attempt to solve an issue of too little people wanting to join the round due to wanting to have cake and eat it too.
-		/*
-		// If we don't have enough antags, draft people who voted for the round.
-		if(candidates.len < required_enemies)
-			for(var/mob/new_player/player in players)
-				if(player.ckey in round_voters)
-					log_game("[player.key] voted for this round, so we are drafting them.")
-					candidates += player.mind
-					players -= player
-					break
-		*/
 
 	return candidates		// Returns: The number of people who had the antagonist role set to yes, regardless of recomended_enemies, if that number is greater than required_enemies
 							//			required_enemies if the number of people with that role set to yes is less than recomended_enemies,

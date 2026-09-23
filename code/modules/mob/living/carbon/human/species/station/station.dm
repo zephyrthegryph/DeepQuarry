@@ -72,11 +72,9 @@
 	primitive_form = SPECIES_MONKEY_UNATHI
 	darksight = 3
 	ambiguous_genders = TRUE
-	slowdown = 0.5
+	factor_baseline = alist(BF_METABOLISM = 0.85, BF_SLOWDOWN = 0.5)
 	total_health = 125
-	brute_mod = 0.85
-	burn_mod = 0.85
-	metabolic_rate = 0.85
+	injury_mod_groups = list("physical" = 0.85, "thermal" = 0.85)
 	item_slowdown_mod = 0.25
 	mob_size = MOB_MEDIUM
 	blood_volume = 840
@@ -213,12 +211,10 @@
 	tail_animation = 'icons/mob/species/tajaran/tail_vr.dmi'
 	unarmed_types = list(/datum/unarmed_attack/stomp, /datum/unarmed_attack/kick, /datum/unarmed_attack/claws, /datum/unarmed_attack/bite/sharp)
 	darksight = 8
-	slowdown = -0.5
+	factor_baseline = alist(BF_METABOLISM = 1.1, BF_SLOWDOWN = -0.5)
 	snow_movement = -1		//Ignores half of light snow
-	brute_mod = 1.15
-	burn_mod =  1.15
+	injury_mod_groups = list("physical" = 1.15, "thermal" = 1.15)
 	flash_mod = 1.1
-	metabolic_rate = 1.1
 	num_alternate_languages = 3
 	secondary_langs = list(LANGUAGE_SIIK, LANGUAGE_AKHANI, LANGUAGE_ALAI)
 	name_language = LANGUAGE_SIIK
@@ -438,12 +434,11 @@
 	icobase = 'icons/mob/human_races/r_zaddat.dmi'
 	deform = 'icons/mob/human_races/r_zaddat.dmi'
 	unarmed_types = list(/datum/unarmed_attack/stomp, /datum/unarmed_attack/kick, /datum/unarmed_attack/punch)
-	brute_mod = 1.15
-	burn_mod =  1.15
-	toxins_mod = 1.5
+	injury_mod_groups = list("physical" = 1.15, "thermal" = 1.15, "toxin" = 0.5)
 	flash_mod = 2
 	flash_burn = 15 //flashing a zaddat probably counts as police brutality
-	metabolic_rate = 0.7 //did u know if your ancestors starved ur body will actually start in starvation mode?
+	// did u know if your ancestors starved ur body will actually start in starvation mode?
+	factor_baseline = alist(BF_METABOLISM = 0.7)
 	item_slowdown_mod = 0.30
 	taste_sensitivity = TASTE_SENSITIVE
 	num_alternate_languages = 3
@@ -548,7 +543,7 @@
 	language = LANGUAGE_ROOTLOCAL
 	unarmed_types = list(/datum/unarmed_attack/stomp, /datum/unarmed_attack/kick, /datum/unarmed_attack/diona)
 	//primitive_form = "Nymph"
-	slowdown = 5
+	factor_baseline = alist(BF_SLOWDOWN = 0.5)
 	snow_movement = -2 	//Ignore light snow
 	water_movement = -4	//Ignore shallow water
 	rarity_value = 3
@@ -667,6 +662,7 @@
 		H.visible_message(span_danger("\The [H] collapses into parts, revealing a solitary diona nymph at the core."))
 
 		H.species = GLOB.all_species[SPECIES_HUMAN] // This is hard-set to default the body to a normal FBP, without changing anything.
+		H.invalidate_factors()
 
 		for(var/obj/item/organ/internal/diona/Org in H.internal_organs) // Remove Nymph organs.
 			qdel(Org)
@@ -702,14 +698,14 @@
 		H.shock_stage -= light_amount
 
 		if(light_amount >= 3) //if there's enough light, heal
-			H.adjustBruteLoss(-(round(light_amount/2)))
-			H.adjustFireLoss(-(round(light_amount/2)))
-			H.adjustToxLoss(-(light_amount))
-			H.adjustOxyLoss(-(light_amount))
+			H.mend(TREAT_TISSUE_REPAIR, round(light_amount/2))
+			H.mend(TREAT_BURN_CARE, round(light_amount/2))
+			H.mend(TREAT_ANTITOXIN, light_amount)
+			H.mend(TREAT_OXYGENATION, light_amount)
 			//TODO: heal wounds, heal broken limbs.
 
 	else if(H.nutrition < 200)
-		H.take_overall_damage(2,0)
+		H.injure(INJURY_BLUNT, 2) // Starving tissue withers
 
 		//traumatic_shock is updated every tick, incrementing that is pointless - shock_stage is the counter.
 		//Not that it matters much for diona, who have NO_PAIN.
@@ -1126,7 +1122,7 @@
 
 	fire_icon_state = "generic" // Humanoid is too big for them and spriting a new one is really annoying.
 
-	slowdown = -1
+	factor_baseline = alist(BF_SLOWDOWN = -1)
 	snow_movement = -2	// Ignores light snow
 	item_slowdown_mod = 2	// Tiny birds don't like heavy things
 	total_health = 75
@@ -1316,12 +1312,13 @@
 	siemens_coefficient = 0
 	darksight = 10
 
-	slowdown = 0.5
+	factor_baseline = alist(BF_SLOWDOWN = 0.5)
 	item_slowdown_mod = 1.5
 
 	total_health = 75
-	brute_mod = 1.25 // Frail
-	burn_mod = 1.25	// Furry
+	injury_mod_groups = list("physical" = 1.25, "thermal" = 1.25)
+	// Frail (brute)
+	// Furry (burn)
 	blood_volume = 500
 	hunger_factor = 0.2
 
@@ -1503,7 +1500,7 @@
 
 	genders = list(MALE, FEMALE, PLURAL, NEUTER)
 
-	burn_mod =  1.15
+	injury_mod_groups = list("thermal" = 1.15)
 	hunger_factor = 0.04
 	can_zero_g_move = TRUE
 
@@ -1538,9 +1535,9 @@
 	deform = 'icons/mob/human_races/r_def_spider.dmi'
 	unarmed_types = list(/datum/unarmed_attack/stomp, /datum/unarmed_attack/kick, /datum/unarmed_attack/claws, /datum/unarmed_attack/bite/sharp)
 	darksight = 8		//Can see completely in the dark. They are spiders, after all. Not that any of this matters because people will be using custom race.
-	slowdown = -0.15	//Small speedboost, as they've got a bunch of legs. Or something. I dunno.
-	brute_mod = 0.8		//20% brute damage reduction
-	burn_mod =  1.15	//15% burn damage increase. They're spiders. Aerosol can+lighter = dead spiders.
+	// Small speedboost, as they've got a bunch of legs. Or something. I dunno.
+	factor_baseline = alist(BF_SLOWDOWN = -0.15)
+	injury_mod_groups = list("physical" = 0.8, "thermal" = 1.15) // 20% brute reduction; 15% burn increase. They're spiders. Aerosol can+lighter = dead spiders.
 	throwforce_absorb_threshold = 10
 
 	num_alternate_languages = 3
@@ -1614,9 +1611,8 @@
 	tail = "tail"
 	unarmed_types = list(/datum/unarmed_attack/stomp, /datum/unarmed_attack/kick, /datum/unarmed_attack/claws, /datum/unarmed_attack/bite/sharp)
 	total_health = 200
-	brute_mod = 0.85
-	burn_mod = 0.85
-	metabolic_rate = 2
+	injury_mod_groups = list("physical" = 0.85, "thermal" = 0.85)
+	factor_baseline = alist(BF_METABOLISM = 2)
 	item_slowdown_mod = 0.25
 	hunger_factor = 0.4
 	darksight = 8
@@ -1679,9 +1675,9 @@
 	deform = 'icons/mob/human_races/r_def_xenochimera.dmi'
 	unarmed_types = list(/datum/unarmed_attack/stomp, /datum/unarmed_attack/kick, /datum/unarmed_attack/claws/chimera, /datum/unarmed_attack/bite/sharp)
 	darksight = 8		//critters with instincts to hide in the dark need to see in the dark - about as good as tajara.
-	slowdown = -0.2		//scuttly, but not as scuttly as a tajara or a teshari.
-	brute_mod = 0.8		//About as tanky to brute as a Unathi. They'll probably snap and go feral when hurt though.
-	burn_mod =  1.15	//As vulnerable to burn as a Tajara.
+	// scuttly, but not as scuttly as a tajara or a teshari.
+	factor_baseline = alist(BF_SLOWDOWN = -0.2)
+	injury_mod_groups = list("physical" = 0.8, "thermal" = 1.15) // As tanky to brute as a Unathi, as vulnerable to burn as a Tajara.
 	base_species = "Xenochimera"
 	selects_bodytype = SELECTS_BODYTYPE_CUSTOM
 	has_vibration_sense = TRUE
@@ -1759,9 +1755,9 @@
 
 	//Very low pressure damage
 	if(adjusted_pressure2 <= 20)
-		H.take_overall_damage(brute=LOW_PRESSURE_DAMAGE, used_weapon = "Low Pressure")
+		H.injure(INJURY_BLUNT, LOW_PRESSURE_DAMAGE) // Decompression
 	//they handle areas where they can't breathe better than most, but it still lowers their effective health as well as all the other bad stuff that comes with unbreathable environments
-	if(H.getOxyLoss() >= 50)
+	if(H.injury_load(INJURY_CATEGORY_ASPHYXIA) >= 50)
 		H.does_not_breathe = TRUE
 
 	//Cold hurts and gives them pain messages, eventually weakening and paralysing, but doesn't damage or trigger feral.
@@ -1782,12 +1778,9 @@
 	icobase = 'icons/mob/human_races/r_sparkle.dmi'
 	icobase_tail = 1
 	unarmed_types = list(/datum/unarmed_attack/stomp, /datum/unarmed_attack/kick, /datum/unarmed_attack/claws, /datum/unarmed_attack/bite/sharp)
-	slowdown = -0.5
-	brute_mod = 1.5
-	burn_mod =  1.5
+	factor_baseline = alist(BF_SLOWDOWN = -0.5)
+	injury_mod_groups = list("physical" = 1.5, "thermal" = 1.5, "toxin" = 0.5, "radiation" = 0)
 	bloodloss_rate = 1.5
-	toxins_mod =    0.5
-	radiation_mod = 0
 	flash_mod =     2
 	siemens_coefficient = 10
 
@@ -1825,15 +1818,13 @@
 //There is already a station file, but feels wrong to put zaddat balancing changes with the restriction file, and feels wrong to lump them in with a modular station_vr so hello station_ch file
 
 /datum/species/zaddat
-	toxins_mod =    0.5 //toxins rarely come into play, and zaddat just has negatives. Along with their parasite letting them survive in their polluted planet, this seems reasonable.
+	//toxins rarely come into play, and zaddat just has negatives. Along with their parasite letting them survive in their polluted planet, this seems reasonable. (toxins)
 
 //So both of this are based off Fennec foxes I belivive. Those are desert critters, giving them more warm focused levels. And for variety giving them minor brute weakness and minor burn resistant
 //I also want to make a dig because fennec foxes actually make burrows and such, but I can't figure out how to do it in a way that is both flavorful but not abuseable
 /datum/species/hi_zoxxen //zorrens get wierd chemistry because of their past of expirementing on themselves. Check the cataloguer for deathclaws
 	chemOD_threshold =		0.75
-	radiation_mod = 0.5
-	brute_mod = 1.1
-	burn_mod = 0.9
+	injury_mod_groups = list("physical" = 1.1, "thermal" = 0.9, "radiation" = 0.5)
 
 	cold_level_1 = 270 //Default 260 - Lower is better
 	cold_level_2 = 210 //Default 200
@@ -1853,9 +1844,8 @@
 
 /datum/species/fl_zorren
 	item_slowdown_mod = 1.2
-	slowdown = -0.2
-	brute_mod = 1.1
-	burn_mod = 0.9
+	factor_baseline = alist(BF_SLOWDOWN = -0.2)
+	injury_mod_groups = list("physical" = 1.1, "thermal" = 0.9)
 
 	cold_level_1 = 270 //Default 260 - Lower is better
 	cold_level_2 = 210 //Default 200
@@ -1874,7 +1864,6 @@
 	breath_heat_level_3 = 1200	//Default 1250
 
 /datum/species/diona
-	slowdown = 0.5
 
 /datum/species/xenomorph_hybrid
 	name = SPECIES_XENOMORPH_HYBRID
@@ -1887,13 +1876,15 @@
 	unarmed_types = list(/datum/unarmed_attack/stomp, /datum/unarmed_attack/kick, /datum/unarmed_attack/claws/strong/xeno, /datum/unarmed_attack/bite/strong/xeno) // Innate claws and bite.
 
 	total_health = 150 // Larger health pool.
-	burn_mod = 2 // Fire does not mix well with their silicon carapace.
-	toxins_mod = 0.5 // Resistant to toxins.
+	injury_mod_groups = list("thermal" = 2, "toxin" = 0.5, "pain" = 0.3)
+	// Fire does not mix well with their silicon carapace. (burn)
+	// Resistant to toxins. (toxins)
 	trauma_mod = 0.3 // Highly resistant to pain.
-	pain_mod = 0.3 // Highly resistant to pain.
+	// Highly resistant to pain. (pain)
 	rad_removal_mod = 1.5 // Radiation leaves the body much faster.
 	chem_strength_heal = 0.1 // Acidic blood neutralizes most injected and ingested beneficial chemicals.
-	metabolic_rate = 1.3 // Very physically active species, thus requiring more nutritional intake.
+	// Very physically active species, thus requiring more nutritional intake.
+	factor_baseline = alist(BF_METABOLISM = 1.3)
 	chem_strength_alcohol = 1.2 // They don't handle their drinks very well.
 	throwforce_absorb_threshold = 10 // Thrown objects don't do as much.
 	darksight = 10 // Full view darksight.
@@ -2021,19 +2012,19 @@
 		mend_prob = 0 // No passive health regen without resting.
 
 	// First, heal internal organs.
-	for(var/obj/item/organ/I in H.internal_organs)
+	for(var/obj/item/organ/internal/I in H.internal_organs)
 		if(I.damage > 0)
-			I.damage = max(I.damage - heal_rate, 0)
+			H.mend(TREAT_RESTORATION, heal_rate, I)
 			if (prob(5))
 				to_chat(H, span_alien("We feel a soothing sensation within our [I.parent_organ]..."))
 			return 1
 
 	// Next, heal external damage.
-	if (H.getBruteLoss() || H.getFireLoss() || H.getOxyLoss() || H.getToxLoss())
-		H.adjustBruteLoss(-heal_rate)
-		H.adjustFireLoss(-heal_rate)
-		H.adjustOxyLoss(-heal_rate)
-		H.adjustToxLoss(-heal_rate)
+	if (H.injury_load(INJURY_CATEGORY_PHYSICAL) || H.injury_load(INJURY_CATEGORY_THERMAL) || H.injury_load(INJURY_CATEGORY_ASPHYXIA) || H.injury_load(INJURY_CATEGORY_TOXIC))
+		H.mend(TREAT_TISSUE_REPAIR, heal_rate)
+		H.mend(TREAT_BURN_CARE, heal_rate)
+		H.mend(TREAT_OXYGENATION, heal_rate)
+		H.mend(TREAT_ANTITOXIN, heal_rate)
 		if (prob(5))
 			to_chat(H, span_alien("A soothing sensation falls over our body..."))
 		return 1

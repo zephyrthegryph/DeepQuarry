@@ -11,8 +11,7 @@
 	icon_rest = "mouse_gray_sleep"
 	faction = FACTION_MOUSE_ARMY
 
-	maxHealth = 50
-	health = 50
+	endurance = 50
 	universal_understand = 1
 
 	taser_kill = 0
@@ -107,7 +106,6 @@
 	return
 
 /mob/living/simple_mob/animal/space/mouse_army/proc/splat()
-	src.health = 0
 	src.stat = DEAD
 	src.icon_dead = "mouse_[rank]_splat"
 	src.icon_state = "mouse_[rank]_splat"
@@ -140,8 +138,7 @@
 	tt_desc = "E Mus phlogiston"
 	rank = "pyro"
 
-	maxHealth = 30
-	health = 30
+	endurance = 30
 
 	//Mob melee settings
 	melee_damage_lower = 5
@@ -192,8 +189,7 @@
 	tt_desc = "E Mus tela"
 	rank = "ammo"
 
-	maxHealth = 30
-	health = 30
+	endurance = 30
 
 	//Mob melee settings
 	melee_damage_lower = 1
@@ -364,7 +360,7 @@
 	wreckage = /obj/structure/loot_pile/mecha/mouse_tank
 	faction = FACTION_MOUSE_ARMY
 
-	maxHealth = 150
+	endurance = 150
 	armor = list(
 				"melee" = 25,
 				"bullet" = 20,
@@ -401,7 +397,7 @@
 	icon_state = "livewire"
 	wreckage = /obj/structure/loot_pile/mecha/mouse_tank/livewire
 
-	maxHealth = 200
+	endurance = 200
 	heat_resist = 1
 	armor = list(
 				"melee" = 0,
@@ -438,7 +434,7 @@
 	icon_state = "eraticator"
 	wreckage = /obj/structure/loot_pile/mecha/mouse_tank/eraticator
 
-	maxHealth = 300
+	endurance = 300
 	heat_resist = 1
 	armor = list(
 				"melee" = 20,
@@ -463,8 +459,7 @@
 // === merged from mouse_army_ch.dm during hard-fork de-suffix (verified no override-order change) ===
 /* Combat refactor changes commented out
 /mob/living/simple_mob/animal/space/mouse_army
-	maxHealth = 25
-	health = 25
+	endurance = 25
 */
 //Honestly with pretty low damage I am not touching it.
 /mob/living/simple_mob/animal/space/mouse_army/operative
@@ -487,8 +482,7 @@
 	icon_living = "mouse_ammo"
 	icon_dead = "mouse_ammo_dead"
 	icon_rest = "mouse_ammo_sleep"
-	maxHealth = 15
-	health = 15
+	endurance = 15
 
 /mob/living/simple_mob/animal/space/mouse_army/stealth
 	icon_state = "mouse_stealth"
@@ -499,12 +493,12 @@
 
 /* Combat refactor changes commented out
 /mob/living/simple_mob/mechanical/mecha/mouse_tank
-	maxHealth = 75
+	endurance = 75
 
 
 /mob/living/simple_mob/mechanical/mecha/mouse_tank/livewire
-	maxHealth = 100
+	endurance = 100
 
 /mob/living/simple_mob/mechanical/mecha/mouse_tank/eraticator
-	maxHealth = 150
+	endurance = 150
 */

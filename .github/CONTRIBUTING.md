@@ -8,7 +8,8 @@ Space Station 13 codebase.
 > **Note:** DeepQuarry is a **hard fork** of the Baystation → Polaris → VOREStation
 > → CHOMPStation lineage. It no longer tracks or merges from any upstream, and the
 > old "modular folder / upstream parity / edit marker" rules no longer apply — the
-> codebase is a single unified tree. See `CLAUDE.md` for the layout and build.
+> codebase is a single unified tree. See `AGENTS.md` for the layout and build,
+> and `doc/testing.md` for how to test.
 
 #### Table Of Contents
 
@@ -37,25 +38,28 @@ By participating, you are expected to uphold this code.
 
 ### Your First Code Contribution
 
-Unsure where to begin? Start by looking through the issues tab. Read `CLAUDE.md`
-for the repository layout, build pipeline, and DM coding standards.
+Unsure where to begin? Start by looking through the issues tab. Read `AGENTS.md`
+for the repository layout, build pipeline, and DM coding standards, and
+`doc/testing.md` for running tests.
 
 ### Map Edits
 
-- The live map is `maps/deep_quarry/`. Dynamically-loaded content lives in
-  `maps/submaps/` (POIs, surface submaps, shelters), `maps/overmap/`, and
-  `maps/common*/`. New atmospherics turf presets use the turfpacks system
-  (`maps/~turfpacks/turfpacks.dm`).
+- The live map is `maps/southern_cross/`. The unit tests boot the small
+  `maps/virgo_minitest/`. Loaded templates live in `maps/submaps/` (engines,
+  shelters), `maps/overmap/` and `maps/common*/`; expedition sites are generated
+  at runtime from `maps/expedition/`. New atmospherics turf presets use the
+  turfpacks system (`maps/~turfpacks/turfpacks.dm`).
 - Map changes must be in TGM format. See the [Mapmerge2 Readme](../tools/mapmerge2/readme.md),
   or use [StrongDMM](../tools/StrongDMM/README.md) which saves TGM automatically.
-- PoIs / generation-placed templates (mining, plains, wilderness, space, …) are
-  generally fair game to edit or create.
+- Map lint (`tools/maplint/lints/`) forbids some var-edits, such as `icon`, SMES
+  state and cable directions. Make a subtype instead; Southern Cross keeps its
+  map-specific subtypes in `maps/southern_cross/southern_cross_map_subtypes.dm`.
 - Permanent maps cost a limited RAM budget — discuss new permanent maps / station
   designs with the community and staff (post a floor plan) before investing effort.
 
 ### Coding Standards
 
-See `CLAUDE.md` §3 for the full DM standards (absolute type paths, `..()` chaining,
+See `AGENTS.md` §3 for the full DM standards (absolute type paths, `..()` chaining,
 list-allocation patterns, signal handlers, `qdel`, time defines, SQL parameters,
 etc.). Highlights:
 
@@ -88,12 +92,13 @@ etc.). Highlights:
 #### TGUI
 
 - **ALL** TGUI files require TypeScript with properly defined types.
-- Run `npm run tgui:lint` (and `npm run tgui:fix`) before submitting.
+- Run `tools/build/build.sh lint tgui-test` (and `bin/tgui-fix.cmd` to auto-fix)
+  before submitting.
 
 ### Pull Requests
 
-- Your submission must pass CI. The checks catch many common mistakes; if you think
-  CI has a bug, open an issue. (Known CI gotcha: don't put comments in the middle of
+- Your submission must pass CI (`doc/testing.md` lists every check and how to
+  run it locally). If you think CI has a bug, open an issue. (Known CI gotcha: don't put comments in the middle of
   a multi-line `list(...)`.)
 - WIP PRs must be marked `[WIP]` in the title **and** be a draft. They can't sit forever.
 - A PR with many no-conflict merge commits ("merge from master" into your branch)

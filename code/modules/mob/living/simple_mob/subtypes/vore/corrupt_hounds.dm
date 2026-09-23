@@ -24,8 +24,7 @@
 
 	faction = FACTION_CORRUPT
 
-	maxHealth = 200
-	health = 200
+	endurance = 200
 	movement_sound = 'sound/effects/houndstep.ogg'
 	see_in_dark = 8
 
@@ -94,13 +93,16 @@
 /mob/living/simple_mob/vore/aggressive/corrupthound/isSynthetic()
 	return TRUE
 
+/mob/living/simple_mob/vore/aggressive/corrupthound
+	biology = BIOLOGY_SYNTHETIC
+
 /mob/living/simple_mob/vore/aggressive/corrupthound/speech_bubble_appearance()
 	return "synthetic_evil"
 
 /mob/living/simple_mob/vore/aggressive/corrupthound/apply_melee_effects(atom/A)
 	if(ismouse(A))
 		var/mob/living/simple_mob/animal/passive/mouse/mouse = A
-		if(mouse.getMaxHealth() < 20) // In case a badmin makes giant mice or something.
+		if(mouse.get_endurance() < 20) // In case a badmin makes giant mice or something.
 			mouse.splat()
 			visible_emote(pick("bites \the [mouse]!", "chomps on \the [mouse]!"))
 	else
@@ -189,8 +191,7 @@
 	icon_dead = "badboi_fire-dead"
 	icon_rest = "badboi_fire_rest"
 
-	maxHealth = 150
-	health = 150
+	endurance = 150
 
 
 	projectiletype = /obj/item/projectile/scatter/flamethrower
@@ -202,8 +203,7 @@
 	icon_dead = "badboi_laser-dead"
 	icon_rest = "badboi_laser_rest"
 
-	maxHealth = 150
-	health = 150
+	endurance = 150
 
 
 	ranged_attack_delay = 2 SECONDS
@@ -218,8 +218,7 @@
 	icon_dead = "badboi_fast-dead"
 	icon_rest = "badboi_fast_rest"
 
-	maxHealth = 100
-	health = 100
+	endurance = 100
 
 	movement_cooldown = -1
 
@@ -265,8 +264,7 @@
 
 	faction = "corrupt"
 
-	maxHealth = 200
-	health = 200
+	endurance = 200
 	movement_sound = 'sound/effects/houndstep.ogg'
 	see_in_dark = 8
 
@@ -334,13 +332,16 @@
 /mob/living/simple_mob/vore/retaliate/corrupthound/janihound/isSynthetic()
 	return TRUE
 
+/mob/living/simple_mob/vore/retaliate/corrupthound/janihound
+	biology = BIOLOGY_SYNTHETIC
+
 /mob/living/simple_mob/vore/retaliate/corrupthound/janihound/speech_bubble_appearance()
 	return "synthetic_evil"
 
 /mob/living/simple_mob/vore/retaliate/corrupthound/janihound/apply_melee_effects(atom/A)
 	if(ismouse(A))
 		var/mob/living/simple_mob/animal/passive/mouse/mouse = A
-		if(mouse.getMaxHealth() < 20) // In case a badmin makes giant mice or something.
+		if(mouse.get_endurance() < 20) // In case a badmin makes giant mice or something.
 			mouse.splat()
 			visible_emote(pick("bites \the [mouse]!", "chomps on \the [mouse]!"))
 	else

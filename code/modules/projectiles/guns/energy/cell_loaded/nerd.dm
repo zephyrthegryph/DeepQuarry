@@ -21,7 +21,6 @@
 
 
 
-// The Magazine // // CH edit - Changes ML3M to NERD
 /obj/item/ammo_magazine/cell_mag/medical //medical
 	name = "nanite magazine"
 	desc = "A nanite fabrication magazine for the \'NERD\'"

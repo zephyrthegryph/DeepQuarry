@@ -19,8 +19,7 @@
 	vore_pounce_maxhealth = 80
 
 	faction = FACTION_VIRGO2
-	maxHealth = 50
-	health = 50
+	endurance = 50
 
 	melee_damage_lower = 2
 	melee_damage_upper = 7

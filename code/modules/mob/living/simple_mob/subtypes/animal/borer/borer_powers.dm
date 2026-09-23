@@ -229,10 +229,10 @@
 	visible_message(span_danger("With a hideous, rattling moan, [src] shudders back to life!"))
 
 	// Dump damage or we won't be able to revive properly
-	setHalLoss(0)
-	setOxyLoss(0)
-	adjustBruteLoss(-20)
-	adjustFireLoss(-20)
+	mend(TREAT_ANALGESIC, 1000)
+	mend(TREAT_OXYGENATION, 1000)
+	mend(TREAT_TISSUE_REPAIR, 20)
+	mend(TREAT_BURN_CARE, 20)
 	adjust_nutrition(-200)
 
 	// Boilerplate revivial

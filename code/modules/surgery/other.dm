@@ -28,9 +28,10 @@
 	if(coverage_check(user, target, affected, tool))
 		return 0
 	var/internal_bleeding = 0
-	for(var/datum/wound/W in affected.wounds) if(W.internal)
-		internal_bleeding = 1
-		break
+	for(var/datum/affliction/wound/W as anything in affected.get_wounds())
+		if(W.internal)
+			internal_bleeding = 1
+			break
 
 	return affected.open == (affected.encased ? 3 : 2) && internal_bleeding
 
@@ -48,17 +49,20 @@
 		span_notice("You have patched the damaged vein in [target]'s [affected.name] with \the [tool]."))
 	user.balloon_alert_visible("patches the damaged vein in [target]'s [affected.name]", "patched the damaged vein in \the [affected.name]")
 
-	for(var/datum/wound/W in affected.wounds) if(W.internal)
-		affected.wounds -= W
-		affected.update_damages()
-	if (ishuman(user) && prob(40)) user:bloody_hands(target, 0)
+	for(var/datum/affliction/wound/W as anything in affected.get_wounds())
+		if(W.internal)
+			affected.remove_wound(W)
+	affected.update_damages()
+	if(ishuman(user) && prob(40))
+		var/mob/living/carbon/human/surgeon = user
+		surgeon.bloody_hands(target, 0)
 
 /datum/surgery_step/fix_vein/fail_step(mob/living/user, mob/living/carbon/human/target, target_zone, obj/item/tool)
 	var/obj/item/organ/external/affected = target.get_organ(target_zone)
 	user.visible_message(span_danger("[user]'s hand slips, smearing [tool] in the incision in [target]'s [affected.name]!") , \
 	span_danger("Your hand slips, smearing [tool] in the incision in [target]'s [affected.name]!"))
 	user.balloon_alert_visible("slips, smearing [tool] in the incision in [target]'s [affected.name]", "your hand slips, smearing [tool] in the incisiom in [affected.name]")
-	affected.take_damage(5, 0)
+	target.injure(INJURY_BLUNT, 5, affected.organ_tag, tool, flags = INJURE_IGNORE_RESISTANCE)
 
 /datum/surgery_step/internal/detoxify
 	surgery_name = "Detoxify"
@@ -68,7 +72,7 @@
 	max_duration = 40
 
 /datum/surgery_step/internal/detoxify/can_use(mob/living/user, mob/living/carbon/human/target, target_zone, obj/item/tool)
-	return ..() && target_zone == BP_TORSO && (target.toxloss || target.oxyloss || target.cloneloss)
+	return ..() && target_zone == BP_TORSO && (target.injury_load(INJURY_CATEGORY_TOXIC) || target.injury_load(INJURY_CATEGORY_ASPHYXIA) || target.injury_load(INJURY_CATEGORY_GENETIC))
 
 /datum/surgery_step/internal/detoxify/begin_step(mob/living/user, mob/living/carbon/human/target, target_zone, obj/item/tool)
 	user.visible_message(span_notice("[user] begins to pull toxins from, and restore oxygen to [target]'s musculature and organs with \the [tool]."), \
@@ -80,9 +84,9 @@
 	user.visible_message(span_notice("[user] finishes pulling toxins from, and restoring oxygen to [target]'s musculature and organs with \the [tool]."), \
 	span_notice("You finish pulling toxins from, and restoring oxygen to [target]'s musculature and organs with \the [tool]."))
 	user.balloon_alert_visible("finishes pulling toxins and restoring oxygen to [target]'s organs", "pulled toxins from and restored oxygen to the organs")
-	target.adjustToxLoss(-20)
-	target.adjustOxyLoss(-20)
-	target.adjustCloneLoss(-20)
+	target.mend(TREAT_ANTITOXIN, 20)
+	target.mend(TREAT_OXYGENATION, 20)
+	target.mend(TREAT_GENETIC_REPAIR, 20)
 	..()
 
 /datum/surgery_step/internal/detoxify/fail_step(mob/living/user, mob/living/carbon/human/target, target_zone, obj/item/tool)
@@ -90,6 +94,6 @@
 	user.visible_message(span_danger("[user]'s hand slips, failing to finish the surgery, and damaging [target] with \the [tool]."), \
 	span_danger("Your hand slips, failing to finish the surgery, and damaging [target] with \the [tool]."))
 	user.balloon_alert_visible("slips, failing to finish the surgery and damaging [target]", "your hand slips, failing to finish the surgery and damaging [target]")
-	affected.createwound(CUT, 15)
-	affected.createwound(BRUISE, 10)
+	target.injure(INJURY_CUT, 15, affected.organ_tag, tool, flags = INJURE_IGNORE_RESISTANCE)
+	target.injure(INJURY_BLUNT, 10, affected.organ_tag, tool, flags = INJURE_IGNORE_RESISTANCE)
 	..()

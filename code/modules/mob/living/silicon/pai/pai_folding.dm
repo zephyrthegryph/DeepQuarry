@@ -48,7 +48,7 @@
 			var/mob/living/carbon/human/H = holder
 			for(var/obj/item/organ/external/affecting in H.organs)
 				if(card in affecting.implants)
-					affecting.take_damage(rand(30,50))
+					H.injure(INJURY_BLUNT, rand(30,50), affecting, src)
 					affecting.implants -= card
 					H.visible_message(span_danger("\The [src] explodes out of \the [H]'s [affecting.name] in shower of gore!"))
 					break

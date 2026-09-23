@@ -51,19 +51,19 @@ the artifact triggers the rage.
 	stacks = MODIFIER_STACK_EXTEND
 
 	// The good stuff.
-	slowdown = -1							// Move a bit faster.
-	attack_speed_percent = 0.66				// Attack at 2/3 the normal delay.
-	outgoing_melee_damage_percent = 1.5		// 50% more damage from melee.
-	max_health_percent = 1.5				// More health as a buffer, however the holder might fall into crit after this expires if they're mortally wounded.
-	disable_duration_percent = 0.25			// Disables only last 25% as long.
-	icon_scale_x_percent = 1.2				// Look scarier.
-	icon_scale_y_percent = 1.2
-	pain_immunity = TRUE					// Avoid falling over from shock (at least until it expires).
+	// Move a bit faster.
+	// Attack at 2/3 the normal delay.
+	// 50% more damage from melee.
+	// More health as a buffer, however the holder might fall into crit after this expires if they're mortally wounded.
+	// Disables only last 25% as long.
+	// Look scarier.
+	// Avoid falling over from shock (at least until it expires).
+	// Aiming requires focus.
+	// Ditto.
+	// Too angry to dodge.
+	factors = alist(BF_SLOWDOWN = -1, BF_ACCURACY = -75, BF_DISPERSION = 3, BF_EVASION = -45, BF_ATTACK_SPEED = 0.66, BF_MELEE_DAMAGE = 1.5, BF_DISABLE_DURATION = 0.25, BF_ENDURANCE_MULT = 1.5, BF_ICON_SCALE_X = 1.2, BF_ICON_SCALE_Y = 1.2, BF_PAIN_IMMUNITY = 1)
 
 	// The less good stuff.
-	accuracy = -75							// Aiming requires focus.
-	accuracy_dispersion = 3					// Ditto.
-	evasion = -45							// Too angry to dodge.
 
 	var/nutrition_cost = 150
 	var/exhaustion_duration = 2 MINUTES 	// How long the exhaustion modifier lasts after it expires. Set to 0 to not apply one.
@@ -90,7 +90,7 @@ the artifact triggers the rage.
 	holder.SetParalysis(0)
 	holder.SetStunned(0)
 	holder.SetWeakened(0)
-	holder.setHalLoss(0)
+	holder.mend(TREAT_ANALGESIC, 200) // Rage drowns out the pain.
 	holder.lying = 0
 	holder.update_canmove()
 
@@ -158,11 +158,7 @@ the artifact triggers the rage.
 	on_expired_text = span_notice("You feel less exhausted now.")
 	stacks = MODIFIER_STACK_EXTEND
 
-	slowdown = 2
-	attack_speed_percent = 1.5
-	outgoing_melee_damage_percent = 0.6
-	disable_duration_percent = 1.5
-	evasion = -30
+	factors = alist(BF_SLOWDOWN = 2, BF_EVASION = -30, BF_ATTACK_SPEED = 1.5, BF_MELEE_DAMAGE = 0.6, BF_DISABLE_DURATION = 1.5)
 
 /datum/modifier/berserk_exhaustion/on_applied()
 	holder.visible_message(span_warning("\The [holder] looks exhausted."))
@@ -182,9 +178,10 @@ the artifact triggers the rage.
 	stacks = MODIFIER_STACK_EXTEND
 
 	// Just being mad isn't gonna overclock your body when you're a beepboop.
-	accuracy = -75				// Aiming requires focus.
-	accuracy_dispersion = 3		// Ditto.
-	evasion = -45				// Too angry to dodge.
+	// Aiming requires focus.
+	// Ditto.
+	// Too angry to dodge.
+	factors = alist(BF_ACCURACY = -75, BF_DISPERSION = 3, BF_EVASION = -45)
 
 // Speedy, but not hasted.
 /datum/modifier/sprinting
@@ -195,8 +192,7 @@ the artifact triggers the rage.
 	on_expired_text = span_notice("The energy high dies out.")
 	stacks = MODIFIER_STACK_EXTEND
 
-	slowdown = -1
-	disable_duration_percent = 0.8
+	factors = alist(BF_SLOWDOWN = -1, BF_DISABLE_DURATION = 0.8)
 
 // Speedy, but not berserked.
 /datum/modifier/melee_surge
@@ -207,9 +203,7 @@ the artifact triggers the rage.
 	on_expired_text = span_notice("The energy high dies out.")
 	stacks = MODIFIER_STACK_ALLOWED
 
-	attack_speed_percent = 0.8
-	outgoing_melee_damage_percent = 1.1
-	disable_duration_percent = 0.8
+	factors = alist(BF_ATTACK_SPEED = 0.8, BF_MELEE_DAMAGE = 1.1, BF_DISABLE_DURATION = 0.8)
 
 // Non-cult version of deep wounds.
 // Surprisingly, more dangerous.
@@ -222,11 +216,12 @@ the artifact triggers the rage.
 
 	stacks = MODIFIER_STACK_EXTEND
 
-	incoming_healing_percent = 0.50	// 50% less healing.
-	disable_duration_percent = 1.22	// 22% longer disables.
-	bleeding_rate_percent = 1.20	// 20% more bleeding.
+	// 50% less healing.
+	// 22% longer disables.
+	// 20% more bleeding.
+	// A combination of fear and immense pain or damage reults in a twitching firing arm. Flee.
+	factors = alist(BF_BLEEDING = 1.20, BF_DISPERSION = 2, BF_DISABLE_DURATION = 1.22, BF_HEALING_RECEIVED = 0.50)
 
-	accuracy_dispersion = 2			// A combination of fear and immense pain or damage reults in a twitching firing arm. Flee.
 
 // Applied when near something very cold.
 // Reduces mobility, attack speed.
@@ -239,10 +234,7 @@ the artifact triggers the rage.
 	on_expired_text = span_warning("You feel somewhat warmer and more mobile now.")
 	stacks = MODIFIER_STACK_EXTEND
 
-	slowdown = 2
-	evasion = -40
-	attack_speed_percent = 1.4
-	disable_duration_percent = 1.2
+	factors = alist(BF_SLOWDOWN = 2, BF_EVASION = -40, BF_ATTACK_SPEED = 1.4, BF_DISABLE_DURATION = 1.2)
 
 
 // Similar to being on fire, except poison tends to be more long term.
@@ -299,7 +291,7 @@ the artifact triggers the rage.
 	on_expired_text = span_notice("You feel.. different.")
 	stacks = MODIFIER_STACK_EXTEND
 
-	pulse_set_level = PULSE_NORM
+	factors = alist(BF_PULSE_SET = PULSE_NORM)
 
 /datum/modifier/slow_pulse
 	name = "slow pulse"
@@ -309,9 +301,8 @@ the artifact triggers the rage.
 	on_expired_text = span_notice("You feel energized.")
 	stacks = MODIFIER_STACK_EXTEND
 
-	bleeding_rate_percent = 0.8
+	factors = alist(BF_BLEEDING = 0.8, BF_PULSE_SHIFT = -1)
 
-	pulse_modifier = -1
 
 // Temperature Normalizer.
 /datum/modifier/homeothermic
@@ -362,7 +353,7 @@ the artifact triggers the rage.
 	on_expired_text = span_warning("You feel a longing for the flow of energy.")
 	stacks = MODIFIER_STACK_EXTEND
 
-	emp_modifier = 5
+	factors = alist(BF_EMP_SHIFT = 5)
 
 // Nullifies explosions.
 /datum/modifier/blastshield
@@ -374,7 +365,7 @@ the artifact triggers the rage.
 	on_expired_text = span_warning("You feel a longing for the flow of energy.")
 	stacks = MODIFIER_STACK_EXTEND
 
-	explosion_modifier = 3
+	factors = alist(BF_EXPLOSION_SHIFT = 3)
 
 // Kills on expiration.
 /datum/modifier/doomed
@@ -408,14 +399,7 @@ the artifact triggers the rage.
 	desc = "You are almost immune to harm, for a little while at least."
 	stacks = MODIFIER_STACK_EXTEND
 
-	disable_duration_percent = 0
-	incoming_damage_percent = 0
-//	bleeding_rate_percent = 0
-	pain_immunity = TRUE
-	armor_percent = list("melee" = 2000, "bullet" = 2000, "laser" = 2000, "bomb" = 2000, "energy" = 2000, "bio" = 2000, "rad" = 2000)
-	heat_protection = 1.0
-	cold_protection = 1.0
-	siemens_coefficient = 0.0
+	factors = alist(BF_INCOMING_ALL = 0, BF_DISABLE_DURATION = 0, BF_PAIN_IMMUNITY = 1, BF_ARMOR_MELEE = 2000, BF_ARMOR_BULLET = 2000, BF_ARMOR_LASER = 2000, BF_ARMOR_ENERGY = 2000, BF_ARMOR_BOMB = 2000, BF_ARMOR_BIO = 2000, BF_ARMOR_RAD = 2000, BF_HEAT_EXPOSURE = 0, BF_COLD_EXPOSURE = 0, BF_SIEMENS = 0.0)
 
 // Reduces resistance to "elements".
 // Note that most things that do give resistance gives 100% protection,
@@ -425,9 +409,7 @@ the artifact triggers the rage.
 	desc = "You're more vulnerable to extreme temperatures and electricity."
 	stacks = MODIFIER_STACK_EXTEND
 
-	heat_protection = -0.5
-	cold_protection = -0.5
-	siemens_coefficient = 1.5
+	factors = alist(BF_HEAT_EXPOSURE = 1.5, BF_COLD_EXPOSURE = 1.5, BF_SIEMENS = 1.5)
 
 /datum/modifier/entangled
 	name = "entangled"
@@ -437,7 +419,7 @@ the artifact triggers the rage.
 	on_expired_text = span_warning("Your movement is freed.")
 	stacks = MODIFIER_STACK_EXTEND
 
-	slowdown = 2
+	factors = alist(BF_SLOWDOWN = 2)
 
 /datum/modifier/trait/thickdigits
 	name = "Thick Digits"
@@ -446,23 +428,19 @@ the artifact triggers the rage.
 /datum/modifier/trait/empresist
 	name = "Emp Resist"
 	desc = "You are resistant to EMPs."
-	emp_modifier = 1
 
 /datum/modifier/trait/empresistb
 	name = "Major Emp Resist"
 	desc = "You are resistant to EMPs."
-	emp_modifier = 2
 
 /datum/modifier/trait/empweakness
 	name = "Emp Weakness"
 	desc = "You are weak to EMPs."
-	emp_modifier = -1
 
 /datum/modifier/trait/majorempweakness
 	name = "Major Emp Weakness"
 	desc = "You are weak to EMPs."
-	emp_modifier = -2
 
 /datum/modifier/rednet //Not used here currently, but used downstream. Todo: Port it.
 	mob_overlay_state = "red_electricity_constant"
-	slowdown = 1
+	factors = alist(BF_SLOWDOWN = 1)

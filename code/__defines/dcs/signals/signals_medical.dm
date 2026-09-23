@@ -26,3 +26,15 @@
 #define COMSIG_SURGERY_STARTING "surgery_starting"
 	#define COMPONENT_CANCEL_SURGERY (1<<0)
 	#define COMPONENT_FORCE_SURGERY (1<<1)
+
+/// From /datum/body/add_affliction() and remove_affliction(): (datum/affliction/affliction, added)
+#define COMSIG_BODY_AFFLICTIONS_CHANGED "body_afflictions_changed"
+/// From /datum/affliction/proc/set_severity(), sent to the owning mob: (datum/affliction/affliction, old_severity)
+#define COMSIG_AFFLICTION_SEVERITY_CHANGED "affliction_severity_changed"
+/// From base of /mob/living/proc/injure(), before mitigation: (kind, list/amount_ref, zone, atom/source, flags). amount_ref[1] may be modified.
+#define COMSIG_LIVING_INJURE "living_injure"
+	#define COMPONENT_CANCEL_INJURY (1<<0)
+/// From base of /mob/living/proc/injure(), after the injury applied: (kind, applied, zone, atom/source, flags)
+#define COMSIG_LIVING_INJURED "living_injured"
+/// From /datum/body/proc/recompute_factors() when a body factor value changed: ()
+#define COMSIG_LIVING_FACTORS_CHANGED "living_factors_changed"

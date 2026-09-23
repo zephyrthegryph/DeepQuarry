@@ -36,9 +36,3 @@
 	explosion(target, 0, 0, 2, 4)//No need to have a question.
 	qdel(src)
 
-/*Old vars here for reference.
-	var/devastation = 0
-	var/heavy_blast = 1
-	var/light_blast = 2
-	var/flash_blast = 4
-*/

@@ -42,13 +42,6 @@
 		return
 	addtimer(CALLBACK(attached_anomaly, TYPE_PROC_REF(/atom/movable, uncloak)), 2 SECONDS)
 
-/*
-/datum/anomaly_modifiers/hidden
-	name = "Hidden"
-	description = "Interference detected. Some data cannot be read."
-	value = 0.15
-*/
-
 /datum/anomaly_modifiers/move
 	name = "Move"
 	description = "Anomalous anchoring could not be detected."

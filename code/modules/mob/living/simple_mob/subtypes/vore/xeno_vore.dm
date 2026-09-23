@@ -25,8 +25,7 @@
 	vis_height = 64
 
 	faction = FACTION_XENO
-	maxHealth = 150
-	health = 150
+	endurance = 150
 	see_in_dark = 10
 
 	//Something something, phoron mutation.

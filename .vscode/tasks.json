@@ -12,7 +12,11 @@
 					"DM_EXE": "${config:dreammaker.byondPath}"
 				}
 			},
-			"problemMatcher": ["$dreammaker", "$tsc", "$eslint-stylish"],
+			"problemMatcher": [
+				"$dreammaker",
+				"$tsc",
+				"$eslint-stylish"
+			],
 			"group": {
 				"kind": "build",
 				"isDefault": true
@@ -23,17 +27,25 @@
 		{
 			"type": "process",
 			"command": "tools/build/build.sh",
-			"args": ["-DLOWMEMORYMODE"],
+			"args": [
+				"-DLOWMEMORYMODE"
+			],
 			"windows": {
 				"command": ".\\tools\\build\\build.bat",
-				"args": ["-DLOWMEMORYMODE"]
+				"args": [
+					"-DLOWMEMORYMODE"
+				]
 			},
 			"options": {
 				"env": {
 					"DM_EXE": "${config:dreammaker.byondPath}"
 				}
 			},
-			"problemMatcher": ["$dreammaker", "$tsc", "$eslint-stylish"],
+			"problemMatcher": [
+				"$dreammaker",
+				"$tsc",
+				"$eslint-stylish"
+			],
 			"group": {
 				"kind": "build"
 			},
@@ -43,77 +55,29 @@
 		{
 			"type": "process",
 			"command": "tools/build/build.sh",
-			"args": ["-DLOWMEMORYMODE", "-DCITESTING", "-DUSE_MAP_TETHER"],
+			"args": [
+				"-DLOWMEMORYMODE",
+				"-DCITESTING",
+				"-DUSE_MAP_MINITEST"
+			],
 			"windows": {
 				"command": ".\\tools\\build\\build.bat",
-				"args": ["-DLOWMEMORYMODE", "-DCITESTING", "-DUSE_MAP_TETHER"]
+				"args": [
+					"-DLOWMEMORYMODE",
+					"-DCITESTING",
+					"-DUSE_MAP_MINITEST"
+				]
 			},
 			"options": {
 				"env": {
 					"DM_EXE": "${config:dreammaker.byondPath}"
 				}
 			},
-			"problemMatcher": ["$dreammaker", "$tsc", "$eslint-stylish"],
-			"group": {
-				"kind": "build"
-			},
-			"dependsOn": "dm: reparse",
-			"label": "Build All (Force Tether)"
-		},
-		{
-			"type": "process",
-			"command": "tools/build/build.sh",
-			"args": ["-DLOWMEMORYMODE", "-DCITESTING", "-DUSE_MAP_STELLARDELIGHT"],
-			"windows": {
-				"command": ".\\tools\\build\\build.bat",
-				"args": ["-DLOWMEMORYMODE", "-DCITESTING", "-DUSE_MAP_STELLARDELIGHT"]
-			},
-			"options": {
-				"env": {
-					"DM_EXE": "${config:dreammaker.byondPath}"
-				}
-			},
-			"problemMatcher": ["$dreammaker", "$tsc", "$eslint-stylish"],
-			"group": {
-				"kind": "build"
-			},
-			"dependsOn": "dm: reparse",
-			"label": "Build All (Force Stellar Delight)"
-		},
-		{
-			"type": "process",
-			"command": "tools/build/build.sh",
-			"args": ["-DLOWMEMORYMODE", "-DCITESTING", "-DUSE_MAP_GROUNDBASE"],
-			"windows": {
-				"command": ".\\tools\\build\\build.bat",
-				"args": ["-DLOWMEMORYMODE", "-DCITESTING", "-DUSE_MAP_GROUNDBASE"]
-			},
-			"options": {
-				"env": {
-					"DM_EXE": "${config:dreammaker.byondPath}"
-				}
-			},
-			"problemMatcher": ["$dreammaker", "$tsc", "$eslint-stylish"],
-			"group": {
-				"kind": "build"
-			},
-			"dependsOn": "dm: reparse",
-			"label": "Build All (Force Groundbase)"
-		},
-		{
-			"type": "process",
-			"command": "tools/build/build.sh",
-			"args": ["-DLOWMEMORYMODE", "-DCITESTING", "-DUSE_MAP_MINITEST"],
-			"windows": {
-				"command": ".\\tools\\build\\build.bat",
-				"args": ["-DLOWMEMORYMODE", "-DCITESTING", "-DUSE_MAP_MINITEST"]
-			},
-			"options": {
-				"env": {
-					"DM_EXE": "${config:dreammaker.byondPath}"
-				}
-			},
-			"problemMatcher": ["$dreammaker", "$tsc", "$eslint-stylish"],
+			"problemMatcher": [
+				"$dreammaker",
+				"$tsc",
+				"$eslint-stylish"
+			],
 			"group": {
 				"kind": "build"
 			},
@@ -123,7 +87,9 @@
 		{
 			"type": "dreammaker",
 			"dme": "deepquarry.dme",
-			"problemMatcher": ["$dreammaker"],
+			"problemMatcher": [
+				"$dreammaker"
+			],
 			"group": "build",
 			"label": "dm: build - deepquarry.dme"
 		},
@@ -138,7 +104,10 @@
 			"windows": {
 				"command": ".\\bin\\tgui-build.cmd"
 			},
-			"problemMatcher": ["$tsc", "$eslint-stylish"],
+			"problemMatcher": [
+				"$tsc",
+				"$eslint-stylish"
+			],
 			"group": "build",
 			"label": "tgui: build"
 		},
@@ -148,7 +117,10 @@
 			"windows": {
 				"command": ".\\bin\\tgui-dev.cmd"
 			},
-			"problemMatcher": ["$tsc", "$eslint-stylish"],
+			"problemMatcher": [
+				"$tsc",
+				"$eslint-stylish"
+			],
 			"group": "build",
 			"label": "tgui: dev server"
 		},
@@ -158,7 +130,10 @@
 			"windows": {
 				"command": ".\\bin\\tgfont.cmd"
 			},
-			"problemMatcher": ["$tsc", "$eslint-stylish"],
+			"problemMatcher": [
+				"$tsc",
+				"$eslint-stylish"
+			],
 			"group": "build",
 			"label": "tgui: rebuild tgfont"
 		}

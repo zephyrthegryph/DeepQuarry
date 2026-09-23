@@ -135,7 +135,7 @@
 			// The thing just to drop the ball if hit
 			if(emagged)
 				to_chat(wearer, span_bolddanger(span_massive("OH GOD! YOUR HEART!"))) //this is the last thing you see before you (presumably) die.
-				wearer.apply_damage(lasertag_max_health*50, BURN, BP_TORSO, used_weapon = "High-Voltage Electrical Shock")
+				wearer.injure(INJURY_ELECTRIC, lasertag_max_health*50, BP_TORSO, src) // High-voltage electrical shock
 				if(ishuman(wearer))
 					var/mob/living/carbon/human/human_wearer = wearer
 					var/obj/item/organ/internal/heart/H = human_wearer.internal_organs_by_name[O_HEART]
@@ -144,8 +144,10 @@
 							H.break_organ()
 						else
 							H.bruise()
-							if(H.damage < 15)
-								H.damage = 14 //Below this number we won't be KO'd from a heart attack.
+							// bruise() leaves the heart at min_bruised_damage (15);
+							// trim it to 14 so we aren't KO'd from a heart attack.
+							if(H.damage > 14)
+								human_wearer.mend(TREAT_RESTORATION, H.damage - 14, H)
 			return
 
 		if(lasertag_health > 0)

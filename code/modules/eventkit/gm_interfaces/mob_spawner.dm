@@ -35,7 +35,6 @@
 	data["initial_y"] = user.y;
 	data["initial_z"] = user.z;
 
-
 	return data
 
 /datum/eventkit/mob_spawner/tgui_data(mob/user)
@@ -66,8 +65,10 @@
 					intent  = (L.a_intent ? L.a_intent : I_HELP)
 					new_path = FALSE
 
-					data["max_health"] = L.getMaxHealth()
-					data["health"] = L.health
+					// "max_health" is the mob's endurance; "health" is how
+					// much of it the spawned mob starts with.
+					data["max_health"] = L.get_endurance()
+					data["health"] = L.get_endurance()
 					if(isanimal(L))
 						var/mob/living/simple_mob/S = L
 						data["melee_damage_lower"] = S.melee_damage_lower ? S.melee_damage_lower : 0
@@ -78,7 +79,6 @@
 	data["ai_type"] = ai_type
 	data["faction"] = faction
 	data["intent"]	= intent
-
 
 	return data
 
@@ -146,10 +146,12 @@
 					M.flavor_text = sanitize(params["flavor_text"])
 					if(isliving(M))
 						var/mob/living/L = M
-						if(isnum(params["max_health"]))
-							L.maxHealth = params["max_health"]
+						if(isnum(params["max_health"]) && params["max_health"] > 0)
+							L.endurance = params["max_health"]
 						if(isnum(params["health"]))
-							L.health = params["health"]
+							var/starting_injury = L.get_endurance() - params["health"]
+							if(starting_injury > 0)
+								L.injure(INJURY_BLUNT, starting_injury, flags = INJURE_IGNORE_RESISTANCE | INJURE_SILENT)
 						if(isanimal(M))
 							var/mob/living/simple_mob/S = L
 							if(isnum(params["melee_damage_lower"]))
@@ -163,18 +165,6 @@
 							L.AdjustSleeping(-100)
 						else
 							to_chat(ui.user, span_notice("You can only set AI for subtypes of mob/living!"))
-
-
-
-					/*
-					WIP: Radius around selected coords
-
-					var/list/turf/destTurfs
-					for(var/turf/RT in orange(T, params["r"]))
-						destTurfs += RT
-
-					var/turf/targetTurf = rand(0,length(destTurfs))
-					*/
 
 					var/size_mul = params["size_multiplier"]
 					if(isnum(size_mul))

@@ -35,7 +35,7 @@
 		return FALSE
 	if(affected.open < (affected.encased ? 3 : 2))
 		return FALSE
-	for(var/datum/medical_issue/condition/tendon_severed/C in affected.medical_issues)
+	for(var/datum/affliction/tendon_severed/C in affected.afflictions_here())
 		return TRUE
 	return FALSE
 
@@ -73,4 +73,4 @@
 		"slips, tearing the tendon in [target]'s [affected.name]",
 		"your hand slips, tearing the tendon in \the [affected.name]",
 	)
-	affected.take_damage(5, 0)
+	target.injure(INJURY_CUT, 5, affected.organ_tag, tool, flags = INJURE_IGNORE_RESISTANCE)

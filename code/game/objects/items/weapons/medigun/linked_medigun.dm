@@ -70,11 +70,6 @@
 	if(!ishuman(target))
 		return TRUE
 
-		/*if(!H.getBruteLoss() && !H.getFireLoss() && !H.getToxLoss())// && !H.getOxyLoss()) // No point Wasting fuel/power if target healed
-			playsound(src, 'sound/machines/ping.ogg', 50)
-			to_chat(user, span_warning("\the [target] is fully healed."))
-			return TRUE
-		*/
 	return FALSE
 
 /obj/item/bork_medigun/linked/afterattack(atom/target, mob/user, proximity_flag)
@@ -167,8 +162,8 @@
 		if(lastier >= 2)
 			if(checked_use(5))
 				H.add_modifier(/datum/modifier/medbeameffect, 2 SECONDS)
-			if(H.getHalLoss() && checked_use(5))
-				H.adjustHalLoss(-20)
+			if(H.current_pain() && checked_use(5))
+				H.mend(TREAT_ANALGESIC, 20)
 			if(H.weakened && checked_use(5))
 				H.AdjustWeakened(-1)
 			if(lastier >= 3)
@@ -176,32 +171,8 @@
 					H.AdjustParalysis(-1)
 
 		var/healmod = lastier
-		/*if(H.getBruteLoss())
-			healmod = min(lastier,medigun_base_unit.brutecharge,H.getBruteLoss())
-			if(medigun_base_unit.brutecharge >= healmod)
-				if(!checked_use(healmod))
-					to_chat(user, span_warning("\The [src] doesn't have enough charge left to do that."))
-					break
-				if(healmod < 0)
-					healmod = 0
-				else
-					H.adjustBruteLoss(-healmod)
-					medigun_base_unit.brutecharge -= healmod
-					ishealing = 1
-		if(H.getFireLoss())
-			healmod = min(lastier,medigun_base_unit.burncharge,H.getFireLoss())
-			if(medigun_base_unit.burncharge >= healmod)
-				if(!checked_use(healmod))
-					to_chat(user, span_warning("\The [src] doesn't have enough charge left to do that."))
-					break
-				if(healmod < 0)
-					healmod = 0
-				else
-					H.adjustFireLoss(-healmod)
-					medigun_base_unit.burncharge -= healmod
-					ishealing = 1*/
-		if(H.getToxLoss())
-			healmod = min(lastier,medigun_base_unit.toxcharge,H.getToxLoss())
+		if(H.injury_load(INJURY_CATEGORY_TOXIC))
+			healmod = min(lastier,medigun_base_unit.toxcharge,H.injury_load(INJURY_CATEGORY_TOXIC))
 			if(medigun_base_unit.toxcharge >= healmod)
 				if(!checked_use(healmod))
 					to_chat(user, span_warning("\The [src] doesn't have enough charge left to do that."))
@@ -209,15 +180,15 @@
 				if(healmod < 0)
 					healmod = 0
 				else
-					H.adjustToxLoss(-healmod)
+					H.mend(TREAT_ANTITOXIN, healmod)
 					medigun_base_unit.toxcharge -= healmod
 					ishealing = TRUE
-		if(H.getOxyLoss())
-			healmod = min(10*lastier,H.getOxyLoss())
+		if(H.injury_load(INJURY_CATEGORY_ASPHYXIA))
+			healmod = min(10*lastier,H.injury_load(INJURY_CATEGORY_ASPHYXIA))
 			if(!checked_use(min(10,healmod)))
 				to_chat(user, span_warning("\The [src] doesn't have enough charge left to do that."))
 				return
-			H.adjustOxyLoss(-healmod)
+			H.mend(TREAT_OXYGENATION, healmod)
 			ishealing = TRUE
 
 		ishealing = process_wounds(H, lastier, lastier, ishealing)
@@ -243,12 +214,12 @@
 	while(heal_ticks > 0)
 		if(remaining_strength <= 0)
 			return ishealing
-		if((!H.getFireLoss() || medigun_base_unit.burncharge <= 0) && (!H.getBruteLoss() || medigun_base_unit.burncharge <= 0))
+		if((!H.injury_load(INJURY_CATEGORY_THERMAL) || medigun_base_unit.burncharge <= 0) && (!H.injury_load(INJURY_CATEGORY_PHYSICAL) || medigun_base_unit.burncharge <= 0))
 			return ishealing
 
 		for(var/name in BP_ALL)
 			var/obj/item/organ/external/O = H.organs_by_name[name]
-			for(var/datum/wound/W in O.wounds)
+			for(var/datum/affliction/wound/W as anything in O.get_wounds())
 				if (W.internal)
 					continue
 				//if (W.bandaged && W.disinfected)
@@ -256,22 +227,22 @@
 				if (W.damage_type == BRUISE || W.damage_type == CUT || W.damage_type == PIERCE)
 					if(medigun_base_unit.brutecharge >= 1)
 						if(W.damage <= 1)
-							O.wounds -= W
+							O.remove_wound(W)
 							medigun_base_unit.brutecharge -= 1
 							ishealing = TRUE
 						else if(medigun_base_unit.brutecharge >= 1)
-							W.damage -= 1
+							W.heal_damage(1)
 							medigun_base_unit.brutecharge -= 1
 							remaining_strength -= 1
 							ishealing = TRUE
 				if (W.damage_type == BURN)
 					if(medigun_base_unit.burncharge >= 1)
 						if(W.damage <= 1)
-							O.wounds -= W
+							O.remove_wound(W)
 							medigun_base_unit.burncharge -= 1
 							ishealing = TRUE
 						else if(medigun_base_unit.burncharge >= 1)
-							W.damage -= 1
+							W.heal_damage(1)
 							medigun_base_unit.burncharge -= 1
 							remaining_strength -= 1
 							ishealing = TRUE

@@ -16,8 +16,7 @@
 	icon_rest = "succlet"
 	icon = 'icons/mob/alienanimals_x32.dmi'
 
-	maxHealth = 10
-	health = 10
+	endurance = 10
 	movement_cooldown = 1000
 
 	response_help = "hugs"
@@ -62,7 +61,7 @@
 	var/succlet_move_chance = 2
 	var/succlet_eat_chance = 50
 	var/succlet_weaken_rate = 2
-	var/succlet_last_health = 10
+	var/succlet_last_health = 1 // vitality() last tick
 
 /datum/say_list/succlet
 	speak = list("...")
@@ -102,7 +101,7 @@
 		return
 	if(isbelly(loc))	//No teleporting out of bellies
 		return
-	if(prob(succlet_move_chance) || health < succlet_last_health)	//This chance can be adjusted, but moving is probably pretty resource expensive on the server, so the chance should stay low
+	if(prob(succlet_move_chance) || vitality() < succlet_last_health)	//This chance can be adjusted, but moving is probably pretty resource expensive on the server, so the chance should stay low
 		var/list/mylist = list()	//Look I'm just saying, you can make it higher if you want but don't cry to me if the server lags, I made this as a joke
 		for(var/mob/M in view(world.view, get_turf(src)))	//Is there anyone nearby to target?
 			if(istype(M, /mob/living/simple_mob/vore/alienanimals/succlet))
@@ -121,7 +120,7 @@
 					mylist |= T
 			if(mylist.len)
 				succlet_move(pick(mylist))
-	succlet_last_health = health	//The succlet will try to move if it has taken damage
+	succlet_last_health = vitality()	//The succlet will try to move if it has taken damage
 
 /mob/living/simple_mob/vore/alienanimals/succlet/death(gibbed, deathmessage = "shrieks in agony as it is eradicated from reality.")
 	. = ..()
@@ -221,8 +220,8 @@
 			var/mob/living/l = user
 			to_chat(l, span_warning("You feel \the [src]'s sting!!!"))
 			l.hallucination += 25
-			l.adjustHalLoss(200)
-			l.adjustToxLoss(10)
+			l.injure(INJURY_PAIN, 200, source = src)
+			l.injure(INJURY_TOXIN, 10, source = src, affliction = /datum/affliction/venom/neurotoxic_sting)
 
 /mob/living/simple_mob/vore/alienanimals/succlet/moss
 	icon_state = "moss_succlet"
@@ -240,5 +239,4 @@
 	vore_taste = "the king of snacks from a distant unseen universe"
 	vore_smell = "the king of snacks from a distant unseen universe"
 
-	maxHealth = 10000
-	health = 10000
+	endurance = 10000

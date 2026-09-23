@@ -246,7 +246,7 @@ would spawn and follow the beaker, even if it is carried or thrown.
 	if (!..())
 		return 0
 	if(L.needs_to_breathe())
-		L.adjustOxyLoss(1)
+		L.injure(INJURY_ASPHYXIA, 1, null, src)
 		if(prob(25))
 			L.emote("cough")
 
@@ -257,7 +257,7 @@ would spawn and follow the beaker, even if it is carried or thrown.
 	if (!..())
 		return 0
 	if(L.needs_to_breathe())
-		L.adjustToxLoss(1)
+		L.injure(INJURY_TOXIN, 1, null, src)
 
 /* Not feasile until a later date
 /obj/effect/effect/smoke/bad/Crossed(atom/movable/M as mob|obj)

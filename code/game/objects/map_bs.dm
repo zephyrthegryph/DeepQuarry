@@ -62,9 +62,6 @@
 	icon = 'icons/turf/shuttle_orange.dmi'
 	icon_state = "orange"
 
-/turf/unsimulated/wall/concrete/turfpack/station/yellow
-	color = "#ebcd7c"
-	icon = 'icons/turf/wall_masks.dmi'
 
 /obj/item/gun/energy/laser/experimental_shit
 	icon = 'icons/obj/gun.dmi'
@@ -102,10 +99,6 @@
 	icon = 'icons/obj/cardboard_cutout.dmi'
 	name = "stand-up figure?"
 
-/turf/simulated/wall/dungeon/gate
-	icon = 'icons/obj/doors/shuttledoors.dmi'
-	icon_state = "door_locked"
-	name = "Wall Gate"
 
 /obj/structure/showcase/AI
 	desc = "So that's how the shuttle moves on its own."
@@ -167,39 +160,3 @@
 /obj/effect/floor_decal/sign/small_h/decal
 	icon = 'icons/turf/flooring/decals.dmi'
 
-/turf/unsimulated/floor/snow_new
-	icon = 'icons/turf/snow_new.dmi'
-	icon_state = "snow"
-	name = "snow"
-
-/turf/unsimulated/wall/shuttle_bay
-	desc = "That looks like it doesn't open easily."
-	icon = 'icons/obj/doors/rapid_pdoor.dmi'
-	icon_state = "pdoor1"
-	name = "Shuttle Bay Blast Door"
-
-/turf/unsimulated/wall/door_maint
-	icon = 'icons/obj/doors/Doormaint.dmi'
-	icon_state = "door_closed"
-	name = "Sealed Door"
-
-/turf/unsimulated/floor/wood
-	icon = 'icons/turf/flooring/wood.dmi'
-
-/turf/unsimulated/wall/fake_dark
-	desc = "It's a strange, impenetrable darkness."
-	icon = 'icons/turf/flooring/weird_vr.dmi'
-	icon_state = "dark"
-	name = "dark"
-
-/turf/unsimulated/wall/fake_uranium
-	icon = 'icons/obj/doors/Dooruranium.dmi'
-	icon_state = "door_closed"
-	name = "Sealed Door"
-
-/turf/simulated/floor/tiled/techfloor/grid/train
-	base_name = "maglev rails"
-	desc = "Train go brrrr."
-	icon = 'icons/turf/flooring/maglevs.dmi'
-	icon_state = "maglevup"
-	name = "maglev rails"

@@ -176,9 +176,3 @@
 	return
 
 
-//For making sure that if a mob is able to be joined by ghosts, that ghosts can't join it if it dies
-/mob/living/simple_mob/death()
-	..()
-	ghostjoin = 0
-	GLOB.active_ghost_pods -= src
-	ghostjoin_icon()

@@ -2701,7 +2701,6 @@
 	return
 
 
-// === merged from mecha_construction_paths_ch.dm during hard-fork de-suffix (verified no override-order change) ===
 /datum/construction/mecha/scarab_chassis
 	steps = list(list("key"=/obj/item/mecha_parts/part/scarab_torso),//1
 					list("key"=/obj/item/mecha_parts/part/scarab_left_arm),//2
@@ -2979,7 +2978,6 @@
 	return
 
 
-// === merged from mecha_construction_paths_chomp.dm during hard-fork de-suffix (verified no override-order change) ===
 //Hades Construction//
 /datum/construction/mecha/hades_chassis
 	result = /obj/mecha/combat/hades

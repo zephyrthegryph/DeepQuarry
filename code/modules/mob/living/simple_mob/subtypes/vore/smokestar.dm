@@ -10,8 +10,7 @@
 
 	faction = "smokestar"
 
-	maxHealth = 200
-	health = 200
+	endurance = 200
 	movement_cooldown = 0
 	melee_attack_delay = 1.5 SECOND
 	can_be_drop_prey = TRUE

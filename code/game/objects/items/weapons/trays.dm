@@ -39,7 +39,7 @@
 	if(CLUMSY_FAIL_CHANCE(user))              //What if he's a clown?
 		to_chat(M, span_warning("You accidentally slam yourself with the [src]!"))
 		M.Weaken(1)
-		user.take_organ_damage(2)
+		user.injure(INJURY_BLUNT, 2, source = src)
 		playsound(src, tray_sound, 50, 1)
 		return ITEM_INTERACT_SUCCESS
 
@@ -62,8 +62,7 @@
 
 		if(face_hit) //No eye or head protection, tough luck!
 			to_chat(M, span_warning("You get slammed in the face with the tray!"))
-			//user.apply_damage(rand(min_bonus_damage, max_bonus_damage), BRUTE, attack_area) //How to make it take armor into account.
-			M.take_organ_damage(rand(min_bonus_damage, max_bonus_damage)) //This gets double damage. One here and one below.
+			M.injure(INJURY_BLUNT, rand(min_bonus_damage, max_bonus_damage), source = src) //This gets double damage. One here and one below.
 			if(prob(30))
 				M.Stun(rand(2,4))
 			else if(prob(30))
@@ -89,8 +88,7 @@
 
 	playsound(src, tray_sound, 50, 1)
 	user.visible_message(span_danger("[user] slams [M] [face_hit ? "in the face " : ""]with the tray!"), runemessage = "CLANG!")
-	//user.apply_damage(rand(min_bonus_damage, max_bonus_damage), BRUTE, attack_area)
-	M.take_organ_damage(rand(min_bonus_damage, max_bonus_damage))
+	M.injure(INJURY_BLUNT, rand(min_bonus_damage, max_bonus_damage), source = src)
 	return ITEM_INTERACT_SUCCESS
 
 /obj/item/tray/attackby(obj/item/W as obj, mob/user as mob)

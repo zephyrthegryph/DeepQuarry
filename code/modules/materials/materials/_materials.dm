@@ -284,6 +284,17 @@ GLOBAL_LIST_INIT(name_to_material, populate_material_list())
 	var/shape_recovery_temperature = 0
 	var/radiovoltaic_efficiency = 0
 	var/scintillation_efficiency = 0
+	/// Energy deposited by emitters or particle beams which a compatible cell can retain.
+	var/field_energy_capacity = 0
+	/// Fraction of an emitter/PA pulse captured instead of becoming waste heat.
+	var/field_charge_efficiency = 0
+	/// Passive heat released by an energized or fusion-stabilized material form.
+	var/exothermic_heat_rate = 0
+	/// Powered coefficient for moving heat through a deliberately constructed thermal assembly.
+	var/heat_pump_coefficient = 0
+	/// Temperature at which the material becomes an efficient thermal conductor.
+	var/thermal_switch_temperature = 0
+	var/thermal_switch_ratio = 1
 	var/reactive_energy_capacity = 0
 	var/antimicrobial_activity = 0
 	var/hemostatic_activity = 0

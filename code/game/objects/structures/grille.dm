@@ -14,7 +14,6 @@
 	integrity_failure = 0.375
 	var/destroyed = FALSE
 
-
 /obj/structure/grille/ex_act(severity)
 	qdel(src)
 
@@ -152,7 +151,6 @@
 	..()
 	return
 
-
 // Crossing the integrity_failure threshold turns the grille into a passable broken stub.
 /obj/structure/grille/atom_break(damage_flag)
 	. = ..()
@@ -210,7 +208,7 @@
 			return 0
 	return 0
 
-/obj/structure/grille/fire_act(datum/gas_mixture/air, exposed_temperature, exposed_volume)
+/obj/structure/grille/fire_act(exposed_temperature, exposed_volume)
 	if(!destroyed)
 		if(exposed_temperature > T0C + 1500)
 			take_damage(1, BURN)
@@ -251,41 +249,6 @@
 
 /obj/structure/grille/broken/rustic
 	icon_state = "grillerustic-b"
-
-/* moved this block to code\game\objects\items\weapons\rcd.dm
-/obj/structure/grille/rcd_values(mob/living/user, obj/item/rcd/the_rcd, passed_mode)
-	switch(passed_mode)
-		if(RCD_WINDOWGRILLE)
-			// A full tile window costs 4 glass sheets.
-			return list(
-				RCD_VALUE_MODE = RCD_WINDOWGRILLE,
-				RCD_VALUE_DELAY = 2 SECONDS,
-				RCD_VALUE_COST = RCD_SHEETS_PER_MATTER_UNIT * 4
-			)
-
-		if(RCD_DECONSTRUCT)
-			return list(
-				RCD_VALUE_MODE = RCD_DECONSTRUCT,
-				RCD_VALUE_DELAY = 2 SECONDS,
-				RCD_VALUE_COST = RCD_SHEETS_PER_MATTER_UNIT * 2
-			)
-	return FALSE
-
-/obj/structure/grille/rcd_act(mob/living/user, obj/item/rcd/the_rcd, passed_mode)
-	switch(passed_mode)
-		if(RCD_DECONSTRUCT)
-			to_chat(user, span_notice("You deconstruct \the [src]."))
-			qdel(src)
-			return TRUE
-		if(RCD_WINDOWGRILLE)
-			if(locate(/obj/structure/window) in loc)
-				return FALSE
-			to_chat(user, span_notice("You construct a window."))
-			var/obj/structure/window/WD = new the_rcd.window_type(loc)
-			WD.anchored = TRUE
-			return TRUE
-	return FALSE
-*/
 
 /obj/structure/grille/occult_act(mob/living/user)
 	new /obj/structure/grille/cult(get_turf(src))

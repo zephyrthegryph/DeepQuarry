@@ -176,7 +176,6 @@
 	supply_conversion_value = 1
 
 
-// === merged from cloth_ch.dm during hard-fork de-suffix (verified no override-order change) ===
 //Red Color Fix
 /datum/material/cloth_red
 	name = "carpet" //This is the easiest fix but god do i hate it -shark

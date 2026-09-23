@@ -46,6 +46,9 @@
 
 	update_integrity(atom_integrity - damage_amount)
 	contract_report_station_damage(src, previous_atom_integrity - atom_integrity)
+	if(isobj(src) && max_integrity > 0)
+		var/obj/damaged_object = src
+		damaged_object.material_service_event(MATERIAL_EVENT_DAMAGE, 1 - atom_integrity / max_integrity)
 
 	var/integrity_failure_amount = integrity_failure * max_integrity
 

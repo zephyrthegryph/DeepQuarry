@@ -26,19 +26,19 @@
 		if(is_ally(L))
 			continue
 
-		var/damage_to_inflict = max(L.health / L.getMaxHealth(), 0) // Otherwise, those in crit would actually be healed.
+		var/damage_to_inflict = L.vitality() // Otherwise, those in crit would actually be healed.
 
 		var/armor_factor = abs(L.getarmor(null, "energy") - 100)
 		armor_factor = armor_factor / 100
 
 		damage_to_inflict = damage_to_inflict * armor_factor
 
+		// Corrosion: flesh melts from the inside, a chassis decays; the body resolves which.
+		L.injure(INJURY_CORROSIVE, damage_to_inflict, source = owner)
 		if(L.isSynthetic())
-			L.adjustBruteLoss(damage_to_inflict)
 			if(damage_to_inflict && prob(10))
 				to_chat(L, span_danger("Your chassis seems to slowly be decaying and breaking down."))
 		else
-			L.adjustToxLoss(damage_to_inflict)
 			if(damage_to_inflict && prob(10))
 				to_chat(L, span_danger("You feel almost like you're melting from the inside!"))
 

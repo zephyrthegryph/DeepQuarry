@@ -8,9 +8,9 @@
 //   Symptoms   — symptom catalogue with audiences, scanner phrases,
 //                examine lines, and the conditions they appear in.
 //   Reagents   — every cure/contraindicated reagent grouped by use.
-//   Causes     — every non-condition cause (damage events, organ-damage
-//                thresholds, blood loss, infection thresholds) and what
-//                each produces.
+//   Triggers   — every /datum/affliction_trigger (injury events, organ
+//                integrity thresholds, blood loss, infection thresholds,
+//                metrics) and what each produces.
 //   Surgeries  — every procedure, its steps, tools, the conditions it
 //                treats, and (where applicable) which organs it repairs.
 //

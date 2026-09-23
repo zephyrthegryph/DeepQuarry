@@ -1,39 +1,42 @@
 #!/usr/bin/env bash
-# Focused unit-test run helper for the build VM.
+# Run only the named unit tests. Works on Linux and in Git Bash on Windows.
 #
-# Usage (on the VM, from ~/DeepQuarry):
-#   bash tools/dq_focused_test.sh /datum/unit_test/dq_expedition_generates_site [more paths...]
-#   DQ_MAP=minitest bash tools/dq_focused_test.sh /datum/unit_test/...   # tiny map: boots in seconds
+#   bash tools/dq_focused_test.sh /datum/unit_test/dq_expedition_generates_site [...]
+#   bash tools/dq_focused_test.sh --full-map /datum/unit_test/...   # boot Southern Cross instead of the test map
 #
-# Appends TEST_FOCUS lines to code/modules/unit_tests/dq_focus.dm (scratch
-# file, empty in git), runs the normal build+test script, then empties the
-# focus file again so the next sync/run is a full suite unless re-focused.
-# DQ_MAP=minitest builds with -DCITESTING (virgo_minitest) instead of Southern
-# Cross — use it for everything except map-specific tests; iteration is ~4x
-# faster (boot seconds instead of ~3 minutes, expedition z-levels are tiny).
+# The script adds TEST_FOCUS(...) lines to code/modules/unit_tests/dq_focus.dm,
+# runs the normal unit-test build (the dm-test target), and restores the focus
+# file afterwards, even if the run fails. CI refuses a committed focus line.
 set -euo pipefail
 
+cd "$(dirname "$0")/.."
 FOCUS_FILE="code/modules/unit_tests/dq_focus.dm"
-[ -f "$FOCUS_FILE" ] || { echo "run from the repo root (missing $FOCUS_FILE)"; exit 1; }
-[ $# -ge 1 ] || { echo "usage: $0 /datum/unit_test/<name> [...]"; exit 1; }
 
-# Slaughter any of OUR stale test daemons first — DreamDaemon routinely hangs
-# after "Shutdown complete" instead of exiting, and a 90%-CPU zombie halves
-# every subsequent run on this small VM. (Never touches other users' daemons.)
-STALE=$(ps -u "$(id -un)" -o pid=,cmd= | awk '/deepquarry\.dmb -close/ && !/awk/ {print $1}')
-if [ -n "$STALE" ]; then
-    echo "Killing stale test DreamDaemon(s): $STALE"
-    kill -9 $STALE || true
-    sleep 1
-    ps -u "$(id -un)" -o pid=,cmd= | grep "deepquarry.dmb -close" | grep -v grep && { echo "stale daemon survived kill!"; exit 1; } || true
+defines=()
+tests=()
+for arg in "$@"; do
+	case "$arg" in
+		--full-map) defines+=("-DCITESTING_FULL_MAP") ;;
+		/datum/unit_test/*) tests+=("$arg") ;;
+		*) echo "unknown argument: $arg" >&2; exit 2 ;;
+	esac
+done
+if [ ${#tests[@]} -eq 0 ]; then
+	echo "usage: $0 [--full-map] /datum/unit_test/<name> [...]" >&2
+	exit 2
 fi
 
-cleanup() { git checkout -- "$FOCUS_FILE" 2>/dev/null || sed -i '/^TEST_FOCUS/d' "$FOCUS_FILE"; }
-trap cleanup EXIT
+backup="$(mktemp)"
+cp "$FOCUS_FILE" "$backup"
+restore() { cp "$backup" "$FOCUS_FILE"; rm -f "$backup"; }
+trap restore EXIT
 
-for t in "$@"; do
-    echo "TEST_FOCUS($t)" >> "$FOCUS_FILE"
+for t in "${tests[@]}"; do
+	echo "TEST_FOCUS($t)" >> "$FOCUS_FILE"
 done
-echo "Focused on: $*"
+echo "Focused on: ${tests[*]}"
 
-bash ~/dq-native.sh
+case "$(uname -s)" in
+	MINGW*|MSYS*|CYGWIN*) cmd //c "tools\build\build.bat" dm-test "${defines[@]}" ;;
+	*) tools/build/build.sh dm-test "${defines[@]}" ;;
+esac

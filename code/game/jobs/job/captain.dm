@@ -180,7 +180,6 @@ GLOBAL_DATUM_INIT(captain_announcement, /datum/announcement/minor, new(do_newsca
 	title = JOB_ALT_BRIDGE_ASSISTANT
 
 
-// === merged from captain_chomp.dm during hard-fork de-suffix (chain-verified, vr->ch order preserved) ===
 /datum/job/captain
 	camp_protection = TRUE
 

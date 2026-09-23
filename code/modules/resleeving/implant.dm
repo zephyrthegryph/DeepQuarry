@@ -160,7 +160,6 @@
 */
 
 
-// === merged from implant_ch.dm during hard-fork de-suffix (verified no override-order change) ===
 //Infinite use implanter. Feel free to make proper sprites for it or whatnot.
 //I guess this would make more sense as a machine but there's all that extra machine code it doesn't need.
 /obj/structure/backup_implanter_ch

@@ -269,15 +269,6 @@
 	if(bcamera.status && loc != old_loc)
 		show_bodycamera_tvs(loc)
 
-/*  // Kinda unneeded, since this one is worn on the suit.
-/obj/item/clothing/accessory/bodycam/afterattack(atom/target, mob/user, proximity_flag, click_parameters)
-	. = ..()
-	if(bcamera.status && !isturf(target))
-		show_bodycamera_tvs(target)
-		user.visible_message("<b>[user]</b> aims [src] at [target].", "You aim [src] at [target].")
-		if(user.machine == src)
-			show_bodycam_ui(user) // refresh the UI
-*/
 /obj/item/clothing/accessory/bodycam/process()
 	if(!showing)
 		return PROCESS_KILL
@@ -313,7 +304,6 @@
 	to_chat(user, span_notice("You add the infrared sensor to the robot head."))
 	user.drop_from_inventory(src)
 	qdel(src)
-
 
 /obj/item/TVAssembly
 	name = "\improper TV Camera Assembly"

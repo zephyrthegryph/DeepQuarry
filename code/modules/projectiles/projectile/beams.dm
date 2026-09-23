@@ -279,7 +279,7 @@
 	nodamage = 1
 	taser_effect = 1
 	agony = 35
-	damage_type = HALLOSS
+	injury_kind = INJURY_PAIN
 	light_color = "#FFFFFF"
 	hitsound = 'sound/weapons/zapbang.ogg'
 
@@ -342,7 +342,7 @@
 	nodamage = 1
 	taser_effect = 1
 	agony = 100 //One shot stuns for the time being until adjustments are fully made.
-	damage_type = HALLOSS
+	injury_kind = INJURY_PAIN
 	light_color = "#00CECE"
 	hud_state = "laser_disabler"
 
@@ -449,7 +449,7 @@
 /obj/item/projectile/beam/rainbow/non_lethal
 	damage = 0
 	agony = 50
-	damage_type = HALLOSS
+	injury_kind = INJURY_PAIN
 
 /obj/item/projectile/beam/sparkledog
 	name = "rainbow"
@@ -467,10 +467,10 @@
 	if(ishuman(target))
 		var/mob/living/carbon/human/M = target
 		M.druggy = max(M.druggy, 20)
-		if(M.health < M.getMaxHealth())
+		if(M.is_injured())
 			to_chat(target, span_notice("As the beam strikes you, you feel a little healthier!"))
-			M.adjustBruteLoss(-5)
-			M.adjustFireLoss(-5)
+			M.mend(TREAT_TISSUE_REPAIR, 5)
+			M.mend(TREAT_BURN_CARE, 5)
 	return 1
 
 //
@@ -512,7 +512,7 @@
 	icon_state = "xray"
 	nodamage = 1
 	agony = 5
-	damage_type = HALLOSS
+	injury_kind = INJURY_PAIN
 	light_color = "#00CC33"
 	hud_state = "flame_green"
 	hud_state_empty = "flame_empty"
@@ -569,7 +569,7 @@
 /obj/item/projectile/beam/medigun/on_hit(atom/target, blocked = 0)
 	if(ishuman(target))
 		var/mob/living/carbon/human/M = target
-		if(M.health < M.getMaxHealth())
+		if(M.is_injured())
 			var/obj/effect/overlay/pulse = new /obj/effect/overlay(get_turf(M))
 			pulse.icon = 'icons/effects/effects.dmi'
 			pulse.icon_state = XENO_CHEM_HEAL
@@ -578,10 +578,10 @@
 			spawn(20)
 				qdel(pulse)
 			to_chat(target, span_notice("As the beam strikes you, your injuries close up!"))
-			M.adjustBruteLoss(-15)
-			M.adjustFireLoss(-15)
-			M.adjustToxLoss(-5)
-			M.adjustOxyLoss(-5)
+			M.mend(TREAT_TISSUE_REPAIR, 15)
+			M.mend(TREAT_BURN_CARE, 15)
+			M.mend(TREAT_ANTITOXIN, 5)
+			M.mend(TREAT_OXYGENATION, 5)
 	return 1
 
 /obj/item/projectile/beam/laser_vision

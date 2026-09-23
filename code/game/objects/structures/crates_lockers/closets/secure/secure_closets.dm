@@ -161,11 +161,6 @@
 			var/icon/I = get_flat_icon(owner.current, dir=SOUTH, no_anim=TRUE)
 			var/image/IM = image(I, pixel_x = (32 - I.Width()))
 			//icon2base64(get_flat_icon(owner.current,dir=SOUTH,no_anim=TRUE))
-			/*
-			I.appearance_flags |= (RESET_COLOR|PIXEL_SCALE)
-			I.plane = MOB_PLANE
-			I.layer = MOB_LAYER
-			*/
 			add_overlay(IM)
 			qdel(I)
 

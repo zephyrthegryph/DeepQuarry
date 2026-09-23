@@ -5,9 +5,7 @@
 	on_created_text = span_critical("You feel an overwhelimg energy surge through your body!")
 	on_expired_text = span_notice("The surge subsides.")
 	stacks = MODIFIER_STACK_EXTEND
-	evasion = 20
-	attack_speed_percent = 0.75
-	siemens_coefficient = 3
+	factors = alist(BF_EVASION = 20, BF_ATTACK_SPEED = 0.75, BF_SIEMENS = 3)
 
 /datum/modifier/healingtide //carp
 	name = "Healing Tide"
@@ -17,8 +15,7 @@
 	on_expired_text = span_notice("The healing subsides.")
 	stacks = MODIFIER_STACK_EXTEND
 
-	metabolism_percent = 0.5
-	incoming_healing_percent = 1.25
+	factors = alist(BF_METABOLISM = 0.5, BF_HEALING_RECEIVED = 1.25)
 
 /datum/modifier/radiationhide //deathclaw
 	name = "Radiation Hide"
@@ -28,12 +25,7 @@
 	on_expired_text = span_notice("Your body returns to normal.")
 	stacks = MODIFIER_STACK_EXTEND
 
-	icon_scale_x_percent = 1.2
-	icon_scale_y_percent = 1.2
-	incoming_clone_damage_percent = 0
-	incoming_healing_percent = 0.5
-	max_health_percent = 1.5
-	incoming_damage_percent = 0.9
+	factors = alist(BF_INCOMING_ALL = 0.9, BF_INCOMING_GENETIC = 0, BF_HEALING_RECEIVED = 0.5, BF_ENDURANCE_MULT = 1.5, BF_ICON_SCALE_X = 1.2, BF_ICON_SCALE_Y = 1.2)
 
 /datum/modifier/nervoushigh //meteroid
 	name = "Nervous High"
@@ -45,12 +37,7 @@
 	on_expired_text = span_notice("The world returns to normal.")
 	stacks = MODIFIER_STACK_EXTEND
 
-	slowdown = -3
-	attack_speed_percent = 0.25
-	bleeding_rate_percent = 3.0
-	metabolism_percent = 3.0
-	max_health_percent = 0.25
-	disable_duration_percent = 0.1
+	factors = alist(BF_METABOLISM = 3.0, BF_BLEEDING = 3.0, BF_SLOWDOWN = -3, BF_ATTACK_SPEED = 0.25, BF_DISABLE_DURATION = 0.1, BF_ENDURANCE_MULT = 0.25)
 
 /datum/modifier/protectivenumbing //spider
 	name = "Protective Numbing"
@@ -60,9 +47,7 @@
 	on_expired_text = span_notice("Sensation returns to your body.")
 	stacks = MODIFIER_STACK_EXTEND
 
-	heat_protection = 1
-	cold_protection = 1
-	attack_speed_percent = 1.25
+	factors = alist(BF_ATTACK_SPEED = 1.25, BF_HEAT_EXPOSURE = 0, BF_COLD_EXPOSURE = 0)
 
 /datum/modifier/juggernog
 	name = "Juggernog"
@@ -72,8 +57,7 @@
 	on_expired_text = span_notice("Your body returns to normal.")
 	stacks = MODIFIER_STACK_EXTEND
 
-	max_health_percent = 1.3
-	disable_duration_percent = 0.2
+	factors = alist(BF_DISABLE_DURATION = 0.2, BF_ENDURANCE_MULT = 1.3)
 
 /datum/modifier/life_cloak
 	name = "Life Cloak"
@@ -91,9 +75,13 @@
 /datum/modifier/life_cloak/tick()
 	if(holder.stat != DEAD)
 		holder.add_modifier(/datum/modifier/life_cloak_exhaustion, 360 SECONDS)
-		holder.adjustBruteLoss(-150)
-		holder.adjustFireLoss(-150)
-		holder.adjustOxyLoss(-200)
+		// A revival burst from a power, not a reagent: mend by mechanism,
+		// organic and synthetic alike.
+		holder.mend(TREAT_TISSUE_REPAIR, 150)
+		holder.mend(TREAT_PLATING_REPAIR, 150)
+		holder.mend(TREAT_BURN_CARE, 150)
+		holder.mend(TREAT_WIRING_REPAIR, 150)
+		holder.mend(TREAT_OXYGENATION, 200)
 		GLOB.dead_mob_list.Remove(holder)
 		if((holder in GLOB.living_mob_list) || (holder in GLOB.dead_mob_list))
 			WARNING("Mob [holder] was defibbed but already in the living or dead list still!")
@@ -102,7 +90,6 @@
 		holder.set_stat(CONSCIOUS)
 		holder.failed_last_breath = 0
 		holder.reload_fullscreen()
-		holder.updatehealth()
 		expire()
 
 /datum/modifier/life_cloak_exhaustion
@@ -113,5 +100,4 @@
 	on_expired_text = span_notice("Your body returns to normal.")
 	stacks = MODIFIER_STACK_EXTEND
 
-	disable_duration_percent = 2
-	incoming_damage_percent = 1.5
+	factors = alist(BF_INCOMING_ALL = 1.5, BF_DISABLE_DURATION = 2)

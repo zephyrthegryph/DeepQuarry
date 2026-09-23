@@ -140,6 +140,10 @@
 			"required" = list("department", "provider_account", "invoice_id", "fact_id", "fact_revision", "amount"),
 			"numeric" = list("provider_account", "invoice_id", "fact_revision", "amount", "tip"),
 		),
+		CONTRACT_EVENT_EQUIPMENT_ADOPTED = list(
+			"required" = list("department", "customer_department", "actor_account", "invoice_id", "physical_item_id", "fact_id", "fact_revision", "value"),
+			"numeric" = list("actor_account", "invoice_id", "fact_revision", "value"),
+		),
 		CONTRACT_EVENT_SERVICE_PERIOD_SETTLED = list(
 			"required" = list("department", "rollup", "accounting_period", "fact_id", "fact_revision", "amount", "customer_count"),
 			"numeric" = list("accounting_period", "fact_revision", "amount", "customer_count", "verified_amount", "verified_item_count", "verified_type_count"),
@@ -154,7 +158,7 @@
 		),
 		CONTRACT_EVENT_BUDGET_CYCLE_SETTLED = list(
 			"required" = list("rollup", "accounting_period", "fact_id", "fact_revision", "funded_allocation_total", "funded_department_count", "payroll_coverage"),
-			"numeric" = list("accounting_period", "fact_revision", "funded_allocation_total", "funded_department_count", "payroll_coverage"),
+			"numeric" = list("accounting_period", "fact_revision", "funded_allocation_total", "funded_department_count", "payroll_coverage", "station_balance"),
 		),
 		CONTRACT_EVENT_MACHINE_RESULT = list(
 			"required" = list("machine_kind", "machine_id", "station_machine", "eer", "integrity"),

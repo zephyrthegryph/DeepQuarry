@@ -181,7 +181,7 @@
 		else
 			O.mmi = new /obj/item/mmi(O)
 
-		O.mmi.transfer_identity(src)
+		O.mmi.take_identity(src) // the MMI holds the character by reference; the mind is in the borg
 
 	if(O.client && O.client.prefs)
 		// migrated alternate_languages/size_multiplier/fuzzy/custom_speech_bubble

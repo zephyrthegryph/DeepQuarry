@@ -12,8 +12,8 @@
 	if(loc != owner)
 		if(isAI(owner))
 			var/mob/living/silicon/ai/AI = owner
-			if(AI.holo && AI.holo.masters[AI])
-				if(loc != AI.holo.masters[AI])
+			if(AI.holo && LAZYACCESS(AI.holo.masters, AI))
+				if(loc != LAZYACCESS(AI.holo.masters, AI))
 					loc = owner
 		else
 			if(istype(owner))
@@ -312,11 +312,12 @@
 	if(!instant && slow_digestion) // Gradual corpse digestion
 		if(!M.digestion_in_progress)
 			M.digestion_in_progress = TRUE
-			if(M.health > -36 || (ishuman(M) && M.health > -136))
+			if(M.vore_digestion_load() < M.get_endurance() + (ishuman(M) ? 136 : 36))
 				to_chat(M, span_vnotice("(Your predator has enabled gradual body digestion. Stick around for a second round of churning to reach the true finisher.)"))
-		if(M.health < M.getMaxHealth() * -1) //Siplemobs etc
+		// Corpse is finished once its accumulated injury load reaches twice its endurance (simplemobs etc).
+		if(M.vore_digestion_load() >= M.get_endurance() * 2)
 			if(ishuman(M))
-				if(M.health < (M.getMaxHealth() * -1) -100) //Spacemans can go much deeper. Jank but maxHealth*-2 doesn't work with flat standard -100hp death threshold.
+				if(M.vore_digestion_load() >= (M.get_endurance() * 2) + 100) //Spacemans can go much deeper.
 					if(slow_brutal)
 						var/mob/living/carbon/human/P = M
 						var/vitals_only = TRUE
@@ -340,9 +341,9 @@
 			return
 	var/digest_alert_owner = span_vnotice(belly_format_string(digest_messages_owner, M))
 	var/digest_alert_prey = span_vnotice(belly_format_string(digest_messages_prey, M))
-	var/compensation = M.getMaxHealth() / 5 //Dead body bonus.
+	var/compensation = M.get_endurance() / 5 //Dead body bonus.
 	if(ishuman(M))
-		compensation += M.getOxyLoss() //How much of the prey's damage was caused by passive crit oxyloss to compensate the lost nutrition.
+		compensation += M.injury_load(INJURY_CATEGORY_ASPHYXIA) //How much of the prey's damage was caused by passive crit oxyloss to compensate the lost nutrition.
 
 	//Send messages
 	to_chat(owner, digest_alert_owner)

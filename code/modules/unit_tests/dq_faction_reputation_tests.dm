@@ -261,7 +261,7 @@
 	TEST_ASSERT(hostile.select_operation_approach(null, agent, AGENT_APPROACH_HOSTILE, null), "red commission rejected its explicitly authorized hostile approach")
 	TEST_ASSERT_EQUAL(hostile.reward, 1250, "hostile approach did not apply its risk premium")
 	TEST_ASSERT_EQUAL(hostile.failure_reputation_factor, 1, "hostile approach did not retain full failure liability")
-	TEST_ASSERT_EQUAL(hostile.discovery_stage, AGENT_DISCOVERY_SUSPECTED, "hostile charter did not create initial suspicion")
+	TEST_ASSERT_EQUAL(hostile.discovery_stage, AGENT_DISCOVERY_CLEAN, "accepting a hostile charter was treated as discovered before anyone found its evidence")
 	TEST_ASSERT(hostile.advance_discovery(AGENT_DISCOVERY_TRACED, "test trace"), "operation discovery did not advance monotonically")
 	TEST_ASSERT_EQUAL(hostile.discovery_reward_multiplier(), 0.85, "traced operation did not receive its graded exposure settlement")
 	TEST_ASSERT(!hostile.advance_discovery(AGENT_DISCOVERY_SUSPECTED, "stale test"), "operation discovery regressed to a weaker stage")

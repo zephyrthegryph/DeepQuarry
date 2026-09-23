@@ -2,7 +2,6 @@
 #define FUSION_MAX_ENVIRO_HEAT 5000 //raise this if you want the reactor to dump more energy into the atmosphere
 #define PLASMA_TEMP_RADIATION_DIVISIOR 20 //radiation divisior. plasma temp / divisor = radiation.
 
-
 /obj/effect/fusion_em_field
 	name = "electromagnetic field"
 	desc = "A coruscating, barely visible field of energy. It is shaped like a slightly flattened torus."
@@ -256,19 +255,6 @@
 								dormant_reactant_quantities.Remove(particle)
 					Radiate()
 	return
-/*/obj/effect/fusion_em_field/proc/CheckCriticality()
-	if (plasma_temperature > 70000)
-		critical += 0.2
-	else if (instability > 0.45)
-		critical += 0.6
-	if(critical >= 25 && prob(percent_unstable*100))
-		if (critical >= 90)
-			visible_message(span_danger("\The [src] rumbles and quivers violently, threatening to break free!"))
-		else if(critical >= 50)
-			visible_message(span_danger("\The [src] rumbles and quivers energetically, the walls distorting slightly."))
-		else if(critical >= 25)
-			visible_message(span_danger("\The [src] rumbles and quivers slightly, vibrating the deck."))
-*/
 /obj/effect/fusion_em_field/proc/ChangeFieldStrength(new_strength)
 	var/calc_size = 1
 	if(new_strength <= 50)
@@ -602,7 +588,6 @@
 		//plasma_temperature -= lost_plasma
 		return
 //Rupture() is no longer the end all be all. Fear the magnetic resonance cascade and quantum flux cascade
-
 
 /obj/effect/fusion_em_field/proc/Rupture()
 	visible_message(span_danger("\The [src] shudders like a dying animal before flaring to eye-searing brightness and rupturing!"))

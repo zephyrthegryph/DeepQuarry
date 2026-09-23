@@ -279,7 +279,6 @@
 	badge_string = "Bishop"
 
 
-// === merged from badges_vr.dm during hard-fork de-suffix (verified no override-order change) ===
 /obj/item/clothing/accessory/dosimeter
 	name = "dosimeter"
 	desc = "A small device used to measure body radiation and warning one after a certain threshold. \

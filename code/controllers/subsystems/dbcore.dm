@@ -113,7 +113,6 @@ SUBSYSTEM_DEF(dbcore)
 		if(MC_TICK_CHECK)
 			return
 
-
 /// Helper proc for handling activating queued queries
 /datum/controller/subsystem/dbcore/proc/create_active_query(datum/db_query/query)
 	PRIVATE_PROC(TRUE)
@@ -368,8 +367,6 @@ SUBSYSTEM_DEF(dbcore)
 		if (qdel)
 			qdel(query)
 
-
-
 /*
 Takes a list of rows (each row being an associated list of column => value) and inserts them via a
 single multi-row INSERT. All rows are sent as a single query; the driver either commits all or none
@@ -381,26 +378,26 @@ escaping of value data is required. Column and table names ARE interpolated dire
 are responsible for supplying safe, validated names (use format_table_name() for table names).
 
 Arguments:
-  table          — SQL table name. Use format_table_name() to produce it.
-  rows           — list of assoc lists, each mapping column => value.
-  duplicate_key  — Controls ON DUPLICATE KEY UPDATE behaviour:
-                     FALSE  (default): no duplicate handling; a duplicate primary/unique key causes
-                            the entire INSERT to fail (all rows rolled back).
-                     TRUE:  auto-generates "ON DUPLICATE KEY UPDATE col = VALUES(col), ..." for every
-                            column in the union of all rows. Useful for upserts, but note that MySQL
-                            counts this as 2 affected rows per updated row, not 1.
-                     string: the string is appended verbatim after VALUES(...); use this to supply a
-                            custom ON DUPLICATE KEY UPDATE clause (e.g. targeting only specific
-                            conflict columns).
-  ignore_errors  — If TRUE, uses INSERT IGNORE. Rows that violate constraints are silently skipped;
-                   the rest are inserted. PARTIAL SUCCESS IS POSSIBLE: the proc returns TRUE even if
-                   some rows were dropped. Callers that need per-row status must issue individual
-                   queries instead.
-  warn           — If TRUE, calls warn_execute() which notifies the user on failure.
-  async          — If TRUE (default), the query is queued asynchronously. FALSE blocks until done.
-  special_columns — Assoc list of column => SQL-expression overrides (e.g. list("ts" = "NOW()")).
-                   Expressions containing "?" are treated as placeholders; those without are
-                   interpolated verbatim into the query.
+	table          — SQL table name. Use format_table_name() to produce it.
+	rows           — list of assoc lists, each mapping column => value.
+	duplicate_key  — Controls ON DUPLICATE KEY UPDATE behaviour:
+	                   FALSE  (default): no duplicate handling; a duplicate primary/unique key causes
+	                          the entire INSERT to fail (all rows rolled back).
+	                   TRUE:  auto-generates "ON DUPLICATE KEY UPDATE col = VALUES(col), ..." for every
+	                          column in the union of all rows. Useful for upserts, but note that MySQL
+	                          counts this as 2 affected rows per updated row, not 1.
+	                   string: the string is appended verbatim after VALUES(...); use this to supply a
+	                          custom ON DUPLICATE KEY UPDATE clause (e.g. targeting only specific
+	                          conflict columns).
+	ignore_errors  — If TRUE, uses INSERT IGNORE. Rows that violate constraints are silently skipped;
+	                 the rest are inserted. PARTIAL SUCCESS IS POSSIBLE: the proc returns TRUE even if
+	                 some rows were dropped. Callers that need per-row status must issue individual
+	                 queries instead.
+	warn           — If TRUE, calls warn_execute() which notifies the user on failure.
+	async          — If TRUE (default), the query is queued asynchronously. FALSE blocks until done.
+	special_columns — Assoc list of column => SQL-expression overrides (e.g. list("ts" = "NOW()")).
+	                 Expressions containing "?" are treated as placeholders; those without are
+	                 interpolated verbatim into the query.
 
 Returns the result of Execute() / warn_execute(): TRUE on success, FALSE on error.
 */
@@ -461,49 +458,6 @@ Returns the result of Execute() / warn_execute(): TRUE on success, FALSE on erro
 	else
 		. = Query.Execute(async)
 	qdel(Query)
-
-/*
-/datum/controller/subsystem/dbcore/proc/start_db_daemon()
-	set waitfor = FALSE
-
-	if (db_daemon_started)
-		return
-
-	db_daemon_started = TRUE
-
-	var/daemon = CONFIG_GET(string/db_daemon)
-	if (!daemon)
-		return
-
-	ASSERT(fexists(daemon))
-
-	var/list/result = world.shelleo("echo \"Starting ezdb daemon, do not close this window\" && [daemon]")
-	var/result_code = result[1]
-	if (!result_code || result_code == 1)
-		return
-
-	stack_trace("Failed to start DB daemon: [result_code]\n[result[3]]")
-
-/datum/controller/subsystem/dbcore/proc/stop_db_daemon()
-	set waitfor = FALSE
-
-	if (!db_daemon_started)
-		return
-
-	db_daemon_started = FALSE
-
-	var/daemon = CONFIG_GET(string/db_daemon)
-	if (!daemon)
-		return
-
-	switch (world.system_type)
-		if (MS_WINDOWS)
-			var/list/result = world.shelleo("Get-Process | ? { $_.Path -eq '[daemon]' } | Stop-Process")
-			ASSERT(result[1])
-		if (UNIX)
-			var/list/result = world.shelleo("kill $(pgrep -f '[daemon]')")
-			ASSERT(result[1])
-*/
 
 /datum/db_query
 	// Inputs

@@ -51,7 +51,6 @@ GLOBAL_DATUM_INIT(sortInstance, /datum/sort_instance, new())
 	var/list/runBases = list()
 	var/list/runLens = list()
 
-
 /datum/sort_instance/proc/timSort(start, end)
 	runBases.Cut()
 	runLens.Cut()
@@ -91,7 +90,6 @@ GLOBAL_DATUM_INIT(sortInstance, /datum/sort_instance, new())
 		remaining -= runLen
 
 	while(remaining > 0)
-
 
 		//Merge all remaining runs to complete sort
 	//ASSERT(start == end)
@@ -211,7 +209,6 @@ GLOBAL_DATUM_INIT(sortInstance, /datum/sort_instance, new())
 		else
 			break //Invariant is established
 
-
 	//Merges all runs on the stack until only one remains.
 	//Called only once, to finalise the sort
 /datum/sort_instance/proc/mergeForceCollapse()
@@ -221,14 +218,10 @@ GLOBAL_DATUM_INIT(sortInstance, /datum/sort_instance, new())
 			--n
 		mergeAt(n)
 
-
 	//Merges the two consecutive runs at stack indices i and i+1
 	//Run i must be the penultimate or antepenultimate run on the stack
 	//In other words, i must be equal to stackSize-2 or stackSize-3
 /datum/sort_instance/proc/mergeAt(i)
-	//ASSERT(runBases.len >= 2)
-	//ASSERT(i >= 1)
-	//ASSERT(i == runBases.len - 1 || i == runBases.len - 2)
 
 	var/base1 = runBases[i]
 	var/base2 = runBases[i+1]
@@ -265,7 +258,6 @@ GLOBAL_DATUM_INIT(sortInstance, /datum/sort_instance, new())
 		mergeLo(base1, len1, base2, len2)
 	else
 		mergeHi(base1, len1, base2, len2)
-
 
 	/*
 		Locates the position to insert key within the specified sorted range
@@ -384,7 +376,6 @@ GLOBAL_DATUM_INIT(sortInstance, /datum/sort_instance, new())
 
 	return offset
 
-
 	//Merges two adjacent runs in-place in a stable fashion.
 	//For performance this method should only be called when len1 <= len2!
 /datum/sort_instance/proc/mergeLo(base1, len1, base2, len2)
@@ -402,7 +393,6 @@ GLOBAL_DATUM_INIT(sortInstance, /datum/sort_instance, new())
 	if(len1 == 1)
 		moveElement(L, cursor1, cursor2+len2)
 		return
-
 
 	//Move first element of second run
 	moveElement(L, cursor2++, cursor1++)
@@ -436,7 +426,6 @@ GLOBAL_DATUM_INIT(sortInstance, /datum/sort_instance, new())
 						break outer
 
 			while((count1 | count2) < minGallop)
-
 
 			//one run is winning consistently so galloping may provide huge benifits
 			//so try galloping, until such time as the run is no longer consistently winning
@@ -480,15 +469,9 @@ GLOBAL_DATUM_INIT(sortInstance, /datum/sort_instance, new())
 				minGallop = 0
 			minGallop += 2;  // Penalize for leaving gallop mode
 
-
 	if(len1 == 1)
 		//ASSERT(len2 > 0)
 		moveElement(L, cursor1, cursor2+len2)
-
-	//else
-		//ASSERT(len2 == 0)
-		//ASSERT(len1 > 1)
-
 
 /datum/sort_instance/proc/mergeHi(base1, len1, base2, len2)
 	//ASSERT(len1 > 0 && len2 > 0 && base1 + len1 == base2)
@@ -586,11 +569,6 @@ GLOBAL_DATUM_INIT(sortInstance, /datum/sort_instance, new())
 		cursor1 -= len1
 		moveRange(L, cursor1+1, cursor2+1, len1)
 
-	//else
-		//ASSERT(len1 == 0)
-		//ASSERT(len2 > 0)
-
-
 /datum/sort_instance/proc/mergeSort(start, end)
 	var/remaining = end - start
 
@@ -660,7 +638,6 @@ GLOBAL_DATUM_INIT(sortInstance, /datum/sort_instance, new())
 			++cursor1
 
 			val2 = fetchElement(L,cursor2)
-
 
 	//Record the legth of the combined runs. If i is the 3rd last run now, also slide over the last run
 	//(which isn't involved in this merge). The current run (i+1) goes away in any case.

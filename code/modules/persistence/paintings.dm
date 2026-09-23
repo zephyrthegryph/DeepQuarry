@@ -25,9 +25,6 @@
 	var/png_filename = "data/paintings/[token["persistence_id"]]/[token["md5"]].png"
 	if(!fexists(png_filename))
 		return FALSE
-//	if(token["age"] > entries_expire_at)
-//		fdel(png_filename)
-//		return FALSE
 	return TRUE
 
 /datum/persistent/paintings/Shutdown()
@@ -47,7 +44,6 @@
 			else
 				log_and_message_admins("Attempted to delete a painting, but failed.")
 			over --
-
 
 	if(fexists(filename))
 		fdel(filename)

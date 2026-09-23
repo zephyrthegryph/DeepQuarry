@@ -78,6 +78,14 @@ GLOBAL_DATUM_INIT(generic_pathfinding_actor, /atom/movable/pathfinding_predicate
 	RETURN_TYPE(/list)
 	CRASH("Not implemented on base type.")
 
+/// Identifies everything that decides this search's result, for SSpathfinder's failure cache.
+/// Returns null when the search can't be cached (a context object may carry its own state).
+/datum/pathfinding/proc/failure_cache_key()
+	if(context || !start || !goal)
+		return null
+	var/access_key = length(ss13_with_access) ? jointext(ss13_with_access, ",") : ""
+	return "[type]|[actor?.type]|[text_ref(start)]|[text_ref(goal)]|[target_distance]|[require_adjacency_when_going_adjacent]|[max_path_length]|[adjacency_call]|[heuristic_call]|[turf_path_danger_ignore]|[access_key]"
+
 /datum/pathfinding/proc/debug_log_string()
 	return json_encode(vars)
 

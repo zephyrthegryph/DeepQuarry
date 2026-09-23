@@ -18,8 +18,7 @@
 	icon_dead = "startreader_dead"
 
 	faction = FACTION_SPACE_TURTLE
-	maxHealth = 1000
-	health = 1000
+	endurance = 1000
 	movement_cooldown = 10
 
 	see_in_dark = 10

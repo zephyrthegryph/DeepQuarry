@@ -1,6 +1,8 @@
 /* Food */
 
 /datum/reagent/nutriment
+	factors = alist(BF_BLOOD_REGEN = 0.8)
+	species_factors = alist(IS_DIONA = null)
 	name = REAGENT_NUTRIMENT
 	id = REAGENT_ID_NUTRIMENT
 	description = "All the vitamins, minerals, and carbohydrates the body needs in pure form."
@@ -45,7 +47,7 @@
 
 /datum/reagent/nutriment/affect_blood(mob/living/carbon/M, alien, removed)
 	if(!injectable && alien != IS_SLIME && alien != IS_CHIMERA && !M.isSynthetic())
-		M.adjustToxLoss(0.1 * removed)
+		M.injure(INJURY_TOXIN, 0.1 * removed, source = src)
 		return
 	affect_ingest(M, alien, removed)
 	// s Start
@@ -63,9 +65,8 @@
 	// s Start
 	if(!M.isSynthetic())
 		if(!(M.species.allergens & allergen_type) && !(M.species.medallergens & medallergen_type))	//assuming it doesn't cause a horrible reaction, we'll be ok!
-			M.heal_organ_damage(0.5 * removed, 0)
+			// Nutriment's light tissue repair is its treatment_tags profile.
 			M.adjust_nutrition(((nutriment_factor + M.food_preference(allergen_type)) * removed) * M.species.organic_food_coeff) //RS edit
-			M.add_chemical_effect(CE_BLOODRESTORE, 4 * removed)
 	else
 		M.adjust_nutrition(((nutriment_factor + M.food_preference(allergen_type)) * removed) * M.species.synthetic_food_coeff) //RS edit
 
@@ -143,6 +144,7 @@
 	allergen_type = ALLERGEN_GRAINS | ALLERGEN_EGGS //Made with flour(grain), and eggs(eggs)
 
 /datum/reagent/nutriment/coating/beerbatter
+	factors = alist(BF_INTOXICATION = 0.02) //Very slightly alcoholic
 	name = REAGENT_BEERBATTER
 	cooked_name = "beer batter"
 	id = REAGENT_ID_BEERBATTER
@@ -152,10 +154,6 @@
 	icon_cooked = "batter_cooked"
 	coated_adj = "beer-battered"
 	allergen_type = ALLERGEN_GRAINS | ALLERGEN_EGGS //Made with flour(grain), eggs(eggs), and beer(grain)
-
-/datum/reagent/nutriment/coating/beerbatter/affect_ingest(mob/living/carbon/M, alien, removed)
-	..()
-	M.add_chemical_effect(CE_ALCOHOL, 0.02) //Very slightly alcoholic
 
 //=========================
 //Fats
@@ -255,7 +253,7 @@
 /datum/reagent/nutriment/triglyceride/oil/affect_touch(mob/living/carbon/M, alien, removed)
 	var/dfactor = heatdamage(M)
 	if (dfactor)
-		M.take_organ_damage(0, removed * 1.5 * dfactor)
+		M.injure(INJURY_BURN, removed * 1.5 * dfactor, source = src)
 		data["temperature"] -= (6 * removed) / (1 + volume*0.1)//Cools off as it burns you
 		if (lastburnmessage+100 < world.time	)
 			to_chat(M, span_danger("Searing hot oil burns you, wash it off quick!"))
@@ -707,7 +705,7 @@
 /datum/reagent/sodiumchloride/affect_blood(mob/living/carbon/M, alien, removed)
 	..()
 	if(alien == IS_SLIME)
-		M.adjustFireLoss(removed)
+		M.injure(INJURY_BURN, removed, source = src)
 
 /datum/reagent/sodiumchloride/affect_ingest(mob/living/carbon/M, alien, removed)
 	var/pass_mod = rand(3,5)
@@ -857,7 +855,7 @@
 /datum/reagent/capsaicin/affect_blood(mob/living/carbon/M, alien, removed)
 	if(alien == IS_DIONA)
 		return
-	M.adjustToxLoss(0.5 * removed)
+	M.injure(INJURY_TOXIN, 0.5 * removed, source = src)
 
 /datum/reagent/capsaicin/affect_ingest(mob/living/carbon/M, alien, removed)
 	// Do not call parent, we don't want this absorbed into our bloodstream!
@@ -905,7 +903,7 @@
 /datum/reagent/condensedcapsaicin/affect_blood(mob/living/carbon/M, alien, removed)
 	if(alien == IS_DIONA)
 		return
-	M.adjustToxLoss(0.5 * removed)
+	M.injure(INJURY_TOXIN, 0.5 * removed, source = src)
 
 /datum/reagent/condensedcapsaicin/affect_touch(mob/living/carbon/M, alien, removed)
 	var/eyes_covered = 0
@@ -1058,7 +1056,7 @@
 	var/strength_mod = 1
 	if(alien == IS_SLIME && water_based)
 		strength_mod = 3
-	M.adjustToxLoss(removed * strength_mod) // Probably not a good idea; not very deadly though
+	M.injure(INJURY_TOXIN, removed * strength_mod, source = src) // Probably not a good idea; not very deadly though
 	return
 
 /datum/reagent/drink/affect_ingest(mob/living/carbon/M, alien, removed)
@@ -1219,11 +1217,7 @@
 	allergen_type = ALLERGEN_FRUIT //Limes are fruit
 	cup_prefix = "lime"
 
-/datum/reagent/drink/juice/lime/affect_ingest(mob/living/carbon/M, alien, removed)
-	..()
-	if(alien == IS_DIONA)
-		return
-	M.adjustToxLoss(-0.5 * removed)
+// Lime juice's mild antitoxin action is its treatment_tags profile.
 
 /datum/reagent/drink/juice/orange
 	name = REAGENT_ORANGEJUICE
@@ -1237,11 +1231,7 @@
 	allergen_type = ALLERGEN_FRUIT //Oranges are fruit
 	cup_prefix = "orange"
 
-/datum/reagent/drink/juice/orange/affect_ingest(mob/living/carbon/M, alien, removed)
-	..()
-	if(alien == IS_DIONA)
-		return
-	M.adjustOxyLoss(-2 * removed)
+// Orange juice's mild oxygenation is its treatment_tags profile.
 
 /datum/reagent/toxin/poisonberryjuice // It has more in common with toxins than drinks... but it's a juice
 	name = REAGENT_POISONBERRYJUICE
@@ -1298,11 +1288,7 @@
 	glass_desc = "Are you sure this is tomato juice?"
 	allergen_type = ALLERGEN_FRUIT //Yes tomatoes are a fruit
 
-/datum/reagent/drink/juice/tomato/affect_ingest(mob/living/carbon/M, alien, removed)
-	..()
-	if(alien == IS_DIONA)
-		return
-	M.heal_organ_damage(0, 0.5 * removed)
+// Tomato juice's mild burn care is its treatment_tags profile.
 
 /datum/reagent/drink/juice/watermelon
 	name = REAGENT_WATERMELONJUICE
@@ -1352,7 +1338,7 @@
 	..()
 	if(alien == IS_DIONA)
 		return
-	M.heal_organ_damage(0.5 * removed, 0)
+	// Milk's light tissue repair is its treatment_tags profile.
 	holder.remove_reagent(REAGENT_ID_CAPSAICIN, 10 * removed)
 	if(ishuman(M) && rand(1,10000) == 1)
 		var/mob/living/carbon/human/H = M
@@ -1360,7 +1346,7 @@
 			if(O.status & ORGAN_BROKEN)
 				O.mend_fracture()
 				H.custom_pain("You feel the agonizing power of calcium mending your bones!",60)
-				H.adjustHalLoss(60) // Get hallos damaged
+				H.injure(INJURY_PAIN, 60, O.organ_tag, source = src)
 				H.AdjustStunned(1) // Crawling again, weakened to stunned
 				break // Only mend one bone, whichever comes first in the list
 
@@ -1429,11 +1415,7 @@
 	cup_desc = "Tasty black tea, it has antioxidants, it's good for you!"
 	allergen_type = ALLERGEN_STIMULANT //Black tea strong enough to have significant caffeine content
 
-/datum/reagent/drink/tea/affect_ingest(mob/living/carbon/M, alien, removed)
-	..()
-	if(alien == IS_DIONA)
-		return
-	M.adjustToxLoss(-0.5 * removed)
+// Tea's mild antitoxin action is its treatment_tags profile.
 
 /datum/reagent/drink/tea/decaf
 	name = REAGENT_TEADECAF
@@ -1475,7 +1457,6 @@
 			M.bodytemperature -= 0.5
 		if(M.bodytemperature < T0C)
 			M.bodytemperature += 0.5
-		// M.adjustToxLoss(5 * removed) // Removal
 
 /datum/reagent/drink/tea/icetea/affect_blood(mob/living/carbon/M, alien, removed)
 	..()
@@ -1484,7 +1465,6 @@
 			M.bodytemperature -= 0.5
 		if(M.bodytemperature < T0C)
 			M.bodytemperature += 0.5
-		// M.adjustToxLoss(5 * removed) // Removal
 
 /datum/reagent/drink/tea/icetea/decaf
 	name = REAGENT_ICETEADECAF
@@ -1679,7 +1659,6 @@
 	..()
 
 	// if(alien == IS_TAJARA) //
-		//M.adjustToxLoss(0.5 * removed)
 		//M.make_jittery(4) //extra sensitive to caffine
 	if(adj_temp > 0)
 		holder.remove_reagent(REAGENT_ID_FROSTOIL, 10 * removed)
@@ -1688,7 +1667,6 @@
 	..()
 
 	//if(alien == IS_TAJARA)
-		//M.adjustToxLoss(2 * removed)
 		//M.make_jittery(4)
 		//return
 
@@ -1696,12 +1674,11 @@
 	if(alien == IS_DIONA)
 		return
 	//if(alien == IS_TAJARA)
-		//M.adjustToxLoss(4 * REM)
 		// M.apply_effect(3, STUTTER) // end
 	M.make_jittery(5)
 
 /datum/reagent/drink/coffee/handle_addiction(mob/living/carbon/M, alien)
-	// A copy of the base with withdrawl, but with much less effects, no vomiting and sometimes halloss
+	// A copy of the base with withdrawl, but with much less effects, no vomiting and sometimes pain
 	var/current_addiction = M.get_addiction_to_reagent(id)
 	// slow degrade
 	if(prob(8))
@@ -1710,7 +1687,7 @@
 	if(prob(2))
 		if(current_addiction < 90 && prob(10))
 			to_chat(M, span_warning("[pick("You feel miserable.","You feel sluggish.","You get a small headache.")]"))
-			M.adjustHalLoss(2)
+			M.injure(INJURY_PAIN, 2, source = src)
 		else if(current_addiction <= 50)
 			to_chat(M, span_warning("You're really craving some [name]."))
 		else if(current_addiction <= 100)
@@ -1740,7 +1717,6 @@
 			M.bodytemperature -= 0.5
 		if(M.bodytemperature < T0C)
 			M.bodytemperature += 0.5
-		// M.adjustToxLoss(5 * removed) // Removal
 
 /datum/reagent/drink/coffee/icecoffee/affect_blood(mob/living/carbon/M, alien, removed)
 	..()
@@ -1749,7 +1725,6 @@
 			M.bodytemperature -= 0.5
 		if(M.bodytemperature < T0C)
 			M.bodytemperature += 0.5
-		// M.adjustToxLoss(5 * removed) // Removal
 
 /datum/reagent/drink/coffee/soy_latte
 	name = REAGENT_SOYLATTE
@@ -1767,9 +1742,7 @@
 	cup_desc = "A nice and refreshing beverage while you are reading."
 	allergen_type = ALLERGEN_COFFEE|ALLERGEN_BEANS 	//Soy(beans) and coffee
 
-/datum/reagent/drink/coffee/soy_latte/affect_ingest(mob/living/carbon/M, alien, removed)
-	..()
-	M.heal_organ_damage(0.5 * removed, 0)
+// Soy latte's light tissue repair is its treatment_tags profile.
 
 /datum/reagent/drink/coffee/cafe_latte
 	name = REAGENT_CAFELATTE
@@ -1787,9 +1760,7 @@
 	cup_desc = "A nice and refreshing beverage while you are reading."
 	allergen_type = ALLERGEN_COFFEE|ALLERGEN_DAIRY //Cream and coffee
 
-/datum/reagent/drink/coffee/cafe_latte/affect_ingest(mob/living/carbon/M, alien, removed)
-	..()
-	M.heal_organ_damage(0.5 * removed, 0)
+// Cafe latte's light tissue repair is its treatment_tags profile.
 
 /datum/reagent/drink/decaf
 	name = REAGENT_DECAF
@@ -2239,6 +2210,7 @@
 	M.make_jittery(5)
 
 /datum/reagent/drink/soda/nuka_cola
+	factors = alist(BF_SLOWDOWN = -1, BF_PENALTY_SCALE = 0.5)
 	name = REAGENT_NUKACOLA
 	id = REAGENT_ID_NUKACOLA
 	description = "Cola, cola never changes."
@@ -2255,7 +2227,6 @@
 
 /datum/reagent/drink/soda/nuka_cola/affect_ingest(mob/living/carbon/M, alien, removed)
 	..()
-	M.add_chemical_effect(CE_SPEEDBOOST, 1)
 	M.make_jittery(20)
 	M.druggy = max(M.druggy, 30)
 	M.make_dizzy(5)
@@ -2568,9 +2539,7 @@
 	..()
 	if(alien == IS_DIONA)
 		return
-	M.adjustOxyLoss(-4 * removed)
-	M.heal_organ_damage(2 * removed, 2 * removed)
-	M.adjustToxLoss(-2 * removed)
+	// Its healing is the treatment_tags profile.
 	M.make_dizzy(-15)
 	if(M.confused)
 		M.Confuse(-5)
@@ -2639,7 +2608,6 @@
 			M.bodytemperature -= rand(1,3)
 		if(M.bodytemperature < T0C)
 			M.bodytemperature += rand(1,3)
-		// M.adjustToxLoss(5 * removed) // Removal
 
 /datum/reagent/drink/ice/affect_ingest(mob/living/carbon/M, alien, removed)
 	..()
@@ -2648,7 +2616,6 @@
 			M.bodytemperature -= rand(1,3)
 		if(M.bodytemperature < T0C)
 			M.bodytemperature += rand(1,3)
-		// M.adjustToxLoss(5 * removed) // Removal
 
 /datum/reagent/drink/nothing
 	name = REAGENT_NOTHING
@@ -2795,7 +2762,8 @@
 			if(istype(R, /datum/reagent/drink))
 				var/datum/reagent/drink/D = R
 				if(D.water_based)
-					M.adjustToxLoss(removed * -3)
+					// Conditional on other drinks being present: mends directly.
+					M.mend(TREAT_ANTITOXIN, removed * 3)
 
 /datum/reagent/drink/sodaoil/affect_ingest(mob/living/carbon/M, alien, removed)
 	..()
@@ -2804,7 +2772,8 @@
 			if(istype(R, /datum/reagent/drink))
 				var/datum/reagent/drink/D = R
 				if(D.water_based)
-					M.adjustToxLoss(removed * -2)
+					// Conditional on other drinks being present: mends directly.
+					M.mend(TREAT_ANTITOXIN, removed * 2)
 
 /datum/reagent/drink/virgin_mojito
 	name = REAGENT_VIRGINMOJITO
@@ -3234,12 +3203,10 @@
 			M.bodytemperature = max(310, M.bodytemperature - (5 * TEMPERATURE_DAMAGE_COEFFICIENT))
 
 		//if(alien == IS_TAJARA)
-			//M.adjustToxLoss(0.5 * removed)
 			//M.make_jittery(4) //extra sensitive to caffine
 
 /datum/reagent/ethanol/coffee/affect_blood(mob/living/carbon/M, alien, removed)
 	//if(alien == IS_TAJARA)
-		//M.adjustToxLoss(2 * removed)
 		//M.make_jittery(4)
 		//return
 
@@ -3247,7 +3214,6 @@
 	if(alien == IS_DIONA)
 		return
 	//if(alien == IS_TAJARA)
-		//M.adjustToxLoss(4 * REM)
 		// M.apply_effect(3, STUTTER) // end
 	if(!(M.isSynthetic()))
 		M.make_jittery(5)
@@ -3464,15 +3430,15 @@
 
 	if(!(M.isSynthetic()))
 		if(dose > 30)
-			M.adjustToxLoss(2 * removed)
+			M.injure(INJURY_TOXIN, 2 * removed, source = src)
 		if(dose > 60 && ishuman(M) && prob(5))
 			var/mob/living/carbon/human/H = M
 			var/obj/item/organ/internal/heart/L = H.internal_organs_by_name[O_HEART]
 			if (L && istype(L))
 				if(dose < 120)
-					L.take_damage(10 * removed, 0)
+					H.injure(INJURY_TOXIN, 10 * removed, L, src, flags = INJURE_IGNORE_RESISTANCE)
 				else
-					L.take_damage(100, 0)
+					H.injure(INJURY_TOXIN, 100, L, src, flags = INJURE_IGNORE_RESISTANCE)
 
 /datum/reagent/ethanol/wine
 	name = REAGENT_DEVELOPER_WARNING // Unit test ignore
@@ -4146,8 +4112,8 @@
 //	if(HAS_TRAIT(liver, TRAIT_ENGINEER_METABOLISM))
 	ADD_TRAIT(drinker, TRAIT_HALT_RADIATION_EFFECTS, "[type]")
 	if (HAS_TRAIT(drinker, TRAIT_IRRADIATED))
-		if(drinker.adjustToxLoss(-2 * metabolization_ratio * seconds_per_tick))
-			return //UPDATE_MOB_HEALTH
+		// Only while irradiated, a gate a continuous tag can't express: mends directly.
+		drinker.mend(TREAT_ANTITOXIN, 2 * metabolization_ratio * seconds_per_tick)
 
 /datum/reagent/ethanol/screwdrivercocktail/on_mob_end_metabolize(mob/living/drinker)
 	. = ..()
@@ -4665,9 +4631,10 @@
 	if(alien == IS_DIONA)
 		return
 	if(alien == IS_VOX)
-		M.adjustToxLoss(-0.5 * removed)
+		// Species-gated: mends directly.
+		M.mend(TREAT_ANTITOXIN, 0.5 * removed)
 		return
-	M.adjustToxLoss(3 * removed)
+	M.injure(INJURY_TOXIN, 3 * removed, source = src)
 
 /datum/reagent/ethanol/screamingviking
 	name =REAGENT_SCREAMINGVIKING
@@ -4907,15 +4874,20 @@
 		if(ishuman(M))
 			var/mob/living/carbon/human/H = M
 			if(H.species.has_organ[O_LIVER])
-				var/obj/item/organ/L = H.internal_organs_by_name[O_LIVER]
+				var/obj/item/organ/internal/L = H.internal_organs_by_name[O_LIVER]
 				if(!L)
 					return
 				var/adjust_liver = rand(-3, 2)
 				if(prob(L.damage))
 					to_chat(M, span_cult("You feel woozy..."))
-				L.damage = max(L.damage + (adjust_liver * removed), 0)
+				if(adjust_liver > 0)
+					H.injure(INJURY_TOXIN, adjust_liver * removed, L, src, flags = INJURE_IGNORE_RESISTANCE | INJURE_SILENT)
+		// A random swing either way: mends or poisons directly.
 		var/adjust_tox = rand(-4, 2)
-		M.adjustToxLoss(adjust_tox * removed)
+		if(adjust_tox > 0)
+			M.injure(INJURY_TOXIN, adjust_tox * removed, source = src)
+		else if(adjust_tox < 0)
+			M.mend(TREAT_ANTITOXIN, -adjust_tox * removed)
 
 /datum/reagent/ethanol/holywine
 	name = REAGENT_HOLYWINE
@@ -5141,7 +5113,6 @@
 
 
 
-// === merged from food_drinks_vr.dm during hard-fork de-suffix (verified no override-order change) ===
 /datum/reagent/nutriment
 	nutriment_factor = 10
 
@@ -5238,7 +5209,7 @@
 				if(IS_DIONA) //Diona don't get any nutrition from nutriment or protein.
 					pass()
 				if(IS_SKRELL)
-					M.adjustToxLoss(0.25 * removed)  //Equivalent to half as much protein, since it's half protein.
+					M.injure(INJURY_TOXIN, 0.25 * removed, source = src)  //Equivalent to half as much protein, since it's half protein.
 				if(IS_TESHARI)
 					M.adjust_nutrition(alt_nutriment_factor * 1.2 * removed) //Give them the same nutrition they would get from protein.
 				if(IS_UNATHI)
@@ -5589,7 +5560,7 @@
 				if(IS_DIONA) //Diona don't get any nutrition from nutriment or protein.
 					pass()
 				if(IS_SKRELL)
-					M.adjustToxLoss(0.25 * removed)  //Equivalent to half as much protein, since it's half protein.
+					M.injure(INJURY_TOXIN, 0.25 * removed, source = src)  //Equivalent to half as much protein, since it's half protein.
 				if(IS_TESHARI)
 					M.nutrition += (alt_nutriment_factor * 1.2 * removed) //Give them the same nutrition they would get from protein.
 				if(IS_UNATHI)
@@ -5684,7 +5655,7 @@
 /datum/reagent/nutriment/protein/brainzsnax/affect_ingest(mob/living/carbon/M, alien, removed)
 	..()
 	if(prob(5) && !(alien == IS_CHIMERA || alien == IS_SLIME || alien == IS_PLANT || alien == IS_DIONA || alien == IS_SHADEKIN && !M.isSynthetic()))
-		M.adjustBrainLoss(removed) //Any other species risks prion disease.
+		M.injure(INJURY_NEURAL, removed, source = src) //Any other species risks prion disease.
 		M.Confuse(5)
 		M.hallucination = max(M.hallucination, 25)
 
@@ -5941,6 +5912,7 @@
 	taste_description = "flavourless energy"
 
 /datum/reagent/drink/coffee/nukie/mega/sight
+	factors = alist(BF_DARKSIGHT = 1)
 	name = REAGENT_NUKIEMEGASIGHT
 	id = REAGENT_ID_NUKIEMEGASIGHT
 	color = "#f4fc03"
@@ -5956,8 +5928,7 @@
 				if(E.robotic >= ORGAN_ROBOT)
 					return
 				if(E.damage < 100)
-					E.damage = max(E.damage + 1 * removed, 0)
-	M.add_chemical_effect(CE_DARKSIGHT, 1)
+					H.injure(INJURY_BLUNT, 1 * removed, E, src, flags = INJURE_IGNORE_RESISTANCE | INJURE_SILENT)
 
 /datum/reagent/drink/coffee/nukie/mega/heart //Heals you pretty damn well but damages your heart
 	name = REAGENT_NUKIEMEGAHEART
@@ -5966,18 +5937,14 @@
 	taste_description = "the end is rapidly approaching, yet remains forever far"
 
 /datum/reagent/drink/coffee/nukie/mega/heart/affect_ingest(mob/living/carbon/M, alien, removed)
-	var/chem_effective = 1 * M.species.chem_strength_heal
-	if(alien == IS_SLIME)
-		chem_effective = 0.75
-	if(alien != IS_DIONA)
-		M.heal_organ_damage(6 * removed * chem_effective, 6 * removed * chem_effective)
+	// Its trauma and burn repair is the treatment_tags profile.
 	if(ishuman(M))
 		var/mob/living/carbon/human/H = M
-		for(var/obj/item/organ/I in H.internal_organs)
+		for(var/obj/item/organ/internal/I in H.internal_organs)
 			if(I.robotic >= ORGAN_ROBOT || !(I.organ_tag in list(O_HEART)))
 				continue
 			if(I.damage < 100 && prob(10))
-				I.damage = max(I.damage + 0.2 * removed, 0)
+				H.injure(INJURY_TOXIN, 0.2 * removed, I, src, flags = INJURE_IGNORE_RESISTANCE | INJURE_SILENT)
 	..()
 
 /datum/reagent/drink/coffee/nukie/mega/nega //Makes you both jittery and sleepy
@@ -6016,6 +5983,7 @@
 
 
 /datum/reagent/drink/coffee/nukie/mega/fast //Like hyperzine, but instead of overdosing, it occassionally burns you
+	factors = alist(BF_SLOWDOWN = -1, BF_PENALTY_SCALE = 0.5)
 	name = REAGENT_NUKIEMEGAFAST
 	id = REAGENT_ID_NUKIEMEGAFAST
 	color = "#000000"
@@ -6025,8 +5993,7 @@
 	..()
 	if(prob(1))
 		M.visible_message(span_danger("\The [M] sizzles!"))
-		M.adjustFireLoss(5)
-	M.add_chemical_effect(CE_SPEEDBOOST, 1)
+		M.injure(INJURY_BURN, 5, source = src)
 
 /datum/reagent/drink/coffee/nukie/mega/high //Simultaneously makes you high and hungry
 	name = REAGENT_NUKIEMEGAHIGH
@@ -6096,6 +6063,7 @@
 /////////////////////////////Event only nukie//////////////////////////////////////
 
 /datum/reagent/drink/coffee/nukie/mega/one //Basically macrocillin but for ingesting
+	factors = alist(BF_DARKSIGHT = 1, BF_SLOWDOWN = -1, BF_PENALTY_SCALE = 0.5)
 	name = REAGENT_NUKIEONE
 	id = REAGENT_ID_NUKIEONE
 	color = "#90ed87"
@@ -6106,17 +6074,14 @@
 
 /datum/reagent/drink/coffee/nukie/mega/one/affect_ingest(mob/living/carbon/M, alien, removed)
 	..()
-	M.add_chemical_effect(CE_DARKSIGHT, 1)
-	M.add_chemical_effect(CE_SPEEDBOOST, 1)
-	M.heal_organ_damage(1.5 * removed, 1.5 * removed)
+	// Its trauma and burn repair is the treatment_tags profile.
 
 /datum/reagent/drink/coffee/nukie/mega/one/overdose(mob/living/carbon/M, alien, removed)
 	if(ishuman(M))
 		var/mob/living/carbon/human/H = M
 		H.eye_blurry += 20
-		H.adjustToxLoss(min(removed * overdose_mod * round(3 + 3 * volume / overdose), 1))
-		H.adjustFireLoss(min(removed * overdose_mod * round(3 + 3 * volume / overdose), 1))
-		H.adjustBruteLoss(min(removed * overdose_mod * round(3 + 3 * volume / overdose), 1))
+		var/od_harm = min(removed * overdose_mod * round(3 + 3 * volume / overdose), 1)
+		H.injure_many(alist(INJURY_TOXIN = od_harm, INJURY_BURN = od_harm, INJURY_BLUNT = od_harm), source = src)
 		H.add_modifier(/datum/modifier/berserk, 2 SECONDS, suppress_failure = TRUE)
 
 
@@ -6150,7 +6115,7 @@
 	cup_name = "cup of watermelon tea"
 	cup_desc = "A tasty mixture of watermelon and tea. It's apparently good for you!"
 
-/datum/reagent/drink/tea/matcha_latte //Putting this as tea to inherit tea variables. Should not have the same toxloss as matcha so it can be placed in a dispenser without breaking balance.
+/datum/reagent/drink/tea/matcha_latte //Putting this as tea to inherit tea variables. Should not have the same antitoxin action as matcha so it can be placed in a dispenser without breaking balance.
 	name = REAGENT_MATCHALATTE
 	id = REAGENT_ID_MATCHALATTE
 	description = "A nice and tasty beverage to enjoy while studying."
@@ -6192,7 +6157,6 @@
 	if(alien != IS_DIONA)
 		M.drowsyness = max(0, M.drowsyness - 6 * removed * chem_effective)
 		M.hallucination = max(0, M.hallucination - 9 * removed * chem_effective)
-		M.adjustToxLoss(-1 * removed * chem_effective)
 
 /datum/reagent/slimedrink
 	name = REAGENT_SLIMEDRINK
@@ -6256,13 +6220,11 @@
 	glass_name = REAGENT_ID_LOWPOWER
 	glass_desc = "Smells, and tastes like lemon.. with a hint of Ozone, for whatever reason. It glows softly."
 
-/datum/reagent/drink/lowpower/affect_ingest(mob/living/carbon/M, alien, removed)
-	..()
-	if(alien == IS_DIONA)
-		return
-	M.adjustToxLoss(-0.5 * removed)
+// Low Power's mild antitoxin action is its treatment_tags profile.
 
 /datum/reagent/drink/highpower
+	factors = alist(BF_SLOWDOWN = -1, BF_PENALTY_SCALE = 0.5)
+	species_factors = alist(IS_DIONA = null)
 	name = REAGENT_HIGHPOWER
 	id = REAGENT_ID_HIGHPOWER
 	description = "A strange, softly crackling drink, smelling just like lightning's just struck, twice. It's rather difficult to make this without busting the lights."
@@ -6280,9 +6242,9 @@
 		M.custom_pain("You feel painful electricity running through your body, like adrenaline, and like your blood's boiling!",30)
 		M.AdjustWeakened(3)		//Getting sapped makes the victim fall
 		M.Stun(3)
-	M.add_chemical_effect(CE_SPEEDBOOST, 1)
 
 /datum/reagent/ethanol/coffee/jackbrew
+	factors = alist(BF_SLOWDOWN = -1, BF_PENALTY_SCALE = 0.5)
 	name = REAGENT_JACKBREW
 	id = REAGENT_ID_JACKBREW
 	description = "Irish coffee, and hyperzine. A common mix for panicked drinkers, EMTS, Paramedics, and CMOs alone on the job."
@@ -6303,7 +6265,6 @@
 	..()
 	if(prob(5))
 		M.emote(pick("twitch", "blink_r", "shiver", "weh", "weh", "weh")) // weh - Jack
-	M.add_chemical_effect(CE_SPEEDBOOST, 1)
 
 /datum/reagent/ethanol/bookwyrm
 	name = REAGENT_BOOKWYRM
@@ -6414,11 +6375,7 @@
 	cup_name = "cup of tea"
 	cup_desc = "Tasty green tea, it has antioxidants, it's good for you!"
 
-/datum/reagent/drink/freshtea/affect_ingest(mob/living/carbon/M, alien, removed)
-	..()
-	if(alien == IS_DIONA)
-		return
-	M.adjustToxLoss(-2 * removed) //Higher toxin removal than other tea to reflect difficulty in preparing, still worse than dylovene.
+// Fresh tea's antitoxin action is its treatment_tags profile (higher than other tea, still worse than dylovene).
 
 /datum/reagent/drink/freshtea/green
 	name = REAGENT_FRESHGREENTEA
@@ -6506,11 +6463,7 @@
 	cup_name = "cup of matcha"
 	cup_desc = "Heavenly matcha. Good for body and spirit."
 
-/datum/reagent/drink/matcha/affect_ingest(mob/living/carbon/M, alien, removed)
-	..()
-	if(alien == IS_DIONA)
-		return
-	M.adjustToxLoss(-3 * removed) //Almost on par with dylovene despite being harder to obtain in bulk. Nerf if this causes problems.
+// Matcha's antitoxin action is its treatment_tags profile (almost on par with dylovene).
 
 /datum/reagent/drink/bubbleteawatermelon
 	name = REAGENT_BUBBLETEAWATERMELON
@@ -6636,6 +6589,7 @@
 	industrial_use = REFINERYEXPORT_REASON_FOOD
 
 /datum/reagent/infusedarachnidslammer/enragedarachnidslammer
+	factors = alist(BF_ANALGESIA = 80, BF_PENALTY_SCALE = 0.5)
 	name = REAGENT_ENRAGEDARACHNIDSLAMMER
 	id = REAGENT_ID_ENRAGEDARACHNIDSLAMMER
 	description = "The best term to scientifically describe this concortion is that the compounds of the Arachnid Slammer are going into a raging frenzy from spider toxin. Its now functioning like a form of potent chemical-based white blood cells that aims to break down harmful compounds and repair the body."
@@ -6648,14 +6602,6 @@
 	supply_conversion_value = REFINERYEXPORT_VALUE_COMMON
 	industrial_use = REFINERYEXPORT_REASON_DRUG
 
-/datum/reagent/infusedarachnidslammer/enragedarachnidslammer/affect_blood(mob/living/carbon/M, alien, removed)
-	var/chem_effective = 1 * M.species.chem_strength_heal
-
-	M.adjustOxyLoss(-1.5 * removed * chem_effective)
-	M.adjustToxLoss(-1.5 * removed * chem_effective)
-	M.heal_organ_damage(1.5 * removed, 1.5 * removed * chem_effective)
-	M.add_chemical_effect(CE_PAINKILLER, 80 * chem_effective)
-	M.add_chemical_effect(CE_SPEEDBOOST, 0)
 
 /datum/reagent/drink/pilk
 	name = REAGENT_PILK
@@ -6708,12 +6654,13 @@
 	glass_desc = "Aromatic beverage served piping hot. According to folk tales it can almost wake the dead."
 
 /datum/reagent/ethanol/hearty_punch/affect_ingest(mob/living/carbon/M, alien, removed)
-	if(M.health<=0)
-		M.adjustBruteLoss(-3 * removed)
-		M.adjustFireLoss(-3 * removed)
-		M.adjustCloneLoss(-5 * removed)
-		M.adjustOxyLoss(-4 * removed)
-		M.adjustToxLoss(-3 * removed)
+	// Only works on the critically injured, a gate a continuous tag can't express: mends directly.
+	if(M.is_critical())
+		M.mend(TREAT_TISSUE_REPAIR, 3 * removed)
+		M.mend(TREAT_BURN_CARE, 3 * removed)
+		M.mend(TREAT_GENETIC_REPAIR, 5 * removed)
+		M.mend(TREAT_OXYGENATION, 4 * removed)
+		M.mend(TREAT_ANTITOXIN, 3 * removed)
 
 /datum/reagent/ethanol/squirt_cider
 	name = REAGENT_SQUIRTCIDER
@@ -6748,7 +6695,7 @@
 
 /datum/reagent/ethanol/crevice_spike/affect_ingest(mob/living/carbon/M, alien, removed)
 	..()
-	M.adjustBruteLoss(50 * removed)
+	M.injure(INJURY_BLUNT, 50 * removed, source = src)
 	if(!M.ingested)
 		return
 	for(var/datum/reagent/R in M.ingested.reagent_list)

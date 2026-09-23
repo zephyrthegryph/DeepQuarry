@@ -24,7 +24,7 @@
 	harm_intent_damage = 10
 	melee_damage_lower = 10
 	melee_damage_upper = 15
-	maxHealth = 500
+	endurance = 500
 	attacktext = list("chomped")
 	see_in_dark = 8
 	minbodytemp = 0

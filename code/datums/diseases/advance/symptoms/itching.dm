@@ -59,4 +59,4 @@ BONUS
 	if(bodypart && !bodypart.robotic)
 		M.visible_message("[can_scratch ? span_warning("[M] scratches their [bodypart.name].") : ""]", span_notice("Your [bodypart.name] itches. [can_scratch ? " You scratch it." : ""]"))
 		if(can_scratch)
-			bodypart.take_damage(0.5)
+			M.injure(INJURY_CUT, 0.5, bodypart)

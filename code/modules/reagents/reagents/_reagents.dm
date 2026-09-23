@@ -96,15 +96,10 @@
 	var/ingest_abs_mult = 1
 
 	if(!mrate_static == TRUE)
-		// Modifiers
-		for(var/datum/modifier/mod in M.modifiers)
-			if(!isnull(mod.metabolism_percent))
-				removed *= mod.metabolism_percent
-				ingest_rem_mult *= mod.metabolism_percent
-		// Species
-		if(M.species)
-			removed *= M.species.metabolic_rate
-			ingest_rem_mult *= M.species.metabolic_rate
+		// Body factors: species, traits, modifiers, afflictions.
+		var/metabolism = M.factor(BF_METABOLISM)
+		removed *= metabolism
+		ingest_rem_mult *= metabolism
 		// Metabolism
 		removed *= active_metab.metabolism_speed
 		ingest_rem_mult *= active_metab.metabolism_speed
@@ -181,8 +176,7 @@
 	removed = min(removed, volume)
 	max_dose = max(volume, max_dose)
 	dose = min(dose + removed, max_dose)
-	if(M.species.medallergens & medallergen_type) // Medical allergies don't gain ANY benefits...
-		M.add_chemical_effect(CE_ALLERGEN, allergen_factor * removed)
+	if(M.species.medallergens & medallergen_type) // Medical allergies don't gain ANY benefits (the reaction is a body factor)...
 		remove_self(removed)
 		return
 	switch(active_metab.metabolism_class)
@@ -198,8 +192,6 @@
 	on_mob_metabolize(M, location)
 	if(overdose && (volume > overdose * M?.species.chemOD_threshold) && (active_metab.metabolism_class != CHEM_TOUCH || can_overdose_touch))
 		overdose(M, alien, removed)
-	if((M.species.allergens & allergen_type))	//uhoh, we can't handle this!
-		M.add_chemical_effect(CE_ALLERGEN, allergen_factor * removed)
 	remove_self(removed)
 	return
 
@@ -208,8 +200,6 @@
 
 /datum/reagent/proc/affect_ingest(mob/living/carbon/M, alien, removed)
 	M.bloodstr.add_reagent(id, removed)
-	if(src.id == M.species.blood_reagents)
-		M.add_chemical_effect(CE_BLOODRESTORE, 8 * removed)
 	return
 
 /datum/reagent/proc/affect_touch(mob/living/carbon/M, alien, removed)
@@ -225,7 +215,7 @@
 	// 6 damage per unit at minimum, scales with excessive reagents. Rounding should help keep damage consistent between ingest / inject, but isn't perfect.
 	// Hardcapped at 3.6 damage per tick, or 18 damage per unit at 0.2 metabolic rate so that you can't instakill people with overdoses by feeding them infinite periadaxon.
 	// Overall, max damage is slightly less effective than hydrophoron, and 1/5 as effective as cyanide.
-	M.adjustToxLoss(min(removed * overdose_mod * round(3 + 3 * volume / overdose), 3.6))
+	M.injure(INJURY_TOXIN, min(removed * overdose_mod * round(3 + 3 * volume / overdose), 3.6), source = src)
 
 /datum/reagent/proc/initialize_data(newdata) // Called when the reagent is created.
 	if(!isnull(newdata))

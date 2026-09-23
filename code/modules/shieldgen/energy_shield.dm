@@ -230,7 +230,7 @@
 
 
 // Fire
-/obj/effect/shield/fire_act(datum/gas_mixture/air, exposed_temperature, exposed_volume)
+/obj/effect/shield/fire_act(exposed_temperature, exposed_volume)
 	if(!disabled_for)
 		take_damage(rand(5,10), SHIELD_DAMTYPE_HEAT)
 
@@ -276,7 +276,7 @@
 	return !QDELETED(meteor) // If it was stopped it will have been deleted
 
 /obj/effect/shield/proc/overcharge_shock(mob/living/M)
-	M.adjustFireLoss(rand(20, 40))
+	M.injure(INJURY_ELECTRIC, rand(20, 40), null, src)
 	M.Weaken(5)
 	to_chat(M, span_danger("As you come into contact with \the [src] a surge of energy paralyses you!"))
 	take_damage(10, SHIELD_DAMTYPE_EM)

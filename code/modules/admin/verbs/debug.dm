@@ -25,13 +25,8 @@ ADMIN_VERB(simple_DPS, R_DEBUG, "Simple DPS", "Gives a really basic idea of how 
 		to_chat(user, span_warning("You need to have something in your active hand, to use this verb."))
 		return
 	var/weapon_attack_speed = user_mob.get_attack_speed(I) / 10
-	var/weapon_damage = I.force
-	var/modified_damage_percent = 1
-
-	for(var/datum/modifier/M in user_mob.modifiers)
-		if(!isnull(M.outgoing_melee_damage_percent))
-			weapon_damage *= M.outgoing_melee_damage_percent
-			modified_damage_percent *= M.outgoing_melee_damage_percent
+	var/modified_damage_percent = user_mob.factor(BF_MELEE_DAMAGE)
+	var/weapon_damage = I.force * modified_damage_percent
 
 	if(istype(I, /obj/item/gun))
 		var/obj/item/gun/G = I
@@ -58,10 +53,12 @@ ADMIN_VERB(simple_DPS, R_DEBUG, "Simple DPS", "Gives a really basic idea of how 
 	to_chat(user, span_notice("Attack Speed: [weapon_attack_speed]/s"))
 	to_chat(user, span_notice("\The [I] does <b>[DPS]</b> damage per second."))
 	if(DPS > 0)
-		to_chat(user, span_notice("At your maximum health ([user_mob.getMaxHealth()]), it would take approximately;"))
-		to_chat(user, span_notice("[(user_mob.getMaxHealth() - CONFIG_GET(number/health_threshold_softcrit)) / DPS] seconds to softcrit you. ([CONFIG_GET(number/health_threshold_softcrit)] health)"))
-		to_chat(user, span_notice("[(user_mob.getMaxHealth() - user_mob.get_crit_point()) / DPS] seconds to hardcrit you. ([user_mob.get_crit_point()] health)"))
-		to_chat(user, span_notice("[(user_mob.getMaxHealth() - (-user_mob.getMaxHealth())) / DPS] seconds to kill you. ([(-user_mob.getMaxHealth())] health)"))
+		// There is no single health number any more: crit and death come from the body's
+		// afflictions. Endurance is the closest toughness scale.
+		var/endurance = user_mob.get_endurance()
+		to_chat(user, span_notice("At your endurance ([endurance]), it would take approximately;"))
+		to_chat(user, span_notice("[endurance / DPS] seconds to deal damage equal to your endurance."))
+		to_chat(user, span_notice("[(endurance * 2) / DPS] seconds to deal twice your endurance (lethal for machines)."))
 
 
 ADMIN_VERB(Cell, R_DEBUG, "Cell", "Display the atmos information of the current cell.", ADMIN_CATEGORY_DEBUG_INVESTIGATE)
@@ -647,7 +644,6 @@ ADMIN_VERB(reload_configuration, R_DEBUG, "Reload Configuration", "Reloads the c
 	config.admin_reload()
 
 
-// === merged from debug_ch.dm during hard-fork de-suffix (verified no override-order change) ===
 /datum/admins/proc/quick_authentic_nif()
 	set category = "Fun.Add Nif"
 	set name = "Quick Auth NIF"
@@ -682,7 +678,6 @@ ADMIN_VERB(reload_configuration, R_DEBUG, "Reload Configuration", "Reloads the c
 	feedback_add_details("admin_verb","QANIF") //If you are copy-pasting this, ensure the 2nd parameter is unique to the new proc!
 
 
-// === merged from debug_chomp.dm during hard-fork de-suffix (manually verified) ===
 /client/proc/reload_configuration()
 	set category = "Debug.Server"
 	set name = "Reload Configuration"

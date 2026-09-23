@@ -8,10 +8,6 @@
 // Kept in the map dir (not code/modules/map_stubs) so they compile ONLY with the
 // test map, not the live Southern Cross build.
 
-// PA room area (41 tiles on virgo_minitest-1). /area/submap exists via blueprints.dm.
-/area/submap/pa_room
-	name = "Particle Accelerator Room"
-
 // Away-gateway variant. /obj/machinery/gateway is itself a stub (map_stubs.dm).
 // The map instance sets `calibrated`, so carry the var to satisfy the map reader.
 /obj/machinery/gateway/centeraway
@@ -19,12 +15,3 @@
 
 // Loot landmark placed on the away sectors. Inert on the test map.
 /obj/effect/landmark/loot_spawn
-
-// Engine selection is unused on the minimal map, but SSmapping's typed fields
-// and load proc are compiled for every map.
-/obj/effect/landmark/engine_loader
-
-/obj/effect/landmark/engine_loader/proc/annihilate_bounds()
-	return
-
-/datum/map_template/engine

@@ -11,6 +11,7 @@
 	#include "southern_cross_presets.dm"
 	#include "southern_cross_shuttles.dm"
 	#include "carrier_compat.dm"
+	#include "southern_cross_map_subtypes.dm"
 
 	#include "shuttles/crew_shuttles.dm"
 	#include "shuttles/heist.dm"
@@ -37,9 +38,6 @@
 	#include "structures/closets/security.dm"
 	#include "turfs/outdoors.dm"
 	#include "overmap/sectors.dm"
-	#include "../submaps/engine_submaps/engine.dm"
-	#include "../submaps/engine_submaps/engine_areas.dm"
-	#include "../submaps/engine_submaps/southern_cross/_engine_submaps.dm"
 
 	// The carrier is retained as the physical base for exploration craft.
 	#include "southern_cross-1.dmm"

@@ -17,29 +17,15 @@
 	our_target.status_flags &= ~CANSTUN
 	our_target.status_flags &= ~CANWEAKEN
 	our_target.status_flags &= ~CANPARALYSE
-	if(ishuman(target))
-		RegisterSignal(target, COMSIG_EXTERNAL_ORGAN_PRE_DAMAGE_APPLICATION, PROC_REF(on_external_damaged))
-		RegisterSignal(target, COMSIG_INTERNAL_ORGAN_PRE_DAMAGE_APPLICATION, PROC_REF(on_internal_damaged))
-
 	if(issilicon(target))
 		RegisterSignal(target, COMSIG_SILICON_EMP_ACT, PROC_REF(on_emp))
 
 	if(isrobot(target))
 		RegisterSignal(target, COMSIG_ROBOT_EMP_ACT, PROC_REF(on_emp))
 
-	//Four main damage types: Brute, Burn, Oxy, Tox
-	RegisterSignal(target, COMSIG_TAKING_OXY_DAMAGE, PROC_REF(on_oxygen_damage))
-	RegisterSignal(target, COMSIG_TAKING_TOX_DAMAGE, PROC_REF(on_tox_damage))
-	RegisterSignal(target, COMSIG_TAKING_FIRE_DAMAGE, PROC_REF(on_fire_damage))
-	RegisterSignal(target, COMSIG_TAKING_BRUTE_DAMAGE, PROC_REF(on_brute_damage))
+	//Every injury of every kind (injure() also checks the GODMODE flag itself).
+	RegisterSignal(target, COMSIG_LIVING_INJURE, PROC_REF(on_injure))
 
-	//Rarer types, such as Brain, Clone, Halloss
-	RegisterSignal(target, COMSIG_TAKING_BRAIN_DAMAGE, PROC_REF(on_brain_damage))
-	RegisterSignal(target, COMSIG_TAKING_CLONE_DAMAGE, PROC_REF(on_clone_damage))
-	RegisterSignal(target, COMSIG_TAKING_HALO_DAMAGE, PROC_REF(on_halo_damage))
-
-	//Things such as update health.
-	RegisterSignal(target, COMSIG_LIVING_HEALTH_UPDATE, PROC_REF(on_update_health))
 	RegisterSignal(target, COMSIG_TAKING_APPLY_EFFECT, PROC_REF(on_apply_effect))
 
 	//For things that don't fall into a single bucket
@@ -49,10 +35,6 @@
 
 
 /datum/element/godmode/Detach(atom/movable/target)
-	//Human specific comsigs:
-	if(ishuman(target))
-		UnregisterSignal(target, list(COMSIG_EXTERNAL_ORGAN_PRE_DAMAGE_APPLICATION, COMSIG_INTERNAL_ORGAN_PRE_DAMAGE_APPLICATION))
-
 	if(issilicon(target))
 		UnregisterSignal(target, list(COMSIG_SILICON_EMP_ACT))
 
@@ -60,9 +42,7 @@
 		UnregisterSignal(target, list(COMSIG_ROBOT_EMP_ACT))
 
 	//All the general comsigs.
-	UnregisterSignal(target, list(COMSIG_TAKING_OXY_DAMAGE, COMSIG_TAKING_TOX_DAMAGE, COMSIG_TAKING_FIRE_DAMAGE, \
-	COMSIG_TAKING_BRUTE_DAMAGE, COMSIG_TAKING_BRAIN_DAMAGE, COMSIG_TAKING_CLONE_DAMAGE, COMSIG_TAKING_HALO_DAMAGE, \
-	COMSIG_LIVING_HEALTH_UPDATE, COMSIG_TAKING_APPLY_EFFECT, COMSIG_CHECK_FOR_GODMODE, COMSIG_BEING_ELECTROCUTED, COMSIG_EMBED_OBJECT))
+	UnregisterSignal(target, list(COMSIG_LIVING_INJURE, COMSIG_TAKING_APPLY_EFFECT, COMSIG_CHECK_FOR_GODMODE, COMSIG_BEING_ELECTROCUTED, COMSIG_EMBED_OBJECT))
 	var/mob/our_target = target
 
 	//And finally, remove the fact we're in godmode.
@@ -70,45 +50,9 @@
 	our_target.status_flags |= CANSTUN|CANWEAKEN|CANPARALYSE
 	return ..()
 
-/datum/element/godmode/proc/on_external_damaged()
+/datum/element/godmode/proc/on_injure()
 	SIGNAL_HANDLER
-	return COMPONENT_CANCEL_EXTERNAL_ORGAN_DAMAGE
-
-/datum/element/godmode/proc/on_internal_damaged()
-	SIGNAL_HANDLER
-	return COMPONENT_CANCEL_INTERNAL_ORGAN_DAMAGE
-
-/datum/element/godmode/proc/on_brain_damage()
-	SIGNAL_HANDLER
-	return COMSIG_CANCEL_BRAIN_DAMAGE
-
-/datum/element/godmode/proc/on_oxygen_damage()
-	SIGNAL_HANDLER
-	return COMSIG_CANCEL_OXY_DAMAGE
-
-/datum/element/godmode/proc/on_tox_damage()
-	SIGNAL_HANDLER
-	return COMSIG_CANCEL_TOX_DAMAGE
-
-/datum/element/godmode/proc/on_clone_damage()
-	SIGNAL_HANDLER
-	return COMSIG_CANCEL_CLONE_DAMAGE
-
-/datum/element/godmode/proc/on_fire_damage()
-	SIGNAL_HANDLER
-	return COMSIG_CANCEL_FIRE_DAMAGE
-
-/datum/element/godmode/proc/on_brute_damage()
-	SIGNAL_HANDLER
-	return COMSIG_CANCEL_BRUTE_DAMAGE
-
-/datum/element/godmode/proc/on_halo_damage()
-	SIGNAL_HANDLER
-	return COMSIG_CANCEL_HALO_DAMAGE
-
-/datum/element/godmode/proc/on_update_health()
-	SIGNAL_HANDLER
-	return COMSIG_LIVING_HEALTH_UPDATE_GOD_MODE
+	return COMPONENT_CANCEL_INJURY
 
 /datum/element/godmode/proc/on_apply_effect()
 	SIGNAL_HANDLER
@@ -144,8 +88,8 @@
 	our_target.status_flags &= ~CANSTUN
 	our_target.status_flags &= ~CANWEAKEN
 	our_target.status_flags &= ~CANPARALYSE
-	RegisterSignal(target, COMSIG_INTERNAL_ORGAN_PRE_DAMAGE_APPLICATION, PROC_REF(on_internal_damaged))
-	RegisterSignal(target, COMSIG_LIVING_HEALTH_UPDATE, PROC_REF(on_update_health))
+	RegisterSignal(target, COMSIG_LIVING_INJURE, PROC_REF(on_injure))
+	RegisterSignal(target, COMSIG_LIVING_BODY_STATUS, PROC_REF(on_body_status))
 	RegisterSignal(target, COMSIG_TAKING_APPLY_EFFECT, PROC_REF(on_apply_effect))
 
 	if(ishuman(target))
@@ -158,8 +102,8 @@
 
 /datum/element/lite_godmode/Detach(atom/movable/target)
 	var/mob/our_target = target
-	UnregisterSignal(target, COMSIG_INTERNAL_ORGAN_PRE_DAMAGE_APPLICATION)
-	UnregisterSignal(target, COMSIG_LIVING_HEALTH_UPDATE)
+	UnregisterSignal(target, COMSIG_LIVING_INJURE)
+	UnregisterSignal(target, COMSIG_LIVING_BODY_STATUS)
 	UnregisterSignal(target, COMSIG_TAKING_APPLY_EFFECT)
 	our_target.status_flags |= CANSTUN|CANWEAKEN|CANPARALYSE
 	if(ishuman(target))
@@ -171,14 +115,18 @@
 			external_organs.stapled_nerves = initial(external_organs.stapled_nerves)
 	return ..()
 
-/datum/element/lite_godmode/proc/on_update_health()
+/datum/element/lite_godmode/proc/on_body_status()
 	SIGNAL_HANDLER
-	return COMSIG_LIVING_HEALTH_UPDATE_GOD_MODE
+	return COMPONENT_BODY_KEEP_ALIVE
 
 /datum/element/lite_godmode/proc/on_apply_effect()
 	SIGNAL_HANDLER
 	return COMSIG_CANCEL_EFFECT
 
-/datum/element/lite_godmode/proc/on_internal_damaged()
+/// Lite godmode keeps the patient's internal organs intact: injuries aimed at
+/// an internal organ, and neural (brain) injury, are cancelled.
+/datum/element/lite_godmode/proc/on_injure(datum/source, kind, list/amount_ref, zone, atom/injury_source, flags)
 	SIGNAL_HANDLER
-	return COMPONENT_CANCEL_INTERNAL_ORGAN_DAMAGE
+	if(kind == INJURY_NEURAL || istype(zone, /obj/item/organ/internal))
+		return COMPONENT_CANCEL_INJURY
+	return NONE

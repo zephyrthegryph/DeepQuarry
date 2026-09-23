@@ -122,19 +122,6 @@
 	///overlays which go unused for this amount of time get cleaned up
 	var/cache_expiration = 2 MINUTES
 
-/*
-/obj/effect/overlay/atmos_excited
-	name = "excited group"
-	icon = null
-	icon_state = null
-	anchored = TRUE  // should only appear in vis_contents, but to be safe
-	appearance_flags = RESET_TRANSFORM | TILE_BOUND
-	invisibility = INVISIBILITY_ABSTRACT
-	mouse_opacity = MOUSE_OPACITY_TRANSPARENT
-
-	plane = ATMOS_GROUP_PLANE
-*/
-
 /obj/effect/overlay/light_visible
 	name = ""
 	icon = 'icons/effects/light_overlays/light_32.dmi'

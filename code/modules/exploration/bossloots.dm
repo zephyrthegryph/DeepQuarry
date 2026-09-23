@@ -16,9 +16,9 @@
 /obj/item/melee/jellyfishwhip/apply_hit_effect(mob/living/target, mob/living/user, hit_zone)
 	if(user.a_intent == I_HURT) //Healy mode
 		. = ..()
-		target.adjustFireLoss(10)
-		user.adjustFireLoss(-7)
-		user.adjustBruteLoss(-7)
+		target.injure(INJURY_BURN, 10, hit_zone, src)
+		user.mend(TREAT_BURN_CARE, 7)
+		user.mend(TREAT_TISSUE_REPAIR, 7)
 	else if(user.a_intent == I_DISARM) //DoT mode
 		. = ..()
 		target.add_modifier(/datum/modifier/poisoned, 20)
@@ -70,7 +70,7 @@
 	else if(user.a_intent == I_HURT) //Tiny Chance to crit
 		. = ..()
 		if(active && prob(2))
-			target.adjustBruteLoss(50)
+			target.injure(INJURY_CUT, 50, hit_zone, src)
 			playsound(src, "blade1", 50, 1)
 
 //Mining tool
@@ -80,28 +80,12 @@
 	generator_hit_cost = 0
 	generator_active_cost = 0
 	damage_cost = 0
-	modifier_type = /datum/modifier/magnet
+	modifier_type = /datum/modifier/shield_projection/magnet
 
 /obj/item/personal_shield_generator/belt/fossiltank
 	name = "expirmental magnet generator belt"
 	desc = "A belt that will pull in minerals torwards you whilst bolstering your defense."
-	modifier_type = /datum/modifier/magnet/defense
-
-/datum/modifier/magnet //you are now a magnet
-	name = "Magnet Pull"
-
-/datum/modifier/magnet/tick()
-	for(var/obj/item/ore/O in orange(4, holder))
-		step_towards(O, get_turf(holder))
-
-/datum/modifier/magnet/defense
-	max_brute_resistance = 0.3
-	min_brute_resistance = 0.8
-	effective_brute_resistance = 1
-
-	max_fire_resistance = 0.3
-	min_fire_resistance = 0.8
-	effective_fire_resistance = 1
+	modifier_type = /datum/modifier/shield_projection/magnet/defense
 
 //props meant to be scanned/deconstructed by science, obtained via exploration
 /obj/item/prop/deconstructable

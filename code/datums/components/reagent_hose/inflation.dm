@@ -85,7 +85,7 @@
 		to_chat(user,span_warning("You couldn't connect the hose, another hose is already connected!"))
 		return FALSE
 	if(connection_mode == CHEM_BLOOD) //OWCH!
-		human_owner.adjustBruteLossByPart(10,BP_TORSO)
+		human_owner.injure(INJURY_PIERCE, 10, BP_TORSO, src)
 		if(human_owner.can_pain_emote) // Doing this probably doesn't feel too good
 			human_owner.emote("pain")
 	to_chat(user, span_notice("You connect the hose to \the [human_owner]'s [feedback]..."))

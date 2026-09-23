@@ -768,7 +768,6 @@
 	icon_state = ""
 
 
-// === merged from crates_vr.dm during hard-fork de-suffix (verified no override-order change) ===
 /obj/structure/closet/crate/secure
 	var/tamper_proof = 0
 

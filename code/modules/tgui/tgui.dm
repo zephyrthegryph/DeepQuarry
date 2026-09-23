@@ -52,7 +52,6 @@
 	/// If the window should be closed with other windows when requested
 	var/closeable = TRUE
 
-
 /**
  * public
  *
@@ -163,7 +162,6 @@
 	SStgui.on_open(src)
 
 	return TRUE
-
 
 /datum/tgui/proc/send_assets(list/startup_profile, startup_timer)
 	#ifdef DEBUG
@@ -309,11 +307,6 @@
 /datum/tgui/proc/send_full_update(custom_data, force)
 	if(!user?.client || !initialized || closing)
 		return
-	//if(!COOLDOWN_FINISHED(src, refresh_cooldown))
-		//refreshing = TRUE
-		//addtimer(CALLBACK(src, PROC_REF(send_full_update)), TGUI_REFRESH_FULL_UPDATE_COOLDOWN, TIMER_UNIQUE)
-		//return
-	//refreshing = FALSE
 	var/should_update_data = force || status >= STATUS_UPDATE
 	window.send_message("update", get_payload(
 		custom_data,

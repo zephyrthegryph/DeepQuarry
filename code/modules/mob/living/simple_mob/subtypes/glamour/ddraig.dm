@@ -25,7 +25,7 @@
 	harm_intent_damage = 10
 	melee_damage_lower = 15
 	melee_damage_upper = 25
-	maxHealth = 1000
+	endurance = 1000
 	attacktext = list("mauled")
 	see_in_dark = 8
 	minbodytemp = 0
@@ -322,7 +322,7 @@
 		to_chat(src, span_warning("You can't do that in your condition."))
 		return
 
-	if(M.health <= 10)	//We can let it undo the TF, because the person will be dead, but otherwise things get weird.
+	if(M.vitality() * M.get_endurance() <= 10)	//We can let it undo the TF, because the person will be dead, but otherwise things get weird.
 		to_chat(src, span_warning("You are too injured to transform into a beast."))
 		return
 

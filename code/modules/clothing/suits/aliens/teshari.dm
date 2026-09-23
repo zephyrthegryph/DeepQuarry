@@ -106,7 +106,6 @@
 	name = "black and glowing cloak"
 	icon_state = "tesh_cloak_bglowing"
 
-
 // Job Cloaks
 /obj/item/clothing/suit/storage/teshari/cloak/jobs/cap
 	name = "site manager cloak"
@@ -357,9 +356,6 @@
 	hoodtype = /obj/item/clothing/head/tesh_hood/standard
 	variant = "orange_grey"
 ///obj/item/clothing/suit/storage/hooded/teshari/standard/rainbow
-//	name = "rainbow hooded cloak"
-//	icon_state = "tesh_hcloak_rainbow"
-//	hoodtype = /obj/item/clothing/head/tesh_hood/standard/rainbow
 
 /obj/item/clothing/suit/storage/hooded/teshari/standard/lightgrey_grey
 	name = "light grey and grey hooded cloak"

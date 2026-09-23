@@ -70,26 +70,21 @@
 
 	if(environment && air_contents.return_temperature() > 0)
 		var/transfer_moles = (volume_rate/air_contents.return_volume())*air_contents.total_moles() //apply flow rate limit
-		power_draw = pump_gas(src, air_contents, environment, transfer_moles, power_rating)
+		power_draw = queue_pump_gas(src, air_contents, environment, transfer_moles, power_rating)
 
 	if (power_draw >= 0)
-		last_power_draw = power_draw
-		use_power(power_draw)
-		// pump_gas writes to loc's air via the gas_mixture ref; turf
-		// needs to be re-enrolled in active_turfs and visuals re-evaluated.
-		if(isturf(loc))
-			var/turf/open/T = loc
-			if(istype(T))
-				T.update_visuals()
-				T.air_update_turf(FALSE, FALSE)
-
-		if(network)
-			network.mark_dirty()
+		// Power, turf publication, and network dirtiness are finalized by the
+		// subsystem's single atomic Rust transfer commit.
 	else
 		SSmachines.hibernate_vent(src)
 		return PROCESS_KILL
 
 	return 1
+
+/obj/machinery/atmospherics/unary/outlet_injector/pump_transaction_committed(actual_moles)
+	if(actual_moles >= MINIMUM_MOLES_TO_PUMP)
+		return
+	SSmachines.hibernate_vent(src)
 
 /obj/machinery/atmospherics/unary/outlet_injector/gas_dependency_changed(mixture_id, change_mask)
 	if(!..())

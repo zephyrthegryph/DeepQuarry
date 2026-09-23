@@ -27,8 +27,7 @@
 	icon_dead = "siffet_dead"
 	icon = 'icons/mob/animal.dmi'
 
-	maxHealth = 60
-	health = 60
+	endurance = 60
 
 	movement_cooldown = -2
 

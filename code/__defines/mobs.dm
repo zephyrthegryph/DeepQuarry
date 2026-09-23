@@ -40,15 +40,6 @@
 
 #define STANCE_ATTACK    11 // Backwards compatability
 #define STANCE_ATTACKING 12 // Ditto
-/*
-#define STANCE_IDLE      1	// Looking for targets if hostile.  Does idle wandering.
-#define STANCE_ALERT     2	// Bears
-#define STANCE_ATTACK    3	// Attempting to get into attack position
-#define STANCE_ATTACKING 4	// Doing attacks
-#define STANCE_TIRED     5	// Bears
-#define STANCE_FOLLOW    6	// Following somone
-#define STANCE_BUSY      7	// Do nothing on life ticks (Other code is running)
-*/
 #define STANCE_SLEEP        0	// Doing (almost) nothing, to save on CPU because nobody is around to notice or the mob died.
 #define STANCE_IDLE         1	// The more or less default state. Wanders around, looks for baddies, and spouts one-liners.
 #define STANCE_ALERT        2	// A baddie is visible but not too close, and essentially we tell them to go away or die.
@@ -121,7 +112,6 @@
 #define DEFAULT_ATTACK_COOLDOWN 8 //Default timeout for aggressive actions
 #define DEFAULT_QUICK_COOLDOWN  4
 
-
 #define MIN_SUPPLIED_LAW_NUMBER 15
 #define MAX_SUPPLIED_LAW_NUMBER 50
 
@@ -153,7 +143,6 @@
 #define CLASS_BROKE			"Broke"
 
 #define ECONOMIC_CLASS		list(CLASS_UPPER,CLASS_UPMID,CLASS_MIDDLE,CLASS_LOWMID,CLASS_LOWER,CLASS_BROKE)
-
 
 // Defines mob sizes, used by lockers and to determine what is considered a small sized mob, etc.
 #define MOB_HUGE  		40
@@ -552,9 +541,7 @@
 #define VOMIT_PURPLE 2
 // Nanite vomit
 #define VOMIT_NANITE 3
-#define DQ_MEDICAL_DIRTY_ORGANS (1<<0)
-#define DQ_MEDICAL_DIRTY_METRICS (1<<1)
-#define DQ_MEDICAL_DIRTY_CHEMS (1<<2)
-#define DQ_MEDICAL_DIRTY_ALL (DQ_MEDICAL_DIRTY_ORGANS | DQ_MEDICAL_DIRTY_METRICS | DQ_MEDICAL_DIRTY_CHEMS)
 #define DQAI_PROCESSING (1<<0)
 #define DQAI_FASTPROCESSING (1<<1)
+
+#define SPECIES_GREY_YW             "Grey"

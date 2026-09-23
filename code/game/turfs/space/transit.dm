@@ -24,8 +24,5 @@
 	icon_state = "arrow-east"
 	pushdirection = WEST
 
-/turf/space/transit/west // moving to the west
-	icon_state = "arrow-west"
-	pushdirection = WEST
 
 //------------------------

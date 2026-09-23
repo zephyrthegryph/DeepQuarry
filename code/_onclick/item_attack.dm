@@ -131,6 +131,13 @@ avoid code duplication. This includes items that may sometimes act as a standard
 	var/result = SEND_SIGNAL(src, secondary ? COMSIG_ATOM_SECONDARY_TOOL_ACT(tool_quality) : COMSIG_ATOM_TOOL_ACT(tool_quality), user, tool)
 	if(result & (ITEM_INTERACT_SUCCESS | ITEM_INTERACT_BLOCKING | ITEM_INTERACT_SKIP_TO_ATTACK))
 		return result
+	// Dormant material assemblies intentionally own no signal handlers. A
+	// deliberate diagnostic interaction is itself their admission event.
+	if(secondary && tool_quality == TOOL_MULTITOOL && isobj(src))
+		var/obj/object = src
+		result = object.material_diagnostics_tool_act(user, tool)
+		if(result & (ITEM_INTERACT_SUCCESS | ITEM_INTERACT_BLOCKING | ITEM_INTERACT_SKIP_TO_ATTACK))
+			return result
 	if(secondary)
 		switch(tool_quality)
 			if(TOOL_SCREWDRIVER) return screwdriver_act_secondary(user, tool)
@@ -216,10 +223,7 @@ avoid code duplication. This includes items that may sometimes act as a standard
 	var/speed = base_attack_cooldown
 	if(W && istype(W))
 		speed = W.attackspeed
-	for(var/datum/modifier/M in modifiers)
-		if(!isnull(M.attack_speed_percent))
-			speed *= M.attack_speed_percent
-	return speed
+	return speed * factor(BF_ATTACK_SPEED)
 
 // Proximity_flag is 1 if this afterattack was called on something adjacent, in your square, or on your person.
 // Click parameters is the params string from byond Click() code, see that documentation.
@@ -234,6 +238,7 @@ avoid code duplication. This includes items that may sometimes act as a standard
 		return ITEM_INTERACT_FAILURE
 	if(M.is_incorporeal()) // No attacking phased entities :)
 		return ITEM_INTERACT_FAILURE
+	SEND_SIGNAL(src, COMSIG_ITEM_ATTACK, M, user, target_zone)
 
 	/////////////////////////
 	M.lastattacker = user
@@ -258,10 +263,7 @@ avoid code duplication. This includes items that may sometimes act as a standard
 	if(hitsound)
 		playsound(src, hitsound, 50, 1, -1)
 
-	var/power = force
-	for(var/datum/modifier/M in user.modifiers)
-		if(!isnull(M.outgoing_melee_damage_percent))
-			power *= M.outgoing_melee_damage_percent
+	var/power = force * user.factor(BF_MELEE_DAMAGE)
 
 	if(HULK in user.mutations)
 		power *= 2

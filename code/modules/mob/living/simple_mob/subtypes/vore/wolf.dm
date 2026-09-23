@@ -42,7 +42,7 @@
 	pain_emote_1p = list("yelp", "whine", "bark", "growl")
 	pain_emote_3p = list("yelps", "whines", "barks", "growls")
 
-/mob/living/simple_mob/vore/wolf/load_default_bellies()
+/mob/living/simple_mob/animal/vore/wolf/load_default_bellies()
 	. = ..()
 
 	var/obj/belly/B = vore_selected
@@ -57,8 +57,7 @@
 	name = "space wolf"
 	tt_desc = "Canis lupus aetherius"
 
-	health = 40
-	maxHealth = 40
+	endurance = 40
 
 	movement_cooldown = 0
 
@@ -98,7 +97,7 @@
 	harm_intent_damage = 10
 	melee_damage_lower = 10
 	melee_damage_upper = 20
-	maxHealth = 300
+	endurance = 300
 
 	minbodytemp = 0
 

@@ -1,6 +1,6 @@
 /mob/living/simple_mob/slime/feral
 	cores = 3 // Xenobio will love getting their hands on these.
-	maxHealth = 150 //Old 75
+	endurance = 150 //Old 75
 	movement_cooldown = 0
 	melee_damage_lower = 15
 	melee_damage_upper = 15
@@ -50,7 +50,7 @@
 	slime_color = "metal"
 	shiny = TRUE
 	coretype = /obj/item/slime_extract/metal
-	maxHealth = 250
+	endurance = 250
 	armor = list(
 				"melee" = 35,
 				"bullet" = 35,
@@ -99,7 +99,7 @@
 	log_and_message_admins("[src] ignited due to a chain reaction with an explosion.")
 	ignite()
 
-/mob/living/simple_mob/slime/feral/dark_purple/fire_act(datum/gas_mixture/air, temperature, volume)
+/mob/living/simple_mob/slime/feral/dark_purple/fire_act(temperature, volume)
 	log_and_message_admins("[src] ignited due to exposure to fire.")
 	ignite()
 

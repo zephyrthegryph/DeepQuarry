@@ -718,7 +718,6 @@
 	item_state_slots = null
 
 
-// === merged from backpack_chomp.dm during hard-fork de-suffix (verified no override-order change) ===
 /obj/item/storage/backpack/saddlebag_common/lightweight
 	name = "Taur Saddlebags (Light)"
 	desc = "A saddle that holds items. Lighter than its heavier cousin, as the cost of storage space."

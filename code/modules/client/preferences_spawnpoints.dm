@@ -87,21 +87,6 @@ GLOBAL_LIST_INIT(spawntypes, populate_spawn_points())
 	..()
 	turfs = GLOB.latejoin_cyborg
 
-/obj/effect/landmark/arrivals
-	name = "JoinLateShuttle"
-	delete_me = TRUE
-
-/obj/effect/landmark/arrivals/Initialize(mapload)
-	GLOB.latejoin += loc
-	. = ..()
-
-/obj/effect/landmark/tram
-	name = "JoinLateTram"
-	delete_me = TRUE
-
-/obj/effect/landmark/tram/Initialize(mapload)
-	GLOB.latejoin_tram += loc // There's no tram but you know whatever man!
-	. = ..()
 
 /datum/spawnpoint/tram
 	display_name = "Tram Station"
@@ -132,7 +117,6 @@ GLOBAL_LIST_INIT(spawntypes, populate_spawn_points())
 	turfs = GLOB.latejoin
 
 
-// === merged from preferences_spawnpoints_chomp.dm during hard-fork de-suffix (verified no override-order change) ===
 /datum/spawnpoint/stationgateway
 	display_name = "Station gateway"
 	msg = "has completed translation from station gateway"
@@ -142,8 +126,6 @@ GLOBAL_LIST_INIT(spawntypes, populate_spawn_points())
 	..()
 	turfs = GLOB.latejoin_gatewaystation
 
-/obj/effect/landmark/stationgateway
-	name = "JoinLateStationGateway"
 
 /datum/spawnpoint/plainspath
 	display_name = "Sif plains"
@@ -154,8 +136,6 @@ GLOBAL_LIST_INIT(spawntypes, populate_spawn_points())
 	..()
 	turfs = GLOB.latejoin_plainspath
 
-/obj/effect/landmark/plainspath
-	name = "JoinLateSifPlains"
 
 /datum/spawnpoint/fueldepot
 	display_name = "Fuel Depot"
@@ -166,8 +146,6 @@ GLOBAL_LIST_INIT(spawntypes, populate_spawn_points())
 	..()
 	turfs = GLOB.latejoin_fueldepot
 
-/obj/effect/landmark/fueldepot
-	name = "JoinLateFuelDepot"
 
 /datum/spawnpoint/tyrspawn
 	display_name = "Tyr Wreckage"
@@ -178,8 +156,6 @@ GLOBAL_LIST_INIT(spawntypes, populate_spawn_points())
 	..()
 	turfs = GLOB.latejoin_tyrvillage
 
-/obj/effect/landmark/tyrspawn
-	name = "JoinLateTyrVillage"
 
 /datum/spawnpoint/darkspawn
 	display_name = "The Dark"
@@ -190,5 +166,3 @@ GLOBAL_LIST_INIT(spawntypes, populate_spawn_points())
 	..()
 	turfs = GLOB.latejoin_thedark
 
-/obj/effect/landmark/darkspawn
-	name = "JoinLateTheDark"

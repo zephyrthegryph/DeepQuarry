@@ -114,6 +114,16 @@ GLOBAL_VAR_INIT(focused_tests, focused_tests())
 	allocated += instance
 	return instance
 
+/// A floor turf on the map, for tests whose subject must be in the world.
+/// allocate() defaults to run_loc_floor_bottom_left, which is null when the
+/// unit-test room template isn't loaded.
+/datum/unit_test/proc/test_floor()
+	RETURN_TYPE(/turf)
+	if(run_loc_floor_bottom_left)
+		return run_loc_floor_bottom_left
+	for(var/turf/simulated/floor/T in world)
+		return T
+
 /// Resets the air of our testing room to its default
 /datum/unit_test/proc/restore_atmos()
 	// Expedition release is deliberately asynchronous in production. Do not let
@@ -127,14 +137,6 @@ GLOBAL_VAR_INIT(focused_tests, focused_tests())
 	// after each test so later tests and shuttles never inherit vacuum, test gas,
 	// or temporary sealing geometry.
 	dq_atmos_test_restore_state()
-	// NOT IMPLEMENTED YET, SEE NEW() PROC
-	//var/area/working_area = run_loc_floor_bottom_left.loc
-	//var/list/turf/to_restore = working_area.get_turfs_from_all_zlevels()
-	//for(var/turf/simulated/restore in to_restore)
-	//	var/datum/gas_mixture/GM = SSair.parse_gas_string(restore.initial_gas_mix, /datum/gas_mixture/turf)
-	//	restore.copy_air(GM)
-	//	restore.temperature = initial(restore.temperature)
-	//	restore.air_update_turf(update = FALSE, remove = FALSE)
 
 /datum/unit_test/proc/test_screenshot(name, icon/icon)
 	if (!istype(icon))
@@ -161,7 +163,6 @@ GLOBAL_VAR_INIT(focused_tests, focused_tests())
 		fcopy(icon, filename)
 		TEST_FAIL("Screenshot for [name] did not exist. One has been created.")
 #endif
-
 
 /// Helper for screenshot tests to take an image of an atom from all directions and insert it into one icon
 /datum/unit_test/proc/get_flat_icon_for_all_directions(atom/thing, no_anim = TRUE)
@@ -195,6 +196,21 @@ GLOBAL_VAR_INIT(focused_tests, focused_tests())
 	clicker.next_move = -1
 	clicker.ClickOn(clicked_on, list2params(passed_params))
 
+/// Tick usage while a test ran: how many MC ticks it spanned, how many overran
+/// (usage above 100%) and the worst one. Recorded in data/unit_tests.json.
+/proc/unit_test_tick_stats(start_index)
+	var/list/usage = Master.perf_tick_usage
+	if(start_index > usage.len)
+		return list("samples" = 0, "overruns" = 0, "max" = 0)
+	var/overruns = 0
+	var/worst = 0
+	for(var/i in start_index to usage.len)
+		var/value = usage[i]
+		worst = max(worst, value)
+		if(value > 100)
+			overruns++
+	return list("samples" = usage.len - start_index + 1, "overruns" = overruns, "max" = worst)
+
 /proc/RunUnitTest(datum/unit_test/test_path, list/test_results, current_index, total_tests)
 	if(ispath(test_path, /datum/unit_test/focus_only))
 		return
@@ -206,11 +222,14 @@ GLOBAL_VAR_INIT(focused_tests, focused_tests())
 
 	GLOB.current_test = test
 	var/duration = 0
+	var/tick_start_index = 0
+	var/runtimes_before = GLOB.total_runtimes
+	var/list/tick_stats
 	// Generated-station coverage is temporarily disabled while that subsystem is
 	// being redesigned. Keep the cases compiled and visible as skipped so they
 	// cannot silently disappear from the suite inventory.
 	var/test_path_text = "[test_path]"
-	var/generated_station_test = findtext(test_path_text, "/datum/unit_test/dq_generated_station") == 1 || findtext(test_path_text, "/datum/unit_test/dq_generated_room") == 1 || findtext(test_path_text, "/datum/unit_test/dq_generation_performance_profile") == 1 || (test_path in list(
+	var/generated_station_test = findtext(test_path_text, "/datum/unit_test/dq_generated_station") == 1 || findtext(test_path_text, "/datum/unit_test/dq_generated_room") == 1 || (test_path in list(
 		/datum/unit_test/dq_expedition_generates_site,
 		/datum/unit_test/dq_debug_station_initializes_complete_runtime,
 		/datum/unit_test/dq_emergency_station_fallback_is_playable,
@@ -227,10 +246,12 @@ GLOBAL_VAR_INIT(focused_tests, focused_tests())
 
 	else
 		duration = REALTIMEOFDAY
+		tick_start_index = Master.perf_samples_total + 1
 		test.Run()
 		test.restore_atmos()
 
 		duration = REALTIMEOFDAY - duration
+		tick_stats = unit_test_tick_stats(Master.perf_index_of(tick_start_index))
 		GLOB.current_test = null
 		GLOB.failed_any_test |= !test.succeeded
 
@@ -261,7 +282,7 @@ GLOBAL_VAR_INIT(focused_tests, focused_tests())
 		log_world("::error::[TEST_OUTPUT_RED("FAIL")] [test_output_desc]")
 
 	var/final_status = skip_test ? UNIT_TEST_SKIPPED : (test.succeeded ? UNIT_TEST_PASSED : UNIT_TEST_FAILED)
-	test_results[test_path] = list("status" = final_status, "message" = message, "name" = test_path, "duration_ds" = duration)
+	test_results[test_path] = list("status" = final_status, "message" = message, "name" = test_path, "duration_ds" = duration, "runtimes" = GLOB.total_runtimes - runtimes_before, "ticks" = tick_stats)
 
 	qdel(test)
 
@@ -386,6 +407,10 @@ GLOBAL_VAR_INIT(focused_tests, focused_tests())
 	return returnable_list
 
 /proc/RunUnitTests()
+	#ifdef BENCHMARK
+	RunBenchmarks()
+	return
+	#endif
 	CHECK_TICK
 	// Mapped patrol bots run independently of tests and can enqueue expensive
 	// pathfinding while the suite is deliberately saturating the tick budget.

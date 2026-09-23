@@ -38,20 +38,3 @@
 		if(new_ident && user.Adjacent(src))
 			monitor.gyro_tag = new_ident
 		return
-/*
-/obj/machinery/computer/gyrotron_control/update_icon()
-	if(stat & (BROKEN))
-		icon = 'icons/obj/computer.dmi'
-		icon_state = "broken"
-		set_light(0)
-
-	if(stat & (NOPOWER))
-		icon = 'icons/obj/computer.dmi'
-		icon_state = "computer"
-		set_light(0)
-
-	if(!stat & (BROKEN|NOPOWER))
-		icon = initial(icon)
-		icon_state = initial(icon_state)
-		set_light(light_range_on, light_power_on)
-*/

@@ -13,8 +13,6 @@
 	if(client) // ganbatte tachikoma-san
 		to_chat(src, span_notice("You are tasked with supporting the Exploration and Science staff as they unearth the secrets of the planet. Do your best!"))
 
-/obj/effect/landmark/robot_platform/explorer
-	platform_type = /mob/living/silicon/robot/platform/explorer
 
 /mob/living/silicon/robot/platform/cargo
 	name = "logistics platform"

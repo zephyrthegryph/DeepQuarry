@@ -33,7 +33,7 @@
 	if(attacker)
 		last_contact = WEAKREF(attacker)
 		runtime?.report_contact(src, attacker)
-	if(defender && defender.health <= defender.maxHealth * GENERATED_STATION_DEFENDER_RETREAT_HEALTH)
+	if(defender && defender.vitality() <= GENERATED_STATION_DEFENDER_RETREAT_HEALTH)
 		runtime?.retreat_agent(src)
 
 /datum/generated_station_defender_agent/proc/on_death(datum/source, gibbed)
@@ -285,8 +285,10 @@
 	if(!medicine || !medicine.use(1))
 		agent.defender.ai_brain?.go_sleep()
 		return
-	agent.defender.adjustBruteLoss(-30)
-	agent.defender.adjustFireLoss(-30)
+	agent.defender.mend(TREAT_TISSUE_REPAIR, 30)
+	agent.defender.mend(TREAT_BURN_CARE, 30)
+	agent.defender.mend(TREAT_PLATING_REPAIR, 30)
+	agent.defender.mend(TREAT_WIRING_REPAIR, 30)
 	var/atom/contact = agent.last_contact?.resolve()
 	if(isliving(contact))
 		var/mob/living/living_contact = contact

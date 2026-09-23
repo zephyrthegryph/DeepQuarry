@@ -128,8 +128,7 @@
 	vore_escape_chance = 0	// As such, if you're a dibshit who feeds yourself to it, you're staying down.
 	// Overrides to non-vore version
 	speed = 4			// Slow it down a bit
-	health = 80			// Increase health to compensate
-	maxHealth = 80
+	endurance = 80
 */
 /*
 /mob/living/simple_mob/animal/space/mimic
@@ -138,8 +137,7 @@
 	vore_capacity = 0
 	vore_pounce_chance = 33
 	// Overrides to non-vore version
-	maxHealth = 60
-	health = 60
+	endurance = 60
 */
 /mob/living/simple_mob/animal/passive/cat
 	vore_active = 1

@@ -66,9 +66,9 @@
 		CtrlClickOn(A)
 		return
 
-	if(holo && istype(holo.masters[src],/obj/effect/overlay/aiholo))
-		var/curdur = get_dir(get_turf(holo.masters[src]), get_turf(A))
-		holo.masters[src].set_dir(curdur)
+	var/obj/effect/overlay/aiholo/hologram = holo ? LAZYACCESS(holo.masters, src) : null
+	if(istype(hologram))
+		hologram.set_dir(get_dir(get_turf(hologram), get_turf(A)))
 
 	if(aiCamera.in_camera_mode)
 		aiCamera.camera_mode_off()

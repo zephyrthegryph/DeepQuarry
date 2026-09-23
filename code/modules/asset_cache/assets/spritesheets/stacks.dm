@@ -21,6 +21,11 @@
 		var/datum/universal_icon/UI = uni_icon(M::icon, "[M::icon_state][append]")
 		if(M.apply_colour)
 			var/datum/material/material = GET_MATERIAL_REF(M::default_type)
+			// Abstract/runtime stack carriers have no static material colour. They
+			// cannot contribute a useful compile-time sheet icon and must not feed
+			// null into iconforge during asset initialization.
+			if(!material?.icon_colour)
+				continue
 			UI.blend_color(material.icon_colour, ICON_MULTIPLY)
 
 		insert_icon(sanitize_css_class_name(M::default_type), UI)

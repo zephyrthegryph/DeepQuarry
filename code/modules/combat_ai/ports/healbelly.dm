@@ -42,7 +42,7 @@
 		return FALSE
 	if(P.suiciding)
 		return FALSE
-	if(P.health > (P.getMaxHealth() * 0.95))
+	if(P.vitality() > 0.95)
 		return FALSE
 	// Vocal nag, throttled to one line per 30s.
 	if(dq_healbelly_vocal && (dq_healbelly_last_speak + 30 SECONDS < world.time))
@@ -121,7 +121,7 @@
 	for(var/mob/living/ally as anything in brain.model.visible_friendlies)
 		if(!SM.dq_confirm_patient(ally))
 			continue
-		var/frac = ally.getMaxHealth() ? (ally.health / ally.getMaxHealth()) : 1
+		var/frac = ally.vitality()
 		if(frac < best_frac)
 			best_frac = frac
 			best_patient = ally

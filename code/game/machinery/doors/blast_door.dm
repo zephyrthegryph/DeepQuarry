@@ -133,7 +133,7 @@
 			if(AM.airlock_crush(damage))
 				if(LAZYLEN(yeet_turfs))
 					AM.throw_at(get_edge_target_turf(src, get_dir(src, pick(yeet_turfs))), (rand(1,3) * multiplier), (rand(2,4) * multiplier)) // YEET.
-				take_damage(damage*0.2)
+				take_damage(damage*0.2, BRUTE, MELEE)
 
 // Proc: force_toggle()
 // Parameters: None
@@ -157,7 +157,6 @@
 			return
 	..()
 
-
 // Proc: attackby()
 // Parameters: 2 (C - Item this object was clicked with, user - Mob which clicked this object)
 // Description: If we are clicked with crowbar, wielded fire axe, or armblade, try to manually open the door.
@@ -180,7 +179,6 @@
 				to_chat(user, span_notice("[src]'s motors resist your effort."))
 			return
 
-
 		else if(src.density && (user.a_intent == I_HURT)) //If we can't pry it open and it's a weapon, let's hit it.
 			var/obj/item/W = C
 			user.setClickCooldown(user.get_attack_speed(W))
@@ -191,7 +189,7 @@
 				else
 					user.visible_message(span_danger("\The [user] forcefully strikes \the [src] with \the [W]!"))
 					playsound(src, hitsound, 100, 1)
-					take_damage(W.force*0.35) //it's a blast door, it should take a while. -Luke
+					take_damage(W.force*0.35, BRUTE, MELEE) //it's a blast door, it should take a while. -Luke
 				return
 
 	else if(istype(C, /obj/item/stack/material) && C.get_material_name() == MAT_PLASTEEL) // Repairing.
@@ -221,7 +219,7 @@
 			else
 				user.visible_message(span_danger("\The [user] forcefully strikes \the [src] with \the [W]!"))
 				playsound(src, hitsound, 100, 1)
-				take_damage(W.force*0.15) //If the item isn't a weapon, let's make this take longer than usual to break it down.
+				take_damage(W.force*0.15, BRUTE, MELEE) //If the item isn't a weapon, let's make this take longer than usual to break it down.
 			return
 
 // Proc: attack_alien()
@@ -306,15 +304,6 @@
 	if(stat & BROKEN)
 		stat &= ~BROKEN
 
-/*
-// This replicates the old functionality coded into CanPass() for this object, however it appeared to have made blast doors not airtight.
-// If for some reason this is actually needed for something important, uncomment this.
-/obj/machinery/door/blast/CanZASPass(turf/T, is_zone)
-	if(is_zone)
-		return TRUE
-	return ..()
-*/
-
 // SUBTYPE: Regular
 // Your classical blast door, found almost everywhere.
 /obj/machinery/door/blast/regular
@@ -326,7 +315,7 @@
 	max_integrity = 600
 	heat_proof = 1 //just so repairing them doesn't try to fireproof something that never takes fire damage
 
-/obj/machinery/door/blast/regular/fire_act(datum/gas_mixture/air, exposed_temperature, exposed_volume)
+/obj/machinery/door/blast/regular/fire_act(exposed_temperature, exposed_volume)
 	return // blast doors are immune to fire completely.
 
 /obj/machinery/door/blast/regular/open
@@ -494,6 +483,38 @@
 	width = 2
 	dir = EAST
 
-
 #undef BLAST_DOOR_CRUSH_DAMAGE
 #undef SHUTTER_CRUSH_DAMAGE
+
+// SUBTYPE: Reactor Shroud.
+// radiation proof door for use as shielding for the R-UST.
+/obj/machinery/door/blast/radproof
+	name = "Reactor Shroud"
+	desc = "Two massive interlocking hulks of radiation resistant metal. It looks like it could stop a tank."
+	icon_state_open = "pdoor0"
+	icon_state_opening = "pdoorc0"
+	icon_state_closed = "pdoor1"
+	icon_state_closing = "pdoorc1"
+	icon_state = "pdoor1"
+	max_integrity = 600
+	rad_insulation = 0
+	id = "EngineShroud"
+
+/obj/machinery/door/blast/radproof/open
+	icon_state = "pdoor0"
+	density = 0
+	opacity = 0
+	rad_insulation = 0
+
+/obj/machinery/door/blast/radproof/force_open()
+	set_rad_insulation(1)
+	..()
+
+/obj/machinery/door/blast/radproof/force_close()
+	set_rad_insulation(0)
+	..()
+
+/obj/machinery/button/remote/blast_door/radproof
+	name = "Reactor Shroud Control"
+	desc = "It the reactor shroud remotely."
+	id = "EngineShroud"

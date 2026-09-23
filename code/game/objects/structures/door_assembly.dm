@@ -129,10 +129,6 @@
 	dir = EAST
 	var/width = 1
 
-/*Temporary until we get sprites.
-	glass_type = "/multi_tile/glass"
-	airlock_type = "/multi_tile/maint"
-	glass = 1*/
 	base_icon_state = "g" //Remember to delete this line when reverting "glass" var to 1.
 	airlock_type = "/multi_tile/glass"
 	glass = -1 //To prevent bugs in deconstruction process.
@@ -162,8 +158,7 @@
 	update_state()
 
 /obj/structure/door_assembly/attack_robot(mob/living/silicon/robot/user)
-	if(Adjacent(user) && (user.module && (istype(user.module,/obj/item/robot_module/robot/engineering)) \
-	|| istype(user.module,/obj/item/robot_module/drone))) //Only drone (and engiborg) needs this.
+	if(Adjacent(user) && user.module?.names_assemblies) //Only drones and engineering borgs need this.
 		rename_door(user)
 
 /obj/structure/door_assembly/attackby(obj/item/W as obj, mob/user as mob, tool_quality)

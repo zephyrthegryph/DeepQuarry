@@ -53,43 +53,6 @@
  * C-20r
  */
 
-/* remove: Moved to automatic_ch.dm. *
-
-/obj/item/gun/projectile/automatic/c20r
-	name = "submachine gun"
-	desc = "The C-20r is a lightweight and rapid firing SMG, for when you REALLY need someone dead. It has 'Scarborough Arms - Per falcis, per pravitas', inscribed on the stock. Uses 10mm rounds."
-	description_fluff = "The C-20r is produced by Scarborough Arms, a specialist high-end weapons manufacturer based out of Titan, Sol. Scarborough has resisted numerous efforts by Trans-Stellars to acquire the brand since its founding in 2511, and has gained a dedicated following among a certain flavor of private operative."
-	icon = 'icons/obj/64x32guns_ch.dmi' //Chomp Edit
-	icon_expected_width = 64 //Chomp EDIT
-	icon_state = "c20r"
-	item_state = "c20r"
-	w_class = ITEMSIZE_NORMAL
-	force = 10
-	caliber = "10mm"
-	slot_flags = SLOT_BELT|SLOT_BACK
-	load_method = MAGAZINE
-	magazine_type = /obj/item/ammo_magazine/m10mm
-	allowed_magazines = list(/obj/item/ammo_magazine/m10mm)
-	projectile_type = /obj/item/projectile/bullet/pistol/medium
-	auto_eject = 1
-	auto_eject_sound = 'sound/weapons/smg_empty_alarm.ogg'
-
-/obj/item/gun/projectile/automatic/c20r/rubber
-	magazine_type = /obj/item/ammo_magazine/m10mm/rubber
-
-/obj/item/gun/projectile/automatic/c20r/empty
-	magazine_type = null
-
-/obj/item/gun/projectile/automatic/c20r/update_icon()
-	..()
-	if(ammo_magazine)
-		icon_state = "c20r-[round(ammo_magazine.stored_ammo.len,4)]"
-	else
-		icon_state = "c20r"
-	return
-
- * remove: Moved to automatic_ch.dm. */
-
 /*
  * Assault Carbine (STS-35)
  */
@@ -165,8 +128,8 @@
 /obj/item/gun/projectile/automatic/wt550
 	name = "machine pistol"
 	desc = "The WT550 Saber is a cheap self-defense weapon mass-produced by Ward-Takahashi for paramilitary and private use. Uses 9mm rounds."
-	icon = 'icons/obj/64x32guns_ch.dmi' //Chomp EDIT
-	icon_expected_width = 64 //Chomp EDIT
+	icon = 'icons/obj/64x32guns_ch.dmi'
+	icon_expected_width = 64
 	icon_state = "wt550"
 	item_state = "wt550"
 	w_class = ITEMSIZE_NORMAL
@@ -198,8 +161,8 @@
 	description_fluff = "Zendai Foundries was a well-respected mid-sized arms company that operated until 2508, when it was acquired by Hephaestus Industries. \
 	Plans to integrate the brand into wider corporate operations were brought to an abrupt halt by the SolGov-Hegemony war, and the company was left by the wayside. \
 	Hephaestus still produces replacement parts for many of Zendai's most popular weapons, including the Z8 Bulldog, and a great detail remain in service."
-	icon = 'icons/obj/64x32guns_ch.dmi' //Chomp EDIT
-	icon_expected_width = 64 //Chomp EDIT
+	icon = 'icons/obj/64x32guns_ch.dmi'
+	icon_expected_width = 64
 	icon_state = "carbine" // This isn't a carbine. :T
 	item_state = "z8carbine"
 	wielded_item_state = "z8bulldog-wielded"
@@ -277,8 +240,8 @@
 	name = "light machine gun"
 	desc = "A rather sturdily made L6 SAW with a reassuringly ergonomic pistol grip. 'Hephaestus Industries' is engraved on the receiver. Uses 5.45mm rounds. It's also compatible with magazines from STS-35 assault rifles."
 	description_fluff = "The leading arms producer in the SCG, Hephaestus typically only uses its 'top level' branding for its military-grade equipment used by professional armed forces across human space."
-	icon = 'icons/obj/64x32guns_ch.dmi' //Chomp EDIT
-	icon_expected_width = 64 //Chomp EDIT
+	icon = 'icons/obj/64x32guns_ch.dmi'
+	icon_expected_width = 64
 	icon_state = "l6closed100"
 	item_state = "l6closed"
 	wielded_item_state = "genericLMG-wielded"
@@ -399,9 +362,9 @@
 	description_fluff = "Budget-grade weapons for the budget-grade consumer! Hephaestus’ low-end brand of cheaply made, low-maintenance personal defense weapons for those who just need a handgun with absolutely no frills. \
 	Early ProTek weapons were notoriously unsafe and unreliable, though more recent designs have improved somewhat - they still aren’t very good. \
 	Though sold for a pittance, the profit margin is too irresistible for Hephaestus to discontinue the brand."
-	icon = 'icons/obj/64x32guns_ch.dmi' //Chomp EDIT
-	icon_expected_width = 64 //Chomp EDIT
-	icon_state = "mini-uzi" //Chomp EDIT - uzi --> mini-uzi
+	icon = 'icons/obj/64x32guns_ch.dmi'
+	icon_expected_width = 64
+	icon_state = "mini-uzi"
 	w_class = ITEMSIZE_NORMAL
 	load_method = MAGAZINE
 	caliber = ".45"
@@ -452,29 +415,6 @@
 			transform = transform.Turn(-45)
 		transform = transform.Translate(-16,0)
 // end: Uzi tilting
-
-/* Commented out, moved to automatic_ch.dm *
-/obj/item/gun/projectile/automatic/p90
-	name = "personal defense weapon"
-	desc = "The H90K is a compact, large capacity submachine gun produced by MarsTech. Despite its fierce reputation, it still manages to feel like a toy. Uses 9mm rounds."
-	description_fluff = "The leading civilian-sector high-quality small arms brand of Hephaestus Industries, MarsTech has been the provider of choice for law enforcement and security forces for over 300 years."
-	icon_state = "p90smg"
-	item_state = "p90"
-	w_class = ITEMSIZE_NORMAL
-	caliber = "9mm"
-	slot_flags = SLOT_BELT // ToDo: Belt sprite.
-	load_method = MAGAZINE
-	magazine_type = /obj/item/ammo_magazine/m9mmp90
-	allowed_magazines = list(/obj/item/ammo_magazine/m9mmp90, /obj/item/ammo_magazine/m9mmt) // ToDo: New sprite for the different mag.
-
-	firemodes = list(
-		list(mode_name="semiauto", burst=1, fire_delay=0.1),
-		list(mode_name="3-round bursts", burst=3, fire_delay=null, move_delay=4,    burst_accuracy=list(0,-15,-15), dispersion=list(0.0, 0.6, 1.0))
-		)
-
-/obj/item/gun/projectile/automatic/p90/update_icon()
-	icon_state = "p90smg-[ammo_magazine ? round(ammo_magazine.stored_ammo.len, 6) : "empty"]"
-* Commented out, moved to automatic_ch.dm */
 
 /*
  * Tommy Gun
@@ -573,8 +513,6 @@
 	else
 		icon_state = "combatsmg-empty"
 
-
-// === merged from automatic_ch.dm during hard-fork de-suffix (verified no override-order change) ===
 //
 ///
 /// This is where reworked automatic weapons will be moved to. The P90 is an example of how these weapons should be laid out for readability (without all the comments).
@@ -701,8 +639,6 @@
 	else
 		icon_state = "[initial(icon_state)]-empty"
 
-
-// === merged from automatic_vr.dm during hard-fork de-suffix (verified no override-order change) ===
 /obj/item/gun/projectile/automatic/wt550/lethal
 	magazine_type = /obj/item/ammo_magazine/m9mmt
 
@@ -841,3 +777,77 @@
 /obj/item/ammo_magazine/m9mml/ap
 	name = "\improper SMG magazine (9mm armor-piercing)"
 	ammo_type = /obj/item/ammo_casing/a9mm/ap
+
+/obj/item/gun/projectile/automatic/mg42
+	name = "MG42"
+	desc = "Entfesseln die Holle" //Unleash the hell
+	icon = 'icons/obj/gun_yw.dmi'
+	item_icons = list(
+		slot_l_hand_str = 'icons/mob/items/lefthand_guns_yw.dmi',
+		slot_r_hand_str = 'icons/mob/items/righthand_guns_yw.dmi',
+		)
+	icon_state = "mg42closed"
+	item_state = "mg42"
+	w_class = ITEMSIZE_HUGE
+	force = 10
+	slot_flags = 0
+	max_shells = 75
+	caliber = "mauser"
+	ammo_type = "/obj/item/ammo_casing/a792x57m/lmg" // Is this really needed anymore?
+	fire_sound = 'sound/weapons/mg42.ogg'
+	load_method = MAGAZINE
+	magazine_type = /obj/item/ammo_magazine/mg42
+	allowed_magazines = list(/obj/item/ammo_magazine/mg42)
+	burst_delay = 0.5
+
+	one_handed_penalty = 6
+
+	firemodes = list(
+		list(mode_name="semiauto",       burst=1, fire_delay=0,    move_delay=null, burst_accuracy=null, dispersion=null),
+		list(mode_name="3-round bursts", burst=3, fire_delay=null, move_delay=4,    burst_accuracy=list(0,-1,-1), dispersion=list(0.0, 0.6, 1.0)),
+		list(mode_name="short bursts",	burst=5, move_delay=6, burst_accuracy = list(0,-1,-1,-2,-2), dispersion = list(0.6, 1.0, 1.0, 1.0, 1.2)),
+		list(mode_name="15-round bursts.. unleash hell",	burst=15, move_delay=6, burst_accuracy = list(0,-1,-1,-2,-2,-2,-2,-2,-2,-2,-2,-2,-2,-2,-2), dispersion = list(0.6, 1.0, 1.0, 1.0, 1.2, 1.2, 1.2, 1.2, 1.2, 1.2, 1.2, 1.2, 1.2, 1.2, 1.2))
+		)
+
+	var/cover_open = 0
+
+/obj/item/gun/projectile/automatic/mg42/special_check(mob/user)
+	if(cover_open)
+		to_chat(user, span_warning("[src]'s cover is open! Close it before firing!"))
+		return 0
+	return ..()
+
+/obj/item/gun/projectile/automatic/mg42/proc/toggle_cover(mob/user)
+	cover_open = !cover_open
+	to_chat(user, span_notice("You [cover_open ? "open" : "close"] [src]'s cover."))
+	update_icon()
+	update_held_icon()
+
+/obj/item/gun/projectile/automatic/mg42/attack_self(mob/user as mob)
+	if(cover_open)
+		toggle_cover(user) //close the cover
+	else
+		return ..() //once closed, behave like normal
+
+/obj/item/gun/projectile/automatic/mg42/attack_hand(mob/user as mob)
+	if(!cover_open && user.get_inactive_hand() == src)
+		toggle_cover(user) //open the cover
+	else
+		return ..() //once open, behave like normal
+
+/obj/item/gun/projectile/automatic/mg42/update_icon()
+	icon_state = "mg42[cover_open ? "open" : "closed"][ammo_magazine ? "" : "-empty"][cover_open && ammo_magazine && ammo_magazine.stored_ammo.len == 0 ? "0" : ""]"
+	item_state = "mg42"
+	update_held_icon()
+
+/obj/item/gun/projectile/automatic/mg42/load_ammo(obj/item/A, mob/user)
+	if(!cover_open)
+		to_chat(user, span_warning("You need to open the cover to load [src]."))
+		return
+	..()
+
+/obj/item/gun/projectile/automatic/mg42/unload_ammo(mob/user, allow_dump=1)
+	if(!cover_open)
+		to_chat(user, span_warning("You need to open the cover to unload [src]."))
+		return
+	..()

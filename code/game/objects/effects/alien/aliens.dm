@@ -90,11 +90,6 @@
 
 	linked_node = src
 
-//	if(newcolor)
-//		set_color = newcolor
-//	if(set_color)
-// color = set_color // Removing coloration.
-
 	START_PROCESSING(SSobj, src) // Only the node processes in a subsystem, the rest are process()'d by the node
 
 /obj/effect/alien/weeds/node/Destroy()
@@ -214,7 +209,7 @@
 	take_damage(damage, BRUTE, MELEE, sound_effect = FALSE)
 	return
 
-/obj/effect/alien/weeds/fire_act(datum/gas_mixture/air, exposed_temperature, exposed_volume)
+/obj/effect/alien/weeds/fire_act(exposed_temperature, exposed_volume)
 	if(exposed_temperature > 300 + T0C)
 		take_damage(5, BURN)
 

@@ -111,7 +111,6 @@
 		M.update_inv_l_hand(0)
 		M.update_inv_r_hand(1)
 
-
 /obj/item/clothing/mask/smokable/ecig/attackby(obj/item/I, mob/user as mob)
 	if(istype(I, /obj/item/reagent_containers/ecig_cartridge))
 		if (ec_cartridge)//can't add second one
@@ -257,14 +256,3 @@
 	reagents.add_reagent(REAGENT_ID_NICOTINE, 5)
 	reagents.add_reagent(REAGENT_ID_WATER, 10)
 	reagents.add_reagent(REAGENT_ID_COFFEE, 5)
-/*
-/obj/item/reagent_containers/ecig_cartridge/cannabis
-	name = "herb flavour cartridge"
-	desc = "A small metal cartridge which contains an atomizing coil and a solution to be atomized. The label seems to be suspiciously scuffed off..."
-
-/obj/item/reagent_containers/ecig_cartridge/cannabis/Initialize(mapload)
-	. = ..()
-	reagents.add_reagent(REAGENT_ID_NICOTINE, 5)
-	reagents.add_reagent(REAGENT_ID_WATER, 10)
-	reagents.add_reagent("cannabis", 5)
-*/

@@ -25,7 +25,7 @@
 		"Stitch the soft tissue closed.",
 	)
 	tools = list("Scalpel", "Hemostat", "Bone gel", "Bone setter", "Cautery")
-	treats = list(/datum/medical_issue/condition/untreated_fracture)
+	treats = list(/datum/affliction/untreated_fracture)
 	completion_step = /datum/surgery_step/bones/finish_bone
 
 
@@ -45,8 +45,9 @@
 	)
 	tools = list("Scalpel", "Hemostat", "Fixovein", "Cautery")
 	treats = list(
-		/datum/medical_issue/condition/lacerated_artery,
-		/datum/medical_issue/condition/internal_hemorrhage,
+		/datum/affliction/lacerated_artery,
+		/datum/affliction/internal_hemorrhage,
+		/datum/affliction/wound/internal_bleeding,
 	)
 	completion_step = /datum/surgery_step/fix_vein
 
@@ -66,7 +67,7 @@
 		"Seal the closure and stitch the tissue.",
 	)
 	tools = list("Scalpel", "Hemostat", "Surgical stapler", "Cautery")
-	treats = list(/datum/medical_issue/condition/tendon_severed)
+	treats = list(/datum/affliction/tendon_severed)
 	completion_step = /datum/surgery_step/fix_tendon
 
 
@@ -83,7 +84,7 @@
 		"Stitch the wound closed.",
 	)
 	tools = list("Scalpel", "Sterile solution", "Cautery")
-	treats = list(/datum/medical_issue/condition/tissue_necrosis)
+	treats = list(/datum/affliction/tissue_necrosis)
 	completion_step = /datum/surgery_step/necrotic/fix_dead_tissue
 
 
@@ -100,7 +101,7 @@
 		"Pack the wound open for delayed closure.",
 	)
 	tools = list("Scalpel", "Hemostat")
-	treats = list(/datum/medical_issue/condition/compartment_syndrome)
+	treats = list(/datum/affliction/compartment_syndrome)
 	completion_step = /datum/surgery_step/fasciotomy
 
 
@@ -119,7 +120,7 @@
 		"Place the chest tube and secure it.",
 	)
 	tools = list("Scalpel", "Hemostat")
-	treats = list(/datum/medical_issue/condition/tension_pneumothorax)
+	treats = list(/datum/affliction/pneumothorax)
 	completion_step = /datum/surgery_step/chest_tube
 
 
@@ -136,7 +137,7 @@
 		"Close the chest cavity in layers.",
 	)
 	tools = list("Scalpel", "Retractor", "Hemostat", "Fixovein", "Bone gel", "Cautery")
-	treats = list(/datum/medical_issue/condition/respiratory_failure)
+	treats = list(/datum/affliction/respiratory_failure)
 	completion_step = /datum/surgery_step/internal/fix_organ
 	heals_organs = list(O_LUNGS)
 	// Mechanical lung repair drops severity substantially but doesn't
@@ -170,7 +171,7 @@
 		"Close the scalp.",
 	)
 	tools = list("Scalpel", "Circular saw", "Retractor", "Hemostat", "Bone gel")
-	treats = list(/datum/medical_issue/condition/subdural_hematoma)
+	treats = list(/datum/affliction/subdural_hematoma)
 	completion_step = /datum/surgery_step/internal/fix_organ
 	// Heals the brain organ damage that the bleed inflicted — but not
 	// brain_damage condition itself (it isn't in `treats`). If the
@@ -195,7 +196,7 @@
 		"Close the chest in layers.",
 	)
 	tools = list("Scalpel", "Retractor", "Hemostat", "Fixovein", "Bone gel", "Cautery")
-	treats = list(/datum/medical_issue/condition/heart_damage)
+	treats = list(/datum/affliction/heart_damage)
 	completion_step = /datum/surgery_step/cardiac_repair
 	// Cardiac repair is severe surgery: drops 60 severity. A patient in
 	// cardiac arrest (severity ~80+) is dropped to cardiogenic shock
@@ -220,7 +221,7 @@
 		"Wash out the cavity and close in layers.",
 	)
 	tools = list("Scalpel", "Retractor", "Hemostat", "Fixovein", "Cautery")
-	treats = list(/datum/medical_issue/condition/internal_hemorrhage)
+	treats = list(/datum/affliction/internal_hemorrhage)
 	completion_step = /datum/surgery_step/exploratory_laparotomy
 
 
@@ -240,8 +241,8 @@
 	)
 	tools = list("Scalpel", "Sterile solution", "Hemostat")
 	treats = list(
-		/datum/medical_issue/condition/wound_infection,
-		/datum/medical_issue/condition/cellulitis,
+		/datum/affliction/wound_infection,
+		/datum/affliction/cellulitis,
 	)
 	completion_step = /datum/surgery_step/necrotic/treat_necrosis
 
@@ -261,5 +262,5 @@
 		"Close the incision with fine sutures.",
 	)
 	tools = list("Scalpel", "Retractor", "Fixovein", "Cautery")
-	treats = list(/datum/medical_issue/condition/ischemic_vision_loss)
+	treats = list(/datum/affliction/ischemic_vision_loss)
 	completion_step = /datum/surgery_step/retinal_repair

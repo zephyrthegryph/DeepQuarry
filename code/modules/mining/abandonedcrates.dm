@@ -228,7 +228,6 @@ vorestation edit end */
 	return ..()
 
 
-// === merged from abandonedcrates_vr.dm during hard-fork de-suffix (verified no override-order change) ===
 /obj/structure/closet/crate/secure/loot
 	tamper_proof = 2
 

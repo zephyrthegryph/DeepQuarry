@@ -79,24 +79,6 @@
 		. += span_notice("Drag towards a direction (while next to it) to change drop direction.")
 	. += span_notice("Its maintenance panel is [!panel_open ? "closed" : "open"].")
 
-/*
-/obj/machinery/autolathe/add_context(atom/source, list/context, obj/item/held_item, mob/user)
-	if(drop_direction)
-		context[SCREENTIP_CONTEXT_ALT_LMB] = "Reset Drop"
-		return CONTEXTUAL_SCREENTIP_SET
-
-	if(isnull(held_item))
-		return NONE
-
-	if(held_item.tool_behaviour == TOOL_SCREWDRIVER)
-		context[SCREENTIP_CONTEXT_LMB] = "[panel_open ? "Close" : "Open"] Panel"
-		return CONTEXTUAL_SCREENTIP_SET
-
-	if(panel_open && held_item.tool_behaviour == TOOL_CROWBAR)
-		context[SCREENTIP_CONTEXT_LMB] = "Deconstruct"
-		return CONTEXTUAL_SCREENTIP_SET
-*/
-
 /obj/machinery/autolathe/crowbar_act(mob/living/user, obj/item/tool)
 	return ..()
 
@@ -316,7 +298,6 @@
 			target_location = get_turf(src)
 	else
 		target_location = get_turf(src)
-
 
 	addtimer(CALLBACK(src, PROC_REF(do_make_item), design, build_count, build_time_per_item, material_cost_coefficient, charge_per_item, materials_needed, target_location, chosen_materials), build_time_per_item)
 	return TRUE

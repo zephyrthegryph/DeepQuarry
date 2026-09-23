@@ -1,6 +1,6 @@
 // DQ Medical Reference — Conditions tab builder.
 //
-// Walks every /datum/medical_issue/condition subtype, instantiates a
+// Walks every /datum/affliction subtype, instantiates a
 // prototype, and emits one TGUI entry per condition: clinical picture,
 // cures (with cure-type curative/stabilising), worsens, caused-by
 // causes, forward complications (via severity_gate + organ_damage
@@ -8,8 +8,8 @@
 
 /obj/item/book/dq_medical_reference/proc/_dq_book_conditions()
 	var/list/out = list()
-	for(var/T in subtypesof(/datum/medical_issue/condition))
-		var/datum/medical_issue/condition/proto = dq_proto(T)
+	for(var/T in dq_catalogued_affliction_types())
+		var/datum/affliction/proto = dq_proto(T)
 		var/list/entry = list()
 		entry["id"]              = "[T]"
 		entry["name"]            = proto.name
@@ -26,15 +26,33 @@
 			entry["progression"] = dq_describe_progression(proto.progression_rate)
 
 		// Cures and worsens.
+		// Cures resolve treatment tags to concrete reagents so the reader
+		// sees every drug that works, generics included.
 		var/list/cures = list()
-		if(proto.cured_by)
-			for(var/id in proto.cured_by)
-				cures += list(list(
-					"id"   = id,
-					"name" = dq_reagent_display_name(id),
-					"band" = dq_describe_cure_strength(proto.cured_by[id]),
-				))
+		var/list/effective_cures = proto.effective_cures()
+		for(var/id in effective_cures)
+			cures += list(list(
+				"id"   = id,
+				"name" = dq_reagent_display_name(id),
+				"band" = dq_describe_cure_strength(effective_cures[id]),
+			))
 		entry["cures"] = cures
+		// The mechanisms themselves, so a doctor can reason about
+		// unlisted treatments that carry the same tag.
+		var/list/mechanisms = list()
+		for(var/tag in proto.treated_by)
+			mechanisms += list(list(
+				"name" = dq_treatment_tag_name(tag),
+				"band" = dq_describe_cure_strength(proto.treated_by[tag]),
+			))
+		entry["mechanisms"] = mechanisms
+		var/list/harmful_mechanisms = list()
+		for(var/tag in proto.worsened_by_tags)
+			harmful_mechanisms += list(list(
+				"name" = dq_treatment_tag_name(tag),
+				"band" = dq_describe_worsen_strength(proto.worsened_by_tags[tag]),
+			))
+		entry["harmful_mechanisms"] = harmful_mechanisms
 		// Niche overdose cures: any reagent whose OD condition lists
 		// THIS condition in its od_cures_externally drains. These are
 		// dangerous-but-effective backup cures (bicaridine OD draining
@@ -43,8 +61,8 @@
 		// this condition's cures sees both the safe path and the
 		// chemical brute-force path.
 		var/list/od_cures = list()
-		for(var/CT in subtypesof(/datum/medical_issue/condition))
-			var/datum/medical_issue/condition/od_proto = dq_proto(CT)
+		for(var/CT in dq_catalogued_affliction_types())
+			var/datum/affliction/od_proto = dq_proto(CT)
 			if(od_proto.subcategory != "Overdose")
 				continue
 			if(!length(od_proto.od_cures_externally))
@@ -71,13 +89,13 @@
 		entry["cure_type"] = _dq_cure_type_for(T)
 
 		var/list/worsens = list()
-		if(proto.worsened_by)
-			for(var/id in proto.worsened_by)
-				worsens += list(list(
-					"id"   = id,
-					"name" = dq_reagent_display_name(id),
-					"band" = dq_describe_worsen_strength(proto.worsened_by[id]),
-				))
+		var/list/effective_worsens = proto.effective_worsens()
+		for(var/id in effective_worsens)
+			worsens += list(list(
+				"id"   = id,
+				"name" = dq_reagent_display_name(id),
+				"band" = dq_describe_worsen_strength(effective_worsens[id]),
+			))
 		entry["worsens"] = worsens
 
 		// Causes: every cause whose `produces` lists this type. The
@@ -90,9 +108,9 @@
 		// than synthesising a cause datum: the OD itself IS the cause
 		// of the complication.
 		var/list/causes = list()
-		for(var/datum/dq_cause/c as anything in dq_causes_producing(T))
-			causes += list(_dq_cause_link(c))
-		for(var/datum/medical_issue/condition/od_proto as anything in _dq_conditions_spawning(T))
+		for(var/datum/affliction_trigger/c as anything in affliction_triggers_producing(T))
+			causes += list(_affliction_trigger_link(c))
+		for(var/datum/affliction/od_proto as anything in _dq_conditions_spawning(T))
 			causes += list(list(
 				"id"   = "[od_proto.type]",
 				"name" = "[od_proto.name] (Critical)",
@@ -137,10 +155,10 @@
 		// the heart which the same cause watches).
 		var/list/complications = list()
 		var/list/comp_seen_causes = list()  // dedupe cause groups across all sources
-		for(var/datum/dq_cause/severity_gate/g as anything in dq_severity_gates_from(T))
+		for(var/datum/affliction_trigger/progression/g as anything in affliction_progression_gates_from(T))
 			var/list/produced = list()
 			var/list/seen = list()
-			for(var/datum/dq_cause_outcome/o as anything in g.produces)
+			for(var/datum/affliction_trigger_outcome/o as anything in g.produces)
 				if(o.condition_type == T)
 					continue
 				if(seen["[o.condition_type]"])
@@ -163,7 +181,7 @@
 		// surfaces here, alongside mob-wide damage types (tox/oxy) which
 		// resolve to their metric_threshold cause.
 		var/list/dam_pairs = list()  // "type|tag" → TRUE for dedupe
-		_dq_collect_damage_pairs(proto.organ_damage_type, proto.organ_damage_targets, proto.organ_damage_per_tick, proto.affectedorgan, proto.caused_by_chems_organ, dam_pairs)
+		_dq_collect_damage_pairs(proto.organ_damage_type, proto.organ_damage_targets, proto.organ_damage_per_tick, proto.location, proto.caused_by_chems_organ, dam_pairs)
 		var/list/proto_stages = proto.get_stages()
 		if(islist(proto_stages))
 			for(var/sid in proto_stages)
@@ -173,7 +191,7 @@
 				var/sd_type = isnull(sd["organ_damage_type"]) ? proto.organ_damage_type : sd["organ_damage_type"]
 				var/list/sd_targets = isnull(sd["organ_damage_targets"]) ? proto.organ_damage_targets : sd["organ_damage_targets"]
 				var/sd_rate = isnull(sd["organ_damage_per_tick"]) ? proto.organ_damage_per_tick : sd["organ_damage_per_tick"]
-				_dq_collect_damage_pairs(sd_type, sd_targets, sd_rate, proto.affectedorgan, proto.caused_by_chems_organ, dam_pairs)
+				_dq_collect_damage_pairs(sd_type, sd_targets, sd_rate, proto.location, proto.caused_by_chems_organ, dam_pairs)
 		// For each damage (type, tag) pair, find the matching cause and
 		// emit it as a complication group whose conditions are the
 		// failures the cause spawns.
@@ -181,13 +199,23 @@
 			var/list/parts = splittext(pair_key, "|")
 			var/dt = parts[1]
 			var/tag = (length(parts) >= 2) ? parts[2] : ""
-			var/datum/dq_cause/dc
-			if(dt == "tox")
-				dc = _dq_metric_cause_for("toxloss")
-			else if(dt == "oxy")
-				dc = _dq_metric_cause_for("oxyloss")
-			else
-				dc = _dq_organ_damage_cause_for(tag)
+			// Systemic toxin / asphyxia injury feeds the systemic
+			// afflictions directly — no trigger record in between.
+			if(dt == "tox" || dt == "oxy")
+				var/pool_type = (dt == "tox") ? /datum/affliction/toxic_poisoning : /datum/affliction/tissue_hypoxia
+				if(pool_type == T || comp_seen_causes["[pool_type]"])
+					continue
+				comp_seen_causes["[pool_type]"] = TRUE
+				complications += list(list(
+					"cause_id"   = null,
+					"cause_name" = (dt == "tox") ? "Systemic toxicity" : "Systemic oxygen debt",
+					"conditions" = list(list(
+						"id"   = "[pool_type]",
+						"name" = _dq_condition_name(pool_type),
+					)),
+				))
+				continue
+			var/datum/affliction_trigger/dc = _dq_organ_damage_cause_for(tag)
 			if(!dc)
 				continue
 			if(comp_seen_causes["[dc.type]"])
@@ -195,7 +223,7 @@
 			comp_seen_causes["[dc.type]"] = TRUE
 			var/list/produced = list()
 			var/list/seen = list()
-			for(var/datum/dq_cause_outcome/o as anything in dc.produces)
+			for(var/datum/affliction_trigger_outcome/o as anything in dc.produces)
 				if(o.condition_type == T)
 					continue
 				if(seen["[o.condition_type]"])
@@ -266,9 +294,9 @@
 		if(stages)
 			for(var/stage_id in stages)
 				var/list/sd = stages[stage_id]
-				stages_out += list(_dq_emit_stage(stage_id, sd["name"], sd["description"], sd["symptom_pool"], sd["mechanical_effects"], sd["vital_effects"]))
+				stages_out += list(_dq_emit_stage(stage_id, sd["name"], sd["description"], sd["symptom_pool"], body_factor_describe(sd["factors"])))
 		else
-			stages_out += list(_dq_emit_stage(null, null, null, proto.symptom_pool, proto.mechanical_effects, proto.get_vital_effects()))
+			stages_out += list(_dq_emit_stage(null, null, null, proto.symptom_pool, body_factor_describe(proto.factors, " at full severity")))
 		entry["stages"] = stages_out
 		// Keep entry["symptoms"] for back-compat: union of all stages'
 		// symptoms so a casual reader sees what the condition can show.
@@ -287,32 +315,24 @@
 
 
 /// Build one stage entry for the book: id, name (override), description,
-/// symptom list with frequency bands, mechanical effects, vital effects.
-/proc/_dq_emit_stage(stage_id, stage_name, stage_desc, list/symptom_pool, list/mechanical_effects, list/vital_effects)
+/// symptom list with frequency bands, and the body-factor effects (lines
+/// from body_factor_describe()).
+/proc/_dq_emit_stage(stage_id, stage_name, stage_desc, list/symptom_pool, list/effects)
 	var/list/syms = list()
 	if(symptom_pool)
 		for(var/sym_path in symptom_pool)
-			var/datum/medical_symptom/S = dq_proto(sym_path)
+			var/datum/affliction_symptom/S = dq_proto(sym_path)
 			syms += list(list(
 				"id"        = "[sym_path]",
 				"name"      = S.name,
 				"frequency" = dq_describe_symptom_frequency(symptom_pool[sym_path]),
 			))
-	var/list/mech = list()
-	if(mechanical_effects)
-		for(var/k in mechanical_effects)
-			mech += list(list("key" = k, "value" = "[mechanical_effects[k]]"))
-	var/list/vit = list()
-	if(vital_effects)
-		for(var/k in vital_effects)
-			vit += list(list("key" = k, "value" = "[vital_effects[k]]"))
 	return list(
-		"id"                = stage_id,
-		"name"              = stage_name,
-		"description"       = stage_desc,
-		"symptoms"          = syms,
-		"mechanical_effects" = mech,
-		"vital_effects"     = vit,
+		"id"          = stage_id,
+		"name"        = stage_name,
+		"description" = stage_desc,
+		"symptoms"    = syms,
+		"effects"     = effects || list(),
 	)
 
 
@@ -323,10 +343,10 @@
 /proc/_dq_collect_damage_pairs(damage_type, list/organ_targets, rate, default_organ, fallback_organ, list/out)
 	if(!damage_type || !rate || rate <= 0)
 		return
-	if(damage_type == "tox")
+	if(damage_type == INJURY_TOXIN)
 		out["tox|"] = TRUE
 		return
-	if(damage_type == "oxy")
+	if(damage_type == INJURY_ASPHYXIA)
 		out["oxy|"] = TRUE
 		return
 	var/list/tags = list()
@@ -341,25 +361,13 @@
 		out["[damage_type]|[tag]"] = TRUE
 
 
-/// Find the /datum/dq_cause/organ_damage subtype watching a given organ
+/// Find the /datum/affliction_trigger/organ_integrity subtype watching a given organ
 /// tag. Returns null when no cause is registered for that organ.
 /proc/_dq_organ_damage_cause_for(organ_tag)
 	if(!organ_tag)
 		return null
-	for(var/datum/dq_cause/organ_damage/c as anything in dq_causes_of_kind("/datum/dq_cause/organ_damage"))
+	for(var/datum/affliction_trigger/organ_integrity/c as anything in affliction_triggers_of_kind("/datum/affliction_trigger/organ_integrity"))
 		if(c.organ == organ_tag)
-			return c
-	return null
-
-
-/// Find the /datum/dq_cause/metric_threshold subtype watching a given
-/// scalar metric (e.g. "toxloss", "oxyloss"). Used by the Complications
-/// builder to map mob-wide damage types to their umbrella cause.
-/proc/_dq_metric_cause_for(metric_name)
-	if(!metric_name)
-		return null
-	for(var/datum/dq_cause/metric_threshold/c as anything in dq_causes_of_kind("/datum/dq_cause/metric_threshold"))
-		if(c.metric == metric_name)
 			return c
 	return null
 
@@ -370,8 +378,8 @@
 /// they hardwire-spawn at Critical stage.
 /proc/_dq_conditions_spawning(target_type)
 	var/list/out = list()
-	for(var/CT in subtypesof(/datum/medical_issue/condition))
-		var/datum/medical_issue/condition/cproto = dq_proto(CT)
+	for(var/CT in dq_catalogued_affliction_types())
+		var/datum/affliction/cproto = dq_proto(CT)
 		var/list/stages = cproto.get_stages()
 		if(!islist(stages))
 			continue

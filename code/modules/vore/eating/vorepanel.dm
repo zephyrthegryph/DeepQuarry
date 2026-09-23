@@ -268,7 +268,7 @@
 			return pick_from_outside(ui.user, params)
 
 		if("newbelly")
-			if(host.vore_organs.len >= BELLIES_MAX)
+			if(length(host.vore_organs) >= BELLIES_MAX)
 				return FALSE
 
 			var/new_name = sanitize(params["val"], BELLIES_NAME_MAX, FALSE, TRUE, FALSE)
@@ -1125,7 +1125,7 @@
 			var/list/viable_candidates = list()
 			for(var/mob/living/candidate in range(1, host))
 				if(istype(candidate) && !(candidate == host))
-					if(candidate.vore_organs.len && candidate.feeding && !candidate.no_vore)
+					if(length(candidate.vore_organs) && candidate.feeding && !candidate.no_vore)
 						viable_candidates += candidate
 			if(!viable_candidates.len)
 				to_chat(user, span_notice("There are no viable candidates around you!"))
@@ -1197,34 +1197,22 @@
 					var/mob/living/body_backup = T.body_backup
 					if(ishuman(body_backup))
 						var/mob/living/carbon/human/H = body_backup
-						H.setOxyLoss(0)
-						if(H.isSynthetic())
-							H.adjustToxLoss(-H.getToxLoss())
-						else
-							H.adjustToxLoss(-25)
-						if(H.health <= -H.getMaxHealth())
-							H.adjustBruteLoss(-25)
-							H.adjustFireLoss(-25)
-							H.adjustCloneLoss(-25)
-
-							//This looks how much health we need to get to 'barely in crit'
-							//We heal up to that point here, starting with toxins and moving up to the harder to heal types.
-							//Once we heal one type, we check again to see if we're still dead. If so, we heal the next type in the list.
-							if(H.health <= -H.getMaxHealth())
-								var/barely_in_crit = -(H.get_crit_point() - 1)
-								var/adjust_health = barely_in_crit - H.health
-								if(adjust_health < 0)
-									adjust_health *= -1
-
-								H.adjustToxLoss(adjust_health)
-								if(H.health <= -H.getMaxHealth())
-									H.adjustFireLoss(adjust_health)
-								if(H.health <= -H.getMaxHealth())
-									H.adjustBruteLoss(adjust_health)
-								if(H.health <= -H.getMaxHealth())
-									H.adjustCloneLoss(adjust_health)
-
-						body_backup.updatehealth()
+						H.mend(TREAT_OXYGENATION, 1000)
+						H.mend(TREAT_ANTITOXIN, 25)
+						H.mend(TREAT_SYSTEM_RESTORE, 1000)
+						if(H.vitality() <= 0)
+							var/static/list/reform_treatments = list(TREAT_ANTITOXIN, TREAT_BURN_CARE, TREAT_WIRING_REPAIR, TREAT_TISSUE_REPAIR, TREAT_PLATING_REPAIR, TREAT_GENETIC_REPAIR)
+							for(var/treat_tag in reform_treatments)
+								H.mend(treat_tag, 25)
+							//Heal up to 'barely in crit', starting with toxins and moving up to the harder to heal types.
+							//Once one mechanism has nothing left to fix, move on to the next; stop as soon as the body is viable again.
+							for(var/treat_tag in reform_treatments)
+								var/guard = 20
+								while(H.vitality() <= 0 && guard-- > 0)
+									if(!H.mend(treat_tag, 10))
+										break
+								if(H.vitality() > 0)
+									break
 						// Now we do the check to see if we should revive...
 						var/should_proceed_with_revive = TRUE
 						var/obj/item/organ/internal/brain/brain = H.internal_organs_by_name[O_BRAIN]
@@ -1269,10 +1257,12 @@
 					announce_ghost_joinleave(T.mind, 0, "They now occupy their body again.")
 			else if(istype(target,/obj/item/mmi)) // A good bit of repeated code, sure, but... cleanest way to do this.
 				var/obj/item/mmi/MMI = target
-				if(!ismob(MMI.body_backup) || !MMI.brainmob.mind || GLOB.prevent_respawns.Find(MMI.brainmob.mind.name))
+				var/mob/living/carbon/brain/mmi_occupant = MMI.get_occupant()
+				var/datum/component/mind_host/mmi_host = get_mind_host(MMI)
+				if(!ismob(MMI.body_backup) || !mmi_occupant?.mind || GLOB.prevent_respawns.Find(mmi_occupant.mind.name))
 					to_chat(user,span_warning("They don't seem to be reformable!"))
 					return TRUE
-				var/accepted = tgui_alert(MMI.brainmob, "[host] is trying to reform your body! Would you like to get reformed inside [host]'s [lowertext(host.vore_selected.name)]?", "Reforming Attempt", list("Yes", "No"))
+				var/accepted = tgui_alert(mmi_occupant, "[host] is trying to reform your body! Would you like to get reformed inside [host]'s [lowertext(host.vore_selected.name)]?", "Reforming Attempt", list("Yes", "No"))
 				if(accepted != "Yes")
 					to_chat(user,span_warning("[MMI] refused to be reformed!"))
 					return TRUE
@@ -1287,10 +1277,10 @@
 					if(isrobot(body_backup)) //Just do the reverse of getting the MMI pulled out in /obj/belly/proc/digestion_death
 						var/mob/living/silicon/robot/R = body_backup
 						R.revive()
-						MMI.brainmob.mind.transfer_to(R)
+						mmi_host.release_mind(R, "reformed by [key_name(user)]")
 						MMI.loc = R
 						R.mmi = MMI
-						R.mmi.brainmob.add_language(LANGUAGE_ROBOT_TALK)
+						R.add_language(LANGUAGE_ROBOT_TALK)
 					else //reference /datum/surgery_step/robotics/install_mmi/end_step
 						var/obj/item/organ/internal/mmi_holder/holder
 						if(istype(MMI, /obj/item/mmi/digital/posibrain))
@@ -1306,17 +1296,16 @@
 						holder.stored_mmi = MMI
 						holder.update_from_mmi()
 
-						if(MMI.brainmob && MMI.brainmob.mind)
-							MMI.brainmob.mind.transfer_to(body_backup)
-							body_backup.languages = MMI.brainmob.languages
+						mmi_host.release_mind(body_backup, "reformed by [key_name(user)]")
 						//You've hopefully already named yourself, so... not implementing that bit.
 						var/mob/living/carbon/human/H = body_backup
-						body_backup.adjustBruteLoss(-6, TRUE)
-						body_backup.adjustFireLoss(-6, TRUE)
-						body_backup.setOxyLoss(0)
-						H.adjustToxLoss(-H.getToxLoss())
-						body_backup.adjustCloneLoss(-6)
-						body_backup.updatehealth()
+						body_backup.mend(TREAT_TISSUE_REPAIR, 6)
+						body_backup.mend(TREAT_PLATING_REPAIR, 6)
+						body_backup.mend(TREAT_BURN_CARE, 6)
+						body_backup.mend(TREAT_WIRING_REPAIR, 6)
+						body_backup.mend(TREAT_OXYGENATION, 1000)
+						H.mend(TREAT_ANTITOXIN, 1000)
+						body_backup.mend(TREAT_GENETIC_REPAIR, 6)
 						// Now we do the check to see if we should revive...
 						var/should_proceed_with_revive = TRUE
 						var/obj/item/organ/internal/brain/brain = H.internal_organs_by_name[O_BRAIN]
@@ -1344,7 +1333,7 @@
 			return TRUE
 		if("Health")
 			var/mob/living/ourtarget = target
-			to_chat(user, span_notice("Current health reading for \The [ourtarget]: [ourtarget.health] / [ourtarget.getMaxHealth()] "))
+			to_chat(user, span_notice("Current health reading for \The [ourtarget]: [round(ourtarget.vitality() * 100)]%"))
 			return TRUE
 		if("Process")
 			var/mob/living/ourtarget = target
@@ -1388,7 +1377,7 @@
 					return FALSE
 		if("Health Check")
 			var/mob/living/carbon/human/H = target
-			var/target_health = round((H.health/H.getMaxHealth())*100)
+			var/target_health = round(H.vitality() * 100)
 			var/condition
 			var/condition_consequences
 			to_chat(user, span_vwarning("\The [target] is at [target_health]% health."))

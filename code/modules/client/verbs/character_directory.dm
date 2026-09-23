@@ -114,23 +114,23 @@ GLOBAL_LIST_EMPTY(chardirectory_photos)
 						strangername = "unknown"
 			name = strangername
 			species = "[H.custom_species ? H.custom_species : H.species.name]"
-			ooc_notes = H.ooc_notes
-			if(H.ooc_notes_style && (H.ooc_notes_favs || H.ooc_notes_likes || H.ooc_notes_maybes || H.ooc_notes_dislikes))
-				ooc_notes = H.ooc_notes + "\n\n"
-				ooc_notes_favs = H.ooc_notes_favs
-				ooc_notes_likes = H.ooc_notes_likes
-				ooc_notes_maybes = H.ooc_notes_maybes
-				ooc_notes_dislikes = H.ooc_notes_dislikes
-				ooc_notes_style = H.ooc_notes_style
+			ooc_notes = H.identity.ooc_notes
+			if(H.identity.ooc_notes_style && (H.identity.ooc_notes_favs || H.identity.ooc_notes_likes || H.identity.ooc_notes_maybes || H.identity.ooc_notes_dislikes))
+				ooc_notes = H.identity.ooc_notes + "\n\n"
+				ooc_notes_favs = H.identity.ooc_notes_favs
+				ooc_notes_likes = H.identity.ooc_notes_likes
+				ooc_notes_maybes = H.identity.ooc_notes_maybes
+				ooc_notes_dislikes = H.identity.ooc_notes_dislikes
+				ooc_notes_style = H.identity.ooc_notes_style
 			else
-				if(H.ooc_notes_favs)
-					ooc_notes += "\n\nFAVOURITES\n\n[H.ooc_notes_favs]"
-				if(H.ooc_notes_likes)
-					ooc_notes += "\n\nLIKES\n\n[H.ooc_notes_likes]"
-				if(H.ooc_notes_maybes)
-					ooc_notes += "\n\nMAYBES\n\n[H.ooc_notes_maybes]"
-				if(H.ooc_notes_dislikes)
-					ooc_notes += "\n\nDISLIKES\n\n[H.ooc_notes_dislikes]"
+				if(H.identity.ooc_notes_favs)
+					ooc_notes += "\n\nFAVOURITES\n\n[H.identity.ooc_notes_favs]"
+				if(H.identity.ooc_notes_likes)
+					ooc_notes += "\n\nLIKES\n\n[H.identity.ooc_notes_likes]"
+				if(H.identity.ooc_notes_maybes)
+					ooc_notes += "\n\nMAYBES\n\n[H.identity.ooc_notes_maybes]"
+				if(H.identity.ooc_notes_dislikes)
+					ooc_notes += "\n\nDISLIKES\n\n[H.identity.ooc_notes_dislikes]"
 			if(LAZYLEN(H.flavor_texts))
 				flavor_text = H.flavor_texts["general"]
 			if(H.custom_link)
@@ -140,23 +140,23 @@ GLOBAL_LIST_EMPTY(chardirectory_photos)
 			var/mob/living/silicon/ai/A = C.mob
 			name = A.name
 			species = "Artificial Intelligence"
-			ooc_notes = A.ooc_notes
-			if(A.ooc_notes_style && (A.ooc_notes_favs || A.ooc_notes_likes || A.ooc_notes_maybes || A.ooc_notes_dislikes))
-				ooc_notes = A.ooc_notes + "\n\n"
-				ooc_notes_favs = A.ooc_notes_favs
-				ooc_notes_likes = A.ooc_notes_likes
-				ooc_notes_maybes = A.ooc_notes_maybes
-				ooc_notes_dislikes = A.ooc_notes_dislikes
-				ooc_notes_style = A.ooc_notes_style
+			ooc_notes = A.identity.ooc_notes
+			if(A.identity.ooc_notes_style && (A.identity.ooc_notes_favs || A.identity.ooc_notes_likes || A.identity.ooc_notes_maybes || A.identity.ooc_notes_dislikes))
+				ooc_notes = A.identity.ooc_notes + "\n\n"
+				ooc_notes_favs = A.identity.ooc_notes_favs
+				ooc_notes_likes = A.identity.ooc_notes_likes
+				ooc_notes_maybes = A.identity.ooc_notes_maybes
+				ooc_notes_dislikes = A.identity.ooc_notes_dislikes
+				ooc_notes_style = A.identity.ooc_notes_style
 			else
-				if(A.ooc_notes_favs)
-					ooc_notes += "\n\nFAVOURITES\n\n[A.ooc_notes_favs]"
-				if(A.ooc_notes_likes)
-					ooc_notes += "\n\nLIKES\n\n[A.ooc_notes_likes]"
-				if(A.ooc_notes_maybes)
-					ooc_notes += "\n\nMAYBES\n\n[A.ooc_notes_maybes]"
-				if(A.ooc_notes_dislikes)
-					ooc_notes += "\n\nDISLIKES\n\n[A.ooc_notes_dislikes]"
+				if(A.identity.ooc_notes_favs)
+					ooc_notes += "\n\nFAVOURITES\n\n[A.identity.ooc_notes_favs]"
+				if(A.identity.ooc_notes_likes)
+					ooc_notes += "\n\nLIKES\n\n[A.identity.ooc_notes_likes]"
+				if(A.identity.ooc_notes_maybes)
+					ooc_notes += "\n\nMAYBES\n\n[A.identity.ooc_notes_maybes]"
+				if(A.identity.ooc_notes_dislikes)
+					ooc_notes += "\n\nDISLIKES\n\n[A.identity.ooc_notes_dislikes]"
 
 			flavor_text = null // No flavor text for AIs :c
 
@@ -166,23 +166,23 @@ GLOBAL_LIST_EMPTY(chardirectory_photos)
 				continue
 			name = R.name
 			species = "[R.modtype] [R.braintype]"
-			ooc_notes = R.ooc_notes
-			if(R.ooc_notes_style && (R.ooc_notes_favs || R.ooc_notes_likes || R.ooc_notes_maybes || R.ooc_notes_dislikes))
-				ooc_notes = R.ooc_notes + "\n\n"
-				ooc_notes_favs = R.ooc_notes_favs
-				ooc_notes_likes = R.ooc_notes_likes
-				ooc_notes_maybes = R.ooc_notes_maybes
-				ooc_notes_dislikes = R.ooc_notes_dislikes
-				ooc_notes_style = R.ooc_notes_style
+			ooc_notes = R.identity.ooc_notes
+			if(R.identity.ooc_notes_style && (R.identity.ooc_notes_favs || R.identity.ooc_notes_likes || R.identity.ooc_notes_maybes || R.identity.ooc_notes_dislikes))
+				ooc_notes = R.identity.ooc_notes + "\n\n"
+				ooc_notes_favs = R.identity.ooc_notes_favs
+				ooc_notes_likes = R.identity.ooc_notes_likes
+				ooc_notes_maybes = R.identity.ooc_notes_maybes
+				ooc_notes_dislikes = R.identity.ooc_notes_dislikes
+				ooc_notes_style = R.identity.ooc_notes_style
 			else
-				if(R.ooc_notes_favs)
-					ooc_notes += "\n\nFAVOURITES\n\n[R.ooc_notes_favs]"
-				if(R.ooc_notes_likes)
-					ooc_notes += "\n\nLIKES\n\n[R.ooc_notes_likes]"
-				if(R.ooc_notes_maybes)
-					ooc_notes += "\n\nMAYBES\n\n[R.ooc_notes_maybes]"
-				if(R.ooc_notes_dislikes)
-					ooc_notes += "\n\nDISLIKES\n\n[R.ooc_notes_dislikes]"
+				if(R.identity.ooc_notes_favs)
+					ooc_notes += "\n\nFAVOURITES\n\n[R.identity.ooc_notes_favs]"
+				if(R.identity.ooc_notes_likes)
+					ooc_notes += "\n\nLIKES\n\n[R.identity.ooc_notes_likes]"
+				if(R.identity.ooc_notes_maybes)
+					ooc_notes += "\n\nMAYBES\n\n[R.identity.ooc_notes_maybes]"
+				if(R.identity.ooc_notes_dislikes)
+					ooc_notes += "\n\nDISLIKES\n\n[R.identity.ooc_notes_dislikes]"
 
 			flavor_text = R.flavor_text
 
@@ -190,46 +190,46 @@ GLOBAL_LIST_EMPTY(chardirectory_photos)
 			var/mob/living/silicon/pai/P = C.mob
 			name = P.name
 			species = "pAI"
-			ooc_notes = P.ooc_notes
-			if(P.ooc_notes_style && (P.ooc_notes_favs || P.ooc_notes_likes || P.ooc_notes_maybes || P.ooc_notes_dislikes))
-				ooc_notes = P.ooc_notes + "\n\n"
-				ooc_notes_favs = P.ooc_notes_favs
-				ooc_notes_likes = P.ooc_notes_likes
-				ooc_notes_maybes = P.ooc_notes_maybes
-				ooc_notes_dislikes = P.ooc_notes_dislikes
-				ooc_notes_style = P.ooc_notes_style
+			ooc_notes = P.identity.ooc_notes
+			if(P.identity.ooc_notes_style && (P.identity.ooc_notes_favs || P.identity.ooc_notes_likes || P.identity.ooc_notes_maybes || P.identity.ooc_notes_dislikes))
+				ooc_notes = P.identity.ooc_notes + "\n\n"
+				ooc_notes_favs = P.identity.ooc_notes_favs
+				ooc_notes_likes = P.identity.ooc_notes_likes
+				ooc_notes_maybes = P.identity.ooc_notes_maybes
+				ooc_notes_dislikes = P.identity.ooc_notes_dislikes
+				ooc_notes_style = P.identity.ooc_notes_style
 			else
-				if(P.ooc_notes_favs)
-					ooc_notes += "\n\nFAVOURITES\n\n[P.ooc_notes_favs]"
-				if(P.ooc_notes_likes)
-					ooc_notes += "\n\nLIKES\n\n[P.ooc_notes_likes]"
-				if(P.ooc_notes_maybes)
-					ooc_notes += "\n\nMAYBES\n\n[P.ooc_notes_maybes]"
-				if(P.ooc_notes_dislikes)
-					ooc_notes += "\n\nDISLIKES\n\n[P.ooc_notes_dislikes]"
+				if(P.identity.ooc_notes_favs)
+					ooc_notes += "\n\nFAVOURITES\n\n[P.identity.ooc_notes_favs]"
+				if(P.identity.ooc_notes_likes)
+					ooc_notes += "\n\nLIKES\n\n[P.identity.ooc_notes_likes]"
+				if(P.identity.ooc_notes_maybes)
+					ooc_notes += "\n\nMAYBES\n\n[P.identity.ooc_notes_maybes]"
+				if(P.identity.ooc_notes_dislikes)
+					ooc_notes += "\n\nDISLIKES\n\n[P.identity.ooc_notes_dislikes]"
 			flavor_text = P.flavor_text
 
 		if(isanimal(C.mob))
 			var/mob/living/simple_mob/S = C.mob
 			name = S.name
 			species = S.character_directory_species()
-			ooc_notes = S.ooc_notes
-			if(S.ooc_notes_style && (S.ooc_notes_favs || S.ooc_notes_likes || S.ooc_notes_maybes || S.ooc_notes_dislikes))
-				ooc_notes = S.ooc_notes + "\n\n"
-				ooc_notes_favs = S.ooc_notes_favs
-				ooc_notes_likes = S.ooc_notes_likes
-				ooc_notes_maybes = S.ooc_notes_maybes
-				ooc_notes_dislikes = S.ooc_notes_dislikes
-				ooc_notes_style = S.ooc_notes_style
+			ooc_notes = S.identity.ooc_notes
+			if(S.identity.ooc_notes_style && (S.identity.ooc_notes_favs || S.identity.ooc_notes_likes || S.identity.ooc_notes_maybes || S.identity.ooc_notes_dislikes))
+				ooc_notes = S.identity.ooc_notes + "\n\n"
+				ooc_notes_favs = S.identity.ooc_notes_favs
+				ooc_notes_likes = S.identity.ooc_notes_likes
+				ooc_notes_maybes = S.identity.ooc_notes_maybes
+				ooc_notes_dislikes = S.identity.ooc_notes_dislikes
+				ooc_notes_style = S.identity.ooc_notes_style
 			else
-				if(S.ooc_notes_favs)
-					ooc_notes += "\n\nFAVOURITES\n\n[S.ooc_notes_favs]"
-				if(S.ooc_notes_likes)
-					ooc_notes += "\n\nLIKES\n\n[S.ooc_notes_likes]"
-				if(S.ooc_notes_maybes)
-					ooc_notes += "\n\nMAYBES\n\n[S.ooc_notes_maybes]"
-				if(S.ooc_notes_dislikes)
-					ooc_notes += "\n\nDISLIKES\n\n[S.ooc_notes_dislikes]"
+				if(S.identity.ooc_notes_favs)
+					ooc_notes += "\n\nFAVOURITES\n\n[S.identity.ooc_notes_favs]"
+				if(S.identity.ooc_notes_likes)
+					ooc_notes += "\n\nLIKES\n\n[S.identity.ooc_notes_likes]"
+				if(S.identity.ooc_notes_maybes)
+					ooc_notes += "\n\nMAYBES\n\n[S.identity.ooc_notes_maybes]"
+				if(S.identity.ooc_notes_dislikes)
+					ooc_notes += "\n\nDISLIKES\n\n[S.identity.ooc_notes_dislikes]"
 			flavor_text = S.desc
 
 		// It's okay if we fail to find OOC notes and flavor text

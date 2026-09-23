@@ -687,7 +687,6 @@
 		var/risk_multiplier = agent_contract ? agent_contact_risk_rank(agent_contract.contact_mode) : 1
 		transaction.trace_strength = CLAMP(round((8 + sqrt(max(0, transaction.value)) / 3 + (reservation_key ? 5 : 0)) * risk_multiplier), 1, CARGO_MARKET_TRACE_LIMIT)
 		GLOB.station_faction_relations.add_agent_exposure(transaction.principal_account, counterparty.faction_id, max(1, round(transaction.trace_strength / 5)), "Encrypted market traffic accumulated forensic metadata.", transaction.id)
-		agent_contract?.advance_discovery(AGENT_DISCOVERY_TRACED, "Encrypted settlement metadata created a recoverable transaction trace.", max(1, round(transaction.trace_strength / 8)))
 	log_game("Cargo market [transaction.id]: [transaction_type] [transaction.value] Thalers with [counterparty?.name || counterparty_id] by account [account_number || "unknown"] (cover: [transaction.cover_name || "none"], reservation: [reservation_key || "none"]).")
 	market_transactions += transaction
 	if(length(market_transactions) > CARGO_MARKET_TRANSACTION_LIMIT)
@@ -907,13 +906,17 @@
 	transaction.audited_accounts[auditor_key] = TRUE
 	var/datum/cargo_market_counterparty/counterparty = market_counterparties[transaction.counterparty_id]
 	var/datum/faction_agent_record/record = GLOB.station_faction_relations.get_agent_record(transaction.principal_account)
+	var/datum/contract/faction_agent/agent_contract = SScontracts?.agent_contract_for_market_key(transaction.reservation_key)
 	var/score = transaction.trace_strength + (record?.exposure || 0)
 	if(score >= FACTION_AGENT_INVESTIGATION_THRESHOLD)
 		transaction.detected = TRUE
 		transaction.detected_account = record?.account_number || transaction.principal_account
 		transaction.detected_contact_account = transaction.account_number != transaction.detected_account ? transaction.account_number : 0
-		var/datum/contract/faction_agent/agent_contract = SScontracts?.agent_contract_for_market_key(transaction.reservation_key)
 		agent_contract?.advance_discovery(AGENT_DISCOVERY_IDENTIFIED, "A Supply-console forensic audit correlated the settlement with its principal and contact.", 15)
+	else if(score >= round(FACTION_AGENT_INVESTIGATION_THRESHOLD * 0.5))
+		agent_contract?.advance_discovery(AGENT_DISCOVERY_TRACED, "A Security audit recovered a strong trace but could not yet identify its participants.")
+	else
+		agent_contract?.advance_discovery(AGENT_DISCOVERY_SUSPECTED, "A Security audit confirmed suspicious settlement metadata without identifying its participants.")
 	emit_contract_event(CONTRACT_EVENT_COVERT_MARKET_AUDIT, list(
 		"actor_account" = auditor?.account_number,
 		"department" = DEPARTMENT_SECURITY,

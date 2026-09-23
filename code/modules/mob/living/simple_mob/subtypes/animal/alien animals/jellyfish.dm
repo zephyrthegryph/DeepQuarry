@@ -29,8 +29,7 @@ GLOBAL_VAR_INIT(jellyfish_count, 0)
 
 
 	faction = FACTION_JELLYFISH
-	maxHealth = 100
-	health = 100
+	endurance = 100
 	nutrition = 150
 	pass_flags = PASSTABLE
 	movement_cooldown = 1
@@ -112,7 +111,7 @@ GLOBAL_VAR_INIT(jellyfish_count, 0)
 			L.adjust_nutrition(-leech)
 			adjust_nutrition(leech)
 		if(prob(25))
-			L.adjustHalLoss(leech)
+			L.injure(INJURY_PAIN, leech, source = src, affliction = /datum/affliction/venom/cnidarian_sting)
 
 /mob/living/simple_mob/vore/alienanimals/space_jellyfish/Initialize(mapload, jellyfish)
 	. = ..()

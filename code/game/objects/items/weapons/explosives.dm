@@ -131,7 +131,6 @@
 	return .
 
 
-// === merged from explosives_vr.dm during hard-fork de-suffix (verified no override-order change) ===
 /obj/item/plastique/seismic/locked
 	desc = "Used to dig holes in specific areas without too much extra hole. Has extra mechanism that safely implodes the bomb if it is used in close proximity to the facility."
 

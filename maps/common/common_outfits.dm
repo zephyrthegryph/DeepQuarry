@@ -10,7 +10,7 @@ Keep outfits simple. Spawn with basic uniforms and minimal gear. Gear instead go
 	uniform = /obj/item/clothing/under/explorer
 	id_slot = slot_wear_id
 	pda_slot = slot_l_store
-	pda_type = /obj/item/pda/explorer //VORESTation Edit - Better Brown
+	pda_type = /obj/item/pda/explorer
 	id_type = /obj/item/card/id/exploration // fix conflicts with citrp ID port
 	id_pda_assignment = "Explorer"
 	flags = OUTFIT_HAS_BACKPACK|OUTFIT_COMPREHENSIVE_SURVIVAL

@@ -1,20 +1,6 @@
 /datum/trait/negative
 	category = TRAIT_TYPE_NEGATIVE
 
-/* Was disabled in setupgame.dm, likely nonfunctional
-/datum/trait/negative/disability_hallucinations
-	name = "Disability: Hallucinations"
-	desc = "..."
-	cost = -3
-	custom_only = FALSE
-
-	is_genetrait = TRUE
-	hidden = FALSE
-
-	mutation = mHallucination
-	activation_message="Your mind says 'Hello'."
-*/
-
 /datum/trait/negative/disability_epilepsy
 	name = "Epilepsy"
 	desc = "You experience periodic seizures."
@@ -27,7 +13,6 @@
 	activation_message="You get a headache."
 	primitive_expression_messages=list("shudders and twitches.")
 	added_component_path = /datum/component/epilepsy_disability
-
 
 /datum/trait/negative/disability_cough
 	name = "Coughing Fits"
@@ -66,23 +51,6 @@
 	activation_message="You twitch."
 	primitive_expression_messages=list("twitches and chitters.")
 	added_component_path = /datum/component/coprolalia_disability
-
-/* Replaced by /datum/trait/negative/blindness
-/datum/trait/negative/disability_blind
-	name = "Blinded"
-	desc = "You are unable to see anything."
-	cost = -3
-	custom_only = FALSE
-
-	is_genetrait = TRUE
-	hidden = FALSE
-
-	sdisability=BLIND
-	activation_message="You can't seem to see anything."
-
-/datum/trait/negative/disability_blind/handle_environment_special(mob/living/carbon/human/H)
-	H.sdisabilities |= sdisability 		// In space, no one can hear you scream
-*/
 
 /datum/trait/negative/disability_mute
 	name = "Mute"
@@ -174,7 +142,6 @@
 	excludes = list(/datum/trait/positive/stable_genetics)
 	banned_species	= list(/datum/species/protean, /datum/species/shapeshifter/promethean)
 
-
 /datum/trait/negative/disability_gibbing
 	name = "Gibbingtons"
 	desc = "Your body is on the edge of exploding, anything could set it off! A rare genetic disorder, only discovered with the invention of resleeving technology!"
@@ -187,7 +154,6 @@
 	activation_message="You feel bloated..."
 	primitive_expression_messages=list("shudders.","gasps.","chokes.")
 	added_component_path = /datum/component/gibbing_disability
-
 
 /datum/trait/negative/disability_damagedspine
 	name = "Lumbar Impairment"

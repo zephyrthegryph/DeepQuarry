@@ -23,154 +23,7 @@ SUBSYSTEM_DEF(profiler)
 	// AUTO_PROFILE controls full world.Profile collection only. Compact subsystem
 	// diagnostics are cheap, bounded, and must continue even when it is disabled.
 	can_fire = TRUE
-	var/run_idle_benchmark = fexists("data/benchmark_idle")
-	var/run_sm_benchmark = fexists("data/benchmark_sm")
-	var/run_type_profile = fexists("data/benchmark_type_profile")
-	if(run_idle_benchmark)
-		fdel("data/benchmark_idle")
-	if(run_sm_benchmark)
-		fdel("data/benchmark_sm")
-	if(run_type_profile)
-		fdel("data/benchmark_type_profile")
-	if(run_idle_benchmark || run_sm_benchmark)
-		Master.sleep_offline_after_initializations = FALSE
-		SSticker.start_immediately = TRUE
-	if(run_type_profile)
-		SSmachines.profile_machine_types = TRUE
-		SSexplosions.profile_atom_types = TRUE
-	if(run_sm_benchmark)
-		SSticker.OnRoundstart(CALLBACK(GLOBAL_PROC, GLOBAL_PROC_REF(schedule_sm_benchmark)))
 	return SS_INIT_SUCCESS
-
-/proc/schedule_sm_benchmark()
-	log_runtime("ATMOS_BENCHMARK scheduled four supermatter-scale explosions at 60-second intervals")
-	addtimer(CALLBACK(GLOBAL_PROC, GLOBAL_PROC_REF(run_sm_benchmark), 1, 4), 60 SECONDS)
-
-/proc/run_sm_benchmark(iteration, total)
-	if(iteration < total)
-		addtimer(CALLBACK(GLOBAL_PROC, GLOBAL_PROC_REF(run_sm_benchmark), iteration + 1, total), 60 SECONDS)
-	else
-		// The last pressure curve ends forty seconds after detonation (ten seconds
-		// before opening the breach plus thirty seconds of samples). Give damaged
-		// machinery and topology another full minute to settle before declaring the
-		// workload complete, so the final subsystem snapshot is true recovery state.
-		addtimer(CALLBACK(GLOBAL_PROC, GLOBAL_PROC_REF(begin_sm_benchmark_recovery)), 40 SECONDS)
-		addtimer(CALLBACK(GLOBAL_PROC, GLOBAL_PROC_REF(log_sm_benchmark_recovery_checkpoint)), 100 SECONDS)
-		addtimer(CALLBACK(GLOBAL_PROC, GLOBAL_PROC_REF(log_sm_benchmark_long_recovery_checkpoint)), 220 SECONDS)
-		// The GC check queue intentionally retains destroyed objects for five
-		// minutes. Keep the bounded server alive beyond that horizon so an explosion
-		// soak can prove soft collection instead of reporting only a young queue.
-		addtimer(CALLBACK(GLOBAL_PROC, GLOBAL_PROC_REF(finish_sm_benchmark)), 360 SECONDS)
-	for(var/obj/machinery/power/supermatter/SM in world)
-		var/area/affected_area = get_area(SM)
-		var/turf/epicenter = get_turf(SM)
-		var/epicenter_x = epicenter.x
-		var/epicenter_y = epicenter.y
-		var/epicenter_z = epicenter.z
-		log_runtime("ATMOS_BENCHMARK [iteration]/[total] detonating [SM] at [SM.x],[SM.y],[SM.z]")
-		SM.explode()
-		addtimer(CALLBACK(GLOBAL_PROC, GLOBAL_PROC_REF(begin_atmos_breach_benchmark), affected_area, "blast-[iteration]", epicenter_x, epicenter_y, epicenter_z), 10 SECONDS)
-		return
-	var/list/station_areas = get_station_areas(list())
-	while(length(station_areas))
-		var/area/target_area = pick_n_take(station_areas)
-		var/list/open_turfs = list()
-		for(var/turf/open/T in target_area)
-			open_turfs += T
-		if(!length(open_turfs))
-			continue
-		var/turf/open/epicenter = pick(open_turfs)
-		var/epicenter_x = epicenter.x
-		var/epicenter_y = epicenter.y
-		var/epicenter_z = epicenter.z
-		log_runtime("ATMOS_BENCHMARK [iteration]/[total] detonating fallback bomb at [epicenter.x],[epicenter.y],[epicenter.z]")
-		explosion(epicenter, 8, 16, 24, 32, TRUE)
-		addtimer(CALLBACK(GLOBAL_PROC, GLOBAL_PROC_REF(begin_atmos_breach_benchmark), target_area, "blast-[iteration]", epicenter_x, epicenter_y, epicenter_z), 10 SECONDS)
-		return
-	log_runtime("ATMOS_BENCHMARK could not find a valid station turf")
-
-/proc/force_atmos_benchmark_breach(epicenter_x, epicenter_y, epicenter_z)
-	var/turf/epicenter = locate(epicenter_x, epicenter_y, epicenter_z)
-	if(!epicenter)
-		return
-	if(!istype(epicenter, /turf/space))
-		epicenter.ChangeTurf(/turf/space)
-
-/proc/begin_atmos_breach_benchmark(area/affected_area, label, epicenter_x, epicenter_y, epicenter_z)
-	force_atmos_benchmark_breach(epicenter_x, epicenter_y, epicenter_z)
-	schedule_atmos_benchmark_pressure_samples(affected_area, label, epicenter_x, epicenter_y, epicenter_z)
-
-/proc/schedule_atmos_benchmark_pressure_samples(area/affected_area, label, epicenter_x, epicenter_y, epicenter_z)
-	if(!affected_area)
-		return
-	for(var/delay in list(1 SECOND, 5 SECONDS, 15 SECONDS, 30 SECONDS))
-		addtimer(CALLBACK(GLOBAL_PROC, GLOBAL_PROC_REF(log_atmos_benchmark_pressure), affected_area, label, delay, epicenter_x, epicenter_y, epicenter_z), delay)
-
-/proc/log_atmos_benchmark_pressure(area/affected_area, label, delay, epicenter_x, epicenter_y, epicenter_z)
-	if(!affected_area)
-		return
-	var/turf/open/epicenter = locate(epicenter_x, epicenter_y, epicenter_z)
-	if(!istype(epicenter) || get_area(epicenter) != affected_area)
-		log_runtime("ATMOS_DRAIN [label] delay=[delay / 10]s area=\"[affected_area.name]\" connected_cells=0 origin_missing=1")
-		return
-	// Area datums are reused for disconnected map fragments, so averaging every
-	// turf in an area can make a successfully spaced room look half pressurized.
-	// Measure exactly the atmosphere-connected component containing the blast.
-	var/list/turfs_to_scan = list(epicenter)
-	var/list/connected_turfs = list()
-	connected_turfs[epicenter] = TRUE
-	var/scan_index = 1
-	while(scan_index <= length(turfs_to_scan))
-		var/turf/open/current = turfs_to_scan[scan_index++]
-		for(var/turf/open/neighbor as anything in current.atmos_adjacent_turfs)
-			if(get_area(neighbor) != affected_area || connected_turfs[neighbor])
-				continue
-			connected_turfs[neighbor] = TRUE
-			turfs_to_scan += neighbor
-	var/count = 0
-	var/vacuum = 0
-	var/total_pressure = 0
-	var/min_pressure = INFINITY
-	var/max_pressure = 0
-	for(var/turf/open/turf as anything in connected_turfs)
-		var/datum/gas_mixture/air = turf.return_air()
-		if(!air)
-			continue
-		var/pressure = air.return_pressure()
-		count++
-		total_pressure += pressure
-		min_pressure = min(min_pressure, pressure)
-		max_pressure = max(max_pressure, pressure)
-		if(pressure < 5)
-			vacuum++
-	log_runtime("ATMOS_DRAIN [label] delay=[delay / 10]s area=\"[affected_area.name]\" connected_cells=[count] avg_kpa=[count ? round(total_pressure / count, 0.01) : 0] min_kpa=[count ? round(min_pressure, 0.01) : 0] max_kpa=[round(max_pressure, 0.01)] vacuum=[vacuum]")
-
-/proc/begin_sm_benchmark_recovery()
-	// Discard the destruction interval. The completion dump must represent only
-	// the following quiet minute, otherwise expensive machines that already
-	// hibernated remain at the top of a misleading cumulative profile.
-	if(SSmachines.profile_machine_types)
-		SSmachines.dump_machine_profile()
-	log_runtime("ATMOS_BENCHMARK RECOVERY WINDOW START")
-
-/proc/log_sm_benchmark_recovery_checkpoint()
-	log_runtime("ATMOS_BENCHMARK RECOVERY 60S CHECKPOINT")
-	if(SSmachines.profile_machine_types)
-		SSmachines.dump_machine_profile()
-	SSprofiler.fire()
-
-/proc/log_sm_benchmark_long_recovery_checkpoint()
-	log_runtime("ATMOS_BENCHMARK RECOVERY 180S CHECKPOINT")
-	if(SSmachines.profile_machine_types)
-		SSmachines.dump_machine_profile()
-	SSprofiler.fire()
-
-/proc/finish_sm_benchmark()
-	log_runtime("ATMOS_BENCHMARK RECOVERY 320S COMPLETE")
-	if(SSmachines.profile_machine_types)
-		SSmachines.dump_machine_profile()
-	SSprofiler.fire()
-	log_runtime("ATMOS_BENCHMARK COMPLETE")
 
 /datum/controller/subsystem/profiler/OnConfigLoad()
 	if(CONFIG_GET(flag/auto_profile))
@@ -184,6 +37,7 @@ SUBSYSTEM_DEF(profiler)
 	// Full BYOND profile serialization is synchronous and can itself overrun a tick.
 	// Periodic collection therefore records only the inexpensive native diagnostics;
 	// profile dumps are requested explicitly or by the MC drift outlier detector.
+	SSmachines.request_adaptive_profile()
 	var/list/atmos_arena = SSair.auxmos_diagnostics()
 	var/list/rust_allocator = SSair.verdigris_allocator_diagnostics()
 	var/list/subsystems = list(
@@ -197,7 +51,7 @@ SUBSYSTEM_DEF(profiler)
 		"radiation" = subsystem_diagnostics(SSradiation),
 		"explosions" = subsystem_diagnostics(SSexplosions),
 	)
-	subsystems["material_exposure"] += list("pending" = length(SSmaterial_services.scheduled), "current" = length(SSmaterial_services.currentrun))
+	subsystems["material_exposure"] += SSmaterial_services.performance_diagnostics()
 	var/list/material_graphs = list()
 	for(var/datum/powernet/network as anything in SSmachines.powernets)
 		var/datum/material_power_graph/graph = network.material_graph
@@ -257,8 +111,9 @@ SUBSYSTEM_DEF(profiler)
 	subsystems["machines"] += list(
 		"stage_average_ms" = list("machinery" = SSmachines.cost_machinery, "powernets" = SSmachines.cost_powernets, "power_objects" = SSmachines.cost_power_objects),
 		"stage_last_logical_run_ms" = list("machinery" = SSmachines.last_cost_machinery, "powernets" = SSmachines.last_cost_powernets, "power_objects" = SSmachines.last_cost_power_objects),
-		"pump_commit" = list("ms" = SSmachines.last_pump_commit_ms, "operations" = SSmachines.last_pump_commit_operations, "turfs" = SSmachines.last_pump_commit_turfs),
-		"counts" = list("processing" = length(SSmachines.processing_machines), "all" = length(SSmachines.all_machines), "powernets" = length(SSmachines.powernets), "power_objects" = length(SSmachines.powerobjs), "hibernating_vents" = length(SSmachines.hibernating_vents), "reactive_sleepers" = length(SSmachines.reactive_sleepers)),
+		"pump_commit" = list("active_ms" = SSmachines.last_pump_commit_ms, "wall_ms" = SSmachines.last_pump_commit_wall_ms, "suspended_ms" = SSmachines.last_pump_commit_suspended_ms, "operations" = SSmachines.last_pump_commit_operations, "turfs" = SSmachines.last_pump_commit_turfs),
+		"topology" = list("jobs" = length(SSmachines.powernet_topology_jobs), "work" = SSmachines.powernet_topology_last_work, "active_ms" = SSmachines.powernet_topology_last_ms),
+		"counts" = list("processing" = length(SSmachines.processing_machines), "all" = length(SSmachines.all_machines), "powernets" = length(SSmachines.powernets), "active_powernets" = length(SSmachines.active_powernets), "power_objects" = length(SSmachines.powerobjs), "hibernating_vents" = length(SSmachines.hibernating_vents), "reactive_sleepers" = length(SSmachines.reactive_sleepers)),
 		"gas_wakes" = list("dirty" = SSmachines.gas_dirty_last, "subscribers_checked" = SSmachines.gas_wake_subscribers_last, "scan_ms" = SSmachines.gas_wake_scan_last_ms, "woken" = SSmachines.gas_woken_last, "dead" = SSmachines.gas_dead_last, "pending" = length(SSmachines.pending_dirty_gas_mixtures)),
 	)
 	subsystems["mobs"] += list("counts" = list("world" = length(GLOB.mob_list), "current" = length(SSmobs.currentrun), "slept" = SSmobs.slept_mobs, "deaths_pending" = length(SSmobs.death_list)))

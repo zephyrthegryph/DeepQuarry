@@ -205,7 +205,6 @@
 	allowed = list(POCKET_ALL_TANKS, POCKET_GENERIC, POCKET_EMERGENCY, POCKET_SUIT_REGULATORS, POCKET_SECURITY)
 
 
-// === merged from event_vr.dm during hard-fork de-suffix (verified no override-order change) ===
 /obj/item/clothing/head/helmet/space/void/refurb/talon
 	name = "talon crew voidsuit helmet"
 	desc = "A refurbished early contact era voidsuit helmet of human design. These things aren't especially good against modern weapons but they're sturdy, incredibly easy to come by, and there are lots of spare parts for repairs. The visor has a bad habit of fogging up and collecting condensation, but it beats sucking hard vacuum."

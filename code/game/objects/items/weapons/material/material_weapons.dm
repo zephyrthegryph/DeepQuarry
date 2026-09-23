@@ -19,7 +19,7 @@
 	var/unbreakable = 0		//Doesn't lose health
 	var/fragile = 0			//Shatters when it dies
 	var/dulled = 0			//Has gone dull
-	var/can_dull = 0		//Can it go dull? //chompEDIT Removes dulling from general items. Doesn't really add anything
+	var/can_dull = 0
 	var/force_divisor = 0.5
 	var/thrown_force_divisor = 0.5
 	var/dulled_divisor = 0.5	//Just drops the damage by half
@@ -160,30 +160,3 @@
 		to_chat(M, span_warning("You can't sharpen and re-edge [src]."))
 		return FALSE
 
-/*
-Commenting this out pending rebalancing of radiation based on small objects.
-/obj/item/material/process()
-	if(!material.radioactivity)
-		return
-	for(var/mob/living/L in range(1,src))
-		L.apply_effect(round(material.radioactivity/30),IRRADIATE,0)
-*/
-
-/*
-// Commenting this out while fires are so spectacularly lethal, as I can't seem to get this balanced appropriately.
-/obj/item/material/fire_act(datum/gas_mixture/air, exposed_temperature, exposed_volume)
-	TemperatureAct(exposed_temperature)
-
-// This might need adjustment. Will work that out later.
-/obj/item/material/proc/TemperatureAct(temperature)
-	health -= material.combustion_effect(get_turf(src), temperature, 0.1)
-	check_health(1)
-
-/obj/item/material/attackby(obj/item/W as obj, mob/user as mob)
-	if(istype(W,/obj/item/weldingtool))
-		var/obj/item/weldingtool/WT = W
-		if(material.ignition_point && WT.remove_fuel(0, user))
-			TemperatureAct(150)
-	else
-		return ..()
-*/

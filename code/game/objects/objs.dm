@@ -43,6 +43,7 @@
 		"actor_account" = producer_account,
 		"department" = department,
 		"origin_department" = department,
+		"physical_item_id" = REF(src),
 		"item_type" = type,
 		"item_name" = name,
 		"fact_id" = "production:[REF(src)]",

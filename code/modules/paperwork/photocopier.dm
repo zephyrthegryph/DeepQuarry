@@ -234,7 +234,6 @@
 		visible_message(span_notice("A [span_red("red")] light on \the [src] flashes, indicating that it is out of toner."))
 	return c
 
-
 /obj/machinery/photocopier/proc/photocopy(obj/item/photo/photocopy, need_toner=1)
 	var/obj/item/photo/p = photocopy.copy()
 	p.loc = src.loc
@@ -257,7 +256,6 @@
 		visible_message(span_notice("A red light on \the [src] flashes, indicating that it is out of toner."))
 
 	return p
-
 
 /obj/machinery/photocopier/proc/copyass(mob/user)
 	var/icon/temp_img
@@ -307,18 +305,6 @@
 				temp_img = icon('icons/obj/butts_vr.dmi', "tesh") // kinda close! but should have it's own someday
 			if(SPECIES_ALTEVIAN)
 				temp_img = icon('icons/obj/butts_vr.dmi', "altevian")
-			/* // Commented out because no icons exist, BUT if someone wants to sprite some more ASSCHEEKS, then just uncomment these and you have asses for each species. - Rykka.
-			if(SPECIES_SHADEKIN || SPECIES_SHADEKIN_CREW)
-				temp_img = icon('icons/obj/butts_vr.dmi', "shadekin")
-			if(SPECIES_ALRAUNE)
-				temp_img = icon('icons/obj/butts_vr.dmi', "alraune")
-			if(SPECIES_RAPALA)
-				temp_img = icon('icons/obj/butts_vr.dmi', "rapala")
-			if(SPECIES_ZADDAT)
-				temp_img = icon('icons/obj/butts_vr.dmi', "zaddat")
-			if(SPECIES_XENOCHIMERA)
-				temp_img = icon('icons/obj/butts_vr.dmi', "xenochimera")
-			*/
 			else // Sanity/Safety check - does their species not show up or not work, or did something fail, but they're DEFINITELY a /human/ subtype? Print the 'default' ass.
 				temp_img = icon('icons/obj/butts_vr.dmi', "human")
 	else if(istype(sitter,/mob/living/silicon/robot/drone)) // Are we a drone?

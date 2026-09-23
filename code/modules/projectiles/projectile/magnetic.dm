@@ -229,7 +229,7 @@
 
 /obj/item/projectile/bullet/magnetic/fuelrod/blitz/on_hit(atom/target, blocked = 0, def_zone)
 	var/mob/living/M = target
-	if(istype(M) && M.maxHealth<=200)
+	if(istype(M) && M.get_endurance() <= 200)
 		M.dust()
 	if(isturf(loc))
 		explosion(loc, 3, 4, 5, 10)

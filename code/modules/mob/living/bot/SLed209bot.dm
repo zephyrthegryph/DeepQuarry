@@ -4,8 +4,7 @@
 	icon = 'icons/obj/aibots.dmi'
 	icon_state = "sled2090"
 	density = TRUE
-	health = 200
-	maxHealth = 200
+	endurance = 200
 
 	is_ranged = 1
 	preparing_arrest_sounds = new()

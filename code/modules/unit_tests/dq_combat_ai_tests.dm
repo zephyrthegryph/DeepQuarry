@@ -17,6 +17,43 @@
 
 #include "../combat_ai/_defines.dm"
 
+// Test-only mob with a fixed modern-AI behavior set, so these tests don't
+// depend on any shipped creature's tuning.
+/mob/living/simple_mob/combat_ai_test_subject
+	name = "combat AI test subject"
+	icon = 'icons/mob/animal.dmi'
+	icon_state = "tiger"
+	icon_living = "tiger"
+	icon_dead = "tiger-dead"
+	faction = FACTION_CREATURE
+	endurance = 90
+	melee_damage_lower = 8
+	melee_damage_upper = 14
+	base_attack_cooldown = 1.2 SECONDS
+	movement_cooldown = 2
+	has_hands = FALSE
+	can_pain_emote = FALSE
+	use_modern_ai = TRUE
+
+/mob/living/simple_mob/combat_ai_test_subject/get_ai_behaviors()
+	var/static/list/L = list(
+		/datum/ai_behavior/retaliate_to_attacker,
+		/datum/ai_behavior/threaten,
+		/datum/ai_behavior/approach_threat,
+		/datum/ai_behavior/melee_attack,
+		/datum/ai_behavior/charge_slam,
+		/datum/ai_behavior/flee_low_hp,
+		/datum/ai_behavior/idle_wander,
+	)
+	return L
+
+/mob/living/simple_mob/combat_ai_test_subject/get_ai_target_selectors()
+	var/static/list/L = list(
+		/datum/target_selector/prefer_players,
+		/datum/target_selector/closest,
+	)
+	return L
+
 // --- static: behaviors are flyweights ----------------------------------
 
 /datum/unit_test/dq_combat_ai_spatial_sleep_wakes
@@ -139,8 +176,8 @@
 /datum/unit_test/dq_combat_ai_brain_spawns_on_simple_mob
 
 /datum/unit_test/dq_combat_ai_brain_spawns_on_simple_mob/Run()
-	var/mob/living/simple_mob/quarry_stalker/S = allocate(/mob/living/simple_mob/quarry_stalker)
-	TEST_ASSERT_NOTNULL(S.ai_brain, "quarry_stalker spawned without an ai_brain")
+	var/mob/living/simple_mob/combat_ai_test_subject/S = allocate(/mob/living/simple_mob/combat_ai_test_subject)
+	TEST_ASSERT_NOTNULL(S.ai_brain, "combat_ai_test_subject spawned without an ai_brain")
 	TEST_ASSERT(S.ai_brain.holder == S, "brain.holder doesn't point back to the mob")
 	TEST_ASSERT_NOTNULL(S.ai_brain.model, "brain.model wasn't created")
 	TEST_ASSERT(length(S.ai_brain.target_selector_chain), "brain has no target_selector_chain")
@@ -153,7 +190,7 @@
 /datum/unit_test/dq_combat_ai_give_target_sets_threat
 
 /datum/unit_test/dq_combat_ai_give_target_sets_threat/Run()
-	var/mob/living/simple_mob/quarry_stalker/S = allocate(/mob/living/simple_mob/quarry_stalker)
+	var/mob/living/simple_mob/combat_ai_test_subject/S = allocate(/mob/living/simple_mob/combat_ai_test_subject)
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human)
 	S.ai_brain.give_target(H)
 	TEST_ASSERT_EQUAL(S.ai_brain.primary_threat, H, "give_target didn't set primary_threat")
@@ -168,7 +205,7 @@
 /datum/unit_test/dq_combat_ai_forget_clears_state
 
 /datum/unit_test/dq_combat_ai_forget_clears_state/Run()
-	var/mob/living/simple_mob/quarry_stalker/S = allocate(/mob/living/simple_mob/quarry_stalker)
+	var/mob/living/simple_mob/combat_ai_test_subject/S = allocate(/mob/living/simple_mob/combat_ai_test_subject)
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human)
 	S.ai_brain.give_target(H)
 	S.ai_brain.forget_everything()
@@ -184,8 +221,8 @@
 /datum/unit_test/dq_combat_ai_damage_promotes_attacker
 
 /datum/unit_test/dq_combat_ai_damage_promotes_attacker/Run()
-	var/mob/living/simple_mob/quarry_stalker/victim = allocate(/mob/living/simple_mob/quarry_stalker)
-	var/mob/living/simple_mob/quarry_stalker/aggressor = allocate(/mob/living/simple_mob/quarry_stalker)
+	var/mob/living/simple_mob/combat_ai_test_subject/victim = allocate(/mob/living/simple_mob/combat_ai_test_subject)
+	var/mob/living/simple_mob/combat_ai_test_subject/aggressor = allocate(/mob/living/simple_mob/combat_ai_test_subject)
 	// Direct notify (the hook does the same after attack_generic).
 	victim.ai_brain.notify_damage(10, BRUTE, aggressor)
 	TEST_ASSERT(victim.ai_brain.check_attacker(aggressor), "notify_damage didn't promote attacker to HOSTILE")
@@ -199,8 +236,8 @@
 /datum/unit_test/dq_combat_ai_personal_overrides_faction
 
 /datum/unit_test/dq_combat_ai_personal_overrides_faction/Run()
-	var/mob/living/simple_mob/quarry_stalker/S = allocate(/mob/living/simple_mob/quarry_stalker)
-	var/mob/living/simple_mob/quarry_stalker/mate = allocate(/mob/living/simple_mob/quarry_stalker)
+	var/mob/living/simple_mob/combat_ai_test_subject/S = allocate(/mob/living/simple_mob/combat_ai_test_subject)
+	var/mob/living/simple_mob/combat_ai_test_subject/mate = allocate(/mob/living/simple_mob/combat_ai_test_subject)
 	// Same faction → ALLY by default.
 	TEST_ASSERT_EQUAL(S.ai_brain.disposition_to(mate), DQ_DISPOSITION_ALLY, "same-faction default should be ALLY")
 	S.ai_brain.add_personal(mate, DQ_DISPOSITION_HOSTILE, 60 SECONDS, "test")
@@ -257,9 +294,9 @@
 /datum/unit_test/dq_combat_ai_give_destination_records_target
 
 /datum/unit_test/dq_combat_ai_give_destination_records_target/Run()
-	var/mob/living/simple_mob/quarry_stalker/S = allocate(/mob/living/simple_mob/quarry_stalker)
-	// The DQ test map doesn't ship the unit-test landmarks (see the comment
-	// in dq_quarry_persistence_tests.dm). Grab any simulated floor on z=1
+	var/mob/living/simple_mob/combat_ai_test_subject/S = allocate(/mob/living/simple_mob/combat_ai_test_subject)
+	// The DQ test map doesn't ship the unit-test landmarks. Grab any
+	// simulated floor on z=1
 	// as a workable destination — give_destination just stores it.
 	var/turf/dest = null
 	for(var/turf/simulated/T in block(locate(1, 1, 1), locate(world.maxx, world.maxy, 1)))
@@ -279,7 +316,7 @@
 /datum/unit_test/dq_combat_ai_stop_active_clears_busy
 
 /datum/unit_test/dq_combat_ai_stop_active_clears_busy/Run()
-	var/mob/living/simple_mob/quarry_stalker/S = allocate(/mob/living/simple_mob/quarry_stalker)
+	var/mob/living/simple_mob/combat_ai_test_subject/S = allocate(/mob/living/simple_mob/combat_ai_test_subject)
 	// Simulate a blocks_reselection behavior in flight.
 	S.ai_brain.busy = TRUE
 	S.ai_brain.selection_dirty = FALSE
@@ -298,7 +335,7 @@
 /datum/unit_test/dq_combat_ai_login_adds_player_verb
 
 /datum/unit_test/dq_combat_ai_login_adds_player_verb/Run()
-	var/mob/living/simple_mob/quarry_stalker/S = allocate(/mob/living/simple_mob/quarry_stalker)
+	var/mob/living/simple_mob/combat_ai_test_subject/S = allocate(/mob/living/simple_mob/combat_ai_test_subject)
 	// AI-only mob: verb must NOT be present yet (would bloat verbs list of
 	// every wild critter).
 	TEST_ASSERT(!(/mob/living/proc/dq_use_combat_move in S.verbs), "verb was added before client login")
@@ -314,7 +351,7 @@
 /datum/unit_test/dq_combat_ai_set_hostile_flips_attack_on_sight
 
 /datum/unit_test/dq_combat_ai_set_hostile_flips_attack_on_sight/Run()
-	var/mob/living/simple_mob/quarry_stalker/S = allocate(/mob/living/simple_mob/quarry_stalker)
+	var/mob/living/simple_mob/combat_ai_test_subject/S = allocate(/mob/living/simple_mob/combat_ai_test_subject)
 	S.ai_attack_on_sight = TRUE
 	S.ai_brain.set_hostile(FALSE)
 	TEST_ASSERT_EQUAL(S.ai_attack_on_sight, FALSE, "set_hostile(FALSE) didn't flip ai_attack_on_sight")
@@ -327,7 +364,7 @@
 /datum/unit_test/dq_combat_ai_fast_processing_is_combat_scoped
 
 /datum/unit_test/dq_combat_ai_fast_processing_is_combat_scoped/Run()
-	var/mob/living/simple_mob/quarry_stalker/hunter = allocate(/mob/living/simple_mob/quarry_stalker)
+	var/mob/living/simple_mob/combat_ai_test_subject/hunter = allocate(/mob/living/simple_mob/combat_ai_test_subject)
 	var/mob/living/carbon/human/target = allocate(/mob/living/carbon/human)
 	TEST_ASSERT(!(hunter.ai_brain in SSaifast.processing), \
 		"idle AI brain was registered for quarter-second tactical processing")
@@ -361,12 +398,12 @@
 //   1. Damage in-view: primary_threat set and held.
 //   2. Damage out-of-view: primary_threat set and RETAINED after calling
 //      update_primary_threat with an empty visible_hostiles list.
-//   3. retaliate_to_attacker is in the quarry_stalker's behavior list.
+//   3. retaliate_to_attacker is in the test subject's behavior list.
 
 /datum/unit_test/dq_combat_ai_aggro_on_damage_out_of_view
 
 /datum/unit_test/dq_combat_ai_aggro_on_damage_out_of_view/Run()
-	var/mob/living/simple_mob/quarry_stalker/victim = allocate(/mob/living/simple_mob/quarry_stalker)
+	var/mob/living/simple_mob/combat_ai_test_subject/victim = allocate(/mob/living/simple_mob/combat_ai_test_subject)
 	var/mob/living/carbon/human/attacker = allocate(/mob/living/carbon/human)
 
 	TEST_ASSERT_NOTNULL(victim.ai_brain, "victim spawned without an ai_brain")
@@ -374,7 +411,7 @@
 	// Confirm retaliate_to_attacker is in the behavior list.
 	victim.ai_brain.rebuild_behaviors()
 	TEST_ASSERT(/datum/ai_behavior/retaliate_to_attacker in victim.ai_brain.effective_behaviors, \
-		"retaliate_to_attacker is not in quarry_stalker effective_behaviors after rebuild")
+		"retaliate_to_attacker is not in combat_ai_test_subject effective_behaviors after rebuild")
 
 	// Simulate attacker hitting the victim (out of view — visible_hostiles is empty
 	// because we never ran update_perception and the mobs aren't on a live map).
@@ -415,7 +452,7 @@
 /datum/unit_test/dq_combat_ai_react_to_attack_sets_last_attacker
 
 /datum/unit_test/dq_combat_ai_react_to_attack_sets_last_attacker/Run()
-	var/mob/living/simple_mob/quarry_stalker/victim = allocate(/mob/living/simple_mob/quarry_stalker)
+	var/mob/living/simple_mob/combat_ai_test_subject/victim = allocate(/mob/living/simple_mob/combat_ai_test_subject)
 	var/mob/living/carbon/human/attacker = allocate(/mob/living/carbon/human)
 
 	// react_to_attack is called from hit_with_weapon when a player swings a knife.
@@ -431,7 +468,7 @@
 
 	// null-holder safety: calling react_to_attack after brain.holder = null must
 	// not runtime. Simulate the vore-eating case from the confirmed runtime log.
-	var/mob/living/simple_mob/quarry_stalker/victim2 = allocate(/mob/living/simple_mob/quarry_stalker)
+	var/mob/living/simple_mob/combat_ai_test_subject/victim2 = allocate(/mob/living/simple_mob/combat_ai_test_subject)
 	victim2.ai_brain.holder = null  // Simulate partial Destroy / eaten state.
 	victim2.ai_brain.react_to_attack(attacker)  // Must not runtime.
 	// If we reach here, no crash — test passes implicitly.

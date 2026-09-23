@@ -19,8 +19,7 @@
 	icon = 'icons/mob/vox.dmi'
 	icon_state = "armalis"
 	icon_living = "armalis"
-	maxHealth = 500
-	health = 500
+	endurance = 500
 	response_harm = "slashes at the"
 	harm_intent_damage = 0
 	melee_damage_lower = 30
@@ -107,8 +106,7 @@
 		user.drop_item(O)
 		armour = O
 		movement_cooldown = 4
-		maxHealth += 200
-		health += 200
+		endurance += 200
 		visible_message(span_notice("[src] is quickly outfitted in [O] by [user]."),span_notice("You quickly outfit [src] in [O]."))
 		regenerate_icons()
 		return
@@ -125,7 +123,7 @@
 			var/damage = O.force
 			if (O.damtype == HALLOSS)
 				damage = 0
-			health -= damage
+			injure(O.get_injury_kind(), damage, null, O)
 			for(var/mob/M in viewers(src, null))
 				if ((M.client && !( M.blinded )))
 					M.show_message(span_danger("[src] has been attacked with the [O] by [user]. "))

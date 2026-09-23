@@ -241,11 +241,11 @@
 		if(AGENT_APPROACH_DISCREET)
 			failure_reputation_factor = 0.5
 			operation_reward_multiplier = 1
-			advance_discovery(AGENT_DISCOVERY_SUSPECTED, "A compartmentalized charter created a recoverable private record.", 3)
+			GLOB.station_faction_relations.add_agent_exposure(owner_account_number, agent_faction, 3, "A compartmentalized charter created a recoverable private record.", "CHARTER-[id]")
 		if(AGENT_APPROACH_HOSTILE)
 			failure_reputation_factor = 1
 			operation_reward_multiplier = 1.25
-			advance_discovery(AGENT_DISCOVERY_SUSPECTED, "The hostile mandate created an encrypted operational trace.", 10)
+			GLOB.station_faction_relations.add_agent_exposure(owner_account_number, agent_faction, 10, "The hostile mandate created an encrypted operational trace.", "CHARTER-[id]")
 	base_reward = round(base_reward * operation_reward_multiplier)
 	reward = base_reward + negotiated_station_bonus + negotiated_department_bonus + negotiated_staff_bonus
 	emit_contract_event(CONTRACT_EVENT_AGENT_APPROACH_SIGNED, list(

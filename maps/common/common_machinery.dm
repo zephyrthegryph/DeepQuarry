@@ -16,8 +16,8 @@
 	invisibility = INVISIBILITY_BADMIN // nope cant see this shit
 	plane = ABOVE_PLANE
 	anchored = TRUE
-	icon = 'icons/mob/screen1.dmi' //VS Edit
-	icon_state = "centermarker" //VS Edit
+	icon = 'icons/mob/screen1.dmi'
+	icon_state = "centermarker"
 
 /obj/effect/step_trigger/tramblock/Trigger(atom/movable/A)
 	if(istype(A, /mob/living/carbon/human))

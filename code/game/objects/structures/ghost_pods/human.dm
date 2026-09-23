@@ -42,7 +42,7 @@
 	var/turf/T = get_turf(src)
 	var/mob/living/carbon/human/H = new(src)
 
-	H.adjustCloneLoss(rand(1,5))
+	H.injure(INJURY_CELLULAR, rand(1,5), null, src)
 	if(M.mind)
 		M.mind.transfer_to(H)
 	to_chat(M, span_notice("You are a [occupant_type]!"))
@@ -117,9 +117,9 @@
 				log_admin("\The [src] made [key_name(src)] into a [antag.role_text].")
 
 	if(start_injured) // Done 3 different times to disperse damage.
-		H.adjustBruteLoss(rand(1,20))
-		H.adjustBruteLoss(rand(1,20))
-		H.adjustBruteLoss(rand(1,20))
+		H.injure(INJURY_BLUNT, rand(1,20), null, src)
+		H.injure(INJURY_BLUNT, rand(1,20), null, src)
+		H.injure(INJURY_BLUNT, rand(1,20), null, src)
 
 	if(allow_appearance_change)
 		H.change_appearance(APPEARANCE_ALL, H, check_species_whitelist = 1)
@@ -170,7 +170,7 @@
 	var/turf/T = get_turf(src)
 	var/mob/living/carbon/human/H = new(src)
 
-	H.adjustCloneLoss(rand(1,5))
+	H.injure(INJURY_CELLULAR, rand(1,5), null, src)
 	if(M.mind)
 		M.mind.transfer_to(H)
 	to_chat(M, span_notice("You are a [occupant_type]!"))
@@ -239,9 +239,9 @@
 				log_admin("\The [src] made [key_name(src)] into a [antag.role_text].")
 
 	if(start_injured) // Done 3 different times to disperse damage.
-		H.adjustBruteLoss(rand(1,20))
-		H.adjustBruteLoss(rand(1,20))
-		H.adjustBruteLoss(rand(1,20))
+		H.injure(INJURY_BLUNT, rand(1,20), null, src)
+		H.injure(INJURY_BLUNT, rand(1,20), null, src)
+		H.injure(INJURY_BLUNT, rand(1,20), null, src)
 
 	if(allow_appearance_change)
 		H.change_appearance(APPEARANCE_ALL, H, check_species_whitelist = 1)

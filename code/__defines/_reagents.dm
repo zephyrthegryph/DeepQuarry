@@ -1410,7 +1410,6 @@
 #define SCANNABLE_UNSCANNABLE 99
 
 
-// === merged from _reagents_ch.dm during hard-fork de-suffix (manually verified: all-new types/defines, no base re-open) ===
 // Drugs
 #define REAGENT_CLEANSINGAGENT "Cleansing Agent"
 #define REAGENT_ID_CLEANSINGAGENT "cleansingagent"

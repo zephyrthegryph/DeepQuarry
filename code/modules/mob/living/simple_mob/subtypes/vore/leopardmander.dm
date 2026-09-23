@@ -24,7 +24,7 @@
 	response_disarm = "shoves"
 	response_harm = "bops"
 	movement_cooldown = -1 // 2 on Downstream
-	maxHealth = 1500
+	endurance = 1500
 	attacktext = list("chomped")
 	see_in_dark = 8
 	minbodytemp = 0

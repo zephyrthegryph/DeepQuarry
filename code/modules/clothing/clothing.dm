@@ -549,7 +549,7 @@
 		if(D.hat)
 			success = 2
 		else
-			D.wear_hat(src)
+			D.place_on_head(src)
 			success = 1
 	else if(istype(user, /mob/living/carbon/alien/diona))
 		var/mob/living/carbon/alien/diona/D = user
@@ -869,7 +869,7 @@
 			for(var/obj/item/organ/external/I in prey.organs)
 				// Running Total: 1.50 damage min, 28.875 damage max, depending on size & RNG.
 				// Walking Total: 5.25 damage min, 101.0625 damage max, depending on size & RNG. Ouch.
-				I.take_damage(damage, 0)
+				prey.injure(INJURY_BLUNT, damage, I, src)
 
 	if(message_pred != null)
 		to_chat(pred, span_warning(message_pred))
@@ -1486,7 +1486,6 @@
 	balloon_alert(user, "picked up hat")
 
 
-// === merged from clothing_chomp.dm during hard-fork de-suffix (manually verified) ===
 /obj/item/clothing
 	matter = list(MAT_FIBERS = 50)
 
@@ -1511,7 +1510,6 @@
 	return ..()
 
 
-// === merged from clothing_vr.dm during hard-fork de-suffix (chain-verified, vr->ch order preserved) ===
 /obj/item/clothing
 	var/recent_struggle = 0
 

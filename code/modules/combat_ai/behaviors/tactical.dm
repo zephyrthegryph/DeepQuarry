@@ -144,15 +144,16 @@
 /datum/ai_behavior/pack_retreat/evaluate(datum/ai_brain/brain, atom/source)
 	var/mob/living/owner = brain.get_owner()
 	var/mob/threat = brain.primary_threat
-	if(!owner || !threat || !owner.maxHealth)
+	if(!owner || !threat)
 		return null
-	var/dying = owner.health / owner.maxHealth < 0.3
+	var/dying = owner.vitality() < 0.3
 	// "Outmatched" — we have no nearby faction allies and the target is robust.
 	var/no_backup = brain.model && !length(brain.model.visible_friendlies)
 	var/outmatched = FALSE
 	if(no_backup && isliving(threat))
 		var/mob/living/threat_living = threat
-		outmatched = threat_living.health > owner.health
+		// Absolute toughness remaining: wellness scaled by endurance.
+		outmatched = threat_living.vitality() * threat_living.get_endurance() > owner.vitality() * owner.get_endurance()
 	if(!dying && !outmatched)
 		return null
 	return DQAI_RESULT(120, threat)  // overrides plain flee_low_hp

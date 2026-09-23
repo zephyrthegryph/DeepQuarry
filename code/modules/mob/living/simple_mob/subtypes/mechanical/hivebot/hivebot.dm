@@ -7,8 +7,7 @@
 
 	faction = FACTION_HIVEBOT
 
-	maxHealth = 3 LASERS_TO_KILL
-	health = 3 LASERS_TO_KILL
+	endurance = 3 LASERS_TO_KILL
 	water_resist = 0.5
 	movement_sound = 'sound/effects/servostep.ogg'
 
@@ -39,8 +38,7 @@
 /mob/living/simple_mob/mechanical/hivebot/swarm
 	name = "swarm hivebot"
 	desc = "A robot. It looks fragile and weak."
-	maxHealth = 1 LASERS_TO_KILL
-	health = 1 LASERS_TO_KILL
+	endurance = 1 LASERS_TO_KILL
 	melee_damage_lower = 8
 	melee_damage_upper = 8
 	attack_armor_pen = 5

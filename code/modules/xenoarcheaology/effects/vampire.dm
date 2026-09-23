@@ -26,7 +26,9 @@
 		playsound(holder, pick('sound/hallucinations/wail.ogg','sound/hallucinations/veryfar_noise.ogg','sound/hallucinations/far_noise.ogg'), 50, 1, -3)
 
 		var/target = pick(M.organs_by_name)
-		M.apply_damage(rand(5, 10), SEARING, target)
+		var/searing = rand(5, 10)
+		M.injure(INJURY_BURN, searing / 3, target)
+		M.injure(INJURY_BLUNT, searing * 2 / 3, target)
 		to_chat(M, span_critical("The skin on your [parse_zone(target)] feels like it's ripping apart, and a stream of blood flies out."))
 		var/obj/effect/decal/cleanable/blood/splatter/animated/B = new(M.loc)
 		B.basecolor = M.species.get_blood_colour(M)
@@ -37,7 +39,7 @@
 		M.remove_blood(blood_to_remove)
 		if(harvested)
 			charges += blood_to_remove/10 //Anywhere from 1 to 3 charges based on how much it sucks, plus the extra blood puddle.. This means you can reasonably get things from the harvested variant.
-			/// In testing, (with it set to effect = 1 aka AURA, it got ~18 charges with 300 anobattery usage, 22% blood loss from the person being drained, and 41 damage to them (plus the resulting 20 oxyloss from low blood)
+			/// In testing, (with it set to effect = 1 aka AURA, it got ~18 charges with 300 anobattery usage, 22% blood loss from the person being drained, and 41 damage to them (plus the resulting 20 asphyxiation from low blood)
 			/// I feel like 22% blood loss and 41 damage is a good exchange for 18 charges. If this seems to be too strong later down the line, just  change that /10 above to a /15 (33% less per blood) or /20 (50% less per blood)
 
 /datum/artifact_effect/vampire/DoEffectTouch(mob/user)
@@ -62,7 +64,7 @@
 
 	if(world.time - bloodcall_interval >= last_bloodcall && LAZYLEN(nearby_mobs))
 		var/mob/living/carbon/human/M = pick(nearby_mobs)
-		if(get_dist(M, T) <= effectrange && M.health > 20)
+		if(get_dist(M, T) <= effectrange && M.vitality() > 0.6)
 			bloodcall(M)
 			holder.Beam(M, icon_state = "drainbeam", time = 1 SECOND)
 

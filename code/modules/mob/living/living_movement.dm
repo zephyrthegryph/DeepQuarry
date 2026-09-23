@@ -260,8 +260,8 @@ default behaviour is:
 
 /mob/living/proc/dragged(mob/living/dragger, oldloc, forced)
 	var/area/A = get_area(src)
-	if(forced || (lying && !buckled && pull_damage() && A.get_gravity() && (prob(getBruteLoss() * 200 / maxHealth))))
-		adjustBruteLoss(2)
+	if(forced || (lying && !buckled && pull_damage() && A.get_gravity() && (prob(injury_load(INJURY_CATEGORY_PHYSICAL) * 200 / max(1, get_endurance())))))
+		injure(INJURY_BLUNT, 2, null, dragger)
 		visible_message(span_danger("\The [src]'s [isSynthetic() ? "state" : "wounds"] worsen terribly from being dragged!"), runemessage = "is dragged, wounds worsening!")
 		return TRUE
 

@@ -1,0 +1,13 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - bugfix: "Cyborgs no longer tick their body twice per cycle, and a stunned or unpowered cyborg now stays down instead of flickering awake every tick."
+  - bugfix: "One EMP now hits a cyborg once: one surge, one cell drain, and blocking modules are checked first."
+  - bugfix: "Pulling a damaged part (or the cell) out of a cyborg and putting it back no longer repairs it; parts carry their damage."
+  - bugfix: "Cyborg power can no longer go negative or overfill: every drain and charge goes through one power ledger."
+  - bugfix: "The cyborg analyzer's prosthetic scan now lists synthetic faults instead of a system instability reading that was always zero."
+  - rscadd: "Cyborgs have a coolant loop and a processor core. Destroying the core destroys the unit; poor cooling builds heat until thermal runaway."
+  - rscadd: "Worn actuators slow a cyborg down and a worn camera blurs its vision; parts degrade gradually instead of working until they break."
+  - rscadd: "Losing power browns a cyborg out until power returns. EMPs cause a power fault on the power bus."
+  - qol: "Slaved cyborgs pick up their AI's law changes as soon as they happen."
+  - code_imp: "Split the cyborg god procedures (tool interactions, appearance, click handling, setup), moved sleeper-belly features into a component, and turned the AI power-loss routine and cyborg lock countdowns into timers."

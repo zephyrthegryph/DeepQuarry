@@ -29,7 +29,7 @@
 		return
 	// Geometry-specific consumers can override thickness; ordinary fabricated
 	// items use a five-millimeter representative path through their material.
-	I.rad_insulation = material_radiation_transmission(5)
+	I.set_rad_insulation(material_radiation_transmission(5))
 	var/datum/component/material_behaviors/behavior = I.GetComponent(/datum/component/material_behaviors)
 	if(behavior)
 		behavior.configure(luminescence, radioactivity, toxicity, icon_colour)
@@ -100,4 +100,4 @@
 		// seconds, so this is deliberately NOT multiplied by the process arg.
 		var/mob/living/carbon/human/H = I.loc
 		if(istype(H))
-			H.adjustToxLoss(toxicity * 0.01)
+			H.injure(INJURY_TOXIN, toxicity * 0.01, null, I, 0, null, INJURE_SILENT)

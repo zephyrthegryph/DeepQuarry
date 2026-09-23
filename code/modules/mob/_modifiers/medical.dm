@@ -13,7 +13,7 @@
 	on_expired_text = span_notice("You feel.. less alive.")
 	stacks = MODIFIER_STACK_EXTEND
 
-	pulse_set_level = PULSE_NORM
+	factors = alist(BF_PULSE_SET = PULSE_NORM)
 
 /datum/modifier/bloodpump/check_if_valid()
 	..()
@@ -28,7 +28,7 @@
 	on_expired_text = span_notice("You feel.. less alive.")
 	stacks = MODIFIER_STACK_EXTEND
 
-	pulse_set_level = PULSE_SLOW
+	factors = alist(BF_PULSE_SET = PULSE_SLOW)
 	var/mob/living/carbon/human/human_being_pumped
 
 //The meat and
@@ -63,7 +63,8 @@
 
 /datum/modifier/bloodpump_corpse/cpr
 	desc = "Your blood flows thanks to the wonderful power of CPR."
-	pulse_set_level = PULSE_NONE //No pulse. You're acting as their pulse.
+	// No pulse. You're acting as their pulse.
+	factors = alist(BF_PULSE_SET = PULSE_NONE)
 
 /datum/modifier/bloodpump_corpse/cpr/tick()
 	var/randomization = rand(4,7) //CPR isn't perfect. You get some randomization in there.
@@ -79,10 +80,7 @@
 	on_expired_text = span_warning("You feel somewhat warmer and more mobile now.")
 	stacks = MODIFIER_STACK_ALLOWED
 
-	slowdown = 0.1
-	evasion = -5
-	attack_speed_percent = 1.1
-	disable_duration_percent = 1.05
+	factors = alist(BF_SLOWDOWN = 0.1, BF_EVASION = -5, BF_ATTACK_SPEED = 1.1, BF_DISABLE_DURATION = 1.05)
 
 /datum/modifier/clone_stabilizer
 	name = "clone stabilized"
@@ -92,4 +90,57 @@
 	on_expired_text = span_warning("You feel healthier.")
 	stacks = MODIFIER_STACK_EXTEND
 
-	incoming_healing_percent = 0.1
+	factors = alist(BF_HEALING_RECEIVED = 0.1)
+
+
+// --- Transient body-factor sources ------------------------------------------------------
+// Brief effects that aren't reagents (venom bites, rotting nerves, withdrawal
+// crises, allergy flares). Each is a short modifier carrying a static factor
+// table; re-applying one while it runs extends it.
+
+/datum/modifier/numbness
+	name = "numbness"
+	desc = "You can barely feel your body."
+	hidden = TRUE
+	stacks = MODIFIER_STACK_EXTEND
+	factors = alist(BF_ANALGESIA = 60)
+
+/datum/modifier/numbness/mild
+	factors = alist(BF_ANALGESIA = 20)
+
+/datum/modifier/numbness/deep
+	factors = alist(BF_ANALGESIA = 150)
+
+/// Synx venom: numbs and steadies the prey.
+/datum/modifier/numbness/synx
+	factors = alist(BF_ANALGESIA = 50, BF_STABILIZATION = 15)
+
+/// A withdrawal crisis strains the liver, kidneys and spleen.
+/datum/modifier/withdrawal_strain
+	name = "withdrawal strain"
+	hidden = TRUE
+	stacks = MODIFIER_STACK_EXTEND
+	factors = alist(BF_WITHDRAWAL = 0.5)
+
+/datum/modifier/withdrawal_strain/mild
+	factors = alist(BF_WITHDRAWAL = 0.5)
+
+/datum/modifier/withdrawal_strain/moderate
+	factors = alist(BF_WITHDRAWAL = 1.4)
+
+/datum/modifier/withdrawal_strain/severe
+	factors = alist(BF_WITHDRAWAL = 2.3)
+
+/// Airborne allergens (pollen) set off the mob's allergies.
+/datum/modifier/allergic_flare
+	name = "allergic flare"
+	hidden = TRUE
+	stacks = MODIFIER_STACK_EXTEND
+	factors = alist(BF_ALLERGY = 2.5)
+
+/// A disease symptom rebuilding blood.
+/datum/modifier/blood_regeneration
+	name = "blood regeneration"
+	hidden = TRUE
+	stacks = MODIFIER_STACK_EXTEND
+	factors = alist(BF_BLOOD_REGEN = 1)

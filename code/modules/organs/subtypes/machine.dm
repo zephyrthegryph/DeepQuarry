@@ -73,15 +73,11 @@
 /obj/item/organ/internal/mmi_holder/proc/update_from_mmi()
 	if(!owner) return
 
-	if(!stored_mmi.brainmob)
-		stored_mmi.brainmob = new(stored_mmi)
-		stored_mmi.brainobj = new(stored_mmi)
-		stored_mmi.brainmob.container = stored_mmi
-		stored_mmi.brainmob.real_name = owner.real_name
-		stored_mmi.brainmob.name = stored_mmi.brainmob.real_name
+	// An assisted interface keeps real brain tissue in its MMI; the mind stays
+	// in the body until the interface is removed.
+	if(!istype(stored_mmi, /obj/item/mmi/digital) && !stored_mmi.brainobj)
+		stored_mmi.set_brain(new /obj/item/organ/internal/brain(stored_mmi))
 		stored_mmi.name = "[initial(stored_mmi.name)] ([owner.real_name])"
-
-	if(!owner) return
 
 	name = stored_mmi.name
 	desc = stored_mmi.desc
@@ -89,8 +85,6 @@
 
 	stored_mmi.icon_state = "mmi_full"
 	icon_state = stored_mmi.icon_state
-
-	stored_mmi.brainmob.languages = owner.languages
 
 	if(owner && owner.stat == DEAD)
 		owner.set_stat(CONSCIOUS)
@@ -104,20 +98,15 @@
 		. = stored_mmi // Code
 		stored_mmi.forceMove(drop_location())
 		if(owner.mind)
-			owner.mind.transfer_to(stored_mmi.brainmob)
-			stored_mmi.brainmob.reset_perspective()
+			var/datum/component/mind_host/host = get_mind_host(stored_mmi)
+			var/mob/living/carbon/brain/view = host?.receive_mind(owner.mind, "brain interface removed from [owner]")
+			view?.reset_perspective()
 	..()
 
 	var/mob/living/holder_mob = loc
 	if(istype(holder_mob))
 		holder_mob.drop_from_inventory(src)
 	qdel(src)
-/*
-// EMP loops inside things, this should still work?
-/obj/item/organ/internal/mmi_holder/emp_act(severity, recursive)
-	if(stored_mmi)
-		stored_mmi.emp_act(severity, recursive)
-*/
 /obj/item/organ/internal/mmi_holder/posibrain
 	name = "positronic brain interface"
 	brain_type = /obj/item/mmi/digital/posibrain
@@ -128,7 +117,6 @@
 	stored_mmi.icon_state = "posibrain-occupied"
 	icon_state = stored_mmi.icon_state
 
-	stored_mmi.brainmob.languages = owner.languages
 
 /obj/item/organ/internal/mmi_holder/robot
 	name = "digital brain interface"
@@ -140,4 +128,3 @@
 	stored_mmi.icon_state = "mainboard"
 	icon_state = stored_mmi.icon_state
 
-	stored_mmi.brainmob.languages = owner.languages

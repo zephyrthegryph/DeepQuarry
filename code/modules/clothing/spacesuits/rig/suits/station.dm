@@ -608,7 +608,6 @@
 	armor = list(melee = 50, bullet = 10, laser = 20, energy = 15, bomb = 30, bio = 100, rad = 50)
 
 
-// === merged from station_ch.dm during hard-fork de-suffix (verified no override-order change) ===
 //Hardsuits
 /obj/item/rig/ch //Some blank bs
 	name = DEVELOPER_WARNING_NAME

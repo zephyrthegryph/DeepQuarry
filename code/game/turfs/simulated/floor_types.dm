@@ -1,9 +1,4 @@
-/turf/simulated/floor/diona
-	name = "biomass flooring"
-	icon_state = "diona"
 
-/turf/simulated/floor/diona/attackby()
-	return
 
 //Shuttle Floors
 /obj/landed_holder
@@ -220,9 +215,6 @@
 /turf/simulated/shuttle/floor/black
 	icon_state = "floor_black"
 
-/turf/simulated/shuttle/floor/glass
-	icon_state = "floor_glass"
-	takes_underlays = 1
 
 /turf/simulated/shuttle/floor/alien
 	icon_state = "alienpod1"
@@ -241,7 +233,6 @@
 	icon_state = "alienplating"
 	block_tele = TRUE
 
-/turf/simulated/shuttle/floor/alienplating/external // For the outer rim of the UFO, to avoid active edges.
 // The actual temperature adjustment is defined if the SC or other future map is compiled.
 
 /turf/simulated/shuttle/plating
@@ -302,7 +293,6 @@
 /turf/simulated/shuttle/floor/voidcraft/external // For avoiding active edges.
 // The actual temperature adjustment is defined if the SC or other future map is compiled.
 
-/turf/simulated/shuttle/floor/voidcraft/external/dark
 
 /turf/simulated/shuttle/floor/voidcraft/external/light
 
@@ -372,9 +362,6 @@
 	icon_base = "gold"
 	build_type = /obj/item/stack/tile/floor/gold
 
-/turf/simulated/floor/tiled/material/silver
-	icon_state = "silver"
-	initial_flooring = /datum/decl/flooring/tiling/material/silver
 
 /datum/decl/flooring/tiling/material/silver
 	name = "silver floor"
@@ -390,27 +377,6 @@
 	icon_base = "diamond"
 	build_type = /obj/item/stack/tile/floor/diamond
 
-
-// === merged from floor_types_vr.dm during hard-fork de-suffix (verified no override-order change) ===
-/turf/simulated/shuttle/floor/alienplating/blue
-	icon = 'icons/turf/shuttle_alien_blue.dmi'
-	icon_state = "alienplating"
-
-/turf/simulated/shuttle/floor/alienplating/blue/half
-	icon_state = "alienplatinghalf"
-
-/turf/simulated/shuttle/floor/alien/blue
-	icon = 'icons/turf/shuttle_alien_blue.dmi'
-	icon_state = "alienpod1"
-	light_range = 4
-	light_power = 0.8
-	light_color = "#66ffff" // Bright cyan.
-
-/turf/simulated/shuttle/floor/alienplating/vacuum
-	initial_gas_mix = AIRLESS_ATMOS
-	oxygen = 0
-	nitrogen = 0
-	temperature = TCMB
 
 /turf/simulated/floor/flesh
 	name = "flesh"

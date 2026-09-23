@@ -21,11 +21,6 @@
 	var/deconstructable = FALSE
 
 /obj/machinery/embedded_controller/radio/airlock/Destroy()
-	// TODO - Leshana - Implement dummy terminals
-	//for(var/thing in dummy_terminals)
-	//	var/obj/machinery/dummy_airlock_controller/dummy = thing
-	//	dummy.master_controller = null
-	//dummy_terminals.Cut()
 	return ..()
 
 /obj/machinery/embedded_controller/radio/airlock/tgui_status(mob/user, datum/tgui_state/state)
@@ -83,7 +78,6 @@
 			set_frequency(sanitize_frequency(text2num(params["freq"]), RADIO_LOW_FREQ, RADIO_HIGH_FREQ))
 			return TRUE
 
-
 /obj/machinery/embedded_controller/radio/airlock/update_icon()
 	cut_overlays()
 	if(panel_open)
@@ -110,7 +104,6 @@
 	)
 
 	return data
-
 
 //Airlock controller for airlock control - most airlocks on the station use this
 /obj/machinery/embedded_controller/radio/airlock/airlock_controller

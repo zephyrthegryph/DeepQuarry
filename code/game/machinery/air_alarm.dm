@@ -23,11 +23,12 @@
 //all air alarms in area are connected via freq 1439
 /area
 	var/datum/weakref/main_air_alarm // The air alarm currently managing the others in the area, settings changes go to this one and propogate
-	var/list/air_vent_names = list()
-	var/list/air_scrub_names = list()
-	var/list/air_vent_info = list()
-	var/list/air_scrub_info = list()
-	var/list/air_alarms = list()
+	// All lazy: most areas have no air alarm or vents.
+	var/list/air_vent_names
+	var/list/air_scrub_names
+	var/list/air_vent_info
+	var/list/air_scrub_info
+	var/list/air_alarms
 
 /area/proc/elect_main_air_alarm(exclude_self = FALSE)
 	// loop through all sensors to update the area's sensor list as well
@@ -102,8 +103,11 @@
 	/// Keys are things like temperature and certain gasses. Values are lists, which contain, in order:
 	/// red warning minimum value, yellow warning minimum value, yellow warning maximum value, red warning maximum value
 	/// Use code\defines\gases.dm as reference for id/name. Please keep it consistent
-	var/list/TLV = list()
-	var/list/trace_gas = list(GAS_N2O, GAS_VOLATILE_FUEL) //list of other gases that this air alarm is able to detect
+	/// Starts as the type's shared default_TLV() table, which is read-only; call own_TLV() before editing.
+	var/list/TLV
+	/// TRUE once TLV is a private deep copy that this alarm may edit.
+	var/TLV_owned = FALSE
+	var/static/list/trace_gas = list(GAS_N2O, GAS_VOLATILE_FUEL) //list of other gases that this air alarm is able to detect
 
 	var/danger_level = 0
 	var/pressure_dangerlevel = 0
@@ -151,7 +155,7 @@
 	if(!pixel_x && !pixel_y)
 		offset_airalarm()
 	set_wires(new /datum/wires/alarm(src))
-	alarm_area.air_alarms += src
+	LAZYADD(alarm_area.air_alarms, src)
 	if(!alarm_area.main_air_alarm_is_operating()) // select main alarm
 		alarm_area.elect_main_air_alarm()
 	set_initial_TLV()
@@ -162,7 +166,7 @@
 	unregister_radio(src, frequency)
 	qdel(wires)
 	wires = null
-	alarm_area.air_alarms -= src
+	LAZYREMOVE(alarm_area.air_alarms, src)
 	if(alarm_area.main_air_alarm?.resolve() == src)
 		alarm_area.elect_main_air_alarm(TRUE)
 	alarm_area = null
@@ -175,17 +179,40 @@
 
 /obj/machinery/alarm/proc/set_initial_TLV()
 	invalidate_gas_dependencies()
-	// breathable air according to human/Life()
-	TLV[GAS_O2] =			list(16, 19, 135, 140) // Partial pressure, kpa
-	TLV[GAS_N2] =		list(0, 0, 135, 140) // Partial pressure, kpa
-	TLV[GAS_CO2] = list(-1.0, -1.0, 5, 10) // Partial pressure, kpa
-	TLV[GAS_PHORON] =			list(-1.0, -1.0, 0, 0.5) // Partial pressure, kpa
-	TLV[GAS_CH4] = 		list(-1.0, -1.0, 0, 0.5) // Partial pressure, kpa
-	TLV["other"] =			list(-1.0, -1.0, 0.5, 1.0) // Partial pressure, kpa
-	TLV["pressure"] =		list(ONE_ATMOSPHERE * 0.80, ONE_ATMOSPHERE * 0.90, ONE_ATMOSPHERE * 1.10, ONE_ATMOSPHERE * 1.20) /* kpa */
-	TLV["temperature"] =	list(T0C - 26, T0C, T0C + 40, T0C + 66) // K
-
+	TLV = default_TLV()
+	TLV_owned = FALSE
 	update_icon()
+
+/// The shared, read-only threshold table for this alarm type. Subtypes override
+/// this with their own proc-local static table built from a copy of the parent's.
+/obj/machinery/alarm/proc/default_TLV()
+	var/static/list/table
+	if(!table)
+		table = list()
+		// breathable air according to human/Life()
+		table[GAS_O2] =			list(16, 19, 135, 140) // Partial pressure, kpa
+		table[GAS_N2] =			list(0, 0, 135, 140) // Partial pressure, kpa
+		table[GAS_CO2] =		list(-1.0, -1.0, 5, 10) // Partial pressure, kpa
+		table[GAS_PHORON] =		list(-1.0, -1.0, 0, 0.5) // Partial pressure, kpa
+		table[GAS_CH4] =		list(-1.0, -1.0, 0, 0.5) // Partial pressure, kpa
+		table["other"] =		list(-1.0, -1.0, 0.5, 1.0) // Partial pressure, kpa
+		table["pressure"] =		list(ONE_ATMOSPHERE * 0.80, ONE_ATMOSPHERE * 0.90, ONE_ATMOSPHERE * 1.10, ONE_ATMOSPHERE * 1.20) /* kpa */
+		table["temperature"] =	list(T0C - 26, T0C, T0C + 40, T0C + 66) // K
+	return table
+
+/proc/copy_air_alarm_TLV(list/table)
+	var/list/copy = list()
+	for(var/key in table)
+		var/list/row = table[key]
+		copy[key] = row.Copy()
+	return copy
+
+/// Copy-on-write: give this alarm a private TLV table before editing it.
+/obj/machinery/alarm/proc/own_TLV()
+	if(TLV_owned)
+		return
+	TLV = copy_air_alarm_TLV(TLV)
+	TLV_owned = TRUE
 
 /obj/machinery/alarm/proc/update_area()
 	invalidate_gas_dependencies()
@@ -283,7 +310,10 @@
 	if(sleeping_mixture_id != new_mixture_id)
 		SSmachines.unsubscribe_gas_dependency(sleeping_mixture_id, WR)
 		sleeping_mixture_id = new_mixture_id
-		SSmachines.subscribe_gas_dependency(sleeping_mixture_id, WR)
+	// Hibernation is also the idempotent repair path after a wake. The mixture
+	// may be unchanged while the scheduler-side subscription was removed, so
+	// always ensure the registration exists.
+	SSmachines.subscribe_gas_dependency(sleeping_mixture_id, WR)
 	sleeping_mixture_revision = environment ? environment.revision() : -1
 	sleeping_alarm_signature = environment ? atmospheric_control_signature(environment) : null
 
@@ -296,11 +326,10 @@
 /obj/machinery/alarm/gas_dependency_changed(mixture_id, change_mask, list/observation, observation_index)
 	if(!(change_mask & GAS_DEPENDENCY_ALL) || mixture_id != sleeping_mixture_id)
 		return FALSE
-	// A concrete composition publication is itself player-visible state even if
-	// it has not crossed a danger TLV. GAS_DEPENDENCY_ALL is also used by direct
-	// callers as "unknown class", so those still take the threshold path below.
-	if((change_mask & GAS_DEPENDENCY_COMPOSITION) && change_mask != GAS_DEPENDENCY_ALL)
-		return TRUE
+	// Composition is only actionable when it crosses one of the alarm's TLV
+	// bands. The Rust observation below contains every gas this controller can
+	// display, so unconditional composition wakes merely turned harmless room-air
+	// diffusion into six full alarm scans per Machines fire.
 	if(observation && observation_index)
 		var/current_revision = observation[observation_index + 2]
 		if(current_revision == sleeping_mixture_revision)
@@ -578,30 +607,30 @@
 	if(!(id_tag in alarm_area.air_scrub_names) && !(id_tag in alarm_area.air_vent_names))
 		register_env_machine(id_tag, dev_type)
 	if(dev_type == "AScr")
-		alarm_area.air_scrub_info[id_tag] = signal.data
+		LAZYSET(alarm_area.air_scrub_info, id_tag, signal.data)
 	else if(dev_type == "AVP")
-		alarm_area.air_vent_info[id_tag] = signal.data
+		LAZYSET(alarm_area.air_vent_info, id_tag, signal.data)
 
 /obj/machinery/alarm/proc/register_env_machine(m_id, device_type)
 	var/new_name
 	if(device_type == "AVP")
-		new_name = "[alarm_area.name] Vent Pump #[alarm_area.air_vent_names.len+1]"
-		alarm_area.air_vent_names[m_id] = new_name
+		new_name = "[alarm_area.name] Vent Pump #[length(alarm_area.air_vent_names)+1]"
+		LAZYSET(alarm_area.air_vent_names, m_id, new_name)
 	else if(device_type == "AScr")
-		new_name = "[alarm_area.name] Air Scrubber #[alarm_area.air_scrub_names.len+1]"
-		alarm_area.air_scrub_names[m_id] = new_name
+		new_name = "[alarm_area.name] Air Scrubber #[length(alarm_area.air_scrub_names)+1]"
+		LAZYSET(alarm_area.air_scrub_names, m_id, new_name)
 	else
 		return
 	addtimer(CALLBACK(src, PROC_REF(send_signal),m_id, list("init" = new_name)), 10, TIMER_DELETE_ME)
 
 /obj/machinery/alarm/proc/refresh_all()
 	for(var/id_tag in alarm_area.air_vent_names)
-		var/list/I = alarm_area.air_vent_info[id_tag]
+		var/list/I = LAZYACCESS(alarm_area.air_vent_info, id_tag)
 		if(I && I["timestamp"] + AALARM_REPORT_TIMEOUT / 2 > world.time)
 			continue
 		send_signal(id_tag, list("status"))
 	for(var/id_tag in alarm_area.air_scrub_names)
-		var/list/I = alarm_area.air_scrub_info[id_tag]
+		var/list/I = LAZYACCESS(alarm_area.air_scrub_info, id_tag)
 		if(I && I["timestamp"] + AALARM_REPORT_TIMEOUT / 2 > world.time)
 			continue
 		send_signal(id_tag, list("status"))
@@ -775,7 +804,7 @@
 		data["vents"] = vents
 		for(var/id_tag in A.air_vent_names)
 			var/long_name = A.air_vent_names[id_tag]
-			var/list/info = A.air_vent_info[id_tag]
+			var/list/info = LAZYACCESS(A.air_vent_info, id_tag)
 			if(!info)
 				continue
 			vents.Add(list(list(
@@ -797,7 +826,7 @@
 		data["scrubbers"] = scrubbers
 		for(var/id_tag in alarm_area.air_scrub_names)
 			var/long_name = alarm_area.air_scrub_names[id_tag]
-			var/list/info = alarm_area.air_scrub_info[id_tag]
+			var/list/info = LAZYACCESS(alarm_area.air_scrub_info, id_tag)
 			if(!info)
 				continue
 			scrubbers += list(list(
@@ -935,6 +964,7 @@
 			var/name = params["var"]
 			var/value = tgui_input_number(ui.user, "New [name] for [env]:", name, TLV[env][name], min_value=-1, round_value = FALSE)
 			if(!isnull(value) && !..())
+				own_TLV()
 				if(value < 0)
 					TLV[env][name] = -1
 				else
@@ -942,6 +972,7 @@
 				clamp_tlv_values(env, name)
 				// investigate_log(" treshold value for [env]:[name] was set to [value] by [key_name(ui.user)]",INVESTIGATE_ATMOS)
 				for(var/obj/machinery/alarm/AA in alarm_area.air_alarms)
+					AA.own_TLV()
 					AA.TLV[env][name] = TLV[env][name]
 					AA.invalidate_gas_dependencies()
 				. = TRUE
@@ -963,6 +994,7 @@
 // This big ol' mess just ensures that TLV always makes sense. If you set the max value below the min value,
 // it'll automatically update all the other values to keep it sane.
 /obj/machinery/alarm/proc/clamp_tlv_values(env, changed_threshold)
+	own_TLV()
 	var/list/selected = TLV[env]
 	switch(changed_threshold)
 		if(1)
@@ -1066,33 +1098,43 @@
 /obj/machinery/alarm/server/Initialize(mapload)
 	. = ..()
 	req_access = list(ACCESS_RD, ACCESS_ATMOSPHERICS, ACCESS_ENGINE_EQUIP)
-	TLV[GAS_O2] =			list(-1.0, -1.0,-1.0,-1.0) // Partial pressure, kpa
-	TLV[GAS_CO2] =			list(-1.0, -1.0,   5,  10) // Partial pressure, kpa
-	TLV[GAS_PHORON] =		list(-1.0, -1.0, 0, 0.5) // Partial pressure, kpa
-	TLV[GAS_CH4] = 			list(-1.0, -1.0, 0, 0.5) // Partial pressure, kpa
-	TLV["other"] =			list(-1.0, -1.0, 0.5, 1.0) // Partial pressure, kpa
-	TLV["pressure"] =		list(0,ONE_ATMOSPHERE*0.10,ONE_ATMOSPHERE*1.40,ONE_ATMOSPHERE*1.60) /* kpa */
-	TLV["temperature"] =	list(20, 40, 140, 160) // K
 	target_temperature = 90
+
+/obj/machinery/alarm/server/default_TLV()
+	var/static/list/table
+	if(!table)
+		table = copy_air_alarm_TLV(..())
+		table[GAS_O2] =			list(-1.0, -1.0,-1.0,-1.0) // Partial pressure, kpa
+		table[GAS_CO2] =		list(-1.0, -1.0,   5,  10) // Partial pressure, kpa
+		table[GAS_PHORON] =		list(-1.0, -1.0, 0, 0.5) // Partial pressure, kpa
+		table[GAS_CH4] =		list(-1.0, -1.0, 0, 0.5) // Partial pressure, kpa
+		table["other"] =		list(-1.0, -1.0, 0.5, 1.0) // Partial pressure, kpa
+		table["pressure"] =		list(0,ONE_ATMOSPHERE*0.10,ONE_ATMOSPHERE*1.40,ONE_ATMOSPHERE*1.60) /* kpa */
+		table["temperature"] =	list(20, 40, 140, 160) // K
+	return table
 
 /obj/machinery/alarm/freezer
 	target_temperature = T0C - 13.15 // Chilly freezer room
 
-/obj/machinery/alarm/freezer/set_initial_TLV()
-	. = ..()
-
-	TLV["temperature"] =	list(T0C - 40, T0C - 20, T0C + 40, T0C + 66) // K, Lower Temperature for Freezer Air Alarms (This is because TLV is hardcoded to be generated on first_run, and therefore the only way to modify this without changing TLV generation)
+/obj/machinery/alarm/freezer/default_TLV()
+	var/static/list/table
+	if(!table)
+		table = copy_air_alarm_TLV(..())
+		table["temperature"] =	list(T0C - 40, T0C - 20, T0C + 40, T0C + 66) // K, lower temperature for freezer air alarms
+	return table
 
 /obj/machinery/alarm/sifwilderness
 	breach_detection = 0
 	report_danger_level = 0
 
-/obj/machinery/alarm/sifwilderness/set_initial_TLV()
-	. = ..()
-
-	TLV["oxygen"] =			list(16, 17, 135, 140)
-	TLV["pressure"] =		list(0,ONE_ATMOSPHERE*0.10,ONE_ATMOSPHERE*1.50,ONE_ATMOSPHERE*1.60)
-	TLV["temperature"] =	list(T0C - 40, T0C - 31, T0C + 40, T0C + 120)
+/obj/machinery/alarm/sifwilderness/default_TLV()
+	var/static/list/table
+	if(!table)
+		table = copy_air_alarm_TLV(..())
+		table["oxygen"] =		list(16, 17, 135, 140)
+		table["pressure"] =		list(0,ONE_ATMOSPHERE*0.10,ONE_ATMOSPHERE*1.50,ONE_ATMOSPHERE*1.60)
+		table["temperature"] =	list(T0C - 40, T0C - 31, T0C + 40, T0C + 120)
+	return table
 
 #undef LOAD_TLV_VALUES
 #undef TEST_TLV_VALUES

@@ -66,6 +66,9 @@
 	var/list/stakeholder_proposals
 	var/list/personal_side_definitions
 	var/stakeholder_requirements_locked = FALSE
+	/// Highest cumulative grade award paid while the project was underway.
+	/// This survives reversible progress and makes milestones exactly-once.
+	var/settled_project_multiplier = 0
 
 /datum/contract/social/New()
 	. = ..()
@@ -103,17 +106,11 @@
 	return clamp(floors[requirement.name], 0.25, 1)
 
 /datum/contract/social/proc/social_personal_offer_context(side_definition_id)
-	var/list/context = list(
+	return list(
 		"parent_contract_id" = id,
 		"parent_definition_id" = definition_id,
 		"department" = department,
 	)
-	switch(side_definition_id)
-		if("emergency_exclusive_contractor")
-			context["role_id"] = "repair"
-		if("clinical_priority_coordinator")
-			context["role_id"] = "clinician"
-	return context
 
 /datum/contract/social/proc/offer_social_personal_contract(side_definition_id, mob/living/accepting_user)
 	var/datum/contract_definition/personal_outcome/definition = SScontracts.definitions[side_definition_id]
@@ -269,85 +266,19 @@
 		return FALSE
 	if(account_has_stakeholder_role(account.account_number, role_id))
 		return FALSE
-	var/key = proposal_key(account.account_number, role_id)
-	var/datum/contract_stakeholder_proposal/proposal = stakeholder_proposals[key]
-	if(proposal?.status in list(CONTRACT_STAKEHOLDER_PENDING, CONTRACT_STAKEHOLDER_COUNTERED, CONTRACT_STAKEHOLDER_APPROVED))
-		return FALSE
-	if(proposal)
-		qdel(proposal)
-	proposal = new(account, role_id, requested_weight)
-	stakeholder_proposals[key] = proposal
-	audit(CONTRACT_AUDIT_PROGRESS, "[proposal.account_name] proposed [role.title] participation at share weight [proposal.requested_weight].")
-	SScontracts?.notify_contract(src, "A new stakeholder proposal was filed for [title].")
-	return TRUE
-
-/datum/contract/social/proc/decide_stakeholder(account_number, role_id, approved, actor_name, offered_weight = 0)
-	if(!(state in list(CONTRACT_ACTIVE, CONTRACT_GRACE)))
-		return FALSE
-	var/key = proposal_key(account_number, role_id)
-	var/datum/contract_stakeholder_proposal/proposal = stakeholder_proposals[key]
-	var/datum/contract_stakeholder_role/role = stakeholder_roles[role_id]
-	if(!proposal || !role || !(proposal.status in list(CONTRACT_STAKEHOLDER_PENDING, CONTRACT_STAKEHOLDER_COUNTERED, CONTRACT_STAKEHOLDER_APPROVED)))
-		return FALSE
-	var/was_approved = proposal.status == CONTRACT_STAKEHOLDER_APPROVED
-	if(approved && account_has_stakeholder_role(proposal.account_number, role_id))
-		return FALSE
-	if(approved && !was_approved && role.maximum_approved > 0 && approved_stakeholder_count(role_id) >= role.maximum_approved)
-		return FALSE
-	if(!approved)
-		proposal.status = CONTRACT_STAKEHOLDER_REJECTED
-		proposal.approved_weight = 0
-		audit(CONTRACT_AUDIT_PROGRESS, "[actor_name || "An authorized representative"] rejected [proposal.account_name]'s [role.title] proposal.")
-		reconcile_completion()
-		return TRUE
-	offered_weight = clamp(round(offered_weight || proposal.requested_weight), 1, 3)
-	if(was_approved && offered_weight == proposal.approved_weight)
-		return TRUE
-	proposal.approved_weight = offered_weight
-	if(offered_weight != proposal.requested_weight)
-		proposal.status = CONTRACT_STAKEHOLDER_COUNTERED
-		audit(CONTRACT_AUDIT_PROGRESS, "[actor_name || "An authorized representative"] countered [proposal.account_name]'s [role.title] share request with weight [offered_weight].")
-		reconcile_completion()
-		return TRUE
-	proposal.status = CONTRACT_STAKEHOLDER_APPROVED
-	var/contribution_key = "[proposal.account_number]"
-	proposal.contribution = max(proposal.contribution, contributions[contribution_key] || 0)
-	audit(CONTRACT_AUDIT_PROGRESS, "[actor_name || "An authorized representative"] approved [proposal.account_name]'s [role.title] proposal at share weight [proposal.approved_weight].")
-	if(!was_approved)
-		emit_contract_event(CONTRACT_EVENT_STAKEHOLDER_APPROVED, list(
-			"contract_id" = id,
-			"actor_account" = proposal.account_number,
-			"actor_name" = proposal.account_name,
-			"actor_department" = proposal.department,
-			"department" = department,
-			"role_id" = role.id,
-			"requested_weight" = proposal.approved_weight,
-			"detail" = "[proposal.account_name] received the [role.title] subcontract at share weight [proposal.approved_weight].",
-		), "stakeholder-approved:[id]:[proposal.account_number]:[role.id]")
-	reconcile_completion()
-	return TRUE
-
-/datum/contract/social/proc/respond_stakeholder_counter(datum/money_account/account, role_id, accepted)
-	if(!(state in list(CONTRACT_ACTIVE, CONTRACT_GRACE)) || !account)
-		return FALSE
-	var/key = proposal_key(account.account_number, role_id)
-	var/datum/contract_stakeholder_proposal/proposal = stakeholder_proposals[key]
-	var/datum/contract_stakeholder_role/role = stakeholder_roles[role_id]
-	if(!proposal || !role || proposal.status != CONTRACT_STAKEHOLDER_COUNTERED)
-		return FALSE
-	if(!accepted)
-		proposal.status = CONTRACT_STAKEHOLDER_WITHDRAWN
-		proposal.approved_weight = 0
-		audit(CONTRACT_AUDIT_PROGRESS, "[proposal.account_name] declined the [role.title] counteroffer.")
-		return TRUE
-	if(account_has_stakeholder_role(proposal.account_number, role_id))
-		return FALSE
 	if(role.maximum_approved > 0 && approved_stakeholder_count(role_id) >= role.maximum_approved)
 		return FALSE
+	var/key = proposal_key(account.account_number, role_id)
+	var/datum/contract_stakeholder_proposal/proposal = stakeholder_proposals[key]
+	if(proposal?.status == CONTRACT_STAKEHOLDER_APPROVED)
+		return FALSE
+	if(!proposal)
+		proposal = new(account, role_id, 1)
 	proposal.status = CONTRACT_STAKEHOLDER_APPROVED
-	var/contribution_key = "[proposal.account_number]"
-	proposal.contribution = max(proposal.contribution, contributions[contribution_key] || 0)
-	audit(CONTRACT_AUDIT_PROGRESS, "[proposal.account_name] accepted the [role.title] counteroffer at share weight [proposal.approved_weight].")
+	proposal.approved_weight = 1
+	proposal.contribution = max(proposal.contribution, contributions["[proposal.account_number]"] || 0)
+	stakeholder_proposals[key] = proposal
+	audit(CONTRACT_AUDIT_PROGRESS, "[proposal.account_name] joined [role.title].")
 	emit_contract_event(CONTRACT_EVENT_STAKEHOLDER_APPROVED, list(
 		"contract_id" = id,
 		"actor_account" = proposal.account_number,
@@ -355,9 +286,10 @@
 		"actor_department" = proposal.department,
 		"department" = department,
 		"role_id" = role.id,
-		"requested_weight" = proposal.approved_weight,
-		"detail" = "[proposal.account_name] accepted the [role.title] subcontract at share weight [proposal.approved_weight].",
-	), "stakeholder-counter-accepted:[id]:[proposal.account_number]:[role.id]")
+		"requested_weight" = 1,
+		"detail" = "[proposal.account_name] joined [role.title].",
+	), "stakeholder-joined:[id]:[proposal.account_number]:[role.id]")
+	SScontracts?.notify_contract(src, "[proposal.account_name] joined [role.title] for [title].")
 	reconcile_completion()
 	return TRUE
 
@@ -366,26 +298,12 @@
 		return FALSE
 	var/key = proposal_key(account.account_number, role_id)
 	var/datum/contract_stakeholder_proposal/proposal = stakeholder_proposals[key]
-	if(!proposal || !(proposal.status in list(CONTRACT_STAKEHOLDER_PENDING, CONTRACT_STAKEHOLDER_COUNTERED, CONTRACT_STAKEHOLDER_APPROVED)))
+	if(!proposal || proposal.status != CONTRACT_STAKEHOLDER_APPROVED)
 		return FALSE
 	var/datum/contract_stakeholder_role/role = stakeholder_roles[role_id]
 	proposal.status = CONTRACT_STAKEHOLDER_WITHDRAWN
 	proposal.approved_weight = 0
 	audit(CONTRACT_AUDIT_PROGRESS, "[proposal.account_name] withdrew from [role?.title || "a stakeholder role"].")
-	reconcile_completion()
-	return TRUE
-
-/datum/contract/social/proc/revoke_stakeholder(account_number, role_id, actor_name)
-	if(!(state in list(CONTRACT_ACTIVE, CONTRACT_GRACE)))
-		return FALSE
-	var/key = proposal_key(account_number, role_id)
-	var/datum/contract_stakeholder_proposal/proposal = stakeholder_proposals[key]
-	if(!proposal || !(proposal.status in list(CONTRACT_STAKEHOLDER_COUNTERED, CONTRACT_STAKEHOLDER_APPROVED)))
-		return FALSE
-	var/datum/contract_stakeholder_role/role = stakeholder_roles[role_id]
-	proposal.status = CONTRACT_STAKEHOLDER_REVOKED
-	proposal.approved_weight = 0
-	audit(CONTRACT_AUDIT_PROGRESS, "[actor_name || "An authorized representative"] revoked [proposal.account_name]'s [role?.title || "stakeholder"] appointment.")
 	reconcile_completion()
 	return TRUE
 
@@ -425,6 +343,33 @@
 		ratio = min(ratio, clamp(requirement.grade_progress() / completion_floor, 0, 1))
 	return has_required ? clamp(ratio, 0, 1) : 0
 
+/// Pay useful work as it reaches the minimum, full, and exceptional project
+/// specifications. Because payout_to_fraction() uses a cumulative target,
+/// revisions that reopen a requirement never duplicate a tranche.
+/datum/contract/social/proc/settle_reached_project_milestones()
+	if(!stakeholders_ready() || !(state in list(CONTRACT_ACTIVE, CONTRACT_GRACE)))
+		return FALSE
+	var/ratio = current_outcome_ratio()
+	var/new_multiplier = 0
+	var/label
+	if(ratio >= CONTRACT_GRADE_EXCEPTIONAL_RATIO)
+		new_multiplier = CONTRACT_GRADE_EXCEPTIONAL_REWARD
+		label = "Exceptional project milestone"
+	else if(ratio >= success_grade_ratio)
+		new_multiplier = CONTRACT_GRADE_SUCCESS_REWARD
+		label = "Full project milestone"
+	else if(ratio >= minimum_grade_ratio)
+		new_multiplier = CONTRACT_GRADE_MINIMUM_REWARD
+		label = "Viable project milestone"
+	if(new_multiplier <= settled_project_multiplier)
+		return FALSE
+	if(!payout_to_fraction(new_multiplier, label))
+		audit(CONTRACT_AUDIT_PAYMENT, "[label] is verified, but its payment is waiting on an unavailable recipient account.")
+		return FALSE
+	settled_project_multiplier = new_multiplier
+	audit(CONTRACT_AUDIT_PROGRESS, "[label] reached; earned payment is retained if later conditions change.")
+	return TRUE
+
 /datum/contract/social/proc/grade_for_ratio(ratio)
 	if(ratio >= CONTRACT_GRADE_EXCEPTIONAL_RATIO)
 		return CONTRACT_OUTCOME_EXCEPTIONAL
@@ -450,6 +395,7 @@
 /datum/contract/social/reconcile_completion()
 	if(!(state in list(CONTRACT_ACTIVE, CONTRACT_GRACE)))
 		return FALSE
+	settle_reached_project_milestones()
 	if(outcome_finalized)
 		return complete()
 	outcome_score = round(current_outcome_ratio() * 100, 0.1)
@@ -460,7 +406,11 @@
 		return FALSE
 	var/ratio = current_outcome_ratio()
 	var/grade = grade_for_ratio(ratio)
-	var/multiplier = reward_multiplier_for_grade(grade)
+	var/multiplier = max(reward_multiplier_for_grade(grade), settled_project_multiplier)
+	if(settled_project_multiplier >= CONTRACT_GRADE_EXCEPTIONAL_REWARD)
+		grade = CONTRACT_OUTCOME_EXCEPTIONAL
+	else if(settled_project_multiplier >= CONTRACT_GRADE_SUCCESS_REWARD)
+		grade = CONTRACT_OUTCOME_SUCCESSFUL
 	if(multiplier <= 0)
 		return FALSE
 	outcome_finalized = TRUE
@@ -527,9 +477,9 @@
 		if(final_multiplier > 0)
 			stage_reward_basis = round(reward / final_multiplier)
 	var/list/outcome_stages = list(
-		list("label" = "Minimum", "target" = round(minimum_grade_ratio * 100), "reward" = round(stage_reward_basis * CONTRACT_GRADE_MINIMUM_REWARD), "reached" = current_ratio >= minimum_grade_ratio),
-		list("label" = "Full award", "target" = round(success_grade_ratio * 100), "reward" = round(stage_reward_basis * CONTRACT_GRADE_SUCCESS_REWARD), "reached" = current_ratio >= success_grade_ratio),
-		list("label" = "Exceptional", "target" = round(CONTRACT_GRADE_EXCEPTIONAL_RATIO * 100), "reward" = round(stage_reward_basis * CONTRACT_GRADE_EXCEPTIONAL_REWARD), "reached" = current_ratio >= CONTRACT_GRADE_EXCEPTIONAL_RATIO),
+		list("label" = "Viable work", "target" = round(minimum_grade_ratio * 100), "reward" = round(stage_reward_basis * CONTRACT_GRADE_MINIMUM_REWARD), "reached" = current_ratio >= minimum_grade_ratio, "earned" = settled_project_multiplier >= CONTRACT_GRADE_MINIMUM_REWARD),
+		list("label" = "Full commission", "target" = round(success_grade_ratio * 100), "reward" = round(stage_reward_basis * CONTRACT_GRADE_SUCCESS_REWARD), "reached" = current_ratio >= success_grade_ratio, "earned" = settled_project_multiplier >= CONTRACT_GRADE_SUCCESS_REWARD),
+		list("label" = "Exceptional", "target" = round(CONTRACT_GRADE_EXCEPTIONAL_RATIO * 100), "reward" = round(stage_reward_basis * CONTRACT_GRADE_EXCEPTIONAL_REWARD), "reached" = current_ratio >= CONTRACT_GRADE_EXCEPTIONAL_RATIO, "earned" = settled_project_multiplier >= CONTRACT_GRADE_EXCEPTIONAL_REWARD),
 	)
 	var/list/preview_plan = stakeholder_requirements_locked ? null : stakeholder_minimum_plan()
 	var/list/role_rows = list()
@@ -585,6 +535,7 @@
 		"grade" = outcome_grade,
 		"projected_grade" = projected_grade,
 		"projected_reward" = round(reward * projected_multiplier),
+		"earned_reward" = paid_reward,
 		"score" = round(current_ratio * 100, 0.1),
 		"outcome_stages" = outcome_stages,
 		"minimum_percent" = round(minimum_grade_ratio * 100),

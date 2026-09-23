@@ -8,8 +8,7 @@
 
 	faction = FACTION_GEESE
 
-	maxHealth = 30
-	health = 30
+	endurance = 30
 
 	response_help = "pets the"
 	response_disarm = "gently pushes aside the"
@@ -38,7 +37,7 @@
 
 /mob/living/simple_mob/animal/space/goose/handle_special()
 	if(((ai_brain ? (ai_brain.primary_threat ? STANCE_FIGHT : STANCE_IDLE) : STANCE_IDLE) in list(STANCE_APPROACH, STANCE_FIGHT)) && !(ai_brain && ai_brain.busy) && isturf(loc))
-		if(health <= (maxHealth * 0.5)) // At half health, and fighting someone currently.
+		if(vitality() <= 0.5) // At half health, and fighting someone currently.
 			berserk()
 
 /mob/living/simple_mob/animal/space/goose/verb/berserk()
@@ -76,8 +75,7 @@
 
 	faction = "neutral" //Mess with this and the goose will eat anyones face, will eat other factions faces, appropiate considering its a hellbird - Jack
 
-	maxHealth = 75
-	health = 75
+	endurance = 75
 
 	harm_intent_damage = 10
 	melee_damage_lower = 10

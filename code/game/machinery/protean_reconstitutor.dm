@@ -83,7 +83,7 @@
 		. += "A protean orchestrator is present."
 	if(protean_brain)
 		. += "It currently has a protean positronic brain."
-		if(!protean_brain.brainmob.client)
+		if(!protean_brain.get_occupant()?.client)
 			. += span_warning("The positronic brain appears to be inactive!")
 	. += "The readout shows that it has [nanomass_reserve] units of nanites ready for use. It requires [nanomass_required] per \'revive\' process, and has a maximum capacity of [nanotank_max] units."
 
@@ -99,7 +99,7 @@
 
 	if(istype(W,/obj/item/mmi/digital/posibrain/nano))
 		var/obj/item/mmi/digital/posibrain/nano/NB = W
-		if(!NB.brainmob.client)
+		if(!NB.get_occupant()?.client)
 			to_chat(user,span_warning("You cannot use an inactive positronic brain for this process."))
 			return
 		to_chat(user,span_notice("You slot \the [NB] into \the [src]."))
@@ -177,7 +177,7 @@
 		src.visible_message(span_notice("\The [src] chirps, \"Reconstitution cycle currently in progress, please wait!\""))
 		playsound(src, buzzsound, 100, 1, -1)
 		return
-	if(!protean_brain.brainmob.client)
+	if(!protean_brain.get_occupant()?.client)
 		src.visible_message(span_warning("\The [src] chirps, \"Warning, no positronic neural network activity detected! Recommend removing inactive core.\""))
 		return
 	else if(!processing_revive && protean_brain && protean_orchestrator && protean_refactory && (nanomass_reserve >= nanomass_required))
@@ -190,7 +190,13 @@
 		else
 			playsound(src, clicksound, 50, 1)
 		nanomass_reserve -= nanomass_required
+		log_game("PROTEAN: [key_name(user)] started a reconstitution cycle at [AREACOORD(src)]")
 		sleep(base_cook_time)
+		if(QDELETED(src))
+			return
+		if(!protean_brain || !protean_orchestrator || !protean_refactory)
+			abort_reconstitution(null, "Essential components removed!")
+			return
 		var/mob/living/carbon/human/protean/P = new /mob/living/carbon/human/protean
 		var/mats_cached
 		var/list/materials_cache
@@ -199,6 +205,8 @@
 		P.real_name = "Unfinished Protean"
 		for(var/organ in P.internal_organs_by_name)
 			sleep(per_organ_delay)
+			if(QDELETED(src))
+				return
 			var/obj/item/O = P.internal_organs_by_name[organ]
 			if(istype(O,/obj/item/organ/internal/nano/refactory))
 				src.visible_message(span_notice("\The [src] chirps, \"Initializing refactory...\""))
@@ -223,29 +231,22 @@
 			if(istype(O,/obj/item/organ/internal/mmi_holder/posibrain/nano))
 				src.visible_message(span_notice("\The [src] chirps, \"Synchronizing positronic neural architecture...\""))
 				//on the offchance our client blipped before getting to this step, abort, schloop the organs back into the machine, dissolve the body, and refund the nanos
-				if(!protean_brain.brainmob.client)
-					src.visible_message(span_warning("\The [src] buzzes, \"No positronic neural activity detected! Aborting cycle!\""))
-					playsound(src, buzzsound, 100, 1, -1)
-					processing_revive = FALSE
-					qdel(P)
-					nanomass_reserve += nanomass_required
-					update_icon()
+				if(!protean_brain.get_occupant()?.client)
+					abort_reconstitution(P, "No positronic neural activity detected!")
 					return
+				var/client/posibrain_client = protean_brain.get_occupant().client
+				var/datum/data/record/record_found = find_general_record("name", posibrain_client.prefs.read_preference(/datum/preference/name/real_name))
+				if(!record_found)
+					abort_reconstitution(P, "No crew record matches this neural architecture!")
+					return
+				var/charjob = record_found.fields["real_rank"]
 				var/obj/item/organ/internal/mmi_holder/posibrain/nano/BR = O
 				BR.stored_mmi = null	//toss the dummy...
 				BR.contents.Cut()
 				BR.stored_mmi = protean_brain	//...and implant the salvaged mmi in its place
 				BR.contents.Add(protean_brain)
-				var/client/posibrain_client = protean_brain.brainmob.client
 				var/picked_ckey = posibrain_client.ckey
 				var/picked_slot = posibrain_client.prefs.default_slot
-				var/charjob
-				var/datum/data/record/record_found
-				record_found = find_general_record("name", posibrain_client.prefs.read_preference(/datum/preference/name/real_name))
-				if(record_found)
-					charjob = record_found.fields["real_rank"]
-				else
-					return
 				if(P.dna)
 					P.dna.ResetUIFrom(P)
 					P.sync_dna_traits(FALSE) // Traitgenes Sync traits to genetics if needed
@@ -262,10 +263,7 @@
 					P.mind.assigned_role = charjob
 					P.mind.role_alt_title = SSjob.get_player_alt_title(P, charjob)
 
-				//no need to be particularly thorough about language handover, we can safely assume that they were allowed to have it if they had it to begin with
-				P.languages.Cut()
-				P.languages = protean_brain.brainmob.languages.Copy()
-
+				// Languages come with the character's identity when the mind moves in.
 				// migrated language_custom_keys
 				var/list/_posi_lang_custom = posibrain_client.prefs.read_preference(/datum/preference/language_custom_keys)
 				for(var/key in _posi_lang_custom)
@@ -281,7 +279,8 @@
 
 				SEND_SIGNAL(P, COMSIG_HUMAN_DNA_FINALIZED)
 
-				protean_brain.brainmob.mind.transfer_to(P)
+				var/datum/component/mind_host/core_host = get_mind_host(protean_brain)
+				core_host.release_mind(P, "protean reconstitution")
 				protean_brain.loc = BR
 		protean_refactory = null
 		protean_brain = null
@@ -309,5 +308,28 @@
 		playsound(src, dingsound, 100, 1, -1)	//soup's on!
 		P.loc = src.loc
 		processing_revive = FALSE
+		log_game("PROTEAN: [key_name(P)] was reconstituted at [AREACOORD(src)]")
 		update_icon()
+	update_icon()
+
+/// Stop a cycle cleanly: salvaged components go back into the tank, the
+/// unfinished body is dissolved, the nanites are refunded and the machine is
+/// free again (bug 19: it used to stay busy forever).
+/obj/machinery/protean_reconstitutor/proc/abort_reconstitution(mob/living/carbon/human/P, reason)
+	visible_message(span_warning("\The [src] buzzes, \"[reason] Aborting cycle!\""))
+	playsound(src, buzzsound, 100, 1, -1)
+	log_game("PROTEAN: reconstitution aborted at [AREACOORD(src)]: [reason]")
+	if(P)
+		for(var/obj/item/organ/O in list(protean_refactory, protean_orchestrator))
+			if(O.loc != P)
+				continue
+			P.internal_organs -= O
+			P.internal_organs_by_name -= O.organ_tag
+			O.owner = null
+			O.forceMove(src)
+		if(protean_brain && protean_brain.loc != src)
+			protean_brain.forceMove(src)
+		qdel(P)
+	nanomass_reserve = min(nanotank_max, nanomass_reserve + nanomass_required)
+	processing_revive = FALSE
 	update_icon()

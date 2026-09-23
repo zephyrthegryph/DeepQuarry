@@ -5,7 +5,6 @@
 // If you DO want to use this for an event, make the event area a child of /redgate or add it to the below areas list.
 // These have some extremely spooky effects and players should know about it beforehand.
 
-
 // REDSPACE AREAS
 // This list needs expansion...  Currently, we have very few proper redspace areas.
 // Tossing /area/redgate in here as well. Entering one of these areas (unless coded to do such) doesn't apply
@@ -51,7 +50,7 @@ GLOBAL_LIST_INIT(redspace_areas, list(
 		drop_point = pick(GLOB.latejoin) //Can be changed to whatever exit list you want. By default, uses GLOB.latejoin
 		if(drop_point)
 			unfortunate_soul.forceMove(get_turf(drop_point))
-			unfortunate_soul.maxHealth = max(50, unfortunate_soul.maxHealth) //If they died, send them back with 50 maxHealth or their current maxHealth. Whatever's higher. We're evil, but not mean.
+			unfortunate_soul.endurance = max(50, unfortunate_soul.endurance) //If they died, send them back with 50 endurance or their current endurance. Whatever's higher. We're evil, but not mean.
 		else
 			message_admins("Redspace Drain expired, but no drop point was found, leaving [unfortunate_soul] in limbo. This is a bug. Please report it with this info: redspace_drain/on_expire")
 	unfortunate_soul = null
@@ -78,12 +77,11 @@ GLOBAL_LIST_INIT(redspace_areas, list(
 
 	if(unfortunate_soul.life_tick % 5 == 0) //Once every 5 ticks, we chip away at them.
 		unfortunate_soul.drip(1) //Blood trail.
-		unfortunate_soul.take_overall_damage(1) //Small bit of damage
+		unfortunate_soul.injure(INJURY_BLUNT, 1) //Small bit of damage
 		if(unfortunate_soul.bloodstr.get_reagent_amount(REAGENT_ID_NUMBENZYME) < 2) //We lose all feeling in our body. We can't tell how injured we are.
 			unfortunate_soul.bloodstr.add_reagent(REAGENT_ID_NUMBENZYME,1)
 	if(unfortunate_soul.life_tick % 20 == 0) //Once every 20 ticks, we permanetly cripple them.
-		unfortunate_soul.maxHealth = max(10, unfortunate_soul.maxHealth - 1) //Max health is reduced by 1, but never below 10. This is PERMANENT for the rest of the round or until resleeving.
-
+		unfortunate_soul.endurance = max(10, unfortunate_soul.endurance - 1) //Endurance is reduced by 1, but never below 10. This is PERMANENT for the rest of the round or until resleeving.
 
 	//The mental effects.
 	unfortunate_soul.fear = min(100, unfortunate_soul.fear + 2) //Fear is increased by 1, but never above 100. You're in a scary place.
@@ -285,20 +283,6 @@ GLOBAL_LIST_INIT(redspace_areas, list(
 
 /datum/modifier/redspace_drain/lesser/tick()
 	return
-/*
-/datum/modifier/redspace_drain/proc/replace_organ() //Old version of doing this WITHOUT the custom organs. Preserved as an alternative version / reference
-	var/obj/item/organ/O = pick(unfortunate_soul.internal_organs)
-	if(O)
-		var/random_name = pick("pulsating", "quivering", "throbbing", "crawling", "oozing", "melting", "gushing", "dripping", "twitching", "slimy", "gooey")
-		O.name = "[random_name] [initial(O.name)]"
-		O.desc = "A twisted, warped version of a [initial(O.name)] covered in thick, red, pulsating tendrils."
-		O.take_damage(3)
-		O.color = "#760b0b"
-		O.add_autopsy_data("ANOMALOUS FLESH GROWTH", 3)
-		O.decays = FALSE
-		O.meat_type = /obj/item/reagent_containers/food/snacks/meat/worm //It turns into 'weird meat' with the desc of 'A chunk of pulsating meat'
-		O.can_reject = FALSE
-*/
 
 /datum/modifier/redspace_drain/proc/become_drippy()
 	if(!(unfortunate_soul.species.flags & NO_DNA)) //Doing it as such in case drippy is ever made NOT a trait gene.
@@ -391,7 +375,6 @@ GLOBAL_LIST_INIT(redspace_areas, list(
 	///What is our hivemind name?
 	var/speech_name = "The Unseen Horror"
 
-
 	var/mob/living/carbon/human/unfortunate_soul //The human target of our modifier.
 
 /datum/modifier/redspace_corruption/can_apply(mob/living/L, suppress_output = TRUE)
@@ -450,9 +433,9 @@ GLOBAL_LIST_INIT(redspace_areas, list(
 		handle_death()
 		return
 
-	if(!armor_deployed && (unfortunate_soul.stunned || unfortunate_soul.weakened || unfortunate_soul.paralysis || unfortunate_soul.health < unfortunate_soul.getMaxHealth() * 0.75))
+	if(!armor_deployed && (unfortunate_soul.stunned || unfortunate_soul.weakened || unfortunate_soul.paralysis || unfortunate_soul.vitality() < 0.75))
 		if(assume_battle_stance())
-			unfortunate_soul.adjustHalLoss(-200) //WAKE UP SAMURI
+			unfortunate_soul.mend(TREAT_ANALGESIC, 200) //WAKE UP SAMURI
 			unfortunate_soul.reagents.add_reagent(REAGENT_ID_ADRENALINE, 5)
 			unfortunate_soul.reagents.add_reagent(REAGENT_ID_EPINEPHRINE, 5)
 			unfortunate_soul.reagents.add_reagent(REAGENT_ID_NUMBENZYME, 1)
@@ -468,7 +451,7 @@ GLOBAL_LIST_INIT(redspace_areas, list(
 	if(armor_deployed && ((armor_deployed_time + armor_duration) < world.time)) //Time ran out.
 
 		//Are we still in panic mode?
-		if(unfortunate_soul.stunned || unfortunate_soul.weakened || unfortunate_soul.paralysis || (unfortunate_soul.health < unfortunate_soul.maxHealth * 0.75))
+		if(unfortunate_soul.stunned || unfortunate_soul.weakened || unfortunate_soul.paralysis || (unfortunate_soul.vitality() < 0.75))
 			return
 		else
 			equip_flesh_armor(/obj/item/clothing/suit/space/changeling/armored, /obj/item/clothing/head/helmet/space/changeling/armored, /obj/item/clothing/shoes/magboots/changeling/armored, /obj/item/clothing/gloves/combat/changeling)
@@ -530,7 +513,6 @@ GLOBAL_LIST_INIT(redspace_areas, list(
 	if(!heart)
 		return
 
-
 	var/blood_volume = unfortunate_soul.vessel.get_reagent_amount(REAGENT_ID_BLOOD)
 	var/lethal_blood = FALSE
 	if(unfortunate_soul.reagents.get_reagent_amount(REAGENT_ID_MYELAMINE) < 5)
@@ -551,16 +533,17 @@ GLOBAL_LIST_INIT(redspace_areas, list(
 	unfortunate_soul.handle_organs()
 
 	//Slowly come back from the dead.
-	unfortunate_soul.heal_overall_damage(2, 2)
-	unfortunate_soul.adjustToxLoss(-5)
-	unfortunate_soul.adjustOxyLoss(-5)
-	unfortunate_soul.adjustBrainLoss(-0.5)
+	unfortunate_soul.mend(TREAT_TISSUE_REPAIR, 2)
+	unfortunate_soul.mend(TREAT_BURN_CARE, 2)
+	unfortunate_soul.mend(TREAT_ANTITOXIN, 5)
+	unfortunate_soul.mend(TREAT_OXYGENATION, 5)
+	unfortunate_soul.mend(TREAT_NEURAL_REPAIR, 0.5)
 
 	//Handle our organs. We might not heal entirely before we come back, but that's fine. If we die again, we come back again.
-	for(var/obj/item/organ/I in unfortunate_soul.internal_organs)
+	for(var/obj/item/organ/internal/I in unfortunate_soul.internal_organs)
 		I.process()
 		I.germ_level = max(0, I.germ_level - 25)
-		I.damage = max(0, I.damage - 2.5)
+		unfortunate_soul.mend(TREAT_RESTORATION, 2.5, I)
 		if(I.status & ORGAN_DEAD && (I.damage < I.is_broken()) && (I.germ_level < INFECTION_LEVEL_ONE)) //If we have any dead organs, try to revive them.
 			I.status = 0
 
@@ -576,7 +559,7 @@ GLOBAL_LIST_INIT(redspace_areas, list(
 		return
 	if(lethal_blood) //Blood volume is low enough we'd immediately die upon revival.
 		return
-	if(unfortunate_soul.health <= -(unfortunate_soul.getMaxHealth() * 0.33)) //Too injured to revive. We want to be a bit JUST before hardcrit.
+	if(unfortunate_soul.body?.is_dead() || unfortunate_soul.vitality() <= 0.33) //Too injured to revive. We want to be a bit JUST before hardcrit.
 		return
 	if(unfortunate_soul.check_vital_organs()) //Missing a vital organ.
 		return
@@ -584,7 +567,6 @@ GLOBAL_LIST_INIT(redspace_areas, list(
 		return
 	if(!unfortunate_soul.mind) //Mind is gone.
 		return
-
 
 	//This won't get EVERYTHING, but if we end up reviving just to die shortly afterwards to heal up further, that's fine.
 
@@ -609,7 +591,6 @@ GLOBAL_LIST_INIT(redspace_areas, list(
 	//Awaken!
 	unfortunate_soul.emote("gasp")
 	unfortunate_soul.Weaken(rand(10,25))
-	unfortunate_soul.updatehealth()
 	time_since_revival = world.time
 
 //Returns TRUE If we succeeded. FALSE if we failed.

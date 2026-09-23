@@ -74,7 +74,7 @@ I think I covered everything.
 	response_disarm = "shoves"
 	response_harm = "smacks"
 	movement_cooldown = 2
-	maxHealth = 800
+	endurance = 800
 	attacktext = list("slashed")
 	see_in_dark = 8
 	minbodytemp = 0
@@ -158,7 +158,7 @@ I think I covered everything.
 		"Smooth",
 		"Scaled"
 	)
-	var/body
+	var/body_style
 	var/list/ear_styles = list(
 		"Normal"
 	)
@@ -203,7 +203,7 @@ I think I covered everything.
 	desc = "A large, intimidating creature reminiscent of the traditional idea of medieval fire breathing lizards. This one seems weaker than the rest."
 	player_msg = "You're a nerfed variant of the large dragon with reduced health, reduced melee damage and your special attacks disabled. Resting will heal you slowly over time. Check abilities tab for functions."
 	nospecial = 1
-	maxHealth = 200
+	endurance = 200
 	melee_damage_lower = 20
 	melee_damage_upper = 15
 	allow_mind_transfer = TRUE
@@ -344,7 +344,7 @@ I think I covered everything.
 		var/list/bodycolors = list("#1E1E1E","#3F3F3F","#545454","#969696","#DBDBDB","#ABBBD8","#3D0B00","#3A221D","#77554F","#281D1B","#631F00","#964421","#936B24","#381313","#380000","#682121","#700E00","#44525B","#283035","#29353D","#353E44","#281000","#38261A","#302F3D","#322E3A","#262738")
 		under = pick(underbelly_styles)
 		overlay_colors["Underbelly"] = pick(bodycolors)
-		body = pick(body_styles)
+		body_style = pick(body_styles)
 		overlay_colors["Body"] = pick(bodycolors)
 		ears = pick(ear_styles)
 		overlay_colors["Ears"] = get_random_colour(0, 100, 150)
@@ -363,7 +363,7 @@ I think I covered everything.
 	I.layer = MOB_LAYER
 	add_overlay(I)
 
-	I = image(icon, "dragon_body[body][resting? "-rest" : null]")
+	I = image(icon, "dragon_body[body_style][resting? "-rest" : null]")
 	I.color = overlay_colors["Body"]
 	I.appearance_flags |= (RESET_COLOR|PIXEL_SCALE)
 	I.plane = MOB_PLANE
@@ -446,7 +446,7 @@ I think I covered everything.
 			var/new_color = tgui_color_picker(src, "Pick body color:","Body Color", overlay_colors["Body"])
 			if(!new_color)
 				return 0
-			body = choice
+			body_style = choice
 			overlay_colors["Body"] = new_color
 		if("Ears")
 			options = ear_styles
@@ -667,17 +667,17 @@ I think I covered everything.
 /mob/living/simple_mob/vore/bigdragon/handle_special()
 	if(!noenrage)
 		if(!enraged)
-			if(health <= (maxHealth * 0.5))
+			if(vitality() <= 0.5)
 				enraged = 1
 				say("No more games. COME HERE.")
 		if(enraged)
-			if(health >= (maxHealth * 0.5))
+			if(vitality() >= 0.5)
 				enraged = 0
 	if(resting)	//Give them a way to slowly heal over time while player controlled
-		adjustBruteLoss(-2.5)
-		adjustFireLoss(-2.5)
-		adjustToxLoss(-5)
-		adjustOxyLoss(-5)
+		mend(TREAT_TISSUE_REPAIR, 2.5)
+		mend(TREAT_BURN_CARE, 2.5)
+		mend(TREAT_ANTITOXIN, 5)
+		mend(TREAT_OXYGENATION, 5)
 
 /mob/living/simple_mob/vore/bigdragon/do_special_attack(atom/A)
 	. = TRUE
@@ -723,14 +723,14 @@ I think I covered everything.
 			var/mob/living/M = AM
 			M.Weaken(5)
 			if(!gentle)
-				M.adjustBruteLoss(50)	//A dragon just slammed ontop of you
+				M.injure(INJURY_BLUNT, 50, source = src)	//A dragon just slammed ontop of you
 			to_chat(M, span_userdanger("You're slammed into the floor by [src]!"))
 	else
 		if(isliving(AM))
 			var/mob/living/M = AM
 			M.Weaken(1.5)
 			if(!gentle)
-				M.adjustBruteLoss(20)
+				M.injure(INJURY_BLUNT, 20, source = src)
 			to_chat(M, span_userdanger("You're thrown back by [src]!"))
 			playsound(src, get_sfx("punch"), 50, 1)
 		AM.throw_at(throwtarget, maxthrow, 3, src)
@@ -866,7 +866,7 @@ I think I covered everything.
 
 	handle_tame_item(O, user)
 
-	//legacy ai_brain swap removed. Modern brain uses set_hostile() /
+	// DQEdit - legacy ai_brain swap removed. Modern brain uses set_hostile() /
 	// personal disposition for state changes.
 	faction = FACTION_NEUTRAL
 	norange = 1		//Don't start fires while friendly
@@ -884,7 +884,7 @@ I think I covered everything.
 	norange = 0
 	faction = FACTION_DRAGON
 	say("HAVE IT YOUR WAY THEN")
-	//legacy ai_brain swap removed; brain stays put.
+	// DQEdit - legacy ai_brain swap removed; brain stays put.
 	ai_brain?.set_hostile(TRUE)
 	vore_selected = gut1
 	if(attacker)
@@ -909,7 +909,7 @@ I think I covered everything.
 		overlay_colors["Underbelly"],
 		under,
 		overlay_colors["Body"],
-		body,
+		body_style,
 		overlay_colors["Ears"],
 		ears,
 		overlay_colors["Mane"],
@@ -928,7 +928,7 @@ I think I covered everything.
 	input_style = sanitizeSafe(tgui_input_text(src,"Paste the style string you exported with Export Style.", "Style loading"))
 	if(input_style)
 		var/list/input_style_list = splittext(input_style, ";")
-		if((LAZYLEN(input_style_list) == 12) && (input_style_list[2] in underbelly_styles) && (input_style_list[4] in body_styles) && (input_style_list[6] in ear_styles) && (input_style_list[8] in mane_styles) && (input_style_list[10] in horn_styles) && (input_style_list[12] in eye_styles))
+		if((LAZYLEN(input_style_list) == 12) && (input_style_list[2] in underbelly_styles) && (input_style_list[4] in body_styles) && (input_style_list[6] in ear_styles) && (input_style_list[8] in mane_styles) && (input_style_list[10] in horn_styles) && (input_style_list[12] in ear_styles))
 			try
 				if(rgb2num(input_style_list[1]))
 					overlay_colors["Underbelly"] = input_style_list[1]
@@ -938,7 +938,7 @@ I think I covered everything.
 				if(rgb2num(input_style_list[3]))
 					overlay_colors["Body"] = input_style_list[3]
 			catch
-			body = input_style_list[4]
+			body_style = input_style_list[4]
 			try
 				if(rgb2num(input_style_list[5]))
 					overlay_colors["Ears"] = input_style_list[5]

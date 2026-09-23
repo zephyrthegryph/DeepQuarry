@@ -11,8 +11,7 @@
 	icon_state = "laity"
 	icon_living = "laity"
 	ui_icons = 'icons/mob/screen1_purity.dmi'
-	maxHealth = 75
-	health = 75
+	endurance = 75
 	response_harm = "viciously beaten"
 	harm_intent_damage = 5
 	melee_damage_lower = 4 //It's not the strongest of the bunch, but that doesn't mean it can't hurt you.

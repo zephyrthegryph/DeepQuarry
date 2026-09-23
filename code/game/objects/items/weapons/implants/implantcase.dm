@@ -294,7 +294,6 @@
 	imp = new /obj/item/implant/restrainingbolt(src)
 
 
-// === merged from implantcase_vr.dm during hard-fork de-suffix (verified no override-order change) ===
 /obj/item/implantcase/vrlanguage
 	name = "glass case - 'language'"
 	desc = "A case containing a language implant."

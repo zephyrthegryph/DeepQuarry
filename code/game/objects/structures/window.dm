@@ -145,7 +145,7 @@
 				return
 
 /obj/structure/window/blob_act()
-	take_damage(50)
+	take_damage(50, BRUTE, MELEE)
 
 /obj/structure/window/CanPass(atom/movable/mover, turf/target)
 	if(istype(mover) && mover.checkpass(PASSGLASS))
@@ -188,7 +188,7 @@
 		update_verbs()
 		update_nearby_icons()
 		step(src, get_dir(source, src))
-	take_damage(tforce)
+	take_damage(tforce, BRUTE, MELEE)
 
 /obj/structure/window/attack_tk(mob/user as mob)
 	user.visible_message(span_notice("Something knocks on [src]."))
@@ -231,7 +231,7 @@
 		visible_message(span_danger("[user] smashes into [src]!"))
 		if(reinf)
 			damage = damage / 2
-		take_damage(damage)
+		take_damage(damage, BRUTE, MELEE)
 	else
 		visible_message(span_infoplain(span_bold("\The [user]") + " bonks \the [src] harmlessly."))
 	user.do_attack_animation(src)
@@ -250,18 +250,18 @@
 			switch (state)
 				if(1)
 					M.visible_message(span_warning("[user] slams [M] against \the [src]!"))
-					M.apply_damage(7)
+					M.injure(INJURY_BLUNT, 7, null, src)
 					hit(10)
 				if(2)
 					M.visible_message(span_danger("[user] bashes [M] against \the [src]!"))
 					if (prob(50))
 						M.Weaken(1)
-					M.apply_damage(10)
+					M.injure(INJURY_BLUNT, 10, null, src)
 					hit(25)
 				if(3)
 					M.visible_message(span_danger("<big>[user] crushes [M] against \the [src]!</big>"))
 					M.Weaken(5)
-					M.apply_damage(20)
+					M.injure(INJURY_BLUNT, 20, null, src)
 					hit(50)
 			return
 
@@ -360,7 +360,7 @@
 	if(damage < force_threshold || force_threshold < 0)
 		return
 	if(reinf) damage *= 0.5
-	take_damage(damage)
+	take_damage(damage, BRUTE, MELEE)
 	return
 
 /obj/structure/window/handle_rotation_verbs(angle, mob/user)
@@ -486,7 +486,7 @@
 
 	return
 
-/obj/structure/window/fire_act(datum/gas_mixture/air, exposed_temperature, exposed_volume)
+/obj/structure/window/fire_act(exposed_temperature, exposed_volume)
 	if(exposed_temperature > maximal_heat)
 		hit(damage_per_fire_tick, 0)
 	..()

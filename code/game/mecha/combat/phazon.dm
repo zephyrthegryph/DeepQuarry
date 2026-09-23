@@ -154,11 +154,11 @@
 		return
 	switch(new_damtype)
 		if("Force")
-			damage_type = BRUTE
+			melee_injury_kind = INJURY_BLUNT
 		if("Energy")
-			damage_type = BURN
+			melee_injury_kind = INJURY_BURN
 		if("Stun")
-			damage_type = HALLOSS
+			melee_injury_kind = INJURY_PAIN
 	occupant_message("Melee damage type switched to [new_damtype]")
 	return
 

@@ -32,7 +32,7 @@
 	icon_dead = "shantak_dead"
 	icon = 'icons/jungle.dmi'
 
-	maxHealth = 75
+	endurance = 75
 	heat_resist = -0.50
 	cold_resist = 0.75
 	movement_cooldown = -1
@@ -63,7 +63,7 @@
 	This one seems bigger than the others, and has a commanding presence."
 	icon_scale_x = 1.5
 	icon_scale_y = 1.5
-	maxHealth = 125
+	endurance = 125
 	player_msg = "You have the ability to <b>command other shantaks to follow you</b>."
 
 /mob/living/simple_mob/animal/sif/shantak/leader/verb/rally_pack()

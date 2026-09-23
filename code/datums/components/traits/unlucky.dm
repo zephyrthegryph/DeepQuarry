@@ -250,9 +250,9 @@
 					if(prob(50 * effective_luck)) // sometimes
 						luck_mod += 0.25
 						damage_mod += 0.25
-					var/max_health_coefficient = (living_guy.maxHealth * 0.06)
+					var/max_health_coefficient = (living_guy.get_endurance() * 0.06)
 					for(var/obj/item/organ/external/limb in living_guy.organs)
-						living_guy.apply_damage(max_health_coefficient * damage_mod, BRUTE, limb.organ_tag, used_weapon = "glass shrapnel")
+						living_guy.injure(INJURY_CUT, max_health_coefficient * damage_mod, limb.organ_tag, evil_mirror)
 
 			living_guy.make_jittery(250)
 			if(evil && prob(7 * effective_luck))
@@ -282,8 +282,8 @@
 			if(!prob(10)) //Reduce the chance further, due to the number of tables that are passed in normal play.
 				continue
 			living_guy.visible_message(span_danger("[living_guy] stubs [living_guy.p_their()] toe on [evil_table]!"), span_bolddanger("You stub your toe on [evil_table]!"))
-			living_guy.apply_damage(2 * damage_mod, BRUTE, pick(BP_L_FOOT, BP_R_FOOT), used_weapon = "blunt force trauma")
-			living_guy.adjustHalLoss(25) //It REALLY hurts.
+			living_guy.injure(INJURY_BLUNT, 2 * damage_mod, pick(BP_L_FOOT, BP_R_FOOT), evil_table)
+			living_guy.injure(INJURY_PAIN, 25) //It REALLY hurts.
 			living_guy.Weaken(3)
 			consume_omen()
 			return
@@ -317,13 +317,13 @@
 	if(prob(30 * luck_mod) && our_guy.get_bodypart_name(BP_HEAD)) /// Bonk!
 		playsound(our_guy, 'sound/effects/tableheadsmash.ogg', 90, TRUE)
 		our_guy.visible_message(span_danger("[our_guy] hits [our_guy.p_their()] head really badly falling down!"), span_bolddanger("You hit your head really badly falling down!"))
-		var/max_health_coefficient = (our_guy.maxHealth * 0.5)
-		our_guy.apply_damage(max_health_coefficient * damage_mod, BRUTE, BP_HEAD, used_weapon = "slipping")
+		var/max_health_coefficient = (our_guy.get_endurance() * 0.5)
+		our_guy.injure(INJURY_BLUNT, max_health_coefficient * damage_mod, BP_HEAD)
 		if(ishuman(our_guy))
 			var/mob/living/carbon/human/human_guy = our_guy
 			if(human_guy.should_have_organ(O_BRAIN))
 				for(var/obj/item/organ/internal/brain/brain in human_guy.internal_organs)
-					brain.take_damage(30 * damage_mod) //60 damage kills.
+					human_guy.injure(INJURY_NEURAL, 30 * damage_mod, brain, src) //60 damage kills.
 			if(human_guy.glasses && human_guy.canUnEquip(human_guy.glasses))
 				var/turf/T = get_turf(human_guy)
 				if(T)
@@ -365,15 +365,12 @@
  * Some objects might cut, burn, or otherwise injure you if you pick them up!
  * Genenerally more of an annoyance than anything.
  * Variables that can be changed:
- * injury_type, damage_to_inflict, damage_type, injury_verb, is_sharp, is_edge.
+ * damage_to_inflict, damage_type, injury_verb, is_sharp, is_edge.
 */
 /datum/component/omen/proc/check_pickup(mob/living/unlucky_soul, obj/item/item)
 	SIGNAL_HANDLER
 	if(prob(3 * luck_mod) && ishuman(unlucky_soul)) // ~3% chance
 		var/mob/living/carbon/human/unlucky_human = unlucky_soul
-
-		///What the injury will show up as on an autopsy.
-		var/injury_type = "injury"
 
 		///How much damage we'll inflect.
 		var/damage_to_inflict = 0
@@ -397,14 +394,12 @@
 
 		if(istype(item, /obj/item/paper))
 			injury_verb = "cuts"
-			injury_type = "paper cut"
 			damage_to_inflict = 2
 
 		else if(istype(item, /obj/item/material/knife))
 			var/obj/item/material/knife = item
 
 			injury_verb = "cuts"
-			injury_type = "knife"
 			is_sharp = knife.sharp
 			has_edge = knife.edge
 			damage_to_inflict = knife.force
@@ -413,7 +408,6 @@
 			var/obj/item/material/shard/shard = item
 
 			injury_verb = "cuts"
-			injury_type = "shard"
 			is_sharp = shard.sharp
 			has_edge = shard.edge
 			damage_to_inflict = shard.force
@@ -424,7 +418,6 @@
 				return
 
 			injury_verb = "burns"
-			injury_type = "lighter"
 			damage_type = BURN
 			damage_to_inflict = 5
 
@@ -432,7 +425,6 @@
 			var/obj/item/tool/transforming/jawsoflife/jaws = item
 
 			injury_verb = "clamps"
-			injury_type = "industrial tool"
 			is_sharp = jaws.sharp
 			has_edge = jaws.edge
 			damage_to_inflict = jaws.force
@@ -441,7 +433,6 @@
 			var/obj/item/tool/screwdriver/screwdriver = item
 
 			injury_verb = "stabs"
-			injury_type = "industrial tool"
 			is_sharp = screwdriver.sharp
 			has_edge = screwdriver.edge
 			damage_to_inflict = screwdriver.force
@@ -450,7 +441,6 @@
 			var/obj/item/tool/wirecutters/wirecutters = item
 
 			injury_verb = "nips"
-			injury_type = "industrial tool"
 			is_sharp = wirecutters.sharp
 			has_edge = wirecutters.edge
 			damage_to_inflict = wirecutters.force
@@ -459,16 +449,16 @@
 			return
 
 		unlucky_human.visible_message(span_danger("[unlucky_human] accidentally [injury_verb] [unlucky_human.p_their()] hand on [item]!"))
-		unlucky_human.apply_damage(damage_to_inflict * damage_mod, damage_type, current_hand, sharp = is_sharp, edge = has_edge, used_weapon = injury_type)
+		unlucky_human.injure(injury_kind_for(damage_type, is_sharp, has_edge), damage_to_inflict * damage_mod, current_hand, item)
 
 /datum/component/omen/proc/check_stairs(mob/living/unlucky_soul)
 	SIGNAL_HANDLER
 	if(prob(3 * luck_mod)) /// Bonk!
 		playsound(unlucky_soul, 'sound/effects/tableheadsmash.ogg', 90, TRUE)
 		unlucky_soul.visible_message(span_danger("One of the stairs give way as [unlucky_soul] steps onto it, tumbling them down to the bottom!"), span_bolddanger("A stair gives way and you trip to the bottom!"))
-		var/max_health_coefficient = (unlucky_soul.maxHealth * 0.09)
+		var/max_health_coefficient = (unlucky_soul.get_endurance() * 0.09)
 		for(var/obj/item/organ/external/limb in unlucky_soul.organs) //In total, you should have 11 limbs (generally, unless you have an amputation). The full omen variant we want to leave you at 1 hp, the trait version less. As of writing, the trait version is 25% of the damage, so you take 24.75 across all limbs.
-			unlucky_soul.apply_damage(max_health_coefficient * damage_mod, BRUTE, limb.organ_tag, used_weapon = "slipping")
+			unlucky_soul.injure(INJURY_BLUNT, max_health_coefficient * damage_mod, limb.organ_tag)
 		unlucky_soul.Weaken(5)
 		consume_omen()
 
@@ -484,8 +474,8 @@
 			for(var/obj/item/organ/internal/heart/heart in human_guy.internal_organs)
 				if(heart.robotic)
 					continue //Robotic hearts are immune to this.
-				heart.take_damage(10 * stun_amount * damage_mod)
-				heart.take_damage(0.25 * agony_amount * damage_mod)
+				human_guy.injure(INJURY_BLUNT, 10 * stun_amount * damage_mod, heart, src)
+				human_guy.injure(INJURY_BLUNT, 0.25 * agony_amount * damage_mod, heart, src)
 			playsound(src, 'sound/effects/singlebeat.ogg', 50, FALSE)
 			to_chat(unlucky_soul, span_bolddanger("You feel as though your heart stopped"))
 			human_guy.Stun(5)

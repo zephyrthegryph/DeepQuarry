@@ -104,10 +104,6 @@
 							feedback_add_details("wizard_spell_learned","SJ") //please do not change the abbreviation to keep data processing consistent. Add a unique id to any new spells
 							H.add_spell(new/datum/spell/targeted/subjugation)
 							temp = "You have learned subjugate."
-//						if("mindswap")
-//							feedback_add_details("wizard_spell_learned","MT") //please do not change the abbreviation to keep data processing consistent. Add a unique id to any new spells
-//							H.add_spell(new/datum/spell/targeted/mind_transfer)
-//							temp = "You have learned mindswap."
 						if("forcewall")
 							feedback_add_details("wizard_spell_learned","FW") //please do not change the abbreviation to keep data processing consistent. Add a unique id to any new spells
 							H.add_spell(new/datum/spell/aoe_turf/conjure/forcewall)
@@ -132,10 +128,6 @@
 							feedback_add_details("wizard_spell_learned","KN") //please do not change the abbreviation to keep data processing consistent. Add a unique id to any new spells
 							H.add_spell(new/datum/spell/aoe_turf/knock)
 							temp = "You have learned knock."
-//						if("horseman")
-//							feedback_add_details("wizard_spell_learned","HH") //please do not change the abbreviation to keep data processing consistent. Add a unique id to any new spells
-//							H.add_spell(new/datum/spell/targeted/equip_item/horsemask)
-//							temp = "You have learned curse of the horseman."
 						if("mentalfocus")
 							feedback_add_details("wizard_spell_learned","MF") //please do not change the abbreviation to keep data processing consistent. Add a unique id to any new spells
 							new /obj/item/gun/energy/staff/focus(get_turf(H))
@@ -322,7 +314,6 @@
 	var/obj/structure/closet/statue/S = new /obj/structure/closet/statue(get_turf(user), user)
 	S.timer = 30
 	user.drop_item()
-
 
 /obj/item/spellbook/oneuse/knock
 	spell = /datum/spell/aoe_turf/knock

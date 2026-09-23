@@ -95,10 +95,6 @@ Buildable meters
 		if(PIPING_LAYER_AUX)
 			color = PIPE_COLOR_CYAN
 			name = "[initial(fakeA.name)] aux fitting"
-	// Or if we were to do it the TG way...
-	// pixel_x = PIPE_PIXEL_OFFSET_X(piping_layer)
-	// pixel_y = PIPE_PIXEL_OFFSET_Y(piping_layer)
-	// layer = initial(layer) + PIPE_LAYER_OFFSET(piping_layer)
 
 /obj/item/pipe/proc/update()
 	var/obj/machinery/atmospherics/fakeA = pipe_type
@@ -256,10 +252,6 @@ Buildable meters
 		qdel(temp)
 
 	return pipe_init_dirs_cache[type]["[dir]"]
-
-
-
-
 
 //
 // Meters are special - not like any other pipes or components

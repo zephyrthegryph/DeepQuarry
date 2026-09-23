@@ -61,11 +61,6 @@
 		to_chat(user, span_notice("You start attaching the pack to [A]..."))
 		if(do_after(user, 5 SECONDS, target = A))
 			to_chat(user, span_notice("You attach the pack to [A] and activate it."))
-			/* No components, sorry. No convienence for you!
-			if(loc == user && istype(user.back, /obj/item/storage/backpack))
-				var/obj/item/storage/backpack/B = user.back
-				B.SendSignal(COMSIG_TRY_STORAGE_INSERT, src, user, FALSE, FALSE)
-			*/
 			uses_left--
 			if(uses_left <= 0)
 				user.drop_from_inventory(src, A)

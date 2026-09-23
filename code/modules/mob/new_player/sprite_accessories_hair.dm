@@ -340,22 +340,6 @@
 	icon_state = "hair_celebcurls"
 	flags = HAIR_TIEABLE
 
-/* 
-/datum/sprite_accessory/hair/citheronia
-	name = "Citheronia Hair (Kira72)"
-	icon = 'icons/mob/human_face_vr.dmi'
-	icon_state = "citheronia_hair"
-	ckeys_allowed = list("Kira72")
-	do_colouration = 0
-
-/datum/sprite_accessory/hair/taramaw
-	name = "Hairmaw (Liquidfirefly)"
-	icon = 'icons/mob/human_face_vr.dmi'
-	icon_state = "maw_hair"
-	ckeys_allowed = list("liquidfirefly")
-	do_colouration = 0
-*/
-
 /datum/sprite_accessory/hair/twindrillslong
 	name = "Twin Drills Long"
 	icon = 'icons/mob/human_face_vr.dmi'
@@ -1389,7 +1373,6 @@
 	name = "Muscov"
 	icon_state = "muscov"
 
-
 // Vulpa stuffs
 
 /datum/sprite_accessory/hair/vulp_hair_kajam
@@ -1920,17 +1903,6 @@
 	name = "Quill Mohawk"
 	icon_state = "vox_mohawk"
 
-/* CHOMPRemve Start
-/datum/sprite_accessory/hair/shadekin_hair_rivyr
-	name = "Rivyr Hair"
-	icon = 'icons/mob/human_face_vr.dmi'
-	icon_add = 'icons/mob/human_face_vr_add.dmi'
-	icon_state = "shadekin_rivyr"
-	ckeys_allowed = list("verysoft")
-	species_allowed = list(SPECIES_SHADEKIN, SPECIES_SHADEKIN_CREW)
-	gender = NEUTER
-*/
-
 /datum/sprite_accessory/hair/slicker
 	name = "Slicker"
 	icon = 'icons/mob/human_face_vr.dmi'
@@ -1940,7 +1912,6 @@
 /datum/sprite_accessory/facial_hair
 	icon = 'icons/mob/human_face_or_alt.dmi'
 	color_blend_mode = ICON_MULTIPLY
-
 
 /datum/sprite_accessory/facial_hair/vulp_ruff
 	name = "Ruff"

@@ -1,294 +1,326 @@
-// These medical issues are designed to be simple, custom medical issues that can be created on the fly by GMs.
-// Designed to be more simple than diseases, they use a separate system.
-// They are not designed to replace any existing medical work, just allow GMs to make them up for events
+// GM custom afflictions.
+//
+// Simple, one-off afflictions a GM builds on the fly for events. They are
+// ordinary /datum/affliction instances living in the patient's body, located
+// on the organ the GM picked, so every scanner, the detach/reattach system and
+// the body's bookkeeping see them like any other affliction. Everything that
+// would normally be authored on a subtype (name, harm, cure, symptoms,
+// scanner visibility) is configured at runtime on the instance.
+//
+//   severity      the issue's remaining "health": starts at 100, the cure
+//                 reagent wears it down, it resolves at 0. It does not
+//                 progress on its own.
+//   harm          optional: every tick, injure() the body with a chosen
+//                 INJURY_* kind, or damage the host organ directly, up to a cap.
+//   cure          a reagent (cured_by), a named surgery step (cure_surgery),
+//                 or removal of the organ (the affliction leaves with it).
 
-/datum/medical_issue
-	var/name = "medical issue"
-	var/mob/living/carbon/human/owner		//Who is affected by this issue? Who's it attached to?
-	var/advscan = 0 			//The required level of advanced scan to see this issue with health analysers, set to 4 to disable.
-	var/showscanner = FALSE 	//Should this issue show up on body scanners?
+/// Surgery steps a GM may name as the cure for a custom affliction.
+#define DQ_CUSTOM_SURGERY_BONE        "bone reinforcement"
+#define DQ_CUSTOM_SURGERY_GROWTHS     "remove growths"
+#define DQ_CUSTOM_SURGERY_VESSELS     "redirect blood vessels"
+#define DQ_CUSTOM_SURGERY_EXTRACT     "extract object"
+#define DQ_CUSTOM_SURGERY_GRAFT       "flesh graft"
+#define DQ_CUSTOM_SURGERY_HOLES       "close holes"
+#define DQ_CUSTOM_SURGERY_ULTRASOUND  "ultrasound"
+#define DQ_CUSTOM_SURGERY_REOXYGENATE "reoxygenate tissue"
 
-	var/obj/item/organ/affectedorgan	//Which organ is this attached to?
+/// Per-tick cure strength of the cure reagent at a standard dose (the old
+/// system removed 10 "unhealth" per tick while the reagent was present).
+#define DQ_CUSTOM_CURE_RATE 10
 
-	var/damagetype				//What sort of damage should this deal to the owner?
-	var/damagestrength			//How much damage should this deal over time to the owner?
-	var/maxdamage = 300			//What is the maximum amount of damage it can cause?
-	var/damageorgan = FALSE		//Should this damage the organ it's attached to or the body in general?
+/datum/affliction/custom
+	name = "custom affliction"
+	category = "Custom"
+	clinical_description = "An unusual condition without an established clinical picture."
+	biology = BIOLOGY_ALL
+	// Severity is the issue's remaining health; it never climbs by itself.
+	progression_rate = 0
+	min_symptoms = 0
+	max_symptoms = 0
+	catalogued = FALSE
 
-	var/cure_reagent			//Which reagent cures this issue, if any?
-	var/datum/surgery_step/cure_surgery			//Which surgery step can be used to cure this?
-	var/unhealth = 100			//The amount of health the issue has, depleted by reagent
-	var/reagent_strength = 10	//How much health the reagent will remove per processing
-	var/advscan_cure = SCANNABLE_BENEFICIAL		//What level of advanced scan is required to reveal the cure?
+	/// Health-analyser level needed to see this (4 = never).
+	var/advscan = SCANNABLE_BENEFICIAL
+	/// Health-analyser level needed to reveal the cure.
+	var/advscan_cure = SCANNABLE_BENEFICIAL
+	/// Shown on the body scanner's findings.
+	var/showscanner = FALSE
 
-	var/symptom_text			//Messages relayed to the patient about their symptoms
-	var/symptom_affect			//Visible effects on the patient such as vomiting or weakness
+	/// INJURY_* dealt to the body each tick, or null for none.
+	var/damage_kind
+	/// Damage the host organ directly instead of the body.
+	var/damage_organ = FALSE
+	/// Amount per tick.
+	var/damage_strength = 0
+	/// Never push the harmed pool/organ past this.
+	var/damage_max = 300
 
-/datum/medical_issue/Destroy()
-	// Both refs point at atoms that may be mid-deletion; leaving them set keeps
-	// the issue (and through `owner`, the whole mob) from garbage collecting.
-	owner = null
-	affectedorgan = null
-	return ..()
+	/// Display name of the cure reagent (the ID lives in cured_by).
+	var/cure_reagent_name
+	/// DQ_CUSTOM_SURGERY_* that cures this, or null.
+	var/cure_surgery
 
-/datum/medical_issue/proc/handle_effects()
-	if(!owner || !affectedorgan)
+	/// Message relayed to the patient now and then.
+	var/symptom_text
+	/// Observable effect key (see handle_custom_symptoms()).
+	var/symptom_affect
+
+/datum/affliction/custom/tick()
+	if(!owner || QDELETED(location) || location.owner != owner)
 		return
-	if(!istype(owner) || !istype(affectedorgan))
-		return
+	..()
 
-	if(!(affectedorgan in owner.organs) && !(affectedorgan in owner.internal_organs))
-		return
-
-	if(unhealth <= 0)
-		cure_issue()
-
-	if(damagestrength)
-		handle_damage()
-
-	if(cure_reagent && reagent_strength)
-		handle_curing()
-
-	if(symptom_text)
-		if(prob(1))
-			to_chat(owner, span_danger("[symptom_text]"))
-
+/// GM afflictions don't progress or snowball on their own: they drain their
+/// organ, respond to their cure (this tick's treatment, flat) and relay their
+/// symptom.
+/datum/affliction/custom/progress()
+	if(damage_strength)
+		apply_custom_damage()
+	var/delta = pending_treatment
+	pending_treatment = 0
+	if(delta)
+		adjust_severity(delta)
+		if(severity <= 0)
+			cure()
+			return
+	if(symptom_text && prob(1))
+		to_chat(owner, span_danger("[symptom_text]"))
 	if(symptom_affect)
-		handle_symptoms()
+		handle_custom_symptoms()
 
-/datum/medical_issue/proc/cure_issue()
-	// guard the deref. affectedorgan can be null if the organ
-	// was amputated/extracted (the organ's Destroy/removed clears its
-	// medical_issues list and nulls each issue's pointer; this proc may
-	// still get called via the condition's own progression path before
-	// the qdel chain runs).
-	if(affectedorgan)
-		affectedorgan.remove_medical_issue(src)
-	qdel(src)
+/// A detached custom affliction simply waits for the organ to come back.
+/datum/affliction/custom/tick_offline()
+	return
 
-/// Authoritative mutation boundary for attaching a medical issue to an organ.
-/// Callers must configure the issue before attachment so observers see its
-/// complete initial state.
-/obj/item/organ/proc/add_medical_issue(datum/medical_issue/issue, mob/living/carbon/human/subject = owner)
-	if(!issue || !istype(subject) || (issue in medical_issues))
-		return FALSE
-	issue.owner = subject
-	issue.affectedorgan = src
-	LAZYADD(medical_issues, issue)
-	SEND_SIGNAL(subject, COMSIG_MOB_MEDICAL_ISSUES_CHANGED)
-	return TRUE
+/datum/affliction/custom/proc/apply_custom_damage()
+	if(damage_organ)
+		if(istype(location, /obj/item/organ/external))
+			var/obj/item/organ/external/E = location
+			if(E.get_trauma() + E.get_burn() < damage_max)
+				owner.injure(INJURY_BLUNT, damage_strength, E.organ_tag, flags = INJURE_IGNORE_RESISTANCE | INJURE_SILENT)
+		else if(location.damage < damage_max)
+			owner.injure(INJURY_BLUNT, min(damage_strength, damage_max - location.damage), location, flags = INJURE_IGNORE_RESISTANCE | INJURE_SILENT)
+		return
+	if(!damage_kind)
+		return
+	if(owner.injury_load(injury_category(damage_kind)) >= damage_max)
+		return
+	owner.injure(damage_kind, damage_strength, flags = INJURE_SILENT)
 
-/// Authoritative inverse of add_medical_issue().
-/obj/item/organ/proc/remove_medical_issue(datum/medical_issue/issue)
-	if(!issue || !(issue in medical_issues))
-		return FALSE
-	var/mob/living/carbon/human/subject = issue.owner
-	LAZYREMOVE(medical_issues, issue)
-	if(subject)
-		SEND_SIGNAL(subject, COMSIG_MOB_MEDICAL_ISSUES_CHANGED)
-	issue.affectedorgan = null
-	return TRUE
-
-/datum/medical_issue/proc/handle_damage()
-	if(damagestrength)
-		if(damageorgan)
-			var/maxtotal = max(maxdamage,affectedorgan.damage) //We don't want it to heal damage that's above the max by this
-			affectedorgan.damage = min((affectedorgan.damage + damagestrength),maxtotal)
-		else
-			switch(damagetype)
-				if(BRUTE)
-					if(maxdamage >= owner.getBruteLoss())
-						owner.adjustBruteLoss(damagestrength)
-				if(BURN)
-					if(maxdamage >= owner.getFireLoss())
-						owner.adjustFireLoss(damagestrength)
-				if(OXY)
-					if(maxdamage >= owner.getOxyLoss())
-						owner.adjustFireLoss(damagestrength)
-				if(TOX)
-					if(maxdamage >= owner.getToxLoss())
-						owner.adjustToxLoss(damagestrength)
-				if(CLONE)
-					if(maxdamage >= owner.getCloneLoss())
-						owner.adjustCloneLoss(damagestrength)
-				if(HALLOSS)
-					if(maxdamage >= owner.getHalLoss())
-						owner.adjustHalLoss(damagestrength)
-
-/datum/medical_issue/proc/handle_curing()
-	for(var/datum/reagent/R in owner.reagents.reagent_list)
-		if(R.name == cure_reagent)
-			unhealth = unhealth - reagent_strength
-	for(var/datum/reagent/R in owner.ingested.reagent_list)
-		if(R.name == cure_reagent)
-			unhealth = unhealth - reagent_strength
-
-/datum/medical_issue/proc/handle_symptoms()
+/datum/affliction/custom/proc/handle_custom_symptoms()
+	var/mob/living/carbon/human/H = owner
+	if(!istype(H))
+		return
 	switch(symptom_affect)
 		if("vomit")
 			if(prob(5))
-				owner.vomit(10)
+				H.vomit(10)
 		if("temporary weakness")
 			if(prob(5))
-				owner.AdjustWeakened(5)
+				H.AdjustWeakened(5)
 		if("permanent weakness")
-			owner.SetWeakened(max(owner.weakened,10))
+			H.SetWeakened(max(H.weakened, 10))
 		if("temporary sleeping")
 			if(prob(5))
-				owner.AdjustSleeping(5)
+				H.AdjustSleeping(5)
 		if("permanent sleeping")
-			owner.SetSleeping(max(owner.sleeping+10,10))
+			H.SetSleeping(max(H.sleeping + 10, 10))
 		if("jittery")
-			if(owner.get_jittery() < 100)
-				owner.make_jittery(100)
+			if(H.get_jittery() < 100)
+				H.make_jittery(100)
 		if("paralysed")
-			owner.SetParalysis(max(owner.paralysis,10))
+			H.SetParalysis(max(H.paralysis, 10))
 		if("cough")
 			if(prob(3))
-				owner.emote("cough")
+				H.emote("cough")
 		if("confusion")
-			owner.SetConfused(max(owner.confused,10))
+			H.SetConfused(max(H.confused, 10))
 
-// Proc for setting all this up for GMs
+/// Human-readable cure hint for scanners.
+/datum/affliction/custom/proc/cure_hint()
+	if(cure_reagent_name)
+		return "Suggested treatment: Prescription of [cure_reagent_name]."
+	if(cure_surgery)
+		return "Required surgery: [cure_surgery]."
+	return "[location ? capitalize(location.name) : "The affected organ"] may require surgical removal or transplantation."
+
+/// Custom afflictions on `O` (in a body or detached), optionally only those
+/// cured by `surgery`.
+/proc/dq_custom_afflictions_on(obj/item/organ/O, surgery = null)
+	. = list()
+	if(!O)
+		return
+	for(var/datum/affliction/custom/A in O.afflictions_here())
+		if(!surgery || A.cure_surgery == surgery)
+			. += A
+
+/// Every custom affliction on a mob.
+/proc/dq_custom_afflictions_of(mob/living/M)
+	. = list()
+	for(var/datum/affliction/custom/A in M?.body?.afflictions)
+		. += A
+
+
+// --- GM setup -----------------------------------------------------------------------
 
 /mob/living/carbon/human/proc/custom_medical_issue(mob/user)
+	var/static/list/external_organ_surgeries = list(DQ_CUSTOM_SURGERY_BONE, DQ_CUSTOM_SURGERY_GROWTHS, DQ_CUSTOM_SURGERY_VESSELS, DQ_CUSTOM_SURGERY_EXTRACT, DQ_CUSTOM_SURGERY_GRAFT)
+	var/static/list/internal_organ_surgeries = list(DQ_CUSTOM_SURGERY_GROWTHS, DQ_CUSTOM_SURGERY_VESSELS, DQ_CUSTOM_SURGERY_HOLES, DQ_CUSTOM_SURGERY_ULTRASOUND, DQ_CUSTOM_SURGERY_REOXYGENATE)
+	var/static/list/possible_symptoms = list("vomit", "temporary weakness", "permanent weakness", "temporary sleeping", "permanent sleeping", "jittery", "paralysed", "cough", "confusion", "None")
 
-	var/list/external_organ_surgeries = list("bone reinforcement","remove growths","redirect blood vessels","extract object","flesh graft")
-	var/list/internal_organ_surgeries = list("remove growths","redirect blood vessels","close holes","ultrasound","reoxygenate tissue")
-
-	var/issue_name = tgui_input_text(user,"What would you like to call this medical issue?","Name")
+	var/issue_name = tgui_input_text(user, "What would you like to call this medical issue?", "Name")
+	if(!issue_name)
+		return
+	issue_name = sanitize(issue_name)
 	var/list/organ_options = list()
-	for(var/obj/item/organ/E in src.organs)
+	for(var/obj/item/organ/E in organs)
 		organ_options |= E
-	for(var/obj/item/organ/I in src.internal_organs)
+	for(var/obj/item/organ/I in internal_organs)
 		organ_options |= I
-	var/obj/item/organ/issue_organ = tgui_input_list(user,"Which organ should this issue be attached to?","Affect organ",organ_options)
+	var/obj/item/organ/issue_organ = tgui_input_list(user, "Which organ should this issue be attached to?", "Affect organ", organ_options)
 	if(!issue_organ)
 		return
 
-	var/damage = tgui_alert(user, "Should this apply damage?","Damage",list("Yes","No","Cancel"))
-	if(!damage || (damage == "Cancel"))
+	var/damage = tgui_alert(user, "Should this apply damage?", "Damage", list("Yes", "No", "Cancel"))
+	if(!damage || damage == "Cancel")
 		return
 	var/damage_organ
-	var/damage_value_pre
 	var/damage_value
 	var/damage_max
-	var/damage_type
+	var/damage_kind
 	if(damage == "Yes")
-		damage_organ = tgui_alert(user, "Should this damage the organ or body?","Damage",list("Organ","Body"))
+		damage_organ = tgui_alert(user, "Should this damage the organ or body?", "Damage", list("Organ", "Body"))
 		if(!damage_organ)
 			return
-		damage_value_pre = tgui_input_number(user,"How much damage should this apply per processing. Low values are recommended, automatically divided by 10.","Damage",1)
-		damage_value = damage_value_pre / 10
-		damage_max = tgui_input_number(user,"What is the maximum about of damage this issue can apply? It will not damage above this value.","Damage",300)
+		var/damage_value_pre = tgui_input_number(user, "How much damage should this apply per processing. Low values are recommended, automatically divided by 10.", "Damage", 1)
+		damage_value = max(0, damage_value_pre) / 10
+		damage_max = tgui_input_number(user, "What is the maximum amount of damage this issue can apply? It will not damage above this value.", "Damage", 300)
 		if(damage_organ == "Body")
-			damage_type = tgui_input_list(user, "Should this damage the organ or body?","Damage",list(BRUTE,BURN,OXY,TOX,CLONE,HALLOSS),BRUTE)
-			if(!damage_type)
+			var/list/kinds = list()
+			for(var/kind in 1 to INJURY_KIND_COUNT)
+				kinds[injury_kind_name(kind)] = kind
+			var/kind_name = tgui_input_list(user, "What kind of harm should this do to the body?", "Damage", kinds, injury_kind_name(INJURY_BLUNT))
+			if(!kind_name)
 				return
+			damage_kind = kinds[kind_name]
 
-	var/cure_q = tgui_alert(user, "Should this be cured by a reagent, surgery or organ removal only? Note that organ removal will always be an option if it's not a vital body part.","Cure",list("Reagent","Surgery","Removal","Cancel"))
-	if(!cure_q || (cure_q == "Cancel"))
+	var/cure_q = tgui_alert(user, "Should this be cured by a reagent, surgery or organ removal only? Note that organ removal will always be an option if it's not a vital body part.", "Cure", list("Reagent", "Surgery", "Removal", "Cancel"))
+	if(!cure_q || cure_q == "Cancel")
 		return
-	var/datum/reagent/cure_reagent
-	var/cure_reagent_ID
+	var/datum/reagent/cure_reagent_type
 	var/cure_surgery
 	if(cure_q == "Reagent")
-		var/list/chem_list = typesof(/datum/reagent)
-		cure_reagent = tgui_input_list(user, "Which reagent should be the cure?", "Cure", chem_list)
-		if(!cure_reagent)
+		cure_reagent_type = tgui_input_list(user, "Which reagent should be the cure?", "Cure", subtypesof(/datum/reagent))
+		if(!cure_reagent_type)
 			return
-		cure_reagent_ID = cure_reagent.name
-
 	if(cure_q == "Surgery")
-		if(istype(issue_organ,/obj/item/organ/internal))
-			cure_surgery = tgui_input_list(user, "Which surgery step should cure it?", "Cure", internal_organ_surgeries)
-		else
-			cure_surgery = tgui_input_list(user, "Which surgery step should cure it?", "Cure", external_organ_surgeries)
+		cure_surgery = tgui_input_list(user, "Which surgery step should cure it?", "Cure", istype(issue_organ, /obj/item/organ/internal) ? internal_organ_surgeries : external_organ_surgeries)
 		if(!cure_surgery)
 			return
 
-	var/list/possible_symptoms = list("vomit","temporary weakness","permanent weakness","temporary sleeping","permanent sleeping","jittery","paralysed","cough","confusion","None")
-
-	var/symptom_text = tgui_input_text(user,"What text should be displayed to the affected patient about their symptoms?","Symptoms")
+	var/symptom_text = tgui_input_text(user, "What text should be displayed to the affected patient about their symptoms?", "Symptoms")
 	var/symptom_affect = tgui_input_list(user, "What observable symptom should they display?", "Symptoms", possible_symptoms)
 	if(!symptom_affect)
 		return
 
-	var/scanner_show = tgui_alert(user, "Should this show on body scanners?","Diagnosis",list("Yes","No","Cancel"))
-	if(!scanner_show || (scanner_show == "Cancel"))
+	var/scanner_show = tgui_alert(user, "Should this show on body scanners?", "Diagnosis", list("Yes", "No", "Cancel"))
+	if(!scanner_show || scanner_show == "Cancel")
 		return
 
-	var/scanner_strength = tgui_input_number(user,"What level of health analyser is needed to see this? 0 for standard, 1 for improved, 2 for advanced, 3 for phasic and 4 for impossible.","Diagnosis",0)
-	var/advscan_cure = tgui_input_number(user, "What level of health analyser is required to display the cure? 0 for standard, 1 for improved, 2 for advanced, 3 for phasic and 4 for impossible.","Diagnosis",0)
+	var/scanner_strength = tgui_input_number(user, "What level of health analyser is needed to see this? 0 for standard, 1 for improved, 2 for advanced, 3 for phasic and 4 for impossible.", "Diagnosis", 0)
+	var/advscan_cure = tgui_input_number(user, "What level of health analyser is required to display the cure? 0 for standard, 1 for improved, 2 for advanced, 3 for phasic and 4 for impossible.", "Diagnosis", 0)
 
-	var/datum/medical_issue/M = new()
-	M.affectedorgan = issue_organ
-	M.name = issue_name
-	M.owner = src
-	M.advscan = scanner_strength
-	M.advscan_cure = advscan_cure
-	M.showscanner = scanner_show
+	// Every prompt above can sleep; the patient or organ may be gone now.
+	if(QDELETED(src) || !body || QDELETED(issue_organ) || issue_organ.owner != src)
+		to_chat(user, span_warning("The patient or the chosen organ is no longer available."))
+		return
 
+	var/datum/affliction/custom/A = new()
+	A.name = issue_name
+	A.advscan = scanner_strength
+	A.advscan_cure = advscan_cure
+	A.showscanner = (scanner_show == "Yes")
 	if(damage == "Yes")
-		if(damage_organ == "Body")
-			M.damagetype = damage_type
-			M.damageorgan = FALSE
-		else
-			M.damageorgan = TRUE
-		M.damagestrength = damage_value
-		M.maxdamage = damage_max
-
-	if(cure_reagent)
-		M.cure_reagent = cure_reagent_ID
-	if(cure_surgery)
-		M.cure_surgery = cure_surgery
-
+		A.damage_organ = (damage_organ == "Organ")
+		A.damage_kind = damage_kind
+		A.damage_strength = damage_value
+		A.damage_max = damage_max
+	if(cure_reagent_type)
+		A.cure_reagent_name = initial(cure_reagent_type.name)
+		A.cured_by = list()
+		A.cured_by[initial(cure_reagent_type.id)] = DQ_CUSTOM_CURE_RATE
+	A.cure_surgery = cure_surgery
 	if(symptom_text)
-		M.symptom_text = symptom_text
+		A.symptom_text = sanitize(symptom_text)
 	if(symptom_affect != "None")
-		M.symptom_affect = symptom_affect
-	issue_organ.add_medical_issue(M, src)
+		A.symptom_affect = symptom_affect
+	body.add_affliction(A, issue_organ)
+	A.set_severity(AFFLICTION_SEVERITY_TERMINAL)
 
-	to_chat(user,"[issue_name] applied to [issue_organ] inside of [src]!")
+	to_chat(user, "[issue_name] applied to [issue_organ] inside of [src]!")
+	log_admin("[key_name(user)] applied custom affliction '[issue_name]' to [key_name(src)] ([issue_organ]).")
 	if(damage == "Yes")
-		to_chat(user,"[issue_name] will damage the [damage_organ] with a strength of [damage_value], up to a maximum of [damage_max].")
-	if(cure_reagent)
-		to_chat(user,"[issue_name] can be cured with [cure_reagent_ID].")
+		to_chat(user, "[issue_name] will damage the [damage_organ] with a strength of [damage_value], up to a maximum of [damage_max].")
+	if(cure_reagent_type)
+		to_chat(user, "[issue_name] can be cured with [A.cure_reagent_name].")
 	else if(cure_surgery)
-		to_chat(user,"[issue_name] can be cured via the [cure_surgery] surgery.")
+		to_chat(user, "[issue_name] can be cured via the [cure_surgery] surgery.")
 	else
-		to_chat(user,"[issue_name] can only be cured by amputation or removal of \the [issue_organ]!")
+		to_chat(user, "[issue_name] can only be cured by amputation or removal of \the [issue_organ]!")
 
 /mob/living/carbon/human/proc/clear_medical_issue(mob/user)
-	var/list/all_issues = list()
-	for(var/obj/item/organ/O in contents)
-		for(var/datum/medical_issue/MI in O.medical_issues)
-			all_issues |= MI
-	if(!all_issues.len)
-		to_chat(user,"No custom medical issues found in [src]!")
+	var/list/all_issues = dq_custom_afflictions_of(src)
+	if(!length(all_issues))
+		to_chat(user, "No custom medical issues found in [src]!")
 		return
-	var/broad = tgui_alert(user, "Would you like to clear all custom medical issues or a specific one?","Damage",list("All","One","Cancel"))
-	if(!broad || (broad == "Cancel"))
+	var/broad = tgui_alert(user, "Would you like to clear all custom medical issues or a specific one?", "Damage", list("All", "One", "Cancel"))
+	if(!broad || broad == "Cancel")
 		return
 
 	if(broad == "All")
-		for(var/datum/medical_issue/MI in all_issues)
-			MI.cure_issue()
-			to_chat(user,"[MI.name] removed from [MI.affectedorgan] in [src].")
+		for(var/datum/affliction/custom/A as anything in dq_custom_afflictions_of(src))
+			to_chat(user, "[A.name] removed from [A.location] in [src].")
+			A.cure()
+		return
 
-	if(broad == "One")
-		var/datum/medical_issue/one_issue = tgui_input_list(user, "Which issue would you like to remove?", "Symptoms", all_issues)
-		if(!one_issue)
-			return
-		one_issue.cure_issue()
-		to_chat(user,"[one_issue.name] removed from [one_issue.affectedorgan] in [src].")
+	var/datum/affliction/custom/one_issue = tgui_input_list(user, "Which issue would you like to remove?", "Symptoms", all_issues)
+	if(!one_issue || QDELETED(one_issue) || one_issue.owner != src)
+		return
+	to_chat(user, "[one_issue.name] removed from [one_issue.location] in [src].")
+	one_issue.cure()
 
 
 ///////////////////////////////////////////////////////////////
-//////////////External Organ Surgeries/////////////////////////
+//////////////Custom affliction surgeries//////////////////////
 ///////////////////////////////////////////////////////////////
+// Each step cures the custom afflictions that name it. External steps treat
+// afflictions on the limb itself; internal steps treat afflictions on the
+// organs inside the limb.
 
 /datum/surgery_step/medical_issue
+	can_infect = 1
+	blood_level = 1
+	min_duration = 50
+	max_duration = 60
+	/// DQ_CUSTOM_SURGERY_* this step performs.
+	var/cure_key
+	/// Treat afflictions on the internal organs of the limb, not the limb.
+	var/internal_target = FALSE
+	/// "reinforce the bone" — the verb phrase for messages.
+	var/action_text = "operate"
+	/// "reinforced the bone" — the completed phrase.
+	var/done_text = "operated"
+
+/// Custom afflictions this step can cure at `affected`.
+/datum/surgery_step/medical_issue/proc/curable_afflictions(obj/item/organ/external/affected)
+	. = list()
+	if(!affected || !cure_key)
+		return
+	if(!internal_target)
+		return dq_custom_afflictions_on(affected, cure_key)
+	for(var/obj/item/organ/internal/I in affected.internal_organs)
+		. += dq_custom_afflictions_on(I, cure_key)
 
 /datum/surgery_step/medical_issue/can_use(mob/living/user, mob/living/carbon/human/target, target_zone, obj/item/tool)
 	if(!ishuman(target))
@@ -298,16 +330,37 @@
 		return FALSE
 	if(coverage_check(user, target, affected, tool))
 		return FALSE
-	if(!affected.medical_issues)
+	if(!length(curable_afflictions(affected)))
 		return FALSE
-	return TRUE
+	return (affected.robotic < ORGAN_ROBOT) && affected.open >= FLESH_RETRACTED
+
+/datum/surgery_step/medical_issue/begin_step(mob/user, mob/living/carbon/human/target, target_zone, obj/item/tool)
+	var/obj/item/organ/external/affected = target.get_organ(target_zone)
+	user.visible_message(span_notice("[user] is beginning to [action_text] in [target]'s [affected.name] with \the [tool]."), \
+		span_notice("You are beginning to [action_text] in [target]'s [affected.name] with \the [tool]."))
+	user.balloon_alert_visible("begins to [action_text].", "beginning to [action_text].")
+	target.custom_pain("The pain in your [affected.name] is going to make you pass out!", 50)
+	..()
+
+/datum/surgery_step/medical_issue/end_step(mob/living/user, mob/living/carbon/human/target, target_zone, obj/item/tool)
+	var/obj/item/organ/external/affected = target.get_organ(target_zone)
+	var/list/curable = curable_afflictions(affected)
+	if(!length(curable))
+		return
+	user.visible_message(span_notice("[user] [done_text] in [target]'s [affected.name] with \the [tool]."), \
+		span_notice("You [done_text] in [target]'s [affected.name] with \the [tool]."))
+	user.balloon_alert_visible("[done_text].", "[done_text].")
+	for(var/datum/affliction/custom/A as anything in curable)
+		A.cure()
 
 /datum/surgery_step/medical_issue/fail_step(mob/living/user, mob/living/carbon/human/target, target_zone, obj/item/tool)
 	var/obj/item/organ/external/affected = target.get_organ(target_zone)
-	user.visible_message(span_danger("[user]'s hand slips, damaging the bone in [target]'s [affected.name] with \the [tool]!") , \
-		span_danger("Your hand slips, damaging the bone in [target]'s [affected.name] with \the [tool]!"))
-	user.balloon_alert_visible("slips, damaging the bone.", "your hand slips, damaging the bone")
-	affected.createwound(BRUISE, 5)
+	user.visible_message(span_danger("[user]'s hand slips, damaging the tissue in [target]'s [affected.name] with \the [tool]!"), \
+		span_danger("Your hand slips, damaging the tissue in [target]'s [affected.name] with \the [tool]!"))
+	user.balloon_alert_visible("slips, damaging the tissue.", "your hand slips, damaging the tissue")
+	target.injure(INJURY_BLUNT, 5, target_zone, tool)
+
+// --- External (the limb itself) ---
 
 //Bone-gel
 /datum/surgery_step/medical_issue/strengthen_bone
@@ -315,39 +368,10 @@
 	allowed_tools = list(
 		/obj/item/surgical/bonegel = 100
 	)
-
 	allowed_procs = list(IS_SCREWDRIVER = 75)
-
-	can_infect = 1
-	blood_level = 1
-
-	min_duration = 50
-	max_duration = 60
-
-/datum/surgery_step/medical_issue/strengthen_bone/can_use(mob/living/user, mob/living/carbon/human/target, target_zone, obj/item/tool)
-	if(!..(user, target, target_zone, tool))
-		return FALSE
-	var/obj/item/organ/external/affected = target.get_organ(target_zone)
-	for(var/datum/medical_issue/MI in affected.medical_issues)
-		if(MI.cure_surgery == "bone reinforcement")
-			return affected && (affected.robotic < ORGAN_ROBOT) && affected.open >= FLESH_RETRACTED
-
-/datum/surgery_step/medical_issue/strengthen_bone/begin_step(mob/user, mob/living/carbon/human/target, target_zone, obj/item/tool)
-	var/obj/item/organ/external/affected = target.get_organ(target_zone)
-	user.visible_message(span_notice("[user] is beginning to reinforce the bone in [target]'s [affected.name] in place with \the [tool].") , \
-		span_notice("You are beginning to reinforce the bone in [target]'s [affected.name] in place with \the [tool]."))
-	user.balloon_alert_visible("begins to reinforce the bone.", "reinforcing the bone.")
-	target.custom_pain("The pain in your [affected.name] is going to make you pass out!", 50)
-	..()
-
-/datum/surgery_step/medical_issue/strengthen_bone/end_step(mob/living/user, mob/living/carbon/human/target, target_zone, obj/item/tool)
-	var/obj/item/organ/external/affected = target.get_organ(target_zone)
-	for(var/datum/medical_issue/MI in affected.medical_issues)
-		if(MI.cure_surgery == "bone reinforcement")
-			user.visible_message(span_notice("[user] reinforces the bone in [target]'s [affected.name] with \the [tool]."), \
-			span_notice("You reinforce the bone in [target]'s [affected.name] with \the [tool]."))
-			user.balloon_alert_visible("reinforces the bone.", "bone reinforced.")
-			MI.cure_issue()
+	cure_key = DQ_CUSTOM_SURGERY_BONE
+	action_text = "reinforce the bone"
+	done_text = "reinforced the bone"
 
 //scalpel
 /datum/surgery_step/medical_issue/remove_growth
@@ -355,38 +379,9 @@
 	allowed_tools = list(
 		/obj/item/surgical/scalpel = 100
 	)
-
-	can_infect = 1
-	blood_level = 1
-
-	min_duration = 50
-	max_duration = 60
-
-/datum/surgery_step/medical_issue/remove_growth/can_use(mob/living/user, mob/living/carbon/human/target, target_zone, obj/item/tool)
-	if(!..(user, target, target_zone, tool))
-		return FALSE
-	var/obj/item/organ/external/affected = target.get_organ(target_zone)
-	for(var/datum/medical_issue/MI in affected.medical_issues)
-		if(MI.cure_surgery == "remove growths")
-			return affected && (affected.robotic < ORGAN_ROBOT) && affected.open >= FLESH_RETRACTED
-	return FALSE
-
-/datum/surgery_step/medical_issue/remove_growth/begin_step(mob/user, mob/living/carbon/human/target, target_zone, obj/item/tool)
-	var/obj/item/organ/external/affected = target.get_organ(target_zone)
-	user.visible_message(span_notice("[user] is beginning to remove growths in [target]'s [affected.name] with \the [tool].") , \
-		span_notice("You are beginning to remove growths in [target]'s [affected.name] with \the [tool]."))
-	user.balloon_alert_visible("begins to remove growths.", "removing growths.")
-	target.custom_pain("The pain in your [affected.name] is going to make you pass out!", 50)
-	..()
-
-/datum/surgery_step/medical_issue/remove_growth/end_step(mob/living/user, mob/living/carbon/human/target, target_zone, obj/item/tool)
-	var/obj/item/organ/external/affected = target.get_organ(target_zone)
-	for(var/datum/medical_issue/MI in affected.medical_issues)
-		if(MI.cure_surgery == "remove growths")
-			user.visible_message(span_notice("[user] removes the growths in [target]'s [affected.name] with \the [tool]."), \
-			span_notice("You removes the growths in [target]'s [affected.name] with \the [tool]."))
-			user.balloon_alert_visible("removes the growth.", "removed growth.")
-			MI.cure_issue()
+	cure_key = DQ_CUSTOM_SURGERY_GROWTHS
+	action_text = "remove growths"
+	done_text = "removed the growths"
 
 //fixovein
 /datum/surgery_step/medical_issue/redirect_vessels
@@ -394,38 +389,9 @@
 	allowed_tools = list(
 		/obj/item/surgical/FixOVein = 100
 	)
-
-	can_infect = 1
-	blood_level = 1
-
-	min_duration = 50
-	max_duration = 60
-
-/datum/surgery_step/medical_issue/redirect_vessels/can_use(mob/living/user, mob/living/carbon/human/target, target_zone, obj/item/tool)
-	if(!..(user, target, target_zone, tool))
-		return FALSE
-	var/obj/item/organ/external/affected = target.get_organ(target_zone)
-	for(var/datum/medical_issue/MI in affected.medical_issues)
-		if(MI.cure_surgery == "redirect blood vessels")
-			return affected && (affected.robotic < ORGAN_ROBOT) && affected.open >= FLESH_RETRACTED
-	return FALSE
-
-/datum/surgery_step/medical_issue/redirect_vessels/begin_step(mob/user, mob/living/carbon/human/target, target_zone, obj/item/tool)
-	var/obj/item/organ/external/affected = target.get_organ(target_zone)
-	user.visible_message(span_notice("[user] is beginning to redirect blood vessels in [target]'s [affected.name] with \the [tool].") , \
-		span_notice("You are beginning to redirect blood vessels in [target]'s [affected.name] with \the [tool]."))
-	user.balloon_alert_visible("begins to redirect blood vessels.", "redirecting blood vessels.")
-	target.custom_pain("The pain in your [affected.name] is going to make you pass out!", 50)
-	..()
-
-/datum/surgery_step/medical_issue/redirect_vessels/end_step(mob/living/user, mob/living/carbon/human/target, target_zone, obj/item/tool)
-	var/obj/item/organ/external/affected = target.get_organ(target_zone)
-	for(var/datum/medical_issue/MI in affected.medical_issues)
-		if(MI.cure_surgery == "redirect blood vessels")
-			user.visible_message(span_notice("[user] redirected blood vessels in [target]'s [affected.name] with \the [tool]."), \
-			span_notice("You redirected blood vessels in [target]'s [affected.name] with \the [tool]."))
-			user.balloon_alert_visible("redirected blood vessels.", "redirected blood vessels.")
-			MI.cure_issue()
+	cure_key = DQ_CUSTOM_SURGERY_VESSELS
+	action_text = "redirect blood vessels"
+	done_text = "redirected blood vessels"
 
 //hemostat
 /datum/surgery_step/medical_issue/extract_object
@@ -433,38 +399,9 @@
 	allowed_tools = list(
 		/obj/item/surgical/hemostat = 100
 	)
-
-	can_infect = 1
-	blood_level = 1
-
-	min_duration = 50
-	max_duration = 60
-
-/datum/surgery_step/medical_issue/extract_object/can_use(mob/living/user, mob/living/carbon/human/target, target_zone, obj/item/tool)
-	if(!..(user, target, target_zone, tool))
-		return FALSE
-	var/obj/item/organ/external/affected = target.get_organ(target_zone)
-	for(var/datum/medical_issue/MI in affected.medical_issues)
-		if(MI.cure_surgery == "extract object")
-			return affected && (affected.robotic < ORGAN_ROBOT) && affected.open >= FLESH_RETRACTED
-	return FALSE
-
-/datum/surgery_step/medical_issue/extract_object/begin_step(mob/user, mob/living/carbon/human/target, target_zone, obj/item/tool)
-	var/obj/item/organ/external/affected = target.get_organ(target_zone)
-	user.visible_message(span_notice("[user] is beginning to remove objects in [target]'s [affected.name] with \the [tool].") , \
-		span_notice("You are beginning to remove objects in [target]'s [affected.name] with \the [tool]."))
-	user.balloon_alert_visible("begins to remove objects.", "removing objects.")
-	target.custom_pain("The pain in your [affected.name] is going to make you pass out!", 50)
-	..()
-
-/datum/surgery_step/medical_issue/extract_object/end_step(mob/living/user, mob/living/carbon/human/target, target_zone, obj/item/tool)
-	var/obj/item/organ/external/affected = target.get_organ(target_zone)
-	for(var/datum/medical_issue/MI in affected.medical_issues)
-		if(MI.cure_surgery == "extract object")
-			user.visible_message(span_notice("[user] removes the objects in [target]'s [affected.name] with \the [tool]."), \
-			span_notice("You removes the objects in [target]'s [affected.name] with \the [tool]."))
-			user.balloon_alert_visible("removes the objects.", "removed objects.")
-			MI.cure_issue()
+	cure_key = DQ_CUSTOM_SURGERY_EXTRACT
+	action_text = "remove objects"
+	done_text = "removed the objects"
 
 //brute kit
 /datum/surgery_step/medical_issue/flesh_graft
@@ -472,40 +409,11 @@
 	allowed_tools = list(
 		/obj/item/stack/medical/advanced/bruise_pack = 100
 	)
+	cure_key = DQ_CUSTOM_SURGERY_GRAFT
+	action_text = "graft flesh"
+	done_text = "grafted the flesh"
 
-	can_infect = 1
-	blood_level = 1
-
-	min_duration = 50
-	max_duration = 60
-
-/datum/surgery_step/medical_issue/flesh_graft/can_use(mob/living/user, mob/living/carbon/human/target, target_zone, obj/item/tool)
-	if(!..(user, target, target_zone, tool))
-		return FALSE
-	var/obj/item/organ/external/affected = target.get_organ(target_zone)
-	for(var/datum/medical_issue/MI in affected.medical_issues)
-		if(MI.cure_surgery == "flesh graft")
-			return affected && (affected.robotic < ORGAN_ROBOT) && affected.open >= FLESH_RETRACTED
-	return FALSE
-
-/datum/surgery_step/medical_issue/flesh_graft/begin_step(mob/user, mob/living/carbon/human/target, target_zone, obj/item/tool)
-	var/obj/item/organ/external/affected = target.get_organ(target_zone)
-	user.visible_message(span_notice("[user] is beginning to graft flesh in [target]'s [affected.name] with \the [tool].") , \
-		span_notice("You are beginning to graft flesh in [target]'s [affected.name] with \the [tool]."))
-	user.balloon_alert_visible("begins to graft flesh.", "grafting flesh.")
-	target.custom_pain("The pain in your [affected.name] is going to make you pass out!", 50)
-	..()
-
-/datum/surgery_step/medical_issue/flesh_graft/end_step(mob/living/user, mob/living/carbon/human/target, target_zone, obj/item/tool)
-	var/obj/item/organ/external/affected = target.get_organ(target_zone)
-	for(var/datum/medical_issue/MI in affected.medical_issues)
-		if(MI.cure_surgery == "flesh graft")
-			user.visible_message(span_notice("[user] grafts the flesh in [target]'s [affected.name] with \the [tool]."), \
-			span_notice("You grafts the flesh in [target]'s [affected.name] with \the [tool]."))
-			user.balloon_alert_visible("grafted flesh.", "grafted flesh.")
-			MI.cure_issue()
-
-///////////////////Internal Organs
+// --- Internal (organs inside the limb) ---
 
 //scalpel
 /datum/surgery_step/medical_issue/remove_growth_internal
@@ -513,40 +421,10 @@
 	allowed_tools = list(
 		/obj/item/surgical/scalpel = 100
 	)
-
-	can_infect = 1
-	blood_level = 1
-
-	min_duration = 50
-	max_duration = 60
-
-/datum/surgery_step/medical_issue/remove_growth_internal/can_use(mob/living/user, mob/living/carbon/human/target, target_zone, obj/item/tool)
-	if(!..(user, target, target_zone, tool))
-		return FALSE
-	var/obj/item/organ/external/affected = target.get_organ(target_zone)
-	for(var/obj/item/organ/internal/I in affected.internal_organs)
-		for(var/datum/medical_issue/MI in I.medical_issues)
-			if(MI.cure_surgery == "remove growths")
-				return affected && (affected.robotic < ORGAN_ROBOT) && affected.open >= FLESH_RETRACTED
-	return FALSE
-
-/datum/surgery_step/medical_issue/remove_growth_internal/begin_step(mob/user, mob/living/carbon/human/target, target_zone, obj/item/tool)
-	var/obj/item/organ/external/affected = target.get_organ(target_zone)
-	user.visible_message(span_notice("[user] is beginning to remove growths in [target]'s [affected.name] with \the [tool].") , \
-		span_notice("You are beginning to remove growths in [target]'s [affected.name] with \the [tool]."))
-	user.balloon_alert_visible("begins to remove growths.", "removing growths.")
-	target.custom_pain("The pain in your [affected.name] is going to make you pass out!", 50)
-	..()
-
-/datum/surgery_step/medical_issue/remove_growth_internal/end_step(mob/living/user, mob/living/carbon/human/target, target_zone, obj/item/tool)
-	var/obj/item/organ/external/affected = target.get_organ(target_zone)
-	for(var/obj/item/organ/internal/I in affected.internal_organs)
-		for(var/datum/medical_issue/MI in I.medical_issues)
-			if(MI.cure_surgery == "remove growths")
-				user.visible_message(span_notice("[user] removes the growths in [target]'s [affected.name] with \the [tool]."), \
-				span_notice("You removes the growths in [target]'s [affected.name] with \the [tool]."))
-				user.balloon_alert_visible("removes the growth.", "removed growth.")
-				MI.cure_issue()
+	cure_key = DQ_CUSTOM_SURGERY_GROWTHS
+	internal_target = TRUE
+	action_text = "remove growths"
+	done_text = "removed the growths"
 
 //fixovein
 /datum/surgery_step/medical_issue/redirect_vessels_internal
@@ -554,40 +432,10 @@
 	allowed_tools = list(
 		/obj/item/surgical/FixOVein = 100
 	)
-
-	can_infect = 1
-	blood_level = 1
-
-	min_duration = 50
-	max_duration = 60
-
-/datum/surgery_step/medical_issue/redirect_vessels_internal/can_use(mob/living/user, mob/living/carbon/human/target, target_zone, obj/item/tool)
-	if(!..(user, target, target_zone, tool))
-		return FALSE
-	var/obj/item/organ/external/affected = target.get_organ(target_zone)
-	for(var/obj/item/organ/internal/I in affected.internal_organs)
-		for(var/datum/medical_issue/MI in I.medical_issues)
-			if(MI.cure_surgery == "redirect blood vessels")
-				return affected && (affected.robotic < ORGAN_ROBOT) && affected.open >= FLESH_RETRACTED
-	return FALSE
-
-/datum/surgery_step/medical_issue/redirect_vessels_internal/begin_step(mob/user, mob/living/carbon/human/target, target_zone, obj/item/tool)
-	var/obj/item/organ/external/affected = target.get_organ(target_zone)
-	user.visible_message(span_notice("[user] is beginning to redirect blood vessels in [target]'s [affected.name] with \the [tool].") , \
-		span_notice("You are beginning to redirect blood vessels in [target]'s [affected.name] with \the [tool]."))
-	user.balloon_alert_visible("begins to redirect blood vessels.", "redirecting blood vessels.")
-	target.custom_pain("The pain in your [affected.name] is going to make you pass out!", 50)
-	..()
-
-/datum/surgery_step/medical_issue/redirect_vessels_internal/end_step(mob/living/user, mob/living/carbon/human/target, target_zone, obj/item/tool)
-	var/obj/item/organ/external/affected = target.get_organ(target_zone)
-	for(var/obj/item/organ/internal/I in affected.internal_organs)
-		for(var/datum/medical_issue/MI in I.medical_issues)
-			if(MI.cure_surgery == "redirect blood vessels")
-				user.visible_message(span_notice("[user] redirected blood vessels in [target]'s [affected.name] with \the [tool]."), \
-				span_notice("You redirected blood vessels in [target]'s [affected.name] with \the [tool]."))
-				user.balloon_alert_visible("redirected blood vessels.", "redirected blood vessels.")
-				MI.cure_issue()
+	cure_key = DQ_CUSTOM_SURGERY_VESSELS
+	internal_target = TRUE
+	action_text = "redirect blood vessels"
+	done_text = "redirected blood vessels"
 
 //cautery
 /datum/surgery_step/medical_issue/close_holes
@@ -595,119 +443,29 @@
 	allowed_tools = list(
 		/obj/item/surgical/cautery = 100
 	)
+	cure_key = DQ_CUSTOM_SURGERY_HOLES
+	internal_target = TRUE
+	action_text = "close holes"
+	done_text = "closed the holes"
 
-	can_infect = 1
-	blood_level = 1
-
-	min_duration = 50
-	max_duration = 60
-
-/datum/surgery_step/medical_issue/close_holes/can_use(mob/living/user, mob/living/carbon/human/target, target_zone, obj/item/tool)
-	if(!..(user, target, target_zone, tool))
-		return FALSE
-	var/obj/item/organ/external/affected = target.get_organ(target_zone)
-	for(var/obj/item/organ/internal/I in affected.internal_organs)
-		for(var/datum/medical_issue/MI in I.medical_issues)
-			if(MI.cure_surgery == "close holes")
-				return affected && (affected.robotic < ORGAN_ROBOT) && affected.open >= FLESH_RETRACTED
-	return FALSE
-
-/datum/surgery_step/medical_issue/close_holes/begin_step(mob/user, mob/living/carbon/human/target, target_zone, obj/item/tool)
-	var/obj/item/organ/external/affected = target.get_organ(target_zone)
-	user.visible_message(span_notice("[user] is beginning to close holes in [target]'s [affected.name] with \the [tool].") , \
-		span_notice("You are beginning to close holes in [target]'s [affected.name] with \the [tool]."))
-	user.balloon_alert_visible("begins to close holes.", "closing holes.")
-	target.custom_pain("The pain in your [affected.name] is going to make you pass out!", 50)
-	..()
-
-/datum/surgery_step/medical_issue/close_holes/end_step(mob/living/user, mob/living/carbon/human/target, target_zone, obj/item/tool)
-	var/obj/item/organ/external/affected = target.get_organ(target_zone)
-	for(var/obj/item/organ/internal/I in affected.internal_organs)
-		for(var/datum/medical_issue/MI in I.medical_issues)
-			if(MI.cure_surgery == "close holes")
-				user.visible_message(span_notice("[user] closed holes in [target]'s [affected.name] with \the [tool]."), \
-				span_notice("You closed holes in [target]'s [affected.name] with \the [tool]."))
-				user.balloon_alert_visible("closed holes.", "closed holes.")
-				MI.cure_issue()
-
-//cautery
+//autopsy scanner
 /datum/surgery_step/medical_issue/ultrasound
 	surgery_name = "Ultrasound"
 	allowed_tools = list(
 		/obj/item/autopsy_scanner = 100
 	)
+	cure_key = DQ_CUSTOM_SURGERY_ULTRASOUND
+	internal_target = TRUE
+	action_text = "break up material using ultrasound"
+	done_text = "broke up material with ultrasound"
 
-	can_infect = 1
-	blood_level = 1
-
-	min_duration = 50
-	max_duration = 60
-
-/datum/surgery_step/medical_issue/ultrasound/can_use(mob/living/user, mob/living/carbon/human/target, target_zone, obj/item/tool)
-	if(!..(user, target, target_zone, tool))
-		return FALSE
-	var/obj/item/organ/external/affected = target.get_organ(target_zone)
-	for(var/obj/item/organ/internal/I in affected.internal_organs)
-		for(var/datum/medical_issue/MI in I.medical_issues)
-			if(MI.cure_surgery == "ultrasound")
-				return affected && (affected.robotic < ORGAN_ROBOT) && affected.open >= FLESH_RETRACTED
-	return FALSE
-
-/datum/surgery_step/medical_issue/ultrasound/begin_step(mob/user, mob/living/carbon/human/target, target_zone, obj/item/tool)
-	var/obj/item/organ/external/affected = target.get_organ(target_zone)
-	user.visible_message(span_notice("[user] is beginning to break up material using ultrasound in [target]'s [affected.name] with \the [tool].") , \
-		span_notice("You are beginning to break up material using ultrasound in [target]'s [affected.name] with \the [tool]."))
-	user.balloon_alert_visible("begins to break up material using ultrasound.", "breaking up material using ultrasound.")
-	target.custom_pain("The pain in your [affected.name] is going to make you pass out!", 50)
-	..()
-
-/datum/surgery_step/medical_issue/ultrasound/end_step(mob/living/user, mob/living/carbon/human/target, target_zone, obj/item/tool)
-	var/obj/item/organ/external/affected = target.get_organ(target_zone)
-	for(var/obj/item/organ/internal/I in affected.internal_organs)
-		for(var/datum/medical_issue/MI in I.medical_issues)
-			if(MI.cure_surgery == "ultrasound")
-				user.visible_message(span_notice("[user] broke up material with ultrasound in [target]'s [affected.name] with \the [tool]."), \
-				span_notice("You broke up material with ultrasound in [target]'s [affected.name] with \the [tool]."))
-				user.balloon_alert_visible("broke up material with ultrasound.", "broke up material with ultrasound.")
-				MI.cure_issue()
-
-//cautery
+//bioregen
 /datum/surgery_step/medical_issue/reoxygenate_tissue
 	surgery_name = "Reoxygenate Tissue"
 	allowed_tools = list(
 		/obj/item/surgical/bioregen = 100
 	)
-
-	can_infect = 1
-	blood_level = 1
-
-	min_duration = 50
-	max_duration = 60
-
-/datum/surgery_step/medical_issue/reoxygenate_tissue/can_use(mob/living/user, mob/living/carbon/human/target, target_zone, obj/item/tool)
-	if(!..(user, target, target_zone, tool))
-		return FALSE
-	var/obj/item/organ/external/affected = target.get_organ(target_zone)
-	for(var/obj/item/organ/internal/I in affected.internal_organs)
-		for(var/datum/medical_issue/MI in I.medical_issues)
-			if(MI.cure_surgery == "reoxygenate tissue")
-				return affected && (affected.robotic < ORGAN_ROBOT) && affected.open >= FLESH_RETRACTED
-	return FALSE
-
-/datum/surgery_step/medical_issue/reoxygenate_tissue/begin_step(mob/user, mob/living/carbon/human/target, target_zone, obj/item/tool)
-	var/obj/item/organ/external/affected = target.get_organ(target_zone)
-	user.visible_message(span_notice("[user] is beginning to reoxygenate tissue in [target]'s [affected.name] with \the [tool].") , \
-		span_notice("You are beginning to reoxygenate tissue in [target]'s [affected.name] with \the [tool]."))
-	user.balloon_alert_visible("begins to reoxygenate tissue.", "reoxygenating tissue.")
-	target.custom_pain("The pain in your [affected.name] is going to make you pass out!", 50)
-	..()
-
-/datum/surgery_step/medical_issue/reoxygenate_tissue/end_step(mob/living/user, mob/living/carbon/human/target, target_zone, obj/item/tool)
-	var/obj/item/organ/external/affected = target.get_organ(target_zone)
-	for(var/obj/item/organ/internal/I in affected.internal_organs)
-		for(var/datum/medical_issue/MI in I.medical_issues)
-			if(MI.cure_surgery == "reoxygenate tissue")
-				user.visible_message(span_notice("[user] reoxygenated tissue in [target]'s [affected.name] with \the [tool]."), \
-				span_notice("You reoxygenated tissue in [target]'s [affected.name] with \the [tool]."))
-				user.balloon_alert_visible("reoxygenated tissue.", "reoxygenated tissue.")
-				MI.cure_issue()
+	cure_key = DQ_CUSTOM_SURGERY_REOXYGENATE
+	internal_target = TRUE
+	action_text = "reoxygenate tissue"
+	done_text = "reoxygenated tissue"

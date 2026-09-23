@@ -10,7 +10,6 @@
 	base_turf = /turf/space
 	base_area = /area/space
 
-
 /obj/effect/shuttle_landmark/station_dockpoint2
 	name = "Station Docking Point 2"
 	landmark_tag = "nav_station_docking2"
@@ -59,11 +58,6 @@
 	landmark_tag = "nav_ferrydemo_transit"
 	flags = SLANDMARK_FLAG_AUTOSET
 
-// /obj/machinery/computer/shuttle_control/power_change()
-// 	log_debug("[src].power_change() - area=[get_area(src)] powered=[powered(power_channel)]")
-// 	. = ..()
-
-
 //
 // MULTI DEMO SHUTTLE
 //
@@ -97,7 +91,6 @@
 	name = "Multi-Demo Transient Point"
 	landmark_tag = "nav_multidemo_transit"
 	flags = SLANDMARK_FLAG_AUTOSET
-
 
 //
 // WEB DEMO SHUTTLE
@@ -138,7 +131,6 @@
 /datum/shuttle_destination/webdemo/inside_bridge/get_departure_message()
 	return "Attention, [master.my_shuttle.visible_name] has departed from [name]."
 
-
 /datum/shuttle_destination/webdemo/docked_bridge
 	name = "Bridge docking pylon"
 	my_landmark = "nav_station_docking1"
@@ -150,7 +142,6 @@
 
 /datum/shuttle_destination/webdemo/docked_bridge/get_departure_message()
 	return "Attention, [master.my_shuttle.visible_name] has departed from [name]."
-
 
 /obj/effect/shuttle_landmark/transit/webdemo_transit
 	name = "Web-Demo Transient Point"

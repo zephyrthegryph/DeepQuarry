@@ -554,7 +554,7 @@ SUBSYSTEM_DEF(air)
 
 /datum/controller/subsystem/air/StopLoadingMap()
 	map_loading = FALSE
-	// Turfs deferred during a mid-round map load (submaps, quarry z-levels). Now
+	// Turfs deferred during a mid-round map load (submaps, expedition z-levels). Now
 	// that the whole batch exists, rebuild each one's adjacency, register it, then
 	// push adjacency to the arena (all endpoints in the batch are registered by the
 	// time the second loop runs).
@@ -631,7 +631,8 @@ SUBSYSTEM_DEF(air)
 			// air unconditionally when blocks_air == 0).
 			if(open_setup.blocks_air || !isnull(open_setup.air))
 				open_turfs += open_setup
-		if(CHECK_TICK)
+		if(length(GLOB.clients) && TICK_CHECK)
+			stoplag()
 			time--
 
 	// PASS 2: bulk-register every eligible turf's air ref, then bulk-push the
@@ -641,10 +642,12 @@ SUBSYSTEM_DEF(air)
 	var/chunk = 8192
 	for(var/start = 1, start <= total, start += chunk)
 		auxmos_register_turfs_bulk(open_turfs.Copy(start, min(start + chunk, total + 1)))
-		CHECK_TICK
+		if(length(GLOB.clients) && TICK_CHECK)
+			stoplag()
 	for(var/start = 1, start <= total, start += chunk)
 		auxmos_update_adjacencies_bulk(open_turfs.Copy(start, min(start + chunk, total + 1)))
-		CHECK_TICK
+		if(length(GLOB.clients) && TICK_CHECK)
+			stoplag()
 
 // log_active_turfs / resolve_active_graph removed — they existed only to service
 // the DM roundstart active-turf diffing pass, which is gone (auxmos discovers
@@ -660,7 +663,8 @@ SUBSYSTEM_DEF(air)
 /datum/controller/subsystem/air/proc/setup_atmos_machinery()
 	for (var/obj/machinery/atmospherics/AM in SSmachines.all_machines)
 		AM.atmos_init()
-		CHECK_TICK
+		if(length(GLOB.clients) && TICK_CHECK)
+			stoplag()
 	setup_rust_pipenets()
 
 // setup_pipenets removed — see Initialize() comment.

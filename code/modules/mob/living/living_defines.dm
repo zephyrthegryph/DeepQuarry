@@ -1,22 +1,12 @@
 /mob/living
 	see_invisible = SEE_INVISIBLE_LIVING
 
-	//Health and life related vars
-	var/maxHealth = 100 //Maximum health that should be possible.  Avoid adjusting this if you can, and instead use modifiers datums.
-	var/health = 100 	//A mob's health
-
 	var/mob_class = null	// A mob's "class", e.g. human, mechanical, animal, etc. Used for certain projectile effects. See __defines/mob.dm for available classes.
 
 	var/hud_updateflag = 0
 
-	//Damage related vars, NOTE: THESE SHOULD ONLY BE MODIFIED BY PROCS
-	var/bruteloss = 0.0	//Brutal damage caused by brute force (punching, being clubbed by a toolbox ect... this also accounts for pressure damage)
-	var/oxyloss = 0.0	//Oxygen depravation damage (no air in lungs)
-	var/toxloss = 0.0	//Toxic damage caused by being poisoned or radiated
-	var/fireloss = 0.0	//Burn damage caused by being way too hot, too cold or burnt.
-	var/cloneloss = 0	//Damage caused by being cloned or ejected from the cloner early. slimes also deal cloneloss damage to victims
-	var/brainloss = 0	//Thought-scrambly damage caused by someone hitting you in the head with a bible or being infected with brainrot.
-	var/halloss = 0		//Hallucination damage. 'Fake' damage obtained through hallucinating or the holodeck. Sleeping should cause it to wear off.
+	// Health lives in the body (/datum/body, code/modules/body/) — there are no
+	// damage pools on the mob. See doc/body_architecture.md.
 
 	var/nutrition = 400
 	var/max_nutrition = MAX_NUTRITION
@@ -124,24 +114,17 @@
 	var/mob/living/tf_form // Shapeshifter shenanigans
 	var/tf_form_ckey
 
-	var/ooc_notes_favs = null
-	var/ooc_notes_maybes = null
-	var/ooc_notes_style = FALSE
 
 	///a list of all status effects the mob has
 	var/list/status_effects
 
 
-// === merged from living_defines_vr.dm during hard-fork de-suffix (verified no override-order change) ===
 /mob
 	var/muffled = FALSE					// Used by muffling belly
 	var/forced_psay = FALSE				// If true will prevent the user from speaking with normal say/emotes, and instead redirect these to a private speech mode with their predator.
 	var/autowhisper = FALSE				// Automatically whisper
 	var/autowhisper_mode = null			// Mode to use with autowhisper
 /mob/living
-	var/ooc_notes = null
-	var/ooc_notes_likes = null
-	var/ooc_notes_dislikes = null
 	var/custom_link = null
 	appearance_flags = TILE_BOUND|PIXEL_SCALE|KEEP_TOGETHER|LONG_GLIDE
 	var/hunger_rate = DEFAULT_HUNGER_FACTOR

@@ -1,6 +1,6 @@
 // The Gun //
 /obj/item/gun/projectile/cell_loaded //this one can load both medical and security cells! for ERT/admin use.
-	name = "multipurpose cell-loaded revolver" // CH edit - Changes ML-3 to NERD
+	name = "multipurpose cell-loaded revolver"
 	desc = "Variety is the spice of life! This weapon is a hybrid of the HI-102b 'Nanotech Selectable-Cell Weapon' and the Vey-Med NERD 'Medigun'. \
 	It can fire both harmful and healing cells with an internal nanite fabricator and energy weapon cell loader. Up to three combinations of \
 	energy beams can be configured at once. Ammo not included."
@@ -14,7 +14,6 @@
 	item_state = "gun"
 
 	caliber = "nsfw"
-
 
 	fire_sound = 'sound/weapons/taser.ogg'
 
@@ -93,17 +92,6 @@
 		if(chambered != next_batt && !istype(next_batt, chambered.type))
 			switch_to(next_batt)
 			break
-/*
-/obj/item/gun/projectile/cell_loaded/special_check(mob/user)
-	if(!chambered)
-		return
-
-	var/obj/item/ammo_casing/microbattery/batt = chambered
-	if(!batt.shots_left)
-		return FALSE
-
-	return TRUE
-*/
 /obj/item/gun/projectile/cell_loaded/load_ammo(obj/item/A, mob/user)
 	. = ..()
 	if(ammo_magazine && ammo_magazine.stored_ammo.len)
@@ -141,7 +129,6 @@
 		charge_bar.pixel_x = i
 		charge_bar.color = batt_color
 		add_overlay(charge_bar)
-
 
 // The Magazine //
 /obj/item/ammo_magazine/cell_mag
@@ -209,7 +196,6 @@
 	x_offset = 3
 	icon_state = "cell_mag_extended"
 
-
 // The Casing //
 /obj/item/ammo_casing/microbattery
 	name = "\'NSCW\' microbattery - UNKNOWN"
@@ -242,7 +228,6 @@
 
 /obj/item/ammo_casing/microbattery/expend()
 	shots_left--
-
 
 // The Pack //
 /obj/item/storage/secure/briefcase/nsfw_pack_hybrid
@@ -290,14 +275,6 @@
 	new /obj/item/ammo_casing/microbattery/medical/resist(src)
 
 // TGMC Ammo HUD: Custom handling for cell-loaded weaponry.
-/*
-/obj/item/gun/projectile/cell_loaded/get_ammo_type()
-	if(!projectile_type)
-		return list("unknown", "unknown")
-	else
-		var/obj/item/projectile/P = projectile_type
-		return list(initial(P.hud_state), initial(P.hud_state_empty))
-*/
 /obj/item/gun/projectile/cell_loaded/get_ammo_count()
 	if(!chambered)
 		return 0 // We're not chambered, so we have 0 rounds loaded.

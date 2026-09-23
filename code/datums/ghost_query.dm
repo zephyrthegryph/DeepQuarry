@@ -223,7 +223,6 @@
 	cutoff_number = 1
 
 
-// === merged from ghost_query_vr.dm during hard-fork de-suffix (verified no override-order change) ===
 /*
 /datum/ghost_query/morph
 	role_name = "Morph"

@@ -183,10 +183,10 @@ SUBSYSTEM_DEF(mobs)
 	"laname" = laname,
 	"lakey" = lakey,
 	"gender" = L.gender,
-	"bruteloss" = L.getBruteLoss(),
-	"fireloss" = L.getFireLoss(),
-	"brainloss" = L.brainloss,
-	"oxyloss" = L.getOxyLoss(),
+	"bruteloss" = L.injury_load(INJURY_CATEGORY_PHYSICAL),
+	"fireloss" = L.injury_load(INJURY_CATEGORY_THERMAL),
+	"brainloss" = L.injury_load(INJURY_CATEGORY_NEURAL),
+	"oxyloss" = L.injury_load(INJURY_CATEGORY_ASPHYXIA),
 	"coord" = "[L.x], [L.y], [L.z]"
 	)
 	death_list += list(data)

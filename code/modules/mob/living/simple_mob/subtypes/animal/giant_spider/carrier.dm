@@ -20,8 +20,7 @@
 	icon_living = "carrier"
 	icon_dead = "carrier_dead"
 
-	maxHealth = 100
-	health = 100
+	endurance = 100
 
 	melee_damage_lower = 8
 	melee_damage_upper = 25
@@ -51,12 +50,11 @@
 		for(var/i = 1 to spiderling_count)
 			if(prob(swarmling_prob) && src)
 				var/mob/living/simple_mob/animal/giant_spider/swarmling = new swarmling_type(src.loc)
-				var/swarm_health = FLOOR(swarmling.getMaxHealth() * 0.4, 1)
+				var/swarm_health = FLOOR(swarmling.endurance * 0.4, 1)
 				var/swarm_dam_lower = FLOOR(melee_damage_lower * 0.4, 1)
 				var/swarm_dam_upper = FLOOR(melee_damage_upper * 0.4, 1)
 				swarmling.name = "spiderling"
-				swarmling.maxHealth = swarm_health
-				swarmling.health = swarm_health
+				swarmling.endurance = swarm_health
 				swarmling.melee_damage_lower = swarm_dam_lower
 				swarmling.melee_damage_upper = swarm_dam_upper
 				swarmling.faction = faction

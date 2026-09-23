@@ -33,15 +33,6 @@
 	max_item_count = 10
 	decompiler = TRUE
 	recycles = TRUE
-/*
-/obj/item/dogborg/sleeper/compactor/delivery //Unfinished and unimplemented, still testing.
-	name = "Cargo Belly"
-	desc = "A mounted cargo bay unit for tagged deliveries."
-	icon_state = "decompiler"
-	max_item_count = 20
-	delivery = TRUE
-	recycles = FALSE
-*/
 
 /obj/item/dogborg/sleeper/compactor/supply //Miner borg belly
 	name = "Supply Storage"
@@ -70,7 +61,6 @@
 				return
 	. = ..()
 
-
 /obj/item/dogborg/sleeper/compactor/brewer
 	name = "Brew Belly"
 	desc = "A mounted drunk tank unit with fuel processor, for putting away particularly rowdy patrons."
@@ -91,7 +81,7 @@
 /obj/item/dogborg/sleeper/compactor/brewer/inject_chem(mob/user, chem)
 	if(patient && patient.reagents)
 		if(chem in (injection_chems + REAGENT_ID_INAPROVALINE))
-			if(hound.cell.charge < 200) //This is so borgs don't kill themselves with it.
+			if(!hound.cell || hound.cell.charge < 200) //This is so borgs don't kill themselves with it.
 				to_chat(hound, span_notice("You don't have enough power to synthesize fluids."))
 				return
 			else if(patient.reagents.get_reagent_amount(chem) + 10 >= 50) //Preventing people from accidentally killing themselves by trying to inject too many chemicals!

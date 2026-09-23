@@ -1,7 +1,6 @@
 // reparent /turf/simulated → /turf/open so it inherits LINDA's
-// full gas-spread + visuals + adjacency + spacewind machinery. The atmos
-// migration plan (doc/atmos_migration.md §"map turf types") always
-// targeted this shape; without it, /turf/simulated tiles never enter LINDA's
+// full gas-spread + visuals + adjacency + spacewind machinery. This is the
+// intended shape; without it, /turf/simulated tiles never enter LINDA's
 // turf graph so gases stay where vents push them and never render. Floors
 // get air via /turf/open/Initialize (because blocks_air defaults FALSE);
 // walls keep their existing blocks_air=1 and remain inert.

@@ -11,15 +11,15 @@
 	anchored = TRUE
 	mouse_opacity = 2
 
-	var/maxHealth = 30
-	var/health
+	var/blob_max_health = 30
+	var/blob_health
 	var/brute_resist = 4
 	var/fire_resist = 1
 	var/expandType = /obj/effect/blob
 
 /obj/effect/blob/Initialize(mapload)
 	. = ..()
-	health = maxHealth
+	blob_health = blob_max_health
 	update_icon()
 
 /obj/effect/blob/CanPass(atom/movable/mover, turf/target)
@@ -35,21 +35,21 @@
 			take_damage(rand(20, 60) / brute_resist)
 
 /obj/effect/blob/update_icon()
-	if(health > maxHealth / 2)
+	if(blob_health > blob_max_health / 2)
 		icon_state = "blob"
 	else
 		icon_state = "blob_damaged"
 
 /obj/effect/blob/take_damage(damage)
-	health -= damage
-	if(health < 0)
+	blob_health -= damage
+	if(blob_health < 0)
 		playsound(src, 'sound/effects/splat.ogg', 50, 1)
 		qdel(src)
 	else
 		update_icon()
 
 /obj/effect/blob/proc/regen()
-	health = min(health + 1, maxHealth)
+	blob_health = min(blob_health + 1, blob_max_health)
 	update_icon()
 
 /obj/effect/blob/proc/expand(turf/T)
@@ -104,9 +104,9 @@
 			continue
 		L.visible_message(span_danger("The blob attacks \the [L]!"), span_danger("The blob attacks you!"))
 		playsound(src, 'sound/effects/attackblob.ogg', 50, 1)
-		L.take_organ_damage(rand(30, 40))
+		L.injure(INJURY_BLUNT, rand(30, 40), null, src)
 		return
-	new expandType(T, min(health, 30))
+	new expandType(T, min(blob_health, 30))
 
 /obj/effect/blob/proc/pulse(forceLeft, list/dirs)
 	regen()
@@ -117,7 +117,7 @@
 	var/turf/T = get_step(src, pushDir)
 	var/obj/effect/blob/B = (locate() in T)
 	if(!B)
-		if(prob(health))
+		if(prob(blob_health))
 			expand(T)
 		return
 	B.pulse(forceLeft - 1, dirs)
@@ -155,7 +155,7 @@
 	icon_state = "blob_core"
 	light_range = 3
 	light_color = "#ffc880"
-	maxHealth = 200
+	blob_max_health = 200
 	brute_resist = 2
 	fire_resist = 2
 
@@ -184,7 +184,7 @@
 	icon_state = "blob_idle"
 	light_range = 3
 	desc = "Some blob creature thingy"
-	maxHealth = 60
+	blob_max_health = 60
 	brute_resist = 1
 	fire_resist = 2
 
@@ -198,9 +198,9 @@
 	. = ..()
 
 /obj/effect/blob/shield/update_icon()
-	if(health > maxHealth * 2 / 3)
+	if(blob_health > blob_max_health * 2 / 3)
 		icon_state = "blob_idle"
-	else if(health > maxHealth / 3)
+	else if(blob_health > blob_max_health / 3)
 		icon_state = "blob"
 	else
 		icon_state = "blob_damaged"

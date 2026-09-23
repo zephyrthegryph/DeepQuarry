@@ -15,7 +15,7 @@
 	var/mob/living/carbon/human/subject = SScontracts.resolve_subject(context?["target_ref"])
 	if(!istype(subject) || subject.stat == DEAD || !subject.mind?.assigned_role)
 		return FALSE
-	for(var/datum/medical_issue/condition/condition as anything in subject.get_all_conditions())
+	for(var/datum/affliction/condition as anything in subject.get_afflictions())
 		if(condition.type == context["condition_type"] && medical_rare_case_condition(condition))
 			return TRUE
 	return FALSE
@@ -70,9 +70,9 @@
 	var/mob/living/carbon/human/subject = SScontracts.resolve_subject(target_ref)
 	return istype(subject) ? subject : null
 
-/datum/contract/medical_case_report/proc/target_condition() as /datum/medical_issue/condition
+/datum/contract/medical_case_report/proc/target_condition() as /datum/affliction
 	var/mob/living/carbon/human/subject = target_subject()
-	for(var/datum/medical_issue/condition/condition as anything in subject?.get_all_conditions())
+	for(var/datum/affliction/condition as anything in subject?.get_afflictions())
 		if(condition.type == target_condition_type)
 			return condition
 
@@ -178,18 +178,18 @@
 
 /proc/medical_rare_case_types()
 	var/static/list/types = list(
-		/datum/medical_issue/condition/subdural_hematoma,
-		/datum/medical_issue/condition/tension_pneumothorax,
-		/datum/medical_issue/condition/compartment_syndrome,
-		/datum/medical_issue/condition/tissue_necrosis,
-		/datum/medical_issue/condition/septic_shock,
-		/datum/medical_issue/condition/chronic_radiation,
-		/datum/medical_issue/condition/ischemic_vision_loss,
-		/datum/medical_issue/condition/genetic_damage,
+		/datum/affliction/subdural_hematoma,
+		/datum/affliction/pneumothorax,
+		/datum/affliction/compartment_syndrome,
+		/datum/affliction/tissue_necrosis,
+		/datum/affliction/septic_shock,
+		/datum/affliction/chronic_radiation,
+		/datum/affliction/ischemic_vision_loss,
+		/datum/affliction/genetic_damage,
 	)
 	return types
 
-/proc/medical_rare_case_condition(datum/medical_issue/condition/condition)
+/proc/medical_rare_case_condition(datum/affliction/condition)
 	return condition && (condition.type in medical_rare_case_types()) && condition.severity >= MEDICAL_RARE_CASE_MINIMUM_SEVERITY
 
 /proc/medical_snapshot_condition_severity(list/snapshot, condition_type)
@@ -263,7 +263,7 @@
 		return
 	var/list/qualifying_types = list()
 	var/subject_id = subject_identity(subject)?.id
-	for(var/datum/medical_issue/condition/condition as anything in subject.get_all_conditions())
+	for(var/datum/affliction/condition as anything in subject.get_afflictions())
 		if(medical_rare_case_condition(condition))
 			qualifying_types |= condition.type
 	for(var/datum/contract/medical_case_report/report in offered_contracts.Copy())
@@ -272,7 +272,7 @@
 	for(var/datum/contract/medical_case_report/report in active_contracts.Copy())
 		if(report.target_ref == subject_id && !report.consent_time && !(report.target_condition_type in qualifying_types))
 			report.withdraw("The qualifying presentation resolved before consent; no penalty was assessed.")
-	for(var/datum/medical_issue/condition/condition as anything in subject.get_all_conditions())
+	for(var/datum/affliction/condition as anything in subject.get_afflictions())
 		if(!medical_rare_case_condition(condition) || rare_case_contract_exists(subject_id, condition.type))
 			continue
 		queue_offer("medical_rare_case_report", list(

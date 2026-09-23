@@ -16,8 +16,7 @@
 
 	faction = "terror" //Ai seemed bugged during test, and it fighting the book bats might be niche but nice
 
-	maxHealth = 250
-	health = 250
+	endurance = 250
 	movement_cooldown = 0
 	unsuitable_atoms_damage = 0
 	projectiletype = /obj/item/projectile/energy/homing_bolt/wizard/boss
@@ -87,11 +86,12 @@
 	on_created_text = span_warning("You feel incrediably vulnerable.")
 	on_expired_text = span_notice("You feel better.")
 	stacks = MODIFIER_STACK_ALLOWED // Multiple instances will hurt a lot.
-	incoming_damage_percent = 2			// Adjusts all incoming damage.
-	incoming_brute_damage_percent = 2	// Only affects bruteloss.
-	incoming_fire_damage_percent = 2	// Only affects fireloss.
-	incoming_tox_damage_percent = 2		// Only affects toxloss.
-	incoming_oxy_damage_percent = 2		// Only affects oxyloss.
+	// Adjusts all incoming damage.
+	// Physical injuries.
+	// Thermal injuries.
+	// Toxic injuries.
+	// Asphyxiation.
+	factors = alist(BF_INCOMING_ALL = 2, BF_INCOMING_PHYSICAL = 2, BF_INCOMING_THERMAL = 2, BF_INCOMING_TOXIC = 2, BF_INCOMING_ASPHYXIA = 2)
 
 //Trying to learn from the AADG's ai and make my own
 

@@ -108,17 +108,9 @@ def main(args):
             traceback.print_exc()
             any_failed = True
 
-    # default_maps_dir = os.path.join(frontend.read_settings().map_folder, '') # make sure it has a trailing slash # ChompEDIT
-    # for map_filename in (args.maps or glob.glob(default_maps_dir + "**/*.dmm", recursive = True)): # ChompEDIT
-    for map_filename in (args.maps or glob.glob("**/*.dmm", recursive = True)): # ChompEDIT
+    default_maps_dir = os.path.join(frontend.read_settings().map_folder, '') # make sure it has a trailing slash
+    for map_filename in (args.maps or glob.glob(default_maps_dir + "**/*.dmm", recursive = True)):
         print(map_filename, end = " ")
-
-        # ChompEDIT START
-        if not args.maps:
-            if "modular_chomp/maps/" not in map_filename:
-                print(yellow("SKIPPED"))
-                continue
-        # ChompEDIT END
 
         success = True
         all_failures: list[MaplintError] = []

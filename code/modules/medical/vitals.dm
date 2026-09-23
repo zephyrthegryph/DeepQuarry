@@ -12,29 +12,14 @@
 //   bp_diastolic : 80 mmHg
 //   o2_sat       : 99 % (range 0..100)
 //
-// Conditions modulate these via their `vital_effects` list, keyed by:
-//   "pulse_mod"     bpm offset
-//   "temp_mod_c"    celsius offset
-//   "bp_sys_mod"    systolic offset
-//   "bp_dia_mod"    diastolic offset
-//   "o2_sat_mod"    saturation %% offset
-// Effects are summed across all of the mob's active conditions.
+// Afflictions, reagents and modifiers modulate these through the readout
+// body factors (BF_HEART_RATE, BF_TEMPERATURE, BF_BP_SYSTOLIC,
+// BF_BP_DIASTOLIC, BF_O2_SAT, BF_RESP_RATE), summed across every source.
 //
-// We layer condition effects on top of whatever vitals the upstream
-// mob already tracks (BYOND `bodytemperature` in kelvin, heart pulse
-// enum). For pulse and BP we synthesize from the heart organ's enum
-// rather than tracking a separate bpm var, so existing code that reads
-// the enum still works.
-
-/// Sum a single vital_effects key across the mob's active conditions.
-/// Each condition's contribution comes from its per-subtype
-/// `get_vital_effects()` proc (which returns a shared static list).
-/mob/living/carbon/human/proc/_vital_modifier(key)
-	. = 0
-	for(var/datum/medical_issue/condition/C in get_all_conditions())
-		var/list/ve = C.get_vital_effects()
-		if(ve && ve[key])
-			. += ve[key]
+// We layer those on top of whatever vitals the upstream mob already tracks
+// (BYOND `bodytemperature` in kelvin, heart pulse enum). For pulse and BP we
+// synthesize from the heart organ's enum rather than tracking a separate bpm
+// var, so existing code that reads the enum still works.
 
 // Per-reading jitter. Real instruments don't return identical numbers
 // on consecutive checks; we apply a small random offset so repeated
@@ -47,15 +32,15 @@
 	// bodytemperature is in kelvin upstream; convert to celsius for the
 	// instrument readout. T0C = 273.15 (defined in upstream defines).
 	var/celsius = bodytemperature - T0C
-	celsius += _vital_modifier("temp_mod_c")
+	celsius += factor(BF_TEMPERATURE)
 	celsius += _dq_jitter(0.1)
 	return round(celsius * 10) / 10  // one decimal place
 
 /mob/living/carbon/human/proc/get_pulse_reading_bpm()
 	// Map the upstream pulse enum to a bpm baseline, then offset by
-	// compensatory tachycardia from blood loss and per-condition mods.
+	// compensatory tachycardia from blood loss and heart-rate factors.
 	var/obj/item/organ/internal/heart/H = internal_organs_by_name?[O_HEART]
-	if(!H || H.is_broken())
+	if(!H || H.is_broken() || !has_cardiac_output())
 		return 0
 	var/baseline
 	switch(H.standard_pulse_level)
@@ -78,7 +63,7 @@
 		if(species.blood_volume > 0 && blood_now < species.blood_volume)
 			var/lost = (species.blood_volume - blood_now) / species.blood_volume
 			baseline += round(lost * 80)  // up to +80 bpm at full exsanguination
-	baseline += _vital_modifier("pulse_mod")
+	baseline += factor(BF_HEART_RATE)
 	baseline += _dq_jitter(3)
 	return max(0, round(baseline))
 
@@ -88,7 +73,7 @@
 	// thresholds. Returns list(systolic, diastolic) or null if no
 	// detectable blood pressure (dead, no heart).
 	var/obj/item/organ/internal/heart/H = internal_organs_by_name?[O_HEART]
-	if(!H || H.is_broken() || stat == DEAD)
+	if(!H || H.is_broken() || stat == DEAD || !has_cardiac_output())
 		return null
 	var/sys = 120
 	var/dia = 80
@@ -99,8 +84,8 @@
 		if(ratio < 0.60)        { sys -= 50; dia -= 30 }
 		else if(ratio < 0.75)   { sys -= 30; dia -= 18 }
 		else if(ratio < 0.85)   { sys -= 15; dia -= 8 }
-	sys += _vital_modifier("bp_sys_mod")
-	dia += _vital_modifier("bp_dia_mod")
+	sys += factor(BF_BP_SYSTOLIC)
+	dia += factor(BF_BP_DIASTOLIC)
 	sys += _dq_jitter(3)
 	dia += _dq_jitter(2)
 	sys = max(0, round(sys))
@@ -108,14 +93,14 @@
 	return list(sys, dia)
 
 /mob/living/carbon/human/proc/get_o2_sat_reading()
-	// Pulse oximetry. 99% normal; drops as oxyloss climbs.
+	// Pulse oximetry. 99% normal; drops as tissue hypoxia climbs.
 	if(stat == DEAD)
 		return 0
 	var/sat = 99
-	var/oxy = getOxyLoss()
-	// Linear drop: every 5 oxyloss = 1% sat lost (rough mapping).
-	sat -= round(oxy / 5)
-	sat += _vital_modifier("o2_sat_mod")
+	var/hypoxia = injury_load(INJURY_CATEGORY_ASPHYXIA)
+	// Linear drop: every 5 points of hypoxia = 1% sat lost (rough mapping).
+	sat -= round(hypoxia / 5)
+	sat += factor(BF_O2_SAT)
 	sat += _dq_jitter(1)
 	return clamp(round(sat), 0, 100)
 
@@ -126,7 +111,10 @@
 		return 0
 	if(!should_have_organ(O_LUNGS))
 		return 0
+	// Apnea or a closed airway: nothing moves.
+	if(breath_blocked())
+		return 0
 	var/rate = 14
-	rate += _vital_modifier("resp_mod")
+	rate += factor(BF_RESP_RATE)
 	rate += _dq_jitter(1)
 	return max(0, round(rate))

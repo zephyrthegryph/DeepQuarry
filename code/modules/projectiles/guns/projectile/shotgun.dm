@@ -142,45 +142,6 @@
 
 /obj/item/gun/projectile/shotgun/doublebarrel/unload_ammo(user, allow_dump)
 	..(user, allow_dump=1)
-/*
-/obj/item/gun/projectile/shotgun/doublebarrel/verb/rename_gun()
-	set name = "Name Gun"
-	set category = "Object"
-	set desc = "Rename your gun."
-
-	var/input = sanitizeSafe(tgui_input_text(usr, "What do you want to name the gun?","Rename Shotgun" ,"",MAX_NAME_LEN, encode = FALSE))
-
-	var/mob/M = usr
-	if(src && input && !M.stat && in_range(M,src))
-		name = input
-		to_chat(M, "You name the gun [input]. Say hello to your new friend.")
-		return 1
-
-/obj/item/gun/projectile/shotgun/doublebarrel/verb/reskin_gun()
-	set name = "Resprite gun"
-	set category = "Object"
-	set desc = "Click to choose a sprite for your gun."
-
-	var/mob/M = usr
-	var/list/options = list()
-	options["Default"] = "dshotgun"
-	options["Cherry Red"] = "dshotgun_d"
-	options["Ash"] = "dshotgun_f"
-	options["Faded Grey"] = "dshotgun_g"
-	options["Maple"] = "dshotgun_l"
-	options["Rosewood"] = "dshotgun_p"
-	options["Olive Green"] = "dshotgun_o"
-	options["Blued"] = "dshotgun_b"
-	var/choice = tgui_input_list(M,"Choose your sprite!","Resprite Gun", options)
-	if(sawn_off)
-		to_chat(M, span_warning("The [src] is already shortened and cannot be resprited!"))
-		return
-	if(src && choice && !M.stat && in_range(M,src))
-		icon_state = options[choice]
-		unique_reskin = options[choice]
-		to_chat(M, "Your gun is now sprited as [choice]. Say hello to your new friend.")
-		return 1
-*/
 //this is largely hacky and bad :(	-Pete //less hacky and bad now :) -Ghost
 /obj/item/gun/projectile/shotgun/doublebarrel/attackby(obj/item/A as obj, mob/user as mob)
 	if(istype(A, /obj/item/surgical/circular_saw) || istype(A, /obj/item/melee/energy) || istype(A, /obj/item/pickaxe/plasmacutter))
@@ -199,10 +160,6 @@
 		if(do_after(user, 3 SECONDS, target = src)) // SHIT IS STEALTHY EYYYYY
 			if(sawn_off)
 				return
-// if(unique_reskin)
-// icon_state = "[unique_reskin]_sawn"
-// else
-// icon_state = "dshotgun_sawn"
 			item_state = "sawnshotgun"
 			w_class = ITEMSIZE_NORMAL
 			force = 5
@@ -243,8 +200,6 @@
 	max_shells = 5
 	ammo_type = /obj/item/ammo_casing/a12g/beanbag
 
-
-// === merged from shotgun_ch.dm during hard-fork de-suffix (verified no override-order change) ===
 /obj/item/gun/projectile/shotgun/doublebarrel/quad
 	name = "quad-barreled shotgun"
 	desc = "A shotgun pattern designed to make the most out of the limited machining capability of the frontier. 4 Whole barrels of death, loads using 12 gauge rounds."
@@ -279,8 +234,6 @@
 /obj/item/gun/projectile/shotgun/doublebarrel/sawn/alt/holy
 	ammo_type = /obj/item/ammo_casing/a12g/silver
 
-
-// === merged from shotgun_vr.dm during hard-fork de-suffix (verified no override-order change) ===
 // For general use
 /obj/item/gun/projectile/shotgun/pump/USDF
 	name = "\improper USDF tactical shotgun"
@@ -320,7 +273,6 @@
 	recoil = 5 //Unfold the damn stock you fool!
 	actions_types = list(/datum/action/item_action/toggle_stock)
 	var/stock = FALSE
-
 
 /obj/item/gun/projectile/shotgun/compact/proc/toggle_stock()
 	var/mob/living/user = loc
@@ -377,3 +329,91 @@
 	desc = "Built for <i>extremely</i>-close quarters combat, the Hephaestus Industries KS-55 \"semi-auto shorty\" is a relatively rare sight to see, usually in the hands of elite troops that specialize in boarding. This one has 'Property of the Warden' inscribed on the upper receiver."
 	description_fluff = "The leading arms producer in the SCG, Hephaestus typically only uses its 'top level' branding for its military-grade equipment used by armed forces across human space."
 	ammo_type = /obj/item/ammo_casing/a12g/beanbag
+
+/obj/item/gun/projectile/revolvershotgun
+	name = "Jackhammer"
+	desc = "Uses 12g rounds."
+	icon = 'icons/obj/gun_yw.dmi'
+	icon_state = "revolvshot"
+	item_state = null
+	w_class = ITEMSIZE_HUGE //.
+	force = 10
+	caliber = "12g"
+	slot_flags = SLOT_BACK|SLOT_BELT|SLOT_HOLSTER
+	handle_casings = EJECT_CASINGS
+	load_method = MAGAZINE
+	magazine_type = /obj/item/ammo_magazine/m12gdrumjack/beanbag
+	allowed_magazines = list(/obj/item/ammo_magazine/m12gdrumjack)
+	projectile_type = /obj/item/projectile/bullet/shotgun
+
+/obj/item/gun/projectile/revolvershotgun/update_icon()
+	..()
+	if(ammo_magazine)
+		icon_state = "revolvshot"
+	else
+		icon_state = "revolvshot-empty"
+	return
+
+/obj/item/ammo_magazine/m12gdrumjack
+	name = "drum magazine (12 gauge slug)"
+	desc = "A magazine for a revolver shotgun."
+	icon = 'icons/obj/ammo_yw.dmi'
+	icon_state = "c12g"
+	mag_type = MAGAZINE
+	caliber = "12g"
+	matter = list(DEFAULT_WALL_MATERIAL = 1300) //did the math. now fixed the exploityness of this thing. Have fun!
+	ammo_type = /obj/item/ammo_casing/a12g
+	max_ammo = 4
+	multiple_sprites = 1
+
+/obj/item/ammo_magazine/m12gdrumjack/beanbag
+	name = "drum magazine (12 gauge beanbag)"
+	ammo_type = /obj/item/ammo_casing/a12g/beanbag
+
+/obj/item/ammo_magazine/m12gdrumjack/pellet
+	name = "drum magazine (12 gauge pellet)"
+	ammo_type = /obj/item/ammo_casing/a12g/pellet
+
+/obj/item/ammo_magazine/m12gdrumjack/flash
+	name = "drum magazine (12 gauge flash)"
+	ammo_type = /obj/item/ammo_casing/a12g/flash
+
+/obj/item/ammo_magazine/m12gdrumjack/empty
+	name = "drum magazine (12 gauge)"
+	initial_ammo = 0
+	matter = list(DEFAULT_WALL_MATERIAL = 1625) //Why these cost so much ? the normal ones have 13000 matter so i just multiplied by 1.25(default) don't know why it costs so much
+
+//scattering shots, old buckshot
+/obj/item/ammo_casing/a12g/scatter
+	name = "scatter shotgun shell"
+	desc = "A 12 gauge scattering shell"
+	icon = 'icons/obj/ammo_yw.dmi'
+	icon_state = "scattershell"
+	projectile_type = /obj/item/projectile/scatter/shotgun
+	matter = list(DEFAULT_WALL_MATERIAL = 450)
+
+/obj/item/projectile/scatter/shotgun
+	name = "shotgun scatter projectile"
+	spread_submunition_damage = FALSE
+	submunition_spread_max = 100
+	submunition_spread_min = 90
+	submunitions = list(
+		/obj/item/projectile/bullet/shotgun/scatterprojectile = 6
+		)
+
+/obj/item/projectile/bullet/shotgun/scatterprojectile
+	name = "pellet"
+	icon_state = "bullet"
+	fire_sound = 'sound/weapons/gunshot_shotgun.ogg'
+	damage = 13
+
+/obj/item/storage/box/scattershot
+	name = "box of shotgun scatter shells"
+	desc = "It has a picture of a shell and several warning symbols on the front.<br>WARNING: Live ammunition. Misuse may result in serious injury or death. High spread factor, just shoot and pray."
+	icon = 'icons/obj/ammo_yw.dmi'
+	icon_state = "scattershot_box"
+	item_state_slots = list(slot_r_hand_str = "syringe_kit", slot_l_hand_str = "syringe_kit")
+	starts_with = list(/obj/item/ammo_casing/a12g/scatter = 8)
+
+/obj/item/storage/box/scattershot/large
+	starts_with = list(/obj/item/ammo_casing/a12g/scatter = 16)

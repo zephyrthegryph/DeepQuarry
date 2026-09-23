@@ -29,6 +29,7 @@
 /turf/proc/ChangeTurf(turf/N, tell_universe=1, force_lighting_update = 0, preserve_outdoors = FALSE)
 	if (!N)
 		return
+	RAD_SHIELDING_CHANGED
 
 	if(N == /turf/space)
 		var/turf/below = GetBelow(src)
@@ -57,7 +58,10 @@
 	var/datum/gas_mixture/old_air
 	var/turf/open/old_open_turf = src
 	if(istype(old_open_turf) && old_open_turf.air)
-		old_air = old_open_turf.air.copy()
+		// Space turfs share one immutable vacuum that outlives this turf, so read
+		// it directly instead of allocating a throwaway copy.
+		old_air = old_open_turf.immutable_atmos ? old_open_turf.air : old_open_turf.air.copy()
+	var/old_air_shared = istype(old_open_turf) && old_open_turf.immutable_atmos
 	var/datum/sunlight_handler/old_shandler
 	var/turf/simulated/simself = src
 	if(istype(simself) && simself.shandler)
@@ -74,16 +78,27 @@
 	// reference) are both ZAS-only. Under LINDA, turf air adjacency is rebuilt
 	// via SSair.add_to_active() on the changed turf, called below.
 
+	// Listeners may append callbacks; each is invoked with the new turf.
+	var/list/post_change_callbacks
+	if(_listen_lookup?[COMSIG_TURF_CHANGE])
+		post_change_callbacks = list()
+		SEND_SIGNAL(src, COMSIG_TURF_CHANGE, N, null, NONE, post_change_callbacks)
+
 	cut_overlays(TRUE)
 	RemoveElement(/datum/element/turf_z_transparency)
 	changing_turf = TRUE
 	qdel(src)
 
 	var/turf/W = new N( locate(src.x, src.y, src.z) )
+	for(var/datum/callback/post_change as anything in post_change_callbacks)
+		post_change.InvokeAsync(W)
 	var/turf/open/new_open_turf = W
 	if(old_air && istype(new_open_turf) && new_open_turf.air)
 		new_open_turf.air.copy_from(old_air)
-	QDEL_NULL(old_air)
+	if(old_air_shared)
+		old_air = null
+	else
+		QDEL_NULL(old_air)
 	if(ispath(N, /turf/simulated/floor))
 		// W.fire was a ZAS hotspot pointer; LINDA hotspots are tracked
 		// in SSair.active_hotspots, not as a turf var.

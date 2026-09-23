@@ -154,7 +154,6 @@
 	var/celebrate = 0
 	var/delaytime = 5 SECONDS
 
-
 	spawn(delaytime)
 		to_chat(user,span_notice("The slot machine flashes with bright colours as the slots lights up with a [symbol1], a [symbol2] and a [symbol3]!"))
 
@@ -201,12 +200,6 @@
 			return
 
 		to_chat(user,output) //Output message
-
-		/* Disabled until further notice, platinum now more rare
-		if(platinumwin) // Did they win the platinum chip?
-			new /obj/item/casino_platinum_chip(src.loc)
-			playsound(src.loc, 'sound/machines/slotmachine.ogg', 25, 1)
-		*/
 
 		if(winnings) //Did the person win?
 			icon_state = "slotmachine_winning"
@@ -375,7 +368,6 @@
 	var/platinumwin = 0 // If you win the platinum chip or not
 	var/celebrate = 0
 	var/delaytime = 5 SECONDS
-
 
 	spawn(delaytime)
 		to_chat(user,span_notice("The slot machine flashes with bright colours as the slots lights up with a [symbol1], a [symbol2] and a [symbol3]!"))

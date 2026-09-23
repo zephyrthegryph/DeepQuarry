@@ -1,162 +1,92 @@
+// The view has no health life of its own: it doesn't breathe, metabolise,
+// feel the environment or take radiation. Its status comes from the brain
+// tissue of its mind host (refresh_host_status()); what's left here is what a
+// client in a container needs: EMP interference on an MMI's I/O, vision and HUD.
+
 /mob/living/carbon/brain/handle_breathing()
 	return
 
 /mob/living/carbon/brain/handle_radiation()
-	. = ..()
-	if(.)
-		return
-	if (radiation)
-		throw_alert("irradiated", /atom/movable/screen/alert/irradiated)
-		if(radiation > 100)
-			radiation = 100
-			if(!container)//If it's not in an MMI
-				to_chat(src, span_red("You feel weak."))
-			else//Fluff-wise, since the brain can't detect anything itself, the MMI handles thing like that
-				to_chat(src, span_red("STATUS: CRITICAL AMOUNTS OF RADIATION DETECTED."))
-		switch(radiation)
-			if(1 to 49)
-				radiation--
-				if(prob(25))
-					adjustToxLoss(1)
-					updatehealth()
-
-			if(50 to 74)
-				radiation -= 2
-				adjustToxLoss(1)
-				if(prob(5))
-					radiation -= 5
-					if(!container)
-						to_chat(src, span_red("You feel weak."))
-					else
-						to_chat(src, span_red("STATUS: DANGEROUS LEVELS OF RADIATION DETECTED."))
-				updatehealth()
-
-			if(75 to 100)
-				radiation -= 3
-				adjustToxLoss(3)
-				updatehealth()
-	else
-		clear_alert("irradiated")
-
+	return
 
 /mob/living/carbon/brain/handle_environment(datum/gas_mixture/environment)
-	if(!environment)
-		return
-	var/environment_heat_capacity = environment.heat_capacity()
-	if(istype(get_turf(src), /turf/space))
-		var/turf/heat_turf = get_turf(src)
-		environment_heat_capacity = heat_turf.heat_capacity
-
-	var/env_temp = environment.return_temperature()
-	if((env_temp > (T0C + 50)) || (env_temp < (T0C + 10)))
-		var/transfer_coefficient = 1
-
-		handle_temperature_damage(HEAD, env_temp, environment_heat_capacity*transfer_coefficient)
-
-	if(stat == DEAD)
-		bodytemperature += 0.1*(env_temp - bodytemperature)*environment_heat_capacity/(environment_heat_capacity + 270000)
-
-	//Account for massive pressure differences
-
-	return //TODO: DEFERRED
-
-/mob/living/carbon/brain/proc/handle_temperature_damage(body_part, exposed_temperature, exposed_intensity)
-	if(SEND_SIGNAL(src, COMSIG_CHECK_FOR_GODMODE) & COMSIG_GODMODE_CANCEL)
-		return 0	// Cancelled by a component
-
-	if(exposed_temperature > bodytemperature)
-		var/discomfort = min( abs(exposed_temperature - bodytemperature)*(exposed_intensity)/2000000, 1.0)
-		//adjustFireLoss(2.5*discomfort)
-		//adjustFireLoss(5.0*discomfort)
-		adjustFireLoss(20.0*discomfort)
-
-	else
-		var/discomfort = min( abs(exposed_temperature - bodytemperature)*(exposed_intensity)/2000000, 1.0)
-		//adjustFireLoss(2.5*discomfort)
-		adjustFireLoss(5.0*discomfort)
-
+	return
 
 /mob/living/carbon/brain/handle_chemicals_in_body()
-	chem_effects.Cut()
+	return
 
-	if(touching) touching.metabolize()
-	if(ingested) ingested.metabolize()
-	if(bloodstr) bloodstr.metabolize()
+/mob/living/carbon/brain/handle_regular_status_updates()
+	if(host)
+		refresh_host_status()
+	else if(stat != DEAD)
+		body?.life_tick() // tissue-less views (souls) keep a simple body
 
-	updatehealth()
-
-	return //TODO: DEFERRED
-
-/mob/living/carbon/brain/handle_regular_status_updates()	//TODO: comment out the unused bits >_>
-	updatehealth()
-
-	if(stat == DEAD)	//DEAD. BROWN BREAD. SWIMMING WITH THE SPESS CARP
+	if(stat == DEAD)
 		blinded = 1
 		silent = 0
-		deaf_loop.stop() // Ear Ringing/Deafness - Not sure if we need this, but, safety.
-	else				//ALIVE. LIGHTS ARE ON
-		if( !container && (health < -getMaxHealth() || ((world.time - timeofhostdeath) > CONFIG_GET(number/revival_brain_life))) )
-			death()
-			blinded = 1
-			silent = 0
-			return 1
+		deaf_loop.stop()
+		return 1
 
-		//Handling EMP effect in the Life(), it's made VERY simply, and has some additional effects handled elsewhere
-		if(emp_damage)			//This is pretty much a damage type only used by MMIs, dished out by the emp_act
-			if(!(container && istype(container, /obj/item/mmi)))
-				emp_damage = 0
-			else
-				emp_damage = round(emp_damage,1)//Let's have some nice numbers to work with
-			switch(emp_damage)
-				if(31 to INFINITY)
-					emp_damage = 30//Let's not overdo it
-				if(21 to 30)//High level of EMP damage, unable to see, hear, or speak
-					SetBlinded(1)
-					blinded = 1
-					ear_deaf = 1
-					deaf_loop.start() // Ear Ringing/Deafness
-					silent = 1
-					if(!alert)//Sounds an alarm, but only once per 'level'
-						emote("alarm")
-						to_chat(src, span_red("Major electrical distruption detected: System rebooting."))
-						alert = 1
-					if(prob(75))
-						emp_damage -= 1
-				if(20)
-					alert = 0
-					blinded = 0
-					SetBlinded(0)
-					ear_deaf = 0
-					deaf_loop.stop() // Ear Ringing/Deafness
-					silent = 0
-					emp_damage -= 1
-				if(11 to 19)//Moderate level of EMP damage, resulting in nearsightedness and ear damage
-					eye_blurry = 1
-					ear_damage = 1
-					if(!alert)
-						emote("alert")
-						to_chat(src, span_red("Primary systems are now online."))
-						alert = 1
-					if(prob(50))
-						emp_damage -= 1
-				if(10)
-					alert = 0
-					eye_blurry = 0
-					ear_damage = 0
-					emp_damage -= 1
-				if(2 to 9)//Low level of EMP damage, has few effects(handled elsewhere)
-					if(!alert)
-						emote("notice")
-						to_chat(src, span_red("System reboot nearly complete."))
-						alert = 1
-					if(prob(25))
-						emp_damage -= 1
-				if(1)
-					alert = 0
-					to_chat(src, span_red("All systems restored."))
-					emp_damage -= 1
-
+	handle_emp_interference()
 	return 1
+
+/// EMP interference with an MMI's sensors and speech. Not damage: the MMI's
+/// I/O reboots over a few ticks.
+/mob/living/carbon/brain/proc/handle_emp_interference()
+	if(!emp_damage)
+		return
+	if(!istype(container, /obj/item/mmi))
+		emp_damage = 0
+		return
+	emp_damage = round(emp_damage, 1)
+	switch(emp_damage)
+		if(31 to INFINITY)
+			emp_damage = 30//Let's not overdo it
+		if(21 to 30)//High level of EMP damage, unable to see, hear, or speak
+			SetBlinded(1)
+			blinded = 1
+			ear_deaf = 1
+			deaf_loop.start()
+			silent = 1
+			if(!alert)//Sounds an alarm, but only once per 'level'
+				emote("alarm")
+				to_chat(src, span_red("Major electrical distruption detected: System rebooting."))
+				alert = 1
+			if(prob(75))
+				emp_damage -= 1
+		if(20)
+			alert = 0
+			blinded = 0
+			SetBlinded(0)
+			ear_deaf = 0
+			deaf_loop.stop()
+			silent = 0
+			emp_damage -= 1
+		if(11 to 19)//Moderate level of EMP damage, resulting in nearsightedness and ear damage
+			eye_blurry = 1
+			ear_damage = 1
+			if(!alert)
+				emote("alert")
+				to_chat(src, span_red("Primary systems are now online."))
+				alert = 1
+			if(prob(50))
+				emp_damage -= 1
+		if(10)
+			alert = 0
+			eye_blurry = 0
+			ear_damage = 0
+			emp_damage -= 1
+		if(2 to 9)//Low level of EMP damage, has few effects(handled elsewhere)
+			if(!alert)
+				emote("notice")
+				to_chat(src, span_red("System reboot nearly complete."))
+				alert = 1
+			if(prob(25))
+				emp_damage -= 1
+		if(1)
+			alert = 0
+			to_chat(src, span_red("All systems restored."))
+			emp_damage -= 1
 
 /mob/living/carbon/brain/handle_vision()
 	if (stat == DEAD || (XRAY in src.mutations))
@@ -200,7 +130,7 @@
 		healths.icon_state = "health7"
 		return
 
-	switch(health)
+	switch(vitality() * 100)
 		if(100 to INFINITY)
 			healths.icon_state = "health0"
 		if(80 to 100)

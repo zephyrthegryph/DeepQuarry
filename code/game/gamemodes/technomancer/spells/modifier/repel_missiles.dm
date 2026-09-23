@@ -24,5 +24,5 @@
 
 	on_created_text = span_notice("You have a repulsion field around you, which will attempt to deflect projectiles.")
 	on_expired_text = span_warning("Your repulsion field has expired.")
-	evasion = 45
+	factors = alist(BF_EVASION = 45)
 	stacks = MODIFIER_STACK_EXTEND

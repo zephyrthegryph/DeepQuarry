@@ -129,19 +129,20 @@
 
 			if(istype(P, /obj/item/mmi))
 				var/obj/item/mmi/M = P
-				if(!M.brainmob)
+				var/mob/living/carbon/brain/occupant = M.get_occupant()
+				if(!occupant)
 					to_chat(user, span_warning("Sticking an empty [P] into the frame would sort of defeat the purpose."))
 					return
-				if(M.brainmob.stat == 2)
+				if(occupant.stat == DEAD)
 					to_chat(user, span_warning("Sticking a dead [P] into the frame would sort of defeat the purpose."))
 					return
 
-				if(jobban_isbanned(M.brainmob, JOB_AI))
+				if(jobban_isbanned(occupant, JOB_AI))
 					to_chat(user, span_warning("This [P] does not seem to fit."))
 					return
 
-				if(M.brainmob.mind)
-					SSantag_job.clear_antag_roles(M.brainmob.mind, 1)
+				if(occupant.mind)
+					SSantag_job.clear_antag_roles(occupant.mind, 1)
 
 				user.drop_item()
 				P.loc = src
@@ -180,7 +181,7 @@
 					var/mob/living/silicon/ai/A = new /mob/living/silicon/ai(loc, FALSE, laws, brain)
 					if(A) //if there's no brain, the mob is deleted and a structure/AIcore is created
 						A.rename_self("ai", 1)
-						for(var/datum/language/L in brain.brainmob.languages)
+						for(var/datum/language/L in A.identity.languages)
 							A.add_language(L.name)
 				feedback_inc("cyborg_ais_created",1)
 				qdel(src)

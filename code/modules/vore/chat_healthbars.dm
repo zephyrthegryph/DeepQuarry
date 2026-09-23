@@ -69,12 +69,7 @@
 			return
 	if(!istype(src.loc, /obj/belly)) // not in a belly? don't bother
 		return
-	var/ourpercent = 0
-
-	if(ishuman(src))	//humans don't die or become unconcious at 0%, it's actually like -50% or something, so, let's pretend they have 50 more health than they do
-		ourpercent = ((health + 50) / (maxHealth + 50)) * 100
-	else
-		ourpercent = (health / maxHealth) * 100
+	var/ourpercent = vitality() * 100
 
 	var/ourbar = ""
 	var/obj/belly/ourbelly = src.loc

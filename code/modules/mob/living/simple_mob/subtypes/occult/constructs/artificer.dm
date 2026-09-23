@@ -9,8 +9,7 @@
 	desc = "A bulbous construct dedicated to building and maintaining temples to their otherworldly lords."
 	icon_state = "artificer"
 	icon_living = "artificer"
-	maxHealth = 100
-	health = 100
+	endurance = 100
 	response_harm = "viciously beaten"
 	harm_intent_damage = 5
 	melee_damage_lower = 15 //It's not the strongest of the bunch, but that doesn't mean it can't hurt you.
@@ -57,8 +56,7 @@
 	desc = "A weak but speedy construction designed to assist other constructs rather than fight. Still seems bloodthirtsy though."
 	icon_state = "proteon"
 	icon_living = "proteon"
-	maxHealth = 50
-	health = 50
+	endurance = 50
 	response_harm = "viciously beaten"
 	harm_intent_damage = 5
 	melee_damage_lower = 8 //It's not the strongest of the bunch, but that doesn't mean it can't hurt you.

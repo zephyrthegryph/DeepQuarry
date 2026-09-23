@@ -28,8 +28,7 @@ TODO: Make them light up and heat the air when exposed to oxygen.
 	vis_height = 64
 
 	faction = FACTION_VIRGO3B
-	maxHealth = 100
-	health = 100
+	endurance = 100
 	movement_cooldown = 4
 
 	say_list_type = /datum/say_list/gaslamp
@@ -109,8 +108,7 @@ TODO: Make them light up and heat the air when exposed to oxygen.
 	icon_dead = "gaslamp_snow-dead"
 
 	faction = "virgo3b"
-	maxHealth = 100
-	health = 100
+	endurance = 100
 	movement_cooldown = 12
 
 	say_list_type = /datum/say_list/gaslamp

@@ -92,6 +92,9 @@
 				var/reference_capacity = 0.65 + reference_electrode.conductivity / 140 + reference_electrode.heat_resistance / 350
 				var/capacity_factor = clamp((0.65 + electrode.conductivity / 140 + electrode.heat_resistance / 350) / reference_capacity, 0.5, 2)
 				cell.maxcharge = round(initial(cell.maxcharge) * capacity_factor)
+				// Beam-conditioned crystalline electrodes retain deposited field
+				// energy as real cell capacity rather than an abstract quality bonus.
+				cell.maxcharge += round(electrode.field_energy_capacity)
 				cell.charge = min(cell.charge, cell.maxcharge)
 				cell.material_emp_resistance = clamp(round((insulation?.dielectric_strength || 0) * 0.5 + conductor.magnetism * 0.2 + casing.heat_resistance * 0.2), 0, 90)
 				cell.robot_durability = clamp(round(casing.integrity / 2), 20, 125)

@@ -20,14 +20,14 @@
 			owner.automatic_custom_emote(VISIBLE_MESSAGE, "gasps for air!", check_stat = TRUE)
 			owner.AdjustLosebreath(15)
 
-	else if(is_bruised()) //Only bruised? That's an annoyance and can cause some more damage (via brainloss due to oxyloss)
+	else if(is_bruised()) //Only bruised? That's an annoyance and can cause some more damage (via brain damage from hypoxia)
 		if(prob(2)) //But let's not kill people too quickly.
 			owner.automatic_custom_emote(VISIBLE_MESSAGE, "coughs up a small amount of blood!", check_stat = TRUE)
 			var/bleeding_rng = rand(1,2)
 			owner.drip(bleeding_rng)
 		if(prob(4)) //Get to medical quickly. but shouldn't kill without exceedingly bad RNG.
 			owner.automatic_custom_emote(VISIBLE_MESSAGE, "gasps for air!", check_stat = TRUE)
-			owner.AdjustLosebreath(10) //Losebreath is a DoT that does 1:1 damage and prevents oxyloss healing via breathing.
+			owner.AdjustLosebreath(10) //Losebreath is a DoT that does 1:1 damage and prevents hypoxia recovery via breathing.
 
 	if(owner.internal_organs_by_name[O_BRAIN]) // As the brain starts having Trouble, the lungs start malfunctioning.
 		var/obj/item/organ/internal/brain/Brain = owner.internal_organs_by_name[O_BRAIN]
@@ -41,7 +41,7 @@
 		var/obj/item/organ/external/parent = owner.get_organ(parent_organ)
 		if(istype(parent))
 			owner.custom_pain("You feel a stabbing pain in your [parent.name]!", 50)
-	bruise()
+	damage_to_at_least(min_bruised_damage, /datum/affliction/lesion/perforation) // a ruptured lung is a perforated one
 
 /obj/item/organ/internal/lungs/handle_germ_effects()
 	. = ..() //Up should return an infection level as an integer
@@ -54,7 +54,7 @@
 	if (. >= 2)
 		if(prob(1))
 			owner.custom_pain("You suddenly feel short of breath and take a sharp, painful breath!",1)
-			owner.adjustOxyLoss(30) //Look it's hard to simulate low O2 perfusion okay
+			owner.injure(INJURY_ASPHYXIA, 30, source = src) //Look it's hard to simulate low O2 perfusion okay
 
 /obj/item/organ/internal/lungs/grey
 	icon_state = "lungs_grey"

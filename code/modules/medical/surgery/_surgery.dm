@@ -41,7 +41,7 @@
 	var/list/steps
 	/// Tools the surgeon needs (display strings, not typepaths).
 	var/list/tools
-	/// list of /datum/medical_issue/condition typepaths that this
+	/// list of /datum/affliction typepaths that this
 	/// surgery, when completed, cures on the patient.
 	var/list/treats
 	/// Upstream /datum/surgery_step typepath whose successful end()

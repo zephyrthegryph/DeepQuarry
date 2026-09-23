@@ -52,8 +52,7 @@
 	desc = "A infanthomable mass of tentacles and claws ripping and tearing through all that oppose it."
 	icon_state = "chosen"
 	icon_living = "chosen"
-	maxHealth = 100
-	health = 100
+	endurance = 100
 	melee_damage_lower = 40 //Glass Cannon Mini-Boss/Semi-Boss large. Few hits is enough to end you.
 	melee_damage_upper = 50
 	attack_armor_pen = 60 //No Armor Shall Save you

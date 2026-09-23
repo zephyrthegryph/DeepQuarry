@@ -2,6 +2,13 @@
 /obj/fire_act(exposed_temperature, exposed_volume)
 	if(HAS_TRAIT(src, TRAIT_UNDERFLOOR))
 		return
+	// Generic map machinery remains dormant under nominal room conditions, but
+	// crossing into an actual thermal hazard activates its material assembly so
+	// continued exposure, cooling, diagnostics, and repair use the same model as
+	// custom-built equipment.
+	if(ismachinery(src) && exposed_temperature > T0C + 100)
+		var/datum/material/hazard_material = material_for_role(MATERIAL_ROLE_STRUCTURE) || primary_construction_material()
+		material_service_event(MATERIAL_EVENT_TEMPERATURE, hazard_material ? exposed_temperature / max(hazard_material.melting_point, 1) : 0, exposed_temperature)
 	var/potential_damage = 0.02 * exposed_temperature
 	var/datum/material/exterior_material = material_for_role(MATERIAL_ROLE_JACKET) || material_for_role(MATERIAL_ROLE_INSULATION) || material_for_role(MATERIAL_ROLE_STRUCTURE) || primary_construction_material()
 	if(exterior_material)

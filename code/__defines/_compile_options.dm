@@ -17,7 +17,6 @@
 
 // CI will override these as appropriate
 // #define MAP_TEST 0
-// #define AWAY_MISSION_TEST 0
 // #define UNIT_TESTS 1
 
 #if defined(CIBUILDING) && !defined(OPENDREAM)

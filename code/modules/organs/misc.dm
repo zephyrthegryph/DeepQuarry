@@ -12,7 +12,7 @@
 	if(!owner || !owner.reagents)
 		return
 
-	// Borer husks regenerate health, feel no pain, and are resistant to stuns and brainloss.
+	// Borer husks regenerate health, feel no pain, and are resistant to stuns and brain damage.
 	for(var/chem in list(REAGENT_ID_TRICORDRAZINE,REAGENT_ID_TRAMADOL,REAGENT_ID_HYPERZINE,REAGENT_ID_ALKYSINE))
 		if(owner.reagents.get_reagent_amount(chem) < 3)
 			owner.reagents.add_reagent(chem, 5)

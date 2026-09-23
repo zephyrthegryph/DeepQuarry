@@ -8,8 +8,7 @@
 
 	faction = FACTION_GOAT
 
-	health = 40
-	maxHealth = 40
+	endurance = 40
 
 	response_help  = "pets"
 	response_disarm = "gently pushes aside"

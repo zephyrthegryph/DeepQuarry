@@ -79,7 +79,7 @@ GLOBAL_LIST_INIT(cat_default_emotes, list(
 /mob/living/simple_mob/animal/passive/cat/apply_melee_effects(atom/A)
 	if(ismouse(A))
 		var/mob/living/simple_mob/animal/passive/mouse/mouse = A
-		if(mouse.getMaxHealth() < 20) // In case a badmin makes giant mice or something.
+		if(mouse.get_endurance() < 20) // In case a badmin makes giant mice or something.
 			mouse.splat()
 			visible_emote(pick("bites \the [mouse]!", "toys with \the [mouse].", "chomps on \the [mouse]!"))
 	else
@@ -337,15 +337,14 @@ GLOBAL_LIST_INIT(cat_default_emotes, list(
 	friend_name = "Ascian"
 	digestable = 0
 	meat_amount = 0
-	maxHealth = 50
-	health = 50
+	endurance = 50
 
 /mob/living/simple_mob/animal/passive/cat/tabiranth/handle_special()
 	. = ..()
 	if ((ai_brain != null) && friend)
 		var/friend_dist = get_dist(src,friend)
 		if (friend_dist <= 1)
-			if (friend.stat >= DEAD || friend.health <= CONFIG_GET(number/health_threshold_softcrit))
+			if (friend.stat >= DEAD || friend.is_critical())
 				if (prob((friend.stat < DEAD)? 50 : 15))
 					var/verb = pick("meows", "mews", "mrowls")
 					audible_emote(pick("[verb] in distress.", "[verb] anxiously."))
@@ -355,7 +354,7 @@ GLOBAL_LIST_INIT(cat_default_emotes, list(
 									"brushes against [friend].",
 									"rubs against [friend].",
 									"purrs."))
-		else if (friend.health <= 50)
+		else if (friend.vitality() <= 0.5)
 			if (prob(10))
 				var/verb = pick("meows", "mews", "mrowls")
 				audible_emote("[verb] anxiously.")

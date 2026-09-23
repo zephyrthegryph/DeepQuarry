@@ -25,8 +25,7 @@
 	icon_rest = "raccoon_dead"
 	icon = 'icons/mob/animal.dmi'
 
-	maxHealth = 50
-	health = 50
+	endurance = 50
 	has_hands = TRUE
 	humanoid_hands = TRUE
 	minbodytemp = 175

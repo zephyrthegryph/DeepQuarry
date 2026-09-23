@@ -217,7 +217,7 @@
 		/obj/item/cell/device,
 		/obj/item/radio,
 		/obj/item/gps/explorer,
-		/obj/item/cataloguer/compact, //CHOMP edit
+		/obj/item/cataloguer/compact,
 	// /obj/item/gun/energy/gun/protector/pilotgun/locked, //d
 		/obj/item/clothing/accessory/watch/survival,
 		/obj/item/clothing/accessory/storage/webbing/pilot1,

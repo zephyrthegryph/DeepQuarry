@@ -48,7 +48,7 @@
 		return
 	clear_leak_gas_dependencies()
 	leaking = new_leaking
-	wake_automatic_shutoff_valves()
+	wake_automatic_shutoff_valves(parent?.network)
 	if(parent)
 		if(leaking)
 			parent.leaks |= src
@@ -78,6 +78,9 @@
 	var/pressure_difference = pressure - (environment?.return_pressure() || 0)
 	var/internal_temperature = parent?.air?.return_temperature() || T20C
 	var/effective_maximum = material_environment_pressure_limit(maximum_pressure, MATERIAL_PIPE_REFERENCE_RADIUS, MATERIAL_PIPE_REFERENCE_THICKNESS, internal_temperature)
+	var/load_ratio = abs(pressure_difference) / max(effective_maximum, ONE_ATMOSPHERE)
+	material_service_event(MATERIAL_EVENT_PRESSURE, load_ratio)
+	material_service_event(MATERIAL_EVENT_CORROSION, material_gas_corrosion_load(parent?.air))
 	if(pressure_difference > effective_maximum)
 		burst_from_pressure()
 		return FALSE
@@ -132,7 +135,7 @@
 	var/rust_owned_parent = old_parent?.network?.rust_authoritative
 	rust_unregister_pipe_topology()
 	clear_leak_gas_dependencies()
-	wake_automatic_shutoff_valves()
+	wake_automatic_shutoff_valves(old_parent?.network)
 	release_sorbed_material_gas()
 	var/list/old_edge_pipelines = edge_pipelines
 	edge_pipelines = null

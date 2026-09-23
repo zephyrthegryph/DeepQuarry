@@ -10,17 +10,6 @@
 	nitrogen	= MOLES_N2SIF
 	temperature	= TEMPERATURE_SIF
 
-/turf/simulated/floor/tiled/sif/planetuse
-	oxygen		= MOLES_O2SIF
-	nitrogen	= MOLES_N2SIF
-	temperature	= TEMPERATURE_SIF
-	outdoors = OUTDOORS_YES
-
-/turf/simulated/floor/tiled/steel/sif/planetuse
-	oxygen		= MOLES_O2SIF
-	nitrogen	= MOLES_N2SIF
-	temperature	= TEMPERATURE_SIF
-	outdoors = OUTDOORS_YES
 
 /turf/simulated/floor/plating/sif/planetuse
 	oxygen		= MOLES_O2SIF
@@ -28,45 +17,18 @@
 	temperature	= TEMPERATURE_SIF
 	outdoors = OUTDOORS_YES
 
-/turf/simulated/floor/outdoors/snow/sif/planetuse
-	oxygen		= MOLES_O2SIF
-	nitrogen	= MOLES_N2SIF
-	temperature	= TEMPERATURE_SIF
 
 /turf/simulated/floor/outdoors/grass/sif/planetuse
 	oxygen		= MOLES_O2SIF
 	nitrogen	= MOLES_N2SIF
 	temperature	= TEMPERATURE_SIF
 
-/turf/simulated/floor/outdoors/grass/sif/forest/planetuse
-	oxygen		= MOLES_O2SIF
-	nitrogen	= MOLES_N2SIF
-	temperature	= TEMPERATURE_SIF
 
 /turf/simulated/floor/outdoors/dirt/sif/planetuse
 	oxygen		= MOLES_O2SIF
 	nitrogen	= MOLES_N2SIF
 	temperature	= TEMPERATURE_SIF
 
-/turf/simulated/mineral/sif
-	oxygen		= MOLES_O2SIF
-	nitrogen	= MOLES_N2SIF
-	temperature	= TEMPERATURE_SIF
-
-/turf/simulated/mineral/ignore_mapgen/sif
-	oxygen		= MOLES_O2SIF
-	nitrogen	= MOLES_N2SIF
-	temperature	= TEMPERATURE_SIF
-
-/turf/simulated/mineral/floor/sif
-	oxygen		= MOLES_O2SIF
-	nitrogen	= MOLES_N2SIF
-	temperature	= TEMPERATURE_SIF
-
-/turf/simulated/mineral/floor/ignore_mapgen/sif
-	oxygen		= MOLES_O2SIF
-	nitrogen	= MOLES_N2SIF
-	temperature	= TEMPERATURE_SIF
 
 /turf/simulated/floor/outdoors/mud/sif/planetuse
 	oxygen		= MOLES_O2SIF
@@ -93,20 +55,12 @@
 	nitrogen	= MOLES_N2SIF
 	temperature	= TEMPERATURE_SIF
 
-/turf/simulated/shuttle/floor/alienplating/external
-	oxygen		= MOLES_O2SIF
-	nitrogen	= MOLES_N2SIF
-	temperature	= TEMPERATURE_SIF
 
 /turf/simulated/shuttle/floor/voidcraft/external
 	oxygen		= MOLES_O2SIF
 	nitrogen	= MOLES_N2SIF
 	temperature	= TEMPERATURE_SIF
 
-/turf/simulated/shuttle/floor/voidcraft/external/dark
-	oxygen		= MOLES_O2SIF
-	nitrogen	= MOLES_N2SIF
-	temperature	= TEMPERATURE_SIF
 
 /turf/simulated/shuttle/floor/voidcraft/external/light
 	oxygen		= MOLES_O2SIF
@@ -118,10 +72,6 @@
 	nitrogen	= MOLES_N2SIF
 	temperature	= TEMPERATURE_SIF
 
-/turf/simulated/floor/tiled/external
-	oxygen		= MOLES_O2SIF
-	nitrogen	= MOLES_N2SIF
-	temperature	= TEMPERATURE_SIF
 
 /turf/simulated/sky
 	oxygen		= MOLES_O2SIF
@@ -135,20 +85,12 @@
 	nitrogen = 0
 	temperature = TCMB
 
-/turf/simulated/mineral/ignore_mapgen/vacuum
-	oxygen = 0
-	nitrogen = 0
-	temperature = TCMB
 
 /turf/simulated/mineral/floor/vacuum
 	oxygen = 0
 	nitrogen = 0
 	temperature = TCMB
 
-/turf/simulated/mineral/floor/ignore_mapgen/vacuum
-	oxygen = 0
-	nitrogen = 0
-	temperature = TCMB
 
 // Step trigger to fall down to planet Sif
 /obj/effect/step_trigger/teleporter/planetary_fall/sif/find_planet()

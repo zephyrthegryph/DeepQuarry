@@ -107,13 +107,6 @@
 		AddComponent(/datum/component/recursive_move)
 		RegisterSignal(src, COMSIG_MOVABLE_ATTEMPTED_MOVE, PROC_REF(update_power_on_move)) //we only need this for recursive moving
 
-	/* No
-	if(ismovable(old_loc)) // Unregister recursive movement.
-		UnregisterSignal(old_loc, COMSIG_MOVABLE_ATTEMPTED_MOVE)
-	if(ismovable(loc)) // Register for recursive movement (if the thing we're inside moves)
-		RegisterSignal(loc, COMSIG_MOVABLE_ATTEMPTED_MOVE, PROC_REF(update_power_on_move), override = TRUE)
-	*/
-
 /obj/machinery/proc/update_power_on_move(atom/movable/mover, atom/old_loc, atom/new_loc)
 	SIGNAL_HANDLER
 	var/area/old_area = get_area(old_loc)

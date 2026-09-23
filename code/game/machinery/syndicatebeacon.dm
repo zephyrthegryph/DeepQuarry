@@ -164,7 +164,6 @@
 	icon_state = "beaconsynd0"
 
 
-// === merged from syndicatebeacon_vr.dm during hard-fork de-suffix (verified no override-order change) ===
 //  Virgo modified syndie beacon, does not give objectives
 
 // attack_hand body relocated to code/modules/admin/misc_admin_panels.dm (structured TGUI).

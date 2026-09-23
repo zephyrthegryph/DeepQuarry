@@ -72,7 +72,6 @@
 */
 
 
-// === merged from codex_chomp.dm during hard-fork de-suffix (verified no override-order change) ===
 /obj/item/book/codex/chef_recipes
 	name = "Chef Recipes Ultramatus Edition"
 	color = "#585a5e"

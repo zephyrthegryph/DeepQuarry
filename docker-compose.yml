@@ -1,9 +1,9 @@
 version: "3"
 
 services:
-  # Virgo DM server
+  # DeepQuarry DM server
   dreammaker:
-    image: vorestation:latest
+    image: deepquarry:latest
     restart: unless-stopped
     build:
       context: .
@@ -13,8 +13,8 @@ services:
     depends_on:
       - db
     volumes:
-      - ./config/:/vorestation/config
-      - gamedata:/vorestation/data
+      - ./config/:/deepquarry/config
+      - gamedata:/deepquarry/data
   # MariaDB/MySQL database: game
   # (if you don't really need this, feel free to remove this section.)
   db:

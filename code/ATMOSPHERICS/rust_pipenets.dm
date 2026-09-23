@@ -3,14 +3,20 @@
 	var/list/rust_pipe_ports
 	var/list/rust_pipe_region_networks
 	var/rust_pipe_pending_operations = ""
-	/// Coalesces structural automatic-valve invalidation during a bulk blast.
-	var/pending_automatic_shutoff_wake = FALSE
+	/// Set during a bulk blast when a change of unknown network asked for every valve to wake.
+	var/pending_automatic_shutoff_wake_all = FALSE
+	/// Automatic shutoff valves (as keys) woken by network-local changes during a bulk blast.
+	var/list/pending_automatic_shutoff_valves = list()
 
 /datum/controller/subsystem/air/proc/flush_automatic_shutoff_wake()
-	if(!pending_automatic_shutoff_wake)
+	var/list/valves = pending_automatic_shutoff_valves
+	pending_automatic_shutoff_valves = list()
+	if(pending_automatic_shutoff_wake_all)
+		pending_automatic_shutoff_wake_all = FALSE
+		wake_all_automatic_shutoff_valves()
 		return
-	pending_automatic_shutoff_wake = FALSE
-	wake_all_automatic_shutoff_valves()
+	for(var/obj/machinery/atmospherics/valve/shutoff/valve as anything in valves)
+		START_MACHINE_PROCESSING(valve)
 
 /obj/machinery/atmospherics
 	/// Stable IDs for this machine's physical gas ports. Rust owns connectivity.
@@ -187,7 +193,8 @@
 			if(!port_air)
 				continue
 			operations += rust_pipe_operation(RUST_PIPE_OP_UPSERT, machine.rust_pipe_port_ids[index], port_air.arena_id(), machine.rust_pipe_port_volume(index))
-		CHECK_TICK
+		if(length(GLOB.clients) && TICK_CHECK)
+			stoplag()
 
 	var/list/seen_edges = list()
 	for(var/obj/machinery/atmospherics/machine in SSmachines.all_machines)
@@ -210,7 +217,8 @@
 			var/first_index = internal_edges[edge_index]
 			var/second_index = internal_edges[edge_index + 1]
 			operations += rust_pipe_operation(RUST_PIPE_OP_CONNECT, machine.rust_pipe_port_ids[first_index], machine.rust_pipe_port_ids[second_index])
-		CHECK_TICK
+		if(length(GLOB.clients) && TICK_CHECK)
+			stoplag()
 
 	rust_apply_pipe_topology(operations)
 

@@ -13,6 +13,9 @@
 
 /mob/living/Destroy()
 	remove_all_modifiers(TRUE)
+	// The character's DNA outlives this body when the identity references it.
+	if(dna && identity?.dna == dna)
+		dna = null
 	QDEL_NULL(say_list)
 
 	for(var/datum/soul_link/S as anything in owned_soul_links)
@@ -126,7 +129,7 @@
 	var/confirm2 = "No"
 	if(confirm1 == "Yes")
 		confirm2 = tgui_alert(src, "Pressing this buttom will really kill you, no going back", "Are you sure?", list("Yes", "No")) //Swapped answers to protect from accidental double clicks.
-	if (src.health < 0 && stat != DEAD && confirm1 == "Yes" && confirm2 == "Yes") // Checking both confirm1 and confirm2 for good measure. I don't trust TGUI.
+	if (is_critical() && stat != DEAD && confirm1 == "Yes" && confirm2 == "Yes") // Checking both confirm1 and confirm2 for good measure. I don't trust TGUI.
 		src.death()
 		to_chat(src, span_blue("You have given up life and succumbed to death."))
 	else
@@ -152,37 +155,6 @@
 		away_from_keyboard = TRUE
 		manual_afk = TRUE
 
-/mob/living/proc/updatehealth()
-	if(SEND_SIGNAL(src, COMSIG_LIVING_HEALTH_UPDATE) & COMSIG_LIVING_HEALTH_UPDATE_GOD_MODE)
-		health = getMaxHealth()
-		set_stat(CONSCIOUS)
-	else
-		// Pain/etc calculations, but more efficient:tm: - this should work for literally anything that applies to health. Far better than slapping emote("pain") everywhere like scream does.
-		if(health > getMaxHealth()) //Overhealth
-			health = getMaxHealth()
-		var/initialhealth = health // Getting our health before this check
-		health = getMaxHealth() - getOxyLoss() - getToxLoss() - getFireLoss() - getBruteLoss() - getCloneLoss() - halloss
-		if(!((ishuman(src)) || (issilicon(src))) && src.can_pain_emote) // Only run this if we're non-human/non-silicon (bots and mechanical simplemobs should be allowed to make pain sounds) & can emote pain, bc humans + carbons already do this. human_damage doesn't call parent, but sanity is better here.
-			if(health < initialhealth) // Did we lose health?
-				// Yes. How much by?
-				var/damage = initialhealth - health // Get our damage (say, 200 - 180 = 20, etc etc)
-				var/pain_noise = (damage * rand(0.5, 1.5)) // Multiply damage by our rand mod. 50 damage becomes 50 x 0.5, means prob 25. 50 x 1.5 means prob 75, etc.
-				switch(damage)
-					if(-INFINITY to 0)
-						return
-					if(1 to 25)
-						if(prob(pain_noise) && !isbelly(loc)) // No pain noises inside bellies.
-							emote("pain")
-					if(26 to 50)
-						if(prob(pain_noise * 1.5) && !isbelly(loc)) // No pain noises inside bellies.
-							emote("pain")
-					if(51 to INFINITY)
-						if(prob(pain_noise * 3)  && !isbelly(loc)) // More likely, most severe damage. No pain noises inside bellies.
-							emote("pain")
-		if(health <= -getMaxHealth()) //die only once
-			death()
-			return
-
 //This proc is used for mobs which are affected by pressure to calculate the amount of pressure that actually
 //affects them once clothing is factored in. ~Errorage
 /mob/living/proc/calculate_affecting_pressure(pressure)
@@ -197,14 +169,9 @@
 			return 0
 		if (COLD_RESISTANCE in src.mutations) //fireproof
 			return 0
-		var/mob/living/carbon/human/H = src	//make this damage method divide the damage to be done among all the body parts, then burn each body part for that much damage. will have better effect then just randomly picking a body part
-		var/divided_damage = (burn_amount)/(H.organs.len)
-		var/extradam = 0	//added to when organ is at max dam
-		for(var/obj/item/organ/external/affecting in H.organs)
-			if(!affecting)	continue
-			if(affecting.take_damage(0, divided_damage+extradam))	//TODO: fix the extradam stuff. Or, ebtter yet...rewrite this entire proc ~Carn
-				H.UpdateDamageIcon()
-		H.updatehealth()
+		// Electrical burns spread across the whole body.
+		if(injure(INJURY_ELECTRIC, burn_amount))
+			UpdateDamageIcon()
 		return 1
 	else if(isAI(src))
 		return 0
@@ -230,254 +197,14 @@
 	return temperature
 
 
-// ++++ROCKDTBEN++++ MOB PROCS -- Ask me before touching.
-// Stop! ... Hammertime! ~Carn
-// I touched them without asking... I'm soooo edgy ~Erro (added nodamage checks)
-
-/mob/living/proc/getBruteLoss()
-	return bruteloss
-
-/mob/living/proc/getShockBruteLoss()	//Only checks for things that'll actually hurt (not robolimbs)
-	return bruteloss
-
-/mob/living/proc/getActualBruteLoss()	// Mostly for humans with robolimbs.
-	return getBruteLoss()
-
-//'include_robo' only applies to healing, for legacy purposes, as all damage typically hurts both types of organs
-/mob/living/proc/adjustBruteLoss(amount,include_robo)
-	if(SEND_SIGNAL(src, COMSIG_TAKING_BRUTE_DAMAGE, amount) & COMSIG_CANCEL_BRUTE_DAMAGE)
-		return 0	// Cancelled by a component
-
-	if(amount > 0)
-		for(var/datum/modifier/M in modifiers)
-			if(!isnull(M.incoming_damage_percent))
-				if(M.energy_based)
-					M.energy_source.use(M.damage_cost*amount)
-				amount *= M.incoming_damage_percent
-			if(!isnull(M.incoming_brute_damage_percent))
-				if(M.energy_based)
-					M.energy_source.use(M.damage_cost*amount)
-				amount *= M.incoming_brute_damage_percent
-	else if(amount < 0)
-		for(var/datum/modifier/M in modifiers)
-			if(!isnull(M.incoming_healing_percent))
-				amount *= M.incoming_healing_percent
-
-	if(tf_mob_holder && tf_mob_holder.loc == src)
-		var/dmgmultiplier = tf_mob_holder.getMaxHealth() / getMaxHealth()
-		dmgmultiplier *= amount
-		tf_mob_holder.adjustBruteLoss(dmgmultiplier)
-
-	bruteloss = min(max(bruteloss + amount, 0),(getMaxHealth()*2))
-	updatehealth()
-
-/mob/living/proc/getOxyLoss()
-	return oxyloss
-
-/mob/living/proc/adjustOxyLoss(amount)
-	if(SEND_SIGNAL(src, COMSIG_TAKING_OXY_DAMAGE, amount) & COMSIG_CANCEL_OXY_DAMAGE)
-		return 0	// Cancelled by a component
-
-	if(amount > 0)
-		for(var/datum/modifier/M in modifiers)
-			if(!isnull(M.incoming_damage_percent))
-				if(M.energy_based)
-					M.energy_source.use(M.damage_cost*amount)
-				amount *= M.incoming_damage_percent
-			if(!isnull(M.incoming_oxy_damage_percent))
-				if(M.energy_based)
-					M.energy_source.use(M.damage_cost*amount)
-				amount *= M.incoming_oxy_damage_percent
-	else if(amount < 0)
-		for(var/datum/modifier/M in modifiers)
-			if(!isnull(M.incoming_healing_percent))
-				amount *= M.incoming_healing_percent
-
-	oxyloss = min(max(oxyloss + amount, 0),(getMaxHealth()*2))
-	updatehealth()
-
-/mob/living/proc/setOxyLoss(amount)
-	if(SEND_SIGNAL(src, COMSIG_TAKING_OXY_DAMAGE, amount) & COMSIG_CANCEL_OXY_DAMAGE)
-		return 0	// Cancelled by a component
-	oxyloss = amount
-
-/mob/living/proc/getToxLoss()
-	return toxloss
-
-/mob/living/proc/adjustToxLoss(amount)
-	if(SEND_SIGNAL(src, COMSIG_TAKING_TOX_DAMAGE, amount) & COMSIG_CANCEL_TOX_DAMAGE)
-		return 0	// Cancelled by a component
-
-	if(amount > 0)
-		for(var/datum/modifier/M in modifiers)
-			if(!isnull(M.incoming_damage_percent))
-				if(M.energy_based)
-					M.energy_source.use(M.damage_cost*amount)
-				amount *= M.incoming_damage_percent
-			if(!isnull(M.incoming_tox_damage_percent))
-				if(M.energy_based)
-					M.energy_source.use(M.damage_cost*amount)
-				amount *= M.incoming_tox_damage_percent
-	else if(amount < 0)
-		for(var/datum/modifier/M in modifiers)
-			if(!isnull(M.incoming_healing_percent))
-				amount *= M.incoming_healing_percent
-
-	toxloss = min(max(toxloss + amount, 0),(getMaxHealth()*2))
-	updatehealth()
-
-/mob/living/proc/setToxLoss(amount)
-	if(SEND_SIGNAL(src, COMSIG_TAKING_TOX_DAMAGE, amount) & COMSIG_CANCEL_TOX_DAMAGE)
-		return 0	// Cancelled by a component
-	toxloss = amount
-
-/mob/living/proc/getFireLoss()
-	return fireloss
-
-/mob/living/proc/getShockFireLoss()	//Only checks for things that'll actually hurt (not robolimbs)
-	return fireloss
-
-/mob/living/proc/getActualFireLoss()	// Mostly for humans with robolimbs.
-	return getFireLoss()
-
-//'include_robo' only applies to healing, for legacy purposes, as all damage typically hurts both types of organs
-/mob/living/proc/adjustFireLoss(amount,include_robo)
-	if(SEND_SIGNAL(src, COMSIG_TAKING_FIRE_DAMAGE, amount) & COMSIG_CANCEL_FIRE_DAMAGE)
-		return 0	// Cancelled by a component
-	if(amount > 0)
-		for(var/datum/modifier/M in modifiers)
-			if(!isnull(M.incoming_damage_percent))
-				if(M.energy_based)
-					M.energy_source.use(M.damage_cost*amount)
-				amount *= M.incoming_damage_percent
-			if(!isnull(M.incoming_fire_damage_percent))
-				if(M.energy_based)
-					M.energy_source.use(M.damage_cost*amount)
-				amount *= M.incoming_fire_damage_percent
-	else if(amount < 0)
-		for(var/datum/modifier/M in modifiers)
-			if(!isnull(M.incoming_healing_percent))
-				amount *= M.incoming_healing_percent
-	if(tf_mob_holder && tf_mob_holder.loc == src)
-		var/dmgmultiplier = tf_mob_holder.getMaxHealth() / getMaxHealth()
-		dmgmultiplier *= amount
-		tf_mob_holder.adjustFireLoss(dmgmultiplier)
-	fireloss = min(max(fireloss + amount, 0),(getMaxHealth()*2))
-	updatehealth()
-
-/mob/living/proc/getCloneLoss()
-	return cloneloss
-
-/mob/living/proc/adjustCloneLoss(amount)
-	if(SEND_SIGNAL(src, COMSIG_TAKING_CLONE_DAMAGE, amount) & COMSIG_CANCEL_CLONE_DAMAGE)
-		return 0	// Cancelled by a component
-
-	if(amount > 0)
-		for(var/datum/modifier/M in modifiers)
-			if(!isnull(M.incoming_damage_percent))
-				if(M.energy_based)
-					M.energy_source.use(M.damage_cost*amount)
-				amount *= M.incoming_damage_percent
-			if(!isnull(M.incoming_clone_damage_percent))
-				if(M.energy_based)
-					M.energy_source.use(M.damage_cost*amount)
-				amount *= M.incoming_clone_damage_percent
-	else if(amount < 0)
-		for(var/datum/modifier/M in modifiers)
-			if(!isnull(M.incoming_healing_percent))
-				amount *= M.incoming_healing_percent
-
-	cloneloss = min(max(cloneloss + amount, 0),(getMaxHealth()*2))
-	updatehealth()
-
-/mob/living/proc/setCloneLoss(amount)
-	if(SEND_SIGNAL(src, COMSIG_TAKING_CLONE_DAMAGE, amount) & COMSIG_CANCEL_CLONE_DAMAGE)
-		return 0	// Cancelled by a component
-	cloneloss = amount
-
-/mob/living/proc/getBrainLoss()
-	return brainloss
-
-/mob/living/proc/adjustBrainLoss(amount)
-	if(SEND_SIGNAL(src, COMSIG_TAKING_BRAIN_DAMAGE, amount) & COMSIG_CANCEL_BRAIN_DAMAGE)
-		return 0	// Cancelled by a component
-	brainloss = min(max(brainloss + amount, 0),(getMaxHealth()*2))
-
-/mob/living/proc/setBrainLoss(amount)
-	if(SEND_SIGNAL(src, COMSIG_TAKING_BRAIN_DAMAGE, amount) & COMSIG_CANCEL_BRAIN_DAMAGE)
-		return 0	// Cancelled by a component
-	brainloss = amount
-
-/mob/living/proc/getHalLoss()
-	return halloss
-
-/mob/living/proc/adjustHalLoss(amount)
-	if(SEND_SIGNAL(src, COMSIG_TAKING_HALO_DAMAGE, amount) & COMSIG_CANCEL_HALO_DAMAGE)
-		return 0	// Cancelled by a component
-	if(amount > 0)
-		for(var/datum/modifier/M in modifiers)
-			if(M.energy_based && (!isnull(M.incoming_hal_damage_percent) || !isnull(M.disable_duration_percent)))
-				M.energy_source.use(M.damage_cost*amount) // Cost of the Damage absorbed.
-				M.energy_source.use(M.energy_cost) // Cost of the Effect absorbed.
-			if(!isnull(M.incoming_damage_percent))
-				amount *= M.incoming_damage_percent
-			if(!isnull(M.incoming_hal_damage_percent))
-				amount *= M.incoming_hal_damage_percent
-			if(!isnull(M.disable_duration_percent))
-				amount *= M.disable_duration_percent
-	else if(amount < 0)
-		for(var/datum/modifier/M in modifiers)
-			if(!isnull(M.incoming_healing_percent))
-				amount *= M.incoming_healing_percent
-	halloss = min(max(halloss + amount, 0),(getMaxHealth()*2))
-	updatehealth()
-
-/mob/living/proc/setHalLoss(amount)
-	if(SEND_SIGNAL(src, COMSIG_TAKING_HALO_DAMAGE, amount) & COMSIG_CANCEL_HALO_DAMAGE)
-		return 0	// Cancelled by a component
-	halloss = amount
-
-// Use this to get a mob's max health whenever possible.  Reading maxHealth directly will give inaccurate results if any modifiers exist.
-/mob/living/proc/getMaxHealth()
-	var/result = maxHealth
-	for(var/datum/modifier/M in modifiers)
-		if(!isnull(M.max_health_flat))
-			result += M.max_health_flat
-	// Second loop is so we can get all the flat adjustments first before multiplying, otherwise the result will be different.
-	for(var/datum/modifier/M in modifiers)
-		if(!isnull(M.max_health_percent))
-			result *= M.max_health_percent
-	return result
-
-///Use this proc to get the damage in which the mob will be put into critical condition (hardcrit)
-///Will return a NEGATIVE value. Ex: MaxHealth of 100 returns -50
-/mob/living/proc/get_crit_point()
-	return -(getMaxHealth()*0.5)
-
-/mob/living/carbon/human/get_crit_point()
-	var/crit_point = -(getMaxHealth()*0.5)
-	if(species.crit_mod)
-		crit_point *= species.crit_mod
-	return crit_point
-
-/mob/living/proc/setMaxHealth(newMaxHealth)
-	var/h_mult = maxHealth / newMaxHealth	//Calculate change multiplier
-	if(bruteloss)							//In case a damage value is 0, divide by 0 bad
-		bruteloss = round(bruteloss / h_mult)		//Health is calculated on life based on damage types, so we update the damage and let life handle health
-	if(fireloss)
-		fireloss = round(fireloss / h_mult)
-	if(toxloss)
-		toxloss = round(toxloss / h_mult)
-	if(oxyloss)
-		oxyloss = round(oxyloss / h_mult)
-	if(cloneloss)
-		cloneloss = round(cloneloss / h_mult)
-	maxHealth = newMaxHealth
+/// Scale a stun / weaken / paralysis / sleep / confusion / blindness duration
+/// by BF_DISABLE_DURATION (0 = immune).
+/mob/living/proc/scale_disable_duration(amount)
+	var/scale = factor(BF_DISABLE_DURATION)
+	return scale == 1 ? amount : round(amount * scale)
 
 /mob/living/Stun(amount, ignore_canstun = FALSE)
-	for(var/datum/modifier/M in modifiers)
-		if(!isnull(M.disable_duration_percent))
-			amount = round(amount * M.disable_duration_percent)
+	amount = scale_disable_duration(amount)
 	..(amount)
 	if(stunned > 0)
 		add_status_indicator("stunned")
@@ -491,9 +218,7 @@
 
 /mob/living/AdjustStunned(amount, ignore_canstun = FALSE)
 	if(amount > 0)
-		for(var/datum/modifier/M in modifiers)
-			if(!isnull(M.disable_duration_percent))
-				amount = round(amount * M.disable_duration_percent)
+		amount = scale_disable_duration(amount)
 	..(amount)
 	if(stunned <= 0)
 		remove_status_indicator("stunned")
@@ -501,9 +226,7 @@
 		add_status_indicator("stunned")
 
 /mob/living/Weaken(amount, ignore_canstun = FALSE)
-	for(var/datum/modifier/M in modifiers)
-		if(!isnull(M.disable_duration_percent))
-			amount = round(amount * M.disable_duration_percent)
+	amount = scale_disable_duration(amount)
 	..(amount)
 	if(weakened > 0)
 		add_status_indicator("weakened")
@@ -517,9 +240,7 @@
 
 /mob/living/AdjustWeakened(amount, ignore_canstun = FALSE)
 	if(amount > 0)
-		for(var/datum/modifier/M in modifiers)
-			if(!isnull(M.disable_duration_percent))
-				amount = round(amount * M.disable_duration_percent)
+		amount = scale_disable_duration(amount)
 	..(amount)
 	if(weakened <= 0)
 		remove_status_indicator("weakened")
@@ -527,9 +248,7 @@
 		add_status_indicator("weakened")
 
 /mob/living/Paralyse(amount, ignore_canstun = FALSE)
-	for(var/datum/modifier/M in modifiers)
-		if(!isnull(M.disable_duration_percent))
-			amount = round(amount * M.disable_duration_percent)
+	amount = scale_disable_duration(amount)
 	..(amount)
 	if(paralysis > 0)
 		add_status_indicator("paralysis")
@@ -543,9 +262,7 @@
 
 /mob/living/AdjustParalysis(amount, ignore_canstun = FALSE)
 	if(amount > 0)
-		for(var/datum/modifier/M in modifiers)
-			if(!isnull(M.disable_duration_percent))
-				amount = round(amount * M.disable_duration_percent)
+		amount = scale_disable_duration(amount)
 	..(amount)
 	if(paralysis <= 0)
 		remove_status_indicator("paralysis")
@@ -553,9 +270,7 @@
 		add_status_indicator("paralysis")
 
 /mob/living/Sleeping(amount, ignore_canstun = FALSE)
-	for(var/datum/modifier/M in modifiers)
-		if(!isnull(M.disable_duration_percent))
-			amount = round(amount * M.disable_duration_percent)
+	amount = scale_disable_duration(amount)
 	..(amount)
 	if(sleeping > 0)
 		add_status_indicator("sleeping")
@@ -569,9 +284,7 @@
 
 /mob/living/AdjustSleeping(amount, ignore_canstun = FALSE)
 	if(amount > 0)
-		for(var/datum/modifier/M in modifiers)
-			if(!isnull(M.disable_duration_percent))
-				amount = round(amount * M.disable_duration_percent)
+		amount = scale_disable_duration(amount)
 	..(amount)
 	if(sleeping <= 0)
 		remove_status_indicator("sleeping")
@@ -579,9 +292,7 @@
 		add_status_indicator("sleeping")
 
 /mob/living/Confuse(amount, ignore_canstun = FALSE)
-	for(var/datum/modifier/M in modifiers)
-		if(!isnull(M.disable_duration_percent))
-			amount = round(amount * M.disable_duration_percent)
+	amount = scale_disable_duration(amount)
 	..(amount)
 	if(confused > 0)
 		add_status_indicator("confused")
@@ -595,9 +306,7 @@
 
 /mob/living/AdjustConfused(amount, ignore_canstun = FALSE)
 	if(amount > 0)
-		for(var/datum/modifier/M in modifiers)
-			if(!isnull(M.disable_duration_percent))
-				amount = round(amount * M.disable_duration_percent)
+		amount = scale_disable_duration(amount)
 	..(amount)
 	if(confused <= 0)
 		remove_status_indicator("confused")
@@ -605,9 +314,7 @@
 		add_status_indicator("confused")
 
 /mob/living/Blind(amount, ignore_canstun = FALSE)
-	for(var/datum/modifier/M in modifiers)
-		if(!isnull(M.disable_duration_percent))
-			amount = round(amount * M.disable_duration_percent)
+	amount = scale_disable_duration(amount)
 	..(amount)
 	if(eye_blind > 0)
 		add_status_indicator("blinded")
@@ -621,9 +328,7 @@
 
 /mob/living/AdjustBlinded(amount, ignore_canstun = FALSE)
 	if(amount > 0)
-		for(var/datum/modifier/M in modifiers)
-			if(!isnull(M.disable_duration_percent))
-				amount = round(amount * M.disable_duration_percent)
+		amount = scale_disable_duration(amount)
 	..(amount)
 	if(eye_blind <= 0)
 		remove_status_indicator("blinded")
@@ -690,6 +395,7 @@
 /// Revives a body using the client's preferences if human
 /mob/living/proc/revive()
 	revival_healing_action()
+	SEND_SIGNAL(src, COMSIG_LIVING_REVIVE)
 
 /// Performs the actual healing of Aheal, seperate from revive() because it does not use client prefs. Will not heal everything, and expects to be called through revive() or with a bodyrecord doing a respawn/revive.
 /mob/living/proc/revival_healing_action()
@@ -720,10 +426,7 @@
 		reagents.clear_reagents()
 
 	// shut down various types of badness
-	setToxLoss(0)
-	setOxyLoss(0)
-	setCloneLoss(0)
-	setBrainLoss(0)
+	fully_heal()
 	SetParalysis(0)
 	SetStunned(0)
 	SetWeakened(0)
@@ -750,7 +453,6 @@
 	eye_blurry = 0
 	ear_deaf = 0
 	ear_damage = 0
-	heal_overall_damage(getBruteLoss(), getFireLoss())
 
 	// fix all of our organs
 	restore_all_organs()
@@ -790,7 +492,7 @@
 /mob/living/proc/do_examine_ooc(mob/user)
 	//Makes it so SSD people have prefs with fallback to original style.
 	if(CONFIG_GET(flag/allow_metadata))
-		if(ooc_notes)
+		if(identity.ooc_notes)
 			ooc_notes_window(user)
 //			to_chat(user, span_filter_notice("[src]'s Metainfo:<br>[ooc_notes]"))
 		else if(client)
@@ -885,6 +587,10 @@
 /mob/living/proc/has_brain()
 	return 1
 
+/// Is this mob brain dead (needs a resleeve)? See /mob/living/carbon/human/is_brain_dead().
+/mob/living/proc/is_brain_dead()
+	return FALSE
+
 /mob/living/proc/has_eyes()
 	return 1
 
@@ -963,8 +669,9 @@
 
 	if(ishuman(src))
 		var/mob/living/carbon/human/H = src
-		if(CE_ANTACID in H.chem_effects)
-			if(prob(min(90, H.chem_effects[CE_ANTACID] * 15)))
+		var/antiemetic = H.factor(BF_ANTIEMETIC)
+		if(antiemetic)
+			if(prob(min(90, antiemetic * 15)))
 				VARSET_IN(src, lastpuke, FALSE, rand(30 SECONDS, 2 MINUTES))
 			return FALSE
 
@@ -1018,6 +725,10 @@
 	if(stun)
 		Stun(stun)
 
+	// Vomiting while unconscious: the patient aspirates it.
+	if(ishuman(src) && stat != CONSCIOUS && !isSynthetic())
+		body?.afflict(/datum/affliction/airway_obstruction)
+
 	playsound(get_turf(src), 'sound/effects/splat.ogg', 50, 1)
 	var/turf/T = get_turf(src)
 	var/vomit_type = NONE
@@ -1027,12 +738,12 @@
 		vomit_type = VOMIT_NANITE
 	else if(ishuman(src) && H.ingested.has_reagent(REAGENT_ID_PHORON) && !isSynthetic())
 		vomit_type = VOMIT_PURPLE
-	else if(toxloss && !isSynthetic())
+	else if(injury_load(INJURY_CATEGORY_TOXIC) && !isSynthetic())
 		vomit_type = VOMIT_TOXIC
 
 	if(!blood)
 		adjust_nutrition(-lost_nutrition)
-		adjustToxLoss(-3)
+		mend(TREAT_ANTITOXIN, 3) // Purging the stomach clears some of the poison.
 
 	if(distance)
 		for(var/i=0 to distance)
@@ -1040,7 +751,7 @@
 				if(T)
 					blood_splatter(T, src, large = TRUE)
 				if(stun)
-					adjustBruteLoss(2)
+					injure(INJURY_BLUNT, 2, BP_TORSO) // Retching blood tears at the gut.
 			else if(T)
 				T.add_vomit_floor(src, vomit_type, purge)
 			T = get_step(T, dir)
@@ -1174,16 +885,10 @@
 	return TRUE
 
 /mob/living/get_icon_scale_x()
-	. = ..()
-	for(var/datum/modifier/M in modifiers)
-		if(!isnull(M.icon_scale_x_percent))
-			. *= M.icon_scale_x_percent
+	return ..() * factor(BF_ICON_SCALE_X)
 
 /mob/living/get_icon_scale_y()
-	. = ..()
-	for(var/datum/modifier/M in modifiers)
-		if(!isnull(M.icon_scale_y_percent))
-			. *= M.icon_scale_y_percent
+	return ..() * factor(BF_ICON_SCALE_Y)
 
 /mob/living/update_transform(instant = FALSE)
 	// First, get the correct size.
@@ -1297,8 +1002,8 @@
 				add_attack_logs(src,M,"Thrown via grab to [end_T.x],[end_T.y],[end_T.z]")
 			if(ishuman(M))
 				var/mob/living/carbon/human/N = M
-				if((N.health + N.halloss) < N.get_crit_point() || N.stat == DEAD)
-					N.adjustBruteLoss(rand(10,30))
+				if(N.is_critical() || N.stat == DEAD)
+					N.injure(INJURY_BLUNT, rand(10,30), null, src)
 			src.drop_from_inventory(G)
 
 			src.visible_message(span_warning("[src] has thrown [item]."))
@@ -1408,12 +1113,12 @@
 	. += {"
 		<br>"} + span_small("[VV_HREF_TARGETREF(refid, VV_HK_GIVE_DIRECT_CONTROL, "[ckey || "no ckey"]")] / [VV_HREF_TARGETREF_1V(refid, VV_HK_BASIC_EDIT, "[real_name || "no real name"]", NAMEOF(src, real_name))]") + {"
 		<br>"} + span_small({"
-			BRUTE:"} + span_small("<a href='byond://?_src_=vars;[HrefToken()];mobToDamage=[refid];adjustDamage=brute' id='brute'>[getBruteLoss()]</a>") + {"
-			FIRE:"} + span_small("<a href='byond://?_src_=vars;[HrefToken()];mobToDamage=[refid];adjustDamage=fire' id='fire'>[getFireLoss()]</a>") + {"
-			TOXIN:"} + span_small("<a href='byond://?_src_=vars;[HrefToken()];mobToDamage=[refid];adjustDamage=toxin' id='toxin'>[getToxLoss()]</a>") + {"
-			OXY:"} + span_small("<a href='byond://?_src_=vars;[HrefToken()];mobToDamage=[refid];adjustDamage=oxygen' id='oxygen'>[getOxyLoss()]</a>") + {"
-			BRAIN:"} + span_small("<a href='byond://?_src_=vars;[HrefToken()];mobToDamage=[refid];adjustDamage=brain' id='brain'>[getBrainLoss()]</a>") + {"
-			CLONE:"} + span_small("<a href='byond://?_src_=vars;[HrefToken()];mobToDamage=[refid];adjustDamage=clone' id='clone'>[getCloneLoss()]</a>") + {"
+			PHYSICAL:"} + span_small("<a href='byond://?_src_=vars;[HrefToken()];mobToDamage=[refid];adjustDamage=brute' id='brute'>[round(injury_load(INJURY_CATEGORY_PHYSICAL), 0.1)]</a>") + {"
+			THERMAL:"} + span_small("<a href='byond://?_src_=vars;[HrefToken()];mobToDamage=[refid];adjustDamage=fire' id='fire'>[round(injury_load(INJURY_CATEGORY_THERMAL), 0.1)]</a>") + {"
+			TOXIC:"} + span_small("<a href='byond://?_src_=vars;[HrefToken()];mobToDamage=[refid];adjustDamage=toxin' id='toxin'>[round(injury_load(INJURY_CATEGORY_TOXIC), 0.1)]</a>") + {"
+			ASPHYXIA:"} + span_small("<a href='byond://?_src_=vars;[HrefToken()];mobToDamage=[refid];adjustDamage=oxygen' id='oxygen'>[round(injury_load(INJURY_CATEGORY_ASPHYXIA), 0.1)]</a>") + {"
+			NEURAL:"} + span_small("<a href='byond://?_src_=vars;[HrefToken()];mobToDamage=[refid];adjustDamage=brain' id='brain'>[round(injury_load(INJURY_CATEGORY_NEURAL), 0.1)]</a>") + {"
+			GENETIC:"} + span_small("<a href='byond://?_src_=vars;[HrefToken()];mobToDamage=[refid];adjustDamage=clone' id='clone'>[round(injury_load(INJURY_CATEGORY_GENETIC), 0.1)]</a>") + {"
 		"})
 
 /mob/living/update_gravity(has_gravity)
@@ -1512,11 +1217,11 @@
 /mob/living/proc/set_metainfo_favs(mob/user, reopen = TRUE)
 	if(user != src)
 		return
-	var/new_metadata = strip_html_simple(tgui_input_text(user, "Enter any information you'd like others to see relating to your FAVOURITE roleplay preferences. This will not be saved permanently unless you click save in the OOC notes panel! Type \"!clear\" to empty.", "Game Preference" , html_decode(ooc_notes_favs), multiline = TRUE,  prevent_enter = TRUE))
+	var/new_metadata = strip_html_simple(tgui_input_text(user, "Enter any information you'd like others to see relating to your FAVOURITE roleplay preferences. This will not be saved permanently unless you click save in the OOC notes panel! Type \"!clear\" to empty.", "Game Preference" , html_decode(identity.ooc_notes_favs), multiline = TRUE,  prevent_enter = TRUE))
 	if(new_metadata && CanUseTopic(user))
 		if(new_metadata == "!clear")
 			new_metadata = ""
-		ooc_notes_favs = new_metadata
+		identity.ooc_notes_favs = new_metadata
 		client.prefs.update_preference_by_type(/datum/preference/text/living/ooc_notes_favs, new_metadata)
 		to_chat(user, span_filter_notice("OOC note favs have been updated. Don't forget to save!"))
 		log_admin("[key_name(user)] updated their OOC note favs mid-round.")
@@ -1526,11 +1231,11 @@
 /mob/living/proc/set_metainfo_maybes(mob/user, reopen = TRUE)
 	if(user != src)
 		return
-	var/new_metadata = strip_html_simple(tgui_input_text(user, "Enter any information you'd like others to see relating to your MAYBE roleplay preferences. This will not be saved permanently unless you click save in the OOC notes panel! Type \"!clear\" to empty.", "Game Preference" , html_decode(ooc_notes_maybes), multiline = TRUE,  prevent_enter = TRUE))
+	var/new_metadata = strip_html_simple(tgui_input_text(user, "Enter any information you'd like others to see relating to your MAYBE roleplay preferences. This will not be saved permanently unless you click save in the OOC notes panel! Type \"!clear\" to empty.", "Game Preference" , html_decode(identity.ooc_notes_maybes), multiline = TRUE,  prevent_enter = TRUE))
 	if(new_metadata && CanUseTopic(user))
 		if(new_metadata == "!clear")
 			new_metadata = ""
-		ooc_notes_maybes = new_metadata
+		identity.ooc_notes_maybes = new_metadata
 		client.prefs.update_preference_by_type(/datum/preference/text/living/ooc_notes_maybes, new_metadata)
 		to_chat(user, span_filter_notice("OOC note maybes have been updated. Don't forget to save!"))
 		log_admin("[key_name(user)] updated their OOC note maybes mid-round.")
@@ -1540,8 +1245,8 @@
 /mob/living/proc/set_metainfo_ooc_style(mob/user, reopen = TRUE)
 	if(user != src)
 		return
-	ooc_notes_style = !ooc_notes_style
-	client.prefs.update_preference_by_type(/datum/preference/toggle/living/ooc_notes_style, ooc_notes_style)
+	identity.ooc_notes_style = !identity.ooc_notes_style
+	client.prefs.update_preference_by_type(/datum/preference/toggle/living/ooc_notes_style, identity.ooc_notes_style)
 	if(reopen)
 		ooc_notes_window(user)
 
@@ -1635,9 +1340,9 @@ Maybe later, gotta figure out a way to click yourself when in a locker etc.
 
 	if(usr != src)
 		return
-	var/new_metadata = strip_html_simple(tgui_input_text(src, "Enter any information you'd like others to see, such as Roleplay-preferences. This will not be saved permanently unless you click save in the OOC notes panel!", "Game Preference" , html_decode(ooc_notes), multiline = TRUE,  prevent_enter = TRUE))
+	var/new_metadata = strip_html_simple(tgui_input_text(src, "Enter any information you'd like others to see, such as Roleplay-preferences. This will not be saved permanently unless you click save in the OOC notes panel!", "Game Preference" , html_decode(identity.ooc_notes), multiline = TRUE,  prevent_enter = TRUE))
 	if(new_metadata && CanUseTopic(src))
-		ooc_notes = new_metadata
+		identity.ooc_notes = new_metadata
 		client.prefs.update_preference_by_type(/datum/preference/text/living/ooc_notes, new_metadata)
 		to_chat(src, span_filter_notice("OOC notes updated. Don't forget to save!"))
 		log_admin("[key_name(src)] updated their OOC notes mid-round.")
@@ -1651,9 +1356,9 @@ Maybe later, gotta figure out a way to click yourself when in a locker etc.
 /mob/living/proc/set_metainfo_panel(mob/user)
 	if(user != src)
 		return
-	var/new_metadata = strip_html_simple(tgui_input_text(src, "Enter any information you'd like others to see, such as Roleplay-preferences. This will not be saved permanently unless you click save in the OOC notes panel!", "Game Preference" , html_decode(ooc_notes), multiline = TRUE,  prevent_enter = TRUE))
+	var/new_metadata = strip_html_simple(tgui_input_text(src, "Enter any information you'd like others to see, such as Roleplay-preferences. This will not be saved permanently unless you click save in the OOC notes panel!", "Game Preference" , html_decode(identity.ooc_notes), multiline = TRUE,  prevent_enter = TRUE))
 	if(new_metadata && CanUseTopic(src))
-		ooc_notes = new_metadata
+		identity.ooc_notes = new_metadata
 		client.prefs.update_preference_by_type(/datum/preference/text/living/ooc_notes, new_metadata)
 		to_chat(src, span_filter_notice("OOC notes updated. Don't forget to save!"))
 		log_admin("[key_name(src)] updated their OOC notes mid-round.")
@@ -1662,11 +1367,11 @@ Maybe later, gotta figure out a way to click yourself when in a locker etc.
 /mob/living/proc/set_metainfo_likes(mob/user, reopen = TRUE)
 	if(user != src)
 		return
-	var/new_metadata = strip_html_simple(tgui_input_text(src, "Enter any information you'd like others to see relating to your LIKED roleplay preferences. This will not be saved permanently unless you click save in the OOC notes panel! Type \"!clear\" to empty.", "Game Preference" , html_decode(ooc_notes_likes), multiline = TRUE,  prevent_enter = TRUE))
+	var/new_metadata = strip_html_simple(tgui_input_text(src, "Enter any information you'd like others to see relating to your LIKED roleplay preferences. This will not be saved permanently unless you click save in the OOC notes panel! Type \"!clear\" to empty.", "Game Preference" , html_decode(identity.ooc_notes_likes), multiline = TRUE,  prevent_enter = TRUE))
 	if(new_metadata && CanUseTopic(src))
 		if(new_metadata == "!clear")
 			new_metadata = ""
-		ooc_notes_likes = new_metadata
+		identity.ooc_notes_likes = new_metadata
 		client.prefs.update_preference_by_type(/datum/preference/text/living/ooc_notes_likes, new_metadata)
 		to_chat(src, span_filter_notice("OOC note likes have been updated. Don't forget to save!"))
 		log_admin("[key_name(src)] updated their OOC note likes mid-round.")
@@ -1676,11 +1381,11 @@ Maybe later, gotta figure out a way to click yourself when in a locker etc.
 /mob/living/proc/set_metainfo_dislikes(mob/user, reopen = TRUE)
 	if(user != src)
 		return
-	var/new_metadata = strip_html_simple(tgui_input_text(src, "Enter any information you'd like others to see relating to your DISLIKED roleplay preferences. This will not be saved permanently unless you click save in the OOC notes panel! Type \"!clear\" to empty.", "Game Preference" , html_decode(ooc_notes_dislikes), multiline = TRUE,  prevent_enter = TRUE))
+	var/new_metadata = strip_html_simple(tgui_input_text(src, "Enter any information you'd like others to see relating to your DISLIKED roleplay preferences. This will not be saved permanently unless you click save in the OOC notes panel! Type \"!clear\" to empty.", "Game Preference" , html_decode(identity.ooc_notes_dislikes), multiline = TRUE,  prevent_enter = TRUE))
 	if(new_metadata && CanUseTopic(src))
 		if(new_metadata == "!clear")
 			new_metadata = ""
-		ooc_notes_dislikes = new_metadata
+		identity.ooc_notes_dislikes = new_metadata
 		client.prefs.update_preference_by_type(/datum/preference/text/living/ooc_notes_dislikes, new_metadata)
 		to_chat(src, span_filter_notice("OOC note dislikes have been updated. Don't forget to save!"))
 		log_admin("[key_name(src)] updated their OOC note dislikes mid-round.")
@@ -1697,51 +1402,51 @@ Maybe later, gotta figure out a way to click yourself when in a locker etc.
 		to_chat(src, span_filter_notice("Character preferences saved."))
 
 /mob/living/proc/print_ooc_notes_chat(mob/user)
-	if(!ooc_notes)
+	if(!identity.ooc_notes)
 		return
-	var/msg = ooc_notes
-	if(ooc_notes_style && (ooc_notes_favs || ooc_notes_likes || ooc_notes_maybes || ooc_notes_dislikes) && !user.client?.prefs?.read_preference(/datum/preference/toggle/vchat_enable)) // Oldchat hates proper formatting
+	var/msg = identity.ooc_notes
+	if(identity.ooc_notes_style && (identity.ooc_notes_favs || identity.ooc_notes_likes || identity.ooc_notes_maybes || identity.ooc_notes_dislikes) && !user.client?.prefs?.read_preference(/datum/preference/toggle/vchat_enable)) // Oldchat hates proper formatting
 		msg += "<br><br>"
 		msg += "<table><tr>"
-		if(ooc_notes_favs)
+		if(identity.ooc_notes_favs)
 			msg += "<th><b>\t[span_blue("FAVOURITES")]</b></th>"
-		if(ooc_notes_likes)
+		if(identity.ooc_notes_likes)
 			msg += "<th><b>\t[span_green("LIKES")]</b></th>"
-		if(ooc_notes_maybes)
+		if(identity.ooc_notes_maybes)
 			msg += "<th><b>\t[span_yellow("MAYBES")]</b></th>"
-		if(ooc_notes_dislikes)
+		if(identity.ooc_notes_dislikes)
 			msg += "<th><b>\t[span_red("DISLIKES")]</b></th>"
 		msg += "</tr><tr>"
-		if(ooc_notes_favs)
+		if(identity.ooc_notes_favs)
 			msg += "<td>"
-			for(var/line in splittext(ooc_notes_favs, "\n"))
+			for(var/line in splittext(identity.ooc_notes_favs, "\n"))
 				msg += "\t[line]\n"
 			msg += "</td>"
-		if(ooc_notes_likes)
+		if(identity.ooc_notes_likes)
 			msg += "<td>"
-			for(var/line in splittext(ooc_notes_likes, "\n"))
+			for(var/line in splittext(identity.ooc_notes_likes, "\n"))
 				msg += "\t[line]\n"
 			msg += "</td>"
-		if(ooc_notes_maybes)
+		if(identity.ooc_notes_maybes)
 			msg += "<td>"
-			for(var/line in splittext(ooc_notes_maybes, "\n"))
+			for(var/line in splittext(identity.ooc_notes_maybes, "\n"))
 				msg += "\t[line]\n"
 			msg += "</td>"
-		if(ooc_notes_dislikes)
+		if(identity.ooc_notes_dislikes)
 			msg += "<td>"
-			for(var/line in splittext(ooc_notes_dislikes, "\n"))
+			for(var/line in splittext(identity.ooc_notes_dislikes, "\n"))
 				msg += "\t[line]\n"
 			msg += "</td>"
 		msg += "</tr></table>"
 	else
-		if(ooc_notes_favs)
-			msg += "<br><br><b>[span_blue("FAVOURITES")]</b><br>[ooc_notes_favs]"
-		if(ooc_notes_likes)
-			msg += "<br><br><b>[span_green("LIKES")]</b><br>[ooc_notes_likes]"
-		if(ooc_notes_maybes)
-			msg += "<br><br><b>[span_yellow("MAYBES")]</b><br>[ooc_notes_maybes]"
-		if(ooc_notes_dislikes)
-			msg += "<br><br><b>[span_red("DISLIKES")]</b><br>[ooc_notes_dislikes]"
+		if(identity.ooc_notes_favs)
+			msg += "<br><br><b>[span_blue("FAVOURITES")]</b><br>[identity.ooc_notes_favs]"
+		if(identity.ooc_notes_likes)
+			msg += "<br><br><b>[span_green("LIKES")]</b><br>[identity.ooc_notes_likes]"
+		if(identity.ooc_notes_maybes)
+			msg += "<br><br><b>[span_yellow("MAYBES")]</b><br>[identity.ooc_notes_maybes]"
+		if(identity.ooc_notes_dislikes)
+			msg += "<br><br><b>[span_red("DISLIKES")]</b><br>[identity.ooc_notes_dislikes]"
 	to_chat(user, span_chatexport("<b>[src]'s Metainfo:</b><br>[msg]"))
 /mob/living/verb/set_custom_link()
 	set name = "Set Custom Link"

@@ -32,8 +32,7 @@
 	heat_resist = -0.50
 	cold_resist = 0.75
 
-	maxHealth = 65
-	health = 65
+	endurance = 65
 	minbodytemp = 175
 	pass_flags = PASSTABLE
 

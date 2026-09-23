@@ -74,7 +74,7 @@
 	//see if we've identified anyone nearby
 	if(world.time - last_bloodcall > bloodcall_interval && nearby_mobs.len)
 		var/mob/living/carbon/human/M = pop(nearby_mobs)
-		if((M in view(7,src)) && M.health > 20)
+		if((M in view(7,src)) && M.vitality() > 0.6)
 			if(prob(50))
 				bloodcall(M)
 				nearby_mobs.Add(M)
@@ -142,7 +142,7 @@
 		nearby_mobs.Add(M)
 
 		var/target = pick(M.organs_by_name)
-		M.apply_damage(rand(5, 10), BRUTE, target)
+		M.injure(INJURY_CUT, rand(5, 10), target, src)
 		to_chat(M, span_red("The skin on your [parse_zone(target)] feels like it's ripping apart, and a stream of blood flies out."))
 		var/obj/effect/decal/cleanable/blood/splatter/animated/B = new(M.loc)
 		//legacy .target reference removed (no equivalent on /datum/ai_brain).

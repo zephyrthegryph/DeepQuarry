@@ -19,8 +19,7 @@
 	icon = 'icons/mob/vore.dmi'
 
 	faction = FACTION_SEAGULL
-	maxHealth = 25
-	health = 25
+	endurance = 25
 
 	response_help = "pats"
 	response_disarm = "gently pushes aside"

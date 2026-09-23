@@ -10,8 +10,7 @@
 	icon = 'icons/mob/vore.dmi'
 
 	faction = FACTION_REDPANDA
-	maxHealth = 30
-	health = 30
+	endurance = 30
 
 	meat_amount = 2
 	meat_type = /obj/item/reagent_containers/food/snacks/meat
@@ -52,8 +51,7 @@
 	vore_digest_chance = 0			// instead of digesting if you struggle...
 	vore_absorb_chance = 20			// you get to become adorable purple wahpudge.
 	vore_bump_chance = 75
-	maxHealth = 100
-	health = 100
+	endurance = 100
 	melee_damage_lower = 10
 	melee_damage_upper = 20
 
@@ -71,8 +69,7 @@
 	vore_digest_chance = 0			// instead of digesting if you struggle...
 	vore_absorb_chance = 20			// you get to become adorable purple wahpudge.
 	vore_bump_chance = 75
-	maxHealth = 100
-	health = 100
+	endurance = 100
 	melee_damage_lower = 10
 	melee_damage_upper = 20
 

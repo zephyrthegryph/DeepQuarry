@@ -102,7 +102,7 @@ GLOBAL_LIST_EMPTY(channel_to_radio_key)
 			S.message = censor_swears(S.message) // Googlybonkers
 			. = 1
 
-		if((HULK in mutations) && health >= 25 && length(S.message))
+		if((HULK in mutations) && vitality() >= 0.25 && length(S.message))
 			S.message = "[uppertext(S.message)]!!!"
 			verb = pick("yells","roars","hollers")
 			whispering = 0
@@ -218,6 +218,11 @@ GLOBAL_LIST_EMPTY(channel_to_radio_key)
 	// However, sign language is handled above.
 	if(is_muzzled())
 		to_chat(src, span_danger("You're muzzled and cannot speak!"))
+		return
+
+	// A closed airway or failing lungs leave no breath to speak with.
+	if(action_blocked(ACTION_BLOCK_SPEECH))
+		to_chat(src, span_danger("You can't get enough breath to speak!"))
 		return
 
 	//Whisper vars

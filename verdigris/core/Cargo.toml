@@ -1,0 +1,8 @@
+[package]
+name = "vg-core"
+version = "0.1.0"
+edition = "2024"
+rust-version = "1.85"
+description = "Domain-agnostic simulation primitives for verdigris. Host-buildable: no byondapi, no global statics."
+
+[dependencies]

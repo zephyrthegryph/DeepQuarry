@@ -19,13 +19,6 @@
 		name = "[initial(name)] ([user.real_name])"
 		desc = "[initial(desc)] This one is assigned to [user.real_name]."
 		named = 1
-		/* //Another way of naming the device. Gives more freedom, but could lead to issues.
-		device_name = tgui_input_text(user, "What would you like to name your device? You must input a name before the device can be used.", "Name your device", "", MAX_NAME_LEN)
-		if(!device_name)
-			return
-		name = "[initial(name)] - [device_name]"
-		named = 1
-		*/
 
 	user.client?.start_thinking()
 	user.client?.start_typing()

@@ -16,7 +16,6 @@
 		EM.enabled = 0
 		available_events += EM
 
-
 /datum/event_container/mundane/New()
 	available_events = list(
 		// Severity level, event name, even type, base weight, role weights, one shot, min weight, max weight. Last two only used if set and non-zero
@@ -49,7 +48,6 @@
 		new /datum/event_meta(EVENT_LEVEL_MUNDANE, "PDA Spam",				/datum/event/pda_spam, 						0, 		list(DEPARTMENT_ANY = 4), TRUE, 25, 50),
 // new /datum/event_meta(EVENT_LEVEL_MUNDANE, "Lost Spiders", /datum/event/spider_migration, 0, list(DEPARTMENT_SECURITY = 10), 1), // // Moved to disabled and commented. This just spawns spiders on carp spawns.
 	))
-
 
 /datum/event_container/moderate/New()
 	available_events = list(
@@ -113,7 +111,6 @@
 // new /datum/event_meta(EVENT_LEVEL_MODERATE, "Lost Spiders", /datum/event/spider_migration, 0, list(DEPARTMENT_SECURITY = 30), 1), // // Moved to disabled. This is a YW feature that spawns spiders on carp spawns.
 	))
 
-
 /datum/event_container/major/New()
 	available_events = list(
 		new /datum/event_meta(EVENT_LEVEL_MAJOR, "Nothing",						/datum/event/nothing,					900),
@@ -141,8 +138,4 @@
 		new /datum/event_meta(EVENT_LEVEL_MAJOR, "Metroid Infestation",			/datum/event/metroid_infestation,		-100,	list(DEPARTMENT_SECURITY = 30, DEPARTMENT_RESEARCH = 20, JOB_HEAD_OF_SECURITY = 15, JOB_WARDEN = 15, DEPARTMENT_ANY = 2), TRUE, min_jobs = list(DEPARTMENT_SECURITY = 2, DEPARTMENT_RESEARCH = 1)),
 		// new /datum/event_meta(EVENT_LEVEL_MAJOR, "Viral Infection",				/datum/event/viral_infection,			-50,	list(DEPARTMENT_MEDICAL = 25), 	1, min_jobs = list(DEPARTMENT_MEDICAL = 2)),
 
-		//Needs Xenobio containment breach fixed
-		//new /datum/event_meta(EVENT_LEVEL_MAJOR, "Xenobiology Breach",		/datum/event/prison_break/xenobiology,	-10,	list(DEPARTMENT_RESEARCH = 30, DEPARTMENT_ENGINEERING = 20), 1),
-		//new /datum/event_meta(EVENT_LEVEL_MAJOR, "Meteor Strike",				/datum/event/meteor_strike,		10,		list(DEPARTMENT_ENGINEERING = 15), 1),
-		// /datum/event/supply_demand deleted with supply_demand_vr.dm.
 	))

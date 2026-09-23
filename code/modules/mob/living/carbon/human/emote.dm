@@ -474,7 +474,6 @@ GLOBAL_LIST_INIT(simple_mob_default_emotes, list(
 	return 1
 
 
-// === merged from emote_vr.dm during hard-fork de-suffix (chain-verified: prior definer is this file, nothing between) ===
 /mob/living/carbon/human/verb/toggle_resizing_immunity()
 	set name = "Toggle Resizing Immunity"
 	set desc = "Toggles your ability to resist resizing attempts"
@@ -513,7 +512,7 @@ GLOBAL_LIST_INIT(simple_mob_default_emotes, list(
 			visible_message(span_warning("\The [src] falls down the stairs!"), span_warning("You fall down the stairs!"))
 			Confuse(10) //Thud
 			AdjustWeakened(12)
-			adjustBruteLoss(8)
+			injure(INJURY_BLUNT, 8, null, S)
 			if(prob(80))
 				if(prob(50))
 					var/obj/item/organ/external/left_leg = get_organ(BP_L_LEG)
@@ -578,7 +577,6 @@ GLOBAL_LIST_INIT(simple_mob_default_emotes, list(
 	visible_message(span_filter_notice("[src] [message]"))
 
 
-// === merged from emote_chomp.dm during hard-fork de-suffix (chain-verified: prior definer is this file, nothing between) ===
 /mob/living/carbon/human/verb/hide_nutrition()
 	set name = "Show/Hide Nutrition Levels"
 	set category = "IC.Settings"

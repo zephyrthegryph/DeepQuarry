@@ -99,14 +99,14 @@
 			if (G.state < 2)
 				if(user.a_intent == I_HURT)
 					if (prob(15))	M.Weaken(5)
-					M.apply_damage(8,def_zone = BP_HEAD)
+					M.injure(INJURY_BLUNT, 8, BP_HEAD, src)
 					visible_message(span_danger("[G.assailant] slams [G.affecting]'s face against \the [src]!"))
 					if(material)
 						playsound(src, material.tableslam_noise, 50, 1)
 					else
 						playsound(src, 'sound/weapons/tablehit1.ogg', 50, 1)
 					last_break_shards = null
-					take_damage(rand(1,5))
+					take_damage(rand(1,5), BRUTE, MELEE)
 					var/list/L = last_break_shards
 					last_break_shards = null
 					// Shards. Extra damage, plus potentially the fact YOU LITERALLY HAVE A PIECE OF GLASS/METAL/WHATEVER IN YOUR FACE
@@ -114,7 +114,7 @@
 						if(prob(50))
 							M.visible_message(span_danger("\The [S] slices [M]'s face messily!"),
 												span_danger("\The [S] slices your face messily!"))
-							M.apply_damage(10, def_zone = BP_HEAD)
+							M.injure(INJURY_BLUNT, 10, BP_HEAD, src)
 							if(prob(2))
 								M.embed(S, def_zone = BP_HEAD)
 				else

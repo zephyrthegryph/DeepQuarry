@@ -9,8 +9,7 @@ GLOBAL_LIST_EMPTY(grub_machine_overlays)
 	icon_living = "grublarva"
 	icon_dead = "grublarva-dead"
 
-	health = 5
-	maxHealth = 5
+	endurance = 5
 	movement_cooldown = 0
 
 	melee_damage_lower = 1	// This is a tiny worm. It will nibble and thats about it.
@@ -87,7 +86,7 @@ GLOBAL_LIST_EMPTY(grub_machine_overlays)
 		return
 
 	if(istype(loc, /obj/machinery))
-		if(machine_effect && !(SSair.times_fired % 30)) // LINDA renamed current_cycle → times_fired
+		if(machine_effect && SSair.times_fired%30) // LINDA renamed current_cycle → times_fired
 			for(var/mob/M in GLOB.player_list)
 				M << machine_effect
 		if(prob(10))

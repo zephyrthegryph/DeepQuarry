@@ -14,14 +14,8 @@ GLOBAL_DATUM(sleevemate_mob, /mob/living/carbon/human/dummy/mannequin)
 	throw_range = 10
 	matter = list(MAT_STEEL = 200)
 
+	/// The stored mind. Its identity (OOC notes and all) is carried with it.
 	var/datum/mind/stored_mind
-
-	var/ooc_notes = null //For holding prefs
-	var/ooc_notes_favs = null
-	var/ooc_notes_likes = null
-	var/ooc_notes_maybes = null
-	var/ooc_notes_dislikes = null
-	var/ooc_notes_style = FALSE
 	var/soulcatcher_pref_flags = NONE
 
 	// Resleeving database this machine interacts with. Blank for default database
@@ -38,23 +32,13 @@ GLOBAL_DATUM(sleevemate_mob, /mob/living/carbon/human/dummy/mannequin)
 //These don't perform any checks and need to be wrapped by checks
 /obj/item/sleevemate/proc/clear_mind()
 	stored_mind = null
-	ooc_notes = null
-	ooc_notes_likes = null
-	ooc_notes_dislikes = null
-	ooc_notes_favs = null
-	ooc_notes_maybes = null
-	ooc_notes_style = FALSE
 	update_icon()
 
 /obj/item/sleevemate/proc/get_mind(mob/living/M)
 	ASSERT(M.mind)
-	ooc_notes = M.ooc_notes
-	ooc_notes_likes = M.ooc_notes_likes
-	ooc_notes_dislikes = M.ooc_notes_dislikes
-	ooc_notes_favs = M.ooc_notes_favs
-	ooc_notes_maybes = M.ooc_notes_maybes
-	ooc_notes_style = M.ooc_notes_style
 	stored_mind = M.mind
+	stored_mind.get_identity() // make sure the identity rides the stored mind
+	log_game("MIND: [stored_mind.key] ([stored_mind.name]) stored in [src] from [M]")
 	soulcatcher_pref_flags = M.soulcatcher_pref_flags
 	M.ghostize()
 	stored_mind.current = null
@@ -62,13 +46,7 @@ GLOBAL_DATUM(sleevemate_mob, /mob/living/carbon/human/dummy/mannequin)
 
 /obj/item/sleevemate/proc/put_mind(mob/living/M)
 	stored_mind.active = TRUE
-	stored_mind.transfer_to(M)
-	M.ooc_notes = ooc_notes
-	M.ooc_notes_likes = ooc_notes_likes
-	M.ooc_notes_dislikes = ooc_notes_dislikes
-	M.ooc_notes_favs = ooc_notes_favs
-	M.ooc_notes_maybes = ooc_notes_maybes
-	M.ooc_notes_style = ooc_notes_style
+	transfer_mind(stored_mind, M, "sleevemate upload")
 	M.soulcatcher_pref_flags = soulcatcher_pref_flags
 	SEND_GLOBAL_SIGNAL(COMSIG_GLOB_RESLEEVED_MIND, M, stored_mind)
 	clear_mind()

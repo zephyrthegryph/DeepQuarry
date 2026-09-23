@@ -36,6 +36,7 @@
 			return
 		. += span_notice("Vitals of [victim]:")
 		. += span_notice("Pulse: [victim.get_pulse(GETPULSE_TOOL)]")
+		. += span_notice("Rhythm: [victim.cardiac_rhythm_reading()]")
 
 		var/brain_activity = "none"
 		var/breathing = "none"
@@ -43,7 +44,7 @@
 		if(victim.stat != DEAD && !(victim.status_flags & FAKEDEATH))
 			var/obj/item/organ/internal/brain/brain = victim.internal_organs_by_name[O_BRAIN]
 			if(istype(brain))
-				if(victim.getBrainLoss() || is_changeling(victim) || HAS_TRAIT(victim, UNIQUE_MINDSTRUCTURE))
+				if(victim.injury_load(INJURY_CATEGORY_NEURAL) || is_changeling(victim) || HAS_TRAIT(victim, UNIQUE_MINDSTRUCTURE))
 					brain_activity = "anomalous"
 				else if(victim.stat == UNCONSCIOUS)
 					brain_activity = "weak"
@@ -52,10 +53,12 @@
 
 			var/obj/item/organ/internal/lungs/lungs = victim.internal_organs_by_name[O_LUNGS]
 			if(istype(lungs))
-				var/oxyloss = victim.getOxyLoss()
-				if(oxyloss > 50)
+				var/hypoxia = victim.injury_load(INJURY_CATEGORY_ASPHYXIA)
+				if(victim.breath_blocked())
+					breathing = "none"
+				else if(hypoxia > 50)
 					breathing = "erratic"
-				else if(oxyloss > 10)
+				else if(hypoxia > 10)
 					breathing = "shallow"
 				else
 					breathing = "normal"
@@ -111,7 +114,7 @@
 
 	var/obj/item/organ/internal/brain/brain = victim.internal_organs_by_name[O_BRAIN]
 	if(istype(brain) && victim.stat != DEAD && !(victim.status_flags & FAKEDEATH))
-		if(victim.getBrainLoss())
+		if(victim.injury_load(INJURY_CATEGORY_NEURAL))
 			add_overlay("brain_verybad")
 			add_overlay("brain_warning")
 		else if(victim.stat == UNCONSCIOUS)
@@ -123,11 +126,11 @@
 
 	var/obj/item/organ/internal/lungs/lungs = victim.internal_organs_by_name[O_LUNGS]
 	if(istype(lungs) && victim.stat != DEAD && !(victim.status_flags & FAKEDEATH))
-		var/oxyloss = victim.getOxyLoss()
-		if(oxyloss > 50)
+		var/hypoxia = victim.injury_load(INJURY_CATEGORY_ASPHYXIA)
+		if(hypoxia > 50)
 			add_overlay("breathing_shallow")
 			add_overlay("breathing_warning")
-		else if(oxyloss > 10)
+		else if(hypoxia > 10)
 			add_overlay("breathing_shallow")
 		else
 			add_overlay("breathing_normal")

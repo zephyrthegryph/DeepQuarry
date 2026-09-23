@@ -311,7 +311,6 @@
 		return 0
 
 
-// === merged from projectile_ch.dm during hard-fork de-suffix (manually verified: all-new types/defines, no base re-open) ===
 #define BOLT_NOEVENT 0
 #define BOLT_CLOSED 1
 #define BOLT_OPENED 2

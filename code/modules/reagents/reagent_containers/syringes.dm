@@ -313,12 +313,11 @@
 
 		balloon_alert_visible("stabs [target] in \the [hit_area] with [src.name]!")
 
-		if(affecting.take_damage(3))
-			H.UpdateDamageIcon()
+		H.injure(INJURY_PIERCE, 3, target_zone, source = src)
 
 	else
 		balloon_alert_visible("stabs [user] in \the [target] with [src.name]!")
-		target.take_organ_damage(3)// 7 is the same as crowbar punch
+		target.injure(INJURY_PIERCE, 3, source = src)// 7 is the same as crowbar punch
 
 
 

@@ -3,7 +3,6 @@
 *	related to security tasks live
 */
 
-
 /datum/supply_pack/security
 	group = "Security"
 	access = ACCESS_SECURITY
@@ -307,16 +306,6 @@
 	containertype = /obj/structure/closet/crate/secure/lawson
 	containername = "Riot armor crate"
 	access = ACCESS_ARMORY
-/*
-/datum/supply_pack/security/riot_sprayer
-	name = "Gear - Riot sprayer"
-	contains = list(
-			/obj/item/watertank/pepperspray
-			)
-	cost = 40
-	containertype = /obj/structure/closet/crate/secure/lawson
-	containername = "Riot sprayer crate"
-	access = ACCESS_ARMORY*/
 
 /datum/supply_pack/security/ablative_armor
 	name = "Armor - Ablative"
@@ -769,8 +758,6 @@
 	containername = "Chemical implants"
 	access = ACCESS_SECURITY
 
-
-// === merged from security_chomp.dm during hard-fork de-suffix (verified no override-order change) ===
 /datum/supply_pack/security/secpsg
 	name = "Security Belt PSGs"
 	contains = list(
@@ -808,3 +795,13 @@
 	cost = 150
 	containertype = /obj/structure/closet/crate/secure/gear
 	containername = "Expirmental Capture crate"
+
+/datum/supply_pack/security/loyaltyimplants
+	name = "Loyalty Implant Lockbox"
+	contains = list(
+			/obj/item/storage/lockbox/loyalty
+			)
+	cost = 100
+	containertype = /obj/structure/closet/crate/secure/gear
+	containername = "Loyalty Implants Lockbox crate"
+	access = ACCESS_HEADS

@@ -57,7 +57,7 @@
 			to_chat(src, span_warning("The wounds on [M]'s [affecting.name] have already been treated."))
 			return
 
-		if(affecting.brute_dam > 20 || affecting.burn_dam > 20)
+		if(affecting.get_trauma() > 20 || affecting.get_burn() > 20)
 			to_chat(src, span_warning("The wounds on [M]'s [affecting.name] are too severe to treat with just licking."))
 			return
 
@@ -65,7 +65,7 @@
 			visible_message(span_infoplain(span_bold("\The [src]") + " starts licking the wounds on [M]'s [affecting.name] clean."), \
 								span_notice("You start licking the wounds on [M]'s [affecting.name] clean.") )
 
-			for (var/datum/wound/W in affecting.wounds)
+			for (var/datum/affliction/wound/W as anything in affecting.get_wounds())
 
 				if(W.bandaged && W.salved && W.disinfected)
 					continue

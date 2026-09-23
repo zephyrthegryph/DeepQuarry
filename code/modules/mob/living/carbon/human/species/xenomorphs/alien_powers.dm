@@ -370,13 +370,13 @@
 
 	if(ishuman(G.affecting))
 		var/mob/living/carbon/human/H = G.affecting
-		H.apply_damage(50,BRUTE)
+		H.injure(INJURY_CUT, 50, null, src)
 		if(H.stat == 2)
 			H.gib()
 
 	else
 		var/mob/living/M = G.affecting
 		if(!istype(M)) return //wut
-		M.apply_damage(50,BRUTE)
+		M.injure(INJURY_CUT, 50, null, src)
 		if(M.stat == 2)
 			M.gib()

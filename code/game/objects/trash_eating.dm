@@ -261,7 +261,6 @@
 	to_chat(user, span_notice("You can taste the submissiveness in the wearer of [src]!"))
 
 
-// === merged from trash_eating_chomp.dm during hard-fork de-suffix (manually verified: all-new types/defines, no base re-open) ===
 /obj/item/starcaster_news/after_trash_eaten(mob/living/user)
 	if(!..(user))
 		return

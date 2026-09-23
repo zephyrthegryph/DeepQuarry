@@ -12,7 +12,6 @@
 // There are a good amount of variants in here, ranging from mining to security to misc ones.
 // If you want to make a variant, you need to only change modifier_type and make the modifier desired.
 
-
 /obj/item/personal_shield_generator
 	name = "personal shield generator"
 	desc = "A personal shield generator."
@@ -29,7 +28,6 @@
 	var/obj/item/gun/energy/gun/generator/active_weapon
 	var/obj/item/cell/device/bcell = null
 	var/upgraded = FALSE 									// If the PSG has been upgraded by some method or not. Only used for the mining belt ATM.
-
 
 	var/generator_hit_cost = 100							// Power used when a special effect (such as a bullet being blocked) is performed! Could also be expanded to other things.
 	var/generator_active_cost = 10							// Power used when turned on.
@@ -91,25 +89,6 @@
 		if(bcell.rigged)
 			. += "A red flashing 'WARNING' is visible on the display, noting that the cell is unstable and requires replacement."
 
-
-/* //This would be cool, but we need sprites.
-	cut_overlays()
-
-	if(has_weapon && active_weapon && active_weapon.loc == src) //in case gun gets destroyed somehow.
-		add_overlay("[initial(icon_state)]-paddles")
-	if(bcell)
-		if(bcell.check_charge(generator_hit_cost)) //Can we take a blow?
-			add_overlay("[initial(icon_state)]-powered")
-		else if(has_weapon && active_weapon)
-			if(bcell.check_charge(active_weapon.charge_cost)) //We got enough to go pew pew?
-				add_overlay("[initial(icon_state)]-powered")
-
-		var/ratio = CEILING(bcell.percent()/25, 1) * 25
-		add_overlay("[initial(icon_state)]-charge[ratio]")
-	else
-		add_overlay("[initial(icon_state)]-nocell")
-*/
-
 /obj/item/personal_shield_generator/emp_act(severity, recursive)
 	. = ..()
 	if (. & EMP_PROTECT_SELF)
@@ -160,7 +139,6 @@
 			return
 		src.add_fingerprint(usr)
 		M.put_in_any_hand_if_possible(src)
-
 
 /obj/item/personal_shield_generator/attackby(obj/item/W, mob/user, params)
 	if(W == active_weapon)
@@ -228,16 +206,7 @@
 // This would kind of be like people being able to emag the NIFSoft for bloodletters & all the buffs that come with an emagged NIFSoft.
 // Making it so emagging the weapon it comes with would also be a good idea. Different modes, perhaps?
 
-/*
-/obj/item/personal_shield_generator/emag_act(remaining_charges, mob/user)
-	if(active_weapon)
-		. = active_weapon.emag_act(user)
-		update_icon()
-	return
-*/
-
 //Gun stuff
-
 
 /obj/item/personal_shield_generator/verb/toggle_shield()
 	set name = "Toggle Shield"
@@ -346,8 +315,6 @@
 		playsound(src, 'sound/weapons/saberoff.ogg', 50, 1) //Shield turning off! PLACEHOLDER
 		return
 
-
-
 //checks that the base unit is in the correct slot to be used
 /obj/item/personal_shield_generator/proc/slot_check()
 	var/mob/M = loc
@@ -411,19 +378,6 @@
 	shield_generator = shield_gen
 	power_supply = shield_generator.bcell
 
-/* //Unused. Use for large guns.
-/obj/item/gun/energy/gun/generator/update_held_icon()
-	var/mob/living/M = loc
-	if(istype(M) && M.item_is_in_hands(src) && !M.hands_are_full())
-		wielded = 1
-		name = "[initial(name)] (wielded)"
-	else
-		wielded = 0
-		name = initial(name)
-	update_icon()
-	..()
-*/
-
 /obj/item/gun/energy/gun/generator/proc/can_use(mob/user, mob/M)
 	if(busy)
 		return 0
@@ -454,8 +408,6 @@
 
 /obj/item/gun/energy/gun/generator/checked_use(charge_amt)
 	return (shield_generator.bcell && shield_generator.bcell.checked_use(charge_amt))
-
-
 
 //VARIANTS.
 
@@ -525,7 +477,6 @@
 		qdel(W)
 	else
 		..()
-
 
 //Security belts
 

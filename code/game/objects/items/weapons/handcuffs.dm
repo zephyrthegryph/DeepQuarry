@@ -140,8 +140,7 @@
 	H.visible_message(s, span_warning("You chew on your [O.name]!"))
 	add_attack_logs(H,H,"chewed own [O.name]")
 
-	if(O.take_damage(3,0,1,1,"teeth marks"))
-		H:UpdateDamageIcon()
+	H.injure(INJURY_CUT, 3, O, src)
 
 	last_chew = world.time
 
@@ -349,7 +348,6 @@
 	color = "#7e6442"
 
 
-// === merged from handcuffs_vr.dm during hard-fork de-suffix (verified no override-order change) ===
 /obj/item/handcuffs/legcuffs/fuzzy
 	name = "fuzzy legcuffs"
 	desc = "Use this to keep... 'prisoners' in line."

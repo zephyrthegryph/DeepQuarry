@@ -41,13 +41,11 @@
 //So tyr mobs, Two types, the robots, and the expirments.
 //Expirments will have less health but some defensive mechanic or the like
 /mob/living/simple_mob/mechanical/mecha/eclipse/tyrbosses/ai_cores
-	health = 3300
-	maxHealth = 3300 //TG has megafauna with 2500 HP. Yet to see folks call those overly tanky. Tyr gun can deal 504 with a full clip of the single shot mode. Wanting longer fights, and this are meant for groups of three
+	endurance = 3300 //TG has megafauna with 2500 HP. Yet to see folks call those overly tanky. Tyr gun can deal 504 with a full clip of the single shot mode. Wanting longer fights, and this are meant for groups of three
 
 /mob/living/simple_mob/mechanical/mecha/eclipse/tyrbosses/expirments
 	mob_class = MOB_CLASS_ABERRATION
-	health = 2100
-	maxHealth = 2100
+	endurance = 2100
 	armor = list(melee = 30, bullet = 30, laser = 30, energy = 30, bomb = 30, bio = 100, rad = 100)
 	movement_cooldown = 40
 
@@ -148,8 +146,7 @@
 	desc = "A mechanical weaponized ai core."
 	icon_state = "final_core"
 	icon_living = "final_core"
-	health = 4200
-	maxHealth = 4200
+	endurance = 4200
 
 /mob/living/simple_mob/mechanical/mecha/eclipse/tyrbosses/ai_cores/ark_core/do_special_attack(atom/A)
 	switch(attackcycle)
@@ -214,8 +211,7 @@
 	name = "farm expirment"
 	icon_state = "slime_boss"
 	icon_living = "slime_boss"
-	health = 1200
-	maxHealth = 1200
+	endurance = 1200
 	special_attack_cooldown = 3 SECONDS
 
 /mob/living/simple_mob/mechanical/mecha/eclipse/tyrbosses/expirments/slime/bullet_act(obj/item/projectile/P)
@@ -281,8 +277,7 @@
 	icon = 'icons/mob/tyr.dmi'
 	icon_state = "crystalized"
 	icon_living = "crystalized"
-	health = 400
-	maxHealth = 400 //15ish hits with E sword
+	endurance = 400 //15ish hits with E sword
 	melee_damage_lower = 40
 	melee_damage_upper = 40
 	attack_armor_pen = 40

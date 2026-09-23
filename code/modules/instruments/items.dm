@@ -265,7 +265,6 @@
 	allowed_instrument_ids = "recorder"
 
 
-// === merged from items_chomp.dm during hard-fork de-suffix (verified no override-order change) ===
 /obj/item/instrument/keytar
 	name = "portable keyboard"
 	desc = "A keyboard, for those interested in the piano on the go! "

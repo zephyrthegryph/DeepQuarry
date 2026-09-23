@@ -58,17 +58,6 @@
 
 	return
 
-/*
-/obj/structure/ore_box/proc/update_ore_count() //OLD way of storing ore. Comment this out once done.
-
-	stored_ore = list()
-
-	for(var/obj/item/ore/O in contents)
-		if(stored_ore[O.name])
-			stored_ore[O.name]++
-		else
-			stored_ore[O.name] = 1
-*/
 /obj/structure/ore_box/examine(mob/user)
 	. = ..()
 
@@ -85,34 +74,6 @@
 			has_ore = 1
 	if(!has_ore)
 		. += "Nothing."
-
-// /obj/structure/ore_box/verb/empty_box() //Servercrash.mov
-//	set name = "Empty Ore Box"
-//	set category = "Object"
-//	set src in view(1)
-//
-//	if(!ishuman(usr) && !isrobot(usr)) //Only living, intelligent creatures with gripping aparatti can empty ore boxes.
-//		to_chat(usr, span_warning("You are physically incapable of emptying the ore box."))
-//		return
-//	if(usr.stat || usr.restrained())
-//		return
-//
-//	if(!Adjacent(usr)) //You can only empty the box if you can physically reach it
-//		to_chat(usr, "You cannot reach the ore box.")
-//		return
-//
-//	add_fingerprint(usr)
-//
-//	if(contents.len < 1)
-//		to_chat(usr, span_warning("The ore box is empty."))
-//		return
-//
-//	for (var/obj/item/ore/O in contents)
-//		contents -= O
-//		O.loc = src.loc
-//	to_chat(usr, span_notice("You empty the ore box."))
-//
-//	return
 
 /obj/structure/ore_box/ex_act(severity)
 	if(severity == 1.0 || (severity == 2.0 && prob(50)))

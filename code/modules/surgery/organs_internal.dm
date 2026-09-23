@@ -99,7 +99,7 @@
 					to_chat(user, span_warning("You fix their [I] but the neurological structure is still heavily damaged and in need of repair."))
 					user.balloon_alert(user, "fixed \the [I], neurological structure still in neeed of repair.")
 				I.germ_level = 0
-				I.damage = 0
+				target.surgically_repair_organ(I)
 				I.status = 0
 				if(I.organ_tag == O_EYES)
 					target.sdisabilities &= ~BLIND
@@ -117,15 +117,15 @@
 	var/dam_amt = 2
 
 	if (istype(tool, /obj/item/stack/medical/advanced/bruise_pack))
-		target.adjustToxLoss(5)
+		target.injure(INJURY_TOXIN, 5, source = tool)
 	else if (istype(tool, /obj/item/stack/medical/bruise_pack))
 		dam_amt = 5
-		target.adjustToxLoss(10)
-		affected.createwound(CUT, 5)
+		target.injure(INJURY_TOXIN, 10, source = tool)
+		target.injure(INJURY_CUT, 5, affected.organ_tag, tool, flags = INJURE_IGNORE_RESISTANCE)
 
 	for(var/obj/item/organ/I in affected.internal_organs)
 		if(I && I.damage > 0)
-			I.take_damage(dam_amt,0)
+			target.injure(INJURY_CUT, dam_amt, I, tool, affliction = /datum/affliction/lesion/laceration, flags = INJURE_IGNORE_RESISTANCE)
 
 
 
@@ -184,7 +184,7 @@
 				user.visible_message(span_notice("[user] repairs [target]'s [I.name] with [tool]."), \
 				span_notice("You repair [target]'s [I.name] with [tool].") )
 				user.balloon_alert_visible("repairs [target]'s [I.name]", "repaired \the [I.name]")
-				I.damage = 0
+				target.surgically_repair_organ(I)
 				if(I.organ_tag == O_EYES)
 					target.sdisabilities &= ~BLIND
 
@@ -197,11 +197,11 @@
 	span_warning("Your hand slips, gumming up the mechanisms inside of [target]'s [affected.name] with \the [tool]!"))
 	user.balloon_alert_visible("slips, gumming up the mechanisms inside of [target]'s [affected.name]", "your hand slips, gumming up the mechanisms inside \the [affected.name]")
 
-	target.adjustBruteLoss(5)
+	target.injure(INJURY_BLUNT, 5, affected.organ_tag, tool, flags = INJURE_IGNORE_RESISTANCE)
 
 	for(var/obj/item/organ/I in affected.internal_organs)
 		if(I)
-			I.take_damage(rand(3,5),0)
+			target.injure(INJURY_CUT, rand(3,5), I, tool, affliction = /datum/affliction/lesion/laceration, flags = INJURE_IGNORE_RESISTANCE)
 
 
 //Robo limb fix end
@@ -276,7 +276,7 @@
 	user.visible_message(span_warning("[user]'s hand slips, slicing an artery inside [target]'s [affected.name] with \the [tool]!"), \
 	span_warning("Your hand slips, slicing an artery inside [target]'s [affected.name] with \the [tool]!"))
 	user.balloon_alert_visible("slips, slicing an artery inside [target]'s [affected.name]", "your hand slips, slicing anrtery inside [affected.name]")
-	affected.createwound(CUT, rand(30,50), 1)
+	target.injure(INJURY_CUT, rand(30,50), affected.organ_tag, tool, flags = INJURE_IGNORE_RESISTANCE)
 
 ///////////////////////////////////////////////////////////////
 // Organ Removal Surgery
@@ -360,7 +360,7 @@
 	user.visible_message(span_warning("[user]'s hand slips, damaging [target]'s [affected.name] with \the [tool]!"), \
 	span_warning("Your hand slips, damaging [target]'s [affected.name] with \the [tool]!"))
 	user.balloon_alert_visible("slips, damaging [target]'s [affected.name]", "your hand slips, damaging \the [affected.name]")
-	affected.createwound(BRUISE, 20)
+	target.injure(INJURY_BLUNT, 20, affected.organ_tag, tool, flags = INJURE_IGNORE_RESISTANCE)
 
 ///////////////////////////////////////////////////////////////
 // Organ Replacement Surgery
@@ -451,9 +451,9 @@
 	user.visible_message(span_warning("[user]'s hand slips, damaging \the [tool]!"), \
 	span_warning("Your hand slips, damaging \the [tool]!"))
 	user.balloon_alert_visible("slips, damaging \the [tool]", "your hand slips, damaging \the [tool]")
-	var/obj/item/organ/I = tool
+	var/obj/item/organ/internal/I = tool
 	if(istype(I))
-		I.take_damage(rand(3,5),0)
+		I.bench_damage(rand(3,5), /datum/affliction/lesion/laceration)
 
 ///////////////////////////////////////////////////////////////
 // Organ Attaching Surgery
@@ -513,4 +513,4 @@
 	user.visible_message(span_warning("[user]'s hand slips, damaging the flesh in [target]'s [affected.name] with \the [tool]!"), \
 	span_warning("Your hand slips, damaging the flesh in [target]'s [affected.name] with \the [tool]!"))
 	user.balloon_alert_visible("slips, damaging the flesh in [target]'s [affected.name]", "your hand slips, damaging the flesh in [affected.name]")
-	affected.createwound(BRUISE, 20)
+	target.injure(INJURY_BLUNT, 20, affected.organ_tag, tool, flags = INJURE_IGNORE_RESISTANCE)

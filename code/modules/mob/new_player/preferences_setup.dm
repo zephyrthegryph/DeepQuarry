@@ -17,24 +17,6 @@
 			else
 				update_preference(preference, preference.create_random_value(src, current_species))
 
-/* Currently not used
-/// Randomizes the character according to preferences.
-/datum/preferences/proc/apply_character_randomization_prefs(antag_override = FALSE)
-	switch (read_preference(/datum/preference/choiced/random_body))
-		if (RANDOM_ANTAG_ONLY)
-			if (!antag_override)
-				return
-
-		if (RANDOM_DISABLED)
-			return
-
-	for (var/datum/preference/preference as anything in get_preferences_in_priority_order())
-		if (should_randomize(preference, antag_override))
-			write_preference(preference, preference.create_random_value(src))
-*/
-
-
-
 /datum/preferences/proc/randomize_hair_color(target = "hair")
 	if(prob (75) && target == "facial") // Chance to inherit hair color
 		update_preference_by_type(/datum/preference/color/human/facial_color, read_preference(/datum/preference/color/human/hair_color))
@@ -383,7 +365,6 @@
 			continue
 		if((!S.ckeys_allowed) || (user.ckey in S.ckeys_allowed))
 			valid_hairstyles[S.name] = hairstyle
-
 
 	return valid_hairstyles
 

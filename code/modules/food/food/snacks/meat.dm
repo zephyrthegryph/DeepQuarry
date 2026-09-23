@@ -212,7 +212,6 @@ GLOBAL_LIST_INIT(worm_meat_spawns, list (
 	..()
 
 
-// === merged from meat_chomp.dm during hard-fork de-suffix (verified no override-order change) ===
 /obj/item/reagent_containers/food/snacks/deathclawmeat
 	name = "Death claw Meat"
 	desc = "A slice from a deathclaw"

@@ -6,8 +6,7 @@
 
 	faction = FACTION_CLOWN
 
-	maxHealth = 100
-	health = 100
+	endurance = 100
 	see_in_dark = 8
 
 	has_hands = TRUE

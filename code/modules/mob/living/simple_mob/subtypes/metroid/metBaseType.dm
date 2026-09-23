@@ -13,7 +13,7 @@
 	gender = NEUTER
 
 	faction = "metroids"
-	maxHealth = 25
+	endurance = 25
 	movement_cooldown = 1.7
 	pass_flags = PASSTABLE
 	makes_dirt = FALSE	// Floats, mostly.

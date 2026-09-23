@@ -27,8 +27,7 @@
 	// dq_get_hovering(src) type-default moved to GLOB.dq_hovering_by_type
 
 	faction = FACTION_UNDERDARK
-	maxHealth = 25
-	health = 25
+	endurance = 25
 	movement_cooldown = -1
 	movement_sound = 'sound/effects/servostep.ogg'
 

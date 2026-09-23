@@ -18,10 +18,10 @@
 	data["has_occupant"] = !!occupant
 	if(occupant)
 		data["occupant_name"] = "[occupant]"
-		var/health_text = "[round(occupant.health, 0.1)]"
+		var/health_text = "[round(occupant.vitality() * 100, 0.1)]%"
 		data["health_text"] = health_text
-		data["dead"] = occupant.health <= -100
-		data["damaged"] = occupant.health < 0
+		data["dead"] = occupant.stat == DEAD
+		data["damaged"] = occupant.is_critical()
 	data["implants_left"] = implant_list ? implant_list.len : 0
 	data["ready"] = !!ready
 	return data

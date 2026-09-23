@@ -154,12 +154,6 @@ GLOBAL_LIST_EMPTY(turf_edge_cache)
 				return
 	demote()
 
-/turf/simulated/floor/outdoors/road
-	name = "road"
-	icon = 'icons/turf/concrete.dmi'
-	icon_state = "concrete_dark"
-	desc = "Some sort of material composite road."
-	edge_blending_priority = -1
 
 /turf/simulated/floor/tiled/asteroid_steel/outdoors
 	name = "weathered tiles"
@@ -218,8 +212,6 @@ GLOBAL_LIST_EMPTY(turf_edge_cache)
 	flooring_override = pickweight(possibledirts)
 	return ..()
 
-/turf/simulated/floor/outdoors/newdirt_nograss/caves
-	outdoors = OUTDOORS_NO
 
 /turf/simulated/floor/outdoors/sidewalk
 	name = "sidewalk"
@@ -293,9 +285,6 @@ GLOBAL_LIST_EMPTY(turf_edge_cache)
 
 /obj/item/stack/tile/floor/sidewalk/slab/
 
-/turf/simulated/floor/outdoors/sidewalk/slab/city
-	icon_state = "cityslab"
-	initial_flooring = /datum/decl/flooring/outdoors/sidewalk/slab/city
 
 /datum/decl/flooring/outdoors/sidewalk/slab/city
 	icon_base = "cityslab"
@@ -319,7 +308,6 @@ GLOBAL_LIST_EMPTY(turf_edge_cache)
 	build_type = /obj/item/stack/tile/floor/concrete
 
 
-// === merged from outdoors_ch.dm during hard-fork de-suffix (verified no override-order change) ===
 /turf/simulated/floor/outdoors
 	var/demote_to = /turf/simulated/floor/outdoors/rocks
 
@@ -354,55 +342,9 @@ GLOBAL_LIST_EMPTY(turf_edge_cache)
 // General sif turf defines for unit test, overridden in map for specific values
 /turf/simulated/floor/plating/sif/planetuse
 
-/turf/simulated/mineral/floor/sif
-
-/turf/simulated/open/sif
-
-/turf/simulated/mineral/floor/ignore_mapgen/sif
 
 /turf/simulated/floor/plating/sif/planetuse
 
-/turf/simulated/floor/outdoors/snow/sif/planetuse
-	name = "snow"
-	icon_state = "snow"
-	edge_blending_priority = 6
-	movement_cost = 2
-	initial_flooring = /datum/decl/flooring/snow
-
-/turf/simulated/floor/outdoors/snow/sif/planetuse/Entered(atom/A)
-	if(isliving(A))
-		var/mob/living/L = A
-		if(dq_get_hovering(L)) // Flying things shouldn't make footprints.
-			return ..()
-		var/mdir = "[A.dir]"
-		crossed_dirs[mdir] = 1
-		update_icon()
-	. = ..()
-
-/turf/simulated/floor/outdoors/snow/sif/planetuse/update_icon()
-	..()
-	for(var/d in crossed_dirs)
-		add_overlay(image(icon = 'icons/turf/outdoors.dmi', icon_state = "snow_footprints", dir = text2num(d)))
-
-/turf/simulated/floor/outdoors/snow/sif/planetuse/attackby(obj/item/W, mob/user)
-	if(istype(W, /obj/item/shovel))
-		to_chat(user, span_notice("You begin to remove \the [src] with your [W]."))
-		if(do_after(user, 4 SECONDS * W.toolspeed, src))
-			to_chat(user, span_notice("\The [src] has been dug up, and now lies in a pile nearby."))
-			new /obj/item/stack/material/snow(src)
-			demote()
-		else
-			to_chat(user, span_notice("You decide to not finish removing \the [src]."))
-	else
-		..()
-
-/turf/simulated/floor/outdoors/snow/sif/planetuse/attack_hand(mob/user as mob)
-	visible_message("[user] starts scooping up some snow.", "You start scooping up some snow.")
-	if(do_after(user, 1 SECOND, src))
-		var/obj/S = new /obj/item/stack/material/snow(user.loc)
-		user.put_in_hands(S)
-		visible_message("[user] scoops up a pile of snow.", "You scoop up a pile of snow.")
-	return
 
 /turf/simulated/sky/moving/north/sif/planet_fall/find_planet()
 	return GLOB.planet_sif
@@ -411,21 +353,14 @@ GLOBAL_LIST_EMPTY(turf_edge_cache)
 
 /turf/simulated/floor/outdoors/dirt/sif/planetuse
 
-/turf/simulated/floor/outdoors/grass/sif/forest/planetuse
 
 /turf/simulated/floor/outdoors/rocks/sif/planetuse
 
 /turf/simulated/floor/outdoors/mud/sif/planetuse
 
-/turf/simulated/mineral/sif
-
-/turf/simulated/mineral/ignore_mapgen/sif
 
 /turf/simulated/floor/outdoors/grass/sif/planetuse
 
-/turf/simulated/floor/tiled/steel/sif/planetuse
-
-/turf/simulated/floor/tiled/sif/planetuse
 
 /obj/effect/step_trigger/teleporter/planetary_fall/sif/find_planet()
 	planet = GLOB.planet_sif

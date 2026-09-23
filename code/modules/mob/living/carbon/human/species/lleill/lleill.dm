@@ -58,7 +58,8 @@
 
 	chem_strength_alcohol = 0 //Can't get drunk
 
-	oxy_mod = 0.25 //Suffocates very slowly, but does ultimately need to breathe, will outpace heal most oxygen damage.
+	injury_mod_groups = list("asphyxia" = 0.25)
+	//Suffocates very slowly, but does ultimately need to breathe, will outpace heal most oxygen damage. (oxy)
 	poison_type = null //Not harmed by phoron.
 	water_breather = TRUE
 

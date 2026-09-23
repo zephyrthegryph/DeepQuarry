@@ -42,7 +42,7 @@
 					H.Confuse(applied_strength + 5)
 					H.Blind(applied_strength)
 					H.eye_blurry = max(H.eye_blurry, applied_strength + 5)
-					H.adjustHalLoss(22 * (applied_strength / 5)) // Five flashes to stun.  Bit weaker than melee flashes due to being ranged.
+					H.injure(INJURY_PAIN, 22 * (applied_strength / 5), source = src) // Five flashes to stun.  Bit weaker than melee flashes due to being ranged.
 
 	//snap pop
 	playsound(src, 'sound/effects/snap.ogg', 50, 1)
@@ -107,7 +107,7 @@
 	icon_state = "declone"
 	fire_sound = 'sound/weapons/pulse3.ogg'
 	nodamage = 1
-	damage_type = CLONE
+	injury_kind = INJURY_CELLULAR
 	irradiate = 40
 	light_range = 2
 	light_power = 0.5
@@ -139,7 +139,7 @@
 	name = "dart"
 	icon_state = "toxin"
 	damage = 5
-	damage_type = TOX
+	injury_kind = INJURY_TOXIN
 	agony = 120
 	check_armour = "energy"
 	hud_state = "pistol_tranq"
@@ -150,7 +150,7 @@
 	name = "bolt"
 	icon_state = "cbbolt"
 	damage = 10
-	damage_type = TOX
+	injury_kind = INJURY_TOXIN
 	agony = 40
 	stutter = 10
 	hud_state = "electrothermal"
@@ -219,7 +219,7 @@
 	icon_state = "energy"
 	fire_sound = 'sound/effects/stealthoff.ogg'
 	damage = 20
-	damage_type = TOX
+	injury_kind = INJURY_TOXIN
 	irradiate = 20
 	light_range = 2
 	light_power = 0.5
@@ -350,7 +350,6 @@
 		particle_type = particle
 
 
-// === merged from energy_ch.dm during hard-fork de-suffix (verified no override-order change) ===
 /obj/item/projectile/energy/phase/bolt
 	range = 4
 	mob_bonus_damage = 15	// 30 total on animals

@@ -537,7 +537,7 @@ GLOBAL_LIST_EMPTY(asset_datums)
 
 /datum/asset/changelog_item/New(date)
 	item_filename = sanitize_filename("[date].yml")
-	SSassets.transport.register_asset(item_filename, file("html/changelogs_ch/archive/" + item_filename)) // changelogs_ch
+	SSassets.transport.register_asset(item_filename, file("html/changelogs/archive/" + item_filename))
 
 /datum/asset/changelog_item/send(client)
 	if (!item_filename)
@@ -606,7 +606,7 @@ GLOBAL_LIST_EMPTY(asset_datums)
 
 	var/list/sorted_assets = sortList(assets)
 	for(var/asset_name in sorted_assets)
-		var/datum/asset_cache_item/ACI = new(asset_name, sorted_assets[asset_name])
+		var/datum/asset_cache_item/ACI = new(asset_name, sorted_assets[asset_name], prehashed_asset_hash(asset_name))
 		if (!istype(ACI) || !ACI.hash)
 			log_asset("ERROR: Invalid asset: [type]:[asset_name]:[ACI]")
 			continue
@@ -631,6 +631,10 @@ GLOBAL_LIST_EMPTY(asset_datums)
 
 	assets = created_items
 	..()
+
+/// A content hash for `asset_name` already known without reading the file, or null to hash it at registration.
+/datum/asset/simple/namespaced/proc/prehashed_asset_hash(asset_name)
+	return null
 
 /// Get a html string that will load a html asset.
 /// Needed because byond doesn't allow you to browse() to a url.

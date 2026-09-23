@@ -76,9 +76,7 @@ BLOOD_VOLUME_SURVIVE = 40
 							B = D
 							break
 
-				B.volume += 0.1 // regenerate blood VERY slowly
-				if(CE_BLOODRESTORE in chem_effects)
-					B.volume += chem_effects[CE_BLOODRESTORE]
+				B.volume += 0.1 + factor(BF_BLOOD_REGEN) // regenerate blood VERY slowly, faster with iron and friends
 
 		// Damaged heart virtually reduces the blood volume, as the blood isn't
 		// being pumped properly anymore.
@@ -107,19 +105,19 @@ BLOOD_VOLUME_SURVIVE = 40
 		var/dmg_coef = 1				//Lower means less damage taken
 		var/threshold_coef = 1			//Lower means the damage caps off lower
 
-		if(CE_STABLE in chem_effects)
+		if(factor(BF_STABILIZATION))
 			dmg_coef = 0.5
 			threshold_coef = 0.75
 
 		// DQ medical owns blood-loss presentation. The
 		// vanilla branch below floods chat with "you feel woozy" etc.,
 		// which collides with our internal_hemorrhage/hypovolemic_shock
-		// symptoms. We keep the pale flag (sprite cue), the oxyloss
+		// symptoms. We keep the pale flag (sprite cue), the asphyxia
 		// (mechanical consequence of low O2 transport), and the fatal
 		// paralyse/sleep — but suppress the player-facing dizzy/woozy
 		// spam and skip the eye_blurry overrides (our symptoms own
 		// blurred_vision). Reasoning: DQ conditions provide messaging
-		// via /datum/medical_symptom; doubled messages were confusing.
+		// via /datum/affliction_symptom; doubled messages were confusing.
 		if(blood_volume_raw >= species.blood_volume*species.blood_level_safe)
 			if(pale)
 				pale = 0
@@ -128,25 +126,25 @@ BLOOD_VOLUME_SURVIVE = 40
 			if(!pale)
 				pale = 1
 				update_icons_body()
-			if(getOxyLoss() < 20 * threshold_coef)
-				adjustOxyLoss(3 * dmg_coef)
+			if(injury_load(INJURY_CATEGORY_ASPHYXIA) < 20 * threshold_coef)
+				injure(INJURY_ASPHYXIA, 3 * dmg_coef)
 		else if(blood_volume_raw >= species.blood_volume*species.blood_level_danger)
 			if(!pale)
 				pale = 1
 				update_icons_body()
-			if(getOxyLoss() < 50 * threshold_coef)
-				adjustOxyLoss(10 * dmg_coef)
-			adjustOxyLoss(1 * dmg_coef)
+			if(injury_load(INJURY_CATEGORY_ASPHYXIA) < 50 * threshold_coef)
+				injure(INJURY_ASPHYXIA, 10 * dmg_coef)
+			injure(INJURY_ASPHYXIA, 1 * dmg_coef)
 		else if(blood_volume_raw >= species.blood_volume*species.blood_level_fatal)
-			adjustOxyLoss(5 * dmg_coef)
+			injure(INJURY_ASPHYXIA, 5 * dmg_coef)
 		else //Not enough blood to survive (usually)
 			if(!pale)
 				pale = 1
 				update_icons_body()
 			Paralyse(3)
 			Sleeping(3)
-			adjustToxLoss(3 * dmg_coef)
-			adjustOxyLoss(75 * dmg_coef)
+			injure(INJURY_TOXIN, 3 * dmg_coef, flags = INJURE_SILENT)
+			injure(INJURY_ASPHYXIA, 75 * dmg_coef)
 
 		// Without enough blood you slowly go hungry.
 		if(blood_volume_raw < species.blood_volume*species.blood_level_safe)
@@ -165,14 +163,11 @@ BLOOD_VOLUME_SURVIVE = 40
 	// Some species bleed out differently
 	blood_loss_divisor /= species.bloodloss_rate
 
-	// Some modifiers can make bleeding better or worse.  Higher multiplers = more bleeding.
-	var/blood_loss_modifier_multiplier = 1.0
-	for(var/datum/modifier/M in modifiers)
-		if(!isnull(M.bleeding_rate_percent))
-			blood_loss_modifier_multiplier += (M.bleeding_rate_percent - 1.0)
-
-	blood_loss_divisor /= blood_loss_modifier_multiplier
-	return blood_loss_divisor
+	// Body factors can make bleeding better or worse. Higher = more bleeding.
+	var/bleeding = factor(BF_BLEEDING)
+	if(bleeding <= 0)
+		return INFINITY
+	return blood_loss_divisor / bleeding
 
 ///Calculates how much blood we should lose from our wounds and makes us bleed that amount if bleed is TRUE
 ///ARGS:
@@ -200,7 +195,7 @@ BLOOD_VOLUME_SURVIVE = 40
 
 		///Second, we process internal bleeding.
 		if(bleed || count_internal)
-			for(var/datum/wound/internal_bleeding/W in temp.wounds)
+			for(var/datum/affliction/wound/internal_bleeding/W in temp.get_wounds())
 				var/internal_blood_to_lose = calculate_internal_bloodloss(W, applied_pressure = temp.applied_pressure)
 				if(count_internal)
 					total_blood_loss += internal_blood_to_lose
@@ -213,7 +208,7 @@ BLOOD_VOLUME_SURVIVE = 40
 		if(!(temp.status & ORGAN_BLEEDING))
 			continue
 		///Finally, we process external wounds.
-		for(var/datum/wound/W in temp.wounds)
+		for(var/datum/affliction/wound/W as anything in temp.get_wounds())
 			if(W.bleeding())
 				var/temp_bld = blood_loss_divisor
 				if(W.damage_type == PIERCE) //gunshots and spear stabs bleed more
@@ -226,7 +221,7 @@ BLOOD_VOLUME_SURVIVE = 40
 					temp_bld = max(temp_bld + 5, 1)
 				else if((temp.organ_tag == BP_L_HAND) || (temp.organ_tag == BP_R_HAND) || (temp.organ_tag == BP_L_FOOT) || (temp.organ_tag == BP_R_FOOT))
 					temp_bld = max(temp_bld + 10, 1)
-				if(CE_STABLE in chem_effects)	//Inaprov slows bloodloss
+				if(factor(BF_STABILIZATION))	//Inaprov slows bloodloss
 					temp_bld = max(temp_bld + 10, 1)
 				if(temp.applied_pressure)
 					if(ishuman(temp.applied_pressure))
@@ -248,7 +243,7 @@ BLOOD_VOLUME_SURVIVE = 40
 	return round(total_blood_loss, 0.1)
 
 ///Calculates how much blood we should lose from an internal wound.
-/mob/living/carbon/human/proc/calculate_internal_bloodloss(datum/wound/internal_bleeding/wound_to_check, applied_pressure = FALSE)
+/mob/living/carbon/human/proc/calculate_internal_bloodloss(datum/affliction/wound/internal_bleeding/wound_to_check, applied_pressure = FALSE)
 	if(!wound_to_check)
 		return 0
 
@@ -262,7 +257,7 @@ BLOOD_VOLUME_SURVIVE = 40
 	var/myeldose = reagents.get_reagent_amount(REAGENT_ID_MYELAMINE)
 	if(!(wound_to_check.can_autoheal() || (bicardose && inaprovaline) || myeldose))	//bicaridine and inaprovaline stop internal wounds from growing bigger with time, unless it is so small that it is already healing
 		wound_to_check.open_wound(0.1)
-	if((CE_STABLE in chem_effects) || myeldose)
+	if(factor(BF_STABILIZATION) || myeldose)
 		temp_bld = max(temp_bld + 30, 1) //Inaprovaline is great on internal wounds.
 	if(applied_pressure) //Putting pressure on the afflicted wound helps stop the arterial bleeding.
 		temp_bld += 30

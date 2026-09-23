@@ -17,7 +17,7 @@
 	harm_intent_damage = 1
 	melee_damage_lower = 1
 	melee_damage_upper = 2
-	maxHealth = 100
+	endurance = 100
 	attacktext = list("scratches")
 	see_in_dark = 8
 	minbodytemp = 0
@@ -101,7 +101,7 @@
 
 /mob/living/simple_mob/vore/meowl/attackby(obj/item/O as obj, mob/user as mob)
 	if(istype(O, /obj/item/reagent_containers/food))
-		if(health <= 0)
+		if(stat == DEAD)
 			return
 		user.visible_message(span_notice("\The [src] happily gulps down \the [O] right out of \the [user]'s hand, it seems pretty content now."),span_notice("\The [src] happily gulps down \the [O] right out of your hand, it seems pretty content now."))
 		user.drop_from_inventory(O)
@@ -134,4 +134,4 @@
 	Despite this, these creatues can be rather docile in the right conditions, and will not attack those who it believes it can get food from reliably."
 	value = CATALOGUER_REWARD_HARD
 
-//legacy engage_target override body removed.
+// DQEdit - legacy engage_target override body removed.

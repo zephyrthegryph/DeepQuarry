@@ -89,7 +89,7 @@
 			ai_brain.react_to_attack(L)
 	if(touch_reaction_flags & SPECIES_TRAIT_THORNS)
 		if(src != L)
-			L.apply_damage(3, BRUTE)
+			L.injure(INJURY_PIERCE, 3, L.hand ? BP_L_HAND : BP_R_HAND, src)
 			L.visible_message( \
 				span_warning("[L] is hurt by sharp body parts when touching [src]!"), \
 				span_warning("[src] is covered in sharp bits and it hurt when you touched them!"), )
@@ -119,8 +119,7 @@
 	//Stun Beams
 	if(P.taser_effect)
 		stun_effect_act(0, P.agony, def_zone, P, electric = TRUE)
-		if(!P.nodamage)
-			apply_damage(P.damage, P.damage_type, def_zone, absorb, proj_sharp, proj_edge, P, TRUE)
+		P.inflict_injury(src, def_zone, absorb, proj_sharp, proj_edge)
 		// Call on_hit() so any modifier_type_to_apply and other effects set on the
 		// projectile are applied even for taser-effect projectiles.  Pass absorb so
 		// a fully-blocked hit still suppresses secondary effects correctly.
@@ -128,8 +127,7 @@
 		qdel(P)
 		return
 
-	if(!P.nodamage)
-		apply_damage(P.damage, P.damage_type, def_zone, absorb, proj_sharp, proj_edge, P, TRUE)
+	P.inflict_injury(src, def_zone, absorb, proj_sharp, proj_edge)
 	P.on_hit(src, absorb, def_zone)
 
 	if(absorb == 100)
@@ -153,7 +151,7 @@
 		apply_effect(EYE_BLUR, stun_amount)
 
 	if (agony_amount)
-		apply_damage(agony_amount, HALLOSS, def_zone, 0, used_weapon=used_weapon)
+		injure(INJURY_PAIN, agony_amount, def_zone, used_weapon)
 		apply_effect(STUTTER, agony_amount/10)
 		apply_effect(EYE_BLUR, agony_amount/10)
 
@@ -165,14 +163,12 @@
 	if (. & EMP_PROTECT_SELF || is_incorporeal()) // Can't emp shadekin in phase
 		return
 
-	if(LAZYLEN(modifiers))
-		for(var/datum/modifier/M in modifiers)
-			if(!isnull(M.emp_modifier))
-				severity = CLAMP(severity + M.emp_modifier, 1, 5)
+	var/emp_shift = factor(BF_EMP_SHIFT)
+	if(emp_shift)
+		severity = CLAMP(severity + emp_shift, 1, 5)
 
 	if(severity == 5)	// Effectively nullified.
 		return
-	..()
 
 /mob/living/blob_act(obj/structure/blob/B)
 	if(stat == DEAD || faction == B.faction)
@@ -198,10 +194,6 @@
 		attack_verb = blob.attack_verb
 		B.overmind.blob_type.on_attack(B, src, def_zone)
 
-	if( (damage_type == TOX || damage_type == OXY) && isSynthetic()) // Borgs and FBPs don't really handle tox/oxy damage the same way other mobs do.
-		damage_type = BRUTE
-		damage *= 0.66 // Take 2/3s as much damage.
-
 	visible_message(span_danger("\The [B] [attack_verb] \the [src]!"), span_danger("[attack_message]!"))
 	playsound(src, 'sound/effects/attackblob.ogg', 50, 1)
 
@@ -211,7 +203,7 @@
 	if(ai_brain)
 		ai_brain.react_to_attack(B)
 
-	apply_damage(damage, damage_type, def_zone, absorb)
+	injure_by_damtype(damage_type, damage, def_zone, B, absorb)
 
 /mob/living/proc/resolve_item_attack(obj/item/I, mob/living/user, target_zone)
 	return target_zone
@@ -245,9 +237,42 @@
 		weapon_sharp = 0
 		weapon_edge = 0
 
-	apply_damage(effective_force, I.damtype, hit_zone, blocked, weapon_sharp, weapon_edge, I)
+	injure_by_damtype(I.damtype, effective_force, hit_zone, I, blocked, weapon_sharp, weapon_edge)
 
 	return 1
+
+/// Harm from a legacy-damtype source (weapon, thrown object, blob):
+/// resolves the injury kind (sharp/edge honoured) and the two damtypes that
+/// are not a single injury â€” SEARING (a burn plus a blunt/cut injury) and
+/// ELECTROMAG (an EMP scaled by the unblocked amount). Returns the amount applied.
+/mob/living/proc/injure_by_damtype(damtype, amount, zone = null, atom/source = null, armor = 0, sharp = FALSE, edge = FALSE, flags = NONE)
+	switch(damtype)
+		if(ELECTROMAG)
+			electromagnetic_hit(amount * (100 - armor) / 100)
+			return 0
+		if(SEARING)
+			. = injure(INJURY_BURN, amount / 3, zone, source, armor, null, flags)
+			. += injure(injury_kind_for(BRUTE, sharp, edge), amount * 2 / 3, zone, source, armor, null, flags)
+			return
+	return injure(injury_kind_for(damtype, sharp, edge), amount, zone, source, armor, null, flags)
+
+/// Electromagnetic "damage" pulses the mob instead of injuring it.
+/mob/living/proc/electromagnetic_hit(amount)
+	switch(round(amount))
+		if(91 to INFINITY)
+			emp_act(EMP_HEAVY)
+		if(76 to 90)
+			emp_act(prob(50) ? EMP_HEAVY : EMP_MEDIUM)
+		if(61 to 75)
+			emp_act(EMP_MEDIUM)
+		if(46 to 60)
+			emp_act(prob(50) ? EMP_MEDIUM : EMP_LIGHT)
+		if(31 to 45)
+			emp_act(EMP_LIGHT)
+		if(16 to 30)
+			emp_act(prob(50) ? EMP_LIGHT : EMP_HARMLESS)
+		else
+			emp_act(EMP_HARMLESS)
 
 //this proc handles being hit by a thrown atom
 /mob/living/hitby(atom/movable/source, datum/thrownthing/throwingdatum)//Standardization and logging -Sieve
@@ -278,7 +303,7 @@
 		var/armor = run_armor_check(null, "melee")
 
 
-		apply_damage(throw_damage, dtype, null, armor, is_sharp(O), has_edge(O), O)
+		injure_by_damtype(dtype, throw_damage, null, O, armor, is_sharp(O), has_edge(O))
 
 		if(ismob(thrower))
 			var/client/assailant = thrower.client
@@ -325,7 +350,7 @@
 /mob/living/proc/turf_collision(turf/T, speed)
 	if(SEND_SIGNAL(src, COMSIG_LIVING_TURF_COLLISION, T, speed) & COMPONENT_LIVING_BLOCK_TURF_COLLISION)
 		return
-	src.take_organ_damage(speed * 5) // used to be 5 * speed. That's a default of 25 and I dont see anything ever changing the "speed" value. // no. We keep the damage values, no reduction to 12
+	injure(INJURY_BLUNT, speed * 5, null, T) // A default of 25, spread across the body.
 	//src.Weaken(3)				// That is absurdly high so im just setting it to a flat 12 with a bit of stun ontop. //Stun is too dangerous
 	playsound(src, get_sfx("punch"), 50) //ouch sound
 
@@ -350,7 +375,7 @@
 		var/mob/living/L = user
 		if(touch_reaction_flags & SPECIES_TRAIT_THORNS)
 			if((src != L))
-				L.apply_damage(3, BRUTE)
+				L.injure(INJURY_PIERCE, 3, L.hand ? BP_L_HAND : BP_R_HAND, src)
 				L.visible_message( \
 					span_warning("[L] is hurt by sharp body parts when touching [src]!"), \
 					span_warning("[src] is covered in sharp bits and it hurt when you touched them!"), )
@@ -358,14 +383,21 @@
 	if(!damage)
 		return
 
-	adjustBruteLoss(damage)
+	injure(generic_attack_injury_kind(user), damage, null, user)
 	add_attack_logs(user,src,"Generic attack (probably animal)", admin_notify = FALSE) //Usually due to simple_mob attacks
 	if(ai_brain)
 		ai_brain.react_to_attack(user)
 	src.visible_message(span_danger("[user] has [attack_message] [src]!"))
 	user.do_attack_animation(src)
-	spawn(1) updatehealth()
 	return 1
+
+/// What kind of wound a generic (usually animal) attack from `user` leaves:
+/// simple mobs declare their melee sharpness; anything else is a blunt blow.
+/mob/living/proc/generic_attack_injury_kind(mob/user)
+	var/mob/living/simple_mob/S = user
+	if(istype(S))
+		return injury_kind_for(BRUTE, S.attack_sharp, S.attack_edge)
+	return INJURY_BLUNT
 
 /mob/living/proc/get_cold_protection()
 	return 0
@@ -406,7 +438,7 @@
 /mob/living/lava_act()
 	adjust_fire_stacks(4)
 	inflict_heat_damage(20) // Another 20, however this is instantly applied to unprotected mobs.
-	adjustFireLoss(10) // Lava cannot be 100% resisted with fire protection.
+	injure(INJURY_BURN, 10) // Lava cannot be 100% resisted with fire protection.
 
 /mob/living/proc/reagent_permeability()
 	return 1
@@ -414,11 +446,7 @@
 
 // Returns a number to determine if something is harder or easier to hit than normal.
 /mob/living/proc/get_evasion()
-	var/result = evasion // First we get the 'base' evasion.  Generally this is zero.
-	for(var/datum/modifier/M in modifiers)
-		if(!isnull(M.evasion))
-			result += M.evasion
-	return result
+	return evasion + factor(BF_EVASION) // The 'base' evasion (generally zero) plus body factors.
 
 /mob/living/proc/get_accuracy_penalty()
 	// Certain statuses make it harder to score a hit.
@@ -436,13 +464,13 @@
 /mob/living/proc/inflict_cold_damage(amount)
 	amount *= 1 - get_cold_protection(50) // Within spacesuit protection.
 	if(amount > 0)
-		adjustFireLoss(amount)
+		injure(INJURY_FROSTBITE, amount)
 
 // Ditto, but for "heat".
 /mob/living/proc/inflict_heat_damage(amount)
 	amount *= 1 - get_heat_protection(10000) // Within firesuit protection.
 	if(amount > 0)
-		adjustFireLoss(amount)
+		injure(INJURY_BURN, amount)
 
 // and one for electricity because why not
 /mob/living/proc/inflict_shock_damage(amount)
@@ -452,15 +480,13 @@
 /mob/living/proc/inflict_water_damage(amount)
 	amount *= 1 - get_water_protection()
 	if(amount > 0)
-		adjustToxLoss(amount)
+		injure(INJURY_TOXIN, amount)
 
 // one for abstracted away ""poison"" (mostly because simplemobs shouldn't handle reagents)
 /mob/living/proc/inflict_poison_damage(amount)
-	if(isSynthetic())
-		return
 	amount *= 1 - get_poison_protection()
 	if(amount > 0)
-		adjustToxLoss(amount)
+		injure(INJURY_TOXIN, amount)
 
 /mob/living/proc/can_inject(mob/user, error_msg, target_zone, ignore_thickness = FALSE)
 	return 1
@@ -472,30 +498,6 @@
 		t = BP_HEAD
 	var/obj/item/organ/external/def_zone = ran_zone(t)
 	return def_zone
-
-// heal ONE external organ, organ gets randomly selected from damaged ones.
-/mob/living/proc/heal_organ_damage(brute, burn)
-	adjustBruteLoss(-brute)
-	adjustFireLoss(-burn)
-	src.updatehealth()
-
-// damage ONE external organ, organ gets randomly selected from damaged ones.
-/mob/living/proc/take_organ_damage(brute, burn, emp=0)
-	adjustBruteLoss(brute)
-	adjustFireLoss(burn)
-	src.updatehealth()
-
-// heal MANY external organs, in random order
-/mob/living/proc/heal_overall_damage(brute, burn)
-	adjustBruteLoss(-brute)
-	adjustFireLoss(-burn)
-	src.updatehealth()
-
-// damage MANY external organs, in random order
-/mob/living/proc/take_overall_damage(brute, burn, used_weapon = null)
-	adjustBruteLoss(brute)
-	adjustFireLoss(burn)
-	src.updatehealth()
 
 /mob/living/proc/restore_all_organs()
 	return

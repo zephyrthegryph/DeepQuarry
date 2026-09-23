@@ -73,7 +73,6 @@ GLOBAL_LIST_EMPTY_TYPED(powerinstances, /datum/power/changeling)
 			changeling = M.mind.antag_holder.changeling //Check our mind's antag holder.
 	return changeling
 
-
 ///Handles the cooldown for the power. Returns TRUE if the cooldown has passed. FALSE if it's still on cooldown.
 ///This is just a general anti-spam thing and not really a true cooldown
 
@@ -114,17 +113,6 @@ GLOBAL_LIST_EMPTY_TYPED(powerinstances, /datum/power/changeling)
 		return QDEL_HINT_LETMELIVE
 	return ..()
 	//Old code from when it did destroy itself.
-	/*
-	if(owner)
-		remove_verb(owner,/mob/proc/EvolutionMenu)
-		remove_verb(owner,/mob/proc/changeling_respec)
-	QDEL_NULL(power_panel)
-	absorbed_dna.Cut()
-	absorbed_languages.Cut()
-	purchased_powers.Cut()
-	purchased_powers_history.Cut()
-	. = ..()
-	*/
 
 //Former /datum/changeling procs
 /datum/component/antag/changeling/proc/regenerate()
@@ -141,7 +129,6 @@ GLOBAL_LIST_EMPTY_TYPED(powerinstances, /datum/power/changeling)
 	var/datum/component/antag/changeling/comp = is_changeling(src)
 	if(!comp)
 		return
-
 
 	for(var/language in newDNA.languages)
 		comp.absorbed_languages |= language
@@ -220,7 +207,6 @@ GLOBAL_LIST_EMPTY_TYPED(powerinstances, /datum/power/changeling)
 			var/atom/movable/screen/ability/verb_based/changeling/C = ability_master.get_ability_by_proc_ref(P.verbpath)
 			if(C)
 				ability_master.remove_ability(C)
-
 
 //Helper proc. Does all the checks and stuff for us to avoid copypasta
 /mob/proc/changeling_power(required_chems=0, required_dna=0, max_genetic_damage=100, max_stat=0)
@@ -385,7 +371,6 @@ GLOBAL_LIST_EMPTY_TYPED(powerinstances, /datum/power/changeling)
 			Thepower = P
 			break
 
-
 	if(Thepower == null)
 		to_chat(owner, "This is awkward.  Changeling power purchase failed, please report this bug to a coder!")
 		return
@@ -393,7 +378,6 @@ GLOBAL_LIST_EMPTY_TYPED(powerinstances, /datum/power/changeling)
 	if(Thepower in purchased_powers)
 		to_chat(owner, "We have already evolved this ability!")
 		return
-
 
 	if(geneticpoints < Thepower.genomecost)
 		to_chat(owner, "We cannot evolve this... yet.  We must acquire more DNA.")
@@ -422,7 +406,6 @@ GLOBAL_LIST_EMPTY_TYPED(powerinstances, /datum/power/changeling)
 		call(owner, Thepower.verbpath)()
 	else if(remake_verbs)
 		owner.make_changeling()
-
 
 //Debug item. Here because during debugging I DO NOT want to have to open the player panel 5000 times.
 /obj/item/changeling_debug

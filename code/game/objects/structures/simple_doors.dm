@@ -25,7 +25,7 @@
 	var/keysound = 'sound/items/toolbelt_equip.ogg'
 	rad_insulation = RAD_MEDIUM_INSULATION
 
-/obj/structure/simple_door/fire_act(datum/gas_mixture/air, exposed_temperature, exposed_volume)
+/obj/structure/simple_door/fire_act(exposed_temperature, exposed_volume)
 	TemperatureAct(exposed_temperature)
 
 /obj/structure/simple_door/proc/TemperatureAct(temperature)
@@ -397,7 +397,6 @@
 // end.
 
 
-// === merged from simple_doors_vr.dm during hard-fork de-suffix (verified no override-order change) ===
 /datum/material/flockium
 	name = MAT_FLOKIUM
 	//stack_type = /obj/item/stack/material/sandstone

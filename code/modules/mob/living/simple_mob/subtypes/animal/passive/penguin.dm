@@ -6,8 +6,7 @@
 	icon_living = "penguin"
 	icon_dead = "penguin_dead"
 
-	maxHealth = 20
-	health = 20
+	endurance = 20
 	minbodytemp = 175 // Same as Sif mobs.
 
 	response_help  = "pets"

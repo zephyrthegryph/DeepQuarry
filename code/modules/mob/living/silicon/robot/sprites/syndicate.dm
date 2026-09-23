@@ -1,10 +1,4 @@
 // Syndie borg sprites
-/*
-/datum/robot_sprite/syndie
-	module_type = list("Protector", "Mechanist", "Combat Medic")
-	sprite_icon = 'icons/mob/robot/syndie.dmi'
-	sprite_hud_icon_state = "malf"
-*/
 // Wide/dogborg sprites
 
 /datum/robot_sprite/dogborg/syndie
@@ -112,7 +106,6 @@
 	sprite_decals = list("decals")
 	rest_sprite_options = list("Default", "Sit")
 	hat_offset = DULLAHAN_HAT_OFFSET
-
 
 // Protector
 
@@ -279,11 +272,6 @@
 	hat_offset = RAPTOR_HAT_OFFSET
 
 // Ninja models
-/* //Unused
-/datum/robot_sprite/dogborg/ninja
-	module_type = "Ninja"
-	sprite_hud_icon_state = "malf"
-*/
 /datum/robot_sprite/dogborg/tall/ninja
 	module_type = "Ninja"
 	sprite_hud_icon_state = "malf"

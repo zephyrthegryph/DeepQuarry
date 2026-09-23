@@ -155,7 +155,7 @@
 		else
 			message_admins("[key_name_admin(user)] triggered a fueltank explosion with a welding tool.")
 			log_game("[key_name(user)] triggered a fueltank explosion with a welding tool.")
-			to_chat(user, span_danger("You begin welding on the fueltank and with a moment of lucidity you realize... you are doomed.")) //changed yawn edit to just say you are doomed
+			to_chat(user, span_danger("You begin welding on the fueltank and with a moment of lucidity you realize... you are doomed."))
 			var/obj/structure/reagent_dispensers/fueltank/tank = O // CHOMPS edit - Readds welderbombing
 			tank.explode()
 			return
@@ -323,18 +323,18 @@
 		switch(safety)
 			if(1)
 				to_chat(user, span_warning("Your eyes sting a little."))
-				E.damage += rand(1, 2)
+				H.injure(INJURY_BURN, rand(1, 2), E, src, flags = INJURE_SILENT)
 				if(E.damage > 12)
 					user.eye_blurry += rand(3,6)
 			if(0)
 				to_chat(user, span_warning("Your eyes burn."))
-				E.damage += rand(2, 4)
+				H.injure(INJURY_BURN, rand(2, 4), E, src, flags = INJURE_SILENT)
 				if(E.damage > 10)
-					E.damage += rand(4,10)
+					H.injure(INJURY_BURN, rand(4, 10), E, src, flags = INJURE_SILENT)
 			if(-1)
 				to_chat(user, span_danger("Your thermals intensify the welder's glow. Your eyes itch and burn severely."))
 				user.eye_blurry += rand(12,20)
-				E.damage += rand(12, 16)
+				H.injure(INJURY_BURN, rand(12, 16), E, src, flags = INJURE_SILENT)
 		if(safety<2)
 
 			if(E.damage > 10)

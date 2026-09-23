@@ -575,7 +575,6 @@
 	slot = ACCESSORY_SLOT_OVER
 
 
-// === merged from clothing_vr.dm during hard-fork de-suffix (verified no override-order change) ===
 /obj/item/clothing/accessory/jacket/modwrap
 	name = "modern wrapped coat (coat)"
 	desc = "The cutting edge of fashion."

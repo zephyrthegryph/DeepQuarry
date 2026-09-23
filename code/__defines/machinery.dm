@@ -167,8 +167,15 @@ if (!(DATUM.datum_flags & DF_ISPROCESSING)) {\
 #define STOP_PROCESSING_IN_LIST(DATUM, LIST) LIST.Remove(DATUM);DATUM.datum_flags &= ~DF_ISPROCESSING
 
 // Note - I would prefer these be defined machines.dm, but some are used prior in file order. ~Leshana
-#define START_MACHINE_PROCESSING(Datum) START_PROCESSING_IN_LIST(Datum, SSmachines.processing_machines)
-#define STOP_MACHINE_PROCESSING(Datum) STOP_PROCESSING_IN_LIST(Datum, SSmachines.processing_machines);SSmachines.current_run.Remove(Datum)
+// Merges a cable skipped while powernet rebuilds were deferred (SSmachines.deferred_powernet_cables).
+#define CABLE_DEFERRED_DIRECTIONS (1<<0)
+#define CABLE_DEFERRED_TURF (1<<1)
+#define CABLE_DEFERRED_DIAGONAL_D1 (1<<2)
+#define CABLE_DEFERRED_DIAGONAL_D2 (1<<3)
+#define CABLE_DEFERRED_DENODE (1<<4)
+
+#define START_MACHINE_PROCESSING(Datum) SSmachines.start_machine_processing(Datum)
+#define STOP_MACHINE_PROCESSING(Datum) SSmachines.stop_machine_processing(Datum)
 
 // LINDA owns pipenets via SSair, not SSmachines.
 // SSmachines.process_pipenets is a stub; SSair.process_pipenets is the live

@@ -26,11 +26,12 @@
 	siemens_coefficient = 1
 	darksight = 10
 
-	slowdown = -0.5
+	factor_baseline = alist(BF_SLOWDOWN = -0.5)
 	item_slowdown_mod = 0.5
 
-	brute_mod = 0.7	// Naturally sturdy.
-	burn_mod = 1.2	// Furry
+	injury_mod_groups = list("physical" = 0.7, "thermal" = 1.2)
+	// Naturally sturdy. (brute)
+	// Furry (burn)
 
 	warning_low_pressure = 50
 	hazard_low_pressure = -1
@@ -136,17 +137,18 @@
 		SK.in_dark_respite = TRUE
 		H.invisibility = INVISIBILITY_SHADEKIN
 
-		H.adjustFireLoss(-(H.getFireLoss() * 0.75))
-		H.adjustBruteLoss(-(H.getBruteLoss() * 0.75))
-		H.adjustToxLoss(-(H.getToxLoss() * 0.75))
-		H.adjustCloneLoss(-(H.getCloneLoss() * 0.75))
+		// Dark respite mends three quarters of every injury.
+		H.mend(TREAT_BURN_CARE, H.injury_load(INJURY_CATEGORY_THERMAL) * 0.75)
+		H.mend(TREAT_TISSUE_REPAIR, H.injury_load(INJURY_CATEGORY_PHYSICAL) * 0.75)
+		H.mend(TREAT_ANTITOXIN, H.injury_load(INJURY_CATEGORY_TOXIC) * 0.75)
+		H.mend(TREAT_GENETIC_REPAIR, H.injury_load(INJURY_CATEGORY_GENETIC) * 0.75)
 		H.germ_level = 0 //Take away the germs, or we'll die AGAIN
 		H.vessel.add_reagent(REAGENT_ID_BLOOD,blood_volume-H.vessel.total_volume)
 		for(var/obj/item/organ/external/bp in H.organs)
 			bp.bandage()
 			bp.disinfect()
 		for(var/obj/item/organ/internal/I in H.internal_organs) //other wise their organs stay mush
-			I.damage = 0
+			H.mend(TREAT_RESTORATION, I.max_damage, I)
 			I.status = 0
 			if(I.organ_tag == O_EYES)
 				H.sdisabilities &= ~BLIND
@@ -238,9 +240,7 @@
 		if(ORANGE_EYES)
 			total_health = 125
 
-	H.maxHealth = total_health
-
-	H.health = H.getMaxHealth()
+	H.endurance = total_health
 
 /datum/species/shadekin/produceCopy(list/traits, mob/living/carbon/human/H, custom_base, reset_dna = TRUE) // Traitgenes reset_dna flag required, or genes get reset on resleeve
 	var/datum/species/shadekin/new_copy = ..()

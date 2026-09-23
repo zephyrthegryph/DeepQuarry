@@ -29,18 +29,6 @@
 #define IS_ZADDAT  9
 #define IS_ZORREN  10
 
-#define CE_STABLE "stable" // Inaprovaline
-#define CE_ANTIBIOTIC "antibiotic" // Antibiotics
-#define CE_BLOODRESTORE "bloodrestore" // Iron/nutriment
-#define CE_PAINKILLER "painkiller"
-#define CE_ALCOHOL "alcohol" // Liver filtering
-#define CE_ALCOHOL_TOXIC "alcotoxic" // Liver damage
-#define CE_SPEEDBOOST "gofast" // Hyperzine
-#define CE_SLOWDOWN "goslow" // Slowdown
-#define CE_NARCOTICS "narcotics" // Narcotics. Ignore pain slowdown entirely.
-#define CE_ANTACID "nopuke" // Don't puke.
-#define CE_ALLERGEN "allergyreaction" // Self explanatory
-#define CE_DARKSIGHT "darksight" // Gives perfect vision in dark
 
 #define REAGENTS_PER_SHEET 20
 #define REAGENTS_PER_ROD 10
@@ -48,7 +36,7 @@
 #define REAGENTS_PER_LOG 40
 #define REAGENTS_PER_HULL 40
 
-// Attached to CE_ANTIBIOTIC
+// BF_ANTIMICROBIAL levels
 #define ANTIBIO_NORM	1
 #define ANTIBIO_OD		2
 #define ANTIBIO_SUPER	3
@@ -63,7 +51,6 @@
 #define MAX_CUSTOM_NAME_LEN 64 // Max length of a custom pill/condiment/whatever
 
 
-// === merged from chemistry_vr.dm during hard-fork de-suffix (manually verified) ===
 // More for our custom races
 #define IS_CHIMERA 12
 #define IS_SHADEKIN 13

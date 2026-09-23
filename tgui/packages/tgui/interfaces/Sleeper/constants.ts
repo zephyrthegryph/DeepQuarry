@@ -5,10 +5,10 @@ export const stats: string[][] = [
 ];
 
 export const damages: string[][] = [
-  ['Resp', 'oxyLoss'],
-  ['Toxin', 'toxLoss'],
-  ['Brute', 'bruteLoss'],
-  ['Burn', 'fireLoss'],
+  ['Resp', 'asphyxiaLoad'],
+  ['Toxin', 'toxicLoad'],
+  ['Brute', 'physicalLoad'],
+  ['Burn', 'thermalLoad'],
 ];
 
 export const damageRange: Record<string, [number, number]> = {

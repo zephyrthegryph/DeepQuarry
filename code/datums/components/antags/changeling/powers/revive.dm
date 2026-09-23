@@ -37,14 +37,11 @@
 	var/mob/living/carbon/C = src
 
 	C.tod = null
-	C.setToxLoss(0)
-	C.setOxyLoss(0)
-	C.setCloneLoss(0)
+	C.fully_heal()
 	C.SetParalysis(0)
 	C.SetStunned(0)
 	C.SetWeakened(0)
 	C.radiation = 0
-	C.heal_overall_damage(C.getBruteLoss(), C.getFireLoss())
 	C.reagents.clear_reagents()
 	if(ishuman(C))
 		var/mob/living/carbon/human/H = src
@@ -93,7 +90,6 @@
 			H.wear_suit = null
 		H.UpdateAppearance()
 
-	C.halloss = 0
 	C.shock_stage = 0 //Pain
 	to_chat(C, span_notice("We have regenerated."))
 	C.update_canmove()

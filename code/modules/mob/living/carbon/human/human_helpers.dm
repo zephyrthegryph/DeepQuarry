@@ -177,7 +177,7 @@
 	var/list/slots = list(slot_glasses,slot_head)
 	var/list/compiled_vis = list()
 
-	if(CE_DARKSIGHT in chem_effects) //Putting this near the beginning so it can be overwritten by equipment
+	if(factor(BF_DARKSIGHT)) //Putting this near the beginning so it can be overwritten by equipment
 		compiled_vis += VIS_FULLBRIGHT
 
 	for(var/slot in slots)
@@ -241,7 +241,6 @@
 #undef HUMAN_EATING_BLOCKED_MOUTH
 
 
-// === merged from human_helpers_vr.dm during hard-fork de-suffix (verified no override-order change) ===
 GLOBAL_DATUM_INIT(ingame_hud_vr, /icon, icon('icons/mob/hud_vr.dmi'))
 GLOBAL_DATUM_INIT(ingame_hud_med_vr, /icon, icon('icons/mob/hud_med_vr.dmi'))
 

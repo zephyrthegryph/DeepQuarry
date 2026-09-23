@@ -27,7 +27,7 @@
 	harm_intent_damage = 10
 	melee_damage_lower = 8
 	melee_damage_upper = 12
-	maxHealth = 150
+	endurance = 150
 	attacktext = list("haunts")
 	see_in_dark = 8
 	catalogue_data = list(/datum/category_item/catalogue/fauna/ysbryd)
@@ -134,7 +134,7 @@
 /mob/living/simple_mob/ysbryd/Life()
 	if(chosen_target)
 		handle_target()
-	if(health <= boost_health)
+	if(vitality() * get_endurance() <= boost_health)
 		movement_cooldown = -2
 	return ..()
 

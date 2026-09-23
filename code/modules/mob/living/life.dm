@@ -133,7 +133,7 @@
 
 //This updates the health and status of the mob (conscious, unconscious, dead)
 /mob/living/proc/handle_regular_status_updates()
-	updatehealth()
+	body?.life_tick()
 	if(stat != DEAD)
 		set_stat(CONSCIOUS)
 		return TRUE
@@ -255,10 +255,7 @@
 		see_invisible = initial(see_invisible)
 
 	sight = initial(sight)
-
-	for(var/datum/modifier/M in modifiers)
-		if(!isnull(M.vision_flags))
-			sight |= M.vision_flags
+	sight |= factor(BF_SIGHT_FLAGS)
 
 	return
 

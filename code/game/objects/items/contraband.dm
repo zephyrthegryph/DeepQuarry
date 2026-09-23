@@ -97,7 +97,6 @@
 ////// End powder. /////////
 
 
-// === merged from contraband_vr.dm during hard-fork de-suffix (verified no override-order change) ===
 /obj/item/stolenpackage
 	name = "stolen package"
 	desc = "What's in the box?"
@@ -216,7 +215,6 @@
 	to_chat(user, "As you hold the large disc in your open palm, fingers cusped around the edge, the crystal embedded in the item begins to vibrate. It lifts itself from the disc a few cenimetres, before beginning to glow with a bright red light. The glow lasts for a few seconds, before the crystal embeds itself back into the disc with a quick snap.")
 
 
-// === merged from contraband_chomp.dm during hard-fork de-suffix (verified no override-order change) ===
 /obj/item/contraband
 	name = "contraband"
 	desc = "A tightly sealed package. Dare to look inside?"

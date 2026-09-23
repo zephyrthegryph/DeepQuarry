@@ -75,7 +75,6 @@
 			child.status &= ~ORGAN_CUT_AWAY
 
 	target.update_icons_body(FALSE)
-	target.updatehealth()
 	target.UpdateDamageIcon()
 
 /datum/surgery_step/limb/attach/fail_step(mob/living/user, mob/living/carbon/human/target, target_zone, obj/item/tool)
@@ -83,7 +82,7 @@
 	user.visible_message(span_warning(" [user]'s hand slips, damaging [target]'s [E.amputation_point]!"), \
 	span_warning(" Your hand slips, damaging [target]'s [E.amputation_point]!"))
 	user.balloon_alert_visible("slips, damaging [target]'s [E.amputation_point]", "your hand slips, damaging [E.amputation_point]")
-	target.apply_damage(10, BRUTE, null, sharp = TRUE)
+	target.injure(INJURY_PIERCE, 10, source = tool)
 
 ///////////////////////////////////////////////////////////////
 // Limb Connection Surgery
@@ -121,7 +120,6 @@
 		child.status &= ~ORGAN_CUT_AWAY
 		to_chat(user, "You attach [target]'s [child.name] as well.")
 	target.update_icons_body()
-	target.updatehealth()
 	target.UpdateDamageIcon()
 
 /datum/surgery_step/limb/connect/fail_step(mob/living/user, mob/living/carbon/human/target, target_zone, obj/item/tool)
@@ -129,7 +127,7 @@
 	user.visible_message(span_warning(" [user]'s hand slips, damaging [target]'s [E.amputation_point]!"), \
 	span_warning("Your hand slips, damaging [target]'s [E.amputation_point]!"))
 	user.balloon_alert_visible("slips, damaging [target]'s [E.amputation_point]", "your hand slips, damaging \the [E.amputation_point]")
-	target.apply_damage(10, BRUTE, null, sharp = TRUE)
+	target.injure(INJURY_PIERCE, 10, source = tool)
 
 ///////////////////////////////////////////////////////////////
 // Robolimb Attachment Surgery
@@ -175,7 +173,6 @@
 				new_limb.sabotaged = 1
 
 	target.update_icons_body(FALSE)
-	target.updatehealth()
 	target.UpdateDamageIcon()
 
 	qdel(tool)
@@ -184,4 +181,4 @@
 	user.visible_message(span_warning(" [user]'s hand slips, damaging [target]'s flesh!"), \
 	span_warning(" Your hand slips, damaging [target]'s flesh!"))
 	user.balloon_alert_visible("slips, damaging [target]'s flesh", "your hand slips, damaging the flesh")
-	target.apply_damage(10, BRUTE, null, sharp = TRUE)
+	target.injure(INJURY_PIERCE, 10, source = tool)

@@ -54,9 +54,7 @@
 	if(confirm == "Yes")
 		suiciding = 1
 		to_chat(viewers(src),span_danger("[src] is powering down. It looks like they're trying to commit suicide."))
-		//put em at -175
-		adjustOxyLoss(max(getMaxHealth() * 2 - getToxLoss() - getFireLoss() - getBruteLoss() - getOxyLoss(), 0))
-		updatehealth()
+		death(0)
 
 /mob/living/silicon/robot/verb/suicide()
 	set hidden = 1
@@ -74,9 +72,7 @@
 	if(confirm == "Yes")
 		suiciding = 1
 		to_chat(viewers(src),span_danger("[src] is powering down. It looks like they're trying to commit suicide."))
-		//put em at -175
-		adjustOxyLoss(max(getMaxHealth() * 2 - getToxLoss() - getFireLoss() - getBruteLoss() - getOxyLoss(), 0))
-		updatehealth()
+		death(0)
 
 /*
 /mob/living/silicon/pai/verb/suicide()

@@ -37,8 +37,7 @@
 	var/seen_gun
 	var/transformed
 	var/seen_armour
-	maxHealth = 100
-	health = 100
+	endurance = 100
 
 	faction = FACTION_GLAMOUR
 

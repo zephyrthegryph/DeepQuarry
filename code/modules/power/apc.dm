@@ -879,7 +879,7 @@ GLOBAL_LIST_EMPTY(apcs)
 		if(!in_range(src, user) || !istype(loc, /turf))
 			return 0
 	var/mob/living/carbon/human/H = user
-	if(istype(H) && prob(H.getBrainLoss()))
+	if(istype(H) && prob(H.injury_load(INJURY_CATEGORY_NEURAL)))
 		to_chat(user, span_danger("You momentarily forget how to use [src]."))
 		return 0
 	return 1
@@ -1053,11 +1053,14 @@ GLOBAL_LIST_EMPTY(apcs)
 	// instead of polling on every machinery tick.
 	if(!changed && !force_update && !failure_timer)
 		connected_powernet?.reserve_sleeping_apc_load(src, lastused_total)
-		SSmachines.hibernate_reactive_machine(src, list(
+		var/list/wake_keys = list(
 			"apc-power:[REF(src)]",
 			"area_power:[REF(area)]",
 			"apc:[REF(src)]"
-		))
+		)
+		if(connected_powernet)
+			wake_keys += "powernet-topology:[REF(connected_powernet)]"
+		SSmachines.hibernate_reactive_machine(src, wake_keys)
 		// Connected, stable APC demand is represented directly in the powernet and
 		// needs no timer. An isolated battery must only wake to integrate elapsed
 		// discharge (or while charging), not poll on every machinery fire.

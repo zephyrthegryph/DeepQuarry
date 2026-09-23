@@ -426,7 +426,6 @@
 	pickup_sound = 'sound/items/pickup/drinkglass.ogg'
 
 
-// === merged from glass_vr.dm during hard-fork de-suffix (verified no override-order change) ===
 /obj/item/reagent_containers/glass/beaker/neurotoxin
 	prefill = list(REAGENT_ID_NEUROTOXIN = 50)
 

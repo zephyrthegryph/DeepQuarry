@@ -340,7 +340,6 @@
 #undef SCRAMBLE_CACHE_LEN
 
 
-// === merged from language_chomp.dm during hard-fork de-suffix (manually verified: all-new types / new defines, no base re-open) ===
 #define SCRAMBLE_CACHE_LEN 40
 //basically, how many words can it store that it remembers to use? Upped from 20 to 40, because 20 is very s m a l l
 

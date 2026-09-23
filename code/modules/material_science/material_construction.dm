@@ -320,6 +320,44 @@
 	var/list/construction_materials
 	/// Material units by role, used for inspection, recycling, and weighted behavior.
 	var/list/construction_material_amounts
+	/// TRUE once this object owns private copies of the two lists above. Until
+	/// then both are interned and shared: write through set_construction_material().
+	var/tmp/construction_materials_owned = FALSE
+
+/// Interned construction lists keyed by their contents. Thousands of pipes,
+/// cables and machines carry identical assemblies, so they share one pair.
+/// Shared lists are read-only; set_construction_material() copies on write.
+/proc/material_construction_intern(list/materials, list/amounts)
+	var/static/list/interned = list()
+	var/key = ""
+	for(var/role in materials)
+		key += "[role]=[materials[role]]:[amounts?[role]];"
+	var/list/pair = interned[key]
+	if(!pair)
+		pair = list(materials.Copy(), amounts ? amounts.Copy() : list())
+		interned[key] = pair
+	return pair
+
+/obj/proc/share_construction_lists(list/materials, list/amounts)
+	if(!length(materials))
+		construction_materials = null
+		construction_material_amounts = null
+		construction_materials_owned = FALSE
+		return
+	var/list/pair = material_construction_intern(materials, amounts)
+	construction_materials = pair[1]
+	construction_material_amounts = pair[2]
+	construction_materials_owned = FALSE
+
+/// The only supported way to change one functional part after construction.
+/obj/proc/set_construction_material(role, material_id, amount)
+	if(!construction_materials_owned)
+		construction_materials = construction_materials ? construction_materials.Copy() : list()
+		construction_material_amounts = construction_material_amounts ? construction_material_amounts.Copy() : list()
+		construction_materials_owned = TRUE
+	construction_materials[role] = material_id
+	if(!isnull(amount))
+		construction_material_amounts[role] = amount
 
 /obj/proc/material_for_role(role) as /datum/material
 	var/material_id = construction_materials?[role]
@@ -333,15 +371,16 @@
 			return material
 	return null
 
-/obj/proc/apply_material_construction(list/materials_by_role, list/slots, application_profile)
+/obj/proc/apply_material_construction(list/materials_by_role, list/slots, application_profile, customized = TRUE)
 	var/list/resolved = material_slot_resolve(slots, materials_by_role)
 	if(!length(resolved))
 		return FALSE
-	construction_materials = resolved.Copy()
-	construction_material_amounts = list()
+	material_custom_assembly = customized
+	var/list/amounts = list()
 	for(var/role in resolved)
 		var/list/spec = slots[role]
-		construction_material_amounts[role] = spec?["amount"] || 0
+		amounts[role] = spec?["amount"] || 0
+	share_construction_lists(resolved, amounts)
 	if(isitem(src))
 		var/obj/item/item = src
 		item.apply_material_role_effects(application_profile)
@@ -354,12 +393,12 @@
 /obj/proc/copy_material_construction_from(obj/source)
 	if(!source)
 		return FALSE
-	construction_materials = source.construction_materials?.Copy()
-	construction_material_amounts = source.construction_material_amounts?.Copy()
+	share_construction_lists(source.construction_materials, source.construction_material_amounts)
 	material_environment_liner_integrity = source.material_environment_liner_integrity
 	material_environment_exterior_integrity = source.material_environment_exterior_integrity
 	material_environment_fatigue = source.material_environment_fatigue
 	material_environment_leaking = source.material_environment_leaking
+	material_custom_assembly = source.material_custom_assembly
 	if(!istype(source, /obj/item/stack) && source.material_assembly_id)
 		material_assembly_id = source.material_assembly_id
 	material_service_changed()
@@ -374,7 +413,7 @@
 	if(length(construction_materials))
 		return TRUE
 	var/list/slots = default_material_slots(application_profile, total_amount)
-	return apply_material_construction(null, slots, application_profile)
+	return apply_material_construction(null, slots, application_profile, FALSE)
 
 /obj/proc/construction_summary()
 	var/list/summary = list()
@@ -393,6 +432,9 @@
 /obj/proc/construction_thermal_conductance(area_m2, thickness_m, temperature)
 	var/datum/material/thermal = material_for_role(MATERIAL_ROLE_THERMAL) || material_for_role(MATERIAL_ROLE_STRUCTURE) || primary_construction_material()
 	var/conductance = thermal ? thermal.material_thermal_conductance(area_m2, thickness_m, temperature) : null
+	if(!isnull(conductance) && thermal?.thermal_switch_temperature)
+		var/switch_fraction = clamp((temperature - thermal.thermal_switch_temperature) / 20, 0, 1)
+		conductance *= 1 + (thermal.thermal_switch_ratio - 1) * switch_fraction
 	var/datum/material/insulator = material_for_role(MATERIAL_ROLE_INSULATION)
 	if(!isnull(conductance) && insulator)
 		var/insulation_conductance = insulator.material_thermal_conductance(area_m2, thickness_m, temperature)

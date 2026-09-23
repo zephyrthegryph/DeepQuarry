@@ -124,7 +124,7 @@
 	cooldown = world.time + cooldown_duration
 	to_chat(wearer, flavor_activate)
 	to_chat(wearer, span_danger("The inside of your head hurts..."))
-	wearer.adjustBrainLoss(brainloss_cost)
+	wearer.injure(INJURY_NEURAL, brainloss_cost, null, src)
 	wearer.add_modifier(/datum/modifier/aura/candy_blue, 30 SECONDS)
 
 /obj/item/clothing/suit/armor/buffvest/equipped(mob/living/carbon/human/H, slot)

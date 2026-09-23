@@ -78,7 +78,7 @@
 	if(swirlie)
 		user.setClickCooldown(user.get_attack_speed())
 		user.visible_message(span_danger("[user] slams the toilet seat onto [swirlie.name]'s head!"), span_notice("You slam the toilet seat onto [swirlie.name]'s head!"), "You hear reverberating porcelain.")
-		swirlie.adjustBruteLoss(5)
+		swirlie.injure(INJURY_BLUNT, 5, BP_HEAD, src)
 		return
 
 	if(cistern && !open)
@@ -145,7 +145,7 @@
 					if(!refilling)
 						user.visible_message(span_danger("[user] gives [GM] a swirlie!"), span_notice("You give [GM] a swirlie!"), "You hear a toilet flushing.")
 						if(!GM.internal)
-							GM.adjustOxyLoss(5)
+							GM.injure(INJURY_ASPHYXIA, 5, null, src)
 						if(GM.size_multiplier <= 0.75)
 							GM.visible_message(span_danger("[GM] gets sucked into \the [src] due to their small size!"), span_userdanger("You get sucked into \the [src]!"))
 							GM.forceMove(get_turf(src))
@@ -156,7 +156,7 @@
 				swirlie_mob = null
 			else
 				user.visible_message(span_danger("[user] slams [GM] into the [src]!"), span_notice("You slam [GM] into the [src]!"))
-				GM.adjustBruteLoss(5)
+				GM.injure(INJURY_BLUNT, 5, BP_HEAD, src)
 
 	if(cistern && !teleplumb_crystal && istype(I, /obj/item/bluespace_crystal))
 		to_chat(user, span_notice("You begin to insert \the [I] into \the [src]..."))
@@ -409,7 +409,7 @@
 					to_chat(user, span_notice("[GM.name] needs to be on the urinal."))
 					return
 				user.visible_message(span_danger("[user] slams [GM.name] into the [src]!"), span_notice("You slam [GM.name] into the [src]!"))
-				GM.adjustBruteLoss(8)
+				GM.injure(INJURY_BLUNT, 8, BP_HEAD, src)
 			else
 				to_chat(user, span_notice("You need a tighter grip."))
 
@@ -596,10 +596,10 @@
 				var/mob/living/carbon/human/H = L
 				if(temperature >= H.species.heat_level_1)
 					to_chat(L, span_danger("The water is searing hot!"))
-					L.adjustFireLoss(5)
+					L.injure(INJURY_BURN, 5, null, src)
 			else //Sorry, simplemobs just get Burnt
 				to_chat(L, span_danger("The water is searing hot!"))
-				L.adjustFireLoss(5)
+				L.injure(INJURY_BURN, 5, null, src)
 		else
 			if(L.bodytemperature < 288) // 15C
 				L.bodytemperature = min(L.bodytemperature + 10, SHOWER_TEMP_NORMAL)
@@ -998,7 +998,7 @@
 				user.Weaken(10)
 				if(isrobot(user))
 					var/mob/living/silicon/robot/R = user
-					R.cell.charge -= 20
+					R.draw_power(ROBOT_CELL_JOULES(20), src, 0, TRUE)
 				else
 					B.deductcharge(B.hitcost)
 				user.visible_message( \

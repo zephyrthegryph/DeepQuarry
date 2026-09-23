@@ -47,7 +47,6 @@
 	return ..()
 
 
-// === merged from turbolift_door_vr.dm during hard-fork de-suffix (verified no override-order change) ===
 // Vore specific code for /obj/machinery/door/airlock/lift
 
 /obj/machinery/door/airlock/lift/emag_act(uses_left, mob/user)

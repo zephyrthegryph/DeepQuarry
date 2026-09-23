@@ -1,7 +1,7 @@
 /datum/material/phoron
 	name = MAT_PHORON
 	stack_type = /obj/item/stack/material/phoron
-	ignition_point = PHORON_MINIMUM_BURN_TEMPERATURE
+	ignition_point = PLASMA_MINIMUM_BURN_TEMPERATURE
 	icon_base = "stone"
 	table_icon_base = "stone"
 	icon_colour = "#FC2BC5"
@@ -255,7 +255,6 @@
 	table_icon_base = "resin"
 
 
-// === merged from gems_chomp.dm during hard-fork de-suffix (verified no override-order change) ===
 /datum/material/valhollide //buffed protection and reflectivity
 	protectiveness = 70
 	reflectivity = 0.75

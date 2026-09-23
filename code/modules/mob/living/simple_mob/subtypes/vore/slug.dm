@@ -18,8 +18,7 @@
 	response_disarm = "prods"
 	response_harm = "punches"
 	movement_cooldown = 40 //I guess you could call this a SNAIL'S PACE.
-	maxHealth = 100
-	health = 100
+	endurance = 100
 	attacktext = list("headbutted")
 	minbodytemp = 80
 	vore_icons = SA_ICON_LIVING

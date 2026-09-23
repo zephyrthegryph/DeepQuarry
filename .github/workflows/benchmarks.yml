@@ -1,0 +1,103 @@
+name: Benchmarks
+
+# Boots a -DBENCHMARK build and runs the scenarios in code/modules/benchmarks/
+# (see doc/testing.md). Results are uploaded as the `bench-runs` artifact;
+# each run is compared with the latest successful master run, and regressions
+# are reported in the job summary without failing the build, because shared
+# runners are noisy. Pushes to master refresh the stored baseline.
+on:
+  push:
+    branches: [master]
+  pull_request:
+  schedule:
+    - cron: "0 7 * * 1"
+  workflow_dispatch:
+    inputs:
+      full_map:
+        description: "Run on Southern Cross instead of the test map"
+        type: boolean
+        default: false
+      scenarios:
+        description: "Comma-separated scenario ids (empty = defaults)"
+        type: string
+        default: ""
+
+permissions:
+  contents: read
+  actions: read
+
+concurrency:
+  group: benchmarks-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  bench:
+    name: Benchmarks (${{ (github.event_name == 'schedule' || inputs.full_map) && 'Southern Cross' || 'test map' }})
+    runs-on: ubuntu-24.04
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v6.0.2
+      - name: Restore BYOND from Cache
+        uses: ./.github/actions/restore_or_install_byond
+      - name: Install 32-bit toolchain deps
+        run: |
+          sudo dpkg --add-architecture i386
+          sudo apt update || true
+          sudo apt install -y gcc-multilib zlib1g-dev:i386
+          sudo apt install -o APT::Immediate-Configure=false zlib1g-dev:i386 libssl-dev:i386 curl:i386
+      - name: Setup Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: i686-unknown-linux-gnu
+      - name: Restore Rust cache
+        uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: verdigris -> target
+          shared-key: verdigris-i686-linux
+      - name: Build verdigris
+        run: bash verdigris/build-linux.sh
+      - name: Install rust-g
+        run: bash tools/ci/install_rust_g.sh
+      - name: Fetch the latest master results for comparison
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p data/bench/runs
+          run_id=$(gh run list --workflow benchmarks.yml --branch master --status success --limit 1 --json databaseId --jq '.[0].databaseId' || true)
+          if [ -n "$run_id" ]; then
+            gh run download "$run_id" --name bench-runs --dir data/bench/baseline || true
+            cp data/bench/baseline/runs/*.json data/bench/runs/ 2>/dev/null || true
+          fi
+      - name: Run benchmarks
+        id: bench
+        run: |
+          source $HOME/BYOND/byond/bin/byondsetup
+          cp config/example/* config/
+          args="--runs=3"
+          if [ "${{ github.event_name == 'schedule' || inputs.full_map }}" = "true" ]; then
+            args="$args -DCITESTING_FULL_MAP"
+          fi
+          if [ -n "${{ inputs.scenarios }}" ]; then
+            args="$args --scenario=${{ inputs.scenarios }}"
+          fi
+          tools/build/build.sh --ci bench $args --label=ci-${{ github.run_number }}
+      - name: Compare with master
+        if: always() && steps.bench.outcome != 'skipped'
+        run: |
+          {
+            echo "# Benchmarks"
+            echo '```'
+            tools/build/build.sh bench-compare --threshold=10 2>&1 | sed -n '/^Base /,$p' || echo "No earlier run to compare with."
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+      - name: Upload results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: bench-runs
+          path: |
+            data/bench/runs/
+            data/bench/report.html
+            data/bench/profiles/
+          if-no-files-found: ignore
+          retention-days: 90

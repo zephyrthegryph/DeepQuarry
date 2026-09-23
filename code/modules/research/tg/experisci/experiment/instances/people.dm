@@ -18,7 +18,7 @@
 	. = ..()
 	if(!.)
 		return
-	var/HP_percent = check.health/check.getMaxHealth()
+	var/HP_percent = check.vitality()
 	if(HP_percent < 1)
 		return TRUE
 	return FALSE

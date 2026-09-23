@@ -22,7 +22,7 @@
 	harm_intent_damage = 7
 	melee_damage_lower = 3
 	melee_damage_upper = 10
-	maxHealth = 100
+	endurance = 100
 	attacktext = list("bites")
 	see_in_dark = 8
 	minbodytemp = 0
@@ -80,5 +80,5 @@
 	else
 		return //just leave them
 
-//legacy /datum/ai_brain/.../find_target / can_attack / engage_target
+// DQEdit - legacy /datum/ai_brain/.../find_target / can_attack / engage_target
 // overrides removed in the combat migration. The brain handles targeting.

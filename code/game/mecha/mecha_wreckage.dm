@@ -235,7 +235,6 @@
 	bound_height = 64
 
 
-// === merged from mecha_wreckage_ch.dm during hard-fork de-suffix (verified no override-order change) ===
 /obj/effect/decal/mecha_wreckage/scarab
 	name = "Scarab Wreckage"
 	icon = 'icons/mecha/mecha_ch.dmi'

@@ -188,7 +188,6 @@
 		)
 
 
-// === merged from dispenser_presets_vr.dm during hard-fork de-suffix (verified no override-order change) ===
 /obj/machinery/chemical_dispenser/xenoflora
 	name = "xenoflora chem dispenser"
 	ui_title = "Xenoflora Chemical Dispenser"

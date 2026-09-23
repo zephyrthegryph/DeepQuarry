@@ -36,9 +36,7 @@
 					affecting = H.get_organ(type)
 					H.Stun(3)
 		if(affecting)
-			if(affecting.take_damage(1, 0))
-				H.UpdateDamageIcon()
-			H.updatehealth()
+			H.injure(INJURY_BLUNT, 1, affecting, src)
 	else if(ismouse(target))
 		var/mob/living/simple_mob/animal/passive/mouse/M = target
 		visible_message(span_bolddanger("SPLAT!"))

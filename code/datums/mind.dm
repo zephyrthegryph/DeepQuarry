@@ -74,11 +74,17 @@
 /datum/mind/Destroy(force)
 	. = ..()
 	original_character = null
+	identity = null
 
 /datum/mind/proc/transfer_to(mob/living/new_character, force = FALSE)
 	if(!istype(new_character))
 		log_world("## DEBUG: transfer_to(): Some idiot has tried to transfer_to() a non mob/living mob. Please inform Carn")
+	// The identity follows the mind: adopt the old body's if the mind has none
+	// yet, else the new body's (a brand-new character).
+	var/datum/character_identity/carried_identity = get_identity() || new_character.identity
+	identity = carried_identity
 	var/datum/component/antag/changeling/changeling_comp
+	var/mob/living/old_character = current
 	if(current)
 		changeling_comp = is_changeling(current)			//remove ourself from our old body's mind variable
 		if(changeling_comp)
@@ -91,6 +97,10 @@
 
 	current = new_character		//link ourself to our new body
 	new_character.mind = src	//and link our new body to ourself
+	new_character.bind_identity(identity)
+	if(old_character)
+		SEND_SIGNAL(old_character, COMSIG_MOB_MIND_TRANSFERRED_OUT_OF, new_character)
+	SEND_SIGNAL(new_character, COMSIG_MOB_MIND_TRANSFERRED_INTO, old_character)
 
 	// Handle mode/antag specific respawns
 	if(changeling_comp)
@@ -488,6 +498,10 @@
 			log_world("## DEBUG: mind_initialize(): No ticker ready yet! Please inform Carn")
 	if(!mind.name)	mind.name = real_name
 	mind.current = src
+	if(mind.identity)
+		bind_identity(mind.identity)
+	else
+		mind.identity = identity
 	if(SSantag_job.player_is_antag(mind))
 		add_verb(src.client, /client/proc/aooc)
 	if (client?.prefs)
@@ -562,7 +576,6 @@
 	mind.special_role = JOB_CULTIST
 
 
-// === merged from mind_vr.dm during hard-fork de-suffix (verified no override-order change) ===
 /datum/mind
 	var/vore_death = FALSE	// Was our last gasp a gurgle?
 	var/show_in_directory

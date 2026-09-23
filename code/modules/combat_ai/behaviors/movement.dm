@@ -76,9 +76,9 @@
 
 /datum/ai_behavior/flee_low_hp/evaluate(datum/ai_brain/brain, atom/source)
 	var/mob/living/owner = brain.get_owner()
-	if(!owner || !owner.maxHealth)
+	if(!owner)
 		return null
-	var/hp_frac = owner.health / owner.maxHealth
+	var/hp_frac = owner.vitality()
 	if(hp_frac > DQ_LOW_HP_THRESHOLD)
 		return null
 	var/mob/threat = brain.primary_threat

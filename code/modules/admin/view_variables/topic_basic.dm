@@ -135,11 +135,6 @@
 					qdel(to_delete)
 
 		message_admins(span_notice("[key_name_admin(usr)] has [mass_remove? "mass" : ""] removed [path] component from [mass_remove? target.type : key_name_admin(target)]."))
-	//if(href_list[VV_HK_MODIFY_GREYSCALE])
-	//	if(!check_rights(NONE))
-	//		return
-	//	var/datum/greyscale_modify_menu/menu = new(target, usr, SSgreyscale.configurations, unlocked = TRUE)
-	//	menu.ui_interact(usr)
 
 	if(href_list[VV_HK_CALLPROC])
 		return SSadmin_verbs.dynamic_invoke_verb(usr, /datum/admin_verb/call_proc_datum, target)

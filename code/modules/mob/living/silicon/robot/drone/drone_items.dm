@@ -134,10 +134,6 @@
 //PRETTIER TOOL LIST.
 // /mob/living/silicon/robot/drone/installed_modules()
 
-// 	if(weapon_lock)
-// 		to_chat(src, span_danger("Weapon lock active, unable to use modules! Count:[weaponlock_time]"))
-// 		return
-
 // 	if(!module)
 // 		module = new /obj/item/robot_module/drone(src)
 
@@ -151,7 +147,6 @@
 // 	<BR>
 // 	<B>Installed Modules</B><BR><BR>"}
 
-
 // 	var/tools = span_bold("Tools and devices") + "<BR>"
 // 	var/resources = "<BR>" + span_bold("Resources") + "<BR>"
 
@@ -159,34 +154,10 @@
 
 // 		var/module_string = ""
 
-// 		if (!O)
-// 			module_string += span_bold("Resource depleted") + "<BR>"
-// 		else if(activated(O))
-// 			module_string += text("[O]: <B>Activated</B><BR>")
-// 		else
-// 			module_string += text("[O]: <A HREF='byond://?src=\ref[src];act=\ref[O]'>Activate</A><BR>")
-
-// 		if((istype(O,/obj/item) || istype(O,/obj/item)) && !(istype(O,/obj/item/stack/cable_coil)))
-// 			tools += module_string
-// 		else
-// 			resources += module_string
-
 // 	if (emagged)
 // 		for (var/O in module.emag)
 
 // 			var/module_string = ""
-
-// 			if (!O)
-// 				module_string += span_bold("Resource depleted") + "<BR>"
-// 			else if(activated(O))
-// 				module_string += text("[O]: <B>Activated</B><BR>")
-// 			else
-// 				module_string += text("[O]: <A HREF='byond://?src=\ref[src];act=\ref[O]'>Activate</A><BR>")
-
-// 			if((istype(O,/obj/item) || istype(O,/obj/item)) && !(istype(O,/obj/item/stack/cable_coil)))
-// 				tools += module_string
-// 			else
-// 				resources += module_string
 
 // 	dat += tools
 

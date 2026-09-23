@@ -191,12 +191,6 @@
 	if(EXTRAPOLATOR_ACT_CHECK(result, EXTRAPOLATOR_ACT_PRIORITY_ISOLATE))
 		isolate = TRUE
 	//var/list/advance_diseases = list()
-	/*
-	for(var/datum/disease/advance/candidate in diseases)
-		if(candidate.stealth >= maximum_stealth)
-			continue
-		advance_diseases += candidate
-	*/
 	if(!length(diseases))
 		to_chat(user, span_warning("[icon2html(src, user)] There are no valid diseases to make a culture from."))
 		return

@@ -514,8 +514,7 @@
 		for(var/mob/living/L in range(1, target_turf) - K.firer - target)
 			var/armor = L.run_armor_check(K.def_zone, K.check_armour)
 			// var/armor = L.run_armor_check(K.def_zone, K.flag, null, null, K.armour_penetration)
-			L.apply_damage(K.damage*modifier, K.damage_type, K.def_zone, armor)
-			// L.apply_damage(K.damage*modifier, K.damage_type, K.def_zone, armor)
+			L.injure(K.get_injury_kind(), K.damage*modifier, K.def_zone, K, armor)
 			to_chat(L, span_userdanger("You're struck by a [K.name]!"))
 
 /obj/item/borg/upgrade/modkit/aoe/turfs
@@ -568,14 +567,15 @@
 	icon_state = "modkit_crystal"
 	modifier = 2.5 //Not a very effective method of healing.
 	cost = 20
-	var/static/list/damage_heal_order = list(BRUTE, BURN, OXY)
+	var/static/list/heal_tags = list(TREAT_TISSUE_REPAIR, TREAT_BURN_CARE, TREAT_OXYGENATION)
 /obj/item/borg/upgrade/modkit/lifesteal/projectile_prehit(obj/item/projectile/kinetic/K, atom/target, obj/item/gun/energy/kinetic_accelerator/KA)
 	if(isliving(target) && isliving(K.firer))
 		var/mob/living/L = target
 		if(L.stat == DEAD)
 			return
 		L = K.firer
-		L.heal_ordered_damage(modifier, damage_heal_order)
+		for(var/tag in heal_tags)
+			L.mend(tag, modifier)
 */
 
 /obj/item/borg/upgrade/modkit/resonator_blasts
@@ -621,7 +621,7 @@
 			if(K.pressure_decrease_active)
 				kill_modifier *= K.pressure_decrease
 			var/armor = L.run_armor_check(K.def_zone, K.flag, null, null, K.armour_penetration)
-			L.apply_damage(bounties_reaped[L.type]*kill_modifier, K.damage_type, K.def_zone, armor)
+			L.injure(K.get_injury_kind(), bounties_reaped[L.type]*kill_modifier, K.def_zone, K, armor)
 /obj/item/borg/upgrade/modkit/bounty/proc/get_kill(mob/living/L)
 	var/bonus_mod = 1
 	if(ismegafauna(L)) //megafauna reward

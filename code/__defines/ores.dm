@@ -22,3 +22,7 @@
 #define ORE_PAINITE "painite"
 #define ORE_MHYDROGEN "mhydrogen"
 #define ORE_SAND "sand"
+#define ORE_PENTLANDITE "pentlandite"
+#define ORE_CHROMITE "chromite"
+#define ORE_WOLFRAMITE "wolframite"
+#define ORE_KAOLIN "kaolin"

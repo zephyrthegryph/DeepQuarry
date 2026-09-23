@@ -47,19 +47,18 @@
 /datum/data/pda/utility/scanmode/medical/scan_mob(mob/living/C, mob/living/user)
 	C.visible_message(span_warning("[user] has analyzed [C]'s vitals!"))
 	user.show_message(span_notice("Analyzing Results for [C]:"))
+	var/oxy = round(C.injury_load(INJURY_CATEGORY_ASPHYXIA), 0.1)
+	var/tox = round(C.injury_load(INJURY_CATEGORY_TOXIC), 0.1)
+	var/burn = round(C.injury_load(INJURY_CATEGORY_THERMAL), 0.1)
+	var/brute = round(C.injury_load(INJURY_CATEGORY_PHYSICAL), 0.1)
 	if(C.status_flags & FAKEDEATH)
 		user.show_message(span_notice("    Overall Status: dead"))
-		var/fake_oxy = max(C.getOxyLoss(), (300 - (C.getToxLoss() + C.getFireLoss() + C.getBruteLoss())))
-		var/OX = fake_oxy > 50 			? 	span_bold("[fake_oxy]") 			: fake_oxy //Easier to do this. All this needs consolidation, eventually.
-		user.show_message(span_notice("    Damage Specifics:") + " [OX]-0-\
-										[(C.getFireLoss() > 50) ? span_warning("[C.getFireLoss()]") : C.getFireLoss()]-\
-										[(C.getBruteLoss() > 50) ? span_warning("[C.getBruteLoss()]") : C.getBruteLoss()]", 1)
+		var/fake_oxy = max(oxy, (300 - (tox + burn + brute)))
+		var/OX = fake_oxy > 50 ? span_bold("[fake_oxy]") : fake_oxy
+		user.show_message(span_notice("    Damage Specifics:") + " [OX]-0-[(burn > 50) ? span_warning("[burn]") : burn]-[(brute > 50) ? span_warning("[brute]") : brute]", 1)
 	else
-		user.show_message(span_notice("    Overall Status: [C.stat > 1 ? "dead" : "[C.health - C.halloss]% healthy"]"), 1)
-		user.show_message(span_notice("    Damage Specifics:") + " [(C.getOxyLoss() > 50) ? span_warning("[C.getOxyLoss()]") : C.getOxyLoss()]-\
-										[(C.getToxLoss() > 50) ? span_warning("[C.getToxLoss()]") : C.getToxLoss()]-\
-										[(C.getFireLoss() > 50) ? span_warning("[C.getFireLoss()]") : C.getFireLoss()]-\
-										[(C.getBruteLoss() > 50) ? span_warning("[C.getBruteLoss()]") : C.getBruteLoss()]", 1)
+		user.show_message(span_notice("    Overall Status: [C.stat > 1 ? "dead" : "[round(C.vitality() * 100)]% healthy"]"), 1)
+		user.show_message(span_notice("    Damage Specifics:") + " [(oxy > 50) ? span_warning("[oxy]") : oxy]-[(tox > 50) ? span_warning("[tox]") : tox]-[(burn > 50) ? span_warning("[burn]") : burn]-[(brute > 50) ? span_warning("[brute]") : brute]", 1)
 	user.show_message(span_notice("    Key: Suffocation/Toxin/Burns/Brute"), 1)
 	user.show_message(span_notice("    Body Temperature: [C.bodytemperature-T0C]&deg;C ([C.bodytemperature*1.8-459.67]&deg;F)"), 1)
 	if(C.tod && (C.stat == DEAD || (C.status_flags & FAKEDEATH)))
@@ -70,8 +69,10 @@
 		user.show_message(span_notice("Localized Damage, Brute/Burn:"),1)
 		if(length(damaged)>0)
 			for(var/obj/item/organ/external/org in damaged)
-				user.show_message(span_notice("     [capitalize(org.name)]: [(org.brute_dam > 0) ? span_warning("[org.brute_dam]") : span_notice("[org.brute_dam]")]-\
-								[(org.burn_dam > 0) ? span_warning("[org.burn_dam]") : span_notice("[org.burn_dam]")]"), 1)
+				var/org_trauma = round(org.get_trauma(), 0.1)
+				var/org_burn = round(org.get_burn(), 0.1)
+				user.show_message(span_notice("     [capitalize(org.name)]: [(org_trauma > 0) ? span_warning("[org_trauma]") : span_notice("[org_trauma]")]-\
+								[(org_burn > 0) ? span_warning("[org_burn]") : span_notice("[org_burn]")]"), 1)
 		else
 			user.show_message(span_notice("    Limbs are OK."),1)
 

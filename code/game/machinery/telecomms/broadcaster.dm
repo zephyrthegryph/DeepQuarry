@@ -772,7 +772,6 @@ GLOBAL_VAR_INIT(message_delay, 0) // To make sure restarting the recentmessages 
 	return signal
 
 
-// === merged from broadcaster_ch.dm during hard-fork de-suffix (verified no override-order change) ===
 //This is meant for essentially linking a separate z-level to the rest with telecomms
 /obj/machinery/telecomms/allinone/link
 	name = "Telecommunications Mainframe"

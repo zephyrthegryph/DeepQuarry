@@ -6,8 +6,7 @@
 	name = "animal"
 	desc = ""
 	icon = 'icons/mob/animal.dmi'
-	health = 20
-	maxHealth = 20
+	endurance = 20
 
 	// Generally we don't want simple_mobs to get displaced when bumped into due to it trivializing combat with windup attacks.
 	// Some subtypes allow displacement, like passive animals.
@@ -167,7 +166,7 @@
 	var/list/myid_access = list()
 	var/ID_provided = FALSE
 	// Move/Shoot/Attack delays based on damage
-	var/damage_fatigue_mult = 1			// Our multiplier for how heavily mobs are affected by injury. [UPDATE THIS IF THE FORMULA CHANGES]: Formula = injury_level = round(rand(1,3) * damage_fatigue_mult * clamp(((rand(2,5) * (h / getMaxHealth())) - rand(0,2)), 1, 5))
+	var/damage_fatigue_mult = 1			// Our multiplier for how heavily mobs are affected by injury. [UPDATE THIS IF THE FORMULA CHANGES]: Formula = injury_level = round(rand(1,3) * damage_fatigue_mult * clamp(((rand(2,5) * vitality()) - rand(0,2)), 1, 5))
 	var/injury_level = 0 				// What our injury level is. Rather than being the flat damage, this is the amount added to various delays to simulate injuries in a manner as lightweight as possible.
 	var/threshold = 0.6					// When we start slowing down. Configure this setting per-mob. Default is 60%
 	var/injury_enrages = FALSE			// Do injuries enrage (aka strengthen) our mob? If yes, we'll interpret how hurt we are differently.
@@ -188,7 +187,6 @@
 
 /mob/living/simple_mob/Initialize(mapload)
 	remove_verb(src, /mob/verb/observe)
-	health = maxHealth
 
 	if(ID_provided)
 		myid = new /obj/item/card/id(src)
@@ -240,11 +238,6 @@
 	LAZYCLEARLIST(prey_excludes)
 	return ..()
 
-/mob/living/simple_mob/death()
-	update_icon()
-	release_vore_contents()
-	. = ..()
-
 //Client attached
 /mob/living/simple_mob/Login()
 	. = ..()
@@ -273,9 +266,6 @@
 	if(size_range_check(new_size))
 		resize(new_size/100, uncapped = has_large_resize_bounds(), ignore_prefs = TRUE)
 		picked_size = TRUE
-		if(temporary_form)	//resizing both our forms
-			var/mob/living/L = temporary_form
-			L.resize(new_size/100, uncapped = has_large_resize_bounds(), ignore_prefs = TRUE)
 
 /mob/living/simple_mob/proc/pick_color()
 	set name = "Pick Color"
@@ -313,11 +303,12 @@
 	if(force_max_speed)
 		return -3
 
-	for(var/datum/modifier/M in modifiers)
-		if(!isnull(M.haste) && M.haste == TRUE)
-			return -3
-		if(!isnull(M.slowdown))
-			. += M.slowdown
+	if(factor(BF_HASTE))
+		return -3
+	. += factor(BF_SLOWDOWN)
+	var/penalty_scale = factor(BF_PENALTY_SCALE)
+	if(penalty_scale != 1 && . > movement_cooldown)
+		. = movement_cooldown + (. - movement_cooldown) * penalty_scale
 
 	// Turf related slowdown
 	var/turf/T = get_turf(src)
@@ -350,7 +341,7 @@
 /mob/living/simple_mob/get_status_tab_items()
 	. = ..()
 	. += ""
-	. += "Health: [round((health / getMaxHealth()) * 100)]%"
+	. += "Health: [round(vitality() * 100)]%"
 
 /mob/living/simple_mob/lay_down()
 	..()
@@ -413,12 +404,12 @@
  * Called by movement_delay and our firing/melee delay checks
 */
 /mob/living/simple_mob/proc/get_injury_level(mob/living/simple_mob/M)
-	var/h = getMaxHealth() - getOxyLoss() - getToxLoss() - getFireLoss() - getBruteLoss() - getCloneLoss() - halloss // We're not updating our actual health here bc we want updatehealth() and other checks to handle that
-	if(h > 0) 												// Safety to prevent division by 0 errors
-		if((h / getMaxHealth()) <= threshold) 				// Essentially, did our health go down? We don't modify want to modify our total slowdown if we didn't actually take damage, and aren't below our threshold %
-			var/totaldelay = round(rand(1,3) * damage_fatigue_mult * clamp(((rand(2,5) * (h / getMaxHealth())) - rand(0,2)), 1, 5)) 	// totaldelay is how much delay we're going to feed into attacks and movement. Do NOT change this formula unless you know how to math.
+	var/h = vitality() // 0..1 wellness left (pain-free: simple bodies don't feel pain)
+	if(h > 0) 												// Safety: nothing to compute for a dead/zeroed body
+		if(h <= threshold) 									// Did our health go below our threshold %?
+			var/totaldelay = round(rand(1,3) * damage_fatigue_mult * clamp(((rand(2,5) * h) - rand(0,2)), 1, 5)) 	// totaldelay is how much delay we're going to feed into attacks and movement. Do NOT change this formula unless you know how to math.
 			injury_level = totaldelay 						// Adds our returned slowdown to the mob's injury level
-		else if((h / getMaxHealth()) >= threshold)			// If our health has gone up somehow, and we're over our threshold percentage now, reset it to full
+		else												// Healed back over our threshold percentage: reset
 			injury_level = 0								// Reset to no slowdown
 
 /mob/living/simple_mob/proc/ColorMate()
@@ -641,7 +632,7 @@
 		return FALSE
 	if(vore_standing_too) //100% chance of hitting people we can eat on the spot
 		return 100
-	var/TargetHealthPercent = (M.health/M.getMaxHealth())*100 //now we start looking at the target itself
+	var/TargetHealthPercent = M.vitality() * 100 //now we start looking at the target itself
 	if (TargetHealthPercent > vore_pounce_maxhealth) //target is too healthy to pounce
 		return FALSE
 	else
@@ -948,7 +939,7 @@
 			H.Weaken(3)
 			return
 	var/armor_block = run_armor_check(T, "melee")
-	T.apply_damage(20, HALLOSS, null, armor_block)
+	T.injure(INJURY_PAIN, 20, null, src, armor_block)
 	if(prob(75))
 		T.apply_effect(3, WEAKEN, armor_block)
 

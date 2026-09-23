@@ -74,6 +74,7 @@
 	M.update_water()
 
 	post_buckle_mob(M)
+	SEND_SIGNAL(src, COMSIG_MOVABLE_BUCKLE, M, forced)
 	M.throw_alert("buckled", /atom/movable/screen/alert/restrained/buckled, new_master = src)
 	return TRUE
 

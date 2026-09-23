@@ -114,11 +114,6 @@ SUBSYSTEM_DEF(transcore)
 		if(since_backup < overdue_time)
 			curr_MR.dead_state = MR_NORMAL
 		else
-/*			if(curr_MR.dead_state != MR_DEAD) // First time switching to dead //Remove auto notification! Ghosts have a button to notify, so no more false flags. Readded removal.
-				if(curr_MR.do_notify)
-					db.notify(curr_MR)
-					curr_MR.last_notification = world.time
-*/
 			curr_MR.dead_state = MR_DEAD
 
 		if(MC_TICK_CHECK)
@@ -207,7 +202,6 @@ SUBSYSTEM_DEF(transcore)
 /datum/controller/subsystem/transcore/proc/core_dump(obj/item/disk/transcore/disk, database_key)
 	var/datum/transcore_db/db = db_by_key(database_key)
 	db.core_dump(disk=disk)
-
 
 /datum/transcore_db
 	var/list/datum/transhuman/mind_record/backed_up = list()	// All known mind records, indexed by MR.mindname/mind.name

@@ -1,3 +1,81 @@
+/// One resolved feature position within a generated functional room.
+/datum/generated_room_placement
+	var/datum/generated_room_feature/feature
+	var/x
+	var/y
+	var/dir = SOUTH
+	var/score = 0
+	var/list/reserved_frontage
+
+/datum/generated_room_placement/New()
+	..()
+	reserved_frontage = list()
+
+/datum/generated_room_placement/Destroy()
+	QDEL_NULL(feature)
+	reserved_frontage = null
+	return ..()
+
+/// Complete, inspectable result of resolving one room definition.
+/datum/generated_room_solution
+	var/definition_id
+	var/module_id
+	var/floor_type = /turf/simulated/floor/tiled
+	var/accent_color = COLOR_WHITE
+	var/aesthetic_id = "general"
+	var/trim_density = 0
+	var/decoration_density = 0
+	var/valid = FALSE
+	var/score = 0
+	var/floor_tiles = 0
+	var/occupied_tiles = 0
+	var/wall_placements = 0
+	var/largest_empty_region = 0
+	var/list/placements
+	var/list/fragments
+	var/list/circulation
+	var/list/door_circulation
+	var/list/occupied
+	var/list/issues
+
+/datum/generated_room_solution/New()
+	..()
+	placements = list()
+	fragments = list()
+	circulation = list()
+	door_circulation = list()
+	occupied = list()
+	issues = list()
+
+/datum/generated_room_solution/Destroy()
+	QDEL_LIST(placements)
+	QDEL_LIST(fragments)
+	circulation = null
+	door_circulation = null
+	occupied = null
+	issues = null
+	return ..()
+
+/datum/generated_room_solution/proc/tile_key(x, y)
+	return "[x],[y]"
+
+/datum/generated_room_solution/proc/reserve_circulation(x, y)
+	var/key = tile_key(x, y)
+	circulation[key] = TRUE
+	door_circulation[key] = TRUE
+
+/// One authored fragment footprint selected for a generated room.
+/datum/generated_room_fragment_placement
+	var/datum/generated_room_fragment/fragment
+	var/x
+	var/y
+	var/rotation = 0
+	var/mirrored = FALSE
+
+/datum/generated_room_fragment_placement/Destroy()
+	QDEL_NULL(fragment)
+	return ..()
+
 /// Area types owned by a materialized station. Separate instances are created
 /// for every department so APC and alarm state cannot bleed between rooms.
 /area/generated_station

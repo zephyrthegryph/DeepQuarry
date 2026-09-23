@@ -13,8 +13,7 @@
 	glow_intensity = 5
 	layer = ABOVE_MOB_LAYER // Over the blob.
 
-	health = 30
-	maxHealth = 30
+	endurance = 30
 	melee_damage_lower = 2
 	melee_damage_upper = 4
 	movement_cooldown = -2
@@ -44,8 +43,7 @@
 
 /mob/living/simple_mob/blob/spore/weak
 	name = "fragile blob spore"
-	health = 15
-	maxHealth = 15
+	endurance = 15
 	melee_damage_lower = 1
 	melee_damage_upper = 2
 
@@ -118,10 +116,10 @@
 	if(H.wear_suit)
 		var/obj/item/clothing/suit/A = H.wear_suit
 		if(A.armor && A.armor["melee"])
-			maxHealth += A.armor["melee"] //That zombie's got armor, I want armor!
+			endurance += A.armor["melee"] //That zombie's got armor, I want armor!
 
-	maxHealth += 40
-	health = maxHealth
+	endurance += 40
+	fully_heal()
 	name = "Infested [H.real_name]" // Not using the Z word.
 	desc = "A parasitic organism attached to a deceased body, controlling it directly as if it were a puppet."
 	melee_damage_lower += 8  // 10 total.

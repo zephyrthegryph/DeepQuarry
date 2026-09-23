@@ -60,7 +60,7 @@
 		if(src != M)
 			if(istype(M,/mob/living))
 				var/mob/living/L = M
-				L.apply_damage(3, BRUTE)
+				L.injure(INJURY_PIERCE, 3, L.hand ? BP_L_HAND : BP_R_HAND, src)
 				L.visible_message( \
 					span_warning("[L] is hurt by sharp body parts when touching [src]!"), \
 					span_warning("[src] is covered in sharp bits and it hurt when you touched them!"), )
@@ -108,7 +108,7 @@
 		//stun effects block, effects vary wildly
 		if(species.emp_sensitivity & EMP_PAIN)
 			to_chat(src, span_danger("A wave of intense pain washes over you."))
-			src.adjustHalLoss(agony_str)
+			injure(INJURY_PAIN, agony_str)
 		if(species.emp_sensitivity & EMP_BLIND)
 			if(blind_dur >= 1) //don't flash them unless they actually roll a positive blind duration
 				src.flash_eyes(3)	//3 allows it to bypass any tier of eye protection, necessary or else sec sunglasses/etc. protect you from this
@@ -127,13 +127,13 @@
 			Weaken(max(0,weaken_dur))
 		//physical damage block, deals (minor-4) 5-15, 10-20, 15-25, 20-30 (extreme-1) of *each* type
 		if(species.emp_sensitivity & EMP_BRUTE_DMG)
-			src.adjustBruteLoss(rand(25-(severity*5),35-(severity*5)) * species.emp_dmg_mod)
+			injure(INJURY_BLUNT, rand(25-(severity*5),35-(severity*5)) * species.emp_dmg_mod)
 		if(species.emp_sensitivity & EMP_BURN_DMG)
-			src.adjustFireLoss(rand(25-(severity*5),35-(severity*5)) * species.emp_dmg_mod)
+			injure(INJURY_ELECTRIC, rand(25-(severity*5),35-(severity*5)) * species.emp_dmg_mod)
 		if(species.emp_sensitivity & EMP_TOX_DMG)
-			src.adjustToxLoss(rand(25-(severity*5),35-(severity*5)) * species.emp_dmg_mod)
+			injure(INJURY_TOXIN, rand(25-(severity*5),35-(severity*5)) * species.emp_dmg_mod)
 		if(species.emp_sensitivity & EMP_OXY_DMG)
-			src.adjustOxyLoss(rand(25-(severity*5),35-(severity*5)) * species.emp_dmg_mod)
+			injure(INJURY_ASPHYXIA, rand(25-(severity*5),35-(severity*5)) * species.emp_dmg_mod)
 
 /mob/living/carbon/electrocute_act(shock_damage, obj/source, siemens_coeff = 1.0, def_zone = null, stun = 1)
 	if(SEND_SIGNAL(src, COMSIG_BEING_ELECTROCUTED, shock_damage, source, siemens_coeff, def_zone, stun) & COMPONENT_CARBON_CANCEL_ELECTROCUTE)
@@ -145,10 +145,10 @@
 	if (shock_damage<1)
 		return 0
 
-	src.apply_damage(0.2 * shock_damage, BURN, def_zone) //shock the target organ
-	src.apply_damage(0.4 * shock_damage, BURN, BP_TORSO) //shock the torso more
-	src.apply_damage(0.2 * shock_damage, BURN, null) //shock a random part!
-	src.apply_damage(0.2 * shock_damage, BURN, null) //shock a random part!
+	injure(INJURY_ELECTRIC, 0.2 * shock_damage, def_zone, source) //shock the target organ
+	injure(INJURY_ELECTRIC, 0.4 * shock_damage, BP_TORSO, source) //shock the torso more
+	injure(INJURY_ELECTRIC, 0.2 * shock_damage, null, source) //shock a random part!
+	injure(INJURY_ELECTRIC, 0.2 * shock_damage, null, source) //shock a random part!
 
 	playsound(src, "sparks", 50, 1, -1)
 	if (shock_damage > 15)
@@ -182,7 +182,7 @@
 	return shock_damage
 
 /mob/living/carbon/proc/help_shake_act(mob/living/carbon/M)
-	if (health >= get_crit_point() || on_fire)
+	if (!is_critical() || on_fire)
 		if(src == M && ishuman(src))
 			var/mob/living/carbon/human/H = src
 			visible_message( \
@@ -192,15 +192,8 @@
 
 			for(var/obj/item/organ/external/org in H.organs)
 				var/list/status = list()
-				var/brutedamage = org.brute_dam
-				var/burndamage = org.burn_dam
-				/*
-				if(halloss > 0) //Makes halloss show up as actual wounds on self examine.
-					if(prob(30))
-						brutedamage += halloss
-					if(prob(30))
-						burndamage += halloss
-				*/
+				var/brutedamage = org.get_trauma()
+				var/burndamage = org.get_burn()
 				//For reference, these will show up in game as:
 				//"My X is: [DESCRIPTOR]"
 				switch(brutedamage)
@@ -234,10 +227,9 @@
 					status += "burning and feels like it's on fire"
 				else if(org.germ_level > INFECTION_LEVEL_TWO-INFECTION_LEVEL_ONE) //Early warning
 					status += "warm to the touch"
-				if(LAZYLEN(org.wounds))
-					for(var/datum/wound/W in org.wounds)
-						if(W.internal)
-							status += "[can_feel_pain(org) ? "hurting and " : ""]showing a slowly growing bruise"
+				for(var/datum/affliction/wound/W as anything in org.get_wounds())
+					if(W.internal)
+						status += "[can_feel_pain(org) ? "hurting and " : ""]showing a slowly growing bruise"
 				if(!org.is_usable() || org.is_dislocated())
 					status += "dangling uselessly"
 				if(status.len)
@@ -334,7 +326,7 @@
 
 // ++++ROCKDTBEN++++ MOB PROCS //END
 
-/mob/living/carbon/fire_act(datum/gas_mixture/air, exposed_temperature, exposed_volume)
+/mob/living/carbon/fire_act(exposed_temperature, exposed_volume)
 	if(is_incorporeal())
 		return
 	..()
@@ -417,16 +409,6 @@
 			return TRUE
 	Weaken(FLOOR(stun_duration/2, 1))
 	return TRUE
-
-/mob/living/carbon/proc/add_chemical_effect(effect, magnitude = 1)
-	if(effect in chem_effects)
-		chem_effects[effect] += magnitude
-	else
-		chem_effects[effect] = magnitude
-
-/mob/living/carbon/proc/remove_chemical_effect(effect, magnitude)
-	if(effect in chem_effects)
-		chem_effects[effect] = magnitude ? max(0,chem_effects[effect]-magnitude) : 0
 
 /mob/living/carbon/get_default_language()
 	if(default_language)
@@ -694,7 +676,6 @@
 	return FALSE
 
 
-// === merged from carbon_chomp.dm during hard-fork de-suffix (chain-verified: prior definer is this file, nothing between) ===
 /mob/living/carbon
 	var/datum/looping_sound/mob/cozyloop/cozyloop
 	var/slip_reflex = FALSE

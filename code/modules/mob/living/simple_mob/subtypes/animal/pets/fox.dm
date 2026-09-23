@@ -64,7 +64,7 @@
 /mob/living/simple_mob/animal/passive/fox/apply_melee_effects(atom/A)
 	if(ismouse(A))
 		var/mob/living/simple_mob/animal/passive/mouse/mouse = A
-		if(mouse.getMaxHealth() < 20) // In case a badmin makes giant mice or something.
+		if(mouse.get_endurance() < 20) // In case a badmin makes giant mice or something.
 			mouse.splat()
 			visible_emote(pick("bites \the [mouse]!", "toys with \the [mouse].", "chomps on \the [mouse]!"))
 	else
@@ -139,7 +139,7 @@
 				handle_stance(STANCE_FOLLOW)
 
 	if (friend_dist <= 1)
-		if (friend.stat >= DEAD || friend.health <= config.health_threshold_softcrit)
+		if (friend.stat >= DEAD || friend.is_critical())
 			if (prob((friend.stat < DEAD)? 50 : 15))
 				var/verb = pick("yaps", "howls", "whines")
 				audible_emote(pick("[verb] in distress.", "[verb] anxiously."))
@@ -149,7 +149,7 @@
 								   "brushes against [friend].",
 								   "tugs on [friend].",
 								   "chrrrrs."))
-	else if (friend.health <= 50)
+	else if (friend.vitality() <= 0.5)
 		if (prob(10))
 			var/verb = pick("yaps", "howls", "whines")
 			audible_emote("[verb] anxiously.")
@@ -217,8 +217,7 @@
 	icon_rest = "syndifox_rest"
 
 	// this fox wears a hardsuit
-	maxHealth = 100
-	health = 100
+	endurance = 100
 	min_oxy = 0
 	max_oxy = 0
 	min_tox = 0

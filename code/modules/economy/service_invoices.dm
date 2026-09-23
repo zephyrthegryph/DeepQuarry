@@ -175,12 +175,16 @@
 		invoice.verified_item_types["[sale_item.type]"] = TRUE
 		invoice.verified_amount += credited_value
 		invoice.verified_item_count++
+		if(istype(sale_item, /obj/item))
+			var/customer_department = customer?.department_id
+			sale_item.AddComponent(/datum/component/economic_adoption, invoice.id, customer?.account_number, customer_department, provider.department_id, credited_value)
 		remaining_personal_payment -= credited_value
 		remaining_by_name[sale_item.name]--
 	service_invoices += invoice
 	emit_contract_event(CONTRACT_EVENT_SERVICE_INVOICE_CHANGED, list(
 		"actor_account" = customer?.account_number,
 		"actor_name" = invoice.customer_name,
+		"actor_department" = customer?.department_id,
 		"department" = provider.department_id,
 		"provider_account" = provider.account_number,
 		"staff_account" = invoice.staff_account_number,
@@ -279,8 +283,12 @@
 	invoice.refund_accounting_period = service_accounting_period
 	invoice.contract_revision++
 	for(var/obj/sale_item as anything in invoice.verified_items)
-		if(!QDELETED(sale_item) && sale_item.economic_sale_invoice_id == invoice.id)
-			sale_item.economic_sale_invoice_id = 0
+		if(QDELETED(sale_item) || sale_item.economic_sale_invoice_id != invoice.id)
+			continue
+		sale_item.economic_sale_invoice_id = 0
+		var/datum/component/economic_adoption/adoption = sale_item.GetComponent(/datum/component/economic_adoption)
+		if(adoption)
+			qdel(adoption)
 	record_currency_refund(invoice.amount, FALSE)
 	emit_contract_event(CONTRACT_EVENT_SERVICE_INVOICE_CHANGED, list(
 		"actor_account" = invoice.customer_account_number,
@@ -299,6 +307,71 @@
 	if(customer)
 		notify_service_invoice(invoice, "Service invoice #[invoice.id] was refunded.")
 	return TRUE
+
+/// Marks the first real use of a purchased, station-fabricated item. Checkout
+/// proves delivery; this component proves that its customer actually tried to
+/// use it. It observes the ordinary item interaction signals and publishes one
+/// reversible physical fact rather than teaching individual item types about
+/// contracts.
+/datum/component/economic_adoption
+	dupe_mode = COMPONENT_DUPE_UNIQUE
+	var/invoice_id
+	var/customer_account
+	var/customer_department
+	var/provider_department
+	var/value
+	var/adopted = FALSE
+
+/datum/component/economic_adoption/Initialize(_invoice_id, _customer_account, _customer_department, _provider_department, _value)
+	if(!istype(parent, /obj/item) || !_invoice_id || !_customer_account || !_customer_department || !_provider_department || _value <= 0)
+		return COMPONENT_INCOMPATIBLE
+	invoice_id = _invoice_id
+	customer_account = _customer_account
+	customer_department = _customer_department
+	provider_department = _provider_department
+	value = _value
+	RegisterSignal(parent, COMSIG_ITEM_ATTACK_SELF, PROC_REF(on_attack_self))
+	RegisterSignal(parent, COMSIG_ITEM_ATTACK, PROC_REF(on_attack))
+
+/datum/component/economic_adoption/Destroy()
+	UnregisterSignal(parent, list(COMSIG_ITEM_ATTACK_SELF, COMSIG_ITEM_ATTACK))
+	return ..()
+
+/datum/component/economic_adoption/proc/on_attack_self(obj/item/source, mob/user)
+	SIGNAL_HANDLER
+	record_use(user)
+
+/datum/component/economic_adoption/proc/on_attack(obj/item/source, mob/living/target, mob/living/user)
+	SIGNAL_HANDLER
+	record_use(user)
+
+/datum/component/economic_adoption/proc/record_use(mob/user)
+	if(adopted || !user)
+		return FALSE
+	var/datum/money_account/account = contract_account_for_mob(user)
+	if(!account || (account.account_number != customer_account && account.department_id != customer_department))
+		return FALSE
+	adopted = TRUE
+	publish_adoption(user, TRUE)
+	return TRUE
+
+/datum/component/economic_adoption/proc/publish_adoption(mob/user, active)
+	var/obj/item/item = parent
+	return emit_contract_event(CONTRACT_EVENT_EQUIPMENT_ADOPTED, list(
+		"actor_account" = customer_account,
+		"actor_department" = customer_department,
+		"department" = provider_department,
+		"customer_department" = customer_department,
+		"invoice_id" = invoice_id,
+		"physical_item_id" = REF(item),
+		"item_type" = item.type,
+		"item_name" = item.name,
+		"fact_id" = "equipment-adoption:[REF(item)]",
+		"fact_revision" = active ? 1 : 2,
+		"fact_active" = active,
+		"metrics" = list("value" = active ? value : 0),
+		"detail" = active ? "[item.name] entered operational use in [customer_department]." : "[item.name]'s sale was reversed before settlement.",
+	), "equipment-adoption:[REF(item)]:[active ? 1 : 2]", item, user)
 
 /datum/controller/subsystem/supply/proc/service_invoice_summary(department, accounting_period = 0)
 	var/list/summary = list(

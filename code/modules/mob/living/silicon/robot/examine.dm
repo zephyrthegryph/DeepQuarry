@@ -2,13 +2,15 @@
 	var/custom_infix = custom_name ? ", [modtype][sprite_type ? " [sprite_type]" : ""] [braintype]" : ""
 	. = ..(user, infix = custom_infix)
 
-	if (src.getBruteLoss())
-		if (src.getBruteLoss() < 75)
+	var/structural_load = injury_load(INJURY_CATEGORY_PHYSICAL)
+	var/electronics_load = injury_load(INJURY_CATEGORY_THERMAL)
+	if (structural_load)
+		if (structural_load < 75)
 			. += span_warning("It looks slightly dented.")
 		else
 			. += span_boldwarning("It looks severely dented!")
-	if (src.getFireLoss())
-		if (src.getFireLoss() < 75)
+	if (electronics_load)
+		if (electronics_load < 75)
 			. += span_warning("It looks slightly charred.")
 		else
 			. += span_boldwarning("It looks severely burnt and heat-warped!")

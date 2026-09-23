@@ -39,7 +39,7 @@
 					fever(infected)
 			else if(prob(1))
 				infected.visible_message(span_cult("The flesh of [infected] bulges and shifts unnaturally, a weeping sore appearing on [infected.p_their()] skin."))
-				infected.adjustBruteLossByPart(2, BP_HEAD, "Fleshy Rupture")
+				infected.injure(INJURY_CUT, 2, BP_HEAD)
 				infected.drip(1)
 			else if(prob(1))
 				to_chat(infected, span_danger("You hear whispers speaking to you in the back of your mind, your throat closing up."))

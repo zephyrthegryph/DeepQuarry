@@ -18,11 +18,6 @@
 
 	assisted_langs = list()
 
-	// male_cough_sounds = list('sound/effects/mob_effects/m_cougha.ogg','sound/effects/mob_effects/m_coughb.ogg', 'sound/effects/mob_effects/m_coughc.ogg')
-	// female_cough_sounds = list('sound/effects/mob_effects/f_cougha.ogg','sound/effects/mob_effects/f_coughb.ogg')
-	// male_sneeze_sound = 'sound/effects/mob_effects/sneeze.ogg'
-	// female_sneeze_sound = 'sound/effects/mob_effects/f_sneeze.ogg'
-
 	valid_transform_species = list(SPECIES_HUMAN, SPECIES_HUMAN_VATBORN, SPECIES_UNATHI, SPECIES_TAJARAN, SPECIES_SKRELL, SPECIES_DIONA, SPECIES_TESHARI, SPECIES_VOX, SPECIES_MONKEY, SPECIES_SKELETON)
 
 	unarmed_types = list(/datum/unarmed_attack/stomp, /datum/unarmed_attack/kick, /datum/unarmed_attack/punch, /datum/unarmed_attack/bite)
@@ -43,7 +38,6 @@
 		/mob/living/carbon/human/proc/promethean_select_opaqueness,
 		/mob/living/carbon/human/proc/perform_exit_vr
 		)
-
 
 /datum/species/shapeshifter/promethean/avatar/handle_death(mob/living/carbon/human/H)
 	return
@@ -68,7 +62,6 @@
 	else
 		icon_state = "promethean"
 		shapeshifter_change_species(SPECIES_VR)
-
 
 // enter_vr is called on the original mob, and puts the mind into the supplied vr mob
 /mob/living/carbon/human/proc/enter_vr(mob/living/carbon/human/avatar) // Avatar is currently a human, because we have preexisting setup code for appearance manipulation, etc.
@@ -107,7 +100,7 @@
 	// Tally human damage
 	if(ishuman(src))
 		var/mob/living/carbon/human/H = src
-		total_damage = H.getBruteLoss() + H.getFireLoss() + H.getOxyLoss() + H.getToxLoss()
+		total_damage = H.injury_load(INJURY_CATEGORY_PHYSICAL) + H.injury_load(INJURY_CATEGORY_THERMAL) + H.injury_load(INJURY_CATEGORY_ASPHYXIA) + H.injury_load(INJURY_CATEGORY_TOXIC)
 
 	// Move the mind back to the original mob
 //	vr_holder.Sleeping(1)

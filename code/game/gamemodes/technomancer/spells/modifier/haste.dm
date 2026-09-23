@@ -24,5 +24,5 @@
 
 	on_created_text = span_notice("You suddenly find it much easier to move.")
 	on_expired_text = span_warning("You feel slow again.")
-	haste = TRUE
+	factors = alist(BF_HASTE = 1)
 	stacks = MODIFIER_STACK_EXTEND

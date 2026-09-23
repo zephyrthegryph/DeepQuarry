@@ -33,7 +33,7 @@
 					s.start()
 
 					if(prob(stun_power * 10) && stun_power >= 8)
-						L.adjustFireLoss(power_charge * rand(1, 2))
+						L.injure(INJURY_ELECTRIC, power_charge * rand(1, 2), source = src)
 					return FALSE
 
 				else if(prob(20)) // Try to do a regular disarm attack.

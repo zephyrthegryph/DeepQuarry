@@ -24,7 +24,7 @@
 			if(prob(2))
 				to_chat(affected_mob, span_notice("Your stomach stings painfully."))
 				if(prob(20))
-					affected_mob.adjustToxLoss(2)
+					affected_mob.injure(INJURY_TOXIN, 2, affliction = /datum/affliction/apid_infestation)
 		if(4)
 			if(prob(10))
 				affected_mob.visible_message(span_danger("[affected_mob] buzzles loudly"), span_userdanger("Your stomach buzzles violently!"))

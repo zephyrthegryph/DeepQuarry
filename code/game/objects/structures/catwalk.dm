@@ -32,7 +32,6 @@
 	update_connections(1)
 	update_icon()
 
-
 /obj/structure/catwalk/Destroy()
 	redraw_nearby_catwalks()
 	update_falling()
@@ -69,10 +68,10 @@
 /obj/structure/catwalk/ex_act(severity)
 	switch(severity)
 		if(1)
-			new /obj/item/stack/rods(src.loc, 2) //VOREstation Edit: Conservation of mass
+			new /obj/item/stack/rods(src.loc, 2)
 			qdel(src)
 		if(2)
-			new /obj/item/stack/rods(src.loc, 2) //VOREstation Edit: Conservation of mass
+			new /obj/item/stack/rods(src.loc, 2)
 			qdel(src)
 
 /obj/structure/catwalk/attack_robot(mob/user)
@@ -182,11 +181,6 @@
 		C.name = "plated catwalk"
 		C.update_icon()
 	activated = 1
-	/* We don't have wallframes - yet
-	for(var/turf/T in orange(src, 1))
-		for(var/obj/effect/wallframe_spawn/other in T)
-			if(!other.activated) other.activate()
-	*/
 	qdel(src)
 
 /obj/effect/catwalk_plated/dark

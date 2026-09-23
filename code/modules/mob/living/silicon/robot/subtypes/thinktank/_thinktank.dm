@@ -70,15 +70,14 @@
 	SetName("inactive [initial(name)]")
 	update_icon()
 
-// Copypasting from root proc to avoid calling ..() and accidentally creating duplicate armour etc.
-/mob/living/silicon/robot/platform/initialize_components()
-	components["actuator"] =       new /datum/robot_component/actuator(src)
-	components["radio"] =          new /datum/robot_component/radio(src)
-	components["power cell"] =     new /datum/robot_component/cell(src)
-	components["diagnosis unit"] = new /datum/robot_component/diagnosis_unit(src)
-	components["camera"] =         new /datum/robot_component/camera(src)
-	components["comms"] =          new /datum/robot_component/binary_communication(src)
-	components["armour"] =         new /datum/robot_component/armour/platform(src)
+/// Platforms carry heavier armour plating.
+/mob/living/silicon/robot/platform/get_component_types()
+	var/static/list/types
+	if(!types)
+		var/list/base = ..()
+		types = base.Copy()
+		types[ROBOT_SLOT_ARMOUR] = /datum/robot_component/armour/platform
+	return types
 
 /mob/living/silicon/robot/platform/Destroy()
 	for(var/datum/weakref/drop_ref in stored_atoms)
@@ -121,15 +120,16 @@
 /mob/living/silicon/robot/platform/update_braintype()
 	braintype = BORG_BRAINTYPE_PLATFORM
 
-/mob/living/silicon/robot/platform/init()
-	. = ..()
+/mob/living/silicon/robot/platform/setup_module()
+	..()
 	if(ispath(module, /obj/item/robot_module))
 		module = new module(src)
 
 /mob/living/silicon/robot/platform/module_reset()
 	return FALSE
 
-/mob/living/silicon/robot/platform/use_power()
+/// Solar top-up and the cargo recharging port, through the power ledger.
+/mob/living/silicon/robot/platform/process_power()
 	. = ..()
 
 	if(stat != DEAD && cell)
@@ -145,10 +145,8 @@
 				to_chat(src, span_danger("Your integrated solar panels cease recharging your battery."))
 
 		if(last_recharge_state)
-			var/charge_amt = recharger_charge_amount * CELLRATE
-			cell.give(charge_amt)
-			used_power_this_tick -= (charge_amt)
-			module.respawn_consumable(src, (charge_amt / 250)) // magic number copied from borg charger.
+			var/stored = add_power(recharger_charge_amount, src)
+			module.respawn_consumable(src, (stored * CELLRATE / 250)) // magic number copied from borg charger.
 
 		if(recharging)
 
@@ -158,10 +156,9 @@
 				return
 
 			if(recharging_atom.percent() < 100)
-				var/charge_amount = recharger_tick_cost * CELLRATE
-				if(cell.check_charge(charge_amount * 1.5) && cell.checked_use(charge_amount)) // Don't kill ourselves recharging the battery.
-					recharging_atom.give(charge_amount)
-					used_power_this_tick += charge_amount
+				// Don't kill ourselves recharging the battery: keep half a transfer in reserve.
+				if(draw_power(recharger_tick_cost, recharging_atom, recharger_tick_cost * 0.5))
+					recharging_atom.give(recharger_tick_cost * CELLRATE)
 
 			if(!recharge_complete && recharging_atom.percent() >= 100)
 				recharge_complete = TRUE

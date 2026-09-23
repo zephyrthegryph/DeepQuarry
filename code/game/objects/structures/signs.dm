@@ -1976,7 +1976,6 @@
 	flag_path = "gap"
 
 
-// === merged from signs_vr.dm during hard-fork de-suffix (verified no override-order change) ===
 /obj/structure/sign/itg
 	icon = 'icons/obj/decals.dmi'
 	name = "\improper ITG"

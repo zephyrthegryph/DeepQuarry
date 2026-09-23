@@ -6,8 +6,8 @@
 /mob/living/simple_mob/Life()
 	..()
 
-	//Health
-	updatehealth()
+	// Death is decided by the body (evaluate_status -> death()); we only refresh displays here.
+	update_health_display()
 	if(stat >= DEAD)
 		return FALSE
 
@@ -25,27 +25,14 @@
 	return TRUE
 
 
-//Should we be dead?
-/mob/living/simple_mob/updatehealth()
-	if(SEND_SIGNAL(src, COMSIG_LIVING_HEALTH_UPDATE) & COMSIG_LIVING_HEALTH_UPDATE_GOD_MODE)
-		health = getMaxHealth()
-		set_stat(CONSCIOUS)
-		return
+/// Refreshes the health HUD, nutrition alert and injury slowdown. Death itself
+/// is handled by the body plan (total load >= endurance -> death()).
+/mob/living/simple_mob/proc/update_health_display()
 	get_injury_level()
-	health = getMaxHealth() - getFireLoss() - getBruteLoss() - getToxLoss() - getOxyLoss() - getCloneLoss()
-
-	//Alive, becoming dead
-	if((stat < DEAD) && (health <= 0))
-		death()
-
-	//Overhealth
-	if(health > getMaxHealth())
-		health = getMaxHealth()
-
 	//Update our hud if we have one
 	if(healths)
 		if(stat != DEAD)
-			var/heal_per = (health / getMaxHealth()) * 100
+			var/heal_per = vitality() * 100
 			switch(heal_per)
 				if(100 to INFINITY)
 					healths.icon_state = "health0"
@@ -80,25 +67,29 @@
 /mob/living/simple_mob/proc/do_healing()
 	if(nutrition < 150)
 		return
-	if(health == maxHealth)
+	if(!is_injured())
 		return
 	if(heal_countdown > 0)
 		heal_countdown --
 		return
 	if(resting)
-		if(bruteloss > 0)
-			adjustBruteLoss(-10)
-		else if(fireloss > 0)
-			adjustFireLoss(-10)
+		natural_mend(10)
 		nutrition -= 50
 		heal_countdown = 5
 		return
-	if(bruteloss > 0)
-		adjustBruteLoss(-1)
-	else if(fireloss > 0)
-		adjustFireLoss(-1)
+	natural_mend(1)
 	nutrition -= 5
 	heal_countdown = 5
+
+/// Natural regeneration: physical injury first, then burns. Mechanical mobs
+/// (synthetic biology) self-repair plating then wiring instead.
+/mob/living/simple_mob/proc/natural_mend(amount)
+	if(biology & BIOLOGY_ORGANIC)
+		if(!mend(TREAT_TISSUE_REPAIR, amount))
+			mend(TREAT_BURN_CARE, amount)
+	else
+		if(!mend(TREAT_PLATING_REPAIR, amount))
+			mend(TREAT_WIRING_REPAIR, amount)
 // ADD END
 
 // Override for special bullshit.
@@ -167,18 +158,18 @@
 
 	//Atmos effect
 	if(bodytemperature < minbodytemp)
-		adjustFireLoss(cold_damage_per_tick)
+		injure(INJURY_FROSTBITE, cold_damage_per_tick, source = loc)
 		throw_alert("temp", /atom/movable/screen/alert/cold, COLD_ALERT_SEVERITY_MAX)
 	else if(bodytemperature > maxbodytemp)
-		adjustFireLoss(heat_damage_per_tick)
+		injure(INJURY_BURN, heat_damage_per_tick, source = loc)
 		throw_alert("temp", /atom/movable/screen/alert/hot, HOT_ALERT_SEVERITY_MAX)
 	else
 		clear_alert("temp")
 
 	if(atmos_unsuitable)
-		adjustOxyLoss(unsuitable_atoms_damage)
+		injure(INJURY_ASPHYXIA, unsuitable_atoms_damage, source = loc)
 	else
-		adjustOxyLoss(-unsuitable_atoms_damage)
+		mend(TREAT_OXYGENATION, unsuitable_atoms_damage)
 
 /mob/living/simple_mob/proc/handle_guts()
 	for(var/obj/item/organ/OR in internal_organs)
@@ -195,6 +186,8 @@
 	var/update_icon_timer
 
 /mob/living/simple_mob/death(gibbed, deathmessage = "dies!")
+	update_icon()
+	release_vore_contents()
 	density = FALSE //We don't block even if we did before
 
 	if(has_eye_glow)
@@ -205,8 +198,11 @@
 			if(prob(loot_list[path]))
 				new path(get_turf(src))
 
-	update_icon_timer = addtimer(CALLBACK(src, PROC_REF(callback_update_icon)), 3, TIMER_STOPPABLE)
+	update_icon_timer = addtimer(CALLBACK(src, PROC_REF(callback_update_icon)), 0.3 SECONDS, TIMER_STOPPABLE)
 
+	ghostjoin = 0
+	GLOB.active_ghost_pods -= src
+	ghostjoin_icon()
 	return ..(gibbed,deathmessage)
 
 /mob/living/simple_mob/proc/callback_update_icon()

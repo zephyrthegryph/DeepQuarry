@@ -98,5 +98,5 @@
 
 	if(H && shard && M == user) //This needs a check for feeding the food to other people, but that could be abusable.
 		to_chat(H, span_red("You lacerate your mouth on a [shard.name] in the sandwich!"))
-		H.adjustBruteLoss(5) //TODO: Target head if human. //This TODO has been here for 4 years.
+		H.injure(INJURY_CUT, 5, BP_HEAD, source = shard)
 	..()

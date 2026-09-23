@@ -37,8 +37,7 @@
 	icon_gib = "ray_gib"
 
 	faction = FACTION_RAY
-	maxHealth = 125
-	health = 125
+	endurance = 125
 	movement_cooldown = 0 // Carp go fast
 	// dq_get_hovering(src) type-default moved to GLOB.dq_hovering_by_type
 

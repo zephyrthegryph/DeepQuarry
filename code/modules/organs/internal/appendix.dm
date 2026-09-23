@@ -28,7 +28,7 @@
 		if(prob(3))
 			to_chat(owner, span_warning("You feel a stabbing pain in your abdomen!"))
 			owner.automatic_custom_emote(VISIBLE_MESSAGE, "winces painfully.", check_stat = TRUE)
-			owner.adjustToxLoss(1)
+			owner.injure(INJURY_TOXIN, 1, flags = INJURE_SILENT)
 	if(inflamed > 2)
 		if(prob(1))
 			owner.vomit()
@@ -38,9 +38,8 @@
 			owner.Weaken(10)
 
 			var/obj/item/organ/external/groin = owner.get_organ(BP_GROIN)
-			var/datum/wound/W = new /datum/wound/internal_bleeding(20)
-			owner.adjustToxLoss(25)
-			groin.wounds += W
+			owner.injure(INJURY_TOXIN, 25, flags = INJURE_SILENT)
+			groin.add_wound(new /datum/affliction/wound/internal_bleeding(groin, 20))
 			groin.update_damages()
 			owner.handle_organs(TRUE) //Force an update so we start processing the internal bleeding.
 			inflamed = 1

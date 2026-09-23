@@ -15,9 +15,6 @@
 	var/stacks = MODIFIER_STACK_FORBID	// If true, attempts to add a second instance of this type will refresh expire_at instead.
 	var/flags = NONE						// Flags for the modifier, see mobs.dm defines for more details.
 
-	var/light_color = null				// If set, the mob possessing the modifier will glow in this color.  Not implemented yet.
-	var/light_range = null				// How far the light for the above var goes. Not implemented yet.
-	var/light_intensity = null			// Ditto. Not implemented yet.
 	var/mob_overlay_state = null		// Icon_state for an overlay to apply to a (human) mob while this exists.  This is actually implemented.
 	var/client_color = null				// If set, the client will have the world be shown in this color, from their perspective.
 	var/wire_colors_replace = null		// If set, the client will have wires replaced by the given replacement list. For colorblindness.
@@ -25,44 +22,10 @@
 	var/filter_priority = 1				// Used to make filters be applied in a specific order, if that is important.
 	var/filter_instance = null			// Instance of a filter created with the `filter_parameters` list. This exists to make `animate()` calls easier. Don't set manually.
 
-	// Now for all the different effects.
-	// Percentage modifiers are expressed as a multipler. (e.g. +25% damage should be written as 1.25)
-	var/max_health_flat					// Adjusts max health by a flat (e.g. +20) amount.  Note this is added to base health.
-	var/max_health_percent				// Adjusts max health by a percentage (e.g. -30%).
-	var/disable_duration_percent		// Adjusts duration of 'disables' (stun, weaken, paralyze, confusion, sleep, halloss, etc)  Setting to 0 will grant immunity.
-	var/incoming_damage_percent			// Adjusts all incoming damage.
-	var/incoming_brute_damage_percent	// Only affects bruteloss.
-	var/incoming_fire_damage_percent	// Only affects fireloss.
-	var/incoming_tox_damage_percent		// Only affects toxloss.
-	var/incoming_oxy_damage_percent		// Only affects oxyloss.
-	var/incoming_clone_damage_percent	// Only affects cloneloss.
-	var/incoming_hal_damage_percent		// Only affects halloss.
-	var/incoming_healing_percent		// Adjusts amount of healing received.
-	var/outgoing_melee_damage_percent	// Adjusts melee damage inflicted by holder by a percentage.  Affects attacks by melee weapons and hand-to-hand.
-	var/slowdown						// Negative numbers speed up, positive numbers slow down movement.
-	var/haste							// If set to 1, the mob will be 'hasted', which makes it ignore slowdown and go really fast.
-	var/evasion							// Positive numbers reduce the odds of being hit. Negative numbers increase the odds.
-	var/bleeding_rate_percent			// Adjusts amount of blood lost when bleeding.
-	var/accuracy						// Positive numbers makes hitting things with guns easier, negatives make it harder.
-	var/accuracy_dispersion				// Positive numbers make gun firing cover a wider tile range, and therefore more inaccurate.  Negatives help negate dispersion penalties.
-	var/metabolism_percent				// Adjusts the mob's metabolic rate, which affects reagent processing.  Won't affect mobs without reagent processing.
-	var/icon_scale_x_percent			// Makes the holder's icon get scaled wider or thinner.
-	var/icon_scale_y_percent			// Makes the holder's icon get scaled taller or shorter.
-	var/attack_speed_percent			// Makes the holder's 'attack speed' (click delay) shorter or longer.
-	var/pain_immunity					// Makes the holder not care about pain while this is on. Only really useful to human mobs.
-	var/pulse_modifier					// Modifier for pulse, will be rounded on application, then added to the normal 'pulse' multiplier which ranges between 0 and 5 normally. Only applied if they're living.
-	var/pulse_set_level					// Positive number. If this is non-null, it will hard-set the pulse level to this. Pulse ranges from 0 to 5 normally.
-	var/emp_modifier					// Added to the EMP strength, which is an inverse scale from 1 to 4, with 1 being the strongest EMP. 5 is a nullification.
-	var/explosion_modifier				// Added to the bomb strength, which is an inverse scale from 1 to 3, with 1 being gibstrength. 4 is a nullification.
-
-	// Note that these are combined with the mob's real armor values additatively. You can also omit specific armor types.
-	var/list/armor_percent = null		// List of armor values to add to the holder when doing armor calculations. This is for percentage based armor. E.g. 50 = half damage.
-	// Unlike armor, this is multiplicative. Two 50% protection modifiers will be combined into 75% protection (assuming no base protection on the mob).
-	var/heat_protection = null			// Modifies how 'heat' protection is calculated, like wearing a firesuit. 1 = full protection.
-	var/cold_protection = null			// Ditto, but for cold, like wearing a winter coat.
-	var/siemens_coefficient = null		// Similar to above two vars but 0 = full protection, to be consistant with siemens numbers everywhere else.
-
-	var/vision_flags					// Vision flags to add to the mob. SEE_MOB, SEE_OBJ, etc.
+	// Every numeric effect (slowdown, accuracy, incoming injury, metabolism,
+	// armour, ...) is a body factor: declare them in `factors` (see
+	// code/modules/body/factors.dm), e.g. factors = alist(BF_SLOWDOWN = 1).
+	// Percentages are multipliers (+25% damage is 1.25).
 
 /datum/modifier/New(new_holder, new_origin)
 	holder = new_holder
@@ -91,9 +54,15 @@
 		to_chat(holder, on_expired_text)
 	on_expire()
 	holder.modifiers.Remove(src)
+	// A persistent trait leaves the character only when deliberately removed
+	// from a living body, not when the body dies or is deleted.
+	if((flags & MODIFIER_GENETIC) && !QDELETED(holder) && holder.stat != DEAD)
+		holder.record_genetic_modifier(type, FALSE)
+	if(factors)
+		holder.invalidate_factors()
 	if(mob_overlay_state) // We do this after removing ourselves from the list so that the overlay won't remain.
 		holder.update_modifier_visuals()
-	if(icon_scale_x_percent || icon_scale_y_percent) // Correct the scaling.
+	if(changes_icon_scale()) // Correct the scaling.
 		holder.update_transform()
 	if(client_color)
 		holder.update_client_color()
@@ -156,10 +125,14 @@
 	if(mod.on_created_text)
 		to_chat(src, mod.on_created_text)
 	modifiers.Add(mod)
+	if(mod.flags & MODIFIER_GENETIC)
+		record_genetic_modifier(mod.type, TRUE)
+	if(mod.factors)
+		invalidate_factors()
 	mod.on_applied()
 	if(mod.mob_overlay_state)
 		update_modifier_visuals()
-	if(mod.icon_scale_x_percent || mod.icon_scale_y_percent)
+	if(mod.changes_icon_scale())
 		update_transform()
 	if(mod.client_color)
 		update_client_color()
@@ -202,80 +175,13 @@
 			return M
 	return null
 
+/// Does this modifier scale the holder's sprite?
+/datum/modifier/proc/changes_icon_scale()
+	return factors && (!isnull(factors[BF_ICON_SCALE_X]) || !isnull(factors[BF_ICON_SCALE_Y]))
+
 // This displays the actual 'numbers' that a modifier is doing.  Should only be shown in OOC contexts.
-// When adding new effects, be sure to update this as well.
 /datum/modifier/proc/describe_modifier_effects()
-	var/list/effects = list()
-	if(!isnull(max_health_flat))
-		effects += "You [max_health_flat > 0 ? "gain" : "lose"] [abs(max_health_flat)] maximum health."
-	if(!isnull(max_health_percent))
-		effects += "You [max_health_percent > 1.0 ? "gain" : "lose"] [multipler_to_percentage(max_health_percent, TRUE)] maximum health."
-
-	if(!isnull(disable_duration_percent))
-		effects += "Disabling effects on you last [multipler_to_percentage(disable_duration_percent, TRUE)] [disable_duration_percent > 1.0 ? "longer" : "shorter"]"
-
-	if(!isnull(incoming_damage_percent))
-		effects += "You take [multipler_to_percentage(incoming_damage_percent, TRUE)] [incoming_damage_percent > 1.0 ? "more" : "less"] damage."
-	if(!isnull(incoming_brute_damage_percent))
-		effects += "You take [multipler_to_percentage(incoming_brute_damage_percent, TRUE)] [incoming_brute_damage_percent > 1.0 ? "more" : "less"] brute damage."
-	if(!isnull(incoming_fire_damage_percent))
-		effects += "You take [multipler_to_percentage(incoming_fire_damage_percent, TRUE)] [incoming_fire_damage_percent > 1.0 ? "more" : "less"] fire damage."
-	if(!isnull(incoming_tox_damage_percent))
-		effects += "You take [multipler_to_percentage(incoming_tox_damage_percent, TRUE)] [incoming_tox_damage_percent > 1.0 ? "more" : "less"] toxin damage."
-	if(!isnull(incoming_oxy_damage_percent))
-		effects += "You take [multipler_to_percentage(incoming_oxy_damage_percent, TRUE)] [incoming_oxy_damage_percent > 1.0 ? "more" : "less"] oxy damage."
-	if(!isnull(incoming_clone_damage_percent))
-		effects += "You take [multipler_to_percentage(incoming_clone_damage_percent, TRUE)] [incoming_clone_damage_percent > 1.0 ? "more" : "less"] clone damage."
-	if(!isnull(incoming_hal_damage_percent))
-		effects += "You take [multipler_to_percentage(incoming_hal_damage_percent, TRUE)] [incoming_hal_damage_percent > 1.0 ? "more" : "less"] agony damage."
-
-	if(!isnull(incoming_healing_percent))
-		effects += "Healing applied to you is [multipler_to_percentage(incoming_healing_percent, TRUE)] [incoming_healing_percent > 1.0 ? "stronger" : "weaker"]."
-
-	if(!isnull(outgoing_melee_damage_percent))
-		effects += "Damage you do with melee weapons and unarmed combat is [multipler_to_percentage(outgoing_melee_damage_percent, TRUE)] \
-		[outgoing_melee_damage_percent > 1.0 ? "higher" : "lower"]."
-
-	if(!isnull(slowdown))
-		effects += "[slowdown > 0 ? "lose" : "gain"] [slowdown] slowdown."
-
-	if(!isnull(haste))
-		effects += "You move at maximum speed, and cannot be slowed by any means."
-
-	if(!isnull(evasion))
-		effects += "You are [abs(evasion)]% [evasion > 0 ? "harder" : "easier"] to hit with weapons."
-
-	if(!isnull(bleeding_rate_percent))
-		effects += "You bleed [multipler_to_percentage(bleeding_rate_percent, TRUE)] [bleeding_rate_percent > 1.0 ? "faster" : "slower"]."
-
-	if(!isnull(accuracy))
-		effects += "It is [abs(accuracy)]% [accuracy > 0 ? "easier" : "harder"] for you to hit someone with a ranged weapon."
-
-	if(!isnull(accuracy_dispersion))
-		effects += "Projectiles you fire are [accuracy_dispersion > 0 ? "more" : "less"] likely to stray from your intended target."
-
-	if(!isnull(metabolism_percent))
-		effects += "Your metabolism is [metabolism_percent > 1.0 ? "faster" : "slower"], \
-		causing reagents in your body to process, and hunger to occur [multipler_to_percentage(metabolism_percent, TRUE)] [metabolism_percent > 1.0 ? "faster" : "slower"]."
-
-	if(!isnull(icon_scale_x_percent))
-		effects += "Your appearance is [multipler_to_percentage(icon_scale_x_percent, TRUE)] [icon_scale_x_percent > 1 ? "wider" : "thinner"]."
-
-	if(!isnull(icon_scale_y_percent))
-		effects += "Your appearance is [multipler_to_percentage(icon_scale_y_percent, TRUE)] [icon_scale_y_percent > 1 ? "taller" : "shorter"]."
-
-	if(!isnull(attack_speed_percent))
-		effects += "The delay between attacking is [multipler_to_percentage(attack_speed_percent, TRUE)] [disable_duration_percent > 1.0 ? "longer" : "shorter"]."
-
-	return jointext(effects, "<br>")
-
-
-
-// Helper to format multiplers (e.g. 1.4) to percentages (like '40%')
-/proc/multipler_to_percentage(multi, abs = FALSE)
-	if(abs)
-		return "[abs( ((multi - 1) * 100) )]%"
-	return "[((multi - 1) * 100)]%"
+	return jointext(body_factor_describe(factors), "<br>")
 
 
 // === merged from modifiers_vr.dm during hard-fork de-suffix (verified no override-order change) ===
@@ -283,49 +189,6 @@
 	var/effect_color					// Allows for coloring of modifiers.
 	var/coloration_applied = 0			// Tells the game is coloration has been applied already or not.
 	var/icon_override = 0				// Tells the game if it should use modifer_effects_vr.dmi or not.
-	// ENERGY CODE. Variables to allow for energy based modifiers.
-	var/energy_based					// Sees if the modifier is based on something electronic based.
-	var/energy_cost						// How much the modifier uses per action/special effect blocked. For base values.
-	var/damage_cost						// How much energy is used when numbers are involed. For values, such as taking damage. Ex: (Damage*damage_cost)
-	var/obj/item/cell/energy_source = null	// The source of the above.
-
-	// RESISTANCES CODE. Variable to enable external damage resistance modifiers. This is not unlike armor.
-	// 0 = immune || < 0 = heals || 1 = full damage || >1 = increased damage.
-	// It should never be below zero as it is not intended to do such, but you are free to experiment!
-	// Ex: Max_brute_resistance = 0. Min_brute resistance = 1. When started, provides 100% resistance to brute. When cell is dying, goes down to 0% resistance.
-	// Max is the MAXIMUM % multiplier that will be taken at a MAX charge. Min is the MINIMUM % multiplier that will be taken at a MINIMUM charge.
-	// Think of it like this: Minimum = what happens at minimum charge. Max = what happens at maximum charge.
-	// Why do I mention this so much? Because even /I/ got confused, and I wrote this thing!
-	var/min_damage_resistance
-	var/max_damage_resistance
-	var/effective_damage_resistance
-
-	var/min_brute_resistance
-	var/max_brute_resistance
-	var/effective_brute_resistance
-
-	var/min_fire_resistance
-	var/max_fire_resistance
-	var/effective_fire_resistance
-
-	var/min_tox_resistance
-	var/max_tox_resistance
-	var/effective_tox_resistance
-
-	var/min_oxy_resistance
-	var/max_oxy_resistance
-	var/effective_oxy_resistance
-
-	var/min_clone_resistance
-	var/max_clone_resistance
-	var/effective_clone_resistance
-
-	var/min_hal_resistance
-	var/max_hal_resistance
-	var/effective_hal_resistance
-	// Resistances end
-
-
 
 /datum/modifier/underwater_stealth
 	name = "underwater stealth"
@@ -336,12 +199,13 @@
 
 	stacks = MODIFIER_STACK_FORBID
 
-	slowdown = -1.0 // A bit faster when actually submerged fully in water, as you're not waddling through it. // nerf this a lil
-	siemens_coefficient = 1.5 				//You are, however, underwater. Getting shocked will hurt.
+	// A bit faster when actually submerged fully in water, as you're not waddling through it. // nerf this a lil
+	// You are, however, underwater. Getting shocked will hurt.
+	// You are swinging a sword under water...Good luck.
+	// You're underwater. Good luck shooting a gun. (Makes shots as if you were 3.33 tiles further.)
+	// You're underwater and a bit harder to hit.
+	factors = alist(BF_SLOWDOWN = -1.0, BF_ACCURACY = -50, BF_EVASION = 30, BF_MELEE_DAMAGE = 0.75, BF_SIEMENS = 1.5)
 
-	outgoing_melee_damage_percent = 0.75 	//You are swinging a sword under water...Good luck.
-	accuracy = -50							//You're underwater. Good luck shooting a gun. (Makes shots as if you were 3.33 tiles further.)
-	evasion = 30							//You're underwater and a bit harder to hit.
 
 /datum/modifier/underwater_stealth/on_applied()
 	holder.alpha = 50
@@ -365,6 +229,11 @@
 	else
 		expire(silent = FALSE)
 
+// Personal shield projections. Their numeric effects (siemens, stun
+// resistance, evasion...) are ordinary body factors; the one thing that is
+// not a simple multiplier is the charge-dependent damage resistance, which
+// also drains the generator's cell for what it absorbs. That runs on the
+// holder's COMSIG_LIVING_INJURE while the shield is up.
 /datum/modifier/shield_projection
 	name = "Shield Projection"
 	desc = "You are currently protected by a shield, rendering nigh impossible to hit you through conventional means."
@@ -375,45 +244,35 @@
 
 	icon_override = 1
 	mob_overlay_state = "deflect"
-	siemens_coefficient = 2 //Stun weapons drain 100% charge per point of damage. They're good at blocking lasers and bullets but not good at blocking stun beams!
-	energy_based = 1
-	energy_cost = 99999 //This is changed to the shield_generator's energy_cost.
-	damage_cost = 50 //This is how much battery is used per damage unit absorbed. Higher damage means higher charge use per damage absorbed. Changed below!
+	// Stun weapons drain 100% charge per point of damage. They're good at blocking lasers and bullets but not good at blocking stun beams!
+	factors = alist(BF_SIEMENS = 2)
 
-	//Not actually in use until effective resistances are set. Just here so it doesn't have to be placed down for all the variants. Less lines.
-	max_damage_resistance = 1
-	max_brute_resistance = 1
-	max_fire_resistance = 1
-	max_tox_resistance = 1
-	max_oxy_resistance = 1
-	max_clone_resistance = 1
-	max_hal_resistance = 1
-	min_damage_resistance = 1
-	min_brute_resistance = 1
-	min_fire_resistance = 1
-	min_tox_resistance = 1
-	min_oxy_resistance = 1
-	min_clone_resistance = 1
-	min_hal_resistance = 1
+	/// Cell charge used per point of injury the shield absorbs. Set from the generator.
+	var/damage_cost = 50
+	/// The generator's cell.
+	var/obj/item/cell/energy_source
+	/// The shield generator you're wearing.
+	var/obj/item/personal_shield_generator/shield_generator
+	/// Injury multipliers at FULL charge: INJURY_CATEGORY_* -> multiplier
+	/// (SHIELD_RESIST_ALL for every injury). 0 = immune, 1 = full injury.
+	var/alist/resist_full
+	/// Injury multipliers at EMPTY charge; the shield slides between the two.
+	/// Missing categories are 1 (no protection) when empty.
+	var/alist/resist_empty
 
-/* 	// These are not set, but left here as an example. All three (min,max,effective) must be set or BAD THINGS will happen.
-	min_brute_resistance = 1 // Min = WHAT HAPPENS AT MINIMUM CHARGE
-	max_brute_resistance = 0 // MAX = WHAT HAPPENS AT MAXIMUM CHARGE
-	effective_brute_resistance = 1 //Just tells the game that it has vars. Done to use less checks.
-
-	min_fire_resistance = 1
-	max_fire_resistance = 0
-	effective_fire_resistance = 1
-	disable_duration_percent = 1 //THIS CAN ALSO BE USED! Don't be too afraid to use this one, but use it sparingly!
-*/
-	var/obj/item/personal_shield_generator/shield_generator //This is the shield generator you're wearing!
-
+/// Key in resist_full / resist_empty that applies to every injury category.
+#define SHIELD_RESIST_ALL 0
 
 /datum/modifier/shield_projection/on_applied()
-	return
+	RegisterSignal(holder, COMSIG_LIVING_INJURE, PROC_REF(on_holder_injure))
 
-/datum/modifier/shield_projection/on_expire() //Don't need to modify this!
-	return
+/datum/modifier/shield_projection/on_expire()
+	UnregisterSignal(holder, COMSIG_LIVING_INJURE)
+
+/datum/modifier/shield_projection/Destroy(force)
+	shield_generator = null
+	energy_source = null
+	return ..()
 
 /datum/modifier/shield_projection/check_if_valid() //Let's check to make sure you got the stuff and set the vars. Don't need to modify this for any subtypes!
 	if(ishuman(holder)) //Only humans can use this! Other things later down the line might use the same stuff this does, but the shield generator is human only!
@@ -428,7 +287,6 @@
 			expire(silent = TRUE)
 		if(shield_generator) //Sanity.
 			energy_source = shield_generator.bcell
-			energy_cost = shield_generator.generator_hit_cost
 			damage_cost = shield_generator.damage_cost
 			effect_color = shield_generator.effect_color
 		if(!coloration_applied) //Does a check if colors have been applied. If not, updates the color.
@@ -437,218 +295,121 @@
 	else
 		expire(silent = TRUE)
 
-
 /datum/modifier/shield_projection/tick() //When the shield generator runs out of charge, it'll remove this naturally.
 	if(holder.stat == DEAD)
 		expire(silent = TRUE) //If you're dead the generator stops protecting you but keeps running.
 	if(!shield_generator || !shield_generator.slot_check()) //No shield to begin with/shield is not on them any longer.
 		expire(silent = FALSE)
 
-	var/shield_efficiency = (energy_source.charge/energy_source.maxcharge) //1 = complete resistance. 0 = no resistance. Must be adjusted for subtypes!
-	if(!isnull(effective_damage_resistance))
-		effective_damage_resistance = min_damage_resistance + (max_damage_resistance - min_damage_resistance) * shield_efficiency
+/// Injury multiplier for `category` at the cell's current charge, or null
+/// when the shield doesn't touch that category.
+/datum/modifier/shield_projection/proc/resistance(category)
+	var/efficiency = energy_source?.maxcharge ? energy_source.charge / energy_source.maxcharge : 0
+	. = null
+	for(var/key in list(SHIELD_RESIST_ALL, category))
+		if(isnull(resist_full?[key]))
+			continue
+		var/empty = isnull(resist_empty?[key]) ? 1 : resist_empty[key]
+		var/mult = empty + (resist_full[key] - empty) * efficiency
+		. = isnull(.) ? mult : . * mult
 
-	if(!isnull(effective_brute_resistance))
-		effective_brute_resistance = min_brute_resistance + (max_brute_resistance - min_brute_resistance) * shield_efficiency
-
-	if(!isnull(effective_fire_resistance))
-		effective_fire_resistance = min_fire_resistance + (max_fire_resistance - min_fire_resistance) * shield_efficiency
-
-	if(!isnull(effective_tox_resistance))
-		effective_tox_resistance = min_tox_resistance + (max_tox_resistance - min_tox_resistance) * shield_efficiency
-
-	if(!isnull(effective_oxy_resistance))
-		effective_oxy_resistance = min_oxy_resistance + (max_oxy_resistance - min_oxy_resistance) * shield_efficiency
-
-	if(!isnull(effective_clone_resistance))
-		effective_clone_resistance = min_clone_resistance + (max_clone_resistance - min_clone_resistance) * shield_efficiency
-
-	if(!isnull(effective_hal_resistance))
-		effective_hal_resistance = min_hal_resistance + (max_hal_resistance - min_hal_resistance) * shield_efficiency
+/datum/modifier/shield_projection/proc/on_holder_injure(mob/living/source, kind, list/amount_ref, zone, atom/injury_source, flags)
+	SIGNAL_HANDLER
+	if(flags & INJURE_IGNORE_RESISTANCE)
+		return NONE
+	var/mult = resistance(injury_category(kind))
+	if(isnull(mult))
+		return NONE
+	energy_source?.use(damage_cost * amount_ref[1])
+	amount_ref[1] *= mult
+	return NONE
 
 //Shield variants.
 
 //Simple. Goes from 100% resistance to 0% resistance depending on charge. This is mostly an example of a shield variant.
 /datum/modifier/shield_projection/bruteburn
-	max_brute_resistance = 0
-	effective_brute_resistance = 1
-
-	max_fire_resistance = 0
-	effective_fire_resistance = 1
+	resist_full = alist(INJURY_CATEGORY_PHYSICAL = 0, INJURY_CATEGORY_THERMAL = 0)
 
 /datum/modifier/shield_projection/bruteburn/weak
-	max_brute_resistance = 0.5
-	max_fire_resistance = 0.5
+	resist_full = alist(INJURY_CATEGORY_PHYSICAL = 0.5, INJURY_CATEGORY_THERMAL = 0.5)
 
 //SECURITY VARIANTS
 /datum/modifier/shield_projection/security // Security backpack. 50% resistance at full charge. 10% resistance for the last shot taken.
-	max_brute_resistance = 0.50
-	min_brute_resistance = 0.9
-	effective_brute_resistance = 1
-
-	max_fire_resistance = 0.5
-	min_fire_resistance = 0.9
-	effective_fire_resistance = 1
-
-	max_hal_resistance = 0.5
-	min_hal_resistance = 0.9
-	effective_hal_resistance = 1
-
-	disable_duration_percent = 0.75
+	resist_full = alist(INJURY_CATEGORY_PHYSICAL = 0.5, INJURY_CATEGORY_THERMAL = 0.5, INJURY_CATEGORY_PAIN = 0.5)
+	resist_empty = alist(INJURY_CATEGORY_PHYSICAL = 0.9, INJURY_CATEGORY_THERMAL = 0.9, INJURY_CATEGORY_PAIN = 0.9)
+	factors = alist(BF_DISABLE_DURATION = 0.75, BF_SIEMENS = 2)
 
 /datum/modifier/shield_projection/security/weak // Security belt.
-	max_brute_resistance = 0.75
-	min_brute_resistance = 0.95
-	max_fire_resistance = 0.75
-	min_fire_resistance = 0.95
-	max_hal_resistance = 0.75
-	min_hal_resistance = 0.95
+	resist_full = alist(INJURY_CATEGORY_PHYSICAL = 0.75, INJURY_CATEGORY_THERMAL = 0.75, INJURY_CATEGORY_PAIN = 0.75)
+	resist_empty = alist(INJURY_CATEGORY_PHYSICAL = 0.95, INJURY_CATEGORY_THERMAL = 0.95, INJURY_CATEGORY_PAIN = 0.95)
 
 /datum/modifier/shield_projection/security/strong // Dunno. Upgraded variant of security backpack?
-	max_brute_resistance = 0.25
-	max_fire_resistance = 0.25
-	max_hal_resistance = 0.25
-	siemens_coefficient = 1.5 //Not as weak as normal, but still weak.
-	disable_duration_percent = 0.5
-
+	resist_full = alist(INJURY_CATEGORY_PHYSICAL = 0.25, INJURY_CATEGORY_THERMAL = 0.25, INJURY_CATEGORY_PAIN = 0.25)
+	// Not as weak as normal, but still weak.
+	factors = alist(BF_DISABLE_DURATION = 0.5, BF_SIEMENS = 1.5)
 
 //MINING VARIANTS
 /datum/modifier/shield_projection/mining //Base mining belt. 30% resistance that fades to 15% resistance
-	max_brute_resistance = 0.70
-	min_brute_resistance = 0.85
-	effective_brute_resistance = 1
-
-	max_fire_resistance = 0.70
-	min_fire_resistance = 0.85
-	effective_fire_resistance = 1
-
-	max_hal_resistance = 1.5 // No mobs should be shooting you with halloss. If this happens, it means you're using it wrong!!!
-	min_hal_resistance = 1.5
-	effective_hal_resistance = 1
-
-	disable_duration_percent = 0.75 //Miners often come into contact with things that can stun them.
+	// No mobs should be shooting you with halloss. If this happens, it means you're using it wrong!!!
+	resist_full = alist(INJURY_CATEGORY_PHYSICAL = 0.7, INJURY_CATEGORY_THERMAL = 0.7, INJURY_CATEGORY_PAIN = 1.5)
+	resist_empty = alist(INJURY_CATEGORY_PHYSICAL = 0.85, INJURY_CATEGORY_THERMAL = 0.85, INJURY_CATEGORY_PAIN = 1.5)
+	// Miners often come into contact with things that can stun them.
+	factors = alist(BF_DISABLE_DURATION = 0.75, BF_SIEMENS = 2)
 
 /datum/modifier/shield_projection/mining/strong // Mining belt, but upgraded. Even weaker to halloss!
-	max_brute_resistance = 0.55
-	min_brute_resistance = 0.75
-	max_fire_resistance = 0.55
-	min_fire_resistance = 0.75
-	disable_duration_percent = 0.5
-
-	max_hal_resistance = 2
-	min_hal_resistance = 2
+	resist_full = alist(INJURY_CATEGORY_PHYSICAL = 0.55, INJURY_CATEGORY_THERMAL = 0.55, INJURY_CATEGORY_PAIN = 2)
+	resist_empty = alist(INJURY_CATEGORY_PHYSICAL = 0.75, INJURY_CATEGORY_THERMAL = 0.75, INJURY_CATEGORY_PAIN = 2)
+	factors = alist(BF_DISABLE_DURATION = 0.5, BF_SIEMENS = 2)
 
 //MISC VARIANTS
 
 /datum/modifier/shield_projection/biohazard //The odd-ball damage types. Provides near-complete immunity while it's up.
-	min_tox_resistance = 0.25
-	max_tox_resistance = 0
-	effective_tox_resistance = 1
-
-	min_oxy_resistance = 0.25
-	max_oxy_resistance = 0
-	effective_oxy_resistance = 1
-
-	min_clone_resistance = 0.25
-	max_clone_resistance = 0
-	effective_clone_resistance = 1
+	resist_full = alist(INJURY_CATEGORY_TOXIC = 0, INJURY_CATEGORY_ASPHYXIA = 0, INJURY_CATEGORY_GENETIC = 0)
+	resist_empty = alist(INJURY_CATEGORY_TOXIC = 0.25, INJURY_CATEGORY_ASPHYXIA = 0.25, INJURY_CATEGORY_GENETIC = 0.25)
 
 /datum/modifier/shield_projection/admin // Adminbus.
 	on_created_text = span_notice("Your shield generator activates and you feel the power of the tesla buzzing around you.")
 	on_expired_text = span_warning("Your shield generator deactivates, leaving you feeling weak and vulnerable.")
-	siemens_coefficient = 0
-	disable_duration_percent = 0
-	min_damage_resistance = 0
-	max_damage_resistance = 0
-	effective_damage_resistance = 0
-	min_brute_resistance = 0
-	max_brute_resistance = 0
-	effective_brute_resistance = 0
-	min_fire_resistance = 0
-	max_fire_resistance = 0
-	effective_fire_resistance = 0
-	min_tox_resistance = 0
-	max_tox_resistance = 0
-	effective_tox_resistance = 0
-	min_oxy_resistance = 0
-	max_oxy_resistance = 0
-	effective_oxy_resistance = 0
-	min_clone_resistance = 0
-	max_clone_resistance = 0
-	effective_clone_resistance = 0
-	min_hal_resistance = 0
-	max_hal_resistance = 0
-	effective_hal_resistance = 0
+	factors = alist(BF_DISABLE_DURATION = 0, BF_SIEMENS = 0)
+	resist_full = alist(SHIELD_RESIST_ALL = 0)
+	resist_empty = alist(SHIELD_RESIST_ALL = 0)
 
 /datum/modifier/shield_projection/broken //For broken variants. Good if possible randomization is included for packs spawned on PoIs.
-	max_brute_resistance = 2
-	min_brute_resistance = 2
-	effective_brute_resistance = 1
-
-	max_fire_resistance = 2
-	min_fire_resistance = 2
-	effective_fire_resistance = 1
+	resist_full = alist(INJURY_CATEGORY_PHYSICAL = 2, INJURY_CATEGORY_THERMAL = 2)
+	resist_empty = alist(INJURY_CATEGORY_PHYSICAL = 2, INJURY_CATEGORY_THERMAL = 2)
 
 /datum/modifier/shield_projection/inverted //Becomes stronger the weaker the cell is. Means the last shot taken will be the weakest. Example just to show it can be done.
-	max_brute_resistance = 1
-	min_brute_resistance = 0
-	effective_brute_resistance = 1
-
-	max_fire_resistance = 1
-	min_fire_resistance = 0
-	effective_fire_resistance = 1
+	resist_full = alist(INJURY_CATEGORY_PHYSICAL = 1, INJURY_CATEGORY_THERMAL = 1)
+	resist_empty = alist(INJURY_CATEGORY_PHYSICAL = 0, INJURY_CATEGORY_THERMAL = 0)
 
 /datum/modifier/shield_projection/parry //Intended for 'parry' shields, which only last for a single second before running out of charge
-	max_brute_resistance = 0
-	min_brute_resistance = 0
-	effective_brute_resistance = 1
-
-	max_fire_resistance = 0
-	min_fire_resistance = 0
-	effective_fire_resistance = 1
-
-	max_hal_resistance = 0
-	min_hal_resistance = 0
-	effective_hal_resistance = 1
+	resist_full = alist(INJURY_CATEGORY_PHYSICAL = 0, INJURY_CATEGORY_THERMAL = 0, INJURY_CATEGORY_PAIN = 0)
+	resist_empty = alist(INJURY_CATEGORY_PHYSICAL = 0, INJURY_CATEGORY_THERMAL = 0, INJURY_CATEGORY_PAIN = 0)
 
 /datum/modifier/shield_projection/melee_focus
-
 	//You are expected to be taking a LOT more hits while this is up.
 	damage_cost = 5
+	// 50% resistance at a full charge, 35% when about to empty. 500% damage
+	// taken from halloss: anti PVP, this is meant to be a PvE weapon.
+	resist_full = alist(INJURY_CATEGORY_PHYSICAL = 0.5, INJURY_CATEGORY_THERMAL = 0.5, INJURY_CATEGORY_PAIN = 5)
+	resist_empty = alist(INJURY_CATEGORY_PHYSICAL = 0.65, INJURY_CATEGORY_THERMAL = 0.65, INJURY_CATEGORY_PAIN = 5)
+	// Stuns are half as long; much harder to shoot; somewhat faster; can't
+	// shoot; attacks faster and harder; bleeds slightly slower.
+	factors = alist(BF_BLEEDING = 0.75, BF_SLOWDOWN = -0.5, BF_ACCURACY = -1000, BF_EVASION = 35, BF_ATTACK_SPEED = 0.8, BF_MELEE_DAMAGE = 1.25, BF_DISABLE_DURATION = 0.5, BF_SIEMENS = 2)
 
-	//.50% resistance at a full charge, 35% resistance at when we're about to empty.
-	max_brute_resistance = 0.5
-	min_brute_resistance = 0.65
-	effective_brute_resistance = 1
+/// Exploration boss loot: a generator belt that pulls ore towards you.
+/datum/modifier/shield_projection/magnet
+	name = "Magnet Pull"
+	mob_overlay_state = null
+	factors = null
 
-	//.50% resistance at a full charge, 35% resistance at when we're about to empty.
-	max_fire_resistance = 0.5
-	min_fire_resistance = 0.65
-	effective_fire_resistance = 1
+/datum/modifier/shield_projection/magnet/tick()
+	..()
+	for(var/obj/item/ore/O in orange(4, holder))
+		step_towards(O, get_turf(holder))
 
-	//500% damage taken from halloss. Anti PVP. This is meant to be a PvE weapon.
-	//This also means that mobs that deal halloss will wreck users of this...Those are (extremely) rare as far as I know.
-	min_hal_resistance = 5
-	max_hal_resistance = 5
-	effective_hal_resistance = 1
+/datum/modifier/shield_projection/magnet/defense
+	resist_full = alist(INJURY_CATEGORY_PHYSICAL = 0.3, INJURY_CATEGORY_THERMAL = 0.3)
+	resist_empty = alist(INJURY_CATEGORY_PHYSICAL = 0.8, INJURY_CATEGORY_THERMAL = 0.8)
 
-	//Stuns are HALF as long. Get stunned for 4 seconds? Only stunned for 2, now.
-	disable_duration_percent = 0.5
-
-	//You are QUITE harder to shoot.
-	evasion = 35
-
-	//You move SOMEWHAT faster.
-	slowdown = -0.5
-
-	//You can't shoot, though. This isn't actually used as this modifier is checked in gun.dm, but it's here anyways.
-	accuracy = -1000
-
-	//You attack SOMEWHAT faster
-	attack_speed_percent = 0.8
-
-	//You hit SOMEWHAT harder
-	outgoing_melee_damage_percent = 1.25
-
-	//You bleed SLIGHTLY slower, since you are taking more hits.
-	bleeding_rate_percent = 0.75
+#undef SHIELD_RESIST_ALL

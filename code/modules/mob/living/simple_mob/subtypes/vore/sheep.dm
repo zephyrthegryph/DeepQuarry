@@ -9,8 +9,7 @@
 	icon = 'icons/mob/vore.dmi'
 
 	faction = FACTION_SHEEP
-	maxHealth = 40
-	health = 40
+	endurance = 40
 
 	see_in_dark = 2
 

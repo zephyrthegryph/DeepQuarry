@@ -40,7 +40,6 @@
 /mob/living/simple_mob/shadekin/blue
 	name = "blue-eyed shadekin"
 	eye_state = BLUE_EYES
-	health = 100
 	//hostile = FALSE
 	//animal = FALSE
 	//stop_when_pulled = TRUE
@@ -90,7 +89,6 @@
 /mob/living/simple_mob/shadekin/purple
 	name = "purple-eyed shadekin"
 	eye_state = PURPLE_EYES
-	health = 150
 	//hostile = FALSE
 	//animal = TRUE
 	//stop_when_pulled = FALSE
@@ -135,7 +133,6 @@
 /mob/living/simple_mob/shadekin/yellow
 	name = "yellow-eyed shadekin"
 	eye_state = YELLOW_EYES
-	health = 100
 	//hostile = FALSE
 	//animal = TRUE
 	//stop_when_pulled = FALSE
@@ -190,7 +187,6 @@
 /mob/living/simple_mob/shadekin/green
 	name = "green-eyed shadekin"
 	eye_state = GREEN_EYES
-	health = 125
 	//hostile = FALSE
 	//animal = TRUE
 	//stop_when_pulled = FALSE
@@ -234,7 +230,6 @@
 /mob/living/simple_mob/shadekin/orange
 	name = "orange-eyed shadekin"
 	eye_state = ORANGE_EYES
-	health = 175
 	//hostile = TRUE
 	//animal = TRUE
 	//stop_when_pulled = FALSE
@@ -296,8 +291,7 @@
 	Your body feels hot, growing weaker, more tired. Draining. Darkness coming. \
 	You struggle to stay awake while floating helplessly in the goo."
 	player_msg = "You are Rakshasa. You are not to directly harm crew, only consume. You never speak a language. You have special emotes: 'evillaugh', 'evilno', 'evilbreath', 'evilbreath2', and 'goodripsound'"
-	maxHealth = 1000000000000
-	health = 1000000000000
+	endurance = 1000000000000
 	eye_state = "BLUE EYES"
 	eye_icon_state = "e_rakshasa"
 	comp = /datum/component/shadekin/full/rakshasa

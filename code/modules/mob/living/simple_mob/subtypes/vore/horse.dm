@@ -9,8 +9,7 @@
 	icon = 'icons/mob/vore.dmi'
 
 	faction = FACTION_HORSE
-	maxHealth = 60
-	health = 60
+	endurance = 60
 
 	movement_cooldown = -2 //horses are fast mkay.
 	see_in_dark = 6
@@ -44,8 +43,7 @@
 	icon_dead = "horse-dead"
 	icon = 'icons/mob/vore64x64.dmi'
 
-	maxHealth = 120
-	health = 120
+	endurance = 120
 
 	melee_damage_lower = 5
 	melee_damage_upper = 15
@@ -118,8 +116,7 @@
 	tt_desc = "Equus cailpeach"
 
 	vore_capacity = 2
-	maxHealth = 250
-	health = 250
+	endurance = 250
 	meat_amount = 10
 
 	old_x = -16

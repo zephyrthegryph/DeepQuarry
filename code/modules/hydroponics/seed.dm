@@ -147,19 +147,19 @@
 
 		if(affecting)
 			to_chat(target, span_danger("\The [fruit]'s thorns pierce your [affecting.name] greedily!"))
-			target.apply_damage(damage, BRUTE, target_limb, blocked, TRUE, has_edge)
+			target.injure(injury_kind_for(BRUTE, TRUE, has_edge), damage, target_limb, fruit, blocked)
 		else
 			to_chat(target, span_danger("\The [fruit]'s thorns pierce your flesh greedily!"))
-			target.adjustBruteLoss(damage)
+			target.injure(INJURY_PIERCE, damage, source = fruit)
 	else
 		damage = max(1, round(5*get_trait(TRAIT_POTENCY)/100, 1))
 		has_edge = prob(get_trait(TRAIT_POTENCY)/5)
 		if(affecting)
 			to_chat(target, span_danger("\The [fruit]'s thorns dig deeply into your [affecting.name]!"))
-			target.apply_damage(damage, BRUTE, target_limb, blocked, TRUE, has_edge)
+			target.injure(injury_kind_for(BRUTE, TRUE, has_edge), damage, target_limb, fruit, blocked)
 		else
 			to_chat(target, span_danger("\The [fruit]'s thorns dig deeply into your flesh!"))
-			target.adjustBruteLoss(damage)
+			target.injure(INJURY_PIERCE, damage, source = fruit)
 
 // Adds reagents to a target.
 /datum/seed/proc/do_sting(mob/living/carbon/human/target, obj/item/fruit)

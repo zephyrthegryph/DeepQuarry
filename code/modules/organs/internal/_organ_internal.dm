@@ -5,26 +5,11 @@
 	var/dead_icon // Icon to use when the organ has died.
 
 	var/supply_conversion_value = 0
-	var/healing_factor = 0.005 // How much this organ will heal passively
 
 /obj/item/organ/internal/Initialize(mapload, internal)
 	. = ..()
 	if(supply_conversion_value)
 		AddElement(/datum/element/sellable/organ)
-
-/obj/item/organ/internal/process()
-	. = ..()
-	passive_heal()
-
-// Heals the internal organ passively as long as it's under the bruised threshold
-// Not a lot of MATH just yet, but nutrition or other factors could be taken into account
-// Per the original PR: 'Allows internal organs to regenerate themselves passively, as long as they're not bruised.'
-/obj/item/organ/internal/proc/passive_heal()
-	if(is_bruised() || is_broken())
-		return
-
-	var/heal_amt = healing_factor * CONFIG_GET(number/organ_regeneration_multiplier)
-	damage = max(damage - heal_amt, 0)
 
 /obj/item/organ/internal/die()
 	..()
@@ -66,12 +51,12 @@
 	. = ..() //Should be an interger value for infection level
 	if(!.) return
 
-	var/antibiotics = owner.chem_effects[CE_ANTIBIOTIC]
+	var/antibiotics = owner.factor(BF_ANTIMICROBIAL)
 
 	if(. >= 2 && antibiotics < ANTIBIO_NORM) //INFECTION_LEVEL_TWO
 		if (prob(3))
-			take_damage(1,silent=prob(30))
+			apply_lesion_damage(1, /datum/affliction/lesion/necrosis, prob(30))
 
 	if(. >= 3 && antibiotics < ANTIBIO_OD)	//INFECTION_LEVEL_THREE
 		if (prob(50))
-			take_damage(1,silent=prob(15))
+			apply_lesion_damage(1, /datum/affliction/lesion/necrosis, prob(15))

@@ -131,10 +131,10 @@
 		var/backstab_bonus = src.backstab_bonus * (!ishuman(L)? 1 : human_backstab_nerf)
 		var/thrown_bonus = thrown? (src.thrown_bonus * (!ishuman(L)? 1 : human_damage_nerf)) : 0
 		if(thrown? (get_dir(src, L) & L.dir) : ((user.dir & backstab_dir) && (L.dir & backstab_dir)))
-			L.apply_damage(detonation_damage + backstab_bonus + thrown_bonus, BRUTE, blocked = def_check)
+			L.injure(INJURY_BLUNT, detonation_damage + backstab_bonus + thrown_bonus, null, src, def_check)
 			playsound(src, 'sound/weapons/kenetic_accel.ogg', 100, 1) //Seriously who spelled it wrong
 		else
-			L.apply_damage(detonation_damage + thrown_bonus, BRUTE, blocked = def_check)
+			L.injure(INJURY_BLUNT, detonation_damage + thrown_bonus, null, src, def_check)
 
 /obj/item/kinetic_crusher/throw_impact(atom/hit_atom, datum/thrownthing/throwingdatumd)
 	. = ..()

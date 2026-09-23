@@ -309,7 +309,6 @@ GLOBAL_LIST_INIT(civilian_cartridges, list(
 	messenger_plugins = list(new/datum/data/pda/messenger_plugin/virus/frame)
 
 
-// === merged from cart_vr.dm during hard-fork de-suffix (verified no override-order change) ===
 /obj/item/cartridge
 	slot_flags = SLOT_EARS
 

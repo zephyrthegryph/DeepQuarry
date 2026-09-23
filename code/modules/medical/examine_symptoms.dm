@@ -16,10 +16,10 @@
 /mob/living/carbon/human/proc/dq_externally_visible_symptom_lines()
 	var/list/lines = list()
 	var/list/seen = list()
-	for(var/datum/medical_issue/condition/C as anything in get_all_conditions())
+	for(var/datum/affliction/C as anything in body?.afflictions)
 		if(!C.active_symptoms)
 			continue
-		for(var/datum/medical_symptom/S as anything in C.active_symptoms)
+		for(var/datum/affliction_symptom/S as anything in affliction_symptoms_of(C))
 			if(!(S.audiences & SYMPTOM_AUDIENCE_PUBLIC))
 				continue
 			if(S.type in seen)

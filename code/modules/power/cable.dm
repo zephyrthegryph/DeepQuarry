@@ -132,6 +132,7 @@ GLOBAL_LIST_INIT(possible_cable_coil_colours, list(
 
 /obj/structure/cable/Destroy()
 	breaker_box = null
+	SSmachines.deferred_powernet_cables -= src
 	// Update powernets before removing from the global list so propagate_network
 	// can still walk the cable graph through us (cut_cable_from_powernet sets
 	// src.loc = null internally to exclude the cut cable from propagation).
@@ -319,7 +320,9 @@ GLOBAL_LIST_INIT(possible_cable_coil_colours, list(
 //handles merging diagonally matching cables
 //for info : direction^3 is flipping horizontally, direction^12 is flipping vertically
 /obj/structure/cable/proc/mergeDiagonalsNetworks(direction)
-	if(SSmachines.powernet_is_defered()) return;
+	if(SSmachines.powernet_is_defered())
+		SSmachines.note_deferred_powernet_cable(src, direction == d1 ? CABLE_DEFERRED_DIAGONAL_D1 : CABLE_DEFERRED_DIAGONAL_D2)
+		return
 
 	//search for and merge diagonally matching cables from the first direction component (north/south)
 	var/turf/T  = get_step(src, direction&3)//go north/south
@@ -364,7 +367,9 @@ GLOBAL_LIST_INIT(possible_cable_coil_colours, list(
 
 // merge with the powernets of power objects in the given direction
 /obj/structure/cable/proc/mergeConnectedNetworks(direction)
-	if(SSmachines.powernet_is_defered()) return;
+	if(SSmachines.powernet_is_defered())
+		SSmachines.note_deferred_powernet_cable(src, CABLE_DEFERRED_DIRECTIONS)
+		return
 
 	var/fdir = direction ? GLOB.reverse_dir[direction] : 0 //flip the direction, to match with the source position on its turf
 
@@ -400,7 +405,9 @@ GLOBAL_LIST_INIT(possible_cable_coil_colours, list(
 
 // merge with the powernets of power objects in the source turf
 /obj/structure/cable/proc/mergeConnectedNetworksOnTurf()
-	if(SSmachines.powernet_is_defered()) return;
+	if(SSmachines.powernet_is_defered())
+		SSmachines.note_deferred_powernet_cable(src, CABLE_DEFERRED_TURF)
+		return
 
 	var/list/to_connect = list()
 
@@ -490,7 +497,9 @@ GLOBAL_LIST_INIT(possible_cable_coil_colours, list(
 //should be called after placing a cable which extends another cable, creating a "smooth" cable that no longer terminates in the centre of a turf.
 //needed as this can, unlike other placements, disconnect cables
 /obj/structure/cable/proc/denode()
-	if(SSmachines.powernet_is_defered()) return;
+	if(SSmachines.powernet_is_defered())
+		SSmachines.note_deferred_powernet_cable(src, CABLE_DEFERRED_DENODE)
+		return
 
 	var/turf/T1 = loc
 	if(!T1) return
@@ -502,6 +511,21 @@ GLOBAL_LIST_INIT(possible_cable_coil_colours, list(
 
 		if(PN.is_empty()) //can happen with machines made nodeless when smoothing cables
 			qdel(PN)
+
+/// Replays the merges that were skipped while powernet rebuilds were deferred.
+/obj/structure/cable/proc/replay_deferred_merges(merges)
+	if(merges & CABLE_DEFERRED_DIRECTIONS)
+		if(d1)
+			mergeConnectedNetworks(d1)
+		mergeConnectedNetworks(d2)
+	if(merges & CABLE_DEFERRED_TURF)
+		mergeConnectedNetworksOnTurf()
+	if(merges & CABLE_DEFERRED_DIAGONAL_D1)
+		mergeDiagonalsNetworks(d1)
+	if(merges & CABLE_DEFERRED_DIAGONAL_D2)
+		mergeDiagonalsNetworks(d2)
+	if(merges & CABLE_DEFERRED_DENODE)
+		denode()
 
 // cut_cable_from_powernet() — remove this cable from the powernet and
 // re-propagate the graph on each side of the cut.
@@ -548,17 +572,21 @@ GLOBAL_LIST_INIT(possible_cable_coil_colours, list(
 	// Multi-segment cable: temporarily move the cable off the turf so that
 	// propagate_network doesn't re-add it while rebuilding the split network.
 	loc = null
-	powernet.remove_cable(src)
-
-	if(!SSmachines.powernet_is_defered())
-		// Propagate a fresh powernet from one side; the other side retains the
-		// old (now empty on this cable's end) network or gets a new one.
-		var/datum/powernet/newPN = new()
-		propagate_network(P_list[1], newPN)
+	var/datum/powernet/old_powernet = powernet
+	// Detach immediately, then let SSmachines discover and publish the split in
+	// bounded slices. Calling remove_cable()/propagate_network() here performed a
+	// station-wide flood fill and thousands of notifications inside wirecutters.
+	old_powernet.cables -= src
+	powernet = null
+	old_powernet.invalidate_material_cache()
+	if(SSmachines.powernet_is_defered())
+		SSmachines.note_deferred_powernet_split(old_powernet)
+	else
+		SSmachines.queue_powernet_topology(old_powernet)
 
 	// Node cable cut: machines on the original turf must re-evaluate their
 	// connection since the node is gone.
-	if(d1 == 0)
+	if(d1 == 0 && SSmachines.powernet_is_defered())
 		for(var/obj/machinery/power/P in home)
 			if(P.powernet == 0) continue  // APCs excluded by convention
 			if(!P.connect_to_network())
@@ -646,7 +674,7 @@ GLOBAL_LIST_INIT(possible_cable_coil_colours, list(
 				to_chat(user, span_warning("You can't apply [src] through [H.wear_suit]!"))
 				return ITEM_INTERACT_FAILURE
 
-		var/use_amt = min(src.amount, CEILING(S.burn_dam/5, 1), 5)
+		var/use_amt = min(src.amount, CEILING(S.get_burn()/5, 1), 5)
 		if(can_use(use_amt))
 			if(S.robo_repair(5*use_amt, BURN, "some damaged wiring", src, user))
 				src.use(use_amt)

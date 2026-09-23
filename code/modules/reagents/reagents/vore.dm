@@ -126,7 +126,7 @@
 
 /datum/reagent/ickypak/affect_blood(mob/living/carbon/M, alien, removed)
 	M.make_dizzy(1)
-	M.adjustHalLoss(2)
+	M.injure(INJURY_PAIN, 2, source = src)
 
 	for(var/obj/belly/B as anything in M.vore_organs)
 		for(var/atom/movable/A in B)
@@ -151,7 +151,7 @@
 
 /datum/reagent/unsorbitol/affect_blood(mob/living/carbon/M, alien, removed)
 	M.make_dizzy(1)
-	M.adjustHalLoss(1)
+	M.injure(INJURY_PAIN, 1, source = src)
 	M.SetConfused(max(M.confused, 20))
 	M.hallucination = max(M.hallucination, 20) //This used to be += 15 resulting in INFINITE HALLUCINATION
 
@@ -278,8 +278,8 @@
 	if(prob_proc == TRUE && prob(20))
 		M.hallucination = max(M.hallucination, 5)
 		prob_proc = FALSE
-	M.adjustBrainLoss(0.25*REM) //Too much isn't good for your long term health...
-	M.adjustToxLoss(0.01*REM)	//Enough that it'll make your HUD dummy update, but not enough that you'll vomit mid scene. (Sorry emetophiliacs!)
+	M.injure(INJURY_NEURAL, 0.25*REM, source = src) //Too much isn't good for your long term health...
+	M.injure(INJURY_TOXIN, 0.01*REM, source = src)	//Enough that it'll make your HUD dummy update, but not enough that you'll vomit mid scene. (Sorry emetophiliacs!)
 	..()
 
 /datum/reagent/paralysis_toxin
@@ -303,6 +303,7 @@
 		M.AdjustStunned(5) // stun accounting for crawl
 
 /datum/reagent/pain_enzyme
+	factors = alist(BF_ANALGESIA = -200)
 	name = REAGENT_PAINENZYME
 	id = REAGENT_ID_PAINENZYME
 	scannable = SCANNABLE_ADVANCED
@@ -318,7 +319,6 @@
 	industrial_use = REFINERYEXPORT_REASON_WEAPONS
 
 /datum/reagent/pain_enzyme/affect_blood(mob/living/carbon/M, alien, removed)
-	M.add_chemical_effect(CE_PAINKILLER, -200)
 	if(prob(0.01)) //1 in 10000 chance per tick. Extremely rare.
 		to_chat(M,span_warning("Your body feels as though it's on fire!"))
 

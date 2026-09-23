@@ -1,6 +1,5 @@
 /mob/living/simple_mob/animal/giant_spider/frost/broodling
-	maxHealth = 40
-	health = 40
+	endurance = 40
 
 	melee_damage_lower = 10
 	melee_damage_upper = 15
@@ -19,8 +18,7 @@
 		qdel(src)
 
 /mob/living/simple_mob/animal/giant_spider/electric/broodling
-	maxHealth = 30
-	health = 30
+	endurance = 30
 
 	taser_kill = TRUE
 	base_attack_cooldown = 20
@@ -39,8 +37,7 @@
 		qdel(src)
 
 /mob/living/simple_mob/animal/giant_spider/hunter/broodling
-	maxHealth = 40
-	health = 40
+	endurance = 40
 
 	movement_cooldown = 0
 
@@ -56,8 +53,7 @@
 		qdel(src)
 
 /mob/living/simple_mob/animal/giant_spider/lurker/broodling
-	maxHealth = 40
-	health = 40
+	endurance = 40
 
 	movement_cooldown = 0
 
@@ -73,8 +69,7 @@
 		qdel(src)
 
 /mob/living/simple_mob/animal/giant_spider/nurse/broodling
-	maxHealth = 60
-	health = 60
+	endurance = 60
 
 	movement_cooldown = 3
 
@@ -90,8 +85,7 @@
 		qdel(src)
 
 /mob/living/simple_mob/animal/giant_spider/pepper/broodling
-	maxHealth = 40
-	health = 40
+	endurance = 40
 
 	movement_cooldown = 3
 
@@ -107,8 +101,7 @@
 		qdel(src)
 
 /mob/living/simple_mob/animal/giant_spider/thermic/broodling
-	maxHealth = 40
-	health = 40
+	endurance = 40
 
 	melee_damage_lower = 10
 	melee_damage_upper = 15
@@ -127,8 +120,7 @@
 		qdel(src)
 
 /mob/living/simple_mob/animal/giant_spider/tunneler/broodling
-	maxHealth = 40
-	health = 40
+	endurance = 40
 
 	movement_cooldown = 1
 
@@ -144,8 +136,7 @@
 		qdel(src)
 
 /mob/living/simple_mob/animal/giant_spider/webslinger/broodling
-	maxHealth = 30
-	health = 30
+	endurance = 30
 
 	base_attack_cooldown = 20
 
@@ -163,8 +154,7 @@
 		qdel(src)
 
 /mob/living/simple_mob/animal/giant_spider/broodling
-	maxHealth = 60
-	health = 60
+	endurance = 60
 
 	melee_damage_lower = 10
 	melee_damage_upper = 20

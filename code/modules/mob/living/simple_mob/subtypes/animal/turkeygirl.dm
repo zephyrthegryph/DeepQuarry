@@ -8,8 +8,7 @@
 	icon_living = "turkeygirl"
 	icon_dead = "turkeygirl-dead"
 
-	health = 100
-	maxHealth = 100
+	endurance = 100
 
 	has_hands = TRUE
 

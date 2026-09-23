@@ -437,7 +437,6 @@
 				)
 
 
-// === merged from mob_vr.dm during hard-fork de-suffix (verified no override-order change) ===
 /obj/random/weapon // For Gateway maps and Syndicate. Can possibly spawn almost any gun in the game.
 	name = "Random Illegal Weapon"
 	desc = "This is a random illegal weapon."

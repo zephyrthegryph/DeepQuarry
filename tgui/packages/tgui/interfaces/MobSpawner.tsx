@@ -278,7 +278,7 @@ const GeneralMobSettings = (props: {
               <LabeledList>
                 {(data.max_health && (
                   <>
-                    <LabeledList.Item label="Max Health">
+                    <LabeledList.Item label="Endurance">
                       <NumberInput
                         step={1}
                         minValue={-Infinity}
@@ -287,7 +287,7 @@ const GeneralMobSettings = (props: {
                         onChange={(val: number) => props.onMaxHealth(val)}
                       />
                     </LabeledList.Item>
-                    <LabeledList.Item label="Health">
+                    <LabeledList.Item label="Starting Health">
                       <NumberInput
                         step={1}
                         minValue={-Infinity}

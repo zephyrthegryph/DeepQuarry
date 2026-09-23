@@ -392,14 +392,14 @@
 		// Do some extra damage.  Not a whole lot more since emp_act() is pretty nasty on FBPs already.
 		target.emp_act(3) // A weaker severity is used because this has infinite uses.
 		playsound(target, 'sound/effects/EMPulse.ogg', 100, 1)
-		target.adjustFireLoss(force * 3) // 15 Burn, for 20 total.
+		target.injure(INJURY_BURN, force * 3, hit_zone, src) // 15 Burn, for 20 total.
 		playsound(target, 'sound/weapons/blade1.ogg', 100, 1)
 
 		// Make lesser robots really mad at us.
 		if(target.mob_class & MOB_CLASS_SYNTHETIC)
 			if((target.ai_brain != null))
 				target.taunt(user)
-			target.adjustFireLoss(force * 6) // 30 Burn, for 50 total.
+			target.injure(INJURY_BURN, force * 6, hit_zone, src) // 30 Burn, for 50 total.
 
 /obj/item/melee/robotic/blade/ionic/lance
 	name = "zero-point lance"
@@ -562,5 +562,5 @@
 	if(ishuman(L))
 		var/mob/living/carbon/human/H = L
 		if(H.species && H.species.name == SPECIES_PROMETHEAN)
-			H.apply_damage(35, HALLOSS)
+			H.injure(INJURY_PAIN, 35, source = src)
 	..()

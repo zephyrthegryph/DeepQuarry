@@ -174,7 +174,6 @@
 	icon_state = "ch4"
 
 
-// === merged from tank_vr.dm during hard-fork de-suffix (verified no override-order change) ===
 /obj/machinery/atmospherics/pipe/tank/phoron/full
 	start_pressure = 15000
 

@@ -16,8 +16,7 @@
 	response_disarm = "shoves"
 	response_harm = "hits"
 
-	maxHealth = 100
-	health = 100
+	endurance = 100
 	see_in_dark = 7
 
 	harm_intent_damage = 5
@@ -41,7 +40,6 @@
 	icon_living = "aliend_running"
 	icon_dead = "aliend_l"
 	icon_rest = "aliend_sleep"
-	health = 60
 	melee_damage_lower = 15
 	melee_damage_upper = 15
 
@@ -51,7 +49,6 @@
 	icon_living = "aliens_running"
 	icon_dead = "aliens_l"
 	icon_rest = "aliens_sleep"
-	health = 120
 	melee_damage_lower = 15
 	melee_damage_upper = 15
 	projectiletype = /obj/item/projectile/energy/neurotoxin/toxic
@@ -64,8 +61,7 @@
 	icon_living = "prat_s"
 	icon_dead = "prat_dead"
 	icon_rest = "prat_sleep"
-	maxHealth = 200
-	health = 200
+	endurance = 200
 
 	pixel_x = -16
 	old_x = -16
@@ -79,8 +75,7 @@
 	icon_living = "alienq_running"
 	icon_dead = "alienq_l"
 	icon_rest = "alienq_sleep"
-	health = 250
-	maxHealth = 250
+	endurance = 250
 	melee_damage_lower = 15
 	melee_damage_upper = 15
 	projectiletype = /obj/item/projectile/energy/neurotoxin/toxic
@@ -96,8 +91,7 @@
 	icon_living = "queen_s"
 	icon_dead = "queen_dead"
 	icon_rest = "queen_sleep"
-	maxHealth = 400
-	health = 400
+	endurance = 400
 	meat_amount = 15
 
 	pixel_x = -16
@@ -112,8 +106,7 @@
 	icon_living = "empress_s"
 	icon_dead = "empress_dead"
 	icon_rest = "empress_rest"
-	maxHealth = 600
-	health = 600
+	endurance = 600
 	meat_amount = 40
 	melee_damage_lower = 15
 	melee_damage_upper = 25
@@ -135,8 +128,7 @@
 /mob/living/simple_mob/animal/space/alien/sentinel/praetorian/echo
 	name = "alien Echopraetorian"
 	color = "#424242"
-	health = 300
-	maxHealth = 300
+	endurance = 300
 	needs_reload = 1
 	projectiletype = /obj/item/projectile/sonic/strong
 	reload_time = 150 SECONDS
@@ -145,8 +137,7 @@
 	name = "alien Ionic praetorian"
 	color = "#004cff"
 	armor = list(melee = 0,bullet = 25,laser = 0,energy = 0,bomb = 0,bio = 100,rad = 100)
-	health = 350
-	maxHealth = 350
+	endurance = 350
 	needs_reload = 1
 	projectiletype = /obj/item/projectile/arc/emp_blast
 	reload_time = 150 SECONDS
@@ -157,8 +148,7 @@
 	name = "alien blazing praetorian"
 	color = "Red"
 	armor = list(melee = 0, bullet = 0, laser = 25, energy = 0, bomb = 0, bio = 100, rad = 100)
-	health = 450
-	maxHealth = 450
+	endurance = 450
 	needs_reload = 1
 	projectiletype = /obj/item/projectile/energy/fireball
 	reload_max = 3
@@ -178,8 +168,7 @@
 	armor = list(melee = -25, bullet = 20, laser = 20, energy = 0, bomb = 0, bio = 0, rad = 0)
 	base_attack_cooldown = 25
 	color = "#ff8214"
-	health = 700
-	maxHealth = 700
+	endurance = 700
 	melee_damage_lower = 25
 	melee_damage_upper = 35
 	movement_cooldown = 10
@@ -195,8 +184,7 @@
 	name = "alien Staticlisk"
 	base_attack_cooldown = 15
 	color = "#38b9ff"
-	health = 500
-	maxHealth = 500
+	endurance = 500
 	armor = list(melee = -20, bullet = 20, laser = 10, energy = 0, bomb = 0, bio = 0, rad = 0)
 	melee_damage_lower = 25
 	melee_damage_upper = 30
@@ -213,8 +201,7 @@
 	name = "alien tankerlisk"
 	base_attack_cooldown = 25
 	color = "#4a4a4a"
-	health = 1250
-	maxHealth = 1250
+	endurance = 1250
 	armor = list(melee = -20, bullet = 20, laser = 10, energy = 0, bomb = 0, bio = 0, rad = 0)
 	melee_damage_lower = 25
 	melee_damage_upper = 30
@@ -228,8 +215,7 @@
 /mob/living/simple_mob/animal/space/alien/sentinel/electro
 	name = "alien Electrosentinel"
 	color = "#ccff4a"
-	health = 200
-	maxHealth = 200
+	endurance = 200
 	armor = list(melee = 0, bullet = 10, laser = 10, energy = 0, bomb = 0, bio = 0, rad = 0)
 	needs_reload = 1
 	projectiletype = /obj/item/projectile/beam/stun/electric_spider
@@ -242,8 +228,7 @@
 	armor = list (melee = 0, bullet = 0, laser = 15, energy = 0, bomb = 0, bio = 100, rad = 100)
 	base_attack_cooldown = 15
 	color = "#ff7373"
-	health = 250
-	maxHealth = 250
+	endurance = 250
 	needs_reload = 1
 	projectiletype = /obj/item/projectile/bullet/incendiary/dragonflame
 	reload_max = 2
@@ -253,8 +238,7 @@
 	name = "alien cryosentinel"
 	armor = list(melee = 0, bullet = 15, laser = 0, energy = 0, bomb = 0, bio = 100, rad = 100)
 	color = "#4f83ff"
-	health = 200
-	maxHealth = 200
+	endurance = 200
 	needs_reload = 1
 	projectiletype = /obj/item/projectile/energy/blob/freezing/splattering
 	reload_max = 3
@@ -265,8 +249,7 @@
 	projectiletype = /obj/item/projectile/energy/acid
 
 /mob/living/simple_mob/animal/space/alien/tanky
-	health = 200
-	maxHealth = 200
+	endurance = 200
 
 /mob/living/simple_mob/animal/space/alien/hunterling
 	name = "alien hunterling"
@@ -274,8 +257,7 @@
 	base_attack_cooldown = 2
 	color = "#1cbdff"
 	force_max_speed = 1
-	health = 15
-	maxHealth = 15
+	endurance = 15
 	melee_damage_lower = 1
 	melee_damage_upper = 3
 	size_multiplier = 0.5
@@ -284,8 +266,7 @@
 	name = "alien hunterlisk"
 	base_attack_cooldown = 15
 	color = "#575757"
-	health = 150
-	maxHealth = 150
+	endurance = 150
 	melee_damage_upper = 35
 	movement_cooldown = 3
 	size_multiplier = 1.25

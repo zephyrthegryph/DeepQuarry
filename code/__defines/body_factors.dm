@@ -1,0 +1,125 @@
+// Body factors: the unified stat layer. See doc/health_system_review.md §5.3
+// and code/modules/body/factors.dm.
+//
+// A body factor is a named quantity that any number of sources contribute to
+// (afflictions, reagents, modifiers, species and traits, forms, worn
+// equipment) and any number of consumers read with `L.factor(BF_X)`.
+// Every factor has one combine rule, a baseline and bounds, registered once in
+// body_factor_defs(). Sources declare static alist tables keyed by these ids,
+// e.g. `factors = alist(BF_SLOWDOWN = 1, BF_ACCURACY = -20)`.
+//
+// Flat-list indices: keep contiguous from 1 and keep BF_COUNT last.
+
+// --- Combine rules -----------------------------------------------------------
+/// Product of contributions. A table value `f` at scale `s` contributes
+/// `1 - (1 - f) * s` (never below 0).
+#define BF_RULE_MULT  1
+/// Sum of contributions. A value `f` at scale `s` contributes `f * s`.
+#define BF_RULE_ADD   2
+/// Highest contribution (and the baseline) wins.
+#define BF_RULE_MAX   3
+/// Lowest contribution (and the baseline) wins.
+#define BF_RULE_MIN   4
+/// Bitfield OR of every contribution with a positive scale.
+#define BF_RULE_FLAGS 5
+
+// --- Physiology (placeholders the vital systems will read) -------------------
+#define BF_AIRWAY            1  // mult: airway patency
+#define BF_RESP_DRIVE        2  // mult: spontaneous breathing drive
+#define BF_LUNG_MECHANICS    3  // mult: chest wall and lung expansion
+#define BF_GAS_EXCHANGE      4  // mult: alveolar exchange
+#define BF_PUMP              5  // mult: cardiac output (synthetic: power delivery)
+#define BF_CIRCULATION       6  // mult: vascular tone (synthetic: coolant circulation)
+#define BF_DEMAND            7  // mult: metabolic demand
+#define BF_PROGRESSION       8  // mult: how fast afflictions progress
+#define BF_METABOLISM        9  // mult: reagent processing rate (and hunger)
+#define BF_BLEEDING          10 // mult: bleed rate
+#define BF_HEALING           11 // mult: natural regeneration
+#define BF_ANALGESIA         12 // add: pain relief (points)
+#define BF_PAIN              13 // add: extra pain (points)
+#define BF_SEDATION          14 // add: consciousness reduction (points)
+#define BF_ARRHYTHMIA_RISK   15 // add: hazard of rhythm deterioration
+#define BF_HEART_RATE        16 // add: heart-rate drive, bpm (readout)
+// --- Vital-sign readouts ------------------------------------------------------
+#define BF_TEMPERATURE       17 // add: core temperature offset, °C (readout)
+#define BF_BP_SYSTOLIC       18 // add: systolic offset, mmHg (readout)
+#define BF_BP_DIASTOLIC      19 // add: diastolic offset, mmHg (readout)
+#define BF_O2_SAT            20 // add: oxygen saturation offset, % (readout)
+#define BF_RESP_RATE         21 // add: respiratory-rate offset, /min (readout)
+// --- Combat and mobility ------------------------------------------------------
+#define BF_SLOWDOWN          22 // add: movement delay
+#define BF_PENALTY_SCALE     23 // mult: scale applied to positive movement penalties
+#define BF_HASTE             24 // max: 1 = ignore every slowdown and move at top speed
+#define BF_ACCURACY          25 // add: ranged accuracy (%)
+#define BF_DISPERSION        26 // add: ranged dispersion
+#define BF_EVASION           27 // add: chance to be missed (%)
+#define BF_ATTACK_SPEED      28 // mult: attack (click) delay
+#define BF_MELEE_DAMAGE      29 // mult: outgoing melee and unarmed damage
+// --- Senses -------------------------------------------------------------------------
+#define BF_VISION            30 // mult: visual acuity
+#define BF_HEARING           31 // mult: hearing
+#define BF_MOTOR_CONTROL     32 // mult: fine motor control (below 1: dropped items)
+#define BF_DARKSIGHT         33 // max: 1 = sees in the dark
+#define BF_SIGHT_FLAGS       34 // flags: SEE_* sight flags granted
+#define BF_ACTION_BLOCKS     35 // flags: ACTION_BLOCK_* blocked actions
+// --- Harm -------------------------------------------------------------------------------
+#define BF_INCOMING_ALL      36 // mult: every incoming injury
+/// Per-category incoming injury multiplier: BF_INCOMING_ALL + INJURY_CATEGORY_*.
+#define BF_INCOMING(category) (BF_INCOMING_ALL + (category))
+#define BF_INCOMING_PHYSICAL 37 // mult (INJURY_CATEGORY_PHYSICAL)
+#define BF_INCOMING_THERMAL  38 // mult (INJURY_CATEGORY_THERMAL)
+#define BF_INCOMING_TOXIC    39 // mult (INJURY_CATEGORY_TOXIC)
+#define BF_INCOMING_ASPHYXIA 40 // mult (INJURY_CATEGORY_ASPHYXIA)
+#define BF_INCOMING_GENETIC  41 // mult (INJURY_CATEGORY_GENETIC)
+#define BF_INCOMING_NEURAL   42 // mult (INJURY_CATEGORY_NEURAL)
+#define BF_INCOMING_PAIN     43 // mult (INJURY_CATEGORY_PAIN)
+#define BF_DISABLE_DURATION  44 // mult: stun / weaken / paralysis / sleep / confusion durations
+#define BF_HEALING_RECEIVED  45 // mult: every mend() the mob receives
+#define BF_ENDURANCE_FLAT    46 // add: toughness points
+#define BF_ENDURANCE_MULT    47 // mult: toughness
+#define BF_ICON_SCALE_X      48 // mult: sprite width
+#define BF_ICON_SCALE_Y      49 // mult: sprite height
+#define BF_PAIN_IMMUNITY     50 // max: 1 = feels no pain
+#define BF_PULSE_SHIFT       51 // add: pulse-level shift (PULSE_* steps)
+#define BF_PULSE_SET         52 // max: forced pulse level (baseline -1 = none)
+#define BF_EMP_SHIFT         53 // add: added to EMP severity (higher = weaker)
+#define BF_EXPLOSION_SHIFT   54 // add: added to explosion severity (higher = weaker)
+#define BF_ARMOR_MELEE       55 // add: armour points
+#define BF_ARMOR_BULLET      56 // add
+#define BF_ARMOR_LASER       57 // add
+#define BF_ARMOR_ENERGY      58 // add
+#define BF_ARMOR_BOMB        59 // add
+#define BF_ARMOR_BIO         60 // add
+#define BF_ARMOR_RAD         61 // add
+#define BF_HEAT_EXPOSURE     62 // mult: share of environmental heat that reaches the body
+#define BF_COLD_EXPOSURE     63 // mult: share of environmental cold that reaches the body
+#define BF_SIEMENS           64 // mult: electrical conductivity
+// --- Chemistry (the old per-tick chemical channels) -------------------------------------
+#define BF_STABILIZATION     65 // add: cardiorespiratory stabilisation (inaprovaline)
+#define BF_ANTIMICROBIAL     66 // add: antibiotic strength
+#define BF_BLOOD_REGEN       67 // add: blood regenerated per tick (units)
+#define BF_INTOXICATION      68 // add: alcohol intoxication
+#define BF_HEPATOTOXICITY    69 // add: liver toxicity from alcohol
+#define BF_ANTIEMETIC        70 // add: vomiting suppression
+#define BF_ALLERGY           71 // add: allergic reaction strength
+#define BF_WITHDRAWAL        72 // add: withdrawal strain on the organs
+#define BF_NEURAL_REPAIR     73 // add: extra brain-lesion repair per tick
+#define BF_IMMUNE_SUPPRESSION 74 // add: immune suppression
+#define BF_COUNT             74
+
+// --- Action blocks (BF_ACTION_BLOCKS) ------------------------------------------------------
+/// Can't speak (airway closed, respiratory failure).
+#define ACTION_BLOCK_SPEECH     (1<<0)
+/// Can't perform surgery.
+#define ACTION_BLOCK_SURGERY    (1<<1)
+/// Can't hold anything in the left hand.
+#define ACTION_BLOCK_HOLD_LEFT  (1<<2)
+/// Can't hold anything in the right hand.
+#define ACTION_BLOCK_HOLD_RIGHT (1<<3)
+
+/// Afflictions only trigger a factor recompute when severity crosses a band
+/// this wide (the contribution uses the severity at the recompute).
+#define BF_SEVERITY_BAND 10
+
+/// Highest per-tick chance (%) that poor motor control drops a held item.
+#define BF_MAX_DROP_CHANCE 25

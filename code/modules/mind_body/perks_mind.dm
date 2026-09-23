@@ -964,7 +964,7 @@
 
 /datum/perk/mind/cargo_miner_pathfinder
 	name = "Pathfinder"
-	desc = "Quarry-floor hazards (gas, fauna) are flagged on your HUD before you reach them."
+	desc = "Expedition-site hazards (gas, fauna) are flagged on your HUD before you reach them."
 	icon_name = "route"
 	cost = 3
 	tree = PERK_TREE_MIND_CARGO_MINER
@@ -978,7 +978,7 @@
 	tree = PERK_TREE_MIND_CARGO_MINER
 
 /datum/perk/mind/cargo_miner_lung
-	name = "Quarry Lungs"
+	name = "Dust Lungs"
 	desc = "Dust and rock-particle inhalation no longer slows or damages you."
 	icon_name = "lungs"
 	cost = 1

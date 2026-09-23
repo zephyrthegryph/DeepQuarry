@@ -90,7 +90,6 @@
 	return 0
 
 
-// === merged from antagonist_chomp.dm during hard-fork de-suffix (verified no override-order change) ===
 // Buzzer Ring - Traitor, Merc.
 /obj/item/clothing/gloves/ring/buzzer
 	name = "ring"
@@ -154,6 +153,5 @@
 
 	H.emote("gasp")
 	H.Weaken(rand(10,25))
-	H.updatehealth()
 
 	battery.emp_act(1)

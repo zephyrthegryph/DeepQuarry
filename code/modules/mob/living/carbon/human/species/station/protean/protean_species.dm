@@ -1,4 +1,3 @@
-#define METAL_PER_TICK SHEET_MATERIAL_AMOUNT/20
 /datum/species/protean
 	name =             SPECIES_PROTEAN
 	name_plural =      "Proteans"
@@ -37,12 +36,10 @@
 	blood_volume = 0
 	min_age = 18
 	max_age = 200
-	oxy_mod = 0
+	injury_mod_groups = list("physical" = 0.8, "thermal" = 1.5, "asphyxia" = 0)
 	//radiation_mod = 0	//Can't be assed with fandangling rad protections while blob formed/suited
 	darksight = 10
 	siemens_coefficient = 2
-	brute_mod =        0.8
-	burn_mod =        1.5
 	emp_dmg_mod = 0.8
 	emp_sensitivity = EMP_BLIND | EMP_DEAFEN | EMP_BRUTE_DMG | EMP_BURN_DMG
 	item_slowdown_mod = 1.5	//Gentle encouragement to let others wear you
@@ -62,8 +59,9 @@
 
 	species_sounds = "Robotic"
 
-	crit_mod = 4	//Unable to go crit  // CHOMPEnable
-	var/obj/item/rig/protean/OurRig
+	crit_mod = 4	//Unable to go crit
+	body_plan = /datum/body/humanoid/nanoform
+	species_component = list(/datum/component/forms/protean)
 
 	genders = list(MALE, FEMALE, PLURAL, NEUTER)
 
@@ -89,19 +87,10 @@
 	heat_discomfort_strings = list("WARNING: Temperature exceeding acceptable thresholds!.")
 	cold_discomfort_strings = list("You feel too cool.")
 
-	//These verbs are hidden, for hotkey use only
+	// Power verbs (hotkeys) come from the protean power registry via the forms component.
 	inherent_verbs = list(
-		/mob/living/carbon/human/proc/nano_regenerate, //These verbs are hidden so you can macro them,
-		/mob/living/carbon/human/proc/nano_partswap,
-		/mob/living/carbon/human/proc/nano_metalnom,
-		/mob/living/carbon/human/proc/nano_blobform,
-		/mob/living/carbon/human/proc/nano_rig_transform,
-		/mob/living/carbon/human/proc/nano_copy_body,
-		/mob/living/carbon/human/proc/appearance_switch,
-		/mob/living/carbon/human/proc/nano_latch,
-		/mob/living/carbon/human/proc/nano_assimilate,
 		/mob/living/proc/set_size,
-		/mob/living/carbon/human/proc/nano_change_fitting, //These verbs are displayed normally,
+		/mob/living/carbon/human/proc/nano_change_fitting,
 		/mob/living/carbon/human/proc/shapeshifter_select_hair,
 		/mob/living/carbon/human/proc/shapeshifter_select_hair_colors,
 		/mob/living/carbon/human/proc/shapeshifter_select_colour,
@@ -115,36 +104,6 @@
 		/mob/living/proc/flying_vore_toggle,
 		/mob/living/proc/start_wings_hovering,
 		) //removed fetish verbs, since non-customs can pick neutral traits now. Also added flight, cause shapeshifter can grow wings.
-
-	var/blob_appearance = "puddle1"
-	var/blob_color_1 = "#363636"
-	var/blob_color_2 = "#ba3636"
-	var/list/dragon_overlays = list(
-		"dragon_underSmooth" = "#FFFFFF",
-		"dragon_bodySmooth" = "#FFFFFF",
-		"dragon_earsNormal" = "#FFFFFF",
-		"dragon_maneShaggy" = "#FFFFFF",
-		"dragon_hornsPointy" = "#FFFFFF",
-		"dragon_eyesNormal" = "#FFFFFF"
-	)
-	var/list/dullahan_overlays = list(
-		"dullahanbody" = "#FFFFFF", // body 1
-		"dullahaneyes" = "#FFFFFF", // eyes 2
-		"dullahanmetal" = "#FFFFFF", // metal 3
-		"dullahanhead" = "#FFFFFF", // head 4
-		"dullahanlightsempty" = "#FFFFFF", // lights 5
-		"dullahanextended" = "#FFFFFF", // breastplate part only on 6, do not use for anything else
-		"dullahanclothesempty" = "#FFFFFF" // clothes 7
-		// loads the icons from the DMI file in that order on spawn. they are overlay 1-6. specifically it uses those names in the DMI file.
-	)
-	var/pseudodead = 0
-
-/datum/species/protean/New()
-	..()
-	if(!LAZYLEN(GLOB.protean_abilities))
-		var/list/powertypes = subtypesof(/obj/effect/protean_ability)
-		for(var/path in powertypes)
-			GLOB.protean_abilities += new path()
 
 /datum/species/protean/create_organs(mob/living/carbon/human/H)
 	var/obj/item/nif/saved_nif = H.nif
@@ -221,16 +180,17 @@
 		H.equip_to_slot_or_del(permit, slot_in_backpack)
 		H.equip_to_slot_or_del(metal_stack, slot_in_backpack)
 
-	spawn(0) //Let their real nif load if they have one
-		if(!H) //Human could have been deleted in this amount of time. Observing does this, mannequins, etc.
-			return
-		if(!H.nif)
-			var/obj/item/nif/protean/new_nif = new()
-			new_nif.quick_implant(H)
-		else
-			H.nif.durability = 25
+	addtimer(CALLBACK(src, PROC_REF(finish_survival_gear), H), 1) //Let their real nif load if they have one
 
-		new /obj/item/rig/protean(H,H)
+/datum/species/protean/proc/finish_survival_gear(mob/living/carbon/human/H)
+	if(QDELETED(H)) //Observing, mannequins, etc. can delete the human first.
+		return
+	if(!H.nif)
+		var/obj/item/nif/protean/new_nif = new()
+		new_nif.quick_implant(H)
+	else
+		H.nif.durability = 25
+	new /obj/item/rig/protean(H, H)
 
 /datum/species/protean/hug(mob/living/carbon/human/H, mob/living/target)
 	return ..() //Wut
@@ -240,54 +200,6 @@
 
 /datum/species/protean/get_flesh_colour(mob/living/carbon/human/H)
 	return rgb(80,80,80,230)
-
-/datum/species/protean/handle_death(mob/living/carbon/human/H)
-	if(!H)
-		return //No body?
-	if(OurRig)
-		if(OurRig.dead)
-			return
-		OurRig.dead = 1
-	var/mob/temp = H
-	if(H.temporary_form)
-		temp = H.temporary_form
-	playsound(temp, 'sound/voice/borg_deathsound.ogg', 50, 1)
-	temp.visible_message(span_bold("[temp.name]") + " shudders and retreats inwards, coalescing into a single core componant!")
-	to_chat(temp, span_warning("You've died as a Protean! While dead, you will be locked to your core RIG control module until you can be repaired. Instructions to your revival can be found in the Examine tab when examining your module."))
-	if(OurRig)
-		if(H.temporary_form)
-			if(!istype(H.temporary_form.loc, /obj/item/rig/protean))
-				H.nano_rig_transform(1)
-		else
-			H.nano_rig_transform(1)
-	pseudodead = 1
-
-/datum/species/protean/handle_environment_special(mob/living/carbon/human/H)
-	if((H.getActualBruteLoss() + H.getActualFireLoss()) > H.getMaxHealth()*0.5 && isturf(H.loc)) //So, only if we're not a blob (we're in nullspace) or in someone (or a locker, really, but whatever)
-		return ..() //Any instakill shot runtimes since there are no organs after this. No point to not skip these checks, going to nullspace anyway.
-
-/*
-	var/obj/item/organ/internal/nano/refactory/refactory = locate() in H.internal_organs
-	if(refactory && !(refactory.status & ORGAN_DEAD))
-
-		//MHydrogen adds speeeeeed
-		if(refactory.get_stored_material(MAT_METALHYDROGEN) >= METAL_PER_TICK)
-			H.add_modifier(/datum/modifier/protean/mhydrogen, origin = refactory)
-
-		//Uranium adds brute armor
-		if(refactory.get_stored_material(MAT_URANIUM) >= METAL_PER_TICK)
-			H.add_modifier(/datum/modifier/protean/uranium, origin = refactory)
-
-		//Gold adds burn armor
-		if(refactory.get_stored_material(MAT_GOLD) >= METAL_PER_TICK)
-			H.add_modifier(/datum/modifier/protean/gold, origin = refactory)
-
-		//Silver adds accuracy and evasion
-		if(refactory.get_stored_material(MAT_SILVER) >= METAL_PER_TICK)
-			H.add_modifier(/datum/modifier/protean/silver, origin = refactory)
-
-	return ..()
-*/
 
 /datum/species/protean/get_additional_examine_text(mob/living/carbon/human/H)
 	return ..() //Hmm, what could be done here?
@@ -306,127 +218,20 @@
 		L[++L.len] = list("- -- --- REFACTORY ERROR! --- -- -", null, null, null, null)
 
 	L[++L.len] = list("- -- --- Abilities (Shift+LMB Examines) --- -- -", null, null, null, null)
-	for(var/obj/effect/protean_ability/A as anything in GLOB.protean_abilities)
-		var/client/C = H.client
+	var/client/C = H.client
+	var/list/powers = protean_powers()
+	for(var/power_type in powers)
+		var/datum/protean_power/P = powers[power_type]
+		if(!P.button)
+			continue
 		var/img
-		if(C && istype(C)) //sanity checks
-			if(A.ability_name in C.misc_cache)
-				img = C.misc_cache[A.ability_name]
-			else
-				img = icon2html(A,C,sourceonly=TRUE)
-				C.misc_cache[A.ability_name] = img
-
-		L[++L.len] = list("[A.ability_name]", A.ability_name, img, A.atom_button_text(), REF(A))
+		if(C)
+			img = C.misc_cache[P.name]
+			if(!img)
+				img = icon2html(P.button, C, sourceonly = TRUE)
+				C.misc_cache[P.name] = img
+		L[++L.len] = list("[P.name]", P.name, img, P.button, REF(P.button))
 	H.misc_tabs["Protean"] = L
-
-// Various modifiers
-/datum/modifier/protean
-	stacks = MODIFIER_STACK_FORBID
-	var/material_use = METAL_PER_TICK
-	var/material_name = MAT_STEEL
-
-/datum/modifier/protean/on_applied()
-	. = ..()
-	if(holder.temporary_form)
-		to_chat(holder.temporary_form,on_created_text)
-
-/datum/modifier/protean/on_expire()
-	. = ..()
-	if(holder.temporary_form)
-		to_chat(holder.temporary_form,on_expired_text)
-
-/datum/modifier/protean/check_if_valid()
-	//No origin set
-	if(!istype(origin))
-		expire()
-		return
-
-	//No refactory
-	var/obj/item/organ/internal/nano/refactory/refactory = origin.resolve()
-	if(!istype(refactory) || refactory.status & ORGAN_DEAD)
-		expire()
-
-	//Out of materials
-	if(!refactory.use_stored_material(material_name,material_use))
-		expire()
-
-/*
-/datum/modifier/protean/mhydrogen
-	name = "Protean Effect - M.Hydrogen"
-	desc = "You're affected by the presence of metallic hydrogen."
-
-	on_created_text = span_notice("You feel yourself accelerate, the metallic hydrogen increasing your speed temporarily.")
-	on_expired_text = span_notice("Your refactory finishes consuming the metallic hydrogen, and you return to normal speed.")
-
-	material_name = MAT_METALHYDROGEN
-
-	slowdown = -1
-
-/datum/modifier/protean/uranium
-	name = "Protean Effect - Uranium"
-	desc = "You're affected by the presence of uranium."
-
-	on_created_text = span_notice("You feel yourself become nearly impervious to physical attacks as uranium is incorporated in your nanites.")
-	on_expired_text = span_notice("Your refactory finishes consuming the uranium, and you return to your normal nanites.")
-
-	material_name = MAT_URANIUM
-
-	incoming_brute_damage_percent = 0.8
-
-/datum/modifier/protean/gold
-	name = "Protean Effect - Gold"
-	desc = "You're affected by the presence of gold."
-
-	on_created_text = span_notice("You feel yourself become more reflective, able to resist heat and fire better for a time.")
-	on_expired_text = span_notice("Your refactory finishes consuming the gold, and you return to your normal nanites.")
-
-	material_name = MAT_GOLD
-
-	incoming_fire_damage_percent = 0.8
-
-/datum/modifier/protean/silver
-	name = "Protean Effect - Silver"
-	desc = "You're affected by the presence of silver."
-
-	on_created_text = span_notice("Your physical control is improved for a time, making it easier to hit targets, and avoid being hit.")
-	on_expired_text = span_notice("Your refactory finishes consuming the silver, and your motor control returns to normal.")
-
-	material_name = MAT_SILVER
-
-	accuracy = 30
-	evasion = 30
-*/
-
-/datum/modifier/protean/steel
-	name = "Protean Effect - Steel"
-	desc = "You're affected by the presence of steel."
-
-	on_created_text = span_notice("You feel new nanites being produced from your stockpile of steel, healing you slowly.")
-	on_expired_text = span_notice("Your steel supply has either run out, or is no longer needed, and your healing stops.")
-
-	material_name = MAT_STEEL
-
-/datum/modifier/protean/steel/tick()
-	//Heal a random damaged limb by 1,1 per tick
-	holder.adjustBruteLoss(-1,include_robo = TRUE)
-	holder.adjustFireLoss(-1,include_robo = TRUE)
-	holder.adjustToxLoss(-1)
-
-	var/mob/living/carbon/human/H
-	if(ishuman(holder))
-		H = holder
-
-	//Then heal every damaged limb by a smaller amount
-	if(H)
-		for(var/obj/item/organ/external/O in H.organs)
-			O.heal_damage(0.5, 0.5, 0, 1)
-
-		//Heal the organs a little bit too, as a treat
-		for(var/obj/item/organ/O as anything in H.internal_organs)
-			if(O.damage > 0)
-				O.damage = max(0,O.damage-0.3)
-			else if(O.status & ORGAN_DEAD)
-				O.status &= ~ORGAN_DEAD //Unset dead if we repaired it entirely
 
 // PAN Card
 /obj/item/clothing/accessory/permit/nanotech
@@ -449,4 +254,3 @@
 	. = ..()
 	. += validstring
 	. += registring
-#undef METAL_PER_TICK

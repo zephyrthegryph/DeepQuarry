@@ -349,7 +349,6 @@
 	playsound(user.loc, sound, 100, 1)
 
 
-// === merged from visible_vr.dm during hard-fork de-suffix (verified no override-order change) ===
 /datum/decl/emote/visible/mlem
 	key = "mlem"
 	emote_message_3p = "mlems USER_THEIR tongue up over USER_THEIR nose. Mlem."

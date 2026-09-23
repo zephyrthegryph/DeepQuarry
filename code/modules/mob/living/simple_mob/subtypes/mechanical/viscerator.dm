@@ -28,8 +28,7 @@
 	// dq_get_hovering(src) type-default moved to GLOB.dq_hovering_by_type
 
 	faction = FACTION_SYNDICATE
-	maxHealth = 15
-	health = 15
+	endurance = 15
 	movement_cooldown = -2
 
 	pass_flags = PASSTABLE | PASSMOB
@@ -78,8 +77,7 @@
 	icon_living = "viscerator_b_attack"
 
 	faction = FACTION_STATION
-	maxHealth = 20
-	health = 20
+	endurance = 20
 
 	melee_damage_lower = 2
 	melee_damage_upper = 5

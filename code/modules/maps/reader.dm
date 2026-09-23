@@ -353,10 +353,6 @@ GLOBAL_LIST_EMPTY(cached_maps)
 	SSatoms.map_loader_stop(REF(src))
 	loading = FALSE
 
-	// if(new_z)
-	// 	for(var/z_index in bounds[MAP_MINZ] to bounds[MAP_MAXZ])
-	// 		SSmapping.build_area_turfs(z_index)
-
 	// if(!no_changeturf)
 	// 	var/list/turfs = block(
 	// 		bounds[MAP_MINX], bounds[MAP_MINY], bounds[MAP_MINZ],
@@ -777,7 +773,6 @@ GLOBAL_LIST_EMPTY(map_model_default)
 					members_attributes += wrapped_default_list // We know this is a path, and we also know it has no vv's. so we'll just set this to the default list
 					path_to_init = line
 
-
 			// Alright, if we've gotten to this point, our string is a path
 			// Oh and we don't trim it, because we require no padding for these
 			// Saves like 1.5 deciseconds
@@ -935,12 +930,6 @@ GLOBAL_LIST_EMPTY(map_model_default)
 					CRASH("[area_type] failed to be new'd, what'd you do?")
 			loaded_areas[area_type] = area_instance
 
-		// if(!new_z)
-			// old_area = crds.loc
-			// LISTASSERTLEN(old_area.turfs_to_uncontain_by_zlevel, crds.z, list())
-			// LISTASSERTLEN(area_instance.turfs_by_zlevel, crds.z, list())
-			// old_area.turfs_to_uncontain_by_zlevel[crds.z] += crds
-			// area_instance.turfs_by_zlevel[crds.z] += crds
 		area_instance.contents.Add(crds)
 
 		if(GLOB.use_preloader)

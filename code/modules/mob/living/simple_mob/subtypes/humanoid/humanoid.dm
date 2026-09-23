@@ -12,8 +12,7 @@
 	max_n2 = 0
 	unsuitable_atoms_damage = 15
 
-	health = 150			// Point of human crit, as of commenting
-	maxHealth = 150
+	endurance = 150
 
 	organ_names = /datum/decl/mob_organ_names/humanoid
 

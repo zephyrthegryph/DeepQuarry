@@ -9,10 +9,37 @@
 
 import { spawn, spawnSync } from 'node:child_process';
 import fs from 'node:fs';
+import os from 'node:os';
+import path from 'node:path';
 import Juke from './juke/index.js';
 import { bun, bunRoot } from './lib/bun';
+import {
+  BENCH_RUNS_DIR,
+  type BenchIteration,
+  type BenchRun,
+  compareRuns,
+  formatComparison,
+  formatNumber,
+  listRuns,
+  type ProcessSample,
+  ProcessSampler,
+  type ProcessSummary,
+  readJson,
+  resolveRun,
+  runIdentity,
+  summarize,
+  TEST_RUNS_DIR,
+  type TestRun,
+  testHotspots,
+  testRunRecord,
+  type UnitTestEntry,
+  type WorldBenchDocument,
+  writeJson,
+} from './lib/bench';
+import { renderReport } from './lib/bench_report';
 import { DreamDaemon, DreamMaker, NamedVersionFile } from './lib/byond';
 import { prependDefines } from './lib/tgs';
+import { MAP_BOUNDS_FILE, writeMapBounds } from './lib/map_bounds';
 
 export const TGS_MODE = process.env.CBT_BUILD_MODE === 'TGS';
 
@@ -117,6 +144,18 @@ export const CleanIconsTarget = new Juke.Target({
 });
 // DQAdd End
 
+// Width/height of every .dmm, so map templates aren't parsed at boot just to
+// learn their size (doc/rewrite/fixes.md Q2). DM falls back to parsing when an
+// entry is missing or the file's size changed.
+export const MapBoundsTarget = new Juke.Target({
+  inputs: ['maps/**/*.dmm'],
+  outputs: [MAP_BOUNDS_FILE],
+  executes: async () => {
+    const count = writeMapBounds(['maps']);
+    Juke.logger.info(`Wrote bounds for ${count} maps to ${MAP_BOUNDS_FILE}`);
+  },
+});
+
 // DQAdd Start — validate that every .dm file under code/ is included in
 // deepquarry.dme. Runs before the DM compile so missing includes are caught
 // with a helpful error rather than silently-uncompiled code.
@@ -190,6 +229,13 @@ export const ValidateDmeTarget = new Juke.Target({
       missing.push(normalized);
     }
 
+    if (missing.length > 0 && (process.env.DQ_WIP_TREE || process.env.DQ_ALLOW_UNREACHABLE_DM)) {
+      Juke.logger.warn(
+        `DQ_WIP_TREE is set: ignoring ${missing.length} .dm file(s) not reachable from ${DME_NAME}.dme:\n`
+        + missing.map((f) => `  ${f}`).join('\n'),
+      );
+      return;
+    }
     if (missing.length > 0) {
       Juke.logger.error(
         `${missing.length} .dm file(s) under code/ are not reachable from ${DME_NAME}.dme `
@@ -285,6 +331,7 @@ export const DmTarget = new Juke.Target({
     IconRepackTarget, // DQAdd — regenerate .dmi from PNG+TOML before DM compile
     ValidateDmeTarget, // DQAdd — fail fast if any code/ .dm is missing from the DME
     DreamCheckerTarget, // DQAdd — run SpacemanDMM lint before DM compile if available
+    MapBoundsTarget, // boot reads template sizes from data/map_template_bounds.json
   ],
   inputs: [
     '_maps/map_files/generic/**',
@@ -315,123 +362,452 @@ export const DmTarget = new Juke.Target({
   },
 });
 
+// ---------------------------------------------------------------------------
+// Unit tests, benchmarks and their records. doc/testing.md is the user guide;
+// lib/bench.ts holds the storage, statistics and comparison logic.
+
+export const RunsParameter = new Juke.Parameter({ type: 'number' });
+export const WarmupParameter = new Juke.Parameter({ type: 'number' });
+export const ScenarioParameter = new Juke.Parameter({ type: 'string[]', alias: 's' });
+export const ArgParameter = new Juke.Parameter({ type: 'string[]' });
+export const ProfileParameter = new Juke.Parameter({ type: 'boolean' });
+export const LabelParameter = new Juke.Parameter({ type: 'string' });
+export const BaseParameter = new Juke.Parameter({ type: 'string' });
+export const HeadParameter = new Juke.Parameter({ type: 'string' });
+export const ThresholdParameter = new Juke.Parameter({ type: 'number' });
+export const FailOnRegressionParameter = new Juke.Parameter({ type: 'boolean' });
+export const AllParameter = new Juke.Parameter({ type: 'boolean' });
+export const RefParameter = new Juke.Parameter({ type: 'string' });
+
+/** Set in a tree with unfinished work to tolerate dangling or missing includes. */
+const WIP_TREE = !!(process.env.DQ_WIP_TREE || process.env.DQ_ALLOW_UNREACHABLE_DM);
+
+/**
+ * Writes the manifest for a test or benchmark build. In a WIP tree
+ * (DQ_WIP_TREE=1), includes whose file no longer exists are dropped with a
+ * warning so half-finished work elsewhere doesn't block verification.
+ */
+function writeDerivedDme(target: string): void {
+  let text = fs.readFileSync(`${DME_NAME}.dme`, 'utf-8');
+  if (WIP_TREE) {
+    const dropped: string[] = [];
+    text = text
+      .split(/\r?\n/)
+      .filter((line) => {
+        const match = /^#include "(.+)"/.exec(line.trim());
+        if (match && !fs.existsSync(match[1].replace(/\\/g, '/'))) {
+          dropped.push(match[1]);
+          return false;
+        }
+        return true;
+      })
+      .join('\n');
+    if (dropped.length) {
+      Juke.logger.warn(`DQ_WIP_TREE: dropped ${dropped.length} include(s) of missing files:\n${dropped.map((f) => `  ${f}`).join('\n')}`);
+    }
+  }
+  fs.writeFileSync(target, text);
+}
+
+async function compileDerived(dme: string, get: any, defines: string[]): Promise<void> {
+  writeDerivedDme(dme);
+  try {
+    await DreamMaker(dme, {
+      defines: [...defines, ...get(DefineParameter)],
+      warningsAsErrors: get(WarningParameter).includes('error'),
+      ignoreWarningCodes: get(NoWarningParameter),
+      namedDmVersion: get(DmVersionParameter),
+    });
+  } catch (error) {
+    // Don't leave a half-built derived dme/rsc lying around after a failed compile.
+    await removeDerivedArtifacts(dme.replace(/\.dme$/, '.*'));
+    throw error;
+  }
+}
+
+type WorldRun = {
+  clean: boolean;
+  cleanText: string | null;
+  results: Record<string, UnitTestEntry> | null;
+  durationSeconds: number;
+  process: ProcessSummary | null;
+  samples: ProcessSample[];
+};
+
+/**
+ * Boots a compiled test/bench world once and collects what it wrote. The
+ * world signals completion by writing data/unit_tests.json; the watchdog
+ * reaps daemons that linger afterwards (common on Windows).
+ */
+async function runTestWorld(
+  dmbFile: string,
+  dmVersion: string | null,
+  worldParams: Record<string, string>,
+  sample: boolean,
+): Promise<WorldRun> {
+  Juke.rm('data/logs/ci', { recursive: true });
+  Juke.rm('data/unit_tests.json');
+  Juke.rm('data/bench/process.json');
+  Juke.rm('data/bench/scenarios.json');
+  fs.mkdirSync('data/bench', { recursive: true });
+  const sampler = sample ? new ProcessSampler('data/bench/process.json') : null;
+  const params = new URLSearchParams({ 'log-directory': 'ci', ...worldParams }).toString();
+  const started = Date.now();
+  try {
+    await DreamDaemon(
+      {
+        dmbFile,
+        namedDmVersion: dmVersion,
+        watchdogFile: 'data/unit_tests.json',
+        onSpawn: (pid) => sampler?.start(pid),
+      },
+      '-close',
+      '-trusted',
+      '-verbose',
+      '-params',
+      params,
+    );
+  } catch {
+    // DreamDaemon exits non-zero even on clean runs; the files below decide.
+  }
+  const processSummary = sampler ? sampler.stop() : null;
+  let cleanText: string | null = null;
+  try {
+    cleanText = fs.readFileSync('data/logs/ci/clean_run.lk', 'utf-8');
+  } catch {
+    // not clean
+  }
+  let results: Record<string, UnitTestEntry> | null = null;
+  try {
+    results = JSON.parse(fs.readFileSync('data/unit_tests.json', 'utf-8'));
+  } catch {
+    // the world died before finishing
+  }
+  return {
+    clean: cleanText !== null,
+    cleanText,
+    results,
+    durationSeconds: (Date.now() - started) / 1000,
+    process: processSummary,
+    samples: sampler?.samples ?? [],
+  };
+}
+
+function printLogTails(): void {
+  for (const logFile of ['data/logs/ci/tests.log', 'data/logs/ci/runtime.log']) {
+    if (!fs.existsSync(logFile)) continue;
+    const lines = fs.readFileSync(logFile, 'utf-8').trim().split(/\r?\n/);
+    Juke.logger.error(`Last output from ${logFile}:`);
+    console.error(lines.slice(-80).join('\n'));
+  }
+}
+
+/** Best-effort removal of build copies; DreamDaemon can hold the .rsc briefly. */
+async function removeDerivedArtifacts(pattern: string): Promise<void> {
+  for (let attempt = 0; attempt < 20; attempt++) {
+    try {
+      Juke.rm(pattern);
+      return;
+    } catch {
+      await new Promise((resolve) => setTimeout(resolve, 250));
+    }
+  }
+  Juke.logger.warn(`Could not remove ${pattern}; it will be replaced on the next run.`);
+}
+
+function reportFocus(): void {
+  const focusedTests = fs
+    .readFileSync('code/modules/unit_tests/dq_focus.dm', 'utf-8')
+    .split(/\r?\n/)
+    .map((line) => line.trim())
+    .filter((line) => line.startsWith('TEST_FOCUS('));
+  if (focusedTests.length) {
+    Juke.logger.warn(`Focused unit-test run (${focusedTests.length}): ${focusedTests.join(', ')}`);
+  } else {
+    Juke.logger.info('Full unit-test suite selected.');
+  }
+}
+
+/** Stores a test run under data/test-runs/ and prints its summary. */
+function recordTestRun(run: WorldRun, label: string | null, defines: string[]): TestRun | null {
+  if (!run.results) return null;
+  const record = testRunRecord(runIdentity(label), label, defines, run.clean, run.durationSeconds, run.results);
+  writeJson(`${TEST_RUNS_DIR}/${record.id}.json`, record);
+  Juke.logger.info(
+    `Unit-test summary: ${record.counts.passed} passed, ${record.counts.failed} failed, ${record.counts.skipped} skipped `
+      + `in ${Math.round(record.duration_seconds)}s (saved ${TEST_RUNS_DIR}/${record.id}.json).`,
+  );
+  console.log(testHotspots(run.results));
+  for (const name of record.failed) {
+    Juke.logger.error(`FAILED ${name}: ${run.results[name].message ?? ''}`);
+  }
+  return record;
+}
+
+const TEST_DEFINES = ['CBT', 'CIBUILDING', 'CITESTING'];
+
 export const DmTestTarget = new Juke.Target({
-  parameters: [
-    DefineParameter,
-    DmVersionParameter,
-    WarningParameter,
-    NoWarningParameter,
-  ],
+  parameters: [DefineParameter, DmVersionParameter, WarningParameter, NoWarningParameter, LabelParameter],
   dependsOn: ({ get }) => [
     get(DefineParameter).includes('ALL_MAPS') && DmMapsIncludeTarget,
     IconRepackTarget, // tests boot the world, which uses the .rsc
     ValidateDmeTarget, // catch missing includes before compiling
     VerdigrisTarget, // tests boot the world, which loads the FFI lib
+    MapBoundsTarget, // tests boot the world, which reads template bounds
   ],
   executes: async ({ get }) => {
-    const focusSource = fs.readFileSync(
-      'code/modules/unit_tests/dq_focus.dm',
-      'utf-8',
-    );
-    const focusedTests = focusSource
-      .split(/\r?\n/)
-      .map((line) => line.trim())
-      .filter((line) => line.startsWith('TEST_FOCUS('));
-    if (focusedTests.length) {
-      Juke.logger.warn(
-        `Focused unit-test run (${focusedTests.length}): ${focusedTests.join(', ')}`,
-      );
-    } else {
-      Juke.logger.info('Full unit-test suite selected.');
-    }
-
-    fs.copyFileSync(`${DME_NAME}.dme`, `${DME_NAME}.test.dme`);
-    await DreamMaker(`${DME_NAME}.test.dme`, {
-      defines: ['CBT', 'CIBUILDING', 'CITESTING', ...get(DefineParameter)],
-      warningsAsErrors: get(WarningParameter).includes('error'),
-      ignoreWarningCodes: get(NoWarningParameter),
-      namedDmVersion: get(DmVersionParameter),
-    });
-    Juke.rm('data/logs/ci', { recursive: true });
-    // The run-complete marker the DreamDaemon watchdog waits on. RunUnitTests()
-    // writes it once every test has finished (pass OR fail), just before the
-    // world qdels itself. Clear it so the watchdog detects THIS run's marker.
-    Juke.rm('data/unit_tests.json');
-    const options = {
-      dmbFile: `${DME_NAME}.test.dmb`,
-      namedDmVersion: get(DmVersionParameter),
-      // Without this, a zombied dreamdaemon.exe (which Windows leaves behind
-      // after the world ends) would hang the build forever — Juke.exec only
-      // resolves on process exit. The watchdog force-kills the lingering daemon
-      // once the run is done.
-      watchdogFile: 'data/unit_tests.json',
-    };
-    // DreamDaemon on Windows exits non-zero even on a clean test run
-    // (the world qdels itself which BYOND reports as abnormal exit).
-    // The authoritative success signal is data/logs/ci/clean_run.lk
-    // written by world.dm, so swallow the exit code and check that file instead.
-    try {
-      await DreamDaemon(
-        options,
-        '-close',
-        '-trusted',
-        '-verbose',
-        '-params',
-        'log-directory=ci',
-      );
-    } catch (err) {
-      // Swallow — clean_run.lk check below is the real verdict.
-    }
-    let cleanRun: string;
-    try {
-      cleanRun = fs.readFileSync('data/logs/ci/clean_run.lk', 'utf-8');
-    } catch (err) {
-      for (const logFile of [
-        'data/logs/ci/tests.log',
-        'data/logs/ci/runtime.log',
-      ]) {
-        if (!fs.existsSync(logFile)) {
-          continue;
-        }
-        const lines = fs.readFileSync(logFile, 'utf-8').trim().split(/\r?\n/);
-        Juke.logger.error(`Last output from ${logFile}:`);
-        console.error(lines.slice(-80).join('\n'));
-      }
+    reportFocus();
+    await compileDerived(`${DME_NAME}.test.dme`, get, TEST_DEFINES);
+    const run = await runTestWorld(`${DME_NAME}.test.dmb`, get(DmVersionParameter), {}, false);
+    if (!run.clean) printLogTails();
+    recordTestRun(run, get(LabelParameter), get(DefineParameter));
+    await removeDerivedArtifacts('*.test.*');
+    if (!run.clean) {
       Juke.logger.error('Test run was not clean, exiting');
       throw new Juke.ExitCode(1);
     }
-    console.log(cleanRun);
+    console.log(run.cleanText);
+  },
+});
 
-    const results = JSON.parse(
-      fs.readFileSync('data/unit_tests.json', 'utf-8'),
-    ) as Record<string, { status: number }>;
-    const counts = { passed: 0, failed: 0, skipped: 0 };
-    for (const result of Object.values(results)) {
-      if (result.status === 0) counts.passed++;
-      else if (result.status === 1) counts.failed++;
-      else counts.skipped++;
-    }
-    Juke.logger.info(
-      `Unit-test summary: ${counts.passed} passed, ${counts.failed} failed, ${counts.skipped} skipped.`,
-    );
-
-    // DreamDaemon may take a moment to release its dynamic resource file after
-    // the watchdog observes unit_tests.json and terminates the process. Cleanup
-    // is best-effort and must not turn an authoritative clean run red on Windows.
-    for (let attempt = 0; attempt < 20; attempt++) {
-      try {
-        Juke.rm('*.test.*');
-        break;
-      } catch (err) {
-        if (attempt === 19) {
-          Juke.logger.warn(
-            'Could not remove all temporary test artifacts; they will be replaced on the next run.',
-          );
-          break;
-        }
-        await new Promise((resolve) => setTimeout(resolve, 250));
+/**
+ * Runs the suite several times on one build and sorts failures into
+ * consistent and flaky. `--runs` defaults to 3.
+ */
+export const TestRepeatTarget = new Juke.Target({
+  parameters: [DefineParameter, DmVersionParameter, WarningParameter, NoWarningParameter, RunsParameter],
+  dependsOn: [IconRepackTarget, ValidateDmeTarget, VerdigrisTarget, MapBoundsTarget],
+  executes: async ({ get }) => {
+    const runs = Math.max(get(RunsParameter) ?? 3, 1);
+    reportFocus();
+    await compileDerived(`${DME_NAME}.test.dme`, get, TEST_DEFINES);
+    const outcomes: Record<string, number[]> = {};
+    for (let i = 1; i <= runs; i++) {
+      Juke.logger.info(`Test repeat ${i}/${runs}`);
+      const run = await runTestWorld(`${DME_NAME}.test.dmb`, get(DmVersionParameter), {}, false);
+      recordTestRun(run, `repeat${i}of${runs}`, get(DefineParameter));
+      for (const [name, result] of Object.entries(run.results ?? {})) {
+        (outcomes[name] ??= []).push(result.status);
       }
     }
+    await removeDerivedArtifacts('*.test.*');
+    const consistent = Object.entries(outcomes).filter(([, s]) => s.length === runs && s.every((v) => v === 1));
+    const flaky = Object.entries(outcomes).filter(([, s]) => s.includes(1) && !s.every((v) => v === 1));
+    Juke.logger.info(`Across ${runs} runs: ${consistent.length} consistent failure(s), ${flaky.length} flaky test(s).`);
+    for (const [name] of consistent) console.log(`  always fails  ${name}`);
+    for (const [name, s] of flaky) console.log(`  flaky ${s.filter((v) => v === 1).length}/${s.length}   ${name}`);
+    if (consistent.length || flaky.length) throw new Juke.ExitCode(1);
+  },
+});
+
+/** Prints new, fixed and shared failures between two stored test runs. */
+function compareTestRuns(base: TestRun, head: TestRun): { newFailures: string[] } {
+  const baseFailed = new Set(base.failed);
+  const headFailed = new Set(head.failed);
+  const newFailures = head.failed.filter((t) => !baseFailed.has(t));
+  const fixed = base.failed.filter((t) => !headFailed.has(t));
+  const shared = head.failed.filter((t) => baseFailed.has(t));
+  const missing = Object.keys(base.tests).filter((t) => !(t in head.tests));
+  const added = Object.keys(head.tests).filter((t) => !(t in base.tests));
+  console.log(`Base ${base.id} (${base.counts.failed} failed) -> head ${head.id} (${head.counts.failed} failed)`);
+  const section = (title: string, items: string[]) => {
+    if (!items.length) return;
+    console.log(`${title} (${items.length}):`);
+    for (const item of items) console.log(`  ${item}`);
+  };
+  section('New failures', newFailures);
+  section('Fixed', fixed);
+  section('Failing in both', shared);
+  section('Tests only in base', missing);
+  section('Tests only in head', added);
+  return { newFailures };
+}
+
+export const TestCompareTarget = new Juke.Target({
+  parameters: [BaseParameter, HeadParameter],
+  executes: async ({ get }) => {
+    const base = readJson<TestRun>(resolveRun(TEST_RUNS_DIR, get(BaseParameter) || 'previous'));
+    const head = readJson<TestRun>(resolveRun(TEST_RUNS_DIR, get(HeadParameter) || 'latest'));
+    if (compareTestRuns(base, head).newFailures.length) throw new Juke.ExitCode(1);
+  },
+});
+
+/**
+ * Runs the suite on another commit (default HEAD, i.e. without your
+ * uncommitted changes) in a reusable worktree, then compares it with the
+ * latest local test run. Answers "is this failure mine or pre-existing?".
+ */
+export const TestBaselineTarget = new Juke.Target({
+  parameters: [RefParameter, DefineParameter],
+  executes: async ({ get }) => {
+    const ref = get(RefParameter) || 'HEAD';
+    const commit = spawnSync('git', ['rev-parse', '--short=10', ref], { encoding: 'utf-8' }).stdout.trim();
+    if (!commit) {
+      Juke.logger.error(`Unknown git ref '${ref}'.`);
+      throw new Juke.ExitCode(1);
+    }
+    const root = process.cwd();
+    const worktree = path.join(os.tmpdir(), `dq-baseline-${commit}`);
+    if (!fs.existsSync(worktree)) {
+      Juke.logger.info(`Creating baseline worktree for ${ref} (${commit}) at ${worktree}`);
+      await Juke.exec('git', ['worktree', 'add', '--detach', worktree, commit]);
+    } else {
+      Juke.logger.info(`Reusing baseline worktree ${worktree}`);
+    }
+    // Seed the generated icons so the repack only redoes what differs.
+    if (fs.existsSync('icons/gen') && !fs.existsSync(path.join(worktree, 'icons/gen'))) {
+      fs.cpSync('icons/gen', path.join(worktree, 'icons/gen'), { recursive: true });
+    }
+    const script = process.platform === 'win32' ? 'tools\\build\\build.bat' : 'tools/build/build.sh';
+    const defines = get(DefineParameter).flatMap((d) => ['-D', d]);
+    try {
+      await Juke.exec(script, ['dm-test', '--label', `baseline-${commit}`, ...defines], {
+        cwd: worktree,
+        shell: process.platform === 'win32',
+        env: { ...process.env, CARGO_TARGET_DIR: path.join(root, 'verdigris', 'target') },
+      });
+    } catch {
+      // failures are expected; the record decides
+    }
+    const baselineRuns = listRuns(path.join(worktree, TEST_RUNS_DIR));
+    if (!baselineRuns.length) {
+      Juke.logger.error('The baseline run produced no results (compile or boot failure). See the output above.');
+      throw new Juke.ExitCode(1);
+    }
+    const baselineFile = baselineRuns[baselineRuns.length - 1];
+    const copied = path.join(TEST_RUNS_DIR, path.basename(baselineFile));
+    fs.mkdirSync(TEST_RUNS_DIR, { recursive: true });
+    fs.copyFileSync(baselineFile, copied);
+    const local = listRuns(TEST_RUNS_DIR).filter((f) => !path.basename(f).includes('baseline-'));
+    if (!local.length) {
+      Juke.logger.warn('No local test run to compare against; run dm-test first. Baseline saved.');
+      return;
+    }
+    compareTestRuns(readJson<TestRun>(copied), readJson<TestRun>(local[local.length - 1]));
+    Juke.logger.info(`Remove the worktree when done: git worktree remove --force ${worktree}`);
+  },
+});
+
+/**
+ * Boots a -DBENCHMARK build and runs scenarios from code/modules/benchmarks/,
+ * sampling DreamDaemon's memory and CPU from outside. Each invocation is stored
+ * in data/bench/runs/ and compared with the previous run on the same map.
+ */
+export const BenchTarget = new Juke.Target({
+  parameters: [
+    DefineParameter, DmVersionParameter, WarningParameter, NoWarningParameter,
+    ScenarioParameter, RunsParameter, WarmupParameter, ArgParameter, ProfileParameter, LabelParameter,
+  ],
+  dependsOn: [IconRepackTarget, ValidateDmeTarget, VerdigrisTarget, MapBoundsTarget],
+  executes: async ({ get }) => {
+    const scenarios = get(ScenarioParameter).flatMap((s) => s.split(','));
+    const runs = Math.max(get(RunsParameter) ?? 1, 1);
+    const warmup = Math.max(get(WarmupParameter) ?? (runs > 1 ? 1 : 0), 0);
+    const worldParams: Record<string, string> = { bench: scenarios.length ? scenarios.join(',') : 'default' };
+    if (get(ProfileParameter)) worldParams.bench_profile = '1';
+    for (const arg of get(ArgParameter)) {
+      const [key, ...rest] = arg.split('=');
+      worldParams[`bench_${key}`] = rest.join('=');
+    }
+    await compileDerived(`${DME_NAME}.bench.dme`, get, [...TEST_DEFINES, 'BENCHMARK']);
+    const identity = runIdentity(get(LabelParameter));
+    const iterations: BenchIteration[] = [];
+    const failures: string[] = [];
+    for (let i = 1; i <= warmup + runs; i++) {
+      const isWarmup = i <= warmup;
+      Juke.logger.info(`Benchmark iteration ${i}/${warmup + runs}${isWarmup ? ' (warm-up, not counted)' : ''}`);
+      const run = await runTestWorld(`${DME_NAME}.bench.dmb`, get(DmVersionParameter), worldParams, true);
+      let world: WorldBenchDocument;
+      try {
+        world = readJson<WorldBenchDocument>('data/bench/scenarios.json');
+      } catch {
+        printLogTails();
+        failures.push(`iteration ${i}: the world wrote no benchmark results`);
+        continue;
+      }
+      for (const scenario of Object.values(world.scenarios)) {
+        if (scenario.status !== 'passed') failures.push(`iteration ${i}: ${scenario.id} ${scenario.status}: ${scenario.error ?? ''}`);
+      }
+      const profiles: string[] = [];
+      if (fs.existsSync('data/logs/ci/profiler')) {
+        const dest = `data/bench/profiles/${identity.id}/iteration${i}`;
+        fs.mkdirSync(dest, { recursive: true });
+        for (const file of fs.readdirSync('data/logs/ci/profiler')) {
+          fs.copyFileSync(`data/logs/ci/profiler/${file}`, `${dest}/${file}`);
+          profiles.push(`${dest}/${file}`);
+        }
+      }
+      iterations.push({
+        ...world,
+        iteration: i,
+        warmup: isWarmup,
+        process: run.process as ProcessSummary,
+        process_samples: run.samples,
+        profiles,
+      });
+    }
+    await removeDerivedArtifacts('*.bench.*');
+    const record: BenchRun = {
+      ...identity,
+      kind: 'bench',
+      label: get(LabelParameter),
+      map: iterations[0]?.map ?? 'unknown',
+      defines: get(DefineParameter),
+      scenarios_requested: scenarios,
+      args: get(ArgParameter),
+      iterations,
+      summary: summarize(iterations),
+      failures,
+    };
+    const file = `${BENCH_RUNS_DIR}/${record.id}.json`;
+    writeJson(file, record);
+    for (const [scenario, metrics] of Object.entries(record.summary)) {
+      console.log(`\n${scenario}`);
+      for (const [name, stats] of Object.entries(metrics)) {
+        const spread = stats.n > 1 ? ` ±${formatNumber(stats.stdev)}` : '';
+        console.log(`  ${name.padEnd(40)} ${formatNumber(stats.median).padStart(10)} ${stats.unit}${spread}`);
+      }
+    }
+    Juke.logger.info(`Saved ${file}`);
+    const sameMap = listRuns(BENCH_RUNS_DIR)
+      .map((f) => readJson<BenchRun>(f))
+      .filter((r) => r.map === record.map && r.id !== record.id);
+    if (sameMap.length) {
+      const previous = sameMap[sameMap.length - 1];
+      console.log(`\nCompared with ${previous.id}:`);
+      console.log(formatComparison(compareRuns(previous, record, 5), true));
+    }
+    renderReport('data/bench/report.html');
+    Juke.logger.info('Report: data/bench/report.html');
+    if (failures.length) {
+      for (const failure of failures) Juke.logger.error(failure);
+      throw new Juke.ExitCode(1);
+    }
+  },
+});
+
+export const BenchCompareTarget = new Juke.Target({
+  parameters: [BaseParameter, HeadParameter, ThresholdParameter, FailOnRegressionParameter, AllParameter],
+  executes: async ({ get }) => {
+    const baseFile = resolveRun(BENCH_RUNS_DIR, get(BaseParameter) || 'previous');
+    const headFile = resolveRun(BENCH_RUNS_DIR, get(HeadParameter) || 'latest');
+    const base = readJson<BenchRun>(baseFile);
+    const head = readJson<BenchRun>(headFile);
+    if (base.map !== head.map) Juke.logger.warn(`Comparing different maps: ${base.map} vs ${head.map}`);
+    const rows = compareRuns(base, head, get(ThresholdParameter) ?? 5);
+    console.log(`Base ${base.id}\nHead ${head.id}\n`);
+    console.log(formatComparison(rows, !get(AllParameter)));
+    const regressions = rows.filter((r) => r.verdict === 'regression');
+    const improvements = rows.filter((r) => r.verdict === 'improvement');
+    Juke.logger.info(`${regressions.length} regression(s), ${improvements.length} improvement(s), ${rows.length} metrics compared.`);
+    if (get(FailOnRegressionParameter) && regressions.length) throw new Juke.ExitCode(1);
+  },
+});
+
+export const BenchReportTarget = new Juke.Target({
+  executes: async () => {
+    const { runs, tests } = renderReport('data/bench/report.html');
+    Juke.logger.info(`Wrote data/bench/report.html (${runs} benchmark runs, ${tests} test runs).`);
   },
 });
 

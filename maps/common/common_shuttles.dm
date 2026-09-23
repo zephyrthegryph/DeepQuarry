@@ -5,22 +5,6 @@
 	shuttle_tag = "Virgo Flyer"
 	req_one_access = list(ACCESS_PILOT)
 
-/obj/effect/overmap/visitable/ship/landable/ccboat
-	name = "NTV Virgo Flyer"
-	desc = "A small shuttle from Central Command."
-	vessel_mass = 1000
-	vessel_size = SHIP_SIZE_TINY
-	shuttle = "Virgo Flyer"
-	known = TRUE
-
-// A shuttle lateloader landmark
-/obj/effect/shuttle_landmark/shuttle_initializer/ccboat
-	name = "Central Command Shuttlepad"
-	base_area = /area/shuttle/centcom/ccbay
-	base_turf = /turf/simulated/floor/reinforced
-	landmark_tag = "cc_shuttlepad"
-	docking_controller = "cc_landing_pad"
-	shuttle_type = /datum/shuttle/autodock/overmap/ccboat
 
 /datum/shuttle/autodock/overmap/ccboat
 	name = "Virgo Flyer"
@@ -35,13 +19,6 @@
 	icon_state = "yelwhitri"
 	name = "Virgo Flyer"
 	requires_power = 0
-
-/area/shuttle/centcom/ccbay
-	icon = 'icons/turf/areas_vr.dmi'
-	icon_state = "bluwhisqu"
-	name = "Central Command Shuttle Bay"
-	requires_power = 0
-	dynamic_lighting = 0
 
 
 // === merged from maps/ during hard-fork flatten ===
@@ -197,59 +174,6 @@
 	landmark_tag = "sling_outpost"
 	docking_controller = "exp_sling_outpost"
 
-//Carrier Docks
-/obj/effect/shuttle_landmark/southern_cross/carrier
-	name = "Carrier Dock"
-	base_turf = /turf/simulated/floor/reinforced
-
-/obj/effect/shuttle_landmark/southern_cross/carrier/hangar_one
-	name = "Exploration Carrier Hangar One"
-	landmark_tag = "exphangar_1"
-	docking_controller = "exphangar_1"
-	base_area = /area/expoutpost/hangarone
-
-/obj/effect/shuttle_landmark/southern_cross/carrier/baby_mammoth_dock
-	name = "Baby Mammoth Dock"
-	landmark_tag = "baby_mammoth_dock"
-	docking_controller = "baby_mammoth_dock"
-	base_area = /area/expoutpost/hangartwo
-
-/obj/effect/shuttle_landmark/southern_cross/carrier/ursula_dock
-	name = "Ursula Dock"
-	landmark_tag = "ursula_dock"
-	docking_controller = "ursula_dock"
-	base_area = /area/expoutpost/hangarthree
-
-/obj/effect/shuttle_landmark/southern_cross/carrier/stargazer_dock
-	name = "Stargazer Dock"
-	landmark_tag = "stargazer_dock"
-	docking_controller = "stargazer_dock"
-	base_area = /area/expoutpost/hangarfour
-
-/obj/effect/shuttle_landmark/southern_cross/carrier/needle_dock
-	name = "Needle Dock"
-	landmark_tag = "needle_dock"
-	docking_controller = "needle_dock"
-	base_area = /area/expoutpost/hangarfive
-
-/obj/effect/shuttle_landmark/southern_cross/carrier/echidna_dock
-	name = "Echidna Dock"
-	landmark_tag = "echidna_dock"
-	docking_controller = "echidna_dock"
-	base_area = /area/expoutpost/hangarsix
-
-/obj/effect/shuttle_landmark/southern_cross/carrier/port_dock
-	name = "Carrier Port Dock"
-	landmark_tag = "carrier_port_dock"
-	base_area = /area/space
-	base_turf = /turf/space
-
-/obj/effect/shuttle_landmark/southern_cross/carrier/starboard_dock
-	name = "Carrier Starboard Dock"
-	landmark_tag = "carrier_starboard_dock"
-	base_area = /area/space
-	base_turf = /turf/space
-
 
 //Escape Pods
 
@@ -381,83 +305,6 @@ ESCAPE_POD(14)
 	landmark_tag = "large_escape_pod2_transit"
 	flags = SLANDMARK_FLAG_AUTOSET
 
-/obj/effect/shuttle_landmark/southern_cross/large_escape_pod3/station
-	name = "Station"
-	landmark_tag = "large_escape_pod3_station"
-	docking_controller = "large_escape_pod_3_berth"
-	base_area = /area/maintenance/firstdeck/centralstarboard
-	base_turf = /turf/simulated/floor/airless
-
-/obj/effect/shuttle_landmark/southern_cross/large_escape_pod3/offsite
-	name = "Recovery"
-	landmark_tag = "large_escape_pod3_offsite"
-	docking_controller = "large_escape_pod_3_recovery"
-
-/obj/effect/shuttle_landmark/southern_cross/large_escape_pod3/transit
-	landmark_tag = "large_escape_pod3_transit"
-	flags = SLANDMARK_FLAG_AUTOSET
-
-/obj/effect/shuttle_landmark/southern_cross/large_escape_pod4/station
-	name = "Station"
-	landmark_tag = "large_escape_pod4_station"
-	docking_controller = "large_escape_pod_4_berth"
-	base_area = /area/maintenance/firstdeck/centralstarboard
-	base_turf = /turf/simulated/floor/airless
-
-/obj/effect/shuttle_landmark/southern_cross/large_escape_pod4/offsite
-	name = "Recovery"
-	landmark_tag = "large_escape_pod4_offsite"
-	docking_controller = "large_escape_pod_4_recovery"
-
-/obj/effect/shuttle_landmark/southern_cross/large_escape_pod4/transit
-	landmark_tag = "large_escape_pod4_transit"
-	flags = SLANDMARK_FLAG_AUTOSET
-
-// Arrivals ''''Shuttle''''
-/obj/effect/shuttle_landmark/relicbase/arrivals/offsite
-	name = "Transit to Station"
-	landmark_tag = "arrivals_offsite"
-	base_area = /area/space
-	base_turf = /turf/simulated/floor/tiled/techfloor/grid
-
-/obj/effect/shuttle_landmark/relicbase/arrivals/station
-	name = "Relic Base Arrivals Station"
-	landmark_tag = "arrivals_station"
-	docking_controller = "arrivals_dock"
 
 //Escape ''''Shuttle''''
 
-/obj/effect/shuttle_landmark/relicbase/escape/offsite
-	base_turf = /turf/simulated/floor/tiled/techfloor/grid
-
-/obj/effect/shuttle_landmark/relicbase/escape/station
-	name = "Relic Base Departures Station"
-	landmark_tag = "escape_station"
-	docking_controller = "escape_dock"
-
-/obj/effect/shuttle_landmark/relicbase/escape/transit
-	landmark_tag = "escape_transit"
-
-/obj/effect/shuttle_landmark/relicbase/mining_base
-	name = "Mining Elevator Base"
-	landmark_tag = "mining_base"
-	docking_controller = "car_mining_base"
-	base_area = /area/space
-	base_turf = /turf/simulated/floor/reinforced
-
-/obj/effect/shuttle_landmark/relicbase/mining_undermines
-	name = "Mining Elevator Mines"
-	landmark_tag = "mining_undermines"
-	docking_controller = "car_mining_undermines"
-
-/obj/effect/shuttle_landmark/relicbase/research
-	name = "Research Elevator Base"
-	landmark_tag = "rsr_base"
-	docking_controller = "rsr_base"
-	base_area = /area/space
-	base_turf = /turf/simulated/floor/reinforced
-
-/obj/effect/shuttle_landmark/relicbase/research_undermines
-	name = "Research Elevator Mines"
-	landmark_tag = "rsr_undermines"
-	docking_controller = "rsr_undermines"

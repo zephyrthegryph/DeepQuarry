@@ -30,15 +30,6 @@
 	name = "south-east of third deck"
 	icon_state = "southeast"
 
-/area/syndicate_station/mining
-	name = "mining site"
-	icon_state = "shuttlered"
-
-/area/syndicate_station/planet
-	name = "planetside"
-	dynamic_lighting = 1
-	icon_state = "shuttlered"
-	base_turf = /turf/simulated/floor/outdoors/grass/sif/planetuse
 
 /area/syndicate_station/transit
 	name = " transit"

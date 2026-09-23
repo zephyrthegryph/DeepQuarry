@@ -219,7 +219,6 @@
 	slot_flags = SLOT_BELT
 
 
-// === merged from equipment_ch.dm during hard-fork de-suffix (verified no override-order change) ===
 /obj/item/clothing/glasses/monocoole
 	name = "The Monocoole"
 	desc = "One heck of a stylish monocle. This one lets you see a little farther..."

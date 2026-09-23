@@ -2,7 +2,6 @@ GLOBAL_LIST_BOILERPLATE(all_brain_organs, /obj/item/organ/internal/brain)
 
 /obj/item/organ/internal/brain
 	name = "brain"
-	health = 400 //They need to live awhile longer than other organs. Is this even used by organ code anymore?
 	desc = "A piece of juicy meat found in a person's head."
 	organ_tag = O_BRAIN
 	parent_organ = BP_HEAD
@@ -15,7 +14,6 @@ GLOBAL_LIST_BOILERPLATE(all_brain_organs, /obj/item/organ/internal/brain)
 	throw_range = 5
 	attack_verb = list("attacked", "slapped", "whacked")
 	var/clone_source = FALSE
-	var/mob/living/carbon/brain/brainmob = null
 	var/can_assist = TRUE
 	var/defib_timer = -1
 
@@ -23,6 +21,16 @@ GLOBAL_LIST_BOILERPLATE(all_brain_organs, /obj/item/organ/internal/brain)
 	..()
 	if(owner && owner.stat != DEAD) // So there's a lower risk of ticking twice.
 		tick_defib_timer()
+
+/// Fraction of max_damage below which a brain still recovers on its own
+/// (natural regeneration). Above it the brain needs neural repair; past the
+/// salvage band it swells (see lesions.dm).
+#define BRAIN_NATURAL_HEAL_FRACTION 0.2
+
+/obj/item/organ/internal/brain/natural_heal_ceiling()
+	return max_damage * BRAIN_NATURAL_HEAL_FRACTION
+
+#undef BRAIN_NATURAL_HEAL_FRACTION
 
 // This is called by `process()` when the owner is alive, or brain is not in a body, and by `Life()` directly when dead.
 /obj/item/organ/internal/brain/proc/tick_defib_timer()
@@ -79,56 +87,20 @@ GLOBAL_LIST_BOILERPLATE(all_brain_organs, /obj/item/organ/internal/brain)
 
 /obj/item/organ/internal/brain/Initialize(mapload)
 	..()
-	health = CONFIG_GET(number/default_brain_health)
 	defib_timer = (CONFIG_GET(number/defib_timer) MINUTES) / 2 // // Time vars measure things in ticks. Life tick happens every ~2 seconds, therefore dividing by 20
+	AddComponent(/datum/component/mind_host, src)
 	return INITIALIZE_HINT_LATELOAD
 
-/obj/item/organ/internal/brain/LateInitialize()
-	if(brainmob)
-		butcherable = FALSE
-
-		if(brainmob.client)
-			brainmob.client.screen.len = null //clear the hud
-
-/obj/item/organ/internal/brain/Destroy()
-	if(brainmob && brainmob.dna)
-		qdel(brainmob.dna)
-	QDEL_NULL(brainmob)
-	. = ..()
-
-/obj/item/organ/internal/brain/proc/transfer_identity(mob/living/carbon/H)
-
-	if(!brainmob)
-		brainmob = new(src)
-		brainmob.name = H.real_name
-		brainmob.real_name = H.real_name
-
-		if(istype(H))
-			QDEL_SWAP(brainmob.dna, H.dna.Clone())
-			brainmob.timeofhostdeath = H.timeofdeath
-			brainmob.ooc_notes = H.ooc_notes
-			brainmob.ooc_notes_likes = H.ooc_notes_likes
-			brainmob.ooc_notes_dislikes = H.ooc_notes_dislikes
-			brainmob.ooc_notes_favs = H.ooc_notes_favs
-			brainmob.ooc_notes_maybes = H.ooc_notes_maybes
-			brainmob.ooc_notes_style = H.ooc_notes_style
-
-		// Copy modifiers.
-		for(var/datum/modifier/M in H.modifiers)
-			if(M.flags & MODIFIER_GENETIC)
-				brainmob.add_modifier(M.type)
-
-	if(H.mind)
-		H.mind.transfer_to(brainmob) //mAYBE MAKE THIS FORCE....
-
-	brainmob.languages = H.languages
-
-	to_chat(brainmob, span_notice("You feel slightly disoriented. That's normal when you're just \a [initial(src.name)]."))
-	SEND_GLOBAL_SIGNAL(COMSIG_GLOB_BRAIN_REMOVED, brainmob)
+/// THE brain-death decision. A brain at 100% damage, or a dead organ, cannot
+/// be defibrillated or treated back: the person needs a resleeve. Defib,
+/// the humanoid body plan, scanners, MMIs and the brain view all ask this.
+/obj/item/organ/internal/brain/proc/is_brain_dead()
+	return (status & ORGAN_DEAD) || (max_damage && damage >= max_damage)
 
 /obj/item/organ/internal/brain/examine(mob/user) // -- TLE
 	. = ..()
-	if(brainmob && brainmob.client)//if thar be a brain inside... the brain.
+	var/mob/living/carbon/brain/view = hosted_view()
+	if(view?.client)//if thar be a brain inside... the brain.
 		. += "You can feel the small spark of life still left in this one."
 	else
 		. += "This one seems particularly lifeless. Perhaps it will regain some of its luster later..."
@@ -143,25 +115,23 @@ GLOBAL_LIST_BOILERPLATE(all_brain_organs, /obj/item/organ/internal/brain)
 	if(borer)
 		borer.detatch() //Should remove borer if the brain is removed - RR
 
-	var/obj/item/organ/internal/brain/B = src
-	if(istype(B) && owner)
-		if(istype(owner, /mob/living/carbon) && (owner.ckey || owner.original_player))
-			B.transfer_identity(owner)
+	if(owner?.mind)
+		var/datum/component/mind_host/host = get_mind_host(src)
+		var/mob/living/carbon/brain/view = host.receive_mind(owner.mind, "brain removed from [owner]")
+		to_chat(view, span_notice("You feel slightly disoriented. That's normal when you're just  [initial(name)]."))
+		SEND_GLOBAL_SIGNAL(COMSIG_GLOB_BRAIN_REMOVED, view)
 
 	..()
+	hosted_view()?.refresh_host_status()
 
 /obj/item/organ/internal/brain/replaced(mob/living/target)
 
-	if(target.key)
-		target.ghostize()
-
-	if(brainmob)
-		if(brainmob.mind)
-			brainmob.mind.transfer_to(target)
-			target.languages = brainmob.languages
-		else
-			target.key = brainmob.key
-			target.languages = brainmob.languages
+	var/datum/component/mind_host/host = get_mind_host(src)
+	if(host?.hosted_mind())
+		if(target.key)
+			target.ghostize()
+		host.release_mind(target, "brain implanted into [target]")
+		host.discard_occupant()
 	..()
 
 /obj/item/organ/internal/brain/proc/get_control_efficiency()
@@ -194,7 +164,6 @@ GLOBAL_LIST_BOILERPLATE(all_brain_organs, /obj/item/organ/internal/brain)
 	parent_organ = BP_TORSO
 	clone_source = TRUE
 	flags = OPENCONTAINER
-	var/list/owner_flavor_text = list()
 
 /obj/item/organ/internal/brain/slime/is_open_container()
 	return 1
@@ -210,95 +179,47 @@ GLOBAL_LIST_BOILERPLATE(all_brain_organs, /obj/item/organ/internal/brain)
 		var/mob/living/carbon/human/H = loc
 		color = rgb(min(H.r_skin + 40, 255), min(H.g_skin + 40, 255), min(H.b_skin + 40, 255))
 
-/obj/item/organ/internal/brain/slime/removed(mob/living/user)
-	if(istype(owner))
-		owner_flavor_text = owner.flavor_texts.Copy()
-	..()
-
 /obj/item/organ/internal/brain/slime/proc/reviveBody()
-	// TODO - Reference how xenochimera component handles revival from bodyrecord in the future.
-	// This requires a promie/protean component for transformation and regeneration.
-	// This shouldn't use a brain mob for caching dna. That's what BRs are for.
-	var/datum/dna2/record/R = new /datum/dna2/record()
-	QDEL_SWAP(R.dna, brainmob.dna.Clone())
-	R.ckey = brainmob.ckey
-	R.id = copytext(md5(brainmob.real_name), 2, 6)
-	R.name = R.dna.real_name
-	R.types = DNA2_BUF_UI|DNA2_BUF_UE|DNA2_BUF_SE
-	R.languages = brainmob.languages
-	R.flavor = list()
-	if(islist(owner_flavor_text))
-		R.flavor = owner_flavor_text.Copy()
-	for(var/datum/modifier/mod in brainmob.modifiers)
-		if(mod.flags & MODIFIER_GENETIC)
-			R.genetic_modifiers.Add(mod.type)
-
-	var/datum/mind/clonemind = brainmob.mind
-
-	if(!istype(clonemind, /datum/mind))	//not a mind
+	// The core hosts the promethean's mind; the new body is grown from the
+	// character's identity (its DNA reference, persistent traits, languages
+	// and flavour follow the mind when it moves in).
+	var/datum/component/mind_host/host = get_mind_host(src)
+	var/datum/mind/clonemind = host?.hosted_mind()
+	if(!clonemind)
 		return 0
-	if(clonemind.current && clonemind.current.stat != DEAD)	//mind is associated with a non-dead body
+	var/datum/character_identity/identity = clonemind.get_identity()
+	var/datum/dna/source_dna = identity?.get_dna()
+	if(!source_dna)
 		return 0
-	if(clonemind.active)	//somebody is using that mind
-		if(ckey(clonemind.key) != R.ckey)
-			return 0
-	else
-		for(var/mob/observer/dead/G in GLOB.player_list)
-			if(G.ckey == R.ckey)
-				if(G.can_reenter_corpse)
-					break
-				else
-					return 0
+	if(identity.has_genetic_modifier(/datum/modifier/no_clone))	//Can't be revived. Probably won't happen...?
+		return 0
 
-	for(var/modifier_type in R.genetic_modifiers)	//Can't be revived. Probably won't happen...?
-		if(ispath(modifier_type, /datum/modifier/no_clone))
-			return 0
-
-	var/mob/living/carbon/human/H = new /mob/living/carbon/human(get_turf(src), R.dna.species)
-
-	if(!R.dna)
-		H.dna = new /datum/dna()
-		H.dna.real_name = H.real_name
-	else
-		QDEL_SWAP(H.dna, R.dna.Clone())
+	var/mob/living/carbon/human/H = new /mob/living/carbon/human(get_turf(src), source_dna.species)
+	QDEL_SWAP(H.dna, source_dna.Clone()) // a new body needs DNA of its own
 
 	H.UpdateAppearance()
 	H.sync_dna_traits(FALSE) // Traitgenes Sync traits to genetics if needed
 	H.sync_organ_dna()
 	H.initialize_vessel()
-	if(!R.dna.real_name)	//to prevent null names
-		R.dna.real_name = "promethean ([rand(0,999)])"
-	H.real_name = R.dna.real_name
-	H.ooc_notes = brainmob.ooc_notes
-	H.ooc_notes_likes = brainmob.ooc_notes_likes
-	H.ooc_notes_dislikes = brainmob.ooc_notes_dislikes
-	H.ooc_notes_favs = brainmob.ooc_notes_favs
-	H.ooc_notes_maybes = brainmob.ooc_notes_maybes
-	H.ooc_notes_style = brainmob.ooc_notes_style
+	H.real_name = identity.real_name || H.dna.real_name || "promethean ([rand(0,999)])"
 
 	H.nutrition = 260 //Enough to try to regenerate ONCE.
-	H.adjustBruteLoss(40)
-	H.adjustFireLoss(40)
+	H.injure(INJURY_BLUNT, 40, flags = INJURE_IGNORE_RESISTANCE | INJURE_SILENT)
+	H.injure(INJURY_BURN, 40, flags = INJURE_IGNORE_RESISTANCE | INJURE_SILENT)
 	H.Paralyse(4)
 	H.Sleeping(4)
-	H.updatehealth()
 	for(var/obj/item/organ/external/E in H.organs) //They've still gotta congeal, but it's faster than the clone sickness they'd normally get.
 		if(E && E.organ_tag == BP_L_ARM || E.organ_tag == BP_R_ARM || E.organ_tag == BP_L_LEG || E.organ_tag == BP_R_LEG)
 			E.removed()
 			qdel(E)
 			E = null
 	H.regenerate_icons()
-	clonemind.transfer_to(H)
-	for(var/modifier_type in R.genetic_modifiers)
+	host.release_mind(H, "promethean core revival")
+	for(var/modifier_type in identity.genetic_modifiers)
 		H.add_modifier(modifier_type)
-
-	for(var/datum/language/L in R.languages)
-		H.add_language(L.name)
-	H.flavor_texts = R.flavor.Copy()
 
 	SEND_SIGNAL(H, COMSIG_HUMAN_DNA_FINALIZED)
 
-	qdel(R) // Record already deletes dna
 	qdel(src)
 	return 1
 
@@ -337,3 +258,52 @@ GLOBAL_LIST_BOILERPLATE(all_brain_organs, /obj/item/organ/internal/brain)
 	if(ishuman(loc))
 		var/mob/living/carbon/human/H = loc
 		color = H.species.blood_color
+
+
+// --- The brain view reads its tissue ---------------------------------------------------
+//
+// A view (/mob/living/carbon/brain) whose mind host has brain tissue has no
+// health of its own: harm lands on the organ as lesions, repair comes off the
+// organ, and its questions are answered from the organ. The organ keeps every
+// lesion across body -> view -> MMI -> body, so damage and treatment carry on.
+
+/mob/living/carbon/brain/injure(kind, amount, zone = null, atom/source = null, armor = 0, affliction = null, flags = NONE)
+	var/obj/item/organ/internal/brain/tissue = host_tissue()
+	if(!tissue)
+		return ..()
+	if(amount <= 0 || kind < 1 || kind > INJURY_KIND_COUNT || (status_flags & GODMODE))
+		return 0
+	var/lesion_type = ispath(affliction, /datum/affliction/lesion) ? affliction : organ_lesion_for_injury(kind)
+	if(!lesion_type)
+		return 0
+	. = tissue.apply_lesion_damage(amount, lesion_type, TRUE)
+	refresh_host_status()
+
+/mob/living/carbon/brain/mend(tag, amount, target = null)
+	var/obj/item/organ/internal/brain/tissue = host_tissue()
+	if(!tissue)
+		return ..()
+	if(amount <= 0 || tag != tissue.lesion_repair_tag())
+		return 0
+	. = tissue.restore_lesions(amount)
+	refresh_host_status()
+
+/mob/living/carbon/brain/vitality()
+	var/obj/item/organ/internal/brain/tissue = host_tissue()
+	if(!tissue)
+		return ..()
+	if(!tissue.max_damage)
+		return 1
+	return clamp(1 - tissue.damage / tissue.max_damage, 0, 1)
+
+/mob/living/carbon/brain/injury_load(category)
+	var/obj/item/organ/internal/brain/tissue = host_tissue()
+	if(!tissue)
+		return ..()
+	return category == INJURY_CATEGORY_NEURAL ? tissue.damage : 0
+
+/mob/living/carbon/brain/is_injured()
+	var/obj/item/organ/internal/brain/tissue = host_tissue()
+	if(!tissue)
+		return ..()
+	return tissue.damage > 0

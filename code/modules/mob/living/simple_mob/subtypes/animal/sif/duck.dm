@@ -27,8 +27,7 @@
 	icon = 'icons/mob/animal.dmi'
 	has_eye_glow = TRUE
 
-	maxHealth = 50
-	health = 50
+	endurance = 50
 
 	movement_cooldown = -1
 

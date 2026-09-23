@@ -11,7 +11,6 @@
 
 
 /datum/event2/event/spacevine/announce()
-	//level_seven_announcement() // Chomp Edit
 	GLOB.command_announcement.Announce("Hazardous plant infestation detected on \the [station_name()]. Station facilities may be overgrown.", "Hazardous Biomass")
 
 /datum/event2/event/spacevine/start()

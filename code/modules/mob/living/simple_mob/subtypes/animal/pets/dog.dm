@@ -8,8 +8,7 @@
 	icon_living = "corgi"
 	icon_dead = "corgi_dead"
 
-	health = 20
-	maxHealth = 20
+	endurance = 20
 
 	response_help  = "pets"
 	response_disarm = "bops"
@@ -48,7 +47,7 @@
 
 	if(inventory_head)
 		var/head_icon_state = inventory_head.icon_state
-		if(health <= 0)
+		if(stat == DEAD)
 			head_icon_state += "2"
 
 		var/icon/head_icon = image('icons/mob/corgi_head.dmi',head_icon_state)
@@ -57,7 +56,7 @@
 
 	if(inventory_back)
 		var/back_icon_state = inventory_back.icon_state
-		if(health <= 0)
+		if(stat == DEAD)
 			back_icon_state += "2"
 
 		var/icon/back_icon = image('icons/mob/corgi_back.dmi',back_icon_state)

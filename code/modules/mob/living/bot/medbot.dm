@@ -461,22 +461,26 @@
 		return treatment_emag
 
 	// If they're injured, we're using a beaker, and they don't have on of the chems in the beaker
-	if(reagent_glass && use_beaker && ((H.getBruteLoss() >= heal_threshold) || (H.getToxLoss() >= heal_threshold) || (H.getFireLoss() >= heal_threshold) || (H.getOxyLoss() >= (heal_threshold + 15))))
+	var/physical = H.injury_load(INJURY_CATEGORY_PHYSICAL)
+	var/thermal = H.injury_load(INJURY_CATEGORY_THERMAL)
+	var/toxic = H.injury_load(INJURY_CATEGORY_TOXIC)
+	var/asphyxia = H.injury_load(INJURY_CATEGORY_ASPHYXIA)
+	if(reagent_glass && use_beaker && ((physical >= heal_threshold) || (toxic >= heal_threshold) || (thermal >= heal_threshold) || (asphyxia >= (heal_threshold + 15))))
 		for(var/datum/reagent/R in reagent_glass.reagents.reagent_list)
 			if(!H.reagents.has_reagent(R))
 				return 1
 			continue
 
-	if((H.getBruteLoss() >= heal_threshold) && (!H.reagents.has_reagent(treatment_brute)))
+	if((physical >= heal_threshold) && (!H.reagents.has_reagent(treatment_brute)))
 		return treatment_brute //If they're already medicated don't bother!
 
-	if((H.getOxyLoss() >= (15 + heal_threshold)) && (!H.reagents.has_reagent(treatment_oxy)))
+	if((asphyxia >= (15 + heal_threshold)) && (!H.reagents.has_reagent(treatment_oxy)))
 		return treatment_oxy
 
-	if((H.getFireLoss() >= heal_threshold) && (!H.reagents.has_reagent(treatment_fire)))
+	if((thermal >= heal_threshold) && (!H.reagents.has_reagent(treatment_fire)))
 		return treatment_fire
 
-	if((H.getToxLoss() >= heal_threshold) && (!H.reagents.has_reagent(treatment_tox)))
+	if((toxic >= heal_threshold) && (!H.reagents.has_reagent(treatment_tox)))
 		return treatment_tox
 
 /* Construction */

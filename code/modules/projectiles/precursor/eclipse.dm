@@ -96,7 +96,7 @@
 	name = "lighting spark"
 	icon_state = "spark"
 	nodamage = 1
-	damage_type = HALLOSS
+	injury_kind = INJURY_PAIN
 	speed = 2
 	var/power = 20				//How hard it will hit for with electrocute_act(), decreases with each bounce.
 

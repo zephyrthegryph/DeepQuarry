@@ -74,7 +74,6 @@
 	broken_icon_state = "minimoogbroken"
 
 
-// === merged from stationary_chomp.dm during hard-fork de-suffix (verified no override-order change) ===
 /obj/structure/musician/wrench_act(mob/user, obj/item/tool)
 	playsound(src, tool.usesound, 100, TRUE)
 	user.visible_message(span_filter_notice("[user] begins [anchored ? "un" : ""]securing \the [src] from the floor."), span_notice("You start [anchored ? "un" : ""]securing \the [src] from the floor."))

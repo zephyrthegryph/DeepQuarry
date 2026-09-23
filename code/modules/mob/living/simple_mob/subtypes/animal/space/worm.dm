@@ -10,8 +10,7 @@
 
 	anchored = TRUE	// Theoretically, you shouldn't be able to move this without moving the head.
 
-	maxHealth = 200
-	health = 200
+	endurance = 200
 	movement_cooldown = -1
 
 	faction = FACTION_WORM
@@ -67,8 +66,7 @@
 
 	anchored = FALSE	// You can pull the head to pull the body.
 
-	maxHealth = 300
-	health = 300
+	endurance = 300
 
 	// dq_get_hovering(src) type-default moved to GLOB.dq_hovering_by_type
 
@@ -262,7 +260,7 @@
 
 					if(do_after(src, 5, target))
 						D.visible_message(span_danger("Something crashes against \the [D]!"))
-						D.take_damage(2 * melee_damage_upper)
+						D.take_damage(2 * melee_damage_upper, BRUTE, MELEE)
 					else
 						objectOrMob = null
 						break
@@ -341,9 +339,9 @@
 						var/mob/living/carbon/C = L
 						var/damage_cycles = rand(3, 5)
 						for(var/I = 0, I < damage_cycles, I++)
-							C.apply_damage(damage = rand(10,20), damagetype = BIOACID, def_zone = pick(BP_ALL))
+							C.injure(INJURY_CORROSIVE, rand(10,20), pick(BP_ALL), src)
 					else
-						L.apply_damage(damage = rand(10,60), damagetype = BIOACID)
+						L.injure(INJURY_CORROSIVE, rand(10,60), source = src)
 				continue
 
 	DumpStomach()

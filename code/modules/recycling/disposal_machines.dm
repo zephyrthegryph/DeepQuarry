@@ -63,6 +63,20 @@
 		SEND_SIGNAL(src, COMSIG_DISPOSAL_LINK, trunk)
 
 	air_contents = new(PRESSURE_TANK_VOLUME)
+	// Map-loaded bins are installed infrastructure, not freshly constructed
+	// empty vessels. Prime their tiny reservoir from the mapped room atmosphere
+	// so hundreds of bins do not all perform identical FFI pump transactions for
+	// the first minute of every round. Constructed/repaired bins still charge
+	// through the normal physical pump path.
+	if(mapload)
+		var/datum/gas_mixture/environment = loc.return_air()
+		var/environment_pressure = environment?.return_pressure() || 0
+		var/environment_volume = environment?.return_volume() || 0
+		if(environment_pressure > 0 && environment_volume > 0)
+			var/fill_ratio = (PRESSURE_TANK_VOLUME / environment_volume) * (SEND_PRESSURE / environment_pressure)
+			air_contents.copy_from_ratio(environment, fill_ratio)
+			air_contents.set_volume(PRESSURE_TANK_VOLUME)
+			mode = DISPOSALMODE_CHARGED
 	update_icon()
 
 /obj/machinery/disposal/Destroy()

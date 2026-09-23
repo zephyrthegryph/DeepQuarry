@@ -297,7 +297,7 @@
 	on_created_text = span_notice("Part of your form phases out.")
 	on_expired_text = span_warning("Your missing form phases back in.")
 	stacks = MODIFIER_STACK_EXTEND
-	incoming_damage_percent = 1.5
+	factors = alist(BF_INCOMING_ALL = 1.5)
 
 //Trades speed for defense
 //you are the wall
@@ -333,8 +333,8 @@
 		. = ..()
 		switch(user.a_intent)
 			if(I_GRAB)
-				user.adjustFireLoss(-5)
-				user.adjustFireLoss(-5)
+				user.mend(TREAT_BURN_CARE, 5)
+				user.mend(TREAT_TISSUE_REPAIR, 5)
 			if(I_DISARM)
 				target.Weaken(30)
 			if(I_HURT)

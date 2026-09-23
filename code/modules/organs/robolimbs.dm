@@ -419,7 +419,6 @@ GLOBAL_DATUM(basic_robolimb, /datum/robolimb)
 	parts = list(BP_HEAD)
 	modular_bodyparts = MODULAR_BODYPART_PROSTHETIC // remove the restrictions
 
-
 /datum/robolimb/xion_monitor
 	company = "Xion Monitor"
 	desc = "Xion Mfg.'s unique spin on a popular prosthetic head model. It looks and minimalist and utilitarian."
@@ -489,17 +488,6 @@ GLOBAL_DATUM(basic_robolimb, /datum/robolimb)
 	unavailable_to_build = 1
 	modular_bodyparts = MODULAR_BODYPART_PROSTHETIC
 	parts = list(BP_L_LEG, BP_R_LEG, BP_L_FOOT, BP_R_FOOT)
-
-/* 
-/datum/robolimb/digi
-	company = "DSI Digitigrade Legs" //yup that's how I'm fixing this, you NEED to have digi on or else oh god it looks weird
-	desc = "Synthflesh-wrapped robotic digitigrade legs, for the animal in all of us."
-	icon = 'icons/mob/human_races/r_digi.dmi'
-	lifelike = 1
-	unavailable_to_build = 1
-	skin_tone = 1
-	parts = list(BP_L_LEG, BP_R_LEG, BP_L_FOOT, BP_R_FOOT)
-*/
 
 /obj/item/disk/limb/Initialize(mapload)
 	. = ..()
@@ -582,8 +570,6 @@ GLOBAL_DATUM(basic_robolimb, /datum/robolimb)
 /obj/item/disk/limb/cenilimicybernetics
 	company = "Cenilimi Cybernetics"
 
-
-// === merged from robolimbs_ch.dm during hard-fork de-suffix (verified no override-order change) ===
 /datum/robolimb
 	var/no_icon = FALSE //specifically for DSI things, makes it so it doesn't override the species icons
 	var/can_be_digitigrade = FALSE //used for skipping the icon if it can be digitigrade - maybe turn this into more of a 'use this icon/iconstate' instead later, when actual prosthetic digi icons get made
@@ -625,7 +611,6 @@ GLOBAL_DATUM(basic_robolimb, /datum/robolimb)
 /datum/robolimb/dsi_teshari/New()
 	. = ..()
 	species_cannot_use -= SPECIES_PROTEAN
-
 
 /datum/robolimb/dsi_other
 	company = "DSI - Adaptive"
@@ -688,12 +673,9 @@ GLOBAL_DATUM(basic_robolimb, /datum/robolimb)
 	modular_bodyparts = MODULAR_BODYPART_PROSTHETIC
 	parts = list(BP_L_LEG, BP_R_LEG, BP_L_FOOT, BP_R_FOOT)
 
-
-// === merged from robolimbs_vr.dm during hard-fork de-suffix (verified no override-order change) ===
 GLOBAL_LIST_INIT(dsi_to_species, list(SPECIES_TAJARAN = "DSI - Tajaran", SPECIES_UNATHI = "DSI - Lizard", SPECIES_SERGAL = "DSI - Sergal", SPECIES_NEVREAN = "DSI - Nevrean", \
 									SPECIES_VULPKANIN = "DSI - Vulpkanin", SPECIES_AKULA = "DSI - Akula", SPECIES_VASILISSAN = "DSI - Vasilissan", SPECIES_ZORREN = "DSI - Zorren",\
 									SPECIES_TESHARI = "DSI - Teshari", SPECIES_FENNEC = "DSI - Fennec"))
-
 
 // Placeholder for protean limbs during character spawning, before they have a properly set model
 /datum/robolimb/protean
@@ -777,8 +759,6 @@ GLOBAL_LIST_INIT(dsi_to_species, list(SPECIES_TAJARAN = "DSI - Tajaran", SPECIES
 	unavailable_to_build = 1
 	parts = list(BP_HEAD)
 
-
-// === merged from robolimbs_chomp.dm during hard-fork de-suffix (manually verified: all-new types / new defines, no base re-open) ===
 #define YR3_MONITOR_STYLES "blank=YR3_blank;\
 	eyes=YR3_eyes;\
 	foureyes=YR3_foureyes;\
@@ -855,3 +835,70 @@ GLOBAL_LIST_INIT(dsi_to_species, list(SPECIES_TAJARAN = "DSI - Tajaran", SPECIES
 	lifelike = TRUE
 
 #undef YR3_MONITOR_STYLES
+
+/datum/robolimb/eioni
+	company = "Eio'ni Co."
+	desc = "Eio'ni's brand prosthetic limbs."
+	icon = 'icons/mob/human_races/cyberlimbs/eioni/eioni_main.dmi' //Sprited by: Unleashed Mana
+
+/datum/robolimb/eioni_alt1
+	company = "Eio'ni Co. - Heads"
+	desc = "Eio'ni's brand heads with mounted display."
+	icon = 'icons/mob/human_races/cyberlimbs/eioni/eioni_alt1.dmi' //Sprited by: Unleashed Mana
+	parts = list(BP_HEAD)
+	monitor_styles = STANDARD_MONITOR_STYLES
+
+/datum/robolimb/s_Ind
+	company = "S.Ind"
+	desc = "S.Ind brand prosthetic limbs."
+	icon = 'icons/mob/human_races/cyberlimbs/S.Ind/sind_main.dmi' //Sprited by: Generalpantsu
+
+/datum/robolimb/Hperformance
+	company = "Hperformance."
+	desc = "Hperformance brand prosthetic limbs."
+	icon = 'icons/mob/human_races/cyberlimbs/Hperformance/hperformance_main.dmi' //Sprited by: Generalpantsu
+
+/datum/robolimb/xionalt
+	company = "Xion (alt yw)."
+	desc = "Xion brand prosthetic limbs."
+	icon = 'icons/mob/human_races/cyberlimbs/xion/xion_alt5.dmi' //Sprited by: Whiteout
+
+/datum/robolimb/aphrodite_cyberdoe
+	company = "Aphrodite - Cyberdoe"
+	desc = "This limb feels soft and fluffy, realistic in design and squish. By Aphrodite Ltd."
+	icon = 'icons/mob/human_races/cyberlimbs/aphrodite/andy_taj.dmi'
+	blood_color = "#ffe2ff"
+	lifelike = 1
+	unavailable_to_build = 1
+	includes_tail = 0
+	suggested_species = "Tajara"
+	whitelisted_to = list("dameonowen")
+
+/datum/robolimb/aphrodite_cyberdragon
+	company = "Aphrodite - Cyberdragon"
+	desc = "This limb feels smooth and scalie, realistic in design and squish. By Aphrodite Ltd."
+	icon = 'icons/mob/human_races/cyberlimbs/aphrodite/andy_liz.dmi'
+	blood_color = "#ffe2ff"
+	lifelike = 1
+	unavailable_to_build = 1
+	includes_tail = 0
+	suggested_species = "Unathi"
+	whitelisted_to = list("dameonowen")
+
+/datum/robolimb/dopiotl_jeanne
+	company = "Jeanne - Nanovulp"
+	desc = ""
+	icon = 'icons/mob/human_races/cyberlimbs/dopiotl/jeanne_nanovulp.dmi'
+	monitor_icon = 'icons/mob/human_races/cyberlimbs/dopiotl/nanovulp_animations.dmi'
+	lifelike = 1
+	unavailable_to_build = 1
+	includes_tail = 0
+	suggested_species = "Vuplkanin"
+	whitelisted_to = list("dopiotl")
+	monitor_styles = "idle=idle;\
+		idle-eye=eyeidle;\
+		emptyinput=emptyinput;\
+		rainbow=rainbow;\
+		snow=snow;\
+		robocop=robocop;\
+		rainbowcop=rainbowcop"

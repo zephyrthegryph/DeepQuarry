@@ -37,6 +37,8 @@
 	/// Body var_changes — assoc list mirroring /datum/trait.var_changes. Applied to
 	/// the synthesized species datum. Leave null for Mind perks and override grant().
 	var/list/var_changes = null
+	/// Body factors (BF_* -> value) granted to the species, like a trait's.
+	var/alist/factors
 
 	/// Optional component to attach on grant / detach on revoke.
 	var/added_component_path = null
@@ -68,9 +70,13 @@
 		if(C)
 			qdel(C)
 
-/// Apply this perk's var_changes to the synthesized species.
+/// Apply this perk's var_changes and body factors to the synthesized species.
 /datum/perk/proc/apply_var_changes(datum/species/S)
-	if(!var_changes || !S)
+	if(!S)
+		return
+	if(factors)
+		S.grant_factors(factors)
+	if(!var_changes)
 		return
 	for(var/V in var_changes)
 		if(V == "flags") // Bitflag merge, like traits.

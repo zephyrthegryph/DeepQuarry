@@ -36,8 +36,7 @@
 	icon_gib = "carp_gib"
 
 	faction = FACTION_CARP
-	maxHealth = 25
-	health = 25
+	endurance = 25
 	movement_cooldown = -2
 	// dq_get_hovering(src) type-default moved to GLOB.dq_hovering_by_type
 	density = FALSE
@@ -202,8 +201,7 @@
 	icon_living = "shark"
 	icon_dead = "shark_dead"
 
-	maxHealth = 50
-	health = 50
+	endurance = 50
 	movement_cooldown = 1 // Slower than the younger carp.
 	mob_size = MOB_LARGE
 
@@ -224,8 +222,7 @@
 	icon_state = "megacarp"
 	vore_icons = SA_ICON_LIVING
 
-	maxHealth = 230
-	health = 230
+	endurance = 230
 	movement_cooldown = 3
 
 	melee_damage_lower = 15 // About 20 DPS.
@@ -244,8 +241,7 @@
 	name = "great white carp"
 	desc = "A very rare breed of carp- and a very hungry one."
 
-	maxHealth = 230
-	health = 230
+	endurance = 230
 	movement_cooldown = 3
 
 	melee_damage_lower = 1 // Minimal damage to make the knockdown work.
@@ -359,10 +355,10 @@
 /mob/living/simple_mob/animal/space/carp/puffer/apply_melee_effects() //it gets close enough to attack? EXPLODE
 	kaboom()
 
-/mob/living/simple_mob/animal/space/carp/puffer/adjustFireLoss(amount,include_robo) //you make it hot? EXPLODE
-	if(amount>0)
+/mob/living/simple_mob/animal/space/carp/puffer/injure(kind, amount, zone = null, atom/source = null, armor = 0, affliction = null, flags = NONE) //you make it hot? EXPLODE
+	if(kind == INJURY_BURN && amount > 0)
 		kaboom()
-	..()
+	return ..()
 
 /mob/living/simple_mob/animal/space/carp/puffer/ex_act() //explode? YOU BETTER BELIEVE THAT'S AN EXPLODE
 	kaboom()
@@ -376,8 +372,7 @@
 // === merged from carp_chomp.dm during hard-fork de-suffix (verified no override-order change) ===
 /mob/living/simple_mob/animal/space/carp/station
 	name = "distant space carp"
-	health = 50
-	maxHealth = 50
+	endurance = 50
 
 	faction = "station"
 

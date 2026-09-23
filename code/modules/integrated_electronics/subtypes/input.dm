@@ -152,8 +152,8 @@
 	if(!istype(H)) //Invalid input
 		return
 	if(H.Adjacent(get_turf(src))) // Like normal analysers, it can't be used at range.
-		var/total_health = round(H.health/H.getMaxHealth(), 0.01)*100
-		var/missing_health = H.getMaxHealth() - H.health
+		var/total_health = round(H.vitality(), 0.01)*100
+		var/missing_health = round(H.get_endurance() * (1 - H.vitality()), 0.1)
 
 		set_pin_data(IC_OUTPUT, 1, total_health)
 		set_pin_data(IC_OUTPUT, 2, missing_health)
@@ -192,16 +192,16 @@
 
 	if(H in view(get_turf(H))) // Like medbot's analyzer it can be used in range..
 
-		var/total_health = round(H.health/H.getMaxHealth(), 0.01)*100
-		var/missing_health = H.getMaxHealth() - H.health
+		var/total_health = round(H.vitality(), 0.01)*100
+		var/missing_health = round(H.get_endurance() * (1 - H.vitality()), 0.1)
 
 		set_pin_data(IC_OUTPUT, 1, total_health)
 		set_pin_data(IC_OUTPUT, 2, missing_health)
-		set_pin_data(IC_OUTPUT, 3, H.getBruteLoss())
-		set_pin_data(IC_OUTPUT, 4, H.getFireLoss())
-		set_pin_data(IC_OUTPUT, 5, H.getToxLoss())
-		set_pin_data(IC_OUTPUT, 6, H.getOxyLoss())
-		set_pin_data(IC_OUTPUT, 7, H.getCloneLoss())
+		set_pin_data(IC_OUTPUT, 3, H.injury_load(INJURY_CATEGORY_PHYSICAL))
+		set_pin_data(IC_OUTPUT, 4, H.injury_load(INJURY_CATEGORY_THERMAL))
+		set_pin_data(IC_OUTPUT, 5, H.injury_load(INJURY_CATEGORY_TOXIC))
+		set_pin_data(IC_OUTPUT, 6, H.injury_load(INJURY_CATEGORY_ASPHYXIA))
+		set_pin_data(IC_OUTPUT, 7, H.injury_load(INJURY_CATEGORY_GENETIC))
 
 	push_data()
 	activate_pin(2)

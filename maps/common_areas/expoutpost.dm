@@ -2,59 +2,10 @@
 	name = "\improper Exploration Carrier"
 	icon_state = "purple"
 
-/area/expoutpost/shuttle
-	name = "\improper Exploration Carrier shuttle"
 
 /area/expoutpost/stationshuttle
 	name = "\improper Station Shuttle to Exploration Carrier"
 
-/area/expoutpost/debriefing
-	name = "\improper Exploration Carrier Debriefing"
-	ambience = AMBIENCE_OUTPOST
-
-/area/expoutpost/prep
-	name = "\improper Exploration Carrier"
-
-/area/expoutpost/prep/recovery
-	name = "\improper Exploration Carrier Recovery"
-	icon_state = "exam_room"
-
-/area/expoutpost/pathfinder
-	name = "\improper Exploration Carrier Pathfinder Office"
-
-/area/expoutpost/hallwayaftport
-	name = "\improper Exploration Carrier Aft Port Hallway"
-
-/area/expoutpost/bathroom
-	name = "\improper Exploration Carrier Bathroom"
-
-/area/expoutpost/aftdock
-	name = "\improper Exploration Carrier Backup Shuttle Docks"
-
-/area/expoutpost/hangerhall
-	name = "\improper Exploration Carrier Hangar Hallway"
-
-/area/expoutpost/hangaroneprep
-	name = "\improper Exploration Carrier Hangar One Prep"
-
-/area/expoutpost/nukestorage
-	name = "\improper Exploration Carrier Secure Storage"
-	icon_state = "nuke_storage"
-
-/area/expoutpost/teleporter
-	name = "\improper Exploration Carrier Teleporter"
-	icon_state = "teleporter"
-
-/area/expoutpost/displayroom
-	name = "\improper Exploration Carrier Display Room"
-
-/area/solar/expstarboardsolar
-	name = "\improper Exploration Carrier Starbound Solars"
-	icon_state = "panelsS"
-
-/area/solar/expportsolar
-	name = "\improper Exploration Carrier Port Solars"
-	icon_state = "panelsP"
 
 /area/expoutpost/portbowairlock
 	name = "\improper Port Bow Airlock"

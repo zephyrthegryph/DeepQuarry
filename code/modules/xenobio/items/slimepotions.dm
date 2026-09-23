@@ -400,7 +400,7 @@
 		return ..()
 
 	to_chat(user, span_notice("You feed the slime the death agent. Its face flashes pain of betrayal before it goes still."))
-	xenobio_slime.adjustToxLoss(500)
+	xenobio_slime.injure(INJURY_TOXIN, xenobio_slime.get_endurance() * 5, source = src, flags = INJURE_IGNORE_RESISTANCE)
 	playsound(src, 'sound/effects/bubbles.ogg', 50, 1)
 	qdel(src)
 	return ITEM_INTERACT_SUCCESS

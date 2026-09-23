@@ -31,8 +31,7 @@ They're also cool, and Rykka/Nyria wrote this uwu
 	has_eye_glow = FALSE // Change this to true for fun spooky eye glow in darkness. <3
 	minbodytemp = 175 // Make hyenas able to survive freezing cold. Someone criticize me later uwu
 	faction = "yeen" // gon fight any other mobs. grr
-	maxHealth = 125 // not as tanky as a spider for obvious reasons, but not a pushover.
-	health = 125
+	endurance = 125 // not as tanky as a spider for obvious reasons, but not a pushover.
 	pass_flags = PASSTABLE
 	movement_cooldown = 0 // Yeen go fast - nah, yeen still slower. gottagofast.
 	// movement_sound = null - TODO: find good animal pawb sounds

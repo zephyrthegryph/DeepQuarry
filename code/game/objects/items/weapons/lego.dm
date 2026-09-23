@@ -23,7 +23,7 @@
 				span_danger("You step on \the [src], you poor bastard!"),
 				span_hear(span_bold("You hear the sound of immeasurable suffering!"))
 				)
-			L.adjustHalLoss(100)
+			L.injure(INJURY_PAIN, 100, source = src)
 			playsound(src, 'sound/misc/legodeath.ogg', 50, 1)
 			qdel(src)
 	..()

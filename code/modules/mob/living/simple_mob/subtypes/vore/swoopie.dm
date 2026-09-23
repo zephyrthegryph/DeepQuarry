@@ -44,8 +44,6 @@
 	mob_bump_flag = 0
 	player_msg = "You are a SWOOPIE XL cleaning bot! Use DISARM intent on yourself to change your integrated Vac-Pack settings, or GRAB intent to swoop stuff up! Turning off the Vac-Pack will make your grab clicks function as normal grab intent clicks."
 
-	var/static/list/crew_creatures = list(	/mob/living/simple_mob/protean_blob,
-											/mob/living/simple_mob/slime/promethean)
 	var/obj/item/vac_attachment/swoopie/Vac
 
 /mob/living/simple_mob/vore/aggressive/corrupthound/swoopie/Initialize(mapload)
@@ -63,8 +61,6 @@
 	. = ..()
 	if(L && HAS_TRAIT(L, TRAIT_AMBIENT_PEST_MOB)) // If they're a pest, swoop no matter what!
 		return FALSE
-	if(!.) // Outside the faction and not in friends, are they crew
-		return L?.type in crew_creatures
 
 /mob/living/simple_mob/vore/aggressive/corrupthound/swoopie/attack_target(atom/A)
 	if(!(ai_brain != null))
@@ -243,7 +239,7 @@
 			return
 		if(src.a_intent == I_GRAB && Vac.vac_power != 0) //Only on grab intent. if someone needs to use grab intent they can just turn off the vac
 			if(istype(A, /obj/machinery/disposal)) //You used that bin when the bird was right there? How inconsiderate!
-				var/obj/machinery/disposal/D = A
+				var/obj/machinery/disposal/D
 				if(D.flushing)
 					to_chat(src, "\The [D] has already began flushing, you're too late to grab whatever was inside!")
 					return
@@ -296,7 +292,7 @@
 				return
 			L.put_in_active_hand(Vac)
 
-//change_settings verb body moved to
+// DQEdit - change_settings verb body moved to
 // modular_dq/.../ports/swoopie.dm where it toggles mob-side swoop_pests /
 // swoop_trash vars (the legacy AI subtype is gone).
 

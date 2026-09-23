@@ -30,11 +30,11 @@
 		owner.bodytemperature -= temp_adj*efficiency
 
 		if(owner.bodytemperature > owner.species.heat_level_3)    // If you're already overheating to the point of melting, the heatsink starts causing problems.
-			owner.adjustToxLoss(2 * damage / max_damage)
-			take_damage(max(0.5,round(damage / max_damage, 0.1)))
+			owner.injure(INJURY_TOXIN, 2 * damage / max_damage, flags = INJURE_SILENT)
+			apply_lesion_damage(max(0.5,round(damage / max_damage, 0.1)))
 		else if (owner.bodytemperature > owner.species.heat_level_2)
-			owner.adjustToxLoss(damage / max_damage)
-			take_damage(max(0.25,round(damage / max_damage, 0.1)))
+			owner.injure(INJURY_TOXIN, damage / max_damage, flags = INJURE_SILENT)
+			apply_lesion_damage(max(0.25,round(damage / max_damage, 0.1)))
 
 	return
 

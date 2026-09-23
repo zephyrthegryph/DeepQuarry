@@ -718,7 +718,6 @@
 	result_quantity = 2
 
 
-// === merged from recipes_oven_ch.dm during hard-fork de-suffix (verified no override-order change) ===
 /datum/recipe/buttspie
 	appliance = OVEN
 	reagents = list(REAGENT_ID_CINNAMONPOWDER = 10)
@@ -759,7 +758,6 @@
 	result = /obj/item/reagent_containers/food/snacks/sliceable/blondies
 
 
-// === merged from recipes_oven_vr.dm during hard-fork de-suffix (verified no override-order change) ===
 /datum/recipe/scorpion
 	appliance = OVEN
 	reagents = list(REAGENT_ID_SODIUMCHLORIDE = 1)

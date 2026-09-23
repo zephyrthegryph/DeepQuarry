@@ -32,8 +32,8 @@
 			else
 				mobs_to_heal |= L // Heal everyone!
 		for(var/mob/living/L in mobs_to_heal)
-			L.adjustBruteLoss(calculate_spell_power(-5))
-			L.adjustFireLoss(calculate_spell_power(-5))
+			L.mend(TREAT_TISSUE_REPAIR, calculate_spell_power(5))
+			L.mend(TREAT_BURN_CARE, calculate_spell_power(5))
 		adjust_instability(2)
 
 /obj/item/spell/aura/biomed/on_use_cast(mob/living/user)

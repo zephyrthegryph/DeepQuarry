@@ -59,7 +59,11 @@ pub fn solve(edges: &[(usize, usize, f64)], rhs: &[f64], initial: &[f64]) -> Res
         norm += rhs[i] * rhs[i];
         rz += residual[i] * direction[i];
     }
-    let target = (norm * 1e-12).max(1e-14);
+    // Material voltage drop is ultimately consumed as f32 and displayed as a
+    // coarse efficiency/failure signal. A one-part-in-a-million residual made
+    // station-scale cable meshes spend hundreds of iterations resolving noise
+    // far below either representation's useful precision.
+    let target = (norm * 5e-12).max(1e-13);
     let limit = (n * 2).min(4096).min(12_000_000 / edges.len().max(1));
     let mut iterations = 0;
     while squared > target && iterations < limit {
@@ -113,6 +117,82 @@ pub fn solve(edges: &[(usize, usize, f64)], rhs: &[f64], initial: &[f64]) -> Res
 mod ffi {
     use byondapi::prelude::*;
     use eyre::{Result, bail};
+    use std::collections::{HashMap, HashSet};
+    use std::sync::{
+        Mutex, OnceLock,
+        atomic::{AtomicU32, Ordering},
+        mpsc,
+    };
+
+    enum WorkerRequest {
+        Solve(SolveRequest),
+        Drop(u32),
+    }
+
+    struct SolveRequest {
+        id: u32,
+        generation: u32,
+        topology: Option<Vec<(usize, usize, f64)>>,
+        rhs: Vec<f64>,
+        initial: Vec<f64>,
+    }
+
+    struct SolveResult {
+        generation: u32,
+        solution: Result<super::Solution, String>,
+    }
+
+    static NEXT_ID: AtomicU32 = AtomicU32::new(1);
+    static REQUESTS: OnceLock<mpsc::Sender<WorkerRequest>> = OnceLock::new();
+    static RESULTS: OnceLock<Mutex<HashMap<u32, SolveResult>>> = OnceLock::new();
+    static BUSY: OnceLock<Mutex<HashSet<u32>>> = OnceLock::new();
+
+    fn results() -> &'static Mutex<HashMap<u32, SolveResult>> {
+        RESULTS.get_or_init(|| Mutex::new(HashMap::new()))
+    }
+
+    fn busy() -> &'static Mutex<HashSet<u32>> {
+        BUSY.get_or_init(|| Mutex::new(HashSet::new()))
+    }
+
+    fn sender() -> &'static mpsc::Sender<WorkerRequest> {
+        REQUESTS.get_or_init(|| {
+            let (sender, receiver) = mpsc::channel::<WorkerRequest>();
+            std::thread::Builder::new()
+                .name("verdigris-material-power".to_string())
+                .spawn(move || {
+                    let mut graphs: HashMap<u32, Vec<(usize, usize, f64)>> = HashMap::new();
+                    while let Ok(message) = receiver.recv() {
+                        let WorkerRequest::Solve(request) = message else {
+                            let WorkerRequest::Drop(id) = message else {
+                                unreachable!()
+                            };
+                            graphs.remove(&id);
+                            continue;
+                        };
+                        if let Some(topology) = request.topology {
+                            graphs.insert(request.id, topology);
+                        }
+                        let solution = match graphs.get(&request.id) {
+                            Some(edges) => super::solve(edges, &request.rhs, &request.initial)
+                                .map_err(|error| format!("{error:#}")),
+                            None => Err("material power graph has no topology".to_string()),
+                        };
+                        if let Ok(mut output) = results().lock() {
+                            output.insert(
+                                request.id,
+                                SolveResult {
+                                    generation: request.generation,
+                                    solution,
+                                },
+                            );
+                        }
+                    }
+                })
+                .expect("material power worker thread must start");
+            sender
+        })
+    }
 
     fn numbers(value: ByondValue) -> Result<Vec<f64>> {
         value
@@ -126,6 +206,115 @@ mod ffi {
                 })
             })
             .collect()
+    }
+
+    fn edges(value: ByondValue) -> Result<Vec<(usize, usize, f64)>> {
+        let flat = numbers(value)?;
+        if flat.len() % 3 != 0 {
+            bail!("material power edges must be triples");
+        }
+        let mut edges = Vec::with_capacity(flat.len() / 3);
+        for edge in flat.chunks_exact(3) {
+            if edge[0] < 1.0 || edge[1] < 1.0 || edge[0].fract() != 0.0 || edge[1].fract() != 0.0 {
+                bail!("material power indices must be positive integers");
+            }
+            edges.push((edge[0] as usize - 1, edge[1] as usize - 1, edge[2]));
+        }
+        Ok(edges)
+    }
+
+    #[byondapi::bind("/proc/submit_material_power_graph")]
+    #[auxmacros::panic_safe]
+    fn submit_material_power_graph(
+        handle: ByondValue,
+        topology: ByondValue,
+        loads: ByondValue,
+        warm: ByondValue,
+        generation: ByondValue,
+    ) -> Result<ByondValue> {
+        let mut id = handle.get_number()? as u32;
+        if id == 0 {
+            id = NEXT_ID.fetch_add(1, Ordering::Relaxed).max(1);
+        }
+        let flat_topology = topology.get_list_values()?;
+        let parsed_topology = if flat_topology.is_empty() {
+            None
+        } else {
+            Some(edges(topology)?)
+        };
+        let rhs = numbers(loads)?;
+        let initial = numbers(warm)?;
+        {
+            let mut active = busy()
+                .lock()
+                .map_err(|_| eyre::eyre!("material power busy lock poisoned"))?;
+            if !active.insert(id) {
+                return Ok(ByondValue::from(0.0));
+            }
+        }
+        let request = SolveRequest {
+            id,
+            generation: generation.get_number()? as u32,
+            topology: parsed_topology,
+            rhs,
+            initial,
+        };
+        if sender().send(WorkerRequest::Solve(request)).is_err() {
+            if let Ok(mut active) = busy().lock() {
+                active.remove(&id);
+            }
+            bail!("material power worker stopped");
+        }
+        Ok(ByondValue::from(id as f32))
+    }
+
+    #[byondapi::bind("/proc/drop_material_power_graph")]
+    #[auxmacros::panic_safe]
+    fn drop_material_power_graph(handle: ByondValue) -> Result<ByondValue> {
+        let id = handle.get_number()? as u32;
+        if id == 0 {
+            return Ok(ByondValue::from(0.0));
+        }
+        if let Ok(mut active) = busy().lock() {
+            active.remove(&id);
+        }
+        if let Ok(mut output) = results().lock() {
+            output.remove(&id);
+        }
+        sender()
+            .send(WorkerRequest::Drop(id))
+            .map_err(|_| eyre::eyre!("material power worker stopped"))?;
+        Ok(ByondValue::from(1.0))
+    }
+
+    #[byondapi::bind("/proc/poll_material_power_graph")]
+    #[auxmacros::panic_safe]
+    fn poll_material_power_graph(handle: ByondValue) -> Result<ByondValue> {
+        let id = handle.get_number()? as u32;
+        let result = results()
+            .lock()
+            .map_err(|_| eyre::eyre!("material power result lock poisoned"))?
+            .remove(&id);
+        let Some(result) = result else {
+            return Ok(ByondValue::new_list()?);
+        };
+        if let Ok(mut active) = busy().lock() {
+            active.remove(&id);
+        }
+        let solution = result.solution.map_err(|error| eyre::eyre!(error))?;
+        let mut output = Vec::with_capacity(solution.voltages.len() + 3);
+        output.push(ByondValue::from(result.generation as f32));
+        output.push(ByondValue::from(solution.residual as f32));
+        output.push(ByondValue::from(solution.iterations as f32));
+        output.extend(
+            solution
+                .voltages
+                .into_iter()
+                .map(|value| ByondValue::from(value as f32)),
+        );
+        let list = ByondValue::new_list()?;
+        list.write_list(&output)?;
+        Ok(list)
     }
 
     #[byondapi::bind("/proc/solve_material_power_graph")]

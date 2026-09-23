@@ -1,8 +1,7 @@
 /mob/living/simple_mob/mechanical/mecha/eclipse/bomb_mauler
 	name = "damaged mauler"
 	desc = "A strange robotic creature."
-	health = 700
-	maxHealth = 700
+	endurance = 700
 
 	armor = list(melee = 30, bullet = 30, laser = 30, energy = 30, bomb = 30, bio = 100, rad = 100)
 

@@ -12,8 +12,7 @@
 	icon_rest = "armadillo_rest"
 	icon_dead = "armadillo_dead"
 
-	health = 30
-	maxHealth = 30
+	endurance = 30
 
 	mob_size = MOB_SMALL
 	pass_flags = PASSTABLE

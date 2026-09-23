@@ -64,8 +64,7 @@
 	speak_emote = list("hisses")
 	pass_flags = PASSTABLE
 	see_in_dark = 6
-	maxHealth = 50
-	health = 50
+	endurance = 50
 	response_help = "pets"
 	response_disarm = "gently pushes aside"
 	response_harm = "stamps on"
@@ -83,15 +82,12 @@
 	catalogue_data = list(/datum/category_item/catalogue/fauna/opossum)
 	meat_amount = 2
 
-/mob/living/simple_mob/animal/passive/opossum/adjustBruteLoss(amount,include_robo)
+/mob/living/simple_mob/animal/passive/opossum/injure(kind, amount, zone = null, atom/source = null, armor = 0, affliction = null, flags = NONE)
 	. = ..()
-	if(amount >= 3)
-		respond_to_damage()
-
-/mob/living/simple_mob/animal/passive/opossum/adjustFireLoss(amount,include_robo)
-	. = ..()
-	if(amount >= 3)
-		respond_to_damage()
+	if(. && amount >= 3)
+		var/category = injury_category(kind)
+		if(category == INJURY_CATEGORY_PHYSICAL || category == INJURY_CATEGORY_THERMAL)
+			respond_to_damage()
 
 /mob/living/simple_mob/animal/passive/opossum/lay_down()
 	. = ..()

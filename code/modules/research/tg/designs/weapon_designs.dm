@@ -992,107 +992,6 @@
 	)
 	departmental_flags = DEPARTMENT_BITFLAG_SCIENCE | DEPARTMENT_BITFLAG_SECURITY
 
-/* Unbalanced material weapons
-/datum/design_techweb/claymore
-	name = "claymore"
-	desc = "A very large sword."
-	id = "claymore"
-	build_type = AUTOLATHE
-	materials = list(MAT_STEEL = 10000)
-	build_path = /obj/item/material/sword
-	category = list(
-		RND_CATEGORY_HACKED,
-		RND_CATEGORY_INITIAL,
-		RND_CATEGORY_WEAPONS + RND_SUBCATEGORY_WEAPONS_MELEE
-	)
-	departmental_flags = DEPARTMENT_BITFLAG_SCIENCE | DEPARTMENT_BITFLAG_SECURITY
-
-/datum/design_techweb/gladius
-	name = "gladius"
-	desc = "An ancient short sword, designed to stab and cut."
-	id = "gladius"
-	build_type = AUTOLATHE
-	materials = list(MAT_STEEL = 5000)
-	build_path = /obj/item/material/sword/gladius
-	category = list(
-		RND_CATEGORY_HACKED,
-		RND_CATEGORY_INITIAL,
-		RND_CATEGORY_WEAPONS + RND_SUBCATEGORY_WEAPONS_MELEE
-	)
-	departmental_flags = DEPARTMENT_BITFLAG_SCIENCE | DEPARTMENT_BITFLAG_SECURITY
-
-/datum/design_techweb/katana
-	name = "katana"
-	desc = "An ancient short sword, designed to slice and dice."
-	id = "katana"
-	build_type = AUTOLATHE
-	materials = list(MAT_STEEL = 6000)
-	build_path = /obj/item/material/sword/katana
-	category = list(
-		RND_CATEGORY_HACKED,
-		RND_CATEGORY_INITIAL,
-		RND_CATEGORY_WEAPONS + RND_SUBCATEGORY_WEAPONS_MELEE
-	)
-	departmental_flags = DEPARTMENT_BITFLAG_SCIENCE | DEPARTMENT_BITFLAG_SECURITY
-
-/datum/design_techweb/rapier
-	name = "rapier"
-	desc = "A slender, fancy and sharply pointed sword."
-	id = "rapier"
-	build_type = AUTOLATHE
-	materials = list(MAT_STEEL = 6000)
-	build_path = /obj/item/material/sword/rapier
-	category = list(
-		RND_CATEGORY_HACKED,
-		RND_CATEGORY_INITIAL,
-		RND_CATEGORY_WEAPONS + RND_SUBCATEGORY_WEAPONS_MELEE
-	)
-	departmental_flags = DEPARTMENT_BITFLAG_SCIENCE | DEPARTMENT_BITFLAG_SECURITY
-
-/datum/design_techweb/sabre
-	name = "sabre"
-	desc = "A sharp curved sword, a favored weapon of pirates far in the past."
-	id = "sabre"
-	build_type = AUTOLATHE
-	materials = list(MAT_STEEL = 7400)
-	build_path = /obj/item/material/sword/sabre
-	category = list(
-		RND_CATEGORY_HACKED,
-		RND_CATEGORY_INITIAL,
-		RND_CATEGORY_WEAPONS + RND_SUBCATEGORY_WEAPONS_MELEE
-	)
-	departmental_flags = DEPARTMENT_BITFLAG_SCIENCE | DEPARTMENT_BITFLAG_SECURITY
-
-/datum/design_techweb/longsword
-	name = "longsword"
-	desc = "a more elegant weapon from a more civilised age"
-	id = "longsword"
-	build_type = AUTOLATHE
-	materials = list(MAT_STEEL = 8000)
-	build_path = /obj/item/material/twohanded/longsword
-	category = list(
-		RND_CATEGORY_HACKED,
-		RND_CATEGORY_INITIAL,
-		RND_CATEGORY_WEAPONS + RND_SUBCATEGORY_WEAPONS_MELEE
-	)
-	departmental_flags = DEPARTMENT_BITFLAG_SCIENCE | DEPARTMENT_BITFLAG_SECURITY
-
-// has no wielded sprite
-/datum/design_techweb/battleaxe
-	name = "battleaxe"
-	desc = "A one handed battle axe, still a deadly weapon."
-	id = "battleaxe"
-	build_type = AUTOLATHE
-	materials = list(MAT_STEEL = 7000)
-	build_path = /obj/item/material/sword/battleaxe
-	category = list(
-		RND_CATEGORY_HACKED,
-		RND_CATEGORY_INITIAL,
-		RND_CATEGORY_WEAPONS + RND_SUBCATEGORY_WEAPONS_MELEE
-	)
-	departmental_flags = DEPARTMENT_BITFLAG_SCIENCE | DEPARTMENT_BITFLAG_SECURITY
-*/
-
 /datum/design_techweb/anomaly_gun
 	name = "Handheld Anomalous Particle Releaser"
 	id = "anom_gun"
@@ -1137,7 +1036,6 @@
 		RND_CATEGORY_EQUIPMENT + RND_SUBCATEGORY_EQUIPMENT_MISC
 	)
 	departmental_flags = DEPARTMENT_BITFLAG_SCIENCE
-
 
 /datum/design_techweb/advanced_emf
 	name = "Advanced EMF Reader"

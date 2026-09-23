@@ -94,10 +94,10 @@
 			// init with the MC already ticking, so vents have broadcast their status
 			// by now and the registry reflects real coverage.
 			if(!(A.type in exempt_from_atmos))
-				if(!A.air_scrub_info.len)
+				if(!length(A.air_scrub_info))
 					TEST_FAIL("[bad_msg] lacks an Air scrubber. (X[A.x]|Y[A.y]) - (Z[A.z])")
 
-				if(!A.air_vent_info.len)
+				if(!length(A.air_vent_info))
 					TEST_FAIL("[bad_msg] lacks an Air vent. (X[A.x]|Y[A.y]) - (Z[A.z])")
 
 /// Test that tests cables on defined z-levels

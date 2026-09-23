@@ -67,7 +67,6 @@
 	cold_protection = LEGS
 
 
-// === merged from leg_guards_vr.dm during hard-fork de-suffix (verified no override-order change) ===
 /obj/item/clothing/shoes/leg_guard/combat/imperial
 	name = "imperial leg guards"
 	desc = "Good for Roman around."

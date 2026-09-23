@@ -269,7 +269,7 @@
 		tforce = O.throwforce * (speed/THROWFORCE_SPEED_DIVISOR)
 	if (tforce < 15)
 		return
-	take_damage(tforce)
+	take_damage(tforce, BRUTE, MELEE)
 
 /obj/structure/low_wall/atom_destruction(damage_flag)
 	dismantle()
@@ -291,7 +291,7 @@
 			W.shatter()
 	for(var/obj/structure/grille/G in loc)
 		if(G.anchored)
-			G.take_damage(G.max_integrity) // Smash it apart with the wall.
+			G.take_damage(G.max_integrity, BRUTE, MELEE) // Smash it apart with the wall.
 	qdel(src)
 
 /**

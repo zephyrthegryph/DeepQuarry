@@ -130,6 +130,10 @@
 		healths.icon_state = "health6"
 
 	timeofdeath = world.time
+	if(isliving(src))
+		var/mob/living/dead_living = src
+		if(dead_living.identity)
+			dead_living.identity.time_of_death = world.time
 	if(mind) mind.store_memory("Time of death: [stationtime2text()]", 0)
 	GLOB.living_mob_list -= src
 	GLOB.dead_mob_list |= src

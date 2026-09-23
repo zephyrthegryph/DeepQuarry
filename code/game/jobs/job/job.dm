@@ -233,14 +233,6 @@
 		return TRUE
 	// end
 	return FALSE // Any species can be any job.
-	/* 
-	if(banned_job_species == null)
-		return
-	if(species_name in banned_job_species)
-		return TRUE
-	if(brain_type in banned_job_species)
-		return TRUE
-	*/
 
 // start
 /datum/job/proc/register_shift_key(key)

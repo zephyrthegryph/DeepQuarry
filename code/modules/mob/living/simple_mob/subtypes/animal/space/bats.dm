@@ -10,8 +10,7 @@
 
 	faction = FACTION_SCARYBAT
 
-	maxHealth = 20
-	health = 20
+	endurance = 20
 
 	attacktext = list("bitten")
 	attack_sound = 'sound/weapons/bite.ogg'
@@ -56,6 +55,5 @@
 	return
 
 /mob/living/simple_mob/animal/space/bats/cult/strong
-	maxHealth = 60
-	health = 60
+	endurance = 60
 	melee_damage_upper = 10

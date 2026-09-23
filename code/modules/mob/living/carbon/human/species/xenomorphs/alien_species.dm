@@ -19,8 +19,9 @@
 	siemens_coefficient = 0
 	gluttonous = 2
 
-	brute_mod = 0.6 // Hardened carapace.
-	burn_mod = 1.75    // Weak to fire.
+	injury_mod_groups = list("physical" = 0.6, "thermal" = 1.75)
+	// Hardened carapace. (brute)
+	// Weak to fire. (burn)
 
 	warning_low_pressure = 50
 	hazard_low_pressure = -1
@@ -134,19 +135,19 @@
 		mend_prob = 1
 
 	//first heal damages
-	if (H.getBruteLoss() || H.getFireLoss() || H.getOxyLoss() || H.getToxLoss())
-		H.adjustBruteLoss(-heal_rate)
-		H.adjustFireLoss(-heal_rate)
-		H.adjustOxyLoss(-heal_rate)
-		H.adjustToxLoss(-heal_rate)
+	if (H.injury_load(INJURY_CATEGORY_PHYSICAL) || H.injury_load(INJURY_CATEGORY_THERMAL) || H.injury_load(INJURY_CATEGORY_ASPHYXIA) || H.injury_load(INJURY_CATEGORY_TOXIC))
+		H.mend(TREAT_TISSUE_REPAIR, heal_rate)
+		H.mend(TREAT_BURN_CARE, heal_rate)
+		H.mend(TREAT_OXYGENATION, heal_rate)
+		H.mend(TREAT_ANTITOXIN, heal_rate)
 		if (prob(5))
 			to_chat(H, span_alien("You feel a soothing sensation come over you..."))
 		return 1
 
 	//next internal organs
-	for(var/obj/item/organ/I in H.internal_organs)
+	for(var/obj/item/organ/internal/I in H.internal_organs)
 		if(I.damage > 0)
-			I.damage = max(I.damage - heal_rate, 0)
+			H.mend(TREAT_RESTORATION, heal_rate, I)
 			if (prob(5))
 				to_chat(H, span_alien("You feel a soothing sensation within your [I.parent_organ]..."))
 			return 1
@@ -165,7 +166,7 @@
 	name = SPECIES_XENO_DRONE
 	caste_name = "drone"
 	weeds_plasma_rate = 15
-	slowdown = 1
+	factor_baseline = alist(BF_SLOWDOWN = 1)
 	tail = "xenos_drone_tail"
 	rarity_value = 5
 
@@ -204,7 +205,7 @@
 	name = SPECIES_XENO_HUNTER
 	weeds_plasma_rate = 5
 	caste_name = "hunter"
-	slowdown = -1
+	factor_baseline = alist(BF_SLOWDOWN = -1)
 	total_health = 150
 	tail = "xenos_hunter_tail"
 
@@ -233,7 +234,7 @@
 	name = SPECIES_XENO_SENTINEL
 	weeds_plasma_rate = 10
 	caste_name = "sentinel"
-	slowdown = 0
+	factor_baseline = alist(BF_SLOWDOWN = 0)
 	total_health = 200
 	tail = "xenos_sentinel_tail"
 
@@ -267,7 +268,7 @@
 	weeds_heal_rate = 5
 	weeds_plasma_rate = 20
 	caste_name = "queen"
-	slowdown = 3
+	factor_baseline = alist(BF_SLOWDOWN = 3)
 	tail = "xenos_queen_tail"
 	rarity_value = 10
 

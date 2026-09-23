@@ -12,14 +12,11 @@
 	on_expired_text = span_notice("Your body softens, returning to its regular durability.")
 	stacks = MODIFIER_STACK_EXTEND
 
-	disable_duration_percent = 0.25			// Disables only last 25% as long.
-	incoming_damage_percent = 0.5			// 50% incoming damage.
-	icon_scale_x_percent = 1.2				// Become a bigger target.
-	icon_scale_y_percent = 1.2
-	pain_immunity = TRUE
+	// Disables only last 25% as long.
+	// 50% incoming damage.
+	// Become a bigger target.
+	factors = alist(BF_SLOWDOWN = 2, BF_EVASION = -20, BF_INCOMING_ALL = 0.5, BF_DISABLE_DURATION = 0.25, BF_ICON_SCALE_X = 1.2, BF_ICON_SCALE_Y = 1.2, BF_PAIN_IMMUNITY = 1)
 
-	slowdown = 2
-	evasion = -20
 
 /datum/modifier/ambush
 	name = "phased"
@@ -30,11 +27,11 @@
 
 	stacks = MODIFIER_STACK_FORBID
 
-	incoming_damage_percent = 0.1			// 10% incoming damage. You're not all there.
-	outgoing_melee_damage_percent = 0		// 0% outgoing damage. Be prepared.
-	pain_immunity = TRUE
+	// 10% incoming damage. You're not all there.
+	// 0% outgoing damage. Be prepared.
+	// Luckily, not being all there means you're actually hard to hit with a gun.
+	factors = alist(BF_EVASION = 50, BF_MELEE_DAMAGE = 0, BF_INCOMING_ALL = 0.1, BF_PAIN_IMMUNITY = 1)
 
-	evasion = 50							//Luckily, not being all there means you're actually hard to hit with a gun.
 
 /datum/modifier/ambush/on_applied()
 	holder.alpha = 30
@@ -55,8 +52,9 @@
 
 	stacks = MODIFIER_STACK_EXTEND
 
-	incoming_healing_percent = 0.66 // 34% less healing.
-	disable_duration_percent = 1.22 // 22% longer disables.
+	// 34% less healing.
+	// 22% longer disables.
+	factors = alist(BF_DISABLE_DURATION = 1.22, BF_HEALING_RECEIVED = 0.66)
 
 
 ////////// Auras
@@ -73,8 +71,7 @@
 /datum/modifier/repair_aura/tick()
 	spawn()
 		for(var/mob/living/simple_mob/construct/T in view(4,holder))
-			T.adjustBruteLoss(rand(-10,-15))
-			T.adjustFireLoss(rand(-10,-15))
+			T.occult_mend(rand(10,15), rand(10,15))
 
 /datum/modifier/agonize //This modifier is used in an aura spell.
 	name = "agonize"
@@ -112,40 +109,36 @@
 		if(isliving(holder))
 			var/mob/living/L = holder
 			if(istype(L, /mob/living/simple_mob/construct))
-				L.adjustBruteLoss(rand(-5,-10))
-				L.adjustFireLoss(rand(-5,-10))
+				L.occult_mend(rand(5,10), rand(5,10))
 			else
-				L.adjustBruteLoss(-2)
-				L.adjustFireLoss(-2)
+				L.occult_mend(2, 2)
 
 			if(ishuman(holder))
 				var/mob/living/carbon/human/H = holder
 
-				for(var/obj/item/organ/O in H.internal_organs)
+				for(var/obj/item/organ/internal/O in H.internal_organs)
 					if(O.damage > 0) // Fix internal damage
-						O.damage = max(O.damage - 2, 0)
+						H.mend(TREAT_RESTORATION, 2, O)
 					if(O.damage <= 5 && O.organ_tag == O_EYES) // Fix eyes
 						H.sdisabilities &= ~BLIND
 
 				for(var/obj/item/organ/external/O in H.organs) // Fix limbs, no matter if they are Man or Machine.
-					O.heal_damage(rand(1,3), rand(1,3), internal = 1, robo_repair = 1)
+					H.mend(TREAT_RESTORATION, rand(2,6), O)
 
 				for(var/obj/item/organ/E in H.bad_external_organs) // Fix bones
 					var/obj/item/organ/external/affected = E
 					if((affected.damage < affected.min_broken_damage * CONFIG_GET(number/organ_health_multiplier)) && (affected.status & ORGAN_BROKEN))
 						affected.status &= ~ORGAN_BROKEN
 
-					for(var/datum/wound/W in affected.wounds) // Fix IB
-						if(istype(W, /datum/wound/internal_bleeding))
-							affected.wounds -= W
-							affected.update_damages()
+					for(var/datum/affliction/wound/internal_bleeding/W in affected.get_wounds()) // Fix IB
+						affected.remove_wound(W)
+						affected.update_damages()
 
 				H.restore_blood()
 				if(!iscultist(H))
 					H.apply_effect(2, AGONY)
 				if(prob(10))
 					to_chat(H, span_danger("It feels as though your body is being torn apart!"))
-			L.updatehealth()
 
 /datum/modifier/gluttonyregeneration
 	name = "gluttonous regeneration"
@@ -187,12 +180,19 @@
 			H.adjust_nutrition(-10)
 			var/healing_amount = starting_nutrition - H.nutrition //Anything above 9 nutrition will return 10. Anything below will give 0-9. Nutrition is capped at 0.
 			if(healing_amount)
-				H.adjustBruteLoss(-healing_amount * 0.25)
-
-				H.adjustFireLoss(-healing_amount * 0.25)
-
-				H.adjustOxyLoss(-healing_amount * 0.25)
-
-				H.adjustToxLoss(-healing_amount * 0.25)
+				H.occult_mend(healing_amount * 0.25, healing_amount * 0.25)
+				H.mend(TREAT_OXYGENATION, healing_amount * 0.25)
+				H.mend(TREAT_ANTITOXIN, healing_amount * 0.25)
 
 	..()
+
+/// Supernatural mending knits flesh and metal alike: it applies both the
+/// organic and the synthetic repair mechanism, and the body uses whichever
+/// matches each part.
+/mob/living/proc/occult_mend(physical, thermal)
+	if(physical)
+		mend(TREAT_TISSUE_REPAIR, physical)
+		mend(TREAT_PLATING_REPAIR, physical)
+	if(thermal)
+		mend(TREAT_BURN_CARE, thermal)
+		mend(TREAT_WIRING_REPAIR, thermal)

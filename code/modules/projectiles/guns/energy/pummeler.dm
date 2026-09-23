@@ -47,7 +47,7 @@
 		if(istype(L, /mob/living/simple_mob/vore/alienanimals/startreader))
 			var/mob/living/simple_mob/vore/alienanimals/startreader/S = L
 			if(!S.flipped)
-				S.adjustBruteLoss(100)
+				S.injure(INJURY_BLUNT, 100, source = src)
 				S.visible_message(span_notice("\The [S] is flipped over!!!"))
 				S.flipped = TRUE
 				S.flip_cooldown = 10

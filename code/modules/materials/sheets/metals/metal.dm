@@ -165,6 +165,38 @@
 	no_variants = FALSE
 	coin_type = /obj/item/coin/aluminium
 
+/obj/item/stack/material/nickel
+	name = MAT_NICKEL
+	icon_state = "sheet-ingot"
+	default_type = MAT_NICKEL
+	apply_colour = TRUE
+	no_variants = FALSE
+	exotic_no_autolathe_reprint = TRUE
+
+/obj/item/stack/material/chromium
+	name = MAT_CHROMIUM
+	icon_state = "sheet-ingot"
+	default_type = MAT_CHROMIUM
+	apply_colour = TRUE
+	no_variants = FALSE
+	exotic_no_autolathe_reprint = TRUE
+
+/obj/item/stack/material/tungsten
+	name = MAT_TUNGSTEN
+	icon_state = "sheet-ingot"
+	default_type = MAT_TUNGSTEN
+	apply_colour = TRUE
+	no_variants = FALSE
+	exotic_no_autolathe_reprint = TRUE
+
+/obj/item/stack/material/technical_ceramic
+	name = MAT_TECH_CERAMIC
+	icon_state = "sheet-puck"
+	default_type = MAT_TECH_CERAMIC
+	apply_colour = TRUE
+	no_variants = FALSE
+	exotic_no_autolathe_reprint = TRUE
+
 
 // === merged from metal_vr.dm during hard-fork de-suffix (verified no override-order change) ===
 /obj/item/stack/material/titanium

@@ -46,12 +46,6 @@
 	assembly.state = 4
 	LAZYOR(client_huds, GLOB.global_hud.whitense)
 
-	/* // Use this to look for cameras that have the same c_tag.
-	for(var/obj/machinery/camera/C in GLOB.cameranet.cameras)
-		var/list/tempnetwork = C.network&src.network
-		if(C != src && C.c_tag == src.c_tag && tempnetwork.len)
-			to_world_log("[src.c_tag] [src.x] [src.y] [src.z] conflicts with [C.c_tag] [C.x] [C.y] [C.z]")
-	*/
 	if(!src.network || src.network.len < 1)
 		if(loc)
 			log_world("## ERROR [src.name] in [get_area(src)] (x:[src.x] y:[src.y] z:[src.z] has errored. [src.network?"Empty network list":"Null network list"]")
@@ -59,6 +53,7 @@
 			log_world("## ERROR [src.name] in [get_area(src)]has errored. [src.network?"Empty network list":"Null network list"]")
 		ASSERT(src.network)
 		ASSERT(src.network.len > 0)
+	network = camera_network_intern(network)
 	// Make mapping with cameras easier
 	if(!c_tag)
 		var/area/A = get_area(src)
@@ -68,6 +63,17 @@
 
 	if (dir == NORTH)
 		layer = ABOVE_MOB_LAYER
+
+/// Cameras with the same network set share one list. Shared lists are
+/// read-only: camera procs replace `network` rather than mutate it.
+/proc/camera_network_intern(list/networks)
+	var/static/list/interned = list()
+	var/key = jointext(networks, "|")
+	var/list/shared = interned[key]
+	if(!shared)
+		shared = networks.Copy()
+		interned[key] = shared
+	return shared
 
 /obj/machinery/camera/Destroy()
 	// cancelCameraAlarm() intentionally respects a cut alarm wire, which is wrong
@@ -134,7 +140,7 @@
 	var/obj/item/O = source
 	if(O.throwforce >= src.toughness)
 		visible_message(span_boldwarning("[src] was hit by [O]."))
-	take_damage(O.throwforce)
+	take_damage(O.throwforce, BRUTE, MELEE)
 
 /obj/machinery/camera/proc/setViewRange(num = 7)
 	src.view_range = num
@@ -258,7 +264,7 @@
 				var/obj/item/I = W
 				if (I.hitsound)
 					playsound(src, I.hitsound, 50, 1, -1)
-		take_damage(W.force)
+		take_damage(W.force, BRUTE, MELEE)
 
 	else
 		..()
@@ -432,7 +438,7 @@
 	network_added = 0
 	for(var/network_name in networks)
 		if(!(network_name in src.network))
-			network += network_name
+			network = network + network_name
 			network_added = 1
 
 	if(network_added)
@@ -443,7 +449,7 @@
 	network_removed = 0
 	for(var/network_name in networks)
 		if(network_name in src.network)
-			network -= network_name
+			network = network - network_name
 			network_removed = 1
 
 	if(network_removed)
@@ -463,7 +469,7 @@
 
 /obj/machinery/camera/proc/clear_all_networks()
 	if(network.len)
-		network.Cut()
+		network = list()
 		update_coverage(1)
 
 /obj/machinery/camera/proc/tgui_structure()

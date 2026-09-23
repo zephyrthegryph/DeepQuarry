@@ -52,7 +52,7 @@
 		if(damage >= STRUCTURE_MIN_DAMAGE_THRESHOLD)
 			visible_message(span_danger("\The [user] smashes into [src]!"))
 			playsound(src, S.attack_sound, 75, 1)
-			take_damage(damage)
+			take_damage(damage, BRUTE, MELEE)
 		else
 			visible_message(span_infoplain(span_bold("\The [user]") + " bonks \the [src] harmlessly."))
 	user.do_attack_animation(src)
@@ -251,7 +251,7 @@
 		else
 			tforce = object.w_class * (speed/THROWFORCE_SPEED_DIVISOR)
 	playsound(src, hitsound, 100, 1)
-	take_damage(tforce)
+	take_damage(tforce, BRUTE, MELEE)
 
 /obj/machinery/door/attack_ai(mob/user)
 	return attack_hand(user)
@@ -316,7 +316,7 @@
 			else
 				user.visible_message(span_danger("\The [user] forcefully strikes \the [src] with \the [W]!"))
 				playsound(src, hitsound, 100, 1)
-				take_damage(W.force)
+				take_damage(W.force, BRUTE, MELEE)
 		return
 
 	try_to_activate_door(user)
@@ -451,7 +451,7 @@
 		if(stat & BROKEN)
 			open(1)
 		else
-			take_damage(100)
+			take_damage(100, BRUTE, MELEE)
 
 /obj/machinery/door/update_icon()
 	if(density)
@@ -628,8 +628,7 @@
 	icon = 'icons/obj/doors/doormorgue.dmi'
 
 
-// === merged from door_vr.dm during hard-fork de-suffix (verified no override-order change) ===
-/obj/machinery/door/fire_act(datum/gas_mixture/air, exposed_temperature, exposed_volume)
+/obj/machinery/door/fire_act(exposed_temperature, exposed_volume)
 	for(var/obj/machinery/door/blast/B in loc.contents)
 		if(B.density)
 			return

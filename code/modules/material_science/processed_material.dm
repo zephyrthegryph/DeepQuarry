@@ -66,6 +66,14 @@ GLOBAL_LIST_EMPTY(processed_material_dedup)
 	material.dielectric_strength = clamp(round((100 - batch.conductivity) * 1.2 + batch.corrosion_resistance * 0.25), 1, 150)
 	var/cryo_skin = batch.surface_layers[MATERIAL_SURFACE_SLIME_CRYO] || 0
 	var/thermal_skin = batch.surface_layers[MATERIAL_SURFACE_SLIME_THERMAL] || 0
+	var/metal_skin = batch.surface_layers[MATERIAL_SURFACE_SLIME_METAL] || 0
+	var/corrosion_skin = batch.surface_layers[MATERIAL_SURFACE_SLIME_CORROSION] || 0
+	var/bluespace_skin = batch.surface_layers[MATERIAL_SURFACE_SLIME_BLUESPACE] || 0
+	if(metal_skin)
+		material.hardness = clamp(material.hardness + metal_skin * 0.2, 1, 100)
+		material.integrity = clamp(material.integrity + round(metal_skin * 0.8), 5, 250)
+	if(corrosion_skin)
+		material.corrosion_resistance = clamp(material.corrosion_resistance + corrosion_skin * 0.6, 0, 100)
 	var/metal_hydrogen_share = (batch.composition[MAT_METALHYDROGEN] || 0) / max(batch.amount, 1)
 	if((metal_hydrogen_share >= 0.15 || (batch.additive_units_matching("cryogenic stabilizer") && cryo_skin)) && batch.conductivity >= 75 && batch.purity >= 90)
 		material.critical_temperature = clamp(T0C - 120 + cryo_skin * 0.8, 40, T0C - 5)
@@ -80,7 +88,17 @@ GLOBAL_LIST_EMPTY(processed_material_dedup)
 	var/has_crystal = crystal_amount / max(batch.amount, 1) >= 0.1
 	var/has_biological = biological_amount / max(batch.amount, 1) >= 0.15
 	var/particle_conditioned = batch.field_treatments[MATERIAL_FIELD_PARTICLE] || 0
-	if(batch.additive_units_matching("thermal phase catalyst") && thermal_skin && batch.conductivity >= 45)
+	var/emitter_charged = batch.field_treatments[MATERIAL_FIELD_EMITTER] || 0
+	var/fusion_stabilized = batch.field_treatments[MATERIAL_FIELD_FUSION] || 0
+	var/energy_storage = batch.field_treatments[MATERIAL_FIELD_ENERGY_STORAGE] || 0
+	var/nickel_share = (batch.composition[MAT_NICKEL] || 0) / max(batch.amount, 1)
+	var/copper_share = (batch.composition[MAT_COPPER] || 0) / max(batch.amount, 1)
+	var/titanium_share = (batch.composition[MAT_TITANIUM] || 0) / max(batch.amount, 1)
+	var/chromium_share = (batch.composition[MAT_CHROMIUM] || 0) / max(batch.amount, 1)
+	var/tungsten_share = (batch.composition[MAT_TUNGSTEN] || 0) / max(batch.amount, 1)
+	var/ceramic_share = (batch.composition[MAT_TECH_CERAMIC] || 0) / max(batch.amount, 1)
+	var/phoron_share = ((batch.composition[MAT_PHORON] || 0) + (batch.dissolved_gases["fusion phoron"] || 0) * 0.1) / max(batch.amount, 1)
+	if((nickel_share >= 0.15 && copper_share >= 0.15) || (batch.additive_units_matching("thermal phase catalyst") && thermal_skin && batch.conductivity >= 45))
 		material.thermoelectric_coefficient = clamp((batch.conductivity + batch.heat_resistance) / 200, 0, 1)
 	if(has_crystal && batch.conductivity >= 30 && batch.homogeneity >= 70)
 		material.piezoelectric_coefficient = clamp((batch.conductivity + batch.homogeneity - batch.porosity) / 200, 0, 1)
@@ -95,9 +113,30 @@ GLOBAL_LIST_EMPTY(processed_material_dedup)
 		material.catalytic_activity = max(material.catalytic_activity, clamp(batch.purity * batch.corrosion_resistance / 100, 0, 100))
 	if(batch.additive_units_matching("conductive dopant") && batch.surface_layers[MATERIAL_SURFACE_SLIME_CONDUCTIVE] && batch.conductivity >= 40 && batch.homogeneity >= 60)
 		material.electrogenic_rate = clamp((batch.conductivity + batch.homogeneity) / 4, 0, 50)
-	if(((batch.composition[MAT_MORPHIUM] || 0) / max(batch.amount, 1) >= 0.15 || ((batch.composition[MAT_TITANIUM] || 0) / max(batch.amount, 1) >= 0.25 && batch.structure[MATERIAL_STRUCTURE_HARDENED] >= 20)) && batch.toughness >= 55)
+	if(((batch.composition[MAT_MORPHIUM] || 0) / max(batch.amount, 1) >= 0.15 || (nickel_share >= 0.2 && titanium_share >= 0.2) || (titanium_share >= 0.25 && batch.structure[MATERIAL_STRUCTURE_HARDENED] >= 20)) && batch.toughness >= 55)
 		material.shape_recovery_rate = clamp((batch.toughness + batch.homogeneity - batch.internal_stress) / 40, 0, 5)
 		material.shape_recovery_temperature = T0C + 80
+	if(nickel_share >= 0.15 && chromium_share >= 0.15)
+		material.heat_resistance = max(material.heat_resistance, clamp(70 + tungsten_share * 30, 0, 100))
+		material.electrical_resistivity = max(material.electrical_resistivity, 1.5)
+	if((ceramic_share >= 0.2 && batch.conductivity >= 25 && particle_conditioned >= 25) || (copper_share >= 0.2 && nickel_share >= 0.15 && fusion_stabilized >= 25))
+		material.heat_pump_coefficient = clamp((particle_conditioned + fusion_stabilized + batch.homogeneity) / 250, 0.1, 1)
+	if(copper_share >= 0.2 && nickel_share >= 0.15 && fusion_stabilized >= 35)
+		material.thermal_switch_temperature = T0C + clamp(40 + fusion_stabilized, 40, 140)
+		material.thermal_switch_ratio = clamp(2 + fusion_stabilized / 20, 2, 7)
+	if(phoron_share >= 0.08 && tungsten_share >= 0.15 && fusion_stabilized >= 20)
+		material.exothermic_heat_rate = clamp(phoron_share * fusion_stabilized * 18, 25, 500)
+	if(has_crystal && batch.conductivity >= 35 && (particle_conditioned >= 20 || emitter_charged >= 20))
+		material.field_charge_efficiency = clamp((batch.conductivity + batch.homogeneity + particle_conditioned + emitter_charged) / 400, 0.1, 0.9)
+		material.field_energy_capacity = clamp((energy_storage + particle_conditioned + emitter_charged) * batch.purity * 8, 1000, 100000)
+	var/radiation_hardened = batch.field_treatments[MATERIAL_FIELD_RADIATION_HARDENED] || 0
+	if(radiation_hardened)
+		material.heat_resistance = clamp(material.heat_resistance + radiation_hardened * 0.2, 0, 120)
+		material.yield_strength = clamp(material.yield_strength * (1 + radiation_hardened / 250), 25, 1600)
+		material.brittleness = clamp(material.brittleness + max(0, radiation_hardened - 60) * 0.25, 0, 100)
+	if(fusion_stabilized && metal_hydrogen_share >= 0.15 && material.critical_temperature)
+		material.critical_temperature = clamp(material.critical_temperature + fusion_stabilized * 0.45, 40, T0C + 25)
+		material.critical_current_density = clamp(material.critical_current_density * (1 + fusion_stabilized / 100), 100, 3000)
 	if((batch.composition[MAT_WARD_METAL] || 0) / max(batch.amount, 1) >= 0.15 || ((batch.composition[MAT_PLASTEEL] || 0) / max(batch.amount, 1) >= 0.25 && batch.structure[MATERIAL_STRUCTURE_PRECIPITATE] >= 20))
 		material.reactive_energy_capacity = clamp((batch.toughness + batch.hardness) * 25, 0, 5000)
 	if(((batch.composition[MAT_SILVER] || 0) / max(batch.amount, 1) >= 0.1 || batch.additive_units_matching("silver plating")) && batch.corrosion_resistance >= 50)
@@ -108,6 +147,8 @@ GLOBAL_LIST_EMPTY(processed_material_dedup)
 		material.biocompatibility = clamp((batch.toughness + batch.homogeneity) / 2, 0, 100)
 	if(batch.porosity >= 18 && (batch.composition[MAT_TITANIUM] || batch.composition[MAT_ALUMINIUM] || batch.composition[MAT_GRAPHITE]))
 		material.gas_sorption_capacity = clamp(batch.porosity / 5 + batch.corrosion_resistance / 20, 0, 25)
+	if(bluespace_skin)
+		material.gas_sorption_capacity = max(material.gas_sorption_capacity, clamp(bluespace_skin / 2, 0, 50))
 	if((batch.composition[MAT_RIFT_GLASS] || 0) / max(batch.amount, 1) >= 0.15)
 		material.gas_sorption_capacity = max(material.gas_sorption_capacity, clamp(batch.porosity / 4 + batch.purity / 8, 0, 25))
 	if(batch.porosity >= 22 && batch.corrosion_resistance >= 45)
@@ -157,7 +198,9 @@ GLOBAL_LIST_EMPTY(processed_material_dedup)
 	if(batch.brittleness >= 70)
 		material.flags |= MATERIAL_BRITTLE
 	var/performance_value = (batch.hardness + batch.toughness + batch.conductivity + batch.heat_resistance + batch.corrosion_resistance + batch.purity) / 24
-	material.supply_conversion_value = clamp(round(max(performance_value, batch.unit_production_cost() * 1.15)), 5, 80)
+	// Sale value follows useful performance. Inefficient processing remains an
+	// expense rather than making an otherwise identical material worth more.
+	material.supply_conversion_value = clamp(round(performance_value), 5, 80)
 	var/datum/material/dominant
 	var/dominant_amount = 0
 	for(var/component in batch.composition)
@@ -183,6 +226,8 @@ GLOBAL_LIST_EMPTY(processed_material_dedup)
 	var/obj/item/stack/material/processed_alloy/stock = new /obj/item/stack/material/processed_alloy(location, stack_amount, material_key)
 	QDEL_NULL(stock.batch_state)
 	stock.batch_state = batch.copy_for_amount(stack_amount)
+	stock.feedstock_purity = batch.purity
+	stock.feedstock_lot_id = uppertext(copytext(md5("[world.realtime]-[REF(stock)]-[rand()]"), 1, 9))
 	stock.update_thermal_processing()
 	return stock
 
@@ -197,10 +242,11 @@ GLOBAL_LIST_EMPTY(processed_material_dedup)
 	return batch
 
 /obj/item/stack/material/processed_alloy
-	name = "processed material stock"
-	desc = "Traceable material stock whose composition and processing history determine its performance."
-	icon = 'icons/obj/mining.dmi'
-	icon_state = "sheet-plastic"
+	name = "alloy sheets"
+	desc = "Sheets of a custom alloy, ready for further treatment or fabrication."
+	// Temporary recolored metal-sheet sprite until dedicated alloy-stock art exists.
+	icon = 'icons/obj/stacks_ch.dmi'
+	icon_state = "sheet-metal"
 	default_type = MAT_STEEL
 	no_variants = TRUE
 	pass_color = TRUE
@@ -335,18 +381,15 @@ GLOBAL_LIST_EMPTY(processed_material_dedup)
 	if(!istype(material, /datum/material/processed_alloy))
 		return
 	var/datum/material_batch/batch = physical_batch()
-	. += span_notice("Finished solid stock at [round(batch.temperature)] K, produced at [round(batch.yield_fraction * 100)]% retained yield.")
+	if(batch.temperature > T20C + 40)
+		. += span_warning("The alloy is still dangerously hot.")
 	if(length(batch.surface_layers))
-		. += span_notice("Persistent surface treatments: [jointext(batch.surface_layers, ", ")].")
+		. += span_notice("Surface treatment: [jointext(batch.surface_layers, ", ")].")
 	if(length(batch.dissolved_gases))
-		. += span_notice("Entrained gas signatures: [jointext(batch.dissolved_gases, ", ")].")
+		. += span_notice("It contains [jointext(batch.dissolved_gases, ", ")].")
 	if(length(batch.field_treatments))
-		. += span_notice("Field-conditioned lattice: [jointext(batch.field_treatments, ", ")].")
-	if(length(batch.test_results))
-		var/list/disclosed = list()
-		for(var/test in batch.test_results)
-			disclosed += "[test]: [batch.test_results[test]]"
-		. += span_notice("Recorded tests: [jointext(disclosed, "; ")].")
-	else
-		. += span_notice("No physical observations have been recorded; its behavior remains experimental.")
-	. += span_notice("Batch fingerprint: [batch.fingerprint()].")
+		. += span_notice("Field treatment: [jointext(batch.field_treatments, ", ")].")
+	var/list/responses = material.material_response_summary()
+	if(length(responses))
+		. += span_notice("Useful properties: [jointext(responses, "; ")].")
+	. += span_notice("Use an analyzer for exact composition and measurements.")

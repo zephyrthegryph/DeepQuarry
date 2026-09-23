@@ -3934,11 +3934,8 @@
 	},
 /area/centcom/specops)
 "in" = (
-/turf/unsimulated/wall{
-	desc = "That looks like it doesn't open easily.";
+/turf/unsimulated/wall/blast_door_appearance{
 	dir = 8;
-	icon = 'icons/obj/doors/rapid_pdoor.dmi';
-	icon_state = "pdoor1";
 	name = "Shuttle Bay Blast Door"
 	},
 /area/centcom/specops)
@@ -4290,11 +4287,8 @@
 /turf/simulated/shuttle/wall,
 /area/centcom/evac)
 "iZ" = (
-/turf/unsimulated/wall{
-	desc = "That looks like it doesn't open easily.";
+/turf/unsimulated/wall/blast_door_appearance{
 	dir = 8;
-	icon = 'icons/obj/doors/rapid_pdoor.dmi';
-	icon_state = "pdoor1";
 	name = "Shuttle Bay Blast Door"
 	},
 /area/centcom/evac)
@@ -4384,11 +4378,7 @@
 	},
 /area/centcom/bar)
 "jr" = (
-/turf/unsimulated/wall{
-	icon = 'icons/obj/doors/Doormaint.dmi';
-	icon_state = "door_closed";
-	name = "Sealed Door"
-	},
+/turf/unsimulated/wall/maint_door_appearance,
 /area/centcom/bar)
 "js" = (
 /turf/unsimulated/floor{
@@ -4984,10 +4974,7 @@
 /turf/simulated/shuttle/floor,
 /area/shuttle/supply)
 "kL" = (
-/turf/unsimulated/wall{
-	desc = "That looks like it doesn't open easily.";
-	icon = 'icons/obj/doors/rapid_pdoor.dmi';
-	icon_state = "pdoor1";
+/turf/unsimulated/wall/blast_door_appearance{
 	name = "Shuttle Bay Blast Door"
 	},
 /area/centcom/evac)
@@ -5178,11 +5165,8 @@
 	},
 /area/centcom/command)
 "lg" = (
-/turf/unsimulated/wall{
-	desc = "That looks like it doesn't open easily.";
+/turf/unsimulated/wall/blast_door_appearance{
 	dir = 8;
-	icon = 'icons/obj/doors/rapid_pdoor.dmi';
-	icon_state = "pdoor1";
 	name = "Shuttle Bay Blast Door"
 	},
 /area/centcom/command)
@@ -5691,7 +5675,6 @@
 	icon_state = "burst_l";
 	dir = 8
 	},
-/turf/space,
 /turf/simulated/shuttle/plating/airless/carry,
 /area/shuttle/response_ship/start)
 "mA" = (
@@ -5847,7 +5830,6 @@
 	icon_state = "propulsion";
 	dir = 8
 	},
-/turf/space,
 /turf/simulated/shuttle/plating/airless/carry,
 /area/shuttle/response_ship/start)
 "mS" = (
@@ -5855,7 +5837,6 @@
 	icon_state = "burst_r";
 	dir = 8
 	},
-/turf/space,
 /turf/simulated/shuttle/plating/airless/carry,
 /area/shuttle/response_ship/start)
 "mT" = (
@@ -6322,7 +6303,6 @@
 	icon_state = "propulsion_r";
 	dir = 1
 	},
-/turf/space,
 /turf/simulated/shuttle/plating/airless/carry,
 /area/centcom/evac)
 "nT" = (
@@ -6389,7 +6369,6 @@
 	icon_state = "propulsion";
 	dir = 1
 	},
-/turf/space,
 /turf/simulated/shuttle/plating/airless/carry,
 /area/centcom/evac)
 "nY" = (
@@ -6525,7 +6504,6 @@
 	icon_state = "propulsion_l";
 	dir = 1
 	},
-/turf/space,
 /turf/simulated/shuttle/plating/airless/carry,
 /area/centcom/evac)
 "on" = (
@@ -6640,11 +6618,9 @@
 /obj/structure/shuttle/engine/propulsion{
 	icon_state = "burst_l"
 	},
-/turf/unsimulated/floor{
-	icon_state = "plating";
-	name = "plating"
+/turf/simulated/shuttle/plating/airless/carry{
+	under_turf = /turf/unsimulated/floor
 	},
-/turf/simulated/shuttle/plating/airless/carry,
 /area/shuttle/supply)
 "oE" = (
 /obj/structure/bed/chair,
@@ -6655,11 +6631,9 @@
 /area/centcom/command)
 "oF" = (
 /obj/structure/shuttle/engine/propulsion,
-/turf/unsimulated/floor{
-	icon_state = "plating";
-	name = "plating"
+/turf/simulated/shuttle/plating/airless/carry{
+	under_turf = /turf/unsimulated/floor
 	},
-/turf/simulated/shuttle/plating/airless/carry,
 /area/shuttle/supply)
 "oG" = (
 /obj/structure/sink{
@@ -7644,11 +7618,7 @@
 	},
 /area/centcom/bar)
 "ri" = (
-/turf/unsimulated/wall{
-	icon = 'icons/obj/doors/Doormaint.dmi';
-	icon_state = "door_closed";
-	name = "Sealed Door"
-	},
+/turf/unsimulated/wall/maint_door_appearance,
 /area/centcom/main_hall)
 "rj" = (
 /obj/structure/table/marble,
@@ -10776,11 +10746,9 @@
 /obj/structure/shuttle/engine/propulsion{
 	icon_state = "burst_r"
 	},
-/turf/unsimulated/floor{
-	icon_state = "plating";
-	name = "plating"
+/turf/simulated/shuttle/plating/airless/carry{
+	under_turf = /turf/unsimulated/floor
 	},
-/turf/simulated/shuttle/plating/airless/carry,
 /area/shuttle/supply)
 "yt" = (
 /obj/machinery/smartfridge/chemistry,
@@ -10848,7 +10816,6 @@
 	icon_state = "burst_l";
 	dir = 8
 	},
-/turf/space,
 /turf/simulated/shuttle/plating/airless/carry,
 /area/shuttle/transport1/centcom)
 "yA" = (
@@ -11665,11 +11632,7 @@
 	},
 /area/centcom/terminal)
 "Ah" = (
-/turf/unsimulated/wall{
-	icon = 'icons/obj/doors/Doormaint.dmi';
-	icon_state = "door_closed";
-	name = "Sealed Door"
-	},
+/turf/unsimulated/wall/maint_door_appearance,
 /area/centcom/terminal)
 "Ai" = (
 /turf/unsimulated/floor{
@@ -11739,7 +11702,6 @@
 	icon_state = "burst_r";
 	dir = 8
 	},
-/turf/space,
 /turf/simulated/shuttle/plating/airless/carry,
 /area/shuttle/transport1/centcom)
 "Ap" = (
@@ -13222,7 +13184,6 @@
 	icon_state = "propulsion_l";
 	dir = 8
 	},
-/turf/space,
 /turf/simulated/shuttle/plating/airless/carry,
 /area/shuttle/administration/centcom)
 "DF" = (
@@ -13245,7 +13206,6 @@
 	icon_state = "propulsion_r";
 	dir = 8
 	},
-/turf/space,
 /turf/simulated/shuttle/plating/airless/carry,
 /area/shuttle/administration/centcom)
 "DI" = (
@@ -13923,20 +13883,14 @@
 /turf/simulated/mineral,
 /area/ninja_dojo/dojo)
 "Fo" = (
-/turf/unsimulated/floor{
-	dir = 2;
-	icon = 'icons/turf/snow_new.dmi';
-	icon_state = "snow";
-	name = "snow"
+/turf/unsimulated/floor/snow_decor{
+	dir = 2
 	},
 /area/ninja_dojo/dojo)
 "Fp" = (
 /obj/effect/floor_decal/asteroid,
-/turf/unsimulated/floor{
-	dir = 2;
-	icon = 'icons/turf/snow_new.dmi';
-	icon_state = "snow";
-	name = "snow"
+/turf/unsimulated/floor/snow_decor{
+	dir = 2
 	},
 /area/ninja_dojo/dojo)
 "Fq" = (
@@ -13968,8 +13922,7 @@
 /area/beach)
 "Fx" = (
 /obj/item/target/alien,
-/turf/unsimulated/floor{
-	icon = 'icons/turf/flooring/wood.dmi';
+/turf/unsimulated/floor/wood_appearance{
 	icon_state = "wood-broken2"
 	},
 /area/ninja_dojo/dojo)
@@ -14191,17 +14144,13 @@
 	},
 /area/ninja_dojo/dojo)
 "Gc" = (
-/obj/machinery/door/airlock{
-	icon = 'icons/obj/doors/Dooruranium.dmi'
-	},
+/obj/machinery/door/airlock/uranium_appearance,
 /turf/unsimulated/floor{
 	icon_state = "dark"
 	},
 /area/ninja_dojo/dojo)
 "Gd" = (
-/obj/machinery/door/airlock{
-	icon = 'icons/obj/doors/Dooruranium.dmi'
-	},
+/obj/machinery/door/airlock/uranium_appearance,
 /turf/unsimulated/floor{
 	icon_state = "plating";
 	name = "plating"
@@ -14388,8 +14337,7 @@
 /turf/simulated/shuttle/floor/white,
 /area/centcom/evac)
 "Gy" = (
-/turf/unsimulated/floor{
-	icon = 'icons/turf/flooring/wood.dmi';
+/turf/unsimulated/floor/wood_appearance{
 	icon_state = "wood-broken1"
 	},
 /area/ninja_dojo/dojo)
@@ -14467,9 +14415,7 @@
 /turf/unsimulated/beach/sand,
 /area/beach)
 "GJ" = (
-/obj/machinery/door/airlock{
-	icon = 'icons/obj/doors/Dooruranium.dmi'
-	},
+/obj/machinery/door/airlock/uranium_appearance,
 /turf/unsimulated/floor{
 	dir = 8;
 	icon_state = "wood"
@@ -14538,20 +14484,14 @@
 /area/beach)
 "GO" = (
 /obj/structure/flora/tree/pine,
-/turf/unsimulated/floor{
-	dir = 2;
-	icon = 'icons/turf/snow_new.dmi';
-	icon_state = "snow";
-	name = "snow"
+/turf/unsimulated/floor/snow_decor{
+	dir = 2
 	},
 /area/ninja_dojo/dojo)
 "GP" = (
 /obj/structure/flora/ausbushes/palebush,
-/turf/unsimulated/floor{
-	dir = 2;
-	icon = 'icons/turf/snow_new.dmi';
-	icon_state = "snow";
-	name = "snow"
+/turf/unsimulated/floor/snow_decor{
+	dir = 2
 	},
 /area/ninja_dojo/dojo)
 "GQ" = (
@@ -14559,11 +14499,8 @@
 	dir = 4;
 	max_integrity = 1e+006
 	},
-/turf/unsimulated/floor{
-	dir = 2;
-	icon = 'icons/turf/snow_new.dmi';
-	icon_state = "snow";
-	name = "snow"
+/turf/unsimulated/floor/snow_decor{
+	dir = 2
 	},
 /area/ninja_dojo/dojo)
 "GR" = (
@@ -14592,11 +14529,8 @@
 /obj/structure/window/reinforced{
 	dir = 8
 	},
-/turf/unsimulated/floor{
-	dir = 2;
-	icon = 'icons/turf/snow_new.dmi';
-	icon_state = "snow";
-	name = "snow"
+/turf/unsimulated/floor/snow_decor{
+	dir = 2
 	},
 /area/ninja_dojo/dojo)
 "GV" = (
@@ -14640,11 +14574,7 @@
 	},
 /area/ninja_dojo/dojo)
 "Hc" = (
-/turf/unsimulated/wall{
-	icon = 'icons/obj/doors/Dooruranium.dmi';
-	icon_state = "door_closed";
-	name = "Sealed Door"
-	},
+/turf/unsimulated/wall/uranium_door_appearance,
 /area/ninja_dojo/dojo)
 "Hd" = (
 /obj/structure/table/glass,
@@ -14796,9 +14726,7 @@
 	},
 /area/ninja_dojo/dojo)
 "Ht" = (
-/obj/machinery/door/airlock{
-	icon = 'icons/obj/doors/Dooruranium.dmi'
-	},
+/obj/machinery/door/airlock/uranium_appearance,
 /turf/unsimulated/floor{
 	icon_state = "white"
 	},
@@ -14935,8 +14863,7 @@
 /area/syndicate_station)
 "HL" = (
 /obj/machinery/space_heater,
-/turf/unsimulated/floor{
-	icon = 'icons/turf/flooring/wood.dmi';
+/turf/unsimulated/floor/wood_appearance{
 	icon_state = "wood-broken3"
 	},
 /area/ninja_dojo/dojo)
@@ -15509,10 +15436,7 @@
 	},
 /area/syndicate_station)
 "IY" = (
-/turf/unsimulated/wall{
-	desc = "That looks like it doesn't open easily.";
-	icon = 'icons/obj/doors/rapid_pdoor.dmi';
-	icon_state = "pdoor1";
+/turf/unsimulated/wall/blast_door_appearance{
 	name = "Shuttle Bay Blast Door"
 	},
 /area/syndicate_mothership/elite_squad)
@@ -15766,8 +15690,7 @@
 "JA" = (
 /obj/structure/bed/padded,
 /obj/item/bedsheet/orange,
-/turf/unsimulated/floor{
-	icon = 'icons/turf/flooring/wood.dmi';
+/turf/unsimulated/floor/wood_appearance{
 	icon_state = "wood-broken1"
 	},
 /area/skipjack_station)
@@ -16001,10 +15924,7 @@
 	},
 /area/skipjack_station)
 "Kd" = (
-/turf/unsimulated/wall{
-	desc = "That looks like it doesn't open easily.";
-	icon = 'icons/obj/doors/rapid_pdoor.dmi';
-	icon_state = "pdoor1";
+/turf/unsimulated/wall/blast_door_appearance{
 	name = "Shuttle Bay Blast Door"
 	},
 /area/skipjack_station)
@@ -16082,8 +16002,7 @@
 	},
 /area/centcom/security)
 "Kn" = (
-/turf/unsimulated/floor{
-	icon = 'icons/turf/flooring/wood.dmi';
+/turf/unsimulated/floor/wood_appearance{
 	icon_state = "wood-broken3"
 	},
 /area/skipjack_station)
@@ -16195,8 +16114,7 @@
 /obj/effect/landmark{
 	name = "voxstart"
 	},
-/turf/unsimulated/floor{
-	icon = 'icons/turf/flooring/wood.dmi';
+/turf/unsimulated/floor/wood_appearance{
 	icon_state = "wood-broken2"
 	},
 /area/skipjack_station)
@@ -17621,7 +17539,6 @@
 	icon_state = "propulsion_r";
 	dir = 4
 	},
-/turf/space,
 /turf/simulated/shuttle/plating/airless/carry,
 /area/shuttle/merchant/home)
 "NH" = (
@@ -18022,11 +17939,8 @@
 /turf/simulated/shuttle/floor/darkred,
 /area/skipjack_station/start)
 "OD" = (
-/turf/unsimulated/wall{
-	desc = "That looks like it doesn't open easily.";
+/turf/unsimulated/wall/blast_door_appearance{
 	dir = 8;
-	icon = 'icons/obj/doors/rapid_pdoor.dmi';
-	icon_state = "pdoor1";
 	name = "Blast Door"
 	},
 /area/centcom/main_hall)
@@ -18695,11 +18609,7 @@
 /turf/simulated/shuttle/floor/voidcraft/light,
 /area/syndicate_station/start)
 "Qj" = (
-/turf/simulated/shuttle/wall/no_join{
-	base_state = "orange";
-	icon = 'icons/turf/shuttle_orange.dmi';
-	icon_state = "orange"
-	},
+/turf/simulated/shuttle/wall/no_join/orange,
 /area/centcom/evac)
 "Qk" = (
 /obj/structure/table/standard,
@@ -18998,10 +18908,6 @@
 	pixel_x = 32;
 	req_access = list(150)
 	},
-/obj/machinery/turretid{
-	pixel_x = 32;
-	req_access = list(150)
-	},
 /turf/simulated/floor/airless,
 /area/syndicate_station/start)
 "QT" = (
@@ -19199,7 +19105,6 @@
 /obj/structure/shuttle/engine/propulsion{
 	dir = 4
 	},
-/turf/space,
 /turf/simulated/shuttle/plating/airless/carry,
 /area/shuttle/merchant/home)
 "Rm" = (
@@ -19216,12 +19121,10 @@
 	icon_state = "propulsion_l";
 	dir = 4
 	},
-/turf/space,
 /turf/simulated/shuttle/plating/airless/carry,
 /area/shuttle/merchant/home)
 "Rp" = (
 /obj/structure/shuttle/engine/propulsion,
-/turf/space,
 /turf/simulated/shuttle/plating/airless/carry,
 /area/shuttle/escape/centcom)
 "Rq" = (
@@ -19290,7 +19193,6 @@
 	icon_state = "propulsion_r";
 	dir = 1
 	},
-/turf/space,
 /turf/simulated/shuttle/plating/airless/carry,
 /area/shuttle/syndicate_elite/mothership)
 "Rz" = (
@@ -19298,7 +19200,6 @@
 	icon_state = "propulsion";
 	dir = 1
 	},
-/turf/space,
 /turf/simulated/shuttle/plating/airless/carry,
 /area/shuttle/syndicate_elite/mothership)
 "RA" = (
@@ -19306,7 +19207,6 @@
 	icon_state = "propulsion_l";
 	dir = 1
 	},
-/turf/space,
 /turf/simulated/shuttle/plating/airless/carry,
 /area/shuttle/syndicate_elite/mothership)
 "RB" = (
@@ -19327,7 +19227,6 @@
 	icon_state = "propulsion_r";
 	dir = 4
 	},
-/turf/space,
 /turf/simulated/shuttle/plating/airless/carry,
 /area/syndicate_station/start)
 "RE" = (
@@ -19439,7 +19338,6 @@
 	icon_state = "propulsion";
 	dir = 4
 	},
-/turf/space,
 /turf/simulated/shuttle/plating/airless/carry,
 /area/syndicate_station/start)
 "RS" = (
@@ -19447,12 +19345,10 @@
 	icon_state = "propulsion_l";
 	dir = 4
 	},
-/turf/space,
 /turf/simulated/shuttle/plating/airless/carry,
 /area/syndicate_station/start)
 "RT" = (
 /obj/structure/shuttle/engine/propulsion,
-/turf/space,
 /turf/simulated/shuttle/plating/airless/carry,
 /area/skipjack_station/start)
 "RU" = (
@@ -19630,8 +19526,7 @@
 	},
 /area/virtual_reality)
 "SL" = (
-/obj/machinery/door/airlock{
-	icon = 'icons/obj/doors/Dooruranium.dmi';
+/obj/machinery/door/airlock/uranium_appearance{
 	name = "Spawn"
 	},
 /turf/unsimulated/floor{
@@ -19687,8 +19582,7 @@
 	},
 /area/virtual_reality)
 "SR" = (
-/obj/machinery/door/airlock{
-	icon = 'icons/obj/doors/Dooruranium.dmi';
+/obj/machinery/door/airlock/uranium_appearance{
 	name = "Object Deletion"
 	},
 /turf/unsimulated/floor{
@@ -19795,9 +19689,7 @@
 	},
 /area/virtual_reality)
 "Tf" = (
-/obj/machinery/door/airlock{
-	icon = 'icons/obj/doors/Dooruranium.dmi'
-	},
+/obj/machinery/door/airlock/uranium_appearance,
 /turf/unsimulated/floor{
 	icon_state = "dark"
 	},

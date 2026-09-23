@@ -28,7 +28,6 @@
 /datum/event2/event/legacy/announce()
 	legacy_event.announce()
 
-
 // Legacy events don't tick before they start, so we don't need to do `wait_tick()`.
 
 /datum/event2/event/legacy/should_start()
@@ -39,7 +38,6 @@
 
 /datum/event2/event/legacy/event_tick()
 	legacy_event.tick()
-
 
 /datum/event2/event/legacy/should_end()
 	return tick_count >= legacy_event.endWhen
@@ -52,12 +50,3 @@
 	..()
 
 // Proof of concept.
-/*
-/datum/event2/meta/legacy_gravity
-	name = "gravity (legacy)"
-	reusable = TRUE
-	event_type = /datum/event2/event/legacy/gravity
-
-/datum/event2/event/legacy/gravity
-	legacy_event = /datum/event/gravity
-*/

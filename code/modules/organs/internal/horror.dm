@@ -13,7 +13,7 @@
 	..()
 	if(!owner) return
 	if(is_bruised()) //They heal theirselves.
-		damage -= 1
+		owner?.mend(TREAT_RESTORATION, 1, src)
 	if(owner.life_tick % 60 == 0 && prob(10))
 		to_chat(owner, span_cult("You hear a whispering coming from your torso... " + pick("'You should come back'", "'Come back'", "'We're so empty without you'", "'You could stay forever'", "'Become one with us'")))
 
@@ -31,7 +31,7 @@
 	if(!owner)
 		return
 	if(is_bruised()) //They heal theirselves.
-		damage -= 1
+		owner?.mend(TREAT_RESTORATION, 1, src)
 	//Get our spooky vision
 	if(!owner.has_modifier_of_type(/datum/modifier/redsight))
 		owner.add_modifier(/datum/modifier/redsight)
@@ -55,7 +55,7 @@
 	if(!owner)
 		return
 	if(is_bruised()) //They heal theirselves.
-		damage -= 1
+		owner?.mend(TREAT_RESTORATION, 1, src)
 	if(owner.life_tick % 20 == 0 && prob(5))
 		owner.reagents.add_reagent(REAGENT_ID_NUMBENZYME, 0.2) //Lasts for 20 ticks. Their health hud will randomly go '?'
 	if(owner.life_tick % 60 == 0)
@@ -77,7 +77,7 @@
 	..()
 	if(!owner && !escaping) return
 	if(is_bruised()) //They heal theirselves.
-		damage -= 1
+		owner?.mend(TREAT_RESTORATION, 1, src)
 	if(escaping && entry_vent)
 		if(get_dist(src, entry_vent) <= 1 && !entering_vent)
 			audible_message("[src] slithers into the [entry_vent.name]!", "You hear a wet, squelching sound.")
@@ -121,7 +121,7 @@
 	..()
 	if(!owner) return
 	if(is_bruised()) //They heal theirselves.
-		damage -= 1
+		owner?.mend(TREAT_RESTORATION, 1, src)
 
 	var/datum/reagent/coffee = locate(/datum/reagent/drink/coffee) in owner.reagents.reagent_list
 	if(coffee && owner.ingested)
@@ -143,7 +143,7 @@
 	if(!owner)
 		return
 	if(is_bruised()) //They heal theirselves.
-		damage -= 1
+		owner?.mend(TREAT_RESTORATION, 1, src)
 	var/datum/reagent/toxin/toxins = locate(/datum/reagent/toxin) in owner.reagents.reagent_list
 	if(toxins)
 		for(var/datum/reagent/toxin/R in owner.bloodstr.reagent_list)
@@ -164,7 +164,7 @@
 	if(!owner)
 		return
 	if(is_bruised()) //They heal theirselves.
-		damage -= 1
+		owner?.mend(TREAT_RESTORATION, 1, src)
 	if(owner.life_tick % 60 == 0 && prob(10))
 		to_chat(owner, span_cult("You feel something quivering in your chest, making breathing impossible!"))
 		owner.AdjustLosebreath(10)
@@ -184,7 +184,7 @@
 	if(!owner)
 		return
 	if(is_bruised()) //They heal theirselves.
-		damage -= 1
+		owner?.mend(TREAT_RESTORATION, 1, src)
 	if(owner.vessel.total_volume < owner.vessel.maximum_volume) //Bloodloss
 		owner.bloodstr.add_reagent(REAGENT_ID_SYNTHBLOOD, REM) //Get a little bit of blood added into your blood stream (that then metabolizes into actual blood)
 
@@ -202,7 +202,7 @@
 	if(!owner)
 		return
 	if(is_bruised()) //They heal theirselves.
-		damage -= 1
+		owner?.mend(TREAT_RESTORATION, 1, src)
 	if(owner.life_tick % 60 == 0 && prob(spider_chance))
 		var/turf/T = get_turf(owner)
 		if(T)
@@ -242,7 +242,7 @@
 	if(!owner)
 		return
 	if(is_bruised()) //They heal theirselves.
-		damage -= 1
+		owner?.mend(TREAT_RESTORATION, 1, src)
 	if(owner.life_tick % 10 == 0 && prob(speak_chance))
 		if(prob(5)) //1/20 on a 1/4 chance. 1/80 chance every 10 ticks.
 			owner.say(pick("; Accept our gift.", "; Become one with us.", "; Join our embrace.", "; Come to us.", "; We welcome all that can hear.", "; You can be just like us."))

@@ -239,7 +239,6 @@ ADMIN_VERB(Set_Holiday, R_SERVER, "Set Holiday", "Force-set the Holiday variable
 	if(!B)
 		return
 
-
 	GLOB.Holiday[H] = B
 
 	//update our hub status
@@ -248,7 +247,6 @@ ADMIN_VERB(Set_Holiday, R_SERVER, "Set Holiday", "Force-set the Holiday variable
 
 	message_admins(span_notice("ADMIN: Event: [key_name(user)] force-set Holiday to \"[GLOB.Holiday]\""))
 	log_admin("[key_name(user)] force-set Holiday to \"[GLOB.Holiday]\"")
-
 
 //Run at the  start of a round
 /proc/Holiday_Game_Start()
@@ -276,23 +274,6 @@ ADMIN_VERB(Set_Holiday, R_SERVER, "Set Holiday", "Force-set the Holiday variable
 		return 0
 	//special holidays — GLOB.Holiday is an assoc list keyed by holiday name
 		//if("Easter")		//I'll make this into some helper procs at some point
-/*			var/list/turf/simulated/floor/Floorlist = list()
-			for(var/turf/simulated/floor/T)
-				if(T.contents)
-					Floorlist += T
-			var/turf/simulated/floor/F = Floorlist[rand(1,Floorlist.len)]
-			Floorlist = null
-			var/obj/structure/closet/C = locate(/obj/structure/closet) in F
-			var/obj/item/reagent_containers/food/snacks/chocolateegg/wrapped/Egg
-			if( C )			Egg = new(C)
-			else			Egg = new(F)
-*/
-/*			var/list/obj/containers = list()
-			for(var/obj/item/storage/S in world)
-				if(isNotStationLevel(S.z))	continue
-				containers += S
-
-			message_admins(span_notice("DEBUG: Event: Egg spawned at [Egg.loc] ([Egg.x],[Egg.y],[Egg.z])"))*/
 	if("End of the World" in GLOB.Holiday)
 		if(prob(GLOB.eventchance))	GameOver()
 

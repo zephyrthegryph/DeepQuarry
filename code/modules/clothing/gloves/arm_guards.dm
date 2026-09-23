@@ -64,7 +64,6 @@
 	cold_protection = ARMS
 
 
-// === merged from arm_guards_vr.dm during hard-fork de-suffix (verified no override-order change) ===
 /obj/item/clothing/gloves/arm_guard/combat/imperial
 	name = "imperial gauntlets"
 	desc = "Made of some exotic metal, and crafted by space elves. Elves have delicate hands."

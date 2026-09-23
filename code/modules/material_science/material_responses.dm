@@ -239,10 +239,10 @@ GLOBAL_LIST_EMPTY(material_radiovoltaic_items)
 		target.germ_level = max(0, target.germ_level - material.antimicrobial_activity)
 	if(material.hemostatic_activity >= 50)
 		affected.organ_clamp()
-		for(var/datum/wound/internal_bleeding/wound in affected.wounds)
+		for(var/datum/affliction/wound/internal_bleeding/wound in affected.get_wounds())
 			wound.clamped = TRUE
-	if(material.biocompatibility > 0 && affected.brute_dam + affected.burn_dam > 0)
-		affected.heal_damage(max(1, round(material.biocompatibility / 20)), 0, 0, 1)
+	if(material.biocompatibility > 0 && affected.get_trauma() + affected.get_burn() > 0)
+		target.mend(TREAT_TISSUE_REPAIR, max(1, round(material.biocompatibility / 20)), target_zone)
 
 /datum/component/material_response/proc/absorb_reactive_hit(damage)
 	if(!armor_form || damage <= 0 || stored_reactive_energy <= 0)
@@ -262,6 +262,10 @@ GLOBAL_LIST_EMPTY(material_radiovoltaic_items)
 	if(piezoelectric_coefficient > 0) result += "piezoelectric [round(piezoelectric_coefficient, 0.01)]"
 	if(electrogenic_rate > 0) result += "generates [round(electrogenic_rate, 0.1)] charge/s"
 	if(radiovoltaic_efficiency > 0) result += "radiovoltaic [round(radiovoltaic_efficiency, 0.01)]"
+	if(field_energy_capacity > 0) result += "stores [round(field_energy_capacity)] units of deposited field energy"
+	if(exothermic_heat_rate > 0) result += "releases [round(exothermic_heat_rate)] J/s as heat"
+	if(heat_pump_coefficient > 0) result += "heat-pump coefficient [round(heat_pump_coefficient, 0.01)]"
+	if(thermal_switch_temperature > 0) result += "opens a thermal path above [round(thermal_switch_temperature)] K"
 	if(shape_recovery_rate > 0) result += "recovers above [round(shape_recovery_temperature)] K"
 	if(reactive_energy_capacity > 0) result += "stores [round(reactive_energy_capacity)] J reactive energy"
 	if(catalytic_activity > 0) result += "catalytic surface [round(catalytic_activity)]"

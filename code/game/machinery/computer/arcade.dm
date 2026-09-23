@@ -426,7 +426,7 @@
 							M.hallucination += 30
 						else
 							to_chat(usr, span_danger("Something strikes you from behind! It hurts like hell and feel like a blunt weapon, but nothing is there..."))
-							M.take_organ_damage(25)
+							M.injure(INJURY_BLUNT, 25, null, src)
 					if(ORION_TRAIL_ILLNESS)
 						var/severity = rand(1,3) //pray to RNGesus. PRAY, PIGS
 						if(severity == 1)
@@ -444,7 +444,7 @@
 						if(prob(75))
 							M.Weaken(3)
 							src.visible_message("A sudden gust of powerful wind slams \the [M] into the floor!", "You hear a large fwooshing sound, followed by a bang.")
-							M.take_organ_damage(15)
+							M.injure(INJURY_BLUNT, 15, null, src)
 						else
 							to_chat(M, span_warning("A violent gale blows past you, and you barely manage to stay standing!"))
 					if(ORION_TRAIL_COLLISION) //by far the most damaging event
@@ -528,7 +528,7 @@
 					for(i=0;i<4;i++)
 						var/mob/living/L = usr
 						if(istype(L))
-							L.adjustBruteLoss(25)
+							L.injure(INJURY_BLUNT, 25, null, src)
 						sleep(10)
 			else
 				event = null
@@ -552,14 +552,14 @@
 				src.visible_message("\The [src] states, 'EVERYONE HAS DIED, GAMEOVER.'", "You hear something state, 'EVERYONE HAS DIED, GAMEOVER.'")
 				if(emagged)
 					src.visible_message("\The [src] produces a loud, gunlike sound.")
-					L.adjustBruteLoss(30)
+					L.injure(INJURY_PIERCE, 30, null, src)
 					emagged = 0
 				gameStatus = ORION_STATUS_GAMEOVER
 				event = null
 			else if(emagged)
 				if(usr.name == sheriff)
 					src.visible_message("\The [src] states, 'THE CREW HAS CHOSEN TO KILL [usr]'. A gunshot can be heard coming from \the [src]", "You hear 'THE CREW HAS CHOSEN TO KILL [usr]' followed by a gunshot")
-					L.adjustBruteLoss(30)
+					L.injure(INJURY_PIERCE, 30, null, src)
 			if(event == ORION_TRAIL_MUTINY) //only ends the ORION_TRAIL_MUTINY event, since you can do this action in multiple places
 				event = null
 

@@ -21,7 +21,7 @@
 	var/power_tick = 25
 	var/disabled_icon = "armor"
 	var/active_icon = "armor_broken"
-	var/list/target_components = list("armour")
+	var/list/target_components = list(ROBOT_SLOT_ARMOUR)
 	var/repairing = FALSE
 	flags = NOBLUDGEON
 
@@ -34,26 +34,26 @@
 	var/mob/living/silicon/robot/R = user
 	var/destroyed_components = FALSE
 	var/list/repairable_components = list()
-	for(var/target_component in target_components)
-		var/datum/robot_component/C = R.components[target_component]
+	for(var/target_slot in target_components)
+		var/datum/robot_component/C = R.get_component(target_slot)
 		if(!C)
 			continue
-		if(istype(C.wrapped, /obj/item/broken_device))
+		if(C.installed == ROBOT_PART_DESTROYED)
 			destroyed_components = TRUE
-		else if (C.brute_damage != 0 || C.electronics_damage != 0)
+		else if (C.get_total_damage() > 0)
 			repairable_components += C
 	if(!repairable_components.len && destroyed_components)
-		to_chat(R, span_warning("Repair system initialization failed. Can't repair destroyed [target_components.len == 1 ? "[R.components[target_components[1]]]'s" : "component's"] plating or wiring."))
+		to_chat(R, span_warning("Repair system initialization failed. Can't repair destroyed [target_components.len == 1 ? "[R.get_component(target_components[1])]'s" : "component's"] plating or wiring."))
 		return
 	if(!repairable_components.len)
-		to_chat(R, span_warning("No brute or burn damage detected [target_components.len == 1 ? "in [R.components[target_components[1]]]" : ""]."))
+		to_chat(R, span_warning("No structural or wiring damage detected [target_components.len == 1 ? "in [R.get_component(target_components[1])]" : ""]."))
 		return
 	if(destroyed_components)
 		to_chat(R, span_warning("WARNING! Destroyed modules detected. Those can not be repaired!"))
 	icon_state = active_icon
 	update_icon()
 	repairing = TRUE
-	for(var/datum/robot_component/C in repairable_components)
+	for(var/datum/robot_component/C as anything in repairable_components)
 		to_chat(R, span_notice("Repair system initializated. Repairing plating and wiring of [C]."))
 		src.self_repair(R, C, repair_time, repair_amount)
 	repairing = FALSE
@@ -63,25 +63,24 @@
 /obj/item/self_repair_system/proc/self_repair(mob/living/silicon/robot/R, datum/robot_component/C, tick_delay, heal_per_tick)
 	if(!C || !R.cell)
 		return
-	if(C.brute_damage == 0 && C.electronics_damage == 0)
+	if(C.get_total_damage() <= 0)
 		to_chat(R, span_notice("Repair of [C] completed."))
 		return
-	if(!R.use_direct_power(power_tick, 500)) //We don't want to drain ourselves too far down during exploration
+	if(!R.draw_power(ROBOT_CELL_JOULES(power_tick), src, ROBOT_CELL_JOULES(500))) //We don't want to drain ourselves too far down during exploration
 		to_chat(R, span_warning("Not enough power to initialize the repair system."))
 		return
 	if(do_after(R, tick_delay, target = R))
 		if(!C)
 			return
-		C.brute_damage -= min(C.brute_damage, heal_per_tick)
-		C.electronics_damage -= min(C.electronics_damage, heal_per_tick)
-		R.updatehealth()
+		R.mend(TREAT_PLATING_REPAIR, heal_per_tick, C)
+		R.mend(TREAT_WIRING_REPAIR, heal_per_tick, C)
 		src.self_repair(R, C, tick_delay, heal_per_tick)
 
 // To repair multiple modules
 /obj/item/self_repair_system/advanced
 	name = "self repair system"
 	desc = "A nanite control system to repair damaged components while not moving. Destroyed components can't be restored."
-	target_components = list("actuator", "radio", "power cell", "diagnosis unit", "camera", "comms", "armour")
+	target_components = list(ROBOT_SLOT_ACTUATOR, ROBOT_SLOT_RADIO, ROBOT_SLOT_POWER, ROBOT_SLOT_DIAGNOSIS, ROBOT_SLOT_CAMERA, ROBOT_SLOT_COMMS, ROBOT_SLOT_ARMOUR)
 	power_tick = 10
 	repair_time = 15
 	repair_amount = 3

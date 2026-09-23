@@ -102,7 +102,6 @@
 //	if(flags_1 & HOLOGRAM_1)
 //		.["holographic"] = "It looks like a hologram."
 
-	//SEND_SIGNAL(src, COMSIG_ATOM_EXAMINE_TAGS, user, .)
 
 /obj/item/get_description_info(list/additional_information)
 	var/list/weapon_stats = list()

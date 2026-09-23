@@ -6,8 +6,7 @@
 	icon_state = "precursorhive"
 	icon_living = "precursorhive"
 	attacktext = list("prodded")
-	maxHealth = 3 LASERS_TO_KILL // 150 health
-	health = 3 LASERS_TO_KILL
+	endurance = 3 LASERS_TO_KILL // 150 health
 	movement_cooldown = 4
 	melee_damage_lower = 15
 	melee_damage_upper = 15

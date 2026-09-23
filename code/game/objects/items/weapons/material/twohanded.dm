@@ -290,7 +290,7 @@
 			return
 		else
 			target.stun_effect_act(10 , 50, BP_TORSO, src)
-			target.take_organ_damage(10)
+			target.injure(INJURY_ELECTRIC, 10, BP_TORSO, src)
 			target.Paralyse(20)
 			playsound(src.loc, "sparks", 50, 1)
 			return

@@ -7,7 +7,6 @@
 	starts_with = list(
 		/obj/item/gun/energy/gun = 4)
 
-
 /obj/structure/closet/secure_closet/guncabinet/rifle
 	name = "rifle cabinet"
 	req_one_access = list(ACCESS_EXPLORER,ACCESS_BRIG)
@@ -63,12 +62,6 @@
 		starts_with += /obj/item/storage/backpack
 	else
 		starts_with += /obj/item/storage/backpack/satchel/norm
-	/* VOREStation Removal - Always give both
-	if(prob(75))
-		starts_with += /obj/item/material/knife/tacknife/survival
-	else
-		starts_with += /obj/item/material/knife/machete
-	*/ //VOREStation Removal End
 	return ..()
 
 //SAR Lockers

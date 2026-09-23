@@ -307,9 +307,6 @@
 		if(QDELETED(mover))
 			return FALSE		//We were deleted.
 
-/turf/proc/adjacent_fire_act(turf/simulated/floor/source, temperature, volume)
-	return
-
 /turf/proc/is_plating()
 	return 0
 
@@ -451,33 +448,6 @@
 	LAZYREMOVE(dangerous_objects, O)
 	UNSETEMPTY(dangerous_objects) // This nulls the list var if it's empty.
 //	color = "#00FF00"
-
-/* moved this block to code\game\objects\items\weapons\rcd.dm
-// This is all the way up here since its the common ancestor for things that need to get replaced with a floor when an RCD is used on them.
-// More specialized turfs like walls should instead override this.
-// The code for applying lattices/floor tiles onto lattices could also utilize something similar in the future.
-/turf/rcd_values(mob/living/user, obj/item/rcd/the_rcd, passed_mode)
-	if(density || !can_build_into_floor)
-		return FALSE
-	if(passed_mode == RCD_FLOORWALL)
-		var/obj/structure/lattice/L = locate() in src
-		// A lattice costs one rod to make. A sheet can make two rods, meaning a lattice costs half of a sheet.
-		// A sheet also makes four floor tiles, meaning it costs 1/4th of a sheet to place a floor tile on a lattice.
-		// Therefore it should cost 3/4ths of a sheet if a lattice is not present, or 1/4th of a sheet if it does.
-		return list(
-			RCD_VALUE_MODE = RCD_FLOORWALL,
-			RCD_VALUE_DELAY = 0,
-			RCD_VALUE_COST = L ? RCD_SHEETS_PER_MATTER_UNIT * 0.25 : RCD_SHEETS_PER_MATTER_UNIT * 0.75
-			)
-	return FALSE
-
-/turf/rcd_act(mob/living/user, obj/item/rcd/the_rcd, passed_mode)
-	if(passed_mode == RCD_FLOORWALL)
-		to_chat(user, span_notice("You build a floor."))
-		ChangeTurf(/turf/simulated/floor/airless, preserve_outdoors = TRUE)
-		return TRUE
-	return FALSE
-*/
 
 /turf/occult_act(mob/living/user)
 	to_chat(user, span_cult("You consecrate the floor."))

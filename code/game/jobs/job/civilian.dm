@@ -262,41 +262,6 @@
 /datum/alt_title/ia_investigator
 	title = JOB_ALT_INTERNAL_AFFAIRS_INVESTIGATOR
 
-/*because we have our own in maps/southern_cross/southern_cross_jobs.dm
-//////////////////////////////////
-//		      	Pilot
-//////////////////////////////////
-
-/datum/job/pilot
-	title = JOB_PILOT
-	flag = PILOT
-	departments = list(DEPARTMENT_CIVILIAN)
-	department_flag = CIVILIAN
-	faction = FACTION_STATION
-	total_positions = 2
-	spawn_positions = 2
-	supervisors = "the " + JOB_HEAD_OF_PERSONNEL
-	selection_color = "#515151"
-	economic_modifier = 5
-	minimal_player_age = 3
-	pto_type = PTO_CIVILIAN
-	access = list(ACCESS_EVA, ACCESS_MAINT_TUNNELS, ACCESS_EXTERNAL_AIRLOCKS, ACCESS_PILOT)
-	minimal_access = list(ACCESS_EVA, ACCESS_MAINT_TUNNELS, ACCESS_EXTERNAL_AIRLOCKS, ACCESS_PILOT)
-	outfit_type = /datum/decl/hierarchy/outfit/job/pilot
-	job_description = "A " + JOB_PILOT + " flies the various shuttles in the Virgo-Erigone System."
-	alt_titles = list(JOB_ALT_COPILOT = /datum/alt_title/co_pilot, JOB_ALT_NAVIGATOR = /datum/alt_title/navigator, JOB_ALT_HELMSMAN = /datum/alt_title/helmsman)
-
-/datum/alt_title/co_pilot
-	title = JOB_ALT_COPILOT
-	title_blurb = "A Co-" + JOB_ALT_COPILOT + " is there primarily to assist main pilot as well as learn from them"
-
-/datum/alt_title/navigator
-	title = JOB_ALT_NAVIGATOR
-
-/datum/alt_title/helmsman
-	title = JOB_ALT_HELMSMAN
-*/
-
 /datum/job/pilot/get_request_reasons()
 	return list("Assembling expedition team")
 
@@ -370,11 +335,9 @@
 	title = JOB_ALT_GAME_MASTER
 	title_blurb = "A " + JOB_ALT_GAME_MASTER + " provides recreation for the crew by hosting variety of games. From cards to roleplaying to something more personalized."
 
-// ChompADD
 /datum/alt_title/fitnessinstructor
 	title = JOB_ALT_FITNESS_INSTRUCTOR
 	title_blurb = "A " + JOB_ALT_FITNESS_INSTRUCTOR + " dedicates themselves to improving the health of the crew through physical activity, and boy, do they need the help."
-// ChompADD END
 
 //////////////////////////////////
 //			Entrepreneur

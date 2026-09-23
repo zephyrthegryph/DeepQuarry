@@ -84,27 +84,6 @@
 /obj/mecha/working/hoverpod/can_fall()
 	return (stabilization_enabled && has_charge(step_energy_drain))
 
-/*	// One horrific bastardization of glorious inheritence dead. A billion to go. ~Mech
-//these three procs overriden to play different sounds
-/obj/mecha/working/hoverpod/mechturn(direction)
-	set_dir(direction)
-	//playsound(src,'sound/machines/hiss.ogg',40,1)
-	return 1
-
-/obj/mecha/working/hoverpod/mechstep(direction)
-	var/result = step(src,direction)
-	if(result)
-		playsound(src,'sound/machines/hiss.ogg',40,1)
-	return result
-
-
-/obj/mecha/working/hoverpod/mechsteprand()
-	var/result = step_rand(src)
-	if(result)
-		playsound(src,'sound/machines/hiss.ogg',40,1)
-	return result
-*/
-
 //Hoverpod variants
 /obj/mecha/working/hoverpod/combatpod
 	desc = "An ancient, run-down combat spacecraft." // Ideally would have a seperate icon.
@@ -125,7 +104,6 @@
 	ME.attach(src)
 	ME = new /obj/item/mecha_parts/mecha_equipment/weapon/ballistic/missile_rack/explosive
 	ME.attach(src)
-
 
 /obj/mecha/working/hoverpod/shuttlepod
 	desc = "Who knew a tiny ball could fit three people?"

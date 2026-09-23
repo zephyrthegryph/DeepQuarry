@@ -74,7 +74,8 @@
 /obj/item/glass_extra/straw/afterattack(atom/target, mob/user, proximity_flag, click_parameters)
 	if(ismob(target) && proximity_flag)
 		// Clicked protean blob
-		if(istype(target, /mob/living/simple_mob/protean_blob))
+		var/mob/living/carbon/human/blob_host = target
+		if(ishuman(blob_host) && istype(blob_host.current_form(), /datum/form/protean_blob))
 			sipp_mob(target, user, REAGENT_ID_LIQUIDPROTEAN)
 			return
 		// Clicked humanoid
@@ -91,7 +92,7 @@
 	return ..()
 
 /obj/item/glass_extra/straw/proc/sipp_mob(mob/living/victim, mob/user, reagent_type = REAGENT_ID_NUTRIMENT)
-	if(victim.health <= 0)
+	if(victim.is_critical())
 		to_chat(user, span_warning("There's not enough of [victim] left to sip on!"))
 		return
 
@@ -103,7 +104,7 @@
 	if(victim.vore_taste)
 		to_chat(user, span_infoplain(span_bold("[victim]") + " tastes like... [victim.vore_taste]!"))
 
-	victim.apply_damage(5, used_weapon=src)
+	victim.injure(INJURY_BLUNT, 5, source = src)
 
 	// If you're human you get the reagent
 	if(ishuman(user))

@@ -19,8 +19,8 @@
 
 /obj/item/instrument/piano_synth/headphones/Initialize(mapload)
 	. = ..()
-	RegisterSignal(src, COMSIG_SONG_START, PROC_REF(start_playing))
-	RegisterSignal(src, COMSIG_SONG_END, PROC_REF(stop_playing))
+	RegisterSignal(src, COMSIG_INSTRUMENT_START, PROC_REF(start_playing))
+	RegisterSignal(src, COMSIG_INSTRUMENT_END, PROC_REF(stop_playing))
 
 /**
  * Called by a component signal when our song starts playing.

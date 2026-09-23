@@ -34,8 +34,7 @@
 	status_flags = CANPUSH
 	pass_flags = PASSTABLE
 	minbodytemp = 175
-	maxHealth = 100
-	health = 100
+	endurance = 100
 
 	universal_understand = 1
 
@@ -173,25 +172,25 @@
 			chemicals += 2
 
 		if(!client && !docile)	// Automatic 'AI' to manage damage levels.
-			if(host.getBruteLoss() >= 30 && chemicals > 50)
+			if(host.injury_load(INJURY_CATEGORY_PHYSICAL) >= 30 && chemicals > 50)
 				host.reagents.add_reagent(REAGENT_ID_BICARIDINE, 5)
 				chemicals -= 30
 
-			if(host.getToxLoss() >= 30 && chemicals > 50)
+			if(host.injury_load(INJURY_CATEGORY_TOXIC) >= 30 && chemicals > 50)
 				var/randomchem = pickweight(list(REAGENT_ID_TRAMADOL = 7, REAGENT_ID_ANTITOXIN = 15, REAGENT_ID_FROSTOIL = 3))
 				host.reagents.add_reagent(randomchem, 5)
 				chemicals -= 50
 
-			if(host.getFireLoss() >= 30 && chemicals > 50)
+			if(host.injury_load(INJURY_CATEGORY_THERMAL) >= 30 && chemicals > 50)
 				host.reagents.add_reagent(REAGENT_ID_KELOTANE, 5)
 				host.reagents.add_reagent(REAGENT_ID_LEPORAZINE, 2)
 				chemicals -= 50
 
-			if(host.getOxyLoss() >= 30 && chemicals > 50)
+			if(host.injury_load(INJURY_CATEGORY_ASPHYXIA) >= 30 && chemicals > 50)
 				host.reagents.add_reagent(REAGENT_ID_IRON, 10)
 				chemicals -= 40
 
-			if(host.getBrainLoss() >= 10 && chemicals > 100)
+			if(host.injury_load(INJURY_CATEGORY_NEURAL) >= 10 && chemicals > 100)
 				host.reagents.add_reagent(REAGENT_ID_ALKYSINE, 5)
 				host.reagents.add_reagent(REAGENT_ID_TRAMADOL, 3)
 				chemicals -= 100
@@ -432,11 +431,11 @@
 
 	if(O)
 		to_chat(src, span_alien("We feed on [O]."))
-		O.take_damage(2,silent=prob(10))
+		O.owner?.injure(INJURY_PIERCE, 2, O, src, flags = prob(10) ? INJURE_SILENT : NONE)
 		chemicals = min(max_chemicals, chemicals + 60)
 		host.add_modifier(/datum/modifier/grievous_wounds, 60 SECONDS)
-		adjustBruteLoss(rand(-10,-60))
-		adjustFireLoss(rand(-10,-60))
+		mend(TREAT_TISSUE_REPAIR, rand(10,60))
+		mend(TREAT_BURN_CARE, rand(10,60))
 
 /datum/decl/mob_organ_names/leech
 	hit_zones = list("mouthparts", "central segment", "tail segment")

@@ -169,7 +169,6 @@
 	var/hide_glasses = FALSE
 
 
-// === merged from human_defines_vr.dm during hard-fork de-suffix (verified no override-order change) ===
 /mob/living/carbon/human
 	r_skin = 238 // TO DO: Set defaults for other races.
 	g_skin = 206
@@ -186,7 +185,6 @@
 	var/list/body_writing // assoc list by BP_ key
 
 
-// === merged from human_defines_chomp.dm during hard-fork de-suffix (manually verified) ===
 /mob/living/carbon/human
 	var/gender_change_cooldown = 0 // A cooldown for gender and gender indentify changing procs to make it easy to avoid spam of gender change
 	var/speech_sound_enabled = TRUE

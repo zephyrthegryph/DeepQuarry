@@ -27,7 +27,7 @@
 /datum/nifsoft/medichines_org/life()
 	if((. = ..()))
 		var/mob/living/carbon/human/H = nif.human
-		var/HP_percent = H.health/H.getMaxHealth()
+		var/HP_percent = 2 * H.vitality() - 1 // 1 = well, 0 = the crit line, -1 = dead
 
 		//Mode changing state machine
 		if(HP_percent >= 0.9)
@@ -58,9 +58,9 @@
 
 		//Injured but not critical
 		if(mode)
-			H.adjustToxLoss(-0.1 * mode)
-			H.adjustBruteLoss(-0.1 * mode)
-			H.adjustFireLoss(-0.1 * mode)
+			H.mend(TREAT_ANTITOXIN, 0.1 * mode)
+			H.mend(TREAT_TISSUE_REPAIR, 0.1 * mode)
+			H.mend(TREAT_BURN_CARE, 0.1 * mode)
 
 			if(mode >= 2)
 				nif.use_charge(a_drain) //A second drain if we're in level 2+
@@ -104,7 +104,7 @@
 	if((. = ..()))
 		//We're good!
 		var/mob/living/carbon/human/S = nif.human
-		var/HP_percent = S.health/S.getMaxHealth()
+		var/HP_percent = 2 * S.vitality() - 1 // 1 = well, 0 = the crit line, -1 = dead
 		if(!nif.human.bad_external_organs.len)
 			if(mode || active)
 				nif.notify("User Status: NORMAL. Medichines deactivating.")
@@ -118,8 +118,8 @@
 			activate()
 
 		for(var/obj/item/organ/external/EO as anything in nif.human.bad_external_organs)
-			for(var/datum/wound/W as anything in EO.wounds)
-				if(W.damage <= 30) // Chomp Edit // The current limb break threshold.
+			for(var/datum/affliction/wound/W as anything in EO.get_wounds())
+				if(W.damage <= 30)
 					W.heal_damage(0.1)
 					EO.update_damages()
 					if(EO.update_icon())
@@ -129,7 +129,6 @@
 				else if(mode == 1)
 					mode = 2
 					nif.notify("Medichines unable to repair all damage. Perform manual repairs.",TRUE)
-				// Chomp Edit Start //
 				else if(mode == 2 && HP_percent < -0.4)
 					nif.notify("User Status: CRITICAL. Notifying medical!",TRUE)
 					S << 'sound/voice/nifmed_critical.ogg'
@@ -139,7 +138,6 @@
 						var/obj/item/radio/headset/a = new /obj/item/radio/headset/heads/captain(null)
 						a.autosay("[S.real_name] is in critical condition, located at ([T.x],[T.y],[T.z])!", "[S.real_name]'s NIF", "Medical")
 						qdel(a)
-				// Chomp Edit End //
 
 		/* //Chomp Comment out, using our solution instead of their backport and edit of our solution.
 		if(mode == 2 && HP_percent < -0.4) //lets inform someone who might be able to help us that we got toasted and roasted

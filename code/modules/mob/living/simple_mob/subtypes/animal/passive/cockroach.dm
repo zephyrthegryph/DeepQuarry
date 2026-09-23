@@ -11,8 +11,7 @@
 	icon_dead = "cockroach_rest" //No real 'dead' sprite
 	icon_rest = "cockroach_rest"
 
-	maxHealth = 1
-	health = 1
+	endurance = 1
 	nutrition = 20
 
 	movement_cooldown = -1
@@ -62,14 +61,14 @@
 			if(A.mob_size > MOB_SMALL)
 				if(prob(squish_chance))
 					A.visible_message(span_notice("[A] squashed [src]."), span_notice("You squashed [src]."))
-					adjustBruteLoss(1) //kills a normal cockroach
+					injure(INJURY_BLUNT, 1, source = A) //kills a normal cockroach
 				else
 					visible_message(span_notice("[src] avoids getting crushed."))
 	else
 		if(isstructure(AM))
 			if(prob(squish_chance))
 				AM.visible_message(span_notice("[src] was crushed under [AM]."))
-				adjustBruteLoss(1)
+				injure(INJURY_BLUNT, 1, source = AM)
 			else
 				visible_message(span_notice("[src] avoids getting crushed."))
 

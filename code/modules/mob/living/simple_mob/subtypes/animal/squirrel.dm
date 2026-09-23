@@ -20,8 +20,7 @@
 	color = "#76462c"
 
 	faction = FACTION_ANIMAL
-	maxHealth = 40
-	health = 40
+	endurance = 40
 	movement_cooldown = -1
 	meat_amount = 1
 	meat_type = /obj/item/reagent_containers/food/snacks/meat
@@ -189,8 +188,7 @@
 
 	icon = 'icons/mob/alienanimals_96x64.dmi'
 
-	maxHealth = 200
-	health = 200
+	endurance = 200
 	movement_cooldown = 1
 	meat_amount = 6
 	harm_intent_damage = 1

@@ -2,7 +2,6 @@
 //
 // consists of light fixtures (/obj/machinery/light) and light tube/bulb items (/obj/item/light)
 
-
 // status values shared between lighting fixtures and items
 #define LIGHT_BULB_TEMPERATURE 400 //K - used value for a 60W bulb
 #define LIGHTING_POWER_FACTOR 2		//2W per luminosity * range
@@ -250,7 +249,6 @@ GLOBAL_LIST_EMPTY(light_type_cache)
 
 	var/overlay_color = LIGHT_COLOR_INCANDESCENT_TUBE
 
-
 /obj/machinery/light/flicker
 	auto_flicker = TRUE
 
@@ -305,10 +303,8 @@ GLOBAL_LIST_EMPTY(light_type_cache)
 	light_type = /obj/item/light/tube/large
 	shows_alerts = FALSE
 
-//YW ADDITION START
 /obj/machinery/light/spot/no_nightshift
 	nightshift_allowed = FALSE
-//YW ADDITION END
 
 /obj/machinery/light/spot/flicker
 	auto_flicker = TRUE
@@ -826,7 +822,6 @@ GLOBAL_LIST_EMPTY(light_type_cache)
 	else
 		..()
 
-
 /obj/machinery/light/attack_tk(mob/user)
 	if(status == LIGHT_EMPTY)
 		to_chat(user, "There is no [get_fitting_name()] in this light.")
@@ -878,7 +873,6 @@ GLOBAL_LIST_EMPTY(light_type_cache)
 	update()
 
 //blob effect
-
 
 // timed process
 // use power
@@ -963,7 +957,7 @@ GLOBAL_LIST_EMPTY(light_type_cache)
 
 // called when on fire
 
-/obj/machinery/light/fire_act(datum/gas_mixture/air, exposed_temperature, exposed_volume)
+/obj/machinery/light/fire_act(exposed_temperature, exposed_volume)
 	if(prob(max(0, exposed_temperature - 673)))   //0% at <400C, 100% at >500C
 		broken()
 
@@ -1106,7 +1100,6 @@ GLOBAL_LIST_EMPTY(light_type_cache)
 			icon_state = "[base_state]-broken"
 			desc = "A broken [name]."
 
-
 /obj/item/light/Initialize(mapload, obj/machinery/light/fixture = null)
 	. = ..()
 	if(fixture)
@@ -1120,7 +1113,6 @@ GLOBAL_LIST_EMPTY(light_type_cache)
 		brightness_power = fixture.brightness_power
 		brightness_color = fixture.brightness_color
 	update_icon()
-
 
 // attack bulb/tube with object
 // if a syringe, can inject phoron to make it explode
@@ -1230,7 +1222,6 @@ GLOBAL_LIST_EMPTY(light_type_cache)
 #undef LIGHTING_POWER_FACTOR
 #undef LIGHT_EMERGENCY_POWER_USE
 #undef LIGHT_EMERGENCY_POWER_STEP
-
 
 // I hate the way macros look stupid standing near lights. I don't care how absurd this looks.
 
@@ -1393,7 +1384,6 @@ GLOBAL_LIST_EMPTY(light_type_cache)
 	nightshift_range = 1
 	nightshift_power = 0.25
 
-
 /obj/machinery/light/small/fairylights
 	icon = 'icons/obj/lighting.dmi'
 	icon_state = "fairy_lights1"
@@ -1454,27 +1444,6 @@ GLOBAL_LIST_EMPTY(light_type_cache)
 	construct_type = null
 	overlay_color = LIGHT_COLOR_INCANDESCENT_BULB
 	overlay_above_everything = TRUE
-
-/*
-/obj/machinery/light_construct/bigfloorlamp
-	name = "big floor light fixture frame"
-	desc = "A big floor light fixture under construction."
-	icon = 'icons/obj/lighting32x64.dmi'
-	icon_state = "big_flamp-construct-stage1"
-	stage = 1
-	anchored = FALSE
-	fixture_type = /obj/machinery/light/bigfloorlamp
-	sheets_refunded = 1
-
-/obj/machinery/light_construct/bigfloorlamp/update_icon()
-	switch(stage)
-		if(1)
-			icon_state = "big_flamp-construct-stage1"
-		if(2)
-			icon_state = "big_flamp-construct-stage2"
-		if(3)
-			icon_state = "big_flamp-empty"
-*/
 
 /obj/item/light/bulb/torch
 	brightness_range = 6

@@ -22,12 +22,12 @@
 			var/mob/living/silicon/robot/R = user
 			if(health_type == ROBO_HEAL)
 				to_chat(R, span_blue("Your systems report damaged components mending by themselves!"))
-				R.adjustBruteLoss(rand(-10,-30))
-				R.adjustFireLoss(rand(-10,-30))
+				R.mend(TREAT_PLATING_REPAIR, rand(10,30))
+				R.mend(TREAT_WIRING_REPAIR, rand(10,30))
 			else
 				to_chat(R, span_red("Your systems report severe damage has been inflicted!"))
-				R.adjustBruteLoss(rand(10,50))
-				R.adjustFireLoss(rand(10,50))
+				R.injure(INJURY_BLUNT, rand(10,50))
+				R.injure(INJURY_ELECTRIC, rand(10,50))
 			return 1
 
 /datum/artifact_effect/robohealth/DoEffectAura()
@@ -39,16 +39,14 @@
 				if(world.time - last_message > 200)
 					to_chat(M, span_blue("SYSTEM ALERT: Beneficial energy field detected!"))
 					last_message = world.time
-				M.adjustBruteLoss(-1)
-				M.adjustFireLoss(-1)
-				M.updatehealth()
+				M.mend(TREAT_PLATING_REPAIR, 1)
+				M.mend(TREAT_WIRING_REPAIR, 1)
 			else
 				if(world.time - last_message > 200)
 					to_chat(M, span_red("SYSTEM ALERT: Harmful energy field detected!"))
 					last_message = world.time
-				M.adjustBruteLoss(1)
-				M.adjustFireLoss(1)
-				M.updatehealth()
+				M.injure(INJURY_BLUNT, 1, null, null, 0, null, INJURE_SILENT)
+				M.injure(INJURY_ELECTRIC, 1, null, null, 0, null, INJURE_SILENT)
 		return 1
 
 /datum/artifact_effect/robohealth/DoEffectPulse()
@@ -60,16 +58,14 @@
 				if(world.time - last_message > 200)
 					to_chat(M, span_blue("SYSTEM ALERT: Structural damage has been repaired by energy pulse!"))
 					last_message = world.time
-				M.adjustBruteLoss(-10)
-				M.adjustFireLoss(-10)
-				M.updatehealth()
+				M.mend(TREAT_PLATING_REPAIR, 10)
+				M.mend(TREAT_WIRING_REPAIR, 10)
 			else
 				if(world.time - last_message > 200)
 					to_chat(M, span_red("SYSTEM ALERT: Structural damage inflicted by energy pulse!"))
 					last_message = world.time
-				M.adjustBruteLoss(10)
-				M.adjustFireLoss(10)
-				M.updatehealth()
+				M.injure(INJURY_BLUNT, 10, null, null, 0, null, INJURE_SILENT)
+				M.injure(INJURY_ELECTRIC, 10, null, null, 0, null, INJURE_SILENT)
 		return 1
 
 #undef ROBO_HEAL

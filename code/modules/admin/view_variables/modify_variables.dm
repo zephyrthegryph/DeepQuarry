@@ -13,10 +13,6 @@ GLOBAL_PROTECT(VVpixelmovement)
 		if(process_vars == "Yes")
 			. = string2listofvars(new_var, O)
 
-//do they want you to include subtypes?
-//FALSE = no subtypes, strict exact type pathing (or the type doesn't have subtypes)
-//TRUE = Yes subtypes
-//NULL = User cancelled at the prompt or invalid type given
 /client/proc/vv_subtype_prompt(type)
 	if (!ispath(type))
 		return
@@ -77,7 +73,6 @@ GLOBAL_PROTECT(VVpixelmovement)
 			var_value = replacetext(var_value,"\[[V]]","[O.vars[V]]")
 
 	return var_value
-
 
 /client/proc/mod_list_add(list/L, atom/O, original_name, objectvar)
 	var/list/LL = vv_get_value(restricted_classes = list(VV_RESTORE_DEFAULT))
@@ -172,7 +167,6 @@ GLOBAL_PROTECT(VVpixelmovement)
 
 		index = names[variable]
 
-
 	var/assoc_key
 	if (index == null)
 		return
@@ -257,7 +251,6 @@ GLOBAL_PROTECT(VVpixelmovement)
 			var/list/varsvars = vv_parse_text(O, new_var)
 			for(var/V in varsvars)
 				new_var = replacetext(new_var,"\[[V]]","[O.vars[V]]")
-
 
 	if(is_normal_list)
 		if(assoc)
@@ -374,7 +367,6 @@ GLOBAL_PROTECT(VVpixelmovement)
 			var/list/varsvars = vv_parse_text(O, var_new)
 			for(var/V in varsvars)
 				var_new = replacetext(var_new,"\[[V]]","[O.vars[V]]")
-
 
 	if (O.vv_edit_var(variable, var_new) == FALSE)
 		to_chat(src, "Your edit was rejected by the object.", confidential = TRUE)

@@ -13,7 +13,6 @@
 /datum/artifact_effect/radiate/DoEffectTouch(mob/living/user)
 	if(user)
 		user.apply_effect(radiation_amount * 5,IRRADIATE,0)
-		user.updatehealth()
 		return 1
 
 /datum/artifact_effect/radiate/DoEffectAura()

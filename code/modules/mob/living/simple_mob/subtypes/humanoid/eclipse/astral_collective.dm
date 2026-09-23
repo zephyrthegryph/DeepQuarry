@@ -17,8 +17,7 @@
 	response_disarm = "shoves"
 	response_harm = "hits"
 
-	health = 100
-	maxHealth = 100
+	endurance = 100
 	harm_intent_damage = 0
 	melee_damage_lower = 25
 	melee_damage_upper = 25
@@ -121,41 +120,38 @@
 	expirmentresult()
 
 /datum/modifier/astralcollect_swift
-	slowdown = -0.5
-	evasion = 20
+	factors = alist(BF_SLOWDOWN = -0.5, BF_EVASION = 20)
 
 /datum/modifier/astralcollect_regen
 	mob_overlay_state = "pink_sparkles"
 
 /datum/modifier/astralcollect_regen/tick()
-	holder.adjustBruteLoss(-8)
-	holder.adjustFireLoss(-8)
-	holder.adjustToxLoss(-8)
-	holder.adjustOxyLoss(-8)
-	holder.adjustCloneLoss(-8)
+	holder.mend(TREAT_TISSUE_REPAIR, 8)
+	holder.mend(TREAT_BURN_CARE, 8)
+	holder.mend(TREAT_PLATING_REPAIR, 8)
+	holder.mend(TREAT_WIRING_REPAIR, 8)
+	holder.mend(TREAT_ANTITOXIN, 8)
+	holder.mend(TREAT_OXYGENATION, 8)
+	holder.mend(TREAT_GENETIC_REPAIR, 8)
 
 /datum/modifier/astralcollect_titan
-	max_health_percent = 1.5
-	slowdown = 3
+	factors = alist(BF_SLOWDOWN = 3, BF_ENDURANCE_MULT = 1.5)
 
 /datum/modifier/astralcollect_mistake
 	mob_overlay_state = "poisoned"
-	incoming_damage_percent = 1.35
-	slowdown = 1
-	max_health_percent = 0.75
+	factors = alist(BF_SLOWDOWN = 1, BF_INCOMING_ALL = 1.35, BF_ENDURANCE_MULT = 0.75)
 
 /datum/modifier/astralcollect_solar
 	mob_overlay_state = "red_electricity_constant"
-	incoming_fire_damage_percent = 0.7
+	factors = alist(BF_INCOMING_THERMAL = 0.7)
 
 /datum/modifier/astralcollect_lunar
 	mob_overlay_state = "blue_electricity_constant"
-	incoming_brute_damage_percent = 0.7
+	factors = alist(BF_INCOMING_PHYSICAL = 0.7)
 
 /datum/modifier/aura/astralcollect_church
 	mob_overlay_state = "redspace_aura"
-	incoming_brute_damage_percent = 0.6
-	incoming_fire_damage_percent = 0.6
+	factors = alist(BF_INCOMING_PHYSICAL = 0.6, BF_INCOMING_THERMAL = 0.6)
 
 /mob/living/simple_mob/humanoid/astral_collective/proc/expirmentresult()
 	switch(expirmental)
@@ -180,8 +176,7 @@
 	attack_armor_pen = 20
 	melee_attack_delay = 1.5 SECONDS
 
-	health = 100
-	maxHealth = 100
+	endurance = 100
 
 	special_attack_cooldown = 7 SECONDS
 	special_attack_min_range = 0
@@ -214,8 +209,8 @@
 		if(3)
 			brute_beam(A)
 		if(4)
-			adjustBruteLoss(-40)
-			adjustFireLoss(-40)
+			mend(TREAT_TISSUE_REPAIR, 40)
+			mend(TREAT_BURN_CARE, 40)
 
 //snake creature
 /mob/living/simple_mob/humanoid/astral_collective/ranged/noodle
@@ -228,8 +223,7 @@
 	desc = "A quadrapel creature with expirmental gear."
 	icon_state = "taur"
 	icon_living = "taur"
-	health = 125
-	maxHealth = 125
+	endurance = 125
 
 	special_attack_cooldown = 20 SECONDS
 	reload_max = 15
@@ -242,8 +236,7 @@
 	desc = "A teshari contained within prototype equipment."
 	icon_state = "tesh"
 	icon_living = "tesh"
-	health = 50
-	maxHealth = 50
+	endurance = 50
 
 	special_attack_cooldown = 5 SECONDS
 	reload_max = 2
@@ -266,8 +259,7 @@
 	desc = "A humanoid heavily armoured lizardfolk."
 	icon_state = "breacher"
 	icon_living = "breacher"
-	health = 150
-	maxHealth = 150
+	endurance = 150
 
 	needs_reload = FALSE
 	special_attack_cooldown = 20 SECONDS
@@ -300,8 +292,10 @@
 	for(var/mob/living/L in orange(src, 5))
 		if(IIsAlly(L))
 			Beam(L, icon_state = "g_beam", time = 2.5 SECONDS, maxdistance = INFINITY)
-			L.adjustBruteLoss(-30)
-			L.adjustFireLoss(-30)
+			L.mend(TREAT_TISSUE_REPAIR, 30)
+			L.mend(TREAT_BURN_CARE, 30)
+			L.mend(TREAT_PLATING_REPAIR, 30)
+			L.mend(TREAT_WIRING_REPAIR, 30)
 
 /mob/living/simple_mob/humanoid/astral_collective/proc/burn_beam(atom/target)
 	if(!target)
@@ -353,8 +347,7 @@
 /mob/living/simple_mob/humanoid/astral_collective/body
 	name = "Astral Collective Enforcement"
 	projectiletype = /obj/item/projectile/energy/astral_collective/basic
-	health = 125
-	maxHealth = 125
+	endurance = 125
 
 /mob/living/simple_mob/humanoid/astral_collective/body/dagger
 	projectiletype = /obj/item/projectile/energy/astral_collective/dagger
@@ -393,8 +386,7 @@
 //The mind is the science branch. Their goal is to limit or disable your options
 /mob/living/simple_mob/humanoid/astral_collective/mind
 	name = "Astral Collective Researcher"
-	health = 125
-	maxHealth = 125
+	endurance = 125
 
 /mob/living/simple_mob/humanoid/astral_collective/mind/gravity
 	icon_state = "space"
@@ -438,8 +430,7 @@
 //The soul is the relogious branch. Their goal is to limit your offense
 /mob/living/simple_mob/humanoid/astral_collective/soul
 	name = "Astral Collective Soulspeaker" //I swear if anyone takes this name litterally
-	health = 150
-	maxHealth = 150
+	endurance = 150
 
 /mob/living/simple_mob/humanoid/astral_collective/soul/spear_bearer
 	melee_damage_lower = 27 //25ish with explo voidsuit
@@ -476,8 +467,8 @@
 	icon_living = "clock_sergal"
 
 /mob/living/simple_mob/humanoid/astral_collective/soul/shield_projector/do_special_attack(atom/A)
-	adjustBruteLoss(-200)
-	adjustFireLoss(-200)
+	mend(TREAT_TISSUE_REPAIR, 200)
+	mend(TREAT_BURN_CARE, 200)
 
 /mob/living/simple_mob/humanoid/astral_collective/soul/shield_projector/handle_special()
 	if(stat != DEAD)

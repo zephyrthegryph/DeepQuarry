@@ -85,8 +85,8 @@
 	if(prob_proc == TRUE && prob(20))
 		M.hallucination = max(M.hallucination, 5)
 		prob_proc = FALSE
-	M.adjustBrainLoss(0.25*REM)
-	M.adjustToxLoss(0.25*REM)
+	M.injure(INJURY_NEURAL, 0.25*REM, source = src)
+	M.injure(INJURY_TOXIN, 0.25*REM, source = src)
 	..()
 
 /datum/reagent/drugs/ambrosia_extract
@@ -119,10 +119,8 @@
 	if(alien == IS_SLIME)
 		drug_strength *= 0.15 //~ 1/6
 
-	M.adjustToxLoss(-2)
+	// Its restorative action is the treatment_tags profile.
 	M.druggy = max(M.druggy, drug_strength)
-	M.heal_organ_damage(6)
-	M.adjustOxyLoss(-3)
 	M.AdjustStunned(-1)
 	if(prob(5) && prob_proc == TRUE)
 		M.emote("giggle")
@@ -207,7 +205,7 @@
 	if(M.species.chem_strength_tox > 0) //Closer to 0 means they're more resistant to toxins. Higher than 1 means they're weaker to toxins.
 		drug_strength *= M.species.chem_strength_tox
 	else
-		M.adjustToxLoss(10 * removed) //Given incorporations of other toxins with similiar damage, this seems right.
+		M.injure(INJURY_TOXIN, 10 * removed, source = src) //Given incorporations of other toxins with similiar damage, this seems right.
 
 	M.druggy = max(M.druggy, drug_strength)
 	if(prob(10) && prob_proc == TRUE && isturf(M.loc) && !istype(M.loc, /turf/space) && M.canmove && !M.restrained())
@@ -236,10 +234,10 @@
 		current_addiction  -= 1
 	// withdrawl mechanics
 	if(prob(2))
-		if(!(CE_STABLE in M.chem_effects)) //Without stabilization effects
+		if(!M.factor(BF_STABILIZATION)) //Without stabilization effects
 			if(current_addiction < 90 && prob(10))
 				to_chat(M, span_warning("[pick("You feel miserable.","You feel nauseous.","You get a raging headache.")]"))
-				M.adjustHalLoss(5)
+				M.injure(INJURY_PAIN, 5, source = src)
 			else if(current_addiction <= 20)
 				to_chat(M, span_danger("You feel absolutely awful. You need some [name]. Now."))
 				if(prob(10)) //1 in 10 on top of a 1 in 50, so thats a 1 in 500 chance. Seems low enough to not be disruptive.

@@ -725,6 +725,7 @@
 	producer.owner_name = "Research Producer"
 	producer.account_number = 918273
 	producer.money = 1000
+	producer.department_id = DEPARTMENT_ENGINEERING
 	GLOB.all_money_accounts += producer
 	var/datum/contract_definition/research_definition = SScontracts.definitions["research_export_portfolio"]
 	var/datum/contract/outcome/research_contract = research_definition.create_contract(list("value_target" = 100, "variety_target" = 1))
@@ -776,6 +777,7 @@
 	var/mob/living/carbon/human/customer = new(test_turf)
 	var/obj/item/card/id/customer_id = new(customer)
 	customer_id.associated_account_number = producer.account_number
+	customer.wear_id = customer_id
 	scanner.scan_item_price(prototype, customer)
 	TEST_ASSERT_EQUAL(scanner.transaction_amount, 500, "R&D prototype did not receive a crew-facing Thaler price")
 	var/research_before_crew_sale = research.money
@@ -785,6 +787,10 @@
 	var/datum/service_invoice/research_invoice = SSsupply.service_invoices[length(SSsupply.service_invoices)]
 	TEST_ASSERT_EQUAL(research_invoice.verified_item_count, 1, "the real Research checkout did not retain physical merchandise evidence")
 	TEST_ASSERT_EQUAL(research_invoice.verified_amount, 500, "the real Research checkout recorded the wrong verified sale value")
+	var/datum/component/economic_adoption/adoption = prototype.GetComponent(/datum/component/economic_adoption)
+	TEST_ASSERT_NOTNULL(adoption, "the purchased prototype was not equipped with post-sale adoption tracking")
+	TEST_ASSERT(adoption.record_use(customer), "the purchasing department could not record real operational use of its prototype")
+	TEST_ASSERT(adoption.adopted, "operational prototype use did not publish its adoption fact")
 
 	// Legacy fabrication queues must retain the initiating account just like the
 	// modern protolathe/autolathe paths.
@@ -994,8 +1000,10 @@
 	var/owner_balance_before = owner_account.money
 	var/allowance_before = funding_contract.market_allowance - funding_contract.market_spend
 	var/funded_stock_before = funded_listing.stock
-	var/datum/supply_order/funded_order = SSsupply.request_market_order(funded_listing, collaborator, "Contract allowance integration test", FALSE, FALSE, TRUE)
+	var/datum/supply_order/funded_order = SSsupply.request_market_order(funded_listing, collaborator, "Contract allowance integration test", TRUE, FALSE, TRUE)
 	TEST_ASSERT_NOTNULL(funded_order, "approved collaborator could not use a principal contract allowance")
+	if(!funded_order)
+		return
 	TEST_ASSERT(funded_order.market_contract_funded && funded_order.paid_amount == funded_listing.unit_price, "contract-funded order did not retain its funding provenance")
 	TEST_ASSERT_EQUAL(owner_account.money, owner_balance_before, "contract allowance incorrectly debited the agent's personal balance")
 	TEST_ASSERT_EQUAL(funding_contract.market_allowance - funding_contract.market_spend, allowance_before - funded_listing.unit_price, "contract allowance did not reserve the quoted order value")
@@ -1215,6 +1223,7 @@
 	var/datum/money_account/customer = new
 	customer.account_number = 9876101
 	customer.owner_name = "Storefront Unit Customer"
+	customer.department_id = DEPARTMENT_ENGINEERING
 	customer.money = 500
 	GLOB.all_money_accounts += customer
 	var/datum/mind/customer_mind = new("storefront_unit_customer")
@@ -1257,6 +1266,10 @@
 	TEST_ASSERT_EQUAL(research.money, research_before + 50, "storefront did not credit its configured department")
 	TEST_ASSERT(store_item.loc != store, "storefront retained the purchased physical item")
 	TEST_ASSERT(store_item.economic_sale_invoice_id > 0, "storefront sale did not produce verified invoice evidence")
+	var/datum/component/economic_adoption/adoption = store_item.GetComponent(/datum/component/economic_adoption)
+	TEST_ASSERT_NOTNULL(adoption, "verified Research sale did not attach operational-use evidence to the physical item")
+	TEST_ASSERT(adoption.record_use(customer_mob), "the purchasing department's first real item use did not publish adoption evidence")
+	TEST_ASSERT(adoption.adopted, "operational-use evidence did not become exactly-once after publication")
 
 	research.money = research_before
 	GLOB.all_money_accounts -= customer

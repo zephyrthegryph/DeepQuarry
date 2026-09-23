@@ -1098,7 +1098,6 @@
 			overlays += image('icons/mob/screen_ammo.dmi', src, "h9")
 
 
-// === merged from screen_objects_ch.dm during hard-fork de-suffix (verified no override-order change) ===
 //Invesitgating a runtime made me discover that all simplemobs have HUD on hands set to themselves
 //Which cause this original code to die because the mob does not have a mymob var...
 //So yeah this is why we now check if it is type of mob first...

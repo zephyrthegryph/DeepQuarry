@@ -160,8 +160,9 @@
 			switch(tgui_alert(usr, "Search for item signature or DNA fragment?", "Signature Mode Select", list("Item", "DNA")))
 
 				if("Item")
-					var/datum/objective/steal/itemlist
-					itemlist = new
+					var/static/datum/objective/steal/itemlist
+					if(!itemlist)
+						itemlist = new
 					var/targetitem = tgui_input_list(usr, "Select item to search for.", "Item Mode Select", itemlist.possible_items)
 					if(!targetitem)
 						return

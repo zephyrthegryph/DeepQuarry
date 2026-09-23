@@ -144,6 +144,8 @@
 /obj/machinery/shield_gen/process()
 	if (!anchored && active)
 		toggle()
+	if(!active && !length(field))
+		return PROCESS_KILL
 
 	average_field_strength = max(average_field_strength, 0)
 
@@ -232,6 +234,8 @@
 /obj/machinery/shield_gen/proc/toggle()
 	set background = 1
 	active = !active
+	if(active)
+		START_MACHINE_PROCESSING(src)
 	update_icon()
 	if(active)
 		var/list/covered_turfs = get_shielded_turfs()

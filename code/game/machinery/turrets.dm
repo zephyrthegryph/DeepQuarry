@@ -1,24 +1,3 @@
-/* Combat refactor walkback
-/obj/machinery/porta_turret
-	max_integrity = 40			//turrets maximal health.
-
-/obj/machinery/porta_turret/ai_defense
-	max_integrity = 125
-
-/obj/machinery/porta_turret/alien
-	max_integrity = 125
-
-/obj/machinery/porta_turret/industrial
-	max_integrity = 100
-
-/obj/machinery/porta_turret/industrial/teleport_defense
-	name = "defense turret"
-	desc = "This variant appears to be much more durable, with a rugged outer coating."
-	req_one_access = list(ACCESS_HEADS)
-	installation = /obj/item/gun/energy/gun/burst
-	max_integrity = 125
-
-*/
 /obj/machinery/porta_turret/obelisk
 	name = "defense obelisk"
 	catalogue_data = list(/datum/category_item/catalogue/technology/turret)
@@ -42,7 +21,6 @@
 	power_channel = EQUIP	//drains power from the EQUIPMENT channel
 	req_one_access = list(ACCESS_HEADS)
 	blocks_emissive = EMISSIVE_BLOCK_UNIQUE
-
 
 	max_integrity = 300			//turrets maximal health.
 	auto_repair = TRUE		//if 1 the turret slowly repairs itself.

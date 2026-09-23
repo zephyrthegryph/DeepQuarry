@@ -1,0 +1,8 @@
+author: "BigBadE"
+delete-after: true
+changes:
+  - bugfix: "Research equipment contracts now require purchased equipment to enter real operational use across departments."
+  - bugfix: "Covert agent evidence now affects discovery only when investigators actually uncover it."
+  - qol: "Engineering qualification filing now explains missing, void, or previously filed evidence."
+  - balance: "Blood reserve contracts no longer demand blood-type diversity the current crew may be unable to supply."
+  - bugfix: "Hardened antagonist cleanup for disconnected players."

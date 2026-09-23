@@ -40,20 +40,6 @@ GLOBAL_LIST_EMPTY(jobban_keylist)		//to store the keys & ranks
 			return "Reason Unspecified"
 	return 0
 
-/*
-DEBUG
-/mob/verb/list_all_jobbans()
-	set name = "list all jobbans"
-
-	for(var/s in GLOB.jobban_keylist)
-		to_world(s)
-
-/mob/verb/reload_jobbans()
-	set name = "reload jobbans"
-
-	jobban_loadbanfile()
-*/
-
 /hook/startup/proc/loadJobBans()
 	jobban_loadbanfile()
 	return 1
@@ -104,10 +90,8 @@ DEBUG
 	jobban_remove("[M.ckey] - [rank]")
 	jobban_savebanfile()
 
-
 /proc/ban_unban_log_save(formatted_log)
 	text2file(formatted_log,"data/ban_unban_log.txt")
-
 
 /proc/jobban_remove(X)
 	for (var/i = 1; i <= length(GLOB.jobban_keylist); i++)

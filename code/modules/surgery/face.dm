@@ -54,7 +54,7 @@
 	user.visible_message(span_danger("[user]'s hand slips, slicing [target]'s throat with \the [tool]!") , \
 	span_danger("Your hand slips, slicing [target]'s throat wth \the [tool]!") )
 	user.balloon_alert_visible("slips, slicing [target]'s throat.", "your hand slips, slicing [target]'s throat.")
-	affected.createwound(CUT, 10)
+	target.injure(INJURY_CUT, 10, affected.organ_tag, tool, flags = INJURE_IGNORE_RESISTANCE)
 	target.AdjustLosebreath(10)
 
 ///////////////////////////////////////////////////////////////
@@ -129,7 +129,7 @@
 	user.visible_message(span_danger("[user]'s hand slips, tearing skin on [target]'s face with \the [tool]!"), \
 	span_danger("Your hand slips, tearing skin on [target]'s face with \the [tool]!"))
 	user.balloon_alert_visible("slips, tearing skin on [target]'s face.", "your hand slips, tearing skin on the face.")
-	target.apply_damage(10, BRUTE, affected, sharp = TRUE)
+	target.injure(INJURY_PIERCE, 10, affected.organ_tag, tool)
 
 ///////////////////////////////////////////////////////////////
 // Face Cauterizing Surgery
@@ -174,4 +174,4 @@
 	user.visible_message(span_danger("[user]'s hand slips, leaving a small burn on [target]'s face with \the [tool]!"), \
 	span_danger("Your hand slips, leaving a small burn on [target]'s face with \the [tool]!"))
 	user.balloon_alert_visible("slips, leaving a small burn on the face.", "your hand slips, leaving a small burn on the face.")
-	target.apply_damage(4, BURN, affected)
+	target.injure(INJURY_BURN, 4, affected.organ_tag, tool)

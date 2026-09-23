@@ -262,7 +262,6 @@
 	item_state = "ballet"
 
 
-// === merged from miscellaneous_vr.dm during hard-fork de-suffix (verified no override-order change) ===
 /obj/item/clothing/shoes/griffin
 	name = "griffon boots"
 	desc = "A pair of costume boots fashioned after bird talons."
@@ -367,7 +366,6 @@
 	addblends = "sandals_elegant_a"
 
 
-// === merged from miscellaneous_chomp.dm during hard-fork de-suffix (verified no override-order change) ===
 /obj/item/clothing/shoes/mech_shoes
 	name = "mech shoes"
 	desc = "Thud thud."

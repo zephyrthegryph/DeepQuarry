@@ -9,10 +9,10 @@
 //   blood_loss        — vessel blood fell below a fraction
 //   germ_level        — an organ's germ_level crossed a threshold
 //
-// Each /datum/dq_cause subtype carries its triggering rule data and a
+// Each /datum/affliction_trigger subtype carries its triggering rule data and a
 // `produces` list of (condition_type, chance_or_band) records. The
 // downstream dispatchers (cascades.dm for damage_event, emergent.dm for
-// organ_damage, tick_condition for severity_gate, etc.) walk their
+// organ_damage, tick for severity_gate, etc.) walk their
 // relevant subset and fire spawns. The reference book reads the same
 // data so the in-game documentation always matches behaviour.
 //
@@ -20,7 +20,7 @@
 // up. There is no separate "cascade table" — `cause.produces` is the
 // table.
 
-/datum/dq_cause
+/datum/affliction_trigger
 	/// Display name in the book.
 	var/name = "cause"
 	/// Reference-book category. Used for grouping in the Causes tab:
@@ -39,16 +39,16 @@
 	/// already self-explanatory (severity_gate from another condition)
 	/// the book uses the source condition's description instead.
 	var/description = ""
-	/// list of /datum/dq_cause_outcome describing each condition this
+	/// list of /datum/affliction_trigger_outcome describing each condition this
 	/// cause can spawn. Authored by subtype New().
 	var/list/produces
 
 
-/datum/dq_cause/proc/setup()
+/datum/affliction_trigger/proc/setup()
 	produces = list()
 
 
-/datum/dq_cause/New()
+/datum/affliction_trigger/New()
 	setup()
 
 
@@ -58,13 +58,13 @@
 /// damage % (so one cause can have Moderate / Severe / Critical
 /// outcomes at different organ-damage levels). `tier` is the book's
 /// label for that bucket.
-/datum/dq_cause/proc/declare(condition_type, chance = 100, requires_present = null, requires_absent = null, threshold = null, tier = null)
-	produces += list(new /datum/dq_cause_outcome(condition_type, chance, requires_present, requires_absent, threshold, tier))
+/datum/affliction_trigger/proc/declare(condition_type, chance = 100, requires_present = null, requires_absent = null, threshold = null, tier = null)
+	produces += list(new /datum/affliction_trigger_outcome(condition_type, chance, requires_present, requires_absent, threshold, tier))
 
 
 // --- Outcome record -----------------------------------------------------
 
-/datum/dq_cause_outcome
+/datum/affliction_trigger_outcome
 	var/condition_type
 	/// % chance per qualifying event (damage_event causes) or unused for
 	/// gate-style causes where the condition is either present or not.
@@ -73,7 +73,7 @@
 	var/requires_absent
 	/// Per-outcome organ-damage threshold (overrides the cause's
 	/// threshold_pct, which is now just a default). Used by
-	/// /datum/dq_cause/organ_damage to declare multiple severity tiers
+	/// /datum/affliction_trigger/organ_integrity to declare multiple severity tiers
 	/// in a single cause: Moderate / Severe / Critical, each producing
 	/// a different downstream condition.
 	var/threshold
@@ -82,7 +82,7 @@
 	/// outcomes.
 	var/tier
 
-/datum/dq_cause_outcome/New(condition_type, chance, requires_present, requires_absent, threshold, tier)
+/datum/affliction_trigger_outcome/New(condition_type, chance, requires_present, requires_absent, threshold, tier)
 	src.condition_type = condition_type
 	src.chance = chance
 	src.requires_present = requires_present
@@ -90,13 +90,14 @@
 	src.threshold = threshold
 	src.tier = tier
 
-/datum/dq_cause_outcome/proc/preconditions_met(obj/item/organ/target)
+/// Do this outcome's present/absent requirements hold at `location` on `target_body`?
+/datum/affliction_trigger_outcome/proc/preconditions_met(datum/body/target_body, location)
 	if(requires_present || requires_absent)
-		if(!target)
+		if(!target_body)
 			return FALSE
 		var/has_present = FALSE
 		var/has_absent = FALSE
-		for(var/datum/medical_issue/condition/C in target.medical_issues)
+		for(var/datum/affliction/C as anything in target_body.afflictions_at(location))
 			if(requires_present && istype(C, requires_present))
 				has_present = TRUE
 			if(requires_absent && istype(C, requires_absent))
@@ -115,7 +116,7 @@
 // through dq_dispatch_damage_event() which walks every matching
 // damage_event cause and rolls its outcomes.
 
-/datum/dq_cause/damage_event
+/datum/affliction_trigger/injury
 	category = "Trauma"
 	/// "blunt", "sharp", or "burn". Compared against the wound class
 	/// derived in dispatcher from upstream CUT / PIERCE / BRUISE / BURN.
@@ -128,11 +129,11 @@
 	var/min_damage = 1
 	/// Minimum cumulative damage on the organ post-event to qualify.
 	/// 0 = ignore cumulative. Used for burn shock and similar where
-	/// the threshold is total burn_dam, not per-hit.
+	/// the threshold is total limb burn load (get_burn()), not per-hit.
 	var/min_cumulative_damage = 0
 
 
-/datum/dq_cause/damage_event/proc/matches(wound_type, organ_tag, single_damage, cumulative_damage)
+/datum/affliction_trigger/injury/proc/matches(wound_type, organ_tag, single_damage, cumulative_damage)
 	if(wound_class && wound_type != wound_class)
 		return FALSE
 	if(single_damage < min_damage)
@@ -144,7 +145,7 @@
 			return FALSE
 	return TRUE
 
-/datum/dq_cause/damage_event/proc/_region_matches(organ_tag)
+/datum/affliction_trigger/injury/proc/_region_matches(organ_tag)
 	for(var/region in body_regions)
 		if(region == organ_tag)
 			return TRUE
@@ -155,7 +156,7 @@
 
 // --- Subtype: organ_damage ----------------------------------------------
 
-/datum/dq_cause/organ_damage
+/datum/affliction_trigger/organ_integrity
 	category = "Complication"
 	/// Organ tag to watch (BP_* or O_*).
 	var/organ
@@ -171,7 +172,7 @@
 // gated condition is rolled (or, with requires_absent / requires_present,
 // branched).
 
-/datum/dq_cause/severity_gate
+/datum/affliction_trigger/progression
 	category = "Complication"
 	/// Source condition typepath whose severity drives this gate.
 	var/source_condition
@@ -187,11 +188,11 @@
 // Reserved for future use. Existing blood-loss-driven cascades —
 // hypovolemic_shock from internal_hemorrhage via a severity_gate, and
 // the staged brain_damage / heart_damage conditions driven via
-// organ_damage from oxyloss — don't need a dedicated cause kind yet;
+// organ_damage from hypoxia — don't need a dedicated cause kind yet;
 // this slot is here so a future "patient's blood volume fell below X"
 // rule has a place to live without another framework change.
 
-/datum/dq_cause/blood_loss
+/datum/affliction_trigger/blood_loss
 	category = "Environmental"
 	/// 0..1 fraction lost (e.g. 0.4 = "below 60% of normal").
 	var/loss_fraction
@@ -199,7 +200,7 @@
 
 // --- Subtype: germ_level ------------------------------------------------
 
-/datum/dq_cause/germ_level
+/datum/affliction_trigger/infection
 	category = "Infection"
 	var/organ
 	var/threshold_level
@@ -207,8 +208,8 @@
 
 // --- Subtype: metric_threshold ------------------------------------------
 //
-// Watches a mob-level scalar (radiation, accumulated_rads, toxloss,
-// bodytemperature, cloneloss, ...) and spawns conditions when it crosses
+// Watches a mob-level scalar (radiation, accumulated_rads, toxin injury,
+// bodytemperature, genetic damage, ...) and spawns conditions when it crosses
 // thresholds. Direction matters: most metrics are "above" thresholds
 // (radiation high = bad), some are "below" (bodytemperature low = bad).
 //
@@ -217,21 +218,20 @@
 // have Mild / Moderate / Severe outcomes at different rad levels.
 //
 // The condition spawns on a designated "host" organ since our
-// medical_issues live on organs. Pick the organ most clinically tied
+// Afflictions sit on organs. Pick the organ most clinically tied
 // to the metric (heart for radiation, liver for toxins, torso for
-// temperature, brain for cloneloss).
+// temperature, brain for genetic damage).
 
-/datum/dq_cause/metric_threshold
+/datum/affliction_trigger/metric
 	category = "Environmental"
 	/// What to read each tick. Implemented in
 	/// /mob/living/carbon/human/proc/dq_get_metric().
 	///   "radiation"        — acute rad value
 	///   "accumulated_rads" — chronic accumulated dose
-	///   "toxloss"          — current toxin damage
-	///   "oxyloss"          — current oxygen-debt damage
 	///   "temp_above"       — bodytemperature above normal (kelvin)
 	///   "temp_below"       — drop below normal (positive number)
-	///   "cloneloss"        — clone damage
+	/// (Oxy/tox/clone are not metrics any more — they ARE the severity of
+	/// tissue_hypoxia / toxic_poisoning / genetic_damage; see body/plans/humanoid.dm.)
 	var/metric
 	/// Organ tag this condition mounts on.
 	var/host_organ
@@ -241,57 +241,57 @@
 
 // --- Registry -----------------------------------------------------------
 
-GLOBAL_LIST_EMPTY(dq_causes_all)
-GLOBAL_LIST_EMPTY(dq_causes_by_kind)
-GLOBAL_PROTECT(dq_causes_all)
-GLOBAL_PROTECT(dq_causes_by_kind)
+GLOBAL_LIST_EMPTY(affliction_triggers_all)
+GLOBAL_LIST_EMPTY(affliction_triggers_by_kind)
+GLOBAL_PROTECT(affliction_triggers_all)
+GLOBAL_PROTECT(affliction_triggers_by_kind)
 
-/proc/dq_causes_registry()
-	if(length(GLOB.dq_causes_all))
-		return GLOB.dq_causes_all
-	for(var/T in subtypesof(/datum/dq_cause))
+/proc/affliction_triggers_registry()
+	if(length(GLOB.affliction_triggers_all))
+		return GLOB.affliction_triggers_all
+	for(var/T in subtypesof(/datum/affliction_trigger))
 		// Abstract intermediate types (the five "kind" parent types)
 		// have no authored produces; skip those naturally.
-		var/datum/dq_cause/c = new T()
+		var/datum/affliction_trigger/c = new T()
 		if(!length(c.produces))
 			qdel(c)
 			continue
-		GLOB.dq_causes_all += c
+		GLOB.affliction_triggers_all += c
 		// Index by the cause's PARENT type (the kind), not its own
-		// concrete type. Callers look up "/datum/dq_cause/damage_event"
+		// concrete type. Callers look up "/datum/affliction_trigger/injury"
 		// and expect every authored damage_event subtype.
 		var/kind = "[parent_type_of(T)]"
-		LAZYINITLIST(GLOB.dq_causes_by_kind[kind])
-		GLOB.dq_causes_by_kind[kind] += c
-	return GLOB.dq_causes_all
+		LAZYINITLIST(GLOB.affliction_triggers_by_kind[kind])
+		GLOB.affliction_triggers_by_kind[kind] += c
+	return GLOB.affliction_triggers_all
 
 /// Walk the type tree until we hit one of the named cause "kinds"
 /// (damage_event, organ_damage, severity_gate, blood_loss, germ_level).
-/// Falls back to /datum/dq_cause if none matched.
+/// Falls back to /datum/affliction_trigger if none matched.
 /proc/parent_type_of(T)
 	var/list/kinds = list(
-		/datum/dq_cause/damage_event,
-		/datum/dq_cause/organ_damage,
-		/datum/dq_cause/severity_gate,
-		/datum/dq_cause/blood_loss,
-		/datum/dq_cause/germ_level,
-		/datum/dq_cause/metric_threshold,
+		/datum/affliction_trigger/injury,
+		/datum/affliction_trigger/organ_integrity,
+		/datum/affliction_trigger/progression,
+		/datum/affliction_trigger/blood_loss,
+		/datum/affliction_trigger/infection,
+		/datum/affliction_trigger/metric,
 	)
 	for(var/K in kinds)
 		if(ispath(T, K))
 			return K
-	return /datum/dq_cause
+	return /datum/affliction_trigger
 
-/proc/dq_causes_of_kind(typepath_str)
-	dq_causes_registry()
-	return GLOB.dq_causes_by_kind[typepath_str] || list()
+/proc/affliction_triggers_of_kind(typepath_str)
+	affliction_triggers_registry()
+	return GLOB.affliction_triggers_by_kind[typepath_str] || list()
 
 /// All causes whose produces table mentions `condition_type`. Used by
 /// the book's "Caused by" lookup.
-/proc/dq_causes_producing(condition_type)
+/proc/affliction_triggers_producing(condition_type)
 	var/list/out = list()
-	for(var/datum/dq_cause/c as anything in dq_causes_registry())
-		for(var/datum/dq_cause_outcome/o as anything in c.produces)
+	for(var/datum/affliction_trigger/c as anything in affliction_triggers_registry())
+		for(var/datum/affliction_trigger_outcome/o as anything in c.produces)
 			if(o.condition_type == condition_type)
 				out += c
 				break
@@ -302,9 +302,9 @@ GLOBAL_PROTECT(dq_causes_by_kind)
 /// causes (organ_damage gates aren't owned by a condition, even when a
 /// condition is what damages the organ). The book combines this with
 /// organ-damage targets to give a complete forward-link picture.
-/proc/dq_severity_gates_from(condition_type)
+/proc/affliction_progression_gates_from(condition_type)
 	var/list/out = list()
-	for(var/datum/dq_cause/severity_gate/c as anything in dq_causes_of_kind("/datum/dq_cause/severity_gate"))
+	for(var/datum/affliction_trigger/progression/c as anything in affliction_triggers_of_kind("/datum/affliction_trigger/progression"))
 		if(c.source_condition == condition_type)
 			out += c
 	return out

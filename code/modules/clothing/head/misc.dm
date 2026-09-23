@@ -564,7 +564,6 @@
 	icon_state = "sweet_bow"
 
 
-// === merged from misc_ch.dm during hard-fork de-suffix (verified no override-order change) ===
 /obj/item/clothing/head/wiggler
 	icon_override = 'icons/vore/misc_ch.dmi'
 	icon = 'icons/vore/misc_ch.dmi'//lets use our own DMI with blackjack and deers
@@ -668,7 +667,6 @@
 	item_state = "tigerpelt_pink"
 
 
-// === merged from misc_chomp.dm during hard-fork de-suffix (verified no override-order change) ===
 //Angel Halo
 /obj/item/clothing/head/angel_halo
 	name = "Angel halo"
@@ -679,7 +677,6 @@
 //Angel Halo End
 
 
-// === merged from misc_vr.dm during hard-fork de-suffix (chain-verified, vr->ch order preserved) ===
 /obj/item/clothing/head/centhat/customs
 	desc = "A formal hat for SolGov Customs Officers." // SolGov
 

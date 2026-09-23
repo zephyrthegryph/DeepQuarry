@@ -63,14 +63,14 @@
 	if(istype(target) && target.should_have_organ(O_HEART))
 		affected.status |= ORGAN_BLEEDING
 
-	affected.createwound(CUT, 1)
+	target.injure(INJURY_CUT, 1, affected.organ_tag, tool, flags = INJURE_IGNORE_RESISTANCE)
 
 /datum/surgery_step/generic/cut_open/fail_step(mob/living/user, mob/living/carbon/human/target, target_zone, obj/item/tool)
 	var/obj/item/organ/external/affected = target.get_organ(target_zone)
 	user.visible_message(span_danger("[user]'s hand slips, slicing open [target]'s [affected.name] in the wrong place with \the [tool]!"), \
 	span_danger("Your hand slips, slicing open [target]'s [affected.name] in the wrong place with \the [tool]!"))
 	user.balloon_alert_visible("slips, slicing open \the [affected.name]", "your hand slips, slicing open [affected.name] in the wrong place.")
-	affected.createwound(CUT, 10)
+	target.injure(INJURY_CUT, 10, affected.organ_tag, tool, flags = INJURE_IGNORE_RESISTANCE)
 
 ///////////////////////////////////////////////////////////////
 // Laser Scalpel Surgery
@@ -107,7 +107,7 @@
 	var/obj/item/organ/external/affected = target.get_organ(target_zone)
 	affected.open = INCISION_MADE
 
-	affected.createwound(CUT, 1)
+	target.injure(INJURY_CUT, 1, affected.organ_tag, tool, flags = INJURE_IGNORE_RESISTANCE)
 	var/clamp_chance = 0
 	if(istype(tool,/obj/item/surgical/scalpel))
 		var/obj/item/surgical/scalpel/T = tool
@@ -127,8 +127,8 @@
 	user.visible_message(span_danger("[user]'s hand slips as the blade sputters, searing a long gash in [target]'s [affected.name] with \the [tool]!"), \
 	span_danger("Your hand slips as the blade sputters, searing a long gash in [target]'s [affected.name] with \the [tool]!"))
 	user.balloon_alert_visible("slips, searing a long gash on \the [affected.name]", "your hand slips, searing a long gash on [affected.name].")
-	affected.createwound(CUT, 7.5)
-	affected.createwound(BURN, 7.5)
+	target.injure(INJURY_CUT, 7.5, affected.organ_tag, tool, flags = INJURE_IGNORE_RESISTANCE)
+	target.injure(INJURY_BURN, 7.5, affected.organ_tag, tool, flags = INJURE_IGNORE_RESISTANCE)
 
 ///////////////////////////////////////////////////////////////
 // Incision Management Surgery
@@ -169,7 +169,7 @@
 	if(istype(target) && target.should_have_organ(O_HEART))
 		affected.status |= ORGAN_BLEEDING
 
-	affected.createwound(CUT, 1)
+	target.injure(INJURY_CUT, 1, affected.organ_tag, tool, flags = INJURE_IGNORE_RESISTANCE)
 	affected.organ_clamp()
 	affected.open = FLESH_RETRACTED
 
@@ -178,8 +178,8 @@
 	user.visible_message(span_danger("[user]'s hand jolts as the system sparks, ripping a gruesome hole in [target]'s [affected.name] with \the [tool]!"), \
 	span_danger("Your hand jolts as the system sparks, ripping a gruesome hole in [target]'s [affected.name] with \the [tool]!"))
 	user.balloon_alert_visible("hand slips as the system sparks, ripping a gruesome hole in [target]'s [affected.name]", "your hand jolts as the system sparks, ripping a gruesome hole in \the [affected.name]")
-	affected.createwound(CUT, 20)
-	affected.createwound(BURN, 15)
+	target.injure(INJURY_CUT, 20, affected.organ_tag, tool, flags = INJURE_IGNORE_RESISTANCE)
+	target.injure(INJURY_BURN, 15, affected.organ_tag, tool, flags = INJURE_IGNORE_RESISTANCE)
 
 ///////////////////////////////////////////////////////////////
 // Hemostat Surgery
@@ -202,7 +202,7 @@
 		if(!affected)
 			return FALSE
 		var/internally_bleeding = FALSE
-		for(var/datum/wound/internal_bleeding/W in affected.wounds)
+		for(var/datum/affliction/wound/internal_bleeding/W in affected.get_wounds())
 			if(W.clamped)
 				continue
 			internally_bleeding = TRUE
@@ -223,7 +223,7 @@
 	span_notice("You clamp bleeders in [target]'s [affected.name] with \the [tool]."))
 	user.balloon_alert_visible("clamps bleeders", "clamped bleeders")
 	affected.organ_clamp()
-	for(var/datum/wound/internal_bleeding/W in affected.wounds) //Normal organ clamp does NOT clamp internal bleeds. Using hemostats directly does.
+	for(var/datum/affliction/wound/internal_bleeding/W in affected.get_wounds()) //Normal organ clamp does NOT clamp internal bleeds. Using hemostats directly does.
 		W.clamped = TRUE
 
 /datum/surgery_step/generic/clamp_bleeders/fail_step(mob/living/user, mob/living/carbon/human/target, target_zone, obj/item/tool)
@@ -231,7 +231,7 @@
 	user.visible_message(span_danger("[user]'s hand slips, tearing blood vessels and causing massive bleeding in [target]'s [affected.name] with \the [tool]!"),	\
 	span_danger("Your hand slips, tearing blood vessels and causing massive bleeding in [target]'s [affected.name] with \the [tool]!"),)
 	user.balloon_alert_visible("slips, tearing blood vessels and causing massive bleedings in [target]'s [affected.name]", "your hand slips, tearing blood vessels and causing massive bleedings in \the [affected.name]")
-	affected.createwound(CUT, 10)
+	target.injure(INJURY_CUT, 10, affected.organ_tag, tool, flags = INJURE_IGNORE_RESISTANCE)
 
 ///////////////////////////////////////////////////////////////
 // Retractor Surgery
@@ -312,7 +312,7 @@
 		self_msgBall = "your hand slips, damaging several organs in the torso."
 	user.visible_message(msg, self_msg)
 	user.balloon_alert_visible(msgBall, self_msgBall)
-	target.apply_damage(12, BRUTE, affected, sharp = TRUE)
+	target.injure(INJURY_PIERCE, 12, affected.organ_tag, tool)
 
 ///////////////////////////////////////////////////////////////
 // Cauterize Surgery
@@ -357,7 +357,7 @@
 	user.visible_message(span_danger("[user]'s hand slips, leaving a small burn on [target]'s [affected.name] with \the [tool]!"), \
 	span_danger("Your hand slips, leaving a small burn on [target]'s [affected.name] with \the [tool]!"))
 	user.balloon_alert_visible("slips, leaving a small burn on [target]'s [affected.name]", "your hand slips, leaving a small burn on \the [affected.name]")
-	target.apply_damage(3, BURN, affected)
+	target.injure(INJURY_BURN, 3, affected.organ_tag, tool)
 
 ///////////////////////////////////////////////////////////////
 // Amputation Surgery
@@ -405,5 +405,5 @@
 	user.visible_message(span_danger("[user]'s hand slips, sawing through the bone in [target]'s [affected.name] with \the [tool]!"), \
 	span_danger("Your hand slips, sawwing through the bone in [target]'s [affected.name] with \the [tool]!"))
 	user.balloon_alert_visible("slips, sawing through the bone in [target]'s [affected.name]", "your hand slips, sawng through the bone in \the [affected.name]")
-	affected.createwound(CUT, 30)
+	target.injure(INJURY_CUT, 30, affected.organ_tag, tool, flags = INJURE_IGNORE_RESISTANCE)
 	affected.fracture()

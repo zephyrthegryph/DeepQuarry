@@ -219,4 +219,4 @@
 				selfdamagezone=pick(BP_L_ARM, BP_L_HAND)
 			else
 				selfdamagezone=pick(BP_R_ARM, BP_R_HAND)
-			user.apply_damage(selfdamage, BRUTE, selfdamagezone, 0, FALSE, FALSE)
+			user.injure(INJURY_BLUNT, selfdamage, selfdamagezone, target)

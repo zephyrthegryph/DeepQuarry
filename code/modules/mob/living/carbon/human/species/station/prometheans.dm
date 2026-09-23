@@ -33,7 +33,7 @@
 	secondary_langs = list(LANGUAGE_PROMETHEAN, LANGUAGE_SOL_COMMON)	// For some reason, having this as their species language does not allow it to be chosen.
 	assisted_langs = list(LANGUAGE_ROOTGLOBAL, LANGUAGE_VOX)	// Prometheans are weird, let's just assume they can use basically any language.
 
-	species_component = list(/datum/component/radiation_effects/promethean)
+	species_component = list(/datum/component/radiation_effects/promethean, /datum/component/forms/promethean, /datum/component/promethean_biology)
 
 	blood_name = "gelatinous ooze"
 	blood_reagents = REAGENT_ID_SLIMEJELLY
@@ -52,9 +52,9 @@
 
 	virus_immune =	1
 	blood_volume =	560
-	brute_mod =		0.7  //chompedit Old values of .75 brute and 2 burn were imbalanced.
-	burn_mod =		1.6  //chompedit
-	oxy_mod =		0
+	injury_mod_groups = list("physical" = 0.7, "thermal" = 1.6, "asphyxia" = 0)
+	//chompedit Old values of .75 brute and 2 burn were imbalanced. (brute)
+	//chompedit (burn)
 	flash_mod =		0.5 //No centralized, lensed eyes.
 	item_slowdown_mod = 1.33
 	throwforce_absorb_threshold = 10
@@ -125,7 +125,8 @@
 		SPECIES_RAPALA, SPECIES_MONKEY_SKRELL, SPECIES_MONKEY_UNATHI, SPECIES_MONKEY_TAJ, SPECIES_MONKEY_AKULA,
 		SPECIES_MONKEY_VULPKANIN, SPECIES_MONKEY_SERGAL, SPECIES_MONKEY_NEVREAN)
 
-	var/heal_rate = 0.5 // Temp. Regen per tick.
+	/// Regeneration per tick, per mechanism, while still, warm and pressurised.
+	var/heal_rate = 0.5
 
 	default_emotes = list(
 		/datum/decl/emote/audible/squish,
@@ -149,7 +150,7 @@
 							/obj/item/storage/toolbox/lunchbox/syndicate))	//Only pick the empty types
 	var/obj/item/storage/toolbox/lunchbox/L = new boxtype(get_turf(H))
 	new /obj/item/reagent_containers/food/snacks/candy/proteinbar(L)
-	new /obj/item/tool/prybar/red(L) // 
+	new /obj/item/tool/prybar/red(L)
 	if(H.backbag == 1)
 		H.equip_to_slot_or_del(L, slot_r_hand)
 	else
@@ -182,166 +183,8 @@
 
 /datum/species/shapeshifter/promethean/handle_death(mob/living/carbon/human/H)
 	if(!H)
-		return // Iono!
-
-	if(H.temporary_form)
-		H.forceMove(H.temporary_form.drop_location())
-		H.ckey = H.temporary_form.ckey
-		QDEL_NULL(H.temporary_form)
-
-	spawn(1)
-		if(H)
-			H.gib()
-
-/datum/species/shapeshifter/promethean/handle_environment_special(mob/living/carbon/human/H)
-	var/healing = TRUE	// Switches to FALSE if healing is not possible at all.
-	var/regen_brute = TRUE
-	var/regen_burn = TRUE
-	var/regen_tox = TRUE
-	var/regen_oxy = TRUE
-	// Yawn Wider Changes Start re-adds prom water damage
-	if(H.fire_stacks < 0 && H.get_water_protection() <= 0.5)	// If over half your body is soaked, you're melting.
-		H.adjustToxLoss(max(0,(3 - (3 * H.get_water_protection())) * heal_rate))	// Tripled because 0.5 is miniscule, and fire_stacks are capped in both directions.
-		healing = FALSE
-	//Yawn Wider Changes End
-
-	//Prometheans automatically clean every surface they're in contact with every life tick - this includes the floor without shoes.
-	//They gain nutrition from doing this.
-	var/turf/T = get_turf(H)
-	if(istype(T))
-		if(!(H.shoes || (H.wear_suit && (H.wear_suit.body_parts_covered & FEET))))
-			for(var/obj/O in T)
-				if(O.wash(CLEAN_SCRUB))
-					H.adjust_nutrition(rand(5, 15))
-			if (istype(T, /turf/simulated))
-				var/turf/simulated/S = T
-				if(T.wash(CLEAN_SCRUB))
-					H.adjust_nutrition(rand(10, 20))
-				if(S.dirt > 50)
-					S.dirt = 0
-					H.adjust_nutrition(rand(10, 20))
-		if(H.feet_blood_color || LAZYLEN(H.feet_blood_DNA))
-			LAZYCLEARLIST(H.feet_blood_DNA)
-			H.feet_blood_DNA = null
-			H.feet_blood_color = null
-			H.adjust_nutrition(rand(3, 10))
-		if(H.bloody_hands)
-			H.forensic_data?.clear_blooddna()
-			H.hand_blood_color = null
-			H.bloody_hands = 0
-			H.adjust_nutrition(rand(3, 10))
-		if(!(H.gloves || (H.wear_suit && (H.wear_suit.body_parts_covered & HANDS))))
-			if(H.r_hand)
-				if(H.r_hand.wash(CLEAN_SCRUB))
-					H.adjust_nutrition(rand(5, 15))
-			if(H.l_hand)
-				if(H.l_hand.wash(CLEAN_SCRUB))
-					H.adjust_nutrition(rand(5, 15))
-/*
-		if(H.head)
-			if(H.head.clean_blood())
-				H.update_inv_head(0)
-				H.adjust_nutrition(rand(5, 15))
-		if(H.wear_suit)
-			if(H.wear_suit.clean_blood())
-				H.update_inv_wear_suit(0)
-				H.adjust_nutrition(rand(5, 15))
-		if(H.w_uniform)
-			if(H.w_uniform.clean_blood())
-				H.update_inv_w_uniform(0)
-				H.adjust_nutrition(rand(5, 15))
-*/
-		// Prometheans themselves aren't very safe places for other biota.
-		H.germ_level = 0
-		H.update_bloodied()
-		//End cleaning code.
-
-		var/datum/gas_mixture/environment = T.return_air()
-		var/pressure = environment.return_pressure()
-		var/affecting_pressure = H.calculate_affecting_pressure(pressure)
-		if(affecting_pressure <= hazard_low_pressure) // Dangerous low pressure stops the regeneration of physical wounds. Body is focusing on keeping them intact rather than sealing.
-			regen_brute = FALSE
-			regen_burn = FALSE
-
-	if(world.time < H.l_move_time + 1 MINUTE)	// Need to stay still for a minute, before passive healing will activate.
-		healing = FALSE
-
-	if(H.bodytemperature > heat_level_1 || H.bodytemperature < cold_level_1)	// If you're too hot or cold, you can't heal.
-		healing = FALSE
-
-	// Heal remaining damage.
-	if(healing)
-		if(H.getBruteLoss() || H.getFireLoss() || H.getOxyLoss() || H.getToxLoss())
-			var/nutrition_cost = 0		// The total amount of nutrition drained every tick, when healing
-			var/nutrition_debt = 0		// Holder variable used to store previous damage values prior to healing for use in the nutrition_cost equation.
-			var/starve_mod = 1			// Lowering this lowers healing and increases agony multiplicatively.
-
-			var/strain_negation = 0		// How much agony is being prevented by the
-
-			if(H.nutrition <= 150)		// This is when the icon goes red
-				starve_mod = 0.75
-				if(H.nutrition <= 50)	// Severe starvation. Damage repaired beyond this point will cause a stunlock if untreated.
-					starve_mod = 0.5
-
-			var/to_pay = 0
-			if(regen_brute)
-				nutrition_debt = H.getBruteLoss()
-				H.adjustBruteLoss(-heal_rate * starve_mod)
-
-				to_pay = nutrition_debt - H.getBruteLoss()
-
-				nutrition_cost += to_pay
-
-				var/obj/item/organ/internal/regennetwork/BrReg = H.internal_organs_by_name[O_REGBRUTE]
-
-				if(BrReg)
-					strain_negation += to_pay * max(0, (1 - BrReg.get_strain_percent()))
-
-			if(regen_burn)
-				nutrition_debt = H.getFireLoss()
-				H.adjustFireLoss(-heal_rate * starve_mod)
-
-				to_pay = nutrition_debt - H.getFireLoss()
-
-				nutrition_cost += to_pay
-
-				var/obj/item/organ/internal/regennetwork/BuReg = H.internal_organs_by_name[O_REGBURN]
-
-				if(BuReg)
-					strain_negation += to_pay * max(0, (1 - BuReg.get_strain_percent()))
-
-			if(regen_oxy)
-				nutrition_debt = H.getOxyLoss()
-				H.adjustOxyLoss(-heal_rate * starve_mod)
-
-				to_pay = nutrition_debt - H.getOxyLoss()
-
-				nutrition_cost += to_pay
-
-				var/obj/item/organ/internal/regennetwork/OxReg = H.internal_organs_by_name[O_REGOXY]
-
-				if(OxReg)
-					strain_negation += to_pay * max(0, (1 - OxReg.get_strain_percent()))
-
-			if(regen_tox)
-				nutrition_debt = H.getToxLoss()
-				H.adjustToxLoss(-heal_rate * starve_mod)
-
-				to_pay = nutrition_debt - H.getToxLoss()
-
-				nutrition_cost += to_pay
-
-				var/obj/item/organ/internal/regennetwork/ToxReg = H.internal_organs_by_name[O_REGTOX]
-
-				if(ToxReg)
-					strain_negation += to_pay * max(0, (1 - ToxReg.get_strain_percent()))
-
-			H.adjust_nutrition(-(3 * nutrition_cost)) // Costs Nutrition when damage is being repaired, corresponding to the amount of damage being repaired.
-
-			var/agony_to_apply = ((1 / starve_mod) * (nutrition_cost - strain_negation)) //Regenerating damage causes minor pain over time, if the organs responsible are nonexistant or too high on strain. Small injures will be no issue, large ones will cause problems.
-
-			if((starve_mod <= 0.5 && (H.getHalLoss() + agony_to_apply) <= 90) || ((H.getHalLoss() + agony_to_apply) <= 70))	// Will max out at applying halloss at 70, unless they are starving; starvation regeneration will bring them up to a maximum of 120, the same amount of agony a human receives from three taser hits.
-				H.apply_damage(agony_to_apply, HALLOSS)
+		return
+	addtimer(CALLBACK(H, TYPE_PROC_REF(/mob, gib)), 1)
 
 /datum/species/shapeshifter/promethean/get_blood_colour(mob/living/carbon/human/H)
 	return (H ? rgb(H.r_skin, H.g_skin, H.b_skin) : ..())
@@ -374,33 +217,188 @@
 		if(35 to INFINITY)
 			return span_danger("[t_she] radiating massive levels of electrical activity!")
 
-/mob/living/carbon/human/proc/prommie_blobform()
-	set name = "Toggle Blobform"
-	set desc = "Switch between amorphous and humanoid forms."
-	set category = "Abilities.Promethean"
-	set hidden = FALSE
-
-	var/atom/movable/to_locate = temporary_form || src
-	if(!isturf(to_locate.loc))
-		to_chat(to_locate,span_warning("You need more space to perform this action!"))
-		return
-	/*
-	//Blob form
-	if(temporary_form)
-		if(temporary_form.stat)
-			to_chat(temporary_form,span_warning("You can only do this while not stunned."))
-		else
-			prommie_outofblob(temporary_form)
-	*/
-	//Human form
-	else if(stat || paralysis || stunned || weakened || restrained())
-		to_chat(src,span_warning("You can only do this while not stunned."))
-		return
-	else
-		prommie_intoblob()
-
 /mob/living/carbon/human/proc/innate_shapeshifting()
 	set name = "Transform Appearance"
 	set category = "Abilities.Superpower"
 	var/datum/tgui_module/appearance_changer/innate/I = new(src, src)
 	I.tgui_interact(src)
+
+// --- Promethean biology --------------------------------------------------------------
+// Everything a promethean body does on its own, driven by events instead of a
+// per-tick scan: stillness is a timer reset on Moved, cleaning happens on turf
+// entry and on equip, water is a dissolution affliction, and regeneration runs
+// only while still, warm, pressurised and dry.
+
+#define PROMETHEAN_STILLNESS_TIME (1 MINUTES)
+#define PROMETHEAN_PAIN_CAP 70
+#define PROMETHEAN_STARVING_PAIN_CAP 90
+
+/datum/component/promethean_biology
+	dupe_mode = COMPONENT_DUPE_UNIQUE
+	/// Held still for PROMETHEAN_STILLNESS_TIME.
+	var/still = FALSE
+	/// Stillness timer id.
+	var/still_timer
+
+/datum/component/promethean_biology/Initialize()
+	if(!ishuman(parent))
+		return COMPONENT_INCOMPATIBLE
+
+/datum/component/promethean_biology/RegisterWithParent()
+	RegisterSignal(parent, COMSIG_MOVABLE_MOVED, PROC_REF(on_moved))
+	RegisterSignal(parent, COMSIG_MOB_EQUIPPED_ITEM, PROC_REF(on_equipped))
+	RegisterSignal(parent, COMSIG_LIVING_LIFE, PROC_REF(on_life))
+	restart_stillness()
+
+/datum/component/promethean_biology/UnregisterFromParent()
+	UnregisterSignal(parent, list(COMSIG_MOVABLE_MOVED, COMSIG_MOB_EQUIPPED_ITEM, COMSIG_LIVING_LIFE))
+	if(still_timer)
+		deltimer(still_timer)
+		still_timer = null
+
+/datum/component/promethean_biology/proc/restart_stillness()
+	still = FALSE
+	still_timer = addtimer(CALLBACK(src, PROC_REF(became_still)), PROMETHEAN_STILLNESS_TIME, TIMER_UNIQUE | TIMER_OVERRIDE | TIMER_STOPPABLE)
+
+/datum/component/promethean_biology/proc/became_still()
+	still = TRUE
+	still_timer = null
+
+/datum/component/promethean_biology/proc/on_moved(mob/living/carbon/human/source, atom/old_loc, dir, forced)
+	SIGNAL_HANDLER
+	restart_stillness()
+	if(isturf(source.loc))
+		clean_on_entry(source, source.loc)
+
+/// Prometheans clean every surface they touch and feed on the grime.
+/datum/component/promethean_biology/proc/clean_on_entry(mob/living/carbon/human/H, turf/T)
+	var/gained = 0
+	if(!(H.shoes || (H.wear_suit && (H.wear_suit.body_parts_covered & FEET))))
+		for(var/obj/O in T)
+			if(O.wash(CLEAN_SCRUB))
+				gained += rand(5, 15)
+		if(istype(T, /turf/simulated))
+			var/turf/simulated/S = T
+			if(T.wash(CLEAN_SCRUB))
+				gained += rand(10, 20)
+			if(S.dirt > 50)
+				S.dirt = 0
+				gained += rand(10, 20)
+	if(H.feet_blood_color || LAZYLEN(H.feet_blood_DNA))
+		LAZYCLEARLIST(H.feet_blood_DNA)
+		H.feet_blood_DNA = null
+		H.feet_blood_color = null
+		gained += rand(3, 10)
+	if(H.bloody_hands)
+		H.forensic_data?.clear_blooddna()
+		H.hand_blood_color = null
+		H.bloody_hands = 0
+		gained += rand(3, 10)
+	// Prometheans themselves aren't very safe places for other biota.
+	H.germ_level = 0
+	if(gained)
+		H.adjust_nutrition(gained)
+		H.update_bloodied()
+
+/// Whatever a bare-handed promethean picks up gets cleaned too.
+/datum/component/promethean_biology/proc/on_equipped(mob/living/carbon/human/source, obj/item/equipped_item, slot)
+	SIGNAL_HANDLER
+	if(slot != slot_l_hand && slot != slot_r_hand)
+		return
+	if(source.gloves || (source.wear_suit && (source.wear_suit.body_parts_covered & HANDS)))
+		return
+	if(equipped_item.wash(CLEAN_SCRUB))
+		source.adjust_nutrition(rand(5, 15))
+
+/datum/component/promethean_biology/proc/on_life(mob/living/carbon/human/source)
+	SIGNAL_HANDLER
+	if(source.stat == DEAD)
+		return
+	if(promethean_is_soaked(source))
+		source.body?.afflict(/datum/affliction/dissolution)
+	regenerate(source)
+
+/// Regeneration: each mechanism heals by what mend() reports, and that is what
+/// the body pays for in nutrition and strains the matching regenerative network.
+/datum/component/promethean_biology/proc/regenerate(mob/living/carbon/human/H)
+	if(!still || !H.body || H.body.has_affliction(/datum/affliction/dissolution))
+		return
+	var/datum/species/shapeshifter/promethean/S = H.species
+	if(!istype(S))
+		return
+	if(H.bodytemperature > S.heat_level_1 || H.bodytemperature < S.cold_level_1)
+		return
+	if(!H.is_injured())
+		return
+	var/regen_wounds = TRUE
+	var/turf/T = get_turf(H)
+	if(T)
+		var/datum/gas_mixture/environment = T.return_air()
+		if(environment && H.calculate_affecting_pressure(environment.return_pressure()) <= S.hazard_low_pressure)
+			regen_wounds = FALSE // Low pressure: the body holds wounds together rather than sealing them.
+
+	var/starve_mod = 1
+	if(H.nutrition <= 50)
+		starve_mod = 0.5 // Severe starvation. Healing past this point hurts badly.
+	else if(H.nutrition <= 150)
+		starve_mod = 0.75
+	var/amount = S.heal_rate * starve_mod
+
+	var/nutrition_cost = 0
+	var/strain_negation = 0
+	// Mechanism -> the regenerative network that does the work.
+	var/static/list/mechanisms = list(TREAT_TISSUE_REPAIR = O_REGBRUTE, TREAT_BURN_CARE = O_REGBURN, TREAT_OXYGENATION = O_REGOXY, TREAT_ANTITOXIN = O_REGTOX)
+	for(var/tag in mechanisms)
+		if(!regen_wounds && (tag == TREAT_TISSUE_REPAIR || tag == TREAT_BURN_CARE))
+			continue
+		var/healed = H.mend(tag, amount)
+		if(healed <= 0)
+			continue
+		nutrition_cost += healed
+		var/obj/item/organ/internal/regennetwork/network = H.internal_organs_by_name[mechanisms[tag]]
+		if(network)
+			// Strain rises with the work done (bug 19: it never used to).
+			strain_negation += healed * max(0, 1 - network.get_strain_percent(healed))
+	if(!nutrition_cost)
+		return
+	H.adjust_nutrition(-3 * nutrition_cost)
+	// Regenerating without healthy networks hurts; small injuries are no issue.
+	var/agony = (nutrition_cost - strain_negation) / starve_mod
+	if(agony <= 0)
+		return
+	var/pain_cap = starve_mod <= 0.5 ? PROMETHEAN_STARVING_PAIN_CAP : PROMETHEAN_PAIN_CAP
+	if(H.current_pain() + agony <= pain_cap)
+		H.injure(INJURY_PAIN, agony)
+
+/// Over half the body soaked through.
+/proc/promethean_is_soaked(mob/living/carbon/human/H)
+	return H.fire_stacks < 0 && H.get_water_protection() <= 0.5
+
+/// Water dissolves a promethean's gel. Grows while soaked, fades once dry, and
+/// stops regeneration while present.
+/datum/affliction/dissolution
+	name = "gel dissolution"
+	category = "Environmental"
+	clinical_description = "The patient's gelatinous body is dissolving in water. Dry them off; the gel recovers on its own once dry."
+	injury_category = INJURY_CATEGORY_TOXIC
+	biology = BIOLOGY_ORGANIC
+	body_plans = BODY_PLAN_HUMANOID
+	pain_at_max = 60
+	consciousness_at_max = 120
+	progression_rate = -2
+	min_symptoms = 0
+	max_symptoms = 0
+
+/datum/affliction/dissolution/tick()
+	var/mob/living/carbon/human/H = owner
+	var/soaked = istype(H) && promethean_is_soaked(H)
+	progression_rate = soaked ? (3 - 3 * H.get_water_protection()) : initial(progression_rate)
+	..()
+	if(QDELETED(src) || !soaked)
+		return
+	// Melting: the gel sloughs off the limbs.
+	H.injure(INJURY_CORROSIVE, severity / 50, source = src, flags = INJURE_SILENT)
+
+#undef PROMETHEAN_STILLNESS_TIME
+#undef PROMETHEAN_PAIN_CAP
+#undef PROMETHEAN_STARVING_PAIN_CAP

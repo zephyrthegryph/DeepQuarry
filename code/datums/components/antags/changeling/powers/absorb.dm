@@ -57,8 +57,7 @@
 				src.visible_message(span_danger("[src] stabs [T] with the proboscis!"))
 				to_chat(T, span_danger("You feel a sharp stabbing pain!"))
 				var/obj/item/organ/external/affecting = T.get_organ(src.zone_sel.selecting)
-				if(affecting.take_damage(39,0,1,0,"large organic needle"))
-					T.UpdateDamageIcon()
+				T.injure(INJURY_PIERCE, 39, affecting, src)
 
 		feedback_add_details("changeling_powers","A[stage]")
 		if(!do_after(src, 15 SECONDS, T) || G.state != GRAB_KILL)

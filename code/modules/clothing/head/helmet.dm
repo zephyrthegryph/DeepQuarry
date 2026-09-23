@@ -230,7 +230,6 @@
 	icon_state = "erthelmet_med"
 
 
-// === merged from helmet_vr.dm during hard-fork de-suffix (verified no override-order change) ===
 /obj/item/clothing/head/helmet/solgov
 	name = "peacekeeper helmet"
 	desc = "A helmet painted in Peacekeeper blue. Stands out like a sore thumb."

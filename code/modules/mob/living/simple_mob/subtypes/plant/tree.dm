@@ -11,8 +11,7 @@
 	mob_class = MOB_CLASS_PLANT
 
 	faction = FACTION_PLANTS
-	maxHealth = 250
-	health = 250
+	endurance = 250
 	poison_resist = 1.0
 
 	response_help = "brushes"

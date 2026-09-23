@@ -221,7 +221,7 @@
 			sex = active_br.bodygender,
 			mind_compat = active_br.locked ? "Low" : "High",
 			synthetic = active_br.synthetic,
-			oocnotes = active_br.body_oocnotes ? active_br.body_oocnotes : "None",
+			oocnotes = active_br.mind_ref?.identity?.ooc_notes || "None",
 			can_grow_active = can_grow_active,
 		)
 
@@ -232,7 +232,7 @@
 			activerecord = REF(active_mr),
 			realname = sanitize(active_mr.mindname),
 			obviously_dead = active_mr.dead_state == MR_DEAD ? "Past-due" : "Current",
-			oocnotes = active_mr.mind_oocnotes ? active_mr.mind_oocnotes : "None.",
+			oocnotes = active_mr.mind_ref?.identity?.ooc_notes || "None.",
 			can_sleeve_active = can_sleeve_active,
 		)
 

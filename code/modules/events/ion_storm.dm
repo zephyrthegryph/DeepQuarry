@@ -82,15 +82,6 @@
 			target.add_ion_law(law)
 			target.show_laws()
 
-/* //VOREstation edit. Was fucking up all PDA messagess.
-	for (var/obj/machinery/message_server/MS in GLOB.message_servers)
-		MS.spamfilter.Cut()
-		var/i
-		for (i = 1, i <= MS.spamfilter_limit, i++)
-			MS.spamfilter += pick("kitty","HONK","rev","malf","liberty","freedom","drugs", "[using_map.station_short]", \
-				"admin","ponies","heresy","meow","Pun Pun","monkey","Ian","moron","pizza","message","spam",\
-				"director", "Hello", "Hi!"," ","nuke","crate","dwarf","xeno")
-*/
 /datum/event/ionstorm/tick()
 	if(botEmagChance)
 		for(var/mob/living/bot/bot in GLOB.mob_list)
@@ -98,7 +89,6 @@
 				continue
 			if(prob(botEmagChance))
 				bot.emag_act(1)
-
 
 // Overmap version
 /datum/event/ionstorm/overmap/announce()
@@ -216,46 +206,3 @@ Would like to add a law like "Law x is _______" where x = a number, and _____ is
 				bot.Emag()
 */
 
-	/*
-
-	var/apcnum = 0
-	var/smesnum = 0
-	var/airlocknum = 0
-	var/firedoornum = 0
-
-	to_world("Ion Storm Main Started")
-
-	spawn(0)
-		to_world("Started processing APCs")
-		for (var/obj/machinery/power/apc/APC in GLOB.apcs)
-			if(APC.z in station_levels)
-				APC.ion_act()
-				apcnum++
-		to_world("Finished processing APCs. Processed: [apcnum]")
-	spawn(0)
-		to_world("Started processing SMES")
-		for (var/obj/machinery/power/smes/SMES in GLOB.smeses)
-			if(SMES.z in station_levels)
-				SMES.ion_act()
-				smesnum++
-		to_world("Finished processing SMES. Processed: [smesnum]")
-	spawn(0)
-		to_world("Started processing AIRLOCKS")
-		for (var/obj/machinery/door/airlock/D in GLOB.machines)
-			if(D.z in station_levels)
-				//if(length(D.req_access) > 0 && !(12 in D.req_access)) //not counting general access and maintenance airlocks
-				airlocknum++
-				spawn(0)
-					D.ion_act()
-		to_world("Finished processing AIRLOCKS. Processed: [airlocknum]")
-	spawn(0)
-		to_world("Started processing FIREDOORS")
-		for (var/obj/machinery/door/firedoor/D in GLOB.machines)
-			if(D.z in station_levels)
-				firedoornum++;
-				spawn(0)
-					D.ion_act()
-		to_world("Finished processing FIREDOORS. Processed: [firedoornum]")
-
-	to_world("Ion Storm Main Done")
-	*/

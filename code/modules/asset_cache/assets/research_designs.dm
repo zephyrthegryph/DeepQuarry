@@ -14,19 +14,10 @@
 		if(initial(path.research_icon) && initial(path.research_icon_state)) //If the design has an icon replacement skip the rest
 			icon_file = path::research_icon
 			icon_state = path::research_icon_state
-			// if (PERFORM_ALL_TESTS(focus_only/invalid_research_designs))
-			// 	if(!icon_exists(icon_file, icon_state))
-			// 		stack_trace("design [path] with icon '[icon_file]' missing state '[icon_state]'")
-			// 		continue
 		else
 			// construct the icon and slap it into the resource cache
 			var/atom/item = initial(path.build_path)
 			if (!ispath(item, /atom))
-				// biogenerator reagent designs display their default container
-				// if(initial(path.make_reagent))
-				// 	var/datum/reagent/reagent = initial(path.make_reagent)
-				// 	item = initial(reagent.default_container)
-				// else
 				continue  // shouldn't happen, but just in case
 
 			// circuit boards become their resulting machines or computers
@@ -46,10 +37,6 @@
 			icon_state = item::icon_state
 			if(item::color)
 				transform = color_transform(item::color)
-			// if (PERFORM_ALL_TESTS(focus_only/invalid_research_designs))
-			// 	if(!icon_exists(icon_file, icon_state))
-			// 		stack_trace("design [path] with icon '[icon_file]' missing state '[icon_state]'")
-			// 		continue
 
 			// computers (and snowflakes) get their screen and keyboard sprites
 			if (ispath(item, /obj/machinery/computer) || ispath(item, /obj/machinery/power/solar_control))

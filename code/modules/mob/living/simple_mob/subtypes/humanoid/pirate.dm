@@ -5,12 +5,11 @@
 	projectiletype = /obj/item/projectile/energy/mob/heavylaser
 /* Combat refactor walkback
 /mob/living/simple_mob/humanoid/pirate
-	maxHealth = 75
-	health = 75
+	endurance = 75
 
 /mob/living/simple_mob/mechanical/mecha/ripley/pirate
-	maxHealth = 125
+	endurance = 125
 
 /mob/living/simple_mob/mechanical/mecha/ripley/pirate/last_stand_merc	//Special version used as a quasi boss fight
-	maxHealth = 85
+	endurance = 85
 */

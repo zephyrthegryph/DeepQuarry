@@ -22,19 +22,19 @@
 		owner.automatic_custom_emote(VISIBLE_MESSAGE, "flinches slightly.", check_stat = TRUE)
 		switch(rand(1,4))
 			if(1)
-				owner.adjustToxLoss(rand(2,8))
+				owner.injure(INJURY_TOXIN, rand(2, 8))
 			if(2)
-				owner.adjustCloneLoss(rand(1,2))
+				owner.injure(INJURY_CELLULAR, rand(1, 2))
 			if(3)
-				owner.add_chemical_effect(CE_PAINKILLER, rand(8,28))
+				owner.add_modifier(/datum/modifier/numbness/mild, 3 SECONDS)
 			else
-				owner.adjustOxyLoss(rand(13,26))
+				owner.injure(INJURY_ASPHYXIA, rand(13, 26))
 		// external organs need to fall off if damaged enough
 		var/obj/item/organ/O = pick(owner.organs)
 		if(O && !(O.organ_tag == BP_GROIN || O.organ_tag == BP_TORSO) && istype(O,/obj/item/organ/external))
 			var/obj/item/organ/external/E = O
 			if(O.damage >= O.min_broken_damage && O.robotic <= ORGAN_ASSISTED && prob(70))
-				owner.add_chemical_effect(CE_PAINKILLER, 120) // what limb? Extreme nerve damage. Can't feel a thing + shock
+				owner.add_modifier(/datum/modifier/numbness/deep, 3 SECONDS) // what limb? Extreme nerve damage. Can't feel a thing + shock
 				E.droplimb(TRUE, DROPLIMB_ACID)
 
 /datum/component/rotting_disability/Destroy(force = FALSE)

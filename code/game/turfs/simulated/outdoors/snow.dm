@@ -54,34 +54,6 @@
 	can_be_plated = FALSE
 	wet = TURFSLIP_ICE
 
-/turf/simulated/floor/outdoors/ice/dark
-	name = "black ice"
-	icon_state = "ice_dark"
-	desc = "An uneven surface of dark rocks glazed over by solid ice. Looks slippey, maybe even painful"
-
-/turf/simulated/floor/outdoors/ice/dark_smooth
-	name = "smooth black ice"
-	icon_state = "ice_dark_smooth"
-	desc = "Dark rock that has been smoothened to be perfectly even. It's coated in a layer of slippey ice"
-
-// Ice that is used for, say, areas floating on water or similar.
-/turf/simulated/floor/outdoors/shelfice
-	name = "ice"
-	icon_state = "ice"
-	desc = "Looks slippery."
-	movement_cost = 4
-	edge_blending_priority = 0
 
 // Extra cold variants
 
-/turf/simulated/floor/outdoors/snow/v5
-	temperature = 150
-	oxygen = 8
-	nitrogen = 17
-	carbon_dioxide = 75
-
-/turf/simulated/floor/outdoors/ice/v5
-	temperature = 150
-	oxygen = 8
-	nitrogen = 17
-	carbon_dioxide = 75

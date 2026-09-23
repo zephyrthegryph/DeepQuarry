@@ -1,7 +1,7 @@
 /mob/living/silicon/robot/handle_message_mode(message_mode, message, verb, speaking, used_radios)
 	..()
 	if(message_mode)
-		if(!is_component_functioning("radio"))
+		if(!is_component_functioning(ROBOT_SLOT_RADIO))
 			to_chat(src, span_warning("Your radio isn't functional at this time."))
 			return 0
 		if(message_mode == "general")
@@ -60,7 +60,7 @@
 	log_talk("(HPAD) [multilingual_to_message(message_pieces)]", LOG_SAY)
 
 	var/obj/machinery/hologram/holopad/T = src.holo
-	if(T && T.masters[src])//If there is a hologram and its master is the user.
+	if(T && LAZYACCESS(T.masters, src))//If there is a hologram and its master is the user.
 		var/list/listeners = get_mobs_and_objs_in_view_fast(get_turf(T), world.view)
 		var/list/listening = listeners["mobs"]
 		var/list/listening_obj = listeners["objs"]
@@ -86,12 +86,12 @@
 		return
 
 	var/obj/machinery/hologram/holopad/T = src.holo
-	if(T && T.masters[src])
+	if(T && LAZYACCESS(T.masters, src))
 		var/rendered = span_game(span_say(span_name(name) + " " + span_message(message)))
 		to_chat(src, span_game(span_say(span_italics("Holopad action relayed, [span_name(real_name)] [span_message(message)]"))))
-		var/obj/effect/overlay/aiholo/hologram = T.masters[src] // for people in the hologram to hear the messages
+		var/obj/effect/overlay/aiholo/hologram = LAZYACCESS(T.masters, src) // for people in the hologram to hear the messages
 
-		// var/obj/effect/overlay/hologram = T.masters[src] // . Done above.
+		// var/obj/effect/overlay/hologram = LAZYACCESS(T.masters, src) // . Done above.
 		var/list/in_range = get_mobs_and_objs_in_view_fast(get_turf(hologram), world.view, 2) //Emotes are displayed from the hologram, not the pad
 		var/list/m_viewers = in_range["mobs"]
 		var/list/o_viewers = in_range["objs"]
@@ -117,7 +117,7 @@
 
 /mob/living/silicon/ai/emote(act, m_type, message)
 	var/obj/machinery/hologram/holopad/T = holo
-	if(T && T.masters[src]) //Is the AI using a holopad?
+	if(T && LAZYACCESS(T.masters, src)) //Is the AI using a holopad?
 		. = holopad_emote(message)
 	else //Emote normally, then.
 		. = ..()

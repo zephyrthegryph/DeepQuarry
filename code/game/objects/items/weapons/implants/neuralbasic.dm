@@ -64,26 +64,26 @@ Implant Specifics:<BR>"}
 			if(prob(10))
 				meltdown()
 			else if(prob(80))
-				my_brain.take_damage(5)
+				L.injure(INJURY_NEURAL, 5, my_brain, src)
 				if(!robotic_brain)
 					to_chat(L, span_critical("Something in your [brain_location] burns!"))
 				else
 					to_chat(L, span_warning("Severe fault detected in [brain_location]."))
 		if(2)
 			if(prob(80))
-				my_brain.take_damage(3)
+				L.injure(INJURY_NEURAL, 3, my_brain, src)
 				if(!robotic_brain)
 					to_chat(L, span_danger("It feels like something is digging into your [brain_location]!"))
 				else
 					to_chat(L, span_warning("Fault detected in [brain_location]."))
 		if(3)
 			if(prob(60))
-				my_brain.take_damage(2)
+				L.injure(INJURY_NEURAL, 2, my_brain, src)
 				if(!robotic_brain)
 					to_chat(L, span_warning("There is a stabbing pain in your [brain_location]!"))
 		if(4)
 			if(prob(40))
-				my_brain.take_damage(1)
+				L.injure(INJURY_NEURAL, 1, my_brain, src)
 				if(!robotic_brain)
 					to_chat(L, span_warning("Your [brain_location] aches."))
 
@@ -101,6 +101,6 @@ Implant Specifics:<BR>"}
 				to_chat(H, span_critical("WARNING. Fault dete-ct-- in the \the [src]."))
 			H.Confuse(30)
 			H.AdjustBlinded(5)
-		my_brain.take_damage(15)
+		my_brain.owner?.injure(INJURY_NEURAL, 15, my_brain, src)
 		my_brain = null
 	return

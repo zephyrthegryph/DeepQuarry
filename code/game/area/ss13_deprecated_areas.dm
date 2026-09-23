@@ -110,46 +110,6 @@
 /area/shuttle/mining/station
 	icon_state = "shuttle2"
 
-/area/shuttle/mining/outpost
-	icon_state = "shuttle"
-
-/area/shuttle/trade/centcom
-	name = "\improper Trade Shuttle CentCom"
-	icon_state = "shuttlered"
-
-/area/shuttle/trade/station
-	name = "\improper Trade Shuttle"
-	icon_state = "shuttlered"
-
-/area/shuttle/thunderdome/grnshuttle
-	name = "\improper Thunderdome GRN Shuttle"
-	icon_state = "green"
-
-/area/shuttle/thunderdome/grnshuttle/dome
-	name = "\improper GRN Shuttle"
-	icon_state = "shuttlegrn"
-
-/area/shuttle/thunderdome/grnshuttle/station
-	name = "\improper GRN Station"
-	icon_state = "shuttlegrn2"
-
-/area/shuttle/thunderdome/redshuttle
-	name = "\improper Thunderdome RED Shuttle"
-	icon_state = "red"
-
-/area/shuttle/thunderdome/redshuttle/dome
-	name = "\improper RED Shuttle"
-	icon_state = "shuttlered"
-
-/area/shuttle/thunderdome/redshuttle/station
-	name = "\improper RED Station"
-	icon_state = "shuttlered2"
-
-/area/shuttle/research/station
-	icon_state = "shuttle2"
-
-/area/shuttle/research/outpost
-	icon_state = "shuttle"
 
 /area/supply/station
 	name = "Supply Shuttle"
@@ -157,8 +117,3 @@
 	requires_power = 0
 	base_turf = /turf/space
 
-/area/supply/dock
-	name = "Supply Shuttle"
-	icon_state = "shuttle3"
-	requires_power = 0
-	base_turf = /turf/space

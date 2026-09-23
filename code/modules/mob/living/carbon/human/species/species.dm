@@ -103,17 +103,23 @@
 	var/list/special_step_sounds = null
 
 	// Combat/health/chem/etc. vars.
+	/// Body plan a species' members get (set_species swaps the body when it differs).
+	var/body_plan = /datum/body/humanoid
 	var/total_health = 100								// How much damage the mob can take before entering crit.
 	var/list/unarmed_types = list(							// Possible unarmed attacks that the mob will use in combat,
 		/datum/unarmed_attack,
 		/datum/unarmed_attack/bite
 		)
 	var/list/unarmed_attacks = null							// For empty hand harm-intent attack
-	var/brute_mod =     1								// Physical damage multiplier.
-	var/burn_mod =      1								// Burn damage multiplier.
-	var/oxy_mod =       1								// Oxyloss modifier
-	var/toxins_mod =    1								// Toxloss modifier. overridden by NO_POISON flag.
-	var/radiation_mod = 1								// Radiation modifier, determines the practically negligable burn damage from direct exposure to extreme sources.
+	/// Species tuning of injury multipliers by coarse group: "physical",
+	/// "thermal", "toxin", "asphyxia", "radiation", "cellular", "neural",
+	/// "pain" -> multiplier (omitted = 1). e.g. list("physical" = 0.85).
+	var/list/injury_mod_groups
+	/// Flat INJURY_* -> multiplier list built from injury_mod_groups at New();
+	/// NO_POISON / NO_PAIN / NO_DNA zero their kinds. Read via get_injury_mod().
+	var/list/injury_mods
+	/// Snapshot of injury_mods after species setup, so traits can restore it.
+	var/list/base_injury_mods
 	var/flash_mod =     1								// Stun from blindness modifier (flashes and flashbangs)
 	var/flash_burn =    0								// how much damage to take from being flashed if light hypersensitive
 	var/sound_mod =     1								// Multiplier to the effective *range* of flashbangs. a flashbang's bang hits an entire screen radius, with some falloff.
@@ -126,7 +132,6 @@
 
 	var/chemOD_threshold =		1						// Multiplier to overdose threshold; lower = easier overdosing
 	var/chemOD_mod =		1						// Damage modifier for overdose; higher = more damage from ODs
-	var/pain_mod =			1						// Multiplier to pain effects; 0.5 = half, 0 = no effect (equal to NO_PAIN, really), 2 = double, etc.
 	var/stun_mod =			1						// Multiplier to stun effects; 0.5 = half, - = no effect (immune), 2 = double, etc.
 	var/weaken_mod =		1						// Multiplier to weakness effects; 0.5 = half, - = no effect (immune), 2 = double, etc.
 													// Stuns + Weakens will be rounded to the nearest whole #. If you set 0.5 mod, on a base stun of 3, the return will be 1.5, which rounds to 1. Be careful.
@@ -205,7 +210,12 @@
 	var/minimum_breath_pressure = 16						// Minimum required pressure for breath, in kPa
 
 
-	var/metabolic_rate = 1
+	/// Body factors every member of the species has (BF_* -> value), e.g.
+	/// slowdown and metabolism. See code/modules/body/factors.dm.
+	var/alist/factor_baseline
+	/// Factor tables granted by traits and perks applied to this species
+	/// instance. Lazy list of alists.
+	var/list/granted_factors
 
 	// HUD data vars.
 	var/datum/hud_data/hud
@@ -221,7 +231,6 @@
 	var/appearance_flags = 0								// Appearance/display related features.
 	var/spawn_flags = 0										// Flags that specify who can spawn as this species
 
-	var/slowdown = 0										// Passive movement speed malus (or boost, if negative)
 	var/obj/effect/decal/cleanable/blood/tracks/move_trail = /obj/effect/decal/cleanable/blood/tracks/footprints // What marks are left when walking
 	var/list/skin_overlays = list()
 	var/has_floating_eyes = 0								// Whether the eyes can be shown above other icons
@@ -379,6 +388,8 @@
 	var/default_custom_base = SPECIES_HUMAN
 
 /datum/species/proc/update_attack_types()
+	setup_injury_mods()
+
 	unarmed_attacks = list()
 	for(var/u_type in unarmed_types)
 		unarmed_attacks += new u_type()
@@ -393,6 +404,8 @@
 	if(!vision_organ && has_organ[O_EYES])
 		vision_organ = O_EYES
 
+	setup_injury_mods()
+
 	unarmed_attacks = list()
 	for(var/u_type in unarmed_types)
 		unarmed_attacks += new u_type()
@@ -402,6 +415,94 @@
 			inherent_verbs = list()
 
 	update_sort_hint()
+
+/// Build the flat per-kind injury multipliers from the species' groups,
+/// then apply the species immunity flags.
+/datum/species/proc/setup_injury_mods()
+	injury_mods = injury_mod_list()
+	for(var/group in injury_mod_groups)
+		for(var/kind in injury_mod_group_kinds(group))
+			injury_mods[kind] = injury_mod_groups[group]
+	if(flags & NO_POISON)
+		injury_mods[INJURY_TOXIN] = 0
+	if(flags & NO_PAIN)
+		injury_mods[INJURY_PAIN] = 0
+	if(flags & NO_DNA)
+		injury_mods[INJURY_CELLULAR] = 0
+	base_injury_mods = injury_mods.Copy()
+
+/// Multiplier for one INJURY_* kind.
+/datum/species/proc/get_injury_mod(kind)
+	if(length(injury_mods) != INJURY_KIND_COUNT)
+		setup_injury_mods()
+	return injury_mods[kind]
+
+/// Set every kind in an injury-mod group ("physical", "thermal", "toxin",
+/// "asphyxia", "radiation", "cellular", "neural", "pain") to `value`.
+/// Used by traits / perks (`var_changes` keys "injury_mod_<group>").
+/datum/species/proc/set_injury_mod_group(group, value)
+	if(length(injury_mods) != INJURY_KIND_COUNT)
+		setup_injury_mods()
+	for(var/kind in injury_mod_group_kinds(group))
+		injury_mods[kind] = value
+
+/// Restore a group to the species' own value (trait removal).
+/datum/species/proc/reset_injury_mod_group(group)
+	if(length(base_injury_mods) != INJURY_KIND_COUNT)
+		return
+	for(var/kind in injury_mod_group_kinds(group))
+		injury_mods[kind] = base_injury_mods[kind]
+
+/// Handle a trait/perk `var_changes` entry. Returns TRUE if it was an
+/// injury-mod key ("injury_mod_<group>") and has been applied.
+/datum/species/proc/apply_injury_mod_var_change(key, value)
+	if(!istext(key) || copytext(key, 1, 12) != "injury_mod_")
+		return FALSE
+	if(isnull(value))
+		reset_injury_mod_group(copytext(key, 12))
+	else
+		set_injury_mod_group(copytext(key, 12), value)
+	return TRUE
+
+/// INJURY_* kinds covered by a coarse injury-mod group.
+/proc/injury_mod_group_kinds(group)
+	switch(group)
+		if("physical")
+			return list(INJURY_BLUNT, INJURY_CUT, INJURY_PIERCE, INJURY_DIGESTION)
+		if("thermal")
+			return list(INJURY_BURN, INJURY_FROSTBITE, INJURY_CORROSIVE, INJURY_ELECTRIC)
+		if("toxin")
+			return list(INJURY_TOXIN)
+		if("asphyxia")
+			return list(INJURY_ASPHYXIA)
+		if("radiation")
+			return list(INJURY_RADIATION)
+		if("cellular")
+			return list(INJURY_CELLULAR)
+		if("neural")
+			return list(INJURY_NEURAL)
+		if("pain")
+			return list(INJURY_PAIN)
+	return list()
+
+/// A flat INJURY_* multiplier list from coarse group values.
+/proc/injury_mod_list(physical = 1, thermal = 1, toxin = 1, asphyxia = 1, radiation = 1, cellular = 1, neural = 1, pain = 1)
+	var/list/mods = new /list(INJURY_KIND_COUNT)
+	mods[INJURY_BLUNT] = physical
+	mods[INJURY_CUT] = physical
+	mods[INJURY_PIERCE] = physical
+	mods[INJURY_DIGESTION] = physical
+	mods[INJURY_BURN] = thermal
+	mods[INJURY_FROSTBITE] = thermal
+	mods[INJURY_CORROSIVE] = thermal
+	mods[INJURY_ELECTRIC] = thermal
+	mods[INJURY_TOXIN] = toxin
+	mods[INJURY_ASPHYXIA] = asphyxia
+	mods[INJURY_RADIATION] = radiation
+	mods[INJURY_CELLULAR] = cellular
+	mods[INJURY_NEURAL] = neural
+	mods[INJURY_PAIN] = pain
+	return mods
 
 /datum/species/proc/get_footsep_sounds()
 	return footstep
@@ -543,10 +644,7 @@
 			H.visible_message( \
 				span_warning("[target] reflexively bites the hand of [H] to prevent head patting!"), \
 				span_warning("[target] reflexively bites your hand!"), )
-			if(H.hand)
-				H.apply_damage(1, BRUTE, BP_L_HAND)
-			else
-				H.apply_damage(1, BRUTE, BP_R_HAND)
+			H.injure(INJURY_PIERCE, 1, H.hand ? BP_L_HAND : BP_R_HAND, target) // Bitten
 		else
 			H.visible_message( \
 				span_notice("[H] pats [target] on the head."), \
@@ -560,10 +658,7 @@
 			H.visible_message( \
 				span_warning("[target] reflexively bites the hand of [H] to prevent nose booping!"), \
 				span_warning("[target] reflexively bites your hand!"), )
-			if(H.hand)
-				H.apply_damage(1, BRUTE, BP_L_HAND)
-			else
-				H.apply_damage(1, BRUTE, BP_R_HAND)
+			H.injure(INJURY_PIERCE, 1, H.hand ? BP_L_HAND : BP_R_HAND, target) // Bitten
 		else
 			H.visible_message( \
 				span_notice("[H] boops [target]'s nose."), \
@@ -709,7 +804,7 @@
 	amount *= 1 - H.get_water_protection()
 	amount *= water_damage_mod
 	if(amount > 0)
-		H.adjustToxLoss(amount)
+		H.injure(INJURY_TOXIN, amount)
 
 /datum/species/proc/handle_falling(mob/living/carbon/human/H, atom/hit_atom, damage_min, damage_max, silent, planetary)
 	var/turf/landing = get_turf(hit_atom)
@@ -751,9 +846,8 @@
 			landing.visible_message(span_danger(span_bold("\The [H]") + " crashes down from above!"))
 			playsound(H, 'sound/effects/meteorimpact.ogg', 75, TRUE, 3)
 			for(var/i = 1 to 10)
-				H.adjustBruteLoss(rand((0), (10)))
+				H.injure(INJURY_BLUNT, rand((0), (10)), null, landing)
 			H.Weaken(20)
-			H.updatehealth()
 			if(istype(landing, /turf/simulated/floor) && prob(50))
 				var/turf/simulated/floor/our_crash = landing
 				our_crash.break_tile()
@@ -830,6 +924,7 @@
 
 	//Set up a mob
 	H.species = new_copy
+	H.invalidate_factors()
 	H.icon_state = new_copy.get_bodytype()
 
 	if(new_copy.holder_type)

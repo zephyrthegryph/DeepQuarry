@@ -224,6 +224,34 @@
 	containertype = /obj/structure/closet/crate/grayson
 	containername = "Titanium ingots crate"
 
+/datum/supply_pack/materials/nickel50
+	name = "50 nickel ingots"
+	contains = list(/obj/fiftyspawner/nickel)
+	cost = 180
+	containertype = /obj/structure/closet/crate/grayson
+	containername = "Nickel ingots crate"
+
+/datum/supply_pack/materials/chromium50
+	name = "50 chromium ingots"
+	contains = list(/obj/fiftyspawner/chromium)
+	cost = 240
+	containertype = /obj/structure/closet/crate/grayson
+	containername = "Chromium ingots crate"
+
+/datum/supply_pack/materials/tungsten50
+	name = "50 tungsten ingots"
+	contains = list(/obj/fiftyspawner/tungsten)
+	cost = 420
+	containertype = /obj/structure/closet/crate/grayson
+	containername = "Tungsten ingots crate"
+
+/datum/supply_pack/materials/technical_ceramic50
+	name = "50 technical ceramic sheets"
+	contains = list(/obj/fiftyspawner/technical_ceramic)
+	cost = 210
+	containertype = /obj/structure/closet/crate/grayson
+	containername = "Technical ceramic sheets crate"
+
 /datum/supply_pack/materials/graphite50
 	name = "50 graphite ingots"
 	contains = list(/obj/fiftyspawner/graphite)

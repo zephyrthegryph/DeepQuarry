@@ -536,7 +536,7 @@
 
 /datum/contract_opportunity_rule/research_breakthrough
 	id = "research_breakthrough"
-	definition_id = "opportunity_breakthrough_translation"
+	definition_id = "opportunity_equipment_deployment"
 	description = "A cluster of distinct research milestones attracted a translation grant."
 	window_duration = 15 MINUTES
 
@@ -546,21 +546,6 @@
 	milestones.maximum_fact_value = 2500
 	milestones.require_station_source = TRUE
 	milestones.require_diversity("node_id", 3)
-
-/datum/contract_opportunity_rule/chemistry_momentum
-	id = "chemistry_momentum"
-	definition_id = "opportunity_process_scaleup"
-	description = "Diverse, substantive syntheses attracted a process scale-up commission."
-	window_duration = 10 MINUTES
-
-/datum/contract_opportunity_rule/chemistry_momentum/configure()
-	var/datum/contract_opportunity_signal/reactions = add_signal(new /datum/contract_opportunity_signal("reactions", CONTRACT_EVENT_CHEMISTRY_RESULT, 80, "amount"))
-	reactions.minimum_facts = 5
-	reactions.maximum_fact_value = 25
-	reactions.require_station_source = TRUE
-	reactions.require_number("reactant_count", CONTRACT_EVIDENCE_COMPARE_AT_LEAST, 2)
-	reactions.require_diversity("reaction_id", 4)
-	reactions.require_diversity("product_id", 3)
 
 /datum/contract_opportunity_rule/security_caseload
 	id = "security_caseload"
@@ -599,34 +584,6 @@
 	record.counter_offer_queued = !!controller.find_live_offer(offer_key) || !!controller.find_candidate(offer_key)
 	return record.counter_offer_queued
 
-/datum/contract_opportunity_rule/export_momentum
-	id = "export_momentum"
-	definition_id = "opportunity_supplier_option"
-	description = "A diverse station export portfolio attracted a preferred-supplier option."
-	window_duration = 12 MINUTES
-
-/datum/contract_opportunity_rule/export_momentum/configure()
-	var/datum/contract_opportunity_signal/exports = add_signal(new /datum/contract_opportunity_signal("exports", CONTRACT_EVENT_ITEM_EXPORTED, 3500, "value"))
-	exports.minimum_facts = 6
-	exports.maximum_fact_value = 900
-	exports.maximum_actor_value = 1800
-	exports.require_diversity("item_type", 6)
-	exports.require_diversity("origin_department", 3)
-
-/datum/contract_opportunity_rule/procurement_momentum
-	id = "procurement_momentum"
-	definition_id = "opportunity_procurement_rebate"
-	description = "Broad departmental procurement unlocked a volume-rebate opportunity."
-	window_duration = 12 MINUTES
-
-/datum/contract_opportunity_rule/procurement_momentum/configure()
-	var/datum/contract_opportunity_signal/orders = add_signal(new /datum/contract_opportunity_signal("orders", CONTRACT_EVENT_SUPPLY_ORDER_FULFILLED, 3000, "value"))
-	orders.minimum_facts = 5
-	orders.maximum_fact_value = 1200
-	orders.maximum_actor_value = 1800
-	orders.require_diversity("pack_type", 5)
-	orders.require_diversity("funding_department", 3)
-
 /datum/contract_opportunity_rule/supply_shortage
 	id = "supply_shortage"
 	definition_id = "supply_shortage_response"
@@ -642,49 +599,6 @@
 	forward_context("shortage_id")
 	forward_context("quantity_target")
 	forward_context("variety_target")
-
-/datum/contract_opportunity_rule/hospitality_demand
-	id = "hospitality_demand"
-	definition_id = "opportunity_hospitality_expansion"
-	description = "Verified crew commerce demonstrated demand for an expanded hospitality commission."
-	window_duration = 20 MINUTES
-
-/datum/contract_opportunity_rule/hospitality_demand/configure()
-	var/datum/contract_opportunity_signal/service = add_signal(new /datum/contract_opportunity_signal("service", CONTRACT_EVENT_SERVICE_PERIOD_SETTLED, 1000, "verified_amount"))
-	service.maximum_fact_value = 1500
-	service.require_value("rollup", "department")
-	service.require_value("department", DEPARTMENT_CIVILIAN)
-	service.require_number("customer_count", CONTRACT_EVIDENCE_COMPARE_AT_LEAST, 6)
-	service.require_number("verified_type_count", CONTRACT_EVIDENCE_COMPARE_AT_LEAST, 4)
-
-/datum/contract_opportunity_rule/agricultural_demand
-	id = "agricultural_demand"
-	definition_id = "opportunity_crop_forward_order"
-	description = "A diverse station harvest attracted a forward purchasing offer."
-	window_duration = 12 MINUTES
-
-/datum/contract_opportunity_rule/agricultural_demand/configure()
-	var/datum/contract_opportunity_signal/harvest = add_signal(new /datum/contract_opportunity_signal("harvest", CONTRACT_EVENT_CROP_HARVESTED, 50, "yield"))
-	harvest.minimum_facts = 6
-	harvest.maximum_fact_value = 12
-	harvest.maximum_actor_value = 35
-	harvest.require_station_source = TRUE
-	harvest.require_diversity("crop_id", 6)
-
-/datum/contract_opportunity_rule/automation_demand
-	id = "automation_demand"
-	definition_id = "opportunity_automation_expansion"
-	description = "A varied automated workload justified a systems-capacity commission."
-	window_duration = 12 MINUTES
-
-/datum/contract_opportunity_rule/automation_demand/configure()
-	var/datum/contract_opportunity_signal/tasks = add_signal(new /datum/contract_opportunity_signal("tasks", CONTRACT_EVENT_AUTOMATION_TASK_COMPLETED, 12, "work_units"))
-	tasks.minimum_facts = 8
-	tasks.maximum_fact_value = 2
-	tasks.require_value("successful", TRUE)
-	tasks.require_diversity("bot_id", 2)
-	tasks.require_diversity("task_kind", 3)
-	tasks.require_diversity("target_id", 6)
 
 /datum/contract_opportunity_rule/budget_performance
 	id = "budget_performance"

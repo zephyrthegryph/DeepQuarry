@@ -84,7 +84,6 @@
 		qdel(src)
 
 
-// === merged from gunbox_vr.dm during hard-fork de-suffix (verified no override-order change) ===
 /*
  * Shotgun Box
  */
@@ -143,7 +142,6 @@
 		qdel(src)
 
 
-// === merged from gunbox_chomp.dm during hard-fork de-suffix (verified no override-order change) ===
 /obj/item/gunbox/sec_officer
 	name = "lethal armament box"
 	desc = "A secure box containing a lethal sidearm."

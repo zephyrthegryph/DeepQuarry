@@ -3,7 +3,7 @@
 /// to come from their authoritative power, atmos, medicine, research, economy,
 /// service, security, and automation systems.
 
-/proc/add_program_count(datum/contract/social/contract, event_type, target, name, description, value_field = null, scope_mode = CONTRACT_EVIDENCE_SCOPE_ANY, unique_field = null, list/exact_values, list/numeric_checks) as /datum/contract_requirement/event_count
+/proc/add_program_count(datum/contract/social/contract, event_type, target, name, description, value_field = null, scope_mode = CONTRACT_EVIDENCE_SCOPE_DEPARTMENT, unique_field = null, list/exact_values, list/numeric_checks) as /datum/contract_requirement/event_count
 	var/datum/contract_requirement/event_count/requirement = new(event_type, target, exact_values, value_field, TRUE, scope_mode)
 	requirement.name = name
 	requirement.description = description
@@ -13,7 +13,7 @@
 	contract.add_requirement(requirement)
 	return requirement
 
-/proc/add_program_portfolio(datum/contract/social/contract, event_type, target, category_field, value_field, category_target, name, description, scope_mode = CONTRACT_EVIDENCE_SCOPE_ANY, list/exact_values, list/numeric_checks, maximum_fact_value = INFINITY, maximum_category_value = INFINITY) as /datum/contract_requirement/fact_portfolio
+/proc/add_program_portfolio(datum/contract/social/contract, event_type, target, category_field, value_field, category_target, name, description, scope_mode = CONTRACT_EVIDENCE_SCOPE_DEPARTMENT, list/exact_values, list/numeric_checks, maximum_fact_value = INFINITY, maximum_category_value = INFINITY) as /datum/contract_requirement/fact_portfolio
 	var/datum/contract_requirement/fact_portfolio/requirement = new(event_type, target, category_field, value_field, category_target, scope_mode)
 	requirement.name = name
 	requirement.description = description
@@ -26,7 +26,7 @@
 	contract.add_requirement(requirement)
 	return requirement
 
-/proc/add_program_sustained(datum/contract/social/contract, event_type, entity_field, numeric_field, comparator, threshold, duration, target, name, description, scope_mode = CONTRACT_EVIDENCE_SCOPE_ANY, list/exact_values, list/numeric_checks) as /datum/contract_requirement/sustained_event
+/proc/add_program_sustained(datum/contract/social/contract, event_type, entity_field, numeric_field, comparator, threshold, duration, target, name, description, scope_mode = CONTRACT_EVIDENCE_SCOPE_DEPARTMENT, list/exact_values, list/numeric_checks) as /datum/contract_requirement/sustained_event
 	var/datum/contract_requirement/sustained_event/requirement = new(event_type, entity_field, numeric_field, comparator, threshold, duration, target, scope_mode)
 	requirement.name = name
 	requirement.description = description
@@ -43,13 +43,17 @@
 	name = "Qualified material delivery"
 	var/datum/contract_event_filter/assay_filter
 	var/minimum_amount = 1
-	var/list/qualified_fingerprints
+	var/list/qualified_lots
+	var/source_department
 
-/datum/contract_requirement/qualified_material_delivery/New(list/checks, amount = 1)
+/datum/contract_requirement/qualified_material_delivery/New(list/checks, amount = 1, _source_department)
 	. = ..()
-	assay_filter = new(CONTRACT_EVIDENCE_SCOPE_DEPARTMENT)
+	source_department = _source_department
+	assay_filter = new(source_department ? CONTRACT_EVIDENCE_SCOPE_ANY : CONTRACT_EVIDENCE_SCOPE_DEPARTMENT)
+	if(source_department)
+		assay_filter.require_value("department", source_department)
 	minimum_amount = max(1, amount)
-	qualified_fingerprints = list()
+	qualified_lots = list()
 	for(var/list/check as anything in checks)
 		assay_filter.require_number(check["key"], check["comparator"], check["expected"])
 	assay_filter.require_number("amount", CONTRACT_EVIDENCE_COMPARE_AT_LEAST, minimum_amount)
@@ -57,7 +61,7 @@
 
 /datum/contract_requirement/qualified_material_delivery/Destroy()
 	QDEL_NULL(assay_filter)
-	qualified_fingerprints = null
+	qualified_lots = null
 	return ..()
 
 /datum/contract_requirement/qualified_material_delivery/handle_event(datum/contract_event/event)
@@ -66,23 +70,33 @@
 	if(event.event_type == CONTRACT_EVENT_MATERIAL_CERTIFIED)
 		if(!assay_filter.matches(event, contract))
 			return FALSE
-		qualified_fingerprints["[event.value("fingerprint")]"] = event.value("contributor_account")
-		contract.audit(CONTRACT_AUDIT_PROGRESS, "[name]: assay accepted; awaiting physical shipment of batch [copytext(event.value("fingerprint"), 1, 9)].")
+		var/lot_id = event.value("material_lot_id")
+		if(!lot_id)
+			return FALSE
+		qualified_lots["[lot_id]"] = event.value("contributor_account")
+		contract.audit(CONTRACT_AUDIT_PROGRESS, "[name]: lot [lot_id] passed assay and awaits Cargo shipment.")
 		return TRUE
-	if(event.event_type != CONTRACT_EVENT_ITEM_EXPORTED || event.value("origin_department") != contract.department || event.value("material_amount") < minimum_amount)
+	if(event.event_type != CONTRACT_EVENT_ITEM_EXPORTED || event.value("origin_department") != (source_department || contract.department) || event.value("handling_department") != DEPARTMENT_CARGO || event.value("material_amount") < minimum_amount)
 		return FALSE
-	var/fingerprint = "[event.value("material_fingerprint")]"
-	if(!(fingerprint in qualified_fingerprints))
+	var/lot_id = "[event.value("material_lot_id")]"
+	if(!(lot_id in qualified_lots))
 		return FALSE
-	return add_progress(1, qualified_fingerprints[fingerprint], "Assayed batch [copytext(fingerprint, 1, 9)] was accepted as cargo freight.")
+	return add_progress(1, qualified_lots[lot_id], "Assayed material lot [lot_id] was accepted as Cargo freight.")
 
 /datum/contract_requirement/qualified_material_delivery/progress_text()
 	if(state == CONTRACT_REQUIREMENT_COMPLETE)
 		return "Assay and delivery complete"
-	return length(qualified_fingerprints) ? "Qualified batch awaiting cargo shipment" : "Batch awaiting assay"
+	return length(qualified_lots) ? "Qualified lot awaiting Cargo shipment" : "Batch awaiting assay"
 
-/proc/add_material_delivery(datum/contract/social/contract, list/checks, amount, name, description)
-	var/datum/contract_requirement/qualified_material_delivery/requirement = new(checks, amount)
+/proc/add_material_delivery(datum/contract/social/contract, list/checks, amount, name, description, source_department)
+	var/datum/contract_requirement/qualified_material_delivery/requirement = new(checks, amount, source_department)
+	requirement.name = name
+	requirement.description = description
+	contract.add_requirement(requirement)
+	return requirement
+
+/proc/add_program_paired_facts(datum/contract/social/contract, first_event_type, second_event_type, join_field, target, name, description, scope_mode = CONTRACT_EVIDENCE_SCOPE_DEPARTMENT, second_join_field) as /datum/contract_requirement/paired_facts
+	var/datum/contract_requirement/paired_facts/requirement = new(first_event_type, second_event_type, join_field, target, scope_mode, second_join_field)
 	requirement.name = name
 	requirement.description = description
 	contract.add_requirement(requirement)
@@ -175,6 +189,7 @@
 	issuer_name = "Focal Point Energetics"
 	issuer_faction = REPUTATION_FACTION_NANOTRASEN
 	reward = 3400
+	expected_duration = 90 MINUTES
 	contract_type = /datum/contract/social/alternative_fuel_trial
 
 /datum/contract_definition/social/program/alternative_fuel/configure_contract(datum/contract/social/alternative_fuel_trial/contract, list/context)
@@ -200,6 +215,12 @@
 	contract.output_requirement.filter.require_value("machine_kind", "supermatter")
 	contract.add_requirement(contract.output_requirement)
 	contract.thermal_requirement = add_program_sustained(contract, CONTRACT_EVENT_MACHINE_RESULT, "machine_id", "temperature", CONTRACT_EVIDENCE_COMPARE_AT_MOST, 4500, 2 MINUTES, 1, "Thermal control", "Keep the qualifying engine below 4,500 K for the full demonstration.", CONTRACT_EVIDENCE_SCOPE_DEPARTMENT, list("machine_kind" = "supermatter"), list(list("key" = "eer", "comparator" = CONTRACT_EVIDENCE_COMPARE_AT_LEAST, "expected" = 300)))
+	add_program_sustained(contract, CONTRACT_EVENT_POWER_SERVICE_CHANGED, "service_id", "powered_channels", CONTRACT_EVIDENCE_COMPARE_AT_LEAST, 3, 3 MINUTES, 4, "Commissioned station service", "After the engine trial, hold four APC service zones at full power for three minutes.", CONTRACT_EVIDENCE_SCOPE_DEPARTMENT)
+	var/datum/contract_negotiation_clause/commissioning = new("commissioning_priority", "Commissioning priority", "Choose what the station must protect while pursuing the performance award.")
+	commissioning.add_option(make_contract_clause_option("reserve", "Protect reserve", "Keep the safer operating margin; Engineering receives more of the award.", -100, 250, -50, 1, 3, 0, 10 MINUTES, list("requirement_floors" = list("Alternative-fuel output stages" = 0.75))))
+	commissioning.add_option(make_contract_clause_option("balanced", "Service first", "Use the standard limits and prove useful station service.", 0, 0, 0), TRUE)
+	commissioning.add_option(make_contract_clause_option("sponsor", "Peak demonstration", "Pursue the full output envelope on a shorter schedule for a larger shared award.", 200, 150, 150, 0, 0, 0, -10 MINUTES))
+	contract.add_negotiation_clause(commissioning)
 
 // --------------------------------------------------------------------------
 // Medical
@@ -221,8 +242,7 @@
 	add_social_role(contract, "clinician", "Occupational clinician", "Coordinates diagnosis, treatment, and follow-up records.", list(DEPARTMENT_MEDICAL), 1, 4)
 	add_social_role(contract, "patient", "Participating worker", "Participates in care and outcome follow-up.", null, 4, 12)
 	add_program_count(contract, CONTRACT_EVENT_MEDICAL_TREATMENT_OUTCOME, patient_target * 50, "Clinical improvement", "Deliver substantial, measurable improvement across participating workers.", "improvement", CONTRACT_EVIDENCE_SCOPE_DEPARTMENT)
-	add_program_count(contract, CONTRACT_EVENT_MEDICAL_TREATMENT_OUTCOME, patient_target, "Workers recovered", "Improve [patient_target] distinct patients.", null, CONTRACT_EVIDENCE_SCOPE_DEPARTMENT, "subject_id")
-	add_program_count(contract, CONTRACT_EVENT_MEDICAL_SCAN_CREATED, patient_target, "Documented follow-up", "File body-scanner follow-ups for [patient_target] distinct patients.", null, CONTRACT_EVIDENCE_SCOPE_ANY, "subject_id")
+	add_program_paired_facts(contract, CONTRACT_EVENT_MEDICAL_TREATMENT_OUTCOME, CONTRACT_EVENT_MEDICAL_SCAN_CREATED, "subject_id", patient_target, "Documented recovery", "Improve and produce a follow-up body scan for the same [patient_target] participating workers.")
 
 /datum/contract_definition/social/program/blood_reserve
 	id = "blood_reserve_campaign"
@@ -237,76 +257,10 @@
 /datum/contract_definition/social/program/blood_reserve/configure_contract(datum/contract/social/contract, list/context)
 	..()
 	var/donor_target = contract_scaled_participant_target(4, 2, 3)
-	var/type_target = min(3, donor_target)
 	add_social_role(contract, "clinician", "Transfusion coordinator", "Screens donors and manages safe blood collection.", list(DEPARTMENT_MEDICAL), 1, 3)
 	add_social_role(contract, "donor", "Registered donor", "Contributes to the station reserve under Medical supervision.", null, 4, 12)
 	add_program_count(contract, CONTRACT_EVENT_BLOOD_DONATED, donor_target * 150, "Reserve volume", "Collect [donor_target * 150] units of blood into the station reserve.", "amount", CONTRACT_EVIDENCE_SCOPE_DEPARTMENT)
 	add_program_count(contract, CONTRACT_EVENT_BLOOD_DONATED, donor_target, "Donor participation", "Collect from [donor_target] distinct donors.", null, CONTRACT_EVIDENCE_SCOPE_DEPARTMENT, "subject_id")
-	add_program_count(contract, CONTRACT_EVENT_BLOOD_DONATED, type_target, "Blood-type breadth", "Represent [type_target] distinct blood types in the campaign.", null, CONTRACT_EVIDENCE_SCOPE_DEPARTMENT, "blood_type")
-
-/datum/contract_definition/social/program/rehabilitation
-	id = "rehabilitation_return_to_duty"
-	title = "Rehabilitation and Return-to-Duty"
-	description = "NanoTrasen Personnel requests documented recovery of multiple injured crew members."
-	scope = CONTRACT_SCOPE_DEPARTMENT
-	department = DEPARTMENT_MEDICAL
-	issuer_name = "NanoTrasen Occupational Health"
-	issuer_faction = REPUTATION_FACTION_NANOTRASEN
-	reward = 2800
-	// Superseded by the population-scaled Occupational Recovery and Clinical
-	// Access programs, which cover the same play without duplicating scan work.
-	initial_offers = 0
-
-/datum/contract_definition/social/program/rehabilitation/configure_contract(datum/contract/social/contract, list/context)
-	..()
-	var/patient_target = contract_scaled_participant_target(5, 2)
-	add_social_role(contract, "rehab", "Rehabilitation clinician", "Coordinates treatment and confirms durable recovery.", list(DEPARTMENT_MEDICAL), 1, 4)
-	add_social_role(contract, "worker", "Returning crew member", "Completes treatment and follow-up assessment.", null, 4, 10)
-	add_program_count(contract, CONTRACT_EVENT_MEDICAL_TREATMENT_OUTCOME, patient_target * 48, "Condition recovery", "Deliver substantial, measurable recovery across returning crew.", "improvement", CONTRACT_EVIDENCE_SCOPE_DEPARTMENT)
-	add_program_count(contract, CONTRACT_EVENT_MEDICAL_TREATMENT_OUTCOME, patient_target, "Returned crew", "Improve [patient_target] distinct crew members.", null, CONTRACT_EVIDENCE_SCOPE_DEPARTMENT, "subject_id")
-	add_program_count(contract, CONTRACT_EVENT_MEDICAL_SCAN_CREATED, patient_target, "Return-to-duty scans", "Produce follow-up scans for [patient_target] distinct patients.", null, CONTRACT_EVIDENCE_SCOPE_ANY, "subject_id")
-
-/datum/contract_definition/social/program/public_health
-	id = "public_health_response"
-	title = "Public Health Response"
-	description = "SolGov Health requests a broad, evidence-led response to varied station medical conditions."
-	scope = CONTRACT_SCOPE_DEPARTMENT
-	department = DEPARTMENT_MEDICAL
-	issuer_name = "SolGov Public Health Service"
-	issuer_faction = REPUTATION_FACTION_SOLGOV
-	reward = 3200
-
-/datum/contract_definition/social/program/public_health/configure_contract(datum/contract/social/contract, list/context)
-	..()
-	var/patient_target = contract_scaled_participant_target(8, 3)
-	var/condition_target = min(4, max(2, CEILING(patient_target / 2, 1)))
-	add_social_role(contract, "coordinator", "Public-health coordinator", "Coordinates case finding, treatment, and follow-up.", list(DEPARTMENT_MEDICAL), 1, 3)
-	add_social_role(contract, "liaison", "Department health liaison", "Brings department-specific risks and affected staff into the response.", null, 3, 8)
-	add_program_count(contract, CONTRACT_EVENT_MEDICAL_TREATMENT_OUTCOME, patient_target, "Cases improved", "Improve the diagnosed conditions of [patient_target] distinct patients.", null, CONTRACT_EVIDENCE_SCOPE_DEPARTMENT, "subject_id")
-	add_program_count(contract, CONTRACT_EVENT_MEDICAL_TREATMENT_OUTCOME, condition_target, "Condition breadth", "Treat [condition_target] distinct condition classes.", null, CONTRACT_EVIDENCE_SCOPE_DEPARTMENT, "condition_type")
-	add_program_count(contract, CONTRACT_EVENT_MEDICAL_SCAN_CREATED, patient_target, "Case surveillance", "Create medical scans for [patient_target] distinct patients.", null, CONTRACT_EVIDENCE_SCOPE_ANY, "subject_id")
-
-// --------------------------------------------------------------------------
-// Research
-// --------------------------------------------------------------------------
-
-/datum/contract_definition/social/program/materials_qualification
-	id = "materials_qualification_board"
-	title = "Materials Qualification Board"
-	description = "Chimera Genetics requests a varied portfolio of station-manufactured material applications."
-	scope = CONTRACT_SCOPE_DEPARTMENT
-	department = DEPARTMENT_RESEARCH
-	issuer_name = "Chimera Applied Materials Board"
-	issuer_faction = REPUTATION_FACTION_CHIMERA
-	reward = 3000
-
-/datum/contract_definition/social/program/materials_qualification/configure_contract(datum/contract/social/contract, list/context)
-	..()
-	add_social_role(contract, "researcher", "Materials researcher", "Produces and documents the qualification portfolio.", list(DEPARTMENT_RESEARCH), 1, 4)
-	add_social_role(contract, "user", "Operational evaluator", "Purchases, uses, or exports qualified station products.", null, 3, 8)
-	contract.personal_side_definitions = list("research_exclusive_export")
-	add_program_portfolio(contract, CONTRACT_EVENT_ITEM_PRODUCED, 2200, "item_type", "value", 7, "Qualified production", "Produce 2,200 Thalers of station equipment across seven product classes.", CONTRACT_EVIDENCE_SCOPE_DEPARTMENT, null, null, 500, 700)
-	add_program_portfolio(contract, CONTRACT_EVENT_ITEM_EXPORTED, 1200, "item_type", "value", 4, "External qualification", "Export 1,200 Thalers across four qualified product classes.", CONTRACT_EVIDENCE_SCOPE_DEPARTMENT, null, null, 400, 500)
 
 /datum/contract_definition/social/program/advanced_alloy_trial
 	id = "advanced_alloy_trial"
@@ -317,6 +271,7 @@
 	issuer_name = "Chimera Applied Materials"
 	issuer_faction = REPUTATION_FACTION_CHIMERA
 	reward = 3400
+	expected_duration = 90 MINUTES
 
 /datum/contract_definition/social/program/advanced_alloy_trial/configure_contract(datum/contract/social/contract, list/context)
 	..()
@@ -361,298 +316,70 @@
 	checks += list(list("key" = "purity", "comparator" = CONTRACT_EVIDENCE_COMPARE_AT_LEAST, "expected" = 84), list("key" = "amount", "comparator" = CONTRACT_EVIDENCE_COMPARE_AT_LEAST, "expected" = 4))
 	add_material_delivery(contract, checks, 4, "Extreme-service stock order", "Assay at least four sheets meeting the complete envelope, then ship that exact batch through Cargo.")
 
-/datum/contract_definition/social/program/replication_study
-	id = "independent_replication_study"
-	title = "Independent Replication Study"
-	description = "SolGov Science requests independent reproduction of multiple station research results."
-	scope = CONTRACT_SCOPE_DEPARTMENT
-	department = DEPARTMENT_RESEARCH
-	issuer_name = "SolGov Open Science Directorate"
-	issuer_faction = REPUTATION_FACTION_SOLGOV
-	reward = 3100
-	// Reproduction needs stable experiment identity and independent operators.
-	// Generic node unlocks and assorted products do not prove replication.
-	initial_offers = 0
-
-/datum/contract_definition/social/program/replication_study/configure_contract(datum/contract/social/contract, list/context)
-	..()
-	add_social_role(contract, "author", "Primary investigator", "Selects research milestones and produces the initial results.", list(DEPARTMENT_RESEARCH), 1, 3)
-	add_social_role(contract, "replicator", "Independent replicator", "Reproduces outputs without relying on the primary investigator alone.", list(DEPARTMENT_RESEARCH, DEPARTMENT_ENGINEERING, DEPARTMENT_MEDICAL), 2, 6)
-	add_program_count(contract, CONTRACT_EVENT_RESEARCH_MILESTONE, 4, "Research milestones", "Unlock four distinct techweb nodes.", null, CONTRACT_EVIDENCE_SCOPE_DEPARTMENT, "node_id")
-	add_program_portfolio(contract, CONTRACT_EVENT_ITEM_PRODUCED, 1800, "item_type", "value", 6, "Replicated outputs", "Produce a varied 1,800-Thaler portfolio across six product types.", CONTRACT_EVIDENCE_SCOPE_DEPARTMENT, null, null, 400, 500)
-
 /datum/contract_definition/social/program/applied_chemistry
-	id = "applied_chemistry_brief"
-	title = "Therapeutic Production Commission"
-	description = "VeyMed requests a focused production run of one useful clinical compound selected for this shift."
+	id = "research_equipment_commission"
+	title = "Station Equipment Commission"
+	description = "Eclipse will subsidize useful Research equipment purchased by station departments for real operational use."
 	scope = CONTRACT_SCOPE_DEPARTMENT
 	department = DEPARTMENT_RESEARCH
-	issuer_name = "VeyMed Applied Chemistry"
-	issuer_faction = REPUTATION_FACTION_VEYMED
-	reward = 2800
+	issuer_name = "Eclipse Applied Technologies"
+	issuer_faction = REPUTATION_FACTION_ECLIPSE
+	reward = 3200
 
 /datum/contract_definition/social/program/applied_chemistry/configure_contract(datum/contract/social/contract, list/context)
 	..()
-	var/list/clinical_products = list(
-		REAGENT_ID_BICARIDINE = "bicaridine trauma medicine",
-		REAGENT_ID_KELOTANE = "kelotane burn medicine",
-		REAGENT_ID_DEXALINP = "dexalin plus respiratory medicine",
-		REAGENT_ID_ANTITOXIN = "anti-toxin",
-		REAGENT_ID_SPACEACILLIN = "spaceacillin",
-		REAGENT_ID_TRICORDRAZINE = "tricordrazine",
-	)
-	var/product_id = pick(clinical_products)
-	var/product_name = clinical_products[product_id]
-	contract.title = "[capitalize(product_name)] Commission"
-	contract.description = "VeyMed requires 40 units of freshly synthesized [product_name] for station clinical use. Research may choose its equipment, batch size, and production route."
-	add_social_role(contract, "chemist", "Production chemist", "Synthesizes and packages the commissioned medicine.", list(DEPARTMENT_RESEARCH, DEPARTMENT_MEDICAL), 1, 4)
-	add_social_role(contract, "clinician", "Clinical recipient", "Coordinates the station need and receives the finished medicine.", list(DEPARTMENT_MEDICAL), 1, 4)
-	add_program_count(contract, CONTRACT_EVENT_CHEMISTRY_RESULT, 40, "Commissioned medicine", "Synthesize 40 units of [product_name] after accepting the commission.", "amount", CONTRACT_EVIDENCE_SCOPE_DEPARTMENT, null, list("product_id" = product_id))
-
-/datum/contract_definition/social/program/publication_consortium
-	id = "publication_consortium"
-	title = "Publication Consortium"
-	description = "A multi-institution consortium requests research milestones, useful outputs, and demonstrated station adoption."
-	scope = CONTRACT_SCOPE_DEPARTMENT
-	department = DEPARTMENT_RESEARCH
-	issuer_name = "Vir Scientific Publication Consortium"
-	issuer_faction = REPUTATION_FACTION_SOLGOV
-	reward = 3300
-	// Superseded by the commercialization contract, which couples production to
-	// actual station customers. Keep the datum for saved/audit identity only.
-	initial_offers = 0
-
-/datum/contract_definition/social/program/publication_consortium/configure_contract(datum/contract/social/contract, list/context)
-	..()
-	add_social_role(contract, "author", "Consortium author", "Coordinates milestones and attributes contributors.", list(DEPARTMENT_RESEARCH), 2, 5)
-	add_social_role(contract, "licensee", "Station adopter", "Purchases or evaluates the resulting Research goods in practical use.", null, 3, 10)
+	contract.description = "Build useful equipment, sell it through the Research checkout, and have several departments put it into operational use. Eclipse pays for equipment that leaves the shelf and gets used."
+	add_social_role(contract, "designer", "Equipment designer", "Builds and prices equipment for an identified station need.", list(DEPARTMENT_RESEARCH), 1, 4)
+	add_social_role(contract, "customer", "Operational customer", "Purchases equipment for use in their department.", null, 2, 8)
 	contract.personal_side_definitions = list("research_exclusive_export")
-	add_program_count(contract, CONTRACT_EVENT_RESEARCH_MILESTONE, 5, "Published milestones", "Unlock five distinct research nodes.", null, CONTRACT_EVIDENCE_SCOPE_DEPARTMENT, "node_id")
-	add_program_portfolio(contract, CONTRACT_EVENT_ITEM_PRODUCED, 2000, "item_type", "value", 7, "Publication outputs", "Produce 2,000 Thalers across seven output classes.", CONTRACT_EVIDENCE_SCOPE_DEPARTMENT, null, null, 450, 600)
-	add_program_count(contract, CONTRACT_EVENT_SERVICE_PERIOD_SETTLED, 700, "Station adoption", "Settle 700 Thalers of verified Research sales to crew.", "verified_amount", CONTRACT_EVIDENCE_SCOPE_DEPARTMENT, null, list("rollup" = "department"))
-
-// --------------------------------------------------------------------------
-// Security
-// --------------------------------------------------------------------------
-
-/datum/contract_definition/social/program/contraband_buyback
-	id = "contraband_buyback_program"
-	title = "Contraband Buyback Program"
-	description = "SolGov offers a restorative buyback award for resolving custody cases with documented compensation."
-	scope = CONTRACT_SCOPE_DEPARTMENT
-	department = DEPARTMENT_SECURITY
-	issuer_name = "SolGov Community Safety Office"
-	issuer_faction = REPUTATION_FACTION_SOLGOV
-	reward = 2700
-
-/datum/contract_definition/social/program/contraband_buyback/configure_contract(datum/contract/social/contract, list/context)
-	..()
-	add_social_role(contract, "officer", "Buyback coordinator", "Records surrendered cases and verifies lawful disposition.", list(DEPARTMENT_SECURITY), 1, 4)
-	add_social_role(contract, "participant", "Program participant", "Participates in a documented voluntary resolution.", null, 3, 10)
-	contract.personal_side_definitions = list("security_record_suppression")
-	add_program_count(contract, CONTRACT_EVENT_SECURITY_DISPOSITION_CHANGED, 5, "Resolved participants", "Close custodial cases concerning five distinct identifiable people.", null, CONTRACT_EVIDENCE_SCOPE_DEPARTMENT, "subject_id", list("physical_custody_verified" = TRUE))
-	add_program_count(contract, CONTRACT_EVENT_MONEY_TRANSFERRED, 1000, "Documented consideration", "Pay 1,000 Thalers to participants using the transfer purpose 'Contraband buyback'.", "amount", CONTRACT_EVIDENCE_SCOPE_ANY, "target_account", list("purpose" = "Contraband buyback"), list(list("key" = "amount", "comparator" = CONTRACT_EVIDENCE_COMPARE_AT_LEAST, "expected" = 50)))
-
-/datum/contract_definition/social/program/forensic_portfolio
-	id = "forensic_case_portfolio"
-	title = "Forensic Case Portfolio"
-	description = "NanoTrasen Legal requests a varied portfolio of case resolutions tied to identifiable station personnel."
-	scope = CONTRACT_SCOPE_DEPARTMENT
-	department = DEPARTMENT_SECURITY
-	issuer_name = "NanoTrasen Legal Assurance"
-	issuer_faction = REPUTATION_FACTION_NANOTRASEN
-	reward = 2900
-
-/datum/contract_definition/social/program/forensic_portfolio/configure_contract(datum/contract/social/contract, list/context)
-	..()
-	add_social_role(contract, "investigator", "Case investigator", "Develops records and links them to physical subjects.", list(DEPARTMENT_SECURITY), 1, 4)
-	add_social_role(contract, "reviewer", "Independent case reviewer", "Reviews proportionality and record completeness.", list(DEPARTMENT_COMMAND, DEPARTMENT_MEDICAL), 1, 3)
-	add_program_count(contract, CONTRACT_EVENT_SECURITY_DISPOSITION_CHANGED, 7, "Case portfolio", "Resolve seven distinct custodial records linked to identifiable people.", null, CONTRACT_EVIDENCE_SCOPE_DEPARTMENT, "record_id", list("physical_custody_verified" = TRUE))
-	add_program_count(contract, CONTRACT_EVENT_SECURITY_DISPOSITION_CHANGED, 5, "Subject breadth", "Resolve custodial cases for five distinct people.", null, CONTRACT_EVIDENCE_SCOPE_DEPARTMENT, "physical_subject_id", list("physical_custody_verified" = TRUE))
-	add_program_count(contract, CONTRACT_EVENT_CUSTODY_CHANGED, 3, "Documented custody", "Document custody of three distinct people.", null, CONTRACT_EVIDENCE_SCOPE_DEPARTMENT, "subject_id")
-
-/datum/contract_definition/social/program/community_resolution
-	id = "community_resolution_docket"
-	title = "Community Resolution Docket"
-	description = "The Worker's Union requests negotiated, restorative closure of station disputes."
-	scope = CONTRACT_SCOPE_DEPARTMENT
-	department = DEPARTMENT_SECURITY
-	issuer_name = "Worker's Union Mediation Board"
-	issuer_faction = REPUTATION_FACTION_WORKERS_UNION
-	reward = 2600
-
-/datum/contract_definition/social/program/community_resolution/configure_contract(datum/contract/social/contract, list/context)
-	..()
-	add_social_role(contract, "mediator", "Security mediator", "Facilitates documented case closure without predetermining the outcome.", list(DEPARTMENT_SECURITY), 1, 3)
-	add_social_role(contract, "party", "Community participant", "Represents an affected party, guarantor, or department.", null, 4, 12)
-	add_program_count(contract, CONTRACT_EVENT_SECURITY_DISPOSITION_CHANGED, 5, "Resolved docket", "Close five distinct custodial case records.", null, CONTRACT_EVIDENCE_SCOPE_DEPARTMENT, "record_id", list("physical_custody_verified" = TRUE))
-	add_program_count(contract, CONTRACT_EVENT_MONEY_TRANSFERRED, 800, "Restitution and guarantees", "Transfer 800 Thalers among distinct recipients using the purpose 'Community restitution'.", "amount", CONTRACT_EVIDENCE_SCOPE_ANY, "target_account", list("purpose" = "Community restitution"), list(list("key" = "amount", "comparator" = CONTRACT_EVIDENCE_COMPARE_AT_LEAST, "expected" = 50)))
-
-/datum/contract_definition/social/program/emergency_response
-	id = "emergency_response_accreditation"
-	title = "Emergency Response Accreditation"
-	description = "SolGov Emergency Management requests a multi-department response portfolio grounded in real incidents."
-	scope = CONTRACT_SCOPE_DEPARTMENT
-	department = DEPARTMENT_SECURITY
-	issuer_name = "SolGov Emergency Management"
-	issuer_faction = REPUTATION_FACTION_SOLGOV
-	reward = 3200
-	// Reserved for a future multi-system incident trigger; never rotate this
-	// into a healthy station's standing board.
-	initial_offers = 0
-
-/datum/contract_definition/social/program/emergency_response/configure_contract(datum/contract/social/contract, list/context)
-	..()
-	add_social_role(contract, "commander", "Response commander", "Coordinates scene safety and cross-department priorities.", list(DEPARTMENT_SECURITY, DEPARTMENT_COMMAND), 1, 3)
-	add_social_role(contract, "responder", "Specialist responder", "Provides Engineering or Medical response capacity.", list(DEPARTMENT_ENGINEERING, DEPARTMENT_MEDICAL), 2, 6)
-	add_program_count(contract, CONTRACT_EVENT_MEDICAL_TREATMENT_OUTCOME, 4, "Casualty recovery", "Improve four distinct patients through the condition system.", null, CONTRACT_EVIDENCE_SCOPE_ANY, "subject_id")
-	add_program_count(contract, CONTRACT_EVENT_SECURITY_DISPOSITION_CHANGED, 3, "Incident closure", "Close three distinct custodial incident records.", null, CONTRACT_EVIDENCE_SCOPE_DEPARTMENT, "record_id", list("physical_custody_verified" = TRUE))
-
-// --------------------------------------------------------------------------
-// Cargo
-// --------------------------------------------------------------------------
-
-/datum/contract_definition/social/program/budget_procurement
-	id = "budget_procurement_challenge"
-	title = "Budget Procurement Challenge"
-	description = "The Traders' Guild requests broad purchasing value without relying on a single catalog line."
-	scope = CONTRACT_SCOPE_DEPARTMENT
-	department = DEPARTMENT_CARGO
-	issuer_name = "Interstellar Traders' Guild"
-	issuer_faction = REPUTATION_FACTION_TRADERS_GUILD
-	reward = 2900
-
-/datum/contract_definition/social/program/budget_procurement/configure_contract(datum/contract/social/contract, list/context)
-	..()
-	add_social_role(contract, "buyer", "Cargo procurement lead", "Coordinates approvals, timing, and budget use.", list(DEPARTMENT_CARGO), 1, 3)
-	add_social_role(contract, "requester", "Department requester", "Defines a departmental need and receives the resulting order.", null, 3, 8)
-	contract.personal_side_definitions = list("cargo_local_priority")
-	add_program_count(contract, CONTRACT_EVENT_SUPPLY_ORDER_FULFILLED, 5000, "Procured value", "Deliver 5,000 Thalers of departmental supply orders.", "value", CONTRACT_EVIDENCE_SCOPE_ANY)
-	add_program_count(contract, CONTRACT_EVENT_SUPPLY_ORDER_FULFILLED, 9, "Catalog breadth", "Fulfill nine distinct supply-pack types.", null, CONTRACT_EVIDENCE_SCOPE_ANY, "pack_type")
-	add_program_count(contract, CONTRACT_EVENT_SUPPLY_ORDER_FULFILLED, 4, "Department participation", "Fulfill orders funded by four distinct departments.", null, CONTRACT_EVIDENCE_SCOPE_ANY, "funding_department")
-
-/datum/contract_definition/social/program/local_supplier
-	id = "local_supplier_cooperative"
-	title = "Local Supplier Cooperative"
-	description = "The Traders' Guild requests a diversified export portfolio sourced from station departments."
-	scope = CONTRACT_SCOPE_DEPARTMENT
-	department = DEPARTMENT_CARGO
-	issuer_name = "Interstellar Traders' Guild Cooperative Desk"
-	issuer_faction = REPUTATION_FACTION_TRADERS_GUILD
-	reward = 3000
-
-/datum/contract_definition/social/program/local_supplier/configure_contract(datum/contract/social/contract, list/context)
-	..()
-	add_social_role(contract, "broker", "Cargo cooperative broker", "Values, manifests, and exports station products.", list(DEPARTMENT_CARGO), 1, 3)
-	add_social_role(contract, "supplier", "Department supplier", "Contributes locally produced goods to the cooperative.", null, 4, 12)
-	add_program_portfolio(contract, CONTRACT_EVENT_ITEM_EXPORTED, 4000, "origin_department", "value", 4, "Local export value", "Export 4,000 Thalers sourced from four station departments.", CONTRACT_EVIDENCE_SCOPE_ANY, null, null, 700, 1400)
-	add_program_count(contract, CONTRACT_EVENT_ITEM_EXPORTED, 9, "Product breadth", "Export nine distinct product classes.", null, CONTRACT_EVIDENCE_SCOPE_ANY, "item_type")
-
-/datum/contract_definition/social/program/materials_recovery
-	id = "materials_recovery_initiative"
-	title = "Materials Recovery Initiative"
-	description = "NanoTrasen Circular Logistics requests a varied portfolio of recovered assets returned by freight."
-	scope = CONTRACT_SCOPE_DEPARTMENT
-	department = DEPARTMENT_CARGO
-	issuer_name = "NanoTrasen Circular Logistics"
-	issuer_faction = REPUTATION_FACTION_NANOTRASEN
-	reward = 2850
-
-/datum/contract_definition/social/program/materials_recovery/configure_contract(datum/contract/social/contract, list/context)
-	..()
-	add_social_role(contract, "recovery", "Materials recovery lead", "Organizes collection, valuation, and outbound processing.", list(DEPARTMENT_CARGO), 1, 4)
-	add_social_role(contract, "supplier", "Recovery contributor", "Supplies salvage, surplus, raw material, or fabricated goods.", null, 3, 10)
-	add_program_portfolio(contract, CONTRACT_EVENT_ITEM_EXPORTED, 5000, "item_type", "value", 10, "Recovered freight", "Export 5,000 Thalers across ten product classes.", CONTRACT_EVIDENCE_SCOPE_ANY, null, null, 600, 900)
-	add_program_portfolio(contract, CONTRACT_EVENT_ITEM_PRODUCED, 1200, "department", "value", 3, "Station reclamation use", "Produce 1,200 Thalers of equipment across three departments.", CONTRACT_EVIDENCE_SCOPE_ANY, null, null, 400, 600)
-
-/datum/contract_definition/social/program/cold_chain
-	id = "cold_chain_logistics"
-	title = "Cold-Chain Logistics"
-	description = "VeyMed requests diverse medical supplies delivered under documented cold-chain conditions."
-	scope = CONTRACT_SCOPE_DEPARTMENT
-	department = DEPARTMENT_CARGO
-	issuer_name = "VeyMed Cold-Chain Operations"
-	issuer_faction = REPUTATION_FACTION_VEYMED
-	reward = 2800
-
-/datum/contract_definition/social/program/cold_chain/configure_contract(datum/contract/social/contract, list/context)
-	..()
-	add_social_role(contract, "logistics", "Cold-chain coordinator", "Schedules and receives temperature-controlled Cargo orders.", list(DEPARTMENT_CARGO), 1, 3)
-	add_social_role(contract, "recipient", "Clinical or food-service recipient", "Defines need and accepts freezer-crate deliveries.", list(DEPARTMENT_MEDICAL, DEPARTMENT_CIVILIAN), 2, 6)
-	add_program_count(contract, CONTRACT_EVENT_SUPPLY_ORDER_FULFILLED, 6, "Cold-chain deliveries", "Fulfill six distinct supply packs delivered in freezer crates.", null, CONTRACT_EVIDENCE_SCOPE_ANY, "pack_type", list("cold_chain" = TRUE))
-	add_program_count(contract, CONTRACT_EVENT_SUPPLY_ORDER_FULFILLED, 2400, "Protected cargo value", "Deliver 2,400 Thalers of freezer-crated goods.", "value", CONTRACT_EVIDENCE_SCOPE_ANY, null, list("cold_chain" = TRUE))
-
-// --------------------------------------------------------------------------
-// Civilian
-// --------------------------------------------------------------------------
+	add_program_count(contract, CONTRACT_EVENT_EQUIPMENT_ADOPTED, 900, "Equipment in service", "Put 900 Thalers of purchased Research equipment into operational use.", "value", CONTRACT_EVIDENCE_SCOPE_DEPARTMENT)
+	add_program_count(contract, CONTRACT_EVENT_EQUIPMENT_ADOPTED, 3, "Departments equipped", "Have purchased equipment used by three distinct station departments.", null, CONTRACT_EVIDENCE_SCOPE_DEPARTMENT, "customer_department")
+	add_program_count(contract, CONTRACT_EVENT_EQUIPMENT_ADOPTED, 4, "Useful deliveries", "Have four distinct purchased items used by their customers.", null, CONTRACT_EVIDENCE_SCOPE_DEPARTMENT, "physical_item_id")
 
 /datum/contract_definition/social/program/station_festival
-	id = "station_festival_commission"
-	title = "Station Festival Commission"
-	description = "TALON Cultural Exchange requests a paid station event with broad participation and varied service."
+	id = "station_catering_commission"
+	title = "Station Catering Commission"
+	description = "TALON Cultural Exchange requests a paid catering service for a broad group of station personnel."
 	scope = CONTRACT_SCOPE_DEPARTMENT
 	department = DEPARTMENT_CIVILIAN
 	issuer_name = "TALON Cultural Exchange"
 	issuer_faction = REPUTATION_FACTION_TALON
 	reward = 3000
+	expected_duration = 45 MINUTES
 
 /datum/contract_definition/social/program/station_festival/configure_contract(datum/contract/social/contract, list/context)
 	..()
-	var/customer_target = contract_scaled_participant_target(16, 4, 1)
-	add_social_role(contract, "host", "Festival host", "Coordinates food, drink, pricing, and participation.", list(DEPARTMENT_CIVILIAN), 2, 6)
-	add_social_role(contract, "patron", "Registered patron", "Participates as a paying customer or event sponsor.", null, 6, 16)
+	var/customer_target = contract_scaled_participant_target(10, 3, 2)
+	add_social_role(contract, "caterer", "Catering lead", "Plans, prepares, prices, and serves the commission.", list(DEPARTMENT_CIVILIAN), 1, 4)
+	add_social_role(contract, "customer", "Catering customer", "Purchases and consumes a meal or drink from the commissioned service.", null, 3, 10)
 	contract.personal_side_definitions = list("service_gratuity_drive")
-	add_program_count(contract, CONTRACT_EVENT_SERVICE_PERIOD_SETTLED, customer_target * 75, "Festival revenue", "Settle [customer_target * 75] Thalers of Civilian service sales.", "verified_amount", CONTRACT_EVIDENCE_SCOPE_DEPARTMENT, null, list("rollup" = "department"))
 	var/list/paid_checks = list(list("key" = "sale_invoice_id", "comparator" = CONTRACT_EVIDENCE_COMPARE_AT_LEAST, "expected" = 1))
-	add_program_count(contract, CONTRACT_EVENT_FOOD_CONSUMED, customer_target, "Festival attendance", "Serve invoiced food or drink to [customer_target] distinct consumers.", null, CONTRACT_EVIDENCE_SCOPE_DEPARTMENT, "subject_id", null, paid_checks)
-	var/menu_target = min(10, max(4, CEILING(customer_target * 0.6, 1)))
-	add_program_count(contract, CONTRACT_EVENT_FOOD_CONSUMED, menu_target, "Menu breadth", "Serve [menu_target] distinct invoiced meal or drink types.", null, CONTRACT_EVIDENCE_SCOPE_DEPARTMENT, "item_type", null, paid_checks)
-
-/datum/contract_definition/social/program/nutritional_services
-	id = "nutritional_services_campaign"
-	title = "Nutritional Services Campaign"
-	description = "NanoTrasen Personnel requests broad, measurable crew participation in paid station food service."
-	scope = CONTRACT_SCOPE_DEPARTMENT
-	department = DEPARTMENT_CIVILIAN
-	issuer_name = "NanoTrasen Personnel Services"
-	issuer_faction = REPUTATION_FACTION_NANOTRASEN
-	reward = 2700
-	// The Festival commission owns the paid-menu participation loop; do not
-	// offer a second contract with the same checklist under another name.
-	initial_offers = 0
-
-/datum/contract_definition/social/program/nutritional_services/configure_contract(datum/contract/social/contract, list/context)
-	..()
-	var/customer_target = contract_scaled_participant_target(20, 5, 1)
-	add_social_role(contract, "provider", "Nutrition-service provider", "Prepares, prices, and sells a varied station menu.", list(DEPARTMENT_CIVILIAN), 1, 5)
-	add_social_role(contract, "participant", "Crew participant", "Purchases and consumes station food or drink.", null, 5, 14)
-	var/list/paid_checks = list(list("key" = "sale_invoice_id", "comparator" = CONTRACT_EVIDENCE_COMPARE_AT_LEAST, "expected" = 1))
-	add_program_count(contract, CONTRACT_EVENT_FOOD_CONSUMED, customer_target, "Crew reached", "Serve invoiced food or drink to [customer_target] distinct consumers.", null, CONTRACT_EVIDENCE_SCOPE_DEPARTMENT, "subject_id", null, paid_checks)
-	var/menu_target = min(12, max(4, CEILING(customer_target * 0.6, 1)))
-	add_program_count(contract, CONTRACT_EVENT_FOOD_CONSUMED, menu_target, "Menu diversity", "Serve [menu_target] distinct invoiced food or drink types.", null, CONTRACT_EVIDENCE_SCOPE_DEPARTMENT, "item_type", null, paid_checks)
-	add_program_count(contract, CONTRACT_EVENT_SERVICE_PERIOD_SETTLED, customer_target * 50, "Sustainable service", "Settle [customer_target * 50] Thalers of Civilian sales.", "verified_amount", CONTRACT_EVIDENCE_SCOPE_DEPARTMENT, null, list("rollup" = "department"))
-
-/datum/contract_definition/social/program/agricultural_cooperative
-	id = "agricultural_cooperative"
-	title = "Agricultural Cooperative"
-	description = "The Worker's Union requests a varied harvest tied to paid station food-service demand."
-	scope = CONTRACT_SCOPE_DEPARTMENT
-	department = DEPARTMENT_CIVILIAN
-	issuer_name = "Worker's Union Agricultural Cooperative"
-	issuer_faction = REPUTATION_FACTION_WORKERS_UNION
-	reward = 2800
-
-/datum/contract_definition/social/program/agricultural_cooperative/configure_contract(datum/contract/social/contract, list/context)
-	..()
-	add_social_role(contract, "grower", "Cooperative grower", "Raises and harvests a varied station crop portfolio.", list(DEPARTMENT_CIVILIAN), 1, 5)
-	add_social_role(contract, "buyer", "Kitchen or crew buyer", "Creates real demand for the cooperative's output.", null, 3, 10)
-	add_program_count(contract, CONTRACT_EVENT_CROP_HARVESTED, 60, "Cooperative yield", "Harvest sixty units of station produce.", "yield", CONTRACT_EVIDENCE_SCOPE_DEPARTMENT)
-	add_program_count(contract, CONTRACT_EVENT_CROP_HARVESTED, 8, "Crop diversity", "Harvest eight distinct crop lines.", null, CONTRACT_EVIDENCE_SCOPE_DEPARTMENT, "crop_id")
-	add_program_count(contract, CONTRACT_EVENT_SERVICE_PERIOD_SETTLED, 700, "Market demand", "Settle 700 Thalers of verified Civilian sales.", "verified_amount", CONTRACT_EVIDENCE_SCOPE_DEPARTMENT, null, list("rollup" = "department"))
+	add_program_count(contract, CONTRACT_EVENT_FOOD_CONSUMED, customer_target, "Customers served", "Serve invoiced food or drink to [customer_target] distinct station customers.", null, CONTRACT_EVIDENCE_SCOPE_DEPARTMENT, "subject_id", null, paid_checks)
+	add_program_count(contract, CONTRACT_EVENT_FOOD_CONSUMED, min(5, customer_target), "Menu choice", "Serve [min(5, customer_target)] different prepared dishes or drinks as part of the order.", null, CONTRACT_EVIDENCE_SCOPE_DEPARTMENT, "item_type", null, paid_checks)
 
 // --------------------------------------------------------------------------
 // Command
 // --------------------------------------------------------------------------
+
+/datum/contract/social/balanced_operations
+	var/datum/contract_requirement/event_count/cycle_requirement
+
+/datum/contract/social/balanced_operations/Destroy()
+	cycle_requirement = null
+	return ..()
+
+/datum/contract/social/balanced_operations/on_negotiated_terms_changed()
+	..()
+	if(!cycle_requirement)
+		return
+	var/profile = negotiated_effect("budget_profile", "balanced")
+	var/payroll_floor = profile == "staff" ? 0.98 : 0.9
+	var/department_floor = profile == "departments" ? 7 : 6
+	var/reserve_floor = profile == "reserve" ? 5000 : 0
+	cycle_requirement.filter.set_number_requirement("payroll_coverage", CONTRACT_EVIDENCE_COMPARE_AT_LEAST, payroll_floor)
+	cycle_requirement.filter.set_number_requirement("funded_department_count", CONTRACT_EVIDENCE_COMPARE_AT_LEAST, department_floor)
+	cycle_requirement.filter.set_number_requirement("station_balance", CONTRACT_EVIDENCE_COMPARE_AT_LEAST, reserve_floor)
+	cycle_requirement.description = "Close two station budget cycles with at least [round(payroll_floor * 100)]% payroll coverage, [department_floor] funded departments[reserve_floor ? ", and [reserve_floor] Thalers retained in station reserve" : ""]."
 
 /datum/contract_definition/social/program/balanced_operations
 	id = "balanced_operations_charter"
@@ -663,14 +390,20 @@
 	issuer_name = "NanoTrasen Corporate Finance"
 	issuer_faction = REPUTATION_FACTION_NANOTRASEN
 	reward = 3400
+	expected_duration = 120 MINUTES
+	contract_type = /datum/contract/social/balanced_operations
 
-/datum/contract_definition/social/program/balanced_operations/configure_contract(datum/contract/social/contract, list/context)
+/datum/contract_definition/social/program/balanced_operations/configure_contract(datum/contract/social/balanced_operations/contract, list/context)
 	..()
 	add_social_role(contract, "executive", "Executive budget sponsor", "Sets allocations and accepts accountability for the closed cycle.", list(DEPARTMENT_COMMAND), 1, 2)
 	add_social_role(contract, "delegate", "Department budget delegate", "Represents operating and workforce needs.", list(DEPARTMENT_ENGINEERING, DEPARTMENT_MEDICAL, DEPARTMENT_RESEARCH, DEPARTMENT_SECURITY, DEPARTMENT_CARGO, DEPARTMENT_CIVILIAN, DEPARTMENT_SYNTHETIC), 5, 9)
 	contract.personal_side_definitions = list("command_executive_reserve")
-	add_program_count(contract, CONTRACT_EVENT_BUDGET_CYCLE_SETTLED, 1, "Balanced cycle", "Close a station budget cycle funding at least six departments and 20,000 Thalers.", null, CONTRACT_EVIDENCE_SCOPE_DEPARTMENT, null, list("rollup" = "station"), list(list("key" = "funded_department_count", "comparator" = CONTRACT_EVIDENCE_COMPARE_AT_LEAST, "expected" = 6), list("key" = "funded_allocation_total", "comparator" = CONTRACT_EVIDENCE_COMPARE_AT_LEAST, "expected" = 20000)))
-	add_program_count(contract, CONTRACT_EVENT_BUDGET_CYCLE_SETTLED, 1, "Payroll coverage", "Fund at least 90% of due station payroll in the same closed cycle.", null, CONTRACT_EVIDENCE_SCOPE_DEPARTMENT, null, list("rollup" = "station"), list(list("key" = "payroll_coverage", "comparator" = CONTRACT_EVIDENCE_COMPARE_AT_LEAST, "expected" = 0.9)))
+	contract.cycle_requirement = add_program_count(contract, CONTRACT_EVENT_BUDGET_CYCLE_SETTLED, 2, "Sustained operating agreement", "Close two distinct station budget cycles with payroll paid first, at least six funded departments, and at least 90% payroll coverage.", null, CONTRACT_EVIDENCE_SCOPE_DEPARTMENT, "accounting_period", list("rollup" = "station"), list(list("key" = "funded_department_count", "comparator" = CONTRACT_EVIDENCE_COMPARE_AT_LEAST, "expected" = 6), list("key" = "payroll_coverage", "comparator" = CONTRACT_EVIDENCE_COMPARE_AT_LEAST, "expected" = 0.9), list("key" = "station_balance", "comparator" = CONTRACT_EVIDENCE_COMPARE_AT_LEAST, "expected" = 0)))
+	var/datum/contract_negotiation_clause/operating_policy = new("operating_policy", "Operating policy", "Choose the station's priority for both covered budget cycles.")
+	operating_policy.add_option(make_contract_clause_option("staff", "Staffing first", "Requires 98% payroll coverage across both cycles.", -100, -100, 200, 2, 1, 3, 0, list("budget_profile" = "staff")), TRUE)
+	operating_policy.add_option(make_contract_clause_option("departments", "Operations first", "Requires all seven operating departments to receive funding.", -50, 250, -100, 1, 3, 0, 0, list("budget_profile" = "departments")))
+	operating_policy.add_option(make_contract_clause_option("reserve", "Reserve first", "Requires a 5,000 Thaler station reserve at settlement.", 250, -100, -150, 2, -1, -1, 0, list("budget_profile" = "reserve")))
+	contract.add_negotiation_clause(operating_policy)
 
 /datum/contract_definition/social/program/mutual_aid
 	id = "interdepartmental_mutual_aid_compact"
@@ -685,124 +418,9 @@
 /datum/contract_definition/social/program/mutual_aid/configure_contract(datum/contract/social/contract, list/context)
 	..()
 	add_social_role(contract, "coordinator", "Mutual-aid coordinator", "Allocates resources and resolves interdepartmental priorities.", list(DEPARTMENT_COMMAND), 1, 2)
-	add_social_role(contract, "delegate", "Department compact delegate", "Commits a department to provide or receive meaningful aid.", list(DEPARTMENT_ENGINEERING, DEPARTMENT_MEDICAL, DEPARTMENT_RESEARCH, DEPARTMENT_SECURITY, DEPARTMENT_CARGO, DEPARTMENT_CIVILIAN, DEPARTMENT_SYNTHETIC), 4, 9)
-	add_program_count(contract, CONTRACT_EVENT_BUDGET_ALLOCATION_CHANGED, 10000, "Committed aid", "Commit 10,000 Thalers to departmental aid allocations.", "amount")
-	add_program_count(contract, CONTRACT_EVENT_BUDGET_ALLOCATION_CHANGED, 5, "Recipient breadth", "Fund five distinct departments.", null, CONTRACT_EVIDENCE_SCOPE_ANY, "target_department")
-	add_program_portfolio(contract, CONTRACT_EVENT_ITEM_PRODUCED, 1200, "department", "value", 3, "Delivered aid", "Produce useful equipment through three departments receiving compact support.", CONTRACT_EVIDENCE_SCOPE_ANY, null, null, 500, 600)
-
-/datum/contract_definition/social/program/emergency_continuity
-	id = "emergency_continuity_award"
-	title = "Emergency Continuity Award"
-	description = "SolGov requests restoration of essential electrical, atmospheric, and medical service after disruption."
-	scope = CONTRACT_SCOPE_DEPARTMENT
-	department = DEPARTMENT_COMMAND
-	issuer_name = "SolGov Continuity Directorate"
-	issuer_faction = REPUTATION_FACTION_SOLGOV
-	reward = 3500
-	initial_offers = 0
-
-/datum/contract_definition/social/program/emergency_continuity/configure_contract(datum/contract/social/contract, list/context)
-	..()
-	add_social_role(contract, "command", "Continuity commander", "Coordinates priorities and interdepartmental access.", list(DEPARTMENT_COMMAND), 1, 2)
-	add_social_role(contract, "specialist", "Continuity specialist", "Restores one essential service domain.", list(DEPARTMENT_ENGINEERING, DEPARTMENT_MEDICAL, DEPARTMENT_SECURITY), 3, 8)
-	add_program_count(contract, CONTRACT_EVENT_POWER_SERVICE_CHANGED, 5, "Electrical continuity", "Return five distinct APC zones to full service.", null, CONTRACT_EVIDENCE_SCOPE_ANY, "service_id", null, list(list("key" = "powered_channels", "comparator" = CONTRACT_EVIDENCE_COMPARE_AT_LEAST, "expected" = 3)))
-	add_program_count(contract, CONTRACT_EVENT_ATMOS_SERVICE_CHANGED, 5, "Atmospheric continuity", "Return five distinct alarm zones to safe status.", null, CONTRACT_EVIDENCE_SCOPE_ANY, "service_id", null, list(list("key" = "danger_level", "comparator" = CONTRACT_EVIDENCE_COMPARE_AT_MOST, "expected" = 0)))
-	add_program_count(contract, CONTRACT_EVENT_MEDICAL_TREATMENT_OUTCOME, 4, "Medical continuity", "Stabilize and improve four distinct patients' diagnosed conditions.", null, CONTRACT_EVIDENCE_SCOPE_ANY, "subject_id")
-
-/datum/contract_definition/social/program/workforce_retention
-	id = "workforce_retention_agreement"
-	title = "Workforce Retention Agreement"
-	description = "The Worker's Union requests a funded payroll cycle and broad employee participation."
-	scope = CONTRACT_SCOPE_DEPARTMENT
-	department = DEPARTMENT_COMMAND
-	issuer_name = "Worker's Union Bargaining Council"
-	issuer_faction = REPUTATION_FACTION_WORKERS_UNION
-	reward = 3300
-	// Balanced Operations already covers the same payroll-cycle decision with
-	// stronger departmental tradeoffs and a conflicting personal offer.
-	initial_offers = 0
-
-/datum/contract_definition/social/program/workforce_retention/configure_contract(datum/contract/social/contract, list/context)
-	..()
-	add_social_role(contract, "executive", "Station bargaining representative", "Commits Command to the selected compensation terms.", list(DEPARTMENT_COMMAND), 1, 2)
-	add_social_role(contract, "delegate", "Workforce delegate", "Represents one department's staff and operating needs.", list(DEPARTMENT_ENGINEERING, DEPARTMENT_MEDICAL, DEPARTMENT_RESEARCH, DEPARTMENT_SECURITY, DEPARTMENT_CARGO, DEPARTMENT_CIVILIAN, DEPARTMENT_SYNTHETIC), 5, 10)
-	add_program_count(contract, CONTRACT_EVENT_BUDGET_CYCLE_SETTLED, 1, "Funded payroll", "Close a cycle paying at least 95% of due payroll.", null, CONTRACT_EVIDENCE_SCOPE_DEPARTMENT, null, list("rollup" = "station"), list(list("key" = "payroll_coverage", "comparator" = CONTRACT_EVIDENCE_COMPARE_AT_LEAST, "expected" = 0.95)))
-	add_program_count(contract, CONTRACT_EVENT_BUDGET_CYCLE_SETTLED, 6, "Funded departments", "Fund at least six operating departments in the closed cycle.", "funded_department_count", CONTRACT_EVIDENCE_SCOPE_DEPARTMENT, null, list("rollup" = "station"))
-
-// --------------------------------------------------------------------------
-// Synthetic
-// --------------------------------------------------------------------------
-
-/datum/contract_definition/social/program/systems_uptime
-	id = "systems_uptime_accord"
-	title = "Systems Uptime Accord"
-	description = "Kusanagi field support requests sustained electrical service across the station's monitored distribution zones."
-	scope = CONTRACT_SCOPE_STATION
-	department = DEPARTMENT_SYNTHETIC
-	issuer_name = "Kusanagi Robotics Field Support"
-	issuer_faction = REPUTATION_FACTION_NANOTRASEN
-	reward = 2900
-	initial_offers = 0
-
-/datum/contract_definition/social/program/systems_uptime/configure_contract(datum/contract/social/contract, list/context)
-	..()
-	add_social_role(contract, "systems", "Synthetic systems coordinator", "Monitors service continuity and directs automated support.", list(DEPARTMENT_SYNTHETIC), 0, 4)
-	add_social_role(contract, "liaison", "Department systems liaison", "Provides operational priorities and verifies restored service.", null, 3, 8)
-	add_program_count(contract, CONTRACT_EVENT_POWER_SERVICE_CHANGED, 8, "Distributed uptime", "Return eight distinct APC service zones to full power.", null, CONTRACT_EVIDENCE_SCOPE_ANY, "service_id", null, list(list("key" = "powered_channels", "comparator" = CONTRACT_EVIDENCE_COMPARE_AT_LEAST, "expected" = 3)))
-	add_program_sustained(contract, CONTRACT_EVENT_POWER_SERVICE_CHANGED, "service_id", "powered_channels", CONTRACT_EVIDENCE_COMPARE_AT_LEAST, 3, 3 MINUTES, 5, "Sustained uptime", "Hold five service zones at full power for three minutes.", CONTRACT_EVIDENCE_SCOPE_ANY)
-
-/datum/contract_definition/social/program/automation_logistics
-	id = "automation_logistics_trial"
-	title = "Automation Logistics Trial"
-	description = "Kusanagi Robotics requests a varied field trial of station bots performing useful work for the crew."
-	scope = CONTRACT_SCOPE_STATION
-	department = DEPARTMENT_SYNTHETIC
-	issuer_name = "Kusanagi Robotics Applications Group"
-	issuer_faction = REPUTATION_FACTION_NANOTRASEN
-	reward = 3000
-	// Human-Synthetic Service Compact is the social version of this task loop.
-	initial_offers = 0
-
-/datum/contract_definition/social/program/automation_logistics/configure_contract(datum/contract/social/contract, list/context)
-	..()
-	add_social_role(contract, "automation", "Automation coordinator", "Configures and supervises station bots in active service.", list(DEPARTMENT_SYNTHETIC, DEPARTMENT_CARGO), 1, 4)
-	add_social_role(contract, "recipient", "Automation-service recipient", "Provides real tasks and confirms operational results.", null, 3, 10)
-	add_program_count(contract, CONTRACT_EVENT_AUTOMATION_TASK_COMPLETED, 15, "Automated workload", "Complete fifteen units of successful automated work.", "work_units", CONTRACT_EVIDENCE_SCOPE_DEPARTMENT)
-	add_program_count(contract, CONTRACT_EVENT_AUTOMATION_TASK_COMPLETED, 3, "Task diversity", "Complete three distinct automation task classes.", null, CONTRACT_EVIDENCE_SCOPE_DEPARTMENT, "task_kind")
-	add_program_count(contract, CONTRACT_EVENT_AUTOMATION_TASK_COMPLETED, 5, "Service breadth", "Complete useful work for five distinct recipients or locations.", null, CONTRACT_EVIDENCE_SCOPE_DEPARTMENT, "target_id")
-
-/datum/contract_definition/social/program/access_safety_audit
-	id = "access_safety_audit"
-	title = "Access and Safety Audit"
-	description = "NanoTrasen Systems Assurance requests cross-system verification backed by actual service transitions and repairs."
-	scope = CONTRACT_SCOPE_STATION
-	department = DEPARTMENT_SYNTHETIC
-	issuer_name = "NanoTrasen Systems Assurance"
-	issuer_faction = REPUTATION_FACTION_NANOTRASEN
-	reward = 2800
-	initial_offers = 0
-
-/datum/contract_definition/social/program/access_safety_audit/configure_contract(datum/contract/social/contract, list/context)
-	..()
-	add_social_role(contract, "auditor", "Systems auditor", "Coordinates automated checks and identifies unsafe dependencies.", list(DEPARTMENT_SYNTHETIC, DEPARTMENT_ENGINEERING), 1, 4)
-	add_social_role(contract, "owner", "Department asset owner", "Provides access and accepts the resulting service state.", null, 3, 8)
-	add_program_count(contract, CONTRACT_EVENT_POWER_SERVICE_CHANGED, 6, "Electrical audit", "Verify six distinct APC zones in full service.", null, CONTRACT_EVIDENCE_SCOPE_ANY, "service_id", null, list(list("key" = "powered_channels", "comparator" = CONTRACT_EVIDENCE_COMPARE_AT_LEAST, "expected" = 3)))
-	add_program_count(contract, CONTRACT_EVENT_ATMOS_SERVICE_CHANGED, 6, "Atmospheric audit", "Verify six distinct air-alarm zones at safe status.", null, CONTRACT_EVIDENCE_SCOPE_ANY, "service_id", null, list(list("key" = "danger_level", "comparator" = CONTRACT_EVIDENCE_COMPARE_AT_MOST, "expected" = 0)))
-
-/datum/contract_definition/social/program/human_synthetic_compact
-	id = "human_synthetic_service_compact"
-	title = "Human-Synthetic Service Compact"
-	description = "The Worker's Union and Kusanagi Robotics jointly request accountable automation serving varied crew needs."
-	scope = CONTRACT_SCOPE_STATION
-	department = DEPARTMENT_SYNTHETIC
-	issuer_name = "Human-Synthetic Service Council"
-	issuer_faction = REPUTATION_FACTION_WORKERS_UNION
-	reward = 3200
-
-/datum/contract_definition/social/program/human_synthetic_compact/configure_contract(datum/contract/social/contract, list/context)
-	..()
-	add_social_role(contract, "synthetic", "Synthetic service coordinator", "Coordinates automated work and reports service constraints.", list(DEPARTMENT_SYNTHETIC), 0, 4)
-	add_social_role(contract, "delegate", "Crew service delegate", "Represents a department receiving or supervising automated assistance.", list(DEPARTMENT_ENGINEERING, DEPARTMENT_MEDICAL, DEPARTMENT_RESEARCH, DEPARTMENT_SECURITY, DEPARTMENT_CARGO, DEPARTMENT_CIVILIAN, DEPARTMENT_COMMAND), 4, 10)
-	add_program_count(contract, CONTRACT_EVENT_AUTOMATION_TASK_COMPLETED, 18, "Shared automated work", "Complete eighteen units of successful station-bot work.", "work_units", CONTRACT_EVIDENCE_SCOPE_DEPARTMENT)
-	add_program_count(contract, CONTRACT_EVENT_AUTOMATION_TASK_COMPLETED, 3, "Service breadth", "Complete three distinct automation task classes.", null, CONTRACT_EVIDENCE_SCOPE_DEPARTMENT, "task_kind")
-	add_program_count(contract, CONTRACT_EVENT_AUTOMATION_TASK_COMPLETED, 8, "Crew needs served", "Complete useful work for eight distinct recipients or locations.", null, CONTRACT_EVIDENCE_SCOPE_DEPARTMENT, "target_id")
+	add_social_role(contract, "recipient", "Funded department lead", "Accepts funding and delivers a useful project for station operation.", list(DEPARTMENT_ENGINEERING, DEPARTMENT_MEDICAL, DEPARTMENT_RESEARCH, DEPARTMENT_SECURITY, DEPARTMENT_CARGO, DEPARTMENT_CIVILIAN, DEPARTMENT_SYNTHETIC), 3, 7)
+	var/datum/contract_requirement/paired_facts/projects = add_program_paired_facts(contract, CONTRACT_EVENT_MONEY_TRANSFERRED, CONTRACT_EVENT_ITEM_PRODUCED, "target_department", 3, "Funded station projects", "Fund three departments from the station account, then have each funded department produce useful equipment.", CONTRACT_EVIDENCE_SCOPE_ANY, "department")
+	projects.first_filter.require_value("source_is_station", TRUE)
+	projects.first_filter.require_value("target_is_department", TRUE)
+	projects.first_filter.require_number("amount", CONTRACT_EVIDENCE_COMPARE_AT_LEAST, 1000)
+	projects.second_filter.require_number("value", CONTRACT_EVIDENCE_COMPARE_AT_LEAST, 100)

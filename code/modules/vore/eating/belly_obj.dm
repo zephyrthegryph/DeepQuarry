@@ -295,7 +295,7 @@
 	//If not, we're probably just in a prefs list or something.
 	if(ismob(loc))
 		owner = loc
-		owner.vore_organs += src
+		LAZYADD(owner.vore_organs, src)
 		if(isliving(loc))
 			if(mode_flags & DM_FLAG_TURBOMODE)
 				START_PROCESSING(SSobj, src)
@@ -742,20 +742,16 @@
 	// Changed qdel to a forceMove to allow reforming, and... handled robots special.
 	if(isrobot(M))
 		var/mob/living/silicon/robot/R = M
-		if(R.mmi && R.mind && R.mmi.brainmob)
+		if(R.mmi && R.mind && get_mind_host(R.mmi))
 			if((R.soulcatcher_pref_flags & SOULCATCHER_ALLOW_CAPTURE) && owner.soulgem && owner.soulgem.flag_check(SOULGEM_ACTIVE | NIF_SC_CATCHING_OTHERS, TRUE))
 				owner.soulgem.catch_mob(R, R.name)
 			else
 				R.mmi.loc = src
 				items_preserved += R.mmi
-				var/obj/item/robot_module/MB = locate() in R.contents
-				if(MB)
-					R.mmi.brainmob.languages = MB.original_languages
-				else
-					R.mmi.brainmob.languages = R.languages
-				R.mmi.brainmob.remove_language(LANGUAGE_ROBOT_TALK)
 				hasMMI = R.mmi
-				M.mind.transfer_to(hasMMI.brainmob)
+				var/datum/component/mind_host/mmi_host = get_mind_host(hasMMI)
+				var/mob/living/carbon/brain/view = mmi_host.receive_mind(M.mind, "cyborg [R] digested")
+				view.remove_language(LANGUAGE_ROBOT_TALK)
 				R.mmi = null
 		else if(!R.shell) // Shells don't have brainmobs in their MMIs.
 			to_chat(R, span_danger("Oops! Something went very wrong, your MMI was unable to receive your mind. You have been ghosted. Please make a bug report so we can fix this bug."))
@@ -884,8 +880,9 @@
 	//Should be the case 99.99% of the time
 	if(isAI(owner))
 		var/mob/living/silicon/ai/AI = owner
-		if(AI.holo && AI.holo.masters[AI])
-			return AI.holo.masters[AI].drop_location()
+		var/obj/effect/overlay/aiholo/hologram = AI.holo ? LAZYACCESS(AI.holo.masters, AI) : null
+		if(hologram)
+			return hologram.drop_location()
 
 	if(owner)
 		return owner.drop_location()
@@ -1035,7 +1032,7 @@
 			if(blacklist & autotransfer_flags_list["Full Health"])
 				if(isliving(prey))
 					var/mob/living/L = prey
-					if((L.getOxyLoss() + L.getToxLoss() + L.getFireLoss() + L.getBruteLoss() + L.getCloneLoss()) == 0) return FALSE
+					if(!L.is_injured()) return FALSE
 		if(whitelist == 0) return TRUE
 		if(whitelist & autotransfer_flags_list["Creatures"])
 			if(isliving(prey)) return TRUE
@@ -1068,7 +1065,7 @@
 		if(whitelist & autotransfer_flags_list["Full Health"])
 			if(isliving(prey))
 				var/mob/living/L = prey
-				if((L.getOxyLoss() + L.getToxLoss() + L.getFireLoss() + L.getBruteLoss() + L.getCloneLoss()) == 0) return TRUE
+				if(!L.is_injured()) return TRUE
 	else
 		if(blacklist & autotransfer_flags_list_items["Items"])
 			if(isitem(prey)) return FALSE
@@ -1505,10 +1502,7 @@
 			if(M.absorbed)
 				fullness_to_add *= absorbed_multiplier
 			if(health_impacts_size)
-				if(ishuman(M))
-					fullness_to_add *= (M.health + 100) / (M.getMaxHealth() + 100)
-				else
-					fullness_to_add *= M.health / M.getMaxHealth()
+				fullness_to_add *= M.vitality()
 			if(fullness_to_add > 0)
 				belly_fullness += fullness_to_add
 	if(count_liquid_for_sprite)
@@ -1613,7 +1607,9 @@
 // Updates the belly_surrounding list variable. Called in bellymodes_vr.dm
 /obj/belly/proc/update_belly_surrounding()
 	if(!contents.len && !LAZYLEN(owner.soulgem?.brainmobs))
-		belly_surrounding = list()
+		// Empty bellies are the common case each tick: reuse the list, don't allocate.
+		if(length(belly_surrounding))
+			belly_surrounding.Cut()
 		return
 	belly_surrounding = get_belly_surrounding(contents)
 	if(owner.soulgem?.linked_belly == src)

@@ -27,16 +27,6 @@
 	bpinboard = SSvis_overlays.add_vis_overlay(src, icon = icon, iconstate = "pinboard", layer = 0.1, add_appearance_flags = KEEP_TOGETHER, add_vis_flags = VIS_INHERIT_ID|VIS_INHERIT_PLANE, unique = TRUE)
 	bpinboard.add_filter("screen cutter", 1, alpha_mask_filter(icon = mask))
 	vis_contents += bpinboard
-	/*
-	bpinboard = new()
-	bpinboard.icon = icon
-	bpinboard.icon_state = "pinboard"
-	bpinboard.layer = 0.1
-	bpinboard.vis_flags = VIS_UNDERLAY|VIS_INHERIT_ID|VIS_INHERIT_PLANE
-	bpinboard.appearance_flags = KEEP_TOGETHER
-	bpinboard.add_filter("screen cutter", 1, alpha_mask_filter(icon = mask))
-	vis_contents += bpinboard
-	*/
 
 	. = ..()
 

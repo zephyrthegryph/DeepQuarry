@@ -47,7 +47,6 @@
 
 /datum/modifier/dark_respite
 	name = "Dark Respite"
-	pain_immunity = 1
 	var/datum/component/shadekin/SK
 
 // Override this for special effects when it gets added to the mob.
@@ -64,44 +63,45 @@
 	var/mob/living/carbon/human/H
 	if(istype(holder, /mob/living/carbon/human))
 		H = holder
-		if(H.nutrition)
-			H.add_chemical_effect(CE_BLOODRESTORE, 5)
+	var/in_dark = istype(get_area(H), /area/shadekin)
+	update_respite_factors(in_dark, H?.nutrition > 0)
 
-	if(istype(get_area(H), /area/shadekin))
-		pain_immunity = TRUE
+	if(in_dark)
 		//Very good healing, but only in the Dark.
-		holder.adjustFireLoss((-0.25))
-		holder.adjustBruteLoss((-0.25))
-		holder.adjustToxLoss((-0.25))
-		holder.heal_organ_damage(3, 0)
+		holder.mend(TREAT_BURN_CARE, 0.25)
+		holder.mend(TREAT_TISSUE_REPAIR, 3.25)
+		holder.mend(TREAT_ANTITOXIN, 0.25)
 		if(H)
-			H.add_chemical_effect(CE_ANTIBIOTIC, ANTIBIO_SUPER)
-			for(var/obj/item/organ/I in H.internal_organs)
+			for(var/obj/item/organ/internal/I in H.internal_organs)
 				if(I.robotic >= ORGAN_ROBOT)
 					continue
 				if(I.damage > 0)
-					I.damage = max(I.damage - 0.25, 0)
+					H.mend(TREAT_RESTORATION, 0.25, I)
 				if(I.damage <= 5 && I.organ_tag == O_EYES)
 					H.sdisabilities &= ~BLIND
 			for(var/obj/item/organ/external/O in H.organs)
 				if(O.status & ORGAN_BROKEN)
 					O.mend_fracture()		//Only works if the bone won't rebreak, as usual
-				for(var/datum/wound/W in O.wounds)
-					if(W.bleeding())
-						W.damage = max(W.damage - 3, 0)
+				for(var/datum/affliction/wound/W in O.get_wounds())
+					if(W.bleeding() || W.internal)
+						W.heal_damage(3, TRUE)
 						if(W.damage <= 0)
-							O.wounds -= W
-					if(W.internal)
-						W.damage = max(W.damage - 3, 0)
-						if(W.damage <= 0)
-							O.wounds -= W
+							O.remove_wound(W)
 	else
 		if(SK.manual_respite)
 			to_chat(holder, span_notice("As you leave the Dark, you stop focusing the Dark on healing yourself."))
 			SK.manual_respite = FALSE
 			expire()
-		if(pain_immunity)
-			pain_immunity = 0
+
+/// The Dark numbs pain and fights infection; a fed body rebuilds blood.
+/// Swaps between static tables, so the factors only recompute on a change.
+/datum/modifier/dark_respite/proc/update_respite_factors(in_dark, fed)
+	var/static/alist/dark_fed = alist(BF_PAIN_IMMUNITY = 1, BF_ANTIMICROBIAL = ANTIBIO_SUPER, BF_BLOOD_REGEN = 5)
+	var/static/alist/dark_hungry = alist(BF_PAIN_IMMUNITY = 1, BF_ANTIMICROBIAL = ANTIBIO_SUPER)
+	var/static/alist/light_fed = alist(BF_BLOOD_REGEN = 5)
+	var/alist/wanted = in_dark ? (fed ? dark_fed : dark_hungry) : (fed ? light_fed : null)
+	if(wanted != factors)
+		set_factors(wanted)
 
 /datum/modifier/dark_respite/on_expire()
 	SK = null

@@ -114,18 +114,6 @@
 	rolled_sleeves = 0
 	starting_accessories = list(/obj/item/clothing/accessory/tie/blue_clip)
 
-/*
-/obj/item/clothing/under/det/verb/rollup()
-	set name = "Roll Suit Sleeves"
-	set category = "Object"
-	set src in usr
-	var/unrolled = item_state_slots[slot_w_uniform_str] == initial(worn_state)
-	item_state_slots[slot_w_uniform_str] = unrolled ? "[worn_state]_r" : initial(worn_state)
-	var/mob/living/carbon/human/H = loc
-	H.update_inv_w_uniform(1)
-	to_chat(H, span_notice("You roll the sleeves of your shirt [unrolled ? "up" : "down"]"))
-*/
-
 /obj/item/clothing/under/det/grey
 	icon_state = "detective2"
 	desc = "A serious-looking tan dress shirt paired with freshly-pressed black slacks."

@@ -9,8 +9,7 @@
 
 	mob_class = MOB_CLASS_DEMONIC
 
-	maxHealth = 50
-	health = 50
+	endurance = 50
 
 	response_help = "passes through"
 	response_disarm = "shoves"
@@ -58,8 +57,7 @@
 
 // Strong Variant
 /mob/living/simple_mob/faithless/strong
-	maxHealth = 100
-	health = 100
+	endurance = 100
 
 	harm_intent_damage = 5
 	melee_damage_lower = 13
@@ -75,8 +73,7 @@
 
 // Strong Cult Variant
 /mob/living/simple_mob/faithless/cult/strong
-	maxHealth = 100
-	health = 100
+	endurance = 100
 
 	harm_intent_damage = 5
 	melee_damage_lower = 13

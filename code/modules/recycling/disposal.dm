@@ -51,7 +51,6 @@
 
 	return P
 
-
 // update the icon_state to reflect hidden status
 /obj/structure/disposalpipe/proc/update()
 	var/turf/T = get_turf(src)
@@ -70,13 +69,8 @@
 /obj/structure/disposalpipe/update_icon()
 	if(!(flags & ATOM_INITIALIZED)) // Do not call update_icon before init. E.g. hide might be called before
 		return
-/*	if(invisibility)	//we hide things with alpha now, no need for transparent icons
-		icon_state = "[base_icon_state]f"
-	else
-		icon_state = base_icon_state*/
 	icon_state = base_icon_state
 	return
-
 
 // expel the held objects into a turf
 // called when there is a break in the pipe
@@ -171,7 +165,6 @@
 	spawn(2)	// delete pipe after 2 ticks to ensure expel proc finished
 		qdel(src)
 
-
 // pipe affected by explosion
 /obj/structure/disposalpipe/ex_act(severity)
 
@@ -185,7 +178,6 @@
 		if(3.0)
 			take_damage(rand(0,15), BRUTE, BOMB)
 			return
-
 
 // Light damage leaves broken pipe segments in place.
 /obj/structure/disposalpipe/atom_break(damage_flag)
@@ -306,8 +298,6 @@
 
 	update()
 
-
-
 ///// Z-Level stuff
 /obj/structure/disposalpipe/up
 	icon_state = "pipe-u"
@@ -406,8 +396,6 @@
 		return null
 
 	return P
-
-
 
 // a broken pipe
 /obj/structure/disposalpipe/broken

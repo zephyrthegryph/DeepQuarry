@@ -65,7 +65,7 @@
 	die()
 	return ..()
 
-/obj/effect/spider/fire_act(datum/gas_mixture/air, exposed_temperature, exposed_volume)
+/obj/effect/spider/fire_act(exposed_temperature, exposed_volume)
 	if(exposed_temperature > 300 + T0C)
 		take_damage(5, BURN)
 
@@ -215,9 +215,9 @@
 			src.loc = O.owner ? O.owner.loc : O.loc
 			src.visible_message(span_warning("\A [src] makes its way out of [O.owner ? "[O.owner]'s [O.name]" : "\the [O]"]!"))
 			if(O.owner)
-				O.owner.apply_damage(1, BRUTE, O.organ_tag)
+				O.owner.injure(INJURY_PIERCE, 1, O.organ_tag, src)
 		else if(prob(1))
-			O.owner.apply_damage(1, TOX, O.organ_tag)
+			O.owner.injure(INJURY_TOXIN, 1, O.organ_tag, src)
 			if(world.time > last_itch + 30 SECONDS)
 				last_itch = world.time
 				to_chat(O.owner, span_notice("Your [O.name] itches..."))

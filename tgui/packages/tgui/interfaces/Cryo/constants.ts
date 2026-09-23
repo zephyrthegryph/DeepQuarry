@@ -1,19 +1,19 @@
 export const damageTypes: { label: string; type: string }[] = [
   {
     label: 'Resp.',
-    type: 'oxyLoss',
+    type: 'asphyxiaLoad',
   },
   {
     label: 'Toxin',
-    type: 'toxLoss',
+    type: 'toxicLoad',
   },
   {
     label: 'Brute',
-    type: 'bruteLoss',
+    type: 'physicalLoad',
   },
   {
     label: 'Burn',
-    type: 'fireLoss',
+    type: 'thermalLoad',
   },
 ];
 

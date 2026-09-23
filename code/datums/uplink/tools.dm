@@ -158,7 +158,6 @@
 	blacklisted = 1
 
 
-// === merged from tools_vr.dm during hard-fork de-suffix (verified no override-order change) ===
 /********************
 * Devices and Tools *
 ********************/

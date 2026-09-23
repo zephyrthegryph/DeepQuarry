@@ -45,6 +45,5 @@
 // catalogue_data = list(/datum/category_item/catalogue/information/organization/virgov) //. We need to add our own code/game/busy_space/organizations.dm for lore
 
 
-// === merged from banners_vr.dm during hard-fork de-suffix (verified no override-order change) ===
 /obj/item/banner/solgov
 	name = "\improper SolGov banner" // SolGov

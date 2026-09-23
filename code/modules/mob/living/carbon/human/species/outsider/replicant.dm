@@ -31,11 +31,7 @@
 	vision_flags = SEE_SELF
 	darksight = 5
 
-	brute_mod = 0.9
-	burn_mod = 0.9
-	oxy_mod = 0.7
-	toxins_mod = 0.85
-	radiation_mod = 0.9
+	injury_mod_groups = list("physical" = 0.9, "thermal" = 0.9, "toxin" = 0.85, "asphyxia" = 0.7, "radiation" = 0.9)
 	flash_mod = 0.9
 	sound_mod = 0.9
 	siemens_coefficient = 0.9

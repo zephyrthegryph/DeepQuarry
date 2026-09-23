@@ -52,14 +52,16 @@ export const SleeperOccupant = (props) => {
           <ProgressBar
             minValue={0}
             maxValue={1}
-            value={occupant.health / occupant.maxHealth}
-            ranges={{
-              good: [0.5, Infinity],
-              average: [0, 0.5],
-              bad: [-Infinity, 0],
-            }}
+            value={occupant.vitality / 100}
+            color={
+              occupant.critical
+                ? 'bad'
+                : occupant.vitality >= 50
+                  ? 'good'
+                  : 'average'
+            }
           >
-            {occupant.health.toFixed()}
+            {occupant.vitality.toFixed()}%
           </ProgressBar>
         </LabeledList.Item>
         <LabeledList.Item label="Status" color={stats[occupant.stat][0]}>

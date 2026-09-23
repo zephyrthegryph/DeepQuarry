@@ -316,7 +316,6 @@
 	update_icon()
 
 
-// === merged from emitter_vr.dm during hard-fork de-suffix (verified no override-order change) ===
 /obj/machinery/power/emitter
 	icon = 'icons/obj/singularity_vr.dmi' // New emitter sprite
 	icon_state = "emitter0"

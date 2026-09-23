@@ -14,11 +14,6 @@ In short:
 
 /datum/universal_state/hell/OnShuttleCall(mob/user)
 	return 1
-	/*
-	if(user)
-		to_chat(user, span_sinister("All you hear on the frequency is static and panicked screaming. There will be no shuttle call today."))
-	return 0
-	*/
 
 /datum/universal_state/hell/DecayTurf(turf/T)
 	if(!T.holy)
@@ -27,7 +22,6 @@ In short:
 			new /obj/structure/cult/pylon(L.loc)
 			qdel(L)
 	return
-
 
 /datum/universal_state/hell/OnTurfChange(turf/T)
 	var/turf/space/S = T
@@ -51,7 +45,6 @@ In short:
 	lightsout(0,0)
 
 	GLOB.runedec += 9000	//basically removing the rune cap
-
 
 /datum/universal_state/hell/proc/AreaSet()
 	for(var/area/A in world)

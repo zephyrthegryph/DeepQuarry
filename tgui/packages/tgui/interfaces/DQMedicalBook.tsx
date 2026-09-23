@@ -106,15 +106,18 @@ type ComplicationGroup = {
   conditions: { id: string; name: string }[];
 };
 
-type EffectKV = { key: string; value: string };
-
 type ConditionStage = {
   id: string | null;
   name: string | null;
   description: string | null;
   symptoms: SymptomRef[];
-  mechanical_effects: EffectKV[];
-  vital_effects: EffectKV[];
+  // Body-factor effects of this stage, one readable line each.
+  effects: string[];
+};
+
+type Mechanism = {
+  name: string;
+  band: string;
 };
 
 type Condition = {
@@ -127,6 +130,10 @@ type Condition = {
   cures: ReagentRef[];
   od_cures: ReagentRef[];
   worsens: ReagentRef[];
+  // Treatment tags: the mechanisms that help / harm this condition.
+  // Any treatment carrying the tag applies, listed reagents included.
+  mechanisms?: Mechanism[];
+  harmful_mechanisms?: Mechanism[];
   symptoms: SymptomRef[];
   stages: ConditionStage[];
   causes: CauseLink[];
@@ -211,9 +218,8 @@ type OverdoseInfo = {
   lingers?: 0 | 1;
   // Niche conditions this OD drains while active. Clickable.
   drains?: { id: string; name: string }[];
-  // Combat/utility upsides at peak severity. The 'key' identifies
-  // what game system the boost affects (see DQ docs).
-  boosts?: { key: string; strength: number }[];
+  // Body-factor effects of the overdose at its peak, one line each.
+  effects?: string[];
 };
 
 type ReagentEntry = {
@@ -227,6 +233,8 @@ type ReagentEntry = {
   recipe: RecipeEntry[] | null;
   used_in: { id: string; name: string }[];
   overdose: OverdoseInfo | null;
+  // The reagent's body factors at a standard dose, one line each.
+  effects: string[];
   side_effects: SideEffectRef[];
   interactions: InteractionRef[];
 };
@@ -522,7 +530,7 @@ export const DQMedicalBook = () => {
                 selected={tab === 'causes'}
                 onClick={() => switchTab('causes')}
               >
-                Causes
+                Triggers
               </Tabs.Tab>
               <Tabs.Tab
                 selected={tab === 'surgeries'}
@@ -672,7 +680,7 @@ const ConditionDetail = (props: {
       </LabeledList>
 
       {c.causes?.length || c.caused_by_reagents?.length ? (
-        <Section title="Causes" mt={1}>
+        <Section title="Triggers" mt={1}>
           {c.caused_by_reagents?.length
             ? c.caused_by_reagents.map((row, ri) => (
                 <Box key={`row-${ri}`} mb="2px">
@@ -730,6 +738,11 @@ const ConditionDetail = (props: {
                 onClick={props.goToSymptom}
                 emptyMessage=""
               />
+              {stage.effects?.map((line) => (
+                <Box key={line} color="label">
+                  {line}
+                </Box>
+              ))}
             </Section>
           ) : null,
         )
@@ -745,6 +758,35 @@ const ConditionDetail = (props: {
             onClick={props.goToSymptom}
             emptyMessage=""
           />
+        </Section>
+      ) : null}
+
+      {c.stages.length <= 1 && c.stages[0]?.effects?.length ? (
+        <Section title="Effects" mt={1}>
+          {c.stages[0].effects.map((line) => (
+            <Box key={line}>{line}</Box>
+          ))}
+        </Section>
+      ) : null}
+
+      {c.mechanisms?.length || c.harmful_mechanisms?.length ? (
+        <Section title="Treatment mechanisms" mt={1}>
+          {c.mechanisms?.map((m) => (
+            <Box key={m.name} color="good">
+              {m.name}{' '}
+              <Box as="span" color="label">
+                ({m.band})
+              </Box>
+            </Box>
+          ))}
+          {c.harmful_mechanisms?.map((m) => (
+            <Box key={m.name} color="bad">
+              Avoid: {m.name}{' '}
+              <Box as="span" color="label">
+                ({m.band})
+              </Box>
+            </Box>
+          ))}
         </Section>
       ) : null}
 
@@ -1064,6 +1106,14 @@ const ReagentDetail = (props: {
         </Section>
       ) : null}
 
+      {r.effects?.length ? (
+        <Section title="Effects" mt={1}>
+          {r.effects.map((line) => (
+            <Box key={line}>{line}</Box>
+          ))}
+        </Section>
+      ) : null}
+
       {r.side_effects?.length ? (
         <Section title="Side effects" mt={1}>
           {r.side_effects.map((s, i) => (
@@ -1139,15 +1189,13 @@ const ReagentDetail = (props: {
               ))}
             </Box>
           ) : null}
-          {r.overdose.boosts?.length ? (
+          {r.overdose.effects?.length ? (
             <Box>
-              <Box color="good" bold inline mr={1}>
-                OD upside:
+              <Box color="label" bold inline mr={1}>
+                Overdose effects:
               </Box>
-              {r.overdose.boosts.map((b, i) => (
-                <Box key={i} inline mr={1} color="good">
-                  {b.key} (+{b.strength})
-                </Box>
+              {r.overdose.effects.map((line) => (
+                <Box key={line}>{line}</Box>
               ))}
             </Box>
           ) : null}
@@ -1280,7 +1328,7 @@ const CauseTab = (props: {
           <CauseDetail c={selected} goToCondition={props.goToCondition} />
         ) : (
           <Section fill>
-            <Box color="average">Select a cause from the index.</Box>
+            <Box color="average">Select a trigger from the index.</Box>
           </Section>
         )}
       </Stack.Item>

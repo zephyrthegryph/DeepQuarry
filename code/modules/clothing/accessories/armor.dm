@@ -166,7 +166,6 @@
 		if(P.starting && prob(reflectchance))
 			visible_message(span_danger("\The [user]'s [src.name] reflects [attack_text]!"))
 
-
 			var/new_x = P.starting.x + pick(0, 0, 0, 0, 0, -1, 1, -2, 2)
 			var/new_y = P.starting.y + pick(0, 0, 0, 0, 0, -1, 1, -2, 2)
 			var/turf/curloc = get_turf(user)
@@ -342,12 +341,6 @@
 	icon_state = "solflag"
 	slot = ACCESSORY_SLOT_ARMOR_M
 	w_class = ITEMSIZE_SMALL
-/* //Lost to time.
-/obj/item/clothing/accessory/armor/tag/sifguard
-	name = "\improper Sif Defense Force crest"
-	desc = "An emblem depicting the crest of the Sif Defense Force."
-	icon_state = "ecflag"
-*/
 /obj/item/clothing/accessory/armor/tag/sec
 	name = "\improper POLICE tag"
 	desc = "An armor tag with the word POLICE printed in silver lettering on it."

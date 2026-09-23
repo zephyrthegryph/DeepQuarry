@@ -11,8 +11,7 @@
 	icon_state = "deacon"
 	icon_living = "deacon"
 	ui_icons = 'icons/mob/screen1_purity.dmi'
-	maxHealth = 150
-	health = 150
+	endurance = 150
 	melee_damage_lower = 8 //not meant for combat but can hold its own in a pinch
 	melee_damage_upper = 12
 	attack_armor_pen = 60 //used to carve stone and other metals, cuts through armor just as well

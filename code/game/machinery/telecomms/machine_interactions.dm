@@ -1,6 +1,5 @@
 //This file was auto-corrected by findeclaration.exe on 25.5.2012 20:42:32
 
-
 /*
 
 	All telecommunications interactions:
@@ -26,8 +25,6 @@
 		else
 			to_chat(user, "This machine is already in perfect condition.")
 		return
-
-
 
 /obj/machinery/telecomms/multitool_act(mob/user, obj/item/tool)
 	attack_hand(user)
@@ -109,7 +106,6 @@
 // You are able to send/receive signals from the station's z level (changeable in the STATION_Z #define) if
 // the relay is on the telecomm satellite (changable in the TELECOMM_Z #define)
 
-
 /obj/machinery/telecomms/relay/proc/toggle_level()
 
 	var/turf/position = get_turf(src)
@@ -145,24 +141,10 @@
 /obj/machinery/telecomms/proc/Options_Menu()
 	return list()
 
-/*
-// Add an option to the processor to switch processing mode. (COMPRESS -> UNCOMPRESS or UNCOMPRESS -> COMPRESS)
-/obj/machinery/telecomms/processor/Options_Menu()
-	var/dat = "<br>Processing Mode: <A href='byond://?src=\ref[src];process=1'>[process_mode ? "UNCOMPRESS" : "COMPRESS"]</a>"
-	return dat
-*/
 // The topic for Additional Options. Use this for checking href links for your specific option.
 // Example of how to use below.
 /obj/machinery/telecomms/proc/Options_Act(action, params)
 	return
-
-/*
-/obj/machinery/telecomms/processor/Options_Act(action, params)
-
-	if(href_list["process"])
-		set_temp("-% Processing mode changed. %-", "average")
-		src.process_mode = !src.process_mode
-*/
 
 // RELAY
 
@@ -225,7 +207,6 @@
 				else
 					change_frequency = ZERO_FREQ
 					set_temp("-% Frequency changing deactivated %-", "average")
-
 
 // BROADCASTER
 /obj/machinery/telecomms/broadcaster/Options_Menu()
@@ -306,7 +287,6 @@
 					links = list()
 					set_temp("-% New network tag assigned: \"[network]\" %-", "average")
 				. = TRUE
-
 
 		if("freq")
 			var/newfreq = tgui_input_number(ui.user, "Specify a new frequency to filter (GHz). Decimals assigned automatically.", src, max_value=9999)

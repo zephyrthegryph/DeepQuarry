@@ -1265,7 +1265,6 @@
 	result_amount = 9
 
 
-// === merged from drinks_vr.dm during hard-fork de-suffix (verified no override-order change) ===
 ///////////////////////////////////////////////////////////////////////////////////
 /// Special drinks
 /datum/decl/chemical_reaction/instant/drinks/grubshake
@@ -1516,7 +1515,6 @@
 	result_amount = 3
 
 
-// === merged from drinks_chomp.dm during hard-fork de-suffix (verified no override-order change) ===
 /datum/decl/chemical_reaction/instant/instantteapowder/green
 	id = REAGENT_ID_INSTANTTEAPOWDERGREEN
 	result = REAGENT_ID_INSTANTTEAPOWDERGREEN

@@ -11,11 +11,6 @@
 	var/obj/machinery/media/jukebox/paired_juke
 	var/area/our_area
 
-/*
-/obj/item/juke_remote/Initialize(mapload)
-	. = ..()
-	flags |= NOBLUDGEON
-*/
 // Pairing
 /obj/item/juke_remote/proc/pair_juke(obj/machinery/media/jukebox/juke, mob/user)
 	if(paired_juke)

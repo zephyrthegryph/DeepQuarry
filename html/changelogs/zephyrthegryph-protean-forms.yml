@@ -1,0 +1,9 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - refactor: "Proteans and prometheans are one mob with forms: blob form is your own character with a different shape, not a second mob. Your body, reagents, statuses and bellies keep working while blobbed."
+  - refactor: "Protean powers come from one registry; blob styles (including dragon and dullahan) are data, and dullahan import/export now round-trips every layer."
+  - refactor: "A protean that loses cohesion goes into core dormancy instead of dying, and is revived with a screwdriver, reboot programmer, nanopaste and defibrillator as before."
+  - bugfix: "Protean nanite regeneration no longer revives dead organs or heals surgery-only organ damage, on proteans or on the hosts they heal."
+  - bugfix: "Promethean regeneration now strains the regenerative networks; water now dissolves prometheans as an affliction that fades once dry."
+  - bugfix: "The protean reconstitutor no longer gets stuck busy when a cycle aborts, and returns the salvaged components."

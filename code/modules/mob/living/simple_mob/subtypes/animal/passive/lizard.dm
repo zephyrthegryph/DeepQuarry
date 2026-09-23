@@ -7,8 +7,7 @@
 	icon_living = "lizard_green"
 	icon_dead = "lizard_green_dead"
 
-	health = 5
-	maxHealth = 5
+	endurance = 5
 	mob_size = MOB_MINISCULE
 
 	response_help  = "pets"
@@ -48,8 +47,7 @@
 
 /mob/living/simple_mob/animal/passive/lizard/large
 	desc = "A cute, big lizard."
-	maxHealth = 20
-	health = 20
+	endurance = 20
 
 	melee_damage_lower = 5
 	melee_damage_upper = 15
@@ -60,5 +58,4 @@
 	. = ..()
 	adjust_scale(rand(12, 20) / 10)
 /mob/living/simple_mob/animal/passive/lizard/large/defensive
-	maxHealth = 30
-	health = 30
+	endurance = 30

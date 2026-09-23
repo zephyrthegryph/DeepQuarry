@@ -16,7 +16,7 @@
 	movement_cooldown = 1.5
 	wreckage = /obj/structure/loot_pile/mecha/marauder
 
-	maxHealth = 500
+	endurance = 500
 	deflect_chance = 25
 	sight = SEE_SELF | SEE_MOBS
 	armor = list(
@@ -55,7 +55,6 @@
 	catalogue_data = list(/datum/category_item/catalogue/technology/seraph)
 	icon_state = "seraph"
 	wreckage = /obj/structure/loot_pile/mecha/marauder/seraph
-	health = 550
 	melee_damage_lower = 55 // The real version hits this hard apparently. Ouch.
 	melee_damage_upper = 55
 

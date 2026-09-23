@@ -23,7 +23,7 @@
 	assisted_langs = list(LANGUAGE_EAL, LANGUAGE_SKRELLIAN, LANGUAGE_ROOTLOCAL, LANGUAGE_ROOTGLOBAL, LANGUAGE_VOX)
 	flesh_color = "#a598ad"
 	blood_color = "#A200FF"
-	brute_mod = 1.25
+	injury_mod_groups = list("physical" = 1.25)
 	flash_mod = 1.15
 	darksight = 5
 	reagent_tag = IS_GREY
@@ -72,7 +72,7 @@
 
 /datum/species/grey/handle_environment_special(mob/living/carbon/human/H)
 	if(H.fire_stacks < 0 && H.get_water_protection() <= 0.5)	// If over half your body is soaked, you're melting.
-		H.adjustFireLoss(max(0,(3 - (3 * H.get_water_protection()))))	// Tripled because 0.5 is miniscule, and fire_stacks are capped in both directions.
+		H.injure(INJURY_BURN, max(0,(3 - (3 * H.get_water_protection()))))	// Tripled because 0.5 is miniscule, and fire_stacks are capped in both directions.
 
 /mob/living/carbon/human/grey/Initialize(mapload) //makes grey spawnable
 	. = ..(mapload, SPECIES_GREY_YW)

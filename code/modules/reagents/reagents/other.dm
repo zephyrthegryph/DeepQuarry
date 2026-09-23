@@ -176,6 +176,7 @@
 /* Things that didn't fit anywhere else */
 
 /datum/reagent/adminordrazine //An OP chemical for admins
+	factors = alist(BF_ANALGESIA = 200, BF_STABILIZATION = 15, BF_ANTIMICROBIAL = ANTIBIO_SUPER)
 	name = REAGENT_ADMINORDRAZINE
 	id = REAGENT_ID_ADMINORDRAZINE
 	description = "It's magic. We don't have to explain it."
@@ -198,12 +199,9 @@
 	affect_blood(M, alien, removed)
 
 /datum/reagent/adminordrazine/affect_blood(mob/living/carbon/M, alien, removed)
-	M.heal_organ_damage(40,40)
-	M.adjustCloneLoss(-40)
-	M.adjustToxLoss(-40)
-	M.adjustOxyLoss(-300)
+	// Admin chem: heals everything.
+	M.fully_heal()
 	M.hallucination = 0
-	M.setBrainLoss(0)
 	M.disabilities = 0
 	M.sdisabilities = 0
 	M.eye_blurry = 0
@@ -221,9 +219,6 @@
 	M.radiation = 0
 	M.extinguish_mob()
 	M.fire_stacks = 0
-	M.add_chemical_effect(CE_ANTIBIOTIC, ANTIBIO_SUPER)
-	M.add_chemical_effect(CE_STABLE, 15)
-	M.add_chemical_effect(CE_PAINKILLER, 200)
 	M.remove_a_modifier_of_type(/datum/modifier/poisoned)
 	if(M.bodytemperature > 310)
 		M.bodytemperature = max(310, M.bodytemperature - (40 * TEMPERATURE_DAMAGE_COEFFICIENT))
@@ -232,21 +227,11 @@
 	if(ishuman(M))
 		var/mob/living/carbon/human/H = M
 		var/wound_heal = 5
-		for(var/obj/item/organ/I in H.internal_organs)
-			if(I.damage > 0) //Adminordrazine heals even robits, it is magic
-				I.damage = max(I.damage - wound_heal, 0)
+		// Organ repair is adminordrazine's TREAT_RESTORATION tag (body/treatment.dm).
 		for(var/obj/item/organ/external/O in H.bad_external_organs)
 			if(O.status & ORGAN_BROKEN)
 				O.mend_fracture()		//Only works if the bone won't rebreak, as usual
-			for(var/datum/wound/W in O.wounds)
-				if(W.bleeding())
-					W.damage = max(W.damage - wound_heal, 0)
-					if(W.damage <= 0)
-						O.wounds -= W
-				if(W.internal)
-					W.damage = max(W.damage - wound_heal, 0)
-					if(W.damage <= 0)
-						O.wounds -= W
+			dq_reagent_close_wounds(O, wound_heal)
 
 /datum/reagent/gold
 	name = REAGENT_GOLD
@@ -392,7 +377,7 @@
 		return
 	M.SetParalysis(0)
 	M.SetWeakened(0)
-	M.adjustToxLoss(rand(3))
+	M.injure(INJURY_TOXIN, rand(3), source = src)
 
 /datum/reagent/water/holywater
 	name = REAGENT_HOLYWATER
@@ -546,7 +531,7 @@
 		L.adjust_fire_stacks(amount / 5)
 
 /datum/reagent/thermite/affect_blood(mob/living/carbon/M, alien, removed)
-	M.adjustFireLoss(3 * removed)
+	M.injure(INJURY_BURN, 3 * removed, source = src)
 
 /datum/reagent/space_cleaner
 	name = REAGENT_CLEANER
@@ -577,10 +562,10 @@
 				qdel(O)
 
 		for(var/mob/living/simple_mob/slime/M in T)
-			M.adjustToxLoss(rand(5, 10))
+			M.injure(INJURY_CORROSIVE, rand(5, 10), source = src)
 
 		for(var/mob/living/simple_mob/vore/aggressive/macrophage/virus in T)
-			virus.adjustToxLoss(rand(5, 10))
+			virus.injure(INJURY_TOXIN, rand(5, 10), source = src)
 
 	T.apply_fire_protection() // Apply fire protection
 
@@ -595,7 +580,7 @@
 	if(ishuman(M))
 		var/mob/living/carbon/human/H = M
 		if(alien == IS_SLIME)
-			M.adjustToxLoss(rand(5, 10))
+			M.injure(INJURY_CORROSIVE, rand(5, 10), source = src)
 		if(H.head)
 			if(H.head.wash(CLEAN_SCRUB))
 				H.update_inv_head(0)
@@ -615,9 +600,9 @@
 
 /datum/reagent/space_cleaner/affect_ingest(mob/living/carbon/M, alien, removed)
 	if(alien == IS_SLIME)
-		M.adjustToxLoss(6 * removed)
+		M.injure(INJURY_TOXIN, 6 * removed, source = src)
 	else
-		M.adjustToxLoss(3 * removed)
+		M.injure(INJURY_TOXIN, 3 * removed, source = src)
 		if(prob(5))
 			M.vomit()
 
@@ -629,7 +614,7 @@
 
 	if(istype(M, /mob/living/simple_mob/vore/aggressive/macrophage)) // Big ouch for viruses
 		var/mob/living/simple_mob/macrophage = M
-		macrophage.adjustToxLoss(20)
+		macrophage.injure(INJURY_TOXIN, 20, source = src)
 
 	if(ishuman(M))
 		var/mob/living/carbon/human/H = M
@@ -811,10 +796,13 @@
 	industrial_use = REFINERYEXPORT_REASON_BIOHAZARD
 
 /datum/reagent/defective_nanites/affect_blood(mob/living/carbon/M, alien, removed)
-	M.take_organ_damage(2 * removed, 2 * removed)
-	M.adjustOxyLoss(4 * removed)
-	M.adjustToxLoss(2 * removed)
-	M.adjustCloneLoss(2 * removed)
+	M.injure_many(alist(
+		INJURY_BLUNT = 2 * removed,
+		INJURY_BURN = 2 * removed,
+		INJURY_ASPHYXIA = 4 * removed,
+		INJURY_TOXIN = 2 * removed,
+		INJURY_CELLULAR = 2 * removed,
+	), source = src)
 
 /datum/reagent/nutriment/fishbait
 	name = REAGENT_FISHBAIT
@@ -969,7 +957,7 @@
 /datum/reagent/toxin/plantbgone/touch_mob(mob/living/L, amount) //Plantbgone override to damage plant mobs. Part of pitcher plants, touch_mob doesn't exist for plantbgone at the time of writing.
 	if(istype(L) && L.faction)
 		if(L.faction == "plants") //This would be better with a variable but I'm not adding that because upstream conflicts. If you send this upstream please do this.
-			L.adjustToxLoss(15 * amount)
+			L.injure(INJURY_TOXIN, 15 * amount, source = src)
 			L.visible_message(span_warning("[L] withers rapidly!"), span_danger("The chemical burns you!"))
 
 //////SAP IN UNREFINED FORM////
@@ -1209,7 +1197,7 @@
 /datum/reagent/firefighting_foam/touch_mob(mob/living/M, reac_volume)
 	if(istype(M, /mob/living/simple_mob/slime)) //I'm sure foam is water-based!
 		var/mob/living/simple_mob/slime/S = M
-		S.adjustToxLoss(15 * reac_volume)
+		S.injure(INJURY_CORROSIVE, 15 * reac_volume, source = src)
 		S.visible_message(span_warning("[S]'s flesh sizzles where the foam touches it!"), span_danger("Your flesh burns in the foam!"))
 	if(istype(M))
 		M.adjust_fire_stacks(-reac_volume)
@@ -1229,14 +1217,7 @@
 	industrial_use = REFINERYEXPORT_REASON_PRECURSOR
 
 /datum/reagent/liquid_protean/affect_blood(mob/living/carbon/M, alien, removed)
-	if(alien != IS_DIONA)
-		var/chem_effective = 1
-		if(alien == IS_SLIME)
-			chem_effective = 0.5
-		M.adjustOxyLoss(-1 * removed * chem_effective)
-		M.heal_organ_damage(0.5 * removed, 0.5 * removed * chem_effective)
-		M.adjustToxLoss(-0.5 * removed * chem_effective)
-
+	// Its restorative action is the treatment_tags profile.
 	if(ishuman(M))
 		var/mob/living/carbon/human/H = M
 		if(H.nif)
@@ -1259,4 +1240,4 @@
 	industrial_use = REFINERYEXPORT_REASON_PRECURSOR
 
 /datum/reagent/grubshock/affect_blood(mob/living/carbon/M, alien, removed)
-	M.take_organ_damage(0, removed * power * 0.2)
+	M.injure(INJURY_ELECTRIC, removed * power * 0.2, source = src)

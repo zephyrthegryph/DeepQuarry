@@ -1,6 +1,8 @@
 /* General medicine */
 
 /datum/reagent/inaprovaline
+	factors = alist(BF_ANALGESIA = 10, BF_STABILIZATION = 15, BF_ALLERGY = -5)
+	species_factors = alist(IS_DIONA = null)
 	name = REAGENT_INAPROVALINE
 	id = REAGENT_ID_INAPROVALINE
 	description = REAGENT_INAPROVALINE + " is a synaptic stimulant and cardiostimulant. Commonly used to stabilize patients. Also counteracts allergic reactions."
@@ -14,13 +16,8 @@
 	supply_conversion_value = REFINERYEXPORT_VALUE_COMMON
 	industrial_use = REFINERYEXPORT_REASON_DRUG
 
-/datum/reagent/inaprovaline/affect_blood(mob/living/carbon/M, alien, removed)
-	if(alien != IS_DIONA)
-		M.add_chemical_effect(CE_STABLE, 15)
-		M.add_chemical_effect(CE_PAINKILLER, 10 * M.species.chem_strength_pain)
-		M.remove_chemical_effect(CE_ALLERGEN)
-
 /datum/reagent/inaprovaline/topical
+	factors = alist(BF_ANALGESIA = 12, BF_STABILIZATION = 20, BF_ALLERGY = -5)
 	name = REAGENT_INAPROVALAZE
 	id = REAGENT_ID_INAPROVALAZE
 	description = REAGENT_INAPROVALAZE + " is a topical variant of Inaprovaline."
@@ -37,13 +34,7 @@
 
 /datum/reagent/inaprovaline/topical/affect_blood(mob/living/carbon/M, alien, removed)
 	if(alien != IS_DIONA)
-		..()
-		M.adjustToxLoss(2 * removed)
-
-/datum/reagent/inaprovaline/topical/affect_touch(mob/living/carbon/M, alien, removed)
-	if(alien != IS_DIONA)
-		M.add_chemical_effect(CE_STABLE, 20)
-		M.add_chemical_effect(CE_PAINKILLER, 12 * M.species.chem_strength_pain)
+		M.injure(INJURY_TOXIN, 2 * removed, source = src)
 
 /datum/reagent/bicaridine
 	name = REAGENT_BICARIDINE
@@ -61,12 +52,7 @@
 	industrial_use = REFINERYEXPORT_REASON_DRUG
 	medallergen_type = MEDALLERGEN_BICARD
 
-/datum/reagent/bicaridine/affect_blood(mob/living/carbon/M, alien, removed)
-	var/chem_effective = 1 * M.species.chem_strength_heal
-	if(alien == IS_SLIME)
-		chem_effective = 0.75
-	if(alien != IS_DIONA)
-		M.heal_organ_damage(4 * removed * chem_effective, 0)
+// Bicaridine's trauma repair is its treatment_tags profile (body/treatment.dm).
 
 /datum/reagent/bicaridine/overdose(mob/living/carbon/M, alien, removed)
 	..()
@@ -75,15 +61,18 @@
 	if(ishuman(M))
 		var/mob/living/carbon/human/H = M
 		for(var/obj/item/organ/external/O in H.organs)
-			for(var/datum/wound/W in O.wounds)
-				if(W.bleeding())
-					W.damage = max(W.damage - wound_heal, 0)
-					if(W.damage <= 0)
-						O.wounds -= W
-				if(W.internal)
-					W.damage = max(W.damage - wound_heal, 0)
-					if(W.damage <= 0)
-						O.wounds -= W
+			dq_reagent_close_wounds(O, wound_heal)
+
+/// Instant wound closure for overdose / clotting side effects (a burst, not a
+/// continuous treatment): heals `amount` off every bleeding and/or internal
+/// wound on `O`, removing the ones that close.
+/proc/dq_reagent_close_wounds(obj/item/organ/external/O, amount, bleeding = TRUE, internal = TRUE)
+	for(var/datum/affliction/wound/W as anything in O.get_wounds())
+		if(!((bleeding && W.bleeding()) || (internal && W.internal)))
+			continue
+		W.heal_damage(amount, heals_internal = TRUE)
+		if(!QDELETED(W) && W.damage <= 0)
+			O.remove_wound(W)
 
 /datum/reagent/bicaridine/topical
 	name = REAGENT_BICARIDAZE
@@ -102,21 +91,12 @@
 	medallergen_type = MEDALLERGEN_BICARD
 
 /datum/reagent/bicaridine/topical/affect_blood(mob/living/carbon/M, alien, removed)
-	var/chem_effective = 1 * M.species.chem_strength_heal
-	if(alien == IS_SLIME)
-		chem_effective = 0.75
 	if(alien != IS_DIONA)
-		..(M, alien, removed * chem_effective)
-		M.adjustToxLoss(2 * removed)
-
-/datum/reagent/bicaridine/topical/affect_touch(mob/living/carbon/M, alien, removed)
-	var/chem_effective = 1 * M.species.chem_strength_heal
-	if(alien == IS_SLIME)
-		chem_effective = 0.75
-	if(alien != IS_DIONA)
-		M.heal_organ_damage(6 * removed * chem_effective, 0)
+		M.injure(INJURY_TOXIN, 2 * removed, source = src)
 
 /datum/reagent/calciumcarbonate
+	factors = alist(BF_ANTIEMETIC = 3)
+	species_factors = alist(IS_DIONA = null)
 	name = REAGENT_CALCIUMCARBONATE
 	id = REAGENT_ID_CALCIUMCARBONATE
 	description = "Calcium carbonate is a calcium salt commonly used as an antacid."
@@ -132,11 +112,7 @@
 
 /datum/reagent/calciumcarbonate/affect_blood(mob/living/carbon/M, alien, removed) // Why would you inject this.
 	if(alien != IS_DIONA)
-		M.adjustToxLoss(3 * removed)
-
-/datum/reagent/calciumcarbonate/affect_ingest(mob/living/carbon/M, alien, removed)
-	if(alien != IS_DIONA)
-		M.add_chemical_effect(CE_ANTACID, 3)
+		M.injure(INJURY_TOXIN, 3 * removed, source = src)
 
 /datum/reagent/kelotane
 	name = REAGENT_KELOTANE
@@ -153,12 +129,9 @@
 	medallergen_type = MEDALLERGEN_KELOTANE
 
 /datum/reagent/kelotane/affect_blood(mob/living/carbon/M, alien, removed)
-	var/chem_effective = 1 * M.species.chem_strength_heal
+	// Burn care is the treatment_tags profile; only the Promethean side effect lives here.
 	if(alien == IS_SLIME)
-		chem_effective = 0.5
-		M.adjustBruteLoss(2 * removed) //Mends burns, but has negative effects with a Promethean's skeletal structure.
-	if(alien != IS_DIONA)
-		M.heal_organ_damage(0, 4 * removed * chem_effective)
+		M.injure(INJURY_BLUNT, 2 * removed, source = src) //Mends burns, but has negative effects with a Promethean's skeletal structure.
 
 /datum/reagent/dermaline
 	id = REAGENT_ID_DERMALINE
@@ -175,12 +148,6 @@
 	industrial_use = REFINERYEXPORT_REASON_DRUG
 	medallergen_type = MEDALLERGEN_KELOTANE
 
-/datum/reagent/dermaline/affect_blood(mob/living/carbon/M, alien, removed)
-	var/chem_effective = 1 * M.species.chem_strength_heal
-	if(alien == IS_SLIME)
-		chem_effective = 0.75
-	if(alien != IS_DIONA)
-		M.heal_organ_damage(0, 8 * removed * chem_effective)
 
 /datum/reagent/dermaline/topical
 	name = REAGENT_DERMALAZE
@@ -199,19 +166,8 @@
 	medallergen_type = MEDALLERGEN_KELOTANE
 
 /datum/reagent/dermaline/topical/affect_blood(mob/living/carbon/M, alien, removed)
-	var/chem_effective = 1 * M.species.chem_strength_heal
-	if(alien == IS_SLIME)
-		chem_effective = 0.75
 	if(alien != IS_DIONA)
-		..(M, alien, removed * chem_effective)
-		M.adjustToxLoss(2 * removed)
-
-/datum/reagent/dermaline/topical/affect_touch(mob/living/carbon/M, alien, removed)
-	var/chem_effective = 1 * M.species.chem_strength_heal
-	if(alien == IS_SLIME)
-		chem_effective = 0.75
-	if(alien != IS_DIONA)
-		M.heal_organ_damage(0, 12 * removed * chem_effective)
+		M.injure(INJURY_TOXIN, 2 * removed, source = src)
 
 /datum/reagent/dylovene
 	name = REAGENT_ANTITOXIN
@@ -235,7 +191,6 @@
 	if(alien != IS_DIONA)
 		M.drowsyness = max(0, M.drowsyness - 6 * removed * chem_effective)
 		M.hallucination = max(0, M.hallucination - 9 * removed * chem_effective)
-		M.adjustToxLoss(-4 * removed * chem_effective)
 		if(prob(10))
 			M.remove_a_modifier_of_type(/datum/modifier/poisoned)
 
@@ -255,29 +210,28 @@
 /datum/reagent/carthatoline/affect_blood(mob/living/carbon/M, alien, removed)
 	if(alien == IS_DIONA)
 		return
-	if(M.getToxLoss() && prob(10))
+	if(M.injury_load(INJURY_CATEGORY_TOXIC) && prob(10))
 		M.vomit(1)
-	M.adjustToxLoss(-8 * removed * M.species.chem_strength_heal)
 	if(prob(30))
 		M.remove_a_modifier_of_type(/datum/modifier/poisoned)
 	if(ishuman(M))
 		var/mob/living/carbon/human/H = M
 		var/obj/item/organ/internal/liver/L = H.internal_organs_by_name[O_LIVER]
-		if(istype(L))
-			if(L.robotic >= ORGAN_ROBOT)
-				return
-			if(L.damage > 0)
-				L.damage = max(L.damage - 2 * removed, 0)
+		if(istype(L) && L.robotic >= ORGAN_ROBOT)
+			return
+		// Liver repair is carthatoline's TREAT_HEPATORENAL tag (body/treatment.dm).
 		if(alien == IS_SLIME)
 			H.druggy = max(M.druggy, 5)
 
 /datum/reagent/carthatoline/overdose(mob/living/carbon/M, alien, removed)
-	M.adjustHalLoss(2)
+	M.injure(INJURY_PAIN, 2, source = src)
 	var/mob/living/carbon/human/H = M
 	var/obj/item/organ/internal/stomach/st = H.internal_organs_by_name[O_STOMACH]
-	st?.take_damage(removed * 2) // Causes stomach contractions, makes sense for an overdose to make it much worse.
+	if(st)
+		H.injure(INJURY_BLUNT, removed * 2, st, src, flags = INJURE_IGNORE_RESISTANCE) // Causes stomach contractions, makes sense for an overdose to make it much worse.
 
 /datum/reagent/dexalin
+	species_factors = alist(IS_SLIME = alist(BF_ANALGESIA = 15))
 	name = REAGENT_DEXALIN
 	id = REAGENT_ID_DEXALIN
 	description = REAGENT_DEXALIN + " is used in the treatment of oxygen deprivation."
@@ -292,20 +246,20 @@
 	industrial_use = REFINERYEXPORT_REASON_DRUG
 
 /datum/reagent/dexalin/affect_blood(mob/living/carbon/M, alien, removed)
+	// Oxygenation is the treatment_tags profile.
 	if(alien == IS_VOX)
-		M.adjustToxLoss(removed * 24)
+		M.injure(INJURY_TOXIN, removed * 24, source = src)
 	else if(alien == IS_SLIME && dose >= 15)
-		M.add_chemical_effect(CE_PAINKILLER, 15 * M.species.chem_strength_pain)
 		if(prob(15))
 			to_chat(M, span_notice("You have a moment of clarity as you collapse."))
-			M.adjustBrainLoss(-20 * removed)
+			// Random burst, not a continuous effect: mend directly.
+			M.mend(TREAT_NEURAL_REPAIR, 20 * removed)
 			M.Weaken(6)
-	else if(alien != IS_DIONA)
-		M.adjustOxyLoss(-15 * removed * M.species.chem_strength_heal)
 
 	holder.remove_reagent(REAGENT_ID_LEXORIN, 8 * removed)
 
 /datum/reagent/dexalinp
+	species_factors = alist(IS_SLIME = alist(BF_ANALGESIA = 25))
 	name = REAGENT_DEXALINP
 	id = REAGENT_ID_DEXALINP
 	description = REAGENT_DEXALINP + " is used in the treatment of oxygen deprivation. It is highly effective."
@@ -320,16 +274,15 @@
 	industrial_use = REFINERYEXPORT_REASON_SPECIALDRUG
 
 /datum/reagent/dexalinp/affect_blood(mob/living/carbon/M, alien, removed)
+	// Oxygenation is the treatment_tags profile.
 	if(alien == IS_VOX)
-		M.adjustToxLoss(removed * 9)
+		M.injure(INJURY_TOXIN, removed * 9, source = src)
 	else if(alien == IS_SLIME && dose >= 10)
-		M.add_chemical_effect(CE_PAINKILLER, 25 * M.species.chem_strength_pain)
 		if(prob(25))
 			to_chat(M, span_notice("You have a moment of clarity, as you feel your tubes lose pressure rapidly."))
-			M.adjustBrainLoss(-8 * removed)
+			// Random burst, not a continuous effect: mend directly.
+			M.mend(TREAT_NEURAL_REPAIR, 8 * removed)
 			M.Weaken(3)
-	else if(alien != IS_DIONA)
-		M.adjustOxyLoss(-150 * removed * M.species.chem_strength_heal)
 
 	holder.remove_reagent(REAGENT_ID_LEXORIN, 3 * removed)
 
@@ -352,18 +305,7 @@
 	M.druggy = max(M.druggy, 5)
 	M.Confuse(5)
 
-/datum/reagent/tricordrazine/affect_blood(mob/living/carbon/M, alien, removed)
-	if(alien != IS_DIONA)
-		var/chem_effective = 1 * M.species.chem_strength_heal
-		if(alien == IS_SLIME)
-			chem_effective = 0.5
-		M.adjustOxyLoss(-3 * removed * chem_effective)
-		M.heal_organ_damage(1.5 * removed, 1.5 * removed * chem_effective)
-		M.adjustToxLoss(-1.5 * removed * chem_effective)
-
-/datum/reagent/tricordrazine/affect_touch(mob/living/carbon/M, alien, removed)
-	if(alien != IS_DIONA)
-		affect_blood(M, alien, removed * 0.4)
+// Tricordrazine's healing (blood or touch) is its treatment_tags profile.
 
 /datum/reagent/tricorlidaze
 	name = REAGENT_TRICORLIDAZE
@@ -378,18 +320,10 @@
 	industrial_use = REFINERYEXPORT_REASON_SPECIALDRUG
 	medallergen_type = MEDALLERGEN_TRICORD
 
-/datum/reagent/tricorlidaze/affect_touch(mob/living/carbon/M, alien, removed)
-	if(alien != IS_DIONA)
-		var/chem_effective = 1 * M.species.chem_strength_heal
-		if(alien == IS_SLIME)
-			chem_effective = 0.5
-		M.adjustOxyLoss(-2 * removed * chem_effective)
-		M.heal_organ_damage(1 * removed, 1 * removed * chem_effective)
-		M.adjustToxLoss(-2 * removed * chem_effective)
-
+// Tricorlidaze's topical healing is its treatment_tags profile.
 /datum/reagent/tricorlidaze/affect_blood(mob/living/carbon/M, alien, removed)
 	if(alien != IS_DIONA)
-		M.adjustToxLoss(3 * removed)
+		M.injure(INJURY_TOXIN, 3 * removed, source = src)
 
 /datum/reagent/tricorlidaze/touch_obj(obj/O)
 	..()
@@ -427,10 +361,9 @@
 			M.Weaken(10)
 			M.silent = max(M.silent, 10)
 			M.make_jittery(4)
-		M.adjustCloneLoss(-10 * removed * chem_effective)
-		M.adjustOxyLoss(-10 * removed * chem_effective)
-		M.heal_organ_damage(10 * removed, 10 * removed * chem_effective)
-		M.adjustToxLoss(-10 * removed * chem_effective)
+		// Only works below 170K, a gate a continuous treatment tag can't
+		// express, so the cryo-healing mends directly.
+		dq_cryo_mend(M, 10 * removed * chem_effective)
 
 /datum/reagent/clonexadone
 	name = REAGENT_CLONEXADONE
@@ -456,10 +389,17 @@
 			M.Weaken(20)
 			M.silent = max(M.silent, 20)
 			M.make_jittery(4)
-		M.adjustCloneLoss(-30 * removed * chem_effective)
-		M.adjustOxyLoss(-30 * removed * chem_effective)
-		M.heal_organ_damage(30 * removed, 30 * removed * chem_effective)
-		M.adjustToxLoss(-30 * removed * chem_effective)
+		// Temperature-gated (see cryoxadone): mends directly.
+		dq_cryo_mend(M, 30 * removed * chem_effective)
+
+/// Cryo-chemical regeneration: every tissue mechanism at once. Only for the
+/// temperature/death-gated cryo chems, whose gate a continuous tag can't express.
+/proc/dq_cryo_mend(mob/living/carbon/M, amount)
+	M.mend(TREAT_GENETIC_REPAIR, amount)
+	M.mend(TREAT_OXYGENATION, amount)
+	M.mend(TREAT_TISSUE_REPAIR, amount)
+	M.mend(TREAT_BURN_CARE, amount)
+	M.mend(TREAT_ANTITOXIN, amount)
 
 /datum/reagent/mortiferin
 	name = REAGENT_MORTIFERIN
@@ -489,10 +429,11 @@
 			M.Weaken(10)
 			M.silent = max(M.silent, 10)
 			M.make_jittery(4)
+		// Cold- or death-gated: mends directly (a tag can't express the gate).
 		if(M.stat != DEAD)
-			M.adjustCloneLoss(-5 * removed * chem_effective)
-		M.adjustOxyLoss(-10 * removed * chem_effective)
-		M.adjustToxLoss(-20 * removed * chem_effective)
+			M.mend(TREAT_GENETIC_REPAIR, 5 * removed * chem_effective)
+		M.mend(TREAT_OXYGENATION, 10 * removed * chem_effective)
+		M.mend(TREAT_ANTITOXIN, 20 * removed * chem_effective)
 
 		if(ishuman(M))
 			var/mob/living/carbon/human/H = M
@@ -501,7 +442,7 @@
 				if(L.robotic >= ORGAN_ROBOT)
 					return
 
-				L.take_damage(rand(1,3) * removed)
+				H.injure(INJURY_TOXIN, rand(1,3) * removed, L, src, flags = INJURE_IGNORE_RESISTANCE)
 
 /datum/reagent/necroxadone
 	name = REAGENT_NECROXADONE
@@ -528,20 +469,17 @@
 			M.Weaken(20)
 			M.silent = max(M.silent, 20)
 			M.make_jittery(4)
-		if(M.stat != DEAD)
-			M.adjustCloneLoss(-5 * removed * chem_effective)
-		M.adjustOxyLoss(-20 * removed * chem_effective)
-		M.adjustToxLoss(-40 * removed * chem_effective)
-		M.adjustCloneLoss(-15 * removed * chem_effective)
-
-	else
-		M.adjustToxLoss(-25 * removed * chem_effective)
-		M.adjustOxyLoss(-10 * removed * chem_effective)
-		M.adjustCloneLoss(-7 * removed * chem_effective)
+		// Cold/corpse-gated boost on top of the baseline treatment_tags
+		// profile; the gate can't be a tag, so it mends directly.
+		M.mend(TREAT_GENETIC_REPAIR, (M.stat != DEAD ? 20 : 15) * removed * chem_effective)
+		M.mend(TREAT_OXYGENATION, 20 * removed * chem_effective)
+		M.mend(TREAT_ANTITOXIN, 40 * removed * chem_effective)
 
 /* Painkillers */
 
 /datum/reagent/paracetamol
+	factors = alist(BF_ANALGESIA = 25)
+	species_factors = alist(IS_SLIME = alist(BF_ANALGESIA = 18.75))
 	name = REAGENT_PARACETAMOL
 	id = REAGENT_ID_PARACETAMOL
 	description = "Most probably know this as Tylenol, but this chemical is a mild, simple painkiller."
@@ -557,19 +495,13 @@
 	supply_conversion_value = REFINERYEXPORT_VALUE_PROCESSED
 	industrial_use = REFINERYEXPORT_REASON_DRUG
 
-/datum/reagent/paracetamol/affect_blood(mob/living/carbon/M, alien, removed)
-	var/chem_effective = 1 * M.species.chem_strength_pain
-	if(alien == IS_SLIME)
-		chem_effective = 0.75
-	M.add_chemical_effect(CE_PAINKILLER, 25 * chem_effective)
-
 /datum/reagent/paracetamol/overdose(mob/living/carbon/M, alien)
 	..()
-	if(alien == IS_SLIME)
-		M.add_chemical_effect(CE_SLOWDOWN, 1)
 	M.hallucination = max(M.hallucination, 2)
 
 /datum/reagent/tramadol
+	factors = alist(BF_ANALGESIA = 80)
+	species_factors = alist(IS_SLIME = alist(BF_ANALGESIA = 64, BF_SLOWDOWN = 1, BF_PENALTY_SCALE = 1.25))
 	name = REAGENT_TRAMADOL
 	id = REAGENT_ID_TRAMADOL
 	description = "A simple, yet effective painkiller."
@@ -585,18 +517,13 @@
 	supply_conversion_value = REFINERYEXPORT_VALUE_HIGHREFINED
 	industrial_use = REFINERYEXPORT_REASON_DRUG
 
-/datum/reagent/tramadol/affect_blood(mob/living/carbon/M, alien, removed)
-	var/chem_effective = 1 * M.species.chem_strength_pain
-	if(alien == IS_SLIME)
-		chem_effective = 0.8
-		M.add_chemical_effect(CE_SLOWDOWN, 1)
-	M.add_chemical_effect(CE_PAINKILLER, 80 * chem_effective)
-
 /datum/reagent/tramadol/overdose(mob/living/carbon/M, alien)
 	..()
 	M.hallucination = max(M.hallucination, 2)
 
 /datum/reagent/oxycodone
+	factors = alist(BF_ANALGESIA = 200, BF_SLOWDOWN = 1, BF_PENALTY_SCALE = 1.25)
+	species_factors = alist(IS_SLIME = alist(BF_ANALGESIA = 150, BF_SLOWDOWN = 1, BF_PENALTY_SCALE = 1.25))
 	name = REAGENT_OXYCODONE
 	id = REAGENT_ID_OXYCODONE
 	description = "An effective and very addictive painkiller."
@@ -617,9 +544,6 @@
 	if(alien == IS_SLIME)
 		chem_effective = 0.75
 		M.stuttering = min(50, max(0, M.stuttering + 5)) //If you can't feel yourself, and your main mode of speech is resonation, there's a problem.
-	M.add_chemical_effect(CE_PAINKILLER, 200 * chem_effective)
-	M.add_chemical_effect(CE_SLOWDOWN, 1)
-	M.add_chemical_effect(CE_NARCOTICS, 1)
 	M.eye_blurry = min(M.eye_blurry + 10, 250 * chem_effective)
 
 /datum/reagent/oxycodone/overdose(mob/living/carbon/M, alien)
@@ -630,6 +554,8 @@
 /* Other medicine */
 
 /datum/reagent/synaptizine
+	factors = alist(BF_ANALGESIA = 20)
+	species_factors = alist(IS_DIONA = null, IS_SLIME = alist(BF_ANALGESIA = 10))
 	name = REAGENT_SYNAPTIZINE
 	id = REAGENT_ID_SYNAPTIZINE
 	description = REAGENT_SYNAPTIZINE + " is used to treat various diseases."
@@ -649,10 +575,11 @@
 	if(alien == IS_DIONA)
 		return
 	if(alien == IS_SLIME)
-		if(dose >= 5) //Not effective in small doses, though it causes toxloss at higher ones, it will make the regeneration for brute and burn more 'efficient' at the cost of more nutrition.
+		if(dose >= 5) //Not effective in small doses, though it causes toxins at higher ones, it will make the regeneration for brute and burn more 'efficient' at the cost of more nutrition.
+			// Species-specific dose-gated regeneration boost: mends directly.
 			M.adjust_nutrition(removed * 2)
-			M.adjustBruteLoss(-2 * removed)
-			M.adjustFireLoss(-1 * removed)
+			M.mend(TREAT_TISSUE_REPAIR, 2 * removed)
+			M.mend(TREAT_BURN_CARE, 1 * removed)
 		chem_effective = 0.5
 	M.drowsyness = max(M.drowsyness - 5, 0)
 	M.AdjustParalysis(-1)
@@ -660,10 +587,10 @@
 	M.AdjustWeakened(-1)
 	holder.remove_reagent(REAGENT_ID_MINDBREAKER, 5)
 	M.hallucination = max(0, M.hallucination - 10)
-	M.adjustToxLoss(10 * removed * chem_effective) // It used to be incredibly deadly due to an oversight. Not anymore!
-	M.add_chemical_effect(CE_PAINKILLER, 20 * chem_effective * M.species.chem_strength_pain)
+	M.injure(INJURY_TOXIN, 10 * removed * chem_effective, source = src) // It used to be incredibly deadly due to an oversight. Not anymore!
 
 /datum/reagent/hyperzine
+	factors = alist(BF_SLOWDOWN = -1, BF_PENALTY_SCALE = 0.5)
 	name = REAGENT_HYPERZINE
 	id = REAGENT_ID_HYPERZINE
 	description = REAGENT_HYPERZINE + " is a highly effective, long lasting, muscle stimulant."
@@ -687,17 +614,19 @@
 	..()
 	if(prob(5))
 		M.emote(pick("twitch", "blink_r", "shiver"))
-	M.add_chemical_effect(CE_SPEEDBOOST, 1)
 
 /datum/reagent/hyperzine/overdose(mob/living/carbon/M, alien, removed)
 	..()
 	if(prob(5)) // 1 in 20
 		var/mob/living/carbon/human/H = M
 		var/obj/item/organ/internal/heart/ht = H.internal_organs_by_name[O_HEART]
-		ht?.take_damage(1)
+		if(ht)
+			H.injure(INJURY_BLUNT, 1, ht, src, flags = INJURE_IGNORE_RESISTANCE)
 		to_chat(M, span_warning("Huh... Is this what a heart attack feels like?"))
 
 /datum/reagent/alkysine
+	factors = alist(BF_ANALGESIA = 10)
+	species_factors = alist(IS_DIONA = null, IS_SLIME = alist(BF_ANALGESIA = 2.5))
 	name = REAGENT_ALKYSINE
 	id = REAGENT_ID_ALKYSINE
 	description = REAGENT_ALKYSINE + " is a drug used to lessen the damage to neurological tissue after a catastrophic injury. Can heal brain tissue."
@@ -714,20 +643,13 @@
 /datum/reagent/alkysine/affect_blood(mob/living/carbon/M, alien, removed)
 	if(alien == IS_DIONA)
 		return
-	var/chem_effective = 1 * M.species.chem_strength_heal
 	if(alien == IS_SLIME)
-		chem_effective = 0.25
-		if(M.brainloss >= 10)
+		if(M.injury_load(INJURY_CATEGORY_NEURAL) >= 10)
 			M.Weaken(5)
 		if(dose >= 10 && M.paralysis < 40)
 			M.AdjustParalysis(1) //Messing with the core with a simple chemical probably isn't the best idea.
-	// base brain healing moved to dq_alkysine_brain_effect (see
-	// code/modules/medical/organ_decay/). Alkysine still works
-	// on mildly-damaged brains, but stops keeping up past the salvageable
-	// threshold (~60% organ damage), at which point ongoing decay
-	// outpaces the chem. The DQ proc is the single source of truth.
-	dq_alkysine_brain_effect(M, removed, chem_effective)
-	M.add_chemical_effect(CE_PAINKILLER, 10 * chem_effective * M.species.chem_strength_pain)
+	// Brain repair is alkysine's TREAT_NEURAL_REPAIR tag (body/treatment.dm);
+	// past the salvage band a swollen brain outpaces it (lesions.dm).
 
 /datum/reagent/imidazoline
 	name = REAGENT_IMIDAZOLINE
@@ -751,12 +673,12 @@
 		if(istype(E))
 			if(E.robotic >= ORGAN_ROBOT)
 				return
-			if(E.damage > 0)
-				E.damage = max(E.damage - 5 * removed, 0)
+			// Eye repair is imidazoline's TREAT_OCULAR tag (body/treatment.dm).
 			if(E.damage <= 5 && E.organ_tag == O_EYES)
 				H.sdisabilities &= ~BLIND
 
 /datum/reagent/peridaxon
+	species_factors = alist(IS_SLIME = alist(BF_ANALGESIA = 20))
 	name = REAGENT_PERIDAXON
 	id = REAGENT_ID_PERIDAXON
 	description = "Used to encourage recovery of internal organs and nervous systems. Medicate cautiously."
@@ -774,23 +696,21 @@
 /datum/reagent/peridaxon/affect_blood(mob/living/carbon/M, alien, removed)
 	if(ishuman(M))
 		var/mob/living/carbon/human/H = M
-		for(var/obj/item/organ/I in H.internal_organs)
+		for(var/obj/item/organ/internal/I in H.internal_organs)
 			if(I.robotic >= ORGAN_ROBOT)
 				continue
-			if(I.damage > 0) //Peridaxon heals only non-robotic organs
-				I.damage = max(I.damage - removed, 0)
+			if(I.damage > 0) // Repair is peridaxon's organ tags; the confusion is its side effect.
 				H.Confuse(5)
 			if(I.damage <= 5 && I.organ_tag == O_EYES)
 				H.eye_blurry = min(M.eye_blurry + 10, 250) //Eyes need to reset, or something
 				H.sdisabilities &= ~BLIND
 		if(alien == IS_SLIME)
-			H.add_chemical_effect(CE_PAINKILLER, 20 * M.species.chem_strength_pain)
 			if(prob(33))
 				H.Confuse(10)
 
 /datum/reagent/peridaxon/overdose(mob/living/carbon/M, alien, removed)
 	..()
-	M.adjustHalLoss(5)
+	M.injure(INJURY_PAIN, 5, source = src)
 	M.hallucination = max(M.hallucination, 10)
 
 /datum/reagent/osteodaxon
@@ -810,7 +730,7 @@
 /datum/reagent/osteodaxon/affect_blood(mob/living/carbon/M, alien, removed)
 	if(alien == IS_DIONA)
 		return
-	M.heal_organ_damage(3 * removed, 0)	//Gives the bones a chance to set properly even without other meds
+	// Light tissue repair ("gives the bones a chance to set") is in the treatment_tags profile.
 	if(ishuman(M))
 		var/mob/living/carbon/human/H = M
 		var/totalvol = 0
@@ -825,7 +745,7 @@
 					O.mend_fracture()		//Only works if the bone won't rebreak, as usual
 					H.custom_pain(span_danger(span_normal(span_bold("You feel a terrible agony tear through your [O.name]!"))),60,TRUE)
 					H.AdjustWeakened(10)		//Bones being regrown will knock you over
-					H.adjustHalLoss(60)
+					H.injure(INJURY_PAIN, 60, O.organ_tag, source = src)
 					H.AdjustStunned(1)		//Bones being regrown will knock you over
 
 /datum/reagent/myelamine
@@ -851,20 +771,21 @@
 		var/mob/living/carbon/human/H = M
 		var/wound_heal = removed * repair_strength
 		for(var/obj/item/organ/external/O in H.organs)
-			for(var/datum/wound/W in O.wounds)
+			for(var/datum/affliction/wound/W as anything in O.get_wounds())
 				if(W.bleeding())
 					W.bandage() //This is the ACTUAL clotting being performed.
-					W.damage = max(W.damage - (wound_heal*3.5), 0) 	//Removed should be 0.15 (can be higher if you have high/apex metabolism). repair_strength is 6. Making wound_heal  .9. Multiply by 3.5 and that gives us a heal of 3.15 on our wounds.
-					if(W.damage <= 0)								//We do this since this will only happen once per bleeding wound, as it's then bandaged (clotted). We do the heal as we want it to be somewhat like slapping them with an advanceed/bruise_pack. (Bruise packs heal 3.5 on application, as of the time of writing.)
-						O.wounds -= W
+					W.heal_damage(wound_heal * 3.5) 	//Removed should be 0.15 (can be higher if you have high/apex metabolism). repair_strength is 6. Making wound_heal  .9. Multiply by 3.5 and that gives us a heal of 3.15 on our wounds.
+					if(!QDELETED(W) && W.damage <= 0)	//We do this since this will only happen once per bleeding wound, as it's then bandaged (clotted). We do the heal as we want it to be somewhat like slapping them with an advanceed/bruise_pack. (Bruise packs heal 3.5 on application, as of the time of writing.)
+						O.remove_wound(W)
 					break //We only heal ONE external wound per go around.
-			for(var/datum/wound/internal_bleeding/W in O.wounds)
-				W.damage = max(W.damage - wound_heal, 0)
+			for(var/datum/affliction/wound/internal_bleeding/W in O.get_wounds())
+				W.heal_damage(wound_heal, heals_internal = TRUE)
+				if(QDELETED(W))
+					continue
 				if(W.damage <= 0)
-					O.wounds -= W
+					O.remove_wound(W)
 				else if(dose >= 9.5 && dose < 11) //If you are in the 'sweet zone' of 9.5u to 11u, your internal wounds instantly heal. This is to prevent people from using a clotting pen or taking a 10u clotting pill from medical and it not actually fixing their wounds.
-					W.damage = 0
-					O.wounds -= W
+					O.remove_wound(W)
 
 /datum/reagent/myelamine/overdose(mob/living/carbon/M, alien, removed)
 	//Heals slightly faster at the cost of high toxins. Honestly you should never do this, but whatever.
@@ -873,10 +794,10 @@
 		var/mob/living/carbon/human/H = M
 		var/wound_heal = removed * repair_strength / 2
 		for(var/obj/item/organ/external/O in H.bad_external_organs)
-			for(var/datum/wound/internal_bleeding/W in O.wounds)
-				W.damage = max(W.damage - wound_heal, 0)
-				if(W.damage <= 0)
-					O.wounds -= W
+			for(var/datum/affliction/wound/internal_bleeding/W in O.get_wounds())
+				W.heal_damage(wound_heal, heals_internal = TRUE)
+				if(!QDELETED(W) && W.damage <= 0)
+					O.remove_wound(W)
 
 /datum/reagent/respirodaxon
 	name = REAGENT_RESPIRODAXON
@@ -894,16 +815,12 @@
 	industrial_use = REFINERYEXPORT_REASON_SPECIALDRUG
 
 /datum/reagent/respirodaxon/affect_blood(mob/living/carbon/M, alien, removed)
-	var/repair_strength = 1 * M.species.chem_strength_heal
-	if(alien == IS_SLIME)
-		repair_strength = 0.6
 	if(ishuman(M))
 		var/mob/living/carbon/human/H = M
-		for(var/obj/item/organ/I in H.internal_organs)
+		for(var/obj/item/organ/internal/I in H.internal_organs)
 			if(I.robotic >= ORGAN_ROBOT || !(I.organ_tag in list(O_LUNGS, O_VOICE, O_GBLADDER)))
 				continue
-			if(I.damage > 0)
-				I.damage = max(I.damage - 4 * removed * repair_strength, 0)
+			if(I.damage > 0) // Repair is the drug's organ tag; the confusion is its side effect.
 				H.Confuse(2)
 		if(M.reagents.has_reagent(REAGENT_ID_GASTIRODAXON) || M.reagents.has_reagent(REAGENT_ID_PERIDAXON))
 			if(H.losebreath >= 15 && prob(H.losebreath))
@@ -929,24 +846,19 @@
 	industrial_use = REFINERYEXPORT_REASON_SPECIALDRUG
 
 /datum/reagent/gastirodaxon/affect_blood(mob/living/carbon/M, alien, removed)
-	var/repair_strength = 1 * M.species.chem_strength_heal
-	if(alien == IS_SLIME)
-		repair_strength = 0.6
 	if(ishuman(M))
 		var/mob/living/carbon/human/H = M
-		for(var/obj/item/organ/I in H.internal_organs)
+		for(var/obj/item/organ/internal/I in H.internal_organs)
 			if(I.robotic >= ORGAN_ROBOT || !(I.organ_tag in list(O_APPENDIX, O_STOMACH, O_INTESTINE, O_NUTRIENT, O_PLASMA, O_POLYP)))
 				continue
-			if(I.damage > 0)
-				I.damage = max(I.damage - 4 * removed * repair_strength, 0)
+			if(I.damage > 0) // Repair is the drug's organ tag; the confusion is its side effect.
 				H.Confuse(2)
 		if(M.reagents.has_reagent(REAGENT_ID_HEPANEPHRODAXON) || M.reagents.has_reagent(REAGENT_ID_PERIDAXON))
 			if(prob(10))
 				H.vomit(1)
 			else if(H.nutrition > 30)
 				M.adjust_nutrition(-removed * 30)
-		else
-			H.adjustToxLoss(-10 * removed) // Carthatoline based, considering cost.
+		// Without its interacting chems, gastirodaxon also scrubs toxins: see treatment_tags.
 
 /datum/reagent/hepanephrodaxon
 	name = REAGENT_HEPANEPHRODAXON
@@ -964,26 +876,21 @@
 	industrial_use = REFINERYEXPORT_REASON_SPECIALDRUG
 
 /datum/reagent/hepanephrodaxon/affect_blood(mob/living/carbon/M, alien, removed)
-	var/repair_strength = 1 * M.species.chem_strength_heal
-	if(alien == IS_SLIME)
-		repair_strength = 0.4
 	if(ishuman(M))
 		var/mob/living/carbon/human/H = M
-		for(var/obj/item/organ/I in H.internal_organs)
+		for(var/obj/item/organ/internal/I in H.internal_organs)
 			if(I.robotic >= ORGAN_ROBOT || !(I.organ_tag in list(O_LIVER, O_KIDNEYS, O_APPENDIX, O_ACID, O_HIVE)))
 				continue
-			if(I.damage > 0)
-				I.damage = max(I.damage - 4 * removed * repair_strength, 0)
+			if(I.damage > 0) // Repair is the drug's organ tag; the confusion is its side effect.
 				H.Confuse(2)
 		if(M.reagents.has_reagent(REAGENT_ID_CORDRADAXON) || M.reagents.has_reagent(REAGENT_ID_PERIDAXON))
 			if(prob(5))
 				H.vomit(1)
 			else if(prob(5))
 				to_chat(H, span_danger("Something churns inside you."))
-				H.adjustToxLoss(10 * removed)
+				H.injure(INJURY_TOXIN, 10 * removed, source = src)
 				H.vomit(0, 1)
-		else
-			H.adjustToxLoss(-12 * removed) // Carthatoline based, considering cost.
+		// Otherwise hepanephrodaxon scrubs toxins: see treatment_tags.
 
 /datum/reagent/cordradaxon
 	name = REAGENT_CORDRADAXON
@@ -1001,21 +908,16 @@
 	industrial_use = REFINERYEXPORT_REASON_SPECIALDRUG
 
 /datum/reagent/cordradaxon/affect_blood(mob/living/carbon/M, alien, removed)
-	var/repair_strength = 1 * M.species.chem_strength_heal
-	if(alien == IS_SLIME)
-		repair_strength = 0.6
 	if(ishuman(M))
 		var/mob/living/carbon/human/H = M
-		for(var/obj/item/organ/I in H.internal_organs)
+		for(var/obj/item/organ/internal/I in H.internal_organs)
 			if(I.robotic >= ORGAN_ROBOT || !(I.organ_tag in list(O_HEART, O_SPLEEN, O_RESPONSE, O_ANCHOR, O_EGG)))
 				continue
-			if(I.damage > 0)
-				I.damage = max(I.damage - 4 * removed * repair_strength, 0)
+			if(I.damage > 0) // Repair is the drug's organ tag; the confusion is its side effect.
 				H.Confuse(2)
 		if(M.reagents.has_reagent(REAGENT_ID_HYRONALIN) || M.reagents.has_reagent(REAGENT_ID_PERIDAXON))
 			H.losebreath = CLAMP(H.losebreath + 1, 0, 10)
-		else
-			H.adjustOxyLoss(-30 * removed) // Deals with blood oxygenation.
+		// Otherwise cordradaxon oxygenates the blood: see treatment_tags.
 
 /datum/reagent/immunosuprizine
 	name = REAGENT_IMMUNOSUPRIZINE
@@ -1050,7 +952,7 @@
 	if(ishuman(M))
 		var/mob/living/carbon/human/H = M
 		if(alien != IS_DIONA)
-			H.adjustToxLoss((30 * strength_mod) * removed)
+			H.injure(INJURY_TOXIN, (30 * strength_mod) * removed, source = src)
 
 		var/list/organtotal = list()
 		organtotal |= H.organs
@@ -1072,8 +974,8 @@
 					var/rejectmem = I.can_reject
 					I.can_reject = initial(I.can_reject)
 					if(rejectmem != I.can_reject)
-						H.adjustToxLoss((15 / strength_mod) * removed) //Someone forgot a * removed here in the past. It made it so 1u of this chem would do (baseline) 1245 toxins per unit, or 15 toxins per tick.
-						I.take_damage(1)
+						H.injure(INJURY_TOXIN, (15 / strength_mod) * removed, source = src) //Someone forgot a * removed here in the past. It made it so 1u of this chem would do (baseline) 1245 toxins per unit, or 15 toxins per tick.
+						H.injure(INJURY_TOXIN, 1, I, src, flags = INJURE_IGNORE_RESISTANCE)
 
 /datum/reagent/skrellimmuno //skrell exist?
 	name = REAGENT_MALISHQUALEM
@@ -1096,7 +998,7 @@
 	if(ishuman(M))
 		var/mob/living/carbon/human/H = M
 		if(alien != IS_SKRELL)
-			H.adjustToxLoss(20 * removed)
+			H.injure(INJURY_TOXIN, 20 * removed, source = src)
 
 		var/list/organtotal = list()
 		organtotal |= H.organs
@@ -1118,8 +1020,8 @@
 					var/rejectmem = I.can_reject
 					I.can_reject = initial(I.can_reject)
 					if(rejectmem != I.can_reject)
-						H.adjustToxLoss((10 / strength_mod))
-						I.take_damage(1)
+						H.injure(INJURY_TOXIN, (10 / strength_mod), source = src)
+						H.injure(INJURY_TOXIN, 1, I, src, flags = INJURE_IGNORE_RESISTANCE)
 
 /datum/reagent/ryetalyn
 	name = REAGENT_RYETALYN
@@ -1134,12 +1036,7 @@
 	supply_conversion_value = REFINERYEXPORT_VALUE_PROCESSED
 	industrial_use = REFINERYEXPORT_REASON_CLONEDRUG
 
-/datum/reagent/ryetalyn/affect_blood(mob/living/carbon/M, alien, removed)
-	//Ryetalyn is for genetics damage curing not resetting mutations, breaks traitgenes
-	if(alien == IS_DIONA)
-		return
-	var/chem_effective = 1 * M.species.chem_strength_heal
-	M.adjustCloneLoss(-2 * removed * chem_effective)
+// Ryetalyn's genetic repair is its treatment_tags profile. It is for genetic damage, not resetting mutations (breaks traitgenes).
 
 /*/datum/reagent/hyperzine
 	name = REAGENT_HYPERZINE
@@ -1156,7 +1053,6 @@
 		return
 	if(prob(5))
 		M.emote(pick("twitch", "blink_r", "shiver"))
-	M.add_chemical_effect(CE_SPEEDBOOST, 1)
 */
 /datum/reagent/ethylredoxrazine
 	name = REAGENT_ETHYLREDOXRAZINE
@@ -1235,11 +1131,12 @@
 		return
 	M.radiation = max(M.radiation - 70 * removed * M.species.chem_strength_heal, 0)
 	M.accumulated_rads = max(M.accumulated_rads - 70 * removed * M.species.chem_strength_heal, 0)
-	M.adjustToxLoss(-10 * removed)
+	// Its antitoxin action is in the treatment_tags profile.
 	if(prob(60))
-		M.take_organ_damage(4 * removed, 0)
+		M.injure(INJURY_BLUNT, 4 * removed, source = src)
 
 /datum/reagent/spaceacillin
+	factors = alist(BF_ANTIMICROBIAL = ANTIBIO_NORM)
 	name = REAGENT_SPACEACILLIN
 	id = REAGENT_ID_SPACEACILLIN
 	description = "An all-purpose antiviral agent."
@@ -1267,12 +1164,12 @@
 			if(world.time > data + delay)
 				data = world.time
 				to_chat(M, span_warning("Your senses feel unfocused, and divided."))
-	M.add_chemical_effect(CE_ANTIBIOTIC, dose >= overdose ? ANTIBIO_OD : ANTIBIO_NORM)
 
 /datum/reagent/spaceacillin/affect_touch(mob/living/carbon/M, alien, removed)
 	affect_blood(M, alien, removed * 0.8) // Not 100% as effective as injections, though still useful.
 
 /datum/reagent/corophizine
+	factors = alist(BF_ANTIMICROBIAL = ANTIBIO_SUPER)
 	name = REAGENT_COROPHIZINE
 	id = REAGENT_ID_COROPHIZINE
 	description = "A wide-spectrum antibiotic drug. Powerful and uncomfortable in equal doses."
@@ -1290,7 +1187,6 @@
 
 /datum/reagent/corophizine/affect_blood(mob/living/carbon/M, alien, removed)
 	..()
-	M.add_chemical_effect(CE_ANTIBIOTIC, ANTIBIO_SUPER)
 
 	var/mob/living/carbon/human/H = M
 
@@ -1304,10 +1200,11 @@
 				data = world.time
 				to_chat(M, span_critical("It feels like your body is revolting!"))
 		M.Confuse(7)
-		M.adjustFireLoss(removed * 2)
-		M.adjustToxLoss(removed * 2)
-		if(dose >= 5 && M.toxloss >= 10) //It all starts going wrong.
-			M.adjustBruteLoss(removed * 3)
+		M.injure(INJURY_BURN, removed * 2, source = src)
+		M.injure(INJURY_TOXIN, removed * 2, source = src)
+		var/toxic_load = M.injury_load(INJURY_CATEGORY_TOXIC)
+		if(dose >= 5 && toxic_load >= 10) //It all starts going wrong.
+			M.injure(INJURY_BLUNT, removed * 3, source = src)
 			M.eye_blurry = min(20, max(0, M.eye_blurry + 10))
 			if(prob(25))
 				if(prob(25))
@@ -1315,13 +1212,13 @@
 				M.Stun(2)
 				spawn(30)
 					M.Weaken(2)
-		if(dose >= 10 || M.toxloss >= 25) //Internal skeletal tubes are rupturing, allowing the chemical to breach them.
-			M.adjustToxLoss(removed * 4)
+		if(dose >= 10 || toxic_load >= 25) //Internal skeletal tubes are rupturing, allowing the chemical to breach them.
+			M.injure(INJURY_TOXIN, removed * 4, source = src)
 			M.make_jittery(5)
-		if(dose >= 20 || M.toxloss >= 60) //Core disentigration, cellular mass begins treating itself as an enemy, while maintaining regeneration. Slime-cancer.
-			M.adjustBrainLoss(2 * removed)
+		if(dose >= 20 || toxic_load >= 60) //Core disentigration, cellular mass begins treating itself as an enemy, while maintaining regeneration. Slime-cancer.
+			M.injure(INJURY_NEURAL, 2 * removed, source = src)
 			M.adjust_nutrition(-20)
-		if(M.bruteloss >= 60 && M.toxloss >= 60 && M.brainloss >= 30) //Total Structural Failure. Limbs start splattering.
+		if(M.injury_load(INJURY_CATEGORY_PHYSICAL) >= 60 && toxic_load >= 60 && M.injury_load(INJURY_CATEGORY_NEURAL) >= 30) //Total Structural Failure. Limbs start splattering.
 			var/obj/item/organ/external/O = pick(H.organs)
 			if(prob(20) && !istype(O, /obj/item/organ/external/chest/unbreakable/slime) && !istype(O, /obj/item/organ/external/groin/unbreakable/slime))
 				to_chat(M, span_critical("You feel your [O] begin to dissolve, before it sloughs from your body."))
@@ -1344,6 +1241,7 @@
 		eo.fracture()
 
 /datum/reagent/spacomycaze
+	factors = alist(BF_ANALGESIA = 20, BF_ANTIMICROBIAL = ANTIBIO_NORM)
 	name = REAGENT_SPACOMYCAZE
 	id = REAGENT_ID_SPACOMYCAZE
 	description = "An all-purpose painkilling antibiotic gel."
@@ -1361,8 +1259,7 @@
 	industrial_use = REFINERYEXPORT_REASON_DRUG
 
 /datum/reagent/spacomycaze/affect_blood(mob/living/carbon/M, alien, removed)
-	M.add_chemical_effect(CE_PAINKILLER, 10 * M.species.chem_strength_pain)
-	M.adjustToxLoss(3 * removed)
+	M.injure(INJURY_TOXIN, 3 * removed, source = src)
 
 /datum/reagent/spacomycaze/affect_ingest(mob/living/carbon/M, alien, removed)
 	affect_blood(M, alien, removed * 0.8)
@@ -1377,9 +1274,6 @@
 			if(world.time > data + delay)
 				data = world.time
 				to_chat(M, span_warning("Your skin itches."))
-
-	M.add_chemical_effect(CE_ANTIBIOTIC, dose >= overdose ? ANTIBIO_OD : ANTIBIO_NORM)
-	M.add_chemical_effect(CE_PAINKILLER, 20 * M.species.chem_strength_pain) // 5 less than paracetamol.
 
 /datum/reagent/spacomycaze/touch_obj(obj/O)
 	..()
@@ -1409,8 +1303,8 @@
 
 /datum/reagent/sterilizine/affect_blood(mob/living/carbon/M, alien, removed)
 	if(alien == IS_SLIME)
-		M.adjustFireLoss(removed)
-		M.adjustToxLoss(2 * removed)
+		M.injure(INJURY_CORROSIVE, removed, source = src)
+		M.injure(INJURY_TOXIN, 2 * removed, source = src)
 	return
 
 /datum/reagent/sterilizine/affect_touch(mob/living/carbon/M, alien, removed)
@@ -1419,8 +1313,8 @@
 		dq_set_was_bloodied(I, null)
 	dq_set_was_bloodied(M, null)
 	if(alien == IS_SLIME)
-		M.adjustFireLoss(removed)
-		M.adjustToxLoss(2 * removed)
+		M.injure(INJURY_CORROSIVE, removed, source = src)
+		M.injure(INJURY_TOXIN, 2 * removed, source = src)
 
 /datum/reagent/sterilizine/touch_obj(obj/O)
 	..()
@@ -1444,7 +1338,7 @@
 	if(istype(L))
 		if(istype(L, /mob/living/simple_mob/slime))
 			var/mob/living/simple_mob/slime/S = L
-			S.adjustToxLoss(rand(15, 25) * amount)	// Does more damage than water.
+			S.injure(INJURY_CORROSIVE, rand(15, 25) * amount, source = src)	// Does more damage than water.
 			S.visible_message(span_warning("[S]'s flesh sizzles where the fluid touches it!"), span_danger("Your flesh burns in the fluid!"))
 		remove_self(amount)
 
@@ -1491,7 +1385,6 @@
 /datum/reagent/rezadone/affect_blood(mob/living/carbon/M, alien, removed)
 	if(alien == IS_DIONA)
 		return
-	var/strength_mod = 1 * M.species.chem_strength_heal
 	var/mob/living/carbon/human/H = M
 	if(alien == IS_SLIME && istype(H))
 		if(prob(50))
@@ -1515,10 +1408,7 @@
 				H.b_hair = round((H.b_hair + 50)/2)
 			if(H.b_facial)
 				H.b_facial = round((H.b_facial + 50)/2)
-	M.adjustCloneLoss(-20 * removed * strength_mod)
-	M.adjustOxyLoss(-2 * removed * strength_mod)
-	M.heal_organ_damage(20 * removed, 20 * removed * strength_mod)
-	M.adjustToxLoss(-20 * removed * strength_mod)
+	// Rezadone's regeneration is its treatment_tags profile.
 	if(dose > 3)
 		M.status_flags &= ~DISFIGURED
 	if(dose > 10)
@@ -1540,11 +1430,7 @@
 	supply_conversion_value = REFINERYEXPORT_VALUE_HIGHREFINED
 	industrial_use = REFINERYEXPORT_REASON_DRUG
 
-/datum/reagent/healing_nanites/affect_blood(mob/living/carbon/M, alien, removed)
-	M.heal_organ_damage(2 * removed, 2 * removed)
-	M.adjustOxyLoss(-4 * removed)
-	M.adjustToxLoss(-2 * removed)
-	M.adjustCloneLoss(-2 * removed)
+// Healing nanites' repair (organic and synthetic) is their treatment_tags profile.
 
 /datum/reagent/menthol
 	name = REAGENT_MENTHOL
@@ -1573,13 +1459,10 @@
 	scannable = SCANNABLE_BENEFICIAL
 
 /datum/reagent/earthsblood/affect_blood(mob/living/carbon/M, alien, removed)
-	M.heal_organ_damage (4 * removed, 4 * removed)
-	M.adjustOxyLoss(-10 * removed)
-	M.adjustToxLoss(-4 * removed)
-	M.adjustCloneLoss(-2 * removed)
+	// The healing is the treatment_tags profile; the Tithe is paid here.
 	M.druggy = max(M.druggy, 20)
 	M.hallucination = max(M.hallucination, 3)
-	M.adjustBrainLoss(1 * removed) //your life for your mind. The Earthmother's Tithe.
+	M.injure(INJURY_NEURAL, 1 * removed, source = src) //your life for your mind. The Earthmother's Tithe.
 
 
 // Vat clone stablizer
@@ -1624,19 +1507,19 @@
 	// Agony and death!
 	if(current_addiction <= 20)
 		if(prob(12))
-			M.adjustToxLoss( rand(1,4) )
-			M.adjustBruteLoss( rand(1,4) )
-			M.adjustOxyLoss( rand(1,4) )
+			M.injure(INJURY_TOXIN, rand(1,4), source = src)
+			M.injure(INJURY_BLUNT, rand(1,4), source = src)
+			M.injure(INJURY_ASPHYXIA, rand(1,4), source = src)
 	// proc side effect
 	if(current_addiction <= 30)
 		if(prob(3))
 			M.Weaken(2)
 			M.emote("vomit")
-			M.add_chemical_effect(CE_WITHDRAWL, rand(9,14) * REM)
+			M.add_modifier(/datum/modifier/withdrawal_strain/severe, 3 SECONDS)
 	else if(current_addiction <= 40)
 		if(prob(3))
 			M.emote("vomit")
-			M.add_chemical_effect(CE_WITHDRAWL, rand(5,9) * REM)
+			M.add_modifier(/datum/modifier/withdrawal_strain/moderate, 3 SECONDS)
 	else if(current_addiction <= 50)
 		if(prob(2))
 			M.emote("vomit")
@@ -1651,6 +1534,8 @@
 ////////////   MEDICINE   /////////
 //////////////////////////////////
 /datum/reagent/claridyl
+	factors = alist(BF_ANALGESIA = 40, BF_STABILIZATION = 30)
+	species_factors = alist(IS_DIONA = null)
 	name = REAGENT_CLARIDYL
 	id = REAGENT_ID_CLARIDYL
 	description = "Claridyl is an advanced medicine that cures all of your problems. Notice: Clarydil does not claim to fix marriages, car loans, student debt or insomnia and may cause severe pain."
@@ -1666,13 +1551,11 @@
 
 /datum/reagent/claridyl/affect_blood(mob/living/carbon/M, alien, removed)
 	if(alien != IS_DIONA)
-		M.add_chemical_effect(CE_STABLE, 30)
-		M.add_chemical_effect(CE_PAINKILLER, 40)
-		if(M.getBruteLoss())
-			M.adjustBruteLoss(-1)
-			M.adjustHalLoss(1.5)
+		// Its trauma repair is the treatment_tags profile; mending hurts.
+		if(M.injury_load(INJURY_CATEGORY_PHYSICAL))
+			M.injure(INJURY_PAIN, 1.5, source = src)
 		if(prob(0.0001))
-			M.adjustToxLoss(50)//instant crit for tesh
+			M.injure(INJURY_TOXIN, 50, source = src)//instant crit for tesh
 
 		if(prob(0.1))
 			pick(M.custom_pain("You suddenly feel inexplicably angry!",30),
@@ -1684,8 +1567,7 @@
 			M.AdjustParalysis(0.1),
 			M.hallucination = max(M.hallucination, 2),
 			M.flash_eyes(),
-			M.custom_pain("Your vision becomes blurred!",30),
-			M.add_chemical_effect(CE_ALCOHOL, 5),)
+			M.custom_pain("Your vision becomes blurred!",30),)
 
 /datum/reagent/claridyl/bloodburn
 	name = REAGENT_BLOODBURN
@@ -1723,9 +1605,9 @@
 /datum/reagent/eden/affect_blood(mob/living/carbon/M, alien, removed)
 	if(alien == IS_SLIME || alien == IS_DIONA)
 		return
-	if(M.getToxLoss())
-		M.adjustFireLoss(1.2)
-		M.adjustToxLoss(-1)
+	// Antitoxin action is the treatment_tags profile; purging impurities burns.
+	if(M.injury_load(INJURY_CATEGORY_TOXIC))
+		M.injure(INJURY_BURN, 1.2, source = src)
 
 /datum/reagent/eden/snake
 	name = REAGENT_EDENSNAKE
@@ -1736,10 +1618,7 @@
 	color = "#FF0000"
 
 /datum/reagent/eden/snake/affect_blood(mob/living/carbon/M, alien, removed)
-	M.adjustOxyLoss(1)
-	M.adjustFireLoss(1)
-	M.adjustBruteLoss(1)
-	M.adjustToxLoss(1)
+	M.injure_many(alist(INJURY_ASPHYXIA = 1, INJURY_BURN = 1, INJURY_BLUNT = 1, INJURY_TOXIN = 1), source = src)
 
 /datum/reagent/tercozolam
 	name = REAGENT_TERCOZOLAM
@@ -1775,12 +1654,8 @@
 		var/wound_heal = 1.5 * removed
 		var/mob/living/carbon/human/H = M
 		for(var/obj/item/organ/external/O in H.bad_external_organs)
-			for(var/datum/wound/W in O.wounds)
-				if(W.bleeding())
-					W.damage = max(W.damage - wound_heal, 0)
-					if(W.damage <= 0)
-						O.wounds -= W
-		M.take_organ_damage(3 * removed, 0)
+			dq_reagent_close_wounds(O, wound_heal, internal = FALSE)
+		M.injure(INJURY_BLUNT, 3 * removed, source = src)
 		if(M.losebreath < 15)
 			M.AdjustLosebreath(1)
 		H.custom_pain("It feels as if your veins are fusing shut!",60)
@@ -1817,11 +1692,10 @@
 /datum/reagent/bullvalene/affect_blood(mob/living/carbon/M, alien, removed)
 	if(alien == IS_SLIME || alien == IS_DIONA)
 		return
-	if(M.getBruteLoss() || M.getFireLoss() || M.getOxyLoss())
-		M.adjustOxyLoss(-1)
-		M.adjustFireLoss(-1)
-		M.adjustBruteLoss(-1)
-		M.adjustToxLoss(0.8)
+	// Repair is the treatment_tags profile; the catalysis toxifies the host
+	// while it has something to convert.
+	if(M.injury_load(INJURY_CATEGORY_PHYSICAL) || M.injury_load(INJURY_CATEGORY_THERMAL) || M.injury_load(INJURY_CATEGORY_ASPHYXIA))
+		M.injure(INJURY_TOXIN, 0.8, source = src)
 
 /////SERAZINE REAGENTS///////
 
@@ -1842,7 +1716,6 @@
 	if(alien != IS_DIONA)
 		M.drowsyness = max(0, M.drowsyness - 3 * removed * chem_effective)
 		M.hallucination = max(0, M.hallucination - 6 * removed * chem_effective)
-		M.adjustToxLoss(-2 * removed * chem_effective)
 
 /datum/reagent/alizene
 	name = REAGENT_ALIZENE
@@ -1858,12 +1731,7 @@
 	supply_conversion_value = REFINERYEXPORT_VALUE_PROCESSED
 	industrial_use = REFINERYEXPORT_REASON_DRUG
 
-/datum/reagent/alizene/affect_blood(mob/living/carbon/M, alien, removed)
-	var/chem_effective = 1
-	if(alien == IS_SLIME)
-		chem_effective = 0.75
-	if(alien != IS_DIONA)
-		M.heal_organ_damage(12 * removed * chem_effective, 0)
+// Alizene's trauma repair is its treatment_tags profile.
 
 
 // === merged from medicine_vr.dm during hard-fork de-suffix (verified no override-order change) ===
@@ -1889,6 +1757,7 @@
 	M.make_jittery(-25*removed)
 
 /datum/reagent/numbing_enzyme
+	factors = alist(BF_ANALGESIA = 200)
 	name = REAGENT_NUMBENZYME
 	id = REAGENT_ID_NUMBENZYME
 	description = "Some sort of organic painkiller."
@@ -1904,7 +1773,6 @@
 	industrial_use = REFINERYEXPORT_REASON_DRUG
 
 /datum/reagent/numbing_enzyme/affect_blood(mob/living/carbon/M, alien, removed)
-	M.add_chemical_effect(CE_PAINKILLER, 200)
 	if(prob(0.01)) //1 in 10000 chance per tick. Extremely rare.
 		to_chat(M,span_warning("Your body feels numb as a light, tingly sensation spreads throughout it, like some odd warmth."))
 	//Not noted here, but a movement debuff of 1.5 is handed out in human_movement.dm when numbing_enzyme is in a person's bloodstream!
@@ -1918,10 +1786,10 @@
 			H.AdjustWeakened(5) //Fall onto the floor for a few moments.
 			H.Confuse(15) //Be unable to walk correctly for a bit longer.
 		if(prob(1))
-			if(H.losebreath <= 1 && H.oxyloss <= 20) //Let's not suffocate them to the point that they pass out.
+			if(H.losebreath <= 1 && H.injury_load(INJURY_CATEGORY_ASPHYXIA) <= 20) //Let's not suffocate them to the point that they pass out.
 				to_chat(H,span_warning("You feel a sharp stabbing pain in your chest and quickly realize that your lungs have stopped functioning!")) //Let's scare them a bit.
 				H.losebreath = 10
-				H.adjustOxyLoss(5)
+				H.injure(INJURY_ASPHYXIA, 5, source = src)
 		if(prob(2))
 			to_chat(H,span_warning("You feel a dull pain behind your eyes and at the back of your head..."))
 			H.hallucination += 20 //It messes with your mind for some reason.
@@ -1948,12 +1816,7 @@
 	supply_conversion_value = REFINERYEXPORT_VALUE_HIGHREFINED
 	industrial_use = REFINERYEXPORT_REASON_DRUG
 
-/datum/reagent/vermicetol/affect_blood(mob/living/carbon/M, alien, removed)
-	var/chem_effective = 1 * M.species.chem_strength_heal
-	if(alien == IS_SLIME)
-		chem_effective = 0.75
-	if(alien != IS_DIONA)
-		M.heal_organ_damage(8 * removed * chem_effective, 0)
+// Vermicetol's trauma repair is its treatment_tags profile.
 
 /*
 /datum/reagent/sleevingcure
@@ -1991,11 +1854,7 @@
 	industrial_use = REFINERYEXPORT_REASON_DRUG
 	metabolized_traits = list(TRAIT_HALT_RADIATION_EFFECTS)
 
-/datum/reagent/prussian_blue/affect_blood(mob/living/carbon/M, alien, removed)
-	if(alien == IS_DIONA)
-		return
-	if(prob(10)) //Miniscule chance of removing some toxins.
-		M.adjustToxLoss(-10 * removed)
+// Prussian blue's miniscule antitoxin action is its treatment_tags profile.
 
 /datum/reagent/lipozilase // The anti-nutriment that rapidly removes weight.
 	name = REAGENT_LIPOZILASE
@@ -2227,12 +2086,9 @@
 	industrial_use = REFINERYEXPORT_REASON_MEDSCI
 
 /datum/reagent/cleansingagent/affect_blood(mob/living/carbon/M, alien, removed)
-	var/chem_effective = 1 * M.species.chem_strength_heal
-	if(alien == IS_SLIME)
-		chem_effective = 0.66
+	// Antitoxin action is the treatment_tags profile.
 	if(alien != IS_DIONA)
 		M.druggy = max(M.druggy, 5)
-		M.adjustToxLoss(-6 * removed * chem_effective)
 		M.radiation = max(M.radiation - 15 * removed * M.species.chem_strength_heal, 0)
 		M.accumulated_rads = max(M.accumulated_rads - 15 * removed * M.species.chem_strength_heal, 0)
 
@@ -2250,11 +2106,8 @@
 	industrial_use = REFINERYEXPORT_REASON_MEDSCI
 
 /datum/reagent/purifyingagent/affect_blood(mob/living/carbon/M, alien, removed)
-	var/chem_effective = 1 * M.species.chem_strength_heal
-	if(alien == IS_SLIME)
-		chem_effective = 0.66
+	// Antitoxin action is the treatment_tags profile.
 	if(alien != IS_DIONA)
-		M.adjustToxLoss(-6 * removed * chem_effective)
 		M.radiation = max(M.radiation - 15 * removed * M.species.chem_strength_heal, 0)
 		M.accumulated_rads = max(M.accumulated_rads - 15 * removed * M.species.chem_strength_heal, 0)
 
@@ -2275,12 +2128,9 @@
 	industrial_use = REFINERYEXPORT_REASON_MEDSCI
 
 /datum/reagent/burncard/affect_blood(mob/living/carbon/M, alien, removed)
-	var/chem_effective = 1 * M.species.chem_strength_heal
-	if(alien == IS_SLIME)
-		chem_effective = 0.75
+	// Trauma repair is the treatment_tags profile; liquid fire still burns.
 	if(alien != IS_DIONA)
-		M.heal_organ_damage(13 * removed * chem_effective, 0)
-		M.adjustFireLoss(1 * removed)
+		M.injure(INJURY_BURN, 1 * removed, source = src)
 
 /datum/reagent/burncard/overdose(mob/living/carbon/M, alien, removed)
 	..()
@@ -2289,15 +2139,7 @@
 	if(ishuman(M))
 		var/mob/living/carbon/human/H = M
 		for(var/obj/item/organ/external/O in H.bad_external_organs)
-			for(var/datum/wound/W in O.wounds)
-				if(W.bleeding())
-					W.damage = max(W.damage - wound_heal, 0)
-					if(W.damage <= 0)
-						O.wounds -= W
-				if(W.internal)
-					W.damage = max(W.damage - wound_heal, 0)
-					if(W.damage <= 0)
-						O.wounds -= W
+			dq_reagent_close_wounds(O, wound_heal)
 
 /datum/reagent/flamecure
 	name = REAGENT_FLAMECURE
@@ -2316,21 +2158,13 @@
 	if(alien == IS_DIONA)
 		return
 	M.eye_blurry = min(M.eye_blurry + (repair_strength * removed), 250)
-	M.heal_organ_damage(0, -1 * removed)
+	// The legacy negative burn-heal here was a burn (twice for humans).
+	M.injure(INJURY_BURN, (ishuman(M) ? 2 : 1) * removed, source = src)
 	if(ishuman(M))
-		M.heal_organ_damage(0, -1 * removed)
 		var/mob/living/carbon/human/H = M
 		var/wound_heal = removed * repair_strength
 		for(var/obj/item/organ/external/O in H.bad_external_organs)
-			for(var/datum/wound/W in O.wounds)
-				if(W.bleeding())
-					W.damage = max(W.damage - wound_heal, 0)
-					if(W.damage <= 0)
-						O.wounds -= W
-				if(W.internal)
-					W.damage = max(W.damage - wound_heal, 0)
-					if(W.damage <= 0)
-						O.wounds -= W
+			dq_reagent_close_wounds(O, wound_heal)
 
 //neoliquidfire
 /datum/reagent/neotane
@@ -2347,15 +2181,15 @@
 	industrial_use = REFINERYEXPORT_REASON_MEDSCI
 
 /datum/reagent/neotane/affect_blood(mob/living/carbon/M, alien, removed)
-	var/chem_effective = 1 * M.species.chem_strength_heal
+	// Burn care is the treatment_tags profile; the side effects stay here.
 	if(alien == IS_SLIME)
-		chem_effective = 0.5
-		M.adjustBruteLoss(3 * removed)
+		M.injure(INJURY_BLUNT, 3 * removed, source = src)
 	if(alien != IS_DIONA)
-		M.heal_organ_damage(0, 13 * removed * chem_effective)
-		M.adjustBruteLoss(1 * removed)
+		M.injure(INJURY_BLUNT, 1 * removed, source = src)
 
 /datum/reagent/bloodsealer
+	factors = alist(BF_STABILIZATION = 25)
+	species_factors = alist(IS_DIONA = null)
 	name = REAGENT_BLOODSEALER
 	id = REAGENT_ID_BLOODSEALER
 	description = "A strange chemical that will stablize bloodflow by burning the subject"
@@ -2370,11 +2204,12 @@
 
 /datum/reagent/bloodsealer/affect_blood(mob/living/carbon/M, alien, removed)
 	if(alien != IS_DIONA)
-		M.add_chemical_effect(CE_STABLE, 25)
-		M.heal_organ_damage(0, -1 * removed)
+		M.injure(INJURY_BURN, 1 * removed, source = src) // the legacy negative burn-heal: a burn
 
 //meteroidliquid
 /datum/reagent/livingagent
+	factors = alist(BF_ANALGESIA = -20)
+	species_factors = alist(IS_DIONA = null)
 	name = REAGENT_LIVINGAGENT
 	id = REAGENT_ID_LIVINGAGENT
 	description = "Fill the body with life, while making it more senstive to stimulus."
@@ -2392,17 +2227,8 @@
 	M.druggy = max(M.druggy, 5)
 	M.Confuse(5)
 
-/datum/reagent/livingagent/affect_blood(mob/living/carbon/M, alien, removed)
-	if(alien != IS_DIONA)
-		var/chem_effective = 1 * M.species.chem_strength_heal
-		if(alien == IS_SLIME)
-			chem_effective = 0.5
-		M.adjustOxyLoss(-4 * removed * chem_effective)
-		M.heal_organ_damage(2 * removed, 2 * removed * chem_effective)
-		M.adjustToxLoss(-3 * removed * chem_effective)
-		M.add_chemical_effect(CE_PAINKILLER, -20 * M.species.chem_strength_pain)
-
 /datum/reagent/performancepeaker
+	factors = alist(BF_ANALGESIA = 10, BF_SLOWDOWN = -0.5, BF_PENALTY_SCALE = 0.5)
 	name = REAGENT_PERFORMANCEPEAKER
 	id = REAGENT_ID_PERFORMANCEPEAKER
 	description = "A chemical created to bring a body to peak condition. Highly toxic"
@@ -2416,12 +2242,10 @@
 	industrial_use = REFINERYEXPORT_REASON_MEDSCI
 
 /datum/reagent/performancepeaker/affect_blood(mob/living/carbon/M, alien, removed)
-	M.add_chemical_effect(CE_SPEEDBOOST, 0.5)
 	M.AdjustParalysis(-1)
 	M.AdjustStunned(-1)
 	M.AdjustWeakened(-1)
-	M.add_chemical_effect(CE_PAINKILLER, 10 * M.species.chem_strength_pain)
-	M.adjustToxLoss(15 * removed)
+	M.injure(INJURY_TOXIN, 15 * removed, source = src)
 
 //advanced crafting
 //tier 1
@@ -2443,9 +2267,11 @@
 /datum/reagent/souldew/affect_blood(mob/living/carbon/M, alien, removed)
 	var/chem_effective = 1 * M.species.chem_strength_heal
 	if(M.stat == DEAD)
-		M.adjustOxyLoss(-3 * removed * chem_effective)
-		M.heal_organ_damage(3 * removed * chem_effective, 3 * removed * chem_effective)
-		M.adjustToxLoss(-3 * removed * chem_effective)
+		// Only works on the dead, which a continuous tag can't express: mends directly.
+		M.mend(TREAT_OXYGENATION, 3 * removed * chem_effective)
+		M.mend(TREAT_TISSUE_REPAIR, 3 * removed * chem_effective)
+		M.mend(TREAT_BURN_CARE, 3 * removed * chem_effective)
+		M.mend(TREAT_ANTITOXIN, 3 * removed * chem_effective)
 
 /datum/reagent/quadcord
 	name = REAGENT_QUADCORD
@@ -2458,15 +2284,7 @@
 	overdose = REAGENTS_OVERDOSE * 2
 	supply_conversion_value = REFINERYEXPORT_VALUE_HIGHREFINED
 	industrial_use = REFINERYEXPORT_REASON_MEDSCI
-/datum/reagent/quadcord/affect_blood(mob/living/carbon/M, alien, removed)
-	if(alien != IS_DIONA)
-		var/chem_effective = 1 * M.species.chem_strength_heal
-		if(alien == IS_SLIME)
-			chem_effective = 0.5
-		M.adjustOxyLoss(-0.5 * removed * chem_effective)
-		M.heal_organ_damage(0.5 * removed * chem_effective, 0.5 * removed * chem_effective)
-		M.adjustToxLoss(-0.5 * removed * chem_effective)
-		M.adjustBrainLoss(-1 * removed * chem_effective)
+// Quadcord's healing is its treatment_tags profile.
 
 //tier 2
 
@@ -2521,24 +2339,21 @@
 	on_created_text = span_critical("You feel your body's natural healing quick into overdrive!")
 	on_expired_text = span_notice("Your body returns to normal.")
 
-	incoming_healing_percent = 1.2
+	factors = alist(BF_HEALING_RECEIVED = 1.2)
 
 /datum/modifier/liquidhealer/tick()
 	if(holder.stat == DEAD)
 		expire()
 
-	if(ishuman(holder)) // Robolimbs need this code sadly.
-		var/mob/living/carbon/human/H = holder
-		for(var/obj/item/organ/external/E in H.organs)
-			var/obj/item/organ/external/O = E
-			O.heal_damage(1, 1, 0, 1)
-	else
-		holder.adjustBruteLoss(-1)
-		holder.adjustFireLoss(-1)
-
-	holder.adjustToxLoss(-1)
-	holder.adjustOxyLoss(-1)
-	holder.adjustCloneLoss(-1)
+	// A regeneration power, not a reagent: it mends by mechanism, organic
+	// and synthetic alike (the old code repaired robolimbs too).
+	holder.mend(TREAT_TISSUE_REPAIR, 1)
+	holder.mend(TREAT_BURN_CARE, 1)
+	holder.mend(TREAT_PLATING_REPAIR, 1)
+	holder.mend(TREAT_WIRING_REPAIR, 1)
+	holder.mend(TREAT_ANTITOXIN, 1)
+	holder.mend(TREAT_OXYGENATION, 1)
+	holder.mend(TREAT_GENETIC_REPAIR, 1)
 
 
 /datum/reagent/modapplying/phoenixbreath
@@ -2574,7 +2389,7 @@
 	var/chem_effective = 1 * M.species.chem_strength_heal
 	if(alien == IS_SLIME)
 		chem_effective = 1.25
-		M.adjustFireLoss(2 * removed * chem_effective) // Why are you giving this to Prometheans or Dionas. You're going to DRY them.
+		M.injure(INJURY_BURN, 2 * removed * chem_effective, source = src) // Why are you giving this to Prometheans or Dionas. You're going to DRY them.
 
 /datum/reagent/dryagent/touch_obj(obj/O, amount)
 	if(istype(O, /obj/item/clothing/shoes/galoshes) && O.loc)

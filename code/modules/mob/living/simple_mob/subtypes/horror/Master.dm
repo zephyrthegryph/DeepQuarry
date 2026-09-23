@@ -14,8 +14,7 @@
 
 	attack_sound = 'sound/h_sounds/shitty_tim.ogg'
 
-	maxHealth = 400
-	health = 400
+	endurance = 400
 
 	melee_damage_lower = 5
 	melee_damage_upper = 8

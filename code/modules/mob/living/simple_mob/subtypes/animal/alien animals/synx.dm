@@ -46,7 +46,7 @@
 	var/list/body_styles = list(
 		"Normal"
 	)
-	var/body
+	var/body_style
 	var/list/horn_styles = list(
 		"None",
 		"Curved",
@@ -72,8 +72,7 @@
 
 	//intelligence_level = SA_ANIMAL
 
-	maxHealth = 75 //Lowered from 150. 150 is wayyy too high for a noodly stealth predator. - Lo
-	health = 75
+	endurance = 75 //Lowered from 150. 150 is wayyy too high for a noodly stealth predator. - Lo
 	movement_cooldown = 6
 	see_in_dark = 6
 	grab_resist = 2 //slippery. %  grabwill not work. Should be 10-20%. -Lo
@@ -278,10 +277,7 @@
 		if(prob(2))
 			M.custom_pain("You [pick("suddenly lose control over your body!", "can't move!", "are frozen in place.", "can't struggle!")]",60)
 			M.AdjustParalysis(1)
-//		M.add_chemical_effect(CE_STABLE, 15)
-		M.add_chemical_effect(CE_PAINKILLER, 60)
-		// M.adjustToxLoss(0.4) //Dealing twice of it as tox, even if you have no brute, its not true conversion. Synxchem without stomach shoved out of its mouth isn't going to do tox. -Lo
-	//	M.adjustHalLoss(1) //we do not need halloss as well as paralyze. lo-
+		M.add_modifier(/datum/modifier/numbness, 3 SECONDS)
 
 /datum/reagent/inaprovaline/synxchem/holo
 	name = "SX type simulation nanomachines" //Educational!
@@ -290,6 +286,8 @@
 	metabolism = REM * 1 //ten times faster for convenience of testers.
 	color = "#00FFFF"
 	overdose = REAGENTS_OVERDOSE * 20 //it's all fake. But having nanomachines move through you is not good at a certain amount.
+	// Made to simulate combat, also useful as very odd healer. The body applies these each tick.
+	treatment_tags = list(TREAT_TISSUE_REPAIR = 0.1, TREAT_ANTITOXIN = 0.1, TREAT_BURN_CARE = 0.1)
 
 /datum/reagent/inaprovaline/synxchem/holo/affect_blood(mob/living/carbon/M, alien, removed)
 	if(alien != IS_DIONA)
@@ -298,12 +296,7 @@
 		if(prob(2))
 			M.custom_pain("You suddenly lose control over your body!",60)
 			M.AdjustParalysis(1)
-		M.add_chemical_effect(CE_STABLE, 15)
-		M.add_chemical_effect(CE_PAINKILLER, 50)
-		M.adjustBruteLoss(-0.2)//Made to simulate combat, also useful as very odd healer.
-		M.adjustToxLoss(-0.2) //HELP ITS MAULING ME!
-		M.adjustFireLoss(-0.2) //huh this mauling aint so bad
-		//M.adjustHalLoss(10) //OH MY GOD END MY PAIN NOW WHO MADE THIS SIMULATION //Removing because this is spammy and stunlocks for absurd durations
+		M.add_modifier(/datum/modifier/numbness/synx, 3 SECONDS)
 
 /datum/reagent/inaprovaline/synxchem/clown
 	name = "HONK"
@@ -312,11 +305,11 @@
 	metabolism = REM * 0.5
 	color = "#FFFFFF"
 	overdose = REAGENTS_OVERDOSE * 200
+	treatment_tags = list(TREAT_TISSUE_REPAIR = 0.5)
 
 /datum/reagent/inaprovaline/synxchem/clown/affect_blood(mob/living/carbon/M, alien, removed)
-	M.adjustToxLoss(0.01)
+	M.injure(INJURY_TOXIN, 0.01, flags = INJURE_SILENT)
 	playsound(M.loc, 'sound/items/bikehorn.ogg', 50, 1)
-	M.adjustBruteLoss(-2)//healing brute
 	if(prob(1))
 		M.custom_pain("I have no horn but i must honk!",60)
 	if(prob(2))
@@ -332,11 +325,8 @@
 		if(prob(2))
 			M.custom_pain("You suddenly lose control over your body!",0)
 			M.AdjustParalysis(1)
-		M.add_chemical_effect(CE_STABLE, 15)
-		M.add_chemical_effect(CE_PAINKILLER, 50)
-		M.adjustBruteLoss(-0.2)//healing brute
-		M.adjustToxLoss(0.1) //Dealing half of it as tox
-		M.adjustHalLoss(1) //dealing 5 times the amount of brute healed as halo, but we cant feel pain yet
+		M.add_modifier(/datum/modifier/numbness/synx, 3 SECONDS)
+		(legacy duplicate removed)
 		// ^ I have no idea what this might cause, my ideal plan is that once the pain killer wears off you suddenly collapse;
 		//Since Halloss is not "real" damage this should not cause death
 */
@@ -372,7 +362,7 @@
 			var/amount = rand(acid_damage_lower, acid_damage_upper) //Select a damage value
 			var/damage_done = amount * armor_modifier
 			if(damage_done > 0) //sanity check, no healing the victim if somehow this is a negative value.
-				L.adjustFireLoss(damage_done)
+				L.injure(INJURY_CORROSIVE, damage_done, null, src)
 				return
 			else
 				to_chat(src,span_notice("Your stomach bounces off of the victim's armor!"))
@@ -620,7 +610,7 @@
 		return
 	if(random)
 		var/list/bodycolors = list("#FFFFFF")
-		body = pick(body_styles)
+		body_style = pick(body_styles)
 		overlay_colors["Body"] = pick(bodycolors)
 		horns = pick(horn_styles)
 		var/list/horncolors = list("#FFE100","#A75A35","#1C4DFF","#FF0000","#404C6D","#2F2F2F","#55CE21","#711BFF","#DEDEE0")
@@ -633,7 +623,7 @@
 		overlay_colors["Eyes"] = pick(eyecolors)
 
 
-	var/image/I = image(icon, "synx_body[body][transformed? "-t" : null][stomach_distended? "-s" : null]")
+	var/image/I = image(icon, "synx_body[body_style][transformed? "-t" : null][stomach_distended? "-s" : null]")
 	I.color = overlay_colors["Body"]
 	I.appearance_flags |= (RESET_COLOR|PIXEL_SCALE)
 	I.plane = (status_flags & HIDING)? OBJ_PLANE : MOB_PLANE
@@ -685,7 +675,7 @@
 			var/new_color = tgui_color_picker(src, "Pick body color:","Body Color", overlay_colors["Body"])
 			if(!new_color)
 				return 0
-			body = choice
+			body_style = choice
 			overlay_colors["Body"] = new_color
 		if("Horns")
 			options = horn_styles
@@ -823,7 +813,6 @@
 	icon_dead = "synx_greed_dead"
 	speak = list("Who is there?")//preset unique words Greed remembers, to be defined more
 	player_msg = "You Hunger."
-	health = 100//Slightly lower health due to being damaged permanently.
 	speak_chance = 5
 	//Vore Section
 	vore_capacity = 4 //What a fat noodle.
@@ -866,7 +855,7 @@
 	name = "SYN-KinC"
 	desc = "A robotic recreation of a an Alien parasite. The metal plates seem quite thick."
 	humanoid_hands = 1
-	health = 200 //Metally
+	biology = BIOLOGY_SYNTHETIC // Metally
 	player_msg = "All systems nominal."
 	/////////////////////ARMOR
 	armor = list(

@@ -116,14 +116,14 @@
 
 /obj/item/projectile/beam/medical_cell/phys_heal/on_hit(mob/living/carbon/human/target)
 	if(ishuman(target))
-		target.adjustBruteLoss(-20)
-		target.adjustFireLoss(-20)
+		target.mend(TREAT_TISSUE_REPAIR, 20)
+		target.mend(TREAT_BURN_CARE, 20)
 	else
 		return 1
 
 /obj/item/projectile/beam/medical_cell/detox/on_hit(mob/living/carbon/human/target)
 	if(ishuman(target))
-		target.adjustToxLoss(-15)
+		target.mend(TREAT_ANTITOXIN, 15)
 		target.radiation = max(target.radiation - 75, 0) //worse than mlem for rad, better for tox.
 	else
 		return 1

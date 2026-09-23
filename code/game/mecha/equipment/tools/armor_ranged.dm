@@ -96,7 +96,7 @@
 		chassis.log_append_to_last("Armor saved.")
 		if(isliving(A))
 			var/mob/living/M = A
-			M.take_organ_damage(10)
+			M.injure(INJURY_BLUNT, 10, null, chassis)
 	else if(istype(A, /obj))
 		var/obj/O = A
 		if(O.throwforce)

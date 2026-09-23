@@ -10,8 +10,7 @@
 	vis_height = 32
 
 	faction = "xeno"
-	maxHealth = 200
-	health = 200
+	endurance = 200
 	see_in_dark = 10
 
 
@@ -157,8 +156,7 @@
 	pixel_y = 0
 	default_pixel_y = 0
 
-	maxHealth = 600
-	health = 600
+	endurance = 600
 
 	movement_cooldown = 2
 

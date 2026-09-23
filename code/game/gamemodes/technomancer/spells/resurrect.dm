@@ -31,7 +31,8 @@
 			to_chat(user, span_notice("You stab \the [L] with a hidden integrated hypo, attempting to bring them back..."))
 			if(isanimal(L))
 				var/mob/living/simple_mob/SM = L
-				SM.health = SM.getMaxHealth() / 3
+				SM.fully_heal()
+				SM.injure(INJURY_BLUNT, SM.get_endurance() * 2 / 3, flags = INJURE_IGNORE_RESISTANCE | INJURE_SILENT) // back at a third of its strength
 				SM.set_stat(CONSCIOUS)
 				GLOB.dead_mob_list -= SM
 				GLOB.living_mob_list += SM
@@ -47,8 +48,8 @@
 							Re-enter your body if you want to be revived!", 'sound/effects/genetics.ogg', source = user)
 							break
 
-				H.adjustBruteLoss(-40)
-				H.adjustFireLoss(-40)
+				H.mend(TREAT_TISSUE_REPAIR, 40)
+				H.mend(TREAT_BURN_CARE, 40)
 
 				sleep(10 SECONDS)
 				if(H.client)

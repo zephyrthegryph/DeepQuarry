@@ -8,8 +8,7 @@
 	icon_dead = "cookiegirl-dead"
 	icon = 'icons/mob/vore.dmi'
 
-	maxHealth = 10
-	health = 10
+	endurance = 10
 
 	harm_intent_damage = 2
 	melee_damage_lower = 2

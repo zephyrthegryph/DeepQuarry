@@ -93,13 +93,13 @@
 	sleep(100)
 	switch(luckynumber7)
 		if(1)	capsuleowner.resize(RESIZE_TINY) //Loss Shrinking!
-		if(2)	capsuleowner.apply_damage(5, BRUTE) //Loss Damaging!
+		if(2)	capsuleowner.injure(INJURY_BLUNT, 5, source = src) //Loss Damaging!
 		if(3)	capsuleowner.Weaken(5) //Loss Knee spaghetti!
 		if(4)	capsuleowner.hallucination += 66 //loss woah, dude.
 		if(5)	new	item(capsuleowner.loc) //Win!
 		if(7)
 			new	/obj/item/material/butterfly/switchblade(capsuleowner.loc)
-			capsuleowner.apply_damage(10, BRUTE) //Loss Damaging! WIN KNIVE!
+			capsuleowner.injure(INJURY_CUT, 10, source = src) //Loss Damaging! WIN KNIVE!
 		if(9)
 			new	/obj/item/gun/energy/sizegun/not_advanced(capsuleowner.loc)
 			qdel(src)

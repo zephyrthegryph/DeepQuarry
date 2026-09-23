@@ -90,7 +90,7 @@
 		automatic_custom_emote(VISIBLE_MESSAGE,"phases out!")
 		real_name = name
 		name = "Something"
-		health = maxHealth	//Fullheal
+		fully_heal()
 
 		for(var/obj/belly/B as anything in vore_organs)
 			B.escapable = B_ESCAPABLE_NONE

@@ -51,48 +51,90 @@
 	for (var/obj/machinery/station_map/S in station_holomaps)
 		S.setup_holomap()
 
+/// Transparent background key for the holomap PNGs; no holomap colour is opaque black.
+#define HOLOMAP_PNG_BACKGROUND "#000000"
+#define HOLOMAP_PNG_BASE 1
+#define HOLOMAP_PNG_AREAS 2
+
+/// Builds a holomap canvas in one rust-g call instead of one DrawBox per pixel (Q3).
+/// The PNG is RGB only, so each tile is written as an opaque key colour; SwapColor then turns
+/// every key into its real (translucent) colour and the background into transparency.
+/// `color_keys` maps real colour -> key. In HOLOMAP_PNG_AREAS mode it is filled as areas appear.
+/datum/controller/subsystem/holomaps/proc/render_holomap_png(zLevel, mode, list/color_keys)
+	var/icon/blank = icon(HOLOMAP_ICON, "blank")
+	var/canvas_width = blank.Width()
+	var/canvas_height = blank.Height()
+	if(world.maxx > canvas_width)
+		stack_trace("Minimap for z=[zLevel] : world.maxx ([world.maxx]) must be <= [canvas_width]")
+	if(world.maxy > canvas_height)
+		stack_trace("Minimap for z=[zLevel] : world.maxy ([world.maxy]) must be <= [canvas_height]")
+	var/map_width = min(world.maxx, canvas_width)
+	var/map_height = min(world.maxy, canvas_height)
+
+	var/list/background_row = new /list(canvas_width)
+	for(var/i in 1 to canvas_width)
+		background_row[i] = HOLOMAP_PNG_BACKGROUND
+	var/background_row_text = background_row.Join("")
+	var/right_padding = canvas_width > map_width ? background_row.Join("", 1, canvas_width - map_width + 1) : ""
+	var/rock_key = color_keys[HOLOMAP_ROCK]
+	var/path_key = color_keys[HOLOMAP_PATH]
+	var/obstacle_key = color_keys[HOLOMAP_OBSTACLE]
+
+	// PNG rows run top to bottom; icon y = 1 is the bottom row.
+	var/list/rows = new /list(canvas_height)
+	for(var/row in 1 to canvas_height)
+		var/y = canvas_height - row + 1
+		if(y > map_height)
+			rows[row] = background_row_text
+			continue
+		var/list/pixels = new /list(map_width)
+		for(var/x in 1 to map_width)
+			var/turf/tile = locate(x, y, zLevel)
+			var/key = HOLOMAP_PNG_BACKGROUND
+			if(mode == HOLOMAP_PNG_BASE)
+				// Obstacles win over paths and paths over rock, the order the old DrawBox calls painted in.
+				if(tile && tile.loc:holomapAlwaysDraw())
+					if(IS_OBSTACLE(tile))
+						key = obstacle_key
+					else if(IS_PATH(tile))
+						key = path_key
+					else if(IS_ROCK(tile))
+						key = rock_key
+			else
+				var/area/area_to_paint = tile?.loc
+				var/area_color = area_to_paint?.holomap_color
+				if(area_color)
+					key = color_keys[area_color]
+					if(!key)
+						key = rgb(0, 1, length(color_keys) + 1)
+						color_keys[area_color] = key
+			pixels[x] = key
+		rows[row] = pixels.Join("") + right_padding
+		CHECK_TICK
+
+	var/png_path = "data/holomaps/[mode]_[zLevel].png"
+	var/error = rustg_dmi_create_png(png_path, "[canvas_width]", "[canvas_height]", rows.Join(""))
+	if(error)
+		stack_trace("Failed to render holomap [png_path]: [error]")
+		return blank
+	var/icon/canvas = icon(file(png_path))
+	canvas.SwapColor(HOLOMAP_PNG_BACKGROUND, null)
+	for(var/real_color in color_keys)
+		canvas.SwapColor(color_keys[real_color], real_color)
+	fdel(png_path)
+	return canvas
+
 // Generates the "base" holomap for one z-level, showing only the physical structure of walls and paths.
 /datum/controller/subsystem/holomaps/proc/generateHoloMinimap(zLevel = 1)
-	// Sanity checks - Better to generate a helpful error message now than have DrawBox() runtime
-	var/icon/canvas = icon(HOLOMAP_ICON, "blank")
-	if(world.maxx > canvas.Width())
-		stack_trace("Minimap for z=[zLevel] : world.maxx ([world.maxx]) must be <= [canvas.Width()]")
-	if(world.maxy > canvas.Height())
-		stack_trace("Minimap for z=[zLevel] : world.maxy ([world.maxy]) must be <= [canvas.Height()]")
-
-	for(var/x = 1 to world.maxx)
-		for(var/y = 1 to world.maxy)
-			var/turf/tile = locate(x, y, zLevel)
-			if(tile && tile.loc:holomapAlwaysDraw())
-				if(IS_ROCK(tile))
-					canvas.DrawBox(HOLOMAP_ROCK, x, y)
-				if(IS_OBSTACLE(tile))
-					canvas.DrawBox(HOLOMAP_OBSTACLE, x, y)
-				else if(IS_PATH(tile))
-					canvas.DrawBox(HOLOMAP_PATH, x, y)
-		// Check sleeping after each row to avoid *completely* destroying the server
-		CHECK_TICK
-	return canvas
+	var/static/list/base_keys = list(HOLOMAP_ROCK = "#000001", HOLOMAP_PATH = "#000002", HOLOMAP_OBSTACLE = "#000003")
+	return render_holomap_png(zLevel, HOLOMAP_PNG_BASE, base_keys)
 
 // Okay, what does this one do?
 // This seems to do the drawing thing, but draws only the areas, having nothing to do with the tiles.
 // Leshana: I'm guessing this map will get overlayed on top of the base map at runtime? We'll see.
 // Wait, seems we actually blend the area map on top of it right now! Huh.
 /datum/controller/subsystem/holomaps/proc/generateStationMinimap(zLevel)
-	// Sanity checks - Better to generate a helpful error message now than have DrawBox() runtime
-	var/icon/canvas = icon(HOLOMAP_ICON, "blank")
-	if(world.maxx > canvas.Width())
-		stack_trace("Minimap for z=[zLevel] : world.maxx ([world.maxx]) must be <= [canvas.Width()]")
-	if(world.maxy > canvas.Height())
-		stack_trace("Minimap for z=[zLevel] : world.maxy ([world.maxy]) must be <= [canvas.Height()]")
-
-	for(var/x = 1 to world.maxx)
-		for(var/y = 1 to world.maxy)
-			var/turf/tile = locate(x, y, zLevel)
-			if(tile && tile.loc)
-				var/area/areaToPaint = tile.loc
-				if(areaToPaint.holomap_color)
-					canvas.DrawBox(areaToPaint.holomap_color, x, y)
+	var/icon/canvas = render_holomap_png(zLevel, HOLOMAP_PNG_AREAS, list())
 
 	// Save this nice area-colored canvas in case we want to layer it or something I guess
 	extraMiniMaps["[HOLOMAP_EXTRA_STATIONMAPAREAS]_[zLevel]"] = canvas
@@ -156,3 +198,6 @@
 #undef IS_ROCK
 #undef IS_OBSTACLE
 #undef IS_PATH
+#undef HOLOMAP_PNG_BACKGROUND
+#undef HOLOMAP_PNG_BASE
+#undef HOLOMAP_PNG_AREAS

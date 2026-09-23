@@ -1,5 +1,3 @@
-//This file was auto-corrected by findeclaration.exe on 25.5.2012 20:42:32
-
 /obj/item/mmi
 	name = "man-machine interface"
 	desc = "The Warrior's bland acronym, MMI, obscures the true horror of this monstrosity."
@@ -10,10 +8,11 @@
 
 	req_access = list(ACCESS_ROBOTICS)
 
-	//Revised. Brainmob is now contained directly within object of transfer. MMI in this case.
+	// The occupant (the mind's view mob) belongs to this MMI's mind host
+	// component (code/datums/components/mind_host.dm); its status is read from
+	// `brainobj` when there is one.
 
 	var/locked = 0
-	var/mob/living/carbon/brain/brainmob = null//The current occupant.
 	var/obj/item/organ/internal/brain/brainobj = null	//The current brain organ.
 	var/obj/mecha = null//This does not appear to be used outside of reference in mecha.dm.
 	var/obj/item/radio/headset/mmi_radio/radio = null//Let's give it a radio.
@@ -25,6 +24,41 @@
 /obj/item/mmi/Initialize(mapload)
 	. = ..()
 	radio = new(src)//Spawns a radio inside the MMI.
+	AddComponent(/datum/component/mind_host)
+
+/// The occupant view mob (the hosted mind lives there), if any.
+/obj/item/mmi/proc/get_occupant()
+	return hosted_view()
+
+/// Seat `B` as this MMI's brain tissue: the occupant's status reads it.
+/obj/item/mmi/proc/set_brain(obj/item/organ/internal/brain/B)
+	brainobj = B
+	if(B)
+		B.preserved = TRUE
+		if(B.loc != src)
+			B.forceMove(src)
+	var/datum/component/mind_host/host = get_mind_host(src)
+	host?.set_tissue(B)
+
+/// Make this MMI hold `L`'s character (by reference). With `move_mind`, `L`'s
+/// mind comes along too; otherwise the mind is expected elsewhere (a borg).
+/obj/item/mmi/proc/take_identity(mob/living/L, move_mind = FALSE)
+	var/datum/component/mind_host/host = get_mind_host(src)
+	var/mob/living/carbon/brain/view = host.receive_mind(move_mind ? L.mind : null, "[L] placed into [src]")
+	view.bind_identity(L.mind ? L.mind.get_identity() : L.identity)
+	update_occupied_state()
+	return view
+
+/// Name and icon for the MMI's current occupancy.
+/obj/item/mmi/proc/update_occupied_state()
+	var/mob/living/carbon/brain/view = get_occupant()
+	if(!view)
+		name = initial(name)
+		icon_state = "mmi_empty"
+		return
+	name = "[initial(name)] ([view.real_name])"
+	icon_state = "mmi_full"
+	locked = 1
 
 /obj/item/mmi/verb/toggle_radio()
 	set name = "Toggle Brain Radio"
@@ -38,113 +72,84 @@
 	if (radio.radio_enabled == 1)
 		radio.radio_enabled = 0
 		to_chat (usr, "You have disabled the [src]'s radio.")
-		to_chat (brainmob, "Your radio has been disabled.")
+		to_chat (get_occupant(), "Your radio has been disabled.")
 	else if (radio.radio_enabled == 0)
 		radio.radio_enabled = 1
 		to_chat (usr, "You have enabled the [src]'s radio.")
-		to_chat (brainmob, "Your radio has been enabled.")
+		to_chat (get_occupant(), "Your radio has been enabled.")
 	else
 		to_chat (usr, "You were unable to toggle the [src]'s radio.")
 
 /obj/item/mmi/attackby(obj/item/O as obj, mob/user as mob)
-	if(istype(O,/obj/item/organ/internal/brain) && !brainmob) //Time to stick a brain in it --NEO
-
+	var/mob/living/carbon/brain/occupant = get_occupant()
+	if(istype(O,/obj/item/organ/internal/brain) && !occupant) //Time to stick a brain in it --NEO
 		var/obj/item/organ/internal/brain/B = O
-		if(B.health <= 0)
+		if(B.is_brain_dead())
 			to_chat(user, span_warning("That brain is well and truly dead."))
 			return
-		else if(!B.brainmob)
+		var/mob/living/carbon/brain/view = B.hosted_view()
+		if(!view)
 			to_chat(user, span_warning("You aren't sure where this brain came from, but you're pretty sure it's useless."))
 			return
-
-		for(var/modifier_type in B.brainmob.modifiers)	//Can't be shoved in an MMI.
-			if(istype(modifier_type, /datum/modifier/no_borg))
-				to_chat(user, span_warning("\The [src] appears to reject this brain.  It is incompatible."))
-				return
+		if(view.identity.has_genetic_modifier(/datum/modifier/no_borg))	//Can't be shoved in an MMI.
+			to_chat(user, span_warning("\The [src] appears to reject this brain.  It is incompatible."))
+			return
 
 		user.visible_message(span_infoplain(span_bold("\The [user]") + " sticks \a [O] into \the [src]."))
-		B.preserved = TRUE
-
-		brainmob = B.brainmob
-		B.brainmob = null
-		brainmob.loc = src
-		brainmob.container = src
-		brainmob.set_stat(CONSCIOUS)
-		brainmob.blinded = 0 // Fixes MMIs vision
-		GLOB.dead_mob_list -= brainmob//Update dem lists
-		GLOB.living_mob_list += brainmob
-
 		user.drop_item()
-		brainobj = O
-		brainobj.loc = src
-
-		name = "man-machine interface ([brainmob.real_name])"
-		icon_state = "mmi_full"
-
-		locked = 1
+		insert_brain(B, "brain placed in [src] by [key_name(user)]")
 
 		feedback_inc("cyborg_mmis_filled",1)
 
 		return
 
-	if((istype(O,/obj/item/card/id)||istype(O,/obj/item/pda)) && brainmob)
+	if((istype(O,/obj/item/card/id)||istype(O,/obj/item/pda)) && occupant)
 		if(allowed(user))
 			locked = !locked
 			to_chat(user, span_notice("You [locked ? "lock" : "unlock"] the brain holder."))
 		else
 			to_chat(user, span_warning("Access denied."))
 		return
-	if(brainmob)
-		O.attack(brainmob, user)//Oh noooeeeee
+	if(occupant)
+		O.attack(occupant, user)//Oh noooeeeee
 		return
 	..()
 
-//TODO: ORGAN REMOVAL UPDATE. Make the brain remain in the MMI so it doesn't lose organ data.
+/// Seat a removed brain: the organ becomes the tissue and its view (with the
+/// mind) moves into this MMI. Nothing is copied.
+/obj/item/mmi/proc/insert_brain(obj/item/organ/internal/brain/B, reason = "brain inserted")
+	set_brain(B)
+	var/datum/component/mind_host/host = get_mind_host(src)
+	host.adopt_occupant(get_mind_host(B), reason)
+	update_occupied_state()
+
 /obj/item/mmi/attack_self(mob/user)
 	. = ..(user)
 	if(.)
 		return TRUE
 	if(special_handling)
 		return FALSE
-	if(!brainmob)
+	if(!get_occupant())
 		to_chat(user, span_warning("You upend the MMI, but there's nothing in it."))
 	else if(locked)
 		to_chat(user, span_warning("You upend the MMI, but the brain is clamped into place."))
 	else
 		to_chat(user, span_notice("You upend the MMI, spilling the brain onto the floor."))
-		var/obj/item/organ/internal/brain/brain
-		if (brainobj)	//Pull brain organ out of MMI.
-			brainobj.loc = user.loc
-			brain = brainobj
-			brainobj = null
-		else	//Or make a new one if empty.
-			brain = new(user.loc)
-		brain.preserved = FALSE
-		brainmob.container = null//Reset brainmob mmi var.
-		brainmob.loc = brain//Throw mob into brain.
-		GLOB.living_mob_list -= brainmob//Get outta here
-		brain.brainmob = brainmob//Set the brain to use the brainmob
-		brainmob = null//Set mmi brainmob var to null
+		eject_brain(get_turf(user), "spilled from [src] by [key_name(user)]")
 
-		icon_state = "mmi_empty"
-		name = "Man-Machine Interface"
-
-/obj/item/mmi/proc/transfer_identity(mob/living/carbon/human/H)//Same deal as the regular brain proc. Used for human-->robot people.
-	brainmob = new(src)
-	brainmob.name = H.real_name
-	brainmob.real_name = H.real_name
-	QDEL_SWAP(brainmob.dna, H.dna.Clone())
-	brainmob.container = src
-
-	// Copy modifiers.
-	for(var/datum/modifier/M in H.modifiers)
-		if(M.flags & MODIFIER_GENETIC)
-			brainmob.add_modifier(M.type)
-
-	name = "Man-Machine Interface: [brainmob.real_name]"
-	icon_state = "mmi_full"
-	locked = 1
-	return
+/// Take the brain organ out; the occupant (and its mind) goes with it. The
+/// organ keeps its lesions, so damage and treatment carry on.
+/obj/item/mmi/proc/eject_brain(atom/destination, reason = "ejected")
+	var/obj/item/organ/internal/brain/brain = brainobj
+	if(!brain)	// An MMI filled without an organ (borging) grows one to carry the mind.
+		brain = new(destination)
+	set_brain(null)
+	brain.preserved = FALSE
+	brain.forceMove(destination)
+	var/datum/component/mind_host/brain_host = get_mind_host(brain)
+	brain_host.adopt_occupant(get_mind_host(src), reason)
+	update_occupied_state()
+	return brain
 
 /obj/item/mmi/relaymove(mob/user, direction)
 	if(user.stat || user.stunned)
@@ -161,12 +166,9 @@
 		var/mob/living/silicon/robot/borg = loc
 		borg.mmi = null
 	QDEL_NULL(radio)
-	if(brainmob?.container == src)
-		brainmob.container = null
-	QDEL_NULL(brainmob)
 	if(brainobj)
 		QDEL_NULL(brainobj)
-	return ..()
+	return ..() // the mind host component deletes the occupant
 
 /obj/item/mmi/radio_enabled
 	name = "radio-enabled man-machine interface"
@@ -174,17 +176,18 @@
 
 /obj/item/mmi/emp_act(severity, recursive)
 	. = ..()
-	if (. & EMP_PROTECT_SELF || !brainmob)
+	var/mob/living/carbon/brain/occupant = get_occupant()
+	if (. & EMP_PROTECT_SELF || !occupant)
 		return
 	switch(severity)
 		if(EMP_HEAVY)
-			brainmob.emp_damage += rand(20,30)
+			occupant.emp_damage += rand(20,30)
 		if(EMP_MEDIUM)
-			brainmob.emp_damage += rand(10,20)
+			occupant.emp_damage += rand(10,20)
 		if(EMP_LIGHT)
-			brainmob.emp_damage += rand(5,10)
+			occupant.emp_damage += rand(5,10)
 		if(EMP_HARMLESS)
-			brainmob.emp_damage += rand(0,5)
+			occupant.emp_damage += rand(0,5)
 
 /obj/item/mmi/digital
 	var/searching = 0
@@ -200,15 +203,18 @@
 
 /obj/item/mmi/digital/Initialize(mapload)
 	. = ..()
-	src.brainmob = new(src)
-//	src.brainmob.add_language(LANGUAGE_ROBOT_TALK)//No binary without a binary communication device
-	src.brainmob.add_language(LANGUAGE_GALCOM)
-	src.brainmob.add_language(LANGUAGE_EAL)
-	src.brainmob.loc = src
-	src.brainmob.container = src
-	src.brainmob.set_stat(CONSCIOUS)
-	src.brainmob.silent = 0
-	GLOB.dead_mob_list -= src.brainmob
+	// A synthetic mind host: an empty view waits for a mind, with no tissue.
+	var/datum/component/mind_host/host = get_mind_host(src)
+	var/mob/living/carbon/brain/view = host.receive_mind(null, "[src] booted")
+//	view.add_language(LANGUAGE_ROBOT_TALK)//No binary without a binary communication device
+	view.add_language(LANGUAGE_GALCOM)
+	view.add_language(LANGUAGE_EAL)
+	view.set_stat(CONSCIOUS)
+	view.silent = 0
+	GLOB.dead_mob_list -= view
+
+/obj/item/mmi/digital/update_occupied_state()
+	return
 
 /obj/item/mmi/digital/attackby(obj/item/O as obj, mob/user as mob)
 	return	//Doesn't do anything right now because none of the things that can be done to a regular MMI make any sense for these
@@ -216,10 +222,11 @@
 /obj/item/mmi/digital/examine(mob/user)
 	. = ..()
 
-	if(src.brainmob && src.brainmob.key)
-		switch(src.brainmob.stat)
+	var/mob/living/carbon/brain/occupant = get_occupant()
+	if(occupant?.key)
+		switch(occupant.stat)
 			if(CONSCIOUS)
-				if(!src.brainmob.client)
+				if(!occupant.client)
 					. += span_warning("It appears to be in stand-by mode.") //afk
 			if(UNCONSCIOUS)
 				. += span_warning("It doesn't seem to be responsive.")
@@ -228,13 +235,10 @@
 	else
 		. += span_deadsay("It appears to be completely inactive.")
 
-/obj/item/mmi/digital/transfer_identity(mob/living/carbon/H)
-	QDEL_SWAP(brainmob.dna, H.dna.Clone())
-	brainmob.timeofhostdeath = H.timeofdeath
-	brainmob.set_stat(CONSCIOUS)
-	if(H.mind)
-		H.mind.transfer_to(brainmob)
-	return
+/obj/item/mmi/digital/take_identity(mob/living/L, move_mind = TRUE)
+	. = ..()
+	var/mob/living/carbon/brain/view = .
+	view.set_stat(CONSCIOUS)
 
 /obj/item/mmi/digital/attack_self(mob/user)
 	. = ..(user)
@@ -242,7 +246,8 @@
 		return TRUE
 	if(is_digital_robot)
 		return FALSE
-	if(brainmob && !brainmob.key && searching == 0)
+	var/mob/living/carbon/brain/occupant = get_occupant()
+	if(occupant && !occupant.key && searching == 0)
 		//Start the process of searching for a new user.
 		to_chat(user, span_blue("You carefully locate the manual activation switch and start the [src]'s boot process."))
 		request_player()
@@ -267,7 +272,7 @@
 	QDEL_NULL(Q) //get rid of the query
 
 /obj/item/mmi/digital/proc/reset_search() //We give the players sixty seconds to decide, then reset the timer.
-	if(src.brainmob && src.brainmob.key)
+	if(get_occupant()?.key)
 		return
 
 	src.searching = 0
@@ -276,19 +281,20 @@
 	for (var/mob/M in viewers(T))
 		M.show_message(span_blue("\The [src] buzzes quietly, and the golden lights fade away. Perhaps you could try again?"))
 
+/// A ghost becomes this synthetic brain: a new IC character, so the player
+/// joins the waiting view and gets a fresh mind (see the mind.dm guidelines).
 /obj/item/mmi/digital/proc/transfer_personality(mob/candidate)
 	announce_ghost_joinleave(candidate, 0, "They are occupying a synthetic brain now.")
 	src.searching = 0
-	if(candidate.mind)
-		src.brainmob.mind = candidate.mind
-		src.brainmob.mind.reset()
-	src.brainmob.ckey = candidate.ckey
-	src.name = "[name] ([src.brainmob.name])"
-	to_chat(src.brainmob, span_infoplain(span_bold("You are [src.name], brought into existence on [station_name()].")))
-	to_chat(src.brainmob, span_infoplain(span_bold("As a synthetic intelligence, you are designed with organic values in mind.")))
-	to_chat(src.brainmob, span_infoplain(span_bold("However, unless placed in a lawed chassis, you are not obligated to obey any individual crew member."))) //it's not like they can hurt anyone
-//	to_chat(src.brainmob, span_infoplain(span_bold("Use say #b to speak to other artificial intelligences.")))
-	src.brainmob.mind.assigned_role = JOB_SYNTHETIC_BRAIN
+	var/mob/living/carbon/brain/view = get_occupant()
+	log_game("MIND: [key_name(candidate)] joined [src] as a new synthetic intelligence")
+	view.ckey = candidate.ckey
+	src.name = "[name] ([view.name])"
+	to_chat(view, span_infoplain(span_bold("You are [src.name], brought into existence on [station_name()].")))
+	to_chat(view, span_infoplain(span_bold("As a synthetic intelligence, you are designed with organic values in mind.")))
+	to_chat(view, span_infoplain(span_bold("However, unless placed in a lawed chassis, you are not obligated to obey any individual crew member."))) //it's not like they can hurt anyone
+	if(view.mind)
+		view.mind.assigned_role = JOB_SYNTHETIC_BRAIN
 
 	var/turf/T = get_turf_or_move(src.loc)
 	for (var/mob/M in viewers(T))
@@ -306,15 +312,18 @@
 
 /obj/item/mmi/digital/robot/Initialize(mapload)
 	. = ..()
-	src.brainmob.name = "[pick(list("ADA","DOS","GNU","MAC","WIN","NJS","SKS","DRD","IOS","CRM","IBM","TEX","LVM","BSD",))]-[rand(1000, 9999)]"
-	src.brainmob.real_name = src.brainmob.name
+	var/mob/living/carbon/brain/view = get_occupant()
+	view.real_name = "[pick(list("ADA","DOS","GNU","MAC","WIN","NJS","SKS","DRD","IOS","CRM","IBM","TEX","LVM","BSD",))]-[rand(1000, 9999)]"
+	view.name = view.real_name
+	view.identity.real_name = view.real_name
+	name = "[initial(name)] ([view.name])"
 
-/obj/item/mmi/digital/robot/transfer_identity(mob/living/carbon/H)
-	..()
-	if(brainmob.mind)
-		brainmob.mind.assigned_role = JOB_ROBOTIC_INTELLIGENCE
-	to_chat(brainmob, span_notify("You feel slightly disoriented. That's normal when you're little more than a complex circuit."))
-	return
+/obj/item/mmi/digital/robot/take_identity(mob/living/L, move_mind = TRUE)
+	. = ..()
+	var/mob/living/carbon/brain/view = .
+	if(view.mind)
+		view.mind.assigned_role = JOB_ROBOTIC_INTELLIGENCE
+	to_chat(view, span_notify("You feel slightly disoriented. That's normal when you're little more than a complex circuit."))
 
 /obj/item/mmi/digital/posibrain
 	name = "positronic brain"
@@ -329,14 +338,13 @@
 	icon_state = "posibrain-searching"
 	..()
 
-
-/obj/item/mmi/digital/posibrain/transfer_identity(mob/living/carbon/H)
-	..()
-	if(brainmob.mind)
-		brainmob.mind.assigned_role = JOB_POSITRONIC_BRAIN
-	to_chat(brainmob, span_notify("You feel slightly disoriented. That's normal when you're just a metal cube."))
+/obj/item/mmi/digital/posibrain/take_identity(mob/living/L, move_mind = TRUE)
+	. = ..()
+	var/mob/living/carbon/brain/view = .
+	if(view.mind)
+		view.mind.assigned_role = JOB_POSITRONIC_BRAIN
+	to_chat(view, span_notify("You feel slightly disoriented. That's normal when you're just a metal cube."))
 	icon_state = "posibrain-occupied"
-	return
 
 /obj/item/mmi/digital/posibrain/transfer_personality(mob/candidate)
 	..()
@@ -348,11 +356,17 @@
 
 /obj/item/mmi/digital/posibrain/Initialize(mapload)
 	. = ..()
-	src.brainmob.name = "[pick(list("PBU","HIU","SINA","ARMA","OSI"))]-[rand(100, 999)]"
-	src.brainmob.real_name = src.brainmob.name
+	var/mob/living/carbon/brain/view = get_occupant()
+	view.real_name = "[pick(list("PBU","HIU","SINA","ARMA","OSI"))]-[rand(100, 999)]"
+	view.name = view.real_name
+	view.identity.real_name = view.real_name
 
-// This type shouldn't care about brainmobs.
+// This type hosts no mind.
 /obj/item/mmi/inert
+
+/obj/item/mmi/inert/Initialize(mapload)
+	. = ..()
+	qdel(GetComponent(/datum/component/mind_host))
 
 // This is a 'fake' MMI that is used to let AIs control borg shells directly.
 // This doesn't inherit from /digital because all that does is add ghost pulling capabilities, which this thing won't need.

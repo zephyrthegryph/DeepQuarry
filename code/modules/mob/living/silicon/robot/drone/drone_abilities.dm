@@ -26,10 +26,9 @@
 	if(!istype(H) || !Adjacent(H))
 		return ..()
 	if(H.a_intent == I_GRAB && hat && !(H.l_hand && H.r_hand))
-		H.put_in_hands(hat)
-		H.visible_message(span_danger("\The [H] removes \the [src]'s [hat]."))
-		hat = null
-		update_icon()
+		var/obj/item/removed_hat = remove_hat(get_turf(src))
+		H.put_in_hands(removed_hat)
+		H.visible_message(span_danger("\The [H] removes \the [src]'s [removed_hat]."))
 		return
 	else
 		return ..()

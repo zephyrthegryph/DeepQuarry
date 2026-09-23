@@ -68,7 +68,6 @@
 	sprite_icon_state = "noble"
 	has_custom_open_sprites = TRUE
 
-
 /datum/robot_sprite/civilian/worm
 	name = "W02M"
 	sprite_icon_state = "worm-service"
@@ -84,21 +83,7 @@
 	sprite_icon_state = "uptall"
 
 // Wide/dogborg sprites
-/*
-/datum/robot_sprite/dogborg/civilian
-	module_type = list("Service", "Clerical")
-	sprite_icon = 'icons/mob/robot/civilian_wide.dmi'
-
-		// None yet
-*/
 // Tall sprites
-/*
-/datum/robot_sprite/dogborg/tall/civilian
-	module_type = list("Service", "Clerical")
-	sprite_icon = 'icons/mob/robot/civilian_large.dmi'
-
-		// None yet
-*/
 
 // Service
 
@@ -458,13 +443,6 @@
 	hat_offset = OTIE_HAT_OFFSET
 
 // Tall sprites
-/*
-/datum/robot_sprite/dogborg/tall/clerical
-	module_type = "Clerical"
-	sprite_icon = 'icons/mob/robot/clerical_large.dmi'
-
-		// None yet
-*/
 
 /datum/robot_sprite/dogborg/clown
 	module_type = "Clown"

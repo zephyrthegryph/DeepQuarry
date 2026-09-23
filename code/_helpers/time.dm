@@ -47,22 +47,13 @@ GLOBAL_VAR_INIT(next_station_date_change, 1 DAY)
 		GLOB.next_station_date_change += 1 DAY
 		update_time = TRUE
 	if(!GLOB.station_date || update_time)
-		GLOB.station_date = num2text((text2num(time2text(REALTIMEOFDAY, "YYYY"))+544)) + "-" + time2text(REALTIMEOFDAY, "MM-DD") //CHOMP EDIT
+		GLOB.station_date = num2text((text2num(time2text(REALTIMEOFDAY, "YYYY"))+544)) + "-" + time2text(REALTIMEOFDAY, "MM-DD")
 	return GLOB.station_date
 
 /// Returns UTC timestamp with the specifified format and optionally deciseconds
 /proc/time_stamp(format = "hh:mm:ss", show_ds)
 	var/time_string = time2text(world.timeofday, format, TIMEZONE_UTC)
 	return show_ds ? "[time_string]:[world.timeofday % 10]" : time_string
-
-/* //ChompREMOVE
-/proc/get_timezone_offset()
-	var/midnight_gmt_here = text2num(time2text(0,"hh")) * 36000
-	if(midnight_gmt_here > 12 HOURS)
-		return 24 HOURS - midnight_gmt_here
-	else
-		return midnight_gmt_here
-*/ //ChompREMOVE END
 
 /proc/gameTimestamp(format = "hh:mm:ss", wtime=null)
 	if(!wtime)
@@ -144,7 +135,6 @@ GLOBAL_VAR_INIT(rollover_safety_date, 0) // set in world/New to the server start
 #endif
 
 #undef DELTA_CALC
-
 
 //Takes a value of time in deciseconds.
 //Returns a text value of that number in hours, minutes, or seconds.

@@ -58,10 +58,10 @@
 
 /// Called from the damage pipeline. Wires the brain's notify_damage. Safe
 /// to call on mobs without a brain — short-circuits.
-/mob/living/proc/dq_notify_damage(amount, damagetype, atom/attacker)
+/mob/living/proc/dq_notify_damage(amount, injury_kind, atom/attacker)
 	if(!ai_brain || amount <= 0)
 		return
-	ai_brain.notify_damage(amount, damagetype, attacker)
+	ai_brain.notify_damage(amount, injury_kind, attacker)
 
 /// Modern brain implementation of taunt(). Replaces the legacy ai_holder
 /// version. External code (cyborg guns, hivebot tank, slime feral subtype)

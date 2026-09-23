@@ -71,7 +71,7 @@
 
 /datum/component/pollen_disability/proc/trigger_allergy()
 	to_chat(owner, span_danger("[pick("The air feels itchy!","Your face feels uncomfortable!","Your body tingles!")]"))
-	owner.add_chemical_effect(CE_ALLERGEN, rand(5,20) * REM)
+	owner.add_modifier(/datum/modifier/allergic_flare, 3 SECONDS)
 
 /datum/component/pollen_disability/Destroy(force = FALSE)
 	UnregisterSignal(owner, COMSIG_HANDLE_DISABILITIES)

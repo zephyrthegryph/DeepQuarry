@@ -20,7 +20,7 @@
 	movement_cooldown = -1
 	wreckage = /obj/structure/loot_pile/mecha/gygax
 
-	maxHealth = 300
+	endurance = 300
 	armor = list(
 				"melee"		= 25,
 				"bullet"	= 20,
@@ -60,7 +60,7 @@
 	icon_state = "darkgygax"
 	wreckage = /obj/structure/loot_pile/mecha/gygax/dark
 
-	maxHealth = 400
+	endurance = 400
 	deflect_chance = 25
 	has_repair_droid = TRUE
 	armor = list(

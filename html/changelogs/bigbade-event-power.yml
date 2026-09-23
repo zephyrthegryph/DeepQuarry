@@ -1,0 +1,11 @@
+author: "BigBadE"
+delete-after: true
+changes:
+  - refactor: "Made stable power sources, powernets, SMES accounting, and cable heating settle from registered state instead of repeating full accounting every machinery cycle."
+  - refactor: "Moved idle solar controllers, telecomms thermal checks, power sensors, turrets, and broken SMES units onto event or timer driven processing."
+  - refactor: "Made clean power transactions sleep immediately and moved idle shield machinery onto dependency-driven scheduling."
+  - refactor: "Batched atmos outlet injection with other pump transfers and filtered air-alarm wakes through published gas semantics."
+  - bugfix: "Preserved deferred cable heat across low-energy intervals and topology rebuilds."
+  - bugfix: "Made cable cuts rebuild only the affected power network in bounded slices instead of freezing the game thread."
+  - code_imp: "Moved station-scale material power solves to a persistent Rust worker and reduced irrelevant atmos machinery wakeups."
+  - server: "Reduced map startup stalls by batching power and atmos registration work when no players are connected."

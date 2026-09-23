@@ -63,9 +63,3 @@
 
 	..() // Do everything else
 
-/*
-/datum/shuttle/autodock/ferry/arrivals/current_dock_target()
-	if(location) // If we're off station.
-		return null // Nothing to dock to in space.
-	return ..()
-*/

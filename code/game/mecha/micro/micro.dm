@@ -30,48 +30,24 @@
 		var/mob/living/M = target
 		if(src.occupant.a_intent == I_HURT)
 			playsound(src, 'sound/weapons/punch4.ogg', 50, 1)
-			if(damage_type == BRUTE)
+			if(melee_injury_kind == INJURY_BLUNT)
 				step_away(M,src,15)
-
-			if(ishuman(target))
-				var/mob/living/carbon/human/H = target
-	//			if (M.health <= 0) return
-
-				var/obj/item/organ/external/temp = H.get_organ(pick(BP_TORSO, BP_TORSO, BP_TORSO, BP_HEAD))
-				if(temp)
-					var/update = 0
-					switch(damage_type)
-						if(BRUTE)
-							update |= temp.take_damage(rand(force/2, force), 0)
-						if(BURN)
-							update |= temp.take_damage(0, rand(force/2, force))
-						if(TOX)
-							if(H.reagents)
-								if(H.reagents.get_reagent_amount(REAGENT_ID_CARPOTOXIN) + force < force*2)
-									H.reagents.add_reagent(REAGENT_ID_CARPOTOXIN, force)
-								if(H.reagents.get_reagent_amount(REAGENT_ID_CRYPTOBIOLIN) + force < force*2)
-									H.reagents.add_reagent(REAGENT_ID_CRYPTOBIOLIN, force)
-						else
-							return
-					if(update)	H.UpdateDamageIcon()
-				H.updatehealth()
-
-			else
-				switch(damage_type)
-					if(BRUTE)
+			var/hit_zone = ishuman(M) ? pick(BP_TORSO, BP_TORSO, BP_TORSO, BP_HEAD) : null
+			switch(melee_injury_kind)
+				if(INJURY_BLUNT)
+					if(!ishuman(M))
 						M.Paralyse(1)
-						M.take_overall_damage(rand(force/2, force))
-					if(BURN)
-						M.take_overall_damage(0, rand(force/2, force))
-					if(TOX)
-						if(M.reagents)
-							if(M.reagents.get_reagent_amount(REAGENT_ID_CARPOTOXIN) + force < force*2)
-								M.reagents.add_reagent(REAGENT_ID_CARPOTOXIN, force)
-							if(M.reagents.get_reagent_amount(REAGENT_ID_CRYPTOBIOLIN) + force < force*2)
-								M.reagents.add_reagent(REAGENT_ID_CRYPTOBIOLIN, force)
-					else
-						return
-				M.updatehealth()
+					M.injure(INJURY_BLUNT, rand(force/2, force), hit_zone, src)
+				if(INJURY_BURN)
+					M.injure(INJURY_BURN, rand(force/2, force), hit_zone, src)
+				if(INJURY_TOXIN)
+					if(M.reagents)
+						if(M.reagents.get_reagent_amount(REAGENT_ID_CARPOTOXIN) + force < force*2)
+							M.reagents.add_reagent(REAGENT_ID_CARPOTOXIN, force)
+						if(M.reagents.get_reagent_amount(REAGENT_ID_CRYPTOBIOLIN) + force < force*2)
+							M.reagents.add_reagent(REAGENT_ID_CRYPTOBIOLIN, force)
+				else
+					return
 			src.occupant_message(span_attack("You hit [target]."))
 			src.visible_message(span_bolddanger("[src.name] hits [target]."))
 		else
@@ -85,7 +61,7 @@
 		return
 
 	else
-		if(damage_type == BRUTE)
+		if(melee_injury_kind == INJURY_BLUNT)
 			for(var/target_type in src.destroyable_obj)
 				if(istype(target, target_type) && hascall(target, "attackby"))
 					src.occupant_message(span_attack("You hit [target]."))

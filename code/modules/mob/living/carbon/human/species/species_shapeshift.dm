@@ -257,25 +257,10 @@ GLOBAL_LIST_EMPTY(wrapped_species_by_ref)
 		BP_L_FOOT = 0,
 		BP_R_FOOT = 0
 		)
-	var/list/wounds_by_limb = list(
-		BP_TORSO =  new/list(),
-		BP_GROIN =  new/list(),
-		BP_HEAD =   new/list(),
-		BP_L_ARM =  new/list(),
-		BP_R_ARM =  new/list(),
-		BP_L_LEG =  new/list(),
-		BP_R_LEG =  new/list(),
-		BP_L_HAND = new/list(),
-		BP_R_HAND = new/list(),
-		BP_L_FOOT = new/list(),
-		BP_R_FOOT = new/list()
-		)
-
-	// Copy damage values
+	// Remember which limbs exist (wound afflictions travel with the limb itself).
 	for(var/limb in organs_by_name)
 		var/obj/item/organ/external/O = organs_by_name[limb]
 		limb_exists[O.organ_tag] = 1
-		wounds_by_limb[O.organ_tag] = O.wounds
 
 	species = GLOB.all_species[new_species]
 	species.create_organs(src)
@@ -285,10 +270,8 @@ GLOBAL_LIST_EMPTY(wrapped_species_by_ref)
 		var/obj/item/organ/external/O = organs_by_name[limb]
 		if(limb_exists[O.organ_tag])
 			O.data.setup_from_species(GLOB.all_species[new_species])
-			O.wounds = wounds_by_limb[O.organ_tag]
 			// sync the organ's damage with its wounds
 			O.update_damages()
-			O.owner.updatehealth() //droplimb will call updatehealth() again if it does end up being called
 		else
 			organs.Remove(O)
 			organs_by_name.Remove(O)
@@ -579,8 +562,6 @@ GLOBAL_LIST_EMPTY(wrapped_species_by_ref)
 	set desc = "Reload your appearance from whatever character slot you have loaded."
 	set category = "Abilities.Shapeshift"
 	var/mob/living/character = src
-	if(temporary_form)
-		character = temporary_form
 	var/input = tgui_alert(character,{"Do you want to copy the appearance data of your currently loaded save slot?"},"Reformation",list("Reform","Cancel"))
 	if(input == "Cancel" || !input)
 		return
@@ -609,8 +590,6 @@ GLOBAL_LIST_EMPTY(wrapped_species_by_ref)
 	set desc = "If you are aggressively grabbing someone, with their consent, you can turn into a copy of them. (Without their name)."
 	set category = "Abilities.Shapeshift"
 	var/mob/living/character = src
-	if(temporary_form)
-		character = temporary_form
 
 	var/grabbing_but_not_enough
 	var/mob/living/carbon/human/victim = null
@@ -670,7 +649,6 @@ GLOBAL_LIST_EMPTY(wrapped_species_by_ref)
 			character.visible_message(span_notify("[character] adopts the form of [victim]!"), span_danger("You have reassembled into [victim]."))
 
 
-// === merged from species_shapeshift_ch.dm during hard-fork de-suffix (manually verified) ===
 /mob/living/carbon/human/proc/shapeshifter_reassemble()
 
 	set name = "Complete Reform"

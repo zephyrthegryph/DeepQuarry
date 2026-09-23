@@ -21,7 +21,7 @@
 	if(L.buckled) //wheelchairs, office chairs, rollerbeds
 		return
 
-	if(!L.apply_damage(30, BURN, target_zone, blocked, used_weapon=src))
+	if(!L.injure(INJURY_BURN, 30, target_zone, src, blocked))
 		return 0
 
 	shock(L, 100, target_zone)

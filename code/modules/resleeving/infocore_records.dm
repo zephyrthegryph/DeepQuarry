@@ -23,13 +23,6 @@
 	var/id_gender = MALE
 	var/datum/mind/mind_ref
 	var/cryo_at = 0
-	var/languages = list()
-	var/mind_oocnotes = ""
-	var/mind_ooclikes = ""
-	var/mind_oocdislikes = ""
-	var/mind_oocfavs = ""
-	var/mind_oocmaybes = ""
-	var/mind_oocstyle = FALSE
 	var/nif_path
 	var/nif_durability
 	var/list/nif_software
@@ -52,8 +45,6 @@
 	//Mental stuff the game doesn't keep mentally
 	if(istype(M) || istype(M,/mob/living/carbon/brain/caught_soul))
 		id_gender = M.identifying_gender
-		languages = M.languages.Copy()
-		mind_oocnotes = M.ooc_notes
 		if(M.nif)
 			nif_path = M.nif.type
 			nif_durability = M.nif.durability
@@ -86,12 +77,6 @@
 	var/synthetic
 	var/speciesname
 	var/bodygender
-	var/body_oocnotes
-	var/body_ooclikes
-	var/body_oocdislikes
-	var/body_oocfavs
-	var/body_oocmaybes
-	var/body_oocstyle
 	var/list/limb_data = list(BP_HEAD, BP_L_HAND, BP_R_HAND, BP_L_ARM, BP_R_ARM, BP_L_FOOT, BP_R_FOOT, BP_L_LEG, BP_R_LEG, BP_GROIN, BP_TORSO)
 	var/list/organ_data = list(O_HEART, O_EYES, O_LUNGS, O_BRAIN)
 	var/list/genetic_modifiers = list()
@@ -140,12 +125,6 @@
 	synthetic = M.isSynthetic()
 	speciesname = M.custom_species ? M.custom_species : null
 	bodygender = M.gender
-	body_oocnotes = M.ooc_notes
-	body_ooclikes = M.ooc_notes_likes
-	body_oocdislikes = M.ooc_notes_dislikes
-	body_oocfavs = M.ooc_notes_favs
-	body_oocmaybes = M.ooc_notes_maybes
-	body_oocstyle = M.ooc_notes_style
 	sizemult = M.size_multiplier
 	weight = M.weight
 	aflags = M.appearance_flags
@@ -251,7 +230,6 @@
 	internal_producebody_handlesleevelock(H,force_unlock)
 	internal_producebody_updatelimbandorgans(H,is_synthfab)
 	internal_producebody_updatednastate(H,is_synthfab)
-	internal_producebody_virgoOOC(H)
 	internal_producebody_misc(H)
 	return H
 
@@ -347,17 +325,6 @@
 	H.regenerate_icons()
 	H.initialize_vessel()
 
-/// Transfers VORE related information cached in the mob
-/datum/transhuman/body_record/proc/internal_producebody_virgoOOC(mob/living/carbon/human/H)
-	SHOULD_NOT_OVERRIDE(TRUE)
-	PRIVATE_PROC(TRUE)
-	H.ooc_notes = body_oocnotes
-	H.ooc_notes_likes = body_ooclikes
-	H.ooc_notes_dislikes = body_oocdislikes
-	H.ooc_notes_favs = body_oocfavs
-	H.ooc_notes_maybes = body_oocmaybes
-	H.ooc_notes_style = body_oocstyle
-
 /datum/transhuman/body_record/proc/internal_producebody_misc(mob/living/carbon/human/H)
 	SHOULD_NOT_OVERRIDE(TRUE)
 	PRIVATE_PROC(TRUE)
@@ -379,18 +346,22 @@
 	// Don't unlock unwilling xenochi!
 	internal_producebody_handlesleevelock(H,FALSE)
 
-	// Reset our organs/limbs.
+	// Reset our organs/limbs. The rebuilt body starts with a clean slate: drop
+	// every affliction first so none stay pointed at the organs being replaced.
+	H.body?.clear_afflictions()
 	H.species.create_organs(H)
 	internal_producebody_updatelimbandorgans(H, heal_robot_limbs)
 
 	//Don't boot out anyone already in the mob.
 	if(!H.client || !H.key)
+		// A loose brain that hosts this body's character goes home.
 		for (var/obj/item/organ/internal/brain/CH in GLOB.all_brain_organs)
-			if(CH.brainmob)
-				if(CH.brainmob.real_name == H.real_name)
-					if(CH.brainmob.mind)
-						CH.brainmob.mind.transfer_to(H)
-						qdel(CH)
+			var/datum/component/mind_host/host = get_mind_host(CH)
+			var/datum/mind/brain_mind = host?.hosted_mind()
+			if(brain_mind && brain_mind.get_identity() == H.identity)
+				host.release_mind(H, "regrown body reclaimed its brain")
+				qdel(CH)
+				break
 
 	// Traitgenes Disable all traits currently active, before species.produceCopy() applies them during updatednastate(). Relevant here as genetraits may not match prior dna!
 	for(var/datum/gene/trait/gene in GLOB.dna_genes)
@@ -399,7 +370,6 @@
 			H.active_genes -= gene.name
 
 	internal_producebody_updatednastate(H,FALSE)
-	internal_producebody_virgoOOC(H) // Is this needed?
 	internal_producebody_misc(H)
 
 	// Begin actual REVIVIAL. Do NOT use revive(). That uses client prefs and allows save hacking.

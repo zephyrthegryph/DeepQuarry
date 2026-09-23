@@ -132,7 +132,6 @@
 	headset_earbud = /obj/item/radio/headset/earbud
 
 
-// === merged from civilian_vr.dm during hard-fork de-suffix (verified no override-order change) ===
 /datum/decl/hierarchy/outfit/job/assistant/worker
 	id_type = /obj/item/card/id/civilian/service
 

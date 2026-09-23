@@ -41,8 +41,7 @@
 
 	faction = FACTION_MALF_DRONE
 
-	maxHealth = 50 // Shield has 150 for total of 200.
-	health = 50
+	endurance = 50 // Shield has 150 for total of 200.
 	movement_cooldown = 1.5
 	// dq_get_hovering(src) type-default moved to GLOB.dq_hovering_by_type
 

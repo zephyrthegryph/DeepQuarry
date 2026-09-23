@@ -348,14 +348,14 @@
 					var/obj/item/organ/internal/L = H.internal_organs_by_name[O_LUNGS]
 					if(L)
 						if(!(L.status & ORGAN_DEAD))
-							H.adjustOxyLoss(-(rand(10,15)))
+							H.mend(TREAT_OXYGENATION, rand(10,15))
 
 							if(L.is_bruised() && prob(30))
-								L.take_damage(-1)
+								H.mend(TREAT_RESPIRATORY, 1, L)
 							else
 								H.AdjustLosebreath(-(rand(1, 5)))
 						else
-							H.adjustOxyLoss(-(rand(1,8)))
+							H.mend(TREAT_OXYGENATION, rand(1,8))
 
 				if(H.stat == DEAD)
 					H.add_modifier(/datum/modifier/bloodpump_corpse, 6 SECONDS)

@@ -653,8 +653,7 @@ GLOBAL_DATUM(autospeaker, /mob/living/silicon/ai/announcer)
 	. = ..()
 	if (isrobot(src.loc))
 		var/mob/living/silicon/robot/R = src.loc
-		var/datum/robot_component/C = R.components["radio"]
-		R.cell_use_power(C.active_usage)
+		R.use_component(ROBOT_SLOT_RADIO)
 
 /obj/item/radio/borg/attackby(obj/item/W as obj, mob/user as mob)
 	if(istype(W, /obj/item/encryptionkey/))
@@ -858,7 +857,6 @@ GLOBAL_DATUM(autospeaker, /mob/living/silicon/ai/announcer)
 	bs_rx_preload_id = "talon_aio" //Recveive from a transmitter
 
 
-// === merged from radio_chomp.dm during hard-fork de-suffix (verified no override-order change) ===
 //* Bluespace Radio *//
 /obj/item/bluespaceradio/relicbase_prelinked
 	name = "bluespace radio (forbearance)"
@@ -867,3 +865,11 @@ GLOBAL_DATUM(autospeaker, /mob/living/silicon/ai/announcer)
 /obj/item/radio/bluespacehandset/linked/relicbase_prelinked // Same as Southern Cross. We use their tcomms setup after all
 	bs_tx_preload_id = "Receiver A" //Transmit to a receiver
 	bs_rx_preload_id = "Broadcaster A" //Recveive from a transmitter
+
+/obj/item/bluespaceradio/cryogaia_prelinked
+	name = "bluespace radio (Cryogaia)"
+	handset_path = /obj/item/radio/bluespacehandset/linked/cryogaia_prelinked
+
+/obj/item/radio/bluespacehandset/linked/cryogaia_prelinked
+	bs_tx_preload_id = "cryogaia_rx" //Transmit to a receiver
+	bs_rx_preload_id = "cryogaia_tx" //Recveive from a transmitter

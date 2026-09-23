@@ -141,8 +141,7 @@ GLOBAL_LIST_INIT(robot_glass_options, list(
 
 	if(isrobot(user))
 		var/mob/living/silicon/robot/R = user
-		if(R.cell)
-			R.cell.use(used_energy)
+		R.draw_power(ROBOT_CELL_JOULES(used_energy), src, 0, TRUE)
 	else
 		stored_matter--
 		to_chat(user,span_notice("the fabricator now holds [stored_matter]/30 fabrication-units."))

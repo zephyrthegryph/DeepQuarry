@@ -215,7 +215,6 @@ Chomp remove end */
 	result = /obj/item/reagent_containers/food/snacks/churro
 
 
-// === merged from recipes_fryer_vr.dm during hard-fork de-suffix (verified no override-order change) ===
 /datum/recipe/generalschicken
 	appliance = FRYER
 	reagents = list(REAGENT_ID_CAPSAICIN = 2, REAGENT_ID_SUGAR = 2, REAGENT_ID_BATTER = 10)

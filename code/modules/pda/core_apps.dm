@@ -308,7 +308,6 @@
 	return news
 
 
-// === merged from core_apps_chomp.dm during hard-fork de-suffix (verified no override-order change) ===
 /datum/data/pda/app/timeclock
 	name = "Timeclock"
 	icon = "clock"

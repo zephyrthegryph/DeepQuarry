@@ -186,10 +186,10 @@
 
 	return
 
-/turf/simulated/wall/fire_act(datum/gas_mixture/air, exposed_temperature, exposed_volume)//Doesn't fucking work because walls don't interact with air :(
+/turf/simulated/wall/fire_act(exposed_temperature, exposed_volume)//Doesn't fucking work because walls don't interact with air :(
 	burn(exposed_temperature)
 
-/turf/simulated/wall/adjacent_fire_act(turf/simulated/floor/adj_turf, datum/gas_mixture/adj_air, adj_temp, adj_volume)
+/turf/simulated/wall/adjacent_fire_act(turf/simulated/floor/adj_turf, adj_temp, adj_volume)
 	burn(adj_temp)
 	if(adj_temp > material.melting_point)
 		take_damage(log(RAND_F(0.9, 1.1) * (adj_temp - material.melting_point)))
@@ -332,32 +332,6 @@
 /turf/simulated/wall/can_engrave()
 	return (material && material.hardness >= 10 && material.hardness <= 100)
 
-/* moved this block to code\game\objects\items\weapons\rcd.dm
-/turf/simulated/wall/rcd_values(mob/living/user, obj/item/rcd/the_rcd, passed_mode)
-	if(material.integrity > 1000) // Don't decon things like elevatorium.
-		return FALSE
-	if(reinf_material && !the_rcd.can_remove_rwalls) // Gotta do it the old fashioned way if your RCD can't.
-		return FALSE
-
-	if(passed_mode == RCD_DECONSTRUCT)
-		var/delay_to_use = material.integrity / 3 // Steel has 150 integrity, so it'll take five seconds to down a regular wall.
-		if(reinf_material)
-			delay_to_use += reinf_material.integrity / 3
-		return list(
-			RCD_VALUE_MODE = RCD_DECONSTRUCT,
-			RCD_VALUE_DELAY = delay_to_use,
-			RCD_VALUE_COST = RCD_SHEETS_PER_MATTER_UNIT * 5
-			)
-	return FALSE
-
-/turf/simulated/wall/rcd_act(mob/living/user, obj/item/rcd/the_rcd, passed_mode)
-	if(passed_mode == RCD_DECONSTRUCT)
-		to_chat(user, span_notice("You deconstruct \the [src]."))
-		ChangeTurf(/turf/simulated/floor/airless, preserve_outdoors = TRUE)
-		return TRUE
-	return FALSE
-*/
-
 /turf/simulated/wall/occult_act(mob/living/user)
 	to_chat(user, span_cult("You consecrate the wall."))
 	ChangeTurf(/turf/simulated/wall/cult, preserve_outdoors = TRUE)
@@ -369,7 +343,6 @@
 		if(try_graffiti(livingUser, livingUser.get_active_hand()))
 			return
 	. = ..()
-
 
 // === merged from RCD_chomp.dm during hard-fork de-suffix. Placed in this file because it
 // is the highest-positioned definer in the override chain for the members it
@@ -399,17 +372,6 @@
 
 /obj/item/rcd/advanced
 	can_remove_rwalls = 1
-/*
-Material values
-plasteel = 12
-steel = 3.99
-tile = 0.99
-rod = 1.98
-glass = 3.99
-rglass = 6
-borosilicate = 9
-rborosilicate = 12
-*/
 
 /obj/item/rcd/emag_act(remaining_charges, mob/user)
 	..()
@@ -752,7 +714,6 @@ rborosilicate = 12
 
 	var/t1 = ""
 
-
 	if(use_one_access)
 		t1 += "Restriction Type: <a href='byond://?src=[REF(src)];access=one'>At least one access required</a><br>"
 	else
@@ -814,8 +775,6 @@ rborosilicate = 12
 			conf_access -= req
 			if (!conf_access.len)
 				conf_access = null
-
-
 
 //Storing all the RCD acts and values here for ease of navigation
 //////////////////////////////////////
@@ -915,7 +874,6 @@ rborosilicate = 12
 				RCD_VALUE_COST = RCD_SHEETS_PER_MATTER_UNIT * 10
 			)
 	return FALSE
-
 
 /turf/simulated/floor/rcd_act(mob/living/user, obj/item/rcd/the_rcd, passed_mode)
 	switch(passed_mode)

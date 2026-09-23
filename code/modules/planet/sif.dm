@@ -392,7 +392,7 @@ GLOBAL_DATUM(planet_sif, /datum/planet/sif)
 			return // No need to apply damage. Hardhats are 30. They should probably protect you from hail on your head.
 			//Voidsuits are likewise 40, and riot, 80. Clothes are all less than 30.
 
-		H.apply_damage(damage, BRUTE, target_zone, amount_blocked, used_weapon = "hail")
+		H.injure(INJURY_BLUNT, damage, target_zone, null, amount_blocked)
 		if(show_message)
 			to_chat(H, effect_message)
 
@@ -679,7 +679,7 @@ GLOBAL_DATUM(planet_sif, /datum/planet/sif)
 		if(amount_blocked >= 40)
 			return
 
-		H.apply_damage(damage, BURN, target_zone, amount_blocked, used_weapon = "acidic rain")
+		H.injure(INJURY_CORROSIVE, damage, target_zone, null, amount_blocked)
 		if(show_message)
 			to_chat(H, effect_message)
 
@@ -708,7 +708,7 @@ GLOBAL_DATUM(planet_sif, /datum/planet/sif)
 		if(amount_blocked >= 10)
 			return
 
-		H.apply_damage(damage, BRUTE, target_zone, amount_blocked, used_weapon = "sand")
+		H.injure(INJURY_BLUNT, damage, target_zone, null, amount_blocked)
 		if(show_message)
 			to_chat(H, effect_message)
 
@@ -740,7 +740,7 @@ GLOBAL_DATUM(planet_sif, /datum/planet/sif)
 
 	stacks = MODIFIER_STACK_EXTEND
 
-	incoming_healing_percent = 2
+	factors = alist(BF_HEALING_RECEIVED = 2)
 
 /*
 /datum/modifier/starrynight_boon/tick() Wanna have this and it's counter part mess with kin but brain says noto figuring out how lol
@@ -753,8 +753,9 @@ GLOBAL_DATUM(planet_sif, /datum/planet/sif)
 
 	stacks = MODIFIER_STACK_EXTEND
 
-	bleeding_rate_percent = 2 //It desires you
-	evasion = 10 //Worlds bend and meld. Small chance you aren't where you appear to be
+	// It desires you
+	// Worlds bend and meld. Small chance you aren't where you appear to be
+	factors = alist(BF_BLEEDING = 2, BF_EVASION = 10)
 
 /*
 /datum/modifier/midnightfog_boon/tick()
@@ -930,7 +931,7 @@ GLOBAL_DATUM(planet_sif, /datum/planet/sif)
 		if(amount_blocked >= 30)
 			return
 
-		L.apply_damage(damage, BRUTE, target_zone, amount_blocked, used_weapon = "rain bludgoning")
+		L.injure(INJURY_BLUNT, damage, target_zone, null, amount_blocked)
 		L.Weaken(3)
 		if(show_message)
 			to_chat(L, effect_message)

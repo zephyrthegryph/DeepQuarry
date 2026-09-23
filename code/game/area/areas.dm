@@ -463,7 +463,7 @@ GLOBAL_LIST_EMPTY(forced_ambiance_list)
 		to_chat(mob, span_notice("The sudden appearance of gravity makes you fall to the floor!"))
 		if(HAS_TRAIT(H, TRAIT_UNLUCKY) && prob(50) && H.get_bodypart_name(BP_HEAD))
 			H.visible_message(span_warning("[H] falls to the ground from the sudden appearance of gravity, smashing [H.p_their()] head against the ground!"),span_warning("You smash your head into the ground as gravity appears!"))
-			H.apply_damage(14, BRUTE, BP_HEAD, used_weapon = "blunt force")
+			H.injure(INJURY_BLUNT, 14, BP_HEAD, src)
 			playsound(H, 'sound/effects/tableheadsmash.ogg', 90, TRUE)
 		playsound(mob, "bodyfall", 50, 1)
 
@@ -603,6 +603,7 @@ GLOBAL_DATUM(spoiler_obfuscation_image, /image)
 
 /area/Exited(atom/movable/AM, newLoc)
 	. = ..()
+	SEND_SIGNAL(AM, COMSIG_MOVABLE_EXITED_AREA, src, get_dir(AM, newLoc))
 	if(exit_message && isliving(AM))
 		to_chat(AM, exit_message)
 

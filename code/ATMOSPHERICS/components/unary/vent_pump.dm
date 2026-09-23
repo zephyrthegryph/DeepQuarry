@@ -101,8 +101,8 @@
 	SSmachines.wake_vent(WEAKREF(src)) // So we are removed from hibernating list
 	unregister_radio(src, frequency)
 	if(initial_loc)
-		initial_loc.air_vent_info -= id_tag
-		initial_loc.air_vent_names -= id_tag
+		LAZYREMOVE(initial_loc.air_vent_info, id_tag)
+		LAZYREMOVE(initial_loc.air_vent_names, id_tag)
 	//QDEL_NULL(soundloop)
 	return ..()
 
@@ -296,11 +296,11 @@
 		"flow_rate" = last_flow_rate,
 	)
 
-	if(!initial_loc.air_vent_names[id_tag])
-		var/new_name = "[initial_loc.name] Vent Pump #[initial_loc.air_vent_names.len+1]"
-		initial_loc.air_vent_names[id_tag] = new_name
+	if(!LAZYACCESS(initial_loc.air_vent_names, id_tag))
+		var/new_name = "[initial_loc.name] Vent Pump #[length(initial_loc.air_vent_names)+1]"
+		LAZYSET(initial_loc.air_vent_names, id_tag, new_name)
 		src.name = new_name
-	initial_loc.air_vent_info[id_tag] = signal.data
+	LAZYSET(initial_loc.air_vent_info, id_tag, signal.data)
 
 	radio_connection.post_signal(src, signal, radio_filter_out)
 

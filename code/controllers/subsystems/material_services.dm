@@ -12,6 +12,12 @@ SUBSYSTEM_DEF(material_services)
 	var/list/scheduled_due = list()
 	var/list/scheduled_indices = list()
 	var/list/currentrun
+	/// Sampled attribution avoids putting a clock read around every service while
+	/// retaining enough resolution to identify an unexpectedly hot owner type.
+	var/profile_sample_cursor = 0
+	var/profile_sample_stride = 8
+	var/list/profile_type_cost_ms = list()
+	var/list/profile_type_calls = list()
 
 /datum/controller/subsystem/material_services/proc/swap_scheduled(a, b)
 	var/datum/material_service/service = scheduled[a]
@@ -95,9 +101,41 @@ SUBSYSTEM_DEF(material_services)
 		if(QDELETED(service))
 			continue
 		service.timer = FALSE
-		service.advance()
+		profile_sample_cursor = (profile_sample_cursor + 1) % profile_sample_stride
+		if(!profile_sample_cursor)
+			var/owner_type = "[service.owner?.type]"
+			var/profile_start = TICK_USAGE
+			service.advance()
+			profile_type_cost_ms[owner_type] += TICK_DELTA_TO_MS(TICK_USAGE - profile_start) * profile_sample_stride
+			profile_type_calls[owner_type] += profile_sample_stride
+		else
+			service.advance()
 		if(MC_TICK_CHECK)
 			return
+
+/datum/controller/subsystem/material_services/proc/performance_diagnostics()
+	var/list/sorted_cost = profile_type_cost_ms.Copy()
+	sortTim(sorted_cost, /proc/cmp_numeric_desc, TRUE)
+	if(length(sorted_cost) > 10)
+		sorted_cost.Cut(11)
+	var/list/pending_types = list()
+	for(var/datum/material_service/service as anything in scheduled)
+		if(service && !QDELETED(service))
+			pending_types["[service.owner?.type]"]++
+	sortTim(pending_types, /proc/cmp_numeric_desc, TRUE)
+	if(length(pending_types) > 10)
+		pending_types.Cut(11)
+	var/list/result = list(
+		"pending" = length(scheduled),
+		"current" = length(currentrun),
+		"sample_stride" = profile_sample_stride,
+		"top_type_cost_ms" = sorted_cost,
+		"type_calls" = profile_type_calls.Copy(),
+		"pending_types" = pending_types,
+	)
+	profile_type_cost_ms.Cut()
+	profile_type_calls.Cut()
+	return result
 
 /datum/controller/subsystem/material_services/stat_entry(msg)
 	msg += " P:[length(scheduled)]"

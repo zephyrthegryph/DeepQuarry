@@ -19,14 +19,6 @@
 	var/center = FALSE
 	var/optional = FALSE
 
-/turf/simulated/floor/looking_glass/center
-	center = TRUE
-	icon_state = "origin_center"
-
-/turf/simulated/floor/looking_glass/optional
-	center = TRUE
-	optional = TRUE
-	icon_state = "origin_optional_arrow"
 
 /turf/simulated/floor/looking_glass/proc/activate()
 	set waitfor = FALSE

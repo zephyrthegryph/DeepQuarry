@@ -455,7 +455,6 @@
 #undef TEMPERATURE_CHANGE_MAX
 
 
-// === merged from port_gen_vr.dm during hard-fork de-suffix (verified no override-order change) ===
 /obj/machinery/power/port_gen/pacman/super/potato
 	name = "nuclear reactor"
 	desc = "PTTO-3, an industrial all-in-one nuclear power plant by Neo-Chernobyl GmbH. It uses uranium as a fuel source. Rated for 200 kW max safe output."

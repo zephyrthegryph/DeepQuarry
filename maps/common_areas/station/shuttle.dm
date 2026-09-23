@@ -1,14 +1,4 @@
-//Exploration backup shuttle. For now this is a placeholder for future expedition content.
-/area/shuttle/shuttlebackup
-	name = "\improper Hangar Deck"
-	icon_state = "yellow"
-	requires_power = 0
-	dynamic_lighting = 1
-	flags = RAD_SHIELDED
 
-/area/shuttle/shuttlebackup/start
-	name = "\improper Expedition Backup Shuttle Docks"
-	icon_state = "shuttlered"
 
 //NT response shuttle
 /area/shuttle/response_ship
@@ -21,9 +11,6 @@
 /area/shuttle/response_ship/simulated_reinforced
 	base_turf = /turf/simulated/floor/reinforced
 
-/area/shuttle/overmap/sif
-	name = "wilderness site"
-	icon_state = "shuttlered"
 
 // Centcom Transport Shuttle
 /area/shuttle/transport1
@@ -261,33 +248,6 @@
 /area/shuttle/large_escape_pod2/transit
 	icon_state = "shuttle"
 
-/area/shuttle/large_escape_pod3
-	name = "\improper Large Escape Pod Three"
-	music = "music/escape.ogg"
-
-/area/shuttle/large_escape_pod3/station
-	icon_state = "shuttle2"
-	base_turf = /turf/simulated/floor/airless
-
-/area/shuttle/large_escape_pod3/centcom
-	icon_state = "shuttle"
-
-/area/shuttle/large_escape_pod3/transit
-	icon_state = "shuttle"
-
-/area/shuttle/large_escape_pod4
-	name = "\improper Large Escape Pod Four"
-	music = "music/escape.ogg"
-
-/area/shuttle/large_escape_pod4/station
-	icon_state = "shuttle2"
-	base_turf = /turf/simulated/floor/airless
-
-/area/shuttle/large_escape_pod4/centcom
-	icon_state = "shuttle"
-
-/area/shuttle/large_escape_pod4/transit
-	icon_state = "shuttle"
 
 /area/shuttle/cryo
 	name = "\improper Cryogenic Storage"
@@ -322,14 +282,6 @@
 	name = "south of second deck"
 	icon_state = "south"
 
-/area/shuttle/shuttle1/mining
-	name = "wilderness site"
-	icon_state = "shuttlered"
-
-/area/shuttle/shuttle1/planet
-	name = "planetside outpost"
-	icon_state = "shuttlered"
-	base_turf = /turf/simulated/floor/plating/thor/planetuse
 
 /area/shuttle/shuttle1/transit
 	name = "transit"
@@ -371,14 +323,6 @@
 	name = "south of second deck"
 	icon_state = "south"
 
-/area/shuttle/shuttle2/mining
-	name = "wilderness site"
-	icon_state = "shuttlered"
-
-/area/shuttle/shuttle2/planet
-	name = "planetside outpost"
-	icon_state = "shuttlered"
-	base_turf = /turf/simulated/floor/plating/thor/planetuse
 
 /area/shuttle/shuttle2/transit
 	name = "transit"
@@ -412,43 +356,6 @@
 	icon_state = "shuttlered"
 	base_turf = /turf/simulated/floor/reinforced
 
-/area/shuttle/shuttle3/seconddeck
-	name = "south of second deck"
-	icon_state = "south"
-
-/area/shuttle/shuttle3/stationhangar3
-	name = "\improper Hangar Three"
-	icon_state = "shuttlered"
-	base_turf = /turf/simulated/floor/reinforced
-
-/area/shuttle/shuttle3/expedition
-	name = "\improper Expedition Hangar One"
-	icon_state = "shuttlered"
-	base_turf = /turf/simulated/floor/reinforced
-
-/area/shuttle/shuttle3/mining
-	name = "wilderness site"
-	icon_state = "shuttlered"
-
-/area/shuttle/shuttle3/transit
-	name = "transit"
-	icon_state = "shuttlered"
-	base_turf = /turf/space/transit/north
-
-/area/shuttle/shuttle3/orbit
-	name = "in orbit of Sif"
-	icon_state = "shuttlegrn"
-	base_turf = /turf/space
-
-/area/shuttle/shuttle3/sky
-	name = "hovering over skies of sif"
-	icon_state = "shuttlegrn"
-	base_turf = /turf/simulated/sky
-
-/area/shuttle/shuttle3/sky_transit
-	name = "in flight over sif"
-	icon_state = "shuttlered"
-	base_turf = /turf/simulated/sky/moving
 
 /area/shuttle/expoutpost/site
 	name = "\improper Exploration Sling"
@@ -468,11 +375,3 @@
 /area/shuttle/arrival/station/simulated_grid
 	base_turf = /turf/simulated/floor/tiled/techfloor/grid
 
-/area/shuttle/minoutpost/site
-	name = "\improper Mining Elevator"
-	icon_state = "shuttle2"
-	base_turf = /turf/simulated/floor/reinforced
-/area/shuttle/minoutpost/base
-	name = "\improper Mining Elevator"
-	icon_state = "shuttle2"
-	base_turf = /turf/simulated/floor/reinforced

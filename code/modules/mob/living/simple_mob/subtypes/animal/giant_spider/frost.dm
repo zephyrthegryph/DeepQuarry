@@ -23,8 +23,7 @@
 	icon_living = "frost"
 	icon_dead = "frost_dead"
 
-	maxHealth = 175
-	health = 175
+	endurance = 175
 
 	poison_per_bite = 5
 	poison_type = REAGENT_ID_CRYOTOXIN

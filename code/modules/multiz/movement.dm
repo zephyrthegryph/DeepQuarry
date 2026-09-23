@@ -578,17 +578,15 @@
 		// Hits 10 times, because apparently targeting individual limbs lets certain species survive the fall from atmosphere
 		if(HAS_TRAIT(src, TRAIT_HEAVY_LANDING))
 			for(var/i = 1 to 10)
-				adjustBruteLoss(rand((damage_min * 2), (damage_max * 2)))
+				injure(INJURY_BLUNT, rand((damage_min * 2), (damage_max * 2)), ran_zone(), landing)
 			Weaken(20)
-			updatehealth()
 			if(istype(landing, /turf/simulated/floor) && prob(50))
 				var/turf/simulated/floor/our_crash = landing
 				our_crash.break_tile()
 		else
 			for(var/i = 1 to 10)
-				adjustBruteLoss(rand(damage_min, damage_max))
+				injure(INJURY_BLUNT, rand(damage_min, damage_max), ran_zone(), landing)
 			Weaken(4)
-			updatehealth()
 	// There is really no situation where smacking into a floor and possibly dying horribly would NOT result in you dropping your remote view... It's also safer then assuming they should persist.
 	reset_perspective()
 
@@ -653,7 +651,7 @@
 	// Anything on the same tile as the landing tile is gonna have a bad day.
 	for(var/mob/living/L in hit_atom.contents)
 		L.visible_message(span_danger("\The [src] crushes \the [L] as it lands on them!"))
-		L.adjustBruteLoss(rand(70, 100))
+		L.injure(INJURY_BLUNT, rand(70, 100), null, src)
 		L.Weaken(8)
 
 	var/turf/landing = get_turf(hit_atom)
@@ -742,10 +740,8 @@
 				tdamage = rand(0, 5)
 				if(HAS_TRAIT(drop_mob, TRAIT_HEAVY_LANDING))
 					tdamage = tdamage * 1.5
-				drop_mob.adjustBruteLoss(tdamage)
-				adjustBruteLoss(tdamage)
-			drop_mob.updatehealth()
-			updatehealth()
+				drop_mob.injure(INJURY_BLUNT, tdamage, ran_zone(), src)
+				injure(INJURY_BLUNT, tdamage, ran_zone(), drop_mob)
 			if(HAS_TRAIT(drop_mob, TRAIT_HEAVY_LANDING))
 				drop_mob.visible_message(span_danger("\The [drop_mob] crashes down onto \the [src]!"))
 			else

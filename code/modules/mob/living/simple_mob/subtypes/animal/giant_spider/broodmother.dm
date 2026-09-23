@@ -8,8 +8,7 @@
 	icon_living = "spider_queen"
 	icon_dead = "spider_queen_dead"
 
-	maxHealth = 800
-	health = 800
+	endurance = 800
 
 	melee_damage_lower = 25
 	melee_damage_upper = 40

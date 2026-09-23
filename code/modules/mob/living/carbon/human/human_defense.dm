@@ -38,16 +38,8 @@ emp_act
 		if(!prob(armor/2))		//Even if the armor doesn't stop the bullet from hurting you, it might stop it from embedding.
 			var/hit_embed_chance = P.embed_chance + (P.damage - armor)	//More damage equals more chance to embed
 
-			//Modifiers can make bullets less likely to embed! These are the normal modifiers and shouldn't be related to energy stuff, but they can be anyways!
-			for(var/datum/modifier/M in modifiers)
-				if(!isnull(M.incoming_damage_percent))
-					if(M.energy_based)
-						M.energy_source.use(M.energy_cost) //We use energy_cost here for special effects, such as embedding.
-					hit_embed_chance = hit_embed_chance*M.incoming_damage_percent
-				if(P.damage_type == BRUTE && (!isnull(M.incoming_brute_damage_percent)))
-					if(M.energy_based)
-						M.energy_source.use(M.energy_cost)
-					hit_embed_chance = hit_embed_chance*M.incoming_brute_damage_percent
+			// Injury resistance makes bullets less likely to embed.
+			hit_embed_chance *= incoming_injury_factor(P.damage_type == BRUTE ? INJURY_CATEGORY_PHYSICAL : null)
 
 			if(prob(max(hit_embed_chance, 0)))
 				var/obj/item/material/shard/shrapnel/SP = new()
@@ -123,12 +115,7 @@ emp_act
 		if(istype(C) && (C.body_parts_covered & def_zone.body_part)) // Is that body part being targeted covered?
 			siemens_coefficient *= C.siemens_coefficient
 
-	// Modifiers.
-	for(var/datum/modifier/M as anything in modifiers)
-		if(!isnull(M.siemens_coefficient))
-			siemens_coefficient *= M.siemens_coefficient
-
-	return siemens_coefficient
+	return siemens_coefficient * factor(BF_SIEMENS)
 
 // Similar to above but is for the mob's overall protection, being the average of all slots.
 /mob/living/carbon/human/proc/get_siemens_coefficient_average()
@@ -169,12 +156,7 @@ emp_act
 	for(var/obj/item/clothing/gear in protective_gear)
 		protection += gear.armor[type]
 
-	for(var/datum/modifier/M as anything in modifiers)
-		var/modifier_armor = LAZYACCESS(M.armor_percent, type)
-		if(modifier_armor)
-			protection += modifier_armor
-
-	return protection
+	return protection + factor_armor(type)
 
 // Checked in borer code
 /mob/living/carbon/human/proc/check_head_coverage()
@@ -407,7 +389,7 @@ emp_act
 
 		var/armor = run_armor_check(affecting, "melee", thrown_object.armor_penetration, "Your armor has protected your [hit_area].", "Your armor has softened hit to your [hit_area].") //I guess "melee" is the best fit here
 		if(armor < 100)
-			apply_damage(throw_damage, thrown_object.damtype, zone, armor, is_sharp(thrown_object), has_edge(thrown_object), thrown_object)
+			injure_by_damtype(thrown_object.damtype, throw_damage, zone, thrown_object, armor, is_sharp(thrown_object), has_edge(thrown_object))
 
 
 		//thrown weapon embedded object code.
@@ -502,10 +484,32 @@ emp_act
 		w_uniform.add_blood(source)
 		update_inv_w_uniform(0)
 
-/mob/living/carbon/human/proc/handle_suit_punctures(damtype, damage, def_zone)
+/// Human post-injury reactions: rig soak / suit breaches, damage overlays,
+/// agony screams and burn husking of corpses.
+/mob/living/carbon/human/on_injured(kind, amount, zone, atom/source, flags)
+	var/category = injury_category(kind)
+	if(category == INJURY_CATEGORY_PHYSICAL || category == INJURY_CATEGORY_THERMAL)
+		handle_suit_punctures(kind, amount, zone)
+		if(injury_is_located(kind))
+			damageoverlaytemp = 20
+			UpdateDamageIcon()
+		// A corpse burned past 3.5x its species health is husked.
+		if(stat == DEAD && category == INJURY_CATEGORY_THERMAL && injury_load(INJURY_CATEGORY_THERMAL) > species.total_health * 3.5)
+			ChangeToHusk()
+	if(kind == INJURY_PAIN && !(flags & INJURE_SILENT))
+		if((amount > 25 && prob(20)) || (amount > 50 && prob(60)))
+			var/obj/item/organ/external/organ = get_organ(zone || BP_TORSO)
+			if(organ && organ.organ_can_feel_pain() && !isbelly(loc) && !istype(loc, /obj/item/dogborg/sleeper))
+				emote("scream")
+	return ..()
 
-	// Tox and oxy don't matter to suits.
-	if(damtype != BURN && damtype != BRUTE) return
+/// Physical and thermal hits may soak into a rig or breach a spacesuit.
+/mob/living/carbon/human/proc/handle_suit_punctures(kind, damage, def_zone)
+	var/category = injury_category(kind)
+	// Only physical and thermal injuries matter to suits.
+	if(category != INJURY_CATEGORY_PHYSICAL && category != INJURY_CATEGORY_THERMAL)
+		return
+	var/damtype = category == INJURY_CATEGORY_PHYSICAL ? BRUTE : BURN
 
 	// The rig might soak this hit, if we're wearing one.
 	if(istype(get_rig(),/obj/item/rig))
@@ -596,7 +600,7 @@ emp_act
 
 	if(prob(organ_chance))
 		var/obj/item/organ/internal/selected_organ = pick(chest.internal_organs)
-		selected_organ.damage = max(selected_organ.damage, damage * 0.5)
+		injure(INJURY_CUT, damage * 0.5, selected_organ, W, affliction = /datum/affliction/lesion/laceration)
 		G.last_action = world.time
 		flick(G.hud.icon_state, G.hud)
 

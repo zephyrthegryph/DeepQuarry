@@ -1,9 +1,19 @@
 //Common breathing procs
 
+/// Life cycles since this mob's last scheduled breath. Breathing runs on the
+/// mob's own cadence, independent of how often the atmos subsystem fires.
+/mob/living/carbon/var/breath_cycle = 0
+
+/// A scheduled breath is taken every this many Life cycles.
+#define BREATH_CYCLE_PERIOD 4
+
 //Start of a breath chain, calls breathe()
 /mob/living/carbon/handle_breathing()
-	if(SSair.times_fired%4==2 || failed_last_breath || (health < get_crit_point())) // First, resolve location and get a breath // LINDA renamed current_cycle → times_fired
+	breath_cycle = (breath_cycle + 1) % BREATH_CYCLE_PERIOD
+	if(!breath_cycle || failed_last_breath || is_critical()) // First, resolve location and get a breath
 		breathe()
+
+#undef BREATH_CYCLE_PERIOD
 
 /mob/living/carbon/proc/breathe()
 	//if(istype(loc, /obj/machinery/atmospherics/unary/cryo_cell)) return
@@ -12,13 +22,16 @@
 	var/datum/gas_mixture/breath = null
 
 	//First, check if we can breathe at all
-	if(health < get_crit_point() && !(CE_STABLE in chem_effects)) //crit aka circulatory shock
+	if(is_critical() && !factor(BF_STABILIZATION)) //crit aka circulatory shock
 		AdjustLosebreath(1)
 
 	if(losebreath>0) //Suffocating so do not take a breath
 		AdjustLosebreath(-1)
 		if (prob(10) && !isbelly(loc)) //Gasp per 10 ticks? Sounds about right.
 			spawn emote("gasp")
+	else if(breath_blocked()) //Closed airway or not breathing on their own: no gas exchange at all.
+		if(prob(10) && !isbelly(loc))
+			INVOKE_ASYNC(src, TYPE_PROC_REF(/mob, emote), "gasp")
 	else
 		//Okay, we can breathe, now check if we can get air
 		breath = get_breath_from_internal() //First, check for air from internals

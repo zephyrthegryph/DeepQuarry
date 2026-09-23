@@ -10,50 +10,57 @@
 	//allocate a channel if necessary now so its the same for everyone
 	channel = channel || SSsounds.random_available_channel()
 
-	// Looping through the player list has the added bonus of working for mobs inside containers
-	var/sound/S = sound(get_sfx(soundin))
 	var/maxdistance = (world.view + extrarange) * 2 // 3 to 2
-	var/list/listeners = GLOB.player_list.Copy()
+	var/source_z = turf_source.z
+	var/source_soundproof = area_source.flag_check(AREA_SOUNDPROOF)
+	// Built on the first hearer and shared; playsound_local resets every field it uses per listener (Q6).
+	var/sound/S
 
-	// Get AI holograms of active AIs too
-	var/list/holo_listeners = list()
-	for(var/mob/living/silicon/ai/A in listeners)
-		if(A.holo && istype(A.holo.masters[A],/obj/effect/overlay/aiholo/))
-			holo_listeners += A.holo.masters[A]
-	listeners += holo_listeners
-
-	for(var/atom/U as anything in listeners)
-		var/turf/T = get_turf(U)
-		var/mob/hearer = null
-		// Normal mobs
-		if(istype(U,/mob))
-			var/mob/M = U
-			if(!M || !M.client)
+	// Looping through the player list has the added bonus of working for mobs inside containers.
+	// Iterated in place: nothing below can add or remove players.
+	for(var/mob/hearer as anything in GLOB.player_list)
+		if(!hearer.client)
+			continue
+		var/list/hear_turfs = list(get_turf(hearer))
+		// AIs also hear through an active hologram.
+		if(isAI(hearer))
+			var/mob/living/silicon/ai/ai_hearer = hearer
+			var/obj/effect/overlay/aiholo/holo = ai_hearer.holo ? LAZYACCESS(ai_hearer.holo.masters, ai_hearer) : null
+			if(istype(holo))
+				hear_turfs += get_turf(holo)
+		for(var/turf/T as anything in hear_turfs)
+			if(!T || T.z != source_z)
 				continue
-			hearer = M
-		// Holograms need to hear too
-		if(istype(U,/obj/effect/overlay/aiholo))
-			var/obj/effect/overlay/aiholo/H = U
-			if(!H || !H.master || !H.master.client)
+			var/area/A = T.loc
+			if(A != area_source && (source_soundproof || A.flag_check(AREA_SOUNDPROOF)))
 				continue
-			hearer = H.master
+			if(get_dist(T, turf_source) > maxdistance)
+				continue
+			if(!ignore_walls && !can_see(turf_source, T, length = maxdistance * 2))
+				continue
+			if(!S)
+				S = sound(get_sfx(soundin))
+			hearer.playsound_local(turf_source, soundin, vol, vary, frequency, falloff, is_global, channel, pressure_affected, S, preference, volume_channel, T)
+			SSmotiontracker.ping(source,vol) // Nearly everything pings this, the quieter the less likely
 
-		if(!T || !hearer)
+/// TRUE if any player could hear a playsound() from `turf_source` within `max_distance`.
+/// Mirrors playsound()'s listener rules, minus soundproofing and walls.
+/proc/playsound_has_listener(turf/turf_source, max_distance)
+	var/source_z = turf_source.z
+	for(var/mob/hearer as anything in GLOB.player_list)
+		if(!hearer.client)
 			continue
-		var/area/A = T.loc
-		if((A.flag_check(AREA_SOUNDPROOF) || area_source.flag_check(AREA_SOUNDPROOF)) && (A != area_source))
-			continue
-		//var/distance = get_dist(T, turf_source) Save get_dist for later because it's more expensive
-
-		if(!T || T.z != turf_source.z) //^ +1
-			continue
-		if(get_dist(T, turf_source) > maxdistance)
-			continue
-		if(!ignore_walls && !can_see(turf_source, T, length = maxdistance * 2))
-			continue
-
-		hearer.playsound_local(turf_source, soundin, vol, vary, frequency, falloff, is_global, channel, pressure_affected, S, preference, volume_channel, T)
-		SSmotiontracker.ping(source,vol) // Nearly everything pings this, the quieter the less likely
+		var/turf/T = get_turf(hearer)
+		if(T && T.z == source_z && get_dist(T, turf_source) <= max_distance)
+			return TRUE
+		if(isAI(hearer))
+			var/mob/living/silicon/ai/ai_hearer = hearer
+			var/obj/effect/overlay/aiholo/holo = ai_hearer.holo ? LAZYACCESS(ai_hearer.holo.masters, ai_hearer) : null
+			if(istype(holo))
+				T = get_turf(holo)
+				if(T && T.z == source_z && get_dist(T, turf_source) <= max_distance)
+					return TRUE
+	return FALSE
 
 /mob/proc/check_sound_preference(list/preference)
 	if(!islist(preference))
@@ -97,9 +104,9 @@
 	var/listener_position = T
 	if(isAI(src))
 		var/mob/living/silicon/ai/A = src
-		if(A.holo && istype(A.holo.masters[A],/obj/effect/overlay/aiholo))
-			T = get_turf(A.holo.masters[A])
-			listener_position = A.holo.masters[A]
+		if(A.holo && istype(LAZYACCESS(A.holo.masters, A),/obj/effect/overlay/aiholo))
+			T = get_turf(LAZYACCESS(A.holo.masters, A))
+			listener_position = LAZYACCESS(A.holo.masters, A)
 
 	if(isturf(turf_source))
 		//sound volume falloff with distance
@@ -339,7 +346,6 @@
 					'sound/effects/wounds/sizzle2.ogg')
 	return soundin
 
-
 //Are these even used?	//Yes
 GLOBAL_LIST_INIT(keyboard_sound, list('sound/effects/keyboard/keyboard1.ogg','sound/effects/keyboard/keyboard2.ogg','sound/effects/keyboard/keyboard3.ogg', 'sound/effects/keyboard/keyboard4.ogg'))
 GLOBAL_LIST_INIT(bodyfall_sound, list('sound/effects/bodyfall1.ogg','sound/effects/bodyfall2.ogg','sound/effects/bodyfall3.ogg','sound/effects/bodyfall4.ogg'))
@@ -372,32 +378,6 @@ GLOBAL_LIST_INIT(wf_speak_vomva_sound, list ('sound/talksounds/wf/vomva_1.ogg', 
 #define use_default list("cough" = null, "sneeze" = null, "scream" = null, "pain" = null, "gasp" = null, "death" = null)
 /*
  * TBD Sound Defines below
-*/
-/*
-#define avian_sounds list(
-	"scream" = list(),
-	"pain" = list(),
-	"gasp" = list(),
-	"death" = list()
-)
-#define slime_sounds list(
-	"scream" = list(),
-	"pain" = list(),
-	"gasp" = list(),
-	"death" = list()
-)
-#define vulpine_sounds list(
-	"scream" = list(),
-	"pain" = list(),
-	"gasp" = list(),
-	"death" = list()
-)
-#define lizard_sounds list(
-	"scream" = list(),
-	"pain" = list(),
-	"gasp" = list(),
-	"death" = list()
-)
 */
 
 // Not sure we even really need this

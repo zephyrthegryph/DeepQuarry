@@ -30,6 +30,12 @@
 		name = rename
 
 /datum/map_template/proc/preload_size(path, cache = FALSE)
+	if(!cache)
+		var/list/cached_bounds = build_time_template_bounds(path)
+		if(cached_bounds)
+			width = cached_bounds[MAP_MAXX] // Same rectangular, single-Z assumption as below
+			height = cached_bounds[MAP_MAXY]
+			return cached_bounds
 	var/datum/parsed_map/parsed = new(file(path))
 	var/bounds = parsed?.bounds
 	if(bounds)
@@ -38,6 +44,24 @@
 		if(cache)
 			cached_map = parsed
 	return bounds
+
+/// Bounds written by the build (tools/build/lib/map_bounds.ts) so templates don't
+/// have to be parsed just to learn their size (Q2). Returns a copy of the six bounds,
+/// or null when the file has no entry or its size changed since the build.
+/proc/build_time_template_bounds(path)
+	var/static/list/bounds_by_path
+	if(isnull(bounds_by_path))
+		bounds_by_path = list()
+		if(fexists("data/map_template_bounds.json"))
+			var/list/decoded = json_decode(file2text("data/map_template_bounds.json"))
+			if(islist(decoded))
+				bounds_by_path = decoded
+	if(!istext(path))
+		return null
+	var/list/entry = bounds_by_path[replacetext(path, "\\", "/")]
+	if(length(entry) != 7 || !fexists(path) || length(file(path)) != entry[7])
+		return null
+	return entry.Copy(1, 7)
 
 /datum/map_template/proc/initTemplateBounds(list/bounds)
 	if(SSatoms.initialized == INITIALIZATION_INSSATOMS)
@@ -392,7 +416,6 @@
 	admin_notice("Loaded: [english_list(pretty_submap_list)]", R_DEBUG)
 
 
-// === merged from map_template_vr.dm during hard-fork de-suffix (verified no override-order change) ===
 /// An asslist of name=z for map_templates that have been loaded
 GLOBAL_LIST_EMPTY(map_templates_loaded)
 

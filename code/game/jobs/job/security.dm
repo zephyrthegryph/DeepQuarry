@@ -196,7 +196,6 @@
 	title = JOB_ALT_LOSS_PREVENTION
 
 
-// === merged from security_chomp.dm during hard-fork de-suffix (verified no override-order change) ===
 /datum/job/hos
 	camp_protection = TRUE
 /*

@@ -86,32 +86,3 @@
 	if(!ai_number)
 		to_chat(usr, span_bold("No AIs located")) //Just so you know the thing is actually working and not just ignoring you.
 
-	/* This part would require an update of the ai laws datum, but is replacing the above if implemented
-	var/law_bound_entities = 0
-	for(var/mob/living/silicon/subject as anything in mob_list)
-		law_bound_entities++
-
-		var/message = ""
-
-		if(isAI(subject))
-			message += "<b>AI [key_name(subject, usr)]'s laws:</b>"
-		else if(isrobot(subject))
-			var/mob/living/silicon/robot/borg = subject
-			message += "<b>CYBORG [key_name(subject, usr)] [borg.connected_ai?"(Slaved to: [key_name(borg.connected_ai)])":"(Independent)"]: laws:</b>"
-		else if (ispAI(subject))
-			message += "<b>pAI [key_name(subject, usr)]'s laws:</b>"
-		else
-			message += "<b>SOMETHING SILICON [key_name(subject, usr)]'s laws:</b>"
-
-		message += "<br>"
-
-		if (!subject.laws)
-			message += "[key_name(subject, usr)]'s laws are null?? Contact a coder."
-		else
-			message += jointext(subject.laws.get_law_list(include_zeroth = TRUE), "<br>")
-
-		to_chat(usr, message, confidential = TRUE)
-
-	if(!law_bound_entities)
-		to_chat(usr, "<b>No law bound entities located</b>", confidential = TRUE)
-	*/

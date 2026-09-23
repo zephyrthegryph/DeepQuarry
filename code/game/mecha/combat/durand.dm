@@ -34,16 +34,6 @@
 	icon_scale_x = 1.5
 	icon_scale_y = 1.5
 
-/*
-/obj/mecha/combat/durand/Initialize(mapload)
-	. = ..()
-	weapons += new /datum/mecha_weapon/ballistic/lmg(src)
-	weapons += new /datum/mecha_weapon/ballistic/scattershot(src)
-	selected_weapon = weapons[1]
-*/
-
-
-
 //This is for the Mech stats / Menu system. To be moved later on.
 /obj/mecha/combat/durand/get_commands()
 	var/output = {"<div class='wr'>
@@ -56,23 +46,7 @@
 	output += ..()
 	return output
 
-
 //Not needed anymore but left for reference.
-/*
-/obj/mecha/combat/durand/get_stats_part()
-	var/output = ..()
-	output += span_bold("Defence mode: [defence?"on":"off"]")
-	return output
-*/
-
-/*
-
-/obj/mecha/combat/durand/Topic(href, href_list)
-	..()
-	if (href_list["toggle_defence_mode"])
-		src.defence_mode()
-	return
-*/
 
 //Meant for random spawns.
 /obj/mecha/combat/durand/old

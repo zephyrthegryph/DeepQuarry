@@ -77,13 +77,6 @@
 
 	. = ..()
 
-/turf/simulated/floor/outdoors/grass/forest
-	name = "thick grass"
-	icon_state = "grass-dark0"
-	grass_chance = 50
-	//tree_chance = 20
-	edge_blending_priority = 5
-	initial_flooring = /datum/decl/flooring/grass/outdoors/forest
 
 /turf/simulated/floor/outdoors/grass/sif/forest
 	name = "thick growth"
@@ -119,7 +112,6 @@
 // end
 
 
-// === merged from grass_ch.dm during hard-fork de-suffix (verified no override-order change) ===
 /turf/simulated/floor/outdoors/grass
 	var/animals = "base"
 	var/grass = "base"

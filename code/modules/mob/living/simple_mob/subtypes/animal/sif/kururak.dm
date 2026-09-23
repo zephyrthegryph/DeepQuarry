@@ -34,8 +34,7 @@
 	default_pixel_x = -16
 	pixel_x = -16
 	minbodytemp = 175
-	maxHealth = 200
-	health = 200
+	endurance = 200
 
 	universal_understand = 1
 
@@ -99,8 +98,7 @@
 	emote_hear = list("chirps", "clicks", "grumbles", "chitters")
 
 /mob/living/simple_mob/animal/sif/kururak/leader	// Going to be the starting leader. Has some base buffs to make it more likely to stay the leader.
-	maxHealth = 250
-	health = 250
+	endurance = 250
 	instinct = 50
 
 /mob/living/simple_mob/animal/sif/kururak/Initialize(mapload)
@@ -202,7 +200,7 @@
 							to_chat(H, span_alien("You are disoriented by \the [src]!"))
 							H.eye_blurry = max(H.eye_blurry, flash_strength + 5)
 							H.flash_eyes()
-							H.apply_damage(flash_strength * H.species.flash_burn/5, BURN, BP_HEAD, 0)
+							H.injure(INJURY_BURN, flash_strength * H.species.flash_burn/5, BP_HEAD, src)
 
 		else if(issilicon(L))
 			if(isrobot(L))
@@ -280,10 +278,10 @@
 		var/mob/living/L = A
 		if(ishuman(L))
 			var/mob/living/carbon/human/H = L
-			H.apply_damage(damage_to_apply, BRUTE, BP_TORSO, 0)
+			H.injure(INJURY_CUT, damage_to_apply, BP_TORSO, src)
 
 		else
-			L.adjustBruteLoss(damage_to_apply)
+			L.injure(INJURY_CUT, damage_to_apply, source = src)
 
 		L.add_modifier(/datum/modifier/grievous_wounds, 60 SECONDS)
 
@@ -362,15 +360,7 @@
 
 	mob_overlay_state = "ace"
 
-	max_health_flat = 25
-	max_health_percent = 1.2
-	disable_duration_percent = 0.8
-	incoming_damage_percent = 0.7
-	incoming_healing_percent = 1.5
-	outgoing_melee_damage_percent = 1.5
-	evasion = 20
-	bleeding_rate_percent = 0.7
-	attack_speed_percent = 0.8
+	factors = alist(BF_BLEEDING = 0.7, BF_EVASION = 20, BF_ATTACK_SPEED = 0.8, BF_MELEE_DAMAGE = 1.5, BF_INCOMING_ALL = 0.7, BF_DISABLE_DURATION = 0.8, BF_HEALING_RECEIVED = 1.5, BF_ENDURANCE_FLAT = 25, BF_ENDURANCE_MULT = 1.2)
 
 /datum/decl/mob_organ_names/kururak
 	hit_zones = list("head", "chest", "left foreleg", "right foreleg", "left hind leg", "right hind leg", "far left tail", "far right tail", "left middle tail", "right middle tail")

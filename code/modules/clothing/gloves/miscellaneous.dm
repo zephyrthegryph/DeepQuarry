@@ -162,7 +162,6 @@
 	icon_state = "waterwings"
 
 
-// === merged from miscellaneous_vr.dm during hard-fork de-suffix (verified no override-order change) ===
 // ??? Somehow wedding rigs were attributed to me from 9 years ago but is not upstream and is only on here, yet there's no chomp edits?
 /obj/item/clothing/gloves/weddingring
 	name = "golden wedding ring"

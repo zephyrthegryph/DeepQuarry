@@ -279,7 +279,7 @@
 	if(flavor_activate)
 		to_chat(wearer, flavor_activate)
 	to_chat(wearer, span_danger("The inside of your head hurts..."))
-	wearer.adjustBrainLoss(brainloss_cost)
+	wearer.injure(INJURY_NEURAL, brainloss_cost, null, src)
 
 /obj/item/clothing/head/psy_crown/equipped(mob/living/carbon/human/user)
 	..()
@@ -357,7 +357,6 @@
 	armor = list("melee" = 5, "bullet" = 0, "laser" = 0,"energy" = 0, "bomb" = 0, "bio" = 0, "rad" = 0, "fire" = 0, "acid" = 0)
 
 
-// === merged from misc_special_vr.dm during hard-fork de-suffix (verified no override-order change) ===
 /obj/item/clothing/head/cone
 	sprite_sheets = list(
 		SPECIES_TESHARI = 'icons/inventory/head/mob_teshari.dmi'

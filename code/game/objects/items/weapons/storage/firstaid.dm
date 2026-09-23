@@ -203,7 +203,6 @@
 	desc = "Contains pills used to aid in blood regeneration."
 
 
-// === merged from firstaid_vr.dm during hard-fork de-suffix (verified no override-order change) ===
 /obj/item/storage/firstaid
 	icon = 'icons/obj/storage_vr.dmi'
 
@@ -504,7 +503,6 @@
 	wrapper_color = COLOR_BLACK
 
 
-// === merged from firstaid_chomp.dm during hard-fork de-suffix (new kits/bottles) ===
 /obj/item/storage/firstaid/experimental
 	name = "experimental firstaid kit"
 	icon = 'icons/obj/storage.dmi'

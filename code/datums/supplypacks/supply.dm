@@ -303,7 +303,6 @@
 	containername = "Postal Service crate"
 
 
-// === merged from supply_chomp.dm during hard-fork de-suffix (verified no override-order change) ===
 /datum/supply_pack/supply/freezer
 	name = "Freezer crate"
 	desc = "An empty freezer for storing perishable items."

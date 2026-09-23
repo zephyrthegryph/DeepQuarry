@@ -45,12 +45,12 @@
 /obj/item/radio/intercom/interrogation
 	name = "station intercom (Interrogation)"
 	frequency  = 1449
-	broadcasting = 1 //yw edit starts
+	broadcasting = 1
 	listening = 0
 
 /obj/item/radio/intercom/interrogation/observation
 	listening = 1
-	broadcasting = 0 //yw edit ends
+	broadcasting = 0
 
 /obj/item/radio/intercom/private
 	name = "station intercom (Private)"

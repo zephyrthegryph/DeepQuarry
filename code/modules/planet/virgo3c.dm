@@ -413,7 +413,7 @@ GLOBAL_DATUM(planet_virgo3c, /datum/planet/virgo3c)
 			return // No need to apply damage. Hardhats are 30. They should probably protect you from hail on your head.
 			//Voidsuits are likewise 40, and riot, 80. Clothes are all less than 30.
 
-		H.apply_damage(damage, BRUTE, target_zone, amount_blocked)
+		H.injure(INJURY_BLUNT, damage, target_zone, null, amount_blocked)
 		if(show_message)
 			to_chat(H, effect_message)
 
@@ -522,7 +522,6 @@ GLOBAL_DATUM(planet_virgo3c, /datum/planet/virgo3c)
 
 		L.inflict_heat_damage(1)
 		to_chat(L, span_warning("Smoldering ash singes you!"))
-
 
 
 //A non-lethal variant of the ash_storm. Stays on indefinitely.
@@ -665,73 +664,9 @@ VIRGO3C_TURF_CREATE(/turf/simulated/floor/beach/sand)
 VIRGO3C_TURF_CREATE(/turf/simulated/floor/tiled/asteroid_steel/outdoors)
 
 
-
-/turf/simulated/open/virgo3c
-	VIRGO3C_SET_ATMOS
-
 /*	Handled by parent now
-/turf/simulated/open/virgo3c/Initialize(mapload)
-	. = ..()
-	if(is_outdoors())
-		SSplanets.addTurf(src)
 */
 
-/turf/simulated/mineral/cave/virgo3c
-	VIRGO3C_SET_ATMOS
-	outdoors = OUTDOORS_NO
-
-/turf/simulated/mineral/floor/virgo3c
-	VIRGO3C_SET_ATMOS
-	outdoors = OUTDOORS_NO
-
-/turf/simulated/mineral/floor/ignore_mapgen/virgo3c
-	VIRGO3C_SET_ATMOS
-	outdoors = OUTDOORS_NO
-
-/turf/simulated/floor/outdoors/grass/virgo3c
-	VIRGO3C_SET_ATMOS
-
-	/* 
-	grass_types = list(
-		/obj/structure/flora/ausbushes/sparsegrass = 50,
-		/obj/structure/flora/ausbushes/fullgrass = 50,
-		/obj/structure/flora/ausbushes/brflowers = 1,
-		/obj/structure/flora/ausbushes/ppflowers = 1,
-		/obj/structure/flora/ausbushes/ywflowers = 1
-		)
-	*/
-
-/turf/simulated/floor/outdoors/grass/forest/virgo3c
-	VIRGO3C_SET_ATMOS
-	var/tree_chance = 5
-
-	animal_chance = 0.5
-	var/animal_types = list(
-		/mob/living/simple_mob/vore/redpanda = 40,
-		/mob/living/simple_mob/vore/redpanda/fae = 2,
-		/mob/living/simple_mob/vore/sheep = 20,
-		/mob/living/simple_mob/vore/rabbit/black = 20,
-		/mob/living/simple_mob/vore/rabbit/white = 20,
-		/mob/living/simple_mob/vore/rabbit/brown = 20,
-		/mob/living/simple_mob/vore/leopardmander = 2,
-		/mob/living/simple_mob/vore/horse/big = 10,
-		/mob/living/simple_mob/vore/bigdragon/friendly = 1,
-		/mob/living/simple_mob/vore/alienanimals/dustjumper = 20
-		)
-
-
-/turf/simulated/floor/outdoors/grass/forest/virgo3c/Initialize(mapload)
-	if(tree_chance && prob(tree_chance) && !check_density())
-		new /obj/structure/flora/tree/bigtree(src)
-
-	if(animal_chance && prob(animal_chance) && !check_density())
-		var/animal_type = pickweight(animal_types)
-		new animal_type(src)
-
-	. = ..()
-
-/turf/simulated/floor/outdoors/grass/forest/virgo3c/notrees
-	tree_chance = 0
 
 #undef VIRGO3C_ONE_ATMOSPHERE
 #undef VIRGO3C_AVG_TEMP

@@ -9,8 +9,7 @@
 	icon = 'icons/mob/vore.dmi'
 
 	faction = FACTION_FENNEC // Will protec other fenfens
-	maxHealth = 60
-	health = 60
+	endurance = 60
 
 	meat_amount = 5
 	meat_type = /obj/item/reagent_containers/food/snacks/meat/fox

@@ -27,8 +27,9 @@
 	var/best
 	var/best_hp = INFINITY
 	for(var/mob/living/M as anything in candidates)
-		if(M.health < best_hp)
-			best_hp = M.health
+		var/hp = M.vitality() * M.get_endurance() // absolute toughness remaining
+		if(hp < best_hp)
+			best_hp = hp
 			best = M
 	return best
 
@@ -72,7 +73,7 @@
 	var/best
 	var/best_score = -INFINITY
 	for(var/mob/living/M as anything in candidates)
-		var/score = M.maxHealth
+		var/score = M.get_endurance()
 		// Personal grudges amplify.
 		if(brain.disposition_to(M) == DQ_DISPOSITION_NEMESIS)
 			score *= 2

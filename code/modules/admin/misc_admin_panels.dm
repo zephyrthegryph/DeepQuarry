@@ -96,12 +96,9 @@
 		var/atom/atom_d = istype(d, /atom) ? d : null
 		if(atom_d)
 			area_coord = "[AREACOORD(atom_d)]"
-		if(iscarbon(d))
-			var/mob/living/carbon/c = d
-			health_info = "Health: [c.health]"
-		else if(isliving(d))
+		if(isliving(d))
 			var/mob/living/L = d
-			health_info = "Health: [L.health]"
+			health_info = "Vitality: [round(L.vitality() * 100)]%"
 		rows += list(list(
 			"index" = index,
 			"ref" = REF(d),

@@ -142,7 +142,7 @@
 		var/mob/living/M = A
 		visible_message(span_danger("[src] knocks over [M]!"))
 		M.apply_effects(2, 2)				// Knock people down for a short moment
-		M.apply_damages(8 / move_delay)		// Smaller amount of damage than a tug, since this will always be possible because Quads don't have safeties.
+		M.injure(INJURY_BLUNT, 8 / move_delay, null, src)		// Smaller amount of damage than a tug, since this will always be possible because Quads don't have safeties.
 		var/list/throw_dirs = list(1, 2, 4, 8, 5, 6, 9, 10)
 		if(!emagged)						// By the power of Bumpers TM, it won't throw them ahead of the quad's path unless it's emagged or the person turns.
 			take_damage(round(M.mob_size / 2), BRUTE)
@@ -255,9 +255,9 @@
 		var/mob/living/M = A
 		visible_message(span_danger("[src] knocks over [M]!"))
 		M.apply_effects(1, 1)
-		M.apply_damages(8 / move_delay)
+		M.injure(INJURY_BLUNT, 8 / move_delay, null, src)
 		if(load)
-			M.apply_damages(4/move_delay)
+			M.injure(INJURY_BLUNT, 4 / move_delay, null, src)
 		var/list/throw_dirs = list(1, 2, 4, 8, 5, 6, 9, 10)
 		if(!emagged)
 			throw_dirs -= dir

@@ -1,18 +1,32 @@
 [workspace]
 resolver = "2"
+# Crate map (see README.md and doc/rewrite/rust_core.md):
+#   core/            vg-core    domain-agnostic primitives; host-buildable, no byondapi, no global statics
+#   domains/gas/     vg-gas     gas arena, turf diffusion, heat (vendored auxmos); i686 only for now
+#   domains/layout/  vg-layout  station layout planner + cave generator; host-buildable
+#   ffi/             vg-ffi     BYOND binds (byondapi); i686 only
+#   ffi/macros       auxmacros  panic_safe bind attribute (proc macro)
+#   ffi/callback     auxcallback  deferred callbacks to the BYOND main thread; i686 only
+#   verdigris/       verdigris  the DLL
+#   tools/bench/     vg-bench   criterion benchmarks
 members = [
+    "core",
+    "domains/gas",
+    "domains/layout",
+    "ffi",
+    "ffi/macros",
+    "ffi/callback",
     "verdigris",
-    "atmos",
-    "atmos/crates/auxcallback",
-    "atmos/crates/auxmacros",
+    "tools/bench",
 ]
-# `cargo check` / `test` without --package will only operate on verdigris by default —
-# auxmos's byondapi-sys transitively requires a 32-bit target. The release build via
-# verdigris/build-{linux,windows}.sh uses --target i686-* and builds the full workspace.
-default-members = ["verdigris"]
+# byondapi-sys only builds for 32-bit targets, so a plain host `cargo test` / `cargo
+# check` covers the host-buildable crates. The i686 release build
+# (build-{linux,windows}.sh) builds the DLL and everything it links; gas tests run
+# with `cargo test --target i686-pc-windows-msvc -p vg-gas` (or i686-unknown-linux-gnu).
+default-members = ["core", "domains/layout", "verdigris", "tools/bench"]
 
-# Inherited by atmos and its sub-crates (which were originally their own workspace).
-# See verdigris/atmos/UPSTREAM.md for context.
+# Shared by the gas domain and the FFI crates (auxmos was originally its own
+# workspace; see domains/gas/UPSTREAM.md).
 [workspace.dependencies]
 # byondapi git-main (0.6.x, default feature byond-516-1682): the modern 516 ABI —
 # buffer-based Byond_LastError (no LastError deref crash) and correct 516 reference
@@ -32,7 +46,7 @@ tracing = "0.1.41"
 debug = "full"
 lto = "thin"
 split-debuginfo = "packed"
-# Must be "unwind" (the default) so panic_safe! in verdigris can catch panics
+# Must be "unwind" (the default) so #[auxmacros::panic_safe] can catch panics
 # across the FFI boundary. Auxmos's original "abort" was removed when vendoring.
 
 [profile.dev]

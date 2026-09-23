@@ -162,7 +162,6 @@
 	nozzle_type = /obj/item/weldingtool/tubefed/survival
 
 
-// === merged from weldbackpack_ch.dm during hard-fork de-suffix (verified no override-order change) ===
 /obj/item/weldpack
 	sprite_sheets = list(
 		SPECIES_TESHARI = 'icons/inventory/back/mob_teshari.dmi'

@@ -5,7 +5,7 @@
 	name = "Slowdown"
 	desc = "Allows you to move slower on average than baseline."
 	cost = -3
-	var_changes = list("slowdown" = 0.5)
+	factors = alist(BF_SLOWDOWN = 0.5)
 	banned_species = list(SPECIES_ALRAUNE, SPECIES_SHADEKIN_CREW, SPECIES_DIONA, SPECIES_UNATHI) //These are already this slow.
 	custom_only = FALSE
 
@@ -13,7 +13,7 @@
 	name = "Slowdown, Major"
 	desc = "Allows you to move MUCH slower on average than baseline."
 	cost = -5
-	var_changes = list("slowdown" = 1.0)
+	factors = alist(BF_SLOWDOWN = 1.0)
 	custom_only = FALSE
 	banned_species = list(SPECIES_DIONA) //Diona are even slower than this
 
@@ -49,7 +49,7 @@
 
 /datum/trait/negative/endurance_low/apply(datum/species/S,mob/living/carbon/human/H)
 	..()
-	H.setMaxHealth(S.total_health)
+	H.endurance = S.total_health
 
 /datum/trait/negative/endurance_very_low
 	name = "Low Endurance, Major"
@@ -61,14 +61,14 @@
 
 /datum/trait/negative/endurance_very_low/apply(datum/species/S,mob/living/carbon/human/H)
 	..()
-	H.setMaxHealth(S.total_health)
+	H.endurance = S.total_health
 
 /datum/trait/negative/minor_brute_weak
 	name = "Brute Weakness, Minor"
 	desc = "Increases damage from brute damage sources by 15%"
 	cost = -1
 	custom_only = FALSE
-	var_changes = list("brute_mod" = 1.15)
+	var_changes = list("injury_mod_physical" = 1.15)
 	banned_species = list(SPECIES_TESHARI, SPECIES_TAJARAN, SPECIES_ZADDAT, SPECIES_SHADEKIN_CREW) //These are already this weak.
 
 /datum/trait/negative/brute_weak
@@ -76,7 +76,7 @@
 	desc = "Increases damage from brute damage sources by 20%"
 	cost = -2
 	custom_only = FALSE
-	var_changes = list("brute_mod" = 1.2) // 25% --> 20%
+	var_changes = list("injury_mod_physical" = 1.2) // 25% --> 20%
 	banned_species = list(SPECIES_TESHARI, SPECIES_SHADEKIN_CREW) //These are already this weak.
 
 /datum/trait/negative/brute_weak_plus
@@ -84,25 +84,25 @@
 	desc = "Increases damage from brute damage sources by 50%"
 	cost = -3
 	custom_only = FALSE
-	var_changes = list("brute_mod" = 1.5)
+	var_changes = list("injury_mod_physical" = 1.5)
 
 /datum/trait/negative/minor_burn_weak
 	name = "Burn Weakness, Minor"
 	desc = "Increases damage from burn damage sources by 15%"
 	cost = -1
-	var_changes = list("burn_mod" = 1.15)
+	var_changes = list("injury_mod_thermal" = 1.15)
 
 /datum/trait/negative/burn_weak
 	name = "Burn Weakness"
 	desc = "Increases damage from burn damage sources by 20%"
 	cost = -2
-	var_changes = list("burn_mod" = 1.2)
+	var_changes = list("injury_mod_thermal" = 1.2)
 
 /datum/trait/negative/burn_weak_plus
 	name = "Burn Weakness, Major"
 	desc = "Increases damage from burn damage sources by 50%"
 	cost = -3
-	var_changes = list("burn_mod" = 1.5)
+	var_changes = list("injury_mod_thermal" = 1.5)
 
 /datum/trait/negative/conductive
 	name = "Conductive"
@@ -270,7 +270,7 @@
 	name = "Slowdown, Extreme"
 	desc = "You move EXTREMELY slower than baseline"
 	cost = -8
-	var_changes = list("slowdown" = 4.0)
+	factors = alist(BF_SLOWDOWN = 4.0)
 
 	//Traitgenes
 	is_genetrait = TRUE
@@ -353,7 +353,7 @@
 
 /datum/trait/negative/endurance_glass/apply(datum/species/S,mob/living/carbon/human/H)
 	..()
-	H.setMaxHealth(S.total_health)
+	H.endurance = S.total_health
 
 /datum/trait/negative/reduced_biocompat_minor
 	name = "Reduced Biocompatibility, Minor"
@@ -417,13 +417,13 @@
 	name = "Pain Intolerance"
 	desc = "You are frail and sensitive to pain. You experience 25% more pain from all sources."
 	cost = -2
-	var_changes = list("pain_mod" = 1.2)
+	var_changes = list("injury_mod_pain" = 1.2)
 
 /datum/trait/negative/pain_intolerance_advanced
 	name = "Pain Intolerance, Major"
 	desc = "You are highly sensitive to all sources of pain, and experience 50% more pain."
 	cost = -3
-	var_changes = list("pain_mod" = 1.5) //this makes you extremely vulnerable to most sources of pain, a stunbaton bop or shotgun beanbag will do around 90 agony, almost enough to drop you in one hit.
+	var_changes = list("injury_mod_pain" = 1.5) //this makes you extremely vulnerable to most sources of pain, a stunbaton bop or shotgun beanbag will do around 90 agony, almost enough to drop you in one hit.
 
 	//Traitgenes
 	is_genetrait = TRUE
@@ -768,7 +768,7 @@
 	name = "Radiation Weakness"
 	desc = "You are approximately 50% more susceptible to radiation, and it dissipates slower from your body."
 	cost = -2
-	var_changes = list("radiation_mod" = 1.5, "rad_removal_mod" = 0.5, "rad_levels" = WEAKENED_RADIATION_RESISTANCE)
+	var_changes = list("injury_mod_radiation" = 1.5, "rad_removal_mod" = 0.5, "rad_levels" = WEAKENED_RADIATION_RESISTANCE)
 
 // medical allergens
 /datum/trait/negative/medical_allergy

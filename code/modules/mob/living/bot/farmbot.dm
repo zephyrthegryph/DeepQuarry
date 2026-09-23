@@ -8,8 +8,7 @@
 	desc = "The botanist's best friend."
 	icon = 'icons/obj/chemical_tanks.dmi'
 	icon_state = "farmbot0"
-	health = 50
-	maxHealth = 50
+	endurance = 50
 	req_one_access = list(ACCESS_ROBOTICS, ACCESS_HYDROPONICS, ACCESS_XENOBIOLOGY)
 
 	var/action = "" // Used to update icon

@@ -786,7 +786,6 @@
 	info = span_bold("Our search for the source has brought us to this planet, and we were quickly able to locate a seepage of the anomaly in the area. We set up this base immediately beside it, so that we can best study it. However, we are growing concerned as the material continues to spread beyond it's initial sprouting point and has begun to encroach directly on our buildings.<br><br>Our plan was to move our base further back from the site and study from a distance, but we have begun to detect lifeforms traversing the void. Yellow eyes have been seen watching from beyond the safety of the cave, disappearing and reappearing seemingly at random. We weren't aware that anything could survive this, they could hold the key to our scenario and we are requesting immediate support to research this further.")
 
 
-// === merged from paper_chomp.dm during hard-fork de-suffix (verified no override-order change) ===
 //Used in  maps/overmap/space_pois/dj_31x28
 /obj/item/paper/djstation/poi
 	info = span_bold("Welcome new owner!") + "<BR><BR>You have purchased the latest in listening equipment. The telecommunication setup we created is the best in listening to common and private radio fequencies. Here is a step by step guide to start listening in on those saucy radio channels:<br><ol><li>Equip yourself with a multi-tool</li><li>Use the multitool on each machine, that is the broadcaster, receiver and the relay.</li><li>Turn all the machines on, it has already been configured for you to listen on.</li></ol> Simple as that. Now to listen to the private channels, you'll have to configure the intercoms, located on the front desk. Here is a list of frequencies for you to listen on.<br><ul><li>145.7 - Common Channel</li><li>144.7 - Private AI Channel</li><li>135.9 - Security Channel</li><li>135.7 - Engineering Channel</li><li>135.5 - Medical Channel</li><li>135.3 - Command Channel</li><li>135.1 - Science Channel</li><li>134.7 - Supply Channel</li>"
@@ -873,3 +872,17 @@
 /obj/item/paper/zap_brief
 	info = "To the Magnificent Z.A.P.<BR>A small mining base has been created within our territory by wandless scum. Send them a message from the wizard federation they will not forget. I know your kind is rather fragile, but a group of lightly armed miners should not pose any threat to you at all. Just be warned they have a security cyborg for self defence, you might want to tune your spells to that threat. I look forward to hearing of your success.<BR>Grand Magus Abra the Wonderous"
 	name = "Mission Briefing"
+
+/obj/item/paper/crumpled/bloody/whiskeystation
+	icon_state = "scrap_bloodied"
+	info = "By Gods, Jenkins was right. We dug too deep, and now those things escaped the blast doors. I can hear them pounding on the walls. I hope Hephaestus gets our distress signal so-"
+
+/obj/item/paper/crumpled/whiskeymine
+	name = "Emergency lockdown"
+	icon_state = "scrap"
+	info = "For the love of god, I hate it when they lockdown the deep mine in these damn tests. One of these days I'll give bill a piece of my mind. I'm tired of having to walk all the way back to the station just to hit a damn button."
+
+/obj/item/paper/crumpled/whiskeyhermit
+	name = "Hermit's notes"
+	icon_state = "scrap"
+	info = "I told them over and over! Stop digging. But no, of course not. They kept digging, and digging and digging on down, and now their dead. now we're all dead."

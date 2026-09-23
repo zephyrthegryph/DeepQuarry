@@ -150,19 +150,19 @@
 		var/mob/living/carbon/human/H = M
 		if(!istype(H))
 			to_chat(H, span_danger("You land heavily!"))
-			M.adjustBruteLoss(damage)
+			M.injure(INJURY_BLUNT, damage)
 			continue
 
 		// Try to hurt a specific limb
 		var/obj/item/organ/external/affecting = H.get_organ(pick(BP_ALL))
 		if(affecting)
 			to_chat(M, span_danger("You land heavily on your [affecting.name]!"))
-			affecting.take_damage(damage, used_weapon = "Misadventure")
+			H.injure(INJURY_BLUNT, damage, affecting.organ_tag)
 			return
 
 		// If no limb to hurt, just randomly apply damage
 		to_chat(H, span_danger("You land heavily!"))
-		H.adjustBruteLoss(damage)
+		H.injure(INJURY_BLUNT, damage)
 
 /datum/element/climbable/proc/on_examine(datum/source, mob/user, list/examine_texts)
 	SIGNAL_HANDLER
@@ -191,7 +191,7 @@
 /datum/element/climbable/unanchored_can_break/climb_to(obj/climbed_thing, mob/living/user)
 	. = ..()
 	if(!climbed_thing.anchored)
-		climbed_thing.take_damage(9999) // Fatboy, was originally maxhealth, but that var doesn't exist on everything
+		climbed_thing.take_damage(9999, BRUTE, MELEE) // Fatboy, was originally maxhealth, but that var doesn't exist on everything
 
 
 // Table flipping is important!

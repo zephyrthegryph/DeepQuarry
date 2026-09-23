@@ -106,7 +106,7 @@
 	if(src.imprinted != "empty")
 		to_chat(U, span_danger("Capture failed!") + ": The soul stone has already been imprinted with [src.imprinted]'s mind!")
 		return
-	if ((T.health + T.halloss) > T.get_crit_point() && T.stat != DEAD)
+	if (!T.is_critical() && T.stat != DEAD)
 		to_chat(U, span_danger("Capture failed!") + ": Kill or maim the victim first!")
 		return
 	if(T.client == null)
@@ -169,7 +169,7 @@
 	T.forceMove(src) //put shade in stone
 	T.AddElement(/datum/element/godmode)
 	T.canmove = 0
-	T.health = T.getMaxHealth()
+	T.fully_heal()
 	src.icon_state = "soulstone2"
 
 	to_chat(T, "Your soul has been recaptured by the soul stone, its arcane energies are reknitting your ethereal form")

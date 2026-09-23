@@ -195,7 +195,7 @@
 			continue
 		if(isobj(A))
 			var/obj/O = A
-			O.fire_act(null, 1000, 500)
+			O.fire_act(1000, 500)
 		else if(isliving(A) && get_fuel_amount() > 4)
 			var/mob/living/L = A
 			if(!(L.is_incorporeal()))
@@ -271,7 +271,7 @@
 
 				env.merge(removed)
 
-/obj/structure/bonfire/fire_act(datum/gas_mixture/air, exposed_temperature, exposed_volume)
+/obj/structure/bonfire/fire_act(exposed_temperature, exposed_volume)
 	ignite()
 
 /obj/structure/bonfire/water_act(amount)
@@ -391,7 +391,7 @@
 			continue
 		if(isobj(A))
 			var/obj/O = A
-			O.fire_act(null, 1000, 500)
+			O.fire_act(1000, 500)
 
 /obj/structure/fireplace/update_icon()
 	cut_overlays()
@@ -444,7 +444,7 @@
 
 				env.merge(removed)
 
-/obj/structure/fireplace/fire_act(datum/gas_mixture/air, exposed_temperature, exposed_volume)
+/obj/structure/fireplace/fire_act(exposed_temperature, exposed_volume)
 	ignite()
 
 /obj/structure/fireplace/water_act(amount)

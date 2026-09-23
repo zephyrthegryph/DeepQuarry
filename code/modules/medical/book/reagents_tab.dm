@@ -1,10 +1,10 @@
 // DQ Medical Reference — Reagents tab builder.
 //
 // For each reagent the encyclopedia surfaces:
-//   - what conditions it cures (cured_by inversion)
-//   - what conditions it worsens (worsened_by inversion)
+//   - what conditions it cures (treatment tags + cured_by, inverted)
+//   - what conditions it worsens (worsened tags + worsened_by, inverted)
 //   - side-effect conditions it spawns above a threshold (single-chem
-//     `caused_by_chems` entries on /datum/medical_issue/condition)
+//     `caused_by_chems` entries on /datum/affliction)
 //   - interaction conditions it participates in (multi-chem
 //     `caused_by_chems` entries)
 //   - the overdose condition (if any) — caused_by_chems with subcategory
@@ -21,27 +21,29 @@
 	// set — anything they reference (including via the recipe graph)
 	// is medically relevant; anything not reachable from the seed
 	// isn't and gets filtered out below.
-	var/list/datum/medical_issue/condition/chem_caused = list()
-	for(var/T in subtypesof(/datum/medical_issue/condition))
-		var/datum/medical_issue/condition/proto = dq_proto(T)
-		if(proto.cured_by)
-			for(var/id in proto.cured_by)
-				LAZYINITLIST(by_id[id])
-				LAZYINITLIST(by_id[id]["cures"])
-				by_id[id]["cures"] += list(list(
-					"id"   = "[T]",
-					"name" = proto.name,
-					"band" = dq_describe_cure_strength(proto.cured_by[id]),
-				))
-		if(proto.worsened_by)
-			for(var/id in proto.worsened_by)
-				LAZYINITLIST(by_id[id])
-				LAZYINITLIST(by_id[id]["worsens"])
-				by_id[id]["worsens"] += list(list(
-					"id"   = "[T]",
-					"name" = proto.name,
-					"band" = dq_describe_worsen_strength(proto.worsened_by[id]),
-				))
+	var/list/datum/affliction/chem_caused = list()
+	for(var/T in dq_catalogued_affliction_types())
+		var/datum/affliction/proto = dq_proto(T)
+		// Tag-resolved: a reagent lists every condition any of its
+		// treatment tags reaches, not just hand-authored pairings.
+		var/list/effective_cures = proto.effective_cures()
+		for(var/id in effective_cures)
+			LAZYINITLIST(by_id[id])
+			LAZYINITLIST(by_id[id]["cures"])
+			by_id[id]["cures"] += list(list(
+				"id"   = "[T]",
+				"name" = proto.name,
+				"band" = dq_describe_cure_strength(effective_cures[id]),
+			))
+		var/list/effective_worsens = proto.effective_worsens()
+		for(var/id in effective_worsens)
+			LAZYINITLIST(by_id[id])
+			LAZYINITLIST(by_id[id]["worsens"])
+			by_id[id]["worsens"] += list(list(
+				"id"   = "[T]",
+				"name" = proto.name,
+				"band" = dq_describe_worsen_strength(effective_worsens[id]),
+			))
 		if(length(proto.caused_by_chems))
 			chem_caused += proto
 			for(var/id in proto.caused_by_chems)
@@ -113,6 +115,9 @@
 		entry["overdose"]        = _dq_reagent_overdose_for(id, chem_caused)
 		entry["side_effects"]    = _dq_reagent_side_effects_for(id, chem_caused)
 		entry["interactions"]    = _dq_reagent_interactions_for(id, chem_caused)
+		// The reagent's own body factors, documented straight from its table.
+		var/datum/reagent/R = SSchemistry?.chemical_reagents?[id]
+		entry["effects"]         = body_factor_describe(R?.factors, " at a standard dose")
 		out += list(entry)
 	return out
 
@@ -208,13 +213,13 @@
 	return entry
 
 
-/// Overdose info: prefers an authored /datum/medical_issue/condition with
+/// Overdose info: prefers an authored /datum/affliction with
 /// subcategory "Overdose" that the reagent is the (single) cause of.
 /// Falls back to the upstream `overdose` threshold without a condition
 /// link if no overdose condition is authored — that lets the encyclopedia
 /// still warn medics about the threshold for chems we haven't documented.
-/proc/_dq_reagent_overdose_for(reagent_id, list/datum/medical_issue/condition/chem_caused)
-	for(var/datum/medical_issue/condition/proto as anything in chem_caused)
+/proc/_dq_reagent_overdose_for(reagent_id, list/datum/affliction/chem_caused)
+	for(var/datum/affliction/proto as anything in chem_caused)
 		if(proto.subcategory != "Overdose")
 			continue
 		if(length(proto.caused_by_chems) != 1)
@@ -237,16 +242,16 @@
 					"name" = _dq_condition_name(target_type),
 				))
 			entry["drains"] = drains
-		// Combat / utility upsides: the od_boost keys, in plain text
-		// readable form. Only emit when the condition actually has any.
-		if(length(proto.od_boost))
-			var/list/boosts = list()
-			for(var/key in proto.od_boost)
-				boosts += list(list(
-					"key"      = key,
-					"strength" = proto.od_boost[key],
-				))
-			entry["boosts"] = boosts
+		// What the overdose does to the body (its body factors), in plain
+		// text. Staged overdoses list their worst stage's table.
+		var/alist/od_factors = proto.factors
+		var/list/od_stages = proto.get_stages()
+		if(length(od_stages))
+			var/list/last_stage = od_stages[od_stages[length(od_stages)]]
+			od_factors = last_stage["factors"] || od_factors
+		var/list/effects = body_factor_describe(od_factors, " at peak")
+		if(length(effects))
+			entry["effects"] = effects
 		return entry
 	// Fall back to the bare upstream OD threshold so the encyclopedia
 	// at least flags "this reagent has a dangerous threshold".
@@ -260,9 +265,9 @@
 
 /// Single-chem (= side effect) conditions that name this reagent as
 /// their sole trigger. Returns one entry per condition.
-/proc/_dq_reagent_side_effects_for(reagent_id, list/datum/medical_issue/condition/chem_caused)
+/proc/_dq_reagent_side_effects_for(reagent_id, list/datum/affliction/chem_caused)
 	var/list/out = list()
-	for(var/datum/medical_issue/condition/proto as anything in chem_caused)
+	for(var/datum/affliction/proto as anything in chem_caused)
 		if(proto.subcategory == "Overdose")
 			continue
 		if(length(proto.caused_by_chems) != 1)
@@ -281,9 +286,9 @@
 /// Multi-chem (= interaction) conditions that include this reagent.
 /// Each entry names the other reagent(s) required and the resulting
 /// condition.
-/proc/_dq_reagent_interactions_for(reagent_id, list/datum/medical_issue/condition/chem_caused)
+/proc/_dq_reagent_interactions_for(reagent_id, list/datum/affliction/chem_caused)
 	var/list/out = list()
-	for(var/datum/medical_issue/condition/proto as anything in chem_caused)
+	for(var/datum/affliction/proto as anything in chem_caused)
 		if(length(proto.caused_by_chems) < 2)
 			continue
 		if(!(reagent_id in proto.caused_by_chems))

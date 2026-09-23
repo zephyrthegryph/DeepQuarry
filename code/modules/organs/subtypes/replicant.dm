@@ -168,15 +168,15 @@
 
 	var/damage_tally = 0
 	var/pain_tally = 0
-	damage_tally += owner.getBruteLoss()
-	damage_tally += owner.getFireLoss()
-	pain_tally += owner.getHalLoss()
+	damage_tally += owner.injury_load(INJURY_CATEGORY_PHYSICAL)
+	damage_tally += owner.injury_load(INJURY_CATEGORY_THERMAL)
+	pain_tally += owner.current_pain()
 
 	if(((damage_tally >= 50 || prev_damage_tally >= 50) && prev_damage_tally - damage_tally < 0) || pain_tally >= 60)
 		if(world.time > last_activation_time + 60 SECONDS)
 			last_activation_time = world.time
 			owner.add_modifier(/datum/modifier/berserk, 20 SECONDS)
-			take_damage(5)
+			apply_lesion_damage(5)
 
 /obj/item/organ/internal/heart/replicant/rage/crew/handle_organ_proc_special()
 	if(!owner)
@@ -184,15 +184,15 @@
 
 	var/damage_tally = 0
 	var/pain_tally = 0
-	damage_tally += owner.getBruteLoss()
-	damage_tally += owner.getFireLoss()
-	pain_tally += owner.getHalLoss()
+	damage_tally += owner.injury_load(INJURY_CATEGORY_PHYSICAL)
+	damage_tally += owner.injury_load(INJURY_CATEGORY_THERMAL)
+	pain_tally += owner.current_pain()
 
 	if(((damage_tally >= 50 || prev_damage_tally >= 50) && prev_damage_tally - damage_tally < 0) || pain_tally >= 60)
 		if(world.time > last_activation_time + 60 MINUTES) //Can only be activated once every 60 minutes to prevent it being able to be spammed
 			last_activation_time = world.time
 			owner.add_modifier(/datum/modifier/berserk, 40 SECONDS) //Lasts a little longer so that it can actually get some use seeing as it activates so infrequently
-			take_damage(5)
+			apply_lesion_damage(5)
 
 /obj/item/organ/internal/lungs/replicant/mending
 	name = "replicant hive lungs"
@@ -210,7 +210,7 @@
 		for(var/o_tag in repair_list)
 			var/obj/item/organ/O = owner.internal_organs_by_name[o_tag]
 			if(O)
-				O.take_damage(-1 * modifier)
+				owner.mend(TREAT_RESTORATION, 1 * modifier, O)
 
 /obj/item/organ/internal/lungs/replicant/mending/crew/handle_organ_proc_special()
 	if(!owner)
@@ -222,4 +222,4 @@
 		for(var/o_tag in repair_list)
 			var/obj/item/organ/O = owner.internal_organs_by_name[o_tag]
 			if(O)
-				O.take_damage(-0.01 * modifier) //Very very slow regen, but still cool flavour
+				owner.mend(TREAT_RESTORATION, 0.01 * modifier, O) //Very very slow regen, but still cool flavour

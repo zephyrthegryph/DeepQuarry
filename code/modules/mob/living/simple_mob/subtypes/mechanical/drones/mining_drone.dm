@@ -27,8 +27,7 @@
 
 	faction = FACTION_MALF_DRONE
 
-	maxHealth = 50
-	health = 50
+	endurance = 50
 	movement_cooldown = 1.5
 	// dq_get_hovering(src) type-default moved to GLOB.dq_hovering_by_type
 
@@ -201,17 +200,14 @@
 	stand_down_sound = 'sound/mob/robots/dronelosttarget.ogg'
 /* Combat refactor walkback
 /mob/living/simple_mob/mechanical/combat_drone
-	maxHealth = 25
-	health = 25
+	endurance = 25
 
 /mob/living/simple_mob/mechanical/mining_drone
-	maxHealth = 25
-	health = 25
+	endurance = 25
 
 //Are this things close enough to drones?
 /mob/living/simple_mob/mechanical/viscerator
-	maxHealth = 7
-	health = 7
+	endurance = 7
 */
 /obj/item/shield_projector/rectangle/automatic/drone
 	shield_health = 75

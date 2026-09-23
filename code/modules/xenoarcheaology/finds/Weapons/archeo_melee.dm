@@ -105,7 +105,7 @@
 		user.drop_from_inventory(src, user.loc)
 		user.Weaken(5)
 		throw_at(get_edge_target_turf(src,pick(GLOB.alldirs)),rand(1,10),5)
-		user.apply_damage(rand(force/2, force), BURN, zone, FALSE)
+		user.injure(INJURY_BURN, rand(force/2, force), zone, src)
 		return ITEM_INTERACT_SUCCESS
 
 	..() //We hit them!
@@ -117,8 +117,8 @@
 		to_chat(user, span_cult("You feel your [affecting.name] tearing from the inside out as the sword takes its blood price!"))
 
 		var/damage_to_apply = rand(1,3)
-		affecting.take_damage(damage_to_apply, sharp = FALSE, edge = FALSE) //Careful...Too much use and you might break your arm! This doesn't make you bleed because the sword is slurping that up.
-		if(((affecting.brute_dam + affecting.burn_dam) >= affecting.max_damage) && prob((affecting.brute_dam + affecting.burn_dam))) //Don't just splint  your arm and keep using it, because you'll lose it!
+		H.injure(INJURY_BLUNT, damage_to_apply, affecting, src) //Careful...Too much use and you might break your arm! This doesn't make you bleed because the sword is slurping that up.
+		if(((affecting.get_trauma() + affecting.get_burn()) >= affecting.max_damage) && prob((affecting.get_trauma() + affecting.get_burn()))) //Don't just splint  your arm and keep using it, because you'll lose it!
 			user.visible_message(span_cult("[H]'s arm is engulfed in dark flames!"))
 			affecting.droplimb(TRUE, DROPLIMB_BURN) //And by hacked off, we mean melted into ashes... It's fire, so it's a clean loss.
 

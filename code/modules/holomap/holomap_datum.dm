@@ -30,11 +30,3 @@
 	legend.pixel_y = 7 * WORLD_ICON_SIZE
 	station_map.add_overlay(legend)
 
-// TODO - Strategic Holomap support
-// /datum/station_holomap/strategic/initialize_holomap(var/turf/T, var/isAI=null, var/mob/user=null)
-// 	..()
-// 	station_map = image(SSholomaps.extraMiniMaps[HOLOMAP_EXTRA_STATIONMAP_STRATEGIC])
-// 	legend = image('icons/effects/64x64.dmi', "strategic")
-// 	legend.pixel_x = 3*WORLD_ICON_SIZE
-// 	legend.pixel_y = 3*WORLD_ICON_SIZE
-// 	station_map.add_overlay(legend)

@@ -17,14 +17,12 @@
  *		Stick Horse
  */
 
-
 /obj/item/toy
 	throwforce = 0
 	throw_speed = 4
 	throw_range = 20
 	force = 0
 	drop_sound = 'sound/items/drop/gloves.ogg'
-
 
 /*
  * Balloons
@@ -623,7 +621,6 @@
 	\"Abandoned for Escalation, the patrolman grumbles.\""
 	icon_state = "metro_patrolman"
 
-
 /*
  * Plushies
  */
@@ -645,7 +642,6 @@
 /obj/item/toy/plushie/carp/attack(mob/living/M, mob/living/user, target_zone, attack_modifier)
 	playsound(src, squeeze_sound, 20, 1)	// Play bite sound in local area
 	return ..()
-
 
 /obj/random/carp_plushie
 	name = "Random Carp Plushie"
@@ -741,7 +737,6 @@
 	if(phrase) //There was no indiciation you had to use disarm intent to make it speak...So now it speaks if you touch it at all!
 		atom_say("[phrase]")
 
-
 /obj/structure/plushie/attackby(obj/item/I as obj, mob/user as mob)
 	if(istype(I, /obj/item/threadneedle) && opened)
 		to_chat(user, "You sew the hole in [src].")
@@ -766,7 +761,6 @@
 			return
 		else
 			to_chat(user, "You open a small incision in [src]. You can place tiny items inside.")
-
 
 	..()
 
@@ -906,7 +900,6 @@
 		user.visible_message(span_notice("[user] makes \the [I] kiss \the [src]!."), \
 		span_notice("You make \the [I] kiss \the [src]!."))
 		return
-
 
 	if(istype(I, /obj/item/threadneedle) && opened)
 		to_chat(user, "You sew the hole underneath [src].")
@@ -1375,16 +1368,6 @@
 		cooldown = 1
 		VARSET_IN(src, cooldown, FALSE, 3 SECONDS)
 
-/* NYET.
-/obj/item/toddler
-	icon_state = "toddler"
-	name = "toddler"
-	desc = "This baby looks almost real. Wait, did it just burp?"
-	force = 5
-	w_class = ITEMSIZE_LARGE
-	slot_flags = SLOT_BACK
-*/
-
 //This should really be somewhere else but I don't know where. w/e
 
 /obj/item/inflatable_duck
@@ -1511,8 +1494,6 @@
 	desc = "Oh no, it's a ghost! Oh wait, it's just a balloon. Phew!"
 	icon_state = "ghostballoon"
 
-
-// === merged from toys_ch.dm during hard-fork de-suffix (verified no override-order change) ===
 /obj/item/toy/figure/bounty_hunter
 	name = "Space bounty hunter action figure"
 	desc = "A \"Space Life\" brand bounty hunter action figure."
@@ -1591,8 +1572,6 @@
 
 	return 0
 
-
-// === merged from toys_vr.dm during hard-fork de-suffix (verified no override-order change) ===
 /* Virgo Toys!
  * Contains:
  *		Mistletoe
@@ -1619,7 +1598,6 @@
  *		Action figures
  *		Desk toys
  */
-
 
 /*
  * Mistletoe
@@ -1780,7 +1758,6 @@
 	icon_state = "plushie_vox"
 	pokephrase = "Skreee!"
 	squeeze_sound = 'sound/voice/shriek1.ogg'
-
 
 /obj/item/toy/plushie/ipc
 	name = "IPC plushie"
@@ -2453,7 +2430,6 @@
 		s.set_up(5, 1, src)
 		s.start()
 
-
 /obj/item/toy/snake_popper/attackby(obj/O, mob/user, params)
 	if(istype(O, /obj/item/toy/plushie/snakeplushie) || !real)
 		if(popped && !real)
@@ -2840,3 +2816,112 @@
 	desc = "A soft plushie of a shiny golden dragon. Made of Real* gold!"
 	icon_state = "goldeasterndragon"
 	pokephrase = "Rawr~!"
+
+/obj/item/toy/plushie/teshari/strix
+	name = "Strix Hades"
+	desc = "This is Strix Hades the plushie Avali. Very soft, with a pompom on the tail. The toy is made well, as if alive. Looks like he is sleeping. Shhh!"
+	icon_state = "strixplush"
+	item_state = "strixplush"
+	slot_flags = SLOT_BACK | SLOT_HEAD
+	pokephrase = "Weh!"
+	icon = 'icons/obj/toy_yw.dmi'
+	item_icons = list(
+		slot_l_hand_str = 'icons/mob/items/lefthand_toys.dmi',
+		slot_r_hand_str = 'icons/mob/items/righthand_toys.dmi',
+		slot_back_str = 'icons/mob/toy_worn.dmi',
+		slot_head_str = 'icons/mob/toy_worn.dmi')
+
+/obj/item/toy/plushie/teshari/strix/rename_plushie()
+	set name = "Name Plushie"
+	set category = "Object"
+	set desc = "Give your plushie a cute name!"
+	var/mob/M = usr
+	if(!M.mind)
+		return 0
+
+	if(src && !M.stat && in_range(M,src))
+		to_chat(M, "You cannot rename Strix Hades! You hug him anyway.")
+		return 1
+
+/obj/item/toy/plushie/teshari/eili
+	name = "Eili"
+	desc = "This is a plushie that resembles an Avali named Eili. The ammount of detail makes it almost look lifelike! Looks like she is sleeping. Shhh!"
+	icon_state = "jeans_eiliplush"
+	item_state = "jeans_eiliplush"
+	slot_flags = SLOT_BACK | SLOT_HEAD
+	pokephrase = "Weh!"
+	icon = 'icons/vore/custom_items_yw.dmi'
+	item_icons = list(
+		slot_l_hand_str = 'icons/vore/custom_items_left_hand_yw.dmi',
+		slot_r_hand_str = 'icons/vore/custom_items_right_hand_yw.dmi',
+		slot_back_str = 'icons/vore/custom_onmob_yw.dmi',
+		slot_head_str = 'icons/vore/custom_onmob_yw.dmi')
+
+/obj/item/toy/plushie/teshari/eili/rename_plushie()
+	set name = "Name Plushie"
+	set category = "Object"
+	set desc = "Give your plushie a cute name!"
+	var/mob/M = usr
+	if(!M.mind)
+		return 0
+
+	if(src && !M.stat && in_range(M,src))
+		to_chat(M, "You cannot rename Eili! You hug her anyway.")
+		return 1
+
+/obj/item/toy/plushie/teshari/_yw
+	name = "lifelike teshari plush"
+	desc = "This is a plush teshari. Very soft. The ammount of detail makes it almost look lifelike! Looks like it is sleeping. Shhh!"
+	icon_state = "teshariplushie_brown"
+	item_state = "teshariplushie_brown"
+	pokephrase = "Rya!"
+	slot_flags = SLOT_BACK | SLOT_HEAD
+	icon = 'icons/obj/toy_yw.dmi'
+	item_icons = list(
+		slot_l_hand_str = 'icons/mob/items/lefthand_toys.dmi',
+		slot_r_hand_str = 'icons/mob/items/righthand_toys.dmi',
+		slot_back_str = 'icons/mob/toy_worn.dmi',
+		slot_head_str = 'icons/mob/toy_worn.dmi')
+
+/obj/item/toy/plushie/teshari/w_yw
+	name = "lifelike teshari plush"
+	desc = "This is a plush teshari. Very soft. The ammount of detail makes it almost look lifelike! Looks like it is sleeping. Shhh!"
+	icon_state = "teshariplushie_white"
+	item_state = "teshariplushie_white"
+	pokephrase = "Rya!"
+	slot_flags = SLOT_BACK | SLOT_HEAD
+	icon = 'icons/obj/toy_yw.dmi'
+	item_icons = list(
+		slot_l_hand_str = 'icons/mob/items/lefthand_toys.dmi',
+		slot_r_hand_str = 'icons/mob/items/righthand_toys.dmi',
+		slot_back_str = 'icons/mob/toy_worn.dmi',
+		slot_head_str = 'icons/mob/toy_worn.dmi')
+
+/obj/item/toy/plushie/teshari/b_yw
+	name = "lifelike teshari plush"
+	desc = "This is a plush teshari. Very soft. The ammount of detail makes it almost look lifelike! Looks like it is sleeping. Shhh!"
+	icon_state = "teshariplushie_black"
+	item_state = "teshariplushie_black"
+	pokephrase = "Rya!"
+	slot_flags = SLOT_BACK | SLOT_HEAD
+	icon = 'icons/obj/toy_yw.dmi'
+	item_icons = list(
+		slot_l_hand_str = 'icons/mob/items/lefthand_toys.dmi',
+		slot_r_hand_str = 'icons/mob/items/righthand_toys.dmi',
+		slot_back_str = 'icons/mob/toy_worn.dmi',
+		slot_head_str = 'icons/mob/toy_worn.dmi',
+		slot_ear_str = 'icons/mob/toy_worn.dmi')
+
+/obj/item/toy/plushie/teshari/y_yw
+	name = "lifelike teshari plush"
+	desc = "This is a plush teshari. Very soft. The ammount of detail makes it almost look lifelike! Looks like it is sleeping. Shhh!"
+	icon_state = "teshariplushie_yellow"
+	item_state = "teshariplushie_yellow"
+	pokephrase = "Rya!"
+	slot_flags = SLOT_BACK | SLOT_HEAD
+	icon = 'icons/obj/toy_yw.dmi'
+	item_icons = list(
+		slot_l_hand_str = 'icons/mob/items/lefthand_toys.dmi',
+		slot_r_hand_str = 'icons/mob/items/righthand_toys.dmi',
+		slot_back_str = 'icons/mob/toy_worn.dmi',
+		slot_head_str = 'icons/mob/toy_worn.dmi')

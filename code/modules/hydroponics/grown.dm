@@ -15,7 +15,6 @@
 	var/potency = -1
 	special_handling = TRUE
 
-
 /obj/item/reagent_containers/food/snacks/grown/Initialize(mapload, planttype)
 	. = ..()
 
@@ -328,23 +327,6 @@
 		GLOB.seed_planted_shift_roundstat++
 		qdel(src)
 		return
-
-	/*
-	if(seed.kitchen_tag)
-		switch(seed.kitchen_tag)
-			if(PLANT_SHAND)
-				var/obj/item/stack/medical/bruise_pack/tajaran/poultice = new /obj/item/stack/medical/bruise_pack/tajaran(user.loc)
-				poultice.heal_brute = potency
-				to_chat(user, span_notice("You mash the leaves into a poultice."))
-				qdel(src)
-				return
-			if(PLANT_MTEAR)
-				var/obj/item/stack/medical/ointment/tajaran/poultice = new /obj/item/stack/medical/ointment/tajaran(user.loc)
-				poultice.heal_burn = potency
-				to_chat(user, span_notice("You mash the petals into a poultice."))
-				qdel(src)
-				return
-	*/
 
 /obj/item/reagent_containers/food/snacks/grown/pickup(mob/user)
 	..()

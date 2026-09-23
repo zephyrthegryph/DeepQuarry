@@ -231,7 +231,6 @@
 	return
 
 
-// === merged from food_ch.dm during hard-fork de-suffix (verified no override-order change) ===
 //////////////////////////////////////////////
 ////////////////C U B E S////////////////////
 ////////////////////////////////////////////
@@ -256,6 +255,5 @@
 	result_amount = 15
 
 
-// === merged from food_vr.dm during hard-fork de-suffix (verified no override-order change) ===
 /datum/decl/chemical_reaction/instant/food/syntiflesh
 	required_reagents = list(REAGENT_ID_BLOOD = 5, REAGENT_ID_CLONEXADONE = 1)

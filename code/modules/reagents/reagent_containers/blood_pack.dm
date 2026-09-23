@@ -119,7 +119,6 @@
 	. = ..()
 
 
-// === merged from blood_pack_vr.dm during hard-fork de-suffix (verified no override-order change) ===
 /obj/item/reagent_containers/blood/attack_self(mob/living/user)
 	. = ..(user)
 	if(.)

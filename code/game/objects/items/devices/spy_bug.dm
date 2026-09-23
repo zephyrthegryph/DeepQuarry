@@ -248,20 +248,3 @@
 	name = "DV-136ZB #[rand(1000,9999)]"
 	c_tag = name
 
-/* //These were originally supposed to have radios in them. Doesn't work.
-/obj/item/radio/bug
-	listening = 0 //turn it on first
-	frequency = SEC_FREQ //sec comms
-	broadcasting = 0
-	canhear_range = 1
-	name = "camera bug device"
-	icon_state = "syn_cypherkey"
-
-/obj/item/radio/bug/spy
-	listening = 0
-	frequency = 1473
-	broadcasting = 0
-	canhear_range = 1
-	name = "spy device"
-	icon_state = "syn_cypherkey"
-	*/

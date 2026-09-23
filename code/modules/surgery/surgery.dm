@@ -142,6 +142,9 @@
 	if (user.a_intent == I_HURT)	//check for Hippocratic Oath
 		//Insert intentional hurt medical code here.
 		return FALSE
+	if(user.action_blocked(ACTION_BLOCK_SURGERY))
+		to_chat(user, span_warning("Your hands and head aren't steady enough to operate right now."))
+		return TRUE
 	var/zone = user.zone_sel.selecting
 	if(zone in M.op_stage.in_progress) //Can't operate on someone repeatedly.
 		to_chat(user, span_warning("You can't operate on this area while surgery is already in progress."))

@@ -72,25 +72,27 @@
 			return
 
 		var/newamt
+		var/kind
+		var/list/heal_tags
 		switch(Text)
 			if("brute")
-				L.adjustBruteLoss(amount)
-				newamt = L.getBruteLoss()
+				kind = INJURY_BLUNT
+				heal_tags = list(TREAT_TISSUE_REPAIR, TREAT_BONE_REPAIR, TREAT_PLATING_REPAIR)
 			if("fire")
-				L.adjustFireLoss(amount)
-				newamt = L.getFireLoss()
+				kind = INJURY_BURN
+				heal_tags = list(TREAT_BURN_CARE, TREAT_WIRING_REPAIR)
 			if("toxin")
-				L.adjustToxLoss(amount)
-				newamt = L.getToxLoss()
+				kind = INJURY_TOXIN
+				heal_tags = list(TREAT_ANTITOXIN)
 			if("oxygen")
-				L.adjustOxyLoss(amount)
-				newamt = L.getOxyLoss()
+				kind = INJURY_ASPHYXIA
+				heal_tags = list(TREAT_OXYGENATION)
 			if("brain")
-				L.adjustBrainLoss(amount)
-				newamt = L.getBrainLoss()
+				kind = INJURY_NEURAL
+				heal_tags = list(TREAT_NEURAL_REPAIR, TREAT_SYSTEM_RESTORE)
 			if("clone")
-				L.adjustCloneLoss(amount)
-				newamt = L.getCloneLoss()
+				kind = INJURY_CELLULAR
+				heal_tags = list(TREAT_GENETIC_REPAIR)
 			//if("brain")
 			//	L.adjustOrganLoss(ORGAN_SLOT_BRAIN, amount)
 			//	newamt = L.get_organ_loss(ORGAN_SLOT_BRAIN)
@@ -100,6 +102,12 @@
 			else
 				to_chat(usr, "You caused an error. DEBUG: Text:[Text] Mob:[L]", confidential = TRUE)
 				return
+		if(amount > 0)
+			L.injure(kind, amount, flags = INJURE_IGNORE_RESISTANCE)
+		else if(amount < 0)
+			for(var/tag in heal_tags)
+				L.mend(tag, -amount)
+		newamt = L.injury_load(injury_category(kind))
 
 		if(amount != 0)
 			var/log_msg = "[key_name(usr)] dealt [amount] amount of [Text] damage to [key_name(L)]"

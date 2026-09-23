@@ -235,13 +235,13 @@ two tiles on initialization, and which way a cliff is facing may change during m
 		visible_message(span_danger("\The [L] hits \the [T]!"))
 
 		// The bigger they are, the harder they fall.
-		// They will take at least 20 damage at the minimum, and tries to scale up to 40% of their max health.
-		// This scaling is capped at 100 total damage, which occurs if the thing that fell has more than 250 health.
-		var/damage = between(20, L.getMaxHealth() * 0.4, 100)
+		// They will take at least 20 damage at the minimum, and tries to scale up to 40% of their endurance.
+		// This scaling is capped at 100 total damage, which occurs if the thing that fell has more than 250 endurance.
+		var/damage = between(20, L.get_endurance() * 0.4, 100)
 		var/target_zone = ran_zone()
 		var/blocked = L.run_armor_check(target_zone, "melee") * harm
 
-		L.apply_damage(damage * harm, BRUTE, target_zone, blocked, used_weapon=src)
+		L.injure(INJURY_BLUNT, damage * harm, target_zone, src, blocked)
 
 		// Now fall off more cliffs below this one if they exist.
 		var/obj/structure/cliff/bottom_cliff = locate() in T

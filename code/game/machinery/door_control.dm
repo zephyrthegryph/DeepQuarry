@@ -285,7 +285,6 @@
 	return 1 //Is always able to be used
 
 
-// === merged from door_control_chomp.dm during hard-fork de-suffix (verified no override-order change) ===
 /obj/machinery/button/remote/blast_door/single_use
 	name = "single use button"
 	var/has_been_pressed = FALSE

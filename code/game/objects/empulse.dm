@@ -25,7 +25,8 @@
 	if(third_range > fourth_range)
 		fourth_range = third_range
 
-	for(var/mob/M in range(first_range, epicenter))
+	// One sound for the pulse; playsound already reaches every listener in range (Q6).
+	if(locate(/mob) in range(first_range, epicenter))
 		playsound(epicenter, 'sound/effects/EMPulse.ogg', 100, TRUE)
 
 	for(var/atom/T in spiral_range_turfs(fourth_range, epicenter))

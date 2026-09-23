@@ -28,10 +28,10 @@
 			if(prob(1))
 				to_chat(affected_mob, span_danger("Your muscles ache."))
 				if(prob(20))
-					affected_mob.apply_damage(1)
+					affected_mob.injure(INJURY_PAIN, 1) // muscle aches
 			if(prob(1))
 				to_chat(affected_mob, span_danger("Your stomach hurts."))
-				affected_mob.adjustToxLoss(1)
+				affected_mob.injure(INJURY_TOXIN, 1)
 		if(3)
 			if(affected_mob.lying && prob(15))
 				to_chat(affected_mob, span_notice("You feel better."))
@@ -44,8 +44,8 @@
 			if(prob(1))
 				to_chat(affected_mob, span_danger("Your muscles ache."))
 				if(prob(20))
-					affected_mob.apply_damage(1)
+					affected_mob.injure(INJURY_PAIN, 1) // muscle aches
 			if(prob(1))
 				to_chat(affected_mob, span_danger("Your stomach hurts."))
-				affected_mob.adjustToxLoss(1)
+				affected_mob.injure(INJURY_TOXIN, 1)
 	return

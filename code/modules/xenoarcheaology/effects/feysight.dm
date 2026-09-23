@@ -15,7 +15,7 @@
 
 	if(L.add_modifier(/datum/modifier/feysight, 30 SECONDS))
 		to_chat(L, span_alien("An otherworldly feeling seems to enter your mind, and you feel at peace."))
-		L.adjustHalLoss(10)
+		L.injure(INJURY_PAIN, 10)
 		to_chat(L, span_danger("The inside of your head hurts..."))
 		return TRUE
 	else

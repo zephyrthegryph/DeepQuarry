@@ -1,21 +1,3 @@
-/turf/simulated/floor/outdoors/grass/smokestar
-	name = "strange moss"
-	icon = 'icons/turf/falseplanets.dmi'
-	icon_state = "moss"
-	flags = TURF_CAN_DIG_SHOVEL
-/*unsure how needed this variable will need to be changed
-	turf_layers = list(
-		/turf/simulated/floor/outdoors/rocks,
-		/turf/simulated/floor/outdoors/dirt
-		)
-*/
-	grass_chance = 15
-
-	animal_chance = 0.1
-
-	animals = "smokestar"
-
-	grass = "smokestar"
 
 
 /obj/structure/flora/opalflowers

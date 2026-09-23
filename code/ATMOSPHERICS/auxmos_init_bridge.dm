@@ -9,11 +9,8 @@
 // is created before SSair inits, so the lazy path is load-bearing — see the
 // note above it).
 //
-// auxmos_bindings.dm (the generated reference sheet of every call_ext route)
-// is intentionally NOT #include'd: it would re-declare procs already defined
-// in gasmixtures/gas_mixture.dm (duplicate-definition compile error).
-// DO NOT add proc declarations that conflict with gas_mixture.dm here.
-// Generation source: verdigris/atmos/bindings.dm (selected procs only).
+// Only the routes DeepQuarry needs are declared here, by hand. Do not add proc
+// declarations that conflict with gasmixtures/gas_mixture.dm.
 
 
 /// Registers gases, and get reaction infos for auxmos, only call when ssair is initing.
@@ -74,7 +71,7 @@ GLOBAL_LIST_EMPTY(auxmos_seen_errors)
 // gases by /datum/gas TYPE PATHS (gases[] keys, caller args) — so we register
 // each gas under its type-path TEXT ("/datum/gas/plasma"). DM gas_mixture
 // wrappers then pass the arg stringified ("[gas_type]") and auxmos resolves it
-// via get_string. See doc/atmos_migration.md.
+// via get_string.
 
 /// Lightweight metadata datum shaped for auxmos hook_register_gas.
 /// NOTE: auxmos reads combustion vars via byond_string!("oxidation_temperature")

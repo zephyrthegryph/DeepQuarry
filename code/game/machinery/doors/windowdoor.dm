@@ -171,7 +171,7 @@
 			visible_message(span_danger("[user] smashes against the [src.name]."), 1)
 			user.do_attack_animation(src)
 			user.setClickCooldown(user.get_attack_speed())
-			take_damage(25)
+			take_damage(25, BRUTE, MELEE)
 			return
 
 	if (src.allowed(user))
@@ -218,7 +218,7 @@
 			playsound(src, 'sound/effects/Glasshit.ogg', 75, 1)
 			visible_message(span_danger("[src] was hit by [I]."))
 			if(I.damtype == BRUTE || I.damtype == BURN)
-				take_damage(aforce)
+				take_damage(aforce, I.damtype, MELEE)
 			return
 
 

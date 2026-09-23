@@ -56,13 +56,6 @@
 	set_trait(TRAIT_POTENCY,10)
 	set_trait(TRAIT_YIELD,2)
 
-//Commenting out because self_harvesting can be troublesome.
-//  /datum/seed/apple/falling
-// 	name = "fallingapple"
-// 	mutants = list("poisonapple")
-// 	can_self_harvest = 1
-// 	chems = list(REAGENT_ID_NUTRIMENT = list(1,5),REAGENT_ID_APPLEJUICE = list(5,10),REAGENT_ID_CYANIDE = list(1,3))
-
 /datum/seed/wheat/meatwheat
 	name = PLANT_MEATWHEAT
 	seed_name = PLANT_MEATWHEAT
@@ -152,9 +145,6 @@
 	set_trait(TRAIT_PRODUCT_COLOUR, "#FF9A85")
 	set_trait(TRAIT_PLANT_ICON,"tree2")
 
-
-// === merged from seed_datums_vr.dm during hard-fork de-suffix (verified no override-order change) ===
-
 //Vore Originals
 
 /datum/seed/size
@@ -175,7 +165,6 @@
 	set_trait(TRAIT_PRODUCT_ICON,"mushroom3")
 	set_trait(TRAIT_PRODUCT_COLOUR,"#DA00DA")
 	set_trait(TRAIT_PLANT_ICON,"tree")
-
 
 /datum/seed/size/megam
 	name = PLANT_MEGAM
@@ -271,3 +260,23 @@
 	set_trait(TRAIT_IDEAL_HEAT, 283)
 	set_trait(TRAIT_NUTRIENT_CONSUMPTION, 0)
 	set_trait(TRAIT_WATER_CONSUMPTION, 0)
+
+/datum/seed/lustflower
+	name = PLANT_GARDENIA
+	seed_name = "Gardenia"
+	display_name = "Gardenia Produce"
+	kitchen_tag = PLANT_GARDENIA
+	chems = list(REAGENT_ID_NUTRIMENT = list(1), REAGENT_ID_PHENETHYLAMINE = list(12,24))
+
+/datum/seed/lustflower/New()
+	..()
+	set_trait(TRAIT_HARVEST_REPEAT,1)
+	set_trait(TRAIT_MATURATION,12)
+	set_trait(TRAIT_PRODUCTION,12)
+	set_trait(TRAIT_YIELD,3)
+	set_trait(TRAIT_POTENCY,2)
+	set_trait(TRAIT_IDEAL_LIGHT, 3)
+	set_trait(TRAIT_PLANT_COLOUR,"#8BD6B6")
+	set_trait(TRAIT_PLANT_ICON,"flower4")
+	set_trait(TRAIT_PRODUCT_COLOUR,"#DD9DF2")
+	set_trait(TRAIT_PRODUCT_ICON,"ambrosia")

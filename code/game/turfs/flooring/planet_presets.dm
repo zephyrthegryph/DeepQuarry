@@ -27,14 +27,9 @@
 #define THOR_MOL_CO2			(THOR_MOL_PER_TURF * THOR_PER_CO2)
 #define THOR_MOL_PHORON		(THOR_MOL_PER_TURF * THOR_PER_PHORON)
 
-// Custom snow presets for the cryosauna
-/turf/simulated/floor/snow/snow2/cryosauna
-	temperature = 263.15 // All we're doing here is manually setting the temperature
-
-/turf/simulated/floor/wood/cryosauna
-	temperature = 263.15 // All we're doing here is manually setting the temperature
 
 /turf/simulated/floor/lava/external
 	oxygen		= MOLES_O2SIF
 	nitrogen	= MOLES_N2SIF
 	temperature	= TEMPERATURE_SIF
+

@@ -49,8 +49,7 @@
 					for(var/mob/O in viewers(M, null))
 						if ((O.client && !( O.blinded )))
 							O.show_message(span_bolddanger(text("[] has weakened []!", M, src)), 1, span_red("You hear someone fall."), 2)
-				adjustBruteLoss(damage)
-				updatehealth()
+				injure(INJURY_BLUNT, damage, null, M)
 			else
 				playsound(src, 'sound/weapons/punchmiss.ogg', 25, 1, -1)
 				for(var/mob/O in viewers(src, null))

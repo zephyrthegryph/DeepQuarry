@@ -33,9 +33,10 @@
 	aura_max_distance = 7 // Viewrange.
 	mob_overlay_state = "purple_electricity_constant"
 
-	outgoing_melee_damage_percent = 1.2 // Only affects melee weapons, not fists
-	attack_speed_percent = 0.9 // Increases attack speed by 10%
-	evasion = 25 // Only affects ranged attacks missing
+	// Only affects melee weapons, not fists
+	// Increases attack speed by 10%
+	// Only affects ranged attacks missing
+	factors = alist(BF_EVASION = 25, BF_ATTACK_SPEED = 0.9, BF_MELEE_DAMAGE = 1.2)
 
 /datum/modifier/aura/xenoqueenbuff/check_if_valid()
 	.=..()

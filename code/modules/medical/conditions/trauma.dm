@@ -1,62 +1,59 @@
 // Trauma / burn / infection conditions — first batch.
 //
-// All conditions live in the affected organ's medical_issues list. Each
+// All conditions live in the body, located on the affected organ. Each
 // condition declares its own progression rate, cure/worsen reagents,
 // cascade target(s), symptom pool, and vital effects. The framework in
 // _condition.dm handles severity ticking and presentation.
 
 // --- Bruising / hemorrhage ---
 
-/datum/medical_issue/condition/deep_bruising
+/datum/affliction/deep_bruising
+	factors = alist(BF_HEART_RATE = 8)
 	name = "deep bruising"
 	category = "Soft Tissue"
 	clinical_description = "Bruised soft tissue from a heavy impact. Sore, but the body heals it on its own given time."
 	progression_rate = 1.0
-	cured_by = list(REAGENT_ID_BICARIDINE = 0.6, REAGENT_ID_TRICORDRAZINE = 0.3)
+	treated_by = list(TREAT_TISSUE_REPAIR = 0.6)
 	symptom_pool = list(
-		/datum/medical_symptom/throbbing_pain    = 60,
-		/datum/medical_symptom/pallor            = 40,
-		/datum/medical_symptom/internal_pressure = 30,
+		/datum/affliction_symptom/throbbing_pain    = 60,
+		/datum/affliction_symptom/pallor            = 40,
+		/datum/affliction_symptom/internal_pressure = 30,
 	)
 	min_symptoms = 1
 	max_symptoms = 2
 
-/datum/medical_issue/condition/deep_bruising/get_vital_effects()
-	var/static/list/L = list("pulse_mod" = 8)
-	return L
-
-/datum/medical_issue/condition/deep_bruising/damage_scaling()
+/datum/affliction/deep_bruising/damage_scaling()
 	. = 1.0
-	if(affectedorgan)
-		var/obj/item/organ/external/E = affectedorgan
+	if(location)
+		var/obj/item/organ/external/E = location
 		if(istype(E))
-			. *= dq_damage_scale(E.brute_dam, 5, 50, 0.5, 2.0)
+			. *= dq_damage_scale(E.get_trauma(), 5, 50, 0.5, 2.0)
 
-/datum/medical_issue/condition/internal_hemorrhage
+/datum/affliction/internal_hemorrhage
 	name = "internal hemorrhage"
 	category = "Circulation"
 	clinical_description = "Bleeding into the body cavity from torn vessels. Symptoms are often subtle until enough blood has been lost to start affecting circulation."
 	progression_rate = 1.0
-	cured_by = list(REAGENT_ID_TRICORDRAZINE = 0.8, REAGENT_ID_BICARIDAZE = 1.4)
-	worsened_by = list(REAGENT_ID_HYPERZINE = 1.0)  // stimulant raises BP, worsens bleed
+	treated_by = list(TREAT_HEMOSTATIC = 1.4)
+	worsened_by_tags = list(TREAT_STIMULANT = 1.0)  // stimulant raises BP, worsens bleed
 	// min_symptoms = 0: this can present invisibly at low severity.
 	// Doctors who don't measure vitals won't see it until shock starts.
 	symptom_pool = list(
-		/datum/medical_symptom/abdominal_tenderness = 35,
-		/datum/medical_symptom/pallor               = 30,
-		/datum/medical_symptom/dizziness            = 25,
-		/datum/medical_symptom/internal_pressure    = 25,
+		/datum/affliction_symptom/abdominal_tenderness = 35,
+		/datum/affliction_symptom/pallor               = 30,
+		/datum/affliction_symptom/dizziness            = 25,
+		/datum/affliction_symptom/internal_pressure    = 25,
 	)
 	min_symptoms = 0
 	max_symptoms = 2
-	// No vital_effects: pulse and BP are derived from actual blood
+	// No heart-rate or blood-pressure factors: pulse and BP are derived from actual blood
 	// volume in vitals.dm. The bleed itself drains blood, and that
 	// drain shows up directly in the instrument readings.
 
 // Active hemorrhage actively drains blood. Internal — no visible
 // splatter, just a silent reduction of vessel volume. The patient's
 // pulse and BP readings update through vitals.dm reading vessel directly.
-/datum/medical_issue/condition/internal_hemorrhage/tick_condition()
+/datum/affliction/internal_hemorrhage/tick()
 	. = ..()
 	if(severity <= 0 || !owner || !istype(owner, /mob/living/carbon/human))
 		return
@@ -74,12 +71,12 @@
 // Scales with brute damage on the affected organ AND with blood loss.
 // A bleeder with a 60-dam stab on a half-empty body runs much faster
 // than a 10-dam scratch on a fully-topped-off body.
-/datum/medical_issue/condition/internal_hemorrhage/damage_scaling()
+/datum/affliction/internal_hemorrhage/damage_scaling()
 	. = 1.0
-	if(affectedorgan)
-		var/obj/item/organ/external/E = affectedorgan
+	if(location)
+		var/obj/item/organ/external/E = location
 		if(istype(E))
-			. *= dq_damage_scale(E.brute_dam, 5, 60, 0.6, 2.5)
+			. *= dq_damage_scale(E.get_trauma(), 5, 60, 0.6, 2.5)
 	if(owner && istype(owner, /mob/living/carbon/human))
 		var/mob/living/carbon/human/H = owner
 		if(H.vessel && H.species)
@@ -89,18 +86,19 @@
 				var/lost_frac = clamp(1 - (blood_now / blood_max), 0, 1)
 				. *= dq_damage_scale(lost_frac, 0, 0.4, 1.0, 2.0)
 
-/datum/medical_issue/condition/hypovolemic_shock
+/datum/affliction/hypovolemic_shock
+	factors = alist(BF_O2_SAT = -5)
 	name = "hypovolemic shock"
 	category = "Circulation"
 	clinical_description = "Circulatory collapse from heavy blood loss. The body can no longer perfuse its tissues, and shock takes over."
 	progression_rate = 2.0
-	cured_by = list(REAGENT_ID_NUTRIMENT = 0.2, REAGENT_ID_IRON = 0.8)
+	treated_by = list(TREAT_BLOOD_RESTORE = 0.8)
 	symptom_pool = list(
-		/datum/medical_symptom/pallor      = 80,
-		/datum/medical_symptom/dizziness   = 70,
-		/datum/medical_symptom/chills      = 60,
-		/datum/medical_symptom/short_breath = 50,
-		/datum/medical_symptom/confusion   = 30,
+		/datum/affliction_symptom/pallor      = 80,
+		/datum/affliction_symptom/dizziness   = 70,
+		/datum/affliction_symptom/chills      = 60,
+		/datum/affliction_symptom/short_breath = 50,
+		/datum/affliction_symptom/confusion   = 30,
 	)
 	min_symptoms = 1
 	max_symptoms = 3
@@ -108,28 +106,24 @@
 	// the perfusion-related o2 sat needs an extra hit.
 	// Damages the heart at high severity (poor coronary perfusion);
 	// downstream cardiac damage spawns cardiac_arrest via the emergent
-	// system. We also stack oxyloss directly — see the proc override
+	// system. We also stack hypoxia directly — see the proc override
 	// below.
 	organ_damage_threshold = 60
 	organ_damage_type = "internal"
 	organ_damage_per_tick = 2
 	organ_damage_targets = list(O_HEART)
 
-/datum/medical_issue/condition/hypovolemic_shock/get_vital_effects()
-	var/static/list/L = list("o2_sat_mod" = -5)
-	return L
-
-// Hypovolemic shock stacks oxyloss on top of the heart damage. Low
+// Hypovolemic shock stacks hypoxia on top of the heart damage. Low
 // blood means low perfusion means O2 transport collapses; upstream
-// code converts that oxyloss into brain damage, which is what spawns
+// code converts that hypoxia into brain damage, which is what spawns
 // anoxic_brain_injury via the emergent system. This is the natural
-// path: bleed → shock → oxyloss → brain damage → ABI.
-/datum/medical_issue/condition/hypovolemic_shock/_apply_organ_damage()
+// path: bleed → shock → hypoxia → brain damage → ABI.
+/datum/affliction/hypovolemic_shock/_apply_organ_damage()
 	..()
 	if(!owner || severity < 60)
 		return
 	var/scale = clamp((severity - 60) / 40, 0, 1)
-	owner.adjustOxyLoss(2.5 * scale)
+	owner.injure(INJURY_ASPHYXIA, 2.5 * scale, flags = INJURE_IGNORE_RESISTANCE | INJURE_SILENT)
 
 // Severity-scaled mechanical effects: even at low severity (perfusion
 // just starting to fail), the patient feels weak. At high severity
@@ -139,10 +133,16 @@
 // Effects only change when the severity BAND crosses (<30, 30-60, 60+),
 // so cache the current band and reallocate the dict only on band
 // transition — was allocating fresh on every Life tick.
-/datum/medical_issue/condition/hypovolemic_shock
+/datum/affliction/hypovolemic_shock
 	var/_last_effect_band = -1
+	/// This band's factor table, applied at full value.
+	var/alist/band_factors
 
-/datum/medical_issue/condition/hypovolemic_shock/tick_condition()
+/datum/affliction/hypovolemic_shock/accumulate_factors(list/acc)
+	factor_band = round(severity / BF_SEVERITY_BAND)
+	return body_factor_accumulate(acc, band_factors, 1)
+
+/datum/affliction/hypovolemic_shock/tick()
 	. = ..()
 	if(severity <= 0)
 		return
@@ -156,33 +156,22 @@
 	if(band == _last_effect_band)
 		return
 	_last_effect_band = band
-	switch(band)
-		if(2)
-			mechanical_effects = list(
-				"slowdown" = 1.5,
-				"accuracy_penalty" = 25,
-				"drop_held_prob" = 4,
-				"spontaneous_emotes" = list("stagger", "collapse", "groan"),
-				"spontaneous_emote_prob" = 6,
-			)
-		if(1)
-			mechanical_effects = list(
-				"slowdown" = 0.8,
-				"accuracy_penalty" = 12,
-				"drop_held_prob" = 1,
-				"spontaneous_emotes" = list("wobble", "shake"),
-				"spontaneous_emote_prob" = 3,
-			)
-		else
-			mechanical_effects = list(
-				"slowdown" = 0.3,
-				"spontaneous_emotes" = list("sigh"),
-				"spontaneous_emote_prob" = 2,
-			)
+	// Band tables are applied at full value: set them through the stage
+	// path so the body treats them as the band's own table.
+	var/static/list/bands = list(
+		list("factors" = alist(BF_SLOWDOWN = 0.3), "spontaneous_emotes" = list("sigh"), "spontaneous_emote_prob" = 2),
+		list("factors" = alist(BF_SLOWDOWN = 0.8, BF_ACCURACY = -12, BF_MOTOR_CONTROL = 0.99), "spontaneous_emotes" = list("wobble", "shake"), "spontaneous_emote_prob" = 3),
+		list("factors" = alist(BF_SLOWDOWN = 1.5, BF_ACCURACY = -25, BF_MOTOR_CONTROL = 0.96), "spontaneous_emotes" = list("stagger", "collapse", "groan"), "spontaneous_emote_prob" = 6),
+	)
+	var/list/entry = bands[band + 1]
+	band_factors = entry["factors"]
+	spontaneous_emotes = entry["spontaneous_emotes"]
+	spontaneous_emote_prob = entry["spontaneous_emote_prob"]
+	body?.invalidate(BODY_DIRTY_FACTORS)
 
 // Driven entirely by how much blood the patient has left. Topping the
 // patient back up via saline / blood-pack stops the runaway.
-/datum/medical_issue/condition/hypovolemic_shock/damage_scaling()
+/datum/affliction/hypovolemic_shock/damage_scaling()
 	. = 1.0
 	if(owner && istype(owner, /mob/living/carbon/human))
 		var/mob/living/carbon/human/H = owner
@@ -198,70 +187,67 @@
 
 // --- Fracture / blunt ---
 
-/datum/medical_issue/condition/untreated_fracture
+/datum/affliction/untreated_fracture
 	name = "untreated fracture"
 	category = "Bone"
 	clinical_description = "A bone broken and left unset. The surrounding tissue grinds against the fragments with every movement."
 	progression_rate = 0.5
 	// Osteodaxon promotes bone healing; bicaridine handles the
 	// surrounding soft-tissue damage.
-	cured_by = list(REAGENT_ID_OSTEODAXON = 1.0, REAGENT_ID_BICARIDINE = 0.3, REAGENT_ID_BICARIDAZE = 1.5)
-	worsened_by = list(REAGENT_ID_HYPERZINE = 0.5)
+	treated_by = list(TREAT_BONE_REPAIR = 1.2)
+	worsened_by_tags = list(TREAT_STIMULANT = 0.5)
 	symptom_pool = list(
-		/datum/medical_symptom/sharp_pain    = 80,
-		/datum/medical_symptom/throbbing_pain = 60,
+		/datum/affliction_symptom/sharp_pain    = 80,
+		/datum/affliction_symptom/throbbing_pain = 60,
 	)
 	min_symptoms = 1
 	max_symptoms = 2
 
-/datum/medical_issue/condition/untreated_fracture/damage_scaling()
+/datum/affliction/untreated_fracture/damage_scaling()
 	. = 1.0
-	if(affectedorgan)
-		var/obj/item/organ/external/E = affectedorgan
+	if(location)
+		var/obj/item/organ/external/E = location
 		if(istype(E))
-			. *= dq_damage_scale(E.brute_dam, 10, 60, 0.6, 1.8)
+			. *= dq_damage_scale(E.get_trauma(), 10, 60, 0.6, 1.8)
 
 // Mild head trauma. A single concussion is mostly an inconvenience —
 // dead-end cascade, self-heals over time, just symptoms + mild
 // mechanical penalty while it runs its course. A SECOND head hit while
 // the concussion is active spawns subdural_hematoma instead (handled
 // in cascades.dm).
-/datum/medical_issue/condition/concussion
+/datum/affliction/concussion
 	name = "concussion"
 	category = "Brain"
 	clinical_description = "A brief disruption of brain function from a blow to the head. The first one usually resolves on its own; a second on top of it is far more serious."
 	progression_rate = -0.5  // negative — concussions heal on their own (~20 min from 100)
 	// Synaptizine is the targeted neuro-repair drug; alkysine helps mildly;
 	// paracetamol manages the headache without accelerating recovery.
-	cured_by = list(REAGENT_ID_SYNAPTIZINE = 0.6, REAGENT_ID_ALKYSINE = 0.4, REAGENT_ID_PARACETAMOL = 0.2)
+	treated_by = list(TREAT_NEURAL_REPAIR = 0.7, TREAT_ANALGESIC = 0.2)
 	symptom_pool = list(
-		/datum/medical_symptom/headache         = 70,
-		/datum/medical_symptom/dizziness        = 60,
-		/datum/medical_symptom/nausea           = 50,
-		/datum/medical_symptom/blurred_vision   = 50,
-		/datum/medical_symptom/confusion        = 40,
-		/datum/medical_symptom/unsteady_gait    = 70,
+		/datum/affliction_symptom/headache         = 70,
+		/datum/affliction_symptom/dizziness        = 60,
+		/datum/affliction_symptom/nausea           = 50,
+		/datum/affliction_symptom/blurred_vision   = 50,
+		/datum/affliction_symptom/confusion        = 40,
+		/datum/affliction_symptom/unsteady_gait    = 70,
 	)
 	min_symptoms = 2
 	max_symptoms = 4
-	mechanical_effects = list(
-		"slowdown" = 0.4,
-		"accuracy_penalty" = 15,
-		"spontaneous_emotes" = list("stumble", "shake their head"),
-		"spontaneous_emote_prob" = 3,
-	)
+	factors = alist(BF_SLOWDOWN = 0.4, BF_ACCURACY = -15)
+	spontaneous_emotes = list("stumble", "shake their head")
+	spontaneous_emote_prob = 3
 
 // Concussions normally heal. Spawn this with an initial severity high
 // enough to actually present symptoms before the negative progression
 // drags it back down.
-/datum/medical_issue/condition/concussion/New()
+/datum/affliction/concussion/New()
 	..()
 	severity = 100
 
 // --- Burns ---
 
 // Burn shock comes in three stages, driven by how much of the body has
-// been burned. Stage is recomputed every tick from cumulative burn_dam;
+// been burned. Stage is recomputed every tick from cumulative limb burn load;
 // as the patient's burns worsen (or heal), the condition's symptoms and
 // mechanical effects shift to match. This lets one datum cover the full
 // "light singe → near-fatal" spectrum without a separate condition per
@@ -272,80 +258,72 @@
 //                              hypotension, can cascade to wound_infection
 // Stage 3 (>120 total burn):   "severe" — full shock presentation, fast
 //                              progression, hypovolemic cascade enabled
-/datum/medical_issue/condition/burn_shock
+/datum/affliction/burn_shock
 	name = "burn shock"
 	category = "Burns"
 	clinical_description = "Systemic shock following extensive thermal injury. The more of the body's surface is burned, the harder it gets to stabilise."
 	progression_rate = 2.0
-	cured_by = list(REAGENT_ID_KELOTANE = 0.7, REAGENT_ID_DERMALINE = 1.2, REAGENT_ID_INAPROVALINE = 0.4)
-	// symptom_pool / vital_effects / mechanical_effects come from
+	treated_by = list(TREAT_BURN_CARE = 1.2, TREAT_CIRCULATORY = 0.4)
+	// symptom_pool / factors / spontaneous emotes come from
 	// get_stages() — burn_shock has three stages driven by cumulative
-	// burn_dam across all external organs, swapped in tick_condition().
+	// limb burn load across all external organs, swapped in tick().
 	min_symptoms = 1
 	max_symptoms = 2
 	// Severe stage-3 burns crash the body's ability to hold fluid
-	// balance; we model that as systemic oxyloss above stage 3.
+	// balance; we model that as systemic hypoxia above stage 3.
 	organ_damage_threshold = 70
-	organ_damage_type = "oxy"
+	organ_damage_type = INJURY_ASPHYXIA
 	organ_damage_per_tick = 3
 
-/datum/medical_issue/condition/burn_shock/New()
+/datum/affliction/burn_shock/New()
 	..()
 	// Default to Stage 1 so a freshly-spawned burn_shock has a symptom
-	// pool before tick_condition gets to recompute from burn_dam.
+	// pool before tick gets to recompute from limb burns.
 	_apply_stage("Stage 1")
 
-/datum/medical_issue/condition/burn_shock/get_stages()
+/datum/affliction/burn_shock/get_stages()
 	var/static/list/S = list(
 		"Stage 1" = list(
 			"symptom_pool" = list(
-				/datum/medical_symptom/pallor = 70,
-				/datum/medical_symptom/chills = 50,
+				/datum/affliction_symptom/pallor = 70,
+				/datum/affliction_symptom/chills = 50,
 			),
 			"min_symptoms" = 1,
 			"max_symptoms" = 2,
-			"vital_effects" = list("pulse_mod" = 10, "bp_sys_mod" = -5),
+			"factors" = alist(BF_HEART_RATE = 10, BF_BP_SYSTOLIC = -5),
 		),
 		"Stage 2" = list(
 			"symptom_pool" = list(
-				/datum/medical_symptom/pallor       = 80,
-				/datum/medical_symptom/chills       = 60,
-				/datum/medical_symptom/short_breath = 50,
-				/datum/medical_symptom/dizziness    = 40,
+				/datum/affliction_symptom/pallor       = 80,
+				/datum/affliction_symptom/chills       = 60,
+				/datum/affliction_symptom/short_breath = 50,
+				/datum/affliction_symptom/dizziness    = 40,
 			),
 			"min_symptoms" = 2,
 			"max_symptoms" = 3,
-			"vital_effects" = list("pulse_mod" = 25, "bp_sys_mod" = -20, "bp_dia_mod" = -10),
-			"mechanical_effects" = list(
-				"slowdown" = 0.6,
-				"spontaneous_emotes" = list("wince", "groan"),
-				"spontaneous_emote_prob" = 4,
-			),
+			"factors" = alist(BF_SLOWDOWN = 0.6, BF_HEART_RATE = 25, BF_BP_SYSTOLIC = -20, BF_BP_DIASTOLIC = -10),
+			"spontaneous_emotes" = list("wince", "groan"),
+			"spontaneous_emote_prob" = 4,
 		),
 		"Stage 3" = list(
 			"symptom_pool" = list(
-				/datum/medical_symptom/pallor       = 90,
-				/datum/medical_symptom/chills       = 80,
-				/datum/medical_symptom/short_breath = 70,
-				/datum/medical_symptom/dizziness    = 60,
-				/datum/medical_symptom/confusion    = 40,
-				/datum/medical_symptom/cyanosis     = 50,
+				/datum/affliction_symptom/pallor       = 90,
+				/datum/affliction_symptom/chills       = 80,
+				/datum/affliction_symptom/short_breath = 70,
+				/datum/affliction_symptom/dizziness    = 60,
+				/datum/affliction_symptom/confusion    = 40,
+				/datum/affliction_symptom/cyanosis     = 50,
 			),
 			"min_symptoms" = 3,
 			"max_symptoms" = 4,
-			"vital_effects" = list("pulse_mod" = 40, "bp_sys_mod" = -35, "bp_dia_mod" = -20, "o2_sat_mod" = -8),
-			"mechanical_effects" = list(
-				"slowdown" = 1.4,
-				"accuracy_penalty" = 20,
-				"drop_held_prob" = 3,
-				"spontaneous_emotes" = list("groan in pain", "collapse", "shudder"),
-				"spontaneous_emote_prob" = 7,
-			),
+			"factors" = alist(BF_SLOWDOWN = 1.4, BF_ACCURACY = -20, BF_MOTOR_CONTROL = 0.97, BF_HEART_RATE = 40, BF_BP_SYSTOLIC = -35, BF_BP_DIASTOLIC = -20, BF_O2_SAT = -8),
+			"spontaneous_emotes" = list("groan in pain", "collapse", "shudder"),
+			"spontaneous_emote_prob" = 7,
 		),
 	)
 	return S
 
-/datum/medical_issue/condition/burn_shock/tick_condition()
+/datum/affliction/burn_shock/tick()
 	// Burn_shock computes its stage from cumulative burn damage on the
 	// owner each tick (the metric isn't a simple mob scalar; it walks
 	// every external organ).
@@ -354,7 +332,7 @@
 		var/total_burn = 0
 		if(H.organs)
 			for(var/obj/item/organ/external/E in H.organs)
-				total_burn += E.burn_dam
+				total_burn += E.get_burn()
 		var/new_stage
 		if(total_burn >= 120)
 			new_stage = "Stage 3"
@@ -366,31 +344,31 @@
 			_apply_stage(new_stage)
 	. = ..()
 
-// Sums burn_dam across all external organs — more of the body burned
+// Sums limb burn load across all external organs — more of the body burned
 // runs the shock harder. 30 total burn damage ≈ baseline, 150 = ×3.
-/datum/medical_issue/condition/burn_shock/damage_scaling()
+/datum/affliction/burn_shock/damage_scaling()
 	. = 1.0
 	if(owner && istype(owner, /mob/living/carbon/human))
 		var/mob/living/carbon/human/H = owner
 		var/total_burn = 0
 		if(H.organs)
 			for(var/obj/item/organ/external/E in H.organs)
-				total_burn += E.burn_dam
+				total_burn += E.get_burn()
 		. *= dq_damage_scale(total_burn, 20, 150, 0.6, 3.0)
 
 // --- Infection ---
 
-/datum/medical_issue/condition/wound_infection
+/datum/affliction/wound_infection
 	name = "wound infection"
 	category = "Infection"
 	clinical_description = "Bacterial colonisation of an open wound. The dirtier the wound was when it was inflicted, the faster the infection takes hold."
 	progression_rate = 0.5
-	cured_by = list(REAGENT_ID_SPACEACILLIN = 1.0)
+	treated_by = list(TREAT_ANTIMICROBIAL = 1.0)
 	symptom_pool = list(
-		/datum/medical_symptom/fever_sensation = 60,
-		/datum/medical_symptom/chills          = 40,
-		/datum/medical_symptom/throbbing_pain  = 50,
-		/datum/medical_symptom/fatigue         = 40,
+		/datum/affliction_symptom/fever_sensation = 60,
+		/datum/affliction_symptom/chills          = 40,
+		/datum/affliction_symptom/throbbing_pain  = 50,
+		/datum/affliction_symptom/fatigue         = 40,
 	)
 	min_symptoms = 1
 	max_symptoms = 3
@@ -402,25 +380,25 @@
 // can also push spaceacillin directly to drop severity faster than the
 // germ-physics alone. Also pushes real body temperature up so a fever
 // shows on the thermometer, not just on the readout.
-/datum/medical_issue/condition/wound_infection/tick_condition()
+/datum/affliction/wound_infection/tick()
 	. = ..()
-	if(!affectedorgan || !owner)
+	if(!location || !owner)
 		return
 	// Modest fever — local infection, not systemic yet.
 	if(severity > 0 && istype(owner, /mob/living/carbon/human))
 		var/target_offset_k = (severity / 100) * 1.2
 		owner.bodytemperature = min(owner.bodytemperature + target_offset_k * 0.1, 310.15 + 1.5)
-	var/germ_level = affectedorgan.germ_level
+	var/germ_level = location.germ_level
 	// Above INFECTION_LEVEL_ONE the wound is actively feeding the
 	// condition. The extra delta scales with how far past threshold
 	// we are: each 1000 germs over threshold = +1.0/tick (on top of
 	// base progression).
 	if(germ_level > INFECTION_LEVEL_ONE)
-		severity = min(severity + ((germ_level - INFECTION_LEVEL_ONE) / 1000), CONDITION_SEVERITY_TERMINAL)
+		severity = min(severity + ((germ_level - INFECTION_LEVEL_ONE) / 1000), AFFLICTION_SEVERITY_TERMINAL)
 	// Hysteresis: germs well below threshold means the wound has been
 	// cleaned. Condition severity drifts down on its own.
 	else if(germ_level < (INFECTION_LEVEL_ONE - 100))
 		severity = max(severity - 0.2, 0)
 		if(severity <= 0)
-			cure_issue()
+			cure()
 

@@ -28,7 +28,6 @@
 	supply_conversion_value = 4
 
 
-// === merged from animal_products_chomp.dm during hard-fork de-suffix (verified no override-order change) ===
 /datum/material/chitin
 	protectiveness = 25
 	reflectivity = 0.05

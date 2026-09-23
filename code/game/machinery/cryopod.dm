@@ -736,7 +736,6 @@
 		add_fingerprint(M)
 
 
-// === merged from cryopod_vr.dm during hard-fork de-suffix (verified no override-order change) ===
 //Overrides!
 
 /obj/machinery/cryopod
@@ -816,7 +815,6 @@
 		control_computer.frozen_items += "[item_name] ([char_name])"
 
 
-// === merged from cryopod_chomp.dm during hard-fork de-suffix (verified no override-order change) ===
 /obj/machinery/cryopod/robot/door/gateway/quiet
 	name = "departure teleporter"
 	desc = "The short-range teleporter you might've came in from. You could leave easily using this."

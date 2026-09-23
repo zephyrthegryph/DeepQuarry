@@ -37,7 +37,7 @@
 			potential_damage = P.agony / 2
 		else
 			potential_damage = P.damage
-			if(P.damage_type == HALLOSS) // Not sure if any projectiles do this, but can't be too safe.
+			if(P.get_injury_kind() == INJURY_PAIN) // Not sure if any projectiles do this, but can't be too safe.
 				potential_damage /= 2
 			// Rubber bullets, I guess.
 			potential_damage += P.agony / 2
@@ -50,7 +50,7 @@
 	threat_guess += potential_damage
 
 	// Then consider their defense.
-	threat_guess += getMaxHealth() / 5 // 100 health translates to 20 threat.
+	threat_guess += get_endurance() / 5 // 100 health translates to 20 threat.
 
 	return threat_guess
 
@@ -74,8 +74,7 @@
 	var/threat = guess_threat_level(threatened)
 
 	// Hurt entities contribute less tension.
-	threat *= health
-	threat /= getMaxHealth()
+	threat *= vitality()
 
 	// Allies reduce tension instead of adding.
 	if(friendly)
@@ -116,8 +115,7 @@
 
 	var/threat = guess_threat_level(threatened)
 
-	threat *= health
-	threat /= getMaxHealth()
+	threat *= vitality()
 
 	// Allies reduce tension instead of adding.
 	if(friendly)
@@ -168,19 +166,13 @@
 		else
 			damage_guess += 5
 
-		for(var/datum/modifier/M in modifiers)
-			if(!isnull(M.outgoing_melee_damage_percent))
-				damage_guess *= M.outgoing_melee_damage_percent
+		damage_guess *= factor(BF_MELEE_DAMAGE)
 
 		threat_guess += damage_guess
 
 	else
 		var/weapon_attack_speed = get_attack_speed(I) / (1 SECOND)
-		var/weapon_damage = I.force
-
-		for(var/datum/modifier/M in modifiers)
-			if(!isnull(M.outgoing_melee_damage_percent))
-				weapon_damage *= M.outgoing_melee_damage_percent
+		var/weapon_damage = I.force * factor(BF_MELEE_DAMAGE)
 
 		if(istype(I, /obj/item/gun))
 			will_point_blank = TRUE
@@ -213,7 +205,7 @@
 			threat_guess *= 1.25
 
 	// Then consider their defense.
-	threat_guess += getMaxHealth() / 5 // 100 health translates to 20 threat.
+	threat_guess += get_endurance() / 5 // 100 health translates to 20 threat.
 
 	return threat_guess
 
@@ -241,8 +233,7 @@
 		return 0
 
 	// Tension is roughly doubled when about to fall into crit.
-	var/max_health = getMaxHealth()
-	tension *= 2 * max_health / (health + max_health)
+	tension *= 2 / (1 + vitality())
 
 	// Being unable to act is really tense.
 	if(incapacitated(INCAPACITATION_DISABLED) && !lying)

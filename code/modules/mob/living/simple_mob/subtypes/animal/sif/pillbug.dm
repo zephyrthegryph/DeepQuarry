@@ -21,8 +21,7 @@
 	icon_living = "pillbug"
 	icon_dead = "pillbug_dead"
 
-	health = 15
-	maxHealth = 15
+	endurance = 15
 	mob_size = MOB_MINISCULE
 
 	response_help  = "gently touches"

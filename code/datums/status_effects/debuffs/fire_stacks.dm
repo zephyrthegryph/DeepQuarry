@@ -44,10 +44,6 @@
 	if(isanimal(owner))
 		qdel(src)
 		return
-	// if(isbasicmob(owner))
-	// 	if(!check_basic_mob_immunity(owner))
-	// 		qdel(src)
-	// 		return
 
 	owner = new_owner
 	set_stacks(new_stacks)
@@ -169,7 +165,6 @@
 	. = ..()
 	// RegisterSignal(owner, COMSIG_ATOM_TOUCHED_SPARKS, PROC_REF(owner_touched_sparks))
 
-
 /datum/status_effect/fire_handler/fire_stacks/tick(seconds_between_ticks)
 	if(stacks <= 0)
 		qdel(src)
@@ -225,8 +220,10 @@
 	if(owner.is_incorporeal()) // Shadekin don't spread fire in phase, but still take damage
 		return
 
-	var/turf/location = get_turf(owner)
-	location.hotspot_expose(700, 25 * seconds_per_tick, TRUE)
+	// A hotspot already on the tile burns on its own; only light one when there is none.
+	var/turf/open/location = get_turf(owner)
+	if(istype(location) && !location.active_hotspot)
+		location.hotspot_expose(owner.fire_burn_temperature(), 25 * seconds_per_tick, TRUE)
 
 /**
  * Used to deal damage to humans and count their protection.
@@ -239,7 +236,7 @@
 
 /datum/status_effect/fire_handler/fire_stacks/proc/harm_human(seconds_per_tick, no_protection = FALSE)
 	var/mob/living/carbon/human/victim = owner
-	var/thermal_protection = victim.get_heat_protection(stacks)
+	var/thermal_protection = victim.get_heat_protection(victim.fire_burn_temperature())
 
 	if(!no_protection)
 		if(thermal_protection == 1) // IMMUNE
@@ -250,23 +247,6 @@
 
 	// var/mob/living/carbon/human/victim = owner
 	// var/thermal_protection = victim.get_heat_protection(stacks)
-
-	// if(!no_protection)
-	// 	if(thermal_protection >= FIRE_IMMUNITY_MAX_TEMP_PROTECT)
-	// 		return
-	// 	if(thermal_protection >= FIRE_SUIT_MAX_TEMP_PROTECT)
-	// 		victim.adjust_bodytemperature(5.5 * seconds_per_tick)
-	// 		return
-
-	// var/amount_to_heat = (BODYTEMP_HEATING_MAX + (stacks * 12)) * 0.5 * seconds_per_tick
-	// if(owner.bodytemperature > BODYTEMP_FIRE_TEMP_SOFTCAP)
-	// 	// Apply dimishing returns upon temp beyond the soft cap
-	// 	amount_to_heat = amount_to_heat ** (BODYTEMP_FIRE_TEMP_SOFTCAP / owner.bodytemperature)
-
-	// victim.adjust_bodytemperature(amount_to_heat)
-	// if (!(HAS_TRAIT(victim, TRAIT_RESISTHEAT)))
-	// 	victim.add_mood_event("on_fire", /datum/mood_event/on_fire)
-	// 	victim.add_mob_memory(/datum/memory/was_burning)
 
 /**
  * Handles mob ignition, should be the only way to set on_fire to TRUE
@@ -336,7 +316,6 @@
 		return
 
 	source.overlays |= created_overlay
-
 
 // WET
 /datum/status_effect/fire_handler/wet_stacks

@@ -50,18 +50,6 @@
 	icon_state = "grass0"
 	initial_flooring = /datum/decl/flooring/grass
 
-/turf/simulated/floor/holofloor/grass/jungle
-	icon = 'icons/jungle.dmi'
-	icon_state = "grass2"
-
-/turf/simulated/floor/holofloor/grass/hive
-	icon = 'icons/turf/flooring/misc_vr.dmi'
-	icon_state = "hive"
-	name = "giant honeycomb"
-
-/turf/simulated/floor/holofloor/wood/diona
-	icon = 'icons/turf/floors.dmi'
-	icon_state = "diona"
 
 /turf/simulated/floor/holofloor/snow
 	name = "snow"
@@ -180,7 +168,7 @@
 
 	target.visible_message(span_bolddanger("[user] has punched [target]!"))
 
-	target.apply_damage(damage, HALLOSS, affecting, armor_block)
+	target.injure(INJURY_PAIN, damage, affecting?.organ_tag, user, armor_block)
 	if(damage >= 9)
 		target.visible_message(span_bolddanger("[user] has weakened [target]!"))
 		target.apply_effect(4, WEAKEN, armor_block)
@@ -199,18 +187,18 @@
 			switch (state)
 				if(1)
 					M.visible_message(span_warning("[user] slams [M] against \the [src]!"))
-					M.apply_damage(7)
+					M.injure(INJURY_PAIN, 7, null, src)
 					hit(10)
 				if(2)
 					M.visible_message(span_danger("[user] bashes [M] against \the [src]!"))
 					if (prob(50))
 						M.Weaken(1)
-					M.apply_damage(10)
+					M.injure(INJURY_PAIN, 10, null, src)
 					hit(25)
 				if(3)
 					M.visible_message(span_danger("<big>[user] crushes [M] against \the [src]!</big>"))
 					M.Weaken(5)
-					M.apply_damage(20)
+					M.injure(INJURY_PAIN, 20, null, src)
 					hit(50)
 			return
 
@@ -256,7 +244,7 @@
 		playsound(src, 'sound/effects/Glasshit.ogg', 75, 1)
 		visible_message(span_bolddanger("[src] was hit by [I]."))
 		if(I.damtype == BRUTE || I.damtype == BURN)
-			take_damage(aforce)
+			take_damage(aforce, I.damtype, MELEE)
 		return
 
 	src.add_fingerprint(user)
@@ -537,12 +525,3 @@
 	visible_message(span_infoplain(span_bold("\The [src]") + " fades away!"))
 	qdel(src)
 
-
-// === merged from HolodeckObjects_vr.dm during hard-fork de-suffix (verified no override-order change) ===
-/turf/simulated/floor/holofloor/flesh
-	name = "flesh"
-	desc = "This slick flesh ripples and squishes under your touch"
-	icon = 'icons/turf/stomach_vr.dmi'
-	icon_state = "flesh_floor"
-	base_icon_state = "flesh_floor"
-	initial_flooring = null

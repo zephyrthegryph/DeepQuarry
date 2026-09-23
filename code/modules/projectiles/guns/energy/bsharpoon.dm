@@ -140,7 +140,7 @@
 					var/obj/belly/belly_dest
 					if(living_user.vore_selected)
 						belly_dest = living_user.vore_selected
-					else if(living_user.vore_organs.len)
+					else if(length(living_user.vore_organs))
 						belly_dest = pick(living_user.vore_organs)
 					if(belly_dest)
 						for(var/mob/living/prey in ToTurf)
@@ -158,7 +158,7 @@
 						var/obj/belly/belly_dest
 						if(pred.vore_selected)
 							belly_dest = pred.vore_selected
-						else if(pred.vore_organs.len)
+						else if(length(pred.vore_organs))
 							belly_dest = pick(pred.vore_organs)
 						if(belly_dest)
 							living_user.forceMove(belly_dest)
@@ -184,7 +184,7 @@
 					var/obj/belly/belly_dest
 					if(living_user.vore_selected)
 						belly_dest = living_user.vore_selected
-					else if(living_user.vore_organs.len)
+					else if(length(living_user.vore_organs))
 						belly_dest = pick(living_user.vore_organs)
 					if(belly_dest)
 						M.forceMove(belly_dest)
@@ -194,7 +194,7 @@
 					var/obj/belly/belly_dest
 					if(M.vore_selected)
 						belly_dest = M.vore_selected
-					else if(M.vore_organs.len)
+					else if(length(M.vore_organs))
 						belly_dest = pick(M.vore_organs)
 					if(belly_dest)
 						living_user.forceMove(belly_dest)

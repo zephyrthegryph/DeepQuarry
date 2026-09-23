@@ -1,4 +1,3 @@
-// tgui-migration (commit 3ec748264e). browse()/datum/browser/admin_log_show panels migrated to TGUI; stale shims (show_browser macro, browse callsites) removed.
 // Bracketed at file-header rather than per-hunk because the
 // edits are mechanical and span the whole file; the commit SHA
 // is the source of truth for per-line diff context.
@@ -29,8 +28,7 @@
 	icon = 'icons/mob/alienanimals_x32.dmi'
 
 	faction = FACTION_CATSLUG
-	maxHealth = 50
-	health = 50
+	endurance = 50
 	movement_cooldown = -1
 	meat_amount = 2
 	meat_type = /obj/item/reagent_containers/food/snacks/meat
@@ -521,8 +519,7 @@
 	icon_dead = "gatslug_dead"
 	catalogue_data = list(/datum/category_item/catalogue/fauna/catslug/custom/gatslug)
 	holder_type = /obj/item/holder/catslug/custom/gatslug
-	maxHealth = 75
-	health = 75
+	endurance = 75
 	say_list_type = /datum/say_list/catslug/custom/gatslug
 	melee_damage_lower = 5
 	melee_damage_upper = 10		//"Trained" security member, so they can hit that little bit harder
@@ -718,8 +715,7 @@
 	catalogue_data = list(/datum/category_item/catalogue/fauna/catslug) 			//So they don't get the spaceslug's cataloguer entry
 	say_list_type = /datum/say_list/catslug 			//Similarly, so they don't get the spaceslug's speech lines.
 	myid_access = list(ACCESS_CENT_GENERAL, ACCESS_CENT_SPECOPS, ACCESS_CENT_LIVING, ACCESS_CENT_STORAGE)
-	maxHealth = 100		//Tough noodles
-	health = 100
+	endurance = 100		//Tough noodles
 	taser_kill = 0
 	mob_size = MOB_MEDIUM		//As funny as picking up deathslugs & throwing them at people to be merked would be, I'm not willing to sprite their holders. Something something hardsuit heavy can be the "IC" reason for this.
 	siemens_coefficient = 0
@@ -757,8 +753,7 @@
 	say_list_type = /datum/say_list/catslug
 	myid_access = list(ACCESS_MAINT_TUNNELS, ACCESS_SYNDICATE, ACCESS_EXTERNAL_AIRLOCKS)
 	faction = FACTION_SYNDICATE
-	maxHealth = 100		//Tough noodles
-	health = 100
+	endurance = 100		//Tough noodles
 	taser_kill = 0
 	melee_damage_lower = 15
 	melee_damage_upper = 20
@@ -801,8 +796,7 @@
 	catalogue_data = list(/datum/category_item/catalogue/fauna/catslug)
 	say_list_type = /datum/say_list/catslug
 	myid_access = list(ACCESS_CENT_GENERAL, ACCESS_CENT_SPECOPS, ACCESS_CENT_LIVING, ACCESS_CENT_STORAGE)
-	maxHealth = 100		//Tough noodles
-	health = 100
+	endurance = 100		//Tough noodles
 	taser_kill = 0
 	mob_size = MOB_MEDIUM		//Something something hardsuits are heavy.
 	siemens_coefficient = 0
@@ -1104,7 +1098,7 @@
 		target = tgui_input_list(src, "Kill", "Pick a victim", victims)
 
 	if(target && istype(target))
-		target.adjustBruteLoss(3000)
+		target.injure(INJURY_BLUNT, target.get_endurance() * 30, source = src, flags = INJURE_IGNORE_RESISTANCE)
 		visible_message(span_warning("\The [src] kills \the [target]!"))
 		kill_cooldown = world.time
 

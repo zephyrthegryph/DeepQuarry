@@ -33,7 +33,6 @@
 	apply_colour = TRUE
 
 
-// === merged from glass_vr.dm during hard-fork de-suffix (verified no override-order change) ===
 /obj/item/stack/material/glass/titanium
 	name = "ti-glass sheets"
 	icon = 'icons/obj/stacks_vr.dmi'

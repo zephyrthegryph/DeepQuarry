@@ -103,20 +103,6 @@
 	reagent_ids = list(REAGENT_ID_INAPROVALINE, REAGENT_ID_TRICORDRAZINE, REAGENT_ID_DEXALIN, REAGENT_ID_BICARIDINE, REAGENT_ID_KELOTANE, REAGENT_ID_ANTITOXIN, REAGENT_ID_SPACEACILLIN, REAGENT_ID_TRAMADOL, REAGENT_ID_ADRANOL) // More chems for Medihound
 	var/datum/matter_synth/water = null
 
-/* Water requirement removal. *
-
-/obj/item/reagent_containers/borghypo/hound/process() //Recharges in smaller steps and uses the water reserves as well.
-	if(isrobot(loc))
-		var/mob/living/silicon/robot/R = loc
-		if(R && R.cell)
-			for(var/T in reagent_ids)
-				if(reagent_volumes[T] < volume && water.energy >= charge_cost)
-					R.cell.use(charge_cost)
-					water.use_charge(charge_cost)
-					reagent_volumes[T] = min(reagent_volumes[T] + 1, volume)
-	return 1
-
-* Water requirement removal. */
 
 /obj/item/reagent_containers/borghypo/hound/lost
 	name = "Hound hypospray"
@@ -192,7 +178,7 @@
 			water.use_charge(5)
 			qdel(target)
 			var/mob/living/silicon/robot/R = user
-			R.cell.charge += 50
+			R.add_power(ROBOT_CELL_JOULES(50), src)
 		busy = 0
 	else if(istype(target,/obj/item))
 		if(istype(target,/obj/item/trash))
@@ -203,7 +189,7 @@
 				to_chat(user, span_notice("You finish off \the [target.name]."))
 				qdel(target)
 				var/mob/living/silicon/robot/R = user
-				R.cell.charge += 250
+				R.add_power(ROBOT_CELL_JOULES(250), src)
 				water.use_charge(5)
 			busy = 0 // prevents abuse
 			return
@@ -215,7 +201,7 @@
 				user << span_notice("You finish off \the [target.name].")
 				qdel(target)
 				var/mob/living/silicon/robot/R = user
-				R.cell.charge = R.cell.charge + 250
+				R.add_power(ROBOT_CELL_JOULES(250), src)
 			busy = 0 // prevents abuse
 			return
 		if(istype(target,/obj/item/cell))
@@ -226,7 +212,7 @@
 				to_chat(user, span_notice("You finish off \the [target.name], and gain some charge!"))
 				var/mob/living/silicon/robot/R = user
 				var/obj/item/cell/C = target
-				R.cell.charge += C.charge / 3
+				R.add_power(ROBOT_CELL_JOULES(C.charge / 3), src)
 				water.use_charge(5)
 				qdel(target)
 			busy = 0 // prevents abuse
@@ -244,7 +230,7 @@
 		if(src.emagged)
 			var/mob/living/silicon/robot/R = user
 			var/mob/living/L = target
-			if(!R.use_direct_power(666, 100))
+			if(!R.draw_power(ROBOT_CELL_JOULES(666), src, ROBOT_CELL_JOULES(100)))
 				to_chat(user, span_warning("Warning, low power detected. Aborting action."))
 				return
 			L.Stun(1)
@@ -389,7 +375,7 @@
 
 	var/power_cost = bluespace ? 1000 : 750
 	var/minimum_power = bluespace ? 2500 : 1000
-	if(cell.charge < minimum_power)
+	if(!cell || cell.charge < minimum_power)
 		to_chat(src, span_filter_notice("Cell charge too low to continue."))
 		return
 
@@ -416,7 +402,7 @@
 		if(SK && SK.in_phase)
 			power_cost *= 2
 
-	if(!use_direct_power(power_cost, minimum_power - power_cost))
+	if(!draw_power(ROBOT_CELL_JOULES(power_cost), src, ROBOT_CELL_JOULES(minimum_power - power_cost)))
 		to_chat(src, span_warning("Warning, low power detected. Aborting action."))
 		return
 
@@ -460,7 +446,7 @@
 			return
 
 	var/armor_block = run_armor_check(T, "melee")
-	T.apply_damage(20, HALLOSS, null, armor_block)
+	T.injure(INJURY_PAIN, 20, null, src, armor_block)
 	if(prob(75)) //75% chance to stun for 5 seconds, really only going to be 4 bcus click cooldown+animation.
 		T.apply_effect(5, STUN, armor_block)
 		T.drop_both_hands() // Stuns no longer drop items

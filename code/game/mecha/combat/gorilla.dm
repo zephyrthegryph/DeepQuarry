@@ -100,12 +100,10 @@
 		return 1
 	return 0
 
-
 /obj/mecha/combat/gorilla/get_stats_part()
 	var/output = ..()
 	output += span_bold("Smoke:") + {"[smoke_reserve]"}
 	return output
-
 
 /obj/mecha/combat/gorilla/get_commands()
 	var/output = {"<div class='wr'>
@@ -151,21 +149,6 @@
 	name ="canister shell"
 	icon_state = "canister"
 	damage = 120 //Do not get fucking shot.
-
-/* // GLITCHY UND LAGGY. Will later look into fixing.
-/obj/item/mecha_parts/mecha_equipment/weapon/ballistic/mg42
-	name = "Maschinengewehr 60"
-	icon_state = "mecha_uac2"
-	equip_cooldown = 10
-	projectile = /obj/item/projectile/bullet/midbullet2
-	fire_sound = 'sound/weapons/mg42.ogg'
-	projectiles = 1000
-	projectiles_per_shot = 5
-	deviation = 0.3
-	projectile_energy_cost = 20
-	fire_cooldown = 1
-	salvageable = 0 // We don't want players ripping this off a dead mech.
-*/
 
 /obj/effect/decal/mecha_wreckage/gorilla
 	name = "Gorilla wreckage"

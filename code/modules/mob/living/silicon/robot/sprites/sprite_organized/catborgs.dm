@@ -16,20 +16,6 @@
 /// Save it and boom, you're done. You should now have 8 new icon states. 4 static 4 moving.
 
 /// EXAMPLE.
-/*
-/datum/robot_sprite/dogborg/DEPARTMENT/catborg
-	name = "Catborg - DEPARTMENTL"
-	sprite_icon_state = "engi"
-	sprite_hud_icon_state = "engi"
-	has_eye_sprites = TRUE
-	has_eye_light_sprites = TRUE
-	has_sleeper_light_indicator = FALSE
-	has_vore_belly_resting_sprites = TRUE
-	sprite_icon = 'icons/mob/catborgs/Departmental/catborgs/catborg_engineering.dmi'
-	rest_sprite_options = list("Default", "Bellyup", "Sit")
-	belly_capacity_list = list("sleeper" = 2, "throat" =2)
-	module_type = list("Standard", "Engineering", "Crisis", "Miner", "Janitor", "Service", "Clerical", "Security", "Research") //Select whichever ones they apply to.
-*/
 
 /// Kitty Borgs
 
@@ -66,7 +52,6 @@
 	belly_capacity_list = list("sleeper" = 2)
 	sprite_flags = ROBOT_HAS_SHIELD_SPRITE | ROBOT_HAS_GUN_SPRITE
 	hat_offset = KITTY_HAT_OFFSET
-
 
 /// Janitor
 /datum/robot_sprite/dogborg/janitor/kittyborg
@@ -154,15 +139,6 @@
 	sprite_flags = ROBOT_HAS_SHIELD_SPRITE | ROBOT_HAS_GUN_SPRITE
 	module_type = list("Service", "Clerical")
 	hat_offset = KITTY_HAT_OFFSET
-
-
-
-
-
-
-
-
-
 
 /// CAT BORGS
 /// ALL THE CAT BORG SPRITES BELOW HERE
@@ -328,21 +304,3 @@
 	sprite_flags = ROBOT_HAS_SHIELD_SPRITE | ROBOT_HAS_DISABLER_SPRITE | ROBOT_HAS_TASER_SPRITE | ROBOT_HAS_LASER_SPRITE
 	hat_offset = CAT_HAT_OFFSET
 
-/* //These are in the game and can be enabled to enable the sprites. They were added to fluff.dm, but they're also included here commented out as they're part of the catborgs and it's easy to track them down from here.
-/// Custom Catborg Matica
-/datum/robot_sprite/dogborg/catborg/matica
-	name = "Catborg - Matica"
-	sprite_icon_state = "chonker"
-	sprite_hud_icon_state = "chonker"
-	sprite_icon = 'icons/mob/catborgs/custom/catborg_matica_custom.dmi'
-	belly_capacity_list = list("sleeper" = 1, "throat" =2)
-	rest_sprite_options = list("Default", "Bellyup", "Sit")
-	has_eye_sprites = TRUE
-	has_eye_light_sprites = TRUE
-	has_sleeper_light_indicator = FALSE
-	has_vore_belly_resting_sprites = TRUE
-	is_whitelisted = TRUE
-	whitelist_ckey = "somememeguy"
-	module_type = list("Standard", "Engineering", "Surgeon", "Crisis", "Miner", "Janitor", "Service", "Clerical", "Security", "Research")
-	sprite_flags = ROBOT_HAS_SHIELD_SPRITE | ROBOT_HAS_DISABLER_SPRITE | ROBOT_HAS_TASER_SPRITE | ROBOT_HAS_LASER_SPRITE
-*/

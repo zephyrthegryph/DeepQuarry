@@ -18,7 +18,7 @@
 	icon_state = "ripley"
 	wreckage = /obj/structure/loot_pile/mecha/ripley
 
-	maxHealth = 200
+	endurance = 200
 
 	melee_damage_lower = 10
 	melee_damage_upper = 10
@@ -45,7 +45,7 @@
 	icon_state = "firefighter"
 	wreckage = /obj/structure/loot_pile/mecha/ripley/firefighter
 
-	maxHealth = 250
+	endurance = 250
 	heat_resist = 1
 	armor = list(
 				"melee"		= 0,

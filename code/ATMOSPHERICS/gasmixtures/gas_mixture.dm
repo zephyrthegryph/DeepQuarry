@@ -57,7 +57,7 @@ GLOBAL_LIST_INIT(gaslist_cache, init_gaslist_cache())
 	var/pipeline_cycle = -1
 	/// auxmos arena handle: index into the Rust gas-mixture arena, written by
 	/// register_gasmixture_hook_ffi (verdigris GasArena::register_mix). Null until
-	/// registered. See doc/atmos_migration.md.
+	/// registered. See code/ATMOSPHERICS/README.md.
 	var/_extools_pointer_gasmixture
 	/// Volume the mixture was created with; read by register_mix to size the
 	/// Rust-side mixture at New(). The live volume lives in the arena (return_volume()).

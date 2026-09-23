@@ -1,6 +1,5 @@
 /mob/living/simple_mob/mechanical/mecha/eclipse
-	health = 600
-	maxHealth = 600
+	endurance = 600
 	faction = FACTION_ECLIPSE
 	icon = 'icons/mob/eclipse.dmi'
 	has_repair_droid = TRUE

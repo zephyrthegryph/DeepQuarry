@@ -269,9 +269,11 @@ GLOBAL_LIST_INIT(recharger_battery_exempt, list(
 		charging = null
 		update_icon()
 		return
-	if(pcard.pai.bruteloss || pcard.pai.fireloss)
-		pcard.pai.adjustBruteLoss(-5)
-		pcard.pai.adjustFireLoss(-5)
+	if(pcard.pai.is_injured())
+		pcard.pai.mend(TREAT_PLATING_REPAIR, 5)
+		pcard.pai.mend(TREAT_WIRING_REPAIR, 5)
+		pcard.pai.mend(TREAT_TISSUE_REPAIR, 5)
+		pcard.pai.mend(TREAT_BURN_CARE, 5)
 	else
 		charging = null
 		update_icon()

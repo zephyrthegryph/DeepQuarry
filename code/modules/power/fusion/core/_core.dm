@@ -27,6 +27,9 @@ GLOBAL_LIST_EMPTY(fusion_cores)
 	var/id_tag
 
 	var/reactant_dump = FALSE	// Does the tokomak actively try to syphon materials?
+	/// Ordinary processed stock held in the core's shielded material-treatment cradle.
+	var/obj/item/stack/material/processed_alloy/material_sample
+	var/next_material_treatment = 0
 
 /obj/machinery/power/fusion_core/mapped
 	anchored = TRUE
@@ -46,6 +49,9 @@ GLOBAL_LIST_EMPTY(fusion_cores)
 	connect_to_network()
 
 /obj/machinery/power/fusion_core/Destroy()
+	if(material_sample && !QDELETED(material_sample))
+		material_sample.forceMove(get_turf(src))
+	material_sample = null
 	for(var/obj/machinery/computer/fusion_core_control/FCC in GLOB.machines)
 		FCC.connected_devices -= src
 		if(FCC.cur_viewed_device == src)
@@ -69,6 +75,7 @@ GLOBAL_LIST_EMPTY(fusion_cores)
 	if(owned_field)
 
 		set_strength(target_field_strength)
+		process_material_sample()
 
 		spawn(1)
 			if(!QDELETED(owned_field))
@@ -130,14 +137,33 @@ GLOBAL_LIST_EMPTY(fusion_cores)
 /obj/machinery/power/fusion_core/attack_hand(mob/user)
 	if(!Adjacent(user)) // As funny as it was for the AI to hug-kill the tokamak field from a distance...
 		return
-	visible_message(span_infoplain(span_bold("\The [user]") + " hugs \the [src] to make it feel better!"))
 	if(owned_field)
+		visible_message(span_notice("[user] initiates an emergency shutdown of [src]'s fusion field."))
 		Shutdown()
+	else if(material_sample)
+		var/obj/item/stack/material/processed_alloy/finished_sample = material_sample
+		material_sample = null
+		finished_sample.forceMove(user.drop_location())
+		user.put_in_hands(finished_sample)
+		visible_message(span_notice("[user] releases [finished_sample] from [src]'s material cradle."))
+	else
+		to_chat(user, span_notice("The fusion field is off and the material cradle is empty."))
 
 /obj/machinery/power/fusion_core/attackby(obj/item/W, mob/user)
 
 	if(owned_field)
-		to_chat(user,span_warning("Shut \the [src] off first!"))
+		to_chat(user,span_warning("The fusion field must be shut down before opening the material cradle."))
+		return
+
+	if(istype(W, /obj/item/stack/material/processed_alloy))
+		if(material_sample)
+			to_chat(user, span_warning("The material cradle is already occupied."))
+			return
+		var/obj/item/stack/material/processed_alloy/stock = W
+		user.drop_from_inventory(stock)
+		stock.forceMove(src)
+		material_sample = stock
+		visible_message(span_notice("[user] secures [stock] in [src]'s shielded treatment cradle."))
 		return
 
 	if(default_part_replacement(user, W))
@@ -150,6 +176,54 @@ GLOBAL_LIST_EMPTY(fusion_cores)
 		return
 
 	return ..()
+
+/obj/machinery/power/fusion_core/examine(mob/user)
+	. = ..()
+	if(material_sample)
+		. += span_notice("The cradle contains [material_sample].")
+		if(owned_field)
+			. += span_warning("Shut down the fusion field before removing it.")
+		else
+			. += span_notice("Click the core to remove it.")
+	else if(!owned_field)
+		. += span_notice("The material cradle is empty. Apply alloy stock to load it.")
+
+/obj/machinery/power/fusion_core/proc/process_material_sample()
+	if(!material_sample || QDELETED(material_sample) || !owned_field || world.time < next_material_treatment)
+		return
+	next_material_treatment = world.time + 5 SECONDS
+	var/datum/material_batch/batch = material_sample.physical_batch()?.copy_batch()
+	if(!batch)
+		return
+	var/field_work = clamp(round(field_strength / 25 + owned_field.plasma_temperature / 2500), 2, 30)
+	var/old_fusion_strength = batch.field_treatments[MATERIAL_FIELD_FUSION] || 0
+	batch.add_field_treatment(MATERIAL_FIELD_FUSION, field_work)
+	batch.homogeneity = clamp(batch.homogeneity + round(field_work / 6), 0, 100)
+	batch.add_thermal_energy(max(100, owned_field.plasma_temperature * batch.amount * 0.04))
+	batch.record_electricity(active_power_usage * 5)
+	var/phoron_key
+	var/hydrogen_key
+	for(var/reactant in owned_field.dormant_reactant_quantities)
+		var/reactant_name = lowertext("[reactant]")
+		if(!phoron_key && (findtext(reactant_name, "plasma") || findtext(reactant_name, "phoron")))
+			phoron_key = reactant
+		if(!hydrogen_key && findtext(reactant_name, "hydrogen"))
+			hydrogen_key = reactant
+	var/phoron = phoron_key ? (owned_field.dormant_reactant_quantities[phoron_key] || 0) : 0
+	var/hydrogen = hydrogen_key ? (owned_field.dormant_reactant_quantities[hydrogen_key] || 0) : 0
+	if(phoron > 5)
+		batch.add_dissolved_gas("fusion phoron", min(phoron / 50, field_work))
+		owned_field.dormant_reactant_quantities[phoron_key] = max(0, phoron - 5)
+	if(hydrogen > 5)
+		batch.add_dissolved_gas("fusion hydrogen", min(hydrogen / 50, field_work))
+		owned_field.dormant_reactant_quantities[hydrogen_key] = max(0, hydrogen - 5)
+	var/obj/item/stack/material/processed_alloy/replacement = replace_processed_stack(material_sample, batch, src)
+	material_sample = replacement
+	if(material_sample)
+		material_sample.forceMove(src)
+	if(round(old_fusion_strength / 25) != round((batch.field_treatments[MATERIAL_FIELD_FUSION] || 0) / 25))
+		visible_message(span_notice("Colored bands crawl across [src]'s sample cradle as the fusion field changes the stock's lattice."))
+	qdel(batch)
 
 /obj/machinery/power/fusion_core/proc/jumpstart(field_temperature)
 	field_strength = 501 // Generally a good size.

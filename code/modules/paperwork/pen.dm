@@ -364,7 +364,6 @@
 	icon_state = "markerred"
 
 
-// === merged from pen_chomp.dm during hard-fork de-suffix (verified no override-order change) ===
 //Adminspawn item for hunters who're doing kidnaps during events
 /obj/item/pen/autostun
 	desc = "A well made and expensive fountain pen. This one has gold accents."

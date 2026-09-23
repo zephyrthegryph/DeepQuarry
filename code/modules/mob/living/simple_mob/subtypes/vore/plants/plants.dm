@@ -14,7 +14,7 @@
 	harm_intent_damage = 0
 	melee_damage_lower = 0
 	melee_damage_upper = 0
-	maxHealth = 100
+	endurance = 100
 	attacktext = list("flinches at")
 	see_in_dark = 8
 	minbodytemp = 0
@@ -94,7 +94,7 @@
 	harm_intent_damage = 0
 	melee_damage_lower = 0
 	melee_damage_upper = 0
-	maxHealth = 100
+	endurance = 100
 	attacktext = list("flinches at")
 	see_in_dark = 8
 	minbodytemp = 0

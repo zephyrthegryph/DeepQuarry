@@ -1,4 +1,3 @@
-#define CE_WITHDRAWL "withdrawl" // Withdrawl symptoms
 
 #define ADDICT_NORMAL 1
 #define ADDICT_SLOW 2

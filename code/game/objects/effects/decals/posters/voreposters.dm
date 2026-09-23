@@ -100,12 +100,6 @@
 	icon_state = "sbsposter17"
 	name = "DiveIn"
 	desc = "A limited edition holographic poster that seems to feature subliminal suggestions and conditioning."
-/*Remove loss poster
-/datum/decl/poster/vore_29
-	icon_state = "sbsposter18"
-	name = "Perdition"
-	desc = "You get the feeling that whomever made this intended for you to feel very differently than you do when you look at it."
-*/
 /datum/decl/poster/vore_30
 	icon_state = "tgposter0"
 	name = "RIP Badger"

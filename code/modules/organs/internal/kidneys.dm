@@ -16,21 +16,21 @@
 	var/datum/reagent/coffee = locate(/datum/reagent/drink/coffee) in owner.reagents.reagent_list
 	if(coffee)
 		if(is_bruised())
-			owner.adjustToxLoss(0.1 * PROCESS_ACCURACY)
+			owner.injure(INJURY_TOXIN, 0.1 * PROCESS_ACCURACY, flags = INJURE_SILENT)
 		else if(is_broken())
-			owner.adjustToxLoss(0.3 * PROCESS_ACCURACY)
+			owner.injure(INJURY_TOXIN, 0.3 * PROCESS_ACCURACY, flags = INJURE_SILENT)
 
 	// General organ damage from withdraw, kidneys do a lot of the work
-	if(prob(70) && owner.chem_effects[CE_WITHDRAWL])
-		take_damage(owner.chem_effects[CE_WITHDRAWL] * 0.05 * PROCESS_ACCURACY, prob(1)) // Chance to warn them
-		owner.adjustToxLoss(owner.chem_effects[CE_WITHDRAWL] * 0.3 * PROCESS_ACCURACY)
+	if(prob(70) && owner.factor(BF_WITHDRAWAL))
+		apply_lesion_damage(owner.factor(BF_WITHDRAWAL) * 0.05 * PROCESS_ACCURACY, /datum/affliction/lesion/toxic_injury, prob(1)) // Chance to warn them
+		owner.injure(INJURY_TOXIN, owner.factor(BF_WITHDRAWAL) * 0.3 * PROCESS_ACCURACY, flags = INJURE_SILENT)
 
 /obj/item/organ/internal/kidneys/handle_organ_proc_special()
 	. = ..()
 
-	if(owner && owner.getToxLoss() <= owner.getMaxHealth() * 0.1) // If you have less than 10 tox damage (for a human), your kidneys can help purge it.
-		if(prob(owner.getToxLoss()))
-			owner.adjustToxLoss(rand(-1,-3))
+	if(owner && owner.injury_load(INJURY_CATEGORY_TOXIC) <= owner.get_endurance() * 0.1) // If you have less than 10 tox damage (for a human), your kidneys can help purge it.
+		if(prob(owner.injury_load(INJURY_CATEGORY_TOXIC)))
+			owner.mend(TREAT_ANTITOXIN, rand(1,3))
 
 /obj/item/organ/internal/kidneys/handle_germ_effects()
 	. = ..() //Up should return an infection level as an integer

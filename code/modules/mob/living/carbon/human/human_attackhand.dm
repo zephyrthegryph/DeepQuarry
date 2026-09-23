@@ -114,8 +114,15 @@
 	if(istype(M) && attempt_to_scoop(M, H) && !on_fire)
 		return FALSE;
 
+	// Abdominal thrusts on a choking patient (aim at the chest).
+	if(istype(H) && H != src && !on_fire && H.zone_sel?.selecting == BP_TORSO && stat != DEAD)
+		var/datum/affliction/airway_obstruction/choke = body?.find_affliction(/datum/affliction/airway_obstruction)
+		if(choke)
+			perform_heimlich(H, choke)
+			return TRUE
+
 	//todo: make this whole CPR check into it's own individual proc instead of hogging up attack_hand_help_intent
-	if((istype(H) && (health < get_crit_point()) || stat == DEAD) && !on_fire && H != src) //Only humans can do CPR.
+	if((istype(H) && HAS_TRAIT(src, TRAIT_CRITICAL_CONDITION) || stat == DEAD) && !on_fire && H != src) //Only humans can do CPR.
 		if(!H.check_has_mouth())
 			to_chat(H, span_danger("You don't have a mouth, you cannot perform CPR!"))
 			return FALSE
@@ -393,8 +400,8 @@
 		if(HAS_TRAIT(H, TRAIT_NONLETHAL_BLOWS) && !attack.sharp && !attack.edge && !H.get_feralness())	//SO IT IS DECREED: PULLING PUNCHES WILL PREVENT THE ACTUAL DAMAGE FROM RINGS AND KNUCKLES, BUT NOT THE ADDED PAIN, BUT YOU CAN'T "PULL" A KNIFE
 			hit_dam_type = HALLOSS
 			if(species)// if you're more resistant to physical blows, pulling punches won't make them more likely to down you. This makes species with both brute and pain modifiers double-dip, but I think that's fine
-				real_damage *= species.brute_mod
-				rand_damage *= species.brute_mod
+				real_damage *= species.get_injury_mod(INJURY_BLUNT)
+				rand_damage *= species.get_injury_mod(INJURY_BLUNT)
 
 	real_damage *= damage_multiplier
 	rand_damage *= damage_multiplier
@@ -408,7 +415,7 @@
 	attack.apply_effects(H, src, armour, rand_damage, hit_zone)
 
 	// Finally, apply damage to target
-	apply_damage(real_damage, hit_dam_type, hit_zone, armour, attack.sharp, attack.edge)
+	injure_by_damtype(hit_dam_type, real_damage, hit_zone, H, armour, attack.sharp, attack.edge)
 
 /// INTENTS END
 
@@ -421,7 +428,7 @@
 		var/mob/living/L = user
 		if(touch_reaction_flags & SPECIES_TRAIT_THORNS)
 			if((src != L))
-				L.apply_damage(3, BRUTE)
+				L.injure(INJURY_PIERCE, 3, L.hand ? BP_L_HAND : BP_R_HAND, src)
 				L.visible_message( \
 					span_warning("[L] is hurt by sharp body parts when touching [src]!"), \
 					span_warning("[src] is covered in sharp bits and it hurt when you touched them!"), )
@@ -436,8 +443,8 @@
 	var/dam_zone = pick(organs_by_name)
 	var/obj/item/organ/external/affecting = get_organ(ran_zone(dam_zone))
 	var/armor_block = run_armor_check(affecting, armor_type, armor_pen)
-	apply_damage(damage, BRUTE, affecting, armor_block, a_sharp, a_edge)
-	updatehealth()
+	var/kind = (a_sharp || a_edge) ? injury_kind_for(BRUTE, a_sharp, a_edge) : generic_attack_injury_kind(user)
+	injure(kind, damage, affecting?.organ_tag, user, armor_block)
 	return TRUE
 
 //Used to attack a joint through grabbing
@@ -555,6 +562,9 @@
 
 	//The below is what actually allows metabolism.
 	add_modifier(/datum/modifier/bloodpump_corpse/cpr, 2 SECONDS)
+	// Compressions: partial perfusion for a stopped heart (and, with a
+	// vasopressor aboard, a chance to coarsen asystole into VF).
+	mend(TREAT_CHEST_COMPRESSION, 1)
 
 	// Toggle for 'realistic' CPR. Use this if you want a more grim CPR approach that mimicks the damage that CPR can do to someone. This means more extensive internal damage, almost guaranteed rib breakage, etc.
 	// DEFAULT: FALSE
@@ -562,14 +572,15 @@
 
 	// brute damage
 	if(prob(3))
-		apply_damage(1, BRUTE, BP_TORSO)
+		injure(INJURY_BLUNT, 1, BP_TORSO, reviver)
 		if(prob(25) || (realistic_cpr)) //This being a 25% chance on top of the 3% chance means you have a 0.75% chance every compression to break ribs (and do minor internal damage). Realism mode means it's a 100% chance every time that 3% procs.
 			var/obj/item/organ/external/chest = get_organ(BP_TORSO)
 			if(chest)
 				chest.fracture()
 
-	// standard CPR ahead, adjust oxy and refresh health
-	if(health > get_crit_point() && prob(10))
+	// standard CPR ahead: restart a body whose injuries are survivable, or oxygenate a living one
+	// A fibrillating or flatlined heart doesn't restart from compressions alone.
+	if(stat == DEAD && !body?.is_dead() && has_cardiac_output() && vitality() > 0.5 && prob(10))
 		if(species.flags & NO_DEFIB) //TODO: Changee the NO_DEFIB species flag into a HAS_TRAIT() sometime.
 			to_chat(reviver, span_danger("You get the feeling [src] can't be revived by CPR alone."))
 			return // Handle no-defib species flag.
@@ -612,7 +623,6 @@
 		if(lungs)
 			emote("gasp")
 		Weaken(rand(10,25))
-		updatehealth()
 		//SShaunting.influence(HAUNTING_RESLEEVE) // Used for the Haunting module downstream. Not implemented upstream.
 
 		// This is measures in `Life()` ticks. E.g. 10 minute defib timer = 300 `Life()` ticks.				// Original math was VERY off. Life() tick occurs every ~2 seconds, not every 2 world.time ticks.
@@ -622,10 +632,33 @@
 			// As the brain decays, this will be between 0 and 1, with 1 being the most fresh.
 			var/brain_death_scale = brain.defib_timer / brain_damage_timer
 			// This is backwards from what you might expect, since 1 = fresh and 0 = rip.
-			var/damage_calc = LERP(brain.max_damage, getBrainLoss(), brain_death_scale)
+			var/current_brain_damage = injury_load(INJURY_CATEGORY_NEURAL)
+			var/damage_calc = LERP(brain.max_damage, current_brain_damage, brain_death_scale)
 			// A bit of sanity.
-			var/brain_damage = between(getBrainLoss(), damage_calc, brain.max_damage)
-			setBrainLoss(brain_damage)
-	else if(health > -getMaxHealth())
-		adjustOxyLoss(-(min(getOxyLoss(), 5)))
-		updatehealth()
+			var/brain_damage = between(current_brain_damage, damage_calc, brain.max_damage)
+			injure(INJURY_NEURAL, brain_damage - current_brain_damage, null, null, 0, null, INJURE_IGNORE_RESISTANCE | INJURE_SILENT)
+	else if(stat != DEAD)
+		if(airway_obstructed())
+			// Compressions may still shift what's stuck; the breaths won't go in.
+			var/datum/affliction/airway_obstruction/choke = body?.find_affliction(/datum/affliction/airway_obstruction)
+			choke?.receive_tagged_treatment(TREAT_AIRWAY, 10)
+			to_chat(reviver, span_warning("Your rescue breaths won't go in - [src]'s airway is blocked!"))
+			return
+		// Rescue breaths: breathe for an apneic patient and oxygenate.
+		mend(TREAT_VENTILATION, CPR_RESCUE_BREATH_SECONDS)
+		mend(TREAT_OXYGENATION, 5)
+
+/// Abdominal thrusts to dislodge an airway obstruction.
+/mob/living/carbon/human/proc/perform_heimlich(mob/living/carbon/human/rescuer, datum/affliction/airway_obstruction/choke)
+	rescuer.visible_message(span_danger("\The [rescuer] wraps [rescuer.p_their()] arms around \the [src] and thrusts hard under the ribs!"))
+	if(!do_after(rescuer, 2 SECONDS, target = src))
+		return FALSE
+	if(QDELETED(choke) || choke.body != body)
+		return FALSE
+	choke.receive_tagged_treatment(TREAT_AIRWAY, rand(20, 45))
+	if(QDELETED(choke))
+		visible_message(span_notice("\The [src] coughs something up and gasps for air!"))
+		emote("gasp")
+	else
+		emote("cough")
+	return TRUE

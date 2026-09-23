@@ -9,7 +9,7 @@
 	on_created_text = span_warning("You feel rather weak.")
 	on_expired_text = span_notice("You feel your strength returning to you.")
 
-	max_health_percent = 0.8
+	factors = alist(BF_ENDURANCE_MULT = 0.8)
 
 /datum/modifier/trait/frail
 	name = "frail"
@@ -18,109 +18,86 @@
 	on_created_text = span_warning("You feel really weak.")
 	on_expired_text = span_notice("You feel your strength returning to you.")
 
-	max_health_percent = 0.6
+	factors = alist(BF_ENDURANCE_MULT = 0.6)
 
 /datum/modifier/trait/weak
 	name = "weak"
 	desc = "A lack of physical strength causes a diminshed capability in close quarters combat"
 
-	outgoing_melee_damage_percent = 0.8
+	factors = alist(BF_MELEE_DAMAGE = 0.8)
 
 /datum/modifier/trait/wimpy
 	name = "wimpy"
 	desc = "An extreme lack of physical strength causes greatly diminished capability in close quarters combat."
 
-	outgoing_melee_damage_percent = 0.6
+	factors = alist(BF_MELEE_DAMAGE = 0.6)
 
 /datum/modifier/trait/haemophilia
 	name = "haemophilia"
 	desc = "You bleed much faster than average."
 
-	bleeding_rate_percent = 3.0
+	factors = alist(BF_BLEEDING = 3.0)
 
 /datum/modifier/trait/inaccurate
 	name = "Inaccurate"
 	desc = "You're rather inexperienced with guns, you've never used one in your life, or you're just really rusty.  \
 	Regardless, you find it quite difficult to land shots where you wanted them to go."
 
-	accuracy = -15
-	accuracy_dispersion = 1
+	factors = alist(BF_ACCURACY = -15, BF_DISPERSION = 1)
 
 /datum/modifier/trait/high_metabolism
 	name = "High Metabolsim"
 	desc = "Your body's metabolism is faster than average."
 
-	metabolism_percent = 2.0
-	incoming_healing_percent = 1.4
+	factors = alist(BF_METABOLISM = 2.0, BF_HEALING_RECEIVED = 1.4)
 
 /datum/modifier/trait/low_metabolism
 	name = "Low Metabolism"
 	desc = "Your body's metabolism is slower than average."
 
-	metabolism_percent = 0.5
-	incoming_healing_percent = 0.6
+	factors = alist(BF_METABOLISM = 0.5, BF_HEALING_RECEIVED = 0.6)
 
 /datum/modifier/trait/taller
 	name = "Taller"
 	desc = "Your body is taller than average."
-	icon_scale_x_percent = 1
-	icon_scale_y_percent = 1.09
+	factors = alist(BF_ICON_SCALE_X = 1, BF_ICON_SCALE_Y = 1.09)
 
 /datum/modifier/trait/tall
 	name = "Tall"
 	desc = "Your body is a bit taller than average."
-	icon_scale_x_percent = 1
-	icon_scale_y_percent = 1.05
+	factors = alist(BF_ICON_SCALE_X = 1, BF_ICON_SCALE_Y = 1.05)
 
 /datum/modifier/trait/short
 	name = "Short"
 	desc = "Your body is a bit shorter than average."
-	icon_scale_x_percent = 1
-	icon_scale_y_percent = 0.95
+	factors = alist(BF_ICON_SCALE_X = 1, BF_ICON_SCALE_Y = 0.95)
 
 
 /datum/modifier/trait/shorter
 	name = "Shorter"
 	desc = "You are shorter than average."
-	icon_scale_x_percent = 1
-	icon_scale_y_percent = 0.915
+	factors = alist(BF_ICON_SCALE_X = 1, BF_ICON_SCALE_Y = 0.915)
 
 /datum/modifier/trait/fat
 	name = "Overweight"
 	desc = "You are heavier than average."
 
-	metabolism_percent = 1.2
-	icon_scale_x_percent = 1.054
-	icon_scale_y_percent = 1
-	slowdown = 1.1
-	max_health_percent = 1.05
+	factors = alist(BF_METABOLISM = 1.2, BF_SLOWDOWN = 1.1, BF_ENDURANCE_MULT = 1.05, BF_ICON_SCALE_X = 1.054, BF_ICON_SCALE_Y = 1)
 
 /datum/modifier/trait/obese
 	name = "Obese"
 	desc = "You are much heavier than average."
-	metabolism_percent = 1.4
-	icon_scale_x_percent = 1.095
-	icon_scale_y_percent = 1
-	slowdown = 1.2
-	max_health_percent = 1.10
+	factors = alist(BF_METABOLISM = 1.4, BF_SLOWDOWN = 1.2, BF_ENDURANCE_MULT = 1.10, BF_ICON_SCALE_X = 1.095, BF_ICON_SCALE_Y = 1)
 
 /datum/modifier/trait/thin
 	name = "Thin"
 	desc = "You are skinnier than average."
-	metabolism_percent = 0.8
-	icon_scale_x_percent = 0.945
-	icon_scale_y_percent = 1
-	max_health_percent = 0.95
-	outgoing_melee_damage_percent = 0.95
+	factors = alist(BF_METABOLISM = 0.8, BF_MELEE_DAMAGE = 0.95, BF_ENDURANCE_MULT = 0.95, BF_ICON_SCALE_X = 0.945, BF_ICON_SCALE_Y = 1)
 
 /datum/modifier/trait/thinner
 	name = "Very Thin"
 	desc = "You are much skinnier than average."
-	metabolism_percent = 0.6
-	icon_scale_x_percent = 0.905
-	icon_scale_y_percent = 1
-	max_health_percent = 0.90
-	outgoing_melee_damage_percent = 0.9
+	factors = alist(BF_METABOLISM = 0.6, BF_MELEE_DAMAGE = 0.9, BF_ENDURANCE_MULT = 0.90, BF_ICON_SCALE_X = 0.905, BF_ICON_SCALE_Y = 1)
 
 /datum/modifier/trait/colorblind_protanopia
 	name = "Protanopia"

@@ -98,5 +98,5 @@
 	if(check_locks())
 		force_toggle(1, user)
 
-/obj/machinery/door/blast/puzzle/fire_act(datum/gas_mixture/air, exposed_temperature, exposed_volume)
+/obj/machinery/door/blast/puzzle/fire_act(exposed_temperature, exposed_volume)
 	return // blast doors are immune to fire completely.

@@ -162,7 +162,7 @@
 		"name" = pai.name,
 		"color" = screen_color,
 		"chassis" = pai.chassis_name,
-		"health" = pai.health,
+		"health" = round(pai.vitality() * 100),
 		"law_zero" = pai.pai_law0,
 		"law_extra" = pai.pai_laws,
 		"master_name" = pai.master,

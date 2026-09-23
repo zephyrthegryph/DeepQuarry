@@ -124,6 +124,16 @@ export const ProductConfigurator = (props: Props) => {
   const [search, setSearch] = useState('');
   const [quantity, setQuantity] = useState(1);
   const selected = custom ? requested : defaults;
+  const selectedConductor = materialChoices.find(
+    (choice) => choice.id === selected.conductor,
+  );
+  const selectedBuffer = materialChoices.find(
+    (choice) => choice.id === selected['thermal buffer'],
+  );
+  const incompatibleColdAssembly =
+    !!selectedConductor?.criticalTemperature &&
+    !!selectedBuffer?.phaseTemperature &&
+    selectedBuffer.phaseTemperature >= selectedConductor.criticalTemperature;
   const activeSlot = slots.find((slot) => slot.role === activeRole) ?? slots[0];
   const totalCost: MaterialMap = { ...design.cost };
   for (const slot of slots) {
@@ -228,6 +238,13 @@ export const ProductConfigurator = (props: Props) => {
           })}
         </Stack>
       </Section>
+      {incompatibleColdAssembly && (
+        <NoticeBox color="yellow">
+          The selected thermal buffer stabilizes above this conductor&apos;s
+          critical temperature. It will not keep the conductor superconducting
+          without additional cooling.
+        </NoticeBox>
+      )}
       {custom && activeSlot && (
         <Section title={`Choose ${activeSlot.label}`}>
           <Input

@@ -37,7 +37,7 @@
 	//TODO: Replace with a modifier.
 	for(var/i = 0, i<10,i++)
 		if(C)
-			C.adjustToxLoss(-heal_amount)
+			C.mend(TREAT_ANTITOXIN, heal_amount)
 			sleep(10)
 
 	for(var/obj/item/organ/external/E in C.organs)

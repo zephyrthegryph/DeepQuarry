@@ -136,7 +136,6 @@
 	return FALSE
 
 
-// === merged from area_atmos_computer_vr.dm during hard-fork de-suffix (verified no override-order change) ===
 // The one that only works in the same map area
 /obj/machinery/portable_atmospherics/powered/scrubber/huge/var/scrub_id = "generic"
 

@@ -111,12 +111,15 @@
 		var/pressure_delta = abs(internal.return_pressure() - (external?.return_pressure() || 0))
 		var/pressure_limit = material_environment_pressure_limit(base_pressure, radius_mm, wall_thickness_mm, service_owns_heat ? material_service.temperature : internal_temperature)
 		var/load_ratio = pressure_delta / max(pressure_limit, ONE_ATMOSPHERE)
-		if(load_ratio >= 1.25)
+		if(load_ratio >= MATERIAL_PRESSURE_BURST_RATIO)
 			material_environment_rupture()
 			return TRUE
-		if(load_ratio > 0.78)
-			material_environment_fatigue = min(100, material_environment_fatigue + (load_ratio - 0.78) * 12 * elapsed_seconds)
+		if(load_ratio > MATERIAL_PRESSURE_FATIGUE_RATIO)
+			material_environment_fatigue = min(100, material_environment_fatigue + (load_ratio - MATERIAL_PRESSURE_FATIGUE_RATIO) * MATERIAL_PRESSURE_FATIGUE_RATE * elapsed_seconds)
 			active = TRUE
+		else if(load_ratio < MATERIAL_PRESSURE_RECOVERY_RATIO && material_environment_fatigue > 0)
+			material_environment_fatigue = max(0, material_environment_fatigue - MATERIAL_PRESSURE_RECOVERY_RATE * elapsed_seconds)
+			active = material_environment_fatigue > 0
 		if(material_environment_fatigue >= 100 && !material_environment_leaking)
 			material_environment_begin_leak()
 
@@ -214,6 +217,12 @@
 /obj/item/reagent_containers/on_reagent_change()
 	. = ..()
 	ensure_material_construction(MATERIAL_APPLICATION_CONTAINER)
+	var/datum/material/liner = material_for_role(MATERIAL_ROLE_LINER)
+	var/corrosion = 0
+	if(liner && reagents?.total_volume)
+		for(var/datum/reagent/chemical in reagents.reagent_list)
+			corrosion += liner.material_corrosion_rate(chemical.id) * chemical.volume / reagents.total_volume
+	material_service_event(MATERIAL_EVENT_CORROSION, corrosion)
 	material_service?.contents_changed()
 
 /obj/item/reagent_containers/material_environment_rupture()

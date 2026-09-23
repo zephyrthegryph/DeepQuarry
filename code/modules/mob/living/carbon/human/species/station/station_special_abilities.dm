@@ -9,7 +9,7 @@
 	else return FALSE
 
 /mob/living/carbon/human/proc/quickcheckuninjured()
-	if (getBruteLoss() || getFireLoss() || getHalLoss() || getToxLoss() || getOxyLoss() || getBrainLoss()) //fails if they have any of the main damage types
+	if (is_injured() || current_pain()) //fails if they have any injury or pain
 		return FALSE
 	for (var/obj/item/organ/O in organs) //check their organs just in case they're being sneaky and somehow have organ damage but no health damage
 		if (O.is_damaged() || O.status)
@@ -124,14 +124,14 @@
 		else
 			src.visible_message(span_infoplain(span_red(span_italics("[src] suddenly extends their fangs and plunges them down into [B]'s neck!"))), range = 1)
 		if(bleed)
-			B.apply_damage(10, BRUTE, BP_HEAD, blocked = 0, sharp = TRUE, edge = FALSE)
+			B.injure(INJURY_PIERCE, 10, BP_HEAD, src)
 			var/obj/item/organ/external/E = B.get_organ(BP_HEAD)
 			if(!(E.status & ORGAN_BLEEDING))
 				E.status |= ORGAN_BLEEDING //If 10 points of piercing didn't make the organ bleed, we are making it bleed.
 
 
 		else
-			B.apply_damage(5, BRUTE, BP_HEAD) //You're getting fangs pushed into your neck. What do you expect????
+			B.injure(INJURY_PIERCE, 5, BP_HEAD, src) //You're getting fangs pushed into your neck. What do you expect????
 
 
 		if(!noise && !bleed) //If we're quiet and careful, there should be no blood to serve as evidence
@@ -197,8 +197,8 @@
 			if(100)
 				C.nutrition = (C.nutrition + T.nutrition)
 				T.nutrition = 0 //Completely drained of everything.
-				var/damage_to_be_applied = T.getMaxHealth() //Get their max health.
-				T.apply_damage(damage_to_be_applied, HALLOSS) //Knock em out.
+				var/damage_to_be_applied = T.get_endurance() //Enough pain to pass out.
+				T.injure(INJURY_PAIN, damage_to_be_applied, null, src) //Knock em out.
 				C.absorbing_prey = FALSE
 				to_chat(C, span_notice("You have completely drained [T], causing them to pass out."))
 				to_chat(T, span_danger("You feel weak, as if you have no control over your body whatsoever as [C] finishes draining you.!"))
@@ -267,8 +267,8 @@
 					to_chat(T, span_danger("You feel completely drained as [src] finishes draining you and begins to move onto draining you lethally, but you are too strong for them to do so!"))
 					nutrition = (nutrition + T.nutrition)
 					T.nutrition = 0 //Completely drained of everything.
-					var/damage_to_be_applied = T.getMaxHealth() //Get their max health.
-					T.apply_damage(damage_to_be_applied, HALLOSS) //Knock em out.
+					var/damage_to_be_applied = T.get_endurance() //Enough pain to pass out.
+					T.injure(INJURY_PAIN, damage_to_be_applied, null, src) //Knock em out.
 					absorbing_prey = 0 //Clean this up before we return
 					return
 				to_chat(src, span_notice("You begin to drain [T] completely..."))
@@ -277,14 +277,14 @@
 				if(T.stat == DEAD)
 					if(soulgem?.flag_check(SOULGEM_ACTIVE | SOULGEM_CATCHING_DRAIN, TRUE))
 						soulgem.catch_mob(T)
-					T.apply_damage(500, OXY) //Bit of fluff.
+					T.injure(INJURY_ASPHYXIA, 500, null, src) //Bit of fluff.
 					absorbing_prey = 0
 					to_chat(src, span_notice("You have completely drained [T], killing them."))
 					to_chat(T, span_danger(span_giant("You feel... So... Weak...")))
 					add_attack_logs(src,T,"Succubus drained (almost lethal)")
 					return
-				if(drain_finalized == 1 || T.getBrainLoss() < 55) //Let's not kill them with this unless the drain is finalized. This will still stack up to 55, since 60 is lethal.
-					T.adjustBrainLoss(5) //Will kill them after a short bit!
+				if(drain_finalized == 1 || T.injury_load(INJURY_CATEGORY_NEURAL) < 55) //Let's not kill them with this unless the drain is finalized. This will still stack up to 55, since 60 is lethal.
+					T.injure(INJURY_NEURAL, 5, null, src) //Will kill them after a short bit!
 				T.eye_blurry += 20 //A lot of eye blurry just to signify to the prey that they are still being drained. This'll stack up over time, leave the prey a bit more "weakened" after the deed is done. More than non-lethal due to their lifeforce being sucked out
 				nutrition = (nutrition + 25) //Assuming brain damage kills at 60, this gives 300 nutrition.
 			if(99)
@@ -293,7 +293,9 @@
 			if(100) //They shouldn't  survive long enough to get here, but just in case.
 				if(soulgem?.flag_check(SOULGEM_ACTIVE | SOULGEM_CATCHING_DRAIN, TRUE))
 					soulgem.catch_mob(T)
-				T.apply_damage(500, OXY) //Kill them.
+				T.injure(INJURY_ASPHYXIA, 500, null, src) //Kill them.
+				if(T.stat != DEAD)
+					T.death()
 				absorbing_prey = FALSE
 				to_chat(src, span_notice("You have completely drained [T], killing them in the process."))
 				to_chat(T, span_danger(span_massive("You... Feel... So... Weak...")))
@@ -502,7 +504,7 @@
 
 		//Removing an internal organ
 		if(T_int && T_int.damage >= 25) //Internal organ and it's been severely damaged
-			T.apply_damage(15, BRUTE, T_ext) //Damage the external organ they're going through.
+			T.injure(INJURY_CUT, 15, T_ext.organ_tag, src) //Damage the external organ they're going through.
 			T_int.removed()
 			if(B)
 				T_int.forceMove(B) //Move to pred's gut
@@ -512,12 +514,12 @@
 				visible_message(span_danger("[src] severely damages [T_ext.name] of [T], resulting in their [T_int.name] coming out!"),span_warning("You tear out [T]'s [T_int.name]!"))
 
 		//Removing an external organ
-		else if(!T_int && (T_ext.damage >= 25 || T_ext.brute_dam >= 25))
+		else if(!T_int && (T_ext.damage >= 25 || T_ext.get_trauma() >= 25))
 			T_ext.droplimb(1,DROPLIMB_EDGE) //Clean cut so it doesn't kill the prey completely.
 
 			//Is it groin/chest? You can't remove those.
 			if(T_ext.cannot_amputate)
-				T.apply_damage(25, BRUTE, T_ext)
+				T.injure(INJURY_CUT, 25, T_ext.organ_tag, src)
 				visible_message(span_danger("[src] severely damages [T]'s [T_ext.name]!"))
 			else if(B)
 				T_ext.forceMove(B)
@@ -529,8 +531,8 @@
 		//Not targeting an internal organ w/ > 25 damage , and the limb doesn't have < 25 damage.
 		else
 			if(T_int)
-				T_int.damage = 25 //Internal organs can only take damage, not brute damage.
-			T.apply_damage(25, BRUTE, T_ext)
+				T.injure(INJURY_CUT, 25, T_int, src, affliction = /datum/affliction/lesion/laceration)
+			T.injure(INJURY_CUT, 25, T_ext.organ_tag, src)
 			visible_message(span_danger("[src] severely damages [T]'s [T_ext.name]!"))
 
 		add_attack_logs(src,T,"Shredded (hardvore)")

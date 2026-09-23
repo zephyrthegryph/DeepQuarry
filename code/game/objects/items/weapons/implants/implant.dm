@@ -54,11 +54,8 @@
 
 /obj/item/implant/proc/meltdown()	//breaks it down, making implant unrecongizible
 	to_chat(imp_in, span_warning("You feel something melting inside [part ? "your [part.name]" : "you"]!"))
-	if (part)
-		part.take_damage(burn = 15, used_weapon = "Electronics meltdown")
-	else
-		var/mob/living/M = imp_in
-		M.apply_damage(15,BURN)
+	var/mob/living/M = imp_in
+	M?.injure(INJURY_BURN, 15, part, src)
 	name = "melted implant"
 	desc = "Charred circuit in melted plastic case. Wonder what that used to be..."
 	icon_state = "implant_melted"
@@ -265,7 +262,7 @@ Implant Specifics:<BR>"}
 					if (istype(part,/obj/item/organ/external/chest) ||	\
 						istype(part,/obj/item/organ/external/groin) ||	\
 						istype(part,/obj/item/organ/external/head))
-						part.createwound(BRUISE, 80)	//mangle them instead
+						part.owner?.injure(INJURY_BLUNT, 80, part.organ_tag, src, flags = INJURE_IGNORE_RESISTANCE)	//mangle them instead
 						explosion(get_turf(imp_in), -1, -1, 1, 3)
 						qdel(src)
 					else
@@ -342,7 +339,7 @@ Implant Specifics:<BR>"}
 				if (istype(part,/obj/item/organ/external/chest) ||	\
 					istype(part,/obj/item/organ/external/groin) ||	\
 					istype(part,/obj/item/organ/external/head))
-					part.createwound(BRUISE, 80)	//mangle them instead
+					part.owner?.injure(INJURY_BLUNT, 80, part.organ_tag, src, flags = INJURE_IGNORE_RESISTANCE)	//mangle them instead
 				else
 					part.droplimb(0,DROPLIMB_BLUNT)
 			explosion(get_turf(imp_in), -1, -1, 1, 3)

@@ -222,7 +222,6 @@
 	..()
 
 
-// === merged from shelter_atoms_vr.dm during hard-fork de-suffix (manually verified) ===
 GLOBAL_LIST_EMPTY(unique_deployable)
 /*****************************Survival Pod********************************/
 /area/survivalpod

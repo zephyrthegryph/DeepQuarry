@@ -77,7 +77,7 @@
 	nodamage = 1
 	taser_effect = 1
 	agony = 55
-	damage_type = HALLOSS
+	injury_kind = INJURY_PAIN
 	light_color = "#8837A3"
 
 	muzzle_type = /obj/effect/projectile/muzzle/darkmatterstun

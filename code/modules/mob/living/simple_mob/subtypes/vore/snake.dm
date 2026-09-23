@@ -32,8 +32,7 @@
 	vis_height = 64
 
 	faction = FACTION_SNAKE
-	maxHealth = 200
-	health = 200
+	endurance = 200
 
 	melee_damage_lower = 5
 	melee_damage_upper = 12

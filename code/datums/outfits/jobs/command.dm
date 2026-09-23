@@ -57,7 +57,6 @@
 		uniform = /obj/item/clothing/under/suit_jacket/charcoal
 
 
-// === merged from command_vr.dm during hard-fork de-suffix (verified no override-order change) ===
 /datum/decl/hierarchy/outfit/job/hop
 	id_type = /obj/item/card/id/silver/hop
 
@@ -65,7 +64,6 @@
 	id_type = /obj/item/card/id/silver/secretary
 
 
-// === merged from command_chomp.dm during hard-fork de-suffix (verified no override-order change) ===
 /datum/decl/hierarchy/outfit/job/bridge_officer
 	name = OUTFIT_JOB_NAME("Bridge Officer")
 	uniform = /obj/item/clothing/under/utility

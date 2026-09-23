@@ -321,13 +321,13 @@
 	get_icon()
 	..()
 
-/obj/item/organ/external/head/take_damage(brute, burn, sharp, edge, used_weapon = null, list/forbidden_limbs = list(), permutation, projectile)
-	..(brute, burn, sharp, edge, used_weapon, forbidden_limbs, permutation, projectile)
+/obj/item/organ/external/head/apply_wound_damage(brute, burn, sharp, edge, used_weapon = null, list/forbidden_limbs = null, permutation, projectile)
+	. = ..(brute, burn, sharp, edge, used_weapon, forbidden_limbs, permutation, projectile)
 	if (!disfigured)
-		if (brute_dam > 40)
+		if (get_trauma() > 40)
 			if (prob(50))
 				disfigure("brute")
-		if (burn_dam > 40)
+		if (get_burn() > 40)
 			disfigure("burn")
 
 /obj/item/organ/external/head/handle_germ_effects()

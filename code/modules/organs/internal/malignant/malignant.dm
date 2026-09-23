@@ -139,7 +139,7 @@
 	if(degradechance == 0)
 		return FALSE
 	if(prob(degradechance))
-		damage += intensity
+		apply_lesion_damage(intensity, /datum/affliction/lesion/necrosis, TRUE)
 		add_autopsy_data("Programmed degeneration", intensity)
 	if(prob(damage * 2))
 		return TRUE // do handle_sideeffects proc
@@ -158,7 +158,7 @@
 		if(damage >= min_broken_damage)
 			owner.custom_pain(span_warning("You feel a painful sensation in your [O.name]."),damage,TRUE)
 			owner.AdjustBlinded(6 * base_mult)
-			owner.adjustToxLoss(4 * base_mult)
+			owner.injure(INJURY_TOXIN, 4 * base_mult, flags = INJURE_SILENT)
 		else
 			owner.custom_pain(span_warning("You feel a strange sensation in your [O.name]."),damage / 10,TRUE)
 
@@ -194,7 +194,7 @@
 	if(stage > 1)
 		if(prob(1))
 			owner.Weaken(3)
-			owner.adjustToxLoss(3)
+			owner.injure(INJURY_TOXIN, 3, flags = INJURE_SILENT)
 			owner.adjust_nutrition(-rand(1,5))
 			cooldown = rand(cooldownmin,cooldownmax)
 	if(stage > 2)
@@ -214,10 +214,10 @@
 	if(stage > 3)
 		if(prob(1))
 			var/obj/item/organ/external/bodypart = owner.get_organ(parent_organ)
-			var/datum/wound/W = new /datum/wound/internal_bleeding(2)
-			bodypart.wounds += W
+			bodypart?.add_wound(new /datum/affliction/wound/internal_bleeding(bodypart, 2))
+			bodypart?.update_damages()
 			owner.Weaken(10)
-			owner.adjustToxLoss(20)
+			owner.injure(INJURY_TOXIN, 20, flags = INJURE_SILENT)
 			owner.adjust_nutrition(-rand(1,5))
 			cooldown = rand(cooldownmin,cooldownmax)
 
@@ -239,7 +239,7 @@
 		return
 
 	if(prob(3))
-		owner.adjustToxLoss(2)
+		owner.injure(INJURY_TOXIN, 2, flags = INJURE_SILENT)
 		owner.adjust_nutrition(-rand(1,5))
 
 	if(prob(2))
@@ -537,7 +537,7 @@
 
 /obj/item/organ/internal/malignant/parasite/painleech/feed()
 	..()
-	owner.add_chemical_effect(CE_PAINKILLER, 10 + (growth * 20))
+	owner.add_modifier(growth >= 5 ? /datum/modifier/numbness/deep : /datum/modifier/numbness, 3 SECONDS)
 	return prob(10) && growth < 10
 
 
@@ -634,7 +634,7 @@
 					new newpath(ourowner, TRUE, ourloc, ourtag)
 			cooldown = rand(2,5)
 		else
-			damage += 1
+			apply_lesion_damage(1, /datum/affliction/lesion/necrosis, TRUE)
 			add_autopsy_data("Apoptotic training cells", 3)
 			cooldown = rand(5,10)
 

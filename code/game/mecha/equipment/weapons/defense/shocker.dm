@@ -15,19 +15,6 @@
 
 	equip_type = EQUIP_HULL
 
-/*
-/obj/item/mecha_parts/mecha_equipment/shocker/can_attach(obj/mecha/M as obj)
-	if(..())
-		if(!M.proc_res["dynattackby"] && !M.proc_res["dynattackhand"] && !M.proc_res["dynattackalien"])
-			return 1
-	return 0
-
-/obj/item/mecha_parts/mecha_equipment/shocker/attach(obj/mecha/M as obj)
-	..()
-	chassis.proc_res["dynattackby"] = src
-	return
-*/
-
 /obj/item/mecha_parts/mecha_equipment/shocker/handle_melee_contact(obj/item/W, mob/living/user, inc_damage = null)
 	if(!action_checks(user) || !active)
 		return

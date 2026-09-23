@@ -2,6 +2,10 @@
 //* Copyright (c) 2023 Citadel Station developers.          *//
 
 #define PATHFINDER_TIMEOUT 50
+/// A cached failure is also dropped after this long, because not every map edit bumps the navigation revision.
+#define PATHFINDER_FAILURE_TTL (30 SECONDS)
+/// The failure cache is emptied when it grows past this many entries.
+#define PATHFINDER_FAILURE_CACHE_MAX 2048
 
 SUBSYSTEM_DEF(pathfinder)
 	name = "Pathfinder"
@@ -20,6 +24,10 @@ SUBSYSTEM_DEF(pathfinder)
 	/// this is used in place of a closed list in algorithms like JPS
 	/// to maximize performance.
 	var/tmp/pathfinding_cycle = 0
+	/// Failed search key -> list(SSai.navigation_revision, world.time) when it failed (Q9).
+	var/list/failed_searches = list()
+	/// Searches answered from failed_searches.
+	var/failure_cache_hits = 0
 
 /**
  * be aware that this emits a set of disjunct nodes
@@ -73,14 +81,29 @@ SUBSYSTEM_DEF(pathfinder)
 				log_runtime("pathfinder timeout of instance with debug variables [instance.debug_log_string()]")
 				return
 	--pathfinding_blocked
+	var/failure_key = instance.failure_cache_key()
+	var/navigation_revision = SSai?.navigation_revision
+	if(failure_key)
+		var/list/failure = failed_searches[failure_key]
+		if(failure)
+			if(failure[1] == navigation_revision && world.time - failure[2] < PATHFINDER_FAILURE_TTL)
+				failure_cache_hits++
+				return null
+			failed_searches -= failure_key
 	pathfinding_mutex = TRUE
 	. = instance.search()
 	if(world.time > started + PATHFINDER_TIMEOUT)
 		stack_trace("pathfinder timeout; check debug logs.")
 		log_runtime("pathfinder timeout of instance with debug variables [instance.debug_log_string()]")
 	pathfinding_mutex = FALSE
+	if(failure_key && !length(.))
+		if(length(failed_searches) >= PATHFINDER_FAILURE_CACHE_MAX)
+			failed_searches.Cut()
+		failed_searches[failure_key] = list(navigation_revision, world.time)
 
 #undef PATHFINDER_TIMEOUT
+#undef PATHFINDER_FAILURE_TTL
+#undef PATHFINDER_FAILURE_CACHE_MAX
 
 /proc/astar_debug(turf/target)
 	if(isnull(target))

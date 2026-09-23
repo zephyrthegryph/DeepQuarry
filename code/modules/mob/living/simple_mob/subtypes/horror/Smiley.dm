@@ -12,8 +12,7 @@
 
 	attack_sound = 'sound/h_sounds/holla.ogg'
 
-	maxHealth = 175
-	health = 175
+	endurance = 175
 
 	melee_damage_lower = 25
 	melee_damage_upper = 35

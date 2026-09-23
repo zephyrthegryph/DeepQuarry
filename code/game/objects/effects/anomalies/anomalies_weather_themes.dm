@@ -183,7 +183,7 @@
 	if(amount_blocked >= 30)
 		return
 
-	affected_mob.apply_damage(damage, BRUTE, target_zone, amount_blocked, used_weapon = "hail")
+	affected_mob.injure(INJURY_BLUNT, damage, target_zone, null, amount_blocked)
 
 /datum/anomalous_weather/ash_storm
 	name = "Ash Storm"

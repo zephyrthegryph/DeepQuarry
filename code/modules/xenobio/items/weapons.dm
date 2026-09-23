@@ -24,7 +24,7 @@
 			var/mob/living/carbon/human/H = M
 			if(H.species && H.species.name == SPECIES_PROMETHEAN)
 				var/agony_to_apply = 60 - agonyforce
-				H.apply_damage(agony_to_apply, HALLOSS)
+				H.injure(INJURY_PAIN, agony_to_apply, source = src)
 
 	..()
 /obj/item/melee/baton/slime/loaded/Initialize(mapload)

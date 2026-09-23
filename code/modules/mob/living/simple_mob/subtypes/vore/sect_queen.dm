@@ -37,8 +37,7 @@
 	custom_eye_color = "#FF0000"
 
 	faction = FACTION_INSECTS
-	maxHealth = 200
-	health = 200
+	endurance = 200
 	see_in_dark = 8
 
 	meat_amount = 8

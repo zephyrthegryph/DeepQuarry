@@ -137,7 +137,6 @@
 	departmental_flags = DEPARTMENT_BITFLAG_SCIENCE | DEPARTMENT_BITFLAG_ENGINEERING
 
 
-// === merged from construction_designs_chomp.dm during hard-fork de-suffix (verified no override-order change) ===
 /datum/design_techweb/fluor_light_bulb
 	name = "fluorescent light bulb"
 	id = "fluor_light_bulb"

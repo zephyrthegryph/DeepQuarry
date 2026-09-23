@@ -467,7 +467,7 @@
 	faction = "pirate"
 	wreckage = /obj/structure/loot_pile/mecha/ripley/pirate
 
-	maxHealth = 250
+	endurance = 250
 	heat_resist = 1
 	armor = list(
 				"melee"		= 30,
@@ -492,7 +492,7 @@
 	name = "Xeno Ripper"
 	desc = "A Ripley modified by a desperate merc. It sports additional riveted armor plating splattered with dried xeno blood and a jury rigged machine gun in addition to its drill.\
 			A repair drone flits around the intimidating mech."
-	maxHealth = 170				//Less Health
+	endurance = 170				//Less Health
 	has_repair_droid = TRUE		//But has repair drone
 	pilot_type = /mob/living/simple_mob/humanoid/possessed/merc/feral	//Possessed rig suit piloting a mech. Tremble in fear
 	movement_shake_radius = 5

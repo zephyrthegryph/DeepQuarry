@@ -34,8 +34,7 @@ GLOBAL_VAR_INIT(moth_amount, 0)
 	// Don't leave that as null if you add solar moths.
 
 	faction = FACTION_GRUBS
-	maxHealth = 50
-	health = 50
+	endurance = 50
 
 	melee_damage_lower = 1
 	melee_damage_upper = 3 	//low damage, but poison and stuns are strong
@@ -89,8 +88,6 @@ GLOBAL_VAR_INIT(moth_amount, 0)
 				sparks.start()
 			anchored = TRUE
 			PN = attached.powernet
-			if(!PN)
-				return
 			PN.draw_power(powerdraw)
 			charge = charge + (powerdraw/1000) //This adds raw powerdraw to charge(Charge is in Ks as in 1 = 1000)
 			var/apc_drain_rate = 750 //Going to see if grubs are better as a minimal bother. previous value : 4000

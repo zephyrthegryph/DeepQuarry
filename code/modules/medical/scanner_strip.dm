@@ -53,7 +53,7 @@
 		lines += "<b>Status:</b> [span_warning("unresponsive")]"
 	else
 		lines += "<b>Status:</b> conscious"
-	var/total = H.getBruteLoss() + H.getFireLoss()
+	var/total = H.injury_load(INJURY_CATEGORY_PHYSICAL) + H.injury_load(INJURY_CATEGORY_THERMAL)
 	var/injury_band
 	if(total <= 0)
 		injury_band = "no visible trauma"

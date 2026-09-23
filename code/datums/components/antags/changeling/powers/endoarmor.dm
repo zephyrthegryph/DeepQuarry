@@ -13,7 +13,7 @@
 
 	on_created_text = span_notice("We feel protective plating form underneath our skin.")
 	on_expired_text = span_notice("Our protective armor underneath our skin fades as we absorb it.")
-	max_health_flat = 50
+	factors = alist(BF_ENDURANCE_FLAT = 50)
 
 /mob/proc/changeling_endoarmor()
 	if(ishuman(src))

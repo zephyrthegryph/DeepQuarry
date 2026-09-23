@@ -14,7 +14,8 @@
 	slowdown = 0
 	offline_slowdown = 0
 	seal_delay = 0
-	var/mob/living/myprotean
+	/// The protean character this cluster belongs to. While folded, it is inside us.
+	var/mob/living/carbon/human/myprotean
 	initial_modules = list(/obj/item/rig_module/protean/syphon, /obj/item/rig_module/protean/armor, /obj/item/rig_module/protean/healing)
 	flags = PHORONGUARD
 	item_flags = NOSTRIP
@@ -27,16 +28,36 @@
 	offline_vision_restriction = FALSE
 	open = TRUE
 	cell_type =  /obj/item/cell/protean
-	var/dead = 0 //This can be greater than 1.
 	//interface_path = "RIGSuit_protean"
 	//ai_interface_path = "RIGSuit_protean"
 	var/assimilated_rig
 	var/can_assimilate_rig = TRUE
 
 /obj/item/rig/protean/relaymove(mob/user, direction)
-	if(user.stat || user.stunned)
+	if(user != myprotean || user.stat || user.stunned)
 		return
 	forced_move(direction, user, 0)
+
+/// The protean's core_dormancy affliction, if it is dormant.
+/obj/item/rig/protean/proc/get_dormancy()
+	RETURN_TYPE(/datum/affliction/core_dormancy)
+	return myprotean?.body?.find_affliction(/datum/affliction/core_dormancy)
+
+/// A click from the folded protean drives the selected module. TRUE if handled.
+/obj/item/rig/protean/proc/host_click(mob/living/carbon/human/user, atom/A)
+	if(offline || !selected_module || !ai_can_move_suit(user))
+		return FALSE
+	selected_module.engage(A, FALSE)
+	if(ismob(A))
+		user.setClickCooldown(user.get_attack_speed())
+	return TRUE
+
+/mob/living/carbon/human/ClickOn(atom/A, params)
+	if(istype(loc, /obj/item/rig/protean))
+		var/obj/item/rig/protean/prig = loc
+		if(prig.myprotean == src && prig.host_click(src, A))
+			return
+	return ..()
 
 /obj/item/rig/protean/check_suit_access(mob/living/user)
 	if(user == myprotean)
@@ -50,27 +71,28 @@
 	return
 
 /obj/item/rig/protean/Initialize(mapload, mob/living/carbon/human/P)
-	if(P)
-		var/datum/species/protean/S = P.species
-		S.OurRig = src
-		if(P.back)
-			addtimer(CALLBACK(src, PROC_REF(AssimilateBag), P, 1, P.back), 3)
-			myprotean = P
-		else
-			to_chat(P, span_notice("You should have spawned with a backpack to assimilate into your RIG. Try clicking it with a backpack."))
 	. = ..()
+	if(!istype(P))
+		return
+	var/datum/component/forms/protean/F = P.LoadComponent(/datum/component/forms/protean)
+	if(F.rig && F.rig != src)
+		F.rig.myprotean = null
+	F.rig = src
+	myprotean = P
+	if(P.back)
+		addtimer(CALLBACK(src, PROC_REF(AssimilateBag), P, 1, P.back), 3)
+	else
+		to_chat(P, span_notice("You should have spawned with a backpack to assimilate into your RIG. Try clicking it with a backpack."))
 
 /obj/item/rig/protean/Destroy()
 	if(myprotean)
-		var/mob/living/carbon/human/P = myprotean
-		if(!ishuman(P) && isprotblob(myprotean))
-			var/mob/living/simple_mob/protean_blob/blob = myprotean
-			P = blob.humanform
-		if(ishuman(P))
-			var/datum/species/protean/S = P?.species
-			S?.OurRig = null
+		var/datum/component/forms/protean/F = myprotean.GetComponent(/datum/component/forms/protean)
+		if(F?.rig == src)
+			F.rig = null
+		if(myprotean.loc == src)
+			myprotean.forceMove(drop_location())
 		myprotean = null
-	. = ..()
+	return ..()
 
 
 /obj/item/rig/proc/AssimilateBag(mob/living/carbon/human/P, spawned, obj/item/storage/backpack/B)
@@ -250,39 +272,10 @@
 /obj/item/rig/protean/attackby(obj/item/W, mob/living/user)
 	if(!istype(user))
 		return 0
-	if(dead)
-		switch(dead)
-			if(1)
-				return
-			if(2)
-				if(istype(W, /obj/item/protean_reboot))//placeholder
-					if(do_after(user, 5 SECONDS, target = src))
-						playsound(src, 'sound/items/Deconstruct.ogg', 50, 1)
-						to_chat(user, span_notice("You carefully slot [W] in the [src]."))
-						dead +=1
-						qdel(W)
-				return
-			if(3)
-				if(istype(W, /obj/item/stack/nanopaste))
-					if(do_after(user, 5 SECONDS, target = src))
-						playsound(src, 'sound/effects/ointment.ogg', 50, 1)
-						to_chat(user, span_notice("You slather the interior confines of the [src] with the [W]."))
-						dead +=1
-						W?:use(1)
-				return
-			if(4)
-				if(istype(W, /obj/item/shockpaddles))
-					if(W?:can_use(user))
-						to_chat(user, span_notice("You hook up the [W] to the contact points in the maintenance assembly"))
-						if(do_after(user, 5 SECONDS, target = src))
-							playsound(src, 'sound/machines/defib_charge.ogg', 50, 0)
-							if(do_after(user, 1 SECOND, target = src))
-								playsound(src, 'sound/machines/defib_zap.ogg', 50, 1, -1)
-								playsound(src, 'sound/machines/defib_success.ogg', 50, 0)
-								new /obj/effect/gibspawner/robot(src.loc)
-								src.atom_say("Contact received! Reassembly nanites calibrated. Estimated time to resucitation: 1 minute 30 seconds")
-								addtimer(CALLBACK(src, PROC_REF(make_alive), myprotean?:humanform), 900)
-				return
+	var/datum/affliction/core_dormancy/dormancy = get_dormancy()
+	if(dormancy)
+		dormancy_repair(W, user, dormancy)
+		return
 	if(istype(W,/obj/item/rig))
 		if(!assimilated_rig)
 			AssimilateRig(user,W)
@@ -335,7 +328,7 @@
 			AssimilateBag(user,0,W)
 
 /obj/item/rig/protean/wrench_act(mob/living/user, obj/item/tool)
-	if(dead)
+	if(get_dormancy())
 		return ITEM_INTERACT_BLOCKING
 	if(!air_supply)
 		to_chat(user, "There is no tank to remove.")
@@ -349,14 +342,15 @@
 	return ITEM_INTERACT_SUCCESS
 
 /obj/item/rig/protean/screwdriver_act(mob/living/user, obj/item/tool)
-	if(dead == 1)
+	var/datum/affliction/core_dormancy/dormancy = get_dormancy()
+	if(dormancy)
+		if(dormancy.revival_step != DORMANCY_SEALED)
+			return ITEM_INTERACT_BLOCKING
 		playsound(src, tool.usesound, 50, 1)
-		if(do_after(user, 5 SECONDS, target = src) && dead == 1)
+		if(do_after(user, 5 SECONDS, target = src) && !QDELETED(dormancy) && dormancy.revival_step == DORMANCY_SEALED)
 			to_chat(user, span_notice("You unscrew the maintenance panel on the [src]."))
-			dead++
+			dormancy.open_panel()
 		return ITEM_INTERACT_SUCCESS
-	if(dead)
-		return ITEM_INTERACT_BLOCKING
 	else
 		var/list/possible_removals = list()
 		for(var/obj/item/rig_module/module in installed_modules)
@@ -380,52 +374,43 @@
 		update_icon()
 		return ITEM_INTERACT_SUCCESS
 
-/obj/item/rig/protean/proc/make_alive(mob/living/carbon/human/H, partial)
-	if(H)
-		H.setToxLoss(0)
-		H.setOxyLoss(0)
-		H.setCloneLoss(0)
-		H.setBrainLoss(0)
-		H.SetParalysis(0)
-		H.SetStunned(0)
-		H.SetWeakened(0)
-		H.blinded = 0
-		H.SetBlinded(0)
-		H.eye_blurry = 0
-		H.ear_deaf = 0
-		H.ear_damage = 0
-		H.heal_overall_damage(H.getActualBruteLoss(), H.getActualFireLoss(), 1)
-		for(var/I in H.organs_by_name)
-			if(!H.organs_by_name[I] || istype(H.organs_by_name[I], /obj/item/organ/external/stump))
-				if(H.organs_by_name[I])
-					var/obj/item/organ/external/oldlimb = H.organs_by_name[I]
-					oldlimb.removed()
-					qdel(oldlimb)
-				var/list/organ_data = H.species.has_limbs[I]
-				var/limb_path = organ_data["path"]
-				var/obj/item/organ/external/new_eo = new limb_path(H)
-				new_eo.robotize(H.synthetic ? H.synthetic.company : null)
-				new_eo.sync_colour_to_human(H)
-		// Regenerate missing internal organs too
-		for(var/organ_tag in H.species.has_organ)
-			var/obj/item/organ/O = H.internal_organs_by_name[organ_tag]
-			if(!O)
-				var/organ_type = H.species.has_organ[organ_tag]
-				O = new organ_type(H,1)
-				H.internal_organs_by_name[organ_tag] = O
-		if(!partial)
-			GLOB.dead_mob_list.Remove(H)
-			GLOB.living_mob_list += H
-			H.tod = null
-			H.timeofdeath = 0
-			H.set_stat(CONSCIOUS)
-			if(istype(H.species, /datum/species/protean))
-				var/datum/species/protean/S
-				S = H.species
-				S.pseudodead = 0
-				to_chat(myprotean, span_notice("You have finished reconstituting."))
-				playsound(src.loc, 'sound/machines/ding.ogg', 50, 1)
-		dead = 0
+/// Revival of a dormant core, one step per tool. Each step is a treatment
+/// mechanism the core_dormancy affliction answers to.
+/obj/item/rig/protean/proc/dormancy_repair(obj/item/W, mob/living/user, datum/affliction/core_dormancy/dormancy)
+	switch(dormancy.revival_step)
+		if(DORMANCY_OPEN)
+			if(!istype(W, /obj/item/protean_reboot))
+				return
+			if(!do_after(user, 5 SECONDS, target = src) || QDELETED(dormancy) || dormancy.revival_step != DORMANCY_OPEN)
+				return
+			if(myprotean.mend(TREAT_CALIBRATION, 1))
+				playsound(src, 'sound/items/Deconstruct.ogg', 50, 1)
+				to_chat(user, span_notice("You carefully slot [W] in the [src]."))
+				qdel(W)
+		if(DORMANCY_PROGRAMMED)
+			var/obj/item/stack/nanopaste/paste = W
+			if(!istype(paste))
+				return
+			if(!do_after(user, 5 SECONDS, target = src) || QDELETED(dormancy) || dormancy.revival_step != DORMANCY_PROGRAMMED)
+				return
+			if(paste.use(1) && myprotean.mend(TREAT_PLATING_REPAIR, 1))
+				playsound(src, 'sound/effects/ointment.ogg', 50, 1)
+				to_chat(user, span_notice("You slather the interior confines of the [src] with the [W]."))
+		if(DORMANCY_PASTED)
+			var/obj/item/shockpaddles/paddles = W
+			if(!istype(paddles) || !paddles.can_use(user))
+				return
+			to_chat(user, span_notice("You hook up the [W] to the contact points in the maintenance assembly"))
+			if(!do_after(user, 5 SECONDS, target = src))
+				return
+			playsound(src, 'sound/machines/defib_charge.ogg', 50, 0)
+			if(!do_after(user, 1 SECOND, target = src) || QDELETED(dormancy) || dormancy.revival_step != DORMANCY_PASTED)
+				return
+			playsound(src, 'sound/machines/defib_zap.ogg', 50, 1, -1)
+			if(myprotean.mend(TREAT_DEFIBRILLATION, 1))
+				playsound(src, 'sound/machines/defib_success.ogg', 50, 0)
+				new /obj/effect/gibspawner/robot(loc)
+				atom_say("Contact received! Reassembly nanites calibrated. Estimated time to resucitation: 1 minute 30 seconds")
 
 /obj/item/rig/protean/take_hit(damage, source, is_emp=0)
 	return	//We don't do that here
@@ -472,7 +457,7 @@
 
 /obj/item/rig/protean/equipped(mob/living/carbon/human/M)
 	..()
-	if(dead)
+	if(get_dormancy())
 		unremovable = FALSE
 	else
 		unremovable = TRUE //It's like glue! If you put them on your back, YOU can't take them off!
@@ -504,16 +489,9 @@
 
 /obj/item/rig/protean/get_description_interaction()
 	var/list/results = list()
-	if(dead)
-		switch(dead)
-			if(1)
-				results += "Use a screwdriver to start repairs."
-			if(2)
-				results += "Insert a Protean Reboot Programmer, printed from a protolathe."
-			if(3)
-				results += "Use some Nanopaste."
-			if(4)
-				results += "Use either a defib or jumper cables to start the reboot sequence."
+	var/datum/affliction/core_dormancy/dormancy = get_dormancy()
+	if(dormancy)
+		results += dormancy.revival_instructions()
 	return results
 
 //Effectively a round about way of letting a Protean wear other rigs.
@@ -608,7 +586,7 @@
 		to_chat(usr, "[src] has not assimilated a RIG. Use one on it to assimilate.")
 
 /obj/item/rig/protean/MouseDrop(obj/over_object as obj)
-	if(dead) //We adjust our unremovable upon being attempted to be moved via checking if we are dead or not.
+	if(get_dormancy()) //We adjust our unremovable upon being attempted to be moved via checking if we are dead or not.
 		unremovable = FALSE
 	else
 		unremovable = TRUE

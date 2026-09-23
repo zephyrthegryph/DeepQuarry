@@ -135,11 +135,9 @@
 			problems |= EXTERNAL_BLEEDING
 		if(E.dislocated == 1)
 			problems |= ORGAN_DISLOCATED
-		for(var/datum/wound/W in E.wounds)
-			if(W.internal) //Internal wounds don't get pinged as 'bleeding' when bleeding() is checked.
-				problems |= INTERNAL_BLEEDING
-			else if(W.bleeding())
-				problems |= EXTERNAL_BLEEDING
+		// Internal bleeds don't set ORGAN_BLEEDING; external bleeding is caught above.
+		if(length(dq_limb_internal_bleeds(E)))
+			problems |= INTERNAL_BLEEDING
 		if(E.germ_level >= INFECTION_LEVEL_ONE) //Do NOT check for the germ_level on the mob, it'll be innacurate.
 			problems |= INFECTION
 
@@ -160,17 +158,17 @@
 	if(HUSK in user.mutations)
 		problems |= HUSKED_BODY
 
-	if(user.getToxLoss() > 0)
+	if(user.injury_load(INJURY_CATEGORY_TOXIC) > 0)
 		problems |= TOXIN_DAMAGE
-	if(user.getOxyLoss() > 0)
+	if(user.injury_load(INJURY_CATEGORY_ASPHYXIA) > 0)
 		problems |= OXY_DAMAGE
 	if(user.radiation > 0)
 		problems |= ACUTE_RADIATION_DOSE
 	if(user.accumulated_rads > 0)
 		problems |= CHRONIC_RADIATION_DOSE
-	if(user.getFireLoss() > 40 || user.getBruteLoss() > 40)
+	if(user.injury_load(INJURY_CATEGORY_THERMAL) > 40 || user.injury_load(INJURY_CATEGORY_PHYSICAL) > 40)
 		problems |= SERIOUS_EXTERNAL_DAMAGE
-	if(user.getCloneLoss())
+	if(user.injury_load(INJURY_CATEGORY_GENETIC))
 		problems |= CLONE_DAMAGE
 
 	var/is_drunk = FALSE //Just so we don't have to do another ishuman() check down there in !problems
@@ -178,9 +176,9 @@
 		var/mob/living/carbon/human/our_user = user
 		if(our_user.has_virus())
 			problems |= VIRUS
-		if(our_user.chem_effects[CE_ALCOHOL_TOXIC])
+		if(our_user.factor(BF_HEPATOTOXICITY))
 			problems |= ALCOHOL_POISONING
-		if(our_user.chem_effects[CE_ALCOHOL])
+		if(our_user.factor(BF_INTOXICATION))
 			is_drunk = TRUE
 		if(our_user.vessel.total_volume < (our_user.vessel.maximum_volume*0.95)) //Bloodloss. Only happens at below 95% blood.
 			problems |= BLOODLOSS
@@ -193,7 +191,7 @@
 			minor_problems += "<br>" + span_warning("Mild mental inhibitions detected - drinking coffee can improve symptoms and stimulate nervous system.")
 		if(is_drunk)
 			minor_problems += "<br>" + span_warning("Ethanol intoxication detected - suggest close observation to alleviate risk of injury.")
-		if(user.getHalLoss())
+		if(user.current_pain())
 			minor_problems += "<br>" + span_warning("Mild concussion detected - advising bed rest until feeling better.")
 		if(user.get_jittery() || user.get_dizzy())
 			minor_problems += "<br>" + span_warning("Neurological symptoms detected - advising bed rest until feeling better.") //Resting fixes dizziness and jitteryness!

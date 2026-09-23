@@ -16,7 +16,7 @@
 		to_chat(user, span_infoplain(span_bold("This device can only scan lab-grown slimes!")))
 		return ITEM_INTERACT_FAILURE
 	var/mob/living/simple_mob/slime/xenobio/S = M
-	user.show_message("Slime scan results:<br>[S.slime_color] [S.is_adult ? "adult" : "baby"] slime<br>Health: [S.health]<br>Mutation Probability: [S.mutation_chance]")
+	user.show_message("Slime scan results:<br>[S.slime_color] [S.is_adult ? "adult" : "baby"] slime<br>Health: [round(S.vitality() * 100)]%<br>Mutation Probability: [S.mutation_chance]")
 
 	var/list/mutations = list()
 	for(var/potential_color in S.slime_mutation)

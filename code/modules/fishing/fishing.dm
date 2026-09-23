@@ -203,7 +203,6 @@ GLOBAL_LIST_INIT(generic_fishing_chance_list, list(FISHING_RARE = 5, FISHING_UNC
 #undef FISHING_NOTHING
 
 
-// === merged from fishing_vr.dm during hard-fork de-suffix (manually verified: all-new types/defines, no base re-open) ===
 #define FISHING_RARE     "rare"
 #define FISHING_UNCOMMON "uncommon"
 #define FISHING_COMMON   "common"
@@ -259,17 +258,6 @@ GLOBAL_LIST_INIT(ocean_fishing_common_list, list(
 		/obj/item/reagent_containers/food/snacks/lobster = 8
 		))
 
-/turf/simulated/floor/water/ocean
-	min_fishing_time = 30
-	max_fishing_time = 90
-
-/turf/simulated/floor/water/ocean/handle_fish()
-	if(has_fish)
-		rare_fish_list = GLOB.ocean_fishing_rare_list
-		uncommon_fish_list = GLOB.ocean_fishing_uncommon_list
-		common_fish_list = GLOB.ocean_fishing_common_list
-		junk_list = GLOB.generic_fishing_junk_list
-		fishing_loot = GLOB.ocean_fishing_chance_list
 
 /turf/simulated/floor/water/deep/ocean
 	min_fishing_time = 20
@@ -282,7 +270,6 @@ GLOBAL_LIST_INIT(ocean_fishing_common_list, list(
 		common_fish_list = GLOB.ocean_fishing_common_list
 		junk_list = GLOB.generic_fishing_junk_list
 		fishing_loot = GLOB.ocean_fishing_chance_list
-
 
 
 #undef FISHING_RARE

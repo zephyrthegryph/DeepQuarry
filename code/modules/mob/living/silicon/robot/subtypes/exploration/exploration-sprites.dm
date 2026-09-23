@@ -47,27 +47,3 @@
 	has_dead_sprite_overlay = FALSE
 	rest_sprite_options = list("Default", "Sit", "Bellyup")
 
-/* placeholder
-/datum/robot_sprite/dogborg/tall/explorer
-	module_type = "Exploration"
-	sprite_icon = 'icons/mob/robot/tallrobot/tallrobots.dmi'
-	pixel_x = 0
-
-/datum/robot_sprite/dogborg/raptor/explorer
-	module_type = "Exploration"
-	sprite_icon = 'icons/mob/robot/raptor.dmi'
-
-/datum/robot_sprite/dogborg/raptor/explorer/raptor
-	name = "Raptor"
-	sprite_icon_state = "chraptor"
-	has_custom_equipment_sprites = TRUE
-	rest_sprite_options = list("Default", "Bellyup")
-
-/datum/robot_sprite/dogborg/tall/explorer/meka
-	name = "MEKA"
-	sprite_icon_state = "mmekaunity"
-	has_eye_light_sprites = TRUE
-	has_custom_open_sprites = TRUE
-	has_vore_belly_sprites = TRUE
-	rest_sprite_options = list("Default", "Sit")
-*/

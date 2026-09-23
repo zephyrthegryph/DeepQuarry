@@ -186,13 +186,6 @@ GLOBAL_LIST_INIT_TYPED(ai_icons, /datum/ai_icon, init_subtypes(/datum/ai_icon, a
 	alive_icon = "ai-clown2"
 	dead_icon = "ai-clown2-crash"
 
-/*
-/datum/ai_icon/boxfort
-	name = "Boxfort"
-	alive_icon = "ai-boxfort"
-	dead_icon = "ai-boxfort_dead"
-*/
-
 /datum/ai_icon/ravensdale
 	name = "Integration"
 	alive_icon = "ai-ravensdale"
@@ -207,13 +200,6 @@ GLOBAL_LIST_INIT_TYPED(ai_icons, /datum/ai_icon, init_subtypes(/datum/ai_icon, a
 	name = "Mechanicus"
 	alive_icon = "ai-serithi"
 	dead_icon = "ai-serithi-crash"
-
-/*
-/datum/ai_icon/alien
-	name = "Xenomorph"
-	alive_icon = "ai-alien"
-	dead_icon = "ai-alien-crash"
-*/
 
 /datum/ai_icon/syndicat
 	name = "Syndi-cat"

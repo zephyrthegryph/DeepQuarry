@@ -299,7 +299,6 @@
 		)
 
 
-// === merged from mecha_chomp.dm during hard-fork de-suffix (verified no override-order change) ===
 // Stuff you may find attached to an odd gygax.
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 /datum/element/lootable/mecha/odd_gygax

@@ -6,13 +6,12 @@ export type Data = {
   occupant: {
     name: string;
     stat: number;
-    health: number;
-    maxHealth: number;
-    minHealth: number;
-    bruteLoss: number;
-    oxyLoss: number;
-    toxLoss: number;
-    fireLoss: number;
+    vitality: number;
+    critical: BooleanLike;
+    physicalLoad: number;
+    asphyxiaLoad: number;
+    toxicLoad: number;
+    thermalLoad: number;
     bodyTemperature: number;
   };
   cellTemperature: number;

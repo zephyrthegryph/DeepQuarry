@@ -77,6 +77,7 @@
 		"routed_department" = EC.sales_department,
 		"item_type" = source.type,
 		"item_name" = source.name,
+		"physical_item_id" = REF(source),
 		"quantity" = export_row["quantity"],
 		"in_crate" = in_crate,
 		"fact_id" = "export:[REF(source)]",
@@ -89,7 +90,9 @@
 		var/obj/item/stack/material/processed_alloy/stock = source
 		var/datum/material_batch/batch = stock.physical_batch()
 		if(batch)
+			stock.ensure_feedstock_lot()
 			contract_context["material_fingerprint"] = batch.fingerprint()
+			contract_context["material_lot_id"] = stock.feedstock_lot_id
 			contract_context["material_amount"] = stock.get_amount()
 			contract_context["purity"] = batch.purity
 			contract_context["hardness"] = batch.hardness

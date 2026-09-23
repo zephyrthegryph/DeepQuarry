@@ -127,10 +127,13 @@
 		if(70 to INFINITY)	return "elderly"
 		else				return "unknown"
 
-/proc/RoundHealth(health)
+/// Medical-HUD health bar icon_state for a mob, from its vitality() (0..1).
+/// Critical mobs show the bottom of the bar.
+/proc/vitality_hud_state(mob/living/L)
+	var/percent = L.is_critical() ? -100 : round(L.vitality() * 100)
 	var/list/icon_states = icon_states_fast(GLOB.ingame_hud_med)
 	for(var/icon_state in icon_states)
-		if(health >= text2num(icon_state))
+		if(percent >= text2num(icon_state))
 			return icon_state
 	return icon_states[icon_states.len] // If we had no match, return the last element
 

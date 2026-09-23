@@ -13,8 +13,7 @@
 
 	attack_sound = 'sound/h_sounds/youknowwhoitis.ogg'
 
-	maxHealth = 200
-	health = 200
+	endurance = 200
 
 	melee_damage_lower = 30
 	melee_damage_upper = 40

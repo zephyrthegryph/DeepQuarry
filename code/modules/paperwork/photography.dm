@@ -256,9 +256,9 @@ GLOBAL_VAR_INIT(photo_count, 0)
 					holding = "They are holding \a [A.r_hand]"
 
 		if(!mob_detail)
-			mob_detail = "You can see [A] on the photo[(A:health / A.getMaxHealth()) < 0.75 ? " - [A] looks hurt":""].[holding ? " [holding]":"."]. "
+			mob_detail = "You can see [A] on the photo[A.vitality() < 0.75 ? " - [A] looks hurt":""].[holding ? " [holding]":"."]. "
 		else
-			mob_detail += "You can also see [A] on the photo[(A:health / A.getMaxHealth()) < 0.75 ? " - [A] looks hurt":""].[holding ? " [holding]":"."]."
+			mob_detail += "You can also see [A] on the photo[A.vitality() < 0.75 ? " - [A] looks hurt":""].[holding ? " [holding]":"."]."
 
 	return mob_detail
 

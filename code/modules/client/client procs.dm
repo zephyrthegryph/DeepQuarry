@@ -850,7 +850,6 @@ GLOBAL_LIST_INIT(blacklisted_builds, list(
 #undef SECOND_COUNT
 
 
-// === merged from client procs_vr.dm during hard-fork de-suffix (verified no override-order change) ===
 //Uses a couple different services
 /client/proc/update_ip_reputation()
 	var/scores[] = list("GII" = ipr_getipintel(), "IPQS" = ipr_ipqualityscore())

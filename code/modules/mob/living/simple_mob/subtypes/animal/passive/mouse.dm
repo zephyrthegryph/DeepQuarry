@@ -10,8 +10,7 @@
 	icon_rest = "mouse_gray_sleep"
 	kitchen_tag = "rodent"
 
-	maxHealth = 5
-	health = 5
+	endurance = 5
 	melee_damage_lower = 1
 	melee_damage_upper = 3
 
@@ -122,7 +121,6 @@
 	return
 
 /mob/living/simple_mob/animal/passive/mouse/proc/splat()
-	src.health = 0
 	src.set_stat(DEAD)
 	src.icon_dead = "mouse_[body_color]_splat"
 	src.icon_state = "mouse_[body_color]_splat"
@@ -176,8 +174,7 @@
 	holder_type = /obj/item/holder/mouse/rat
 
 /mob/living/simple_mob/animal/passive/mouse/rat/strong // In case you still want to be a jerk to your players for some reason.
-	maxHealth = 20
-	health = 20
+	endurance = 20
 
 /mob/living/simple_mob/animal/passive/mouse/operative
 	name = "mouse operative"
@@ -186,10 +183,9 @@
 	icon_state = "mouse_operative"
 	icon_rest = "mouse_operative_sleep"
 	holder_type = /obj/item/holder/mouse/operative
-	maxHealth = 35
+	endurance = 35
 
 	//It's wearing a void suit, it don't care about atmos
-	health = 35
 	min_oxy = 0
 	max_oxy = 0
 	min_tox = 0
@@ -338,7 +334,6 @@
 
 
 /mob/living/simple_mob/animal/passive/mouse/mining/splat()
-	src.health = 0
 	src.set_stat(DEAD)
 	src.icon_dead = "mouse_miner_splat"
 	src.icon_state = "mouse_miner_splat"

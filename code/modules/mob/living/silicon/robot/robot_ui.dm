@@ -59,11 +59,11 @@
 	data["ai"] = "[R.connected_ai]"
 	data["charge"] = R.cell?.charge
 	data["max_charge"] = R.cell?.maxcharge
-	data["health"] = R.health
-	data["max_health"] = R.getMaxHealth()
+	data["health"] = round(R.vitality() * 100)
+	data["max_health"] = 100
 	data["light_color"] = R.robot_light_col
 
-	data["weapon_lock"] = R.weapon_lock
+	data["weapon_lock"] = !!R.weapon_lock
 
 	var/list/modules = list()
 	for(var/obj/item/I as anything in R.module.modules)
@@ -82,18 +82,18 @@
 			LAZYSET(emag_modules, REF(I), R.get_slot_from_module(I))
 	data["emag_modules"] = emag_modules
 
-	var/diagnosis_functional = R.is_component_functioning("diagnosis unit")
+	var/diagnosis_functional = R.is_component_functioning(ROBOT_SLOT_DIAGNOSIS)
 	data["diag_functional"] = diagnosis_functional
 
 	var/list/components = list()
-	for(var/V in R.components)
-		var/datum/robot_component/comp = R.components[V]
-
+	for(var/datum/robot_component/comp as anything in R.components)
+		if(comp.internal && !diagnosis_functional)
+			continue // internal parts are only reported by a working diagnosis unit
 		UNTYPED_LIST_ADD(components, list(
-			"key" = V,
+			"key" = comp.slot,
 			"name" = "[comp]",
-			"brute_damage" = comp.brute_damage,
-			"electronics_damage" = diagnosis_functional ? comp.electronics_damage : -1,
+			"brute_damage" = round(comp.get_structural_damage(), 0.1),
+			"electronics_damage" = diagnosis_functional ? round(comp.get_wiring_damage(), 0.1) : -1,
 			"max_damage" = diagnosis_functional ? comp.max_damage : -1,
 			"idle_usage" = diagnosis_functional ? comp.idle_usage : -1,
 			"is_powered" = diagnosis_functional ? comp.is_powered() : 0,
@@ -120,10 +120,9 @@
 			R.pick_module()
 			. = TRUE
 		if("toggle_component")
-			var/component = params["component"]
-			var/datum/robot_component/C = LAZYACCESS(R.components, component)
-			if(istype(C))
-				C.toggled = !C.toggled
+			var/slot = text2num(params["component"])
+			var/datum/robot_component/C = R.get_component(slot)
+			if(istype(C) && !C.internal && R.toggle_component(slot))
 				if(C.toggled)
 					to_chat(ui.user, span_notice("You enable [C]."))
 				else

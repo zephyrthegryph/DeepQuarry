@@ -137,7 +137,7 @@ Windows is the supported dev OS. Entry points (`bin/`):
 
 - `bin/build.cmd` — DM + TGUI build → `deepquarry.dmb` + `deepquarry.rsc`.
 - `bin/server.cmd` — build then host on port 1337.
-- `bin/test.cmd` — unit-test boot (CI verification).
+- `bin/test.cmd` — build and boot the unit-test world (see §4a).
 - `bin/tgui-build.cmd` / `bin/tgui-dev.cmd` / `bin/tgui-fix.cmd`.
 - `bin/clean.cmd`.
 
@@ -158,12 +158,37 @@ DMI metadata at runtime via rust-g resolves the `icons/gen/` copy automatically
 The DM linter (`SpacemanDMM`) runs as part of the build and in CI — heed every
 warning.
 
+### 4a. Testing
+
+`doc/testing.md` is the full reference. The short version:
+
+| What | Command |
+|---|---|
+| Full unit-test suite (test map) | `bin/test.cmd` or `tools/build/build.sh dm-test` |
+| Only some tests | `bash tools/dq_focused_test.sh /datum/unit_test/<name> [...]` |
+| Same, on Southern Cross | `bash tools/dq_focused_test.sh --full-map /datum/unit_test/<name>` |
+| DM and TGUI lint | `tools/build/build.sh lint` (other CI checks: `doc/testing.md`) |
+| TGUI tests | `tools/build/build.sh tgui-test` |
+| Rust | `cd verdigris && cargo test --package verdigris` |
+| Flaky, or caused by my change? | `tools/build/build.sh test-repeat --runs=5` · `tools/build/build.sh test-baseline` |
+| Memory, tick cost, overruns | `bin/bench.cmd` or `tools/build/build.sh bench [--scenario=a,b] [--runs=3]`, then `bench-compare` |
+
+Measure before and after any performance or memory change with `bench`; don't write
+one-off profiling tests or scripts. Add a scenario under `code/modules/benchmarks/`
+instead. Results and history live in `data/bench/` and `data/test-runs/`. If another
+agent's unfinished work breaks the build, `DQ_WIP_TREE=1` lets test and bench builds
+skip their dangling includes.
+
+Never commit a `TEST_FOCUS(...)` line in `code/modules/unit_tests/dq_focus.dm`;
+CI rejects it.
+
 ---
 
 ## 5. TGUI
 
 - `tgui/` is TypeScript-only with Biome (formatter/linter) and Bun (runtime).
-- `npm run tgui:lint` to check, `npm run tgui:fix` to auto-fix.
+- `bin/tgui-fix.cmd` (or `bun run tgui:fix` at the repo root) auto-fixes;
+  `tools/build/build.sh lint` checks Biome and TypeScript.
 - Interfaces live in `tgui/packages/tgui/interfaces/`. New fork UIs go there.
 
 ---
@@ -183,8 +208,9 @@ changes:
 
 Valid prefixes: `rscadd`, `rscdel`, `bugfix`, `qol`, `balance`, `soundadd`,
 `sounddel`, `imageadd`, `imagedel`, `maptweak`, `spellcheck`, `experiment`,
-`refactor`, `code_imp`, `config`, `admin`, `server`, `wip`. The merge bot rolls the
-YAML into the master changelog and deletes the stub.
+`refactor`, `code_imp`, `config`, `admin`, `server`, `wip`. The nightly
+`compile_changelogs` workflow rolls the stubs into `html/changelogs/archive/`
+(which the in-game changelog reads) and deletes them.
 
 ---
 
@@ -196,7 +222,8 @@ YAML into the master changelog and deletes the stub.
 - [ ] Signal handlers start with `SIGNAL_HANDLER`; callbacks use the `*_PROC_REF` macros.
 - [ ] Time args use `SECONDS`/`MINUTES`/`HOURS`.
 - [ ] DreamChecker (`SpacemanDMM`) passes locally.
-- [ ] TGUI (if changed): `npm run tgui:lint` clean, `npm run tgui:fix` leaves no diff.
+- [ ] TGUI (if changed): `tools/build/build.sh lint tgui-test` clean.
+- [ ] Unit tests pass (`bin/test.cmd`), and `dq_focus.dm` is empty.
 - [ ] One YAML changelog stub.
 - [ ] Squash-able history; commit subject ≤ 72 chars.
 
@@ -218,35 +245,21 @@ YAML into the master changelog and deletes the stub.
 Things that are deliberately mid-flight or disabled, so you don't "fix" them by
 accident or assume they work:
 
-- **Atmospherics — LINDA-only.** LINDA (the vendored /tg/ atmos: `/datum/gas_mixture`,
-  `gas_types`, `SSair`, environmental/pipes/components under `code/ATMOSPHERICS/`) is
-  the **live and only** engine. The old CHOMP/ZAS/XGM engine is **deleted**; there is no
-  `USE_LINDA_ATMOS` gate anymore. Gas reactions are the CHOMP roster ported onto LINDA
-  (`gasmixtures/reactions.dm`). Multi-z atmos is wired (`SSair.build_multiz_atmos_levels()`
-  bridges `GLOB.z_levels` → `SSmapping.multiz_levels`; re-run when z-levels are added).
-  The **Rust auxmos** gas-math backend is **fully wired** (the cutover is done): `/datum/gas_mixture`
-  is a handle over a Rust arena, turf processing / pressure equalisation (katmos) / multi-z sharing /
-  gas overlays and **superconductivity** (heat conduction) all run in Rust, driven from `SSair.fire()`.
-  **`/datum/gas_mixture` is an OPAQUE HANDLE (/tg/ model) — there is NO public `temperature`/`volume` var.**
-  The Rust arena is the single source of truth. READ via `air.return_temperature()` / `air.return_volume()`
-  and WRITE via `air.set_temperature(x)` / `air.set_volume(x)`; a bare `air.temperature = x` is a COMPILE
-  error. The accessors cross the FFI boundary, so cache the result in a local in hot loops
-  (`var/temp = air.return_temperature()`). Turf heat is the same: the superconductivity arena owns it — use
-  `/turf/proc/set_temperature()` / `return_temperature()`, not `turf.temperature = x`. A `check_grep.sh` lint
-  ("gas mixture mirror writes") is kept as a belt-and-suspenders guard for untyped access the compiler misses.
-  The FFI binds live in `dq_linda_turf_air.dm` (NOT `auxmos_bindings.dm`, which is the earlier
-  reference draft and is intentionally **not** `#include`d). The library is `verdigris`
-  (`verdigris/atmos/` = vendored auxmos) built on **byondapi 0.6.x** (feature `byond-516-1682`);
-  it therefore **requires BYOND 516.1682+** at runtime (older builds crash at atmos init on a missing
-  `ByondValue_DecTempRef` symbol — see `doc/atmos_migration.md`). Gas **reactions** still run in
-  DM (the CHOMP roster; `reaction_hooks` is off) — a deliberate split, not a gap. A set of CHOMP/ZAS-era
-  atmos callers reach LINDA through a **deliberate, documented compatibility API** — `xgm_compat.dm`
-  (`assume_gas`, `c_airblock`, `air_blocked`, `update_nearby_tiles`, `CanZASPass`, gas_mixture helpers)
-  and `tg_infra_compat.dm`. These are **not** temporary shims to migrate away: they carry real
-  ZAS→LINDA semantic translation (e.g. `assume_gas`'s weighted-temperature mix, `c_airblock`'s BLOCKED
-  bitfield), and `CanZASPass` is a hook point dozens of atoms override — there is no "more native" target
-  to point callers at, so treat these as the fork's stable atmos API. See `doc/atmos_migration.md`
-  and `code/ATMOSPHERICS/README.md`.
+- **Atmospherics — LINDA on a Rust backend.** LINDA (the vendored /tg/ atmos under
+  `code/ATMOSPHERICS/`) is the only engine; ZAS/XGM are gone. Gas math, turf diffusion,
+  decompression and heat conduction (superconductivity) run in the auxmos arena inside
+  Verdigris, driven from `SSair.fire()`. `code/ATMOSPHERICS/README.md` is the reference.
+  **`/datum/gas_mixture` is an opaque handle.** There is no public `temperature`/`volume`
+  var: read with `return_temperature()`/`return_volume()`, write with
+  `set_temperature()`/`set_volume()`, and cache reads in hot loops because each call crosses
+  the FFI. Turf heat works the same way through `/turf/proc/set_temperature()` /
+  `return_temperature()`. The `check_grep.sh` "gas mixture mirror writes" lint backs this up.
+  The hand-written FFI routes live in `auxmos_init_bridge.dm` and `dq_linda_turf_air.dm`.
+  Verdigris builds on byondapi 0.6.x and **requires BYOND 516.1682+** (older builds crash at
+  atmos init on a missing `ByondValue_DecTempRef`). Gas **reactions** deliberately stay in DM.
+  `xgm_compat.dm` and `tg_infra_compat.dm` are the fork's stable compatibility API, not
+  temporary shims: they carry real ZAS→LINDA semantics (`assume_gas` temperature mixing,
+  `c_airblock` bitfields), and `CanZASPass` is a hook many atoms override.
   The **`.air`-on-unsimulated-turf** family (Southern Cross has ~1188 `/turf/unsimulated/floor` that
   inherit `init_air` but are NOT `/turf/open`, so have no `air` var) is now guarded at all three sites:
   `setup_allturfs` append, the difference-pass neighbour loop, AND `add_to_active` (`SSair.dm` — the last
@@ -254,74 +267,26 @@ accident or assume they work:
   The SSair admin debug panel works again: verb "Debug Atmospherics" (Debug→Investigate) →
   `SSair.tgui_interact` → `AtmosControlPanel.tsx` (was dead: nonexistent interface + `ui_*` names when this
   fork's tgui calls `tgui_*`).
-- **Quarry system — removed, replaced by the on-demand expedition generator.** The old
-  `SSquarry` (depth layers + freight elevator + goals/danger/noise/archetype/persistence)
-  and the `maps/deep_quarry/` map are **deleted**. In their place, `code/modules/expedition/`
-  provides `SSexpedition.generate_site()`: a lean, demand-driven generator that allocates a
-  fresh (or recycled) z-level (`load_new_z()` on `/datum/map_template/expedition_site`), carves
-  it with the base `cave_system` automata, bridges it into multi-z atmos, and scatters loot/POIs.
-  Now a full loop: `SSexpedition` fires on a 2s tick to poll mission completion and presence-
-  release empty sites (their z-levels recycled via a `free_z` pool). The station-side
-  `/obj/machinery/computer/expedition` (TGUI `ExpeditionConsole`, auto-placed in a hangar if not
-  mapped) rolls a mission board, launches the selected `/datum/expedition_mission` (survey,
-  extermination, salvage, retrieval, rescue — see `code/modules/expedition/`), bluespace-deploys
-  the pad crew, and recalls them; an extraction beacon on-site returns them too. Missions pay
-  survey points + Thalers on completion. A dynamic POI system (`expedition_poi.dm`: vault, camp,
-  nest, cache, salvage field, relay) populates sites. Admin Debug verbs ("Generate Expedition
-  Site" / "Generate Expedition Mission") jump a site directly. (Reusable non-quarry infra kept:
-  `cave_system` automata, `load_new_z`, the `quarry_stalker` combat-AI canary mob, `tab_noop`.)
-- **Substance & chemistry system — science core (new, live).** `code/modules/substance/`:
-  everything is a `/datum/substance` with a visible surface behavior (effect family + trigger)
-  and a hidden five-axis profile (energy/volatility/affinity 0–100, resonance 0–360 cyclic,
-  purity) that **rerolls every round** (md5 salt). The engine is `substance_combine(A,B,ctx)`
-  (`substance_resolver.dm`): resonance distance picks MATCHING/ADJACENT/OPPOSING → reinforce /
-  transform (a `switch`-based family transform map) / conflict; energy=magnitude,
-  volatility=control, affinity=yield+dampening, purity=byproducts+wobble; hazards erupt via the
-  shared `substance_apply_effect()`. **A substance is ALWAYS a material — there is no vial/gadget.**
-  The universal object is the stack `/obj/item/stack/material/substance` (sheets; `…/random_field`
-  drops in loot), backed by `/datum/material/substance` (`substance_material.dm`, runtime-registered
-  in `GLOB.name_to_material` like `/datum/material/dynamic`, stats derived from the axes;
-  `substance_spawn_stack()` / `substance_stack_substance()`). Player-facing pipeline (all operate on
-  stacks): the **combiner** (`/obj/machinery/substance_combiner` + TGUI `SubstanceCombiner`) alloys
-  two stacks and shows learned-by-doing **Field Notes** (no scanning); the **refiner** pushes one
-  axis at others' cost; the **extractor** renders slime extracts / bred produce into bio / botany
-  substance stacks. From a stack it is ordinary material: forge via the in-hand material stack-recipe
-  menu (`material.get_recipes()`, like exotic/dynamic materials) into weapons, plating, walls, OR via a
-  **material-selectable lathe design** (see the material-selection note below) — load a substance alloy
-  stack into a protolathe and pick it in the design's material picker. Anything made of it carries
-  `/datum/component/substance_infusion` (applied
-  via the `dq_apply_material_behaviors` seam) that fires the effect on `COMSIG_SUBSTANCE_FORM_TRIGGER`
-  with finite charges. **All trigger conditions are wired** (`substance_triggers.dm` +
-  `material_weapons.dm`, via `/obj/item/material/substance_form_trigger()`): melee strike
-  (IMPACT+CONTACT), thrown impact (IMPACT+PRESSURE), fire (HEAT), projectile hit (IMPACT+PRESSURE,
-  +ENERGY for energy shots), EMP (ENERGY), bare-hand touch (CONTACT); plus **armour struck**
-  (`material_impact`, material_armor.dm), any substance **obj destroyed** (`substance_on_destruction`
-  in `/atom/atom_destruction`), and substance **walls dismantled** (walls.dm). Substance materials also
-  drive the material behaviour vars from their axes (glow/rad/tox) and scale `supply_conversion_value`
-  by potency. Xenoarch source: the extractor renders an `/obj/item/anobattery` essence into a field
-  substance. Atmospherics (ambient temp/pressure → volatility) and engineering (rig `energy_ceiling`)
-  feed the resolver via `/datum/substance_context`. Debug verbs under "Substance: …". Earlier
-  vial/charge/node carriers + rigging were removed in favour of the material model. **Substance gun-ammo
-  IS built:** base `/obj/item/ammo_casing`/`ammo_magazine` carry a forged material (`set_forged_material`);
-  a substance round's bullet gets the infusion only (`apply_substance_infusion`) and discharges via the base
-  `/obj/item/projectile/on_impact` form-trigger (IMPACT/PRESSURE, +ENERGY for burn); lathe entry =
-  material-selectable `material_rounds_9mm`. Deferred: medical/cargo axis mechanics, the full
-  threat-vulnerability intel loop, and discovery-gated techweb fabrication. **Reachability — via existing
-  engineering machines, no new machines:** REFINE by loading a substance sheet into a `particle_smasher`
-  (the PA's beam target), clicking to pick the trade, and firing the particle accelerator at it until it
-  charges past threshold → `apply_refine` (`substance_particle_refine.dm` + a hook in the smasher's
-  `process()`). COMBINE by feeding two substance stacks into the `fusion_core` ("R-UST") reactant slots;
-  the live field fuses a sheet-pair per interval via `substance_combine`, casts the alloy at the core,
-  turns magnitude into reactor energy (`AddEnergy`), and maps a hazard onto `tick_instability`/breach
-  (`substance_fusion_combine.dm` + hooks in `_core.dm` attackby/process/Destroy). EXTRACT deferred. The
-  standalone `/obj/machinery/substance_combiner`/`_refiner`/`_extractor` remain debug-verb-only fallbacks.
-  **Atmos/engineering feed BOTH machine paths** via one shared helper (`substance_env_context()` in
-  `substance_resolver.dm`, factored out of the bench combiner): the room's temperature/pressure shift
-  volatility and the machine's power rating is the energy ceiling — PA refine ceiling scales with charge,
-  fusion combine ceiling with field strength (+plasma heat as extra volatility). `apply_refine()` takes an
-  optional context and spills over-ceiling energy into volatility.
-  CAVEAT: the PA (CE supply crate) and the R-UST reactor (circuit-board build) are NOT pre-mapped on
-  Southern Cross, so refine/combine require building those engineering machines first.
+- **Expeditions and Flight Operations.** The old quarry mode is gone. `SSexpedition`
+  (`code/modules/expedition/`) generates sites on demand: it allocates or recycles a
+  z-level (`load_new_z()`), carves it with the `cave_system` automata or builds a generated
+  station, bridges it into multi-z atmos, and populates POIs, loot and a
+  `/datum/expedition_mission` objective. Sites are released and wiped when the crew leaves;
+  z-levels go back into a `free_z` pool. Crews reach sites by flying: `SSflight_operations`
+  (`code/modules/flight_operations/`) owns vessels, destinations, berths and flight plans,
+  and the Flight Operations console plots expedition contracts as short-jump destinations.
+  Admin debug verbs ("Generate Expedition Site" / "Generate Expedition Mission") jump
+  straight to a site. Lifecycle risks are tracked in `doc/generated_site_lifecycle_audit.md`.
+- **Material science and engineering.** The science core is physical material work
+  (`code/modules/material_science/`): crucibles, alloys with measurable structure,
+  layered composites, reagent baths, slime coatings, and exotic feedstocks from
+  expeditions. Engineered materials change how assemblies behave (cable heating, pipe
+  pressure and corrosion, heat exchange, power cells, emitters, armour, ammunition).
+  `doc/material_engineering_implementation.md` describes the model and
+  `doc/material_engineering_playtest.md` how to exercise it in game. The earlier
+  "substance" system was removed in favour of this.
+- **Variants.** Families of subtypes that differ only in data are collapsed into one type
+  plus a registry to save memory. See `code/datums/variants/README.md`.
 - **Material behaviour system — rewritten; material synergies removed.** A material's three active
   behaviours are plain vars on `/datum/material` (`luminescence`/`radioactivity`/`toxicity`), read via
   `dq_material_*()` and applied to items by a working self-processing `/datum/component/material_behaviors`
@@ -334,14 +299,14 @@ accident or assume they work:
   `material_selectable = TRUE` + `selectable_amount` (+ optional `selectable_class`); the lathe UI then
   shows a material picker (loaded materials via `lathe_material_choice_list(container)` in `_production.dm`)
   and the chosen material is consumed and passed to `create_item(target, chosen)` → the product's
-  `set_material`. This is how exotic/substance alloys become lathe-buildable WITHOUT one techweb entry per
-  material. Design backend: `effective_materials()`/`material_choice_valid()` (`designs.dm`). Both build
+  `set_material`. This is how engineered and exotic materials become lathe-buildable without one techweb
+  entry per material. Design backend: `effective_materials()`/`material_choice_valid()` (`designs.dm`). Both build
   paths thread `chosen_material`: protolathe family `_production.dm` (`build`/`do_make_item`) AND autolathe
   `autolathe.dm` (`make`/`do_make_item`). UI: one shared `Fabrication/SelectableRecipe.tsx` (native row +
   dropdown + x1/x5/x10/max), used by both `Fabricator.tsx` and `Autolathe.tsx` via an `onBuild` callback;
   `materialChoices` in `Types.ts`. Sample designs + node: `designs/material_selectable.dm` (Material
   Knife/Sword, `build_type = AUTOLATHE | PROTOLATHE`, starting node). The lathe material container allows
-  any `/datum/material` subtype, so substance/dynamic sheets load. Biome lint/format clean (root
+  any `/datum/material` subtype. Biome lint/format clean (root
   `npm install` provides Biome); tsc **is** run clean (bun at `~/.bun/bin`; `bun install` in `tgui/` provides
   the workspace) — sample design now also includes `material_rounds_9mm`.
 - **Overmap — subsystem on, station map ground-only.** `code/modules/overmap/` compiles and
@@ -364,6 +329,33 @@ accident or assume they work:
   `damage`-var model (as upstream TG does). A few entities run self-contained damage backed by
   obj_integrity but with their own combat logic on top: `/obj/mecha` (component armor/deflect)
   and `/obj/item/uav`. Mob/plant/blob health is a separate system and untouched.
+- **Health model — body & afflictions, no health pools on ANY mob.** Read
+  `doc/body_architecture.md`. Every `/mob/living` has a `/datum/body` (plans: humanoid,
+  simple, simple/machine, simple/machine/robot) in `code/modules/body/`. There is no
+  `health`/`maxHealth`/`*loss`, `adjust*Loss`, `apply_damage`, `updatehealth`, `getMaxHealth` —
+  those are deleted. Harm = `L.injure(INJURY_*, amount, zone, source, armor, affliction)`;
+  healing = `L.mend(TREAT_*, amount, zone)` / `fully_heal()`; questions = `vitality()`,
+  `is_critical()`, `get_endurance()`, `injury_load(INJURY_CATEGORY_*)`. Mob toughness is
+  `endurance`. Everything harmful is a `/datum/affliction` (limb wounds too; limb integrity is
+  `E.get_trauma()`/`get_burn()`, derived). Afflictions declare `biology` and `body_plans`;
+  treatment tags declare biology — never branch on `isSynthetic()` for damage/heal. Reagents
+  heal only via `treatment_tags` (`code/modules/body/treatment.dm`). Triggers
+  (`/datum/affliction_trigger`) create afflictions; symptoms are singletons that ACCUMULATE.
+  Vital systems (airway / breathing / cardiac rhythm, `medical/conditions/vital_systems.dm`)
+  are afflictions too; see the doc. Not yet built: tourniquets, surgery redesign,
+  stasis & field stabilisation.
+- **Body factors — every numeric mob stat.** `code/modules/body/factors.dm`, defines in
+  `code/__defines/body_factors.dm`. Slowdown, accuracy, evasion, attack speed, incoming
+  injury per category, stun duration, healing received, metabolism, bleeding, analgesia,
+  vitals readouts, armour, conductivity, action blocks, … are `BF_*` factors with one combine
+  rule each. Read them with `L.factor(BF_X)`. Sources declare static `alist` tables:
+  affliction `factors` (scaled by severity; a stage's `"factors"` applies at full value),
+  reagent `factors` / `species_factors` (scaled by dose), modifier `factors`, species
+  `factor_baseline`, trait/perk `factors`, form `factors`, item `worn_factors`. The body
+  caches one flat list (null at baseline) and recomputes on `BODY_DIRTY_FACTORS`. There is
+  no `chem_effects`/`add_chemical_effect`, no `mechanical_effects`/`vital_effects`/`od_boost`
+  and no numeric modifier fields; `tools/ci/check_grep.sh` rejects them. Brief non-reagent
+  effects are short modifiers (`/datum/modifier/numbness`, `withdrawal_strain`, …).
 - **verdigris (Rust FFI)** is a build artifact, gitignored per-platform. If `cargo` is absent
   the build warns and skips it, and **both** subsystems that depend on it fail at runtime:
   cave-gen (expedition) and — since the auxmos cutover — **atmospherics** (gas math + turf
@@ -371,8 +363,8 @@ accident or assume they work:
   **byondapi 0.6.x** for BYOND 516.1682+. (The whole library is one FFI framework: cave-gen was
   migrated off `meowtonin` onto byondapi so `verdigris` links a single BYOND API.)
 
-Recent hardening (already landed): ban/admin/stats SQL is fully parameterized; all verdigris
-`#[byond_fn]` entry points are wrapped in `panic_safe!`; the tgui Rules-of-Hooks / XSS audit
+Recent hardening (already landed): ban/admin/stats SQL is fully parameterized; every
+Verdigris bind carries `#[auxmacros::panic_safe]`; the tgui Rules-of-Hooks / XSS audit
 findings are fixed; the unit-test suite was audited for fake-passes and made genuinely
 falsifiable.
 

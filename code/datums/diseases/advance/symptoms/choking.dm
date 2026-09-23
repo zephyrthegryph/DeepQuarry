@@ -10,7 +10,7 @@ Choking
 	Moderate Level.
 
 Bonus
-	Inflicts spikes of oxyloss
+	Inflicts spikes of asphyxiation
 
 //////////////////////////////////////
 */
@@ -71,10 +71,10 @@ Bonus
 
 /datum/symptom/choking/proc/Choke_stage_3_4(mob/living/M, datum/disease/advance/A)
 	var/get_damage = rand(5, 10) * power
-	M.adjustOxyLoss(get_damage)
+	M.injure(INJURY_ASPHYXIA, get_damage)
 	return TRUE
 
 /datum/symptom/choking/proc/Choke(mob/living/M, datum/disease/advance/A)
 	var/get_damage = rand(2, 5) * power
-	M.adjustOxyLoss(get_damage)
+	M.injure(INJURY_ASPHYXIA, get_damage)
 	return TRUE

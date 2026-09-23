@@ -16,11 +16,13 @@
 	var/wire_count = NONE
 	/// A list of all wires. For a list of valid wires defines that can go here, see `code/__DEFINES/wires.dm`
 	var/list/wires
-	/// A list of all cut wires. The same values that can go into `wires` will get added and removed from this list.
+	/// Lazy list of all cut wires. The same values that can go into `wires` will get added and removed from this list.
 	var/list/cut_wires
 	/// An associative list with the wire color as the key, and the wire define as the value.
+	/// Non-randomized types share their type's list from `GLOB.wire_color_directory`: treat it as read-only
+	/// and replace it (never mutate it) when this instance needs its own colours.
 	var/list/colors
-	/// An associative list of signalers attached to the wires. The wire color is the key, and the signaler object reference is the value.
+	/// Lazy associative list of signalers attached to the wires. The wire color is the key, and the signaler object reference is the value.
 	var/list/assemblies
 	/// Admin var to disable seeing wire descriptions
 	var/force_hide_wires = FALSE
@@ -31,9 +33,6 @@
 		CRASH("Our holder is null/the wrong type!")
 
 	holder = _holder
-	cut_wires = list()
-	colors = list()
-	assemblies = list()
 
 	// Add in the appropriate amount of dud wires.
 	var/wire_len = length(wires)
@@ -45,15 +44,14 @@
 		randomize()
 		return
 
-	if(!GLOB.wire_color_directory[holder_type])
+	colors = GLOB.wire_color_directory[holder_type]
+	if(!colors)
 		randomize()
 		GLOB.wire_color_directory[holder_type] = colors
 		GLOB.wire_name_directory[holder_type] = proper_name
-	else
-		colors = GLOB.wire_color_directory[holder_type]
 
 /datum/wires/Destroy()
-	for(var/color in colors)
+	for(var/color in assemblies)
 		detach_assembly(color)
 	holder = null
 	return ..()
@@ -68,8 +66,11 @@
 	var/static/list/possible_colors = list("red", "blue", "green", "darkmagenta", "orange", "brown", "gold", "grey", "cyan", "white", "purple", "pink", "darkslategrey", "yellow")
 	var/list/my_possible_colors = possible_colors.Copy()
 
+	// Always build a fresh list: `colors` may be the type's shared directory entry.
+	var/list/new_colors = list()
 	for(var/wire in shuffle(wires))
-		colors[pick_n_take(my_possible_colors)] = wire
+		new_colors[pick_n_take(my_possible_colors)] = wire
+	colors = new_colors
 
 /**
  * Proc called when the user attempts to interact with wires UI.
@@ -254,14 +255,13 @@
  * Clears the `colors` list, and randomizes it to a new set of color-to-wire relations.
  */
 /datum/wires/proc/shuffle_wires()
-	colors.Cut()
 	randomize()
 
 /**
  * Repairs all cut wires.
  */
 /datum/wires/proc/repair()
-	cut_wires.Cut()
+	cut_wires = null
 
 /**
  * Adds in dud wires, which do nothing when cut/pulsed.
@@ -335,7 +335,7 @@
  */
 /datum/wires/proc/cut(wire)
 	if(is_cut(wire))
-		cut_wires -= wire
+		LAZYREMOVE(cut_wires, wire)
 		on_cut(wire, mend = TRUE)
 	else
 		cut_wire(wire)
@@ -350,7 +350,7 @@
 /datum/wires/proc/cut_wire(wire)
 	if(is_cut(wire))
 		return FALSE
-	cut_wires += wire
+	LAZYADD(cut_wires, wire)
 	on_cut(wire, mend = FALSE)
 	return TRUE
 
@@ -386,7 +386,7 @@
  */
 /datum/wires/proc/mend_all()
 	var/mend_count = 0
-	for(var/wire in cut_wires.Copy())
+	for(var/wire in cut_wires?.Copy())
 		cut(wire)
 		mend_count++
 	return mend_count
@@ -462,7 +462,7 @@
  */
 /datum/wires/proc/attach_assembly(color, obj/item/assembly/signaler/S)
 	if(S && istype(S) && !is_attached(color))
-		assemblies[color] = S
+		LAZYSET(assemblies, color, S)
 		S.forceMove(holder)
 		S.connected = src
 		return S
@@ -478,7 +478,7 @@
 /datum/wires/proc/detach_assembly(color)
 	var/obj/item/assembly/signaler/S = get_attached(color)
 	if(S && istype(S))
-		assemblies -= color
+		LAZYREMOVE(assemblies, color)
 		S.connected = null
 		S.forceMove(holder.drop_location())
 		return S
@@ -490,9 +490,7 @@
  * * color - the wire color.
  */
 /datum/wires/proc/get_attached(color)
-	if(assemblies[color])
-		return assemblies[color]
-	return null
+	return LAZYACCESS(assemblies, color)
 
 /**
  * Checks if the given wire has a signaler on it.
@@ -501,7 +499,7 @@
  * * color - the wire color.
  */
 /datum/wires/proc/is_attached(color)
-	if(assemblies[color])
+	if(LAZYACCESS(assemblies, color))
 		return TRUE
 
 /datum/wires/proc/emp_pulse()

@@ -10,8 +10,7 @@
 	icon = 'icons/mob/mob.dmi'
 	icon_state = "behemoth"
 	icon_living = "behemoth"
-	maxHealth = 200
-	health = 200
+	endurance = 200
 	response_harm   = "harmlessly punches"
 	harm_intent_damage = 0
 	melee_damage_lower = 30
@@ -63,7 +62,7 @@
 			if(!(P.damage_type == BRUTE || P.damage_type == BURN))
 				projectile_dam_type = BRUTE
 				incoming_damage = round(incoming_damage / 4) //Damage from strange sources is converted to brute for physical projectiles, though severely decreased.
-			apply_damage(incoming_damage, projectile_dam_type, null, armorcheck, is_sharp(P), has_edge(P), P)
+			injure(injury_kind_for(projectile_dam_type, is_sharp(P), has_edge(P)), incoming_damage, null, P, armorcheck)
 			return -1 //Doesn't reflect non-beams or non-energy projectiles. They just smack and drop with little to no effect.
 		else
 			visible_message(span_danger("The [P.name] gets reflected by [src]'s shell!"), \
@@ -73,7 +72,7 @@
 			if(!(P.damage_type == BRUTE || P.damage_type == BURN))
 				projectile_dam_type = BURN
 				incoming_damage = round(incoming_damage / 4) //Damage from strange sources is converted to burn for energy-type projectiles, though severely decreased.
-			apply_damage(incoming_damage, projectile_dam_type, null, armorcheck, is_sharp(P), has_edge(P), P)
+			injure(injury_kind_for(projectile_dam_type, is_sharp(P), has_edge(P)), incoming_damage, null, P, armorcheck)
 
 		// Find a turf near or on the original location to bounce to
 		if(P.starting)
@@ -97,8 +96,7 @@
 	name = "Behemoth"
 	real_name = "Behemoth"
 	desc = "The pinnacle of occult technology, Behemoths are nothing shy of both an Immovable Object, and Unstoppable Force."
-	maxHealth = 600
-	health = 600
+	endurance = 600
 	speak_emote = list("rumbles")
 	melee_damage_lower = 50
 	melee_damage_upper = 50

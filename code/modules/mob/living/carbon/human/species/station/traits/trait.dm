@@ -7,6 +7,7 @@
 	var/sort = TRAIT_SORT_NORMAL	// Sort order, 1 before 2 before 3 etc. Alphabetical is used for same-group traits.
 	var/category = TRAIT_TYPE_NEUTRAL	// What category this trait is. -1 is Negative, 0 is Neutral, 1 is Positive
 	var/list/var_changes			// A list to apply to the custom species vars.
+	var/alist/factors				// Body factors (BF_* -> value) this trait grants the species. See code/modules/body/factors.dm.
 	var/list/var_changes_pref		// A list to apply to the preference vars.
 	var/list/excludes				// Store a list of paths of traits to exclude, but done automatically if they change the same vars.
 	var/can_take = ORGANICS|SYNTHETICS	// Can freaking synths use those.
@@ -49,10 +50,15 @@
 //Proc can be overridden lower to include special changes, make sure to call up though for the vars changes
 /datum/trait/proc/apply(datum/species/S,mob/living/carbon/human/H, trait_prefs = null)
 	ASSERT(S)
+	if(factors)
+		S.grant_factors(factors)
+		H?.invalidate_factors()
 	if(var_changes)
 		for(var/V in var_changes)
 			if(V == "flags") // Is bitflag, implimentation means traits can only GIVE you flags, not remove them.
 				S.vars[V] |= var_changes[V]
+			else if(S.apply_injury_mod_var_change(V, var_changes[V])) // "injury_mod_<group>" keys
+				continue
 			else
 				S.vars[V] = var_changes[V]
 	if (trait_prefs)
@@ -82,11 +88,16 @@
 // Traitgenes Disabling traits, genes can be turned off after all!
 /datum/trait/proc/unapply(datum/species/S,mob/living/carbon/human/H, trait_prefs = null)
 	ASSERT(S)
+	if(factors)
+		S.revoke_factors(factors)
+		H?.invalidate_factors()
 	if(var_changes)
 		for(var/V in var_changes)
 			if(V == "flags") // Is bitflag, this assumes traits can only ever GIVE you flags.
 				if(!(initial(S.vars[V]) & var_changes[V]))
 					S.vars[V] &= ~var_changes[V]
+			else if(S.apply_injury_mod_var_change(V, null)) // restores the species' own value
+				continue
 			else
 				S.vars[V] = initial(S.vars[V])
 	if (trait_prefs)

@@ -18,8 +18,8 @@
 /obj/structure/ghost_pod/manual/lost_drone/create_occupant(mob/M)
 	density = FALSE
 	var/mob/living/silicon/robot/malf/lost/randomlaws/R = new(get_turf(src))
-	R.adjustBruteLoss(rand(5, 30))
-	R.adjustFireLoss(rand(5, 10))
+	R.injure(INJURY_BLUNT, rand(5, 30), null, src)
+	R.injure(INJURY_BURN, rand(5, 10), null, src)
 	if(M.mind)
 		M.mind.transfer_to(R)
 	// Put this text here before ckey change so that their laws are shown below it, since borg login() shows it.
@@ -116,8 +116,8 @@
 	else
 		density = FALSE
 		var/mob/living/silicon/robot/malf/lost/randomlaws/vore/R = new(get_turf(src))
-		R.adjustBruteLoss(rand(5, 30))
-		R.adjustFireLoss(rand(5, 10))
+		R.injure(INJURY_BLUNT, rand(5, 30), null, src)
+		R.injure(INJURY_BURN, rand(5, 10), null, src)
 		if(M.mind)
 			M.mind.transfer_to(R)
 		// Put this text here before ckey change so that their laws are shown below it, since borg login() shows it.

@@ -348,7 +348,6 @@ GLOBAL_LIST_BOILERPLATE(all_brig_closets, /obj/structure/closet/secure_closet/br
 	large = 0
 
 
-// === merged from security_vr.dm during hard-fork de-suffix (verified no override-order change) ===
 /obj/structure/closet/secure_closet/hos
 	name = "head of security's attire"
 	req_access = list(ACCESS_HOS)

@@ -31,9 +31,10 @@
 	var/rads = radiation/25
 	radiation -= rads
 	//adjust_nutrition(rads) //Commented out to prevent alien obesity.
-	heal_overall_damage(rads,rads)
-	adjustOxyLoss(-(rads))
-	adjustToxLoss(-(rads))
+	mend(TREAT_TISSUE_REPAIR, rads)
+	mend(TREAT_BURN_CARE, rads)
+	mend(TREAT_OXYGENATION, rads)
+	mend(TREAT_ANTITOXIN, rads)
 	return
 
 /mob/living/carbon/alien/handle_regular_status_updates()
@@ -41,40 +42,27 @@
 	if(SEND_SIGNAL(src, COMSIG_CHECK_FOR_GODMODE) & COMSIG_GODMODE_CANCEL) //I don't want to go in and do HUD stuff imediately, so... no.
 		return 0	// Cancelled by a component
 
+	// Death from injury is decided by the (simple) body.
+	if(stat != DEAD)
+		body?.life_tick()
+
 	if(stat == DEAD)
 		blinded = 1
 		silent = 0
 		deaf_loop.stop() // Ear Ringing/Deafness - Not sure if we need this, but, safety.
 	else
-		updatehealth()
-		if(health <= 0)
-			death()
-			blinded = 1
-			silent = 0
-			deaf_loop.stop() // Ear Ringing/Deafness - Not sure if we need this, but, safety.
-			return 1
-
 		if(paralysis && paralysis > 0)
 			blinded = 1
 			set_stat(UNCONSCIOUS)
-			if(halloss > 0)
-				adjustHalLoss(-3)
 
 		if(sleeping)
-			adjustHalLoss(-3)
 			if (mind)
 				if(mind.active && client != null)
 					AdjustSleeping(-1)
 			blinded = 1
 			set_stat(UNCONSCIOUS)
-		else if(resting)
-			if(halloss > 0)
-				adjustHalLoss(-3)
-
-		else
+		else if(!resting)
 			set_stat(CONSCIOUS)
-			if(halloss > 0)
-				adjustHalLoss(-1)
 
 		// Eyes and blindness.
 		if(!has_eyes())
@@ -133,7 +121,7 @@
 		healths.icon_state = "health7"
 		return
 
-	switch(health)
+	switch(vitality() * 100)
 		if(100 to INFINITY)
 			healths.icon_state = "health0"
 		if(80 to 100)
@@ -156,7 +144,7 @@
 
 	var/environment_temp = environment.return_temperature()
 	if(environment_temp > (T0C+66))
-		adjustFireLoss((environment_temp - (T0C+66))/5) // Might be too high, check in testing.
+		injure(INJURY_BURN, (environment_temp - (T0C+66))/5, null, null, 0, null, INJURE_SILENT) // Might be too high, check in testing.
 		throw_alert("alien_fire", /atom/movable/screen/alert/alien_fire)
 		if(prob(20))
 			to_chat(src, span_red("You feel a searing heat!"))

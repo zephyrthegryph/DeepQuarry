@@ -10,8 +10,7 @@
 	icon_rest = "fluffy_sleep"
 	icon = 'icons/mob/animal_vr.dmi'
 
-	maxHealth = 20 //don't want Fluff to die on a missclick
-	health = 20
+	endurance = 20 //don't want Fluff to die on a missclick
 
 	movement_cooldown = 1.5
 	makes_dirt = 0

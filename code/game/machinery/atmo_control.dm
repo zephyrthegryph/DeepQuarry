@@ -98,7 +98,9 @@
 	if(sleeping_mixture_id != new_mixture_id)
 		SSmachines.unsubscribe_gas_dependency(sleeping_mixture_id, WR)
 		sleeping_mixture_id = new_mixture_id
-		SSmachines.subscribe_gas_dependency(sleeping_mixture_id, WR)
+	// Re-hibernation must repair a missing scheduler subscription even when the
+	// sensor is still observing the same authoritative mixture.
+	SSmachines.subscribe_gas_dependency(sleeping_mixture_id, WR)
 	sleeping_mixture_revision = environment ? environment.revision() : -1
 
 /obj/machinery/air_sensor/proc/unregister_gas_dependencies(datum/weakref/WR)

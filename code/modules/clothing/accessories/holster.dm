@@ -186,7 +186,6 @@
 	overlay_state = "holster_b_leg"
 
 
-// === merged from holster_vr.dm during hard-fork de-suffix (verified no override-order change) ===
 /obj/item/clothing/accessory/holster/waist/kinetic_accelerator
 	name = "KA holster"
 	desc = "A specialized holster, made specifically for Kinetic Accelerators."
@@ -253,7 +252,6 @@
 		has_suit.update_clothing_icon()
 
 
-// === merged from holster_chomp.dm during hard-fork de-suffix (verified no override-order change) ===
 /obj/item/clothing/accessory/holster/leg/left
 	name = "left leg holster"
 	desc = "A drop leg holster made of a durable synthetic leather, fitted for your left leg."

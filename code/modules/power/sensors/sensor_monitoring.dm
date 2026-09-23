@@ -2,7 +2,6 @@
 // Connects to powernet sensors and loads data from them. Shows this data to the user.
 // Newly supports NanoUI.
 
-
 /obj/machinery/computer/power_monitor
 	name = "Power Monitoring Console"
 	desc = "Computer designed to remotely monitor power levels around the station"
@@ -33,16 +32,6 @@
 	if(length(dependencies))
 		SSmachines.hibernate_reactive_machine(src, dependencies)
 		return PROCESS_KILL
-/* Moved to VR File
-// Updates icon of this computer according to current status.
-/obj/machinery/computer/power_monitor/update_icon()
-	if(!(stat & (NOPOWER|BROKEN)))
-		if(alerting)
-			icon_screen = "[initial(icon_screen)]"
-		else
-			icon_screen = "[initial(icon_screen)]_warn"
-	..()
-*/
 // On creation automatically connects to active sensors. This is delayed to ensure sensors already exist.
 /obj/machinery/computer/power_monitor/Initialize(mapload)
 	. = ..()

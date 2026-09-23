@@ -1,0 +1,377 @@
+// Benchmark scenarios. Add a scenario by subtyping /datum/benchmark with an
+// `id`; options are read with param() from `bench_<name>` world parameters
+// (the runner passes `--arg name=value`).
+
+/// Records the Rust atmos arena counters as metrics under `prefix`.
+/datum/benchmark/proc/record_atmos_arena(prefix)
+	// Layout of auxmos_diagnostics() (verdigris/atmos/src/lib.rs):
+	// gas slots, gas capacity, free gas slots, baselines, baseline capacity, dirty,
+	// turf map len, turf map capacity, graph nodes, graph edges, pending turfs,
+	// pending callbacks, heat state x3, node capacity, edge capacity.
+	var/list/arena = SSair.auxmos_diagnostics()
+	if(!islist(arena) || length(arena) < 10)
+		return
+	metric("[prefix]_gas_mixtures", arena[1] - arena[3], "mixtures")
+	metric("[prefix]_gas_slots", arena[2], "slots")
+	metric("[prefix]_atmos_turfs", arena[7], "turfs")
+	metric("[prefix]_atmos_edges", arena[10], "edges")
+	detail("[prefix]_atmos_arena", arena)
+
+/// Boot memory: what a freshly booted world holds, where the memory goes.
+/datum/benchmark/boot_memory
+	id = "boot_memory"
+	description = "Memory and instance census of a freshly booted world"
+	default_scenario = TRUE
+
+/datum/benchmark/boot_memory/Run()
+	wait_for_assets()
+	// Let the first atmos generations and deferred init settle before measuring.
+	wait_fires(SSair, 10)
+	mark("booted")
+	record_atmos_arena("booted")
+	var/list/census = benchmark_census(param("top", 40))
+	metric("instances_total", census["total"], "instances")
+	for(var/root in census["by_root"])
+		metric("instances_[root]", census["by_root"][root], "instances")
+	detail("census_top_types", census["top_types"])
+	var/list/types = benchmark_type_counts()
+	for(var/kind in types)
+		metric("types_[kind]", types[kind], "types")
+	metric("init_seconds", Master.initializations_seconds, "s")
+	// Weakrefs never get cleaned up while their target lives, so count them by target type.
+	var/list/weakref_targets = list()
+	var/weakrefs = 0
+	var/dead_weakrefs = 0
+	for(var/datum/weakref/ref)
+		weakrefs++
+		var/datum/target = ref.resolve()
+		if(target)
+			weakref_targets["[target.type]"]++
+		else
+			dead_weakrefs++
+		CHECK_TICK
+	metric("weakrefs_total", weakrefs, "instances")
+	metric("weakrefs_dead", dead_weakrefs, "instances")
+	weakref_targets = sortTim(weakref_targets, GLOBAL_PROC_REF(cmp_numeric_desc), associative = TRUE)
+	if(length(weakref_targets) > 20)
+		weakref_targets.Cut(21)
+	detail("weakref_targets", weakref_targets)
+
+/// A quiet round: steady-state tick cost with nobody playing.
+/datum/benchmark/idle
+	id = "idle"
+	description = "Idle round tick cost and overruns"
+	default_scenario = TRUE
+
+/datum/benchmark/idle/Run()
+	wait_for_assets()
+	begin_window()
+	wait_seconds(param("seconds", 60))
+	end_window("idle")
+	mark("idle_end")
+
+/// Atmospherics baseline: 120 SSair cycles of the mapped station, recording
+/// Rust worker pressure alongside tick cost.
+/datum/benchmark/atmos_idle
+	id = "atmos_idle"
+	description = "Atmospherics cost on the mapped station at rest"
+
+/datum/benchmark/atmos_idle/Run()
+	wait_for_assets()
+	measure_atmos_cycles("atmos_idle", param("cycles", 120))
+
+/// Runs `cycles` SSair cycles inside a window and records worker maxima.
+/datum/benchmark/proc/measure_atmos_cycles(prefix, cycles)
+	begin_window()
+	var/start_cycle = SSair.times_fired
+	var/list/maxima = list(
+		"active_turfs" = 0,
+		"seed_turfs" = 0,
+		"retained_turfs" = 0,
+		"pending_turfs" = 0,
+		"snapshot_mixtures" = 0,
+		"published_mixtures" = 0,
+		"compute_ms" = 0,
+		"high_pressure_turfs" = 0,
+		"equalized_turfs" = 0,
+	)
+	var/deadline = REALTIMEOFDAY + 3000
+	while(SSair.times_fired < start_cycle + cycles)
+		if(REALTIMEOFDAY > deadline)
+			fail("SSair ran [SSair.times_fired - start_cycle]/[cycles] cycles in 300s")
+		stoplag()
+		maxima["active_turfs"] = max(maxima["active_turfs"], SSair.async_active_turfs)
+		maxima["seed_turfs"] = max(maxima["seed_turfs"], SSair.async_seed_turfs)
+		maxima["retained_turfs"] = max(maxima["retained_turfs"], SSair.async_retained_turfs)
+		maxima["pending_turfs"] = max(maxima["pending_turfs"], SSair.async_pending_turfs)
+		maxima["snapshot_mixtures"] = max(maxima["snapshot_mixtures"], SSair.async_snapshot_mixtures)
+		maxima["published_mixtures"] = max(maxima["published_mixtures"], SSair.async_published_mixtures)
+		maxima["compute_ms"] = max(maxima["compute_ms"], SSair.async_compute_cost)
+		maxima["high_pressure_turfs"] = max(maxima["high_pressure_turfs"], SSair.high_pressure_turfs)
+		maxima["equalized_turfs"] = max(maxima["equalized_turfs"], SSair.num_equalize_processed)
+	end_window(prefix)
+	metric("[prefix]_cycles", SSair.times_fired - start_cycle, "cycles", "none")
+	for(var/key in maxima)
+		metric("[prefix]_max_[key]", maxima[key], key == "compute_ms" ? "ms" : "count")
+	record_atmos_arena(prefix)
+
+/// Builds a walled width x width floor fixture on a fresh z-level and returns
+/// its floor turfs. The wall ring keeps gas from venting into the level's space.
+/datum/benchmark/proc/build_floor_fixture(width)
+	var/fixture_z = world.maxz + 1
+	world.maxz = fixture_z
+	var/list/turf/open/turfs = list()
+	for(var/x in 1 to width + 2)
+		for(var/y in 1 to width + 2)
+			var/turf/fixture_turf = locate(x, y, fixture_z)
+			if(x == 1 || y == 1 || x == width + 2 || y == width + 2)
+				fixture_turf.ChangeTurf(/turf/simulated/wall)
+			else
+				turfs += fixture_turf.ChangeTurf(/turf/simulated/floor)
+			CHECK_TICK
+	return turfs
+
+/// Large atmospherics workload: a checkerboard of gas that has to equalize.
+/datum/benchmark/atmos_large
+	id = "atmos_large"
+	description = "Checkerboard gas equalization over a large floor (bench_size, default 48; 0 = whole level)"
+
+/datum/benchmark/atmos_large/Run()
+	wait_for_assets()
+	var/size = param("size", 48)
+	if(size <= 0)
+		size = min(world.maxx - 2, world.maxy - 2)
+	var/list/turf/open/turfs = build_floor_fixture(size)
+	for(var/turf/open/fixture_turf as anything in turfs)
+		for(var/datum/gas/gas as anything in fixture_turf.air.get_gases())
+			fixture_turf.air.set_moles(gas, 0)
+		if((fixture_turf.x + fixture_turf.y) % 2)
+			fixture_turf.air.set_moles(/datum/gas/oxygen, 500)
+			fixture_turf.air.set_temperature(T20C)
+		fixture_turf.air_update_turf(FALSE, FALSE)
+	metric("atmos_large_turfs", length(turfs), "turfs", "none")
+	measure_atmos_cycles("atmos_large", param("cycles", 120))
+	mark("atmos_large_end")
+
+/// Major events: explosions, supermatter, mass fire and decompression on a
+/// fresh 64x64 fixture each. `bench_events` picks a comma-separated subset.
+/datum/benchmark/major_events
+	id = "major_events"
+	description = "Tick cost of explosions, supermatter, mass fire and decompression"
+	var/turf/open/event_center
+	var/list/turf/open/event_turfs
+
+/datum/benchmark/major_events/Destroy()
+	event_center = null
+	event_turfs = null
+	return ..()
+
+/datum/benchmark/major_events/Run()
+	wait_for_assets()
+	var/list/events = splittext(param("events", "large_explosion,supermatter,mass_fire,decompression"), ",")
+	for(var/event_name in events)
+		event_turfs = build_floor_fixture(64)
+		var/turf/corner = event_turfs[1]
+		event_center = locate(33, 33, corner.z)
+		stoplag()
+		switch(event_name)
+			if("large_explosion")
+				measure_event(event_name, CALLBACK(src, PROC_REF(trigger_large_explosion)))
+			if("supermatter")
+				measure_event(event_name, CALLBACK(src, PROC_REF(trigger_supermatter)))
+			if("mass_fire")
+				for(var/turf/open/T as anything in event_turfs)
+					T.air.set_moles(/datum/gas/oxygen, 300)
+					T.air.set_moles(/datum/gas/plasma, 100)
+					T.air.set_temperature(PLASMA_MINIMUM_BURN_TEMPERATURE + 100)
+					T.air_update_turf(FALSE, FALSE)
+				measure_event(event_name, CALLBACK(src, PROC_REF(trigger_mass_fire)))
+			if("decompression")
+				for(var/turf/open/T as anything in event_turfs)
+					T.air.set_moles(/datum/gas/oxygen, 500)
+					T.air.set_temperature(T20C)
+					T.air_update_turf(FALSE, FALSE)
+				measure_event(event_name, CALLBACK(src, PROC_REF(trigger_decompression)))
+			else
+				fail("unknown event '[event_name]'")
+
+/datum/benchmark/major_events/proc/measure_event(event_name, datum/callback/trigger, atmos_cycles = 60)
+	begin_window()
+	var/start_cycle = SSair.times_fired
+	trigger.Invoke()
+	wait_fires(SSair, atmos_cycles - (SSair.times_fired - start_cycle))
+	end_window(event_name)
+
+/datum/benchmark/major_events/proc/trigger_large_explosion()
+	explosion(event_center, 8, 16, 24, 32, FALSE, 0)
+
+/datum/benchmark/major_events/proc/trigger_supermatter()
+	var/obj/machinery/power/supermatter/crystal = new(event_center)
+	crystal.pull_time = 0
+	crystal.power = 5000
+	crystal.explode()
+
+/datum/benchmark/major_events/proc/trigger_mass_fire()
+	for(var/turf/open/T as anything in event_turfs)
+		if(T.x % 2 || T.y % 2)
+			continue
+		T.hotspot_expose(PLASMA_MINIMUM_BURN_TEMPERATURE + 500, CELL_VOLUME, TRUE)
+
+/datum/benchmark/major_events/proc/trigger_decompression()
+	for(var/turf/open/T as anything in event_turfs)
+		if(T.x == 2 || T.y == 2)
+			T.ChangeTurf(/turf/space)
+
+/// Expedition generation: builds and releases generated sites, recording tick
+/// cost and memory at each stage. `bench_cycles` > 1 is a leak soak.
+/datum/benchmark/generation
+	id = "generation"
+	description = "Expedition station generation and release (bench_cycles, default 1)"
+	var/datum/expedition_site/generated_site
+	var/generation_done = FALSE
+
+/datum/benchmark/generation/Destroy()
+	generated_site = null
+	return ..()
+
+/datum/benchmark/generation/proc/generate(seed, list/diagnostics)
+	try
+		generated_site = SSexpedition.generate_debug_station(seed, diagnostics)
+	catch(var/exception/error)
+		diagnostics["error"] = "[error]"
+	generation_done = TRUE
+
+/datum/benchmark/generation/Run()
+	wait_for_assets()
+	var/cycles = param("cycles", 1)
+	var/seed = param("seed", 900252288)
+	for(var/cycle in 1 to cycles)
+		mark("cycle[cycle]_begin")
+		var/list/diagnostics = list()
+		generated_site = null
+		generation_done = FALSE
+		begin_window()
+		INVOKE_ASYNC(src, PROC_REF(generate), seed, diagnostics)
+		var/deadline = REALTIMEOFDAY + 6000
+		while(!generation_done)
+			if(REALTIMEOFDAY > deadline)
+				fail("generation did not finish within 600s on cycle [cycle]")
+			stoplag()
+		end_window("cycle[cycle]_generate")
+		detail("cycle[cycle]_diagnostics", diagnostics)
+		if(!generated_site)
+			fail("generation returned no site on cycle [cycle]: [diagnostics["error"] || "no error"]")
+		mark("cycle[cycle]_generated")
+		SSexpedition.release_site(generated_site, "generation benchmark")
+		generated_site = null
+		var/waited = 0
+		while((length(SSexpedition.teardown_z) || !length(SSexpedition.free_z)) && waited++ < world.fps * 180)
+			stoplag()
+		if(waited >= world.fps * 180)
+			fail("expedition teardown did not return its z-level to the pool")
+		wait_fires(SSair, 60)
+		mark("cycle[cycle]_released")
+		detail("cycle[cycle]_garbage", SSgarbage.performance_diagnostics())
+
+/// Supermatter-scale destruction soak: detonates the station supermatter (or a
+/// large bomb in a random station area) `bench_blasts` times, a minute apart,
+/// then watches recovery long enough for the GC check queue to turn over. Meant
+/// for Southern Cross (-DCITESTING_FULL_MAP). `bench_profile_types=1` adds
+/// per-type machine and explosion cost attribution.
+/datum/benchmark/sm_soak
+	id = "sm_soak"
+	description = "Repeated supermatter-scale blasts and recovery (bench_blasts, default 4)"
+
+/datum/benchmark/sm_soak/Run()
+	wait_for_assets()
+	if(param("profile_types", 0))
+		SSmachines.profile_machine_types = TRUE
+		SSexplosions.profile_atom_types = TRUE
+	mark("before")
+	var/blasts = param("blasts", 4)
+	var/list/drains = list()
+	for(var/blast in 1 to blasts)
+		begin_window()
+		var/list/site = detonate()
+		if(!site)
+			fail("no supermatter and no open station turf to bomb")
+		wait_seconds(10)
+		// Open the blast site to space so decompression is part of the load.
+		var/turf/epicenter = locate(site["x"], site["y"], site["z"])
+		if(epicenter && !istype(epicenter, /turf/space))
+			epicenter.ChangeTurf(/turf/space)
+		var/sampled_at = 0
+		for(var/delay in list(1, 5, 15, 30))
+			wait_seconds(delay - sampled_at)
+			sampled_at = delay
+			drains += list(sample_drain(site, "blast[blast]", delay))
+		wait_seconds(20)
+		end_window("blast[blast]")
+		mark("blast[blast]")
+	var/recovered_for = 0
+	for(var/checkpoint in list(60, 180, 320))
+		begin_window()
+		wait_seconds(checkpoint - recovered_for)
+		recovered_for = checkpoint
+		end_window("recovery[checkpoint]")
+		mark("recovery[checkpoint]")
+		if(SSmachines.profile_machine_types)
+			SSmachines.dump_machine_profile()
+	detail("drain_samples", drains)
+	detail("garbage", SSgarbage.performance_diagnostics())
+
+/// Blows up the supermatter if there is one, else bombs a station area.
+/// Returns the epicenter as list(x, y, z, area).
+/datum/benchmark/sm_soak/proc/detonate()
+	for(var/obj/machinery/power/supermatter/crystal in world)
+		var/turf/epicenter = get_turf(crystal)
+		var/list/site = list("x" = epicenter.x, "y" = epicenter.y, "z" = epicenter.z, "area" = get_area(crystal))
+		crystal.explode()
+		return site
+	var/list/station_areas = get_station_areas(list())
+	while(length(station_areas))
+		var/area/target_area = pick_n_take(station_areas)
+		var/list/open_turfs = list()
+		for(var/turf/open/T in target_area)
+			open_turfs += T
+		if(!length(open_turfs))
+			continue
+		var/turf/open/epicenter = pick(open_turfs)
+		var/list/site = list("x" = epicenter.x, "y" = epicenter.y, "z" = epicenter.z, "area" = target_area)
+		explosion(epicenter, 8, 16, 24, 32, TRUE)
+		return site
+	return null
+
+/// Pressure across the atmosphere-connected component that contains the blast.
+/// Area datums are shared by disconnected fragments, so a whole-area average
+/// would make a spaced room look half pressurised.
+/datum/benchmark/sm_soak/proc/sample_drain(list/site, label, delay)
+	var/area/affected_area = site["area"]
+	var/turf/open/epicenter = locate(site["x"], site["y"], site["z"])
+	if(!istype(epicenter) || get_area(epicenter) != affected_area)
+		return list("label" = label, "delay_s" = delay, "cells" = 0, "origin_missing" = TRUE)
+	var/list/turfs_to_scan = list(epicenter)
+	var/list/connected = list()
+	connected[epicenter] = TRUE
+	var/scan_index = 1
+	while(scan_index <= length(turfs_to_scan))
+		var/turf/open/current = turfs_to_scan[scan_index++]
+		for(var/turf/open/neighbor as anything in current.atmos_adjacent_turfs)
+			if(get_area(neighbor) != affected_area || connected[neighbor])
+				continue
+			connected[neighbor] = TRUE
+			turfs_to_scan += neighbor
+	var/count = 0
+	var/vacuum = 0
+	var/total = 0
+	var/lowest = INFINITY
+	var/highest = 0
+	for(var/turf/open/cell as anything in connected)
+		var/pressure = cell.return_air().return_pressure()
+		count++
+		total += pressure
+		lowest = min(lowest, pressure)
+		highest = max(highest, pressure)
+		if(pressure < 5)
+			vacuum++
+	return list("label" = label, "delay_s" = delay, "area" = affected_area.name, "cells" = count, "avg_kpa" = count ? total / count : 0, "min_kpa" = count ? lowest : 0, "max_kpa" = highest, "vacuum_cells" = vacuum)

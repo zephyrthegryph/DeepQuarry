@@ -111,7 +111,6 @@
 					var/green = getg(colour)
 					var/blue = getb(colour)
 
-
 					green = min(255, green+40)
 					blue = min(255, blue+40)
 
@@ -302,10 +301,6 @@
 
 	src.close(user)
 
-/*			if(seccomp == src)
-				drawmap(user)
-			else
-				user.clearmap()*/
 	return
 
 /obj/machinery/computer/security/proc/close(mob/user)

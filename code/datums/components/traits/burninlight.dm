@@ -49,10 +49,12 @@
 				var/covered = H.get_coverage()
 				for(var/K in damageable)
 					if(!(K in covered))
-						H.apply_damage(light_amount * damage_rate, BURN, K, 0)
+						H.injure(INJURY_BURN, light_amount * damage_rate, K, flags = INJURE_SILENT)
 			else
-				owner.take_overall_damage(light_amount * damage_rate,light_amount * damage_rate)
+				owner.injure(INJURY_BLUNT, light_amount * damage_rate, flags = INJURE_SILENT)
+				owner.injure(INJURY_BURN, light_amount * damage_rate, flags = INJURE_SILENT)
 
 	// heal in the dark, if possible
 	else if(heal_rate > 0)
-		owner.heal_overall_damage(heal_rate,heal_rate)
+		owner.mend(TREAT_TISSUE_REPAIR, heal_rate)
+		owner.mend(TREAT_BURN_CARE, heal_rate)

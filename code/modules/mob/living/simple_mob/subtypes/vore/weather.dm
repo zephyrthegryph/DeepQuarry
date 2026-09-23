@@ -1,8 +1,7 @@
 /mob/living/simple_mob/vore/fossiltank //slow but endless hunter
 	name = "rolling crematorium"
 	desc = "A large metal tank."
-	health = 200
-	maxHealth = 200
+	endurance = 200
 	armor = list(melee = 60, bullet = 60, laser = 60, energy = 60, bomb = 80, bio = 100, rad = 100)  //High armor, relativly low HP
 	icon_state = "rex"
 	melee_attack_delay = 2.5 SECONDS
@@ -41,8 +40,7 @@
 		/obj/item/prop/tyrlore/fossiltank = 100,
 		)
 
-/mob/living/simple_mob/vore/fossiltank/emp_act(severity)
-	..()
+/mob/living/simple_mob/vore/fossiltank/emp_act
 	regenration_rate = 0
 
 /mob/living/simple_mob/vore/fossiltank/handle_special()
@@ -51,8 +49,9 @@
 	..()
 
 /mob/living/simple_mob/vore/fossiltank/proc/regenration()
-	adjustBruteLoss(regenration_rate)
-	adjustFireLoss(regenration_rate)
+	if(regenration_rate < 0) // Negative = healing per tick.
+		mend(TREAT_TISSUE_REPAIR, -regenration_rate)
+		mend(TREAT_BURN_CARE, -regenration_rate)
 
 /mob/living/simple_mob/vore/fossiltank/load_default_bellies()
 	. = ..()
@@ -65,19 +64,19 @@
 	B.absorbchance = 0
 	B.escapechance = 15
 
-/mob/living/simple_mob/vore/fossiltank/updatehealth()
+/mob/living/simple_mob/vore/fossiltank/update_health_display()
 	. = ..()
-
-	if(health < maxHealth*0.25)
+	var/wellness = vitality()
+	if(wellness < 0.25)
 		icon_state = "rex_25"
 		icon_living = "rex_25"
-	else if(health < maxHealth*0.5)
+	else if(wellness < 0.5)
 		icon_state = "rex_50"
 		icon_living = "rex_50"
-	else if (health < maxHealth*0.75)
+	else if (wellness < 0.75)
 		icon_state = "rex_75"
 		icon_living = "rex_75"
-	else if (health > maxHealth*0.75)
+	else if (wellness > 0.75)
 		icon_state = "rex"
 		icon_living = "rex"
 
@@ -90,8 +89,7 @@
 /mob/living/simple_mob/vore/boss_jellyfish
 	name = "expirmental jellyfish"
 	desc = "A glowing green jellyfish"
-	health = 600
-	maxHealth = 600
+	endurance = 600
 	armor = list(melee = 30, bullet = 30, laser = 30, energy = 30, bomb = 50, bio = 100, rad = 100) //So, it's made of jelly. Bullets and melee bounces off of it. The 20 laser and energy are for a smidge extra tankny because I savour endurance fights
 	icon = 'icons/mob/tyr.dmi'
 	icon_state = "jellyfish"
@@ -162,17 +160,17 @@
 	if(nutrition > 500)
 		Beam(A, icon_state = "sat_beam", time = 3.5 SECONDS, maxdistance = INFINITY)
 		addtimer(CALLBACK(src, PROC_REF(sniper_shot), A), 4 SECONDS, TIMER_DELETE_ME)
-	else if(health < maxHealth*0.25) //phase 4 where it teleports then chains 3 attacks
+	else if(vitality() < 0.25) //phase 4 where it teleports then chains 3 attacks
 		chain_number = 3
 		addtimer(CALLBACK(src, PROC_REF(astral_sea_warp), A), 3 SECONDS, TIMER_DELETE_ME)
 		icon_state = "jellyfish_blue"
 		icon_living = "jellyfish_blue"
-	else if(health < maxHealth*0.5) //teleports then chains 2 attacks
+	else if(vitality() < 0.5) //teleports then chains 2 attacks
 		chain_number = 2
 		addtimer(CALLBACK(src, PROC_REF(astral_sea_warp), A), 3 SECONDS, TIMER_DELETE_ME)
 		icon_state = "jellyfish_blue"
 		icon_living = "jellyfish_blue"
-	else if(health < maxHealth*0.75) //teleports then attacks
+	else if(vitality() < 0.75) //teleports then attacks
 		chain_number = 1
 		icon_state = "jellyfish_blue"
 		icon_living = "jellyfish_blue"
@@ -247,7 +245,7 @@
 
 /mob/living/simple_mob/vore/boss_jellyfish/proc/summon_puddles(atom/A)
 	for(var/mob/living/L in view(src, 7))
-		if(L.stat != DEAD && !IIsAlly(L))
+		if(L.stat != DEAD || !IIsAlly(L))
 			L.add_modifier(/datum/modifier/mmo_drop/jelly_fish, 3, src)
 		if(chain_number > 0)
 			chain_number -= 1

@@ -62,37 +62,6 @@
 	new /obj/effect/temp_visual/circle_wave/gravity(get_turf(src))
 	playsound(src, 'sound/effects/cosmic_energy.ogg', vol = 50)
 
-/* // Unfortunately couldn't get this one working. Maybe in the future.
-/obj/effect/anomaly/grav/high
-	var/datum/proximity_monitor/advanced/gravity/grav_field
-
-/obj/effect/anomaly/grav/high/Initialize(mapload, new_lifespan)
-	. = ..()
-	INVOKE_ASYNC(src, PROC_REF(setup_grav_field))
-
-/obj/effect/anomaly/grav/high/proc/setup_grav_field()
-	grav_field = new(src, 7, TRUE, rand(0, 3))
-
-/obj/effect/anomaly/grav/high/detonate()
-	..()
-	for(var/obj/machinery/gravity_generator/main/the_generator as anything in GLOB.machines)
-		if(is_on_same_plane_or_station(the_generator.z))
-			the_generator.breaker = FALSE
-			the_generator.set_power()
-			the_generator.charge_count = 10
-
-/obj/effect/anomaly/grav/high/Destroy()
-	QDEL_NULL(grav_field)
-	. = ..()
-
-/obj/effect/anomaly/grav/high/big
-	immortal = TRUE
-	anomaly_core = null
-
-/obj/effect/anomaly/grav/high/big/Initialize(mapload, new_lifespan)
-	. = ..()
-	transform *= 3
-*/
 /obj/effect/temp_visual/circle_wave/gravity
 	color = COLOR_NAVY
 

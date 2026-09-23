@@ -9,8 +9,7 @@
 
 	faction = FACTION_RUSSIAN
 
-	maxHealth = 125
-	health = 125
+	endurance = 125
 
 	movement_cooldown = -1
 
@@ -38,7 +37,7 @@
 // Is it time to be mad?
 /mob/living/simple_mob/animal/space/bear/handle_special()
 	if(((ai_brain ? (ai_brain.primary_threat ? STANCE_FIGHT : STANCE_IDLE) : STANCE_IDLE) in list(STANCE_APPROACH, STANCE_FIGHT)) && !(ai_brain && ai_brain.busy) && isturf(loc))
-		if(health <= (maxHealth * 0.5)) // At half health, and fighting someone currently.
+		if(vitality() <= 0.5) // At half health, and fighting someone currently.
 			berserk()
 
 // So players can use it too.

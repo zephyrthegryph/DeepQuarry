@@ -85,13 +85,6 @@
 /mob/living/carbon/human/proc/check_can_attach_modular_limb(obj/item/organ/external/E)
 	if(world.time < last_special + (2 SECONDS) || get_active_hand() != E)
 		return FALSE
-	/*
-	// ition Start
-	if(species.name == SPECIES_PROTEAN)
-		to_chat(src, span_warning("This is not compatible with your nanomachine body!"))
-		return FALSE
-	// ition End
-	*/
 	if(incapacitated() || restrained())
 		to_chat(src, span_warning("You can't do that in your current state!"))
 		return FALSE
@@ -124,13 +117,6 @@
 /mob/living/carbon/human/proc/check_can_detach_modular_limb(obj/item/organ/external/E)
 	if(world.time < last_special + (2 SECONDS))
 		return FALSE
-	/*
-	// ition Start
-	if(species.name == SPECIES_PROTEAN)
-		to_chat(src, span_warning("You can't just detach parts of your nanomachine body!"))
-		return FALSE
-	// ition End
-	*/
 	if(incapacitated() || restrained())
 		to_chat(src, span_warning("You can't do that in your current state!"))
 		return FALSE

@@ -280,7 +280,6 @@
 	if(istype(W, /obj/item/stack/cable_coil) && malfunction && is_open)
 		var/obj/item/stack/cable_coil/coil = W
 		to_chat(user, span_notice("You begin to replace the wires."))
-		//if(do_after(user, min(60, round( ((getMaxHealth()/health)*10)+(malfunction*10) ))) //Take longer to repair heavier damage
 		if(do_after(user, 3 SECONDS, target = src))
 			if (coil.use(1))
 				repair_damage(max_integrity)

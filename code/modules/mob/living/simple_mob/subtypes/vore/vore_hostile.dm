@@ -22,8 +22,7 @@
 	vis_height = 64
 
 	faction = FACTION_MACROBACTERIA
-	maxHealth = 600
-	health = 600
+	endurance = 600
 	movement_cooldown = 3
 
 	harm_intent_damage = 1
@@ -87,7 +86,7 @@
 		return ..()
 	if(!user.devourable || !user.allowmobvore || !user.can_be_drop_prey)
 		return ..()
-	//was: ai_holder.give_target(user); track_target_position; set_stance(STANCE_FIGHT)
+	// DQEdit - was: ai_holder.give_target(user); track_target_position; set_stance(STANCE_FIGHT)
 	ai_brain?.give_target(user, TRUE)
 /////Leaper/////
 
@@ -108,8 +107,7 @@
 	vis_height = 64
 
 	faction = FACTION_MACROBACTERIA
-	maxHealth = 600
-	health = 600
+	endurance = 600
 
 	harm_intent_damage = 1
 	melee_damage_lower = 1
@@ -234,8 +232,7 @@
 	vis_height = 64
 
 	faction = FACTION_MACROBACTERIA
-	maxHealth = 500
-	health = 500
+	endurance = 500
 
 	harm_intent_damage = 1
 	melee_damage_lower = 1

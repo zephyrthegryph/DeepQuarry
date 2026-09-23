@@ -43,7 +43,7 @@
 /obj/item/latexballon/bullet_act()
 	burst()
 
-/obj/item/latexballon/fire_act(datum/gas_mixture/air, temperature, volume)
+/obj/item/latexballon/fire_act(temperature, volume)
 	if(temperature > T0C+100)
 		burst()
 	return
@@ -52,14 +52,3 @@
 	if (can_puncture(W))
 		burst()
 
-/*
-/obj/item/latexballon/nitrile
-	name = "nitrile glove"
-	desc = "A nitrile glove, usually used as a balloon."
-	icon_state = "nitrileballon"
-	item_icons = list(
-			slot_l_hand_str = 'icons/mob/items/lefthand_gloves.dmi',
-			slot_r_hand_str = 'icons/mob/items/righthand_gloves.dmi',
-			)
-	item_state = "ngloves"
-*/

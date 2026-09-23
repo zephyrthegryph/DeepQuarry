@@ -462,7 +462,7 @@
 					if(mysize <= 0.60)
 						micro.Weaken(1*recoil_mode)
 						if(!istype(src,/obj/item/gun/energy))
-							micro.adjustBruteLoss((5-mysize*4)*recoil_mode)
+							micro.injure(INJURY_BLUNT, (5-mysize*4)*recoil_mode, null, src)
 							to_chat(micro, span_danger("You're so tiny that you drop the gun and hurt yourself from the recoil!"))
 						else
 							to_chat(micro, span_danger("You're so tiny that the pull of the trigger causes you to drop the gun!"))
@@ -683,12 +683,11 @@
 		//As opposed to no-delay pew pew
 		P.accuracy += 30
 
-	// Some modifiers make it harder or easier to hit things.
-	for(var/datum/modifier/M in user.modifiers)
-		if(!isnull(M.accuracy))
-			P.accuracy += M.accuracy
-		if(!isnull(M.accuracy_dispersion))
-			P.dispersion = max(P.dispersion + M.accuracy_dispersion, 0)
+	// Body factors make it harder or easier to hit things.
+	P.accuracy += user.factor(BF_ACCURACY)
+	var/dispersion_shift = user.factor(BF_DISPERSION)
+	if(dispersion_shift)
+		P.dispersion = max(P.dispersion + dispersion_shift, 0)
 
 	if(ishuman(user))
 		var/mob/living/carbon/human/H = user
@@ -756,11 +755,12 @@
 			return
 
 		in_chamber.on_hit(M)
-		if(in_chamber.damage_type != HALLOSS && !in_chamber.nodamage)
+		var/suicide_kind = in_chamber.get_injury_kind(TRUE, in_chamber.edge)
+		if(suicide_kind != INJURY_PAIN && !in_chamber.nodamage)
 			log_and_message_admins("commited suicide using \a [src]", user)
-			user.apply_damage(in_chamber.damage*2.5, in_chamber.damage_type, BP_HEAD, sharp = TRUE, used_weapon = src)
+			user.injure(suicide_kind, in_chamber.damage*2.5, BP_HEAD, src, 0, null, INJURE_PROJECTILE)
 			user.death()
-		else if(in_chamber.damage_type == HALLOSS)
+		else if(suicide_kind == INJURY_PAIN)
 			to_chat(user, span_notice("Ow..."))
 			user.apply_effect(110,AGONY,0)
 		qdel(in_chamber)

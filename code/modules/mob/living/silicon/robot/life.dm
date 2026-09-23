@@ -1,162 +1,86 @@
+// Robot Life: a fixed sequence of small systems (doc/mob_life_architecture.md §5.2).
+//   Status  - incapacitation counters wear off.
+//   Power   - one ledger draw of the cached demand; brownout on shortfall; heat debt.
+//   Body    - afflictions, consciousness and death, ticked exactly once.
+//   HUD/Senses - client readouts. Camera, radio and lights change on events,
+//             not here (update_senses(), set_lights()).
+// Countdowns (killswitch, weapon lock) are timers (robot.dm).
+
 /mob/living/silicon/robot/Life()
 	set invisibility = INVISIBILITY_NONE
 
-	if (transforming)
+	if(transforming)
 		return
 
-	blinded = null
-
-	//Status updates, death etc.
-	clamp_values()
-	handle_regular_status_updates()
-	handle_instability()
-	// For some reason borg Life() doesn't call ..()
+	used_power_this_tick = 0
 	handle_modifiers()
-	handle_light()
+	handle_statuses()
+	handle_sensory_recovery()
+	handle_instability()
+
+	if(stat != DEAD)
+		process_power()
+
+	// Vitals, part breakage, consciousness and death: the machine plan decides.
+	body?.life_tick()
 
 	if(client)
 		handle_regular_hud_updates()
 		handle_vision()
 		update_items()
-	if (stat != DEAD) //still using power
-		use_power()
-		process_killswitch()
-		process_locks()
+	if(stat != DEAD)
 		process_queued_alarms()
 	update_canmove()
 
-/mob/living/silicon/robot/proc/clamp_values()
-
-//	SetStunned(min(stunned, 30))
-	SetParalysis(min(paralysis, 30))
-//	SetWeakened(min(weakened, 20))
-	SetSleeping(0)
-	adjustBruteLoss(0)
-	adjustToxLoss(0)
-	adjustOxyLoss(0)
-	adjustFireLoss(0)
-
-/mob/living/silicon/robot/proc/use_power()
-	// Debug only
-	used_power_this_tick = 0
-	for(var/V in components)
-		var/datum/robot_component/C = components[V]
-		C.update_power_state()
-
-	if ( cell && is_component_functioning("power cell") && cell.charge > 0 )
-		if(module_state_1)
-			cell_use_power(50) // 50W load for every enabled tool TODO: tool-specific loads
-		if(module_state_2)
-			cell_use_power(50)
-		if(module_state_3)
-			cell_use_power(50)
-
-		if(lights_on)
-			cell_use_power(30) 	// 30W light. Normal lights would use ~15W, but increased for balance reasons.
-
-		has_power = TRUE
-	else
-		if (has_power)
-			to_chat(src, span_red("You are now running on emergency backup power."))
-		has_power = FALSE
-		if(lights_on) // Light is on but there is no power!
-			lights_on = FALSE
-			set_light(0)
-
-/mob/living/silicon/robot/handle_regular_status_updates()
-
-	if(camera && !scrambledcodes)
-		if(stat == 2 || wires.is_cut(WIRE_BORG_CAMERA))
-			camera.set_status(0)
-		else
-			camera.set_status(1)
-
-	updatehealth()
-
-	if(sleeping)
-		Paralyse(3)
-		AdjustSleeping(-1)
-
-	// if(resting) // . Our borgos would rather not.
-	//	Weaken(5)
-
-	if(health < (-getMaxHealth()) && stat != 2) //die only once
-		death()
-
-	if (stat != 2) //Alive.
-		/* 
-		if (src.weakened > 0)	// Do not fullstun on weaken
-			AdjustWeakened(-1)
-		*/
-		if (paralysis || stunned || weakened || !has_power) // Stunned etc. // all states
-			set_stat(UNCONSCIOUS)
-			if (stunned > 0)
-				AdjustStunned(-1)
-			if (weakened > 0)
-				AdjustWeakened(-1)
-			if (paralysis > 0)
-				AdjustParalysis(-1)
-				blinded = 1
-			else
-				blinded = 0
-
-		else	//Not stunned.
-			if(stat != 0) //We are just getting done with being stunned
-				set_stat(CONSCIOUS)
-				update_icon()
-
-		AdjustConfused(-1)
-
-	else //Dead or just unconscious.
-		blinded = 1
-
-	if (stuttering) stuttering--
-
-	if (eye_blind)
+/// Temporary blindness, deafness and blur wear off.
+/mob/living/silicon/robot/proc/handle_sensory_recovery()
+	var/senses_changed = FALSE
+	if(eye_blind)
 		AdjustBlinded(-1)
-		blinded = 1
-
-	if (ear_deaf > 0)
+		senses_changed = !eye_blind
+	if(ear_deaf > 0)
 		ear_deaf--
-	if (ear_damage < 25)
-		ear_damage -= 0.05
-		ear_damage = max(ear_damage, 0)
-
-	if(ear_deaf <= 0) // Ear Ringing/Deafness - Not sure if we need this, but, safety.
-		deaf_loop.stop() // Ear Ringing/Deafness - Not sure if we need this, but, safety.
-
-	density = !( lying )
-
-	if (sdisabilities & BLIND)
-		blinded = 1
-	if (sdisabilities & DEAF)
+	if(ear_damage < 25)
+		ear_damage = max(ear_damage - 0.05, 0)
+	if(ear_deaf <= 0)
+		deaf_loop.stop()
+	if(sdisabilities & DEAF)
 		ear_deaf = 1
+	if(eye_blurry > 0)
+		eye_blurry = max(0, eye_blurry - 1)
+	if(senses_changed)
+		update_senses()
 
-	if (eye_blurry > 0)
-		eye_blurry--
-		eye_blurry = max(0, eye_blurry)
+// --- Power system ------------------------------------------------------------------------------
 
-	if (druggy > 0)
-		druggy--
-		druggy = max(0, druggy)
+/// Spend the cached demand through the ledger. A shortfall is a brownout.
+/mob/living/silicon/robot/proc/process_power()
+	if(cell && nutrition >= ROBOT_NUTRITION_BURN && cell.charge < cell.maxcharge)
+		adjust_nutrition(-ROBOT_NUTRITION_BURN)
+		add_power(ROBOT_NUTRITION_JOULES, src)
+	var/delivered = power_bus_ok() && draw_power(power_demand, src)
+	update_power_state(delivered)
+	process_heat()
 
-	//update the state of modules and components here
-	if (stat != 0)
-		uneq_all()
+/// Machine physiology: a cooling loop that can't circulate builds heat debt;
+/// enough debt tips it into thermal runaway.
+/mob/living/silicon/robot/proc/process_heat()
+	var/datum/robot_component/cooling/loop = get_component(ROBOT_SLOT_COOLING)
+	if(!istype(loop))
+		return
+	var/circulation = loop.circulation()
+	if(circulation >= ROBOT_CIRCULATION_OK)
+		if(heat_debt > 0)
+			heat_debt = max(0, heat_debt - ROBOT_HEAT_DEBT_SHED)
+		return
+	heat_debt += (1 - circulation) * ROBOT_HEAT_DEBT_SHED * 2
+	if(heat_debt < ROBOT_HEAT_DEBT_RUNAWAY || body?.has_affliction(/datum/affliction/synthetic/thermal_runaway))
+		return
+	if(body?.afflict(/datum/affliction/synthetic/thermal_runaway))
+		log_runtime("ROBOT_HEAT: [key_name(src)] entered thermal runaway (heat debt [round(heat_debt)], circulation [round(circulation, 0.01)]).")
+		to_chat(src, span_danger("Warning: core temperature exceeding safe limits."))
 
-	if(radio)
-		if(!is_component_functioning("radio"))
-			radio.on = 0
-		else
-			radio.on = 1
-
-	if(is_component_functioning("camera"))
-		blinded = 0
-	else
-		blinded = 1
-
-	// Call parent to handle signals
-	. = ..()
+// --- Senses and HUD ------------------------------------------------------------------------------
 
 /mob/living/silicon/robot/handle_vision()
 	var/fullbright = FALSE
@@ -256,18 +180,10 @@
 			else
 				throw_alert("temp", /atom/movable/screen/alert/cold/robot, COLD_ALERT_SEVERITY_MODERATE)
 
-	//Oxygen and fire does nothing yet!!
-	//if (oxygen) oxygen.icon_state = "oxy[oxygen_alert ? 1 : 0]"
-	//if (fire) fire.icon_state = "fire[fire_alert ? 1 : 0]"
-
-	if(stat != 2)
-		if(blinded)
-			overlay_fullscreen("blind", /atom/movable/screen/fullscreen/blind)
-		else
-			clear_fullscreen("blind")
-			set_fullscreen(disabilities & NEARSIGHTED, "impaired", /atom/movable/screen/fullscreen/impaired, 1)
-			set_fullscreen(eye_blurry, "blurry", /atom/movable/screen/fullscreen/blurry)
-			set_fullscreen(druggy, "high", /atom/movable/screen/fullscreen/high)
+	// Blindness is raised by update_senses() when the camera or stat changes.
+	if(stat != DEAD && !blinded)
+		set_fullscreen(eye_blurry, "blurry", /atom/movable/screen/fullscreen/blurry)
+		set_fullscreen(druggy, "high", /atom/movable/screen/fullscreen/high)
 
 	if(emagged)
 		throw_alert("hacked", /atom/movable/screen/alert/hacked)
@@ -283,36 +199,19 @@
 		healths.icon_state = "health7"
 		return
 
-	if(istype(src,/mob/living/silicon/robot/drone))
-		switch(health)
-			if(35 to INFINITY)
-				healths.icon_state = "health0"
-			if(25 to 34)
-				healths.icon_state = "health1"
-			if(15 to 24)
-				healths.icon_state = "health2"
-			if(5 to 14)
-				healths.icon_state = "health3"
-			if(0 to 4)
-				healths.icon_state = "health4"
-			if(-35 to 0)
-				healths.icon_state = "health5"
-			else
-				healths.icon_state = "health6"
-		return
-
-	// Not a switch because of the -max_health() case
-	if(health >= 200)
+	// Same bands as the old 200..-200 health scale, read from vitality.
+	var/v = vitality()
+	if(v >= 1)
 		healths.icon_state = "health0"
-	else if(health >= 150)
+	else if(v >= 0.875)
 		healths.icon_state = "health1"
-	else if(health >= 100)
+	else if(v >= 0.75)
 		healths.icon_state = "health2"
-	else if(health >= 50)
+	else if(v >= 0.625)
 		healths.icon_state = "health3"
-	else if(health >= 0)
+	else if(v >= 0.5)
 		healths.icon_state = "health4"
-	else if(health >= (-getMaxHealth()))
+	else if(v > 0)
 		healths.icon_state = "health5"
 	else
 		healths.icon_state = "health6"
@@ -341,37 +240,14 @@
 		for(var/obj/I in contents)
 			if(I && !(istype(I,/obj/item/cell) || istype(I,/obj/item/radio)  || istype(I,/obj/machinery/camera) || istype(I,/obj/item/mmi)))
 				client.screen += I
-	if(module_state_1)
-		module_state_1:screen_loc = ui_inv1
-	if(module_state_2)
-		module_state_2:screen_loc = ui_inv2
-	if(module_state_3)
-		module_state_3:screen_loc = ui_inv3
-	//update_icon() //Removed and moved to robot/inventory.dm so it's not being called EVERY LIFE TICK
-
-/mob/living/silicon/robot/proc/process_killswitch()
-	if(killswitch)
-		killswitch_time --
-		if(killswitch_time <= 0)
-			if(client)
-				to_chat(src, span_danger("Killswitch Activated"))
-			killswitch = 0
-			spawn(5)
-				gib()
-
-/mob/living/silicon/robot/proc/process_locks()
-	if(weapon_lock)
-		uneq_all()
-		weaponlock_time --
-		if(weaponlock_time <= 0)
-			if(client)
-				to_chat(src, span_danger("Weapon Lock Timed Out!"))
-			weapon_lock = 0
-			weaponlock_time = 120
+	for(var/slot in 1 to 3)
+		var/obj/item/held = get_module_slot(slot)
+		if(held)
+			held.screen_loc = get_module_slot_screen_loc(slot)
 
 /mob/living/silicon/robot/update_canmove()
 	..() // Let's not reinvent the wheel.
-	if(lockdown || !is_component_functioning("actuator"))
+	if(lockdown || !is_component_functioning(ROBOT_SLOT_ACTUATOR))
 		canmove = FALSE
 	return canmove
 
@@ -385,10 +261,3 @@
 	cut_overlay(image(icon = 'icons/mob/OnFire.dmi', icon_state = get_fire_icon_state()))
 	if(on_fire)
 		add_overlay(image(icon = 'icons/mob/OnFire.dmi', icon_state = get_fire_icon_state()))
-
-/mob/living/silicon/robot/handle_light()
-	if(lights_on)
-		set_light(integrated_light_power, 1, robot_light_col)
-		return TRUE
-	else
-		. = ..()

@@ -9,8 +9,7 @@ GLOBAL_VAR_INIT(chicken_count, 0)	// How mant chickens DO we have?
 	icon_living = "chicken"
 	icon_dead = "chicken_dead"
 
-	health = 10
-	maxHealth = 10
+	endurance = 10
 
 	pass_flags = PASSTABLE
 	mob_size = MOB_SMALL
@@ -112,8 +111,7 @@ GLOBAL_VAR_INIT(chicken_count, 0)	// How mant chickens DO we have?
 	icon_dead = "chick_dead"
 	icon_gib = "chick_gib"
 
-	health = 1
-	maxHealth = 1
+	endurance = 1
 
 	pass_flags = PASSTABLE | PASSGRILLE
 	mob_size = MOB_MINISCULE

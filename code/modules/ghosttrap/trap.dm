@@ -88,7 +88,7 @@ GLOBAL_LIST(ghost_traps)
 	if(!istype(P)) //wat
 		return
 	P.searching = 0
-	P.name = "positronic brain ([P.brainmob.name])"
+	P.name = "positronic brain ([P.get_occupant()?.name])"
 	P.icon_state = "posibrain-occupied"
 
 // Allows people to set their own name. May or may not need to be removed for posibrains if people are dumbasses.

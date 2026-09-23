@@ -35,10 +35,14 @@
 			return
 	..()
 
+// The only /mob/living AltClickOn: hardsuit activation first, then ventcrawl entry.
 /mob/living/AltClickOn(atom/A)
 	if(client && client.hardsuit_click_mode == HARDSUIT_ALT_CLICK)
 		if(HardsuitClickOn(A))
 			return
+	if(is_type_in_list(A, GLOB.ventcrawl_machinery))
+		handle_ventcrawl(A)
+		return
 	..()
 
 /mob/living/CtrlClickOn(atom/A)

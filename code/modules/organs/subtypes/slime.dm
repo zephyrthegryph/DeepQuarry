@@ -142,7 +142,6 @@
 	organ_tag = O_REGTOX
 
 
-// === merged from slime_vr.dm during hard-fork de-suffix (verified no override-order change) ===
 /obj/item/organ/external/chest/unbreakable/slime
 	transparent = 1
 

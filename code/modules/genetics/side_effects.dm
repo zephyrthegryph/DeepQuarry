@@ -46,7 +46,7 @@
 	for(var/organ_name in BP_ALL)
 		var/obj/item/organ/external/E = H.get_organ(organ_name)
 		if(E)
-			E.take_damage(0, 5, 0)
+			H.injure(INJURY_BURN, 5, E)
 
 /datum/genetics/side_effect/bone_snap
 	name = "Genetic Bone Snap"
@@ -62,7 +62,9 @@
 	var/mob/living/carbon/human/H = WR.resolve()
 	var/organ_name = pick(BP_ALL)
 	var/obj/item/organ/external/E = H.get_organ(organ_name)
-	E.take_damage(20, 0, 0)
+	if(!E)
+		return
+	H.injure(INJURY_BLUNT, 20, E)
 	E.fracture()
 
 /datum/genetics/side_effect/confuse

@@ -144,7 +144,6 @@
 	supply_conversion_value = 5
 
 
-// === merged from glass_vr.dm during hard-fork de-suffix (verified no override-order change) ===
 /datum/material/glass/titaniumglass
 	name = MAT_TITANIUMGLASS
 	display_name = "titanium glass"

@@ -113,10 +113,8 @@
 #define MINIMUM_TEMPERATURE_DELTA_TO_SUSPEND 4
 /// Minimum temperature difference before the gas temperatures are just set to be equal
 #define MINIMUM_TEMPERATURE_DELTA_TO_CONSIDER 0.5
-///Minimum temperature to continue superconduction once started
-#define MINIMUM_TEMPERATURE_FOR_SUPERCONDUCTION (T20C+80)
-///Minimum temperature to start doing superconduction calculations
-#define MINIMUM_TEMPERATURE_START_SUPERCONDUCTION (T20C+400)
+// Superconduction thresholds live only in verdigris (domains/gas/src/gas/constants.rs);
+// Rust runs turf heat conduction and DM never reads them.
 
 //HEAT TRANSFER COEFFICIENTS
 //Must be between 0 and 1. Values closer to 1 equalize temperature faster
@@ -125,6 +123,12 @@
 #define OPEN_HEAT_TRANSFER_COEFFICIENT 0.4
 /// a hack for now
 #define WINDOW_HEAT_TRANSFER_COEFFICIENT 0.1
+/// Wall material conductance (W/K for a 2.5 m^2, 0.25 m slab) that maps to a
+/// transfer coefficient of 1. The best conductors (~100 W/mK, 1000 W/K) reach the
+/// 0.25 cap and steel (11 W/mK) lands near 0.03, just under a floor tile.
+#define WALL_CONDUCTANCE_PER_TRANSFER_COEFFICIENT 4000
+/// Most heat a wall passes per exchange, whatever it is made of.
+#define WALL_MAX_HEAT_TRANSFER_COEFFICIENT 0.25
 /// a hack to help make vacuums "cold", sacrificing realism for gameplay
 #define HEAT_CAPACITY_VACUUM 7000
 

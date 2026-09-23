@@ -625,7 +625,7 @@
 			L.add_modifier(/datum/modifier/agonize, 2 SECONDS)
 			if(L.isSynthetic())
 				to_chat(L, span_cult("Your chassis warps as the [src] pulses!"))
-				L.adjustFireLoss(4)
+				L.injure(INJURY_BURN, 4, source = src)
 
 //Artificer Heal
 
@@ -667,7 +667,7 @@
 		L.visible_message(span_danger("\The [user] [attack_message] \the [L], sending them flying!"))
 		playsound(src, "punch", 50, 1)
 		L.Weaken(2)
-		L.adjustBruteLoss(rand(30, 50))
+		L.injure(INJURY_BLUNT, rand(30, 50), source = user)
 		var/throwdir = get_dir(src, L)
 		L.throw_at(get_edge_target_turf(L, throwdir), 3, 1, src)
 	if(istype(hit_atom, /turf/simulated/wall))
@@ -886,8 +886,8 @@
 	for(var/mob/living/L in view(4,src))
 		if(!iscultist(L) && !istype(L, /mob/living/simple_mob/construct))
 			L.add_modifier(/datum/modifier/soothe, 2 SECONDS)
-			L.adjustBruteLoss(rand(-5,-10))
-			L.adjustFireLoss(rand(-5,-10))
+			L.mend(TREAT_TISSUE_REPAIR, rand(5, 10))
+			L.mend(TREAT_BURN_CARE, rand(5, 10))
 
 /datum/modifier/soothe
 	name = "soothe"
@@ -952,41 +952,40 @@
 	spawn()
 		if(isliving(holder))
 			var/mob/living/L = holder
-			if(istype(L, /mob/living/simple_mob/construct))
-				L.adjustBruteLoss(rand(-5,-10))
-				L.adjustFireLoss(rand(-5,-10))
-			else
-				L.adjustBruteLoss(-2)
-				L.adjustFireLoss(-2)
+			var/mend_amount = istype(L, /mob/living/simple_mob/construct) ? rand(5, 10) : 2
+			L.mend(TREAT_TISSUE_REPAIR, mend_amount)
+			L.mend(TREAT_PLATING_REPAIR, mend_amount)
+			L.mend(TREAT_BURN_CARE, mend_amount)
+			L.mend(TREAT_WIRING_REPAIR, mend_amount)
 
 			if(ishuman(holder))
 				var/mob/living/carbon/human/H = holder
 
-				for(var/obj/item/organ/O in H.internal_organs)
+				for(var/obj/item/organ/internal/O in H.internal_organs)
 					if(O.damage > 0)
-						O.damage = max(O.damage - 2, 0)
+						H.mend(TREAT_RESTORATION, 2, O)
 					if(O.damage <= 5 && O.organ_tag == O_EYES)
 						H.sdisabilities &= ~BLIND
 
 				for(var/obj/item/organ/external/O in H.organs)
-					O.heal_damage(rand(1,3), rand(1,3), internal = 1, robo_repair = 1)
+					H.mend(TREAT_TISSUE_REPAIR, rand(1, 3), O.organ_tag)
+					H.mend(TREAT_PLATING_REPAIR, rand(1, 3), O.organ_tag)
+					H.mend(TREAT_BURN_CARE, rand(1, 3), O.organ_tag)
+					H.mend(TREAT_WIRING_REPAIR, rand(1, 3), O.organ_tag)
 
 				for(var/obj/item/organ/E in H.bad_external_organs)
 					var/obj/item/organ/external/affected = E
 					if((affected.damage < affected.min_broken_damage * CONFIG_GET(number/organ_health_multiplier)) && (affected.status & ORGAN_BROKEN))
 						affected.status &= ~ORGAN_BROKEN
 
-					for(var/datum/wound/W in affected.wounds)
-						if(istype(W, /datum/wound/internal_bleeding))
-							affected.wounds -= W
-							affected.update_damages()
+					for(var/datum/affliction/wound/internal_bleeding/W in affected.get_wounds())
+						affected.remove_wound(W)
 
 				H.restore_blood()
 				if(iscultist(H))
 					H.apply_effect(100, AGONY)//it will heal cultists but purity really doesn't like them so causes much pain
 				if(prob(10))
 					to_chat(H, span_danger("It feels as though your body is being torn apart!"))
-			L.updatehealth()
 
 /datum/spell/targeted/purity_repair_aura
 	name = "Repair Aura"
@@ -1021,5 +1020,7 @@
 /datum/modifier/repair_aura_purity/tick()
 	spawn()
 		for(var/mob/living/simple_mob/construct/T in view(4,holder))
-			T.adjustBruteLoss(rand(-10,-15))
-			T.adjustFireLoss(rand(-10,-15))
+			T.mend(TREAT_TISSUE_REPAIR, rand(10, 15))
+			T.mend(TREAT_PLATING_REPAIR, rand(10, 15))
+			T.mend(TREAT_BURN_CARE, rand(10, 15))
+			T.mend(TREAT_WIRING_REPAIR, rand(10, 15))

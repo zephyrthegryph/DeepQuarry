@@ -82,7 +82,7 @@
 			return /mob/living/simple_mob/mechanical/hivebot/support/commander
 		if(EXP_FACTION_MERC)
 			return /mob/living/simple_mob/humanoid/merc/ranged/sniper
-	return /mob/living/simple_mob/quarry_stalker
+	return /mob/living/simple_mob/animal/sif/savik
 
 // One-line threat briefing for the mission board / active readout.
 /proc/expedition_faction_brief(faction)

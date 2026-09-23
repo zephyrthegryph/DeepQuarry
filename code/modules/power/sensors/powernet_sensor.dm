@@ -31,6 +31,8 @@
 // Description: Automatically assigns name according to ID tag.
 /obj/machinery/power/sensor/Initialize(mapload)
 	. = ..()
+	if(name_tag == "#UNKN#")
+		name_tag = "Grid [z]-[x]-[y]"
 	auto_set_name()
 	history["supply"] = list()
 	history["demand"] = list()
@@ -84,7 +86,9 @@
 
 /obj/machinery/power/sensor/proc/wake_for_record()
 	record_timer = null
-	START_MACHINE_PROCESSING(src)
+	// Sampling is already timer-driven and does not sleep. Do it directly rather
+	// than enrolling every sensor for a one-call wake-and-kill machinery pass.
+	process()
 
 // This tracks historical usage, for TGUI power monitors
 /obj/machinery/power/sensor/proc/record()

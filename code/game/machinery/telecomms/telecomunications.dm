@@ -43,6 +43,10 @@
 
 	var/datum/looping_sound/tcomms/soundloop
 	var/noisy = TRUE
+	/// Telecomms thermal wear and idle heat are slow physical processes. They do
+	/// not justify keeping every network node in the two-second machinery roster.
+	var/thermal_timer
+	var/last_thermal_check
 
 /obj/machinery/telecomms/proc/relay_information(datum/signal/signal, filter, copysig, amount = 20)
 	// relay signal to all linked machinery that are of type [filter]. If signal has been sent [amount] times, stop sending
@@ -160,6 +164,9 @@
 	soundloop.start()
 
 /obj/machinery/telecomms/Destroy()
+	if(thermal_timer)
+		deltimer(thermal_timer)
+		thermal_timer = null
 	GLOB.telecomms_list -= src
 	for(var/obj/machinery/telecomms/comm in GLOB.telecomms_list)
 		comm.links -= src
@@ -202,10 +209,16 @@
 	return was_on != on
 
 /obj/machinery/telecomms/process()
+	if(thermal_timer)
+		deltimer(thermal_timer)
+		thermal_timer = null
 	var/power_changed = update_power()
 
-	// Check heat and generate some
-	checkheat()
+	// Preserve the former per-fire probabilities while doing the work once per
+	// thermal interval. Heat itself was emitted once per eleven old fires.
+	var/elapsed_cycles = last_thermal_check ? max(round((world.time - last_thermal_check) / max(SSmachines.wait, 1)), 1) : 1
+	last_thermal_check = world.time
+	checkheat(elapsed_cycles)
 
 	// Power transitions are the only process-time state that changes this icon.
 	// Reassigning icon_state every machinery tick is surprisingly expensive,
@@ -214,7 +227,24 @@
 		update_icon()
 
 	if(traffic > 0)
-		traffic -= netspeed
+		traffic = max(traffic - netspeed * elapsed_cycles, 0)
+	schedule_thermal_check()
+	return PROCESS_KILL
+
+/obj/machinery/telecomms/proc/schedule_thermal_check()
+	if(thermal_timer || QDELETED(src))
+		return
+	thermal_timer = addtimer(CALLBACK(src, PROC_REF(thermal_check_due)), max((initial(delay) + 1) * SSmachines.wait, 1), TIMER_STOPPABLE)
+
+/obj/machinery/telecomms/proc/thermal_check_due()
+	thermal_timer = null
+	START_MACHINE_PROCESSING(src)
+
+/obj/machinery/telecomms/power_change()
+	var/changed = ..()
+	if(changed)
+		START_MACHINE_PROCESSING(src)
+	return changed
 
 /obj/machinery/telecomms/emp_act(severity, recursive)
 	. = ..()
@@ -223,12 +253,14 @@
 	if(prob(100/severity))
 		if(!(stat & EMPED))
 			stat |= EMPED
+			START_MACHINE_PROCESSING(src)
 			playsound(src, 'sound/machines/tcomms/tcomms_pulse.ogg', 70, 1, 30)
 			var/duration = (300 * 10)/severity
 			spawn(rand(duration - 20, duration + 20)) // Takes a long time for the machines to reboot.
 				stat &= ~EMPED
+				START_MACHINE_PROCESSING(src)
 
-/obj/machinery/telecomms/proc/checkheat()
+/obj/machinery/telecomms/proc/checkheat(elapsed_cycles = 1)
 	if(QDELETED(src))
 		return
 	// Checks heat from the environment and applies any integrity damage
@@ -243,15 +275,12 @@
 			damage_chance = 50
 		if((T0C + 200) to INFINITY)					// More than 200C, INFERNO. Takes damage every tick.
 			damage_chance = 100
-	if (damage_chance && prob(damage_chance))
+	var/accumulated_damage_chance = damage_chance ? 100 * (1 - ((100 - damage_chance) / 100) ** elapsed_cycles) : 0
+	if (accumulated_damage_chance && prob(accumulated_damage_chance))
 		take_damage(1, BURN, FIRE, FALSE)
 
-
-	if(delay > 0)
-		delay--
-	else if(on)
+	if(on)
 		produce_heat()
-		delay = initial(delay)
 
 
 

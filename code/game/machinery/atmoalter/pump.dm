@@ -203,7 +203,6 @@
 	update_icon()
 
 
-// === merged from pump_vr.dm during hard-fork de-suffix (verified no override-order change) ===
 /obj/machinery/portable_atmospherics/powered/pump/huge
 	name = "Huge Air Pump"
 	icon = 'icons/obj/atmos.dmi'

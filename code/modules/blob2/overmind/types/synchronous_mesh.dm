@@ -57,15 +57,15 @@
 		for(var/mob/living/victim in nearby_mobs)
 			var/need_beam = FALSE
 
-			if(carrier.getBruteLoss())
+			if(carrier.injury_load(INJURY_CATEGORY_PHYSICAL))
 				need_beam = TRUE
-				victim.adjustBruteLoss(3 / nearby_mobs.len)
-				carrier.adjustBruteLoss(-3 / nearby_mobs.len)
+				victim.injure(INJURY_BLUNT, 3 / nearby_mobs.len, null, B)
+				carrier.mend(TREAT_TISSUE_REPAIR, 3 / nearby_mobs.len)
 
-			if(carrier.getFireLoss())
+			if(carrier.injury_load(INJURY_CATEGORY_THERMAL))
 				need_beam = TRUE
-				victim.adjustFireLoss(3 / nearby_mobs.len)
-				carrier.adjustFireLoss(-3 / nearby_mobs.len)
+				victim.injure(INJURY_BURN, 3 / nearby_mobs.len, null, B)
+				carrier.mend(TREAT_BURN_CARE, 3 / nearby_mobs.len)
 
 			if(need_beam)
 				carrier.visible_message(span_alien("[icon2html(B,viewers(carrier))] \The [B] sends noxious spores toward \the [victim]!"))

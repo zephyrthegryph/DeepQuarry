@@ -160,6 +160,45 @@
 	//Failure
 	return 0
 
+/// Remove up to `amt` of a stored material. Returns the amount removed.
+/obj/item/organ/internal/nano/refactory/proc/consume_stored_material(material, amt)
+	if(status & ORGAN_DEAD || amt <= 0)
+		return 0
+	var/available = materials[material] || 0
+	. = min(available, amt)
+	if(!.)
+		return
+	if(available - . <= 0)
+		materials -= material
+	else
+		materials[material] = available - .
+
+/// Spend steel on repairing `patient` through treatment `tags`, at most
+/// `max_points` of repair. Steel is charged from what mend() actually
+/// repaired. Returns the points repaired.
+/obj/item/organ/internal/nano/refactory/proc/fund_repair(mob/living/patient, list/tags, max_points)
+	if(!patient || (status & ORGAN_DEAD) || !length(tags))
+		return 0
+	var/budget = min(max_points, get_stored_material(MAT_STEEL) / NANOFORM_STEEL_PER_POINT)
+	if(budget <= 0)
+		return 0
+	var/per_tag = budget / length(tags)
+	. = 0
+	for(var/tag in tags)
+		. += patient.mend(tag, per_tag)
+	if(. > 0)
+		consume_stored_material(MAT_STEEL, CEILING(. * NANOFORM_STEEL_PER_POINT, 1))
+
+/// The working refactory of a nanoform body, if any.
+/mob/living/proc/nano_get_refactory()
+	return null
+
+/mob/living/carbon/human/nano_get_refactory()
+	var/obj/item/organ/internal/nano/refactory/R = internal_organs_by_name?[O_FACT]
+	if(istype(R) && !(R.status & ORGAN_DEAD))
+		return R
+	return null
+
 /obj/item/organ/internal/mmi_holder/posibrain/nano
 	name = "protean posibrain"
 	desc = "A more advanced version of the standard posibrain, typically found in protean bodies."
@@ -183,7 +222,6 @@
 	icon = initial(icon)
 	icon_state = "posi1"
 	stored_mmi.icon_state = "posi1"
-	stored_mmi.brainmob.languages = owner.languages
 /*
 /obj/item/organ/internal/mmi_holder/posibrain/nano/emp_act(severity, recursive)
 	return	//Proteans handle EMP's differently
@@ -211,7 +249,7 @@
 	. = ..()
 	icon_state = "posi1"
 
-/obj/item/mmi/digital/posibrain/nano/transfer_identity()
+/obj/item/mmi/digital/posibrain/nano/take_identity(mob/living/L, move_mind = TRUE)
 	. = ..()
 	icon_state = "posi1"
 

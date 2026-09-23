@@ -7,7 +7,7 @@
 	movement_cooldown = 1.5
 	wreckage = /obj/structure/loot_pile/mecha/phazon
 
-	maxHealth = 200
+	endurance = 200
 	deflect_chance = 30
 	armor = list(
 				"melee"		= 30,
@@ -32,8 +32,7 @@
 	wreckage = /obj/structure/loot_pile/mecha/phazon
 	color = "#ffffff"
 
-	health = 500 //Old 250
-	maxHealth = 500
+	endurance = 500
 	evasion = 10
 
 	special_attack_min_range = 1

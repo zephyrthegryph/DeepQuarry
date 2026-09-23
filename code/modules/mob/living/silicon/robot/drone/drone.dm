@@ -24,9 +24,13 @@ GLOBAL_LIST_EMPTY(mob_hat_cache)
 	real_name = "drone"
 	icon = 'icons/mob/robots.dmi'
 	icon_state = "repairbot"
-	maxHealth = 35
-	health = 35
+	endurance = 35
+	// Drones don't locate damage on components: one whole-body machine load.
+	body_type = /datum/body/simple/machine
 	cell_emp_mult = 1
+	// They are unable to be upgraded, so they get a better battery.
+	cell_type = /obj/item/cell/high
+	photo_camera_type = /obj/item/camera/siliconcam/drone_camera
 	universal_speak = 0
 	universal_understand = 1
 	gender = NEUTER
@@ -68,11 +72,6 @@ GLOBAL_LIST_EMPTY(mob_hat_cache)
 	var/can_pick_shell = TRUE
 	var/list/shell_accessories
 	var/can_blitz = FALSE
-
-/mob/living/silicon/robot/drone/Destroy()
-	if(hat)
-		hat.loc = get_turf(src)
-	. = ..()
 
 /mob/living/silicon/robot/drone/is_sentient()
 	return FALSE
@@ -116,15 +115,6 @@ GLOBAL_LIST_EMPTY(mob_hat_cache)
 	add_language(LANGUAGE_DRONE_TALK, 1)
 	serial_number = rand(0,999)
 
-	//They are unable to be upgraded, so let's give them a bit of a better battery.
-	cell.maxcharge = 10000
-	cell.charge = 10000
-
-	//We need to screw with their HP a bit. They have around one fifth as much HP as a full borg.
-	for(var/V in components) if(V != "power cell")
-		var/datum/robot_component/C = components[V]
-		C.max_damage = 10
-
 	remove_verb(src, /mob/living/silicon/robot/verb/namepick)
 
 	if(can_pick_shell)
@@ -135,13 +125,21 @@ GLOBAL_LIST_EMPTY(mob_hat_cache)
 	update_icon()
 	updatename()
 
-/mob/living/silicon/robot/drone/init()
-	if(!scrambledcodes && !foreign_droid)
-		aiCamera = new/obj/item/camera/siliconcam/drone_camera(src)
-	additional_law_channels["Drone"] = ":d"
-	if(!laws) laws = new law_type
-	if(!module) module = new module_type(src)
+/mob/living/silicon/robot/drone/setup_camera()
+	if(scrambledcodes || foreign_droid)
+		photo_camera_type = null
+	..()
 
+/mob/living/silicon/robot/drone/setup_laws()
+	..()
+	additional_law_channels -= "Binary"
+	additional_law_channels["Drone"] = ":d"
+	laws = new law_type
+
+/mob/living/silicon/robot/drone/setup_module()
+	..()
+	if(!module)
+		module = new module_type(src)
 	flavor_text = "It's a tiny little repair drone. The casing is stamped with an corporate logo and the subscript: '[using_map.company_name] Recursive Repair Systems: Fixing Tomorrow's Problem, Today!'"
 	playsound(src, 'sound/machines/twobeep.ogg', 50, 0)
 
@@ -165,12 +163,17 @@ GLOBAL_LIST_EMPTY(mob_hat_cache)
 
 /mob/living/silicon/robot/drone/update_icon()
 	cut_overlays()
-
 	if(islist(shell_accessories))
 		add_overlay(shell_accessories)
+	add_hat_overlay()
 
-	if(hat) // Let the drones wear hats.
+/// Drones wear hats through the shared robot hat procs, drawn at their own offsets.
+/mob/living/silicon/robot/drone/add_hat_overlay()
+	if(hat)
 		add_overlay(get_hat_icon(hat, hat_x_offset, hat_y_offset))
+
+/mob/living/silicon/robot/drone/update_worn_icons()
+	return
 
 /mob/living/silicon/robot/drone/verb/pick_shell()
 	set name = "Customize Appearance"
@@ -208,57 +211,50 @@ GLOBAL_LIST_EMPTY(mob_hat_cache)
 /mob/living/silicon/robot/drone/pick_module()
 	return
 
-/mob/living/silicon/robot/drone/proc/wear_hat(obj/item/new_hat)
-	if(hat)
-		return
-	hat = new_hat
-	new_hat.loc = src
-	update_icon()
-
 //Drones cannot be upgraded with borg modules so we need to catch some items before they get used in ..().
 /mob/living/silicon/robot/drone/attackby(obj/item/W, mob/user)
-
 	if(user.a_intent == I_HELP && istype(W, /obj/item/clothing/head))
 		if(hat)
 			to_chat(user, span_warning("\The [src] is already wearing \the [hat]."))
 			return
 		user.unEquip(W)
-		wear_hat(W)
+		place_on_head(W)
 		user.visible_message(span_infoplain(span_bold("\The [user]") + " puts \the [W] on \the [src]."))
 		return
-	else if(istype(W, /obj/item/borg/upgrade/))
-		to_chat(user, span_danger("\The [src] is not compatible with \the [W]."))
-		return
+	return ..()
 
-	else if (istype(W, /obj/item/card/id)||istype(W, /obj/item/pda))
-		if(stat == 2)
+/// Drones' wiring is always reachable.
+/mob/living/silicon/robot/drone/can_rewire()
+	return TRUE
 
-			if(!CONFIG_GET(flag/allow_drone_spawn) || emagged || health < -35) //It's dead, Dave.
-				to_chat(user, span_danger("The interface is fried, and a distressing burned smell wafts from the robot's interior. You're not rebooting this one."))
-				return
+/mob/living/silicon/robot/drone/apply_upgrade(obj/item/borg/upgrade/U, mob/user)
+	to_chat(user, span_danger("\The [src] is not compatible with \the [U]."))
+	return FALSE
 
-			if(!allowed(user))
-				to_chat(user, span_danger("Access denied."))
-				return
-
-			user.visible_message(span_danger("\The [user] swipes [user.p_their()] ID card through \the [src], attempting to reboot it."), span_danger(">You swipe your ID card through \the [src], attempting to reboot it."))
-			var/drones = 0
-			for(var/mob/living/silicon/robot/drone/D in GLOB.player_list)
-				drones++
-			if(drones < CONFIG_GET(number/max_maint_drones))
-				request_player()
-			return
-
-		return
-
-	..()
+/// A drone's interface doesn't lock; an ID swipe on a dead drone reboots it.
+/mob/living/silicon/robot/drone/swipe_id(obj/item/W, mob/user)
+	if(stat != DEAD)
+		return FALSE
+	if(!CONFIG_GET(flag/allow_drone_spawn) || emagged || vitality() <= 0) //It's dead, Dave.
+		to_chat(user, span_danger("The interface is fried, and a distressing burned smell wafts from the robot's interior. You're not rebooting this one."))
+		return FALSE
+	if(!allowed(user))
+		to_chat(user, span_danger("Access denied."))
+		return FALSE
+	user.visible_message(span_danger("\The [user] swipes [user.p_their()] ID card through \the [src], attempting to reboot it."), span_danger(">You swipe your ID card through \the [src], attempting to reboot it."))
+	var/drones = 0
+	for(var/mob/living/silicon/robot/drone/D in GLOB.player_list)
+		drones++
+	if(drones < CONFIG_GET(number/max_maint_drones))
+		request_player()
+	return TRUE
 
 /mob/living/silicon/robot/drone/crowbar_act(mob/user, obj/item/tool)
 	to_chat(user, span_danger("\The [src] is hermetically sealed. You can't open the case."))
 	return ITEM_INTERACT_BLOCKING
 
 /mob/living/silicon/robot/drone/emag_act(remaining_charges, mob/user)
-	if(!client || stat == 2)
+	if(!client || stat == DEAD)
 		to_chat(user, span_danger("There's not much point subverting this heap of junk."))
 		return
 
@@ -268,41 +264,23 @@ GLOBAL_LIST_EMPTY(mob_hat_cache)
 		return
 
 	to_chat(user, span_danger("You swipe the sequencer across [src]'s interface and watch its eyes flicker."))
-
 	to_chat(src, span_danger("You feel a sudden burst of malware loaded into your execute-as-root buffer. Your tiny brain methodically parses, loads and executes the script."))
 
-	log_game("[key_name(user)] emagged drone [key_name(src)]. Laws overridden.")
-	var/time = time2text(world.realtime,"hh:mm:ss")
-	GLOB.lawchanges.Add("[time] " + span_bold(":") + " [user.name]([user.key]) emagged [name]([key])")
-
-	emagged = TRUE
-	lawupdate = FALSE
-	connected_ai = null
-	clear_supplied_laws()
-	clear_inherent_laws()
-	laws = new /datum/ai_laws/syndicate_override
-	set_zeroth_law("Only [user.real_name] and people [user.p_their()] designate[user.p_s()] as being such are operatives.")
+	subvert_laws(user)
 
 	to_chat(src, span_infoplain(span_bold("Obey these laws:\n") + laws.get_formatted_laws()))
-	to_chat(src, span_danger("ALERT: [user.real_name] is your new master. Obey your new laws and \his commands."))
+	to_chat(src, span_danger("ALERT: [user.real_name] is your new master. Obey your new laws and [user.p_their()] commands."))
 	return 1
 
 //DRONE LIFE/DEATH
 
-/mob/living/silicon/robot/drone/getMaxHealth()
-	return maxHealth
-
-//Easiest to check this here, then check again in the robot proc.
-//Standard robots use config for crit, which is somewhat excessive for these guys.
-//Drones killed by damage will gib.
-/mob/living/silicon/robot/drone/handle_regular_status_updates()
-	var/turf/T = get_turf(src)
-	if(!T || health <= -35 )
-		timeofdeath = world.time
-		death() //Possibly redundant, having trouble making death() cooperate.
-		gib()
-		return
-	..()
+/// The machine plan decides that a drone dies; the drone only chooses its
+/// remains. Destroyed by damage, it breaks apart; shut down, it leaves an
+/// intact shell that an ID swipe can reboot.
+/mob/living/silicon/robot/drone/death(gibbed)
+	. = ..()
+	if(!gibbed && vitality() <= 0)
+		INVOKE_ASYNC(src, TYPE_PROC_REF(/mob, gib))
 
 //CONSOLE PROCS
 /mob/living/silicon/robot/drone/proc/law_resync()
@@ -381,10 +359,10 @@ GLOBAL_LIST_EMPTY(mob_hat_cache)
 	to_chat(src, span_infoplain("Use " + span_bold(":d") + " to talk to other drones and " + span_bold("say") + " to speak silently to your nearby fellows."))
 	to_chat(src, span_infoplain(span_bold("You do not follow orders from anyone; not the AI, not humans, and not other synthetics") + "."))
 
-/mob/living/silicon/robot/drone/construction/init()
+/mob/living/silicon/robot/drone/construction/setup_module()
 	..()
 	flavor_text = "It's a bulky construction drone stamped with a Sol Central glyph."
 
-/mob/living/silicon/robot/drone/mining/init()
+/mob/living/silicon/robot/drone/mining/setup_module()
 	..()
 	flavor_text = "It's a bulky mining drone stamped with a Grayson logo."

@@ -79,7 +79,7 @@
 	if(output)
 		var/temp = ""
 		if(occupant)
-			temp = "<br />\[Occupant: [occupant] (Health: [occupant.health]%)\]<br /><a href='byond://?src=\ref[src];view_stats=1'>View stats</a>|<a href='byond://?src=\ref[src];eject=1'>Eject</a>"
+			temp = "<br />\[Occupant: [occupant] (Health: [round(occupant.vitality()*100)]%)\]<br /><a href='byond://?src=\ref[src];view_stats=1'>View stats</a>|<a href='byond://?src=\ref[src];eject=1'>Eject</a>"
 		return "[output] [temp]"
 	return
 
@@ -131,11 +131,11 @@
 			data["status"] = "*dead*"
 		else
 			data["status"] = "Unknown"
-	data["health_percent"] = occupant.health
-	data["brute"] = occupant.getBruteLoss()
-	data["oxy"] = occupant.getOxyLoss()
-	data["tox"] = occupant.getToxLoss()
-	data["fire"] = occupant.getFireLoss()
+	data["health_percent"] = round(occupant.vitality()*100)
+	data["brute"] = occupant.injury_load(INJURY_CATEGORY_PHYSICAL)
+	data["oxy"] = occupant.injury_load(INJURY_CATEGORY_ASPHYXIA)
+	data["tox"] = occupant.injury_load(INJURY_CATEGORY_TOXIC)
+	data["fire"] = occupant.injury_load(INJURY_CATEGORY_THERMAL)
 	data["body_temp_c"] = round(occupant.bodytemperature - T0C, 0.1)
 	data["body_temp_f"] = round(occupant.bodytemperature * 1.8 - 459.67, 0.1)
 	var/list/rlist = list()
@@ -213,28 +213,29 @@
 		else
 			t1 = "Unknown"
 	var/text = ""
-	var/entry = span_bold("Health:") + " [occupant.health]% ([t1])"
-	text += occupant.health > 50 ? span_blue(entry) : span_red(entry)
+	var/vitality_pct = round(occupant.vitality()*100)
+	var/entry = span_bold("Health:") + " [vitality_pct]% ([t1])"
+	text += vitality_pct > 50 ? span_blue(entry) : span_red(entry)
 	text += "<br />"
 
 	entry = span_bold("Core Temperature:") + " [src.occupant.bodytemperature-T0C]&deg;C ([src.occupant.bodytemperature*1.8-459.67]&deg;F)"
 	text += occupant.bodytemperature > 50 ? span_blue(entry) : span_red(entry)
 	text += "<br />"
 
-	entry = span_bold("Brute Damage:") + " [occupant.getBruteLoss()]%"
-	text += occupant.getBruteLoss() < 60 ? span_blue(entry) : span_red(entry)
+	entry = span_bold("Brute Damage:") + " [occupant.injury_load(INJURY_CATEGORY_PHYSICAL)]%"
+	text += occupant.injury_load(INJURY_CATEGORY_PHYSICAL) < 60 ? span_blue(entry) : span_red(entry)
 	text += "<br />"
 
-	entry = span_bold("Respiratory Damage:") + " [occupant.getOxyLoss()]%"
-	text += occupant.getOxyLoss() < 60 ? span_blue(entry) : span_red(entry)
+	entry = span_bold("Respiratory Damage:") + " [occupant.injury_load(INJURY_CATEGORY_ASPHYXIA)]%"
+	text += occupant.injury_load(INJURY_CATEGORY_ASPHYXIA) < 60 ? span_blue(entry) : span_red(entry)
 	text += "<br />"
 
-	entry = span_bold("Toxin Content:") + " [occupant.getToxLoss()]%"
-	text += occupant.getToxLoss() < 60 ? span_blue(entry) : span_red(entry)
+	entry = span_bold("Toxin Content:") + " [occupant.injury_load(INJURY_CATEGORY_TOXIC)]%"
+	text += occupant.injury_load(INJURY_CATEGORY_TOXIC) < 60 ? span_blue(entry) : span_red(entry)
 	text += "<br />"
 
-	entry = span_bold("Burn Severity:") + " [occupant.getFireLoss()]%"
-	text += occupant.getFireLoss() < 60 ? span_blue(entry) : span_red(entry)
+	entry = span_bold("Burn Severity:") + " [occupant.injury_load(INJURY_CATEGORY_THERMAL)]%"
+	text += occupant.injury_load(INJURY_CATEGORY_THERMAL) < 60 ? span_blue(entry) : span_red(entry)
 	text += "<br />"
 
 	return text
@@ -309,9 +310,8 @@
 	var/mob/living/carbon/M = occupant
 	if(!M)
 		return
-	if(M.health > 0)
-		M.adjustOxyLoss(-1)
-		M.updatehealth()
+	if(!M.is_critical())
+		M.mend(TREAT_OXYGENATION, 1)
 	M.AdjustStunned(-4)
 	M.AdjustWeakened(-4)
 	M.AdjustStunned(-4)

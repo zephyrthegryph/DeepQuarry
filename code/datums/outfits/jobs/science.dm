@@ -56,7 +56,6 @@
 	backpack_contents = list(/obj/item/storage/box/anomaly = 1)
 
 
-// === merged from science_vr.dm during hard-fork de-suffix (verified no override-order change) ===
 /datum/decl/hierarchy/outfit/job/science/xenobiologist
 	id_type = /obj/item/card/id/science/xenobiologist
 

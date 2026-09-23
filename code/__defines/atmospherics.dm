@@ -1,8 +1,7 @@
 // DeepQuarry atmospherics defines.
 //
 // LINDA atmospherics (vendored from /tg/, backed by auxmos in Rust) is the
-// only atmos engine in DQ. ZAS and XGM are no longer compiled into the build.
-// See doc/atmos_migration.md.
+// only atmos engine in DQ. See code/ATMOSPHERICS/README.md.
 
 // XGM call-site rewrite helpers. CHOMP consumers that haven't been per-site
 // rewritten use these macros to bridge to LINDA's gas_mixture shape.

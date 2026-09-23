@@ -4,6 +4,11 @@
 	if(stat == DEAD)
 		return
 
+	// Death from injury is decided by the body (see death.dm for card damage).
+	body?.life_tick()
+	if(stat == DEAD)
+		return
+
 	if(card.cell != PP_FUNCTIONAL|| card.processor != PP_FUNCTIONAL || card.board != PP_FUNCTIONAL || card.capacitor != PP_FUNCTIONAL)
 		death()
 
@@ -27,19 +32,7 @@
 	handle_statuses()
 	handle_sleeping()
 
-	if(health <= 0)
-		card.death_damage()
-		death(null,"fizzles out and clatters to the floor...")
-	else if(health < maxHealth && istype(src.loc , /obj/item/paicard))
-		adjustBruteLoss(-0.5)
-		adjustFireLoss(-0.5)
-
-/mob/living/silicon/pai/updatehealth()
-	if(SEND_SIGNAL(src, COMSIG_LIVING_HEALTH_UPDATE) & COMSIG_LIVING_HEALTH_UPDATE_GOD_MODE)
-		health = getMaxHealth()
-		set_stat(CONSCIOUS)
-	else
-		health = getMaxHealth() - getBruteLoss() - getFireLoss()
-		if(health <= -getMaxHealth()) //die only once
-			death()
-			return
+	// Folded into the card, the pAI slowly self-repairs.
+	if(is_injured() && istype(src.loc, /obj/item/paicard))
+		mend(TREAT_PLATING_REPAIR, 0.5)
+		mend(TREAT_WIRING_REPAIR, 0.5)

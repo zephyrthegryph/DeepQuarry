@@ -278,6 +278,8 @@
 	)
 	for(var/obj/infrastructure as anything in objects)
 		TEST_ASSERT(infrastructure.material_for_role(MATERIAL_ROLE_STRUCTURE) || infrastructure.material_for_role(MATERIAL_ROLE_CONDUCTOR), "[infrastructure.type] must initialize with a physical material assembly")
+		if(infrastructure.type == /obj/machinery)
+			TEST_ASSERT(!infrastructure.material_service, "Ordinary legacy machinery must not enter continuous material exposure merely because it has default parts")
 		qdel(infrastructure)
 
 /datum/unit_test/dq_material_hot_steel_loses_pressure_capacity
@@ -289,6 +291,28 @@
 	var/hot = vessel.material_environment_pressure_limit(1000, 100, 4, (T20C + steel.melting_point) / 2)
 	TEST_ASSERT(abs(cold - 1000) < 0.01, "Factory steel must retain its reference rating")
 	TEST_ASSERT(hot < cold * 0.75, "Hot steel must weaken against a fixed cold reference")
+	qdel(vessel)
+
+/datum/unit_test/dq_material_pressure_has_safe_endurance_band
+
+/datum/unit_test/dq_material_pressure_has_safe_endurance_band/Run()
+	var/obj/vessel = new(run_loc_floor_bottom_left)
+	var/datum/gas_mixture/internal = new(CELL_VOLUME)
+	var/datum/gas_mixture/external = new(CELL_VOLUME)
+	internal.set_temperature(T20C)
+	external.set_temperature(T20C)
+	internal.adjust_moles(/datum/gas/nitrogen, 850 * CELL_VOLUME / (R_IDEAL_GAS_EQUATION * T20C))
+	vessel.process_material_environment(internal, external, 120, 1000, MATERIAL_PIPE_REFERENCE_RADIUS, MATERIAL_PIPE_REFERENCE_THICKNESS)
+	TEST_ASSERT_EQUAL(vessel.material_environment_fatigue, 0, "Pressure inside the continuous operating envelope accumulated permanent fatigue")
+	internal.adjust_moles(/datum/gas/nitrogen, 100 * CELL_VOLUME / (R_IDEAL_GAS_EQUATION * T20C))
+	vessel.process_material_environment(internal, external, 60, 1000, MATERIAL_PIPE_REFERENCE_RADIUS, MATERIAL_PIPE_REFERENCE_THICKNESS)
+	TEST_ASSERT(vessel.material_environment_fatigue > 0, "Sustained pressure above the fatigue threshold produced no wear")
+	var/fatigue_before_recovery = vessel.material_environment_fatigue
+	internal.remove_ratio(0.5)
+	vessel.process_material_environment(internal, external, 10, 1000, MATERIAL_PIPE_REFERENCE_RADIUS, MATERIAL_PIPE_REFERENCE_THICKNESS)
+	TEST_ASSERT(vessel.material_environment_fatigue < fatigue_before_recovery, "Returning below the recovery threshold did not relieve recent pressure fatigue")
+	qdel(internal)
+	qdel(external)
 	qdel(vessel)
 
 /datum/unit_test/dq_material_cell_delivery_and_rebuild
@@ -385,16 +409,17 @@
 /datum/unit_test/dq_material_pump_parts_change_operation/Run()
 	var/obj/machinery/atmospherics/binary/pump/pump = new(run_loc_floor_bottom_left)
 	var/baseline = pump.material_pump_power(7500)
-	pump.construction_materials[MATERIAL_ROLE_CONDUCTOR] = MAT_WOOD
+	pump.set_construction_material(MATERIAL_ROLE_CONDUCTOR, MAT_WOOD)
 	TEST_ASSERT(pump.material_pump_power(7500) < baseline, "Insulating motor windings must reduce actual pump capacity")
-	pump.construction_materials[MATERIAL_ROLE_CONDUCTOR] = MAT_COPPER
+	pump.set_construction_material(MATERIAL_ROLE_CONDUCTOR, MAT_COPPER)
 	var/efficiency = pump.material_pump_efficiency()
-	pump.construction_materials[MATERIAL_ROLE_BEARINGS] = MAT_WOOD
+	pump.set_construction_material(MATERIAL_ROLE_BEARINGS, MAT_WOOD)
 	TEST_ASSERT(pump.material_pump_efficiency() != efficiency, "Bearing material must affect actual pumping efficiency")
 	qdel(pump)
 
 /datum/material/engineering_test_conductor
 	name = "engineering test conductor"
+	supply_conversion_value = 0
 	critical_temperature = 260
 	critical_current_density = 25
 	electrical_resistivity = 1
@@ -403,6 +428,7 @@
 
 /datum/material/engineering_test_buffer
 	name = "engineering test buffer"
+	supply_conversion_value = 0
 	phase_change_temperature = 250
 	phase_change_capacity = 50000
 	specific_heat = 500
@@ -426,6 +452,25 @@
 	TEST_ASSERT(cell.construction_electrical_resistance(1, 1, service.temperature, 5) <= cold, "A suitable phase plateau must preserve superconducting operation")
 	service.add_heat(25000 + 20 * service.thermal_mass())
 	TEST_ASSERT(service.temperature > 260 && cell.construction_electrical_resistance(1, 1, service.temperature, 5) > cold * 100, "Exhausted cooling must expose the thermal limit")
+	qdel(cell)
+
+/datum/unit_test/dq_superconducting_cell_automatic_envelope
+
+/datum/unit_test/dq_superconducting_cell_automatic_envelope/Run()
+	var/obj/item/cell/cell = new(run_loc_floor_bottom_left)
+	var/datum/material/conductor_type = /datum/material/engineering_test_conductor
+	var/datum/material/buffer_type = /datum/material/engineering_test_buffer
+	cell.apply_material_construction(list(MATERIAL_ROLE_CONDUCTOR = initial(conductor_type.name), MATERIAL_ROLE_THERMAL = initial(buffer_type.name)), default_material_slots(MATERIAL_APPLICATION_CELL, 2000), MATERIAL_APPLICATION_CELL)
+	var/datum/material_service/service = cell.material_service
+	service.add_heat(-(service.temperature - 240) * service.thermal_mass() - service.buffer_energy)
+	var/envelope = cell.material_output_envelope(10)
+	TEST_ASSERT(envelope > 1, "A physically cold superconductor must automatically expose enhanced output")
+	var/charge_before = cell.charge
+	TEST_ASSERT(cell.checked_use(10 * envelope), "The enhanced envelope must still debit real stored energy")
+	cell.material_record_enhanced_output(10, envelope)
+	TEST_ASSERT(cell.charge < charge_before - 10, "Enhanced output must cost more energy than an ordinary action")
+	service.add_heat((initial(conductor_type.critical_temperature) + 1 - service.temperature) * service.thermal_mass() + max(initial(buffer_type.phase_change_capacity) - service.buffer_energy, 0))
+	TEST_ASSERT_EQUAL(cell.material_output_envelope(10), 1, "A hot or quenched conductor must fall back to ordinary device output")
 	qdel(cell)
 
 /datum/unit_test/dq_material_service_sleep_move_delete
@@ -473,8 +518,9 @@
 
 /datum/unit_test/dq_material_gas_publication_filtering/Run()
 	var/obj/machinery/machine = new(run_loc_floor_bottom_left)
-	var/datum/material_service/service = machine.material_service
-	TEST_ASSERT(service, "Ordinary machinery must expose its material service")
+	TEST_ASSERT(!machine.material_service, "An idle ordinary machine must not allocate material exposure state")
+	var/datum/material_service/service = machine.enable_material_service()
+	TEST_ASSERT(service, "Explicit diagnostic monitoring must expose material service state")
 	TEST_ASSERT(!(service.gas_dependency_interest_mask() & GAS_DEPENDENCY_PRESSURE), "An ordinary housing must not subscribe to irrelevant turf pressure churn")
 	var/mixture_id = 12345
 	service.mixture_pressures = list("[mixture_id]" = ONE_ATMOSPHERE)
@@ -488,7 +534,7 @@
 	qdel(machine)
 
 	var/obj/machinery/portable_atmospherics/canister/canister = new(run_loc_floor_bottom_left)
-	service = canister.material_service
+	service = canister.enable_material_service()
 	TEST_ASSERT(service.gas_dependency_interest_mask() & GAS_DEPENDENCY_PRESSURE, "Pressure vessels must retain pressure-change subscriptions")
 	service.mixture_pressures = list("1" = 0, "2" = 0)
 	var/list/dangerous_pressure = list(1, GAS_DEPENDENCY_PRESSURE, 5, 100 * ONE_ATMOSPHERE, T20C, 1000, 0, 0, 0, 0, 0, 0, 0, 0, 100)
@@ -532,8 +578,8 @@
 	var/obj/machinery/portable_atmospherics/canister/b = new(run_loc_floor_bottom_left)
 	a.air_contents.adjust_moles(/datum/gas/plasma, 100)
 	b.air_contents.copy_from(a.air_contents)
-	a.construction_materials[MATERIAL_ROLE_LINER] = MAT_WOOD
-	b.construction_materials[MATERIAL_ROLE_LINER] = MAT_WOOD
+	a.set_construction_material(MATERIAL_ROLE_LINER, MAT_WOOD)
+	b.set_construction_material(MATERIAL_ROLE_LINER, MAT_WOOD)
 	for(var/index in 1 to 10)
 		a.process_material_environment(a.air_contents, null, 1, 0, 1, 1, FALSE)
 	b.process_material_environment(b.air_contents, null, 10, 0, 1, 1, FALSE)
@@ -545,6 +591,7 @@
 
 /datum/unit_test/dq_material_pump_energy_conservation/Run()
 	var/obj/machinery/atmospherics/binary/pump/pump = new(run_loc_floor_bottom_left)
+	pump.enable_material_service()
 	pump.air1.adjust_moles(/datum/gas/nitrogen, 100)
 	pump.air2.adjust_moles(/datum/gas/nitrogen, 200)
 	var/before = pump.air1.thermal_energy() + pump.air2.thermal_energy() + pump.material_service.temperature * pump.material_service.thermal_mass() + pump.material_service.buffer_energy
@@ -591,6 +638,53 @@
 	qdel(target)
 	if(!QDELETED(net))
 		qdel(net)
+
+/datum/unit_test/dq_material_fingerprint_is_quantity_independent
+
+/datum/unit_test/dq_material_fingerprint_is_quantity_independent/Run()
+	var/datum/material_batch/small = new
+	small.add_material(MAT_STEEL, 1)
+	small.add_additive("carbon", 1, 0)
+	var/datum/material_batch/large = new
+	large.add_material(MAT_STEEL, 10)
+	large.add_additive("carbon", 10, 0)
+	TEST_ASSERT_EQUAL(small.fingerprint(), large.fingerprint(), "equivalent alloy recipes registered different materials solely because batch size changed")
+	qdel(small)
+	qdel(large)
+
+/datum/unit_test/dq_material_recovery_is_production_backed
+
+/datum/unit_test/dq_material_recovery_is_production_backed/Run()
+	var/turf/test_turf = run_loc_floor_bottom_left || locate(1, 1, 1)
+	var/datum/material_batch/source = new
+	source.add_material(MAT_STEEL, 2)
+	var/obj/item/stack/material/processed_alloy/stock = processed_spawn_stack(test_turf, source, 2)
+	var/datum/material_batch/reclaimed = new
+	TEST_ASSERT(material_batch_absorb_sheet(reclaimed, stock), "processed stock could not be returned to the furnace charge")
+	TEST_ASSERT(reclaimed.cost_ledger[MATERIAL_COST_RECOVERY] > 0, "remelting reclaimed stock did not record any recovered value")
+	qdel(source)
+	qdel(reclaimed)
+	qdel(stock)
+
+/obj/machinery/material_furnace/unpowered_test
+
+/obj/machinery/material_furnace/unpowered_test/use_power_oneoff(amount, chan)
+	return 0
+
+/datum/unit_test/dq_material_furnace_cannot_create_heat
+
+/datum/unit_test/dq_material_furnace_cannot_create_heat/Run()
+	var/turf/test_turf = run_loc_floor_bottom_left || locate(1, 1, 1)
+	var/obj/machinery/material_furnace/unpowered_test/furnace = new(test_turf)
+	var/obj/item/stack/material/steel/stock = new(test_turf, 2)
+	stock.forceMove(furnace)
+	furnace.feedstock = list(stock)
+	furnace.finish_firing()
+	var/datum/material_batch/output = furnace.output_stock ? furnace.output_stock.physical_batch() : null
+	TEST_ASSERT(output, "power-starved furnace failed to return recoverable stock")
+	TEST_ASSERT_EQUAL(output.energy_spent, 0, "power-starved furnace invented process energy")
+	TEST_ASSERT(!(MATERIAL_PROCESS_MELT in output.process_history), "power-starved furnace completed a melt without supplied energy")
+	qdel(furnace)
 
 /datum/unit_test/dq_processed_stock_split_preserves_physical_state
 
@@ -643,12 +737,12 @@
 	var/datum/contract_requirement/qualified_material_delivery/requirement = new(checks, 4)
 	contract.add_requirement(requirement)
 	TEST_ASSERT(contract.accept(), "material delivery fixture could not activate")
-	var/datum/contract_event/assay = new(CONTRACT_EVENT_MATERIAL_CERTIFIED, null, null, null, list("department" = DEPARTMENT_RESEARCH, "fingerprint" = "qualified", "hardness" = 60, "amount" = 4, "contributor_account" = 42))
+	var/datum/contract_event/assay = new(CONTRACT_EVENT_MATERIAL_CERTIFIED, null, null, null, list("department" = DEPARTMENT_RESEARCH, "fingerprint" = "qualified", "material_lot_id" = "LOT-QUALIFIED", "hardness" = 60, "amount" = 4, "contributor_account" = 42))
 	TEST_ASSERT(requirement.handle_event(assay), "qualifying assay was rejected")
 	TEST_ASSERT_EQUAL(requirement.state, CONTRACT_REQUIREMENT_PENDING, "assay alone completed a physical stock order")
-	var/datum/contract_event/wrong_shipment = new(CONTRACT_EVENT_ITEM_EXPORTED, null, null, null, list("department" = DEPARTMENT_RESEARCH, "origin_department" = DEPARTMENT_RESEARCH, "material_fingerprint" = "wrong", "material_amount" = 4))
+	var/datum/contract_event/wrong_shipment = new(CONTRACT_EVENT_ITEM_EXPORTED, null, null, null, list("department" = DEPARTMENT_RESEARCH, "origin_department" = DEPARTMENT_RESEARCH, "handling_department" = DEPARTMENT_CARGO, "material_fingerprint" = "qualified", "material_lot_id" = "LOT-WRONG", "material_amount" = 4))
 	TEST_ASSERT(!requirement.handle_event(wrong_shipment), "a different batch satisfied the assayed stock order")
-	var/datum/contract_event/shipment = new(CONTRACT_EVENT_ITEM_EXPORTED, null, null, null, list("department" = DEPARTMENT_RESEARCH, "origin_department" = DEPARTMENT_RESEARCH, "material_fingerprint" = "qualified", "material_amount" = 4))
+	var/datum/contract_event/shipment = new(CONTRACT_EVENT_ITEM_EXPORTED, null, null, null, list("department" = DEPARTMENT_RESEARCH, "origin_department" = DEPARTMENT_RESEARCH, "handling_department" = DEPARTMENT_CARGO, "material_fingerprint" = "qualified", "material_lot_id" = "LOT-QUALIFIED", "material_amount" = 4))
 	TEST_ASSERT(requirement.handle_event(shipment), "matching assayed cargo shipment was rejected")
 	TEST_ASSERT_EQUAL(requirement.state, CONTRACT_REQUIREMENT_COMPLETE, "matching assay and shipment did not complete the order")
 	qdel(assay)
@@ -760,8 +854,16 @@
 	consumers[WEAKREF(end)] = 10000
 	graph.resolve_loads(sources, consumers)
 	TEST_ASSERT(graph.loss_watts > 0, "A real loaded ordinary cable must have positive resistance loss")
+	graph.deposit_losses(12000)
+	for(var/obj/structure/cable/cable as anything in net.cables)
+		TEST_ASSERT(!cable.material_service, "Normally loaded station cable must not enter per-object material exposure")
+		cable.set_engineered_material(MAT_COPPER)
+	net.rebuild_material_cache()
+	graph = net.material_graph
+	graph.resolve_loads(sources, consumers)
 	var/before = 0
 	for(var/obj/structure/cable/cable as anything in net.cables)
+		cable.enable_material_service()
 		before += cable.material_service.temperature * cable.material_service.thermal_mass() + cable.material_service.buffer_energy
 	graph.deposit_losses(12000)
 	var/after = 0
@@ -777,3 +879,49 @@
 	qdel(end)
 	if(!QDELETED(net))
 		qdel(net)
+
+/datum/unit_test/dq_material_high_energy_progression
+
+/datum/unit_test/dq_material_high_energy_progression/Run()
+	var/datum/material_batch/storage_batch = new
+	storage_batch.add_material(MAT_COPPER, 3, null, 98)
+	storage_batch.add_material(MAT_QUARTZ, 2, null, 98)
+	storage_batch.add_field_treatment(MATERIAL_FIELD_PARTICLE, 45)
+	storage_batch.add_field_treatment(MATERIAL_FIELD_ENERGY_STORAGE, 30)
+	var/datum/material/storage = get_material_by_name(register_processed_material(storage_batch))
+	TEST_ASSERT(storage.field_energy_capacity >= 1000, "PA-conditioned conductive crystal did not become an energy-storage material")
+	TEST_ASSERT(storage.field_charge_efficiency > 0, "PA-conditioned conductive crystal cannot accept deposited field energy")
+
+	var/datum/material_batch/switch_batch = new
+	switch_batch.add_material(MAT_COPPER, 3, null, 98)
+	switch_batch.add_material(MAT_NICKEL, 2, null, 98)
+	switch_batch.add_field_treatment(MATERIAL_FIELD_FUSION, 50)
+	var/datum/material/thermal_switch = get_material_by_name(register_processed_material(switch_batch))
+	TEST_ASSERT(thermal_switch.thermoelectric_coefficient > 0, "copper-nickel alloy did not gain useful thermoelectric response")
+	TEST_ASSERT(thermal_switch.thermal_switch_temperature > T20C, "fusion-conditioned copper-nickel alloy did not become a thermal switch")
+
+	var/datum/material_batch/heater_batch = new
+	heater_batch.add_material(MAT_TUNGSTEN, 4, null, 98)
+	heater_batch.add_material(MAT_PHORON, 1, null, 98)
+	heater_batch.add_field_treatment(MATERIAL_FIELD_FUSION, 45)
+	var/datum/material/heater = get_material_by_name(register_processed_material(heater_batch))
+	TEST_ASSERT(heater.exothermic_heat_rate >= 25, "fusion-conditioned tungsten-phoron alloy did not become an exothermic heat source")
+
+	var/datum/material_batch/pump_batch = new
+	pump_batch.add_material(MAT_COPPER, 3, null, 98)
+	pump_batch.add_material(MAT_NICKEL, 2, null, 98)
+	pump_batch.add_field_treatment(MATERIAL_FIELD_FUSION, 45)
+	var/datum/material/pump = get_material_by_name(register_processed_material(pump_batch))
+	TEST_ASSERT(pump.heat_pump_coefficient > 0, "fusion-conditioned copper-nickel stock did not become an active heat-pump material")
+	var/datum/material_batch/memory_batch = new
+	memory_batch.add_material(MAT_NICKEL, 2, null, 98)
+	memory_batch.add_material(MAT_TITANIUM, 3, null, 98)
+	memory_batch.homogeneity = 90
+	memory_batch.toughness = 80
+	var/datum/material/memory = get_material_by_name(register_processed_material(memory_batch))
+	TEST_ASSERT(memory.shape_recovery_rate > 0, "nickel-titanium stock did not gain shape-memory recovery")
+	qdel(storage_batch)
+	qdel(switch_batch)
+	qdel(heater_batch)
+	qdel(pump_batch)
+	qdel(memory_batch)

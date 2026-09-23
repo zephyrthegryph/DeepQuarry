@@ -10,9 +10,11 @@
 
 	// Start with the cyborg analyser first
 	if(isrobot(M))
-		var/BU = M.getFireLoss() > 50 	? 	span_bold("[M.getFireLoss()]") 		: M.getFireLoss()
-		var/BR = M.getBruteLoss() > 50 	? 	span_bold("[M.getBruteLoss()]") 	: M.getBruteLoss()
-		user.show_message(span_blue("Analyzing Results for [M]:\n\t Overall Status: [M.stat > 1 ? "fully disabled" : "[M.health - M.halloss]% functional"]"))
+		var/burn_load = round(M.injury_load(INJURY_CATEGORY_THERMAL))
+		var/brute_load = round(M.injury_load(INJURY_CATEGORY_PHYSICAL))
+		var/BU = burn_load > 50 	? 	span_bold("[burn_load]") 		: burn_load
+		var/BR = brute_load > 50 	? 	span_bold("[brute_load]") 	: brute_load
+		user.show_message(span_blue("Analyzing Results for [M]:\n\t Overall Status: [M.stat == DEAD ? "fully disabled" : "[round(M.vitality() * 100)]% functional"]"))
 		user.show_message("\t Key: [span_orange("Electronics")]/[span_red("Brute")]", 1)
 		user.show_message("\t Damage Specifics: [span_orange("[BU]")] - [span_red("[BR]")]")
 		if(M.tod && M.stat == DEAD)
@@ -33,15 +35,15 @@
 			else
 				cell_text = span_red(span_bold("[cell_charge]"))
 			user.show_message("\t Power Cell Status: [span_blue("[capitalize(cell.name)]")] at [cell_text]% charge")
-		var/list/damaged = R.get_damaged_components(1,1,1)
+		var/list/damaged = R.get_faulted_components(TRUE)
 		user.show_message(span_blue("Localized Damage:"),1)
 		if(length(damaged)>0)
-			for(var/datum/robot_component/org in damaged)
+			for(var/datum/robot_component/org as anything in damaged)
 				user.show_message(span_blue(text("\t []: [][] - [] - [] - []",	\
 				span_blue(capitalize(org.name)),					\
-				(org.installed == -1)	?	"[span_red(span_bold("DESTROYED"))] "					:"",\
-				(org.electronics_damage > 0)	?	"[span_orange("[org.electronics_damage]")]"	:0,	\
-				(org.brute_damage > 0)	?	"[span_red("[org.brute_damage]")]"					:0,	\
+				(org.installed == ROBOT_PART_DESTROYED)	?	"[span_red(span_bold("DESTROYED"))] "					:"",\
+				(org.get_wiring_damage() > 0)	?	"[span_orange("[round(org.get_wiring_damage(), 0.1)]")]"	:0,	\
+				(org.get_structural_damage() > 0)	?	"[span_red("[round(org.get_structural_damage(), 0.1)]")]"					:0,	\
 				(org.toggled)	?	"Toggled ON"	:	"[span_red("Toggled OFF")]",\
 				(org.powered)	?	"Power ON"		:	"[span_red("Power OFF")]")),1)
 		else
@@ -54,8 +56,11 @@
 	if(ishuman(M))
 		var/mob/living/carbon/human/H = M
 		to_chat(user, span_notice("Analyzing Results for \the [H]:"))
-		if(H.isSynthetic())
-			to_chat(user, "System instability: [span_green("[H.getToxLoss()]")]")
+		// Structural / wiring / system afflictions on synthetic parts.
+		for(var/datum/affliction/A as anything in H.body?.afflictions)
+			if(!(H.body.biology_of(A.location) & BIOLOGY_SYNTHETIC))
+				continue
+			to_chat(user, "System fault: [span_orange(A.name)][A.location ? " in [A.location]" : ""] ([dq_qualitative_damage_band(A.load_value(), 100)])")
 		to_chat(user, "Key: [span_orange("Electronics")]/[span_red("Brute")]")
 		to_chat(user, span_notice("External prosthetics:"))
 		var/organ_found
@@ -64,7 +69,7 @@
 				if(!(E.robotic >= ORGAN_ROBOT))
 					continue
 				organ_found = 1
-				to_chat(user, "[E.name]: [span_red("[E.brute_dam] ")] [span_orange("[E.burn_dam]")]")
+				to_chat(user, "[E.name]: [span_red("[round(E.get_trauma())] ")] [span_orange("[round(E.get_burn())]")]")
 		if(!organ_found)
 			to_chat(user, "No prosthetics located.")
 		to_chat(user, "<hr>")
@@ -83,11 +88,15 @@
 		return //End here if they're FBP
 
 	//Then do normal health scan
-	var/fake_oxy = max(M.getOxyLoss(), (300 - (M.getToxLoss() + M.getFireLoss() + M.getBruteLoss())))
-	var/OX = M.getOxyLoss() > 50 	? 	span_bold("[M.getOxyLoss()]") 		: M.getOxyLoss()
-	var/TX = M.getToxLoss() > 50 	? 	span_bold("[M.getToxLoss()]")  		: M.getToxLoss()
-	var/BU = M.getFireLoss() > 50 	? 	span_bold("[M.getFireLoss()]") 		: M.getFireLoss()
-	var/BR = M.getBruteLoss() > 50 	? 	span_bold("[M.getBruteLoss()]")  	: M.getBruteLoss()
+	var/oxy_load = round(M.injury_load(INJURY_CATEGORY_ASPHYXIA))
+	var/tox_load = round(M.injury_load(INJURY_CATEGORY_TOXIC))
+	var/burn_load = round(M.injury_load(INJURY_CATEGORY_THERMAL))
+	var/brute_load = round(M.injury_load(INJURY_CATEGORY_PHYSICAL))
+	var/fake_oxy = max(oxy_load, (300 - (tox_load + burn_load + brute_load)))
+	var/OX = oxy_load > 50 		? 	span_bold("[oxy_load]") 		: oxy_load
+	var/TX = tox_load > 50 		? 	span_bold("[tox_load]")  		: tox_load
+	var/BU = burn_load > 50 	? 	span_bold("[burn_load]") 		: burn_load
+	var/BR = brute_load > 50 	? 	span_bold("[brute_load]")  		: brute_load
 	var/analyzed_results = ""
 	if(M.status_flags & FAKEDEATH)
 		OX = fake_oxy > 50 			? 	span_bold("[fake_oxy]") 			: fake_oxy
@@ -96,7 +105,7 @@
 		dat += span_notice("Overall Status: dead")
 		dat += "<br>"
 	else
-		analyzed_results += "Analyzing Results for [M]:\n\t Overall Status: [M.stat > 1 ? "dead" : "[round((M.health/M.getMaxHealth())*100) ]% healthy"]<br>"
+		analyzed_results += "Analyzing Results for [M]:\n\t Overall Status: [M.stat == DEAD ? "dead" : "[round(M.vitality() * 100)]% healthy[M.is_critical() ? " (critical)" : ""]"]<br>"
 	analyzed_results += "\tKey: [span_cyan("Suffocation")]/[span_green("Toxin")]/[span_orange("Burns")]/[span_red("Brute")]<br>"
 	analyzed_results += "\tDamage Specifics: [span_cyan("[OX]")] - [span_green("[TX]")] - [span_orange("[BU]")] - [span_red("[BR]")]<br>"
 	analyzed_results +=	"Body Temperature: [M.bodytemperature-T0C]&deg;C ([M.bodytemperature*1.8-459.67]&deg;F)<br>"
@@ -119,9 +128,11 @@
 				if(org.robotic >= ORGAN_ROBOT)
 					continue
 				else
-					var/our_damage = "     [capitalize(org.name)]: [(org.brute_dam > 0) ? span_warning("[org.brute_dam]") : 0]"
+					var/trauma = round(org.get_trauma())
+					var/burn = round(org.get_burn())
+					var/our_damage = "     [capitalize(org.name)]: [(trauma > 0) ? span_warning("[trauma]") : 0]"
 					our_damage += "[(org.status & ORGAN_BLEEDING)?span_danger("\[Bleeding\]"):""] - "
-					our_damage += "[(org.burn_dam > 0) ? "[span_orange("[org.burn_dam]")]" : 0]"
+					our_damage += "[(burn > 0) ? "[span_orange("[burn]")]" : 0]"
 					dat += span_notice(our_damage) + "<br>"
 		else
 			dat += span_notice("    Limbs are OK.")
@@ -138,10 +149,10 @@
 				else
 					dat += "There is no known treatment.<br>"
 
-	OX = M.getOxyLoss() > 50 ? 	 "[span_cyan(span_bold("Severe oxygen deprivation detected"))]" 			: 	"Subject bloodstream oxygen level normal"
-	TX = M.getToxLoss() > 50 ? 	 "[span_green(span_bold("Dangerous amount of toxins detected"))]" 	: 	"Subject bloodstream toxin level minimal"
-	BU = M.getFireLoss() > 50 ?  "[span_orange(span_bold("Severe burn damage detected"))]" 			:	"Subject burn injury status O.K"
-	BR = M.getBruteLoss() > 50 ? "[span_red(span_bold("Severe anatomical damage detected"))]"		 		: 	"Subject brute-force injury status O.K"
+	OX = oxy_load > 50 ? 	 "[span_cyan(span_bold("Severe oxygen deprivation detected"))]" 			: 	"Subject bloodstream oxygen level normal"
+	TX = tox_load > 50 ? 	 "[span_green(span_bold("Dangerous amount of toxins detected"))]" 	: 	"Subject bloodstream toxin level minimal"
+	BU = burn_load > 50 ?  "[span_orange(span_bold("Severe burn damage detected"))]" 			:	"Subject burn injury status O.K"
+	BR = brute_load > 50 ? "[span_red(span_bold("Severe anatomical damage detected"))]"		 		: 	"Subject brute-force injury status O.K"
 	if(M.status_flags & FAKEDEATH)
 		OX = fake_oxy > 50 ? 		span_warning("Severe oxygen deprivation detected") 	: 	"Subject bloodstream oxygen level normal"
 	dat += "[OX] | [TX] | [BU] | [BR]<br>"
@@ -255,7 +266,7 @@
 					continue
 				dat += span_alert(span_bold("Warning: [virus.form] detected in subject's blood."))
 				dat += "<br>"
-	if (M.getCloneLoss())
+	if (M.injury_load(INJURY_CATEGORY_GENETIC))
 		dat += span_warning("Subject appears to have been imperfectly cloned.")
 		dat += "<br>"
 //	if (M.reagents && M.reagents.get_reagent_amount(REAGENT_ID_INAPROVALINE))
@@ -263,16 +274,19 @@
 	if (M.has_brain_worms())
 		dat += span_warning("Subject suffering from aberrant brain activity. Recommend further scanning.")
 		dat += "<br>"
-	else if (M.getBrainLoss() >= 60 || !M.has_brain())
+	else if (M.is_brain_dead() || !M.has_brain())
 		dat += span_warning("Subject is brain dead.")
 		dat += "<br>"
-	else if (M.getBrainLoss() >= 25)
+	else if (M.injury_load(INJURY_CATEGORY_NEURAL) >= 60)
+		dat += span_warning("Critical brain damage detected. Subject is at risk of brain death.")
+		dat += "<br>"
+	else if (M.injury_load(INJURY_CATEGORY_NEURAL) >= 25)
 		dat += span_warning("Severe brain damage detected. Subject likely to have a traumatic brain injury.")
 		dat += "<br>"
-	else if (M.getBrainLoss() >= 10)
+	else if (M.injury_load(INJURY_CATEGORY_NEURAL) >= 10)
 		dat += span_warning("Significant brain damage detected. Subject may have had a concussion.")
 		dat += "<br>"
-	else if (M.getBrainLoss() >= 1)
+	else if (M.injury_load(INJURY_CATEGORY_NEURAL) >= 1)
 		dat += span_warning("Minor brain damage detected.")
 		dat += "<br>"
 	if(ishuman(M))
@@ -361,13 +375,12 @@
 				dat += span_warning("Infected wound detected in subject [e.name]. Disinfection recommended.")
 				dat += "<br>"
 			// IB
-			for(var/datum/wound/W in e.wounds)
-				if(W.internal)
-					if(advscan >= SCANNABLE_ADVANCED && showadvscan == 1)
-						ib_dat += span_warning("Internal bleeding detected in subject [e.name].")
-						ib_dat += "<br>"
-					else
-						basic_ib = 1
+			if(length(dq_limb_internal_bleeds(e)))
+				if(advscan >= SCANNABLE_ADVANCED && showadvscan == 1)
+					ib_dat += span_warning("Internal bleeding detected in subject [e.name].")
+					ib_dat += "<br>"
+				else
+					basic_ib = 1
 		if(basic_fracture)
 			fracture_dat += span_warning("Bone fractures detected. Advanced scanner required for location.")
 			fracture_dat += "<br>"
@@ -379,7 +392,7 @@
 		dat += ib_dat
 
 		// Blood level
-		if(M:vessel)
+		if(H.vessel)
 			var/blood_volume = H.vessel.get_reagent_amount(REAGENT_ID_BLOOD)
 			var/blood_percent =  round((blood_volume / H.species.blood_volume)*100)
 			var/blood_type = H.dna.b_type
@@ -411,28 +424,12 @@
 			else // If they bop them and they're not dead or reviving, give 'em a little notice.
 				dat += span_notice("Subject is a Xenochimera. Treat accordingly.")
 
-	// Custom medical issues
-		for(var/obj/item/organ/I in H.internal_organs)
-			for(var/datum/medical_issue/MI in I.medical_issues)
-				if(advscan >= MI.advscan)
-					dat += span_danger("Warning: [MI.name] detected in [MI.affectedorgan].<br>")
-					if(advscan >= MI.advscan_cure)
-						if(MI.cure_reagent)
-							dat += span_notice("Suggested treatment: Prescription of [MI.cure_reagent].<br>")
-						else if(MI.cure_surgery)
-							dat += span_notice("Required surgery: [MI.cure_surgery].<br>")
-						else
-							dat += span_notice("[MI.affectedorgan] may require surgical removal or transplantation.<br>")
-		for(var/obj/item/organ/E in H.organs)
-			for(var/datum/medical_issue/MI in E.medical_issues)
-				if(advscan >= MI.advscan)
-					dat += span_danger("Warning: [MI.name] detected in [MI.affectedorgan].<br>")
-					if(advscan >= MI.advscan_cure)
-						if(MI.cure_reagent)
-							dat += span_notice("Suggested treatment: Prescription of [MI.cure_reagent].<br>")
-						else if(MI.cure_surgery)
-							dat += span_notice("Required surgery: [MI.cure_surgery].<br>")
-						else
-							dat += span_notice("[MI.affectedorgan] may require surgical removal or transplantation.<br>")
+		// GM custom afflictions
+		for(var/datum/affliction/custom/A as anything in dq_custom_afflictions_of(H))
+			if(advscan < A.advscan)
+				continue
+			dat += span_danger("Warning: [A.name] detected in [A.location].<br>")
+			if(advscan >= A.advscan_cure)
+				dat += span_notice("[A.cure_hint()]<br>")
 
 	user.show_message(dat, 1)

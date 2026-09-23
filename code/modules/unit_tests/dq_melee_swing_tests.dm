@@ -80,9 +80,9 @@
 	TEST_ASSERT_EQUAL(attacker.get_active_hand(), weapon, "weapon should be in the attacker's active hand")
 	TEST_ASSERT(attacker.Adjacent(victim), "attacker should be adjacent to the victim")
 
-	var/before = victim.health
+	var/before = victim.vitality()
 	victim.attackby(weapon, attacker) // harm-intent item attack -> divert -> windup -> swing
-	TEST_ASSERT(victim.health < before, "a victim in the swing tile should take damage (before [before], after [victim.health])")
+	TEST_ASSERT(victim.vitality() < before, "a victim in the swing tile should take damage (vitality before [before], after [victim.vitality()])")
 
 /datum/unit_test/dq_melee_swing_kitchen_knife
 
@@ -96,9 +96,9 @@
 	attacker.a_intent = I_HURT
 	TEST_ASSERT(knife.force > 0, "a newly initialized kitchen knife has no melee force")
 	TEST_ASSERT_EQUAL(attacker.get_active_hand(), knife, "the kitchen knife was not held in the active hand")
-	var/before = victim.getBruteLoss()
+	var/before = victim.injury_load(INJURY_CATEGORY_PHYSICAL)
 	TEST_ASSERT(attacker.begin_melee_swing(victim, knife), "the kitchen knife swing did not commit")
-	TEST_ASSERT(victim.getBruteLoss() > before, "a real kitchen knife on harm intent did not deal brute damage")
+	TEST_ASSERT(victim.injury_load(INJURY_CATEGORY_PHYSICAL) > before, "a real kitchen knife on harm intent did not deal physical injury")
 
 
 // Committed-but-dodgeable: a target that steps out of the telegraphed tiles during the
@@ -119,12 +119,12 @@
 	attacker.put_in_active_hand(weapon)
 	attacker.a_intent = I_HURT
 
-	var/before = victim.health
+	var/before = victim.vitality()
 	INVOKE_ASYNC(attacker, TYPE_PROC_REF(/mob/living, begin_melee_swing), victim, weapon)
 	sleep(2)                                  // windup is in progress (9 ds total)
 	victim.forceMove(far)                     // dodge out of the swing tiles
 	sleep(weapon.get_melee_windup() + 4)      // wait past the swing resolution
-	TEST_ASSERT_EQUAL(victim.health, before, "a victim that left the tiles during windup should take no damage")
+	TEST_ASSERT_EQUAL(victim.vitality(), before, "a victim that left the tiles during windup should take no damage")
 
 
 // After a swing, a recovery cooldown is set and the swinging flag is cleared.

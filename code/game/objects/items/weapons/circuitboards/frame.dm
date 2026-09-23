@@ -412,7 +412,6 @@
 							/obj/item/stock_parts/console_screen = 1)
 
 
-// === merged from frame_ch.dm during hard-fork de-suffix (verified no override-order change) ===
 /obj/item/circuitboard/microwave/advanced
 	name = T_BOARD("deluxe microwave")
 	build_path = /obj/machinery/microwave/advanced

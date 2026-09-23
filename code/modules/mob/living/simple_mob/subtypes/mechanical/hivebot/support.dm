@@ -15,8 +15,7 @@
 /mob/living/simple_mob/mechanical/hivebot/support/commander
 	name = "commander hivebot"
 	desc = "A robot that appears to be directing the others."
-	maxHealth = 5 LASERS_TO_KILL // 150 health
-	health = 5 LASERS_TO_KILL
+	endurance = 5 LASERS_TO_KILL // 150 health
 	player_msg = "You <b>increase the performance of other hivebots near you</b> passively.<br>\
 	You are otherwise very weak offensively."
 
@@ -38,12 +37,7 @@
 	aura_max_distance = 4
 	mob_overlay_state = "signal_blue"
 
-	disable_duration_percent = 0.7
-	outgoing_melee_damage_percent = 1.3
-	attack_speed_percent = 0.7
-	accuracy = 30
-	slowdown = -1
-	evasion = 30
+	factors = alist(BF_SLOWDOWN = -1, BF_ACCURACY = 30, BF_EVASION = 30, BF_ATTACK_SPEED = 0.7, BF_MELEE_DAMAGE = 1.3, BF_DISABLE_DURATION = 0.7)
 
 // Variant that automatically commands nearby allies to follow it when created.
 // Useful to avoid having to manually set follow to a lot of hivebots that are gonna die in the next minute anyways.
@@ -64,8 +58,7 @@
 /mob/living/simple_mob/mechanical/hivebot/support/logistics
 	name = "logistics hivebot"
 	desc = "A robot that resupplies their allies."
-	maxHealth = 3 LASERS_TO_KILL // 90 health
-	health = 3 LASERS_TO_KILL
+	endurance = 3 LASERS_TO_KILL // 90 health
 	player_msg = "You <b>passively restore 'charges' to allies with special abilities</b> who are \
 	limited to using them a specific number of times."
 	var/resupply_range = 5
@@ -93,8 +86,7 @@
 /mob/living/simple_mob/mechanical/hivebot/support/harry
 	name = "Harry the hivelessbot"
 	desc = "A severely corroded hivebot, covered in barnacles and seaweed."
-	maxHealth = 5 // 1 health
-	health = 5
+	endurance = 5 // 1 health
 	say_list_type = /datum/say_list/hivebot/harry
 	melee_damage_lower = 0
 	melee_damage_upper = 0

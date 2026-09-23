@@ -429,7 +429,7 @@
 /datum/gear/suit/wintercoat/security
 	display_name = "winter coat, security"
 	path = /obj/item/clothing/suit/storage/hooded/wintercoat/security
-	allowed_roles = list(JOB_SECURITY_OFFICER, JOB_HEAD_OF_SECURITY, JOB_WARDEN, JOB_DETECTIVE, JOB_BLUESHIELD_GUARD, JOB_SECURITY_PILOT) //YW ADDITIONS
+	allowed_roles = list(JOB_SECURITY_OFFICER, JOB_HEAD_OF_SECURITY, JOB_WARDEN, JOB_DETECTIVE, JOB_BLUESHIELD_GUARD, JOB_SECURITY_PILOT)
 	show_roles = FALSE
 
 /datum/gear/suit/wintercoat/security/hos
@@ -676,13 +676,13 @@
 /datum/gear/suit/snowsuit/command
 	display_name = "snowsuit, command"
 	path = /obj/item/clothing/suit/storage/hooded/wintercoat/snowsuit/command
-	allowed_roles = list(JOB_SITE_MANAGER,JOB_RESEARCH_DIRECTOR,JOB_HEAD_OF_PERSONNEL,JOB_HEAD_OF_SECURITY,JOB_CHIEF_ENGINEER,JOB_COMMAND_SECRETARY,JOB_BLUESHIELD_GUARD) //YW ADDITIONS
+	allowed_roles = list(JOB_SITE_MANAGER,JOB_RESEARCH_DIRECTOR,JOB_HEAD_OF_PERSONNEL,JOB_HEAD_OF_SECURITY,JOB_CHIEF_ENGINEER,JOB_COMMAND_SECRETARY,JOB_BLUESHIELD_GUARD)
 	show_roles = FALSE
 
 /datum/gear/suit/snowsuit/security
 	display_name = "snowsuit, security"
 	path = /obj/item/clothing/suit/storage/hooded/wintercoat/snowsuit/security
-	allowed_roles = list(JOB_SECURITY_OFFICER, JOB_HEAD_OF_SECURITY, JOB_WARDEN, JOB_DETECTIVE, JOB_BLUESHIELD_GUARD, JOB_SECURITY_PILOT) //YW ADDITIONS
+	allowed_roles = list(JOB_SECURITY_OFFICER, JOB_HEAD_OF_SECURITY, JOB_WARDEN, JOB_DETECTIVE, JOB_BLUESHIELD_GUARD, JOB_SECURITY_PILOT)
 	show_roles = FALSE
 
 /datum/gear/suit/snowsuit/medical

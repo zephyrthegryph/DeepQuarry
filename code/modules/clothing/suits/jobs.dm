@@ -268,7 +268,6 @@
 	icon_state = "suspenders_grey" //Need a sprite for this.
 
 
-// === merged from jobs_vr.dm during hard-fork de-suffix (verified no override-order change) ===
 // Cargotech jacket
 /obj/item/clothing/suit/storage/cargo
 	name = "cargo jacket"
@@ -293,7 +292,6 @@
 		)
 
 
-// === merged from jobs_chomp.dm during hard-fork de-suffix (verified no override-order change) ===
 /obj/item/clothing/suit/chef/classic
 	sprite_sheets = list(
 		SPECIES_TESHARI = 'icons/inventory/suit/mob_teshari.dmi',

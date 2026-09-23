@@ -45,7 +45,7 @@
 		var/mob/living/simple_mob/animal/borer/B = loc
 		to_chat(src, span_danger("You begin doggedly resisting the parasite's control (this will take approximately sixty seconds)."))
 		to_chat(B.host, span_danger("You feel the captive mind of [src] begin to resist your control."))
-		addtimer(CALLBACK(src, PROC_REF(break_control_of_borer)), (rand(20,25) + (B.host.brainloss/10)) SECONDS, TIMER_DELETE_ME)
+		addtimer(CALLBACK(src, PROC_REF(break_control_of_borer)), (rand(20,25) + (B.host.injury_load(INJURY_CATEGORY_NEURAL)/10)) SECONDS, TIMER_DELETE_ME)
 		return
 	. = ..()
 
@@ -55,5 +55,5 @@
 		return
 	to_chat(src, span_danger("With an immense exertion of will, you regain control of your body!"))
 	to_chat(B.host, span_danger("You feel control of the host brain ripped from your grasp, and retract your probosci before the wild neural impulses can damage you."))
-	B.host.adjustBrainLoss(rand(0.1,0.5))
+	B.host.injure(INJURY_NEURAL, rand(0.1,0.5), source = B)
 	B.detatch()

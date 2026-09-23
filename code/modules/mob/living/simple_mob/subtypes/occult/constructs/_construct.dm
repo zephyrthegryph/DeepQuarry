@@ -13,6 +13,7 @@
 	icon_dead = "shade_dead"
 
 	mob_class = MOB_CLASS_DEMONIC
+	biology = BIOLOGY_SYNTHETIC // Runed-metal shells: repaired by artificers, immune to poison and suffocation.
 
 	ui_icons = 'icons/mob/screen1_construct.dmi'
 	has_hands = 1
@@ -125,11 +126,9 @@
 /mob/living/simple_mob/construct/attack_generic(mob/user)
 	if(istype(user, /mob/living/simple_mob/construct/artificer))
 		var/mob/living/simple_mob/construct/artificer/A = user
-		if(health < getMaxHealth())
-			var/repair_lower_bound = A.melee_damage_lower * -1
-			var/repair_upper_bound = A.melee_damage_upper * -1
-			adjustBruteLoss(rand(repair_lower_bound, repair_upper_bound))
-			adjustFireLoss(rand(repair_lower_bound, repair_upper_bound))
+		if(is_injured())
+			mend(TREAT_PLATING_REPAIR, rand(A.melee_damage_lower, A.melee_damage_upper))
+			mend(TREAT_WIRING_REPAIR, rand(A.melee_damage_lower, A.melee_damage_upper))
 			user.visible_message(span_infoplain(span_bold("\The [user]") + " mends some of \the [src]'s wounds."))
 		else
 			to_chat(user, span_notice("\The [src] is undamaged."))
@@ -138,9 +137,9 @@
 
 /mob/living/simple_mob/construct/examine(mob/user)
 	. = ..(user)
-	var/max = getMaxHealth()
-	if (health < max)
-		if (health >= max/2)
+	var/wellness = vitality()
+	if (wellness < 1)
+		if (wellness >= 0.5)
 			. += span_warning("It looks slightly dented.")
 		else
 			. += span_boldwarning("It looks severely dented!")

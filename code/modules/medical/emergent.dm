@@ -1,80 +1,68 @@
-// Damage-emergent conditions.
+// Emergent afflictions: trigger dispatchers.
 //
-// Some conditions are observations of catastrophic organ failure —
+// Some afflictions are observations of catastrophic organ failure —
 // respiratory_failure isn't a separate thing from "lungs at >70%
 // damage"; cardiac_arrest isn't separate from "heart >70%". These
-// conditions auto-spawn when their target organ crosses a damage
+// afflictions auto-spawn when their target organ crosses an integrity
 // threshold and auto-clear when it falls back below.
 //
-// The rule data lives entirely in /datum/dq_cause/organ_damage records
-// (see code/modules/medical/causes/causes.dm). This file
-// just walks those causes each Life tick.
+// The rule data lives entirely in /datum/affliction_trigger records
+// (see code/modules/medical/causes/causes.dm). This file walks the
+// organ_integrity / metric triggers and the chem-caused afflictions when
+// their body invalidation domain (BODY_DIRTY_ORGANS / _METRICS / _CHEMS on
+// body.dirty) is set: the base /mob/living on_reagent_change() and organ
+// integrity changes mark them, Life() consumes them once per cycle. Everything
+// lands in owner.body.
 
 /mob/living/carbon/human
-	/// Exact invalidation domains consumed by Life(). Mutation funnels set bits;
-	/// normal gameplay never relies on a reconciliation scan.
-	var/dq_medical_dirty = DQ_MEDICAL_DIRTY_ALL
-	var/dq_last_oxy_loss
-	var/dq_last_tox_loss
-	var/dq_last_clone_loss
-	var/dq_last_brain_loss
+	var/dq_last_neural_load
 	var/dq_last_radiation
 	var/dq_last_bodytemperature
-
-/mob/living/carbon/human/proc/dq_invalidate_medical_conditions(domains = DQ_MEDICAL_DIRTY_ALL)
-	dq_medical_dirty |= domains
-
-/mob/living/carbon/human/on_reagent_change(changetype)
-	. = ..()
-	dq_invalidate_medical_conditions(DQ_MEDICAL_DIRTY_CHEMS)
-	reconcile_medical_side_effects()
 
 /// Scalar metrics include environmental values that can be authored outside a
 /// setter. Comparing this small fixed signature is cheaper and safer than
 /// walking every condition/cause when nothing changed.
 /mob/living/carbon/human/proc/dq_refresh_metric_dirty_state()
-	var/current_oxy = getOxyLoss()
-	var/current_tox = getToxLoss()
-	var/current_clone = getCloneLoss()
-	var/current_brain = getBrainLoss()
-	if(current_oxy == dq_last_oxy_loss && current_tox == dq_last_tox_loss && current_clone == dq_last_clone_loss && current_brain == dq_last_brain_loss && radiation == dq_last_radiation && bodytemperature == dq_last_bodytemperature)
+	var/current_neural = injury_load(INJURY_CATEGORY_NEURAL)
+	if(current_neural == dq_last_neural_load && radiation == dq_last_radiation && bodytemperature == dq_last_bodytemperature)
 		return
-	dq_last_oxy_loss = current_oxy
-	dq_last_tox_loss = current_tox
-	dq_last_clone_loss = current_clone
-	dq_last_brain_loss = current_brain
+	dq_last_neural_load = current_neural
 	dq_last_radiation = radiation
 	dq_last_bodytemperature = bodytemperature
-	dq_medical_dirty |= DQ_MEDICAL_DIRTY_METRICS
+	body?.invalidate(BODY_DIRTY_METRICS)
 
+/// Run the trigger domains the body has invalidated since last time.
 /mob/living/carbon/human/proc/dq_process_dirty_medical_conditions()
+	if(!body)
+		return
 	dq_refresh_metric_dirty_state()
-	var/dirty = dq_medical_dirty
-	dq_medical_dirty = 0
-	if(dirty & DQ_MEDICAL_DIRTY_ORGANS)
+	var/dirty = body.dirty & BODY_DIRTY_CONDITIONS
+	body.dirty &= ~BODY_DIRTY_CONDITIONS
+	if(dirty & BODY_DIRTY_ORGANS)
 		dq_check_emergent_conditions()
-	if(dirty & DQ_MEDICAL_DIRTY_METRICS)
+	if(dirty & BODY_DIRTY_METRICS)
 		dq_check_metric_conditions()
-	if(dirty & DQ_MEDICAL_DIRTY_CHEMS)
+	if(dirty & BODY_DIRTY_CHEMS)
 		dq_check_chem_conditions()
+		reconcile_medical_side_effects()
 
 /mob/living/carbon/human/proc/dq_check_emergent_conditions()
 	if(stat == DEAD)
 		return
-	for(var/datum/dq_cause/organ_damage/c as anything in dq_causes_of_kind("/datum/dq_cause/organ_damage"))
+	for(var/datum/affliction_trigger/organ_integrity/c as anything in affliction_triggers_of_kind("/datum/affliction_trigger/organ_integrity"))
 		var/obj/item/organ/O = _dq_resolve_organ_on(src, c.organ)
 		if(!O || !O.max_damage)
 			continue
 		var/dmg_pct
 		if(istype(O, /obj/item/organ/external))
 			var/obj/item/organ/external/E = O
-			dmg_pct = ((E.brute_dam + E.burn_dam) / O.max_damage) * 100
+			dmg_pct = ((E.get_trauma() + E.get_burn()) / O.max_damage) * 100
 		else
 			dmg_pct = (O.damage / O.max_damage) * 100
 		_dq_apply_outcomes(O, c.produces, dmg_pct, c.threshold_pct)
 
 
-/// Apply a list of /datum/dq_cause_outcome to the host organ, given
+/// Apply a list of /datum/affliction_trigger_outcome to the host organ, given
 /// the current metric value (`metric`) and an optional cause-level
 /// default threshold (`default_threshold`). Outcomes can map either:
 ///
@@ -90,10 +78,12 @@
 /// past the lowest-threshold outcome we are, and cure when no outcome
 /// is met.
 /mob/living/carbon/human/proc/_dq_apply_outcomes(obj/item/organ/host, list/produces, metric, default_threshold)
+	if(!body)
+		return
 	// Bucket outcomes by condition_type so staged conditions can pick
 	// the highest tier that fits.
 	var/list/by_type = list()
-	for(var/datum/dq_cause_outcome/o as anything in produces)
+	for(var/datum/affliction_trigger_outcome/o as anything in produces)
 		LAZYINITLIST(by_type[o.condition_type])
 		by_type[o.condition_type] += o
 
@@ -102,9 +92,9 @@
 		// Find the lowest threshold (for severity scaling) and the
 		// highest-tier outcome currently met.
 		var/min_thresh = 200
-		var/datum/dq_cause_outcome/active_outcome
+		var/datum/affliction_trigger_outcome/active_outcome
 		var/highest_thresh = -1
-		for(var/datum/dq_cause_outcome/o as anything in outs)
+		for(var/datum/affliction_trigger_outcome/o as anything in outs)
 			var/thresh = !isnull(o.threshold) ? o.threshold : default_threshold
 			if(isnull(thresh))
 				thresh = 0
@@ -114,12 +104,7 @@
 				highest_thresh = thresh
 				active_outcome = o
 
-		// Find or remove an existing condition of this type.
-		var/datum/medical_issue/condition/existing
-		for(var/datum/medical_issue/condition/C in host.medical_issues)
-			if(C.type == condition_type)
-				existing = C
-				break
+		var/datum/affliction/existing = body.find_affliction(condition_type, host)
 
 		if(active_outcome)
 			// Severity scales from the lowest-met-threshold to 100, so
@@ -133,18 +118,16 @@
 				if(active_outcome.tier && active_outcome.tier != existing.stage)
 					existing._apply_stage(active_outcome.tier)
 			else
-				var/datum/medical_issue/condition/N = new condition_type()
-				N.owner = src
-				N.affectedorgan = host
-				N.set_severity(target_severity)
-				if(active_outcome.tier)
-					N._apply_stage(active_outcome.tier)
-				host.add_medical_issue(N, src)
+				var/datum/affliction/N = body.afflict(condition_type, host)
+				if(N)
+					N.set_severity(target_severity)
+					if(active_outcome.tier)
+						N._apply_stage(active_outcome.tier)
 		else if(existing)
-			existing.cure_issue()
+			existing.cure()
 
 
-/// Metric-driven conditions: walk every /datum/dq_cause/metric_threshold,
+/// Metric-driven conditions: walk every /datum/affliction_trigger/metric,
 /// read the mob's scalar value, spawn / cure / update severity on the
 /// host organ. Same continuous-severity pattern as organ_damage causes:
 /// at threshold severity is 0, at the cause's `metric_max` (or a
@@ -152,7 +135,7 @@
 /mob/living/carbon/human/proc/dq_check_metric_conditions()
 	if(stat == DEAD)
 		return
-	for(var/datum/dq_cause/metric_threshold/c as anything in dq_causes_of_kind("/datum/dq_cause/metric_threshold"))
+	for(var/datum/affliction_trigger/metric/c as anything in affliction_triggers_of_kind("/datum/affliction_trigger/metric"))
 		var/value = dq_get_metric(c.metric)
 		var/obj/item/organ/host = _dq_resolve_organ_on(src, c.host_organ)
 		if(!host)
@@ -185,18 +168,18 @@
 /// — the encyclopedia links these conditions directly to their causing
 /// reagents.
 /mob/living/carbon/human/proc/dq_check_chem_conditions()
-	if(stat == DEAD)
+	if(stat == DEAD || !body)
 		return
 	var/static/list/chem_caused_types
 	if(isnull(chem_caused_types))
 		chem_caused_types = list()
-		for(var/T in subtypesof(/datum/medical_issue/condition))
-			var/datum/medical_issue/condition/proto = dq_proto(T)
+		for(var/T in subtypesof(/datum/affliction))
+			var/datum/affliction/proto = dq_proto(T)
 			if(length(proto.caused_by_chems))
 				chem_caused_types += T
 
 	for(var/T as anything in chem_caused_types)
-		var/datum/medical_issue/condition/proto = dq_proto(T)
+		var/datum/affliction/proto = dq_proto(T)
 		var/list/chems = proto.caused_by_chems
 		if(!length(chems))
 			continue
@@ -204,11 +187,7 @@
 		var/obj/item/organ/host = _dq_resolve_organ_on(src, proto.caused_by_chems_organ)
 		if(!host)
 			continue
-		var/datum/medical_issue/condition/existing
-		for(var/datum/medical_issue/condition/C in host.medical_issues)
-			if(C.type == T)
-				existing = C
-				break
+		var/datum/affliction/existing = body.find_affliction(T, host)
 
 		if(proto.chem_scaling)
 			_dq_apply_scaling_chem_condition(host, existing, T, proto, chems)
@@ -221,19 +200,12 @@
 	// dependent on the OD condition's host organ ticking. Scales by
 	// the OD condition's own severity so mild ODs drain mildly.
 	//
-	// Snapshot get_all_conditions() ONCE per tick and index by type —
-	// the previous version was O(N²) (outer condition walk × inner
-	// condition walk per target type). Polytrauma patients made this
-	// hot.
-	var/list/all_conditions = get_all_conditions()
-	var/list/conditions_by_type = list()
-	for(var/datum/medical_issue/condition/IC as anything in all_conditions)
-		LAZYADDASSOCLIST(conditions_by_type, IC.type, IC)
-	for(var/datum/medical_issue/condition/C as anything in all_conditions)
+	// The body keeps a by-type index, so target lookup is O(1) per type.
+	for(var/datum/affliction/C as anything in body.afflictions?.Copy())
 		// Scaling conditions own a time-based severity ramp/decay. Keep only this
 		// domain scheduled until the condition reaches a terminal state.
 		if(C.chem_scaling && C.severity > 0)
-			dq_medical_dirty |= DQ_MEDICAL_DIRTY_CHEMS
+			body.invalidate(BODY_DIRTY_CHEMS)
 		if(!length(C.od_cures_externally))
 			continue
 		var/sev_scale = C.severity / 100
@@ -243,17 +215,17 @@
 			var/drop_per_tick = C.od_cures_externally[target_type] * sev_scale
 			if(drop_per_tick <= 0)
 				continue
-			var/list/targets = conditions_by_type[target_type]
+			var/list/targets = body.afflictions_by_type?[target_type]
 			if(!targets)
 				continue
-			for(var/datum/medical_issue/condition/target as anything in targets)
+			for(var/datum/affliction/target as anything in targets.Copy())
 				target.adjust_severity(-drop_per_tick)
 
 
 /// Binary (presence-gated) chem condition: spawn at severity 50 when
 /// every named reagent is over its threshold, clear instantly when any
 /// drops below.
-/mob/living/carbon/human/proc/_dq_apply_binary_chem_condition(obj/item/organ/host, datum/medical_issue/condition/existing, condition_type, list/chems)
+/mob/living/carbon/human/proc/_dq_apply_binary_chem_condition(obj/item/organ/host, datum/affliction/existing, condition_type, list/chems)
 	var/all_present = TRUE
 	for(var/reagent_id in chems)
 		var/vol = _dq_chem_volume(src, reagent_id)
@@ -262,13 +234,9 @@
 			break
 	if(all_present)
 		if(!existing)
-			var/datum/medical_issue/condition/N = new condition_type()
-			N.owner = src
-			N.affectedorgan = host
-			N.set_severity(50)
-			host.add_medical_issue(N, src)
+			body.afflict(condition_type, host, 50)
 	else if(existing)
-		existing.cure_issue()
+		existing.cure()
 
 
 /// Scaling (overdose-style) chem condition: severity climbs while the
@@ -280,7 +248,7 @@
 /// drive climb from the SMALLEST over-amount across the gate (any chem
 /// at or below threshold halts the climb), and decay from the same
 /// gate failure. That matches the intuitive "interaction OD" pattern.
-/mob/living/carbon/human/proc/_dq_apply_scaling_chem_condition(obj/item/organ/host, datum/medical_issue/condition/existing, condition_type, datum/medical_issue/condition/proto, list/chems)
+/mob/living/carbon/human/proc/_dq_apply_scaling_chem_condition(obj/item/organ/host, datum/affliction/existing, condition_type, datum/affliction/proto, list/chems)
 	var/min_over_amount = INFINITY
 	for(var/reagent_id in chems)
 		var/vol = _dq_chem_volume(src, reagent_id)
@@ -291,12 +259,9 @@
 	if(min_over_amount > 0)
 		// Over threshold: severity climbs.
 		if(!existing)
-			var/datum/medical_issue/condition/N = new condition_type()
-			N.owner = src
-			N.affectedorgan = host
-			N.set_severity(0)
-			host.add_medical_issue(N, src)
-			existing = N
+			existing = body.afflict(condition_type, host)
+			if(!existing)
+				return
 		existing.adjust_severity(proto.chem_climb_per_unit * min_over_amount)
 		_dq_apply_od_stage(existing)
 		return
@@ -307,7 +272,7 @@
 		return
 	existing.adjust_severity(-proto.chem_decay_per_tick)
 	if(existing.severity <= 0)
-		existing.cure_issue()
+		existing.cure()
 		return
 	_dq_apply_od_stage(existing)
 
@@ -320,7 +285,7 @@
 ///
 /// Each OD condition declares its own `get_stages()` with stage-specific
 /// effect data; the dispatcher only owns the severity→stage_id mapping.
-/proc/_dq_apply_od_stage(datum/medical_issue/condition/existing)
+/proc/_dq_apply_od_stage(datum/affliction/existing)
 	var/new_stage
 	if(existing.severity >= 90)
 		new_stage = "Critical"
@@ -338,82 +303,54 @@
 		existing.stage = null
 		existing.active_symptoms = null
 		existing.symptom_pool = null
-		existing.mechanical_effects = null
-		existing.vital_effects = null
+		existing.spontaneous_emotes = null
 		existing.last_reroll_band = -1
+		existing.body?.invalidate(BODY_DIRTY_FACTORS)
 		return
 	existing._apply_stage(new_stage)
 
 
-/// Sum of a reagent's volume across all body holders the cure-check
-/// machinery considers. Mirrors dq_reagent_present's holder list so
-/// presence and threshold agree on what counts.
-/proc/_dq_chem_volume(mob/living/carbon/M, reagent_id)
-	. = 0
-	. += _dq_holder_reagent_volume(M.bloodstr, reagent_id)
-	. += _dq_holder_reagent_volume(M.ingested, reagent_id)
-	. += _dq_holder_reagent_volume(M.reagents, reagent_id)
+/// The patient's normal core temperature (species), 37°C when unknown.
+/mob/living/carbon/human/proc/dq_normal_body_temperature()
+	return species?.body_temperature || T0C + 37
 
-/proc/_dq_holder_reagent_volume(datum/reagents/holder, reagent_id)
-	if(!holder)
-		return 0
-	for(var/datum/reagent/R in holder.reagent_list)
-		if(R.id == reagent_id)
-			return R.volume
-	return 0
-
-
-/// Read a named scalar metric off the mob for metric_threshold causes.
-/// Centralised so adding a new metric kind only requires one edit.
 /mob/living/carbon/human/proc/dq_get_metric(metric_name)
 	switch(metric_name)
 		if("radiation")
 			return radiation
 		if("accumulated_rads")
 			return accumulated_rads
-		if("toxloss")
-			return getToxLoss()
-		if("oxyloss")
-			return getOxyLoss()
 		if("temp_above")
-			// Kelvin above 310.15 (37°C).
-			return max(0, bodytemperature - 310.15)
+			// Kelvin above the species' normal body temperature.
+			return max(0, bodytemperature - dq_normal_body_temperature())
 		if("temp_below")
-			// Kelvin below 310.15 (37°C).
-			return max(0, 310.15 - bodytemperature)
-		if("cloneloss")
-			return getCloneLoss()
+			// Kelvin below the species' normal body temperature.
+			return max(0, dq_normal_body_temperature() - bodytemperature)
 	return 0
 
 
-/// Ischemic damage: sustained oxyloss damages organs beyond just the
-/// brain. Upstream already converts oxyloss to brain damage; we extend
-/// that to liver / kidneys / heart so prolonged shock causes the
-/// secondary-failure modes real medicine cares about (acute kidney
-/// injury, shock liver, cardiogenic shock from poor coronary perfusion).
+/// Ischemic damage: sustained tissue hypoxia damages organs beyond just
+/// the brain. /datum/affliction/tissue_hypoxia already kills the brain past
+/// DQ_HYPOXIA_BRAIN_DAMAGE severity; we extend that to liver / kidneys /
+/// heart so prolonged shock causes the secondary-failure modes real
+/// medicine cares about (acute kidney injury, shock liver, cardiogenic
+/// shock from poor coronary perfusion).
 ///
-/// Threshold mirrors the upstream "oxyloss >= 30% of max health" gate
-/// the brain damage path uses, so all three organ paths start together.
-/// Rates are deliberately slow: organs accumulate damage only over
-/// minutes of unresolved hypoxia, not seconds.
-#define DQ_ISCHEMIA_OXY_THRESHOLD_PCT 0.30
+/// Threshold is hypoxia severity 30 (the old "oxyloss >= 30% of max health"
+/// gate), full rate at 60. Rates are deliberately slow: organs accumulate
+/// damage only over minutes of unresolved hypoxia, not seconds.
+#define DQ_ISCHEMIA_HYPOXIA_THRESHOLD 30
 /mob/living/carbon/human/proc/dq_check_ischemic_damage()
 	if(stat == DEAD)
 		return
-	var/oxy = getOxyLoss()
-	var/max_hp = getMaxHealth()
-	if(max_hp <= 0)
-		return
-	if(oxy < (max_hp * DQ_ISCHEMIA_OXY_THRESHOLD_PCT))
+	var/hypoxia = injury_load(INJURY_CATEGORY_ASPHYXIA)
+	if(hypoxia < DQ_ISCHEMIA_HYPOXIA_THRESHOLD)
 		return
 	// Damage scales with how far past threshold we are: at threshold,
-	// minimum rate; at 2× threshold (60% of max_hp in oxyloss),
-	// maximum rate.
-	var/excess = (oxy - max_hp * DQ_ISCHEMIA_OXY_THRESHOLD_PCT) / (max_hp * DQ_ISCHEMIA_OXY_THRESHOLD_PCT)
-	var/scale = clamp(excess, 0, 1)
-	// Per-tick damage to non-brain organs from sustained hypoxia.
-	// Brain still takes the heaviest hit (via upstream conversion at
-	// 0.015 × oxyloss). These are lower. Rates reflect each organ's
+	// minimum rate; at 2× threshold, maximum rate.
+	var/scale = clamp((hypoxia - DQ_ISCHEMIA_HYPOXIA_THRESHOLD) / DQ_ISCHEMIA_HYPOXIA_THRESHOLD, 0, 1)
+	// Per-tick damage to non-brain organs from sustained hypoxia. The brain
+	// still takes the heaviest hit (tissue_hypoxia/tick). These are lower. Rates reflect each organ's
 	// real-medicine ischemic sensitivity:
 	//   kidneys > liver > eyes > heart > lungs
 	for(var/tag in list(O_LIVER, O_KIDNEYS, O_HEART, O_EYES, O_LUNGS))
@@ -430,7 +367,7 @@
 			if(O_HEART)   per_tick = 0.2 + 0.4 * scale
 			if(O_LUNGS)   per_tick = 0.1 + 0.2 * scale  // small to avoid runaway feedback
 		if(prob(60))  // not every tick; smooths the curve
-			O.take_damage(per_tick, silent = TRUE)
+			injure(INJURY_BLUNT, per_tick, O, affliction = /datum/affliction/lesion/ischemic_injury, flags = INJURE_IGNORE_RESISTANCE | INJURE_SILENT)
 
 	// Gut ischemia: damaged intestine risks bacterial translocation.
 	// Rather than damage the intestine outward, we raise its germ_level
@@ -455,3 +392,4 @@
 	if(H.internal_organs_by_name)
 		return H.internal_organs_by_name[tag]
 	return null
+

@@ -48,7 +48,6 @@
 		))
 
 
-// === merged from plasteel_vr.dm during hard-fork de-suffix (verified no override-order change) ===
 /datum/material/plastitanium
 	name = MAT_PLASTITANIUM
 	stack_type = /obj/item/stack/material/plastitanium

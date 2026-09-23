@@ -83,12 +83,11 @@
 
 	P.accuracy -= user.get_accuracy_penalty()
 
-	// Some modifiers make it harder or easier to hit things.
-	for(var/datum/modifier/M in user.modifiers)
-		if(!isnull(M.accuracy))
-			P.accuracy += M.accuracy
-		if(!isnull(M.accuracy_dispersion))
-			P.dispersion = max(P.dispersion + M.accuracy_dispersion, 0)
+	// Body factors make it harder or easier to hit things.
+	P.accuracy += user.factor(BF_ACCURACY)
+	var/dispersion_shift = user.factor(BF_DISPERSION)
+	if(dispersion_shift)
+		P.dispersion = max(P.dispersion + dispersion_shift, 0)
 
 	if(ishuman(user))
 		var/mob/living/carbon/human/H = user

@@ -169,7 +169,6 @@
 	update()
 
 
-// === merged from implanter_vr.dm during hard-fork de-suffix (verified no override-order change) ===
 // universal translator implant.
 
 /obj/item/implanter/vrlanguage

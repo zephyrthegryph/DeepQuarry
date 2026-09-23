@@ -3,8 +3,7 @@
 	icon = 'icons/mob/animal_VG.dmi'
 	icon_state = "drone3"
 	icon_living = "drone3"
-	maxHealth = 50 //Old 25
-	health = 50
+	endurance = 50 //Old 25
 	movement_cooldown = 0
 	unsuitable_atoms_damage = 0
 	projectiletype = /obj/item/projectile/energy/homing_bolt
@@ -30,7 +29,7 @@
 			if(!(P.damage_type == BRUTE || P.damage_type == BURN))
 				projectile_dam_type = BRUTE
 				incoming_damage = round(incoming_damage / 4) //Damage from strange sources is converted to brute for physical projectiles, though severely decreased.
-			apply_damage(incoming_damage, projectile_dam_type, null, armorcheck, is_sharp(P), has_edge(P), P)
+			injure(injury_kind_for(projectile_dam_type, is_sharp(P), has_edge(P)), incoming_damage, null, P, armorcheck)
 			return -1 //Doesn't reflect non-beams or non-energy projectiles. They just smack and drop with little to no effect.
 		else
 			visible_message(span_danger("The [P.name] gets reflected by [src]'s shield!"), \
@@ -40,7 +39,7 @@
 			if(!(P.damage_type == BRUTE || P.damage_type == BURN))
 				projectile_dam_type = BURN
 				incoming_damage = round(incoming_damage / 4) //Damage from strange sources is converted to burn for energy-type projectiles, though severely decreased.
-			apply_damage(incoming_damage, P.damage_type, null, armorcheck, is_sharp(P), has_edge(P), P)
+			injure(injury_kind_for(projectile_dam_type, is_sharp(P), has_edge(P)), incoming_damage, null, P, armorcheck)
 
 		// Find a turf near or on the original location to bounce to
 		if(P.starting)
@@ -66,8 +65,7 @@
 
 	faction = "vistor"
 
-	maxHealth = 150 //Old 75
-	health = 150
+	endurance = 150 //Old 75
 	movement_cooldown = 0
 	unsuitable_atoms_damage = 0
 	projectiletype = /obj/item/projectile/energy/homing_bolt
@@ -134,8 +132,7 @@
 	icon = 'icons/mob/animal_VG.dmi'
 	icon_state = "mushroom"
 	icon_living = "mushroom"
-	maxHealth = 200 //Old 100
-	health = 200
+	endurance = 200 //Old 100
 	movement_cooldown = 0
 	unsuitable_atoms_damage = 0
 	projectiletype = /obj/item/projectile/arc/spore
@@ -164,8 +161,7 @@
 	icon = 'icons/mob/animal_VG.dmi'
 	icon_state = "scarybat"
 	icon_living = "scarybat"
-	maxHealth = 200 //Old 100
-	health = 200
+	endurance = 200 //Old 100
 	movement_cooldown = 0
 	unsuitable_atoms_damage = 0
 	projectiletype = null
@@ -186,8 +182,7 @@
 	icon = 'icons/mob/animal.dmi'
 	icon_state = "chick"
 	icon_living = "chick"
-	maxHealth = 25
-	health = 25
+	endurance = 25
 	movement_cooldown = 0
 	unsuitable_atoms_damage = 0
 	projectiletype = null
@@ -207,8 +202,7 @@
 	icon = 'icons/mecha/mecha.dmi'
 	icon_state = "honker"
 	icon_living = "honker"
-	maxHealth = 300 //Old 150
-	health = 300
+	endurance = 300 //Old 150
 	movement_cooldown = 0
 	unsuitable_atoms_damage = 0
 	projectiletype = /obj/item/projectile/energy/gaussrifle
@@ -261,8 +255,7 @@
 	icon = 'icons/mecha/mecha.dmi'
 	icon_state = "mime"
 	icon_living = "mime"
-	maxHealth = 300 //Old 150
-	health = 300
+	endurance = 300 //Old 150
 	movement_cooldown = 0
 	damage_fatigue_mult = 0
 	alpha = 175

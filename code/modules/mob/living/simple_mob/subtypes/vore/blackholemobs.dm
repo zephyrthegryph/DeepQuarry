@@ -14,8 +14,7 @@
 	icon_dead = "bhotie-dead"
 	icon_rest = "bhotie-dead"
 	faction = FACTION_BLACKHOLE
-	maxHealth = 200
-	health = 200
+	endurance = 200
 	minbodytemp = 200
 	melee_damage_lower = 15
 	melee_damage_upper = 20
@@ -128,7 +127,7 @@
 	icon_state = "trooper"
 	icon_rest = "trooper"
 	see_in_dark = 8
-	maxHealth = 200
+	endurance = 200
 	movement_cooldown = 0
 	harm_intent_damage = 5
 	melee_damage_lower = 15
@@ -187,7 +186,7 @@
 	icon_state = "trooper_shield"
 	icon_rest = "trooper_shield"
 	attacktext = list("stabbed","slashed","impaled")
-	maxHealth = 200
+	endurance = 200
 	melee_miss_chance = 0
 	movement_cooldown = -1.5
 	harm_intent_damage = 5
@@ -216,7 +215,7 @@
 	icon_rest = "grotesque"
 	attacktext = list("savaged","slashed","impaled","gored","clawed","brutalized")
 	see_in_dark = 8
-	maxHealth = 75
+	endurance = 75
 	melee_miss_chance = 0
 	melee_attack_delay = 0
 	movement_cooldown = -3
@@ -312,7 +311,7 @@
 	icon_living = "heavytrooper"
 	icon_state = "heavytrooper"
 	icon_rest = "heavytrooper"
-	maxHealth = 300
+	endurance = 300
 	movement_cooldown = 0
 	harm_intent_damage = 5
 	melee_damage_lower = 15
@@ -358,7 +357,7 @@
 	icon_living = "heavytrooper_shield"
 	icon_state = "heavytrooper_shield"
 	icon_rest = "heavytrooper_shield"
-	maxHealth = 300
+	endurance = 300
 	movement_cooldown = -1.5
 	harm_intent_damage = 5
 	melee_damage_lower = 25
@@ -510,7 +509,7 @@
 	icon_living = "bikeus"
 	icon_state = "bikeus"
 	icon_rest = "bikeus"
-	maxHealth = 200
+	endurance = 200
 	movement_cooldown = -0.5
 	harm_intent_damage = 5
 	melee_damage_lower = 15
@@ -580,7 +579,7 @@
 	movement_shake_radius = 14
 	movement_cooldown = 0
 
-	maxHealth = 450
+	endurance = 450
 	deflect_chance = 25
 	has_repair_droid = FALSE
 	armor = list(
@@ -611,7 +610,7 @@
 	wreckage = /obj/structure/loot_pile/mecha/durand/blackhole
 	icon_scale_x = 2
 	icon_scale_y = 2
-	maxHealth = 400
+	endurance = 400
 	deflect_chance = 20
 	armor = list(
 				"melee"		= 50,
@@ -665,8 +664,7 @@ GLOBAL_LIST_INIT(obelisk_lure_messages, list(
 	faction = FACTION_BLACKHOLE
 	a_intent = I_HURT
 	anchored = 1
-	maxHealth = 400
-	health = 400
+	endurance = 400
 	response_help = "touches"
 	response_disarm = "pushes against"
 	response_harm = "slams their fists against"
@@ -787,7 +785,7 @@ GLOBAL_LIST_INIT(obelisk_lure_messages, list(
 
 	switch(L.a_intent)
 		if(I_HELP)
-			if(health > 0)
+			if(stat != DEAD)
 				if(L.zone_sel.selecting == BP_GROIN)
 					if(L.vore_bellyrub(src))
 						return

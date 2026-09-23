@@ -117,102 +117,6 @@ ColorTone(rgb, tone)
 */
 
 /*
-Get Flat Icon DEMO by DarkCampainger
-
-This is a test for the get flat icon proc, modified approprietly for icons and their states.
-Probably not a good idea to run this unless you want to see how the proc works in detail.
-mob
-	icon = 'old_or_unused.dmi'
-	icon_state = "green"
-
-	Login()
-		// Testing image underlays
-		underlays += image(icon='old_or_unused.dmi',icon_state="red")
-		underlays += image(icon='old_or_unused.dmi',icon_state="red", pixel_x = 32)
-		underlays += image(icon='old_or_unused.dmi',icon_state="red", pixel_x = -32)
-
-		// Testing image overlays
-		add_overlay(image(icon='old_or_unused.dmi',icon_state="green", pixel_x = 32, pixel_y = -32))
-		add_overlay(image(icon='old_or_unused.dmi',icon_state="green", pixel_x = 32, pixel_y = 32))
-		add_overlay(image(icon='old_or_unused.dmi',icon_state="green", pixel_x = -32, pixel_y = -32))
-
-		// Testing icon file overlays (defaults to mob's state)
-		add_overlay('_flat_demoIcons2.dmi')
-
-		// Testing icon_state overlays (defaults to mob's icon)
-		add_overlay("white")
-
-		// Testing dynamic icon overlays
-		var/icon/I = icon('old_or_unused.dmi', icon_state="aqua")
-		I.Shift(NORTH,16,1)
-		add_overlay(I)
-
-		// Testing dynamic image overlays
-		I=image(icon=I,pixel_x = -32, pixel_y = 32)
-		add_overlay(I)
-
-		// Testing object types (and layers)
-		add_overlay(/obj/effect/overlayTest)
-
-		loc = locate (10,10,1)
-	verb
-		Browse_Icon()
-			set name = "1. Browse Icon"
-			// structured TGUI AdminReport; browse_rsc still seeds
-			// the client cache so the <img> tag resolves inside HtmlRenderer.
-			var/iconName = "[ckey(src.name)]_flattened.dmi"
-			src<<browse_rsc(get_flat_icon(src), iconName)
-			dq_admin_report_html(src, "Icon", "<div style='background:#000000;padding:8px'><img src='[iconName]'></div>")
-
-		Output_Icon()
-			set name = "2. Output Icon"
-			to_chat(src, "Icon is: [icon2base64html(get_flat_icon(src))]")
-
-		Label_Icon()
-			set name = "3. Label Icon"
-			// Give it a name for the cache
-			var/iconName = "[ckey(src.name)]_flattened.dmi"
-			// Copy the file to the rsc manually
-			var/icon/I = fcopy_rsc(get_flat_icon(src))
-			// Send the icon to src's local cache
-			src<<browse_rsc(I, iconName)
-			// Update the label to show it
-			winset(src,"imageLabel","image='[REF(I)]'");
-
-		Add_Overlay()
-			set name = "4. Add Overlay"
-			add_overlay(image(icon='old_or_unused.dmi',icon_state="yellow",pixel_x = rand(-64,32), pixel_y = rand(-64,32))
-
-		Stress_Test()
-			set name = "5. Stress Test"
-			for(var/i = 0 to 1000)
-				// The third parameter forces it to generate a new one, even if it's already cached
-				get_flat_icon(src,0,2)
-				if(prob(5))
-					Add_Overlay()
-			Browse_Icon()
-
-		Cache_Test()
-			set name = "6. Cache Test"
-			for(var/i = 0 to 1000)
-				get_flat_icon(src)
-			Browse_Icon()
-
-/obj/effect/overlayTest
-	icon = 'old_or_unused.dmi'
-	icon_state = "blue"
-	pixel_x = -24
-	pixel_y = 24
-	layer = TURF_LAYER // Should appear below the rest of the overlays
-
-world
-	view = "7x7"
-	maxx = 20
-	maxy = 20
-	maxz = 1
-*/
-
-/*
 	HSV format is represented as "#hhhssvv" or "#hhhssvvaa"
 
 	Hue ranges from 0 to 0x5ff (1535)
@@ -457,15 +361,6 @@ world
 		. += TO_HEX_DIGIT(alpha >> 4)
 		. += TO_HEX_DIGIT(alpha)
 
-/*
-	Smooth blend between HSV colors
-
-	amount=0 is the first color
-	amount=1 is the second color
-	amount=0.5 is directly between the two colors
-
-	amount<0 or amount>1 are allowed
- */
 /proc/BlendHSV(hsv1, hsv2, amount)
 	var/list/HSV1 = ReadHSV(hsv1)
 	var/list/HSV2 = ReadHSV(hsv2)
@@ -547,7 +442,6 @@ world
 	hue += round(hue / 255)
 	return hue
 
-
 // positive angle rotates forward through red->green->blue
 /proc/RotateHue(hsv, angle)
 	var/list/HSV = ReadHSV(hsv)
@@ -594,7 +488,6 @@ world
 	else
 		return BlendRGB(tone, "#ffffff", (gray-tone_gray)/((255-tone_gray) || 1))
 
-
 //Used in the OLD chem colour mixing algorithm
 /proc/GetColors(hex)
 	hex = uppertext(hex)
@@ -630,7 +523,6 @@ world
 
 	I.DrawBox(colour,drawX, drawY)
 	return I
-
 
 //Interface for easy drawing of one pixel on an atom.
 /atom/proc/DrawPixelOn(colour, drawX, drawY)

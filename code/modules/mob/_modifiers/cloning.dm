@@ -10,12 +10,13 @@
 	on_created_text = span_warning(span_large("You feel really weak."))
 	on_expired_text = span_notice(span_large("You feel your strength returning to you."))
 
-	max_health_percent = 0.6				// -40% max health.
-	incoming_damage_percent = 1.1			// 10% more incoming damage.
-	outgoing_melee_damage_percent = 0.7		// 30% less melee damage.
-	disable_duration_percent = 1.25			// Stuns last 25% longer.
-	slowdown = 1							// Slower.
-	evasion = -15							// 15% easier to hit.
+	// -40% max health.
+	// 10% more incoming damage.
+	// 30% less melee damage.
+	// Stuns last 25% longer.
+	// Slower.
+	// 15% easier to hit.
+	factors = alist(BF_SLOWDOWN = 1, BF_EVASION = -15, BF_MELEE_DAMAGE = 0.7, BF_INCOMING_ALL = 1.1, BF_DISABLE_DURATION = 1.25, BF_ENDURANCE_MULT = 0.6)
 
 // Tracks number of deaths, one modifier added per cloning
 /datum/modifier/cloned
@@ -55,12 +56,13 @@
 	on_created_text = span_warning(span_large("Your core aches."))
 	on_expired_text = span_notice(span_large("You feel your core's strength returning to normal."))
 
-	incoming_damage_percent = 1 //Level the incoming damage from the parent modifier. They already take 200% burn.
-	incoming_brute_damage_percent = 1.5 //150% incoming brute damage. Decreases the effectiveness of their 0.75 modifier.
-	incoming_hal_damage_percent = 1.25 //125% incoming halloss.
+	// Level the incoming damage from the parent modifier. They already take 200% burn.
+	// 150% incoming brute damage. Decreases the effectiveness of their 0.75 modifier.
+	// 125% incoming halloss.
+	// 50% less outgoing melee damage.
+	// 20% slower attack speed.
+	factors = alist(BF_SLOWDOWN = 1, BF_EVASION = -15, BF_ATTACK_SPEED = 1.2, BF_MELEE_DAMAGE = 0.5, BF_INCOMING_ALL = 1, BF_INCOMING_PHYSICAL = 1.5, BF_INCOMING_PAIN = 1.25, BF_DISABLE_DURATION = 1.25, BF_ENDURANCE_MULT = 0.6)
 
-	outgoing_melee_damage_percent = 0.5 //50% less outgoing melee damage.
-	attack_speed_percent = 1.2 //20% slower attack speed.
 
 //////////////////////
 //Surgical Modifiers// As of writing, limited to the 'Frankenstein' modifier.
@@ -73,14 +75,15 @@
 	on_created_text = span_warning(span_large("You feel... off, and your head hurts."))
 	on_expired_text = span_notice(span_large("You feel some strength returning to you."))
 
-	max_health_percent = 0.9				// -10% max health.
-	incoming_damage_percent = 1.1			// 10% more incoming damage.
-	incoming_hal_damage_percent = 1.5		// 50% more halloss damage, stacking on the previous 1.1 widespread.
-	outgoing_melee_damage_percent = 0.9		// 10% less melee damage.
-	disable_duration_percent = 1.25			// Stuns last 25% longer.
-	incoming_healing_percent = 0.9			// -10% to all healing
-	evasion = -5							// 5% easier to hit.
-	accuracy_dispersion = 1					// Inaccurate trait level of tile dispersion.
+	// -10% max health.
+	// 10% more incoming damage.
+	// 50% more halloss damage, stacking on the previous 1.1 widespread.
+	// 10% less melee damage.
+	// Stuns last 25% longer.
+	// -10% to all healing
+	// 5% easier to hit.
+	// Inaccurate trait level of tile dispersion.
+	factors = alist(BF_DISPERSION = 1, BF_EVASION = -5, BF_MELEE_DAMAGE = 0.9, BF_INCOMING_ALL = 1.1, BF_INCOMING_PAIN = 1.5, BF_DISABLE_DURATION = 1.25, BF_HEALING_RECEIVED = 0.9, BF_ENDURANCE_MULT = 0.9)
 
 	stacks = MODIFIER_STACK_ALLOWED //You have somehow had the surgery done twice. Your brain is very, very fucked, but I won't say no.
 
@@ -99,10 +102,11 @@
 	on_created_text = span_warning(span_large("You feel... off. Everything is fuzzy."))
 	on_expired_text = span_notice(span_large("You feel your senses returning to you."))
 
-	incoming_hal_damage_percent = 1.5		// 50% more halloss damage.
-	disable_duration_percent = 1.25			// Stuns last 25% longer.
-	evasion = -5							// 5% easier to hit.
-	accuracy_dispersion = 1					// Inaccurate trait level of tile dispersion.
+	// 50% more halloss damage.
+	// Stuns last 25% longer.
+	// 5% easier to hit.
+	// Inaccurate trait level of tile dispersion.
+	factors = alist(BF_DISPERSION = 1, BF_EVASION = -5, BF_INCOMING_PAIN = 1.5, BF_DISABLE_DURATION = 1.25)
 
 	stacks = MODIFIER_STACK_ALLOWED
 

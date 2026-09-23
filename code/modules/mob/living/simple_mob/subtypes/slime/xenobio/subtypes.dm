@@ -83,8 +83,8 @@
 	description_info = "This slime is a lot more durable and tough to damage than the others. It also seems to provoke others to attack it over others."
 	player_msg = "You are <b>more resilient and armored</b> than more slimes. Your attacks will also encourage less intelligent enemies to focus on you."
 
-	maxHealth = 250
-	maxHealth_adult = 350
+	endurance = 250
+	endurance_adult = 350
 
 	// The sloped armor.
 	// It's resistant to most weapons (but a spraybottle still kills it rather fast).
@@ -189,7 +189,7 @@
 	log_and_message_admins("ignited due to a chain reaction with an explosion.", src)
 	ignite()
 
-/mob/living/simple_mob/slime/xenobio/dark_purple/fire_act(datum/gas_mixture/air, temperature, volume)
+/mob/living/simple_mob/slime/xenobio/dark_purple/fire_act(temperature, volume)
 	log_and_message_admins("ignited due to exposure to fire.", src)
 	ignite()
 
@@ -458,8 +458,8 @@
 	coretype = /obj/item/slime_extract/cerulean
 
 	// Less than the specialized slimes, but higher than the rest.
-	maxHealth = 200
-	maxHealth_adult = 250
+	endurance = 200
+	endurance_adult = 250
 
 	melee_damage_lower = 10
 	melee_damage_upper = 30
@@ -573,18 +573,22 @@
 	if(holder.stat == DEAD)
 		expire()
 
-	if(ishuman(holder)) // Robolimbs need this code sadly.
+	if(ishuman(holder)) // Every limb, organic or robotic.
 		var/mob/living/carbon/human/H = holder
-		for(var/obj/item/organ/external/E in H.organs)
-			var/obj/item/organ/external/O = E
-			O.heal_damage(1, 1, 0, 1)
+		for(var/obj/item/organ/external/E as anything in H.organs)
+			H.mend(TREAT_TISSUE_REPAIR, 1, E.organ_tag)
+			H.mend(TREAT_BURN_CARE, 1, E.organ_tag)
+			H.mend(TREAT_PLATING_REPAIR, 1, E.organ_tag)
+			H.mend(TREAT_WIRING_REPAIR, 1, E.organ_tag)
 	else
-		holder.adjustBruteLoss(-1)
-		holder.adjustFireLoss(-1)
+		holder.mend(TREAT_TISSUE_REPAIR, 1)
+		holder.mend(TREAT_BURN_CARE, 1)
+		holder.mend(TREAT_PLATING_REPAIR, 1)
+		holder.mend(TREAT_WIRING_REPAIR, 1)
 
-	holder.adjustToxLoss(-2)
-	holder.adjustOxyLoss(-2)
-	holder.adjustCloneLoss(-1)
+	holder.mend(TREAT_ANTITOXIN, 2)
+	holder.mend(TREAT_OXYGENATION, 2)
+	holder.mend(TREAT_GENETIC_REPAIR, 1)
 
 
 /mob/living/simple_mob/slime/xenobio/gold
@@ -660,7 +664,7 @@
 	log_and_message_admins("exploded due to a chain reaction with another explosion.", src)
 	explode()
 
-/mob/living/simple_mob/slime/xenobio/oil/fire_act(datum/gas_mixture/air, temperature, volume)
+/mob/living/simple_mob/slime/xenobio/oil/fire_act(temperature, volume)
 	log_and_message_admins("exploded due to exposure to fire.", src)
 	explode()
 

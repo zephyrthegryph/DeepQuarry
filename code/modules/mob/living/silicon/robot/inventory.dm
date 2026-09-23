@@ -24,55 +24,81 @@
 	set hidden = 1
 	toggle_module(module)
 
+// --- Module slots ------------------------------------------------------------------------
+// The three module slots are module_state_1..3. Slot logic is written once,
+// here, and reached by slot number.
+
+/mob/living/silicon/robot/proc/get_module_slot(slot)
+	switch(slot)
+		if(1)
+			return module_state_1
+		if(2)
+			return module_state_2
+		if(3)
+			return module_state_3
+	return null
+
+/mob/living/silicon/robot/proc/set_module_slot(slot, obj/item/I)
+	switch(slot)
+		if(1)
+			module_state_1 = I
+		if(2)
+			module_state_2 = I
+		if(3)
+			module_state_3 = I
+
+/mob/living/silicon/robot/proc/get_module_slot_screen(slot)
+	switch(slot)
+		if(1)
+			return inv1
+		if(2)
+			return inv2
+		if(3)
+			return inv3
+	return null
+
+/mob/living/silicon/robot/proc/get_module_slot_screen_loc(slot)
+	switch(slot)
+		if(1)
+			return ui_inv1
+		if(2)
+			return ui_inv2
+		if(3)
+			return ui_inv3
+	return null
+
+/// Return the item in `slot` to the module. No appearance or HUD refresh.
+/mob/living/silicon/robot/proc/clear_module_slot(slot)
+	var/obj/item/I = get_module_slot(slot)
+	if(!I)
+		return null
+	if(isrobotmultibelt(I))
+		var/obj/item/robotic_multibelt/toolbelt = I
+		toolbelt.original_state()
+	if(istype(I, /obj/item/borg/sight))
+		var/obj/item/borg/sight/S = I
+		sight_mode &= ~S.sight_mode
+	if(client)
+		client.screen -= I
+	contents -= I
+	if(module_active == I)
+		module_active = null
+	for(var/datum/action/A as anything in I.actions)
+		A.Remove(src)
+	I.loc = module //So it can be used again later (no Moved side effects, as before)
+	set_module_slot(slot, null)
+	var/atom/movable/screen/slot_screen = get_module_slot_screen(slot)
+	if(slot_screen)
+		slot_screen.icon_state = "inv[slot]"
+	return I
+
 /mob/living/silicon/robot/proc/uneq_specific(obj/item/I)
 	if(!istype(I))
 		return
-
-	if(module_state_1 == I)
-		if(isrobotmultibelt(module_state_1))
-			var/obj/item/robotic_multibelt/toolbelt = module_state_1
-			toolbelt.original_state()
-		if(istype(module_state_1,/obj/item/borg/sight))
-			sight_mode &= ~module_state_1:sight_mode
-		if (client)
-			client.screen -= module_state_1
-		contents -= module_state_1
-		module_active = null
-		module_state_1:loc = module //So it can be used again later
-		module_state_1 = null
-		inv1.icon_state = "inv1"
-	else if(module_state_2 == I)
-		if(isrobotmultibelt(module_state_2))
-			var/obj/item/robotic_multibelt/toolbelt = module_state_2
-			toolbelt.original_state()
-		if(istype(module_state_2,/obj/item/borg/sight))
-			sight_mode &= ~module_state_2:sight_mode
-		if (client)
-			client.screen -= module_state_2
-		contents -= module_state_2
-		module_active = null
-		module_state_2:loc = module //So it can be used again later
-		module_state_2 = null
-		inv2.icon_state = "inv2"
-	else if(module_state_3 == I)
-		if(isrobotmultibelt(module_state_3))
-			var/obj/item/robotic_multibelt/toolbelt = module_state_3
-			toolbelt.original_state()
-		if(istype(module_state_3,/obj/item/borg/sight))
-			sight_mode &= ~module_state_3:sight_mode
-		if (client)
-			client.screen -= module_state_3
-		contents -= module_state_3
-		module_active = null
-		module_state_3:loc = module //So it can be used again later
-		module_state_3 = null
-		inv3.icon_state = "inv3"
-	else
+	var/slot = get_slot_from_module(I)
+	if(!slot)
 		return
-
-	for(var/datum/action/A as anything in I.actions)
-		A.Remove(src)
-
+	clear_module_slot(slot)
 	after_equip()
 	update_icon()
 	if(shown_robot_modules)
@@ -81,64 +107,23 @@
 /mob/living/silicon/robot/proc/uneq_active()
 	if(isnull(module_active))
 		return
+	uneq_specific(module_active)
 
-	var/obj/item/I = module_active
-	for(var/datum/action/A as anything in I.actions)
-		A.Remove(src)
-
-	uneq_specific(I)
-
+/// Drop every module. Called on events (stat change, weapon lock, EMP),
+/// never per tick; does nothing (and redraws nothing) when already empty.
 /mob/living/silicon/robot/proc/uneq_all()
 	module_active = null
-
 	var/removed_any_module = FALSE
-	if(module_state_1)
-		if(istype(module_state_1,/obj/item/borg/sight))
-			sight_mode &= ~module_state_1:sight_mode
-		if (client)
-			client.screen -= module_state_1
-		contents -= module_state_1
-		var/obj/item/I = module_state_1
-		for(var/datum/action/A as anything in I.actions)
-			A.Remove(src)
-		module_state_1:loc = module
-		module_state_1 = null
-		inv1.icon_state = "inv1"
-		removed_any_module = TRUE
-
-	if(module_state_2)
-		if(istype(module_state_2,/obj/item/borg/sight))
-			sight_mode &= ~module_state_2:sight_mode
-		if (client)
-			client.screen -= module_state_2
-		var/obj/item/I = module_state_2
-		for(var/datum/action/A as anything in I.actions)
-			A.Remove(src)
-		contents -= module_state_2
-		module_state_2:loc = module
-		module_state_2 = null
-		inv2.icon_state = "inv2"
-		removed_any_module = TRUE
-
-	if(module_state_3)
-		if(istype(module_state_3,/obj/item/borg/sight))
-			sight_mode &= ~module_state_3:sight_mode
-		if (client)
-			client.screen -= module_state_3
-		var/obj/item/I = module_state_3
-		for(var/datum/action/A as anything in I.actions)
-			A.Remove(src)
-		contents -= module_state_3
-		module_state_3:loc = module
-		module_state_3 = null
-		inv3.icon_state = "inv3"
-		removed_any_module = TRUE
-
+	for(var/slot in 1 to 3)
+		if(clear_module_slot(slot))
+			removed_any_module = TRUE
+	if(!removed_any_module)
+		return
 	after_equip()
 	update_icon()
 
 	// Refresh inventory if needed
-	if(hud_used && removed_any_module && shown_robot_modules)
+	if(hud_used && shown_robot_modules)
 		hud_used.update_robot_modules_display()
 
 // Just used for pretty display in TGUI
@@ -220,19 +205,7 @@
 
 //module_active(module) - Checks whether there is a module active in the slot specified by "module".
 /mob/living/silicon/robot/proc/module_active(module) //Module is 1-3
-	if(module < 1 || module > 3) return 0
-
-	switch(module)
-		if(1)
-			if(module_state_1)
-				return 1
-		if(2)
-			if(module_state_2)
-				return 1
-		if(3)
-			if(module_state_3)
-				return 1
-	return 0
+	return get_module_slot(module) ? 1 : 0
 
 //get_selected_module() - Returns the slot number of the currently selected module.  Returns 0 if no modules are selected.
 /mob/living/silicon/robot/proc/get_selected_module()
@@ -247,61 +220,30 @@
 
 //select_module(module) - Selects the module slot specified by "module"
 /mob/living/silicon/robot/proc/select_module(module) //Module is 1-3
-	if(module < 1 || module > 3) return
-
-	if(!module_active(module)) return
-
-	switch(module)
-		if(1)
-			if(module_active != module_state_1)
-				inv1.icon_state = "inv1 +a"
-				inv2.icon_state = "inv2"
-				inv3.icon_state = "inv3"
-				module_active = module_state_1
-				update_icon()
-				return
-		if(2)
-			if(module_active != module_state_2)
-				inv1.icon_state = "inv1"
-				inv2.icon_state = "inv2 +a"
-				inv3.icon_state = "inv3"
-				module_active = module_state_2
-				update_icon()
-				return
-		if(3)
-			if(module_active != module_state_3)
-				inv1.icon_state = "inv1"
-				inv2.icon_state = "inv2"
-				inv3.icon_state = "inv3 +a"
-				module_active = module_state_3
-				update_icon()
-				return
-	return
+	if(module < 1 || module > 3)
+		return
+	var/obj/item/I = get_module_slot(module)
+	if(!I || module_active == I)
+		return
+	for(var/slot in 1 to 3)
+		var/atom/movable/screen/slot_screen = get_module_slot_screen(slot)
+		if(slot_screen)
+			slot_screen.icon_state = slot == module ? "inv[slot] +a" : "inv[slot]"
+	module_active = I
+	update_icon()
 
 //deselect_module(module) - Deselects the module slot specified by "module"
 /mob/living/silicon/robot/proc/deselect_module(module) //Module is 1-3
-	if(module < 1 || module > 3) return
-
-	switch(module)
-		if(1)
-			if(module_active == module_state_1)
-				inv1.icon_state = "inv1"
-				module_active = null
-				update_icon()
-				return
-		if(2)
-			if(module_active == module_state_2)
-				inv2.icon_state = "inv2"
-				module_active = null
-				update_icon()
-				return
-		if(3)
-			if(module_active == module_state_3)
-				inv3.icon_state = "inv3"
-				module_active = null
-				update_icon()
-				return
-	return
+	if(module < 1 || module > 3)
+		return
+	var/obj/item/I = get_module_slot(module)
+	if(!I || module_active != I)
+		return
+	var/atom/movable/screen/slot_screen = get_module_slot_screen(module)
+	if(slot_screen)
+		slot_screen.icon_state = "inv[module]"
+	module_active = null
+	update_icon()
 
 //toggle_module(module) - Toggles the selection of the module slot specified by "module".
 /mob/living/silicon/robot/proc/toggle_module(module) //Module is 1-3
@@ -340,64 +282,39 @@
 /mob/living/silicon/robot/proc/activate_module(obj/item/O)
 	if(!(locate(O) in src.module.modules) && !(locate(O) in src.module.emag))
 		return
+	if(weapon_lock)
+		to_chat(src, span_danger("Error: Modules locked."))
+		return
 	if(activated(O))
 		to_chat(src, span_notice("Already activated"))
 		return
-	if(!module_state_1)
-		module_state_1 = O
+	for(var/slot in 1 to 3)
+		if(get_module_slot(slot))
+			continue
+		set_module_slot(slot, O)
 		O.hud_layerise()
-		O.screen_loc = inv1.screen_loc
+		var/atom/movable/screen/slot_screen = get_module_slot_screen(slot)
+		O.screen_loc = slot_screen?.screen_loc
 		contents += O
-		if(istype(module_state_1,/obj/item/borg/sight))
-			sight_mode |= module_state_1:sight_mode
+		if(istype(O, /obj/item/borg/sight))
+			var/obj/item/borg/sight/S = O
+			sight_mode |= S.sight_mode
 		update_icon()
-	else if(!module_state_2)
-		module_state_2 = O
-		O.hud_layerise()
-		O.screen_loc = inv2.screen_loc
-		contents += O
-		if(istype(module_state_2,/obj/item/borg/sight))
-			sight_mode |= module_state_2:sight_mode
-		update_icon()
-	else if(!module_state_3)
-		module_state_3 = O
-		O.hud_layerise()
-		O.screen_loc = inv3.screen_loc
-		contents += O
-		if(istype(module_state_3,/obj/item/borg/sight))
-			sight_mode |= module_state_3:sight_mode
-		update_icon()
-	else
-		to_chat(src, span_notice("You need to disable a module first!"))
+		after_equip(O)
 		return
-	after_equip(O)
+	to_chat(src, span_notice("You need to disable a module first!"))
 
+/// Equipment changed: power demand is recomputed and modules/components react
+/// through COMSIG_ROBOT_EQUIPMENT_CHANGED (the belly component handles its ore
+/// bag and pounce there).
 /mob/living/silicon/robot/proc/after_equip(obj/item/O)
 	if(istype(O, /obj/item/gps))
 		var/obj/item/gps/tracker = O
 		if(tracker.tracking)
 			tracker.tracking = FALSE
 			tracker.toggle_tracking()
-	if(istype(O, /obj/item/dogborg/sleeper)) //gross
-		var/obj/item/dogborg/sleeper/our_compactor = O
-		if(our_compactor.ore_storage)
-			if(O in get_all_held_items())
-				our_compactor.ore_bag.equipped(src)
-			else
-				our_compactor.ore_bag.dropped(src)
-	if(sight_mode & BORGANOMALOUS)
-		var/obj/item/dogborg/pounce/pounce = has_upgrade_module(/obj/item/dogborg/pounce)
-		if(pounce)
-			pounce.name = "bluespace pounce"
-			pounce.icon_state = "bluespace_pounce"
-			pounce.bluespace = TRUE
-	else
-		var/obj/item/dogborg/pounce/pounce = has_upgrade_module(/obj/item/dogborg/pounce)
-		if(pounce)
-			pounce.name = initial(pounce.name)
-			pounce.icon_state = initial(pounce.icon_state)
-			pounce.desc = initial(pounce.desc)
-			pounce.bluespace = initial(pounce.bluespace)
+	recompute_power_demand()
+	SEND_SIGNAL(src, COMSIG_ROBOT_EQUIPMENT_CHANGED, O)
 	if(O)
 		for(var/datum/action/A as anything in O.actions)
 			A.Grant(src)

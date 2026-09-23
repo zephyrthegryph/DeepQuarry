@@ -23,6 +23,8 @@
 	var/turf/T = get_turf(B)
 	for(var/mob/living/L in view(world.view, T))
 		if(L.stat != DEAD)
-			L.adjustBruteLoss(-1)
-			L.adjustFireLoss(-1)
+			L.mend(TREAT_TISSUE_REPAIR, 1)
+			L.mend(TREAT_BURN_CARE, 1)
+			L.mend(TREAT_PLATING_REPAIR, 1)
+			L.mend(TREAT_WIRING_REPAIR, 1)
 	return

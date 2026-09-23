@@ -130,17 +130,6 @@ SUBSYSTEM_DEF(research)
 	/// The global list of raw anomaly types that have been refined, for hard limits.
 	// var/list/created_anomaly_types = list()
 	/// The hard limits of cores created for each anomaly type. For faster code lookup without switch statements.
-	// var/list/anomaly_hard_limit_by_type = list(
-	// 	/obj/item/assembly/signaler/anomaly/bluespace = MAX_CORES_BLUESPACE,
-	// 	/obj/item/assembly/signaler/anomaly/pyro = MAX_CORES_PYRO,
-	// 	/obj/item/assembly/signaler/anomaly/grav = MAX_CORES_GRAVITATIONAL,
-	// 	/obj/item/assembly/signaler/anomaly/vortex = MAX_CORES_VORTEX,
-	// 	/obj/item/assembly/signaler/anomaly/flux = MAX_CORES_FLUX,
-	// 	/obj/item/assembly/signaler/anomaly/hallucination = MAX_CORES_HALLUCINATION,
-	// 	/obj/item/assembly/signaler/anomaly/bioscrambler = MAX_CORES_BIOSCRAMBLER,
-	// 	/obj/item/assembly/signaler/anomaly/dimensional = MAX_CORES_DIMENSIONAL,
-	// 	/obj/item/assembly/signaler/anomaly/ectoplasm = MAX_CORES_ECTOPLASMIC,
-	// )
 
 	/// Lookup list for ordnance briefers.
 	var/list/ordnance_experiments = list()
@@ -291,7 +280,6 @@ SUBSYSTEM_DEF(research)
 	techweb_designs = returned
 	verify_techweb_designs()
 
-
 /datum/controller/subsystem/research/proc/verify_techweb_nodes()
 	. = TRUE
 	for(var/n in techweb_nodes)
@@ -402,18 +390,6 @@ SUBSYSTEM_DEF(research)
 				techweb_unlock_items[path] = list(node.id = node.required_items_to_unlock[path])
 		CHECK_TICK
 
-// /datum/controller/subsystem/research/proc/populate_ordnance_experiments()
-// 	for (var/datum/experiment/ordnance/experiment_path as anything in subtypesof(/datum/experiment/ordnance))
-// 		if (initial(experiment_path.experiment_proper))
-// 			ordnance_experiments += new experiment_path()
-
-// 	for(var/partner_path in subtypesof(/datum/scientific_partner))
-// 		var/datum/scientific_partner/partner = new partner_path
-// 		if(!length(partner.accepted_experiments))
-// 			for (var/datum/experiment/ordnance/ordnance_experiment as anything in ordnance_experiments)
-// 				partner.accepted_experiments += ordnance_experiment.type
-// 		scientific_partners += partner
-
 /**
  * Goes through all techwebs and goes through their servers to find ones on a valid z-level
  * Returns the full list of all techweb servers.
@@ -442,15 +418,3 @@ SUBSYSTEM_DEF(research)
 		valid_servers += server
 	return valid_servers
 
-// /// Returns true if you can make an anomaly core of the provided type
-// /datum/controller/subsystem/research/proc/is_core_available(core_type)
-// 	if (!ispath(core_type, /obj/item/assembly/signaler/anomaly))
-// 		return FALSE // The fuck are you checking this random object for?
-// 	var/already_made = created_anomaly_types[core_type] || 0
-// 	var/hard_limit = anomaly_hard_limit_by_type[core_type]
-// 	return already_made < hard_limit
-
-// /// Increase our tracked number of cores of this type
-// /datum/controller/subsystem/research/proc/increment_existing_anomaly_cores(core_type)
-// 	var/existing = created_anomaly_types[core_type] || 0
-// 	created_anomaly_types[core_type] = existing + 1

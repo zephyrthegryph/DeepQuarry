@@ -356,7 +356,6 @@
 	contraband = 1	//so it gets contraband status too
 
 
-// === merged from misc_chomp.dm during hard-fork de-suffix (verified no override-order change) ===
 /datum/supply_pack/misc/solarray
 	name = "Exotic crate - Solar Ray"
 	contains = list()

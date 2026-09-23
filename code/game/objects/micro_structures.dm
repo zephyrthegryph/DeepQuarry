@@ -17,7 +17,6 @@ GLOBAL_LIST_EMPTY(micro_tunnels)
 		/mob/living/simple_mob/vore/squirrel,
 		/mob/living/simple_mob/vore/alienanimals/catslug,
 		/mob/living/simple_mob/vore/morph,
-		/mob/living/simple_mob/protean_blob,
 		/mob/living/simple_mob/slime
 	)
 

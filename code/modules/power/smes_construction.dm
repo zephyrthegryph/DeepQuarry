@@ -122,7 +122,8 @@
 // Description: Uses parent process, but if grounding wire is cut causes sparks to fly around.
 // This also causes the SMES to quickly discharge, and has small chance of breaking lights connected to APCs in the powernet.
 /obj/machinery/power/smes/buildable/process()
-	if(!grounding && (Percentage() > 5))
+	var/needs_grounding_tick = !grounding && (Percentage() > 5)
+	if(needs_grounding_tick)
 		var/datum/effect/effect/system/spark_spread/s = new /datum/effect/effect/system/spark_spread
 		s.set_up(5, 1, src)
 		s.start()
@@ -130,7 +131,10 @@
 		if(prob(1)) // Small chance of overload occuring since grounding is disabled.
 			apcs_overload(0,10)
 
-	..()
+	var/parent_result = ..()
+	if(needs_grounding_tick)
+		return
+	return parent_result
 
 // Proc: attack_ai()
 // Parameters: None
@@ -231,7 +235,7 @@
 				to_chat(h_user, "A small electrical arc almost burns your hand. Luckily you had your gloves on!")
 			else
 				to_chat(h_user, "A small electrical arc sparks and burns your hand as you touch the [src]!")
-				h_user.adjustFireLossByPart(rand(5,10), used_hand)
+				h_user.injure(INJURY_ELECTRIC, rand(5,10), used_hand, src)
 				h_user.Weaken(2)
 
 		if (16 to 35)
@@ -242,7 +246,7 @@
 				to_chat(h_user, "A medium electrical arc sparks and almost burns your hand. Luckily you had your gloves on!")
 			else
 				to_chat(h_user, "A medium electrical arc sparks as you touch the [src], severely burning your hand!")
-				h_user.adjustFireLossByPart(rand(10,25), used_hand)
+				h_user.injure(INJURY_ELECTRIC, rand(10,25), used_hand, src)
 				h_user.Weaken(5)
 			spawn()
 				empulse(get_turf(src), 1, 2, 3, 4)
@@ -253,7 +257,7 @@
 			s.set_up(7,1,src)
 			if (user_protected)
 				to_chat(h_user, "A strong electrical arc sparks between you and [src], ignoring your gloves and burning your hand!")
-				h_user.adjustFireLossByPart(rand(25,60), used_hand)
+				h_user.injure(INJURY_ELECTRIC, rand(25,60), used_hand, src)
 				h_user.Weaken(8)
 			else
 				to_chat(h_user, "A strong electrical arc sparks between you and [src], knocking you out for a while!")

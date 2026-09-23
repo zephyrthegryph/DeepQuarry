@@ -6,7 +6,6 @@
 	The process of adding in new hairstyles has been made pain-free and easy to do.
 	Enjoy! - Doohl
 
-
 	Notice: This all gets automatically compiled in a list in dna2.dm, so you do not
 	have to define any UI values for sprite accessories manually for hair and facial
 	hair. Just add in new hair types and the game will naturally adapt.
@@ -62,8 +61,6 @@ GLOBAL_LIST_INIT(fancy_sprite_accessory_color_channel_names, list("Primary", "Se
 /datum/sprite_accessory/proc/get_color_channel_count()
 	return do_colouration ? 1 : 0
 
-
-// === merged from sprite_accessories_chomp.dm during hard-fork de-suffix (manually verified: all-new types / new defines, no base re-open) ===
 /datum/sprite_accessory/marking/vox/vox_alt_eyes
 	icon = 'icons/mob/human_races/markings_vox.dmi'
 
@@ -787,8 +784,6 @@ GLOBAL_LIST_INIT(fancy_sprite_accessory_color_channel_names, list("Primary", "Se
 /datum/sprite_accessory/hair/shadekin_hair_long
 	icon_add = 'icons/mob/human_face_alt_add.dmi'
 
-
-// === merged from sprite_accessories_extra_ch.dm during hard-fork de-suffix (manually verified) ===
 /datum/sprite_accessory/marking/ch
 	icon = 'icons/mob/human_races/markings_ch.dmi'
 
@@ -819,13 +814,6 @@ GLOBAL_LIST_INIT(fancy_sprite_accessory_color_channel_names, list("Primary", "Se
 	color_blend_mode = ICON_MULTIPLY
 	body_parts = list(BP_L_ARM,BP_R_ARM)
 	species_allowed = list(SPECIES_AKULA)
-/* //I can't make out what this icon_state was ever supposed to be. There is no 'zan' 'mon' or anything like that in the ch.dmi file...
-/datum/sprite_accessory/marking/ch/zangoose_belly
-	name = "Mongoose Cat Belly Marking"
-	icon_state = "test"
-	body_parts = list(BP_TORSO)
-	species_allowed = list(SPECIES_HUMAN, SPECIES_UNATHI, SPECIES_TAJARAN, SPECIES_NEVREAN, SPECIES_AKULA, SPECIES_ZORREN_HIGH, SPECIES_VULPKANIN, SPECIES_XENOCHIMERA, SPECIES_XENOHYBRID, SPECIES_VASILISSAN, SPECIES_RAPALA, SPECIES_PROTEAN, SPECIES_ALRAUNE) //This lets all races use the default hairstyles.
-*/
 /datum/sprite_accessory/marking/ch/athena_lights
 	name = "Hephaestus - Athena lights"
 	icon_state = "athena"
@@ -1093,7 +1081,6 @@ GLOBAL_LIST_INIT(fancy_sprite_accessory_color_channel_names, list("Primary", "Se
 /datum/sprite_accessory/hair/ch/cotton
 	name = "Cotton"
 	icon_state = "hair_cotton"
-
 
 /datum/sprite_accessory/hair/ch/unshavenreversemohawk
 	name = "Mohawk Reverse Unshaven"
@@ -1395,3 +1382,64 @@ GLOBAL_LIST_INIT(fancy_sprite_accessory_color_channel_names, list("Primary", "Se
 	color_blend_mode = ICON_ADD
 	icon_state = "gloss"
 	body_parts = list(BP_L_LEG,BP_R_LEG,BP_L_FOOT,BP_R_FOOT)
+
+/datum/sprite_accessory/ears/yw
+	icon = 'icons/mob/human_races/markings_yw.dmi'
+
+/datum/sprite_accessory/ears/yw/onehorn
+	name = "Colorable single horn"
+	desc = ""
+	icon_state = "singlehorn"
+	color_blend_mode = ICON_MULTIPLY
+	do_colouration = 1
+
+/datum/sprite_accessory/ears/yw/wolf_ears
+	name = "Wolf Ears"
+	desc = ""
+	icon_state = "wolf_ears"
+	color_blend_mode = ICON_MULTIPLY
+	do_colouration = 1
+
+/datum/sprite_accessory/marking/yw
+	icon = 'icons/mob/human_races/markings_yw.dmi'
+/datum/sprite_accessory/marking/yw/lizardsnoutsharp
+	name = "Lizard snout (sharp)"
+	icon_state = "lizard_snout_sharp"
+	color_blend_mode = ICON_MULTIPLY
+	body_parts = list(BP_HEAD)
+
+/datum/sprite_accessory/marking/yw/lizard_snout_sharp_light
+	name = "Lizard Snout (Sharp Light)"
+	icon_state = "lizard_snout_sharp_light"
+	color_blend_mode = ICON_MULTIPLY
+	body_parts = list(BP_HEAD)
+
+/datum/sprite_accessory/marking/yw/lizard_snout_round
+	name = "Lizard Snout (Round)"
+	icon_state = "lizard_snout_round"
+	color_blend_mode = ICON_MULTIPLY
+	body_parts = list(BP_HEAD)
+
+/datum/sprite_accessory/marking/yw/lizard_snout_round_light
+	name = "Lizard Snout (Round Light)"
+	icon_state = "lizard_snout_round_light"
+	color_blend_mode = ICON_MULTIPLY
+	body_parts = list(BP_HEAD)
+
+/datum/sprite_accessory/marking/yw/wolf_snout_light_round
+	name = "Canine Snout (Light Round)"
+	icon_state = "wolf_snout_light_round"
+	color_blend_mode = ICON_MULTIPLY
+	body_parts = list(BP_HEAD)
+
+/datum/sprite_accessory/marking/yw/roundhumanoid
+	name = "Round (Humanoid)"
+	icon_state = "preg_tummy_humanoid"
+	color_blend_mode = ICON_MULTIPLY
+	body_parts = list(BP_TORSO,BP_GROIN,BP_L_HAND,BP_R_HAND,BP_L_LEG,BP_R_LEG)
+
+/datum/sprite_accessory/marking/yw/roundteshari
+	name = "Round (Teshari)"
+	icon_state = "preg_tummy_teshari"
+	color_blend_mode = ICON_MULTIPLY
+	body_parts = list(BP_TORSO,BP_GROIN,BP_L_HAND,BP_R_HAND,BP_L_LEG,BP_R_LEG)

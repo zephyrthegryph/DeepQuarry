@@ -84,7 +84,7 @@ GLOBAL_DATUM_INIT(unarmed_hardclaws, /datum/unarmed_attack/hardclaws, new)
 			return FALSE
 
 		var/mob/living/carbon/human/H = nif.human
-		H.adjustHalLoss(30)
+		H.injure(INJURY_PAIN, 30)
 		var/obj/item/gun/energy/gun/compact/dazzle/dgun = new(get_turf(H))
 		H.put_in_hands(dgun)
 		nif.notify("Weapon deployed!",TRUE)

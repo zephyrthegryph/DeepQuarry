@@ -24,8 +24,7 @@ GLOBAL_LIST_INIT(pitcher_plant_lure_messages, list(
 	icon = 'icons/mob/vore.dmi'
 
 	anchored = 1 // Rooted plant. Only killing it will let you move it.
-	maxHealth = 200
-	health = 200
+	endurance = 200
 	a_intent = I_HELP // While this is already help by default, I'm leaving this variable here as a reminder that disarm will prevent players from swapping places with the pitcher, but interfere with vore bump.
 	faction = FACTION_PLANTS // Makes plant-b-gone deadly.
 
@@ -136,10 +135,12 @@ GLOBAL_LIST_INIT(pitcher_plant_lure_messages, list(
 			grow_fruit()
 	var/lastnutrition = nutrition
 	adjust_nutrition(-pitcher_metabolism)
-	adjustBruteLoss(nutrition - lastnutrition)
-	adjustToxLoss((nutrition - lastnutrition) * 3)
-	if(nutrition < pitcher_metabolism)
-		adjustToxLoss(pitcher_metabolism)
+	var/digested = lastnutrition - nutrition // Metabolising nutrients heals the pitcher.
+	if(digested > 0)
+		mend(TREAT_TISSUE_REPAIR, digested)
+		mend(TREAT_ANTITOXIN, digested * 3)
+	if(nutrition < pitcher_metabolism) // Starving.
+		injure(INJURY_TOXIN, pitcher_metabolism, flags = INJURE_SILENT)
 	if(world.time > last_lifechecks + 30 SECONDS)
 		last_lifechecks = world.time
 		vore_checks()

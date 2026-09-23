@@ -72,7 +72,7 @@
  * Weapon
  */
 /obj/item/cell/device/weapon
-	name = "advanced device power cell" //This was a yawn change. I quite like this, makes more sense.
+	name = "advanced device power cell"
 	desc = "A small upgraded power cell designed to power handheld devices."
 	icon_state = "m_sup"
 	charge = 2400

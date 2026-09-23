@@ -49,23 +49,25 @@ GLOBAL_DATUM_INIT(fire_overlay, /mutable_appearance, mutable_appearance('icons/e
 
 /datum/component/burning/RegisterWithParent()
 	RegisterSignal(parent, COMSIG_ATOM_ATTACK_HAND, PROC_REF(on_attack_hand))
-	RegisterSignal(parent, COMSIG_ATOM_UPDATE_OVERLAYS, PROC_REF(on_update_overlays))
 	RegisterSignal(parent, COMSIG_ATOM_EXAMINE, PROC_REF(on_examine))
 	RegisterSignal(parent, COMSIG_ATOM_EXTINGUISH, PROC_REF(on_extinguish))
 	var/atom/atom_parent = parent
 	atom_parent.resistance_flags |= ON_FIRE
+	if(fire_overlay)
+		atom_parent.add_overlay(fire_overlay)
 	atom_parent.update_icon()
 
 /datum/component/burning/UnregisterFromParent()
 	UnregisterSignal(parent, list(
 		COMSIG_ATOM_ATTACK_HAND,
-		COMSIG_ATOM_UPDATE_OVERLAYS,
 		COMSIG_ATOM_EXAMINE,
 		COMSIG_ATOM_EXTINGUISH,
 	))
 	var/atom/atom_parent = parent
 	if(!QDELETED(atom_parent))
 		atom_parent.resistance_flags &= ~ON_FIRE
+		if(fire_overlay)
+			atom_parent.cut_overlay(fire_overlay)
 		atom_parent.update_icon()
 
 /datum/component/burning/process(seconds_per_tick)
@@ -101,22 +103,11 @@ GLOBAL_DATUM_INIT(fire_overlay, /mutable_appearance, mutable_appearance('icons/e
 		source.extinguish()
 		return COMPONENT_CANCEL_ATTACK_CHAIN
 
-	user.apply_damage(5, BURN, user.get_active_hand())
+	user.injure(INJURY_BURN, 5, user.hand ? BP_L_HAND : BP_R_HAND, source)
 	to_chat(user, span_userdanger("You burn your hand on [source]!"))
 	user.emote("scream")
 	playsound(source, 'sound/items/weapons/sear.ogg', 50, TRUE)
 	return COMPONENT_CANCEL_ATTACK_CHAIN
-
-/// Maintains the burning overlay on the parent atom
-/datum/component/burning/proc/on_update_overlays(atom/source, list/overlays)
-	SIGNAL_HANDLER
-
-	//most likely means the component is being removed
-	if(!(source.resistance_flags & ON_FIRE))
-		return
-
-	if(fire_overlay)
-		overlays += fire_overlay
 
 /// Deletes the component when the atom gets extinguished
 /datum/component/burning/proc/on_extinguish(atom/source, list/overlays)

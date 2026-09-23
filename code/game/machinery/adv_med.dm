@@ -157,7 +157,7 @@
 
 /obj/machinery/bodyscanner/tgui_data(mob/user)
 	// qualitative scanner output. The old block dumped exact
-	// damage numbers and the full medical_issue catalog; the new builder
+	// damage numbers and every affliction's name; the new builder
 	// returns qualitative bands plus DQ scanner-audience findings.
 	// Implementation lives in code/modules/medical/bodyscanner/.
 	return dq_build_tgui_data()
@@ -240,8 +240,13 @@
 				t1 = "Unconscious"
 			else
 				t1 = "*dead*"
-		var/health_text = "\tHealth %: [(occupant.health / occupant.getMaxHealth())*100], ([t1])"
-		//var/fake_oxy = max(occupant.getOxyLoss(), (300 - (occupant.getFireLoss() + occupant.getBruteLoss())))
+		var/health_text = "\tHealth %: [round(occupant.vitality() * 100)], ([t1])"
+		var/brute_load = round(occupant.injury_load(INJURY_CATEGORY_PHYSICAL))
+		var/burn_load = round(occupant.injury_load(INJURY_CATEGORY_THERMAL))
+		var/oxy_load = round(occupant.injury_load(INJURY_CATEGORY_ASPHYXIA))
+		var/tox_load = round(occupant.injury_load(INJURY_CATEGORY_TOXIC))
+		var/genetic_load = round(occupant.injury_load(INJURY_CATEGORY_GENETIC))
+		var/neural_load = round(occupant.injury_load(INJURY_CATEGORY_NEURAL))
 		var/fake_death = FALSE
 		if(occupant.status_flags & FAKEDEATH)
 			t1 = "*dead*"
@@ -250,7 +255,7 @@
 			dat += (span_red(health_text))
 			dat += "<br>"
 		else
-			dat += (occupant.health > (occupant.getMaxHealth() / 2) ? span_blue(health_text) : span_red(health_text))
+			dat += (occupant.vitality() > 0.5 ? span_blue(health_text) : span_red(health_text))
 			dat += "<br>"
 
 		if(occupant.IsInfected())
@@ -261,38 +266,38 @@
 					dat += span_red("Disease detected in blood stream.") + "<BR>"
 
 		var/damage_string = null
-		damage_string = "\t-Brute Damage %: [occupant.getBruteLoss()]"
-		dat += (occupant.getBruteLoss() < 60 ? span_blue(damage_string) : span_red(damage_string)) + "<br>"
-		damage_string = "\t-Respiratory Damage %: [occupant.getOxyLoss()]"
+		damage_string = "\t-Brute Damage %: [brute_load]"
+		dat += (brute_load < 60 ? span_blue(damage_string) : span_red(damage_string)) + "<br>"
+		damage_string = "\t-Respiratory Damage %: [oxy_load]"
 		/* //Alternative oxygen based fakedeath
 		if(fake_death)
 			damage_string = "\t-Respiratory Damage %: [fake_oxy]"
 			dat += (span_red(damage_string)) + "<br>"
 		else*/
-		dat += (occupant.getOxyLoss() < 60 ? span_blue(damage_string) : span_red(damage_string)) + "<br>"
+		dat += (oxy_load < 60 ? span_blue(damage_string) : span_red(damage_string)) + "<br>"
 
 		if(fake_death)
 			damage_string = "\t-Toxin Content %: 0"
 			dat += span_blue(damage_string) + "<br>"
 		else
-			damage_string = "\t-Toxin Content %: [occupant.getToxLoss()]"
-			dat += (occupant.getToxLoss() < 60 ? span_blue(damage_string) : span_red(damage_string)) + "<br>"
+			damage_string = "\t-Toxin Content %: [tox_load]"
+			dat += (tox_load < 60 ? span_blue(damage_string) : span_red(damage_string)) + "<br>"
 
-		damage_string = "\t-Burn Severity %: [occupant.getFireLoss()]"
-		dat += (occupant.getFireLoss() < 60 ? span_blue(damage_string) : span_red(damage_string)) + "<br>"
+		damage_string = "\t-Burn Severity %: [burn_load]"
+		dat += (burn_load < 60 ? span_blue(damage_string) : span_red(damage_string)) + "<br>"
 
 		damage_string = "\tRadiation Level %: [occupant.radiation]"
 		dat += (occupant.radiation < 10 ? span_blue(damage_string) : span_red(damage_string)) + "<br>"
 
-		damage_string = "\tGenetic Tissue Damage %: [occupant.getCloneLoss()]"
-		dat += (occupant.getCloneLoss() < 1 ? span_blue(damage_string) : span_red(damage_string)) + "<br>"
+		damage_string = "\tGenetic Tissue Damage %: [genetic_load]"
+		dat += (genetic_load < 1 ? span_blue(damage_string) : span_red(damage_string)) + "<br>"
 
 		if(fake_death)
 			damage_string = "\tApprox. Brain Damage %: 100"
 			dat += (span_red(damage_string)) + "<br>"
 		else
-			damage_string = "\tApprox. Brain Damage %: [occupant.getBrainLoss()]"
-			dat += (occupant.getBrainLoss() < 1 ? span_blue(damage_string) : span_red(damage_string)) + "<br>"
+			damage_string = "\tApprox. Brain Damage %: [neural_load]"
+			dat += (neural_load < 1 ? span_blue(damage_string) : span_red(damage_string)) + "<br>"
 
 		var/occupant_paralysis = occupant.paralysis
 		var/paralysis_duration = round(occupant.paralysis * 0.25)
@@ -356,9 +361,8 @@
 			var/lung_ruptured = ""
 			var/o_dead = ""
 			var/mi = ""
-			for(var/datum/wound/W in e.wounds) if(W.internal)
+			if(length(dq_limb_internal_bleeds(e)))
 				internal_bleeding = "<br>Internal bleeding"
-				break
 			if(istype(e, /obj/item/organ/external/chest) && occupant.is_lung_ruptured())
 				lung_ruptured = "Lung ruptured:"
 			if(e.splinted)
@@ -399,15 +403,16 @@
 				else
 					unknown_body++
 
-			for(var/datum/medical_issue/MI in e.medical_issues)
-				mi += "[MI.name] detected:"
+			for(var/datum/affliction/custom/A as anything in dq_custom_afflictions_on(e))
+				if(A.showscanner)
+					mi += "[A.name] detected:"
 
 			if(unknown_body)
 				imp += "Unknown body present:"
 			if(!AN && !open && !infected && !imp && !mi)
 				AN = "None:"
 			if(!(e.status & ORGAN_DESTROYED))
-				dat += "<td>[e.name]</td><td>[e.burn_dam]</td><td>[e.brute_dam]</td><td>[robot][bled][AN][splint][open][infected][imp][mi][internal_bleeding][lung_ruptured][o_dead]</td>"
+				dat += "<td>[e.name]</td><td>[round(e.get_burn())]</td><td>[round(e.get_trauma())]</td><td>[robot][bled][AN][splint][open][infected][imp][mi][internal_bleeding][lung_ruptured][o_dead]</td>"
 			else
 				dat += "<td>[e.name]</td><td>-</td><td>-</td><td>Not Found</td>"
 			dat += "</tr>"
@@ -443,8 +448,9 @@
 				var/obj/item/organ/internal/appendix/A = i
 				if(A.inflamed)
 					infection = "Inflammation detected!"
-			for(var/datum/medical_issue/MI in i.medical_issues)
-				mi += "[MI.name] detected:"
+			for(var/datum/affliction/custom/A as anything in dq_custom_afflictions_on(i))
+				if(A.showscanner)
+					mi += "[A.name] detected:"
 
 			// begin - malignant organs
 			if(istype(i, /obj/item/organ/internal/malignant))
@@ -616,8 +622,8 @@
 	// Determine gradient state
 	var/state
 	var/scan = TRUE
-	var/h_ratio = occupant.health / occupant.getMaxHealth()
-	if(occupant.status_flags & FAKEDEATH)
+	var/h_ratio = occupant.is_critical() ? 0 : occupant.vitality()
+	if(occupant.stat == DEAD || (occupant.status_flags & FAKEDEATH))
 		h_ratio = -1 //shows up dead
 	if(console)
 		console.update_icon(h_ratio)

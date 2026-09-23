@@ -115,7 +115,6 @@
 	icon_state = "circuit_phase"
 
 
-// === merged from alien_props_vr.dm during hard-fork de-suffix (verified no override-order change) ===
 /obj/structure/prop/alien/computer/hybrid
 	name = "hybrid console"
 	desc = "The console flashes what appear to be symbols you've never seen before, intermixed with human writing moving too fast to comprehend."

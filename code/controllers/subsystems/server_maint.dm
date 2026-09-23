@@ -65,20 +65,9 @@ SUBSYSTEM_DEF(server_maint)
 	var/list/currentrun = src.currentrun
 	//var/round_started = SSticker.HasRoundStarted()
 
-	//var/kick_inactive = CONFIG_GET(flag/kick_inactive)
-	//var/afk_period
-	//if(kick_inactive)
-		//afk_period = CONFIG_GET(number/afk_period)
 	for(var/I in currentrun)
 		var/client/C = I
 		//handle kicking inactive players
-		/*if(round_started && kick_inactive && !C.holder && C.is_afk(afk_period))
-			var/cmob = C.mob
-			if (!isnewplayer(cmob) || !SSticker.queued_players.Find(cmob))
-				log_access("AFK: [key_name(C)]")
-				to_chat(C, span_userdanger("You have been inactive for more than [DisplayTimeText(afk_period)] and have been disconnected.") + "<br>" + span_danger("You may reconnect via the button in the file menu or by " + span_bold(span_underline("<a href='byond://winset?command=.reconnect'>clicking here to reconnect</a>")" + "."))
-				QDEL_IN(C, 1) //to ensure they get our message before getting disconnected
-				continue*/
 
 		if (!(!C || world.time - C.connection_time < PING_BUFFER_TIME || C.inactivity >= (wait-1)))
 			winset(C, null, "command=.update_ping+[num2text(world.time+world.tick_lag*TICK_USAGE_REAL/100, 32)]")
@@ -99,16 +88,4 @@ SUBSYSTEM_DEF(server_maint)
 		if(server) //if you set a server location in config.txt, it sends you there instead of trying to reconnect to the same world address. -- NeoFite
 			C << link("byond://[server]")
 
-/*
-/datum/controller/subsystem/server_maint/proc/UpdateHubStatus()
-	if(!CONFIG_GET(flag/hub) || !CONFIG_GET(number/max_hub_pop))
-		return FALSE //no point, hub / auto hub controls are disabled
-
-	var/max_pop = CONFIG_GET(number/max_hub_pop)
-
-	if(length(GLOB.clients) > max_pop)
-		world.update_hub_visibility(FALSE)
-	else
-		world.update_hub_visibility(TRUE)
-*/
 #undef PING_BUFFER_TIME

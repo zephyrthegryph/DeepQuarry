@@ -241,10 +241,10 @@
 
 	// If they're hurt, chance of snapping.
 	else if(cause == "shock")
-		//If the majority of their shock is due to halloss, give them a different message (3x multiplier on check as halloss is 2x - meaning t_s must be at least 3x for other damage sources to be the greater part)
-		if(3*owner.halloss >= owner.traumatic_shock)
+		//If the majority of their shock is due to raw pain, give them a different message (3x multiplier on check as pain is 2x - meaning t_s must be at least 3x for other damage sources to be the greater part)
+		if(3*owner.current_pain() >= owner.traumatic_shock)
 			to_chat(owner,span_danger(span_large("The pain! It stings! Got to get away! Your instincts take over, urging you to flee, to hide, to go to ground, get away from here...")))
-			log_and_message_admins("has gone feral due to halloss.", owner)
+			log_and_message_admins("has gone feral due to pain.", owner)
 
 		//Majority due to other damage sources
 		else
@@ -436,7 +436,7 @@
 		visible_message(span_warning(span_huge("[src] rises to \his feet."))) //Bloody hell...
 		if(has_braindamage)
 			// add_modifier(/datum/modifier/resleeving_sickness/chimera, sickness_duration) //
-			adjustBrainLoss(5) // if they're reviving from dead, they come back with 5 brainloss on top of whatever's unhealed.
+			injure(INJURY_NEURAL, 5) // if they're reviving from dead, they come back with 5 brain damage on top of whatever's unhealed.
 
 /datum/component/xenochimera/proc/chimera_hatch(from_save_slot)
 	if(!owner)
@@ -446,12 +446,12 @@
 	to_chat(owner, span_notice("Your new body awakens, bursting free from your old skin."))
 	//Modify and record values (half nutrition and braindamage)
 	var/old_nutrition = owner.nutrition
-	var/braindamage = min(5, max(0, (owner.brainloss-1) * 0.5)) //brainloss is tricky to heal and might take a couple of goes to get rid of completely.
+	var/braindamage = min(5, max(0, (owner.injury_load(INJURY_CATEGORY_NEURAL)-1) * 0.5)) //brain damage is tricky to heal and might take a couple of goes to get rid of completely.
 	var/uninjured=owner.quickcheckuninjured()
 	trigger_revival(from_save_slot)
 
 	owner.mutations.Remove(HUSK)
-	owner.setBrainLoss(braindamage)
+	owner.injure(INJURY_NEURAL, braindamage, flags = INJURE_IGNORE_RESISTANCE | INJURE_SILENT)
 	owner.species.update_vore_belly_def_variant()
 
 	if(!uninjured)

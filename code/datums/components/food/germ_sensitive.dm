@@ -105,10 +105,6 @@ GLOBAL_LIST_INIT(floor_diseases, list(
 		examine_list += span_warning("[parent] looks dirty and not safe to consume.")
 
 /datum/component/germ_sensitive/proc/expose_to_germs()
-	// Admin spawned items are never exposed NYI
-//	var/atom/parent_atom = parent
-//	if(parent_atom.flags_1 & ADMIN_SPAWNED_1)
-//		return
 
 	SEND_SIGNAL(parent, COMSIG_ATOM_GERM_EXPOSED, src)
 

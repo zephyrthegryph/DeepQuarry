@@ -504,7 +504,7 @@
 
 	if(isrobot(M))
 		var/mob/living/silicon/robot/R = M
-		if(R.module.type == /obj/item/robot_module/robot/janitor) // You can now feed the trash borg yay.
+		if(R.module?.eats_trash) // You can now feed the trash borg yay.
 			playsound(src,'sound/items/eatfood.ogg', rand(10,50), 1)
 			user.drop_item()
 			R.vore_selected.nom_atom(src)

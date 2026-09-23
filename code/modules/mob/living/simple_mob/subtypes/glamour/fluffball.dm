@@ -16,7 +16,7 @@
 	harm_intent_damage = 2
 	melee_damage_lower = 1
 	melee_damage_upper = 4
-	maxHealth = 50
+	endurance = 50
 	attacktext = list("tail whips")
 	see_in_dark = 8
 	minbodytemp = 0

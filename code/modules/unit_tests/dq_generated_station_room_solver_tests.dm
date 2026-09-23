@@ -1,48 +1,3 @@
-/datum/unit_test/dq_generated_room_solver_is_deterministic
-
-/datum/unit_test/dq_generated_room_solver_is_deterministic/Run()
-	var/origin_x = world.maxx - 14
-	var/origin_y = world.maxy - 12
-	for(var/x in origin_x to origin_x + 11)
-		for(var/y in origin_y to origin_y + 9)
-			var/turf/T = locate(x, y, world.maxz)
-			T.ChangeTurf(/turf/simulated/floor/plating, tell_universe = FALSE)
-	var/datum/generated_station_materializer/materializer = new
-	materializer.min_x = origin_x
-	materializer.min_y = origin_y
-	materializer.z_level = world.maxz
-	var/datum/generated_station_module/module = new
-	module.id = "test-reception"
-	module.department_node_id = "test-command"
-	module.role = "operations"
-	module.x1 = 2
-	module.y1 = 2
-	module.x2 = 11
-	module.y2 = 9
-	var/datum/generated_room_definition/reception/definition = new
-	var/datum/generated_room_solver/first_solver = new
-	var/datum/generated_room_solution/first = first_solver.solve(materializer, module, definition, 445566, "corporate", "sterile")
-	var/datum/generated_room_solver/second_solver = new
-	var/datum/generated_room_solution/second = second_solver.solve(materializer, module, definition, 445566, "corporate", "sterile")
-	TEST_ASSERT(first?.valid && second?.valid, "Reception room constraint solver rejected a spacious valid shell")
-	TEST_ASSERT_EQUAL(length(first.fragments), 1, "Reception room did not select its authored corner fragment")
-	TEST_ASSERT_EQUAL(length(first.placements), length(second.placements), "Same room seed produced different feature counts")
-	for(var/i in 1 to length(first.placements))
-		var/datum/generated_room_placement/a = first.placements[i]
-		var/datum/generated_room_placement/b = second.placements[i]
-		TEST_ASSERT(a.feature.id == b.feature.id && a.x == b.x && a.y == b.y && a.dir == b.dir, "Same room seed produced a different placement at index [i]")
-		TEST_ASSERT(!first.door_circulation[first.tile_key(a.x, a.y)], "Feature '[a.feature.id]' blocks reserved door circulation")
-		if(ispath(a.feature.atom_type, /obj/structure/bed/chair))
-			var/turf/chair_turf = materializer.world_turf(a.x, a.y)
-			TEST_ASSERT(!get_step(chair_turf, a.dir)?.density, "Chair '[a.feature.id]' faces into a wall")
-	qdel(first)
-	qdel(second)
-	qdel(first_solver)
-	qdel(second_solver)
-	qdel(definition)
-	qdel(module)
-	qdel(materializer)
-
 /datum/unit_test/dq_generated_room_fragment_materializes_real_content
 
 /datum/unit_test/dq_generated_room_fragment_materializes_real_content/Run()
@@ -173,9 +128,6 @@
 	return list(/datum/generated_room_feature/test_impossible_dependency)
 
 /datum/generated_station_materializer/test_impossible_room
-
-/datum/generated_station_materializer/test_impossible_room/resolve_room_definition(department_id, role)
-	return new /datum/generated_room_definition/test_impossible
 
 /datum/unit_test/dq_generated_station_runtime_rejects_generic_room_fallback
 

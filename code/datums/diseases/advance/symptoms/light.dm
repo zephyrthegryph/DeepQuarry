@@ -46,13 +46,11 @@
 			to_chat(H, span_warning(pick("Your muscles feel tight.", "You feel lethargic.", "Your muscles feel hard and tough.")))
 	if(A.stage >= 5)
 		currenthealthmodifier += healthchange
-		H.maxHealth += healthchange
-		H.health += healthchange
+		H.endurance += healthchange
 
 /datum/symptom/light/End(datum/disease/advance/A)
 	. = ..()
 	var/mob/living/carbon/human/H = A.affected_mob
 	if(!H)
 		return
-	H.maxHealth -= currenthealthmodifier
-	H.health -= currenthealthmodifier
+	H.endurance -= currenthealthmodifier

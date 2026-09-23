@@ -86,16 +86,6 @@
 
 /datum/species/proc/get_environment_discomfort(mob/living/carbon/human/H, msg_type)
 
-	/* // Commented out because clothes should not prevent you from feeling cold if your body temperature has already dropped. You can absolutely feel cold through clothing, and feel too warm without clothing. ???
-	var/covered = 0 // Basic coverage can help.
-	for(var/obj/item/clothing/clothes in H)
-		if(H.item_is_in_hands(clothes))
-			continue
-		if((clothes.body_parts_covered & UPPER_TORSO) && (clothes.body_parts_covered & LOWER_TORSO))
-			covered = 1
-			break
-	*/
-
 	var/discomfort_message
 	var/list/custom_cold = H.custom_cold
 	var/list/custom_heat = H.custom_heat

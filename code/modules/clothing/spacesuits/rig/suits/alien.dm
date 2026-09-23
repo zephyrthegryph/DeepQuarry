@@ -128,7 +128,6 @@
 		)
 
 
-// === merged from alien_chomp.dm during hard-fork de-suffix (verified no override-order change) ===
 /obj/item/clothing/head/helmet/space/rig/vox/ch
 	icon_state = "vox_engineer_rig" //The name is seen by players, but rigs do some funny things like overwriting the icon_state. The unit test will screech if a rig doesn't have an icon_state, so we set one here.
 	icon = 'icons/inventory/head/item.dmi'

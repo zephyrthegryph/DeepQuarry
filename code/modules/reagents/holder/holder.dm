@@ -6,6 +6,11 @@
 	var/total_volume = 0
 	var/maximum_volume = 100
 	var/atom/my_atom = null
+	/// Nesting depth of begin_batch()/end_batch(). While positive, removals
+	/// defer their reaction check and change notification to end_batch().
+	var/batch_depth = 0
+	/// A removal happened inside the current batch.
+	var/batch_changed = FALSE
 
 /datum/reagents/New(max = 100, atom/A = null)
 	..()
@@ -179,6 +184,24 @@
 		stack_trace("[my_atom] attempted to add a reagent called '[id]' which doesn't exist. ([usr])")
 	return 0
 
+/// Start a run of removals (metabolism) that should react and notify once.
+/datum/reagents/proc/begin_batch()
+	batch_depth++
+
+/// Close a batch. The outermost close runs the deferred reaction check and
+/// change notification once, if anything was removed. Reactions still run, so
+/// depleting an inhibitor mid-batch is honoured.
+/datum/reagents/proc/end_batch()
+	if(--batch_depth > 0)
+		return
+	batch_depth = 0
+	if(!batch_changed)
+		return
+	batch_changed = FALSE
+	handle_reactions()
+	if(my_atom)
+		my_atom.on_reagent_change()
+
 /datum/reagents/proc/isolate_reagent(reagent)
 	for(var/datum/reagent/R as anything in reagent_list)
 		if(R.id != reagent)
@@ -192,6 +215,9 @@
 	if(current)
 		current.volume -= amount // It can go negative, but it doesn't matter
 		update_total() // Because this proc will delete it then
+		if(batch_depth)
+			batch_changed = TRUE
+			return 1
 		if(!safety)
 			handle_reactions()
 		if(my_atom)

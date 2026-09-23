@@ -1,0 +1,12 @@
+author: "BigBadE"
+delete-after: true
+changes:
+  - bugfix: "Fire now reads its real temperature everywhere: windows, floors, doors, mobs and bonfire-lit objects no longer mistake the fire's volume for its heat."
+  - bugfix: "Burning mobs judge their heat protection against the flame's temperature instead of their fire stack count, and stop re-igniting a tile that is already burning."
+  - bugfix: "Wall materials now change how much heat a wall conducts; every wall used to conduct the maximum."
+  - balance: "Freezers dump the heat they remove, plus the power they use, into the room they stand in, and gas heaters no longer put out more heat than the power they draw."
+  - balance: "Cryo cells exchange heat with their occupant using a real body heat capacity, and no longer warm their gas toward room temperature every tick."
+  - bugfix: "Phoron has one ignition temperature: canisters, tanks, bomb spawners and thrusters use the same value as the fire reaction."
+  - code_imp: "Explosions repair only the power networks they damaged instead of rebuilding every network, and cable edits no longer wake every sleeping APC."
+  - code_imp: "Automatic shutoff valves wake only for leaks on their own pipe network."
+  - code_imp: "Machine processing removes machines in constant time, and the dependency tables no longer grow for the whole round."

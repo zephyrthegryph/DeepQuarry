@@ -462,6 +462,7 @@ GLOBAL_LIST_EMPTY(solars_list)
 				S.unset_control()
 	if(powernet)
 		add_avail(connected_power)
+	return PROCESS_KILL
 
 /obj/machinery/power/solar_control/tgui_act(action, params)
 	if(..())
@@ -513,6 +514,8 @@ GLOBAL_LIST_EMPTY(solars_list)
 	for(var/obj/machinery/power/solar/S in connected_panels)
 		sum += S.update_power_generation(src)
 	connected_power = sum
+	if(powernet)
+		add_avail(connected_power)
 	update_icon()
 
 /obj/machinery/power/solar_control/power_change()

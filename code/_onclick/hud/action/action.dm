@@ -54,9 +54,6 @@
 	target = Target
 	RegisterSignal(target, COMSIG_QDELETING, PROC_REF(clear_ref), override = TRUE)
 
-	if(isatom(target))
-		RegisterSignal(target, COMSIG_ATOM_UPDATED_ICON, PROC_REF(on_target_icon_update))
-
 	// if(istype(target, /datum/mind))
 	// 	RegisterSignal(target, COMSIG_MIND_TRANSFERRED, PROC_REF(on_target_mind_swapped))
 
@@ -322,26 +319,6 @@
 		if(bitfield & bitflag)
 			our_button.id = bitflag
 			return
-
-/// Updates our buttons if our target's icon was updated
-/// Still never triggered lmao
-/datum/action/proc/on_target_icon_update(datum/source, updates, updated)
-	SIGNAL_HANDLER
-
-	var/update_flag = NONE
-	var/forced = FALSE
-	if(updates & UPDATE_ICON_STATE)
-		update_flag |= UPDATE_BUTTON_ICON
-		forced = TRUE
-	if(updates & UPDATE_OVERLAYS)
-		update_flag |= UPDATE_BUTTON_OVERLAY
-		forced = TRUE
-	if(updates & (UPDATE_NAME|UPDATE_DESC))
-		update_flag |= UPDATE_BUTTON_NAME
-	// Status is not relevant, and background is not relevant. Neither will change
-
-	// Force the update if an icon state or overlay change was done
-	build_all_button_icons(update_flag, forced)
 
 /// Checks if our action is actively selected. Used for selecting icons primarily.
 /datum/action/proc/is_action_active(atom/movable/screen/movable/action_button/current_button)

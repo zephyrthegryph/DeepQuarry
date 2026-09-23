@@ -81,7 +81,7 @@
 	icon_scale_y = 1.5
 	movement_shake_radius = 14
 
-	maxHealth = 450
+	endurance = 450
 	deflect_chance = 25
 	has_repair_droid = TRUE
 	armor = list(

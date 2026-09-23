@@ -232,7 +232,6 @@
 		)
 
 
-// === merged from magnetic_railgun_ch.dm during hard-fork de-suffix (verified no override-order change) ===
 /obj/item/gun/magnetic/railgun
 	name = "WKHM 'Strzyga' railgun"
 	desc = "A devastatingly powerful, and very expensive railgun built for long range engagements, and anti vehicle applications. Possibly one of the most powerful handheld weapons to date. Capable of punching a hole clean through a durasteel wall. The last thing the enemy will never see. 'DO NOT TOUCH THE RAILS' is stickered on the receiver. Chambers 16.5x122mm slugs. "

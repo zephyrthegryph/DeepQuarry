@@ -13,7 +13,7 @@
 
 	switch(L.a_intent)
 		if(I_HELP)
-			if(health > 0)
+			if(stat != DEAD)
 				if(L.zone_sel.selecting == BP_GROIN)
 					if(L.vore_bellyrub(src))
 						return
@@ -68,11 +68,11 @@
 					L.visible_message(span_warning("\The [L] uselessly hits \the [src]!"))
 					L.do_attack_animation(src)
 					return
-				apply_damage(damage = real_damage, damagetype = hit_dam_type, def_zone = null, blocked = armor, sharp = FALSE, edge = FALSE, used_weapon = null)
+				injure(injury_kind_for(hit_dam_type), real_damage, null, L, armor)
 				L.visible_message(span_warning("\The [L] [pick(attack.attack_verb)] \the [src]!"))
 				L.do_attack_animation(src)
 				return
-			apply_damage(damage = harm_intent_damage, damagetype = BRUTE, def_zone = null, blocked = armor, sharp = FALSE, edge = FALSE, used_weapon = null) // EDIT Somebody set this to burn instead of brute.
+			injure(INJURY_BLUNT, harm_intent_damage, null, L, armor)
 			L.visible_message(span_warning("\The [L] [response_harm] \the [src]!"))
 			L.do_attack_animation(src)
 
@@ -85,9 +85,9 @@
 		if(stat != DEAD)
 			// This could be done better.
 			var/obj/item/stack/medical/MED = O
-			if(health < getMaxHealth())
+			if(is_injured())
 				if(MED.use(1))
-					adjustBruteLoss(-MED.heal_brute)
+					mend(TREAT_TISSUE_REPAIR, MED.heal_brute)
 					visible_message(span_infoplain(span_bold("\The [user]") + " applies the [MED] on [src]."))
 		else
 			to_chat(user, span_notice("\The [src] is dead, medical items won't bring [p_them()] back to life.")) // the gender lookup is somewhat overkill, but it functions identically to the obsolete gender macros and future-proofs this code
@@ -140,9 +140,9 @@
 	if(!blinded)
 		flash_eyes()
 
-	for(var/datum/modifier/M in modifiers)
-		if(!isnull(M.explosion_modifier))
-			severity = CLAMP(severity + M.explosion_modifier, 1, 4)
+	var/explosion_shift = factor(BF_EXPLOSION_SHIFT)
+	if(explosion_shift)
+		severity = CLAMP(severity + explosion_shift, 1, 4)
 
 	severity = round(severity)
 
@@ -159,9 +159,9 @@
 		if (3.0)
 			bombdam = 30
 
-	apply_damage(damage = bombdam, damagetype = BRUTE, def_zone = null, blocked = armor, sharp = FALSE, edge = FALSE, used_weapon = null)
+	injure(INJURY_BLUNT, bombdam, null, null, armor)
 
-	if(bombdam > maxHealth)
+	if(bombdam > get_endurance())
 		gib()
 
 // Cold stuff.
@@ -169,10 +169,8 @@
 	. = cold_resist
 	. = 1 - . // Invert from 1 = immunity to 0 = immunity.
 
-	// Doing it this way makes multiplicative stacking not get out of hand, so two modifiers that give 0.5 protection will be combined to 0.75 in the end.
-	for(var/datum/modifier/M as anything in modifiers)
-		if(!isnull(M.cold_protection))
-			. *= 1 - M.cold_protection
+	// Body factors stack multiplicatively.
+	. *= factor(BF_COLD_EXPOSURE)
 
 	// Code that calls this expects 1 = immunity so we need to invert again.
 	. = 1 - .
@@ -182,10 +180,8 @@
 	. = heat_resist
 	. = 1 - . // Invert from 1 = immunity to 0 = immunity.
 
-	// Doing it this way makes multiplicative stacking not get out of hand, so two modifiers that give 0.5 protection will be combined to 0.75 in the end.
-	for(var/datum/modifier/M as anything in modifiers)
-		if(!isnull(M.heat_protection))
-			. *= 1 - M.heat_protection
+	// Body factors stack multiplicatively.
+	. *= factor(BF_HEAT_EXPOSURE)
 
 	// Code that calls this expects 1 = immunity so we need to invert again.
 	. = 1 - .
@@ -197,7 +193,7 @@
 	if(shock_damage < 1)
 		return 0
 
-	apply_damage(damage = shock_damage, damagetype = BURN, def_zone = null, blocked = null, blocked = resistance, sharp = FALSE, edge = FALSE, used_weapon = null)
+	injure(INJURY_ELECTRIC, shock_damage, null, source, resistance)
 	playsound(src, "sparks", 50, 1, -1)
 
 	var/datum/effect/effect/system/spark_spread/s = new /datum/effect/effect/system/spark_spread
@@ -208,10 +204,8 @@
 	. = shock_resist
 	. = 1 - . // Invert from 1 = immunity to 0 = immunity.
 
-	// Doing it this way makes multiplicative stacking not get out of hand, so two modifiers that give 0.5 protection will be combined to 0.75 in the end.
-	for(var/datum/modifier/M as anything in modifiers)
-		if(!isnull(M.siemens_coefficient))
-			. *= M.siemens_coefficient
+	// Body factors stack multiplicatively.
+	. *= factor(BF_SIEMENS)
 
 	// Code that calls this expects 1 = immunity so we need to invert again.
 	. = 1 - .
@@ -226,11 +220,11 @@
 
 		if(stun_amount)
 			stunDam += stun_amount * 0.5
-			apply_damage(damage = stunDam, damagetype = BURN, def_zone = null, blocked = armor, sharp = FALSE, edge = FALSE, used_weapon = used_weapon)
+			injure(INJURY_ELECTRIC, stunDam, null, used_weapon, armor)
 
 		if(agony_amount)
 			agonyDam += agony_amount * 0.5
-			apply_damage(damage = agonyDam, damagetype = BURN, def_zone = null, blocked = armor, sharp = FALSE, edge = FALSE, used_weapon = used_weapon)
+			injure(INJURY_ELECTRIC, agonyDam, null, used_weapon, armor) // Simple bodies ignore pain; taser_kill mobs take it as a real electrical injury.
 
 
 // Electromagnetism
@@ -238,21 +232,18 @@
 	. = ..()
 	if (. & EMP_PROTECT_SELF)
 		return
-	if(!isSynthetic())
+	if(!(biology & BIOLOGY_SYNTHETIC))
 		return
+	var/endurance_scale = get_endurance()
 	switch(severity)
 		if(1)
-		//	adjustFireLoss(rand(15, 25))
-			adjustFireLoss(min(60, getMaxHealth()*0.5)) // Weak mobs will always take two direct EMP hits to kill. Stronger ones might take more.
+			injure(INJURY_ELECTRIC, min(60, endurance_scale * 0.5)) // Weak mobs will always take two direct EMP hits to kill. Stronger ones might take more.
 		if(2)
-			adjustFireLoss(min(30, getMaxHealth()*0.25))
-		//	adjustFireLoss(rand(10, 18))
+			injure(INJURY_ELECTRIC, min(30, endurance_scale * 0.25))
 		if(3)
-			adjustFireLoss(min(15, getMaxHealth()*0.125))
-		//	adjustFireLoss(rand(5, 12))
+			injure(INJURY_ELECTRIC, min(15, endurance_scale * 0.125))
 		if(4)
-			adjustFireLoss(min(7, getMaxHealth()*0.0625))
-		//	adjustFireLoss(rand(1, 6))
+			injure(INJURY_ELECTRIC, min(7, endurance_scale * 0.0625))
 
 // Water
 /mob/living/simple_mob/get_water_protection()
@@ -268,12 +259,7 @@
 	if(isnull(armorval))
 		armorval = 0
 
-	for(var/datum/modifier/M as anything in modifiers)
-		var/modifier_armor = LAZYACCESS(M.armor_percent, attack_flag)
-		if(modifier_armor)
-			armorval += modifier_armor
-
-	return armorval
+	return armorval + factor_armor(attack_flag)
 
 // Lightning
 /mob/living/simple_mob/lightning_act()
@@ -282,8 +268,7 @@
 	// If the damage is fatal, it is turned to ash.
 	if(!client)
 		inflict_shock_damage(200) // Mobs that are very beefy or resistant to shock may survive getting struck.
-		updatehealth()
-		if(health <= 0)
+		if(stat == DEAD)
 			visible_message(span_critical("\The [src] disintegrates into ash!"))
 			ash()
 			return // No point deafening something that wont exist.
@@ -294,8 +279,7 @@
 	// Similar to lightning, the mob is turned to ash if the lava tick was fatal and it isn't a player.
 	// Unlike lightning, we don't add an additional damage spike (since lava already hurts a lot).
 	if(!client)
-		updatehealth()
-		if(health <= 0)
+		if(stat == DEAD)
 			visible_message(span_critical("\The [src] flashes into ash as the lava consumes them!"))
 			ash()
 

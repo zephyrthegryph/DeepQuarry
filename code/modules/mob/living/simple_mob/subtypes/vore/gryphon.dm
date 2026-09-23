@@ -8,8 +8,7 @@
 	vis_height = 64
 
 	faction = FACTION_GRYPHON
-	maxHealth = 200 // Pretty tanky, but not a boss
-	health = 200
+	endurance = 200 // Pretty tanky, but not a boss
 	see_in_dark = 8
 
 	melee_damage_lower = 5

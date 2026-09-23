@@ -9,7 +9,7 @@
 	user.visible_message(span_notice("[user] starts inspecting [affecting]'s [E.name] carefully."))
 	if(!do_after(user, 1 SECOND, H))
 		to_chat(user, span_notice("You must stand still to inspect [E] for wounds."))
-	else if(LAZYLEN(E.wounds))
+	else if(length(E.get_wounds()))
 		to_chat(user, span_warning("You find [E.get_wounds_desc()]"))
 	else
 		to_chat(user, span_notice("You find no visible wounds."))
@@ -30,10 +30,10 @@
 		to_chat(user, span_notice("You must stand still to check [H]'s skin for abnormalities."))
 	else
 		var/bad = 0
-		if(H.getToxLoss() >= 40)
+		if(H.injury_load(INJURY_CATEGORY_TOXIC) >= 40)
 			to_chat(user, span_warning("[H] has an unhealthy skin discoloration."))
 			bad = 1
-		if(H.getOxyLoss() >= 20)
+		if(H.injury_load(INJURY_CATEGORY_ASPHYXIA) >= 20)
 			to_chat(user, span_warning("[H]'s skin is unusaly pale."))
 			bad = 1
 		if(E.status & ORGAN_DEAD)
@@ -49,11 +49,10 @@
 			else
 				to_chat(user, span_warning("[H] shows signs of infection in the [E.name]."))
 				bad = 1
-		if(LAZYLEN(E.wounds))
-			for(var/datum/wound/W in E.wounds)
-				if(W.internal)
-					to_chat(user, span_danger("You find a large, swelling hematoma in the skin")) //INTERNAL BLEEDING, BE VERY AFRAID.
-					break
+		for(var/datum/affliction/wound/W as anything in E.get_wounds())
+			if(W.internal)
+				to_chat(user, span_danger("You find a large, swelling hematoma in the skin")) //INTERNAL BLEEDING, BE VERY AFRAID.
+				break
 		if(!bad)
 			to_chat(user, span_notice("[H]'s skin is normal."))
 
@@ -109,7 +108,7 @@
 				H.custom_pain("Your [E.name] hurts where it's poked.", bad_organs*20)
 
 			if(appendicitis)
-				var/pain_check = (H.stat && (H.can_feel_pain() || H.synth_cosmetic_pain) && H.chem_effects[CE_PAINKILLER] < 60)
+				var/pain_check = (H.stat && (H.can_feel_pain() || H.synth_cosmetic_pain) && H.factor(BF_ANALGESIA) < 60)
 				if(pain_check) //They can feel pain.
 					to_chat(user, span_danger("[H] jolts when you let go of their [E.name], indicating appendicitis!"))
 					H.custom_pain("You feel pure agony as [src] pushes down on your [E.name]!", 200)
@@ -132,8 +131,8 @@
 	if(armor < 60)
 		to_chat(target, span_danger("You feel extreme pain!"))
 
-		var/max_halloss = round(target.getMaxHealth() * 0.8) //up to 80% of passing out
-		affecting.adjustHalLoss(CLAMP(max_halloss - affecting.halloss, 0, 30))
+		var/max_pain = round(target.get_endurance() * 0.8) //up to 80% of passing out
+		target.injure(INJURY_PAIN, CLAMP(max_pain - target.current_pain(), 0, 30), organ.organ_tag, attacker)
 
 /obj/item/grab/proc/attack_eye(mob/living/carbon/human/target, mob/living/carbon/human/attacker)
 	if(!istype(attacker))
@@ -171,8 +170,8 @@
 		damage += hat.force * 3
 
 	var/armor = target.run_armor_check(BP_HEAD, "melee")
-	target.apply_damage(damage, BRUTE, BP_HEAD, armor)
-	attacker.apply_damage(10, BRUTE, BP_HEAD, attacker.run_armor_check(BP_HEAD))
+	target.injure(INJURY_BLUNT, damage, BP_HEAD, attacker, armor)
+	attacker.injure(INJURY_BLUNT, 10, BP_HEAD, target, attacker.run_armor_check(BP_HEAD))
 
 	if(!armor && target.headcheck(BP_HEAD) && prob(damage))
 		target.apply_effect(20, PARALYZE)

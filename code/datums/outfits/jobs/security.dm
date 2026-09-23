@@ -61,7 +61,6 @@
 	pda_type = /obj/item/pda/security
 
 
-// === merged from security_chomp.dm during hard-fork de-suffix (verified no override-order change) ===
 /datum/decl/hierarchy/outfit/job/security/brigphysician
 	name = OUTFIT_JOB_NAME(JOB_BRIG_PHYSICIAN)
 	uniform = /obj/item/clothing/under/rank/brigphys
@@ -81,3 +80,9 @@
 	headset = /obj/item/radio/headset/headset_medsec
 	headset_alt = /obj/item/radio/headset/headset_medsec
 	headset_earbud = /obj/item/radio/headset/headset_medsec
+
+/datum/decl/hierarchy/outfit/job/security/pilot
+	name = OUTFIT_JOB_NAME(JOB_SECURITY_PILOT)
+	uniform = /obj/item/clothing/under/rank/khi/sec/pilot
+	id_type = /obj/item/card/id/security
+	pda_type = /obj/item/pda/security

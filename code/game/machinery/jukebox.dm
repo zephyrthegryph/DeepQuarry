@@ -441,7 +441,6 @@
 		href_list[VV_HK_DATUM_REFRESH] = "\ref[src]"
 
 
-// === merged from jukebox_ch.dm during hard-fork de-suffix (verified no override-order change) ===
 
 /obj/machinery/media/jukebox/casinojukebox
 	name = "space casino jukebox"

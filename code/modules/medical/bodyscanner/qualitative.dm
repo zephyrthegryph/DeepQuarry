@@ -1,13 +1,13 @@
 // Qualitative bucketing helpers for the body scanner.
 //
 // The bodyscanner used to dump raw damage numbers and the full list of
-// medical_issue names onto the TGUI. Players read those as "exact" data
+// affliction names onto the TGUI. Players read those as "exact" data
 // that the in-fiction scanner would not, in practice, give a medic.
 //
 // These helpers translate raw damage numbers and condition lists into
 // qualitative findings that match what a real-life medical scanner would
 // actually report: severity bands, broken/bleeding/dead flags, and the
-// scanner phrases authored on each /datum/medical_symptom.
+// scanner phrases authored on each /datum/affliction_symptom.
 //
 // Bands (used everywhere unless noted):
 //   "uninjured"   no measurable damage
@@ -48,41 +48,41 @@
 	return "critical"
 
 
-/// Qualitative band for the *overall* health pool. Different max from
-/// per-organ values (the body's overall pool tops out around 100), and
-/// the "critical" tier is calibrated so that 0-or-below health reads
-/// critical regardless of the player's max.
-/proc/dq_qualitative_health_band(health, max_health)
-	if(!max_health || max_health <= 0)
+/// Qualitative band for the patient's overall condition, from the body's
+/// vitality (0..1 wellness). A patient who is down from injury reads
+/// critical regardless of the number.
+/proc/dq_qualitative_vitality_band(vitality, critical = FALSE)
+	if(critical || vitality <= 0)
 		return "critical"
-	if(health <= 0)
-		return "critical"
-	var/frac = health / max_health
-	if(frac >= 0.9)
+	if(vitality >= 0.9)
 		return "uninjured"
-	if(frac >= 0.6)
+	if(vitality >= 0.6)
 		return "minor"
-	if(frac >= 0.3)
+	if(vitality >= 0.3)
 		return "moderate"
-	if(frac >= 0.1)
+	if(vitality >= 0.1)
 		return "severe"
 	return "critical"
 
 
-/// Whole-body damage panel: one row per damage type, qualitative band only.
-/// Caller passes the occupant; we read each loss type and translate.
+/// Whole-body damage panel: one row per injury category, qualitative band
+/// only. Reads the body's injury loads and translates. The `kind` keys are
+/// the TGUI's stable row ids.
 /proc/dq_qualitative_damage_panel(mob/living/carbon/human/H)
 	if(!H)
 		return list()
 	var/list/out = list()
 	// Each entry: { kind, label, band }. Order is deliberate — mirrors
-	// the order the old TGUI rendered them in.
-	out += list(list("kind" = "brute",     "label" = "Trauma",        "band" = dq_qualitative_damage_band(H.getBruteLoss(), 100)))
-	out += list(list("kind" = "fire",      "label" = "Burns",         "band" = dq_qualitative_damage_band(H.getFireLoss(), 100)))
-	out += list(list("kind" = "oxy",       "label" = "Respiratory",   "band" = dq_qualitative_damage_band(H.getOxyLoss(), 100)))
-	out += list(list("kind" = "tox",       "label" = "Toxin",         "band" = dq_qualitative_damage_band(H.getToxLoss(), 100)))
-	out += list(list("kind" = "brain",     "label" = "Neurological",  "band" = dq_qualitative_damage_band(H.getBrainLoss(), 100)))
-	out += list(list("kind" = "clone",     "label" = "Genetic",       "band" = dq_qualitative_damage_band(H.getCloneLoss(), 100)))
+	// the order the old TGUI rendered them in. Neural load is brain
+	// integrity, rated against the brain's own maximum.
+	var/obj/item/organ/internal/brain/brain = H.internal_organs_by_name?[O_BRAIN]
+	var/neural_max = brain?.max_damage || 100
+	out += list(list("kind" = "brute",     "label" = "Trauma",        "band" = dq_qualitative_damage_band(H.injury_load(INJURY_CATEGORY_PHYSICAL), 100)))
+	out += list(list("kind" = "fire",      "label" = "Burns",         "band" = dq_qualitative_damage_band(H.injury_load(INJURY_CATEGORY_THERMAL), 100)))
+	out += list(list("kind" = "oxy",       "label" = "Respiratory",   "band" = dq_qualitative_damage_band(H.injury_load(INJURY_CATEGORY_ASPHYXIA), 100)))
+	out += list(list("kind" = "tox",       "label" = "Toxin",         "band" = dq_qualitative_damage_band(H.injury_load(INJURY_CATEGORY_TOXIC), 100)))
+	out += list(list("kind" = "brain",     "label" = "Neurological",  "band" = dq_qualitative_damage_band(H.injury_load(INJURY_CATEGORY_NEURAL), neural_max)))
+	out += list(list("kind" = "clone",     "label" = "Genetic",       "band" = dq_qualitative_damage_band(H.injury_load(INJURY_CATEGORY_GENETIC), 100)))
 	out += list(list("kind" = "rad",       "label" = "Radiation",     "band" = dq_qualitative_damage_band(H.radiation, 100)))
 	// Paralysis is tick-based, not damage. Translate "this many seconds
 	// of expected immobility" → band.
@@ -115,7 +115,21 @@
 		return list()
 	var/list/out = list()
 	var/list/trend_by_condition = list()
-	for(var/datum/medical_issue/condition/C as anything in H.get_all_conditions())
+	for(var/datum/affliction/C as anything in H.body?.afflictions)
+		// GM custom afflictions have no symptoms; the GM decides whether
+		// the scanner names them outright.
+		if(istype(C, /datum/affliction/custom))
+			var/datum/affliction/custom/custom = C
+			if(custom.showscanner)
+				out += list(list(
+					"phrase"   = custom.name,
+					"organ"    = custom.location?.name || "",
+					"severity" = dq_qualitative_damage_band(custom.severity, 100),
+					"trend"    = _dq_trend_for_condition(custom),
+					"stage"    = null,
+				))
+				custom.last_scanned_severity = custom.severity
+			continue
 		if(!C.active_symptoms)
 			continue
 		// Compute the trend once per condition (one delta) but attach
@@ -126,14 +140,14 @@
 			trend = _dq_trend_for_condition(C)
 			trend_by_condition[key] = trend
 			C.last_scanned_severity = C.severity
-		for(var/datum/medical_symptom/S as anything in C.active_symptoms)
+		for(var/datum/affliction_symptom/S as anything in affliction_symptoms_of(C))
 			if(!(S.audiences & SYMPTOM_AUDIENCE_SCANNER))
 				continue
 			if(!S.scanner_phrase)
 				continue
 			var/organ_name = ""
-			if(C.affectedorgan)
-				organ_name = C.affectedorgan.name
+			if(C.location)
+				organ_name = C.location.name
 			out += list(list(
 				"phrase"   = S.scanner_phrase,
 				"organ"    = organ_name,
@@ -147,7 +161,7 @@
 /// Trend bucket for a condition's severity delta. Uses a small dead
 /// zone around zero so a condition that's drifting by < 2 severity
 /// between scans reads as "stable" rather than flickering.
-/proc/_dq_trend_for_condition(datum/medical_issue/condition/C)
+/proc/_dq_trend_for_condition(datum/affliction/C)
 	if(isnull(C.last_scanned_severity))
 		return "new"
 	var/delta = C.severity - C.last_scanned_severity
@@ -156,3 +170,13 @@
 	if(delta < -2)
 		return "improving"
 	return "stable"
+
+
+/// Internal-bleeding wound afflictions on a limb (empty list if none). The
+/// single place diagnostics look for internal bleeds, so scanners don't
+/// reach into wound internals themselves.
+/proc/dq_limb_internal_bleeds(obj/item/organ/external/E)
+	. = list()
+	for(var/datum/affliction/wound/W in E?.afflictions_here())
+		if(W.internal)
+			. += W

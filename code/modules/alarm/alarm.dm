@@ -100,7 +100,7 @@
 		cameras = null
 
 	if(!cameras)
-		cameras = origin ? origin.get_alarm_cameras() : last_area.get_alarm_cameras()
+		cameras = origin ? origin.get_alarm_cameras() : last_area?.get_alarm_cameras()
 
 	last_camera_area = last_area
 	return cameras
@@ -123,7 +123,7 @@
 
 /atom/proc/get_alarm_name()
 	var/area/A = get_area(src)
-	return A.name
+	return A ? A.name : name
 
 /area/get_alarm_name()
 	return name
@@ -139,7 +139,8 @@
 
 /atom/proc/get_alarm_cameras()
 	var/area/A = get_area(src)
-	return A.get_cameras()
+	// An origin outside any area (nullspace) has no camera network.
+	return A ? A.get_cameras() : list()
 
 /area/get_alarm_cameras()
 	return get_cameras()

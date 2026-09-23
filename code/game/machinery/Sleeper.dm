@@ -101,10 +101,9 @@
 	var/obj/item/reagent_containers/glass/beaker = null
 	var/filtering = 0
 	var/pumping = 0
-	// Currently never changes. On Paradise, max_chem and min_health are based on the matter bins in the sleeper.
+	// Currently never changes. On Paradise, max_chem is based on the matter bins in the sleeper.
 	var/max_chem = 20
 	var/initial_bin_rating = 1
-	var/min_health = -101
 	var/obj/machinery/sleep_console/console
 	var/stasis_level = 0 //Every 'this' life ticks are applied to the mob (when life_ticks%stasis_level == 1)
 	var/stasis_choices = list("Complete (1%)" = 100, "Deep (10%)" = 10, "Moderate (20%)" = 5, "Light (50%)" = 2, "None (100%)" = 0)
@@ -190,13 +189,12 @@
 	if(occupant)
 		occupantData["name"] = occupant.name
 		occupantData["stat"] = occupant.stat
-		occupantData["health"] = occupant.health
-		occupantData["maxHealth"] = occupant.getMaxHealth()
-		occupantData["minHealth"] = -(occupant.getMaxHealth())
-		occupantData["bruteLoss"] = occupant.getBruteLoss()
-		occupantData["oxyLoss"] = occupant.getOxyLoss()
-		occupantData["toxLoss"] = occupant.getToxLoss()
-		occupantData["fireLoss"] = occupant.getFireLoss()
+		occupantData["vitality"] = round(occupant.vitality() * 100)
+		occupantData["critical"] = occupant.is_critical()
+		occupantData["physicalLoad"] = occupant.injury_load(INJURY_CATEGORY_PHYSICAL)
+		occupantData["asphyxiaLoad"] = occupant.injury_load(INJURY_CATEGORY_ASPHYXIA)
+		occupantData["toxicLoad"] = occupant.injury_load(INJURY_CATEGORY_TOXIC)
+		occupantData["thermalLoad"] = occupant.injury_load(INJURY_CATEGORY_THERMAL)
 		occupantData["paralysis"] = occupant.paralysis
 		occupantData["hasBlood"] = 0
 		occupantData["bodyTemperature"] = occupant.bodytemperature
@@ -230,7 +228,6 @@
 		occupantData["btFaren"] = ((occupant.bodytemperature - T0C) * (9.0/5.0))+ 32
 
 
-		// crisis = (occupant.health < min_health)
 		// I'm not sure WHY you'd want to put a simple_animal in a sleeper, but precedent is precedent
 		// Runtime is aptly named, isn't she?
 		if(ishuman(occupant) && !(NO_BLOOD in occupant.species.flags) && occupant.vessel)
@@ -245,7 +242,6 @@
 
 	data["occupant"] = occupantData
 	data["maxchem"] = max_chem
-	data["minhealth"] = min_health
 	data["dialysis"] = filtering
 	data["stomachpumping"] = pumping
 	data["auto_eject_dead"] = auto_eject_dead
@@ -316,7 +312,7 @@
 			var/amount = text2num(params["amount"])
 			if(!length(chemical) || amount <= 0)
 				return
-			if(occupant.health > min_health) //|| (chemical in emergency_chems))
+			if(occupant.vitality() > 0) //|| (chemical in emergency_chems))
 				inject_chemical(ui.user, chemical, amount)
 			else
 				to_chat(ui.user, span_danger("This person is not in good enough condition for sleepers to be effective! Use another means of treatment, such as cryogenics!"))

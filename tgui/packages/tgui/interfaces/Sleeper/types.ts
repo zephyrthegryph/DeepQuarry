@@ -5,7 +5,6 @@ export type Data = {
   hasOccupant: BooleanLike;
   occupant: occupant;
   maxchem: number;
-  minhealth: number;
   dialysis: BooleanLike;
   stomachpumping: BooleanLike;
   auto_eject_dead: BooleanLike;
@@ -30,13 +29,12 @@ type chemical = {
 export type occupant = {
   name: string;
   stat: number;
-  health: number;
-  maxHealth: number;
-  minHealth: number;
-  bruteLoss: number;
-  oxyLoss: number;
-  toxLoss: number;
-  fireLoss: number;
+  vitality: number;
+  critical: BooleanLike;
+  physicalLoad: number;
+  asphyxiaLoad: number;
+  toxicLoad: number;
+  thermalLoad: number;
   paralysis: number;
   hasBlood: BooleanLike;
   bodyTemperature: number;

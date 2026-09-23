@@ -176,7 +176,6 @@
 		qdel(blade)
 
 
-// === merged from mounted_gun_vr.dm during hard-fork de-suffix (verified no override-order change) ===
 /obj/item/rig_module/mounted/sizegun
 	icon = 'icons/obj/rig_modules_vr.dmi'
 	icon_state = "sizegun"
@@ -191,7 +190,6 @@
 	gun_type = /obj/item/gun/energy/sizegun/mounted
 
 
-// === merged from mounted_gun_chomp.dm during hard-fork de-suffix (verified no override-order change) ===
 /obj/item/rig_module/mounted/phase
 	name = "mounted phase rifle"
 	desc = "A forearm-mounted phase rifle."

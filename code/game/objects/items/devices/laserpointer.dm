@@ -133,7 +133,7 @@
 					if(severity >= 3)
 						if(prob(severity * diode.rating))
 							H.Weaken(max(H.weakened, severity - 2))
-						E.damage += severity - 2
+						H.injure(INJURY_BURN, severity - 2, E, src, flags = INJURE_SILENT)
 
 					var/eye_message = span_info("A small, bright dot appears in your vision.")
 					switch(severity)

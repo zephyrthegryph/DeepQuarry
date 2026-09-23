@@ -1,23 +1,23 @@
-// DQ Medical Reference — Causes tab builder.
+// DQ Medical Reference — Triggers tab builder (the TGUI key is still "causes").
 //
-// Iterates dq_causes_registry() and emits one entry per cause with its
-// display name, category, kind (damage / organ damage / progression /
-// blood loss / infection), and the conditions it can produce. Also
-// holds the cause-shape helpers used elsewhere: _dq_cause_kind,
-// _dq_cause_link, and _dq_cure_type_for.
+// Iterates affliction_triggers_registry() and emits one entry per trigger
+// with its display name, category, kind (damage / organ damage /
+// progression / blood loss / infection / metric), and the afflictions it
+// can produce. Also holds the trigger-shape helpers used elsewhere:
+// _affliction_trigger_kind, _affliction_trigger_link, and _dq_cure_type_for.
 
 /obj/item/book/dq_medical_reference/proc/_dq_book_causes()
 	var/list/out = list()
-	for(var/datum/dq_cause/c as anything in dq_causes_registry())
+	for(var/datum/affliction_trigger/c as anything in affliction_triggers_registry())
 		var/list/entry = list()
 		entry["id"]          = "[c.type]"
 		entry["name"]        = c.name
 		entry["category"]    = c.category || "Trauma"
 		entry["subcategory"] = c.subcategory
 		entry["description"] = c.description
-		entry["kind"]        = _dq_cause_kind(c)
+		entry["kind"]        = _affliction_trigger_kind(c)
 		var/list/produces_out = list()
-		for(var/datum/dq_cause_outcome/o as anything in c.produces)
+		for(var/datum/affliction_trigger_outcome/o as anything in c.produces)
 			var/list/po = list()
 			po["id"]   = "[o.condition_type]"
 			po["name"] = _dq_condition_name(o.condition_type)
@@ -31,21 +31,23 @@
 	return out
 
 
-/proc/_dq_cause_kind(datum/dq_cause/c)
-	if(istype(c, /datum/dq_cause/damage_event))
+/proc/_affliction_trigger_kind(datum/affliction_trigger/c)
+	if(istype(c, /datum/affliction_trigger/injury))
 		return "damage"
-	if(istype(c, /datum/dq_cause/organ_damage))
+	if(istype(c, /datum/affliction_trigger/organ_integrity))
 		return "organ damage"
-	if(istype(c, /datum/dq_cause/severity_gate))
+	if(istype(c, /datum/affliction_trigger/progression))
 		return "progression"
-	if(istype(c, /datum/dq_cause/blood_loss))
+	if(istype(c, /datum/affliction_trigger/blood_loss))
 		return "blood loss"
-	if(istype(c, /datum/dq_cause/germ_level))
+	if(istype(c, /datum/affliction_trigger/infection))
 		return "infection"
-	return "cause"
+	if(istype(c, /datum/affliction_trigger/metric))
+		return "metric"
+	return "trigger"
 
-/proc/_dq_cause_link(datum/dq_cause/c)
-	return list("id" = "[c.type]", "name" = c.name, "kind" = _dq_cause_kind(c))
+/proc/_affliction_trigger_link(datum/affliction_trigger/c)
+	return list("id" = "[c.type]", "name" = c.name, "kind" = _affliction_trigger_kind(c))
 
 
 /// Returns either "curative" or "stabilising" for a condition typepath.
@@ -57,18 +59,18 @@
 /// cured_by chems can permanently clear the condition.
 /proc/_dq_cure_type_for(condition_typepath)
 	// Chem-driven conditions clear when the chem leaves — they don't
-	// need their own dq_cause record but they're still
+	// need their own affliction_trigger record but they're still
 	// stabilising-style (cured_by reagents only suppress while present).
-	var/datum/medical_issue/condition/proto = dq_proto(condition_typepath)
+	var/datum/affliction/proto = dq_proto(condition_typepath)
 	if(length(proto.caused_by_chems))
 		return "stabilising"
-	for(var/datum/dq_cause/c as anything in dq_causes_producing(condition_typepath))
-		if(istype(c, /datum/dq_cause/organ_damage))
+	for(var/datum/affliction_trigger/c as anything in affliction_triggers_producing(condition_typepath))
+		if(istype(c, /datum/affliction_trigger/organ_integrity))
 			return "stabilising"
-		if(istype(c, /datum/dq_cause/metric_threshold))
+		if(istype(c, /datum/affliction_trigger/metric))
 			return "stabilising"
-		if(istype(c, /datum/dq_cause/blood_loss))
+		if(istype(c, /datum/affliction_trigger/blood_loss))
 			return "stabilising"
-		if(istype(c, /datum/dq_cause/germ_level))
+		if(istype(c, /datum/affliction_trigger/infection))
 			return "stabilising"
 	return "curative"

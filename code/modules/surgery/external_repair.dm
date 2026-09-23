@@ -66,12 +66,12 @@
 	user.visible_message(span_notice("[user] finishes scanning [target]'s [affected]."), \
 	span_notice("You finish scanning [target]'s [affected]."))
 	user.balloon_alert_visible("finishes scanning [target]'s [affected]", "finished scanning \the [affected]")
-	if(affected.brute_dam)
+	if(affected.get_trauma())
 		to_chat(user, span_notice("The muscle in [target]'s [affected] is notably bruised."))
 		if(affected.status & ORGAN_BROKEN)
 			to_chat(user, span_warning("\The [target]'s [affected] is broken!"))
 		affected.brute_stage = max(1, affected.brute_stage)
-	if(affected.burn_dam)
+	if(affected.get_burn())
 		to_chat(user, span_notice("\The muscle in [target]'s [affected] is notably charred."))
 		affected.burn_stage = max(1, affected.burn_stage)
 
@@ -102,7 +102,7 @@
 /datum/surgery_step/repairflesh/repair_burns/can_use(mob/living/user, mob/living/carbon/human/target, target_zone, obj/item/tool)
 	if(..())
 		var/obj/item/organ/external/affected = target.get_organ(target_zone)
-		if(affected.burn_stage < 1 || !(affected.burn_dam))
+		if(affected.burn_stage < 1 || !(affected.get_burn()))
 			return 0
 		return 1
 	return 0
@@ -130,12 +130,12 @@
 		user.visible_message(span_notice("[user] finishes taping up [target]'s [affected] with \the [tool]."), \
 	span_notice("You finish taping up [target]'s [affected] with \the [tool]."))
 		user.balloon_alert_visible("tapes up \the [affected]", "taped up \the [affected]")
-		affected.createwound(BRUISE, 10)
+		target.injure(INJURY_BLUNT, 10, affected.organ_tag, tool, flags = INJURE_IGNORE_RESISTANCE)
 	var/heal_efficiency = 25
 	if(istype(tool, /obj/item/stack/medical/advanced/ointment))
 		heal_efficiency = 50
-	affected.heal_damage(0, heal_efficiency, 0, 0)
-	if(!(affected.burn_dam))
+	target.mend(TREAT_BURN_CARE, heal_efficiency, affected.organ_tag)
+	if(!(affected.get_burn()))
 		affected.burn_stage = 0
 	if(istype(tool, /obj/item/stack))
 		var/obj/item/stack/T = tool
@@ -147,7 +147,7 @@
 	user.visible_message(span_danger("[user]'s hand slips, tearing up [target]'s [affected] with \the [tool]."), \
 	span_danger("Your hand slips, tearing up [target]'s [affected] with \the [tool]."))
 	user.balloon_alert_visible("slips, tearing up \the [affected]", "you slip, tearing up \the [affected]")
-	affected.createwound(BRUISE, 5)
+	target.injure(INJURY_BLUNT, 5, affected.organ_tag, tool, flags = INJURE_IGNORE_RESISTANCE)
 	if(istype(tool, /obj/item/stack) && prob(30))
 		var/obj/item/stack/T = tool
 		T.use(1)
@@ -174,7 +174,7 @@
 /datum/surgery_step/repairflesh/repair_brute/can_use(mob/living/user, mob/living/carbon/human/target, target_zone, obj/item/tool)
 	if(..())
 		var/obj/item/organ/external/affected = target.get_organ(target_zone)
-		if(affected.brute_stage < 1 || !(affected.brute_dam))
+		if(affected.brute_stage < 1 || !(affected.get_trauma()))
 			return 0
 		return 1
 	return 0
@@ -202,12 +202,12 @@
 		user.visible_message(span_notice("[user] finishes taping up [target]'s \the [affected] with \the [tool]."), \
 	span_notice("You finish taping up [target]'s \the [affected] with \the [tool]."))
 		user.balloon_alert_visible("tapes up \the [affected]", "taped up \the [affected]")
-		affected.createwound(BRUISE, 10)
+		target.injure(INJURY_BLUNT, 10, affected.organ_tag, tool, flags = INJURE_IGNORE_RESISTANCE)
 	var/heal_efficiency = 25
 	if(istype(tool, /obj/item/stack/medical/advanced/bruise_pack))
 		heal_efficiency = 50
-	affected.heal_damage(heal_efficiency, 0, 0, 0)
-	if(!(affected.brute_dam))
+	target.mend(TREAT_TISSUE_REPAIR, heal_efficiency, affected.organ_tag)
+	if(!(affected.get_trauma()))
 		affected.brute_stage = 0
 	if(istype(tool, /obj/item/stack))
 		var/obj/item/stack/T = tool
@@ -219,7 +219,7 @@
 	user.visible_message(span_danger("[user]'s hand slips, tearing up [target]'s \the [affected] with \the [tool]."), \
 	span_danger("Your hand slips, tearing up [target]'s \the [affected] with \the [tool]."))
 	user.balloon_alert_visible("slips, tearing up \the [affected]", "your hand slips, tearing up \the [affected]")
-	affected.createwound(BRUISE, 5)
+	target.injure(INJURY_BLUNT, 5, affected.organ_tag, tool, flags = INJURE_IGNORE_RESISTANCE)
 	if(istype(tool, /obj/item/stack) && prob(30))
 		var/obj/item/stack/T = tool
 		T.use(1)

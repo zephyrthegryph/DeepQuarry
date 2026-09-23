@@ -69,7 +69,7 @@
 	if(isliving(M) && has_radiation)
 		var/mob/living/L = M
 		L.apply_effect(rand(5,20), IRRADIATE, check_protection = 0)
-		L.apply_damage(max(2,L.getCloneLoss()), CLONE)
+		L.injure(INJURY_CELLULAR, max(2, L.injury_load(INJURY_CATEGORY_GENETIC)), source = src)
 
 	// Traitgenes edit begin - NO_DNA and Synthetics cannot be mutated
 	var/allow = TRUE

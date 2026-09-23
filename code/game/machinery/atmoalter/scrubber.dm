@@ -206,11 +206,12 @@
 		last_flow_rate = 0
 		last_power_draw = 0
 		update_icon()
+		return PROCESS_KILL
 	var/new_use_power = 1 + on
 	if(new_use_power != use_power)
 		update_use_power(new_use_power)
 	if(!on)
-		return
+		return PROCESS_KILL
 
 	var/power_draw = -1
 

@@ -59,7 +59,7 @@
 		span = "cult" // Purple and bold.
 		if(prob(1))
 			to_chat(L, span_danger("You cut your hand on something in the trash!"))
-			L.apply_damage(2, BRUTE, pick(BP_L_HAND, BP_R_HAND), used_weapon = "sharp object")
+			L.injure(INJURY_CUT, 2, pick(BP_L_HAND, BP_R_HAND), source)
 			var/datum/disease/advance/random/random_disease = new /datum/disease/advance/random()
 			random_disease.spread_flags |= DISEASE_SPREAD_NON_CONTAGIOUS
 			L.ForceContractDisease(random_disease)

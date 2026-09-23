@@ -18,7 +18,7 @@
 	if (. >= 2)
 		if(prob(1))
 			owner.custom_pain("A stabbing pain rolls through your chest!",1)
-			owner.apply_damage(damage = 25, damagetype = HALLOSS, def_zone = parent_organ)
+			owner.injure(INJURY_PAIN, 25, parent_organ, src)
 
 /obj/item/organ/internal/heart/robotize()
 	..()

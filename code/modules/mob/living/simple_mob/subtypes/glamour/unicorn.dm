@@ -8,8 +8,7 @@
 	tt_desc = "Equus unicornis"
 
 	vore_capacity = 2
-	maxHealth = 250
-	health = 250
+	endurance = 250
 	meat_amount = 10
 
 	old_x = -16
@@ -71,5 +70,4 @@
 
 /mob/living/simple_mob/vore/horse/unicorn/beastmode //for hanner TF
 	projectiletype = null
-	maxHealth = 100
-	health = 100
+	endurance = 100

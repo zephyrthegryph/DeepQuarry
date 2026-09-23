@@ -1,31 +1,3 @@
-/*
-/datum/shuttle/multi_shuttle/mercenary
-	name = "Mercenary"
-	warmup_time = 0
-	can_cloak = TRUE
-	cloaked = TRUE
-	origin = /area/syndicate_station/start
-	interim = /area/syndicate_station/transit
-	start_location = "Mercenary Ship"
-	destinations = list(
-		"Northwest of First Deck" = /area/syndicate_station/firstdeck,
-		"Northeast of the Second deck" = /area/syndicate_station/seconddeck,
-		"Southeast of Third deck" = /area/syndicate_station/thirddeck,
-		"Planetside" = /area/syndicate_station/planet,
-		"Docking Port" = /area/syndicate_station/arrivals_dock,
-		)
-	docking_controller_tag = "merc_shuttle"
-	destination_dock_targets = list(
-		"Forward Operating Base" = "merc_base",
-		"Docking Port" = "nuke_shuttle_dock_airlock",
-		)
-	announcer = "Southern Cross Docking Computer"
-
-/datum/shuttle/multi_shuttle/mercenary/New()
-	arrival_message = "Attention, vessel docking with the Southern Cross."
-	departure_message = "Attention, vessel docking with the Southern Cross."
-	..()
-*/
 
 /obj/machinery/computer/shuttle_control/web/syndicate
 	name = "mercenary shuttle control console"
@@ -47,8 +19,6 @@
 /datum/shuttle_web_master/syndie
 	destination_class = /datum/shuttle_destination/syndie
 	starting_destination = /datum/shuttle_destination/syndie/root
-
-
 
 /datum/shuttle_destination/syndie/root
 	name = "Mercenary Asteroid"

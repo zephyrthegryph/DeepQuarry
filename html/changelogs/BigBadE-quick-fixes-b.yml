@@ -1,0 +1,9 @@
+author: "BigBadE"
+delete-after: true
+changes:
+  - bugfix: "Cyborg ctrl-shift-click now acts on the clicked object instead of the cyborg."
+  - bugfix: "Alt-click hardsuit activation and alt-click ventcrawling no longer shadow each other."
+  - bugfix: "A Shadekin phase shift that fails its final check no longer costs energy or plays the sound."
+  - bugfix: "Objects damaged by melee, thrown items, projectiles, heat and EMP now use the matching damage type and armour flag."
+  - code_imp: "Radiation caches shielding until the shielding actually changes and no longer copies the living mob list per pulse."
+  - code_imp: "get_all_contents_type is linear, and empty vore bellies no longer allocate a list every tick."

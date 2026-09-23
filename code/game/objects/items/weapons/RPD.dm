@@ -137,9 +137,6 @@
 		if("piping_layer")
 			piping_layer = text2num(params["piping_layer"])
 			playeffect = FALSE
-		// if("ducting_layer")
-		// 	ducting_layer = text2num(params["ducting_layer"])
-		// 	playeffect = FALSE
 		if("pipe_type")
 			var/static/list/recipes
 			if(!recipes)

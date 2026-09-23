@@ -229,7 +229,7 @@ GLOBAL_LIST_BOILERPLATE(nanite_turfs, /turf/simulated/floor/water/digestive_enzy
 			targetcarbon.ghostize() //prevent runtimes
 			qdel(targetcarbon)	//glorp
 			return
-		targetcarbon.adjustFireLoss(damage)
+		targetcarbon.injure(INJURY_DIGESTION, damage, null, src)
 		var/how_much = (damage * targetcarbon.size_multiplier) * targetcarbon.get_digestion_nutrition_modifier()
 		if(!targetcarbon.ckey)
 			how_much = how_much / 10	//Braindead mobs are worth less
@@ -250,7 +250,7 @@ GLOBAL_LIST_BOILERPLATE(nanite_turfs, /turf/simulated/floor/water/digestive_enzy
 			nutrients += how_much
 			qdel(targetmob) //gloop
 			return
-		targetmob.adjustFireLoss(damage)
+		targetmob.injure(INJURY_DIGESTION, damage, null, src)
 		var/how_much = (damage * targetmob.size_multiplier) * targetmob.get_digestion_nutrition_modifier()
 		if(!targetmob.ckey)
 			how_much = how_much / 10	//Braindead mobs are worth less
@@ -271,9 +271,8 @@ GLOBAL_LIST_BOILERPLATE(nanite_turfs, /turf/simulated/floor/water/digestive_enzy
 				return
 	if(isrobot(nutrienttarget))
 		var/mob/living/silicon/robot/targetrobot = nutrienttarget
-		if(targetrobot.cell)
-			targetrobot.cell.give(amt * 20)
-			return
+		targetrobot.add_power(ROBOT_CELL_JOULES(amt * 20), src)
+		return
 
 
 /turf/simulated/floor/water/digestive_enzymes/nanites/return_air_for_internal_lifeform(mob/living/targetmob)

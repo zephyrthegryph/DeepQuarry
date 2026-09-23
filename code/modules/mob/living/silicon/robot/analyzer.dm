@@ -52,9 +52,11 @@
 	switch(scan_type)
 		if("robot")
 			if(mode)
-				var/BU = M.getFireLoss() > 50 	? 	span_bold("[M.getFireLoss()]") 		: M.getFireLoss()
-				var/BR = M.getBruteLoss() > 50 	? 	span_bold("[M.getBruteLoss()]") 	: M.getBruteLoss()
-				user.show_message(span_blue("Analyzing Results for [M]:\n\t Overall Status: [M.stat > 1 ? "fully disabled" : "[M.health - M.halloss]% functional"]"))
+				var/electronics_load = round(M.injury_load(INJURY_CATEGORY_THERMAL), 0.1)
+				var/structural_load = round(M.injury_load(INJURY_CATEGORY_PHYSICAL), 0.1)
+				var/BU = electronics_load > 50 	? 	span_bold("[electronics_load]") 		: electronics_load
+				var/BR = structural_load > 50 	? 	span_bold("[structural_load]") 	: structural_load
+				user.show_message(span_blue("Analyzing Results for [M]:\n\t Overall Status: [M.stat > 1 ? "fully disabled" : "[round(M.vitality() * 100)]% functional"]"))
 				user.show_message("\t Key: [span_orange("Electronics")]/[span_red("Brute")]", 1)
 				user.show_message("\t Damage Specifics: [span_orange("[BU]")] - [span_red("[BR]")]")
 				if(M.tod && M.stat == DEAD)
@@ -75,15 +77,15 @@
 					else
 						cell_text = span_red(span_bold("[cell_charge]"))
 					user.show_message("\t Power Cell Status: [span_blue("[capitalize(cell.name)]")] at [cell_text]% charge")
-				var/list/damaged = R.get_damaged_components(1,1,1)
+				var/list/damaged = R.get_faulted_components(TRUE)
 				user.show_message(span_blue("Localized Damage:"),1)
 				if(length(damaged)>0)
-					for(var/datum/robot_component/org in damaged)
+					for(var/datum/robot_component/org as anything in damaged)
 						user.show_message(span_blue(text("\t []: [][] - [] - [] - []",	\
 						span_blue(capitalize(org.name)),					\
-						(org.installed == -1)	?	"[span_red(span_bold("DESTROYED"))] "					:"",\
-						(org.electronics_damage > 0)	?	"[span_orange("[org.electronics_damage]")]"	:0,	\
-						(org.brute_damage > 0)	?	"[span_red("[org.brute_damage]")]"					:0,	\
+						(org.installed == ROBOT_PART_DESTROYED)	?	"[span_red(span_bold("DESTROYED"))] "					:"",\
+						(org.get_wiring_damage() > 0)	?	"[span_orange("[round(org.get_wiring_damage(), 0.1)]")]"	:0,	\
+						(org.get_structural_damage() > 0)	?	"[span_red("[round(org.get_structural_damage(), 0.1)]")]"					:0,	\
 						(org.toggled)	?	"Toggled ON"	:	"[span_red("Toggled OFF")]",\
 						(org.powered)	?	"Power ON"		:	"[span_red("Power OFF")]")),1)
 				else
@@ -120,10 +122,7 @@
 					if(show_title)
 						user.show_message("\t Basic Modules, used for direct upgrade purposes:")
 						show_title = FALSE
-					if(R.has_basic_upgrade(initial(upgrade.build_path)) == "")
-						user.show_message(span_blue("\t\t [capitalize(initial(upgrade.name))]: [span_red(span_bold("ERROR"))]"))
-					else
-						user.show_message(span_blue("\t\t [capitalize(initial(upgrade.name))]: [R.has_basic_upgrade(initial(upgrade.build_path)) ? span_green("Installed") : span_red("Missing")]"))
+					show_upgrade_line(user, R, initial(upgrade.build_path), initial(upgrade.name))
 				show_title = TRUE
 				for(var/datum/design_techweb/prosfab/robot_upgrade/advanced/upgrade in SSresearch.techweb_designs)
 					var/obj/item/borg/upgrade/advanced/upgrade_type = initial(upgrade.build_path)
@@ -133,10 +132,7 @@
 					if(show_title)
 						user.show_message("\t Advanced Modules, used for module upgrade purposes:")
 						show_title = FALSE
-					if(R.has_advanced_upgrade(initial(upgrade.build_path)) == "")
-						user.show_message(span_blue("\t\t [capitalize(initial(upgrade.name))]: [span_red(span_bold("ERROR"))]"))
-					else
-						user.show_message(span_blue("\t\t [capitalize(initial(upgrade.name))]: [R.has_advanced_upgrade(initial(upgrade.build_path)) ? span_green("Installed") : span_red("Missing")]"))
+					show_upgrade_line(user, R, initial(upgrade.build_path), initial(upgrade.name))
 				show_title = TRUE
 				for(var/datum/design_techweb/prosfab/robot_upgrade/restricted/upgrade in SSresearch.techweb_designs)
 					var/obj/item/borg/upgrade/restricted/upgrade_type = initial(upgrade.build_path)
@@ -146,17 +142,18 @@
 					if(show_title)
 						user.show_message("\t Restricted Modules, used for module upgrade purposes on specific chassis:")
 						show_title = FALSE
-					if(R.has_restricted_upgrade(initial(upgrade.build_path)) == "")
-						user.show_message(span_blue("\t\t [capitalize(initial(upgrade.name))]: [span_red(span_bold("ERROR"))]"))
-					else
-						user.show_message(span_blue("\t\t [capitalize(initial(upgrade.name))]: [R.has_restricted_upgrade(initial(upgrade.build_path)) ? span_green("Installed") : span_red("Missing")]"))
+					show_upgrade_line(user, R, initial(upgrade.build_path), initial(upgrade.name))
 				show_title = TRUE
 		if("prosthetics")
 
 			var/mob/living/carbon/human/H = M
 			to_chat(user, span_notice("Analyzing Results for \the [H]:"))
 			if(H.isSynthetic())
-				to_chat(user, "System instability: [span_green("[H.getToxLoss()]")]")
+				// Synthetic faults come from the body's afflictions; synthetic bodies carry no toxic load.
+				var/list/fault_names = list()
+				for(var/datum/affliction/synthetic/fault as anything in H.body?.afflictions_of(/datum/affliction/synthetic))
+					fault_names += fault.name
+				to_chat(user, "System faults: [length(fault_names) ? span_orange(english_list(fault_names)) : span_green("none detected")]")
 			to_chat(user, "Key: [span_orange("Electronics")]/[span_red("Brute")]")
 			to_chat(user, span_notice("External prosthetics:"))
 			var/organ_found
@@ -165,7 +162,7 @@
 					if(!(E.robotic >= ORGAN_ROBOT))
 						continue
 					organ_found = 1
-					to_chat(user, "[E.name]: [span_red("[E.brute_dam] ")] [span_orange("[E.burn_dam]")]")
+					to_chat(user, "[E.name]: [span_red("[E.get_trauma()] ")] [span_orange("[E.get_burn()]")]")
 			if(!organ_found)
 				to_chat(user, "No prosthetics located.")
 			to_chat(user, "<hr>")
@@ -214,3 +211,13 @@
 
 	src.add_fingerprint(user)
 	return
+
+/// One upgrade line of the upgrade scan, from the upgrade's own detection.
+/obj/item/robotanalyzer/proc/show_upgrade_line(mob/user, mob/living/silicon/robot/R, upgrade_type, upgrade_name)
+	var/obj/item/borg/upgrade/proto = robot_upgrade_prototype(upgrade_type)
+	if(!proto)
+		return
+	if(proto.host_missing(R))
+		user.show_message(span_blue("\t\t [capitalize(upgrade_name)]: [span_red(span_bold("ERROR"))]"))
+		return
+	user.show_message(span_blue("\t\t [capitalize(upgrade_name)]: [proto.is_installed(R) ? span_green("Installed") : span_red("Missing")]"))

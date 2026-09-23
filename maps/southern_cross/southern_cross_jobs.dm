@@ -12,37 +12,6 @@
 
 //SC Jobs
 
-/*
-
-//Will see about getting working later.
-
-/datum/job/captain
-	title = "Station Director"
-	flag = CAPTAIN
-	department = "Command"
-	head_position = 1
-	department_flag = ENGSEC
-	faction = FACTION_STATION
-	total_positions = 1
-	spawn_positions = 1
-	supervisors = "company officials and Corporate Regulations"
-	selection_color = "#1D1D4F"
-	req_admin_notify = 1
-	access = list() 			//See get_access()
-	minimal_access = list() 	//See get_access()
-	minimal_player_age = 14
-	economic_modifier = 20
-
-	minimum_character_age = 25
-	ideal_character_age = 50 // Because 70 is a tad on the old side
-
-	outfit_type = /datum/decl/hierarchy/outfit/job/captain
-	alt_titles = list("Site Manager", "Overseer")
-
-/datum/job/captain/get_access()
-	return get_all_station_access()
-*/
-
 /datum/department/planetside
 	name = DEPARTMENT_PLANET
 	color = "#555555"
@@ -82,12 +51,6 @@
 
 	outfit_type = /datum/decl/hierarchy/outfit/job/explorer2
 	job_description = "An Explorer searches for interesting things on the surface of Sif, and returns them to the station."
-
-/*
-	alt_titles = list(
-		JOB_ALT_EXPLORERE_TECHNICIAN = /datum/decl/hierarchy/outfit/job/explorer2/technician,
-		JOB_ALT_EXPLORER_MEDIC = /datum/decl/hierarchy/outfit/job/explorer2/medic)
-*/
 
 /datum/job/sar
 	title = "Search and Rescue"

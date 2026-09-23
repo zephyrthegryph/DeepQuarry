@@ -253,9 +253,9 @@
 	target.Blind(flash_strength)
 	target.eye_blurry = max(target.eye_blurry, flash_strength + 5)
 	target.flash_eyes()
-	target.adjustHalLoss(halloss_per_flash * (flash_strength / 5)) // Should take two flashes to stun.
+	target.injure(INJURY_PAIN, halloss_per_flash * (flash_strength / 5), BP_HEAD, src) // Should take two flashes to stun.
 	if(flash_burn)
-		target.apply_damage(flash_burn * (flash_strength/5), BURN, BP_HEAD, 0)
+		target.injure(INJURY_BURN, flash_burn * (flash_strength/5), BP_HEAD, src)
 	return TRUE
 
 
@@ -307,7 +307,7 @@
 		var/mob/living/carbon/C = loc
 		var/safety = C.eyecheck()
 		if(safety <= 0)
-			C.adjustHalLoss(halloss_per_flash)
+			C.injure(INJURY_PAIN, halloss_per_flash, BP_HEAD, src)
 			C.flash_eyes()
 			C.visible_message(span_disarm("[C] is blinded by the flash!"), span_danger("You're blinded by the flash!"), span_warning("You hear the sound of a flash!"))
 	..()

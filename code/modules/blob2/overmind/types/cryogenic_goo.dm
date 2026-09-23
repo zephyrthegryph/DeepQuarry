@@ -34,7 +34,7 @@
 
 			H.bodytemperature = max(H.bodytemperature - temp_change, temp_cap)
 	else // Just do some extra burn for mobs who don't process bodytemp
-		victim.adjustFireLoss(20)
+		victim.injure(INJURY_FROSTBITE, 20, null, B)
 
 /datum/blob_type/cryogenic_goo/on_pulse(obj/structure/blob/B)
 	var/turf/simulated/T = get_turf(B)

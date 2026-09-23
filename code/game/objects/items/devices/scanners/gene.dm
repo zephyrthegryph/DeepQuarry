@@ -55,11 +55,12 @@
 				output += span_danger("Subject is severely irradiated") + "<br>"
 			else
 				output += span_warning("Subject is irradiated") + "<br>"
-		if(L.getCloneLoss())
-			if(L.getCloneLoss() > 50)
-				output += span_danger("[L.getCloneLoss()] Genetic damage") + "<br>"
+		var/genetic_load = round(L.injury_load(INJURY_CATEGORY_GENETIC))
+		if(genetic_load)
+			if(genetic_load > 50)
+				output += span_danger("[genetic_load] Genetic damage") + "<br>"
 			else
-				output += span_warning("[L.getCloneLoss()] Genetic damage") + "<br>"
+				output += span_warning("[genetic_load] Genetic damage") + "<br>"
 
 		if(NOCLONE in L.mutations)
 			output += span_warning("Subject's dna is unstable") + "<br>"

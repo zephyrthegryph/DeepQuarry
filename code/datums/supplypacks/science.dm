@@ -173,7 +173,6 @@
 	access = ACCESS_RESEARCH
 
 
-// === merged from science_chomp.dm during hard-fork de-suffix (verified no override-order change) ===
 /datum/supply_pack/sci/borgos
 	name = "Borg-O's Five-Pack"
 	contains = list(

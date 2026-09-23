@@ -203,7 +203,6 @@
 	update_clothing_icon() //so our mob-overlays update
 
 
-// === merged from pilot_helmet_vr.dm during hard-fork de-suffix (verified no override-order change) ===
 //Pilot helmets
 /obj/item/clothing/head/pilot_vr
 	name = "standard pilot helmet"

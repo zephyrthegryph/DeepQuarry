@@ -37,6 +37,8 @@
 
 /atom/movable/Initialize(mapload)
 	. = ..()
+	if(rad_insulation != RAD_NO_INSULATION)
+		RAD_SHIELDING_CHANGED
 
 #if EMISSIVE_BLOCK_GENERIC != 0
 	#error EMISSIVE_BLOCK_GENERIC is expected to be 0 to facilitate a weird optimization hack where we rely on it being the most common.
@@ -71,7 +73,6 @@
 			AddComponent(/datum/component/overlay_lighting, is_directional = TRUE, starts_on = light_on)
 	if (listening_recursive)
 		set_listening(listening_recursive)
-
 
 /atom/movable/Destroy()
 	if(em_block)
@@ -256,6 +257,9 @@
 ///Called after a successful Move(). By this point, we've already moved
 /atom/movable/proc/Moved(atom/old_loc, direction, forced = FALSE, movetime)
 	SEND_SIGNAL(src, COMSIG_MOVABLE_MOVED, old_loc, direction, forced, movetime)
+	// Covers Destroy() too, which moves to nullspace.
+	if(rad_insulation != RAD_NO_INSULATION)
+		RAD_SHIELDING_CHANGED
 	// Handle any buckled mobs on this movable
 	if(has_buckled_mobs())
 		handle_buckled_mob_movement(old_loc, direction, movetime)
@@ -268,10 +272,18 @@
 
 /mob/Moved(atom/old_loc, direction, forced, movetime)
 	. = ..()
-	SSmachines?.publish_mob_chunk(old_loc)
-	SSmachines?.publish_mob_chunk(src)
-	SSai?.publish_mob_chunk(old_loc)
-	SSai?.publish_mob_chunk(src)
+	// Both publishers return before any turf lookup while nothing is subscribed (Q12).
+	if(SSmachines?.mob_chunk_subscriptions || length(SSai?.chunk_subscribers) || (client && length(SSsounds?.dormant_loops_by_chunk)))
+		var/turf/old_turf = get_turf(old_loc)
+		var/turf/new_turf = get_turf(src)
+		if(client)
+			SSsounds?.publish_mob_chunk(new_turf)
+		// A step inside one chunk only needs one publish: the first wakes every subscriber.
+		if(old_turf && (!new_turf || old_turf.z != new_turf.z || MOB_CHUNK_COORD(old_turf.x) != MOB_CHUNK_COORD(new_turf.x) || MOB_CHUNK_COORD(old_turf.y) != MOB_CHUNK_COORD(new_turf.y)))
+			SSmachines?.publish_mob_chunk(old_turf)
+			SSai?.publish_mob_chunk(old_turf)
+		SSmachines?.publish_mob_chunk(new_turf)
+		SSai?.publish_mob_chunk(new_turf)
 	//If we return focus to our own mob, but we are still inside something with an inherent remote view. Restart it.
 	if(client)
 		restore_remote_views()
@@ -428,6 +440,7 @@
 
 //called when src is thrown into hit_atom
 /atom/movable/proc/throw_impact(atom/hit_atom, datum/thrownthing/throwingdatum)
+	SEND_SIGNAL(src, COMSIG_MOVABLE_IMPACT, hit_atom, throwingdatum)
 	if(isliving(hit_atom))
 		var/mob/living/M = hit_atom
 		if(M.buckled == src)
@@ -565,8 +578,7 @@
 
 // Called when touching a lava tile.
 /atom/movable/proc/lava_act()
-	fire_act(null, 10000, 1000)
-
+	fire_act(10000, 1000)
 
 // Procs to cloak/uncloak
 /atom/movable/proc/cloak()
@@ -603,7 +615,6 @@
 
 	//Oooooo
 	uncloak_animation(animation_time)
-
 
 // Animations for cloaking/uncloaking
 /atom/movable/proc/cloak_animation(length = 1 SECOND)
@@ -647,7 +658,6 @@
 
 	//Remove those
 	filters -= filter(type="wave", x=0, y = 16, size = 0, offset = 0, flags = WAVE_SIDEWAYS)
-
 
 // So dq_get_cloaked(src) things can see themselves, if necessary
 /atom/movable/proc/get_cloaked_selfimage()
@@ -746,11 +756,6 @@
 	if(!.)
 		return
 
-	//if(href_list[VV_HK_OBSERVE_FOLLOW])
-	//	if(!check_rights(R_ADMIN))
-	//		return
-	//	usr.client?.admin_follow(src)
-
 	if(href_list[VV_HK_GET_MOVABLE])
 		if(!check_rights(R_ADMIN))
 			return
@@ -765,16 +770,3 @@
 		var/client/C = usr.client
 		C?.open_particle_editor(src)
 
-	//if(href_list[VV_HK_DEADCHAT_PLAYS] && check_rights(R_FUN))
-	//	if(tgui_alert(usr, "Allow deadchat to control [src] via chat commands?", "Deadchat Plays [src]", list("Allow", "Cancel")) != "Allow")
-	//		return
-	//	// Alert is async, so quick sanity check to make sure we should still be doing this.
-	//	if(QDELETED(src))
-	//		return
-	//	// This should never happen, but if it does it should not be silent.
-	//	if(deadchat_plays() == COMPONENT_INCOMPATIBLE)
-	//		to_chat(usr, span_warning("Deadchat control not compatible with [src]."))
-	//		CRASH("deadchat_control component incompatible with object of type: [type]")
-	//	to_chat(usr, span_notice("Deadchat now control [src]."))
-	//	log_admin("[key_name(usr)] has added deadchat control to [src]")
-	//	message_admins(span_notice("[key_name(usr)] has added deadchat control to [src]"))

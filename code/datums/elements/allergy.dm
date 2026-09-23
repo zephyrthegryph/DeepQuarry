@@ -21,16 +21,18 @@
 	var/disable_severity = species.allergen_disable_severity * allergen_CE_amount
 
 	if(species.allergen_reaction & AG_PHYS_DMG)
-		H.adjustBruteLoss(damage_severity)
+		H.injure(INJURY_BLUNT, damage_severity, flags = INJURE_SILENT) // hives, swelling
 
 	if(species.allergen_reaction & AG_BURN_DMG)
-		H.adjustFireLoss(damage_severity)
+		H.injure(INJURY_CORROSIVE, damage_severity, flags = INJURE_SILENT) // blistering
 
 	if(species.allergen_reaction & AG_TOX_DMG)
-		H.adjustToxLoss(damage_severity)
+		H.injure(INJURY_TOXIN, damage_severity, flags = INJURE_SILENT)
 
 	if(species.allergen_reaction & AG_OXY_DMG)
-		H.adjustOxyLoss(damage_severity)
+		// Airway swelling: an edema that can close the throat (vasopressor to reverse).
+		var/datum/affliction/airway_edema/edema = H.body?.afflict(/datum/affliction/airway_edema)
+		edema?.adjust_severity(damage_severity)
 		if(prob(disable_severity/2))
 			H.emote(pick("cough","gasp","choke"))
 
@@ -39,7 +41,7 @@
 			H.emote(pick("pale","shiver","twitch"))
 
 	if(species.allergen_reaction & AG_PAIN)
-		H.adjustHalLoss(disable_severity)
+		H.injure(INJURY_PAIN, disable_severity)
 
 	if(species.allergen_reaction & AG_WEAKEN)
 		H.Weaken(disable_severity)

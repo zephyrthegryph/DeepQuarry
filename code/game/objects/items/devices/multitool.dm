@@ -105,3 +105,24 @@
 		icon_state = "multitool_ref_scan"
 		return
 	icon_state = "multitool"
+
+/// Recalibrating a synthetic body part: actuator misalignment responds to
+/// TREAT_CALIBRATION, and a pass over the head also runs a system restore
+/// for processor corruption. Only synthetic parts respond — the body gates
+/// treatment by the part's biology.
+/obj/item/multitool/attack(mob/living/M, mob/living/user, target_zone, attack_modifier)
+	if(!ishuman(M) || user.a_intent != I_HELP)
+		return ..()
+	var/mob/living/carbon/human/H = M
+	var/obj/item/organ/external/E = H.get_organ(target_zone)
+	if(!E || !(H.body.biology_of(E) & treatment_tag_biology(TREAT_CALIBRATION)))
+		return ..()
+	user.visible_message(span_notice("[user] plugs \the [src] into a diagnostic port on [H]'s [E.name] and starts recalibrating."), \
+		span_notice("You start recalibrating [H]'s [E.name]."))
+	if(!do_after(user, 4 SECONDS, H))
+		return ITEM_INTERACT_SUCCESS
+	var/treated = H.mend(TREAT_CALIBRATION, 30, E.organ_tag)
+	if(E.organ_tag == BP_HEAD)
+		treated += H.mend(TREAT_SYSTEM_RESTORE, 20, BP_HEAD)
+	to_chat(user, treated ? span_notice("Calibration offsets corrected.") : span_notice("Everything already reads within tolerance."))
+	return ITEM_INTERACT_SUCCESS

@@ -34,7 +34,6 @@
 	return REAGENTS_PER_HULL
 
 
-// === merged from hull_vr.dm during hard-fork de-suffix (verified no override-order change) ===
 /obj/item/stack/material/plastitanium/hull
 	name = "plastitanium hull sheets"
 	icon = 'icons/obj/stacks_vr.dmi'

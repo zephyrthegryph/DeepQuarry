@@ -18,9 +18,11 @@
 		var/mob/living/carbon/human/H = parent
 		metabolism_type = H.species.reagent_tag
 
+	begin_batch()
 	for(var/datum/reagent/current in reagent_list)
 		current.on_mob_life(parent, metabolism_type, src)
 	update_total()
+	end_batch()
 
 // "Specialized" metabolism datums
 /datum/reagents/metabolism/bloodstream

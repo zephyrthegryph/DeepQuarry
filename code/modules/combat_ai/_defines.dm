@@ -69,20 +69,18 @@
 // Signals emitted on the mob by the brain framework. Behaviors can subscribe
 // to these via their eval_triggers list to re-evaluate only when relevant.
 // ---------------------------------------------------------------------------
-#define COMSIG_DQAI_DAMAGE_TAKEN     "dqai_damage_taken"      // (amount, damagetype, source_mob)
+#define COMSIG_DQAI_DAMAGE_TAKEN     "dqai_damage_taken"      // (amount, injury_kind, source_mob)
 #define COMSIG_DQAI_TARGET_LOST      "dqai_target_lost"       // (old_target)
 #define COMSIG_DQAI_TARGET_CHANGED   "dqai_target_changed"    // (new_target, old_target)
 #define COMSIG_DQAI_ALLY_DISTRESS    "dqai_ally_distress"     // (ally, attacker)
-#define COMSIG_DQAI_BEHAVIORS_DIRTY  "dqai_behaviors_dirty"   // ()
 #define COMSIG_DQAI_LOW_HEALTH       "dqai_low_health"        // (hp_fraction)
-#define COMSIG_DQAI_ENTERED_VIEW     "dqai_entered_view"      // (mob_seen)
 
 // ---------------------------------------------------------------------------
 // Misc helpers / tuning.
 // ---------------------------------------------------------------------------
 // How long personal relationship entries last by default if duration is unset.
 #define DQ_PERSONAL_DEFAULT_DURATION (30 SECONDS)
-// Below this fraction of max HP, COMSIG_DQAI_LOW_HEALTH fires.
+// At or below this vitality() fraction (0..1 wellness), COMSIG_DQAI_LOW_HEALTH fires.
 #define DQ_LOW_HP_THRESHOLD 0.4
 // World model perception refresh interval (in slow ticks). 1 = every slow tick.
 #define DQ_PERCEPTION_REFRESH_RATE 1

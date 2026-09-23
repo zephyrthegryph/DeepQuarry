@@ -9,7 +9,7 @@
 // DreamSeeker doesn't fall back to its built-in toggle. The verb does
 // nothing.
 
-/client/verb/quarry_tab_noop()
+/client/verb/tab_noop()
 	set hidden = TRUE
 	set name = ".dq-tab-noop"
 	return

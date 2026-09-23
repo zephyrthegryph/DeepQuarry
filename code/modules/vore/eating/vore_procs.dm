@@ -173,8 +173,8 @@
 
 	if(user == pred && isAI(user))
 		var/mob/living/silicon/ai/AI = user
-		if(AI.holo && AI.holo.masters[AI])
-			user_to_prey = get_dist(get_turf(AI.holo.masters[AI]), get_turf(prey))
+		if(AI.holo && LAZYACCESS(AI.holo.masters, AI))
+			user_to_prey = get_dist(get_turf(LAZYACCESS(AI.holo.masters, AI)), get_turf(prey))
 
 	if(user_to_pred > 1 || user_to_prey > 1)
 		return FALSE

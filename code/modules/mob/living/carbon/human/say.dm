@@ -165,7 +165,7 @@
 				message_data[2] = "HIIII EVERYPONY"
 			return 1
 
-	if((CE_SPEEDBOOST in chem_effects) || (get_jittery() >= 100 && !stuttering)) // motor mouth, check for stuttering so anxiety doesn't do hyperzine text
+	if(factor(BF_PENALTY_SCALE) < 1 || (get_jittery() >= 100 && !stuttering)) // motor mouth, check for stuttering so anxiety doesn't do hyperzine text
 		// Despite trying to url/html decode these, byond is just being bad and I dunno.
 		var/static/regex/speedboost_initial = new (@"&[a-z]{2,5};|&#\d{2};","g")
 		// Not herestring because bad vs code syntax highlight panics at apostrophe

@@ -77,7 +77,6 @@
 	path = /obj/item/storage/quickdraw/syringe_case
 
 
-// === merged from stealthy_weapons_chomp.dm during hard-fork de-suffix (verified no override-order change) ===
 /datum/uplink_item/item/stealthy_weapons/angrybuzzer
 	name = "Morphium Shock Ring"
 	desc = "An enigmatic ring used to create powerful electric shocks when punching. Can be used as a brute-force method of defibrillation."

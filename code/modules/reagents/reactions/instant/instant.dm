@@ -1654,7 +1654,7 @@
 					else if(comp.revive_ready == REVIVING_DONE)// already reviving, check if they're ready to hatch
 						comp.chimera_hatch()
 						H.visible_message(span_danger(span_huge("[H] violently convulses and then bursts open, revealing a new, intact copy in the pool of viscera."))) // Hope you were wearing waterproofs, doc...
-						H.adjustBrainLoss(10) // they're reviving from dead, so take 10 brainloss
+						H.injure(INJURY_NEURAL, 10, source = holder.my_atom) // they're reviving from dead, so take 10 brain damage
 					else //they're already reviving but haven't hatched. Give a little message to tell them to wait.
 						H.visible_message(span_info("[H] stirs faintly, but doesn't appear to be ready to wake up yet."))
 				else

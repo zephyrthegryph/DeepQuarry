@@ -79,7 +79,6 @@
 			M.toggle()
 
 
-// === merged from holosign_chomp.dm during hard-fork de-suffix (verified no override-order change) ===
 /obj/machinery/holosign/chemistry
 	name = "chemistry holosign"
 	desc = "Small wall-mounted holographic projector. This one signifies that a chemist is on duty."

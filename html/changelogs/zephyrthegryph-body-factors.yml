@@ -1,0 +1,9 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - refactor: "Every mob stat (slowdown, accuracy, evasion, attack speed, incoming injury, stun duration, healing, metabolism, bleeding, pain relief, vitals and more) is now one body factor that afflictions, drugs, modifiers, species, traits, forms and worn gear all feed. Effects combine automatically, so two conditions that each narrow the airway now close it together."
+  - balance: "Condition effects now scale with how severe the condition is, and drug effects scale with the dose in your system."
+  - rscadd: "A choked or failing airway stops you speaking, severe head injuries stop you operating, and a severed arm tendon stops that hand holding anything."
+  - rscadd: "The medical reference book lists every condition's and drug's effects on the body, straight from their data."
+  - bugfix: "Reagents in the bloodstream were counted twice when working out treatment strength."
+  - bugfix: "The magnet mining belt's defensive variant now actually reduces damage, and both switch off with the generator."

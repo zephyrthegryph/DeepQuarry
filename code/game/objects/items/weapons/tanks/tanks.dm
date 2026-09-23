@@ -375,7 +375,7 @@ GLOBAL_LIST_EMPTY(tank_gauge_cache)
 	if(!air_contents)
 		return
 	//Allow for reactions
-	air_contents.react() //cooking up air tanks - add phoron and oxygen, then heat above PHORON_MINIMUM_BURN_TEMPERATURE
+	air_contents.react() //cooking up air tanks - add phoron and oxygen, then heat above PLASMA_MINIMUM_BURN_TEMPERATURE
 	if(gauge_icon)
 		update_gauge()
 	check_status()
@@ -595,7 +595,7 @@ GLOBAL_LIST_EMPTY(tank_gauge_cache)
 	src.air_contents.adjust_gas(GAS_O2, (oxygen_amt) - LINDA_GAS_AMT(src.air_contents, GAS_O2))
 	// update_values() removed; no-op under LINDA.
 	src.valve_welded = 1
-	src.air_contents.set_temperature(PHORON_MINIMUM_BURN_TEMPERATURE-1)
+	src.air_contents.set_temperature(PLASMA_MINIMUM_BURN_TEMPERATURE-1)
 
 	src.wired = 1
 

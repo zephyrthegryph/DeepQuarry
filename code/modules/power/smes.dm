@@ -52,7 +52,7 @@ GLOBAL_LIST_EMPTY(smeses)
 
 	var/name_tag = null
 	var/building_terminal = 0 //Suggestions about how to avoid clickspam building several terminals accepted!
-	var/list/terminals = list()
+	var/list/terminals // Lazy
 	var/should_be_mapped = 0 // If this is set to 0 it will send out warning on New()
 	var/grid_check = FALSE // If true, suspends all I/O.
 
@@ -124,6 +124,7 @@ GLOBAL_LIST_EMPTY(smeses)
 
 /obj/machinery/power/smes/Destroy()
 	for(var/obj/machinery/power/terminal/T in terminals)
+		T.powernet?.unregister_storage_terminal(T)
 		T.master = null
 	terminals = null
 	GLOB.smeses -= src
@@ -135,23 +136,25 @@ GLOBAL_LIST_EMPTY(smeses)
 		var/turf/T = get_step(src, d)
 		for(var/obj/machinery/power/terminal/term in T)
 			if(term && term.dir == turn(d, 180) && !term.master)
-				terminals |= term
+				LAZYOR(terminals, term)
 				term.master = src
 				term.connect_to_network()
 
 /obj/machinery/power/smes/proc/check_terminals()
-	if(!terminals.len)
+	if(!LAZYLEN(terminals))
 		return FALSE
 	return TRUE
 
 /obj/machinery/power/smes/add_avail(amount)
-	if(..(amount))
-		powernet.smes_newavail += amount
+	if(powernet)
+		power_supply_generation = SSmachines.power_supply_generation
+		powernet.register_power_supply(src, amount, TRUE)
 		return 1
 	return 0
 
 /obj/machinery/power/smes/disconnect_terminal(obj/machinery/power/terminal/term)
-	terminals -= term
+	term.powernet?.unregister_storage_terminal(term)
+	LAZYREMOVE(terminals, term)
 	term.master = null
 
 /obj/machinery/power/smes/update_icon()
@@ -201,7 +204,10 @@ GLOBAL_LIST_EMPTY(smeses)
 	if(stat & BROKEN)
 		soundloop.stop()
 		noisy = FALSE
-		return
+		clear_power_supply()
+		for(var/obj/machinery/power/terminal/term in terminals)
+			term.powernet?.register_storage_demand(src, term, 0)
+		return PROCESS_KILL
 
 	// only update icon if state changed
 	if(last_disp != chargedisplay() || last_chrg != inputting || last_onln != outputting)
@@ -211,6 +217,8 @@ GLOBAL_LIST_EMPTY(smeses)
 	last_chrg = inputting
 	last_onln = outputting
 	input_available = 0
+	target_load = 0
+	inputting = 0
 
 	//inputting
 	if(input_attempt && (!input_pulsed && !input_cut) && !grid_check)
@@ -220,17 +228,18 @@ GLOBAL_LIST_EMPTY(smeses)
 			if(!term.powernet)
 				continue
 			input_available = TRUE
-			term.powernet.smes_demand += target_load
-			term.powernet.inputting.Add(term)
+			term.powernet.register_storage_demand(src, term, target_load)
 		if(!input_available)
 			target_load = 0 // We won't input any power without powernet connection.
 		inputting = 0
+	else
+		for(var/obj/machinery/power/terminal/term in terminals)
+			term.powernet?.register_storage_demand(src, term, 0)
 
 	output_used = 0
 	//outputting
 	if(output_attempt && (!output_pulsed && !output_cut) && powernet && charge && !grid_check)
 		output_used = min( charge/SMESRATE, output_level)		//limit output to that stored
-		remove_charge(output_used)			// reduce the storage (may be recovered in /restore() if excessive)
 		add_avail(output_used)				// add output to powernet (smes side)
 		outputting = 2
 	else if(!powernet || !charge)
@@ -248,31 +257,41 @@ GLOBAL_LIST_EMPTY(smeses)
 	if(!outputting)
 		soundloop.stop()
 		noisy = FALSE
+	// Both directions are retained as powernet rates. Storage settlement wakes
+	// this machine exactly at a full/empty boundary; settings and topology wake it
+	// explicitly, so no charge-state polling remains.
+	return PROCESS_KILL
 
-// called after all power processes are finished
-// restores charge level to smes if there was excess this ptick
+/// Debit the portion of a stable registered output rate that the network
+/// actually consumed over elapsed machinery intervals.
+/obj/machinery/power/smes/proc/consume_registered_output(used_rate, elapsed_ticks)
+	if(used_rate <= 0 || elapsed_ticks <= 0)
+		return
+	output_used = min(used_rate, output_level)
+	remove_charge(output_used * elapsed_ticks)
+	charge = max(charge, 0)
+	if((input_attempt && charge < capacity) || !charge)
+		START_MACHINE_PROCESSING(src)
+
+/obj/machinery/power/smes/proc/receive_registered_input(input_rate, elapsed_ticks)
+	if(input_rate <= 0 || elapsed_ticks <= 0)
+		return
+	add_charge(input_rate * elapsed_ticks)
+	charge = min(charge, capacity)
+	if(charge >= capacity)
+		START_MACHINE_PROCESSING(src)
+
+/obj/machinery/power/smes/proc/set_registered_input(input_rate, requested_rate)
+	input_available = input_rate
+	if(input_rate <= 0)
+		inputting = 0
+	else if(input_rate + 0.01 >= requested_rate)
+		inputting = 2
+	else
+		inputting = 1
+
+// Compatibility hook for callers outside the persistent ledger.
 /obj/machinery/power/smes/proc/restore(percent_load)
-	if(stat & BROKEN)
-		return
-
-	if(!outputting)
-		output_used = 0
-		return
-
-	var/total_restore = output_used * (percent_load / 100) // First calculate amount of power used from our output
-	total_restore = between(0, total_restore, output_used) // Now clamp the value between 0 and actual output, just for clarity.
-	total_restore = output_used - total_restore			   // And, at last, subtract used power from outputted power, to get amount of power we will give back to the SMES.
-
-	// now recharge this amount
-	var/clev = chargedisplay()
-
-	add_charge(total_restore)				// restore unused power
-	powernet.netexcess -= total_restore		// remove the excess from the powernet, so later SMESes don't try to use it
-
-	output_used -= total_restore
-
-	if(clev != chargedisplay() ) //if needed updates the icons overlay
-		update_icon()
 	return
 
 //Will return 1 on failure
@@ -306,7 +325,7 @@ GLOBAL_LIST_EMPTY(smeses)
 		term.set_dir(tempDir)
 		term.master = src
 		term.connect_to_network()
-		terminals |= term
+		LAZYOR(terminals, term)
 		return 0
 	return 1
 
@@ -418,7 +437,7 @@ GLOBAL_LIST_EMPTY(smeses)
 					return ITEM_INTERACT_SUCCESS
 			new /obj/item/stack/cable_coil(loc, 10)
 			user.visible_message(span_filter_notice(span_notice("[user.name] cut the cables and dismantled the power terminal.")), span_filter_notice(span_notice("You cut the cables and dismantle the power terminal.")))
-			terminals -= term
+			LAZYREMOVE(terminals, term)
 			qdel(term)
 	building_terminal = FALSE
 	return ITEM_INTERACT_SUCCESS
@@ -508,11 +527,14 @@ GLOBAL_LIST_EMPTY(smeses)
 	input_attempt = do_input
 	if(!input_attempt)
 		inputting = 0
+	START_MACHINE_PROCESSING(src)
 
 /obj/machinery/power/smes/proc/outputting(do_output)
 	output_attempt = do_output
 	if(!output_attempt)
 		outputting = 0
+		clear_power_supply()
+	START_MACHINE_PROCESSING(src)
 
 /obj/machinery/power/smes/atom_destruction(damage_flag)
 	visible_message(span_filter_notice(span_danger("\The [src] explodes in large shower of sparks and smoke!")))
@@ -575,6 +597,7 @@ GLOBAL_LIST_EMPTY(smeses)
 // Description: Sets input setting on this SMES. Trims it if limits are exceeded.
 /obj/machinery/power/smes/proc/set_input(new_input = 0)
 	input_level = between(0, new_input, input_level_max)
+	START_MACHINE_PROCESSING(src)
 	update_icon()
 
 // Proc: set_output()
@@ -582,6 +605,7 @@ GLOBAL_LIST_EMPTY(smeses)
 // Description: Sets output setting on this SMES. Trims it if limits are exceeded.
 /obj/machinery/power/smes/proc/set_output(new_output = 0)
 	output_level = between(0, new_output, output_level_max)
+	START_MACHINE_PROCESSING(src)
 	update_icon()
 
 /obj/machinery/power/smes/buildable/hybrid

@@ -97,7 +97,7 @@
 /datum/unarmed_attack/proc/handle_eye_attack(mob/living/carbon/human/user, mob/living/carbon/human/target)
 	var/obj/item/organ/internal/eyes/eyes = target.internal_organs_by_name[O_EYES]
 	if(eyes)
-		eyes.take_damage(rand(3,4), 1)
+		target.injure(INJURY_BLUNT, rand(3,4), eyes, user, flags = INJURE_SILENT)
 		user.visible_message(span_danger("[user] presses [p_their()] [eye_attack_text] into [target]'s [eyes.name]!"))
 		var/eye_pain = eyes.organ_can_feel_pain()
 		to_chat(target, span_danger("You experience[(eye_pain) ? "" : " immense pain as you feel" ] [eye_attack_text_victim] being pressed into your [eyes.name][(eye_pain)? "." : "!"]"))

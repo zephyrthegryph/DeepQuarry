@@ -1152,7 +1152,6 @@ I said no!
 	result = /obj/item/reagent_containers/food/snacks/gigapuddi/anger
 
 
-// === merged from recipes_microwave_ch.dm during hard-fork de-suffix (verified no override-order change) ===
 	//Imported food from old code
 /datum/recipe/sauerkraut
 	reagents = list(REAGENT_ID_SODIUMCHLORIDE = 3)
@@ -1270,7 +1269,6 @@ I said no!
 	result = /obj/item/reagent_containers/food/snacks/hotbuttericecream
 
 
-// === merged from recipes_microwave_vr.dm during hard-fork de-suffix (verified no override-order change) ===
 /*
 /datum/recipe/unique_name
 	fruit = list("example_fruit1" = 1, "example_fruit2" = 2)

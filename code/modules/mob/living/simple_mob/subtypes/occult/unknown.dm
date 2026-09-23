@@ -17,8 +17,7 @@
 
 	faction = FACTION_MATH
 
-	maxHealth = 2000
-	health = 2000
+	endurance = 2000
 	evasion = -75		// Its hitbox is broken ;_;
 
 	melee_damage_lower = 20
@@ -61,18 +60,18 @@
 	new /obj/effect/temp_visual/glitch(get_turf(src))
 	qdel(src)
 
-/mob/living/simple_mob/glitch_boss/updatehealth()
+/mob/living/simple_mob/glitch_boss/update_health_display()
 	. = ..()
-
-	if(health < maxHealth*0.25)
+	var/wellness = vitality()
+	if(wellness < 0.25)
 		special_attack_cooldown = 5 SECONDS
 		icon_state = "glitch_boss_25"
 		icon_living = "glitch_boss_25"
-	else if(health < maxHealth*0.5)
+	else if(wellness < 0.5)
 		special_attack_cooldown = 10 SECONDS
 		icon_state = "glitch_boss_50"
 		icon_living = "glitch_boss_50"
-	else if (health < maxHealth*0.75)
+	else if (wellness < 0.75)
 		special_attack_cooldown = 15 SECONDS
 		icon_state = "glitch_boss_75"
 		icon_living = "glitch_boss_75"
@@ -270,8 +269,7 @@
 	icon_dead = "glitch_boss_dead"
 	faction = FACTION_MATH
 
-	maxHealth = 20
-	health = 20
+	endurance = 20
 	evasion = -75
 
 	melee_damage_lower = 0
@@ -289,8 +287,7 @@
 	can_pain_emote = FALSE
 
 /mob/living/simple_mob/glitch_boss_fake/strong
-	maxHealth = 100
-	health = 100
+	endurance = 100
 	prob_respawn = 60
 
 /mob/living/simple_mob/glitch_boss_fake/death(gibbed, deathmessage="disappears in cloud of static.")

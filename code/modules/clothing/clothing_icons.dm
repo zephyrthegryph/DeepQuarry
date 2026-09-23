@@ -29,7 +29,6 @@
 		standing.add_overlay(bloodsies)
 
 
-// === merged from clothing_icons_chomp.dm during hard-fork de-suffix (manually verified: no middle override of the affected member) ===
 /obj/item/clothing/shoes/apply_blood(image/standing)
 	if(forensic_data?.has_blooddna() && blood_sprite_state && ishuman(loc))
 		var/mob/living/carbon/human/H = loc

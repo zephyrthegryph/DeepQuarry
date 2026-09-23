@@ -48,7 +48,7 @@
 	fire_sound = 'sound/weapons/taser.ogg'
 	nodamage = 1
 	taser_effect = 1
-	damage_type = HALLOSS
+	injury_kind = INJURY_PAIN
 	light_color = "#FFFFFF"
 	hitsound = 'sound/weapons/zapbang.ogg'
 	pass_flags = PASSTABLE | PASSGLASS | PASSGRILLE

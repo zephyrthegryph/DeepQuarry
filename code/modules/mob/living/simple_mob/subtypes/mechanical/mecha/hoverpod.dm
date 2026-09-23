@@ -20,7 +20,7 @@
 	movement_sound = 'sound/machines/hiss.ogg'
 	wreckage = /obj/structure/loot_pile/mecha/hoverpod
 
-	maxHealth = 150
+	endurance = 150
 	// dq_get_hovering(src) type-default moved to GLOB.dq_hovering_by_type
 
 	projectile_dispersion = 10

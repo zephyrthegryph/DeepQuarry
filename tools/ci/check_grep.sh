@@ -26,15 +26,18 @@ if command -v rg >/dev/null 2>&1; then
 	# shuttle_map_files="_maps/shuttles/**.dmm"
 	code_x_515="code/**/!(__byond_version_compat).dm"
 else
+	# Fallback for machines without ripgrep: GNU grep in Perl-regex mode reads
+	# the same patterns. The multiline (PCRE2) checks below still need ripgrep
+	# and are skipped here; CI always runs them.
+	export LC_ALL=C.UTF-8
 	pcre2_support=0
-	grep=grep
-	code_files="-r --include=code/**/**.dm"
-	map_files="-r --include=maps/**/**.dmm"
-	# shuttle_map_files="-r --include=_maps/shuttles/**.dmm"
-	code_x_515="-r --include=code/**/!(__byond_version_compat).dm"
+	grep="grep -P"
+	code_files="code/**/**.dm"
+	map_files="maps/**/**.dmm"
+	code_x_515="code/**/!(__byond_version_compat).dm"
 fi;
 
-echo -e "${BLUE}Using grep provider at $(which $grep)${NC}"
+echo -e "${BLUE}Using grep provider at $(which ${grep%% *})${NC}"
 
 part=0
 section() {
@@ -119,9 +122,49 @@ part "gas mixture mirror writes"
 # the change silently vanishes from all gas math. Callers must use set_temperature() /
 # set_volume() instead. This guards the common gas-mixture accessor idioms; a refresh of
 # the mirror FROM the arena (RHS return_temperature()/return_volume()) is allowed.
-if $grep -nE '(\bair|air_contents|\bair[0-9]|cabin_air|\benvironment)\.(temperature|volume)[[:space:]]*[-+*/]?=[^=]' $code_files | grep -vE 'return_temperature|return_volume'; then
+if $grep -n '(\bair|air_contents|\bair[0-9]|cabin_air|\benvironment)\.(temperature|volume)[[:space:]]*[-+*/]?=[^=]' $code_files | grep -vE 'return_temperature|return_volume'; then
 	echo
 	echo -e "${RED}ERROR: direct write to a gas mixture temperature/volume mirror detected. Use set_temperature() / set_volume() — a raw assignment updates only the DM mirror and is ignored by the Rust atmos arena.${NC}"
+	FAILED=1
+fi;
+
+part "robot cell writes outside the power ledger"
+# A robot's cell charge is written only by draw_power()/add_power() in robot.dm, so the
+# ledger (used_power_this_tick, part power states) sees every joule. Robot code under
+# code/modules/mob/living/silicon/robot must not touch the cell directly.
+if grep -RInE --include='*.dm' '\bcell\.(charge[[:space:]]*[-+*/]?=[^=]|use\(|give\(|checked_use\()' code/modules/mob/living/silicon/robot | grep -vE '/robot/robot\.dm:'; then
+	echo
+	echo -e "${RED}ERROR: direct robot cell write detected. Use draw_power() / add_power() with ROBOT_CELL_JOULES().${NC}"
+	FAILED=1
+fi;
+
+part "body factors: no chemical effects"
+# Reagent effects are body factors (`factors` on the reagent, read with
+# L.factor(BF_*)); the per-tick chem_effects channels are gone.
+if $grep -n '\b(add_chemical_effect|remove_chemical_effect|chem_effects)\b' $code_files; then
+	echo
+	echo -e "${RED}ERROR: chem_effects / add_chemical_effect detected. Declare body factors on the reagent (factors = alist(BF_X = value)) and read them with factor(BF_X).${NC}"
+	FAILED=1
+fi;
+
+part "body factors: no mechanical effects"
+# Affliction effects are body factors (`factors`, or a stage's "factors").
+if $grep -n '\b(mechanical_effects|vital_effects|od_boost|get_vital_effects)\b' $code_files; then
+	echo
+	echo -e "${RED}ERROR: mechanical_effects / vital_effects / od_boost detected. Declare body factors on the affliction (factors = alist(BF_X = value)).${NC}"
+	FAILED=1
+fi;
+
+part "body factors: no modifier numeric fields"
+# Every numeric modifier effect is a body factor in the modifier's `factors`.
+if $grep -n '\b(endurance_flat|endurance_percent|disable_duration_percent|incoming_[a-z]+_percent|outgoing_melee_damage_percent|bleeding_rate_percent|metabolism_percent|icon_scale_[xy]_percent|attack_speed_percent|accuracy_dispersion|pain_immunity|pulse_modifier|pulse_set_level|emp_modifier|explosion_modifier|[a-z]+_injury_resistance|[a-z]+_physical_resistance|[a-z]+_thermal_resistance)\b' $code_files; then
+	echo
+	echo -e "${RED}ERROR: a removed /datum/modifier numeric field is referenced. Declare it in the modifier's factors table and read factor(BF_X).${NC}"
+	FAILED=1
+fi;
+if $grep -n '\b(M|mod|modifier)\.(slowdown|haste|evasion|accuracy|siemens_coefficient|heat_protection|cold_protection|vision_flags|armor_percent)\b' $code_files; then
+	echo
+	echo -e "${RED}ERROR: a modifier's slowdown/evasion/accuracy/... is read directly. Those are body factors: read factor(BF_X) on the holder.${NC}"
 	FAILED=1
 fi;
 
@@ -132,6 +175,18 @@ part "medical condition severity writes"
 if grep -RInE --include='*.dm' '\.severity[[:space:]]*[-+*/]?=[^=]' code/modules/medical code/modules/contracts; then
 	echo
 	echo -e "${RED}ERROR: direct medical-condition severity write detected. Use set_severity() or adjust_severity() so condition-dependent systems receive invalidation signals.${NC}"
+	FAILED=1
+fi;
+
+part "organ damage outside the body"
+# Organ and limb integrity belong to the body (doc/body_architecture.md): harm
+# goes through injure(kind, amount, organ) and healing through
+# mend(tag, amount, organ). Outside code/modules/body and code/modules/organs,
+# no take_damage()/heal_damage() on organs, no organ `.damage` writes, no
+# LESION_HEAL_* modes and no calls to the body-internal integrity procs.
+if grep -RInE --include='*.dm' '\b(organ|internal_organ|external_organ|our_organ|affecting|affected|bodypart|brain|my_brain|heart|ht|liver|lungs|kidneys|eyes|stomach|st|limb|[a-z_]*_organ)\??\.(take_damage|heal_damage|damage[[:space:]]*([-+*/]?=[^=]|\+\+|--))|(take_damage|heal_damage)\(.*(LESION_HEAL|/datum/affliction/lesion)|internal_organs_by_name\[[^]]*\]\??\.(take_damage|heal_damage)\(|\.(apply_lesion_damage|apply_wound_damage|restore_lesions|heal_wound_damage)\(|LESION_HEAL_' code | grep -vE '^code/modules/(body|organs)/'; then
+	echo
+	echo -e "${RED}ERROR: organ or limb damage/healing outside the body detected. Use injure(kind, amount, organ) to harm and mend(tag, amount, organ) to heal.${NC}"
 	FAILED=1
 fi;
 
@@ -178,7 +233,7 @@ fi;
 
 part "color macros"
 #Checking for color macros
-(num=`$grep -n '\\\\(red|blue|green|black|b|i[^mnct])' $code_files | wc -l`; echo "$num escapes (expecting ${MACRO_COUNT} or less)"; [ $num -le ${MACRO_COUNT} ])
+(num=`{ $grep -n '\\\\(red|blue|green|black|b|i[^mnct])' $code_files || true; } | wc -l`; echo "$num escapes (expecting ${MACRO_COUNT} or less)"; [ $num -le ${MACRO_COUNT} ])
 retVal=$?
 if [ $retVal -ne 0 ]; then
 	echo -e "${RED}Do not use any byond color macros (such as \blue), they are deprecated.${NC}"

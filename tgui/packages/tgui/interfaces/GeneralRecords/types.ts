@@ -76,6 +76,7 @@ export type managementContract = {
   issuer_color: string;
   department?: string;
   reward: number;
+  paid_reward: number;
   standing_score: number;
   standing_tier: string;
   standing_reward_modifier: number;
@@ -198,6 +199,7 @@ export type socialOutcomeDetails = {
   grade: string;
   projected_grade: string;
   projected_reward: number;
+  earned_reward: number;
   score: number;
   outcome_stages: contractOutcomeStage[];
   minimum_percent: number;
@@ -216,6 +218,7 @@ export type contractOutcomeStage = {
   target: number;
   reward: number;
   reached: BooleanLike;
+  earned: BooleanLike;
 };
 
 export type financeTransaction = {

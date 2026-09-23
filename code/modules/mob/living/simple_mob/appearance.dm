@@ -1,9 +1,6 @@
 /mob/living/simple_mob/update_icon()
 	. = ..()
 	cut_overlays()
-//	var/mutable_appearance/ma = new(src)
-//	ma.layer = layer
-//	ma.plane = plane
 
 	add_overlay(modifier_overlay)
 
@@ -40,7 +37,6 @@
 
 //	appearance = ma
 
-
 // If your simple mob's update_icon() call calls overlays.Cut(), this needs to be called after this, or manually apply modifier_overly to overlays.
 /mob/living/simple_mob/update_modifier_visuals()
 	var/image/effects = null
@@ -59,7 +55,6 @@
 
 	modifier_overlay = effects
 	add_overlay(modifier_overlay)
-
 
 /mob/living/simple_mob/proc/add_eyes()
 	if(!eye_layer)

@@ -10,8 +10,7 @@
 	icon_dead = "syndotie_std-dead"
 	icon_rest = "syndotie_std_rest"
 	faction = "syndicate"
-	maxHealth = 200
-	health = 200
+	endurance = 200
 	minbodytemp = 200
 	melee_damage_lower = 15
 	melee_damage_upper = 20
@@ -71,8 +70,7 @@
 	icon_living = "syndcotie_std"
 	icon_dead = "syndcotie_std-dead"
 	icon_rest = "syndcotie_std_rest"
-	maxHealth = 350
-	health = 350
+	endurance = 350
 	meat_amount = 12
 	melee_attack_delay = 0.5
 	movement_cooldown = 0
@@ -157,7 +155,7 @@
 	harm_intent_damage = 10
 	melee_damage_lower = 30
 	melee_damage_upper = 35
-	maxHealth = 350
+	endurance = 350
 	melee_attack_delay = 1
 	minbodytemp = 0
 
@@ -199,7 +197,7 @@
 	icon_living = "synditaur"
 	icon_state = "synditaur"
 	icon_rest = "synditaur"
-	maxHealth = 200
+	endurance = 200
 	harm_intent_damage = 5
 	melee_damage_lower = 15
 	melee_damage_upper = 20

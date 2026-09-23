@@ -40,11 +40,6 @@
 		return
 
 	. = TRUE
-	/*
-	if(grab(target))
-		changeNext_move(CLICK_CD_MELEE)
-		return
-	*/
 	pulled(target)
 
 /**

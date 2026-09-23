@@ -1,7 +1,6 @@
 /mob/living/simple_mob/mechanical/hivebot/nanoevent
 	name = "strange hivebot"
-	maxHealth = 0.5 LASERS_TO_KILL // 20 hp
-	health = 0.5 LASERS_TO_KILL
+	endurance = 0.5 LASERS_TO_KILL // 20 hp
 	icon = 'icons/mob/hivebot.dmi'
 	desc = "A familiar looking robot, trading out it's defense for offense."
 	icon_state = "precursorhive"
@@ -137,17 +136,14 @@
 	icon_state = "king"
 	movement_cooldown = 7
 	size_multiplier = 2.5
-	maxHealth = 1000
-	health = 1000
+	endurance = 1000
 	wreckage = /obj/item/prop/nanoweave/orange
 
 /mob/living/simple_mob/mechanical/mecha/eclipse/hivebot/boss/event //super buffed HP for event
-	maxHealth = 5000
-	health = 5000
+	endurance = 5000
 
 /mob/living/simple_mob/mechanical/mecha/eclipse/hivebot/boss/sifpoi
-	maxHealth = 600
-	health = 600
+	endurance = 600
 	loot_list = list(/obj/item/prop/alien/junk = 100,
 		/obj/item/multitool/alien = 60,
 		/obj/item/stack/cable_coil/alien = 60,
@@ -210,14 +206,12 @@
 	size_multiplier = 2
 	icon_state = "cyan"
 	icon_living = "cyan"
-	maxHealth = 1000
-	health = 1000
+	endurance = 1000
 	specialattackprojectile = /obj/item/projectile/bullet/alterhivebot/boss
 	wreckage = /obj/item/prop/nanoweave/cyan
 
 /mob/living/simple_mob/mechanical/mecha/eclipse/hivebot/cyan/event
-	maxHealth = 3000
-	health = 3000
+	endurance = 3000
 
 /mob/living/simple_mob/mechanical/mecha/eclipse/hivebot/cyan/do_special_attack(atom/A)
 	. = TRUE // So we don't fire a bolt as well.
@@ -255,13 +249,11 @@
 	desc = "A large, very important looking robot."
 	icon_state = "green"
 	icon_living = "green"
-	maxHealth = 1000
-	health = 1000
+	endurance = 1000
 	wreckage = /obj/item/prop/nanoweave/lime
 
 /mob/living/simple_mob/mechanical/mecha/eclipse/hivebot/green/event
-	maxHealth = 3000
-	health = 3000
+	endurance = 3000
 
 /mob/living/simple_mob/mechanical/mecha/eclipse/hivebot/green/do_special_attack(atom/A)
 	. = TRUE // So we don't fire a bolt as well.

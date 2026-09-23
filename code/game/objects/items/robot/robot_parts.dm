@@ -165,15 +165,16 @@
 			if(!istype(loc,/turf))
 				to_chat(user, span_warning("You can't put \the [W] in, the frame has to be standing on the ground to be perfectly precise."))
 				return
+			var/mob/living/carbon/brain/occupant = M.get_occupant()
 			if(!istype(W, /obj/item/mmi/inert))
-				if(!M.brainmob)
+				if(!occupant)
 					to_chat(user, span_warning("Sticking an empty [W] into the frame would sort of defeat the purpose."))
 					return
-				if(!M.brainmob.key)
+				if(!occupant.key)
 					var/ghost_can_reenter = 0
-					if(M.brainmob.mind)
+					if(occupant.mind)
 						for(var/mob/observer/dead/G in GLOB.player_list)
-							if(G.can_reenter_corpse && G.mind == M.brainmob.mind)
+							if(G.can_reenter_corpse && G.mind == occupant.mind)
 								ghost_can_reenter = 1 //May come in use again at another point.
 								to_chat(user, span_notice("\The [W] is completely unresponsive; though it may be able to auto-resuscitate.")) //Jamming a ghosted brain into a borg is likely detrimental, and may result in some problems.
 								return
@@ -181,11 +182,11 @@
 						to_chat(user, span_notice("\The [W] is completely unresponsive; there's no point."))
 						return
 
-				if(M.brainmob.stat == DEAD)
+				if(occupant.stat == DEAD)
 					to_chat(user, span_warning("Sticking a dead [W] into the frame would sort of defeat the purpose."))
 					return
 
-				if(jobban_isbanned(M.brainmob, JOB_CYBORG))
+				if(jobban_isbanned(occupant, JOB_CYBORG))
 					to_chat(user, span_warning("This [W] does not seem to fit."))
 					return
 
@@ -200,22 +201,16 @@
 			O.custom_name = created_name
 			O.updatename("Default")
 
-			if(M.brainmob)
-				M.brainmob.mind.transfer_to(O)
+			var/datum/component/mind_host/host = get_mind_host(M)
+			if(host?.release_mind(O, "borged by [key_name(user)]"))
 				if(O.mind && O.mind.special_role)
 					O.mind.store_memory("In case you look at this after being borged, the objectives are only here until I find a way to make them not show up for you, as I can't simply delete them without screwing up round-end reporting. --NeoFite")
-				for(var/datum/language/L in M.brainmob.languages)
+				for(var/datum/language/L in O.identity.languages)
 					O.add_language(L.name)
 			O.job = JOB_CYBORG
-			O.cell = chest.cell
-			O.cell.loc = O
+			O.set_cell(chest.cell)
+			chest.cell = null
 			W.loc = O//Should fix cybros run time erroring when blown up. It got deleted before, along with the frame.
-
-			// Since we "magically" installed a cell, we also have to update the correct component.
-			if(O.cell)
-				var/datum/robot_component/cell_component = O.components["power cell"]
-				cell_component.wrapped = O.cell
-				cell_component.installed = 1
 
 			feedback_inc("cyborg_birth",1)
 			SEND_GLOBAL_SIGNAL(COMSIG_GLOB_BORGIFY, O)

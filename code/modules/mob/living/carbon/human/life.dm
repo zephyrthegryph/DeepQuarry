@@ -70,7 +70,7 @@
 
 			handle_pain()
 
-			SEND_SIGNAL(src,COMSIG_HANDLE_ALLERGENS, chem_effects[CE_ALLERGEN])
+			SEND_SIGNAL(src,COMSIG_HANDLE_ALLERGENS, factor(BF_ALLERGY))
 
 			handle_medical_side_effects()
 			dq_check_ischemic_damage()
@@ -188,18 +188,19 @@
 		return
 
 	var/rn = rand(0, 200)
-	if(getBrainLoss() >= 5)
+	var/brain_damage = injury_load(INJURY_CATEGORY_NEURAL)
+	if(brain_damage >= 5)
 		if(0 <= rn && rn <= 3)
 			custom_pain("Your head feels numb and painful.", 10)
-	if(getBrainLoss() >= 15)
+	if(brain_damage >= 15)
 		if(4 <= rn && rn <= 6) if(eye_blurry <= 0)
 			to_chat(src, span_warning("It becomes hard to see for some reason."))
 			eye_blurry = 10
-	if(getBrainLoss() >= 35)
+	if(brain_damage >= 35)
 		if(7 <= rn && rn <= 9) if(get_active_hand())
 			to_chat(src, span_danger("Your hand won't respond properly, you drop what you're holding!"))
 			drop_item()
-	if(getBrainLoss() >= 45)
+	if(brain_damage >= 45)
 		if(10 <= rn && rn <= 12)
 			if(prob(50))
 				to_chat(src, span_danger("You suddenly black out!"))
@@ -216,28 +217,22 @@
 	if(inStasisNow())
 		return
 
-	if(getFireLoss())
+	// Slow natural healing of wounds; cold-resistant bodies shrug off burns.
+	if(injury_load(INJURY_CATEGORY_THERMAL))
 		if((COLD_RESISTANCE in mutations) || (prob(1)))
-			heal_organ_damage(0,1)
-	if(getBruteLoss()) //Fireloss gets this RNG change so may as well give bruteloss it as well.
+			mend(TREAT_BURN_CARE, 1)
+	if(injury_load(INJURY_CATEGORY_PHYSICAL))
 		if(prob(1))
-			heal_organ_damage(1,0)
+			mend(TREAT_TISSUE_REPAIR, 1)
 
 	if((mRegen in mutations))
 		var/heal = rand(0.2,1.3)
 		if(prob(50))
-			for(var/obj/item/organ/external/O in organs) //HAS to be organs and NOT bad_external_organs as a fully healed limb w/ internal damage will NOT be in bad_external_organs
-				for(var/datum/wound/W in O.wounds)
-					if(W.bleeding())
-						W.damage = max(W.damage - heal, 0)
-						if(W.damage <= 0)
-							O.wounds -= W
-					if(W.internal)
-						W.damage = max(W.damage - heal, 0)
-						if(W.damage <= 0)
-							O.wounds -= W
+			for(var/obj/item/organ/external/O as anything in organs)
+				mend(TREAT_RESTORATION, heal, O)
 		else
-			heal_organ_damage(heal,heal)
+			mend(TREAT_TISSUE_REPAIR, heal)
+			mend(TREAT_BURN_CARE, heal)
 
 
 // RADIATION! Everyone's favorite thing in the world! So let's get some numbers down off the bat.
@@ -261,6 +256,17 @@
 
 // Additionally, RADIATION_SPEED_COEFFICIENT = 0.1
 
+/// Radiation burns on a random organic limb: skin sloughing from a heavy dose.
+/mob/living/carbon/human/proc/radiation_burn(amount)
+	var/list/candidates = list()
+	for(var/obj/item/organ/external/E as anything in organs)
+		if(E.robotic < ORGAN_ROBOT && !E.is_stump())
+			candidates += E
+	if(!length(candidates))
+		return 0
+	var/obj/item/organ/external/E = pick(candidates)
+	return injure(INJURY_BURN, amount, E.organ_tag, null, 0, /datum/affliction/radiation_burns)
+
 /mob/living/carbon/human/handle_radiation() //Radiation rework! Now with 'accumulated_rads'
 	. = ..()
 	if(.)
@@ -281,8 +287,9 @@
 			return
 
 		var/damage = 0
+		var/rad_mod = species.get_injury_mod(INJURY_RADIATION)
 
-		if(!species.radiation_mod) //If we are rad immune, stop here and remove rads if we have any.
+		if(!rad_mod) //If we are rad immune, stop here and remove rads if we have any.
 			radiation -= 10 * RADIATION_SPEED_COEFFICIENT * species.rad_removal_mod
 			return
 
@@ -313,9 +320,9 @@
 			accumulated_rads += 30 * RADIATION_SPEED_COEFFICIENT
 			if(!isSynthetic())
 				if(prob(5))
-					take_overall_damage(0, 5 * RADIATION_SPEED_COEFFICIENT, used_weapon = "Radiation Burns")
+					radiation_burn(5 * RADIATION_SPEED_COEFFICIENT)
 				if(prob(1))
-					adjustCloneLoss(5 * RADIATION_SPEED_COEFFICIENT)
+					injure(INJURY_CELLULAR, 5 * RADIATION_SPEED_COEFFICIENT)
 					emote("gasp")
 				if(prob(5) && prob(100 * RADIATION_SPEED_COEFFICIENT))
 					spawn vomit()
@@ -329,9 +336,9 @@
 			accumulated_rads += 50 * RADIATION_SPEED_COEFFICIENT
 			if(!isSynthetic())
 				if(prob(15))
-					take_overall_damage(0, 10 * RADIATION_SPEED_COEFFICIENT, used_weapon = "Radiation Burns")
+					radiation_burn(10 * RADIATION_SPEED_COEFFICIENT)
 				if(prob(2))
-					adjustCloneLoss(5 * RADIATION_SPEED_COEFFICIENT)
+					injure(INJURY_CELLULAR, 5 * RADIATION_SPEED_COEFFICIENT)
 					emote("gasp")
 				if(prob(10) && prob(100 * RADIATION_SPEED_COEFFICIENT))
 					spawn vomit()
@@ -347,7 +354,7 @@
 					else
 						I = pick(internal_organs) //Internal organ damage...Not good. Not good at all.
 						if(istype(I)) I.add_autopsy_data("Radiation Induced Cancerous Growth", damage)
-						I.take_damage(damage * species.radiation_mod * RADIATION_SPEED_COEFFICIENT)
+						injure(INJURY_RADIATION, damage * rad_mod * RADIATION_SPEED_COEFFICIENT, I, flags = INJURE_IGNORE_RESISTANCE)
 
 
 		else if (radiation >= GLOB.radiation_levels[species.rad_levels]["danger_3"] && radiation < GLOB.radiation_levels[species.rad_levels]["danger_4"]) //Equivalent of 8.0 to 30 Gy.
@@ -357,16 +364,16 @@
 			accumulated_rads += 100 * RADIATION_SPEED_COEFFICIENT
 			if(!isSynthetic())
 				if(prob(25))
-					take_overall_damage(0, 15 * RADIATION_SPEED_COEFFICIENT, used_weapon = "Radiation Burns")
+					radiation_burn(15 * RADIATION_SPEED_COEFFICIENT)
 					if(prob(5))
 						I = internal_organs_by_name[O_EYES]
 						if(I)
 							if(istype(I)) I.add_autopsy_data("Radiation Burns", damage)
-							I.take_damage(damage * species.radiation_mod * RADIATION_SPEED_COEFFICIENT)
+							injure(INJURY_RADIATION, damage * rad_mod * RADIATION_SPEED_COEFFICIENT, I, flags = INJURE_IGNORE_RESISTANCE)
 							to_chat(src, span_warning("Your eyes burn!"))
 							eye_blurry += 10
 				if(prob(4))
-					adjustCloneLoss(5 * RADIATION_SPEED_COEFFICIENT)
+					injure(INJURY_CELLULAR, 5 * RADIATION_SPEED_COEFFICIENT)
 					emote("gasp")
 				if(prob(25) && prob(100 * RADIATION_SPEED_COEFFICIENT))
 					spawn vomit()
@@ -375,7 +382,7 @@
 					AdjustWeakened(5)
 				if(prob(5))
 					to_chat(src, span_critical("Your entire body feels like it's on fire!"))
-					adjustHalLoss(5)
+					injure(INJURY_PAIN, 5)
 				if(prob(10) && internal_organs.len)
 					// begin - organ mutations
 					if(prob(2))
@@ -384,7 +391,7 @@
 					else
 						I = pick(internal_organs) //Internal organ damage...Not good. Not good at all.
 						if(istype(I)) I.add_autopsy_data("Radiation Induced Cancerous Growth", damage)
-						I.take_damage(damage * species.radiation_mod * RADIATION_SPEED_COEFFICIENT)
+						injure(INJURY_RADIATION, damage * rad_mod * RADIATION_SPEED_COEFFICIENT, I, flags = INJURE_IGNORE_RESISTANCE)
 
 		else if (radiation >= GLOB.radiation_levels[species.rad_levels]["danger_4"]) //Above 30Gy. You had to get absolutely blasted with rads for this.
 			damage = 30
@@ -392,13 +399,13 @@
 			accumulated_rads += 300 * RADIATION_SPEED_COEFFICIENT
 
 			if(!isSynthetic())
-				take_overall_damage(0, damage * RADIATION_SPEED_COEFFICIENT, used_weapon = "Radiation Burns") //3 burn damage a tick as your body melts.
-				adjustCloneLoss(15 * RADIATION_SPEED_COEFFICIENT) //1.5 cloneloss a tick as your cells mutate and break down.
+				radiation_burn(damage * RADIATION_SPEED_COEFFICIENT) //3 burn damage a tick as your body melts.
+				injure(INJURY_CELLULAR, 15 * RADIATION_SPEED_COEFFICIENT) //1.5 cellular damage a tick as your cells mutate and break down.
 
 				I = internal_organs_by_name[O_EYES]
 				if(I)
-					I.add_autopsy_data("Radiation Burns", damage * species.radiation_mod * RADIATION_SPEED_COEFFICIENT)
-					I.take_damage(damage * species.radiation_mod * RADIATION_SPEED_COEFFICIENT) //3 eye damage a tick as your eyes melt down.
+					I.add_autopsy_data("Radiation Burns", damage * rad_mod * RADIATION_SPEED_COEFFICIENT)
+					injure(INJURY_RADIATION, damage * rad_mod * RADIATION_SPEED_COEFFICIENT, I, flags = INJURE_IGNORE_RESISTANCE) //3 eye damage a tick as your eyes melt down.
 					eye_blurry += 10
 
 				if(prob(50) && prob(100 * RADIATION_SPEED_COEFFICIENT))
@@ -415,8 +422,8 @@
 					drop_item()
 				if(internal_organs.len)  //TODO: Add malignant organs. - The person that wrote radcode.
 					I = pick(internal_organs) //Internal organ damage...Not good. Not good at all.
-					if(istype(I)) I.add_autopsy_data("Radiation Induced Cancerous Growth", damage * species.radiation_mod * RADIATION_SPEED_COEFFICIENT)
-					I.take_damage(damage * species.radiation_mod * RADIATION_SPEED_COEFFICIENT)
+					if(istype(I)) I.add_autopsy_data("Radiation Induced Cancerous Growth", damage * rad_mod * RADIATION_SPEED_COEFFICIENT)
+					injure(INJURY_RADIATION, damage * rad_mod * RADIATION_SPEED_COEFFICIENT, I, flags = INJURE_IGNORE_RESISTANCE)
 
 /* 		//Not-so-sparkledog code. TODO: Make a pref for 'special game interactions' that allows interactions that align with prefs to occur.
 		if(radiation >= 250) //Special effect stuff that occurs at certain rad levels.
@@ -428,9 +435,8 @@
 */
 
 		if(damage)
-			damage *= species.radiation_mod
-			adjustToxLoss(damage * RADIATION_SPEED_COEFFICIENT)
-			updatehealth()
+			damage *= rad_mod
+			injure(INJURY_TOXIN, damage * RADIATION_SPEED_COEFFICIENT, null, null, 0, /datum/affliction/radiation_poisoning)
 			if(!isSynthetic() && organs.len)
 				var/obj/item/organ/external/O = pick(organs)
 				if(istype(O)) O.add_autopsy_data("Radiation Poisoning", damage)
@@ -448,8 +454,8 @@
 				if(accumulated_rads > 300) // (6Gy)
 					if(prob(2) && prob(accumulated_rads * RADIATION_SPEED_COEFFICIENT))
 						to_chat(src, span_warning("Your eyes burn."))
-						I.add_autopsy_data("Radiation Burns", 1 * species.radiation_mod * RADIATION_SPEED_COEFFICIENT)
-						I.take_damage(1 * species.radiation_mod * RADIATION_SPEED_COEFFICIENT) //0.1 damage. Not a lot, but enough to tell you to get to medical.
+						I.add_autopsy_data("Radiation Burns", 1 * species.get_injury_mod(INJURY_RADIATION) * RADIATION_SPEED_COEFFICIENT)
+						injure(INJURY_RADIATION, 1 * species.get_injury_mod(INJURY_RADIATION) * RADIATION_SPEED_COEFFICIENT, I, flags = INJURE_IGNORE_RESISTANCE) //0.1 damage. Not a lot, but enough to tell you to get to medical.
 						eye_blurry += 10
 
 			if(accumulated_rads > 200) // (4Gy)
@@ -535,28 +541,28 @@
 
 	if(suiciding)
 		failed_last_breath = 1
-		adjustOxyLoss(2)//If you are suiciding, you should die a little bit faster
+		injure(INJURY_ASPHYXIA, 2)//If you are suiciding, you should die a little bit faster
 		suiciding--
 		return 0
 
 	if(wear_mask && (wear_mask.item_flags & INFINITE_AIR))
 		failed_last_breath = 0
-		adjustOxyLoss(-5)
+		mend(TREAT_OXYGENATION, 5)
 		return
 
 	if(does_not_breathe)
 		failed_last_breath = 0
-		adjustOxyLoss(-5)
+		mend(TREAT_OXYGENATION, 5)
 		return
 
 	// XGM .total_moles var → LINDA proc. Cache to avoid 12 proc calls.
 	var/breath_moles = breath ? breath.total_moles() : 0
 	if(!breath || (breath_moles == 0))
 		failed_last_breath = 1
-		if(health > get_crit_point())
-			adjustOxyLoss(HUMAN_MAX_OXYLOSS)
+		if(!is_critical())
+			injure(INJURY_ASPHYXIA, HUMAN_MAX_OXYLOSS)
 		else
-			adjustOxyLoss(HUMAN_CRIT_MAX_OXYLOSS)
+			injure(INJURY_ASPHYXIA, HUMAN_CRIT_MAX_OXYLOSS)
 
 		throw_alert("oxy", /atom/movable/screen/alert/not_enough_atmos)
 		return 0
@@ -633,7 +639,7 @@
 
 		var/ratio = inhale_pp/safe_pressure_min
 		// Don't fuck them up too fast (space only does HUMAN_MAX_OXYLOSS after all!)
-		adjustOxyLoss(max(HUMAN_MAX_OXYLOSS*(1-ratio), 0))
+		injure(INJURY_ASPHYXIA, max(HUMAN_MAX_OXYLOSS*(1-ratio), 0))
 		failed_inhale = 1
 
 		switch(breath_type)
@@ -669,7 +675,7 @@
 				var/word = pick("extremely dizzy","short of breath","faint","confused")
 				to_chat(src, span_danger("You feel [word]."))
 
-			adjustOxyLoss(HUMAN_MAX_OXYLOSS)
+			injure(INJURY_ASPHYXIA, HUMAN_MAX_OXYLOSS)
 			failed_exhale = 1
 
 		else if(exhaled_pp > safe_exhaled_max * 0.7)
@@ -681,8 +687,8 @@
 			var/ratio = 1.0 - (safe_exhaled_max - exhaled_pp)/(safe_exhaled_max*0.3)
 
 			//give them some oxyloss, up to the limit - we don't want people falling unconcious due to CO2 alone until they're pretty close to safe_exhaled_max.
-			if (getOxyLoss() < 50*ratio)
-				adjustOxyLoss(HUMAN_MAX_OXYLOSS)
+			if (injury_load(INJURY_CATEGORY_ASPHYXIA) < 50*ratio)
+				injure(INJURY_ASPHYXIA, HUMAN_MAX_OXYLOSS)
 			failed_exhale = 1
 
 		else if(exhaled_pp > safe_exhaled_max * 0.6)
@@ -713,7 +719,7 @@
 				to_chat(src,span_warning("You smell rotten eggs."))
 	if(methane_pp > safe_toxins_max)
 		var/ratio = (poison_methane/safe_toxins_max) * 1200
-		adjustOxyLoss(CLAMP(ratio,0.1,10)) // Causes slow suffocation
+		injure(INJURY_ASPHYXIA, CLAMP(ratio,0.1,10)) // Causes slow suffocation
 		if(prob(20))
 			emote("gasp")
 		breath.adjust_gas(GAS_CH4, -poison_methane/6, update = 0) // update after // removed duplicate line; poison_methane already equals LINDA_GAS_AMT(breath, GAS_CH4) from line 608
@@ -752,7 +758,7 @@
 		failed_last_breath = 1
 	else
 		failed_last_breath = 0
-		adjustOxyLoss(-5)
+		mend(TREAT_OXYGENATION, 5)
 
 	if(!does_not_breathe && client) // If we breathe, and have an active client, check if we have synthetic lungs.
 		var/obj/item/organ/internal/lungs/L = internal_organs_by_name[O_LUNGS]
@@ -780,13 +786,13 @@
 			if(breath_temperature >= species.heat_discomfort_level)
 
 				if(breath_temperature >= species.breath_heat_level_3)
-					apply_damage(HEAT_GAS_DAMAGE_LEVEL_3, BURN, BP_HEAD)
+					injure(INJURY_BURN, HEAT_GAS_DAMAGE_LEVEL_3, BP_HEAD)
 					throw_alert("temp", /atom/movable/screen/alert/hot, HOT_ALERT_SEVERITY_MAX)
 				else if(breath_temperature >= species.breath_heat_level_2)
-					apply_damage(HEAT_GAS_DAMAGE_LEVEL_2, BURN, BP_HEAD)
+					injure(INJURY_BURN, HEAT_GAS_DAMAGE_LEVEL_2, BP_HEAD)
 					throw_alert("temp", /atom/movable/screen/alert/hot, HOT_ALERT_SEVERITY_MODERATE)
 				else if(breath_temperature >= species.breath_heat_level_1)
-					apply_damage(HEAT_GAS_DAMAGE_LEVEL_1, BURN, BP_HEAD)
+					injure(INJURY_BURN, HEAT_GAS_DAMAGE_LEVEL_1, BP_HEAD)
 					throw_alert("temp", /atom/movable/screen/alert/hot, HOT_ALERT_SEVERITY_LOW)
 				else if(species.get_environment_discomfort(src, ENVIRONMENT_COMFORT_MARKER_HOT))
 					throw_alert("temp", /atom/movable/screen/alert/warm, HOT_ALERT_SEVERITY_LOW)
@@ -796,13 +802,13 @@
 			else if(breath_temperature <= species.cold_discomfort_level)
 
 				if(breath_temperature <= species.breath_cold_level_3)
-					apply_damage(COLD_GAS_DAMAGE_LEVEL_3, BURN, BP_HEAD)
+					injure(INJURY_FROSTBITE, COLD_GAS_DAMAGE_LEVEL_3, BP_HEAD)
 					throw_alert("temp", /atom/movable/screen/alert/cold, COLD_ALERT_SEVERITY_MAX)
 				else if(breath_temperature <= species.breath_cold_level_2)
-					apply_damage(COLD_GAS_DAMAGE_LEVEL_2, BURN, BP_HEAD)
+					injure(INJURY_FROSTBITE, COLD_GAS_DAMAGE_LEVEL_2, BP_HEAD)
 					throw_alert("temp", /atom/movable/screen/alert/cold, COLD_ALERT_SEVERITY_MODERATE)
 				else if(breath_temperature <= species.breath_cold_level_1)
-					apply_damage(COLD_GAS_DAMAGE_LEVEL_1, BURN, BP_HEAD)
+					injure(INJURY_FROSTBITE, COLD_GAS_DAMAGE_LEVEL_1, BP_HEAD)
 					throw_alert("temp", /atom/movable/screen/alert/cold, COLD_ALERT_SEVERITY_LOW)
 				else if(species.get_environment_discomfort(src, ENVIRONMENT_COMFORT_MARKER_COLD))
 					throw_alert("temp", /atom/movable/screen/alert/chilly, COLD_ALERT_SEVERITY_LOW)
@@ -919,22 +925,22 @@
 	if(isbelly(loc) && allowtemp)
 		var/obj/belly/b = loc
 		if(b.bellytemperature >= species.heat_discomfort_level) //A bit more easily triggered than normal, intentionally
-			var/burn_dam = 0
+			var/heat_dam = 0
 			if(b.bellytemperature >= species.heat_level_1)
 				if(b.bellytemperature >= species.heat_level_2)
 					if(b.bellytemperature >= species.heat_level_3)
-						burn_dam = HEAT_DAMAGE_LEVEL_3
+						heat_dam = HEAT_DAMAGE_LEVEL_3
 						throw_alert("temp", /atom/movable/screen/alert/hot, HOT_ALERT_SEVERITY_MAX)
 					else
-						burn_dam = HEAT_DAMAGE_LEVEL_2
+						heat_dam = HEAT_DAMAGE_LEVEL_2
 						throw_alert("temp", /atom/movable/screen/alert/hot, HOT_ALERT_SEVERITY_MODERATE)
 				else
-					burn_dam = HEAT_DAMAGE_LEVEL_1
+					heat_dam = HEAT_DAMAGE_LEVEL_1
 					throw_alert("temp", /atom/movable/screen/alert/hot, HOT_ALERT_SEVERITY_LOW)
 			else
 				throw_alert("temp", /atom/movable/screen/alert/warm, HOT_ALERT_SEVERITY_LOW)
 			if(digestable && b.temperature_damage)
-				take_overall_damage(burn=burn_dam, used_weapon = "High Body Temperature")
+				injure(INJURY_BURN, heat_dam) // High body temperature
 		else if(b.bellytemperature <= species.cold_discomfort_level)
 			var/cold_dam = 0
 			if(b.bellytemperature <= species.cold_level_1)
@@ -951,7 +957,7 @@
 			else
 				throw_alert("temp", /atom/movable/screen/alert/chilly, COLD_ALERT_SEVERITY_LOW)
 			if(digestable && b.temperature_damage)
-				take_overall_damage(burn=cold_dam, used_weapon = "Low Body Temperature")
+				injure(INJURY_FROSTBITE, cold_dam) // Low body temperature
 		else clear_alert("temp")
 
 	// +/- 50 degrees from 310.15K is the 'safe' zone, where no damage is dealt.
@@ -960,22 +966,22 @@
 		if(SEND_SIGNAL(src, COMSIG_CHECK_FOR_GODMODE) & COMSIG_GODMODE_CANCEL)
 			return 1	// Cancelled by a component
 
-		var/burn_dam = 0
+		var/heat_dam = 0
 
 		// switch() can't access numbers inside variables, so we need to use some ugly if() spam ladder.
 		if(bodytemperature >= species.heat_level_1)
 			if(bodytemperature >= species.heat_level_2)
 				if(bodytemperature >= species.heat_level_3)
-					burn_dam = HEAT_DAMAGE_LEVEL_3
+					heat_dam = HEAT_DAMAGE_LEVEL_3
 					throw_alert("temp", /atom/movable/screen/alert/hot, HOT_ALERT_SEVERITY_MAX)
 				else
-					burn_dam = HEAT_DAMAGE_LEVEL_2
+					heat_dam = HEAT_DAMAGE_LEVEL_2
 					throw_alert("temp", /atom/movable/screen/alert/hot, HOT_ALERT_SEVERITY_MODERATE)
 			else
-				burn_dam = HEAT_DAMAGE_LEVEL_1
+				heat_dam = HEAT_DAMAGE_LEVEL_1
 				throw_alert("temp", /atom/movable/screen/alert/hot, HOT_ALERT_SEVERITY_LOW)
 
-		take_overall_damage(burn=burn_dam, used_weapon = "High Body Temperature")
+		injure(INJURY_BURN, heat_dam) // High body temperature
 
 	else if(bodytemperature <= species.cold_discomfort_level)
 		//Body temperature is too cold.
@@ -995,7 +1001,7 @@
 				else
 					cold_dam = COLD_DAMAGE_LEVEL_1
 
-			take_overall_damage(burn=cold_dam, used_weapon = "Low Body Temperature")
+			injure(INJURY_FROSTBITE, cold_dam) // Low body temperature
 
 	else clear_alert("temp")
 
@@ -1009,7 +1015,7 @@
 		if(stat == DEAD)
 			pressure_damage = pressure_damage/2
 		if(!istype(loc, /obj/structure/closet/body_bag/cryobag))
-			take_overall_damage(brute=pressure_damage, used_weapon = "High Pressure")
+			injure(INJURY_BLUNT, pressure_damage) // Crushing pressure
 		throw_alert("pressure", /atom/movable/screen/alert/highpressure, 2)
 	else if(adjusted_pressure >= species.warning_high_pressure)
 		throw_alert("pressure", /atom/movable/screen/alert/highpressure, 1)
@@ -1023,8 +1029,8 @@
 				var/pressure_damage = LOW_PRESSURE_DAMAGE
 				if(stat==DEAD)
 					pressure_damage = pressure_damage/2
-				take_overall_damage(brute=pressure_damage, used_weapon = "Low Pressure")
-			if(getOxyLoss() < 55) 		// 12 OxyLoss per 4 ticks when wearing internals;    unconsciousness in 16 ticks, roughly half a minute
+				injure(INJURY_BLUNT, pressure_damage) // Decompression: ruptured capillaries and tissue
+			if(injury_load(INJURY_CATEGORY_ASPHYXIA) < 55) 		// 12 OxyLoss per 4 ticks when wearing internals;    unconsciousness in 16 ticks, roughly half a minute
 				var/pressure_dam = 3	// 16 OxyLoss per 4 ticks when no internals present; unconsciousness in 13 ticks, roughly twenty seconds
 										// (Extra 1 oxyloss from failed breath)
 										// Being in higher pressure decreases the damage taken, down to a minimum of (species.hazard_low_pressure / ONE_ATMOSPHERE) at species.hazard_low_pressure
@@ -1036,7 +1042,7 @@
 																		// Stronger protection (Closer to 0) results in a smaller fraction
 																		// Firesuits (Min protection = 0.2 atmospheres) decrease oxyloss to 1/5
 
-				adjustOxyLoss(pressure_dam)
+				injure(INJURY_ASPHYXIA, pressure_dam)
 			throw_alert("pressure", /atom/movable/screen/alert/lowpressure, 2)
 		else
 			clear_alert("pressure")
@@ -1106,10 +1112,8 @@
 	. = get_thermal_protection(thermal_protection_flags)
 	. = 1 - . // Invert from 1 = immunity to 0 = immunity.
 
-	// Doing it this way makes multiplicative stacking not get out of hand, so two modifiers that give 0.5 protection will be combined to 0.75 in the end.
-	for(var/datum/modifier/M as anything in modifiers)
-		if(!isnull(M.heat_protection))
-			. *= 1 - M.heat_protection
+	// Body factors stack multiplicatively, so two sources that each let half the heat through combine to a quarter.
+	. *= factor(BF_HEAT_EXPOSURE)
 
 	// Code that calls this expects 1 = immunity so we need to invert again.
 	. = 1 - .
@@ -1125,11 +1129,8 @@
 	. = get_thermal_protection(thermal_protection_flags)
 	. = 1 - . // Invert from 1 = immunity to 0 = immunity.
 
-	// Doing it this way makes multiplicative stacking not get out of hand, so two modifiers that give 0.5 protection will be combined to 0.75 in the end.
-	for(var/datum/modifier/M as anything in modifiers)
-		if(!isnull(M.cold_protection))
-			// Invert the modifier values so they align with the current working value.
-			. *= 1 - M.cold_protection
+	// Body factors stack multiplicatively, so two sources that each let half the cold through combine to a quarter.
+	. *= factor(BF_COLD_EXPOSURE)
 
 	// Code that calls this expects 1 = immunity so we need to invert again.
 	. = 1 - .
@@ -1168,8 +1169,6 @@
 		return
 
 	if(reagents)
-		chem_effects.Cut()
-
 		if(touching)
 			touching.metabolize()
 		if(ingested)
@@ -1191,10 +1190,11 @@
 	if(nutrition > 0 && stat != DEAD)
 		var/nutrition_reduction = DEFAULT_HUNGER_FACTOR
 		nutrition_reduction = species.hunger_factor
-		// Modifiers can increase or decrease nutrition cost
-		for(var/datum/modifier/mod in modifiers)
-			if(!isnull(mod.metabolism_percent))
-				nutrition_reduction *= mod.metabolism_percent
+		// Metabolism above or below the species' own (hunger_factor already
+		// covers the species) raises or lowers nutrition cost.
+		var/species_metabolism = species.baseline_factor(BF_METABOLISM)
+		if(species_metabolism > 0)
+			nutrition_reduction *= factor(BF_METABOLISM) / species_metabolism
 		var/datum/component/nutrition_size_change/comp = GetComponent(/datum/component/nutrition_size_change)
 		if(comp)
 			nutrition_reduction *= comp.get_nutrition_multiplier()
@@ -1210,18 +1210,16 @@
 			belch_prob = ((nutrition-500)/3575)*5 //Scale belch prob with fullness if not already at max. If editing make sure the multiplier matches the max prob above.
 		if(prob(belch_prob))
 			src.emote("belch")
-	if((CE_DARKSIGHT in chem_effects) && chemical_darksight == 0)
+	if(factor(BF_DARKSIGHT) && chemical_darksight == 0)
 		recalculate_vis()
 		chemical_darksight = 1
-	if(!(CE_DARKSIGHT in chem_effects) && chemical_darksight == 1)
+	if(!factor(BF_DARKSIGHT) && chemical_darksight == 1)
 		recalculate_vis()
 		chemical_darksight = 0
 
 	// TODO: stomach and bloodstream organ.
 	if(!isSynthetic())
 		handle_trace_chems()
-
-	updatehealth()
 
 	return
 
@@ -1239,10 +1237,11 @@
 		silent = 0
 		deaf_loop.stop() // CHOMPEnable: Ear Ringing/Deafness - Not sure if we need this, but, safety.
 	else				//ALIVE. LIGHTS ARE ON
-		updatehealth()	//TODO
+		// The body ticks afflictions, recomputes vitals once, and applies
+		// death (organ death) and unconsciousness (consciousness model).
+		body.life_tick()
 
-		if(health <= (-getMaxHealth()) || (should_have_organ(O_BRAIN) && !has_brain()))
-			death()
+		if(stat == DEAD)
 			blinded = 1
 			silent = 0
 			deaf_loop.stop() // CHOMPEnable: Ear Ringing/Deafness - Not sure if we need this, but, safety.
@@ -1250,7 +1249,7 @@
 
 		//UNCONSCIOUS. NO-ONE IS HOME
 		var/in_crit = FALSE
-		if((getOxyLoss() > (getMaxHealth()/2)) || (health <= (get_crit_point() * species.crit_mod)))
+		if(body.is_unconscious())
 			Paralyse(3)
 			Sleeping(3)
 			set_stat(UNCONSCIOUS)
@@ -1270,20 +1269,7 @@
 				*/
 			hallucination = max(0, hallucination - 2)
 
-		//Brain damage from Oxyloss
-		if(should_have_organ(O_BRAIN))
-			var/brainOxPercent = 0.015		//Default 1.5% of your current oxyloss is applied as brain damage, 50 oxyloss is 1 brain damage
-			if(CE_STABLE in chem_effects)
-				brainOxPercent = 0.008		//Halved in effect
-			if(oxyloss >= (getMaxHealth() * 0.3) && prob(5)) // If oxyloss exceeds 30% of your max health, you can take brain damage.
-				adjustBrainLoss(brainOxPercent * oxyloss)
 
-		if(halloss >= getMaxHealth())
-			to_chat(src, span_notice("You're in too much pain to keep going..."))
-			src.visible_message(span_infoplain(span_bold("[src]") + " slumps to the ground, too weak to continue fighting."))
-			Paralyse(10)
-			Sleeping(10)
-			setHalLoss(getMaxHealth() - 1)
 
 		if(tiredness) //tiredness for vore drain
 			tiredness = (tiredness - 1)
@@ -1315,25 +1301,21 @@
 			blinded = TRUE
 			set_stat(UNCONSCIOUS)
 			animate_tail_reset()
-			adjustHalLoss(-3)
+			mend(TREAT_ANALGESIC, 3) // Sleep eases pain on top of its natural fading.
 
 			if(sleeping)
 				if(prob(2))
 					if(prob(50))
-						adjustBruteLoss(-1)
+						mend(TREAT_TISSUE_REPAIR, 1)
 					else
-						adjustFireLoss(-1)
-					if(bad_external_organs.len && prob(45))
-						var/obj/item/organ/badorgan = pick(bad_external_organs)
-						if(!badorgan.is_broken() && badorgan.is_bruised())
-							badorgan.damage -= 1
+						mend(TREAT_BURN_CARE, 1)
 
 				handle_dreams()
 				if(mind)
 					//Are they SSD? If so we'll keep them asleep but work off some of that sleep var in case of stoxin or similar.
 					if(client || sleeping > 3)
 						handle_sleeping()
-				if(prob(2) && health && !get_hallucination_component()?.get_fakecrit() && client)
+				if(prob(2) && !is_critical() && !get_hallucination_component()?.get_fakecrit() && client)
 					emote("snore")
 		//CONSCIOUS
 		else if(!in_crit)
@@ -1414,11 +1396,9 @@
 			deaf_loop.stop()
 		// CHOMPEnable End
 
-		//Resting
+		//Resting eases pain faster than it fades on its own.
 		if(resting)
-			adjustHalLoss(-3)
-		else
-			adjustHalLoss(-1)
+			mend(TREAT_ANALGESIC, 2)
 
 		if (drowsyness)
 			drowsyness = max(0, drowsyness - 1)
@@ -1457,10 +1437,10 @@
 	if(stat == DEAD) //Dead
 		if(!druggy)		see_invisible = SEE_INVISIBLE_LEVEL_TWO
 
-	else if(stat == UNCONSCIOUS && health <= 0) //Crit
-		//Critical damage passage overlay
+	else if(is_critical()) //Crit
+		//Critical damage passage overlay, deeper as vitality drains (0 at the crit line, -100 at the end).
 		var/severity = 0
-		switch(health)
+		switch(100 * (2 * vitality() - 1))
 			if(-20 to -10)			severity = 1
 			if(-30 to -20)			severity = 2
 			if(-40 to -30)			severity = 3
@@ -1475,9 +1455,10 @@
 	else //Alive
 		clear_fullscreen("crit")
 		//Oxygen damage overlay
-		if(oxyloss)
+		var/asphyxia = injury_load(INJURY_CATEGORY_ASPHYXIA)
+		if(asphyxia)
 			var/severity = 0
-			switch(oxyloss)
+			switch(asphyxia)
 				if(10 to 20)		severity = 1
 				if(20 to 25)		severity = 2
 				if(25 to 30)		severity = 3
@@ -1490,7 +1471,7 @@
 			clear_fullscreen("oxy")
 
 		//Fire and Brute damage overlay (BSSR)
-		var/hurtdamage = src.getShockBruteLoss() + src.getShockFireLoss() + damageoverlaytemp	//Doesn't call the overlay if you can't actually feel it
+		var/hurtdamage = injury_load(INJURY_CATEGORY_PHYSICAL) + injury_load(INJURY_CATEGORY_THERMAL) + damageoverlaytemp
 		damageoverlaytemp = 0 // We do this so we can detect if someone hits us or not.
 		if(hurtdamage)
 			var/severity = 0
@@ -1532,47 +1513,6 @@
 			overlay_fullscreen("fear", /atom/movable/screen/fullscreen/fear, severity)
 		else
 			clear_fullscreen("fear")
-
-		if(healths)
-			if(chem_effects[CE_PAINKILLER] > 100)
-				healths.icon_state = "health_numb"
-			else
-				// Generate a by-limb health display.
-				var/mutable_appearance/healths_ma = new(healths)
-				healths_ma.icon_state = "blank"
-				healths_ma.overlays = null
-				healths_ma.plane = PLANE_PLAYER_HUD
-
-				var/no_damage = 1
-				var/trauma_val = 0 // Used in calculating softcrit/hardcrit indicators.
-				if(!(species.flags & NO_PAIN))
-					trauma_val = max(traumatic_shock,halloss)/getMaxHealth()
-				var/limb_trauma_val = trauma_val*0.3
-				// Collect and apply the images all at once to avoid appearance churn.
-				var/list/health_images = list()
-				for(var/obj/item/organ/external/E in organs)
-					if(no_damage && (E.brute_dam || E.burn_dam))
-						no_damage = 0
-					health_images += E.get_damage_hud_image(limb_trauma_val)
-
-				// Apply a fire overlay if we're burning.
-				if(on_fire || get_hallucination_component()?.get_hud_state() == HUD_HALLUCINATION_ONFIRE)
-					health_images += image('icons/mob/OnFire.dmi',"[get_fire_icon_state()]")
-
-				// Show a general pain/crit indicator if needed.
-				if(get_hallucination_component()?.get_hud_state() == HUD_HALLUCINATION_CRIT)
-					trauma_val = 2
-				if(trauma_val)
-					if(!(species.flags & NO_PAIN))
-						if(trauma_val > 0.7)
-							health_images += image('icons/mob/screen1_health.dmi',"softcrit")
-						if(trauma_val >= 1)
-							health_images += image('icons/mob/screen1_health.dmi',"hardcrit")
-				else if(no_damage)
-					health_images += image('icons/mob/screen1_health.dmi',"fullhealth")
-
-				healths_ma.add_overlay(health_images)
-				healths.appearance = healths_ma
 
 
 		var/fat_alert = /atom/movable/screen/alert/fat
@@ -1659,6 +1599,14 @@
 			if(found_welder)
 				client.screen |= GLOB.global_hud.darkMask
 
+/// Pain as a fraction of the pain that knocks this body out (1 = passing
+/// out from pain). Drives the HUD's softcrit / hardcrit indicators.
+/mob/living/carbon/human/proc/pain_knockout_fraction()
+	var/datum/body/humanoid/HB = body
+	if(!istype(HB))
+		return 0
+	return current_pain() / max(1, HB.pain_tolerance() + 100)
+
 /mob/living/carbon/human/handle_hud_icons_health()
 	. = ..()
 	if(!. || !healths)
@@ -1668,10 +1616,10 @@
 		healths.icon_state = "health7"	//DEAD healthmeter
 		return
 
-	if(stat == UNCONSCIOUS && health <= 0) //Crit
+	if(is_critical()) //Crit
 		return
 
-	if(chem_effects[CE_PAINKILLER] > 100)
+	if(factor(BF_ANALGESIA) > 100)
 		healths.icon_state = "health_numb"
 		return
 
@@ -1684,12 +1632,12 @@
 	var/no_damage = 1
 	var/trauma_val = 0 // Used in calculating softcrit/hardcrit indicators.
 	if(!(species.flags & NO_PAIN))
-		trauma_val = max(traumatic_shock,halloss)/species.total_health
+		trauma_val = pain_knockout_fraction()
 	var/limb_trauma_val = trauma_val*0.3
 	// Collect and apply the images all at once to avoid appearance churn.
 	var/list/health_images = list()
 	for(var/obj/item/organ/external/E in organs)
-		if(no_damage && (E.brute_dam || E.burn_dam))
+		if(no_damage && (E.get_trauma() || E.get_burn()))
 			no_damage = 0
 		health_images += E.get_damage_hud_image(limb_trauma_val)
 
@@ -1770,9 +1718,7 @@
 			if(!druggy)
 				see_invisible = SEE_INVISIBLE_LEVEL_TWO
 
-		for(var/datum/modifier/M in modifiers)
-			if(!isnull(M.vision_flags))
-				sight |= M.vision_flags
+		sight |= factor(BF_SIGHT_FLAGS)
 
 		if(!glasses_processed && nif)
 			var/datum/nifsoft/vision_soft
@@ -1830,12 +1776,13 @@
 
 	// Puke if toxloss is too high
 	if(!stat && !isbelly(loc))
-		if (getToxLoss() >= 30 && isSynthetic())
+		var/toxic_load = injury_load(INJURY_CATEGORY_TOXIC)
+		if (toxic_load >= 30 && isSynthetic())
 			if(!confused)
 				if(prob(5))
 					to_chat(src, span_danger("You lose directional control!"))
 					Confuse(10)
-		if (getToxLoss() >= 45 && !isSynthetic())
+		if (toxic_load >= 45 && !isSynthetic())
 			spawn vomit()
 
 
@@ -1909,8 +1856,6 @@
 		shock_stage = max(shock_stage-1, 0)
 	if(!can_feel_pain()) return
 
-	if(health < (CONFIG_GET(number/health_threshold_softcrit) * species.crit_mod) && !chem_effects[CE_NARCOTICS])
-		shock_stage = max(shock_stage, 61)
 	if(stat)
 		return 0
 
@@ -1972,23 +1917,10 @@
 
 	var/brain_modifier = 1
 
-	var/modifier_shift = 0
-	var/modifier_set
-
-	if(modifiers && modifiers.len)
-		for(var/datum/modifier/mod in modifiers)
-			if(isnull(modifier_set) && !isnull(mod.pulse_set_level))
-				modifier_set = round(mod.pulse_set_level)	// Should be a whole number, but let's not take chances.
-			else if(mod.pulse_set_level > modifier_set)
-				modifier_set = round(mod.pulse_set_level)
-
-			if(!isnull(modifier_set))
-				modifier_set = max(0, modifier_set)	// No setting to negatives.
-
-			if(mod.pulse_modifier)
-				modifier_shift += mod.pulse_modifier
-
-	modifier_shift = round(modifier_shift)
+	var/modifier_shift = round(factor(BF_PULSE_SHIFT))
+	// BF_PULSE_SET's baseline is -1: nothing forces the pulse.
+	var/modifier_set = factor(BF_PULSE_SET)
+	modifier_set = modifier_set < 0 ? null : round(modifier_set)
 
 	if(!internal_organs_by_name[O_HEART])
 		temp = PULSE_NONE
@@ -2003,6 +1935,10 @@
 		return temp	//that's it, you're dead, nothing can influence your pulse, aside from outside means.
 
 	var/obj/item/organ/internal/heart/Pump = internal_organs_by_name[O_HEART]
+
+	// VF / asystole: the heart isn't moving blood (cardiac_arrhythmia).
+	if(!has_cardiac_output())
+		return isnull(modifier_set) ? PULSE_NONE : modifier_set
 
 	var/obj/item/organ/internal/brain/Control = internal_organs_by_name[O_BRAIN]
 
@@ -2039,7 +1975,7 @@
 				if(temp >= PULSE_NORM)
 					temp--
 					current_medications += R.id
-		//Stuff in our bloodstream. This is checked AFTER stomach so the heartstoppers can have their fun.
+		//Stuff in our bloodstream. (Heart-stopping drugs induce a cardiac_arrhythmia instead; see toxins.dm.)
 		for(var/datum/reagent/R in reagents.reagent_list)
 			if((R.id in GLOB.tachycardics) && !(R.id in current_medications))
 				if(temp < PULSE_THREADY && temp != PULSE_NONE) //We can reach a thready pulse, but only if we actually have a pulse.
@@ -2049,28 +1985,6 @@
 				if(temp >= PULSE_NORM) //Can get to PULSE_SLOW but never PULSE_NONE
 					temp--
 					current_medications += R.id
-			if(R.id in GLOB.heartstopper) //To avoid using fakedeath
-				temp = PULSE_NONE
-				break //No amount of medications is getting you out of this.
-			if(R.id in GLOB.cheartstopper) //Conditional heart-stoppage
-				if(R.volume >= R.overdose)
-					temp = PULSE_NONE
-					break //No amount of medications is getting you out of this.
-		return temp * brain_modifier
-	//handles different chems' influence on pulse
-	for(var/datum/reagent/R in reagents.reagent_list)
-		if(R.id in GLOB.bradycardics)
-			if(temp <= PULSE_THREADY && temp >= PULSE_NORM)
-				temp--
-		if(R.id in GLOB.tachycardics)
-			if(temp <= PULSE_FAST && temp >= PULSE_NONE)
-				temp++
-		if(R.id in GLOB.heartstopper) //To avoid using fakedeath
-			temp = PULSE_NONE
-		if(R.id in GLOB.cheartstopper) //Conditional heart-stoppage
-			if(R.volume >= R.overdose)
-				temp = PULSE_NONE
-
 	return max(0, round(temp * brain_modifier))
 
 /mob/living/carbon/human/proc/handle_heartbeat()
@@ -2106,7 +2020,7 @@
 		if(stat == DEAD || (status_flags & FAKEDEATH))
 			holder.icon_state = "-100" 	// X_X
 		else
-			holder.icon_state = RoundHealth((health-get_crit_point())/(getMaxHealth()-get_crit_point())*100)
+			holder.icon_state = vitality_hud_state(src)
 		if(block_hud)
 			holder.icon_state = "hudblank"
 		health_us.icon_state = holder.icon_state

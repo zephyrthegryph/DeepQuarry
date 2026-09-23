@@ -238,6 +238,8 @@ type DDOptions = {
   watchdogFile?: string;
   watchdogGraceMs?: number;
   watchdogTimeoutMs?: number;
+  /** Called with the daemon's pid once it has started (watchdog runs only). */
+  onSpawn?: (pid: number) => void;
 };
 
 /** Force-kill a process tree cross-platform. */
@@ -274,6 +276,9 @@ function runDreamDaemonWithWatchdog(
       stdio: 'inherit',
       detached: process.platform !== 'win32',
     });
+    if (child.pid && options.onSpawn) {
+      options.onSpawn(child.pid);
+    }
     let settled = false;
     let graceTimer: ReturnType<typeof setTimeout> | null = null;
     const poll = setInterval(checkDone, 1_000);

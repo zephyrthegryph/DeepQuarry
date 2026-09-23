@@ -15,7 +15,8 @@
 	cost = 0
 	category = 0
 	custom_only = FALSE
-	var_changes = list("item_slowdown_mod" = 0.5, "total_health" = 175, "brute_mod" = 0.8, "slowdown" = 0.1) // Can carry heavy stuff better, more health, more brute resist, but slight slowdown.
+	var_changes = list("item_slowdown_mod" = 0.5, "total_health" = 175, "injury_mod_physical" = 0.8)
+	factors = alist(BF_SLOWDOWN = 0.1) // Can carry heavy stuff better, more health, more brute resist, but slight slowdown.
 
 /datum/trait/neutral/xenomorph_warrior
 	sort = TRAIT_SORT_SPECIES
@@ -38,7 +39,8 @@
 	cost = 0
 	category = 0
 	custom_only = FALSE
-	var_changes = list("slowdown" = -0.5, "item_slowdown_mod" = 0.5, "total_health" = 125) // Much faster and carry-capable, but slightly less tanky.
+	var_changes = list("item_slowdown_mod" = 0.5, "total_health" = 125)
+	factors = alist(BF_SLOWDOWN = -0.5) // Much faster and carry-capable, but slightly less tanky.
 	has_preferences = list("pass_table" = list(TRAIT_PREF_TYPE_BOOLEAN, "On spawn", TRAIT_NO_VAREDIT_TARGET, TRUE))
 
 /datum/trait/neutral/xenomorph_hunter/apply(datum/species/S,mob/living/carbon/human/H, list/trait_prefs)

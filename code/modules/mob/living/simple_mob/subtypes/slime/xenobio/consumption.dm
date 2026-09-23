@@ -8,15 +8,16 @@
 		if(prob(input * 2))
 			power_charge = min(power_charge + 1, 10)
 			if(power_charge == 10)
-				adjustToxLoss(-10)
+				mend(TREAT_ANTITOXIN, 10)
 
 		// Heal 1 point of damage per 5 nutrition coming in.
 		if(heal)
-			adjustBruteLoss(-input * 0.2)
-			adjustFireLoss(-input * 0.2)
-			adjustToxLoss(-input * 0.2)
-			adjustOxyLoss(-input * 0.2)
-			adjustCloneLoss(-input * 0.2)
+			var/heal_amount = input * 0.2
+			mend(TREAT_TISSUE_REPAIR, heal_amount)
+			mend(TREAT_BURN_CARE, heal_amount)
+			mend(TREAT_ANTITOXIN, heal_amount)
+			mend(TREAT_OXYGENATION, heal_amount)
+			mend(TREAT_GENETIC_REPAIR, heal_amount)
 
 /mob/living/simple_mob/slime/xenobio/proc/get_grow_nutrition() // Above it we grow, below it we can eat
 	return is_adult ? 1000 : 800
@@ -52,7 +53,7 @@
 				say("[nofriend]... food now...")
 
 	if(nutrition <= 0)
-		adjustToxLoss(rand(1,3))
+		injure(INJURY_TOXIN, rand(1,3), flags = INJURE_SILENT) // Starving.
 		if(client && prob(5))
 			to_chat(src, span_danger("You are starving!"))
 
@@ -76,8 +77,6 @@
 			to_chat(src, span_warning("[pick(feedback)]..."))
 			stop_consumption()
 
-		if(victim)
-			victim.updatehealth()
 
 	else
 		stop_consumption()
@@ -132,7 +131,8 @@
 	if(!Adjacent(L))
 		to_chat(src, "This subject is too far away...")
 		return FALSE
-	if(L.getCloneLoss() >= L.getMaxHealth() * 1.5)
+	var/datum/affliction/dissolution = L.find_affliction(/datum/affliction/venom/slime_dissolution)
+	if(dissolution && dissolution.severity >= AFFLICTION_SEVERITY_TERMINAL)
 		to_chat(src, "This subject does not have an edible life energy...")
 		return FALSE
 	// ition start
@@ -152,8 +152,8 @@
 
 // This does the actual damage, as well as give nutrition and heals.
 // Assuming no bio armor, calling consume(10) will result in;
-// 6 clone damage to victim
-// 4 tox damage to victim.
+// 6 cellular (slime dissolution) injury to victim
+// 4 toxin injury to victim.
 // 25 nutrition for the slime.
 // 2 points of damage healed on the slime (as a result of the nutrition).
 // 50% of giving +1 charge to the slime (same as above).
@@ -162,9 +162,9 @@
 		var/armor_modifier = abs((victim.getarmor(null, "bio") / 100) - 1)
 		var/damage_done = amount * armor_modifier
 		if(damage_done > 0)
-			victim.adjustCloneLoss(damage_done * 0.6)
-			victim.adjustToxLoss(damage_done * 0.4)
-			adjust_nutrition(damage_done * 5)
+			var/absorbed = victim.injure(INJURY_CELLULAR, damage_done * 0.6, source = src, affliction = /datum/affliction/venom/slime_dissolution)
+			absorbed += victim.injure(INJURY_TOXIN, damage_done * 0.4, source = src)
+			adjust_nutrition(absorbed * 5)
 			Beam(victim, icon_state = "slime_consume", time = 8)
 			to_chat(src, span_notice("You absorb some biomaterial from \the [victim]."))
 			to_chat(victim, span_danger("\The [src] consumes some of your flesh!"))

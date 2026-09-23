@@ -1,10 +1,24 @@
 GLOBAL_LIST_EMPTY(shutoff_valves)
 
-/proc/wake_automatic_shutoff_valves()
-	if(SSexplosions?.is_bulk_resolving())
-		SSair.pending_automatic_shutoff_wake = TRUE
+/// Wakes the automatic shutoff valves that border `network`, so they can react
+/// to a leak or split there. With no network (a change whose network is not
+/// known yet, such as new construction) every valve wakes. During a bulk blast
+/// the valves are collected and woken once when it ends.
+/proc/wake_automatic_shutoff_valves(datum/pipe_network/network)
+	var/bulk = SSexplosions?.is_bulk_resolving()
+	if(!network)
+		if(bulk)
+			SSair.pending_automatic_shutoff_wake_all = TRUE
+		else
+			wake_all_automatic_shutoff_valves()
 		return
-	wake_all_automatic_shutoff_valves()
+	for(var/obj/machinery/atmospherics/valve/shutoff/valve as anything in GLOB.shutoff_valves)
+		if(valve.network_node1 != network && valve.network_node2 != network)
+			continue
+		if(bulk)
+			SSair.pending_automatic_shutoff_valves[valve] = TRUE
+		else
+			START_MACHINE_PROCESSING(valve)
 
 /proc/wake_all_automatic_shutoff_valves()
 	for(var/obj/machinery/atmospherics/valve/shutoff/valve as anything in GLOB.shutoff_valves)
@@ -36,6 +50,7 @@ GLOBAL_LIST_EMPTY(shutoff_valves)
 
 /obj/machinery/atmospherics/valve/shutoff/Destroy()
 	GLOB.shutoff_valves -= src
+	SSair.pending_automatic_shutoff_valves -= src
 	. = ..()
 
 /obj/machinery/atmospherics/valve/shutoff/attack_ai(mob/user as mob)

@@ -17,8 +17,7 @@
 
 	organ_names = /datum/decl/mob_organ_names/ward
 
-	maxHealth = 15
-	health = 15
+	endurance = 15
 	movement_cooldown = -1
 	// dq_get_hovering(src) type-default moved to GLOB.dq_hovering_by_type
 

@@ -37,62 +37,28 @@
 		to_chat(src, span_warning("You can't do that here!"))
 		return
 
-	var/ability_cost = 100
-
-	var/darkness = 1
 	var/turf/T = get_turf(src)
 	if(!T)
 		to_chat(src,span_warning("You can't use that here!"))
 		return FALSE
 
 	if(SK.doing_phase)
-		return FALSE
-
-	var/brightness = T.get_lumcount() //Brightness in 0.0 to 1.0
-	darkness = 1-brightness //Invert
-
-	var/watcher = 0
-	for(var/mob/living/thing in orange(7, src)) //Fun fact, doing two typed loops is faster than doing one untyped loop. Check it with Tracy!
-		if(istype(thing, /mob/living/carbon/human))
-			var/mob/living/carbon/human/watchers = thing
-			if(watchers in oviewers(7,src))
-				var/datum/component/shadekin/watcher_SK = watchers.get_shadekin_component()
-				if(!watcher_SK && !(watchers.stat) && !isbelly(watchers.loc) && !istype(watchers.loc, /obj/item/holder))	// And they are alive and not being held by someone...
-					watcher++	//They are watching us!
-		if(istype(thing, /mob/living/silicon/robot))
-			var/mob/living/silicon/robot/watchers = thing
-			var/datum/component/shadekin/watcher_SK = watchers.get_shadekin_component() //you never know, man.
-			if(watchers in oviewers(7,src))
-				if(!watcher_SK && !watchers.stat && !isbelly(watchers.loc))
-					watcher++	//The robot is watching us!
-	if(SK.camera_counts_as_watcher)
-		for(var/obj/machinery/camera/watchers in orange(7, src))
-			if(watchers.can_use())
-				if(src in watchers.can_see())
-					watcher++	//The camera is watching us!
-
-	ability_cost = CLAMP(ability_cost/(0.01+darkness*2),50, 80)//This allows for 1 watcher in full light
-	if(watcher>0)
-		ability_cost = ability_cost + ( 15 * watcher )
-	/*
-	if(!(SK.in_phase))
-		to_chat(world, "[src] attempted to shift with [watcher] visible Carbons with a  cost of [ability_cost] in a darkness level of [darkness]")
-	*/
-
-	if(SK.doing_phase)
 		to_chat(src, span_warning("You are already trying to phase!"))
 		return FALSE
-	else if(SK.shadekin_get_energy() < ability_cost && !(SK.in_phase))
-		to_chat(src, span_warning("Not enough energy for that ability!"))
-		return FALSE
 
-	if(!(SK.in_phase))
-		SK.shadekin_adjust_energy(-ability_cost)
-	playsound(src, SK.phase_noise, 75, 1)
-
+	// Every check that can fail runs before any energy is spent or sound played.
 	if(!T.CanPass(src,T) || loc != T)
 		to_chat(src,span_warning("You can't use that here!"))
 		return FALSE
+
+	var/ability_cost = SK.in_phase ? 0 : phase_shift_cost(T)
+	if(SK.shadekin_get_energy() < ability_cost)
+		to_chat(src, span_warning("Not enough energy for that ability!"))
+		return FALSE
+
+	if(ability_cost)
+		SK.shadekin_adjust_energy(-ability_cost)
+	playsound(src, SK.phase_noise, 75, 1)
 
 	//Shifting in
 	if(SK.in_phase)
@@ -100,6 +66,29 @@
 	//Shifting out
 	else
 		phase_out(T, SK)
+
+/// Energy cost of phasing out from T: cheaper in darkness, +15 per non-shadekin watcher.
+/mob/living/proc/phase_shift_cost(turf/T)
+	var/datum/component/shadekin/SK = get_shadekin_component()
+	var/darkness = 1 - T.get_lumcount() //Brightness in 0.0 to 1.0, inverted
+
+	var/watcher = 0
+	// oviewers() is computed once; every mob it returns is also within orange(7).
+	for(var/mob/living/watchers in oviewers(7, src))
+		if(!ishuman(watchers) && !isrobot(watchers))
+			continue
+		if(watchers.get_shadekin_component() || watchers.stat || isbelly(watchers.loc))
+			continue
+		if(ishuman(watchers) && istype(watchers.loc, /obj/item/holder)) // Held humans can't watch.
+			continue
+		watcher++ //They are watching us!
+	if(SK?.camera_counts_as_watcher)
+		for(var/obj/machinery/camera/watchers in orange(7, src))
+			if(watchers.can_use() && (src in watchers.can_see()))
+				watcher++ //The camera is watching us!
+
+	var/ability_cost = CLAMP(100/(0.01+darkness*2), 50, 80) //This allows for 1 watcher in full light
+	return ability_cost + 15 * watcher
 
 /mob/living/proc/phase_in(turf/T, datum/component/shadekin/SK)
 	//In case we're not passed args, do it ourself.
@@ -275,7 +264,7 @@
 
 /datum/modifier/shadekin_phase_vision
 	name = "Shadekin Phase Vision"
-	vision_flags = SEE_THRU
+	factors = alist(BF_SIGHT_FLAGS = SEE_THRU)
 
 /datum/modifier/phased_out
 	name = "Phased Out"

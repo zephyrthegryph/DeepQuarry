@@ -165,7 +165,6 @@
 	channels = list(CHANNEL_TALON = 1)
 
 
-// === merged from encryptionkey_chomp.dm during hard-fork de-suffix (verified no override-order change) ===
 /obj/item/encryptionkey/headset_medsec
 	name = "medical security radio encryption key"
 	icon_state = "med_cypherkey"

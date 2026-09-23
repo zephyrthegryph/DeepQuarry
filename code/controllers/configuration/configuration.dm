@@ -110,12 +110,6 @@
 	LoadPolicy()
 	LoadChatFilter()
 	LoadModes()
-	/*
-	if(CONFIG_GET(flag/load_jobs_from_txt))
-		validate_job_config()
-		if(SSjob.initialized) // in case we're reloading from disk after initialization, wanna make sure the changes update in the ongoing shift
-			SSjob.load_jobs_from_config()
-	*/
 
 	if(CONFIG_GET(flag/usewhitelist))
 		load_whitelist()
@@ -132,9 +126,6 @@
 	entries_by_type.Cut()
 	QDEL_LIST_ASSOC_VAL(entries)
 	entries = null
-	//QDEL_LIST_ASSOC_VAL(maplist)
-	//maplist = null
-	//QDEL_NULL(defaultmap)
 	configuration_errors?.Cut()
 
 /datum/controller/configuration/Destroy()
@@ -362,67 +353,6 @@ Example config:
 		else
 			policy = parsed
 
-/*
-/datum/controller/configuration/proc/loadmaplist(filename)
-	log_config("Loading config file [filename]...")
-	filename = "[directory]/[filename]"
-	var/list/Lines = world.file2list(filename)
-
-	var/datum/map_config/currentmap = null
-	for(var/t in Lines)
-		if(!t)
-			continue
-
-		t = trim(t)
-		if(length(t) == 0)
-			continue
-		else if(t[1] == "#")
-			continue
-
-		var/pos = findtext(t, " ")
-		var/command = null
-		var/data = null
-
-		if(pos)
-			command = lowertext(copytext(t, 1, pos))
-			data = copytext(t, pos + length(t[pos]))
-		else
-			command = lowertext(t)
-
-		if(!command)
-			continue
-
-		if (!currentmap && command != "map")
-			continue
-
-		switch (command)
-			if ("map")
-				currentmap = load_map_config(data, MAP_DIRECTORY_MAPS)
-				if(currentmap.defaulted)
-					var/error_message = "Failed to load map config for [data]!"
-					log_config(error_message)
-					log_mapping(error_message, TRUE)
-					currentmap = null
-			if ("minplayers","minplayer")
-				currentmap.config_min_users = text2num(data)
-			if ("maxplayers","maxplayer")
-				currentmap.config_max_users = text2num(data)
-			if ("weight","voteweight")
-				currentmap.voteweight = text2num(data)
-			if ("default","defaultmap")
-				defaultmap = currentmap
-			if ("votable")
-				currentmap.votable = TRUE
-			if ("endmap")
-				LAZYINITLIST(maplist)
-				maplist[currentmap.map_name] = currentmap
-				currentmap = null
-			if ("disabled")
-				currentmap = null
-			else
-				log_config("Unknown command in map vote config: '[command]'")
-*/
-
 /datum/controller/configuration/proc/LoadChatFilter()
 	if(!fexists("[directory]/word_filter.toml"))
 		load_legacy_chat_filter()
@@ -517,33 +447,6 @@ Example config:
 	var/word_bounds = @"(\b(" + jointext(to_join_on_word_bounds, "|") + @")\b)"
 	var/regex_filter = whitespace_split != "" ? "([whitespace_split]|[word_bounds])" : word_bounds
 	return regex(regex_filter, "i")
-
-/*
-/// Check to ensure that the jobconfig is valid/in-date.
-/datum/controller/configuration/proc/validate_job_config()
-	var/config_toml = "[directory]/jobconfig.toml"
-	var/config_txt = "[directory]/jobs.txt"
-	var/message = "Notify Server Operators: "
-	log_config("Validating config file jobconfig.toml...")
-
-	if(!fexists(file(config_toml)))
-		SSjob.legacy_mode = TRUE
-		message += "jobconfig.toml not found, falling back to legacy mode (using jobs.txt). To surpress this warning, generate a jobconfig.toml by running the verb 'Generate Job Configuration' in the Server tab.\n\
-			From there, you can then add it to the /config folder of your server to have it take effect for future rounds."
-
-		if(!fexists(file(config_txt)))
-			message += "\n\nFailed to set up legacy mode, jobs.txt not found! Codebase defaults will be used. If you do not wish to use this system, please disable it by commenting out the LOAD_JOBS_FROM_TXT config flag."
-
-		log_config(message)
-		DelayedMessageAdmins(span_notice(message))
-		return
-
-	var/list/result = rustg_raw_read_toml_file(config_toml)
-	if(!result["success"])
-		message += "The job config (jobconfig.toml) is not configured correctly! [result["content"]]"
-		log_config(message)
-		DelayedMessageAdmins(span_notice(message))
-*/
 
 //Message admins when you can.
 /datum/controller/configuration/proc/DelayedMessageAdmins(text)

@@ -225,7 +225,6 @@ GLOBAL_LIST_EMPTY(bodycamera_screens)
 	req_access = list(150)
 
 
-// === merged from camera_vr.dm during hard-fork de-suffix (verified no override-order change) ===
 /obj/machinery/computer/security/abductor
 	name = "camera uplink"
 	desc = "Used for hacking into camera networks"

@@ -13,29 +13,11 @@
 	rad_insulation = RAD_HEAVY_INSULATION
 /turf/simulated/wall/rshull/Initialize(mapload)
 	. = ..(mapload,  MAT_STEELHULL, MAT_STEELHULL, MAT_STEELHULL)
-/turf/simulated/wall/pshull
-	icon_state = "hull-plasteel"
-	rad_insulation = RAD_HEAVY_INSULATION
-/turf/simulated/wall/pshull/Initialize(mapload) //Spaaaace-er ship.
-	. = ..(mapload,  MAT_PLASTEELHULL, null, MAT_PLASTEELHULL)
 /turf/simulated/wall/rpshull
 	icon_state = "hull-r_plasteel"
 /turf/simulated/wall/rpshull/Initialize(mapload)
 	. = ..(mapload,  MAT_PLASTEELHULL, MAT_PLASTEELHULL, MAT_PLASTEELHULL)
 
-/turf/simulated/wall/dshull
-	icon_state = "hull-durasteel"
-	rad_insulation = RAD_HEAVY_INSULATION
-
-/turf/simulated/wall/dshull/Initialize(mapload) //Spaaaace-est ship.
-	. = ..(mapload,  MAT_DURASTEELHULL, null, MAT_DURASTEELHULL)
-
-/turf/simulated/wall/rdshull
-	icon_state = "hull-r_durasteel"
-	rad_insulation = RAD_EXTREME_INSULATION
-
-/turf/simulated/wall/rdshull/Initialize(mapload)
-	. = ..(mapload,  MAT_DURASTEELHULL, MAT_DURASTEELHULL, MAT_DURASTEELHULL)
 
 /turf/simulated/wall/thull
 	icon_state = "hull-titanium"
@@ -44,12 +26,6 @@
 /turf/simulated/wall/thull/Initialize(mapload)
 	. = ..(mapload,  MAT_TITANIUMHULL, null, MAT_TITANIUMHULL)
 
-/turf/simulated/wall/rthull
-	icon_state = "hull-r_titanium"
-	rad_insulation = RAD_EXTREME_INSULATION
-
-/turf/simulated/wall/rthull/Initialize(mapload)
-	. = ..(mapload,  MAT_TITANIUMHULL, MAT_TITANIUMHULL, MAT_TITANIUMHULL)
 
 /turf/simulated/wall/cult
 	icon_state = "cult"
@@ -67,14 +43,7 @@
 	. = ..(mapload, MAT_DIAMOND)
 /turf/simulated/wall/gold/Initialize(mapload)
 	. = ..(mapload, MAT_GOLD)
-/turf/simulated/wall/silver/Initialize(mapload)
-	. = ..(mapload, MAT_SILVER)
 
-/turf/simulated/wall/lead
-	rad_insulation = RAD_EXTREME_INSULATION
-
-/turf/simulated/wall/lead/Initialize(mapload)
-	. = ..(mapload, MAT_LEAD)
 
 /turf/simulated/wall/r_lead
 	rad_insulation = RAD_EXTREME_INSULATION
@@ -85,19 +54,11 @@
 	. = ..(mapload, MAT_PHORON)
 /turf/simulated/wall/sandstone/Initialize(mapload)
 	. = ..(mapload, MAT_SANDSTONE)
-/turf/simulated/wall/ironphoron/Initialize(mapload)
-	. = ..(mapload, MAT_IRON,MAT_PHORON)
 /turf/simulated/wall/golddiamond/Initialize(mapload)
 	. = ..(mapload, MAT_GOLD,MAT_DIAMOND)
-/turf/simulated/wall/silvergold/Initialize(mapload)
-	. = ..(mapload, MAT_SILVER,MAT_GOLD)
-/turf/simulated/wall/sandstonediamond/Initialize(mapload)
-	. = ..(mapload, MAT_SANDSTONE,MAT_DIAMOND)
 /turf/simulated/wall/snowbrick/Initialize(mapload)
 	. = ..(mapload, MAT_SNOWBRICK)
 
-/turf/simulated/wall/resin/Initialize(mapload)
-	. = ..(mapload, MAT_RESIN,null,MAT_RESIN)
 
 /turf/simulated/wall/concrete
 	icon_state = "brick"
@@ -106,12 +67,6 @@
 /turf/simulated/wall/concrete/Initialize(mapload)
 	. = ..(mapload, MAT_CONCRETE) //3strong
 
-/turf/simulated/wall/r_concrete
-	rad_insulation = RAD_HEAVY_INSULATION
-	icon_state = "rbrick"
-
-/turf/simulated/wall/r_concrete/Initialize(mapload)
-	. = ..(mapload, MAT_CONCRETE,MAT_PLASTEELREBAR) //3strong
 
 // Kind of wondering if this is going to bite me in the butt.
 /turf/simulated/wall/skipjack/Initialize(mapload)
@@ -127,57 +82,15 @@
 /turf/simulated/wall/durasteel/Initialize(mapload)
 	. = ..(mapload, MAT_DURASTEEL, MAT_DURASTEEL)
 
-/turf/simulated/wall/durasteel/blueserg/Initialize(mapload)
-	. = ..(mapload, MAT_DURASTEEL, MAT_DURASTEEL)
 
-/turf/simulated/wall/durasteel/blueserg/attackby(obj/item/I, mob/user)
-	return
 // ENd
 
 /turf/simulated/wall/wood/Initialize(mapload)
 	. = ..(mapload,  MAT_WOOD)
 
-/turf/simulated/wall/hardwood/Initialize(mapload)
-	. = ..(mapload,  MAT_HARDWOOD)
-
-/turf/simulated/wall/sifwood/Initialize(mapload)
-	. = ..(mapload,  MAT_SIFWOOD)
-
-/turf/simulated/wall/rsifwood/Initialize(mapload)
-	. = ..(mapload,  MAT_SIFWOOD, MAT_SIFWOOD, MAT_SIFWOOD)
-
-/turf/simulated/wall/birchwood/Initialize(mapload)
-	. = ..(mapload,  MAT_BIRCHWOOD)
-
-/turf/simulated/wall/pinewood/Initialize(mapload)
-	. = ..(mapload,  MAT_PINEWOOD)
-
-/turf/simulated/wall/oakwood/Initialize(mapload)
-	. = ..(mapload,  MAT_OAKWOOD)
-
-/turf/simulated/wall/acaciawood/Initialize(mapload)
-	. = ..(mapload,  MAT_ACACIAWOOD)
-
-/turf/simulated/wall/redwood/Initialize(mapload)
-	. = ..(mapload,  MAT_REDWOOD)
-
-/turf/simulated/wall/log/Initialize(mapload)
-	. = ..(mapload,  MAT_LOG)
 
 /turf/simulated/wall/log_sif/Initialize(mapload)
 	. = ..(mapload,  MAT_SIFLOG)
-
-/turf/unsimulated/wall/ice
-	name = "Ice wall"
-	desc = "Frigid Ice that seems to be stronger then most manmade structures"
-	icon = 'icons/turf/snow_new.dmi'
-	icon_state = "Icerock"
-
-/turf/unsimulated/wall/bronze
-	name = "Bronze wall"
-	desc = "A huge chunk of warm metal. The clanging of machinery emanates from within."
-	icon = 'icons/obj/clockwork_objects.dmi'
-	icon_state = "clockwork_wall"
 
 
 // Shuttle Walls
@@ -242,15 +155,6 @@
 	. = ..()
 	update_light()
 
-/turf/simulated/shuttle/wall/alien/hard_corner
-	name = "hardcorner wall"
-	icon_state = "alien-hc"
-	hard_corner = 1
-
-/turf/simulated/shuttle/wall/alien/no_join
-	name = "nojoin wall"
-	icon_state = "alien-nj"
-	join_group = null
 
 /turf/simulated/shuttle/wall/Initialize(mapload)
 	. = ..()
@@ -328,23 +232,7 @@
 	hard_corner = 1
 	stripe_color = "#0000FF"
 
-/turf/simulated/shuttle/wall/voidcraft/hard_corner/lightblue
-	name = "hardcorner wall"
-	icon_state = "void-hc"
-	hard_corner = 1
-	stripe_color = "#33ccff"
 
-/turf/simulated/shuttle/wall/voidcraft/hard_corner/green
-	name = "hardcorner wall"
-	icon_state = "void-hc"
-	hard_corner = 1
-	stripe_color = "#00FF00"
-
-/turf/simulated/shuttle/wall/voidcraft/hard_corner/red
-	name = "hardcorner wall"
-	icon_state = "void-hc"
-	stripe_color = "#FF0000"
-	hard_corner = 1
 /turf/simulated/shuttle/wall/voidcraft/no_join
 	name = "nojoin wall"
 	icon_state = "void-nj"
@@ -437,7 +325,6 @@
 	return list(dir, turn(dir,90), turn(dir,-90))
 
 
-
 // Eris walls
 /turf/simulated/wall/eris
 	icon = 'icons/turf/wall_masks_eris.dmi'
@@ -470,10 +357,6 @@
 						dirs += direction
 						break blend_obj_loop // breaks outer loop
 
-/turf/simulated/wall/eris/r_wall
-	icon_state = "rgeneric"
-/turf/simulated/wall/eris/r_wall/Initialize(mapload)
-	. = ..(mapload, MAT_PLASTEEL,MAT_PLASTEEL)
 
 // Bay walls
 /turf/simulated/wall/bay
@@ -518,10 +401,6 @@
 						dirs += direction
 						break blend_obj_loop // breaks outer loop
 
-/turf/simulated/wall/bay/r_wall
-	icon_state = "rgeneric"
-/turf/simulated/wall/bay/r_wall/Initialize(mapload)
-	. = ..(mapload, MAT_PLASTEEL,MAT_PLASTEEL)
 
 /turf/simulated/wall/tgmc
 	icon = 'icons/turf/wall_masks_tgmc.dmi'
@@ -612,207 +491,15 @@
 /turf/simulated/wall/tgmc/can_join_with_low_wall(obj/structure/low_wall/WF)
 	return istype(WF, /obj/structure/low_wall)
 
-/turf/simulated/wall/tgmc/rwall
-	icon_state = "rwall0"
-	wall_base_state = "rwall"
-	wall_blend_category = "rwall"
-/turf/simulated/wall/tgmc/rwall/Initialize(mapload)
-	. = ..(mapload, MAT_PLASTEEL,MAT_PLASTEEL)
-
-/turf/simulated/wall/tgmc/gray
-	icon_state = "gray0"
-	wall_base_state = "gray"
-	wall_blend_category = "gray"
-/turf/simulated/wall/tgmc/gwall/Initialize(mapload)
-	. = ..(mapload, MAT_PLASTEEL,MAT_PLASTEEL)
-
-/turf/simulated/wall/tgmc/darkwall
-	icon_state = "darkwall0"
-	wall_base_state = "darkwall"
-	wall_blend_category = "darkwall"
-/turf/simulated/wall/tgmc/darkwall/Initialize(mapload)
-	. = ..(mapload, MAT_PLASTEEL,MAT_PLASTEEL)
-/turf/simulated/wall/tgmc/darkwall/deco0
-	icon_state = "darkwall_deco0"
-	force_icon = "_deco0"
-/turf/simulated/wall/tgmc/darkwall/deco1
-	icon_state = "darkwall_deco1"
-	force_icon = "_deco1"
-/turf/simulated/wall/tgmc/darkwall/deco2
-	icon_state = "darkwall_deco2"
-	force_icon = "_deco2"
-/turf/simulated/wall/tgmc/darkwall/deco3
-	icon_state = "darkwall_deco3"
-	force_icon = "_deco3"
-/turf/simulated/wall/tgmc/darkwall/fake_door
-	icon = 'icons/obj/doors/angled/elevator/door.dmi'
-	icon_state = "preview"
-	name = "locked elevator"
-
-/turf/simulated/wall/tgmc/whitewall
-	icon_state = "white0"
-	wall_base_state = "white"
-	wall_blend_category = "white"
-/turf/simulated/wall/tgmc/whitewall/Initialize(mapload)
-	. = ..(mapload, MAT_STEEL,MAT_PLASTIC)
-
-/turf/simulated/wall/tgmc/durawall
-	icon_state = "darkband0"
-	wall_base_state = "darkband"
-	wall_blend_category = "darkband"
-/turf/simulated/wall/tgmc/durawall/Initialize(mapload)
-	. = ..(mapload, MAT_DURASTEEL,MAT_DURASTEEL)
-/turf/simulated/wall/tgmc/durawall/deco0
-	icon_state = "darkband_deco0"
-	force_icon = "_deco0"
-/turf/simulated/wall/tgmc/durawall/deco1
-	icon_state = "darkband_deco1"
-	force_icon = "_deco1"
-/turf/simulated/wall/tgmc/durawall/deco2
-	icon_state = "darkband_deco2"
-	force_icon = "_deco2"
-/turf/simulated/wall/tgmc/durawall/deco3
-	icon_state = "darkband_deco3"
-	force_icon = "_deco3"
-
-/turf/simulated/wall/tgmc/sanitary
-	icon_state = "whiteband0"
-	wall_base_state = "whiteband"
-	wall_blend_category = "whiteband"
-/turf/simulated/wall/tgmc/sanitary/Initialize(mapload)
-	. = ..(mapload, MAT_PLASTEEL,MAT_PLASTEEL)
-
-/turf/simulated/wall/tgmc/chigusa
-	icon_state = "chigusa0"
-	wall_base_state = "chigusa"
-	wall_blend_category = "chigusa"
-/turf/simulated/wall/tgmc/chigusa/Initialize(mapload)
-	. = ..(mapload, MAT_CHITIN,MAT_CHITIN)
-/turf/simulated/wall/tgmc/chigusa/deco0
-	icon_state = "chigusa_deco0"
-	force_icon = "_deco0"
-/turf/simulated/wall/tgmc/chigusa/deco1
-	icon_state = "chigusa_deco1"
-	force_icon = "_deco1"
-/turf/simulated/wall/tgmc/chigusa/deco2
-	icon_state = "chigusa_deco2"
-	force_icon = "_deco2"
-
-/turf/simulated/wall/tgmc/redstripe
-	icon_state = "redstripe0"
-	wall_base_state = "redstripe"
-	wall_blend_category = "redstripe"
-/turf/simulated/wall/tgmc/redstripe/Initialize(mapload)
-	. = ..(mapload, MAT_PLASTEELHULL,MAT_PLASTEELHULL)
-
-/turf/simulated/wall/tgmc/redstripe_r
-	icon_state = "redstriper0"
-	wall_base_state = "redstriper"
-	wall_blend_category = "redstriper"
-/turf/simulated/wall/tgmc/redstripe_r/Initialize(mapload)
-	. = ..(mapload, MAT_DURASTEELHULL,MAT_DURASTEELHULL)
-
-/turf/simulated/wall/tgmc/plain_redstripe
-	icon_state = "predstripe0"
-	wall_base_state = "predstripe"
-	wall_blend_category = "predstripe"
-/turf/simulated/wall/tgmc/plain_redstripe/Initialize(mapload)
-	. = ..(mapload, MAT_PLASTEEL,MAT_PLASTEEL)
-
-/turf/simulated/wall/tgmc/plain_redstripe_r
-	icon_state = "predstriper0"
-	wall_base_state = "predstriper"
-	wall_blend_category = "predstriper"
-/turf/simulated/wall/tgmc/plain_redstripe_r/Initialize(mapload)
-	. = ..(mapload, MAT_DURASTEEL,MAT_DURASTEEL)
 
 #define WINDOW_GLASS 0x1
 #define WINDOW_RGLASS 0x2
-/turf/simulated/wall/tgmc/window
-	icon = 'icons/turf/wall_masks_tgmc_win.dmi'
-	wall_masks = 'icons/turf/wall_masks_tgmc_win.dmi' // not really a MASK per-se, I guess
-	icon_state = "metal_window0"
-	wall_base_state = "metal_window"
-	wall_blend_category = "metal"
 
-	opacity = 0
-	var/window_types = WINDOW_GLASS
-	strict_blending = TRUE
-	diagonal_blending = TRUE
-
-/turf/simulated/wall/tgmc/window/CanPass(atom/movable/mover, turf/target)
-	// This IS a glass window, so things that can pass glass should pass through here!
-	if(istype(mover) && mover.checkpass(PASSGLASS))
-		return TRUE
-	return ..()
-
-/turf/simulated/wall/tgmc/window/rwall
-	icon_state = "rwall_window0"
-	wall_base_state = "rwall_window"
-	wall_blend_category = "rwall"
-	window_types = WINDOW_RGLASS
-
-/turf/simulated/wall/tgmc/window/rwall
-	icon_state = "rwall_rwindow0"
-	wall_base_state = "rwall_rwindow"
-	wall_blend_category = "rwall"
-	window_types = WINDOW_RGLASS
-
-/turf/simulated/wall/tgmc/window/gray
-	icon_state = "gray_window0"
-	wall_base_state = "gray_window"
-	wall_blend_category = "gray"
-	window_types = WINDOW_GLASS|WINDOW_RGLASS
-
-/turf/simulated/wall/tgmc/window/gray/reinf
-	icon_state = "gray_rwindow0"
-	wall_base_state = "gray_rwindow"
-
-/turf/simulated/wall/tgmc/window/white
-	icon_state = "white_window0"
-	wall_base_state = "white_window"
-	wall_blend_category = "white"
-	window_types = WINDOW_GLASS|WINDOW_RGLASS
-	diagonal_blending = FALSE
-
-/turf/simulated/wall/tgmc/window/white/reinf
-	icon_state = "white_rwindow0"
-	wall_base_state = "white_rwindow"
-
-/turf/simulated/wall/tgmc/window/chigusa
-	icon_state = "chigusa_rwindow0"
-	wall_base_state = "chigusa_rwindow"
-	wall_blend_category = "chigusa"
-	window_types = WINDOW_RGLASS
-	diagonal_blending = FALSE
-
-/turf/simulated/wall/tgmc/window/redstripe_r
-	icon_state = "predstriper_window0"
-	wall_base_state = "predstriper_window"
-	wall_blend_category = "predstriper"
-	window_types = WINDOW_GLASS|WINDOW_RGLASS
-
-/turf/simulated/wall/tgmc/window/redstripe_r/reinf
-	icon_state = "predstriper_rwindow0"
-	wall_base_state = "predstriper_rwindow"
-	wall_blend_category = "predstriper"
-
-/turf/simulated/wall/tgmc/window/darkwall
-	icon_state = "darkwall_window0"
-	wall_base_state = "darkwall_window"
-	wall_blend_category = "darkwall"
-	window_types = WINDOW_GLASS|WINDOW_RGLASS
-	diagonal_blending = FALSE
-
-/turf/simulated/wall/tgmc/window/darkwall/reinf
-	icon_state = "darkwall_rwindow0"
-	wall_base_state = "darkwall_rwindow"
 
 #undef WINDOW_GLASS
 #undef WINDOW_RGLASS
 
 
-// === merged from wall_types_vr.dm during hard-fork de-suffix (verified no override-order change) ===
 /turf/simulated/shuttle/wall/alien/blue
 	name = "hybrid wall"
 	desc = "Seems slightly more friendly than if the wall were ominous purple."
@@ -838,14 +525,6 @@
 	density = TRUE
 	blocks_air = 1
 
-/turf/simulated/flesh/colour
-	name = "flesh wall"
-	desc = "The fleshy surface of this wall squishes nicely under your touch but looks and feels extremly strong"
-	icon = 'icons/turf/stomach_vr.dmi'
-	icon_state = "colorable-wall"
-	opacity = 1
-	density = TRUE
-	blocks_air = 1
 
 /turf/simulated/flesh/attackby()
 	return
@@ -894,28 +573,6 @@ GLOBAL_LIST_EMPTY(flesh_overlay_cache)
 	density = TRUE
 	blocks_air = 1
 
-/turf/simulated/shuttle/wall/flock
-	icon = 'icons/goonstation/featherzone.dmi'
-	icon_state = "flockwall0"
-	base_state = "flockwall"
-	hard_corner = 1 //They're all HC
-	true_name = "wall"
-
-/turf/simulated/shuttle/wall/flock/Initialize(mapload)
-	. = ..()
-	set_light(3,3,"#26c5a9")
-
-/turf/simulated/wall/rplastitanium
-	icon_state = "rwall-plastitanium"
-	icon = 'icons/turf/wall_masks_vr.dmi'
-/turf/simulated/wall/rplastitanium/Initialize(mapload)
-	. = ..(mapload, MAT_PLASTITANIUM,MAT_PLASTITANIUM,MAT_PLASTITANIUM)
-
-/turf/simulated/wall/plastitanium
-	icon_state = "wall-plastitanium"
-	icon = 'icons/turf/wall_masks_vr.dmi'
-/turf/simulated/wall/plastitanium/Initialize(mapload)
-	. = ..(mapload, MAT_PLASTITANIUM, null,MAT_PLASTITANIUM)
 
 /turf/simulated/wall/rplastihull
 	icon_state = "rhull-plastitanium"
@@ -923,24 +580,11 @@ GLOBAL_LIST_EMPTY(flesh_overlay_cache)
 /turf/simulated/wall/rplastihull/Initialize(mapload)
 	. = ..(mapload, MAT_PLASTITANIUMHULL,MAT_PLASTITANIUMHULL,MAT_PLASTITANIUMHULL)
 
-/turf/simulated/wall/plastihull
-	icon_state = "hull-plastitanium"
-	icon = 'icons/turf/wall_masks_vr.dmi'
-/turf/simulated/wall/plastihull/Initialize(mapload)
-	. = ..(mapload, MAT_PLASTITANIUMHULL, null,MAT_PLASTITANIUMHULL)
-
-/turf/simulated/wall/ghull
-	icon_state = "hull-titanium"
-/turf/simulated/wall/ghull/Initialize(mapload)
-	. = ..(mapload, MAT_GOLDHULL, MAT_DIAMOND, MAT_GOLDHULL)
 
 /turf/simulated/wall/diamond
 	icon_state = "diamond"
 	icon = 'icons/turf/wall_masks_vr.dmi'
 
-/turf/simulated/wall/dungeon
-	icon_state = "dungeon"
-	icon = 'icons/turf/wall_masks_vr.dmi'
 
 /turf/simulated/wall/durasteel
 	icon_state = "durasteel"
@@ -962,17 +606,6 @@ GLOBAL_LIST_EMPTY(flesh_overlay_cache)
 	icon_state = "iron"
 	icon = 'icons/turf/wall_masks_vr.dmi'
 
-/turf/simulated/wall/ironphoron
-	icon_state = "ironphoron"
-	icon = 'icons/turf/wall_masks_vr.dmi'
-
-/turf/simulated/wall/lead
-	icon_state = "lead"
-	icon = 'icons/turf/wall_masks_vr.dmi'
-
-/turf/simulated/wall/log
-	icon_state = "log"
-	icon = 'icons/turf/wall_masks_vr.dmi'
 
 /turf/simulated/wall/log_sif
 	icon_state = "log_sif"
@@ -986,33 +619,11 @@ GLOBAL_LIST_EMPTY(flesh_overlay_cache)
 	icon_state = "lead"
 	icon = 'icons/turf/wall_masks_vr.dmi'
 
-/turf/simulated/wall/resin
-	icon_state = "resin"
-	icon = 'icons/turf/wall_masks_vr.dmi'
 
 /turf/simulated/wall/sandstone
 	icon_state = "sandstone"
 	icon = 'icons/turf/wall_masks_vr.dmi'
 
-/turf/simulated/wall/sandstonediamond
-	icon_state = "sandstonediamond"
-	icon = 'icons/turf/wall_masks_vr.dmi'
-
-/turf/simulated/wall/sifwood
-	icon_state = "sifwood"
-	icon = 'icons/turf/wall_masks_vr.dmi'
-
-/turf/simulated/wall/rsifwood
-	icon_state = "sifwood"
-	icon = 'icons/turf/wall_masks_vr.dmi'
-
-/turf/simulated/wall/silver
-	icon_state = "silver"
-	icon = 'icons/turf/wall_masks_vr.dmi'
-
-/turf/simulated/wall/silvergold
-	icon_state = "silvergold"
-	icon = 'icons/turf/wall_masks_vr.dmi'
 
 /turf/simulated/wall/skipjack
 	icon_state = "skipjack"
@@ -1064,44 +675,11 @@ GLOBAL_LIST_EMPTY(flesh_overlay_cache)
 	last_event = world.time
 	active = FALSE
 
-/turf/simulated/wall/virgo2
-	icon_state = "virgo2"
-	icon = 'icons/turf/wall_masks_vr.dmi'
 
 /turf/simulated/wall/wood
 	icon_state = "wood"
 	icon = 'icons/turf/wall_masks_vr.dmi'
 
-/turf/simulated/wall/acaciawood
-	icon_state = "acaciawood"
-	icon = 'icons/turf/wall_masks_vr.dmi'
-
-/turf/simulated/wall/birchwood
-	icon_state = "birchwood"
-	icon = 'icons/turf/wall_masks_vr.dmi'
-
-/turf/simulated/wall/hardwood
-	icon_state = "hardwood"
-	icon = 'icons/turf/wall_masks_vr.dmi'
-
-/turf/simulated/wall/oakwood
-	icon_state = "oakwood"
-	icon = 'icons/turf/wall_masks_vr.dmi'
-
-/turf/simulated/wall/pinewood
-	icon_state = "pinewood"
-	icon = 'icons/turf/wall_masks_vr.dmi'
-
-/turf/simulated/wall/redwood
-	icon_state = "redwood"
-	icon = 'icons/turf/wall_masks_vr.dmi'
-
-/turf/simulated/wall/stonebricks
-	icon_state = "stonebrick"
-	icon = 'icons/turf/wall_masks_vr.dmi'
-
-/turf/simulated/wall/stonebricks/Initialize(mapload)
-		. = ..(mapload, MAT_CONCRETE)
 
 /turf/simulated/wall/stonelogs
 	icon_state = "stonelogs"

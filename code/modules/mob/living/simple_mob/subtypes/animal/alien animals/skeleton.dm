@@ -24,8 +24,7 @@
 	icon_dead = "skeleton_dead"
 
 	faction = FACTION_SPACE_SKELETON
-	maxHealth = 100
-	health = 100
+	endurance = 100
 	movement_cooldown = 1
 	movement_sound = 'sound/effects/skeleton_walk.ogg' //VERY IMPORTANT
 

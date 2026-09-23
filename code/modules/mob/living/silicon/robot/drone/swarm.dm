@@ -5,8 +5,7 @@
 	icon_state = "swarmer"
 	item_state = "repairbot"
 	faction = FACTION_SWARMER
-	maxHealth = 35
-	health = 35
+	endurance = 35
 	cell_emp_mult = 0.5
 	universal_speak = 0
 	universal_understand = 1
@@ -62,9 +61,8 @@
 	for(var/spell in spell_setup)
 		src.add_spell(new spell, "nano_spell_ready", /atom/movable/screen/movable/spell_master/swarm)
 
-/mob/living/silicon/robot/drone/swarm/init()
+/mob/living/silicon/robot/drone/swarm/setup_module()
 	..()
-	QDEL_NULL(aiCamera)
 	flavor_text = "Some form of ancient machine."
 
 /mob/living/silicon/robot/drone/swarm/gunner
@@ -74,8 +72,7 @@
 	icon_state = "swarmer_ranged"
 	faction = FACTION_SWARMER
 
-	maxHealth = 50
-	health = 50
+	endurance = 50
 
 	speed = 4
 
@@ -95,8 +92,7 @@
 	icon_state = "swarmer_melee"
 	faction = FACTION_SWARMER
 
-	maxHealth = 70
-	health = 70
+	endurance = 70
 
 	speed = 2
 

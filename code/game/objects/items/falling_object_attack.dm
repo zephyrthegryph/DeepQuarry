@@ -35,7 +35,7 @@
 		var/target_zone = ran_zone()
 		var/blocked = L.run_armor_check(target_zone, "melee")
 
-		if(!L.apply_damage(35, BRUTE, target_zone, blocked))
+		if(!L.injure(INJURY_BLUNT, 35, target_zone, src, blocked))
 			break
 	playsound(src, 'sound/effects/clang2.ogg', 50, 1)
 	qdel(src)

@@ -14,7 +14,7 @@
 
 	var/silenced = 0 //not a binary - the length of time we can't cast this for
 
-	var/holder_var_type = "bruteloss" //only used if charge_type equals to "holder_var"
+	var/holder_var_type = "trauma" //only used if charge_type equals to "holder_var"
 	var/holder_var_amount = 20 //same. The amount adjusted with the mob's var when the spell is used
 
 	var/datum/spell_flags = NEEDSCLOTHES
@@ -102,16 +102,24 @@
 /datum/spell/proc/critfail(list/targets, mob/user) //the wizman has fucked up somehow
 	return
 
+/// Positive `amount` injures with `kind`; negative mends by each of `heal_tags`.
+/datum/spell/proc/spell_injure(mob/living/target, kind, amount, list/heal_tags)
+	if(amount > 0)
+		target.injure(kind, amount, source = holder)
+	else if(amount < 0)
+		for(var/tag in heal_tags)
+			target.mend(tag, -amount)
+
 /datum/spell/proc/adjust_var(mob/living/target = usr, type, amount) //handles the adjustment of the var when the spell is used. has some hardcoded types
 	switch(type)
-		if("bruteloss")
-			target.adjustBruteLoss(amount)
-		if("fireloss")
-			target.adjustFireLoss(amount)
-		if("toxloss")
-			target.adjustToxLoss(amount)
-		if("oxyloss")
-			target.adjustOxyLoss(amount)
+		if("trauma")
+			spell_injure(target, INJURY_BLUNT, amount, list(TREAT_TISSUE_REPAIR, TREAT_PLATING_REPAIR))
+		if("burn")
+			spell_injure(target, INJURY_BURN, amount, list(TREAT_BURN_CARE, TREAT_WIRING_REPAIR))
+		if("toxin")
+			spell_injure(target, INJURY_TOXIN, amount, list(TREAT_ANTITOXIN))
+		if("asphyxia")
+			spell_injure(target, INJURY_ASPHYXIA, amount, list(TREAT_OXYGENATION))
 		if("stunned")
 			target.AdjustStunned(amount)
 		if("weakened")

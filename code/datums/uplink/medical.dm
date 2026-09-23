@@ -98,7 +98,6 @@
 	path = /obj/item/storage/firstaid/combat
 
 
-// === merged from medical_vr.dm during hard-fork de-suffix (verified no override-order change) ===
 /**********
 * Medical *
 **********/

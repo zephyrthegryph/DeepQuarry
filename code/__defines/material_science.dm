@@ -14,6 +14,10 @@
 
 #define MATERIAL_FIELD_PARTICLE "particle-conditioned lattice"
 #define MATERIAL_FIELD_MAGNETIC "magnetically aligned lattice"
+#define MATERIAL_FIELD_EMITTER "emitter-charged lattice"
+#define MATERIAL_FIELD_FUSION "fusion-field stabilized lattice"
+#define MATERIAL_FIELD_RADIATION_HARDENED "radiation-hardened lattice"
+#define MATERIAL_FIELD_ENERGY_STORAGE "energized storage lattice"
 
 // Rare feedstocks are concrete phases, not spell-like effect payloads. They
 // enter the same batch/composite model as ordinary metals and ceramics.
@@ -120,8 +124,12 @@
 
 #define MATERIAL_CABLE_REFERENCE_AREA 12
 #define MATERIAL_SERVICE_INTERVAL (10 SECONDS)
+#define MATERIAL_SERVICE_MAX_ELAPSED 10
 #define MATERIAL_POWER_HEAT_SETTLEMENT_INTERVAL (5 SECONDS)
+#define MATERIAL_POWER_GRAPH_SETTLEMENT_INTERVAL (10 SECONDS)
 #define MATERIAL_THERMAL_RESOLUTION 0.05
+#define MATERIAL_POWER_LOAD_ABSOLUTE_EPSILON 1
+#define MATERIAL_POWER_LOAD_RELATIVE_EPSILON 0.05
 #define MATERIAL_SERVICE_NOMINAL_VOLTAGE 1000
 #define MATERIAL_SERVICE_REFERENCE_MASS 8
 #define MATERIAL_SERVICE_RESISTANCE_SCALE 0.001
@@ -136,10 +144,34 @@
 #define MATERIAL_POWER_EDGE_CRITICAL 8
 #define MATERIAL_PIPE_REFERENCE_RADIUS 40
 #define MATERIAL_PIPE_REFERENCE_THICKNESS 4
+#define MATERIAL_PRESSURE_STRESS_RATIO 0.78
+#define MATERIAL_PRESSURE_FATIGUE_RATIO 0.90
+#define MATERIAL_PRESSURE_RECOVERY_RATIO 0.85
+#define MATERIAL_PRESSURE_BURST_RATIO 1.25
+#define MATERIAL_PRESSURE_FATIGUE_RATE 4
+#define MATERIAL_PRESSURE_RECOVERY_RATE 2
 #define MATERIAL_CANISTER_REFERENCE_RADIUS 250
 #define MATERIAL_CANISTER_REFERENCE_THICKNESS 8
 #define MATERIAL_TANK_REFERENCE_RADIUS 60
 #define MATERIAL_TANK_REFERENCE_THICKNESS 3
+
+// Material-service admission is event driven. These are observations, not
+// owner types: every assembly enters and leaves the same lifecycle policy.
+#define MATERIAL_EVENT_CONFIGURATION "configuration"
+#define MATERIAL_EVENT_MONITORING "monitoring"
+#define MATERIAL_EVENT_PRESSURE "pressure"
+#define MATERIAL_EVENT_TEMPERATURE "temperature"
+#define MATERIAL_EVENT_CORROSION "corrosion"
+#define MATERIAL_EVENT_ELECTRICAL "electrical"
+#define MATERIAL_EVENT_DAMAGE "damage"
+#define MATERIAL_EVENT_WORK "work"
+
+/// Powered devices may draw above their ordinary envelope when their cell's
+/// conductor is actively superconducting. The device chooses a lower ceiling
+/// when its own construction cannot survive the full output.
+#define MATERIAL_SUPERCONDUCTING_MAX_OUTPUT 1.5
+#define MATERIAL_SUPERCONDUCTING_RECOVERY_MARGIN 5
+#define MATERIAL_SUPERCONDUCTING_OVERDRIVE_HEAT 0.08
 
 #define COMSIG_MATERIAL_SURGERY "material_surgery"
 

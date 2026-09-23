@@ -405,7 +405,7 @@
 		healths.icon_state = "health7"
 		return
 
-	var/heal_per = (health / getMaxHealth()) * 100
+	var/heal_per = vitality() * 100
 	switch(heal_per)
 		if(100 to INFINITY)
 			healths.icon_state = "health0"

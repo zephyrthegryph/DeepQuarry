@@ -11,8 +11,7 @@
 	icon_state = "cardinal"
 	icon_living = "cardinal"
 	ui_icons = 'icons/mob/screen1_purity.dmi'
-	maxHealth = 300
-	health = 300
+	endurance = 300
 	response_harm = "harmlessly punches"
 	harm_intent_damage = 0
 	melee_damage_lower = 20
@@ -59,7 +58,7 @@
 			if(!(P.damage_type == BRUTE || P.damage_type == BURN))
 				projectile_dam_type = BRUTE
 				incoming_damage = round(incoming_damage / 4) //Damage from strange sources is converted to brute for physical projectiles, though severely decreased.
-			apply_damage(incoming_damage, projectile_dam_type, null, armorcheck, is_sharp(P), has_edge(P), P)
+			injure(injury_kind_for(projectile_dam_type, is_sharp(P), has_edge(P)), incoming_damage, null, P, armorcheck)
 			return -1 //Doesn't reflect non-beams or non-energy projectiles. They just smack and drop with little to no effect.
 		else
 			visible_message(span_danger("The [P.name] gets reflected by [src]'s shell!"), \
@@ -69,7 +68,7 @@
 			if(!(P.damage_type == BRUTE || P.damage_type == BURN))
 				projectile_dam_type = BURN
 				incoming_damage = round(incoming_damage / 4) //Damage from strange sources is converted to burn for energy-type projectiles, though severely decreased.
-			apply_damage(incoming_damage, projectile_dam_type, null, armorcheck, is_sharp(P), has_edge(P), P)
+			injure(injury_kind_for(projectile_dam_type, is_sharp(P), has_edge(P)), incoming_damage, null, P, armorcheck)
 
 		// Find a turf near or on the original location to bounce to
 		if(P.starting)

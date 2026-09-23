@@ -652,7 +652,6 @@ BLIND     // can't see anything
 		usr.update_mob_action_buttons()
 
 
-// === merged from glasses_vr.dm during hard-fork de-suffix (verified no override-order change) ===
 /obj/item/clothing/glasses/proc/prescribe(mob/user)
 	prescription = !prescription
 
@@ -804,7 +803,6 @@ BLIND     // can't see anything
 	body_parts_covered = EYES
 
 
-// === merged from glasses_chomp.dm during hard-fork de-suffix (verified no override-order change) ===
 /obj/item/clothing/glasses/omnihud/visor/tesh
 	name = "AR V-visor"
 	desc = "A modified VZR-AR visor refitted for Teshari."

@@ -129,57 +129,8 @@ GLOBAL_VAR(world_time_day)
 		if("winter")
 			return
 
-/turf/simulated/floor/outdoors/grass/seasonal/notrees
-	tree_chance = 0
-/turf/simulated/floor/outdoors/grass/seasonal/nomobs
-	animal_chance = 0
-/turf/simulated/floor/outdoors/grass/seasonal/notrees_nomobs
-	tree_chance = 0
-	animal_chance = 0
 /turf/simulated/floor/outdoors/grass/seasonal/notrees_nomobs_nosnow
 	tree_chance = 0
 	animal_chance = 0
 	snow_chance = 0
-/turf/simulated/floor/outdoors/grass/seasonal/notrees_nomobs_lowsnow
-	tree_chance = 0
-	animal_chance = 0
-	snow_chance = 1
-/turf/simulated/floor/outdoors/grass/seasonal/lowsnow
-	snow_chance = 1
 
-/turf/simulated/floor/outdoors/grass/seasonal/dark
-	icon_state = "ds-grass"
-	edge_blending_priority = 4.01
-	initial_flooring = /datum/decl/flooring/grass/seasonal_grass/dark
-	tree_chance = 5
-/turf/simulated/floor/outdoors/grass/seasonal/dark/notrees
-	tree_chance = 0
-/turf/simulated/floor/outdoors/grass/seasonal/dark/nomobs
-	animal_chance = 0
-/turf/simulated/floor/outdoors/grass/seasonal/dark/notrees_nomobs
-	tree_chance = 0
-	animal_chance = 0
-/turf/simulated/floor/outdoors/grass/seasonal/dark/notrees_nomobs_nosnow
-	tree_chance = 0
-	animal_chance = 0
-	snow_chance = 0
-/turf/simulated/floor/outdoors/grass/seasonal/dark/notrees_nomobs_lowsnow
-	tree_chance = 0
-	animal_chance = 0
-	snow_chance = 1
-/turf/simulated/floor/outdoors/grass/seasonal/dark/lowsnow
-	snow_chance = 1
-
-/turf/simulated/floor/water/seasonal/Initialize(mapload)
-	. = ..()
-	switch(GLOB.world_time_season)
-		if("winter")
-			if(prob(99))
-				ChangeTurf(/turf/simulated/floor/outdoors/ice)
-
-/turf/simulated/floor/water/deep/seasonal/Initialize(mapload)
-	. = ..()
-	switch(GLOB.world_time_season)
-		if("winter")
-			if(prob(75))
-				ChangeTurf(/turf/simulated/floor/outdoors/ice)

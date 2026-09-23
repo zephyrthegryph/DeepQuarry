@@ -12,33 +12,6 @@
 	projectile_type = /obj/item/projectile/beam/imperial
 
 // Removed because gun64_vr.dmi guns don't work.
-/*
-//-----------------------G44 Energy Variant--------------------
-/obj/item/gun/energy/gun/burst/g44e
-	name = "G44 Energy Rifle"
-	desc = "The G44 Energy is a laser variant of the G44 lightweight assault rifle manufactured by the National Armory of Gaia. Though almost exclusively to the United Federation's Military Assault Command Operations Department (MACOs) and Starfleet, it is occassionally sold to security departments for their stun capabilities."
-	icon = 'icons/obj/gun64_vr.dmi'
-	icon_state = "g44estun100"
-	item_state = "energystun100" //This is temporary.
-	fire_sound = 'sound/weapons/taser.ogg'
-	charge_cost = 100
-	force = 8
-	w_class = ITEMSIZE_LARGE
-	fire_delay = 6
-	pixel_x = -16
-
-	projectile_type = /obj/item/projectile/beam/stun/weak
-	modifystate = "g44estun"
-
-	one_handed_penalty = 60
-
-	firemodes = list(
-		list(mode_name="stun", burst=1, projectile_type=/obj/item/projectile/beam/stun/weak, modifystate="g44estun", fire_sound='sound/weapons/taser.ogg', charge_cost = 100),
-		list(mode_name="stun burst", burst=3, fire_delay=null, move_delay=4, burst_accuracy=list(0,0,0), dispersion=list(0.0, 0.2, 0.5), projectile_type=/obj/item/projectile/beam/stun/weak, modifystate="g44estun", fire_sound='sound/weapons/taser.ogg'),
-		list(mode_name="lethal", burst=1, projectile_type=/obj/item/projectile/beam/burstlaser, modifystate="g44ekill", fire_sound='sound/weapons/Laser.ogg', charge_cost = 200),
-		list(mode_name="lethal burst", burst=3, fire_delay=null, move_delay=4, burst_accuracy=list(0,0,0), dispersion=list(0.0, 0.2, 0.5), projectile_type=/obj/item/projectile/beam/burstlaser, modifystate="g44ekill", fire_sound='sound/weapons/Laser.ogg'),
-		)
-*/
 
 //////////////////// Energy Weapons ////////////////////
 

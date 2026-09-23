@@ -112,7 +112,6 @@
 	)
 
 
-// === merged from suit_cycler_units_vr.dm during hard-fork de-suffix (verified no override-order change) ===
 // Old Exploration is too WIP to use right now
 /obj/machinery/suit_cycler/exploration
 	req_access = null

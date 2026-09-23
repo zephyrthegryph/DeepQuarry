@@ -46,7 +46,6 @@
 	slowdown = 1
 
 
-// === merged from merc_vr.dm during hard-fork de-suffix (verified no override-order change) ===
 /obj/item/clothing/head/helmet/space/void/merc
 	armor = list(melee = 70, bullet = 60, laser = 40,energy = 15, bomb = 45, bio = 100, rad = 60)
 

@@ -169,7 +169,6 @@
 	centcom_only = TRUE
 
 
-// === merged from department_chomp.dm during hard-fork de-suffix (verified no override-order change) ===
 /datum/department/noncrew
 	name = DEPARTMENT_NONCREW
 	short_name = "N/A"

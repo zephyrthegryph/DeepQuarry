@@ -94,6 +94,12 @@
 /obj/item/rcd/proc/can_afford(amount)
 	return stored_matter >= amount
 
+/obj/item/rcd/proc/power_output_envelope(amount)
+	return 1
+
+/obj/item/rcd/proc/record_enhanced_output(amount, output_envelope)
+	return
+
 /obj/item/rcd/afterattack(atom/A, mob/living/user, proximity)
 	if(!ranged && !proximity)
 		return FALSE
@@ -120,7 +126,8 @@
 
 	playsound(src, 'sound/machines/click.ogg', 50, 1)
 
-	var/true_delay = rcd_results[RCD_VALUE_DELAY] * toolspeed
+	var/output_envelope = power_output_envelope(rcd_results[RCD_VALUE_COST])
+	var/true_delay = rcd_results[RCD_VALUE_DELAY] * toolspeed / output_envelope
 
 	var/datum/beam/rcd_beam = null
 	if(ranged)
@@ -134,12 +141,13 @@
 	if(do_after(user, true_delay, target = A))
 		busy = FALSE
 		// Doing another check in case we lost matter during the delay for whatever reason.
-		if(!can_afford(rcd_results[RCD_VALUE_COST]))
+		if(!can_afford(rcd_results[RCD_VALUE_COST] * output_envelope))
 			to_chat(user, span_warning("\The [src] lacks the required material to finish the operation."))
 			cleanup_effect(A)
 			return FALSE
 		if(A.rcd_act(user, src, rcd_results[RCD_VALUE_MODE]))
-			consume_resources(rcd_results[RCD_VALUE_COST])
+			consume_resources(rcd_results[RCD_VALUE_COST] * output_envelope)
+			record_enhanced_output(rcd_results[RCD_VALUE_COST], output_envelope)
 			playsound(A, 'sound/items/Deconstruct.ogg', 50, 1)
 			cleanup_effect(A)
 			return TRUE
@@ -206,7 +214,15 @@
 	return ..()
 
 /obj/item/rcd/electric/get_cell()
+	RETURN_TYPE(/obj/item/cell)
 	return cell
+
+/obj/item/rcd/electric/power_output_envelope(amount)
+	var/obj/item/cell/power_cell = get_cell()
+	return power_cell ? power_cell.material_output_envelope(amount * electric_cost_coefficent, 1.4) : 1
+
+/obj/item/rcd/electric/record_enhanced_output(amount, output_envelope)
+	get_cell()?.material_record_enhanced_output(amount * electric_cost_coefficent, output_envelope)
 
 /obj/item/rcd/electric/can_afford(amount) // This makes it so borgs won't drain their last sliver of charge by mistake, as a bonus.
 	var/obj/item/cell/cell = get_cell()

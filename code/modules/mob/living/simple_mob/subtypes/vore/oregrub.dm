@@ -23,8 +23,7 @@
 	icon_dead = "oregrub-dead"
 
 	faction = FACTION_GRUBS
-	maxHealth = 50 //oregrubs are quite hardy
-	health = 50
+	endurance = 50 //oregrubs are quite hardy
 
 	melee_damage_lower = 1
 	melee_damage_upper = 3	//low damage, they prefer to flee
@@ -88,8 +87,7 @@
 	icon_dead = "lavagrub-dead"
 
 	movement_cooldown = 2
-	maxHealth = 75 //lavagrubs are really hardy
-	health = 75
+	endurance = 75 //lavagrubs are really hardy
 	vore_pounce_chance = 80 // Full-grown grubs should pounce. More homf opportunities if you're dumb enough to poke it.
 	vore_pounce_maxhealth = 100 // They won't pounce by default, as they're passive. This is just so the nom check succeeds (and allows it to try and eat you) once you poke the damn thing. :u
 	//lavagrubs have even more armor than oregrubs
@@ -122,7 +120,7 @@
 /mob/living/simple_mob/vore/oregrub/death()
 	visible_message(span_warning("\The [src] shudders and collapses, expelling the ores it had devoured!"))
 	var/i = rand(min_ore,max_ore)
-	while(i>0)
+	while(i>1)
 		var/ore = pick(/obj/item/ore/glass,/obj/item/ore/coal,/obj/item/ore/iron,/obj/item/ore/lead,/obj/item/ore/marble,/obj/item/ore/phoron,/obj/item/ore/silver,/obj/item/ore/gold)
 		new ore(src.loc)
 		i--
@@ -139,7 +137,7 @@
 /mob/living/simple_mob/vore/oregrub/lava/death()
 	set_light(0)
 	var/p = rand(lava_min_ore,lava_max_ore)
-	while(p>0)
+	while(p>1)
 		var/ore = pick(/obj/item/ore/osmium,/obj/item/ore/uranium,/obj/item/ore/hydrogen,/obj/item/ore/diamond,/obj/item/ore/verdantium)
 		new ore(src.loc)
 		p--

@@ -24,7 +24,7 @@ GLOBAL_LIST_INIT(station_networks, list(
 */
 GLOBAL_LIST_INIT(engineering_networks, list(
 										NETWORK_ENGINE,
-										NETWORK_SUBSTATIONS, //YAWN ADD: new substations subnet
+										NETWORK_SUBSTATIONS,
 										NETWORK_ENGINEERING,
 										// NETWORK_ENGINEERING_OUTPOST, // Tether has no Engineering Outpost,
 										NETWORK_ALARM_ATMOS,
@@ -46,14 +46,6 @@ GLOBAL_LIST_INIT(engineering_networks, list(
 
 /obj/machinery/camera/network/circuits
 	network = list(NETWORK_CIRCUITS)
-
-/*
-/obj/machinery/camera/network/civilian_east
-	network = list(NETWORK_CIVILIAN_EAST)
-
-/obj/machinery/camera/network/civilian_west
-	network = list(NETWORK_CIVILIAN_WEST)
-*/
 
 /obj/machinery/camera/network/command
 	network = list(NETWORK_COMMAND)
@@ -91,7 +83,7 @@ GLOBAL_LIST_INIT(engineering_networks, list(
 /obj/machinery/camera/network/research
 	network = list(NETWORK_RESEARCH)
 
-/obj/machinery/camera/network/exploration //yw edit
+/obj/machinery/camera/network/exploration
 	network = list(NETWORK_EXPLORATION)
 
 /obj/machinery/camera/network/research_outpost
@@ -104,7 +96,7 @@ GLOBAL_LIST_INIT(engineering_networks, list(
 	network = list(NETWORK_SUBSTATIONS)
 
 /obj/machinery/camera/network/telecom
-	network = list(NETWORK_TCOMMS) //yw edit
+	network = list(NETWORK_TCOMMS)
 
 /obj/machinery/camera/network/exploration
 	network = list(NETWORK_EXPLORATION)
@@ -166,10 +158,9 @@ GLOBAL_LIST_INIT(engineering_networks, list(
 	network = list(NETWORK_COMMAND)
 
 /obj/machinery/camera/motion/telecom
-	network = list(NETWORK_TCOMMS) //yw edit
+	network = list(NETWORK_TCOMMS)
 
 // ALL UPGRADES
-
 
 /obj/machinery/camera/all/command
 	network = list(NETWORK_COMMAND)

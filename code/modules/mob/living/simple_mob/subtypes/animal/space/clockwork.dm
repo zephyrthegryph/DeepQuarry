@@ -3,6 +3,7 @@
 	name = "Clockwork Marauder"
 	desc = "The stalwart apparition of a clockwork flame guardian. It's eternal flame glows a firey-red."
 	tt_desc = "Aeterna flamma armis"
+	biology = BIOLOGY_SYNTHETIC // Animated brass armour.
 	icon = 'icons/mob/clockwork_mobs.dmi'
 	icon_state = "clockwork_marauder_r"
 	item_state = "clockwork_marauder_r"
@@ -72,7 +73,7 @@
 				handle_stance(STANCE_FOLLOW)
 
 	if (friend_dist <= 1)
-		if (friend.stat >= DEAD || friend.health <= config.health_threshold_softcrit)
+		if (friend.stat >= DEAD || friend.is_critical())
 			if (prob((friend.stat < DEAD)? 50 : 15))
 				var/verb = pick("meows", "mews", "mrowls")
 				audible_emote(pick("[verb] in distress.", "[verb] anxiously."))
@@ -82,7 +83,7 @@
 									"brushes against [friend].",
 									"rubs against [friend].",
 									"purrs."))
-	else if (friend.health <= 50)
+	else if (friend.vitality() <= 0.5)
 		if (prob(10))
 			var/verb = pick("meows", "mews", "mrowls")
 			audible_emote("[verb] anxiously.")

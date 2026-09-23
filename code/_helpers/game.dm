@@ -247,8 +247,7 @@
 
 	// We heard it on our own radio? We use power for that.
 	if(istype(R) && R.myborg == src)
-		var/datum/robot_component/CO = get_component("radio")
-		if(!CO || !is_component_functioning("radio") || !cell_use_power(CO.active_usage))
+		if(!use_component(ROBOT_SLOT_RADIO))
 			return FALSE // Sorry, couldn't hear
 
 	return R // radio, true, false, what's the difference
@@ -593,7 +592,11 @@
 	for(var/dir in GLOB.cardinal)
 		var/turf/simulated/T=get_turf(get_step(loc,dir))
 		var/cp=0
-		var/datum/gas_mixture/environment = T?.return_air()
+		var/turf/open/open_turf = istype(T, /turf/open) ? T : null
+		// /turf/open/return_air() deliberately returns the immutable vacuum
+		// fallback for walls and other airless turfs. Sensors must inspect the
+		// actual turf-owned mixture or walls become fake 0 K / 0 kPa samples.
+		var/datum/gas_mixture/environment = open_turf?.air
 		if(environment)
 			cp = environment.return_pressure()
 		else if(istype(T, /turf/simulated))
@@ -625,7 +628,8 @@
 		// (blocks_air=1) have air=null and are excluded as "no readings".
 		var/turf/simulated/T=get_turf(get_step(loc,dir))
 		var/list/rstats = new /list(stats.len)
-		var/datum/gas_mixture/environment = T?.return_air()
+		var/turf/open/open_turf = istype(T, /turf/open) ? T : null
+		var/datum/gas_mixture/environment = open_turf?.air
 		if(environment)
 			for(var/i=1;i<=stats.len;i++)
 				switch(stats[i])
@@ -747,7 +751,7 @@
 /proc/get_all_prey_recursive(mob/living/L, client_check = 1)			// returns all prey inside the target as well all prey of target's prey, as well as all prey inside target's prey, etc.
 	var/list/result = list()
 
-	if(!istype(L) || !(L.vore_organs) || !(L.vore_organs.len))
+	if(!istype(L) || !(L.vore_organs) || !(length(L.vore_organs)))
 		return result
 
 	for(var/obj/belly/B in L.vore_organs)

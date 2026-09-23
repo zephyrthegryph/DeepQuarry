@@ -71,8 +71,7 @@
 	density = FALSE
 	minbodytemp = 175
 	faction = FACTION_SPIDERS
-	maxHealth = 200
-	health = 200
+	endurance = 200
 	pass_flags = PASSTABLE
 	movement_cooldown = 3
 	movement_sound = 'sound/effects/spider_loop.ogg'
@@ -155,8 +154,7 @@
 
 /mob/living/simple_mob/animal/giant_spider/proc/make_spiderling()
 	adjust_scale(icon_scale_x * 0.7, icon_scale_y * 0.7)
-	maxHealth = round(maxHealth * 0.5)
-	health = round(health * 0.5)
+	endurance = round(endurance * 0.5)
 	melee_damage_lower *= 0.7
 	melee_damage_upper *= 0.7
 

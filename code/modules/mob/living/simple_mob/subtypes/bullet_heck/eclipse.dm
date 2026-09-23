@@ -2,8 +2,7 @@
 	name = "astral collective cryo top"
 	icon_state = "mecha_top"
 	icon_living = "mecha_top"
-	health = 3000
-	maxHealth = 3000
+	endurance = 3000
 	wreckage = /obj/item/melee/energy/sword/top_shield
 	desc = "It appears to be spinning at rapid speeds; enough to deflect projectiles. The air around it feels frigid."
 	specialattackprojectile = /obj/item/projectile/energy/eclipse_boss/chillingwind
@@ -71,8 +70,7 @@
 	desc = "A metallic flying saucer, a reflective barrier around it."
 	faction = FACTION_ECLIPSE
 	icon = 'icons/mob/eclipse.dmi'
-	health = 1500
-	maxHealth = 1500
+	endurance = 1500
 	specialattackprojectile = /obj/item/projectile/energy/eclipse_boss/metalsphere
 	projectiletype = /obj/item/projectile/energy/eclipse_boss/metalsphere
 	wreckage = /obj/item/prop/deconstructable/gigacell
@@ -135,8 +133,7 @@
 	icon_state = "astral_janus"
 	icon_living = "astral_janus"
 	desc = "A janus made from stolen tech."
-	health = 4500
-	maxHealth = 4500
+	endurance = 4500
 	specialattackprojectile = /obj/item/projectile/energy/eclipse_boss/energyjavelin
 	projectiletype = /obj/item/projectile/energy/eclipse_boss/energyjavelin
 	wreckage = /obj/item/prop/deconstructable/gigacell

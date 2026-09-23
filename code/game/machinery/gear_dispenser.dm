@@ -172,7 +172,6 @@ GLOBAL_LIST_EMPTY(dispenser_presets)
 		one_setting = new one_setting
 	dispenses = real_gear_list
 
-
 /obj/machinery/gear_dispenser/attack_hand(mob/living/carbon/human/user)
 	if(!can_use(user))
 		return
@@ -194,7 +193,6 @@ GLOBAL_LIST_EMPTY(dispenser_presets)
 		dispense(gear_list[choice],user)
 	else
 		dispense(one_setting,user)
-
 
 /obj/machinery/gear_dispenser/proc/can_use(mob/living/carbon/human/user)
 	var/list/used_by = GLOB.gear_distributed_to["[type]"]
@@ -230,7 +228,6 @@ GLOBAL_LIST_EMPTY(dispenser_presets)
 		to_chat(user,span_warning("Your access is rejected!"))
 		playsound(src, 'sound/machines/buzz-sigh.ogg', 100, 0)
 		return 0
-
 
 /obj/machinery/gear_dispenser/proc/get_gear_list(mob/living/carbon/human/user)
 	if(emagged)
@@ -283,7 +280,6 @@ GLOBAL_LIST_EMPTY(dispenser_presets)
 		emagged = TRUE
 		visible_message(span_warning("\The [user] slides a weird looking ID into \the [src]!"),span_warning("You temporarily short the safety mechanisms."))
 		return 1
-
 
 // Just a different sprite
 /obj/machinery/gear_dispenser/suit
@@ -394,7 +390,6 @@ GLOBAL_LIST_EMPTY(dispenser_presets)
 	dispenses = subtypesof(/datum/gear_disp/custom)
 	. = ..()
 
-
 ////////////////////////////// ERT SUIT DISPENSERS ///////////////////////////
 // Non-sealed armor
 /datum/gear_disp/ert/security_armor
@@ -408,12 +403,6 @@ GLOBAL_LIST_EMPTY(dispenser_presets)
 /datum/gear_disp/ert/engineer_armor
 	name = "Engineering (Armor)"
 	to_spawn = list(/obj/item/clothing/suit/armor/vest/ert/engineer,/obj/item/clothing/head/helmet/ert/engineer)
-/*
-/datum/gear_disp/ert/commander_armor
-	name = "Commander (Armor)"
-	to_spawn = list(/obj/item/clothing/suit/armor/vest/ert/command,/obj/item/clothing/head/helmet/ert/command)
-	amount = 1
-*/
 // Voidsuit versions
 /datum/gear_disp/voidsuit/ert/security_void
 	name = "Security (Voidsuit)"
@@ -432,13 +421,6 @@ GLOBAL_LIST_EMPTY(dispenser_presets)
 	voidsuit_type = /obj/item/clothing/suit/space/void/responseteam/engineer
 	refit = TRUE
 	magboots_type = /obj/item/clothing/shoes/magboots/adv
-/*
-/datum/gear_disp/ert/commander_void
-	name = "Commander (Voidsuit)"
-	to_spawn = list(/obj/item/clothing/suit/space/void/responseteam/command)
-	refit = TRUE
-	amount = 1
-*/
 // Hardsuit versions
 /datum/gear_disp/ert/security_rig
 	name = "Security (Hardsuit)"
@@ -451,13 +433,6 @@ GLOBAL_LIST_EMPTY(dispenser_presets)
 /datum/gear_disp/ert/engineer_rig
 	name = "Engineering (Hardsuit)"
 	to_spawn = list(/obj/item/rig/ert/engineer)
-/*
-/datum/gear_disp/ert/commander_rig
-	name = "Commander (Hardsuit)"
-	to_spawn = list(/obj/item/rig/ert)
-	amount = 1
-*/
-
 
 /obj/machinery/gear_dispenser/suit/ert
 	name = "ERT Suit Dispenser"
@@ -475,7 +450,6 @@ GLOBAL_LIST_EMPTY(dispenser_presets)
 		/datum/gear_disp/ert/engineer_rig,
 	)
 	req_one_access = list(ACCESS_CENT_SPECOPS)
-
 
 ////////////////////////////// STATION SUIT DISPENSERS ///////////////////////////
 /datum/gear_disp/station/standard
@@ -933,7 +907,6 @@ GLOBAL_LIST_EMPTY(dispenser_presets)
 					prob(1);/obj/random/multiple/gun/projectile/rifle)
 	to_spawn = list(choice)
 	return ..()
-
 
 /obj/machinery/gear_dispenser/adventure_box/weapon
 	dispenses = list(

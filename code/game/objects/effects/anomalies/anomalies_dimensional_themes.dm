@@ -38,7 +38,6 @@
 		var/datum/material/using_mat = GET_MATERIAL_REF(material)
 		window_colour = using_mat.icon_colour
 
-
 /**
  * Applies themed transformation to the provided turf.
  *
@@ -204,23 +203,6 @@
 		/obj/structure/table = list(/obj/structure/table/woodentable = 1)
 	)
 	replace_walls = /turf/simulated/wall/wood
-/*
-/datum/dimension_theme/meat
-	name = "Meat"
-	icon = 'icons/obj/food.dmi'
-	icon_state = "meat"
-	material = /datum/material/flesh
-
-/datum/dimension_theme/alien
-	name = "Alien"
-	icon = 'icons/obj/abductor.dmi'
-	icon_state = "circuit"
-	replace_floors = list(/turf/simulated/floor/redgrid = 1, /turf/simulated/floor/greengrid = 1, /turf/simulated/floor/bluegrid = 1)
-	replace_objs = list(
-		/obj/machinery/door/airlock = list(/obj/machinery/door/airlock/alien = 1),
-		/obj/structure/table = list(/obj/structure/table/alien = 1, /obj/structure/table/alien/blue = 1)
-	)
-*/
 /datum/dimension_theme/natural
 	name = "Natural"
 	icon = 'icons/obj/plants.dmi'

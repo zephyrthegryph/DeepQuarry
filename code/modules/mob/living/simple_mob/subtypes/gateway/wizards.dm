@@ -18,8 +18,7 @@
 
 	faction = "vr"
 
-	maxHealth = 100 //Old 50
-	health = 100
+	endurance = 100 //Old 50
 	movement_cooldown = 1
 	unsuitable_atoms_damage = 0
 	projectiletype = /obj/item/projectile/energy/homing_bolt/wizard
@@ -74,8 +73,7 @@
 	icon_dead = ""
 	projectiletype = null
 
-	maxHealth = 20
-	health = 20
+	endurance = 20
 	movement_cooldown = -3
 	unsuitable_atoms_damage = 0
 	projectiletype = null
@@ -93,8 +91,7 @@
 	name = "hardlight creation doomknight"
 	projectiletype = null
 
-	maxHealth = 70
-	health = 70
+	endurance = 70
 	movement_cooldown = 4
 	unsuitable_atoms_damage = 0
 	projectiletype = null
@@ -142,7 +139,7 @@
 	on_expired_text = span_notice("You feel better.")
 	stacks = MODIFIER_STACK_ALLOWED // Multiple instances will hurt a lot.
 	var/damage_per_tick = 1.5
-	bleeding_rate_percent = 0.7
+	factors = alist(BF_BLEEDING = 0.7)
 
 /datum/modifier/wizfire/tick()
 	holder.inflict_heat_damage(damage_per_tick)
@@ -156,7 +153,7 @@
 	on_expired_text = span_notice("You feel better.")
 	stacks = MODIFIER_STACK_ALLOWED // Multiple instances will hurt a lot.
 	damage_per_tick = 1.0
-	incoming_fire_damage_percent = 1.1
+	factors = alist(BF_BLEEDING = 0.7, BF_INCOMING_THERMAL = 1.1)
 
 /datum/modifier/wizpoison
 	name = "wizpoison"
@@ -182,7 +179,7 @@
 	on_expired_text = span_notice("You feel better.")
 	stacks = MODIFIER_STACK_ALLOWED // Multiple instances will hurt a lot.
 	damage_per_tick = 1
-	slowdown = 0.5
+	factors = alist(BF_SLOWDOWN = 0.5)
 
 /datum/modifier/digitizing
 	name = "digital"
@@ -192,7 +189,7 @@
 	on_created_text = span_warning("You feel less real.")
 	on_expired_text = span_notice("You feel real again.")
 	stacks = MODIFIER_STACK_ALLOWED //How does this stack?
-	max_health_percent = 0.7
+	factors = alist(BF_ENDURANCE_MULT = 0.7)
 
 /datum/modifier/aura/crumbling
 	name = "crumbling"
@@ -202,12 +199,7 @@
 	on_created_text = span_warning("You feel like the end is nigh.")
 	on_expired_text = span_notice("You feel safe for now.")
 	aura_max_distance = 4
-	max_health_percent = 0.9
-	disable_duration_percent = 1.2
-	incoming_damage_percent = 1.2
-	incoming_oxy_damage_percent = 2
-	incoming_hal_damage_percent = 2
-	incoming_healing_percent = 0.8
+	factors = alist(BF_INCOMING_ALL = 1.2, BF_INCOMING_ASPHYXIA = 2, BF_INCOMING_PAIN = 2, BF_DISABLE_DURATION = 1.2, BF_HEALING_RECEIVED = 0.8, BF_ENDURANCE_MULT = 0.9)
 
 /datum/modifier/aura/crumbling/superboss
 	aura_max_distance = 16

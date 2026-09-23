@@ -14,8 +14,14 @@
 	use_power = USE_POWER_OFF
 	idle_power_usage = 0
 	active_power_usage = 0
+	/// Machinery-generation heartbeat for the persistent supply ledger. A source
+	/// that stops publishing is removed after its process call in that generation.
+	var/power_supply_generation = 0
 
 /obj/machinery/power/Destroy()
+	SSmachines.deferred_powernet_machines -= src
+	if(powernet)
+		powernet.unregister_power_supply(src)
 	disconnect_from_network()
 	return ..()
 
@@ -34,12 +40,15 @@
 
 /obj/machinery/power/proc/add_avail(amount)
 	if(powernet)
-		powernet.mark_accounting_dirty()
-		powernet.newavail += amount
-		LAZYINITLIST(powernet.material_next_sources)
-		powernet.material_next_sources[WEAKREF(src)] += amount
+		power_supply_generation = SSmachines.power_supply_generation
+		powernet.register_power_supply(src, amount, FALSE)
 		return TRUE
 	return FALSE
+
+/// Remove a persistent supply rate when a producer switches off. Repeating an
+/// unchanged add_avail() is intentionally free, so stopping is explicit.
+/obj/machinery/power/proc/clear_power_supply()
+	powernet?.unregister_power_supply(src)
 
 /obj/machinery/power/proc/draw_power(amount)
 	if(powernet)
@@ -69,7 +78,9 @@
 
 // connect the machine to a powernet if a node cable is present on the turf
 /obj/machinery/power/proc/connect_to_network()
-	if(SSmachines.powernet_is_defered()) return 0;
+	if(SSmachines.powernet_is_defered())
+		SSmachines.note_deferred_powernet_machine(src)
+		return 0
 
 	var/turf/T = src.loc
 	if(!T || !istype(T))
@@ -86,6 +97,7 @@
 /obj/machinery/power/proc/disconnect_from_network()
 	if(!powernet)
 		return 0
+	powernet.unregister_power_supply(src)
 	powernet.remove_machine(src)
 	return 1
 
@@ -214,12 +226,13 @@
 //remove the old powernet and replace it with a new one throughout the network.
 /proc/propagate_network(obj/O, datum/powernet/PN)
 	//to_world_log("propagating new network")
-	var/list/worklist = list()
+	var/list/worklist = list(O)
+	// Membership set for worklist; `worklist |= ...` rescanned the whole list per cable.
+	var/list/queued = list()
+	queued[O] = TRUE
 	var/list/found_machines = list()
 	var/index = 1
 	var/obj/P = null
-
-	worklist+=O //start propagating from the passed object
 
 	while(index<=worklist.len) //until we've exhausted all power objects
 		P = worklist[index] //get the next power object found
@@ -229,7 +242,10 @@
 			var/obj/structure/cable/C = P
 			if(C.powernet != PN) //add it to the powernet, if it isn't already there
 				PN.add_cable(C)
-			worklist |= C.get_connections() //get adjacents power objects, with or without a powernet
+			for(var/obj/connection as anything in C.get_connections()) //get adjacents power objects, with or without a powernet
+				if(!queued[connection])
+					queued[connection] = TRUE
+					worklist += connection
 
 		else if(P.anchored && istype(P,/obj/machinery/power))
 			var/obj/machinery/power/M = P

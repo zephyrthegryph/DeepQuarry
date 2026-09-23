@@ -5,8 +5,7 @@
 	var/changed = FALSE
 	for(var/role in list(MATERIAL_ROLE_CONDUCTOR, MATERIAL_ROLE_BEARINGS, MATERIAL_ROLE_WORKING))
 		if(!construction_materials[role])
-			construction_materials[role] = role == MATERIAL_ROLE_CONDUCTOR ? MAT_COPPER : MAT_STEEL
-			construction_material_amounts[role] = SHEET_MATERIAL_AMOUNT
+			set_construction_material(role, role == MATERIAL_ROLE_CONDUCTOR ? MAT_COPPER : MAT_STEEL, SHEET_MATERIAL_AMOUNT)
 			changed = TRUE
 	if(changed && notify)
 		material_service_changed()
@@ -37,11 +36,17 @@
 			available = min(available, portable.cell ? max(0, portable.cell.material_available_output((available + portable.power_losses) * CELLRATE) / CELLRATE - portable.power_losses) : 0)
 	return available
 
+/obj/machinery/proc/material_service_work_rating()
+	return 0
+
+/obj/machinery/atmospherics/material_service_work_rating()
+	return power_rating
+
 /obj/machinery/portable_atmospherics/powered/proc/pay_material_pump_energy(pump_energy)
 	var/paid = cell ? cell.use(max(pump_energy, power_losses) * CELLRATE) / CELLRATE : 0
 	// Compression and its motor losses were accounted at the gas transfer.
 	// The remaining idle-drive draw becomes heat, never additional gas work.
-	if(paid > pump_energy)
+	if(paid > pump_energy && material_service)
 		material_service.record_work(paid - pump_energy, 0)
 	return paid
 
@@ -49,8 +54,19 @@
 	if(input_energy <= 0 || actual_moles <= 0)
 		return
 	var/useful = input_energy * material_pump_efficiency()
+	var/rated = material_pump_power(material_service_work_rating())
+	material_service_event(MATERIAL_EVENT_WORK, rated > 0 ? input_energy / rated : 0)
+	var/turf/environment_turf = get_turf(src)
+	var/datum/gas_mixture/environment = environment_turf ? environment_turf.return_air() : null
+	for(var/datum/gas_mixture/air as anything in material_service_gases())
+		material_observe_gases(air, environment)
+	if(!material_service)
+		return
+	// Transferring gas preserves its existing thermal energy, but compression
+	// work is new energy supplied by the motor. Deposit useful shaft work into
+	// the destination gas and motor losses into the shell so the complete
+	// machine + gas ledger conserves exactly the power paid by the pump.
 	destination.add_thermal_energy(useful)
-	enable_material_service()
 	material_service.record_work(input_energy, useful)
 	material_service.delivered_moles += actual_moles
 	material_service.last_delivery_pressure = destination.return_pressure()
@@ -118,6 +134,11 @@
 	var/input_energy = actual * elapsed
 	var/stored = min(input_energy, max(active_power_usage * 10 - material_stored_energy, 0))
 	material_stored_energy += stored
+	// A live accelerator beam is intrinsically high-energy work, independent of
+	// the concrete machine type or whether its component materials are standard.
+	material_service_event(MATERIAL_EVENT_WORK, actual > 0 ? 1.25 : 0)
+	if(!material_service)
+		return
 	material_service.input_joules += input_energy
 	material_service.loss_joules += input_energy - stored
 	material_service.last_input_watts = actual

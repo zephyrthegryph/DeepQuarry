@@ -17,7 +17,7 @@
 		weapon_edge = 0
 		hit_embed_chance = I.force/(I.w_class*3)
 
-	apply_damage(effective_force, I.damtype, hit_zone, blocked, weapon_sharp, weapon_edge, I)
+	injure_by_damtype(I.damtype, effective_force, hit_zone, I, blocked, weapon_sharp, weapon_edge)
 
 	//Melee weapon embedded object code.
 	if (I && I.damtype == BRUTE && !I.anchored && !is_robot_module(I) && I.embed_chance > 0)
@@ -72,17 +72,17 @@
 	var/total_damage = 0
 	for(var/i in 1 to 3)
 		var/damage = min(W.force*1.5, 20)*damage_mod
-		apply_damage(damage, W.damtype, "head", 0, sharp=W.sharp, edge=W.edge)
+		injure_by_damtype(W.damtype, damage, BP_HEAD, W, 0, W.sharp, W.edge)
 		total_damage += damage
 
-	var/oxyloss = total_damage
+	var/asphyxia = total_damage
 	if(total_damage >= 40) //threshold to make someone pass out
-		oxyloss = 60 // Brain lacks oxygen immediately, pass out
+		asphyxia = 60 // Brain lacks oxygen immediately, pass out
 
-	adjustOxyLoss(min(oxyloss, 100 - getOxyLoss())) //don't put them over 100 oxyloss
+	injure(INJURY_ASPHYXIA, min(asphyxia, 100 - injury_load(INJURY_CATEGORY_ASPHYXIA)), null, W) //don't put them over 100 asphyxia
 
 	if(total_damage)
-		if(oxyloss >= 40)
+		if(asphyxia >= 40)
 			user.visible_message(span_danger("\The [user] slit [src]'s throat open with \the [W]!"))
 		else
 			user.visible_message(span_danger("\The [user] cut [src]'s neck with \the [W]!"))
@@ -105,7 +105,7 @@
 	user.visible_message(span_danger("\The [user] plunges \the [W] into \the [src]!"))
 
 	var/damage = shank_armor_helper(W, G, user)
-	apply_damage(damage, W.damtype, BP_TORSO, 0, sharp=W.sharp, edge=W.edge)
+	injure_by_damtype(W.damtype, damage, BP_TORSO, W, 0, W.sharp, W.edge)
 
 	if(W.hitsound)
 		playsound(src, W.hitsound, 50, 1, -1)
@@ -150,37 +150,38 @@
 
 	return damage
 
-/*
- * Pain/etc calculations, but more efficient:tm: - this should work for literally anything that applies to health. Far better than slapping emote("pain") everywhere like scream does.
- * The reason we're doing this here is to enable carbons to handle pain differently if they need to - in this case, we're going to check if we're synthetic here, anyways. Essentially a dupe of human_damage.dm's updatehealth()
- * Human updatehealth() doesn't call parent, so we can safely ignore human checks, but we're going to put sanity in anyways
-*/
-/mob/living/carbon/updatehealth()
-	if(status_flags & GODMODE)
-		health = 100
-		set_stat(CONSCIOUS)
-	else
-		var/initialhealth = health // Getting our health before this check
-		health = getMaxHealth() - getOxyLoss() - getToxLoss() - getFireLoss() - getBruteLoss() - getCloneLoss() - halloss
-		if(!((ishuman(src)) || (issilicon(src))) && can_feel_pain() || ((src.isSynthetic() && synth_cosmetic_pain))) // Only run this if we're non-human/non-silicon + can feel pain, bc humans already do this. human_damage doesn't call parent, but sanity is better here.
-			if(health < initialhealth) // Did we lose health?
-				// Yes. How much by?
-				var/damage = initialhealth - health // Get our damage (say, 200 - 180 = 20, etc etc)
-				var/pain_noise
-				if(species)
-					pain_noise = (damage * species.pain_mod) // Multiply the incoming damage by our mod. 50 damage becomes 25 x 0.6 on highest strength, meaning prob 15. 50 x 1.4 means prob 35, etc.
-				else // Sanity, in case we don't have a species
-					pain_noise = (damage * rand(0.5, 1.5)) // Multiply damage by our rand mod. 50 damage becomes 50 x 0.5, means prob 25. 50 x 1.5 means prob 75, etc.
-				switch(damage)
-					if(-INFINITY to 0)
-						return
-					if(1 to 25)
-						if(prob(pain_noise) && !isbelly(loc)) // No pain noises inside bellies.
-							emote("pain")
-					if(26 to 50)
-						if(prob(pain_noise * 1.5) && !isbelly(loc)) // No pain noises inside bellies.
-							emote("pain")
-					if(51 to INFINITY)
-						if(prob(pain_noise * 3)  && !isbelly(loc)) // More likely, most severe damage. No pain noises inside bellies.
-							emote("pain")
-	// Pain
+/// Carbons react to every injury after it lands (pain noises; humans add
+/// suit breaches, damage overlays and husking — see on_injured()).
+/mob/living/carbon/injure(kind, amount, zone = null, atom/source = null, armor = 0, affliction = null, flags = NONE)
+	. = ..()
+	if(.)
+		on_injured(kind, ., zone, source, flags)
+
+/// Post-injury reactions. `amount` is what the body actually received.
+/mob/living/carbon/proc/on_injured(kind, amount, zone, atom/source, flags)
+	if(flags & INJURE_SILENT)
+		return
+	if(injury_category(kind) == INJURY_CATEGORY_ASPHYXIA)
+		return
+	if(!(can_feel_pain() || (isSynthetic() && synth_cosmetic_pain)))
+		return
+	injury_pain_noise(amount)
+
+/// Pain emotes scaled by the size of the hit and the species' pain sensitivity:
+/// 50 incoming at 0.6 sensitivity is prob 30 * 1.5, etc.
+/mob/living/carbon/proc/injury_pain_noise(amount)
+	if(isbelly(loc)) // No pain noises inside bellies.
+		return
+	var/pain_noise = species ? amount * species.get_injury_mod(INJURY_PAIN) : amount * rand(0.5, 1.5)
+	switch(amount)
+		if(-INFINITY to 0)
+			return
+		if(0 to 25)
+			if(prob(pain_noise))
+				emote("pain")
+		if(25 to 50)
+			if(prob(pain_noise * 1.5))
+				emote("pain")
+		if(50 to INFINITY)
+			if(prob(pain_noise * 3)) // More likely, most severe damage.
+				emote("pain")

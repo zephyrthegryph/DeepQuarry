@@ -9,14 +9,12 @@
 		qdel(mmi)
 	..()
 
+/// Camera and senses follow the stat change (set_stat()); modules react to
+/// COMSIG_MOB_DEATH (the belly component ejects its sleeper).
 /mob/living/silicon/robot/death(gibbed)
-	if(camera)
-		camera.status = 0
 	if(module)
 		var/obj/item/gripper/G = locate(/obj/item/gripper) in module
-		if(G) G.drop_item()
-		var/obj/item/dogborg/sleeper/S = locate(/obj/item/dogborg/sleeper) in module // .
-		if(S) S.go_out() // .
+		G?.drop_item()
 	remove_robot_verbs()
 	SSmobs.report_death(src)
 	..(gibbed,"shudders violently for a moment, then becomes motionless, its eyes slowly darkening.")

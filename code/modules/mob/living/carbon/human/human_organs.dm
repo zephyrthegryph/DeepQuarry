@@ -6,9 +6,9 @@
 		update_eyes() //For floating eyes only
 
 /mob/living/carbon/human/proc/recheck_bad_external_organs()
-	var/damage_this_tick = getToxLoss()
+	var/damage_this_tick = injury_load(INJURY_CATEGORY_TOXIC)
 	for(var/obj/item/organ/external/O in organs)
-		damage_this_tick += O.burn_dam + O.brute_dam
+		damage_this_tick += O.get_burn() + O.get_trauma()
 		if(O.germ_level)
 			damage_this_tick += 1 //Just tap it if we have germs so we can process those
 
@@ -48,21 +48,20 @@
 			continue
 		else
 			E.process()
-			number_wounds += E.number_wounds
+			number_wounds += length(E.get_wounds())
 
 			if (!lying && !buckled && world.time - l_move_time < 15)
 			//Moving around with fractured ribs won't do you any good
-				if (prob(10) && !stat && can_feel_pain() && chem_effects[CE_PAINKILLER] < 50 && E.is_broken() && E.internal_organs.len)
+				if (prob(10) && !stat && can_feel_pain() && factor(BF_ANALGESIA) < 50 && E.is_broken() && E.internal_organs.len)
 					custom_pain("Pain jolts through your broken [E.encased ? E.encased : E.name], staggering you!", 50)
 					emote("scream")
 					drop_item(loc)
 					Stun(2)
 
 				//Moving makes open wounds get infected much faster
-				if (E.wounds.len)
-					for(var/datum/wound/W in E.wounds)
-						if (W.infection_check())
-							W.germ_level += 1
+				for(var/datum/affliction/wound/W as anything in E.get_wounds())
+					if (W.infection_check())
+						W.germ_level += 1
 
 /mob/living/carbon/human/proc/handle_stance()
 	// Don't need to process any of this if they aren't standing anyways

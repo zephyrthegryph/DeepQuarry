@@ -322,7 +322,6 @@
 #undef PSU_MAXCELLS
 
 
-// === merged from batteryrack_vr.dm during hard-fork de-suffix (verified no override-order change) ===
 /obj/machinery/power/smes/batteryrack/mapped
 	var/cell_type = /obj/item/cell/apc
 	var/cell_number = 3

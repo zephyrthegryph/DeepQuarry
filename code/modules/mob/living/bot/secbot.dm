@@ -6,8 +6,7 @@
 	name = "Securitron"
 	desc = "A little security robot.  He looks less than thrilled."
 	icon_state = "secbot0"
-	maxHealth = 100
-	health = 100
+	endurance = 100
 	req_one_access = list(ACCESS_SECURITY, ACCESS_FORENSICS_LOCKERS)
 	botcard_access = list(ACCESS_SECURITY, ACCESS_SEC_DOORS, ACCESS_FORENSICS_LOCKERS, ACCESS_MAINT_TUNNELS)
 	patrol_speed = 2
@@ -41,7 +40,7 @@
 // They don't like being pulled. This is going to fuck with slimesky, but meh. //Screw you. Just screw you and your 'meh'
 /mob/living/bot/secbot/Life()
 	..()
-	if(health > 0 && on && pulledby)
+	if(stat != DEAD && on && pulledby)
 		if(isliving(pulledby))
 			var/pull_allowed = FALSE
 			for(var/A in req_one_access)
@@ -56,8 +55,7 @@
 	name = "Officer Beepsky"
 	desc = "It's Officer Beep O'sky! Powered by a potato and a shot of whiskey."
 	will_patrol = TRUE
-	maxHealth = 130
-	health = 130
+	endurance = 130
 
 /mob/living/bot/secbot/slime
 	name = "Slime Securitron"
@@ -76,8 +74,7 @@
 /mob/living/bot/secbot/slime/slimesky
 	name = "Doctor Slimesky"
 	desc = "An old friend of Officer Beep O'sky.  He prescribes beatings to rowdy slimes so that real doctors don't need to treat the xenobiologists."
-	maxHealth = 130
-	health = 130
+	endurance = 130
 
 /mob/living/bot/secbot/update_icons()
 	if(on && busy)
@@ -176,19 +173,29 @@
 	else
 		to_chat(user, span_notice("\The [src] is already corrupt."))
 
-/mob/living/bot/secbot/attackby(obj/item/O, mob/user)
-	var/curhealth = health
+/mob/living/bot/secbot/Initialize(mapload)
 	. = ..()
-	if(health < curhealth && on == TRUE)
-		react_to_attack(user)
+	RegisterSignal(src, COMSIG_LIVING_INJURED, PROC_REF(on_injured))
 
-/mob/living/bot/secbot/bullet_act(obj/item/projectile/P)
-	var/curhealth = health
-	var/mob/shooter = P.firer
-	. = ..()
-	//if we already have a target just ignore to avoid lots of checking
-	if(!target && health < curhealth && shooter && (shooter in view(world.view, src)))
-		react_to_attack(shooter)
+/// Anything that actually hurt us is an attack: find who did it and retaliate.
+/mob/living/bot/secbot/proc/on_injured(datum/source, kind, amount, zone, atom/injury_source, flags)
+	SIGNAL_HANDLER
+	if(amount <= 0 || !injury_source)
+		return
+	var/mob/attacker
+	if(istype(injury_source, /obj/item/projectile))
+		var/obj/item/projectile/P = injury_source
+		attacker = P.firer
+		//if we already have a target just ignore to avoid lots of checking
+		if(target || !attacker || !(attacker in view(world.view, src)))
+			return
+	else if(ismob(injury_source))
+		attacker = injury_source
+	else if(ismob(injury_source.loc))
+		attacker = injury_source.loc // a held weapon
+	if(!attacker || attacker == src || on != TRUE)
+		return
+	INVOKE_ASYNC(src, PROC_REF(react_to_attack), attacker)
 
 /mob/living/bot/secbot/attack_generic(mob/attacker)
 	if(attacker)
@@ -346,7 +353,7 @@
 			busy = FALSE
 	else if(isliving(M))
 		var/mob/living/L = M
-		L.adjustBruteLoss(xeno_harm_strength)
+		L.injure(INJURY_BLUNT, xeno_harm_strength, null, src)
 		do_attack_animation(M)
 		playsound(src, "swing_hit", 50, 1, -1)
 		busy = TRUE

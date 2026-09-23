@@ -288,7 +288,6 @@
 	. = trim_right(.)
 
 
-// === merged from say_vr.dm during hard-fork de-suffix (chain-verified: prior definer is this file, nothing between) ===
 //////////////////////////////////////////////////////
 ////////////////////SUBTLE COMMAND////////////////////
 //////////////////////////////////////////////////////
@@ -448,7 +447,7 @@
 					to_chat(src, span_warning("You do not appear to be a living mob capable of having bellies. Your input has not been sent, but preserved:") + " [input]")
 					return
 				var/mob/living/L = src
-				if(!(L.vore_organs) || !(L.vore_organs.len))
+				if(!(L.vore_organs) || !(length(L.vore_organs)))
 					to_chat(src, span_warning("You do not have any bellies. Your input has not been sent, but preserved:") + " [input]")
 					return
 				var/obj/belly/B = tgui_input_list(src, "Which belly do you want to sent the subtle to?","Select Belly", L.vore_organs)

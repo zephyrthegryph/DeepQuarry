@@ -208,7 +208,6 @@
 	prefill = list(REAGENT_ID_LUBE = 60)
 
 
-// === merged from bottle_ch.dm during hard-fork de-suffix (verified no override-order change) ===
 /obj/item/reagent_containers/glass/bottle/sorbitol
 	name = "sorbitol bottle"
 	desc = "A small bottle of sorbitol. Sickeningly sweet."
@@ -217,7 +216,6 @@
 	prefill = list(REAGENT_ID_SORBITOL = 60)
 
 
-// === merged from bottle_vr.dm during hard-fork de-suffix (verified no override-order change) ===
 /obj/item/reagent_containers/glass/bottle/bicaridine
 	name = "bicaridine bottle"
 	desc = "A small bottle. Bicaridine is an analgesic medication and can be used to treat blunt trauma."

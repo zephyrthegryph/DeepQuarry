@@ -1,7 +1,6 @@
 /mob/living/simple_mob/vore/spacecritter
 	icon = 'icons/mob/spaceinvader.dmi'
-	health = 30
-	maxHealth = 30
+	endurance = 30
 	movement_cooldown = 3
 	aquatic_movement = 0
 
@@ -26,7 +25,7 @@
 	melee_damage_upper = 12
 	melee_miss_chance = 0
 	melee_attack_delay = 1.5
-	//dq_get_hovering(src) type-default moved to GLOB.dq_hovering_by_type
+	// DQEdit — dq_get_hovering(src) type-default moved to GLOB.dq_hovering_by_type
 
 	heat_resist = 1.0
 	cold_resist = 1.0
@@ -97,20 +96,20 @@
 			var/datum/gas_mixture/removed = env.remove(transfer_moles)
 			if(removed)
 				var/heat_transfer = removed.get_thermal_energy_change(set_temperature)
-				if(heat_transfer > 0 && env.return_temperature() < T0C + 200)	//This should start heating the room at a moderate pace up to 200 degrees celsius.
+				var/environment_temperature = env.return_temperature()
+				if(heat_transfer > 0 && environment_temperature < T0C + 200)	//This should start heating the room at a moderate pace up to 200 degrees celsius.
 					heat_transfer = min(heat_transfer , heating_power) //limit by the power rating of the heater
 					removed.add_thermal_energy(heat_transfer)
 
-				else if(heat_transfer > 0 && env.return_temperature() < set_temperature) //Set temperature is 10,000 degrees celsius. So this thing will start cooking crazy hot between the temperatures of 200C and 10,000C.
+				else if(heat_transfer > 0 && environment_temperature < set_temperature) //Set temperature is 10,000 degrees celsius. So this thing will start cooking crazy hot between the temperatures of 200C and 10,000C.
 					heating_power = original_temp*100 //Changed to work variable -shark //FLAME ON! This will make the moth heat up the room at an incredible rate.
 					heat_transfer = min(heat_transfer , heating_power) //limit by the power rating of the heater. Except it's hot, so yeah.
 					removed.add_thermal_energy(heat_transfer)
 
 				else
-					heat_transfer = 0
+					return
 
 				env.merge(removed)
-				qdel(removed)
 
 
 
@@ -121,8 +120,7 @@
 	name = "galaxy ray"
 	icon_state = "galaxyray"
 	icon_living = "galaxyray"
-	health = 75
-	maxHealth = 75
+	endurance = 75
 	set_temperature = T0C + 15000
 	heating_power = 150000
 	size_multiplier = 1.5
@@ -162,8 +160,7 @@
 	name = "living iceberg"
 	desc = "A giant strange creature, a crab like creature seemingly made of ice"
 	size_multiplier = 3.0
-	health = 75
-	maxHealth = 75
+	endurance = 75
 	chilltemp = -50
 
 /mob/living/simple_mob/vore/spacecritter/radcrab //bullets, melee, and cold all crack the poor thing's shell
@@ -204,8 +201,7 @@
 
 /mob/living/simple_mob/vore/spacecritter/radcrab/supermattercrab
 	size_multiplier = 1.5
-	health = 75
-	maxHealth = 75
+	endurance = 75
 	rads = 150
 	name = "energized crystaline crab"
 	icon_state = "superhermitcrab"
@@ -271,8 +267,7 @@
 
 /mob/living/simple_mob/vore/spacecritter/gravityshell/cleanse
 	size_multiplier = 0.5
-	health = 75
-	maxHealth = 75
+	endurance = 75
 	artifact_master = /datum/component/artifact_master/gasoxy
 	icon_state = "cleanseshell"
 	icon_living = "cleanseshell"

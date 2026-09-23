@@ -61,8 +61,7 @@ GLOBAL_VAR_INIT(teppi_count, 0)	// How mant teppi DO we have?
 	default_pixel_x = -16
 
 	faction = FACTION_TEPPI
-	maxHealth = 600
-	health = 600
+	endurance = 600
 	movement_cooldown = -1
 	meat_amount = 12
 	meat_type = /obj/item/reagent_containers/food/snacks/meat
@@ -629,7 +628,7 @@ GLOBAL_VAR_INIT(teppi_count, 0)	// How mant teppi DO we have?
 		. += span_notice("They look well fed.")
 	if(nutrition <= 500)
 		. += span_notice("They look hungry.")
-	if(health < maxHealth && health / maxHealth * 100 <= 75)
+	if(vitality() <= 0.75)
 		. += span_notice("They look beat up.")
 
 
@@ -890,8 +889,7 @@ GLOBAL_VAR_INIT(teppi_count, 0)	// How mant teppi DO we have?
 	pixel_x = 0
 	default_pixel_x = 0
 	teppi_adult = FALSE
-	maxHealth = 50
-	health = 50
+	endurance = 50
 	movement_cooldown = 1
 	harm_intent_damage = 5
 	melee_damage_lower = 1

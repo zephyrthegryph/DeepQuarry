@@ -21,7 +21,7 @@
 	if(ishuman(hit_atom))
 		var/mob/living/carbon/human/H = hit_atom
 		if(pay_energy(1500))
-			H.adjustOxyLoss(-35)
+			H.mend(TREAT_OXYGENATION, 35)
 			adjust_instability(10)
 			return
 	else if(isturf(hit_atom))

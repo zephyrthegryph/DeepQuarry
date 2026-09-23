@@ -66,7 +66,8 @@
 	new_effect.start = life_tick
 	LAZYADD(side_effects, new_effect)
 
-/// Reconcile only when the reagent holder changes. The old architecture
+/// Reconcile once per Life cycle, and only when the reagent holder changed
+/// (BODY_DIRTY_CHEMS, consumed by dq_process_dirty_medical_conditions). The old architecture
 /// allocated every medical-effect subtype for every human every 30 seconds.
 /mob/living/carbon/human/proc/reconcile_medical_side_effects()
 	for(var/datum/medical_effect/active in side_effects)

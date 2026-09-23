@@ -1,0 +1,15 @@
+[package]
+name = "deepquarry-mapcore"
+version = "0.1.0"
+edition = "2021"
+description = "Shared offline TGM/DMM parsing and sprite tooling for DeepQuarry"
+
+[dependencies]
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+toml = "0.8"
+png = "0.17"
+
+[[bin]]
+name = "mapcore"
+path = "src/main.rs"

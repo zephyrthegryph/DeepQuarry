@@ -60,7 +60,6 @@
 		update_thermal(turf)
 		SSair.mark_for_update(turf)
 
-
 /turf/simulated/wall/proc/update_thermal(turf/simulated/source)
 	if(istype(source))
 		if(density && opacity)
@@ -155,13 +154,6 @@
 
 	user.setClickCooldown(user.get_attack_speed(W))
 
-/*
-//As with the floors, only this time it works AND tries pushing the wall after it's done.
-	if(!construction_stage && user.a_intent == I_HELP)
-		if(try_graffiti(user,W, click_parameters))
-			return
-*/
-
 	if (!user.IsAdvancedToolUser())
 		to_chat(user, span_warning("You don't have the dexterity to do this!"))
 		return
@@ -206,7 +198,6 @@
 					playsound(src, 'sound/weapons/genhit.ogg', 50, 1)
 				user.visible_message(span_notice("[user] roofs \the [src], shielding it from the elements."), span_notice("You roof \the [src] tile, shielding it from the elements."))
 		return
-
 
 	if(locate(/obj/effect/overlay/wallrot) in src)
 		if(focused_tool_stage == TOOL_WELDER)

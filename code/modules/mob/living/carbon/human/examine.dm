@@ -342,12 +342,12 @@
 				continue
 
 			if(!looks_synth && temp.robotic == ORGAN_ROBOT)
-				if(!(temp.brute_dam + temp.burn_dam))
+				if(!(temp.get_trauma() + temp.get_burn()))
 					wound_flavor_text["[temp.name]"] = "[p_They()] [p_have()] a [temp.name]."
 				else
 					wound_flavor_text["[temp.name]"] = span_warning("[p_They()] [p_have()] a [temp.name] with [temp.get_wounds_desc()]!")
 				continue
-			else if(temp.wounds.len > 0 || temp.open)
+			else if(length(temp.get_wounds()) || temp.open)
 				if(temp.is_stump() && temp.parent_organ && organs_by_name[temp.parent_organ])
 					var/obj/item/organ/external/parent = organs_by_name[temp.parent_organ]
 					wound_flavor_text["[temp.name]"] = span_warning("[p_They()] [p_have()] [temp.get_wounds_desc()] on [p_their()] [parent.name].")
@@ -357,7 +357,7 @@
 				wound_flavor_text["[temp.name]"] = ""
 			if(temp.dislocated == 1)
 				wound_flavor_text["[temp.name]"] += span_warning("[p_Their()] [temp.joint] is dislocated!")
-			if(temp.brute_dam > temp.min_broken_damage || (temp.status & (ORGAN_BROKEN | ORGAN_MUTATED)))
+			if(temp.get_trauma() > temp.min_broken_damage || (temp.status & (ORGAN_BROKEN | ORGAN_MUTATED)))
 				wound_flavor_text["[temp.name]"] += span_warning("[p_Their()] [temp.name] is dented and swollen!")
 
 			if(temp.germ_level > INFECTION_LEVEL_TWO && !(temp.status & ORGAN_DEAD))
@@ -441,7 +441,7 @@
 	if(custom_link)
 		msg += "Custom link: " + span_linkify("[custom_link]")
 
-	if(ooc_notes)
+	if(identity.ooc_notes)
 		msg += "OOC Notes: <a href='byond://?src=\ref[src];ooc_notes=1'>\[View\]</a> - <a href='byond://?src=\ref[src];print_ooc_notes_chat=1'>\[Print\]</a>"
 	msg += "<a href='byond://?src=\ref[src];vore_prefs=1'>\[Mechanical Vore Preferences\]</a>"
 	msg = list(span_info(jointext(msg, "<br>")))
@@ -470,7 +470,6 @@
 		return R.sensor_type //Borgo sensors are now binary so just have them on or off
 
 
-// === merged from examine_vr.dm during hard-fork de-suffix (verified no override-order change) ===
 /mob/living/carbon/human/proc/examine_weight()
 	if(!show_pudge() || !weight_message_visible) //Some clothing or equipment can hide this.
 		return ""

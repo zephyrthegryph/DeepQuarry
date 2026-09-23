@@ -1,0 +1,6 @@
+author: "ethan"
+delete-after: true
+changes:
+  - server: "Faster boot: only the tgui chunks named in the manifest are registered, hashed by the content hash rspack already puts in their filenames; map template sizes come from a build-time bounds file instead of parsing every template; holomaps are rendered with one rust-g PNG call per map instead of a DrawBox per pixel."
+  - server: "Looping sounds pause while no player is in earshot and resume when one walks into range. playsound no longer copies the player list and only builds its sound when someone can hear it; an EMP plays its sound once instead of once per mob in range."
+  - code_imp: "The MC performance window reads percentiles from a histogram instead of copying and sorting samples. Logging trusts a log file for 10 seconds between existence checks. Failed pathfinding searches are cached until the navigation revision changes. Timers only build their debug list under TIMER_DEBUG. Mob movement skips chunk-key work when nothing is subscribed, and AI chunk keys are numeric."

@@ -46,8 +46,8 @@
 	user.visible_message(span_notice("[user] has ripped [target]'s [affected] \the [tool], blood and viscera spraying everywhere!"), \
 	span_notice("You have ripped a blood vessel in [target]'s [affected.name] out with \the [tool], spraying blood all through the room!"))
 	user.balloon_alert_visible("rips into [target]'s [affected], blood and viscera everywhere!", "ripped into [target]'s [affected], blood and viscera everywhere!")
-	var/datum/wound/internal_bleeding/I = new (30) //splurt. New severed artery.
-	affected.wounds += I
+	affected.add_wound(new /datum/affliction/wound/internal_bleeding(affected, 30)) //splurt. New severed artery.
+	affected.update_damages()
 	affected.owner.custom_pain("You feel something rip in your [affected.name]!", 1)
 	target.drip(30) //Lose a lot of blood.
 	new /obj/effect/gibspawner/human(target.loc,target.dna,target.species.flesh_color,target.species.blood_color) //SPLAT.
@@ -58,7 +58,7 @@
 	user.visible_message(span_warning("[user]'s hand slips, damaging [target]'s [affected.name] with \the [tool]!"), \
 	span_warning("Your hand slips, damaging [target]'s [affected.name] with \the [tool]!"))
 	user.balloon_alert_visible("slips, damaging [target]'s [affected.name]", "your hand slips, damaging \the [affected.name]")
-	affected.createwound(BRUISE, 20) //Only bruised...Sad.
+	target.injure(INJURY_BLUNT, 20, affected.organ_tag, tool, flags = INJURE_IGNORE_RESISTANCE) //Only bruised...Sad.
 
 
 //Break Bone
@@ -81,7 +81,7 @@
 	user.visible_message(span_notice("[user] has destroyed the bones within [target]'s [affected] with \the [tool]"), \
 	span_notice("You have destroyed the bones in [target]'s [affected] with \the [tool]!"))
 	affected.fracture()
-	affected.createwound(BRUISE, 20)
+	target.injure(INJURY_BLUNT, 20, affected.organ_tag, tool, flags = INJURE_IGNORE_RESISTANCE)
 	target.emote("scream") //Hope you put them under...
 
 //Mutilate Organ
@@ -143,7 +143,7 @@
 		user.visible_message(span_notice("[user] has ripped [target]'s [O.name] out with \the [tool]."), \
 		span_notice("You have ripped [target]'s [O.name] out with \the [tool]."))
 		if(O && istype(O))
-			O.take_damage(10)
+			target.injure(INJURY_CUT, 10, O, tool, flags = INJURE_IGNORE_RESISTANCE)
 		target.op_stage.current_organ = null
 		new /obj/effect/gibspawner/human(target.loc,target.dna,target.species.flesh_color,target.species.blood_color)
 		target.emote("scream")
@@ -152,7 +152,7 @@
 	var/obj/item/organ/external/affected = target.get_organ(target_zone)
 	user.visible_message(span_warning("[user]'s hand slips, damaging [target]'s [affected.name] with \the [tool]!"), \
 	span_warning("Your hand slips, damaging [target]'s [affected.name] with \the [tool]!"))
-	affected.createwound(BRUISE, 20)
+	target.injure(INJURY_BLUNT, 20, affected.organ_tag, tool, flags = INJURE_IGNORE_RESISTANCE)
 
 ///////////////////////////////////////////////////////////////
 // Organ Ripping Surgery
@@ -227,4 +227,4 @@
 	var/obj/item/organ/external/affected = target.get_organ(target_zone)
 	user.visible_message(span_warning("[user]'s hand slips, damaging [target]'s [affected.name] with \the [tool]!"), \
 	span_warning("Your hand slips, damaging [target]'s [affected.name] with \the [tool]!"))
-	affected.createwound(BRUISE, 20)
+	target.injure(INJURY_BLUNT, 20, affected.organ_tag, tool, flags = INJURE_IGNORE_RESISTANCE)

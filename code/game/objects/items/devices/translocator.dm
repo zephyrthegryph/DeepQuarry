@@ -308,7 +308,7 @@ This device records all warnings given and teleport events for admin review in c
 		var/mob/living/L = real_loc
 		if(L.vore_selected)
 			real_dest = L.vore_selected
-		else if(L.vore_organs.len)
+		else if(length(L.vore_organs))
 			real_dest = pick(L.vore_organs)
 
 	//Confirm televore
@@ -441,15 +441,6 @@ GLOBAL_LIST_BOILERPLATE(premade_tele_beacons, /obj/item/perfect_tele_beacon/stat
 	icon_state = "minitrans"
 	beacons_left = 1 //Just one
 	cell_type = /obj/item/cell/device
-
-/*
-/obj/item/perfect_tele/one_beacon/teleport_checks(mob/living/target,mob/living/user)
-	var/turf/T = get_turf(destination)
-	if(T && user.z != T.z)
-		to_chat(user,span_warning("\The [src] is too far away from the beacon. Try getting closer first!"))
-		return FALSE
-	return ..()
-*/
 
 /obj/item/perfect_tele/alien
 	name = "alien translocator"

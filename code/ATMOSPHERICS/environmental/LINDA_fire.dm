@@ -7,9 +7,6 @@
 
 	return fire_reactions
 
-/atom/proc/temperature_expose(datum/gas_mixture/air, exposed_temperature, exposed_volume)
-	return null
-
 
 
 /turf/proc/hotspot_expose(exposed_temperature, exposed_volume, soh = 0)
@@ -139,7 +136,6 @@
 	air_update_turf(FALSE, FALSE)
 	var/static/list/loc_connections = list(
 		COMSIG_ATOM_ENTERED = PROC_REF(on_entered),
-		COMSIG_ATOM_ABSTRACT_ENTERED = PROC_REF(on_entered),
 	)
 	AddElement(/datum/element/connect_loc, loc_connections)
 

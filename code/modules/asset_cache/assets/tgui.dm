@@ -46,11 +46,42 @@
 	var/list/allowed_assets
 
 /datum/asset/simple/namespaced/tgui_chunks/register()
-	for(var/filename in flist("[asset_directory]/"))
-		// match `*.chunk.js` (9 chars) and `*.chunk.css` (10 chars)
-		if((allowed_assets && allowed_assets[filename]) || (!allowed_assets && (copytext(filename, -9) == ".chunk.js" || copytext(filename, -10) == ".chunk.css")))
+	// Only the chunks the manifest names (Q1). tgui/public keeps stale chunks from
+	// older builds, and hashing those roughly doubled the boot asset cost.
+	var/list/wanted = allowed_assets
+	if(!wanted)
+		wanted = list()
+		for(var/filename in SStgui.chunk_files)
+			wanted[filename] = TRUE
+	for(var/filename in wanted)
+		if(fexists("[asset_directory]/[filename]"))
 			assets[filename] = file("[asset_directory]/[filename]")
+		else
+			log_asset("ERROR: tgui chunk [filename] is in the manifest but missing from [asset_directory]")
 	return ..()
+
+/datum/asset/simple/namespaced/tgui_chunks/prehashed_asset_hash(asset_name)
+	return tgui_chunk_content_hash(asset_name)
+
+/// Returns the build-time content hash rspack put in a chunk filename
+/// (`[name].[contenthash].chunk.js` / `.chunk.css`), or null if it has none.
+/// It stands in for md5 so registering a chunk never reads the file.
+/proc/tgui_chunk_content_hash(filename)
+	var/stem
+	if(copytext(filename, -9) == ".chunk.js")
+		stem = copytext(filename, 1, -9)
+	else if(copytext(filename, -10) == ".chunk.css")
+		stem = copytext(filename, 1, -10)
+	else
+		return null
+	var/dot = findlasttext(stem, ".")
+	if(!dot)
+		return null
+	var/content_hash = copytext(stem, dot + 1)
+	var/static/regex/hex_hash = regex(@"^[0-9a-f]{8,}$")
+	if(!hex_hash.Find(content_hash))
+		return null
+	return content_hash
 
 /datum/asset/simple/namespaced/tgui_chunks/proc/reload_from_directory(directory, list/filenames)
 	unregister()
@@ -92,6 +123,9 @@
 	for(var/filename in allowed_assets)
 		assets[filename] = file("[asset_directory]/[filename]")
 	return ..()
+
+/datum/asset/simple/namespaced/tgui_live_generation_chunks/prehashed_asset_hash(asset_name)
+	return tgui_chunk_content_hash(asset_name)
 
 /datum/asset/simple/namespaced/tgui_live_generation_chunks/proc/get_public_base_url()
 	if(!length(assets))

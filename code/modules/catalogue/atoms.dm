@@ -1,6 +1,6 @@
 // catalogue_delay var on /atom moved to GLOB.dq_catalogue_delay_by_type
 // (per-type defaults) plus GLOB.dq_catalogue_delay_by_atom (per-instance overrides).
-// See code/modules/consolidation/atom_var_components.dm.
+// See code/datums/components/sparse_vars/catalogue_delay.dm.
 /atom
 	// List of types of /datum/category_item/catalogue that should be 'unlocked' when scanned by a Cataloguer.
 	// It is null by default to save memory by not having everything hold onto empty lists. Use macros like LAZYLEN() to check.

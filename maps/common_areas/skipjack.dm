@@ -23,15 +23,6 @@
 	name = "east of third deck"
 	icon_state = "east"
 
-/area/skipjack_station/mining
-	name = "mining site"
-	icon_state = "shuttlered"
-
-/area/skipjack_station/planet
-	name = "planet"
-	icon_state = "shuttlered"
-	dynamic_lighting = 1
-	base_turf = /turf/simulated/floor/outdoors/grass/sif/planetuse
 
 /area/skipjack_station/orbit
 	name = "in orbit of Sif"

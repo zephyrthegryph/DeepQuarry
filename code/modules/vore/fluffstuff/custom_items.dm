@@ -1088,7 +1088,8 @@
 		if (CLUMSY_HARM_CHANCE(user))
 			user.visible_message(span_danger("\The [user] accidentally cuts \himself with \the [src]."),\
 			span_danger("You accidentally cut yourself with \the [src]."))
-			user.take_organ_damage(5,5)
+			user.injure(INJURY_CUT, 5, source = src)
+			user.injure(INJURY_BURN, 5, source = src)
 		deactivate(user)
 	else
 		activate(user)

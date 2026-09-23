@@ -37,16 +37,16 @@
 	var/datum/reagent/coffee = locate(/datum/reagent/drink/coffee) in owner.reagents.reagent_list
 	if(coffee)
 		if(is_bruised())
-			owner.adjustToxLoss(0.1 * PROCESS_ACCURACY)
+			owner.injure(INJURY_TOXIN, 0.1 * PROCESS_ACCURACY, flags = INJURE_SILENT)
 		else if(is_broken())
-			owner.adjustToxLoss(0.3 * PROCESS_ACCURACY)
+			owner.injure(INJURY_TOXIN, 0.3 * PROCESS_ACCURACY, flags = INJURE_SILENT)
 
 	var/datum/reagent/sugar = locate(/datum/reagent/sugar) in owner.reagents.reagent_list
 	if(sugar)
 		if(is_bruised())
-			owner.adjustToxLoss(0.1 * PROCESS_ACCURACY)
+			owner.injure(INJURY_TOXIN, 0.1 * PROCESS_ACCURACY, flags = INJURE_SILENT)
 		else if(is_broken())
-			owner.adjustToxLoss(0.3 * PROCESS_ACCURACY)
+			owner.injure(INJURY_TOXIN, 0.3 * PROCESS_ACCURACY, flags = INJURE_SILENT)
 
 /obj/item/organ/internal/brain/unathi
 	color = "#b3cbc3"

@@ -120,7 +120,7 @@
 		if(robot_user && robot_user.cell)
 			for(var/T in reagent_ids)
 				if(reagent_volumes[T] < volume)
-					if(!robot_user.use_direct_power(charge_cost, 800))
+					if(!robot_user.draw_power(ROBOT_CELL_JOULES(charge_cost), src, ROBOT_CELL_JOULES(800)))
 						return 0
 					reagent_volumes[T] = min(reagent_volumes[T] + 5, volume)
 	return 1
@@ -135,11 +135,6 @@
 		if(!affected)
 			balloon_alert(user, "\the [H] is missing that limb!")
 			return ITEM_INTERACT_FAILURE
-		/* since synths have oil/coolant streams now, it only makes sense that you should be able to inject stuff. preserved for posterity.
-		else if(affected.robotic >= ORGAN_ROBOT)
-			to_chat(user, span_danger("You cannot inject a robotic limb."))
-			return ITEM_INTERACT_FAILURE
-		*/
 
 	if(M.can_inject(user, 1, ignore_thickness = bypass_protection))
 
@@ -187,17 +182,6 @@
 		return TRUE
 	tgui_interact(user)
 	return
-
-/* No longer necessary because we use TGUI for this now!
-/obj/item/reagent_containers/borghypo/Topic(href, list/href_list)
-	if(href_list["reagent"])
-		var/t = reagent_ids.Find(href_list["reagent"])
-		if(t)
-			playsound(src, 'sound/effects/pop.ogg', 50, 0)
-			mode = t
-			var/datum/reagent/new_reagent = SSchemistry.chemical_reagents[reagent_ids[mode]]
-			balloon_alert(usr, "synthesizer is now producing '[new_reagent.name]'")
-*/
 
 /obj/item/reagent_containers/borghypo/tgui_interact(mob/user, datum/tgui/ui, datum/tgui/parent_ui, custom_state)
 	. = ..()
@@ -330,7 +314,6 @@
 		if("set_chemical_search")
 			ui_chemical_search = params["uiChemicalSearch"]
 			. = TRUE
-
 
 /obj/item/reagent_containers/borghypo/examine(mob/user)
 	. = ..()

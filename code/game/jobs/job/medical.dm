@@ -276,7 +276,6 @@
 */
 
 
-// === merged from medical_ch.dm during hard-fork de-suffix (verified no override-order change) ===
 //TFF 7/1/20 - Add Chemistry access to Psychs. Backported from old Chompcode
 /datum/job/psychiatrist
 	access = list(ACCESS_MEDICAL, ACCESS_CHEMISTRY, ACCESS_MEDICAL_EQUIP, ACCESS_MORGUE, ACCESS_PSYCHIATRIST)
@@ -286,6 +285,5 @@
 	pto_type = PTO_MEDICAL
 
 
-// === merged from medical_chomp.dm during hard-fork de-suffix (verified no override-order change) ===
 /datum/job/cmo
 	camp_protection = TRUE

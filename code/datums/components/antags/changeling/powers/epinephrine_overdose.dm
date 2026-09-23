@@ -15,7 +15,7 @@
 	stacks = MODIFIER_STACK_EXTEND
 	on_created_text = span_notice("We feel unstoppable!")
 	on_expired_text = span_warning("We feel our newfound energy fade...")
-	disable_duration_percent = 0
+	factors = alist(BF_DISABLE_DURATION = 0)
 
 //Recover from stuns.
 /mob/proc/changeling_epinephrine_overdose()
@@ -45,6 +45,8 @@
 	return 1
 
 /datum/reagent/epinephrine
+	factors = alist(BF_ANALGESIA = 60, BF_SLOWDOWN = -3, BF_PENALTY_SCALE = 0.5)
+	species_factors = alist(IS_DIONA = null)
 	name = REAGENT_EPINEPHRINE
 	id = REAGENT_ID_EPINEPHRINE
 	description = "A chemically naturally produced by the body while in fight-or-flight mode. Greatly increases one's strength."
@@ -55,15 +57,15 @@
 	supply_conversion_value = REFINERYEXPORT_VALUE_RARE
 	industrial_use = REFINERYEXPORT_REASON_MATSCI
 
+/datum/reagent/epinephrine
+	treatment_tags = list(TREAT_ANALGESIC = 2.0, TREAT_STIMULANT = 1.0, TREAT_VASOPRESSOR = 1.0)
+
 /datum/reagent/epinephrine/affect_blood(mob/living/carbon/M, alien, removed)
 	if(alien == IS_DIONA)
 		return
-	M.add_chemical_effect(CE_SPEEDBOOST, 3)
-	M.add_chemical_effect(CE_PAINKILLER, 60)
-	M.adjustHalLoss(-30)
 	M.AdjustParalysis(-2)
 	M.AdjustStunned(-2)
 	M.AdjustWeakened(-2)
-	M.adjustToxLoss(removed * 2.5) //It gives you 20units of epinephrine. 50 toxins damage. 1 Toxin per tick.
+	M.injure(INJURY_TOXIN, removed * 2.5, source = src) //It gives you 20units of epinephrine. 50 toxins damage. 1 Toxin per tick.
 	..()
 	return

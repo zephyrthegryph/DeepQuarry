@@ -423,16 +423,6 @@ GLOBAL_LIST_EMPTY(active_buildmode_holders)
 					if(NORTHWEST)
 						var/obj/structure/window/reinforced/WIN = new/obj/structure/window/reinforced(get_turf(object))
 						WIN.set_dir(NORTHWEST)
-/*self-insert
-						WIN.flags |= ADMIN_SPAWNED
-			else if(istype(object,/turf) && pa.Find("ctrl") && pa.Find("alt") && pa.Find("middle"))
-				var/turf/T = object
-				var/obj/item/toy/plushie/teshari/easter_egg = new /obj/item/toy/plushie/teshari(T)
-				easter_egg.name = "coding teshari plushie"
-				easter_egg.desc = "A small purple teshari with a plush keyboard attached to it. Where did this come from?"
-				easter_egg.color = "#a418c7"
-				easter_egg.flags |= ADMIN_SPAWNED
-*/
 
 		if(BUILDMODE_ADVANCED)
 			if(pa.Find("left") && !pa.Find("ctrl") && !pa.Find("alt"))
@@ -638,7 +628,6 @@ GLOBAL_LIST_EMPTY(active_buildmode_holders)
 					log_admin("[key_name(usr)] added [object] to the entity narration list.")
 					SSadmin_verbs.dynamic_invoke_verb(user.client, /datum/admin_verb/add_mob_for_narration, object)
 
-
 			if(pa.Find("right"))
 				// Paste faction
 				if(pa.Find("ctrl") && isliving(object))
@@ -720,7 +709,6 @@ GLOBAL_LIST_EMPTY(active_buildmode_holders)
 					orderimage.plane = PLANE_BUILDMODE
 					flick_overlay(orderimage, list(user.client), 8, TRUE)
 					return
-
 
 		if(BUILDMODE_DROP)
 			if(ispath(holder.buildmode.objholder,/turf))

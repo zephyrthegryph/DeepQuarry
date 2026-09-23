@@ -11,7 +11,7 @@
 	movement_cooldown = 1.5
 	movement_sound = "mechstep" // This gets fed into playsound(), which can also take strings as a 'group' of sound files.
 	turn_sound = 'sound/mecha/mechturn.ogg'
-	maxHealth = 300
+	endurance = 300
 	mob_size = MOB_LARGE
 	damage_threshold = 5 //Anything that's 5 or less damage will not do damage.
 
@@ -80,11 +80,8 @@
 
 /mob/living/simple_mob/mechanical/mecha/handle_special()
 	if(has_repair_droid)
-		adjustBruteLoss(-2)
-		adjustFireLoss(-2)
-		adjustToxLoss(-2)
-		adjustOxyLoss(-2)
-		adjustCloneLoss(-2)
+		mend(TREAT_PLATING_REPAIR, 2)
+		mend(TREAT_WIRING_REPAIR, 2)
 	..()
 
 /mob/living/simple_mob/mechanical/mecha/update_icon()

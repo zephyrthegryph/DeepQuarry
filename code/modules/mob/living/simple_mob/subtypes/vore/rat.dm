@@ -31,8 +31,7 @@
 	faction = FACTION_MOUSE
 	icon = 'icons/mob/vore64x32.dmi'
 
-	maxHealth = 150
-	health = 150
+	endurance = 150
 
 	melee_damage_lower = 8
 	melee_damage_upper = 16
@@ -236,8 +235,7 @@
 	icon_dead = "phorous-dead"
 	icon_rest = "phorous_rest"
 
-	maxHealth = 175
-	health = 175
+	endurance = 175
 
 	melee_damage_lower = 8
 	melee_damage_upper = 16
@@ -278,8 +276,7 @@
 			name = "Brick"
 			desc = "Despite some conspiracy theories, this rat is not younger sibling of the other two rats commonly found in local trashpits, nor is it a \
 			younger sibling of any ratlike crew. Truth be told, it's just some random rat that barely ever shows up, yet people demanded it be given a name as well."
-			maxHealth = 1750
-			health = 1750
+			endurance = 1750
 			melee_damage_lower = 1
 			melee_damage_upper = 2
 
@@ -291,8 +288,7 @@
 	say_got_target = list("SQUEEK!")
 
 /mob/living/simple_mob/vore/aggressive/rat/event
-	maxHealth = 50
-	health = 50
+	endurance = 50
 	vore_pounce_chance = 10
 
 	can_be_drop_prey = FALSE

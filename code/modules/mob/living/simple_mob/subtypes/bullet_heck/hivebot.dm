@@ -6,8 +6,7 @@
 	faction = FACTION_TYR
 	movement_cooldown = 10
 	size_multiplier = 2
-	maxHealth = 500
-	health = 500
+	endurance = 500
 	anchored = 1
 	armor = list(melee = 40, bullet = 40, laser = 40, energy = 40, bomb = 50, bio = 100, rad = 100)
 	projectiletype = /obj/item/projectile/energy/eclipse_boss/tyrjavelin
@@ -48,8 +47,7 @@
 	faction = FACTION_HIVEBOT
 	movement_cooldown = 10
 	size_multiplier = 2
-	maxHealth = 600
-	health = 600
+	endurance = 600
 	projectiletype = /obj/item/projectile/energy/wallbreaker/boss
 	wreckage = /obj/structure/loot_pile/surface/alien/engineering
 	anchored = 1

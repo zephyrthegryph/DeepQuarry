@@ -1,6 +1,12 @@
 name: CI Suite
 
+# Runs on every push to master, on pull requests, in the merge queue, and on
+# demand from the Actions tab. See doc/testing.md for what each job covers and
+# how to run the same checks locally.
 on:
+  push:
+    branches:
+      - master
   pull_request:
     branches:
       - master
@@ -8,6 +14,7 @@ on:
   merge_group:
     branches:
       - master
+  workflow_dispatch:
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -27,29 +34,24 @@ jobs:
     needs: start_gate
     uses: ./.github/workflows/run_linters.yml
 
-  run_all_tests:
-    name: Integration Tests
+  run_unit_tests:
+    name: Unit Tests
     needs: start_gate
-    uses: ./.github/workflows/perform_regular_version_tests.yml
+    uses: ./.github/workflows/run_integration_tests.yml
     with:
-      maps: '{"paths":["USE_MAP_SOUTHERN_CROSS","USE_MAP_SOLUNA_NEXUS","USE_MAP_CETUS"]}'
       max_required_byond_client: 516
 
-  run_extra_map_tests:
-    name: Extra Map Tests
+  run_compile_checks:
+    name: Compile Checks
     needs: start_gate
-    uses: ./.github/workflows/run_extra_map_tests.yml
-    strategy:
-      fail-fast: false
-      matrix:
-        map: ${{ fromJSON('{"paths":["USE_MAP_SOUTHERN_CROSS","USE_MAP_SOLUNA_NEXUS","USE_MAP_CETUS"]}').paths }}
+    uses: ./.github/workflows/run_compile_checks.yml
     with:
-      map: ${{ matrix.map }}
+      max_required_byond_client: 516
 
   completion_gate: # Serves as a non-moving target for branch rulesets
     if: always() && !cancelled()
     name: Completion Gate
-    needs: [run_all_tests, run_extra_map_tests, run_linters]
+    needs: [run_unit_tests, run_compile_checks, run_linters]
     runs-on: ubuntu-24.04
     steps:
       - name: Decide whether the needed jobs succeeded or failed

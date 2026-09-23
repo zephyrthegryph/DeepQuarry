@@ -75,7 +75,6 @@
 			fitness_being_used = 0
 
 
-// === merged from fitness_vr.dm during hard-fork de-suffix (verified no override-order change) ===
 /obj/structure/fitness/boxing_ropes
 	name = "ropes"
 	desc = "Firm yet springy, perhaps this could be useful!"
@@ -116,7 +115,3 @@
 	icon_state = "turnbuckle"
 	layer = WINDOW_LAYER
 
-/turf/simulated/fitness
-	name = "Mat"
-	icon = 'icons/turf/floors_vr.dmi'
-	icon_state = "fit_mat"

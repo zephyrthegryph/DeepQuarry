@@ -1037,7 +1037,6 @@ This is the proc mobs get to turn into a ghost. Forked from ghostize due to comp
 	src.abandon_mob()
 
 
-// === merged from observer_vr.dm during hard-fork de-suffix (verified no override-order change) ===
 /mob/observer/dead/verb/backup_ping()
 	set category = "Ghost.Join"
 	set name = "Notify Transcore"

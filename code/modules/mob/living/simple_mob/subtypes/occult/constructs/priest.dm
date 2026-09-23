@@ -11,8 +11,7 @@
 	icon_state = "priest"
 	icon_living = "priest"
 	ui_icons = 'icons/mob/screen1_purity.dmi'
-	maxHealth = 200
-	health = 200
+	endurance = 200
 	response_harm = "viciously beaten"
 	harm_intent_damage = 5
 	melee_damage_lower = 10 //It's not the strongest of the bunch, but that doesn't mean it can't hurt you.

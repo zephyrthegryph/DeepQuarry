@@ -1082,7 +1082,6 @@ GLOBAL_LIST_EMPTY(json_cache)
 	return null
 
 
-// === merged from _lists_chomp.dm during hard-fork de-suffix (manually verified) ===
 /proc/bitfield_to_list(bitfield = 0, list/wordlist)
 	var/list/return_list = list()
 	if(islist(wordlist))

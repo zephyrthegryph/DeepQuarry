@@ -365,65 +365,53 @@ ADMIN_VERB_AND_CONTEXT_MENU(modify_robot, R_ADMIN|R_FUN|R_VAREDIT|R_EVENT, "Modi
 			target.radio.secure_radio_connections -= selected_radio_channel
 			return TRUE
 		if("add_component")
-			var/datum/robot_component/C = locate(params["component"])
-			if(C.wrapped)
-				qdel(C.wrapped)
+			var/datum/robot_component/C = locate(params["component"]) in target.components
+			if(!C || C.internal)
+				return FALSE
 			var/new_component = text2path(params["new_part"])
-			if(istype(C, /datum/robot_component/actuator))
-				if(!new_component)
-					new_component = /obj/item/robot_parts/robot_component/actuator
-				C.wrapped = new new_component(target)
-			else if(istype(C, /datum/robot_component/radio))
-				if(!new_component)
-					new_component = /obj/item/robot_parts/robot_component/radio
-				C.wrapped = new new_component(target)
-			else if(istype(C, /datum/robot_component/cell))
-				target.cell = new new_component(target)
-				C.wrapped = target.cell
-			else if(istype(C, /datum/robot_component/diagnosis_unit))
-				if(!new_component)
-					new_component = /obj/item/robot_parts/robot_component/diagnosis_unit
-				C.wrapped = new new_component(target)
-			else if(istype(C, /datum/robot_component/camera))
-				if(!new_component)
-					new_component = /obj/item/robot_parts/robot_component/camera
-				C.wrapped = new new_component(target)
-			else if(istype(C, /datum/robot_component/binary_communication))
-				if(!new_component)
-					new_component = /obj/item/robot_parts/robot_component/binary_communication_device
-				C.wrapped = new new_component(target)
-			else if(istype(C, /datum/robot_component/armour))
-				if(!new_component)
-					new_component = /obj/item/robot_parts/robot_component/armour
-				C.wrapped = new new_component(target)
-			C.brute_damage = 0
-			C.electronics_damage = 0
-			C.install()
-			C.installed = 1
+			if(C.slot == ROBOT_SLOT_POWER)
+				if(!ispath(new_component, /obj/item/cell))
+					return FALSE
+				qdel(target.remove_cell())
+				target.set_cell(new new_component(target))
+				return TRUE
+			if(!ispath(new_component, C.external_type))
+				new_component = C.external_type
+			if(C.wrapped)
+				qdel(C.uninstall())
+			C.clear_located_damage()
+			C.install(new new_component(target))
 			return TRUE
 		if("rem_component")
-			var/datum/robot_component/C = locate(params["component"])
-			if(!C.wrapped)
+			var/datum/robot_component/C = locate(params["component"]) in target.components
+			if(!C?.wrapped || C.internal)
 				return FALSE
-			C.uninstall()
-			C.brute_damage = 0
-			C.electronics_damage = 0
-			C.installed = 0
-			qdel(C.wrapped)
-			C.wrapped = null
-			if(istype(C, /datum/robot_component/cell))
-				target.cell = null
+			if(C.slot == ROBOT_SLOT_POWER)
+				qdel(target.remove_cell())
+				return TRUE
+			qdel(C.uninstall())
 			return TRUE
 		if("adjust_cell_charge")
-			target.cell.charge = text2num(params["charge"])
+			var/obj/item/cell/cell = target.cell
+			if(!cell)
+				return FALSE
+			var/delta = clamp(text2num(params["charge"]), 0, cell.maxcharge) - cell.charge
+			if(delta > 0)
+				target.add_power(ROBOT_CELL_JOULES(delta), src)
+			else if(delta < 0)
+				target.draw_power(ROBOT_CELL_JOULES(-delta), src, 0, TRUE)
 			return TRUE
 		if("adjust_brute")
-			var/datum/robot_component/C = locate(params["component"])
-			C.brute_damage = text2num(params["damage"])
+			var/datum/robot_component/C = locate(params["component"]) in target.components
+			if(!C)
+				return FALSE
+			C.set_located_damage(text2num(params["damage"]), C.get_wiring_damage())
 			return TRUE
 		if("adjust_electronics")
-			var/datum/robot_component/C = locate(params["component"])
-			C.electronics_damage = text2num(params["damage"])
+			var/datum/robot_component/C = locate(params["component"]) in target.components
+			if(!C)
+				return FALSE
+			C.set_located_damage(C.get_structural_damage(), text2num(params["damage"]))
 			return TRUE
 		if("add_access")
 			target.idcard.access += text2num(params["access"])
@@ -625,14 +613,14 @@ ADMIN_VERB_AND_CONTEXT_MENU(modify_robot, R_ADMIN|R_FUN|R_VAREDIT|R_EVENT, "Modi
 	for(var/datum/design_techweb/prosfab/robot_upgrade/utility/upgrade as anything in subtypesof(/datum/design_techweb/prosfab/robot_upgrade/utility))
 		if(!upgrade.name)
 			continue
-		if(!(target.has_upgrade(initial(upgrade.build_path))))
+		if(!(robot_upgrade_prototype(initial(upgrade.build_path))?.is_installed(target)))
 			utility_upgrades += list(list("name" = initial(upgrade.name), "path" = "[initial(upgrade.build_path)]"))
 	all_upgrades["utility_upgrades"] = utility_upgrades
 	var/list/basic_upgrades = list()
 	for(var/datum/design_techweb/prosfab/robot_upgrade/basic/upgrade as anything in subtypesof(/datum/design_techweb/prosfab/robot_upgrade/basic))
 		if(!upgrade.name)
 			continue
-		if(!(target.has_upgrade(initial(upgrade.build_path))))
+		if(!(robot_upgrade_prototype(initial(upgrade.build_path))?.is_installed(target)))
 			basic_upgrades += list(list("name" = initial(upgrade.name), "path" = "[initial(upgrade.build_path)]", "installed" = 0))
 		else
 			basic_upgrades += list(list("name" = initial(upgrade.name), "path" = "[initial(upgrade.build_path)]", "installed" = 1))
@@ -641,7 +629,7 @@ ADMIN_VERB_AND_CONTEXT_MENU(modify_robot, R_ADMIN|R_FUN|R_VAREDIT|R_EVENT, "Modi
 	for(var/datum/design_techweb/prosfab/robot_upgrade/advanced/upgrade as anything in subtypesof(/datum/design_techweb/prosfab/robot_upgrade/advanced))
 		if(!upgrade.name)
 			continue
-		if(!(target.has_upgrade(initial(upgrade.build_path))))
+		if(!(robot_upgrade_prototype(initial(upgrade.build_path))?.is_installed(target)))
 			advanced_upgrades += list(list("name" = initial(upgrade.name), "path" = "[initial(upgrade.build_path)]", "installed" = 0))
 		else
 			advanced_upgrades += list(list("name" = initial(upgrade.name), "path" = "[initial(upgrade.build_path)]", "installed" = 1))
@@ -650,7 +638,7 @@ ADMIN_VERB_AND_CONTEXT_MENU(modify_robot, R_ADMIN|R_FUN|R_VAREDIT|R_EVENT, "Modi
 	for(var/datum/design_techweb/prosfab/robot_upgrade/restricted/upgrade as anything in subtypesof(/datum/design_techweb/prosfab/robot_upgrade/restricted))
 		if(!upgrade.name)
 			continue
-		if(!(target.has_upgrade(initial(upgrade.build_path))))
+		if(!(robot_upgrade_prototype(initial(upgrade.build_path))?.is_installed(target)))
 			if(!(initial(upgrade.build_path) in target.module.supported_upgrades))
 				restricted_upgrades += list(list("name" = initial(upgrade.name), "path" = "[initial(upgrade.build_path)]", "installed" = 2))
 				continue
@@ -764,31 +752,19 @@ ADMIN_VERB_AND_CONTEXT_MENU(modify_robot, R_ADMIN|R_FUN|R_VAREDIT|R_EVENT, "Modi
 
 /datum/eventkit/modify_robot/proc/get_gear()
 	var/list/equip = list()
-	for (var/V in target.components)
-		var/datum/robot_component/C = target.components[V]
+	for(var/datum/robot_component/C as anything in target.components)
+		if(C.internal || C.slot == ROBOT_SLOT_POWER)
+			continue
 		var/component_name
 		if(istype(C.wrapped, /obj/item/robot_parts/robot_component))
-			component_name = C.wrapped?.name
-		switch(V)
-			if("actuator")
-				equip += list("[lowertext(C.name)]" = "[component_name]")
-			if("radio")
-				equip += list("[lowertext(C.name)]" = "[component_name]")
-			if("diagnosis unit")
-				equip += list("[lowertext(C.name)]" = "[component_name]")
-			if("camera")
-				equip += list("[lowertext(C.name)]" = "[component_name]")
-			if("comms")
-				equip += list("[lowertext(C.name)]" = "[component_name]")
-			if("armour")
-				equip += list("[lowertext(C.name)]" = "[component_name]")
+			component_name = C.wrapped.name
+		equip += list("[lowertext(C.name)]" = "[component_name]")
 	return equip
 
 /datum/eventkit/modify_robot/proc/get_components()
 	var/list/components = list()
-	for(var/entry in target.components)
-		var/datum/robot_component/C = target.components[entry]
-		components += list(list("name" = C.name, "ref" = "\ref[C]", "brute_damage" = C.brute_damage, "electronics_damage" = C.electronics_damage, "max_damage" = C.max_damage, "idle_usage" = C.idle_usage, "active_usage" = C.active_usage, "installed" = C.installed, "exists" = (C.wrapped ? TRUE : FALSE)))
+	for(var/datum/robot_component/C as anything in target.components)
+		components += list(list("name" = C.name, "ref" = "\ref[C]", "brute_damage" = C.get_structural_damage(), "electronics_damage" = C.get_wiring_damage(), "max_damage" = C.max_damage, "idle_usage" = C.idle_usage, "active_usage" = C.active_usage, "installed" = C.installed, "exists" = (C.wrapped ? TRUE : FALSE)))
 	return components
 
 /datum/eventkit/modify_robot/proc/package_laws(list/data, field, list/datum/ai_law/laws)

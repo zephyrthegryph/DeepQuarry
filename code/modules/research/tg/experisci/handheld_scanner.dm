@@ -22,7 +22,6 @@
 /obj/item/experi_scanner/LateInitialize()
 	var/static/list/handheld_signals = list(
 		COMSIG_ITEM_PRE_ATTACK = TYPE_PROC_REF(/datum/component/experiment_handler, try_run_handheld_experiment),
-		COMSIG_ITEM_AFTERATTACK = TYPE_PROC_REF(/datum/component/experiment_handler, ignored_handheld_experiment_attempt),
 	)
 	AddComponent(/datum/component/experiment_handler, \
 		allowed_experiments = list(/datum/experiment/scanning, /datum/experiment/physical), \

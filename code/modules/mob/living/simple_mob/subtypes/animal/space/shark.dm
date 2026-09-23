@@ -20,8 +20,7 @@
 	icon_rest = "shark_rest"
 
 	faction = FACTION_SPACESHARK
-	maxHealth = 125
-	health = 125
+	endurance = 125
 	movement_cooldown = 0
 	// dq_get_hovering(src) type-default moved to GLOB.dq_hovering_by_type
 

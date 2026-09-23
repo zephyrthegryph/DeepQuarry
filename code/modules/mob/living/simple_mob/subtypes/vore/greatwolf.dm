@@ -28,7 +28,7 @@
 	harm_intent_damage = 10
 	melee_damage_lower = 10
 	melee_damage_upper = 20
-	maxHealth = 500
+	endurance = 500
 	attacktext = list("chomped")
 	see_in_dark = 8
 	minbodytemp = 0
@@ -72,7 +72,7 @@
 	icon_living = "sifwolf"
 	icon_state = "sifwolf"
 	icon_rest = "blackwolf-rest"
-	maxHealth = 900 //boss, with air quotes
+	endurance = 900 //boss, with air quotes
 	harm_intent_damage = 10
 	melee_damage_lower = 15
 	melee_damage_upper = 25

@@ -150,7 +150,6 @@
 	)
 
 
-// === merged from largecrate_vr.dm during hard-fork de-suffix (verified no override-order change) ===
 /obj/structure/largecrate/birds //This is an awful hack, but it's the only way to get multiple mobs spawned in one crate.
 	name = "Bird crate"
 	desc = "You hear chirping and cawing inside the crate. It sounds like there are a lot of birds in there..."
@@ -321,3 +320,12 @@
 	name = "A pair of Great tits"
 	desc = "You can hear two round things inside"
 	starts_with = list (/mob/living/simple_mob/animal/passive/bird/azure_tit/great, /mob/living/simple_mob/animal/passive/bird/azure_tit/great)
+
+/obj/structure/largecrate/piano
+	name = "piano crate"
+	starts_with = list(/obj/structure/musician/piano)
+	desc = "*Grand piano may end up being a minimoog."
+
+/obj/structure/largecrate/piano/Initialize(mapload) //This is nessesary to get a random one each time.
+	starts_with = list(/obj/structure/musician/piano)
+	return ..()

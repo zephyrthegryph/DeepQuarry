@@ -15,7 +15,7 @@
 	melee_miss_chance = 0
 	melee_attack_delay = 0
 	movement_cooldown = 0
-	maxHealth = 200
+	endurance = 200
 	attacktext = list("slashed")
 	see_in_dark = 8
 	minbodytemp = 0
@@ -54,14 +54,11 @@
 	color = "#FF8000"
 	overdose = REAGENTS_OVERDOSE * 0.25
 	scannable = 0
+	// Divine regeneration; the body applies these each tick.
+	treatment_tags = list(TREAT_TISSUE_REPAIR = 0.8, TREAT_BURN_CARE = 0.8)
 	supply_conversion_value = REFINERYEXPORT_VALUE_GODTIER
 	industrial_use = REFINERYEXPORT_REASON_FOOD
 
 /datum/reagent/xeyakinblood/affect_blood(mob/living/carbon/M, alien, removed) //should proabaly make something more special but this isn't meant to be a proper chem
-	var/chem_effective = 1 * M.species.chem_strength_heal
 	if(alien == IS_SLIME)
-		M.adjustBruteLoss(12 * removed) //This will uber merc prometheans. It wants to turn them to crystal.
-	if(alien == IS_DIONA)
-		M.heal_organ_damage(0, 12 * removed * chem_effective)
-	if(alien != IS_DIONA)
-		M.heal_organ_damage(8, 8 * removed * chem_effective)
+		M.injure(INJURY_BLUNT, 12 * removed) //This will uber merc prometheans. It wants to turn them to crystal.

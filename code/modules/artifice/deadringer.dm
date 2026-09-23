@@ -41,8 +41,8 @@
 	if(!activated)
 		if(timer == 0)
 			to_chat(H, span_blue("You press a small button on [src]'s side. It starts to hum quietly."))
-			bruteloss_prev = H.getBruteLoss()
-			fireloss_prev = H.getFireLoss()
+			bruteloss_prev = H.injury_load(INJURY_CATEGORY_PHYSICAL)
+			fireloss_prev = H.injury_load(INJURY_CATEGORY_THERMAL)
 			activated = 1
 			return
 		else
@@ -146,8 +146,8 @@
 	corpse.change_hair_color(H.r_hair, H.g_hair, H.b_hair)
 	corpse.change_facial_hair_color(H.r_facial, H.g_facial, H.b_facial)
 	corpse.change_skin_color(H.r_skin, H.g_skin, H.b_skin)
-	corpse.adjustFireLoss(H.getFireLoss())
-	corpse.adjustBruteLoss(H.getBruteLoss())
+	corpse.injure(INJURY_BURN, H.injury_load(INJURY_CATEGORY_THERMAL), null, null, 0, null, INJURE_SILENT)
+	corpse.injure(INJURY_BLUNT, H.injury_load(INJURY_CATEGORY_PHYSICAL), null, null, 0, null, INJURE_SILENT)
 	corpse.UpdateAppearance()
 	corpse.regenerate_icons()
 	QDEL_NULL_LIST(corpse.internal_organs)
@@ -161,7 +161,7 @@
 			watchowner = H
 			if(isbelly(watchowner.loc)) //No spawning people in bellies.
 				return
-			if(H.getBruteLoss() > bruteloss_prev || H.getFireLoss() > fireloss_prev)
+			if(H.injury_load(INJURY_CATEGORY_PHYSICAL) > bruteloss_prev || H.injury_load(INJURY_CATEGORY_THERMAL) > fireloss_prev)
 				deathprevent()
 				activated = 0
 				if(watchowner.isSynthetic())

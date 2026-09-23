@@ -1,4 +1,3 @@
-// tgui-migration (commit 3ec748264e). browse()/datum/browser/admin_log_show panels migrated to TGUI; stale shims (show_browser macro, browse callsites) removed.
 // Bracketed at file-header rather than per-hunk because the
 // edits are mechanical and span the whole file; the commit SHA
 // is the source of truth for per-line diff context.
@@ -181,7 +180,7 @@
 			if (G.state < 2)
 				if(user.a_intent == I_HURT)
 					if (prob(15))	M.Weaken(5)
-					M.apply_damage(8,def_zone = "head")
+					M.injure(INJURY_BLUNT, 8, BP_HEAD, src)
 					take_damage(8, BRUTE, MELEE, sound_effect = FALSE)
 					visible_message(span_danger("[G.assailant] slams [G.affecting]'s face against \the [src]!"))
 					playsound(src, 'sound/effects/grillehit.ogg', 50, 1)

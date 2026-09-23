@@ -512,7 +512,6 @@ so as to remain in compliance with the most up-to-date laws."
 	return QDEL_HINT_QUEUE
 
 
-// === merged from alert_vr.dm during hard-fork de-suffix (verified no override-order change) ===
 /atom/movable/screen/alert/fat
 	name = "Full"
 	desc = "You overate! If you don't exercise soon, you might find yourself gaining weight."
@@ -569,7 +568,6 @@ so as to remain in compliance with the most up-to-date laws."
 */
 
 
-// === merged from alert_chomp.dm during hard-fork de-suffix (verified no override-order change) ===
 /atom/movable/screen/alert/open_ticket
 	icon = 'icons/logo.dmi'
 	icon_state = "32x32"

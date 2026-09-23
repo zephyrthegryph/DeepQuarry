@@ -101,6 +101,7 @@
 /obj/machinery/shield_capacitor/process()
 	if (!anchored)
 		active = 0
+		return PROCESS_KILL
 
 	//see if we can connect to a power net.
 	var/datum/powernet/PN
@@ -113,6 +114,11 @@
 		var/power_draw = between(0, max_charge - stored_charge, charge_rate) //what we are trying to draw
 		power_draw = PN.draw_power(power_draw) //what we actually get
 		stored_charge += power_draw
+		if(power_draw <= 0 && stored_charge < max_charge)
+			SSmachines.hibernate_reactive_machine(src, list("powernet-rate:[REF(PN)]", "powernet:[REF(PN)]"))
+			return PROCESS_KILL
+	else
+		return PROCESS_KILL
 
 	time_since_fail++
 	if(stored_charge < last_stored_charge)
@@ -132,6 +138,8 @@
 				to_chat(ui.user, span_red("The [src] needs to be firmly secured to the floor first."))
 				return
 			active = !active
+			if(stored_charge < max_charge)
+				START_MACHINE_PROCESSING(src)
 			. = TRUE
 		if("charge_rate")
 			charge_rate = clamp(text2num(params["rate"]), 10000, max_charge_rate)

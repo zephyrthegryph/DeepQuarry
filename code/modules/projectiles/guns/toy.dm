@@ -29,7 +29,7 @@
 	projectile_type = /obj/item/projectile/bullet/cap
 	matter = list(MAT_STEEL = 1000)
 	handle_casings = null
-	recoil = 0 //it's a toy //CHOMP Edit
+	recoil = 0
 
 /*
  * Shotgun
@@ -50,7 +50,7 @@
 	projectile_type = /obj/item/projectile/bullet/foam_dart
 	matter = list(MAT_PLASTIC = 2000)
 	handle_casings = null
-	recoil = 0 //it's a toy //CHOMP Edit
+	recoil = 0
 	fire_sound = 'sound/items/syringeproj.ogg'
 
 /*
@@ -82,7 +82,7 @@
 	caliber = "foam"
 	load_method = MAGAZINE
 	matter = list(MAT_PLASTIC = 1000)
-	recoil = 0 //it's a toy //CHOMP Edit
+	recoil = 0
 	fire_sound = 'sound/items/syringeproj.ogg'
 
 /obj/item/gun/projectile/pistol/toy/update_icon()

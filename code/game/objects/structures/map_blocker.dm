@@ -10,9 +10,3 @@
 	unacidable = TRUE
 	plane = PLANE_BUILDMODE
 
-/*
-/obj/effect/blocker/Initialize(mapload) // For non-gateway maps.
-	. = ..()
-	icon = null
-	icon_state = null
-*/

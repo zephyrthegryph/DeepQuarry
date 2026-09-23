@@ -185,8 +185,7 @@
 			to_chat(target, "SYSTEM LOG: Operation keycodes reset. New master AI: [user.name].")
 			to_chat(user, "Hack completed.")
 			// Connect the cyborg to AI
-			target.connected_ai = user
-			user.connected_robots += target
+			target.set_master_ai(user)
 			target.lawupdate = TRUE
 			target.sync()
 			target.show_laws()

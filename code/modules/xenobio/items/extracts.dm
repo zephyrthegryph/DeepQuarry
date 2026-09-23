@@ -784,9 +784,7 @@
 	on_expired_text = span_notice("The shield of goo has faded, and you feel vulnerable to temperature again.")
 	stacks = MODIFIER_STACK_EXTEND
 
-	incoming_fire_damage_percent = 0.5
-	heat_protection = 1
-	cold_protection = 1
+	factors = alist(BF_INCOMING_THERMAL = 0.5, BF_HEAT_EXPOSURE = 0, BF_COLD_EXPOSURE = 0)
 
 
 /datum/decl/chemical_reaction/instant/slime/dark_blue_ice
@@ -1028,13 +1026,12 @@
 /datum/decl/chemical_reaction/instant/slime/pink_heal_pulse/on_reaction(datum/reagents/holder)
 	for(var/mob/living/carbon/C in viewers(get_turf(holder.my_atom), null))
 		to_chat(C, span_notice("A wave of energy suddenly invigorates you."))
-		C.adjustBruteLoss(-25)
-		C.adjustFireLoss(-25)
-		C.adjustToxLoss(-25)
-		C.adjustOxyLoss(-25)
-		C.adjustBrainLoss(-25)
-		C.adjustCloneLoss(-25)
-		C.updatehealth()
+		C.mend(TREAT_TISSUE_REPAIR, 25)
+		C.mend(TREAT_BURN_CARE, 25)
+		C.mend(TREAT_ANTITOXIN, 25)
+		C.mend(TREAT_OXYGENATION, 25)
+		C.mend(TREAT_NEURAL_REPAIR, 25)
+		C.mend(TREAT_GENETIC_REPAIR, 25)
 	..()
 
 // **************
@@ -1402,10 +1399,7 @@
 	on_expired_text = span_notice("The spores of goo have faded, and you feel your strength returning to what it was before.")
 	stacks = MODIFIER_STACK_EXTEND
 
-	max_health_flat = 50
-	outgoing_melee_damage_percent = 2
-	disable_duration_percent = 0.5
-	incoming_damage_percent = 0.75
+	factors = alist(BF_MELEE_DAMAGE = 2, BF_INCOMING_ALL = 0.75, BF_DISABLE_DURATION = 0.5, BF_ENDURANCE_FLAT = 50)
 
 
 /datum/decl/chemical_reaction/instant/slime/ruby_pull
@@ -1491,9 +1485,7 @@
 	on_expired_text = span_notice("The spores of goo have faded, and you feel your agility returning to what it was before.")
 	stacks = MODIFIER_STACK_EXTEND
 
-	evasion = 45
-	attack_speed_percent = 0.5
-	disable_duration_percent = 0.5
+	factors = alist(BF_EVASION = 45, BF_ATTACK_SPEED = 0.5, BF_DISABLE_DURATION = 0.5)
 
 
 /datum/decl/chemical_reaction/instant/slime/emerald_speed
@@ -1517,7 +1509,7 @@
 	on_expired_text = span_notice("The spores of goo have faded, and you feel your speed returning to what it was before.")
 	stacks = MODIFIER_STACK_EXTEND
 
-	slowdown = -3
+	factors = alist(BF_SLOWDOWN = -3)
 
 
 /datum/decl/chemical_reaction/instant/slime/emerald_hyperzine

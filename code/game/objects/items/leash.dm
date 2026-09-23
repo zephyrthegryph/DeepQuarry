@@ -179,7 +179,7 @@
 			span_warning("Your leash pops from your collar!")
 		)
 		leash_pet.apply_effect(5, STUN, 0)
-		leash_pet.adjustOxyLoss(5)
+		leash_pet.injure(INJURY_ASPHYXIA, 5, BP_HEAD, src)
 		clear_leash()
 
 /obj/item/leash/proc/on_pet_move()
@@ -276,7 +276,7 @@
 
 /datum/modifier/leash
 	name = "Leash"
-	slowdown = 5
+	factors = alist(BF_SLOWDOWN = 5)
 
 // Utility functions
 /obj/item/proc/apply_tug_mob_to_mob(mob/living/tug_pet, mob/living/tug_master, distance = 2)

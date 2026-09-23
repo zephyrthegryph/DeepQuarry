@@ -989,7 +989,6 @@ GLOBAL_LIST_EMPTY(cached_examine_icons)
 	return GLOB.icon_dimensions[icon_path]
 
 
-// === merged from icons_vr.dm during hard-fork de-suffix (manually verified: new global procs/lists, no base symbol collision) ===
 /proc/AverageColor(icon/I, accurate = 0, ignoreGreyscale = 0)
 //Accurate: Use more accurate color averaging, usually has better results and prevents muddied or overly dark colors. Mad thanks to wwjnc.
 //ignoreGreyscale: Excempts greyscale colors from the color list, useful for filtering outlines or plate overlays.

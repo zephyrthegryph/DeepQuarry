@@ -345,9 +345,6 @@
 						P.pixel_x = rand(-7, 7) // random position
 						P.pixel_y = rand(-7, 7)
 						reagents.trans_to_obj(P, amount_per_patch)
-						// if(is_medical_patch)
-							// P.instant_application = TRUE
-							// P.icon_state = "bandaid_med"
 				if("create_patch_multiple")
 					if(condi || !reagents.total_volume)
 						return
@@ -494,13 +491,6 @@
 		return num
 	else
 		return FALSE
-
-// /obj/machinery/chem_master/proc/chemical_safety_check(datum/reagents/R)
-// 	var/all_safe = TRUE
-// 	for(var/datum/reagent/A in R.reagent_list)
-// 		if(!GLOB.safe_chem_list.Find(A.id))
-// 			all_safe = FALSE
-// 	return all_safe
 
 /obj/machinery/chem_master/condimaster
 	name = "CondiMaster 3000"

@@ -118,7 +118,6 @@
 	create_occupant(user)
 
 
-// === merged from ghost_pods_vr.dm during hard-fork de-suffix (verified no override-order change) ===
 /obj/structure/ghost_pod/Destroy()
 	GLOB.active_ghost_pods -= src
 	. = ..()

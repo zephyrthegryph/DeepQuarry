@@ -66,13 +66,14 @@
 	if(occupant)
 		occupantData["name"] = occupant.name
 		occupantData["stat"] = occupant.stat
-		occupantData["health"] = occupant.health
-		occupantData["maxHealth"] = occupant.getMaxHealth()
-		occupantData["minHealth"] = -(occupant.getMaxHealth())
-		occupantData["bruteLoss"] = occupant.getBruteLoss()
-		occupantData["oxyLoss"] = occupant.getOxyLoss()
-		occupantData["toxLoss"] = occupant.getToxLoss()
-		occupantData["fireLoss"] = occupant.getFireLoss()
+		// UI keys kept for the tgui interface: health is vitality as a percentage.
+		occupantData["health"] = round(occupant.vitality() * 100)
+		occupantData["maxHealth"] = 100
+		occupantData["minHealth"] = 0
+		occupantData["bruteLoss"] = occupant.injury_load(INJURY_CATEGORY_PHYSICAL)
+		occupantData["oxyLoss"] = occupant.injury_load(INJURY_CATEGORY_ASPHYXIA)
+		occupantData["toxLoss"] = occupant.injury_load(INJURY_CATEGORY_TOXIC)
+		occupantData["fireLoss"] = occupant.injury_load(INJURY_CATEGORY_THERMAL)
 		occupantData["paralysis"] = occupant.paralysis
 		occupantData["hasBlood"] = 0
 		occupantData["bodyTemperature"] = occupant.bodytemperature
@@ -177,12 +178,12 @@
 				SStgui.update_uis(src)
 			if(nextTick < world.time)
 				nextTick=world.time + OP_COMPUTER_COOLDOWN
-				if(crit && victim.health <= -50 )
+				if(crit && victim.is_critical())
 					playsound(src.loc, 'sound/machines/defib_success.ogg', 50, 0)
-				if(oxy && victim.getOxyLoss()>oxyAlarm)
+				if(oxy && victim.injury_load(INJURY_CATEGORY_ASPHYXIA) > oxyAlarm)
 					playsound(src.loc, 'sound/machines/defib_safetyOff.ogg', 50, 0)
-				if(healthAnnounce && ((victim.health / victim.getMaxHealth()) * 100) <= healthAlarm)
-					atom_say("[round(((victim.health / victim.getMaxHealth()) * 100))]% health.")
+				if(healthAnnounce && victim.vitality() * 100 <= healthAlarm)
+					atom_say("[round(victim.vitality() * 100)]% vitality.")
 
 // Surgery Helpers
 /obj/machinery/computer/operating/proc/build_surgery_list(mob/user)

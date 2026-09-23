@@ -37,8 +37,7 @@
 
 	faction = FACTION_CRABS
 
-	maxHealth = 200
-	health = 200
+	endurance = 200
 	movement_cooldown = 4
 	movement_sound = 'sound/weapons/heavysmash.ogg'
 	movement_shake_radius = 5

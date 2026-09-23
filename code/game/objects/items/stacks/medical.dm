@@ -58,7 +58,10 @@
 		H.UpdateDamageIcon()
 
 	else
-		M.heal_organ_damage((src.heal_brute/2), (src.heal_burn/2))
+		if(heal_brute)
+			M.mend(TREAT_TISSUE_REPAIR, heal_brute / 2)
+		if(heal_burn)
+			M.mend(TREAT_BURN_CARE, heal_burn / 2)
 		user.balloon_alert_visible( \
 			"[M] has been applied with [src] by [user].", \
 			"you apply \the [src] to [M]." \
@@ -68,7 +71,6 @@
 			charge_mob_for_department_service(M, DEPARTMENT_MEDICAL, 2, "Medical treatment with [name]", user.real_name)
 		return ITEM_INTERACT_SUCCESS
 
-	M.updatehealth()
 	if(user != M && department_for_mob(user) == DEPARTMENT_MEDICAL)
 		charge_mob_for_department_service(M, DEPARTMENT_MEDICAL, 2, "Medical treatment with [name]", user.real_name)
 	return ITEM_INTERACT_SUCCESS
@@ -114,7 +116,7 @@
 			user.balloon_alert_visible("\the [user] starts bandaging [M]'s [affecting.name].", \
 											"bandaging [M]'s [affecting.name]." )
 			var/used = 0
-			for (var/datum/wound/W in affecting.wounds)
+			for(var/datum/affliction/wound/W as anything in affecting.get_wounds())
 				if(W.internal)
 					continue
 				if(W.bandaged)
@@ -183,7 +185,7 @@
 			user.balloon_alert_visible("\the [user] starts treating [M]'s [affecting.name].", \
 										"treating [M]'s [affecting.name]." )
 			var/used = 0
-			for (var/datum/wound/W in affecting.wounds)
+			for(var/datum/affliction/wound/W as anything in affecting.get_wounds())
 				if (W.internal)
 					continue
 				if(W.bandaged)
@@ -302,7 +304,7 @@
 			user.balloon_alert_visible("\the [user] starts treating [M]'s [affecting.name].", \
 										"treating [M]'s [affecting.name]." )
 			var/used = 0
-			for (var/datum/wound/W in affecting.wounds)
+			for(var/datum/affliction/wound/W as anything in affecting.get_wounds())
 				if (W.internal)
 					continue
 				if (W.bandaged && W.disinfected)
@@ -331,7 +333,7 @@
 												"smeared bioglue over \a [W.desc] on [M]'s [affecting.name]." )
 				W.bandage()
 				W.disinfect()
-				W.heal_damage(heal_brute)
+				H.mend(TREAT_TISSUE_REPAIR, heal_brute, affecting.organ_tag)
 				playsound(src, pick(apply_sounds), 25)
 				used = 1
 				update_icon()
@@ -378,7 +380,7 @@
 				return ITEM_INTERACT_FAILURE
 			user.balloon_alert_visible("[user] covers wounds on [M]'s [affecting.name] with regenerative membrane.", \
 									"covered wounds on [M]'s [affecting.name] with regenerative membrane." )
-			affecting.heal_damage(0,heal_burn)
+			H.mend(TREAT_BURN_CARE, heal_burn, affecting.organ_tag)
 			use(1)
 			affecting.salve()
 			playsound(src, pick(apply_sounds), 25)
@@ -459,7 +461,6 @@
 	splintable_organs = list(BP_L_ARM, BP_R_ARM, BP_L_LEG, BP_R_LEG)
 
 
-// === merged from medical_vr.dm during hard-fork de-suffix (verified no override-order change) ===
 /obj/item/stack/medical/advanced
 	icon = 'icons/obj/stacks_vr.dmi'
 
@@ -512,7 +513,7 @@
 			too_far_gone++
 			continue
 
-		for(var/datum/wound/W as anything in affecting.wounds)
+		for(var/datum/affliction/wound/W as anything in affecting.get_wounds())
 			// No need
 			if(W.bandaged)
 				continue

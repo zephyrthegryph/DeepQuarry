@@ -1,0 +1,11 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - refactor: "Every affliction now ticks through one shared treatment and progression pipeline; wounds and organ lesions no longer run their own loops."
+  - refactor: "Harm to internal organs and limbs goes through injure() everywhere (signals, modifiers, species and limb multipliers, armour); healing goes through mend() only."
+  - rscadd: "Natural regeneration is a treatment: fed, resting patients heal lightly damaged organs faster, starving ones don't heal at all. Admin, magic and species restoration use one restoration mechanism."
+  - balance: "Drugs no longer heal organs twice (a direct heal on top of their treatment mechanism); organ repair drugs now act only through their tags. Gastirodaxon and peridaxon repair digestive organs."
+  - balance: "A badly damaged brain now swells as organ-lesion drift: past 60% damage it keeps worsening, neural repair slows it, and past 90% nothing keeps up."
+  - bugfix: "The oxygen pump can no longer close lung perforations that need surgery."
+  - bugfix: "Surgical organ repair no longer heals up to twice its budget."
+  - code_imp: "One treatment snapshot per body per tick, a location index for afflictions, and injure() no longer recomputes all vitals on every hit."

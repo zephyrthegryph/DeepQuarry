@@ -4,7 +4,7 @@
 	icon_colour = "#FFFF00"
 	stack_type = /obj/item/stack/material/supermatter
 	shard_type = SHARD_SHARD
-	ignition_point = PHORON_MINIMUM_BURN_TEMPERATURE
+	ignition_point = PLASMA_MINIMUM_BURN_TEMPERATURE
 	icon_base = "stone"
 	shard_type = SHARD_SHARD
 	hardness = 30

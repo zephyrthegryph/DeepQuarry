@@ -6,7 +6,8 @@
 	desc = "You process ingested and injected reagents faster, but get hungry faster (Teshari speed)."
 	cost = 0
 	can_take = ORGANICS|SYNTHETICS
-	var_changes = list("metabolic_rate" = 1.2, "hunger_factor" = 0.2, "metabolism" = 0.06) // +20% rate and 4x hunger (Teshari level)
+	var_changes = list("hunger_factor" = 0.2, "metabolism" = 0.06)
+	factors = alist(BF_METABOLISM = 1.2) // +20% rate and 4x hunger (Teshari level)
 	excludes = list(/datum/trait/neutral/metabolism_down, /datum/trait/neutral/metabolism_apex, /datum/trait/neutral/singularity_metabolism)
 	custom_only = FALSE
 
@@ -15,7 +16,8 @@
 	desc = "You process ingested and injected reagents slower, but get hungry slower."
 	cost = 0
 	can_take = ORGANICS|SYNTHETICS
-	var_changes = list("metabolic_rate" = 0.8, "hunger_factor" = 0.04, "metabolism" = 0.0012) // -20% of default.
+	var_changes = list("hunger_factor" = 0.04, "metabolism" = 0.0012)
+	factors = alist(BF_METABOLISM = 0.8) // -20% of default.
 	excludes = list(/datum/trait/neutral/metabolism_up, /datum/trait/neutral/metabolism_apex, /datum/trait/neutral/singularity_metabolism)
 	custom_only = FALSE
 
@@ -24,7 +26,8 @@
 	desc = "Finally a proper excuse for your predatory actions. Essentially doubles the fast trait rates. Good for characters with big appetites."
 	cost = 0
 	can_take = ORGANICS|SYNTHETICS
-	var_changes = list("metabolic_rate" = 1.4, "hunger_factor" = 0.4, "metabolism" = 0.012) // +40% rate and 8x hunger (Double Teshari)
+	var_changes = list("hunger_factor" = 0.4, "metabolism" = 0.012)
+	factors = alist(BF_METABOLISM = 1.4) // +40% rate and 8x hunger (Double Teshari)
 	excludes = list(/datum/trait/neutral/metabolism_up, /datum/trait/neutral/metabolism_down, /datum/trait/neutral/singularity_metabolism)
 	custom_only = FALSE
 
@@ -32,7 +35,8 @@
 	name = "Metabolism, Singularity"
 	desc = "You are insanely hungry. You can seemingly never get enough to eat. Perhaps you had a singularity as an ancestor, or maybe one is currently living inside of your gut."
 	cost = 0
-	var_changes = list("metabolic_rate" = 2, "hunger_factor" = 1.6, "metabolism" = 0.012)	//2x metabolism speed, 32x hunger speed
+	var_changes = list("hunger_factor" = 1.6, "metabolism" = 0.012)
+	factors = alist(BF_METABOLISM = 2)	//2x metabolism speed, 32x hunger speed
 	custom_only = FALSE
 	excludes = list(/datum/trait/neutral/metabolism_up, /datum/trait/neutral/metabolism_down, /datum/trait/neutral/metabolism_apex)
 
@@ -1994,7 +1998,8 @@
 	custom_only = FALSE
 	special_env = TRUE
 	excludes = list(/datum/trait/negative/speed_slow_plus, /datum/trait/negative/speed_slow, /datum/trait/neutral/hotadapt, /datum/trait/neutral/coldadapt)
-	var_changes = list("slowdown" = 1,  "burn_mod" = 0.7, "unarmed_types" = list(/datum/unarmed_attack/stomp, /datum/unarmed_attack/kick, /datum/unarmed_attack/punch/chimera, /datum/unarmed_attack/bite/sharp), "heat_level_1" = 420, "heat_level_2" = 480, "heat_level_3" = 1100, "breath_heat_level_1" = 450, "breath_heat_level_2" = 530, "breath_heat_level_3" = 1500, "heat_discomfort_level" = 390) //xenochim are already tank
+	factors = alist(BF_SLOWDOWN = 1)
+	var_changes = list("injury_mod_thermal" = 0.7, "unarmed_types" = list(/datum/unarmed_attack/stomp, /datum/unarmed_attack/kick, /datum/unarmed_attack/punch/chimera, /datum/unarmed_attack/bite/sharp), "heat_level_1" = 420, "heat_level_2" = 480, "heat_level_3" = 1100, "breath_heat_level_1" = 450, "breath_heat_level_2" = 530, "breath_heat_level_3" = 1500, "heat_discomfort_level" = 390) //xenochim are already tank
 
 /datum/trait/neutral/xenochimera_YR3/handle_environment_special(mob/living/carbon/human/H)
 	var/list/nanitereagents = list(REAGENT_HEALINGNANITES, REAGENT_SHREDDINGNANITES, REAGENT_IRRADIATEDNANITES, REAGENT_NEUROPHAGENANITES, REAGENT_NIFREPAIRNANITES)

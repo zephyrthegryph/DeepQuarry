@@ -38,7 +38,7 @@
 /mob/living/silicon/robot/vs_animate(belly_class)
 	if(!sprite_datum.has_vore_struggle_sprite)
 		return
-	if(belly_class == "sleeper" && sleeper_state == 0 && vore_selected.silicon_belly_overlay_preference == "Sleeper")
+	if(belly_class == "sleeper" && !belly_display_fullness(belly_class))
 		return
 	var/vs_fullness = vore_fullness_ex[belly_class]
 	if(resting)

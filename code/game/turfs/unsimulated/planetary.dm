@@ -41,13 +41,6 @@
 	oxygen = MOLES_O2STANDARD
 	nitrogen = MOLES_N2STANDARD
 
-/turf/unsimulated/wall/planetary/firnir
-	temperature = 570
-	carbon_dioxide = 0.04863
-
-/turf/unsimulated/wall/planetary/tyr
-	temperature = 405
-	carbon_dioxide = 0.15848
 
 // Wiki says it's 92.6 kPa, composition 18.1% O2 80.8% N2 1.1% trace.  We're gonna pretend trace is actually nitrogen.
 /turf/unsimulated/wall/planetary/sif
@@ -59,12 +52,3 @@
 /turf/unsimulated/wall/planetary/sif/alt
 	temperature	= 225.15
 
-// Fairly close to Mars in terms of temperature and pressure.
-/turf/unsimulated/wall/planetary/magni
-	carbon_dioxide = 0.90998361
-	temperature = 202
-
-/turf/unsimulated/wall/planetary/desert
-	oxygen = MOLES_O2STANDARD
-	nitrogen = MOLES_N2STANDARD
-	temperature = 310.92 // About 37.7C / 100F

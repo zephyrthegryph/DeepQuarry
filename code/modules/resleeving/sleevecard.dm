@@ -39,16 +39,10 @@
 /obj/item/paicard/sleevecard/proc/sleeveInto(datum/transhuman/mind_record/MR, db_key)
 	var/mob/living/silicon/pai/infomorph/infomorph = new(src,MR.mindname,db_key)
 
-	for(var/datum/language/L in MR.languages)
+	for(var/datum/language/L in MR.mind_ref.get_identity()?.languages)
 		infomorph.add_language(L.name)
 	MR.mind_ref.active = 1 //Well, it's about to be.
-	MR.mind_ref.transfer_to(infomorph) //Does mind+ckey+client.
-	infomorph.ooc_notes = MR.mind_oocnotes
-	infomorph.ooc_notes_likes = MR.mind_ooclikes
-	infomorph.ooc_notes_dislikes = MR.mind_oocdislikes
-	infomorph.ooc_notes_favs = MR.mind_oocfavs
-	infomorph.ooc_notes_maybes = MR.mind_oocmaybes
-	infomorph.ooc_notes_style = MR.mind_oocstyle
+	transfer_mind(MR.mind_ref, infomorph, "sleeved into [src]") //Does mind+ckey+client.
 	infomorph.apply_vore_prefs() //Cheap hack for now to give them SOME bellies.
 
 	//Don't set 'real_name' because then we get a nice (as sleevecard) thing.

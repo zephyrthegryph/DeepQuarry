@@ -191,7 +191,7 @@
 			attacked = TRUE
 			VARSET_IN(src, attacked, FALSE, 6 SECONDS)
 
-	take_damage(damage)
+	take_damage(damage, Proj.damage_type, Proj.check_armour)
 
 /obj/machinery/porta_turret/industrial/attack_generic(mob/living/L, damage)
 	return ..(L, damage * 0.8)
@@ -567,7 +567,7 @@
 		//if the turret was attacked with the intention of harming it:
 		user.setClickCooldown(user.get_attack_speed(I))
 		var/dam = I.force * 0.5
-		take_damage(dam)
+		take_damage(dam, BRUTE, MELEE)
 		attempt_retaliate(dam)
 		..()
 
@@ -603,7 +603,7 @@
 		if(damage >= STRUCTURE_MIN_DAMAGE_THRESHOLD)
 			var/incoming_damage = round(damage - (damage / 5)) //Turrets are slightly armored, assumedly.
 			visible_message(span_danger("\The [S] [pick(S.attacktext)] \the [src]!"))
-			take_damage(incoming_damage)
+			take_damage(incoming_damage, BRUTE, MELEE)
 			S.do_attack_animation(src)
 			attempt_retaliate(incoming_damage)
 			return 1
@@ -719,6 +719,10 @@
 
 		for(var/mob/M in nearby_mobs)
 			assess_and_assign(M, targets, secondarytargets)
+		if(!length(targets) && !length(secondarytargets) && !speed_process && !(auto_repair && get_integrity() < max_integrity))
+			popDown()
+			SSmachines.hibernate_reactive_machine(src, reactive_mob_chunk_keys())
+			return PROCESS_KILL
 
 		shot_targets = tryToShootAt(targets) || tryToShootAt(secondarytargets)
 

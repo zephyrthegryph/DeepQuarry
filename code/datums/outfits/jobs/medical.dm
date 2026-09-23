@@ -121,6 +121,5 @@
 	suit = /obj/item/clothing/suit/storage/toggle/labcoat/emt
 
 
-// === merged from medical_vr.dm during hard-fork de-suffix (verified no override-order change) ===
 /datum/decl/hierarchy/outfit/job/medical/doctor/virologist
 	id_type = /obj/item/card/id/medical/virologist

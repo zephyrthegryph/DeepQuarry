@@ -425,7 +425,6 @@
 	icon_state = "baron_r_engine"
 
 
-// === merged from mecha_parts_ch.dm during hard-fork de-suffix (verified no override-order change) ===
 /obj/item/mecha_parts/chassis/scarab
 	name = "Scarab Chassis"
 	icon = 'icons/mecha/mech_construct_ch.dmi'
@@ -472,7 +471,6 @@
 	icon_state = "scarab_r_legs"
 
 
-// === merged from mecha_parts_chomp.dm during hard-fork de-suffix (verified no override-order change) ===
 /obj/item/mecha_parts/chassis/hades
 	name = "Hades Chassis"
 

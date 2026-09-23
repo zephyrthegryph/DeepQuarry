@@ -32,8 +32,7 @@
 	icon = 'icons/mob/vore.dmi'
 
 	faction = FACTION_FENNEC
-	maxHealth = 30
-	health = 30
+	endurance = 30
 
 	response_help = "pats"
 	response_disarm = "gently pushes aside"
@@ -92,8 +91,7 @@
 	icon_rest = null
 
 	// LORG
-	maxHealth = 500
-	health = 500
+	endurance = 500
 	harm_intent_damage = 40
 	melee_damage_lower = 20
 	melee_damage_upper = 60

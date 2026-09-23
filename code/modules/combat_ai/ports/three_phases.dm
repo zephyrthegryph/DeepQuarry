@@ -74,7 +74,7 @@
 		return DQ_BEHAVIOR_FAILED
 	// Phase machine: pick the telegraph intent from the boss's HP fraction,
 	// exactly as legacy pre_special_attack() did.
-	var/hp_frac = E.health / E.getMaxHealth()
+	var/hp_frac = E.vitality()
 	if(hp_frac <= 0.35)
 		E.a_intent = I_DISARM   // Phase three
 	else if(hp_frac <= 0.7)

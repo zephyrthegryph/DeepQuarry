@@ -1509,7 +1509,6 @@
 	)
 
 
-// === merged from ammunition_designs_chomp.dm during hard-fork de-suffix (verified no override-order change) ===
 // AS-Val magazines
 /datum/design_techweb/rifle_mag_9mmval
 	SET_AMMO_DESIGN_NAMEDESC("rifle magazine (AS-9mm)")

@@ -294,7 +294,7 @@
 		QDEL_LIST(vore_organs)
 		for(var/entry in P.belly_prefs)
 			list_to_object(entry,src)
-		if(!vore_organs.len)
+		if(!length(vore_organs))
 			var/obj/belly/B = new /obj/belly(src)
 			vore_selected = B
 			B.immutable = TRUE
@@ -1028,7 +1028,7 @@
 	. = ..()
 	if(custom_link)
 		. += "Custom link: " + span_linkify("[custom_link]")
-	if(ooc_notes)
+	if(identity.ooc_notes)
 		. += "OOC Notes: <a href='byond://?src=\ref[src];ooc_notes=1'>\[View\]</a> - <a href='byond://?src=\ref[src];print_ooc_notes_chat=1'>\[Print\]</a>"
 	. += "<a href='byond://?src=\ref[src];vore_prefs=1'>\[Mechanical Vore Preferences\]</a>"
 
@@ -1646,3 +1646,11 @@
 		if(!curloc.loc || curloc == curloc.loc) break
 		curloc = curloc.loc
 	if(isbelly(curloc)) return curloc
+
+/// Total injury load across every harm category except pain. Used by gradual
+/// corpse digestion to measure how far a dead body has been churned down, where
+/// vitality() (clamped at 0) can no longer tell the difference.
+/mob/living/proc/vore_digestion_load()
+	. = 0
+	for(var/category in INJURY_CATEGORY_PHYSICAL to INJURY_CATEGORY_NEURAL)
+		. += injury_load(category)

@@ -15,8 +15,7 @@
 	var/last_uncloak = 0			// world.time
 
 	faction = "demon"
-	maxHealth = 200
-	health = 200
+	endurance = 200
 	movement_cooldown = 0
 
 	see_in_dark = 10

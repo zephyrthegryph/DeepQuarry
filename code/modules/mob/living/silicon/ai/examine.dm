@@ -4,20 +4,23 @@
 	if (src.stat == DEAD)
 		. += span_deadsay("It appears to be powered-down.")
 	else
-		if (src.getBruteLoss())
-			if (src.getBruteLoss() < 30)
+		var/structural_load = injury_load(INJURY_CATEGORY_PHYSICAL)
+		var/thermal_load = injury_load(INJURY_CATEGORY_THERMAL)
+		var/backup_drain = AI_BACKUP_CAPACITY - backup_charge
+		if (structural_load)
+			if (structural_load < 30)
 				. += span_warning("It looks slightly dented.")
 			else
 				. += span_boldwarning("It looks severely dented!")
-		if (src.getFireLoss())
-			if (src.getFireLoss() < 30)
+		if (thermal_load)
+			if (thermal_load < 30)
 				. += span_warning("It looks slightly charred.")
 			else
 				. += span_boldwarning("Its casing is melted and heat-warped!")
-		if (src.getOxyLoss() && (aiRestorePowerRoutine != 0 && !APU_power))
-			if (src.getOxyLoss() > 175)
+		if (backup_drain && (aiRestorePowerRoutine != 0 && !APU_power))
+			if (backup_drain > 175)
 				. += span_boldwarning("It seems to be running on backup power. Its display is blinking a \"BACKUP POWER CRITICAL\" warning.")
-			else if(src.getOxyLoss() > 100)
+			else if(backup_drain > 100)
 				. += span_boldwarning("It seems to be running on backup power. Its display is blinking a \"BACKUP POWER LOW\" warning.")
 			else
 				. += span_warning("It seems to be running on backup power.")

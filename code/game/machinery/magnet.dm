@@ -146,14 +146,6 @@
 		update_use_power(USE_POWER_OFF)
 
 	// Overload conditions:
-	/* // Eeeehhh kinda stupid
-	if(on)
-		if(electricity_level > 11)
-			if(prob(electricity_level))
-				explosion(loc, 0, 1, 2, 3) // ooo dat shit EXPLODES son
-				spawn(2)
-					qdel(src)
-	*/
 
 	update_icon()
 
@@ -210,7 +202,6 @@
 
 	var/datum/radio_frequency/radio_connection
 
-
 /obj/machinery/magnetic_controller/Initialize(mapload)
 	. = ..()
 
@@ -219,21 +210,17 @@
 			if(M.freq == frequency && M.code == code)
 				magnets.Add(M)
 
-
 	if(SSradio)
 		radio_connection = SSradio.add_object(src, frequency, RADIO_MAGNETS)
 
-
 	if(path) // check for default path
 		filter_path() // renders rpath
-
 
 /obj/machinery/magnetic_controller/process()
 	if(magnets.len == 0 && autolink)
 		for(var/obj/machinery/magnetic_module/M in GLOB.machines)
 			if(M.freq == frequency && M.code == code)
 				magnets.Add(M)
-
 
 /obj/machinery/magnetic_controller/attack_ai(mob/user as mob)
 	return attack_hand(user)
@@ -276,7 +263,6 @@
 			if("plusmag")
 				signal.data["command"] = "add-mag"
 
-
 		// Broadcast the signal
 
 		radio_connection.post_signal(src, signal, radio_filter = RADIO_MAGNETS)
@@ -303,7 +289,6 @@
 				moving = !moving
 				if(moving)
 					spawn() MagnetMove()
-
 
 	updateUsrDialog(usr)
 
@@ -338,7 +323,6 @@
 
 		signal.data["command"] = nextmove
 
-
 		pathpos++ // increase iterator
 
 		// Broadcast the signal
@@ -351,7 +335,6 @@
 			sleep(12-speed)
 
 	looping = 0
-
 
 /obj/machinery/magnetic_controller/proc/filter_path()
 	// Generates the rpath variable using the path string, think of this as "string2list"

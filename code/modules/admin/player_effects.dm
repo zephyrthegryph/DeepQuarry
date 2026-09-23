@@ -378,7 +378,8 @@ ADMIN_VERB_AND_CONTEXT_MENU(player_effects, R_FUN, "Player Effects", "Modify a p
 				return
 			if(effect == "Damage")
 				var/organ_damage = tgui_input_number(ui.user, "Add how much damage? It is currently at [our_organ.damage].", "Damage")
-				our_organ.damage = our_organ.damage + organ_damage
+				if(organ_damage > 0 && our_organ.owner == Tar)
+					Tar.injure(INJURY_BLUNT, organ_damage, our_organ, flags = INJURE_IGNORE_RESISTANCE | INJURE_SILENT)
 			if(effect == "Kill")
 				our_organ.die()
 			if(effect == "Bruise")
@@ -429,7 +430,8 @@ ADMIN_VERB_AND_CONTEXT_MENU(player_effects, R_FUN, "Player Effects", "Modify a p
 				return
 			if(effect == "Heal")
 				var/organ_damage = tgui_input_number(ui.user, "Add how much damage? It is currently at [our_organ.damage].", "Damage")
-				our_organ.damage = max((our_organ.damage - organ_damage), 0)
+				if(organ_damage > 0 && our_organ.owner == Tar)
+					Tar.mend(TREAT_RESTORATION, organ_damage, our_organ)
 			if(effect == "Rejuvenate")
 				our_organ.rejuvenate()
 

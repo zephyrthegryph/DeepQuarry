@@ -26,7 +26,6 @@
 
 	return data
 
-
 /obj/machinery/appliance/cooker/examine(mob/user)
 	. = ..()
 	if(.)	//no need to duplicate adjacency check
@@ -110,16 +109,6 @@
 			temp_scale = 1
 		else
 			temp_scale = (temperature - min_temp) / (optimal_temp - min_temp) // If we're between min and optimal this will yield a value in the range 0-1
-
-		/* // old code for reference, will be useful if/when we implement ovens with configurable temperatures - TODO recipes with optimal temps for cooking per-recipe??
-		temp_scale = (temperature - min_temp) / (optimal_temp - min_temp) // If we're between min and optimal this will yield a value in the range 0-1
-
-		if(temp_scale > 1) // We're above optimal, efficiency goes down as we pass too much over it
-			if(temp_scale >= 2)
-				temp_scale = 0
-			else
-				temp_scale = 1 - (temp_scale - 1)
-		*/
 
 	cooking_coeff = optimal_power * temp_scale
 	// to_world("Our cooking_power is [cooking_power] and our tempscale is [temp_scale], and our cooking_coeff is [cooking_coeff] before RefreshParts.") // Debug lines, uncomment if you need to test.

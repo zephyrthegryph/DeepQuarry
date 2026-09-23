@@ -10,8 +10,7 @@
 	vis_height = 47
 
 	faction = FACTION_DEMON
-	maxHealth = 200
-	health = 200
+	endurance = 200
 	movement_cooldown = 0
 
 	see_in_dark = 10
@@ -143,10 +142,14 @@
 //Fire heals demons instead.
 //This should include all fire sources assuming they dont weirdly make their own damage handling.
 //Yes this also means that negative fire is bad for them...
-/mob/living/simple_mob/vore/demon/adjustFireLoss(amount,include_robo = TRUE)
-	amount = 0 - amount
-	src.adjustBruteLoss(amount)
-	..()
+/mob/living/simple_mob/vore/demon/injure(kind, amount, zone = null, atom/source = null, armor = 0, affliction = null, flags = NONE)
+	if(kind != INJURY_BURN)
+		return ..()
+	if(amount <= 0 || (status_flags & GODMODE))
+		return 0
+	mend(TREAT_TISSUE_REPAIR, amount)
+	mend(TREAT_BURN_CARE, amount)
+	return 0
 
 
 /mob/living/simple_mob/vore/demon/verb/alt_appearance()

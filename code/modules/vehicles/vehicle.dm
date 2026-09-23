@@ -46,11 +46,9 @@
 //-------------------------------------------
 // Standard procs
 //-------------------------------------------
-//ChompADD START
 /obj/vehicle/Initialize(mapload)
 	. = ..()
 	soundloop = new(list(src), FALSE)
-//ChompADD END
 
 ///obj/vehicle/New()
 //	..()
@@ -58,7 +56,7 @@
 
 /obj/vehicle/Destroy()
 	QDEL_NULL(riding_datum)
-	QDEL_NULL(soundloop) //ChompADD
+	QDEL_NULL(soundloop)
 	return ..()
 
 //BUCKLE HOOKS
@@ -156,7 +154,7 @@
 
 /obj/vehicle/proc/adjust_health(amount)
 	if(amount < 0)
-		take_damage(-amount)
+		take_damage(-amount, BRUTE, MELEE)
 	else
 		repair_damage(amount)
 
@@ -434,7 +432,6 @@
 	if(. && mechanical && prob(10))
 		new /obj/effect/decal/cleanable/blood/oil(src.loc)
 
-//ChompADD START
 //----------------------------
 // Engine sounds datum
 //----------------------------
@@ -447,4 +444,3 @@
 	exclusive = TRUE
 	volume_chan = VOLUME_CHANNEL_AMBIENCE
 
-//ChompADD END

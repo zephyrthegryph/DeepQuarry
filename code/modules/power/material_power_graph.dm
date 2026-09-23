@@ -13,6 +13,8 @@
 	var/list/last_injections
 	var/resistance_dirty = TRUE
 	var/has_superconductors = FALSE
+	var/has_custom_conductors = FALSE
+	var/next_solve = 0
 	var/list/numeric_topology
 	var/list/energized_cables
 	var/list/core_vertices
@@ -24,8 +26,23 @@
 	var/resistance_ms = 0
 	var/list/cable_edges
 	var/list/dirty_edges
+	/// Stable equipment-to-vertex lookup. Resolving every APC weakref through its
+	/// turf and cable contents was a sizeable fraction of every powernet tick.
+	var/list/equipment_vertices
+	/// Large station meshes solve away from the BYOND thread. Results carry this
+	/// generation so a topology rebuild can never publish stale voltages.
+	var/rust_handle = 0
+	var/solve_generation = 0
+	var/solve_pending = FALSE
+	var/list/pending_reduced
+	var/list/pending_sources
+	var/list/pending_consumers
+	var/pending_total_source = 0
 
 /datum/material_power_graph/Destroy()
+	if(rust_handle)
+		VERDIGRIS_CALL("drop_material_power_graph_ffi", rust_handle)
+		rust_handle = 0
 	vertices = null
 	indices = null
 	edges = null
@@ -40,6 +57,10 @@
 	solver_source_edges = null
 	cable_edges = null
 	dirty_edges = null
+	equipment_vertices = null
+	pending_reduced = null
+	pending_sources = null
+	pending_consumers = null
 	return ..()
 
 /datum/material_power_graph/proc/build(list/cables)
@@ -48,8 +69,11 @@
 	edges = list()
 	efficiencies = list()
 	cable_edges = list()
+	equipment_vertices = list()
 	var/list/adjacency = list()
 	for(var/obj/structure/cable/cable as anything in cables)
+		if(cable.material_custom_assembly || cable.engineered_material_id)
+			has_custom_conductors = TRUE
 		var/list/neighbors = list()
 		var/has_attachment = FALSE
 		if(cable.d1 == 0)
@@ -204,9 +228,16 @@
 /datum/material_power_graph/proc/vertex_for(atom/equipment)
 	if(istype(equipment, /obj/structure/cable))
 		return indices[REF(equipment)]
+	var/key = REF(equipment)
+	var/cached = equipment_vertices[key]
+	if(cached)
+		return cached
 	var/turf/location = get_turf(equipment)
 	var/obj/structure/cable/cable = location?.get_cable_node()
-	return cable ? indices[REF(cable)] : null
+	var/index = cable ? indices[REF(cable)] : null
+	if(index)
+		equipment_vertices[key] = index
+	return index
 
 /// The bounded f64 solve runs in Rust. DM retains the physical topology,
 /// constitutive inputs and conserved energy ledger, with no duplicate solver.
@@ -249,9 +280,87 @@
 	solve_ms = (REALTIMEOFDAY - started) * 100
 	return TRUE
 
+/// Submit a station-scale solve to Rust. Topology is transferred only for the
+/// first request on this graph; subsequent requests carry just the load vector.
+/datum/material_power_graph/proc/submit_async_solve(list/injections, list/sources, list/consumers, total_source)
+	prepare_solver()
+	var/list/reduced = injections.Copy()
+	for(var/list/step as anything in leaf_order)
+		reduced[step[2]] += reduced[step[1]] || 0
+	if(length(voltages) != length(vertices))
+		voltages = new /list(length(vertices))
+	var/list/core_loads = reduced.Copy()
+	for(var/list/step as anything in leaf_order)
+		core_loads[step[1]] = 0
+	var/list/topology = list()
+	if(!numeric_topology)
+		numeric_topology = list()
+		for(var/list/edge as anything in core_edges)
+			numeric_topology += list(edge[MATERIAL_POWER_EDGE_A], edge[MATERIAL_POWER_EDGE_B], edge[MATERIAL_POWER_EDGE_R])
+		topology = numeric_topology
+	solve_generation++
+	var/handle = VERDIGRIS_CALL("submit_material_power_graph_ffi", rust_handle, topology, core_loads, voltages, solve_generation)
+	if(!handle)
+		return FALSE
+	rust_handle = handle
+	solve_pending = TRUE
+	pending_reduced = reduced
+	pending_sources = sources?.Copy()
+	pending_consumers = consumers?.Copy()
+	pending_total_source = total_source
+	return TRUE
+
+/// Apply a completed versioned worker result. No BYOND datum is touched by the
+/// worker; all edge currents, heat accounting, and equipment efficiency remain
+/// authoritative here on the main thread.
+/datum/material_power_graph/proc/poll_async_solve()
+	if(!solve_pending || !rust_handle)
+		return FALSE
+	var/list/solution = VERDIGRIS_CALL("poll_material_power_graph_ffi", rust_handle)
+	if(!islist(solution) || !length(solution))
+		return null
+	solve_pending = FALSE
+	if(length(solution) != length(vertices) + 3 || solution[1] != solve_generation)
+		pending_reduced = null
+		pending_sources = null
+		pending_consumers = null
+		return FALSE
+	residual = solution[2]
+	iterations = solution[3]
+	voltages = solution.Copy(4)
+	for(var/i = length(leaf_order), i >= 1, i--)
+		var/list/step = leaf_order[i]
+		var/list/edge = step[3]
+		voltages[step[1]] = (voltages[step[2]] || 0) + (pending_reduced[step[1]] || 0) * edge[MATERIAL_POWER_EDGE_R]
+	loss_watts = 0
+	for(var/list/edge as anything in edges)
+		var/current = ((voltages[edge[MATERIAL_POWER_EDGE_A]] || 0) - (voltages[edge[MATERIAL_POWER_EDGE_B]] || 0)) / edge[MATERIAL_POWER_EDGE_R]
+		if(length(edge) >= MATERIAL_POWER_EDGE_CRITICAL && edge[MATERIAL_POWER_EDGE_CRITICAL] && current != edge[MATERIAL_POWER_EDGE_CURRENT])
+			queue_resistance_edge(edge)
+		edge[MATERIAL_POWER_EDGE_CURRENT] = current
+		loss_watts += current * current * edge[MATERIAL_POWER_EDGE_R]
+	efficiencies = list()
+	var/source_potential = 0
+	for(var/datum/weakref/reference as anything in pending_sources)
+		var/index = vertex_for(reference.resolve())
+		if(index)
+			source_potential += (voltages[index] || 0) * pending_sources[reference] / pending_total_source
+	for(var/datum/weakref/reference as anything in pending_consumers)
+		var/atom/consumer = reference.resolve()
+		var/index = vertex_for(consumer)
+		if(index && consumer)
+			efficiencies[REF(consumer)] = clamp(1 - max(0, source_potential - (voltages[index] || 0)) / MATERIAL_SERVICE_NOMINAL_VOLTAGE, 0.05, 1)
+	pending_reduced = null
+	pending_sources = null
+	pending_consumers = null
+	return TRUE
+
 /datum/material_power_graph/proc/resolve_loads(list/sources, list/consumers)
 	resistance_ms = 0
 	solve_ms = 0
+	var/async_result = poll_async_solve()
+	if(isnull(async_result))
+		return 2
 	var/changed = refresh_resistance()
 	efficiencies = list()
 	var/list/injections = new /list(length(vertices))
@@ -279,13 +388,33 @@
 		changed = TRUE
 	else
 		for(var/index in 1 to length(injections))
-			if(abs((injections[index] || 0) - (last_injections[index] || 0)) > 0.00001)
+			var/old_injection = last_injections[index] || 0
+			var/new_injection = injections[index] || 0
+			// APC demand jitters by tiny amounts every machinery fire. Re-solving a
+			// thousand-node loop graph for sub-percent, sub-100 W changes cannot
+			// produce a visible voltage change, but previously cost 20-80 ms.
+			var/material_change = max(abs(old_injection) * MATERIAL_POWER_LOAD_RELATIVE_EPSILON, MATERIAL_POWER_LOAD_ABSOLUTE_EPSILON)
+			if(abs(new_injection - old_injection) > material_change)
 				changed = TRUE
 				break
+	if(changed && !has_superconductors && world.time < next_solve)
+		changed = FALSE
 	if(changed)
+		// Baseline station cable meshes are large and highly cyclic. Their
+		// material voltage/loss model is observability and failure physics layered
+		// over the authoritative legacy power accounting; it does not need to
+		// chase APC load jitter every machine tick. Superconductors retain
+		// immediate solves because their current and temperature limits are gameplay.
+		if(length(vertices) > 128)
+			if(!submit_async_solve(injections, sources, consumers, total_source))
+				return solve_pending ? 2 : FALSE
+			last_injections = injections.Copy()
+			next_solve = world.time + MATERIAL_POWER_GRAPH_SETTLEMENT_INTERVAL
+			return 2
 		if(!solve(injections))
 			return FALSE
 		last_injections = injections.Copy()
+		next_solve = world.time + MATERIAL_POWER_GRAPH_SETTLEMENT_INTERVAL
 	var/source_potential = 0
 	for(var/datum/weakref/reference as anything in sources)
 		var/index = vertex_for(reference.resolve())
@@ -300,6 +429,14 @@
 /// I^2 R distribution. No thermal energy is minted by an accounting estimate.
 /datum/material_power_graph/proc/deposit_losses(joules, elapsed = 1)
 	var/started = REALTIMEOFDAY
+	// Baseline station cable loss remains part of the power ledger, but does not
+	// become thousands of individually simulated heat reservoirs. Standard cable
+	// has no temperature-dependent electrical behaviour, so publishing this
+	// imperceptible heat cannot change the solution or create useful gameplay.
+	// Engineered cable and superconductors retain exact, conservative deposition.
+	if(!has_custom_conductors && !has_superconductors)
+		deposit_ms = (REALTIMEOFDAY - started) * 100
+		return
 	var/list/cable_heat = list()
 	var/list/cable_current = list()
 	var/distribution_loss = 0
@@ -331,9 +468,11 @@
 	for(var/obj/structure/cable/cable as anything in cable_current)
 		energized_cables += WEAKREF(cable)
 		cable.material_current = cable_current[cable]
-		cable.enable_material_service()
-		var/datum/material_service/service = cable.material_service
 		var/heat = cable_heat[cable]
+		cable.material_service_event(MATERIAL_EVENT_WORK, 1)
+		var/datum/material_service/service = cable.material_service
+		if(!service)
+			continue
 		var/input = max(heat, cable.material_current * MATERIAL_SERVICE_NOMINAL_VOLTAGE * elapsed)
 		service.input_joules += input
 		service.output_joules += input - heat

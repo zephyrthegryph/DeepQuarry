@@ -11,8 +11,7 @@
 	faction = "Possessed"
 	movement_cooldown = 10
 
-	health = 200
-	maxHealth = 200
+	endurance = 200
 	taser_kill = 0
 
 	var/idle = 4 //how long between the breathing sounds, in seconds.

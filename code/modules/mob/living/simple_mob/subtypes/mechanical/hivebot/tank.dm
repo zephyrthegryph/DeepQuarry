@@ -28,19 +28,13 @@
 	stacks = MODIFIER_STACK_EXTEND
 	mob_overlay_state = "electricity"
 
-	attack_speed_percent = 0.6
-	outgoing_melee_damage_percent = 0.7
-	accuracy = -40
-	accuracy_dispersion = 1
-	slowdown = 1
-	evasion = -20
+	factors = alist(BF_SLOWDOWN = 1, BF_ACCURACY = -40, BF_DISPERSION = 1, BF_EVASION = -20, BF_ATTACK_SPEED = 0.6, BF_MELEE_DAMAGE = 0.7)
 
 // This one is tanky by having a massive amount of health.
 /mob/living/simple_mob/mechanical/hivebot/tank/meatshield
 	name = "bulky hivebot"
 	desc = "A large robot."
-	maxHealth = 10 LASERS_TO_KILL // 300 health
-	health = 10 LASERS_TO_KILL
+	endurance = 10 LASERS_TO_KILL // 300 health
 	icon_scale_x = 2
 	icon_scale_y = 2
 	player_msg = "You have a very large amount of health."
@@ -50,8 +44,7 @@
 /mob/living/simple_mob/mechanical/hivebot/tank/armored
 	name = "armored hivebot"
 	desc = "A robot clad in heavy armor."
-	maxHealth = 5 LASERS_TO_KILL // 150 health.
-	health = 5 LASERS_TO_KILL
+	endurance = 5 LASERS_TO_KILL // 150 health.
 	icon_scale_x = 1.5
 	icon_scale_y = 1.5
 	player_msg = "You are heavily armored."

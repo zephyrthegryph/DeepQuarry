@@ -7,7 +7,7 @@
 	wires = list(WIRE_LATHE_HACK, WIRE_ELECTRIFY, WIRE_LATHE_DISABLE)
 	var/obj/machinery/autolathe/A = _holder
 	if(A.hacked)
-		cut_wires += WIRE_LATHE_HACK
+		LAZYADD(cut_wires, WIRE_LATHE_HACK)
 	return ..()
 
 /datum/wires/autolathe/get_status()

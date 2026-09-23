@@ -50,18 +50,6 @@
 					to_chat(user,span_notice("Your minds have been swapped! Have a nice day."))
 					var/datum/mind/user_mind = user.mind
 					var/datum/mind/prey_mind = M.mind
-					var/target_ooc_notes = M.ooc_notes
-					var/target_likes = M.ooc_notes_likes
-					var/target_dislikes = M.ooc_notes_dislikes
-					var/target_favs = M.ooc_notes_favs
-					var/target_maybes = M.ooc_notes_maybes
-					var/target_style = M.ooc_notes_style
-					var/user_favs = user.ooc_notes_favs
-					var/user_maybes = user.ooc_notes_maybes
-					var/user_style = user.ooc_notes_style
-					var/user_ooc_notes = user.ooc_notes
-					var/user_likes = user.ooc_notes_likes
-					var/user_dislikes = user.ooc_notes_dislikes
 					M.ghostize()
 					user.ghostize()
 					user.mind = null
@@ -69,18 +57,9 @@
 					user_mind.current = null
 					prey_mind.current = null
 					user_mind.active = TRUE //If they are 'active', their client is automatically pushed to the mob
-					user_mind.transfer_to(M) //This works. Transfers mind & Ckey.
+					transfer_mind(user_mind, M, "bodysnatcher swap") // The identity (OOC notes and all) follows each mind.
 					prey_mind.active = TRUE
-					prey_mind.transfer_to(user)
-					M.ooc_notes = user_ooc_notes //Let's keep their OOC notes over to their new body.
-					M.ooc_notes_likes = user_likes
-					M.ooc_notes_dislikes = user_dislikes
-					M.ooc_notes_favs = user_favs
-					M.ooc_notes_maybes = user_maybes
-					M.ooc_notes_style = user_style
-					user.ooc_notes_favs = target_favs
-					user.ooc_notes_maybes = target_maybes
-					user.ooc_notes_style = target_style
+					transfer_mind(prey_mind, user, "bodysnatcher swap")
 					if(M.tf_mob_holder == user)
 						M.tf_mob_holder = null
 					else
@@ -89,9 +68,6 @@
 						user.tf_mob_holder = null
 					else
 						user.tf_mob_holder = M
-					user.ooc_notes = target_ooc_notes
-					user.ooc_notes_likes = target_likes
-					user.ooc_notes_dislikes = target_dislikes
 					user.SetSleeping(10) //Device knocks out both the user and the target.
 					user.eye_blurry = 30 //Blurry vision while they both get used to their new body's vision
 					user.slurring = 50 //And let's also have them slurring while they attempt to get used to using their new body.

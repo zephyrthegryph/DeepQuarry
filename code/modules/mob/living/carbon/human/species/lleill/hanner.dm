@@ -22,8 +22,9 @@
 
 	//Specific abilities
 
-	burn_mod = 0.8 //Slightly resistant to fire
-	pain_mod = 0.8 //Whilst not resistant to brute or stunning, they are slightly resistant to pain.
+	injury_mod_groups = list("thermal" = 0.8, "pain" = 0.8)
+	//Slightly resistant to fire (burn)
+	//Whilst not resistant to brute or stunning, they are slightly resistant to pain. (pain)
 
 	hazard_high_pressure = HAZARD_HIGH_PRESSURE + 700  // Dangerously high pressure.
 	warning_high_pressure = WARNING_HIGH_PRESSURE + 700 // High pressure warning.
@@ -42,7 +43,8 @@
 
 	chem_strength_alcohol = 0.8 //Handle alcohol slightly better
 
-	metabolic_rate = 0.4 //Major downside of the Hanner, they metabolise drugs much slower, meaning that they are difficult to treat with medicine alone.
+	// Major downside of the Hanner, they metabolise drugs much slower, meaning that they are difficult to treat with medicine alone.
+	factor_baseline = alist(BF_METABOLISM = 0.4)
 	bloodloss_rate = 1.2 //They bleed out faster too
 
 	lleill_energy = 100

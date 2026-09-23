@@ -272,8 +272,8 @@
  *
  * Default behaviour is to send [COMSIG_ATOM_FIRE_ACT] and return
  */
-/atom/proc/fire_act(datum/gas_mixture/air, exposed_temperature, exposed_volume)
-	SEND_SIGNAL(src, COMSIG_ATOM_FIRE_ACT, air, exposed_temperature, exposed_volume)
+/atom/proc/fire_act(exposed_temperature, exposed_volume)
+	SEND_SIGNAL(src, COMSIG_ATOM_FIRE_ACT, exposed_temperature, exposed_volume)
 	return FALSE
 
 /**
@@ -604,9 +604,9 @@ GLOBAL_LIST_EMPTY(icon_dimensions)
 /atom/proc/get_all_contents_type(type)
 	var/list/processing_list = list(src)
 	. = list()
-	while(length(processing_list))
-		var/atom/checked_atom = processing_list[1]
-		processing_list.Cut(1, 2)
+	var/i = 0
+	while(i < length(processing_list))
+		var/atom/checked_atom = processing_list[++i]
 		processing_list += checked_atom.contents
 		if(istype(checked_atom, type))
 			. += checked_atom

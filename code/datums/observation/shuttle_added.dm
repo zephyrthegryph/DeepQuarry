@@ -5,13 +5,6 @@
 //
 //		Arguments that the called proc should expect:
 //			/datum/shuttle/shuttle: the new shuttle
-/*
-GLOBAL_DATUM_INIT(shuttle_added, /datum/decl/observ/shuttle_added, new)
-
-/datum/decl/observ/shuttle_added
-	name = "Shuttle Added"
-	expected_type = /datum/shuttle
-*/
 //Deprecated in favor of comsigs
 
 /*****************************

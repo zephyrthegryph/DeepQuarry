@@ -41,7 +41,6 @@
 	return
 
 
-// === merged from shaker_vr.dm during hard-fork de-suffix (verified no override-order change) ===
 /obj/item/reagent_containers/food/drinks/glass2/fitnessflask/proteanshake
 	name = "protean shake"
 	icon = 'icons/obj/drinks.dmi'

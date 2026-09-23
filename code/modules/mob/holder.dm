@@ -318,7 +318,7 @@
 				to_chat(user, span_danger("You roughly squeeze [M]!"))
 				to_chat(M, span_danger("You are roughly squeezed by [user]!"))
 				log_and_message_admins("[key_name(M)] has been harmsqueezed by [key_name(user)]")
-				M.apply_damage(dam)
+				M.injure(INJURY_BLUNT, dam, null, user)
 	// ITION: MicroHandCrush END
 	for(var/mob/M in src.contents)
 		M.attackby(W,user)

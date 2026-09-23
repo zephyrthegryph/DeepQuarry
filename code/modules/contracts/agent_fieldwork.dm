@@ -64,10 +64,6 @@
 	contact_name = account.owner_name
 	contact_mode = mode
 	contact_evidence_id = evidence_id
-	if(mode == AGENT_CONTACT_CONFIDENTIAL)
-		advance_discovery(AGENT_DISCOVERY_SUSPECTED, "A confidential contact agreement created recoverable commercial metadata.", 3)
-	else if(mode == AGENT_CONTACT_DENIABLE)
-		advance_discovery(AGENT_DISCOVERY_TRACED, "A deniable contact accepted primary intermediary liability and created a strong routing trace.", 8)
 	var/datum/faction_agent_record/record = GLOB.station_faction_relations.get_agent_record(owner_account_number)
 	if(record && (red_contract || mode != AGENT_CONTACT_STANDARD || agent_faction == REPUTATION_FACTION_SYNDICATE))
 		GLOB.station_faction_relations.add_agent_exposure(owner_account_number, agent_faction, contact_exposure, "A signed [agent_contact_mode_name(mode)] agreement created discoverable commercial metadata.", "CONTACT-[id]")

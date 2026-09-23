@@ -40,6 +40,9 @@ GLOBAL_LIST_INIT(ai_verbs_default, list(
 	return is_in_use
 
 
+/// Full backup capacitor charge (the old 200-point oxyloss budget).
+#define AI_BACKUP_CAPACITY 200
+
 /mob/living/silicon/ai
 	name = JOB_AI
 	icon = 'icons/mob/AI.dmi'//
@@ -51,6 +54,9 @@ GLOBAL_LIST_INIT(ai_verbs_default, list(
 	var/list/network = list(NETWORK_DEFAULT)
 	var/obj/machinery/camera/camera = null
 	var/aiRestorePowerRoutine = 0
+	/// Backup capacitor charge, 0..AI_BACKUP_CAPACITY. Drains while the core is
+	/// unpowered and recharges on mains/APU power; the AI shuts down at 0.
+	var/backup_charge = AI_BACKUP_CAPACITY
 	var/viewalerts = 0
 	var/icon/holo_icon				//Default is assigned when AI is created.
 	var/holo_color = null
@@ -185,8 +191,8 @@ GLOBAL_LIST_INIT(ai_verbs_default, list(
 			GLOB.empty_playable_ai_cores += new/obj/structure/AIcore/deactivated(loc)//New empty terminal.
 			return INITIALIZE_HINT_QDEL //Delete AI.
 
-		if (B.brainmob.mind)
-			B.brainmob.mind.transfer_to(src)
+		var/datum/component/mind_host/host = get_mind_host(B)
+		host?.release_mind(src, "AI core activated")
 
 		on_mob_init()
 
@@ -224,12 +230,12 @@ GLOBAL_LIST_INIT(ai_verbs_default, list(
 
 	// Meta Info for AI's. Mostly used for Holograms
 	if (client)
-		ooc_notes = client.prefs.read_preference(/datum/preference/text/living/ooc_notes)
-		ooc_notes_likes = client.prefs.read_preference(/datum/preference/text/living/ooc_notes_likes)
-		ooc_notes_dislikes = client.prefs.read_preference(/datum/preference/text/living/ooc_notes_dislikes)
-		ooc_notes_favs = read_preference(/datum/preference/text/living/ooc_notes_favs)
-		ooc_notes_maybes = read_preference(/datum/preference/text/living/ooc_notes_maybes)
-		ooc_notes_style = read_preference(/datum/preference/toggle/living/ooc_notes_style)
+		identity.ooc_notes = client.prefs.read_preference(/datum/preference/text/living/ooc_notes)
+		identity.ooc_notes_likes = client.prefs.read_preference(/datum/preference/text/living/ooc_notes_likes)
+		identity.ooc_notes_dislikes = client.prefs.read_preference(/datum/preference/text/living/ooc_notes_dislikes)
+		identity.ooc_notes_favs = read_preference(/datum/preference/text/living/ooc_notes_favs)
+		identity.ooc_notes_maybes = read_preference(/datum/preference/text/living/ooc_notes_maybes)
+		identity.ooc_notes_style = read_preference(/datum/preference/toggle/living/ooc_notes_style)
 		private_notes = client.prefs.read_preference(/datum/preference/text/living/private_notes)
 
 	if (GLOB.malf && !(mind in GLOB.malf.current_antagonists))
@@ -258,7 +264,7 @@ GLOBAL_LIST_INIT(ai_verbs_default, list(
 	. = ..()
 	. += ""
 	if(!stat) // Make sure we're not unconscious/dead.
-		. += "System integrity: [(health+100)/2]%"
+		. += "System integrity: [hardware_integrity()]%"
 		. += "Connected synthetics: [connected_robots.len]"
 		for(var/mob/living/silicon/robot/R in connected_robots)
 			var/robot_status = "Nominal"
@@ -269,7 +275,7 @@ GLOBAL_LIST_INIT(ai_verbs_default, list(
 			else if(!R.cell || R.cell.charge <= 0)
 				robot_status = "DEPOWERED"
 			//Name, Health, Battery, Module, Area, and Status! Everything an AI wants to know about its borgies!
-			. += "[R.name] | S.Integrity: [R.health]% | Cell: [R.cell ? "[R.cell.charge]/[R.cell.maxcharge]" : "Empty"] | \
+			. += "[R.name] | S.Integrity: [round(R.vitality() * 100)]% | Cell: [R.cell ? "[R.cell.charge]/[R.cell.maxcharge]" : "Empty"] | \
 			Module: [R.modtype] | Loc: [get_area_name(R, TRUE)] | Status: [robot_status]"
 		. += "AI shell beacons detected: [LAZYLEN(GLOB.available_ai_shells)]" //Count of total AI shells
 	else
@@ -838,7 +844,7 @@ GLOBAL_LIST_INIT(ai_verbs_default, list(
 	hologram_follow = !hologram_follow
 	// Required to stop movement because we use walk_to(wards) in hologram.dm
 	if(holo)
-		var/obj/effect/overlay/aiholo/hologram = holo.masters[src]
+		var/obj/effect/overlay/aiholo/hologram = LAZYACCESS(holo.masters, src)
 		walk(hologram, 0)
 	to_chat(src, span_filter_notice("Your hologram will [hologram_follow ? "follow" : "no longer follow"] you now."))
 

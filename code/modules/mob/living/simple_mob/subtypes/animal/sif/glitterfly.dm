@@ -35,8 +35,7 @@
 	icon_dead = "butterfly_dead"
 	icon = 'icons/mob/animal.dmi'
 
-	maxHealth = 10
-	health = 10
+	endurance = 10
 
 	movement_cooldown = -2
 	// dq_get_hovering(src) type-default moved to GLOB.dq_hovering_by_type
@@ -78,8 +77,7 @@
 	name = "sparkling glitterfly"
 	desc = "A large, incredibly shiny butterfly!"
 	catalogue_data = list(/datum/category_item/catalogue/fauna/glitterfly, /datum/category_item/catalogue/fauna/glitterfly_rare)
-	maxHealth = 30
-	health = 30
+	endurance = 30
 
 	movement_cooldown = -3
 

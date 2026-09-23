@@ -48,18 +48,6 @@
 		return
 
 /datum/component/effect_remover/proc/do_remove_effects(obj/effect/target, mob/living/user)
-/* Grah- Might have to get this revised, later on.
-	if(time_to_remove && !do_after(user, time_to_remove, target))
-		return
-	var/obj/item/item_parent = parent
-	if(success_forcesay)
-		user.say(success_forcesay)
-	if(success_feedback)
-		var/real_feedback = replacetext(success_feedback, "%THEEFFECT", "\the [target]")
-		real_feedback = replacetext(real_feedback, "%THEWEAPON", "\the [item_parent]")
-		user.balloon_alert()
-		to_chat(user, span_notice(real_feedback))
-*/
 	on_clear_callback?.Invoke(target, user)
 
 	if(!QDELETED(target))

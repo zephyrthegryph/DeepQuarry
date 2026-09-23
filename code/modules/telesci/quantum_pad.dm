@@ -159,13 +159,6 @@
 	src.add_fingerprint(user)
 	doteleport(user)
 
-/*. Teleport code changed slightly making this obsolete
-/obj/machinery/power/quantumpad/proc/sparks()
-	var/datum/effect/effect/system/spark_spread/sparks = new /datum/effect/effect/system/spark_spread()
-	sparks.set_up(5, 1, get_turf(src))
-	sparks.start()
-*/
-
 /obj/machinery/power/quantumpad/attack_ghost(mob/observer/dead/ghost)
 	. = ..()
 	if(.)

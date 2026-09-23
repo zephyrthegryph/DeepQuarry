@@ -60,14 +60,6 @@
 		spawn(2)
 			SaySomething(pick(seperate))
 
-/*/obj/item/talkingcrystal/proc/debug()
-	//set src in view()
-	for(var/v in heard_words)
-		to_world("[uppertext(v)]")
-		var/list/d = heard_words["[v]"]
-		for(var/X in d)
-			to_world("[X]")*/
-
 /datum/talking_atom/proc/SaySomething(word = null)
 	if(!holder_atom)
 		return

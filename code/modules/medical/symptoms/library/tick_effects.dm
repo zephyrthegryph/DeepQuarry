@@ -20,7 +20,7 @@
 // symptom does the full magnitude. The patient-message / emote drip from
 // the parent tick() still fires; we call `..()` first to preserve it.
 
-/datum/medical_symptom/fever_sensation/tick(mob/living/M, datum/medical_issue/condition/source)
+/datum/affliction_symptom/fever_sensation/tick(mob/living/M, datum/affliction/source)
 	. = ..()
 	if(!M || !source)
 		return
@@ -37,7 +37,7 @@
 	M.bodytemperature += 0.4 * scale
 
 
-/datum/medical_symptom/chills/tick(mob/living/M, datum/medical_issue/condition/source)
+/datum/affliction_symptom/chills/tick(mob/living/M, datum/affliction/source)
 	. = ..()
 	if(!M || !source)
 		return
@@ -51,7 +51,7 @@
 	M.bodytemperature -= 0.4 * scale
 
 
-/datum/medical_symptom/palpitations/tick(mob/living/M, datum/medical_issue/condition/source)
+/datum/affliction_symptom/palpitations/tick(mob/living/M, datum/affliction/source)
 	. = ..()
 	if(!M || !source)
 		return
@@ -70,10 +70,10 @@
 		var/mob/living/carbon/human/H = M
 		var/obj/item/organ/internal/heart/heart = H.internal_organs_by_name[O_HEART]
 		if(heart)
-			heart.take_damage(0.4)
+			H.injure(INJURY_BLUNT, 0.4, heart, source, flags = INJURE_IGNORE_RESISTANCE | INJURE_SILENT)
 
 
-/datum/medical_symptom/bleeding_visible/tick(mob/living/M, datum/medical_issue/condition/source)
+/datum/affliction_symptom/bleeding_visible/tick(mob/living/M, datum/affliction/source)
 	. = ..()
 	if(!M || !source || !ishuman(M))
 		return
@@ -91,7 +91,7 @@
 		H.vessel.remove_reagent(REAGENT_ID_BLOOD, 1.0 * scale)
 
 
-/datum/medical_symptom/cyanosis/tick(mob/living/M, datum/medical_issue/condition/source)
+/datum/affliction_symptom/cyanosis/tick(mob/living/M, datum/affliction/source)
 	. = ..()
 	if(!M || !source)
 		return
@@ -101,13 +101,13 @@
 	if(scale <= 0.5)
 		return
 	// Cyanosis fires only when the source is Severe-or-worse. Adds a
-	// small oxy loss to reflect the tissue-level oxygen failure the
+	// little hypoxia to reflect the tissue-level oxygen failure the
 	// blue tint represents — already-existing oxy damage from the
 	// underlying condition just gets amplified.
-	M.adjustOxyLoss(0.5 * scale)
+	M.injure(INJURY_ASPHYXIA, 0.5 * scale, flags = INJURE_IGNORE_RESISTANCE | INJURE_SILENT)
 
 
-/datum/medical_symptom/labored_breathing/tick(mob/living/M, datum/medical_issue/condition/source)
+/datum/affliction_symptom/labored_breathing/tick(mob/living/M, datum/affliction/source)
 	. = ..()
 	if(!M || !source)
 		return
@@ -117,12 +117,12 @@
 	if(scale <= 0.6)
 		return
 	// At Critical, ongoing labored breathing reflects that the patient
-	// isn't moving enough air. Small oxy loss; severity_gate complications
+	// isn't moving enough air. A little hypoxia; progression triggers
 	// (respiratory_failure spawn) handle the catastrophic outcome.
-	M.adjustOxyLoss(0.4 * scale)
+	M.injure(INJURY_ASPHYXIA, 0.4 * scale, flags = INJURE_IGNORE_RESISTANCE | INJURE_SILENT)
 
 
-/datum/medical_symptom/sharp_chest_pain/tick(mob/living/M, datum/medical_issue/condition/source)
+/datum/affliction_symptom/sharp_chest_pain/tick(mob/living/M, datum/affliction/source)
 	. = ..()
 	if(!M || !source)
 		return
@@ -138,7 +138,7 @@
 		M.Weaken(2)
 
 
-/datum/medical_symptom/jaundice/tick(mob/living/M, datum/medical_issue/condition/source)
+/datum/affliction_symptom/jaundice/tick(mob/living/M, datum/affliction/source)
 	. = ..()
 	if(!M || !source)
 		return
@@ -149,4 +149,4 @@
 		return
 	// Severe jaundice means the liver isn't clearing bilirubin — let a
 	// tiny amount of toxic backlog accumulate.
-	M.adjustToxLoss(0.3 * scale)
+	M.injure(INJURY_TOXIN, 0.3 * scale, flags = INJURE_IGNORE_RESISTANCE | INJURE_SILENT)

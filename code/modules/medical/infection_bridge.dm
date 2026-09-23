@@ -7,7 +7,7 @@
 // of opaque germ numbers and "Cellulitis detected" scanner lines, we
 // surface infection through a condition with symptoms.
 //
-// Rules now live as /datum/dq_cause/germ_level records. This proc
+// Rules now live as /datum/affliction_trigger/infection records. This proc
 // walks them and idempotently spawns the produced condition on the
 // organ when its germ_level meets the threshold.
 //
@@ -18,13 +18,13 @@
 		return
 	if(robotic >= ORGAN_ROBOT)
 		return
-	for(var/datum/dq_cause/germ_level/c as anything in dq_causes_of_kind("/datum/dq_cause/germ_level"))
+	for(var/datum/affliction_trigger/infection/c as anything in affliction_triggers_of_kind("/datum/affliction_trigger/infection"))
 		// A null organ on the cause means "any organ".
 		if(c.organ && c.organ != organ_tag)
 			continue
 		if(germ_level < c.threshold_level)
 			continue
-		for(var/datum/dq_cause_outcome/o as anything in c.produces)
-			if(!o.preconditions_met(src))
+		for(var/datum/affliction_trigger_outcome/o as anything in c.produces)
+			if(!o.preconditions_met(owner.body, src))
 				continue
-			dq_spawn_condition(o.condition_type)
+			spawn_affliction(o.condition_type)

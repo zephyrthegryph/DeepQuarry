@@ -3,12 +3,12 @@
 // Replaces the upstream /obj/machinery/bodyscanner/tgui_data block. The
 // shape is intentionally reduced from the old version:
 //
-//   - Per-damage-type numbers (bruteLoss / oxyLoss / etc.) become a
-//     qualitative `damagePanel` array — one band per damage type.
+//   - Per-damage-type numbers become a qualitative `damagePanel` array —
+//     one band per injury category (from injury_load()).
 //   - Per-organ raw damage values are gone. Each organ emits an
 //     `injuryBand` qualitative string instead.
-//   - The grab-bag `medical_issues_E` / `medical_issues_I` lists (which
-//     dumped every active condition's name) are gone. The TGUI gets a
+//   - The old per-organ grab-bag lists (which dumped every active
+//     affliction's name) are gone. The TGUI gets a
 //     deduplicated `scanner_findings` array derived from active symptoms
 //     whose audiences flag includes SYMPTOM_AUDIENCE_SCANNER.
 //
@@ -99,7 +99,7 @@
 		fakedeath = TRUE
 	out["stat"] = stat
 	out["fakedeath"] = fakedeath
-	out["healthBand"] = fakedeath ? "critical" : dq_qualitative_health_band(H.health, H.getMaxHealth())
+	out["healthBand"] = fakedeath ? "critical" : dq_qualitative_vitality_band(H.vitality(), H.is_critical())
 
 
 /obj/machinery/bodyscanner/proc/dq_emit_vitals(mob/living/carbon/human/H, list/out)
@@ -181,9 +181,9 @@
 		od["name"] = E.name
 		od["open"] = E.open
 		od["germ_level"] = E.germ_level
-		od["injuryBand"] = dq_qualitative_damage_band(E.brute_dam + E.burn_dam, E.max_damage)
-		od["hasBrute"] = E.brute_dam > 0
-		od["hasBurn"] = E.burn_dam > 0
+		od["injuryBand"] = dq_qualitative_damage_band(E.get_trauma() + E.get_burn(), E.max_damage)
+		od["hasBrute"] = E.get_trauma() > 0
+		od["hasBurn"] = E.get_burn() > 0
 
 		var/list/implantData = list()
 		for(var/obj/thing in E.implants)
@@ -214,10 +214,8 @@
 		if(istype(E, /obj/item/organ/external/chest) && H.is_lung_ruptured())
 			od["lungRuptured"] = 1
 
-		for(var/datum/wound/W in E.wounds)
-			if(W.internal)
-				od["internalBleeding"] = 1
-				break
+		if(length(dq_limb_internal_bleeds(E)))
+			od["internalBleeding"] = 1
 
 		extOrganData += list(od)
 	out["extOrgan"] = extOrganData

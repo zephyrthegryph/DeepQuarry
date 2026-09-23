@@ -42,13 +42,13 @@
 /// Quick define for readability
 #define TAG_DEL(X) span_bold("(<A href='byond://?_src_=holder;[HrefToken(forceGlobal = TRUE)];del_tag=[REF(X)]'>UNTAG</a>)")
 #define TAG_MARK(X) span_bold("(<A href='byond://?_src_=holder;[HrefToken(forceGlobal = TRUE)];mark_datum=[REF(X)]'>MARK</a>)")
-#define TAG_SIMPLE_HEALTH(X) span_red(span_bold("Health: [X.health]"))
-#define TAG_CARBON_HEALTH(X) span_red(span_bold("Health: [X.health]")) +" (\
-					" + span_brute("[X.getBruteLoss()]") + " \
-					" + span_burn("[X.getFireLoss()]") + " \
-					" + span_tox("[X.getToxLoss()]") + " \
-					" + span_oxy("[X.getOxyLoss()]") + " \
-					" + span_clone("[X.getCloneLoss()]")
+#define TAG_SIMPLE_HEALTH(X) span_red(span_bold("Vitality: [round(X.vitality() * 100)]%"))
+#define TAG_CARBON_HEALTH(X) span_red(span_bold("Vitality: [round(X.vitality() * 100)]%")) +" (\
+					" + span_brute("[round(X.injury_load(INJURY_CATEGORY_PHYSICAL), 0.1)]") + " \
+					" + span_burn("[round(X.injury_load(INJURY_CATEGORY_THERMAL), 0.1)]") + " \
+					" + span_tox("[round(X.injury_load(INJURY_CATEGORY_TOXIC), 0.1)]") + " \
+					" + span_oxy("[round(X.injury_load(INJURY_CATEGORY_ASPHYXIA), 0.1)]") + " \
+					" + span_clone("[round(X.injury_load(INJURY_CATEGORY_GENETIC), 0.1)]")
 
 ADMIN_VERB(display_tags, R_ADMIN, "View Tags", "Display all of the tagged datums.", ADMIN_CATEGORY_GAME)
 	var/index = 0

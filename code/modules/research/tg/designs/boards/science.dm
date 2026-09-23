@@ -295,13 +295,6 @@
 
 ///Protolathe boards
 
-/* Optional
-/datum/design_techweb/board/protolathe
-	SET_CIRCUIT_DESIGN_NAMEDESC("Protolathe - Omni")
-	id = "protolathe_omni"
-	build_path = /obj/item/circuitboard/machine/protolathe
-*/
-
 /datum/design_techweb/board/protolathe/science
 	SET_CIRCUIT_DESIGN_NAMEDESC("Protolathe - Science")
 	id = "protolathe_science"

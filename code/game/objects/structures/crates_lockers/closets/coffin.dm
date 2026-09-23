@@ -64,7 +64,7 @@
 	if(ishuman(L))
 		var/mob/living/carbon/human/H = L
 		var/limb_damage = rand(5,25)
-		H.adjustBruteLoss(limb_damage)
+		H.injure(INJURY_BLUNT, limb_damage, null, src)
 
 /obj/structure/closet/grave/attackby(obj/item/W as obj, mob/user as mob)
 	if(src.opened)

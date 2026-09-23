@@ -19,15 +19,6 @@
 	icon_state = "tealcarpet"
 	initial_flooring = /datum/decl/flooring/carpet/tealcarpet
 
-/turf/simulated/floor/carpet/geo
-	name = "deco carpet"
-	icon_state = "decocarpet"
-	initial_flooring = /datum/decl/flooring/carpet/geo
-
-/turf/simulated/floor/carpet/retro
-	name = "retro carpet"
-	icon_state = "retrocarpet"
-	initial_flooring = /datum/decl/flooring/carpet/retro
 
 // Legacy support for existing paths for blue carpet
 /turf/simulated/floor/carpet/blue
@@ -70,35 +61,12 @@
 	icon_state = "blue1"
 	initial_flooring = /datum/decl/flooring/carpet/blucarpet2
 
-/turf/simulated/floor/carpet/green
-	name = "green carpet"
-	icon_state = "green"
-	initial_flooring = /datum/decl/flooring/carpet/greencarpet
 
 /turf/simulated/floor/carpet/purple
 	name = "purple carpet"
 	icon_state = "purple"
 	initial_flooring = /datum/decl/flooring/carpet/purplecarpet
 
-/turf/simulated/floor/carpet/geo
-	name = "geometric carpet"
-	icon_state = "geocarpet"
-	initial_flooring = /datum/decl/flooring/carpet/geo
-
-/turf/simulated/floor/carpet/retro
-	name = "blue retro carpet"
-	icon_state = "retrocarpet"
-	initial_flooring = /datum/decl/flooring/carpet/retro
-
-/turf/simulated/floor/carpet/retro_red
-	name = "red retro carpet"
-	icon_state = "retrocarpet_red"
-	initial_flooring = /datum/decl/flooring/carpet/retro_red
-
-/turf/simulated/floor/carpet/happy
-	name = "happy carpet"
-	icon_state = "happycarpet"
-	initial_flooring = /datum/decl/flooring/carpet/happy
 
 /turf/simulated/floor/bluegrid
 	name = "mainframe floor"
@@ -139,25 +107,6 @@
 	. = ..()
 	break_tile()
 
-/turf/simulated/floor/wood/sif/tile
-	icon_state = "wood_tile"
-	initial_flooring = /datum/decl/flooring/wood/sif/tile
-
-/turf/simulated/floor/wood/sif/panel
-	icon_state = "wood_panel"
-	initial_flooring = /datum/decl/flooring/wood/sif/panel
-
-/turf/simulated/floor/wood/sif/parquet
-	icon_state = "wood_parquet"
-	initial_flooring = /datum/decl/flooring/wood/sif/parquet
-
-/turf/simulated/floor/wood/sif/vert
-	icon_state = "wood_vert"
-	initial_flooring = /datum/decl/flooring/wood/sif/vert
-
-/turf/simulated/floor/wood/sif/vert_panel
-	icon_state = "wood_vert_panel"
-	initial_flooring = /datum/decl/flooring/wood/sif/vert_panel
 
 /turf/simulated/floor/wood/alt
 	icon = 'icons/turf/flooring/wood_greyscale.dmi'
@@ -186,12 +135,6 @@
 	icon_state = "wood_panel"
 	initial_flooring = /datum/decl/flooring/wood/alt/panel
 
-/turf/simulated/floor/wood/alt/panel/broken
-	icon_state = "wood_panel-broken0" // This gets changed when spawned.
-
-/turf/simulated/floor/wood/alt/panel/broken/LateInitialize()
-	. = ..()
-	break_tile()
 
 /turf/simulated/floor/wood/alt/parquet
 	icon_state = "wood_parquet"
@@ -204,13 +147,6 @@
 	. = ..()
 	break_tile()
 
-/turf/simulated/floor/wood/alt/vert
-	icon_state = "wood_vert"
-	initial_flooring = /datum/decl/flooring/wood/alt/vert
-
-/turf/simulated/floor/wood/alt/vert_panel
-	icon_state = "wood_vert_panel"
-	initial_flooring = /datum/decl/flooring/wood/alt/vert_panel
 
 /turf/simulated/floor/grass
 	name = "grass patch"
@@ -246,9 +182,6 @@
 	icon_state = "monotile"
 	initial_flooring = /datum/decl/flooring/tiling/new_tile/monotile
 
-/turf/simulated/floor/tiled/monotile/purple
-	icon_state = "monotile-purple"
-	initial_flooring = /datum/decl/flooring/tiling/new_tile/monotile/purple
 
 /turf/simulated/floor/tiled/steel_grid
 	name = "floor"
@@ -268,42 +201,9 @@
 	initial_flooring = /datum/decl/flooring/tiling/new_tile
 /turf/simulated/floor/tiled/old_tile/white
 	color = "#d9d9d9"
-/turf/simulated/floor/tiled/old_tile/blue
-	color = "#8ba7ad"
-/turf/simulated/floor/tiled/old_tile/yellow
-	color = "#8c6d46"
 /turf/simulated/floor/tiled/old_tile/gray
 	color = "#687172"
-/turf/simulated/floor/tiled/old_tile/beige
-	color = "#385e60"
-/turf/simulated/floor/tiled/old_tile/red
-	color = "#964e51"
-/turf/simulated/floor/tiled/old_tile/purple
-	color = "#906987"
 /turf/simulated/floor/tiled/old_tile/green
-	color = "#46725c"
-
-
-
-/turf/simulated/floor/tiled/old_cargo
-	name = "floor"
-	icon_state = "cargo_one_full"
-	initial_flooring = /datum/decl/flooring/tiling/new_tile/cargo_one
-/turf/simulated/floor/tiled/old_cargo/white
-	color = "#d9d9d9"
-/turf/simulated/floor/tiled/old_cargo/blue
-	color = "#8ba7ad"
-/turf/simulated/floor/tiled/old_cargo/yellow
-	color = "#8c6d46"
-/turf/simulated/floor/tiled/old_cargo/gray
-	color = "#687172"
-/turf/simulated/floor/tiled/old_cargo/beige
-	color = "#385e60"
-/turf/simulated/floor/tiled/old_cargo/red
-	color = "#964e51"
-/turf/simulated/floor/tiled/old_cargo/purple
-	color = "#906987"
-/turf/simulated/floor/tiled/old_cargo/green
 	color = "#46725c"
 
 
@@ -312,22 +212,8 @@
 	desc = "Ceramic tile flooring."
 	icon_state = "kafel_full"
 	initial_flooring = /datum/decl/flooring/tiling/new_tile/kafel
-/turf/simulated/floor/tiled/kafel_full/white
-	color = "#d9d9d9"
-/turf/simulated/floor/tiled/kafel_full/blue
-	color = "#8ba7ad"
-/turf/simulated/floor/tiled/kafel_full/yellow
-	color = "#8c6d46"
-/turf/simulated/floor/tiled/kafel_full/gray
-	color = "#687172"
-/turf/simulated/floor/tiled/kafel_full/beige
-	color = "#385e60"
-/turf/simulated/floor/tiled/kafel_full/red
-	color = "#964e51"
 /turf/simulated/floor/tiled/kafel_full/purple
 	color = "#906987"
-/turf/simulated/floor/tiled/kafel_full/green
-	color = "#46725c"
 
 
 /turf/simulated/floor/tiled/techfloor/grid
@@ -372,10 +258,6 @@
 	nitrogen = 0
 	nitrous_oxide = ATMOSTANK_NITROUSOXIDE
 
-/turf/simulated/floor/reinforced/methane
-	oxygen = 0
-	nitrogen = 0
-	methane = ATMOSTANK_METHANE
 
 /turf/simulated/floor/cult
 	name = "engraved floor"
@@ -417,20 +299,11 @@
 	icon_state = "steel_dirty"
 	initial_flooring = /datum/decl/flooring/tiling/steel_dirty
 
-/turf/simulated/floor/tiled/steel/airless
-	initial_gas_mix = AIRLESS_ATMOS
-	oxygen = 0
-	nitrogen = 0
 
 /turf/simulated/floor/tiled/asteroid_steel
 	icon_state = "asteroidfloor"
 	initial_flooring = /datum/decl/flooring/tiling/asteroidfloor
 
-/turf/simulated/floor/tiled/asteroid_steel/airless
-	name = "plating"
-	initial_gas_mix = AIRLESS_ATMOS
-	oxygen = 0
-	nitrogen = 0
 
 /turf/simulated/floor/tiled/white
 	name = "white floor"
@@ -443,10 +316,6 @@
 	icon_state = "white"
 	initial_flooring = /datum/decl/flooring/tiling/yellow
 
-/turf/simulated/floor/tiled/purple
-	name = "purple floor"
-	icon_state = "purple"
-	initial_flooring = /datum/decl/flooring/tiling/purple
 
 /turf/simulated/floor/tiled/freezer
 	name = "tiles"
@@ -459,17 +328,6 @@
 	icon_state = "lino"
 	initial_flooring = /datum/decl/flooring/linoleum
 
-/turf/simulated/floor/wmarble
-	name = "marble"
-	icon = 'icons/turf/flooring/misc.dmi'
-	icon_state = "lightmarble"
-	initial_flooring = /datum/decl/flooring/wmarble
-
-/turf/simulated/floor/bmarble
-	name = "marble"
-	icon = 'icons/turf/flooring/misc.dmi'
-	icon_state = "darkmarble"
-	initial_flooring = /datum/decl/flooring/bmarble
 
 //ATMOS PREMADES
 /turf/simulated/floor/reinforced/airless
@@ -477,50 +335,29 @@
 	initial_gas_mix = AIRLESS_ATMOS
 	oxygen = 0
 	nitrogen = 0
-	temperature = TCMB
+	temperature = T20C
 
 /turf/simulated/floor/airless
 	name = "plating"
 	initial_gas_mix = AIRLESS_ATMOS
 	oxygen = 0
 	nitrogen = 0
-	temperature = TCMB
+	temperature = T20C
 
 /turf/simulated/floor/tiled/airless
 	name = "floor"
 	initial_gas_mix = AIRLESS_ATMOS
 	oxygen = 0
 	nitrogen = 0
-	temperature = TCMB
+	temperature = T20C
 
-/turf/simulated/floor/bluegrid/airless
-	name = "floor"
-	initial_gas_mix = AIRLESS_ATMOS
-	oxygen = 0
-	nitrogen = 0
-	temperature = TCMB
-
-/turf/simulated/floor/greengrid/airless
-	name = "floor"
-	initial_gas_mix = AIRLESS_ATMOS
-	oxygen = 0
-	nitrogen = 0
-	temperature = TCMB
 
 /turf/simulated/floor/greengrid/nitrogen
 	oxygen = 0
 
-/turf/simulated/floor/tiled/white/airless
-	name = "floor"
-	initial_gas_mix = AIRLESS_ATMOS
-	oxygen = 0
-	nitrogen = 0
-	temperature = TCMB
 
 // Placeholders
 
-/turf/simulated/floor/airless/lava
-/turf/simulated/floor/light
 /*
 /turf/simulated/floor/beach
 /turf/simulated/floor/beach/sand
@@ -529,10 +366,8 @@
 /turf/simulated/floor/beach/water
 /turf/simulated/floor/beach/water/ocean
 */
-/turf/simulated/floor/airless/ceiling
 /turf/simulated/floor/plating
 /turf/simulated/floor/plating/external // To be overrided by the map files.
-/turf/simulated/floor/tiled/external
 
 //**** Here lives snow ****
 /turf/simulated/floor/snow
@@ -542,32 +377,6 @@
 	initial_flooring = /datum/decl/flooring/snow
 	var/list/crossed_dirs
 
-/turf/simulated/floor/fakesnow
-	name = "fake snow"
-	icon = 'icons/turf/outdoors.dmi'
-	icon_state = "snow"
-	initial_flooring = /datum/decl/flooring/snow/fake
-
-/turf/simulated/floor/snow/snow2
-	name = "snow"
-	icon = 'icons/turf/snow.dmi'
-	icon_state = "snow"
-	initial_flooring = /datum/decl/flooring/snow
-
-/turf/simulated/floor/snow/gravsnow
-	name = "snow"
-	icon_state = "gravsnow"
-	initial_flooring = /datum/decl/flooring/snow/gravsnow
-
-/turf/simulated/floor/snow/plating
-	name = "snowy playing"
-	icon_state = "snowyplating"
-	initial_flooring = /datum/decl/flooring/snow/plating
-
-/turf/simulated/floor/snow/plating/drift
-	name = "snowy plating"
-	icon_state = "snowyplayingdrift"
-	initial_flooring = /datum/decl/flooring/snow/plating/drift
 
 // TODO: Move foortprints to a datum-component signal so they can actually be applied to other turf types, like sand, or mud
 /turf/simulated/floor/snow/Entered(atom/A)
@@ -595,196 +404,3 @@
 	icon_state = "concrete"
 	initial_flooring = /datum/decl/flooring/concrete
 
-
-//New Wood
-/turf/simulated/floor/wood/acacia
-	name = "acacia wood floor"
-	icon = 'icons/turf/flooring/wood_greyscale.dmi'
-	color = "#b75e12"
-	icon_state = "wood"
-	initial_flooring = /datum/decl/flooring/wood/acacia
-
-/turf/simulated/floor/wood/acacia/tile
-	icon = 'icons/turf/flooring/wood_greyscale.dmi'
-	icon_state = "wood_tile"
-	initial_flooring = /datum/decl/flooring/wood/acacia/tile
-
-/turf/simulated/floor/wood/acacia/panel
-	icon = 'icons/turf/flooring/wood_greyscale.dmi'
-	icon_state = "wood_panel"
-	initial_flooring = /datum/decl/flooring/wood/acacia/panel
-
-/turf/simulated/floor/wood/acacia/parquet
-	icon = 'icons/turf/flooring/wood_greyscale.dmi'
-	icon_state = "wood_parquet"
-	initial_flooring = /datum/decl/flooring/wood/acacia/parquet
-
-/turf/simulated/floor/wood/acacia/vert
-	icon = 'icons/turf/flooring/wood_greyscale.dmi'
-	icon_state = "wood_vert"
-	initial_flooring = /datum/decl/flooring/wood/acacia/vert
-
-/turf/simulated/floor/wood/acacia/vert_panel
-	icon = 'icons/turf/flooring/wood_greyscale.dmi'
-	icon_state = "wood_vert_panel"
-	initial_flooring = /datum/decl/flooring/wood/acacia/vert_panel
-
-/turf/simulated/floor/wood/birch
-	name = "birch wood floor"
-	icon = 'icons/turf/flooring/wood_greyscale.dmi'
-	color = "#f6dec0"
-	icon_state = "wood"
-	initial_flooring = /datum/decl/flooring/wood/birch
-
-/turf/simulated/floor/wood/birch/tile
-	icon = 'icons/turf/flooring/wood_greyscale.dmi'
-	icon_state = "wood_tile"
-	initial_flooring = /datum/decl/flooring/wood/birch/tile
-
-/turf/simulated/floor/wood/birch/panel
-	icon = 'icons/turf/flooring/wood_greyscale.dmi'
-	icon_state = "wood_panel"
-	initial_flooring = /datum/decl/flooring/wood/birch/panel
-
-/turf/simulated/floor/wood/birch/parquet
-	icon = 'icons/turf/flooring/wood_greyscale.dmi'
-	icon_state = "wood_parquet"
-	initial_flooring = /datum/decl/flooring/wood/birch/parquet
-
-/turf/simulated/floor/wood/birch/vert
-	icon = 'icons/turf/flooring/wood_greyscale.dmi'
-	icon_state = "wood_vert"
-	initial_flooring = /datum/decl/flooring/wood/birch/vert
-
-/turf/simulated/floor/wood/birch/vert_panel
-	icon = 'icons/turf/flooring/wood_greyscale.dmi'
-	icon_state = "wood_vert_panel"
-	initial_flooring = /datum/decl/flooring/wood/birch/vert_panel
-
-/turf/simulated/floor/wood/hardwood
-	name = "hardwood wood floor"
-	icon = 'icons/turf/flooring/wood_greyscale.dmi'
-	color = "#42291a"
-	icon_state = "wood"
-	initial_flooring = /datum/decl/flooring/wood/hardwood
-
-/turf/simulated/floor/wood/hardwood/tile
-	icon = 'icons/turf/flooring/wood_greyscale.dmi'
-	icon_state = "wood_tile"
-	initial_flooring = /datum/decl/flooring/wood/hardwood/tile
-
-/turf/simulated/floor/wood/hardwood/panel
-	icon = 'icons/turf/flooring/wood_greyscale.dmi'
-	icon_state = "wood_panel"
-	initial_flooring = /datum/decl/flooring/wood/hardwood/panel
-
-/turf/simulated/floor/wood/hardwood/parquet
-	icon = 'icons/turf/flooring/wood_greyscale.dmi'
-	icon_state = "wood_parquet"
-	initial_flooring = /datum/decl/flooring/wood/hardwood/parquet
-
-/turf/simulated/floor/wood/hardwood/vert
-	icon = 'icons/turf/flooring/wood_greyscale.dmi'
-	icon_state = "wood_vert"
-	initial_flooring = /datum/decl/flooring/wood/hardwood/vert
-
-/turf/simulated/floor/wood/hardwood/vert_panel
-	icon = 'icons/turf/flooring/wood_greyscale.dmi'
-	icon_state = "wood_vert_panel"
-	initial_flooring = /datum/decl/flooring/wood/hardwood/vert_panel
-
-/turf/simulated/floor/wood/oak
-	name = "oak wood floor"
-	icon = 'icons/turf/flooring/wood_greyscale.dmi'
-	color = "#674928"
-	icon_state = "wood"
-	initial_flooring = /datum/decl/flooring/wood/oak
-
-/turf/simulated/floor/wood/oak/tile
-	icon = 'icons/turf/flooring/wood_greyscale.dmi'
-	icon_state = "wood_tile"
-	initial_flooring = /datum/decl/flooring/wood/oak/tile
-
-/turf/simulated/floor/wood/oak/panel
-	icon = 'icons/turf/flooring/wood_greyscale.dmi'
-	icon_state = "wood_panel"
-	initial_flooring = /datum/decl/flooring/wood/oak/panel
-
-/turf/simulated/floor/wood/oak/parquet
-	icon = 'icons/turf/flooring/wood_greyscale.dmi'
-	icon_state = "wood_parquet"
-	initial_flooring = /datum/decl/flooring/wood/oak/parquet
-
-/turf/simulated/floor/wood/oak/vert
-	icon = 'icons/turf/flooring/wood_greyscale.dmi'
-	icon_state = "wood_vert"
-	initial_flooring = /datum/decl/flooring/wood/oak/vert
-
-/turf/simulated/floor/wood/oak/vert_panel
-	icon = 'icons/turf/flooring/wood_greyscale.dmi'
-	icon_state = "wood_vert_panel"
-	initial_flooring = /datum/decl/flooring/wood/oak/vert_panel
-
-/turf/simulated/floor/wood/pine
-	name = "pine wood floor"
-	icon = 'icons/turf/flooring/wood_greyscale.dmi'
-	color = "#cd9d6f"
-	icon_state = "wood"
-	initial_flooring = /datum/decl/flooring/wood/pine
-
-/turf/simulated/floor/wood/pine/tile
-	icon = 'icons/turf/flooring/wood_greyscale.dmi'
-	icon_state = "wood_tile"
-	initial_flooring = /datum/decl/flooring/wood/pine/tile
-
-/turf/simulated/floor/wood/pine/panel
-	icon = 'icons/turf/flooring/wood_greyscale.dmi'
-	icon_state = "wood_panel"
-	initial_flooring = /datum/decl/flooring/wood/pine/panel
-
-/turf/simulated/floor/wood/pine/parquet
-	icon = 'icons/turf/flooring/wood_greyscale.dmi'
-	icon_state = "wood_parquet"
-	initial_flooring = /datum/decl/flooring/wood/pine/parquet
-
-/turf/simulated/floor/wood/pine/vert
-	icon = 'icons/turf/flooring/wood_greyscale.dmi'
-	icon_state = "wood_vert"
-	initial_flooring = /datum/decl/flooring/wood/pine/vert
-
-/turf/simulated/floor/wood/pine/vert_panel
-	icon = 'icons/turf/flooring/wood_greyscale.dmi'
-	icon_state = "wood_vert_panel"
-	initial_flooring = /datum/decl/flooring/wood/pine/vert_panel
-
-/turf/simulated/floor/wood/redwood
-	name = "redwood wood floor"
-	icon = 'icons/turf/flooring/wood_greyscale.dmi'
-	color = "#a45a52"
-	icon_state = "wood"
-	initial_flooring = /datum/decl/flooring/wood/redwood
-
-/turf/simulated/floor/wood/redwood/tile
-	icon = 'icons/turf/flooring/wood_greyscale.dmi'
-	icon_state = "wood_tile"
-	initial_flooring = /datum/decl/flooring/wood/redwood/tile
-
-/turf/simulated/floor/wood/redwood/panel
-	icon = 'icons/turf/flooring/wood_greyscale.dmi'
-	icon_state = "wood_panel"
-	initial_flooring = /datum/decl/flooring/wood/redwood/panel
-
-/turf/simulated/floor/wood/redwood/parquet
-	icon = 'icons/turf/flooring/wood_greyscale.dmi'
-	icon_state = "wood_parquet"
-	initial_flooring = /datum/decl/flooring/wood/redwood/parquet
-
-/turf/simulated/floor/wood/redwood/vert
-	icon = 'icons/turf/flooring/wood_greyscale.dmi'
-	icon_state = "wood_vert"
-	initial_flooring = /datum/decl/flooring/wood/redwood/vert
-
-/turf/simulated/floor/wood/redwood/vert_panel
-	icon = 'icons/turf/flooring/wood_greyscale.dmi'
-	icon_state = "wood_vert_panel"
-	initial_flooring = /datum/decl/flooring/wood/redwood/vert_panel

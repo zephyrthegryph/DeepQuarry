@@ -188,6 +188,85 @@
 /datum/contract_requirement/proc/ui_stage_rows()
 	return list()
 
+/// Requires two real event streams to refer to the same subjects/assets. This
+/// prevents unrelated work from satisfying a purported follow-through task.
+/datum/contract_requirement/paired_facts
+	name = "Linked work"
+	var/first_event_type
+	var/second_event_type
+	var/join_field
+	var/second_join_field
+	var/datum/contract_event_filter/first_filter
+	var/datum/contract_event_filter/second_filter
+	var/list/first_facts
+	var/list/second_facts
+	var/list/credited_facts
+	var/list/first_fact_times
+	var/list/second_fact_times
+
+/datum/contract_requirement/paired_facts/New(_first_event_type, _second_event_type, _join_field, _target = 1, _scope_mode = CONTRACT_EVIDENCE_SCOPE_ANY, _second_join_field)
+	. = ..()
+	first_event_type = _first_event_type
+	second_event_type = _second_event_type
+	join_field = _join_field
+	second_join_field = _second_join_field || _join_field
+	target = max(1, _target)
+	first_filter = new(_scope_mode)
+	second_filter = new(_scope_mode)
+	first_facts = list()
+	second_facts = list()
+	credited_facts = list()
+	first_fact_times = list()
+	second_fact_times = list()
+	event_types = list(first_event_type, second_event_type)
+
+/datum/contract_requirement/paired_facts/Destroy()
+	QDEL_NULL(first_filter)
+	QDEL_NULL(second_filter)
+	first_facts = null
+	second_facts = null
+	credited_facts = null
+	first_fact_times = null
+	second_fact_times = null
+	return ..()
+
+/datum/contract_requirement/paired_facts/handle_event(datum/contract_event/event)
+	if(state != CONTRACT_REQUIREMENT_PENDING)
+		return FALSE
+	var/value = event.value(event.event_type == second_event_type ? second_join_field : join_field)
+	if(isnull(value) || value == "")
+		return FALSE
+	var/key = "[value]"
+	if(event.event_type == first_event_type)
+		if(!first_filter.matches(event, contract))
+			return FALSE
+		// A follow-up observed before its prerequisite cannot be banked and then
+		// joined later, even when both events share one BYOND world tick.
+		if(key in second_facts)
+			second_facts -= key
+			second_fact_times -= key
+		first_facts[key] = event.contributor_account || event.actor_account || TRUE
+		first_fact_times[key] = event.occurred_at
+	else if(event.event_type == second_event_type)
+		if(!second_filter.matches(event, contract))
+			return FALSE
+		second_facts[key] = event.contributor_account || event.actor_account || TRUE
+		second_fact_times[key] = event.occurred_at
+	else
+		return FALSE
+	if(credited_facts[key] || !(key in first_facts) || !(key in second_facts))
+		return TRUE
+	if(second_fact_times[key] < first_fact_times[key])
+		return TRUE
+	credited_facts[key] = TRUE
+	var/contributor = second_facts[key]
+	if(!isnum(contributor) || contributor == TRUE)
+		contributor = first_facts[key]
+	return add_progress(1, isnum(contributor) && contributor != TRUE ? contributor : null, "Linked [join_field] [key] completed both parts of [name].")
+
+/datum/contract_requirement/paired_facts/progress_text()
+	return "[progress] / [target] linked outcomes"
+
 /// Generic event-driven counter. A definition describes its evidence with
 /// scope, exact values, tags, numeric predicates, and an optional uniqueness
 /// key; no contract-specific polling loop or callback gadget is required.

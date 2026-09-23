@@ -21,6 +21,10 @@
 #define MAT_MORPHIUM		"morphium"
 #define MAT_MORPHIUMHULL	"morphium hull"
 #define MAT_TIN				"tin"
+#define MAT_NICKEL			"nickel"
+#define MAT_CHROMIUM		"chromium"
+#define MAT_TUNGSTEN		"tungsten"
+#define MAT_TECH_CERAMIC	"technical ceramic"
 
 //stone
 #define MAT_MARBLE			"marble"

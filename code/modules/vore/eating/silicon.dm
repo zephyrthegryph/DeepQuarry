@@ -31,7 +31,7 @@
 		return
 
 	//Holopads have this 'masters' list where the keys are AI names and the values are the hologram effects
-	var/obj/effect/overlay/aiholo/hologram = holo.masters[src]
+	var/obj/effect/overlay/aiholo/hologram = LAZYACCESS(holo.masters, src)
 
 	//Something wrong on holopad
 	if(!hologram)
@@ -72,7 +72,7 @@
 		if(flavor_text)
 			. += "[flavor_text]"
 
-		if(master.ooc_notes)
+		if(master.identity.ooc_notes)
 			. += span_deptradio("OOC Notes:") + "<a href='byond://?src=\ref[master];ooc_notes=1'>\[View\]</a> - <a href='byond://?src=\ref[master];print_ooc_notes_chat=1'>\[Print\]</a>"
 
 // Allow dissipating ai holograms by attacking them

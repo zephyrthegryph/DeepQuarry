@@ -9,6 +9,15 @@
 //      types initialize with their preset gas content
 //   5. SSair init — gas singleton metadata reached Rust via auxtools_atmos_init
 
+/// Empty both halves of the dependency publication pipeline before a focused
+/// wake assertion. A full-suite run can inherit thousands of observations from
+/// earlier fixtures; bounding an assertion by an arbitrary number of scans then
+/// tests queue position rather than whether the new mutation wakes its device.
+/proc/dq_atmos_test_drain_dependency_queue()
+	while(!SSmachines.wake_dirty_gas_subscribers())
+		stoplag()
+	drain_dirty_gas_observations()
+
 /// Publish a synthetic fixture through the same Rust-authoritative port graph
 /// used by map setup. Allocate every port before queueing edges so fixture order
 /// cannot hide a missing reciprocal connection.
@@ -409,7 +418,7 @@
 /// FULL end-to-end: human stands on a turf that has plasma in its air,
 /// then breathe() runs through the production chain — get_breath_from_environment
 /// → environment.remove_volume → mask filter_air → handle_breath →
-/// adjustToxLoss / reagent. If THIS passes but dq_phoron_breath_applies_toxin_reagent
+/// injure(INJURY_TOXIN) / reagent. If THIS passes but dq_phoron_breath_applies_toxin_reagent
 /// also passes and in-game tox still doesn't apply, the live scenario's
 /// plasma concentration is too low (not enough phoron made it to the
 /// player's tile to cross safe_toxins_max).
@@ -2787,8 +2796,16 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_air_snapshots)
 		"powernet did not fold dynamic area usage into sleeping APC demand")
 	P.load = P.sleeping_apc_load_total
 	P.reset()
+	TEST_ASSERT_EQUAL(P.sleeping_apc_load_total, 1550, \
+		"completed accounting window discarded dynamic load before monitors could observe it")
+	P.begin_accounting_window()
 	TEST_ASSERT_EQUAL(P.sleeping_apc_load_total, 1250, \
-		"powernet retained one-tick area usage in the stable APC reservation")
+		"new accounting window retained prior one-tick area usage in the stable APC reservation")
+	STOP_PROCESSING_POWERNET(P)
+	P.adjust_sleeping_apc_load(A, 300)
+	TEST_ASSERT(!(P in SSmachines.active_powernets), "partial area-load accumulation woke a stable powernet before transaction completion")
+	P.finalize_accounting_window()
+	TEST_ASSERT(!(P in SSmachines.active_powernets), "identical completed area-load window woke a stable powernet")
 	P.unreserve_sleeping_apc_load(A)
 	TEST_ASSERT_EQUAL(P.sleeping_apc_load_total, 0, \
 		"powernet retained APC demand after wake")
@@ -3393,11 +3410,11 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_air_snapshots)
 // Mob pressure damage / non-human breath
 // =====================================================================
 
-/// A human in a low-pressure (near-vacuum) environment takes oxyloss as the
+/// A human in a low-pressure (near-vacuum) environment becomes hypoxic as the
 /// breath proc can't extract enough O2. Validates the life-cycle atmos chain.
-/datum/unit_test/dq_human_low_pressure_oxyloss
+/datum/unit_test/dq_human_low_pressure_hypoxia
 
-/datum/unit_test/dq_human_low_pressure_oxyloss/Run()
+/datum/unit_test/dq_human_low_pressure_hypoxia/Run()
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human)
 	TEST_ASSERT_NOTNULL(H, "couldn't allocate human")
 	TEST_ASSERT_NOTNULL(H.species, "test human has no species")
@@ -3406,13 +3423,13 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_air_snapshots)
 	var/datum/gas_mixture/breath = new(BREATH_VOLUME)
 	breath.adjust_gas(/datum/gas/oxygen, 0.01)
 	breath.set_temperature(T20C)
-	var/initial_oxyloss = H.getOxyLoss()
+	var/initial_hypoxia = H.injury_load(INJURY_CATEGORY_ASPHYXIA)
 
 	H.handle_breath(breath)
 
-	var/final_oxyloss = H.getOxyLoss()
-	TEST_ASSERT(final_oxyloss > initial_oxyloss, \
-		"human didn't take oxyloss from near-vacuum breath: [initial_oxyloss] → [final_oxyloss]")
+	var/final_hypoxia = H.injury_load(INJURY_CATEGORY_ASPHYXIA)
+	TEST_ASSERT(final_hypoxia > initial_hypoxia, \
+		"human didn't become hypoxic from near-vacuum breath: [initial_hypoxia] → [final_hypoxia]")
 
 
 /// Verify phoron breather species correctly consumes plasma when given a
@@ -3760,10 +3777,10 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_air_snapshots)
 	turf_air.adjust_gas(/datum/gas/nitrogen, MOLES_N2STANDARD * 20)
 	turf_air.set_temperature(T20C)
 
-	var/initial_brute = H.getBruteLoss()
+	var/initial_brute = H.injury_load(INJURY_CATEGORY_PHYSICAL)
 	for(var/i in 1 to 5)
 		H.handle_environment(turf_air)
-	var/final_brute = H.getBruteLoss()
+	var/final_brute = H.injury_load(INJURY_CATEGORY_PHYSICAL)
 
 	TEST_ASSERT(final_brute > initial_brute, \
 		"human took no brute damage at ~20 atm pressure: [initial_brute] → [final_brute]")
@@ -3798,14 +3815,14 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_air_snapshots)
 	turf_air.adjust_gas(/datum/gas/nitrogen, MOLES_N2STANDARD)
 	turf_air.set_temperature(50) // 50 K, ~-223°C
 
-	// Cold burn → fire damage in CHOMP humans.
-	var/initial_fireloss = H.getFireLoss()
+	// Cold exposure → frostbite (thermal injury).
+	var/initial_thermal = H.injury_load(INJURY_CATEGORY_THERMAL)
 	for(var/i in 1 to 10)
 		H.handle_environment(turf_air)
-	var/final_fireloss = H.getFireLoss()
+	var/final_thermal = H.injury_load(INJURY_CATEGORY_THERMAL)
 
-	TEST_ASSERT(final_fireloss > initial_fireloss, \
-		"human took no fireloss at 50K: [initial_fireloss] → [final_fireloss]")
+	TEST_ASSERT(final_thermal > initial_thermal, \
+		"human took no thermal injury at 50K: [initial_thermal] → [final_thermal]")
 
 	for(var/datum/gas/g as anything in turf_air.get_gases())
 		turf_air.set_moles(g, 0)
@@ -3961,12 +3978,12 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 		"timestamp" = world.time,
 	)
 	A.receive_signal(status)
-	TEST_ASSERT_EQUAL(A.alarm_area.air_vent_info[tag], status.data, \
+	TEST_ASSERT_EQUAL(LAZYACCESS(A.alarm_area.air_vent_info, tag), status.data, \
 		"air alarm discarded a matching vent status packet")
 	TEST_ASSERT(tag in A.alarm_area.air_vent_names, \
 		"air alarm did not register the matching vent status tag")
-	A.alarm_area.air_vent_info.Remove(tag)
-	A.alarm_area.air_vent_names.Remove(tag)
+	LAZYREMOVE(A.alarm_area.air_vent_info, tag)
+	LAZYREMOVE(A.alarm_area.air_vent_names, tag)
 	qdel(status)
 	qdel(A)
 
@@ -3984,7 +4001,7 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	T.air.adjust_gas(/datum/gas/oxygen, MOLES_O2STANDARD)
 	T.air.adjust_gas(/datum/gas/nitrogen, MOLES_N2STANDARD)
 	T.air.set_temperature(T20C)
-	drain_dirty_gas_mixtures()
+	dq_atmos_test_drain_dependency_queue()
 
 	var/obj/machinery/atmospherics/unary/vent_pump/V = new(T)
 	V.update_use_power(USE_POWER_IDLE)
@@ -4011,17 +4028,27 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	A.update_area()
 	A.set_initial_TLV()
 	SSmachines.hibernate_air_alarm(A)
+	var/alarm_wakes_before = A.gas_dependency_wake_count
 	T.air.adjust_moles(/datum/gas/plasma, 1)
-	while(!SSmachines.wake_dirty_gas_subscribers())
-		stoplag()
-	TEST_ASSERT(A.datum_flags & DF_ISPROCESSING, "composition change did not wake air alarm")
+	for(var/alarm_i in 1 to 65536)
+		SSmachines.wake_dirty_gas_subscribers()
+		if(A.gas_dependency_wake_count > alarm_wakes_before)
+			break
+		if(!(alarm_i % 256))
+			stoplag()
+	TEST_ASSERT(A.gas_dependency_wake_count > alarm_wakes_before, "composition change did not wake air alarm")
 
 	var/obj/machinery/air_sensor/S = new(T)
 	SSmachines.hibernate_air_sensor(S)
+	var/sensor_wakes_before = S.gas_dependency_wake_count
 	T.air.set_temperature(T.air.return_temperature() + 5)
-	while(!SSmachines.wake_dirty_gas_subscribers())
-		stoplag()
-	TEST_ASSERT(S.datum_flags & DF_ISPROCESSING, "temperature change did not wake air sensor")
+	for(var/sensor_i in 1 to 65536)
+		SSmachines.wake_dirty_gas_subscribers()
+		if(S.gas_dependency_wake_count > sensor_wakes_before)
+			break
+		if(!(sensor_i % 256))
+			stoplag()
+	TEST_ASSERT(S.gas_dependency_wake_count > sensor_wakes_before, "temperature change did not wake air sensor")
 
 	qdel(V)
 	qdel(A)
@@ -4188,6 +4215,7 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 /datum/unit_test/dq_closed_firedoor_is_event_driven
 
 /datum/unit_test/dq_closed_firedoor_is_event_driven/Run()
+	dq_atmos_test_drain_dependency_queue()
 	var/list/pair = dq_atmos_test_find_clear_pipe_run(2)
 	TEST_ASSERT_NOTNULL(pair, "no adjacent floors for firedoor dependency test")
 	var/turf/simulated/floor/T = pair[1]
@@ -4201,15 +4229,19 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	TEST_ASSERT_EQUAL(F.process(), PROCESS_KILL, "stable closed firedoor retained timed polling")
 	var/datum/weakref/firedoor_ref = WEAKREF(F)
 	TEST_ASSERT(SSmachines.sleeping_gas_devices[firedoor_ref.reference], "closed firedoor did not register gas dependencies")
+	var/firedoor_wakes_before = F.gas_dependency_wake_count
 	T.air.set_temperature(T.air.return_temperature() + 10)
-	SSmachines.wake_dirty_gas_subscribers()
-	TEST_ASSERT(!(F in SSmachines.processing_machines), "harmless in-band temperature drift woke a closed firedoor")
+	while(!SSmachines.wake_dirty_gas_subscribers())
+		stoplag()
+	TEST_ASSERT_EQUAL(F.gas_dependency_wake_count, firedoor_wakes_before, "harmless in-band temperature drift woke a closed firedoor")
 	T.air.set_temperature(convert_c2k(60))
-	for(var/firedoor_i in 1 to 4096)
+	for(var/firedoor_i in 1 to 65536)
 		SSmachines.wake_dirty_gas_subscribers()
-		if(F in SSmachines.processing_machines)
+		if(F.gas_dependency_wake_count > firedoor_wakes_before)
 			break
-	TEST_ASSERT(F in SSmachines.processing_machines, "temperature change did not wake closed firedoor")
+		if(!(firedoor_i % 256))
+			stoplag()
+	TEST_ASSERT(F.gas_dependency_wake_count > firedoor_wakes_before, "temperature change did not wake closed firedoor")
 	TEST_ASSERT_EQUAL(F.process(), PROCESS_KILL, "dependency wake left a firedoor polling after evaluating its state")
 	TEST_ASSERT(!(F in SSmachines.processing_machines), "early-woken firedoor did not return to dependency sleep")
 	qdel(F)
@@ -4285,7 +4317,7 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	var/obj/machinery/firealarm/F = new(T)
 	var/fire_result = F.process()
 	TEST_ASSERT_EQUAL(fire_result, PROCESS_KILL, "idle fire alarm remained in the machine polling loop")
-	F.fire_act(T.air, T0C + 300, CELL_VOLUME)
+	F.fire_act(T0C + 300, CELL_VOLUME)
 	TEST_ASSERT(F.firewarn, "hibernating fire alarm did not respond to direct hotspot exposure")
 	qdel(F)
 	qdel(M)
@@ -4637,7 +4669,13 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	deltimer(power_sensor.record_timer)
 	power_sensor.record_timer = null
 	power_sensor.wake_for_record()
-	TEST_ASSERT(power_sensor in SSmachines.processing_machines, "history timer did not wake the power sensor")
+	TEST_ASSERT(!(power_sensor in SSmachines.processing_machines), "timer-driven power history sample unnecessarily entered machinery processing")
+	TEST_ASSERT(power_sensor.record_timer, "direct power history sample did not schedule its successor")
+	var/obj/machinery/power/solar_control/solar_controller = new(T)
+	TEST_ASSERT_EQUAL(solar_controller.process(), PROCESS_KILL, "solar controller remained in machinery processing between minute-based solar events")
+	var/obj/machinery/telecomms/telecomms_node = new(T)
+	TEST_ASSERT_EQUAL(telecomms_node.process(), PROCESS_KILL, "idle telecomms node retained a two-second machinery poll")
+	TEST_ASSERT(telecomms_node.thermal_timer, "idle telecomms node did not schedule its physical thermal boundary")
 	var/obj/machinery/optable/operating_table = new(T)
 	TEST_ASSERT_EQUAL(operating_table.process(), PROCESS_KILL, "empty operating table remained scheduled")
 	var/obj/machinery/computer/aifixer/ai_fixer = new(T)
@@ -4839,6 +4877,8 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	qdel(cryo)
 	qdel(cryo_cell)
 	qdel(power_sensor)
+	qdel(solar_controller)
+	qdel(telecomms_node)
 	qdel(operating_console)
 	qdel(operating_table)
 	qdel(point_defense)
@@ -5264,6 +5304,7 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	// Manually satisfy can_pump-equivalent preconditions and call process.
 	for(var/i in 1 to 5)
 		Pump.process()
+		SSmachines.flush_pump_transfers()
 
 	var/air1_after = Pump.air1.get_moles(/datum/gas/nitrogen)
 	var/air2_after = Pump.air2.get_moles(/datum/gas/nitrogen)
@@ -5411,8 +5452,7 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 /// is attached and sets the ON_FIRE resistance flag. This is what "fire on the
 /// floor sets dropped items alight" means in the engine.
 ///
-/// Note: /atom/proc/temperature_expose is a no-op stub on this fork; the real
-/// per-atom heat hook is fire_act(), which is what the hotspot actually calls.
+/// The per-atom heat hook is fire_act(), which is what the hotspot calls.
 /datum/unit_test/dq_item_takes_atmos_heat
 
 /datum/unit_test/dq_item_takes_atmos_heat/Run()
@@ -6947,8 +6987,8 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 /// Superconductivity (the Rust heat-conduction arena) is wired end-to-end. A heat-eligible
 /// turf — thermal_conductivity > 0 AND heat_capacity > 0 — must report its real arena
 /// temperature through the /turf/proc/return_temperature bind (the value supercond_update_ref
-/// seeded from turf.temperature), NOT the 102 K "untracked" sentinel that hook_turf_temperature
-/// returns for a turf the arena never registered.
+/// seeded from turf.temperature). Untracked turfs now return that DM mirror too; registration is
+/// established by changing the mirror after registration and confirming the arena stays authoritative.
 ///
 /// This is the regression guard the ported superconductivity subsystem otherwise lacked: it is
 /// green iff turfs actually reach the heat arena. It fails if the `superconductivity` cargo
@@ -6969,8 +7009,8 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 			continue
 		eligible++
 		var/arena_temp = T.return_temperature()
-		// 102 K == the untracked sentinel; a genuinely-tracked turf reports a real temperature
-		// (~293 K for a room-temp floor). Bound the top end to reject NaN/garbage too.
+		// A genuinely tracked room-temperature floor reports a physical temperature.
+		// Bound the top end to reject NaN/garbage too.
 		if(isnum(arena_temp) && arena_temp > 150 && arena_temp < 6000)
 			tracked++
 			sample_temp = arena_temp
@@ -6978,11 +7018,26 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	TEST_ASSERT(eligible > 0, \
 		"no heat-eligible floors on the map (thermal_conductivity>0 && heat_capacity>0) — cannot validate superconductivity")
 	TEST_ASSERT(tracked > 0, \
-		"0 of [eligible] heat-eligible floors are registered in the Rust heat arena (all returned the 102 K untracked sentinel) — superconductivity is NOT wired: the cargo feature is off, supercond_update_ref isn't running, or world dims were never pushed")
+		"0 of [eligible] heat-eligible floors report a physical arena temperature — superconductivity is NOT wired")
 	// Broad registration, not a one-off fluke: the bulk of eligible floors must be tracked.
 	TEST_ASSERT(tracked >= eligible / 2, \
 		"only [tracked]/[eligible] heat-eligible floors reached the heat arena — turf registration is partially broken")
 	log_test("Superconductivity: [tracked]/[eligible] eligible floors heat-tracked; sample arena temp [sample_temp] K")
+
+/datum/unit_test/dq_airless_floor_is_not_a_cryogenic_solid
+
+/datum/unit_test/dq_airless_floor_is_not_a_cryogenic_solid/Run()
+	var/checked = 0
+	for(var/turf/simulated/floor/T in world)
+		if(T.initial_gas_mix != AIRLESS_ATMOS)
+			continue
+		checked++
+		TEST_ASSERT(T.air.return_pressure() < 0.01, "airless floor contains pressurized gas")
+		TEST_ASSERT(abs(T.return_temperature() - T20C) < 1, \
+			"airless floor solid initialized at [T.return_temperature()] K instead of room temperature; it will refrigerate the station through superconductivity")
+		if(checked >= 16)
+			break
+	TEST_ASSERT(checked > 0, "test map has no airless floors to validate")
 
 /datum/unit_test/dq_dirty_gas_publication_is_watch_scoped
 
@@ -7031,9 +7086,9 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	drain_dirty_gas_observations()
 	air.adjust_moles(/datum/gas/oxygen, 1)
 	var/list/observation = drain_dirty_gas_observations()
-	TEST_ASSERT_EQUAL(length(observation), 13, "dirty gas observation did not use the documented atomic stride")
+	TEST_ASSERT_EQUAL(length(observation), GAS_DEPENDENCY_OBSERVATION_STRIDE, "dirty gas observation did not use the documented atomic stride")
 	TEST_ASSERT_EQUAL(observation[1], mixture_id, "dirty gas observation returned the wrong arena mixture")
-	TEST_ASSERT(abs(observation[13] - air.total_moles()) < 0.001, "atomic observation returned the wrong total-moles cache")
+	TEST_ASSERT(abs(observation[GAS_DEPENDENCY_OBSERVATION_STRIDE] - air.total_moles()) < 0.001, "atomic observation returned the wrong total-moles cache")
 	var/obj/machinery/alarm/alarm = new(test_turf)
 	var/direct_signature = alarm.atmospheric_control_signature(air)
 	var/observed_signature = alarm.atmospheric_control_signature_observation(observation, 1)
@@ -7121,3 +7176,92 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	qdel(stacker)
 	qdel(input)
 	qdel(output)
+
+
+/// Memory: every `/turf/space` (and any other immutable_atmos turf) must point
+/// its `air` at the SAME cached vacuum mixture instead of each allocating its
+/// own — that's the entire point of the shared-vacuum change (LINDA_turf_tile.dm
+/// /turf/open/Initialize). On Southern Cross this collapsed ~322k identical
+/// per-turf vacuum mixtures (and Rust arena slots) down to one.
+/datum/unit_test/dq_space_turfs_share_vacuum_mixture
+
+/datum/unit_test/dq_space_turfs_share_vacuum_mixture/Run()
+	var/turf/space/first = null
+	var/turf/space/second = null
+	for(var/turf/space/candidate as anything in world)
+		if(candidate.blocks_air)
+			continue
+		if(!first)
+			first = candidate
+		else if(candidate.air == first.air)
+			second = candidate
+			break
+	TEST_ASSERT_NOTNULL(first, "no usable /turf/space found on the test map")
+	TEST_ASSERT_NOTNULL(first.air, "/turf/space.air is null — vacuum mixture wasn't created")
+	TEST_ASSERT(istype(first.air, /datum/gas_mixture/immutable/space), \
+		"/turf/space.air is not the shared immutable/space mixture (type=[first.air.type])")
+	TEST_ASSERT_NOTNULL(second, "found only one /turf/space with a distinct air reference — could not confirm sharing across multiple space turfs")
+	TEST_ASSERT_EQUAL(first.air, second.air, "two /turf/space turfs on the same map do not share the same gas_mixture instance")
+	TEST_ASSERT(first.immutable_atmos && second.immutable_atmos, "shared vacuum turfs are not flagged immutable_atmos")
+
+
+/// Correctness: ChangeTurf-ing a floor into space must hand it the shared
+/// vacuum instance (not a private copy), and ChangeTurf-ing it back to a floor
+/// must give it a fresh, independently mutable mixture — never an alias of the
+/// shared vacuum, and never leave the shared vacuum mutated or destroyed by the
+/// round trip. Regression for LINDA_turf_tile.dm /turf/open/Initialize+Destroy
+/// and the shared-mixture change in general.
+/datum/unit_test/dq_changeturf_space_floor_roundtrip_preserves_shared_vacuum
+
+/datum/unit_test/dq_changeturf_space_floor_roundtrip_preserves_shared_vacuum/Run()
+	// Find an existing space turf to use as our sharing witness, and a floor
+	// turf whose position we can safely round-trip through space.
+	var/turf/space/witness = null
+	for(var/turf/space/candidate as anything in world)
+		if(!candidate.blocks_air)
+			witness = candidate
+			break
+	TEST_ASSERT_NOTNULL(witness, "no usable /turf/space found on the test map")
+	var/datum/gas_mixture/shared_vacuum = witness.air
+	TEST_ASSERT_NOTNULL(shared_vacuum, "witness space turf has null air")
+
+	var/list/pair = dq_atmos_test_find_floor_pair()
+	TEST_ASSERT_NOTNULL(pair, "no usable floor pair on map for ChangeTurf round-trip test")
+	var/turf/simulated/floor/original = pair[1]
+	var/original_type = original.type
+
+	// floor -> space: must adopt the shared instance, not a private copy.
+	var/turf/space/as_space = original.ChangeTurf(/turf/space)
+	TEST_ASSERT_NOTNULL(as_space, "ChangeTurf(floor -> /turf/space) failed")
+	TEST_ASSERT_EQUAL(as_space.air, shared_vacuum, \
+		"floor turned into space did not adopt the shared vacuum mixture (got a private instance instead)")
+	TEST_ASSERT_EQUAL(shared_vacuum.total_moles(), 0, \
+		"shared vacuum mixture picked up moles when a floor was converted into space")
+
+	// space -> floor: must get its OWN mutable mixture, never the shared one.
+	var/turf/simulated/floor/back_to_floor = as_space.ChangeTurf(original_type)
+	TEST_ASSERT_NOTNULL(back_to_floor, "ChangeTurf(space -> floor) failed")
+	TEST_ASSERT_NOTNULL(back_to_floor.air, "floor restored from space has null air")
+	TEST_ASSERT(back_to_floor.air != shared_vacuum, \
+		"floor restored from space is aliasing the shared vacuum mixture instead of owning a private one")
+	TEST_ASSERT(!istype(back_to_floor.air, /datum/gas_mixture/immutable), \
+		"floor restored from space still has an immutable mixture — can't ever receive real air again")
+
+	// Prove the floor's mixture is genuinely independent and mutable: writing
+	// to it must not perturb the shared vacuum (which every other space turf
+	// on the map is still pointing at).
+	back_to_floor.air.set_moles(/datum/gas/nitrogen, MOLES_N2STANDARD)
+	back_to_floor.air.set_temperature(T20C)
+	TEST_ASSERT(back_to_floor.air.total_moles() > 0, \
+		"floor restored from space rejected a direct gas write — its mixture isn't actually mutable")
+	TEST_ASSERT_EQUAL(shared_vacuum.total_moles(), 0, \
+		"writing gas to a restored floor leaked into the shared vacuum mixture — it is not actually immutable/shared-safe")
+	TEST_ASSERT_EQUAL(witness.air.total_moles(), 0, \
+		"an unrelated space turf's air changed after a floor round-tripped through space")
+
+	// Clean up: put the floor back to vacuum-free space state it started from
+	// isn't meaningful here (original was a floor) — restore it to a floor with
+	// its original type and zero air so later tests see a clean map.
+	for(var/datum/gas/g as anything in back_to_floor.air.get_gases())
+		back_to_floor.air.set_moles(g, 0)
+	dq_atmos_test_restore_walls()

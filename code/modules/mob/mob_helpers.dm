@@ -26,7 +26,6 @@
 		return L.mob_size <= MOB_TINY
 	return 0
 
-
 /proc/ismini(A)
 	if(A && isliving(A))
 		var/mob/living/L = A
@@ -77,7 +76,6 @@
 		var/obj/item/clothing/under/U = H.w_uniform
 		return U.sensor_mode
 	return SUIT_SENSOR_OFF
-
 
 /proc/is_admin(mob/user)
 	return check_rights_for(user.client, R_ADMIN|R_EVENT) != 0
@@ -137,7 +135,6 @@
 /proc/get_zone_with_miss_chance(zone, mob/target, miss_chance_mod = 0, ranged_attack=0, force_hit = FALSE, atom/movable/attacker)
 	zone = check_zone(zone)
 
-
 	/// Toggle for servers that desire to have attacks ALWAYS hit, since force_hit isn't always its default.
 	/// NOTE: This means that mobs will ALWAYS hit players and leads to much more punishing combat.
 	/// The system as is gives players an edge in PvE, while enabling always_hit gives mobs an edge in PvE.
@@ -179,7 +176,6 @@
 	if(!target.client) //If the target is an NPC, we will always hit (barring extreme circumstances like mobs having modified evasion, handled above). Removes baymiss against mobs.
 		return zone
 
-
 	/// Toggle if you desire to have it so things like claymores, mines, and turrets ALWAYS will hit their selected zone & are not subject to RNG miss chance.
 	/// By default, this is set to FALSE. If toggled to TRUE, non living entities will ALWAYS hit 100% of the time.
 	var/non_living_always_hits = FALSE
@@ -207,7 +203,6 @@
 	else if(!has_evasion_chance && prob(miss_chance_mod)) //Only take miss chance into account when we have no evasion IF the attacker is non-living (turret/mine/claymore).
 		return null //They missed.
 
-
 	//However, if a mob IS attacking a player, let's throw in some RNG into the mix to make it feel better for players.
 	//If a mob eats hits and dies, people are happy.
 	//If you shoot a mob point blank 10 times and every hit misses, people are upset (and rightfully so)
@@ -228,7 +223,6 @@
 	if(prob(randomization_chance)) //If the mob rolled a miss chance?
 		return null //No hit! Player escapes unscathed!
 	return zone
-
 
 /proc/stars(n, pr)
 	if (pr == null)
@@ -281,9 +275,6 @@
 			//if(2,4,6,15)	newletter="[uppertext(newletter)]"
 			if(2,4,6,9)	newletter="[uppertext(newletter)]"
 			if(7)	newletter+="'"
-			//if(9,10)	newletter=span_bold("[newletter]")
-			//if(11,12)	newletter="<big>[newletter]</big>"
-			//if(13)	newletter="<small>[newletter]</small>"
 		newphrase+="[newletter]";counter-=1
 	return newphrase
 
@@ -310,7 +301,6 @@
 		p++//for each letter p is increased to find where the next letter will be.
 	return sanitize(t)
 
-
 /proc/Gibberish(t, p)//t is the inputted message, and any value higher than 70 for p will cause letters to be replaced instead of added
 	/* Turn text into complete gibberish! */
 	var/returntext = ""
@@ -330,7 +320,6 @@
 		returntext += letter
 
 	return returntext
-
 
 /proc/ninjaspeak(n)
 /*
@@ -360,7 +349,6 @@ It's fairly easy to fix if dealing with single letters but not so much with comp
 		p=p+n_mod
 	return sanitize(t)
 
-
 /proc/shake_camera(mob/M, duration, strength=1)
 	if(!M || !M.client || duration < 1)
 		return
@@ -382,7 +370,6 @@ It's fairly easy to fix if dealing with single letters but not so much with comp
 		if (M.real_name == text("[msg]"))
 			return 1
 	return 0
-
 
 /mob/proc/abiotic(full_body = 0)
 	return 0
@@ -555,7 +542,6 @@ It's fairly easy to fix if dealing with single letters but not so much with comp
 			// say_dead_direct(span_name("[name]") + " no longer [pick("skulks","lurks","prowls","creeps","stalks")] in the realm of the dead. [message]") // Removed for ghost privacy
 			log_and_message_admins("<span class='name'>[name]</span> left ghost/observe mode. [message]")
 
-
 /mob/proc/switch_to_camera(obj/machinery/camera/C)
 	if (!C.can_use() || stat || (get_dist(C, src) > 1 || !check_current_machine(src) || blinded || !canmove))
 		return 0
@@ -652,17 +638,6 @@ It's fairly easy to fix if dealing with single letters but not so much with comp
 
 	if(is_justified_to_discipline())
 		threatcount += 4
-/*
-	if(discipline && !rabid)
-		if(!target_mob || istype(target_mob, /mob/living/carbon/human/monkey))
-			return SAFE_PERP
-
-	if(target_mob)
-		threatcount += 4
-
-	if(victim)
-		threatcount += 4
-*/
 	//slime rabid check moved to /datum/slime_state.
 	if(istype(src, /mob/living/simple_mob/slime/xenobio))
 		var/mob/living/simple_mob/slime/xenobio/X = src
@@ -672,7 +647,6 @@ It's fairly easy to fix if dealing with single letters but not so much with comp
 	return threatcount
 
 #undef SAFE_PERP
-
 
 //TODO: Integrate defence zones and targeting body parts with the actual organ system, move these into organ definitions.
 
@@ -797,7 +771,6 @@ GLOBAL_DATUM_INIT(backplane, /image, generate_backplane())
 /mob/proc/can_feed()
 	return TRUE
 
-
 /atom/proc/living_mobs_in_view(range = world.view, count_held = FALSE, needs_client = FALSE)
 	var/list/viewers = oviewers(src, range)
 	if(count_held)
@@ -859,7 +832,6 @@ GLOBAL_DATUM_INIT(backplane, /image, generate_backplane())
 			haystack = "[partial_start][pick("BEEP","BLEEP","BOINK","BEEEEEP")][partial_end]"
 	return haystack
 
-
 /mob/verb/toggle_stomach_vision()
 	set name = "Toggle Stomach Sprites"
 	set category = "Preferences.Vore"
@@ -877,11 +849,3 @@ GLOBAL_DATUM_INIT(backplane, /image, generate_backplane())
 		to_chat(src, "You will no longer see stomachs!")
 	recalculate_vis()
 
-/* //Leaving this in as an example of 'how to properly enable a plane to hide/show itself' for future PRs.
-if(stomach_vision && !(VIS_CH_STOMACH in vis_enabled))
-	plane_holder.set_vis(VIS_CH_STOMACH,TRUE)
-	vis_enabled += VIS_CH_STOMACH
-else if(!stomach_vision && (VIS_CH_STOMACH in vis_enabled))
-	plane_holder.set_vis(VIS_CH_STOMACH,FALSE)
-	vis_enabled -= VIS_CH_STOMACH
-*/

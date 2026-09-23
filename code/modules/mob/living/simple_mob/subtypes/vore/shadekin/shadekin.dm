@@ -10,8 +10,7 @@
 	mob_class = MOB_CLASS_HUMANOID
 	mob_bump_flag = HUMAN
 
-	maxHealth = 200
-	health = 200
+	endurance = 200
 
 	movement_cooldown = -1.5
 	see_in_dark = 10 //SHADEkin
@@ -132,7 +131,6 @@
 
 /mob/living/simple_mob/shadekin/Destroy()
 	QDEL_LIST_NULL(shadekin_abilities)
-	comp = null // Cached component ref; the component itself is qdel'd by /datum/Destroy.
 	. = ..()
 
 /mob/living/simple_mob/shadekin/load_default_bellies()
@@ -265,9 +263,9 @@
 		comp.in_dark_respite = TRUE
 		invisibility = INVISIBILITY_LEVEL_TWO
 
-		adjustFireLoss(-(getFireLoss() / 2))
-		adjustBruteLoss(-(getBruteLoss() / 2))
-		adjustToxLoss(-(getToxLoss() / 2))
+		mend(TREAT_BURN_CARE, injury_load(INJURY_CATEGORY_THERMAL) / 2)
+		mend(TREAT_TISSUE_REPAIR, injury_load(INJURY_CATEGORY_PHYSICAL) / 2)
+		mend(TREAT_ANTITOXIN, injury_load(INJURY_CATEGORY_TOXIC) / 2)
 		Stun(10)
 		movement_cooldown = 5
 		nutrition = 0
@@ -315,7 +313,7 @@
 /mob/living/simple_mob/shadekin/Found(atom/A)
 	if(specific_targets && isliving(A)) //Healing!
 		var/mob/living/L = A
-		var/health_percent = (L.health/L.getMaxHealth())*100
+		var/health_percent = L.vitality() * 100
 		if(health_percent <= 50 && will_eat(A))
 			return A
 	. = ..()

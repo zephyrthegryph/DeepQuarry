@@ -94,8 +94,9 @@
 	if(!additive_name || units <= 0)
 		return FALSE
 	impurities[additive_name] = (impurities[additive_name] || 0) + units
-	purity = clamp(purity - round(units * 0.4), 20, 100)
-	homogeneity = clamp(homogeneity - round(units * 0.2), 0, 100)
+	var/concentration = units / max(amount, 1)
+	purity = clamp(purity - round(concentration * 0.4), 20, 100)
+	homogeneity = clamp(homogeneity - round(concentration * 0.2), 0, 100)
 	process_history += "alloyed with [units]u [additive_name]"
 	var/additive_cost = max(unit_cost, 0) * units
 	cost_basis += additive_cost
@@ -303,10 +304,10 @@
 	var/thermal_catalyst = additive_units_matching("thermal phase")
 	var/corrosion_inhibitor = additive_units_matching("corrosion inhibitor")
 	var/grain_refiner = additive_units_matching("grain refiner")
-	var/nitrogen_infusion = dissolved_gases["nitrogen"] || 0
-	var/hydrogen_infusion = dissolved_gases["hydrogen"] || 0
-	var/oxygen_infusion = dissolved_gases["oxygen"] || 0
-	var/phoron_infusion = dissolved_gases["phoron"] || 0
+	var/nitrogen_infusion = (dissolved_gases["nitrogen"] || 0) / max(amount, 1)
+	var/hydrogen_infusion = (dissolved_gases["hydrogen"] || 0) / max(amount, 1)
+	var/oxygen_infusion = (dissolved_gases["oxygen"] || 0) / max(amount, 1)
+	var/phoron_infusion = (dissolved_gases["phoron"] || 0) / max(amount, 1)
 	var/carbon_case = surface_layers[MATERIAL_SURFACE_CARBON] || 0
 	var/effective_porosity = max(0, porosity - min(flux_units, 8))
 	var/carbon_window = max(0, 18 - abs(carbon_units - 6) * 3)
@@ -329,7 +330,7 @@
 	for(var/additive in impurities)
 		if(findtext(lowertext(additive), lowertext(fragment)))
 			total += impurities[additive]
-	return total
+	return total / max(amount, 1)
 
 /datum/material_batch/proc/functional_roles()
 	var/list/roles = list("matrix" = TRUE)
@@ -390,14 +391,15 @@
 
 /datum/material_batch/proc/fingerprint()
 	var/list/parts = list()
+	var/quantity = max(amount, 0.01)
 	for(var/material_name in sortList(composition.Copy()))
-		parts += "[material_name]=[round(composition[material_name], 0.01)]"
+		parts += "[material_name]=[round(composition[material_name] / quantity, 0.001)]"
 	for(var/impurity in sortList(impurities.Copy()))
-		parts += "+[impurity]=[round(impurities[impurity], 0.01)]"
+		parts += "+[impurity]=[round(impurities[impurity] / quantity, 0.001)]"
 	for(var/layer_name in sortList(surface_layers.Copy()))
 		parts += "l[layer_name]=[surface_layers[layer_name]]"
 	for(var/gas_name in sortList(dissolved_gases.Copy()))
-		parts += "g[gas_name]=[dissolved_gases[gas_name]]"
+		parts += "g[gas_name]=[round(dissolved_gases[gas_name] / quantity, 0.001)]"
 	for(var/treatment_name in sortList(field_treatments.Copy()))
 		parts += "t[treatment_name]=[field_treatments[treatment_name]]"
 	for(var/structure_name in sortList(structure.Copy()))

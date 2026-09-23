@@ -78,6 +78,7 @@
 	home_turf = get_turf(owner)
 	manage_processing(DQAI_PROCESSING)
 	RegisterSignal(holder, COMSIG_MOB_STATCHANGE, PROC_REF(on_stat_change))
+	RegisterSignal(holder, COMSIG_LIVING_INJURED, PROC_REF(on_holder_injured))
 	// Lazily add the player-castable-moves dispatcher verb on login — avoids
 	// bloating the verbs list of every wild simple_mob in the round.
 	RegisterSignal(holder, COMSIG_MOB_LOGIN, PROC_REF(on_holder_login))
@@ -92,8 +93,7 @@
 		var/datum/ai_behavior/B = dq_get_behavior(active_behavior_type)
 		B.stop(src, active_target, active_source, DQ_BEHAVIOR_STOP_QDEL)
 	if(holder)
-		UnregisterSignal(holder, COMSIG_MOB_STATCHANGE)
-		UnregisterSignal(holder, COMSIG_MOB_LOGIN)
+		UnregisterSignal(holder, list(COMSIG_MOB_STATCHANGE, COMSIG_MOB_LOGIN, COMSIG_LIVING_INJURED))
 	manage_processing(0)
 	QDEL_NULL(model)
 	holder = null
@@ -493,20 +493,21 @@
 		manage_processing(DQAI_PROCESSING)
 
 /// Called by /mob/living/dq_notify_damage when the mob takes a hit.
-/datum/ai_brain/proc/notify_damage(amount, damagetype, atom/attacker)
+/datum/ai_brain/proc/notify_damage(amount, injury_kind, atom/attacker)
 	if(!model || !holder)
 		return
-	model.record_damage(amount, damagetype, attacker)
+	model.record_damage(amount, injury_kind, attacker)
 	if(ismob(attacker) && attacker != holder)
 		add_personal(attacker, DQ_DISPOSITION_HOSTILE, DQ_PERSONAL_DEFAULT_DURATION, "hit me")
 		if(!primary_threat)
 			var/mob/old = primary_threat
 			primary_threat = attacker
 			SEND_SIGNAL(holder, COMSIG_DQAI_TARGET_CHANGED, attacker, old)
-	SEND_SIGNAL(holder, COMSIG_DQAI_DAMAGE_TAKEN, amount, damagetype, attacker)
-	dispatch_behavior_signal(COMSIG_DQAI_DAMAGE_TAKEN, amount, damagetype, attacker)
-	if(holder.maxHealth && holder.health / holder.maxHealth <= DQ_LOW_HP_THRESHOLD)
-		dispatch_behavior_signal(COMSIG_DQAI_LOW_HEALTH, holder.health / holder.maxHealth)
+	SEND_SIGNAL(holder, COMSIG_DQAI_DAMAGE_TAKEN, amount, injury_kind, attacker)
+	dispatch_behavior_signal(COMSIG_DQAI_DAMAGE_TAKEN, amount, injury_kind, attacker)
+	var/wellness = holder.vitality()
+	if(wellness <= DQ_LOW_HP_THRESHOLD)
+		dispatch_behavior_signal(COMSIG_DQAI_LOW_HEALTH, wellness)
 	invalidate_selection()
 
 /// Forwards a behavior signal to every subscribed behavior. `args` after

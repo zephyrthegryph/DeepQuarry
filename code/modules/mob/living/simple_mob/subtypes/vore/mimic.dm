@@ -55,7 +55,7 @@
 	qdel(src)
 	return
 
-/obj/structure/closet/crate/mimic/take_damage(damage_amount, damage_type = BRUTE, damage_flag, sound_effect = TRUE, attack_dir, armour_penetration = 0)
+/obj/structure/closet/crate/mimic/take_damage(damage_amount, damage_type = BRUTE, damage_flag = "", sound_effect = TRUE, attack_dir, armour_penetration = 0)
 	if(contents.len)
 		visible_message(span_bolddanger("[src] makes out a crunchy noise as its contents are destroyed!"))
 		for(var/obj/O in src.contents)
@@ -88,8 +88,7 @@
 
 	faction = FACTION_MIMIC
 
-	maxHealth = 125
-	health = 125
+	endurance = 125
 	movement_cooldown = 3
 
 	response_help = "touches"
@@ -188,7 +187,7 @@
 	qdel(src)
 	return
 
-/obj/structure/closet/crate/mimic/airlock/take_damage(damage_amount, damage_type = BRUTE, damage_flag, sound_effect = TRUE, attack_dir, armour_penetration = 0)
+/obj/structure/closet/crate/mimic/airlock/take_damage(damage_amount, damage_type = BRUTE, damage_flag = "", sound_effect = TRUE, attack_dir, armour_penetration = 0)
 	if(contents.len)
 		visible_message(span_bolddanger("The [src] let's out an enraged screach!"))
 		for(var/obj/O in src.contents)
@@ -213,8 +212,7 @@
 	icon_state = "amimicopen"
 	icon_living = "amimicopen"
 
-	maxHealth = 50
-	health = 50
+	endurance = 50
 	movement_cooldown = 10
 
 	melee_damage_lower = 8
@@ -282,7 +280,7 @@
 	qdel(src)
 	return
 
-/obj/structure/closet/crate/mimic/closet/take_damage(damage_amount, damage_type = BRUTE, damage_flag, sound_effect = TRUE, attack_dir, armour_penetration = 0)
+/obj/structure/closet/crate/mimic/closet/take_damage(damage_amount, damage_type = BRUTE, damage_flag = "", sound_effect = TRUE, attack_dir, armour_penetration = 0)
 	if(contents.len)
 		visible_message(span_bolddanger("The [src] makes out a crunchy noise as its contents are destroyed!"))
 		for(var/obj/O in src.contents)
@@ -308,8 +306,7 @@
 	icon_state = "cmimicopen"
 	icon_living = "cmimicopen"
 
-	maxHealth = 50
-	health = 50
+	endurance = 50
 	movement_cooldown = 7
 
 	melee_damage_lower = 8
@@ -405,8 +402,7 @@
 
 	faction = "mimic"
 
-	maxHealth = 100
-	health = 100
+	endurance = 100
 	movement_cooldown = 5
 
 	response_help = "touches"
@@ -448,8 +444,7 @@
 
 	faction = "mimic"
 
-	maxHealth = 125
-	health = 125
+	endurance = 125
 	movement_cooldown = 7
 
 	response_help = "touches"
@@ -488,8 +483,7 @@
 
 	faction = "mimic"
 
-	maxHealth = 150
-	health = 150
+	endurance = 150
 	movement_cooldown = 7
 
 	response_help = "touches"

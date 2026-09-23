@@ -29,7 +29,7 @@
 			ear_deaf += 60
 			deaf_loop.start() // Ear Ringing/Deafness
 
-	adjustBruteLoss(b_loss)
-	adjustFireLoss(f_loss)
-
-	updatehealth()
+	if(b_loss)
+		injure(INJURY_BLUNT, b_loss, null, null, 0, null, INJURE_SILENT)
+	if(f_loss)
+		injure(INJURY_BURN, f_loss, null, null, 0, null, INJURE_SILENT)

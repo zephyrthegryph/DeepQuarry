@@ -10,7 +10,8 @@
 	var/mob/living/carbon/patient = null
 	var/mob/living/silicon/robot/hound = null
 	var/inject_amount = 10
-	var/min_health = -100
+	/// Below this vitality the patient is too unstable for anything but inaprovaline.
+	var/min_vitality = 0
 	var/cleaning = 0
 	var/patient_laststat = null
 	var/list/injection_chems = list(REAGENT_ID_INAPROVALINE, REAGENT_ID_BICARIDINE, REAGENT_ID_KELOTANE, REAGENT_ID_ANTITOXIN, REAGENT_ID_DEXALIN, REAGENT_ID_TRICORDRAZINE, REAGENT_ID_SPACEACILLIN, REAGENT_ID_TRAMADOL) //The borg is able to heal every damage type. As a nerf, they use 750 charge per injection.
@@ -231,11 +232,16 @@
 	hound.updateVRPanel()
 	update_patient()
 
+/// Spend `amt` cell units through the robot's power ledger (never below empty).
 /obj/item/dogborg/sleeper/proc/drain(amt = 3) //Slightly reduced cost (before, it was always injecting inaprov)
-	hound = src.loc
-	if(istype(hound,/obj/item/robot_module))
-		hound = hound.loc
-	hound.cell.charge = hound.cell.charge - amt
+	var/atom/holder = loc
+	if(istype(holder, /obj/item/robot_module))
+		holder = holder.loc
+	var/mob/living/silicon/robot/R = holder
+	if(!istype(R))
+		return FALSE
+	hound = R
+	return R.draw_power(ROBOT_CELL_JOULES(amt), src, 0, TRUE)
 
 /obj/item/dogborg/sleeper/attack_self(mob/user)
 	. = ..(user)
@@ -283,15 +289,16 @@
 			"stat" = patient.stat,
 			"pulse" = patient.get_pulse(GETPULSE_TOOL),
 			"crit_pulse" = (patient.pulse == PULSE_NONE || patient.pulse == PULSE_THREADY),
-			"health" = patient.health,
-			"max_health" = patient.getMaxHealth(),
-			"brute" = patient.getBruteLoss(),
-			"oxy" = patient.getOxyLoss(),
-			"tox" = patient.getToxLoss(),
-			"burn" = patient.getFireLoss(),
+			// Old +100..-100 readout scale, derived from vitality.
+			"health" = round((2 * patient.vitality() - 1) * 100),
+			"max_health" = 100,
+			"brute" = round(patient.injury_load(INJURY_CATEGORY_PHYSICAL), 0.1),
+			"oxy" = round(patient.injury_load(INJURY_CATEGORY_ASPHYXIA), 0.1),
+			"tox" = round(patient.injury_load(INJURY_CATEGORY_TOXIC), 0.1),
+			"burn" = round(patient.injury_load(INJURY_CATEGORY_THERMAL), 0.1),
 			"paralysis" = patient.paralysis,
-			"braindamage" = !!patient.getBrainLoss(),
-			"clonedamage" = !!patient.getCloneLoss(),
+			"braindamage" = !!patient.injury_load(INJURY_CATEGORY_NEURAL),
+			"clonedamage" = !!patient.injury_load(INJURY_CATEGORY_GENETIC),
 			"ingested_reagents" = ingested_reagents
 			)
 
@@ -379,7 +386,7 @@
 			var/selected_reagent = params["value"]
 			if(!(selected_reagent in injection_chems))
 				return FALSE
-			if(selected_reagent == REAGENT_ID_INAPROVALINE || patient.health > min_health)
+			if(selected_reagent == REAGENT_ID_INAPROVALINE || patient.vitality() > min_vitality)
 				inject_chem(ui.user, selected_reagent)
 			else
 				to_chat(ui.user, span_notice("ERROR: Subject is not in stable condition for injections."))
@@ -388,7 +395,7 @@
 /obj/item/dogborg/sleeper/proc/inject_chem(mob/user, chem)
 	if(patient && patient.reagents)
 		if(chem in (injection_chems + REAGENT_ID_INAPROVALINE))
-			if(hound.cell.charge < 800) //This is so borgs don't kill themselves with it.
+			if(!hound.cell || hound.cell.charge < 800) //This is so borgs don't kill themselves with it.
 				to_chat(hound, span_notice("You don't have enough power to synthesize fluids."))
 				return
 			else if(patient.reagents.get_reagent_amount(chem) + 10 >= 20) //Preventing people from accidentally killing themselves by trying to inject too many chemicals!
@@ -399,6 +406,17 @@
 			var/units = round(patient.reagents.get_reagent_amount(chem))
 			to_chat(hound, span_notice("Injecting [units] unit\s of [SSchemistry.chemical_reagents[chem]] into occupant.")) //If they were immersed, the reagents wouldn't leave with them.
 
+/// The belly light: busy (red) while cleaning, crowded or holding the dead;
+/// green with a living patient. The robot only redraws when it changes.
+/obj/item/dogborg/sleeper/proc/set_hound_sleeper_state(new_state)
+	var/datum/component/robot_belly/belly = hound?.GetComponent(/datum/component/robot_belly)
+	belly?.set_sleeper_state(new_state)
+
+/obj/item/dogborg/sleeper/proc/patient_light_state(mob/living/carbon/who)
+	if(!medsensor || cleaning || (who.stat & DEAD))
+		return SLEEPER_STATE_BUSY
+	return SLEEPER_STATE_PATIENT
+
 //For if the dogborg's existing patient uh, doesn't make it.
 /obj/item/dogborg/sleeper/proc/update_patient()
 	hound = src.loc
@@ -407,53 +425,27 @@
 
 	//Cleaning looks better with red on, even with nobody in it
 	if(cleaning || (length(contents) > 10) || (decompiler && (length(contents) > 5)) || (analyzer && (length(contents) > 1)))
-		hound.sleeper_state = 1
-		hound.update_icon()
+		set_hound_sleeper_state(SLEEPER_STATE_BUSY)
 		return
 
 	//Well, we HAD one, what happened to them?
 	if(patient in contents)
-		if(medsensor)
-			if(patient_laststat != patient.stat)
-				if(cleaning || (patient.stat & DEAD))
-					hound.sleeper_state = 1
-					patient_laststat = patient.stat
-				else
-					hound.sleeper_state = 2
-					patient_laststat = patient.stat
-		else
-			hound.sleeper_state = 1
+		if(patient_laststat != patient.stat || !medsensor)
+			set_hound_sleeper_state(patient_light_state(patient))
 			patient_laststat = patient.stat
-		//Update icon
-		hound.update_icon()
-		//Return original patient
 		return(patient)
 
 	//Check for a new patient
-	else
-		for(var/mob/living/carbon/human/C in contents)
-			patient = C
-			if(medsensor)
-				if(cleaning || (patient.stat & DEAD))
-					hound.sleeper_state = 1
-					patient_laststat = patient.stat
-				else
-					hound.sleeper_state = 2
-					patient_laststat = patient.stat
-			else
-				hound.sleeper_state = 1
-				patient_laststat = patient.stat
-			//Update icon and return new patient
-			hound.update_icon()
-			return(C)
+	for(var/mob/living/carbon/human/C in contents)
+		patient = C
+		set_hound_sleeper_state(patient_light_state(C))
+		patient_laststat = C.stat
+		return(C)
 
 	//Couldn't find anyone, and not cleaning
-	if(!cleaning && !patient)
-		hound.sleeper_state = 0
-
 	patient_laststat = null
 	patient = null
-	hound.update_icon()
+	set_hound_sleeper_state(SLEEPER_STATE_EMPTY)
 	return
 
 //Gurgleborg process
@@ -513,13 +505,8 @@
 			else if(!T.digestable)
 				items_preserved |= T
 			else
-				var/old_brute = T.getBruteLoss()
-				var/old_burn = T.getFireLoss()
-				T.adjustBruteLoss(digest_brute * digest_multiplier)
-				T.adjustFireLoss(digest_burn * digest_multiplier)
-				var/actual_brute = T.getBruteLoss() - old_brute
-				var/actual_burn = T.getFireLoss() - old_burn
-				var/damage_gain = actual_brute + actual_burn
+				var/damage_gain = T.injure(INJURY_DIGESTION, digest_brute * digest_multiplier, null, hound)
+				damage_gain += T.injure(INJURY_CORROSIVE, digest_burn * digest_multiplier, null, hound)
 				hound.adjust_nutrition(2.5 * damage_gain) //drain(-25 * damage_gain) //25*total loss as with voreorgan stats.
 				if(water)
 					water.add_charge(damage_gain)
@@ -630,9 +617,8 @@
 
 	if(patient && stabilizer) //We're caring for the patient. Medical emergency! Or endo scene.
 		update_patient()
-		if(patient.health < 0)
-			patient.adjustOxyLoss(-1) //Heal some oxygen damage if they're in critical condition
-			patient.updatehealth()
+		if(patient.is_critical())
+			patient.mend(TREAT_OXYGENATION, 1) //Heal some oxygen damage if they're in critical condition
 			drain()
 		patient.AdjustStunned(-4)
 		patient.AdjustWeakened(-4)

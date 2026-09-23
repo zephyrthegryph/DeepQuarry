@@ -70,7 +70,7 @@
 	span_danger("Your hand slips, cracking [target]'s [affected.encased] with \the [tool]!") )
 	user.balloon_alert_visible("slips, crackng [target]'s [affected.encased]","your hand slips.")
 
-	affected.createwound(CUT, 20)
+	target.injure(INJURY_CUT, 20, affected.organ_tag, tool, flags = INJURE_IGNORE_RESISTANCE)
 	affected.fracture()
 
 ///////////////////////////////////////////////////////////////
@@ -127,7 +127,7 @@
 	user.visible_message(msg, self_msg)
 	user.balloon_alert_visible("slips, cracking [affected.encased]", "you hand slips, cracking [affected.encased]")
 
-	affected.createwound(BRUISE, 20)
+	target.injure(INJURY_BLUNT, 20, affected.organ_tag, tool, flags = INJURE_IGNORE_RESISTANCE)
 	affected.fracture()
 
 ///////////////////////////////////////////////////////////////
@@ -185,7 +185,7 @@
 	user.visible_message(msg, self_msg)
 	user.balloon_alert_visible("slips, bending [affected.encased] the wrong way.", "your hand slips, bending [affected.encased] the wrong way.")
 
-	affected.createwound(BRUISE, 20)
+	target.injure(INJURY_BLUNT, 20, affected.organ_tag, tool, flags = INJURE_IGNORE_RESISTANCE)
 	affected.fracture()
 
 	/*if (prob(40)) //TODO: ORGAN REMOVAL UPDATE.
@@ -290,8 +290,8 @@
 	span_danger("Your hand slips, searing [target]'s [affected.encased] with \the [tool]!") )
 	user.balloon_alert_visible("slips, searing \the [affected.encased]", "your hand slips, searing [affected.encased]")
 
-	affected.createwound(CUT, 20)
-	affected.createwound(BURN, 15)
+	target.injure(INJURY_CUT, 20, affected.organ_tag, tool, flags = INJURE_IGNORE_RESISTANCE)
+	target.injure(INJURY_BURN, 15, affected.organ_tag, tool, flags = INJURE_IGNORE_RESISTANCE)
 	if(prob(affected.damage))
 		affected.fracture()
 

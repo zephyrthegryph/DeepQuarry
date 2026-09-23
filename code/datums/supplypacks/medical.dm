@@ -452,7 +452,6 @@
 	access = ACCESS_MEDICAL_EQUIP
 
 
-// === merged from medical_chomp.dm during hard-fork de-suffix (verified no override-order change) ===
 /datum/supply_pack/med/glucose_hypos
 	name = "Glucose Hypoinjectors"
 	contains = list(

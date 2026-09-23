@@ -318,8 +318,8 @@
 	stacks = MODIFIER_STACK_FORBID
 	aura_max_distance = 4
 
-	metabolism_percent = 0.5
-	incoming_healing_percent = 1.15 //The negative hurts less in this form
+	// The negative hurts less in this form
+	factors = alist(BF_METABOLISM = 0.5, BF_HEALING_RECEIVED = 1.15)
 
 /obj/item/slime_extract/oceanic
 	name = "oceanic slime extract"
@@ -413,11 +413,7 @@
 	stacks = MODIFIER_STACK_FORBID
 	aura_max_distance = 4
 
-	icon_scale_x_percent = 1.2
-	icon_scale_y_percent = 1.2
-	incoming_clone_damage_percent = 0
-	incoming_healing_percent = 0.5
-	incoming_damage_percent = 0.8
+	factors = alist(BF_INCOMING_ALL = 0.8, BF_INCOMING_GENETIC = 0, BF_HEALING_RECEIVED = 0.5, BF_ICON_SCALE_X = 1.2, BF_ICON_SCALE_Y = 1.2)
 
 /obj/item/slime_extract/nuclear
 	name = "nuclear slime extract"
@@ -557,20 +553,20 @@
 	stacks = MODIFIER_STACK_FORBID
 
 	mob_overlay_state = "cult_aura"
-	incoming_damage_percent = 0.5
+	factors = alist(BF_INCOMING_ALL = 0.5)
 
 /datum/modifier/aura/dreamarmor/tick()
 	if(holder.stat == DEAD)
 		expire()
 
-	if(ishuman(holder)) // Robolimbs need this code sadly.
+	if(ishuman(holder)) // Every limb withers, organic or robotic.
 		var/mob/living/carbon/human/H = holder
-		for(var/obj/item/organ/external/E in H.organs)
-			var/obj/item/organ/external/O = E
-			O.heal_damage(-2, -2, 0, -1)
+		for(var/obj/item/organ/external/E as anything in H.organs)
+			H.injure(INJURY_BLUNT, 2, E.organ_tag, flags = INJURE_SILENT)
+			H.injure(INJURY_BURN, 2, E.organ_tag, flags = INJURE_SILENT)
 	else
-		holder.adjustBruteLoss(5)
-		holder.adjustFireLoss(5)
+		holder.injure(INJURY_BLUNT, 5, flags = INJURE_SILENT)
+		holder.injure(INJURY_BURN, 5, flags = INJURE_SILENT)
 
 /obj/item/slime_extract/nightmare
 	name = "nightmare slime extract"
@@ -676,8 +672,7 @@
 	stacks = MODIFIER_STACK_FORBID
 	aura_max_distance = 4
 
-	disable_duration_percent = 0.7
-	incoming_hal_damage_percent = 0.8
+	factors = alist(BF_INCOMING_PAIN = 0.8, BF_DISABLE_DURATION = 0.7)
 
 /obj/item/slime_extract/sound
 	name = "sound slime extract"

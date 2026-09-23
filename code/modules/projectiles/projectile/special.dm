@@ -94,7 +94,7 @@
 	// The last metroid has escaped from captivity, the galaxy is no longer safe.
 		if(istype(L, /mob/living/simple_mob/vore/alienanimals/space_jellyfish) && target_temperature <= T0C)
 			var/mob/living/simple_mob/vore/alienanimals/space_jellyfish/J = L
-			J.adjustFireLoss(75)
+			J.injure(INJURY_FROSTBITE, 75, source = src)
 			J.movement_cooldown *= 2
 	return 1
 
@@ -139,7 +139,7 @@
 	icon_state = "energy"
 	fire_sound = 'sound/effects/stealthoff.ogg'
 	damage = 0
-	damage_type = TOX
+	injury_kind = INJURY_TOXIN
 	nodamage = 1
 	check_armour = "energy"
 	light_range = 2
@@ -171,7 +171,7 @@
 					domutcheck(M,null)
 				M.UpdateAppearance()
 			else
-				M.adjustFireLoss(rand(5,15))
+				M.injure(INJURY_BURN, rand(5,15), source = src)
 				M.show_message(span_red("The radiation beam singes you!"))
 			//	for (var/mob/V in viewers(src))
 			//		V.show_message(span_red("[M] is singed by the radiation beam."), 3, span_red(" You hear the crackle of burning leaves."), 2)
@@ -187,7 +187,7 @@
 	icon_state = "energy2"
 	fire_sound = 'sound/effects/stealthoff.ogg'
 	damage = 0
-	damage_type = TOX
+	injury_kind = INJURY_TOXIN
 	nodamage = 1
 	check_armour = "energy"
 	var/datum/decl/plantgene/gene = null
@@ -198,7 +198,7 @@
 	icon_state = "energy2"
 	fire_sound = 'sound/effects/stealthoff.ogg'
 	damage = 0
-	damage_type = TOX
+	injury_kind = INJURY_TOXIN
 	nodamage = 1
 	check_armour = "energy"
 	light_range = 2
@@ -224,7 +224,7 @@
 	icon_state = "energy2"
 	fire_sound = 'sound/effects/stealthoff.ogg'
 	damage = 0
-	damage_type = TOX
+	injury_kind = INJURY_TOXIN
 	nodamage = 1
 	check_armour = "energy"
 	light_range = 2
@@ -264,7 +264,7 @@
 	damage = 1 // stop trying to murderbone with a fake gun dumbass!!!
 	embed_chance = 0 // nope
 	nodamage = 1
-	damage_type = HALLOSS
+	injury_kind = INJURY_PAIN
 	muzzle_type = /obj/effect/projectile/muzzle/bullet
 	hud_state = "monkey"
 
@@ -273,7 +273,7 @@
 	icon_state = "bola"
 	damage = 5
 	embed_chance = 0 //Nada.
-	damage_type = HALLOSS
+	injury_kind = INJURY_PAIN
 	muzzle_type = null
 	hud_state = "monkey"
 
@@ -347,25 +347,25 @@
 			if(target_armor >= 60)
 				var/turf/T = get_step(H, pick(GLOB.alldirs - src.dir))
 				H.throw_at(T, 1, 1, src)
-				H.apply_damage(20, BURN, def_zone)
+				H.injure(INJURY_BURN, 20, def_zone, src)
 				if(target_limb)
 					armor_special = 2
 					target_limb.fracture()
 
 			else if(target_armor >= 45)
-				H.apply_damage(15, BURN, def_zone)
+				H.injure(INJURY_BURN, 15, def_zone, src)
 				if(target_limb)
 					armor_special = 1
 					target_limb.dislocate()
 
 			else if(target_armor >= 30)
-				H.apply_damage(10, BURN, def_zone)
+				H.injure(INJURY_BURN, 10, def_zone, src)
 				if(prob(30) && target_limb)
 					armor_special = 1
 					target_limb.dislocate()
 
 			else if(target_armor >= 15)
-				H.apply_damage(5, BURN, def_zone)
+				H.injure(INJURY_BURN, 5, def_zone, src)
 				if(prob(15) && target_limb)
 					armor_special = 1
 					target_limb.dislocate()

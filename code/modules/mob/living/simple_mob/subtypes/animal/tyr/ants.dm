@@ -3,8 +3,7 @@
 	desc = "A large ant."
 	icon_state = "new_ant"
 	icon_dead = "dead_new"
-	maxHealth = 15
-	health = 15
+	endurance = 15
 	pass_flags = PASSTABLE
 	movement_cooldown = 1
 
@@ -136,7 +135,7 @@
 	return ..()
 
 /mob/living/simple_mob/animal/tyr/mineral_ants/agate/do_special_attack(atom/A)
-	adjustBruteLoss(30)
+	injure(INJURY_BLUNT, 30, source = src)
 
 /mob/living/simple_mob/animal/tyr/mineral_ants/quartz //irl quartz is apparently tough?
 	name = "quartz metal ant"
@@ -156,8 +155,7 @@
 	name = "diamond metal ant"
 	icon_state = "diamond_ant"
 	icon_living = "diamond_ant"
-	maxHealth = 50
-	health = 50
+	endurance = 50
 	melee_damage_lower = 24
 	melee_damage_upper = 24
 	movement_cooldown = 3
@@ -375,8 +373,7 @@
 /mob/living/simple_mob/animal/tyr/mineral_ants/queen //the nurses of the ants
 	name = "queen ant"
 	icon_state = "queen_ant"
-	maxHealth = 60 //four hits with agate sword, five with spear, two with hammer, eight with bow
-	health = 60
+	endurance = 60 //four hits with agate sword, five with spear, two with hammer, eight with bow
 	butchery_loot = list(\
 		/obj/item/stack/material/valhollide = 4\
 		)

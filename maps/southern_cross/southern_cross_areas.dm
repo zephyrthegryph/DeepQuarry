@@ -21,41 +21,6 @@
 	name = "The Surface (Don't Use)"
 	flags = RAD_SHIELDED
 
-/area/surface/center
-	name = "Center"
-	icon_state = "center"
-
-/area/surface/north
-	name = "Outpost"
-	icon_state = "north"
-
-/area/surface/south
-	name = "Lake"
-	icon_state = "south"
-
-/area/surface/east
-	name = "Shoreline"
-	icon_state = "east"
-
-/area/surface/west
-	name = "Snowfields"
-	icon_state = "west"
-
-/area/surface/northeast
-	name = "Depths"
-	icon_state = "northeast"
-
-/area/surface/northwest
-	name = "Mountains"
-	icon_state = "northwest"
-
-/area/surface/southwest
-	name = "Glowing Forest"
-	icon_state = "southwest"
-
-/area/surface/southeast
-	name = "Southern Shoreline"
-	icon_state = "southeast"
 
 /area/surface/outside
 	ambience = AMBIENCE_SIF
@@ -68,87 +33,6 @@
 	name = "Outpost Perimeter"
 	icon_state = "green"
 
-// Rest of the 'plains' Z-level, for POIs.
-/area/surface/outside/plains/normal
-	name = "Plains"
-	icon_state = "yellow"
-
-// So POIs don't get embedded in rock.
-/area/surface/outside/plains/mountains
-	name = "Mountains"
-	icon_state = "darkred"
-
-// Paths get their own area so POIs don't overwrite pathways.
-/area/surface/outside/path
-	name = "Pathway"
-	icon_state = "purple"
-
-/area/surface/outside/path/plains
-
-/area/surface/outside/wilderness/normal
-	name = "Wilderness"
-	icon_state = "yellow"
-
-/area/surface/outside/wilderness/deep
-	name = "Deep Wilderness"
-	icon_state = "red"
-
-// So POIs don't get embedded in rock.
-/area/surface/outside/wilderness/mountains
-	name = "Mountains"
-	icon_state = "darkred"
-
-/area/surface/outside/path/wilderness
-
-// Water
-/area/surface/outside/ocean
-	name = "Sea"
-	icon_state = "bluenew"
-
-/area/surface/outside/river
-	name = "River"
-	icon_state = "bluenew"
-
-/area/surface/outside/river/faxalven
-	name = "Faxälven River"
-
-/area/surface/outside/river/indalsalven
-	name = "Indalsälven River"
-
-/area/surface/outside/river/svartan
-	name = "Svartån River"
-
-/area/surface/outside/lake/romsele
-	name = "Romsele Lake"
-	icon_state = "blue2"
-
-
-
-/area/surface/cave
-	flags = RAD_SHIELDED | AREA_FLAG_IS_NOT_PERSISTENT
-	always_unpowered = TRUE
-
-/area/surface/cave
-
-// The bottom half that connects to the outpost and is safer.
-/area/surface/cave/explored/normal
-	name = "Tunnels"
-	icon_state = "explored"
-
-/area/surface/cave/unexplored/normal
-	name = "Tunnels"
-	icon_state = "unexplored"
-
-// The top half of the map that is more dangerous.
-/area/surface/cave/explored/deep
-	name = "Depths"
-	icon_state = "explored_deep"
-
-/area/surface/cave/unexplored/deep
-	name = "Depths"
-	icon_state = "unexplored_deep"
-
-
 
 //Surface Outposts
 
@@ -157,8 +41,6 @@
 
 //Wilderness Shuttle Shelter
 
-/area/surface/outpost/shelter
-	name = "Wilderness Shelter"
 
 // Main mining outpost
 /area/surface/outpost/mining_main
@@ -171,236 +53,15 @@
 	icon_state = "outpost_mine_main"
 	outdoors = OUTDOORS_YES
 
-/area/surface/outpost/mining_main/crew_area
-	name = "North Mining Crew Area"
-
-/area/surface/outpost/mining_main/firstaid
-	name = "North Mining First-Aid Station"
-
-/area/surface/outpost/mining_main/storage
-	name = "North Mining Gear Storage"
-
-/area/surface/outpost/mining_main/mech_bay
-	name = "North Mining Mech Bay"
-
-/area/surface/outpost/mining_main/gen_room
-	name = "North Mining Generator Room"
-	icon_state = "substation"
-	ambience = AMBIENCE_SUBSTATION
-
-/area/surface/outpost/mining_main/emergencystorage
-	name = "\improper North Mining Emergency Storage"
-	icon_state = "emergencystorage"
-	sound_env = SMALL_ENCLOSED
-
-/area/surface/outpost/mining_main/refinery
-	name = "North Mining Refinery"
-
-/area/surface/outpost/mining_main/restroom
-	name = "North Mining Restroom"
-	sound_env = SMALL_ENCLOSED
-
-/area/surface/outpost/mining_main/cave
-	name = "North Mining Outpost Cave"
-	icon_state = "outpost_mine_main"
 
 //Research Surface Outpost
 
-/area/surface/outpost/research
-	icon_state = "outpost_research"
-	outdoors = OUTDOORS_NO
-
-/area/surface/outpost/research/xenoresearch
-	name = "\improper Xenoresearch"
-
-/area/surface/outpost/research/xenoresearch/smes
-	name = "\improper Xenoresearch SMES Maintenance"
-	icon_state = "substation"
-	sound_env = SMALL_ENCLOSED
-	ambience = AMBIENCE_SUBSTATION
-
-/area/surface/outpost/research/xenoresearch/emergencystorage
-	name = "\improper Xenoresearch Emergency Storage"
-	icon_state = "emergencystorage"
-	sound_env = SMALL_ENCLOSED
-
-/area/surface/outpost/research/xenoresearch/restroom
-	name = "\improper Xenoresearch Restroom"
-	icon_state = "research_restroom"
-	sound_env = SMALL_ENCLOSED
-
-/area/surface/outpost/research/xenoresearch/xenobiology
-	name = "\improper Xenobiology Lab"
-	icon_state = "xeno_lab"
-
-/area/surface/outpost/research/xenoresearch/xenoflora
-	name = "\improper Xenoflora Lab"
-	icon_state = "xeno_f_lab"
-
-/area/surface/outpost/research/xenoresearch/xenoflora_storage
-	name = "\improper Xenoflora Storage"
-	icon_state = "xeno_f_store"
-
-/area/surface/outpost/research/xenoresearch/medical
-	name = "Xenoresearch First-Aid Station"
-
-/area/surface/outpost/research/xenoarcheology
-	name = "\improper Xenoarcheology"
-
-/area/surface/outpost/research/xenoarcheology/medical
-	name = "Xenoarcheology First-Aid Station"
-
-/area/surface/outpost/research/xenoarcheology/smes
-	name = "\improper Xenoarcheology SMES Maintenance"
-	icon_state = "substation"
-	sound_env = SMALL_ENCLOSED
-	ambience = AMBIENCE_SUBSTATION
-
-/area/surface/outpost/research/xenoarcheology/emergencystorage
-	name = "\improper Xenoarcheology Emergency Storage"
-	icon_state = "emergencystorage"
-	sound_env = SMALL_ENCLOSED
-
-/area/surface/outpost/research/xenoarcheology/restroom
-	name = "\improper Xenoarcheology Restroom"
-	icon_state = "research_restroom"
-	sound_env = SMALL_ENCLOSED
-
-/area/surface/outpost/research/xenoarcheology/analysis
-	name = "Xenoarcheology Sample Analysis"
-
-/area/surface/outpost/research/xenoarcheology/anomaly
-	name = "Xenoarcheology Anomalous Materials Lab"
-
-/area/surface/outpost/research/xenoarcheology/isolation_a
-	name = "Xenoarcheology Isolation A"
-
-/area/surface/outpost/research/xenoarcheology/isolation_b
-	name = "Xenoarcheology Isolation B"
-
-/area/surface/outpost/research/xenoarcheology/isolation_c
-	name = "Xenoarcheology Isolation C"
-
-/area/surface/outpost/research/xenoarcheology/lounge
-	name = "Xenoarcheology Research Lounge"
-
-/area/surface/outpost/research/xenoarcheology/longtermstorage
-	name = "Xenoarcheology Long-Term Anomalous Storage"
-
-/area/surface/outpost/research/xenoarcheology/exp_prep
-	name = "Xenoarcheology Expedition Preparation"
 
 //Main Outpost
 
-/area/surface/outpost/main
-	name = "\improper Main Outpost"
-	icon_state = "Sleep"
-	outdoors = OUTDOORS_NO
-
-/area/surface/outpost/main/gen_room
-	name = "\improper Main Outpost SMES"
-	icon_state = "substation"
-	ambience = AMBIENCE_SUBSTATION
-
-/area/surface/outpost/main/gen_room/smes
-	name = "\improper Main Outpost Dorm SMES"
-	icon_state = "substation"
-
-/area/surface/outpost/main/pool
-	name = "\improper Main Outpost Pool"
-	icon_state = "pool"
-
-/area/surface/outpost/main/restroom
-	name = "\improper Main Outpost Restroom"
-	icon_state = "toilet"
-	sound_env = SMALL_ENCLOSED
-
-/area/surface/outpost/main/gym
-	name = "\improper Main Outpost Gym"
-
-/area/surface/outpost/main/garage
-	name = "\improper Main Outpost Garage"
-	icon_state = "storage"
-
-/area/surface/outpost/main/crew_quarters
-	name = "\improper Main Outpost Crew Quarters"
-	sound_env = MEDIUM_SOFTFLOOR
-
-/area/surface/outpost/main/telecomms
-	name = "\improper Main Outpost Telecommunications"
-	music = "signal"
-
-/area/surface/outpost/main/teleporter
-	name = "\improper Main Outpost Teleporter"
-	icon_state = "teleporter"
-
-/area/surface/outpost/main/first_aid
-	name = "\improper Main Outpost First-Aid Station"
-	icon_state = "medbay2"
-
-/area/surface/outpost/main/security
-	name = "\improper Main Outpost Security Station"
-	icon_state = "checkpoint1"
-
-/area/surface/outpost/main/gateway
-	name = "\improper Main Outpost Gateway"
-	icon_state = "teleporter"
-	music = "signal"
-
-/area/surface/outpost/main/corridor
-	name = "\improper Main Outpost Corridor"
-
-/area/surface/outpost/main/bar
-	name = "\improper Main Outpost Bar"
-	icon_state = "bar"
-
-/area/surface/outpost/main/dorms
-	name = "\improper Main Outpost Dorms"
-
-/area/surface/outpost/main/construction_area
-	name = "\improper Main Outpost Construction Area"
-	icon_state = "construction"
-
-/area/surface/outpost/wall
-	name = "The Wall"
-	icon_state = "red"
-	requires_power = FALSE
-	ambience = AMBIENCE_HIGHSEC
-
-/area/surface/outpost/wall/checkpoint
-	name = "Checkpoint"
-	ambience = AMBIENCE_HIGHSEC
 
 //Mining Station
 
-/area/outpost/mining_station
-	icon_state = "outpost_mine_main"
-	name = "Mining Station"
-	outdoors = OUTDOORS_NO
-
-/area/outpost/mining_station/dorms
-	name = "Mining Station Dormitory"
-
-/area/outpost/mining_station/storage
-	name = "Mining Station Gear Storage"
-
-/area/outpost/mining_station/gen_station
-	name = "Mining Station Generator Room"
-	icon_state = "substation"
-	ambience = AMBIENCE_SUBSTATION
-
-/area/outpost/mining_station/crew_area
-	name = "Mining Station Crew Area"
-
-/area/outpost/mining_station/refinery
-	name = "Mining Station Refinery"
-
-/area/outpost/mining_station/telecomms
-	name = "Main Station Telecommunications"
-	sound_env = SMALL_ENCLOSED
-
-/area/outpost/mining_station/dock
-	name = "Mining Station Dock"
 
 //Turbolift
 
@@ -411,20 +72,6 @@
 	dynamic_lighting = 1
 	flags = RAD_SHIELDED | AREA_FLAG_IS_NOT_PERSISTENT
 
-/area/turbolift/start
-	name = "\improper Turbolift Start"
-
-/area/turbolift/firstdeck
-	name = "\improper first deck"
-	base_turf = /turf/simulated/floor/plating
-
-/area/turbolift/seconddeck
-	name = "\improper second deck"
-	base_turf = /turf/simulated/open
-
-/area/turbolift/thirddeck
-	name = "\improper third deck"
-	base_turf = /turf/simulated/open
 
 // Elevator areas.
 /area/turbolift/port_deck_one
@@ -742,18 +389,6 @@
 /area/construction/seconddeck/construction2
 	name = "\improper Abandoned Locker Room"
 
-/area/crew_quarters/seconddeck/locker
-	name = "\improper Locker Room"
-	icon_state = "locker"
-
-/area/crew_quarters/seconddeck/locker/locker_toilet
-	name = "\improper Locker Toilets"
-	icon_state = "toilet"
-	sound_env = SMALL_ENCLOSED
-
-/area/crew_quarters/seconddeck/barrestroom
-	name = "\improper Bar Restroom"
-	icon_state = "bar"
 
 /area/crew_quarters/heads/sc/
 	name = "\improper Command - Head Office"
@@ -1102,10 +737,6 @@
 	icon_state = "shuttlered"
 	base_turf = /turf/simulated/floor/outdoors/dirt/sif/planetuse
 
-/area/shuttle/response_ship/mining
-	name = "mining site"
-	icon_state = "shuttlered"
-	base_turf = /turf/space
 
 /area/shuttle/response_ship/arrivals_dock
 	name = "\improper docked with Southern Cross"
@@ -1152,14 +783,6 @@
 	name = "south of second deck"
 	icon_state = "south"
 
-/area/shuttle/shuttle1/mining
-	name = "wilderness site"
-	icon_state = "shuttlered"
-
-/area/shuttle/shuttle1/planet
-	name = "planetside outpost"
-	icon_state = "shuttlered"
-	base_turf = /turf/simulated/floor/plating/sif/planetuse
 
 /area/shuttle/shuttle1/transit
 	name = "transit"
@@ -1202,14 +825,6 @@
 	name = "south of second deck"
 	icon_state = "south"
 
-/area/shuttle/shuttle2/mining
-	name = "wilderness site"
-	icon_state = "shuttlered"
-
-/area/shuttle/shuttle2/planet
-	name = "planetside outpost"
-	icon_state = "shuttlered"
-	base_turf = /turf/simulated/floor/plating/sif/planetuse
 
 /area/shuttle/shuttle2/transit
 	name = "transit"
@@ -1284,15 +899,6 @@
 	name = "south-east of third deck"
 	icon_state = "southeast"
 
-/area/syndicate_station/mining
-	name = "mining site"
-	icon_state = "shuttlered"
-
-/area/syndicate_station/planet
-	name = "planetside"
-	dynamic_lighting = 1
-	icon_state = "shuttlered"
-	base_turf = /turf/simulated/floor/outdoors/grass/sif/planetuse
 
 /area/syndicate_station/transit
 	name = " transit"
@@ -1346,15 +952,6 @@
 	name = "east of third deck"
 	icon_state = "east"
 
-/area/skipjack_station/mining
-	name = "mining site"
-	icon_state = "shuttlered"
-
-/area/skipjack_station/planet
-	name = "planet"
-	icon_state = "shuttlered"
-	dynamic_lighting = 1
-	base_turf = /turf/simulated/floor/outdoors/grass/sif/planetuse
 
 /area/skipjack_station/orbit
 	name = "in orbit of Sif"
@@ -1404,14 +1001,6 @@
 	name = "west of third deck"
 	icon_state = "west"
 
-/area/ninja_dojo/mining
-	name = "mining site"
-	icon_state = "shuttlered"
-
-/area/ninja_dojo/planet
-	name = "planet outposts"
-	icon_state = "shuttlered"
-	base_turf = /turf/simulated/floor/outdoors/grass/sif/planetuse
 
 /area/ninja_dojo/transit
 	name = "transit"
@@ -1617,12 +1206,3 @@
 
 // Misc
 
-/area/wreck/ufoship
-	name = "\improper Wreck"
-	icon_state = "storage"
-	ambience = AMBIENCE_OTHERWORLDLY
-
-/area/wreck/supplyshuttle
-	name = "\improper Wreck"
-	icon_state = "storage"
-	ambience = AMBIENCE_RUINS

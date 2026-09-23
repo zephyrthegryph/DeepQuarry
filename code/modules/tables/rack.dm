@@ -28,7 +28,6 @@
 	return
 
 
-// === merged from rack_vr.dm during hard-fork de-suffix (verified no override-order change) ===
 /obj/structure/table/rack
 	icon = 'icons/obj/objects_vr.dmi'
 

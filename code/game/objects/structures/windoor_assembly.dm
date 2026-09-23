@@ -77,8 +77,7 @@
 	update_state()
 
 /obj/structure/windoor_assembly/attack_robot(mob/living/silicon/robot/user)
-	if(Adjacent(user) && (user.module && (istype(user.module,/obj/item/robot_module/robot/engineering)) \
-	|| istype(user.module,/obj/item/robot_module/drone))) //Only drone (and engiborg) needs this.
+	if(Adjacent(user) && user.module?.names_assemblies) //Only drones and engineering borgs need this.
 		rename_door(user)
 
 /obj/structure/windoor_assembly/attackby(obj/item/W as obj, mob/user as mob, tool_quality)

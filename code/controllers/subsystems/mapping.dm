@@ -195,25 +195,10 @@ SUBSYSTEM_DEF(mapping)
 		using_map.belter_transit_z[i] = GLOB.map_templates_loaded[current]
 
 	// Convert belter_docked_z to actual Z (Unnecessary atm)
-	/*for(var/i in 1 to length(using_map.belter_docked_z))
-		var/current = using_map.belter_docked_z[i]
-		if(isnum(current))
-			continue
-		using_map.belter_docked_z[i] = GLOB.map_templates_loaded[current]*/
 
 	// Convert mining_station_z to actual Z (Unnecessary atm)
-	/*for(var/i in 1 to length(using_map.mining_station_z))
-		var/current = using_map.mining_station_z[i]
-		if(isnum(current))
-			continue
-		using_map.mining_station_z[i] = GLOB.map_templates_loaded[current]*/
 
 	// Convert mining_outpost_z to actual Z (Unnecessary atm)
-	/*for(var/i in 1 to length(using_map.mining_outpost_z))
-		var/current = using_map.mining_outpost_z[i]
-		if(isnum(current))
-			continue
-		using_map.mining_outpost_z[i] = GLOB.map_templates_loaded[current]*/
 
 /datum/controller/subsystem/mapping/proc/preloadShelterTemplates()
 	for(var/datum/map_template/shelter/shelter_type as anything in subtypesof(/datum/map_template/shelter))

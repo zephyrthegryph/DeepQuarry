@@ -47,7 +47,7 @@
 /datum/modifier/changeling/thermal_sight
 	name = "Thermal Adaptation"
 	desc = "Our eyes are capable of seeing into the infrared spectrum to accurately identify prey through walls."
-	vision_flags = SEE_MOBS
+	factors = alist(BF_SIGHT_FLAGS = SEE_MOBS)
 
 	on_expired_text = span_alien("Your sight returns to what it once was.")
 	stacks = MODIFIER_STACK_EXTEND

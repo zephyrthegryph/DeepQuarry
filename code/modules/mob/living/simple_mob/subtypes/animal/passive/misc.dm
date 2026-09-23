@@ -11,8 +11,7 @@
 	organ_names = /datum/decl/mob_organ_names/yithian
 
 	// Same stats as lizards.
-	health = 5
-	maxHealth = 5
+	endurance = 5
 	mob_size = MOB_MINISCULE
 
 /mob/living/simple_mob/animal/passive/tindalos
@@ -28,8 +27,7 @@
 	organ_names = /datum/decl/mob_organ_names/tindalos
 
 	// Same stats as lizards.
-	health = 5
-	maxHealth = 5
+	endurance = 5
 	mob_size = MOB_MINISCULE
 
 /datum/decl/mob_organ_names/yithian

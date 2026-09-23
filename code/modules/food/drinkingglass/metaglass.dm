@@ -792,7 +792,6 @@ Drinks Data
 	glass_icon_state = "mojito"
 
 
-// === merged from metaglass_vr.dm during hard-fork de-suffix (verified no override-order change) ===
 /datum/reagent/ethanol/ginzamary
 	glass_icon_state = "ginzamaryglass"
 	glass_center_of_mass_x = 16

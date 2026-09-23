@@ -133,7 +133,10 @@
 		if(occupant.radiation || occupant.accumulated_rads)
 			occupant.radiation -= 40
 			occupant.accumulated_rads -= 40
-		occupant.heal_organ_damage(8,8)
+		occupant.mend(TREAT_TISSUE_REPAIR, 8)
+		occupant.mend(TREAT_BURN_CARE, 8)
+		occupant.mend(TREAT_PLATING_REPAIR, 8)
+		occupant.mend(TREAT_WIRING_REPAIR, 8)
 
 /obj/machinery/restoration_cell/proc/go_out()
 	if(!(occupant))
@@ -171,7 +174,7 @@
 	M.stop_pulling()
 	M.loc = src
 	M.ExtinguishMob()
-	if(M.health > -100 && (M.health < 0 || M.sleeping))
+	if(M.stat != DEAD && (M.is_critical() || M.sleeping))
 		to_chat(M, span_notice("<b>You feel a warm liquid surround you.</b>"))
 	occupant = M
 	buckle_mob(occupant, forced = TRUE, check_loc = FALSE)

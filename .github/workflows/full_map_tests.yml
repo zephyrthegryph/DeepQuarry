@@ -1,0 +1,17 @@
+name: Full Map Tests
+
+# Runs the unit-test suite on the real Southern Cross map instead of the small
+# test map. Slower than the regular CI run, so it runs weekly and on demand.
+on:
+  schedule:
+    - cron: "0 6 * * 1"
+  workflow_dispatch:
+
+jobs:
+  run_full_map_tests:
+    name: Unit Tests (Southern Cross)
+    uses: ./.github/workflows/run_integration_tests.yml
+    with:
+      defines: "-DCITESTING_FULL_MAP"
+      label: "Southern Cross"
+      max_required_byond_client: 516

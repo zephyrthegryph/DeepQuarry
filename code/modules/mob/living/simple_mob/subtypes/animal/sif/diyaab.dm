@@ -26,8 +26,7 @@
 	icon_dead = "diyaab_dead"
 	icon = 'icons/jungle.dmi'
 
-	maxHealth = 25
-	health = 25
+	endurance = 25
 
 	meat_amount = 2
 	meat_type = /obj/item/reagent_containers/food/snacks/meat

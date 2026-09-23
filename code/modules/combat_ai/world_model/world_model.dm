@@ -87,7 +87,7 @@
 	trim_old_hazards()
 
 /// Record an incoming hit. Called by the brain's damage signal handler.
-/datum/world_model/proc/record_damage(amount, damagetype, atom/attacker)
+/datum/world_model/proc/record_damage(amount, injury_kind, atom/attacker)
 	LAZYINITLIST(recent_damage_events)
 	if(length(recent_damage_events) >= DQ_DAMAGE_HISTORY_CAP)
 		// Drop oldest. Simple O(n) shift — list is tiny.
@@ -95,7 +95,7 @@
 		recent_damage_events.Cut(1, 2)
 		if(islist(dropped))
 			recent_damage_total = max(0, recent_damage_total - dropped[1])
-	recent_damage_events += list(list(amount, damagetype, WEAKREF(attacker), world.time))
+	recent_damage_events += list(list(amount, injury_kind, WEAKREF(attacker), world.time))
 	recent_damage_total += amount
 	if(attacker)
 		last_attacker = WEAKREF(attacker)

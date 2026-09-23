@@ -203,7 +203,7 @@
 		if(isSynthetic())
 			output += "Current Battery Charge: [nutrition]\n"
 
-			var/toxDam = getToxLoss()
+			var/toxDam = injury_load(INJURY_CATEGORY_TOXIC)
 			if(toxDam)
 				output += "System Instability: " + span_warning("[toxDam > 25 ? "Severe" : "Moderate"]") + ". Seek charging station for cleanup.\n"
 			else
@@ -211,8 +211,8 @@
 
 		for(var/obj/item/organ/external/EO in organs)
 			if(EO.robotic >= ORGAN_ASSISTED)
-				if(EO.brute_dam || EO.burn_dam)
-					output += "[EO.name] - " + span_warning("[EO.burn_dam + EO.brute_dam > EO.min_broken_damage ? "Heavy Damage" : "Light Damage"]") + "\n" // Makes robotic limb damage scalable
+				if(EO.get_trauma() || EO.get_burn())
+					output += "[EO.name] - " + span_warning("[EO.get_burn() + EO.get_trauma() > EO.min_broken_damage ? "Heavy Damage" : "Light Damage"]") + "\n" // Makes robotic limb damage scalable
 				else
 					output += "[EO.name] - " + span_green("OK") + "\n"
 
@@ -293,11 +293,11 @@
 	if(do_after(src, delay_length, target = src))
 		adjust_nutrition(-200)
 
-		for(var/obj/item/organ/I in internal_organs)
+		for(var/obj/item/organ/internal/I in internal_organs)
 			if(I.robotic >= ORGAN_ROBOT) // No free robofix.
 				continue
 			if(I.damage > 0)
-				I.damage = max(I.damage - 30, 0) //Repair functionally half of a dead internal organ.
+				mend(TREAT_RESTORATION, 30, I) //Repair functionally half of a dead internal organ.
 				I.status = 0	// Wipe status, as it's being regenerated from possibly dead.
 				to_chat(src, span_notice("You feel a soothing sensation within your [I.name]..."))
 
@@ -319,7 +319,7 @@
 				to_chat(src, span_notice("You feel a slithering sensation as your [O.name] reform."))
 
 				var/agony_to_apply = round(0.66 * O.max_damage) // 66% of the limb's health is converted into pain.
-				src.apply_damage(agony_to_apply, HALLOSS)
+				injure(INJURY_PAIN, agony_to_apply, O.organ_tag)
 
 		for(var/organtype in species.has_organ) // Replace completely missing internal organs. -After- external ones, so they all should exist.
 			if(!src.internal_organs_by_name[organtype])
@@ -364,7 +364,6 @@
 		update_icons_body()
 
 
-// === merged from human_powers_vr.dm during hard-fork de-suffix (verified no override-order change) ===
 /mob/living/carbon/human/proc/reagent_purge()
 	set name = "Purge Reagents"
 	set desc = "Empty yourself of any reagents you may have consumed or come into contact with."

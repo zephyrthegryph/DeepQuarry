@@ -103,24 +103,24 @@
 							L.add_modifier(/datum/modifier/berserk_exhaustion, 30 SECONDS)
 							var/total_heal = 0
 
-							if(carrier.getBruteLoss())
-								carrier.adjustBruteLoss(-5)
+							if(carrier.injury_load(INJURY_CATEGORY_PHYSICAL))
+								carrier.mend(TREAT_TISSUE_REPAIR, 5)
 								total_heal += 5
 
-							if(carrier.getFireLoss())
-								carrier.adjustFireLoss(-5)
+							if(carrier.injury_load(INJURY_CATEGORY_THERMAL))
+								carrier.mend(TREAT_BURN_CARE, 5)
 								total_heal += 5
 
-							if(carrier.getToxLoss())
-								carrier.adjustToxLoss(-5)
+							if(carrier.injury_load(INJURY_CATEGORY_TOXIC))
+								carrier.mend(TREAT_ANTITOXIN, 5)
 								total_heal += 5
 
-							if(carrier.getOxyLoss())
-								carrier.adjustOxyLoss(-5)
+							if(carrier.injury_load(INJURY_CATEGORY_ASPHYXIA))
+								carrier.mend(TREAT_OXYGENATION, 5)
 								total_heal += 5
 
-							if(carrier.getCloneLoss())
-								carrier.adjustCloneLoss(-5)
+							if(carrier.injury_load(INJURY_CATEGORY_GENETIC))
+								carrier.mend(TREAT_GENETIC_REPAIR, 5)
 								total_heal += 5
 
 							carrier.add_modifier(/datum/modifier/berserk_exhaustion, total_heal SECONDS)

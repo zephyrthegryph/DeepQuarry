@@ -610,7 +610,6 @@ GLOBAL_LIST_INIT(all_volume_channels, list(
 #define FINGERPRINT_COMPLETE 6
 
 
-// === merged from misc_ch.dm during hard-fork de-suffix (manually verified) ===
 //Material defines
 #define MAT_CARPET				"red carpet"
 #define MAT_CARPET_TEAL			"teal carpet"

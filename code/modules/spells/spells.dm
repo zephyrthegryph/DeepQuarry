@@ -88,7 +88,6 @@
 		spell_master.silence_spells(amount)
 
 
-// === merged from spells_chomp.dm during hard-fork de-suffix (verified no override-order change) ===
 //This is pretty much just copied from construct_spells but adjusted so anyone can use them
 
 /datum/spell/targeted/unrestricted

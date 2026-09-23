@@ -8,35 +8,11 @@
 //			/atom/old_loc: The loc before the move.
 //			/atom/new_loc: The loc after the move.
 
-/*
-GLOBAL_DATUM_INIT(moved_event, /datum/decl/observ/moved, new)
-
-
-/datum/decl/observ/moved
-	name = "Moved"
-	expected_type = /atom/movable
-
-/datum/decl/observ/moved/register(atom/movable/mover, datum/listener, proc_call)
-	. = ..()
-
-	// Listen to the parent if possible.
-	if(. && istype(mover.loc, expected_type))
-		register(mover.loc, mover, /atom/movable/proc/recursive_move)
-*/
 //Deprecated in favor of comsigs
 
 /********************
 * Movement Handling *
 ********************/
-/*
-/atom/movable/Entered(atom/movable/am, atom/old_loc)
-	. = ..()
-	am.RegisterSignal(src,COMSIG_MOVABLE_ATTEMPTED_MOVE, /atom/movable/proc/recursive_move, override = TRUE)
-
-/atom/movable/Exited(atom/movable/am, atom/old_loc)
-	. = ..()
-	am.UnregisterSignal(src,COMSIG_MOVABLE_ATTEMPTED_MOVE)
-*/
 // Entered() typically lifts the moved event, but in the case of null-space we'll have to handle it.
 /atom/movable/Move()
 	var/old_loc = loc

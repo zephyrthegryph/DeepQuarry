@@ -132,7 +132,6 @@
 	path = /obj/item/cell/device/weapon
 
 
-// === merged from ammunition_vr.dm during hard-fork de-suffix (verified no override-order change) ===
 /*************
 * Ammunition *
 *************/

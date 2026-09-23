@@ -68,10 +68,10 @@ Bonus
 				if(M.stat != DEAD)
 					to_chat(M, span_boldwarning("Your eyes burn!"))
 				M.eye_blurry = 20
-				eyes.take_damage(1)
+				M.injure(INJURY_BLUNT, 1, eyes)
 			else
 				M.eye_blurry += 20
-				eyes.take_damage(5)
+				M.injure(INJURY_BLUNT, 5, eyes)
 				if(eyes.damage >= 10)
 					M.disabilities |= NEARSIGHTED
 				if(prob(eyes.damage - 10 + 1))
@@ -79,7 +79,7 @@ Bonus
 						if(!M.is_blind())
 							if(M.stat != DEAD)
 								to_chat(M, span_userdanger("You go blind!"))
-							eyes.take_damage(eyes.max_damage)
+							M.injure(INJURY_BLUNT, eyes.max_damage, eyes, flags = INJURE_IGNORE_RESISTANCE)
 					else
 						M.visible_message(span_warning("[M]'s eyes fall out of their sockets!"), span_userdanger("Your eyes out of their sockets!"))
 						eyes.forceMove(get_turf(M))

@@ -16,8 +16,7 @@
 	response_disarm = "gently baps"
 	response_harm = "hits"
 
-	health = 60
-	maxHealth = 60
+	endurance = 60
 
 	old_x = -16
 	old_y = 0

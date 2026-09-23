@@ -302,16 +302,16 @@ GLOBAL_LIST_EMPTY(all_blobs)
 			damage_mult_brute = 0.25
 			damage_mult_burn = 0
 
-		var/burn_dam = real_damage * damage_mult_burn
-		var/brute_dam = real_damage * damage_mult_brute
+		var/burn_amt = real_damage * damage_mult_burn
+		var/brute_amt = real_damage * damage_mult_brute
 
 		if(overmind)
-			if(brute_dam)
-				brute_dam = overmind.blob_type.on_received_damage(src, brute_dam, BRUTE, M)
-			if(burn_dam)
-				burn_dam = overmind.blob_type.on_received_damage(src, burn_dam, BURN, M)
+			if(brute_amt)
+				brute_amt = overmind.blob_type.on_received_damage(src, brute_amt, BRUTE, M)
+			if(burn_amt)
+				burn_amt = overmind.blob_type.on_received_damage(src, burn_amt, BURN, M)
 
-		real_damage = burn_dam + brute_dam
+		real_damage = burn_amt + brute_amt
 
 		adjust_integrity(-real_damage)
 

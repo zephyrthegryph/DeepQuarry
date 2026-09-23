@@ -298,7 +298,6 @@
 	. = ..()
 
 
-// === merged from presets_vr.dm during hard-fork de-suffix (verified no override-order change) ===
 /obj/structure/table/darkglass
 	name = "darkglass table"
 	desc = "Shiny!"

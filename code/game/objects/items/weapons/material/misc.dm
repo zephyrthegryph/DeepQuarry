@@ -216,7 +216,6 @@
 	icon_state = "stone_bone_axe"
 
 
-// === merged from misc_ch.dm during hard-fork de-suffix (verified no override-order change) ===
 //CHOMP Specific overrides
 /obj/item/material/whip
 	icon = 'icons/obj/weapons_ch.dmi'

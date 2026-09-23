@@ -113,7 +113,7 @@ GLOBAL_VAR_INIT(Recycled_Items, 0)
 								transfer_reagent_to_tank(H.vessel,0.5)
 							transfer_sludge_to_tank(rand(4,9))
 						else
-							L.adjustBruteLoss(25)
+							L.injure(INJURY_CUT, 25, null, src)
 							items_taken++
 							break
 					for(var/atom/movable/C in A.contents)

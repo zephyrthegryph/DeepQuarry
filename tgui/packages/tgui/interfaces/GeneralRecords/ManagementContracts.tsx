@@ -245,8 +245,16 @@ const OutcomeStages = ({ contract }: { contract: managementContract }) => {
               <Box color="label">
                 {stage.target}% · {stage.reward.toLocaleString()} th
               </Box>
-              <Box color={stage.reached ? 'good' : 'label'}>
-                {stage.reached ? 'Reached' : 'Pending'}
+              <Box
+                color={
+                  stage.earned ? 'good' : stage.reached ? 'average' : 'label'
+                }
+              >
+                {stage.earned
+                  ? 'Earned and paid'
+                  : stage.reached
+                    ? 'Awaiting payment'
+                    : 'Pending'}
               </Box>
             </Box>
           </Stack.Item>
@@ -723,6 +731,11 @@ export const ManagementContracts = () => {
                             projected {contract.details.projected_grade} ·{' '}
                             {contract.details.projected_reward} Thalers
                           </Box>
+                          <Box color="good">
+                            Earned so far:{' '}
+                            {contract.details.earned_reward.toLocaleString()}{' '}
+                            Thalers
+                          </Box>
                           <ProgressBar
                             value={contract.details.score}
                             minValue={0}
@@ -746,16 +759,15 @@ export const ManagementContracts = () => {
                             its negotiated minimum.
                           </Box>
                           <Box mt={0.5} color="label">
-                            Share weights divide the fixed staff award; they do
-                            not increase it. Approval reserves a role, while
-                            attributable contract work qualifies it for
-                            settlement.
+                            Eligible crew join roles directly. Attributable work
+                            qualifies participation and divides the fixed staff
+                            award by contribution.
                           </Box>
                           {contract.details.roles.map((role) => (
                             <Section
                               key={`${contract.id}-${role.id}`}
                               mt={1}
-                              title={`${role.title} — ${role.qualified}/${role.minimum} qualified · ${role.approved} approved`}
+                              title={`${role.title} — ${role.qualified}/${role.minimum} qualified · ${role.approved} participating`}
                             >
                               <Box mb={0.5} color="label">
                                 {role.description}
@@ -770,7 +782,7 @@ export const ManagementContracts = () => {
                               </Box>
                               {!role.proposals.length && (
                                 <Box color="label">
-                                  No participation proposals filed.
+                                  No participants have joined.
                                 </Box>
                               )}
                               {role.proposals.map((proposal) => (
@@ -784,104 +796,13 @@ export const ManagementContracts = () => {
                                     <Box color="label">
                                       {proposal.department || 'Independent'} ·
                                       {proposal.online ? 'online' : 'offline'} ·
-                                      requested {proposal.weight}× share
-                                      {!!proposal.approved_weight &&
-                                        ` · offered ${proposal.approved_weight}×`}
-                                      {' · '}contribution{' '}
-                                      {proposal.contribution}/
+                                      contribution {proposal.contribution}/
                                       {role.minimum_contribution} ·{' '}
                                       {proposal.qualified
                                         ? 'qualified'
-                                        : proposal.status}
+                                        : 'participating'}
                                     </Box>
                                   </Stack.Item>
-                                  {[
-                                    'pending',
-                                    'countered',
-                                    'approved',
-                                  ].includes(proposal.status) && (
-                                    <Stack.Item>
-                                      <Stack align="center">
-                                        <Stack.Item color="label">
-                                          {proposal.status === 'approved'
-                                            ? 'Share'
-                                            : 'Offer'}
-                                        </Stack.Item>
-                                        {[1, 2, 3].map((weight) => (
-                                          <Stack.Item key={weight}>
-                                            <Button
-                                              compact
-                                              selected={
-                                                proposal.status ===
-                                                  'approved' &&
-                                                proposal.approved_weight ===
-                                                  weight
-                                              }
-                                              tooltip={
-                                                weight === proposal.weight
-                                                  ? 'Approve the requested share'
-                                                  : 'Send this counteroffer'
-                                              }
-                                              onClick={() =>
-                                                act(
-                                                  'contract_stakeholder_decide',
-                                                  {
-                                                    id: contract.id,
-                                                    account: proposal.account,
-                                                    role: role.id,
-                                                    approved: 1,
-                                                    weight,
-                                                  },
-                                                )
-                                              }
-                                            >
-                                              {weight}×
-                                            </Button>
-                                          </Stack.Item>
-                                        ))}
-                                        {proposal.status === 'pending' && (
-                                          <Stack.Item>
-                                            <Button
-                                              compact
-                                              icon="times"
-                                              color="bad"
-                                              tooltip="Reject this application"
-                                              onClick={() =>
-                                                act(
-                                                  'contract_stakeholder_decide',
-                                                  {
-                                                    id: contract.id,
-                                                    account: proposal.account,
-                                                    role: role.id,
-                                                    approved: 0,
-                                                  },
-                                                )
-                                              }
-                                            />
-                                          </Stack.Item>
-                                        )}
-                                      </Stack>
-                                    </Stack.Item>
-                                  )}
-                                  {['approved', 'countered'].includes(
-                                    proposal.status,
-                                  ) && (
-                                    <Stack.Item>
-                                      <Button
-                                        compact
-                                        icon="user-minus"
-                                        color="bad"
-                                        tooltip="Revoke this appointment so the role can be filled again"
-                                        onClick={() =>
-                                          act('contract_stakeholder_revoke', {
-                                            id: contract.id,
-                                            account: proposal.account,
-                                            role: role.id,
-                                          })
-                                        }
-                                      />
-                                    </Stack.Item>
-                                  )}
                                 </Stack>
                               ))}
                             </Section>

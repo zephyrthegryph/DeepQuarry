@@ -266,6 +266,8 @@ Turf and target are seperate in case you want to teleport some distance from a t
 	name = newname
 	if(mind)
 		mind.name = newname
+		if(mind.identity)
+			mind.identity.real_name = newname
 	if(dna)
 		dna.real_name = real_name
 
@@ -1697,7 +1699,6 @@ GLOBAL_DATUM(dview_mob, /mob/dview)
 	return atom_list
 
 
-// === merged from unsorted_vr.dm during hard-fork de-suffix (verified no override-order change) ===
 /*
 	get_holder_at_turf_level(): Similar to get_turf(), will return the "highest up" holder of this atom, excluding the turf.
 	Example: A fork inside a box inside a locker will return the locker. Essentially, get_just_before_turf().

@@ -32,8 +32,7 @@
 
 	rarity_value = 0.1
 	total_health = 75
-	brute_mod = 1.5
-	burn_mod = 1.5
+	injury_mod_groups = list("physical" = 1.5, "thermal" = 1.5)
 
 	spawn_flags = SPECIES_IS_RESTRICTED
 

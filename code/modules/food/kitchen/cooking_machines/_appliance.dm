@@ -381,7 +381,7 @@
 	for(var/obj/item/holder/H in CI.container.contents)
 		var/mob/living/M = H.held_mob
 		if(M)
-			M.apply_damage(rand(1,3) * (1/M.size_multiplier), mobdamagetype, pick(BP_ALL))
+			M.injure(injury_kind_for(mobdamagetype), rand(1,3) * (1/M.size_multiplier), pick(BP_ALL), source = src)
 
 	return TRUE
 

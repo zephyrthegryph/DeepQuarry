@@ -296,9 +296,17 @@
 	icon_state = "mailman2"
 
 
-// === merged from jobs_vr.dm during hard-fork de-suffix (verified no override-order change) ===
 /obj/item/clothing/head/helmet/detective_alt
 	name = "Type-34C Semi-Enclosed Headwear"
 	desc = "Civilian model of a popular helmet used by certain law enforcement agencies. It does not have any armor plating, but has a neo-laminated fiber lining."
 	icon_state = "cyberpunkgoggle"
 	flags_inv = HIDEEARS|HIDEEYES|BLOCKHAIR
+
+/obj/item/clothing/head/beret/blueshield
+	name = "bodyguard's beret"
+	desc = "A dark blue beret adorned with a silver patch. The mark of a professional bodyguard."
+	item_state_slots = list(slot_r_hand_str = "beret_white", slot_l_hand_str = "beret_white")
+	icon = 'icons/obj/clothing/hats_yw.dmi'
+	icon_state = "beret_blueshield"
+	icon_override = 'icons/mob/head_yw.dmi'
+	item_state = "beret_blueshield"

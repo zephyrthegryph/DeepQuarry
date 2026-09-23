@@ -233,6 +233,46 @@
 	scan_icon = "mineral_uncommon"
 	reagent = REAGENT_ID_TITANIUMDIOX
 
+/datum/ore/pentlandite
+	name = ORE_PENTLANDITE
+	display_name = "nickel-bearing pentlandite"
+	smelts_to = MAT_NICKEL
+	result_amount = 3
+	spread_chance = 6
+	ore = /obj/item/ore/pentlandite
+	scan_icon = "mineral_uncommon"
+	reagent = REAGENT_ID_IRON
+
+/datum/ore/chromite
+	name = ORE_CHROMITE
+	display_name = "chromium-bearing chromite"
+	smelts_to = MAT_CHROMIUM
+	result_amount = 3
+	spread_chance = 5
+	ore = /obj/item/ore/chromite
+	scan_icon = "mineral_uncommon"
+	reagent = REAGENT_ID_IRON
+
+/datum/ore/wolframite
+	name = ORE_WOLFRAMITE
+	display_name = "tungsten-bearing wolframite"
+	smelts_to = MAT_TUNGSTEN
+	result_amount = 2
+	spread_chance = 3
+	ore = /obj/item/ore/wolframite
+	scan_icon = "mineral_rare"
+	reagent = REAGENT_ID_IRON
+
+/datum/ore/kaolin
+	name = ORE_KAOLIN
+	display_name = "ceramic-grade kaolin"
+	compresses_to = MAT_TECH_CERAMIC
+	result_amount = 3
+	spread_chance = 6
+	ore = /obj/item/ore/kaolin
+	scan_icon = "mineral_uncommon"
+	reagent = REAGENT_ID_SILICATE
+
 /datum/ore/painite
 	name = ORE_PAINITE
 	display_name = "rough painite"

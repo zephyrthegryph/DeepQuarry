@@ -156,108 +156,6 @@
 	charge_cost = 480	//to compensate a bit for self-recharging
 	cell_type = /obj/item/cell/device/weapon/recharge/captain
 	battery_lock = 1
-/* 	var/remainingshots = 0 // you may get a limited number of shots regardless of the charge // no
-	var/failurechance = 0 //chance per shot of something going awry
-
-/obj/item/gun/energy/captain/Initialize(mapload)
-	//it's an antique and it's been sitting in a case, unmaintained, for who the hell knows how long - who knows what'll happen when you pull it out?
-	..()
-	//first, we decide, does it have a different type of beam? 75% of just being a 40-damage laser, 15% of being less or 0, 10% of being better
-	projectile_type = pick(prob(1);/obj/item/projectile/beam/pulse,
-						prob(2);/obj/item/projectile/beam/heavylaser/cannon,
-						prob(2);/obj/item/projectile/beam/heavylaser,
-						prob(5);/obj/item/projectile/beam/sniper,
-						prob(45);/obj/item/projectile/beam,
-						prob(10);/obj/item/projectile/beam/cyan,
-						prob(10);/obj/item/projectile/beam/eluger,
-						prob(10);/obj/item/projectile/beam/imperial,
-						prob(10);/obj/item/projectile/beam/weaklaser,
-						prob(5);/obj/item/projectile/beam/practice)
-	//now, decide whether it has a shot limit and if so how many
-	if(prob(50))
-		remainingshots = rand(1,40)
-	if(prob(50))
-		failurechance = rand(1,5)
-
-	//finally, update the description so it has a tell if it's gonna burn out on you
-	if(remainingshots || failurechance)
-		desc = "A rare weapon, produced by the Lunar Arms Company around 2105 - one of humanity's first wholly extra-terrestrial weapon designs. It's been reasonably well-preserved."
-
-/obj/item/gun/energy/captain/special_check(mob/user)
-	if(remainingshots)
-		remainingshots -= 1
-		if(!remainingshots) //you've shot your load, sonny
-			burnout(user)
-			return 0
-	else if(prob(failurechance))
-		malfunction(user)
-		return 0
-	return ..()
-
-/obj/item/gun/energy/captain/proc/burnout(mob/user)
-	//your gun is now rendered useless
-	projectile_type = /obj/item/projectile/beam/practice //just in case you somehow manage to get it to fire again, its beam type is set to one that sucks
-	power_supply.charge = 0
-	power_supply.maxcharge = 1 //just to avoid div/0 runtimes
-	desc = "A rare weapon, produced by the Lunar Arms Company around 2105 - one of humanity's first wholly extra-terrestrial weapon designs. It looks to have completely burned out."
-	user.visible_message(span_warning("\The [src] erupts in a shower of sparks!"), span_danger("\the [src] bursts into a shower of sparks!"))
-	var/turf/T = get_turf(src)
-	var/datum/effect/effect/system/spark_spread/sparks = new /datum/effect/effect/system/spark_spread()
-	sparks.set_up(2, 1, T)
-	sparks.start()
-	update_icon()
-
-/obj/item/gun/energy/captain/proc/malfunction(mob/user)
-	var/screwup = rand(1,10)
-	switch(screwup)
-		if(1 to 5) //50% of just draining the battery and making future malfunctions more likely
-			power_supply.charge = 0
-			var/turf/T = get_turf(src)
-			var/datum/effect/effect/system/spark_spread/sparks = new /datum/effect/effect/system/spark_spread()
-			sparks.set_up(2, 1, T)
-			sparks.start()
-			update_icon()
-			user.visible_message(span_warning("\The [src] shorts out!"), span_danger("\the [src] shorts out!"))
-			failurechance += rand(1,5)
-			return
-		if(6 to 7) //20% chance of weakening the beam type, possibly to uselessness
-			var/obj/item/projectile/beam/B = new projectile_type
-			switch(B.damage)
-				if(0)
-					return //can't weaken it any further
-				if(1 to 15) //weaklaser becomes practice
-					projectile_type = /obj/item/projectile/beam/practice
-				if(16 to 40) //regular becomes weaklaser
-					projectile_type = /obj/item/projectile/beam/weaklaser
-				if(41 to 50) //sniper becomes regular
-					projectile_type = /obj/item/projectile/beam
-				if(51 to 60) //heavy becomes sniper
-					projectile_type = /obj/item/projectile/beam/sniper
-				if(61 to 80) //cannon becomes heavy
-					projectile_type = /obj/item/projectile/beam/heavylaser
-				if(81 to 100) //pulse becomes cannon
-					projectile_type = /obj/item/projectile/beam/heavylaser/cannon
-			user.visible_message(span_warning("\The [src] dims slightly!"), span_danger("\the [src] dims slightly!"))
-			return
-		if(8) //10% chance of reducing the number of shots you have left, or giving you a limit if there isn't one
-			if(!remainingshots)
-				remainingshots = rand(1,40)
-			else
-				remainingshots = min(1, round(remainingshots/2))
-			user.visible_message(span_warning("\The [src] lets out a faint pop."), span_danger("\the [src] lets out a faint pop."))
-		if(9) //10% chance of permanently reducing the cell's max charge
-			power_supply.maxcharge = power_supply.maxcharge/2
-			power_supply.charge = min(power_supply.charge, power_supply.maxcharge)
-			user.visible_message(span_warning("\The [src] sparks,letting off a puff of smoke!"), span_danger("\the [src] sparks,letting off a puff of smoke!"))
-			var/turf/T = get_turf(src)
-			var/datum/effect/effect/system/spark_spread/sparks = new /datum/effect/effect/system/spark_spread()
-			sparks.set_up(2, 1, T)
-			sparks.start()
-			update_icon()
-		if(10) //10% chance of just straight-up breaking on the spot
-			burnout(user)
-			return
-*/
 
 /*
  * Laser Cannon
@@ -355,7 +253,6 @@
 	projectile_type = /obj/item/projectile/scatter/laser
 	w_class = ITEMSIZE_HUGE //.
 	slot_flags = SLOT_BELT|SLOT_BACK //because you can still holster it despite it not fitting in a backpack.
-
 
 /*
  * Imperial Pistol
@@ -471,8 +368,6 @@
 /obj/item/gun/energy/zip/craftable
 	battery_lock = 1 //makeshift gun has flaws
 
-
-// === merged from laser_ch.dm during hard-fork de-suffix (verified no override-order change) ===
 /obj/item/gun/energy/laser
 	icon = 'icons/obj/64x32guns_ch.dmi'
 	icon_state = "lcarbine"
@@ -589,8 +484,6 @@
 	accept_cell_type = /obj/item/cell/vepr
 	cell_type = /obj/item/cell/vepr
 
-
-// === merged from laser_chomp.dm during hard-fork de-suffix (manually verified: all-new types/defines, no base re-open) ===
 /obj/item/gun/energy/floragun
 	charge_cost = 80
 
@@ -674,7 +567,6 @@
 		list(mode_name="lethal", projectile_type=/obj/item/projectile/beam, modifystate="lasgunkill", fire_sound='sound/weapons/Laser.ogg', charge_cost = 160),
 		)
 
-
 /obj/item/gun/energy/gun/burst/mg42 //I am unsure what this weapon is, and it seems cheap on paper but just putting it at 80 for unity
 	firemodes = list(
 		list(mode_name="single fire", burst=1, projectile_type=/obj/item/projectile/beam/burstlaser, modifystate="mg42-e", fire_sound='sound/weapons/Laser.ogg', charge_cost = 80),
@@ -690,3 +582,40 @@
 		list(mode_name="gauss", fire_delay=15, projectile_type=/obj/item/projectile/energy/gauss, modifystate="x01gauss", fire_sound='sound/weapons/gauss_shoot.ogg', charge_cost = 120)
 		)
 */
+
+///START OF GAUSS WEAPONRY -Radiantflash ///
+/obj/item/gun/energy/soapenergy/gauss
+	name = "gauss pistol"
+	icon = 'icons/obj/gun_yw.dmi'
+	icon_state = "gausspistol"
+	item_state = "gauss"
+	desc = "An older model of the experimental Gauss weapon series produced by Hephaestus industries. As it is unable to pass through glass, it was phased out during the mars-sol conflict due to the invention of laser carbines.Nevertheless, it still packs a punch and is easy to maintain, making it a favorite amongst sol privateers."
+	force = 5
+	fire_sound = 'sound/weapons/laser4.ogg' //lighter damage sound //CHMOMPEdit - Sound moved to modular files to prevent conflict with an upstream laser sound file
+	slot_flags = SLOT_BELT|SLOT_HOLSTER
+	w_class = 2
+	projectile_type = /obj/item/projectile/energy/gauss
+	charge_cost = 250
+	self_recharge = 1
+	charge_meter = 1
+	fire_delay = 10 //old technology
+
+/obj/item/gun/energy/soapenergy/gaussrifle
+	name = "gauss rifle"
+	icon = 'icons/obj/gun_yw.dmi'
+	icon_state = "gaussrifle"
+	item_state = "gaussrifle"
+	item_icons = list(slot_r_hand_str = 'icons/mob/items/righthand_guns_yw.dmi', slot_l_hand_str = 'icons/mob/items/lefthand_guns_yw.dmi', slot_back_str = 'icons/mob/back_yw.dmi')
+	desc = "An older model of the experimental Gauss weapon series produced by Hephaestus industries. As it is unable to pass through glass, it was phased out during the mars-sol conflict due to the invention of laser carbines.Nevertheless, it still packs a punch and is easy to maintain, making it a favorite amongst sol privateers."
+	force = 8
+	fire_sound = 'sound/weapons/gauss_shoot.ogg'
+	slot_flags = SLOT_BELT|SLOT_BACK
+	w_class = ITEMSIZE_HUGE //.
+	projectile_type = /obj/item/projectile/energy/gaussrifle
+	charge_cost =400
+	self_recharge = 1
+	charge_meter = 1
+	recoil = 1
+	fire_delay = 27 //old technology
+	move_delay = 0 // Pistols have move_delay of 0
+///END OF GAUSS WEAPONRY///

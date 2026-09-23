@@ -3,7 +3,8 @@
 // edits are mechanical and span the whole file; the commit SHA
 // is the source of truth for per-line diff context.
 
-#define HEAT_CAPACITY_HUMAN 100 //249840 J/K, for a 72 kg person.
+/// 72 kg of tissue at about 3470 J/(kg K).
+#define HEAT_CAPACITY_HUMAN 249840
 
 /obj/machinery/atmospherics/unary/cryo_cell
 	name = "cryo cell"
@@ -28,8 +29,6 @@
 	var/temperature_archived
 	var/mob/living/carbon/occupant = null
 	var/obj/item/reagent_containers/glass/beaker = null
-
-	var/current_heat_capacity = 50
 
 	var/image/fluid
 
@@ -66,13 +65,14 @@
 	if(!node)
 		return
 
+	if(air_contents)
+		temperature_archived = air_contents.return_temperature()
+
 	if(occupant)
 		if(occupant.stat != 2)
 			process_occupant()
 
 	if(air_contents)
-		temperature_archived = air_contents.return_temperature()
-		heat_gas_contents()
 		expel_gas()
 
 	if(air_contents && abs(temperature_archived-air_contents.return_temperature()) > 1)
@@ -114,13 +114,12 @@
 	if(occupant)
 		occupantData["name"] = occupant.name
 		occupantData["stat"] = occupant.stat
-		occupantData["health"] = occupant.health
-		occupantData["maxHealth"] = occupant.getMaxHealth()
-		occupantData["minHealth"] = -(occupant.getMaxHealth())
-		occupantData["bruteLoss"] = occupant.getBruteLoss()
-		occupantData["oxyLoss"] = occupant.getOxyLoss()
-		occupantData["toxLoss"] = occupant.getToxLoss()
-		occupantData["fireLoss"] = occupant.getFireLoss()
+		occupantData["vitality"] = round(occupant.vitality() * 100)
+		occupantData["critical"] = occupant.is_critical()
+		occupantData["physicalLoad"] = occupant.injury_load(INJURY_CATEGORY_PHYSICAL)
+		occupantData["asphyxiaLoad"] = occupant.injury_load(INJURY_CATEGORY_ASPHYXIA)
+		occupantData["toxicLoad"] = occupant.injury_load(INJURY_CATEGORY_TOXIC)
+		occupantData["thermalLoad"] = occupant.injury_load(INJURY_CATEGORY_THERMAL)
 		occupantData["bodyTemperature"] = occupant.bodytemperature
 	data["occupant"] = occupantData;
 
@@ -216,42 +215,37 @@
 	if(occupant)
 		if(occupant.stat >= DEAD)
 			return
-		var/air_temperature = air_contents.return_temperature()
-		occupant.bodytemperature += 2*(air_temperature - occupant.bodytemperature)*current_heat_capacity/(current_heat_capacity + air_contents.heat_capacity())
-		occupant.bodytemperature = max(occupant.bodytemperature, air_temperature) // this is so ugly i'm sorry for doing it i'll fix it later i promise
+		// The occupant and the cell's gas settle to a shared temperature; the
+		// heat the body loses is what the gas gains.
+		var/air_heat_capacity = air_contents.heat_capacity()
+		var/equilibrium_temperature = (HEAT_CAPACITY_HUMAN * occupant.bodytemperature + air_heat_capacity * air_contents.return_temperature()) / (HEAT_CAPACITY_HUMAN + air_heat_capacity)
+		occupant.bodytemperature = equilibrium_temperature
+		air_contents.set_temperature(equilibrium_temperature)
 		occupant.set_stat(UNCONSCIOUS)
 		occupant.dir = SOUTH
 		if(occupant.bodytemperature < T0C)
 			occupant.Sleeping(max(5, (1/occupant.bodytemperature)*2000))
 			occupant.Paralyse(max(5, (1/occupant.bodytemperature)*3000))
-			if(LINDA_GAS_AMT(air_contents, GAS_O2) > 2)
-				if(occupant.getOxyLoss()) occupant.adjustOxyLoss(-1)
-			else
-				occupant.adjustOxyLoss(-1)
+			occupant.mend(TREAT_OXYGENATION, 1)
 			//severe damage should heal waaay slower without proper chemicals
 			if(occupant.bodytemperature < 225)
-				if(occupant.getToxLoss())
-					occupant.adjustToxLoss(max(-1, -20/occupant.getToxLoss()))
+				var/toxic_load = occupant.injury_load(INJURY_CATEGORY_TOXIC)
+				if(toxic_load)
+					occupant.mend(TREAT_ANTITOXIN, min(1, 20 / toxic_load))
 				if(occupant.radiation || occupant.accumulated_rads)
 					occupant.radiation -= 25
 					occupant.accumulated_rads -= 25
-				var/heal_brute = occupant.getBruteLoss() ? min(1, 20/occupant.getBruteLoss()) : 0
-				var/heal_fire = occupant.getFireLoss() ? min(1, 20/occupant.getFireLoss()) : 0
-				occupant.heal_organ_damage(heal_brute,heal_fire)
+				var/physical_load = occupant.injury_load(INJURY_CATEGORY_PHYSICAL)
+				if(physical_load)
+					occupant.mend(TREAT_TISSUE_REPAIR, min(1, 20 / physical_load))
+				var/thermal_load = occupant.injury_load(INJURY_CATEGORY_THERMAL)
+				if(thermal_load)
+					occupant.mend(TREAT_BURN_CARE, min(1, 20 / thermal_load))
 		var/has_cryo = occupant.reagents.get_reagent_amount(REAGENT_ID_CRYOXADONE) >= 1
 		var/has_clonexa = occupant.reagents.get_reagent_amount(REAGENT_ID_CLONEXADONE) >= 1
 		var/has_cryo_medicine = has_cryo || has_clonexa
 		if(beaker && !has_cryo_medicine)
 			beaker.reagents.trans_to_mob(occupant, 1, CHEM_BLOOD, 10, can_dialysis = FALSE)
-
-/obj/machinery/atmospherics/unary/cryo_cell/proc/heat_gas_contents()
-	if(air_contents.total_moles() < 1)
-		return
-	var/air_heat_capacity = air_contents.heat_capacity()
-	var/combined_heat_capacity = current_heat_capacity + air_heat_capacity
-	if(combined_heat_capacity > 0)
-		var/combined_energy = T20C*current_heat_capacity + air_heat_capacity*air_contents.return_temperature()
-		air_contents.set_temperature(combined_energy/combined_heat_capacity)
 
 /obj/machinery/atmospherics/unary/cryo_cell/proc/expel_gas()
 	if(air_contents.total_moles() < 1)
@@ -277,7 +271,6 @@
 	occupant.cozyloop.stop() // Cozy Music
 	//REMOVE_TRAIT(occupant, TRAIT_STASIS, REF(src)) //Stops life almost entirely, so not done here.
 	occupant = null
-	current_heat_capacity = initial(current_heat_capacity)
 	update_use_power(USE_POWER_IDLE)
 	SStgui.update_uis(src)
 	return
@@ -301,7 +294,7 @@
 	M.stop_pulling()
 	M.forceMove(src)
 	M.extinguish_mob()
-	if(M.health > -100 && (M.health < 0 || M.sleeping))
+	if(M.stat != DEAD && (M.is_critical() || M.sleeping))
 		to_chat(M, span_boldnotice("You feel a cold liquid surround you. Your skin starts to freeze up."))
 	occupant = M
 	if(on)
@@ -311,7 +304,6 @@
 	buckle_mob(occupant, forced = TRUE, check_loc = FALSE)
 	vis_contents |= occupant
 	occupant.pixel_y += 19
-	current_heat_capacity = HEAT_CAPACITY_HUMAN
 	update_use_power(USE_POWER_ACTIVE)
 //	M.metabslow = 1
 	add_fingerprint(usr)

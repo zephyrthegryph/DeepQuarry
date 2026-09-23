@@ -31,10 +31,10 @@
 		if(S.species.lightweight == 1)
 			visible_message(span_vwarning("[M] carelessly bowls [src] over!"))
 			M.forceMove(get_turf(src))
-			M.apply_damage(0.5, BRUTE)
+			M.injure(INJURY_BLUNT, 0.5, source = src)
 			Weaken(4)
 			stop_flying()
-			apply_damage(0.5, BRUTE)
+			injure(INJURY_BLUNT, 0.5, source = M)
 			return
 
 	if(round(weight) > 474)
@@ -45,4 +45,4 @@
 
 	visible_message(span_vwarning("[M] trips over [src]!"))
 	M.forceMove(get_turf(src))
-	M.apply_damage(1, BRUTE)
+	M.injure(INJURY_BLUNT, 1, source = src)

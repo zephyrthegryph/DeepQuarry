@@ -348,7 +348,6 @@ But for now, for what it's been used for, it works.
 		GLOB.mapped_autostrips_mob[targetid] = src
 
 
-// === merged from step_triggers_chomp.dm during hard-fork de-suffix (verified no override-order change) ===
 /obj/effect/step_trigger/teleporter/deathfall/Initialize(mapload)
 	. = ..()
 	teleport_z = src.z //This is for use in gateways, so mappers can hard map the X and Y without worrying about going to brazil

@@ -32,11 +32,11 @@
 			if(org.damage >= 1 && !istype(org, /obj/item/organ/internal/brain))
 				organ_damage = TRUE
 		patientname = H
-		patienthealth = max(0, (H.health + abs(-H.getMaxHealth())) / (H.getMaxHealth() + abs(-H.getMaxHealth())))
-		patientbruteloss = H.getBruteLoss()
-		patientfireloss = H.getFireLoss()
-		patienttoxloss = H.getToxLoss()
-		patientoxyloss = H.getOxyLoss()
+		patienthealth = H.vitality()
+		patientbruteloss = H.injury_load(INJURY_CATEGORY_PHYSICAL)
+		patientfireloss = H.injury_load(INJURY_CATEGORY_THERMAL)
+		patienttoxloss = H.injury_load(INJURY_CATEGORY_TOXIC)
+		patientoxyloss = H.injury_load(INJURY_CATEGORY_ASPHYXIA)
 		patientstatus = H.stat
 		if(H.vessel)
 			bloodData["volume"] = round(H.vessel.get_reagent_amount("blood"))

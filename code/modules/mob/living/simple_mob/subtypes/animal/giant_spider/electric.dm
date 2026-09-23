@@ -25,8 +25,7 @@
 	icon_living = "spark"
 	icon_dead = "spark_dead"
 
-	maxHealth = 210
-	health = 210
+	endurance = 210
 
 	taser_kill = 0 //It -is- the taser.
 

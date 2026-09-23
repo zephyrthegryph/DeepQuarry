@@ -121,10 +121,10 @@
 					if(0)
 						electrocute_act(instability * 0.3, "unstable energies", 0.75)
 					if(1)
-						adjustFireLoss(instability * 0.15) //7.5 burn @ 50 instability
+						injure(INJURY_BURN, instability * 0.15) //7.5 burn @ 50 instability
 						to_chat(src, span_danger("Your chassis alerts you to overheating from an unknown external force!"))
 					if(2)
-						adjustBruteLoss(instability * 0.15) //7.5 brute @ 50 instability
+						injure(INJURY_BLUNT, instability * 0.15) //7.5 brute @ 50 instability
 						to_chat(src, span_danger("Your chassis makes the sound of metal groaning!"))
 					if(3)
 						safe_blink(src, range = 6)
@@ -140,10 +140,10 @@
 					if(1)
 						emp_act(EMP_MEDIUM)
 					if(2)
-						adjustFireLoss(instability * 0.3) //30 burn @ 100 instability
+						injure(INJURY_BURN, instability * 0.3) //30 burn @ 100 instability
 						to_chat(src, span_danger("Your chassis alerts you to extreme overheating from an unknown external force!"))
 					if(3)
-						adjustBruteLoss(instability * 0.3) //30 brute @ 100 instability
+						injure(INJURY_BLUNT, instability * 0.3) //30 brute @ 100 instability
 						to_chat(src, span_danger("Your chassis makes the sound of metal groaning and tearing!"))
 
 			if(101 to 200) //Lethal
@@ -154,10 +154,10 @@
 					if(1)
 						emp_act(EMP_HEAVY)
 					if(2)
-						adjustFireLoss(instability * 0.4) //40 burn @ 100 instability
+						injure(INJURY_BURN, instability * 0.4) //40 burn @ 100 instability
 						to_chat(src, span_danger("Your chassis alerts you to extreme overheating from an unknown external force!"))
 					if(3)
-						adjustBruteLoss(instability * 0.4) //40 brute @ 100 instability
+						injure(INJURY_BLUNT, instability * 0.4) //40 brute @ 100 instability
 						to_chat(src, span_danger("Your chassis makes the sound of metal groaning and tearing!"))
 
 /mob/living/carbon/human/instability_effects()
@@ -197,13 +197,13 @@
 					if(4)
 						electrocute_act(instability * 0.3, "unstable energies")
 					if(5)
-						adjustFireLoss(instability * 0.15) //7.5 burn @ 50 instability
+						injure(INJURY_BURN, instability * 0.15) //7.5 burn @ 50 instability
 						to_chat(src, span_danger("You feel your skin burn!"))
 					if(6)
-						adjustBruteLoss(instability * 0.15) //7.5 brute @ 50 instability
+						injure(INJURY_BLUNT, instability * 0.15) //7.5 brute @ 50 instability
 						to_chat(src, span_danger("You feel a sharp pain as an unseen force harms your body!"))
 					if(7)
-						adjustToxLoss(instability * 0.15) //7.5 tox @ 50 instability
+						injure(INJURY_TOXIN, instability * 0.15, affliction = /datum/affliction/flux_sickness) //7.5 tox @ 50 instability
 					if(8)
 						safe_blink(src, range = 6)
 						to_chat(src, span_warning("You're teleported against your will!"))
@@ -228,10 +228,10 @@
 						fire_act()
 						to_chat(src, span_danger("You spontaneously combust!"))
 					if(6)
-						adjustCloneLoss(instability * 0.05) //5 cloneloss @ 100 instability
+						injure(INJURY_CELLULAR, instability * 0.05, affliction = /datum/affliction/flux_sickness) //5 genetic damage @ 100 instability
 						to_chat(src, span_danger("You feel your body slowly degenerate."))
 					if(7)
-						adjustToxLoss(instability * 0.25) //25 tox @ 100 instability
+						injure(INJURY_TOXIN, instability * 0.25, affliction = /datum/affliction/flux_sickness) //25 tox @ 100 instability
 
 			if(100 to 200) //Lethal
 				rng = rand(0,8)
@@ -256,10 +256,10 @@
 						fire_act()
 						to_chat(src, span_danger("You spontaneously combust!"))
 					if(6)
-						adjustCloneLoss(instability * 0.10) //5 cloneloss @ 100 instability
+						injure(INJURY_CELLULAR, instability * 0.10, affliction = /datum/affliction/flux_sickness) //5 genetic damage @ 100 instability
 						to_chat(src, span_danger("You feel your body slowly degenerate."))
 					if(7)
-						adjustToxLoss(instability * 0.40) //40 tox @ 100 instability
+						injure(INJURY_TOXIN, instability * 0.40, affliction = /datum/affliction/flux_sickness) //40 tox @ 100 instability
 
 /mob/living/proc/radiate_instability(amount)
 	var/distance = round(sqrt(instability / 2))

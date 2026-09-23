@@ -30,6 +30,11 @@
 	var/material_emp_resistance = 0
 	var/material_discharge_credit
 	var/material_discharge_updated
+	/// Hysteretic physical state. A quenched conductor must cool meaningfully
+	/// below its transition before it can carry enhanced output again.
+	var/material_superconducting = FALSE
+	var/material_quenched = FALSE
+	var/material_feedback_cooldown = 0
 
 	matter = list(MAT_STEEL = 700, MAT_GLASS = 50)
 
@@ -43,6 +48,10 @@
 /obj/item/cell/Initialize(mapload)
 	. = ..()
 	ensure_material_construction(MATERIAL_APPLICATION_CELL, 2 * SHEET_MATERIAL_AMOUNT)
+	// A cell's temperature and electrical phase are functional state even for
+	// the standard construction. Unlike idle machine housings, cells therefore
+	// always need a service datum; it sleeps dependency-driven when stable.
+	enable_material_service()
 	AddElement(/datum/element/electrovoreable)
 	c_uid = cell_uid++
 	update_icon()
@@ -137,6 +146,98 @@
 	var/resistance = construction_electrical_resistance(0.1, MATERIAL_CABLE_REFERENCE_AREA, temperature, current / MATERIAL_CABLE_REFERENCE_AREA) || 0
 	return 1 / (1 + resistance * current / MATERIAL_SERVICE_NOMINAL_VOLTAGE)
 
+/// Refresh the conductor phase from actual assembly temperature. No predictive
+/// UI is involved: the state is discovered through device performance and the
+/// physical quench/recovery cues emitted here.
+/obj/item/cell/proc/update_superconducting_state(requested_output = 0)
+	var/datum/material/conductor = material_for_role(MATERIAL_ROLE_CONDUCTOR)
+	if(!conductor?.critical_temperature || !material_service)
+		material_superconducting = FALSE
+		material_quenched = FALSE
+		return FALSE
+	var/temperature = material_service.temperature
+	var/current_density = max(requested_output / CELLRATE, 0) / MATERIAL_SERVICE_NOMINAL_VOLTAGE / MATERIAL_CABLE_REFERENCE_AREA
+	var/within_current = current_density <= conductor.critical_current_density
+	if(material_quenched)
+		if(temperature <= conductor.critical_temperature - MATERIAL_SUPERCONDUCTING_RECOVERY_MARGIN)
+			material_quenched = FALSE
+			material_superconducting = within_current
+			material_phase_feedback(FALSE)
+		else
+			material_superconducting = FALSE
+		return material_superconducting
+	var/was_superconducting = material_superconducting
+	material_superconducting = temperature < conductor.critical_temperature && within_current
+	if(was_superconducting && !material_superconducting)
+		material_quenched = TRUE
+		material_phase_feedback(TRUE)
+	return material_superconducting
+
+/obj/item/cell/proc/material_phase_feedback(quenching)
+	if(world.time < material_feedback_cooldown)
+		return
+	material_feedback_cooldown = world.time + 2 SECONDS
+	var/atom/device = isobj(loc) ? loc : src
+	if(quenching)
+		device.visible_message(span_warning("[device] snaps with a harsh electrical crack as frost flashes from its casing!"))
+		playsound(device, 'sound/effects/sparks4.ogg', 55, TRUE)
+	else
+		device.visible_message(span_notice("Condensation creeps across [device] as its electrical hum becomes suddenly clean."))
+
+/// Return the strongest output envelope this cell can physically support for
+/// one action. Ordinary cells always return 1; superconductors automatically
+/// use available current and charge without a player-facing mode switch.
+/obj/item/cell/proc/material_output_envelope(base_cost, device_limit = MATERIAL_SUPERCONDUCTING_MAX_OUTPUT)
+	if(base_cost <= 0 || device_limit <= 1 || !update_superconducting_state(base_cost))
+		return 1
+	var/datum/material/conductor = material_for_role(MATERIAL_ROLE_CONDUCTOR)
+	var/current_limited_cost = conductor.critical_current_density * MATERIAL_CABLE_REFERENCE_AREA * MATERIAL_SERVICE_NOMINAL_VOLTAGE * CELLRATE
+	var/available_cost = min(material_available_output(base_cost * device_limit), current_limited_cost)
+	return clamp(available_cost / base_cost, 1, device_limit)
+
+/// Enhanced devices convert a small part of their additional work into heat in
+/// the complete cell assembly. This is not conductor resistance; contacts,
+/// electrodes, and the powered device itself still produce heat.
+/obj/item/cell/proc/material_record_enhanced_output(base_cost, multiplier)
+	if(multiplier <= 1 || !material_service)
+		return
+	material_service.add_heat((base_cost * (multiplier - 1) / CELLRATE) * MATERIAL_SUPERCONDUCTING_OVERDRIVE_HEAT)
+	var/datum/material/conductor = material_for_role(MATERIAL_ROLE_CONDUCTOR)
+	if(conductor?.critical_temperature && material_service.temperature >= conductor.critical_temperature)
+		material_superconducting = FALSE
+		material_quenched = TRUE
+		material_phase_feedback(TRUE)
+
+/// A deliberately fabricated heat-pump layer spends stored power to move the
+/// cell's operating heat into its surroundings. This is the physical consumer
+/// for cryogenic/thermoelectric composites: it can hold a conductor below its
+/// critical temperature, while the insulation layer controls heat leaking back.
+/obj/item/cell/proc/run_material_heat_pump(delivered_charge)
+	if(delivered_charge <= 0 || !material_service)
+		return 0
+	var/datum/material/thermal = material_for_role(MATERIAL_ROLE_THERMAL)
+	var/datum/material/conductor = material_for_role(MATERIAL_ROLE_CONDUCTOR)
+	if(!thermal?.heat_pump_coefficient || !conductor?.critical_temperature)
+		return 0
+	var/target_temperature = conductor.critical_temperature - MATERIAL_SUPERCONDUCTING_RECOVERY_MARGIN
+	if(material_service.temperature <= target_temperature)
+		return 0
+	var/available_cooling = (material_service.temperature - target_temperature) * material_service.thermal_mass()
+	var/requested_cooling = min(available_cooling, delivered_charge / CELLRATE * thermal.heat_pump_coefficient * 6)
+	var/work_joules = requested_cooling / max(thermal.heat_pump_coefficient, 0.1)
+	var/work_charge = min(charge, work_joules * CELLRATE)
+	var/moved_heat = work_charge / CELLRATE * thermal.heat_pump_coefficient
+	if(moved_heat <= 0)
+		return 0
+	charge -= work_charge
+	material_service.add_heat(-moved_heat)
+	var/turf/location = get_turf(src)
+	var/datum/gas_mixture/ambient = location?.return_air()
+	ambient?.add_thermal_energy(moved_heat + work_charge / CELLRATE)
+	material_service.input_joules += work_charge / CELLRATE
+	material_service.loss_joules += work_charge / CELLRATE
+	return moved_heat
+
 /// A conservative preflight budget for consumers that perform physical work
 /// before debiting the cell. Repeated callers share the same discharge credit.
 /obj/item/cell/proc/material_available_output(requested)
@@ -153,11 +254,13 @@
 	if(rigged && amount > 0)
 		explode()
 		return 0
+	refresh_material_discharge()
+	if(amount > 0)
+		material_service_event(MATERIAL_EVENT_ELECTRICAL, amount / max(material_discharge_limit, 1))
 	material_service?.advance()
 	if(QDELETED(src))
 		return 0
 	amount = material_cell_use_cost(amount)
-	refresh_material_discharge()
 	amount = clamp(amount, 0, material_discharge_credit)
 	var/efficiency = material_delivery_efficiency(amount)
 	var/used = min(charge * efficiency, amount)
@@ -180,6 +283,8 @@
 		material_service.output_joules += used / CELLRATE
 		material_service.loss_joules += (debited - used) / CELLRATE
 		material_service.add_heat((debited - used) / CELLRATE)
+		run_material_heat_pump(used)
+	update_superconducting_state(amount)
 	last_use = world.time
 	if(used && self_recharge)
 		START_PROCESSING(SSobj, src)
@@ -314,11 +419,6 @@
 	. = ..()
 	if (. & EMP_PROTECT_SELF)
 		return
-	//remove this once emp changes on dev are merged in
-	if(isrobot(loc))
-		var/mob/living/silicon/robot/R = loc
-		severity *= R.cell_emp_mult
-
 	charge -= (charge / severity) * (1 - material_emp_resistance / 100)
 	if (charge < 0)
 		charge = 0

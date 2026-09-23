@@ -99,16 +99,16 @@ GLOBAL_PROTECT(dq_surgery_by_step)
 		if(!_dq_surgery_matches_zone(surgery, zone))
 			continue
 		var/drop = surgery.cure_severity
-		for(var/datum/medical_issue/condition/C as anything in patient.get_all_conditions())
+		for(var/datum/affliction/C as anything in patient.get_afflictions())
 			if(!(C.type in surgery.treats))
 				continue
 			// Graduated cure: drop severity by `cure_severity`. When that
-			// brings severity to ~0, the condition's own cure_issue path
+			// brings severity to ~0, the condition's own cure path
 			// removes it via check_progress; otherwise the surgery has
 			// reduced the active problem but the patient still has
 			// recovery to do.
 			if(drop >= 100 || drop >= C.severity)
-				C.cure_issue()
+				C.cure()
 			else
 				C.adjust_severity(-drop)
 				// Force the symptom set to refresh on the next tick — a

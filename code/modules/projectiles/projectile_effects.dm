@@ -39,7 +39,7 @@
 	var/eyeblur = 0
 	/// Drowsy duration (deciseconds).
 	var/drowsy = 0
-	/// Agony (halloss damage) amount.
+	/// Agony (pain injury) amount.
 	var/agony = 0
 	/// Incendiary level: 0 = none, 1 = ignite, 2 = trail of fire, 3 = intense fire.
 	var/incendiary = 0

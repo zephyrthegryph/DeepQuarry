@@ -10,8 +10,7 @@
 	icon = 'icons/mob/bigcat.dmi'
 
 	faction = FACTION_PANTHER
-	maxHealth = 150
-	health = 150
+	endurance = 150
 	movement_cooldown = -1
 
 	response_help = "pats"

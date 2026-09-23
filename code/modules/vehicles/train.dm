@@ -53,7 +53,7 @@
 			var/mob/living/M = A
 			visible_message(span_red("[src] knocks over [M]!"))
 			M.apply_effects(5, 5)				//knock people down if you hit them
-			M.apply_damages(22 / move_delay)	// and do damage according to how fast the train is going
+			M.injure(INJURY_BLUNT, 22 / move_delay, null, src)	// and do damage according to how fast the train is going
 			if(ishuman(load))
 				var/mob/living/D = load
 				to_chat(D, span_red("You hit [M]!"))

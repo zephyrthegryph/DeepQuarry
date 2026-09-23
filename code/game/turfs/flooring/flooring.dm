@@ -883,7 +883,6 @@ GLOBAL_LIST_INIT(flooring_types, populate_flooring_types())
 	icon_base = "darkgrass"
 
 
-// === merged from flooring_ch.dm during hard-fork de-suffix (verified no override-order change) ===
 /datum/decl/flooring
 	/* var/list/vorefootstep_sounds = list() // key=species name, value = list of sounds, used for reagent sloshing in vore belly
 
@@ -909,20 +908,7 @@ GLOBAL_LIST_INIT(flooring_types, populate_flooring_types())
 	name = "gym mat"
 	icon_state = "gym_mat"
 
-/turf/simulated/floor/grass2/sif
-	name = "light sif grass patch"
-	desc = "You can't tell if this is real grass or just cheap plastic imitation."
-	icon = 'icons/turf/outdoors.dmi'
-	icon_state = "grass_sif0"
 
-/turf/simulated/floor/grass2/sif/forest
-	name = "dark sif grass patch"
-	desc = "You can't tell if this is real grass or just cheap plastic imitation."
-	icon = 'icons/turf/outdoors.dmi'
-	icon_state = "grass_sif_dark0"
-
-
-// === merged from flooring_vr.dm during hard-fork de-suffix (verified no override-order change) ===
 /turf/simulated/floor/flesh
 	name = "flesh"
 	desc = "This slick flesh ripples and squishes under your touch"

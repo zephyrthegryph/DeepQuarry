@@ -85,10 +85,3 @@
 	icon = 'icons/misc/beach.dmi'
 	icon_base = "seadeep"
 
-
-// === merged from beach_vr.dm during hard-fork de-suffix (verified no override-order change) ===
-/turf/simulated/floor/beach/sand/outdoors
-	outdoors = OUTDOORS_YES
-
-/turf/simulated/floor/beach/sand/desert/outdoors
-	outdoors = OUTDOORS_YES

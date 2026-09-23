@@ -42,8 +42,10 @@
 	pulse_information.minimum_exposure_time = minimum_exposure_time
 	// Radiation only has gameplay consumers in these explicit registries. Do not
 	// allocate and scan thousands of empty turfs for every high-power pulse.
-	pulse_information.targets_to_process = GLOB.living_mob_list.Copy()
-	pulse_information.targets_to_process |= GLOB.rad_collectors
+	// Living mobs are walked in place by index (see SSradiation.pulse) rather than
+	// copied; only the small device registries are snapshotted.
+	pulse_information.living_index = length(GLOB.living_mob_list)
+	pulse_information.targets_to_process = GLOB.rad_collectors.Copy()
 	pulse_information.targets_to_process |= GLOB.geiger_counters
 	pulse_information.targets_to_process |= GLOB.material_radiovoltaic_items
 	pulse_information.strength = strength
@@ -58,13 +60,27 @@
 	var/threshold
 	var/chance
 	var/minimum_exposure_time
+	/// Device targets (collectors, geigers, radiovoltaics) still to process.
 	var/list/targets_to_process
+	/// Next GLOB.living_mob_list index to process, counting down; 0 when done.
+	var/living_index = 0
 	var/strength
 
 /datum/radiation_pulse_information/Destroy(force)
 	. = ..()
 	source_ref = null
 	targets_to_process = null
+
+/// How many targets this pulse still has to visit.
+/datum/radiation_pulse_information/proc/remaining_targets()
+	return length(targets_to_process) + living_index
+
+/// Sets rad_insulation and invalidates cached radiation paths if the value changed.
+/atom/proc/set_rad_insulation(new_insulation)
+	if(rad_insulation == new_insulation)
+		return
+	rad_insulation = new_insulation
+	RAD_SHIELDING_CHANGED
 
 #define MEDIUM_RADIATION_THRESHOLD_RANGE 0.5
 #define EXTREME_RADIATION_CHANCE 30

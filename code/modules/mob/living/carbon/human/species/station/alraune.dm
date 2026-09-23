@@ -4,11 +4,13 @@
 	unarmed_types = list(/datum/unarmed_attack/stomp, /datum/unarmed_attack/kick, /datum/unarmed_attack/punch, /datum/unarmed_attack/bite)
 	species_language = LANGUAGE_ENOCHIAN
 	num_alternate_languages = 3
-	slowdown = 1 //slow, they're plants. Not as slow as full diona.
+	// slow, they're plants. Not as slow as full diona.
+	// slow metabolism
+	factor_baseline = alist(BF_METABOLISM = 0.75, BF_SLOWDOWN = 1)
 	total_health = 100 //standard
-	brute_mod = 1 //nothing special
-	burn_mod = 1.5 //plants don't like fire
-	metabolic_rate = 0.75 // slow metabolism
+	injury_mod_groups = list("physical" = 1, "thermal" = 1.5)
+	//nothing special (brute)
+	//plants don't like fire (burn)
 	item_slowdown_mod = 0.25 //while they start slow, they don't get much slower
 	bloodloss_rate = 0.1 //While they do bleed, they bleed out VERY slowly
 	min_age = 18
@@ -138,15 +140,15 @@
 	// NOW a crude copypasta of handle_breath. Leaving some things out that don't apply to plants.
 	if(H.does_not_breathe)
 		H.failed_last_breath = 0
-		H.adjustOxyLoss(-5)
+		H.mend(TREAT_OXYGENATION, 5)
 		return ..()// if somehow they don't breathe, abort breathing.
 
 	if(!breath || (xgm_total_moles(breath) == 0)) // xgm_total_moles bridges XGM-var/LINDA-proc gap
 		H.failed_last_breath = 1
-		if(H.health > H.get_crit_point())
-			H.adjustOxyLoss(ALRAUNE_MAX_OXYLOSS)
+		if(!H.is_critical())
+			H.injure(INJURY_ASPHYXIA, ALRAUNE_MAX_OXYLOSS)
 		else
-			H.adjustOxyLoss(ALRAUNE_CRIT_MAX_OXYLOSS)
+			H.injure(INJURY_ASPHYXIA, ALRAUNE_CRIT_MAX_OXYLOSS)
 
 		H.throw_alert("pressure", /atom/movable/screen/alert/lowpressure)
 
@@ -190,7 +192,7 @@
 
 		var/ratio = (inhale_pp + exhaled_pp)/minimum_breath_pressure
 		// Don't fuck them up too fast (space only does HUMAN_MAX_OXYLOSS (1) after all!)
-		H.adjustOxyLoss(max(ALRAUNE_MAX_OXYLOSS*(1-ratio), 0))
+		H.injure(INJURY_ASPHYXIA, max(ALRAUNE_MAX_OXYLOSS*(1-ratio), 0))
 		failed_inhale = 1
 
 		H.throw_alert("oxy", /atom/movable/screen/alert/not_enough_co2)
@@ -216,9 +218,9 @@
 
 	var/light_amount = fullysealed ? H.getlightlevel() : H.getlightlevel()/5 // if they're covered, they're not going to get much light on them.
 
-	if(co2buff && !H.toxloss && light_amount >= 0.1) //if there's enough light and CO2 and you're not poisoned, heal. Note if you're wearing a sealed suit your heal rate will suck.
-		H.adjustBruteLoss(-(light_amount * co2buff * 2)) //at a full partial pressure of CO2 and full light, you'll only heal half as fast as diona.
-		H.adjustFireLoss(-(light_amount * co2buff)) //this won't let you tank environmental damage from fire. MAYBE cold until your body temp drops.
+	if(co2buff && !H.injury_load(INJURY_CATEGORY_TOXIC) && light_amount >= 0.1) //if there's enough light and CO2 and you're not poisoned, heal. Note if you're wearing a sealed suit your heal rate will suck.
+		H.mend(TREAT_TISSUE_REPAIR, light_amount * co2buff * 2) //at a full partial pressure of CO2 and full light, you'll only heal half as fast as diona.
+		H.mend(TREAT_BURN_CARE, light_amount * co2buff) //this won't let you tank environmental damage from fire. MAYBE cold until your body temp drops.
 
 	if(H.nutrition < (200 + 400*co2buff)) //if no CO2, a fully lit tile gives them 1/tick up to 200. With CO2, potentially up to 600.
 		H.adjust_nutrition(light_amount*(1+co2buff*5))
@@ -258,7 +260,7 @@
 		H.failed_last_breath = 1
 	else
 		H.failed_last_breath = 0
-		H.adjustOxyLoss(-5)
+		H.mend(TREAT_OXYGENATION, 5)
 
 
 	// Hot air hurts :(
@@ -275,19 +277,19 @@
 		var/bodypart = pick(BP_L_FOOT,BP_R_FOOT,BP_L_LEG,BP_R_LEG,BP_L_ARM,BP_R_ARM,BP_L_HAND,BP_R_HAND,BP_TORSO,BP_GROIN,BP_HEAD)
 		if(breath_temperature >= breath_heat_level_1)
 			if(breath_temperature < breath_heat_level_2)
-				H.apply_damage(HEAT_GAS_DAMAGE_LEVEL_1, BURN, bodypart)
+				H.injure(INJURY_BURN, HEAT_GAS_DAMAGE_LEVEL_1, bodypart)
 			else if(breath_temperature < breath_heat_level_3)
-				H.apply_damage(HEAT_GAS_DAMAGE_LEVEL_2, BURN, bodypart)
+				H.injure(INJURY_BURN, HEAT_GAS_DAMAGE_LEVEL_2, bodypart)
 			else
-				H.apply_damage(HEAT_GAS_DAMAGE_LEVEL_3, BURN, bodypart)
+				H.injure(INJURY_BURN, HEAT_GAS_DAMAGE_LEVEL_3, bodypart)
 
 		else if(breath_temperature <= breath_cold_level_1)
 			if(breath_temperature > breath_cold_level_2)
-				H.apply_damage(COLD_GAS_DAMAGE_LEVEL_1, BURN, bodypart)
+				H.injure(INJURY_FROSTBITE, COLD_GAS_DAMAGE_LEVEL_1, bodypart)
 			else if(breath_temperature > breath_cold_level_3)
-				H.apply_damage(COLD_GAS_DAMAGE_LEVEL_2, BURN, bodypart)
+				H.injure(INJURY_FROSTBITE, COLD_GAS_DAMAGE_LEVEL_2, bodypart)
 			else
-				H.apply_damage(COLD_GAS_DAMAGE_LEVEL_3, BURN, bodypart)
+				H.injure(INJURY_FROSTBITE, COLD_GAS_DAMAGE_LEVEL_3, bodypart)
 
 
 		//breathing in hot/cold air also heats/cools you a bit

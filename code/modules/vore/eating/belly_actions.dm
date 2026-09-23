@@ -13,7 +13,7 @@
 
 	if(isliving(user))
 		var/mob/living/l = user
-		var/thismuch = target.health + 100
+		var/thismuch = (target.vitality() * target.get_endurance()) + 100
 		if(ishuman(l))
 			var/mob/living/carbon/human/h = l
 			thismuch = thismuch * h.species.digestion_nutrition_modifier

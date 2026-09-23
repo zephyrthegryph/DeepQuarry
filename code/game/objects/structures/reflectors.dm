@@ -314,8 +314,6 @@
 
 //Below is mostly mapping stuff for the spicy storage I added to house these new reflectors ;p
 
-/area/engineering/secret_storage
-	name = "Engineering Secret Storage"
 
 /obj/machinery/portable_atmospherics/canister
 	var/dont_burst = FALSE

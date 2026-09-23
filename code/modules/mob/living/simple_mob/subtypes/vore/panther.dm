@@ -11,8 +11,7 @@
 	vis_height = 64
 
 	faction = FACTION_PANTHER
-	maxHealth = 200
-	health = 200
+	endurance = 200
 	movement_cooldown = 0.5
 	see_in_dark = 8
 

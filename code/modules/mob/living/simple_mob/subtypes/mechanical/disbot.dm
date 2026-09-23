@@ -36,8 +36,7 @@
 	icon_dead = "vagrant"
 	icon_gib = "vagrant"
 
-	maxHealth = 65
-	health = 40
+	endurance = 65
 	movement_cooldown = 1
 
 	response_help = "pets the"

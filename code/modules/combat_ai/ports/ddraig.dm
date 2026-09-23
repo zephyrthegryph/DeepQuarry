@@ -193,9 +193,9 @@
 
 /datum/ai_behavior/ddraig_panic_cloak/evaluate(datum/ai_brain/brain, atom/source)
 	var/mob/living/simple_mob/vore/ddraig/D = brain.holder
-	if(!istype(D) || D.ddraig_used_invis || !D.maxHealth)
+	if(!istype(D) || D.ddraig_used_invis)
 		return null
-	if(D.health >= (D.maxHealth * 0.25))
+	if(D.vitality() >= 0.25)
 		return null
 	var/mob/threat = brain.primary_threat
 	if(!threat)

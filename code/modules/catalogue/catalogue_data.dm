@@ -13,12 +13,6 @@ GLOBAL_DATUM_INIT(catalogue_data, /datum/category_collection/catalogue, new)
 		if(G.items_by_name[name_to_search])
 			return G.items_by_name[name_to_search]
 
-	//	for(var/item in G.items)
-	//		var/datum/category_item/I = item
-	//		if(I.type == item_path)
-	//			return I
-
-
 // Groups act as sections for the different data.
 /datum/category_group/catalogue
 
@@ -51,7 +45,6 @@ GLOBAL_DATUM_INIT(catalogue_data, /datum/category_collection/catalogue, new)
 /datum/category_group/catalogue/material
 	name = "Material"
 	category_item_type = /datum/category_item/catalogue/material
-
 
 // Items act as individual data for each object.
 /datum/category_item/catalogue
@@ -116,15 +109,6 @@ GLOBAL_DATUM_INIT(catalogue_data, /datum/category_collection/catalogue, new)
 	to_chat(user, span_notice(span_italics("[displayed_desc]")))
 	to_chat(user, span_notice("Cataloguers : <b>[english_list(cataloguers)]</b>."))
 	to_chat(user, span_notice("Contributes <b>[value]</b> points to personal exploration fund."))
-
-/*
-		// Truncates text to limit if necessary.
-		var/size = length(message)
-		if (size <= length)
-			return message
-		else
-			return copytext(message, 1, length + 1)
-*/
 
 /datum/category_item/catalogue/flora
 
@@ -255,7 +239,6 @@ GLOBAL_DATUM_INIT(catalogue_data, /datum/category_collection/catalogue, new)
 	an assumption which is at odds with their ramshackle technological level."
 	value = CATALOGUER_REWARD_MEDIUM // Since Vox are much rarer.
 
-
 /datum/category_item/catalogue/technology
 
 /datum/category_item/catalogue/technology/drone/drones
@@ -352,18 +335,11 @@ GLOBAL_DATUM_INIT(catalogue_data, /datum/category_collection/catalogue, new)
 	name = "TSC - Major Bill's Transportation"
 	datum_to_copy = /datum/lore/organization/tsc/mbt
 
-/datum/category_item/catalogue/information/organization/solgov //VS EDIT 1
-	name = "Government - Commonwealth of Sol-Procyon" //VS EDIT 2
-	datum_to_copy = /datum/lore/organization/gov/commonwealth //VS EDIT 3
-
-/* // Removal
-/datum/category_item/catalogue/information/organization/virgov
-	name = "Government - Vir Governmental Authority"
-	datum_to_copy = /datum/lore/organization/gov/virgov
-*/
+/datum/category_item/catalogue/information/organization/solgov
+	name = "Government - Commonwealth of Sol-Procyon"
+	datum_to_copy = /datum/lore/organization/gov/commonwealth
 
 /datum/category_item/catalogue/anomalous
-
 
 /datum/category_item/catalogue/anomalous/precursor_controversy
 	name = "Precursor Controversy"
@@ -433,11 +409,8 @@ GLOBAL_DATUM_INIT(catalogue_data, /datum/category_collection/catalogue, new)
 /datum/category_item/catalogue/anomalous/precursor_b/precursor_b_basic
 	name = "Precursors - Precursor Group Beta"
 
-
 /datum/category_item/catalogue/material
 
-
-// === merged from catalogue_data_vr.dm during hard-fork de-suffix (verified no override-order change) ===
 //TODO: VIRGO_LORE_WRITING_WIP - this whole file
 // s: basically every "desc" variable in this file.
 
@@ -562,4 +535,39 @@ GLOBAL_DATUM_INIT(catalogue_data, /datum/category_collection/catalogue, new)
 	Resleeving creates near perfect copies of a body within a database, capable of uploading user consciousness \
 	into a dormant brain via direct electro-uploading. The technology remains imperfect and \
 	non-zero error margins exist. Handle with care! Or don't. Stress testing this stuff makes a lucrative market." //CHOMPedit
+	value = CATALOGUER_REWARD_TRIVIAL
+
+/datum/category_item/catalogue/fauna/grey
+	name = "Sapients - Grey"
+	desc = "The Grey are a species of genderless grey skinned aliens.\
+	Greys lack a language of their own, communicating with their kin telepathically. Though their formal names used through\
+	telepathic communication lack a written counterpart, many Grey adopt written names for the purposes of interacting with\
+	other species or record keeping. Due to their lack of a spoken language, however, these names do not normally follow a\
+	scheme or pattern, varying greatly from individual to individual.\
+	<br><br>\
+	It's believed that Greys have originated\
+	outside of the milky way, on another galaxy. From observing the anatomy of various Greys, xenobiologists have come to the\
+	conclusion that Greys likely did not go through a natural process of evolution, but were instead engineered,\
+	likely by another master species, in a similar fashion to the Vox Primalis commonly found aboard Nanotrasen stations.\
+	The true origin of the species appears to be unknown to even the Greys themselves, who are believed to have arrived from\
+	a distant galaxy cluster after a long period of extended cryosleep. Due to these peculiar circumstances many\
+	Grey have elected that Mauna-b, which has a high population of Greys, act as a stand in for their home planet.\
+	<br><br>\
+	Grey physiology is unique in several ways. While they have similar respiratory and vascular systems to humans - breathing\
+	oxygen and expelling carbon dioxide - it is important to note that instead of producing hemoglobin to transport oxygen,\
+	Greys produce hemerythrin, which causes their blood to take on a violet colour when oxygenated. Hemerythrin is\
+	unfortunately much less effective at distributing oxygen throughout the bloodstream, which lead to issues of\
+	hypoxemia in the Grey population aboard non-Grey facilities.Furthermore, due to high salt concentrations,\
+	the cells in a Grey's body are known rapidly undergo cytolysis when brought into contact with water - a reaction\
+	which can prove immediately fatal.\
+	Grey eyes are almost triple the size of those of most other species, and their sclera, iris, and pupil are completely\
+	indistinct from one another. The large size of Grey eyes is believed to be an adaptation to shield the ocular nerve\
+	against ultraviolet radiation with their unusually monotone complexion providing a similar degree of protection.\
+	This has lead scholars to believe that in addition to likely being low gravity, the original homeworld of the Greys\
+	likely had a poor magnetosphere or was unusually close to its star.\
+	the Grey population appears to be wholly sustained via a form of advanced cloning; due to this abnormality Grey\
+	family structure typically consists of a single parent. Greys are often cited as being highly-reserved and independent,\
+	and appear to be able to go with little to no social interaction for extended periods of time without suffering any\
+	ill-effects. Though Greys are not sexually dimorphic, they often adopt male or female accoutrements for the sake of\
+	clarifying communications with other species, or even make gene-mods in some cases."
 	value = CATALOGUER_REWARD_TRIVIAL

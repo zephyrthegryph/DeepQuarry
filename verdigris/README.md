@@ -1,50 +1,50 @@
 # Verdigris
 
-In-tree Rust extension for DeepQuarry (CHOMPStation2 fork). Loaded by BYOND via
-[`meowtonin`](https://crates.io/crates/meowtonin)'s `call_ext`-style FFI; the DM
-side calls `VERDIGRIS_CALL("name", args...)` and resolves to a `#[byond_fn]` on
-this crate.
+In-tree Rust extension for DeepQuarry. BYOND loads it through `call_ext`
+([`byondapi`](https://crates.io/crates/byondapi)); the DM side calls
+`VERDIGRIS_CALL("name", args...)`, which resolves to a bound function in this
+crate.
 
 ## Workspace layout
 
-This directory is a Cargo workspace. One combined `libverdigris.so` /
-`verdigris.dll` cdylib is produced; auxmos vendors in as an `rlib` (Phase 1.1b)
-and re-exports through this crate so BYOND only ever loads one library.
+This directory is a Cargo workspace that produces one `libverdigris.so` /
+`verdigris.dll`, so BYOND only ever loads one library. The target structure is
+described in `doc/rewrite/rust_core.md`.
 
 ```
-verdigris/                  ← workspace root (this dir)
-├── Cargo.toml              ← [workspace] + shared profiles
-├── Cargo.lock              ← committed (we produce a final cdylib)
-├── rust-toolchain.toml     ← stable + i686 targets
-├── build-linux.sh          ← bash verdigris/build-linux.sh (from repo root)
-├── build-windows.sh
-├── verdigris/              ← member crate, produces the cdylib
-│   ├── Cargo.toml
-│   ├── build.rs
-│   └── src/
-│       ├── lib.rs          ← #[byond_fn]s + atmos re-exports
-│       ├── panic.rs        ← panic_safe! macro + hook
-│       ├── random_map.rs   ← cellular-automata cave gen
-│       └── verdigris.rs    ← version/init/cleanup metadata
-└── atmos/                  ← (Phase 1.1b) vendored auxmos as rlib
+verdigris/                  <- workspace root (this dir)
+├── Cargo.toml              <- [workspace] + shared deps and profiles
+├── Cargo.lock              <- committed (we produce a final cdylib)
+├── rust-toolchain.toml     <- stable + i686 targets
+├── build-linux.sh / build-windows.sh
+├── core/                   <- vg-core: domain-agnostic primitives (grid, ...).
+│                              Host-buildable, no byondapi, no global statics.
+├── domains/
+│   ├── gas/                <- vg-gas: vendored auxmos (gas arena, turf diffusion,
+│   │                          heat); i686 only until its binds move to vg-ffi.
+│   │                          See domains/gas/UPSTREAM.md.
+│   └── layout/             <- vg-layout: station layout planner, cave generator,
+│                              and the offline station-layout tools (src/bin/)
+├── ffi/                    <- vg-ffi: BYOND binds (lifecycle, layout, cave gen)
+│   │                          and the tracking allocator; i686 only
+│   ├── macros/             <- auxmacros: #[panic_safe] bind attribute
+│   └── callback/           <- auxcallback: deferred callbacks to the main thread
+├── verdigris/              <- the DLL: links vg-ffi + vg-gas, sets the global
+│                              allocator; still holds material_power.rs
+└── tools/bench/            <- vg-bench: criterion benchmarks
 ```
 
 ## Modules
 
-| Module | Purpose |
+| Crate / module | Purpose |
 |---|---|
-| `verdigris` | Lifecycle: `verdigris_init`, `cleanup`, version/feature metadata. |
-| `panic` | `panic_safe!` macro + global hook. **Every FFI entry point must use this** — see below. |
-| `random_map` | Cellular-automata cave generator used by `SSquarry`. |
-
-Planned (Phase 1.1b–1.1c, via the `atmos` workspace member vendored from
-[auxmos](https://github.com/Putnam3145/auxmos)):
-
-1. `atmos::gas` — gas mixture arena, mixture math, gas registry.
-2. `atmos::turfs` — LINDA turf graph (`StableDiGraph`) processing, FDM share, monstermos-style equalisation.
-3. `atmos::reactions` — gas reaction rules + reaction queue. Initially **disabled** in favor of a DQ-specific reaction set mirroring XGM combustion (see `modular_dq/doc/atmos_migration.md` decision §6).
-
-See `modular_dq/doc/atmos_migration.md` for the staged plan.
+| `vg-ffi` `lifecycle` | `verdigris_init`, `cleanup`, version/feature metadata, allocator diagnostics. |
+| `vg-layout` `random_map` | Cellular-automata cave generator used by expedition sites. |
+| `vg-layout` `station_layout` | Generated-station layout planner and its planning jobs. |
+| `verdigris` `material_power` | Double-precision electrical solve for material-engineering power networks. |
+| `vg-ffi` `allocator` | Tracking allocator that reports live Rust memory to the profiler. |
+| `vg-gas` | Gas arena, turf diffusion, decompression and heat conduction. Reactions stay in DM; see `code/ATMOSPHERICS/README.md`. |
+| `vg-core` `grid` | Bounds-checked turf-index neighbour arithmetic. |
 
 ## Building
 
@@ -68,47 +68,51 @@ beyond installing rustup itself.
 
 MSRV is 1.85 (edition 2024).
 
-### Committed binaries (cleanup follow-up)
+### Binaries
 
-`libverdigris.so` and `verdigris.dll` are currently committed to git so
-DM-only contributors don't need `rustup` installed. **CI now builds from
-source on every PR**, so the committed binaries are no longer required —
-remove them with `git rm --cached` once the team is ready to require rustup
-locally (DM-only contributors can still run the server, they just can't
-rebuild the lib).
+`libverdigris.so` and `verdigris.dll` are build outputs and are gitignored.
+`bin/build.cmd` and `tools/build/build.sh` build them, and CI builds them from
+source.
+
+### Tests
+
+```bash
+cd verdigris
+cargo fmt --all --check
+cargo test                                            # host crates, in parallel
+cargo test --target i686-pc-windows-msvc -p vg-gas    # gas (or i686-unknown-linux-gnu)
+cargo bench -p vg-bench                               # criterion benchmarks
+```
+
+A plain `cargo test` builds the default members (`vg-core`, `vg-layout`,
+`verdigris`, `vg-bench`) for the host. `vg-gas`, `vg-ffi` and `auxcallback`
+depend on byondapi, which is 32-bit only, so they build and test on the i686
+targets only.
 
 ## The rules
 
 These exist because their absence will crash the server in production.
 
-### Rule 1 — Wrap every `#[byond_fn]` body in `panic_safe!`
+### Rule 1 — Mark every bind `#[auxmacros::panic_safe]`
 
 ```rust
-#[byond_fn]
-pub fn foo(x: ByondValue) -> ByondResult<ByondValue> {
-    panic_safe!({
-        // your body here
-    })
+#[byondapi::bind("/proc/foo")]
+#[auxmacros::panic_safe]
+fn foo(x: ByondValue) -> eyre::Result<ByondValue> {
+    // body
 }
 ```
 
-A Rust panic unwinding across the BYOND FFI boundary is UB — it will SIGSEGV
-DreamDaemon with no DM-side stack. `panic_safe!` catches and converts to a
-`ByondError` that surfaces as a DM runtime, plus logs the panic to stderr.
-
-The hook is installed lazily on first `panic_safe!` invocation and eagerly via
-`verdigris_init()` (called from `/world/New()` in `_verdigris.dm`).
-
-Every `#[byond_fn]` entry point that can panic is wrapped in `panic_safe!`
-(`verdigris_init`, `cleanup`, `generate_automata`). The two metadata helpers
-`verdigris_version()` and `verdigris_features()` return a `&'static str` built
-entirely from compile-time constants — they are panic-free by construction and
-so are intentionally left unwrapped.
+A Rust panic unwinding across the BYOND FFI boundary is undefined behaviour and
+crashes DreamDaemon with no DM-side stack. The attribute wraps the body in
+`catch_unwind` and turns a panic into an error that surfaces as a DM runtime.
+The bound function must return `eyre::Result<ByondValue>`. Every bind in this
+workspace uses the same attribute.
 
 ### Rule 2 — No strings in hot paths
 
 Every FFI call costs microseconds (byondapi marshalling). String allocations
-across the boundary compound that. Once atmos lands:
+across the boundary compound that:
 
 - Gas IDs are `u8`, never strings, after one-time registration at boot.
 - Turf handles are `usize` arena indices, never datum paths.
@@ -127,16 +131,15 @@ Never loop in DM calling a Rust per-tile getter inside.
 
 ### Rule 4 — Destroy() discipline
 
-Once we have an arena (gas mixtures, turf graph, etc.), every DM datum that
-holds an arena handle must release it on `Destroy()`. A CI integration test
-should assert `gasmix_count_live() == 0` after teardown.
+Every DM datum that holds an arena handle (gas mixtures, material power
+graphs) must release it on `Destroy()`.
 
 ### Rule 5 — Single-threaded BYOND, multi-threaded Rust
 
 The BYOND VM is single-threaded. `rayon` is fine *inside* Rust between FFI
 calls. **Never** hold a `ByondValue`, call into DM, or read DM state from a
 worker thread. The pattern for "Rust needs DM to do something" is a callback
-queue that DM drains on the main thread (see auxmos's `byond_callback_sender`).
+queue that DM drains on the main thread (see `auxcallback::byond_callback_sender`).
 
 ## CI
 
@@ -147,6 +150,6 @@ queue that DM drains on the main thread (see auxmos's `byond_callback_sender`).
 
 ## Build-info
 
-`build.rs` invokes [`bosion`](https://crates.io/crates/bosion) to capture the
+`ffi/build.rs` invokes [`bosion`](https://crates.io/crates/bosion) to capture the
 git short-hash at build time; `verdigris_version()` returns `verdigris v0.1.0
 (abc1234)` which DM can compare against an expected pin if needed.

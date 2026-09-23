@@ -1,0 +1,5 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - rscadd: "Internal organ damage is now made of specific lesions (contusions, lacerations, perforations, necrosis, ischemic and toxic injury, prosthetic component faults) that scanners can find and surgery can target."
+  - balance: "Organ lacerations and perforations bleed or leak until treated; drugs only stabilise them, surgical repair closes them. Necrosis spreads until resected."

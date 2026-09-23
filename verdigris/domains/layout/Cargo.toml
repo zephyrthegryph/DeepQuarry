@@ -1,0 +1,16 @@
+[package]
+name = "vg-layout"
+version = "0.1.0"
+edition = "2024"
+rust-version = "1.85"
+description = "Station layout planner and cave generator. Host-buildable; binds live in vg-ffi."
+
+[dependencies]
+eyre = { workspace = true }
+rand = "0.10.1"
+rand_distr = "0.6"
+rayon = "1.10.0"
+png = "0.18.0"
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+toml = "0.8"

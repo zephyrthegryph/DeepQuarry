@@ -1,18 +1,4 @@
 /// EXAMPLE.
-/*
-/datum/robot_sprite/dogborg/DEPARTMENT/gooborg
-	name = "Gooborg - DEPARTMENTL"
-	sprite_icon_state = "engi"
-	sprite_hud_icon_state = "engi"
-	has_eye_sprites = TRUE
-	has_eye_light_sprites = TRUE
-	has_sleeper_light_indicator = FALSE
-	has_vore_belly_resting_sprites = TRUE
-	sprite_icon = 'icons/mob/robot/gooborgs/departmental/XXXX.dmi'
-	rest_sprite_options = list("Default", "Bellyup", "Sit")
-	belly_capacity_list = list("sleeper" = 2, "throat" =2)
-	module_type = list("Standard", "Engineering", "Crisis", "Miner", "Janitor", "Service", "Clerical", "Security", "Research") //Select whichever ones they apply to.
-*/
 
 /// Cargo
 /datum/robot_sprite/dogborg/tall/mining/gooborg

@@ -43,10 +43,6 @@ GLOBAL_LIST_INIT(has_rocks, list("dirt5", "dirt6", "dirt7", "dirt8", "dirt9"))
 /turf/simulated/floor/outdoors/rocks/get_dig_loot_type(mob/user, obj/item/W)
 	return /obj/item/stack/material/flint
 
-/turf/simulated/floor/outdoors/ironsand/get_dig_loot_type(mob/user, obj/item/W)
-	if(prob(50))
-		return pick(/obj/item/stack/material/flint, /obj/item/ore/iron)
-	. = ..()
 
 /turf/simulated/floor/outdoors/newdirt/examine(mob/user)
 	. = ..()

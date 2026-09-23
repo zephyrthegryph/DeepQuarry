@@ -230,7 +230,7 @@
 			s.set_up(3, 1, src)
 			s.start()
 
-			take_damage(rand(10,50))
+			take_damage(rand(10,50), BURN, FIRE)
 			toggle()
 		heat += idle_power_usage/15000
 
@@ -253,7 +253,7 @@
 	. = ..()
 	if (. & EMP_PROTECT_SELF || !use_power)
 		return
-	take_damage(20/severity)
+	take_damage(20/severity, BURN, ENERGY)
 	toggle()
 
 /obj/machinery/shipsensors/atom_destruction(damage_flag)

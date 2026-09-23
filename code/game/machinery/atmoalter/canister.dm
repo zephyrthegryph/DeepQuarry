@@ -243,6 +243,9 @@ update_flag
 /obj/machinery/portable_atmospherics/canister/process()
 	if (destroyed)
 		return PROCESS_KILL
+	var/turf/canister_turf = get_turf(src)
+	var/datum/gas_mixture/canister_environment = canister_turf ? canister_turf.return_air() : null
+	material_observe_gases(air_contents, canister_environment)
 
 	var/reaction_result = ..()
 	var/material_active = process_material_vessel()
@@ -326,7 +329,7 @@ update_flag
 		var/datum/material/liner = stock.material
 		pressure_liner_material_id = liner.name
 		stock.use(2)
-		construction_materials[MATERIAL_ROLE_LINER] = liner.name
+		set_construction_material(MATERIAL_ROLE_LINER, liner.name)
 		material_liner_integrity = 100
 		material_environment_liner_integrity = 100
 		name = "[liner.display_name]-lined [initial(name)]"

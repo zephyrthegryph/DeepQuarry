@@ -1,18 +1,14 @@
-mod allocator;
+//! The verdigris DLL. It owns no logic of its own beyond `material_power`; it
+//! links the bind crates so BYOND loads exactly one library.
+
 pub mod material_power;
-pub mod random_map;
-pub mod station_layout;
-pub mod verdigris;
 
+#[cfg(target_arch = "x86")]
 #[global_allocator]
-static ALLOCATOR: allocator::TrackingAllocator = allocator::TrackingAllocator;
+static ALLOCATOR: vg_ffi::allocator::TrackingAllocator = vg_ffi::allocator::TrackingAllocator;
 
-// Force-link auxmos's byondapi binds into libverdigris.so. Without this, the
-// auxmos rlib's #[no_mangle] FFI exports may be stripped by the linker. The
-// `as _` import is intentional — we only need the symbols, not name imports.
-//
-// Gated on x86 because byondapi-sys (auxmos's transitive dep) is 32-bit-only.
-// See doc/atmos_migration.md decision §4 ("one library").
+// Force-link the rlibs whose #[no_mangle] binds make up the DLL's exports.
+// Without a reference, the linker may drop them.
 #[cfg(target_arch = "x86")]
 #[allow(unused_imports)]
-use auxmos as _;
+use {vg_ffi as _, vg_gas as _};

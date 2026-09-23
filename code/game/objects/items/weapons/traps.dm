@@ -103,7 +103,7 @@
 	if(blocked >= 100)
 		return
 
-	if(!L.apply_damage(30, BRUTE, target_zone, blocked, used_weapon=src))
+	if(!L.injure(INJURY_PIERCE, 30, target_zone, src, blocked))
 		return 0
 
 	if(ishuman(L))
@@ -359,7 +359,7 @@
 
 	L.add_modifier(/datum/modifier/entangled, 3 SECONDS)
 
-	if(!L.apply_damage(force * (issilicon(L) ? 0.25 : 1), BRUTE, target_zone, blocked, sharp, edge, src))
+	if(!L.injure(injury_kind_for(BRUTE, sharp, edge), force * (issilicon(L) ? 0.25 : 1), target_zone, src, blocked))
 		return
 
 	playsound(src, 'sound/effects/glass_step.ogg', 50, 1) // not sure how to handle metal shards with sounds
@@ -384,9 +384,7 @@
 			if(affecting)
 				if(affecting.robotic >= ORGAN_ROBOT)
 					return
-				if(affecting.take_damage(force, 0))
-					H.UpdateDamageIcon()
-				H.updatehealth()
+				H.injure(INJURY_BLUNT, force, affecting, src)
 				if(affecting.organ_can_feel_pain())
 					H.Weaken(3)
 				return

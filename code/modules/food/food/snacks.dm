@@ -7784,7 +7784,6 @@
 	reagents.add_reagent(REAGENT_ID_COOKINGOIL, 1)
 
 
-// === merged from snacks_ch.dm during hard-fork de-suffix (verified no override-order change) ===
 	//Imported food from old code
 /obj/item/reagent_containers/food/snacks/sauerkraut
 	name = "Sauerkraut"
@@ -8109,7 +8108,6 @@
 	reagents.add_reagent(REAGENT_ID_PROTEIN, 1)
 
 
-// === merged from snacks_vr.dm during hard-fork de-suffix (verified no override-order change) ===
 //I guess we're not always eating PEOPLE.
 /obj/item/reagent_containers/food/snacks/sliceable/sushi
 	name = "sushi roll"

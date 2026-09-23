@@ -89,13 +89,13 @@
 
 					end_nutrition = H.nutrition
 
-					if(start_nutrition - max(0, end_nutrition) < rechargeamt / 15)
-
-						if(H.isSynthetic())
-							H.adjustToxLoss((rechargeamt / 15) - (start_nutrition - max(0, end_nutrition)))
-
-						else
-							H.remove_blood((rechargeamt / 15) - (start_nutrition - max(0, end_nutrition)))
+					var/deficit = (rechargeamt / 15) - (start_nutrition - max(0, end_nutrition))
+					if(deficit > 0)
+						// The shortfall is drawn from the host. Biology decides the cost:
+						// the power fault only lands on synthetic parts, and bloodless
+						// bodies lose no blood.
+						H.injure(INJURY_ELECTRIC, deficit, BP_TORSO, src, affliction = /datum/affliction/synthetic/power_fault, flags = INJURE_SILENT)
+						H.remove_blood(deficit)
 
 			power_supply.give(rechargeamt) //... to recharge 1/5th the battery
 			update_icon()
@@ -119,13 +119,21 @@
 /obj/item/gun/energy/consume_next_projectile()
 	if(!power_supply) return null
 	if(!ispath(projectile_type)) return null
-	if(!power_supply.checked_use(charge_cost)) return null
+	var/output_envelope = power_supply.material_output_envelope(charge_cost)
+	var/enhanced_cost = charge_cost * output_envelope
+	if(!power_supply.checked_use(enhanced_cost)) return null
+	power_supply.material_record_enhanced_output(charge_cost, output_envelope)
 	if(self_recharge)
 		START_PROCESSING(SSobj, src)
 	var/mob/living/M = loc // TGMC Ammo HUD
 	if(istype(M)) // TGMC Ammo HUD
 		M?.hud_used.update_ammo_hud(M, src)
-	return new projectile_type(src)
+	var/obj/item/projectile/projectile = new projectile_type(src)
+	if(output_envelope > 1)
+		projectile.damage *= output_envelope
+		projectile.armor_penetration += round((output_envelope - 1) * 20)
+		projectile.color = "#88ddff"
+	return projectile
 
 /obj/item/gun/energy/proc/load_ammo(obj/item/C, mob/user)
 	if(istype(C, /obj/item/cell))

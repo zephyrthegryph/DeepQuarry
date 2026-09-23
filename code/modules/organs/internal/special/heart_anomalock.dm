@@ -129,16 +129,20 @@
 /datum/modifier/voltaic_overdrive
 	name = "voltaic_overdrive"
 	client_color = "#e9f76b"
+	factors = alist(BF_PAIN_IMMUNITY = 1)
 
 /datum/modifier/voltaic_overdrive/tick(seconds_between_ticks)
 	. = ..()
-	if(holder.health > holder.get_crit_point())
+	if(!holder.is_critical())
 		return
 
-	holder.heal_overall_damage(5, 5)
-	holder.adjustOxyLoss(-5)
-	holder.adjustToxLoss(-5)
-	holder.adjustHalLoss(-5)
+	holder.mend(TREAT_TISSUE_REPAIR, 5)
+	holder.mend(TREAT_BURN_CARE, 5)
+	holder.mend(TREAT_PLATING_REPAIR, 5)
+	holder.mend(TREAT_WIRING_REPAIR, 5)
+	holder.mend(TREAT_OXYGENATION, 5)
+	holder.mend(TREAT_ANTITOXIN, 5)
+	holder.mend(TREAT_ANALGESIC, 5)
 	holder.AdjustWeakened(-5)
 	holder.AdjustSleeping(-5)
 	holder.AdjustStunned(-5)
@@ -149,7 +153,6 @@
 	REMOVE_TRAIT(src, TRAIT_CRITICAL_CONDITION, STAT_TRAIT)
 	holder.reagents.add_reagent(REAGENT_ID_MYELAMINE, 5)
 	to_chat(holder, span_userdanger("You feel a burst of energy! It's do or die!"))
-	pain_immunity = TRUE
 
 /datum/modifier/voltaic_overdrive/on_expire()
 	. = ..()

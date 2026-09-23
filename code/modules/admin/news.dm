@@ -26,7 +26,7 @@ ADMIN_VERB(modify_server_news, R_SERVER|R_EVENT, "Modify Public News", "Modify t
 
 		if(findtext(new_body,"<script",1,0) ) // Is this needed with santize()?
 			return
-		GLOB.servernews_hash = md5("[new_title]" + "[new_body]") //ChompADD - update the servernews hash global
+		GLOB.servernews_hash = md5("[new_title]" + "[new_body]")
 		F["title"] << new_title
 		F["body"] << new_body
 		F["author"] << user.key
@@ -36,9 +36,9 @@ ADMIN_VERB(modify_server_news, R_SERVER|R_EVENT, "Modify Public News", "Modify t
 /client/proc/get_server_news() // child of /client/
 	var/savefile/F = new(NEWSFILE)
 	if(F)
-		if(GLOB.servernews_hash != prefs.lastnews) //ChompADD
-			prefs.lastnews = GLOB.servernews_hash //ChompADD
-			SScharacter_setup.queue_preferences_save(prefs) //ChompADD
+		if(GLOB.servernews_hash != prefs.lastnews)
+			prefs.lastnews = GLOB.servernews_hash
+			SScharacter_setup.queue_preferences_save(prefs)
 		return F
 
 // This is used when submitting the news input, so the safe markup can get past sanitize.

@@ -3,8 +3,7 @@
 	desc = "A strange insect."
 	icon_state = "firefly"
 	icon_dead = "firefly_dead"
-	maxHealth = 10 //One shotable by pratically anyweapon
-	health = 10
+	endurance = 10 //One shotable by pratically anyweapon
 	pass_flags = PASSTABLE
 	movement_cooldown = 1
 

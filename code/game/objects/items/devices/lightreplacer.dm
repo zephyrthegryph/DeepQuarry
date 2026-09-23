@@ -136,14 +136,6 @@
 		return TRUE
 	if(special_handling)
 		return FALSE
-	/* // This would probably be a bit OP. If you want it though, uncomment the code.
-	if(isrobot(user))
-		var/mob/living/silicon/robot/R = user
-		if(R.emagged)
-			src.Emag()
-			to_chat(user, You short circuit the [src].")
-			return
-	*/
 	to_chat(user, "It has [uses] lights remaining.")
 	var/new_color = tgui_color_picker(user, "Choose a color to set the light to! (Default is [LIGHT_COLOR_INCANDESCENT_TUBE])", "", selected_color)
 	if(new_color)
@@ -152,7 +144,6 @@
 
 /obj/item/lightreplacer/update_icon()
 	icon_state = "lightreplacer[emagged]"
-
 
 /obj/item/lightreplacer/proc/Use(mob/user)
 
@@ -163,7 +154,6 @@
 // Negative numbers will subtract
 /obj/item/lightreplacer/proc/add_uses(amount = 1)
 	uses = min(max(uses + amount, 0), max_uses)
-
 
 /obj/item/lightreplacer/proc/AddShards(amount = 1)
 	bulb_shards += amount
@@ -275,7 +265,6 @@
 			setnightcolor = addtext("#", setcolorR, setcolorG, setcolorB)
 			resetmode = 0
 			to_chat(user, span_infoplain("Painter color set."))
-
 
 /obj/item/lightpainter/proc/ColorLight(obj/machinery/light/target, mob/living/U)
 

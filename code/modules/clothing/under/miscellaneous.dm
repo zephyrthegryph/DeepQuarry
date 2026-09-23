@@ -1644,7 +1644,6 @@
 	icon_state = "reverse_bunnytop_maid"
 
 
-// === merged from miscellaneous_ch.dm during hard-fork de-suffix (verified no override-order change) ===
 /obj/item/clothing/under/sexybunny_white
 	name = "Bunny girl suit"
 	desc = "this seems to come with extra padding, exaggerating the chest some."
@@ -1678,7 +1677,6 @@
 	icon_state = "skinsuitfem_handless_g"
 
 
-// === merged from miscellaneous_vr.dm during hard-fork de-suffix (verified no override-order change) ===
 /obj/item/clothing/under/customs
 	desc = "A standard SolGov customs uniform. Complete with epaulettes." // SolGov
 

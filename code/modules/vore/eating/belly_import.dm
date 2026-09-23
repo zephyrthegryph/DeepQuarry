@@ -769,25 +769,6 @@
 		if(istext(belly_data["undergarment_color"]))
 			var/new_undergarment_color = sanitize_hexcolor(belly_data["undergarment_color"],new_belly.undergarment_color)
 			new_belly.undergarment_color = new_undergarment_color
-		/* These don't seem to actually be available yet
-		if(istext(belly_data["tail_to_change_to"]))
-			var/new_tail_to_change_to = sanitize(belly_data["tail_to_change_to"],MAX_MESSAGE_LEN,0,0,0)
-			if(new_tail_to_change_to)
-				if (new_tail_to_change_to in GLOB.tail_styles_list)
-					new_belly.tail_to_change_to = new_tail_to_change_to
-
-		if(istext(belly_data["tail_colouration"]))
-			var/new_tail_colouration = sanitize_hexcolor(belly_data["tail_colouration"],new_belly.tail_colouration)
-			new_belly.tail_colouration = new_tail_colouration
-
-		if(istext(belly_data["tail_extra_overlay"]))
-			var/new_tail_extra_overlay = sanitize_hexcolor(belly_data["tail_extra_overlay"],new_belly.tail_extra_overlay)
-			new_belly.tail_extra_overlay = new_tail_extra_overlay
-
-		if(istext(belly_data["tail_extra_overlay2"]))
-			var/new_tail_extra_overlay2 = sanitize_hexcolor(belly_data["tail_extra_overlay2"],new_belly.tail_extra_overlay2)
-			new_belly.tail_extra_overlay2 = new_tail_extra_overlay2
-		*/
 		if(istext(belly_data["belly_fullscreen_color"]))
 			var/new_belly_fullscreen_color = sanitize_hexcolor(belly_data["belly_fullscreen_color"],new_belly.belly_fullscreen_color)
 			new_belly.belly_fullscreen_color = new_belly_fullscreen_color
@@ -857,7 +838,6 @@
 		if(isnum(belly_data["escapechance_absorbed"]))
 			var/new_escapechance_absorbed = belly_data["escapechance_absorbed"]
 			new_belly.escapechance_absorbed = sanitize_integer(new_escapechance_absorbed, 0, 100, initial(new_belly.escapechance_absorbed))
-
 
 		if(isnum(belly_data["escapetime"]))
 			var/new_escapetime = belly_data["escapetime"]
@@ -1001,7 +981,6 @@
 				for(var/extra_belly in new_autotransferextralocation_secondary)
 					if(extra_belly in valid_names)
 						new_belly.autotransferextralocation_secondary += extra_belly
-
 
 		if(isnum(belly_data["autotransfer_min_amount"]))
 			var/new_autotransfer_min_amount = belly_data["autotransfer_min_amount"]

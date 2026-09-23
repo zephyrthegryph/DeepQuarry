@@ -23,7 +23,7 @@
 	if(Proj.get_structure_damage())
 		qdel(src)
 
-/obj/effect/weaversilk/fire_act(datum/gas_mixture/air, exposed_temperature, exposed_volume)
+/obj/effect/weaversilk/fire_act(exposed_temperature, exposed_volume)
 	var/turf/T = get_turf(src)
 	T?.feed_lingering_fire(0.1) // Lingering fire, feeding fires
 	qdel(src)

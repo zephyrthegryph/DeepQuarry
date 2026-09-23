@@ -23,8 +23,7 @@
 	icon_living = "hunter"
 	icon_dead = "hunter_dead"
 
-	maxHealth = 120
-	health = 120
+	endurance = 120
 
 	poison_per_bite = 5
 	melee_damage_lower = 9

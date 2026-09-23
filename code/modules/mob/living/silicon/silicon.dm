@@ -73,26 +73,27 @@
 /mob/living/silicon/drop_item(atom/Target)
 	return
 
+/// An EMP is an electrical injury that brings a power fault with it. Blocking
+/// components are asked before anything is pulsed, and the parent runs once.
 /mob/living/silicon/emp_act(severity, recursive)
+	if(SEND_SIGNAL(src, COMSIG_SILICON_EMP_ACT, severity) & COMPONENT_BLOCK_EMP)
+		return EMP_PROTECT_SELF
 	. = ..()
-	if (. & EMP_PROTECT_SELF || SEND_SIGNAL(src, COMSIG_SILICON_EMP_ACT, severity) & COMPONENT_BLOCK_EMP)
+	if(. & EMP_PROTECT_SELF)
 		return
-	switch(severity)
-		if(1)
-			src.take_organ_damage(0,20,emp=1)
-			Confuse(5)
-		if(2)
-			src.take_organ_damage(0,15,emp=1)
-			Confuse(4)
-		if(3)
-			src.take_organ_damage(0,10,emp=1)
-			Confuse(3)
-		if(4)
-			src.take_organ_damage(0,5,emp=1)
-			Confuse(2)
+	var/static/list/surge_by_severity = list(20, 15, 10, 5)
+	var/static/list/confusion_by_severity = list(5, 4, 3, 2)
+	var/band = round(severity)
+	if(band >= 1 && band <= length(surge_by_severity))
+		injure(INJURY_ELECTRIC, surge_by_severity[band], emp_injury_zone(), null, 0, /datum/affliction/synthetic/power_fault)
+		Confuse(confusion_by_severity[band])
 	flash_eyes(affect_silicon = 1)
 	to_chat(src, span_bolddanger("*BZZZT*"))
 	to_chat(src, span_danger("Warning: Electromagnetic pulse detected."))
+
+/// Where an EMP surge lands. Robots route it past their armour plating.
+/mob/living/silicon/proc/emp_injury_zone()
+	return null
 
 /mob/living/silicon/stun_effect_act(stun_amount, agony_amount, def_zone, used_weapon=null, electric = FALSE)
 	return	//immune
@@ -104,7 +105,7 @@
 		s.start()
 
 		shock_damage *= siemens_coeff	//take reduced damage
-		take_overall_damage(0, shock_damage)
+		injure(INJURY_ELECTRIC, shock_damage, null, source)
 		visible_message(span_warning("[src] was shocked by \the [source]!"), \
 			span_danger("Energy pulse detected, system damaged!"), \
 			span_warning("You hear an electrical crack."))
@@ -112,23 +113,15 @@
 			Stun(2)
 		return
 
-/mob/living/silicon/proc/damage_mob(brute = 0, fire = 0, tox = 0)
-	return
-
 /mob/living/silicon/IsAdvancedToolUser()
 	return 1
 
 /mob/living/silicon/bullet_act(obj/item/projectile/Proj)
 
-	if(!Proj.nodamage)
-		switch(Proj.damage_type)
-			if(BRUTE)
-				adjustBruteLoss(Proj.damage)
-			if(BURN)
-				adjustFireLoss(Proj.damage)
+	if(!Proj.nodamage && (Proj.damage_type == BRUTE || Proj.damage_type == BURN))
+		Proj.inflict_injury(src, null)
 
 	Proj.on_hit(src,2)
-	updatehealth()
 	return 2
 
 /mob/living/silicon/apply_effect(effect = 0,effecttype = STUN, blocked = 0, check_protection = 1)
@@ -147,7 +140,7 @@
 // TGPanel
 /mob/living/silicon/proc/show_system_integrity()
 	if(!src.stat)
-		. = "System integrity: [round((health/getMaxHealth())*100)]%"
+		. = "System integrity: [round(vitality() * 100)]%"
 	else
 		. = "Systems nonfunctional"
 
@@ -280,9 +273,9 @@
 	if(!blinded)
 		flash_eyes()
 
-	for(var/datum/modifier/M in modifiers)
-		if(!isnull(M.explosion_modifier))
-			severity = CLAMP(severity + M.explosion_modifier, 1, 4)
+	var/explosion_shift = factor(BF_EXPLOSION_SHIFT)
+	if(explosion_shift)
+		severity = CLAMP(severity + explosion_shift, 1, 4)
 
 	severity = round(severity)
 
@@ -292,19 +285,17 @@
 	switch(severity)
 		if(1.0)
 			if (stat != 2)
-				adjustBruteLoss(100)
-				adjustFireLoss(100)
+				injure(INJURY_BLUNT, 100, null, null, 0, null, INJURE_SILENT)
+				injure(INJURY_BURN, 100, null, null, 0, null, INJURE_SILENT)
 				if(!anchored)
 					gib()
 		if(2.0)
 			if (stat != 2)
-				adjustBruteLoss(60)
-				adjustFireLoss(60)
+				injure(INJURY_BLUNT, 60, null, null, 0, null, INJURE_SILENT)
+				injure(INJURY_BURN, 60, null, null, 0, null, INJURE_SILENT)
 		if(3.0)
 			if (stat != 2)
-				adjustBruteLoss(30)
-
-	updatehealth()
+				injure(INJURY_BLUNT, 30, null, null, 0, null, INJURE_SILENT)
 
 /mob/living/silicon/proc/receive_alarm(datum/alarm_handler/alarm_handler, datum/alarm/alarm, was_raised)
 	if(!next_alarm_notice)

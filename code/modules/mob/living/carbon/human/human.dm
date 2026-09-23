@@ -95,11 +95,6 @@
 	GLOB.alt_farmanimals -= src
 	worn_clothing.Cut()
 
-	if(stored_blob)
-		stored_blob.drop_l_hand()
-		stored_blob.drop_r_hand()
-		QDEL_NULL(stored_blob)
-
 	if(vessel)
 		QDEL_NULL(vessel)
 	. = ..()
@@ -182,9 +177,9 @@
 	if(!blinded)
 		flash_eyes()
 
-	for(var/datum/modifier/M in modifiers)
-		if(!isnull(M.explosion_modifier))
-			severity = CLAMP(severity + M.explosion_modifier, 1, 4)
+	var/explosion_shift = factor(BF_EXPLOSION_SHIFT)
+	if(explosion_shift)
+		severity = CLAMP(severity + explosion_shift, 1, 4)
 
 	severity = round(severity)
 
@@ -237,27 +232,27 @@
 				Paralyse(10)
 				Sleeping(10)
 
-	var/update = 0
-
 	// focus most of the blast on one organ
 	var/obj/item/organ/external/take_blast = pick(organs)
-	update |= take_blast.take_damage(b_loss * 0.9, f_loss * 0.9, used_weapon = "Explosive blast")
+	blast_injury(take_blast.organ_tag, b_loss * 0.9, f_loss * 0.9)
 
 	// distribute the remaining 10% on all limbs equally
 	b_loss *= 0.1
 	f_loss *= 0.1
 
-	var/weapon_message = "Explosive Blast"
-
 	for(var/obj/item/organ/external/temp in organs)
 		switch(temp.organ_tag)
 			if(BP_HEAD)
-				update |= temp.take_damage(b_loss * 0.2, f_loss * 0.2, used_weapon = weapon_message)
+				blast_injury(temp.organ_tag, b_loss * 0.2, f_loss * 0.2)
 			if(BP_TORSO)
-				update |= temp.take_damage(b_loss * 0.4, f_loss * 0.4, used_weapon = weapon_message)
+				blast_injury(temp.organ_tag, b_loss * 0.4, f_loss * 0.4)
 			else
-				update |= temp.take_damage(b_loss * 0.05, f_loss * 0.05, used_weapon = weapon_message)
-	if(update)	UpdateDamageIcon()
+				blast_injury(temp.organ_tag, b_loss * 0.05, f_loss * 0.05)
+
+/// Explosive blast: concussive (blunt) and thermal (burn) injury to one part.
+/mob/living/carbon/human/proc/blast_injury(zone, blunt, burn)
+	injure(INJURY_BLUNT, blunt, zone)
+	injure(INJURY_BURN, burn, zone)
 
 /mob/living/carbon/human/proc/implant_loyalty(override = FALSE) // Won't override by default.
 	if(!CONFIG_GET(flag/use_loyalty_implants) && !override) return // Nuh-uh.
@@ -409,7 +404,10 @@
 	if(fire_stacks < 0) // Water makes you more conductive.
 		siemens_coeff *= 1.5
 
-	return ..(shock_damage, source, siemens_coeff, def_zone)
+	. = ..(shock_damage, source, siemens_coeff, def_zone)
+	// A strong current across the chest can throw the heart into VF.
+	if(. > 30 && prob(. - 20))
+		induce_arrhythmia(CARDIAC_RHYTHM_VF)
 
 
 /mob/living/carbon/human/Topic(href, href_list)
@@ -1062,12 +1060,14 @@
 	restore_all_organs()       // Reapply robotics/amputated status from preferences.
 
 	if(!client || !key) //Don't boot out anyone already in the mob.
+		// A loose brain that hosts this body's character goes home.
 		for (var/obj/item/organ/internal/brain/H in GLOB.all_brain_organs)
-			if(H.brainmob)
-				if(H.brainmob.real_name == src.real_name)
-					if(H.brainmob.mind)
-						H.brainmob.mind.transfer_to(src)
-						qdel(H)
+			var/datum/component/mind_host/host = get_mind_host(H)
+			var/datum/mind/brain_mind = host?.hosted_mind()
+			if(brain_mind && brain_mind.get_identity() == identity)
+				host.release_mind(src, "revived body reclaimed its brain")
+				qdel(H)
+				break
 
 	// Traitgenes Disable all traits currently active, before prefs.copy_to() is applied, as it refreshes the traits list!
 	for(var/datum/gene/trait/gene in GLOB.dna_genes)
@@ -1097,7 +1097,7 @@
 
 	if(L)
 		if(gradual && (L.damage < (L.min_bruised_damage-1))) //We do slow ticking damage up to 9. After 9, we rupture completely.
-			L.damage++
+			injure(INJURY_PIERCE, 1, L, flags = INJURE_IGNORE_RESISTANCE | INJURE_SILENT)
 		else
 			L.rupture()
 
@@ -1208,7 +1208,7 @@
 						span_warning("Your movement jostles [O] in your [organ.name] painfully."))
 					custom_pain(msg, 40)
 
-				organ.take_damage(rand(1,3), 0, 0)
+				injure(INJURY_CUT, rand(1,3), organ.organ_tag, O)
 				if(!(organ.robotic >= ORGAN_ROBOT) && (should_have_organ(O_HEART))) //There is no blood in protheses.
 					organ.status |= ORGAN_BLEEDING
 
@@ -1274,6 +1274,7 @@
 		hunger_rate = initial(hunger_rate)
 
 	species = GLOB.all_species[new_species]
+	invalidate_factors()
 
 	if(species.language)
 		add_language(species.language)
@@ -1302,13 +1303,21 @@
 
 	//icon_state = lowertext(species.name) //Necessary?
 
+	// Swap the body plan before the organs are built so they attach to the new body.
+	// Before /mob/living/Initialize() there is no body yet; it is built from body_type.
+	body_type = species.body_plan
+	if(body && body.type != body_type)
+		log_game("BODY: [key_name(src)] body plan [body.type] -> [body_type] on species change to [species.name].")
+		QDEL_NULL(body)
+		body = new body_type(src)
+
 	species.handle_post_spawn(src)
 
 	species.create_organs(src)
 
 	species.apply_components(src)
 
-	maxHealth = species.total_health
+	endurance = species.total_health
 	hunger_rate = species.hunger_factor
 
 	default_pixel_x = initial(pixel_x) + species.pixel_offset_x //For giving datum/species ways to change 64x64 sprite offsets
@@ -1419,7 +1428,7 @@
 	else if (affecting.robotic >= ORGAN_LIFELIKE)
 		. = 0
 		fail_msg = "Your needle refuses to penetrate more than a short distance..."
-	else if ((species.flags & THICK_SKIN) && prob(70 - round(affecting.brute_dam + affecting.burn_dam / 2)))	// Allows transplanted limbs with thick skin to maintain their resistance.
+	else if ((species.flags & THICK_SKIN) && prob(70 - round(affecting.get_trauma() + affecting.get_burn() / 2)))	// Allows transplanted limbs with thick skin to maintain their resistance.
 		. = 0
 		fail_msg = "Your needle fails to penetrate \the [affecting]'s thick hide..."
 	else
@@ -1481,6 +1490,14 @@
 		if(brain && istype(brain))
 			return 1
 	return 0
+
+/// Brain death, decided by the brain organ (is_brain_dead()): a resleeve is
+/// required. A missing brain is not brain death (the brain may be put back).
+/mob/living/carbon/human/is_brain_dead()
+	if(!should_have_organ(O_BRAIN))
+		return FALSE
+	var/obj/item/organ/internal/brain/B = internal_organs_by_name[O_BRAIN]
+	return istype(B) && B.is_brain_dead()
 
 /mob/living/carbon/human/has_eyes()
 	if(internal_organs_by_name[O_EYES])
@@ -1688,7 +1705,11 @@
 			O = internal_organs_by_name[organ_tag]
 			if(!O)
 				return name
-			if(O.damage > O.max_damage)
+			if(istype(O, /obj/item/organ/internal/brain))
+				var/obj/item/organ/internal/brain/B = O
+				if(B.is_brain_dead())
+					return name
+			else if(O.damage >= O.max_damage)
 				return name
 	return FALSE
 
@@ -1702,9 +1723,8 @@
 			var/obj/belly/b = loc
 			if(b.digest_mode == DM_DIGEST || b.digest_mode == DM_SELECT)
 				return FALSE
-	for(var/datum/modifier/M in modifiers)
-		if(M.pain_immunity == TRUE)
-			return 0
+	if(factor(BF_PAIN_IMMUNITY))
+		return 0
 	if(check_organ)
 		if(!istype(check_organ))
 			return 0
@@ -1789,7 +1809,7 @@
 			msg += "([criminal]) "
 
 	if(hasHUD(user,"medical"))
-		msg += "(Health: [round((health/getMaxHealth())*100)]%) "
+		msg += "(Health: [round(vitality() * 100)]%) "
 
 	msg += get_display_species()
 	return msg
@@ -1799,24 +1819,29 @@
 		return 2
 	return ..()
 
+/// Badly hurt: past the old soft-crit line (health <= 0), which is half
+/// the body's vitality scale.
+/mob/living/carbon/human/proc/is_badly_hurt()
+	return vitality() <= 0.5
+
 /mob/living/carbon/human/pull_damage()
-	if(((health - halloss) <= CONFIG_GET(number/health_threshold_softcrit)))
+	if(is_badly_hurt())
 		for(var/name in organs_by_name)
 			var/obj/item/organ/external/limb = organs_by_name[name]
 			if(!limb)
 				continue
-			if((limb.status & ORGAN_BROKEN && (!limb.splinted || ((limb.splinted in limb.contents) && prob(30))) || limb.status & ORGAN_BLEEDING) && (getBruteLoss() + getFireLoss() >= 100))
+			if((limb.status & ORGAN_BROKEN && (!limb.splinted || ((limb.splinted in limb.contents) && prob(30))) || limb.status & ORGAN_BLEEDING) && (injury_load(INJURY_CATEGORY_PHYSICAL) + injury_load(INJURY_CATEGORY_THERMAL) >= 100))
 				return TRUE
 	else
 		return ..()
 
 /mob/living/carbon/human/pull_can_damage()
-	if(((health - halloss) <= CONFIG_GET(number/health_threshold_softcrit)))
+	if(is_badly_hurt())
 		for(var/name in organs_by_name)
 			var/obj/item/organ/external/limb = organs_by_name[name]
 			if(!limb)
 				continue
-			if(((limb.status & ORGAN_BROKEN) || (limb.status & ORGAN_BLEEDING)) && (getBruteLoss() + getFireLoss() >= 100))
+			if(((limb.status & ORGAN_BROKEN) || (limb.status & ORGAN_BLEEDING)) && (injury_load(INJURY_CATEGORY_PHYSICAL) + injury_load(INJURY_CATEGORY_THERMAL) >= 100))
 				return TRUE
 	else
 		return ..()
@@ -2125,7 +2150,6 @@
 	*/
 
 
-// === merged from human_chomp.dm during hard-fork de-suffix (chain-verified: prior definer is this file, nothing between) ===
 /mob/living/carbon/human/proc/synth_reag_toggle()
 	set name = "Toggle Reagent Processing"
 	set category = "Abilities.Vore"

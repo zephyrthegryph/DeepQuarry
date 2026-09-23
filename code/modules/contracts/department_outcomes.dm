@@ -288,6 +288,8 @@
 	contract.personal_side_definitions = list("engineering_safety_watch")
 
 /datum/contract_definition/outcome/research_export_portfolio
+	initial_offers = 0
+	auto_replace = FALSE
 	id = "research_export_portfolio"
 	title = "Applied Prototype Portfolio"
 	description = "Eclipse Corporation requests a commercially useful portfolio of station-fabricated Research products, accompanied by freight records establishing their value and station provenance."
@@ -318,6 +320,8 @@
 	contract.personal_side_definitions = list("research_internal_access")
 
 /datum/contract_definition/outcome/cargo_freight_portfolio
+	initial_offers = 0
+	auto_replace = FALSE
 	id = "cargo_freight_portfolio"
 	title = "Guild Freight Portfolio"
 	description = "The Interstellar Traders' Guild offers a throughput award for valuable, varied Cargo-origin freight accepted aboard the supply shuttle."
@@ -349,6 +353,8 @@
 	contract.personal_side_definitions = list("cargo_local_priority")
 
 /datum/contract_definition/outcome/service_hospitality_census
+	initial_offers = 0
+	auto_replace = FALSE
 	id = "service_hospitality_census"
 	title = "Station Hospitality Census"
 	description = "The Interstellar Traders' Guild requests a live market sample from paid station hospitality. Completed register and scanner invoices provide the census without disclosing purchases beyond the receipts customers already receive."
@@ -375,6 +381,8 @@
 	contract.personal_side_definitions = list("service_gratuity_drive")
 
 /datum/contract_definition/outcome/security_case_resolution
+	initial_offers = 0
+	auto_replace = FALSE
 	id = "security_case_resolution"
 	title = "Custodial Resolution Audit"
 	description = "SolGov Justice Administration offers an audit award for documented custodial cases that conclude through release or parole after a meaningful detention period. Security-record transitions provide the audit trail."
@@ -404,6 +412,8 @@
 	contract.personal_side_definitions = list("security_record_suppression")
 
 /datum/contract_definition/outcome/command_budget_mandate
+	initial_offers = 0
+	auto_replace = FALSE
 	id = "command_budget_mandate"
 	title = "Interdepartmental Capital Mandate"
 	description = "NanoTrasen Finance requests a diversified monthly operating plan entered through the station's Department Management console."
@@ -439,13 +449,11 @@
 	var/linked_parent_id
 
 /datum/contract/personal_outcome/complete()
-	. = ..()
-	if(!.)
-		return FALSE
-	var/datum/contract/parent_contract = SScontracts.contracts_by_id[linked_parent_id]
-	if(parent_contract && (parent_contract.state in list(CONTRACT_ACTIVE, CONTRACT_GRACE)))
-		parent_contract.fail("A mutually exclusive linked outcome settled first.")
-	return TRUE
+	// Personal opportunities are incentives, not hidden global vetoes. A parent
+	// contract may react to a concrete breached obligation through its own
+	// evidence, but an ordinary tip, local sale, appointment, or report cannot
+	// invalidate otherwise successful public work.
+	return ..()
 
 /datum/contract_definition/personal_outcome
 	abstract_type = /datum/contract_definition/personal_outcome
@@ -470,7 +478,11 @@
 /datum/contract_definition/personal_outcome/active_remains_possible(datum/contract/contract)
 	var/datum/contract/personal_outcome/personal = contract
 	var/datum/contract/parent = SScontracts.contracts_by_id[personal.linked_parent_id]
-	return istype(parent) && (parent.state in list(CONTRACT_ACTIVE, CONTRACT_GRACE))
+	if(!istype(parent))
+		return FALSE
+	// An accepted private bargain survives successful settlement of its public
+	// parent. Cancellation still closes work whose underlying project vanished.
+	return parent.state in list(CONTRACT_ACTIVE, CONTRACT_GRACE, CONTRACT_COMPLETED)
 
 /proc/configure_personal_outcome(datum/contract/personal_outcome/contract, list/context, deadline = 25 MINUTES)
 	contract.owner_account_number = context?["owner_account"]

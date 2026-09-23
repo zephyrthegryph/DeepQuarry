@@ -1,8 +1,7 @@
 /mob/living/simple_mob/mechanical/mecha/eclipse/occult
 	name = "Occult Construct"
 	desc = "A strange robotic creature."
-	health = 900
-	maxHealth = 900
+	endurance = 900
 
 	armor = list(melee = 30, bullet = 30, laser = 30, energy = 30, bomb = 30, bio = 100, rad = 100)
 

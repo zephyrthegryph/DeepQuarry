@@ -4,7 +4,7 @@
 	restrict_modules_to = list("Lost")
 	var/law_retries = 5
 
-/mob/living/silicon/robot/malf/lost/init()
+/mob/living/silicon/robot/malf/lost/setup_module()
 	..()
 	module = new /obj/item/robot_module/robot/malf/lost(src)
 	scramble_hardware(20)
@@ -23,7 +23,7 @@
 	if(old_name == laws.name)
 		apply_new_laws()
 
-/mob/living/silicon/robot/malf/lost/randomlaws/init()
+/mob/living/silicon/robot/malf/lost/randomlaws/setup_laws()
 	..()
 	apply_new_laws()
 

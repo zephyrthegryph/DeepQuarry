@@ -42,7 +42,7 @@
 /obj/machinery/particle_smasher/examine(mob/user)
 	. = ..()
 	if(Adjacent(user))
-		. += span_notice("It can particle-condition a physical alloy workpiece or run its established exotic-matter recipes.")
+		. += span_notice("A particle beam can alter alloy stock placed inside it, or drive one of its exotic-matter reactions.")
 		. += span_notice("\The [src] contains:")
 		for(var/obj/item/I in contents)
 			. += span_notice("\the [I]")

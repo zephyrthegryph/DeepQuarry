@@ -1,0 +1,17 @@
+[package]
+name = "vg-ffi"
+version = "0.1.0"
+edition = "2024"
+rust-version = "1.85"
+description = "BYOND binds for verdigris. The only crates that use byondapi are this one and vg-gas (whose binds have not moved yet); i686 only."
+
+[dependencies]
+byondapi = { workspace = true }
+eyre = { workspace = true }
+const_format = "0.2.33"
+serde_json = "1.0"
+auxmacros = { path = "macros" }
+vg-layout = { path = "../domains/layout" }
+
+[build-dependencies]
+bosion = "2.0.0"

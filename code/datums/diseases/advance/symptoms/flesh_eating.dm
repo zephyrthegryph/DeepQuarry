@@ -63,14 +63,14 @@ Bonus
 
 /datum/symptom/flesh_eating/proc/Flesheat(mob/living/M, datum/disease/advance/A)
 	if(damage)
-		M.take_overall_damage(BRUTE = rand(15, 25))
+		M.injure(INJURY_CUT, rand(15, 25))
 	if(!ishuman(M))
 		return
 	var/mob/living/carbon/human/H = M
 	var/obj/item/organ/external/O = pick(H.organs)
 
 	if(bleed)
-		O.createwound(PIERCE, 5 * power)
+		H.injure(INJURY_PIERCE, 5 * power, O.organ_tag)
 	else
-		O.createwound(BRUISE, 7.5 * power)
+		H.injure(INJURY_BLUNT, 7.5 * power, O.organ_tag)
 	return TRUE

@@ -95,18 +95,26 @@ GENERAL_PROTECT_DATUM(/datum/log_entry)
 
 #undef MANUAL_JSON_ENTRY
 
+/// How long a log file is trusted to still exist before fexists() is checked again.
+#define LOG_FILE_RECHECK_INTERVAL (10 SECONDS)
+
 #define CHECK_AND_TRY_FILE_ERROR_RECOVERY(file) \
 	var/static/in_error_recovery = FALSE; \
-	if(!fexists(##file)) { \
-		if(in_error_recovery) { \
-			in_error_recovery = FALSE; \
-			CRASH("Failed to error recover log file: [file]"); \
+	var/last_verified = logger.verified_log_files[##file]; \
+	if(isnull(last_verified) || world.time - last_verified >= LOG_FILE_RECHECK_INTERVAL) { \
+		if(!fexists(##file)) { \
+			logger.verified_log_files -= ##file; \
+			if(in_error_recovery) { \
+				in_error_recovery = FALSE; \
+				CRASH("Failed to error recover log file: [file]"); \
+			}; \
+			in_error_recovery = TRUE; \
+			logger.Log(LOG_CATEGORY_INTERNAL_ERROR, "attempting to perform file error recovery: [file]"); \
+			logger.init_category_file(logger.log_categories[category]); \
+			call(src, __PROC__)(arglist(args)); \
+			return; \
 		}; \
-		in_error_recovery = TRUE; \
-		logger.Log(LOG_CATEGORY_INTERNAL_ERROR, "attempting to perform file error recovery: [file]"); \
-		logger.init_category_file(logger.log_categories[category]); \
-		call(src, __PROC__)(arglist(args)); \
-		return; \
+		logger.verified_log_files[##file] = world.time; \
 	}; \
 	in_error_recovery = FALSE;
 
@@ -125,3 +133,4 @@ GENERAL_PROTECT_DATUM(/datum/log_entry)
 		WRITE_LOG(file, "[to_readable_text(format = FALSE)]")
 
 #undef CHECK_AND_TRY_FILE_ERROR_RECOVERY
+#undef LOG_FILE_RECHECK_INTERVAL

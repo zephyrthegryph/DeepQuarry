@@ -23,8 +23,7 @@
 	pass_flags = PASSTABLE
 
 	faction = FACTION_SPACE_GHOST
-	maxHealth = 50
-	health = 50
+	endurance = 50
 	movement_cooldown = 0
 
 	see_in_dark = 10
@@ -120,8 +119,7 @@
 	pass_flags = PASSTABLE
 
 	faction = FACTION_SPACE_GHOST
-	maxHealth = 5
-	health = 5
+	endurance = 5
 	movement_cooldown = -1
 
 	see_in_dark = 10
@@ -185,4 +183,4 @@
 	if(!T)
 		return
 	if(T.get_lumcount() >= 0.5)
-		adjustBruteLoss(1)
+		injure(INJURY_BURN, 1, source = T) // Light sears it.

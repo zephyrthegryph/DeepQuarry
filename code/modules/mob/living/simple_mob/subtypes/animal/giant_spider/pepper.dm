@@ -19,8 +19,7 @@
 	icon_living = "pepper"
 	icon_dead = "pepper_dead"
 
-	maxHealth = 210
-	health = 210
+	endurance = 210
 
 	melee_damage_lower = 8
 	melee_damage_upper = 15

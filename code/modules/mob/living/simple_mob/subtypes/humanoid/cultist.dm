@@ -257,8 +257,7 @@
 	desc = "With a knife in each hand, this lizard looks ready to disect you."
 	icon_state = "cultliz"
 	icon_living = "cultliz"
-	maxHealth = 200
-	health = 200
+	endurance = 200
 	catalogue_data = list(/datum/category_item/catalogue/fauna/cultist/lizard)
 
 	faction = "cult"
@@ -307,8 +306,7 @@
 	desc = "A Robed individual whose hands pulsate with unnatural power."
 	icon_state = "caster"
 	icon_living = "caster"
-	maxHealth = 150
-	health = 150
+	endurance = 150
 	catalogue_data = list(/datum/category_item/catalogue/fauna/cultist/caster)
 
 	faction = "cult"
@@ -353,8 +351,7 @@
 	desc = "A Novice Amongst his betters, he still seems determined to slice you to bits."
 	icon_state = "initiate"
 	icon_living = "initiate"
-	maxHealth = 150
-	health = 150
+	endurance = 150
 	catalogue_data = list(/datum/category_item/catalogue/fauna/cultist/initiate)
 
 	faction = "cult"
@@ -621,8 +618,7 @@
 
 /*
 /mob/living/simple_mob/humanoid/cultist
-	maxHealth = 75
-	health = 75
+	endurance = 75
 */
 /mob/living/simple_mob/humanoid/cultist/human
 	movement_cooldown = 1
@@ -639,16 +635,14 @@
 	movement_cooldown = -1
 	melee_damage_lower = 15 //Old 7
 	melee_damage_upper = 15
-	maxHealth = 37
-	health = 37
+	endurance = 37
 
 /mob/living/simple_mob/humanoid/cultist/castertesh
 	movement_cooldown = -1
 	projectiletype = /obj/item/projectile/energy/inversion
 	melee_damage_lower = 15
 	melee_damage_upper = 15
-	maxHealth = 50
-	health = 50
+	endurance = 50
 
 /mob/living/simple_mob/humanoid/cultist/elite
 	movement_cooldown = 1
@@ -658,14 +652,12 @@
 /mob/living/simple_mob/humanoid/cultist/magus
 	movement_cooldown = 1
 	projectiletype = /obj/item/projectile/energy/inversion
-	maxHealth = 150 //Old 100
-	health = 150
+	endurance = 150 //Old 100
 	melee_damage_lower = 15
 	melee_damage_upper = 15
 
 /mob/living/simple_mob/humanoid/cultist/hunter
-	maxHealth = 175 //Ehhh, this AI is like mini-boss at best //Old 87
-	health = 175
+	endurance = 175 //Ehhh, this AI is like mini-boss at best //Old 87
 	movement_cooldown = 0
 	melee_damage_lower = 21	//Saw Cleaver Brutality
 	melee_damage_upper = 21
@@ -690,8 +682,7 @@
 	desc = "An indiuval wrapped up in a makeshift rig, made from fallen cultist."
 	icon_state = "cobra-cultist"
 	icon_living = "cobra-cultist"
-	maxHealth = 150 //Old 75
-	health = 150
+	endurance = 150 //Old 75
 
 	faction = "cult"
 

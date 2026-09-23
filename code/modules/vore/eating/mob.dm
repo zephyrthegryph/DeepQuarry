@@ -8,7 +8,7 @@
 	var/allowmobvore = TRUE				// Will simplemobs attempt to eat the mob?
 	var/allowtemp = TRUE				// Can they be affected by belly temperature?
 	var/obj/belly/vore_selected			// Default to no vore capability.
-	var/list/vore_organs = list()		// List of vore containers inside a mob
+	var/list/vore_organs		// Lazy list of vore containers inside a mob
 	var/absorbed = FALSE				// If a mob is absorbed into another
 	var/vore_taste = null				// What the character tastes like
 	var/vore_smell = null				// What the character smells like

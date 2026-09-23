@@ -273,7 +273,6 @@
 	src.air_contents.adjust_gas(GAS_CH4, (10*ONE_ATMOSPHERE)*volume/(R_IDEAL_GAS_EQUATION*T20C))
 
 
-// === merged from tank_types_vr.dm during hard-fork de-suffix (verified no override-order change) ===
 /obj/item/tank/emergency/phoron/double
 	name = "double emergency phoron tank"
 	desc = "Contains dangerous phoron. Do not inhale. Warning: extremely flammable."

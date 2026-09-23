@@ -73,7 +73,7 @@
 				for(var/datum/reagent/R in reagents.reagent_list)
 					F.reagents.add_reagent(R.id, 1, safety = 1) //added safety check since reagents in the foam have already had a chance to react
 
-/obj/effect/effect/foam/fire_act(datum/gas_mixture/air, exposed_temperature, exposed_volume) // foam disolves when heated, except metal foams
+/obj/effect/effect/foam/fire_act(exposed_temperature, exposed_volume) // foam disolves when heated, except metal foams
 	if(!metal && prob(max(0, exposed_temperature - 475)))
 		flick("[icon_state]-disolve", src)
 		addtimer(CALLBACK(GLOBAL_PROC, GLOBAL_PROC_REF(qdel), src), 5)
@@ -190,7 +190,6 @@
 		to_chat(user, span_notice("You hit the metal foam to no effect."))
 
 
-// === merged from foam_vr.dm during hard-fork de-suffix (verified no override-order change) ===
 /obj/effect/effect/foam/firefighting
 	name = "firefighting foam"
 	icon_state = "mfoam" //Whiter

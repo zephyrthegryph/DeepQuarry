@@ -37,6 +37,16 @@
 	var/ui_theme
 	var/idcard_type = /obj/item/card/id/synthetic
 
+	// Module capabilities other systems read, instead of checking module types.
+	/// Staffing key this module counts toward for event weighting (DEPARTMENT_* or job title). Null for none.
+	var/staffing_role
+	/// Can name door and windoor assemblies.
+	var/names_assemblies = FALSE
+	/// Accepts trash fed to it.
+	var/eats_trash = FALSE
+	/// Can use the security emotes.
+	var/security_emotes = FALSE
+
 /obj/item/robot_module/proc/hide_on_manifest()
 	. = hide_on_manifest
 
@@ -48,7 +58,6 @@
 
 	var/mob/living/silicon/robot/R = loc
 	R.module = src
-	R.can_buckle = 1 //Chomp Addition; Makes all borgs rideable.
 
 	add_camera_networks(R)
 	add_languages(R)
@@ -70,14 +79,26 @@
 	for(var/obj/item/I in modules)
 		I.canremove = FALSE
 
+	on_robot_equip(R)
+
 /obj/item/robot_module/proc/create_equipment(mob/living/silicon/robot/robot)
 	if(!istype(robot.idcard, idcard_type))
 		QDEL_NULL(robot.idcard)
 	robot.init_id(idcard_type)
 	return
 
+/// The module has been installed in `robot`. Modules compose what they add
+/// to the chassis here (the sleeper belly: riding, belly light, death eject).
+/obj/item/robot_module/proc/on_robot_equip(mob/living/silicon/robot/robot)
+	robot.AddComponent(/datum/component/robot_belly)
+
+/// The module is leaving `robot`. Undo on_robot_equip().
+/obj/item/robot_module/proc/on_robot_unequip(mob/living/silicon/robot/robot)
+	qdel(robot.GetComponent(/datum/component/robot_belly))
+
 // Reset the module and delete it
 /obj/item/robot_module/proc/reset_module(mob/living/silicon/robot/robot)
+	on_robot_unequip(robot)
 	remove_camera_networks(robot)
 	remove_languages(robot)
 	remove_subsystems(robot)
@@ -101,16 +122,13 @@
 	QDEL_LIST(synths)
 	return ..()
 
+/// Module items are pulsed once by content recursion: stowed ones inside the
+/// module, equipped ones inside the robot. Only the matter synths (datums)
+/// need pulsing here.
 /obj/item/robot_module/emp_act(severity, recursive)
 	. = ..()
 	if (. & EMP_PROTECT_SELF)
 		return
-	if(modules)
-		for(var/obj/O in modules)
-			O.emp_act(severity, recursive)
-	if(emag)
-		for(var/obj/O in emag)
-			O.emp_act(severity, recursive)
 	if(synths)
 		for(var/datum/matter_synth/S in synths)
 			S.emp_act(severity, recursive)
@@ -308,6 +326,7 @@
 	src.emag += new /obj/item/dogborg/pounce(src)
 
 /obj/item/robot_module/robot/medical
+	staffing_role = DEPARTMENT_MEDICAL
 	name = "medical robot module"
 	channels = list(CHANNEL_MEDICAL = 1)
 	networks = list(NETWORK_MEDICAL)
@@ -448,6 +467,8 @@
 
 
 /obj/item/robot_module/robot/engineering
+	staffing_role = DEPARTMENT_ENGINEERING
+	names_assemblies = TRUE
 	name = "engineering robot module"
 	channels = list(CHANNEL_ENGINEERING = 1)
 	networks = list(NETWORK_ENGINEERING)
@@ -502,6 +523,8 @@
 	src.emag += new /obj/item/dogborg/pounce(src)
 
 /obj/item/robot_module/robot/security
+	staffing_role = DEPARTMENT_SECURITY
+	security_emotes = TRUE
 	name = "security robot module"
 	channels = list(CHANNEL_SECURITY = 1)
 	networks = list(NETWORK_SECURITY)
@@ -546,6 +569,8 @@
 		T.charge_tick = 0
 
 /obj/item/robot_module/robot/janitor
+	staffing_role = JOB_JANITOR
+	eats_trash = TRUE
 	name = "janitorial robot module"
 	channels = list(CHANNEL_SERVICE = 1)
 	pto_type = PTO_CIVILIAN
@@ -642,6 +667,7 @@
 	pto_type = PTO_CIVILIAN
 
 /obj/item/robot_module/robot/clerical/butler
+	staffing_role = JOB_BOTANIST
 	channels = list(CHANNEL_SERVICE = 1)
 
 /obj/item/robot_module/robot/clerical/butler
@@ -746,6 +772,7 @@
 	src.emag += new /obj/item/dogborg/pounce(src)
 
 /obj/item/robot_module/robot/miner
+	staffing_role = DEPARTMENT_CARGO
 	name = "miner robot module"
 	channels = list(CHANNEL_SUPPLY = 1)
 	networks = list(NETWORK_MINE)
@@ -790,6 +817,7 @@
 	src.emag += new /obj/item/dogborg/pounce(src)
 
 /obj/item/robot_module/robot/research
+	staffing_role = DEPARTMENT_RESEARCH
 	name = "research module"
 	channels = list(CHANNEL_SCIENCE = 1)
 	supported_upgrades = list(/obj/item/borg/upgrade/restricted/advrped, /obj/item/borg/upgrade/restricted/anomalygun)
@@ -874,10 +902,15 @@
 /* Drones */
 
 /obj/item/robot_module/drone
+	names_assemblies = TRUE
 	name = "drone module"
 	hide_on_manifest = TRUE
 	no_slip = 1
 	networks = list(NETWORK_ENGINEERING)
+
+/// Drones have no belly and can't be ridden.
+/obj/item/robot_module/drone/on_robot_equip(mob/living/silicon/robot/robot)
+	return
 
 /obj/item/robot_module/drone/create_equipment(mob/living/silicon/robot/robot)
 	..()

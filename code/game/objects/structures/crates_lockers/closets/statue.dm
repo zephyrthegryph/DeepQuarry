@@ -7,14 +7,12 @@
 	anchored = TRUE
 	blocks_emissive = EMISSIVE_BLOCK_UNIQUE
 	closet_appearance = null
-	// The statue starts at the encased mob's health + 100 integrity (set in Initialize).
-	// Structural damage taken while petrified is transferred back to the mob on release
-	// via atom_integrity (the mob's own health is frozen by the stasis field meanwhile).
+	// The statue starts at the encased mob's remaining wellness (vitality * endurance) + 100
+	// integrity (set in Initialize). Structural damage taken while petrified is transferred
+	// back to the mob on release; meanwhile the stasis field cancels all injury to the mob.
 	max_integrity = 100
-	var/intialTox = 0 	//these are here to keep the mob from taking damage from things that logically wouldn't affect a rock
-	var/intialFire = 0	//it's a little sloppy I know but it was this or the GODMODE flag. Lesser of two evils.
-	var/intialBrute = 0
-	var/intialOxy = 0
+	/// Integrity the statue started at; damage below this is dealt to the mob on release.
+	var/original_int = 100
 	var/timer = 240 //eventually the person will be freed
 
 /obj/structure/closet/statue/Initialize(mapload, mob/living/L)
@@ -27,12 +25,10 @@
 			L.anchored = FALSE
 		L.forceMove(src)
 		L.sdisabilities |= MUTE
-		max_integrity = L.getMaxHealth() + 100
-		update_integrity(L.health + 100) //stoning damaged mobs will result in easier to shatter statues
-		intialTox = L.getToxLoss()
-		intialFire = L.getFireLoss()
-		intialBrute = L.getBruteLoss()
-		intialOxy = L.getOxyLoss()
+		max_integrity = L.get_endurance() + 100
+		original_int = L.vitality() * L.get_endurance() + 100
+		update_integrity(original_int) //stoning damaged mobs will result in easier to shatter statues
+		RegisterSignal(L, COMSIG_LIVING_INJURE, PROC_REF(stasis_block_injury))
 		if(ishuman(L))
 			name = "statue of [L.name]"
 			if(L.gender == "female")
@@ -52,11 +48,6 @@
 
 /obj/structure/closet/statue/process()
 	timer--
-	for(var/mob/living/M in src) //Go-go gadget stasis field
-		M.setToxLoss(intialTox)
-		M.adjustFireLoss(intialFire - M.getFireLoss())
-		M.adjustBruteLoss(intialBrute - M.getBruteLoss())
-		M.setOxyLoss(intialOxy)
 	if (timer <= 0)
 		dump_contents()
 		STOP_PROCESSING(SSobj, src)
@@ -70,8 +61,21 @@
 	for(var/mob/living/M in src)
 		M.forceMove(loc) // Might be in a belly
 		M.sdisabilities &= ~MUTE
-		M.take_overall_damage((M.health + 100 - get_integrity()),0) //any new damage the statue incurred is transfered to the mob
+		UnregisterSignal(M, COMSIG_LIVING_INJURE)
+		if(get_integrity() < original_int) //any new damage the statue incurred is transfered to the mob
+			M.injure(INJURY_BLUNT, original_int - get_integrity(), null, src)
 		M.reset_perspective() // Fixes a blackscreen flicker
+
+/obj/structure/closet/statue/Destroy()
+	for(var/mob/living/M in src)
+		UnregisterSignal(M, COMSIG_LIVING_INJURE)
+	return ..()
+
+/// Go-go gadget stasis field: the encased mob can't be hurt while it's rock.
+/obj/structure/closet/statue/proc/stasis_block_injury(mob/living/source, kind, list/amount_ref, zone, atom/injury_source, flags)
+	SIGNAL_HANDLER
+	if(source.loc == src)
+		return COMPONENT_CANCEL_INJURY
 
 /obj/structure/closet/statue/open()
 	return

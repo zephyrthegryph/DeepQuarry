@@ -247,7 +247,6 @@
 	icon_state = "hosf"
 
 
-// === merged from shorts_ch.dm during hard-fork de-suffix (verified no override-order change) ===
 /obj/item/clothing/under/shorts/cshorts
 	name = "cargo shorts"
 	desc = "When you just don't have enough pockets."

@@ -54,7 +54,6 @@
 	product = /obj/item/stack/material/bronze
 
 
-// === merged from alloys_vr.dm during hard-fork de-suffix (verified no override-order change) ===
 /datum/alloy/plastitanium
 	metaltag = MAT_PLASTITANIUM
 	requires = list(

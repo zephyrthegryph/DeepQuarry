@@ -5,7 +5,7 @@
 	layer = MOB_LAYER + 1 // Need them on top of other mobs or it looks weird when consuming something.
 	max_nutrition = 1000
 	var/is_queen = FALSE // When the metroid is a queen, it should just be shitting out babies. Found in metAI.dm and in metTypes for the queen.
-	var/maxHealth_adult = 200
+	var/endurance_adult = 200
 	var/power_charge = 0 // Disarm attacks can shock someone if high/lucky enough.
 	var/mob/living/victim = null // the person the metroid is currently feeding on
 	var/amount_grown = 0 // controls how long the metroid has been overfed, if 10, grows or reproduces
@@ -113,7 +113,7 @@
 					s.start()
 
 					if(prob(stun_power * 10) && stun_power >= 8)
-						L.adjustFireLoss(power_charge * rand(1, 2))
+						L.injure(INJURY_ELECTRIC, power_charge * rand(1, 2), source = src)
 					return FALSE
 
 				else if(prob(20)) // Try to do a regular disarm attack.

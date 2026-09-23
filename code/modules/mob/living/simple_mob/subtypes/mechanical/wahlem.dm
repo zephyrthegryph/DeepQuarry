@@ -5,8 +5,7 @@
 	desc = "This construct is made of a brass-like material. Though aged, its shine is still brilliant, as it hovers ominously over the battlefield. Red flames spew from its shell. It diligently holds its shield and blade, at the ready, for any threats that may threaten its existence."
 	icon = 'icons/tgstation/clockworkwarrior.dmi'
 	icon_state = "clockM"
-	health = 300
-	maxHealth = 300
+	endurance = 300
 
 	faction = FACTION_GOLEM
 

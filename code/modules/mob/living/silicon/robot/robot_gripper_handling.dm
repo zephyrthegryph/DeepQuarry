@@ -271,11 +271,7 @@
 		if(!grab_cell(A.cell, user))
 			return TRUE
 
-		var/datum/robot_component/cell_component = A.components["power cell"]
-
-
-		A.cell = null
-		cell_component.uninstall(TRUE)
+		A.remove_cell()
 		A.update_icon()
 
 		user.visible_message(

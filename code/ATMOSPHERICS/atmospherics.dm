@@ -253,12 +253,6 @@ Pipelines + Other Objects -> Pipe network
 
 /obj/machinery/atmospherics/proc/can_unwrench()
 
-/* //Old version. We now handle unwrenching in the machinery itself.
-	var/datum/gas_mixture/int_air = return_air()
-	var/datum/gas_mixture/env_air = loc.return_air()
-	if((int_air.return_pressure()-env_air.return_pressure()) > 2*ONE_ATMOSPHERE)
-		return FALSE
-*/
 	return TRUE
 
 // Deconstruct into a pipe item.
@@ -323,10 +317,6 @@ Pipelines + Other Objects -> Pipe network
 			icon_connect_type = "-aux"
 	if(pipe_flags & PIPING_ALL_LAYER)
 		connect_types = CONNECT_TYPE_REGULAR|CONNECT_TYPE_SUPPLY|CONNECT_TYPE_SCRUBBER|CONNECT_TYPE_FUEL|CONNECT_TYPE_AUX
-	// Or if we were to do it the TG way...
-	// pixel_x = PIPE_PIXEL_OFFSET_X(piping_layer)
-	// pixel_y = PIPE_PIXEL_OFFSET_Y(piping_layer)
-	// layer = initial(layer) + PIPE_LAYER_OFFSET(piping_layer)
 
 /obj/machinery/atmospherics/proc/unsafe_pressure_release(mob/user, pressures = null)
 	if(!user)

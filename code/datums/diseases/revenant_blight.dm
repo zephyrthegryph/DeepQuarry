@@ -26,6 +26,8 @@
 			var/mob/living/carbon/human/human = affected_mob
 			human.change_hair_color(original_hair_colour[1], original_hair_colour[2], original_hair_colour[3])
 		to_chat(affected_mob, span_notice("You feel better"))
+		var/datum/affliction/blight = affected_mob.find_affliction(/datum/affliction/spectral_blight)
+		blight?.cure()
 	..()
 
 /datum/disease/revblight/stage_act(seconds_per_tick)
@@ -43,7 +45,7 @@
 			new /obj/effect/temp_visual/revenant(affected_mob.loc)
 		if(stagedamage < stage)
 			stagedamage++
-			affected_mob.adjustToxLoss(1 * stage * seconds_per_tick)
+			affected_mob.injure(INJURY_TOXIN, 1 * stage * seconds_per_tick, affliction = /datum/affliction/spectral_blight)
 			new /obj/effect/temp_visual/revenant(affected_mob.loc)
 
 	switch(stage)

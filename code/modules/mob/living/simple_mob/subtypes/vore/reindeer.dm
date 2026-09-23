@@ -14,8 +14,7 @@
 	icon_rest = "reindeer_rest"
 	icon = 'icons/mob/vore64x32.dmi'
 
-	maxHealth = 100
-	health = 100
+	endurance = 100
 
 	melee_damage_lower = 10
 	melee_damage_upper = 20

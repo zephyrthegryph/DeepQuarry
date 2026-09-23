@@ -8,10 +8,7 @@
 //
 // What's left in this file:
 //  - the auxmos turf-processing FFI routes (the SSair.fire() driver and the
-//    per-turf register/adjacency hooks) — these live HERE (a compiled file)
-//    because auxmos_bindings.dm, which also declares them, is intentionally NOT
-//    #included (it would duplicate the gas_mixture proc defs). Keeping just the
-//    turf/SSair routes here avoids that collision.
+//    per-turf register/adjacency hooks).
 //  - the SSair init-time hook that fires per-turf adjacency calculation, and the
 //    CHOMP-side lingering-fire procs (not provided by the reparent).
 

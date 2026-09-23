@@ -182,7 +182,6 @@
 	transform.blend_color("#ffffff[num2hex(clamp(amount, 0, 1) * 255, 2)]", ICON_MULTIPLY)
 	return src
 
-
 /datum/universal_icon/proc/to_list()
 	RETURN_TYPE(/list)
 	// resolve_icon_dmi_path() handles the DQ Architecture-A case: repacked DMIs live
@@ -376,16 +375,6 @@
 	return transform
 
 /// Converts a GAGS item to a universal icon by generating blend operations.
-/*
-/proc/gags_to_universal_icon(atom/path)
-	RETURN_TYPE(/datum/universal_icon)
-	if(!ispath(path, /atom) || !initial(path.greyscale_config) || !initial(path.greyscale_colors))
-		CRASH("gags_to_universal_icon() received an invalid path of \"[path]\"!")
-	var/datum/greyscale_config/config = initial(path.greyscale_config)
-	var/colors = initial(path.greyscale_colors)
-	var/datum/universal_icon/entry = SSgreyscale.GetColoredIconByTypeUniversalIcon(config, colors, path::post_init_icon_state || path::icon_state)
-	return entry
-*/
 
 /// Gets the relevant universal icon for an atom, when displayed in TGUI. (see: icon_state_preview)
 /// Supports GAGS items and colored items.
@@ -394,14 +383,6 @@
 		return FALSE
 	var/icon_file = atom_path::icon
 	var/icon_state = atom_path::icon_state
-	/*
-	if(atom_path::greyscale_config && atom_path::greyscale_colors)
-		return gags_to_universal_icon(atom_path)
-	if(ispath(atom_path, /obj))
-		var/obj/obj_path = atom_path
-		if(obj_path::icon_state_preview)
-			icon_state = obj_path::icon_state_preview
-	*/
 	return uni_icon(icon_file, icon_state, color=atom_path::color)
 
 /// getFlatIcon for [/datum/universal_icon]s
@@ -503,7 +484,6 @@
 		base_icon_dir = curdir
 
 	var/curblend = appearance.blend_mode || defblend
-
 
 	if(appearance.overlays.len || appearance.underlays.len)
 		// Layers will be a sorted list of icons/overlays, based on the order in which they are displayed

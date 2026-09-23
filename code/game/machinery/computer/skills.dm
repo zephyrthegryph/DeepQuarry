@@ -416,16 +416,6 @@
 		return can_allocate_station_budget()
 	return contract.scope == CONTRACT_SCOPE_DEPARTMENT && can_view_department(contract.department)
 
-/obj/machinery/computer/skills/proc/decide_contract_stakeholder(datum/contract/social/contract, account_number, role_id, approved, offered_weight, mob/living/user)
-	if(!can_manage_social_contract(contract))
-		return FALSE
-	return contract.decide_stakeholder(account_number, role_id, approved, user?.real_name || authenticated, offered_weight)
-
-/obj/machinery/computer/skills/proc/revoke_contract_stakeholder(datum/contract/social/contract, account_number, role_id, mob/living/user)
-	if(!can_manage_social_contract(contract))
-		return FALSE
-	return contract.revoke_stakeholder(account_number, role_id, user?.real_name || authenticated)
-
 /obj/machinery/computer/skills/proc/finalize_social_contract(datum/contract/social/contract, mob/living/user)
 	if(!can_manage_social_contract(contract))
 		return FALSE
@@ -509,12 +499,6 @@
 			if("contract_negotiate")
 				var/datum/contract/contract = SScontracts.contracts_by_id[params["id"]]
 				return negotiate_management_contract(contract, params["clause"], params["option"], ui.user)
-			if("contract_stakeholder_decide")
-				var/datum/contract/social/contract = SScontracts.contracts_by_id[params["id"]]
-				return decide_contract_stakeholder(contract, text2num(params["account"]), params["role"], !!text2num(params["approved"]), text2num(params["weight"]), ui.user)
-			if("contract_stakeholder_revoke")
-				var/datum/contract/social/contract = SScontracts.contracts_by_id[params["id"]]
-				return revoke_contract_stakeholder(contract, text2num(params["account"]), params["role"], ui.user)
 			if("contract_finalize_outcome")
 				var/datum/contract/social/contract = SScontracts.contracts_by_id[params["id"]]
 				return finalize_social_contract(contract, ui.user)

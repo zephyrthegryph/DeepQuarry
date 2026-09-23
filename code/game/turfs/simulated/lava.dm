@@ -100,9 +100,6 @@
 			. = TRUE
 			L.lava_act()
 
-// Lava that does nothing at all.
-/turf/simulated/floor/lava/harmless/burn_stuff(atom/movable/AM)
-	return FALSE
 
 // Tells AI mobs to not suicide by pathing into lava if it would hurt them.
 /turf/simulated/floor/lava/is_safe_to_enter(mob/living/L)

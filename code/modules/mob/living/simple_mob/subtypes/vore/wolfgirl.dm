@@ -9,8 +9,7 @@
 	icon = 'icons/mob/vore.dmi'
 
 	faction = FACTION_WOLFGIRL
-	maxHealth = 30
-	health = 30
+	endurance = 30
 
 	response_help = "pats"
 	response_disarm = "gently pushes aside"

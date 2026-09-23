@@ -30,6 +30,9 @@ GLOBAL_REAL(logger, /datum/log_holder)
 	var/initialized = FALSE
 	var/shutdown = FALSE
 
+	/// Log file path -> world.time it was last confirmed to exist. Saves an fexists() per entry (Q8).
+	var/list/verified_log_files = list()
+
 GENERAL_PROTECT_DATUM(/datum/log_holder)
 
 ADMIN_VERB(log_viewer_new, R_ADMIN|R_MOD|R_DEBUG, "View Round Logs", "View the rounds logs.", ADMIN_CATEGORY_LOGS)

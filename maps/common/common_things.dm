@@ -92,23 +92,8 @@
 /obj/machinery/camera/network/outside
 	network = list(NETWORK_OUTSIDE)
 
-/obj/tether_away_spawner/tether_outside
-	name = "Tether Outside Spawner"
-	prob_spawn = 75
-	prob_fall = 50
-	mobs_to_pick_from = list(
-		/mob/living/simple_mob/animal/passive/gaslamp = 300
-		)
-
 // Landmarks for wildlife events
 
-/obj/effect/landmark/wildlife/water
-	name = "aquatic wildlife"
-	wildlife_type = 1
-
-/obj/effect/landmark/wildlife/forest
-	name = "roaming wildlife"
-	wildlife_type = 2
 
 // SD Things
 
@@ -198,9 +183,6 @@
 
 /obj/machinery/power/quantumpad/scioutpost
 
-//Special map objects
-/obj/effect/landmark/map_data/virgo3b
-	height = 5
 
 /obj/machinery/atmospherics/unary/vent_pump/positive
 	use_power = USE_POWER_IDLE
@@ -210,35 +192,6 @@
 /obj/machinery/computer/shuttle_control/aerostat_shuttle
 	name = "aerostat ferry control console"
 	shuttle_tag = "Aerostat Ferry"
-
-/obj/tether_away_spawner/aerostat_inside
-	name = "Aerostat Indoors Spawner"
-	faction = FACTION_AEROSTAT_INSIDE
-	atmos_comp = TRUE
-	prob_spawn = 100
-	prob_fall = 50
-	//guard = 20
-	mobs_to_pick_from = list(
-		/mob/living/simple_mob/mechanical/hivebot/ranged_damage/basic = 3,
-		/mob/living/simple_mob/mechanical/hivebot/ranged_damage/ion = 1,
-		/mob/living/simple_mob/mechanical/hivebot/ranged_damage/laser = 3,
-		/mob/living/simple_mob/vore/aggressive/corrupthound = 1
-	)
-
-/obj/tether_away_spawner/aerostat_surface
-	name = "Aerostat Surface Spawner"
-	faction = FACTION_AEROSTAT_SURFACE
-	atmos_comp = TRUE
-	prob_spawn = 100
-	prob_fall = 30
-	//guard = 20
-	mobs_to_pick_from = list(
-		/mob/living/simple_mob/vore/jelly = 6,
-		/mob/living/simple_mob/mechanical/viscerator = 6,
-		/mob/living/simple_mob/vore/aggressive/corrupthound = 3,
-		/mob/living/simple_mob/vore/oregrub = 2,
-		/mob/living/simple_mob/vore/oregrub/lava = 1
-	)
 
 /obj/structure/old_roboprinter
 	name = "old drone fabricator"

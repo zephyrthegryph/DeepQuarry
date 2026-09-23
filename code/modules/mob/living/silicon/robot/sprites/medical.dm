@@ -85,13 +85,6 @@
 	hat_offset = WORM_HAT_OFFSET
 
 // Wide/dogborg sprites
-/*
-/datum/robot_sprite/dogborg/medical
-	module_type = list("Crisis", "Surgeon")
-	sprite_icon = 'icons/mob/robot/medical_wide.dmi'
-
-		// None yet
-*/
 // Tall sprites
 //CHOMPNote -- many of the lines in this is overriden in modular
 /datum/robot_sprite/dogborg/tall/medical
@@ -313,7 +306,6 @@
 	rest_sprite_options = list("Default", "Bellyup")
 	hat_offset = RAPTOR_HAT_OFFSET
 
-
 // Crisis
 
 // Regular sprites
@@ -371,14 +363,6 @@
 	module_type = "Crisis"
 	sprite_icon = 'icons/mob/robot/crisis_wide.dmi'
 
-/* //Handled by the normal belly code now.
-/datum/robot_sprite/dogborg/crisis/get_belly_overlay(mob/living/silicon/robot/ourborg)
-	if(has_sleeper_light_indicator)
-		if(ourborg.sleeper_state == 2 && !(ourborg.vore_selected?.silicon_belly_overlay_preference == "Vorebelly")) return "[sprite_icon_state]-sleeper_g"
-		else return "[sprite_icon_state]-sleeper_r"
-	else
-		return ..()
-*/
 /datum/robot_sprite/dogborg/crisis/do_equipment_glamour(obj/item/robot_module/module)
 	..()
 

@@ -91,11 +91,6 @@
 /obj/machinery/gear_painter/AllowDrop()
 	return FALSE
 
-// /obj/machinery/gear_painter/handle_atom_del(atom/movable/AM)
-// 	if(AM == inserted)
-// 		inserted = null
-// 	return ..()
-
 /obj/machinery/gear_painter/click_alt(mob/user)
 	. = ..()
 	drop_item(user)
@@ -202,7 +197,6 @@
 				build_val = clamp(text2num(params["buildval"]), -10, 10)
 				return TRUE
 
-
 /obj/machinery/gear_painter/proc/do_paint(mob/user)
 	var/color_to_use
 	switch(active_mode)
@@ -232,7 +226,6 @@
 	inserted.add_atom_colour(color_to_use, FIXED_COLOUR_PRIORITY)
 	playsound(src, 'sound/effects/spray3.ogg', 50, 1)
 	return TRUE
-
 
 /// Produces the preview image of the item, used in the UI, the way the color is not stacking is a sin.
 /obj/machinery/gear_painter/proc/build_preview(mob/user)

@@ -32,7 +32,7 @@ GLOBAL_LIST_INIT(slime_default_emotes, list(
 	gender = NEUTER
 
 	faction = FACTION_SLIME // Note that slimes are hostile to other slimes of different color regardless of faction (unless Unified).
-	maxHealth = 150
+	endurance = 150
 	movement_cooldown = -1
 	pass_flags = PASSTABLE
 	makes_dirt = FALSE	// Goop
@@ -183,11 +183,11 @@ GLOBAL_LIST_INIT(slime_default_emotes, list(
 
 // Slimes regenerate passively.
 /mob/living/simple_mob/slime/handle_special()
-	adjustOxyLoss(-1)
-	adjustToxLoss(-1)
-	adjustFireLoss(-1)
-	adjustCloneLoss(-1)
-	adjustBruteLoss(-1)
+	mend(TREAT_OXYGENATION, 1)
+	mend(TREAT_ANTITOXIN, 1)
+	mend(TREAT_BURN_CARE, 1)
+	mend(TREAT_GENETIC_REPAIR, 1)
+	mend(TREAT_TISSUE_REPAIR, 1)
 
 // Clicked on by empty hand.
 /mob/living/simple_mob/slime/attack_hand(mob/living/L)

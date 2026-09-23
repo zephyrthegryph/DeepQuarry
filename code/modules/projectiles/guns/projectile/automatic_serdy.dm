@@ -943,25 +943,25 @@
 		user.visible_message(/*What other people experience*/span_notice("[user] manages to pull the trigger on the [src], causing a large bang and a big flash before [src] recoils backwards, crashing violently into [user] and causing them to go flying!"), \
 		/*What you experience*/ span_warning("As you pull the trigger, you suddenly see a flash of bright white light and a loud bang which immediately triggers ringing in your ears. Before you can even react, you feel the giant gun crashing into you and propelling you backwards, and then everything goes black!"))
 		if(user.organs && user.organs.len) //You are going to break a lot of bones.
-			user.apply_damage(15, BRUTE, BP_L_ARM)
-			user.apply_damage(15, BRUTE, BP_R_ARM)
-			user.apply_damage(7, BRUTE, BP_L_HAND)
-			user.apply_damage(8, BRUTE, BP_R_HAND)
-			user.apply_damage(25, BRUTE, BP_TORSO)
+			user.injure(INJURY_BLUNT, 15, BP_L_ARM, src)
+			user.injure(INJURY_BLUNT, 15, BP_R_ARM, src)
+			user.injure(INJURY_BLUNT, 7, BP_L_HAND, src)
+			user.injure(INJURY_BLUNT, 8, BP_R_HAND, src)
+			user.injure(INJURY_BLUNT, 25, BP_TORSO, src)
 			//70 damage total
 			for(var/def_zone in list(BP_L_ARM, BP_R_ARM, BP_L_HAND, BP_R_HAND, BP_TORSO))
 				var/obj/item/organ/external/hit_organ = user.get_organ(def_zone)
 				if(hit_organ)
 					hit_organ.fracture() //Bone crunching noises intensifies
 		else
-			user.apply_damage(80, BRUTE)
+			user.injure(INJURY_BLUNT, 80, source = src)
 		user.drop_item() //Yea you're not holding onto it for long
 
 		if(deafening) //Very loud, ears go ouch. Should not make you permanently deaf, though.
 			H.ear_damage += 60
 			H.ear_deaf += 80
 
-		user.apply_damage(150, HALLOSS) //That hurt a lot.
+		user.injure(INJURY_PAIN, 150, source = src) //That hurt a lot.
 		user.AdjustSleeping(50) //Knocked out
 		var/recoil_dir = turn(user.dir,180)
 		var/turf/target_turf = get_step(get_step(user,recoil_dir),recoil_dir)
@@ -975,8 +975,8 @@
 		if(user.r_hand == src)
 			in_left_hand = FALSE
 		var/damaged_body_part = in_left_hand ? pick(list(BP_L_ARM,BP_TORSO)) : pick(list(BP_R_ARM,BP_TORSO)) //50/50 whether your arm holding the gun gets damaged, or your chest.
-		user.apply_damage(damage_taken,BRUTE,damaged_body_part) //Bruise
-		user.apply_damage(damage_taken * 3,HALLOSS) //Ouchie juice
+		user.injure(INJURY_BLUNT, damage_taken, damaged_body_part, src) //Bruise
+		user.injure(INJURY_PAIN, damage_taken * 3, source = src) //Ouchie juice
 		if(prob(prob_to_drop))
 			message_on_fire += span_notice(" The force causes you to stumble backwards, dropping the gun and falling to the ground.")
 			user.drop_item()

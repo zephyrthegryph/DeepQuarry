@@ -409,7 +409,6 @@
 	item_state = "rig-pilot2"
 
 
-// === merged from station_vr.dm during hard-fork de-suffix (verified no override-order change) ===
 // Alt mining voidsuit
 // Commonwealth -> Solgov.
 /obj/item/clothing/suit/space/void/mining/alt2
@@ -540,5 +539,4 @@
 	camera_networks = list(NETWORK_COMMAND)
 
 
-// === merged from station_chomp.dm during hard-fork de-suffix (verified no override-order change) ===
 

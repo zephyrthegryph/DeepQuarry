@@ -1,9 +1,10 @@
 // Damage-event dispatcher.
 //
-// Called from /obj/item/organ/external/createwound() — the lowest-level
-// damage funnel. Every wound creation flows through here: melee /
-// projectile hits, surgery failures, scripted event damage. We classify
-// the wound, then walk every /datum/dq_cause/damage_event whose rule
+// Called from /obj/item/organ/external/create_wound() — the lowest-level
+// damage funnel, where every limb injury becomes a wound affliction. Every
+// wound creation flows through here: melee / projectile hits (injure() ->
+// receive_injury() -> take_damage()), surgery failures, scripted events. We classify
+// the wound, then walk every /datum/affliction_trigger/injury whose rule
 // matches and roll its outcomes.
 //
 // The rules table itself lives in code/modules/medical/causes/
@@ -13,8 +14,9 @@
 /obj/item/organ/external/proc/dq_check_damage_cascades(type, damage)
 	if(!owner || !ishuman(owner) || damage <= 0)
 		return
-	if(robotic >= ORGAN_ROBOT)
-		return
+	// Synthetic parts fire synthetic triggers (coolant leaks, actuator
+	// faults…) instead of organic ones; each trigger declares its biology.
+	var/part_biology = owner.body.biology_of(src)
 
 	var/wound_class
 	if(type == CUT || type == PIERCE)
@@ -27,32 +29,38 @@
 		return
 
 	// Cumulative damage post-event for rules that gate on totals
-	// (burn_shock, compartment_syndrome). For burn we use organ burn_dam
-	// pre-update + the event damage; for sharp/blunt brute_dam + event.
+	// (burn_shock, compartment_syndrome): the limb's wound load before this
+	// wound (get_burn() / get_trauma()) plus the event damage.
 	var/cumulative
 	if(wound_class == "burn")
-		cumulative = burn_dam + damage
+		cumulative = get_burn() + damage
 	else
-		cumulative = brute_dam + damage
+		cumulative = get_trauma() + damage
 
-	dq_dispatch_damage_event(wound_class, organ_tag, damage, cumulative, src)
+	dq_dispatch_damage_event(wound_class, organ_tag, damage, cumulative, src, part_biology)
 
 	// Broken-bone class is its own pseudo-wound that fires when the
 	// organ flips to ORGAN_BROKEN. We dispatch it here for free since
-	// createwound() is the wound funnel; the bone-fracture cause picks
+	// create_wound() is the wound funnel; the bone-fracture cause picks
 	// it up via wound_class = "broken_bone".
 	if(status & ORGAN_BROKEN)
-		dq_dispatch_damage_event("broken_bone", organ_tag, damage, cumulative, src)
+		dq_dispatch_damage_event("broken_bone", organ_tag, damage, cumulative, src, part_biology)
 
 
-/proc/dq_dispatch_damage_event(wound_class, organ_tag, single_damage, cumulative_damage, obj/item/organ/target)
-	for(var/datum/dq_cause/damage_event/c as anything in dq_causes_of_kind("/datum/dq_cause/damage_event"))
+/datum/affliction_trigger/injury
+	/// Biologies of the injured part this trigger fires for.
+	var/biology = BIOLOGY_ORGANIC
+
+/proc/dq_dispatch_damage_event(wound_class, organ_tag, single_damage, cumulative_damage, obj/item/organ/target, part_biology = BIOLOGY_ORGANIC)
+	for(var/datum/affliction_trigger/injury/c as anything in affliction_triggers_of_kind("/datum/affliction_trigger/injury"))
+		if(!(c.biology & part_biology))
+			continue
 		if(!c.matches(wound_class, organ_tag, single_damage, cumulative_damage))
 			continue
-		for(var/datum/dq_cause_outcome/o as anything in c.produces)
-			if(!o.preconditions_met(target))
+		for(var/datum/affliction_trigger_outcome/o as anything in c.produces)
+			if(!o.preconditions_met(target.owner?.body, target))
 				continue
-			// Per-outcome min_damage override (uses dq_cause_outcome.threshold
+			// Per-outcome min_damage override (uses affliction_trigger_outcome.threshold
 			// as the field — same slot used by organ_damage causes for
 			// their damage % thresholds). Lets one cause carry several
 			// outcomes that activate at different damage levels.
@@ -60,7 +68,7 @@
 				continue
 			if(!prob(dq_scaled_cascade_chance(o, single_damage)))
 				continue
-			target.dq_spawn_condition(o.condition_type)
+			target.spawn_affliction(o.condition_type)
 
 
 /// Scale a damage-event outcome's spawn probability by how much the hit
@@ -71,7 +79,7 @@
 /// makes massive trauma reliably seed cascades while keeping borderline
 /// hits stochastic. If no threshold is declared, fall back to the base
 /// chance — there's nothing to scale against.
-/proc/dq_scaled_cascade_chance(datum/dq_cause_outcome/o, single_damage)
+/proc/dq_scaled_cascade_chance(datum/affliction_trigger_outcome/o, single_damage)
 	if(isnull(o.threshold) || o.threshold <= 0)
 		return o.chance
 	var/ratio = single_damage / o.threshold
@@ -84,17 +92,7 @@
 	return organ_tag in list(BP_L_ARM, BP_R_ARM, BP_L_LEG, BP_R_LEG, BP_L_HAND, BP_R_HAND, BP_L_FOOT, BP_R_FOOT)
 
 
-/// Spawn a condition on this organ, idempotent — don't double-spawn the
-/// same type. `target` defaults to `src` (use to spread to other organs).
-/obj/item/organ/proc/dq_spawn_condition(condition_type, obj/item/organ/target = src)
-	if(!ispath(condition_type, /datum/medical_issue/condition))
-		return
-	if(!target)
-		target = src
-	for(var/datum/medical_issue/condition/existing in target.medical_issues)
-		if(existing.type == condition_type)
-			return
-	var/datum/medical_issue/condition/C = new condition_type()
-	C.owner = owner
-	C.affectedorgan = target
-	target.add_medical_issue(C, owner)
+/// Give this organ's body an affliction located here (or on `target`).
+/// Idempotent per (type, location).
+/obj/item/organ/proc/spawn_affliction(condition_type, obj/item/organ/target = src)
+	return owner?.body?.afflict(condition_type, target || src)

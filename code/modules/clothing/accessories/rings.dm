@@ -218,7 +218,6 @@
 	. = ..(mapload, MAT_VOPAL)
 
 
-// === merged from rings_chomp.dm during hard-fork de-suffix (verified no override-order change) ===
 /obj/item/clothing/accessory/ring/ringworld1
 	name = "world gem ring"
 	desc = "A ring that has a tiny world inside its glassy gem. You can even see clouds moving."

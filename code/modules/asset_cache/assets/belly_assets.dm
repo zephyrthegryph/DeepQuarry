@@ -48,75 +48,11 @@
 /datum/belly_overlays/vbo_gematically_angular
 	belly_icon = "icons/mob/vore_fullscreens/VBO_gematically_angular.dmi" // string not icon ref
 
-/*
-/datum/belly_overlays/vbo_intestines1
-	belly_icon = "icons/mob/vore_fullscreens/VBO_intestines1.dmi" // string not icon ref
-
-/datum/belly_overlays/vbo_intestines2
-	belly_icon = "icons/mob/vore_fullscreens/VBO_intestines2.dmi" // string not icon ref
-
-/datum/belly_overlays/vbo_intestines3
-	belly_icon = "icons/mob/vore_fullscreens/VBO_intestines3.dmi" // string not icon ref
-
-/datum/belly_overlays/vbo_intestines4
-	belly_icon = "icons/mob/vore_fullscreens/VBO_intestines4.dmi" // string not icon ref
-
-/datum/belly_overlays/vbo_intestines5
-	belly_icon = "icons/mob/vore_fullscreens/VBO_intestines5.dmi" // string not icon ref
-
-/datum/belly_overlays/vbo_intestines6
-	belly_icon = "icons/mob/vore_fullscreens/VBO_intestines6.dmi" // string not icon ref
-
-/datum/belly_overlays/vbo_intestines7
-	belly_icon = "icons/mob/vore_fullscreens/VBO_intestines7.dmi" // string not icon ref
-
-/datum/belly_overlays/vbo_intestines8
-	belly_icon = "icons/mob/vore_fullscreens/VBO_intestines8.dmi" // string not icon ref
-*/
-
 /datum/belly_overlays/vbo_intestines9
 	belly_icon = "icons/mob/vore_fullscreens/VBO_intestines9.dmi" // string not icon ref
 
 /datum/belly_overlays/vbo_intestines9_fluidless
 	belly_icon = "icons/mob/vore_fullscreens/VBO_intestines9_fluidless.dmi" // string not icon ref
-
-/*
-/datum/belly_overlays/vbo_maw1
-	belly_icon = "icons/mob/vore_fullscreens/VBO_maw1.dmi" // string not icon ref
-
-/datum/belly_overlays/vbo_maw2
-	belly_icon = "icons/mob/vore_fullscreens/VBO_maw2.dmi" // string not icon ref
-
-/datum/belly_overlays/vbo_maw3
-	belly_icon = "icons/mob/vore_fullscreens/VBO_maw3.dmi" // string not icon ref
-
-/datum/belly_overlays/vbo_maw4
-	belly_icon = "icons/mob/vore_fullscreens/VBO_maw4.dmi" // string not icon ref
-
-/datum/belly_overlays/vbo_maw5
-	belly_icon = "icons/mob/vore_fullscreens/VBO_maw5.dmi" // string not icon ref
-
-/datum/belly_overlays/vbo_maw6
-	belly_icon = "icons/mob/vore_fullscreens/VBO_maw6.dmi" // string not icon ref
-
-/datum/belly_overlays/vbo_maw7
-	belly_icon = "icons/mob/vore_fullscreens/VBO_maw7.dmi" // string not icon ref
-
-/datum/belly_overlays/vbo_maw8
-	belly_icon = "icons/mob/vore_fullscreens/VBO_maw8.dmi" // string not icon ref
-
-/datum/belly_overlays/vbo_maw9
-	belly_icon = "icons/mob/vore_fullscreens/VBO_maw9.dmi" // string not icon ref
-
-/datum/belly_overlays/vbo_maw10
-	belly_icon = "icons/mob/vore_fullscreens/VBO_maw10.dmi" // string not icon ref
-
-/datum/belly_overlays/vbo_maw11
-	belly_icon = "icons/mob/vore_fullscreens/VBO_maw11.dmi" // string not icon ref
-
-/datum/belly_overlays/vbo_maw12
-	belly_icon = "icons/mob/vore_fullscreens/VBO_maw12.dmi" // string not icon ref
-*/
 
 /datum/belly_overlays/vbo_maw13
 	belly_icon = "icons/mob/vore_fullscreens/VBO_maw13.dmi" // string not icon ref

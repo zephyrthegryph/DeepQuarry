@@ -1,0 +1,8 @@
+author: "BigBadE"
+delete-after: true
+changes:
+  - rscadd: "Expanded material science with nickel, chromium, tungsten, technical ceramics, emitter and particle-beam treatment, and a physical R-UST material cradle."
+  - rscadd: "Added field-treated energy-storage, thermoelectric, thermal-switch, exothermic, radiation-hardened, and improved superconducting material outcomes."
+  - rscadd: "Added mineable nickel, chromium, tungsten, and technical-ceramic feedstocks to complement Cargo sourcing."
+  - rscadd: "Heat-pump composites now actively cool superconducting cells, consuming stored power and rejecting conserved heat into the surrounding atmosphere."
+  - qol: "Renamed Cargo's technical ceramic blanks to technical ceramic sheets to match how the stock is actually handled."

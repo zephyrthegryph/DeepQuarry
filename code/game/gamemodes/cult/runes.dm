@@ -26,7 +26,7 @@ GLOBAL_LIST_EMPTY(sacrificed)
 	if(index >= 5)
 		to_chat(user, span_danger("You feel pain, as rune disappears in reality shift caused by too much wear of space-time fabric."))
 		if (isliving(user))
-			user.take_overall_damage(5, 0)
+			user.injure(INJURY_BLUNT, 5)
 		qdel(src)
 	if(allrunesloc && index != 0)
 		if(istype(src,/obj/effect/rune))
@@ -58,7 +58,7 @@ GLOBAL_LIST_EMPTY(sacrificed)
 	if(runecount >= 2)
 		to_chat(user, span_danger("You feel pain, as rune disappears in reality shift caused by too much wear of space-time fabric."))
 		if (isliving(user))
-			user.take_overall_damage(5, 0)
+			user.injure(INJURY_BLUNT, 5)
 		qdel(src)
 	for(var/mob/living/carbon/C in orange(1,src))
 		if(iscultist(C) && !C.stat)
@@ -122,15 +122,17 @@ GLOBAL_LIST_EMPTY(sacrificed)
 	while(target in converting)
 		if(target.loc != src.loc || target.stat == DEAD)
 			converting -= target
-			if(target.getFireLoss() < 100)
+			if(target.injury_load(INJURY_CATEGORY_THERMAL) < 100)
 				target.hallucination = min(target.hallucination, 500)
 			return 0
 
-		target.take_overall_damage(0, rand(5, 20)) // You dirty resister cannot handle the damage to your mind. Easily. - even cultists who accept right away should experience some effects
+		var/corruption_burn = rand(5, 20)
+		target.injure(INJURY_BURN, corruption_burn, source = src) // You dirty resister cannot handle the damage to your mind. Easily. - even cultists who accept right away should experience some effects
+		target.injure(INJURY_TOXIN, corruption_burn / 2, source = src, affliction = /datum/affliction/profane_corruption, flags = INJURE_SILENT)
 		// Resist messages go!
 		if(initial_message) //don't do this stuff right away, only if they resist or hesitate.
 			add_attack_logs(attacker,target,"Convert rune")
-			switch(target.getFireLoss())
+			switch(target.injury_load(INJURY_CATEGORY_THERMAL))
 				if(0 to 25)
 					to_chat(target, span_cult("Your blood boils as you force yourself to resist the corruption invading every corner of your mind."))
 				if(25 to 45)
@@ -146,13 +148,13 @@ GLOBAL_LIST_EMPTY(sacrificed)
 					//5000 is waaaay too much, in practice.
 					target.hallucination = min(target.hallucination + 100, 500)
 					target.apply_effect(10, STUTTER)
-					target.adjustBrainLoss(1)
+					target.injure(INJURY_NEURAL, 1)
 				if(100 to INFINITY)
 					to_chat(target, span_cult("Your entire broken soul and being is engulfed in corruption and flames as your mind shatters away into nothing."))
 					//5000 is waaaay too much, in practice.
 					target.hallucination = min(target.hallucination + 100, 500)
 					target.apply_effect(15, STUTTER)
-					target.adjustBrainLoss(1)
+					target.injure(INJURY_NEURAL, 1)
 
 		initial_message = 1
 		if (!target.can_feel_pain())
@@ -238,7 +240,7 @@ GLOBAL_LIST_EMPTY(sacrificed)
 					add_attack_logs(user,D,"Blood drain rune")
 					var/bdrain = rand(1,25)
 					to_chat(D, span_warning("You feel weakened."))
-					D.take_overall_damage(bdrain, 0)
+					D.injure(INJURY_BLUNT, bdrain)
 					drain += bdrain
 	if(!drain)
 		return fizzle(user)
@@ -257,28 +259,26 @@ GLOBAL_LIST_EMPTY(sacrificed)
 		spawn()
 			for (,user.bhunger>0,user.bhunger--)
 				sleep(50)
-				user.take_overall_damage(3, 0)
+				user.injure(INJURY_BLUNT, 3)
 		return
-	user.heal_organ_damage(drain%5, 0)
+	user.mend(TREAT_TISSUE_REPAIR, drain%5)
 	drain-=drain%5
 	for (,drain>0,drain-=5)
 		sleep(2)
-		user.heal_organ_damage(5, 0)
+		user.mend(TREAT_TISSUE_REPAIR, 5)
 		if(ishuman(user))
 			var/mob/living/carbon/human/H = user
-			for(var/obj/item/organ/I in H.internal_organs)
+			for(var/obj/item/organ/internal/I in H.internal_organs)
 				if(I.damage > 0)
-					I.damage = max(I.damage - 5, 0)		//Heals 5 damage per organ per use
+					H.mend(TREAT_RESTORATION, 5, I)		//Heals 5 damage per organ per use
 				if(I.damage <= 5 && I.organ_tag == O_EYES)
 					H.sdisabilities &= ~BLIND
 			for(var/obj/item/organ/E in H.bad_external_organs)
 				var/obj/item/organ/external/affected = E
 				if((affected.damage < affected.min_broken_damage * CONFIG_GET(number/organ_health_multiplier)) && (affected.status & ORGAN_BROKEN))
 					affected.status &= ~ORGAN_BROKEN
-				for(var/datum/wound/W in affected.wounds)
-					if(istype(W, /datum/wound/internal_bleeding))
-						affected.wounds -= W
-						affected.update_damages()
+				for(var/datum/affliction/wound/internal_bleeding/W in affected.get_wounds())
+					affected.remove_wound(W)
 	return
 
 
@@ -427,7 +427,7 @@ GLOBAL_LIST_EMPTY(sacrificed)
 				L.ajourn=0
 				return
 			else
-				L.take_organ_damage(3, 0)
+				L.injure(INJURY_BLUNT, 3)
 			sleep(100)
 	return fizzle(user)
 
@@ -483,7 +483,7 @@ GLOBAL_LIST_EMPTY(sacrificed)
 
 	log_and_message_admins("used a manifest rune.")
 	while(this_rune && user && user.stat==CONSCIOUS && user.client && user.loc==this_rune.loc)
-		user.take_organ_damage(1, 0)
+		user.injure(INJURY_BLUNT, 1)
 		sleep(30)
 	if(D)
 		D.visible_message(span_danger("[D] slowly dissipates into dust and bones."), \
@@ -582,7 +582,9 @@ GLOBAL_LIST_EMPTY(sacrificed)
 /obj/effect/rune/proc/mend(mob/living/user)
 	src = null
 	user.say("Uhrast ka'hfa heldsagen ver[pick("'","`")]lot!")
-	user.take_overall_damage(200, 0)
+	user.injure(INJURY_BLUNT, 200)
+	if(user.stat != DEAD) // the rune takes the whole life, whatever the body model makes of 200 trauma
+		user.death()
 	GLOB.runedec+=10
 	user.visible_message(span_danger("\The [user] keels over dead, [user.p_their()] blood glowing blue as it escapes [user.p_their()] body and dissipates into thin air."), \
 	span_danger("In the last moment of your humble life, you feel an immense pain as fabric of reality mends... with your blood."), \
@@ -634,10 +636,12 @@ GLOBAL_LIST_EMPTY(sacrificed)
 	for(var/obj/item/I in src.loc)//Checks for MMIs/brains/Intellicards
 		if(istype(I,/obj/item/organ/internal/brain))
 			var/obj/item/organ/internal/brain/B = I
-			victims += B.brainmob
+			if(B.hosted_view())
+				victims += B.hosted_view()
 		else if(istype(I,/obj/item/mmi))
 			var/obj/item/mmi/B = I
-			victims += B.brainmob
+			if(B.get_occupant())
+				victims += B.get_occupant()
 		else if(istype(I,/obj/item/aicard))
 			for(var/mob/living/silicon/ai/A in I)
 				victims += A
@@ -792,7 +796,7 @@ GLOBAL_LIST_EMPTY(sacrificed)
 /obj/effect/rune/proc/wall(mob/living/user)
 	user.say("Khari[pick("'","`")]d! Eske'te tannin!")
 	src.density = !src.density
-	user.take_organ_damage(2, 0)
+	user.injure(INJURY_BLUNT, 2)
 	if(src.density)
 		to_chat(user,span_danger("Your blood flows into the rune, and you feel that the very space over the rune thickens."))
 	else
@@ -840,7 +844,7 @@ GLOBAL_LIST_EMPTY(sacrificed)
 		if(istype(cultist.loc, /obj/machinery/dna_scannernew)&&cultist.loc:locked)
 			cultist.loc:locked = 0
 		for(var/mob/living/carbon/C in users)
-			user.take_overall_damage(dam, 0)
+			user.injure(INJURY_BLUNT, dam)
 			C.say("Khari[pick("'","`")]d! Gual'te nikka!")
 		qdel(src)
 	return fizzle(user)
@@ -874,7 +878,7 @@ GLOBAL_LIST_EMPTY(sacrificed)
 		for(var/mob/living/carbon/human/C in users)
 			if(iscultist(C) && !C.stat)
 				C.say("N'ath reth sh'yro eth d[pick("'","`")]rekkathnor!")
-				C.take_overall_damage(dam, 0)
+				C.injure(INJURY_BLUNT, dam)
 				if(users.len <= 4)				// You did the minimum, this is going to hurt more and we're going to stun you.
 					C.apply_effect(rand(3,6), STUN)
 					C.apply_effect(1, WEAKEN)
@@ -994,7 +998,8 @@ GLOBAL_LIST_EMPTY(sacrificed)
 			var/obj/item/nullrod/N = locate() in M
 			if(N)
 				continue
-			M.take_overall_damage(51,51)
+			M.injure(INJURY_BLUNT, 51)
+			M.injure(INJURY_BURN, 51)
 			to_chat(M, span_danger("Your blood boils!"))
 			victims += M
 			if(prob(5))
@@ -1006,7 +1011,7 @@ GLOBAL_LIST_EMPTY(sacrificed)
 		for(var/mob/living/carbon/human/C in orange(1,src))
 			if(iscultist(C) && !C.stat)
 				C.say("Dedo ol[pick("'","`")]btoh!")
-				C.take_overall_damage(15, 0)
+				C.injure(INJURY_BLUNT, 15)
 		add_attack_logs(user, victims, "Blood boil rune")
 		qdel(src)
 	else
@@ -1024,7 +1029,7 @@ GLOBAL_LIST_EMPTY(sacrificed)
 		for(var/obj/effect/rune/R in GLOB.rune_list)
 			if(R.forensic_data?.get_blooddna() == src.forensic_data?.get_blooddna())
 				for(var/mob/living/M in orange(2,R))
-					M.take_overall_damage(0,15)
+					M.injure(INJURY_BURN, 15)
 					if (R.invisibility>M.see_invisible)
 						to_chat(M, span_danger("Aargh it burns!"))
 					else
@@ -1034,7 +1039,7 @@ GLOBAL_LIST_EMPTY(sacrificed)
 		for(var/obj/effect/decal/cleanable/blood/B in world)
 			if(B.forensic_data?.get_blooddna() == src.forensic_data?.get_blooddna())
 				for(var/mob/living/M in orange(1,B))
-					M.take_overall_damage(0,5)
+					M.injure(INJURY_BURN, 5)
 					to_chat(M, span_danger("Blood suddenly ignites, burning you!"))
 					var/turf/T = get_turf(B)
 					T.hotspot_expose(700,125)

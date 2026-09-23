@@ -747,3 +747,8 @@ GLOBAL_DATUM(belly_serializer, /datum/belly_serializer)
 	if(save_digest_mode)
 		return saving + list("digest_mode")
 	return saving
+
+#undef BELLY_FIELD_SCALAR
+#undef BELLY_FIELD_LIST
+#undef BELLY_FIELD_ASSOC
+#undef BELLY_FIELD_RUNTIME

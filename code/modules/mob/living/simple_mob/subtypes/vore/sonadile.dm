@@ -22,7 +22,7 @@
 	harm_intent_damage = 7
 	melee_damage_lower = 3
 	melee_damage_upper = 10
-	maxHealth = 100
+	endurance = 100
 	attacktext = list("bites")
 	see_in_dark = 8
 	minbodytemp = 0

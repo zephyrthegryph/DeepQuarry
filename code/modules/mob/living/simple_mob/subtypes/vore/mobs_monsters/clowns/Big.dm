@@ -2,8 +2,7 @@
 	tt_desc = "E Homo sapiens corydon horrificus" //this clown is stronk
 	faction = FACTION_CLOWN
 
-	maxHealth = 200
-	health = 200
+	endurance = 200
 	see_in_dark = 8
 
 	melee_damage_lower = 15

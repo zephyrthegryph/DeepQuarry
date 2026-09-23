@@ -414,9 +414,9 @@
 	TEST_ASSERT_EQUAL(GLOB.station_account.money - station_before, 250, "negotiated station contract payout was incorrect")
 	TEST_ASSERT_EQUAL(medical_account.money - medical_before, 550, "negotiated Medical contract payout was incorrect")
 	TEST_ASSERT_EQUAL(contributor_account.money - personal_before, 300, "negotiated contributor contract payout was incorrect")
-	TEST_ASSERT_EQUAL(get_station_faction_reputation(REPUTATION_FACTION_VEYMED) - station_rep_before, 7, "negotiated station reputation reward was incorrect")
-	TEST_ASSERT_EQUAL(get_department_faction_reputation(DEPARTMENT_MEDICAL, REPUTATION_FACTION_VEYMED) - department_rep_before, 2, "negotiated department reputation reward was incorrect")
-	TEST_ASSERT_EQUAL(contributor.get_faction_reputation(REPUTATION_FACTION_VEYMED) - personal_rep_before, 11, "negotiated personal reputation reward was incorrect")
+	TEST_ASSERT_EQUAL(get_station_faction_reputation(REPUTATION_FACTION_VEYMED) - station_rep_before, 5, "negotiated station reputation reward was incorrect")
+	TEST_ASSERT_EQUAL(get_department_faction_reputation(DEPARTMENT_MEDICAL, REPUTATION_FACTION_VEYMED) - department_rep_before, 3, "negotiated department reputation reward was incorrect")
+	TEST_ASSERT_EQUAL(contributor.get_faction_reputation(REPUTATION_FACTION_VEYMED) - personal_rep_before, 8, "negotiated personal reputation reward was incorrect")
 	GLOB.station_account.money = station_before
 	medical_account.money = medical_before
 	contributor_account.money = personal_before
@@ -491,7 +491,8 @@
 	var/datum/contract/social/alternative_fuel_trial/fuel_offer = fuel_definition.create_contract()
 	TEST_ASSERT(fuel_offer.negotiation_clauses["fuel_protocol"], "alternative-fuel contract lacked its certification protocol")
 	TEST_ASSERT(!fuel_offer.negotiation_clauses["objective_focus"], "alternative-fuel contract duplicated its specific protocol with a generic priority choice")
-	TEST_ASSERT_EQUAL(length(fuel_offer.negotiation_clauses), 2, "alternative-fuel contract exposed more than its award and protocol choices")
+	TEST_ASSERT(fuel_offer.negotiation_clauses["commissioning_priority"], "alternative-fuel contract lacked its operational commissioning choice")
+	TEST_ASSERT_EQUAL(length(fuel_offer.negotiation_clauses), 3, "alternative-fuel contract exposed choices outside its award, protocol, and commissioning terms")
 	TEST_ASSERT(fuel_offer.select_negotiation_option("fuel_protocol", "phoron_free", "Unit test"), "phoron-free certification could not be negotiated")
 	TEST_ASSERT_EQUAL(fuel_offer.output_requirement.target, 3, "alternative-fuel protocol did not expose three output stages")
 	TEST_ASSERT(findtext(fuel_offer.output_requirement.description, "0.1% phoron"), "phoron-free negotiation did not update its visible chamber restriction")
@@ -558,11 +559,8 @@
 		var/mob/living/carbon/human/subject = new(run_loc_floor_bottom_left)
 		subject.real_name = "Trial Subject [index]"
 		var/obj/item/organ/host = subject.internal_organs_by_name[O_LUNGS]
-		var/datum/medical_issue/condition/pulmonary_contusion/condition = new
-		condition.owner = subject
-		condition.affectedorgan = host
-		condition.set_severity(30)
-		host.add_medical_issue(condition, subject)
+		var/datum/affliction/pulmonary_contusion/condition = subject.body.afflict(/datum/affliction/pulmonary_contusion, host, 30)
+		TEST_ASSERT_NOTNULL(condition, "pulmonary contusion could not be afflicted")
 		TEST_ASSERT(trial.enroll(subject), "qualifying consenting subject could not be enrolled")
 		var/datum/contract_subject_identity/identity = SScontracts.subject_identity(subject)
 		var/list/baseline_evidence = list("subject_ref" = identity.id, "subject_id" = identity.id, "scan_time" = world.time, "snapshot" = medical_trial_snapshot(subject))
@@ -574,8 +572,8 @@
 		TEST_ASSERT(condition.severity < 30, "trial medication did not reduce authoritative respiratory-condition severity")
 		var/obj/item/organ/heart = subject.internal_organs_by_name[O_HEART]
 		var/found_adverse_condition = FALSE
-		for(var/datum/medical_issue/condition/heart_damage/reaction in heart.medical_issues)
-			found_adverse_condition = reaction.severity > 0 && length(reaction.active_symptoms)
+		var/datum/affliction/heart_damage/reaction = subject.body.find_affliction(/datum/affliction/heart_damage, heart)
+		found_adverse_condition = reaction && reaction.severity > 0 && length(reaction.active_symptoms)
 		TEST_ASSERT(found_adverse_condition, "trial medication did not create a symptomatic vanilla organ-owned adverse condition")
 		var/datum/medical_trial_participant/participant = trial.participants[identity.id]
 		participant.exposure_time = world.time - 1 MINUTE
@@ -673,15 +671,11 @@
 	var/mob/living/carbon/human/healthy_two = new(run_loc_floor_bottom_left)
 	var/mob/living/carbon/human/affected = new(run_loc_floor_bottom_left)
 	var/obj/item/organ/lungs = affected.internal_organs_by_name[O_LUNGS]
-	var/datum/medical_issue/condition/pulmonary_contusion/illness = new
-	illness.owner = affected
-	illness.affectedorgan = lungs
-	illness.set_severity(30)
-	lungs.add_medical_issue(illness, affected)
+	var/datum/affliction/pulmonary_contusion/illness = affected.body.afflict(/datum/affliction/pulmonary_contusion, lungs, 30)
 	var/list/available_indications = medical_trial_qualifying_indications(list(healthy, affected), FALSE)
 	TEST_ASSERT("respiratory" in available_indications, "an actually present qualifying respiratory condition did not enable its indication")
 	TEST_ASSERT(!("neurological" in available_indications), "an absent neurological condition incorrectly enabled a conditional offer")
-	TEST_ASSERT("respiratory" in affected.contract_medical_indications, "add_medical_issue did not publish eligibility through its mutation signal")
+	TEST_ASSERT("respiratory" in affected.contract_medical_indications, "afflicting did not publish eligibility through its mutation signal")
 	illness.set_severity(10)
 	TEST_ASSERT(!("respiratory" in affected.contract_medical_indications), "central severity mutation did not withdraw cohort eligibility below threshold")
 	illness.set_severity(30)
@@ -751,17 +745,16 @@
 	preventative.apply_controlled_challenge(preventative_subject, 5)
 	var/found_challenge = FALSE
 	var/obj/item/organ/preventative_lungs = preventative_subject.internal_organs_by_name[O_LUNGS]
-	for(var/datum/medical_issue/condition/pulmonary_contusion/challenge in preventative_lungs.medical_issues)
-		found_challenge = challenge.severity > 0
+	var/datum/affliction/pulmonary_contusion/challenge = preventative_subject.body.find_affliction(/datum/affliction/pulmonary_contusion, preventative_lungs)
+	found_challenge = challenge && challenge.severity > 0
 	TEST_ASSERT(found_challenge, "preventative protocol did not produce an authoritative controlled condition")
 
 	qdel(safety)
 	qdel(wrong_indication)
 	qdel(mixed)
 	qdel(preventative)
-	lungs.remove_medical_issue(illness)
-	qdel(illness)
-	TEST_ASSERT(!("respiratory" in affected.contract_medical_indications), "remove_medical_issue did not withdraw eligibility through its mutation signal")
+	illness.cure()
+	TEST_ASSERT(!("respiratory" in affected.contract_medical_indications), "curing did not withdraw eligibility through its mutation signal")
 	qdel(healthy)
 	qdel(healthy_two)
 	qdel(affected)
@@ -779,9 +772,7 @@
 		mind.assigned_role = JOB_MEDICAL_DOCTOR
 		mind.transfer_to(subject)
 		var/obj/item/organ/lungs = subject.internal_organs_by_name[O_LUNGS]
-		var/datum/medical_issue/condition/pulmonary_contusion/condition = new
-		condition.set_severity(30)
-		lungs.add_medical_issue(condition, subject)
+		subject.body.afflict(/datum/affliction/pulmonary_contusion, lungs, 30)
 		SScontracts.watch_contract_subject(subject)
 		GLOB.player_list |= subject
 		subjects += subject
@@ -909,7 +900,7 @@
 	corpse.death()
 	var/obj/item/organ/brain = corpse.internal_organs_by_name[O_BRAIN]
 	TEST_ASSERT(!medical_trial_corpse_irrecoverable(corpse), "fresh corpse was incorrectly eligible for irreversible transfer")
-	brain.damage = brain.max_damage
+	dq_test_set_organ_damage(brain, brain.max_damage)
 	TEST_ASSERT(medical_trial_corpse_irrecoverable(corpse), "100% brain-damaged corpse was rejected from irreversible transfer")
 
 	// A missing/offline original clinician must fall through to another live
@@ -1043,9 +1034,7 @@
 	test_mind.assigned_role = JOB_MEDICAL_DOCTOR
 	test_mind.transfer_to(subject)
 	var/obj/item/organ/lungs = subject.internal_organs_by_name[O_LUNGS]
-	var/datum/medical_issue/condition/tension_pneumothorax/condition = new
-	condition.set_severity(40)
-	lungs.add_medical_issue(condition, subject)
+	var/datum/affliction/pneumothorax/condition = subject.body.afflict(/datum/affliction/pneumothorax, lungs, 40)
 	SScontracts.consider_rare_medical_case(subject)
 	var/datum/contract/medical_case_report/report
 	for(var/datum/contract/medical_case_report/candidate in SScontracts.offered_contracts)
@@ -1079,8 +1068,7 @@
 	narrative.on_field_written(doctor, 2, null)
 	var/obj/item/paper/baseline = new(test_turf)
 	dq_contract_test_scan(baseline, subject, report.consent_time, null)
-	lungs.remove_medical_issue(condition)
-	qdel(condition)
+	condition.cure()
 	var/obj/item/paper/followup = new(test_turf)
 	dq_contract_test_scan(followup, subject, world.time, null)
 	var/obj/item/paper_bundle/packet = new(test_turf)
@@ -1110,9 +1098,7 @@
 	subject_mind.assigned_role = JOB_MEDICAL_DOCTOR
 	subject_mind.transfer_to(subject)
 	var/obj/item/organ/lungs = subject.internal_organs_by_name[O_LUNGS]
-	var/datum/medical_issue/condition/tension_pneumothorax/condition = new
-	condition.set_severity(40)
-	lungs.add_medical_issue(condition, subject)
+	var/datum/affliction/pneumothorax/condition = subject.body.afflict(/datum/affliction/pneumothorax, lungs, 40)
 	var/datum/contract_subject_identity/identity = SScontracts.subject_identity(subject)
 	var/datum/contract_definition/definition = SScontracts.definitions["medical_rare_case_report"]
 	var/datum/contract/medical_case_report/report = definition.create_contract(list(
@@ -1167,11 +1153,6 @@
 /datum/unit_test/dq_expanded_contract_catalog/Run()
 	var/static/list/expected_definitions = list(
 		"supermatter_performance",
-		"research_export_portfolio",
-		"cargo_freight_portfolio",
-		"service_hospitality_census",
-		"security_case_resolution",
-		"command_budget_mandate",
 		"engineering_safety_watch",
 		"research_internal_access",
 		"cargo_local_priority",
@@ -1199,8 +1180,9 @@
 	emit_contract_event(CONTRACT_EVENT_MACHINE_RESULT, list("department" = DEPARTMENT_ENGINEERING, "machine_kind" = "supermatter", "machine_id" = "test-sm", "station_machine" = TRUE, "metrics" = list("eer" = 0, "integrity" = 100)), "expanded-engineering-idle:[REF(engineering)]")
 	emit_contract_event(CONTRACT_EVENT_MACHINE_RESULT, list("department" = DEPARTMENT_ENGINEERING, "machine_kind" = "supermatter", "machine_id" = "test-sm", "station_machine" = FALSE, "metrics" = list("eer" = 1000, "integrity" = 95)), "expanded-engineering-offstation:[REF(engineering)]")
 	TEST_ASSERT_EQUAL(engineering.state, CONTRACT_ACTIVE, "idle or off-station supermatter telemetry qualified")
-	emit_contract_event(CONTRACT_EVENT_MACHINE_RESULT, list("department" = DEPARTMENT_ENGINEERING, "machine_kind" = "supermatter", "machine_id" = "test-sm", "station_machine" = TRUE, "metrics" = list("eer" = 1000, "integrity" = 95)), "expanded-engineering:[REF(engineering)]")
-	sleep(2)
+	for(var/stage in 1 to 3)
+		emit_contract_event(CONTRACT_EVENT_MACHINE_RESULT, list("department" = DEPARTMENT_ENGINEERING, "machine_kind" = "supermatter", "machine_id" = "test-sm", "station_machine" = TRUE, "metrics" = list("eer" = 1000, "integrity" = 95)), "expanded-engineering-[stage]:[REF(engineering)]")
+		sleep(2)
 	TEST_ASSERT_EQUAL(engineering.state, CONTRACT_COMPLETED, "qualifying sustained supermatter telemetry did not complete Engineering's contract")
 	qdel(engineering)
 
@@ -1297,9 +1279,13 @@
 	TEST_ASSERT(side, "eligible linked personal opportunity was not materialized")
 	dq_contract_test_zero_rewards(side)
 	TEST_ASSERT(side.accept(owner_account, owner), "linked personal opportunity could not be accepted by its owner")
+	emit_contract_event("linked-parent-event", list(), "linked-parent-complete:[REF(parent)]")
+	TEST_ASSERT_EQUAL(parent.state, CONTRACT_COMPLETED, "linked public project did not complete in the fixture")
+	SScontracts.reconcile_offer_eligibility("parent completed")
+	TEST_ASSERT_EQUAL(side.state, CONTRACT_ACTIVE, "successful public settlement erased accepted personal work")
 	emit_contract_event(CONTRACT_EVENT_SERVICE_PERIOD_SETTLED, list("department" = DEPARTMENT_RESEARCH, "rollup" = "staff", "accounting_period" = 1, "actor_account" = owner_account.account_number, "staff_account" = owner_account.account_number, "fact_id" = "linked-personal-settlement", "fact_revision" = 1, "fact_active" = TRUE, "metrics" = list("amount" = 600, "customer_count" = 3, "verified_amount" = 600, "verified_item_count" = 3, "verified_type_count" = 2)), "linked-personal-settlement:[REF(side)]")
 	TEST_ASSERT_EQUAL(side.state, CONTRACT_COMPLETED, "owner-attributed internal sales did not complete the linked personal contract")
-	TEST_ASSERT_EQUAL(parent.state, CONTRACT_FAILED, "the mutually exclusive personal outcome did not close the public parent")
+	TEST_ASSERT_EQUAL(parent.state, CONTRACT_COMPLETED, "compatible personal work reopened the settled public project")
 	owner.ensure_faction_reputation().set_reputation(REPUTATION_FACTION_SYNDICATE, REPUTATION_HOSTILE)
 	var/datum/contract_definition/sensitive_definition = SScontracts.definitions["security_record_suppression"]
 	TEST_ASSERT(!sensitive_definition.is_available(list("owner_account" = owner_account.account_number, "parent_contract_id" = parent.id)), "hostile Syndicate standing did not suppress a sensitive personal offer")
@@ -1563,6 +1549,7 @@
 		CONTRACT_EVENT_SHIPMENT_DEPARTED,
 		CONTRACT_EVENT_ITEM_EXPORTED,
 		CONTRACT_EVENT_SERVICE_INVOICE_CHANGED,
+		CONTRACT_EVENT_EQUIPMENT_ADOPTED,
 		CONTRACT_EVENT_SERVICE_PERIOD_SETTLED,
 		CONTRACT_EVENT_MONEY_TRANSFERRED,
 		CONTRACT_EVENT_BUDGET_ALLOCATION_CHANGED,
@@ -1693,17 +1680,7 @@
 
 /datum/unit_test/dq_social_contract_catalog/Run()
 	var/list/definition_ids = list(
-		"station_procurement_tender",
-		"prototype_field_license",
 		"emergency_reconstruction_bond",
-		"restorative_settlement_program",
-		"corporate_hospitality_commission",
-		"interdepartmental_manufacturing_bid",
-		"workforce_productivity_compact",
-		"clinical_access_program",
-		"freight_provenance_auction",
-		"publication_patent_dispute",
-		"station_development_grant",
 		"supply_shortage_response",
 	)
 	for(var/definition_id in definition_ids)
@@ -1725,7 +1702,7 @@
 		TEST_ASSERT(length(contract.requirements) >= 2, "social contract [definition_id] lacks multidimensional outcome evidence")
 		TEST_ASSERT(length(contract.stakeholder_roles) >= 2, "social contract [definition_id] lacks multiple stakeholder roles")
 		qdel(contract)
-	for(var/side_definition_id in list("research_exclusive_export", "emergency_exclusive_contractor", "clinical_priority_coordinator"))
+	for(var/side_definition_id in list("research_exclusive_export"))
 		TEST_ASSERT(SScontracts.definitions[side_definition_id], "social counteroffer definition [side_definition_id] was not registered")
 
 /datum/unit_test/dq_department_program_contract_catalog
@@ -1735,41 +1712,19 @@
 		"alternative_fuel_demonstration",
 		"occupational_recovery_program",
 		"blood_reserve_campaign",
-		"rehabilitation_return_to_duty",
-		"public_health_response",
-		"materials_qualification_board",
-		"independent_replication_study",
-		"applied_chemistry_brief",
-		"publication_consortium",
-		"contraband_buyback_program",
-		"forensic_case_portfolio",
-		"community_resolution_docket",
-		"emergency_response_accreditation",
-		"budget_procurement_challenge",
-		"local_supplier_cooperative",
-		"materials_recovery_initiative",
-		"cold_chain_logistics",
-		"station_festival_commission",
-		"nutritional_services_campaign",
-		"agricultural_cooperative",
+		"advanced_alloy_trial",
+		"extreme_service_material",
+		"research_equipment_commission",
+		"station_catering_commission",
 		"balanced_operations_charter",
 		"interdepartmental_mutual_aid_compact",
-		"emergency_continuity_award",
-		"workforce_retention_agreement",
-		"systems_uptime_accord",
-		"automation_logistics_trial",
-		"access_safety_audit",
-		"human_synthetic_service_compact",
 	)
 	var/list/expected_departments = list(
 		DEPARTMENT_ENGINEERING = 1,
-		DEPARTMENT_MEDICAL = 4,
-		DEPARTMENT_RESEARCH = 4,
-		DEPARTMENT_SECURITY = 4,
-		DEPARTMENT_CARGO = 4,
-		DEPARTMENT_CIVILIAN = 3,
-		DEPARTMENT_COMMAND = 4,
-		DEPARTMENT_SYNTHETIC = 4,
+		DEPARTMENT_MEDICAL = 2,
+		DEPARTMENT_RESEARCH = 3,
+		DEPARTMENT_CIVILIAN = 1,
+		DEPARTMENT_COMMAND = 2,
 	)
 	var/list/actual_departments = list()
 	var/list/allowed_events = list(
@@ -1786,6 +1741,8 @@
 		CONTRACT_EVENT_INFRASTRUCTURE_REPAIRED,
 		CONTRACT_EVENT_MEDICAL_TREATMENT_OUTCOME,
 		CONTRACT_EVENT_MEDICAL_SCAN_CREATED,
+		CONTRACT_EVENT_MATERIAL_CERTIFIED,
+		CONTRACT_EVENT_MATERIAL_PROCESSED,
 		CONTRACT_EVENT_ITEM_PRODUCED,
 		CONTRACT_EVENT_ITEM_EXPORTED,
 		CONTRACT_EVENT_SECURITY_DISPOSITION_CHANGED,
@@ -1793,6 +1750,8 @@
 		CONTRACT_EVENT_MONEY_TRANSFERRED,
 		CONTRACT_EVENT_SUPPLY_ORDER_FULFILLED,
 		CONTRACT_EVENT_SERVICE_PERIOD_SETTLED,
+		CONTRACT_EVENT_SERVICE_INVOICE_CHANGED,
+		CONTRACT_EVENT_EQUIPMENT_ADOPTED,
 		CONTRACT_EVENT_BUDGET_ALLOCATION_CHANGED,
 		CONTRACT_EVENT_BUDGET_CYCLE_SETTLED,
 	)
@@ -1809,7 +1768,7 @@
 		if(!contract)
 			continue
 		TEST_ASSERT(!contract.validate(), "department program [definition_id] failed validation: [contract.validate()]")
-		TEST_ASSERT(length(contract.requirements) >= 2, "department program [definition_id] lacks independent graded evidence dimensions")
+		TEST_ASSERT(length(contract.requirements), "department program [definition_id] lacks authoritative outcome evidence")
 		TEST_ASSERT(length(contract.stakeholder_roles) >= 2, "department program [definition_id] lacks social stakeholder roles")
 		for(var/datum/contract_requirement/requirement in contract.requirements)
 			TEST_ASSERT(length(requirement.event_types), "department program [definition_id] contains a polling or manually-certified requirement")
@@ -1817,7 +1776,7 @@
 				TEST_ASSERT(event_type in allowed_events, "department program [definition_id] uses non-generic event [event_type]")
 		qdel(contract)
 	for(var/department in expected_departments)
-		TEST_ASSERT_EQUAL(actual_departments[department], expected_departments[department], "[department] did not receive exactly four new program contracts")
+		TEST_ASSERT_EQUAL(actual_departments[department], expected_departments[department], "[department] did not receive the curated number of program contracts")
 
 /datum/unit_test/dq_department_program_event_pipeline
 
@@ -1925,14 +1884,8 @@
 		"opportunity_grid_restoration",
 		"opportunity_atmos_containment",
 		"opportunity_clinical_aftercare",
-		"opportunity_breakthrough_translation",
-		"opportunity_process_scaleup",
+		"opportunity_equipment_deployment",
 		"opportunity_case_review",
-		"opportunity_supplier_option",
-		"opportunity_procurement_rebate",
-		"opportunity_hospitality_expansion",
-		"opportunity_crop_forward_order",
-		"opportunity_automation_expansion",
 		"opportunity_operational_dividend",
 	)
 	for(var/definition_id in definition_ids)
@@ -1943,17 +1896,17 @@
 		TEST_ASSERT_EQUAL(definition.initial_offers, 0, "opportunity contract [definition_id] leaked into the standing catalog")
 		TEST_ASSERT_EQUAL(definition.offer_kind, CONTRACT_OFFER_OPPORTUNITY, "opportunity contract [definition_id] has the wrong lifecycle kind")
 		TEST_ASSERT(!definition.auto_replace, "opportunity contract [definition_id] auto-replaces without a fresh gameplay trigger")
-		var/list/context = list("trigger_values" = list("service_id" = list("bound-service" = TRUE), "atom_id" = list("bound-asset" = TRUE), "area_name" = list("Bound Area" = TRUE)))
+		var/list/context = list("trigger_values" = list("service_id" = list("bound-service" = TRUE), "record_id" = list("bound-record" = TRUE), "subject_id" = list("bound-subject" = TRUE), "area_name" = list("Bound Area" = TRUE)))
 		var/datum/contract/social/contract = definition.create_contract(context)
 		TEST_ASSERT(istype(contract), "opportunity contract [definition_id] could not materialize")
 		if(!contract)
 			continue
 		TEST_ASSERT(!contract.validate(), "opportunity contract [definition_id] failed validation: [contract.validate()]")
-		TEST_ASSERT(length(contract.requirements) >= 2, "opportunity contract [definition_id] lacks independent outcome dimensions")
+		TEST_ASSERT(length(contract.requirements), "opportunity contract [definition_id] lacks authoritative outcome evidence")
 		TEST_ASSERT(length(contract.stakeholder_roles) >= 2, "opportunity contract [definition_id] lacks social participation roles")
 		if(definition_id in list("opportunity_grid_restoration", "opportunity_atmos_containment"))
 			var/bound_requirement_found = FALSE
-			for(var/datum/contract_requirement/event_count/requirement in contract.requirements)
+			for(var/datum/contract_requirement/sustained_event/requirement in contract.requirements)
 				if(length(requirement.filter.allowed_values?["service_id"]))
 					bound_requirement_found = TRUE
 			TEST_ASSERT(bound_requirement_found, "incident contract [definition_id] was not bound to its triggering services")
@@ -1971,7 +1924,7 @@
 		for(var/datum/contract_opportunity_signal/signal in rule.signals)
 			TEST_ASSERT(signal.minimum_facts >= 1, "opportunity rule [rule_id] accepts an empty signal window")
 			TEST_ASSERT(signal.maximum_fact_value > 0 || length(signal.diversity_targets) || length(signal.filter.numeric_checks), "opportunity rule [rule_id] lacks value caps, diversity, or authoritative thresholds")
-	TEST_ASSERT(rule_count >= 15, "the opportunity broker catalog does not cover the intended breadth of station systems")
+	TEST_ASSERT(rule_count >= 8, "the curated opportunity broker no longer covers the intended incident and demand systems")
 
 /datum/unit_test/dq_covert_investigation_uses_opportunity_broker
 
@@ -2067,20 +2020,17 @@
 	var/datum/money_account/partner_one = accounts[2]
 	var/datum/money_account/partner_two = accounts[3]
 	var/datum/money_account/ineligible = accounts[4]
-	TEST_ASSERT(contract.propose_stakeholder(lead, "lead", 3), "eligible Cargo lead could not submit a proposal")
-	TEST_ASSERT(!contract.propose_stakeholder(lead, "partner", 1), "one account could seek multiple stakeholder roles")
-	TEST_ASSERT(contract.propose_stakeholder(partner_one, "partner", 1), "first eligible partner could not submit a proposal")
-	TEST_ASSERT(contract.propose_stakeholder(partner_two, "partner", 2), "second eligible partner could not submit a proposal")
-	TEST_ASSERT(!contract.propose_stakeholder(ineligible, "partner", 3), "ineligible department submitted a stakeholder proposal")
-	TEST_ASSERT(contract.withdraw_stakeholder(partner_two, "partner"), "partner could not withdraw a pending proposal")
-	TEST_ASSERT(contract.propose_stakeholder(partner_two, "partner", 2), "withdrawn partner could not reapply")
-	TEST_ASSERT(contract.decide_stakeholder(lead.account_number, "lead", TRUE, "Unit test", 2), "Cargo lead proposal could not be countered")
+	TEST_ASSERT(contract.propose_stakeholder(lead, "lead", 3), "eligible Cargo lead could not join a project role")
+	TEST_ASSERT(!contract.propose_stakeholder(lead, "partner", 1), "one account could claim multiple project roles")
+	TEST_ASSERT(contract.propose_stakeholder(partner_one, "partner", 1), "first eligible partner could not join")
+	TEST_ASSERT(contract.propose_stakeholder(partner_two, "partner", 2), "second eligible partner could not join")
+	TEST_ASSERT(!contract.propose_stakeholder(ineligible, "partner", 3), "ineligible department joined a project role")
+	TEST_ASSERT(contract.withdraw_stakeholder(partner_two, "partner"), "partner could not leave a project role")
+	TEST_ASSERT(contract.propose_stakeholder(partner_two, "partner", 2), "withdrawn partner could not rejoin")
 	var/datum/contract_stakeholder_proposal/lead_proposal = contract.stakeholder_proposals[contract.proposal_key(lead.account_number, "lead")]
-	TEST_ASSERT_EQUAL(lead_proposal.status, CONTRACT_STAKEHOLDER_COUNTERED, "different approved weight bypassed stakeholder counteroffer")
-	TEST_ASSERT(contract.respond_stakeholder_counter(lead, "lead", TRUE), "Cargo lead could not accept the counteroffer")
-	TEST_ASSERT(contract.decide_stakeholder(partner_one.account_number, "partner", TRUE, "Unit test"), "first partner proposal could not be approved")
-	TEST_ASSERT(contract.decide_stakeholder(partner_two.account_number, "partner", TRUE, "Unit test"), "second partner proposal could not be approved")
-	TEST_ASSERT(!contract.stakeholders_ready(), "approval alone qualified stakeholders without attributable work")
+	TEST_ASSERT_EQUAL(lead_proposal.status, CONTRACT_STAKEHOLDER_APPROVED, "direct role claim remained pending")
+	TEST_ASSERT_EQUAL(lead_proposal.approved_weight, 1, "role claim retained an applicant-selected payout weight")
+	TEST_ASSERT(!contract.stakeholders_ready(), "joining alone qualified participants without attributable work")
 	for(var/index in 1 to 3)
 		emit_contract_event("dq-social-grade", list(
 			"actor_account" = index == 1 ? lead.account_number : partner_one.account_number,
@@ -2088,22 +2038,43 @@
 			"metrics" = list("value" = 25),
 		), "dq-social-grade:[REF(contract)]:[index]")
 	contract.record_contribution(partner_two.account_number, 1, "Completed partner review")
-	TEST_ASSERT(contract.stakeholders_ready(), "approved stakeholders with attributable work remained incomplete")
-	TEST_ASSERT(contract.revoke_stakeholder(partner_two.account_number, "partner", "Unit test"), "approved stakeholder could not be revoked")
-	TEST_ASSERT(!contract.stakeholders_ready(), "revoked stakeholder continued satisfying the required slate")
-	TEST_ASSERT(contract.propose_stakeholder(partner_two, "partner", 1), "revoked stakeholder could not submit a replacement application")
-	TEST_ASSERT(contract.decide_stakeholder(partner_two.account_number, "partner", TRUE, "Unit test"), "replacement stakeholder application could not be approved")
-	TEST_ASSERT(contract.stakeholders_ready(), "replacement approval did not retain the stakeholder's attributable work")
+	TEST_ASSERT(contract.stakeholders_ready(), "participants with attributable work remained incomplete")
+	TEST_ASSERT_EQUAL(contract.paid_reward, 800, "successful project milestone did not settle its cumulative award")
+	TEST_ASSERT(contract.withdraw_stakeholder(partner_two, "partner"), "participant could not hand off a role")
+	TEST_ASSERT(!contract.stakeholders_ready(), "departed participant continued satisfying the required slate")
+	TEST_ASSERT(contract.propose_stakeholder(partner_two, "partner", 1), "departed participant could not resume the role")
+	TEST_ASSERT(contract.stakeholders_ready(), "returning participant did not retain attributable work")
 	TEST_ASSERT_EQUAL(contract.grade_for_ratio(contract.current_outcome_ratio()), CONTRACT_OUTCOME_SUCCESSFUL, "75% evidence did not project a successful grade")
 	TEST_ASSERT(contract.can_finalize_outcome(), "successful evidence and stakeholders did not unlock settlement")
 	TEST_ASSERT(contract.finalize_graded_outcome("Unit test"), "graded outcome could not be finalized")
 	TEST_ASSERT_EQUAL(contract.outcome_grade, CONTRACT_OUTCOME_SUCCESSFUL, "finalized contract recorded the wrong grade")
 	TEST_ASSERT_EQUAL(contract.reward, 800, "successful grade did not apply the 80% reward band")
+	TEST_ASSERT_EQUAL(contract.paid_reward, 800, "final settlement duplicated the previously paid project milestone")
 	TEST_ASSERT_EQUAL(contract.state, CONTRACT_COMPLETED, "finalized graded contract did not complete")
 	qdel(contract)
 	for(var/datum/money_account/account in accounts)
 		GLOB.all_money_accounts -= account
 		qdel(account)
+
+/datum/unit_test/dq_contract_paired_facts
+
+/datum/unit_test/dq_contract_paired_facts/Run()
+	var/datum/contract/contract = new
+	contract.title = "Paired evidence test"
+	contract.reward = 0
+	var/datum/contract_requirement/paired_facts/paired = new("dq-paired-first", "dq-paired-second", "subject_id", 2)
+	contract.add_requirement(paired)
+	TEST_ASSERT(contract.accept(), "paired-fact contract could not activate")
+	emit_contract_event("dq-paired-first", list("subject_id" = "A"), "dq-paired-first-a")
+	emit_contract_event("dq-paired-second", list("subject_id" = "B"), "dq-paired-second-b")
+	TEST_ASSERT_EQUAL(paired.progress, 0, "unrelated subjects satisfied a paired-fact requirement")
+	emit_contract_event("dq-paired-second", list("subject_id" = "A"), "dq-paired-second-a")
+	TEST_ASSERT_EQUAL(paired.progress, 1, "matching subject did not satisfy one paired outcome")
+	emit_contract_event("dq-paired-first", list("subject_id" = "B"), "dq-paired-first-b")
+	TEST_ASSERT_EQUAL(paired.progress, 1, "follow-up evidence recorded before the originating work was incorrectly credited")
+	emit_contract_event("dq-paired-second", list("subject_id" = "B"), "dq-paired-second-b-followup")
+	TEST_ASSERT_EQUAL(contract.state, CONTRACT_COMPLETED, "ordered linked evidence did not complete after the real follow-up")
+	qdel(contract)
 
 /datum/unit_test/dq_social_contract_population_scaling
 

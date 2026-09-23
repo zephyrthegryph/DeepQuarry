@@ -315,7 +315,6 @@
 	"tod", "ser", "su", "no", "nue", "el")
 
 
-// === merged from station_vr.dm during hard-fork de-suffix (verified no override-order change) ===
 /* 'basic' language; spoken by default.
 /datum/language/common
 	name = "Galactic Common"

@@ -20,7 +20,6 @@
 
 	modifystate = "stun"
 
-
 	dna_lock = TRUE
 	charge_sections = 3 //For the icon
 	ammo_x_offset = 2
@@ -75,12 +74,6 @@
 	cut_overlays()
 	var/ratio = 0
 
-	/* Don't have one for this gun
-	var/itemState = null
-	if(!initial(item_state))
-		itemState = icon_state
-	*/
-
 	var/iconState = "[icon_state]_charge"
 	if (modifystate)
 		add_overlay("[icon_state]_[modifystate]")
@@ -109,18 +102,10 @@
 		flashlight_overlay.pixel_y = flight_y_offset
 		add_overlay(light_state)
 
-
-	/* Don't have one for this gun
-	if(itemState)
-		itemState += "[ratio]"
-		item_state = itemState
-	*/
-
 /obj/item/gun/energy/gun/protector/unlocked
 	emagged = TRUE
 	name = "small energy gun"
 	desc = "The LAEP95 'Protector' is another firearm from Lawson Arms and "+TSC_HEPH+", unlike the Perun this is designed for issue to non-security staff. It contains a detachable cell. It also features an integrated flashlight!"
-
 
 /obj/item/gun/energy/gun/protector/pilotgun/locked
 	name = "secure shuttle-protection pistol"

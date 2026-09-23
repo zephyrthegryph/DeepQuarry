@@ -93,7 +93,7 @@
 		H.eye_blurry += 10
 		var/obj/item/organ/internal/eyes/E = H.internal_organs_by_name[O_EYES]
 		if(E)
-			E.damage += 2.5
+			H.injure(INJURY_BLUNT, 2.5, E, src, flags = INJURE_SILENT)
 		H.emote("scream")
 
 /obj/item/paper/click_alt(mob/living/carbon/user, obj/item/I)

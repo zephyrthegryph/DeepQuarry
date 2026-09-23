@@ -1,7 +1,6 @@
 /mob/living/simple_mob/humanoid/cultist/magus/rift
 	name = "Rift Magus"
-	maxHealth = 450 //Boss Mobs should be tanky. //Old 225
-	health = 450
+	endurance = 450 //Boss Mobs should be tanky. //Old 225
 	armor = list(melee = 70, bullet = 60, laser = 60, energy = 90, bomb = 30, bio = 100, rad = 100)
 
 	melee_damage_lower = 30 //Old 15
@@ -44,7 +43,7 @@
 			L.adjust_nutrition(-leech)
 			adjust_nutrition(leech)
 		if(prob(25))
-			L.adjustHalLoss(leech)
+			L.injure(INJURY_PAIN, leech, source = src)
 
 /mob/living/simple_mob/humanoid/cultist/magus/rift/do_special_attack(atom/A)
 	. = TRUE // So we don't fire a bolt as well.

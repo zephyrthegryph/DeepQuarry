@@ -5,7 +5,7 @@
 	name = "Haste"
 	desc = "Allows you to move faster on average than baseline."
 	cost = 4
-	var_changes = list("slowdown" = -0.5)
+	factors = alist(BF_SLOWDOWN = -0.5)
 //	banned_species = list(SPECIES_ALRAUNE, SPECIES_SHADEKIN_CREW, SPECIES_TESHARI, SPECIES_TAJARAN, SPECIES_DIONA, SPECIES_UNATHI) //Either not applicable or buffs ruin species flavour/balance
 //	custom_only = FALSE //Keeping these in comments in case we decide to open them up in future, so the species are already organised.
 
@@ -108,7 +108,7 @@
 
 /datum/trait/positive/endurance_high/apply(datum/species/S,mob/living/carbon/human/H)
 	..()
-	H.setMaxHealth(S.total_health)
+	H.endurance = S.total_health
 
 /datum/trait/positive/nonconductive
 	name = "Non-Conductive"
@@ -168,7 +168,7 @@
 	name = "Brute Resist, Minor"
 	desc = "Adds 10% resistance to brute damage sources."
 	cost = 1
-	var_changes = list("brute_mod" = 0.9)
+	var_changes = list("injury_mod_physical" = 0.9)
 	custom_only = FALSE
 	banned_species = list(SPECIES_TESHARI, SPECIES_UNATHI, SPECIES_XENOCHIMERA, SPECIES_VASILISSAN, SPECIES_WEREBEAST) //Most of these are already this resistant or stronger, or it'd be way too much of a boost for tesh.
 	excludes = list(/datum/trait/positive/brute_resist, /datum/trait/positive/brute_resist_plus)
@@ -177,20 +177,20 @@
 	name = "Brute Resist"
 	desc = "Adds 20% resistance to brute damage sources."
 	cost = 2
-	var_changes = list("brute_mod" = 0.8)
+	var_changes = list("injury_mod_physical" = 0.8)
 	//excludes = list(/datum/trait/positive/minor_burn_resist,/datum/trait/positive/burn_resist) //CHOMP disable, this is already handled in positive_ch.dm
 
 /datum/trait/positive/minor_burn_resist
 	name = "Burn Resist, Minor"
 	desc = "Adds 10% resistance to burn damage sources."
 	cost = 1
-	var_changes = list("burn_mod" = 0.9)
+	var_changes = list("injury_mod_thermal" = 0.9)
 
 /datum/trait/positive/burn_resist
 	name = "Burn Resist"
 	desc = "Adds 20% resistance to burn damage sources."
 	cost = 2
-	var_changes = list("burn_mod" = 0.8)
+	var_changes = list("injury_mod_thermal" = 0.8)
 	//excludes = list(/datum/trait/positive/minor_brute_resist,/datum/trait/positive/brute_resist) //CHOMP disable, this is already handled in positive_ch.dm
 
 
@@ -437,19 +437,19 @@
 	name = "Radiation Resistance"
 	desc = "You are generally more resistant to radiation, and it dissipates faster from your body."
 	cost = 1
-	var_changes = list("radiation_mod" = 0.65, "rad_removal_mod" = 3.5, "rad_levels" = RESISTANT_RADIATION_RESISTANCE)
+	var_changes = list("injury_mod_radiation" = 0.65, "rad_removal_mod" = 3.5, "rad_levels" = RESISTANT_RADIATION_RESISTANCE)
 
 /datum/trait/positive/rad_resistance_extreme
 	name = "Radiation Resistance, Major"
 	desc = "You are much more resistant to radiation, and it dissipates much faster from your body."
 	cost = 2
-	var_changes = list("radiation_mod" = 0.5, "rad_removal_mod" = 5, "rad_levels" = MAJOR_RESISTANT_RADIATION_RESISTANCE)
+	var_changes = list("injury_mod_radiation" = 0.5, "rad_removal_mod" = 5, "rad_levels" = MAJOR_RESISTANT_RADIATION_RESISTANCE)
 
 /datum/trait/positive/rad_immune
 	name = "Radiation Immunity"
 	desc = "For whatever reason, be it a more dense build or some quirk of your genetic code, your body is completely immune to radiation."
 	cost = 3
-	var_changes = list("radiation_mod" = 0.0, "rad_removal_mod" = 10, "rad_levels" = IMMUNITY_RADIATION_RESISTANCE)
+	var_changes = list("injury_mod_radiation" = 0.0, "rad_removal_mod" = 10, "rad_levels" = IMMUNITY_RADIATION_RESISTANCE)
 
 	// Traitgenes
 	is_genetrait = TRUE
@@ -691,7 +691,7 @@
 	var/last_adrenaline_rush
 
 /datum/trait/positive/adrenaline_rush/handle_environment_special(mob/living/carbon/human/H)
-	if(!(H.health<0))
+	if(!(H.is_critical() || H.vitality() <= 0.5)) // Critically hurt
 		return
 	if(last_adrenaline_rush && last_adrenaline_rush + (30 MINUTES) > world.time)
 		return
@@ -705,37 +705,37 @@
 	on_created_text = span_danger("You suddenly feel adrenaline pumping through your veins as your body refuses to give up! You feel stronger, and faster, and the pain fades away quickly.")
 	on_expired_text = span_danger("You feel your body finally give in once more as the adrenaline subsides. The pain returns in full blast, along with your strength fading once more.")
 
-	disable_duration_percent = 0		//Immune to being disabled.
-	pain_immunity = TRUE				//Immune to pain
-	max_health_flat = 25				//Temporary health boost.
-	incoming_damage_percent = 0.8		//Slight damage immunity
-	incoming_oxy_damage_percent = 0.1	//Temporary oxyloss slowdown
+	// Immune to being disabled.
+	// Immune to pain
+	// Temporary health boost.
+	// Slight damage immunity
+	// Temporary oxyloss slowdown
+	// Muscles are in overdrive
+	// Muscles are in overdrive
+	// Muscles are in overdrive
+	// Increased focus
+	// Increased focus
+	// Increased focus
+	// Heart is in overdrive
+	// Bleed more with higher blood pressure.
+	// Metabolism in overdrive
+	factors = alist(BF_METABOLISM = 2.5, BF_BLEEDING = 1.25, BF_SLOWDOWN = -11, BF_ACCURACY = 25, BF_DISPERSION = -25, BF_EVASION = 20, BF_ATTACK_SPEED = 0.5, BF_MELEE_DAMAGE = 2, BF_INCOMING_ALL = 0.8, BF_INCOMING_ASPHYXIA = 0.1, BF_DISABLE_DURATION = 0, BF_ENDURANCE_FLAT = 25, BF_PAIN_IMMUNITY = 1, BF_PULSE_SHIFT = 2)
 
-	outgoing_melee_damage_percent = 2	//Muscles are in overdrive
-	attack_speed_percent = 0.5			//Muscles are in overdrive
-	slowdown = -11						//Muscles are in overdrive
-	evasion = 20						//Increased focus
-	accuracy = 25						//Increased focus
-	accuracy_dispersion = -25			//Increased focus
-	pulse_modifier = 2					//Heart is in overdrive
-	bleeding_rate_percent = 1.25		//Bleed more with higher blood pressure.
-	metabolism_percent = 2.5			//Metabolism in overdrive
 
 	var/original_length
 	var/list/original_values
 
 /datum/modifier/adrenaline/on_applied()
 	original_length = expire_at - world.time
-	original_values = list("stun" = holder.halloss*1.5, "weaken" = holder.weakened*1.5, "paralyze" = holder.paralysis*1.5, "stutter" = holder.stuttering*1.5, "eye_blur" = holder.eye_blurry*1.5, "drowsy" = holder.drowsyness*1.5, "agony" = holder.halloss*1.5, "confuse" = holder.confused*1.5)
+	original_values = list("stun" = holder.current_pain()*1.5, "weaken" = holder.weakened*1.5, "paralyze" = holder.paralysis*1.5, "stutter" = holder.stuttering*1.5, "eye_blur" = holder.eye_blurry*1.5, "drowsy" = holder.drowsyness*1.5, "agony" = holder.current_pain()*1.5, "confuse" = holder.confused*1.5)
 
 /datum/modifier/adrenaline/tick()
-	holder.halloss = 0
+	holder.mend(TREAT_ANALGESIC, 100)
 	holder.weakened = 0
 	holder.paralysis = 0
 	holder.stuttering = 0
 	holder.eye_blurry = 0
 	holder.drowsyness = 0
-	holder.halloss = 0
 	holder.confused = 0
 	holder.stunned = 0
 
@@ -750,18 +750,7 @@
 	on_created_text = span_danger("Your body aches and groans, forcing you into a period of rest as it recovers from the intense adrenaline rush.")
 	on_expired_text = span_notice("You finally recover from your adrenaline rush, your body returning to its normal state.")
 
-	disable_duration_percent = 1.35
-	outgoing_melee_damage_percent = 0.75
-	attack_speed_percent = 2
-	slowdown = 2
-	evasion = -20
-	bleeding_rate_percent = 0.8
-	pulse_modifier = 0.5
-	metabolism_percent = 0.5
-	accuracy = -25
-	accuracy_dispersion = 25
-	incoming_hal_damage_percent = 1.75
-	incoming_oxy_damage_percent = 1.25
+	factors = alist(BF_METABOLISM = 0.5, BF_BLEEDING = 0.8, BF_SLOWDOWN = 2, BF_ACCURACY = -25, BF_DISPERSION = 25, BF_EVASION = -20, BF_ATTACK_SPEED = 2, BF_MELEE_DAMAGE = 0.75, BF_INCOMING_ASPHYXIA = 1.25, BF_INCOMING_PAIN = 1.75, BF_DISABLE_DURATION = 1.35, BF_PULSE_SHIFT = 0.5)
 
 /datum/trait/positive/insect_sting
 	name = "Insect Sting"
@@ -776,14 +765,14 @@
 	name = "Burn Resist, Major"
 	desc = "Adds 40% resistance to burn damage sources."
 	cost = 4 // Exact Opposite of Burn Weakness Major, except Weakness Major is 50% incoming, this is -40% incoming.
-	var_changes = list("burn_mod" = 0.6)
+	var_changes = list("injury_mod_thermal" = 0.6)
 	excludes = list(/datum/trait/positive/burn_resist, /datum/trait/positive/minor_burn_resist)
 
 /datum/trait/positive/brute_resist_plus // Equivalent to Brute Weakness Major, cannot be taken at the same time.
 	name = "Brute Resist, Major"
 	desc = "Adds 40% resistance to brute damage sources."
 	cost = 4 // Exact Opposite of Brute Weakness Major, except Weakness Major is 50% incoming, this is -40% incoming.
-	var_changes = list("brute_mod" = 0.6)
+	var_changes = list("injury_mod_physical" = 0.6)
 	excludes = list(/datum/trait/positive/brute_resist, /datum/trait/positive/minor_brute_resist)
 
 /datum/trait/positive/endurance_very_high
@@ -795,7 +784,7 @@
 
 /datum/trait/positive/endurance_very_high/apply(datum/species/S,mob/living/carbon/human/H)
 	..()
-	H.setMaxHealth(S.total_health)
+	H.endurance = S.total_health
 
 /datum/trait/positive/endurance_extremely_high
 	name = "High Endurance, Extreme"
@@ -806,28 +795,28 @@
 
 /datum/trait/positive/endurance_extremely_high/apply(datum/species/S,mob/living/carbon/human/H)
 	..()
-	H.setMaxHealth(S.total_health)
+	H.endurance = S.total_health
 
 /datum/trait/positive/pain_tolerance_minor // Minor Pain Tolerance, 10% reduced pain
 	name = "Pain Tolerance, Minor"
 	desc = "You are slightly more resistant to pain than most, and experience 10% less pain from all sources."
 	cost = 1
 	custom_only = FALSE
-	var_changes = list("pain_mod" = 0.9)
+	var_changes = list("injury_mod_pain" = 0.9)
 
 /datum/trait/positive/pain_tolerance
 	name = "Pain Tolerance"
 	desc = "You are noticeably more resistant to pain than most, and experience 20% less pain from all sources."
 	cost = 2
 	custom_only = FALSE
-	var_changes = list("pain_mod" = 0.8)
+	var_changes = list("injury_mod_pain" = 0.8)
 
 /datum/trait/positive/pain_tolerance_advanced // High Pain Intolerance is 50% incoming pain, but this is 40% reduced incoming pain.
 	name = "Pain Tolerance, Major"
 	desc = "You are extremely resistant to pain sources, and experience 40% less pain from all sources."
 	cost = 3 // Equivalent to High Pain Intolerance, but less pain resisted for balance reasons.
 	custom_only = FALSE
-	var_changes = list("pain_mod" = 0.6)
+	var_changes = list("injury_mod_pain" = 0.6)
 
 /datum/trait/positive/improved_biocompat
 	name = "Improved Biocompatibility"

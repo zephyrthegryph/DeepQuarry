@@ -82,7 +82,7 @@
 					S.icon_state = initial(S.icon_state)
 					S.icon = initial(S.icon)
 					S.reagents.trans_to_mob(M, S.reagents.total_volume, CHEM_BLOOD)
-					M.take_organ_damage(2)
+					M.injure(INJURY_PIERCE, 2, null, S)
 					S.visible_message(span_attack("[M] was hit by the syringe!"))
 					break
 				else if(S.loc == trg)
@@ -357,13 +357,13 @@
 	var/damcap = 60
 	var/heal_dead = FALSE	// Does this device heal the dead?
 
-	var/brute_heal = 0.5	// Amount of bruteloss healed.
-	var/burn_heal = 0.5		// Amount of fireloss healed.
-	var/tox_heal = 0.5		// Amount of toxloss healed.
-	var/oxy_heal = 1		// Amount of oxyloss healed.
+	var/brute_heal = 0.5	// Amount of physical injury mended (tissue / plating).
+	var/burn_heal = 0.5		// Amount of burn injury mended (burn care / wiring).
+	var/tox_heal = 0.5		// Amount of toxin cleared.
+	var/oxy_heal = 1		// Amount of asphyxiation relieved.
 	var/rad_heal = 0		// Amount of radiation healed.
-	var/clone_heal = 0	// Amount of cloneloss healed.
-	var/hal_heal = 0.2	// Amount of halloss healed.
+	var/clone_heal = 0	// Amount of cellular damage repaired.
+	var/hal_heal = 0.2	// Amount of pain relieved.
 	var/bone_heal = 0	// Percent chance it will heal a broken bone. this does not mean 'make it not instantly re-break'.
 
 	var/mob/living/Target = null
@@ -402,27 +402,13 @@
 			Target = null
 
 		if(Target)
-			TargDamage = (Targ.getOxyLoss() + Targ.getFireLoss() + Targ.getBruteLoss() + Targ.getToxLoss())
+			TargDamage = (Targ.injury_load(INJURY_CATEGORY_ASPHYXIA) + Targ.injury_load(INJURY_CATEGORY_THERMAL) + Targ.injury_load(INJURY_CATEGORY_PHYSICAL) + Targ.injury_load(INJURY_CATEGORY_TOXIC))
 
 		for(var/mob/living/Potential in viewers(max_distance, chassis))
 			if(!valid_target(Potential))
 				continue
 
-			var/tallydamage = 0
-			if(oxy_heal)
-				tallydamage += Potential.getOxyLoss()
-			if(burn_heal)
-				tallydamage += Potential.getFireLoss()
-			if(brute_heal)
-				tallydamage += Potential.getBruteLoss()
-			if(tox_heal)
-				tallydamage += Potential.getToxLoss()
-			if(hal_heal)
-				tallydamage += Potential.getHalLoss()
-			if(clone_heal)
-				tallydamage += Potential.getCloneLoss()
-			if(rad_heal)
-				tallydamage += Potential.radiation / 2
+			var/tallydamage = treatable_damage(Potential)
 
 			if(tallydamage > TargDamage)
 				Target = Potential
@@ -460,24 +446,26 @@
 	if(L.stat == DEAD && !heal_dead)
 		return FALSE
 
-	var/tallydamage = 0
-	if(oxy_heal)
-		tallydamage += L.getOxyLoss()
-	if(burn_heal)
-		tallydamage += L.getFireLoss()
-	if(brute_heal)
-		tallydamage += L.getBruteLoss()
-	if(tox_heal)
-		tallydamage += L.getToxLoss()
-	if(hal_heal)
-		tallydamage += L.getHalLoss()
-	if(clone_heal)
-		tallydamage += L.getCloneLoss()
-	if(rad_heal)
-		tallydamage += L.radiation / 2
-
-	if(tallydamage < damcap)
+	if(treatable_damage(L) < damcap)
 		return FALSE
+
+/// Sums the injury load this drone is able to treat on L.
+/obj/item/mecha_parts/mecha_equipment/crisis_drone/proc/treatable_damage(mob/living/L)
+	. = 0
+	if(oxy_heal)
+		. += L.injury_load(INJURY_CATEGORY_ASPHYXIA)
+	if(burn_heal)
+		. += L.injury_load(INJURY_CATEGORY_THERMAL)
+	if(brute_heal)
+		. += L.injury_load(INJURY_CATEGORY_PHYSICAL)
+	if(tox_heal)
+		. += L.injury_load(INJURY_CATEGORY_TOXIC)
+	if(hal_heal)
+		. += L.current_pain()
+	if(clone_heal)
+		. += L.injury_load(INJURY_CATEGORY_GENETIC)
+	if(rad_heal)
+		. += L.radiation / 2
 
 /obj/item/mecha_parts/mecha_equipment/crisis_drone/proc/shut_down()
 	if(enabled)
@@ -494,12 +482,20 @@
 /obj/item/mecha_parts/mecha_equipment/crisis_drone/proc/heal_target(mob/living/L)	// We've done all our special checks, just get to fixing damage.
 	chassis.use_power(energy_drain)
 	if(istype(L))
-		L.adjustBruteLoss(brute_heal * -1)
-		L.adjustFireLoss(burn_heal * -1)
-		L.adjustToxLoss(tox_heal * -1)
-		L.adjustOxyLoss(oxy_heal * -1)
-		L.adjustCloneLoss(clone_heal * -1)
-		L.adjustHalLoss(hal_heal * -1)
+		if(brute_heal)
+			L.mend(TREAT_TISSUE_REPAIR, brute_heal)
+			L.mend(TREAT_PLATING_REPAIR, brute_heal)
+		if(burn_heal)
+			L.mend(TREAT_BURN_CARE, burn_heal)
+			L.mend(TREAT_WIRING_REPAIR, burn_heal)
+		if(tox_heal)
+			L.mend(TREAT_ANTITOXIN, tox_heal)
+		if(oxy_heal)
+			L.mend(TREAT_OXYGENATION, oxy_heal)
+		if(clone_heal)
+			L.mend(TREAT_GENETIC_REPAIR, clone_heal)
+		if(hal_heal)
+			L.mend(TREAT_ANALGESIC, hal_heal)
 		L.radiation = max(0, L.radiation - rad_heal)
 
 		if(ishuman(L) && bone_heal)

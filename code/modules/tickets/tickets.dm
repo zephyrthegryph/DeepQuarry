@@ -241,25 +241,6 @@ INITIALIZE_IMMEDIATE(/obj/effect/statclick/ticket_list)
 
 	var/static/ticket_counter = 0
 
-/*
-//call this on its own to create a ticket, don't manually assign current_mentorhelp
-//msg is the title of the ticket: usually the ahelp text
-/datum/mentor_help/New(msg, client/C)
-	initiator_ckey = C.ckey
-	initiator_key_name = key_name(initiator, FALSE, TRUE)
-	if(initiator.current_mentorhelp)	//This is a bug
-		log_admin("Ticket erroneously left open by code")
-		initiator.current_mentorhelp.AddInteraction("Ticket erroneously left open by code")
-		initiator.current_mentorhelp.Resolve()
-	initiator.current_mentorhelp = src
-	statclick = new(null, src)
-	_interactions = list()
-	log_admin("Mentorhelp: [key_name(C)]: [msg]")
-	MessageNoRecipient(msg)
-	//show it to the person adminhelping too
-	to_chat(C, span_mentor(span_italics("Mentor-PM to-" + span_bold("Mentors") + ": [name]"))
-	GLOB.ahelp_tickets.active_tickets += src */
-
 /**
  * public
  *
@@ -328,11 +309,6 @@ INITIALIZE_IMMEDIATE(/obj/effect/statclick/ticket_list)
 		ahelp_discord_message("[level == 0 ? "MENTORHELP" : "ADMINHELP"]: FROM: [initiator_ckey]/[initiator_key_name] - MSG: \n ```[raw_msg]``` \n Heard by [activeMins] NON-AFK staff members.")
 
 	GLOB.tickets.active_tickets += src
-
-	// Open a new chat with the user
-	//var/datum/ticket_chat/TC = new()
-	//TC.T = src
-	//TC.tgui_interact(C.mob)
 
 	C.mob.throw_alert("open ticket", /atom/movable/screen/alert/open_ticket)
 
@@ -419,20 +395,6 @@ INITIALIZE_IMMEDIATE(/obj/effect/statclick/ticket_list)
 					X << 'sound/effects/adminhelp.ogg'
 				window_flash(X)
 				to_chat(X, chat_msg)
-
-/*
-//Reopen a closed ticket
-/datum/mentor_help/proc/Reopen()
-	switch(state)
-		if(AHELP_RESOLVED)
-			feedback_dec("ahelp_resolve")
-	AddInteraction(span_purple("Reopened by [usr.ckey]"))
-	if(initiator)
-		to_chat(initiator, span_filter_adminlog(span_purple("Ticket [TicketHref("#[id]")] was reopened by [usr.ckey].")))
-	var/msg = span_adminhelp("Ticket [TicketHref("#[id]")] reopened by [usr.ckey].")
-	message_mentors(msg)
-	log_admin(msg)
-	*/
 
 //Reopen a closed ticket
 /datum/ticket/proc/Reopen(user)

@@ -10,8 +10,7 @@
 	icon = 'icons/mob/vore.dmi'
 
 	faction = FACTION_TURKEY
-	maxHealth = 25
-	health = 25
+	endurance = 25
 
 	meat_amount = 1
 	meat_type = /obj/item/reagent_containers/food/snacks/rawturkey

@@ -26,8 +26,7 @@
 	max_n2 = 0
 
 	minbodytemp = 0
-	maxHealth = 50
-	health = 50
+	endurance = 50
 	taser_kill = TRUE
 	melee_damage_lower = 15
 	melee_damage_upper = 20

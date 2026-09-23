@@ -213,9 +213,6 @@
 	. = ..()
 	R.add_reagent(REAGENT_ID_CHLORINE, round(volume / 10, 0.1))
 
-/turf/simulated/floor/water/contaminated/pump_reagents(datum/reagents/R, volume)
-	. = ..()
-	R.add_reagent(REAGENT_ID_VATSTABILIZER, round(volume / 2, 0.1))
 
 /turf/simulated/mineral/pump_reagents(datum/reagents/R, volume)
 	. = ..()

@@ -18,7 +18,6 @@ GLOBAL_DATUM_INIT(tgui_inventory_state, /datum/tgui_state/inventory_state, new)
 	return user.shared_tgui_interaction(src_object)
 
 
-// === merged from inventory_vr.dm during hard-fork de-suffix (verified no override-order change) ===
 GLOBAL_DATUM_INIT(tgui_glasses_state, /datum/tgui_state/glasses_state, new)
 /datum/tgui_state/glasses_state/can_use_topic(src_object, mob/user)
 	if(ishuman(user))

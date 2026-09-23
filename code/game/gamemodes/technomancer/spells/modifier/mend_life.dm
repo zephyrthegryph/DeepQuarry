@@ -29,14 +29,13 @@
 	stacks = MODIFIER_STACK_EXTEND
 
 /datum/modifier/technomancer/mend_life/tick()
-	if(holder.isSynthetic()) // Don't heal synths!
+	// Organic mending only: the treatment tags themselves leave synthetic parts alone.
+	// Should heal roughly 20 burn/brute over 10 seconds, as tick() is run every 2 seconds.
+	var/mended = holder.mend(TREAT_TISSUE_REPAIR, 4 * spell_power)
+	mended += holder.mend(TREAT_BURN_CARE, 4 * spell_power)
+	if(!mended) // No point existing if the spell can't heal.
 		expire()
 		return
-	if(!holder.getBruteLoss() && !holder.getFireLoss()) // No point existing if the spell can't heal.
-		expire()
-		return
-	holder.adjustBruteLoss(-4 * spell_power) // Should heal roughly 20 burn/brute over 10 seconds, as tick() is run every 2 seconds.
-	holder.adjustFireLoss(-4 * spell_power) // Ditto.
 	holder.adjust_instability(1)
 	if(origin)
 		var/mob/living/L = origin.resolve()

@@ -115,7 +115,8 @@
 		if (CLUMSY_HARM_CHANCE(user))
 			user.visible_message(span_danger("\The [user] accidentally cuts [user.p_their()] with \the [src]."),\
 			span_danger("You accidentally cut yourself with \the [src]."))
-			user.take_organ_damage(5,5)
+			user.injure(INJURY_CUT, 5, source = src)
+			user.injure(INJURY_BURN, 5, source = src)
 		deactivate(user)
 	else
 		activate(user)
@@ -384,14 +385,14 @@
 		// Do some extra damage.  Not a whole lot more since emp_act() is pretty nasty on FBPs already.
 		target.emp_act(EMP_LIGHT) // A weaker severity is used because this has infinite uses.
 		playsound(target, 'sound/effects/EMPulse.ogg', 100, 1)
-		target.adjustFireLoss(force * 3) // 15 Burn, for 20 total.
+		target.injure(INJURY_BURN, force * 3, source = src) // 15 Burn, for 20 total.
 		playsound(target, 'sound/weapons/blade1.ogg', 100, 1)
 
 		// Make lesser robots really mad at us.
 		if(target.mob_class & MOB_CLASS_SYNTHETIC)
 			if((target.ai_brain != null))
 				target.taunt(user)
-			target.adjustFireLoss(force * 6) // 30 Burn, for 50 total.
+			target.injure(INJURY_BURN, force * 6, source = src) // 30 Burn, for 50 total.
 
 /obj/item/melee/energy/sword/ionic_rapier/lance
 	name = "zero-point lance"

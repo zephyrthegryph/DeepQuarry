@@ -62,7 +62,6 @@ You can also set the stat of a NIF to NIF_TEMPFAIL without any issues to disable
 	var/global/bad_sound = 'sound/items/nif_tone_bad.ogg'
 	var/global/good_sound = 'sound/items/nif_tone_good.ogg'
 
-
 	var/list/save_data
 
 	var/list/planes_visible = list()
@@ -184,31 +183,6 @@ You can also set the stat of a NIF to NIF_TEMPFAIL without any issues to disable
 	human = null
 	install_done = null
 	update_icon()
-
-/* Disabling EMP effect on all Nifs. *
-
-//EMP adds wear and disables all nifsoft
-/obj/item/nif/emp_act(severity, recursive)
-	. = ..()
-	if (. & EMP_PROTECT_SELF)
-		return
-	notify("Danger! Significant electromagnetic interference!",TRUE)
-	for(var/nifsoft in nifsofts)
-		if(nifsoft)
-			var/datum/nifsoft/NS = nifsoft
-			NS.deactivate()
-
-	switch (severity)
-		if (1)
-			wear(rand(30,40))
-		if (2)
-			wear(rand(15,25))
-		if (3)
-			wear(rand(8,15))
-		if (4)
-			wear(rand(1,8))
-
-* end. */
 
 //Wear update/check proc
 /obj/item/nif/proc/wear(wear = 0)
@@ -346,7 +320,7 @@ You can also set the stat of a NIF to NIF_TEMPFAIL without any issues to disable
 								"There's a throbbing lump of ice behind your eyes!",
 								"A wave of pain shoots down your neck!"
 								))
-					human.adjustHalLoss(35)
+					human.injure(INJURY_PAIN, 35)
 					human.custom_pain(message,35)
 				if(2)
 					human.Weaken(5)
@@ -686,7 +660,6 @@ You can also set the stat of a NIF to NIF_TEMPFAIL without any issues to disable
 		/datum/nifsoft/ar_civ,
 		/datum/nifsoft/malware
 	)
-
 
 /obj/item/nif/glitch/bad
 	name = "odd NIF"

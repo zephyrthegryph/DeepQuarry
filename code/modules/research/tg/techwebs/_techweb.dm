@@ -82,7 +82,6 @@
 	*/
 	var/list/research_queue_nodes = list()
 
-
 /datum/techweb/New()
 	SSresearch.techwebs += src
 	for(var/i in SSresearch.techweb_nodes_starting)
@@ -424,10 +423,6 @@
 	for(var/id in node.design_ids)
 		add_design_by_id(id)
 	update_node_status(node)
-	// if(get_that_dosh)
-	// 	var/datum/bank_account/science_department_bank_account = SSeconomy.get_dep_account(ACCOUNT_SCI)
-	// 	science_department_bank_account?.adjust_money(SSeconomy.techweb_bounty)
-	// 	log_message += ", gaining [SSeconomy.techweb_bounty] to [science_department_bank_account] for it."
 
 	// Avoid logging the same 300+ lines at the beginning of every round
 	if (!isnull(Master) && Master.current_runlevel == RUNLEVEL_GAME)
@@ -574,21 +569,8 @@
 	return available_nodes[id]? SSresearch.techweb_node_by_id(id) : FALSE
 
 /// Fill published_papers with nulls.
-// /datum/techweb/proc/initialize_published_papers()
-// 	published_papers = list()
-// 	scientific_cooperation = list()
-// 	for (var/datum/experiment/ordnance/ordnance_experiment as anything in SSresearch.ordnance_experiments)
-// 		var/max_tier = min(length(ordnance_experiment.gain), length(ordnance_experiment.target_amount))
-// 		var/list/tier_list[max_tier]
-// 		published_papers[ordnance_experiment.type] = tier_list
-// 	for (var/datum/scientific_partner/partner as anything in SSresearch.scientific_partners)
-// 		scientific_cooperation[partner.type] = 0
 
 /// Publish the paper into our techweb. Cancel if we are not allowed to.
-// /datum/techweb/proc/add_scientific_paper(datum/scientific_paper/paper_to_add)
-// 	if(!paper_to_add.allowed_to_publish(src))
-// 		return FALSE
-// 	paper_to_add.publish_paper(src)
 
 // 	// If we haven't published a paper in the same topic ...
 // 	if(locate(paper_to_add.experiment_path) in published_papers[paper_to_add.experiment_path])
@@ -602,11 +584,5 @@
 // 	for (var/datum/experiment/experiment as anything in available_experiments)
 // 		if(experiment.type != paper_to_add.experiment_path)
 // 			continue
-
-// 		experiment.completed = TRUE
-// 		var/announcetext = complete_experiment(experiment)
-// 		if(length(GLOB.experiment_handlers))
-// 			var/datum/component/experiment_handler/handler = GLOB.experiment_handlers[1]
-// 			handler.announce_message_to_all(announcetext)
 
 // 	return TRUE

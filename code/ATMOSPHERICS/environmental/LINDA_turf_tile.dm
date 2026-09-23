@@ -68,7 +68,13 @@
 
 /turf/open/Initialize(mapload)
 	if(!blocks_air)
-		air = create_gas_mixture()
+		if(immutable_atmos)
+			// Space and transit hold nothing but vacuum, so they all share one
+			// cached immutable mixture instead of a mixture (and Rust arena slot)
+			// each. The arena drops writes to it; Destroy() must never qdel it.
+			air = SSair.parse_gas_string(initial_gas_mix, /datum/gas_mixture/immutable/space)
+		else
+			air = create_gas_mixture()
 		if(planetary_atmos)
 			if(!SSair.planetary[initial_gas_mix])
 				var/datum/gas_mixture/immutable/planetary/mix = new
@@ -103,7 +109,11 @@
 			near_turf.__update_auxtools_turf_adjacency_info()
 		SSair.add_to_active(near_turf)
 	atmos_adjacent_turfs = null
-	QDEL_NULL(air)
+	if(immutable_atmos)
+		// Shared vacuum (see Initialize); other turfs still use it.
+		air = null
+	else
+		QDEL_NULL(air)
 	return ..()
 
 /////////////////GAS MIXTURE PROCS///////////////////
@@ -169,53 +179,6 @@
 
 /turf/open/return_analyzable_air()
 	return return_air()
-
-// moved to /turf/simulated because to_be_destroyed/max_fire_temperature_sustained
-// are declared on CHOMP's /turf/simulated (simulated.dm:13-14), not the base /turf.
-// Non-simulated turfs (space, unsimulated walls) inherit the no-op base.
-/turf/should_atmos_process(datum/gas_mixture/air, exposed_temperature)
-	return FALSE
-
-/turf/simulated/should_atmos_process(datum/gas_mixture/air, exposed_temperature)
-	return (exposed_temperature >= heat_capacity || to_be_destroyed)
-
-/turf/atmos_expose(datum/gas_mixture/air, exposed_temperature)
-	return
-
-/turf/simulated/atmos_expose(datum/gas_mixture/air, exposed_temperature)
-	if(exposed_temperature >= heat_capacity)
-		to_be_destroyed = TRUE
-	if(to_be_destroyed && exposed_temperature >= max_fire_temperature_sustained)
-		max_fire_temperature_sustained = min(exposed_temperature, max_fire_temperature_sustained + heat_capacity / 4)
-	if(to_be_destroyed && !changing_turf)
-		burn_turf()
-
-/turf/proc/burn_turf()
-	return
-
-/turf/simulated/burn_turf()
-	burn_tile()
-	var/chance_of_deletion
-	if (heat_capacity) //beware of division by zero
-		chance_of_deletion = max_fire_temperature_sustained / heat_capacity * 8
-	else
-		chance_of_deletion = 100
-	if(prob(chance_of_deletion))
-		Melt()
-		max_fire_temperature_sustained = 0
-	else
-		to_be_destroyed = FALSE
-
-/turf/temperature_expose(datum/gas_mixture/air, exposed_temperature)
-	atmos_expose(air, exposed_temperature)
-
-/turf/open/temperature_expose(datum/gas_mixture/air, exposed_temperature)
-	SEND_SIGNAL(src, COMSIG_TURF_EXPOSE, air, exposed_temperature)
-	// was calling a no-op check_atmos_process() shim that swallowed
-	// the work; replaced with the direct should-then-expose check. (/tg/'s
-	// original used a /datum/element to dispatch; we skip the element layer.)
-	if(should_atmos_process(air, exposed_temperature))
-		atmos_expose(air, exposed_temperature)
 
 // /turf/proc/archive + /turf/open/archive removed — turf FDM archiving is Rust-side
 // now (auxmos snapshots inside process_turfs). temperature_archived is still

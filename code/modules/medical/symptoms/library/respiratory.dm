@@ -10,7 +10,7 @@
 
 // --- Respiratory ---
 
-/datum/medical_symptom/short_breath
+/datum/affliction_symptom/short_breath
 	name = "shortness of breath"
 	category = "Observable"
 	clinical_description = "Subjective sense of inadequate ventilation accompanied by tachypnea."
@@ -19,19 +19,19 @@
 	public_emote_chance = 4
 	scanner_phrase = "elevated respiratory rate"
 
-/datum/medical_symptom/short_breath/get_patient_messages()
+/datum/affliction_symptom/short_breath/get_patient_messages()
 	var/static/list/L = list(
 		"You're having trouble catching your breath.",
 		"Each breath feels harder than the last.",
 	)
 	return L
 
-/datum/medical_symptom/short_breath/get_public_emotes()
+/datum/affliction_symptom/short_breath/get_public_emotes()
 	var/static/list/L = list("breathes heavily")
 	return L
 
 
-/datum/medical_symptom/wet_cough
+/datum/affliction_symptom/wet_cough
 	name = "wet cough"
 	category = "Observable"
 	clinical_description = "Productive cough with audible fluid; suggests pulmonary contusion or fluid accumulation."
@@ -40,19 +40,19 @@
 	public_emote_chance = 5
 	scanner_phrase = "productive cough with fluid"
 
-/datum/medical_symptom/wet_cough/get_patient_messages()
+/datum/affliction_symptom/wet_cough/get_patient_messages()
 	var/static/list/L = list(
 		"You cough up something wet.",
 		"You taste copper in your mouth.",
 	)
 	return L
 
-/datum/medical_symptom/wet_cough/get_public_emotes()
+/datum/affliction_symptom/wet_cough/get_public_emotes()
 	var/static/list/L = list("coughs wetly")
 	return L
 
 
-/datum/medical_symptom/wheeze
+/datum/affliction_symptom/wheeze
 	name = "wheezing"
 	category = "Observable"
 	clinical_description = "High-pitched musical sound on expiration from narrowed airways."
@@ -61,18 +61,18 @@
 	public_emote_chance = 4
 	scanner_phrase = "audible wheeze on auscultation"
 
-/datum/medical_symptom/wheeze/get_patient_messages()
+/datum/affliction_symptom/wheeze/get_patient_messages()
 	var/static/list/L = list(
 		"Each breath comes with a whistling sound.",
 	)
 	return L
 
-/datum/medical_symptom/wheeze/get_public_emotes()
+/datum/affliction_symptom/wheeze/get_public_emotes()
 	var/static/list/L = list("wheezes")
 	return L
 
 
-/datum/medical_symptom/labored_breathing
+/datum/affliction_symptom/labored_breathing
 	name = "labored breathing"
 	category = "Observable"
 	clinical_description = "Visible use of accessory respiratory muscles; each breath requires conscious effort."
@@ -81,13 +81,13 @@
 	public_emote_chance = 5
 	scanner_phrase = "severely labored respiration"
 
-/datum/medical_symptom/labored_breathing/get_patient_messages()
+/datum/affliction_symptom/labored_breathing/get_patient_messages()
 	var/static/list/L = list(
 		"You're working hard for every breath.",
 		"Each inhale takes effort.",
 	)
 	return L
 
-/datum/medical_symptom/labored_breathing/get_public_emotes()
+/datum/affliction_symptom/labored_breathing/get_public_emotes()
 	var/static/list/L = list("gasps", "struggles to breathe")
 	return L

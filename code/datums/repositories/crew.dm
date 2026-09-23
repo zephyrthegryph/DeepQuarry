@@ -43,10 +43,13 @@ GLOBAL_DATUM_INIT(crew_repository, /datum/repository/crew, new)
 
 				if(C.sensor_mode >= SUIT_SENSOR_VITAL)
 					crewmemberData["stat"] = H.stat
-					crewmemberData["oxy"] = round(H.getOxyLoss(), 1)
-					crewmemberData["tox"] = round(H.getToxLoss(), 1)
-					crewmemberData["fire"] = round(H.getFireLoss(), 1)
-					crewmemberData["brute"] = round(H.getBruteLoss(), 1)
+					// UI keys kept for the CrewMonitor interface; sourced from injury load per category.
+					crewmemberData["oxy"] = round(H.injury_load(INJURY_CATEGORY_ASPHYXIA), 1)
+					crewmemberData["tox"] = round(H.injury_load(INJURY_CATEGORY_TOXIC), 1)
+					crewmemberData["fire"] = round(H.injury_load(INJURY_CATEGORY_THERMAL), 1)
+					crewmemberData["brute"] = round(H.injury_load(INJURY_CATEGORY_PHYSICAL), 1)
+					crewmemberData["vitality"] = round(H.vitality() * 100, 1)
+					crewmemberData["critical"] = H.is_critical()
 
 				if(C.sensor_mode >= SUIT_SENSOR_TRACKING)
 					var/area/A = get_area(H)

@@ -276,13 +276,13 @@
 /obj/item/projectile/bullet/suffocationbullet//How does this even work?
 	name = "co bullet"
 	damage = 20
-	damage_type = OXY
+	injury_kind = INJURY_ASPHYXIA
 	hud_state = "pistol_tranq"
 
 /obj/item/projectile/bullet/cyanideround
 	name = "poison bullet"
 	damage = 40
-	damage_type = TOX
+	injury_kind = INJURY_TOXIN
 	hud_state = "pistol_tranq"
 
 /obj/item/projectile/bullet/burstbullet
@@ -355,7 +355,7 @@
 
 /obj/item/projectile/bullet/pistol/cap // Just the primer, such as a cap gun.
 	name = "cap"
-	damage_type = HALLOSS
+	injury_kind = INJURY_PAIN
 	fire_sound = 'sound/effects/snap.ogg'
 	damage = 0
 	nodamage = 1
@@ -371,7 +371,7 @@
 
 /obj/item/projectile/bullet/blank
 	name = "blank"
-	damage_type = HALLOSS
+	injury_kind = INJURY_PAIN
 	fire_sound = 'sound/weapons/gunshot_generic_rifle.ogg' // Blanks still make loud noises.
 	damage = 0
 	nodamage = 1
@@ -409,7 +409,7 @@
 	embed_chance = 0
 	nodamage = TRUE
 	sharp = FALSE
-	damage_type = HALLOSS
+	injury_kind = INJURY_PAIN
 	impact_effect_type = null
 	fire_sound = 'sound/effects/snap.ogg'
 	combustion = FALSE
@@ -426,7 +426,7 @@
 	embed_chance = 0
 	nodamage = TRUE
 	sharp = FALSE
-	damage_type = HALLOSS
+	injury_kind = INJURY_PAIN
 	impact_effect_type = null
 	fire_sound = 'sound/items/syringeproj.ogg'
 	combustion = FALSE
@@ -459,7 +459,7 @@
 	agony = 20 // The riot part of the riot dart // nerf this >:3 old 50
 	nodamage = TRUE
 	sharp = FALSE
-	damage_type = HALLOSS
+	injury_kind = INJURY_PAIN
 	impact_effect_type = null
 	fire_sound = 'sound/items/syringeproj.ogg'
 	combustion = FALSE

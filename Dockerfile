@@ -32,7 +32,7 @@ RUN . ./dependencies.sh \
 
 FROM byond AS build
 
-WORKDIR /vorestation
+WORKDIR /deepquarry
 
 RUN apt-get install -y --no-install-recommends \
 	curl \
@@ -72,8 +72,8 @@ RUN git init -q . \
 
 RUN env TG_BOOTSTRAP_NODE_LINUX=1 tools/build/build.sh \
     # Drop build-only artifacts in the SAME layer so they never persist in a
-    # committed layer (the final stage COPYs all of /vorestation). build.sh already
-    # copied the compiled libverdigris.so to /vorestation/; verdigris/target (multi-GB
+    # committed layer (the final stage COPYs all of /deepquarry). build.sh already
+    # copied the compiled libverdigris.so to /deepquarry/; verdigris/target (multi-GB
     # of Rust intermediates), tgui/node_modules, and the throwaway provenance .git are
     # not needed at runtime. Without this the image is ~5GB and won't fit smaller disks.
     && rm -rf verdigris/target tgui/node_modules .git
@@ -102,17 +102,17 @@ RUN . ./dependencies.sh \
 	&& env PKG_CONFIG_ALLOW_CROSS=1 ~/.cargo/bin/cargo build --release --target i686-unknown-linux-gnu --features all
 
 FROM byond
-WORKDIR /vorestation
+WORKDIR /deepquarry
 
 RUN apt-get install -y --no-install-recommends \
         libssl3 \
         zlib1g:i386 \
         libcurl4:i386
 
-COPY --from=build /vorestation/ ./
+COPY --from=build /deepquarry/ ./
 COPY --from=rust_g /rust_g/target/i686-unknown-linux-gnu/release/librust_g.so ./librust_g.so
 
-#VOLUME [ "/vorestation/config", "/vorestation/data" ]
+#VOLUME [ "/deepquarry/config", "/deepquarry/data" ]
 
 ENTRYPOINT [ "DreamDaemon", "deepquarry.dmb", "-port", "2303", "-trusted", "-close", "-verbose" ]
 EXPOSE 2303

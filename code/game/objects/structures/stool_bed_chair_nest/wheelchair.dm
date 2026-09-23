@@ -201,7 +201,7 @@
 		occupant.apply_effect(6, STUN, blocked)
 		occupant.apply_effect(6, WEAKEN, blocked)
 		occupant.apply_effect(6, STUTTER, blocked)
-		occupant.apply_damage(10, BRUTE, def_zone)
+		occupant.injure(INJURY_BLUNT, 10, def_zone, src)
 		playsound(src, 'sound/weapons/punch1.ogg', 50, 1, -1)
 		if(isliving(A))
 			var/mob/living/victim = A
@@ -210,7 +210,7 @@
 			victim.apply_effect(6, STUN, blocked)
 			victim.apply_effect(6, WEAKEN, blocked)
 			victim.apply_effect(6, STUTTER, blocked)
-			victim.apply_damage(10, BRUTE, def_zone)
+			victim.injure(INJURY_BLUNT, 10, def_zone, src)
 		if(pulling)
 			occupant.visible_message(span_danger("[pulling] has thrusted \the [name] into \the [A], throwing \the [occupant] out of it!"))
 

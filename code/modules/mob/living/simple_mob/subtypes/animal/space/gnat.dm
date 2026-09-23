@@ -27,8 +27,7 @@
 	icon_dead = "gnat_dead"
 
 	faction = FACTION_GNAT
-	maxHealth = 5
-	health = 5
+	endurance = 5
 	movement_cooldown = 0
 	// dq_get_hovering(src) type-default moved to GLOB.dq_hovering_by_type
 

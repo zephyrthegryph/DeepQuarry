@@ -28,16 +28,14 @@
 
 /mob/living/simple_mob/mechanical/hivebot/tyr/swarm
 	name = "replicating swarmer"
-	maxHealth = 3
-	health = 3
+	endurance = 3
 	icon_state = "bright_green"
 	icon_living = "bright_green"
 
 /mob/living/simple_mob/mechanical/hivebot/tyr/meteor
 	name = "repair drone"
 	icon = 'icons/mob/tyr.dmi'
-	maxHealth = 6 LASERS_TO_KILL // 240 hp
-	health = 6 LASERS_TO_KILL // 240 hp
+	endurance = 6 LASERS_TO_KILL // 240 hp
 	icon_state = "guardian"
 	icon_living = "guardian"
 	projectiletype = /obj/item/projectile/energy/agate_lighting/fast
@@ -57,8 +55,7 @@
 
 /mob/living/simple_mob/mechanical/hivebot/eclipse
 	name = "repurposed hivebot"
-	maxHealth = 1.5 LASERS_TO_KILL // 60 hp
-	health = 1.5 LASERS_TO_KILL
+	endurance = 1.5 LASERS_TO_KILL // 60 hp
 	icon = 'icons/mob/hivebot.dmi'
 	desc = "A repurposed hivebot."
 	faction = FACTION_ECLIPSE

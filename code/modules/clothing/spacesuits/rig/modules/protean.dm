@@ -9,6 +9,15 @@ These should come standard with the Protean rigsuit, unless you want them to wor
 /obj/item/rig_module/protean
 	permanent = 1
 
+/// The protean character the host cluster belongs to.
+/obj/item/rig_module/protean/proc/get_protean()
+	var/obj/item/rig/protean/prig = holder
+	return istype(prig) ? prig.myprotean : null
+
+/// Protean modules only work on someone else.
+/obj/item/rig_module/protean/proc/wearer_is_protean(mob/living/carbon/human/H)
+	return !!H?.GetComponent(/datum/component/forms/protean)
+
 /obj/item/rig_module/protean/syphon
 	name = "Protean Metabolic Syphon"
 	desc = "This should never be outside of a RIG."
@@ -50,15 +59,13 @@ These should come standard with the Protean rigsuit, unless you want them to wor
 		var/mob/living/carbon/human/H = holder.wearer
 		if(!H)
 			return
-		var/mob/living/P = holder?:myprotean
-		if(istype(H.species, /datum/species/protean))
+		var/mob/living/P = get_protean()
+		if(wearer_is_protean(H))
 			to_chat(H, span_warning("Your Protean modules do not function on yourself."))
 			deactivate(1)
-		else
-			P = P?:humanform
-			if(P && (H.nutrition >= 100) && (P.nutrition <= 5000))
-				H.nutrition -= 10
-				P.nutrition += 10
+		else if(P && (H.nutrition >= 100) && (P.nutrition <= 5000))
+			H.adjust_nutrition(-10)
+			P.adjust_nutrition(10)
 
 //This rig module allows a worn Protean to toggle and configure its armor settings.
 /obj/item/rig_module/protean/armor
@@ -88,7 +95,8 @@ These should come standard with the Protean rigsuit, unless you want them to wor
 			interface_desc += " Slowdown: [slowdown]"
 
 /obj/item/rig_module/protean/armor/activate()
-	if(holder?:assimilated_rig)
+	var/obj/item/rig/protean/prig = holder
+	if(istype(prig) && prig.assimilated_rig)
 		to_chat(usr, span_bolddanger("Armor module non-functional while a RIG is assimilated."))
 		return
 	if(!..(1))
@@ -136,12 +144,14 @@ These should come standard with the Protean rigsuit, unless you want them to wor
 		if(!H)
 			deactivate(1)
 			return
-		if(istype(H.species, /datum/species/protean))
+		if(wearer_is_protean(H))
 			to_chat(H, span_warning("Your Protean modules do not function on yourself."))
 			deactivate(1)
 
 
 //This rig module lets a Protean expend its metal stores to heal its host
+#define PROTEAN_HOST_REPAIR_PER_TICK 4
+
 /obj/item/rig_module/protean/healing
 	name = "Protean Restorative Nanites"
 	desc = "This should never be outside of a RIG."
@@ -150,68 +160,66 @@ These should come standard with the Protean rigsuit, unless you want them to wor
 	toggleable = 1
 	activate_string = "Enable Healing"
 	deactivate_string = "Disable Healing"
-	var/datum/modifier/healing
 
 /obj/item/rig_module/protean/healing/activate()
 	if(!..(1))
 		return 0
-
 	var/mob/living/carbon/human/H = holder.wearer
-	var/mob/living/P = holder?:myprotean
-	if(H && P)
-		if(istype(H.species, /datum/species/protean))
-			to_chat(H, span_warning("Your Protean modules do not function on yourself."))
-			return 0
-		var/obj/item/organ/internal/nano/refactory/R = P.nano_get_refactory()
-		if(R.get_stored_material(MAT_STEEL) >= 100)
-			healing = holder.wearer.add_modifier(/datum/modifier/protean/steel, origin = R)
-			to_chat(usr, span_boldnotice("You activate the suit's restorative nanites."))
-			to_chat(H, span_warning("Your suit begins mending your injuries."))
-			active = 1
-			return 1
-	return 0
+	var/mob/living/P = get_protean()
+	if(!H || !P)
+		return 0
+	if(wearer_is_protean(H))
+		to_chat(H, span_warning("Your Protean modules do not function on yourself."))
+		return 0
+	var/obj/item/organ/internal/nano/refactory/R = P.nano_get_refactory()
+	if(!R || R.get_stored_material(MAT_STEEL) < 100)
+		return 0
+	to_chat(usr, span_boldnotice("You activate the suit's restorative nanites."))
+	to_chat(H, span_warning("Your suit begins mending your injuries."))
+	active = 1
+	return 1
 
 /obj/item/rig_module/protean/healing/deactivate()
 	if(!..(1))
 		return 0
 	var/mob/living/carbon/human/H = holder.wearer
-	if(H)
-		to_chat(usr, span_boldnotice("You deactivate the suit's restorative nanites."))
-		to_chat(H, span_warning("Your suit is no longer mending your injuries."))
-		active = 0
-		if(healing)
-			healing.expire()
-			healing = null
-		return 1
-	else
+	if(!H)
 		return 0
+	to_chat(usr, span_boldnotice("You deactivate the suit's restorative nanites."))
+	to_chat(H, span_warning("Your suit is no longer mending your injuries."))
+	active = 0
+	return 1
 
+/// Wound repair on the host, whatever it is made of, paid for in steel by what
+/// mend() actually repaired. Never touches lesions or dead organs (bug 11).
 /obj/item/rig_module/protean/healing/process()
-	if(active)
-		var/mob/living/carbon/human/H = holder.wearer
-		var/mob/living/P = holder?:myprotean
-		if(!H || !P)
-			deactivate()
-			return
-		if(istype(H.species, /datum/species/protean))
-			to_chat(H, span_warning("Your Protean modules do not function on yourself."))
-			deactivate()
-			return
-		var/obj/item/organ/internal/nano/refactory/R = P.nano_get_refactory()
-		if((!R.get_stored_material(MAT_STEEL)))
-			to_chat(H, span_warning("Your [holder] is out of steel."))
-			deactivate()
-			return
+	if(!active)
+		return
+	var/mob/living/carbon/human/H = holder.wearer
+	var/mob/living/P = get_protean()
+	if(!H || !P)
+		deactivate()
+		return
+	if(wearer_is_protean(H))
+		to_chat(H, span_warning("Your Protean modules do not function on yourself."))
+		deactivate()
+		return
+	var/obj/item/organ/internal/nano/refactory/R = P.nano_get_refactory()
+	if(!R || !R.get_stored_material(MAT_STEEL))
+		to_chat(H, span_warning("Your [holder] is out of steel."))
+		deactivate()
+		return
+	var/static/list/repair_tags = list(TREAT_TISSUE_REPAIR, TREAT_BURN_CARE, TREAT_PLATING_REPAIR, TREAT_WIRING_REPAIR)
+	R.fund_repair(H, repair_tags, PROTEAN_HOST_REPAIR_PER_TICK)
 
 /obj/item/rig_module/protean/healing/accepts_item(obj/item/stack/material/steel/S, mob/living/user)
-
 	if(!istype(S) || !istype(user))
 		return 0
-
-	var/mob/living/P = holder?:myprotean
+	var/mob/living/P = get_protean()
 	var/obj/item/organ/internal/nano/refactory/R = P?.nano_get_refactory()
-
-	if(R?.add_stored_material(S.material.name,1*S.perunit) && S.use(1))
+	if(R?.add_stored_material(S.material.name, 1 * S.perunit) && S.use(1))
 		to_chat(user, span_boldnotice("You directly feed some steel to the [holder]."))
 		return 1
 	return 0
+
+#undef PROTEAN_HOST_REPAIR_PER_TICK

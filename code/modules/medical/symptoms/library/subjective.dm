@@ -10,14 +10,14 @@
 
 // --- Patient-only sensations ---
 
-/datum/medical_symptom/headache
+/datum/affliction_symptom/headache
 	name = "headache"
 	category = "Subjective"
 	clinical_description = "Diffuse cranial pain, frequently retro-orbital."
 	audiences = SYMPTOM_AUDIENCE_PATIENT
 	patient_message_chance = 5
 
-/datum/medical_symptom/headache/get_patient_messages()
+/datum/affliction_symptom/headache/get_patient_messages()
 	var/static/list/L = list(
 		"A dull headache builds behind your eyes.",
 		"Your head throbs.",
@@ -25,14 +25,14 @@
 	return L
 
 
-/datum/medical_symptom/dizziness
+/datum/affliction_symptom/dizziness
 	name = "dizziness"
 	category = "Subjective"
 	clinical_description = "Transient loss of equilibrium and spatial orientation."
 	audiences = SYMPTOM_AUDIENCE_PATIENT
 	patient_message_chance = 5
 
-/datum/medical_symptom/dizziness/get_patient_messages()
+/datum/affliction_symptom/dizziness/get_patient_messages()
 	var/static/list/L = list(
 		"The room sways for a moment.",
 		"You feel briefly lightheaded.",
@@ -41,13 +41,13 @@
 	return L
 
 
-/datum/medical_symptom/blurred_vision
+/datum/affliction_symptom/blurred_vision
 	name = "blurred vision"
 	category = "Subjective"
 	clinical_description = "Reduced visual acuity, particularly at the periphery."
 	audiences = SYMPTOM_AUDIENCE_PATIENT
 
-/datum/medical_symptom/blurred_vision/get_patient_messages()
+/datum/affliction_symptom/blurred_vision/get_patient_messages()
 	var/static/list/L = list(
 		"Your vision blurs at the edges.",
 		"It's hard to focus your eyes.",
@@ -55,14 +55,14 @@
 	return L
 
 
-/datum/medical_symptom/internal_pressure
+/datum/affliction_symptom/internal_pressure
 	name = "internal pressure"
 	category = "Subjective"
 	clinical_description = "Vague visceral pressure without clear localisation; commonly precedes overt hemorrhage."
 	audiences = SYMPTOM_AUDIENCE_PATIENT
 	patient_message_chance = 3
 
-/datum/medical_symptom/internal_pressure/get_patient_messages()
+/datum/affliction_symptom/internal_pressure/get_patient_messages()
 	var/static/list/L = list(
 		"You feel an odd pressure deep inside.",
 		"Something doesn't feel right.",
@@ -70,13 +70,13 @@
 	return L
 
 
-/datum/medical_symptom/fatigue
+/datum/affliction_symptom/fatigue
 	name = "fatigue"
 	category = "Subjective"
 	clinical_description = "Generalised loss of stamina and concentration disproportionate to recent exertion."
 	audiences = SYMPTOM_AUDIENCE_PATIENT
 
-/datum/medical_symptom/fatigue/get_patient_messages()
+/datum/affliction_symptom/fatigue/get_patient_messages()
 	var/static/list/L = list(
 		"You feel inexplicably tired.",
 		"It's getting hard to stay alert.",
@@ -84,13 +84,13 @@
 	return L
 
 
-/datum/medical_symptom/numbness_arm
+/datum/affliction_symptom/numbness_arm
 	name = "numb arm"
 	category = "Subjective"
 	clinical_description = "Loss of sensation in the affected arm and hand; reduced fine-motor function."
 	audiences = SYMPTOM_AUDIENCE_PATIENT
 
-/datum/medical_symptom/numbness_arm/get_patient_messages()
+/datum/affliction_symptom/numbness_arm/get_patient_messages()
 	var/static/list/L = list(
 		"Your arm feels numb and useless.",
 		"You can barely feel your fingers.",
@@ -98,13 +98,13 @@
 	return L
 
 
-/datum/medical_symptom/numbness_leg
+/datum/affliction_symptom/numbness_leg
 	name = "numb leg"
 	category = "Subjective"
 	clinical_description = "Loss of sensation in the affected leg and foot; reduced proprioception."
 	audiences = SYMPTOM_AUDIENCE_PATIENT
 
-/datum/medical_symptom/numbness_leg/get_patient_messages()
+/datum/affliction_symptom/numbness_leg/get_patient_messages()
 	var/static/list/L = list(
 		"Your leg feels numb and dead.",
 		"You can barely feel where your foot ends.",
@@ -112,14 +112,14 @@
 	return L
 
 
-/datum/medical_symptom/burning_limb
+/datum/affliction_symptom/burning_limb
 	name = "burning limb"
 	category = "Subjective"
 	clinical_description = "Deep, persistent burning sensation in the affected limb without visible cause."
 	audiences = SYMPTOM_AUDIENCE_PATIENT
 	patient_message_chance = 6
 
-/datum/medical_symptom/burning_limb/get_patient_messages()
+/datum/affliction_symptom/burning_limb/get_patient_messages()
 	var/static/list/L = list(
 		"Your limb feels like it's on fire from the inside.",
 		"There's an unbearable burning sensation deep in the tissue.",

@@ -16,8 +16,7 @@
 	icon_dead = "otie-dead"
 	icon_rest = "otie_rest"
 	faction = FACTION_OTIE
-	maxHealth = 150
-	health = 150
+	endurance = 150
 	minbodytemp = 200
 	melee_damage_lower = 10
 	melee_damage_upper = 20 //Don't break my bones bro
@@ -186,8 +185,7 @@
 	icon_rest = "sotie_rest"
 	icon_dead = "sotie-dead"
 	faction = FACTION_NEUTRAL
-	maxHealth = 200 //armored or something
-	health = 200
+	endurance = 200 //armored or something
 	tamed = 1
 	has_eye_glow = TRUE
 	loot_list = list(/obj/item/clothing/glasses/sunglasses/sechud,/obj/item/clothing/suit/armor/vest/alt)
@@ -279,7 +277,7 @@
 
 	switch(M.a_intent)
 		if(I_HELP)
-			if(health > 0)
+			if(stat != DEAD)
 				if(M.zone_sel.selecting == BP_GROIN)
 					if(M.vore_bellyrub(src))
 						return
@@ -297,7 +295,7 @@
 					sleep(1 SECOND)
 
 		if(I_GRAB)
-			if(health > 0)
+			if(stat != DEAD)
 				if((ai_brain != null))
 					var/datum/ai_brain/AI = ai_brain
 					audible_emote("growls disapprovingly at [M].")

@@ -40,7 +40,7 @@ Possible to do for anyone motivated enough:
 	var/power_per_hologram = 500 //per usage per hologram
 	idle_power_usage = 5
 	use_power = USE_POWER_IDLE
-	var/list/mob/living/silicon/ai/masters = list() //List of AIs that use the holopad
+	var/list/mob/living/silicon/ai/masters //Lazy list of AIs that use the holopad
 	var/last_request = 0 //to prevent request spam. ~Carn
 	var/holo_range = 5 // Change to change how far the AI can move away from the holopad before deactivating.
 
@@ -72,7 +72,7 @@ Possible to do for anyone motivated enough:
 	This may change in the future but for now will suffice.*/
 	if(user.eyeobj.loc != src.loc)//Set client eye on the object if it's not already.
 		user.eyeobj.setLoc(get_turf(src))
-	else if(!masters[user])//If there is no hologram, possibly make one.
+	else if(!LAZYACCESS(masters, user))//If there is no hologram, possibly make one.
 		activate_holo(user)
 	else//If there is a hologram, remove it.
 		clear_holo(user)
@@ -94,7 +94,7 @@ For the other part of the code, check silicon say.dm. Particularly robot talk.*/
 /obj/machinery/hologram/holopad/hear_talk(mob/M, list/message_pieces, verb)
 	if(M && LAZYLEN(masters))
 		for(var/mob/living/silicon/ai/master in masters)
-			if(masters[master] && M != master)
+			if(LAZYACCESS(masters, master) && M != master)
 				master.relay_speech(M, message_pieces, verb)
 
 /obj/machinery/hologram/holopad/see_emote(mob/living/M, text)
@@ -135,7 +135,7 @@ For the other part of the code, check silicon say.dm. Particularly robot talk.*/
 	for(var/obj/belly/B as anything in A.vore_organs)
 		B.forceMove(hologram)
 
-	masters[A] = hologram
+	LAZYSET(masters, A, hologram)
 	set_light(2)			//pad lighting
 	icon_state = "holopad1"
 	flick("holopadload", src)
@@ -151,9 +151,9 @@ For the other part of the code, check silicon say.dm. Particularly robot talk.*/
 /obj/machinery/hologram/holopad/proc/clear_holo(mob/living/silicon/ai/user)
 	if(user.holo == src)
 		user.holo = null
-	qdel(masters[user])//Get rid of user's hologram
-	masters -= user //Discard AI from the list of those who use holopad
-	if(!masters.len)//If no users left
+	qdel(LAZYACCESS(masters, user))//Get rid of user's hologram
+	LAZYREMOVE(masters, user) //Discard AI from the list of those who use holopad
+	if(!LAZYLEN(masters))//If no users left
 		set_light(0)			//pad lighting (hologram lighting will be handled automatically since its owner was deleted)
 		icon_state = "holopad0"
 	return 1
@@ -170,8 +170,8 @@ For the other part of the code, check silicon say.dm. Particularly robot talk.*/
 		return PROCESS_KILL
 
 /obj/machinery/hologram/holopad/proc/move_hologram(mob/living/silicon/ai/user)
-	if(masters[user])
-		var/obj/effect/overlay/aiholo/H = masters[user]
+	if(LAZYACCESS(masters, user))
+		var/obj/effect/overlay/aiholo/H = LAZYACCESS(masters, user)
 		walk_towards(H, user.eyeobj)
 		//Hologram left the screen (got stuck on a wall or something)
 		if(get_dist(H, user.eyeobj) > world.view)
@@ -207,27 +207,6 @@ For the other part of the code, check silicon say.dm. Particularly robot talk.*/
 	return ..()
 
 /*
-Holographic project of everything else.
-
-/mob/verb/hologram_test()
-	set name = "Hologram Debug New"
-	set category = "CURRENT DEBUG"
-
-	var/obj/effect/overlay/hologram = new(loc)//Spawn a blank effect at the location.
-	var/icon/flat_icon = icon(getFlatIcon(src,0))//Need to make sure it's a new icon so the old one is not reused.
-	flat_icon.ColorTone(rgb(125,180,225))//Let's make it bluish.
-	flat_icon.ChangeOpacity(0.5)//Make it half transparent.
-	var/input = input(usr, "Select what icon state to use in effect.",,"")
-	if(input)
-		var/icon/alpha_mask = new('icons/effects/effects.dmi', "[input]")
-		flat_icon.AddAlphaMask(alpha_mask)//Finally, let's mix in a distortion effect.
-		hologram.icon = flat_icon
-
-		to_world("Your icon should appear now.")
-	return
-*/
-
-/*
  * Other Stuff: Is this even used?
  */
 /obj/machinery/hologram/projector
@@ -235,7 +214,6 @@ Holographic project of everything else.
 	desc = "It makes a hologram appear...with magnets or something..."
 	icon = 'icons/obj/stationobjs.dmi'
 	icon_state = "hologram0"
-
 
 #undef RANGE_BASED
 #undef AREA_BASED

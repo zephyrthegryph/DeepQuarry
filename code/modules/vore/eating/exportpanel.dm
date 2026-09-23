@@ -228,13 +228,6 @@
 			for(var/msg in B.trash_eater_out)
 				belly_data["trash_eater_out"] += msg
 
-			//belly_data["emote_list"] = list()
-			//for(var/EL in B.emote_lists)
-			//	for(var/msg in B.emote_lists[EL])
-			//		msg_list += msg
-			//
-			//	belly_data["emote_lists"] += list(EL, msg_list)
-
 			// I will use this first before the code above gets fixed
 			belly_data["emotes_digest"] = list()
 			for(var/msg in B.emote_lists[DM_DIGEST])
@@ -349,10 +342,6 @@
 			belly_data["undergarment_chosen"] = B.undergarment_chosen
 			belly_data["undergarment_if_none"] = B.undergarment_if_none
 			belly_data["undergarment_color"] = B.undergarment_color
-			//belly_data["tail_to_change_to"] = B.tail_to_change_to
-			//belly_data["tail_colouration"] = B.tail_colouration
-			//belly_data["tail_extra_overlay"] = B.tail_extra_overlay
-			//belly_data["tail_extra_overlay2"] = B.tail_extra_overlay2
 
 			// Visuals (Belly Fullscreens Preview and Coloring)
 			belly_data["belly_fullscreen_color"] = B.belly_fullscreen_color

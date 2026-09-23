@@ -1,164 +1,80 @@
-/mob/living/silicon/robot/updatehealth()
-	if(SEND_SIGNAL(src, COMSIG_LIVING_HEALTH_UPDATE) & COMSIG_LIVING_HEALTH_UPDATE_GOD_MODE)
-		health = getMaxHealth()
-		set_stat(CONSCIOUS)
-		return
-	health = getMaxHealth() - (getBruteLoss() + getFireLoss())
-	if(health <= -getMaxHealth()) //die only once
-		death()
-		return
-	return
+// Cyborg damage lives on the robot body (plans/machine.dm): injuries become
+// load afflictions located on a part; a part's damage is the load located on
+// it (component.dm). This file keeps the robot-side helpers.
 
-/mob/living/silicon/robot/getMaxHealth()
+/// Upgraded parts (e.g. armour_platform) make the chassis tougher: every
+/// point of max_damage above the stock part adds a point of endurance.
+/mob/living/silicon/robot/get_endurance()
 	. = ..()
-	for(var/V in components)
-		var/datum/robot_component/C = components[V]
+	if(!istype(body, /datum/body/simple/machine/robot))
+		return // drones: whole-body load, parts don't add toughness
+	for(var/datum/robot_component/C as anything in components)
 		. += C.max_damage - initial(C.max_damage)
 
-/mob/living/silicon/robot/getBruteLoss()
-	var/amount = 0
-	for(var/V in components)
-		var/datum/robot_component/C = components[V]
-		if(C.installed != 0) amount += C.brute_damage
-	return amount
-
-/mob/living/silicon/robot/getFireLoss()
-	var/amount = 0
-	for(var/V in components)
-		var/datum/robot_component/C = components[V]
-		if(C.installed != 0) amount += C.electronics_damage
-	return amount
-
-/mob/living/silicon/robot/adjustBruteLoss(amount,include_robo)
-	if(amount > 0)
-		take_overall_damage(amount, 0)
-	else
-		heal_overall_damage(-amount, 0)
-
-/mob/living/silicon/robot/adjustFireLoss(amount,include_robo)
-	if(amount > 0)
-		take_overall_damage(0, amount)
-	else
-		heal_overall_damage(0, -amount)
-
-/mob/living/silicon/robot/proc/get_damaged_components(brute, burn, destroyed = 0)
+/// Parts that are damaged, faulted, switched off or unpowered.
+/mob/living/silicon/robot/proc/get_faulted_components(include_destroyed = FALSE)
 	var/list/datum/robot_component/parts = list()
-	for(var/V in components)
-		var/datum/robot_component/C = components[V]
-		if(C.installed == 1 || (C.installed == -1 && destroyed))
-			if((brute && C.brute_damage) || (burn && C.electronics_damage) || (!C.toggled) || (!C.powered && C.toggled))
+	for(var/datum/robot_component/C as anything in components)
+		if(C.installed == ROBOT_PART_DESTROYED)
+			if(include_destroyed)
 				parts += C
+			continue
+		if(C.installed != ROBOT_PART_INSTALLED)
+			continue
+		if(C.get_total_damage() || !C.toggled || !C.is_powered() || length(C.get_afflictions()))
+			parts += C
 	return parts
 
-/mob/living/silicon/robot/proc/get_damageable_components()
-	var/list/rval = list()
-	for(var/V in components)
-		var/datum/robot_component/C = components[V]
-		if(C.installed == 1) rval += C
-	return rval
-
 /mob/living/silicon/robot/proc/get_armour()
-
-	if(!components.len) return 0
-	var/datum/robot_component/C = components["armour"]
-	if(C && C.installed == 1)
+	var/datum/robot_component/C = get_component(ROBOT_SLOT_ARMOUR)
+	if(C?.installed == ROBOT_PART_INSTALLED)
 		return C
-	return 0
+	return null
 
-/mob/living/silicon/robot/heal_organ_damage(brute, burn)
-	var/list/datum/robot_component/parts = get_damaged_components(brute,burn)
-	if(!parts.len)	return
-	var/datum/robot_component/picked = pick(parts)
-	picked.heal_damage(brute,burn)
+/// Combat shielding absorbs a percentage of physical and thermal injury
+/// directly into the cell.
+/mob/living/silicon/robot/proc/absorb_injury_with_shield(datum/source, kind, list/amount_ref, zone, atom/injury_source, flags)
+	SIGNAL_HANDLER
+	var/category = injury_category(kind)
+	if(category != INJURY_CATEGORY_PHYSICAL && category != INJURY_CATEGORY_THERMAL)
+		return NONE
+	if(!has_active_type(/obj/item/borg/combat/shield))
+		return NONE
+	var/obj/item/borg/combat/shield/shield = locate() in src
+	if(!shield?.active)
+		return NONE
+	var/absorbed = amount_ref[1] * shield.shield_level
+	if(!draw_power(ROBOT_CELL_JOULES(absorbed * 25), shield, ROBOT_CELL_JOULES(200)))
+		to_chat(src, span_filter_warning(span_red("Your shield has overloaded!")))
+		return NONE
+	amount_ref[1] -= absorbed
+	to_chat(src, span_filter_combat(span_red("Your shield absorbs some of the impact!")))
+	return NONE
 
-/mob/living/silicon/robot/take_organ_damage(brute = 0, burn = 0, sharp = FALSE, edge = FALSE, emp = 0)
-	var/list/components = get_damageable_components()
-	if(!components.len)
-		return
-
-	//Combat shielding absorbs a percentage of damage directly into the cell.
-	if(has_active_type(/obj/item/borg/combat/shield))
-		var/obj/item/borg/combat/shield/shield = locate() in src
-		if(shield && shield.active)
-			//Shields absorb a certain percentage of damage based on their power setting.
-			var/absorb_brute = brute*shield.shield_level
-			var/absorb_burn = burn*shield.shield_level
-			var/cost = (absorb_brute+absorb_burn) * 25
-
-			if(!use_direct_power(cost, 200))
-				to_chat(src, span_filter_warning("[span_red("Your shield has overloaded!")]"))
-			else
-				brute -= absorb_brute
-				burn -= absorb_burn
-				to_chat(src, span_filter_combat("[span_red("Your shield absorbs some of the impact!")]"))
-
-	if(!emp)
-		var/datum/robot_component/armour/A = get_armour()
-		if(A)
-			A.take_damage(brute,burn,sharp,edge)
-			return
-
-	var/datum/robot_component/C = pick(components)
-	C.take_damage(brute,burn,sharp,edge)
-
-/mob/living/silicon/robot/heal_overall_damage(brute, burn)
-	var/list/datum/robot_component/parts = get_damaged_components(brute,burn)
-
-	while(parts.len && (brute>0 || burn>0) )
-		var/datum/robot_component/picked = pick(parts)
-
-		var/brute_was = picked.brute_damage
-		var/burn_was = picked.electronics_damage
-
-		picked.heal_damage(brute,burn)
-
-		brute -= (brute_was-picked.brute_damage)
-		burn -= (burn_was-picked.electronics_damage)
-
-		parts -= picked
-
-/mob/living/silicon/robot/take_overall_damage(brute = 0, burn = 0, sharp = FALSE, used_weapon = null)
-	if(SEND_SIGNAL(src, COMSIG_CHECK_FOR_GODMODE) & COMSIG_GODMODE_CANCEL) //Normally we'd let this proc continue on, but it's much less time consumptive to just do a godmode check here.
-		return 0	// Cancelled by a component
-	var/list/datum/robot_component/parts = get_damageable_components()
-
-	//Combat shielding absorbs a percentage of damage directly into the cell.
-	if(has_active_type(/obj/item/borg/combat/shield))
-		var/obj/item/borg/combat/shield/shield = locate() in src
-		if(shield)
-			//Shields absorb a certain percentage of damage based on their power setting.
-			var/absorb_brute = brute*shield.shield_level
-			var/absorb_burn = burn*shield.shield_level
-			var/cost = (absorb_brute+absorb_burn) * 25
-
-			if(!use_direct_power(cost, 200))
-				to_chat(src, span_filter_warning("[span_red("Your shield has overloaded!")]"))
-			else
-				brute -= absorb_brute
-				burn -= absorb_burn
-				to_chat(src, span_filter_combat("[span_red("Your shield absorbs some of the impact!")]"))
-
-	var/datum/robot_component/armour/A = get_armour()
-	if(A)
-		A.take_damage(brute,burn,sharp)
-		return
-
-	while(parts.len && (brute>0 || burn>0) )
-		var/datum/robot_component/picked = pick(parts)
-
-		var/brute_was = picked.brute_damage
-		var/burn_was = picked.electronics_damage
-
-		picked.take_damage(brute,burn)
-
-		brute	-= (picked.brute_damage - brute_was)
-		burn	-= (picked.electronics_damage - burn_was)
-
-		parts -= picked
-
+/// One EMP, one pass. Blocking components are asked first; the parent (which
+/// pulses contents and applies the power-fault injury) runs exactly once.
+/// The cell is shielded from content recursion (set_cell()) and drained here
+/// through the ledger instead.
 /mob/living/silicon/robot/emp_act(severity, recursive)
+	if(SEND_SIGNAL(src, COMSIG_ROBOT_EMP_ACT, severity) & COMPONENT_BLOCK_EMP)
+		return EMP_PROTECT_SELF
 	. = ..()
-	if (. & EMP_PROTECT_SELF || SEND_SIGNAL(src, COMSIG_ROBOT_EMP_ACT, severity) & COMPONENT_BLOCK_EMP) // Cancelled by a component
+	if(. & EMP_PROTECT_SELF)
 		return
 	uneq_all()
-	..() //Damage is handled at /silicon/ level.
+	emp_drain_cell(severity)
+
+/mob/living/silicon/robot/proc/emp_drain_cell(severity)
+	if(!cell || severity <= 0)
+		return
+	var/resistance = 1 - cell.material_emp_resistance / 100
+	var/drained_units = cell.charge / (severity * cell_emp_mult) * resistance
+	if(drained_units > 0)
+		draw_power(ROBOT_CELL_JOULES(drained_units), src, 0, TRUE)
+	log_runtime("ROBOT_EMP: [key_name(src)] severity [severity] drained [round(drained_units)] cell units.")
+
+/// EMP surges bypass the armour plating and land on an internal-facing part;
+/// the power fault itself goes to the power bus (its home slot).
+/mob/living/silicon/robot/emp_injury_zone()
+	var/datum/body/simple/machine/robot/B = body
+	return istype(B) ? B.pick_damageable_component(TRUE) : null

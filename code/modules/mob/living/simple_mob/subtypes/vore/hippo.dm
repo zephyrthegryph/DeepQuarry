@@ -9,8 +9,7 @@
 	icon_gib = "hippo-dead" // No gib sprite yet
 	icon = 'icons/mob/vore64x64.dmi'
 
-	maxHealth = 200
-	health = 200
+	endurance = 200
 	movement_cooldown = 1.5
 	see_in_dark = 3
 

@@ -30,7 +30,7 @@
 		return "almost dry"
 	return "dry"
 
-/obj/item/stack/wetleather/fire_act(datum/gas_mixture/air, exposed_temperature, exposed_volume)
+/obj/item/stack/wetleather/fire_act(exposed_temperature, exposed_volume)
 	..()
 	if(exposed_temperature >= drying_threshold_temperature)
 		wetness--

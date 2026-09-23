@@ -201,7 +201,7 @@
 		if(brain.clone_source)
 			user.drop_item()
 			brain.forceMove(src)
-			put_in(brain.brainmob)
+			put_in(brain.hosted_view())
 			src.add_fingerprint(user)
 			user.visible_message("\The [user] adds \a [item] to \the [src]!", "You add \a [item] to \the [src]!")
 			SStgui.update_uis(src)
@@ -448,9 +448,10 @@
 				allowed = FALSE
 		if(!allowed || (NOCLONE in WC.mutations) || !WC.dna)
 			occupantData["isViableSubject"] = 0
-		occupantData["health"] = WC.health
-		occupantData["maxHealth"] = WC.getMaxHealth()
-		occupantData["minHealth"] = -(WC.getMaxHealth())
+		// Vitality is reported as a 0..100 percentage; the UI bar reads health / maxHealth.
+		occupantData["health"] = round(WC.vitality() * 100)
+		occupantData["maxHealth"] = 100
+		occupantData["minHealth"] = 0
 		occupantData["uniqueEnzymes"] = WC.dna.unique_enzymes
 		occupantData["uniqueIdentity"] = WC.dna.uni_identity
 		occupantData["structuralEnzymes"] = WC.dna.struc_enzymes

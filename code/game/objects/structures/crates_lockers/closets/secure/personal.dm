@@ -10,12 +10,6 @@
 	*/
 
 /obj/structure/closet/secure_closet/personal/Initialize(mapload)
-	/* // Removal
-	if(prob(50))
-		starts_with += /obj/item/storage/backpack
-	else
-		starts_with += /obj/item/storage/backpack/satchel/norm
-	*/
 	return ..()
 
 /obj/structure/closet/secure_closet/personal/patient
@@ -26,7 +20,6 @@
 		/obj/item/clothing/under/medigown,
 		/obj/item/clothing/under/color/white,
 		/obj/item/clothing/shoes/white)
-
 
 /obj/structure/closet/secure_closet/personal/cabinet
 	closet_appearance = /datum/decl/closet_appearance/cabinet/secure

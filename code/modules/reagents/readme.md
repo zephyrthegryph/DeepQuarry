@@ -227,7 +227,7 @@ About Reagents:
     	Ditto, touching.
 
     overdose(var/mob/living/carbon/M, var/alien)
-    	Called when dose is above overdose. Defaults to M.adjustToxLoss(REM).
+    	Called when dose is above overdose. Defaults to M.injure(INJURY_TOXIN, ...).
 
     initialize_data(var/newdata)
     	Called when reagent is created. Defaults to setting [data] to [newdata].

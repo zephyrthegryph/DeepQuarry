@@ -194,7 +194,6 @@
 	balloon_alert_visible("\the [src] lands on [comment]!", "\the [src] lands on [comment]!")
 
 
-// === merged from coins_vr.dm during hard-fork de-suffix (verified no override-order change) ===
 //Weird coins that I would prefer didn't work with normal vending machines. Might use them to make weird vending machines later.
 
 /obj/item/aliencoin

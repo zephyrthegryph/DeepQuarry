@@ -1,7 +1,6 @@
 /mob/living/bot
 	name = "Bot"
-	health = 20
-	maxHealth = 20
+	endurance = 20
 	icon = 'icons/obj/aibots.dmi'
 	layer = MOB_LAYER
 	universal_speak = 1
@@ -76,8 +75,7 @@
 
 /mob/living/bot/Life()
 	..()
-	if(health <= 0)
-		death()
+	if(stat == DEAD)
 		return
 	SetWeakened(0)
 	SetStunned(0)
@@ -89,8 +87,8 @@
 /*
 /mob/living/bot/examine(mob/user)
 	. = ..()
-	if(health < maxHealth)
-		if(health > maxHealth/3)
+	if(is_injured())
+		if(vitality() > 1/3)
 			. += "[src]'s parts look loose."
 		else
 			. += "[src]'s parts look very loose!"
@@ -104,20 +102,6 @@
 		if(open)
 			. += span_info("You can use a <b>crowbar</b> to remove it.")
 */
-/mob/living/bot/updatehealth()
-	if(SEND_SIGNAL(src, COMSIG_LIVING_HEALTH_UPDATE) & COMSIG_LIVING_HEALTH_UPDATE_GOD_MODE)
-		health = getMaxHealth()
-		set_stat(CONSCIOUS)
-	else
-		health = getMaxHealth() - getFireLoss() - getBruteLoss()
-	oxyloss = 0
-	toxloss = 0
-	cloneloss = 0
-	halloss = 0
-	if(health <= -getMaxHealth()) //die only once
-		death()
-		return
-
 /mob/living/bot/death()
 	explode()
 
@@ -161,11 +145,10 @@
 	return ITEM_INTERACT_SUCCESS
 
 /mob/living/bot/welder_act(mob/user, obj/item/tool)
-	if(health >= getMaxHealth() || !open)
+	if(!is_injured() || !open)
 		return ITEM_INTERACT_BLOCKING
-	adjustBruteLoss(-min(getBruteLoss(), 10))
-	adjustFireLoss(-min(getFireLoss(), 10))
-	updatehealth()
+	mend(TREAT_PLATING_REPAIR, 10)
+	mend(TREAT_WIRING_REPAIR, 10)
 	user.visible_message(span_notice("[user] repairs [src]."), span_notice("You repair [src]."))
 	playsound(src, tool.usesound, 50, TRUE)
 	return ITEM_INTERACT_SUCCESS
@@ -547,14 +530,8 @@
 	paicard = card
 	user.unEquip(card)
 	card.forceMove(src)
-	src.ckey = AI.ckey
+	transfer_mind(AI.mind, src, "pAI installed into [src]")
 	name = AI.name
-	ooc_notes = AI.ooc_notes
-	ooc_notes_likes = AI.ooc_notes_likes
-	ooc_notes_dislikes = AI.ooc_notes_dislikes
-	ooc_notes_favs = AI.ooc_notes_favs
-	ooc_notes_maybes = AI.ooc_notes_maybes
-	ooc_notes_style = AI.ooc_notes_style
 	to_chat(src, span_notice("You feel a tingle in your circuits as your systems interface with \the [initial(src.name)]."))
 	if(AI.idcard.GetAccess())
 		botcard.access	|= AI.idcard.GetAccess()
@@ -562,13 +539,7 @@
 /mob/living/bot/proc/ejectpai(mob/user)
 	if(paicard)
 		var/mob/living/silicon/pai/AI = paicard.pai
-		AI.ckey = src.ckey
-		AI.ooc_notes = ooc_notes
-		AI.ooc_notes_likes = ooc_notes_likes
-		AI.ooc_notes_dislikes = ooc_notes_dislikes
-		AI.ooc_notes_favs = ooc_notes_favs
-		AI.ooc_notes_maybes = ooc_notes_maybes
-		AI.ooc_notes_style = ooc_notes_style
+		transfer_mind(mind, AI, "pAI ejected from [src]")
 		paicard.forceMove(src.loc)
 		paicard = null
 		name = initial(name)

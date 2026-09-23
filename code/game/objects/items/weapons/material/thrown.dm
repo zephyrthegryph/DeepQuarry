@@ -18,7 +18,7 @@
 	..()
 	if(dq_material_radioactivity(material) > 0 && isliving(hit_atom)) // radioactivity is a component now.
 		var/mob/living/M = hit_atom
-		M.adjustToxLoss(rand(20,40))
+		M.injure(INJURY_RADIATION, rand(20,40), source = src)
 
 /obj/item/material/star/ninja
 	default_material = MAT_URANIUM

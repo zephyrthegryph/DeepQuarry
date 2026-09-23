@@ -328,7 +328,6 @@
 	temp_shift = -1
 
 
-// === merged from distilling_chomp.dm during hard-fork de-suffix (verified no override-order change) ===
 //Grub
 //Spider
 //Carp

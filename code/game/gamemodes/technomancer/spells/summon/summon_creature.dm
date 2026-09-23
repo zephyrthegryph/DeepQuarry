@@ -43,8 +43,7 @@
 		summoned.friends += owner
 
 	// Makes their new pal big and strong, if they have spell power.
-	summoned.maxHealth = calculate_spell_power(summoned.maxHealth)
-	summoned.health = calculate_spell_power(summoned.health)
+	summoned.endurance = calculate_spell_power(summoned.endurance)
 	summoned.melee_damage_lower = calculate_spell_power(summoned.melee_damage_lower)
 	summoned.melee_damage_upper = calculate_spell_power(summoned.melee_damage_upper)
 	// This makes the summon slower, so the crew has a chance to flee from massive monsters.
@@ -56,4 +55,4 @@
 
 
 	// Now we hurt their new pal, because being forcefully abducted by teleportation can't be healthy.
-	summoned.adjustBruteLoss(summoned.getMaxHealth() * 0.3) // Lose 30% of max health on arrival (but could be healed back up).
+	summoned.injure(INJURY_BLUNT, summoned.get_endurance() * 0.3, flags = INJURE_IGNORE_RESISTANCE) // Lose 30% of max health on arrival (but could be healed back up).

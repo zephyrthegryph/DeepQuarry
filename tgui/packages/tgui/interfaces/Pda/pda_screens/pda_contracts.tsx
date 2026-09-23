@@ -377,7 +377,7 @@ export const pda_contracts = () => {
               {contract.details?.kind === 'social_outcome' && (
                 <Section
                   mt={1}
-                  title={`Stakeholder participation — ${contract.details.stakeholder_summary}`}
+                  title={`Project participation — ${contract.details.stakeholder_summary}`}
                 >
                   <Box mb={1} color="label">
                     Current graded specification: {contract.details.score}% ·{' '}
@@ -385,9 +385,9 @@ export const pda_contracts = () => {
                     {contract.details.projected_reward} Thalers
                   </Box>
                   <Box mb={1} color="label">
-                    Share weights divide the fixed staff award. An appointment
-                    qualifies after the stakeholder contributes attributable
-                    work.
+                    Join a role directly. Attributable work qualifies your
+                    participation and determines your share of the fixed staff
+                    award.
                   </Box>
                   {(contract.details.roles ?? []).map((role) => {
                     const ownProposal = role.proposals.find(
@@ -409,93 +409,43 @@ export const pda_contracts = () => {
                         <Box mb={0.5}>{role.description}</Box>
                         {ownProposal && (
                           <Box mb={0.5} color="label">
-                            Your application: {ownProposal.status} · requested{' '}
-                            {ownProposal.weight}×
-                            {!!ownProposal.approved_weight &&
-                              ` · offered ${ownProposal.approved_weight}×`}
-                            {' · '}contribution {ownProposal.contribution}/
+                            Participating · contribution{' '}
+                            {ownProposal.contribution}/
                             {role.minimum_contribution}
                             {ownProposal.qualified && ' · qualified'}
                           </Box>
                         )}
-                        {ownProposal?.status === 'countered' && (
-                          <Stack mb={0.5}>
-                            <Stack.Item>
-                              <Button
-                                icon="check"
-                                color="good"
-                                onClick={() =>
-                                  act('contract_stakeholder_respond', {
-                                    id: contract.id,
-                                    role: role.id,
-                                    accepted: 1,
-                                  })
-                                }
-                              >
-                                Accept {ownProposal.approved_weight}× share
-                              </Button>
-                            </Stack.Item>
-                            <Stack.Item>
-                              <Button
-                                icon="times"
-                                onClick={() =>
-                                  act('contract_stakeholder_respond', {
-                                    id: contract.id,
-                                    role: role.id,
-                                    accepted: 0,
-                                  })
-                                }
-                              >
-                                Decline
-                              </Button>
-                            </Stack.Item>
-                          </Stack>
+                        {ownProposal && ownProposal.status === 'approved' && (
+                          <Button
+                            mb={0.5}
+                            icon="user-minus"
+                            onClick={() =>
+                              act('contract_stakeholder_withdraw', {
+                                id: contract.id,
+                                role: role.id,
+                              })
+                            }
+                          >
+                            Withdraw
+                          </Button>
                         )}
-                        {ownProposal &&
-                          ['pending', 'approved'].includes(
-                            ownProposal.status,
-                          ) && (
-                            <Button
-                              mb={0.5}
-                              icon="user-minus"
-                              onClick={() =>
-                                act('contract_stakeholder_withdraw', {
-                                  id: contract.id,
-                                  role: role.id,
-                                })
-                              }
-                            >
-                              Withdraw
-                            </Button>
-                          )}
                         {canApply && (
-                          <Stack>
-                            {[1, 2, 3].map((weight) => (
-                              <Stack.Item key={weight}>
-                                <Button
-                                  icon="handshake"
-                                  onClick={() =>
-                                    act('contract_stakeholder_propose', {
-                                      id: contract.id,
-                                      role: role.id,
-                                      weight,
-                                    })
-                                  }
-                                >
-                                  {weight === 1
-                                    ? 'Standard share'
-                                    : weight === 2
-                                      ? 'Major share'
-                                      : 'Lead share'}
-                                </Button>
-                              </Stack.Item>
-                            ))}
-                          </Stack>
+                          <Button
+                            icon="handshake"
+                            onClick={() =>
+                              act('contract_stakeholder_propose', {
+                                id: contract.id,
+                                role: role.id,
+                                weight: 1,
+                              })
+                            }
+                          >
+                            Join project role
+                          </Button>
                         )}
                         {!!role.viewer_has_other_role && !ownProposal && (
                           <Box color="label">
-                            You already hold or are seeking another role on this
-                            contract.
+                            You already hold another role on this project.
                           </Box>
                         )}
                       </Section>

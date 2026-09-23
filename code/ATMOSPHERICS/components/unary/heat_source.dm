@@ -76,7 +76,8 @@
 		return PROCESS_KILL
 
 	if(network && air_contents.total_moles() && air_contents.return_temperature() < set_temperature)
-		air_contents.add_thermal_energy(power_rating * CLAMP(reagent_cooling,REAGENT_COOLING_MINMOD,REAGENT_COOLING_MAXMOD) * HEATER_PERF_MULT * heating_efficiency)
+		// A resistive heater turns at most the power it draws into heat.
+		air_contents.add_thermal_energy(min(power_rating * CLAMP(reagent_cooling,REAGENT_COOLING_MINMOD,REAGENT_COOLING_MAXMOD) * HEATER_PERF_MULT * heating_efficiency, power_rating))
 		use_power(power_rating)
 
 		// Process coolant
@@ -199,7 +200,6 @@
 #undef HEATER_PERF_MULT
 
 
-// === merged from heat_source_ch.dm during hard-fork de-suffix (verified no override-order change) ===
 /obj/machinery/atmospherics/unary/heater/sauna
 	max_temperature = 331.15
 	set_temperature = 313.15

@@ -84,7 +84,7 @@
 		qdel(src)
 		var/mob/living/T = M
 		T.Weaken(10)
-		T.apply_damage(20)
+		T.injure(INJURY_BLUNT, 20, null, src)
 		return ITEM_INTERACT_SUCCESS
 	..()
 

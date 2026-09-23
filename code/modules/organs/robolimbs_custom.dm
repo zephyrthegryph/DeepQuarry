@@ -49,7 +49,6 @@
 	icon = 'icons/obj/items.dmi' // add. Use the right sprites
 	icon_state = "verkdisk" // add. Use the right sprites
 
-
 //Darkside Incorperated synthetic augmentation list! Many current most used fuzzy and notsofuzzy races made into synths here.
 /datum/robolimb/dsi_tajaran
 	company = "DSI - Tajaran"
@@ -61,11 +60,6 @@
 	includes_tail = 1
 	skin_tone = 1
 	suggested_species = SPECIES_TAJARAN
-
-/*/datum/robolimb/dsi_tajaran/New()
-	species_cannot_use = GLOB.all_species.Copy()
-	species_cannot_use -= SPECIES_TAJARAN
-VS Edit - anyone can select these. */
 
 /obj/item/disk/limb/dsi_tajaran
 	company = "DSI - Tajaran"
@@ -80,11 +74,6 @@ VS Edit - anyone can select these. */
 	includes_tail = 1
 	skin_tone = 1
 	suggested_species = SPECIES_UNATHI
-
-/* /datum/robolimb/dsi_lizard/New() //
-	species_cannot_use = GLOB.all_species.Copy()
-	species_cannot_use -= SPECIES_UNATHI
-VS Edit - anyone can select these. */
 
 /obj/item/disk/limb/dsi_lizard
 	company = "DSI - Lizard"

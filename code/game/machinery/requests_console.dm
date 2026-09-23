@@ -296,7 +296,6 @@ GLOBAL_LIST_EMPTY_TYPED(allConsoles, /obj/machinery/requests_console)
 #undef RCS_ANNOUNCE
 
 
-// === merged from requests_console_vr.dm during hard-fork de-suffix (verified no override-order change) ===
 // Request Console Presets!  Make mapping 400% easier!
 // By using these presets we can rename the departments easily.
 

@@ -9,7 +9,7 @@ updates:
       default-days: 7
 
   - package-ecosystem: npm
-    directory: "/tools"
+    directory: "/tgui"
     schedule:
       interval: "daily"
     cooldown:

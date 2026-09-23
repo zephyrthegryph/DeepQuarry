@@ -44,13 +44,6 @@
 	path = /obj/item/book/codex/lore/news
 	cost = 0
 
-/* // REMOVAL
-/datum/gear/utility/corp_regs
-	display_name = "corporate regulations and legal code"
-	path = /obj/item/book/codex/corp_regs
-	cost = 0
-*/
-
 /datum/gear/utility/robutt
 	display_name = "a buyer's guide to artificial bodies"
 	path = /obj/item/book/codex/lore/robutt
@@ -281,7 +274,7 @@ modular computers
 
 /datum/gear/utility/dufflebag/sec
 	display_name = "security Dufflebag"
-	allowed_roles = list(JOB_HEAD_OF_SECURITY,JOB_WARDEN,JOB_DETECTIVE,JOB_SECURITY_OFFICER,JOB_BLUESHIELD_GUARD,JOB_SECURITY_PILOT) //YW ADDITIONS
+	allowed_roles = list(JOB_HEAD_OF_SECURITY,JOB_WARDEN,JOB_DETECTIVE,JOB_SECURITY_OFFICER,JOB_BLUESHIELD_GUARD,JOB_SECURITY_PILOT)
 	path = /obj/item/storage/backpack/dufflebag/sec
 
 /datum/gear/utility/dufflebag/eng

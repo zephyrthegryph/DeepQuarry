@@ -754,7 +754,6 @@
 	reagents.add_reagent(REAGENT_ID_NUKIEONE, 60)
 
 
-// === merged from cans_ch.dm during hard-fork de-suffix (verified no override-order change) ===
 /obj/item/reagent_containers/food/drinks/cans/waterbottle/wataur
 	name = "bottled wataur"
 	desc = "Double it's size and double it's grip, this bottle is as mean and large as a taur itself."

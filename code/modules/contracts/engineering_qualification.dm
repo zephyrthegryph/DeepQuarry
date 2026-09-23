@@ -3,7 +3,17 @@
 /proc/process_engineering_measurement_fax(obj/item/paper/paper, sender_account, mob/living/sender)
 	var/evidence_id = paper.medical_scan_evidence?["evidence_id"]
 	var/datum/contract_evidence/evidence = SScontracts.evidence_by_id[evidence_id]
-	if(!evidence || evidence.kind != CONTRACT_EVIDENCE_ENGINEERING || evidence.void_reason || evidence.consumed_by || !sender_account)
+	if(!sender_account)
+		to_chat(sender, span_warning("Engineering Assurance requires an authenticated ID in the fax machine."))
+		return FALSE
+	if(!evidence || evidence.kind != CONTRACT_EVIDENCE_ENGINEERING)
+		to_chat(sender, span_warning("Engineering Assurance could not find a recorded engineering measurement on this paper. Observe the operating assembly with a multitool, then print that record at a powered photocopier."))
+		return FALSE
+	if(evidence.void_reason)
+		to_chat(sender, span_warning("Engineering Assurance rejected this measurement: [evidence.void_reason]"))
+		return FALSE
+	if(evidence.consumed_by)
+		to_chat(sender, span_warning("Engineering Assurance rejected this measurement because it has already been filed for contract [evidence.consumed_by]."))
 		return FALSE
 	var/list/payload = evidence.payload.Copy()
 	payload["measurement_id"] = evidence_id

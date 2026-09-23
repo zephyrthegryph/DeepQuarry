@@ -360,14 +360,6 @@
 			"A chaos cake. Both a creation of dark and light, the two cakes are kept in a careful balance by that mystical coin in the middle. It's said its effects would dissipate if the balance is ever tipped in favour of one side too much, so both sides much be cut equally."
 		)
 
-/*
-/obj/item/chaoscake_layerone
-	name = "A layer of cake"
-	desc = "a layer of cake, you can see the cherry paste ooze."
-	icon = 'icons/obj/food.dmi'
-	icon_state = "chaoscake_layer-1"
-*/
-
 /obj/item/chaoscake_layer
 	name = "A layer of cake"
 	desc = "a layer of cake, it is made out of colourful cream."

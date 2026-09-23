@@ -73,12 +73,12 @@
 	new glasstype(loc)
 	qdel(src)
 
-/obj/structure/window/maintenance_panel/fire_act(datum/gas_mixture/air, exposed_temperature, exposed_volume)
+/obj/structure/window/maintenance_panel/fire_act(exposed_temperature, exposed_volume)
 	if(exposed_temperature <= maximal_heat)
 		return
 	var/burndamage = log(RAND_F(0.9, 1.1) * (exposed_temperature - maximal_heat))
 	if(burndamage)
-		take_damage(burndamage)
+		take_damage(burndamage, BURN, FIRE)
 
 /obj/structure/window/maintenance_panel/examine(mob/user)
 	. = ..()

@@ -20,14 +20,17 @@
 	stacks = MODIFIER_STACK_EXTEND
 
 /datum/modifier/technomancer/mend_all/tick()
-	if(!holder.getBruteLoss() && !holder.getFireLoss() && !holder.getToxLoss() && !holder.getOxyLoss() && !holder.getCloneLoss()) // No point existing if the spell can't heal.
+	// Should heal roughly 120 damage over 1 minute, as tick() is run every 2 seconds.
+	var/mended = holder.mend(TREAT_TISSUE_REPAIR, 4 * spell_power)
+	mended += holder.mend(TREAT_PLATING_REPAIR, 4 * spell_power)
+	mended += holder.mend(TREAT_BURN_CARE, 4 * spell_power)
+	mended += holder.mend(TREAT_WIRING_REPAIR, 4 * spell_power)
+	mended += holder.mend(TREAT_ANTITOXIN, 4 * spell_power)
+	mended += holder.mend(TREAT_OXYGENATION, 4 * spell_power)
+	mended += holder.mend(TREAT_GENETIC_REPAIR, 2 * spell_power) // 60 genetic damage
+	if(!mended) // No point existing if the spell can't heal.
 		expire()
 		return
-	holder.adjustBruteLoss(-4 * spell_power) // Should heal roughly 120 damage over 1 minute, as tick() is run every 2 seconds.
-	holder.adjustFireLoss(-4 * spell_power)
-	holder.adjustToxLoss(-4 * spell_power)
-	holder.adjustOxyLoss(-4 * spell_power)
-	holder.adjustCloneLoss(-2 * spell_power) // 60 cloneloss
 	holder.adjust_instability(1)
 	if(origin)
 		var/mob/living/L = origin.resolve()

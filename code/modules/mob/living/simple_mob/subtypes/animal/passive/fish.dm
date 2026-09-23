@@ -53,7 +53,7 @@
 	if(T && !is_type_in_list(T, GLOB.suitable_fish_turf_types))
 		if(prob(50))
 			say(pick("Blub", "Glub", "Burble"))
-		adjustBruteLoss(unsuitable_atoms_damage)
+		injure(INJURY_ASPHYXIA, unsuitable_atoms_damage, source = T)
 
 // Subtypes.
 /mob/living/simple_mob/animal/passive/fish/bass
@@ -322,8 +322,7 @@
 // === merged from fish_vr.dm during hard-fork de-suffix (verified no override-order change) ===
 /mob/living/simple_mob/animal/passive/fish/koi/poisonous
 	desc = "A genetic marvel, combining the docility and aesthetics of the koi with some of the resiliency and cunning of the noble space carp."
-	health = 50
-	maxHealth = 50
+	endurance = 50
 	meat_amount = 0
 
 /mob/living/simple_mob/animal/passive/fish/koi/poisonous/Initialize(mapload)

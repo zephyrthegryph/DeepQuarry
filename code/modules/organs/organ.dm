@@ -43,7 +43,6 @@
 
 	var/butcherable = TRUE
 	var/meat_type	// What does butchering, if possible, make?
-	var/list/medical_issues
 
 	///Var for attack_self chain
 	var/special_handling = FALSE
@@ -51,20 +50,17 @@
 /obj/item/organ/Destroy()
 
 	handle_organ_mod_special(TRUE)
+	// Afflictions located on this organ die with it, attached or detached.
+	if(owner?.body)
+		for(var/datum/affliction/A as anything in owner.body.afflictions_at(src))
+			A.cure()
 	if(owner)           owner = null
 	if(transplant_data) transplant_data.Cut()
 	if(autopsy_data)    autopsy_data.Cut()
 	if(trace_chemicals) trace_chemicals.Cut()
 	QDEL_NULL(data)
 
-	// clear medical_issues so conditions don't outlive their
-	// host organ with a dangling affectedorgan pointer. Without this an
-	// amputated arm with an active tendon_severed leaks the condition
-	// onto the floor with the limb.
-	if(medical_issues)
-		for(var/datum/medical_issue/I in medical_issues)
-			I.affectedorgan = null
-		QDEL_LIST(medical_issues)
+	QDEL_LIST(detached_afflictions)
 
 	return ..()
 
@@ -146,12 +142,17 @@
 /obj/item/organ/proc/die()
 	if(robotic < ORGAN_ROBOT)
 		status |= ORGAN_DEAD
-	damage = max_damage
+	saturate_damage()
 	STOP_PROCESSING(SSobj, src)
 	handle_organ_mod_special(TRUE)
 	if(owner && vital)
 		owner.can_defib = FALSE
 		owner.death()
+
+/// Bring the organ's integrity to max_damage (death). Internal organs do it
+/// with a necrosis lesion (see organ_integrity.dm).
+/obj/item/organ/proc/saturate_damage()
+	damage = max_damage
 
 /obj/item/organ/proc/adjust_germ_level(amount)		// Unless you're setting germ level directly to 0, use this proc instead
 	germ_level = CLAMP(germ_level + amount, 0, INFECTION_LEVEL_MAX)
@@ -176,8 +177,8 @@
 
 	handle_organ_proc_special()
 
-	for(var/datum/medical_issue/I in medical_issues)
-		I.handle_effects()
+	if(!owner)
+		tick_detached_afflictions()
 
 	//Process infections
 	if(robotic >= ORGAN_ROBOT || (istype(owner) && (owner.species && (owner.species.flags & (IS_PLANT | NO_INFECT)))))
@@ -189,9 +190,10 @@
 		if(B && prob(40) && !isbelly(loc))
 			reagents.remove_reagent(REAGENT_ID_BLOOD,0.1)
 			blood_splatter(src,B,1)
-		if(CONFIG_GET(flag/organs_decay) && decays) damage += rand(1,3)
-		if(damage >= max_damage)
-			damage = max_damage
+		if(CONFIG_GET(flag/organs_decay) && decays)
+			var/obj/item/organ/internal/rotting = src
+			if(istype(rotting))
+				rotting.apply_lesion_damage(rand(1,3), /datum/affliction/lesion/necrosis, TRUE)
 		adjust_germ_level(1) //If something knocked a limb off, usually it'll have 100ish germs. This means you have ~30 minutes to get it back on before it becomes necrotic.
 		if(germ_level >= INFECTION_LEVEL_THREE)
 			die()
@@ -255,7 +257,7 @@
 		germ_level = 0
 		return 0
 
-	var/antibiotics = iscarbon(owner) ? owner.chem_effects[CE_ANTIBIOTIC] || 0 : 0
+	var/antibiotics = owner ? owner.factor(BF_ANTIMICROBIAL) : 0
 
 	// the germ_level toxin-damage path is replaced by the
 	// wound_infection condition (code/modules/medical/...).
@@ -270,7 +272,7 @@
 	//   else if(germ_level > INFECTION_LEVEL_TWO && antibiotics < ANTIBIO_OD)
 	//       infection_damage = CLAMP(round((germ_level - INFECTION_LEVEL_TWO)/1000), 0, 0.1)
 	//   if(infection_damage)
-	//       owner.adjustToxLoss(infection_damage)
+	//       owner.injure(INJURY_TOXIN, infection_damage)
 
 	if (germ_level > 0 && germ_level < INFECTION_LEVEL_ONE/2 && prob(30))
 		adjust_germ_level(-antibiotics)
@@ -359,7 +361,7 @@
 //Germs
 /obj/item/organ/proc/handle_antibiotics()
 	if(istype(owner))
-		var/antibiotics = owner.chem_effects[CE_ANTIBIOTIC] || 0
+		var/antibiotics = owner.factor(BF_ANTIMICROBIAL)
 
 		if (!germ_level || antibiotics < ANTIBIO_NORM)
 			return
@@ -385,24 +387,23 @@
 	W.damage += damage
 	W.time_inflicted = world.time
 
-//Note: external organs have their own version of this proc
-/obj/item/organ/take_damage(amount, silent=0)
-	owner?.dq_invalidate_medical_conditions(DQ_MEDICAL_DIRTY_ORGANS)
-	if(owner)
-		if(SEND_SIGNAL(owner, COMSIG_INTERNAL_ORGAN_PRE_DAMAGE_APPLICATION, amount, silent) & COMPONENT_CANCEL_INTERNAL_ORGAN_DAMAGE)
-			return 0
-	if(src.robotic >= ORGAN_ROBOT)
-		src.damage = between(0, src.damage + (amount * 0.8), max_damage)
-	else
-		src.damage = between(0, src.damage + amount, max_damage)
+/// Organs are anatomy, not item integrity: /atom/take_damage() does nothing
+/// to them. A patient's organs are harmed through injure() (internal organs:
+/// lesions, code/modules/body/parts/organ_integrity.dm; limbs: wounds,
+/// organ_external.dm) and healed through mend().
+/obj/item/organ/take_damage(damage_amount, damage_type, damage_flag, sound_effect, attack_dir, armour_penetration)
+	return 0
 
-		//only show this if the organ is not robotic
-		if(owner && parent_organ && amount > 0)
-			var/obj/item/organ/external/parent = owner?.get_organ(parent_organ)
-			if(parent && !silent)
-				owner.custom_pain("Something inside your [parent.name] hurts a lot.", amount)
-	if(owner)
-		SEND_SIGNAL(owner, COMSIG_INTERNAL_ORGAN_POST_DAMAGE_APPLICATION, amount, silent)
+/// EMP harm to a prosthetic organ's own hardware. Body-internal.
+/obj/item/organ/proc/suffer_emp_damage(amount)
+	return
+
+/obj/item/organ/internal/suffer_emp_damage(amount)
+	apply_lesion_damage(amount, null, TRUE)
+
+/obj/item/organ/external/suffer_emp_damage(amount)
+	apply_wound_damage(amount, 0)
+
 /obj/item/organ/proc/bruise()
 	damage = max(damage, min_bruised_damage)
 
@@ -414,6 +415,18 @@
 	src.status &= ~ORGAN_BROKEN
 	src.status &= ~ORGAN_BLEEDING
 	src.status &= ~ORGAN_CUT_AWAY
+	shed_mismatched_afflictions()
+
+/// After a biology change, cure the afflictions on this organ that can no
+/// longer exist on it (organic wounds on a prosthetic, and so on).
+/obj/item/organ/proc/shed_mismatched_afflictions()
+	if(!owner?.body)
+		return
+	var/biology = owner.body.biology_of(src)
+	for(var/datum/affliction/A as anything in afflictions_here())
+		if(!(A.biology & biology))
+			log_game("BODY: [key_name(owner)] [A.type] cured on [name]: biology changed.")
+			A.cure()
 
 /obj/item/organ/proc/mechassist() //Used to add things like pacemakers, etc
 	robotize()
@@ -437,22 +450,18 @@
 	for(var/i = 1; i <= robotic; i++)
 		switch (severity)
 			if (EMP_HEAVY)
-				take_damage(rand(5,9))
+				suffer_emp_damage(rand(5,9))
 			if (EMP_MEDIUM)
-				take_damage(rand(3,7))
+				suffer_emp_damage(rand(3,7))
 			if (EMP_LIGHT)
-				take_damage(rand(2,5))
+				suffer_emp_damage(rand(2,5))
 			if (EMP_HARMLESS)
-				take_damage(rand(1,3))
+				suffer_emp_damage(rand(1,3))
 
 /obj/item/organ/proc/removed(mob/living/user)
-	// conditions stay attached to the organ so re-implantation
-	// brings them back. Unhook owner so the now-detached patient stops
-	// processing them. Re-anchoring happens in the implantation surgery
-	// step via dq_reseat_owner().
-	if(medical_issues)
-		for(var/datum/medical_issue/condition/C in medical_issues)
-			C.owner = null
+	// Afflictions located here travel with the organ and rejoin whichever
+	// body it is implanted into (see /datum/body/proc/attach_part).
+	owner?.body?.detach_part(src)
 
 	if(owner)
 		owner.internal_organs_by_name[organ_tag] = null
@@ -486,6 +495,8 @@
 	handle_organ_mod_special(TRUE)
 
 	owner = null
+	// Detached: integrity now derives from the afflictions it carries.
+	recalc_integrity()
 
 
 /obj/item/organ/proc/replaced(mob/living/carbon/human/target,obj/item/organ/external/affected)
@@ -514,10 +525,8 @@
 
 	handle_organ_mod_special()
 
-	// re-anchor medical conditions that travelled with the
-	// extracted organ. See /obj/item/organ/external/replaced for the
-	// limb-level equivalent.
-	dq_reseat_owner(target)
+	// Afflictions that travelled with the organ rejoin the new body.
+	target.body?.attach_part(src)
 
 /obj/item/organ/proc/bitten(mob/user)
 
@@ -564,7 +573,12 @@
 	if(istype(container))
 		if(container.reagents.has_reagent(REAGENT_ID_PERIDAXON, 5))
 			status &= ~ORGAN_DEAD
-			damage-- //Fix JUST enough damage so it doesn't immediately die again. For full repair, use denec removal surgery.
+			var/obj/item/organ/internal/internal_organ = src
+			if(istype(internal_organ))
+				internal_organ.restore_lesions(1)
+			else
+				damage--
+			//Fix JUST enough damage so it doesn't immediately die again. For full repair, use denec removal surgery.
 			START_PROCESSING(SSobj, src) //When an organ dies, it stops processing. This restarts it.
 			container.reagents.remove_reagent(REAGENT_ID_PERIDAXON, 5)
 			to_chat(user, "You use the [container] to revive \the [src]")

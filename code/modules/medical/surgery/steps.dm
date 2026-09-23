@@ -41,7 +41,7 @@
 	// Only valid on limbs.
 	if(!(affected.organ_tag in list(BP_L_ARM, BP_R_ARM, BP_L_LEG, BP_R_LEG)))
 		return FALSE
-	for(var/datum/medical_issue/condition/compartment_syndrome/C in affected.medical_issues)
+	for(var/datum/affliction/compartment_syndrome/C in affected.afflictions_here())
 		return TRUE
 	return FALSE
 
@@ -70,10 +70,10 @@
 		span_danger("Your hand slips and gouges deep into [target]'s [affected.name]!"),
 	)
 	user.balloon_alert_visible("slips, gouging deep into [target]'s [affected.name]", "your hand slips, gouging \the [affected.name]")
-	affected.take_damage(10, 0)
+	target.injure(INJURY_CUT, 10, affected.organ_tag, tool, flags = INJURE_IGNORE_RESISTANCE)
 
 
-// --- Chest tube placement (tension pneumothorax) ------------------------
+// --- Chest tube placement (pneumothorax) --------------------------------
 
 /datum/surgery_step/chest_tube
 	surgery_name = "Place Chest Tube"
@@ -98,7 +98,7 @@
 		return FALSE
 	if(affected.open < FLESH_RETRACTED)
 		return FALSE
-	for(var/datum/medical_issue/condition/tension_pneumothorax/C in affected.medical_issues)
+	for(var/datum/affliction/pneumothorax/C in affected.afflictions_here())
 		return TRUE
 	return FALSE
 
@@ -126,7 +126,7 @@
 	user.balloon_alert_visible("slips, mis-piercing [target]'s chest", "your hand slips, mis-piercing the chest")
 	var/obj/item/organ/external/affected = target.get_organ(target_zone)
 	if(affected)
-		affected.take_damage(8, 0)
+		target.injure(INJURY_BLUNT, 8, affected.organ_tag, tool, flags = INJURE_IGNORE_RESISTANCE)
 
 
 // --- Open cardiac repair (heart_damage) --------------------------------
@@ -157,7 +157,7 @@
 	var/obj/item/organ/internal/heart = target.internal_organs_by_name[O_HEART]
 	if(!heart)
 		return FALSE
-	for(var/datum/medical_issue/condition/heart_damage/C in heart.medical_issues)
+	for(var/datum/affliction/heart_damage/C in heart.afflictions_here())
 		return TRUE
 	return FALSE
 
@@ -181,7 +181,7 @@
 		// Real heart-muscle repair: drop the organ's damage substantially
 		// so the heart can actually pump again. The DQ severity drop on
 		// the condition itself happens via dq_apply_surgery_cures.
-		heart.damage = max(0, heart.damage - heart.max_damage * 0.6)
+		target.surgically_repair_organ(heart, heart.max_damage * 0.6)
 
 /datum/surgery_step/cardiac_repair/fail_step(mob/living/user, mob/living/carbon/human/target, target_zone, obj/item/tool)
 	user.visible_message(
@@ -191,7 +191,7 @@
 	user.balloon_alert_visible("slips, tearing into [target]'s heart", "your hand slips, tearing the heart")
 	var/obj/item/organ/internal/heart = target.internal_organs_by_name[O_HEART]
 	if(heart)
-		heart.take_damage(10, 0)
+		target.injure(INJURY_CUT, 10, heart, tool, affliction = /datum/affliction/lesion/laceration, flags = INJURE_IGNORE_RESISTANCE)
 
 
 // --- Exploratory laparotomy (internal_hemorrhage in abdomen) ----------
@@ -220,7 +220,7 @@
 		return FALSE
 	if(affected.open < FLESH_RETRACTED)
 		return FALSE
-	for(var/datum/medical_issue/condition/internal_hemorrhage/C in affected.medical_issues)
+	for(var/datum/affliction/internal_hemorrhage/C in affected.afflictions_here())
 		return TRUE
 	return FALSE
 
@@ -244,9 +244,9 @@
 	// Remove any active internal wounds — the bleeders that drove the
 	// internal_hemorrhage condition. The DQ side will drop the condition
 	// severity separately via dq_apply_surgery_cures.
-	for(var/datum/wound/W in affected.wounds)
+	for(var/datum/affliction/wound/W as anything in affected.get_wounds())
 		if(W.internal)
-			affected.wounds -= W
+			affected.remove_wound(W)
 	affected.update_damages()
 
 /datum/surgery_step/exploratory_laparotomy/fail_step(mob/living/user, mob/living/carbon/human/target, target_zone, obj/item/tool)
@@ -256,7 +256,7 @@
 		span_danger("Your hand slips, tearing further into [target]'s [affected.name]!"),
 	)
 	user.balloon_alert_visible("slips, tearing [target]'s [affected.name]", "your hand slips, tearing \the [affected.name]")
-	affected.take_damage(8, 0)
+	target.injure(INJURY_CUT, 8, affected.organ_tag, tool, flags = INJURE_IGNORE_RESISTANCE)
 
 
 // --- Retinal repair (ischemic_vision_loss) -----------------------------
@@ -283,7 +283,7 @@
 	var/obj/item/organ/internal/eyes = target.internal_organs_by_name[O_EYES]
 	if(!eyes)
 		return FALSE
-	for(var/datum/medical_issue/condition/ischemic_vision_loss/C in eyes.medical_issues)
+	for(var/datum/affliction/ischemic_vision_loss/C in eyes.afflictions_here())
 		return TRUE
 	return FALSE
 
@@ -304,7 +304,7 @@
 	user.balloon_alert_visible("reattaches the retina in [target]'s eye", "reattached the retina")
 	var/obj/item/organ/internal/eyes = target.internal_organs_by_name[O_EYES]
 	if(eyes)
-		eyes.damage = max(0, eyes.damage - eyes.max_damage * 0.5)
+		target.surgically_repair_organ(eyes, eyes.max_damage * 0.5)
 
 /datum/surgery_step/retinal_repair/fail_step(mob/living/user, mob/living/carbon/human/target, target_zone, obj/item/tool)
 	user.visible_message(
@@ -314,4 +314,4 @@
 	user.balloon_alert_visible("slips, scoring [target]'s retina", "your hand slips, scoring the retina")
 	var/obj/item/organ/internal/eyes = target.internal_organs_by_name[O_EYES]
 	if(eyes)
-		eyes.take_damage(5, 0)
+		target.injure(INJURY_CUT, 5, eyes, tool, affliction = /datum/affliction/lesion/laceration, flags = INJURE_IGNORE_RESISTANCE)

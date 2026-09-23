@@ -10,7 +10,7 @@
 //     (record_feedback → feedback_add_details, wet_floor → CHOMP wet_floor,
 //      analyze_gases, fire_nuclear_particle → SSradiation.irradiate)
 //   - a real base no-op for a /tg/ hook that subtypes override
-//     (Initalize_Atmos, atmos_expose, process_atmos, apply_fire_protection)
+//     (Initalize_Atmos, process_atmos, apply_fire_protection)
 //   - a var/list scaffold (multiz_levels, z_list, electrolyzer_reactions)
 //
 // CHOMP atmos MACHINERY (vents, scrubbers, pipes, canisters, alarms) is
@@ -37,7 +37,7 @@
 	var/value = !isnull(data) ? "[data]" : "[increment_by]"
 	feedback_add_details(key_name, "[key_type]:[value]")
 
-var/global/datum/controller/subsystem/blackbox/SSblackbox = new()
+GLOBAL_REAL(SSblackbox, /datum/controller/subsystem/blackbox) = new()
 
 
 // === /tg/ globals SSair expects ===
@@ -283,48 +283,8 @@ GLOBAL_LIST_INIT(diagonals_multiz, list(NORTHEAST, NORTHWEST, SOUTHEAST, SOUTHWE
 		return istype(src, /turf/simulated/open)
 	return TRUE
 
-// atmos_expose / should_atmos_process — base /turf no-ops are FALSE/return;
-// real impls on /turf/simulated live in LINDA_turf_tile.dm. The full call
-// chain runs through /turf/open/temperature_expose.
-/turf/proc/atmos_expose(datum/gas_mixture/air, temperature)
-	return
-
-/turf/proc/should_atmos_process(datum/gas_mixture/air, exposed_temperature)
-	return FALSE
-
-// /turf/proc/check_atmos_process removed; was a no-op that swallowed
-// the temperature_expose handoff. Caller in LINDA_turf_tile.dm now calls
-// should_atmos_process + atmos_expose directly.
-
 /turf/proc/return_analyzable_air()
 	return return_air()
-
-// /turf/proc/Melt — called by /turf/simulated/burn_turf() when a tile has
-// been heat-soaked past its survival threshold. Replaces the turf with the
-// CHOMP "burned down" form: walls become plating, floors become plating,
-// plating itself dissolves to space. Other turfs no-op.
-/turf/proc/Melt()
-	return
-
-/turf/simulated/wall/Melt()
-	// CHOMP /turf/simulated/wall has its own lowercase melt() for the wall-
-	// collapses-into-floor flow; defer to it so wall-specific bookkeeping runs.
-	melt()
-
-/turf/simulated/floor/Melt()
-	if(istype(src, /turf/simulated/floor/plating))
-		return
-	ChangeTurf(/turf/simulated/floor/plating, preserve_outdoors = TRUE)
-
-/turf/simulated/floor/plating/Melt()
-	// Plating burned beyond plating: open to the deck below. ChangeTurf to
-	// space if there's no floor underneath, otherwise leave it as plating
-	// since there's nothing thinner.
-	if(GetBelow(src))
-		ChangeTurf(/turf/simulated/open, preserve_outdoors = TRUE)
-	else
-		ChangeTurf(/turf/space, preserve_outdoors = TRUE)
-
 
 // /datum/component/wet_floor + TURF_WET_PERMAFROST removed alongside
 // the matching branch in gasmixtures/reactions.dm. CHOMP keeps wetness on

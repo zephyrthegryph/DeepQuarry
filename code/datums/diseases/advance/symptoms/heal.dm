@@ -146,9 +146,9 @@
 									H.grab_ghost()
 								break
 			if(bruteheal)
-				H.heal_overall_damage(2 * power)
+				H.mend(TREAT_TISSUE_REPAIR, 2 * power)
 				if(prob(33) && tetsuo)
-					H.adjustCloneLoss(1)
+					H.injure(INJURY_CELLULAR, 1)
 		else
 			if(prob(base_message_chance) && H.stat != DEAD)
 				to_chat(H, span_notice(pick("You feel bloated.", "The station seems small.", "You are the strongest.")))
@@ -220,10 +220,9 @@
 /datum/symptom/heal/oxygen/Heal(mob/living/carbon/human/H, datum/disease/advance/A, actual_power)
 	if(!istype(H))
 		return
-	if(H.getOxyLoss() > 0)
-		H.adjustOxyLoss(3 * power)
+	H.mend(TREAT_OXYGENATION, 3 * power)
 	if(regenerate_blood && H.vessel.get_reagent_amount(REAGENT_ID_BLOOD) < H.species.blood_volume)
-		H.add_chemical_effect(CE_BLOODRESTORE, 1)
+		H.add_modifier(/datum/modifier/blood_regeneration, 3 SECONDS)
 
 /datum/symptom/heal/water
 	name = "Tissue Hydration"
@@ -280,12 +279,8 @@
 	if(prob(5))
 		to_chat(H, span_notice("You feel yourself absorbing the water around you to soothe your damaged skin."))
 
-	var/obj/item/organ/external/pickedpart
-
 	for(var/bodypart in zone_list)
-		pickedpart = H.get_organ(bodypart)
-		if(pickedpart.burn_dam > 0 && !(pickedpart.robotic >= ORGAN_ROBOT))
-			pickedpart.heal_damage(0, (heal_amt/zone_list.len))
+		H.mend(TREAT_BURN_CARE, heal_amt / zone_list.len, bodypart) // organic tag: robotic limbs are unaffected
 
 	return TRUE
 
@@ -316,7 +311,7 @@ Bonus
 
 /datum/symptom/heal/dna/Heal(mob/living/carbon/M, datum/disease/advance/A)
 	var/amt_healed = max(0, (sqrtor0(20+A.stage_rate*(3+rand())))-(sqrtor0(16+A.stealth*rand())))
-	M.adjustBrainLoss(-amt_healed)
+	M.mend(TREAT_NEURAL_REPAIR, amt_healed)
 	M.radiation = max(M.radiation - 3, 0)
 	return TRUE
 */

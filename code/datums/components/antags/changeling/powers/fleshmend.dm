@@ -44,11 +44,11 @@
 
 //These were previously 2 or 4 per second, now it's 4 or 8 per 2 seconds
 /datum/modifier/fleshmend/tick()
-	holder.adjustBruteLoss(-4)
-	holder.adjustOxyLoss(-4)
-	holder.adjustFireLoss(-4)
+	holder.mend(TREAT_TISSUE_REPAIR, 4)
+	holder.mend(TREAT_OXYGENATION, 4)
+	holder.mend(TREAT_BURN_CARE, 4)
 
 /datum/modifier/fleshmend/recursive/tick()
-	holder.adjustBruteLoss(-8)
-	holder.adjustOxyLoss(-8)
-	holder.adjustFireLoss(-8)
+	holder.mend(TREAT_TISSUE_REPAIR, 8)
+	holder.mend(TREAT_OXYGENATION, 8)
+	holder.mend(TREAT_BURN_CARE, 8)

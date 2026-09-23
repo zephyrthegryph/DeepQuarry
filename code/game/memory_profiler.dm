@@ -107,7 +107,6 @@
 
 	world.log << "Finished in [total_time/1000] seconds"
 
-
 /proc/prune_list(list/list_of_lists)
 	if(!list_of_lists.len) return
 	for(var/list/L in list_of_lists)
@@ -158,8 +157,6 @@
 			total += list_memory_size(item,list_of_lists,recursed_from.Copy())
 	return total
 
-
-
 //This feels like it shouldn't work but it does
 /proc/is_associative(list/L)
 	try
@@ -181,13 +178,6 @@
 	var/p_type = thing::parent_type
 	L[type] += val
 	if(p_type) add_types_val(p_type, L, val)
-/*
-/datum/controller/master/SetRunLevel(new_runlevel)
-	if(new_runlevel == RUNLEVEL_GAME)
-		spawn(300)
-			get_stuff()
-	. = ..(new_runlevel)
-*/
 /proc/display_bytes(num_bytes)
 	if(num_bytes > 10000000)
 		return "[num_bytes/1000000] mb"

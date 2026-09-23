@@ -144,6 +144,5 @@
 	add_modifier(/datum/modifier/homeothermic, 0, null)
 
 
-// === merged from ai_controlled_vr.dm during hard-fork de-suffix (verified no override-order change) ===
 /mob/living/carbon/human/ai_controlled
 	sensorpref = 1

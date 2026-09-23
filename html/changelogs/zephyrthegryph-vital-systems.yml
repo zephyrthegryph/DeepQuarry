@@ -1,0 +1,9 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - rscadd: "Vital systems: airway obstruction and airway edema now close the airway (no breathing at all). Clear a choking patient with abdominal thrusts (help intent, aim at the chest) or the new airway kit; adrenaline or an AllergyPen shrinks a swelling airway."
+  - rscadd: "Respiratory arrest (opioid overdose, brain herniation, profound hypoxia) stops spontaneous breathing. Breathe for the patient with the new bag-valve mask or CPR rescue breaths."
+  - rscadd: "Pneumothorax replaces tension pneumothorax: it builds into a tension pneumothorax, is vented with the new decompression needle or a chest tube, and keeps refilling from a perforated lung until surgery closes it."
+  - rscadd: "Cardiac arrhythmias: unstable tachycardia, ventricular fibrillation and asystole. A stopped heart knocks the patient out and starves the brain; CPR slows it. Defibrillators now read the rhythm: they convert VF (even on the living) but refuse asystole, which needs CPR and adrenaline to coarsen into VF first."
+  - rscadd: "Health analysers and vitals monitors show the cardiac rhythm and flag absent breathing."
+  - balance: "Heart-stopping poisons, strong electric shocks and heart failure now cause a real cardiac arrest instead of just a missing pulse. Vomiting while unconscious can cause aspiration."

@@ -391,7 +391,6 @@
 		add_attack_logs(user, H, "Infected \the [H] with \the [src], by \the [user].")
 
 
-// === merged from hypospray_vr.dm during hard-fork de-suffix (verified no override-order change) ===
 /obj/item/reagent_containers/hypospray/autoinjector/burn
 	name = "autoinjector (burn)"
 	icon_state = "purple"

@@ -207,13 +207,13 @@
 		var/obj/item/organ/external/affected = target.get_organ(target_zone)
 		if(istype(tool, /obj/item/weldingtool))
 			var/obj/item/weldingtool/welder = tool
-			if(affected.brute_dam == 0)
+			if(affected.get_trauma() == 0)
 				to_chat(user, span_notice("There is no damage to the internal structure here!"))
 				return SURGERY_FAILURE
 			else
 				if(!welder.isOn() || !welder.remove_fuel(1,user))
 					return 0
-		return affected && affected.open == BONE_RETRACTED  && (affected.disfigured || affected.brute_dam > 0) && target_zone != O_MOUTH // .
+		return affected && affected.open == BONE_RETRACTED  && (affected.disfigured || affected.get_trauma() > 0) && target_zone != O_MOUTH // .
 
 /datum/surgery_step/robotics/repair_brute/begin_step(mob/user, mob/living/carbon/human/target, target_zone, obj/item/tool)
 	var/obj/item/organ/external/affected = target.get_organ(target_zone)
@@ -227,7 +227,7 @@
 	user.visible_message(span_notice("[user] finishes patching damage to [target]'s [affected.name] with \the [tool]."), \
 	span_notice("You finish patching damage to [target]'s [affected.name] with \the [tool]."))
 	user.balloon_alert_visible("finishes patching damage to [target]'s [affected.name]", "patched samage to \the [affected.name]")
-	affected.heal_damage(rand(30,50),0,1,1)
+	target.mend(TREAT_PLATING_REPAIR, rand(30,50), affected.organ_tag)
 	affected.disfigured = 0
 
 /datum/surgery_step/robotics/repair_brute/fail_step(mob/living/user, mob/living/carbon/human/target, target_zone, obj/item/tool)
@@ -235,7 +235,7 @@
 	user.visible_message(span_warning("[user]'s [tool.name] slips, damaging the internal structure of [target]'s [affected.name]."),
 	span_warning("Your [tool.name] slips, damaging the internal structure of [target]'s [affected.name]."))
 	user.balloon_alert_visible("slips, damaging the internal structure of [target]'s [affected.name]", "your [tool.name] slips, damaging the internal structure of \the [affected.name]")
-	target.apply_damage(rand(5,10), BURN, affected)
+	target.injure(INJURY_BURN, rand(5,10), affected.organ_tag, tool)
 
 ///////////////////////////////////////////////////////////////
 // Burn Repair Surgery
@@ -255,7 +255,7 @@
 		var/obj/item/organ/external/affected = target.get_organ(target_zone)
 		if(istype(tool, /obj/item/stack/cable_coil))
 			var/obj/item/stack/cable_coil/C = tool
-			if(affected.burn_dam == 0)
+			if(affected.get_burn() == 0)
 				user.balloon_alert_visible("there are no burnt wires here!")
 				to_chat(user, span_notice("There are no burnt wires here!"))
 				return SURGERY_FAILURE
@@ -267,7 +267,7 @@
 				else
 					C.use(5)
 
-		return affected && affected.open == BONE_RETRACTED && (affected.disfigured || affected.burn_dam > 0) && target_zone != O_MOUTH
+		return affected && affected.open == BONE_RETRACTED && (affected.disfigured || affected.get_burn() > 0) && target_zone != O_MOUTH
 
 /datum/surgery_step/robotics/repair_burn/begin_step(mob/user, mob/living/carbon/human/target, target_zone, obj/item/tool)
 	var/obj/item/organ/external/affected = target.get_organ(target_zone)
@@ -281,7 +281,7 @@
 	user.visible_message(span_notice("[user] finishes splicing cable into [target]'s [affected.name]."), \
 	span_notice("You finishes splicing new cable into [target]'s [affected.name]."))
 	user.balloon_alert_visible("finishes splicing cable into [target]'s [affected.name]", "finished splicing new cable into [target]'s [affected.name]")
-	affected.heal_damage(0,rand(30,50),1,1)
+	target.mend(TREAT_WIRING_REPAIR, rand(30,50), affected.organ_tag)
 	affected.disfigured = 0
 
 /datum/surgery_step/robotics/repair_burn/fail_step(mob/living/user, mob/living/carbon/human/target, target_zone, obj/item/tool)
@@ -289,7 +289,7 @@
 	user.visible_message(span_warning("[user] causes a short circuit in [target]'s [affected.name]!"),
 	span_warning("You cause a short circuit in [target]'s [affected.name]!"))
 	user.balloon_alert_visible("causes a short circuit in [target]'s [affected.name]", "you cause a short circuit in \the [affected.name]")
-	target.apply_damage(rand(5,10), BURN, affected)
+	target.injure(INJURY_BURN, rand(5,10), affected.organ_tag, tool)
 
 ///////////////////////////////////////////////////////////////
 // Robot Organ Surgery
@@ -347,7 +347,7 @@
 				user.visible_message(span_notice("[user] repairs [target]'s [I.name] with [tool]."), \
 				span_notice("You repair [target]'s [I.name] with [tool].") )
 				user.balloon_alert_visible("repairs [target]'s [I.name]", "repaired \the [I.name]")
-				I.damage = 0
+				target.surgically_repair_organ(I)
 				if(I.organ_tag == O_EYES)
 					target.sdisabilities &= ~BLIND
 
@@ -360,12 +360,12 @@
 	span_warning("Your hand slips, gumming up the mechanisms inside of [target]'s [affected.name] with \the [tool]!"))
 	user.balloon_alert_visible("slips, gumming up the mechanisms inside [target]'s [affected.name]", "your hand slips, gumming up the mechanisms inside of \the [affected.name]")
 
-	target.adjustToxLoss(5)
-	affected.createwound(CUT, 5)
+	target.injure(INJURY_TOXIN, 5, source = tool)
+	target.injure(INJURY_CUT, 5, affected.organ_tag, tool, flags = INJURE_IGNORE_RESISTANCE)
 
 	for(var/obj/item/organ/I in affected.internal_organs)
 		if(I)
-			I.take_damage(rand(3,5),0)
+			target.injure(INJURY_BLUNT, rand(3,5), I, tool, flags = INJURE_IGNORE_RESISTANCE)
 
 ///////////////////////////////////////////////////////////////
 // Robot Organ Detaching Surgery
@@ -521,12 +521,6 @@
 	if(!istype(M))
 		return 0
 
-	/* Don't worry about it. We can put these in regardless, because resleeving might make it useful after.
-	if(!M.brainmob || !M.brainmob.client || !M.brainmob.ckey || M.brainmob.stat >= DEAD)
-		to_chat(user, span_danger("That brain is not usable."))
-		return SURGERY_FAILURE
-	*/
-
 	if(!(affected.robotic >= ORGAN_ROBOT))
 		to_chat(user, span_danger("You cannot install a computer brain into a meat skull."))
 		user.balloon_alert(user, "you cannot install a computer brain into a meat skull")
@@ -572,9 +566,8 @@
 	//VOREstation edit end
 	target.internal_organs_by_name[O_BRAIN] = holder
 
-	if(M.brainmob && M.brainmob.mind)
-		M.brainmob.mind.transfer_to(target)
-		target.languages = M.brainmob.languages
+	var/datum/component/mind_host/host = get_mind_host(M)
+	host?.release_mind(target, "MMI installed into [target] by [key_name(user)]")
 
 	spawn(0) //Name yourself on your own damn time
 		var/new_name = target.real_name
@@ -676,6 +669,7 @@
 	qdel(D)
 
 	target.species = GLOB.all_species[SPECIES_DIONA]
+	target.invalidate_factors()
 
 	add_verb(target, /mob/living/carbon/human/proc/diona_split_nymph)
 	add_verb(target, /mob/living/carbon/human/proc/regenerate)

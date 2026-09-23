@@ -819,7 +819,6 @@
 	reagents.add_reagent(REAGENT_ID_DRGIBB, 50)
 
 
-// === merged from bottle_chomp.dm during hard-fork de-suffix (verified no override-order change) ===
 /obj/item/reagent_containers/food/drinks/bottle/snaps
 	name = REAGENT_SNAPS
 	desc = "This could go well with lunch."

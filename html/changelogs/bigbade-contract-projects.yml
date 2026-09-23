@@ -1,0 +1,9 @@
+author: "BigBadE"
+delete-after: true
+changes:
+  - rscadd: "Reworked long-term contracts into staged projects with direct crew participation and milestone payments."
+  - refactor: "Curated the contract catalog around authenticated, linked gameplay evidence and removed superseded offers."
+  - qol: "Simplified project participation and clarified earned project rewards in department and PDA contract interfaces."
+  - bugfix: "Made linked contract evidence order-sensitive and kept accepted personal work active after its public project succeeds."
+  - refactor: "Made alloy batches quantity-independent, gave reclaimed stock real recovery credit, and tied furnace results to supplied power and treatment concentration."
+  - qol: "Added material compatibility warnings and useful engineering coatings for ordinary slime extracts."

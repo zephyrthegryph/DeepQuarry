@@ -29,10 +29,6 @@
 	user.setClickCooldown(10)
 	// Seriously why the fuck is this even a closet aghasjdhasd I hate you
 
-	//var/hasaxe = 0       //gonna come in handy later~ // FUCK YOUR TILDES.
-	//if(fireaxe)
-	//	hasaxe = 1
-
 	if (isrobot(user) || locked)
 		if(istype(O, /obj/item/multitool))
 			to_chat(user, span_warning("Resetting circuitry..."))
@@ -95,11 +91,7 @@
 		else
 			toggle_close_open()
 
-
 /obj/structure/fireaxecabinet/attack_hand(mob/user as mob)
-	//var/hasaxe = 0	//Fuck this. Fuck everything about this. Who wrote this. Why.
-	//if(fireaxe)
-	//	hasaxe = 1
 
 	if(locked)
 		to_chat(user, span_warning("The cabinet won't budge!"))
@@ -188,7 +180,6 @@
 	if(fireaxe)
 		hasaxe = 1
 	icon_state = text("fireaxe[][][][]",hasaxe,open,hitstaken,smashed)
-
 
 /obj/structure/fireaxecabinet/empty
 	starts_with_axe = FALSE

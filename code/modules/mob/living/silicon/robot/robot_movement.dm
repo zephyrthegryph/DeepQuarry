@@ -29,16 +29,16 @@
 
 	. += CONFIG_GET(number/robot_delay)
 
+	// Graded actuator function: a worn actuator drags.
+	. += (1 - component_function(ROBOT_SLOT_ACTUATOR)) * ROBOT_ACTUATOR_WEAR_SLOWDOWN
+
 	. += ..()
 
-// NEW: Use power while moving.
+// Moving spends the actuator's per-step power; a worn actuator is slower.
 /mob/living/silicon/robot/SelfMove(turf/n, direct, movetime)
-	if (!is_component_functioning("actuator"))
+	if(!use_component(ROBOT_SLOT_ACTUATOR))
 		return 0
-
-	var/datum/robot_component/actuator/A = get_component("actuator")
-	if (cell_use_power(A.active_usage))
-		return ..()
+	return ..()
 
 /mob/living/silicon/robot/Moved(atom/old_loc, direction, forced = FALSE)
 	. = ..()
@@ -78,7 +78,6 @@
 					to_chat(cleaned_human, span_warning("[src] cleans your face!"))
 
 
-// === merged from robot_movement_chomp.dm during hard-fork de-suffix (manually verified) ===
 //CHOMP reagent vore belly sloshing
 /* This is an ELEMENT now
 /mob/living/silicon/robot

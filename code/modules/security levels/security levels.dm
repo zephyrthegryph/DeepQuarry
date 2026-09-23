@@ -134,20 +134,3 @@ GLOBAL_DATUM_INIT(security_announcement_down, /datum/announcement/priority/secur
 		if("delta")
 			return SEC_LEVEL_DELTA
 
-
-/*DEBUG
-/mob/verb/set_thing0()
-	set_security_level(0)
-/mob/verb/set_thing1()
-	set_security_level(1)
-/mob/verb/set_thing2()
-	set_security_level(2)
-/mob/verb/set_thing3()
-	set_security_level(3)
-/mob/verb/set_thing4()
-	set_security_level(4)
-/mob/verb/set_thing5()
-	set_security_level(5)
-/mob/verb/set_thing6()
-	set_security_level(6)
-*/

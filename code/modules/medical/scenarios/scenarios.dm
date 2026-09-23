@@ -36,33 +36,27 @@
 		target = H.get_organ(organ_tag)
 	if(!target)
 		return null
-	for(var/datum/medical_issue/condition/existing in target.medical_issues)
-		if(existing.type == condition_type)
-			return existing
-	var/datum/medical_issue/condition/C = new condition_type()
-	C.owner = H
-	C.affectedorgan = target
-	C.set_severity(severity)
-	target.add_medical_issue(C, H)
-	return C
+	var/datum/affliction/C = H.body.find_affliction(condition_type, target)
+	if(C)
+		return C
+	return H.body.afflict(condition_type, target, severity)
 
-/// Apply real damage to an external organ — goes through the same
-/// path as combat hits, so blood, wounds, organ state, and the cause
-/// system all see it. Use this instead of setting brute_dam directly
-/// when the scenario is meant to model a real injury. After running,
-/// `updatehealth()` is called so the mob's health bar reflects the
-/// new state.
+/// Apply a real injury to an external organ — goes through the same
+/// injure() pipeline as combat hits, so wounds, bleeding, organ state and
+/// the trigger system all see it. Sharp hits are punctures (stab wounds).
+/// Resistances are bypassed so every scenario presents identically
+/// regardless of species.
 ///
-/// Note: the wound/cause system may roll the matching condition by
-/// itself depending on probabilities; scenarios still call `_seed`
-/// afterwards to guarantee the targeted condition is present (it's
-/// idempotent).
+/// Note: injury triggers may roll the matching affliction by themselves;
+/// scenarios still call `_seed` afterwards to guarantee the targeted
+/// affliction is present (it's idempotent).
 /datum/dq_medical_scenario/proc/_apply_external_damage(mob/living/carbon/human/H, organ_tag, brute = 0, burn = 0, sharp = FALSE)
-	var/obj/item/organ/external/E = H.get_organ(organ_tag)
-	if(!E)
+	if(!H.get_organ(organ_tag))
 		return
-	E.take_damage(brute, burn, sharp = sharp, edge = FALSE)
-	H.updatehealth()
+	if(brute)
+		H.injure(sharp ? INJURY_PIERCE : INJURY_BLUNT, brute, organ_tag, flags = INJURE_IGNORE_RESISTANCE | INJURE_SILENT)
+	if(burn)
+		H.injure(INJURY_BURN, burn, organ_tag, flags = INJURE_IGNORE_RESISTANCE | INJURE_SILENT)
 
 
 // --- Curated scenarios --------------------------------------------------
@@ -73,7 +67,7 @@
 
 /datum/dq_medical_scenario/sharp_chest_stab/apply(mob/living/carbon/human/H)
 	_apply_external_damage(H, BP_TORSO, brute = 45, sharp = TRUE)
-	_seed(H, BP_TORSO, /datum/medical_issue/condition/internal_hemorrhage, 45)
+	_seed(H, BP_TORSO, /datum/affliction/internal_hemorrhage, 45)
 
 
 /datum/dq_medical_scenario/severe_burns
@@ -85,7 +79,7 @@
 	// stage calculation picks up the body-surface burden.
 	for(var/tag in list(BP_TORSO, BP_L_ARM, BP_R_ARM, BP_HEAD))
 		_apply_external_damage(H, tag, burn = 30)
-	_seed(H, BP_TORSO, /datum/medical_issue/condition/burn_shock, 50)
+	_seed(H, BP_TORSO, /datum/affliction/burn_shock, 50)
 
 
 /datum/dq_medical_scenario/head_trauma
@@ -94,7 +88,7 @@
 
 /datum/dq_medical_scenario/head_trauma/apply(mob/living/carbon/human/H)
 	_apply_external_damage(H, BP_HEAD, brute = 25)
-	_seed(H, BP_HEAD, /datum/medical_issue/condition/concussion, 50)
+	_seed(H, BP_HEAD, /datum/affliction/concussion, 50)
 
 
 /datum/dq_medical_scenario/double_head_hit
@@ -103,8 +97,8 @@
 
 /datum/dq_medical_scenario/double_head_hit/apply(mob/living/carbon/human/H)
 	_apply_external_damage(H, BP_HEAD, brute = 45)
-	_seed(H, BP_HEAD, /datum/medical_issue/condition/concussion, 35)
-	_seed(H, BP_HEAD, /datum/medical_issue/condition/subdural_hematoma, 45)
+	_seed(H, BP_HEAD, /datum/affliction/concussion, 35)
+	_seed(H, BP_HEAD, /datum/affliction/subdural_hematoma, 45)
 
 
 /datum/dq_medical_scenario/crush_injury
@@ -114,8 +108,8 @@
 /datum/dq_medical_scenario/crush_injury/apply(mob/living/carbon/human/H)
 	for(var/tag in list(BP_TORSO, BP_L_LEG, BP_R_LEG))
 		_apply_external_damage(H, tag, brute = 30)
-	_seed(H, BP_TORSO,  /datum/medical_issue/condition/deep_bruising)
-	_seed(H, BP_L_LEG,  /datum/medical_issue/condition/untreated_fracture, 45)
+	_seed(H, BP_TORSO,  /datum/affliction/deep_bruising)
+	_seed(H, BP_L_LEG,  /datum/affliction/untreated_fracture, 45)
 
 
 /datum/dq_medical_scenario/dirty_wound
@@ -127,7 +121,7 @@
 	var/obj/item/organ/external/arm = H.get_organ(BP_R_ARM)
 	if(arm)
 		arm.germ_level = INFECTION_LEVEL_TWO
-	_seed(H, BP_R_ARM, /datum/medical_issue/condition/wound_infection, 50)
+	_seed(H, BP_R_ARM, /datum/affliction/wound_infection, 50)
 
 
 /datum/dq_medical_scenario/cellulitis_advanced
@@ -139,8 +133,8 @@
 	var/obj/item/organ/external/arm = H.get_organ(BP_R_ARM)
 	if(arm)
 		arm.germ_level = INFECTION_LEVEL_TWO
-	_seed(H, BP_R_ARM, /datum/medical_issue/condition/wound_infection, 65)
-	_seed(H, BP_R_ARM, /datum/medical_issue/condition/cellulitis, 55)
+	_seed(H, BP_R_ARM, /datum/affliction/wound_infection, 65)
+	_seed(H, BP_R_ARM, /datum/affliction/cellulitis, 55)
 
 
 /datum/dq_medical_scenario/severed_artery
@@ -149,7 +143,7 @@
 
 /datum/dq_medical_scenario/severed_artery/apply(mob/living/carbon/human/H)
 	_apply_external_damage(H, BP_L_LEG, brute = 35, sharp = TRUE)
-	_seed(H, BP_L_LEG, /datum/medical_issue/condition/lacerated_artery, 50)
+	_seed(H, BP_L_LEG, /datum/affliction/lacerated_artery, 50)
 
 
 /datum/dq_medical_scenario/chest_crush_pneumo
@@ -158,7 +152,7 @@
 
 /datum/dq_medical_scenario/chest_crush_pneumo/apply(mob/living/carbon/human/H)
 	_apply_external_damage(H, BP_TORSO, brute = 40, sharp = TRUE)
-	_seed(H, BP_TORSO, /datum/medical_issue/condition/tension_pneumothorax, 45)
+	_seed(H, BP_TORSO, /datum/affliction/pneumothorax, 45)
 
 
 /datum/dq_medical_scenario/inhalation_burn
@@ -167,7 +161,7 @@
 
 /datum/dq_medical_scenario/inhalation_burn/apply(mob/living/carbon/human/H)
 	_apply_external_damage(H, BP_HEAD, burn = 30)
-	_seed(H, BP_HEAD, /datum/medical_issue/condition/airway_burn, 50)
+	_seed(H, BP_HEAD, /datum/affliction/airway_burn, 50)
 
 
 /datum/dq_medical_scenario/limb_severed_tendon
@@ -176,7 +170,7 @@
 
 /datum/dq_medical_scenario/limb_severed_tendon/apply(mob/living/carbon/human/H)
 	_apply_external_damage(H, BP_R_ARM, brute = 15, sharp = TRUE)
-	_seed(H, BP_R_ARM, /datum/medical_issue/condition/tendon_severed)
+	_seed(H, BP_R_ARM, /datum/affliction/tendon_severed)
 
 
 /datum/dq_medical_scenario/multiple_trauma
@@ -187,9 +181,9 @@
 	_apply_external_damage(H, BP_TORSO, brute = 30, sharp = TRUE)
 	_apply_external_damage(H, BP_R_LEG, brute = 35)
 	_apply_external_damage(H, BP_HEAD,  brute = 20)
-	_seed(H, BP_TORSO, /datum/medical_issue/condition/internal_hemorrhage, 35)
-	_seed(H, BP_R_LEG, /datum/medical_issue/condition/untreated_fracture, 40)
-	_seed(H, BP_HEAD,  /datum/medical_issue/condition/concussion, 40)
+	_seed(H, BP_TORSO, /datum/affliction/internal_hemorrhage, 35)
+	_seed(H, BP_R_LEG, /datum/affliction/untreated_fracture, 40)
+	_seed(H, BP_HEAD,  /datum/affliction/concussion, 40)
 
 
 // --- Verbs -------------------------------------------------------------

@@ -30,29 +30,9 @@
 /// Values can be in the editor for each map or as a subtype.
 /// This is an obj because raw atoms can't be placed in DM or third-party mapping tools.
 ///obj/effect/computer_file_creator
-//	name = "computer file creator"
-//	desc = "This is a mapping tool used for installing text files onto a modular device when it's mapped on top of them. If you see it, it's bugged."
-//	icon = 'icons/effects/landmarks.dmi'
-//	icon_state = "x3"
-//	anchored = TRUE
-//	unacidable = TRUE
-//	simulated = FALSE
-//	invisibility = INVISIBILITY_ABSTRACT
-//	/// The name that the file will have once it's created.
-//	var/file_name = "helloworld"
-//	/// The contents of this file. Uses paper formatting.
-//	var/file_info = "Hello World!"
 
 ///obj/effect/computer_file_creator/Initialize(mapload)
 //	. = ..()
 //	return INITIALIZE_HINT_LATELOAD
 
 ///obj/effect/computer_file_creator/LateInitialize()
-//	var/turf/T = get_turf(src)
-//	for (var/obj/O in T)
-//		if (!istype(O, /obj/machinery/computer/modular) && !istype(O, /obj/item/modular_computer))
-//			continue
-//		var/datum/extension/interactive/ntos/os = get_extension(O, /datum/extension/interactive/ntos)
-//		if (os)
-//			os.create_data_file(file_name, file_info, /datum/computer_file/data/text)
-//	qdel(src)

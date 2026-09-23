@@ -1,6 +1,10 @@
 #define FIREDOOR_MAX_PRESSURE_DIFF 25 // kPa
 #define FIREDOOR_MAX_TEMP 50 // °C
 #define FIREDOOR_MIN_TEMP 0
+/// Turfs in a hibernation snapshot: the door's own turf plus the four cardinals.
+#define FIREDOOR_SNAPSHOT_TURFS 5
+/// Entries per turf in a hibernation snapshot: mixture id, pressure, temperature.
+#define FIREDOOR_SNAPSHOT_STRIDE 3
 
 // Bitflags
 #define FIREDOOR_ALERT_HOT		1
@@ -34,13 +38,14 @@
 	var/nextstate = null
 	var/net_id
 	var/list/areas_added
-	var/list/users_to_open = list()
+	/// Lazy list of names who opened this door during an alert.
+	var/list/users_to_open
 	var/list/sleeping_mixture_ids
 	var/sleeping_atmos_signature
-	/// Local turf followed by the four cardinal turfs. Null entries are walls.
-	var/list/sleeping_atmos_mixture_slots
-	var/list/sleeping_atmos_pressures
-	var/list/sleeping_atmos_temperatures
+	/// Flat snapshot of the local turf followed by the four cardinal turfs, FIREDOOR_SNAPSHOT_STRIDE
+	/// entries per turf: mixture id, pressure, temperature. Null entries are walls.
+	/// Allocated once and reused across hibernations.
+	var/list/sleeping_atmos_snapshot
 	var/datum/weakref/gas_dependency_weakref
 
 	var/hatch_open = 0
@@ -190,7 +195,7 @@
 	if(density)
 		if(alarmed)
 			// Accountability!
-			users_to_open |= user.name
+			LAZYOR(users_to_open, user.name)
 			needs_to_close = !issilicon(user)
 		spawn()
 			open()
@@ -403,20 +408,23 @@
 	var/list/dependency_turfs = list(get_turf(src))
 	for(var/direction in GLOB.cardinal)
 		dependency_turfs += get_step(src, direction)
-	sleeping_atmos_mixture_slots = list()
-	sleeping_atmos_pressures = list()
-	sleeping_atmos_temperatures = list()
+	if(length(sleeping_atmos_snapshot) != FIREDOOR_SNAPSHOT_TURFS * FIREDOOR_SNAPSHOT_STRIDE)
+		sleeping_atmos_snapshot = new /list(FIREDOOR_SNAPSHOT_TURFS * FIREDOOR_SNAPSHOT_STRIDE)
+	var/list/snapshot = sleeping_atmos_snapshot
+	var/base = 0
 	for(var/turf/T as anything in dependency_turfs)
-		var/datum/gas_mixture/air = T.return_air()
+		var/datum/gas_mixture/air = T?.return_air()
 		if(!air)
-			sleeping_atmos_mixture_slots += null
-			sleeping_atmos_pressures += null
-			sleeping_atmos_temperatures += null
+			snapshot[base + 1] = null
+			snapshot[base + 2] = null
+			snapshot[base + 3] = null
+			base += FIREDOOR_SNAPSHOT_STRIDE
 			continue
 		var/mixture_id = air.arena_id()
-		sleeping_atmos_mixture_slots += mixture_id
-		sleeping_atmos_pressures += air.return_pressure()
-		sleeping_atmos_temperatures += air.return_temperature()
+		snapshot[base + 1] = mixture_id
+		snapshot[base + 2] = air.return_pressure()
+		snapshot[base + 3] = air.return_temperature()
+		base += FIREDOOR_SNAPSHOT_STRIDE
 		var/key = "[mixture_id]"
 		LAZYSET(sleeping_mixture_ids, key, mixture_id)
 		SSmachines.subscribe_gas_dependency(mixture_id, WR)
@@ -433,22 +441,21 @@
 		SSmachines.unsubscribe_gas_dependency(sleeping_mixture_ids[key], WR)
 	sleeping_mixture_ids = null
 	sleeping_atmos_signature = null
-	sleeping_atmos_mixture_slots = null
-	sleeping_atmos_pressures = null
-	sleeping_atmos_temperatures = null
+	// sleeping_atmos_snapshot is kept for reuse; the null signature marks it stale.
 	SSmachines.sleeping_gas_devices.Remove(WR.reference)
 
 /obj/machinery/door/firedoor/gas_dependency_changed(mixture_id, change_mask, list/observation, observation_index)
 	if(!(change_mask & (GAS_DEPENDENCY_PRESSURE | GAS_DEPENDENCY_TEMPERATURE)))
 		return FALSE
-	if(observation && observation_index && sleeping_atmos_mixture_slots)
-		for(var/index = 1; index <= length(sleeping_atmos_mixture_slots); index++)
-			if(sleeping_atmos_mixture_slots[index] != mixture_id)
+	if(observation && observation_index && !isnull(sleeping_atmos_signature) && sleeping_atmos_snapshot)
+		var/list/snapshot = sleeping_atmos_snapshot
+		for(var/base = 0; base < length(snapshot); base += FIREDOOR_SNAPSHOT_STRIDE)
+			if(snapshot[base + 1] != mixture_id)
 				continue
-			var/old_temperature = sleeping_atmos_temperatures[index]
+			var/old_temperature = snapshot[base + 3]
 			var/new_temperature = observation[observation_index + 4]
-			sleeping_atmos_pressures[index] = observation[observation_index + 3]
-			sleeping_atmos_temperatures[index] = new_temperature
+			snapshot[base + 2] = observation[observation_index + 3]
+			snapshot[base + 3] = new_temperature
 			// A large thermal transient must not disappear merely because diffusion
 			// carries the sampled value back across the exact alarm threshold before
 			// the dependency queue is consumed.
@@ -460,17 +467,19 @@
 /obj/machinery/door/firedoor/proc/firedoor_cached_atmos_signature()
 	var/min_pressure = 16777216
 	var/max_pressure = 0
-	for(var/index = 2; index <= length(sleeping_atmos_pressures); index++)
-		var/pressure = sleeping_atmos_pressures[index]
+	var/list/snapshot = sleeping_atmos_snapshot
+	var/snapshot_len = length(snapshot)
+	for(var/base = FIREDOOR_SNAPSHOT_STRIDE; base < snapshot_len; base += FIREDOOR_SNAPSHOT_STRIDE)
+		var/pressure = snapshot[base + 2]
 		if(isnull(pressure))
 			continue
 		min_pressure = min(min_pressure, pressure)
 		max_pressure = max(max_pressure, pressure)
 	var/signature = abs(min_pressure - max_pressure) >= FIREDOOR_MAX_PRESSURE_DIFF
-	var/local_temperature = sleeping_atmos_temperatures[1]
+	var/local_temperature = snapshot_len ? snapshot[3] : null
 	signature = (signature << 2) | (isnull(local_temperature) ? 0 : firedoor_temperature_band(local_temperature))
-	for(var/index = 2; index <= length(sleeping_atmos_temperatures); index++)
-		var/temperature = sleeping_atmos_temperatures[index]
+	for(var/base = FIREDOOR_SNAPSHOT_STRIDE; base < snapshot_len; base += FIREDOOR_SNAPSHOT_STRIDE)
+		var/temperature = snapshot[base + 3]
 		signature = (signature << 2) | (isnull(temperature) ? 0 : firedoor_temperature_band(temperature))
 	return signature
 
@@ -630,13 +639,14 @@
 #undef FIREDOOR_MAX_PRESSURE_DIFF
 #undef FIREDOOR_MAX_TEMP
 #undef FIREDOOR_MIN_TEMP
+#undef FIREDOOR_SNAPSHOT_TURFS
+#undef FIREDOOR_SNAPSHOT_STRIDE
 
 #undef FIREDOOR_ALERT_HOT
 #undef FIREDOOR_ALERT_COLD
 // Not used #undef FIREDOOR_ALERT_LOWPRESS
 
 
-// === merged from firedoor_ch.dm during hard-fork de-suffix (verified no override-order change) ===
 //Glass variation of the 2x1 firedoor
 /obj/machinery/door/firedoor/multi_tile/glass
 	icon = 'icons/obj/doors/DoorHazardGlass2x1.dmi'
@@ -652,7 +662,6 @@
 	return (src.dir != dir) || ..()
 
 
-// === merged from firedoor_vr.dm during hard-fork de-suffix (verified no override-order change) ===
 /obj/machinery/door/firedoor/glass/hidden
 	name = "\improper Emergency Shutter System"
 	desc = "Emergency air-tight shutter, capable of sealing off breached areas. This model fits flush with the walls, and has a panel in the floor for maintenance."

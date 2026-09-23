@@ -33,10 +33,6 @@
 	return ..()
 
 /atom/movable/screen/movable/action_button/proc/can_use(mob/user)
-	// if(isobserver(user))
-	// 	var/mob/observer/dead/dead_mob = user
-	// 	if(dead_mob.observetarget) // Observers can only click on action buttons if they're not observing something
-	// 		return FALSE
 
 	if(linked_action)
 		if(linked_action.viewers[user.hud_used])
@@ -164,7 +160,6 @@
 	.["bg_state"] = "bg_default"
 	.["bg_state_active"] = "bg_default_on"
 
-
 /**
  * Updates all action buttons this mob has.
  *
@@ -285,12 +280,6 @@
 	var/mob/viewer = our_hud.mymob
 	if(viewer.client)
 		viewer.client.screen |= src
-
-	// var/list/settings = our_hud.get_action_buttons_icons()
-	// var/ui_icon = "[settings["bg_icon"]]"
-	// var/list/ui_segments = splittext(ui_icon, ".")
-	// var/list/ui_paths = splittext(ui_segments[1], "/")
-	// var/ui_name = ui_paths[length(ui_paths)]
 
 	// icon_state = "[ui_name]_palette"
 

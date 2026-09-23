@@ -161,8 +161,8 @@
 	if(QDELETED(src) || !host || QDELETED(host) || !controlling)
 		return
 	if(prob(2))
-		host.adjustBrainLoss(0.1)
-	if(prob(host.brainloss/20))
+		host.injure(INJURY_NEURAL, 0.1, source = src, flags = INJURE_SILENT)
+	if(prob(host.injury_load(INJURY_CATEGORY_NEURAL)/20))
 		host.say("*[pick(list("blink","blink_r","choke","aflap","drool","twitch","twitch_v","gasp"))]")
 
 /mob/living/simple_mob/animal/borer/proc/can_use_power_in_host()

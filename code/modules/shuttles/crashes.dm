@@ -74,6 +74,6 @@
 	// Put people back
 	for(var/mob/living/L as anything in victims)
 		L.loc = victims[L]
-		L.adjustBruteLoss(5)
-		L.adjustBruteLoss(10)
-		L.adjustBruteLoss(15)
+		L.injure(INJURY_BLUNT, 5, ran_zone())
+		L.injure(INJURY_BLUNT, 10, ran_zone())
+		L.injure(INJURY_BLUNT, 15, ran_zone())

@@ -6,8 +6,8 @@ import type { BooleanLike } from 'tgui-core/react';
 type Data = {
   occupied: BooleanLike;
   name: string;
+  /** Vitality, 0..100. */
   health: number;
-  maxHealth: number;
   stat: number;
   mindStatus: BooleanLike;
   mindName: string;
@@ -21,7 +21,6 @@ export const ResleevingPod = (model) => {
     occupied,
     name,
     health,
-    maxHealth,
     stat,
     mindStatus,
     mindName,
@@ -49,7 +48,7 @@ export const ResleevingPod = (model) => {
                         average: [0.25, 0.5],
                         bad: [-Infinity, 0.25],
                       }}
-                      value={health / maxHealth}
+                      value={health / 100}
                     >
                       {health}%
                     </ProgressBar>

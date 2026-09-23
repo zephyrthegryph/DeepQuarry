@@ -63,7 +63,7 @@
 	add_attack_logs(user, target, "attacked", "[name]", "(INTENT: [uppertext(user.a_intent)]) (DAMTYPE: [uppertext(damtype)])")
 	var/drill_force = force	//Couldn't manage it otherwise.
 	if(ishuman(target))
-		target.apply_damage(drill_force, BRUTE)
+		target.injure(INJURY_PIERCE, drill_force, null, src)
 		return
 
 	else if(isanimal(target))
@@ -76,7 +76,7 @@
 				S.gib()
 				return
 		else
-			S.apply_damage(drill_force)
+			S.injure(INJURY_PIERCE, drill_force, null, src)
 			return
 
 /obj/item/mecha_parts/mecha_equipment/tool/drill/diamonddrill

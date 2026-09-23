@@ -191,6 +191,12 @@
 	var/datum/money_account/funding_account
 	var/reward = 0
 	var/escrow_balance = 0
+	/// Cumulative award already settled through project milestones. Final
+	/// settlement pays only the remainder, so every tranche is exactly-once.
+	var/paid_reward = 0
+	var/paid_station_reward = 0
+	var/paid_department_reward = 0
+	var/paid_staff_reward = 0
 	/// Set only after every planned recipient has accepted the complete payout.
 	/// This prevents a later lifecycle error from paying the same contract twice.
 	var/payout_distributed = FALSE
@@ -475,6 +481,8 @@
 	audit(CONTRACT_AUDIT_ACCEPTED, "Contract accepted.")
 	on_accepted(user, source)
 	SScontracts?.handle_contract_accepted(src)
+	if(offer_kind == CONTRACT_OFFER_OPPORTUNITY)
+		SScontracts?.replay_post_trigger_events(src)
 	return TRUE
 
 /datum/contract/proc/on_accepted(mob/living/user, atom/source)
@@ -569,6 +577,10 @@
 		audit(CONTRACT_AUDIT_PAYMENT, "Completion is verified, but payment is deferred until every recipient account can accept its share.")
 		SScontracts?.notify_contract(src, "Contract [id] completed its requirements, but payment is waiting on an unavailable recipient account.")
 		return FALSE
+	// Graded internal contracts may settle below their original escrowed ceiling.
+	// Return the unearned remainder instead of silently consuming it.
+	if(funding_mode == CONTRACT_FUNDING_INTERNAL && escrow_balance > 0)
+		refund_escrow()
 	SScontracts?.record_contract_completion(src)
 	close(CONTRACT_COMPLETED, CONTRACT_AUDIT_COMPLETED, "All required conditions completed.", CONTRACT_CLOSE_COMPLETED)
 	if(issuer_faction)
@@ -603,7 +615,13 @@
 /// station reserves. Personal contracts always fall back to their owner.
 /datum/contract/proc/reward_recipient_weights()
 	if(length(contributions))
-		return contributions.Copy()
+		var/list/normalized = list()
+		for(var/account_number in contributions)
+			// Evidence uses incomparable units: currency, joules, items and people.
+			// Logarithmic weighting preserves meaningful effort without allowing a
+			// large currency counter to erase every other contributor.
+			normalized[account_number] = 1 + log(1 + max(0, contributions[account_number]))
+		return normalized
 	var/list/recipients = list()
 	if(scope == CONTRACT_SCOPE_PERSONAL && owner_account_number)
 		recipients["[owner_account_number]"] = 1
@@ -690,15 +708,42 @@
 /datum/contract/proc/payout()
 	if(payout_distributed)
 		return TRUE
+	return payout_to_amount(reward, "Final settlement")
+
+/// Settle a cumulative portion of the currently authored award. This is a
+/// cumulative target rather than a delta so duplicate/replayed milestone
+/// events cannot issue the same money twice.
+/datum/contract/proc/payout_to_fraction(fraction, reason = "Project milestone")
+	if(!isnum(fraction))
+		return FALSE
+	return payout_to_amount(round(reward * clamp(fraction, 0, 1)), reason)
+
+/datum/contract/proc/payout_to_amount(target_paid, reason = "Project milestone")
+	if(payout_distributed)
+		return target_paid <= paid_reward
+	target_paid = clamp(round(target_paid), 0, reward)
+	if(target_paid <= paid_reward)
+		payout_distributed = paid_reward >= reward
+		return TRUE
 	if(reward <= 0)
 		payout_distributed = TRUE
 		return TRUE
-	var/available = funding_mode == CONTRACT_FUNDING_INTERNAL ? escrow_balance : reward
-	if(available < reward)
+	var/tranche = target_paid - paid_reward
+	var/available = funding_mode == CONTRACT_FUNDING_INTERNAL ? escrow_balance : tranche
+	if(available < tranche)
 		return FALSE
-	var/station_amount = negotiated_station_amount()
-	var/department_amount = negotiated_department_amount()
-	var/contributor_amount = negotiated_staff_amount()
+	var/total_station_amount = negotiated_station_amount()
+	var/total_department_amount = negotiated_department_amount()
+	var/total_staff_amount = negotiated_staff_amount()
+	var/station_amount = round(total_station_amount * target_paid / reward) - paid_station_reward
+	var/department_amount = round(total_department_amount * target_paid / reward) - paid_department_reward
+	var/contributor_amount = tranche - station_amount - department_amount
+	if(target_paid == reward)
+		station_amount = total_station_amount - paid_station_reward
+		department_amount = total_department_amount - paid_department_reward
+		contributor_amount = total_staff_amount - paid_staff_reward
+	if(station_amount < 0 || department_amount < 0 || contributor_amount < 0)
+		return FALSE
 	var/external_funding = funding_mode != CONTRACT_FUNDING_INTERNAL
 	var/list/planned_payouts = list()
 	if(station_amount > 0)
@@ -738,16 +783,20 @@
 		if(QDELETED(account) || account.suspended || !isnum(account_amount) || account_amount <= 0)
 			return FALSE
 		planned_total += account_amount
-	if(planned_total != reward)
+	if(planned_total != tranche)
 		return FALSE
 	// DM cannot interleave another account mutation here: every credit is
 	// preflighted above and credit() does not sleep. The batch is therefore
 	// atomic with respect to account availability.
 	for(var/datum/money_account/account as anything in planned_payouts)
-		if(!account.credit(planned_payouts[account], issuer_name, "Contract [id]: [title]", "Contracts", external_funding))
+		if(!account.credit(planned_payouts[account], issuer_name, "Contract [id]: [title] — [reason]", "Contracts", external_funding))
 			return FALSE
 	if(funding_mode == CONTRACT_FUNDING_INTERNAL)
-		escrow_balance = 0
-	payout_distributed = TRUE
-	audit(CONTRACT_AUDIT_PAYMENT, "Distributed [planned_total] Thalers.")
+		escrow_balance -= planned_total
+	paid_reward += planned_total
+	paid_station_reward += station_amount
+	paid_department_reward += department_amount
+	paid_staff_reward += contributor_amount
+	payout_distributed = paid_reward >= reward
+	audit(CONTRACT_AUDIT_PAYMENT, "[reason]: distributed [planned_total] Thalers ([paid_reward]/[reward] settled).")
 	return TRUE

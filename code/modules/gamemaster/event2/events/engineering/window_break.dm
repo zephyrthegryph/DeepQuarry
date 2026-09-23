@@ -76,7 +76,7 @@
 	if(!chosen_window)
 		return
 
-	chosen_window.take_damage(chosen_window.max_integrity * 0.8)
+	chosen_window.take_damage(chosen_window.max_integrity * 0.8, BRUTE, MELEE)
 	playsound(chosen_window, 'sound/effects/Glasshit.ogg', 100, 1)
 	chosen_window.visible_message(span_danger("\The [chosen_window] suddenly begins to crack!"))
 

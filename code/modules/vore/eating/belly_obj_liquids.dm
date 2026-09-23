@@ -51,7 +51,7 @@
 /obj/belly/proc/GenerateBellyReagents()
 	if(isrobot(owner))
 		var/mob/living/silicon/robot/R = owner
-		if(!R.use_direct_power(gen_cost*10, 200))
+		if(!R.draw_power(ROBOT_CELL_JOULES(gen_cost * 10), src, ROBOT_CELL_JOULES(200)))
 			return
 	else
 		owner.adjust_nutrition(-gen_cost)

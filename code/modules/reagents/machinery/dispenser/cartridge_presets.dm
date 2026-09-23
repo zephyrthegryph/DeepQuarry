@@ -257,7 +257,6 @@
 	spawn_reagent = REAGENT_ID_NOTHING
 
 
-// === merged from cartridge_presets_ch.dm during hard-fork de-suffix (verified no override-order change) ===
 //CHOMP - Chems that are used but not meant for cargo supplies, at least for now. - Jack
 
 /obj/item/reagent_containers/chem_disp_cartridge/champagne
@@ -369,7 +368,6 @@
 	spawn_reagent = REAGENT_ID_SNAPS
 
 
-// === merged from cartridge_presets_vr.dm during hard-fork de-suffix (verified no override-order change) ===
 //Xenoflora
 
 /obj/item/reagent_containers/chem_disp_cartridge/ammonia

@@ -78,56 +78,8 @@
 //Merc
 
 //Skipjack
-/*
-/obj/machinery/computer/shuttle_control/multi/skipjack
-	name = "skipjack control console"
-	req_access = list(ACCESS_SYNDICATE)
-	shuttle_tag = "Skipjack"
-
-
-
-/datum/shuttle/multi_shuttle/skipjack/New()
-	arrival_message = "Attention.  Unidentified object approaching the station."
-	departure_message = "Attention.  Unidentified object exiting local space.  Unidentified object expected to escape Kara gravity well with current velocity."
-	..()
-*/
-
-
 
 //Ninja Shuttle.
-
-/*
-/obj/machinery/computer/shuttle_control/multi/ninja
-	name = "stealth shuttle control console"
-	req_access = list(ACCESS_SYNDICATE)
-	shuttle_tag = "Ninja"
-
-/datum/shuttle/multi_shuttle/ninja
-	name = "Ninja"
-	warmup_time = 0
-	origin = /area/ninja_dojo/start
-	interim = /area/ninja_dojo/transit
-	start_location = "Clan Dojo"
-	destinations = list(
-		"South of First Deck" = /area/ninja_dojo/firstdeck,
-		"North of Second Deck" = /area/ninja_dojo/seconddeck,
-		"East of Third Deck" = /area/ninja_dojo/thirddeck,
-		"Planet Outposts" = /area/ninja_dojo/planet,
-		"Docking Port" = /area/ninja_dojo/arrivals_dock,
-		)
-	docking_controller_tag = "ninja_shuttle"
-	destination_dock_targets = list(
-		"Dojo Outpost" = "ninja_base",
-		"Docking Port" = "ninja_shuttle_dock_airlock",
-		)
-	announcer = "Southern Cross Sensor Array"
-	arrival_message = "Attention, anomalous sensor reading detected entering station proximity."
-	departure_message = "Attention, anomalous sensor reading detected leaving station proximity."
-*/
-
-
-
-
 
 //Trade Ship
 
@@ -331,38 +283,10 @@ ESCAPE_POD(8)
 	landmark_tag = "large_escape_pod2_transit"
 	flags = SLANDMARK_FLAG_AUTOSET
 
-
 // Destination datums
-
-
 
 // Mercenary Shuttle
 
-
 // Ninja shuttle
-/*
-/datum/shuttle/multi_shuttle/skipjack
-	name = "Skipjack"
-	warmup_time = 0
-	can_cloak = TRUE
-	cloaked = TRUE
-	origin = /area/skipjack_station/start
-	interim = /area/skipjack_station/transit
-	destinations = list(
-		"North of First deck" = /area/skipjack_station/firstdeck,
-		"West of Second deck" = /area/skipjack_station/seconddeck,
-		"East of Third deck" = /area/skipjack_station/thirddeck,
-		"Planet" = /area/skipjack_station/planet,
-		"Docking Port" = /area/skipjack_station/arrivals_dock,
-		)
-	docking_controller_tag = "skipjack_shuttle"
-	destination_dock_targets = list(
-		"Raider Outpost" = "skipjack_base",
-		"Docking Port" = "skipjack_shuttle_dock_airlock",
-		)
-	announcer = "Automated Traffic Control"
-*/
-
-
 
 // Heist shuttle

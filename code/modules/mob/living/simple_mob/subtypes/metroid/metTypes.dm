@@ -10,8 +10,7 @@ GLOBAL_VAR_INIT(queen_amount, 0) //We only gonna want 1 queen in the world.
 	desc = "This one scree's happily at you."
 	say_list_type = /datum/say_list/metroid
 	faction = "notmetroid"
-	maxHealth = 400
-	health = 400
+	endurance = 400
 	melee_damage_lower = 0
 	melee_damage_upper = 0
 	movement_cooldown = 6
@@ -81,8 +80,7 @@ GLOBAL_VAR_INIT(queen_amount, 0) //We only gonna want 1 queen in the world.
 	icon_living = "baby"
 	icon_state = "baby"
 	say_list_type = /datum/say_list/metroid
-	health = 200
-	maxHealth = 200
+	endurance = 200
 	melee_damage_lower = 1
 	melee_damage_upper = 5
 	melee_miss_chance = 0
@@ -142,8 +140,7 @@ GLOBAL_VAR_INIT(queen_amount, 0) //We only gonna want 1 queen in the world.
 	icon_living = "metroid"
 	icon_state = "metroid"
 	say_list_type = /datum/say_list/metroid
-	health = 250
-	maxHealth = 250
+	endurance = 250
 	melee_damage_lower = 2
 	melee_damage_upper = 9
 	melee_miss_chance = 0
@@ -211,8 +208,7 @@ GLOBAL_VAR_INIT(queen_amount, 0) //We only gonna want 1 queen in the world.
 	icon_living = "alpha"
 	icon_state = "alpha"
 	say_list_type = /datum/say_list/metroid
-	health = 300
-	maxHealth = 300
+	endurance = 300
 	melee_damage_lower = 10
 	melee_damage_upper = 15
 	melee_miss_chance = 5
@@ -283,8 +279,7 @@ GLOBAL_VAR_INIT(queen_amount, 0) //We only gonna want 1 queen in the world.
 	icon_state = "gamma"
 	say_list_type = /datum/say_list/metroid
 	movement_cooldown = 2
-	health = 400
-	maxHealth = 400
+	endurance = 400
 	melee_damage_lower = 10
 	melee_damage_upper = 20
 	melee_miss_chance = 5
@@ -372,8 +367,7 @@ GLOBAL_VAR_INIT(queen_amount, 0) //We only gonna want 1 queen in the world.
 	icon_state = "zeta"
 	say_list_type = /datum/say_list/metroid/zeta
 	movement_cooldown = 2
-	health = 500
-	maxHealth = 500
+	endurance = 500
 	melee_damage_lower = 15
 	melee_damage_upper = 25
 	melee_miss_chance = 5
@@ -468,8 +462,7 @@ GLOBAL_VAR_INIT(queen_amount, 0) //We only gonna want 1 queen in the world.
 	icon_state = "omega"
 	say_list_type = /datum/say_list/metroid/omega
 	movement_cooldown = 2.5
-	health = 600
-	maxHealth = 600
+	endurance = 600
 	melee_damage_lower = 25
 	melee_damage_upper = 40
 	melee_miss_chance = 5
@@ -566,8 +559,7 @@ GLOBAL_VAR_INIT(queen_amount, 0) //We only gonna want 1 queen in the world.
 	icon_state = "queen"
 	say_list_type = /datum/say_list/metroid/queen
 	movement_cooldown = 3
-	health = 1000
-	maxHealth = 1000
+	endurance = 1000
 	melee_damage_lower = 30
 	melee_damage_upper = 60
 	melee_miss_chance = 5

@@ -11,7 +11,7 @@
 // power decides how much painkillers will stop the message
 // force means it ignores anti-spam timer
 /mob/living/carbon/proc/custom_pain(message, power, force)
-	if((!message || stat || !can_feel_pain() || chem_effects[CE_PAINKILLER] > power) && !synth_cosmetic_pain)
+	if((!message || stat || !can_feel_pain() || factor(BF_ANALGESIA) > power) && !synth_cosmetic_pain)
 		return 0
 	message = span_danger("[message]")
 	if(power >= 50)
@@ -73,12 +73,12 @@
 			if(ishuman(src))
 				var/mob/living/carbon/human/H = src
 				maxdam *= H.species.trauma_mod // end
-	if(damaged_organ && chem_effects[CE_PAINKILLER] < maxdam)
+	if(damaged_organ && factor(BF_ANALGESIA) < maxdam)
 		if(maxdam > 10 && paralysis)
 			AdjustParalysis(-round(maxdam/10))
 		if(maxdam > 50 && prob(maxdam / 5))
 			drop_item()
-		var/burning = damaged_organ.burn_dam > damaged_organ.brute_dam
+		var/burning = damaged_organ.get_burn() > damaged_organ.get_trauma()
 		var/msg
 		switch(maxdam)
 			if(1 to 10)
@@ -99,12 +99,13 @@
 			src.custom_pain("You feel a sharp pain in your [parent.name]", 50)
 
 	if(prob(2))
-		switch(getToxLoss())
+		var/toxic = injury_load(INJURY_CATEGORY_TOXIC)
+		switch(toxic)
 			if(1 to 10)
-				custom_pain("Your body stings slightly.", getToxLoss())
+				custom_pain("Your body stings slightly.", toxic)
 			if(11 to 30)
-				custom_pain("Your body hurts a little.", getToxLoss())
+				custom_pain("Your body hurts a little.", toxic)
 			if(31 to 60)
-				custom_pain("Your whole body hurts badly.", getToxLoss())
+				custom_pain("Your whole body hurts badly.", toxic)
 			if(61 to INFINITY)
-				custom_pain("Your body aches all over, it's driving you mad.", getToxLoss())
+				custom_pain("Your body aches all over, it's driving you mad.", toxic)

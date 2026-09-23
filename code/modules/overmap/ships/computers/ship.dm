@@ -120,7 +120,6 @@ somewhere on that shuttle. Subtypes of these can be then used to perform ship ov
 	. = ..()
 
 
-// === merged from ship_vr.dm during hard-fork de-suffix (verified no override-order change) ===
 /*
 Ships can now be hijacked!
 */

@@ -533,7 +533,6 @@
 		/obj/item/clothing/head/caphat)
 
 
-// === merged from wardrobe_vr.dm during hard-fork de-suffix (verified no override-order change) ===
 //ert wardrobe override, because these guys really don't need edgy red lockers with CCO dress uniforms, syndi(!!) turtlenecks, two edgy skull bandanas, or facemasks with no sprite. -Killian
 /obj/structure/closet/wardrobe/ert
 	closet_appearance = /datum/decl/closet_appearance/tactical/alt	//because ert lockers are red for some dumb reason

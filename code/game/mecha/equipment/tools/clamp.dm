@@ -96,17 +96,15 @@
 		var/mob/living/M = target
 		if(M.stat>1) return
 		if(chassis.occupant.a_intent == I_HURT || istype(chassis.occupant,/mob/living/carbon/brain)) //No tactile feedback for brains
-			M.take_overall_damage(dam_force)
-			M.adjustOxyLoss(round(dam_force/2))
-			M.updatehealth()
+			M.injure(INJURY_BLUNT, dam_force, null, chassis)
+			M.injure(INJURY_ASPHYXIA, round(dam_force/2), null, chassis)
 			occupant_message(span_warning("You squeeze [target] with [src.name]. Something cracks."))
 			playsound(src, "fracture", 5, 1, -2) //CRACK
 			chassis.visible_message(span_warning("[chassis] squeezes [target]."))
 		else if(chassis.occupant.a_intent == I_DISARM && enable_special)
 			playsound(src, 'sound/mecha/hydraulic.ogg', 10, 1, -2)
-			M.take_overall_damage(dam_force/2)
-			M.adjustOxyLoss(round(dam_force/3))
-			M.updatehealth()
+			M.injure(INJURY_BLUNT, dam_force/2, null, chassis)
+			M.injure(INJURY_ASPHYXIA, round(dam_force/3), null, chassis)
 			occupant_message(span_warning("You slam [target] with [src.name]. Something cracks."))
 			playsound(src, "fracture", 3, 1, -2) //CRACK 2
 			chassis.visible_message(span_warning("[chassis] slams [target]."))

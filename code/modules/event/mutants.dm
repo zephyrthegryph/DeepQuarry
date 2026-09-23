@@ -8,7 +8,6 @@
 #define LOC_HANGAR3 7
 #define LOC_FIELD 8
 
-
 #define VERM_RATS 0
 #define VERM_LIZARDMEN 1
 
@@ -44,11 +43,6 @@
 		if(LOC_TECH)
 			spawn_area_type = /area/storage/tech
 			locstring = "technical storage"
-		/*
-		if(LOC_HANGAR1)
-			spawn_area_type = /area/hangar/one
-			locstring = "the hangar deck"
-		*/
 		if(LOC_HANGAR2)
 			spawn_area_type = /area/hangar/two
 			locstring = "the hangar deck"
@@ -86,7 +80,6 @@
 			num--
 			var/spawn_type = pick(spawn_types)
 			new spawn_type(T)
-
 
 /datum/event/mutants/announce()
 	GLOB.command_announcement.Announce("Bioscans indicate... What are those? It looks like [vermstring] have been breeding in [locstring]. Clear them out, just in case.", "Vermin infestation")

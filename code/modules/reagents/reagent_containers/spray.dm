@@ -316,7 +316,6 @@
 		return
 
 
-// === merged from spray_vr.dm during hard-fork de-suffix (verified no override-order change) ===
 /obj/item/reagent_containers/spray/windowsealant
 	name = "Krak-b-gone"
 	desc = "A spray bottle of silicate sealant for rapid window repair."

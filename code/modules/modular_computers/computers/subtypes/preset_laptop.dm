@@ -48,7 +48,6 @@
 	battery_module.charge_to_full()
 
 
-// === merged from preset_laptop_vr.dm during hard-fork de-suffix (verified no override-order change) ===
 //Rugged laptop
 /obj/item/modular_computer/laptop/preset/custom_loadout/rugged
 	name = "rugged laptop computer"

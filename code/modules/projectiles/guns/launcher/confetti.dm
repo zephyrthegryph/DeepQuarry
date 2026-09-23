@@ -85,7 +85,7 @@
 			return
 		if(istype(user,/mob/living/silicon/robot))
 			var/mob/living/silicon/robot/R = user
-			if(!R.use_direct_power(200, 400))
+			if(!R.draw_power(ROBOT_CELL_JOULES(200), src, ROBOT_CELL_JOULES(400)))
 				to_chat(R, span_warning("Warning, low power detected. Aborting action."))
 				return
 		playsound(src, 'sound/effects/pop.ogg', 50, 0)

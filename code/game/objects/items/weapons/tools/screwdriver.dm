@@ -4,7 +4,6 @@
 /obj/item/tool/screwdriver
 	name = "screwdriver"
 	desc = "You can be totally screwwy with this."
-	//description_fluff = "This could be used to engrave messages on suitable surfaces if you really put your mind to it! Alt-click a floor or wall to engrave with it." //This way it's not a completely hidden, arcane art to engrave. //CHOMP Remove
 	icon = 'icons/obj/tools.dmi'
 	icon_state = "screwdriver"
 	center_of_mass_x = 13

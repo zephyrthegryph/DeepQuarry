@@ -34,8 +34,7 @@
 
 	faction = FACTION_AWAYMISSION
 
-	maxHealth = 200
-	health = 200
+	endurance = 200
 	see_in_dark = 8
 
 	melee_damage_lower = 5
@@ -106,8 +105,7 @@
 
 /mob/living/simple_mob/vore/aggressive/deathclaw/den
 
-	maxHealth = 400
-	health = 400
+	endurance = 400
 	see_in_dark = 8
 	desc = "Big! Big! The size of three men! Claws as long as my forearm! Ripped apart! Ripped apart! This one seems angrier than most."
 	melee_damage_lower = 10

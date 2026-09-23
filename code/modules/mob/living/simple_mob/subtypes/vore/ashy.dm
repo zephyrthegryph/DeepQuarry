@@ -6,7 +6,7 @@
 	icon_dead = "ash_welp"
 	damage_fatigue_mult = 0
 	movement_cooldown = 0
-	maxHealth = 300
+	endurance = 300
 	see_in_dark = 8
 	minbodytemp = 0
 	maxbodytemp = 30000

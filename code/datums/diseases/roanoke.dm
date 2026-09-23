@@ -64,7 +64,7 @@
 				O.adjust_germ_level(rand(5, 10))
 			if(prob(1))
 				O = pick(organ_list)
-				O.take_damage(rand(1, 3))
+				M.injure(INJURY_BLUNT, rand(1, 3), O)
 		if(6)
 			if(prob(1))
 				to_chat(M, span_warning(pick("You feel hot.", "You feel like you're burning.")))
@@ -77,14 +77,13 @@
 
 			if(prob(2))
 				O = pick(organ_list)
-				O.take_damage(rand(1, 3))
+				M.injure(INJURY_BLUNT, rand(1, 3), O)
 
 			if(prob(1) && prob(10))
 				O = pick(organ_list)
 				var/obj/item/organ/external/E = O.parent_organ
-				var/datum/wound/W = new /datum/wound/internal_bleeding(5)
-				E.wounds += W
-				E.update_damages()
+				var/datum/affliction/wound/internal_bleeding/W = new(5)
+				E.add_wound(W)
 				M.handle_organs(TRUE) //Force an update so we start processing the internal bleeding.
 
 			if(M.stat == DEAD || M.allow_spontaneous_tf)

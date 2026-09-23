@@ -18,8 +18,7 @@
 	icon_dead = "space_mouse_dead"
 
 	faction = FACTION_SPACE_MOUSE
-	maxHealth = 20
-	health = 20
+	endurance = 20
 	movement_cooldown = -1
 
 	see_in_dark = 10

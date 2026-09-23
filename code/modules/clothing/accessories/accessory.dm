@@ -263,7 +263,7 @@
 							var/obj/item/organ/internal/lungs/L = M.internal_organs_by_name[O_LUNGS]
 							if(!L || M.losebreath)
 								sound += span_warning(" and no respiration")
-							else if(M.is_lung_ruptured() || M.getOxyLoss() > 50)
+							else if(M.is_lung_ruptured() || M.injury_load(INJURY_CATEGORY_ASPHYXIA) > 50)
 								sound += span_warning(" and [pick("wheezing","gurgling")] sounds")
 							else
 								sound += " and healthy respiration"
@@ -282,7 +282,6 @@
 									sound = span_warning("slowed intestinal sounds")
 								else
 									sound = "normal intestinal sounds,"
-
 
 							if(stomach)
 								if(stomach.is_bruised())
@@ -586,8 +585,6 @@
 	desc = "A comfy pair of legwarmers. For those better in the cold than others."
 	icon_state = "legwarmers_short"
 
-
-// === merged from accessory_vr.dm during hard-fork de-suffix (verified no override-order change) ===
 //
 // Collars and such like that
 //
@@ -1448,7 +1445,6 @@
 	slot_flags = SLOT_TIE | SLOT_BELT
 	slot = ACCESSORY_SLOT_DECOR
 
-
 /obj/item/clothing/accessory/collar/casinoslave
 	name = "a disabled Sentient Prize Collar"
 	desc = "A collar worn by sentient prizes on the Golden Goose Casino. Although the red text on it shows its disconnected and nonfunctional."
@@ -1477,3 +1473,16 @@
 	item_state = "casinoslave_owned"
 	overlay_state = "casinoslave_owned"
 	sprite_sheets = list(SPECIES_TESHARI = 'icons/inventory/accessory/mob_ch_teshari.dmi')
+
+/obj/item/clothing/accessory/poncho/roles/cloak/blueshield
+	name = "bodyguard's cloak"
+	desc = "A dark blue cloak with silver trim around the neck. The mark of a professional bodyguard, and ideal for concealing holsters or other items."
+	icon = 'icons/obj/clothing/ties_yw.dmi' //Moved to archive
+	icon_state = "cloak_blueshield"
+	icon_override = 'icons/mob/ties_yw.dmi' //Moved to archive
+	item_state = "cloak_blueshield"
+
+/obj/item/clothing/accessory/poncho/roles/cloak/blueshield/dropped(mob/user, equipping, slot) //makes the blueshield suit not kek when used by a teshari
+	..()
+	icon_override = 'icons/mob/ties_yw.dmi' //Moved to archive
+

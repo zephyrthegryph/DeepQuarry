@@ -44,7 +44,8 @@
 	var/lights = 0
 	var/lights_power = 6
 	var/force = 0
-	var/damage_type = BRUTE
+	/// INJURY_* kind this mecha's melee strikes inflict on living targets (fists = BLUNT, torch = BURN, needle = TOXIN, phase stun = PAIN).
+	var/melee_injury_kind = INJURY_BLUNT
 
 	var/mech_faction = null
 	var/firstactivation = 0 			//It's simple. If it's 0, no one entered it yet. Otherwise someone entered it at least once.
@@ -1178,7 +1179,7 @@
 		src.log_append_to_last("Armor saved.")
 		if(isliving(A))
 			var/mob/living/M = A
-			M.take_organ_damage(10)
+			M.injure(INJURY_BLUNT, 10, null, src)
 	else if(istype(A, /obj/item))
 		var/obj/item/O = A
 		if(O.throwforce)
@@ -1247,7 +1248,7 @@
 		src.log_append_to_last("Armor saved.")
 		return
 
-	if(Proj.damage_type == HALLOSS)
+	if(Proj.get_injury_kind() == INJURY_PAIN)
 		use_power(Proj.agony * 5)
 
 	if(!(Proj.nodamage))
@@ -1369,7 +1370,7 @@
 	if(prob(80))
 		check_for_internal_damage(list(MECHA_INT_FIRE,MECHA_INT_TEMP_CONTROL,MECHA_INT_CONTROL_LOST,MECHA_INT_SHORT_CIRCUIT),1)
 
-/obj/mecha/fire_act(datum/gas_mixture/air, exposed_temperature, exposed_volume)
+/obj/mecha/fire_act(exposed_temperature, exposed_volume)
 	if(exposed_temperature>src.max_temperature)
 		src.mecha_log_message("Exposed to dangerous temperature.",1)
 		src.take_damage(5,"fire")	//The take_damage() proc handles armor values
@@ -1692,16 +1693,17 @@
 ///////////////////////////////
 
 /obj/mecha/proc/mmi_move_inside(obj/item/mmi/mmi_as_oc as obj,mob/user as mob)
-	if(!mmi_as_oc.brainmob || !mmi_as_oc.brainmob.client)
+	var/mob/living/carbon/brain/mmi_occupant = mmi_as_oc.get_occupant()
+	if(!mmi_occupant?.client)
 		to_chat(user, "Consciousness matrix not detected.")
 		return 0
-	else if(mmi_as_oc.brainmob.stat)
+	else if(mmi_occupant.stat)
 		to_chat(user, "Brain activity below acceptable level.")
 		return 0
 	else if(occupant)
 		to_chat(user, "Occupant detected.")
 		return 0
-	else if(dna && dna!=mmi_as_oc.brainmob.dna.unique_enzymes)
+	else if(dna && dna != mmi_occupant.identity.get_dna()?.unique_enzymes)
 		to_chat(user, "Genetic sequence or serial number incompatible with locking mechanism.")
 		return 0
 	//Added a message here since people assume their first click failed or something./N
@@ -1720,14 +1722,15 @@
 
 /obj/mecha/proc/mmi_moved_inside(obj/item/mmi/mmi_as_oc as obj,mob/user as mob)
 	if(mmi_as_oc && (user in range(1)))
-		if(!mmi_as_oc.brainmob || !mmi_as_oc.brainmob.client)
+		var/mob/living/carbon/brain/mmi_occupant = mmi_as_oc.get_occupant()
+		if(!mmi_occupant?.client)
 			to_chat(user, "Consciousness matrix not detected.")
 			return 0
-		else if(mmi_as_oc.brainmob.stat)
+		else if(mmi_occupant.stat)
 			to_chat(user, "Beta-rhythm below acceptable level.")
 			return 0
 		user.drop_from_inventory(mmi_as_oc)
-		var/mob/brainmob = mmi_as_oc.brainmob
+		var/mob/brainmob = mmi_occupant
 		occupant = brainmob
 		brainmob.loc = src //should allow relaymove
 		brainmob.canmove = 1
@@ -2158,7 +2161,7 @@
 			occupant.client.images -= dq_get_cloaked_selfimage(src)
 		if(istype(mob_container, /obj/item/mmi))
 			var/obj/item/mmi/mmi = mob_container
-			if(mmi.brainmob)
+			if(mmi.get_occupant())
 				occupant.forceMove(mmi)
 			mmi.mecha = null
 			occupant.canmove = 0
@@ -2955,11 +2958,7 @@
 		O.control_disabled = 1 // Can't control things remotely if you're stuck in a card!
 		O.laws = AI.laws
 		O.set_stat(AI.stat)
-		O.oxyloss = AI.getOxyLoss()
-		O.fireloss = AI.getFireLoss()
-		O.bruteloss = AI.getBruteLoss()
-		O.toxloss = AI.toxloss
-		O.updatehealth()
+		mirror_injury_state(AI, O)
 		src.occupant = O
 		if(AI.mind)
 			AI.mind.transfer_to(O)
@@ -2973,11 +2972,7 @@
 				O.mind.transfer_to(AI)
 			AI.control_disabled = 0
 			AI.laws = O.laws
-			AI.oxyloss = O.getOxyLoss()
-			AI.fireloss = O.getFireLoss()
-			AI.bruteloss = O.getBruteLoss()
-			AI.toxloss = O.toxloss
-			AI.updatehealth()
+			mirror_injury_state(O, AI)
 			qdel(O)
 			if (!AI.stat)
 				AI.icon_state = "ai"
@@ -3153,3 +3148,33 @@
 /obj/mecha
 	damage_minimum = 5				//Incoming damage lower than this won't actually deal damage. Scrapes shouldn't be a real thing.
 	minimum_penetration = 10		//Incoming damage won't be fully applied if you don't have at least 20. Almost all AP clears this.
+
+/// Copies the aggregate injury state of one mob onto another (used when an AI is temporarily moved into a mecha shell).
+/// The target is fully healed first, then re-injured with the source's per-category injury load.
+/obj/mecha/proc/mirror_injury_state(mob/living/source_mob, mob/living/target_mob)
+	if(!source_mob || !target_mob)
+		return
+	target_mob.fully_heal()
+	var/physical = source_mob.injury_load(INJURY_CATEGORY_PHYSICAL)
+	var/thermal = source_mob.injury_load(INJURY_CATEGORY_THERMAL)
+	var/toxic = source_mob.injury_load(INJURY_CATEGORY_TOXIC)
+	var/asphyxia = source_mob.injury_load(INJURY_CATEGORY_ASPHYXIA)
+	if(physical)
+		target_mob.injure(INJURY_BLUNT, physical, null, src, flags = INJURE_IGNORE_RESISTANCE | INJURE_SILENT)
+	if(thermal)
+		target_mob.injure(INJURY_BURN, thermal, null, src, flags = INJURE_IGNORE_RESISTANCE | INJURE_SILENT)
+	if(toxic)
+		target_mob.injure(INJURY_TOXIN, toxic, null, src, flags = INJURE_IGNORE_RESISTANCE | INJURE_SILENT)
+	if(asphyxia)
+		target_mob.injure(INJURY_ASPHYXIA, asphyxia, null, src, flags = INJURE_IGNORE_RESISTANCE | INJURE_SILENT)
+
+/// Icon-state suffix for the melee-mode action button, keyed on the mecha's melee injury kind.
+/obj/mecha/proc/melee_damtype_icon()
+	switch(melee_injury_kind)
+		if(INJURY_BURN)
+			return "fire"
+		if(INJURY_TOXIN)
+			return "tox"
+		if(INJURY_PAIN)
+			return "halloss"
+	return "brute"

@@ -301,7 +301,6 @@
 	. = ..()
 
 
-// === merged from cards_vr.dm during hard-fork de-suffix (verified no override-order change) ===
 /obj/item/card/emag/examine(mob/user)
 	. = ..()
 	. += "[uses] uses remaining."

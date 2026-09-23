@@ -31,6 +31,8 @@ GLOBAL_REAL(Master, /datum/controller/master)
 	// Vars for keeping track of tick drift.
 	var/init_timeofday
 	var/init_time
+	/// Wall-clock seconds the last full subsystem initialization took.
+	var/initializations_seconds = 0
 	var/tickdrift = 0
 	/// Tickdrift as of last tick, w no averaging going on
 	var/olddrift = 0
@@ -89,6 +91,8 @@ GLOBAL_REAL(Master, /datum/controller/master)
 	/// Breakdown for the highest-usage tick since the last explicit reset.
 	var/list/perf_worst_tick = list()
 	var/perf_history_limit = 12000
+	/// Every sample ever recorded, so callers can hold a position that survives trimming.
+	var/perf_samples_total = 0
 	var/perf_tick_top_name = "None"
 	var/perf_tick_top_usage = 0
 	var/perf_tick_peak_usage = 0
@@ -468,6 +472,7 @@ ADMIN_VERB(cmd_controller_view_ui, R_SERVER|R_DEBUG, "Controller Overview", "Vie
 			Master.StartProcessing(0)
 
 	var/time = (REALTIMEOFDAY - start_timeofday) / 10
+	initializations_seconds = time
 
 
 
@@ -521,6 +526,7 @@ ADMIN_VERB(cmd_controller_view_ui, R_SERVER|R_DEBUG, "Controller Overview", "Vie
 	// Capture end time
 	var/time = rustg_time_milliseconds(SS_INIT_TIMER_KEY)
 	var/seconds = round(time / 1000, 0.01)
+	subsystem.init_time_ms = time
 
 	// Always update the blackbox tally regardless.
 	// NOT IMPLEMENTED: SSblackbox.record_feedback("tally", "subsystem_initialize", time, subsystem.name)
@@ -823,6 +829,7 @@ ADMIN_VERB(cmd_controller_view_ui, R_SERVER|R_DEBUG, "Controller Overview", "Vie
 	usage = max(usage, 0)
 	perf_tick_usage += usage
 	perf_tick_realtime += REALTIMEOFDAY
+	perf_samples_total++
 	if(perf_tick_usage.len > perf_history_limit)
 		// Trim in chunks so a full five-minute ring does not shift twelve
 		// thousand list entries on every server tick.
@@ -861,6 +868,14 @@ ADMIN_VERB(cmd_controller_view_ui, R_SERVER|R_DEBUG, "Controller Overview", "Vie
 		breakdown += list(list("name" = "BYOND / pre-MC / external", "usage" = unattributed))
 	return breakdown
 
+/// Converts a perf_samples_total position into a current perf_tick_usage index.
+/// Positions that have been trimmed away clamp to the oldest retained sample.
+/datum/controller/master/proc/perf_index_of(position)
+	return max(position - (perf_samples_total - perf_tick_usage.len), 1)
+
+/// Tick usage above this percentage shares the top percentile bin.
+#define PERF_HISTOGRAM_BINS 1000
+
 /datum/controller/master/proc/performance_window(seconds, start_index_override)
 	var/sample_count
 	var/start_index
@@ -872,37 +887,54 @@ ADMIN_VERB(cmd_controller_view_ui, R_SERVER|R_DEBUG, "Controller Overview", "Vie
 		start_index = perf_tick_usage.len - sample_count + 1
 	if(!sample_count)
 		return list("samples" = 0, "avg" = 0, "p50" = 0, "p95" = 0, "p99" = 0, "max" = 0, "overruns" = 0, "tps" = 0)
-	var/list/samples = perf_tick_usage.Copy(start_index)
+	// Percentiles come from a 1%-wide histogram filled in the same pass as the
+	// average, so the window is never copied or sorted (Q7). Usage above
+	// PERF_HISTOGRAM_BINS% lands in the top bin; "max" stays exact.
+	var/list/histogram = new /list(PERF_HISTOGRAM_BINS + 1)
 	var/sum = 0
 	var/overruns = 0
 	var/window_max = 0
-	for(var/value in samples)
+	var/end_index = start_index + sample_count - 1
+	for(var/i in start_index to end_index)
+		var/value = perf_tick_usage[i]
 		sum += value
-		window_max = max(window_max, value)
+		if(value > window_max)
+			window_max = value
 		if(value > 100)
 			overruns++
-	// Percentiles use an evenly-spaced maximum of 300 observations. Average,
-	// maximum, overrun count, and TPS still cover every tick in the window.
-	var/sample_stride = max(CEILING(sample_count / 300, 1), 1)
-	var/list/sorted = list()
-	for(var/i in 1 to sample_count step sample_stride)
-		sorted += samples[i]
-	sortTim(sorted, GLOBAL_PROC_REF(cmp_numeric_asc))
-	var/percentile_count = sorted.len
+		var/bin = min(round(value), PERF_HISTOGRAM_BINS) + 1
+		histogram[bin]++
+	var/list/percentile_ranks = list(
+		max(CEILING(sample_count * 0.50, 1), 1),
+		max(CEILING(sample_count * 0.95, 1), 1),
+		max(CEILING(sample_count * 0.99, 1), 1),
+	)
+	var/list/percentiles = list(0, 0, 0)
+	var/rank_index = 1
+	var/cumulative = 0
+	for(var/bin in 1 to PERF_HISTOGRAM_BINS + 1)
+		cumulative += histogram[bin]
+		while(rank_index <= 3 && cumulative >= percentile_ranks[rank_index])
+			percentiles[rank_index] = bin - 1
+			rank_index++
+		if(rank_index > 3)
+			break
 	var/realtime_delta = perf_tick_realtime[perf_tick_realtime.len] - perf_tick_realtime[start_index]
 	if(realtime_delta < 0)
 		realtime_delta += 24 HOURS
 	return list(
 		"samples" = sample_count,
 		"avg" = sum / sample_count,
-		"percentile_samples" = percentile_count,
-		"p50" = sorted[max(CEILING(percentile_count * 0.50, 1), 1)],
-		"p95" = sorted[max(CEILING(percentile_count * 0.95, 1), 1)],
-		"p99" = sorted[max(CEILING(percentile_count * 0.99, 1), 1)],
+		"percentile_samples" = sample_count,
+		"p50" = percentiles[1],
+		"p95" = percentiles[2],
+		"p99" = percentiles[3],
 		"max" = window_max,
 		"overruns" = overruns,
 		"tps" = realtime_delta > 0 ? ((sample_count - 1) / (realtime_delta * 0.1)) : world.fps,
 	)
+
+#undef PERF_HISTOGRAM_BINS
 
 // This is what decides if something should run.
 /datum/controller/master/proc/CheckQueue(list/subsystemstocheck)

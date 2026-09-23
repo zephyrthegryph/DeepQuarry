@@ -15,7 +15,6 @@ GLOBAL_LIST_INIT(permission_action_types, list(
 	PERMISSIONS_ACTION_NONE
 ))
 
-
 // edit_admin_permissions body relocated to code/modules/admin/permissions_panel.dm (structured TGUI).
 // The legacy 400-line HTML/asset-cache builder is gone; edit_rights_topic and topic.dm's editrightsbrowser* handlers still own the actions and call edit_admin_permissions() at the end to refresh — that now opens the structured panel.
 
@@ -96,13 +95,6 @@ GLOBAL_LIST_INIT(permission_action_types, list(
 			force_deadmin(admin_key, target_admin_datum)
 		if("sync")
 			sync_lastadminrank(admin_ckey, admin_key, target_admin_datum)
-		//if("verify")
-		//	var/msg = "has authenticated [admin_ckey]"
-		//	message_admins("[key_name_admin(usr)] [msg]")
-		//	log_admin("[key_name(usr)] [msg]")
-		//
-		//	target_admin_datum.bypass_2fa = TRUE
-		//	target_admin_datum.associate(GLOB.directory[admin_ckey])
 	edit_admin_permissions(PERMISSIONS_PAGE_PERMISSIONS)
 
 /datum/admins/proc/add_admin(admin_ckey, admin_key, use_db)
@@ -244,7 +236,6 @@ GLOBAL_LIST_INIT(permission_action_types, list(
 
 	var/list/new_rank_names = list()
 	var/list/custom_ranks = list()
-
 
 	while (TRUE)
 		var/list/display_rank_names = list(RANK_DONE)

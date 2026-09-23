@@ -70,9 +70,6 @@
 	// Pause OOC
 	// NOT IMPLEMENTED
 	var/ooc_toggled = FALSE
-	//if(is_global && stop_ooc && GLOB.ooc_allowed)
-	//	ooc_toggled = TRUE
-	//	toggle_ooc(FALSE)
 
 	// Place the /atom/movable/screen/cinematic into everyone's screens, and prevent movement.
 	for(var/mob/watching_mob in watchers)

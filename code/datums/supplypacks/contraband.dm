@@ -182,7 +182,6 @@
 	contraband = 1
 
 
-// === merged from contraband_chomp.dm during hard-fork de-suffix (verified no override-order change) ===
 /*
 *	Here is where any supply packs that may or may not be legal
 *	  and require modification of the supply controller live.

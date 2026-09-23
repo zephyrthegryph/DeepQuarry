@@ -89,10 +89,6 @@
 /obj/machinery/rnd/server/master
 	// max_integrity = 1800 //takes roughly ~15s longer to break then full deconstruction.
 	circuit = null
-	// var/obj/item/computer_disk/hdd_theft/source_code_hdd
-	// var/deconstruction_state = HDD_PANEL_CLOSED
-	// var/front_panel_screws = 4
-	// var/hdd_wires = 6
 
 /obj/machinery/rnd/server/master/Initialize(mapload)
 	. = ..()

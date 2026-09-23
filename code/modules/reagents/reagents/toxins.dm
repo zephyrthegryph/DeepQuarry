@@ -12,6 +12,9 @@
 	filtered_organs = list(O_LIVER, O_KIDNEYS)
 	scannable = SCANNABLE_DIFFICULT
 	var/strength = 4 // How much damage it deals per unit
+	/// Affliction this poison causes instead of generic toxic poisoning
+	/// (typepath; null = the body's default response). See toxicology.dm.
+	var/poison_affliction
 	dermal_absorption = 0
 	supply_conversion_value = REFINERYEXPORT_VALUE_PROCESSED
 	industrial_use = REFINERYEXPORT_REASON_PRECURSOR
@@ -25,8 +28,11 @@
 			if(dose >= 10)
 				M.adjust_nutrition(poison_strength * removed) // Body has to deal with the massive influx of toxins, rather than try using them to repair.
 			else
-				M.heal_organ_damage((10/poison_strength) * removed, (10/poison_strength) * removed) //Doses of toxins below 10 units, and 10 strength, are capable of providing useful compounds for repair.
-		M.adjustToxLoss(poison_strength * removed)
+				//Doses of toxins below 10 units, and 10 strength, are capable of providing useful compounds for repair.
+				// Promethean-only, dose-gated: a species behaviour, not a treatment profile, so it mends directly.
+				M.mend(TREAT_TISSUE_REPAIR, (10/poison_strength) * removed)
+				M.mend(TREAT_BURN_CARE, (10/poison_strength) * removed)
+		M.injure(INJURY_TOXIN, poison_strength * removed, source = src, affliction = poison_affliction)
 
 /datum/reagent/toxin/plasticide
 	name = REAGENT_PLASTICIDE
@@ -48,13 +54,14 @@
 	reagent_state = LIQUID
 	color = "#792300"
 	strength = 10
+	poison_affliction = /datum/affliction/poisoning/amatoxin
 	supply_conversion_value = REFINERYEXPORT_VALUE_PROCESSED
 	industrial_use = REFINERYEXPORT_REASON_PRECURSOR
 
 /datum/reagent/toxin/amatoxin/affect_blood(mob/living/carbon/M, alien, removed)
 	// Trojan horse. Waits until most of the toxin has gone through the body before dealing the bulk of it in one big strike.
 	if(volume < max_dose * 0.1)
-		M.adjustToxLoss(max_dose * strength) //Get hit all at once.
+		M.injure(INJURY_TOXIN, max_dose * strength, source = src, affliction = poison_affliction) //Get hit all at once.
 		M.reagents.del_reagent(REAGENT_ID_AMATOXIN) //Remove the rest of ourselves.
 
 /datum/reagent/toxin/carpotoxin
@@ -66,12 +73,13 @@
 	dermal_absorption = 0.4
 	color = "#003333"
 	strength = 10
+	poison_affliction = /datum/affliction/poisoning/neurotoxin
 	supply_conversion_value = REFINERYEXPORT_VALUE_PROCESSED
 	industrial_use = REFINERYEXPORT_REASON_PRECURSOR
 
 /datum/reagent/toxin/carpotoxin/affect_blood(mob/living/carbon/M, alien, removed)
 	..()
-	M.adjustBrainLoss(strength / 4 * removed)
+	M.injure(INJURY_NEURAL, strength / 4 * removed, source = src)
 
 /datum/reagent/toxin/neurotoxic_protein
 	name = REAGENT_NEUROTOXIC_PROTEIN
@@ -81,6 +89,7 @@
 	reagent_state = LIQUID
 	color = "#005555"
 	strength = 8
+	poison_affliction = /datum/affliction/poisoning/neurotoxin
 	dermal_absorption = 0.4
 	wiki_flag = WIKI_SPOILER
 	supply_conversion_value = REFINERYEXPORT_VALUE_NO
@@ -96,7 +105,7 @@
 		if(prob(5))
 			M.emote(pick("twitch", "drool", "moan"))
 		if(prob(20))
-			M.adjustBrainLoss(0.1)
+			M.injure(INJURY_NEURAL, 0.1, source = src)
 
 //R-UST port
 // Produced during deuterium synthesis. Super poisonous, SUPER flammable (doesn't need oxygen to burn).
@@ -106,6 +115,7 @@
 	description = "An exceptionally flammable molecule formed from deuterium synthesis."
 	dermal_absorption = 1 //same as phoron
 	strength = 80
+	poison_affliction = /datum/affliction/poisoning/phoron
 	var/fire_mult = 30
 	supply_conversion_value = REFINERYEXPORT_VALUE_PROCESSED
 	industrial_use = REFINERYEXPORT_REASON_PRECURSOR
@@ -116,7 +126,7 @@
 		L.adjust_fire_stacks(amount / fire_mult)
 
 /datum/reagent/toxin/hydrophoron/affect_touch(mob/living/carbon/M, alien, removed)
-	M.take_organ_damage(0, removed * 0.1) //being splashed directly with hydrophoron causes minor chemical burns
+	M.injure(INJURY_CORROSIVE, removed * 0.1, source = src) //being splashed directly with hydrophoron causes minor chemical burns
 	// ZAS pl_effects() (phoron contamination side-effect) removed; the
 	// burn damage above is the meaningful remainder under LINDA.
 	..()
@@ -147,6 +157,7 @@
 	color = "#273956"
 	dermal_absorption = 0 //It's lead.
 	strength = 4
+	poison_affliction = /datum/affliction/poisoning/heavy_metal
 	supply_conversion_value = 0.5 SHEET_TO_REAGENT_EQUIVILENT // has sheet value
 	industrial_use = REFINERYEXPORT_REASON_PRECURSOR
 
@@ -156,23 +167,26 @@
 	description = "A liquifying toxin produced by giant spiders."
 	color = "#2CE893"
 	strength = 5
+	poison_affliction = /datum/affliction/venom/arachnid
 	supply_conversion_value = REFINERYEXPORT_VALUE_PROCESSED
 	industrial_use = REFINERYEXPORT_REASON_MEDSCI
 
 /datum/reagent/toxin/warningtoxin
+	factors = alist(BF_SLOWDOWN = 5, BF_PENALTY_SCALE = 1.25)
+	species_factors = alist(IS_DIONA = null)
 	name = REAGENT_WARNINGTOXIN
 	id = REAGENT_ID_WARNINGTOXIN
 	description = "A weaker toxin produced by giant spiders applied only in warning bites, known to slow a people down a lot."
 	color = "#2CE893"
 	strength = 1
+	poison_affliction = /datum/affliction/venom/arachnid
 
 /datum/reagent/toxin/warningtoxin/affect_blood(mob/living/carbon/M, alien, removed)
 	var/poison_strength = strength * M.species.chem_strength_tox
 	if(strength && alien != IS_DIONA)
-		M.adjustToxLoss(poison_strength * removed)
+		M.injure(INJURY_TOXIN, poison_strength * removed, source = src, affliction = poison_affliction)
 		M.druggy = max(M.druggy, 10)
 		M.make_jittery(5)
-		M.add_chemical_effect(CE_SLOWDOWN, 5)
 
 /datum/reagent/toxin/phoron
 	name = REAGENT_PHORON
@@ -182,6 +196,7 @@
 	reagent_state = LIQUID
 	color = "#9D14DB"
 	strength = 30
+	poison_affliction = /datum/affliction/poisoning/phoron
 	touch_met = 5
 	dermal_absorption = 1
 	supply_conversion_value = 5 SHEET_TO_REAGENT_EQUIVILENT // has sheet value
@@ -198,12 +213,13 @@
 	M.adjust_fire_stacks(removed / 5)
 	if(alien == IS_VOX)
 		return
-	M.take_organ_damage(0, removed * 0.1) //being splashed directly with phoron causes minor chemical burns
+	M.injure(INJURY_CORROSIVE, removed * 0.1, source = src) //being splashed directly with phoron causes minor chemical burns
 	// ZAS pl_effects() removed (see hydrophoron/affect_touch).
 
 /datum/reagent/toxin/phoron/affect_blood(mob/living/carbon/M, alien, removed)
 	if(alien == IS_VOX)
-		M.adjustOxyLoss(-100 * removed) //5 oxyloss healed per tick.
+		// Vox breathe phoron: species-gated, so it mends directly rather than via a tag.
+		M.mend(TREAT_OXYGENATION, 100 * removed) //5 asphyxia healed per tick.
 		return //You're wasting plasma (a semi-limited chemical) to save someone, so it might as well be somewhat strong.
 	if(alien == IS_SLIME)
 		M.adjust_fire_stacks(removed * 3) //Not quite 'converting' it. It's like mixing fuel into a jelly. You get explosive, or at least combustible, jelly.
@@ -226,15 +242,16 @@
 	reagent_state = LIQUID
 	color = "#CF3600"
 	strength = 15
+	poison_affliction = /datum/affliction/poisoning/cyanide
 	metabolism = REM * 0.5
 	supply_conversion_value = REFINERYEXPORT_VALUE_PROCESSED
 	industrial_use = REFINERYEXPORT_REASON_PRECURSOR
 
 /datum/reagent/toxin/cyanide/affect_blood(mob/living/carbon/M, alien, removed)
 	..()
-	M.adjustOxyLoss(10 * removed)
-	M.AdjustLosebreath(5) //Adjusting oxyloss with no losebreath adjustment is useless.
-	if(dose > 5) //Puts you to sleep if its in your system for too long. This is equivalent to 100 seconds (50 ticks). By this point, you have 75 toxins, ~100 oxyloss, and are good as dead w/o treatment.
+	M.injure(INJURY_ASPHYXIA, 10 * removed, source = src)
+	M.AdjustLosebreath(5) //Asphyxia with no losebreath adjustment is useless.
+	if(dose > 5) //Puts you to sleep if its in your system for too long. This is equivalent to 100 seconds (50 ticks). By this point, you have 75 toxins, ~100 asphyxia, and are good as dead w/o treatment.
 		M.Sleeping(1)
 
 /datum/reagent/toxin/mold
@@ -277,6 +294,7 @@
 
 
 /datum/reagent/toxin/stimm	//Homemade Hyperzine
+	factors = alist(BF_SLOWDOWN = -1, BF_PENALTY_SCALE = 0.5)
 	name = REAGENT_STIMM
 	id = REAGENT_ID_STIMM
 	description = "A homemade stimulant with some serious side-effects."
@@ -299,15 +317,14 @@
 		M.emote(pick("twitch", "blink_r", "shiver"))
 	if(prob(15))
 		M.visible_message("[M] shudders violently.", "You shudder uncontrollably, it hurts.")
-		M.take_organ_damage(6 * removed, 0)
-	M.add_chemical_effect(CE_SPEEDBOOST, 1)
+		M.injure(INJURY_BLUNT, 6 * removed, source = src)
 
 /datum/reagent/toxin/stimm/overdose(mob/living/carbon/M, alient, removed)
 	..()
 	if(prob(10)) // 1 in 10. This thing's made with welder fuel and fertilizer, what do you expect?
 		var/obj/item/organ/internal/heart/ht = M.internal_organs_by_name[O_HEART]
 		if(ht)
-			ht.take_damage(1)
+			M.injure(INJURY_BLUNT, 1, ht, src, flags = INJURE_IGNORE_RESISTANCE)
 			to_chat(M, span_warning("Huh... Is this what a heart attack feels like?"))
 
 /datum/reagent/toxin/potassium_chloride
@@ -327,16 +344,17 @@
 /datum/reagent/toxin/potassium_chloride/affect_blood(mob/living/carbon/M, alien, removed)
 	..()
 	if(alien == IS_SLIME)
-		M.adjustFireLoss(removed * 2)
+		M.injure(INJURY_BURN, removed * 2, source = src)
 
 /datum/reagent/toxin/potassium_chloride/overdose(mob/living/carbon/M, alien)
 	..()
 	if(ishuman(M))
 		var/mob/living/carbon/human/H = M
+		H.induce_arrhythmia(CARDIAC_RHYTHM_VF) // Hyperkalaemia fibrillates the heart.
 		if(H.stat != 1)
 			if(H.losebreath >= 10)
 				H.losebreath = max(10, H.losebreath - 10)
-			H.adjustOxyLoss(2)
+			H.injure(INJURY_ASPHYXIA, 2, source = src)
 			H.Weaken(10)
 
 /datum/reagent/toxin/potassium_chlorophoride
@@ -357,13 +375,14 @@
 	..()
 	if(ishuman(M))
 		var/mob/living/carbon/human/H = M
+		H.induce_arrhythmia(CARDIAC_RHYTHM_ASYSTOLE) // A lethal-injection flatline.
 		if(H.stat != 1)
 			if(H.losebreath >= 10)
 				H.losebreath = max(10, M.losebreath-10)
-			H.adjustOxyLoss(2)
+			H.injure(INJURY_ASPHYXIA, 2, source = src)
 			H.Weaken(10)
 	if(alien == IS_SLIME)
-		M.adjustFireLoss(removed * 3)
+		M.injure(INJURY_BURN, removed * 3, source = src)
 
 /datum/reagent/toxin/zombiepowder
 	name = REAGENT_ZOMBIEPOWDER
@@ -389,7 +408,7 @@
 		M.tod = stationtime2text()
 		M.timeofdeath = world.time
 	M.status_flags |= FAKEDEATH
-	M.adjustOxyLoss(1 * removed)
+	M.injure(INJURY_ASPHYXIA, 1 * removed, source = src)
 	M.silent = max(M.silent, 10)
 	M.paralysis = max(M.paralysis, 10)
 
@@ -506,11 +525,11 @@
 
 /datum/reagent/toxin/plantbgone/affect_blood(mob/living/carbon/M, alien, removed)
 	if(alien == IS_DIONA)
-		M.adjustToxLoss(50 * removed)
+		M.injure(INJURY_TOXIN, 50 * removed, source = src)
 
 /datum/reagent/toxin/plantbgone/affect_touch(mob/living/carbon/M, alien, removed)
 	if(alien == IS_DIONA)
-		M.adjustToxLoss(50 * removed)
+		M.injure(INJURY_TOXIN, 50 * removed, source = src)
 
 /datum/reagent/toxin/sifslurry
 	name = REAGENT_SIFSAP
@@ -599,7 +618,7 @@
 	industrial_use = REFINERYEXPORT_REASON_BIOHAZARD
 
 /datum/reagent/thermite/venom/affect_blood(mob/living/carbon/M, alien, removed)
-	M.adjustFireLoss(3 * removed)
+	M.injure(INJURY_BURN, 3 * removed, source = src)
 	if(M.fire_stacks <= 1.5)
 		M.adjust_fire_stacks(0.15)
 	if(alien == IS_DIONA)
@@ -626,7 +645,7 @@
 	if(alien == IS_DIONA)
 		return
 	if(prob(50))
-		M.adjustToxLoss(0.5 * removed)
+		M.injure(INJURY_TOXIN, 0.5 * removed, source = src)
 	if(prob(50))
 		M.apply_effect(4, AGONY, 0)
 		if(prob(20))
@@ -654,12 +673,12 @@
 		return
 	if(alien == IS_SLIME)
 		M.apply_effect(5, AGONY, 0)
-		M.adjustToxLoss(3 * removed)
+		M.injure(INJURY_TOXIN, 3 * removed, source = src)
 		if(prob(10))
 			to_chat(M, span_warning("Your cellular mass hardens for a moment."))
 			M.Stun(6)
 		return
-	M.take_organ_damage(3 * removed, 0)
+	M.injure(INJURY_CORROSIVE, 3 * removed, source = src)
 	if(M.losebreath < 15)
 		M.AdjustLosebreath(1)
 
@@ -732,6 +751,7 @@
 	M.apply_effect(10 * removed, IRRADIATE, 0)
 
 /datum/reagent/slimejelly
+	species_factors = alist(IS_SLIME = alist(BF_ANALGESIA = 45))
 	name = REAGENT_SLIMEJELLY
 	id = REAGENT_ID_SLIMEJELLY
 	scannable = SCANNABLE_ADVANCED
@@ -749,16 +769,18 @@
 		return
 	if(alien == IS_SLIME) //Partially made of the stuff. Why would it hurt them?
 		if(prob(75))
-			M.heal_overall_damage(25 * removed, 25 * removed)
-			M.adjustToxLoss(rand(-30, -10) * removed)
+			// Random species-gated bursts: can't be a continuous tag, so it mends directly.
+			M.mend(TREAT_TISSUE_REPAIR, 25 * removed)
+			M.mend(TREAT_BURN_CARE, 25 * removed)
+			M.mend(TREAT_ANTITOXIN, rand(10, 30) * removed)
 			M.druggy = max(M.druggy, 10)
-			M.add_chemical_effect(CE_PAINKILLER, 60)
 	else
 		if(prob(10))
 			to_chat(M, span_danger("Your insides are burning!"))
-			M.adjustToxLoss(rand(100, 300) * removed)
+			M.injure(INJURY_TOXIN, rand(100, 300) * removed, source = src)
 		else if(prob(40))
-			M.heal_organ_damage(25 * removed, 0)
+			// Random burst: mends directly.
+			M.mend(TREAT_TISSUE_REPAIR, 25 * removed)
 
 /datum/reagent/soporific
 	name = REAGENT_STOXIN
@@ -859,12 +881,12 @@
 			M.Sleeping(30)
 
 	if(effective_dose > 1 * threshold)
-		M.adjustToxLoss(removed)
+		M.injure(INJURY_TOXIN, removed, source = src)
 
 /datum/reagent/chloralhydrate/overdose(mob/living/carbon/M, alien, removed)
 	..()
 	M.SetLosebreath(10)
-	M.adjustOxyLoss(removed * overdose_mod)
+	M.injure(INJURY_ASPHYXIA, removed * overdose_mod, source = src)
 
 /datum/reagent/chloralhydrate/beer2 //disguised as normal beer for use by emagged brobots
 	name = REAGENT_BEER2
@@ -917,7 +939,7 @@
 	if(prob(30))
 		if(prob(25))
 			M.emote(pick("shiver", "blink_r"))
-		M.adjustBrainLoss(0.2 * removed)
+		M.injure(INJURY_NEURAL, 0.2 * removed, source = src)
 	return ..()
 
 /datum/reagent/cryptobiolin
@@ -964,7 +986,7 @@
 		return
 	M.make_jittery(-5)
 	if(prob(80))
-		M.adjustBrainLoss(0.1 * removed)
+		M.injure(INJURY_NEURAL, 0.1 * removed, source = src)
 	if(prob(50))
 		M.drowsyness = max(M.drowsyness, 3)
 	if(prob(10))
@@ -1080,8 +1102,8 @@
 	industrial_use = REFINERYEXPORT_REASON_BIOHAZARD
 
 /datum/reagent/shredding_nanites/affect_blood(mob/living/carbon/M, alien, removed)
-	M.adjustBruteLoss(4 * removed)
-	M.adjustOxyLoss(4 * removed)
+	M.injure(INJURY_CUT, 4 * removed, source = src)
+	M.injure(INJURY_ASPHYXIA, 4 * removed, source = src)
 
 /datum/reagent/irradiated_nanites
 	name = REAGENT_IRRADIATEDNANITES
@@ -1117,8 +1139,8 @@
 	industrial_use = REFINERYEXPORT_REASON_BIOHAZARD
 
 /datum/reagent/neurophage_nanites/affect_blood(mob/living/carbon/M, alien, removed)
-	M.adjustBrainLoss(2 * removed)	// Their job is to give you a bad time.
-	M.adjustBruteLoss(2 * removed)
+	M.injure(INJURY_NEURAL, 2 * removed, source = src)	// Their job is to give you a bad time.
+	M.injure(INJURY_BLUNT, 2 * removed, source = src)
 
 /datum/reagent/salmonella
 	name = REAGENT_SALMONELLA

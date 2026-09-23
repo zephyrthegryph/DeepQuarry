@@ -105,6 +105,7 @@
 //////////////////////////////////////////////////////////////////////////////////////////////////
 /mob/living/silicon/pai/Initialize(mapload)
 	. = ..()
+	RegisterSignal(src, COMSIG_LIVING_INJURED, PROC_REF(on_injured))
 
 	card = loc
 	if(!istype(card))
@@ -158,12 +159,12 @@
 
 	// Meta Info for pAI
 	if (client.prefs)
-		ooc_notes = client.prefs.read_preference(/datum/preference/text/living/ooc_notes)
-		ooc_notes_likes = client.prefs.read_preference(/datum/preference/text/living/ooc_notes_likes)
-		ooc_notes_dislikes = client.prefs.read_preference(/datum/preference/text/living/ooc_notes_dislikes)
-		ooc_notes_favs = read_preference(/datum/preference/text/living/ooc_notes_favs)
-		ooc_notes_maybes = read_preference(/datum/preference/text/living/ooc_notes_maybes)
-		ooc_notes_style = read_preference(/datum/preference/toggle/living/ooc_notes_style)
+		identity.ooc_notes = client.prefs.read_preference(/datum/preference/text/living/ooc_notes)
+		identity.ooc_notes_likes = client.prefs.read_preference(/datum/preference/text/living/ooc_notes_likes)
+		identity.ooc_notes_dislikes = client.prefs.read_preference(/datum/preference/text/living/ooc_notes_dislikes)
+		identity.ooc_notes_favs = read_preference(/datum/preference/text/living/ooc_notes_favs)
+		identity.ooc_notes_maybes = read_preference(/datum/preference/text/living/ooc_notes_maybes)
+		identity.ooc_notes_style = read_preference(/datum/preference/toggle/living/ooc_notes_style)
 		private_notes = client.prefs.read_preference(/datum/preference/text/living/private_notes)
 
 	src << sound('sound/effects/pai_login.ogg', volume = 75)
@@ -321,8 +322,7 @@
 			return
 	if(W.force)
 		visible_message(span_danger("[user.name] attacks [src] with [W]!"))
-		src.adjustBruteLoss(W.force)
-		src.updatehealth()
+		injure(W.get_injury_kind(), W.force, null, W)
 	else
 		visible_message(span_warning("[user.name] bonks [src] harmlessly with [W]."))
 	spawn(1)
@@ -414,17 +414,15 @@
 	. += ""
 	. += show_silenced()
 
-/mob/living/silicon/pai/adjustBruteLoss(amount, include_robo)
-	. = ..()
-	if(amount > 0 && health <= 90)	//Something's probably attacking us!
-		if(prob(amount))	//The more damage it is doing, the more likely it is to damage something important!
-			card.damage_random_component()
-
-/mob/living/silicon/pai/adjustFireLoss(amount, include_robo)
-	. = ..()
-	if(amount > 0 && health <= 90)
-		if(prob(amount))
-			card.damage_random_component()
+/// Something's probably attacking us! The more damage it is doing, the more
+/// likely it is to damage something important in the card.
+/mob/living/silicon/pai/proc/on_injured(datum/source, kind, amount, zone, atom/injury_source, flags)
+	SIGNAL_HANDLER
+	var/category = injury_category(kind)
+	if(category != INJURY_CATEGORY_PHYSICAL && category != INJURY_CATEGORY_THERMAL)
+		return
+	if(amount > 0 && vitality() <= 0.9 && prob(amount))
+		card?.damage_random_component()
 
 /mob/living/silicon/pai/restrained()
 	if(istype(src.loc,/obj/item/paicard))
@@ -477,8 +475,7 @@
 
 /// Fully heals a pai, used when a pai is repaired
 /mob/living/silicon/pai/proc/full_restore()
-	adjustBruteLoss(- bruteloss)
-	adjustFireLoss(- fireloss)
+	fully_heal()
 	addtimer(CALLBACK(src, PROC_REF(restore_delay_start)), 5 SECONDS, TIMER_DELETE_ME)
 
 /mob/living/silicon/pai/proc/restore_delay_start()

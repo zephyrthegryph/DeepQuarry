@@ -61,11 +61,11 @@
 	stacks = MODIFIER_STACK_EXTEND
 
 /datum/modifier/shadekin/heal_boop/tick()
-	if(!holder.getBruteLoss() && !holder.getFireLoss() && !holder.getToxLoss() && !holder.getOxyLoss() && !holder.getCloneLoss()) // No point existing if the spell can't heal.
+	var/mended = holder.mend(TREAT_TISSUE_REPAIR, 2)
+	mended += holder.mend(TREAT_BURN_CARE, 2)
+	mended += holder.mend(TREAT_ANTITOXIN, 2)
+	mended += holder.mend(TREAT_OXYGENATION, 2)
+	mended += holder.mend(TREAT_GENETIC_REPAIR, 2)
+	if(!mended) // No point existing if the spell can't heal.
 		expire()
 		return
-	holder.adjustBruteLoss(-2)
-	holder.adjustFireLoss(-2)
-	holder.adjustToxLoss(-2)
-	holder.adjustOxyLoss(-2)
-	holder.adjustCloneLoss(-2)

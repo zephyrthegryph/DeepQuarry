@@ -7,8 +7,7 @@
 	on_expired_text = span_notice("Your sight returns to what it once was.")
 	stacks = MODIFIER_STACK_EXTEND
 
-	accuracy = -15
-	accuracy_dispersion = 1
+	factors = alist(BF_ACCURACY = -15, BF_DISPERSION = 1)
 
 /datum/modifier/feysight/on_applied()
 	holder.see_invisible = 60

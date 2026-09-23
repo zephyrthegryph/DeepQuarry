@@ -87,16 +87,6 @@
 	return COMPONENT_CANCEL_ATTACK_CHAIN
 
 /**
- * Provides feedback when an item isn't related to an experiment, and has fully passed the attack chain
- */
-/datum/component/experiment_handler/proc/ignored_handheld_experiment_attempt(datum/source, atom/target, mob/user, list/modifiers)
-	SIGNAL_HANDLER
-	if ((isnull(selected_experiment) && !(config_flags & EXPERIMENT_CONFIG_ALWAYS_ACTIVE)) || (config_flags & EXPERIMENT_CONFIG_SILENT_FAIL))
-		return
-	playsound(user, 'sound/machines/buzz-sigh.ogg', 25)
-	to_chat(user, span_notice("[target] is not related to your currently selected experiment."))
-
-/**
  * Checks that an experiment can be run using the provided target, used for preventing the cancellation of the attack chain inappropriately
  */
 /datum/component/experiment_handler/proc/should_run_handheld_experiment(datum/source, atom/target, mob/user)

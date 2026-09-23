@@ -839,7 +839,6 @@ GLOBAL_LIST_EMPTY(damage_icon_parts) //see UpdateDamageIcon()
 		if(ubelt.show_above_suit)
 			belt_layer = BELT_LAYER_ALT
 
-
 	var/icon/c_mask = tail_style?.clip_mask
 
 	//NB: this uses a var from above
@@ -1469,12 +1468,6 @@ GLOBAL_LIST_EMPTY(damage_icon_parts) //see UpdateDamageIcon()
 		var/mob/living/carbon/human/dummy/mannequin/Dummy = get_mannequin(client.ckey)
 		client.prefs.copy_to(Dummy)
 		//Important, since some sprites only work for specific species
-		/*	Probably not needed anymore since impersonate_bodytype no longer exists
-		if(Dummy.species.base_species == "Promethean")
-			impersonate_bodytype = "Human"
-		else
-			impersonate_bodytype = Dummy.species.base_species
-		*/
 		custom_species = Dummy.custom_species
 		var/list/traits = dna.species_traits.Copy()
 		dna = Dummy.dna.Clone()
@@ -1487,9 +1480,9 @@ GLOBAL_LIST_EMPTY(damage_icon_parts) //see UpdateDamageIcon()
 			var/list/_flavor_texts = client.prefs.read_preference(/datum/preference/flavor_texts)
 			flavor_texts = islist(_flavor_texts) ? _flavor_texts.Copy() : list()
 		if(oocnotes)
-			ooc_notes = client.prefs.read_preference(/datum/preference/text/living/ooc_notes)
-			ooc_notes_likes = client.prefs.read_preference(/datum/preference/text/living/ooc_notes_likes)
-			ooc_notes_dislikes = client.prefs.read_preference(/datum/preference/text/living/ooc_notes_dislikes)
-			ooc_notes_favs = read_preference(/datum/preference/text/living/ooc_notes_favs)
-			ooc_notes_maybes = read_preference(/datum/preference/text/living/ooc_notes_maybes)
-			ooc_notes_style = read_preference(/datum/preference/toggle/living/ooc_notes_style)
+			identity.ooc_notes = client.prefs.read_preference(/datum/preference/text/living/ooc_notes)
+			identity.ooc_notes_likes = client.prefs.read_preference(/datum/preference/text/living/ooc_notes_likes)
+			identity.ooc_notes_dislikes = client.prefs.read_preference(/datum/preference/text/living/ooc_notes_dislikes)
+			identity.ooc_notes_favs = read_preference(/datum/preference/text/living/ooc_notes_favs)
+			identity.ooc_notes_maybes = read_preference(/datum/preference/text/living/ooc_notes_maybes)
+			identity.ooc_notes_style = read_preference(/datum/preference/toggle/living/ooc_notes_style)

@@ -58,9 +58,8 @@
 		var/turf/T = get_turf(src)
 		T.attackby(C, user) //BubbleWrap - hand this off to the underlying turf instead
 		return
-	if(istype(C, /obj/item/stack/rods)) //VOREstation Edit: Modernizes upgrading lattices into catwalks.
+	if(istype(C, /obj/item/stack/rods))
 		upgrade(C, user)
-		//VOREstation Edit End
 		return
 	return
 

@@ -27,7 +27,6 @@
 // Cached runechat icon
 GLOBAL_LIST_EMPTY(runechat_image_cache)
 
-
 /hook/startup/proc/runechat_images()
 	var/image/radio_image = image('icons/UI_Icons/chat/chat_icons.dmi', icon_state = "radio")
 	GLOB.runechat_image_cache["radio"] = radio_image
@@ -56,7 +55,6 @@ GLOBAL_LIST_EMPTY(runechat_image_cache)
 	var/animate_lifespan = 0
 	/// Callback to finish_image_generation passed to SSrunechat
 	var/datum/callback/finish_callback
-
 
 /**
  * Constructs a chat message overlay
@@ -274,7 +272,6 @@ GLOBAL_LIST_EMPTY(runechat_image_cache)
 	message.pixel_y = starting_height
 	message.maptext = complete_text
 
-
 	animate_start = rough_time
 	animate_lifespan = lifespan
 
@@ -356,12 +353,6 @@ GLOBAL_LIST_EMPTY(runechat_image_cache)
 	// Check for virtual speakers (aka hearing a message through a radio)
 	if(existing_extra_classes.Find("radio"))
 		return
-
-	/* Not currently necessary
-	message = strip_html_properly(message)
-	if(!message)
-		return
- */
 
 	var/list/extra_classes = list()
 	extra_classes += existing_extra_classes

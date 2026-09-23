@@ -210,7 +210,6 @@
 // End panel.
 
 
-// === merged from turbolift_console_vr.dm during hard-fork de-suffix (verified no override-order change) ===
 /obj/structure/lift/button/ex_act()
 	return
 

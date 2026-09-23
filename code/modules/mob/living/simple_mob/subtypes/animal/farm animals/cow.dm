@@ -7,8 +7,7 @@
 	icon_dead = "cow_dead"
 	icon_gib = "cow_gib"
 
-	health = 50
-	maxHealth = 50
+	endurance = 50
 
 	response_help  = "pets"
 	response_disarm = "gently pushes aside"

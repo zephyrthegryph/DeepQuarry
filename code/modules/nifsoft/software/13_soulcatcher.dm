@@ -241,7 +241,7 @@
 	brainmobs |= brainmob
 
 	//Put the mind and player into the mob
-	M.mind.transfer_to(brainmob)
+	transfer_mind(M.mind, brainmob, "caught in [nif]'s soulcatcher") // identity (DNA, OOC notes) comes by reference
 	brainmob.name = brainmob.mind.name
 	brainmob.real_name = brainmob.mind.name
 
@@ -253,15 +253,6 @@
 
 	//If they have these values, apply them
 	if(ishuman(M))
-		var/mob/living/carbon/human/H = M
-		QDEL_SWAP(brainmob.dna, H.dna.Clone())
-		brainmob.ooc_notes = H.ooc_notes
-		brainmob.ooc_notes_likes = H.ooc_notes_likes
-		brainmob.ooc_notes_dislikes = H.ooc_notes_dislikes
-		brainmob.ooc_notes_favs = H.ooc_notes_favs
-		brainmob.ooc_notes_maybes = H.ooc_notes_maybes
-		brainmob.ooc_notes_style = H.ooc_notes_style
-		brainmob.timeofhostdeath = H.timeofdeath
 		SStranscore.m_backup(brainmob.mind,0) //It does ONE, so medical will hear about it.
 
 	//Else maybe they're a joining ghost

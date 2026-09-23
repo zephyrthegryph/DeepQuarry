@@ -1,11 +1,4 @@
 /mob/living/carbon/proc/ingest(datum/reagents/from, datum/reagents/target, amount = 1, multiplier = 1, copy = 0) //we kind of 'sneak' a proc in here for ingesting stuff so we can play with it.
-	/* Synths should be able to taste because... reasons
-	if(ishuman(src))
-		var/mob/living/carbon/human/H = src
-		var/braintype = H.get_FBP_type()
-		if(braintype == FBP_DRONE || braintype == FBP_POSI)
-			return from.trans_to_holder(target,amount,multiplier,copy) //skip the taste, complete transfer
-	*/
 	if(last_taste_time + 50 < world.time)
 		var/datum/reagents/temp = new(amount) //temporary holder used to analyse what gets transfered.
 		from.trans_to_holder(temp, amount, multiplier, 1)

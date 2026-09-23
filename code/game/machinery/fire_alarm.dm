@@ -122,7 +122,7 @@ FIRE ALARM
 
 	add_overlay(.)
 
-/obj/machinery/firealarm/fire_act(datum/gas_mixture/air, temperature, volume)
+/obj/machinery/firealarm/fire_act(temperature, volume)
 	if(detecting)
 		if(temperature > T0C + 200)
 			alarm()			// added check of detector status here
@@ -257,18 +257,6 @@ FIRE ALARM
 		seclevel = newlevel
 		update_icon()
 
-/*
-FIRE ALARM CIRCUIT
-Just a object used in constructing fire alarms
-
-/obj/item/firealarm_electronics
-	name = "fire alarm electronics"
-	icon = 'icons/obj/doors/door_assembly.dmi'
-	icon_state = "door_electronics"
-	desc = "A circuit. It has a label on it, it says \"Can handle heat levels up to 40 degrees celsius!\""
-	w_class = ITEMSIZE_SMALL
-	matter = RECYCLE_CIRCUIT_MATERIALS
-*/
 /obj/machinery/partyalarm
 	name = "\improper PARTY BUTTON"
 	desc = "Cuban Pete is in the house!"

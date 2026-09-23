@@ -31,6 +31,14 @@
 	RegisterSignal(owner, COMSIG_ATOM_ATTACKBY, PROC_REF(replace_with_stock))
 	RegisterSignal(owner, COMSIG_ATOM_EXAMINE, PROC_REF(examine_service))
 
+/obj/proc/material_diagnostics_tool_act(mob/user, obj/item/tool)
+	if(!length(construction_materials) || !istype(tool, /obj/item/multitool))
+		return NONE
+	var/datum/material_service/service = material_service_event(MATERIAL_EVENT_MONITORING)
+	if(!service)
+		return NONE
+	return service.inspect_with_tool(src, user, tool)
+
 /datum/material_service/proc/unregister_diagnostics()
 	UnregisterSignal(owner, list(COMSIG_ATOM_SECONDARY_TOOL_ACT(TOOL_MULTITOOL), COMSIG_ATOM_SECONDARY_TOOL_ACT(TOOL_SCREWDRIVER), COMSIG_ATOM_ATTACKBY, COMSIG_ATOM_EXAMINE))
 	monitor_tool = null
@@ -107,7 +115,7 @@
 	advance()
 	if(QDELETED(owner))
 		return
-	owner.construction_materials[role] = material_id
+	owner.set_construction_material(role, material_id)
 	if(role == MATERIAL_ROLE_LINER)
 		owner.material_environment_liner_integrity = 100
 	if(role == MATERIAL_ROLE_STRUCTURE)

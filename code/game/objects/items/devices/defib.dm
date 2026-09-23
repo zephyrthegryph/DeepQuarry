@@ -236,8 +236,12 @@
 	else if(!H.isSynthetic() && use_on_synthetic)
 		return "buzzes, \"Organic Body. Operation aborted.\""
 
-	if(H.stat != DEAD)
-		return "buzzes, \"Patient is not in a valid state. Operation aborted.\""
+	// Rhythm analysis: only VF (or an unstable tachyarrhythmia) is shockable.
+	var/datum/affliction/cardiac_arrhythmia/rhythm = H.cardiac_arrhythmia()
+	if(rhythm?.rhythm == CARDIAC_RHYTHM_ASYSTOLE)
+		return "buzzes, \"Asystole detected - no shockable rhythm. Continue CPR and administer a vasopressor.\""
+	if(H.stat != DEAD && !rhythm?.is_shockable())
+		return "buzzes, \"No shockable rhythm detected. Operation aborted.\""
 
 	if(!check_contact(H))
 		return "buzzes, \"Patient's chest is obstructed. Operation aborted.\""
@@ -250,16 +254,20 @@
 		if(!brain)
 			return "buzzes, \"Resuscitation failed - Patient lacks a brain. Further attempts futile without replacement.\""
 		else if(istype(brain, /obj/item/organ/internal/brain)) //Some species have weird 'brains' that aren't technically brains. Those don't have defib timers.
+			if(brain.is_brain_dead())
+				return "buzzes, \"Resuscitation failed - Brain death detected. Patient requires resleeving.\""
 			if(brain.defib_timer <= 0)
 				return "buzzes, \"Resuscitation failed - Patient's brain has naturally degraded past a recoverable state. Further attempts futile.\""
 
-	H.updatehealth()
+	// Structural damage (physical + thermal + cellular) at twice the patient's endurance or more
+	// means the body can't sustain a restarted heart. Asphyxia and toxins don't count - the
+	// shock and the post-revive oxygenation deal with those.
+	var/structural_damage = H.injury_load(INJURY_CATEGORY_PHYSICAL) + H.injury_load(INJURY_CATEGORY_THERMAL) + H.injury_load(INJURY_CATEGORY_GENETIC)
+	var/too_damaged = structural_damage >= 2 * H.get_endurance()
+	if(too_damaged && H.isSynthetic())
+		return "buzzes, \"Resuscitation failed - Severe damage detected. Begin damage restoration before further attempts.\""
 
-	if(H.isSynthetic())
-		if(H.health + H.getOxyLoss() + H.getToxLoss() <= -(H.getMaxHealth()))
-			return "buzzes, \"Resuscitation failed - Severe damage detected. Begin damage restoration before further attempts.\""
-
-	else if(H.health + H.getOxyLoss() <= -(H.getMaxHealth())) //They need to be healed first.
+	else if(too_damaged) //They need to be healed first.
 		return "buzzes, \"Resuscitation failed - Severe tissue damage detected. Repair of anatomical damage required.\""
 
 	else if(HUSK in H.mutations) //Husked! Need to fix their husk status first.
@@ -315,6 +323,20 @@
 /obj/item/shockpaddles/proc/checked_use(charge_amt)
 	return 0
 
+/obj/item/shockpaddles/proc/get_power_cell()
+	RETURN_TYPE(/obj/item/cell)
+	return null
+
+/obj/item/shockpaddles/proc/power_output_envelope(charge_amt)
+	var/obj/item/cell/power_cell = get_power_cell()
+	return power_cell ? power_cell.material_output_envelope(charge_amt, 1.5) : 1
+
+/obj/item/shockpaddles/proc/consume_enhanced_charge(charge_amt, output_envelope)
+	if(!checked_use(charge_amt * output_envelope))
+		return FALSE
+	get_power_cell()?.material_record_enhanced_output(charge_amt, output_envelope)
+	return TRUE
+
 /obj/item/shockpaddles/attack(mob/living/M, mob/living/user, target_zone, attack_modifier)
 	var/mob/living/carbon/human/H = M
 	if(!istype(H) || user.a_intent == I_HURT)
@@ -369,11 +391,12 @@
 		make_announcement("buzzes, \"Warning - Patient is in hypovolemic shock.\"", "warning") //also includes heart damage
 
 	//placed on chest and short delay to shock for dramatic effect, revive time is 5sec total
-	if(!do_after(user, chargetime, target = H))
+	var/output_envelope = power_output_envelope(chargecost)
+	if(!do_after(user, chargetime / output_envelope, target = H))
 		return
 
 	//deduct charge here, in case the base unit was EMPed or something during the delay time
-	if(!checked_use(chargecost))
+	if(!consume_enhanced_charge(chargecost, output_envelope))
 		make_announcement("buzzes, \"Insufficient charge.\"", "warning")
 		playsound(src, 'sound/machines/defib_failed.ogg', 50, 0)
 		return
@@ -383,27 +406,40 @@
 	playsound(src, 'sound/machines/defib_zap.ogg', 50, 1, -1)
 	set_cooldown(cooldowntime)
 
+	// A living patient in a shockable rhythm: cardiovert, no resurrection involved.
+	if(H.stat != DEAD)
+		H.injure(INJURY_BURN, burn_damage_amt, BP_TORSO, src)
+		if(H.defibrillate_heart())
+			make_announcement("pings, \"Rhythm converted. Pulse detected.\"", "notice")
+			playsound(src, 'sound/machines/defib_success.ogg', 50, 0)
+		else
+			make_announcement("buzzes, \"Conversion failed. Continue CPR.\"", "warning")
+			playsound(src, 'sound/machines/defib_failed.ogg', 50, 0)
+		add_attack_logs(user, H, "Cardioverted using [name]")
+		return
+
 	error = can_revive(H)
 	if(error)
 		make_announcement(error, "warning")
 		playsound(src, 'sound/machines/defib_failed.ogg', 50, 0)
 		return
 
-	H.apply_damage(burn_damage_amt, BURN, BP_TORSO)
+	H.injure(INJURY_BURN, burn_damage_amt, BP_TORSO, src)
 	if(HAS_TRAIT(H, TRAIT_UNLUCKY) && prob(5))
 		make_announcement("buzzes, \"Unknown error occurred. Please try again.\"", "warning")
 		playsound(src, 'sound/machines/defib_failed.ogg', 50, FALSE)
 		return
 
-	//set oxyloss so that the patient is just barely in crit, if possible
-	var/barely_in_crit = -(H.get_crit_point() - 1) //Assume get_crit_point will return -50, so we take the inverse of it.
-	var/adjust_health = barely_in_crit - H.health //need to increase health by this much
-	if(adjust_health < 0) //We got a negative value. Safety in case of weird fuckery.
-		adjust_health *= -1
-	H.adjustOxyLoss(-adjust_health)
+	// A fibrillating corpse needs its rhythm converted to come back.
+	var/datum/affliction/cardiac_arrhythmia/rhythm = H.cardiac_arrhythmia()
+	if(rhythm && !rhythm.is_perfusing() && !H.defibrillate_heart())
+		make_announcement("buzzes, \"Resuscitation failed - rhythm did not convert. Continue CPR.\"", "warning")
+		playsound(src, 'sound/machines/defib_failed.ogg', 50, 0)
+		return
 
-	if(H.isSynthetic())
-		H.adjustToxLoss(-H.getToxLoss())
+	// Reoxygenate the patient, and flush synthetic system faults (a no-op on organic parts).
+	H.mend(TREAT_OXYGENATION, H.injury_load(INJURY_CATEGORY_ASPHYXIA))
+	H.mend(TREAT_SYSTEM_RESTORE, H.injury_load(INJURY_CATEGORY_TOXIC))
 
 	make_announcement("pings, \"Resuscitation successful.\"", "notice")
 	playsound(src, 'sound/machines/defib_success.ogg', 50, 0)
@@ -430,11 +466,12 @@
 	playsound(src, 'sound/machines/defib_charge.ogg', 50, 0)
 	audible_message(span_warning("\The [src] lets out a steadily rising hum..."), runemessage = "whines")
 
-	if(!do_after(user, chargetime, target = H))
+	var/output_envelope = power_output_envelope(chargecost)
+	if(!do_after(user, chargetime / output_envelope, target = H))
 		return
 
 	//deduct charge here, in case the base unit was EMPed or something during the delay time
-	if(!checked_use(chargecost))
+	if(!consume_enhanced_charge(chargecost, output_envelope))
 		make_announcement("buzzes, \"Insufficient charge.\"", "warning")
 		playsound(src, 'sound/machines/defib_failed.ogg', 50, 0)
 		return
@@ -464,13 +501,12 @@
 
 	M.emote("gasp")
 	M.Weaken(rand(10,25))
-	M.updatehealth()
 	apply_brain_damage(M)
-	M.adjustHalLoss(40) // Moderate amount of halloss for EVERYONE being defibbed. Defibs feel like being kicked in the chest by a mule. Shit hurts if you're awake.
+	M.injure(INJURY_PAIN, 40, BP_TORSO, src) // Moderate amount of halloss for EVERYONE being defibbed. Defibs feel like being kicked in the chest by a mule. Shit hurts if you're awake.
 	// s Start: Defib pain
 	var/datum/component/xenochimera/xc = M.get_xenochimera_component()
 	if(xc) // Only do the following to Xenochimera. Handwave this however you want, this is to balance defibs on an alien race.
-		M.adjustHalLoss(220) // This hurts a LOT, stacks on top of the previous halloss.
+		M.injure(INJURY_PAIN, 220, BP_TORSO, src) // This hurts a LOT, stacks on top of the previous halloss.
 		xc.feral += 100 // If they somehow weren't already feral, force them feral by increasing ferality var directly, to avoid any messy checks. handle_feralness() will immediately set our feral properly according to halloss anyhow.
 	// s End
 	// SSgame_master.adjust_danger(-20) // We don't use SSgame_master yet.
@@ -494,12 +530,13 @@
 	var/brain_death_scale = brain.defib_timer / brain_damage_timer
 
 	// This is backwards from what you might expect, since 1 = fresh and 0 = rip.
-	var/damage_calc = LERP(brain.max_damage, H.getBrainLoss(), brain_death_scale)
+	var/current_brain_damage = H.injury_load(INJURY_CATEGORY_NEURAL)
+	var/damage_calc = LERP(brain.max_damage, current_brain_damage, brain_death_scale)
 
 	// A bit of sanity.
-	var/brain_damage = between(H.getBrainLoss(), damage_calc, brain.max_damage)
+	var/brain_damage = between(current_brain_damage, damage_calc, brain.max_damage)
 
-	H.setBrainLoss(brain_damage)
+	H.injure(INJURY_NEURAL, brain_damage - current_brain_damage, BP_HEAD, src, flags = INJURE_IGNORE_RESISTANCE)
 
 /obj/item/shockpaddles/proc/make_announcement(message, msg_class)
 	audible_message(span_bold(span_info("\The [src]") + " [message]"), span_info("\The [src] vibrates slightly."), runemessage = "buzz")
@@ -545,10 +582,15 @@
 		var/mob/living/silicon/robot/R = src.loc
 		return (R.cell && R.cell.check_charge(charge_amt))
 
+/obj/item/shockpaddles/robot/get_power_cell()
+	if(isrobot(src.loc))
+		var/mob/living/silicon/robot/R = src.loc
+		return R.cell
+
 /obj/item/shockpaddles/robot/checked_use(charge_amt)
 	if(isrobot(src.loc))
 		var/mob/living/silicon/robot/R = src.loc
-		return (R.cell && R.cell.checked_use(charge_amt))
+		return R.draw_power(ROBOT_CELL_JOULES(charge_amt), src)
 
 /obj/item/shockpaddles/robot/combat
 	name = "combat defibrillator paddles"
@@ -563,6 +605,10 @@
 /obj/item/shockpaddles/linked/check_charge(charge_amt)
 	var/obj/item/defib_kit/base_unit = tethered_host_item
 	return (base_unit.bcell && base_unit.bcell.check_charge(charge_amt))
+
+/obj/item/shockpaddles/linked/get_power_cell()
+	var/obj/item/defib_kit/base_unit = tethered_host_item
+	return base_unit?.bcell
 
 /obj/item/shockpaddles/linked/checked_use(charge_amt)
 	var/obj/item/defib_kit/base_unit = tethered_host_item

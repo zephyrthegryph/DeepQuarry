@@ -30,7 +30,8 @@
 	if(target.stat != DEAD && stored_life < 200)
 		holder.Beam(target, icon_state = "drain_life", time = 1 SECOND)
 		if(!prob(susceptibility * 100)) //Inverse. If they are not susceptible, we don't steal life. We still beam them though.
-			target.apply_damage(5 * susceptibility, SEARING, BP_TORSO)
+			target.injure(INJURY_BURN, 5 * susceptibility / 3, BP_TORSO)
+			target.injure(INJURY_BLUNT, 5 * susceptibility * 2 / 3, BP_TORSO)
 		return 25 * susceptibility //nobody actually uses this god damned thing so I'm buffing it so maybe one day someone will ACTUALLY USE IT.
 
 	return 0
@@ -55,15 +56,15 @@
 
 	if(target.stat == DEAD && stored_life)
 		holder.Beam(target, icon_state = "lichbeam", time = 1 SECOND)
-		target.adjustBruteLoss(-5)
-		target.adjustFireLoss(-5)
-		target.adjustCloneLoss(-5)
-		target.adjustOxyLoss(-5)
-		target.adjustHalLoss(-5)
-		target.adjustToxLoss(-5)
+		target.mend(TREAT_TISSUE_REPAIR, 5)
+		target.mend(TREAT_BURN_CARE, 5)
+		target.mend(TREAT_GENETIC_REPAIR, 5)
+		target.mend(TREAT_OXYGENATION, 5)
+		target.mend(TREAT_ANALGESIC, 5)
+		target.mend(TREAT_ANTITOXIN, 5)
 		stored_life = max(0, stored_life - 5)
 
-		if(target.health > (target.getMaxHealth() / 4))
+		if(target.vitality() > 0.6)
 			attempt_revive(target)
 			stored_life = 0
 
@@ -72,9 +73,8 @@
 	spawn()
 		if(isanimal(L))
 			var/mob/living/simple_mob/SM = L
-			SM.adjustBruteLoss(-40)
-			SM.adjustFireLoss(-40)
-			SM.health = SM.getMaxHealth() / 3
+			SM.fully_heal()
+			SM.injure(INJURY_BLUNT, SM.get_endurance() * 2 / 3, null, null, 0, null, INJURE_SILENT)
 			SM.stat = CONSCIOUS
 			GLOB.dead_mob_list -= SM
 			GLOB.living_mob_list += SM
@@ -92,8 +92,8 @@
 						(Verbs -> Ghost -> Re-enter corpse)")))
 						break
 
-			H.adjustBruteLoss(-40)
-			H.adjustFireLoss(-40)
+			H.mend(TREAT_TISSUE_REPAIR, 40)
+			H.mend(TREAT_BURN_CARE, 40)
 			holder.visible_message(span_alien("\The [H]'s body begins to shift and stir, loud, wet cracks emitting from within!"))
 
 			sleep(10 SECONDS)

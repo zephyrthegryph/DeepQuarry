@@ -291,10 +291,8 @@
 	var/slip_protect = 1
 
 
-// === merged from mob_defines_vr.dm during hard-fork de-suffix (verified no override-order change) ===
 /mob
 	var/vantag_hud = 0			// Do I have the HUD enabled?
-	var/mob/living/simple_mob/temporary_form // For holding onto a temporary form // should be mob/living/simple_mob, not /mob
 
 	var/disconnect_time = null		//Time of client loss, set by Logout(), for timekeeping
 
@@ -305,8 +303,3 @@
 	var/size_multiplier = 1 //multiplier for the mob's icon size
 	var/accumulated_rads = 0 	// For radiation stuff.
 	var/faction_bump_vore = FALSE	// Don't bump nom mobs of the same faction
-
-/mob/drop_location()
-	if(temporary_form)
-		return temporary_form.drop_location()
-	return ..()

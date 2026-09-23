@@ -132,7 +132,6 @@
 	species_restricted = list(SPECIES_TESHARI)
 
 
-// === merged from utility_vr.dm during hard-fork de-suffix (verified no override-order change) ===
 /obj/item/clothing/head/bomb_hood/security
 	icon_state = "bombsuitsec"
 	body_parts_covered = HEAD

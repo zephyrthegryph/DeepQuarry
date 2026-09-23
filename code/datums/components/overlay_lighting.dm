@@ -119,7 +119,6 @@
 	RegisterSignal(parent, COMSIG_ATOM_UPDATE_LIGHT_ON, PROC_REF(on_toggle))
 	RegisterSignal(parent, COMSIG_ATOM_UPDATE_LIGHT_FLAGS, PROC_REF(on_light_flags_change))
 	RegisterSignal(parent, COMSIG_ATOM_USED_IN_CRAFT, PROC_REF(on_parent_crafted))
-	RegisterSignal(parent, COMSIG_LIGHT_EATER_QUEUE, PROC_REF(on_light_eater))
 	var/atom/movable/movable_parent = parent
 	if(movable_parent.light_flags & LIGHT_ATTACHED)
 		overlay_lighting_flags |= LIGHTING_ATTACHED
@@ -142,7 +141,6 @@
 		COMSIG_ATOM_UPDATE_LIGHT_ON,
 		COMSIG_ATOM_UPDATE_LIGHT_FLAGS,
 		COMSIG_ATOM_USED_IN_CRAFT,
-		COMSIG_LIGHT_EATER_QUEUE,
 		))
 	if(directional)
 		UnregisterSignal(parent, COMSIG_ATOM_DIR_CHANGE)
@@ -227,17 +225,15 @@
 	parent_attached_to = new_parent_attached_to
 	if(.)
 		var/atom/movable/old_parent_attached_to = .
-		UnregisterSignal(old_parent_attached_to, list(COMSIG_QDELETING, COMSIG_MOVABLE_MOVED, COMSIG_LIGHT_EATER_QUEUE))
+		UnregisterSignal(old_parent_attached_to, list(COMSIG_QDELETING, COMSIG_MOVABLE_MOVED))
 		if(old_parent_attached_to == current_holder)
 			RegisterSignal(old_parent_attached_to, COMSIG_QDELETING, PROC_REF(on_holder_qdel))
 			RegisterSignal(old_parent_attached_to, COMSIG_MOVABLE_MOVED, PROC_REF(on_holder_moved))
-			RegisterSignal(old_parent_attached_to, COMSIG_LIGHT_EATER_QUEUE, PROC_REF(on_light_eater))
 	if(parent_attached_to)
 		if(parent_attached_to == current_holder)
-			UnregisterSignal(current_holder, list(COMSIG_QDELETING, COMSIG_MOVABLE_MOVED, COMSIG_LIGHT_EATER_QUEUE))
+			UnregisterSignal(current_holder, list(COMSIG_QDELETING, COMSIG_MOVABLE_MOVED))
 		RegisterSignal(parent_attached_to, COMSIG_QDELETING, PROC_REF(on_parent_attached_to_qdel))
 		RegisterSignal(parent_attached_to, COMSIG_MOVABLE_MOVED, PROC_REF(on_parent_attached_to_moved))
-		RegisterSignal(parent_attached_to, COMSIG_LIGHT_EATER_QUEUE, PROC_REF(on_light_eater))
 	check_holder()
 
 
@@ -249,7 +245,7 @@
 		new_holder = null // Forbid crates from holding lights, this only applies to contents 'holding', when you put a flashlight into a crate for example. Not crates with lights... Not that there are any.
 	if(current_holder)
 		if(current_holder != parent && current_holder != parent_attached_to)
-			UnregisterSignal(current_holder, list(COMSIG_QDELETING, COMSIG_MOVABLE_MOVED, COMSIG_LIGHT_EATER_QUEUE))
+			UnregisterSignal(current_holder, list(COMSIG_QDELETING, COMSIG_MOVABLE_MOVED))
 			if(directional)
 				UnregisterSignal(current_holder, COMSIG_ATOM_DIR_CHANGE)
 		if(overlay_lighting_flags & LIGHTING_ON)
@@ -261,7 +257,6 @@
 	if(new_holder != parent && new_holder != parent_attached_to)
 		RegisterSignal(new_holder, COMSIG_QDELETING, PROC_REF(on_holder_qdel))
 		RegisterSignal(new_holder, COMSIG_MOVABLE_MOVED, PROC_REF(on_holder_moved))
-		RegisterSignal(new_holder, COMSIG_LIGHT_EATER_QUEUE, PROC_REF(on_light_eater))
 		if(directional)
 			RegisterSignal(new_holder, COMSIG_ATOM_DIR_CHANGE, PROC_REF(on_holder_dir_change))
 	if(overlay_lighting_flags & LIGHTING_ON)
@@ -555,11 +550,6 @@
 	set_parent_attached_to(new_craft)
 
 /// Handles putting the source for overlay lights into the light eater queue since we aren't tracked by [/atom/var/light_sources]
-/datum/component/overlay_lighting/proc/on_light_eater(datum/source, list/light_queue, datum/light_eater)
-	SIGNAL_HANDLER
-	light_queue[parent] = TRUE
-	return NONE
-
 #undef LIGHTING_ON
 #undef LIGHTING_ATTACHED
 #undef GET_PARENT

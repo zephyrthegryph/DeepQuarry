@@ -27,7 +27,6 @@
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-
 /datum/looping_sound/deep_fryer
 	start_sound = 'sound/machines/kitchen/fryer/deep_fryer_immerse.ogg' //my immersions
 	start_length = 10
@@ -157,6 +156,3 @@
 	mid_length = 2 SECONDS
 	volume = 50
 	vary = TRUE
-	// ignore_walls = FALSE
-	// falloff_distance = 1
-	// mid_length_vary = 1 SECONDS

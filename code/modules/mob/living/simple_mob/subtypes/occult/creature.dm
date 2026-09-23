@@ -10,8 +10,7 @@
 
 	faction = FACTION_CREATURE
 
-	maxHealth = 40
-	health = 40
+	endurance = 40
 
 	harm_intent_damage = 8
 
@@ -37,8 +36,7 @@
 
 // Strong Variant
 /mob/living/simple_mob/creature/strong
-	maxHealth = 160
-	health = 160
+	endurance = 160
 
 	harm_intent_damage = 5
 	melee_damage_lower = 13
@@ -67,8 +65,7 @@
 
 // Strong Cult Variant
 /mob/living/simple_mob/creature/cult/strong
-	maxHealth = 160
-	health = 160
+	endurance = 160
 
 	harm_intent_damage = 5
 	melee_damage_lower = 13

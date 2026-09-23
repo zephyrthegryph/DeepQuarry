@@ -224,7 +224,6 @@
 	autolinkers = list("broadcasterCent")
 
 
-// === merged from presets_ch.dm during hard-fork de-suffix (verified no override-order change) ===
 // ### CHOMP Preset machines  ###
 
 //Relay
@@ -235,7 +234,6 @@
 	produces_heat = 0
 
 
-// === merged from presets_vr.dm during hard-fork de-suffix (verified no override-order change) ===
 /obj/machinery/telecomms/relay/preset/houseboat
 	id = "Nearby Ship Relay"
 	hide = 1

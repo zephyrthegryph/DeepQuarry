@@ -53,33 +53,27 @@ GLOBAL_LIST_INIT(digest_modes, list())
 			var/paratox = (B.digest_brute+B.digest_burn) * delta_factor
 			B.owner.adjust_nutrition(-paratox)
 			L.adjust_nutrition(paratox)
-			L.adjustBruteLoss(-paratox*2) //Should automaticaly clamp to 0
-			L.adjustFireLoss(-paratox*2) //Should automaticaly clamp to 0
+			L.mend(TREAT_TISSUE_REPAIR, paratox*2)
+			L.mend(TREAT_BURN_CARE, paratox*2)
+			L.mend(TREAT_PLATING_REPAIR, paratox*2)
+			L.mend(TREAT_WIRING_REPAIR, paratox*2)
 			if(B.health_impacts_size) //Health probably changed so...
 				B.owner.handle_belly_update_buckets() //Only rebuilds the icon when a fullness bucket actually crosses a boundary.
 			return
 
 	// Deal digestion damage (and feed the pred)
-	var/old_health = L.health
-	var/old_brute = L.getBruteLoss()
-	var/old_burn = L.getFireLoss()
-	var/old_oxy = L.getOxyLoss()
-	var/old_tox = L.getToxLoss()
-	var/old_clone = L.getCloneLoss()
-	L.adjustBruteLoss(B.digest_brute * delta_factor)
-	L.adjustFireLoss(B.digest_burn * delta_factor)
-	L.adjustOxyLoss(B.digest_oxy * delta_factor)
-	L.adjustToxLoss(B.digest_tox * delta_factor)
-	L.adjustCloneLoss(B.digest_clone * delta_factor)
+	// The digest_* belly settings are saved player prefs; each maps onto the injury that describes it.
+	var/old_vitality = L.vitality()
+	var/was_critical = L.is_critical()
+	var/actual_brute = B.digest_brute > 0 ? L.injure(INJURY_DIGESTION, B.digest_brute * delta_factor, source = B) : 0
+	var/actual_burn = B.digest_burn > 0 ? L.injure(INJURY_CORROSIVE, B.digest_burn * delta_factor, source = B) : 0
+	var/actual_oxy = B.digest_oxy > 0 ? L.injure(INJURY_ASPHYXIA, B.digest_oxy * delta_factor, source = B) : 0
+	var/actual_tox = B.digest_tox > 0 ? L.injure(INJURY_TOXIN, B.digest_tox * delta_factor, source = B) : 0
+	var/actual_clone = B.digest_clone > 0 ? L.injure(INJURY_CELLULAR, B.digest_clone * delta_factor, source = B) : 0
 	L.attempt_multishock(SHOCKFLAG_DIGESTION)
-	// Send a message when a prey-thing enters hard crit.
-	if(iscarbon(L) && old_health > 0 && L.health <= 0)
+	// Send a message when a prey-thing goes down (crit, or knocked out of consciousness).
+	if(iscarbon(L) && L.stat != DEAD && ((!was_critical && L.is_critical()) || (oldstat == CONSCIOUS && L.stat == UNCONSCIOUS)))
 		to_chat(B.owner, span_notice("You feel [L] go still within your [lowertext(B.name)]."))
-	var/actual_brute = L.getBruteLoss() - old_brute
-	var/actual_burn = L.getFireLoss() - old_burn
-	var/actual_oxy = L.getOxyLoss() - old_oxy
-	var/actual_tox = L.getToxLoss() - old_tox
-	var/actual_clone = L.getCloneLoss() - old_clone
 	var/damage_gain = (actual_brute + actual_burn + actual_oxy/2 + actual_tox + actual_clone*2)*(B.nutrition_percent / 100)
 	if(B.slow_digestion)
 		damage_gain = damage_gain * 0.5
@@ -89,7 +83,7 @@ GLOBAL_LIST_INIT(digest_modes, list())
 	if(B.health_impacts_size)
 		B.owner.handle_belly_update_buckets()
 
-	consider_healthbar(L, old_health, B.owner)
+	consider_healthbar(L, old_vitality, B.owner)
 	if(offset && damage_gain > 0) // If any different than default weight, multiply the % of offset.
 		if(B.show_liquids && B.reagent_mode_flags & DM_FLAG_REAGENTSDIGEST && B.reagents.total_volume < B.reagents.maximum_volume) //digestion producing reagents
 			B.owner_adjust_nutrition(offset * (3 * damage_gain / difference) * L.get_digestion_nutrition_modifier() * B.owner.get_digestion_efficiency_modifier()) //Uncertain if balanced fairly, can adjust by multiplier for the cost of reagent, dont go below 1 or else it will result in more nutrition than normal - Jack
@@ -132,7 +126,7 @@ GLOBAL_LIST_INIT(digest_modes, list())
 			return list("to_update" = TRUE)
 		else if(isrobot(B.owner))
 			var/mob/living/silicon/robot/robot_owner = B.owner
-			if(robot_owner.cell_use_power(100))
+			if(robot_owner.draw_power(100 * CYBORG_POWER_USAGE_MULTIPLIER, B))
 				B.unabsorb_living(L)
 				return list("to_update" = TRUE)
 
@@ -189,32 +183,28 @@ GLOBAL_LIST_INIT(digest_modes, list())
 	var/oldstat = L.stat
 	if(L.stat == DEAD || !L.permit_healbelly) //healpref check
 		return null // Can't heal the dead with healbelly
-	var/mob/living/carbon/human/H = L
-	if(B.owner.nutrition > 90 && H.isSynthetic())
-		for(var/obj/item/organ/external/E in H.organs) //Needed for healing prosthetics
-			var/obj/item/organ/external/O = E
-			if(O.brute_dam > 0 || O.burn_dam > 0) //Making sure healing continues until fixed.
-				O.heal_damage(0.5 * delta_factor, 0.5 * delta_factor, 0, 1) // Less effective healing as able to fix broken limbs
-				B.owner.adjust_nutrition(-5 * delta_factor)  // More costly for the pred, since metals and stuff
-				if(B.health_impacts_size)
-					B.owner.handle_belly_update_buckets()
-			if(L.health < L.getMaxHealth())
-				L.adjustToxLoss(-2 * delta_factor)
-				L.adjustOxyLoss(-2 * delta_factor)
-				L.adjustCloneLoss(-1 * delta_factor)
-				B.owner.adjust_nutrition(-1 * delta_factor)  // Normal cost per old functionality
-				if(B.health_impacts_size)
-					B.owner.handle_belly_update_buckets()
-	if(B.owner.nutrition > 90 && (L.health < L.getMaxHealth()) && !H.isSynthetic())
-		L.adjustBruteLoss(-2.5 * delta_factor)
-		L.adjustFireLoss(-2.5 * delta_factor)
-		L.adjustToxLoss(-5 * delta_factor)
-		L.adjustOxyLoss(-5 * delta_factor)
-		L.adjustCloneLoss(-1.25 * delta_factor)
-		B.owner.adjust_nutrition(-2 * delta_factor)
+	var/old_vitality = L.vitality()
+	if(B.owner.nutrition > 90 && L.is_injured())
+		// Organic tissue: the body resolves which afflictions each mechanism can reach.
+		var/organic_mended = 0
+		organic_mended += L.mend(TREAT_TISSUE_REPAIR, 2.5 * delta_factor)
+		organic_mended += L.mend(TREAT_BURN_CARE, 2.5 * delta_factor)
+		organic_mended += L.mend(TREAT_ANTITOXIN, 5 * delta_factor)
+		organic_mended += L.mend(TREAT_OXYGENATION, 5 * delta_factor)
+		organic_mended += L.mend(TREAT_GENETIC_REPAIR, 1.25 * delta_factor)
+		// Synthetic parts (prosthetics, FBPs, drones): less effective, costlier for the pred since metals and stuff.
+		var/synthetic_mended = 0
+		synthetic_mended += L.mend(TREAT_PLATING_REPAIR, 0.5 * delta_factor)
+		synthetic_mended += L.mend(TREAT_WIRING_REPAIR, 0.5 * delta_factor)
+		synthetic_mended += L.mend(TREAT_SYSTEM_RESTORE, 2 * delta_factor)
+		if(organic_mended > 0)
+			B.owner.adjust_nutrition(-2 * delta_factor)
+		if(synthetic_mended > 0)
+			B.owner.adjust_nutrition(-5 * delta_factor)
 		if(B.health_impacts_size)
 			B.owner.handle_belly_update_buckets()
-		if(L.nutrition <= 400)
+		consider_healthbar(L, old_vitality, B.owner)
+		if(organic_mended > 0 && L.nutrition <= 400)
 			L.adjust_nutrition(1 * delta_factor)
 	else if(B.owner.nutrition > 90 && (L.nutrition <= 400))
 		B.owner.adjust_nutrition(-1 * delta_factor)
@@ -394,20 +384,13 @@ GLOBAL_LIST_INIT(digest_modes, list())
 /datum/digest_mode/proc/consider_healthbar()
 	return
 
-/datum/digest_mode/digest/consider_healthbar(mob/living/L, old_health, mob/living/reciever)
-
-	if(old_health <= L.health)
+/datum/digest_mode/digest/consider_healthbar(mob/living/L, old_vitality, mob/living/reciever)
+	var/new_vitality = L.vitality()
+	if(old_vitality <= new_vitality)
 		return
 
-	var/old_percent
-	var/new_percent
-
-	if(ishuman(L))
-		old_percent = ((old_health + 50) / (L.getMaxHealth() + 50)) * 100
-		new_percent = ((L.health + 50) / (L.getMaxHealth() + 50)) * 100
-	else
-		old_percent = (old_health / L.getMaxHealth()) * 100
-		new_percent = (L.health / L.getMaxHealth()) * 100
+	var/old_percent = old_vitality * 100
+	var/new_percent = new_vitality * 100
 
 	var/lets_announce = FALSE
 	if(new_percent <= 95 && old_percent > 95)
@@ -425,20 +408,13 @@ GLOBAL_LIST_INIT(digest_modes, list())
 		L.chat_healthbar(reciever)
 		L.chat_healthbar(L)
 
-/datum/digest_mode/heal/consider_healthbar(mob/living/L, old_health, mob/living/reciever)
-
-	if(old_health >= L.health)
+/datum/digest_mode/heal/consider_healthbar(mob/living/L, old_vitality, mob/living/reciever)
+	var/new_vitality = L.vitality()
+	if(old_vitality >= new_vitality)
 		return
 
-	var/old_percent
-	var/new_percent
-
-	if(ishuman(L))
-		old_percent = ((old_health + 50) / (L.getMaxHealth() + 50)) * 100
-		new_percent = ((L.health + 50) / (L.getMaxHealth() + 50)) * 100
-	else
-		old_percent = (old_health / L.getMaxHealth()) * 100
-		new_percent = (L.health / L.getMaxHealth()) * 100
+	var/old_percent = old_vitality * 100
+	var/new_percent = new_vitality * 100
 
 	var/lets_announce = FALSE
 	if(new_percent >= 100 && old_percent < 100)

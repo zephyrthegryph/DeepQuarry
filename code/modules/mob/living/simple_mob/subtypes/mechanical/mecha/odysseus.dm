@@ -21,7 +21,7 @@
 	icon_state = "odysseus"
 	wreckage = /obj/structure/loot_pile/mecha/odysseus
 
-	maxHealth = 120
+	endurance = 120
 	movement_cooldown = -1
 	turn_sound = 'sound/mecha/mechmove01.ogg'
 

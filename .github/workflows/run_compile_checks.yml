@@ -1,0 +1,50 @@
+name: Compile Checks
+
+# Compiles the production Southern Cross build (the unit tests use the small
+# test map, so this is the only job that compiles the live map), checks the
+# client version it requires, and compiles every map template under MAP_TEST.
+on:
+  workflow_call:
+    inputs:
+      major:
+        required: false
+        type: string
+      minor:
+        required: false
+        type: string
+      max_required_byond_client:
+        required: true
+        type: string
+
+jobs:
+  compile_checks:
+    name: Compile Checks (${{ inputs.major && format('{0}.{1}', inputs.major, inputs.minor) || 'default BYOND' }})
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+
+    steps:
+      - uses: actions/checkout@v6.0.2
+      - name: Ensure +x on CI directory
+        run: |
+          chmod -R +x ./tools/ci
+      - name: Restore BYOND from Cache
+        uses: ./.github/actions/restore_or_install_byond
+        with:
+          major: ${{ inputs.major }}
+          minor: ${{ inputs.minor }}
+      - name: Compile production build (Southern Cross)
+        run: tools/ci/compile_and_run.sh
+        env:
+          TEST_BUILD: "0"
+          EXTRA_ARGS: ""
+          RUN: "0"
+      - name: Check client compatibility
+        uses: tgstation/byond-client-compatibility-check@v3
+        with:
+          dmb-location: deepquarry.dmb
+          max-required-client-version: ${{ inputs.max_required_byond_client }}
+      - name: Compile map templates
+        run: tools/ci/compile_and_run.sh
+        env:
+          EXTRA_ARGS: "-DMAP_TEST"
+          RUN: "0"

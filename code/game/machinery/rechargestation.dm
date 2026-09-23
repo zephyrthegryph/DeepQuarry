@@ -87,13 +87,13 @@
 		if(R.cell && !R.cell.fully_charged() && !overcharged)
 			var/diff = min(R.cell.maxcharge - R.cell.charge, charging_power * CELLRATE) // Capped by charging_power / tick
 			var/charge_used = cell.use(diff)
-			R.cell.give(charge_used)
+			R.add_power(ROBOT_CELL_JOULES(charge_used), src)
 
 		//Lastly, attempt to repair the cyborg if enabled
-		if(weld_rate && R.getBruteLoss() && cell.checked_use(weld_power_use * weld_rate * CELLRATE))
-			R.adjustBruteLoss(-weld_rate)
-		if(wire_rate && R.getFireLoss() && cell.checked_use(wire_power_use * wire_rate * CELLRATE))
-			R.adjustFireLoss(-wire_rate)
+		if(weld_rate && R.injury_load(INJURY_CATEGORY_PHYSICAL) && cell.checked_use(weld_power_use * weld_rate * CELLRATE))
+			R.mend(TREAT_PLATING_REPAIR, weld_rate)
+		if(wire_rate && R.injury_load(INJURY_CATEGORY_THERMAL) && cell.checked_use(wire_power_use * wire_rate * CELLRATE))
+			R.mend(TREAT_WIRING_REPAIR, wire_rate)
 
 	else if(ispAI(occupant))
 		var/mob/living/silicon/pai/P = occupant
@@ -106,15 +106,9 @@
 		var/mob/living/carbon/human/H = occupant
 
 		if(H.isSynthetic())
-			// In case they somehow end up with positive values for otherwise unobtainable damage...
-			if(H.getToxLoss() > 0)
-				H.adjustToxLoss(-(rand(1,3)))
-			if(H.getOxyLoss() > 0)
-				H.adjustOxyLoss(-(rand(1,3)))
-			if(H.getCloneLoss() > 0)
-				H.adjustCloneLoss(-(rand(1,3)))
-			if(H.getBrainLoss() > 0)
-				H.adjustBrainLoss(-(rand(1,3)))
+			// Run diagnostics: clears processor / system faults on synthetic parts.
+			if(H.is_injured())
+				H.mend(TREAT_SYSTEM_RESTORE, rand(1,3))
 
 			// Also recharge their internal battery.
 			if(H.isSynthetic() && H.nutrition < 500)

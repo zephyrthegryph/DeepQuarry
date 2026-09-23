@@ -15,8 +15,7 @@
 	icon_rest = "mothroach_rest"
 
 	faction = FACTION_MOTHROACH
-	maxHealth = 50
-	health = 50
+	endurance = 50
 	movement_cooldown = -1
 
 	see_in_dark = 10

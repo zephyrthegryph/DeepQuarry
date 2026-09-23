@@ -38,8 +38,11 @@ Thus, the two variables affect pump operation are set in New():
 	var/datum/radio_frequency/radio_connection
 	var/sleeping_input_mixture_id
 	var/sleeping_input_revision = -1
+	var/sleeping_input_temperature = 0
+	var/sleeping_input_moles = 0
 	var/sleeping_output_mixture_id
 	var/sleeping_output_revision = -1
+	var/sleeping_output_pressure = 0
 
 /obj/machinery/atmospherics/binary/pump/Initialize(mapload)
 	. = ..()
@@ -114,30 +117,30 @@ Thus, the two variables affect pump operation are set in New():
 	if(pressure_delta > BINARY_PUMP_PRESSURE_TOLERANCE && air1.return_temperature() > 0)
 		//Figure out how much gas to transfer to meet the target pressure.
 		var/transfer_moles = calculate_transfer_moles(air1, air2, pressure_delta, (network2)? network2.volume : 0)
-		power_draw = pump_gas(src, air1, air2, transfer_moles, power_rating)
+		power_draw = queue_pump_gas(src, air1, air2, transfer_moles, power_rating)
 
-	if (power_draw >= 0)
-		last_power_draw = power_draw
-		use_power(power_draw)
-
-		if(network1)
-			network1.mark_dirty()
-
-		if(network2)
-			network2.mark_dirty()
-
-	if(target_pressure - air2.return_pressure() <= BINARY_PUMP_PRESSURE_TOLERANCE || air1.total_moles() < MINIMUM_MOLES_TO_PUMP)
+	if(power_draw < 0)
 		hibernate_until_gas_changes()
 		return PROCESS_KILL
 
 	return 1
 
+/obj/machinery/atmospherics/binary/pump/pump_transaction_committed(actual_moles)
+	if(actual_moles >= MINIMUM_MOLES_TO_PUMP)
+		network1?.mark_dirty()
+		network2?.mark_dirty()
+	if(actual_moles < MINIMUM_MOLES_TO_PUMP || target_pressure - air2.return_pressure() <= BINARY_PUMP_PRESSURE_TOLERANCE || air1.total_moles() < MINIMUM_MOLES_TO_PUMP)
+		hibernate_until_gas_changes()
+
 /obj/machinery/atmospherics/binary/pump/proc/hibernate_until_gas_changes()
 	var/datum/weakref/WR = WEAKREF(src)
 	sleeping_input_mixture_id = air1?.arena_id()
 	sleeping_input_revision = air1?.revision() || -1
+	sleeping_input_temperature = air1?.return_temperature() || 0
+	sleeping_input_moles = air1?.total_moles() || 0
 	sleeping_output_mixture_id = air2?.arena_id()
 	sleeping_output_revision = air2?.revision() || -1
+	sleeping_output_pressure = air2?.return_pressure() || 0
 	SSmachines.sleeping_gas_devices[WR.reference] = WR
 	SSmachines.subscribe_gas_dependency(sleeping_input_mixture_id, WR)
 	SSmachines.subscribe_gas_dependency(sleeping_output_mixture_id, WR)
@@ -149,27 +152,46 @@ Thus, the two variables affect pump operation are set in New():
 	SSmachines.unsubscribe_gas_dependency(sleeping_output_mixture_id, WR)
 	sleeping_input_mixture_id = null
 	sleeping_input_revision = -1
+	sleeping_input_temperature = 0
+	sleeping_input_moles = 0
 	sleeping_output_mixture_id = null
 	sleeping_output_revision = -1
+	sleeping_output_pressure = 0
 	if(WR?.reference)
 		SSmachines.sleeping_gas_devices.Remove(WR.reference)
 
-/obj/machinery/atmospherics/binary/pump/gas_dependency_changed(mixture_id, change_mask)
-	if(!(change_mask & GAS_DEPENDENCY_ALL) || !use_power || (stat & (NOPOWER|BROKEN)))
+/obj/machinery/atmospherics/binary/pump/gas_dependency_interest_mask()
+	// A pump only needs P/T. Total moles follows pV=nRT; composition-only
+	// changes cannot make its pressure transfer predicate actionable.
+	return GAS_DEPENDENCY_PRESSURE | GAS_DEPENDENCY_TEMPERATURE
+
+/obj/machinery/atmospherics/binary/pump/gas_dependency_changed(mixture_id, change_mask, list/observation, observation_index)
+	if(!(change_mask & gas_dependency_interest_mask()) || !use_power || (stat & (NOPOWER|BROKEN)))
 		return FALSE
+	var/observed_revision = observation && observation_index ? observation[observation_index + 2] : null
 	if(mixture_id == sleeping_input_mixture_id)
 		if(!air1 || air1.arena_id() != sleeping_input_mixture_id)
 			return TRUE
-		if(air1.revision() == sleeping_input_revision)
+		if(!isnull(observed_revision))
+			sleeping_input_temperature = observation[observation_index + 4]
+			sleeping_input_moles = observation[observation_index + 14]
+		else if(air1.revision() == sleeping_input_revision)
 			return FALSE
+		else
+			sleeping_input_temperature = air1.return_temperature()
+			sleeping_input_moles = air1.total_moles()
 	else if(mixture_id == sleeping_output_mixture_id)
 		if(!air2 || air2.arena_id() != sleeping_output_mixture_id)
 			return TRUE
-		if(air2.revision() == sleeping_output_revision)
+		if(!isnull(observed_revision))
+			sleeping_output_pressure = observation[observation_index + 3]
+		else if(air2.revision() == sleeping_output_revision)
 			return FALSE
+		else
+			sleeping_output_pressure = air2.return_pressure()
 	else
 		return FALSE
-	return target_pressure - air2.return_pressure() > BINARY_PUMP_PRESSURE_TOLERANCE && air1.return_temperature() > 0 && air1.total_moles() >= MINIMUM_MOLES_TO_PUMP
+	return target_pressure - sleeping_output_pressure > BINARY_PUMP_PRESSURE_TOLERANCE && sleeping_input_temperature > 0 && sleeping_input_moles >= MINIMUM_MOLES_TO_PUMP
 
 /obj/machinery/atmospherics/binary/pump/proc/wake_for_state_change()
 	clear_gas_dependencies()

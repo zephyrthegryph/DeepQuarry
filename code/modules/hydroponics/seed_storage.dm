@@ -485,7 +485,6 @@
 	return
 
 
-// === merged from seed_storage_vr.dm during hard-fork de-suffix (verified no override-order change) ===
 // seeds: teaseed
 /obj/machinery/seed_storage/garden
 	starting_seeds = list(

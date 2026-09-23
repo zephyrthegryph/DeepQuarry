@@ -120,6 +120,26 @@
 	icon_state = "ore_rutile"
 	material = ORE_RUTILE
 
+/obj/item/ore/pentlandite
+	name = "raw pentlandite"
+	icon_state = "ore_iron"
+	material = ORE_PENTLANDITE
+
+/obj/item/ore/chromite
+	name = "raw chromite"
+	icon_state = "ore_rutile"
+	material = ORE_CHROMITE
+
+/obj/item/ore/wolframite
+	name = "raw wolframite"
+	icon_state = "ore_osmium"
+	material = ORE_WOLFRAMITE
+
+/obj/item/ore/kaolin
+	name = "raw kaolin"
+	icon_state = "ore_glass"
+	material = ORE_KAOLIN
+
 /obj/item/ore/void_opal
 	name = "raw void opal"
 	icon_state = "ore_void_opal"

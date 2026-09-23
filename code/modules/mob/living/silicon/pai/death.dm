@@ -14,6 +14,9 @@
 	release_vore_contents()
 	close_up(TRUE)
 	if(card)
+		// Destroyed by injury (not a scripted death): the card takes a beating too.
+		if(!gibbed && vitality() <= 0)
+			card.death_damage()
 		card.cut_overlays()
 		card.setEmotion(16)
 		card.damage_random_component()

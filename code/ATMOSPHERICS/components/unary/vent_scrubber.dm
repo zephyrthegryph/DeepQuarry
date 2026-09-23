@@ -20,7 +20,9 @@
 	var/datum/radio_frequency/radio_connection
 
 	var/scrubbing = 1 //0 = siphoning, 1 = scrubbing
-	var/list/scrubbing_gas = list(GAS_CO2, GAS_PHORON, GAS_CH4)
+	/// Gas ids to scrub. Defaults to a list shared by every scrubber: never
+	/// mutate it in place, assign a new list instead (copy on write).
+	var/list/scrubbing_gas
 
 	var/panic = 0 //is this scrubber panicked?
 
@@ -34,6 +36,9 @@
 
 /obj/machinery/atmospherics/unary/vent_scrubber/Initialize(mapload)
 	. = ..()
+	var/static/list/default_scrubbing_gas = list(GAS_CO2, GAS_PHORON, GAS_CH4)
+	if(isnull(scrubbing_gas))
+		scrubbing_gas = default_scrubbing_gas
 	air_contents.set_volume(ATMOS_DEFAULT_VOLUME_FILTER)
 
 	icon = null
@@ -53,8 +58,8 @@
 	SSmachines.wake_vent(WEAKREF(src)) // So we are removed from hibernating list
 	unregister_radio(src, frequency)
 	if(initial_loc)
-		initial_loc.air_scrub_info -= id_tag
-		initial_loc.air_scrub_names -= id_tag
+		LAZYREMOVE(initial_loc.air_scrub_info, id_tag)
+		LAZYREMOVE(initial_loc.air_scrub_names, id_tag)
 	return ..()
 
 /obj/machinery/atmospherics/unary/vent_scrubber/update_icon(safety = 0)
@@ -118,11 +123,11 @@
 		"filter_ch4" = (GAS_CH4 in scrubbing_gas),
 		"sigtype" = "status"
 	)
-	if(!initial_loc.air_scrub_names[id_tag])
-		var/new_name = "[initial_loc.name] Air Scrubber #[initial_loc.air_scrub_names.len+1]"
-		initial_loc.air_scrub_names[id_tag] = new_name
+	if(!LAZYACCESS(initial_loc.air_scrub_names, id_tag))
+		var/new_name = "[initial_loc.name] Air Scrubber #[length(initial_loc.air_scrub_names)+1]"
+		LAZYSET(initial_loc.air_scrub_names, id_tag, new_name)
 		src.name = new_name
-	initial_loc.air_scrub_info[id_tag] = signal.data
+	LAZYSET(initial_loc.air_scrub_info, id_tag, signal.data)
 	radio_connection.post_signal(src, signal, radio_filter_out)
 
 	return 1
@@ -313,7 +318,8 @@
 	else if(signal.data["toggle_ch4_scrub"])
 		toggle += GAS_CH4
 
-	scrubbing_gas ^= toggle
+	if(length(toggle))
+		scrubbing_gas = scrubbing_gas ^ toggle // new list: the default is shared
 
 	if(signal.data["init"] != null)
 		name = signal.data["init"]

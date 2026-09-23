@@ -186,7 +186,7 @@
 					heat_limit = H.species.heat_level_3
 
 				if(pipe_air.return_temperature() > heat_limit + 1)
-					L.apply_damage(4 * log(pipe_air.return_temperature() - heat_limit), BURN, BP_TORSO)
+					L.injure(INJURY_BURN, 4 * log(pipe_air.return_temperature() - heat_limit), BP_TORSO, src)
 
 		//fancy radiation glowing
 		pipe_temperature = pipe_air.return_temperature()

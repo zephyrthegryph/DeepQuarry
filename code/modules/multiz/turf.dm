@@ -59,10 +59,6 @@ GLOBAL_DATUM_INIT(openspace_backdrop_one_for_all, /atom/movable/openspace_backdr
 	can_dirty = FALSE // It's open space
 	can_start_dirty = FALSE
 
-/turf/simulated/open/vacuum
-	oxygen = 0
-	nitrogen = 0
-	temperature = TCMB
 
 /turf/simulated/open/Initialize(mapload)
 	. = ..()
@@ -153,24 +149,12 @@ GLOBAL_DATUM_INIT(openspace_backdrop_one_for_all, /atom/movable/openspace_backdr
 				return TRUE // Can't fall through this, like lattice or catwalk.
 	return ..()
 
-
 /turf/simulated/floor/glass
 	name = "glass floor"
 	desc = "Dont jump on it, or do, I'm not your mom."
 	icon = 'icons/turf/flooring/glass.dmi'
 	icon_state = "glass-0"
 	base_icon_state = "glass"
-	/*
-	baseturfs = /turf/simulated/openspace
-	intact = FALSE //this means wires go on top
-	smoothing_flags = SMOOTH_BITMASK
-	smoothing_groups = list(SMOOTH_GROUP_TURF_OPEN, SMOOTH_GROUP_FLOOR_TRANSPARENT_GLASS)
-	canSmoothWith = list(SMOOTH_GROUP_FLOOR_TRANSPARENT_GLASS)
-	footstep = FOOTSTEP_PLATING
-	barefootstep = FOOTSTEP_HARD_BAREFOOT
-	clawfootstep = FOOTSTEP_HARD_CLAW
-	heavyfootstep = FOOTSTEP_GENERIC_HEAVY
-	*/
 
 // /turf/simulated/floor/glass/setup_broken_states()
 //	return list("glass-damaged1", "glass-damaged2", "glass-damaged3")
@@ -233,3 +217,7 @@ GLOBAL_DATUM_INIT(openspace_backdrop_one_for_all, /atom/movable/openspace_backdr
 
 // /turf/simulated/floor/glass/reinforced/setup_broken_states()
 //	return list("reinf_glass-damaged1", "reinf_glass-damaged2", "reinf_glass-damaged3")
+
+/turf/simulated/open
+	dynamic_lighting = 1 //I don't care if there's no true multiz lighting, this looks so much nicer it's not even funny -KK
+

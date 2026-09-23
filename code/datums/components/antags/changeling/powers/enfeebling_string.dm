@@ -13,17 +13,13 @@
 	desc = "You feel really weak and frail for some reason."
 
 	stacks = MODIFIER_STACK_EXTEND
-	max_health_percent = 0.7
-	outgoing_melee_damage_percent = 0.75
-	incoming_damage_percent = 1.1
+	factors = alist(BF_MELEE_DAMAGE = 0.75, BF_INCOMING_ALL = 1.1, BF_ENDURANCE_MULT = 0.7)
 	on_created_text = span_danger("You feel a small prick and you feel extremly weak!")
 	on_expired_text = span_notice("You no longer feel extremly weak.")
 
 // Now YOU'RE the Teshari!
 /datum/modifier/enfeeble/strong
-	max_health_percent = 0.5
-	outgoing_melee_damage_percent = 0.5
-	incoming_damage_percent = 1.35
+	factors = alist(BF_MELEE_DAMAGE = 0.5, BF_INCOMING_ALL = 1.35, BF_ENDURANCE_MULT = 0.5)
 
 /mob/proc/changeling_enfeebling_string()
 	set category = "Changeling"

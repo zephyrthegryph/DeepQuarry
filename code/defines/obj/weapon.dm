@@ -89,19 +89,6 @@
 	w_class = ITEMSIZE_SMALL
 	resistance_flags = INDESTRUCTIBLE | FIRE_PROOF
 
-/*
-/obj/item/game_kit
-	name = "Gaming Kit"
-	icon = 'icons/obj/items.dmi'
-	icon_state = "game_kit"
-	var/selected = null
-	var/board_stat = null
-	var/data = ""
-	var/base_url = "http://svn.slurm.us/public/spacestation13/misc/game_kit"
-	item_state = "sheet-metal"
-	w_class = ITEMSIZE_HUGE
-*/
-
 /obj/item/gift
 	name = "gift"
 	desc = "A wrapped item."
@@ -112,24 +99,6 @@
 	item_state = "gift"
 	w_class = ITEMSIZE_LARGE
 	resistance_flags = FLAMMABLE
-
-/*/obj/item/syndicate_uplink
-	name = "station bounced radio"
-	desc = "Remain silent about this..."
-	icon = 'icons/obj/radio.dmi'
-	icon_state = "radio"
-	var/temp = null
-	var/uses = 10.0
-	var/selfdestruct = 0.0
-	var/traitor_frequency = 0.0
-	var/mob/currentUser = null
-	var/obj/item/radio/origradio = null
-	flags = ONBELT
-	w_class = ITEMSIZE_SMALL
-	item_state = "radio"
-	throw_speed = 4
-	throw_range = 20
-	matter = list(MAT_STEEL = 100)*/
 
 /obj/item/SWF_uplink
 	name = "station-bounced radio"
@@ -273,19 +242,6 @@
 
 	user.AddComponent(/datum/component/remote_view/item_zoom, focused_on = target, vconfig_path = /datum/remote_view_config/camera_standard, our_item = src, viewsize = null, tileoffset = 0, show_visible_messages = FALSE)
 
-/*
-/obj/item/cigarpacket
-	name = "Pete's Cuban Cigars"
-	desc = "The most robust cigars on the planet."
-	icon = 'icons/obj/cigarettes.dmi'
-	icon_state = "cigarpacket"
-	item_state = "cigarpacket"
-	w_class = ITEMSIZE_TINY
-	throwforce = 2
-	var/cigarcount = 6
-	flags = ONBELT
-	*/
-
 /obj/item/pai_cable
 	desc = "A flexible coated cable with a universal jack on one end."
 	name = "data cable"
@@ -381,7 +337,6 @@
 // per-part-type formula over the material's properties. See
 // code/modules/materials/material_stock_parts.dm for the
 // formulas and the imbue/crafting flow.
-
 
 // Subspace stock parts
 

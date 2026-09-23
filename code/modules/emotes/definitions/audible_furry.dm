@@ -91,13 +91,6 @@
 	key = "baa2"
 	emote_message_3p = "bleats."
 	emote_sound = 'sound/voice/baa2.ogg'
-/*
-/datum/decl/emote/audible/deathgasp2
-	key = "deathgasp2"
-	emote_message_3p = "[species.get_death_message()]"
-	m_type = 1
-	emote_sound = 'sound/voice/deathgasp2.ogg'
-*/
 /datum/decl/emote/audible/mar
 	key = "mar"
 	emote_message_3p = "lets out a mar."
@@ -158,7 +151,6 @@
 	key = "mothlaugh"
 	emote_message_3p = "laughs"
 	emote_sound = 'sound/voice/moth/moth_laugh.ogg'
-
 
 /datum/decl/emote/audible/gyoh
 	key = "gyoh"

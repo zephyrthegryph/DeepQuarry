@@ -84,7 +84,7 @@
 	if(R.stat == CONSCIOUS)
 		return FALSE
 
-	if(R.health < 0)
+	if(R.vitality() < 0.5) // below half integrity (the old health < 0)
 		to_chat(user, span_warning("You have to repair the robot before using this module!"))
 		return FALSE
 
@@ -117,7 +117,7 @@
 /obj/item/borg/upgrade/basic/vtec/action(mob/user, mob/living/silicon/robot/R)
 	if(..()) return FALSE
 
-	if(R.has_basic_upgrade(type))
+	if(is_installed(R))
 		to_chat(R,span_warning("Actuator already running on overdrive mode!"))
 		to_chat(user, span_warning("It'd be unwise to plug another vtec module in!"))
 		return FALSE
@@ -138,7 +138,7 @@
 /obj/item/borg/upgrade/basic/sizeshift/action(mob/user, mob/living/silicon/robot/R)
 	if(..()) return FALSE
 
-	if(R.has_basic_upgrade(type))
+	if(is_installed(R))
 		to_chat(R, span_warning("Size alteration module already applied!"))
 		to_chat(user, span_warning("There's no space for another size alteration module!"))
 		return FALSE
@@ -157,7 +157,7 @@
 /obj/item/borg/upgrade/basic/syndicate/action(mob/user, mob/living/silicon/robot/R)
 	if(..()) return FALSE
 
-	if(R.has_basic_upgrade(type))
+	if(is_installed(R))
 		to_chat(R, span_warning("Secret modules already unlocked!"))
 		to_chat(user, span_warning("Plugging another scambled module would be useless!"))
 		return FALSE
@@ -175,7 +175,7 @@
 /obj/item/borg/upgrade/basic/language/action(mob/user, mob/living/silicon/robot/R)
 	if(..()) return FALSE
 
-	if(R.has_basic_upgrade(type))
+	if(is_installed(R))
 		to_chat(R, span_warning("All possible languages already uploaded!"))
 		to_chat(user, span_warning("The language database is up to date!"))
 		return FALSE
@@ -248,7 +248,7 @@
 		to_chat(user, span_warning("This robot has had its processor removed!"))
 		return FALSE
 
-	if(R.has_advanced_upgrade(type))
+	if(is_installed(R))
 		to_chat(R, span_warning("Maximum capacity achieved for this hardpoint!"))
 		to_chat(user, span_warning("There's no room for another capacity upgrade!"))
 		return FALSE
@@ -271,7 +271,7 @@
 /obj/item/borg/upgrade/advanced/jetpack/action(mob/user, mob/living/silicon/robot/R)
 	if(..()) return FALSE
 
-	if(R.has_advanced_upgrade(type))
+	if(is_installed(R))
 		generic_error(user, R, type)
 		return FALSE
 
@@ -290,7 +290,7 @@
 /obj/item/borg/upgrade/advanced/advhealth/action(mob/user, mob/living/silicon/robot/R)
 	if(..()) return FALSE
 
-	if(R.has_advanced_upgrade(type))
+	if(is_installed(R))
 		generic_error(user, R, type)
 		return FALSE
 
@@ -309,7 +309,7 @@
 /obj/item/borg/upgrade/advanced/sizegun/action(mob/user, mob/living/silicon/robot/R)
 	if(..()) return FALSE
 
-	if(R.has_advanced_upgrade(type))
+	if(is_installed(R))
 		generic_error(user, R, type)
 		return FALSE
 
@@ -341,7 +341,7 @@
 		to_chat(user, span_warning("This robot has had its processor removed!"))
 		return FALSE
 
-	if(R.has_restricted_upgrade(type))
+	if(is_installed(R))
 		to_chat(R, span_warning("Maximum capability achieved for this hardpoint!"))
 		to_chat(user, span_warning("There's no room for another capability upgrade!"))
 		return FALSE
@@ -375,7 +375,7 @@
 		to_chat(user, span_warning("This robot has had its taser removed!"))
 		return FALSE
 
-	if(R.has_restricted_upgrade(type))
+	if(is_installed(R))
 		to_chat(R, span_warning("Maximum cooling achieved for this hardpoint!"))
 		to_chat(user, span_warning("There's no room for another cooling unit!"))
 		return FALSE
@@ -401,7 +401,7 @@
 		generic_error(user, R, type)
 		return FALSE
 
-	if(R.has_restricted_upgrade(type))
+	if(is_installed(R))
 		generic_error(user, R, type)
 		return FALSE
 
@@ -424,7 +424,7 @@
 		generic_error(user, R, type)
 		return FALSE
 
-	if(R.has_restricted_upgrade(type))
+	if(is_installed(R))
 		generic_error(user, R, type)
 		return FALSE
 
@@ -447,7 +447,7 @@
 		generic_error(user, R, type)
 		return FALSE
 
-	if(R.has_restricted_upgrade(type))
+	if(is_installed(R))
 		generic_error(user, R, type)
 		return FALSE
 
@@ -474,7 +474,7 @@
 		to_chat(user, span_warning("This robot has had its scanner removed!"))
 		return FALSE
 
-	if(R.has_restricted_upgrade(type))
+	if(is_installed(R))
 		to_chat(R, span_warning("Scanner was already upgraded!"))
 		to_chat(user, span_warning("There's no room for another scanning upgrade!"))
 		return FALSE
@@ -504,7 +504,7 @@
 		to_chat(user, span_warning("This robot has had its sheet snatcher removed!"))
 		return FALSE
 
-	if(R.has_restricted_upgrade(type))
+	if(is_installed(R))
 		to_chat(R, span_warning("Sheet capacity was already upgraded!"))
 		to_chat(user, span_warning("There's no room for another sheet capacity upgrade!"))
 		return FALSE
@@ -534,7 +534,7 @@
 		to_chat(user, span_warning("This robot has had its letter compartment removed!"))
 		return FALSE
 
-	if(R.has_restricted_upgrade(type))
+	if(is_installed(R))
 		to_chat(R, span_warning("Letter compartment was already upgraded!"))
 		to_chat(user, span_warning("There's no room for another letter compartment upgrade!"))
 		return FALSE
@@ -560,7 +560,7 @@
 		generic_error(user, R, type)
 		return FALSE
 
-	if(R.has_restricted_upgrade(type))
+	if(is_installed(R))
 		generic_error(user, R, type)
 		return FALSE
 
@@ -585,7 +585,7 @@
 /obj/item/borg/upgrade/no_prod/toygun/action(mob/user, mob/living/silicon/robot/R)
 	if(..()) return FALSE
 
-	if(R.has_no_prod_upgrade(type))
+	if(is_installed(R))
 		generic_error(user, R, type)
 		return FALSE
 
@@ -603,7 +603,7 @@
 /obj/item/borg/upgrade/no_prod/vision_xray/action(mob/user, mob/living/silicon/robot/R)
 	if(..()) return FALSE
 
-	if(R.has_no_prod_upgrade(type))
+	if(is_installed(R))
 		software_error(user, R, type)
 		return FALSE
 
@@ -621,7 +621,7 @@
 /obj/item/borg/upgrade/no_prod/vision_thermal/action(mob/user, mob/living/silicon/robot/R)
 	if(..()) return FALSE
 
-	if(R.has_no_prod_upgrade(type))
+	if(is_installed(R))
 		software_error(user, R, type)
 		return FALSE
 
@@ -639,7 +639,7 @@
 /obj/item/borg/upgrade/no_prod/vision_meson/action(mob/user, mob/living/silicon/robot/R)
 	if(..()) return FALSE
 
-	if(R.has_no_prod_upgrade(type))
+	if(is_installed(R))
 		software_error(user, R, type)
 		return FALSE
 
@@ -657,7 +657,7 @@
 /obj/item/borg/upgrade/no_prod/vision_material/action(mob/user, mob/living/silicon/robot/R)
 	if(..()) return FALSE
 
-	if(R.has_no_prod_upgrade(type))
+	if(is_installed(R))
 		software_error(user, R, type)
 		return FALSE
 
@@ -675,7 +675,7 @@
 /obj/item/borg/upgrade/no_prod/vision_anomalous/action(mob/user, mob/living/silicon/robot/R)
 	if(..()) return FALSE
 
-	if(R.has_no_prod_upgrade(type))
+	if(is_installed(R))
 		software_error(user, R, type)
 		return FALSE
 

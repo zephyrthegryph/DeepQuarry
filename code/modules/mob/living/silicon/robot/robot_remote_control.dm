@@ -153,8 +153,7 @@ GLOBAL_LIST_EMPTY(available_ai_shells)
 	update_icon()
 
 	// Laws.
-	connected_ai = mainframe // So they share laws.
-	mainframe.connected_robots |= src
+	set_master_ai(mainframe, TRUE) // So they share laws.
 
 	// Outpost 21 upport: force the law sync when an AI enters this shell, unless emagged
 	var/org_lu = lawupdate

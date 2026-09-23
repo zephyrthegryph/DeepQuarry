@@ -29,7 +29,7 @@ Only physical attributes are copied.
 	base_values["pixel_y"] = pixel_y //record our default y pixel offset for later reversion
 	base_values["melee_damage_lower"] = melee_damage_lower
 	base_values["melee_damage_upper"] = melee_damage_upper
-	base_values["maxHealth"] = maxHealth
+	base_values["endurance"] = endurance
 	base_values["armor"] = armor
 	icon_state = icon_living
 
@@ -46,8 +46,8 @@ Only physical attributes are copied.
 	pixel_y = target.pixel_y
 	melee_damage_lower = target.melee_damage_lower
 	melee_damage_upper = target.melee_damage_upper
-	maxHealth = target.maxHealth
-	health = maxHealth
+	endurance = target.endurance
+	fully_heal()
 	icon_state = target.icon_state
 	armor = target.armor
 	//steal base stats
@@ -66,8 +66,8 @@ Only physical attributes are copied.
 	pixel_y = base_values["pixel_y"]
 	melee_damage_lower = base_values["melee_damage_lower"]
 	melee_damage_upper = base_values["melee_damage_upper"]
-	maxHealth = base_values["maxHealth"]
-	health = maxHealth
+	endurance = base_values["endurance"]
+	fully_heal()
 	icon_state = icon_living
 	armor = base_values["armor"]
 	update_icon()

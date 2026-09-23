@@ -194,7 +194,7 @@ GLOBAL_LIST_EMPTY(table_icon_cache)
 	if(damage >= 10)
 		if(reinforced && prob(70))
 			visible_message(span_danger("\The [user] smashes against \the [src]!"))
-			take_damage(damage/2)
+			take_damage(damage/2, BRUTE, MELEE)
 			user.do_attack_animation(src)
 			..()
 		else

@@ -26,7 +26,7 @@
 //	taste_sensitivity = TASTE_DULL
 	min_age = 18
 
-	slowdown = -0.5
+	factor_baseline = alist(BF_SLOWDOWN = -0.5)
 
 	speech_sounds = list()
 	speech_chance = 20
@@ -110,7 +110,6 @@
 		H.internals.icon_state = "internal1"
 
 
-// === merged from vox_chomp.dm during hard-fork de-suffix (manually verified) ===
 /datum/species/vox
 	icobase = 'icons/mob/human_races/r_vox_ch.dmi'
 	tail = "voxtail"

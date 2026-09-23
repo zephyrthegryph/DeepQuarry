@@ -30,7 +30,3 @@
 // as a stub avoids deleting consumer code blocks.
 /obj/machinery/gateway
 
-// NOTE: /obj/tether_away_spawner is no longer stubbed here — it was a vars-only
-// stub that silently disabled the spawners live submaps still place. The real
-// implementation (Initialize + process) now lives in
-// code/modules/awaymissions/tether_away_spawner.dm.

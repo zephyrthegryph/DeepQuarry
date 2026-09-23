@@ -32,13 +32,12 @@
 	)
 	*/
 
-
 /datum/component/squeak/Initialize(custom_sounds, volume_override, chance_override, step_delay_override, use_delay_override, extrarange)
 	if(!isatom(parent))
 		return COMPONENT_INCOMPATIBLE
-	RegisterSignals(parent, list(COMSIG_ATOM_ENTERED, COMSIG_ATOM_BLOB_ACT, COMSIG_ATOM_HULK_ATTACK), PROC_REF(play_squeak))
+	RegisterSignals(parent, list(COMSIG_ATOM_ENTERED), PROC_REF(play_squeak))
 	if(ismovable(parent))
-		RegisterSignals(parent, list(COMSIG_MOVABLE_BUMP, COMSIG_MOVABLE_IMPACT, COMSIG_PROJECTILE_BEFORE_FIRE), PROC_REF(play_squeak))
+		RegisterSignals(parent, list(COMSIG_MOVABLE_BUMP, COMSIG_MOVABLE_IMPACT), PROC_REF(play_squeak))
 
 		//Disposals stuff we don't have
 		//AddComponent(/datum/component/connect_loc_behalf, parent, item_connections)
@@ -71,18 +70,6 @@
 		use_delay = use_delay_override
 	if(isnum(extrarange))
 		sound_extra_range = extrarange
-	/*
-	if(isnum(falloff_exponent))
-		sound_falloff_exponent = falloff_exponent
-	if(isnum(fallof_distance))
-		sound_falloff_distance = fallof_distance
-	*/
-
-/*
-/datum/component/squeak/UnregisterFromParent()
-	. = ..()
-	qdel(GetComponent(/datum/component/connect_loc_behalf))
-*/
 
 /datum/component/squeak/proc/play_squeak(volume_mod = 1)
 	SIGNAL_HANDLER
@@ -96,11 +83,6 @@
 /datum/component/squeak/proc/step_squeak(obj/item/clothing/shoes/source, running)
 	SIGNAL_HANDLER
 
-	/*
-	var/mob/living/carbon/human/owner = source.loc
-	if(CHECK_MOVE_LOOP_FLAGS(owner, MOVEMENT_LOOP_OUTSIDE_CONTROL))
-		return
-	*/
 	if(running == I_WALK)
 		running = 0.25
 	else

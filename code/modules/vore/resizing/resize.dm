@@ -13,7 +13,6 @@
 				target.handle_micro_bump_other(src, 1)
 
 
-// === merged from resize_vr.dm during hard-fork de-suffix (chain-verified additive) ===
 // Adding needed defines to /mob/living
 // Note: Polaris had this on /mob/living/carbon/human We need it higher up for animals and stuff.
 /mob
@@ -175,9 +174,6 @@
 			drop_all_clothing(FALSE)
 		else if(size_strip_preference == SIZESTRIP_ALL)
 			drop_all_clothing(TRUE)
-	if(!ishuman(temporary_form) && isliving(temporary_form))
-		var/mob/living/temp_form = temporary_form
-		temp_form.resize(new_size, animate, uncapped, ignore_prefs, aura_animation)
 	if(LAZYLEN(hud_list) && has_huds)
 		var/new_y_offset = vis_height * (size_multiplier - 1)
 		for(var/index = 1 to hud_list.len)
@@ -203,9 +199,6 @@
 	var/new_size = tgui_input_number(src, nagmessage, "Pick a Size", default, 600, 1)
 	if(size_range_check(new_size))
 		resize(new_size/100, uncapped = has_large_resize_bounds(), ignore_prefs = TRUE)
-		if(temporary_form)
-			var/mob/living/L = temporary_form
-			L.resize(new_size/100, uncapped = has_large_resize_bounds(), ignore_prefs = TRUE)
 		// log_admin("[key_name(src)] used the resize command in-game to be [new_size]% size. [src ? ADMIN_JMP(src) : "null"]")
 
 /**
@@ -417,7 +410,7 @@
 						message_prey = STEP_TEXT_PREY(tail.msg_prey_harm_run)
 
 					for(var/obj/item/organ/external/I in prey.organs)
-						I.take_damage(calculated_damage, 0) // 5 damage min, 26.25 damage max, depending on size & RNG. If they're only stepped on once, the damage will (probably not...) heal over time.
+						prey.injure(INJURY_BLUNT, calculated_damage, I, pred) // 5 damage min, 26.25 damage max, depending on size & RNG. If they're only stepped on once, the damage will (probably not...) heal over time.
 					prey.drip(0.1)
 					add_attack_logs(pred, prey, "Crushed underfoot (run, about [calculated_damage] damage)")
 		else
@@ -439,7 +432,7 @@
 					// Multiplies the above damage by 3.5. This means a min of 1.75 damage, or a max of 9.1875. damage to each limb, depending on size and RNG.
 					calculated_damage *= 3.5
 					for(var/obj/item/organ/I in prey.organs)
-						I.take_damage(calculated_damage, 0)
+						prey.injure(INJURY_BLUNT, calculated_damage, I, pred)
 					prey.drip(3)
 					add_attack_logs(pred, prey, "Crushed underfoot (walk, about [calculated_damage] damage)")
 

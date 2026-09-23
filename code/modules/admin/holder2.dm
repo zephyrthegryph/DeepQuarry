@@ -274,9 +274,8 @@ you will have to do something like if(client.rights & R_ADMIN) yourself.
 	if(!forceGlobal && usr)
 		var/client/C = usr.client
 		if(!C)
-			// CRASH("No client for HrefToken()!") //Chomp EDIT - this seems be to encountered and we don't want this to crash
-			log_runtime("Attempted to retrieve a HrefToken of an entity with no client.") //Chomp EDIT
-			return 0 //Chomp EDIT
+			log_runtime("Attempted to retrieve a HrefToken of an entity with no client.")
+			return 0
 		var/datum/admins/holder = C.holder
 		if(holder)
 			tok = holder.href_token

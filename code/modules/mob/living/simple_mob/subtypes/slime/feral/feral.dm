@@ -19,7 +19,7 @@
 	pixel_y = -10 // Since the base sprite isn't centered properly, the pixel auto-adjustment needs some help.
 	default_pixel_y = -10 // To prevent resetting above var.
 
-	maxHealth = 300
+	endurance = 300
 	movement_cooldown = -3
 	melee_attack_delay = 0.5 SECONDS
 

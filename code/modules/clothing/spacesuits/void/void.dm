@@ -303,7 +303,6 @@
 	..()
 
 
-// === merged from void_vr.dm during hard-fork de-suffix (verified no override-order change) ===
 //
 // Because of our custom change in update_icons, we cannot rely upon the normal
 // method of switching sprites when refitting (which is to have the referitter
@@ -452,7 +451,6 @@
 	sprite_sheets_obj = null
 
 
-// === merged from void_chomp.dm during hard-fork de-suffix (manually verified: no middle override of the affected member) ===
 /obj/item/clothing/head/helmet/space/void
 	species_restricted = list(SPECIES_HUMAN, SPECIES_RAPALA, SPECIES_VASILISSAN, SPECIES_ALRAUNE, SPECIES_PROMETHEAN, SPECIES_XENOCHIMERA, SPECIES_XENOMORPH_HYBRID)
 

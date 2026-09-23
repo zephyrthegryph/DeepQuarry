@@ -12,7 +12,7 @@
 	var/wagging
 	var/flapping
 	max_integrity = 100
-	// The integrity the statue started at when the mob was petrified (= mob health + 100).
+	// The integrity the statue started at when the mob was petrified (= mob vitality * endurance + 100).
 	// Damage taken below this is transferred back to the mob on release; this is NOT
 	// max_integrity, because a wounded mob petrifies into an already-weakened statue.
 	var/original_int = 100
@@ -64,8 +64,8 @@
 	else if(H.tail_style)
 		tail_lower_dirs = H.tail_style.lower_layer_dirs.Copy()
 
-	max_integrity = H.getMaxHealth() + 100
-	original_int = H.health + 100
+	max_integrity = H.get_endurance() + 100
+	original_int = H.vitality() * H.get_endurance() + 100
 	update_integrity(original_int)
 	name = "[identifier] of [H.name]"
 	desc = "A very lifelike [identifier] made of [material]."
@@ -126,7 +126,6 @@
 	H.forceMove(src)
 	H.SetBlinded(0)
 	H.SetSleeping(0)
-	H.updatehealth()
 	H.canmove = 0
 
 	can_revert = revert
@@ -157,7 +156,7 @@
 		can_revert = TRUE //something's gone wrong, they escaped, lets not qdel them
 		unpetrify(deal_damage = FALSE, deleting = TRUE)
 
-/obj/structure/gargoyle/fire_act(datum/gas_mixture/air, temperature, volume)
+/obj/structure/gargoyle/fire_act(temperature, volume)
 	if(temperature > T0C + 1600) //Bingle says the burning point of rock is between 600 to 1600C...Let's use the highest range.
 		damage(temperature/(T0C + 1600)) //1 damage per 1600C
 	return
@@ -215,9 +214,8 @@
 		if(get_integrity() < original_int)
 			var/f = (original_int - get_integrity()) / 10
 			for (var/x in 1 to 10)
-				gargoyle.adjustBruteLoss(f)
+				gargoyle.injure(INJURY_BLUNT, f, ran_zone(), src)
 			hurtmessage = " " + span_bold("You feel your body take the damage that was dealt while being [material]!")
-	gargoyle.updatehealth()
 	alpha = 0
 	gargoyle.visible_message(span_warning("[gargoyle]'s skin rapidly reverts, returning them to normal!"), span_warning("Your skin reverts, freeing your movement once more![hurtmessage]"))
 	gargoyle = null

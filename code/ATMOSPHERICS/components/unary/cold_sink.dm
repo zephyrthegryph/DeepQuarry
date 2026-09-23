@@ -151,6 +151,10 @@
 			visible_message("[src]: Removing [removed] W.")
 
 		use_power(power_rating)
+		// Heat pump: the room around the machine is the hot side. It receives
+		// the heat taken from the loop plus the electrical work.
+		var/datum/gas_mixture/environment = loc?.return_air()
+		environment?.add_thermal_energy(removed + power_rating)
 
 		network.mark_dirty()
 	else

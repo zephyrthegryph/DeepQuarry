@@ -202,7 +202,6 @@ GLOBAL_DATUM_INIT(outfits_decls_root, /datum/decl/hierarchy/outfit, new) // Rewu
 	return name
 
 
-// === merged from outfit_vr.dm during hard-fork de-suffix (verified no override-order change) ===
 /datum/decl/hierarchy/outfit/USDF/Marine
 	name = "USDF marine"
 	uniform = /obj/item/clothing/under/solgov/utility/army/urban

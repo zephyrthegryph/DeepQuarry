@@ -750,7 +750,6 @@ GLOBAL_LIST_INIT(slot_flags_enumeration, list(
 		to_chat(M, span_warning("You stab yourself in the eye."))
 		M.sdisabilities |= BLIND
 		M.weakened += 4
-		M.adjustBruteLoss(10)
 		*/
 
 	if(istype(H))
@@ -768,7 +767,7 @@ GLOBAL_LIST_INIT(slot_flags_enumeration, list(
 				span_danger("You stab yourself in the eyes with [src]!") \
 			)
 
-		eyes.damage += rand(3,4)
+		H.injure(INJURY_CUT, rand(3, 4), eyes, src, flags = INJURE_SILENT)
 		if(eyes.damage >= eyes.min_bruised_damage)
 			if(M.stat != 2)
 				if(!(eyes.robotic >= ORGAN_ROBOT)) //robot eyes bleeding might be a bit silly
@@ -783,11 +782,9 @@ GLOBAL_LIST_INIT(slot_flags_enumeration, list(
 			if (eyes.damage >= eyes.min_broken_damage)
 				if(M.stat != 2)
 					to_chat(M, span_warning("You go blind!"))
-		var/obj/item/organ/external/affecting = H.get_organ(BP_HEAD)
-		if(affecting.take_damage(7))
-			M:UpdateDamageIcon()
+		H.injure(INJURY_BLUNT, 7, BP_HEAD, src)
 	else
-		M.take_organ_damage(7)
+		M.injure(INJURY_PIERCE, 7, BP_HEAD, src)
 	M.eye_blurry += rand(3,4)
 	return ITEM_INTERACT_SUCCESS
 

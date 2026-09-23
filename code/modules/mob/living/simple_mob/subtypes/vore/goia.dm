@@ -8,8 +8,7 @@
 	icon_rest = null
 	icon_dead = "zorgoia-death"
 	faction = FACTION_ZORGOIA
-	maxHealth = 150 //chonk
-	health = 150
+	endurance = 150 //chonk
 	melee_damage_lower = 5
 	melee_damage_upper = 15 //Don't break my bones bro
 	see_in_dark = 5
@@ -415,7 +414,7 @@
 /mob/living/simple_mob/vore/zorgoia/attack_hand(mob/living/carbon/human/M as mob)
 	switch(M.a_intent)
 		if(I_HELP)
-			if(health > 0)
+			if(stat != DEAD)
 				if(M.zone_sel.selecting == BP_GROIN)
 					if(M.vore_bellyrub(src))
 						return
@@ -433,7 +432,7 @@
 					sleep(1 SECOND)
 
 		if(I_GRAB)
-			if(health > 0)
+			if(stat != DEAD)
 				if((ai_brain != null))
 					var/datum/ai_brain/AI = ai_brain
 					audible_emote("growls disapprovingly at [M].")
@@ -546,7 +545,7 @@
 				if(rgb2num(input_style_list[17]))
 					goia_overlays["zorgoia_spike"] = input_style_list[17]
 			catch
-			goia_overlays["spike"] = input_style_list[18]
+			input_style_list["spike"] = input_style_list[18]
 			try
 				if(rgb2num(input_style_list[19]))
 					goia_overlays["zorgoia_belly"] = input_style_list[19]

@@ -112,7 +112,6 @@
 	wiki_flag = WIKI_FOOD
 
 
-// === merged from hot_drinks_chomp.dm during hard-fork de-suffix (verified no override-order change) ===
 /datum/decl/chemical_reaction/distilling/drinks/cherrytea
 	name = REAGENT_CHERRYTEA
 	id = REAGENT_ID_CHERRYTEA

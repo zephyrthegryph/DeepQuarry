@@ -113,7 +113,6 @@
 			.["value"] = chosen_datum
 			.["class"] = VV_TAGGED_DATUM
 
-
 	switch(.["class"])
 		if(VV_TEXT)
 			.["value"] = tgui_input_text(usr, "Enter new text:", "Text", current_value)
@@ -125,7 +124,6 @@
 			if(.["value"] == null)
 				.["class"] = null
 				return
-
 
 		if(VV_NUM)
 			.["value"] = tgui_input_number(usr, "Enter new number:", "Num", current_value, INFINITY, -INFINITY, round_value = FALSE)
@@ -310,7 +308,6 @@
 					break
 				value += LIST_VALUE_WRAP_LISTS(insert["value"])
 
-
 			.["value"] = value
 
 		if(VV_TEXT_LOCATE)
@@ -335,11 +332,6 @@
 			if(.["value"] == null)
 				.["class"] = null
 				return
-
-		//if(VV_COLOR_MATRIX)
-		//	.["value"] = open_color_matrix_editor()
-		//	if(.["value"] == COLOR_MATRIX_IDENTITY) //identity is equivalent to null
-		//		.["class"] = null
 
 		if(VV_INFINITY)
 			.["value"] = INFINITY

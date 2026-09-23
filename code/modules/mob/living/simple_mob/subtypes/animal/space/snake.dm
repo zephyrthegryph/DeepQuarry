@@ -29,8 +29,7 @@
 	icon_rest = "snek_rest"
 	icon = 'icons/mob/snake_vr.dmi'
 
-	maxHealth = 15
-	health = 15
+	endurance = 15
 
 	movement_cooldown = 3 // SLOW-ASS MUTHAFUCKA, I hope.
 
@@ -129,8 +128,7 @@
 	name = "Noodle"
 	desc = "This snake is particularly chubby and demands nothing but the finest of treats."
 
-	maxHealth = 20
-	health = 20
+	endurance = 20
 
 	makes_dirt = FALSE
 
@@ -163,7 +161,7 @@
 /mob/living/simple_mob/animal/passive/snake/python/noodle/apply_melee_effects(atom/A)
 	if(ismouse(A))
 		var/mob/living/simple_mob/animal/passive/mouse/mouse = A
-		if(mouse.getMaxHealth() < 20) // In case a badmin makes giant mice or something.
+		if(mouse.get_endurance() < 20) // In case a badmin makes giant mice or something.
 			mouse.splat()
 			visible_emote(pick("swallows \the [mouse] whole!"))
 	else

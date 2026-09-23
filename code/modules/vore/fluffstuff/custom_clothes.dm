@@ -154,7 +154,6 @@
 	icon_state = "vrsuit" //The name of the suit within the .dmi file
 
 
-// === merged from custom_clothes_vr.dm during hard-fork de-suffix (verified no override-order change) ===
 /* TUTORIAL
 	"icon" is the file with the HUD/ground icon for the item
 	"icon_state" is the iconstate in this file for the item

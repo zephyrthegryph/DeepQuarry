@@ -5,6 +5,7 @@
 *.rsc
 *.m.dme
 *.test.dme
+*.bench.dme
 *.lk
 *.int
 *.backup

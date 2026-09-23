@@ -1,4 +1,5 @@
 /datum/reagent/blood
+	species_factors = alist(IS_SLIME = alist(BF_BLOOD_REGEN = 0.8))
 	data = new/list("donor" = null, "viruses" = null, "species" = SPECIES_HUMAN, "blood_DNA" = null, "blood_type" = null, "blood_colour" = "#A10808", "resistances" = null, "trace_chem" = null, REAGENT_ID_ANTIBODIES = list(), "changeling" = FALSE)
 	name = REAGENT_BLOOD
 	id = REAGENT_ID_BLOOD
@@ -71,18 +72,18 @@
 			remove_self(volume)
 			return
 
-		M.heal_organ_damage(0.2 * removed * volume_mod, 0)	// More 'effective' blood means more usable material.
+		// Promethean-only (species-gated) repair from foreign blood: mends directly.
+		M.mend(TREAT_TISSUE_REPAIR, 0.2 * removed * volume_mod)	// More 'effective' blood means more usable material.
 		M.adjust_nutrition(20 * removed * volume_mod)
-		M.add_chemical_effect(CE_BLOODRESTORE, 4 * removed)
-		//M.adjustToxLoss(removed / 2)	// Still has some water in the form of plasma. | CHOMP EDIT - No. Soda does not kill a prommie, their own blood should not either.
+		// No toxin from the plasma water: soda does not kill a prommie, their own blood should not either.
 		return
 
 	if(effective_dose > 5)
-		if(!is_vampire) // .
-			M.adjustToxLoss(removed) // .
+		if(!is_vampire)
+			M.injure(INJURY_TOXIN, removed, source = src)
 	if(effective_dose > 15)
-		if(!is_vampire) // .
-			M.adjustToxLoss(removed) // .
+		if(!is_vampire)
+			M.injure(INJURY_TOXIN, removed, source = src)
 	if(data && data["viruses"])
 		var/list/vlist = data["viruses"]
 		if(vlist.len)
@@ -309,7 +310,7 @@
 		// First, kill slimes.
 		if(istype(L, /mob/living/simple_mob/slime))
 			var/mob/living/simple_mob/slime/S = L
-			S.adjustToxLoss(15 * amount)
+			S.injure(INJURY_CORROSIVE, 15 * amount, source = src)
 			S.visible_message(span_warning("[S]'s flesh sizzles where the water touches it!"), span_danger("Your flesh burns in the water!"))
 
 		// Then extinguish people on fire.
@@ -331,13 +332,13 @@
 //YWedit start, readds promethean damage that was removed by vorestation.
 /datum/reagent/water/affect_blood(mob/living/carbon/M, alien, removed)
 	if(alien == IS_SLIME)
-		M.adjustToxLoss(6 * removed)
+		M.injure(INJURY_TOXIN, 6 * removed, source = src)
 	else
 		..()
 
 /datum/reagent/water/affect_ingest(mob/living/carbon/M, alien, removed)
 	if(alien == IS_SLIME)
-		M.adjustToxLoss(6 * removed)
+		M.injure(INJURY_TOXIN, 6 * removed, source = src)
 	else
 		..()
 
@@ -373,7 +374,7 @@
 
 /datum/reagent/fuel/affect_blood(mob/living/carbon/M, alien, removed)
 	if(issmall(M)) removed *= 2
-	M.adjustToxLoss(4 * removed)
+	M.injure(INJURY_TOXIN, 4 * removed, source = src)
 
 /datum/reagent/fuel/touch_mob(mob/living/L, amount)
 	..()

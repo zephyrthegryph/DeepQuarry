@@ -1,100 +1,275 @@
-// TODO: remove the robot.mmi and robot.cell variables and completely rely on the robot component system
+// Robot components are the robot's body parts. Each sits in a ROBOT_SLOT_* slot,
+// is an affliction location on the robot's machine body, and has a graded
+// function (1 - load/max) that the robot reads for movement, vision, radio
+// and self-diagnosis. Destruction stays a threshold event.
+//
+// A component stores no damage numbers: its damage IS the load afflictions
+// the body has located on it (plans/machine.dm). A removed part carries its
+// afflictions away on the item (/datum/component/carried_afflictions) and
+// brings them back when it is installed again, so damage is never erased.
 
-/datum/robot_component/var/name
-/datum/robot_component/var/installed = 0
-/datum/robot_component/var/powered = 0
-/datum/robot_component/var/toggled = 1
-/datum/robot_component/var/brute_damage = 0
-/datum/robot_component/var/electronics_damage = 0
-/datum/robot_component/var/idle_usage = 0   // Amount of power used every MC tick. In joules.
-/datum/robot_component/var/active_usage = 0 // Amount of power used for every action. Actions are module-specific. Actuator for each tile moved, etc.
-/datum/robot_component/var/max_damage = 30  // HP of this component.
-/datum/robot_component/var/mob/living/silicon/robot/owner
+/datum/robot_component
+	var/name
+	/// ROBOT_SLOT_* this component occupies.
+	var/slot
+	/// ROBOT_PART_INSTALLED / _MISSING / _DESTROYED.
+	var/installed = ROBOT_PART_MISSING
+	/// Set by the robot's power ledger: TRUE while the bus delivers power.
+	var/powered = FALSE
+	/// Player toggle (robot UI).
+	var/toggled = TRUE
+	/// Joules drawn every Life cycle while toggled on.
+	var/idle_usage = 0
+	/// Joules drawn per action (a step, a transmission, a scan).
+	var/active_usage = 0
+	/// Load at which the part is destroyed.
+	var/max_damage = 30
+	/// Internal parts (core, cooling) can't be pried out and aren't hit by
+	/// spread damage; they are reached by their own afflictions and injuries.
+	var/internal = FALSE
+	var/mob/living/silicon/robot/owner
+	/// The item type that installs into this slot.
+	var/external_type = null
+	/// The installed item (part, cell, or fried remains). Null for internal parts.
+	var/obj/item/wrapped = null
 
-// The actual device object that has to be installed for this.
-/datum/robot_component/var/external_type = null
+/datum/robot_component/New(mob/living/silicon/robot/R, new_slot)
+	owner = R
+	slot = new_slot
 
-// The wrapped device(e.g. radio), only set if external_type isn't null
-/datum/robot_component/var/obj/item/wrapped = null
+/datum/robot_component/Destroy(force)
+	if(wrapped)
+		QDEL_NULL(wrapped)
+	owner = null
+	return ..()
 
-/datum/robot_component/New(mob/living/silicon/robot/R)
-	src.owner = R
-
-/datum/robot_component/proc/install()
+/// Put `part` into this slot. Afflictions the part carried rejoin the body here.
+/datum/robot_component/proc/install(obj/item/part)
+	if(part)
+		wrapped = part
+	installed = ROBOT_PART_INSTALLED
 	if(istype(wrapped, /obj/item/robot_parts/robot_component))
 		var/obj/item/robot_parts/robot_component/comp = wrapped
 		max_damage = comp.max_damage
 		idle_usage = comp.idle_usage
 		active_usage = comp.active_usage
-		return
-	if(istype(wrapped, /obj/item/cell))
+	else if(istype(wrapped, /obj/item/cell))
 		var/obj/item/cell/cell = wrapped
 		max_damage = cell.robot_durability
+	restore_carried_afflictions()
+	owner?.on_part_changed(src)
 
-/datum/robot_component/proc/uninstall(clear)
+/// Take the part out of this slot. Its afflictions leave with it.
+/// Returns the removed item.
+/datum/robot_component/proc/uninstall()
 	SHOULD_CALL_PARENT(TRUE)
+	. = wrapped
+	carry_afflictions_out()
 	max_damage = initial(max_damage)
 	idle_usage = initial(idle_usage)
 	active_usage = initial(active_usage)
-	if(clear)
-		installed = 0
-		wrapped = null
+	installed = ROBOT_PART_MISSING
+	wrapped = null
+	owner?.on_part_changed(src)
 
-/datum/robot_component/Destroy(force)
-	if(wrapped)
-		QDEL_NULL(wrapped)
-	. = ..()
-
+/// Threshold event: the part is fried. The remains stay installed (and keep
+/// the load located here) until they are pried out.
 /datum/robot_component/proc/destroy()
 	SHOULD_CALL_PARENT(TRUE)
-	var/brokenstate = "broken" // Generic icon
-	if (istype(wrapped, /obj/item/robot_parts/robot_component))
+	var/brokenstate = "broken"
+	if(istype(wrapped, /obj/item/robot_parts/robot_component))
 		var/obj/item/robot_parts/robot_component/comp = wrapped
 		brokenstate = comp.icon_state_broken
-	if(wrapped)
-		qdel(wrapped)
+	// Clear the slot before deleting the part so deletion handlers (the
+	// robot's cell watcher) see an empty slot rather than a removal.
+	var/obj/item/old_part = wrapped
+	wrapped = null
+	if(old_part)
+		qdel(old_part)
+	if(!internal)
+		wrapped = new /obj/item/broken_device
+		wrapped.icon_state = brokenstate
+	installed = ROBOT_PART_DESTROYED
+	max_damage = initial(max_damage)
+	idle_usage = initial(idle_usage)
+	active_usage = initial(active_usage)
+	log_runtime("ROBOT_PART: [owner ? key_name(owner) : "ownerless"] lost [name] (slot [slot]).")
+	owner?.on_part_changed(src)
 
+// --- Located damage -------------------------------------------------------------
+// Physical load = dents and breaches; thermal load = burnt wiring.
 
-	wrapped = new/obj/item/broken_device
-	wrapped.icon_state = brokenstate // Module-specific broken icons! Yay!
+/datum/robot_component/proc/get_robot_body()
+	var/datum/body/simple/machine/robot/B = owner?.body
+	return istype(B) ? B : null
 
-	// The thing itself isn't there anymore, but some fried remains are.
-	installed = -1
-	uninstall()
+/// Structural damage (dents, breaches) located on this part.
+/datum/robot_component/proc/get_structural_damage()
+	var/datum/body/simple/machine/robot/B = get_robot_body()
+	return B ? B.component_load(src, INJURY_CATEGORY_PHYSICAL) : 0
 
-/datum/robot_component/proc/take_damage(brute, electronics, sharp, edge)
-	if(installed != 1) return
+/// Wiring damage located on this part.
+/datum/robot_component/proc/get_wiring_damage()
+	var/datum/body/simple/machine/robot/B = get_robot_body()
+	return B ? B.component_load(src, INJURY_CATEGORY_THERMAL) : 0
 
-	brute_damage += brute
-	electronics_damage += electronics
+/// Every point of load located on this part.
+/datum/robot_component/proc/get_total_damage()
+	var/datum/body/simple/machine/robot/B = get_robot_body()
+	return B ? B.component_load(src) : 0
 
-	if(brute_damage + electronics_damage >= max_damage) destroy()
+/// Every affliction located on this part (load and synthetic faults).
+/datum/robot_component/proc/get_afflictions()
+	var/datum/body/simple/machine/robot/B = get_robot_body()
+	return B ? B.afflictions_at(src) : list()
 
-/datum/robot_component/proc/heal_damage(brute, electronics)
-	if(installed != 1)
-		// If it's not installed, can't repair it.
-		return 0
+/// Admin tool: cure everything located on this part.
+/datum/robot_component/proc/clear_located_damage()
+	var/datum/body/simple/machine/robot/B = get_robot_body()
+	if(!B)
+		return
+	for(var/datum/affliction/A as anything in B.afflictions_at(src))
+		A.cure()
+	B.on_status_changed()
+	on_integrity_changed()
 
-	brute_damage = max(0, brute_damage - brute)
-	electronics_damage = max(0, electronics_damage - electronics)
+/// Admin tool: replace the located load with exact amounts. Bypasses
+/// mitigation: the damage already happened.
+/datum/robot_component/proc/set_located_damage(structural, wiring)
+	var/datum/body/simple/machine/robot/B = get_robot_body()
+	if(!B)
+		return
+	for(var/datum/affliction/load/L in B.afflictions_at(src))
+		L.cure()
+	if(structural > 0)
+		var/datum/affliction/load/L = B.afflict(/datum/affliction/load/trauma, src)
+		L?.receive_injury(structural, INJURY_BLUNT, null)
+	if(wiring > 0)
+		var/datum/affliction/load/L = B.afflict(/datum/affliction/load/burn, src)
+		L?.receive_injury(wiring, INJURY_BURN, null)
+	B.on_status_changed()
+	on_integrity_changed()
+
+/// Called by the robot body whenever load located here changes. An installed
+/// part whose load reaches max_damage is destroyed; otherwise its graded
+/// function may have changed.
+/datum/robot_component/proc/on_integrity_changed()
+	if(installed == ROBOT_PART_INSTALLED && get_total_damage() >= max_damage)
+		destroy()
+		return
+	owner?.on_part_changed(src)
+
+/// Move this slot's afflictions onto the part leaving it.
+/datum/robot_component/proc/carry_afflictions_out()
+	var/datum/body/simple/machine/robot/B = get_robot_body()
+	if(!B)
+		return
+	var/list/leaving = B.afflictions_at(src)
+	if(!length(leaving))
+		return
+	for(var/datum/affliction/A as anything in leaving)
+		B.remove_affliction(A)
+		A.location = null
+	if(wrapped && !QDELETED(wrapped))
+		var/datum/component/carried_afflictions/carried = wrapped.AddComponent(/datum/component/carried_afflictions)
+		carried?.take(leaving)
+	else
+		QDEL_LIST(leaving)
+	B.on_status_changed()
+
+/// Afflictions the installed part carried rejoin the body at this slot.
+/datum/robot_component/proc/restore_carried_afflictions()
+	var/datum/body/simple/machine/robot/B = get_robot_body()
+	if(!B || !wrapped)
+		return
+	var/datum/component/carried_afflictions/carried = wrapped.GetComponent(/datum/component/carried_afflictions)
+	if(!carried)
+		return
+	for(var/datum/affliction/A as anything in carried.release())
+		B.add_affliction(A, src)
+	qdel(carried)
+	B.on_status_changed()
+
+// --- Function -------------------------------------------------------------------
+
+/datum/robot_component/proc/is_intact()
+	return installed == ROBOT_PART_INSTALLED && get_total_damage() < max_damage
 
 /datum/robot_component/proc/is_powered()
-	return (installed == 1) && (brute_damage + electronics_damage < max_damage) && (!idle_usage || powered)
+	return is_intact() && (!idle_usage || powered)
 
-/datum/robot_component/proc/update_power_state()
-	if(toggled == 0)
-		powered = 0
-		return
-	if(owner.cell && owner.cell.charge >= idle_usage)
-		owner.cell_use_power(idle_usage)
-		powered = 1
-	else
-		powered = 0
+/datum/robot_component/proc/is_functioning()
+	return toggled && is_powered()
+
+/// Graded function 0..1: 1 - load/max for a working part, 0 for a missing,
+/// destroyed, unpowered or disabled one.
+/datum/robot_component/proc/function()
+	if(!is_functioning())
+		return 0
+	return clamp(1 - get_total_damage() / max_damage, 0, 1)
+
+/// Joules this part draws every Life cycle while switched on.
+/datum/robot_component/proc/idle_draw()
+	return (toggled && is_intact()) ? idle_usage : 0
+
+/// Ledger state change. Only the robot's power system calls this.
+/datum/robot_component/proc/set_powered(new_state)
+	if(powered == new_state)
+		return FALSE
+	powered = new_state
+	return TRUE
 
 
-// ARMOUR
-// Protects the cyborg from damage. Usually first module to be hit
-// No power usage
+// --- Parts ------------------------------------------------------------------------
+
+// ACTUATOR: movement. Draws active_usage per tile.
+/datum/robot_component/actuator
+	name = "actuator"
+	active_usage = 200
+	external_type = /obj/item/robot_parts/robot_component/actuator
+	max_damage = 50
+
+/// Actuators are mechanical: they work unpowered as long as they are intact.
+/datum/robot_component/actuator/is_powered()
+	return is_intact()
+
+// RADIO: idle draw for passive listening, active_usage per transmission.
+/datum/robot_component/radio
+	name = "radio"
+	external_type = /obj/item/robot_parts/robot_component/radio
+	idle_usage = 15
+	active_usage = 75
+	max_damage = 40
+
+// POWER BUS: the cell mount. The cell is the installed item; the robot drops
+// its cell reference when the cell is deleted (see set_cell()).
+/datum/robot_component/cell
+	name = "power cell"
+	max_damage = 50
+
+// DIAGNOSIS UNIT: gates self-diagnosis detail. active_usage per analysis.
+/datum/robot_component/diagnosis_unit
+	name = "self-diagnosis unit"
+	active_usage = 1000
+	external_type = /obj/item/robot_parts/robot_component/diagnosis_unit
+	max_damage = 30
+
+// CAMERA: vision and the remote camera feed.
+/datum/robot_component/camera
+	name = "camera"
+	external_type = /obj/item/robot_parts/robot_component/camera
+	idle_usage = 10
+	max_damage = 40
+
+// BINARY COMMS
+/datum/robot_component/binary_communication
+	name = "binary communication device"
+	external_type = /obj/item/robot_parts/robot_component/binary_communication_device
+	idle_usage = 5
+	active_usage = 25
+	max_damage = 30
+
+// ARMOUR: soaks spread damage first. No power use.
 /datum/robot_component/armour
 	name = "armour plating"
 	external_type = /obj/item/robot_parts/robot_component/armour
@@ -105,133 +280,121 @@
 	external_type = /obj/item/robot_parts/robot_component/armour_platform
 	max_damage = 140
 
-// ACTUATOR
-// Enables movement.
-// Uses no power when idle. Uses 200J for each tile the cyborg moves.
-/datum/robot_component/actuator
-	name = "actuator"
-	idle_usage = 0
-	active_usage = 200
-	external_type = /obj/item/robot_parts/robot_component/actuator
-	max_damage = 50
+// COOLING: the coolant loop. Internal; its circulation feeds heat debt.
+/datum/robot_component/cooling
+	name = "coolant loop"
+	internal = TRUE
+	max_damage = 60
+
+/// Circulation 0..1: loop integrity reduced by an open coolant leak.
+/datum/robot_component/cooling/proc/circulation()
+	. = function()
+	var/datum/body/simple/machine/robot/B = get_robot_body()
+	var/datum/affliction/leak = B?.find_affliction(/datum/affliction/synthetic/coolant_leak, src)
+	if(leak)
+		. *= 1 - leak.severity / AFFLICTION_SEVERITY_TERMINAL
+
+/// The loop is plumbing: it works without bus power.
+/datum/robot_component/cooling/is_powered()
+	return is_intact()
+
+// CORE: processor housing. Internal; destroying it destroys the unit.
+/datum/robot_component/core
+	name = "processor core"
+	internal = TRUE
+	max_damage = 60
+
+/datum/robot_component/core/is_powered()
+	return is_intact()
 
 
-//A fixed and much cleaner implementation of /tg/'s special snowflake code.
-/datum/robot_component/actuator/is_powered()
-	return (installed == 1) && (brute_damage + electronics_damage < max_damage)
+// --- Robot helpers --------------------------------------------------------------------
 
+/// Component type per slot. Subtypes override to change a part.
+/mob/living/silicon/robot/proc/get_component_types()
+	var/static/list/types = list(
+		/datum/robot_component/actuator,
+		/datum/robot_component/radio,
+		/datum/robot_component/cell,
+		/datum/robot_component/diagnosis_unit,
+		/datum/robot_component/camera,
+		/datum/robot_component/binary_communication,
+		/datum/robot_component/armour,
+		/datum/robot_component/cooling,
+		/datum/robot_component/core,
+	)
+	return types
 
-// POWER CELL
-// Stores power (how unexpected..)
-// No power usage
-/datum/robot_component/cell
-	name = "power cell"
-	max_damage = 50
-
-/datum/robot_component/cell/destroy()
-	..()
-	owner.cell = null
-
-
-// RADIO
-// Enables radio communications
-// Uses no power when idle. Uses 10J for each received radio message, 50 for each transmitted message.
-/datum/robot_component/radio
-	name = "radio"
-	external_type = /obj/item/robot_parts/robot_component/radio
-	idle_usage = 15		//it's not actually possible to tell when we receive a message over our radio, so just use 10W every tick for passive listening
-	active_usage = 75	//transmit power
-	max_damage = 40
-
-
-// BINARY RADIO
-// Enables binary communications with other cyborgs/AIs
-// Uses no power when idle. Uses 10J for each received radio message, 50 for each transmitted message
-/datum/robot_component/binary_communication
-	name = "binary communication device"
-	external_type = /obj/item/robot_parts/robot_component/binary_communication_device
-	idle_usage = 5
-	active_usage = 25
-	max_damage = 30
-
-
-// CAMERA
-// Enables cyborg vision. Can also be remotely accessed via consoles.
-// Uses 10J constantly
-/datum/robot_component/camera
-	name = "camera"
-	external_type = /obj/item/robot_parts/robot_component/camera
-	idle_usage = 10
-	max_damage = 40
-	var/obj/machinery/camera/camera
-
-/datum/robot_component/camera/New(mob/living/silicon/robot/R)
-	..()
-	camera = R.camera
-
-/datum/robot_component/camera/update_power_state()
-	..()
-	if (camera)
-		camera.status = powered
-
-/datum/robot_component/camera/install()
-	if (camera)
-		camera.status = 1
-
-/datum/robot_component/camera/uninstall()
-	..()
-	if (camera)
-		camera.status = 0
-
-/datum/robot_component/camera/destroy()
-	..()
-	if (camera)
-		camera.status = 0
-
-// SELF DIAGNOSIS MODULE
-// Analyses cyborg's modules, providing damage readouts and basic information
-// Uses 1kJ burst when analysis is done
-/datum/robot_component/diagnosis_unit
-	name = "self-diagnosis unit"
-	active_usage = 1000
-	external_type = /obj/item/robot_parts/robot_component/diagnosis_unit
-	max_damage = 30
-
-
-
-
-// HELPER STUFF
-
-
-
-// Initializes cyborg's components. Technically, adds default set of components to new borgs
+/// Build the slot list. External parts are created installed; internal parts
+/// are always present; the power slot waits for set_cell().
 /mob/living/silicon/robot/proc/initialize_components()
-	components["actuator"] = new/datum/robot_component/actuator(src)
-	components["radio"] = new/datum/robot_component/radio(src)
-	components["power cell"] = new/datum/robot_component/cell(src)
-	components["diagnosis unit"] = new/datum/robot_component/diagnosis_unit(src)
-	components["camera"] = new/datum/robot_component/camera(src)
-	components["comms"] = new/datum/robot_component/binary_communication(src)
-	components["armour"] = new/datum/robot_component/armour(src)
+	var/list/types = get_component_types()
+	components = new /list(ROBOT_SLOT_COUNT)
+	for(var/slot in 1 to ROBOT_SLOT_COUNT)
+		var/component_type = types[slot]
+		var/datum/robot_component/C = new component_type(src, slot)
+		components[slot] = C
+		if(slot == ROBOT_SLOT_POWER)
+			continue
+		if(C.internal)
+			C.installed = ROBOT_PART_INSTALLED
+		else if(C.external_type)
+			C.install(new C.external_type)
 
-// Checks if component is functioning
-/mob/living/silicon/robot/proc/is_component_functioning(module_name)
-	var/datum/robot_component/C = components[module_name]
-	return C && C.installed == 1 && C.toggled && C.is_powered()
+/mob/living/silicon/robot/proc/get_component(slot)
+	return LAZYACCESS(components, slot)
 
-// Returns component by it's string name
-/mob/living/silicon/robot/proc/get_component(component_name)
-	var/datum/robot_component/C = components[component_name]
-	return C
+/mob/living/silicon/robot/proc/is_component_functioning(slot)
+	var/datum/robot_component/C = LAZYACCESS(components, slot)
+	return C?.is_functioning()
+
+/// Graded function of a slot, 0..1.
+/mob/living/silicon/robot/proc/component_function(slot)
+	var/datum/robot_component/C = LAZYACCESS(components, slot)
+	return C ? C.function() : 0
+
+/// Spend a part's per-action power (a transmission, a step). FALSE if the
+/// part isn't working or the bus can't pay.
+/mob/living/silicon/robot/proc/use_component(slot)
+	var/datum/robot_component/C = LAZYACCESS(components, slot)
+	if(!C?.is_functioning())
+		return FALSE
+	return draw_power(C.active_usage * CYBORG_POWER_USAGE_MULTIPLIER, C)
 
 
+// --- Carried afflictions ------------------------------------------------------------
+// Holds a removed part's afflictions while it sits outside a robot.
 
-// COMPONENT OBJECTS
+/datum/component/carried_afflictions
+	dupe_mode = COMPONENT_DUPE_UNIQUE
+	var/list/afflictions
+
+/datum/component/carried_afflictions/Initialize()
+	if(!isitem(parent))
+		return COMPONENT_INCOMPATIBLE
+
+/datum/component/carried_afflictions/Destroy(force)
+	QDEL_LIST(afflictions)
+	return ..()
+
+/datum/component/carried_afflictions/proc/take(list/incoming)
+	for(var/datum/affliction/A as anything in incoming)
+		LAZYADD(afflictions, A)
+
+/// Hand the afflictions back and forget them.
+/datum/component/carried_afflictions/proc/release()
+	. = afflictions || list()
+	afflictions = null
+
+/// Structural load the part carries (examine, installing checks).
+/datum/component/carried_afflictions/proc/carried_load()
+	. = 0
+	for(var/datum/affliction/A as anything in afflictions)
+		if(istype(A, /datum/affliction/load))
+			. += A.load_value()
 
 
-
-// Component Objects
-// These objects are visual representation of modules
+// --- Component objects ----------------------------------------------------------------
 
 /obj/item/broken_device
 	name = "broken component"
@@ -254,12 +417,17 @@
 /obj/item/robot_parts/robot_component
 	icon = 'icons/obj/robot_component.dmi'
 	icon_state = "working"
-	var/brute = 0
-	var/burn = 0
 	var/icon_state_broken = "broken"
 	var/idle_usage = 0
 	var/active_usage = 0
 	var/max_damage = 0
+
+/obj/item/robot_parts/robot_component/examine(mob/user)
+	. = ..()
+	var/datum/component/carried_afflictions/carried = GetComponent(/datum/component/carried_afflictions)
+	var/load = carried?.carried_load()
+	if(load)
+		. += span_warning("It is damaged ([round(load / max(max_damage, 1) * 100)]% worn).")
 
 /obj/item/robot_parts/robot_component/binary_communication_device
 	name = "binary communication device"

@@ -32,8 +32,7 @@
 	icon_living = "tunneler"
 	icon_dead = "tunneler_dead"
 
-	maxHealth = 120
-	health = 120
+	endurance = 120
 
 	melee_damage_lower = 10
 	melee_damage_upper = 10
@@ -206,14 +205,12 @@
 	on_expired_text = span_notice("You feel better.")
 	stacks = MODIFIER_STACK_EXTEND
 
-	incoming_damage_percent = 2
-	evasion = -100
+	factors = alist(BF_EVASION = -100, BF_INCOMING_ALL = 2)
 
 /mob/living/simple_mob/animal/giant_spider/tunneler/cave
 	name = "cave spider"
 	desc = "Sandy and brown, it makes you shudder to look at it. However, this one doesn't seem very interested in bothering you."
-	maxHealth = 25
-	health = 25
+	endurance = 25
 	harm_intent_damage = 5
 	melee_damage_lower = 5
 	melee_damage_upper = 5

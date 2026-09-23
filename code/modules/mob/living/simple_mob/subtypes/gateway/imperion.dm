@@ -11,8 +11,7 @@
 	icon_state = "imperion"
 	icon_living = "imperion"
 	desc = "A strange precursor mecha"
-	maxHealth = 400
-	health = 400
+	endurance = 400
 	movement_cooldown = -1
 	unsuitable_atoms_damage = 0
 	projectiletype = /obj/item/projectile/energy/gaussrifle
@@ -538,7 +537,7 @@
 	on_expired_text = span_notice("The blaze of rage inside you has ran out.")
 	stacks = MODIFIER_STACK_EXTEND
 
-	disable_duration_percent = 0
+	factors = alist(BF_DISABLE_DURATION = 0)
 
 /mob/living/simple_mob/mechanical/mecha/imperion/Initialize(mapload)
 	add_modifier(/datum/modifier/bossbuff, null, src) // Slime is always swole.
@@ -558,14 +557,14 @@
 	if(holder.stat == DEAD)
 		expire()
 
-	if(ishuman(holder)) // Robolimbs need this code sadly.
+	if(ishuman(holder)) // Every limb withers, organic or robotic.
 		var/mob/living/carbon/human/H = holder
-		for(var/obj/item/organ/external/E in H.organs)
-			var/obj/item/organ/external/O = E
-			O.heal_damage(-0.1, -0.1, 0, 0)
+		for(var/obj/item/organ/external/E as anything in H.organs)
+			H.injure(INJURY_BLUNT, 0.1, E.organ_tag, flags = INJURE_SILENT)
+			H.injure(INJURY_BURN, 0.1, E.organ_tag, flags = INJURE_SILENT)
 	else
-		holder.adjustBruteLoss(0.1)
-		holder.adjustFireLoss(0.1)
+		holder.injure(INJURY_BLUNT, 0.1, flags = INJURE_SILENT)
+		holder.injure(INJURY_BURN, 0.1, flags = INJURE_SILENT)
 
 /mob/living/simple_mob/mechanical/mecha/imperion/phase3/proc/heal_aura()
 	for(var/mob/living/L in view(src, 28))

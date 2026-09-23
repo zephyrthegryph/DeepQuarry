@@ -146,7 +146,7 @@
 		if(creator)
 			add_attack_logs(creator, L, "used a resonator field on")
 		to_chat(L, span_danger("\The [src] ruptured with you in it!"))
-		L.apply_damage(resonance_damage, BRUTE)
+		L.injure(INJURY_BLUNT, resonance_damage, null, src)
 	qdel(src)
 
 

@@ -1,0 +1,22 @@
+[package]
+name = "vg-bench"
+version = "0.1.0"
+edition = "2024"
+rust-version = "1.85"
+publish = false
+description = "Criterion benchmarks for the host-buildable verdigris crates. Run with `cargo bench -p vg-bench`."
+
+[dependencies]
+vg-core = { path = "../../core" }
+vg-layout = { path = "../../domains/layout" }
+
+[dev-dependencies]
+criterion = { version = "0.5.1", default-features = false, features = ["cargo_bench_support"] }
+
+[[bench]]
+name = "core"
+harness = false
+
+[[bench]]
+name = "layout"
+harness = false

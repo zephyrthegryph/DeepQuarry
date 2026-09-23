@@ -419,7 +419,6 @@
 	color = reagents.get_color()
 
 
-// === merged from pill_vr.dm during hard-fork de-suffix (verified no override-order change) ===
 /obj/item/reagent_containers/pill/nutriment
 	name = REAGENT_NUTRIMENT + " (30u)"
 	desc = "Used to feed people on the field. Contains 30 units of " + REAGENT_NUTRIMENT + "."

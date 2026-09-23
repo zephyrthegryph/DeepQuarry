@@ -158,7 +158,7 @@ GLOBAL_DATUM(planet_tyr, /datum/planet/tyr)
 		if(amount_blocked >= 10)
 			return
 
-		H.apply_damage(damage, BRUTE, target_zone, amount_blocked, used_weapon = "sand")
+		H.injure(INJURY_BLUNT, damage, target_zone, null, amount_blocked)
 		if(show_message)
 			to_chat(H, effect_message)
 
@@ -216,30 +216,6 @@ GLOBAL_DATUM(planet_tyr, /datum/planet/tyr)
 	name = "vast desert"
 	alpha = 0
 
-/turf/simulated/tyracid
-	name = "fuel"
-	icon = 'icons/goonstation/turf/timeholefull.dmi'
-	icon_state = "timehole"
-	color = "#FF3100"
-	var/acidlevel = 1
-
-/turf/simulated/tyracid/Entered(atom/movable/AM, atom/oldloc)
-	if(isliving(AM))
-		var/mob/living/L = AM
-		if(dq_get_hovering(L) || L.flying || L.throwing || L.is_incorporeal())
-			return 0
-		acidlevel *= 1 - L.get_water_protection()
-		if(acidlevel > 0)
-			L.adjustFireLoss(acidlevel)
-
-/turf/simulated/tyracid/quantum
-	acidlevel = 20
-	color = "#0059c6"
-
-
-/turf/simulated/tyracid/supernova
-	acidlevel = 10
-	color = "#b10101"
 
 /*
 WEATHER_BLIZZARD	= new (),

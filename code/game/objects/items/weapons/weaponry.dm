@@ -25,7 +25,7 @@
 
 	if(CLUMSY_HARM_CHANCE(user))
 		to_chat(user, span_danger("The rod slips out of your hand and hits your head."))
-		user.take_organ_damage(10)
+		user.injure(INJURY_BLUNT, 10, source = src)
 		user.Paralyse(20)
 		return ITEM_INTERACT_SUCCESS
 

@@ -156,10 +156,6 @@ SUBSYSTEM_DEF(radio)
 		devices_line = new
 		devices[radio_filter] = devices_line
 	devices_line+=device
-//			var/list/obj/devices_line___ = devices[filter_str]
-//			var/l = length(devices_line___)
-	//log_admin("DEBUG: devices_line.len=[length(devices_line)]")
-	//log_admin("DEBUG: devices(filter_str).len=[l]")
 
 /datum/radio_frequency/proc/remove_listener(obj/device)
 	for (var/devices_filter in devices)

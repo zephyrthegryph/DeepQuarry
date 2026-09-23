@@ -18,6 +18,7 @@
 	response_harm   = "tried to punch"
 
 	mob_class = MOB_CLASS_ILLUSION
+	biology = BIOLOGY_SYNTHETIC // Holographic: nothing to poison or suffocate, nothing to medicate.
 
 
 	var/atom/movable/copying = null // The thing we're trying to look like.
@@ -79,7 +80,7 @@
 				..()
 
 			if(I_HURT)
-				adjustBruteLoss(harm_intent_damage)
+				injure(INJURY_BLUNT, harm_intent_damage, source = M)
 				M.visible_message(span_danger("\The [M] [response_harm] \the [src]"))
 				M.do_attack_animation(src)
 

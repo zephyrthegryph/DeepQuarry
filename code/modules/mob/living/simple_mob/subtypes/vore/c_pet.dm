@@ -7,8 +7,7 @@
 	icon_living = "c_pet"
 	icon_dead = "c_pet_dead"
 
-	maxHealth = 1500
-	health = 1500
+	endurance = 1500
 	minbodytemp = 175 // Same as Sif mobs.
 
 	response_help  = "pokes"
@@ -49,8 +48,7 @@
 	icon_dead = "dave_dead"
 	movement_cooldown = 100
 
-	maxHealth = 1500
-	health = 1500
+	endurance = 1500
 	minbodytemp = 175 // Same as Sif mobs.
 
 	response_help  = "pokes"

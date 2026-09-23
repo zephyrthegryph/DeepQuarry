@@ -168,6 +168,64 @@
 	display_name = MAT_TIN
 	use_name = MAT_TIN
 	stack_type = /obj/item/stack/material/tin
+	supply_conversion_value = 1
+
+/datum/material/nickel
+	name = MAT_NICKEL
+	stack_type = /obj/item/stack/material/nickel
+	icon_colour = "#aeb8aa"
+	density = 19
+	hardness = 58
+	integrity = 120
+	conductivity = 24
+	heat_resistance = 72
+	corrosion_resistance = 62
+	melting_point = 1728
+	supply_conversion_value = 1.5
+
+/datum/material/chromium
+	name = MAT_CHROMIUM
+	stack_type = /obj/item/stack/material/chromium
+	icon_colour = "#cad4da"
+	density = 16
+	hardness = 78
+	integrity = 105
+	conductivity = 18
+	heat_resistance = 76
+	corrosion_resistance = 92
+	melting_point = 2180
+	supply_conversion_value = 2
+
+/datum/material/tungsten
+	name = MAT_TUNGSTEN
+	stack_type = /obj/item/stack/material/tungsten
+	icon_colour = "#676b72"
+	density = 35
+	hardness = 92
+	integrity = 175
+	brittleness = 22
+	conductivity = 31
+	heat_resistance = 100
+	melting_point = 3695
+	supply_conversion_value = 3
+
+/datum/material/technical_ceramic
+	name = MAT_TECH_CERAMIC
+	stack_type = /obj/item/stack/material/technical_ceramic
+	icon_colour = "#e1ddd0"
+	icon_base = "stone"
+	density = 11
+	hardness = 82
+	integrity = 90
+	brittleness = 38
+	conductive = FALSE
+	conductivity = 2
+	heat_resistance = 96
+	thermal_insulation = 88
+	dielectric_strength = 130
+	corrosion_resistance = 95
+	melting_point = 2600
+	supply_conversion_value = 2
 	icon_colour = "#b2afaf"
 	sheet_singular_name = "ingot"
 	sheet_plural_name = "ingots"
