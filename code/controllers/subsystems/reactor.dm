@@ -62,6 +62,13 @@ SUBSYSTEM_DEF(reactor)
 	var/audit_sample = 64
 	var/list/last_audit_findings = list()
 
+	/// Live REACT_KEY_MOB_CHUNK subscriptions made through subscribe_chunks(): all of them,
+	/// and those that also want non-player mobs. A player's move publishes only while the
+	/// first is non-zero, any other mob's only while the second is. A subscription dropped
+	/// by REACT_CLEAR without unsubscribe_chunks() leaves a count high, which only costs publishes.
+	var/player_chunk_subscriptions = 0
+	var/mob_chunk_subscriptions = 0
+
 /datum/controller/subsystem/reactor/stat_entry(msg)
 	msg = "S:[length(subscribers) - length(free_ids) - length(released_ids)] W:[last_wakes] C:[length(continuous)] [round(last_dispatch_ms, 0.01)]ms"
 	return ..()
@@ -75,6 +82,8 @@ SUBSYSTEM_DEF(reactor)
 	next_continuous_token = SSreactor.next_continuous_token
 	wake_counts = SSreactor.wake_counts
 	continuous_cost = SSreactor.continuous_cost
+	player_chunk_subscriptions = SSreactor.player_chunk_subscriptions
+	mob_chunk_subscriptions = SSreactor.mob_chunk_subscriptions
 
 /// The wheel tick for world.time `time`: the first tick at or after it.
 /datum/controller/subsystem/reactor/proc/tick_of(time)
@@ -217,6 +226,41 @@ SUBSYSTEM_DEF(reactor)
 		entry.cancelled = TRUE
 		return TRUE
 	return !!vg_react_cancel(token)
+
+// --- Mob chunk keys (Q12) ---------------------------------------------------------------------
+
+/// Subscribes `D` to REACT_KEY_MOB_CHUNK for every chunk within `radius` tiles of `center`.
+/// `mask` REACT_CHUNK_PLAYER wakes only for players; REACT_CHUNK_MOB for any mob.
+/// Returns the tokens, for unsubscribe_chunks() with the same mask.
+/datum/controller/subsystem/reactor/proc/subscribe_chunks(datum/D, turf/center, radius, mask = REACT_CHUNK_MOB)
+	. = list()
+	if(!center)
+		return
+	var/min_x = MOB_CHUNK_COORD(max(center.x - radius, 1))
+	var/max_x = MOB_CHUNK_COORD(min(center.x + radius, world.maxx))
+	var/min_y = MOB_CHUNK_COORD(max(center.y - radius, 1))
+	var/max_y = MOB_CHUNK_COORD(min(center.y + radius, world.maxy))
+	for(var/chunk_x in min_x to max_x)
+		for(var/chunk_y in min_y to max_y)
+			. += on_key(D, REACT_KEY_MOB_CHUNK, MOB_CHUNK_NUMERIC_KEY(center.z, chunk_x, chunk_y), mask)
+	player_chunk_subscriptions += length(.)
+	if(mask & REACT_CHUNK_MOB)
+		mob_chunk_subscriptions += length(.)
+
+/// Drops tokens from subscribe_chunks(). Returns null, for `tokens = unsubscribe_chunks(...)`.
+/datum/controller/subsystem/reactor/proc/unsubscribe_chunks(datum/D, list/tokens, mask = REACT_CHUNK_MOB)
+	for(var/token in tokens)
+		if(!cancel(D, token))
+			continue
+		player_chunk_subscriptions = max(player_chunk_subscriptions - 1, 0)
+		if(mask & REACT_CHUNK_MOB)
+			mob_chunk_subscriptions = max(mob_chunk_subscriptions - 1, 0)
+	return null
+
+/// A mob is in `T`'s chunk (moved in, appeared or left it). Callers check the counts first.
+/datum/controller/subsystem/reactor/proc/publish_mob_chunk(turf/T, mask)
+	if(T)
+		vg_react_publish(REACT_KEY_MOB_CHUNK, MOB_CHUNK_NUMERIC_KEY(T.z, MOB_CHUNK_COORD(T.x), MOB_CHUNK_COORD(T.y)), mask)
 
 // --- The continuous lane (reactor.md §2) --------------------------------------------------------
 

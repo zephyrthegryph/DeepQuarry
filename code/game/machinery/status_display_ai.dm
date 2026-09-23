@@ -57,6 +57,7 @@ GLOBAL_LIST_INIT(ai_status_emotions, list(
 				SD.friendc = 1
 			else
 				SD.friendc = 0
+			SD.refresh()
 
 /obj/machinery/ai_status_display
 	icon = 'icons/obj/status_display.dmi'
@@ -88,9 +89,6 @@ GLOBAL_LIST_INIT(ai_status_emotions, list(
 	if(!emote)
 		return
 	emotion = emote
-
-/obj/machinery/ai_status_display/process()
-	return PROCESS_KILL
 
 /obj/machinery/ai_status_display/proc/update()
 	if(mode==0) //Blank

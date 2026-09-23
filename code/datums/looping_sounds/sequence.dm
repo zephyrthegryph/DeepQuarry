@@ -7,6 +7,8 @@
 	var/loop_sequence = TRUE		// If it should loop the entire sequence upon reaching the end. Otherwise stop() is called.
 	var/repeat_sequnce_delay = 2 SECONDS // How long to wait when reaching the end, if the above var is true, in deciseconds.
 	var/next_iteration_delay = 0
+	/// TRUE while a step runs (it may sleep); the next timer is set when it ends.
+	var/tmp/stepping = FALSE
 
 /datum/looping_sound/sequence/vv_edit_var(var_name, var_value)
 	if(var_name == "sequence")
@@ -51,10 +53,26 @@
 	else
 		stop()
 
-/datum/looping_sound/sequence/sound_loop(starttime)
-	iterate_on_sequence()
+// Reactor handlers never sleep, and a sequence step can (Morse plays each letter's sounds
+// in turn), so each step runs async and schedules the next when it is done.
+/datum/looping_sound/sequence/sound_loop()
+	if(QDELETED(src) || !running)
+		return
+	INVOKE_ASYNC(src, PROC_REF(sequence_step))
 
-	timerid = addtimer(CALLBACK(src, PROC_REF(sound_loop), world.time), next_iteration_delay, TIMER_STOPPABLE)
+/datum/looping_sound/sequence/react_sleep_violation()
+	if(stepping)
+		return null
+	return ..()
+
+/datum/looping_sound/sequence/proc/sequence_step()
+	stepping = TRUE
+	iterate_on_sequence()
+	stepping = FALSE
+	if(QDELETED(src) || !running)
+		return
+	cancel_loop_timer()
+	loop_token = REACT_AT(src, world.time + next_iteration_delay)
 
 #define MORSE_DOT	"*" // Yes this is an asterisk but its easier to see on a computer compared to a period.
 #define MORSE_DASH	"-"

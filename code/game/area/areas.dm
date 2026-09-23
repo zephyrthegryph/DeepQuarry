@@ -264,6 +264,9 @@ GLOBAL_LIST_EMPTY(areas_by_type)
 
 // called when power status changes
 /area/proc/power_change()
+	// Lights (and anything else that subscribes) hear this through the reactor key; the scan
+	// below stays for the other machines until M3's area channel event replaces it.
+	REACT_PUBLISH(REACT_KEY_AREA_POWER, REACT_ID(src), REACT_AREA_POWER_CHANGED)
 	for(var/obj/machinery/M in src)	// for each machine in the area
 		M.power_change()			// reverify power status (to update icons etc.)
 	if (fire || eject || party)

@@ -273,14 +273,22 @@
 
 /mob/Moved(atom/old_loc, direction, forced, movetime)
 	. = ..()
-	// Both publishers return before any turf lookup while nothing is subscribed (Q12).
-	if(SSmachines?.mob_chunk_subscriptions || length(SSai?.chunk_subscribers) || (client && length(SSsounds?.dormant_loops_by_chunk)))
+	// Every publisher returns before any turf lookup while nothing is subscribed (Q12).
+	// REACT_KEY_MOB_CHUNK is the reactor's chunk key; SSmachines and SSai keep their own
+	// tables until S2 moves them onto it.
+	var/react_chunks = client ? SSreactor?.player_chunk_subscriptions : SSreactor?.mob_chunk_subscriptions
+	if(react_chunks || SSmachines?.mob_chunk_subscriptions || length(SSai?.chunk_subscribers))
 		var/turf/old_turf = get_turf(old_loc)
 		var/turf/new_turf = get_turf(src)
-		if(client)
-			SSsounds?.publish_mob_chunk(new_turf)
+		var/chunk_changed = old_turf && (!new_turf || old_turf.z != new_turf.z || MOB_CHUNK_COORD(old_turf.x) != MOB_CHUNK_COORD(new_turf.x) || MOB_CHUNK_COORD(old_turf.y) != MOB_CHUNK_COORD(new_turf.y))
+		if(react_chunks)
+			var/mask = client ? (REACT_CHUNK_MOB|REACT_CHUNK_PLAYER) : REACT_CHUNK_MOB
+			// Publications merge per tick, so a step inside one chunk costs one merged key.
+			if(chunk_changed)
+				SSreactor.publish_mob_chunk(old_turf, mask)
+			SSreactor.publish_mob_chunk(new_turf, mask)
 		// A step inside one chunk only needs one publish: the first wakes every subscriber.
-		if(old_turf && (!new_turf || old_turf.z != new_turf.z || MOB_CHUNK_COORD(old_turf.x) != MOB_CHUNK_COORD(new_turf.x) || MOB_CHUNK_COORD(old_turf.y) != MOB_CHUNK_COORD(new_turf.y)))
+		if(chunk_changed)
 			SSmachines?.publish_mob_chunk(old_turf)
 			SSai?.publish_mob_chunk(old_turf)
 		SSmachines?.publish_mob_chunk(new_turf)

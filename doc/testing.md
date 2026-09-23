@@ -197,6 +197,7 @@ CI also runs these scripts, all from the repository root:
 |---|---|
 | Code and map grep checks | `bash tools/ci/check_grep.sh` |
 | Committed test focus | `bash tools/ci/check_misc.sh` |
+| No `world.time` deadline polling in `process()` (use `REACT_AT`; allowlist in `tools/ci/deadline_polling_allowlist.txt`) | `python3 tools/ci/check_deadline_polling.py` |
 | Changelog stubs parse | `bash tools/ci/check_changelogs.sh` (compiles stubs; run on a scratch copy) |
 | Local `#define`s are `#undef`'d | `tools/bootstrap/python -m define_sanity.check` |
 | Maps are in TGM format and merge-clean | `tools/bootstrap/python -m mapmerge2.dmm_test` |
