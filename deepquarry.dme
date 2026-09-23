@@ -325,6 +325,7 @@
 #include "code\__defines\atmospherics_linda\atmos_mob_interaction.dm"
 #include "code\__defines\atmospherics_linda\atmos_piping.dm"
 #include "code\__defines\atmospherics_linda\reactions.dm"
+#include "code\__defines\predicates.dm"
 #include "code\__defines\properties.dm"
 // Medical symptom/audience #defines — kept in the early defines block so
 // SYMPTOM_AUDIENCE_* etc. are available to every consumer (incl. unit tests,
@@ -5129,6 +5130,7 @@
 #include "code\datums\properties\aggregators.dm"
 #include "code\datums\properties\families\item_physical.dm"
 #include "code\datums\properties\families\temperature_thresholds.dm"
+#include "code\datums\properties\predicates.dm"
 #include "code\datums\properties\property_def.dm"
 #include "code\datums\properties\providers.dm"
 #include "code\datums\properties\registry.dm"
