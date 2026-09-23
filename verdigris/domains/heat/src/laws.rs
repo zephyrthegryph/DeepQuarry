@@ -207,6 +207,25 @@ impl ThermalSide {
     }
 }
 
+impl vg_core::conservation::Conserved for ThermalSide {
+    /// This side's own energy (`capacity * temperature`), the per-source
+    /// unit `HeatWorld`'s hand-rolled [`crate::world::Totals`]/
+    /// [`crate::couple::HeatLedger`] summed by hand for every live body and
+    /// solid cell. A reservoir contributes nothing here (its capacity is
+    /// external to whatever total is being tracked; energy it gave or took
+    /// is booked as an explicit ledger source/sink by [`apply_pair`]
+    /// instead, matching `Ledger::source`'s "only what crosses the boundary
+    /// of what `total` measures is a source or a sink" rule) -- once every
+    /// live body/cell is a real row the scheduler drives, `out[0] +=` here
+    /// for each one *is* the sum `Totals::cells`/`Totals::bodies` compute
+    /// today, with the driver doing the summing instead of `HeatWorld`.
+    fn totals(&self, out: &mut [f64]) {
+        if !self.reservoir {
+            out[0] += f64::from(self.capacity) * f64::from(self.temperature);
+        }
+    }
+}
+
 /// Reads every pair-exchange law shares: the coupling's own [`ThermalSide`]s
 /// are in `Writes` (both may be mutated), so all that's left to read is the
 /// coupling strength. `dt` comes from [`Law::step`]'s own parameter (the
@@ -376,7 +395,21 @@ impl Law for RegulatorHeatPump {
 mod tests {
     use super::*;
     use proptest::prelude::*;
-    use vg_core::conservation::Ledger;
+    use vg_core::conservation::{Conserved, Ledger};
+
+    #[test]
+    fn thermal_side_conserved_reports_capacity_times_temperature() {
+        let mut out = [0.0];
+        ThermalSide::mutable(310.0, 50.0).totals(&mut out);
+        assert!((out[0] - 310.0 * 50.0).abs() < 1e-6);
+    }
+
+    #[test]
+    fn thermal_side_conserved_ignores_a_reservoir() {
+        let mut out = [123.0]; // a nonzero starting value: totals() must only add
+        ThermalSide::reservoir(999.0).totals(&mut out);
+        assert_eq!(out[0], 123.0, "a reservoir's own energy is outside the tracked total");
+    }
 
     #[test]
     fn phase_law_round_trips_through_the_plateau() {

@@ -32,7 +32,7 @@ pub mod world;
 
 pub use body::{Bodies, Body, BodyCmd, Coupling, Phase, Target};
 pub use couple::{GasExchange, GasProbe, GasRef};
-pub use mob::{MobHandle, MobHeatBody, MobHeatCmd, MobHeatConfig, MobHeatWorld, slot_of};
+pub use mob::{MobHandle, MobHeatBody, MobHeatCmd, MobHeatConfig, MobHeatFlux, MobHeatWorld, slot_of};
 pub use regulator::{Regulator, RegulatorMode, RegulatorStep};
 pub use solid::{SolidCell, SolidCmd, SolidHeat};
 pub use world::{BodyHandle, CellKind, CellSpec, HeatConfig, HeatWorld, WatchTarget};

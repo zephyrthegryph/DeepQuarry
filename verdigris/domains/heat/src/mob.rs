@@ -36,9 +36,11 @@
 use vg_core::channel::Unit;
 use vg_core::cow::ChunkLayout;
 use vg_core::frame::Task;
+use vg_core::law::{Law, LawCtx, Settle};
 use vg_core::outbox::{Lane, Subscriber, Wake, WatchId};
 use vg_core::owner::{Applied, Domain, DomainKey};
 use vg_core::sim::{BuildError, Sim, SimBuilder, SimConfig, WatchKey};
+use vg_core::units::Seconds;
 use vg_core::watch::{Cond, WatchError};
 
 use crate::consts::TCMB;
@@ -225,6 +227,27 @@ fn step(b: &mut MobHeatBody, dt: f32) {
     let dt_eff = dt * b.time_scale;
     if dt_eff > 0.0 {
         b.temperature = (b.temperature + total_w * dt_eff / b.capacity).max(TCMB);
+    }
+}
+
+/// `MobHeat`'s flux integration as a [`Law`] (`rust_architecture.md` §6:
+/// "MobHeat... as a component" -- its law is this one, over a whole
+/// [`MobHeatBody`] rather than the pairwise [`crate::laws`] shape, since a
+/// mob body's own config already carries every input its flux terms need
+/// (no separate coupling to another row). Wraps exactly [`step`], the same
+/// function `add_mob_heat`'s frame `Task` already calls -- this is the
+/// formal `Law` shape for the driver to run once it can host per-frame laws
+/// over real component rows (Core A's scheduler, `rust_architecture.md`
+/// §4.3), not a second implementation.
+pub struct MobHeatFlux;
+impl Law for MobHeatFlux {
+    type Reads = ();
+    type Writes = MobHeatBody;
+    const NAME: &'static str = "heat_mob_flux";
+    fn step(ctx: &mut LawCtx<'_, (), MobHeatBody>, dt: Seconds) -> Settle {
+        #[allow(clippy::cast_possible_truncation)]
+        step(ctx.writes, dt.0 as f32);
+        if ctx.writes.time_scale > 0.0 { Settle::Active } else { Settle::Sleep }
     }
 }
 
@@ -617,6 +640,61 @@ mod tests {
 
     fn world() -> MobHeatWorld {
         MobHeatWorld::new(1.0).unwrap()
+    }
+
+    /// Differential coverage for `MobHeatFlux` (the `Law` wrapper) against
+    /// `MobHeatWorld`'s own frame `Task`, mirroring `tests/differential.rs`'s
+    /// old-path-vs-new-path approach for the pairwise coupling laws: both
+    /// call the same `step()`, so a mismatch would mean the `LawCtx`/
+    /// `Settle` wiring disagrees with the `Task` wiring, not that the
+    /// physics itself does.
+    #[test]
+    fn mob_heat_flux_law_matches_the_task_driven_world() {
+        let config = MobHeatConfig {
+            capacity: 300.0,
+            temperature: 290.0,
+            metabolic_watts: 80.0,
+            coolant: false,
+            insulation: 5.0,
+            ambient: 260.0,
+            setpoint: 310.0,
+            sweat_capacity_w: 50.0,
+            shiver_capacity_w: 150.0,
+            time_scale: 1.0,
+        };
+        let mut w = world();
+        let h = w.create_body(config).unwrap();
+
+        let mut law_body = MobHeatBody {
+            capacity: config.capacity,
+            temperature: config.temperature,
+            metabolic_watts: config.metabolic_watts,
+            coolant: config.coolant,
+            insulation: config.insulation,
+            ambient: config.ambient,
+            setpoint: config.setpoint,
+            sweat_capacity_w: config.sweat_capacity_w,
+            shiver_capacity_w: config.shiver_capacity_w,
+            time_scale: config.time_scale,
+            external_watts: [0.0; MOB_EXTERNAL_SOURCES],
+            generation: 0,
+        };
+
+        for _ in 0..25 {
+            w.run_frames(1);
+            let mut events: Vec<u32> = Vec::new();
+            let mut wakes = Vec::new();
+            let mut ledger = vg_core::conservation::Ledger::new();
+            let mut ctx = LawCtx::new(&(), &mut law_body, &mut events, &mut wakes, &mut ledger);
+            MobHeatFlux::step(&mut ctx, Seconds(1.0));
+        }
+
+        let world_t = w.temperature(h).unwrap();
+        assert!(
+            (world_t - law_body.temperature).abs() < 1e-3,
+            "world={world_t} law={}",
+            law_body.temperature
+        );
     }
 
     /// The integrator's own conservation: energy put in through an external
