@@ -5171,6 +5171,7 @@
 #include "code\modules\medical\conditions\disease_effects.dm"
 #include "code\modules\medical\conditions\occult.dm"
 #include "code\modules\medical\conditions\synthetic.dm"
+#include "code\modules\medical\conditions\nanite.dm"
 #include "code\modules\medical\conditions\toxicology.dm"
 #include "code\modules\medical\conditions\environmental.dm"
 #include "code\modules\medical\conditions\wounds.dm"

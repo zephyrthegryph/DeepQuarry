@@ -102,6 +102,7 @@
 // Body-provided mechanisms.
 #define TREAT_REGENERATION     "regeneration"  // natural regeneration: species x nutrition x sleep (body.regeneration_level())
 #define TREAT_RESTORATION      "restoration"  // admin / magic / species restoration: every biology, full repair of every restorable affliction
+#define TREAT_FEEDSTOCK        "feedstock"  // nanoform: steel fed into the refactory (amount = repair points of steel)
 
 // --- Cardiac rhythms (/datum/affliction/cardiac_arrhythmia) ------------------------------
 /// Normal rhythm; the arrhythmia is settling and will resolve.
