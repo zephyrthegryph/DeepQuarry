@@ -198,8 +198,21 @@ fn register_turf(w: &mut GasWorld, src: ByondValue, flag: i32, mask: Option<u8>)
 	}
 	let r = MixRef::of(&air)?;
 	if r == MixRef::Turf(cell) {
-		// Already this turf's cell: only the mask can change.
-		if field.is_registered(cell) {
+		// Already this turf's cell: the mask and the planet flag can change.
+		let planet = is_set(src.read_number_id(byond_string!("planetary_atmos")));
+		let (value, _) = field.read(cell).unwrap_or_default();
+		if planet != (value.planet > 0) {
+			let mut value = value;
+			value.planet = if planet {
+				let key = src
+					.read_string_id(byond_string!("initial_gas_mix"))
+					.unwrap_or_default();
+				field.planet_id(&key, value)
+			} else {
+				0
+			};
+			field.register(cell, value, CELL_VOLUME, planet, mask);
+		} else if field.is_registered(cell) {
 			field.set_mask(cell, mask);
 		} else {
 			let (value, geom) = field.read(cell).unwrap_or_default();

@@ -485,6 +485,9 @@ impl Post {
 			let Some(cell) = dom.store.get_mut(index) else {
 				continue;
 			};
+			if cell.planet == 0 {
+				continue;
+			}
 			let Some(base) = planets.get(cell.planet as usize).copied() else {
 				continue;
 			};

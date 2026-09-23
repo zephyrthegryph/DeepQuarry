@@ -23,10 +23,11 @@ verdigris/                  <- workspace root (this dir)
 ├── core/                   <- vg-core: domain-agnostic primitives (grid, ...).
 │                              Host-buildable, no byondapi, no global statics.
 ├── domains/
-│   ├── gas/                <- vg-gas: vendored auxmos (gas arena, turf diffusion);
-│   │                          i686 only until its binds move to vg-ffi. Also holds
-│   │                          the heat binds and gas adapter (turfs/heat.rs).
-│   │                          See domains/gas/UPSTREAM.md.
+│   ├── gas/                <- vg-gas: the gas domain (M1b): turf gas field,
+│   │                          pipe network, the gas world and its binds; i686
+│   │                          only until its binds move to vg-ffi. Also holds the
+│   │                          heat binds (heat.rs). Mixture maths vendored from
+│   │                          auxmos (domains/gas/UPSTREAM.md).
 │   ├── heat/               <- vg-heat: the heat domain (M4): turf solid field,
 │   │                          heat bodies, couplings, regulator. Host-buildable.
 │   └── layout/             <- vg-layout: station layout planner, cave generator,
@@ -53,7 +54,7 @@ verdigris/                  <- workspace root (this dir)
 | `verdigris` `material_power` | Double-precision electrical solve for material-engineering power networks. |
 | `vg-ffi` `allocator` | Tracking allocator: live/peak Rust heap overall and per `AllocTag`, with a thread-local tag scope (`allocator::tagged`); each block carries its tag in a small header so frees are charged correctly. |
 | `vg-ffi` `allocator` | Tracking allocator that reports live Rust memory to the profiler. |
-| `vg-gas` | Gas arena, turf adjacency (built from DM air-block masks), turf diffusion, decompression. Numeric gas registry in `gas/ids.rs`. Reactions stay in DM; see `code/ATMOSPHERICS/README.md`. | `turfs/heat.rs` holds the heat domain's binds and implements `vg_heat::GasExchange` over the arena. |
+| `vg-gas` | The gas domain (M1b, `simulation.md` §4): `cell` (turf gas as an R6 `FieldKind`: exponential bulk-flow and diffusion kernels, reservoirs, reaction check in `local`, channels), `pipes` (pipes as an R7 `NetworkKind`, main-owned until M2), `world` (the gas world: main-owned mixtures, the field's `Sim`, the pipe network, gas handles, the heat exchange buffer, dirty observations, gas watches), `turf` (turf and SSair binds), `gate` (reaction and visibility data for frame threads). Numeric gas registry in `gas/ids.rs`. Reactions run in DM; see `code/ATMOSPHERICS/README.md`. `heat.rs` holds the heat domain's binds. |
 | `vg-heat` | The heat domain (M4, `simulation.md` §7, `temperature.md`): `solid` (the turf solid heat field on R6's framework, with conduction, Stefan–Boltzmann radiation to space reservoirs and planet reservoirs), `body` (heat bodies created on first divergence, analytic relaxation on reservoirs, exact two-body steps otherwise, phase plateau, power, two couplings), `couple` (the `GasExchange` trait, exact pair exchange, the energy ledger, the solid ↔ turf gas task), `regulator` (the thermal regulator primitive) and `world` (`HeatWorld`, the main-thread host with watches). Replaces `superconduct.rs`. |
 | `vg-core` `grid` | Bounds-checked turf-index neighbour arithmetic, 16x16 chunked layers, per-kind blocked-direction layers (`Grid`). |
 | `vg-core` `handle` / `arena` | 20-bit index + 4-bit generation handles (exact as f32); `Arena<T>` with 4096-slot chunks, stale-handle rejection, rayon iteration. |

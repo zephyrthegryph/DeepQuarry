@@ -1189,6 +1189,9 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_air_snapshots)
 		// restore on cleanup.
 		GLOB.dq_atmos_test_walled_turfs[N] = N.type
 		N.ChangeTurf(/turf/simulated/wall)
+	// Let the gas field apply the walls before the test sets gas.
+	SSair.run_gas_frames(1)
+
 
 /proc/dq_atmos_test_isolate_triple(turf/open/A, turf/open/B, turf/open/C)
 	dq_atmos_test_restore_walls()
@@ -1224,6 +1227,10 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_air_snapshots)
 /// Restore turfs walled off by dq_atmos_test_isolate_* back to whatever
 /// they were before the test. Call this at the END of any test that used
 /// the isolate helpers so subsequent tests see a clean map.
+	// Let the gas field apply the walls before the test sets gas.
+	SSair.run_gas_frames(1)
+
+
 /proc/dq_atmos_test_restore_walls()
 	var/list/restored_turfs = list()
 	for(var/turf/T as anything in GLOB.dq_atmos_test_walled_turfs)
@@ -1860,6 +1867,7 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_air_snapshots)
 	// place — it's an immutable baseline keyed by the standard gas string and
 	// matches what a real planetary turf would have registered anyway.)
 	T.planetary_atmos = FALSE
+	T.update_air_ref(0) // back to an ordinary cell
 	for(var/datum/gas/g as anything in T.air.get_gases())
 		T.air.set_moles(g, 0)
 	dq_atmos_test_restore_walls()
@@ -5406,6 +5414,8 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	var/datum/gas_mixture/turf_air = T.return_air()
 	turf_air.set_temperature(1000) // very hot
 	turf_air.adjust_gas(/datum/gas/oxygen, 100)
+	// The heat domain reads turf gas from the gas field's published frame.
+	SSair.run_gas_frames(1)
 
 	I.fire_act(turf_air.return_temperature(), turf_air.return_volume())
 	// Paper ignites through its ignition rule (code/datums/rules/declarations.dm),
@@ -5745,7 +5755,9 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	// SSair.times_fired) is open — i.e., the paper hasn't already been
 	// pushed THIS air cycle.
 	var/cycle_at_start = SSair.times_fired
-	dq_atmos_test_wait_real_ssair_ticks(1)
+	var/wait_started = world.time
+	while(SSair.times_fired == cycle_at_start && world.time - wait_started < DQ_ATMOS_TEST_MAX_WAIT)
+		sleep(world.tick_lag)
 	TEST_ASSERT(SSair.times_fired > cycle_at_start, \
 		"Master.Loop didn't advance SSair.times_fired during sleep — engine not ticking")
 	var/direction = get_dir(A, B)
@@ -6651,7 +6663,7 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 		"B didn't reach 50/50 composition: N2=[b_n2] O2=[b_o2]")
 	// Cross-conservation: total N2 still ~200, total O2 still ~200.
 	TEST_ASSERT(abs((a_n2 + b_n2) - initial_total_n2) < 1, \
-		"N2 mass lost during diffusion: [initial_total_n2] → [a_n2 + b_n2]")
+		"N2 mass lost during diffusion: [initial_total_n2] → [a_n2 + b_n2] (A=[COORD(A)] planet=[A.planetary_atmos] dirs=[vg_atmos_open_dirs(A)] B=[COORD(B)] planet=[B.planetary_atmos] dirs=[vg_atmos_open_dirs(B)] a=[a_n2]/[a_o2] b=[b_n2]/[b_o2] A.air=[A_air.arena_id()] B.air=[B_air.arena_id()] A.cur=[A.air.arena_id()])")
 	TEST_ASSERT(abs((a_o2 + b_o2) - initial_total_o2) < 1, \
 		"O2 mass lost during diffusion: [initial_total_o2] → [a_o2 + b_o2]")
 

@@ -104,6 +104,8 @@ impl Mixture {
 	pub fn same_state(&self, other: &Self) -> bool {
 		self.temperature == other.temperature
 			&& self.volume == other.volume
+			&& self.immutable == other.immutable
+			&& self.min_heat_capacity == other.min_heat_capacity
 			&& self.moles_array() == other.moles_array()
 	}
 
