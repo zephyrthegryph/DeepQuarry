@@ -424,6 +424,72 @@ fn a_settled_station_sleeps() {
 	assert!(idle(&mut w), "{:?}", w.field.as_ref().unwrap().stats());
 }
 
+/// Pins the activity/sleep invariants `core::field::FieldState` (which
+/// `TurfGas` runs on -- `rust_core.md` §16.5/§15 (2)) is supposed to give
+/// every field, at the gas level specifically: a nudge wakes only nearby
+/// chunks (not the whole map), a distant, settled cell's gas is bit-
+/// identical throughout, and the field re-settles afterward. Gas has no
+/// activity tracking of its own to migrate onto a core service -- this
+/// confirms it's already there (turf gas is `FieldState<TurfGas>`, not a
+/// gas-local reimplementation) rather than building a redundant one.
+#[test]
+fn nudging_one_cell_wakes_only_its_neighbourhood_and_settles_again() {
+	const SIZE: u32 = 48; // several CHUNK_EDGE=16 chunks per axis
+	let mut w = GasWorld::default();
+	let field = crate::world::Field::new(SIZE, SIZE, 1, Mode::Overlay, &w.exchange)
+		.expect("field builds");
+	w.mode = field.mode;
+	w.field = Some(field);
+	let idx = |x: u32, y: u32| y * SIZE + x;
+	{
+		let f = w.field.as_mut().unwrap();
+		for y in 0..SIZE {
+			for x in 0..SIZE {
+				f.register(idx(x, y), air(1.0, 293.15), 2500.0, false, Some(0));
+			}
+		}
+	}
+	w.run_frames(20);
+	let idle = |w: &mut GasWorld| w.field.as_mut().unwrap().idle();
+	assert!(idle(&mut w), "a uniform room should settle");
+
+	// A far corner, well outside the chunk(s) the nudge below can reach.
+	let far = MixRef::Turf(idx(SIZE - 2, SIZE - 2));
+	let before_far = w.load(far).expect("far cell readable");
+
+	// Nudge one cell near the origin.
+	let mut d = [0.0; Q];
+	d[N] = 200.0;
+	w.add_amounts(MixRef::Turf(idx(2, 2)), &d, 0.0);
+	assert!(!idle(&mut w), "the nudge must wake the field");
+	w.run_frames(1);
+	let awake_after_one_step = w.field.as_ref().unwrap().awake_chunks();
+	let total_chunks = SIZE.div_ceil(16) * SIZE.div_ceil(16);
+	assert!(awake_after_one_step > 0, "the nudged neighbourhood woke");
+	assert!(
+		(awake_after_one_step as u32) < total_chunks,
+		"only a neighbourhood should wake, not the whole {total_chunks}-chunk map: {awake_after_one_step}"
+	);
+
+	// The far corner never moved while the field was mid-settle.
+	let mid_far = w.load(far).expect("far cell readable");
+	assert_eq!(
+		before_far.get_temperature(),
+		mid_far.get_temperature(),
+		"a sleeping cell's gas must be untouched by an unrelated wake"
+	);
+
+	// It settles again.
+	w.run_frames(60);
+	assert!(idle(&mut w), "{:?}", w.field.as_ref().unwrap().stats());
+	let after_far = w.load(far).expect("far cell readable");
+	assert_eq!(
+		before_far.get_temperature(),
+		after_far.get_temperature(),
+		"the far cell was never part of the disturbance"
+	);
+}
+
 /// M2 (simulation.md §5): a vent pump/scrubber device edge with one side on
 /// a turf (the R6 field) and the other on a pipe region (the R7 network) —
 /// `GasWorld::step_turf_devices`. Siphons a live cell into an empty pipe

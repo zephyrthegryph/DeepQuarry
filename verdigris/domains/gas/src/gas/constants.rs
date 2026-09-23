@@ -1,19 +1,16 @@
 use bitflags::bitflags;
 
-/// kPa*L/(K*mol)
-pub const R_IDEAL_GAS_EQUATION: f32 = 8.31;
+// R_IDEAL_GAS_EQUATION/TCMB/T0C/T20C moved to vg_core::units::consts
+// (`rust_architecture.md` §4.11: this crate used to keep its own copy,
+// exactly matching heat's, with nothing enforcing that it stayed so).
+// Re-exported so every existing unqualified reference in this crate keeps
+// working.
+pub use vg_core::units::consts::{R_IDEAL_GAS_EQUATION, T0C, T20C, TCMB};
+
 /// kPa
 pub const ONE_ATMOSPHERE: f32 = 101.325;
-///  -270.3degC. Single source is `vg_core::units::TCMB` (`rust_core.md` §15
-/// core consolidation; H1 dedup audit finding) -- both gas and heat
-/// re-export it rather than gas depending on vg-heat for a bare constant.
-pub use vg_core::units::TCMB;
 ///  -48.15degC
 pub const TCRYO: f32 = 225.0;
-///  0degC. Re-exported from `vg_core::units::T0C`.
-pub use vg_core::units::T0C;
-///  20degC. Re-exported from `vg_core::units::T20C`.
-pub use vg_core::units::T20C;
 /// Amount of gas below which any amounts will be truncated to 0.
 pub const GAS_MIN_MOLES: f32 = 0.0001;
 /// Heat capacities below which heat will be considered 0.

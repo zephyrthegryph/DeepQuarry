@@ -534,12 +534,13 @@ deleted), then turf gas and heat as grid kinds.
 ## 16. §15 extensions landed by the rustaudit pass
 
 Extending §15's table with three more entries, and reporting what
-`rewrite/rustaudit` actually built against it (a CI-enforced architecture
-check, plus the two entries it had the most direct evidence for already:
-change tracking, since GasCell's `revision()` was mid-investigation when
-this was scoped in, and thermo, since heat-r10 needed to know where to
-build). Units-everywhere and the activity/sleep service are scoped and
-documented here but **not implemented** by this pass -- see 16.4.
+`rewrite/rustaudit` actually built against it: change tracking (16.1),
+thermo (16.2, so heat-r10 could build on it), a CI-enforced architecture
+check (16.3), units-everywhere (16.4, `vg_core::units` -> `f64`,
+coordinator-approved as a follow-up once heat-r10 was pointed at
+`core::thermo`'s pre-`f64` form), and activity/sleep (16.6: already on
+`core::field`, pinned with new gas-level tests rather than migrated, since
+there was no gas-local duplicate to replace).
 
 | Mechanism | Core home | Replaces |
 |---|---|---|
@@ -564,9 +565,15 @@ into `bands.update(...)`.
 Of gas's three `revision()`s, this is the only one that's actually
 band-based. `world.rs`'s per-"Main"-slot revision and `pipes.rs`'s per-node
 revision are both plain bump-on-every-write generation counters -- a
-different, simpler shape `BandRevision` doesn't fit as-is. Left as-is and
-allow-listed (16.3); `pipes.rs` is also one of M2's concurrently-edited
-files regardless.
+different, simpler shape `BandRevision` doesn't fit. Added
+`core::revision::Counter` (a plain wrapping `u32`, no band comparison) for
+exactly this shape and migrated `world.rs`'s Main-slot revision onto it.
+`pipes.rs`'s per-node revision is left allow-listed (16.3): it's M2's
+territory (`device.rs`/`pipes.rs`/the pipe FFI binds are under concurrent
+edit on `rewrite/m2`), and `Counter` is now there for M2 to use when it
+restructures that file. All of gas's revision counters are now on a core
+primitive (`BandRevision` or `Counter`); none are hand-rolled per-domain
+any more, modulo that one M2-owned file.
 
 ### 16.2 Thermo: `core::thermo::pair_exchange`
 
@@ -602,10 +609,8 @@ branch/plan that removes it; a stale entry -- nothing matches it any more
 -- fails the check too, so the list only shrinks):
 
 - `domains/gas/src/pipes.rs` (`revision`): the pipe-node generation
-  counter; M2's territory regardless.
-- `domains/gas/src/world.rs` (`revision`): the "Main"-slot generation
-  counter; needs its own core primitive (a plain version counter, not
-  band-based), not built this pass.
+  counter; M2's territory. `core::revision::Counter` (16.1) is there for
+  it to use when M2 restructures that file.
 - `domains/power/src/world.rs` (`smoothing`): `shown_brown`/`shown_apc`/
   `shown_smes` -- exactly "power's 'shown' diff copies" from §15's
   original table. Removed when power's rewrite lands.
@@ -620,28 +625,83 @@ these patterns (or adding new categories, e.g. for the R10 identity
 system's arrival) is expected as domains migrate and more examples of each
 violation become concrete.
 
-### 16.4 Not implemented by this pass
+### 16.4 Units everywhere: `vg_core::units` -> `f64`
 
-- **Units everywhere (new §15 row).** Making `vg_core::units` the *only*
-  way a physical quantity crosses a module or FFI boundary is a real
-  `f32`-\>`f64` API change to every unit newtype (`Kelvin`, `Joules`,
-  `HeatCapacity`, `Moles`, plus new `Watts`/`Kpa`/`Liters`/`Seconds`), and
-  `core::thermo` (just landed, 16.2) and every consumer of it (`vg_heat`,
-  soon `heat-r10`) would need updating in lockstep. Attempting this as a
-  drive-by in an already-large pass risked a half-converted state across
-  crate boundaries I don't own (bindings, heat-r10, power-r10) with no way
-  to verify the other sides. Scoped and named here; not started.
-- **Activity and sleep service.** Gas's own activity/wake tracking (the
-  field's active-cell sets, `simulation.md` §1/§4's "urgent/fresh/frontier
-  lanes", already partly on `core::field`'s active-set machinery per
-  §13's table) and its per-device equivalent were not audited in enough
-  depth this pass to design a correct generic replacement -- doing so
-  without fully understanding the field framework's existing active-set
-  invariants risks a live-simulation correctness bug (frozen or
-  perpetually-active gas cells) that only a full DM atmos run would catch,
-  and the test-budget rule for this pass is one DM run, at the very end,
-  for everything above combined. Scoped in §15's table; not started.
-- **Rate-model library** (for `rewrite/power-r10`): not built. The
-  coordinator is relaying between agents; if `power-r10` hasn't produced
-  one by the time this lands, that coordination should happen as its own
-  piece of work, not a rushed addition here.
+Coordinator-approved follow-up (after 16.2 pointed `heat-r10` at
+`core::thermo`'s pre-`f64` form -- doing this then meant `heat-r10` builds
+on the final API instead of a form about to change under it).
+
+Every unit newtype the `unit!` macro generates (`Kelvin`, `Joules`,
+`Pascals`, `Moles`, `Watts`, `HeatCapacity`) is now `f64`-backed; added
+`Kpa` (gas's native pressure unit, with `Pascals`<->`Kpa` conversions),
+`Liters` and `Seconds`. Every type gets `From<f32>`/`Into<f32>` for the
+boundary domains still crossing in `f32` (their own public APIs aren't
+migrated -- see below). `core::thermo` updated to match throughout,
+dropping the `f64::from(...)`/`as f32` round-tripping the old `f32`-backed
+types needed; `pair_exchange`/`pair_exchange_at_rate`'s `dt: f32` becomes
+`dt: Seconds`.
+
+While touching `exchange()` for the migration: fixed a real bug the 14.2
+audit already suspected -- `ca*cb/(ca+cb)` produces an `inf/inf` `NaN` when
+a capacity is infinite (a reservoir side), silently dropping that pair's
+exchange instead of moving all the change onto the non-reservoir side.
+Rewritten via `1/(1/Ca + 1/Cb)` (the same result for finite capacities;
+`1/inf = 0` for a reservoir), the pattern `pair_exchange` already used
+correctly. `exchange()`'s separate `MIN_HEAT_CAPACITY` guard ("either side
+has no meaningful temperature -> no exchange at all", a deliberately
+different rule from the reservoir case) is unchanged.
+
+`vg_heat::couple`'s wrappers and `regulator.rs`'s `Regulator::step`/
+`add_energy`/`reservoir` convert at the `f32`<->`f64` boundary explicitly;
+their own public APIs (`Regulator`'s fields, `RegulatorStep`'s fields, the
+raw-`f32` `couple::` wrapper signatures) are unchanged, so nothing else in
+`vg_heat` needed to change. Domain public APIs generally (gas's
+`GasCell`/`Mixture`, heat's `Regulator`/body fields, all of power) are
+**not** migrated onto these unit types by this pass -- that half of the
+row ("raw `f32` physical quantities in domain public APIs, flagged by the
+consolidation check once a domain migrates") is for each domain's own
+migration, not a blanket rewrite here. Landed as commit `ea6fb5d41c`.
+
+### 16.5 Activity and sleep: already on the core service
+
+Investigated per the coordinator's instruction ("first pin gas's active-
+cell invariants with tests, then replace the tracking with the core
+service, keep those tests green"). Turf gas (`TurfGas`, `domains/gas/src/cell.rs`)
+runs as `core::field::FieldState<TurfGas>` (`domains/gas/src/world.rs`
+constructs it via `add_field::<TurfGas>`), not a gas-local reimplementation
+-- `core::field` already *is* the activity/sleep service §15 (2) asks for:
+wake on a command/input (`wake_cell`), settle and sleep per chunk
+(`active_changed`), and neighbour wake (an edge with either side's chunk
+active stays live, so activity spreads one chunk at a time and stops at the
+boundary where it settled). This is exercised by an existing framework-
+level test, `core::tests::field::settled_regions_sleep_untouched_and_wake_on_commands_and_neighbours`,
+which already pins all four invariants (wake on input, settle, neighbour
+wake, a sleeping chunk's storage literally never copied -- pointer
+identity) against the generic `World<HeatToy>` harness.
+
+There was nothing gas-local to *replace* -- gas's per-cell activity was
+never duplicated outside `core::field` to begin with. What this pass adds
+is `domains/gas/src/tests.rs`'s
+`nudging_one_cell_wakes_only_its_neighbourhood_and_settles_again`: the same
+four invariants, pinned specifically against real `GasWorld`/`TurfGas`
+(not the toy harness) -- a 48x48 room settles, a heat nudge near one
+corner wakes only some of its `awake_chunks()` (not the whole map), a
+cell in the far corner reads bit-identical gas throughout, and the field
+settles again afterward. `cargo test -p vg-gas --features
+turf_processing,heat` is green (46 passed) with it.
+
+Gas's **per-device** activity ("§15 (2)... gas's per-device activity
+maps") turned out not to exist as code to migrate either: `pipes.rs` and
+`device.rs` have no activity/sleep/dirty tracking at all currently (every
+pipe/device steps unconditionally each frame) -- confirmed by grep, not
+just absence of a hit. That's a future *optimization* opportunity (adding
+sleep tracking to pipes/devices, which `core::field`'s machinery isn't
+directly applicable to, since pipe topology isn't a spatial grid), not a
+currently-duplicated mechanism this pass needed to consolidate.
+
+### 16.6 Not implemented by this pass
+
+- **Rate-model library** (for `rewrite/power-r10`): confirmed not needed
+  from this side -- the coordinator reports `power-r10` already has
+  `vg_core::rate::RateStore` (branch commit `1b780a4960`). Not duplicated
+  here.

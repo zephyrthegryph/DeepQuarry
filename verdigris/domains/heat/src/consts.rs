@@ -3,21 +3,15 @@
 //! the generated bindings (`code/__defines/verdigris/_bindings.dm`); DM must
 //! not redefine them (tools/ci/check_grep.sh). `vg_heat_constants()` returns
 //! the same values at runtime so the tests can check the two agree.
+//!
+//! `STEFAN_BOLTZMANN`/`TCMB`/`T0C`/`T20C` moved to
+//! `vg_core::units::consts` (`rust_architecture.md` §4.11: shared with gas,
+//! which used to keep its own exactly-matching copy of `TCMB`/`T0C`/`T20C`
+//! with nothing enforcing that it stayed exact) and are re-exported here so
+//! every existing `heat::consts::TCMB`-style reference in this crate and its
+//! FFI binds keeps working unchanged.
 
-/// Stefan–Boltzmann constant, W/(m²·K⁴). Written out in decimal because the
-/// define scanner reads plain literals only.
-/// @dm-define STEFAN_BOLTZMANN_CONSTANT
-#[allow(clippy::excessive_precision, clippy::unreadable_literal)]
-pub const STEFAN_BOLTZMANN: f64 = 0.000_000_056_703_744_19;
-/// 0 °C, K. Single source is `vg_core::units::T0C`.
-pub use vg_core::units::T0C;
-/// 20 °C, K. Single source is `vg_core::units::T20C`.
-pub use vg_core::units::T20C;
-/// Cosmic microwave background, K. The floor of every body and gas.
-/// Single source is `vg_core::units::TCMB` (`rust_core.md` §15); re-exported
-/// here (no second `@dm-define` -- the generator would reject a duplicate
-/// name) so existing `vg_heat::consts::TCMB` call sites are unaffected.
-pub use vg_core::units::TCMB;
+pub use vg_core::units::consts::{STEFAN_BOLTZMANN, T0C, T20C, TCMB};
 
 /// The effective radiative sink temperature of space, K.
 ///
@@ -122,9 +116,9 @@ mod tests {
 
     #[test]
     fn derived_constants_agree() {
+        // T20C/STEFAN_BOLTZMANN's own precision is pinned in
+        // vg_core::units::consts, where they're now defined.
         assert!((T0C + 100.0 - IGNITION_TEMPERATURE).abs() < 1e-4);
         assert!((T0C + 37.0 - BODYTEMP_NORMAL).abs() < 1e-4);
-        assert!((T0C + 20.0 - T20C).abs() < 1e-4);
-        assert!((STEFAN_BOLTZMANN - 5.670_374_419e-8).abs() < 1e-18);
     }
 }

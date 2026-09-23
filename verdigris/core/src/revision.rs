@@ -121,3 +121,51 @@ mod tests {
         assert_eq!(r.revision, 0);
     }
 }
+
+/// A plain `u32` generation/version counter: bumps unconditionally, every
+/// time the caller says the thing it's attached to changed identity or
+/// content (a slot was reused, a value was overwritten). This is
+/// `BandRevision`'s sibling for the simpler "every write counts" case (no
+/// band, no "did it move enough" comparison) -- e.g. a slab slot's "has
+/// this handle's target changed since I last read it" counter.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub struct Counter(pub u32);
+
+impl Counter {
+    #[must_use]
+    pub const fn new() -> Self {
+        Self(0)
+    }
+
+    /// Unconditionally advances the counter by one (wrapping).
+    pub fn bump(&mut self) {
+        self.0 = self.0.wrapping_add(1);
+    }
+
+    #[must_use]
+    pub const fn get(self) -> u32 {
+        self.0
+    }
+}
+
+#[cfg(test)]
+mod counter_tests {
+    use super::Counter;
+
+    #[test]
+    fn starts_at_zero_and_bumps_by_one() {
+        let mut c = Counter::new();
+        assert_eq!(c.get(), 0);
+        c.bump();
+        assert_eq!(c.get(), 1);
+        c.bump();
+        assert_eq!(c.get(), 2);
+    }
+
+    #[test]
+    fn wraps_instead_of_panicking() {
+        let mut c = Counter(u32::MAX);
+        c.bump();
+        assert_eq!(c.get(), 0);
+    }
+}

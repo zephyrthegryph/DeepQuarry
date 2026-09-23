@@ -4,15 +4,34 @@ from __future__ import annotations
 
 import json
 import mimetypes
+import subprocess
 import sys
+import threading
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from urllib.parse import parse_qs, urlparse
 
-from engine import LAYERS, kind, studio
+from engine import LAYERS, ROOT, kind, studio
 from sprites import sprites
 
 HERE = Path(__file__).resolve().parent
+MAPCORE_WASM = ROOT / "tools/mapcore/target/wasm32-unknown-unknown/release/deepquarry_mapcore.wasm"
+_wasm_lock = threading.Lock()
+
+
+def wasm_bytes():
+    with _wasm_lock:
+        sources = (ROOT / "tools/mapcore/src/lib.rs", ROOT / "tools/mapcore/src/network.rs",
+                   ROOT / "tools/mapcore/Cargo.toml")
+        if not MAPCORE_WASM.is_file() or any(path.stat().st_mtime_ns > MAPCORE_WASM.stat().st_mtime_ns
+                                             for path in sources):
+            build = subprocess.run(["cargo", "build", "--quiet", "--release",
+                                    "--target", "wasm32-unknown-unknown", "--lib",
+                                    "--manifest-path", str(ROOT / "tools/mapcore/Cargo.toml")],
+                                   cwd=ROOT, capture_output=True, text=True, timeout=180)
+            if build.returncode:
+                raise RuntimeError("Rust browser core build failed: " + build.stderr[-2000:])
+        return MAPCORE_WASM.read_bytes()
 
 
 def dispatch(method, args):
@@ -91,6 +110,19 @@ class Handler(BaseHTTPRequestHandler):
     def do_GET(self):
         parsed = urlparse(self.path)
         path = parsed.path
+        if path == "/mapcore.wasm":
+            try:
+                payload = wasm_bytes()
+            except (RuntimeError, subprocess.TimeoutExpired, FileNotFoundError) as error:
+                self.send_error(503, str(error))
+                return
+            self.send_response(200)
+            self.send_header("Content-Type", "application/wasm")
+            self.send_header("Content-Length", str(len(payload)))
+            self.send_header("Cache-Control", "no-store")
+            self.end_headers()
+            self.wfile.write(payload)
+            return
         if path == "/atlas":
             key = parse_qs(parsed.query).get("id", [""])[0]
             payload = sprites.atlas_bytes(key)
@@ -120,7 +152,7 @@ class Handler(BaseHTTPRequestHandler):
             self.end_headers()
             self.wfile.write(payload)
             return
-        if path not in ("/", "/index.html", "/app.js", "/style.css"):
+        if path not in ("/", "/index.html", "/app.js", "/gpu.js", "/mapcore-client.js", "/style.css"):
             self.send_error(404)
             return
         asset = HERE / ("index.html" if path == "/" else path.lstrip("/"))

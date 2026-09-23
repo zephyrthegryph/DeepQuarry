@@ -24,7 +24,7 @@
 #endif
 
 /// Bind-set hash shared with verdigris/ffi/src/abi.rs; checked by verdigris_init().
-#define VERDIGRIS_ABI "031a51b94a27185d"
+#define VERDIGRIS_ABI "69648782eba8ec20"
 
 // Numeric registry (@dm-define constants in the Rust sources).
 
@@ -379,12 +379,16 @@
 // verdigris/domains/gas/src/turf.rs
 #define SIMULATION_ANY 3
 
-/// Stefan–Boltzmann constant, W/(m²·K⁴). Written out in decimal because the
-/// define scanner reads plain literals only.
-// verdigris/domains/heat/src/consts.rs
+/// Stefan-Boltzmann constant, W/(m^2*K^4). Written out in decimal
+/// because the define scanner reads plain literals only.
+// verdigris/core/src/units.rs
 #define STEFAN_BOLTZMANN_CONSTANT 0.00000005670374419
 
 /// 0 °C, K. Single source for gas and heat.
+// verdigris/core/src/units.rs
+#define T0C 273.15
+
+/// 0 degrees Celsius, K.
 // verdigris/core/src/units.rs
 #define T0C 273.15
 
@@ -392,10 +396,19 @@
 // verdigris/core/src/units.rs
 #define T20C 293.15
 
+/// 20 degrees Celsius, K ("room temperature").
+// verdigris/core/src/units.rs
+#define T20C 293.15
+
 /// Cosmic microwave background, K. The floor of every body and gas. Single
 /// source for gas and heat (`rust_core.md` §15 core consolidation; H1 dedup
 /// audit finding); both `vg_heat::consts::TCMB` and `vg_gas`'s copy
 /// re-export this.
+// verdigris/core/src/units.rs
+#define TCMB 2.7
+
+/// Cosmic microwave background temperature, K. The floor every body and
+/// gas cools toward.
 // verdigris/core/src/units.rs
 #define TCMB 2.7
 
@@ -1525,12 +1538,16 @@
 	VG_COUNT_FFI_CALL
 	return call_ext(__f)(domain, sub, lane, cell, mask)
 
+/// `REACT_WHEN` difference: `a - b` (or `|a - b|` with `abs`) on channel
+/// `ch` crosses `value` like a threshold.
 // /proc/react_watch_difference (verdigris/ffi/src/reactor.rs)
 /proc/vg_react_watch_difference(domain, sub, lane, a, b, ch, cmp, value, hysteresis, abs)
 	var/static/__f = load_ext(VERDIGRIS, "byond:react_watch_difference_ffi")
 	VG_COUNT_FFI_CALL
 	return call_ext(__f)(domain, sub, lane, a, b, ch, cmp, value, hysteresis, abs)
 
+/// `REACT_WHEN` threshold: `cmp` 0 above / 1 below `value` on channel `ch`;
+/// `hysteresis` < 0 takes the channel's; `both_edges` also wakes on leaving.
 // /proc/react_watch_threshold (verdigris/ffi/src/reactor.rs)
 /proc/vg_react_watch_threshold(domain, sub, lane, cell, ch, cmp, value, hysteresis, both_edges)
 	var/static/__f = load_ext(VERDIGRIS, "byond:react_watch_threshold_ffi")

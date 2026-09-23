@@ -6,6 +6,44 @@ use std::fs;
 use std::path::Path;
 
 pub mod sprite;
+pub mod network;
+pub mod render;
+
+#[cfg(target_arch = "wasm32")]
+mod browser_api {
+    use super::network;
+    use std::alloc::{alloc, dealloc, Layout};
+
+    #[no_mangle]
+    pub extern "C" fn mapcore_alloc(len: usize) -> *mut u8 {
+        unsafe { alloc(Layout::array::<u8>(len.max(1)).unwrap()) }
+    }
+
+    #[no_mangle]
+    pub unsafe extern "C" fn mapcore_free(ptr: *mut u8, len: usize) {
+        if !ptr.is_null() {
+            dealloc(ptr, Layout::array::<u8>(len.max(1)).unwrap());
+        }
+    }
+
+    #[no_mangle]
+    pub unsafe extern "C" fn mapcore_route(ptr: *const u8, len: usize) -> *mut u8 {
+        let input = std::slice::from_raw_parts(ptr, len);
+        let result = serde_json::from_slice(input)
+            .map_err(|error| error.to_string())
+            .and_then(network::route);
+        let output = match result {
+            Ok(diff) => serde_json::to_vec(&diff).unwrap(),
+            Err(error) => serde_json::to_vec(&serde_json::json!({"error": error})).unwrap(),
+        };
+        let total = output.len() + 4;
+        let result = mapcore_alloc(total);
+        if result.is_null() { return result; }
+        std::ptr::copy_nonoverlapping((output.len() as u32).to_le_bytes().as_ptr(), result, 4);
+        std::ptr::copy_nonoverlapping(output.as_ptr(), result.add(4), output.len());
+        result
+    }
+}
 
 pub type Position = (u32, u32, u32);
 

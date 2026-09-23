@@ -231,6 +231,49 @@ impl Pascals {
     }
 }
 
+/// Physical constants every domain that touches temperature or pressure
+/// needs (`rust_architecture.md` §4.11): previously an independent, exactly-
+/// matching copy in each of gas's and heat's own constants modules, with
+/// nothing enforcing that they stayed equal. Kept as raw `f32`/`f64`
+/// literals, not the unit newtypes above: they're used throughout existing
+/// `f32` domain arithmetic (`150.0 + T0C`, ...), and wrapping them would
+/// force a conversion at every one of those call sites for no benefit here.
+///
+/// `@dm-define` tags are picked up by `tools/build/lib/verdigris_bindings.ts`
+/// (which scans `verdigris/core` along with the domains) to generate the
+/// matching DM `#define`; DM must not redefine them
+/// (`tools/ci/check_grep.sh`).
+pub mod consts {
+    /// Ideal gas constant, J/(mol*K).
+    pub const R_IDEAL_GAS_EQUATION: f32 = 8.31;
+    /// Cosmic microwave background temperature, K. The floor every body and
+    /// gas cools toward.
+    /// @dm-define TCMB
+    pub const TCMB: f32 = 2.7;
+    /// 0 degrees Celsius, K.
+    /// @dm-define T0C
+    pub const T0C: f32 = 273.15;
+    /// 20 degrees Celsius, K ("room temperature").
+    /// @dm-define T20C
+    pub const T20C: f32 = 293.15;
+    /// Stefan-Boltzmann constant, W/(m^2*K^4). Written out in decimal
+    /// because the define scanner reads plain literals only.
+    /// @dm-define STEFAN_BOLTZMANN_CONSTANT
+    #[allow(clippy::excessive_precision, clippy::unreadable_literal)]
+    pub const STEFAN_BOLTZMANN: f64 = 0.000_000_056_703_744_19;
+
+    #[cfg(test)]
+    mod tests {
+        use super::*;
+
+        #[test]
+        fn derived_constants_agree() {
+            assert!((T0C + 20.0 - T20C).abs() < 1e-4);
+            assert!((STEFAN_BOLTZMANN - 5.670_374_419e-8).abs() < 1e-18);
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
