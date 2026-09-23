@@ -2,7 +2,13 @@
 /// The datum hosting the signal is automaticaly added as the first argument
 /// Returns a bitfield gathered from all registered procs
 /// Arguments given here are packaged in a list and given to _SendSignal
+#if defined(UNIT_TESTS) || defined(TESTING)
+/// Debug builds check every send against its declared argument count (code/datums/signal_args.dm).
+#define SIGNAL_ARG_CHECKS
+#define SEND_SIGNAL(target, sigtype, arguments...) _checked_send_signal(target, sigtype, list(target, ##arguments))
+#else
 #define SEND_SIGNAL(target, sigtype, arguments...) ( !target._listen_lookup?[sigtype] ? NONE : target._SendSignal(sigtype, list(target, ##arguments)) )
+#endif
 
 #define SEND_GLOBAL_SIGNAL(sigtype, arguments...) ( SEND_SIGNAL(SSdcs, sigtype, ##arguments) )
 

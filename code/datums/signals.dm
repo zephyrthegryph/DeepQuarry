@@ -117,11 +117,38 @@
 		var/datum/listening_datum = target
 		return NONE | call(listening_datum, listening_datum._signal_procs[src][sigtype])(arglist(arguments))
 	. = NONE
-	// This exists so that even if one of the signal receivers unregisters the signal,
-	// all the objects that are receiving the signal get the signal this final time.
+	// Snapshot every receiver and its proc first, so that even if one receiver
+	// unregisters another, every receiver gets the signal this final time.
 	// AKA: No you can't cancel the signal reception of another object by doing an unregister in the same signal.
-	var/list/queued_calls = list()
+	// The snapshot is a flat (receiver, proc) list taken from a pool instead of
+	// allocated per send. Handlers can send signals themselves, so each nested
+	// send takes its own buffer; one lost to a runtime is simply not returned.
+	var/static/list/free_buffers = list()
+	var/list/queued_calls
+	var/free_count = length(free_buffers)
+	if(free_count)
+		queued_calls = free_buffers[free_count]
+		free_buffers.len = free_count - 1
+	else
+		queued_calls = list()
 	for(var/datum/listening_datum as anything in target)
-		queued_calls[listening_datum] = listening_datum._signal_procs[src][sigtype]
-	for(var/datum/listening_datum as anything in queued_calls)
-		. |= call(listening_datum, queued_calls[listening_datum])(arglist(arguments))
+		queued_calls += listening_datum
+		queued_calls += listening_datum._signal_procs[src][sigtype]
+	for(var/i in 1 to length(queued_calls) step 2)
+		. |= call(queued_calls[i], queued_calls[i + 1])(arglist(arguments))
+	queued_calls.Cut()
+	free_buffers.len++
+	free_buffers[free_buffers.len] = queued_calls
+
+#ifdef SIGNAL_ARG_CHECKS
+/// SEND_SIGNAL in debug builds: checks the argument count against
+/// signal_arg_counts(), then dispatches like the release macro.
+/proc/_checked_send_signal(datum/target, sigtype, list/arguments)
+	var/static/list/declared_counts = signal_arg_counts()
+	var/declared = declared_counts[sigtype]
+	if(!isnull(declared) && declared != length(arguments) - 1)
+		stack_trace("[sigtype] sent with [length(arguments) - 1] argument\s; signal_arg_counts() declares [declared].")
+	if(!target._listen_lookup?[sigtype])
+		return NONE
+	return target._SendSignal(sigtype, arguments)
+#endif

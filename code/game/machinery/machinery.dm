@@ -492,7 +492,7 @@ Class Procs:
 	return dismantle() ? ITEM_INTERACT_SUCCESS : ITEM_INTERACT_BLOCKING
 
 /obj/machinery/proc/dismantle()
-	SEND_SIGNAL(src, COMSIG_OBJ_DECONSTRUCT)
+	SEND_SIGNAL(src, COMSIG_OBJ_DECONSTRUCT, FALSE)
 	playsound(src, 'sound/items/Crowbar.ogg', 50, 1)
 	for(var/obj/I in contents)
 		if(istype(I,/obj/item/card/id))

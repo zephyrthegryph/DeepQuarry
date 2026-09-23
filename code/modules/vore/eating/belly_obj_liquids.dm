@@ -328,7 +328,7 @@
 
 /obj/belly/proc/update_internal_overlay()
 	if(LAZYLEN(belly_surrounding))
-		SEND_SIGNAL(src, COMSIG_BELLY_UPDATE_VORE_FX) // Signals vore_fx() to listening atoms. Atoms must handle appropriate isliving() checks.
+		SEND_SIGNAL(src, COMSIG_BELLY_UPDATE_VORE_FX, reagents.total_volume) // Signals vore_fx() to listening atoms. Atoms must handle appropriate isliving() checks.
 	for(var/A in belly_surrounding)
 		if(isliving(A))
 			vore_fx(A)
