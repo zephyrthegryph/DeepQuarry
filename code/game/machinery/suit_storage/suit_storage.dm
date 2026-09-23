@@ -66,14 +66,28 @@
 		dump_everything()
 	return ..()
 
-/obj/machinery/suit_storage_unit/attack_hand(mob/user)
-	if(..())
-		return
+/obj/machinery/suit_storage_unit/declare_interactions(list/into)
+	into += list(
+		/datum/interaction/machine_verb/suit_storage_get_out,
+		/datum/interaction/machine_verb/suit_storage_move_inside,
+		/datum/interaction/machine_item/suit_storage_use_item,
+		/datum/interaction/machine_hand/suit_storage_use,
+	)
+	..()
+
+/// The old attack_hand: called ..() first, then opened the UI if powered and dexterous.
+/datum/interaction/machine_hand/suit_storage_use
+	id = "suit_storage_use"
+	name = "Use"
+	effect = /obj/machinery/suit_storage_unit/proc/interaction_use
+
+/obj/machinery/suit_storage_unit/proc/interaction_use(mob/user, obj/item/held, datum/interaction/interaction)
 	if(stat & NOPOWER)
-		return
+		return TRUE
 	if(!user.IsAdvancedToolUser())
-		return 0
+		return TRUE
 	tgui_interact(user)
+	return TRUE
 
 /obj/machinery/suit_storage_unit/tgui_state(mob/user)
 	return GLOB.tgui_notcontained_state
@@ -326,69 +340,82 @@
 	return
 
 
-/obj/machinery/suit_storage_unit/verb/get_out()
-	set name = "Eject Suit Storage Unit"
-	set category = "Object"
-	set src in oview(1)
+/// The old "Eject Suit Storage Unit" object verb.
+/datum/interaction/machine_verb/suit_storage_get_out
+	id = "suit_storage_get_out"
+	name = "Eject Suit Storage Unit"
+	category = INTERACTION_CAT_EJECT
+	requires = list(REQ_INTERACTION_REACH)
+	effect = /obj/machinery/suit_storage_unit/proc/interaction_get_out
 
-	if(usr.stat != 0)
-		return
-	eject_occupant(usr)
-	add_fingerprint(usr)
+/obj/machinery/suit_storage_unit/proc/interaction_get_out(mob/user, obj/item/held, datum/interaction/interaction)
+	if(user.stat != 0)
+		return TRUE
+	eject_occupant(user)
+	add_fingerprint(user)
 	update_icon()
-	return
+	return TRUE
 
+/// The old "Hide in Suit Storage Unit" object verb.
+/datum/interaction/machine_verb/suit_storage_move_inside
+	id = "suit_storage_move_inside"
+	name = "Hide in Suit Storage Unit"
+	requires = list(REQ_INTERACTION_REACH)
+	effect = /obj/machinery/suit_storage_unit/proc/interaction_move_inside
 
-/obj/machinery/suit_storage_unit/verb/move_inside()
-	set name = "Hide in Suit Storage Unit"
-	set category = "Object"
-	set src in oview(1)
-
-	if(usr.stat != 0)
-		return
+/obj/machinery/suit_storage_unit/proc/interaction_move_inside(mob/user, obj/item/held, datum/interaction/interaction)
+	if(user.stat != 0)
+		return TRUE
 	if(!isopen)
-		to_chat(usr, span_warning("The unit's doors are shut."))
-		return
+		to_chat(user, span_warning("The unit's doors are shut."))
+		return TRUE
 	if(!ispowered || isbroken)
-		to_chat(usr, span_warning("The unit is not operational."))
-		return
+		to_chat(user, span_warning("The unit is not operational."))
+		return TRUE
 	if((OCCUPANT) || (HELMET) || (SUIT))
-		to_chat(usr, span_warning("It's too cluttered inside for you to fit in!"))
-		return
-	visible_message(span_info("[usr] starts squeezing into the suit storage unit!"), 3)
-	if(do_after(usr, 1 SECOND, target = src))
-		usr.stop_pulling()
-		usr.forceMove(src)
-		OCCUPANT = usr
+		to_chat(user, span_warning("It's too cluttered inside for you to fit in!"))
+		return TRUE
+	visible_message(span_info("[user] starts squeezing into the suit storage unit!"), 3)
+	if(do_after(user, 1 SECOND, target = src))
+		user.stop_pulling()
+		user.forceMove(src)
+		OCCUPANT = user
 		isopen = 0 //Close the thing after the guy gets inside
 		update_icon()
 
-		add_fingerprint(usr)
-		return
+		add_fingerprint(user)
+		return TRUE
 	else
 		OCCUPANT = null //Testing this as a backup sanity test
-	return
+	return TRUE
 
 
-/obj/machinery/suit_storage_unit/attackby(obj/item/I, mob/user)
+/// The old attackby: never called ..(), loaded a grabbed mob, suit, helmet or mask.
+/datum/interaction/machine_item/suit_storage_use_item
+	id = "suit_storage_use_item"
+	name = "Load"
+	held_type = /obj/item
+	effect = /obj/machinery/suit_storage_unit/proc/interaction_use_item
+
+/obj/machinery/suit_storage_unit/proc/interaction_use_item(mob/user, obj/item/I, datum/interaction/interaction)
 	if(!ispowered)
-		return
+		return TRUE
 	if(istype(I, /obj/item/grab))
 		var/obj/item/grab/G = I
 		if(!(ismob(G.affecting)))
-			return
+			return TRUE
 		if(!isopen)
 			to_chat(user, span_warning("The unit's doors are shut."))
-			return
+			return TRUE
 		if(!ispowered || isbroken)
 			to_chat(user, span_warning("The unit is not operational."))
-			return
+			return TRUE
 		if((OCCUPANT) || (HELMET) || (SUIT)) //Unit needs to be absolutely empty
 			to_chat(user, span_warning("The unit's storage area is too cluttered."))
-			return
+			return TRUE
 		visible_message(span_notice("[user] starts putting [G.affecting.name] into the Suit Storage Unit."), 3)
 		if(do_after(user, 2 SECONDS, target = src))
-			if(!G || !G.affecting) return //derpcheck
+			if(!G || !G.affecting) return TRUE //derpcheck
 			var/mob/M = G.affecting
 			M.forceMove(src)
 			OCCUPANT = M
@@ -397,49 +424,49 @@
 			add_fingerprint(user)
 			qdel(G)
 			update_icon()
-			return
-		return
+			return TRUE
+		return TRUE
 	if(istype(I,/obj/item/clothing/suit/space))
 		if(!isopen)
-			return
+			return TRUE
 		var/obj/item/clothing/suit/space/S = I
 		if(SUIT)
 			to_chat(user, span_notice("The unit already contains a suit."))
-			return
+			return TRUE
 		to_chat(user, span_info("You load the [S.name] into the storage compartment."))
 		user.drop_item()
 		S.forceMove(src)
 		SUIT = S
 		update_icon()
-		return
+		return TRUE
 	if(istype(I,/obj/item/clothing/head/helmet))
 		if(!isopen)
-			return
+			return TRUE
 		var/obj/item/clothing/head/helmet/H = I
 		if(HELMET)
 			to_chat(user, span_notice("The unit already contains a helmet."))
-			return
+			return TRUE
 		to_chat(user, span_info("You load the [H.name] into the storage compartment."))
 		user.drop_item()
 		H.forceMove(src)
 		HELMET = H
 		update_icon()
-		return
+		return TRUE
 	if(istype(I,/obj/item/clothing/mask))
 		if(!isopen)
-			return
+			return TRUE
 		var/obj/item/clothing/mask/M = I
 		if(MASK)
 			to_chat(user, span_notice("The unit already contains a mask."))
-			return
+			return TRUE
 		to_chat(user, span_info("You load the [M.name] into the storage compartment."))
 		user.drop_item()
 		M.forceMove(src)
 		MASK = M
 		update_icon()
-		return
+		return TRUE
 	update_icon()
-	return
+	return TRUE
 
 /obj/machinery/suit_storage_unit/screwdriver_act(mob/user, obj/item/tool)
 	if(!ispowered)

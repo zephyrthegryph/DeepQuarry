@@ -33,25 +33,40 @@
 		visible_message(span_warning("\The [src] sounds an alarm, swinging its hatch open."))
 		perform_exit()
 
-/obj/machinery/vr_sleeper/alien/attackby(obj/item/I, mob/user)
+/obj/machinery/vr_sleeper/alien/declare_interactions(list/into)
+	into += list(
+		/datum/interaction/machine_item/vr_sleeper_alien_scan,
+		/datum/interaction/machine_verb/vr_sleeper_alien_eject,
+	)
+	..()
+
+/// Old attackby: always fingerprints, then lets a medical scanner analyze the occupant.
+/datum/interaction/machine_item/vr_sleeper_alien_scan
+	id = "vr_sleeper_alien_scan"
+	name = "Use"
+	held_type = /obj/item
+	effect = /obj/machinery/vr_sleeper/alien/proc/interaction_scan
+
+/obj/machinery/vr_sleeper/alien/proc/interaction_scan(mob/user, obj/item/I, datum/interaction/interaction)
 	add_fingerprint(user)
 
 	if(occupant && (istype(I, /obj/item/healthanalyzer) || istype(I, /obj/item/robotanalyzer)))
 		I.attack(occupant, user)
-	return
+	return TRUE
 
-/obj/machinery/vr_sleeper/alien/eject()
-	set src in view(1)
-	set category = "Object"
+/datum/interaction/machine_verb/vr_sleeper_alien_eject
+	id = "vr_sleeper_alien_eject"
+	name = "Eject"
+	category = INTERACTION_CAT_EJECT
+	effect = /obj/machinery/vr_sleeper/alien/proc/interaction_eject
 
-	if(usr.incapacitated())
-		return
-
+/obj/machinery/vr_sleeper/alien/proc/interaction_eject(mob/user, obj/item/held, datum/interaction/interaction)
 	if(stat & (BROKEN) || (eject_dead && occupant && occupant.stat == DEAD))
 		perform_exit()
 	else
 		go_out()
-	add_fingerprint(usr)
+	add_fingerprint(user)
+	return TRUE
 
 /obj/machinery/vr_sleeper/alien/go_out()
 	if(!occupant)

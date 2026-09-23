@@ -19,10 +19,12 @@
 	var/disposals = FALSE
 
 // TODO - Its about time to make this NanoUI don't we think?
-/obj/machinery/pipedispenser/attack_hand(mob/user as mob)
-	if((. = ..()))
-		return
-	tgui_interact(user)
+/obj/machinery/pipedispenser/declare_interactions(list/into)
+	into += list(
+		/datum/interaction/machine_item/pipedispenser_return,
+		/datum/interaction/machine_hand/open_ui,
+	)
+	..()
 
 /obj/machinery/pipedispenser/ui_assets(mob/user)
 	return list(
@@ -109,15 +111,20 @@
 				VARSET_IN(src, wait, FALSE, 15)
 
 
-/obj/machinery/pipedispenser/attackby(obj/item/W as obj, mob/user as mob)
+/datum/interaction/machine_item/pipedispenser_return
+	id = "pipedispenser_return"
+	name = "Put back"
+	held_type = /obj/item
+	effect = /obj/machinery/pipedispenser/proc/interaction_return
+
+/obj/machinery/pipedispenser/proc/interaction_return(mob/user, obj/item/W, datum/interaction/interaction)
 	src.add_fingerprint(user)
 	if (istype(W, /obj/item/pipe) || istype(W, /obj/item/pipe_meter))
 		to_chat(user, span_notice("You put [W] back in [src]."))
 		user.drop_item()
 		qdel(W)
-		return
-	else
-		return ..()
+		return TRUE
+	return FALSE
 
 /obj/machinery/pipedispenser/wrench_act(mob/user, obj/item/tool)
 	var/delay = unwrenched ? 2 SECONDS : 4 SECONDS
@@ -147,18 +154,32 @@
 	disposals = TRUE
 
 //Allow you to drag-drop disposal pipes into it
-/obj/machinery/pipedispenser/disposal/MouseDrop_T(obj/structure/disposalconstruct/pipe as obj, mob/user as mob)
+/obj/machinery/pipedispenser/disposal/declare_interactions(list/into)
+	into += list(
+		/datum/interaction/machine_drag/pipedispenser_disposal_return,
+	)
+	..()
+
+/datum/interaction/machine_drag/pipedispenser_disposal_return
+	id = "pipedispenser_disposal_return"
+	name = "Put back"
+	held_type = /obj/structure/disposalconstruct
+	effect = /obj/machinery/pipedispenser/disposal/proc/interaction_disposal_return
+
+/obj/machinery/pipedispenser/disposal/proc/interaction_disposal_return(mob/user, atom/movable/dropping, datum/interaction/interaction)
+	var/obj/structure/disposalconstruct/pipe = dropping
 	if(!user.canmove || user.stat || user.restrained())
-		return
+		return TRUE
 
 	if (!istype(pipe) || get_dist(user, src) > 1 || get_dist(src,pipe) > 1 )
-		return
+		return TRUE
 
 	if (pipe.anchored)
-		return
+		return TRUE
 
 	to_chat(user, span_notice("You shove [pipe] back in [src]."))
 	qdel(pipe)
+	return TRUE
 
 // adding a pipe dispensers that spawn unhooked from the ground
 /obj/machinery/pipedispenser/orderable

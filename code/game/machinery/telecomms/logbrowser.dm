@@ -64,10 +64,23 @@
 
 	return data
 
-/obj/machinery/computer/telecomms/server/attack_hand(mob/user)
+/obj/machinery/computer/telecomms/server/declare_interactions(list/into)
+	into += list(
+		/datum/interaction/machine_hand/ungated/telecomms_server_open_ui,
+	)
+	..()
+
+/// Old attack_hand: never called ..().
+/datum/interaction/machine_hand/ungated/telecomms_server_open_ui
+	id = "telecomms_server_open_ui"
+	name = "Use"
+	effect = /obj/machinery/computer/telecomms/server/proc/interaction_open_ui
+
+/obj/machinery/computer/telecomms/server/proc/interaction_open_ui(mob/user, obj/item/held, datum/interaction/interaction)
 	if(stat & (BROKEN|NOPOWER))
-		return
+		return TRUE
 	tgui_interact(user)
+	return TRUE
 
 /obj/machinery/computer/telecomms/server/tgui_interact(mob/user, datum/tgui/ui)
 	ui = SStgui.try_update_ui(user, src, ui)

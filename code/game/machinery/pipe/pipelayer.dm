@@ -53,54 +53,81 @@
 	old_turf = loc
 	old_dir = turn(direction, 180)
 
-/obj/machinery/pipelayer/attack_hand(mob/user as mob)
-	if(..())
-		return
+/obj/machinery/pipelayer/declare_interactions(list/into)
+	into += list(
+		/datum/interaction/machine_item/part_replacement,
+		/datum/interaction/machine_item/pipelayer_recycle_pipe,
+		/datum/interaction/machine_item/pipelayer_load_metal,
+		/datum/interaction/machine_hand/pipelayer_toggle,
+	)
+	..()
+
+/datum/interaction/machine_hand/pipelayer_toggle
+	id = "pipelayer_toggle"
+	name = "Toggle"
+	category = INTERACTION_CAT_TOGGLE
+	effect = /obj/machinery/pipelayer/proc/interaction_toggle
+
+/obj/machinery/pipelayer/proc/interaction_toggle(mob/user, obj/item/held, datum/interaction/interaction)
 	if(panel_open)
 		if(metal < 1)
 			to_chat(user, "\The [src] is empty.")
-			return
+			return TRUE
 		var/answer = tgui_alert(user, "Do you want to eject all the metal in \the [src]?", "Eject?", list("Yes","No"))
 		if(answer == "Yes")
 			var/amount_ejected = eject_metal()
 			user.visible_message(span_notice("[user] removes [amount_ejected] sheet\s of [MAT_STEEL] from the \the [src]."),
 				span_notice("You remove [amount_ejected] sheet\s of [MAT_STEEL] from \the [src]."))
-		return
+		return TRUE
 	if(!metal && !on)
 		to_chat(user, span_warning("\The [src] doesn't work without metal."))
-		return
+		return TRUE
 	on = !on
 	old_turf = get_turf(src)
 	old_dir = dir
 	user.visible_message(span_notice("[user] has [!on?"de":""]activated \the [src]."), span_notice("You [!on?"de":""]activate \the [src]."))
-	return
+	return TRUE
 
-/obj/machinery/pipelayer/attackby(obj/item/W as obj, mob/user as mob)
-	if(default_part_replacement(user, W))
-		return
-	if(istype(W, /obj/item/pipe))
-		// NOTE - We must check for matter, otherwise the (free) pipe dispenser can be used to get infinite steel.
-		if(W.get_material_total() < pipe_cost * SHEET_MATERIAL_AMOUNT)
-			to_chat(user, span_warning("\The [W] doesn't contain enough [MAT_STEEL] to recycle."))
-		else if(metal + pipe_cost > max_metal)
-			to_chat(user, span_notice("\The [src] is full."))
-		else
-			user.drop_from_inventory(W)
-			metal += pipe_cost
-			to_chat(user, span_notice("You recycle \the [W]."))
-			qdel(W)
-		return
-	if(istype(W, /obj/item/stack/material) && W.get_material_name() == MAT_STEEL)
-		var/result = load_metal(W)
-		if(isnull(result))
-			to_chat(user, span_warning("Unable to load [W] - no metal found."))
-		else if(!result)
-			to_chat(user, span_notice("\The [src] is full."))
-		else
-			user.visible_message(span_notice("[user] has loaded metal into \the [src]."), span_notice("You load metal into \the [src]"))
-		return
+/// Recycle a pipe into internal metal storage.
+/datum/interaction/machine_item/pipelayer_recycle_pipe
+	id = "pipelayer_recycle_pipe"
+	name = "Recycle pipe"
+	held_type = /obj/item/pipe
+	effect = /obj/machinery/pipelayer/proc/interaction_recycle_pipe
 
-	..()
+/obj/machinery/pipelayer/proc/interaction_recycle_pipe(mob/user, obj/item/W, datum/interaction/interaction)
+	// NOTE - We must check for matter, otherwise the (free) pipe dispenser can be used to get infinite steel.
+	if(W.get_material_total() < pipe_cost * SHEET_MATERIAL_AMOUNT)
+		to_chat(user, span_warning("\The [W] doesn't contain enough [MAT_STEEL] to recycle."))
+	else if(metal + pipe_cost > max_metal)
+		to_chat(user, span_notice("\The [src] is full."))
+	else
+		user.drop_from_inventory(W)
+		metal += pipe_cost
+		to_chat(user, span_notice("You recycle \the [W]."))
+		qdel(W)
+	return TRUE
+
+/// Load steel stacks into internal storage.
+/datum/interaction/machine_item/pipelayer_load_metal
+	id = "pipelayer_load_metal"
+	name = "Load metal"
+	held_type = /obj/item/stack/material
+	offered_when = list(REQ_ON(PRED_HELD, /obj/item/stack/material/proc/is_steel_stack, null))
+	effect = /obj/machinery/pipelayer/proc/interaction_load_metal
+
+/obj/item/stack/material/proc/is_steel_stack(mob/actor, atom/target, obj/item/held)
+	return get_material_name() == MAT_STEEL
+
+/obj/machinery/pipelayer/proc/interaction_load_metal(mob/user, obj/item/stack/material/W, datum/interaction/interaction)
+	var/result = load_metal(W)
+	if(isnull(result))
+		to_chat(user, span_warning("Unable to load [W] - no metal found."))
+	else if(!result)
+		to_chat(user, span_notice("\The [src] is full."))
+	else
+		user.visible_message(span_notice("[user] has loaded metal into \the [src]."), span_notice("You load metal into \the [src]"))
+	return TRUE
 
 /obj/machinery/pipelayer/wrench_act(mob/user, obj/item/tool)
 	if(panel_open)

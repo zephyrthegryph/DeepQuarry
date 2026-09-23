@@ -50,10 +50,22 @@
 		data["selectedMachine"]["links"] = links
 	return data
 
-/obj/machinery/computer/telecomms/monitor/attack_hand(mob/user)
-	if(stat & (BROKEN|NOPOWER))
-		return
-	tgui_interact(user)
+/obj/machinery/computer/telecomms/monitor/declare_interactions(list/into)
+	into += list(
+		/datum/interaction/machine_hand/ungated/telemonitor_open_ui,
+	)
+	..()
+
+/// Old attack_hand: `if(stat & (BROKEN|NOPOWER)) return; tgui_interact(user)`, no gate (never called ..()).
+/datum/interaction/machine_hand/ungated/telemonitor_open_ui
+	id = "telemonitor_open_ui"
+	name = "Use"
+	requires = list(REQ_INTERACTION_REACH,
+		REQ_ON(PRED_TARGET, /obj/machinery/computer/telecomms/monitor/proc/telemonitor_powered, "it isn't working"))
+	effect = /obj/machinery/proc/interaction_open_ui
+
+/obj/machinery/computer/telecomms/monitor/proc/telemonitor_powered(mob/actor, atom/target, obj/item/held)
+	return !(stat & (BROKEN|NOPOWER))
 
 /obj/machinery/computer/telecomms/monitor/tgui_interact(mob/user, datum/tgui/ui)
 	ui = SStgui.try_update_ui(user, src, ui)
