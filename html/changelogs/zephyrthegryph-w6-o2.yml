@@ -1,0 +1,6 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - refactor: "Body parts are now physically nested: the torso sits in the mob, each limb inside its parent limb and each organ inside its limb, tracked by keyed containment slots."
+  - refactor: "Attaching and detaching a part is one ledger move; one pair of hooks keeps ownership, the organ lists and travelling afflictions in step for every way a part moves."
+  - bugfix: "Severing an arm now drops the gloves worn on its hand, and moving an organ between limbs of the same body no longer counts as losing it."
