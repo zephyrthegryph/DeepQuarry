@@ -217,7 +217,7 @@ avoid code duplication. This includes items that may sometimes act as a standard
 	M.lastattacker = user
 
 	if(!no_attack_log)
-		add_attack_logs(user,M,"attacked with [name] (INTENT: [uppertext(user.a_intent)]) (DAMTYE: [uppertext(damtype)])")
+		add_attack_logs(user,M,"attacked with [name] (INTENT: [uppertext(user.a_intent)]) (KIND: [injury_kind_name(injury_kind)])")
 	/////////////////////////
 
 	user.setClickCooldown(user.get_attack_speed(src))

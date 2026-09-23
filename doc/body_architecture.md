@@ -60,7 +60,7 @@ from the lesion afflictions located on them (§6).
   effect). A lesion typepath as `affliction` picks the kind directly. An organ
   the body no longer has is not a target (the injury applies 0).
 - `source` — the weapon/reagent/turf/mob responsible (logging, triggers).
-- `armor` — 0..100 percent blocked (from `run_armor_check`), applied here.
+- `armor_pen` — armour points ignored when the hit is armoured.
 - `affliction` — optional typepath to create *instead of* the body plan's
   default response. **This is how unique afflictions are introduced**: spider
   venom passes `/datum/affliction/envenomation`, phoron passes
@@ -73,17 +73,23 @@ Pipeline (one place, `code/modules/body/injury.dm`):
    godmode listen here — lite godmode cancels injuries aimed at internal
    organs and neural injury). The amount list is only allocated when
    something listens.
-2. Modifiers: `incoming_injury_percent` + the per-category percent
-   (`INJURY_CATEGORY_*`), energy-shield `effective_*_resistance` (drains cell).
-3. Body/species/part multiplier: `body.injury_multiplier(kind, part)` —
-   species `injury_mods`, biology immunities, and the **part multiplier**
-   (a limb's `brute_mod` for physical, `burn_mod` for thermal injury; spread
-   injuries apply each limb's own).
-4. Armor.
-5. `body.receive_injury(kind, amount, target, source, affliction, flags)` —
+2. The mitigation stages, in order (INJURE_IGNORE_RESISTANCE skips b-d):
+   a. Armour for the hit part and kind, only for hits from outside the body
+      (`INJURE_ARMORED`): `injury_armor(kind, zone)` minus `armor_pen`, +/-25%.
+      Armour can turn a cut or pierce into blunt trauma.
+   b. Energy shields (`COMSIG_LIVING_SHIELD_INJURY`; they drain a cell).
+   c. Resistance factors: `BF_INCOMING_ALL` x `BF_INCOMING(category)` —
+      modifiers, forms, reagents, traits and species `factor_baseline`.
+   d. Body/species/part multiplier: `body.injury_multiplier(kind, part)` —
+      species immunities (NO_POISON, NO_PAIN, NO_DNA), biology, and the
+      **part multiplier** (a limb's `brute_mod` for physical, `burn_mod` for
+      thermal injury; spread injuries apply each limb's own).
+   Each stage is recorded for `COMSIG_LIVING_INJURY_EXPLAINED` listeners and
+   the admin verb "Trace Injury Mitigation".
+3. `body.receive_injury(kind, amount, target, source, affliction, flags)` —
    the body plan resolves it into afflictions (§4).
-6. `COMSIG_LIVING_INJURED` post-signal, pain flash, HUD invalidation.
-7. `body.on_status_changed()`: marks the vitals dirty and runs the cheap
+4. `COMSIG_LIVING_INJURED` post-signal, pain flash, HUD invalidation.
+5. `body.on_status_changed()`: marks the vitals dirty and runs the cheap
    death check only. The full vitals recompute runs once per tick, or on the
    next query (`vitality()`, `is_unconscious()`, `current_pain()`).
 
@@ -96,9 +102,12 @@ organs only) and `organ.bench_damage()` (a loose organ). Outside
 it. `/obj/item/organ/take_damage()` is the item-integrity proc and does
 nothing to organs. There are no organ pre-damage signals.
 
-Convenience wrappers: `injure_many(alist(kind = amount, ...), zone, source, armor)`,
-`/obj/item/proc/get_injury_kind()` (derives kind from `damtype`+`sharp`+`edge`),
-`/obj/item/projectile/var/injury_kind`.
+Convenience wrappers: `injure_many(alist(kind = amount, ...), zone, source, armor_pen)`,
+`injure_split(kind, kinds, amount, ...)` and `injure_by(weapon, amount, zone)`
+(an armoured hit with the weapon's `injury_kind`, or its `injury_kinds` shares).
+Weapons, projectiles, blobs, unarmed attacks (`/datum/unarmed_attack/var/injury_kind`)
+and simple mobs (`attack_injury_kind`) declare their kinds directly; object
+damage is derived with `injury_kind_obj_damage_type(kind)`.
 
 ## 3. Healing in: mend
 

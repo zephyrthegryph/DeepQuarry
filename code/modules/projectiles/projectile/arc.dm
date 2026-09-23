@@ -122,7 +122,7 @@
 	name = "energy missile"
 	icon_state = "force_missile"
 	damage = 15
-	damage_type = BURN
+	injury_kind = INJURY_BURN
 
 /obj/item/projectile/arc/blue_energy/on_impact(turf/T)
 	for(var/mob/living/L in T)
@@ -180,7 +180,7 @@
 	name = "spore"
 	icon_state = "declone"
 	damage = 20
-	damage_type = BIOACID
+	injury_kind = INJURY_CORROSIVE
 	armor_penetration = 30
 	fire_sound = 'sound/effects/slime_squish.ogg'
 	arc_height_multiplier = 0.5

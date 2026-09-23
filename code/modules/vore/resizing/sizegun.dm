@@ -194,7 +194,6 @@
 	icon_state = "xray"
 	nodamage = 1
 	damage = 0
-	check_armour = "laser"
 	var/set_size = 1 //Let's default to 100%
 	can_miss = FALSE
 

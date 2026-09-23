@@ -322,7 +322,7 @@
 			return
 	if(W.force)
 		visible_message(span_danger("[user.name] attacks [src] with [W]!"))
-		injure(W.get_injury_kind(), W.force, null, W)
+		injure_by(W, W.force)
 	else
 		visible_message(span_warning("[user.name] bonks [src] harmlessly with [W]."))
 	spawn(1)

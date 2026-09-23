@@ -170,7 +170,7 @@
 	// You are going to knock someone out for longer if they are not wearing a helmet.
 	var/weaken_duration = 0
 	if(blocked < 100)
-		weaken_duration = smash_duration + min(0, force - target.getarmor(hit_zone, "melee") + 10)
+		weaken_duration = smash_duration + min(0, force - target.injury_armor(INJURY_BLUNT, hit_zone) + 10)
 
 	if(hit_zone == "head" && istype(target, /mob/living/carbon/))
 		user.visible_message(span_danger("\The [user] smashes [src] over [target]'s head!"))
@@ -222,6 +222,7 @@
 	attack_verb = list("stabbed", "slashed", "attacked")
 	sharp = TRUE
 	edge = FALSE
+	injury_kind = INJURY_PIERCE
 	var/icon/broken_outline = icon('icons/obj/drinks.dmi', "broken")
 
 /obj/item/broken_bottle/attack(mob/living/M, mob/living/user, target_zone, attack_modifier)

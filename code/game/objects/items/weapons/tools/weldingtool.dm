@@ -277,7 +277,7 @@
 				T.visible_message(span_danger("\The [src] turns on."))
 			playsound(src, acti_sound, 50, 1)
 			src.force = 15
-			src.damtype = BURN
+			src.injury_kind = INJURY_BURN
 			src.w_class = ITEMSIZE_LARGE
 			src.hitsound = 'sound/items/Welder.ogg'
 			welding = 1
@@ -299,7 +299,7 @@
 			T.visible_message(span_warning("\The [src] turns off."))
 		playsound(src, deac_sound, 50, 1)
 		src.force = 3
-		src.damtype = BRUTE
+		src.injury_kind = initial(src.injury_kind)
 		src.w_class = initial(src.w_class)
 		src.welding = 0
 		src.hitsound = initial(src.hitsound)

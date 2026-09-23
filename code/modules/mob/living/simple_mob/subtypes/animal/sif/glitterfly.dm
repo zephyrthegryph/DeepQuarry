@@ -43,7 +43,7 @@
 	melee_damage_lower = 1
 	melee_damage_upper = 2
 	attack_armor_pen = 80
-	attack_sharp = TRUE
+	attack_injury_kind = INJURY_PIERCE
 
 	density = FALSE	// Non-dense, so things can walk through their groups unhindered.
 

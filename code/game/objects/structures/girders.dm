@@ -132,7 +132,7 @@
 		Proj.redirect(new_x, new_y, curloc, null)
 
 	..()
-	take_damage(damage, Proj.damage_type, BULLET)
+	take_damage(damage, Proj.obj_damage_type(), BULLET)
 
 	return
 

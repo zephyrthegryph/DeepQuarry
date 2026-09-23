@@ -13,8 +13,7 @@
 	melee_damage_lower = 25
 	melee_damage_upper = 30
 	attack_armor_pen = 15
-	attack_sharp = TRUE
-	attack_edge = 1
+	attack_injury_kind = INJURY_CUT
 	attacktext = list("slashed")
 	friendly = list("pinches")
 	organ_names = /datum/decl/mob_organ_names/wraith

@@ -15,7 +15,7 @@
 	var/handle_risk		= 20		//20% chance to hurty if you handle it wrong
 	var/min_damage		= 3			//min: 3 burn per hand
 	var/max_damage		= 5			//max: 5 burn per hand
-	var/damage_type		= "BURN"	//defaults to burn, but randomized and can be preset if desired; currently supports brute, burn, tox, oxy, emp, and pain
+	var/hazard_type		= "BURN"	//defaults to burn, but randomized and can be preset if desired; currently supports brute, burn, tox, oxy, emp, and pain
 
 	//resource returns when crunched; a small amount of OK stuff by default
 	var/min_ore			= 3
@@ -29,7 +29,7 @@
 		var/name_suffix		//blank because it's randomized per sample appearance
 		var/sample_icon = rand(1,11)
 		icon_state = "generic_sample[sample_icon]"
-		damage_type = pick("BRUTE","BURN","TOX","OXY","EMP","PAIN")
+		hazard_type = pick("BRUTE","BURN","TOX","OXY","EMP","PAIN")
 		//per-state tweaks, like glows/light emission or narrower valid tech defs, if desired
 		switch(sample_icon)
 			if(1)	//prism
@@ -78,7 +78,7 @@
 			burn_user = FALSE
 
 		if(burn_user)
-			switch(damage_type)
+			switch(hazard_type)
 				if("BRUTE")
 					H.visible_message(span_danger("\The [src] creaks as it ravages [H]'s hands!"))
 					H.injure(INJURY_CUT, rand(min_damage,max_damage), BP_R_HAND, src)
@@ -136,7 +136,7 @@
 			burn_user = FALSE
 
 		if(burn_user)
-			switch(damage_type)
+			switch(hazard_type)
 				if("BRUTE")
 					H.visible_message(span_danger("\The [src] creaks as it ravages [H]'s hands!"))
 					H.injure(INJURY_CUT, rand(min_damage,max_damage), BP_R_HAND, src)

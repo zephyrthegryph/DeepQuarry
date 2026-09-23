@@ -21,6 +21,7 @@
 	matter = list(MAT_STEEL = 75)
 	attack_verb = list("stabbed")
 	sharp  = TRUE
+	injury_kind = INJURY_PIERCE
 	toolspeed = 1
 	tool_qualities = list(TOOL_SCREWDRIVER)
 	var/random_color = TRUE

@@ -59,13 +59,12 @@
 	name = "icicle"
 	icon_state = "ice_2"
 	damage = 40
-	damage_type = BRUTE
-	check_armour = "melee"
 	armor_penetration = 30
 	speed = 2
 	icon_scale_x = 2 // It hits like a truck.
 	icon_scale_y = 2
 	sharp = TRUE
+	injury_kind = INJURY_PIERCE
 
 /obj/item/projectile/icicle/on_impact(atom/A)
 	playsound(A, "shatter", 70, 1)

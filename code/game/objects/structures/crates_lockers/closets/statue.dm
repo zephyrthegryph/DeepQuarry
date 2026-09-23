@@ -93,7 +93,7 @@
 	return ..()
 
 /obj/structure/closet/statue/bullet_act(obj/item/projectile/Proj)
-	take_damage(Proj.get_structure_damage(), Proj.damage_type, BULLET)
+	take_damage(Proj.get_structure_damage(), Proj.obj_damage_type(), BULLET)
 	return
 
 /obj/structure/closet/statue/attack_generic(mob/user, damage, attacktext, environment_smash)
@@ -109,7 +109,7 @@
 /obj/structure/closet/statue/attackby(obj/item/I as obj, mob/user as mob)
 	user.do_attack_animation(src)
 	visible_message(span_danger("[user] strikes [src] with [I]."))
-	take_damage(I.force, I.damtype, MELEE, sound_effect = FALSE)
+	take_damage(I.force, I.obj_damage_type(), MELEE, sound_effect = FALSE)
 
 /obj/structure/closet/statue/MouseDrop_T()
 	return

@@ -27,8 +27,7 @@
 	icon_state = "sound"
 	damage = 5
 	armor_penetration = 30
-	damage_type = BURN
-	check_armour = "melee"
+	injury_kind = INJURY_BURN
 	embed_chance = 0
 	vacuum_traversal = 0
 	range = 5 //Scary name, but just deletes the projectile after this range

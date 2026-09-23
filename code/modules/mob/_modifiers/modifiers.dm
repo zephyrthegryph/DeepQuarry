@@ -232,8 +232,8 @@
 // Personal shield projections. Their numeric effects (siemens, stun
 // resistance, evasion...) are ordinary body factors; the one thing that is
 // not a simple multiplier is the charge-dependent damage resistance, which
-// also drains the generator's cell for what it absorbs. That runs on the
-// holder's COMSIG_LIVING_INJURE while the shield is up.
+// also drains the generator's cell for what it absorbs. That runs as stage 2
+// of injure()'s mitigation (COMSIG_LIVING_SHIELD_INJURY) while the shield is up.
 /datum/modifier/shield_projection
 	name = "Shield Projection"
 	desc = "You are currently protected by a shield, rendering nigh impossible to hit you through conventional means."
@@ -264,10 +264,10 @@
 #define SHIELD_RESIST_ALL 0
 
 /datum/modifier/shield_projection/on_applied()
-	RegisterSignal(holder, COMSIG_LIVING_INJURE, PROC_REF(on_holder_injure))
+	RegisterSignal(holder, COMSIG_LIVING_SHIELD_INJURY, PROC_REF(on_holder_injure))
 
 /datum/modifier/shield_projection/on_expire()
-	UnregisterSignal(holder, COMSIG_LIVING_INJURE)
+	UnregisterSignal(holder, COMSIG_LIVING_SHIELD_INJURY)
 
 /datum/modifier/shield_projection/Destroy(force)
 	shield_generator = null
@@ -315,8 +315,6 @@
 
 /datum/modifier/shield_projection/proc/on_holder_injure(mob/living/source, kind, list/amount_ref, zone, atom/injury_source, flags)
 	SIGNAL_HANDLER
-	if(flags & INJURE_IGNORE_RESISTANCE)
-		return NONE
 	var/mult = resistance(injury_category(kind))
 	if(isnull(mult))
 		return NONE

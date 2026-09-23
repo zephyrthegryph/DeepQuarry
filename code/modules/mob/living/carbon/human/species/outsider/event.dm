@@ -29,7 +29,8 @@ Variables you may want to make use of are:
 
 	total_health					How much damage can they take before entering crit? Default 100.
 
-	injury_mod_groups				Injury multipliers by group: list("physical" = x, "thermal" = x, "toxin" = x, "asphyxia" = x, "radiation" = x, ...).
+	factor_baseline					Injury multipliers are body factors: alist(BF_INCOMING_PHYSICAL = x, BF_INCOMING_THERMAL = x, BF_INCOMING_TOXIC = x, ...).
+	radiation_mod					Multiplier on radiation's effects.
 	flash_mod						Stun from blindness modifier.
 	sound_mod						Stun from sounds, I.E. flashbangs.
 	chemOD_mod						Damage modifier for overdose
@@ -79,7 +80,8 @@ Variables you may want to make use of are:
 	vision_flags = SEE_SELF
 	darksight = 7
 
-	injury_mod_groups = list("physical" = 0.9, "thermal" = 0.9, "toxin" = 0.9, "asphyxia" = 0.9, "radiation" = 0.9)
+	factor_baseline = alist(BF_INCOMING_PHYSICAL = 0.9, BF_INCOMING_THERMAL = 0.9, BF_INCOMING_TOXIC = 0.9, BF_INCOMING_ASPHYXIA = 0.9)
+	radiation_mod = 0.9
 	flash_mod = 0.9
 	sound_mod = 0.9
 	chemOD_mod = 0.9

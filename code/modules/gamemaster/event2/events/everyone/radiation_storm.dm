@@ -40,7 +40,7 @@
 		if(ishuman(C))
 			var/mob/living/carbon/human/H = C
 			var/chance = 5.0
-			chance -= (chance / 100) * C.getarmor(null, "rad")
+			chance -= (chance / 100) * C.injury_armor(INJURY_RADIATION, null)
 			if(prob(chance))
 				if (prob(75))
 					randmutb(H) // Applies bad mutation

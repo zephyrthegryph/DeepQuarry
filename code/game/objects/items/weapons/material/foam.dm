@@ -5,14 +5,14 @@
 	attack_verb = list("bonked","whacked")
 	force_divisor = 1
 	unbreakable = 1
-	damtype = HALLOSS
+	injury_kind = INJURY_PAIN
 
 /obj/item/material/twohanded/baseballbat/foam
 	attack_verb = list("bonked","whacked")
 	force_wielded = 1
 	force_divisor = 1
 	unbreakable = 1
-	damtype = HALLOSS
+	injury_kind = INJURY_PAIN
 
 /obj/item/material/sword/foam/Initialize(mapload)
 	. = ..(mapload, MAT_FOAM)
@@ -21,7 +21,7 @@
 	attack_verb = list("bonked","whacked")
 	force_wielded = 1
 	force_divisor = 1
-	damtype = HALLOSS
+	injury_kind = INJURY_PAIN
 	applies_material_colour = 1
 	base_icon = "spear_mask"
 	icon_state = "spear_mask0"
@@ -34,7 +34,7 @@
 	attack_verb = list("bonked","whacked")
 	force_wielded = 1
 	force_divisor = 1
-	damtype = HALLOSS
+	injury_kind = INJURY_PAIN
 	applies_material_colour = 1
 	base_icon = "fireaxe_mask"
 	icon_state = "fireaxe_mask0"

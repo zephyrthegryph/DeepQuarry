@@ -106,10 +106,8 @@
 	var/list/friendly = list("nuzzles") // "The mob [friendly] the person."
 	var/attack_sound = null				// Sound to play when I attack
 	var/melee_miss_chance = 0			// percent chance to miss a melee attack.
-	var/attack_armor_type = "melee"		// What armor does this check?
 	var/attack_armor_pen = 0			// How much armor pen this attack has.
-	var/attack_sharp = FALSE			// Is the attack sharp?
-	var/attack_edge = FALSE				// Does the attack have an edge?
+	var/attack_injury_kind = INJURY_BLUNT	// What the melee attack inflicts (INJURY_*); armour is looked up by it.
 
 	var/melee_attack_delay = 2			// If set, the mob will do a windup animation and can miss if the target moves out of the way.
 	var/ranged_attack_delay = null
@@ -132,7 +130,7 @@
 	//Damage resistances
 	var/grab_resist = 0				// Chance for a grab attempt to fail. Note that this is not a true resist and is just a prob() of failure.
 	var/resistance = 0				// Damage reduction for all types
-	var/list/armor = list(			// Values for normal getarmor() checks
+	var/list/armor = list(			// Values read by injury_armor()
 				"melee" = 0,
 				"bullet" = 0,
 				"laser" = 0,
@@ -938,8 +936,8 @@
 		if(H.species.lightweight == 1)
 			H.Weaken(3)
 			return
-	var/armor_block = run_armor_check(T, "melee")
-	T.injure(INJURY_PAIN, 20, null, src, armor_block)
+	var/armor_block = T.armor_against(INJURY_PAIN)
+	T.injure(INJURY_PAIN, 20, null, src, flags = INJURE_ARMORED)
 	if(prob(75))
 		T.apply_effect(3, WEAKEN, armor_block)
 

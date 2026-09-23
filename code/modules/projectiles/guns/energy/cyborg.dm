@@ -156,6 +156,7 @@
 	pry = 1
 	edge = TRUE
 	sharp = TRUE
+	injury_kind = INJURY_CUT
 	tool_qualities = list(TOOL_CROWBAR)
 
 /obj/item/melee/robotic/jaws/big
@@ -299,6 +300,7 @@
 	armor_penetration = 70
 	sharp = TRUE
 	edge = TRUE
+	injury_kind = INJURY_CUT
 	throwforce = 0 //This shouldn't be thrown in the first place.
 	hitsound = 'sound/weapons/blade1.ogg'
 	attack_verb = list("slashed", "stabbed", "jabbed", "mauled", "sliced")

@@ -56,7 +56,7 @@
 
 /obj/effect/spider/bullet_act(obj/item/projectile/Proj)
 	. = ..()
-	take_damage(Proj.get_structure_damage(), Proj.damage_type, BULLET)
+	take_damage(Proj.get_structure_damage(), Proj.obj_damage_type(), BULLET)
 
 /obj/effect/spider/proc/die()
 	qdel(src)

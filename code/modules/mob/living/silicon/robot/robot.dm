@@ -154,7 +154,7 @@
 	spark_system.set_up(5, 0, src)
 	spark_system.attach(src)
 	robotact = new(src)
-	RegisterSignal(src, COMSIG_LIVING_INJURE, PROC_REF(absorb_injury_with_shield))
+	RegisterSignal(src, COMSIG_LIVING_SHIELD_INJURY, PROC_REF(absorb_injury_with_shield))
 
 	add_language(LANGUAGE_ROBOT_TALK, 1)
 	add_language(LANGUAGE_GALCOM, 1)

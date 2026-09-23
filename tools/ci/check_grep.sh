@@ -181,6 +181,36 @@ if $grep -n '\b(M|mod|modifier)\.(slowdown|haste|evasion|accuracy|siemens_coeffi
 	FAILED=1
 fi;
 
+part "weapon vocabulary: injury kinds, not damage types"
+# Weapons, projectiles, blobs, unarmed and animal attacks declare what they
+# inflict as INJURY_* kinds (`injury_kind`, or an `injury_kinds` alist for a
+# mixed hit). Object damage is derived with injury_kind_obj_damage_type().
+if $grep -n '(\.damtype\b|\bvar/damtype\b|^\s*damtype\s*=|\binjury_kind_for\b|\bget_injury_kind\b|\binjure_by_damtype\b|\bpunch_damtype\b|\bcheck_armour\b|\battack_(sharp|edge)\b)' $code_files; then
+	echo
+	echo -e "${RED}ERROR: a legacy damage type (damtype / injury_kind_for / check_armour / attack_sharp...) detected. Declare injury_kind = INJURY_X (or injury_kinds) and derive object damage with injury_kind_obj_damage_type().${NC}"
+	FAILED=1
+fi;
+if $grep -n '^\s*(var/)?damage_type\s*=\s*(BRUTE|BURN)\b' $code_files | $grep -v '^code/modules/medical/conditions/wounds\.dm:'; then
+	echo
+	echo -e "${RED}ERROR: damage_type = BRUTE/BURN on a mob-harming type. Declare injury_kind = INJURY_X; obj_integrity damage is derived from it.${NC}"
+	FAILED=1
+fi;
+if $grep -n '(#define\s+(TOX|OXY|CLONE|HALLOSS)\b|\b(HALLOSS|ELECTROCUTE|BIOACID|SEARING|ELECTROMAG)\b)' $code_files; then
+	echo
+	echo -e "${RED}ERROR: a removed damage-type define (TOX/OXY/CLONE/HALLOSS/ELECTROCUTE/BIOACID/SEARING/ELECTROMAG) detected. Use INJURY_* kinds.${NC}"
+	FAILED=1
+fi;
+
+part "one mitigation pipeline"
+# Armour, shields, resistance factors and species multipliers apply inside
+# injure() (pass INJURE_ARMORED for hits from outside). The old parallel
+# armour procs are gone; ask armour with injury_armor(kind, zone).
+if $grep -n '\b(run_armor_check|getarmor|getarmor_organ|mitigate_injury|factor_armor|get_injury_mod|injury_mod_groups)\b' $code_files; then
+	echo
+	echo -e "${RED}ERROR: a parallel mitigation path detected. Harm goes through injure(); armour is injury_armor(kind, zone); species resistances are factor_baseline BF_INCOMING_*.${NC}"
+	FAILED=1
+fi;
+
 part "medical condition severity writes"
 # Condition severity is observable contract state. All writes, including
 # pre-attachment initialization, go through set_severity()/adjust_severity()

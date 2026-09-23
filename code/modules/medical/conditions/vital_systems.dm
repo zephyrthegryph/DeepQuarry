@@ -161,7 +161,7 @@
 /datum/affliction/respiratory_arrest/proc/is_sustained()
 	if(!body)
 		return FALSE
-	if(body.has_affliction(/datum/affliction/oxycodone_overdose))
+	if(body.has_affliction(/datum/affliction/overdose/oxycodone))
 		return TRUE
 	var/datum/affliction/brain_damage/brain = body.find_affliction(/datum/affliction/brain_damage)
 	if(brain?.stage == "Critical")

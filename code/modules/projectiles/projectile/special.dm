@@ -3,9 +3,8 @@
 	icon_state = "ion"
 	fire_sound = 'sound/weapons/Laser.ogg'
 	damage = 0
-	damage_type = BURN
+	injury_kind = INJURY_BURN
 	nodamage = 1
-	check_armour = "energy"
 	light_range = 2
 	light_power = 0.5
 	light_color = "#55AAFF"
@@ -42,9 +41,9 @@
 	name ="explosive bolt"
 	icon_state= "bolter"
 	damage = 50
-	check_armour = "bullet"
 	sharp = TRUE
 	edge = TRUE
+	injury_kind = INJURY_CUT
 	hud_state = "rocket_fire"
 
 /obj/item/projectile/bullet/gyro/on_hit(atom/target, blocked = 0)
@@ -56,10 +55,9 @@
 	icon_state = "ice_2"
 	fire_sound = 'sound/weapons/pulse3.ogg'
 	damage = 0
-	damage_type = BURN
+	injury_kind = INJURY_BURN
 	pass_flags = PASSTABLE | PASSGLASS | PASSGRILLE
 	nodamage = 1
-	check_armour = "energy" // It actually checks heat/cold protection.
 	var/target_temperature = 50
 	light_range = 2
 	light_power = 0.5
@@ -110,9 +108,7 @@
 	icon = 'icons/obj/meteor.dmi'
 	icon_state = "small"
 	damage = 0
-	damage_type = BRUTE
 	nodamage = 1
-	check_armour = "bullet"
 	hud_state = "monkey"
 
 /obj/item/projectile/meteor/Bump(atom/A as mob|obj|turf|area)
@@ -141,7 +137,6 @@
 	damage = 0
 	injury_kind = INJURY_TOXIN
 	nodamage = 1
-	check_armour = "energy"
 	light_range = 2
 	light_power = 0.5
 	light_color = "#33CC00"
@@ -189,7 +184,6 @@
 	damage = 0
 	injury_kind = INJURY_TOXIN
 	nodamage = 1
-	check_armour = "energy"
 	var/datum/decl/plantgene/gene = null
 	hud_state = "electrothermal"
 
@@ -200,7 +194,6 @@
 	damage = 0
 	injury_kind = INJURY_TOXIN
 	nodamage = 1
-	check_armour = "energy"
 	light_range = 2
 	light_power = 0.5
 	light_color = "#FFFFFF"
@@ -226,7 +219,6 @@
 	damage = 0
 	injury_kind = INJURY_TOXIN
 	nodamage = 1
-	check_armour = "energy"
 	light_range = 2
 	light_power = 0.5
 	light_color = "#FFFFFF"
@@ -302,7 +294,6 @@
 	icon_state = "bola"
 	damage = 10
 	embed_chance = 0 //Nada.
-	damage_type = BRUTE
 	muzzle_type = null
 	hud_state = "monkey"
 	combustion = FALSE
@@ -321,8 +312,6 @@
 	fire_sound = 'sound/weapons/gauss_shoot.ogg'
 	pass_flags = PASSTABLE | PASSGRILLE
 	damage = 70
-	damage_type = BURN
-	check_armour = "laser"
 	light_range = 4
 	light_power = 3
 	light_color = "#3300ff"
@@ -339,7 +328,7 @@
 		if(ishuman(L))
 			var/mob/living/carbon/human/H = L
 
-			var/target_armor = H.getarmor(def_zone, check_armour)
+			var/target_armor = H.injury_armor(injury_kind, def_zone)
 			var/obj/item/organ/external/target_limb = H.get_organ(def_zone)
 
 			var/armor_special = 0

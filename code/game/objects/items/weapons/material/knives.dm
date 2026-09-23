@@ -70,6 +70,7 @@
 	//description_fluff = "This could be used to engrave messages on suitable surfaces if you really put your mind to it! Alt-click a floor or wall to engrave with it." //This way it's not a completely hidden, arcane art to engrave. //CHOMP Remove
 	sharp = TRUE
 	edge = TRUE
+	injury_kind = INJURY_CUT
 	force_divisor = 0.15 // 9 when wielded with hardness 60 (steel)
 	matter = list(MAT_STEEL = 12000)
 	attack_verb = list("slashed", "stabbed", "sliced", "torn", "ripped", "diced", "cut")
@@ -125,6 +126,7 @@
 	icon = 'icons/obj/kitchen.dmi'
 	icon_state = "knife_table"
 	sharp = FALSE // blunted tip
+	injury_kind = INJURY_BLUNT
 	force_divisor = 0.1
 
 /obj/item/material/knife/table/plastic

@@ -7,10 +7,9 @@
 	difficulty = BLOB_DIFFICULTY_HARD
 	color = "#AAAABB"
 	complementary_color = "#BBBBAA"
-	damage_type = OXY
+	injury_kind = INJURY_ASPHYXIA
 	damage_lower = 5
 	damage_upper = 15
-	armor_check = null
 	brute_multiplier = 0.6
 	burn_multiplier = 0.2
 	spread_modifier = 0.4

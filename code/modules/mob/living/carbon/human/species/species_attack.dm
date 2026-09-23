@@ -5,6 +5,7 @@
 	shredding = 0
 	sharp = TRUE
 	edge = TRUE
+	injury_kind = INJURY_CUT
 
 /datum/unarmed_attack/diona
 	attack_name = "tendrils"
@@ -24,6 +25,7 @@
 	miss_sound = 'sound/weapons/slashmiss.ogg'
 	sharp = TRUE
 	edge = TRUE
+	injury_kind = INJURY_CUT
 
 /datum/unarmed_attack/claws/show_attack(mob/living/carbon/human/user, mob/living/carbon/human/target, zone, attack_damage)
 	var/obj/item/organ/external/affecting = target.get_organ(zone)
@@ -112,6 +114,7 @@
 	damage = 10
 	shredding = 0
 	sharp = TRUE
+	injury_kind = INJURY_PIERCE
 
 /datum/unarmed_attack/slime_glomp
 	attack_name = "glomp"

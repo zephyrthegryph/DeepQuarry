@@ -81,7 +81,7 @@
 		return
 
 	..()
-	take_damage(proj_damage, Proj.damage_type, BULLET)
+	take_damage(proj_damage, Proj.obj_damage_type(), BULLET)
 
 	return
 

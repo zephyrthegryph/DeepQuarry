@@ -22,6 +22,7 @@
 	pickup_sound = 'sound/items/pickup/wirecutter.ogg'
 	sharp = TRUE
 	edge = TRUE
+	injury_kind = INJURY_CUT
 	toolspeed = 1
 	tool_qualities = list(TOOL_WIRECUTTER)
 	var/random_color = TRUE

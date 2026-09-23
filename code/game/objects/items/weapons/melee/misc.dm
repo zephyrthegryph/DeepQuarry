@@ -71,6 +71,7 @@
 	w_class = ITEMSIZE_NORMAL
 	sharp = TRUE
 	edge = TRUE
+	injury_kind = INJURY_CUT
 	attack_verb = list("attacked", "slashed", "stabbed", "sliced", "torn", "ripped", "diced", "cut")
 	hitsound = 'sound/weapons/bladeslice.ogg'
 	can_speak = 1
@@ -113,6 +114,7 @@
 	w_class = ITEMSIZE_NORMAL
 	sharp = TRUE
 	edge = FALSE
+	injury_kind = INJURY_PIERCE
 	attack_verb = list("stabbed", "lunged at", "dextrously struck", "sliced", "lacerated", "impaled", "diced", "charioted")
 	hitsound = 'sound/weapons/bladeslice.ogg'
 

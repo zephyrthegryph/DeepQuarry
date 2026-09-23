@@ -6,6 +6,7 @@
 	randpixel = 8
 	w_class = ITEMSIZE_TINY
 	sharp = TRUE
+	injury_kind = INJURY_PIERCE
 	var/datum/geosample/geological_data
 
 /obj/item/rocksliver/Initialize(mapload)

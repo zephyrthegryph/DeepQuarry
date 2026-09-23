@@ -27,7 +27,6 @@
 
 /obj/item/projectile/energy/blob/rainbowfly
 	damage = 10
-	check_armour = "melee"
 	splatter = TRUE
 	my_chems = list(REAGENT_ID_CRYPTOBIOLIN)
 

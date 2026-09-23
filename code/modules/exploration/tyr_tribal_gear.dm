@@ -206,6 +206,7 @@
 	item_state = "dualsaber"
 	sharp = TRUE
 	edge = TRUE
+	injury_kind = INJURY_CUT
 	can_cleave = TRUE
 	colorable = TRUE
 	defend_chance = 65

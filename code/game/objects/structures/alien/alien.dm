@@ -12,7 +12,7 @@
 	return ..()
 
 /obj/structure/alien/bullet_act(obj/item/projectile/Proj)
-	take_damage(Proj.damage, Proj.damage_type, BULLET)
+	take_damage(Proj.damage, Proj.obj_damage_type(), BULLET)
 	return ..()
 
 /obj/structure/alien/ex_act(severity)
@@ -57,7 +57,7 @@
 	user.setClickCooldown(user.get_attack_speed(W))
 	playsound(src, 'sound/effects/attackblob.ogg', 100, 1)
 	visible_message(span_danger("[user] attacks the [src]!"))
-	take_damage(W.force, W.damtype, MELEE, sound_effect = FALSE)
+	take_damage(W.force, W.obj_damage_type(), MELEE, sound_effect = FALSE)
 	..()
 	return
 

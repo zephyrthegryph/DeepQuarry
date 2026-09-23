@@ -691,7 +691,7 @@
 
 /obj/machinery/power/rtg/abductor/bullet_act(obj/item/projectile/Proj)
 	. = ..()
-	if(!QDELETED(src) && !going_kaboom && istype(Proj) && !Proj.nodamage && ((Proj.damage_type == BURN) || (Proj.damage_type == BRUTE)))
+	if(!QDELETED(src) && !going_kaboom && istype(Proj) && !Proj.nodamage && ((Proj.obj_damage_type() == BURN) || (Proj.obj_damage_type() == BRUTE)))
 		log_and_message_admins("[ADMIN_LOOKUPFLW(Proj.firer)] triggered an Abductor Core explosion at [x],[y],[z] via projectile.", Proj.firer)
 		asplod()
 
@@ -806,7 +806,7 @@
 
 /obj/machinery/power/rtg/kugelblitz/bullet_act(obj/item/projectile/Proj)
 	. = ..()
-	if(istype(Proj) && !Proj.nodamage && ((Proj.damage_type == BURN) || (Proj.damage_type == BRUTE)) && Proj.damage >= 20)
+	if(istype(Proj) && !Proj.nodamage && ((Proj.obj_damage_type() == BURN) || (Proj.obj_damage_type() == BRUTE)) && Proj.damage >= 20)
 		log_and_message_admins("[ADMIN_LOOKUPFLW(Proj.firer)] triggered a kugelblitz core explosion at [x],[y],[z] via projectile.", Proj.firer)
 		asplod()
 
@@ -1058,6 +1058,6 @@
 
 /obj/machinery/power/rtg/antimatter_core/bullet_act(obj/item/projectile/Proj)
 	. = ..()
-	if(istype(Proj) && !Proj.nodamage && ((Proj.damage_type == BURN) || (Proj.damage_type == BRUTE)) && Proj.damage >= 20)
+	if(istype(Proj) && !Proj.nodamage && ((Proj.obj_damage_type() == BURN) || (Proj.obj_damage_type() == BRUTE)) && Proj.damage >= 20)
 		log_and_message_admins("[ADMIN_LOOKUPFLW(Proj.firer)] triggered an antimatter core explosion at [x],[y],[z] via projectile.", Proj.firer)
 		asplod()

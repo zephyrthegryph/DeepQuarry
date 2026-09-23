@@ -7,7 +7,6 @@
 	difficulty = BLOB_DIFFICULTY_EASY // Mostly a tank and spank.
 	color = "#65ADA2"
 	complementary_color = "#AD6570"
-	damage_type = BRUTE
 	damage_lower = 10
 	damage_upper = 15
 	brute_multiplier = 0.5

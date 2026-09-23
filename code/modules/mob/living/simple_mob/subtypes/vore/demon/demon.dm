@@ -142,7 +142,7 @@
 //Fire heals demons instead.
 //This should include all fire sources assuming they dont weirdly make their own damage handling.
 //Yes this also means that negative fire is bad for them...
-/mob/living/simple_mob/vore/demon/injure(kind, amount, zone = null, atom/source = null, armor = 0, affliction = null, flags = NONE)
+/mob/living/simple_mob/vore/demon/injure(kind, amount, zone = null, atom/source = null, armor_pen = 0, affliction = null, flags = NONE)
 	if(kind != INJURY_BURN)
 		return ..()
 	if(amount <= 0 || (status_flags & GODMODE))

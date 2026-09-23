@@ -123,7 +123,7 @@
 	if(!proj_damage) return
 
 	..()
-	take_damage(proj_damage, Proj.damage_type, BULLET)
+	take_damage(proj_damage, Proj.obj_damage_type(), BULLET)
 	return
 
 /obj/structure/window/can_pathfinding_enter(atom/movable/actor, dir, datum/pathfinding/search)
@@ -291,7 +291,7 @@
 		F.try_build(src, user)
 	else
 		user.setClickCooldown(user.get_attack_speed(W))
-		if(W.damtype == BRUTE || W.damtype == BURN)
+		if(W.obj_damage_type())
 			user.do_attack_animation(src)
 			hit(W.force)
 			if(get_integrity() <= 7)

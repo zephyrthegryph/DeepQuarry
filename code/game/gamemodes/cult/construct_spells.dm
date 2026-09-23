@@ -567,8 +567,6 @@
 	icon_state = "invert"
 	fire_sound = 'sound/weapons/spiderlunge.ogg'
 	damage = 15
-	damage_type = BURN
-	check_armour = "laser"
 	armor_penetration = 60
 	light_range = 2
 	light_power = -2
@@ -584,8 +582,6 @@
 	icon_state = "impact_invert"
 	damage = 30
 	armor_penetration = 60
-	damage_type = BURN
-	check_armour = "laser"
 	color = "#ffffff"
 	fire_sound = 'sound/weapons/spiderlunge.ogg'
 
@@ -711,8 +707,6 @@
 	icon_state = "invert"
 	fire_sound = 'sound/weapons/spiderlunge.ogg'
 	damage = 20
-	damage_type = BURN
-	check_armour = "laser"
 	armor_penetration = 60
 	light_range = 2
 	light_power = -2
@@ -774,9 +768,7 @@
 	icon_state = "invert"
 	fire_sound = 'sound/weapons/spiderlunge.ogg'
 	damage = 15
-	damage_type = BURN
 	mob_bonus_damage = 45
-	check_armour = "laser"
 	armor_penetration = 60
 	light_range = 2
 	light_power = -2
@@ -824,8 +816,7 @@
 	icon_state = "invert"
 	fire_sound = 'sound/weapons/spiderlunge.ogg'
 	damage = 5
-	damage_type = BRUTE
-	check_armour = "melee"
+	injury_kind = INJURY_BLUNT
 	armor_penetration = 60
 	light_range = 2
 	light_power = -2

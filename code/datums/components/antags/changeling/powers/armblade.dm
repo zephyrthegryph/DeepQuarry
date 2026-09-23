@@ -122,6 +122,7 @@
 	armor_penetration = 15
 	sharp = TRUE
 	edge = TRUE
+	injury_kind = INJURY_CUT
 	pry = 1
 	attack_verb = list("attacked", "slashed", "stabbed", "sliced", "torn", "ripped", "diced", "cut")
 	defend_chance = 60
@@ -141,6 +142,7 @@
 	force = 15
 	sharp = TRUE
 	edge = TRUE
+	injury_kind = INJURY_CUT
 	attack_verb = list("attacked", "slashed", "stabbed", "sliced", "torn", "ripped", "diced", "cut")
 	defend_chance = 50
 	projectile_parry_chance = 15

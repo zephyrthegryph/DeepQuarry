@@ -8,6 +8,7 @@
 	randpixel = 8
 	sharp = TRUE
 	edge = TRUE
+	injury_kind = INJURY_CUT
 	w_class = ITEMSIZE_SMALL
 	force_divisor = 0.25 // 7.5 with hardness 30 (glass)
 	thrown_force_divisor = 0.5
@@ -89,11 +90,11 @@
 
 	if(user.gloves && !protected_hands)
 		to_chat(user, span_warning("\The [src] partially cuts into your hand through your gloves as you hit \the [target]!"))
-		user.injure(get_injury_kind(), light_glove_d + (will_break ? break_damage : 0), active_hand, src) // Ternary to include break damage
+		user.injure(injury_kind, light_glove_d + (will_break ? break_damage : 0), active_hand, src) // Ternary to include break damage
 
 	else if(!user.gloves)
 		to_chat(user, span_warning("\The [src] cuts into your hand as you hit \the [target]!"))
-		user.injure(get_injury_kind(), no_glove_d + (will_break ? break_damage : 0), active_hand, src)
+		user.injure(injury_kind, no_glove_d + (will_break ? break_damage : 0), active_hand, src)
 
 	if(will_break && src.loc == user) // If it's not in our hand anymore
 		user.visible_message(span_danger("[user] hit \the [target] with \the [src], shattering it!"), span_warning("You shatter \the [src] in your hand!"))

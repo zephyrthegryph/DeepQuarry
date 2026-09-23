@@ -159,7 +159,7 @@
 		target.visible_message(span_danger("[user] has attempted to punch [target]!"))
 		return TRUE
 	var/obj/item/organ/external/affecting = target.get_organ(ran_zone(user.zone_sel.selecting))
-	var/armor_block = target.run_armor_check(affecting, "melee")
+	var/armor_block = target.armor_against(INJURY_PAIN, affecting)
 
 	if(HULK in user.mutations)
 		damage += 5
@@ -168,7 +168,7 @@
 
 	target.visible_message(span_bolddanger("[user] has punched [target]!"))
 
-	target.injure(INJURY_PAIN, damage, affecting?.organ_tag, user, armor_block)
+	target.injure(INJURY_PAIN, damage, affecting?.organ_tag, user, flags = INJURE_ARMORED)
 	if(damage >= 9)
 		target.visible_message(span_bolddanger("[user] has weakened [target]!"))
 		target.apply_effect(4, WEAKEN, armor_block)
@@ -204,7 +204,7 @@
 
 	if(W.flags & NOBLUDGEON) return
 
-	if(W.damtype == BRUTE || W.damtype == BURN)
+	if(W.obj_damage_type())
 		hit(W.force)
 		if(get_integrity() <= 7)
 			anchored = FALSE
@@ -243,8 +243,8 @@
 		var/aforce = I.force
 		playsound(src, 'sound/effects/Glasshit.ogg', 75, 1)
 		visible_message(span_bolddanger("[src] was hit by [I]."))
-		if(I.damtype == BRUTE || I.damtype == BURN)
-			take_damage(aforce, I.damtype, MELEE)
+		if(I.obj_damage_type())
+			take_damage(aforce, I.obj_damage_type(), MELEE)
 		return
 
 	src.add_fingerprint(user)
@@ -277,7 +277,7 @@
 	to_chat(user, span_notice("It's a holobed, you can't dismantle it!"))
 	return ITEM_INTERACT_BLOCKING
 /obj/item/holo
-	damtype = HALLOSS
+	injury_kind = INJURY_PAIN
 	no_attack_log = 1
 	no_random_knockdown = TRUE
 

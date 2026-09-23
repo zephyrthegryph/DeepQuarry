@@ -237,9 +237,9 @@
 
 // Projectiles
 /obj/effect/shield/bullet_act(obj/item/projectile/proj)
-	if(proj.damage_type == BURN)
+	if(proj.obj_damage_type() == BURN)
 		take_damage(proj.get_structure_damage(), SHIELD_DAMTYPE_HEAT)
-	else if (proj.damage_type == BRUTE)
+	else if (proj.obj_damage_type() == BRUTE)
 		take_damage(proj.get_structure_damage(), SHIELD_DAMTYPE_PHYSICAL)
 	else //TODO - This will never happen because of get_structure_damage() only returning values for BRUTE and BURN damage types
 		take_damage(proj.get_structure_damage(), SHIELD_DAMTYPE_EM)
@@ -252,9 +252,9 @@
 
 	if(gen.check_flag(MODEFLAG_HYPERKINETIC))
 		user.visible_message(span_danger("\The [user] hits \the [src] with \the [I]!"))
-		if(I.damtype == BURN)
+		if(I.obj_damage_type() == BURN)
 			take_damage(I.force, SHIELD_DAMTYPE_HEAT)
-		else if (I.damtype == BRUTE)
+		else if (I.obj_damage_type() == BRUTE)
 			take_damage(I.force, SHIELD_DAMTYPE_PHYSICAL)
 		else
 			take_damage(I.force, SHIELD_DAMTYPE_EM)

@@ -755,7 +755,7 @@
 			return
 
 		in_chamber.on_hit(M)
-		var/suicide_kind = in_chamber.get_injury_kind(TRUE, in_chamber.edge)
+		var/suicide_kind = in_chamber.injury_kind == INJURY_BLUNT ? INJURY_PIERCE : in_chamber.injury_kind
 		if(suicide_kind != INJURY_PAIN && !in_chamber.nodamage)
 			log_and_message_admins("commited suicide using \a [src]", user)
 			user.injure(suicide_kind, in_chamber.damage*2.5, BP_HEAD, src, 0, null, INJURE_PROJECTILE)

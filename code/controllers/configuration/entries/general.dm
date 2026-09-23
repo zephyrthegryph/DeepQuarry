@@ -464,7 +464,7 @@
 /datum/config_entry/flag/allow_headgibs
 
 /// Paincrit knocks someone down once they hit 60 shock_stage, so by default make it so that close to 100 additional damage needs to be dealt,
-/// so that it's similar to HALLOSS. Lowered it a bit since hitting paincrit takes much longer to wear off than a halloss stun.
+/// so that it's similar to a pain (INJURY_PAIN) stun. Lowered it a bit since hitting paincrit takes much longer to wear off than a pain stun.
 /datum/config_entry/number/organ_damage_spillover_multiplier
 	default = 0.5
 	integer = FALSE

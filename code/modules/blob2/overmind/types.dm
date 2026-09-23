@@ -17,8 +17,10 @@
 	var/attack_verb = "attacks"			// Used for the visible_message(), as the above is shown to the mob getting hit directly.
 										// Format is '\The [blob name] [attack_verb] [victim]!' E.g. 'The explosive lattice blasts John Doe!'
 
-	var/damage_type = BRUTE				// What kind of damage to do to living mobs via blob_act()
-	var/armor_check = "melee"			// What armor to check for when blob_act()-ing living mobs.
+	/// What the blob inflicts on living mobs via blob_act(); armour is looked up by this kind.
+	var/injury_kind = INJURY_BLUNT
+	/// Mixed harm (INJURY_* -> share), or null.
+	var/alist/injury_kinds
 	var/armor_pen = 0					// How much armor to penetrate(ignore) when attacking via blob_act().
 	var/damage_lower = 30				// Lower bound for amount of damage to do for attacks.
 	var/damage_upper = 40				// Upper bound.

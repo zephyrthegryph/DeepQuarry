@@ -15,8 +15,7 @@
 	melee_damage_lower = 15
 	melee_damage_upper = 20
 	attack_armor_pen = 15
-	attack_sharp = TRUE
-	attack_edge = 1
+	attack_injury_kind = INJURY_CUT
 	attacktext = list("slashed")
 	friendly = list("pinches")
 	organ_names = /datum/decl/mob_organ_names/wraith
@@ -54,8 +53,6 @@
 	melee_damage_lower = 20 //hits much harder then most purity constructs
 	melee_damage_upper = 30
 	attack_armor_pen = 50 //armor is no match against its religious wrath
-	attack_sharp = 1
-	attack_edge = 1
 	attacktext = list("violently stabbed")
 	friendly = list("caresses")
 	organ_names = /datum/decl/mob_organ_names/wraith

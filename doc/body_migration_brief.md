@@ -21,12 +21,13 @@ files there must be **zero** uses of:
 - limb `brute_dam` / `burn_dam` outside the limb/wound slice (use `E.get_trauma()` / `E.get_burn()`)
 
 ## The replacements (see architecture §9 for the full table)
-- Harm: `L.injure(INJURY_*, amount, zone = null, source = src_atom, armor = 0, affliction = null, flags = NONE)`.
+- Harm: `L.injure(INJURY_*, amount, zone = null, source = src_atom, armor_pen = 0, affliction = null, flags = NONE)`
+  (add `INJURE_ARMORED` for hits from outside the body).
   Choose the kind that describes WHAT HAPPENED (blunt vs cut vs pierce; burn vs
   frostbite vs corrosive vs electric; toxin; asphyxia; radiation; cellular;
   neural; pain; digestion). `L.injure_many(alist(INJURY_BLUNT = x, INJURY_BURN = y), ...)`
-  for combined hits. Weapon items: `I.get_injury_kind()`. Legacy damtype+sharp+edge:
-  `injury_kind_for(damtype, sharp, edge)`. SEARING = a burn and a blunt injury.
+  for combined hits. Weapon items: `I.injury_kind` (or `L.injure_by(I, amount, zone)`,
+  which also handles mixed `injury_kinds` hits such as searing blades).
 - Healing: `L.mend(TREAT_*, amount, zone = null)` — pick the mechanism
   (TISSUE_REPAIR, BURN_CARE, ANTITOXIN, OXYGENATION, GENETIC_REPAIR,
   NEURAL_REPAIR, ANALGESIC, HEMOSTATIC, PLATING_REPAIR / WIRING_REPAIR for

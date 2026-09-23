@@ -10,7 +10,6 @@
 	icon_state = "medbeam"
 	nodamage = 1
 	damage = 0
-	check_armour = "laser"
 	light_color = "#80F5FF"
 	hud_state = "laser_disabler"
 
