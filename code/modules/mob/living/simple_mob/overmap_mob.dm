@@ -115,14 +115,7 @@
 
 	loot_list = list(/obj/random/underdark/uncertain)
 
-	armor = list(
-		"melee" = 1000,
-		"bullet" = 1000,
-		"laser" = 1000,
-		"energy" = 1000,
-		"bomb" = 1000,
-		"bio" = 1000,
-		"rad" = 1000)
+	armor_spec = "melee=1000;bullet=1000;laser=1000;energy=1000;bomb=1000;bio=1000;rad=1000"
 
 	var/scanner_desc
 	var/obj/effect/overmap/visitable/simplemob/child_om_marker

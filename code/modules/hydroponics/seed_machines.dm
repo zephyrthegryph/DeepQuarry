@@ -5,7 +5,7 @@
 	icon_state = "disk"
 	w_class = ITEMSIZE_TINY
 
-	var/list/genes = list()
+	var/list/genes
 	var/genesource = "unknown"
 
 /obj/item/disk/botany/Initialize(mapload)
@@ -78,9 +78,6 @@
 	if(world.time > last_action + action_time)
 		finished_task()
 
-/obj/machinery/botany/attack_ai(mob/user as mob)
-	return attack_hand(user)
-
 /obj/machinery/botany/attack_hand(mob/user as mob)
 	tgui_interact(user)
 
@@ -124,7 +121,7 @@
 		else
 			var/obj/item/disk/botany/B = W
 
-			if(B.genes && B.genes.len)
+			if(B.genes && length(B.genes))
 				if(!disk_needs_genes)
 					to_chat(user, span_filter_notice("That disk already has gene data loaded."))
 					return
@@ -261,7 +258,7 @@
 			var/datum/plantgene/P = genetics.get_gene(params["get_gene"])
 			if(!P)
 				return
-			loaded_disk.genes += P
+			LAZYADD(loaded_disk.genes, P)
 
 			loaded_disk.genesource = "[genetics.display_name]"
 			if(!genetics.roundstart)
@@ -309,7 +306,7 @@
 	else
 		data["degradation"] = 0
 
-	if(loaded_disk && loaded_disk.genes.len)
+	if(loaded_disk && length(loaded_disk.genes))
 		data["disk"] = 1
 		data["sourceName"] = loaded_disk.genesource
 		data["locus"] = ""

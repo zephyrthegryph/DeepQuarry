@@ -42,7 +42,7 @@ GLOBAL_LIST_EMPTY(preferences_datums)
 	//character preferences
 	var/slot_randomized //keeps track of round-to-round randomization of the character slot, prevents overwriting
 
-	var/list/randomise = list()
+	var/list/randomise
 
 	// maps each organ to either null(intact), "cyborg" or "amputated"
 	// will probably not be able to do this for head and torso ;)
@@ -127,7 +127,7 @@ GLOBAL_LIST_EMPTY(preferences_datums)
 	client = C
 
 	for(var/middleware_type in subtypesof(/datum/preference_middleware))
-		middleware += new middleware_type(src)
+		LAZYADD(middleware, new middleware_type(src))
 
 	if(istype(C)) // IS_CLIENT_OR_MOCK
 		client_ckey = C.ckey

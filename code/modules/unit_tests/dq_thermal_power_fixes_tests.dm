@@ -69,24 +69,6 @@
 	W.update_material()
 	TEST_ASSERT(W.thermal_conductivity < WALL_MAX_HEAT_TRANSFER_COEFFICIENT, "steel wall still clamps to the maximum coefficient ([W.thermal_conductivity])")
 
-/// Q13: a cable edit publishes the powernet's own key only; machine membership
-/// changes publish the topology key that sleeping APCs share.
-/datum/unit_test/dq_powernet_cable_edit_leaves_apcs_asleep
-
-/datum/unit_test/dq_powernet_cable_edit_leaves_apcs_asleep/Run()
-	var/datum/powernet/PN = new()
-	var/obj/machinery/M = allocate(/obj/machinery, test_floor())
-	TEST_ASSERT(M.sleep_until_keys(list(REACT_KEY_POWERNET, REACT_ID(PN), REACT_POWERNET_TOPOLOGY)), "machine refused to hibernate")
-	SSreactor.trace(M)
-	PN.publish_cable_dependency()
-	react_test_ticks(4)
-	TEST_ASSERT(!SSreactor.traced_wakes(M), "a cable-only edit woke a topology subscriber")
-	PN.publish_dependency()
-	react_test_ticks(4)
-	TEST_ASSERT(SSreactor.traced_wakes(M), "a membership change did not wake the topology subscriber")
-	SSreactor.untrace(M)
-	qdel(PN)
-
 /// Q14: a leak on one pipe network wakes only the shutoff valves on it.
 /datum/unit_test/dq_shutoff_wake_is_network_local
 

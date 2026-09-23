@@ -49,7 +49,11 @@ GLOBAL_LIST_INIT(possible_cable_coil_colours, list(
 	level = 1
 	anchored =TRUE
 	unacidable = TRUE
+	/// Set only while a material overlay owns this cable (engineered
+	/// conductors, see powernet.dm). Everything else asks get_powernet().
 	var/datum/powernet/powernet
+	/// This piece's key in the Rust power domain.
+	var/power_key = 0
 	name = "power cable"
 	desc = "A flexible superconducting cable for heavy-duty power transfer."
 	icon = 'icons/obj/power_cond_white.dmi'
@@ -77,7 +81,19 @@ GLOBAL_LIST_INIT(possible_cable_coil_colours, list(
 	var/datum/material/material = engineered_material()
 	if(material?.icon_colour)
 		color = material.icon_colour
-	powernet?.invalidate_material_cache()
+	power_material_changed()
+
+/obj/structure/cable/material_service_changed()
+	. = ..()
+	power_material_changed()
+
+/// Engineered conductors put their region on the material overlay.
+/obj/structure/cable/proc/power_material_changed()
+	if(!engineered_material_id && !material_custom_assembly)
+		return
+	SSmachines.power_material_cables[src] = TRUE
+	if(power_key)
+		get_powernet()?.invalidate_material_cache()
 
 /obj/structure/cable/proc/recover_coil(turf/location, length)
 	var/obj/item/stack/cable_coil/coil = new(location, length, color, engineered_material_id)
@@ -88,10 +104,45 @@ GLOBAL_LIST_INIT(possible_cable_coil_colours, list(
 	if(drain_check)
 		return 1
 
-	if(!powernet)
+	var/datum/powernet/network = get_powernet()
+	if(!network)
 		return 0
 
-	return powernet.draw_power(amount, src)
+	return network.draw_power(amount, src)
+
+/// The network this cable is on (asks Rust; flushes queued edits first).
+/obj/structure/cable/proc/get_powernet()
+	return power_key ? SSmachines.power_region_of(power_key, FALSE) : null
+
+/// Sends this piece (its turf and directions) to the Rust network. Placing,
+/// rotating and moving a cable all call this; Rust works out what it joins.
+/obj/structure/cable/proc/power_register()
+	var/turf/T = loc
+	if(!istype(T))
+		power_unregister()
+		return
+	if(!power_key)
+		power_key = power_key_alloc(src)
+	var/above = 0
+	var/below = 0
+	if((d1 | d2) & UP)
+		var/turf/U = GetAbove(T)
+		above = U?.z || 0
+	if((d1 | d2) & DOWN)
+		var/turf/D = GetBelow(T)
+		below = D?.z || 0
+	SSmachines.power_queue(list(POWER_OP_CABLE, 9, power_key, T.x, T.y, T.z, d1, d2, above, below, power_link_id()))
+
+/obj/structure/cable/proc/power_unregister()
+	if(!power_key)
+		return
+	SSmachines.power_queue(list(POWER_OP_REMOVE, 1, power_key))
+	power_key_free(power_key)
+	power_key = 0
+
+/// Cables with the same non-zero link id connect wherever they are (enders).
+/obj/structure/cable/proc/power_link_id()
+	return 0
 
 /obj/structure/cable/yellow
 	color = COLOR_YELLOW
@@ -129,25 +180,22 @@ REGISTRY_MEMBERSHIP(/obj/structure/cable, REGISTRY_CABLES)
 
 	var/turf/T = src.loc			// hide if turf is not intact
 	if(level==1) hide(!T.is_plating())
+	power_register()
 
 
 /obj/structure/cable/Destroy()
 	breaker_box = null
-	SSmachines.deferred_powernet_cables -= src
-	// Update powernets before removing from the global list so propagate_network
-	// can still walk the cable graph through us (cut_cable_from_powernet sets
-	// src.loc = null internally to exclude the cut cable from propagation).
-	if(powernet)
-		cut_cable_from_powernet()
-	// Null the ref in case cut_cable_from_powernet left it set (e.g. the
-	// powernet was qdel'd but the cable's var wasn't cleared by remove_cable).
+	SSmachines.power_material_cables -= src
+	powernet?.remove_cable(src)
 	powernet = null
-	return ..()									// then go ahead and delete the cable
+	power_unregister()
+	return ..()
 
 /obj/structure/cable/examine(mob/user)
 	. = ..()
 	if(isobserver(user))
-		. += span_warning("[powernet?.avail > 0 ? "[DisplayPower(powernet.avail)] in power network." : "The cable is not powered."]")
+		var/datum/powernet/network = get_powernet()
+		. += span_warning("[network?.avail > 0 ? "[DisplayPower(network.avail)] in power network." : "The cable is not powered."]")
 	if(engineered_material_id)
 		var/datum/material/material = engineered_material()
 		. += span_notice("Conductor: [material?.display_name || engineered_material_id], currently [round(material_service?.temperature || T20C, 0.1)] K; [round(material_current, 0.1)] A.")
@@ -157,8 +205,6 @@ REGISTRY_MEMBERSHIP(/obj/structure/cable, REGISTRY_CABLES)
 // Rotating cables requires d1 and d2 to be rotated
 /obj/structure/cable/set_dir(new_dir)
 	. = ..()
-	if(powernet)
-		cut_cable_from_powernet() // Remove this cable from the powernet so the connections update
 
 	// If d1 is 0, then it's a not, and doesn't rotate
 	if(d1)
@@ -176,12 +222,13 @@ REGISTRY_MEMBERSHIP(/obj/structure/cable, REGISTRY_CABLES)
 	//	..()	Cable sprite generation is dependent upon only d1 and d2.
 	// 			Actually changing dir will rotate the generated sprite to look wrong, but function correctly.
 	update_icon()
-	// Add this cable back to the powernet, if it's connected to any
-	if(d1)
-		mergeConnectedNetworks(d1)
-	else
-		mergeConnectedNetworksOnTurf()
-	mergeConnectedNetworks(d2)
+	if(flags & ATOM_INITIALIZED)
+		power_register()
+
+/obj/structure/cable/Moved(atom/old_loc, direction, forced = FALSE)
+	. = ..()
+	if(flags & ATOM_INITIALIZED)
+		power_register()
 
 ///////////////////////////////////
 // General procedures
@@ -271,8 +318,9 @@ REGISTRY_MEMBERSHIP(/obj/structure/cable, REGISTRY_CABLES)
 	var/turf/T = src.loc
 	if(!T.is_plating())
 		return ITEM_INTERACT_BLOCKING
-	if(powernet && powernet.avail > 0)
-		to_chat(user, span_warning("[DisplayPower(powernet.avail)] in power network."))
+	var/datum/powernet/network = get_powernet()
+	if(network && network.avail > 0)
+		to_chat(user, span_warning("[DisplayPower(network.avail)] in power network."))
 	else
 		to_chat(user, span_warning("The cable is not powered."))
 	shock(user, 5, 0.2)
@@ -283,7 +331,7 @@ REGISTRY_MEMBERSHIP(/obj/structure/cable, REGISTRY_CABLES)
 /obj/structure/cable/proc/shock(mob/user, prb, siemens_coeff = 1.0)
 	if(!prob(prb))
 		return 0
-	if (electrocute_mob(user, powernet, src, siemens_coeff))
+	if (electrocute_mob(user, get_powernet(), src, siemens_coeff))
 		var/datum/effect/effect/system/spark_spread/s = new /datum/effect/effect/system/spark_spread
 		s.set_up(5, 1, src)
 		s.start()
@@ -303,142 +351,6 @@ REGISTRY_MEMBERSHIP(/obj/structure/cable, REGISTRY_CABLES)
 	if(colorC)
 		color_n = colorC
 	color = color_n
-
-/////////////////////////////////////////////////
-// Cable laying helpers
-////////////////////////////////////////////////
-
-//handles merging diagonally matching cables
-//for info : direction^3 is flipping horizontally, direction^12 is flipping vertically
-/obj/structure/cable/proc/mergeDiagonalsNetworks(direction)
-	if(SSmachines.powernet_is_defered())
-		SSmachines.note_deferred_powernet_cable(src, direction == d1 ? CABLE_DEFERRED_DIAGONAL_D1 : CABLE_DEFERRED_DIAGONAL_D2)
-		return
-
-	//search for and merge diagonally matching cables from the first direction component (north/south)
-	var/turf/T  = get_step(src, direction&3)//go north/south
-
-	for(var/obj/structure/cable/C in T)
-
-		if(!C)
-			continue
-
-		if(src == C)
-			continue
-
-		if(C.d1 == (direction^3) || C.d2 == (direction^3)) //we've got a diagonally matching cable
-			if(!C.powernet) //if the matching cable somehow got no powernet, make him one (should not happen for cables)
-				var/datum/powernet/newPN = new()
-				newPN.add_cable(C)
-
-			if(powernet) //if we already have a powernet, then merge the two powernets
-				merge_powernets(powernet,C.powernet)
-			else
-				C.powernet.add_cable(src) //else, we simply connect to the matching cable powernet
-
-	//the same from the second direction component (east/west)
-	T  = get_step(src, direction&12)//go east/west
-
-	for(var/obj/structure/cable/C in T)
-
-		if(!C)
-			continue
-
-		if(src == C)
-			continue
-		if(C.d1 == (direction^12) || C.d2 == (direction^12)) //we've got a diagonally matching cable
-			if(!C.powernet) //if the matching cable somehow got no powernet, make him one (should not happen for cables)
-				var/datum/powernet/newPN = new()
-				newPN.add_cable(C)
-
-			if(powernet) //if we already have a powernet, then merge the two powernets
-				merge_powernets(powernet,C.powernet)
-			else
-				C.powernet.add_cable(src) //else, we simply connect to the matching cable powernet
-
-// merge with the powernets of power objects in the given direction
-/obj/structure/cable/proc/mergeConnectedNetworks(direction)
-	if(SSmachines.powernet_is_defered())
-		SSmachines.note_deferred_powernet_cable(src, CABLE_DEFERRED_DIRECTIONS)
-		return
-
-	var/fdir = direction ? GLOB.reverse_dir[direction] : 0 //flip the direction, to match with the source position on its turf
-
-	if(!(d1 == direction || d2 == direction)) //if the cable is not pointed in this direction, do nothing
-		return
-
-	// get_zstep handles UP/DOWN z-level transitions as well as cardinal dirs.
-	var/turf/TB = get_zstep(src, direction)
-	if(!TB)  // no turf in that direction (edge of z-stack for UP/DOWN)
-		return
-
-	for(var/obj/structure/cable/C in TB)
-
-		if(!C)
-			continue
-
-		if(src == C)
-			continue
-
-		if(C.d1 == fdir || C.d2 == fdir) //we've got a matching cable in the neighbor turf
-			// Idempotency guard: already on the same network, nothing to do.
-			if(C.powernet && powernet && C.powernet == powernet)
-				continue
-
-			if(!C.powernet) //if the matching cable somehow got no powernet, make him one (should not happen for cables)
-				var/datum/powernet/newPN = new()
-				newPN.add_cable(C)
-
-			if(powernet) //if we already have a powernet, then merge the two powernets
-				merge_powernets(powernet,C.powernet)
-			else
-				C.powernet.add_cable(src) //else, we simply connect to the matching cable powernet
-
-// merge with the powernets of power objects in the source turf
-/obj/structure/cable/proc/mergeConnectedNetworksOnTurf()
-	if(SSmachines.powernet_is_defered())
-		SSmachines.note_deferred_powernet_cable(src, CABLE_DEFERRED_TURF)
-		return
-
-	var/list/to_connect = list()
-
-	if(!powernet) //if we somehow have no powernet, make one (should not happen for cables)
-		var/datum/powernet/newPN = new()
-		newPN.add_cable(src)
-
-	//first let's add turf cables to our powernet
-	//then we'll connect machines on turf with a node cable is present
-	for(var/AM in loc)
-		if(istype(AM,/obj/structure/cable))
-			var/obj/structure/cable/C = AM
-			if(C.d1 == d1 || C.d2 == d1 || C.d1 == d2 || C.d2 == d2) //only connected if they have a common direction
-				if(C.powernet == powernet)	continue
-				if(C.powernet)
-					merge_powernets(powernet, C.powernet)
-				else
-					powernet.add_cable(C) //the cable was powernetless, let's just add it to our powernet
-
-		else if(istype(AM,/obj/machinery/power/apc))
-			var/obj/machinery/power/apc/N = AM
-			if(!N.terminal)	continue // APC are connected through their terminal
-
-			if(N.terminal.powernet == powernet)
-				continue
-
-			to_connect += N.terminal //we'll connect the machines after all cables are merged
-
-		else if(istype(AM,/obj/machinery/power)) //other power machines
-			var/obj/machinery/power/M = AM
-
-			if(M.powernet == powernet)
-				continue
-
-			to_connect += M //we'll connect the machines after all cables are merged
-
-	//now that cables are done, let's connect found machines
-	for(var/obj/machinery/power/PM in to_connect)
-		if(!PM.connect_to_network())
-			PM.disconnect_from_network() //if we somehow can't connect the machine to the new powernet, remove it from the old nonetheless
 
 //////////////////////////////////////////////
 // Powernets handling helpers
@@ -484,104 +396,6 @@ REGISTRY_MEMBERSHIP(/obj/structure/cable, REGISTRY_CABLES)
 		for(var/obj/structure/cable/C in .)
 			if(C.powernet)
 				. -= C
-
-//should be called after placing a cable which extends another cable, creating a "smooth" cable that no longer terminates in the centre of a turf.
-//needed as this can, unlike other placements, disconnect cables
-/obj/structure/cable/proc/denode()
-	if(SSmachines.powernet_is_defered())
-		SSmachines.note_deferred_powernet_cable(src, CABLE_DEFERRED_DENODE)
-		return
-
-	var/turf/T1 = loc
-	if(!T1) return
-
-	var/list/powerlist = power_list(T1,src,0,0) //find the other cables that ended in the centre of the turf, with or without a powernet
-	if(powerlist.len>0)
-		var/datum/powernet/PN = new()
-		propagate_network(powerlist[1],PN) //propagates the new powernet beginning at the source cable
-
-		if(PN.is_empty()) //can happen with machines made nodeless when smoothing cables
-			qdel(PN)
-
-/// Replays the merges that were skipped while powernet rebuilds were deferred.
-/obj/structure/cable/proc/replay_deferred_merges(merges)
-	if(merges & CABLE_DEFERRED_DIRECTIONS)
-		if(d1)
-			mergeConnectedNetworks(d1)
-		mergeConnectedNetworks(d2)
-	if(merges & CABLE_DEFERRED_TURF)
-		mergeConnectedNetworksOnTurf()
-	if(merges & CABLE_DEFERRED_DIAGONAL_D1)
-		mergeDiagonalsNetworks(d1)
-	if(merges & CABLE_DEFERRED_DIAGONAL_D2)
-		mergeDiagonalsNetworks(d2)
-	if(merges & CABLE_DEFERRED_DENODE)
-		denode()
-
-// cut_cable_from_powernet() — remove this cable from the powernet and
-// re-propagate the graph on each side of the cut.
-//
-// Special cases handled:
-//   * d1 == 0 (node/knot cable): check machines on the same turf.
-//   * d1 == UP / d1 == DOWN: use get_zstep instead of get_step so
-//     z-level transitions are followed correctly.
-//   * Only-bridge case (P_list.len == 0): cable was isolated; remove it,
-//     scan for machines that may have lost their network connection.
-/obj/structure/cable/proc/cut_cable_from_powernet()
-	var/turf/home = loc  // cable's current turf — preserved before loc=null
-	if(!home)
-		// Cable already has no turf (e.g. double-Destroy); clean up ref and exit.
-		if(powernet)
-			powernet.remove_cable(src)
-		return
-
-	// Build the neighbor-turf cable list using get_zstep so UP/DOWN cables
-	// work correctly.  For a node cable (d1 == 0) there is no d1 side.
-	var/list/P_list = list()
-	var/turf/d1_neighbor = null  // turf on the d1 side of this cable
-
-	if(d1)
-		d1_neighbor = get_zstep(home, d1)  // handles UP/DOWN + cardinal
-		if(d1_neighbor)
-			P_list = power_list(d1_neighbor, src, GLOB.reverse_dir[d1], 0, cable_only = 1)
-
-	P_list += power_list(home, src, d1, 0, cable_only = 1)  // cables on our turf
-
-	if(P_list.len == 0)
-		// Isolated cable (only bridge or lone segment): just remove it.
-		powernet.remove_cable(src)
-
-		// If this was a node cable, machines on the turf may have lost power;
-		// try to reconnect them to any remaining node on the same turf.
-		if(d1 == 0)
-			for(var/obj/machinery/power/P in home)
-				if(P.powernet == 0) continue  // APCs excluded by convention
-				if(!P.connect_to_network())
-					P.disconnect_from_network()
-		return
-
-	// Multi-segment cable: temporarily move the cable off the turf so that
-	// propagate_network doesn't re-add it while rebuilding the split network.
-	loc = null
-	var/datum/powernet/old_powernet = powernet
-	// Detach immediately, then let SSmachines discover and publish the split in
-	// bounded slices. Calling remove_cable()/propagate_network() here performed a
-	// station-wide flood fill and thousands of notifications inside wirecutters.
-	old_powernet.cables -= src
-	powernet = null
-	old_powernet.invalidate_material_cache()
-	if(SSmachines.powernet_is_defered())
-		SSmachines.note_deferred_powernet_split(old_powernet)
-	else
-		SSmachines.queue_powernet_topology(old_powernet)
-
-	// Node cable cut: machines on the original turf must re-evaluate their
-	// connection since the node is gone.
-	if(d1 == 0 && SSmachines.powernet_is_defered())
-		for(var/obj/machinery/power/P in home)
-			if(P.powernet == 0) continue  // APCs excluded by convention
-			if(!P.connect_to_network())
-				P.disconnect_from_network()
 
 ///////////////////////////////////////////////
 // The cable coil object, used for laying cable
@@ -646,7 +460,7 @@ REGISTRY_MEMBERSHIP(/obj/structure/cable, REGISTRY_CABLES)
 
 //you can use wires to heal robotics
 /obj/item/stack/cable_coil/attack(mob/living/A, mob/living/user, target_zone, attack_modifier)
-	if(ishuman(A) && user.a_intent == I_HELP)
+	if(ishuman(A) && IS_HELPING(user))
 		var/mob/living/carbon/human/H = A
 		var/obj/item/organ/external/S = H.organs_by_name[user.zone_sel.selecting]
 
@@ -658,12 +472,12 @@ REGISTRY_MEMBERSHIP(/obj/structure/cable, REGISTRY_CABLES)
 			return ..()
 
 		if(S.organ_tag == BP_HEAD)
-			if(H.head && istype(H.head,/obj/item/clothing/head/helmet/space))
-				to_chat(user, span_warning("You can't apply [src] through [H.head]!"))
+			if(H.get_equipped_item(SLOT_ID_HEAD) && istype(H.get_equipped_item(SLOT_ID_HEAD),/obj/item/clothing/head/helmet/space))
+				to_chat(user, span_warning("You can't apply [src] through [H.get_equipped_item(SLOT_ID_HEAD)]!"))
 				return ITEM_INTERACT_FAILURE
 		else
-			if(H.wear_suit && istype(H.wear_suit,/obj/item/clothing/suit/space))
-				to_chat(user, span_warning("You can't apply [src] through [H.wear_suit]!"))
+			if(H.get_equipped_item(SLOT_ID_SUIT) && istype(H.get_equipped_item(SLOT_ID_SUIT),/obj/item/clothing/suit/space))
+				to_chat(user, span_warning("You can't apply [src] through [H.get_equipped_item(SLOT_ID_SUIT)]!"))
 				return ITEM_INTERACT_FAILURE
 
 		var/use_amt = min(src.amount, CEILING(S.get_burn()/5, 1), 5)
@@ -809,20 +623,7 @@ REGISTRY_MEMBERSHIP(/obj/structure/cable, REGISTRY_CABLES)
 	C.d2 = d2
 	C.add_fingerprint(user)
 	C.update_icon()
-
-	//create a new powernet with the cable, if needed it will be merged later
-	var/datum/powernet/PN = new()
-	PN.add_cable(C)
-
-	C.mergeConnectedNetworks(C.d1) //merge the powernets...
-	C.mergeConnectedNetworks(C.d2) //...in the two new cable directions
-	C.mergeConnectedNetworksOnTurf()
-
-	if(C.d1 & (C.d1 - 1))// if the cable is layed diagonally, check the others 2 possible directions
-		C.mergeDiagonalsNetworks(C.d1)
-
-	if(C.d2 & (C.d2 - 1))// if the cable is layed diagonally, check the others 2 possible directions
-		C.mergeDiagonalsNetworks(C.d2)
+	C.power_register()
 
 	use(1)
 	if (C.shock(user, 50))
@@ -902,17 +703,7 @@ REGISTRY_MEMBERSHIP(/obj/structure/cable, REGISTRY_CABLES)
 
 		C.add_fingerprint()
 		C.update_icon()
-
-
-		C.mergeConnectedNetworks(C.d1) //merge the powernets...
-		C.mergeConnectedNetworks(C.d2) //...in the two new cable directions
-		C.mergeConnectedNetworksOnTurf()
-
-		if(C.d1 & (C.d1 - 1))// if the cable is layed diagonally, check the others 2 possible directions
-			C.mergeDiagonalsNetworks(C.d1)
-
-		if(C.d2 & (C.d2 - 1))// if the cable is layed diagonally, check the others 2 possible directions
-			C.mergeDiagonalsNetworks(C.d2)
+		C.power_register()
 
 		use(1)
 
@@ -921,8 +712,6 @@ REGISTRY_MEMBERSHIP(/obj/structure/cable, REGISTRY_CABLES)
 				C.recover_coil(C.loc, 2)
 				qdel(C)
 				return
-
-		C.denode()// this call may have disconnected some cables that terminated on the centre of the turf, if so split the powernets.
 		return
 
 //////////////////////////////

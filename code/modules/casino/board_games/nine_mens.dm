@@ -81,8 +81,8 @@
 		list(6,14,21),
 		list(3,15,24)
 	)
-	var/list/valid_moves = list()
-	var/list/valid_removes = list()
+	var/list/valid_moves
+	var/list/valid_removes
 	var/selected_node
 	var/turn_start_time = 0
 	var/pone_pieces = 9
@@ -112,8 +112,8 @@
 		"player_two_time" = player_two_time + (game_state == GAME_PLAYER_TWO ? world.time - turn_start_time : 0),
 		"current_board" = current_board,
 		"selected_node" = selected_node,
-		"valid_moves" = valid_moves,
-		"valid_removes" = valid_removes,
+		"valid_moves" = (valid_moves || list()),
+		"valid_removes" = (valid_removes || list()),
 		"game_state" = game_state,
 		"winner" = winner,
 		"has_won" = winner == ui.user.name,
@@ -206,8 +206,8 @@
 	player_one_time = 0
 	player_two_time = 0
 	selected_node = null
-	valid_moves.Cut()
-	valid_removes.Cut()
+	LAZYCLEARLIST(valid_moves)
+	LAZYCLEARLIST(valid_removes)
 	pone_pieces = 9
 	ptwo_pieces = 9
 	phase = GAME_PHASE_PLACING
@@ -273,7 +273,7 @@
 					current_board[target_node] = current_board[selected_node]
 					current_board[selected_node] = null
 					selected_node = null
-					valid_moves.Cut()
+					LAZYCLEARLIST(valid_moves)
 					validate_victory(active_color)
 					if(game_state < GAME_OVER)
 						if(check_for_mill(target_node, active_color))
@@ -292,7 +292,7 @@
 
 					current_board[target_node] = null
 
-					valid_removes.Cut()
+					LAZYCLEARLIST(valid_removes)
 					validate_victory(active_color)
 					if(game_state < GAME_OVER)
 						if((ptwo_pieces && active_color == "w") || (pone_pieces && active_color == "b"))
@@ -307,20 +307,20 @@
 	return GAME_ACTION_NONE
 
 /datum/board_game/nine_mens/proc/update_valid_moves()
-	valid_moves.Cut()
+	LAZYCLEARLIST(valid_moves)
 	if(selected_node)
 		valid_moves = generate_valid_moves(selected_node)
 
 /datum/board_game/nine_mens/proc/update_valid_removals(opponent_color)
-	valid_removes.Cut()
+	LAZYCLEARLIST(valid_removes)
 	for(var/i = 1 to NODE_COUNT)
 		if(current_board[i] && current_board[i][1] == opponent_color)
 			if(!check_for_mill(i, opponent_color))
-				valid_removes += i
+				LAZYADD(valid_removes, i)
 	if(!length(valid_removes))
 		for(var/i = 1 to NODE_COUNT)
 			if(current_board[i] && current_board[i][1] == opponent_color)
-				valid_removes += i
+				LAZYADD(valid_removes, i)
 
 /datum/board_game/nine_mens/proc/valid_remove(picked_node)
 	if(!picked_node || !current_board[picked_node] || !(picked_node in valid_removes))

@@ -4,7 +4,6 @@
 // is the source of truth for per-line diff context.
 
 /// 72 kg of tissue at about 3470 J/(kg K).
-#define HEAT_CAPACITY_HUMAN 249840
 
 /obj/machinery/atmospherics/unary/cryo_cell
 	name = "cryo cell"
@@ -217,7 +216,7 @@
 		// The occupant and the cell's gas settle to a shared temperature; the
 		// heat the body loses is what the gas gains.
 		var/air_heat_capacity = air_contents.heat_capacity()
-		var/equilibrium_temperature = (HEAT_CAPACITY_HUMAN * occupant.bodytemperature + air_heat_capacity * air_contents.return_temperature()) / (HEAT_CAPACITY_HUMAN + air_heat_capacity)
+		var/equilibrium_temperature = (HUMAN_HEAT_CAPACITY * occupant.bodytemperature + air_heat_capacity * air_contents.return_temperature()) / (HUMAN_HEAT_CAPACITY + air_heat_capacity)
 		occupant.bodytemperature = equilibrium_temperature
 		air_contents.set_temperature(equilibrium_temperature)
 		occupant.set_stat(UNCONSCIOUS)
@@ -360,4 +359,3 @@
 /datum/data/function/proc/display()
 	return
 
-#undef HEAT_CAPACITY_HUMAN

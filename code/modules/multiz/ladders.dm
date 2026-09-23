@@ -95,9 +95,8 @@
 	if(target_ladder)
 		M.forceMove(get_turf(target_ladder))
 
-/obj/structure/ladder/attack_robot(mob/M)
-	attack_hand(M)
-	return
+/obj/structure/ladder
+	silicon_use = ROBOT_USE_HAND
 
 /obj/structure/ladder/proc/getTargetLadder(mob/M)
 	if((!target_up && !target_down) || (target_up && !istype(target_up.loc, /turf) || (target_down && !istype(target_down.loc,/turf))))

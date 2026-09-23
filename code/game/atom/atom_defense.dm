@@ -9,6 +9,10 @@
 	var/damage_deflection = 0
 
 	var/resistance_flags = NONE // INDESTRUCTIBLE | LAVA_PROOF | FIRE_PROOF | ON_FIRE | UNACIDABLE | ACID_PROOF
+	/// The damage flag of the last take_damage(), for the breakpoint rules' effects.
+	var/tmp/last_damage_flag
+	/// DAMAGE_BAND_*, kept by the damage-flavour rules (damage.md §6).
+	var/tmp/damage_band = DAMAGE_BAND_NONE
 
 /// The essential proc to call when an atom must receive damage of any kind.
 /atom/proc/take_damage(damage_amount, damage_type = BRUTE, damage_flag = "", sound_effect = TRUE, attack_dir, armour_penetration = 0)
@@ -50,18 +54,23 @@
 		var/obj/damaged_object = src
 		damaged_object.material_service_event(MATERIAL_EVENT_DAMAGE, 1 - atom_integrity / max_integrity)
 
-	var/integrity_failure_amount = integrity_failure * max_integrity
-
-	//BREAKING FIRST (types with a breaking-point rule break through the rule)
-	// Settling runs the rule here, in the same order as the check it replaces.
-	var/rule_breaks = RULES_REPLACE(type, RULE_REPLACES_INTEGRITY_BREAK)
-	if(rule_breaks)
+	// Breakpoints are rules (damage.md §6, declarations.dm). Settling runs every
+	// rule the change triggered now, in declaration order: break, then destroyed.
+	// Objects of those types that never materialized keep the legacy crossings.
+	last_damage_flag = damage_flag
+	var/datum/rule_binding/binding = dq_rules_binding_replacing(src, RULE_REPLACES_INTEGRITY_BREAK|RULE_REPLACES_INTEGRITY_DESTRUCTION)
+	var/rule_breaks = binding?.replaces(RULE_REPLACES_INTEGRITY_BREAK)
+	var/rule_destroys = binding?.replaces(RULE_REPLACES_INTEGRITY_DESTRUCTION)
+	if(binding)
 		dq_rules_settle(src)
-	else if(integrity_failure && previous_atom_integrity > integrity_failure_amount && atom_integrity <= integrity_failure_amount)
+
+	var/integrity_failure_amount = integrity_failure * max_integrity
+	//BREAKING FIRST
+	if(!rule_breaks && integrity_failure && previous_atom_integrity > integrity_failure_amount && atom_integrity <= integrity_failure_amount)
 		atom_break(damage_flag)
 
 	//DESTROYING SECOND
-	if(atom_integrity <= 0 && previous_atom_integrity > 0)
+	if(!rule_destroys && atom_integrity <= 0 && previous_atom_integrity > 0)
 		atom_destruction(damage_flag)
 
 ///the sound played when the atom is damaged.
@@ -108,7 +117,7 @@
 	var/previous_atom_integrity = atom_integrity
 	update_integrity(min(max_integrity, atom_integrity + repair_amount))
 	contract_report_station_repair(src, atom_integrity - previous_atom_integrity)
-	if(RULES_REPLACE(type, RULE_REPLACES_INTEGRITY_BREAK))
+	if(dq_rules_binding_replacing(src, RULE_REPLACES_INTEGRITY_BREAK))
 		dq_rules_settle(src)
 	else if(integrity_failure && previous_atom_integrity <= integrity_failure_amount && atom_integrity > integrity_failure_amount)
 		atom_fix()
@@ -131,21 +140,25 @@
 /atom/proc/atom_destruction(damage_flag)
 	SHOULD_CALL_PARENT(TRUE)
 
-///returns the damage value of the attack after processing the atom's various armor protections
-///Damage_flag can be any of the following: "melee" = 0, "bullet" = 0, "laser" = 0,"energy" = 0, "bomb" = 0, "bio" = 0, "rad" = 0
-///MELEE, BULLET, LASER, ENERGY, BOMB, BIO, and "rad"
+/// The damage left of a hit after this atom's own mitigation (damage.md §4):
+/// innate armour (get_armor(): the deterministic soak against `damage_flag`,
+/// after `armour_penetration`), then material response (impact_factor()) for
+/// the hit's DAMAGE_* kind. The kind comes from the packet being delivered
+/// (receive_damage() sets GLOB.incoming_damage_kind), else from the flag.
 /atom/proc/run_atom_armor(damage_amount, damage_type, damage_flag = 0, attack_dir, armour_penetration = 0)
+	var/kind = GLOB.incoming_damage_kind || dq_damage_kind_for_flag(damage_flag)
+	GLOB.incoming_damage_kind = 0
 	if(!uses_integrity)
 		CRASH("/atom/proc/run_atom_armor was called on [src] without being implemented as a type that uses integrity!")
 	if(damage_flag == MELEE && damage_amount < damage_deflection)
 		return 0
 	if(damage_type != BRUTE && damage_type != BURN)
 		return 0
-	var/armor_protection = 0
-	if(isitem(src)) //Only items have armor until we get armor datums.
-		var/obj/item/item_to_check = src
-		if(damage_flag)
-			armor_protection = item_to_check.armor[damage_flag]
-		if(armor_protection) //Only apply weak-against-armor/hollowpoint effects if there actually IS armor.
-			armor_protection = clamp(PENETRATE_ARMOUR(armor_protection, armour_penetration), min(armor_protection, 0), 100)
-	return round(damage_amount * (100 - armor_protection) * 0.01, DAMAGE_PRECISION)
+	if(damage_flag)
+		damage_amount = get_armor().soak_key(damage_flag, damage_amount, armour_penetration)
+	damage_amount *= impact_factor(kind)
+	return round(damage_amount, DAMAGE_PRECISION)
+
+/// DAMAGE_* kind of the packet receive_damage() is delivering through
+/// take_damage(), read and cleared by run_atom_armor(). 0 outside a delivery.
+GLOBAL_VAR_INIT(incoming_damage_kind, 0)

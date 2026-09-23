@@ -926,25 +926,25 @@
 		var/mob/living/carbon/human/H = M
 		if(!H.can_feel_pain())
 			return
-		if(H.head)
-			if(H.head.body_parts_covered & EYES)
+		if(H.get_equipped_item(SLOT_ID_HEAD))
+			if(H.get_equipped_item(SLOT_ID_HEAD).body_parts_covered & EYES)
 				eyes_covered = 1
-				safe_thing = H.head
-			if((H.head.body_parts_covered & FACE) && !(H.head.item_flags & FLEXIBLEMATERIAL))
+				safe_thing = H.get_equipped_item(SLOT_ID_HEAD)
+			if((H.get_equipped_item(SLOT_ID_HEAD).body_parts_covered & FACE) && !(H.get_equipped_item(SLOT_ID_HEAD).item_flags & FLEXIBLEMATERIAL))
 				mouth_covered = 1
-				safe_thing = H.head
-		if(H.wear_mask)
-			if(!eyes_covered && H.wear_mask.body_parts_covered & EYES)
+				safe_thing = H.get_equipped_item(SLOT_ID_HEAD)
+		if(H.get_equipped_item(SLOT_ID_MASK))
+			if(!eyes_covered && H.get_equipped_item(SLOT_ID_MASK).body_parts_covered & EYES)
 				eyes_covered = 1
-				safe_thing = H.wear_mask
-			if(!mouth_covered && (H.wear_mask.body_parts_covered & FACE) && !(H.wear_mask.item_flags & FLEXIBLEMATERIAL))
+				safe_thing = H.get_equipped_item(SLOT_ID_MASK)
+			if(!mouth_covered && (H.get_equipped_item(SLOT_ID_MASK).body_parts_covered & FACE) && !(H.get_equipped_item(SLOT_ID_MASK).item_flags & FLEXIBLEMATERIAL))
 				mouth_covered = 1
-				safe_thing = H.wear_mask
-		if(H.glasses && H.glasses.body_parts_covered & EYES)
+				safe_thing = H.get_equipped_item(SLOT_ID_MASK)
+		if(H.get_equipped_item(SLOT_ID_EYES) && H.get_equipped_item(SLOT_ID_EYES).body_parts_covered & EYES)
 			if(!eyes_covered)
 				eyes_covered = 1
 				if(!safe_thing)
-					safe_thing = H.glasses
+					safe_thing = H.get_equipped_item(SLOT_ID_EYES)
 		if(alien == IS_SLIME)
 			for(var/obj/item/clothing/C in H.worn_clothing)
 				if(C.body_parts_covered & HEAD)
@@ -1066,10 +1066,10 @@
 	M.make_dizzy(adj_dizzy)
 	M.drowsyness = max(0, M.drowsyness + adj_drowsy)
 	M.AdjustSleeping(adj_sleepy)
-	if(adj_temp > 0 && M.bodytemperature < 310) // 310 is the normal bodytemp. 310.055
-		M.bodytemperature = min(310, M.bodytemperature + (adj_temp * TEMPERATURE_DAMAGE_COEFFICIENT))
-	if(adj_temp < 0 && M.bodytemperature > 310)
-		M.bodytemperature = min(310, M.bodytemperature - (adj_temp * TEMPERATURE_DAMAGE_COEFFICIENT))
+	if(adj_temp > 0 && M.bodytemperature < BODYTEMP_NORMAL)
+		M.bodytemperature = min(BODYTEMP_NORMAL, M.bodytemperature + (adj_temp * TEMPERATURE_DAMAGE_COEFFICIENT))
+	if(adj_temp < 0 && M.bodytemperature > BODYTEMP_NORMAL)
+		M.bodytemperature = min(BODYTEMP_NORMAL, M.bodytemperature - (adj_temp * TEMPERATURE_DAMAGE_COEFFICIENT))
 	if(issmall(M)) removed *= 2
 	if(M.species.organic_food_coeff)
 		M.nutrition += nutriment_factor * removed
@@ -3199,8 +3199,8 @@
 		M.make_dizzy(-5)
 		M.drowsyness = max(0, M.drowsyness - 3)
 		M.AdjustSleeping(-2)
-		if(M.bodytemperature > 310)
-			M.bodytemperature = max(310, M.bodytemperature - (5 * TEMPERATURE_DAMAGE_COEFFICIENT))
+		if(M.bodytemperature > BODYTEMP_NORMAL)
+			M.bodytemperature = max(BODYTEMP_NORMAL, M.bodytemperature - (5 * TEMPERATURE_DAMAGE_COEFFICIENT))
 
 		//if(alien == IS_TAJARA)
 			//M.make_jittery(4) //extra sensitive to caffine
@@ -3325,8 +3325,8 @@
 		if(alien == IS_DIONA)
 			return
 		M.drowsyness = max(0, M.drowsyness - 7)
-		if (M.bodytemperature > 310)
-			M.bodytemperature = max(310, M.bodytemperature - (5 * TEMPERATURE_DAMAGE_COEFFICIENT))
+		if (M.bodytemperature > BODYTEMP_NORMAL)
+			M.bodytemperature = max(BODYTEMP_NORMAL, M.bodytemperature - (5 * TEMPERATURE_DAMAGE_COEFFICIENT))
 		M.make_jittery(5)
 
 /datum/reagent/ethanol/vermouth

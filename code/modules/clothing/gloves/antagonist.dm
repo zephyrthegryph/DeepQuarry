@@ -24,63 +24,51 @@
 	if(!istype(target))
 		return 0
 
-	if(user.a_intent != I_HURT && (turn(target.dir, 180) == get_dir(user, target)))
+	if(!IS_HARMING(user) && (turn(target.dir, 180) == get_dir(user, target)))
 		to_chat(target, span_warning("[user] rifles in your pockets!"))
 
-	if(user.a_intent == I_HELP)
-		if(istype(target.back,/obj/item/storage) && do_after(user, 3 SECONDS, target, progress = FALSE))
-			var/obj/item/storage/Backpack = target.back
+	if(IS_HELPING(user))
+		if(istype(target.get_equipped_item(SLOT_ID_BACK),/obj/item/storage) && do_after(user, 3 SECONDS, target, progress = FALSE))
+			var/obj/item/storage/Backpack = target.get_equipped_item(SLOT_ID_BACK)
 			Backpack.open(user)
-		else if(istype(target.belt, /obj/item/storage) && do_after(user, 5 SECONDS, target))
-			var/obj/item/storage/Belt = target.belt
+		else if(istype(target.get_equipped_item(SLOT_ID_BELT), /obj/item/storage) && do_after(user, 5 SECONDS, target))
+			var/obj/item/storage/Belt = target.get_equipped_item(SLOT_ID_BELT)
 			Belt.open(user)
 		return 1
 
-	if(user.a_intent == I_DISARM)
-		var/obj/item/LTarg = target.l_store
-		var/obj/item/LUser = user.l_store
+	if(IS_DISARMING(user))
+		var/obj/item/LTarg = target.get_equipped_item(SLOT_ID_POCKET_L)
+		var/obj/item/LUser = user.get_equipped_item(SLOT_ID_POCKET_L)
 
 		if(do_after(user, 1 SECOND, target))
-			if(istype(LTarg) && do_after(user, 1 SECOND, target))
-				target.drop_from_inventory(LTarg)
-				target.l_store = null
-				user.l_store = LTarg
-				LTarg.forceMove(user)
-				LTarg.equipped(user, slot_l_store)
-			else
-				target.drop_from_inventory(LTarg)
-
-			if(istype(LUser) && do_after(user, 1 SECOND, target))
+			var/took = istype(LTarg) && do_after(user, 1 SECOND, target)
+			target.drop_from_inventory(LTarg)
+			var/gave = istype(LUser) && do_after(user, 1 SECOND, target)
+			// Taking something leaves the user's own pocket item in bluespace: it drops.
+			if(gave || (took && istype(LUser)))
 				user.drop_from_inventory(LUser)
-				target.l_store = LUser
-				LUser.forceMove(target)
-				LUser.equipped(target, slot_l_store)
-			else if(istype(LUser) && LUser != user.l_store) // We've taken something, so drop the one that's in bluespace.
-				user.drop_from_inventory(LUser)
+			if(took)
+				user.equip_to_slot(LTarg, slot_l_store)
+			if(gave)
+				target.equip_to_slot(LUser, slot_l_store)
 
 		return 1
 
-	if(user.a_intent == I_GRAB)
-		var/obj/item/RTarg = target.r_store
-		var/obj/item/RUser = user.r_store
+	if(IS_GRABBING(user))
+		var/obj/item/RTarg = target.get_equipped_item(SLOT_ID_POCKET_R)
+		var/obj/item/RUser = user.get_equipped_item(SLOT_ID_POCKET_R)
 
 		if(do_after(user, 1 SECOND, target))
-			if(istype(RTarg) && do_after(user, 1 SECOND, target))
-				target.drop_from_inventory(RTarg)
-				target.r_store = null
-				user.r_store = RTarg
-				RTarg.forceMove(user)
-				RTarg.equipped(user, slot_r_store)
-			else
-				target.drop_from_inventory(RTarg)
-
-			if(istype(RUser) && do_after(user, 1 SECOND, target))
+			var/took = istype(RTarg) && do_after(user, 1 SECOND, target)
+			target.drop_from_inventory(RTarg)
+			var/gave = istype(RUser) && do_after(user, 1 SECOND, target)
+			// Taking something leaves the user's own pocket item in bluespace: it drops.
+			if(gave || (took && istype(RUser)))
 				user.drop_from_inventory(RUser)
-				target.r_store = RUser
-				RUser.forceMove(target)
-				RUser.equipped(target, slot_r_store)
-			else if(istype(RUser) && RUser != user.r_store) // We've taken something, so drop the one that's in bluespace.
-				user.drop_from_inventory(RUser)
+			if(took)
+				user.equip_to_slot(RTarg, slot_r_store)
+			if(gave)
+				target.equip_to_slot(RUser, slot_r_store)
 
 		return 1
 
@@ -116,7 +104,7 @@
 
 /obj/item/clothing/gloves/ring/buzzer/proc/zap(mob/living/carbon/human/user, atom/movable/target, proximity)
 	. = FALSE
-	if(user.a_intent == I_HURT && battery.percent() >= 50)
+	if(IS_HARMING(user) && battery.percent() >= 50)
 		if(isliving(target))
 			var/mob/living/L = target
 

@@ -255,7 +255,7 @@
 			var/list/per_tweak_display = list()
 			var/list/per_tweak_raw = list()
 			for(var/i in 1 to length(G.gear_tweaks))
-				var/datum/gear_tweak/gt = G.gear_tweaks[i]
+				var/datum/gear_tweak/gt = LAZYACCESS(G.gear_tweaks, i)
 				var/meta_value = islist(item_meta) ? item_meta["[i]"] : null
 				try
 					per_tweak_display["[i]"] = gt.get_contents(meta_value)
@@ -420,7 +420,7 @@
 			// (text/textarea/color/choice/boolean/modal), and optional choices for "choice".
 			var/list/tweak_descriptors = list()
 			for(var/i in 1 to length(G.gear_tweaks))
-				var/datum/gear_tweak/gt = G.gear_tweaks[i]
+				var/datum/gear_tweak/gt = LAZYACCESS(G.gear_tweaks, i)
 				if(!istype(gt))
 					log_world("loadout build_ui_static_data: gear=[G.display_name] has bad tweak at idx=[i]: [gt]")
 					continue
@@ -644,7 +644,7 @@
 			var/datum/gear/G = GLOB.gear_datums[gear_name]
 			if(!G || !isnum(tweak_idx) || tweak_idx < 1 || tweak_idx > length(G.gear_tweaks))
 				return PREF_UPDATE_REJECTED
-			var/datum/gear_tweak/gt = G.gear_tweaks[tweak_idx]
+			var/datum/gear_tweak/gt = LAZYACCESS(G.gear_tweaks, tweak_idx)
 			var/loadout_key = _current_slot(preferences)
 			var/list/gear_list = preferences.read_preference(/datum/preference/gear_list) || list()
 			var/list/active = gear_list[loadout_key] || list()
@@ -684,7 +684,7 @@
 			var/datum/gear/G = GLOB.gear_datums[gear_name]
 			if(!G || !isnum(tweak_idx) || tweak_idx < 1 || tweak_idx > length(G.gear_tweaks))
 				return PREF_UPDATE_REJECTED
-			var/datum/gear_tweak/gt = G.gear_tweaks[tweak_idx]
+			var/datum/gear_tweak/gt = LAZYACCESS(G.gear_tweaks, tweak_idx)
 			var/validated = gt.validate_inline_value(value, user)
 			if(validated == PREF_UPDATE_REJECTED)
 				return PREF_UPDATE_REJECTED
@@ -714,7 +714,7 @@
 			var/datum/gear/G = GLOB.gear_datums[gear_name]
 			if(!G || !isnum(tweak_idx) || tweak_idx < 1 || tweak_idx > length(G.gear_tweaks))
 				return PREF_UPDATE_REJECTED
-			var/datum/gear_tweak/gt = G.gear_tweaks[tweak_idx]
+			var/datum/gear_tweak/gt = LAZYACCESS(G.gear_tweaks, tweak_idx)
 			if(!istype(gt, /datum/gear_tweak/color))
 				return PREF_UPDATE_REJECTED
 			var/loadout_key = _current_slot(preferences)
@@ -746,7 +746,7 @@
 			var/datum/gear/G = GLOB.gear_datums[gear_name]
 			if(!G || !isnum(tweak_idx) || tweak_idx < 1 || tweak_idx > length(G.gear_tweaks))
 				return PREF_UPDATE_REJECTED
-			var/datum/gear_tweak/gt = G.gear_tweaks[tweak_idx]
+			var/datum/gear_tweak/gt = LAZYACCESS(G.gear_tweaks, tweak_idx)
 			if(!istype(gt, /datum/gear_tweak/recolor))
 				return PREF_UPDATE_REJECTED
 			var/loadout_key = _current_slot(preferences)
@@ -782,7 +782,7 @@
 			var/datum/gear/G = GLOB.gear_datums[gear_name]
 			if(!G || !isnum(tweak_idx) || tweak_idx < 1 || tweak_idx > length(G.gear_tweaks))
 				return PREF_UPDATE_REJECTED
-			var/datum/gear_tweak/gt = G.gear_tweaks[tweak_idx]
+			var/datum/gear_tweak/gt = LAZYACCESS(G.gear_tweaks, tweak_idx)
 			if(!istype(gt, /datum/gear_tweak/recolor))
 				return PREF_UPDATE_REJECTED
 			var/loadout_key = _current_slot(preferences)
@@ -821,7 +821,7 @@
 			var/datum/gear/G = GLOB.gear_datums[gear_name]
 			if(!G || !isnum(tweak_idx) || tweak_idx < 1 || tweak_idx > length(G.gear_tweaks))
 				return PREF_UPDATE_REJECTED
-			var/datum/gear_tweak/gt = G.gear_tweaks[tweak_idx]
+			var/datum/gear_tweak/gt = LAZYACCESS(G.gear_tweaks, tweak_idx)
 			if(!istype(gt, /datum/gear_tweak/recolor))
 				return PREF_UPDATE_REJECTED
 			var/loadout_key = _current_slot(preferences)
@@ -861,7 +861,7 @@
 			var/datum/gear/G = GLOB.gear_datums[gear_name]
 			if(!G || !isnum(tweak_idx) || tweak_idx < 1 || tweak_idx > length(G.gear_tweaks))
 				return PREF_UPDATE_REJECTED
-			var/datum/gear_tweak/gt = G.gear_tweaks[tweak_idx]
+			var/datum/gear_tweak/gt = LAZYACCESS(G.gear_tweaks, tweak_idx)
 			if(!istype(gt, /datum/gear_tweak/recolor))
 				return PREF_UPDATE_REJECTED
 			if(!islist(value))

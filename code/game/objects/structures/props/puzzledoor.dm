@@ -16,12 +16,12 @@
 	max_integrity = 9999999 //No.
 	heat_proof = 1 //just so repairing them doesn't try to fireproof something that never takes fire damage
 
-	var/list/locks = list()
+	var/list/locks
 	var/lockID = null
 	var/checkrange_mult = 1
 
 /obj/machinery/door/blast/puzzle/proc/check_locks()
-	if(!locks || locks.len <= 0)	// Puzzle doors with no locks will only listen to boring buttons.
+	if(!locks || length(locks) <= 0) // Puzzle doors with no locks will only listen to boring buttons.
 		return 0
 
 	for(var/obj/structure/prop/lock/L in locks)
@@ -37,19 +37,19 @@
 /obj/machinery/door/blast/puzzle/Initialize(mapload)
 	. = ..()
 	implicit_material = get_material_by_name(MAT_ALIEN_DUNGEON)
-	if(locks.len)
+	if(length(locks))
 		return
 	var/check_range = world.view * checkrange_mult
 	for(var/obj/structure/prop/lock/L in orange(src, check_range))
 		if(L.lockID == lockID)
-			L.linked_objects |= src
-			locks |= L
+			LAZYOR(L.linked_objects, src)
+			LAZYOR(locks, L)
 
 /obj/machinery/door/blast/puzzle/Destroy()
-	if(locks.len)
+	if(length(locks))
 		for(var/obj/structure/prop/lock/L in locks)
-			L.linked_objects -= src
-			locks -= L
+			LAZYREMOVE(L.linked_objects, src)
+			LAZYREMOVE(locks, L)
 	. = ..()
 
 /obj/machinery/door/blast/puzzle/attack_hand(mob/user as mob)
@@ -60,7 +60,7 @@
 
 /obj/machinery/door/blast/puzzle/attackby(obj/item/C as obj, mob/user as mob)
 	if(istype(C, /obj/item))
-		if(C.pry == 1 && (user.a_intent != I_HURT || (stat & BROKEN)))
+		if(C.pry == 1 && (!IS_HARMING(user) || (stat & BROKEN)))
 			if(istype(C,/obj/item/material/twohanded/fireaxe))
 				var/obj/item/material/twohanded/fireaxe/F = C
 				if(!F.wielded)
@@ -74,7 +74,7 @@
 				to_chat(user, span_notice("[src]'s arcane workings resist your effort."))
 			return
 
-		else if(src.density && (user.a_intent == I_HURT))
+		else if(src.density && (IS_HARMING(user)))
 			var/obj/item/W = C
 			user.setClickCooldown(user.get_attack_speed(W))
 			if(W.obj_damage_type())

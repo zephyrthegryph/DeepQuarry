@@ -217,9 +217,6 @@
 	if(recursive && materials[material] >= S.perunit)
 		eject_materials(material, -1)
 
-/obj/machinery/partslathe/attack_ai(mob/user)
-	src.attack_hand(user)
-
 /obj/machinery/partslathe/attack_hand(mob/user)
 	if(..())
 		return

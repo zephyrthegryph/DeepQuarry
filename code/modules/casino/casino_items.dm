@@ -3,7 +3,9 @@
 	desc = "A fancy casino wallet with flashy lights, oooh~"
 	icon = 'icons/obj/casino_ch.dmi'
 	icon_state = "casinowallet_black"
-	can_hold = list(
+
+/obj/item/storage/wallet/casino/hold_constraint()
+	var/list/holds = list(
 		/obj/item/spacecash,
 		/obj/item/card,
 		/obj/item/clothing/mask/smokable/cigarette/,
@@ -43,6 +45,7 @@
 		/obj/item/storage/pill_bottle/dice_nerd,
 		/obj/item/storage/dicecup/loaded
 		)
+	return list(HOLD_ONLY(holds), HOLD_MAX_SIZE(ITEMSIZE_SMALL))
 
 /obj/item/storage/wallet/casino/verb/toggle_design()
 	set category = "Object"

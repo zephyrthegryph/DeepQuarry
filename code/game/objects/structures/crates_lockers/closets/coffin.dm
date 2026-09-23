@@ -51,7 +51,7 @@
 				return TRUE
 		if(isrobot(M))
 			var/mob/living/silicon/robot/R = M
-			if(R.a_intent == I_HELP)
+			if(IS_HELPING(R))
 				to_chat(R, span_warning("You stop at the edge of \the [src.name]."))
 				return FALSE
 			else
@@ -72,7 +72,7 @@
 			user.visible_message(span_notice("[user] piles dirt into \the [src.name]."), \
 									span_notice("You start to pile dirt into \the [src.name]."), \
 									span_notice("You hear dirt being moved."))
-			if(do_after(user, 4 SECONDS * W.toolspeed, target = src))
+			if(use_tool(user, W, src, delay = 4 SECONDS, volume = 0))
 				user.visible_message(span_notice("[user] pats down the dirt on top of \the [src.name]."), \
 									span_notice("You finish filling in \the [src.name]."))
 				close()
@@ -105,11 +105,11 @@
 			W.forceMove(src.loc)
 	else
 		if(istype(W, /obj/item/shovel))
-			if(user.a_intent == I_HURT)	// Hurt intent means you're trying to kill someone, or just get rid of the grave
+			if(IS_HARMING(user))	// Hurt intent means you're trying to kill someone, or just get rid of the grave
 				user.visible_message(span_notice("[user] begins to smoothe out the dirt of \the [src.name]."), \
 										span_notice("You start to smoothe out the dirt of \the [src.name]."), \
 										span_notice("You hear dirt being moved."))
-				if(do_after(user, 4 SECONDS * W.toolspeed, target = src))
+				if(use_tool(user, W, src, delay = 4 SECONDS, volume = 0))
 					user.visible_message(span_notice("[user] finishes smoothing out \the [src.name]."), \
 											span_notice("You finish smoothing out \the [src.name]."))
 					if(LAZYLEN(contents) || has_latent())
@@ -125,7 +125,7 @@
 				user.visible_message(span_notice("[user] begins to unearth \the [src.name]."), \
 										span_notice("You start to unearth \the [src.name]."), \
 										span_notice("You hear dirt being moved."))
-				if(do_after(user, 4 SECONDS * W.toolspeed, target = src))
+				if(use_tool(user, W, src, delay = 4 SECONDS, volume = 0))
 					user.visible_message(span_notice("[user] reaches the bottom of \the [src.name]."), \
 											span_notice("You finish digging out \the [src.name]."))
 					break_open()

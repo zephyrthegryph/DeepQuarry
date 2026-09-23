@@ -107,4 +107,4 @@
 
 	T.source_terminal = pick("","[pick("Biesel","New Gibson")] GalaxyNet Terminal #[rand(111,999)]","your mums place","nantrasen high CommanD","Angessa's Pearl","Nowhere")
 
-	A.transaction_log.Add(T)
+	LAZYADD(A.transaction_log, T)

@@ -91,6 +91,7 @@
 	B.name = "stomach"
 	B.desc = "You have found yourself pumping on down, down, down into this extremely soft dog. The slick touches of pulsing walls roll over you in greedy fashion as you're swallowed away, the flesh forms to your figure as in an instant the world is replaced by the hot squeeze of canine gullet. And in another moment a heavy GLLRMMPTCH seals you away, the dog tossing its head eagerly, the way forward stretching to accommodate your shape as you are greedily guzzled down. The wrinkled, doughy walls pulse against you in time to the creature's steady heartbeat. The sounds of the outside world muffled into obscure tones as the wet, grumbling rolls of this soft creature's gut hold you, churning you tightly such that no part of you is spared from these gastric affections."
 
+	B.own_emote_lists()
 	B.emote_lists[DM_HOLD] = list(
 		"You can feel yourself shift and sway as the dog moves around. Your figure held tightly there had little room to move in that organic gloom, but every wandering step is another jostling quake that shakes through the canine frame and rocks you once again.",
 		"It is hard to hear much of anything over the grumbling fleshy sounds of the stomach walls pressing to you. The wet sound of flesh gliding over you too was ever-present as the walls encroach upon your personal space. And beyond that, the steady booming of the dog's heart throbs in your ears, a relaxing drone of excited thumping. Any sounds from the outside world are muffled such that they are hard to hear, as the canine walls hold on to you greedily.",
@@ -100,6 +101,7 @@
 		"Thick slime soaks your form as the dog's insides churn over you. There is no part of you that is not totally soaked in it before too long as the steady gastric motions massage you from head to toe. Any pushes or squirms only get the affected flesh to cling more tightly, and to press back. It's very hard to get any personal space!",
 		"Beyond the grumbling gurgles and the ever-present drumming of the dog's heart, you can actually hear, more faintly, the whooshing of the canine's breath. The slow draw in coming with a vague tightening of your surroundings, while the dog's soft, whooshing exhales make your surroundings more relaxed, easy to sink in against.")
 
+	B.own_emote_lists()
 	B.emote_lists[DM_ABSORB] = list(
 		"You can feel the weight of the dog shift as it moves around. Your figure held tightly there had absolutely no room to move in that organic gloom. Every moment those pumping walls seem to squeeze over you tighter, every wandering step the dog takes is another jostling quake that seems to sink you that much deeper into the dog's flesh, the dog's body steadily collapsing in to claim you.",
 		"It is hard to hear much of anything over the smothering press of stomach walls pressing to you, forming to your features. The tarry flesh you are slowly sinking into squelches here and there as it flows over your features. The sound of the dog's body absorbing you is oddly quiet. No bubbling or glooping. Just one body slowly blending into and becoming one with another. And beyond all that, the steady booming of the dog's heart throbs in your ears, moment by moment that sound seems to tug at you, coursing through you as much as the dog you are steadily becoming a part of. Any sounds from the outside world are muffled such that they are hard to hear, as you sink into the walls of this canine predator.",
@@ -109,6 +111,7 @@
 		"The thick slimes that coat your form do nothing to keep the molten flesh of this dog's stomach from advancing across your figure and claiming you up. Soon there's not a single part of you that is not totally inundated in the deep press of a woof's  gastric massage. Any pushes or squirms only get the affected flesh to cling more tightly, and to press back, flowing over your form, deeper, deeper.",
 		"Beyond the squelching, clinging tide of dog flesh working to make the two of you one, and the ever-present drumming of the dog's heart, you can actually hear, more faintly, the whooshing of the canine's breath. The slow draw in coming with a vague tightening of your surroundings, while the dog's soft, whooshing exhales make your surroundings more relaxed. And you realize suddenly that the dog's breathing seem to bring you relief even as you are totally smothered in the canine's insistent gastric affections!")
 
+	B.own_emote_lists()
 	B.emote_lists[DM_DIGEST] = list(
 		"As the dog goes about its business, you can feel the shift your weight sway on its tummy. The gurgling glorping sounds that come with the squeezing, kneading, massaging motions let you know that you're held tight, churned. Dog food.",
 		"It is hard to hear much of anything over the roaring gurgles of stomach walls churning over you. The wet sound of flesh grinding heavily over you too was ever-present as the walls encroach upon your personal space, lathering you in tingly, syrupy thick slimes. And beyond that, the steady booming of the dog's heart throbs in your ears, a drone of excited thumping. Any sounds from the outside world are muffled such that they are hard to hear, as the canine walls churn on to you greedily.",
@@ -187,14 +190,7 @@
 
 /mob/living/simple_mob/vore/woof/hostile/horrible
 
-	armor = list(
-			"melee" = 75,
-			"bullet" = 75,
-			"laser" = 75,
-			"energy" = 75,
-			"bomb" = 75,
-			"bio" = 75,
-			"rad" = 75)
+	armor_spec = "melee=75;bullet=75;laser=75;energy=75;bomb=75;bio=75;rad=75"
 
 	projectiletype = /obj/item/projectile/awoo_missile/heavy
 	projectilesound = 'sound/voice/long_awoo.ogg'
@@ -218,7 +214,7 @@
 /mob/living/simple_mob/vore/woof/cass/attack_hand(mob/living/carbon/human/M as mob)
 	if(stat != DEAD)
 		return ..()
-	if(M.a_intent == I_HELP)
+	if(IS_HELPING(M))
 		M.visible_message("[M] pets [src].", runemessage = "pets [src]")
 		if(do_after(M, 30 SECONDS, target = src))
 			faction = M.faction

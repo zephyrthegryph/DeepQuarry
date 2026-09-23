@@ -37,15 +37,7 @@
 	say_list_type = /datum/say_list/otie
 	tame_chance = 0
 
-	armor = list(			// Values read by injury_armor()
-				"melee" = 20,
-				"bullet" = 10,
-				"laser" = 20,
-				"energy" = 5,
-				"bomb" = 0,
-				"bio" = 100,
-				"rad" = 100
-				)
+	armor_spec = "melee=20;bullet=10;laser=20;energy=5;bio=100;rad=100" // Values read by injury_armor()
 
 	// Leaping is a special attack, so these values determine when leap can happen.
 	// Leaping won't occur if its on cooldown.
@@ -78,15 +70,7 @@
 	special_attack_max_range = 3
 	special_attack_cooldown = 30 SECONDS
 
-	armor = list(			// Values read by injury_armor()
-				"melee" = 30,
-				"bullet" = 30,
-				"laser" = 30,
-				"energy" = 15,
-				"bomb" = 0,
-				"bio" = 100,
-				"rad" = 100
-				)
+	armor_spec = "melee=30;bullet=30;laser=30;energy=15;bio=100;rad=100" // Values read by injury_armor()
 
 /mob/living/simple_mob/vore/otie/syndicate/apply_bonus_melee_damage(atom/A, damage_amount)
 	if(isliving(A))
@@ -166,15 +150,7 @@
 	buckle_movable = TRUE
 	buckle_lying = FALSE
 	vore_icons = SA_ICON_LIVING | SA_ICON_REST
-	armor = list(			// Values read by injury_armor()
-				"melee" = 40,
-				"bullet" = 20,
-				"laser" = 20,
-				"energy" = 15,
-				"bomb" = 0,
-				"bio" = 100,
-				"rad" = 100
-				)
+	armor_spec = "melee=40;bullet=20;laser=20;energy=15;bio=100;rad=100" // Values read by injury_armor()
 
 /mob/living/simple_mob/vore/wolf/direwolf/syndicate/black
 	name = "mercenary commandoggo"
@@ -234,15 +210,7 @@
 
 	say_list_type = /datum/say_list/merc
 
-	armor = list(			// Values read by injury_armor()
-				"melee" = 40,
-				"bullet" = 30,
-				"laser" = 20,
-				"energy" = 5,
-				"bomb" = 50,
-				"bio" = 100,
-				"rad" = 100
-				)
+	armor_spec = "melee=40;bullet=30;laser=20;energy=5;bomb=50;bio=100;rad=100" // Values read by injury_armor()
 /mob/living/simple_mob/vore/wolftaur/Initialize(mapload)
 	. = ..()
 	var/oursize = rand(90, 200) / 100

@@ -138,11 +138,11 @@ GLOBAL_DATUM(raiders, /datum/antagonist/raider)
 		else
 			O = new /datum/objective/heist/salvage()
 		O.choose_target()
-		global_objectives |= O
+		LAZYOR(global_objectives, O)
 
 		i++
 
-	global_objectives |= new /datum/objective/heist/preserve_crew
+	LAZYOR(global_objectives, new /datum/objective/heist/preserve_crew)
 	return 1
 
 /datum/antagonist/raider/check_victory()
@@ -152,15 +152,15 @@ GLOBAL_DATUM(raiders, /datum/antagonist/raider)
 	var/win_msg = ""
 
 	//No objectives, go straight to the feedback.
-	if(CONFIG_GET(flag/objectives_disabled) || !global_objectives.len)
+	if(CONFIG_GET(flag/objectives_disabled) || !length(global_objectives))
 		return
 
-	var/success = global_objectives.len
+	var/success = length(global_objectives)
 	//Decrease success for failed objectives.
 	for(var/datum/objective/O in global_objectives)
 		if(!(O.check_completion())) success--
 	//Set result by objectives.
-	if(success == global_objectives.len)
+	if(success == length(global_objectives))
 		win_type = "Major"
 		win_group = "Raider"
 	else if(success > 2)
@@ -193,7 +193,7 @@ GLOBAL_DATUM(raiders, /datum/antagonist/raider)
 
 /datum/antagonist/raider/proc/is_raider_crew_safe()
 
-	if(!current_antagonists || current_antagonists.len == 0)
+	if(!current_antagonists || length(current_antagonists) == 0)
 		return 0
 
 	for(var/datum/mind/player in current_antagonists)
@@ -216,7 +216,7 @@ GLOBAL_DATUM(raiders, /datum/antagonist/raider)
 		var/new_suit =    pick(raider_suits)
 
 		player.equip_to_slot_or_del(new new_shoes(player),slot_shoes)
-		if(!player.shoes)
+		if(!player.get_equipped_item(SLOT_ID_SHOES))
 			//If equipping shoes failed, fall back to equipping sandals
 			var/fallback_type = pick(/obj/item/clothing/shoes/sandal, /obj/item/clothing/shoes/boots/jackboots/toeless)
 			player.equip_to_slot_or_del(new fallback_type(player), slot_shoes)
@@ -231,7 +231,7 @@ GLOBAL_DATUM(raiders, /datum/antagonist/raider)
 	id.name = "[player.real_name]'s Passport"
 	id.assignment = JOB_ALT_VISITOR
 	var/obj/item/storage/wallet/W = new(player)
-	W.handle_item_insertion(id)
+	W.insert_item(id)
 	player.equip_to_slot_or_del(W, slot_wear_id)
 	spawn_money(rand(50,150)*10,W)
 	create_radio(RAID_FREQ, player)
@@ -249,20 +249,20 @@ GLOBAL_DATUM(raiders, /datum/antagonist/raider)
 	//Give some of the raiders a pirate gun as a secondary
 	if(prob(60))
 		var/obj/item/secondary = new /obj/item/gun/projectile/pirate(T)
-		if(!(primary.slot_flags & SLOT_HOLSTER))
+		if(!HAS_TAG(primary, TAG_HOLSTERABLE))
 			holster = new new_holster(T)
 			holster.holstered = secondary
 			secondary.loc = holster
 		else
 			player.equip_to_slot_or_del(secondary, slot_belt)
 
-	if(primary.slot_flags & SLOT_HOLSTER)
+	if(HAS_TAG(primary, TAG_HOLSTERABLE))
 		holster = new new_holster(T)
 		holster.holstered = primary
 		primary.loc = holster
-	else if(!player.belt && (primary.slot_flags & SLOT_BELT))
+	else if(!player.get_equipped_item(SLOT_ID_BELT) && HAS_TAG(primary, TAG_WEAR_BELT))
 		player.equip_to_slot_or_del(primary, slot_belt)
-	else if(!player.back && (primary.slot_flags & SLOT_BACK))
+	else if(!player.get_equipped_item(SLOT_ID_BACK) && HAS_TAG(primary, TAG_WEAR_BACK))
 		player.equip_to_slot_or_del(primary, slot_back)
 	else
 		player.put_in_any_hand_if_possible(primary)
@@ -271,7 +271,7 @@ GLOBAL_DATUM(raiders, /datum/antagonist/raider)
 	equip_ammo(player, primary)
 
 	if(holster)
-		var/obj/item/clothing/under/uniform = player.w_uniform
+		var/obj/item/clothing/under/uniform = player.get_equipped_item(SLOT_ID_UNIFORM)
 		if(istype(uniform) && uniform.can_attach_accessory(holster))
 			uniform.attackby(holster, player)
 		else

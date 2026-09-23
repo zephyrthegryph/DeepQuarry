@@ -54,14 +54,9 @@
 /obj/machinery/disposal/deliveryChute/welder_act(mob/user, obj/item/I)
 	if(!c_mode)
 		return ITEM_INTERACT_BLOCKING
-	var/obj/item/weldingtool/W = I.get_welder()
-	if(!W.remove_fuel(0,user))
-		to_chat(user, "You need more welding fuel to complete this task.")
-		return ITEM_INTERACT_BLOCKING
-	playsound(src, W.usesound, 50, 1)
-	to_chat(user, "You start slicing the floorweld off the delivery chute.")
-	if(do_after(user, 2 SECONDS * W.toolspeed, target = src))
-		if(!src || !W.isOn()) return ITEM_INTERACT_BLOCKING
+	if(use_tool(user, I, src, delay = 2 SECONDS, quality = TOOL_WELDER, volume = 50, message_self = "You start slicing the floorweld off the delivery chute."))
+		if(!src)
+			return ITEM_INTERACT_BLOCKING
 		to_chat(user, "You sliced the floorweld off the delivery chute.")
 		var/obj/structure/disposalconstruct/C = new(src.loc)
 		C.ptype = 8

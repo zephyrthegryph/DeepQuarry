@@ -5,7 +5,7 @@
 	desc = "A lightweight suit combining the utility of a RIG with the wearability of a voidsuit."
 	icon_state = "void_explorer2"
 	slot_flags = SLOT_BELT
-	armor = list(melee = 40, bullet = 30, laser = 20, energy = 15, bomb = 30, bio = 100, rad = 50)
+	armor_spec = "melee=40;bullet=30;laser=20;energy=15;bomb=30;bio=100;rad=50"
 	slowdown = 0.5
 	offline_slowdown = 1
 	offline_vision_restriction = 0
@@ -20,10 +20,12 @@
 	glove_type = null
 	cell_type =  null
 
-	allowed = list(POCKET_GENERIC, POCKET_EMERGENCY, /obj/item/storage/box, /obj/item/storage/belt, /obj/item/defib_kit/compact)
-
 	req_access = list()
 	req_one_access = list()
+
+/obj/item/rig/robotics/suit_storage_constraint()
+	var/list/stores = list(POCKET_GENERIC, POCKET_EMERGENCY, /obj/item/storage/box, /obj/item/storage/belt, /obj/item/defib_kit/compact)
+	return list(HOLD_ONLY(stores))
 
 /obj/item/clothing/head/helmet/space/rig/advsuit
 	name = "suit helmet"

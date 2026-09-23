@@ -98,7 +98,7 @@
 		return ITEM_INTERACT_BLOCKING
 	var/obj/item/cell/device/removed_cell = attached_cell
 	to_chat(user, "You begin removing \the [removed_cell] from \the [src].")
-	if(!do_after(user, 1 SECOND * tool.toolspeed, target = src))
+	if(!use_tool(user, tool, src, delay = 1 SECOND, quality = TOOL_SCREWDRIVER, volume = 0))
 		return ITEM_INTERACT_BLOCKING
 	removed_cell.update_icon()
 	removed_cell.forceMove(get_turf(src))

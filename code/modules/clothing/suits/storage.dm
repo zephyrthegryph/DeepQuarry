@@ -5,7 +5,6 @@
 /obj/item/clothing/suit/storage/Initialize(mapload)
 	. = ..()
 	pockets = new/obj/item/storage/internal(src)
-	pockets.max_w_class = ITEMSIZE_SMALL		//fit only pocket sized items
 	pockets.max_storage_space = ITEMSIZE_COST_SMALL * 2
 
 /obj/item/clothing/suit/storage/Destroy()
@@ -94,7 +93,6 @@
 	. = ..()
 	qdel(pockets) // Parent Initialize already made one; don't orphan it in contents.
 	pockets = new/obj/item/storage/internal(src)
-	pockets.max_w_class = ITEMSIZE_SMALL
 	pockets.max_storage_space = ITEMSIZE_COST_SMALL * 4
 
 /obj/item/clothing/suit/storage/vest

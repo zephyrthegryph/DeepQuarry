@@ -35,7 +35,7 @@
 	name = "nanoweave barrier hivebot"
 	icon_state = "yellow"
 	icon_living = "yellow"
-	armor = list(melee = 80, bullet = 80, laser = 80, energy = 80, bomb = 0, bio = 100, rad = 100)
+	armor_spec = "melee=80;bullet=80;laser=80;energy=80;bio=100;rad=100"
 
 
 /mob/living/simple_mob/mechanical/hivebot/nanoevent/orange //knockback
@@ -122,7 +122,7 @@
 
 /mob/living/simple_mob/mechanical/mecha/eclipse/hivebot
 	icon = 'icons/mob/hivebot.dmi'
-	armor = list(melee = 20, bullet = 20, laser = 20, energy = 20, bomb = 20, bio = 100, rad = 100)
+	armor_spec = "melee=20;bullet=20;laser=20;energy=20;bomb=20;bio=100;rad=100"
 	size_multiplier = 2
 	faction = FACTION_HIVEBOT
 
@@ -211,7 +211,7 @@
 
 /mob/living/simple_mob/mechanical/mecha/eclipse/hivebot/cyan/do_special_attack(atom/A)
 	. = TRUE // So we don't fire a bolt as well.
-	switch(a_intent)
+	switch(use_stance())
 		if(I_DISARM) // Phase 3
 			if(attackcycle == 1)
 				say("PROTOCOL: MAELSTORM.")
@@ -253,7 +253,7 @@
 
 /mob/living/simple_mob/mechanical/mecha/eclipse/hivebot/green/do_special_attack(atom/A)
 	. = TRUE // So we don't fire a bolt as well.
-	switch(a_intent)
+	switch(use_stance())
 		if(I_DISARM) // Phase 3
 			if(attackcycle == 1)
 				say("PROTOCOL: LASERBLADE.")
@@ -401,7 +401,7 @@
 /*
 /mob/living/simple_mob/mechanical/mecha/eclipse/hivebot/green/do_special_attack(atom/A)
 	. = TRUE // So we don't fire a bolt as well.
-	switch(a_intent)
+	switch(use_stance())
 		if(I_DISARM) // Phase 3 1 safe zone
 			if(attackcycle == 1)
 				say("PROTOCOL: LASERBLADE.")

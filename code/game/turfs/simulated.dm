@@ -120,8 +120,8 @@
 			// Tracking blood
 			var/list/bloodDNA = null
 			var/bloodcolor=""
-			if(H.shoes)
-				var/obj/item/clothing/shoes/S = H.shoes
+			if(H.get_equipped_item(SLOT_ID_SHOES))
+				var/obj/item/clothing/shoes/S = H.get_equipped_item(SLOT_ID_SHOES)
 				if(istype(S))
 					S.handle_movement(src,(H.m_intent == I_RUN ? 1 : 0), H) // handle_movement now needs to know who is moving, for inshoe steppies
 					if(S.track_blood)

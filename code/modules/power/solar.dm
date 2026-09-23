@@ -62,7 +62,7 @@ GLOBAL_LIST_EMPTY(solars_list)
 	control = null
 
 /obj/machinery/power/solar/attackby(obj/item/W, mob/user)
-	if(W && user.a_intent == I_HURT)
+	if(W && IS_HARMING(user))
 		user.visible_message(span_warning("[user] strikes the solar panel with [W]."))
 		user.setClickCooldown(user.get_attack_speed(W))
 		add_fingerprint(user)
@@ -72,7 +72,7 @@ GLOBAL_LIST_EMPTY(solars_list)
 /obj/machinery/power/solar/crowbar_act(mob/user, obj/item/W)
 	playsound(src, 'sound/machines/click.ogg', 50, 1)
 	user.visible_message(span_notice("[user] begins to take the glass off the solar panel."))
-	if(do_after(user, 2 SECONDS * W.toolspeed, target = src))
+	if(use_tool(user, W, src, delay = 2 SECONDS, volume = 0))
 		var/obj/item/solar_assembly/S = new(loc)
 		S.anchored = TRUE
 		new glass_type(loc, 2)
@@ -85,7 +85,7 @@ GLOBAL_LIST_EMPTY(solars_list)
 // First time integrity bottoms out, the panel flips to its broken (cracked) state.
 /obj/machinery/power/solar/atom_break(damage_flag)
 	. = ..()
-	if(!(stat & BROKEN))
+	if(.)
 		broken()
 
 // Once broken, further damage shatters it into shards.
@@ -337,12 +337,19 @@ GLOBAL_LIST_EMPTY(solars_list)
 	GLOB.solars_list.Remove(src)
 	needs_panel_check = TRUE
 
-/obj/machinery/power/solar_control/connect_to_network()
+/obj/machinery/power/solar_control/connect_to_network(bind_now = TRUE)
 	var/to_return = ..()
 	if(powernet) //if connected and not already in solar_list...
 		GLOB.solars_list |= src //... add it
 		needs_panel_check = TRUE
 	return to_return
+
+/obj/machinery/power/solar_control/power_network_changed(datum/powernet/old, datum/powernet/network)
+	if(network)
+		GLOB.solars_list |= src
+	else
+		GLOB.solars_list -= src
+	needs_panel_check = TRUE
 
 //search for unconnected panels and trackers in the computer powernet and connect them
 /obj/machinery/power/solar_control/proc/search_for_connected()
@@ -460,8 +467,7 @@ GLOBAL_LIST_EMPTY(solars_list)
 		for(var/obj/machinery/power/solar/S in connected_panels)
 			if (S.powernet != powernet)
 				S.unset_control()
-	if(powernet)
-		add_avail(connected_power)
+	set_power_supply(connected_power)
 	return PROCESS_KILL
 
 /obj/machinery/power/solar_control/tgui_act(action, params)
@@ -514,8 +520,7 @@ GLOBAL_LIST_EMPTY(solars_list)
 	for(var/obj/machinery/power/solar/S in connected_panels)
 		sum += S.update_power_generation(src)
 	connected_power = sum
-	if(powernet)
-		add_avail(connected_power)
+	set_power_supply(connected_power)
 	update_icon()
 
 /obj/machinery/power/solar_control/power_change()
@@ -523,19 +528,6 @@ GLOBAL_LIST_EMPTY(solars_list)
 		update_icon()
 
 
-/obj/machinery/power/solar_control/proc/broken()
-	stat |= BROKEN
-	update_icon()
-
-
-/obj/machinery/power/solar_control/atom_break(damage_flag)
-	. = ..()
-	broken()
-
-/obj/machinery/power/solar_control/atom_fix()
-	. = ..()
-	stat &= ~BROKEN
-	update_icon()
 
 //
 // MISC

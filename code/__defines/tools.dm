@@ -24,7 +24,7 @@
  * A helper for checking if an item interaction should be skipped.
  * This is only used explicitly because some interactions may not want to ever be skipped.
  */
-#define SHOULD_SKIP_INTERACTION(target, item, user) (HAS_TRAIT(target, TRAIT_COMBAT_MODE_SKIP_INTERACTION) && (user.a_intent == I_HURT))
+#define SHOULD_SKIP_INTERACTION(target, item, user) (HAS_TRAIT(target, TRAIT_COMBAT_MODE_SKIP_INTERACTION) && IS_HARMING(user))
 
 /// Return when an item interaction is successful.
 /// This cancels the rest of the chain entirely and indicates success.

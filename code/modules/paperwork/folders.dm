@@ -8,9 +8,12 @@
 	drop_sound = 'sound/items/drop/paper.ogg'
 	pickup_sound = 'sound/items/pickup/paper.ogg'
 	slot_flags = SLOT_BELT | SLOT_HOLSTER
+	/// Card stock: barely slows a fire (containment paths, C2).
+	insulation = 0.1
 
 // ---- Containment (C1): one pages slot for paperwork. Destroying the folder
-// destroys its pages, as before. ----
+// destroys its pages, as before. C2: the pages are inside the cover, and a
+// stab goes straight through it. ----
 
 /obj/item/folder/slot_def_types()
 	var/static/list/types = list(/datum/slot_def/folder_pages)
@@ -21,6 +24,8 @@
 	name = "pages"
 	accepts = /datum/predicate/slot_folder_pages
 	drop_policy = SLOT_DROP_DELETE
+	exposure = SLOT_EXPOSURE_INTERNAL
+	damage_transmission = list(0, 0.5, 1, 0, 0, 0, 0.5, 0, 0, 0, 0, 0)
 
 /datum/predicate/slot_folder_pages
 	name = "folder pages"

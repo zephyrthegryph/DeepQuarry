@@ -65,7 +65,7 @@
 	update_icon()
 
 /obj/item/reagent_containers/glass/attack(mob/living/M, mob/living/user, target_zone, attack_modifier)
-	if(force && !(flags & NOBLUDGEON) && user.a_intent == I_HURT)
+	if(force && !(flags & NOBLUDGEON) && IS_HARMING(user))
 		return	..()
 
 	// If the container is *closed* we do snake milking!~
@@ -78,7 +78,7 @@
 	return ITEM_INTERACT_FAILURE
 
 /obj/item/reagent_containers/glass/standard_feed_mob(mob/user, mob/target)
-	if(user.a_intent == I_HURT)
+	if(IS_HARMING(user))
 		return FALSE
 	return ..()
 
@@ -120,7 +120,7 @@
 		return 1
 	if(standard_pour_into(user, target)) //Pouring into another beaker?
 		return
-	if(user.a_intent == I_HURT)
+	if(IS_HARMING(user))
 		if(standard_splash_mob(user,target))
 			return 1
 		if(reagents && reagents.total_volume)
@@ -144,7 +144,7 @@
 			update_name_label()
 	if(istype(W,/obj/item/storage/bag))
 		..()
-	if(W && W.w_class <= w_class && (flags & OPENCONTAINER) && user.a_intent != I_HELP)
+	if(W && W.w_class <= w_class && (flags & OPENCONTAINER) && !IS_HELPING(user))
 		balloon_alert(user, "[W] dipped into \the [src].")
 		reagents.touch_obj(W, reagents.total_volume)
 	attempt_changeling_test(W,user)

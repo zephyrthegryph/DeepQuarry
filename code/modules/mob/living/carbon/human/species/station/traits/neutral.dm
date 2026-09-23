@@ -1259,7 +1259,7 @@
 /datum/trait/neutral/food_pref/apply(datum/species/S, mob/living/carbon/human/H, trait_prefs)
 	. = ..()
 	for(var/a in our_allergens)
-		S.food_preference |= a
+		LAZYOR(S.food_preference, a)
 
 /datum/trait/neutral/food_pref/herbivore
 	name = "Food Preference - Herbivore"

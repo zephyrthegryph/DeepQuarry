@@ -5,7 +5,7 @@
 	use_power = USE_POWER_IDLE
 	idle_power_usage = 10
 	var/datum/embedded_program/program	//the currently executing program
-	var/list/valid_actions = list()
+	var/list/valid_actions
 	var/on = 1
 
 /obj/machinery/embedded_controller/Initialize(mapload)
@@ -61,8 +61,8 @@
 	. = ..()
 	START_MACHINE_PROCESSING(src)
 
-/obj/machinery/embedded_controller/attack_ai(mob/user as mob)
-	tgui_interact(user)
+/obj/machinery/embedded_controller
+	silicon_use = SILICON_USE_UI
 
 /obj/machinery/embedded_controller/attack_hand(mob/user as mob)
 	if(!user.IsAdvancedToolUser())

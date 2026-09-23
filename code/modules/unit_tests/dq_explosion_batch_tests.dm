@@ -125,53 +125,36 @@ GLOBAL_LIST_EMPTY(dq_blast_probe_log)
 	TEST_ASSERT_EQUAL(P.get_integrity(), P.max_integrity, "a bomb-proof object takes no blast")
 
 
-/// A blast batch is one power topology commit: cables destroyed while an
-/// explosion defers the rebuild only note their network, once.
+/// A blast batch is one power topology commit (M3, fixes.md Q13): cables the
+/// blast destroys queue their removal, and the edits reach Rust together when
+/// the explosion epoch ends.
 /datum/unit_test/dq_explosion_batch/one_topology_commit
 
 /datum/unit_test/dq_explosion_batch/one_topology_commit/Run()
-	var/was_deferred = SSmachines.powernet_is_defered()
-	var/datum/powernet/network = new
-	var/list/cables = list()
-	for(var/x in 2 to 5)
-		var/obj/structure/cable/C = new(locate(x, 2, 1))
-		C.d1 = x == 2 ? 0 : WEST
-		C.d2 = EAST
-		cables += C
-	network.begin_topology_batch()
-	for(var/obj/structure/cable/C as anything in cables)
-		network.add_cable(C)
-	network.end_topology_batch()
-
-	SSmachines.defer_powernet_rebuild()
-	if(!SSmachines.powernet_is_defered())
-		TEST_NOTICE(src, "powernet rebuilds can't be deferred before the round starts; skipped")
+	var/list/run = dq_power_test_run(4)
+	TEST_ASSERT_NOTNULL(run, "no clear floor run for the power batch test")
+	if(!run)
 		return
+	var/list/cables = dq_power_test_line(run)
+	SSmachines.power_flush(TRUE)
+	var/sent = SSmachines.power_edits_sent
+	SSmachines.power_batch_begin()
 	var/obj/structure/cable/cut_a = cables[2]
 	var/obj/structure/cable/cut_b = cables[3]
 	blast(list(cut_a, cut_b), 1)
 	TEST_ASSERT(QDELETED(cut_a) && QDELETED(cut_b), "a devastating blast should cut the cables")
-	TEST_ASSERT(!network.topology_pending, "cables cut inside an explosion must not start a topology rebuild")
-	TEST_ASSERT_NULL(SSmachines.powernet_topology_jobs_by_net[network], "no topology job until the explosion commits")
-	var/noted = 0
-	for(var/datum/powernet/N as anything in SSmachines.deferred_powernet_splits)
-		if(N == network)
-			noted++
-	TEST_ASSERT_EQUAL(noted, 1, "the network should be noted once for one commit")
-	if(!was_deferred)
-		SSmachines.release_powernet_defer()
-		TEST_ASSERT(network.topology_pending, "the commit should queue the network's rebuild")
-	var/datum/powernet_topology_job/job = SSmachines.powernet_topology_jobs_by_net[network]
-	if(job)
-		SSmachines.powernet_topology_jobs -= job
-		SSmachines.powernet_topology_jobs_by_net.Remove(network)
+	SSmachines.power_flush()
+	TEST_ASSERT_EQUAL(SSmachines.power_edits_sent, sent, "edits reached Rust inside the explosion epoch")
+	TEST_ASSERT(length(SSmachines.power_ops), "the cut cables did not queue their removal")
+	SSmachines.power_batch_end()
+	TEST_ASSERT(!length(SSmachines.power_ops), "ending the epoch did not send the batch")
+	TEST_ASSERT(SSmachines.power_edits_sent > sent, "the batch was not sent")
 	for(var/obj/structure/cable/C as anything in cables)
 		if(!QDELETED(C))
 			qdel(C)
-	for(var/obj/item/stack/cable_coil/coil in locate(3, 2, 1))
-		qdel(coil)
-	for(var/obj/item/stack/cable_coil/coil in locate(4, 2, 1))
-		qdel(coil)
+	for(var/turf/T as anything in run)
+		for(var/obj/item/stack/cable_coil/coil in T)
+			qdel(coil)
 
 
 /// The one EMP ladder: EMP severities read it forwards, ionic hits backwards,

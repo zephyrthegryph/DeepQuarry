@@ -32,7 +32,7 @@
 	icon_state = "picnic_central"
 	var/blanket_type = CENTER
 	layer = HIDING_LAYER - 0.01 //Stuff shouldn't be able to hide under the blanket on the ground
-	var/list/attached_blankets = list()
+	var/list/attached_blankets
 	anchored = TRUE
 
 /obj/structure/picnic_blanket_deployed/verb/fold_up()
@@ -82,7 +82,7 @@
 			//Actually spawning
 			var/obj/structure/picnic_blanket_deployed/side = new /obj/structure/picnic_blanket_deployed(T)
 			side.verbs -= /obj/structure/picnic_blanket_deployed/verb/fold_up
-			attached_blankets += side
+			LAZYADD(attached_blankets, side)
 			side.blanket_type = SIDE
 			side.name = name //Making sure side blankets inherit our vars if they got edited at runtime
 			side.desc = desc

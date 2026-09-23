@@ -22,7 +22,7 @@
 
 	var/mode_index = 1
 	var/toolmode = MULTITOOL_MODE_STANDARD
-	var/list/modes = list(MULTITOOL_MODE_STANDARD, MULTITOOL_MODE_INTCIRCUITS)
+	var/static/list/modes = list(MULTITOOL_MODE_STANDARD, MULTITOOL_MODE_INTCIRCUITS)
 
 	var/obj/machinery/telecomms/buffer // simple machine buffer for device linkage
 	var/obj/machinery/clonepod/connecting //same for cryopod linkage
@@ -111,7 +111,7 @@
 /// for processor corruption. Only synthetic parts respond — the body gates
 /// treatment by the part's biology.
 /obj/item/multitool/attack(mob/living/M, mob/living/user, target_zone, attack_modifier)
-	if(!ishuman(M) || user.a_intent != I_HELP)
+	if(!ishuman(M) || !IS_HELPING(user))
 		return ..()
 	var/mob/living/carbon/human/H = M
 	var/obj/item/organ/external/E = H.get_organ(target_zone)
@@ -126,3 +126,6 @@
 		treated += H.mend(TREAT_SYSTEM_RESTORE, 20, BP_HEAD)
 	to_chat(user, treated ? span_notice("Calibration offsets corrected.") : span_notice("Everything already reads within tolerance."))
 	return ITEM_INTERACT_SUCCESS
+
+/obj/item/multitool/get_multitool()
+	return src

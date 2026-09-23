@@ -120,8 +120,8 @@
 		visible_message(message)
 	return TRUE
 
-/obj/machinery/pump/attack_robot(mob/user)
-	return attack_hand(user)
+/obj/machinery/pump
+	silicon_use = ROBOT_USE_HAND | SILICON_USE_HAND
 
 /obj/machinery/pump/attack_ai(mob/user)
 	if(!set_state(!on))

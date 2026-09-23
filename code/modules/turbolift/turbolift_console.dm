@@ -24,7 +24,7 @@
 
 /obj/structure/lift/proc/pressed(mob/user)
 	if(!istype(user, /mob/living/silicon))
-		if(user.a_intent == I_HURT)
+		if(IS_HARMING(user))
 			user.visible_message(span_danger("\The [user] hammers on the lift button!"))
 		else
 			user.visible_message(span_infoplain(span_bold("\The [user]") + " presses the lift button."))
@@ -34,8 +34,8 @@
 	. = ..()
 	lift = _lift
 
-/obj/structure/lift/attack_ai(mob/user)
-	return attack_hand(user)
+/obj/structure/lift
+	silicon_use = SILICON_USE_HAND
 
 /obj/structure/lift/attack_generic(mob/user)
 	return attack_hand(user)

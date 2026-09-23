@@ -132,10 +132,6 @@
 	temperature = new_temperature
 	return vg_heat_set_turf_temperature(src, new_temperature)
 
-/// Legacy name of get_temperature() for turfs (H1 migrates the callers).
-/turf/proc/return_temperature()
-	return get_temperature()
-
 /turf/thermal_properties()
 	return list(heat_capacity, thermal_conductivity, THERMAL_EMISSIVITY_DEFAULT)
 
@@ -176,6 +172,16 @@
 		var/list/properties = T.thermal_properties()
 		records += list(T, T.heat_cell_kind(), properties[THERMAL_CAPACITY], properties[THERMAL_CONDUCTANCE], properties[THERMAL_EMISSIVITY], T.temperature, T.heat_has_air())
 	return vg_heat_set_turfs_bulk(records)
+
+// ------------------------------------------------------ gas containers
+
+/// Something inside a tank sees its gas.
+/obj/item/tank/get_interior_temperature()
+	return air_contents ? air_contents.return_temperature() : ..()
+
+/// Something inside a canister sees its gas.
+/obj/machinery/portable_atmospherics/canister/get_interior_temperature()
+	return air_contents ? air_contents.return_temperature() : ..()
 
 // ---------------------------------------------------------------- watches
 

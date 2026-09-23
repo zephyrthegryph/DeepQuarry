@@ -408,7 +408,7 @@ GLOBAL_LIST_INIT(preference_entries_by_key, init_preference_entries_by_key())
 		// the constraints to see as old_value. No extra copy needed on this side.
 		var/old_value = value_cache[preference.type]
 
-		recently_updated_keys |= preference.type
+		LAZYOR(recently_updated_keys, preference.type)
 		value_cache[preference.type] = new_value
 		save_batch_dirty = TRUE
 

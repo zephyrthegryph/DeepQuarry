@@ -268,7 +268,7 @@
 
 /datum/reagents/proc/has_all_reagents(list/check_reagents)
 	//this only works if check_reagents has no duplicate entries... hopefully okay since it expects an associative list
-	var/missing = check_reagents.len
+	var/missing = length(check_reagents)
 	for(var/id in check_reagents)
 		var/datum/reagent/current = reagent_by_id[id]
 		if(current && current.volume >= check_reagents[id])

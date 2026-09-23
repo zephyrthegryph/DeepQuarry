@@ -82,6 +82,7 @@
 	B.belly_fullscreen_color = "#c47cb4"
 	B.belly_fullscreen = "VBOanim_belly1"
 
+	B.own_emote_lists()
 	B.emote_lists[DM_HOLD] = list(
 		"As time passes, the massive rat's stomach slowly churns and squeezes down around you, packing you into an easier to carry bundle amidst that oddly soothing massage.",
 		"The giant rat ambles around, its well-fed, underhanging belly doing little to hide that someone is inside it, with every heavy footfall swaying you from one side to the other.",
@@ -90,6 +91,7 @@
 		"For a while, most of your limited free space is squished away as the rat opts to rest atop its stuffed belly, a satisfied squeak drifting in here and there amidst the closer, more intimate massaging.",
 		"Every breath you take while trapped in the rat's stomach is a deep one, having to contend with the hot, stuffy atmosphere within it. It only further compounds upon the relaxation creeping into your body, urging you to curl up, to accept this impromptu, greedy sanctuary.")
 
+	B.own_emote_lists()
 	B.emote_lists[DM_DIGEST] = list(
 		"With each passing moment, the giant rat's stomach forcefully churns and clenches down around you, massaging an ever-thicker layer of hot, ache-inducing ooze into your body!",
 		"The massive rat's stomach visibly twitches and shivers as it ambles around, every footfall sloshing fresh stomach juices over you as the chamber noisily gurgles away!",

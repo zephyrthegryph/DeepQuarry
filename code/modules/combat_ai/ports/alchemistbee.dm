@@ -2,7 +2,7 @@
 //
 // The legacy version lived on /datum/ai_holder/simple_mob/intentional/alchemistbee
 // and worked in two stages:
-//   * pre_special_attack(A) picked an a_intent (DISARM/GRAB/HURT) by counting
+//   * pre_special_attack(A) picked a stance (DISARM/GRAB/HURT) by counting
 //     nearby attackable mobs and anchored objects, then do_special_attack()
 //     ran a switch keyed on that intent (chemblast / dangerbolt / homingcluster).
 //   * on_engagement(A) backpedalled when about to fire an AoE so the bee didn't

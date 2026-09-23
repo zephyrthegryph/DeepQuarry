@@ -656,8 +656,9 @@
 		var/category = current_list[2]
 
 		for(var/entry in current_list[1])
-			var/obj/item/seeds/S = new entry(src)
+			var/obj/item/seeds/S = new entry(null)
 			var/name = S.name
+			qdel(S)
 			var/datum/stored_item/vending_product/product = new/datum/stored_item/vending_product(src, entry, name)
 
 			product.price = (entry in prices) ? prices[entry] : 0
@@ -666,6 +667,12 @@
 
 			product_records.Add(product)
 			GLOB.vending_products[entry] = 1
+
+	// Consumed, as in the base proc.
+	products = null
+	contraband = null
+	premium = null
+	prices = null
 
 /obj/machinery/vending/magivend
 	name = "MagiVend"

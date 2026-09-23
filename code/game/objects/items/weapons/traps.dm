@@ -244,7 +244,7 @@
 			anchored = TRUE
 			update_icon()
 
-/obj/item/material/barbedwire/attackby(obj/item/W as obj, mob/user as mob, tool_quality)
+/obj/item/material/barbedwire/attackby(obj/item/W as obj, mob/user as mob)
 	if(!istype(W))
 		return
 
@@ -255,11 +255,6 @@
 
 		var/inc_damage = W.force
 
-		if(tool_quality == TOOL_WIRECUTTER)
-			if(!shock(user, 100, pick(BP_L_HAND, BP_R_HAND)))
-				playsound(src, W.usesound, 100, 1)
-				inc_damage *= 3
-
 		if(W.obj_damage_type() != BRUTE)
 			inc_damage *= 0.3
 
@@ -268,8 +263,26 @@
 	..()
 
 /obj/item/material/barbedwire/wirecutter_act(mob/user, obj/item/tool)
-	attackby(tool, user, TOOL_WIRECUTTER)
-	return TRUE
+	if(!istype(tool))
+		return ITEM_INTERACT_BLOCKING
+
+	if((tool.flags & NOCONDUCT) || !shock(user, 70, pick(BP_L_HAND, BP_R_HAND)))
+		user.setClickCooldown(user.get_attack_speed(tool))
+		user.do_attack_animation(src)
+		playsound(src, 'sound/effects/grillehit.ogg', 40, 1)
+
+		var/inc_damage = tool.force
+
+		if(!shock(user, 100, pick(BP_L_HAND, BP_R_HAND)))
+			playsound(src, tool.usesound, 100, 1)
+			inc_damage *= 3
+
+		if(tool.obj_damage_type() != BRUTE)
+			inc_damage *= 0.3
+
+		material_wear(inc_damage * MATERIAL_WEAR_UNIT)
+
+	return ITEM_INTERACT_SUCCESS
 
 /obj/item/material/barbedwire/update_icon()
 	..()
@@ -306,8 +319,8 @@
 	var/turf/T = get_turf(src)
 	var/obj/structure/cable/C = T.get_cable_node()
 	if(C)
-		if(C.powernet)
-			var/datum/powernet/PN = C.powernet
+		var/datum/powernet/PN = C.get_powernet()
+		if(PN)
 
 			if(PN)
 				PN.trigger_warning()
@@ -369,7 +382,7 @@
 		if(H.species.siemens_coefficient<0.5) //Thick skin.
 			return
 
-		if( H.shoes || ( H.wear_suit && (H.wear_suit.body_parts_covered & FEET) ) )
+		if( H.get_equipped_item(SLOT_ID_SHOES) || ( H.get_equipped_item(SLOT_ID_SUIT) && (H.get_equipped_item(SLOT_ID_SUIT).body_parts_covered & FEET) ) )
 			return
 
 		if(H.species.flags & NO_MINOR_CUT)
@@ -412,7 +425,7 @@
 /obj/item/beartrap/equipped()
 	if(ishuman(src.loc))
 		var/mob/living/carbon/human/H = src.loc
-		if(H.wear_mask == src)
+		if(H.get_equipped_item(SLOT_ID_MASK) == src)
 			add_verb(H, /mob/living/proc/shred_limb_temp)
 		else
 			remove_verb(H, /mob/living/proc/shred_limb_temp)

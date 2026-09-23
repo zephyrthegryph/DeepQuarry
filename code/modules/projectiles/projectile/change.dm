@@ -83,7 +83,7 @@
 			for (var/datum/spell/S in M.spell_list)
 				new_mob.add_spell(new S.type)
 
-			new_mob.a_intent = "hurt"
+			new_mob.set_combat_mode(TRUE)
 			move_player(M, new_mob, "polymorphed by [src]")
 
 			to_chat(new_mob, span_warning("Your form morphs into that of \a [lowertext(randomize)]."))

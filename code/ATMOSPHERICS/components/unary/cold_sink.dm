@@ -61,8 +61,8 @@
 		icon_state = "freezer_0"
 	return
 
-/obj/machinery/atmospherics/unary/freezer/attack_ai(mob/user as mob)
-	tgui_interact(user)
+/obj/machinery/atmospherics/unary/freezer
+	silicon_use = SILICON_USE_UI
 
 /obj/machinery/atmospherics/unary/freezer/attack_hand(mob/user as mob)
 	tgui_interact(user)

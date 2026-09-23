@@ -179,12 +179,14 @@
 	if(user_to_pred > 1 || user_to_prey > 1)
 		return FALSE
 
-	if(!prey.devourable)
-		to_chat(user, span_vnotice("They aren't able to be devoured."))
-		log_and_message_admins("attempted to devour [key_name_admin(prey)] against their prefs ([prey ? ADMIN_JMP(prey) : "null"])", user)
-		return FALSE
-	if(prey.absorbed || pred.absorbed)
-		to_chat(user, span_vwarning("They aren't aren't in a state to be devoured."))
+	// Consent as requirements (vore_consent.dm): the first failing clause gives the reason.
+	var/refusal = vore_consent_refusal(/datum/predicate/vore_devour, pred, prey)
+	if(refusal)
+		if(!prey.devourable)
+			to_chat(user, span_vnotice(refusal))
+			log_and_message_admins("attempted to devour [key_name_admin(prey)] against their prefs ([prey ? ADMIN_JMP(prey) : "null"])", user)
+		else
+			to_chat(user, span_vwarning(refusal))
 		return FALSE
 	if(!pred.can_be_afk_pred && (!pred.client || pred.away_from_keyboard))
 		if(user == pred)

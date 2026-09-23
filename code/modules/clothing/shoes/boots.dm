@@ -48,7 +48,7 @@
 	name = "jackboots"
 	desc = "Standard-issue Security combat boots for combat scenarios or combat situations. All combat, all the time."
 	icon_state = "jackboots"
-	armor = list(melee = 30, bullet = 10, laser = 10, energy = 15, bomb = 20, bio = 0, rad = 0)
+	armor_spec = "melee=30;bullet=10;laser=10;energy=15;bomb=20"
 	siemens_coefficient = 0.7
 	drop_sound = 'sound/items/drop/boots.ogg'
 	pickup_sound = 'sound/items/pickup/boots.ogg'
@@ -58,7 +58,9 @@
 	desc = "Modified pair of jackboots, particularly friendly to those species whose toes hold claws."
 	icon_state = "digiboots"
 	item_state_slots = list(slot_r_hand_str = "jackboots", slot_l_hand_str = "jackboots")
-	species_restricted = null
+
+/obj/item/clothing/shoes/boots/jackboots/toeless/fit_constraint()
+	return null
 
 /obj/item/clothing/shoes/boots/jackboots/knee
 	name = "knee-length jackboots"
@@ -73,9 +75,11 @@
 	desc = "Modified pair of taller boots, particularly friendly to those species whose toes hold claws."
 	icon_state = "digikneeboots"
 	item_state_slots = list(slot_r_hand_str = "jackboots", slot_l_hand_str = "jackboots")
-	species_restricted = null
 	heat_protection = FEET|LEGS
 	cold_protection = FEET|LEGS
+
+/obj/item/clothing/shoes/boots/jackboots/toeless/knee/fit_constraint()
+	return null
 
 /obj/item/clothing/shoes/boots/jackboots/thigh
 	name = "thigh-length jackboots"
@@ -90,9 +94,11 @@
 	desc = "Modified pair of even taller boots, particularly friendly to those species whose toes hold claws."
 	icon_state = "digithighboots"
 	item_state_slots = list(slot_r_hand_str = "jackboots", slot_l_hand_str = "jackboots")
-	species_restricted = null
 	heat_protection = FEET|LEGS
 	cold_protection = FEET|LEGS
+
+/obj/item/clothing/shoes/boots/jackboots/toeless/thigh/fit_constraint()
+	return null
 
 /obj/item/clothing/shoes/boots/jackboots/recolorable
 	icon_state = "boots_recolor"
@@ -101,7 +107,7 @@
 	name = "workboots"
 	desc = "A pair of steel-toed work boots designed for use in industrial settings. Safety first."
 	icon_state = "workboots"
-	armor = list(melee = 40, bullet = 0, laser = 0, energy = 15, bomb = 20, bio = 0, rad = 20)
+	armor_spec = "melee=40;energy=15;bomb=20;rad=20"
 	siemens_coefficient = 0.7
 	drop_sound = 'sound/items/drop/boots.ogg'
 	pickup_sound = 'sound/items/pickup/boots.ogg'
@@ -111,7 +117,9 @@
 	desc = "A pair of toeless work boots designed for use in industrial settings. Modified for species whose toes have claws."
 	icon_state = "workbootstoeless"
 	item_state_slots = list(slot_r_hand_str = "workboots", slot_l_hand_str = "workboots")
-	species_restricted = null
+
+/obj/item/clothing/shoes/boots/workboots/toeless/fit_constraint()
+	return null
 
 /obj/item/clothing/shoes/boots/winter
 	name = "winter boots"
@@ -127,7 +135,7 @@
 	name = "security winter boots"
 	desc = "A pair of winter boots. These ones are lined with grey fur, and coloured an angry red."
 	icon_state = "winterboots_sec"
-	armor = list(melee = 30, bullet = 10, laser = 10, energy = 15, bomb = 20, bio = 0, rad = 0)
+	armor_spec = "melee=30;bullet=10;laser=10;energy=15;bomb=20"
 
 /obj/item/clothing/shoes/boots/winter/science
 	name = "science winter boots"
@@ -173,7 +181,7 @@
 	name = "explorer winter boots" //CHOMP keep explo
 	desc = "Steel-toed winter boots for mining or exploration in hazardous environments. Very good at keeping toes warm and uncrushed."
 	icon_state = "explorer"
-	armor = list(melee = 30, bullet = 10, laser = 10, energy = 15, bomb = 20, bio = 0, rad = 0)
+	armor_spec = "melee=30;bullet=10;laser=10;energy=15;bomb=20"
 
 /obj/item/clothing/shoes/boots/winter/christmasred
 	name = "red christmas boots"
@@ -197,28 +205,28 @@
 	name = "tactical boots"
 	desc = "Tan boots with extra padding and armor."
 	icon_state = "jungle"
-	armor = list(melee = 40, bullet = 30, laser = 40,energy = 25, bomb = 50, bio = 0, rad = 0)
+	armor_spec = "melee=40;bullet=30;laser=40;energy=25;bomb=50"
 	siemens_coefficient = 0.7
 
 /obj/item/clothing/shoes/boots/duty
 	name = "duty boots"
 	desc = "A pair of steel-toed synthleather boots with a mirror shine."
 	icon_state = "duty"
-	armor = list(melee = 40, bullet = 0, laser = 0, energy = 15, bomb = 20, bio = 0, rad = 20)
+	armor_spec = "melee=40;energy=15;bomb=20;rad=20"
 	siemens_coefficient = 0.7
 
 /obj/item/clothing/shoes/boots/jungle
 	name = "jungle boots"
 	desc = "A pair of durable brown boots. Waterproofed for use planetside."
 	icon_state = "jungle"
-	armor = list(melee = 30, bullet = 10, laser = 10, energy = 15, bomb = 20, bio = 10, rad = 0)
+	armor_spec = "melee=30;bullet=10;laser=10;energy=15;bomb=20;bio=10"
 	siemens_coefficient = 0.7
 
 /obj/item/clothing/shoes/boots/swat
 	name = "\improper SWAT shoes"
 	desc = "When you want to turn up the heat."
 	icon_state = "swat"
-	armor = list(melee = 80, bullet = 60, laser = 50,energy = 25, bomb = 50, bio = 10, rad = 0)
+	armor_spec = "melee=80;bullet=60;laser=50;energy=25;bomb=50;bio=10"
 	item_flags = NOSLIP
 	siemens_coefficient = 0.6
 
@@ -227,7 +235,7 @@
 	desc = "When you REALLY want to turn up the heat"
 	icon_state = "swat"
 	force = 5
-	armor = list(melee = 80, bullet = 60, laser = 50,energy = 25, bomb = 50, bio = 10, rad = 0)
+	armor_spec = "melee=80;bullet=60;laser=50;energy=25;bomb=50;bio=10"
 	item_flags = NOSLIP
 	siemens_coefficient = 0.6
 
@@ -239,7 +247,7 @@
 	name = "combat boots"
 	desc = "Standard issue combat boots for combat scenarios or combat situations. All combat, all the time.  It can hold a Strategical knife."
 	icon_state = "jackboots"
-	armor = list(melee = 80, bullet = 60, laser = 50,energy = 25, bomb = 50, bio = 10, rad = 0)
+	armor_spec = "melee=80;bullet=60;laser=50;energy=25;bomb=50;bio=10"
 	siemens_coefficient = 0.6
 
 /obj/item/clothing/shoes/boots/singer

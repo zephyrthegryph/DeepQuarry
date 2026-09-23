@@ -14,15 +14,15 @@
 	item_state = "chain"
 
 /obj/item/melee/jellyfishwhip/apply_hit_effect(mob/living/target, mob/living/user, hit_zone)
-	if(user.a_intent == I_HURT) //Healy mode
+	if(IS_HARMING(user)) //Healy mode
 		. = ..()
 		target.injure(INJURY_BURN, 10, hit_zone, src)
 		user.mend(TREAT_BURN_CARE, 7)
 		user.mend(TREAT_TISSUE_REPAIR, 7)
-	else if(user.a_intent == I_DISARM) //DoT mode
+	else if(IS_DISARMING(user)) //DoT mode
 		. = ..()
 		target.add_modifier(/datum/modifier/poisoned, 20)
-	else if(user.a_intent == I_GRAB) //weaken mode
+	else if(IS_GRABBING(user)) //weaken mode
 		. = ..()
 		target.add_modifier(/datum/modifier/hivebot_weaken, 20)
 
@@ -59,15 +59,15 @@
 		)
 
 /obj/item/melee/energy/tyr_sabre/apply_hit_effect(mob/living/target, mob/living/user, hit_zone)
-	if(user.a_intent == I_GRAB) //Anti-Heal mode
+	if(IS_GRABBING(user)) //Anti-Heal mode
 		. = ..()
 		if(active)
 			target.add_modifier(/datum/modifier/grievous_wounds, 20)
-	else if(user.a_intent == I_DISARM) //weaken mode
+	else if(IS_DISARMING(user)) //weaken mode
 		. = ..()
 		if(active)
 			target.add_modifier(/datum/modifier/berserk_exhaustion, 3)
-	else if(user.a_intent == I_HURT) //Tiny Chance to crit
+	else if(IS_HARMING(user)) //Tiny Chance to crit
 		. = ..()
 		if(active && prob(2))
 			target.injure(INJURY_CUT, 50, hit_zone, src)

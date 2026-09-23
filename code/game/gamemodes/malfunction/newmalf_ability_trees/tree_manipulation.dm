@@ -51,7 +51,7 @@
 		if(prob(5))
 			AP.overload_lighting()
 		if(prob(1) && prob(1)) // Very very small chance to actually destroy the APC.
-			AP.set_broken()
+			AP.atom_break()
 
 
 /datum/game_mode/malfunction/verb/hack_camera(obj/machinery/camera/target in REGISTRY_MEMBERS(REGISTRY_CAMERAS))
@@ -197,7 +197,7 @@
 				temp_apc.cell.maxcharge -= between(0, (temp_apc.cell.maxcharge/2) + 500, temp_apc.cell.maxcharge)
 				if(temp_apc.cell.maxcharge < 100) // That's it, you busted the APC cell completely. Break the APC and completely destroy the cell.
 					qdel(temp_apc.cell)
-					temp_apc.set_broken()
+					temp_apc.atom_break()
 
 
 	M.visible_message(span_notice("BZZZZZZZT"))

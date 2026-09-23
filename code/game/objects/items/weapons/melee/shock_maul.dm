@@ -102,10 +102,8 @@
 
 		switch(over_object.name)
 			if("r_hand")
-				usr.u_equip(src)
 				usr.put_in_r_hand(src)
 			if("l_hand")
-				usr.u_equip(src)
 				usr.put_in_l_hand(src)
 		src.add_fingerprint(usr)
 
@@ -251,7 +249,7 @@
 
 /obj/item/melee/shock_maul/apply_hit_effect(mob/living/target, mob/living/user, hit_zone)
 	. = ..()
-	if(user.a_intent == I_DISARM)
+	if(IS_DISARMING(user))
 		launch_force *= launch_force_disarm
 		weaken_force *= weaken_force_disarm
 

@@ -15,7 +15,7 @@
 /obj/item/clothing/mask/synthfacemask/equipped()
 	..()
 	var/mob/living/carbon/human/H = loc
-	if(istype(H) && H.wear_mask == src)
+	if(istype(H) && H.get_equipped_item(SLOT_ID_MASK) == src)
 		canremove = FALSE
 		maskmaster = H
 		START_PROCESSING(SSprocessing, src)
@@ -31,15 +31,14 @@
 	. = ..()
 	STOP_PROCESSING(SSprocessing, src)
 
-/obj/item/clothing/mask/synthfacemask/mob_can_equip(mob/living/carbon/human/user, slot, disable_warning = FALSE, ignore_obstruction, go_over_slot = FALSE)
-	if (!..())
-		return 0
-	if(istype(user))
-		var/obj/item/organ/external/E = user.organs_by_name[BP_HEAD]
-		if(istype(E) && (E.robotic >= ORGAN_ROBOT))
-			return 1
-		to_chat(user, span_warning("You must have a compatible robotic head to install this upgrade."))
-	return 0
+/obj/item/clothing/mask/synthfacemask/equip_constraint()
+	return dq_spec_join(..(), list(REQ_ON(PRED_TARGET, /obj/item/clothing/mask/synthfacemask/proc/robotic_head, "you must have a compatible robotic head to install this upgrade")))
+
+/obj/item/clothing/mask/synthfacemask/proc/robotic_head(mob/living/carbon/human/H)
+	if(!istype(H))
+		return FALSE
+	var/obj/item/organ/external/E = H.organs_by_name[BP_HEAD]
+	return istype(E) && (E.robotic >= ORGAN_ROBOT)
 
 /obj/item/clothing/mask/synthfacemask/update_icon()
 	var/mob/living/carbon/human/H = loc
@@ -70,4 +69,4 @@
 
 /datum/gear/mask/synthface/New()
 	..()
-	gear_tweaks += GLOB.gear_tweak_free_color_choice
+	LAZYADD(gear_tweaks, GLOB.gear_tweak_free_color_choice)

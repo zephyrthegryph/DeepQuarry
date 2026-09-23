@@ -80,7 +80,7 @@
 		var/mob/living/carbon/human/H = loc
 		if(istype(H.loc, /obj/mecha))
 			var/obj/mecha/M = H.loc
-			return M.return_temperature()
+			return M.get_interior_temperature()
 		else if(istype(H.loc, /obj/machinery/atmospherics/unary/cryo_cell))
 			var/obj/machinery/atmospherics/unary/cryo_cell/cc = H.loc
 			return cc.air_contents.return_temperature()
@@ -101,7 +101,7 @@
 
 	var/mob/living/carbon/human/H = M
 
-	if (!H.wear_suit || (H.s_store != src && H.back != src))
+	if (!H.get_equipped_item(SLOT_ID_SUIT) || (H.get_equipped_item(SLOT_ID_SUIT_STORAGE) != src && H.get_equipped_item(SLOT_ID_BACK) != src))
 		return 0
 
 	return 1

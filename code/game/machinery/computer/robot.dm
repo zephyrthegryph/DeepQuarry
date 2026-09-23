@@ -8,8 +8,8 @@
 	circuit = /obj/item/circuitboard/robotics
 	var/safety = 1
 
-/obj/machinery/computer/robotics/attack_ai(mob/user as mob)
-	tgui_interact(user)
+/obj/machinery/computer/robotics
+	silicon_use = SILICON_USE_UI
 
 /obj/machinery/computer/robotics/attack_hand(mob/user as mob)
 	if(..())

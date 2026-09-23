@@ -3,7 +3,7 @@
 	desc = "A special helmet designed for work in a hazardous, low pressure environment. This model sacrifices mobility for even more armor."
 	icon_state = "capvoid"
 	item_state_slots = list(slot_r_hand_str = "sec_helm", slot_l_hand_str = "sec_helm")
-	armor = list(melee = 60, bullet = 35, laser = 35, energy = 15, bomb = 55, bio = 100, rad = 20)
+	armor_spec = "melee=60;bullet=35;laser=35;energy=15;bomb=55;bio=100;rad=20;cold=60"
 
 /obj/item/clothing/suit/space/void/captain
 	name = "\improper manager armor"
@@ -11,7 +11,7 @@
 	icon_state = "capsuit_void"
 	item_state_slots = list(slot_r_hand_str = "sec_voidsuit", slot_l_hand_str = "sec_voidsuit")
 	slowdown = 1.5
-	armor = list(melee = 60, bullet = 35, laser = 35, energy = 15, bomb = 55, bio = 100, rad = 20)
+	armor_spec = "melee=60;bullet=35;laser=35;energy=15;bomb=55;bio=100;rad=20;cold=60"
 	breach_threshold = 14 //These are kinda thicc
 	resilience = 0.15 //Armored
 
@@ -32,7 +32,9 @@
 	item_state = "rig0-odst"
 	item_state_slots = null
 	light_overlay = "helmet_light_dual"
-	species_restricted = null
+
+/obj/item/clothing/head/helmet/space/void/merc/odst/fit_constraint()
+	return null
 
 /obj/item/clothing/suit/space/void/merc/odst
 	name = "ODST Armor"
@@ -40,6 +42,8 @@
 	icon_state = "odst"
 	item_state = "odst"
 	item_state_slots = null
-	species_restricted = null
 	breach_threshold = 16 //Extra Thicc
 	resilience = 0.05 //Military Armor
+
+/obj/item/clothing/suit/space/void/merc/odst/fit_constraint()
+	return null

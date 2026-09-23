@@ -68,7 +68,7 @@
 	TEST_ASSERT_EQUAL(ignite.value_property, PROP_IGNITION_POINT, "its level is the ignition point")
 	TEST_ASSERT(ignite.fires_above(), "it fires above the level")
 
-	var/datum/rule/grille = rules[/datum/rule/grille_breaks]
+	var/datum/rule/grille = rules[/datum/rule/integrity_breaks]
 	var/list/grille_thresholds = grille.thresholds()
 	TEST_ASSERT_EQUAL(length(grille_thresholds), 1, "the grille rule has one threshold")
 	var/datum/rule_trigger/breaks = grille_thresholds[1]
@@ -107,18 +107,30 @@
 	for(var/rule_path in rules)
 		var/datum/rule/rule = rules[rule_path]
 		for(var/root in rule.applies_to)
-			for(var/datum/rule_trigger/trigger as anything in rule.thresholds())
-				declared++
-				if(run_case(rule, root, trigger))
-					passed++
+			for(var/declaring in dq_rule_declaring_types(rule, root))
+				for(var/datum/rule_trigger/trigger as anything in rule.thresholds())
+					declared++
+					if(run_case(rule, declaring, trigger))
+						passed++
 	GLOB.dq_rule_recording = FALSE
 	TEST_NOTICE(src, "[passed]/[declared] generated rule threshold tests passed")
 	TEST_ASSERT(declared > 0, "some thresholds are declared")
 	TEST_ASSERT_EQUAL(passed, declared, "every declared threshold passes its generated test")
 
 /datum/unit_test/dq_rule_thresholds/proc/run_case(datum/rule/rule, root, datum/rule_trigger/trigger)
+	// Fresh log per case: a deleted object's ref can be reused by the next one.
+	GLOB.dq_rule_fire_log.Cut()
+	var/atom/thing = ispath(root, /atom/movable) ? allocate(root, test_floor()) : allocate(root)
+	. = check_case(rule, root, trigger, thing)
+	// Some types allow one per turf (tables); clear the case's object and drops.
+	if(ismovable(thing) && !QDELETED(thing))
+		var/turf/T = get_turf(thing)
+		qdel(thing)
+		for(var/obj/item/stack/rods/R in T)
+			qdel(R)
+
+/datum/unit_test/dq_rule_thresholds/proc/check_case(datum/rule/rule, root, datum/rule_trigger/trigger, atom/thing)
 	var/label = "[rule.type] on [root]: [trigger.describe()]"
-	var/atom/thing = allocate(root)
 	var/datum/rule_binding/binding = dq_rule_binding_of(thing)
 	if(!binding)
 		TEST_FAIL("[label]: did not subscribe when it materialized")
@@ -151,6 +163,26 @@
 			TEST_FAIL("[label]: fired again at [further]")
 			return FALSE
 	return TRUE
+
+/// The types a generated test instantiates for `rule` under `root`: the root
+/// itself when the rule's per-type filter takes it, otherwise every topmost
+/// subtype the filter takes (the types that declare the breakpoint).
+/proc/dq_rule_declaring_types(datum/rule/rule, root)
+	if(dq_rule_applies(rule, root))
+		return list(root)
+	. = list()
+	for(var/path in subtypesof(root))
+		if(!dq_rule_applies(rule, path))
+			continue
+		var/parent = path
+		var/topmost = TRUE
+		while(parent != root)
+			parent = type2parent(parent)
+			if(parent != root && dq_rule_applies(rule, parent))
+				topmost = FALSE
+				break
+		if(topmost)
+			. += path
 
 // ---- Subscription lifecycle ----
 
@@ -300,9 +332,11 @@
 	var/obj/structure/grille/third = allocate(/obj/structure/grille, T)
 	third.take_damage(10, BRUTE, MELEE, FALSE)
 	var/datum/rule_binding/binding = dq_rule_binding_of(third)
-	TEST_ASSERT(binding.holding[1], "broken: the rule holds")
+	var/break_index = binding.rules.Find(dq_rules()[/datum/rule/integrity_breaks])
+	TEST_ASSERT(break_index, "grilles have the breaking-point rule")
+	TEST_ASSERT(binding.holding[break_index], "broken: the rule holds")
 	third.repair_damage(10)
-	TEST_ASSERT(!binding.holding[1], "repaired above the breaking point: the rule is re-armed")
+	TEST_ASSERT(!binding.holding[break_index], "repaired above the breaking point: the rule is re-armed")
 	for(var/obj/item/stack/rods/R in T)
 		qdel(R)
 

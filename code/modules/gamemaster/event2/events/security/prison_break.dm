@@ -8,8 +8,8 @@
 	// This isn't the same list as what the event itself will break, as the event will also
 	// break open areas inbetween the holding area and the public hallway, like the brig area verses
 	// the prison area.
-	var/list/relevant_areas = list()
-	var/list/irrelevant_areas = list()
+	var/list/relevant_areas
+	var/list/irrelevant_areas
 
 /datum/event2/meta/prison_break/get_weight()
 	// First, don't do this if nobody can fix the doors.
@@ -123,7 +123,7 @@
 	length_upper_bound = 1 MINUTE
 	var/area_display_name = null // A string used to describe the area being messed with.
 	var/containment_display_desc = null
-	var/list/areas_to_break = list()
+	var/list/areas_to_break
 	var/list/area_types_to_break = null // Area types to include.
 	var/list/area_types_to_ignore = null // Area types to exclude, usually due to undesired inclusion from inheritence.
 	var/ignore_blast_doors = TRUE
@@ -180,9 +180,9 @@
 /datum/event2/event/prison_break/set_up()
 	for(var/area/A in world)
 		if(is_type_in_list(A, area_types_to_break) && !is_type_in_list(A, area_types_to_ignore))
-			areas_to_break += A
+			LAZYADD(areas_to_break, A)
 
-	if(!areas_to_break.len)
+	if(!length(areas_to_break))
 		log_game("Prison Break event failed to find any areas to break. Aborting.")
 		abort()
 		return

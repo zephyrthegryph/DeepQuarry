@@ -19,22 +19,14 @@
 	melee_damage_upper = 0
 	attacktext = list("honked")
 
-	armor = list(
-				"melee" = 80,
-				"bullet" = 20,
-				"laser" = 0,
-				"energy" = 0,
-				"bomb" = 0,
-				"bio" = 0,
-				"rad" = 0
-				)
+	armor_spec = "melee=80;bullet=20"
 
 	has_langs = list(LANGUAGE_ANIMAL)
 
 	can_be_drop_prey = FALSE
 
 /mob/living/simple_mob/animal/passive/honkpet/attack_hand(mob/living/user as mob)
-	if(user.a_intent == I_DISARM)
+	if(IS_DISARMING(user))
 		return icon_state = pick("c_pet", "m_pet")
 	.=..()
 
@@ -60,17 +52,9 @@
 	melee_damage_upper = 0
 	attacktext = list("...")
 
-	armor = list(
-				"melee" = 80,
-				"bullet" = 20,
-				"laser" = 0,
-				"energy" = 0,
-				"bomb" = 0,
-				"bio" = 0,
-				"rad" = 0
-				)
+	armor_spec = "melee=80;bullet=20"
 
 /mob/living/simple_mob/animal/passive/mimepet/attack_hand(mob/living/user as mob)
-	if(user.a_intent == I_DISARM)
+	if(IS_DISARMING(user))
 		icon_state = pick("dave1", "dave2", "dave3", "dave5" , "dave6" , "dave7" , "dave8" , "dave9" , "dave10")
 	.=..()

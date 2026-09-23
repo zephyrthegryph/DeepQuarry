@@ -99,9 +99,7 @@
 	return ITEM_INTERACT_SUCCESS
 
 /obj/structure/noticeboard/wrench_act(mob/user, obj/item/tool)
-	visible_message(span_warning("[user] begins dismantling [src]."))
-	playsound(loc, tool.usesound, 50, TRUE)
-	if(!do_after(user, 5 SECONDS * tool.toolspeed, target = src))
+	if(!use_tool(user, tool, src, delay = 5 SECONDS, volume = 50, message_others = "[user] begins dismantling [src]."))
 		return ITEM_INTERACT_BLOCKING
 	visible_message(span_danger("[user] has dismantled [src]!"))
 	dismantle()

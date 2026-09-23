@@ -18,7 +18,7 @@
 
 /datum/gear/eyes/eyepatchwhite/New()
 	..()
-	gear_tweaks += GLOB.gear_tweak_free_color_choice
+	LAZYADD(gear_tweaks, GLOB.gear_tweak_free_color_choice)
 
 /datum/gear/eyes/blindfold
 	display_name = "blindfold"
@@ -30,7 +30,7 @@
 
 /datum/gear/eyes/whiteblindfold/New()
 	..()
-	gear_tweaks += GLOB.gear_tweak_free_color_choice
+	LAZYADD(gear_tweaks, GLOB.gear_tweak_free_color_choice)
 
 /datum/gear/eyes/thinblindfold
 	display_name = "blindfold, thin white (recolorable)"
@@ -38,7 +38,7 @@
 
 /datum/gear/eyes/thinblindfold/New()
 	..()
-	gear_tweaks += GLOB.gear_tweak_free_color_choice
+	LAZYADD(gear_tweaks, GLOB.gear_tweak_free_color_choice)
 
 /datum/gear/eyes/glasses
 	display_name = "Glasses, prescription"
@@ -90,7 +90,7 @@
 		"security HUD eyepatch, mark II"=/obj/item/clothing/glasses/hud/security/eyepatch2,
 		"tactical security visor"=/obj/item/clothing/glasses/sunglasses/sechud/tactical_sec_vis
 	)
-	gear_tweaks += new/datum/gear_tweak/path(sortAssoc(selector_uniforms))
+	LAZYADD(gear_tweaks, new/datum/gear_tweak/path(sortAssoc(selector_uniforms)))
 
 /datum/gear/eyes/medical
 	display_name = "Medical HUD selector"
@@ -107,7 +107,7 @@
 		"medical HUD aviators (prescription)"=/obj/item/clothing/glasses/hud/health/aviator/prescription,
 		"medical HUD eyepatch"=/obj/item/clothing/glasses/hud/health/eyepatch
 	)
-	gear_tweaks += new/datum/gear_tweak/path(sortAssoc(selector_uniforms))
+	LAZYADD(gear_tweaks, new/datum/gear_tweak/path(sortAssoc(selector_uniforms)))
 
 /datum/gear/eyes/janitor
 	display_name = "Contaminant HUD"
@@ -121,7 +121,7 @@
 		"standard Contaminant HUD"=/obj/item/clothing/glasses/hud/janitor,
 		"prescription Contaminant HUD"=/obj/item/clothing/glasses/hud/janitor/prescription
 	)
-	gear_tweaks += new/datum/gear_tweak/path(sortAssoc(selector_uniforms))
+	LAZYADD(gear_tweaks, new/datum/gear_tweak/path(sortAssoc(selector_uniforms)))
 
 /datum/gear/eyes/meson
 	display_name = "Optical Meson Scanners selection"
@@ -138,7 +138,7 @@
 		"meson aviator glasses"=/obj/item/clothing/glasses/meson/aviator,
 		"meson aviator glasses (prescription)"=/obj/item/clothing/glasses/meson/aviator/prescription
 	)
-	gear_tweaks += new/datum/gear_tweak/path(sortAssoc(selector_uniforms))
+	LAZYADD(gear_tweaks, new/datum/gear_tweak/path(sortAssoc(selector_uniforms)))
 
 /datum/gear/eyes/material
 	display_name = "Optical Material Scanners"
@@ -167,7 +167,7 @@
 		"aviators"=/obj/item/clothing/glasses/sunglasses/aviator,
 		"prescription sunglasses"=/obj/item/clothing/glasses/sunglasses/prescription
 	)
-	gear_tweaks += new/datum/gear_tweak/path(sortAssoc(selector_uniforms))
+	LAZYADD(gear_tweaks, new/datum/gear_tweak/path(sortAssoc(selector_uniforms)))
 
 /datum/gear/eyes/circuitry
 	display_name = "goggles, circuitry (empty)"
@@ -199,7 +199,7 @@
 		"standard AR glasses"=/obj/item/clothing/glasses/omnihud,
 		"prescription AR glasses"=/obj/item/clothing/glasses/omnihud/prescription,
 	)
-	gear_tweaks += new/datum/gear_tweak/path(sortAssoc(selector_uniforms))
+	LAZYADD(gear_tweaks, new/datum/gear_tweak/path(sortAssoc(selector_uniforms)))
 
 /datum/gear/eyes/arglasses_visor
 	display_name = "AR visor"
@@ -220,7 +220,7 @@
 		"standard AR-Security glasses"=/obj/item/clothing/glasses/omnihud/sec,
 		"prescription AR-Security glasses"=/obj/item/clothing/glasses/omnihud/sec/prescription
 	)
-	gear_tweaks += new/datum/gear_tweak/path(sortAssoc(selector_uniforms))
+	LAZYADD(gear_tweaks, new/datum/gear_tweak/path(sortAssoc(selector_uniforms)))
 
 /datum/gear/eyes/arglasses_sci
 	display_name = "AR-Research glasses"
@@ -233,7 +233,7 @@
 		"standard AR-Research glasses"=/obj/item/clothing/glasses/omnihud/rnd,
 		"prescription AR-Research glasses"=/obj/item/clothing/glasses/omnihud/rnd/prescription
 	)
-	gear_tweaks += new/datum/gear_tweak/path(sortAssoc(selector_uniforms))
+	LAZYADD(gear_tweaks, new/datum/gear_tweak/path(sortAssoc(selector_uniforms)))
 
 /datum/gear/eyes/arglasses_eng
 	display_name = "AR-Engineering glasses"
@@ -246,7 +246,7 @@
 		"standard AR-Engineering glasses"=/obj/item/clothing/glasses/omnihud/eng,
 		"prescription AR-Engineering glasses"=/obj/item/clothing/glasses/omnihud/eng/prescription
 	)
-	gear_tweaks += new/datum/gear_tweak/path(sortAssoc(selector_uniforms))
+	LAZYADD(gear_tweaks, new/datum/gear_tweak/path(sortAssoc(selector_uniforms)))
 
 /datum/gear/eyes/arglasses_med
 	display_name = "AR-Medical glasses"
@@ -259,7 +259,7 @@
 		"standard AR-Medical glasses"=/obj/item/clothing/glasses/omnihud/med,
 		"prescription AR-Medical glasses"=/obj/item/clothing/glasses/omnihud/med/prescription
 	)
-	gear_tweaks += new/datum/gear_tweak/path(sortAssoc(selector_uniforms))
+	LAZYADD(gear_tweaks, new/datum/gear_tweak/path(sortAssoc(selector_uniforms)))
 
 /datum/gear/eyes/arglasses_all
 	display_name = "AR-Command glasses"
@@ -273,7 +273,7 @@
 		"standard AR-Command glasses"=/obj/item/clothing/glasses/omnihud/all,
 		"prescription AR-Command glasses"=/obj/item/clothing/glasses/omnihud/all/prescription
 	)
-	gear_tweaks += new/datum/gear_tweak/path(sortAssoc(selector_uniforms))
+	LAZYADD(gear_tweaks, new/datum/gear_tweak/path(sortAssoc(selector_uniforms)))
 
 /datum/gear/eyes/bigshot
 	display_name = "Big Shot's Glasses"

@@ -68,17 +68,13 @@
 
 //End of module select
 
-//Intent
-	using = new /atom/movable/screen()
-	using.name = "act_intent"
+//Combat mode (it replaced the intent selector)
+	using = HUD.make_combat_mode_button(src, "help", "harm")
 	using.set_dir(SOUTHWEST)
 	using.icon = HUD.ui_style
 	using.alpha = HUD.ui_alpha
-	using.icon_state = a_intent
-	using.screen_loc = ui_acti
 	using.layer = HUD_LAYER
 	adding += using
-	HUD.action_intent = using
 
 	//Move intent (walk/run)
 	using = new /atom/movable/screen()
@@ -312,7 +308,7 @@
 					r.module.modules.Remove(O)
 
 		for(var/atom/movable/A in r.module.modules)
-			if(r.client && (A != r.module_state_1) && (A != r.module_state_2) && (A != r.module_state_3) )
+			if(r.client && !r.module_slot_of(A) )
 				//Module is not currently active
 				r.client.screen += A
 				if(x < 0)
@@ -330,7 +326,7 @@
 		//Modules display is hidden
 		//r.client.screen -= robot_inventory	//"store" icon
 		for(var/atom/A in r.module?.modules)
-			if(r.client && (A != r.module_state_1) && (A != r.module_state_2) && (A != r.module_state_3) )
+			if(r.client && !r.module_slot_of(A) )
 				//Module is not currently active
 				r.client.screen -= A
 		r.shown_robot_modules = 0

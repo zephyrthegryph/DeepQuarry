@@ -1,7 +1,10 @@
 /obj/item/clothing/under/teshari
 	icon = 'icons/inventory/uniform/item_teshari.dmi'
 	icon_state = "seromi_grey"
-	species_restricted = list(SPECIES_TESHARI)
+
+/obj/item/clothing/under/teshari/fit_constraint()
+	var/list/bodytypes = list(SPECIES_TESHARI)
+	return list(REQ_FITS_BODYTYPES(bodytypes))
 
 /obj/item/clothing/under/teshari/smock
 	name = "small grey smock"
@@ -139,7 +142,7 @@
 	name = "head of security undercoat"
 	desc = "A traditional Teshari garb made for the " + JOB_HEAD_OF_SECURITY + ". Made with slightly sturdier materials."
 	icon_state = "tesh_uniform_hos"
-	armor = list(melee = 10, bullet = 0, laser = 0,energy = 0, bomb = 0, bio = 0, rad = 0) // start
+	armor_spec = "melee=10" // start
 	siemens_coefficient = 0.9
 	body_parts_covered = UPPER_TORSO|LOWER_TORSO|LEGS|ARMS // end
 
@@ -217,7 +220,7 @@
 	name = "security undercoat"
 	desc = "A traditional Teshari garb made for the Security department. Made with slightly sturdier materials."
 	icon_state = "tesh_uniform_sec"
-	armor = list(melee = 10, bullet = 0, laser = 0,energy = 0, bomb = 0, bio = 0, rad = 0) // start
+	armor_spec = "melee=10" // start
 	siemens_coefficient = 0.9
 	body_parts_covered = UPPER_TORSO|LOWER_TORSO|LEGS|ARMS // end
 

@@ -122,36 +122,26 @@
 
 	//// Object-holding variables
 	//struggle_messages_outside - strings
-	new_belly.struggle_messages_outside.Cut()
-	for(var/I in struggle_messages_outside)
-		new_belly.struggle_messages_outside += I
+	new_belly.struggle_messages_outside = struggle_messages_outside.Copy() // Replaced, never edited: bellies share their message lists.
 
 	//struggle_messages_inside - strings
-	new_belly.struggle_messages_inside.Cut()
-	for(var/I in struggle_messages_inside)
-		new_belly.struggle_messages_inside += I
+	new_belly.struggle_messages_inside = struggle_messages_inside.Copy() // Replaced, never edited: bellies share their message lists.
 
 	//digest_messages_owner - strings
-	new_belly.digest_messages_owner.Cut()
-	for(var/I in digest_messages_owner)
-		new_belly.digest_messages_owner += I
+	new_belly.digest_messages_owner = digest_messages_owner.Copy() // Replaced, never edited: bellies share their message lists.
 
 	//digest_messages_prey - strings
-	new_belly.digest_messages_prey.Cut()
-	for(var/I in digest_messages_prey)
-		new_belly.digest_messages_prey += I
+	new_belly.digest_messages_prey = digest_messages_prey.Copy() // Replaced, never edited: bellies share their message lists.
 
 	//examine_messages - strings
-	new_belly.examine_messages.Cut()
-	for(var/I in examine_messages)
-		new_belly.examine_messages += I
+	new_belly.examine_messages = examine_messages.Copy() // Replaced, never edited: bellies share their message lists.
 
 	//emote_lists - index: digest mode, key: list of strings
-	new_belly.emote_lists.Cut()
+	var/list/new_emotes = list()
 	for(var/K in emote_lists)
-		new_belly.emote_lists[K] = list()
-		for(var/I in emote_lists[K])
-			new_belly.emote_lists[K] += I
+		var/list/mode_emotes = emote_lists[K]
+		new_emotes[K] = mode_emotes.Copy()
+	new_belly.emote_lists = new_emotes
 
 	return new_belly
 

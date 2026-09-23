@@ -6,7 +6,7 @@
 
 	var/mob/living/carbon/human/M = src
 
-	if(istype(M.wear_suit, armor_type) || istype(M.head, helmet_type) || istype(M.shoes, boot_type))
+	if(istype(M.get_equipped_item(SLOT_ID_SUIT), armor_type) || istype(M.get_equipped_item(SLOT_ID_HEAD), helmet_type) || istype(M.get_equipped_item(SLOT_ID_SHOES), boot_type))
 		chem_cost = 0
 
 	var/datum/component/antag/changeling/changeling = changeling_power(chem_cost, 1, 100, CONSCIOUS)
@@ -15,23 +15,23 @@
 		return
 
 	//First, check if we're already wearing the armor, and if so, take it off.
-	if(istype(M.wear_suit, armor_type) || istype(M.head, helmet_type) || istype(M.shoes, boot_type))
-		M.visible_message(span_warning("[M] casts off their [M.wear_suit.name]!"),
-		span_warning("We cast off our [M.wear_suit.name]"),
+	if(istype(M.get_equipped_item(SLOT_ID_SUIT), armor_type) || istype(M.get_equipped_item(SLOT_ID_HEAD), helmet_type) || istype(M.get_equipped_item(SLOT_ID_SHOES), boot_type))
+		M.visible_message(span_warning("[M] casts off their [M.get_equipped_item(SLOT_ID_SUIT).name]!"),
+		span_warning("We cast off our [M.get_equipped_item(SLOT_ID_SUIT).name]"),
 		span_warningplain("You hear the organic matter ripping and tearing!"))
-		if(istype(M.wear_suit, armor_type))
-			remove_from_mob(M.wear_suit)
-		if(istype(M.head, helmet_type))
-			remove_from_mob(M.head)
-		if(istype(M.shoes, boot_type))
-			remove_from_mob(M.shoes)
+		if(istype(M.get_equipped_item(SLOT_ID_SUIT), armor_type))
+			remove_from_mob(M.get_equipped_item(SLOT_ID_SUIT))
+		if(istype(M.get_equipped_item(SLOT_ID_HEAD), helmet_type))
+			remove_from_mob(M.get_equipped_item(SLOT_ID_HEAD))
+		if(istype(M.get_equipped_item(SLOT_ID_SHOES), boot_type))
+			remove_from_mob(M.get_equipped_item(SLOT_ID_SHOES))
 		M.update_inv_wear_suit()
 		M.update_inv_head()
 		M.update_hair()
 		M.update_inv_shoes()
 		return 1
 
-	if(M.head || M.wear_suit) //Make sure our slots aren't full
+	if(M.get_equipped_item(SLOT_ID_HEAD) || M.get_equipped_item(SLOT_ID_SUIT)) //Make sure our slots aren't full
 		to_chat(src, span_warning("We require nothing to be on our head, and we cannot wear any external suits, or shoes."))
 		return 0
 
@@ -67,55 +67,55 @@
 	//First, check if we're already wearing the armor, and if so, take it off.
 
 	if(changeling.armor_deployed)
-		if(M.head && stuff_to_equip["head"])
-			if(istype(M.head, stuff_to_equip["head"]))
-				qdel(M.head)
+		if(M.get_equipped_item(SLOT_ID_HEAD) && stuff_to_equip["head"])
+			if(istype(M.get_equipped_item(SLOT_ID_HEAD), stuff_to_equip["head"]))
+				qdel(M.get_equipped_item(SLOT_ID_HEAD))
 				success = 1
 
-		if(M.wear_id && stuff_to_equip["wear_id"])
-			if(istype(M.wear_id, stuff_to_equip["wear_id"]))
-				qdel(M.wear_id)
+		if(M.get_equipped_item(SLOT_ID_ID) && stuff_to_equip["wear_id"])
+			if(istype(M.get_equipped_item(SLOT_ID_ID), stuff_to_equip["wear_id"]))
+				qdel(M.get_equipped_item(SLOT_ID_ID))
 				success = 1
 
-		if(M.wear_suit && stuff_to_equip["wear_suit"])
-			if(istype(M.wear_suit, stuff_to_equip["wear_suit"]))
-				qdel(M.wear_suit)
+		if(M.get_equipped_item(SLOT_ID_SUIT) && stuff_to_equip["wear_suit"])
+			if(istype(M.get_equipped_item(SLOT_ID_SUIT), stuff_to_equip["wear_suit"]))
+				qdel(M.get_equipped_item(SLOT_ID_SUIT))
 				success = 1
 
-		if(M.gloves && stuff_to_equip["gloves"])
-			if(istype(M.gloves, stuff_to_equip["gloves"]))
-				qdel(M.gloves)
+		if(M.get_equipped_item(SLOT_ID_GLOVES) && stuff_to_equip["gloves"])
+			if(istype(M.get_equipped_item(SLOT_ID_GLOVES), stuff_to_equip["gloves"]))
+				qdel(M.get_equipped_item(SLOT_ID_GLOVES))
 				success = 1
-		if(M.shoes && stuff_to_equip["shoes"])
-			if(istype(M.shoes, stuff_to_equip["shoes"]))
-				qdel(M.shoes)
-				success = 1
-
-		if(M.belt && stuff_to_equip["belt"])
-			if(istype(M.belt, stuff_to_equip["belt"]))
-				qdel(M.belt)
+		if(M.get_equipped_item(SLOT_ID_SHOES) && stuff_to_equip["shoes"])
+			if(istype(M.get_equipped_item(SLOT_ID_SHOES), stuff_to_equip["shoes"]))
+				qdel(M.get_equipped_item(SLOT_ID_SHOES))
 				success = 1
 
-		if(M.glasses && stuff_to_equip["glasses"])
-			if(istype(M.glasses, stuff_to_equip["glasses"]))
-				qdel(M.glasses)
+		if(M.get_equipped_item(SLOT_ID_BELT) && stuff_to_equip["belt"])
+			if(istype(M.get_equipped_item(SLOT_ID_BELT), stuff_to_equip["belt"]))
+				qdel(M.get_equipped_item(SLOT_ID_BELT))
 				success = 1
 
-		if(M.wear_mask && stuff_to_equip["wear_mask"])
-			if(istype(M.wear_mask, stuff_to_equip["wear_mask"]))
-				qdel(M.wear_mask)
+		if(M.get_equipped_item(SLOT_ID_EYES) && stuff_to_equip["glasses"])
+			if(istype(M.get_equipped_item(SLOT_ID_EYES), stuff_to_equip["glasses"]))
+				qdel(M.get_equipped_item(SLOT_ID_EYES))
 				success = 1
 
-		if(M.back && stuff_to_equip["back"])
-			if(istype(M.back, stuff_to_equip["back"]))
-				for(var/atom/movable/AM in M.back.contents) //Dump whatever's in the bag before deleting.
+		if(M.get_equipped_item(SLOT_ID_MASK) && stuff_to_equip["wear_mask"])
+			if(istype(M.get_equipped_item(SLOT_ID_MASK), stuff_to_equip["wear_mask"]))
+				qdel(M.get_equipped_item(SLOT_ID_MASK))
+				success = 1
+
+		if(M.get_equipped_item(SLOT_ID_BACK) && stuff_to_equip["back"])
+			if(istype(M.get_equipped_item(SLOT_ID_BACK), stuff_to_equip["back"]))
+				for(var/atom/movable/AM in M.get_equipped_item(SLOT_ID_BACK).contents) //Dump whatever's in the bag before deleting.
 					AM.forceMove(src.loc)
-				qdel(M.back)
+				qdel(M.get_equipped_item(SLOT_ID_BACK))
 				success = 1
 
-		if(M.w_uniform && stuff_to_equip["w_uniform"])
-			if(istype(M.w_uniform, stuff_to_equip["w_uniform"]))
-				qdel(M.w_uniform)
+		if(M.get_equipped_item(SLOT_ID_UNIFORM) && stuff_to_equip["w_uniform"])
+			if(istype(M.get_equipped_item(SLOT_ID_UNIFORM), stuff_to_equip["w_uniform"]))
+				qdel(M.get_equipped_item(SLOT_ID_UNIFORM))
 				success = 1
 
 		if(success)
@@ -132,7 +132,7 @@
 		var/list/grown_items_list = list()
 
 		var/t = stuff_to_equip["head"]
-		if(!M.head && t)
+		if(!M.get_equipped_item(SLOT_ID_HEAD) && t)
 			var/I = new t
 			M.equip_to_slot_or_del(I, slot_head)
 			grown_items_list.Add("a helmet")
@@ -141,7 +141,7 @@
 			sleep(1 SECOND)
 
 		t = stuff_to_equip["w_uniform"]
-		if(!M.w_uniform && t)
+		if(!M.get_equipped_item(SLOT_ID_UNIFORM) && t)
 			var/I = new t
 			M.equip_to_slot_or_del(I, slot_w_uniform)
 			grown_items_list.Add("a uniform")
@@ -150,7 +150,7 @@
 			sleep(1 SECOND)
 
 		t = stuff_to_equip["gloves"]
-		if(!M.gloves && t)
+		if(!M.get_equipped_item(SLOT_ID_GLOVES) && t)
 			var/I = new t
 			M.equip_to_slot_or_del(I, slot_gloves)
 			grown_items_list.Add("some gloves")
@@ -159,7 +159,7 @@
 			sleep(1 SECOND)
 
 		t = stuff_to_equip["shoes"]
-		if(!M.shoes && t)
+		if(!M.get_equipped_item(SLOT_ID_SHOES) && t)
 			var/I = new t
 			M.equip_to_slot_or_del(I, slot_shoes)
 			grown_items_list.Add("shoes")
@@ -168,7 +168,7 @@
 			sleep(1 SECOND)
 
 		t = stuff_to_equip["belt"]
-		if(!M.belt && t)
+		if(!M.get_equipped_item(SLOT_ID_BELT) && t)
 			var/I = new t
 			M.equip_to_slot_or_del(I, slot_belt)
 			grown_items_list.Add("a belt")
@@ -177,7 +177,7 @@
 			sleep(1 SECOND)
 
 		t = stuff_to_equip["glasses"]
-		if(!M.glasses && t)
+		if(!M.get_equipped_item(SLOT_ID_EYES) && t)
 			var/I = new t
 			M.equip_to_slot_or_del(I, slot_glasses)
 			grown_items_list.Add("some glasses")
@@ -186,7 +186,7 @@
 			sleep(1 SECOND)
 
 		t = stuff_to_equip["wear_mask"]
-		if(!M.wear_mask && t)
+		if(!M.get_equipped_item(SLOT_ID_MASK) && t)
 			var/I = new t
 			M.equip_to_slot_or_del(I, slot_wear_mask)
 			grown_items_list.Add("a mask")
@@ -195,7 +195,7 @@
 			sleep(1 SECOND)
 
 		t = stuff_to_equip["back"]
-		if(!M.back && t)
+		if(!M.get_equipped_item(SLOT_ID_BACK) && t)
 			var/I = new t
 			M.equip_to_slot_or_del(I, slot_back)
 			grown_items_list.Add("a backpack")
@@ -204,7 +204,7 @@
 			sleep(1 SECOND)
 
 		t = stuff_to_equip["wear_suit"]
-		if(!M.wear_suit && t)
+		if(!M.get_equipped_item(SLOT_ID_SUIT) && t)
 			var/I = new t
 			M.equip_to_slot_or_del(I, slot_wear_suit)
 			grown_items_list.Add("an exosuit")
@@ -213,7 +213,7 @@
 			sleep(1 SECOND)
 
 		t = stuff_to_equip["wear_id"]
-		if(!M.wear_id && t)
+		if(!M.get_equipped_item(SLOT_ID_ID) && t)
 			var/I = new t
 			M.equip_to_slot_or_del(I, slot_wear_id)
 			grown_items_list.Add("an ID card")

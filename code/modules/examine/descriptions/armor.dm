@@ -1,6 +1,7 @@
 /obj/item/clothing/proc/describe_armor(armor_type, descriptive_attack_type)
-	if(armor[armor_type])
-		switch(armor[armor_type])
+	var/points = get_armor().value(armor_type)
+	if(points)
+		switch(points)
 			if(1 to 20)
 				return "It provides negligibly small defense against [descriptive_attack_type]."
 			if(21 to 30)
@@ -49,20 +50,11 @@
 	var/armor_stats = description_info + "\
 	<br>"
 
-	if(armor["melee"])
-		armor_stats += "[describe_armor("melee","blunt force")] \n"
-	if(armor["bullet"])
-		armor_stats += "[describe_armor("bullet","ballistics")] \n"
-	if(armor["laser"])
-		armor_stats += "[describe_armor("laser","lasers")] \n"
-	if(armor["energy"])
-		armor_stats += "[describe_armor("energy","energy")] \n"
-	if(armor["bomb"])
-		armor_stats += "[describe_armor("bomb","explosions")] \n"
-	if(armor["bio"])
-		armor_stats += "[describe_armor("bio","biohazards")] \n"
-	if(armor["rad"])
-		armor_stats += "[describe_armor("rad","radiation")] \n"
+	var/static/list/armor_descriptions = list(MELEE = "blunt force", BULLET = "ballistics", LASER = "lasers", ENERGY = "energy", BOMB = "explosions", BIO = "biohazards", ARMOR_RAD = "radiation", FIRE = "fire", ACID = "acid", ARMOR_COLD = "cold")
+	var/datum/armor/worn_armor = get_armor()
+	for(var/key in armor_descriptions)
+		if(worn_armor.value(key))
+			armor_stats += "[describe_armor(key, armor_descriptions[key])] \n"
 
 	armor_stats += "\n"
 

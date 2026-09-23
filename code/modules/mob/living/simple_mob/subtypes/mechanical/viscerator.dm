@@ -32,7 +32,7 @@
 	movement_cooldown = -2
 
 	pass_flags = PASSTABLE | PASSMOB
-	a_intent = I_HURT
+	combat_mode = TRUE
 	mob_swap_flags = 0
 	mob_push_flags = 0
 

@@ -19,15 +19,7 @@
 	endurance = 500
 	deflect_chance = 25
 	sight = SEE_SELF | SEE_MOBS
-	armor = list(
-				"melee"		= 50,
-				"bullet"	= 55,
-				"laser"		= 40,
-				"energy"	= 30,
-				"bomb"		= 30,
-				"bio"		= 100,
-				"rad"		= 100
-				)
+	armor_spec = "melee=50;bullet=55;laser=40;energy=30;bomb=30;bio=100;rad=100"
 	melee_damage_lower = 45
 	melee_damage_upper = 45
 	base_attack_cooldown = 2 SECONDS

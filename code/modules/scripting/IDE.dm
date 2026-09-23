@@ -122,8 +122,8 @@
 
 					var/datum/signal/signal = new()
 					signal.data["message"] = ""
-					if(Server.freq_listening.len > 0)
-						signal.frequency = Server.freq_listening[1]
+					if(length(Server.freq_listening) > 0)
+						signal.frequency = LAZYACCESS(Server.freq_listening, 1)
 					else
 						signal.frequency = PUB_FREQ
 					signal.data["name"] = ""
@@ -156,7 +156,7 @@
 				Machine.editingcode = null
 			else
 				if(mob in Machine.viewingcode)
-					Machine.viewingcode.Remove(mob)
+					LAZYREMOVE(Machine.viewingcode, mob)
 
 /client/verb/tcsrevert()
 	set hidden = 1

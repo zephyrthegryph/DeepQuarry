@@ -61,9 +61,11 @@
 	B.name = "stomach"
 	B.desc = "The fearsome predator gets a firm grip upon you, before dunking you into it's maw, then with a powerful swift gulp you're sent tumbling into it's stomach."
 
+	B.own_emote_lists()
 	B.emote_lists[DM_HOLD] = list(
 		"Your surroundings are momentarily filled with your predator's pleased rumbling, its hands stroking over the taut swell you make in its belly.",)
 
+	B.own_emote_lists()
 	B.emote_lists[DM_DIGEST] = list(
 		"Every clench of the predator's stomach grinds powerful digestive fluids into your body, forcibly churning away your strength!")
 
@@ -85,9 +87,11 @@
 	B.name = "stomach"
 	B.desc = "The fearsome predator gets a firm grip upon you, before dunking you into it's maw, then with a powerful swift gulp you're sent tumbling into it's stomach."
 
+	B.own_emote_lists()
 	B.emote_lists[DM_HOLD] = list(
 		"Your surroundings are momentarily filled with your predator's pleased rumbling, its hands stroking over the taut swell you make in its belly.",)
 
+	B.own_emote_lists()
 	B.emote_lists[DM_DIGEST] = list(
 		"Every clench of the predator's stomach grinds powerful digestive fluids into your body, forcibly churning away your strength!")
 
@@ -109,9 +113,11 @@
 	B.name = "stomach"
 	B.desc = "The fearsome predator gets a firm grip upon you, before dunking you into it's maw, then with a powerful swift gulp you're sent tumbling into it's stomach."
 
+	B.own_emote_lists()
 	B.emote_lists[DM_HOLD] = list(
 		"Your surroundings are momentarily filled with your predator's pleased rumbling, its hands stroking over the taut swell you make in its belly.",)
 
+	B.own_emote_lists()
 	B.emote_lists[DM_DIGEST] = list(
 		"Every clench of the predator's stomach grinds powerful digestive fluids into your body, forcibly churning away your strength!")
 
@@ -133,9 +139,11 @@
 	B.name = "stomach"
 	B.desc = "The fearsome predator gets a firm grip upon you, before dunking you into it's maw, then with a powerful swift gulp you're sent tumbling into it's stomach."
 
+	B.own_emote_lists()
 	B.emote_lists[DM_HOLD] = list(
 		"Your surroundings are momentarily filled with your predator's pleased rumbling, its hands stroking over the taut swell you make in its belly.",)
 
+	B.own_emote_lists()
 	B.emote_lists[DM_DIGEST] = list(
 		"Every clench of the predator's stomach grinds powerful digestive fluids into your body, forcibly churning away your strength!")
 
@@ -157,9 +165,11 @@
 	B.name = "stomach"
 	B.desc = "The fearsome predator gets a firm grip upon you, before dunking you into it's maw, then with a powerful swift gulp you're sent tumbling into it's stomach."
 
+	B.own_emote_lists()
 	B.emote_lists[DM_HOLD] = list(
 		"Your surroundings are momentarily filled with your predator's pleased rumbling, its hands stroking over the taut swell you make in its belly.",)
 
+	B.own_emote_lists()
 	B.emote_lists[DM_DIGEST] = list(
 		"Every clench of the predator's stomach grinds powerful digestive fluids into your body, forcibly churning away your strength!")
 
@@ -181,9 +191,11 @@
 	B.name = "stomach"
 	B.desc = "The fearsome predator gets a firm grip upon you, before dunking you into it's maw, then with a powerful swift gulp you're sent tumbling into it's stomach."
 
+	B.own_emote_lists()
 	B.emote_lists[DM_HOLD] = list(
 		"Your surroundings are momentarily filled with your predator's pleased rumbling, its hands stroking over the taut swell you make in its belly.",)
 
+	B.own_emote_lists()
 	B.emote_lists[DM_DIGEST] = list(
 		"Every clench of the predator's stomach grinds powerful digestive fluids into your body, forcibly churning away your strength!")
 
@@ -226,7 +238,7 @@
 /mob/living/simple_mob/vore/candy/redcabold/apply_melee_effects(atom/A)
 	..()
 
-	if(isliving(A) && a_intent == I_HURT)
+	if(isliving(A) && IS_HARMING(src))
 		var/mob/living/L = A
 		if(L.mob_size <= MOB_MEDIUM)
 			visible_message(span_danger("\The [src] sends \the [L] flying with the impact!"))
@@ -430,7 +442,7 @@
 	icon_dead = "slainouroboros"
 
 	endurance = 200
-	armor = list(melee = 30, bullet = 30, laser = 30, energy = 30, bomb = 20, bio = 100, rad = 100) //armor cause boss
+	armor_spec = "melee=30;bullet=30;laser=30;energy=30;bomb=20;bio=100;rad=100" //armor cause boss
 	movement_cooldown = 0
 	melee_attack_delay = 1 SECOND
 	can_be_drop_prey = TRUE
@@ -453,7 +465,7 @@
 		..()
 
 /mob/living/simple_mob/vore/candy/ouroboros/do_special_attack(atom/A)
-	switch(a_intent)
+	switch(use_stance())
 		if(I_GRAB)
 			summon_combo(A)
 		if(I_HURT)
@@ -670,9 +682,11 @@
 	B.name = "stomach"
 	B.desc = "The fearsome predator gets a firm grip upon you, before dunking you into it's maw, then with a powerful swift gulp you're sent tumbling into it's stomach."
 
+	B.own_emote_lists()
 	B.emote_lists[DM_HOLD] = list(
 		"Your surroundings are momentarily filled with your predator's pleased rumbling, its hands stroking over the taut swell you make in its belly.",)
 
+	B.own_emote_lists()
 	B.emote_lists[DM_DIGEST] = list(
 		"Every clench of the predator's stomach grinds powerful digestive fluids into your body, forcibly churning away your strength!")
 */
@@ -694,9 +708,11 @@
 	B.name = "stomach"
 	B.desc = "The fearsome predator gets a firm grip upon you, before dunking you into it's maw, then with a powerful swift gulp you're sent tumbling into it's stomach."
 
+	B.own_emote_lists()
 	B.emote_lists[DM_HOLD] = list(
 		"Your surroundings are momentarily filled with your predator's pleased rumbling, its hands stroking over the taut swell you make in its belly.",)
 
+	B.own_emote_lists()
 	B.emote_lists[DM_DIGEST] = list(
 		"Every clench of the predator's stomach grinds powerful digestive fluids into your body, forcibly churning away your strength!")
 

@@ -130,15 +130,7 @@
 	//Damage resistances
 	var/grab_resist = 0				// Chance for a grab attempt to fail. Note that this is not a true resist and is just a prob() of failure.
 	var/resistance = 0				// Damage reduction for all types
-	var/list/armor = list(			// Values read by injury_armor()
-				"melee" = 0,
-				"bullet" = 0,
-				"laser" = 0,
-				"energy" = 0,
-				"bomb" = 0,
-				"bio" = 100,
-				"rad" = 100
-				)
+	armor_spec = "bio=100;rad=100" // Innate armour, read by injury_armor() through get_armor().
 	// Protection against heat/cold/electric/water effects.
 	// 0 is no protection, 1 is total protection. Negative numbers increase vulnerability.
 	var/heat_resist = 0.0
@@ -722,6 +714,7 @@
 	B.human_prey_swallow_time = swallowTime
 	B.nonhuman_prey_swallow_time = swallowTime
 	B.vore_verb = "swallow"
+	B.own_emote_lists()
 	B.emote_lists[DM_HOLD] = list( // We need more that aren't repetitive. I suck at endo. -Ace
 		"The insides knead at you gently for a moment.",
 		"The guts glorp wetly around you as some air shifts.",
@@ -732,6 +725,7 @@
 		"The liquids churn around you, though there doesn't seem to be much effect.",
 		"The sound of bodily movements drown out everything for a moment.",
 		"The predator's movements gently force you into a different position.")
+	B.own_emote_lists()
 	B.emote_lists[DM_DIGEST] = list(
 		"The burning acids eat away at your form.",
 		"The muscular stomach flesh grinds harshly against you.",

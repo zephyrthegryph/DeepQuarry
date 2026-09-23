@@ -163,6 +163,7 @@
 	B.belly_fullscreen_color2 = "#660021"
 	B.fancy_vore = 1
 
+	B.own_emote_lists()
 	B.emote_lists[DM_DIGEST] = list(
 		"They say a space carp's belly can digest almost anything. You're going to find out first hand if you stay here for much longer.",
 		"The gastric fluids sizzle ferociously as they ooze across your form.",

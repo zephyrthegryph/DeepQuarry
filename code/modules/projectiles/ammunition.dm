@@ -136,8 +136,8 @@
 
 	var/multiple_sprites = 0
 	//because BYOND doesn't support numbers as keys in associative lists
-	var/list/icon_keys = list()		//keys
-	var/list/ammo_states = list()	//values
+	var/list/icon_keys		//keys
+	var/list/ammo_states	//values
 
 /obj/item/ammo_magazine/Initialize(mapload, material_key)
 	. = ..()
@@ -270,10 +270,10 @@
 	if(multiple_sprites)
 		//find the lowest key greater than or equal to stored_ammo.len
 		var/new_state = null
-		for(var/idx in 1 to icon_keys.len)
-			var/threshold = icon_keys[idx]
+		for(var/idx in 1 to length(icon_keys))
+			var/threshold = LAZYACCESS(icon_keys, idx)
 			if (threshold >= ammo_count())
-				new_state = ammo_states[idx]
+				new_state = LAZYACCESS(ammo_states, idx)
 				break
 		icon_state = (new_state)? new_state : initial(icon_state)
 

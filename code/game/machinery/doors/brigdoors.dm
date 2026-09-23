@@ -149,9 +149,6 @@
 	if(timer_duration && activation_time && timing) // Setting it while active will reset the activation time
 		activation_time = world.time
 
-/obj/machinery/door_timer/attack_ai(mob/user)
-	return src.attack_hand(user)
-
 /obj/machinery/door_timer/attack_hand(mob/user)
 	if(..())
 		return TRUE

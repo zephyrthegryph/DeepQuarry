@@ -18,7 +18,7 @@
 	pickup_sound = 'sound/items/pickup/gun.ogg'
 	preserve_item = 1
 	var/filled = 0
-	var/list/filled_reagents = list()
+	var/list/filled_reagents
 	var/hyposound	// What sound do we play on use?
 
 /obj/item/reagent_containers/hypospray/Initialize(mapload)
@@ -26,7 +26,7 @@
 	if(filled)
 		if(filled_reagents)
 			for(var/r in filled_reagents)
-				reagents.add_reagent(r, filled_reagents[r])
+				reagents.add_reagent(r, LAZYACCESS(filled_reagents, r))
 	update_icon()
 
 /obj/item/reagent_containers/hypospray/attack(mob/living/M, mob/living/user, target_zone, attack_modifier)
@@ -166,7 +166,6 @@
 
 /obj/item/reagent_containers/hypospray/autoinjector/empty
 	filled = 0
-	filled_reagents = list()
 
 /obj/item/reagent_containers/hypospray/autoinjector/used/Initialize(mapload)
 	. = ..()
@@ -227,7 +226,6 @@
 /obj/item/reagent_containers/hypospray/autoinjector/biginjector/empty //for the autolathe
 	name = "large autoinjector"
 	filled = 0
-	filled_reagents = list()
 
 /obj/item/reagent_containers/hypospray/autoinjector/biginjector/brute
 	name = "trauma hypo"

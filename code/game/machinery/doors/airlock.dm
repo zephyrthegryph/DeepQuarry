@@ -114,7 +114,7 @@
 				welded = FALSE
 				update_icon()
 				open(TRUE)
-				set_broken() //These aren't emags, these be CLAWS
+				atom_break() //These aren't emags, these be CLAWS
 		else if(density)
 			visible_message(span_alium("\The [user] begins forcing \the [src] open!"))
 			if(do_after(user, 5 SECONDS, target = src))
@@ -444,11 +444,8 @@ About the new airlock wires panel:
 				playsound(src, denied_sound, 50, 0, 3)
 	return
 
-/obj/machinery/door/airlock/attack_ai(mob/user)
-	tgui_interact(user)
-
-/obj/machinery/door/airlock/attack_ghost(mob/user)
-	tgui_interact(user)
+/obj/machinery/door/airlock
+	silicon_use = SILICON_USE_UI
 
 /obj/machinery/door/airlock/tgui_interact(mob/user, datum/tgui/ui, datum/tgui/parent_ui, datum/tgui_state/custom_state)
 	ui = SStgui.try_update_ui(user, src, ui)
@@ -589,7 +586,7 @@ About the new airlock wires panel:
 	if(!Adjacent(user))
 		return CLICK_ACTION_BLOCKING
 
-	if(user.a_intent == I_HURT)
+	if(IS_HARMING(user))
 		visible_message(span_warning("[user] hammers on \the [src]!"), span_warning("Someone hammers loudly on \the [src]!"))
 		add_fingerprint(user)
 		if(icon_state == "door_closed" && arePowerSystemsOn())
@@ -597,7 +594,7 @@ About the new airlock wires panel:
 		playsound(src, knock_hammer_sound, 50, 0, 3)
 		return CLICK_ACTION_SUCCESS
 
-	if(user.a_intent == I_GRAB) //Hold door open
+	if(IS_GRABBING(user)) //Hold door open
 		hold_open = user
 		visible_message(span_info("[user] begins holding \the [src] open."), span_info("Someone has started holding \the [src] open."))
 		attack_hand(user)
@@ -867,9 +864,9 @@ About the new airlock wires panel:
 	if(reinforcing || user.a_intent == I_HURT)
 		return ..()
 	if(can_remove_electronics())
-		playsound(src, tool.usesound, 75, 1)
-		user.visible_message("[user] removes the electronics from the airlock assembly.", "You start to remove electronics from the airlock assembly.")
-		if(do_after(user, 4 SECONDS * tool.toolspeed, target = src))
+		if(use_tool(user, tool, src, delay = 4 SECONDS, quality = TOOL_CROWBAR, volume = 75,
+				message_self = "You start to remove electronics from the airlock assembly.",
+				message_others = "[user] removes the electronics from the airlock assembly."))
 			to_chat(user, span_notice("You removed the airlock electronics!"))
 
 			var/obj/structure/door_assembly/da = new assembly_type(get_turf(src))
@@ -916,9 +913,8 @@ About the new airlock wires panel:
 		unFreeze()
 		to_chat(user, span_notice("You finish chipping the ice off \the [src]"))
 
-/obj/machinery/door/airlock/set_broken()
+/obj/machinery/door/airlock/on_broken()
 	p_open = TRUE
-	stat |= BROKEN
 	if (secured_wires)
 		lock()
 	for (var/mob/O in viewers(src, null))

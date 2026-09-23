@@ -40,9 +40,9 @@
 	var/max_ammo = 0
 
 	/// Flat list of ammo thresholds (ascending).  Parallel to state_names.
-	var/list/thresholds = list()
+	var/list/thresholds
 	/// Icon states corresponding to each threshold.
-	var/list/state_names = list()
+	var/list/state_names
 
 /datum/magazine_appearance/New(obj/item/ammo_magazine/mag)
 	..()
@@ -87,12 +87,12 @@
 /// Apply the correct icon_state to the magazine based on its current ammo count.
 /// Selects the lowest threshold >= stored_ammo.len.
 /datum/magazine_appearance/proc/apply_icon(obj/item/ammo_magazine/mag)
-	if(!mag || !thresholds.len)
+	if(!mag || !length(thresholds))
 		return
 	var/new_state = null
-	for(var/idx in 1 to thresholds.len)
-		var/threshold = thresholds[idx]
+	for(var/idx in 1 to length(thresholds))
+		var/threshold = LAZYACCESS(thresholds, idx)
 		if(threshold >= mag.ammo_count())
-			new_state = state_names[idx]
+			new_state = LAZYACCESS(state_names, idx)
 			break
 	mag.icon_state = (new_state) ? new_state : initial(mag.icon_state)

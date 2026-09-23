@@ -31,7 +31,7 @@
 	permeability_coefficient = 0.05
 	min_cold_protection_temperature = GLOVES_MIN_COLD_PROTECTION_TEMPERATURE
 	max_heat_protection_temperature = GLOVES_MAX_HEAT_PROTECTION_TEMPERATURE
-	armor = list(melee = 15, bullet = 10, laser = 10, energy = 10, bomb = 5, bio = 0, rad = 0) // Now protective.
+	armor_spec = "melee=15;bullet=10;laser=10;energy=10;bomb=5" // Now protective.
 	resistance_flags = FIRE_PROOF
 
 /obj/item/clothing/gloves/combat // Combined effect of SWAT gloves and insulated gloves, with better protective stats.
@@ -43,7 +43,7 @@
 	permeability_coefficient = 0.05
 	min_cold_protection_temperature = GLOVES_MIN_COLD_PROTECTION_TEMPERATURE
 	max_heat_protection_temperature = GLOVES_MAX_HEAT_PROTECTION_TEMPERATURE
-	armor = list(melee = 20, bullet = 15, laser = 15, energy = 15, bomb = 10, bio = 0, rad = 0) // Now protective.
+	armor_spec = "melee=20;bullet=15;laser=15;energy=15;bomb=10" // Now protective.
 	resistance_flags = FIRE_PROOF
 
 /obj/item/clothing/gloves/sterile
@@ -90,7 +90,7 @@
 	name = "work gloves"
 	icon_state = "work"
 	item_state = "wgloves"
-	armor = list(melee = 10, bullet = 10, laser = 10, energy = 5, bomb = 0, bio = 0, rad = 0)
+	armor_spec = "melee=10;bullet=10;laser=10;energy=5"
 // If they resist lasers and energy they should help inulate against heat and cold.
 	cold_protection = HANDS
 	min_cold_protection_temperature = GLOVES_MIN_COLD_PROTECTION_TEMPERATURE
@@ -105,7 +105,7 @@
 	punch_force = 3
 	siemens_coefficient = 0.75
 	permeability_coefficient = 0.05
-	armor = list(melee = 30, bullet = 10, laser = 10, energy = 15, bomb = 20, bio = 0, rad = 0)
+	armor_spec = "melee=30;bullet=10;laser=10;energy=15;bomb=20"
 
 /obj/item/clothing/gloves/vox
 	desc = "These bizarre gauntlets seem to be fitted for... bird claws?"
@@ -115,14 +115,17 @@
 	flags = PHORONGUARD
 	siemens_coefficient = 0
 	permeability_coefficient = 0.05
-	species_restricted = list("Vox")
 	drop_sound = 'sound/items/drop/metalboots.ogg'
 	pickup_sound = 'sound/items/pickup/toolbox.ogg'
-	armor = list (melee = 20, bullet = 15, laser = 10, energy = 10, bomb =5, bio = 30, rad = 30) // gently bumped up Heavy engineering gloves value for protection //
+	armor_spec = "melee=20;bullet=15;laser=10;energy=10;bomb=5;bio=30;rad=30" // gently bumped up Heavy engineering gloves value for protection //
 
 	min_cold_protection_temperature = GLOVES_MIN_COLD_PROTECTION_TEMPERATURE
 	max_heat_protection_temperature = GLOVES_MAX_HEAT_PROTECTION_TEMPERATURE
 	resistance_flags = FIRE_PROOF
+
+/obj/item/clothing/gloves/vox/fit_constraint()
+	var/list/bodytypes = list("Vox")
+	return list(REQ_FITS_BODYTYPES(bodytypes))
 
 /obj/item/clothing/gloves/ranger
 	var/glovecolor = "white"
@@ -201,7 +204,7 @@
 	permeability_coefficient = 0.05
 	min_cold_protection_temperature = GLOVES_MIN_COLD_PROTECTION_TEMPERATURE
 	max_heat_protection_temperature = GLOVES_MAX_HEAT_PROTECTION_TEMPERATURE
-	armor = list(melee = 80, bullet = 50, laser = 10, energy = 0, bomb = 0, bio = 0, rad = 0)
+	armor_spec = "melee=80;bullet=50;laser=10"
 
 /obj/item/clothing/gloves/combat/knight/brown
 	desc = "ye olde armored gauntlets"
@@ -219,7 +222,7 @@
 	permeability_coefficient = 0.05
 	min_cold_protection_temperature = GLOVES_MIN_COLD_PROTECTION_TEMPERATURE
 	max_heat_protection_temperature = GLOVES_MAX_HEAT_PROTECTION_TEMPERATURE
-	armor = list(melee = 0, bullet = 0, laser = 0, energy = 0, bomb = 0, bio = 0, rad = 0)
+	armor_spec = ""
 
 /obj/item/clothing/gloves/combat/knight_costume/brown
 	desc = "ye olde armored gauntlets"
@@ -235,7 +238,7 @@
 	siemens_coefficient = 0
 	permeability_coefficient = 0.05
 	flags = THICKMATERIAL
-	armor = list(melee = 10, bullet = 10, laser = 10, energy = 5, bomb = 0, bio = 30, rad = 30)
+	armor_spec = "melee=10;bullet=10;laser=10;energy=5;bio=30;rad=30"
 	sprite_sheets = list(
 		SPECIES_TESHARI = 'icons/inventory/hands/mob_teshari.dmi',
 		SPECIES_VOX = 'icons/inventory/hands/mob_vox.dmi',

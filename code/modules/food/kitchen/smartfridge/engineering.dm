@@ -28,6 +28,8 @@
 
 	while(count > 0)
 		var/obj/item/stack/S = I.get_product(get_turf(src), count)
+		if(!S)
+			break
 		count -= S.get_amount()
 	SStgui.update_uis(src)
 

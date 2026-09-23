@@ -10,6 +10,7 @@
  */
 
 /obj/item/clothing/suit/fire
+	armor_spec = "fire=100"
 	name = "emergency firesuit"
 	desc = "A suit that protects against fire and heat."
 	icon_state = "firesuit"
@@ -18,7 +19,6 @@
 	gas_transfer_coefficient = 0.90
 	permeability_coefficient = 0.50
 	body_parts_covered = CHEST|LEGS|FEET|ARMS|HANDS
-	allowed = list(POCKET_GENERIC, POCKET_EMERGENCY, /obj/item/extinguisher)
 	slowdown = 1.0
 	flags_inv = HIDEGLOVES|HIDESHOES|HIDEJUMPSUIT|HIDETAIL|HIDETIE|HIDEHOLSTER
 	item_flags = 0
@@ -28,6 +28,10 @@
 	min_pressure_protection = 0.2 * ONE_ATMOSPHERE
 	max_pressure_protection = 20  * ONE_ATMOSPHERE
 	resistance_flags = FIRE_PROOF
+
+/obj/item/clothing/suit/fire/suit_storage_constraint()
+	var/list/stores = list(POCKET_GENERIC, POCKET_EMERGENCY, /obj/item/extinguisher)
+	return list(HOLD_ONLY(stores))
 
 /obj/item/clothing/suit/fire/firefighter
 	name = "firesuit"
@@ -48,7 +52,7 @@
 	name = "bomb hood"
 	desc = "Use in case of bomb."
 	icon_state = "bombsuit"
-	armor = list(melee = 0, bullet = 0, laser = 0,energy = 0, bomb = 100, bio = 0, rad = 0)
+	armor_spec = "bomb=100"
 	flags_inv = HIDEMASK|HIDEEARS|HIDEEYES|BLOCKHAIR
 	body_parts_covered = HEAD|FACE|EYES
 	siemens_coefficient = 0
@@ -62,7 +66,7 @@
 	gas_transfer_coefficient = 0.01
 	permeability_coefficient = 0.01
 	slowdown = 2
-	armor = list(melee = 0, bullet = 0, laser = 0,energy = 0, bomb = 100, bio = 0, rad = 0)
+	armor_spec = "bomb=100"
 	flags_inv = HIDEJUMPSUIT|HIDETAIL|HIDETIE|HIDEHOLSTER
 	heat_protection = CHEST|LEGS|FEET|ARMS|HANDS
 	cold_protection = CHEST|LEGS|FEET|ARMS|HANDS
@@ -76,12 +80,15 @@
 
 /obj/item/clothing/suit/bomb_suit/security
 	icon_state = "bombsuitsec"
-	allowed = list(POCKET_SECURITY)
 	body_parts_covered = CHEST|LEGS|FEET|ARMS|HANDS
 
 /*
  * Radiation protection
  */
+
+/obj/item/clothing/suit/bomb_suit/security/suit_storage_constraint()
+	var/list/stores = list(POCKET_SECURITY)
+	return list(HOLD_ONLY(stores))
 /obj/item/clothing/head/radiation
 	name = "Radiation hood"
 	icon_state = "rad"
@@ -89,7 +96,7 @@
 	flags_inv = BLOCKHAIR
 	item_flags = THICKMATERIAL
 	body_parts_covered = HEAD|FACE|EYES
-	armor = list(melee = 0, bullet = 0, laser = 0,energy = 0, bomb = 0, bio = 60, rad = 100)
+	armor_spec = "bio=60;rad=100"
 
 
 /obj/item/clothing/head/radiation/Initialize(mapload)
@@ -104,11 +111,14 @@
 	gas_transfer_coefficient = 0.90
 	permeability_coefficient = 0.50
 	body_parts_covered = CHEST|LEGS|ARMS|HANDS|FEET
-	allowed = list(POCKET_GENERIC, POCKET_EMERGENCY, /obj/item/clothing/head/radiation)
 	slowdown = 1.5
-	armor = list(melee = 0, bullet = 0, laser = 0,energy = 0, bomb = 0, bio = 60, rad = 100)
+	armor_spec = "bio=60;rad=100"
 	flags_inv = HIDEJUMPSUIT|HIDETAIL|HIDETIE|HIDEHOLSTER
 	item_flags = THICKMATERIAL
+
+/obj/item/clothing/suit/radiation/suit_storage_constraint()
+	var/list/stores = list(POCKET_GENERIC, POCKET_EMERGENCY, /obj/item/clothing/head/radiation)
+	return list(HOLD_ONLY(stores))
 
 /obj/item/clothing/suit/radiation/Initialize(mapload)
 	. = ..()
@@ -120,8 +130,11 @@
 	icon = 'icons/inventory/suit/item_teshari.dmi'
 	icon_override = 'icons/inventory/suit/mob_teshari.dmi'
 	icon_state = "rad_fitted"
-	species_restricted = list(SPECIES_TESHARI)
 	slowdown = 0.5
+
+/obj/item/clothing/suit/radiation/teshari/fit_constraint()
+	var/list/bodytypes = list(SPECIES_TESHARI)
+	return list(REQ_FITS_BODYTYPES(bodytypes))
 
 /obj/item/clothing/head/radiation/teshari
 	name = "Small radiation hood"
@@ -129,7 +142,10 @@
 	icon = 'icons/inventory/head/item_teshari.dmi'
 	icon_override = 'icons/inventory/head/mob_teshari.dmi'
 	icon_state = "rad_fitted"
-	species_restricted = list(SPECIES_TESHARI)
+
+/obj/item/clothing/head/radiation/teshari/fit_constraint()
+	var/list/bodytypes = list(SPECIES_TESHARI)
+	return list(REQ_FITS_BODYTYPES(bodytypes))
 
 
 /obj/item/clothing/head/bomb_hood/security
@@ -145,8 +161,11 @@
 	blood_overlay_type = "coat"
 	body_parts_covered = UPPER_TORSO
 	flags_inv = HIDEHOLSTER
-	allowed = list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_MEDICAL)
-	armor = list(melee = 0, bullet = 0, laser = 0,energy = 0, bomb = 0, bio = 50, rad = 0)
+	armor_spec = "bio=50"
+
+/obj/item/clothing/suit/storage/toggle/paramedic/suit_storage_constraint()
+	var/list/stores = list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_MEDICAL)
+	return list(HOLD_ONLY(stores))
 
 /obj/item/clothing/head/radiation
 	sprite_sheets = list(

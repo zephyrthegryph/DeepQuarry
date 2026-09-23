@@ -456,18 +456,14 @@
 /obj/item/clothing/suit/armor/vest/wolftaur/serdy //SilencedMP5A5's specialty armor suit.
 	name = "custom security cuirass"
 	desc = "An armored vest that protects against some damage. It appears to be created for a wolfhound. The name 'Serdykov L. Antoz' is written on a tag inside one of the haunchplates."
-	species_restricted = null //Species restricted since all it cares about is a taur half
 	icon = 'icons/mob/taursuits_wolf.dmi'
 	icon_state = "serdy_armor"
 	item_state = "serdy_armor"
 	body_parts_covered = CHEST|LEGS|ARMS //It's a full body suit, minus hands and feet. Arms and legs should be protected, not just the torso. Retains normal security armor values still.
 
-/obj/item/clothing/suit/armor/vest/wolftaur/serdy/mob_can_equip(mob/living/carbon/human/H, slot, disable_warning = FALSE, ignore_obstruction, go_over_slot = FALSE)
-	if(istype(H) && istype(H.tail_style, /datum/sprite_accessory/tail/taur/wolf))
-		return ..()
-	else
-		to_chat(H, span_warning("You need to have a wolf-taur half to wear this."))
-		return 0
+/obj/item/clothing/suit/armor/vest/wolftaur/serdy/fit_constraint()
+	return null
+
 
 /obj/item/clothing/head/serdyhelmet //SilencedMP5A5's specialty helmet.
 	name = "custom security helmet"
@@ -477,7 +473,7 @@
 	valid_accessory_slots = (ACCESSORY_SLOT_HELM_C)
 	restricted_accessory_slots = (ACCESSORY_SLOT_HELM_C)
 	flags = THICKMATERIAL
-	armor = list(melee = 40, bullet = 30, laser = 30, energy = 10, bomb = 10, bio = 0, rad = 0)
+	armor_spec = "melee=40;bullet=30;laser=30;energy=10;bomb=10"
 	icon_override = 'icons/vore/custom_clothes_vr.dmi'
 	min_cold_protection_temperature = HELMET_MIN_COLD_PROTECTION_TEMPERATURE
 	max_heat_protection_temperature = HELMET_MAX_HEAT_PROTECTION_TEMPERATURE
@@ -644,9 +640,12 @@
 	desc = "This case can only hold the VM-LC91-1 and a manual."
 	item_state_slots = list(slot_r_hand_str = "syringe_kit", slot_l_hand_str = "syringe_kit")
 	storage_slots = 2
-	can_hold = list(/obj/item/paper/khcrystal_manual, /obj/item/clothing/accessory/collar/khcrystal)
 	max_storage_space = ITEMSIZE_COST_SMALL * 2
 	w_class = ITEMSIZE_SMALL
+
+/obj/item/storage/box/khcrystal/hold_constraint()
+	var/list/holds = list(/obj/item/paper/khcrystal_manual, /obj/item/clothing/accessory/collar/khcrystal)
+	return list(HOLD_ONLY(holds), HOLD_MAX_SIZE(ITEMSIZE_SMALL))
 
 /obj/item/storage/box/khcrystal/Initialize(mapload)
 	. = ..()
@@ -1034,11 +1033,12 @@
 	slot_flags = SLOT_BACK
 	item_icons = list(slot_back_str = 'icons/vore/custom_clothes_mob.dmi', slot_l_hand_str = 'icons/vore/custom_items_left_hand_vr.dmi', slot_r_hand_str = 'icons/vore/custom_items_right_hand_vr.dmi')
 
-	can_hold = list(/obj/item/melee/baton/fluff/stunstaff)
-
 	w_class = ITEMSIZE_HUGE
-	max_w_class = ITEMSIZE_HUGE
 	max_storage_space = 16
+
+/obj/item/storage/backpack/fluff/stunstaff/hold_constraint()
+	var/list/holds = list(/obj/item/melee/baton/fluff/stunstaff)
+	return list(HOLD_ONLY(holds), HOLD_MAX_SIZE(ITEMSIZE_HUGE))
 
 /obj/item/storage/backpack/fluff/stunstaff/Initialize(mapload)
 	. = ..()
@@ -1119,8 +1119,11 @@
 	w_class = ITEMSIZE_SMALL
 	item_icons = list(slot_l_hand_str = 'icons/mob/items/lefthand_melee_vr.dmi', slot_r_hand_str = 'icons/mob/items/righthand_melee_vr.dmi', slot_back_str = 'icons/vore/custom_items_vr.dmi', slot_wear_suit_str = 'icons/vore/custom_items_vr.dmi')
 	var/active_state = "wolfgirlsword"
-	allowed = list(/obj/item/shield/fluff/wolfgirlshield)
 	injury_kind = INJURY_PAIN
+
+/obj/item/melee/fluffstuff/wolfgirlsword/suit_storage_constraint()
+	var/list/stores = list(/obj/item/shield/fluff/wolfgirlshield)
+	return list(HOLD_ONLY(stores))
 
 /obj/item/melee/fluffstuff/wolfgirlsword/dropped(mob/user, equipping, slot)
 	..()
@@ -1219,12 +1222,11 @@
 	icon_override = 'icons/vore/custom_clothes_vr.dmi'
 	icon_state = "tiemgogs"
 
-/obj/item/clothing/glasses/welding/tiemgogs/mob_can_equip(mob/living/carbon/human/H, slot, disable_warning = FALSE, ignore_obstruction, go_over_slot = FALSE)
-	if(..())
-		if(H.ckey != "radiantaurora")
-			to_chat(H, span_warning("These don't look like they were made to fit you..."))
-			return 0
-		return 1
+/obj/item/clothing/glasses/welding/tiemgogs/equip_constraint()
+	return dq_spec_join(..(), list(REQ_ON(PRED_TARGET, /obj/item/clothing/glasses/welding/tiemgogs/proc/owner_fit, "these don't look like they were made to fit you")))
+
+/obj/item/clothing/glasses/welding/tiemgogs/proc/owner_fit(mob/living/carbon/human/H)
+	return H?.ckey == "radiantaurora"
 
 //Ryumi - Nikki Yumeno
 /obj/item/rig/nikki
@@ -1235,7 +1237,7 @@
 	suit_type = "probably not magical"
 	icon_state = "nikkicape"
 	w_class = ITEMSIZE_SMALL // It is after all only a necklace
-	armor = list("melee" = 0, "bullet" = 0, "laser" = 0, "energy" = 0, "bomb" = 0, "bio" = 0, "rad" = 0) // this isn't armor, it's a dorky frickin cape
+	armor_spec = "" // this isn't armor, it's a dorky frickin cape
 	siemens_coefficient = 0.9
 	slowdown = 0
 	offline_slowdown = 0
@@ -1250,7 +1252,10 @@
 	glove_type = null
 	boot_type = null
 
-	allowed = list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_SUIT_REGULATORS, POCKET_STORAGE)
+/obj/item/rig/nikki/suit_storage_constraint()
+	var/list/stores = list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_SUIT_REGULATORS, POCKET_STORAGE)
+	return list(HOLD_ONLY(stores))
+
 
 /obj/item/rig/nikki/attackby(obj/item/W, mob/living/user)
 	//This thing accepts ONLY mounted sizeguns. That's IT. Nothing else!
@@ -1259,13 +1264,11 @@
 		return
 	..()
 
-/obj/item/rig/nikki/mob_can_equip(mob/living/carbon/human/H, slot, disable_warning = FALSE, ignore_obstruction, go_over_slot = FALSE) // Feel free to (try to) put Nikki's hat on! The necklace though is a flat-out no-go.
-	if(..())
-		if(H.ckey == "ryumi")
-			return 1
-		else if (H.get_active_hand() == src)
-			to_chat(H, span_warning("For some reason, the necklace seems to never quite get past your head when you try to put it on... Weird, it looked like it would fit."))
-			return 0
+/obj/item/rig/nikki/equip_constraint()
+	return dq_spec_join(..(), list(REQ_ON(PRED_TARGET, /obj/item/rig/nikki/proc/owner_fit, "the necklace never quite gets past your head")))
+
+/obj/item/rig/nikki/proc/owner_fit(mob/living/carbon/human/H)
+	return H?.ckey == "ryumi"
 
 //Nickcrazy - Damon Bones Xrim
 /obj/item/clothing/suit/storage/toggle/bomber/bombersec
@@ -1387,11 +1390,14 @@ End */
 	icon_state = "charlotte"
 	icon = 'icons/vore/custom_items_vr.dmi'
 	storage_slots = 7
-	can_hold = list(/obj/item/clothing/mask/smokable/cigarette, /obj/item/flame/lighter, /obj/item/trash/cigbutt)
 	icon_type = "charlotte"
 	//brand = "\improper Professional 120"
 	w_class = ITEMSIZE_TINY
 	starts_with = list(/obj/item/clothing/mask/smokable/cigarette = 7)
+
+/obj/item/storage/fancy/fluff/charlotte/hold_constraint()
+	var/list/holds = list(/obj/item/clothing/mask/smokable/cigarette, /obj/item/flame/lighter, /obj/item/trash/cigbutt)
+	return list(HOLD_ONLY(holds), HOLD_MAX_SIZE(ITEMSIZE_SMALL))
 
 /obj/item/storage/fancy/fluff/charlotte/Initialize(mapload)
 	if(!open_state)
@@ -1447,7 +1453,8 @@ End */
 /obj/item/clothing/accessory/storage/ritualharness/fluff/antoinette/Initialize(mapload)
 	. = ..()
 	hold.max_storage_space = ITEMSIZE_COST_SMALL * 2
-	hold.can_hold = list(/obj/item/material/knife, /obj/item/reagent_containers/glass/bottle)
+	var/static/list/holds = list(/obj/item/material/knife, /obj/item/reagent_containers/glass/bottle)
+	hold.restrict_hold(holds)
 
 	new /obj/item/material/knife/machete/hatchet/unathiknife/fluff/antoinette(hold)
 	new /obj/item/reagent_containers/glass/bottle/poppy(hold)
@@ -1580,13 +1587,13 @@ End */
 
 	if(world.time - last_message <= 5 SECONDS)
 		return
-	if(user.a_intent == I_HELP)
+	if(IS_HELPING(user))
 		user.visible_message(span_notice(span_bold("\The [user]") + " hugs [src]!"),span_notice("You hug [src]!"))
 		icon_state = "pandorba"
-	else if (user.a_intent == I_HURT)
+	else if (IS_HARMING(user))
 		user.visible_message(span_warning(span_bold("\The [user]") + " punches [src]!"),span_warning("You punch [src]!"))
 		icon_state = "pandorba_h"
-	else if (user.a_intent == I_GRAB)
+	else if (IS_GRABBING(user))
 		user.visible_message(span_warning(span_bold("\The [user]") + " attempts to strangle [src]!"),span_warning("You attempt to strangle [src]!"))
 		icon_state = "pandorba_g"
 	else
@@ -1648,13 +1655,11 @@ End */
 	slot_flags = SLOT_MASK | SLOT_OCLOTHING
 	replacementType = /obj/item/remote_scene_tool/tally_doll
 
-/obj/item/remote_scene_tool/tally_necklace/mob_can_equip(mob/living/carbon/human/H, slot, disable_warning = FALSE, ignore_obstruction, go_over_slot = FALSE)
-	if(..())
-		if(H.ckey != "bricker98")
-			if(!disable_warning)
-				to_chat(H, span_warning("The collar doesn't fit you!"))
-			return FALSE
-		return TRUE
+/obj/item/remote_scene_tool/tally_necklace/equip_constraint()
+	return dq_spec_join(..(), list(REQ_ON(PRED_TARGET, /obj/item/remote_scene_tool/tally_necklace/proc/owner_fit, "the collar doesn't fit you")))
+
+/obj/item/remote_scene_tool/tally_necklace/proc/owner_fit(mob/living/carbon/human/H)
+	return H?.ckey == "bricker98"
 
 /obj/item/remote_scene_tool/tally_doll  //A reskinned sticker for the doll, using a custom sprite
 	name = "Talenya's voodoo doll"

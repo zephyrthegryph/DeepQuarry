@@ -36,8 +36,12 @@
 /mob/living/silicon/ai/RangedAttack(atom/A)
 	A.attack_ai(src)
 
+/// The AI's Use (the AI adapter, adapters.dm). With no override, `silicon_use` says what it does.
 /atom/proc/attack_ai(mob/user as mob)
-	return
+	if(silicon_use & SILICON_USE_HAND)
+		return attack_hand(user)
+	if(silicon_use & SILICON_USE_UI)
+		return tgui_interact(user)
 
 /*
 	Since the AI handles shift, ctrl, and alt-click differently

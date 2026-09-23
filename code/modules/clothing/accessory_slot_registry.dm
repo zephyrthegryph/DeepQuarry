@@ -28,7 +28,7 @@
 /datum/accessory_stat_modifier
 	/// Human-readable label for debugging.
 	var/label = "modifier"
-	/// Armor adjustment assoc list (same format as /obj/item.armor).  Null = no armor change.
+	/// Armour adjustment: armour key -> points added while applied. Null = no armour change.
 	var/list/armor_delta
 	/// Slowdown delta (positive = slower).
 	var/slowdown_delta = 0
@@ -57,10 +57,7 @@
 	clothing.force += force_delta
 	clothing.slowdown += slowdown_delta
 	if(LAZYLEN(armor_delta))
-		for(var/damage_type in armor_delta)
-			if(istext(clothing.armor?[damage_type]))
-				clothing.own_armor()
-				clothing.armor[damage_type] += armor_delta[damage_type]
+		clothing.set_armor(clothing.get_armor().add(dq_armor(armor_delta)))
 
 /*
  * proc/revert(obj/item/clothing/clothing)
@@ -73,10 +70,7 @@
 	clothing.force -= force_delta
 	clothing.slowdown -= slowdown_delta
 	if(LAZYLEN(armor_delta))
-		for(var/damage_type in armor_delta)
-			if(istext(clothing.armor?[damage_type]))
-				clothing.own_armor()
-				clothing.armor[damage_type] -= armor_delta[damage_type]
+		clothing.set_armor(clothing.get_armor().add(dq_armor(armor_delta).scaled(-1)))
 
 
 /datum/accessory_slot_registry

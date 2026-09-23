@@ -579,7 +579,6 @@
 	build_global_pipe_network(global_path, pipe_tree_directions, supply_connections, TRUE)
 	build_global_pipe_network(global_path, pipe_tree_directions, scrub_connections, FALSE)
 	build_planned_lights()
-	SSmachines.makepowernets()
 	initialize_global_atmos()
 	publish_utility_state()
 	return result

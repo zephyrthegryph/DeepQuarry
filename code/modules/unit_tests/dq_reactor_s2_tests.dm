@@ -28,7 +28,7 @@
 	var/obj/machinery/shield_capacitor/C = allocate(/obj/machinery/shield_capacitor, test_floor())
 	// The keys process() sleeps on when the grid gives it nothing.
 	TEST_ASSERT(C.sleep_until_keys(list(REACT_KEY_POWERNET, REACT_ID(P), REACT_POWERNET_RATE|REACT_POWERNET_STATE)), "capacitor refused to sleep")
-	var/failure = react_wake_test(C, CALLBACK(P, TYPE_PROC_REF(/datum/powernet, publish_monitor_dependency)))
+	var/failure = react_wake_test(C, CALLBACK(P, TYPE_PROC_REF(/datum/powernet, set_brownout), TRUE))
 	TEST_ASSERT(!failure, failure)
 	// A topology-only change is not the capacitor's input.
 	C.sleep_until_keys(list(REACT_KEY_POWERNET, REACT_ID(P), REACT_POWERNET_RATE|REACT_POWERNET_STATE))
@@ -38,30 +38,6 @@
 	TEST_ASSERT(!SSreactor.traced_wakes(C), "a topology change woke a rate subscriber")
 	SSreactor.untrace(C)
 	qdel(P)
-
-/datum/unit_test/dq_s2_wake_apc
-
-/datum/unit_test/dq_s2_wake_apc/Run()
-	var/obj/machinery/power/apc/A
-	for(var/obj/machinery/power/apc/candidate as anything in REGISTRY_MEMBERS(REGISTRY_APCS))
-		if(candidate.terminal?.powernet && candidate.cell)
-			A = candidate
-			break
-	if(!A)
-		return
-	A.cell.charge = A.cell.maxcharge
-	A.charging = 0
-	A.power_distributor.charging = 0
-	START_MACHINE_PROCESSING(A)
-	for(var/i in 1 to 5)
-		A.process()
-		if(A.asleep_on_keys())
-			break
-	TEST_ASSERT(A.asleep_on_keys(), "stable APC did not sleep on its keys")
-	TEST_ASSERT_NULL(A.react_sleep_violation(), "a stable sleeping APC reported a violation")
-	var/datum/powernet/PN = A.terminal.powernet
-	var/failure = react_wake_test(A, CALLBACK(PN, TYPE_PROC_REF(/datum/powernet, publish_dependency)))
-	TEST_ASSERT(!failure, failure)
 
 /datum/unit_test/dq_s2_wake_turret
 

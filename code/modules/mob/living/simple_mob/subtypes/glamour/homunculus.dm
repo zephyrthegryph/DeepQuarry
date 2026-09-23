@@ -118,6 +118,6 @@
 				projectile_accuracy = 20
 			var/obj/item/clothing/suit/S = H.get_equipped_item(slot_wear_suit)
 			if(istype(S,/obj/item/clothing/suit/armor) || istype(S,/obj/item/clothing/suit/space/rig/))
-				armor = list(melee = 40, bullet = 30, laser = 30, energy = 10, bomb = 10, bio = 100, rad = 100)
+				set_armor(dq_armor(list(melee = 40, bullet = 30, laser = 30, energy = 10, bomb = 10, bio = 100, rad = 100)))
 			transformed = 1
 			return TRUE

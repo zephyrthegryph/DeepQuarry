@@ -24,7 +24,7 @@
 	var/list/cheongasms = list()
 	for(var/obj/item/clothing/under/cheongsam/cheongasm_type as anything in typesof(/obj/item/clothing/under/cheongsam))
 		cheongasms[initial(cheongasm_type.name)] = cheongasm_type
-	gear_tweaks += new/datum/gear_tweak/variant(sortAssoc(cheongasms))
+	LAZYADD(gear_tweaks, new/datum/gear_tweak/variant(sortAssoc(cheongasms)))
 
 /datum/gear/uniform/croptop
 	description = "Light shirts which shows the midsection of the wearer."
@@ -36,7 +36,7 @@
 	var/list/croptops = list()
 	for(var/obj/item/clothing/under/croptop/croptop_type as anything in typesof(/obj/item/clothing/under/croptop))
 		croptops[initial(croptop_type.name)] = croptop_type
-	gear_tweaks += new/datum/gear_tweak/variant(sortAssoc(croptops))
+	LAZYADD(gear_tweaks, new/datum/gear_tweak/variant(sortAssoc(croptops)))
 
 /datum/gear/uniform/kilt
 	display_name = "kilt"
@@ -59,7 +59,7 @@
 	var/list/jumpclothes = list()
 	for(var/obj/item/clothing/under/color/jumps as anything in typesof(/obj/item/clothing/under/color))
 		jumpclothes[initial(jumps.name)] = jumps
-	gear_tweaks += new/datum/gear_tweak/variant(sortAssoc(jumpclothes))
+	LAZYADD(gear_tweaks, new/datum/gear_tweak/variant(sortAssoc(jumpclothes)))
 
 /datum/gear/uniform/qipao_colorable
 	display_name = "qipao, colorable"
@@ -67,7 +67,7 @@
 
 /datum/gear/uniform/qipao_colorable/New()
 	..()
-	gear_tweaks += GLOB.gear_tweak_free_color_choice
+	LAZYADD(gear_tweaks, GLOB.gear_tweak_free_color_choice)
 
 /datum/gear/uniform/qipao2_colorable
 	display_name = "qipao, colorable, slim"
@@ -75,7 +75,7 @@
 
 /datum/gear/uniform/qipao2_colorable/New()
 	..()
-	gear_tweaks += GLOB.gear_tweak_free_color_choice
+	LAZYADD(gear_tweaks, GLOB.gear_tweak_free_color_choice)
 
 /datum/gear/uniform/skirt
 	display_name = "skirt selection"
@@ -87,7 +87,7 @@
 	for(var/skirt in (typesof(/obj/item/clothing/under/skirt)))
 		var/obj/item/clothing/under/skirt/skirt_type = skirt
 		skirts[initial(skirt_type.name)] = skirt_type
-	gear_tweaks += new/datum/gear_tweak/variant(sortAssoc(skirts))
+	LAZYADD(gear_tweaks, new/datum/gear_tweak/variant(sortAssoc(skirts)))
 
 /datum/gear/uniform/pants
 	display_name = "pants selection"
@@ -98,7 +98,7 @@
 	var/list/pants = list()
 	for(var/obj/item/clothing/under/pants/pant_type as anything in (typesof(/obj/item/clothing/under/pants) - typesof(/obj/item/clothing/under/pants/altevian)))
 		pants[initial(pant_type.name)] = pant_type
-	gear_tweaks += new/datum/gear_tweak/variant(sortAssoc(pants))
+	LAZYADD(gear_tweaks, new/datum/gear_tweak/variant(sortAssoc(pants)))
 
 /datum/gear/uniform/shorts
 	display_name = "shorts selection"
@@ -109,7 +109,7 @@
 	var/list/shorts = list()
 	for(var/obj/item/clothing/under/pants/short_type as anything in typesof(/obj/item/clothing/under/shorts))
 		shorts[initial(short_type.name)] = short_type
-	gear_tweaks += new/datum/gear_tweak/variant(sortAssoc(shorts))
+	LAZYADD(gear_tweaks, new/datum/gear_tweak/variant(sortAssoc(shorts)))
 
 /datum/gear/uniform/suit/lawyer
 	display_name = "suit, one-piece selection"
@@ -120,7 +120,7 @@
 	var/list/lsuits = list()
 	for(var/obj/item/clothing/suit/lsuit_type as anything in typesof(/obj/item/clothing/under/lawyer))
 		lsuits[initial(lsuit_type.name)] = lsuit_type
-	gear_tweaks += new/datum/gear_tweak/variant(sortAssoc(lsuits))
+	LAZYADD(gear_tweaks, new/datum/gear_tweak/variant(sortAssoc(lsuits)))
 
 /datum/gear/uniform/suit/suit_jacket
 	display_name = "suit, modular selection"
@@ -132,7 +132,7 @@
 	for(var/msuit in typesof(/obj/item/clothing/under/suit_jacket))
 		var/obj/item/clothing/suit/msuit_type = msuit
 		msuits[initial(msuit_type.name)] = msuit_type
-	gear_tweaks += new/datum/gear_tweak/variant(sortAssoc(msuits))
+	LAZYADD(gear_tweaks, new/datum/gear_tweak/variant(sortAssoc(msuits)))
 
 /datum/gear/uniform/suit/amish  //amish
 	display_name = "suit, amish"
@@ -177,7 +177,7 @@
 	var/list/scrubs = list()
 	for(var/obj/item/clothing/under/rank/medical/scrubs/scrub_type as anything in typesof(/obj/item/clothing/under/rank/medical/scrubs))
 		scrubs[initial(scrub_type.name)] = scrub_type
-	gear_tweaks += new/datum/gear_tweak/variant(sortAssoc(scrubs))
+	LAZYADD(gear_tweaks, new/datum/gear_tweak/variant(sortAssoc(scrubs)))
 
 /datum/gear/uniform/oldwoman
 	display_name = "old woman attire"
@@ -201,7 +201,7 @@
 
 /datum/gear/uniform/shortplaindress/New()
 	..()
-	gear_tweaks += GLOB.gear_tweak_free_color_choice
+	LAZYADD(gear_tweaks, GLOB.gear_tweak_free_color_choice)
 
 /datum/gear/uniform/longdress
 	display_name = "long dress"
@@ -209,7 +209,7 @@
 
 /datum/gear/uniform/longdress/New()
 	..()
-	gear_tweaks += GLOB.gear_tweak_free_color_choice
+	LAZYADD(gear_tweaks, GLOB.gear_tweak_free_color_choice)
 
 /datum/gear/uniform/longwidedress
 	display_name = "long wide dress"
@@ -217,7 +217,7 @@
 
 /datum/gear/uniform/longwidedress/New()
 	..()
-	gear_tweaks += GLOB.gear_tweak_free_color_choice
+	LAZYADD(gear_tweaks, GLOB.gear_tweak_free_color_choice)
 
 /datum/gear/uniform/loincloth
 	display_name = "loincloth"
@@ -225,7 +225,7 @@
 
 /datum/gear/uniform/loincloth/New()
 	..()
-	gear_tweaks += GLOB.gear_tweak_free_color_choice
+	LAZYADD(gear_tweaks, GLOB.gear_tweak_free_color_choice)
 
 /datum/gear/uniform/reddress
 	display_name = "red dress with belt"
@@ -256,7 +256,7 @@
 	var/list/maids = list()
 	for(var/obj/item/clothing/under/dress/maid/maid_type as anything in typesof(/obj/item/clothing/under/dress/maid))
 		maids[initial(maid_type.name)] = maid_type
-	gear_tweaks += new/datum/gear_tweak/variant(sortAssoc(maids))
+	LAZYADD(gear_tweaks, new/datum/gear_tweak/variant(sortAssoc(maids)))
 
 /datum/gear/uniform/sweater
 	display_name = "sweater, grey"
@@ -272,7 +272,7 @@
 
 /datum/gear/uniform/yogapants/New()
 	..()
-	gear_tweaks += GLOB.gear_tweak_free_color_choice
+	LAZYADD(gear_tweaks, GLOB.gear_tweak_free_color_choice)
 
 /datum/gear/uniform/black_corset
 	display_name = "black corset"
@@ -315,7 +315,7 @@
 	"Frontier Overalls" = /obj/item/clothing/under/overalls/frontier,
 	"Rustler Overalls" = /obj/item/clothing/under/overalls/rustler
 	)
-	gear_tweaks += new/datum/gear_tweak/variant(overalls)
+	LAZYADD(gear_tweaks, new/datum/gear_tweak/variant(overalls))
 
 /datum/gear/uniform/sarired
 	display_name = "sari, red"
@@ -339,7 +339,7 @@
 
 /datum/gear/uniform/pleated/New()
 	..()
-	gear_tweaks += GLOB.gear_tweak_free_color_choice
+	LAZYADD(gear_tweaks, GLOB.gear_tweak_free_color_choice)
 
 /datum/gear/uniform/lilacdress
 	display_name = "lilac dress"
@@ -431,7 +431,7 @@
 
 /datum/gear/uniform/floofdress/New()
 	..()
-	gear_tweaks += GLOB.gear_tweak_free_color_choice
+	LAZYADD(gear_tweaks, GLOB.gear_tweak_free_color_choice)
 
 /datum/gear/uniform/blackngold
 	display_name = "black and gold gown"
@@ -483,7 +483,7 @@
 
 /datum/gear/uniform/flowerskirt/New()
 	..()
-	gear_tweaks += GLOB.gear_tweak_free_color_choice
+	LAZYADD(gear_tweaks, GLOB.gear_tweak_free_color_choice)
 
 /datum/gear/uniform/countess
 	display_name = "countess dress"
@@ -499,7 +499,7 @@
 
 /datum/gear/uniform/fashionminiskirt/New()
 	..()
-	gear_tweaks += GLOB.gear_tweak_free_color_choice
+	LAZYADD(gear_tweaks, GLOB.gear_tweak_free_color_choice)
 
 /datum/gear/uniform/tourist_1
 	display_name = "tourist outfit, white"
@@ -521,7 +521,7 @@
 	"Brown Cowboy Outfit" = /obj/item/clothing/under/cowboy/brown,
 	"Grey Cowboy Outfit" = /obj/item/clothing/under/cowboy/grey
 	)
-	gear_tweaks += new/datum/gear_tweak/variant(cowboy_outfits)
+	LAZYADD(gear_tweaks, new/datum/gear_tweak/variant(cowboy_outfits))
 
 /datum/gear/uniform/hightrousers
 	display_name = "high-waisted trousers"
@@ -559,7 +559,7 @@
 
 /datum/gear/uniform/leotardcolor/New()
 	..()
-	gear_tweaks += GLOB.gear_tweak_free_color_choice
+	LAZYADD(gear_tweaks, GLOB.gear_tweak_free_color_choice)
 
 //skinsuits
 /datum/gear/uniform/skinsuits
@@ -580,7 +580,7 @@
 	"gray leotard skinsuit"=/obj/item/clothing/under/skinsuit/leotard/gray,
 	"feminine gray leotard skinsuit"=/obj/item/clothing/under/skinsuit/fem/leotard/gray
 	)
-	gear_tweaks += list(new/datum/gear_tweak/variant(skinsuits))
+	LAZYADD(gear_tweaks, list(new/datum/gear_tweak/variant(skinsuits)))
 
 //baggy turtlenecks
 /datum/gear/uniform/turtlebaggys
@@ -603,7 +603,7 @@
 	"black baggy turtleneck" = "black",
 	"feminine black baggy turtleneck" = "black_fem"
 	)
-	gear_tweaks += list(new/datum/gear_tweak/variant(turtlebaggys))
+	LAZYADD(gear_tweaks, list(new/datum/gear_tweak/variant(turtlebaggys)))
 
 //colorable sweaters
 /datum/gear/uniform/bigsweaters
@@ -616,7 +616,7 @@
 	"cableknit sweater"=/obj/item/clothing/under/bigsweater,
 	"keyhole sweater"=/obj/item/clothing/under/bigsweater/keyhole
 	)
-	gear_tweaks += list(new/datum/gear_tweak/variant(bigsweaters), GLOB.gear_tweak_free_color_choice)
+	LAZYADD(gear_tweaks, list(new/datum/gear_tweak/variant(bigsweaters), GLOB.gear_tweak_free_color_choice))
 
 //half-moon outfit
 /datum/gear/uniform/halfmoon
@@ -643,7 +643,7 @@
 	"white tabard-dress"=/obj/item/clothing/under/dress/tabard,
 	"black tabard-dress"=/obj/item/clothing/under/dress/tabard/black
 	)
-	gear_tweaks += list(new/datum/gear_tweak/variant(tabarddress))
+	LAZYADD(gear_tweaks, list(new/datum/gear_tweak/variant(tabarddress)))
 
 //bunny suits
 
@@ -661,8 +661,8 @@
 	"reverse bunnysuit, no legs"=/obj/item/clothing/under/reverse_bunnytop,
 	"maid reverse bunnysuit, no legs"=/obj/item/clothing/under/reverse_bunnytop_maid
 	)
-	gear_tweaks += list(new/datum/gear_tweak/variant(bunnysuit))
-	gear_tweaks += GLOB.gear_tweak_free_color_choice
+	LAZYADD(gear_tweaks, list(new/datum/gear_tweak/variant(bunnysuit)))
+	LAZYADD(gear_tweaks, GLOB.gear_tweak_free_color_choice)
 
 /datum/gear/uniform/suit/permit
 	display_name = "nudity permit"
@@ -708,7 +708,7 @@ Qipao
 
 /datum/gear/uniform/qipao_colorable_alt/New()
 	..()
-	gear_tweaks += GLOB.gear_tweak_free_color_choice
+	LAZYADD(gear_tweaks, GLOB.gear_tweak_free_color_choice)
 
 /*
 Bluespace jumpsuit
@@ -738,7 +738,7 @@ Talon jumpsuit
 		"blue and white" = /obj/item/clothing/under/summerdress/blue,
 		"red and white" = /obj/item/clothing/under/summerdress/red
 	)
-	gear_tweaks += new/datum/gear_tweak/variant(dresses)
+	LAZYADD(gear_tweaks, new/datum/gear_tweak/variant(dresses))
 
 //Altevian Uniforms
 /datum/gear/uniform/altevian
@@ -751,7 +751,7 @@ Talon jumpsuit
 	var/list/pants = list()
 	for(var/obj/item/clothing/under/pants/altevian/pants_type as anything in typesof(/obj/item/clothing/under/pants/altevian))
 		pants[initial(pants_type.name)] = pants_type
-	gear_tweaks += new/datum/gear_tweak/variant(sortAssoc(pants))
+	LAZYADD(gear_tweaks, new/datum/gear_tweak/variant(sortAssoc(pants)))
 
 //Feminine Colored Jumpsuits.
 /datum/gear/uniform/f_jumpsuit_alt
@@ -764,7 +764,7 @@ Talon jumpsuit
 	for(var/jumpsuit_style in typesof(/obj/item/clothing/under/color/fjumpsuit))
 		var/obj/item/clothing/under/color/fjumpsuit/jumpsuit = jumpsuit_style
 		jumpsuits[initial(jumpsuit.name)] = jumpsuit
-	gear_tweaks += new/datum/gear_tweak/variant(sortAssoc(jumpsuits))
+	LAZYADD(gear_tweaks, new/datum/gear_tweak/variant(sortAssoc(jumpsuits)))
 
 /datum/gear/uniform/singer_blue
 	display_name = "blue singer dress"
@@ -807,7 +807,7 @@ Talon jumpsuit
 	"short skirt"=/obj/item/clothing/under/skirt/colorable/short,
 	"short skirt (split)"=/obj/item/clothing/under/skirt/colorable/short_split
 	)
-	gear_tweaks += list(new/datum/gear_tweak/variant(skirts), GLOB.gear_tweak_free_color_choice)
+	LAZYADD(gear_tweaks, list(new/datum/gear_tweak/variant(skirts), GLOB.gear_tweak_free_color_choice))
 
 // gwen beedells clown clothes
 
@@ -823,7 +823,7 @@ Talon jumpsuit
 
 /datum/gear/uniform/cdress_fire/New()
 	..()
-	gear_tweaks += GLOB.gear_tweak_free_color_choice
+	LAZYADD(gear_tweaks, GLOB.gear_tweak_free_color_choice)
 
 // recolorable yellow dress
 /datum/gear/uniform/cbridesmaid
@@ -832,7 +832,7 @@ Talon jumpsuit
 
 /datum/gear/uniform/cbridesmaid/New()
 	..()
-	gear_tweaks += GLOB.gear_tweak_free_color_choice
+	LAZYADD(gear_tweaks, GLOB.gear_tweak_free_color_choice)
 
 // recolorable orange swoop dress
 /datum/gear/uniform/cswoopdress
@@ -841,7 +841,7 @@ Talon jumpsuit
 
 /datum/gear/uniform/cswoopdress/New()
 	..()
-	gear_tweaks += GLOB.gear_tweak_free_color_choice
+	LAZYADD(gear_tweaks, GLOB.gear_tweak_free_color_choice)
 
 // waiter's outfit, this should probably be in a selector with all the other service uniforms.
 /datum/gear/uniform/waiter

@@ -28,7 +28,7 @@
 	. = ..(user)
 	if(.)
 		return TRUE
-	if(user.a_intent == I_HURT)
+	if(IS_HARMING(user))
 		to_chat(user, span_notice("You crush the [src] under your foot, breaking it."))
 		visible_message(span_notice("[user.name] crushes the [src] under their foot, breaking it!"))
 		new brokentype(get_turf(src))

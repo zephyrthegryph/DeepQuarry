@@ -35,8 +35,8 @@ GLOBAL_DATUM(cult, /datum/antagonist/cultist)
 	var/datum/mind/sacrifice_target
 	var/list/startwords = list("blood","join","self","hell")
 	var/static/list/allwords = list("travel","self","see","hell","blood","join","tech","destroy", "other", "hide")
-	var/list/sacrificed = list()
-	var/list/harvested = list()
+	var/list/sacrificed
+	var/list/harvested
 
 /datum/antagonist/cultist/New()
 	..()
@@ -49,14 +49,14 @@ GLOBAL_DATUM(cult, /datum/antagonist/cultist)
 
 	global_objectives = list()
 	if(prob(50))
-		global_objectives |= new /datum/objective/cult/survive
+		LAZYOR(global_objectives, new /datum/objective/cult/survive)
 	else
-		global_objectives |= new /datum/objective/cult/eldergod
+		LAZYOR(global_objectives, new /datum/objective/cult/eldergod)
 
 	var/datum/objective/cult/sacrifice/sacrifice = new()
 	sacrifice.find_target()
 	sacrifice_target = sacrifice.target
-	global_objectives |= sacrifice
+	LAZYOR(global_objectives, sacrifice)
 
 /datum/antagonist/cultist/equip(mob/living/carbon/human/player)
 

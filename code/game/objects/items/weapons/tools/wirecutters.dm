@@ -48,14 +48,13 @@
 	if(!iscarbon(M))
 		return ..()
 	var/mob/living/carbon/C = M
-	if(istype(C) && user.a_intent == I_HELP && (C.handcuffed) && (istype(C.handcuffed, /obj/item/handcuffs/cable)))
+	if(istype(C) && IS_HELPING(user) && (C.get_equipped_item(SLOT_ID_HANDCUFFED)) && (istype(C.get_equipped_item(SLOT_ID_HANDCUFFED), /obj/item/handcuffs/cable)))
 		user.visible_message("\The [user] cuts \the [C]'s restraints with \the [src]!",\
 		"You cut \the [C]'s restraints with \the [src]!",\
 		"You hear cable being cut.")
-		C.handcuffed = null
-		if(C.buckled && C.buckled.buckle_require_restraints)
-			C.buckled.unbuckle_mob()
-		C.update_handcuffed()
+		var/obj/item/cut = C.get_equipped_item(SLOT_ID_HANDCUFFED)
+		C.drop_from_inventory(cut)
+		qdel(cut)
 		return ITEM_INTERACT_SUCCESS
 	else
 		..()

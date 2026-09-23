@@ -22,7 +22,7 @@
 	factory_type = /obj/structure/blob/factory/sluggish
 	spore_type = /mob/living/simple_mob/blob/spore/weak
 
-	var/list/active_beams = list()
+	var/list/active_beams
 
 /datum/blob_type/ectoplasmic_horror/on_pulse(obj/structure/blob/B)
 	if(B.type == /obj/structure/blob && (locate(/obj/structure/blob/node) in oview(2, get_turf(B))))
@@ -39,7 +39,7 @@
 			if(prob(5))
 				var/beamtarget_exists = FALSE
 
-				if(active_beams.len)
+				if(length(active_beams))
 					for(var/datum/beam/Beam in active_beams)
 						if(Beam.target == L)
 							beamtarget_exists = TRUE
@@ -48,7 +48,7 @@
 				if(!beamtarget_exists && GetAnomalySusceptibility(L) >= 0.5)
 					B.visible_message(span_danger("\The [B] lashes out at \the [L]!"))
 					var/datum/beam/drain_beam = beam_origin.Beam(L, icon_state = "drain_life", time = 10 SECONDS)
-					active_beams |= drain_beam
+					LAZYOR(active_beams, drain_beam)
 					spawn(9 SECONDS)
 						if(B && drain_beam)
 							B.visible_message(span_alien("\The [B] siphons energy from \the [L]"))
@@ -86,7 +86,7 @@
 			if(prob(5))
 				var/beamtarget_exists = FALSE
 
-				if(active_beams.len)
+				if(length(active_beams))
 					for(var/datum/beam/Beam in active_beams)
 						if(Beam.target == L)
 							beamtarget_exists = TRUE
@@ -95,7 +95,7 @@
 				if(!beamtarget_exists && GetAnomalySusceptibility(L) >= 0.5)
 					carrier.visible_message(span_danger("[icon2html(B,viewers(carrier))] \The [B] lashes out at \the [L]!"))
 					var/datum/beam/drain_beam = carrier.Beam(L, icon_state = "drain_life", time = 10 SECONDS)
-					active_beams |= drain_beam
+					LAZYOR(active_beams, drain_beam)
 					spawn(9 SECONDS)
 						if(B && drain_beam)
 							carrier.visible_message(span_alien("\The [B] siphons energy from \the [L]"))

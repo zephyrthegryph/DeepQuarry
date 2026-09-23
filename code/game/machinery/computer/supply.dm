@@ -14,7 +14,7 @@
 	var/can_order_contraband = 0
 	var/active_category = null
 	var/menu_tab = 0
-	var/list/expanded_packs = list()
+	var/list/expanded_packs
 
 // Supply control console
 /obj/machinery/computer/supplycomp/control
@@ -26,9 +26,6 @@
 	//req_access = list(ACCESS_CARGO) //removing hard access locks.
 	circuit = /obj/item/circuitboard/supplycomp/control
 	authorization = SUP_SEND_SHUTTLE | SUP_ACCEPT_ORDERS
-
-/obj/machinery/computer/supplycomp/attack_ai(mob/user as mob)
-	return attack_hand(user)
 
 /obj/machinery/computer/supplycomp/attack_hand(mob/user as mob)
 	if(..())

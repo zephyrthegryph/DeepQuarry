@@ -145,7 +145,7 @@
 		if(F.form_control_check())
 			F.set_form(/datum/form/human)
 		return
-	if(H.handcuffed)
+	if(H.get_equipped_item(SLOT_ID_HANDCUFFED))
 		to_chat(H, span_warning("You can't do this while handcuffed!"))
 		return
 	to_chat(H, span_notice("You begin to disassociate your form."))

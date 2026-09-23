@@ -88,6 +88,7 @@
 	B.escape_stun = 5
 	B.contamination_color = "grey"
 	B.contamination_flavor = "Wet"
+	B.own_emote_lists()
 	B.emote_lists[DM_DIGEST] = list(
 		"The drake growls in annoyance before clenching those wrinkled walls tight against your form, grinding away at you!",
 		"As the beast wanders about, you're forced to slip and slide around amidst a pool of thick digestive goop, sinking briefly into the thick, heavy walls!",

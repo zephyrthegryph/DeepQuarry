@@ -59,8 +59,8 @@ GLOBAL_LIST_INIT(civilian_cartridges, list(
 	var/charges = 0
 
 	var/list/stored_data = list()
-	var/list/programs = list()
-	var/list/messenger_plugins = list()
+	var/list/programs
+	var/list/messenger_plugins
 
 /obj/item/cartridge/Destroy()
 	QDEL_NULL(radio)
@@ -273,7 +273,7 @@ GLOBAL_LIST_INIT(civilian_cartridges, list(
 
 /obj/item/cartridge/syndicate/Initialize(mapload)
 	. = ..()
-	var/datum/data/pda/utility/toggle_door/D = programs[1]
+	var/datum/data/pda/utility/toggle_door/D = LAZYACCESS(programs, 1)
 	if(istype(D))
 		D.remote_door_id = initial_remote_door_id
 
@@ -341,7 +341,6 @@ GLOBAL_LIST_INIT(civilian_cartridges, list(
 	. = ..()
 	hold = new/obj/item/storage/internal(src)
 	hold.max_storage_space = slots * 2
-	hold.max_w_class = ITEMSIZE_SMALL
 
 /obj/item/cartridge/storage/Destroy()
 	// Un-nulled `hold` pins the internal storage against GC (cf. suit pockets).
@@ -368,7 +367,7 @@ GLOBAL_LIST_INIT(civilian_cartridges, list(
 	var/turf/T = get_turf(src)
 	hold.hide_from(user)
 	for(var/obj/item/I in hold.contents)
-		hold.remove_from_storage(I, T)
+		hold.remove_from_storage(I, T, user)
 	add_fingerprint(user)
 
 /obj/item/cartridge/storage/deluxe

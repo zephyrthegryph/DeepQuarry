@@ -23,55 +23,35 @@
 		return FALSE
 	return (hand ? put_in_l_hand(W) : put_in_r_hand(W))
 
-/mob/living/simple_mob/put_in_l_hand(obj/item/W)
-	if(!..() || l_hand)
-		return 0
-	W.forceMove(src)
-	l_hand = W
-	W.equipped(src,slot_l_hand)
-	W.add_fingerprint(src)
-	update_inv_l_hand()
-	return TRUE
-
-/mob/living/simple_mob/put_in_r_hand(obj/item/W)
-	if(!..() || r_hand)
-		return 0
-	W.forceMove(src)
-	r_hand = W
-	W.equipped(src,slot_r_hand)
-	W.add_fingerprint(src)
-	update_inv_r_hand()
-	return TRUE
-
 /mob/living/simple_mob/update_inv_r_hand()
 	if(QDESTROYING(src))
 		return
 
-	if(r_hand)
-		r_hand.screen_loc = ui_rhand	//TODO
+	if(get_equipped_item(SLOT_ID_HAND_R))
+		get_equipped_item(SLOT_ID_HAND_R).screen_loc = ui_rhand	//TODO
 
 		//determine icon state to use
 		var/t_state
-		if(LAZYACCESS(r_hand.item_state_slots, slot_r_hand_str))
-			t_state = r_hand.item_state_slots[slot_r_hand_str]
-		else if(r_hand.item_state)
-			t_state = r_hand.item_state
+		if(LAZYACCESS(get_equipped_item(SLOT_ID_HAND_R).item_state_slots, slot_r_hand_str))
+			t_state = get_equipped_item(SLOT_ID_HAND_R).item_state_slots[slot_r_hand_str]
+		else if(get_equipped_item(SLOT_ID_HAND_R).item_state)
+			t_state = get_equipped_item(SLOT_ID_HAND_R).item_state
 		else
-			t_state = r_hand.icon_state
+			t_state = get_equipped_item(SLOT_ID_HAND_R).icon_state
 
 		//determine icon to use
 		var/icon/t_icon
-		if(LAZYACCESS(r_hand.item_icons, slot_r_hand_str))
-			t_icon = r_hand.item_icons[slot_r_hand_str]
-		else if(r_hand.icon_override)
+		if(LAZYACCESS(get_equipped_item(SLOT_ID_HAND_R).item_icons, slot_r_hand_str))
+			t_icon = get_equipped_item(SLOT_ID_HAND_R).item_icons[slot_r_hand_str]
+		else if(get_equipped_item(SLOT_ID_HAND_R).icon_override)
 			t_state += "_r"
-			t_icon = r_hand.icon_override
+			t_icon = get_equipped_item(SLOT_ID_HAND_R).icon_override
 		else
 			t_icon = INV_R_HAND_DEF_ICON
 
 		//apply color
 		var/image/standing = image(icon = t_icon, icon_state = t_state)
-		standing.color = r_hand.color
+		standing.color = get_equipped_item(SLOT_ID_HAND_R).color
 
 		r_hand_sprite = standing
 
@@ -84,31 +64,31 @@
 	if(QDESTROYING(src))
 		return
 
-	if(l_hand)
-		l_hand.screen_loc = ui_lhand	//TODO
+	if(get_equipped_item(SLOT_ID_HAND_L))
+		get_equipped_item(SLOT_ID_HAND_L).screen_loc = ui_lhand	//TODO
 
 		//determine icon state to use
 		var/t_state
-		if(LAZYACCESS(l_hand.item_state_slots, slot_l_hand_str))
-			t_state = l_hand.item_state_slots[slot_l_hand_str]
-		else if(l_hand.item_state)
-			t_state = l_hand.item_state
+		if(LAZYACCESS(get_equipped_item(SLOT_ID_HAND_L).item_state_slots, slot_l_hand_str))
+			t_state = get_equipped_item(SLOT_ID_HAND_L).item_state_slots[slot_l_hand_str]
+		else if(get_equipped_item(SLOT_ID_HAND_L).item_state)
+			t_state = get_equipped_item(SLOT_ID_HAND_L).item_state
 		else
-			t_state = l_hand.icon_state
+			t_state = get_equipped_item(SLOT_ID_HAND_L).icon_state
 
 		//determine icon to use
 		var/icon/t_icon
-		if(LAZYACCESS(l_hand.item_icons, slot_l_hand_str))
-			t_icon = l_hand.item_icons[slot_l_hand_str]
-		else if(l_hand.icon_override)
+		if(LAZYACCESS(get_equipped_item(SLOT_ID_HAND_L).item_icons, slot_l_hand_str))
+			t_icon = get_equipped_item(SLOT_ID_HAND_L).item_icons[slot_l_hand_str]
+		else if(get_equipped_item(SLOT_ID_HAND_L).icon_override)
 			t_state += "_l"
-			t_icon = l_hand.icon_override
+			t_icon = get_equipped_item(SLOT_ID_HAND_L).icon_override
 		else
 			t_icon = INV_L_HAND_DEF_ICON
 
 		//apply color
 		var/image/standing = image(icon = t_icon, icon_state = t_state)
-		standing.color = l_hand.color
+		standing.color = get_equipped_item(SLOT_ID_HAND_L).color
 
 		l_hand_sprite = standing
 
@@ -135,15 +115,3 @@
 		to_chat(src, span_danger("Your [hand_form] are not fit for use of \the [display_name]."))
 	return humanoid_hands
 
-/mob/living/simple_mob/is_holding_item_of_type(typepath)
-	for(var/obj/item/I in list(l_hand, r_hand))
-		if(istype(I, typepath))
-			return I
-	return FALSE
-
-/mob/living/simple_mob/get_all_held_items()
-	. = list()
-	if(l_hand)
-		. += l_hand
-	if(r_hand)
-		. += r_hand

@@ -334,7 +334,10 @@
 	name = "heavy briefcase"
 	desc = "A heavy, locked briefcase. (Fusion content deprecated under LINDA migration.)"
 	force = 12 //Anti-rad lined i.e. Lead, probably gonna hurt a bit if you get bashed with it.
-	can_hold = list(/obj/item/cell, /obj/item/stock_parts, /obj/item/tool/screwdriver)
 	starts_with = list(
 		/obj/item/tool/screwdriver
 	)
+
+/obj/item/storage/secure/briefcase/fuelrod/hold_constraint()
+	var/list/holds = list(/obj/item/cell, /obj/item/stock_parts, /obj/item/tool/screwdriver)
+	return list(HOLD_ONLY(holds), HOLD_MAX_SIZE(ITEMSIZE_NORMAL))

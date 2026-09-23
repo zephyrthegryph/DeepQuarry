@@ -27,23 +27,22 @@
 	to_chat(user, span_notice("You need a wrench to take this apart!"))
 	return
 
-/obj/structure/vehiclecage/proc/tool_disassemble(mob/user, obj/item/W, delay)
+/obj/structure/vehiclecage/proc/tool_disassemble(mob/user, obj/item/W, delay, quality)
 	var/turf/T = get_turf(src)
 	if(!T)
 		to_chat(user, span_notice("You can't open this here!"))
 		return TRUE
-	if(do_after(user, delay * W.toolspeed, target = src))
-		playsound(src, W.usesound, 50, 1)
+	if(use_tool(user, W, src, delay = delay, quality = quality, volume = 50))
 		disassemble(W, user)
 	return TRUE
 
 /obj/structure/vehiclecage/wrench_act(mob/user, obj/item/W)
 	user.visible_message(span_notice("[user] begins loosening \the [src]'s bolts."))
-	return tool_disassemble(user, W, 6 SECONDS)
+	return tool_disassemble(user, W, 6 SECONDS, TOOL_WRENCH)
 
 /obj/structure/vehiclecage/wirecutter_act(mob/user, obj/item/W)
 	user.visible_message(span_notice("[user] begins cutting \the [src]'s bolts."))
-	return tool_disassemble(user, W, 7 SECONDS)
+	return tool_disassemble(user, W, 7 SECONDS, TOOL_WIRECUTTER)
 
 /obj/structure/vehiclecage/update_icon()
 	..()

@@ -396,7 +396,7 @@
 	var/blacklisted_turfs
 	var/banned_areas
 	var/banned_objects
-	var/list/door_locations = list() /// Where the door (or doors) are located in XY coordinates, so the capsule deploy preview can show where the doors will be.
+	var/list/door_locations /// Where the door (or doors) are located in XY coordinates, so the capsule deploy preview can show where the doors will be.
 
 /datum/map_template/shelter/New()
 	. = ..()

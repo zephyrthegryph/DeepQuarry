@@ -45,6 +45,7 @@
 	B.name = "Stomach"
 	B.desc = "Slick foxguts. Cute on the outside, slimy on the inside!"
 
+	B.own_emote_lists()
 	B.emote_lists[DM_HOLD] = list(
 		"The foxguts knead and churn around you harmlessly.",
 		"With a loud glorp, some air shifts inside the belly.",
@@ -53,6 +54,7 @@
 		"During a moment of relative silence, you can hear the fox breathing.",
 		"The slimey stomach walls squeeze you lightly, then relax.")
 
+	B.own_emote_lists()
 	B.emote_lists[DM_DIGEST] = list(
 		"The guts knead at you, trying to work you into thick soup.",
 		"You're ground on by the slimey walls, treated like a mouse.",
@@ -74,7 +76,7 @@
 	var/mob/living/carbon/H = over_object
 	if(!istype(H) || !Adjacent(H)) return ..()
 
-	if(H.a_intent == I_HELP)
+	if(IS_HELPING(H))
 		get_scooped(H)
 		return
 	else
@@ -193,6 +195,7 @@
 	B.name = "Stomach"
 	B.desc = "Slick foxguts. They seem somehow more regal than perhaps other foxes!"
 
+	B.own_emote_lists()
 	B.emote_lists[DM_HOLD] = list(
 		"Renault's stomach walls squeeze around you more tightly for a moment, before relaxing, as if testing you a bit.",
 		"There's a sudden squeezing as Renault presses a forepaw against his gut over you, squeezing you against the slick walls.",
@@ -201,6 +204,7 @@
 		"It doesn't seem like Renault wants to let you out. The stomach and owner possessively squeeze around you.",
 		"Renault's stomach walls squeeze closer, as he belches quietly, before swallowing more air. Does he do that on purpose?")
 
+	B.own_emote_lists()
 	B.emote_lists[DM_DIGEST] = list(
 		"Renault's stomach walls grind hungrily inwards, kneading acids against your form, and treating you like any other food.",
 		"The captain's fox impatiently kneads and works acids against you, trying to claim your body for fuel.",

@@ -22,7 +22,7 @@
 	var/mob/living/carbon/human/H = M
 	var/sample_type
 
-	if(H.wear_mask)
+	if(H.get_equipped_item(SLOT_ID_MASK))
 		to_chat(user, span_warning("\The [H] is wearing a mask."))
 		return ITEM_INTERACT_FAILURE
 
@@ -30,7 +30,7 @@
 		to_chat(user, span_warning("They don't seem to have DNA!"))
 		return ITEM_INTERACT_FAILURE
 
-	if(user != H && H.a_intent != I_HELP && !H.lying)
+	if(user != H && !IS_HELPING(H) && !H.lying)
 		user.visible_message(span_danger("\The [user] tries to take a swab sample from \the [H], but they move away."))
 		return ITEM_INTERACT_FAILURE
 

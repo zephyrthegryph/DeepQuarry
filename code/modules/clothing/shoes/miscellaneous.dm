@@ -5,11 +5,13 @@
 	permeability_coefficient = 0.05
 	item_flags = NOSLIP
 	siemens_coefficient = 0.8
-	species_restricted = null
 	step_volume_mod = 0.5
 	drop_sound = 'sound/items/drop/rubber.ogg'
 	pickup_sound = 'sound/items/pickup/rubber.ogg'
 	resistance_flags = FIRE_PROOF | ACID_PROOF
+
+/obj/item/clothing/shoes/syndigaloshes/fit_constraint()
+	return null
 
 /obj/item/clothing/shoes/mime
 	name = "mime shoes"
@@ -24,10 +26,12 @@
 	siemens_coefficient = 0 //They're thick rubber boots! Of course they won't conduct electricity!
 	item_flags = NOSLIP
 	slowdown = SHOES_SLOWDOWN+0.5
-	species_restricted = null
 	drop_sound = 'sound/items/drop/rubber.ogg'
 	pickup_sound = 'sound/items/pickup/rubber.ogg'
 	resistance_flags = ACID_PROOF
+
+/obj/item/clothing/shoes/galoshes/fit_constraint()
+	return null
 
 /obj/item/clothing/shoes/dress
 	name = "dress shoes"
@@ -43,10 +47,12 @@
 	desc = "A pair of rather plain, wooden sandals."
 	name = "sandals"
 	icon_state = "wizard"
-	species_restricted = null
 	body_parts_covered = 0
 
 	wizard_garb = 1
+
+/obj/item/clothing/shoes/sandal/fit_constraint()
+	return null
 
 /obj/item/clothing/shoes/sandals
 	desc = "A pair of simple sandals."
@@ -63,22 +69,28 @@
 	name = "grilling sandals"
 	desc = "All this talk of antags, greytiding, and griefing... I just wanna grill for god's sake!"
 	icon_state = "cookflops"
-	species_restricted = null
 	body_parts_covered = 0
+
+/obj/item/clothing/shoes/cookflop/fit_constraint()
+	return null
 
 /obj/item/clothing/shoes/tourist_1
 	name = "tourist sandals"
 	desc = "Black sandals usually worn by tourists. Need I say more?"
 	icon_state = "tourist_1"
-	species_restricted = null
 	body_parts_covered = 0
+
+/obj/item/clothing/shoes/tourist_1/fit_constraint()
+	return null
 
 /obj/item/clothing/shoes/tourist_2
 	name = "tourist sandals"
 	desc = "Green sandals usually worn by tourists. Need I say more?"
 	icon_state = "tourist_2"
-	species_restricted = null
 	body_parts_covered = 0
+
+/obj/item/clothing/shoes/tourist_2/fit_constraint()
+	return null
 
 /obj/item/clothing/shoes/sandal/clogs
 	name = "plastic clogs"
@@ -98,7 +110,6 @@
 	slowdown = SHOES_SLOWDOWN+0.5
 	force = 0
 	//removed built in squeak sounds
-	species_restricted = null
 
 /* Replaced with squeak component
 /obj/item/clothing/shoes/clown_shoes/handle_movement(turf/walking, running)
@@ -112,6 +123,9 @@
 		playsound(src, "clownstep", 20, 1)
 */
 
+/obj/item/clothing/shoes/clown_shoes/fit_constraint()
+	return null
+
 /obj/item/clothing/shoes/cult
 	name = "boots"
 	desc = "A pair of boots worn by the followers of Nar-Sie."
@@ -122,7 +136,9 @@
 
 	min_cold_protection_temperature = SHOE_MIN_COLD_PROTECTION_TEMPERATURE
 	max_heat_protection_temperature = SHOE_MAX_HEAT_PROTECTION_TEMPERATURE
-	species_restricted = null
+
+/obj/item/clothing/shoes/cult/fit_constraint()
+	return null
 
 /obj/item/clothing/shoes/cult/cultify()
 	return
@@ -137,10 +153,12 @@
 	desc = "Fluffy!"
 	icon_state = "slippers"
 	force = 0
-	species_restricted = null
 	w_class = ITEMSIZE_SMALL
 	drop_sound = 'sound/items/drop/clothing.ogg'
 	pickup_sound = 'sound/items/pickup/clothing.ogg'
+
+/obj/item/clothing/shoes/slippers/fit_constraint()
+	return null
 
 /obj/item/clothing/shoes/slippers/worn
 	name = "worn bunny slippers"
@@ -167,7 +185,9 @@
 	item_state_slots = list(slot_r_hand_str = "galoshes", slot_l_hand_str = "galoshes")
 	item_flags = NOSLIP
 	slowdown = SHOES_SLOWDOWN+0.5
-	species_restricted = null
+
+/obj/item/clothing/shoes/swimmingfins/fit_constraint()
+	return null
 
 /obj/item/clothing/shoes/athletic
 	name = "athletic shoes"
@@ -197,9 +217,11 @@
 	blocks_footsteps = FALSE
 	force = 0
 	w_class = ITEMSIZE_SMALL
-	species_restricted = null
 	drop_sound = 'sound/items/drop/clothing.ogg'
 	pickup_sound = 'sound/items/pickup/clothing.ogg'
+
+/obj/item/clothing/shoes/footwraps/fit_constraint()
+	return null
 
 /obj/item/clothing/shoes/boots/ranger
 	var/bootcolor = "white"
@@ -325,7 +347,7 @@
 	desc = "A pair of olde knight boots."
 	icon_state = "knight_boots1"
 	item_state = "knight_boots1"
-	armor = list(melee = 80, bullet = 50, laser = 10, energy = 0, bomb = 0, bio = 0, rad = 0)
+	armor_spec = "melee=80;bullet=50;laser=10"
 
 /obj/item/clothing/shoes/knight/black
 	name = "knight boots"
@@ -371,12 +393,14 @@
 	desc = "Thud thud."
 	icon = 'icons/effects/effects.dmi' //This is to make the unit test happy. These are invisible which are... Less than ideal. This should probably be moved to a trait or sound selector, but I digress. Outside scope of this PR.
 	icon_state = "nothing" // Horribly illegal and shouldn't be a thing, but whatever.
-	armor = list(melee = 30, bullet = 10, laser = 10, energy = 15, bomb = 20, bio = 0, rad = 0) // Same as loadout jackboots.
+	armor_spec = "melee=30;bullet=10;laser=10;energy=15;bomb=20" // Same as loadout jackboots.
 	siemens_coefficient = 0.7 // Same as loadout jackboots.
 	can_hold_knife = 1
 	force = 2
-	species_restricted = null
 	var/list/squeak_sound = list("mechstep"=1)	//Squeak sound list. Necessary so our subtypes can have different sounds loaded into their component
+
+/obj/item/clothing/shoes/mech_shoes/fit_constraint()
+	return null
 
 /obj/item/clothing/shoes/mech_shoes/Initialize(mapload)
 	.=..()
@@ -405,7 +429,7 @@
 	icon_state = "jackboots"
 
 /obj/item/clothing/shoes/clown_shoes
-	var/list/squeak_sound = list("clownstep"=1)
+	var/static/list/squeak_sound = list("clownstep"=1)
 
 /obj/item/clothing/shoes/clown_shoes/Initialize(mapload)
 	.=..()
@@ -420,9 +444,11 @@
 	siemens_coefficient = 0
 	item_flags = NOSLIP
 	slowdown = SHOES_SLOWDOWN+0.5
-	species_restricted = null
 	drop_sound = 'sound/items/drop/rubber.ogg'
 	pickup_sound = 'sound/items/pickup/rubber.ogg'
+
+/obj/item/clothing/shoes/dry_galoshes/fit_constraint()
+	return null
 
 /obj/item/clothing/shoes/dry_galoshes/Initialize(mapload)
 	.=..()

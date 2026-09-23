@@ -53,7 +53,7 @@
 	/// Set to a reason string when the appearance can't be expressed exactly.
 	var/unsupported
 	/// "\ref[runtime icon]" -> on-disk DMI copy, shared by every direction of one render.
-	var/list/runtime_paths = list()
+	var/list/runtime_paths
 
 /// A sprite object in the rust-g iconforge format. Always frame 1, like getFlatIcon(no_anim = TRUE).
 /datum/dq_preview_flattener/proc/make_sprite(icon_key, icon_state, dir)
@@ -76,8 +76,8 @@
 		return icon_string
 	// Runtime-generated icon (a dyn.rsc cache reference). Copy it to disk under its hash.
 	var/ref_key = "\ref[icon_ref]"
-	if(runtime_paths[ref_key])
-		return runtime_paths[ref_key]
+	if(LAZYACCESS(runtime_paths, ref_key))
+		return LAZYACCESS(runtime_paths, ref_key)
 	dq_preview_ensure_dirs()
 	var/staging = "[DQ_PREVIEW_RUNTIME_ICON_DIR]staging-[rand(1, 999999)].dmi"
 	if(!fcopy(icon_ref, staging))
@@ -88,7 +88,7 @@
 	if(!rustg_file_exists(path))
 		fcopy(staging, path)
 	fdel(staging)
-	runtime_paths[ref_key] = path
+	LAZYSET(runtime_paths, ref_key, path)
 	return path
 
 /// Number of dirs an icon state has, from rust-g metadata. Null (and unsupported) if unknown.

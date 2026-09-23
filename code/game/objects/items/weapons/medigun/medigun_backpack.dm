@@ -281,7 +281,7 @@
 
 	var/obj/item/bork_medigun/medigun = get_medigun()
 
-	if(W.is_crowbar() && maintenance)
+	if(W.has_tool_quality(TOOL_CROWBAR) && maintenance)
 		if(smodule )
 			smodule.forceMove(get_turf(loc))
 			smodule = null
@@ -311,7 +311,7 @@
 		update_icon()
 		return TRUE
 
-	if(W.is_screwdriver())
+	if(W.has_tool_quality(TOOL_SCREWDRIVER))
 		if(!maintenance)
 			maintenance = TRUE
 			to_chat(user, span_notice("You open the maintenance hatch on \the [src]."))
@@ -508,9 +508,9 @@
 	if(!istype(M))
 		return FALSE //not equipped
 
-	if((slot_flags & SLOT_BACK) && M.get_equipped_item(slot_back) == src)
+	if(HAS_TAG(src, TAG_WEAR_BACK) && M.get_equipped_item(slot_back) == src)
 		return TRUE
-	if((slot_flags & SLOT_BACK) && M.get_equipped_item(slot_s_store) == src)
+	if(HAS_TAG(src, TAG_WEAR_BACK) && M.get_equipped_item(slot_s_store) == src)
 		return TRUE
 	return FALSE
 

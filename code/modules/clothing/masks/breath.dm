@@ -84,6 +84,9 @@
 	w_class = ITEMSIZE_SMALL
 	gas_transfer_coefficient = 0.10
 	permeability_coefficient = 0.50
-	species_restricted = list(SPECIES_ALTEVIAN)
 	pickup_sound = 'sound/items/pickup/component.ogg'
 	drop_sound = 'sound/items/drop/component.ogg'
+
+/obj/item/clothing/mask/altevian_breath/fit_constraint()
+	var/list/bodytypes = list(SPECIES_ALTEVIAN)
+	return list(REQ_FITS_BODYTYPES(bodytypes))

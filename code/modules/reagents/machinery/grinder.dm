@@ -13,7 +13,7 @@
 	var/inuse = 0
 	var/obj/item/reagent_containers/beaker = null
 	var/limit = 10
-	var/list/holdingitems = list()
+	var/list/holdingitems
 
 	var/static/radial_examine = image(icon = 'icons/mob/radial.dmi', icon_state = "radial_examine")
 	var/static/radial_eject = image(icon = 'icons/mob/radial.dmi', icon_state = "radial_eject")
@@ -68,7 +68,7 @@
 			update_icon()
 			return 0
 
-	if(holdingitems && holdingitems.len >= limit)
+	if(holdingitems && length(holdingitems) >= limit)
 		to_chat(user, "The machine cannot hold anymore items.")
 		return 1
 
@@ -83,8 +83,8 @@
 				continue
 			failed = 0
 			bag.remove_from_storage(G, src)
-			holdingitems += G
-			if(holdingitems && holdingitems.len >= limit)
+			LAZYADD(holdingitems, G)
+			if(holdingitems && length(holdingitems) >= limit)
 				break
 
 		if(failed)
@@ -115,7 +115,7 @@
 
 	user.remove_from_mob(O)
 	O.loc = src
-	holdingitems += O
+	LAZYADD(holdingitems, O)
 	// start
 	if(istype(O,/obj/item/stack/material/supermatter))
 		var/obj/item/stack/material/supermatter/S = O
@@ -180,8 +180,8 @@
 		return
 	for(var/obj/item/O in holdingitems)
 		O.loc = src.loc
-		holdingitems -= O
-	holdingitems.Cut()
+		LAZYREMOVE(holdingitems, O)
+	LAZYCLEARLIST(holdingitems)
 	if(beaker)
 		replace_beaker(user)
 

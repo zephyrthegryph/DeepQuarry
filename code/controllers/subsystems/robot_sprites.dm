@@ -159,13 +159,13 @@ SUBSYSTEM_DEF(robot_sprites)
 			if(findtext(icon, regex("^decals")))
 				var/list/decals = splittext(icon, "_")
 				decals -= "decals"
-				RS.sprite_decals |= decals
+				LAZYOR(RS.sprite_decals, decals)
 				continue
 			// special overlays that also can be used as animations, as some names have - in them, seperated by _
 			if(findtext(icon, regex("^animations")))
 				var/list/animations = splittext(icon, "_")
 				animations -= "animations"
-				RS.sprite_animations |= animations
+				LAZYOR(RS.sprite_animations, animations)
 				continue
 			// Check for all the possible overlays
 			if(findtext(icon, regex("-roll")))
@@ -211,7 +211,7 @@ SUBSYSTEM_DEF(robot_sprites)
 				RS.has_eye_light_sprites = TRUE
 				continue
 			if(findtext(icon, regex("-decals")))
-				RS.sprite_decals |= list("decals")
+				LAZYOR(RS.sprite_decals, list("decals"))
 				continue
 			if(findtext(icon, regex("-struggle")))
 				RS.has_vore_struggle_sprite = TRUE
@@ -237,10 +237,10 @@ SUBSYSTEM_DEF(robot_sprites)
 				if(!RS.belly_light_list)
 					RS.belly_light_list = list()
 				if(isnum(capacity))
-					if(!RS.belly_light_list[belly[2]])
-						RS.belly_light_list[belly[2]] = capacity
-					else if(RS.belly_light_list[belly[2]] < capacity)
-						RS.belly_light_list[belly[2]] = capacity
+					if(!LAZYACCESS(RS.belly_light_list, belly[2]))
+						LAZYSET(RS.belly_light_list, belly[2], capacity)
+					else if(LAZYACCESS(RS.belly_light_list, belly[2]) < capacity)
+						LAZYSET(RS.belly_light_list, belly[2], capacity)
 				continue
 			if(findtext(icon, regex("-\\d$")))
 				var/list/belly = splittext(icon, "-")
@@ -248,10 +248,10 @@ SUBSYSTEM_DEF(robot_sprites)
 				if(!RS.belly_capacity_list)
 					RS.belly_capacity_list = list()
 				if(isnum(capacity))
-					if(!RS.belly_capacity_list[belly[2]])
-						RS.belly_capacity_list[belly[2]] = capacity
-					else if(RS.belly_capacity_list[belly[2]] < capacity)
-						RS.belly_capacity_list[belly[2]] = capacity
+					if(!LAZYACCESS(RS.belly_capacity_list, belly[2]))
+						LAZYSET(RS.belly_capacity_list, belly[2], capacity)
+					else if(LAZYACCESS(RS.belly_capacity_list, belly[2]) < capacity)
+						LAZYSET(RS.belly_capacity_list, belly[2], capacity)
 				continue
 			if(findtext(icon, regex("-sit")))
 				RS.has_rest_sprites = TRUE

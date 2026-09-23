@@ -37,25 +37,26 @@
 	else
 		failure_chance = 75 // You can't even use it if there's no scanmod, but why not.
 
-/obj/item/bluespace_harpoon/screwdriver_act(mob/user, obj/item/tool)
-	attackby(tool, user, TOOL_SCREWDRIVER)
-	return TRUE
+/obj/item/bluespace_harpoon/screwdriver_act(mob/living/user, obj/item/tool)
+	if(!istype(user))
+		return ITEM_INTERACT_BLOCKING
 
-/obj/item/bluespace_harpoon/attackby(obj/item/I, mob/living/user, tool_quality)
+	if(!scanmod)
+		to_chat(user, span_warning("There's no scanner module installed!"))
+		return ITEM_INTERACT_SUCCESS
+	var/turf/T = get_turf(src)
+	to_chat(user, span_notice("You remove [scanmod] from [src]."))
+	playsound(src, tool.usesound, 75, 1)
+	scanmod.forceMove(T)
+	scanmod = null
+	update_fail_chance()
+	return ITEM_INTERACT_SUCCESS
+
+/obj/item/bluespace_harpoon/attackby(obj/item/I, mob/living/user)
 	if(!istype(user))
 		return
 
-	if(tool_quality == TOOL_SCREWDRIVER)
-		if(!scanmod)
-			to_chat(user, span_warning("There's no scanner module installed!"))
-			return
-		var/turf/T = get_turf(src)
-		to_chat(user, span_notice("You remove [scanmod] from [src]."))
-		playsound(src, I.usesound, 75, 1)
-		scanmod.forceMove(T)
-		scanmod = null
-		update_fail_chance()
-	else if(istype(I, /obj/item/stock_parts/scanning_module))
+	if(istype(I, /obj/item/stock_parts/scanning_module))
 		if(scanmod)
 			to_chat(user, span_warning("There's already [scanmod] installed! Remove it first."))
 			return

@@ -40,7 +40,7 @@
 
 		// Describe the current weather.
 		if(WH.imminent_weather)
-			var/datum/weather/coming_weather = WH.allowed_weather_types[WH.imminent_weather]
+			var/datum/weather/coming_weather = LAZYACCESS(WH.allowed_weather_types, WH.imminent_weather)
 			to_chat(usr, coming_weather.imminent_transition_message)
 
 		// If we can see the sky, we'll see things like sun position, phase of the moon, etc.

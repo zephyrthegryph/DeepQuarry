@@ -18,7 +18,7 @@
 	dir = EAST
 	density = TRUE
 	var/obj/structure/m_tray/connected = null
-	var/list/occupants = list()
+	var/list/occupants
 	anchored = TRUE
 	unacidable = TRUE
 
@@ -29,11 +29,11 @@
 	return ..()
 
 /obj/structure/morgue/proc/get_occupants()
-	occupants.Cut()
+	LAZYCLEARLIST(occupants)
 	for(var/mob/living/carbon/human/H in contents)
-		occupants += H
+		LAZYADD(occupants, H)
 	for(var/obj/structure/closet/body_bag/B in contents)
-		occupants += B.get_occupants()
+		LAZYADD(occupants, B.get_occupants())
 
 /obj/structure/morgue/proc/update(broadcast=0)
 	if (src.connected)
@@ -62,9 +62,8 @@
 		A.forceMove(loc)
 	return ..()
 
-/obj/structure/morgue/attack_robot(mob/user)
-	if(Adjacent(user))
-		attack_hand(user)
+/obj/structure/morgue
+	silicon_use = ROBOT_USE_HAND_ADJACENT
 
 /obj/structure/morgue/attack_hand(mob/user as mob)
 	if (src.connected)
@@ -144,9 +143,8 @@
 	connected = null
 	return ..()
 
-/obj/structure/m_tray/attack_robot(mob/user)
-	if(Adjacent(user))
-		attack_hand(user)
+/obj/structure/m_tray
+	silicon_use = ROBOT_USE_HAND_ADJACENT
 
 /obj/structure/m_tray/attack_hand(mob/user as mob)
 	if (src.connected)
@@ -336,7 +334,7 @@ REGISTRY_MEMBERSHIP(/obj/structure/morgue/crematorium, REGISTRY_CREMATORIUMS)
 
 
 /obj/structure/morgue/crematorium/vr
-	var/list/allowed_items = list(/obj/item/organ,
+	var/static/list/allowed_items = list(/obj/item/organ,
 			/obj/item/implant,
 			/obj/item/material/shard/shrapnel,
 			/mob/living)

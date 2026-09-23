@@ -4,9 +4,9 @@
 	if(istype(target) && src.lying && target.loc && target.buckled != src)
 		// src.lying being true means that in theory this code shouldn't run at the same time as the existing code for this in Bump. Probably.
 		// And optionally, this could be gated behind another preference, to prevent stunlock being abused.
-		if((mob_always_swap || (a_intent == I_HELP || src.restrained()) && (target.a_intent == I_HELP || target.restrained())) && target.canmove && target.handle_micro_bump_helping(src))
+		if((mob_always_swap || (IS_HELPING(src) || src.restrained()) && (IS_HELPING(target) || target.restrained())) && target.canmove && target.handle_micro_bump_helping(src))
 			return
-		if(!(target.a_intent == I_HELP || target.restrained()))
+		if(!(IS_HELPING(target) || target.restrained()))
 			if(src.step_mechanics_pref && target.step_mechanics_pref)
 				target.handle_micro_bump_other(src)
 			else
@@ -210,7 +210,7 @@
 		return FALSE
 	if(!(pickup_pref && M.pickup_pref && M.pickup_active))
 		return FALSE
-	if(!(M.a_intent == I_HELP))
+	if(!(IS_HELPING(M)))
 		return FALSE
 	var/size_diff = M.get_effective_size(FALSE) - get_effective_size(TRUE)
 	if(!holder_default && holder_type)
@@ -318,7 +318,7 @@
 
 	var/mob/living/carbon/human/prey = tmob
 	var/can_pass = TRUE
-	var/size_ratio_needed = (a_intent == I_DISARM || a_intent == I_HURT) ? 0.75 : (a_intent == I_GRAB ? 0.5 : 0)
+	var/size_ratio_needed = (IS_DISARMING(src) || IS_HARMING(src)) ? 0.75 : (IS_GRABBING(src) ? 0.5 : 0)
 	if (isturf(prey.loc))
 		for (var/atom/movable/M in prey.loc)
 			if (prey == M || pred == M)
@@ -337,17 +337,17 @@
 	// We need to be above a certain size ratio in order to do anything to the prey.
 	// For DISARM and HURT intent, this is >=0.75, for GRAB it is >=0.5
 	var/size_ratio = get_effective_size(FALSE) - tmob.get_effective_size(TRUE)
-	if((a_intent == I_GRAB || a_intent == I_DISARM) && size_ratio < 0.5) // more step changes
+	if((IS_GRABBING(src) || IS_DISARMING(src)) && size_ratio < 0.5) // more step changes
 		return FALSE
-	if(a_intent == I_HURT && size_ratio < 0.75)
+	if(IS_HARMING(src) && size_ratio < 0.75)
 		return FALSE
-	if(a_intent == I_HELP) // Theoretically not possible, but just in case.
+	if(IS_HELPING(src)) // Theoretically not possible, but just in case.
 		return FALSE
 
 	// removed chance to dodge steppies. Get rng out of my combat.
 	now_pushing = 0
 	forceMove(tmob.loc)
-	if(a_intent != I_HELP)
+	if(!IS_HELPING(src))
 		if(tmob.size_multiplier > 0.75 && nofetish) //So we can stun micros with step mechanics off, but prevent macros from stunning regular heights
 			to_chat(pred, span_danger("You pass over [tmob.name]."))
 			to_chat(prey, span_danger("[src.name] passes over you."))
@@ -365,7 +365,7 @@
 	// I_HURT: Rand 1-3 multiplied by 1 min or 1.75 max. 1 min 5.25 max damage to each limb.
 	// I_DISARM: Inflict some pain (INJURY_PAIN) on the smaller.
 	//           Since stunned is broken, let's do this. Rand 15-30 multiplied by 1 min or 1.75 max. 15 holo to 52.5 holo, depending on RNG and size differnece.
-	var/damage = (a_intent == I_DISARM) ? (rand(15, 30) * size_damage_multiplier) : (rand(1, 3) * size_damage_multiplier)
+	var/damage = (IS_DISARMING(src)) ? (rand(15, 30) * size_damage_multiplier) : (rand(1, 3) * size_damage_multiplier)
 	// I_HURT only
 	var/calculated_damage = damage / 2 //This will sting, but not kill. Does .5 to 2.625 damage, randomly, to each limb.
 
@@ -375,9 +375,9 @@
 	if(istaurtail(pred.tail_style))
 		tail = pred.tail_style
 	if(!nofetish) // Brings back mandatory step mechanics, circumvents the fetish stuff if no pref match
-		if(a_intent == I_GRAB)
+		if(IS_GRABBING(src))
 			// You can only grab prey if you have no shoes on. And both of you are cool with it.
-			if(pred.shoes || !(pred.pickup_pref && prey.pickup_pref))
+			if(pred.get_equipped_item(SLOT_ID_SHOES) || !(pred.pickup_pref && prey.pickup_pref))
 				message_pred = "You step down onto [prey], squishing them and forcing them down to the ground!"
 				message_prey = "[pred] steps down and squishes you with their foot, forcing you down to the ground!"
 				if(tail)
@@ -394,7 +394,7 @@
 				add_attack_logs(pred, prey, "Grabbed underfoot ([tail ? "taur" : "nontaur"], no shoes)")
 
 		if(m_intent == I_RUN)
-			switch(a_intent)
+			switch(use_stance())
 				if(I_DISARM)
 					message_pred = "You quickly push [prey] to the ground with your foot!"
 					message_prey = "[pred] pushes you down to the ground with their foot!"
@@ -414,7 +414,7 @@
 					prey.drip(0.1)
 					add_attack_logs(pred, prey, "Crushed underfoot (run, about [calculated_damage] damage)")
 		else
-			switch(a_intent)
+			switch(use_stance())
 				if(I_DISARM)
 					message_pred = "You firmly push your foot down on [prey], painfully but harmlessly pinning them to the ground!"
 					message_prey = "[pred] firmly pushes their foot down on you, quite painfully but harmlessly pinning you to the ground!"

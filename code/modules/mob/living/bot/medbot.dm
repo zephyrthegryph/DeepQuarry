@@ -207,7 +207,7 @@
 		icon_state = "medibot[on]"
 
 /mob/living/bot/medbot/attack_hand(mob/living/carbon/human/H)
-	if(istype(H) && H.a_intent == I_DISARM && !is_tipped)
+	if(istype(H) && IS_DISARMING(H) && !is_tipped)
 		H.visible_message(span_danger("[H] begins tipping over [src]."), span_warning("You begin tipping over [src]..."))
 
 		if(world.time > last_tipping_action_voice + 15 SECONDS)
@@ -220,7 +220,7 @@
 		if(do_after(H, 3 SECONDS, target = src))
 			tip_over(H)
 
-	else if(istype(H) && H.a_intent == I_HELP && is_tipped)
+	else if(istype(H) && IS_HELPING(H) && is_tipped)
 		H.visible_message(span_notice("[H] begins righting [src]."), span_notice("You begin righting [src]..."))
 		if(do_after(H, 3 SECONDS, target = src))
 			set_right(H)

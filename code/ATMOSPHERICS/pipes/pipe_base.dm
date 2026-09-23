@@ -269,12 +269,8 @@
 /obj/machinery/atmospherics/pipe/welder_act(mob/user, obj/item/W)
 	if(!damaged_leak)
 		return NONE
-	var/obj/item/weldingtool/welder = W.get_welder()
-	if(!welder.remove_fuel(1, user))
-		return ITEM_INTERACT_BLOCKING
-	to_chat(user, span_notice("You begin welding the fatigue crack in \the [src]."))
-	playsound(src, welder.usesound, 50, TRUE)
-	if(do_after(user, 4 SECONDS * welder.toolspeed, target = src) && damaged_leak)
+	if(use_tool(user, W, src, delay = 4 SECONDS, quality = TOOL_WELDER, amount = 1, volume = 50, \
+			message_self = "You begin welding the fatigue crack in \the [src].") && damaged_leak)
 		damaged_leak = FALSE
 		handle_leaking()
 		to_chat(user, span_notice("You seal the fatigue crack in \the [src]."))
@@ -304,9 +300,7 @@
 	else
 		to_chat(user, span_notice("You begin to unfasten \the [src]..."))
 
-	playsound(src, W.usesound, 50, 1)
-
-	if (do_after(user, 10 * W.toolspeed, target = src))
+	if (use_tool(user, W, src, delay = 10, volume = 50))
 		user.visible_message( \
 			span_infoplain(span_bold("\The [user]") + " unfastens \the [src]."), \
 			span_notice("You have unfastened \the [src]."), \

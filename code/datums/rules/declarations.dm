@@ -39,15 +39,26 @@
 	effect_kind = RULE_EFFECT_DATA
 	transform = list(RULE_SWAP_TYPE(/obj/effect/decal/cleanable/molten_item))
 
-// ---- Grilles: integrity breaking point ----
+// ---- Integrity breakpoints (damage.md §6) ----
+//
+// Every type's damage breakpoints are rules, declared once here:
+//   damaged at 3/4, 1/2, 1/4   generated flavour text (damage_flavour_text())
+//   broken at integrity_failure atom_break() / atom_fix()
+//   destroyed at 0              atom_destruction()
+// Rules run in declaration order, so when one hit crosses several levels the
+// break still runs before the destruction, as the old take_damage() did.
+// Only types that declare a breakpoint (integrity_failure > 0) or have damage
+// flavour get the rules, so plain items and structures cost nothing.
 
-/// A grille breaks into a passable stub at its breaking point, and is fixed
-/// when repaired above it. Replaces the integrity_failure crossing checks in
-/// take_damage()/repair_damage() for grilles; dq_rules_settle() keeps the old
-/// order (break before destruction) when one hit does both.
-/datum/rule/grille_breaks
-	name = "grille breaking point"
-	applies_to = list(/obj/structure/grille)
+/// Types whose examine text shows their damage band.
+#define DAMAGE_FLAVOUR_TYPES list( 	/obj/structure/window, 	/obj/structure/railing, 	/obj/structure/low_wall, 	/obj/structure/table, 	/obj/machinery/door, 	/obj/structure/expedition_demo_target, )
+
+/// The object breaks at its breaking point, and is fixed when repaired above
+/// it. Replaces the integrity_failure crossing checks in take_damage() and
+/// repair_damage().
+/datum/rule/integrity_breaks
+	name = "breaking point"
+	applies_to = list(/obj)
 	condition = list(
 		REQ_ABOVE(PRED_TARGET, PROP_INTEGRITY_FAILURE, RATIO(0)),
 		REQ_COMPARE(PRED_TARGET, PROP_INTEGRITY_RATIO, PRED_CMP_LTE, PRED_TARGET, PROP_INTEGRITY_FAILURE),
@@ -58,8 +69,76 @@
 	once = FALSE
 	replaces = RULE_REPLACES_INTEGRITY_BREAK
 
+/datum/rule/integrity_breaks/applies_to_type(path)
+	var/atom/A = path
+	return initial(A.uses_integrity) && initial(A.integrity_failure) > 0 && initial(A.max_integrity) > 0
+
+/// Damage flavour: one rule per band. Each sets damage_band while it holds.
+/datum/rule/damage_flavour
+	name = "damage flavour"
+	abstract_type = /datum/rule/damage_flavour
+	applies_to = DAMAGE_FLAVOUR_TYPES
+	effect_kind = RULE_EFFECT_BEHAVIOUR
+	effect_proc = /atom/proc/rule_enter_damage_band
+	exit_proc = /atom/proc/rule_leave_damage_band
+	once = FALSE
+
+/datum/rule/damage_flavour/applies_to_type(path)
+	var/atom/A = path
+	return initial(A.uses_integrity) && initial(A.max_integrity) > 0
+
+/datum/rule/damage_flavour/light
+	name = "damaged below 3/4"
+	band = DAMAGE_BAND_LIGHT
+	condition = list(REQ_BELOW(PRED_TARGET, PROP_INTEGRITY_RATIO, RATIO(0.75)))
+
+/datum/rule/damage_flavour/moderate
+	name = "damaged below 1/2"
+	band = DAMAGE_BAND_MODERATE
+	condition = list(REQ_BELOW(PRED_TARGET, PROP_INTEGRITY_RATIO, RATIO(0.5)))
+
+/datum/rule/damage_flavour/heavy
+	name = "damaged below 1/4"
+	band = DAMAGE_BAND_HEAVY
+	condition = list(REQ_BELOW(PRED_TARGET, PROP_INTEGRITY_RATIO, RATIO(0.25)))
+
+/// Destroyed at zero integrity. Declared after the break so one hit that does
+/// both breaks first.
+/datum/rule/integrity_destroyed
+	name = "destroyed"
+	applies_to = list(/obj)
+	condition = list(REQ_AT_MOST(PRED_TARGET, PROP_INTEGRITY_RATIO, RATIO(0)))
+	effect_kind = RULE_EFFECT_BEHAVIOUR
+	effect_proc = /atom/proc/rule_destroy
+	// Repaired from zero (a survivor of atom_destruction), it re-arms.
+	once = FALSE
+	replaces = RULE_REPLACES_INTEGRITY_DESTRUCTION
+
+/datum/rule/integrity_destroyed/applies_to_type(path)
+	var/atom/A = path
+	if(!initial(A.uses_integrity) || initial(A.max_integrity) <= 0)
+		return FALSE
+	if(initial(A.integrity_failure) > 0)
+		return TRUE
+	for(var/root in DAMAGE_FLAVOUR_TYPES)
+		if(ispath(path, root))
+			return TRUE
+	return FALSE
+
+#undef DAMAGE_FLAVOUR_TYPES
+
 /atom/proc/rule_break(datum/rule/rule)
-	atom_break()
+	atom_break(last_damage_flag)
 
 /atom/proc/rule_fix(datum/rule/rule)
 	atom_fix()
+
+/atom/proc/rule_destroy(datum/rule/rule)
+	atom_destruction(last_damage_flag)
+
+/atom/proc/rule_enter_damage_band(datum/rule/rule)
+	damage_band = max(damage_band, rule.band)
+
+/atom/proc/rule_leave_damage_band(datum/rule/rule)
+	if(damage_band >= rule.band)
+		damage_band = rule.band - 1

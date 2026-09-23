@@ -24,7 +24,7 @@
 #endif
 
 /// Bind-set hash shared with verdigris/ffi/src/abi.rs; checked by verdigris_init().
-#define VERDIGRIS_ABI "df8be88047025f27"
+#define VERDIGRIS_ABI "6ccd2ff67b8c7499"
 
 // Numeric registry (@dm-define constants in the Rust sources).
 
@@ -35,6 +35,17 @@
 /// Mask argument meaning "keep the mask Rust already has for this turf".
 // verdigris/domains/gas/src/turfs.rs
 #define AIR_BLOCK_KEEP -1
+
+/// Normal human core body temperature, 37 °C in K. The one body temperature:
+/// species, mobs, reagents and machines all read this define.
+// verdigris/domains/heat/src/consts.rs
+#define BODYTEMP_NORMAL 310.15
+
+/// Lowest temperature a fire exists at, and phoron's ignition point, K
+/// (100 °C). The gas crate's `FIRE_MINIMUM_TEMPERATURE_TO_EXIST` and
+/// `PLASMA_MINIMUM_BURN_TEMPERATURE` must equal it (tested there).
+// verdigris/domains/heat/src/consts.rs
+#define FIRE_MINIMUM_TEMPERATURE_TO_EXIST 373.15
 
 // verdigris/domains/gas/src/gas.rs
 #define GAS_DEPENDENCY_COMPOSITION 4
@@ -146,6 +157,11 @@
 // verdigris/domains/gas/src/lib.rs
 #define GAS_READ_HEADER 5
 
+/// Heat capacity DM gives vacuum (`HEAT_CAPACITY_VACUUM`), J/K: the capacity
+/// of a space or planet reservoir cell.
+// verdigris/domains/heat/src/consts.rs
+#define HEAT_CAPACITY_VACUUM 7000.0
+
 // verdigris/domains/gas/src/turfs/heat.rs
 #define HEAT_CELL_PLANET 2
 
@@ -189,6 +205,105 @@
 // verdigris/domains/gas/src/turfs/heat.rs
 #define HEAT_WATCH_SET 3
 
+/// Heat capacity of an 80 kg human body, J/K (about 3.5 kJ/(kg·K)).
+// verdigris/domains/heat/src/consts.rs
+#define HUMAN_HEAT_CAPACITY 280000.0
+
+/// APC flags.
+// verdigris/ffi/src/power.rs
+#define POWER_APC_ACTIVE 1
+
+// verdigris/ffi/src/power.rs
+#define POWER_APC_CHARGEMODE 32
+
+// verdigris/ffi/src/power.rs
+#define POWER_APC_FAILED 4
+
+// verdigris/ffi/src/power.rs
+#define POWER_APC_HAS_CELL 2
+
+// verdigris/ffi/src/power.rs
+#define POWER_APC_OPERATING 16
+
+// verdigris/ffi/src/power.rs
+#define POWER_APC_SHORTED 8
+
+// verdigris/ffi/src/power.rs
+#define POWER_EV_APC 4
+
+// verdigris/ffi/src/power.rs
+#define POWER_EV_BIND 1
+
+// verdigris/ffi/src/power.rs
+#define POWER_EV_BROWNOUT 6
+
+// verdigris/ffi/src/power.rs
+#define POWER_EV_REGION 2
+
+// verdigris/ffi/src/power.rs
+#define POWER_EV_RETIRED 3
+
+// verdigris/ffi/src/power.rs
+#define POWER_EV_SMES 5
+
+/// `key, terminal (-1 none), flags, max_charge, chargelevel, charge (-1
+/// keep), eqp, lgt, env (-1 keep), autoflag (-1 keep)`
+// verdigris/ffi/src/power.rs
+#define POWER_OP_APC 6
+
+/// `key, eqp, lgt, env`: the area's static load (W).
+// verdigris/ffi/src/power.rs
+#define POWER_OP_AREA_LOAD 7
+
+/// `key, x, y, z, d1, d2, z_above, z_below, link_id`
+// verdigris/ffi/src/power.rs
+#define POWER_OP_CABLE 1
+
+/// `key, charge`
+// verdigris/ffi/src/power.rs
+#define POWER_OP_CHARGE 10
+
+/// `key, x, y, z`
+// verdigris/ffi/src/power.rs
+#define POWER_OP_MACHINE 2
+
+/// `key, eqp, lgt, env`: one-off area use (W) for the next step.
+// verdigris/ffi/src/power.rs
+#define POWER_OP_ONEOFF 8
+
+/// `key, watts`: supply for the next step only.
+// verdigris/ffi/src/power.rs
+#define POWER_OP_PULSE 5
+
+/// `key`
+// verdigris/ffi/src/power.rs
+#define POWER_OP_REMOVE 3
+
+/// `key`: forget an APC or SMES.
+// verdigris/ffi/src/power.rs
+#define POWER_OP_REMOVE_STORAGE 11
+
+/// `key, flags, capacity, input_level, output_level, charge (-1 keep),
+/// terminal keys...`
+// verdigris/ffi/src/power.rs
+#define POWER_OP_SMES 9
+
+/// `key, watts`: persistent supply.
+// verdigris/ffi/src/power.rs
+#define POWER_OP_SUPPLY 4
+
+/// Numbers in a `vg_power_region` reply: region, avail, load, viewavail,
+/// viewload, netexcess, supply, eqp, lgt, env, capacity, members.
+// verdigris/ffi/src/power.rs
+#define POWER_REGION_STRIDE 12
+
+/// SMES flags.
+// verdigris/ffi/src/power.rs
+#define POWER_SMES_INPUT 1
+
+// verdigris/ffi/src/power.rs
+#define POWER_SMES_OUTPUT 2
+
 /// The probe domain: DM-written test cells (see the module docs).
 // verdigris/ffi/src/reactor.rs
 #define REACT_DOMAIN_PROBE 1
@@ -225,6 +340,43 @@
 /// Registration flag DM passes for a simulated turf (`SimulationFlags::SIMULATION_ANY`).
 // verdigris/domains/gas/src/turfs.rs
 #define SIMULATION_ANY 3
+
+/// Stefan–Boltzmann constant, W/(m²·K⁴). Written out in decimal because the
+/// define scanner reads plain literals only.
+// verdigris/domains/heat/src/consts.rs
+#define STEFAN_BOLTZMANN_CONSTANT 0.00000005670374419
+
+/// 0 °C, K.
+// verdigris/domains/heat/src/consts.rs
+#define T0C 273.15
+
+/// 20 °C, K.
+// verdigris/domains/heat/src/consts.rs
+#define T20C 293.15
+
+/// Cosmic microwave background, K. The floor of every body and gas.
+// verdigris/domains/heat/src/consts.rs
+#define TCMB 2.7
+
+/// Default heat capacity of an atom that declares no thermal properties, J/K.
+// verdigris/domains/heat/src/consts.rs
+#define THERMAL_CAPACITY_DEFAULT 2000.0
+
+/// An item's heat capacity per `w_class` step, J/K.
+// verdigris/domains/heat/src/consts.rs
+#define THERMAL_CAPACITY_PER_W_CLASS 400.0
+
+/// Default conductance of an atom to its surroundings, W/K.
+// verdigris/domains/heat/src/consts.rs
+#define THERMAL_CONDUCTANCE_DEFAULT 2.0
+
+/// An item's conductance per `w_class` step, W/K.
+// verdigris/domains/heat/src/consts.rs
+#define THERMAL_CONDUCTANCE_PER_W_CLASS 0.5
+
+/// Emissivity used when DM declares none.
+// verdigris/domains/heat/src/consts.rs
+#define THERMAL_EMISSIVITY_DEFAULT 0.9
 
 // Binds.
 
@@ -568,8 +720,9 @@
 	return call_ext(__f)(turf)
 
 /// `list(TCMB, T0C, T20C, space sky temperature, Stefan–Boltzmann constant,
-/// default emissivity, seconds per heat frame)`: the heat constants DM reads
-/// instead of duplicating them (H1 generates defines from these).
+/// default emissivity, seconds per heat frame, normal body temperature, human
+/// heat capacity, ignition temperature, vacuum heat capacity)`. DM gets these
+/// as generated defines; the unit tests compare the two (H1).
 // /proc/heat_constants (verdigris/domains/gas/src/turfs/heat.rs)
 /proc/vg_heat_constants()
 	var/static/__f = load_ext(VERDIGRIS, "byond:heat_constants_ffi")
@@ -820,6 +973,52 @@
 	var/static/__f = load_ext(VERDIGRIS, "byond:poll_material_power_graph_ffi")
 	VG_COUNT_FFI_CALL
 	return call_ext(__f)(handle)
+
+/// Draws up to `watts` for `key` from its region now; returns what was
+/// delivered.
+// /proc/power_draw (verdigris/ffi/src/power.rs)
+/proc/vg_power_draw(key, watts)
+	var/static/__f = load_ext(VERDIGRIS, "byond:power_draw_ffi")
+	VG_COUNT_FFI_CALL
+	return call_ext(__f)(key, watts)
+
+/// Applies a flat list of edits and commands (`op, n, n values` each; the
+/// `POWER_OP_*` defines). Topology waits for the next read or step, so a
+/// batch commits once.
+// /proc/power_edit (verdigris/ffi/src/power.rs)
+/proc/vg_power_edit(ops)
+	var/static/__f = load_ext(VERDIGRIS, "byond:power_edit_ffi")
+	VG_COUNT_FFI_CALL
+	return call_ext(__f)(ops)
+
+/// Keys of every cable and machine on `key`'s region.
+// /proc/power_members (verdigris/ffi/src/power.rs)
+/proc/vg_power_members(key)
+	var/static/__f = load_ext(VERDIGRIS, "byond:power_members_ffi")
+	VG_COUNT_FFI_CALL
+	return call_ext(__f)(key)
+
+/// The region `key` is on, `POWER_REGION_STRIDE` numbers, or null.
+// /proc/power_region (verdigris/ffi/src/power.rs)
+/proc/vg_power_region(key)
+	var/static/__f = load_ext(VERDIGRIS, "byond:power_region_ffi")
+	VG_COUNT_FFI_CALL
+	return call_ext(__f)(key)
+
+/// Forgets everything (world start and tests).
+// /proc/power_reset (verdigris/ffi/src/power.rs)
+/proc/vg_power_reset()
+	var/static/__f = load_ext(VERDIGRIS, "byond:power_reset_ffi")
+	VG_COUNT_FFI_CALL
+	return call_ext(__f)()
+
+/// One machinery tick. Returns the events as `type, n, n values` records
+/// (the `POWER_EV_*` defines).
+// /proc/power_step (verdigris/ffi/src/power.rs)
+/proc/vg_power_step()
+	var/static/__f = load_ext(VERDIGRIS, "byond:power_step_ffi")
+	VG_COUNT_FFI_CALL
+	return call_ext(__f)()
 
 /// Returns: If this cycle is interrupted by overtiming or not. Starts a processing turfs cycle.
 // /datum/controller/subsystem/air/proc/process_turfs_auxtools (verdigris/domains/gas/src/turfs/processing.rs)

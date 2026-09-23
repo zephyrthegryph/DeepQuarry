@@ -47,9 +47,6 @@ GLOBAL_VAR_INIT(Recycled_Items, 0)
 	operating = !operating
 	update()
 
-/obj/machinery/v_garbosystem/attack_ai(mob/user as mob)
-	return attack_hand(user)
-
 /obj/machinery/v_garbosystem/power_change()
 	if((. = ..()))
 		update()
@@ -156,7 +153,7 @@ GLOBAL_VAR_INIT(Recycled_Items, 0)
 	update()
 
 /obj/machinery/v_garbosystem/attackby(obj/item/W as obj, mob/user as mob)
-	if(W.is_crowbar())
+	if(W.has_tool_quality(TOOL_CROWBAR))
 		if(!operating)
 			to_chat(user, span_notice("You crowbar the filter hatch open, releasing the items trapped within."))
 			for(var/atom/movable/A in contents)

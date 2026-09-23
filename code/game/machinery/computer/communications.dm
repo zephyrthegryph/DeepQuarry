@@ -23,9 +23,6 @@
 		to_chat(user, "You scramble the communication routing circuits!")
 		return TRUE
 
-/obj/machinery/computer/communications/attack_ai(mob/user)
-	return attack_hand(user)
-
 /obj/machinery/computer/communications/attack_hand(mob/user)
 	if(..())
 		return

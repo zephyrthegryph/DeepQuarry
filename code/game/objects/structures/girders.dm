@@ -151,23 +151,52 @@
 	if(reinf_material)
 		reinforce_girder()
 
-/obj/structure/girder/attackby(obj/item/W as obj, mob/user as mob, tool_quality)
-	if(tool_quality == TOOL_WRENCH && state == 0)
-		if(anchored && !reinf_material)
-			playsound(src, W.usesound, 100, 1)
-			to_chat(user, span_notice("Now disassembling the girder..."))
-			if(do_after(user,(35 + round(max_integrity/50)) * W.toolspeed, target = src))
-				if(!src) return
-				to_chat(user, span_notice("You dissasembled the girder!"))
-				dismantle()
-		else if(!anchored)
-			playsound(src, W.usesound, 100, 1)
-			to_chat(user, span_notice("Now securing the girder..."))
-			if(do_after(user, 4 SECONDS * W.toolspeed, target = src))
-				to_chat(user, span_notice("You secured the girder!"))
-				reset_girder()
+/obj/structure/girder/wrench_act(mob/user, obj/item/W)
+	if(state != 0)
+		return ITEM_INTERACT_BLOCKING
+	if(anchored && !reinf_material)
+		if(use_tool(user, W, src, delay = 35 + round(max_integrity / 50), quality = TOOL_WRENCH, volume = 100, message_self = "Now disassembling the girder..."))
+			to_chat(user, span_notice("You dissasembled the girder!"))
+			dismantle()
+	else if(!anchored)
+		if(use_tool(user, W, src, delay = 4 SECONDS, quality = TOOL_WRENCH, volume = 100, message_self = "Now securing the girder..."))
+			to_chat(user, span_notice("You secured the girder!"))
+			reset_girder()
+	return ITEM_INTERACT_SUCCESS
 
-	else if(istype(W, /obj/item/pickaxe/plasmacutter))
+/obj/structure/girder/screwdriver_act(mob/user, obj/item/W)
+	if(state == 2)
+		if(use_tool(user, W, src, delay = 4 SECONDS, quality = TOOL_SCREWDRIVER, volume = 100, message_self = "Now unsecuring support struts..."))
+			to_chat(user, span_notice("You unsecured the support struts!"))
+			state = 1
+		return ITEM_INTERACT_SUCCESS
+	if(anchored && !reinf_material)
+		playsound(src, W.usesound, 100, 1)
+		reinforcing = !reinforcing
+		to_chat(user, span_notice("\The [src] can now be [reinforcing? "reinforced" : "constructed"]!"))
+		return ITEM_INTERACT_SUCCESS
+	return ITEM_INTERACT_BLOCKING
+
+/obj/structure/girder/wirecutter_act(mob/user, obj/item/W)
+	if(state != 1)
+		return ITEM_INTERACT_BLOCKING
+	if(use_tool(user, W, src, delay = 4 SECONDS, quality = TOOL_WIRECUTTER, volume = 100, message_self = "Now removing support struts..."))
+		to_chat(user, span_notice("You removed the support struts!"))
+		reinf_material.place_dismantled_product(get_turf(src))
+		reinf_material = null
+		reset_girder()
+	return ITEM_INTERACT_SUCCESS
+
+/obj/structure/girder/crowbar_act(mob/user, obj/item/W)
+	if(state != 0 || !anchored)
+		return ITEM_INTERACT_BLOCKING
+	if(use_tool(user, W, src, delay = 4 SECONDS, quality = TOOL_CROWBAR, volume = 100, message_self = "Now dislodging the girder..."))
+		to_chat(user, span_notice("You dislodged the girder!"))
+		displace()
+	return ITEM_INTERACT_SUCCESS
+
+/obj/structure/girder/attackby(obj/item/W as obj, mob/user as mob)
+	if(istype(W, /obj/item/pickaxe/plasmacutter))
 		to_chat(user, span_notice("Now slicing apart the girder..."))
 		if(do_after(user, 3 SECONDS * W.toolspeed, target = src))
 			if(!src) return
@@ -177,37 +206,6 @@
 	else if(istype(W, /obj/item/pickaxe/diamonddrill))
 		to_chat(user, span_notice("You drill through the girder!"))
 		dismantle()
-
-	else if(tool_quality == TOOL_SCREWDRIVER)
-		if(state == 2)
-			playsound(src, W.usesound, 100, 1)
-			to_chat(user, span_notice("Now unsecuring support struts..."))
-			if(do_after(user, 4 SECONDS * W.toolspeed, target = src))
-				if(!src) return
-				to_chat(user, span_notice("You unsecured the support struts!"))
-				state = 1
-		else if(anchored && !reinf_material)
-			playsound(src, W.usesound, 100, 1)
-			reinforcing = !reinforcing
-			to_chat(user, span_notice("\The [src] can now be [reinforcing? "reinforced" : "constructed"]!"))
-
-	else if(tool_quality == TOOL_WIRECUTTER && state == 1)
-		playsound(src, W.usesound, 100, 1)
-		to_chat(user, span_notice("Now removing support struts..."))
-		if(do_after(user, 4 SECONDS * W.toolspeed, target = src))
-			if(!src) return
-			to_chat(user, span_notice("You removed the support struts!"))
-			reinf_material.place_dismantled_product(get_turf(src))
-			reinf_material = null
-			reset_girder()
-
-	else if(tool_quality == TOOL_CROWBAR && state == 0 && anchored)
-		playsound(src, W.usesound, 100, 1)
-		to_chat(user, span_notice("Now dislodging the girder..."))
-		if(do_after(user, 4 SECONDS * W.toolspeed, target = src))
-			if(!src) return
-			to_chat(user, span_notice("You dislodged the girder!"))
-			displace()
 
 	else if(istype(W, /obj/item/stack/material))
 		if(reinforcing && !reinf_material)
@@ -224,22 +222,6 @@
 
 	else
 		return ..()
-
-/obj/structure/girder/wrench_act(mob/user, obj/item/W)
-	attackby(W, user, TOOL_WRENCH)
-	return TRUE
-
-/obj/structure/girder/screwdriver_act(mob/user, obj/item/W)
-	attackby(W, user, TOOL_SCREWDRIVER)
-	return TRUE
-
-/obj/structure/girder/wirecutter_act(mob/user, obj/item/W)
-	attackby(W, user, TOOL_WIRECUTTER)
-	return TRUE
-
-/obj/structure/girder/crowbar_act(mob/user, obj/item/W)
-	attackby(W, user, TOOL_CROWBAR)
-	return TRUE
 
 // Reaching 0 integrity dismantles the girder back into its material.
 /obj/structure/girder/atom_destruction(damage_flag)
@@ -361,12 +343,19 @@
 		dismantle()
 
 /obj/structure/girder/cult/wrench_act(mob/user, obj/item/W)
-	playsound(src, W.usesound, 100, 1)
-	to_chat(user, span_notice("Now disassembling the girder..."))
-	if(do_after(user, 4 SECONDS * W.toolspeed, target = src))
+	if(use_tool(user, W, src, delay = 4 SECONDS, quality = TOOL_WRENCH, volume = 100, message_self = "Now disassembling the girder..."))
 		to_chat(user, span_notice("You disassembled the girder!"))
 		dismantle()
-	return TRUE
+	return ITEM_INTERACT_SUCCESS
+
+// Cult girders have no struts or reinforcement to work on.
+/obj/structure/girder/cult/screwdriver_act(mob/user, obj/item/W)
+	return ITEM_INTERACT_BLOCKING
+/obj/structure/girder/cult/wirecutter_act(mob/user, obj/item/W)
+	return ITEM_INTERACT_BLOCKING
+/obj/structure/girder/cult/crowbar_act(mob/user, obj/item/W)
+	return ITEM_INTERACT_BLOCKING
+
 /obj/structure/girder/resin
 	name = "soft girder"
 	icon_state = "girder_resin"

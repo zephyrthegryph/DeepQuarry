@@ -117,9 +117,7 @@ GLOBAL_LIST_EMPTY(light_type_cache)
 	if(stage == 3)
 		to_chat(user, "You have to unscrew the case first.")
 		return ITEM_INTERACT_BLOCKING
-	playsound(src, tool.usesound, 75, TRUE)
-	to_chat(user, "You begin deconstructing [src].")
-	if(!do_after(user, 3 SECONDS * tool.toolspeed, target = src))
+	if(!use_tool(user, tool, src, delay = 3 SECONDS, volume = 75, message_self = "You begin deconstructing [src]."))
 		return ITEM_INTERACT_SUCCESS
 	new /obj/item/stack/material/steel(get_turf(src), sheets_refunded)
 	user.visible_message("[user.name] deconstructs [src].", "You deconstruct [src].", "You hear a noise.")
@@ -833,8 +831,8 @@ GLOBAL_LIST_EMPTY(light_type_cache)
 		if(istype(H))
 			if(H.species.heat_level_1 > LIGHT_BULB_TEMPERATURE)
 				prot = 1
-			else if(H.gloves)
-				var/obj/item/clothing/gloves/G = H.gloves
+			else if(H.get_equipped_item(SLOT_ID_GLOVES))
+				var/obj/item/clothing/gloves/G = H.get_equipped_item(SLOT_ID_GLOVES)
 				if(G.max_heat_protection_temperature)
 					if(G.max_heat_protection_temperature > LIGHT_BULB_TEMPERATURE)
 						prot = 1
@@ -1097,6 +1095,9 @@ GLOBAL_LIST_EMPTY(light_type_cache)
 /obj/machinery/light/power_change()
 	return
 
+/obj/machinery/light
+	power_subscriber = FALSE
+
 // called when on fire
 
 /obj/machinery/light/fire_act(exposed_temperature, exposed_volume)
@@ -1338,7 +1339,7 @@ GLOBAL_LIST_EMPTY(light_type_cache)
 	if(!proximity) return
 	if(istype(target, /obj/machinery/light))
 		return
-	if(user.a_intent != I_HURT)
+	if(!IS_HARMING(user))
 		return
 
 	shatter()

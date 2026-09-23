@@ -157,13 +157,8 @@
 	return TRUE
 
 /obj/machinery/microwave/proc/do_repair_step(mob/user, obj/item/tool, full_repair = FALSE)
-	user.visible_message(
-		span_infoplain(span_bold("\The [user]") + " starts to fix part of \the [src]."),
-		span_notice("You start to fix part of \the [src].")
-	)
-	playsound(src, tool.usesound, 50, 1)
-
-	if(!do_after(user, 2 SECONDS * tool.toolspeed, target = src))
+	if(!use_tool(user, tool, src, delay = 2 SECONDS, volume = 50, \
+			message_self = "You start to fix part of \the [src].", message_others = "\The [user] starts to fix part of \the [src]."))
 		return TRUE
 
 	user.visible_message(
@@ -293,7 +288,7 @@
 	. = ..()
 
 /obj/machinery/microwave/attack_hand(mob/user as mob)
-	if(user.a_intent == I_GRAB)
+	if(IS_GRABBING(user))
 		if(paicard)
 			ejectpai(user)
 			return

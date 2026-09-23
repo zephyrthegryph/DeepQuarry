@@ -75,7 +75,7 @@
 	icon = 'icons/mob/pai_hud.dmi'
 
 /datum/hud
-	var/list/hud_elements = list()
+	var/list/hud_elements
 
 /mob/living/silicon/pai/create_mob_hud(datum/hud/HUD)
 	..()
@@ -97,47 +97,12 @@
 
 	var/atom/movable/screen/pai/using
 
-	//Small intent quarters
-
-	using = new /atom/movable/screen()
-	using.name = I_HELP
-	using.icon = ui_style
-	using.icon_state = "intent_help-s"
-	using.screen_loc = ui_acti
-	using.alpha = ui_alpha
-	using.layer = LAYER_HUD_ITEM //These sit on the intent box
-	HUD.adding += using
-	HUD.help_intent = using
-
-	using = new /atom/movable/screen()
-	using.name = I_DISARM
-	using.icon = ui_style
-	using.icon_state = "intent_disarm-n"
-	using.screen_loc = ui_acti
-	using.alpha = ui_alpha
-	using.layer = LAYER_HUD_ITEM
-	HUD.adding += using
-	HUD.disarm_intent = using
-
-	using = new /atom/movable/screen()
-	using.name = I_GRAB
-	using.icon = ui_style
-	using.icon_state = "intent_grab-n"
-	using.screen_loc = ui_acti
-	using.alpha = ui_alpha
-	using.layer = LAYER_HUD_ITEM
-	HUD.adding += using
-	HUD.grab_intent = using
-
-	using = new /atom/movable/screen()
-	using.name = I_HURT
-	using.icon = ui_style
-	using.icon_state = "intent_harm-n"
-	using.screen_loc = ui_acti
-	using.alpha = ui_alpha
-	using.layer = LAYER_HUD_ITEM
-	HUD.adding += using
-	HUD.hurt_intent = using
+	// The combat mode button (it replaced the intent selector).
+	var/atom/movable/screen/combat_mode/combat_button = HUD.make_combat_mode_button(src, "intent_help-s", "intent_harm-s")
+	combat_button.icon = ui_style
+	combat_button.alpha = ui_alpha
+	combat_button.layer = LAYER_HUD_ITEM
+	HUD.adding += combat_button
 
 	//Move intent (walk/run)
 	using = new /atom/movable/screen()
@@ -167,7 +132,7 @@
 	pullin.name = "pull"
 	pullin.screen_loc = ui_movi
 	HUD.hotkeybuttons += pullin
-	HUD.hud_elements |= pullin
+	LAZYOR(HUD.hud_elements, pullin)
 
 	//Health status
 	healths = new /atom/movable/screen()
@@ -175,7 +140,7 @@
 	healths.icon_state = "health0"
 	healths.name = "health"
 	healths.screen_loc = ui_health
-	HUD.hud_elements |= healths
+	LAZYOR(HUD.hud_elements, healths)
 
 	pain = new /atom/movable/screen( null )
 
@@ -185,12 +150,12 @@
 	zone_sel.alpha = ui_alpha
 	zone_sel.cut_overlays()
 	zone_sel.update_icon()
-	HUD.hud_elements |= zone_sel
+	LAZYOR(HUD.hud_elements, zone_sel)
 
 	pai_fold_display = new /atom/movable/screen/pai/pai_fold_display()
 	pai_fold_display.screen_loc = ui_health
 	pai_fold_display.icon_state = "folded"
-	HUD.hud_elements |= pai_fold_display
+	LAZYOR(HUD.hud_elements, pai_fold_display)
 
 	//Choose chassis button
 	using = new /atom/movable/screen/pai()
@@ -459,9 +424,8 @@
 		if(gun_setting_icon)
 			client.screen |= gun_setting_icon
 		if(hud_used.hud_elements)
-			client.screen |= hud_used.hud_elements
+			if(length(hud_used.hud_elements)) client.screen |= hud_used.hud_elements
 
-		hud_used?.action_intent.screen_loc = ui_acti //Restore intent selection to the original position
 		client.screen += zone_sel				//This one is a special snowflake
 
 	hud_used.hidden_inventory_update()

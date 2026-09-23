@@ -73,6 +73,7 @@
 	B.escape_stun = 5
 	B.contamination_color = "grey"
 	B.contamination_flavor = "Wet"
+	B.own_emote_lists()
 	B.emote_lists[DM_DIGEST] = list(
 		"The blaidd growls as the gut squeeze over your body, smearing caustic oozes into your form!",
 		"You are turned over and walls clench around you as the beast moves about, tossing more digestive juices over your body.",

@@ -22,7 +22,7 @@
 	var/artifact_id = ""
 	var/artifact_distance = -1
 	var/source_mineral = REAGENT_ID_CHLORINE
-	var/list/find_presence = list()
+	var/list/find_presence
 
 /datum/geosample/New(turf/simulated/mineral/container)
 	UpdateTurf(container)
@@ -49,20 +49,20 @@
 			source_mineral = container.mineral.xarch_source_mineral
 
 	if(prob(75))
-		find_presence[REAGENT_ID_PHOSPHORUS] = rand(1, 500) / 100
+		LAZYSET(find_presence, REAGENT_ID_PHOSPHORUS, rand(1, 500) / 100)
 	if(prob(25))
-		find_presence[REAGENT_ID_MERCURY] = rand(1, 500) / 100
-	find_presence[REAGENT_ID_CHLORINE] = rand(500, 2500) / 100
+		LAZYSET(find_presence, REAGENT_ID_MERCURY, rand(1, 500) / 100)
+	LAZYSET(find_presence, REAGENT_ID_CHLORINE, rand(500, 2500) / 100)
 
 	for(var/datum/find/F in container.finds)
 		var/responsive_reagent = get_responsive_reagent(F.find_type)
-		find_presence[responsive_reagent] = 25 //Just making this phoron because this this feature was axed 8 years ago.
+		LAZYSET(find_presence, responsive_reagent, 25) //Just making this phoron because this this feature was axed 8 years ago.
 
 	var/total_presence = 0
 	for(var/carrier in find_presence)
-		total_presence += find_presence[carrier]
+		total_presence += LAZYACCESS(find_presence, carrier)
 	for(var/carrier in find_presence)
-		find_presence[carrier] = find_presence[carrier] / total_presence
+		LAZYSET(find_presence, carrier, LAZYACCESS(find_presence, carrier) / total_presence)
 
 /datum/geosample/proc/UpdateNearbyArtifactInfo(turf/simulated/mineral/container)
 	if(!container || !istype(container))

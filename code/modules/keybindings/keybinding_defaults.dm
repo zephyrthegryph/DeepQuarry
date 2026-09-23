@@ -52,13 +52,16 @@
 		list("holster", "Holster", KEYBIND_CAT_ITEMS, "holster", null, KB_HUMAN("H", "CTRL+H")),
 		list("toggle_gun_mode", "Toggle gun aiming mode", KEYBIND_CAT_ITEMS, "toggle-gun-mode", null, KB_BOTH("J", "CTRL+J")),
 
-		// Intents
-		list("intent_help", "Help intent", KEYBIND_CAT_INTENTS, "a-intent help", null, KB_HUMAN("1", "CTRL+1")),
-		list("intent_disarm", "Disarm intent", KEYBIND_CAT_INTENTS, "a-intent disarm", null, KB_HUMAN("2", "CTRL+2")),
-		list("intent_grab", "Grab intent", KEYBIND_CAT_INTENTS, "a-intent grab", null, KB_HUMAN("3", "CTRL+3")),
-		list("intent_harm", "Harm intent", KEYBIND_CAT_INTENTS, "a-intent harm", null, KB_HUMAN("4", "CTRL+4")),
-		list("intent_left", "Cycle intent left", KEYBIND_CAT_INTENTS, "a-intent left", null, list(KEYBIND_PROFILE_DEFAULT = list("F", "CTRL+F"), KEYBIND_PROFILE_ROBOT = list("4", "CTRL+4", "F", "CTRL+F"))),
-		list("intent_right", "Cycle intent right", KEYBIND_CAT_INTENTS, "a-intent right", null, KB_BOTH("INSERT", "G", "CTRL+G")),
+		// Combat mode (I6; code/modules/mob/combat_mode.dm). It replaced the intents, on
+		// the same keys: 1 and 4 (help and harm) turn it off and on, the two
+		// cycle keys toggle it, and 2 and 3 (disarm and grab) became the Disarm
+		// and Grab keys, held like modifiers.
+		list("combat_mode_off", "Combat mode off", KEYBIND_CAT_COMBAT, ".combat-mode off", null, KB_HUMAN("1", "CTRL+1")),
+		list(COMBAT_DISARM_BINDING, "Disarm (hold)", KEYBIND_CAT_COMBAT, ".attack-variant [ATTACK_VARIANT_DISARM]", ".attack-variant-release [ATTACK_VARIANT_DISARM]", KB_HUMAN("2", "CTRL+2")),
+		list(COMBAT_GRAB_BINDING, "Grab (hold)", KEYBIND_CAT_COMBAT, ".attack-variant [ATTACK_VARIANT_GRAB]", ".attack-variant-release [ATTACK_VARIANT_GRAB]", KB_HUMAN("3", "CTRL+3")),
+		list("combat_mode_on", "Combat mode on", KEYBIND_CAT_COMBAT, ".combat-mode on", null, KB_HUMAN("4", "CTRL+4")),
+		list("combat_mode_toggle", "Toggle combat mode", KEYBIND_CAT_COMBAT, ".combat-mode toggle", null, list(KEYBIND_PROFILE_DEFAULT = list("F", "CTRL+F"), KEYBIND_PROFILE_ROBOT = list("4", "CTRL+4", "F", "CTRL+F"))),
+		list("combat_mode_toggle_alt", "Toggle combat mode (second key)", KEYBIND_CAT_COMBAT, ".combat-mode toggle", null, KB_BOTH("INSERT", "G", "CTRL+G")),
 
 		// Robot modules
 		list("module_1", "Module 1", KEYBIND_CAT_ROBOT, "toggle-module 1", null, KB_ROBOT("1", "CTRL+1")),

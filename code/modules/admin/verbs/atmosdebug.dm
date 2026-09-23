@@ -41,13 +41,7 @@ ADMIN_VERB_VISIBILITY(powerdebug, ADMIN_VERB_VISIBLITY_FLAG_LOCALHOST)
 ADMIN_VERB(powerdebug, R_DEBUG, "Check Power", "Checks all powernets (Only use on a test server).", ADMIN_CATEGORY_MAPPING)
 	feedback_add_details("admin_verb","CPOW") //If you are copy-pasting this, ensure the 2nd parameter is unique to the new proc!
 
-	for (var/datum/powernet/PN in SSmachines.powernets)
-		if (!PN.nodes || !PN.nodes.len)
-			if(PN.cables && (PN.cables.len > 1))
-				var/obj/structure/cable/C = PN.cables[1]
-				to_chat(user, span_filter_adminlog("Powernet with no nodes! (number [PN.number]) - example cable at [C.x], [C.y], [C.z] in area [get_area(C.loc)]"))
-
-		if (!PN.cables || (PN.cables.len < 10))
-			if(PN.cables && (PN.cables.len > 1))
-				var/obj/structure/cable/C = PN.cables[1]
-				to_chat(user, span_filter_adminlog("Powernet with fewer than 10 cables! (number [PN.number]) - example cable at [C.x], [C.y], [C.z] in area [get_area(C.loc)]"))
+	for(var/id in SSmachines.power_regions)
+		var/datum/powernet/PN = SSmachines.power_regions[id]
+		if(!length(PN.nodes))
+			to_chat(user, span_filter_adminlog("Power region [id] has no machines ([PN.avail] W available)."))

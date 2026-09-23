@@ -53,7 +53,7 @@
 			self.udder.add_reagent(REAGENT_ID_MILK, rand(5, 10))
 
 /mob/living/simple_mob/animal/passive/cow/attack_hand(mob/living/carbon/M as mob)
-	if(!stat && M.a_intent == I_DISARM && icon_state != icon_dead)
+	if(!stat && IS_DISARMING(M) && icon_state != icon_dead)
 		M.visible_message(span_warning("[M] tips over [src]."),span_notice("You tip over [src]."))
 		Weaken(30)
 		icon_state = icon_dead

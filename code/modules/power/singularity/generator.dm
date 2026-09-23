@@ -50,8 +50,7 @@
 	visible_message(span_infoplain(span_bold("\The [user]") + " adjusts \the [src]'s mechanisms."))
 	if(panel_open && do_after(user, 3 SECONDS, target = src))
 		to_chat(user, span_notice("\The [src] looks like it could be modified."))
-		if(panel_open && do_after(user, 8 SECONDS * W.toolspeed, target = src))
-			playsound(src, W.usesound, 50, 1)
+		if(panel_open && use_tool(user, W, src, delay = 8 SECONDS, volume = 50))
 			to_chat(user, span_cult("\The [src] looks like it could be adapted to forge advanced materials via particle acceleration, somehow.."))
 	else
 		to_chat(user, span_notice("\The [src]'s mechanisms look secure."))

@@ -3,7 +3,7 @@
 	desc = "A strange robotic creature."
 	endurance = 700
 
-	armor = list(melee = 30, bullet = 30, laser = 30, energy = 30, bomb = 30, bio = 100, rad = 100)
+	armor_spec = "melee=30;bullet=30;laser=30;energy=30;bomb=30;bio=100;rad=100"
 
 	pilot_type = /mob/living/simple_mob/humanoid/merc/melee/sword/space
 	wreckage = /obj/structure/loot_pile/mecha/gygax/dark/adv
