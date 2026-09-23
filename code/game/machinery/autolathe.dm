@@ -175,9 +175,9 @@
 			"id" = design.id,
 			"categories" = design.category,
 			"icon" = "[size == size32x32 ? "" : "[size] "][css_id]",
-			"materialConfigurable" = length(design.material_slots) > 0,
+			"materialConfigurable" = !!design.material_template,
 			"materialProfile" = design.material_application,
-			"materialSlots" = material_slots_tgui(design.material_slots),
+			"materialSlots" = material_slots_tgui(material_template_singleton(design.material_template), design.material_total),
 		)
 
 		output += list(design_data)
@@ -255,7 +255,7 @@
 
 	// Material-selectable designs let the user pick which loaded material to use.
 	var/list/chosen_materials = design.material_choices_from_params(params)
-	if(length(design.material_slots) && !design.material_choice_valid(chosen_materials))
+	if(design.material_template && !design.material_choice_valid(chosen_materials))
 		atom_say("Select valid materials for every required construction slot.")
 		return
 	var/list/effective_mats = design.effective_materials(chosen_materials)

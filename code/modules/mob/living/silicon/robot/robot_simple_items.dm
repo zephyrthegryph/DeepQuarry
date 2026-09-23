@@ -216,7 +216,7 @@
 	name = "cable coil synthesizer"
 	desc = "A device that makes cable."
 	gender = NEUTER
-	DEFAULT_MATTER(null)
+	material_total = 0
 	uses_charge = 1
 	charge_costs = list(1)
 	custom_handling = TRUE

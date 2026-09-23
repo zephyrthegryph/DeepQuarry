@@ -11,7 +11,7 @@
 	slot_flags = SLOT_BACK
 	w_class = ITEMSIZE_HUGE
 
-	DEFAULT_MATTER(list(MAT_STEEL = 10000,MAT_GLASS = 2500))
+	MATERIAL_MIX(list(MAT_STEEL = 10000,MAT_GLASS = 2500))
 
 	var/code = 2
 	electric_pack = TRUE

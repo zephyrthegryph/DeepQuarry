@@ -576,8 +576,8 @@
 				else
 					if(volume && water)
 						water.add_charge(volume)
-					var/list/item_matter = T.get_matter()
-					if(recycles && item_matter)
+					var/list/item_matter = T.material_totals()
+					if(recycles && length(item_matter))
 						for(var/material in item_matter)
 							var/total_material = item_matter[material]
 							if(istype(T,/obj/item/stack))

@@ -153,14 +153,3 @@
 #define DEFAULT_CIRCUIT_MATERIALS list(MAT_GLASS = 2000)
 #define RECYCLE_CIRCUIT_MATERIALS list(MAT_GLASS = 40)
 
-/**
- * Declares a type's default material composition ("matter"). Use in a type body:
- *     DEFAULT_MATTER(list(MAT_STEEL = 150, MAT_GLASS = 50))
- * DEFAULT_MATTER(null) clears a parent's composition.
- *
- * Expands to a default_matter() override returning a proc-local static list: one shared,
- * read-only table per declaring type, inherited by subtypes that don't redeclare it. The static
- * initialiser also registers the table by type (at world start), so dq_type_default_matter()
- * can read it without an instance. See code/game/objects/item_matter.dm.
- */
-#define DEFAULT_MATTER(L) default_matter() { var/static/list/_default_matter = dq_register_default_matter(__TYPE__, L); return _default_matter; }

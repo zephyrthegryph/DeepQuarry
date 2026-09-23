@@ -29,7 +29,9 @@
 	var/one_per_turf = FALSE
 	/// Optional universal material-part definitions. Costs are material units;
 	/// the crafting component consumes ordinary nearby material stacks.
-	var/list/material_slots
+	var/material_template
+	/// Material units the blueprint splits between its parts.
+	var/material_total = 0
 
 /datum/crafting_recipe/New()
 	var/list/remaining_requirements = list()
@@ -43,9 +45,10 @@
 				continue
 		remaining_requirements += list(requirement_group)
 	if(application && material_total)
-		var/list/inferred_slots = material_slots_for_product(result, application, material_total)
-		if(length(inferred_slots) && material_slots_normalize_total(inferred_slots, material_total))
-			material_slots = inferred_slots
+		var/inferred_template = material_template_for_product(result, application)
+		if(inferred_template)
+			material_template = inferred_template
+			src.material_total = material_total
 			reqs = remaining_requirements
 	if(!(result in reqs))
 		blacklist += result

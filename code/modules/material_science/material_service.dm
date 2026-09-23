@@ -50,7 +50,7 @@ GLOBAL_VAR_INIT(next_material_assembly_id, 0)
 /// Single admission point for material simulation. Callers report a physical
 /// event and normalized severity; they never decide lifecycle from their type.
 /obj/proc/material_service_event(event, severity = 0, observed_temperature)
-	if(!length(construction_materials))
+	if(!has_functional_construction())
 		return
 	var/admit = !!material_service || material_custom_assembly
 	if(!admit)
@@ -88,7 +88,7 @@ GLOBAL_VAR_INIT(next_material_assembly_id, 0)
 /// Observe a pressure boundary using the same admission policy for every tank,
 /// pipe, canister, and machine. Composition and thermal hazards share it too.
 /obj/proc/material_observe_gases(datum/gas_mixture/internal, datum/gas_mixture/external)
-	if(!internal || !length(construction_materials))
+	if(!internal || !has_functional_construction())
 		return material_service
 	var/internal_temperature = internal.return_temperature()
 	var/external_temperature = external?.return_temperature() || TCMB

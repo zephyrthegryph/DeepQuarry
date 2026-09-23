@@ -128,7 +128,7 @@
 
 		// A physical design must retain either fixed non-material requirements or a
 		// construction blueprint. Material mass is moved into blueprint slots at init.
-		if(!length(design.materials) && !length(design.material_slots))
+		if(!length(design.materials) && !design.material_template)
 			TEST_NOTICE(src, "TECHWEB DESIGN - [design.type] has no materials assigned.")
 			failed = TRUE
 		else

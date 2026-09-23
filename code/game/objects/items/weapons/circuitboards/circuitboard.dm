@@ -9,7 +9,7 @@
 	throwforce = 5.0
 	throw_speed = 3
 	throw_range = 15
-	DEFAULT_MATTER(RECYCLE_CIRCUIT_MATERIALS)
+	MATERIAL_BULK(MAT_GLASS, 40)
 	var/build_path = null
 	var/board_type = new /datum/frame/frame_types/computer
 	var/list/req_components = null

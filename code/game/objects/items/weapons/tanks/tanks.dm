@@ -3,6 +3,7 @@
 GLOBAL_LIST_EMPTY(tank_gauge_cache)
 
 /obj/item/tank
+	material_template = /datum/material_template/pressure
 	name = "tank"
 	icon = 'icons/obj/tank.dmi'
 	sprite_sheets = list(
@@ -59,7 +60,6 @@ GLOBAL_LIST_EMPTY(tank_gauge_cache)
 
 /obj/item/tank/Initialize(mapload)
 	. = ..()
-	ensure_material_construction(MATERIAL_APPLICATION_PRESSURE)
 
 	src.init_proxy()
 	src.air_contents = new /datum/gas_mixture()

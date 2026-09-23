@@ -11,7 +11,7 @@
 	w_class = ITEMSIZE_SMALL
 	throw_speed = 5
 	throw_range = 10
-	DEFAULT_MATTER(list(MAT_STEEL = 200))
+	MATERIAL_BULK(MAT_STEEL, 200)
 	var/mode = 1;
 	var/advscan = SCANNABLE_BENEFICIAL
 	var/showadvscan = 1

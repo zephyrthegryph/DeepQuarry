@@ -44,6 +44,8 @@ GLOBAL_LIST_INIT(possible_cable_coil_colours, list(
 	))
 
 /obj/structure/cable
+	material_template = /datum/material_template/cable
+	material_total = SHEET_MATERIAL_AMOUNT
 	level = 1
 	anchored =TRUE
 	unacidable = TRUE
@@ -70,9 +72,8 @@ GLOBAL_LIST_INIT(possible_cable_coil_colours, list(
 
 /obj/structure/cable/proc/set_engineered_material(material_id)
 	engineered_material_id = material_id
-	if(material_id && !length(construction_materials))
-		var/list/slots = default_material_slots(MATERIAL_APPLICATION_CABLE, SHEET_MATERIAL_AMOUNT)
-		apply_material_construction(list(MATERIAL_ROLE_CONDUCTOR = material_id), slots, MATERIAL_APPLICATION_CABLE)
+	if(material_id && !material_overrides)
+		apply_material_construction(list(MATERIAL_ROLE_CONDUCTOR = material_id), /datum/material_template/cable, SHEET_MATERIAL_AMOUNT)
 	var/datum/material/material = engineered_material()
 	if(material?.icon_colour)
 		color = material.icon_colour
@@ -115,7 +116,6 @@ GLOBAL_LIST_INIT(possible_cable_coil_colours, list(
 
 /obj/structure/cable/Initialize(mapload)
 	. = ..()
-	ensure_material_construction(MATERIAL_APPLICATION_CABLE)
 
 	// ensure d1 & d2 reflect the icon_state for entering and exiting cable
 
@@ -603,6 +603,7 @@ GLOBAL_LIST_INIT(possible_cable_coil_colours, list(
 #define MAXCOIL 30
 
 /obj/item/stack/cable_coil
+	material_template = /datum/material_template/cable
 	name = "cable coil"
 	icon = 'icons/obj/power.dmi'
 	icon_state = "coil"
@@ -615,7 +616,7 @@ GLOBAL_LIST_INIT(possible_cable_coil_colours, list(
 	w_class = ITEMSIZE_SMALL
 	throw_speed = 2
 	throw_range = 5
-	DEFAULT_MATTER(list(MAT_STEEL = 50, MAT_GLASS = 20))
+	material_total = 50 + 20
 	slot_flags = SLOT_BELT
 	item_state = "coil"
 	attack_verb = list("whipped", "lashed", "disciplined", "flogged")
@@ -628,7 +629,6 @@ GLOBAL_LIST_INIT(possible_cable_coil_colours, list(
 
 /obj/item/stack/cable_coil/Initialize(mapload, length = MAXCOIL, param_color = null, material_id)
 	. = ..()
-	ensure_material_construction(MATERIAL_APPLICATION_CABLE)
 	amount = length
 	engineered_material_id = material_id
 	if (param_color) // It should be red by default, so only recolor it if parameter was specified.
@@ -1062,7 +1062,7 @@ GLOBAL_LIST_INIT(possible_cable_coil_colours, list(
 	w_class = ITEMSIZE_SMALL
 	throw_speed = 2
 	throw_range = 5
-	DEFAULT_MATTER(list(MAT_STEEL = 50, MAT_GLASS = 20))
+	material_total = 50 + 20
 	slot_flags = SLOT_BELT
 	attack_verb = list("whipped", "lashed", "disciplined", "flogged")
 	stacktype = null

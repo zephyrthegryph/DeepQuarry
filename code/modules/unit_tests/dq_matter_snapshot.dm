@@ -1,4 +1,4 @@
-// Generated once from the pre-DEFAULT_MATTER source (commit 62e4e63d7b) by reading
+// Generated once from the pre-conversion source (commit 62e4e63d7b) by reading
 // `/type::matter` for every /obj/item subtype. Lists only the types whose value differs
 // from their parent's; every other type inherits its nearest listed ancestor's value.
 // Do not regenerate from the current tree: this is the reference the conversion is checked against.

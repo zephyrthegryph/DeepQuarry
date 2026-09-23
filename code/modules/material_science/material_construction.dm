@@ -1,243 +1,7 @@
 /// Generic material construction shared by lathes, hand crafting, and objects.
-/// Slot definitions are plain immutable lists owned by a recipe/design. Finished
-/// objects store only role -> canonical material id and role -> amount.
-
-/proc/material_slot(role, label, amount, default_material, optional = FALSE, description = null, migrated_description = null)
-	// Accept the former seven-argument call shape during the source migration;
-	// the discarded sixth value carried the deleted categorical restriction.
-	if(!isnull(migrated_description))
-		description = migrated_description
-	return list(
-		"role" = role,
-		"label" = label,
-		"amount" = amount,
-		"default" = default_material,
-		"optional" = optional,
-		"description" = description,
-	)
-
-/proc/default_material_slots(application, total_amount)
-	var/amount = max(round(total_amount), 1)
-	switch(application)
-		if(MATERIAL_APPLICATION_TOOL)
-			return list(
-				MATERIAL_ROLE_WORKING = material_slot(MATERIAL_ROLE_WORKING, "Working head", round(amount * 0.7), MAT_STEEL, FALSE, null, "Controls hardness, wear, force, and heat tolerance."),
-				MATERIAL_ROLE_GRIP = material_slot(MATERIAL_ROLE_GRIP, "Grip", max(1, amount - round(amount * 0.7)), MAT_PLASTIC, FALSE, null, "Controls insulation, handling, and shock isolation."),
-			)
-		if(MATERIAL_APPLICATION_SURGICAL)
-			return list(
-				MATERIAL_ROLE_WORKING = material_slot(MATERIAL_ROLE_WORKING, "Working surface", round(amount * 0.75), MAT_STEEL, FALSE, null, "Controls precision, edge retention, cleanliness, and corrosion."),
-				MATERIAL_ROLE_GRIP = material_slot(MATERIAL_ROLE_GRIP, "Grip", max(1, amount - round(amount * 0.75)), MAT_PLASTIC, FALSE, null, "Controls handling and thermal/electrical isolation."),
-			)
-		if(MATERIAL_APPLICATION_CELL)
-			return list(
-				MATERIAL_ROLE_CONDUCTOR = material_slot(MATERIAL_ROLE_CONDUCTOR, "Current collector", round(amount * 0.35), MAT_COPPER, FALSE, null, "Controls resistance, discharge current, and resistive heat."),
-				MATERIAL_ROLE_ELECTRODE = material_slot(MATERIAL_ROLE_ELECTRODE, "Electrodes", round(amount * 0.3), MAT_COPPER, FALSE, null, "Controls charge capacity and electrochemical stability."),
-				MATERIAL_ROLE_STRUCTURE = material_slot(MATERIAL_ROLE_STRUCTURE, "Casing", round(amount * 0.2), MAT_STEEL, FALSE, null, "Controls impact, pressure, and chemical durability."),
-				MATERIAL_ROLE_THERMAL = material_slot(MATERIAL_ROLE_THERMAL, "Thermal buffer", round(amount * 0.1), MAT_COPPER, FALSE, null, "Absorbs and spreads operating heat around the cell."),
-				MATERIAL_ROLE_INSULATION = material_slot(MATERIAL_ROLE_INSULATION, "Insulation", max(1, round(amount * 0.05)), MAT_GLASS, FALSE, null, "Controls heat leakage, electrical isolation, and EMP coupling."),
-			)
-		if(MATERIAL_APPLICATION_ARMOR)
-			return list(
-				MATERIAL_ROLE_STRUCTURE = material_slot(MATERIAL_ROLE_STRUCTURE, "Load-bearing layer", round(amount * 0.65), MAT_STEEL, FALSE, null, "Controls strength, mass, and fracture behavior."),
-				MATERIAL_ROLE_LINER = material_slot(MATERIAL_ROLE_LINER, "Inner liner", round(amount * 0.15), MAT_CLOTH, FALSE, null, "Controls wearer contact, biocompatibility, and thermal comfort."),
-				MATERIAL_ROLE_JACKET = material_slot(MATERIAL_ROLE_JACKET, "Outer layer", max(1, round(amount * 0.2)), MAT_PLASTIC, FALSE, null, "Controls corrosion, radiation exposure, and surface responses."),
-			)
-		if(MATERIAL_APPLICATION_PRESSURE)
-			return list(
-				MATERIAL_ROLE_STRUCTURE = material_slot(MATERIAL_ROLE_STRUCTURE, "Pressure shell", round(amount * 0.7), MAT_STEEL, FALSE, null, "Controls pressure limit, fracture, and high-temperature strength."),
-				MATERIAL_ROLE_LINER = material_slot(MATERIAL_ROLE_LINER, "Exposed liner", round(amount * 0.2), MAT_GLASS, FALSE, null, "Controls corrosion, sorption, and contact chemistry."),
-				MATERIAL_ROLE_INSULATION = material_slot(MATERIAL_ROLE_INSULATION, "Thermal isolation", max(1, round(amount * 0.1)), MAT_PLASTIC, FALSE, null, "Layer controlling heat transfer through the vessel wall."),
-			)
-		if(MATERIAL_APPLICATION_MACHINE_PART)
-			return list(
-				MATERIAL_ROLE_CONDUCTOR = material_slot(MATERIAL_ROLE_CONDUCTOR, "Functional element", round(amount * 0.6), MAT_COPPER, FALSE, null, "Controls electrical or electromechanical performance."),
-				MATERIAL_ROLE_STRUCTURE = material_slot(MATERIAL_ROLE_STRUCTURE, "Housing", round(amount * 0.3), MAT_STEEL, FALSE, null, "Controls integrity, mass, and operating tolerance."),
-				MATERIAL_ROLE_THERMAL = material_slot(MATERIAL_ROLE_THERMAL, "Thermal element", max(1, round(amount * 0.1)), MAT_COPPER, FALSE, null, "Heat-spreading or phase-buffering element."),
-			)
-		if(MATERIAL_APPLICATION_PROJECTILE)
-			return list(
-				MATERIAL_ROLE_WORKING = material_slot(MATERIAL_ROLE_WORKING, "Projectile core", round(amount * 0.5), MAT_STEEL, FALSE, null, "Controls penetration, deformation, mass, and impact response."),
-				MATERIAL_ROLE_JACKET = material_slot(MATERIAL_ROLE_JACKET, "Projectile jacket", round(amount * 0.2), MAT_COPPER, FALSE, null, "Controls barrel interaction and exposed surface effects."),
-				MATERIAL_ROLE_CASING = material_slot(MATERIAL_ROLE_CASING, "Cartridge case", round(amount * 0.25), MAT_STEEL, FALSE, "Contains propellant and seals the firing chamber."),
-				MATERIAL_ROLE_PRIMER = material_slot(MATERIAL_ROLE_PRIMER, "Primer cup", max(1, round(amount * 0.05)), MAT_COPPER, FALSE, "Holds the impact-sensitive ignition charge."),
-			)
-		if(MATERIAL_APPLICATION_ELECTRONICS)
-			return list(
-				MATERIAL_ROLE_STRUCTURE = material_slot(MATERIAL_ROLE_STRUCTURE, "Casing", amount, MAT_PLASTIC, FALSE, "The device's user-selectable external shell; controls impact protection, mass, and environmental durability."),
-			)
-		if(MATERIAL_APPLICATION_FIREARM)
-			return list(
-				MATERIAL_ROLE_STRUCTURE = material_slot(MATERIAL_ROLE_STRUCTURE, "Receiver", round(amount * 0.45), MAT_STEEL, FALSE, "Controls integrity, recoil tolerance, and mass."),
-				MATERIAL_ROLE_BARREL = material_slot(MATERIAL_ROLE_BARREL, "Barrel", round(amount * 0.4), MAT_STEEL, FALSE, "Controls pressure tolerance, accuracy retention, and heat handling."),
-				MATERIAL_ROLE_GRIP = material_slot(MATERIAL_ROLE_GRIP, "Grip and furniture", max(1, round(amount * 0.15)), MAT_PLASTIC, FALSE, "Controls handling, insulation, and weight."),
-			)
-		if(MATERIAL_APPLICATION_CONTAINER)
-			return list(
-				MATERIAL_ROLE_STRUCTURE = material_slot(MATERIAL_ROLE_STRUCTURE, "Vessel wall", round(amount * 0.7), MAT_GLASS, FALSE, "Controls integrity, mass, and temperature tolerance."),
-				MATERIAL_ROLE_LINER = material_slot(MATERIAL_ROLE_LINER, "Wetted surface", max(1, round(amount * 0.3)), MAT_GLASS, FALSE, "The surface touching the contents; controls corrosion, contamination, and chemical interaction."),
-			)
-		if(MATERIAL_APPLICATION_CAPACITOR)
-			return list(
-				MATERIAL_ROLE_ELECTRODE = material_slot(MATERIAL_ROLE_ELECTRODE, "Electrode foils", round(amount * 0.42), MAT_COPPER, FALSE, "Stores and releases charge; conductivity and surface stability control performance."),
-				MATERIAL_ROLE_DIELECTRIC = material_slot(MATERIAL_ROLE_DIELECTRIC, "Dielectric separator", round(amount * 0.33), MAT_GLASS, FALSE, "Separates the foils; dielectric strength controls voltage tolerance."),
-				MATERIAL_ROLE_CONTACTS = material_slot(MATERIAL_ROLE_CONTACTS, "Terminals", round(amount * 0.1), MAT_GOLD, FALSE, "Carries current into the component and resists contact corrosion."),
-				MATERIAL_ROLE_STRUCTURE = material_slot(MATERIAL_ROLE_STRUCTURE, "Casing", max(1, round(amount * 0.15)), MAT_STEEL, FALSE, "Protects the rolled element from impact and heat."),
-			)
-		if(MATERIAL_APPLICATION_MANIPULATOR)
-			return list(
-				MATERIAL_ROLE_ACTUATOR = material_slot(MATERIAL_ROLE_ACTUATOR, "Actuator windings", round(amount * 0.35), MAT_COPPER, FALSE, "Converts current into precise motion."),
-				MATERIAL_ROLE_BEARINGS = material_slot(MATERIAL_ROLE_BEARINGS, "Bearings and guides", round(amount * 0.2), MAT_STEEL, FALSE, "Controls friction, precision, and wear."),
-				MATERIAL_ROLE_FRAME = material_slot(MATERIAL_ROLE_FRAME, "Linkage frame", round(amount * 0.3), MAT_STEEL, FALSE, "Carries mechanical load and maintains alignment."),
-				MATERIAL_ROLE_INSULATION = material_slot(MATERIAL_ROLE_INSULATION, "Winding insulation", max(1, round(amount * 0.15)), MAT_PLASTIC, FALSE, "Electrically isolates the actuator and limits heat leakage."),
-			)
-		if(MATERIAL_APPLICATION_MATTER_BIN)
-			return list(
-				MATERIAL_ROLE_STRUCTURE = material_slot(MATERIAL_ROLE_STRUCTURE, "Containment chamber", round(amount * 0.55), MAT_STEEL, FALSE, "Carries pressure and mechanical loads around stored matter."),
-				MATERIAL_ROLE_LINER = material_slot(MATERIAL_ROLE_LINER, "Chamber liner", round(amount * 0.25), MAT_GLASS, FALSE, "Contacts stored matter and controls contamination and corrosion."),
-				MATERIAL_ROLE_FRAME = material_slot(MATERIAL_ROLE_FRAME, "Mounting frame", max(1, round(amount * 0.2)), MAT_STEEL, FALSE, "Keeps the chamber aligned inside its parent machine."),
-			)
-		if(MATERIAL_APPLICATION_SCANNER)
-			return list(
-				MATERIAL_ROLE_SENSOR = material_slot(MATERIAL_ROLE_SENSOR, "Sensor element", round(amount * 0.35), MAT_SILVER, FALSE, "Converts the measured field into an electrical signal."),
-				MATERIAL_ROLE_OPTICAL = material_slot(MATERIAL_ROLE_OPTICAL, "Optical window", round(amount * 0.25), MAT_GLASS, FALSE, "Admits and focuses radiation onto the sensor."),
-				MATERIAL_ROLE_CONDUCTOR = material_slot(MATERIAL_ROLE_CONDUCTOR, "Signal traces", round(amount * 0.2), MAT_COPPER, FALSE, "Carries weak sensor signals with minimal loss."),
-				MATERIAL_ROLE_STRUCTURE = material_slot(MATERIAL_ROLE_STRUCTURE, "Shielded housing", max(1, round(amount * 0.2)), MAT_STEEL, FALSE, "Maintains alignment and screens environmental noise."),
-			)
-		if(MATERIAL_APPLICATION_LASER)
-			return list(
-				MATERIAL_ROLE_EMITTER = material_slot(MATERIAL_ROLE_EMITTER, "Emitter crystal", round(amount * 0.35), MAT_GLASS, FALSE, "Generates the coherent output and controls energy tolerance."),
-				MATERIAL_ROLE_OPTICAL = material_slot(MATERIAL_ROLE_OPTICAL, "Focusing optics", round(amount * 0.25), MAT_GLASS, FALSE, "Shapes and focuses the emitted beam."),
-				MATERIAL_ROLE_THERMAL = material_slot(MATERIAL_ROLE_THERMAL, "Heat sink", round(amount * 0.25), MAT_COPPER, FALSE, "Carries waste heat away from the emitter."),
-				MATERIAL_ROLE_STRUCTURE = material_slot(MATERIAL_ROLE_STRUCTURE, "Emitter mount", max(1, round(amount * 0.15)), MAT_STEEL, FALSE, "Maintains optical alignment under heat and vibration."),
-			)
-		if(MATERIAL_APPLICATION_MAGAZINE)
-			return list(
-				MATERIAL_ROLE_WORKING = material_slot(MATERIAL_ROLE_WORKING, "Projectile cores", round(amount * 0.32), MAT_STEEL, FALSE, "Controls the loaded rounds' penetration, deformation, and impact response."),
-				MATERIAL_ROLE_JACKET = material_slot(MATERIAL_ROLE_JACKET, "Projectile jackets", round(amount * 0.13), MAT_COPPER, FALSE, "Controls barrel interaction and exposed projectile behavior."),
-				MATERIAL_ROLE_CASING = material_slot(MATERIAL_ROLE_CASING, "Cartridge cases", round(amount * 0.16), MAT_STEEL, FALSE, "Contains propellant and seals the firing chamber."),
-				MATERIAL_ROLE_STRUCTURE = material_slot(MATERIAL_ROLE_STRUCTURE, "Magazine body", round(amount * 0.18), MAT_STEEL, FALSE, "Protects and aligns the ammunition stack."),
-				MATERIAL_ROLE_FEED = material_slot(MATERIAL_ROLE_FEED, "Feed lips and follower", round(amount * 0.11), MAT_STEEL, FALSE, "Controls reliable presentation of each round."),
-				MATERIAL_ROLE_SPRING = material_slot(MATERIAL_ROLE_SPRING, "Feed spring", max(1, round(amount * 0.1)), MAT_STEEL, FALSE, "Maintains feed pressure through repeated compression cycles."),
-			)
-		if(MATERIAL_APPLICATION_CIRCUIT_BOARD)
-			return list(
-				MATERIAL_ROLE_SUBSTRATE = material_slot(MATERIAL_ROLE_SUBSTRATE, "Board substrate", round(amount * 0.5), MAT_GLASS, FALSE, "Supports and isolates the circuit under heat and flexing."),
-				MATERIAL_ROLE_CONDUCTOR = material_slot(MATERIAL_ROLE_CONDUCTOR, "Circuit traces", round(amount * 0.35), MAT_COPPER, FALSE, "Carries power and signals across the board."),
-				MATERIAL_ROLE_CONTACTS = material_slot(MATERIAL_ROLE_CONTACTS, "Edge contacts", max(1, round(amount * 0.15)), MAT_GOLD, FALSE, "Provides reliable, corrosion-resistant external connections."),
-			)
-		if(MATERIAL_APPLICATION_SOFT_GOODS)
-			return list(
-				MATERIAL_ROLE_FABRIC = material_slot(MATERIAL_ROLE_FABRIC, "Fabric panels", round(amount * 0.7), MAT_CLOTH, FALSE, "Forms the flexible body and controls comfort, mass, and thermal behavior."),
-				MATERIAL_ROLE_STRUCTURE = material_slot(MATERIAL_ROLE_STRUCTURE, "Reinforcement", round(amount * 0.2), MAT_CLOTH, FALSE, "Carries loads around seams and attachment points."),
-				MATERIAL_ROLE_FASTENERS = material_slot(MATERIAL_ROLE_FASTENERS, "Fasteners", max(1, round(amount * 0.1)), MAT_STEEL, FALSE, "Joins panels and secures closures."),
-			)
-		if(MATERIAL_APPLICATION_MECHANICAL)
-			return list(
-				MATERIAL_ROLE_FRAME = material_slot(MATERIAL_ROLE_FRAME, "Load-bearing frame", round(amount * 0.5), MAT_STEEL, FALSE, "Carries the assembly's structural and operating loads."),
-				MATERIAL_ROLE_BEARINGS = material_slot(MATERIAL_ROLE_BEARINGS, "Moving interfaces", round(amount * 0.2), MAT_STEEL, FALSE, "Controls friction, alignment, and mechanical wear."),
-				MATERIAL_ROLE_ACTUATOR = material_slot(MATERIAL_ROLE_ACTUATOR, "Drive element", round(amount * 0.2), MAT_COPPER, FALSE, "Transfers electrical or mechanical power into motion."),
-				MATERIAL_ROLE_STRUCTURE = material_slot(MATERIAL_ROLE_STRUCTURE, "Protective shell", max(1, round(amount * 0.1)), MAT_STEEL, FALSE, "Protects the mechanism from impact and contamination."),
-			)
-		if(MATERIAL_APPLICATION_CABLE)
-			return list(
-				MATERIAL_ROLE_CONDUCTOR = material_slot(MATERIAL_ROLE_CONDUCTOR, "Conductive strands", round(amount * 0.75), MAT_COPPER, FALSE, "Carries electrical current; resistance and current density control losses and capacity."),
-				MATERIAL_ROLE_INSULATION = material_slot(MATERIAL_ROLE_INSULATION, "Insulating jacket", max(1, round(amount * 0.25)), MAT_PLASTIC, FALSE, "Prevents shorts and protects the conductor from heat and chemicals."),
-			)
-		if(MATERIAL_APPLICATION_LIGHT)
-			return list(
-				MATERIAL_ROLE_EMITTER = material_slot(MATERIAL_ROLE_EMITTER, "Light emitter", round(amount * 0.35), MAT_GLASS, FALSE, "Converts electrical energy into visible light."),
-				MATERIAL_ROLE_OPTICAL = material_slot(MATERIAL_ROLE_OPTICAL, "Envelope and optics", round(amount * 0.4), MAT_GLASS, FALSE, "Protects the emitter and shapes its output."),
-				MATERIAL_ROLE_CONTACTS = material_slot(MATERIAL_ROLE_CONTACTS, "Electrical contacts", max(1, round(amount * 0.25)), MAT_COPPER, FALSE, "Carries power into the light source."),
-			)
-		if(MATERIAL_APPLICATION_ENERGY_DEVICE)
-			return list(
-				MATERIAL_ROLE_EMITTER = material_slot(MATERIAL_ROLE_EMITTER, "Energy emitter", round(amount * 0.3), MAT_GLASS, FALSE, "Converts stored power into the weapon's emitted field or beam."),
-				MATERIAL_ROLE_OPTICAL = material_slot(MATERIAL_ROLE_OPTICAL, "Beam-forming assembly", round(amount * 0.2), MAT_GLASS, FALSE, "Focuses and stabilizes the emitted energy."),
-				MATERIAL_ROLE_CONDUCTOR = material_slot(MATERIAL_ROLE_CONDUCTOR, "Power bus", round(amount * 0.2), MAT_COPPER, FALSE, "Carries discharge current from the cell to the emitter."),
-				MATERIAL_ROLE_THERMAL = material_slot(MATERIAL_ROLE_THERMAL, "Heat sink", round(amount * 0.15), MAT_COPPER, FALSE, "Absorbs and spreads waste heat between shots."),
-				MATERIAL_ROLE_STRUCTURE = material_slot(MATERIAL_ROLE_STRUCTURE, "Chassis", max(1, round(amount * 0.15)), MAT_STEEL, FALSE, "Maintains alignment and protects the power train."),
-			)
-		if(MATERIAL_APPLICATION_MONOLITHIC)
-			return list(
-				MATERIAL_ROLE_BODY = material_slot(MATERIAL_ROLE_BODY, "Material", amount, MAT_STEEL, FALSE, "The single continuous material from which this object is formed."),
-			)
-	return list(MATERIAL_ROLE_BODY = material_slot(MATERIAL_ROLE_BODY, "Body", amount, MAT_STEEL, FALSE, "The primary structural and functional material."))
-
-/// Product-specific blueprints sit above the reusable family profiles. These
-/// distinguish tools whose real construction differs despite sharing a common
-/// gameplay parent type.
-/proc/material_slots_for_product(product_path, application, total_amount)
-	var/amount = max(round(total_amount), 1)
-	if(ispath(product_path, /obj/item/tool/wrench))
-		return list(
-			MATERIAL_ROLE_WORKING = material_slot(MATERIAL_ROLE_WORKING, "Wrench jaws", round(amount * 0.45), MAT_STEEL, FALSE, "Controls grip on fasteners, deformation, and wear."),
-			MATERIAL_ROLE_FRAME = material_slot(MATERIAL_ROLE_FRAME, "Handle shank", round(amount * 0.4), MAT_STEEL, FALSE, "Carries torque between the hand and jaws."),
-			MATERIAL_ROLE_GRIP = material_slot(MATERIAL_ROLE_GRIP, "Grip", max(1, round(amount * 0.15)), MAT_PLASTIC, FALSE, "Controls handling and electrical isolation."),
-		)
-	if(ispath(product_path, /obj/item/tool/screwdriver))
-		return list(
-			MATERIAL_ROLE_WORKING = material_slot(MATERIAL_ROLE_WORKING, "Driver tip", round(amount * 0.3), MAT_STEEL, FALSE, "Controls fit, wear, and transmitted torque."),
-			MATERIAL_ROLE_FRAME = material_slot(MATERIAL_ROLE_FRAME, "Driver shaft", round(amount * 0.4), MAT_STEEL, FALSE, "Carries torque without twisting or snapping."),
-			MATERIAL_ROLE_GRIP = material_slot(MATERIAL_ROLE_GRIP, "Insulated handle", max(1, round(amount * 0.3)), MAT_PLASTIC, FALSE, "Controls handling and electrical isolation."),
-		)
-	if(ispath(product_path, /obj/item/tool/wirecutters))
-		return list(
-			MATERIAL_ROLE_WORKING = material_slot(MATERIAL_ROLE_WORKING, "Cutting jaws", round(amount * 0.4), MAT_STEEL, FALSE, "Controls edge life and cutting force."),
-			MATERIAL_ROLE_BEARINGS = material_slot(MATERIAL_ROLE_BEARINGS, "Pivot joint", round(amount * 0.2), MAT_STEEL, FALSE, "Keeps the jaws aligned through repeated use."),
-			MATERIAL_ROLE_GRIP = material_slot(MATERIAL_ROLE_GRIP, "Insulated handles", max(1, round(amount * 0.4)), MAT_PLASTIC, FALSE, "Controls leverage and electrical isolation."),
-		)
-	if(ispath(product_path, /obj/item/tool/crowbar) || ispath(product_path, /obj/item/tool/prybar))
-		return list(
-			MATERIAL_ROLE_WORKING = material_slot(MATERIAL_ROLE_WORKING, "Prying ends", round(amount * 0.35), MAT_STEEL, FALSE, "Controls bite, deformation, and wear against edges."),
-			MATERIAL_ROLE_FRAME = material_slot(MATERIAL_ROLE_FRAME, "Lever shaft", round(amount * 0.5), MAT_STEEL, FALSE, "Carries bending load while prying."),
-			MATERIAL_ROLE_GRIP = material_slot(MATERIAL_ROLE_GRIP, "Grip", max(1, round(amount * 0.15)), MAT_PLASTIC, FALSE, "Controls handling and electrical isolation."),
-		)
-	if(ispath(product_path, /obj/item/surgical/scalpel))
-		return list(
-			MATERIAL_ROLE_WORKING = material_slot(MATERIAL_ROLE_WORKING, "Blade", round(amount * 0.65), MAT_STEEL, FALSE, "Controls sharpness, edge retention, corrosion, and surgical precision."),
-			MATERIAL_ROLE_FRAME = material_slot(MATERIAL_ROLE_FRAME, "Tang", round(amount * 0.2), MAT_STEEL, FALSE, "Transfers force from the handle into the blade without flexing."),
-			MATERIAL_ROLE_GRIP = material_slot(MATERIAL_ROLE_GRIP, "Grip", max(1, round(amount * 0.15)), MAT_PLASTIC, FALSE, "Controls handling, insulation, and cleanability."),
-		)
-	if(ispath(product_path, /obj/item/surgical/circular_saw))
-		return list(
-			MATERIAL_ROLE_WORKING = material_slot(MATERIAL_ROLE_WORKING, "Saw blade", round(amount * 0.5), MAT_STEEL, FALSE, "Controls cutting rate, tooth retention, heat, and wear."),
-			MATERIAL_ROLE_BEARINGS = material_slot(MATERIAL_ROLE_BEARINGS, "Spindle and bearings", round(amount * 0.2), MAT_STEEL, FALSE, "Keeps the rotating blade aligned under load."),
-			MATERIAL_ROLE_ACTUATOR = material_slot(MATERIAL_ROLE_ACTUATOR, "Motor windings", round(amount * 0.15), MAT_COPPER, FALSE, "Drives the blade and controls electrical efficiency."),
-			MATERIAL_ROLE_GRIP = material_slot(MATERIAL_ROLE_GRIP, "Insulated housing", max(1, round(amount * 0.15)), MAT_PLASTIC, FALSE, "Protects and isolates the powered mechanism."),
-		)
-	if(ispath(product_path, /obj/item/surgical/surgicaldrill))
-		return list(
-			MATERIAL_ROLE_WORKING = material_slot(MATERIAL_ROLE_WORKING, "Drill bit", round(amount * 0.35), MAT_STEEL, FALSE, "Controls cutting precision, wear, and heat generation."),
-			MATERIAL_ROLE_BEARINGS = material_slot(MATERIAL_ROLE_BEARINGS, "Chuck and bearings", round(amount * 0.2), MAT_STEEL, FALSE, "Holds the bit concentric under surgical loads."),
-			MATERIAL_ROLE_ACTUATOR = material_slot(MATERIAL_ROLE_ACTUATOR, "Motor windings", round(amount * 0.25), MAT_COPPER, FALSE, "Provides torque and controls electrical losses."),
-			MATERIAL_ROLE_GRIP = material_slot(MATERIAL_ROLE_GRIP, "Insulated housing", max(1, round(amount * 0.2)), MAT_PLASTIC, FALSE, "Provides safe handling and encloses the drive."),
-		)
-	if(ispath(product_path, /obj/item/surgical/hemostat))
-		return list(
-			MATERIAL_ROLE_WORKING = material_slot(MATERIAL_ROLE_WORKING, "Clamping jaws", round(amount * 0.45), MAT_STEEL, FALSE, "Controls grip precision, surface cleanliness, and corrosion."),
-			MATERIAL_ROLE_BEARINGS = material_slot(MATERIAL_ROLE_BEARINGS, "Box joint", round(amount * 0.2), MAT_STEEL, FALSE, "Maintains jaw alignment through repeated use."),
-			MATERIAL_ROLE_GRIP = material_slot(MATERIAL_ROLE_GRIP, "Finger rings", max(1, round(amount * 0.35)), MAT_STEEL, FALSE, "Transfers hand force and controls handling."),
-		)
-	if(ispath(product_path, /obj/item/surgical/retractor))
-		return list(
-			MATERIAL_ROLE_WORKING = material_slot(MATERIAL_ROLE_WORKING, "Retractor blades", round(amount * 0.5), MAT_STEEL, FALSE, "Controls tissue contact, rigidity, and cleanability."),
-			MATERIAL_ROLE_FRAME = material_slot(MATERIAL_ROLE_FRAME, "Spreader frame", round(amount * 0.3), MAT_STEEL, FALSE, "Carries sustained opening force without flexing."),
-			MATERIAL_ROLE_GRIP = material_slot(MATERIAL_ROLE_GRIP, "Adjustment handles", max(1, round(amount * 0.2)), MAT_STEEL, FALSE, "Controls secure adjustment and handling."),
-		)
-	if(ispath(product_path, /obj/item/surgical/cautery))
-		return list(
-			MATERIAL_ROLE_WORKING = material_slot(MATERIAL_ROLE_WORKING, "Cautery tip", round(amount * 0.3), MAT_STEEL, FALSE, "Contacts tissue and controls heat delivery and corrosion."),
-			MATERIAL_ROLE_CONDUCTOR = material_slot(MATERIAL_ROLE_CONDUCTOR, "Heating conductor", round(amount * 0.35), MAT_COPPER, FALSE, "Carries energy to the tip and controls resistive heating."),
-			MATERIAL_ROLE_INSULATION = material_slot(MATERIAL_ROLE_INSULATION, "Thermal insulation", max(1, round(amount * 0.35)), MAT_PLASTIC, FALSE, "Keeps operating heat away from the user's hand."),
-		)
-	if(ispath(product_path, /obj/item/surgical/bonesetter) || ispath(product_path, /obj/item/surgical/bone_clamp))
-		return list(
-			MATERIAL_ROLE_WORKING = material_slot(MATERIAL_ROLE_WORKING, "Setting jaws", round(amount * 0.5), MAT_STEEL, FALSE, "Controls alignment, rigidity, and tissue-facing surface behavior."),
-			MATERIAL_ROLE_BEARINGS = material_slot(MATERIAL_ROLE_BEARINGS, "Pivot", round(amount * 0.2), MAT_STEEL, FALSE, "Keeps the jaws aligned under setting force."),
-			MATERIAL_ROLE_GRIP = material_slot(MATERIAL_ROLE_GRIP, "Handles", max(1, round(amount * 0.3)), MAT_STEEL, FALSE, "Transfers controlled hand force into the jaws."),
-		)
-	return default_material_slots(application, amount)
+/// Blueprints are material template singletons (material_templates.dm). Objects
+/// declare a template and a total on their type and store per instance only the
+/// roles whose material differs from the template default.
 
 /proc/material_slot_choice_valid(list/spec, material_id)
 	if(!islist(spec))
@@ -269,99 +33,151 @@
 			return material.corrosion_resistance + material.heat_resistance * 0.5 + material.biocompatibility - material.reactivity - material.toxicity
 	return material.integrity + material.yield_strength * 0.2 + material.fracture_toughness - material.brittleness * 0.5 - material.density * 0.05
 
-/proc/material_slot_resolve(list/slots, list/requested)
-	var/list/resolved = list()
-	for(var/role in slots)
-		var/list/spec = slots[role]
-		var/material_id = requested?[role]
-		if(!material_id)
-			material_id = spec["default"]
-		if(!material_slot_choice_valid(spec, material_id))
-			if(spec["optional"] && !material_id)
-				continue
-			return null
-		resolved[role] = material_id
-	return resolved
-
-/proc/material_slots_tgui(list/slots)
+/// TGUI rows for a blueprint's configurable roles.
+/proc/material_slots_tgui(datum/material_template/template, total)
 	var/list/out = list()
-	for(var/role in slots)
-		var/list/spec = slots[role]
+	if(!template)
+		return out
+	var/list/amounts = template.role_amounts(total)
+	for(var/role in template.roles)
+		var/list/spec = template.roles[role]
 		out += list(list(
 			"role" = role,
 			"label" = spec["label"],
-			"amount" = spec["amount"],
+			"amount" = amounts[role],
 			"defaultMaterial" = spec["default"],
 			"optional" = !!spec["optional"],
 			"description" = spec["description"],
 		))
 	return out
 
-/// Correct independent percentage rounding so a blueprint consumes exactly
-/// the recipe's original amount. The final required part absorbs the small
-/// rounding remainder; no material is created or lost.
-/proc/material_slots_normalize_total(list/slots, target_total)
-	if(!length(slots) || target_total < 1)
-		return FALSE
-	var/current_total = 0
-	var/list/adjustment_spec
-	for(var/role in slots)
-		var/list/spec = slots[role]
-		current_total += spec["amount"]
-		if(!spec["optional"])
-			adjustment_spec = spec
-	if(!adjustment_spec)
-		return FALSE
-	adjustment_spec["amount"] += target_total - current_total
-	return adjustment_spec["amount"] > 0
-
 /obj
-	/// Canonical material IDs by functional construction role. Lazy per object.
-	var/list/construction_materials
-	/// Material units by role, used for inspection, recycling, and weighted behavior.
-	var/list/construction_material_amounts
-	/// TRUE once this object owns private copies of the two lists above. Until
-	/// then both are interned and shared: write through set_construction_material().
-	var/tmp/construction_materials_owned = FALSE
+	/// Blueprint of this object's composition (a /datum/material_template path).
+	/// Declared per type; an instance only changes it when it is rebuilt to a
+	/// different blueprint (a lathe or crafting recipe).
+	var/material_template
+	/// Total material units in this object; the template splits it between roles.
+	var/material_total = 0
+	/// Material of the single-role bulk template (MATERIAL_BULK).
+	var/material_bulk_material
+	/// Role -> material id for the roles that differ from the template default.
+	/// Null for an unmodified object. Interned and shared: write through
+	/// set_construction_material(), never in place.
+	var/list/material_overrides
 
-/// Interned construction lists keyed by their contents. Thousands of pipes,
-/// cables and machines carry identical assemblies, so they share one pair.
-/// Shared lists are read-only; set_construction_material() copies on write.
-/proc/material_construction_intern(list/materials, list/amounts)
+/// Interned override lists keyed by their contents. Thousands of pipes, cables and
+/// machines carry identical overrides, so they share one list. Shared lists are read-only.
+/proc/material_overrides_intern(list/overrides)
 	var/static/list/interned = list()
+	if(!length(overrides))
+		return null
 	var/key = ""
-	for(var/role in materials)
-		key += "[role]=[materials[role]]:[amounts?[role]];"
-	var/list/pair = interned[key]
-	if(!pair)
-		pair = list(materials.Copy(), amounts ? amounts.Copy() : list())
-		interned[key] = pair
-	return pair
+	for(var/role in overrides)
+		key += "[role]=[overrides[role]];"
+	. = interned[key]
+	if(!.)
+		. = overrides.Copy()
+		interned[key] = .
 
-/obj/proc/share_construction_lists(list/materials, list/amounts)
-	if(!length(materials))
-		construction_materials = null
-		construction_material_amounts = null
-		construction_materials_owned = FALSE
-		return
-	var/list/pair = material_construction_intern(materials, amounts)
-	construction_materials = pair[1]
-	construction_material_amounts = pair[2]
-	construction_materials_owned = FALSE
+/// Override hook for MATERIAL_MIX; returns this type's declared mix template.
+/obj/proc/declared_material_mix()
+	return null
 
-/// The only supported way to change one functional part after construction.
-/obj/proc/set_construction_material(role, material_id, amount)
-	if(!construction_materials_owned)
-		construction_materials = construction_materials ? construction_materials.Copy() : list()
-		construction_material_amounts = construction_material_amounts ? construction_material_amounts.Copy() : list()
-		construction_materials_owned = TRUE
-	construction_materials[role] = material_id
-	if(!isnull(amount))
-		construction_material_amounts[role] = amount
+/// This object's blueprint singleton, or null if it has no material composition.
+/obj/proc/get_material_template() as /datum/material_template
+	if(!material_template)
+		return null
+	if(material_template == /datum/material_template/mix)
+		return declared_material_mix()
+	return material_template_singleton(material_template)
+
+/// Total material units, split between the template's roles.
+/obj/proc/get_material_total()
+	if(material_template == /datum/material_template/mix)
+		var/datum/material_template/mix/mix = declared_material_mix()
+		return mix?.total || 0
+	return material_total
+
+/// Material id filling `role`: this object's override, else the template default.
+/obj/proc/material_id_for_role(role)
+	var/material_id = material_overrides?[role]
+	if(material_id)
+		return material_id
+	if(role == MATERIAL_ROLE_BULK && material_template == /datum/material_template/bulk)
+		return material_bulk_material
+	var/datum/material_template/template = get_material_template()
+	return template?.default_material(role)
 
 /obj/proc/material_for_role(role) as /datum/material
-	var/material_id = construction_materials?[role]
+	var/datum/material_template/template = get_material_template()
+	if(!template || !(role in template.roles))
+		return null
+	var/material_id = material_id_for_role(role)
 	return material_id ? get_material_by_name(material_id) : null
+
+/// The roles of this object's blueprint, in order. Read-only.
+/obj/proc/material_roles()
+	RETURN_TYPE(/list)
+	var/datum/material_template/template = get_material_template()
+	return template?.roles
+
+/// Material units in one role: the template's fraction of this object's total.
+/obj/proc/role_amount(role)
+	var/datum/material_template/template = get_material_template()
+	return template ? template.role_amount(role, get_material_total()) : 0
+
+/// Material id -> units, summed over roles. Derived on demand; the caller owns the list.
+/obj/proc/material_totals()
+	RETURN_TYPE(/list)
+	. = list()
+	var/datum/material_template/template = get_material_template()
+	if(!template)
+		return .
+	var/list/amounts = template.role_amounts(get_material_total())
+	for(var/role in amounts)
+		var/material_id = material_id_for_role(role)
+		if(material_id && amounts[role])
+			.[material_id] = (.[material_id] || 0) + amounts[role]
+
+/// Whether this object has functional construction roles (not just plain bulk material).
+/obj/proc/has_functional_construction()
+	var/datum/material_template/template = get_material_template()
+	return template && !template.bulk && length(template.roles)
+
+/// The only supported way to change one functional part after construction.
+/// Copy-on-write: the object's interned overrides are replaced, never edited.
+/obj/proc/set_construction_material(role, material_id)
+	var/list/overrides = material_overrides ? material_overrides.Copy() : list()
+	var/datum/material_template/template = get_material_template()
+	var/default_id
+	if(role == MATERIAL_ROLE_BULK && material_template == /datum/material_template/bulk)
+		default_id = material_bulk_material
+	else
+		default_id = template?.default_material(role)
+	if(!material_id || material_id == default_id)
+		overrides -= role
+	else
+		overrides[role] = material_id
+	material_overrides = material_overrides_intern(overrides)
+
+/// Rebuild this object to another blueprint: template, total and chosen materials.
+/obj/proc/set_material_blueprint(template_path, total, list/materials_by_role)
+	material_template = template_path
+	material_total = total
+	var/datum/material_template/template = get_material_template()
+	var/list/overrides = list()
+	for(var/role in materials_by_role)
+		var/material_id = materials_by_role[role]
+		if(material_id && material_id != template?.default_material(role))
+			overrides[role] = material_id
+	material_overrides = material_overrides_intern(overrides)
+
+/// Make this object of one plain material, or of nothing with a null material.
+/obj/proc/set_bulk_material(material_id, total)
+	material_template = material_id ? /datum/material_template/bulk : null
+	material_bulk_material = material_id
+	material_total = material_id ? total : 0
+	material_overrides = null
 
 /obj/proc/primary_construction_material() as /datum/material
 	var/static/list/primary_roles = list(MATERIAL_ROLE_WORKING, MATERIAL_ROLE_CONDUCTOR, MATERIAL_ROLE_STRUCTURE, MATERIAL_ROLE_FRAME, MATERIAL_ROLE_EMITTER, MATERIAL_ROLE_FABRIC, MATERIAL_ROLE_BODY, MATERIAL_ROLE_JACKET)
@@ -371,19 +187,17 @@
 			return material
 	return null
 
-/obj/proc/apply_material_construction(list/materials_by_role, list/slots, application_profile, customized = TRUE)
-	var/list/resolved = material_slot_resolve(slots, materials_by_role)
+/// Build to a blueprint with the user's material choices (lathes, crafting, tests).
+/obj/proc/apply_material_construction(list/materials_by_role, template_path, total, customized = TRUE)
+	var/datum/material_template/template = material_template_singleton(template_path)
+	var/list/resolved = template?.resolve(materials_by_role)
 	if(!length(resolved))
 		return FALSE
 	material_custom_assembly = customized
-	var/list/amounts = list()
-	for(var/role in resolved)
-		var/list/spec = slots[role]
-		amounts[role] = spec?["amount"] || 0
-	share_construction_lists(resolved, amounts)
+	set_material_blueprint(template_path, total, resolved)
 	if(isitem(src))
 		var/obj/item/item = src
-		item.apply_material_role_effects(application_profile)
+		item.apply_material_role_effects(template.application)
 	material_service_changed()
 	return TRUE
 
@@ -393,7 +207,22 @@
 /obj/proc/copy_material_construction_from(obj/source)
 	if(!source)
 		return FALSE
-	share_construction_lists(source.construction_materials, source.construction_material_amounts)
+	if(source.material_template == /datum/material_template/mix)
+		var/datum/material_template/mix/mix = source.declared_material_mix()
+		material_template = null
+		material_total = 0
+		if(mix)
+			// A mix is per type; carry the dominant material as plain bulk.
+			var/dominant
+			for(var/material_id in mix.amounts)
+				if(!dominant || mix.amounts[material_id] > mix.amounts[dominant])
+					dominant = material_id
+			set_bulk_material(dominant, mix.total)
+	else
+		material_template = source.material_template
+		material_total = source.material_total
+		material_bulk_material = source.material_bulk_material
+		material_overrides = source.material_overrides
 	material_environment_liner_integrity = source.material_environment_liner_integrity
 	material_environment_exterior_integrity = source.material_environment_exterior_integrity
 	material_environment_fatigue = source.material_environment_fatigue
@@ -405,19 +234,13 @@
 	if(source.material_service && material_service)
 		material_service.temperature = source.material_service.temperature
 		material_service.buffer_energy = source.material_service.buffer_energy
-	return length(construction_materials)
-
-/// Give legacy/map-built infrastructure the same canonical assembly used by
-/// fabrication, without pretending that it was a custom engineered product.
-/obj/proc/ensure_material_construction(application_profile, total_amount = SHEET_MATERIAL_AMOUNT)
-	if(length(construction_materials))
-		return TRUE
-	var/list/slots = default_material_slots(application_profile, total_amount)
-	return apply_material_construction(null, slots, application_profile, FALSE)
+	return has_functional_construction()
 
 /obj/proc/construction_summary()
 	var/list/summary = list()
-	for(var/role in construction_materials)
+	if(!has_functional_construction())
+		return summary
+	for(var/role in material_roles())
 		var/datum/material/material = material_for_role(role)
 		if(material)
 			summary += "[role]: [material.display_name]"
@@ -451,5 +274,82 @@
 
 /obj/examine(mob/user)
 	. = ..()
-	if(length(construction_materials))
+	if(has_functional_construction())
 		. += span_notice("Construction: [jointext(construction_summary(), "; ")].")
+
+// ---- Bulk material holders ----
+// Debris from recyclers and digestion, random scrap and custom-material objects hold
+// an arbitrary mix. That mix is genuine per-instance state, kept as one real list.
+
+/obj/item
+	/// Material id -> units for an object whose mix is arbitrary. Null for everything
+	/// else, whose composition is its blueprint. Private to this instance.
+	var/list/material_mix
+
+/obj/item/material_totals()
+	if(material_mix)
+		return material_mix.Copy()
+	return ..()
+
+/// Replace this item's composition with an arbitrary mix (material id -> units).
+/// Takes ownership of the list; an empty or null mix means made of nothing.
+/obj/item/proc/set_material_mix(list/mix)
+	material_template = null
+	material_overrides = null
+	material_mix = length(mix) ? mix : null
+
+/// Add units of materials to this item's mix, starting from its current composition.
+/obj/item/proc/add_materials(list/added)
+	if(!material_mix)
+		material_mix = material_totals()
+	for(var/material_id in added)
+		material_mix[material_id] = (material_mix[material_id] || 0) + added[material_id]
+
+/// Scale every amount in this item's composition (lathe efficiency).
+/obj/item/proc/scale_materials(factor)
+	if(material_mix || material_template == /datum/material_template/mix)
+		var/list/scaled = material_totals()
+		for(var/material_id in scaled)
+			scaled[material_id] = CEILING(scaled[material_id] * factor, 1)
+		set_material_mix(scaled)
+		return
+	material_total = CEILING(material_total * factor, 1)
+
+/// A type's material totals (material id -> units) from its declared blueprint,
+/// read without an instance. Null if the type has no composition.
+/proc/dq_type_material_totals(path)
+	RETURN_TYPE(/list)
+	var/obj/declared = path
+	var/template_path = initial(declared.material_template)
+	if(!template_path)
+		return null
+	var/datum/material_template/template
+	var/total
+	if(template_path == /datum/material_template/mix)
+		var/datum/material_template/mix/mix = dq_type_material_mix(path)
+		template = mix
+		total = mix?.total
+	else
+		template = material_template_singleton(template_path)
+		total = initial(declared.material_total)
+	if(!template)
+		return null
+	. = list()
+	var/list/amounts = template.role_amounts(total)
+	for(var/role in amounts)
+		var/material_id
+		if(role == MATERIAL_ROLE_BULK && template_path == /datum/material_template/bulk)
+			material_id = initial(declared.material_bulk_material)
+		else
+			material_id = template.default_material(role)
+		if(material_id && amounts[role])
+			.[material_id] = (.[material_id] || 0) + amounts[role]
+
+/// Make this item of `amount` units of one material (a stack recipe's product). A
+/// functional blueprint keeps its parts and takes the new total.
+/obj/item/proc/set_single_material(material_id, amount)
+	material_mix = null
+	if(has_functional_construction())
+		material_total = amount
+		return
+	set_bulk_material(material_id, amount)

@@ -33,10 +33,12 @@ other types of metals and chemistry for reagents).
 	var/list/materials = list()
 	/// Optional application bridge for ordinary items that do not implement set_material.
 	var/material_application = null
-	/// Functional material slots for this design. When omitted on a legacy
-	/// material-selectable design, sensible slots are synthesized from its
-	/// application profile so existing content receives the universal system.
-	var/list/material_slots
+	/// Blueprint (a /datum/material_template path) for this design's configurable
+	/// parts. When omitted, it comes from the product type's declared template or
+	/// from the design's application profile.
+	var/material_template
+	/// Material units the blueprint splits between its parts.
+	var/material_total = 0
 	/// Original canonical material costs retained for coverage tests, UI
 	/// comparison, and exact standard-configuration accounting.
 	var/list/standard_material_costs
@@ -151,6 +153,18 @@ other types of metals and chemistry for reagents).
 		return MATERIAL_APPLICATION_MECHANICAL
 	return explicit_application
 
+/// The blueprint for a product: its type's own functional template when it declares
+/// one (cells, tanks, special tools), else the application's generic template.
+/proc/material_template_for_product(build_path, application)
+	var/obj/product = build_path
+	var/declared = ispath(build_path, /obj) ? initial(product.material_template) : null
+	if(declared && !ispath(declared, /datum/material_template/bulk) && !ispath(declared, /datum/material_template/mix))
+		return declared
+	if(!application)
+		return null
+	var/datum/material_template/template = material_template_for_application(application)
+	return template?.type
+
 /datum/design_techweb/proc/inferred_material_application()
 	return material_application_for_product(build_path, material_application)
 
@@ -176,19 +190,19 @@ other types of metals and chemistry for reagents).
 	for(var/datum/material/material in fixed_costs)
 		original_material_total += fixed_costs[material]
 	var/application = inferred_material_application()
-	if(!length(material_slots))
+	if(!material_template)
 		// A fixed recipe is preferable to fictional placeholder parts. Every
-		// configurable family must have an explicit physical blueprint below.
+		// configurable family must have an explicit physical blueprint.
 		if(!application)
 			return
 		var/total = 0
 		for(var/datum/material/material in fixed_costs)
 			total += fixed_costs[material]
-		material_slots = material_slots_for_product(build_path, application, max(total, 1))
-		if(!length(material_slots))
+		if(total < 1)
 			return
-		if(!material_slots_normalize_total(material_slots, total))
-			material_slots = null
+		material_template = material_template_for_product(build_path, application)
+		material_total = total
+		if(!material_template)
 			return
 	// Recognized blueprints replace abstract resource costs with the same total
 	// quantity distributed across real parts and sensible standard materials.
@@ -198,11 +212,12 @@ other types of metals and chemistry for reagents).
 		materials -= key
 	material_application = application
 	standard_material_costs = list()
-	var/list/defaults = material_slot_resolve(material_slots)
+	var/datum/material_template/template = material_template_singleton(material_template)
+	var/list/defaults = template.resolve()
+	var/list/amounts = template.role_amounts(material_total)
 	for(var/role in defaults)
-		var/list/spec = material_slots[role]
 		var/default_material = defaults[role]
-		standard_material_costs[default_material] = (standard_material_costs[default_material] || 0) + spec["amount"]
+		standard_material_costs[default_material] = (standard_material_costs[default_material] || 0) + amounts[role]
 
 /datum/design_techweb/proc/icon_html(client/user)
 	var/datum/asset/spritesheet_batched/sheet = get_asset_datum(/datum/asset/spritesheet_batched/research_designs)
@@ -219,9 +234,9 @@ other types of metals and chemistry for reagents).
 	// Material items (and material clothing) take a material key as their second
 	// Initialize arg, so passing the chosen material makes the product be made of it.
 	var/obj/product = new build_path(target)
-	if(!length(material_slots))
+	if(!material_template)
 		return product
-	if(!product.apply_material_construction(material_choices, material_slots, material_application))
+	if(!product.apply_material_construction(material_choices, material_template, material_total))
 		qdel(product)
 		return null
 	if(istype(product, /obj/item/material))
@@ -233,25 +248,27 @@ other types of metals and chemistry for reagents).
 
 // Effective per-unit cost given the user's chosen construction materials.
 /datum/design_techweb/proc/effective_materials(list/material_choices)
-	if(!length(material_slots))
+	if(!material_template)
 		return materials
 	var/list/out = materials.Copy()
-	var/list/resolved = material_slot_resolve(material_slots, material_choices)
+	var/datum/material_template/template = material_template_singleton(material_template)
+	var/list/resolved = template.resolve(material_choices)
 	if(!resolved)
 		return null
+	var/list/amounts = template.role_amounts(material_total)
 	for(var/role in resolved)
 		var/datum/material/chosen = get_material_by_name(resolved[role])
-		var/list/spec = material_slots[role]
-		var/amount = spec["amount"]
+		var/amount = amounts[role]
 		if(chosen && amount > 0)
 			out[chosen] = (out[chosen] || 0) + amount
 	return out
 
 // Is the chosen material a valid pick for this design (exists, and matches the class filter)?
 /datum/design_techweb/proc/material_choice_valid(list/material_choices)
-	if(!length(material_slots))
+	if(!material_template)
 		return TRUE
-	return !!material_slot_resolve(material_slots, material_choices)
+	var/datum/material_template/template = material_template_singleton(material_template)
+	return !!template.resolve(material_choices)
 
 /datum/design_techweb/proc/material_choices_from_params(list/params)
 	var/list/choices = params?["materialSlots"]
@@ -259,9 +276,10 @@ other types of metals and chemistry for reagents).
 		return choices
 	// Accept the previous single picker during rolling upgrades and tests.
 	var/legacy_material = params?["material"]
-	if(legacy_material && length(material_slots))
+	if(legacy_material && material_template)
 		var/list/legacy = list()
-		for(var/role in material_slots)
+		var/datum/material_template/template = material_template_singleton(material_template)
+		for(var/role in template.roles)
 			legacy[role] = legacy_material
 			break
 		return legacy

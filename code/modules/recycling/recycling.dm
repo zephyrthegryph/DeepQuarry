@@ -87,7 +87,7 @@
 	effic_factor = CLAMP01(initial(effic_factor)+total_rating)
 
 /obj/machinery/recycling/crusher/can_accept_item(obj/item/O)
-	if(length(O.get_matter()))
+	if(length(O.material_totals()))
 		return ..()
 	// ition Start - Let's the machine decide to put things it can't accept somewhere else.
 	else if(negative_dir && isitem(O) && !ishuman(O.loc))
@@ -109,15 +109,13 @@
 	if(istype(O,/obj/item/stack))
 		var/obj/item/stack/S = O
 		trash = S.amount
-	var/list/item_matter = O.get_matter()
+	var/list/item_matter = O.material_totals()
 	for(var/mat in item_matter)
 		modified_mats[mat] = item_matter[mat] * effic_factor * trash // Trash multiplier
 	var/turf/T = get_step(src, dir)
 	for(var/obj/item/debris_pack/D in T.contents)
 		if(istype(D))
-			var/list/debris_matter = D.own_matter()
-			for(var/mat in modified_mats)
-				debris_matter[mat] += modified_mats[mat]
+			D.add_materials(modified_mats)
 			update_use_power(USE_POWER_IDLE)
 			icon_state = "crusher"
 			qdel(O)
@@ -161,7 +159,7 @@
 	working = FALSE
 
 /obj/machinery/recycling/sorter/proc/sort_item(obj/item/O)
-	var/list/item_matter = O.get_matter()
+	var/list/item_matter = O.material_totals()
 	for(var/mat in item_matter)
 		if(mat in materials)
 			materials[mat] += item_matter[mat]
@@ -229,7 +227,7 @@
 	w_class = ITEMSIZE_NORMAL
 
 /obj/item/debris_pack/Initialize(mapload, list/matter_init)
-	set_matter(matter_init.Copy())
+	set_material_mix(matter_init.Copy())
 	. = ..()
 
 /obj/item/material_dust

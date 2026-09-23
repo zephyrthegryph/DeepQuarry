@@ -278,6 +278,8 @@ GLOBAL_LIST(construction_frame_floor)
 //////////////////////////////
 
 /obj/structure/frame
+	material_template = /datum/material_template/machine_part
+	material_total = 5 * SHEET_MATERIAL_AMOUNT
 	anchored = FALSE
 	name = "frame"
 	icon = 'icons/obj/stock_parts.dmi'
@@ -329,7 +331,6 @@ GLOBAL_LIST(construction_frame_floor)
 
 /obj/structure/frame/Initialize(mapload, dir, building = 0, datum/frame/frame_types/type, mob/user as mob)
 	. = ..()
-	ensure_material_construction(MATERIAL_APPLICATION_MACHINE_PART, 5 * SHEET_MATERIAL_AMOUNT)
 	if(building)
 		frame_type = type
 		state = FRAME_PLACED

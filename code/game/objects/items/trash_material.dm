@@ -1,6 +1,6 @@
 /obj/item/trash/material
 	icon = 'icons/obj/material_trash.dmi'
-	DEFAULT_MATTER(list())
+	MATERIAL_NONE
 	var/matter_chances = list()	//List of lists: list(mat_name, chance, amount)
 
 
@@ -8,9 +8,9 @@
 	. = ..()
 	for(var/list/L in matter_chances)
 		if(prob(L[2]))
-			var/list/own = own_matter()
-			own |= L[1]
-			own[L[1]] += max(0, L[3] + rand(-2,2))
+			var/list/added = list()
+			added[L[1]] = max(0, L[3] + rand(-2,2))
+			add_materials(added)
 
 
 

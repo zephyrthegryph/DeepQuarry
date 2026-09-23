@@ -75,18 +75,15 @@
 /datum/property_provider/material
 	source = PROP_SOURCE_MATERIAL
 	applies_to = /obj/item
-	state_var = "matter"
+	state_var = "material_overrides"
 
 /datum/property_provider/material/type_value(path, list/variant_vars)
 	return from_matter(dq_property_type_matter(path))
 
 /datum/property_provider/material/instance_value(datum/D)
-	var/list/instance_matter = dq_property_state_value(D, state_var)
-	// Null saved state means "no override": the item uses its (possibly instance-dependent) default.
-	if(isnull(instance_matter) && isitem(D))
-		var/obj/item/I = D
-		instance_matter = I.default_matter()
-	return from_matter(instance_matter)
+	// Composition is derived from the blueprint plus this instance's saved overrides.
+	var/obj/O = D
+	return from_matter(O.material_totals())
 
 /// Fold a matter list (material name -> amount) into a value: calls fold()
 /// once per known material.
@@ -103,10 +100,10 @@
 /datum/property_provider/material/proc/fold(datum/material/M, amount, acc)
 	return acc
 
-/// A type's declared default matter (DEFAULT_MATTER), read without an instance.
-/// The one place per-type matter is read.
+/// A type's material totals from its declared blueprint and total, read without an
+/// instance. The one place per-type composition is read.
 /proc/dq_property_type_matter(path)
-	return dq_type_default_matter(path)
+	return dq_type_material_totals(path)
 
 // ---- Components ----
 

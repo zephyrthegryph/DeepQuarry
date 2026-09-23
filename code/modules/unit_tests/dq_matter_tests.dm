@@ -1,22 +1,30 @@
-// Static per-type matter (DEFAULT_MATTER) with copy-on-write instance overrides.
-// See code/game/objects/item_matter.dm.
+// Composition: per-type material blueprints (templates) with per-instance overrides.
+// See code/modules/material_science/material_templates.dm and material_construction.dm.
 
 // ---- Fixtures ----
 
 /obj/item/dq_matter_test
 	name = "matter test item"
-	DEFAULT_MATTER(list(MAT_STEEL = 100, MAT_GLASS = 50))
+	MATERIAL_MIX(list(MAT_STEEL = 100, MAT_GLASS = 50))
 
-/// Inherits its parent's table without redeclaring it.
+/// Inherits its parent's mix without redeclaring it.
 /obj/item/dq_matter_test/child
 
 /obj/item/dq_matter_test/cleared
-	DEFAULT_MATTER(null)
+	MATERIAL_NONE
 
-/// Whether two matter lists hold the same materials and amounts (within float noise).
+/obj/item/dq_matter_test/single
+	MATERIAL_BULK(MAT_STEEL, 300)
+
+/obj/item/dq_matter_test/tool
+	material_template = /datum/material_template/tool
+	material_total = 1000
+
+/// Whether two material lists hold the same materials and amounts (within float noise).
+/// Null and empty are the same: made of nothing.
 /proc/dq_matter_lists_equal(list/a, list/b)
-	if(isnull(a) || isnull(b))
-		return isnull(a) && isnull(b)
+	if(!length(a) || !length(b))
+		return !length(a) && !length(b)
 	if(length(a) != length(b))
 		return FALSE
 	for(var/mat in a)
@@ -27,77 +35,122 @@
 	return TRUE
 
 /proc/dq_matter_text(list/L)
-	return isnull(L) ? "null" : json_encode(L)
+	return length(L) ? json_encode(L) : "nothing"
 
-// ---- Every type's default equals its pre-conversion `matter` ----
+/proc/dq_matter_sum(list/L)
+	. = 0
+	for(var/mat in L)
+		. += L[mat]
 
-/datum/unit_test/dq_matter_type_defaults_match_snapshot
+// ---- Every type's composition matches its pre-conversion `matter` ----
 
-/datum/unit_test/dq_matter_type_defaults_match_snapshot/Run()
-	var/list/changes = dq_matter_snapshot_changes()
+/datum/unit_test/dq_matter_type_totals_match_snapshot
+
+/// Intentional corrections to the snapshot: type -> its corrected composition, and why.
+/proc/dq_matter_snapshot_fixes()
+	return list(
+		// list(PLASTIC = 500) keyed the string "PLASTIC", which is no material.
+		/obj/item/handcuffs/fake = list(MAT_PLASTIC = 500),
+	)
+
+/datum/unit_test/dq_matter_type_totals_match_snapshot/Run()
+	var/list/changes = dq_matter_snapshot_changes().Copy()
+	var/list/fixes = dq_matter_snapshot_fixes()
+	for(var/path in fixes)
+		changes[path] = fixes[path]
 	var/failures = 0
 	var/checked = 0
+	var/functional = 0
+	var/list/mix_disagreements = list()
 	for(var/path in typesof(/obj/item) - typesof(/obj/item/dq_matter_test))
 		var/list/expected = null
 		for(var/datum/T = path; T; T = initial(T.parent_type))
 			if(T in changes)
 				expected = changes[T]
 				break
-		var/list/actual = dq_type_default_matter(path)
+		var/list/actual = dq_type_material_totals(path)
 		checked++
+		var/obj/item/declared = path
+		var/template_path = initial(declared.material_template)
+		var/is_plain = !template_path || ispath(template_path, /datum/material_template/bulk) || ispath(template_path, /datum/material_template/mix)
+		if(is_plain)
+			if(!dq_matter_lists_equal(actual, expected) && failures++ < 20)
+				TEST_FAIL("[path]: made of [dq_matter_text(actual)], expected [dq_matter_text(expected)]")
+			continue
+		// A functional blueprint (cell, tool, container...) splits the old total between
+		// its parts. The total is conserved; the material mix may differ.
+		functional++
+		if(abs(dq_matter_sum(actual) - dq_matter_sum(expected)) > 0.001 && failures++ < 20)
+			TEST_FAIL("[path]: blueprint total [dq_matter_sum(actual)], expected the old total [dq_matter_sum(expected)]")
 		if(!dq_matter_lists_equal(actual, expected))
-			if(failures++ < 20)
-				TEST_FAIL("[path]: default matter [dq_matter_text(actual)], expected [dq_matter_text(expected)]")
+			mix_disagreements += "[path]: [dq_matter_text(expected)] -> [dq_matter_text(actual)]"
+	log_test("dq_matter: [checked] item types checked, [functional] with functional blueprints, [length(mix_disagreements)] whose material mix changed:")
+	for(var/line in mix_disagreements)
+		log_test("  [line]")
 	TEST_ASSERT(checked > 10000, "only [checked] item types were checked")
-	TEST_ASSERT(failures == 0, "[failures] item types have a default matter that differs from the pre-conversion snapshot")
+	TEST_ASSERT(failures == 0, "[failures] item types differ from the pre-conversion snapshot")
 
-// ---- Instances share the type table and copy on write ----
+// ---- Blueprints, overrides and copy-on-write ----
 
-/datum/unit_test/dq_matter_copy_on_write
+/datum/unit_test/dq_matter_blueprints
 
-/datum/unit_test/dq_matter_copy_on_write/Run()
-	var/list/type_table = dq_type_default_matter(/obj/item/dq_matter_test)
-	TEST_ASSERT(dq_matter_lists_equal(type_table, list(MAT_STEEL = 100, MAT_GLASS = 50)), "the declared table is registered by type")
-
+/datum/unit_test/dq_matter_blueprints/Run()
+	// A mix: shared by every instance and inherited by a subtype.
 	var/obj/item/dq_matter_test/a = allocate(/obj/item/dq_matter_test)
 	var/obj/item/dq_matter_test/b = allocate(/obj/item/dq_matter_test)
-	TEST_ASSERT_NULL(a.matter, "a fresh instance has no override")
-	TEST_ASSERT(a.get_matter() == type_table, "a fresh instance reads the shared type table")
-	TEST_ASSERT(b.get_matter() == a.get_matter(), "instances of a type share one table")
-
-	var/list/owned = a.own_matter()
-	TEST_ASSERT(owned != type_table, "own_matter() copies")
-	TEST_ASSERT(a.own_matter() == owned, "a second own_matter() keeps the same private list")
-	owned[MAT_STEEL] = 999
-	owned[MAT_PLASTIC] = 5
-	TEST_ASSERT_EQUAL(a.get_matter()[MAT_STEEL], 999, "the owner sees its edit")
-	TEST_ASSERT_EQUAL(b.get_matter()[MAT_STEEL], 100, "another instance is unchanged")
-	TEST_ASSERT(!(MAT_PLASTIC in b.get_matter()), "another instance gains no materials")
-	TEST_ASSERT_EQUAL(type_table[MAT_STEEL], 100, "the type default is unchanged")
-	TEST_ASSERT_EQUAL(length(type_table), 2, "the type default gains no materials")
-	var/obj/item/dq_matter_test/c = allocate(/obj/item/dq_matter_test)
-	TEST_ASSERT_EQUAL(c.get_matter()[MAT_STEEL], 100, "a new instance still gets the declared default")
-
-	a.set_matter(null)
-	TEST_ASSERT(a.get_matter() == type_table, "set_matter(null) returns to the type default")
-	a.set_custom_materials(list())
-	TEST_ASSERT(islist(a.get_matter()) && !length(a.get_matter()), "custom empty materials mean made of nothing, not the default")
-
-	// Inheritance and clearing.
 	var/obj/item/dq_matter_test/child/child = allocate(/obj/item/dq_matter_test/child)
-	TEST_ASSERT(child.get_matter() == type_table, "a subtype without a declaration shares its parent's table")
-	TEST_ASSERT(dq_type_default_matter(/obj/item/dq_matter_test/child) == type_table, "per-type reads inherit too")
-	var/obj/item/dq_matter_test/cleared/cleared = allocate(/obj/item/dq_matter_test/cleared)
-	TEST_ASSERT_NULL(cleared.get_matter(), "DEFAULT_MATTER(null) clears the parent's table")
-	TEST_ASSERT_NULL(dq_type_default_matter(/obj/item/dq_matter_test/cleared), "and per type")
-	TEST_ASSERT_NULL(dq_type_default_matter(/obj/item), "the base item has no matter")
+	TEST_ASSERT(dq_matter_lists_equal(a.material_totals(), list(MAT_STEEL = 100, MAT_GLASS = 50)), "a mix item is made of its declared mix, got [dq_matter_text(a.material_totals())]")
+	TEST_ASSERT_NULL(a.material_overrides, "a fresh instance stores no overrides")
+	TEST_ASSERT_NULL(a.material_mix, "a fresh instance stores no list of its own")
+	TEST_ASSERT(a.get_material_template() == b.get_material_template(), "instances share one mix template")
+	TEST_ASSERT(child.get_material_template() == a.get_material_template(), "a subtype without a declaration shares its parent's")
+	TEST_ASSERT(dq_matter_lists_equal(dq_type_material_totals(/obj/item/dq_matter_test/child), list(MAT_STEEL = 100, MAT_GLASS = 50)), "per-type reads inherit the mix")
+	TEST_ASSERT(a.material_totals() != a.material_totals(), "totals are derived on demand, never a shared list")
 
-	// Material sheets: one shared table per material, none per stack.
-	var/obj/item/stack/material/steel/s1 = allocate(/obj/item/stack/material/steel)
-	var/obj/item/stack/material/steel/s2 = allocate(/obj/item/stack/material/steel)
-	TEST_ASSERT_NULL(s1.matter, "a sheet stack keeps no list of its own")
-	TEST_ASSERT(s1.get_matter() == s2.get_matter(), "steel stacks share one table")
-	TEST_ASSERT(dq_matter_lists_equal(s1.get_matter(), s1.material.get_matter()), "a sheet's matter is its material's")
-	var/list/sheet_owned = s1.own_matter()
-	sheet_owned[MAT_STEEL] = 1
-	TEST_ASSERT_EQUAL(s2.get_matter()[MAT_STEEL], SHEET_MATERIAL_AMOUNT, "editing one stack leaves the shared material table alone")
+	// Clearing, and a single plain material with no lists at all.
+	var/obj/item/dq_matter_test/cleared/cleared = allocate(/obj/item/dq_matter_test/cleared)
+	TEST_ASSERT(!length(cleared.material_totals()), "MATERIAL_NONE clears the parent's composition")
+	TEST_ASSERT_NULL(dq_type_material_totals(/obj/item/dq_matter_test/cleared), "and per type")
+	TEST_ASSERT_NULL(dq_type_material_totals(/obj/item), "the base item has no composition")
+	var/obj/item/dq_matter_test/single/single = allocate(/obj/item/dq_matter_test/single)
+	TEST_ASSERT(dq_matter_lists_equal(single.material_totals(), list(MAT_STEEL = 300)), "a bulk item is made of its one material")
+
+	// A functional blueprint: amounts are fraction x total, overrides are per role.
+	var/obj/item/dq_matter_test/tool/t1 = allocate(/obj/item/dq_matter_test/tool)
+	var/obj/item/dq_matter_test/tool/t2 = allocate(/obj/item/dq_matter_test/tool)
+	var/obj/item/dq_matter_test/tool/t3 = allocate(/obj/item/dq_matter_test/tool)
+	TEST_ASSERT(dq_matter_lists_equal(t1.material_totals(), list(MAT_STEEL = 700, MAT_PLASTIC = 300)), "the tool blueprint splits 1000 units 70/30, got [dq_matter_text(t1.material_totals())]")
+	t1.set_construction_material(MATERIAL_ROLE_GRIP, MAT_WOOD)
+	TEST_ASSERT_EQUAL(t1.material_for_role(MATERIAL_ROLE_GRIP)?.name, MAT_WOOD, "the override fills its role")
+	TEST_ASSERT(dq_matter_lists_equal(t1.material_totals(), list(MAT_STEEL = 700, MAT_WOOD = 300)), "the override changes the owner's totals")
+	TEST_ASSERT(dq_matter_lists_equal(t2.material_totals(), list(MAT_STEEL = 700, MAT_PLASTIC = 300)), "another instance is unchanged")
+	TEST_ASSERT_NULL(t2.material_overrides, "another instance gains no overrides")
+	TEST_ASSERT(dq_matter_lists_equal(dq_type_material_totals(/obj/item/dq_matter_test/tool), list(MAT_STEEL = 700, MAT_PLASTIC = 300)), "the type blueprint is unchanged")
+	t3.set_construction_material(MATERIAL_ROLE_GRIP, MAT_WOOD)
+	TEST_ASSERT(t1.material_overrides == t3.material_overrides, "identical overrides share one interned list")
+	var/list/shared = t1.material_overrides
+	t3.set_construction_material(MATERIAL_ROLE_WORKING, MAT_GOLD)
+	TEST_ASSERT(t1.material_overrides == shared && length(shared) == 1, "writing one instance never edits a shared list")
+	t1.set_construction_material(MATERIAL_ROLE_GRIP, MAT_PLASTIC)
+	TEST_ASSERT_NULL(t1.material_overrides, "going back to the default drops the override")
+
+	// Exact conservation: the last role takes the rounding remainder.
+	var/datum/material_template/cell = material_template_singleton(/datum/material_template/cell)
+	for(var/total in list(1, 7, 333, 1001, 2 * SHEET_MATERIAL_AMOUNT + 1))
+		TEST_ASSERT_EQUAL(dq_matter_sum(cell.role_amounts(total)), total, "cell roles must sum to exactly [total]")
+
+	// Bulk holders: an arbitrary mix is genuine per-instance state.
+	var/obj/item/dq_matter_test/single/holder = allocate(/obj/item/dq_matter_test/single)
+	holder.add_materials(list(MAT_GLASS = 25))
+	TEST_ASSERT(dq_matter_lists_equal(holder.material_totals(), list(MAT_STEEL = 300, MAT_GLASS = 25)), "adding keeps what the item was made of")
+	TEST_ASSERT(dq_matter_lists_equal(single.material_totals(), list(MAT_STEEL = 300)), "adding to one item leaves another alone")
+	holder.set_material_mix(null)
+	TEST_ASSERT(!length(holder.material_totals()), "an empty mix means made of nothing")
+	var/obj/item/dq_matter_test/tool/scaled = allocate(/obj/item/dq_matter_test/tool)
+	scaled.scale_materials(0.5)
+	TEST_ASSERT_EQUAL(dq_matter_sum(scaled.material_totals()), 500, "scaling a blueprint scales its total")
+
+	// Material sheets: made of their material, per sheet, with nothing stored per stack.
+	var/obj/item/stack/material/steel/sheet = allocate(/obj/item/stack/material/steel)
+	TEST_ASSERT(dq_matter_lists_equal(sheet.material_totals(), sheet.material.get_matter()), "a sheet is made of its material")
+	TEST_ASSERT(isnull(sheet.material_mix) && isnull(sheet.material_overrides), "a sheet stack keeps no list of its own")

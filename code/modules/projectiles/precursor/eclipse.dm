@@ -5,7 +5,7 @@
 	icon_state = "cryogun"
 	item_state = "cryogun"
 	wielded_item_state = "cryogun-wielded"
-	DEFAULT_MATTER(list(MAT_DURASTEEL = 1000, MAT_MORPHIUM = 500))
+	MATERIAL_MIX(list(MAT_DURASTEEL = 1000, MAT_MORPHIUM = 500))
 
 	charge_cost = 80 //How much energy is needed to fire.
 

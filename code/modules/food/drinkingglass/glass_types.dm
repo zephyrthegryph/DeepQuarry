@@ -8,7 +8,7 @@
 	volume = 30
 	max_transfer_amount = 30
 	rim_pos = list(23,13,20) // y, x0, x1
-	DEFAULT_MATTER(list(MAT_GLASS = 60))
+	material_total = 60
 
 /obj/item/reagent_containers/food/drinks/glass2/rocks
 	name = "rocks glass"
@@ -19,7 +19,7 @@
 	volume = 20
 	max_transfer_amount = 20
 	rim_pos = list(21, 10, 23)
-	DEFAULT_MATTER(list(MAT_GLASS = 40))
+	material_total = 40
 
 /obj/item/reagent_containers/food/drinks/glass2/shake
 	name = "milkshake glass"
@@ -30,7 +30,7 @@
 	volume = 30
 	max_transfer_amount = 30
 	rim_pos = list(25, 13, 21)
-	DEFAULT_MATTER(list(MAT_GLASS = 30))
+	material_total = 30
 
 /obj/item/reagent_containers/food/drinks/glass2/cocktail
 	name = "cocktail glass"
@@ -41,7 +41,7 @@
 	volume = 15
 	max_transfer_amount = 15
 	rim_pos = list(22, 13, 21)
-	DEFAULT_MATTER(list(MAT_GLASS = 30))
+	material_total = 30
 
 /obj/item/reagent_containers/food/drinks/glass2/shot
 	name = "shot glass"
@@ -52,7 +52,7 @@
 	volume = 5
 	max_transfer_amount = 5
 	rim_pos = list(17, 13, 21)
-	DEFAULT_MATTER(list(MAT_GLASS = 10))
+	material_total = 10
 
 /obj/item/reagent_containers/food/drinks/glass2/pint
 	name = "pint glass"
@@ -63,7 +63,7 @@
 	volume = 60
 	max_transfer_amount = 60
 	rim_pos = list(25, 12, 21)
-	DEFAULT_MATTER(list(MAT_GLASS = 120))
+	material_total = 120
 
 /obj/item/reagent_containers/food/drinks/glass2/mug
 	name = "glass mug"
@@ -74,7 +74,7 @@
 	volume = 40
 	max_transfer_amount = 40
 	rim_pos = list(22, 12, 20)
-	DEFAULT_MATTER(list(MAT_GLASS = 80))
+	material_total = 80
 
 /obj/item/reagent_containers/food/drinks/glass2/wine
 	name = "wine glass"
@@ -85,4 +85,4 @@
 	volume = 25
 	max_transfer_amount = 25
 	rim_pos = list(25, 12, 21)
-	DEFAULT_MATTER(list(MAT_GLASS = 50))
+	material_total = 50

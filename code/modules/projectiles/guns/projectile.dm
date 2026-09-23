@@ -3,7 +3,7 @@
 	desc = "A gun that fires bullets."
 	icon_state = "revolver"
 	w_class = ITEMSIZE_NORMAL
-	DEFAULT_MATTER(list(MAT_STEEL = 1000))
+	MATERIAL_BULK(MAT_STEEL, 1000)
 	recoil = 1
 	projectile_type = /obj/item/projectile/bullet/pistol/strong	//Only used for chameleon guns
 

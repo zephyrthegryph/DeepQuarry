@@ -54,9 +54,9 @@
 	material = null
 	. = ..()
 
-/// A sheet's composition follows its material: one shared table per material, not a list per stack.
-/obj/item/stack/material/default_matter()
-	return material ? material.get_shared_matter() : ..()
+/// A sheet's composition follows its material (per sheet; multiply by the amount).
+/obj/item/stack/material/material_totals()
+	return material ? material.get_matter() : ..()
 
 /obj/item/stack/material/get_material()
 	return material
