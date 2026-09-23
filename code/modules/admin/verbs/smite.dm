@@ -196,8 +196,8 @@
 			if(ishuman(target))
 				if(target.get_equipped_item(SLOT_ID_HEAD))
 					target.unEquip(target.get_equipped_item(SLOT_ID_HEAD))
-				if(target.get_equipped_item(SLOT_ID_WEAR_SUIT))
-					target.unEquip(target.get_equipped_item(SLOT_ID_WEAR_SUIT))
+				if(target.get_equipped_item(SLOT_ID_SUIT))
+					target.unEquip(target.get_equipped_item(SLOT_ID_SUIT))
 				var/obj/item/clothing/suit = new /obj/item/clothing/suit/storage/hooded/foodcostume/hotdog
 				var/obj/item/clothing/hood = new /obj/item/clothing/head/hood_vr/hotdog_hood
 				target.equip_to_slot_if_possible(suit, slot_wear_suit, 0, 0, 1)

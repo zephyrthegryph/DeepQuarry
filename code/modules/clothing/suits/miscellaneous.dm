@@ -271,7 +271,7 @@
 /obj/item/clothing/suit/straight_jacket/attack_hand(mob/living/user as mob)
 	if(ishuman(user))
 		var/mob/living/carbon/human/H = user
-		if(src == H.get_equipped_item(SLOT_ID_WEAR_SUIT))
+		if(src == H.get_equipped_item(SLOT_ID_SUIT))
 			to_chat(H, span_notice("You need help taking this off!"))
 			return
 	..()
@@ -968,6 +968,7 @@
 		body_parts_covered = initial(body_parts_covered)
 		to_chat(usr, span_notice("You roll down the sleeves of your [src]."))
 	update_icon()
+	worn_protection_changed()
 
 /obj/item/clothing/suit/storage/flannel/verb/tuck()
 	set name = "Toggle Shirt Tucking"

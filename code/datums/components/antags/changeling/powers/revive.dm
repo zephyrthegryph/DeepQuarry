@@ -65,8 +65,8 @@
 			H.drop_from_inventory(H.get_equipped_item(SLOT_ID_HANDCUFFED), H.loc)
 		if(H.get_equipped_item(SLOT_ID_LEGCUFFED))
 			H.drop_from_inventory(H.get_equipped_item(SLOT_ID_LEGCUFFED), H.loc)
-		if(istype(H.get_equipped_item(SLOT_ID_WEAR_SUIT), /obj/item/clothing/suit/straight_jacket))
-			H.drop_from_inventory(H.get_equipped_item(SLOT_ID_WEAR_SUIT), H.loc)
+		if(istype(H.get_equipped_item(SLOT_ID_SUIT), /obj/item/clothing/suit/straight_jacket))
+			H.drop_from_inventory(H.get_equipped_item(SLOT_ID_SUIT), H.loc)
 		H.UpdateAppearance()
 
 	C.shock_stage = 0 //Pain

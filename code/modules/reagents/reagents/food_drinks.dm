@@ -933,18 +933,18 @@
 			if((H.get_equipped_item(SLOT_ID_HEAD).body_parts_covered & FACE) && !(H.get_equipped_item(SLOT_ID_HEAD).item_flags & FLEXIBLEMATERIAL))
 				mouth_covered = 1
 				safe_thing = H.get_equipped_item(SLOT_ID_HEAD)
-		if(H.get_equipped_item(SLOT_ID_WEAR_MASK))
-			if(!eyes_covered && H.get_equipped_item(SLOT_ID_WEAR_MASK).body_parts_covered & EYES)
+		if(H.get_equipped_item(SLOT_ID_MASK))
+			if(!eyes_covered && H.get_equipped_item(SLOT_ID_MASK).body_parts_covered & EYES)
 				eyes_covered = 1
-				safe_thing = H.get_equipped_item(SLOT_ID_WEAR_MASK)
-			if(!mouth_covered && (H.get_equipped_item(SLOT_ID_WEAR_MASK).body_parts_covered & FACE) && !(H.get_equipped_item(SLOT_ID_WEAR_MASK).item_flags & FLEXIBLEMATERIAL))
+				safe_thing = H.get_equipped_item(SLOT_ID_MASK)
+			if(!mouth_covered && (H.get_equipped_item(SLOT_ID_MASK).body_parts_covered & FACE) && !(H.get_equipped_item(SLOT_ID_MASK).item_flags & FLEXIBLEMATERIAL))
 				mouth_covered = 1
-				safe_thing = H.get_equipped_item(SLOT_ID_WEAR_MASK)
-		if(H.get_equipped_item(SLOT_ID_GLASSES) && H.get_equipped_item(SLOT_ID_GLASSES).body_parts_covered & EYES)
+				safe_thing = H.get_equipped_item(SLOT_ID_MASK)
+		if(H.get_equipped_item(SLOT_ID_EYES) && H.get_equipped_item(SLOT_ID_EYES).body_parts_covered & EYES)
 			if(!eyes_covered)
 				eyes_covered = 1
 				if(!safe_thing)
-					safe_thing = H.get_equipped_item(SLOT_ID_GLASSES)
+					safe_thing = H.get_equipped_item(SLOT_ID_EYES)
 		if(alien == IS_SLIME)
 			for(var/obj/item/clothing/C in H.worn_clothing)
 				if(C.body_parts_covered & HEAD)

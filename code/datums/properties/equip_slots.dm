@@ -226,14 +226,14 @@
 // ---- Slot rules (REQ_PROC clauses: (actor, target, held) -> TRUE or a reason) ----
 
 /proc/dq_equip_has_uniform(mob/living/carbon/human/H, obj/item/I)
-	if(!ishuman(H) || H.get_equipped_item(SLOT_ID_W_UNIFORM) || !(slot_w_uniform in dq_equip_slots_of(H)))
+	if(!ishuman(H) || H.get_equipped_item(SLOT_ID_UNIFORM) || !(slot_w_uniform in dq_equip_slots_of(H)))
 		return TRUE
 	return "you need a jumpsuit first"
 
 /proc/dq_equip_suit_storage_takes(mob/living/carbon/human/H, obj/item/I)
 	if(!ishuman(H))
 		return "there's nowhere to put it"
-	var/obj/item/suit = H.get_equipped_item(SLOT_ID_WEAR_SUIT)
+	var/obj/item/suit = H.get_equipped_item(SLOT_ID_SUIT)
 	if(!suit)
 		return "you need a suit first"
 	var/datum/predicate/P = dq_constraint(suit, CONSTRAINT_SUIT_STORAGE)

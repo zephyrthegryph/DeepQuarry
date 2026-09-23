@@ -27,31 +27,31 @@
 	if(QDESTROYING(src))
 		return
 
-	if(get_equipped_item(SLOT_ID_R_HAND))
-		get_equipped_item(SLOT_ID_R_HAND).screen_loc = ui_rhand	//TODO
+	if(get_equipped_item(SLOT_ID_HAND_R))
+		get_equipped_item(SLOT_ID_HAND_R).screen_loc = ui_rhand	//TODO
 
 		//determine icon state to use
 		var/t_state
-		if(LAZYACCESS(get_equipped_item(SLOT_ID_R_HAND).item_state_slots, slot_r_hand_str))
-			t_state = get_equipped_item(SLOT_ID_R_HAND).item_state_slots[slot_r_hand_str]
-		else if(get_equipped_item(SLOT_ID_R_HAND).item_state)
-			t_state = get_equipped_item(SLOT_ID_R_HAND).item_state
+		if(LAZYACCESS(get_equipped_item(SLOT_ID_HAND_R).item_state_slots, slot_r_hand_str))
+			t_state = get_equipped_item(SLOT_ID_HAND_R).item_state_slots[slot_r_hand_str]
+		else if(get_equipped_item(SLOT_ID_HAND_R).item_state)
+			t_state = get_equipped_item(SLOT_ID_HAND_R).item_state
 		else
-			t_state = get_equipped_item(SLOT_ID_R_HAND).icon_state
+			t_state = get_equipped_item(SLOT_ID_HAND_R).icon_state
 
 		//determine icon to use
 		var/icon/t_icon
-		if(LAZYACCESS(get_equipped_item(SLOT_ID_R_HAND).item_icons, slot_r_hand_str))
-			t_icon = get_equipped_item(SLOT_ID_R_HAND).item_icons[slot_r_hand_str]
-		else if(get_equipped_item(SLOT_ID_R_HAND).icon_override)
+		if(LAZYACCESS(get_equipped_item(SLOT_ID_HAND_R).item_icons, slot_r_hand_str))
+			t_icon = get_equipped_item(SLOT_ID_HAND_R).item_icons[slot_r_hand_str]
+		else if(get_equipped_item(SLOT_ID_HAND_R).icon_override)
 			t_state += "_r"
-			t_icon = get_equipped_item(SLOT_ID_R_HAND).icon_override
+			t_icon = get_equipped_item(SLOT_ID_HAND_R).icon_override
 		else
 			t_icon = INV_R_HAND_DEF_ICON
 
 		//apply color
 		var/image/standing = image(icon = t_icon, icon_state = t_state)
-		standing.color = get_equipped_item(SLOT_ID_R_HAND).color
+		standing.color = get_equipped_item(SLOT_ID_HAND_R).color
 
 		r_hand_sprite = standing
 
@@ -64,31 +64,31 @@
 	if(QDESTROYING(src))
 		return
 
-	if(get_equipped_item(SLOT_ID_L_HAND))
-		get_equipped_item(SLOT_ID_L_HAND).screen_loc = ui_lhand	//TODO
+	if(get_equipped_item(SLOT_ID_HAND_L))
+		get_equipped_item(SLOT_ID_HAND_L).screen_loc = ui_lhand	//TODO
 
 		//determine icon state to use
 		var/t_state
-		if(LAZYACCESS(get_equipped_item(SLOT_ID_L_HAND).item_state_slots, slot_l_hand_str))
-			t_state = get_equipped_item(SLOT_ID_L_HAND).item_state_slots[slot_l_hand_str]
-		else if(get_equipped_item(SLOT_ID_L_HAND).item_state)
-			t_state = get_equipped_item(SLOT_ID_L_HAND).item_state
+		if(LAZYACCESS(get_equipped_item(SLOT_ID_HAND_L).item_state_slots, slot_l_hand_str))
+			t_state = get_equipped_item(SLOT_ID_HAND_L).item_state_slots[slot_l_hand_str]
+		else if(get_equipped_item(SLOT_ID_HAND_L).item_state)
+			t_state = get_equipped_item(SLOT_ID_HAND_L).item_state
 		else
-			t_state = get_equipped_item(SLOT_ID_L_HAND).icon_state
+			t_state = get_equipped_item(SLOT_ID_HAND_L).icon_state
 
 		//determine icon to use
 		var/icon/t_icon
-		if(LAZYACCESS(get_equipped_item(SLOT_ID_L_HAND).item_icons, slot_l_hand_str))
-			t_icon = get_equipped_item(SLOT_ID_L_HAND).item_icons[slot_l_hand_str]
-		else if(get_equipped_item(SLOT_ID_L_HAND).icon_override)
+		if(LAZYACCESS(get_equipped_item(SLOT_ID_HAND_L).item_icons, slot_l_hand_str))
+			t_icon = get_equipped_item(SLOT_ID_HAND_L).item_icons[slot_l_hand_str]
+		else if(get_equipped_item(SLOT_ID_HAND_L).icon_override)
 			t_state += "_l"
-			t_icon = get_equipped_item(SLOT_ID_L_HAND).icon_override
+			t_icon = get_equipped_item(SLOT_ID_HAND_L).icon_override
 		else
 			t_icon = INV_L_HAND_DEF_ICON
 
 		//apply color
 		var/image/standing = image(icon = t_icon, icon_state = t_state)
-		standing.color = get_equipped_item(SLOT_ID_L_HAND).color
+		standing.color = get_equipped_item(SLOT_ID_HAND_L).color
 
 		l_hand_sprite = standing
 

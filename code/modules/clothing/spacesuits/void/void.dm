@@ -91,7 +91,7 @@
 
 	if(!istype(H)) return
 
-	if(H.get_equipped_item(SLOT_ID_WEAR_SUIT) != src)
+	if(H.get_equipped_item(SLOT_ID_SUIT) != src)
 		return
 
 	if(boots)
@@ -106,7 +106,7 @@
 			hood.canremove = FALSE
 
 	if(cooler)
-		if(H.get_equipped_item(SLOT_ID_S_STORE)) //Ditto
+		if(H.get_equipped_item(SLOT_ID_SUIT_STORAGE)) //Ditto
 			to_chat(M, "Alarmingly, the cooling unit installed into your suit fails to deploy.")
 		else if (H.equip_to_slot_if_possible(cooler, slot_s_store))
 			to_chat(M, "Your suit's cooling unit deploys.")
@@ -178,7 +178,7 @@
 
 	if(!istype(H)) return
 	if(H.stat) return
-	if(H.get_equipped_item(SLOT_ID_WEAR_SUIT) != src) return
+	if(H.get_equipped_item(SLOT_ID_SUIT) != src) return
 
 	if(hood.light_on)
 		to_chat(H, span_notice("The helmet light shuts off as it retracts."))
@@ -217,7 +217,7 @@
 
 	if(!istype(H)) return
 	if(H.stat) return
-	if(H.get_equipped_item(SLOT_ID_WEAR_SUIT) != src) return
+	if(H.get_equipped_item(SLOT_ID_SUIT) != src) return
 
 	var/obj/item/removing = null
 	if(tank)

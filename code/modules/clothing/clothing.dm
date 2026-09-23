@@ -213,7 +213,7 @@
 		return
 
 	var/mob/living/carbon/human/H = user
-	if(H.get_equipped_item(SLOT_ID_L_EAR) != src && H.get_equipped_item(SLOT_ID_R_EAR) != src)
+	if(H.get_equipped_item(SLOT_ID_EAR_L) != src && H.get_equipped_item(SLOT_ID_EAR_R) != src)
 		..()
 		return
 
@@ -222,7 +222,7 @@
 
 	var/obj/item/clothing/ears/O
 	if(HAS_TAG(src, TAG_WEAR_TWO_EARS))
-		O = (H.get_equipped_item(SLOT_ID_L_EAR) == src ? H.get_equipped_item(SLOT_ID_R_EAR) : H.get_equipped_item(SLOT_ID_L_EAR))
+		O = (H.get_equipped_item(SLOT_ID_EAR_L) == src ? H.get_equipped_item(SLOT_ID_EAR_R) : H.get_equipped_item(SLOT_ID_EAR_L))
 		user.drop_from_inventory(O)
 		if(!istype(src,/obj/item/clothing/ears/offear))
 			qdel(O)
@@ -249,7 +249,7 @@
 		var/mob/living/carbon/human/H = usr
 		// If this covers both ears, we want to return the result of unequipping the primary object, and kill the off-ear one
 		if(HAS_TAG(src, TAG_WEAR_TWO_EARS))
-			var/obj/item/clothing/ears/O = (H.get_equipped_item(SLOT_ID_L_EAR) == src ? H.get_equipped_item(SLOT_ID_R_EAR) : H.get_equipped_item(SLOT_ID_L_EAR))
+			var/obj/item/clothing/ears/O = (H.get_equipped_item(SLOT_ID_EAR_L) == src ? H.get_equipped_item(SLOT_ID_EAR_R) : H.get_equipped_item(SLOT_ID_EAR_L))
 			if(istype(src, /obj/item/clothing/ears/offear))
 				. = O.MouseDrop(over_object)
 				H.drop_from_inventory(src)
@@ -972,7 +972,7 @@
 		return
 	if(ishuman(loc))
 		var/mob/living/carbon/human/H = src.loc
-		if(H.get_equipped_item(SLOT_ID_WEAR_SUIT) != src)
+		if(H.get_equipped_item(SLOT_ID_SUIT) != src)
 			to_chat(H, span_warning("You must be wearing [src] to put up the hood!"))
 			return
 		if(H.get_equipped_item(SLOT_ID_HEAD))
@@ -1286,6 +1286,7 @@
 		LAZYSET(item_state_slots, slot_w_uniform_str, worn_state)
 		to_chat(usr, span_notice("You roll up your [src]."))
 	update_clothing_icon()
+	worn_protection_changed()
 
 /obj/item/clothing/under/verb/rollsleeves()
 	set name = "Roll Up Sleeves"
@@ -1322,6 +1323,7 @@
 		LAZYSET(item_state_slots, slot_w_uniform_str, worn_state)
 		to_chat(usr, span_notice("You roll down your [src]'s sleeves."))
 	update_clothing_icon()
+	worn_protection_changed()
 
 /obj/item/clothing/under/rank/Initialize(mapload)
 	sensor_mode = pick(0,1,2,3)

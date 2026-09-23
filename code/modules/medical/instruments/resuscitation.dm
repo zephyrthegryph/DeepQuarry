@@ -23,7 +23,7 @@
 	var/mob/living/carbon/human/H = M
 	if(!istype(H) || user.a_intent == I_HURT)
 		return ..()
-	if(!H.check_has_mouth() || (H.get_equipped_item(SLOT_ID_WEAR_MASK) && (H.get_equipped_item(SLOT_ID_WEAR_MASK).body_parts_covered & FACE)) || (H.get_equipped_item(SLOT_ID_HEAD) && (H.get_equipped_item(SLOT_ID_HEAD).body_parts_covered & FACE)))
+	if(!H.check_has_mouth() || (H.get_equipped_item(SLOT_ID_MASK) && (H.get_equipped_item(SLOT_ID_MASK).body_parts_covered & FACE)) || (H.get_equipped_item(SLOT_ID_HEAD) && (H.get_equipped_item(SLOT_ID_HEAD).body_parts_covered & FACE)))
 		to_chat(user, span_warning("You can't get a seal over [H]'s face."))
 		return ITEM_INTERACT_SUCCESS
 	user.visible_message(span_notice("[user] seals \the [src] over [H]'s face and starts squeezing."), span_notice("You seal \the [src] over [H]'s face and start squeezing."))
@@ -60,7 +60,7 @@
 	if(target_zone != O_MOUTH && target_zone != BP_HEAD)
 		to_chat(user, span_warning("Aim for [H]'s mouth."))
 		return ITEM_INTERACT_SUCCESS
-	if(!H.check_has_mouth() || (H.get_equipped_item(SLOT_ID_WEAR_MASK) && (H.get_equipped_item(SLOT_ID_WEAR_MASK).body_parts_covered & FACE)))
+	if(!H.check_has_mouth() || (H.get_equipped_item(SLOT_ID_MASK) && (H.get_equipped_item(SLOT_ID_MASK).body_parts_covered & FACE)))
 		to_chat(user, span_warning("You can't get into [H]'s mouth."))
 		return ITEM_INTERACT_SUCCESS
 	user.visible_message(span_notice("[user] starts working \the [src] into [H]'s airway."), span_notice("You start working \the [src] into [H]'s airway."))

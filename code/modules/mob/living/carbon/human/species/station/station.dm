@@ -515,10 +515,10 @@
 
 /datum/species/zaddat/equip_survival_gear(mob/living/carbon/human/H)
 	. = ..()
-	if(H.get_equipped_item(SLOT_ID_WEAR_SUIT)) //get rid of job labcoats so they don't stop us from equipping the Shroud
-		qdel(H.get_equipped_item(SLOT_ID_WEAR_SUIT)) //if you know how to gently set it in like, their backpack or whatever, be my guest
-	if(H.get_equipped_item(SLOT_ID_WEAR_MASK))
-		qdel(H.get_equipped_item(SLOT_ID_WEAR_MASK))
+	if(H.get_equipped_item(SLOT_ID_SUIT)) //get rid of job labcoats so they don't stop us from equipping the Shroud
+		qdel(H.get_equipped_item(SLOT_ID_SUIT)) //if you know how to gently set it in like, their backpack or whatever, be my guest
+	if(H.get_equipped_item(SLOT_ID_MASK))
+		qdel(H.get_equipped_item(SLOT_ID_MASK))
 	if(H.get_equipped_item(SLOT_ID_HEAD))
 		qdel(H.get_equipped_item(SLOT_ID_HEAD))
 

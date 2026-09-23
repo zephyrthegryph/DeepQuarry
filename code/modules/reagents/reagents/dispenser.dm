@@ -527,27 +527,27 @@
 		if(removed <= 0)
 			return
 
-		if(H.get_equipped_item(SLOT_ID_WEAR_MASK))
-			if(H.get_equipped_item(SLOT_ID_WEAR_MASK).unacidable || is_type_in_list(H.get_equipped_item(SLOT_ID_WEAR_MASK), GLOB.item_digestion_blacklist))
-				to_chat(H, span_danger("Your [H.get_equipped_item(SLOT_ID_WEAR_MASK)] protects you from the acid."))
+		if(H.get_equipped_item(SLOT_ID_MASK))
+			if(H.get_equipped_item(SLOT_ID_MASK).unacidable || is_type_in_list(H.get_equipped_item(SLOT_ID_MASK), GLOB.item_digestion_blacklist))
+				to_chat(H, span_danger("Your [H.get_equipped_item(SLOT_ID_MASK)] protects you from the acid."))
 				remove_self(volume)
 				return
 			else if(removed > meltdose)
-				to_chat(H, span_danger("Your [H.get_equipped_item(SLOT_ID_WEAR_MASK)] melts away!"))
-				qdel(H.get_equipped_item(SLOT_ID_WEAR_MASK))
+				to_chat(H, span_danger("Your [H.get_equipped_item(SLOT_ID_MASK)] melts away!"))
+				qdel(H.get_equipped_item(SLOT_ID_MASK))
 				H.update_inv_wear_mask(1)
 				H.update_hair(1)
 				removed -= meltdose
 		if(removed <= 0)
 			return
 
-		if(H.get_equipped_item(SLOT_ID_GLASSES))
-			if(H.get_equipped_item(SLOT_ID_GLASSES).unacidable || is_type_in_list(H.get_equipped_item(SLOT_ID_GLASSES), GLOB.item_digestion_blacklist))
-				to_chat(H, span_danger("Your [H.get_equipped_item(SLOT_ID_GLASSES)] partially protect you from the acid!"))
+		if(H.get_equipped_item(SLOT_ID_EYES))
+			if(H.get_equipped_item(SLOT_ID_EYES).unacidable || is_type_in_list(H.get_equipped_item(SLOT_ID_EYES), GLOB.item_digestion_blacklist))
+				to_chat(H, span_danger("Your [H.get_equipped_item(SLOT_ID_EYES)] partially protect you from the acid!"))
 				removed /= 2
 			else if(removed > meltdose)
-				to_chat(H, span_danger("Your [H.get_equipped_item(SLOT_ID_GLASSES)] melt away!"))
-				qdel(H.get_equipped_item(SLOT_ID_GLASSES))
+				to_chat(H, span_danger("Your [H.get_equipped_item(SLOT_ID_EYES)] melt away!"))
+				qdel(H.get_equipped_item(SLOT_ID_EYES))
 				H.update_inv_glasses(1)
 				removed -= meltdose / 2
 		if(removed <= 0)

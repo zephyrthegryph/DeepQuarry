@@ -19,7 +19,7 @@
 /obj/item/clothing/suit/shibari/attack_hand(mob/living/user as mob)
 	if(ishuman(user))
 		var/mob/living/carbon/human/H = user
-		if(src == H.get_equipped_item(SLOT_ID_WEAR_SUIT))
+		if(src == H.get_equipped_item(SLOT_ID_SUIT))
 			to_chat(H, span_notice("You need help taking this off!"))
 			return
 	..()

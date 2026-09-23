@@ -424,14 +424,14 @@
 
 /mob/living/carbon/human/show_pudge()
 	//A uniform could hide it.
-	if(istype(get_equipped_item(SLOT_ID_W_UNIFORM),/obj/item/clothing))
-		var/obj/item/clothing/under = get_equipped_item(SLOT_ID_W_UNIFORM)
+	if(istype(get_equipped_item(SLOT_ID_UNIFORM),/obj/item/clothing))
+		var/obj/item/clothing/under = get_equipped_item(SLOT_ID_UNIFORM)
 		if(istype(under) && under.hides_bulges)
 			return FALSE
 
 	//We return as soon as we find one, no need for 'else' really.
-	if(istype(get_equipped_item(SLOT_ID_WEAR_SUIT),/obj/item/clothing))
-		var/obj/item/clothing/suit = get_equipped_item(SLOT_ID_WEAR_SUIT)
+	if(istype(get_equipped_item(SLOT_ID_SUIT),/obj/item/clothing))
+		var/obj/item/clothing/suit = get_equipped_item(SLOT_ID_SUIT)
 		if(istype(suit) && suit.hides_bulges)
 			return FALSE
 

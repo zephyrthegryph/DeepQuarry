@@ -135,10 +135,10 @@
 
 		//Code to actually update the mob wearing us
 		//Only suit and uniform for now...Feel free to expand if you need.
-		if(wearing_mob.get_equipped_item(SLOT_ID_WEAR_SUIT) == our_object)
+		if(wearing_mob.get_equipped_item(SLOT_ID_SUIT) == our_object)
 			wearing_mob.update_inv_wear_suit()
 			return
-		if(wearing_mob.get_equipped_item(SLOT_ID_W_UNIFORM) == our_object)
+		if(wearing_mob.get_equipped_item(SLOT_ID_UNIFORM) == our_object)
 			wearing_mob.update_inv_w_uniform()
 			return
 

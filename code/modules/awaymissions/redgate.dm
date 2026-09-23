@@ -237,9 +237,9 @@
 		return
 
 	//get their uniform
-	if(istype(M.get_equipped_item(SLOT_ID_WEAR_SUIT), /obj/item/clothing/suit/lasertag/redtag))
+	if(istype(M.get_equipped_item(SLOT_ID_SUIT), /obj/item/clothing/suit/lasertag/redtag))
 		grabbing_team = "red"
-	else if(istype(M.get_equipped_item(SLOT_ID_WEAR_SUIT), /obj/item/clothing/suit/lasertag/bluetag))
+	else if(istype(M.get_equipped_item(SLOT_ID_SUIT), /obj/item/clothing/suit/lasertag/bluetag))
 		grabbing_team = "blue"
 	else
 		return	//if they're not on a team, stop!
@@ -365,11 +365,11 @@
 		return
 
 	//get their uniform
-	if(istype(M.get_equipped_item(SLOT_ID_WEAR_SUIT), /obj/item/clothing/suit/lasertag/redtag))
+	if(istype(M.get_equipped_item(SLOT_ID_SUIT), /obj/item/clothing/suit/lasertag/redtag))
 		grabbing_team = "red"
 		icon_state = "[initial(icon_state)]_red"
 		item_state = "[initial(icon_state)]_red"
-	else if(istype(M.get_equipped_item(SLOT_ID_WEAR_SUIT), /obj/item/clothing/suit/lasertag/bluetag))
+	else if(istype(M.get_equipped_item(SLOT_ID_SUIT), /obj/item/clothing/suit/lasertag/bluetag))
 		grabbing_team = "blue"
 		icon_state = "[initial(icon_state)]_blue"
 		item_state = "[initial(icon_state)]_blue"
@@ -421,9 +421,9 @@
 	. = ..()
 	var/mob/living/carbon/human/M = user
 	var/dunking_team
-	if(istype(M.get_equipped_item(SLOT_ID_WEAR_SUIT), /obj/item/clothing/suit/lasertag/redtag))
+	if(istype(M.get_equipped_item(SLOT_ID_SUIT), /obj/item/clothing/suit/lasertag/redtag))
 		dunking_team = "red"
-	else if(istype(M.get_equipped_item(SLOT_ID_WEAR_SUIT), /obj/item/clothing/suit/lasertag/bluetag))
+	else if(istype(M.get_equipped_item(SLOT_ID_SUIT), /obj/item/clothing/suit/lasertag/bluetag))
 		dunking_team = "blue"
 	else
 		return	//if they're not on a team, stop!

@@ -496,7 +496,7 @@ GLOBAL_DATUM_INIT(gas_data, /datum/xgm_gas_data, new())
 // is considered sealed.
 
 /mob/living/carbon/human/proc/pl_suit_protected()
-	var/obj/item/clothing/C = get_equipped_item(SLOT_ID_WEAR_SUIT)
+	var/obj/item/clothing/C = get_equipped_item(SLOT_ID_SUIT)
 	if(istype(C) && C.permeability_coefficient <= 0.1)
 		return TRUE
 	return FALSE

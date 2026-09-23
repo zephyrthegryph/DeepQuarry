@@ -351,7 +351,7 @@
 	if(!air_supply)
 		to_chat(user, "There is no tank to remove.")
 		return ITEM_INTERACT_BLOCKING
-	if(user.get_equipped_item(SLOT_ID_R_HAND) && user.get_equipped_item(SLOT_ID_L_HAND))
+	if(user.get_equipped_item(SLOT_ID_HAND_R) && user.get_equipped_item(SLOT_ID_HAND_L))
 		air_supply.forceMove(get_turf(user))
 	else
 		user.put_in_hands(air_supply)
@@ -562,6 +562,7 @@
 	slowdown = PROTEAN_RIG_INERT_SLOWDOWN
 	offline_slowdown = PROTEAN_RIG_INERT_SLOWDOWN
 	wearer?.update_inv_back()
+	wearer?.worn_protection_changed()
 	log_game("PROTEAN RIG: [src] of [key_name(myprotean)] went inert at [AREACOORD(src)].")
 
 /// The protean has reconstituted: the cluster is its own again.
@@ -574,6 +575,7 @@
 	armor = restored.Copy()
 	for(var/obj/item/piece in list(gloves, helmet, boots, chest))
 		piece.armor = restored.Copy()
+	wearer?.worn_protection_changed()
 	if(istype(R))
 		slowdown = initial(R.slowdown) * 0.5
 	else
@@ -673,6 +675,7 @@
 		piece.armor = R.armor.Copy()
 		piece.max_pressure_protection = R.rigsuit_max_pressure
 		piece.max_heat_protection_temperature = R.max_heat_protection_temperature
+	wearer?.worn_protection_changed()
 	//I dislike this piece of code, but not every rig has the full set of parts
 	if(R.gloves)
 		gloves.sprite_sheets = R.gloves.sprite_sheets.Copy()
@@ -741,6 +744,7 @@
 		icon_state = tempRig.icon_state
 		suit_state = icon_state
 		offline_slowdown = initial(offline_slowdown)
+		wearer?.worn_protection_changed()
 		usr.put_in_hands(assimilated_rig)
 		assimilated_rig = null
 		qdel(tempRig)

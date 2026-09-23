@@ -104,7 +104,7 @@
 		H.internal = H.get_equipped_item(SLOT_ID_BACK)
 	else
 		H.equip_to_slot_or_del(new /obj/item/tank/nitrogen(H), slot_r_hand)
-		H.internal = H.get_equipped_item(SLOT_ID_R_HAND)
+		H.internal = H.get_equipped_item(SLOT_ID_HAND_R)
 	H.internal = locate(/obj/item/tank) in H.contents
 	if(istype(H.internal,/obj/item/tank) && H.internals)
 		H.internals.icon_state = "internal1"

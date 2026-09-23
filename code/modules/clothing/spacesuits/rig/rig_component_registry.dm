@@ -88,6 +88,7 @@
 		piece.unacidable = holder.unacidable
 		if(islist(holder.armor))
 			piece.armor = holder.armor.Copy()
+		piece.worn_protection_changed()
 
 /*
  * proc/destroy_pieces()

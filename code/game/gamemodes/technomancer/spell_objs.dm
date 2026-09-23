@@ -175,11 +175,11 @@
 // Description: Terrible code to check if a scepter is in the offhand, returns 1 if yes.
 /obj/item/spell/proc/check_for_scepter()
 	if(!src || !owner) return 0
-	if(owner.get_equipped_item(SLOT_ID_R_HAND) == src)
-		if(istype(owner.get_equipped_item(SLOT_ID_L_HAND), /obj/item/scepter))
+	if(owner.get_equipped_item(SLOT_ID_HAND_R) == src)
+		if(istype(owner.get_equipped_item(SLOT_ID_HAND_L), /obj/item/scepter))
 			return 1
 	else
-		if(istype(owner.get_equipped_item(SLOT_ID_R_HAND), /obj/item/scepter))
+		if(istype(owner.get_equipped_item(SLOT_ID_HAND_R), /obj/item/scepter))
 			return 1
 	return 0
 
@@ -187,10 +187,10 @@
 // Parameters: 1 (I - item being compared to determine what the offhand is)
 // Description: Helper for Aspect spells.
 /mob/living/carbon/human/proc/get_other_hand(obj/item/I)
-	if(get_equipped_item(SLOT_ID_R_HAND) == I)
-		return get_equipped_item(SLOT_ID_L_HAND)
+	if(get_equipped_item(SLOT_ID_HAND_R) == I)
+		return get_equipped_item(SLOT_ID_HAND_L)
 	else
-		return get_equipped_item(SLOT_ID_R_HAND)
+		return get_equipped_item(SLOT_ID_HAND_R)
 
 // Proc: attack_self()
 // Parameters: 1 (user - the Technomancer that invoked this proc)
@@ -261,13 +261,13 @@
 		if(S.run_checks())
 			S.on_innate_cast(src)
 
-	if(get_equipped_item(SLOT_ID_L_HAND) && get_equipped_item(SLOT_ID_R_HAND)) //Make sure our hands aren't full.
-		if(istype(get_equipped_item(SLOT_ID_R_HAND), /obj/item/spell)) //If they are full, perhaps we can still be useful.
-			var/obj/item/spell/r_spell = get_equipped_item(SLOT_ID_R_HAND)
+	if(get_equipped_item(SLOT_ID_HAND_L) && get_equipped_item(SLOT_ID_HAND_R)) //Make sure our hands aren't full.
+		if(istype(get_equipped_item(SLOT_ID_HAND_R), /obj/item/spell)) //If they are full, perhaps we can still be useful.
+			var/obj/item/spell/r_spell = get_equipped_item(SLOT_ID_HAND_R)
 			if(r_spell.aspect == ASPECT_CHROMATIC) //Check if we can combine the new spell with one in our hands.
 				r_spell.on_combine_cast(S, src)
-		else if(istype(get_equipped_item(SLOT_ID_L_HAND), /obj/item/spell))
-			var/obj/item/spell/l_spell = get_equipped_item(SLOT_ID_L_HAND)
+		else if(istype(get_equipped_item(SLOT_ID_HAND_L), /obj/item/spell))
+			var/obj/item/spell/l_spell = get_equipped_item(SLOT_ID_HAND_L)
 			if(l_spell.aspect == ASPECT_CHROMATIC) //Check the other hand too.
 				l_spell.on_combine_cast(S, src)
 		else //Welp

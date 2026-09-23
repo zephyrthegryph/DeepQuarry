@@ -13,7 +13,7 @@
 /obj/item/clothing/accessory/armor/on_attached(obj/item/clothing/S, mob/user)
 	if(ishuman(user))
 		var/mob/living/carbon/human/H = user
-		if(H.get_equipped_item(SLOT_ID_WEAR_SUIT) == S)
+		if(H.get_equipped_item(SLOT_ID_SUIT) == S)
 			if((body_parts_covered & ARMS) && istype(H.get_equipped_item(SLOT_ID_GLOVES), /obj/item/clothing))
 				var/obj/item/clothing/G = H.get_equipped_item(SLOT_ID_GLOVES)
 				if(G.body_parts_covered & ARMS)

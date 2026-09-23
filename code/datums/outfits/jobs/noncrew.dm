@@ -17,7 +17,7 @@
 
 /datum/decl/hierarchy/outfit/noncrew/post_equip(mob/living/carbon/human/H)
 	..()
-	var/obj/item/spacecash/ewallet/wallet = H.get_equipped_item(SLOT_ID_R_STORE)
+	var/obj/item/spacecash/ewallet/wallet = H.get_equipped_item(SLOT_ID_POCKET_R)
 	if(istype(wallet))
 		wallet.owner_name = H.real_name
 		wallet.worth = 1000
@@ -47,7 +47,7 @@
 
 /datum/decl/hierarchy/outfit/shadekin/post_equip(mob/living/carbon/human/H)
 	..()
-	var/obj/item/spacecash/ewallet/wallet = H.get_equipped_item(SLOT_ID_R_STORE)
+	var/obj/item/spacecash/ewallet/wallet = H.get_equipped_item(SLOT_ID_POCKET_R)
 	if(istype(wallet))
 		wallet.owner_name = H.real_name
 		wallet.worth = 1000

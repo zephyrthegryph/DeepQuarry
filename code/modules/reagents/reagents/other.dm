@@ -570,12 +570,12 @@
 	T.apply_fire_protection() // Apply fire protection
 
 /datum/reagent/space_cleaner/affect_touch(mob/living/carbon/M, alien, removed)
-	if(M.get_equipped_item(SLOT_ID_R_HAND))
-		M.get_equipped_item(SLOT_ID_R_HAND).wash(CLEAN_SCRUB)
-	if(M.get_equipped_item(SLOT_ID_L_HAND))
-		M.get_equipped_item(SLOT_ID_L_HAND).wash(CLEAN_SCRUB)
-	if(M.get_equipped_item(SLOT_ID_WEAR_MASK))
-		if(M.get_equipped_item(SLOT_ID_WEAR_MASK).wash(CLEAN_SCRUB))
+	if(M.get_equipped_item(SLOT_ID_HAND_R))
+		M.get_equipped_item(SLOT_ID_HAND_R).wash(CLEAN_SCRUB)
+	if(M.get_equipped_item(SLOT_ID_HAND_L))
+		M.get_equipped_item(SLOT_ID_HAND_L).wash(CLEAN_SCRUB)
+	if(M.get_equipped_item(SLOT_ID_MASK))
+		if(M.get_equipped_item(SLOT_ID_MASK).wash(CLEAN_SCRUB))
 			M.update_inv_wear_mask(0)
 	if(ishuman(M))
 		var/mob/living/carbon/human/H = M
@@ -584,11 +584,11 @@
 		if(H.get_equipped_item(SLOT_ID_HEAD))
 			if(H.get_equipped_item(SLOT_ID_HEAD).wash(CLEAN_SCRUB))
 				H.update_inv_head(0)
-		if(H.get_equipped_item(SLOT_ID_WEAR_SUIT))
-			if(H.get_equipped_item(SLOT_ID_WEAR_SUIT).wash(CLEAN_SCRUB))
+		if(H.get_equipped_item(SLOT_ID_SUIT))
+			if(H.get_equipped_item(SLOT_ID_SUIT).wash(CLEAN_SCRUB))
 				H.update_inv_wear_suit(0)
-		else if(H.get_equipped_item(SLOT_ID_W_UNIFORM))
-			if(H.get_equipped_item(SLOT_ID_W_UNIFORM).wash(CLEAN_SCRUB))
+		else if(H.get_equipped_item(SLOT_ID_UNIFORM))
+			if(H.get_equipped_item(SLOT_ID_UNIFORM).wash(CLEAN_SCRUB))
 				H.update_inv_w_uniform(0)
 		if(H.get_equipped_item(SLOT_ID_SHOES))
 			if(H.get_equipped_item(SLOT_ID_SHOES).wash(CLEAN_SCRUB))
@@ -618,9 +618,9 @@
 
 	if(ishuman(M))
 		var/mob/living/carbon/human/H = M
-		if(H.get_equipped_item(SLOT_ID_WEAR_MASK))
-			if(istype(H.get_equipped_item(SLOT_ID_WEAR_MASK), /obj/item/clothing/mask/smokable))
-				var/obj/item/clothing/mask/smokable/S = H.get_equipped_item(SLOT_ID_WEAR_MASK)
+		if(H.get_equipped_item(SLOT_ID_MASK))
+			if(istype(H.get_equipped_item(SLOT_ID_MASK), /obj/item/clothing/mask/smokable))
+				var/obj/item/clothing/mask/smokable/S = H.get_equipped_item(SLOT_ID_MASK)
 				if(S.lit)
 					S.quench() // No smoking in my medbay!
 					H.visible_message(span_notice("[H]\'s [S.name] is put out."))

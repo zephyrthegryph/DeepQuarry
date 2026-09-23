@@ -71,10 +71,10 @@
 
 	if(ishuman(user))
 		var/mob/living/carbon/human/H = user
-		if(H.get_equipped_item(SLOT_ID_L_STORE) == master_item && !H.get_active_hand())	//Prevents opening if it's in a pocket.
+		if(H.get_equipped_item(SLOT_ID_POCKET_L) == master_item && !H.get_active_hand())	//Prevents opening if it's in a pocket.
 			H.put_in_hands(master_item)
 			return 0
-		if(H.get_equipped_item(SLOT_ID_R_STORE) == master_item && !H.get_active_hand())
+		if(H.get_equipped_item(SLOT_ID_POCKET_R) == master_item && !H.get_active_hand())
 			H.put_in_hands(master_item)
 			return 0
 

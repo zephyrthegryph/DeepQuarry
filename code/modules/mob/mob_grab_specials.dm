@@ -149,7 +149,7 @@
 	if(state < GRAB_NECK)
 		to_chat(attacker, span_warning("You require a better grab to do this."))
 		return
-	for(var/obj/item/protection in list(target.get_equipped_item(SLOT_ID_HEAD), target.get_equipped_item(SLOT_ID_WEAR_MASK), target.get_equipped_item(SLOT_ID_GLASSES)))
+	for(var/obj/item/protection in list(target.get_equipped_item(SLOT_ID_HEAD), target.get_equipped_item(SLOT_ID_MASK), target.get_equipped_item(SLOT_ID_EYES)))
 		if(protection && (protection.body_parts_covered & EYES))
 			to_chat(attacker, span_danger("You're going to need to remove the eye covering first."))
 			return

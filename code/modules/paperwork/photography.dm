@@ -250,13 +250,13 @@ GLOBAL_VAR_INIT(photo_count, 0)
 	for(var/mob/living/carbon/A in the_turf)
 		if(A.invisibility) continue
 		var/holding = null
-		if(A.get_equipped_item(SLOT_ID_L_HAND) || A.get_equipped_item(SLOT_ID_R_HAND))
-			if(A.get_equipped_item(SLOT_ID_L_HAND)) holding = "They are holding \a [A.get_equipped_item(SLOT_ID_L_HAND)]"
-			if(A.get_equipped_item(SLOT_ID_R_HAND))
+		if(A.get_equipped_item(SLOT_ID_HAND_L) || A.get_equipped_item(SLOT_ID_HAND_R))
+			if(A.get_equipped_item(SLOT_ID_HAND_L)) holding = "They are holding \a [A.get_equipped_item(SLOT_ID_HAND_L)]"
+			if(A.get_equipped_item(SLOT_ID_HAND_R))
 				if(holding)
-					holding += " and \a [A.get_equipped_item(SLOT_ID_R_HAND)]"
+					holding += " and \a [A.get_equipped_item(SLOT_ID_HAND_R)]"
 				else
-					holding = "They are holding \a [A.get_equipped_item(SLOT_ID_R_HAND)]"
+					holding = "They are holding \a [A.get_equipped_item(SLOT_ID_HAND_R)]"
 
 		if(!mob_detail)
 			mob_detail = "You can see [A] on the photo[A.vitality() < 0.75 ? " - [A] looks hurt":""].[holding ? " [holding]":"."]. "

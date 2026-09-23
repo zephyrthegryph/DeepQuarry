@@ -201,7 +201,7 @@ GLOBAL_PROTECT(surgical_steps)
 /datum/surgical_step/proc/coverage_check(mob/living/user, mob/living/carbon/human/target, obj/item/organ/external/part)
 	if(part.organ_tag == BP_HEAD)
 		return istype(target.get_equipped_item(SLOT_ID_HEAD), /obj/item/clothing/head/helmet/space)
-	return istype(target.get_equipped_item(SLOT_ID_WEAR_SUIT), /obj/item/clothing/suit/space)
+	return istype(target.get_equipped_item(SLOT_ID_SUIT), /obj/item/clothing/suit/space)
 
 // --- Target selection ---------------------------------------------------------------
 

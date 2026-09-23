@@ -63,15 +63,15 @@
 				target.visible_message(span_danger("[target] looks momentarily disoriented."), span_danger("You see stars."))
 				target.apply_effect(attack_damage*2, EYE_BLUR, armour)
 			if(BP_L_ARM, BP_L_HAND)
-				if (target.get_equipped_item(SLOT_ID_L_HAND))
+				if (target.get_equipped_item(SLOT_ID_HAND_L))
 					// Disarm left hand
 					//Urist McAssistant dropped the macguffin with a scream just sounds odd.
-					target.visible_message(span_danger("\The [target.get_equipped_item(SLOT_ID_L_HAND)] was knocked right out of [target]'s grasp!"))
+					target.visible_message(span_danger("\The [target.get_equipped_item(SLOT_ID_HAND_L)] was knocked right out of [target]'s grasp!"))
 					target.drop_l_hand()
 			if(BP_R_ARM, BP_R_HAND)
-				if (target.get_equipped_item(SLOT_ID_R_HAND))
+				if (target.get_equipped_item(SLOT_ID_HAND_R))
 					// Disarm right hand
-					target.visible_message(span_danger("\The [target.get_equipped_item(SLOT_ID_R_HAND)] was knocked right out of [target]'s grasp!"))
+					target.visible_message(span_danger("\The [target.get_equipped_item(SLOT_ID_HAND_R)] was knocked right out of [target]'s grasp!"))
 					target.drop_r_hand()
 			if(BP_TORSO)
 				if(!target.lying)

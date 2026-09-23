@@ -196,20 +196,20 @@
 	var/pressure_adjustment_coefficient = 1 // Assume no protection at first.
 
 	// Check suit
-	if(get_equipped_item(SLOT_ID_WEAR_SUIT) && get_equipped_item(SLOT_ID_WEAR_SUIT).max_pressure_protection != null && get_equipped_item(SLOT_ID_WEAR_SUIT).min_pressure_protection != null)
+	if(get_equipped_item(SLOT_ID_SUIT) && get_equipped_item(SLOT_ID_SUIT).max_pressure_protection != null && get_equipped_item(SLOT_ID_SUIT).min_pressure_protection != null)
 		pressure_adjustment_coefficient = 0
 		// Pressure is too high
-		if(get_equipped_item(SLOT_ID_WEAR_SUIT).max_pressure_protection < pressure)
+		if(get_equipped_item(SLOT_ID_SUIT).max_pressure_protection < pressure)
 			// Protection scales down from 100% at the boundary to 0% at 10% in excess of the boundary
-			pressure_adjustment_coefficient += round((pressure - get_equipped_item(SLOT_ID_WEAR_SUIT).max_pressure_protection) / (get_equipped_item(SLOT_ID_WEAR_SUIT).max_pressure_protection/10))
+			pressure_adjustment_coefficient += round((pressure - get_equipped_item(SLOT_ID_SUIT).max_pressure_protection) / (get_equipped_item(SLOT_ID_SUIT).max_pressure_protection/10))
 
 		// Pressure is too low
-		if(get_equipped_item(SLOT_ID_WEAR_SUIT).min_pressure_protection > pressure)
-			pressure_adjustment_coefficient += round((get_equipped_item(SLOT_ID_WEAR_SUIT).min_pressure_protection - pressure) / (get_equipped_item(SLOT_ID_WEAR_SUIT).min_pressure_protection/10))
+		if(get_equipped_item(SLOT_ID_SUIT).min_pressure_protection > pressure)
+			pressure_adjustment_coefficient += round((get_equipped_item(SLOT_ID_SUIT).min_pressure_protection - pressure) / (get_equipped_item(SLOT_ID_SUIT).min_pressure_protection/10))
 
 		// Handles breaches in your space suit. 10 suit damage equals a 100% loss of pressure protection.
-		if(istype(get_equipped_item(SLOT_ID_WEAR_SUIT),/obj/item/clothing/suit/space))
-			var/obj/item/clothing/suit/space/S = get_equipped_item(SLOT_ID_WEAR_SUIT)
+		if(istype(get_equipped_item(SLOT_ID_SUIT),/obj/item/clothing/suit/space))
+			var/obj/item/clothing/suit/space/S = get_equipped_item(SLOT_ID_SUIT)
 			if(S.can_breach && S.damage)
 				pressure_adjustment_coefficient += S.damage * 0.1
 
@@ -579,9 +579,9 @@
 	/** breathing **/
 
 /datum/life_system/breathing/carbon/human/inhale_smoke(mob/living/carbon/human/self, datum/gas_mixture/environment)
-	if(self.get_equipped_item(SLOT_ID_WEAR_MASK) && (self.get_equipped_item(SLOT_ID_WEAR_MASK).item_flags & BLOCK_GAS_SMOKE_EFFECT))
+	if(self.get_equipped_item(SLOT_ID_MASK) && (self.get_equipped_item(SLOT_ID_MASK).item_flags & BLOCK_GAS_SMOKE_EFFECT))
 		return
-	if(self.get_equipped_item(SLOT_ID_GLASSES) && (self.get_equipped_item(SLOT_ID_GLASSES).item_flags & BLOCK_GAS_SMOKE_EFFECT))
+	if(self.get_equipped_item(SLOT_ID_EYES) && (self.get_equipped_item(SLOT_ID_EYES).item_flags & BLOCK_GAS_SMOKE_EFFECT))
 		return
 	if(self.get_equipped_item(SLOT_ID_HEAD) && (self.get_equipped_item(SLOT_ID_HEAD).item_flags & BLOCK_GAS_SMOKE_EFFECT))
 		return
@@ -600,7 +600,7 @@
 		else if(Void)
 			suit_supply = Void.tank
 
-		if ((!suit_supply && !contents.Find(internal)) || !((get_equipped_item(SLOT_ID_WEAR_MASK) && (get_equipped_item(SLOT_ID_WEAR_MASK).item_flags & AIRTIGHT)) || (get_equipped_item(SLOT_ID_HEAD) && (get_equipped_item(SLOT_ID_HEAD).item_flags & AIRTIGHT))))
+		if ((!suit_supply && !contents.Find(internal)) || !((get_equipped_item(SLOT_ID_MASK) && (get_equipped_item(SLOT_ID_MASK).item_flags & AIRTIGHT)) || (get_equipped_item(SLOT_ID_HEAD) && (get_equipped_item(SLOT_ID_HEAD).item_flags & AIRTIGHT))))
 			internal = null
 
 		if(internal)
@@ -624,7 +624,7 @@
 		self.suiciding--
 		return 0
 
-	if(self.get_equipped_item(SLOT_ID_WEAR_MASK) && (self.get_equipped_item(SLOT_ID_WEAR_MASK).item_flags & INFINITE_AIR))
+	if(self.get_equipped_item(SLOT_ID_MASK) && (self.get_equipped_item(SLOT_ID_MASK).item_flags & INFINITE_AIR))
 		self.failed_last_breath = 0
 		self.body?.set_breath_quality(1)
 		return
@@ -1119,8 +1119,8 @@
 				// Ebullition in the lungs: gas exchange fails even on internals,
 				// less the better the suit holds pressure.
 				var/exposure = (ONE_ATMOSPHERE - adjusted_pressure) / ONE_ATMOSPHERE
-				if(self.get_equipped_item(SLOT_ID_WEAR_SUIT) && self.get_equipped_item(SLOT_ID_WEAR_SUIT).min_pressure_protection && self.get_equipped_item(SLOT_ID_HEAD) && self.get_equipped_item(SLOT_ID_HEAD).min_pressure_protection)
-					exposure *= max(self.get_equipped_item(SLOT_ID_WEAR_SUIT).min_pressure_protection, self.get_equipped_item(SLOT_ID_HEAD).min_pressure_protection) / ONE_ATMOSPHERE
+				if(self.get_equipped_item(SLOT_ID_SUIT) && self.get_equipped_item(SLOT_ID_SUIT).min_pressure_protection && self.get_equipped_item(SLOT_ID_HEAD) && self.get_equipped_item(SLOT_ID_HEAD).min_pressure_protection)
+					exposure *= max(self.get_equipped_item(SLOT_ID_SUIT).min_pressure_protection, self.get_equipped_item(SLOT_ID_HEAD).min_pressure_protection) / ONE_ATMOSPHERE
 				self.body?.add_restriction(self, BF_GAS_EXCHANGE, clamp(1 - exposure, 0.1, 1), 4 SECONDS)
 			self.throw_alert("pressure", /atom/movable/screen/alert/lowpressure, 2)
 		else
@@ -1177,22 +1177,13 @@
 		self.bodytemperature += recovery_amt
 
 	//This proc returns a number made up of the flags for body parts which you are protected on. (such as HEAD, UPPER_TORSO, LOWER_TORSO, etc. See setup.dm for the full list)
+//Read from the body's worn protection cache (code/modules/body/worn_protection.dm), not by scanning the slots.
 /mob/living/carbon/human/proc/get_heat_protection_flags(temperature) //Temperature is the temperature you're being exposed to.
-	. = 0
-	//Handle normal clothing
-	for(var/obj/item/clothing/C in list(get_equipped_item(SLOT_ID_HEAD),get_equipped_item(SLOT_ID_WEAR_SUIT),get_equipped_item(SLOT_ID_W_UNIFORM),get_equipped_item(SLOT_ID_SHOES),get_equipped_item(SLOT_ID_GLOVES),get_equipped_item(SLOT_ID_WEAR_MASK)))
-		if(C)
-			if(C.handle_high_temperature(temperature))
-				. |= C.get_heat_protection_flags()
+	return body ? body.worn_heat_flags(temperature) : 0
 
 //See proc/get_heat_protection_flags(temperature) for the description of this proc.
 /mob/living/carbon/human/proc/get_cold_protection_flags(temperature)
-	. = 0
-	//Handle normal clothing
-	for(var/obj/item/clothing/C in list(get_equipped_item(SLOT_ID_HEAD),get_equipped_item(SLOT_ID_WEAR_SUIT),get_equipped_item(SLOT_ID_W_UNIFORM),get_equipped_item(SLOT_ID_SHOES),get_equipped_item(SLOT_ID_GLOVES),get_equipped_item(SLOT_ID_WEAR_MASK)))
-		if(C)
-			if(C.handle_low_temperature(temperature))
-				. |= C.get_cold_protection_flags()
+	return body ? body.worn_cold_flags(temperature) : 0
 
 /mob/living/carbon/human/get_heat_protection(temperature) //Temperature is the temperature you're being exposed to.
 	var/thermal_protection_flags = get_heat_protection_flags(temperature)
@@ -1462,7 +1453,7 @@
 				self.AdjustBlinded(-1)
 				self.blinded =    1
 				self.throw_alert("blind", /atom/movable/screen/alert/blind)
-			else if(istype(self.get_equipped_item(SLOT_ID_GLASSES), /obj/item/clothing/glasses/sunglasses/blindfold))	//resting your eyes with a blindfold heals blurry eyes faster
+			else if(istype(self.get_equipped_item(SLOT_ID_EYES), /obj/item/clothing/glasses/sunglasses/blindfold))	//resting your eyes with a blindfold heals blurry eyes faster
 				self.eye_blurry = max(self.eye_blurry-3, 0)
 				self.blinded =    1
 				self.throw_alert("blind", /atom/movable/screen/alert/blind)
@@ -1650,8 +1641,8 @@
 		if(self.disabilities & NEARSIGHTED)
 			apply_nearsighted_overlay = TRUE
 
-			if(self.get_equipped_item(SLOT_ID_GLASSES))
-				var/obj/item/clothing/glasses/G = self.get_equipped_item(SLOT_ID_GLASSES)
+			if(self.get_equipped_item(SLOT_ID_EYES))
+				var/obj/item/clothing/glasses/G = self.get_equipped_item(SLOT_ID_EYES)
 				if(G.prescription)
 					apply_nearsighted_overlay = FALSE
 
@@ -1676,12 +1667,12 @@
 			if(self.species.short_sighted)
 				found_welder = 1
 			else
-				if(istype(self.get_equipped_item(SLOT_ID_GLASSES), /obj/item/clothing/glasses/welding))
-					var/obj/item/clothing/glasses/welding/O = self.get_equipped_item(SLOT_ID_GLASSES)
+				if(istype(self.get_equipped_item(SLOT_ID_EYES), /obj/item/clothing/glasses/welding))
+					var/obj/item/clothing/glasses/welding/O = self.get_equipped_item(SLOT_ID_EYES)
 					if(!O.up)
 						found_welder = 1
 				if(!found_welder && self.nif && self.nif.flag_check(NIF_V_UVFILTER,NIF_FLAGS_VISION))	found_welder = 1
-				if(istype(self.get_equipped_item(SLOT_ID_GLASSES), /obj/item/clothing/glasses/sunglasses/thinblindfold))
+				if(istype(self.get_equipped_item(SLOT_ID_EYES), /obj/item/clothing/glasses/sunglasses/thinblindfold))
 					found_welder = 1
 				if(!found_welder && istype(self.get_equipped_item(SLOT_ID_HEAD), /obj/item/clothing/head/welding))
 					var/obj/item/clothing/head/welding/O = self.get_equipped_item(SLOT_ID_HEAD)
@@ -1810,8 +1801,8 @@
 				if(rig.visor && rig.visor.vision && rig.visor.active && rig.visor.vision.glasses)
 					glasses_processed = self.process_glasses(rig.visor.vision.glasses)
 
-		if(self.get_equipped_item(SLOT_ID_GLASSES) && !glasses_processed && !self.is_remote_viewing())
-			glasses_processed = self.process_glasses(self.get_equipped_item(SLOT_ID_GLASSES))
+		if(self.get_equipped_item(SLOT_ID_EYES) && !glasses_processed && !self.is_remote_viewing())
+			glasses_processed = self.process_glasses(self.get_equipped_item(SLOT_ID_EYES))
 		if(XRAY in self.mutations)
 			self.sight |= SEE_TURFS|SEE_MOBS|SEE_OBJS
 			self.see_in_dark = 8
@@ -2209,8 +2200,8 @@
 
 	if (BITTEST(self.hud_updateflag, ID_HUD))
 		var/image/holder = self.grab_hud(ID_HUD)
-		if(self.get_equipped_item(SLOT_ID_WEAR_ID))
-			var/obj/item/card/id/I = self.get_equipped_item(SLOT_ID_WEAR_ID).GetID()
+		if(self.get_equipped_item(SLOT_ID_ID))
+			var/obj/item/card/id/I = self.get_equipped_item(SLOT_ID_ID).GetID()
 			if(I)
 				holder.icon_state = "hud[ckey(I.GetJobName())]"
 			else
@@ -2226,8 +2217,8 @@
 		var/image/holder = self.grab_hud(WANTED_HUD)
 		holder.icon_state = "hudblank"
 		var/perpname = self.name
-		if(self.get_equipped_item(SLOT_ID_WEAR_ID))
-			var/obj/item/card/id/I = self.get_equipped_item(SLOT_ID_WEAR_ID).GetID()
+		if(self.get_equipped_item(SLOT_ID_ID))
+			var/obj/item/card/id/I = self.get_equipped_item(SLOT_ID_ID).GetID()
 			if(I)
 				perpname = I.registered_name
 

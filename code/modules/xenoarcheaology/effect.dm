@@ -223,9 +223,9 @@
 		if(rig.suit_is_deployed() && !rig.offline)
 			protected += 1
 
-	if(istype(H.get_equipped_item(SLOT_ID_WEAR_SUIT),/obj/item/clothing/suit/bio_suit/anomaly))
+	if(istype(H.get_equipped_item(SLOT_ID_SUIT),/obj/item/clothing/suit/bio_suit/anomaly))
 		protected += 0.6
-	else if(istype(H.get_equipped_item(SLOT_ID_WEAR_SUIT),/obj/item/clothing/suit/space/anomaly))
+	else if(istype(H.get_equipped_item(SLOT_ID_SUIT),/obj/item/clothing/suit/space/anomaly))
 		protected += 0.5
 
 	if(istype(H.get_equipped_item(SLOT_ID_HEAD),/obj/item/clothing/head/bio_hood/anomaly))
@@ -237,7 +237,7 @@
 	if(istype(H.get_equipped_item(SLOT_ID_GLOVES),/obj/item/clothing/gloves/sterile))
 		protected += 0.1
 
-	if(istype(H.get_equipped_item(SLOT_ID_GLASSES),/obj/item/clothing/glasses/science))
+	if(istype(H.get_equipped_item(SLOT_ID_EYES),/obj/item/clothing/glasses/science))
 		protected += 0.1
 
 	susceptibility = CLAMP01(susceptibility - protected) //Clamp the susceptibility to be between 0 and 1. No negative numbers allowed.

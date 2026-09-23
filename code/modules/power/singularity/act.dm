@@ -26,7 +26,7 @@
 
 /mob/living/carbon/human/singularity_pull(S, current_size)
 	if(current_size >= STAGE_THREE)
-		var/list/handlist = list(get_equipped_item(SLOT_ID_L_HAND), get_equipped_item(SLOT_ID_R_HAND))
+		var/list/handlist = list(get_equipped_item(SLOT_ID_HAND_L), get_equipped_item(SLOT_ID_HAND_R))
 		for(var/obj/item/hand in handlist)
 			if(prob(current_size*5) && hand.w_class >= ((11-current_size)/2) && unEquip(hand))
 				step_towards(hand, S)

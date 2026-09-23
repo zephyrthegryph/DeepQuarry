@@ -823,7 +823,7 @@ GLOBAL_LIST_EMPTY(sacrificed)
 			return
 		if(!(cultist.buckled || \
 			cultist.get_equipped_item(SLOT_ID_HANDCUFFED) || \
-			istype(cultist.get_equipped_item(SLOT_ID_WEAR_MASK), /obj/item/clothing/mask/muzzle) || \
+			istype(cultist.get_equipped_item(SLOT_ID_MASK), /obj/item/clothing/mask/muzzle) || \
 			(istype(cultist.loc, /obj/structure/closet)&&cultist.loc:welded) || \
 			(istype(cultist.loc, /obj/structure/closet/secure_closet)&&cultist.loc:locked) || \
 			(istype(cultist.loc, /obj/machinery/dna_scannernew)&&cultist.loc:locked) \
@@ -835,8 +835,8 @@ GLOBAL_LIST_EMPTY(sacrificed)
 			cultist.drop_from_inventory(cultist.get_equipped_item(SLOT_ID_HANDCUFFED))
 		if (cultist.get_equipped_item(SLOT_ID_LEGCUFFED))
 			cultist.drop_from_inventory(cultist.get_equipped_item(SLOT_ID_LEGCUFFED))
-		if (istype(cultist.get_equipped_item(SLOT_ID_WEAR_MASK), /obj/item/clothing/mask/muzzle))
-			cultist.drop_from_inventory(cultist.get_equipped_item(SLOT_ID_WEAR_MASK))
+		if (istype(cultist.get_equipped_item(SLOT_ID_MASK), /obj/item/clothing/mask/muzzle))
+			cultist.drop_from_inventory(cultist.get_equipped_item(SLOT_ID_MASK))
 		if(istype(cultist.loc, /obj/structure/closet)&&cultist.loc:welded)
 			cultist.loc:welded = 0
 		if(istype(cultist.loc, /obj/structure/closet/secure_closet)&&cultist.loc:locked)

@@ -84,8 +84,8 @@
 				to_chat(user, span_warning("You can't apply [src] through [H.get_equipped_item(SLOT_ID_HEAD)]!"))
 				return ITEM_INTERACT_FAILURE
 		else
-			if(H.get_equipped_item(SLOT_ID_WEAR_SUIT) && istype(H.get_equipped_item(SLOT_ID_WEAR_SUIT),/obj/item/clothing/suit/space))
-				to_chat(user, span_warning("You can't apply [src] through [H.get_equipped_item(SLOT_ID_WEAR_SUIT)]!"))
+			if(H.get_equipped_item(SLOT_ID_SUIT) && istype(H.get_equipped_item(SLOT_ID_SUIT),/obj/item/clothing/suit/space))
+				to_chat(user, span_warning("You can't apply [src] through [H.get_equipped_item(SLOT_ID_SUIT)]!"))
 				return ITEM_INTERACT_FAILURE
 
 		if(!welding)

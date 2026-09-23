@@ -1232,7 +1232,7 @@
 	if(ishuman(M))
 		var/mob/living/carbon/human/H = M
 		//if they are holding or wearing a card that has access, that works
-		if(check_access(H.get_active_hand()) || check_access(H.get_equipped_item(SLOT_ID_WEAR_ID)))
+		if(check_access(H.get_active_hand()) || check_access(H.get_equipped_item(SLOT_ID_ID)))
 			return 1
 	else if(isrobot(M))
 		var/mob/living/silicon/robot/R = M

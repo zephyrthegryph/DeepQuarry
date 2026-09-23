@@ -140,7 +140,7 @@ GLOBAL_LIST_EMPTY(all_objectives)
 /datum/objective/anti_revolution/demote/check_completion()
 	if(target && target.current && ishuman(target.current))
 		var/mob/living/carbon/human/H = target.current
-		var/obj/item/card/id/I = H.get_equipped_item(SLOT_ID_WEAR_ID)
+		var/obj/item/card/id/I = H.get_equipped_item(SLOT_ID_ID)
 		if(istype(I, /obj/item/pda))
 			var/obj/item/pda/P = I
 			I = P.id

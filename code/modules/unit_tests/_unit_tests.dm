@@ -167,6 +167,7 @@
 #include "dq_form_tests.dm"
 #include "dq_protean_tests.dm"
 #include "dq_body_factor_tests.dm"
+#include "dq_body_slot_tests.dm"
 #include "dq_harm_mitigation_tests.dm"
 #include "dq_involuntary_emote_tests.dm"
 #include "dq_propagation_tests.dm"

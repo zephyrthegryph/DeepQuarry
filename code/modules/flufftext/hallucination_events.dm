@@ -52,15 +52,15 @@
 		return
 
 	var/list/slots_free = list(ui_lhand,ui_rhand)
-	if(our_human.get_equipped_item(SLOT_ID_L_HAND))
+	if(our_human.get_equipped_item(SLOT_ID_HAND_L))
 		slots_free -= ui_lhand
-	if(our_human.get_equipped_item(SLOT_ID_R_HAND))
+	if(our_human.get_equipped_item(SLOT_ID_HAND_R))
 		slots_free -= ui_rhand
 	if(!our_human.get_equipped_item(SLOT_ID_BELT))
 		slots_free += ui_belt
-	if(!our_human.get_equipped_item(SLOT_ID_L_STORE))
+	if(!our_human.get_equipped_item(SLOT_ID_POCKET_L))
 		slots_free += ui_storage1
-	if(!our_human.get_equipped_item(SLOT_ID_R_STORE))
+	if(!our_human.get_equipped_item(SLOT_ID_POCKET_R))
 		slots_free += ui_storage2
 
 	if(!slots_free.len)

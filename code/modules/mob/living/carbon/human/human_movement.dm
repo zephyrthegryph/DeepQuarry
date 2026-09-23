@@ -132,7 +132,7 @@
 
 	var/total_item_slowdown = 0
 	var/slowdown_mod = species.item_slowdown_mod //HIGHER = MAKES YOU SLOWER
-	for(var/slot in list(get_equipped_item(SLOT_ID_BACK), get_equipped_item(SLOT_ID_BELT), get_equipped_item(SLOT_ID_L_EAR), get_equipped_item(SLOT_ID_R_EAR), get_equipped_item(SLOT_ID_GLASSES), get_equipped_item(SLOT_ID_GLOVES), get_equipped_item(SLOT_ID_HEAD), get_equipped_item(SLOT_ID_SHOES), get_equipped_item(SLOT_ID_WEAR_ID), get_equipped_item(SLOT_ID_WEAR_MASK), get_equipped_item(SLOT_ID_WEAR_SUIT), get_equipped_item(SLOT_ID_W_UNIFORM))) //Two things to note here. ONE: If you add a new inventory slot, ADD IT HERE. Two: If we ever get a global list on human of all the inventory slots (MINUS HANDS) add it here.
+	for(var/slot in list(get_equipped_item(SLOT_ID_BACK), get_equipped_item(SLOT_ID_BELT), get_equipped_item(SLOT_ID_EAR_L), get_equipped_item(SLOT_ID_EAR_R), get_equipped_item(SLOT_ID_EYES), get_equipped_item(SLOT_ID_GLOVES), get_equipped_item(SLOT_ID_HEAD), get_equipped_item(SLOT_ID_SHOES), get_equipped_item(SLOT_ID_ID), get_equipped_item(SLOT_ID_MASK), get_equipped_item(SLOT_ID_SUIT), get_equipped_item(SLOT_ID_UNIFORM))) //Two things to note here. ONE: If you add a new inventory slot, ADD IT HERE. Two: If we ever get a global list on human of all the inventory slots (MINUS HANDS) add it here.
 		if(!slot) //ZOOM
 			continue
 		var/obj/item/I = slot
@@ -148,7 +148,7 @@
 				else if(slowdown_mod < 0 && item_slowdown > 0)
 					item_slowdown = item_slowdown + slowdown_mod //Yes, this is + (Adding a negative), not multiplied. You are not making the 5 slowdown rigsuit give you 5*X speed. You're getting 5-X slowdown instead.
 			total_item_slowdown += item_slowdown
-	for(var/hands in list(get_equipped_item(SLOT_ID_L_HAND), get_equipped_item(SLOT_ID_R_HAND))) //Hands get special treatment. We want slowdown_mod
+	for(var/hands in list(get_equipped_item(SLOT_ID_HAND_L), get_equipped_item(SLOT_ID_HAND_R))) //Hands get special treatment. We want slowdown_mod
 		if(!hands)
 			continue
 		var/obj/item/H = hands
@@ -205,10 +205,10 @@
 		if(istype(rig))
 			for(var/obj/item/rig_module/maneuvering_jets/module in rig.installed_modules)
 				return module.jets
-	if(get_equipped_item(SLOT_ID_S_STORE) && istype(get_equipped_item(SLOT_ID_S_STORE), /obj/item/tank/jetpack))
-		return get_equipped_item(SLOT_ID_S_STORE)
-	if(get_equipped_item(SLOT_ID_WEAR_SUIT) && istype(get_equipped_item(SLOT_ID_WEAR_SUIT), /obj/item/clothing/suit/space/void))
-		var/obj/item/clothing/suit/space/void/v = get_equipped_item(SLOT_ID_WEAR_SUIT)
+	if(get_equipped_item(SLOT_ID_SUIT_STORAGE) && istype(get_equipped_item(SLOT_ID_SUIT_STORAGE), /obj/item/tank/jetpack))
+		return get_equipped_item(SLOT_ID_SUIT_STORAGE)
+	if(get_equipped_item(SLOT_ID_SUIT) && istype(get_equipped_item(SLOT_ID_SUIT), /obj/item/clothing/suit/space/void))
+		var/obj/item/clothing/suit/space/void/v = get_equipped_item(SLOT_ID_SUIT)
 		if(v.tank && istype(v.tank, /obj/item/tank/jetpack))
 			return v.tank
 

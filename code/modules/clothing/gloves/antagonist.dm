@@ -37,8 +37,8 @@
 		return 1
 
 	if(IS_DISARMING(user))
-		var/obj/item/LTarg = target.get_equipped_item(SLOT_ID_L_STORE)
-		var/obj/item/LUser = user.get_equipped_item(SLOT_ID_L_STORE)
+		var/obj/item/LTarg = target.get_equipped_item(SLOT_ID_POCKET_L)
+		var/obj/item/LUser = user.get_equipped_item(SLOT_ID_POCKET_L)
 
 		if(do_after(user, 1 SECOND, target))
 			var/took = istype(LTarg) && do_after(user, 1 SECOND, target)
@@ -55,8 +55,8 @@
 		return 1
 
 	if(IS_GRABBING(user))
-		var/obj/item/RTarg = target.get_equipped_item(SLOT_ID_R_STORE)
-		var/obj/item/RUser = user.get_equipped_item(SLOT_ID_R_STORE)
+		var/obj/item/RTarg = target.get_equipped_item(SLOT_ID_POCKET_R)
+		var/obj/item/RUser = user.get_equipped_item(SLOT_ID_POCKET_R)
 
 		if(do_after(user, 1 SECOND, target))
 			var/took = istype(RTarg) && do_after(user, 1 SECOND, target)

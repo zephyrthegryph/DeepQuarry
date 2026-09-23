@@ -227,7 +227,7 @@
 		return 0
 	if(boot_type && !(boots && wearer.get_equipped_item(SLOT_ID_SHOES) == boots))
 		return 0
-	if(chest_type && !(chest && wearer.get_equipped_item(SLOT_ID_WEAR_SUIT) == chest))
+	if(chest_type && !(chest && wearer.get_equipped_item(SLOT_ID_SUIT) == chest))
 		return 0
 	return 1
 
@@ -311,7 +311,7 @@
 		if(!M)
 			failed_to_seal = 1
 		else
-			for(var/list/piece_data in list(list(M.get_equipped_item(SLOT_ID_SHOES),boots,"boots",boot_type),list(M.get_equipped_item(SLOT_ID_GLOVES),gloves,"gloves",glove_type),list(M.get_equipped_item(SLOT_ID_HEAD),helmet,"helmet",helm_type),list(M.get_equipped_item(SLOT_ID_WEAR_SUIT),chest,"chest",chest_type)))
+			for(var/list/piece_data in list(list(M.get_equipped_item(SLOT_ID_SHOES),boots,"boots",boot_type),list(M.get_equipped_item(SLOT_ID_GLOVES),gloves,"gloves",glove_type),list(M.get_equipped_item(SLOT_ID_HEAD),helmet,"helmet",helm_type),list(M.get_equipped_item(SLOT_ID_SUIT),chest,"chest",chest_type)))
 
 				var/obj/item/piece = piece_data[1]
 				var/obj/item/compare_piece = piece_data[2]
@@ -355,6 +355,7 @@
 						piece.armor["bio"] = 100
 					else
 						piece.armor["bio"] = src.armor["bio"]
+					piece.worn_protection_changed()
 					playsound(src,'sound/machines/rig/rigservo.ogg', 10, FALSE)
 
 				else
@@ -444,7 +445,7 @@
 
 	var/mob/living/carbon/human/H = M
 
-	if (!H.get_equipped_item(SLOT_ID_WEAR_SUIT) || (H.get_equipped_item(SLOT_ID_BACK) != src && H.get_equipped_item(SLOT_ID_BELT) != src))
+	if (!H.get_equipped_item(SLOT_ID_SUIT) || (H.get_equipped_item(SLOT_ID_BACK) != src && H.get_equipped_item(SLOT_ID_BELT) != src))
 		return 0
 
 	return 1
@@ -647,7 +648,7 @@
 		if("chest")
 			equip_to = slot_wear_suit
 			use_obj = chest
-			check_slot = H.get_equipped_item(SLOT_ID_WEAR_SUIT)
+			check_slot = H.get_equipped_item(SLOT_ID_SUIT)
 
 	if(use_obj)
 		if(check_slot == use_obj && deploy_mode != ONLY_DEPLOY)
@@ -710,8 +711,8 @@
 			H.drop_from_inventory(garbage)
 			qdel(garbage)
 
-		if(H.get_equipped_item(SLOT_ID_WEAR_SUIT))
-			var/obj/item/garbage = H.get_equipped_item(SLOT_ID_WEAR_SUIT)
+		if(H.get_equipped_item(SLOT_ID_SUIT))
+			var/obj/item/garbage = H.get_equipped_item(SLOT_ID_SUIT)
 			H.drop_from_inventory(garbage)
 			qdel(garbage)
 
@@ -952,8 +953,8 @@
 	return null
 
 /mob/living/carbon/human/get_voidsuit()
-	if(istype(get_equipped_item(SLOT_ID_WEAR_SUIT), /obj/item/clothing/suit/space/void))
-		return get_equipped_item(SLOT_ID_WEAR_SUIT)
+	if(istype(get_equipped_item(SLOT_ID_SUIT), /obj/item/clothing/suit/space/void))
+		return get_equipped_item(SLOT_ID_SUIT)
 	else
 		return null
 

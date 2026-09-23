@@ -156,14 +156,14 @@
 	var/fibertext = null
 	var/item_multiplier = istype(src,/obj/item)?1.2:1
 	var/suit_coverage = 0
-	if(M.get_equipped_item(SLOT_ID_WEAR_SUIT))
+	if(M.get_equipped_item(SLOT_ID_SUIT))
 		if(prob(10*item_multiplier))
-			fibertext = "Material from \a [M.get_equipped_item(SLOT_ID_WEAR_SUIT)]."
-		suit_coverage = M.get_equipped_item(SLOT_ID_WEAR_SUIT).body_parts_covered
+			fibertext = "Material from \a [M.get_equipped_item(SLOT_ID_SUIT)]."
+		suit_coverage = M.get_equipped_item(SLOT_ID_SUIT).body_parts_covered
 
-	if(M.get_equipped_item(SLOT_ID_W_UNIFORM) && (M.get_equipped_item(SLOT_ID_W_UNIFORM).body_parts_covered & ~suit_coverage))
+	if(M.get_equipped_item(SLOT_ID_UNIFORM) && (M.get_equipped_item(SLOT_ID_UNIFORM).body_parts_covered & ~suit_coverage))
 		if(prob(15*item_multiplier))
-			fibertext = "Fibers from \a [M.get_equipped_item(SLOT_ID_W_UNIFORM)]."
+			fibertext = "Fibers from \a [M.get_equipped_item(SLOT_ID_UNIFORM)]."
 
 	if(M.get_equipped_item(SLOT_ID_GLOVES) && (M.get_equipped_item(SLOT_ID_GLOVES).body_parts_covered & ~suit_coverage))
 		if(prob(20*item_multiplier))

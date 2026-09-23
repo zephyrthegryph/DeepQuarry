@@ -11,36 +11,36 @@
 	var/looks_synth = looksSynthetic()
 
 	//exosuits and helmets obscure our view and stuff.
-	if(get_equipped_item(SLOT_ID_WEAR_SUIT))
-		if(get_equipped_item(SLOT_ID_WEAR_SUIT).flags_inv & HIDESUITSTORAGE)
+	if(get_equipped_item(SLOT_ID_SUIT))
+		if(get_equipped_item(SLOT_ID_SUIT).flags_inv & HIDESUITSTORAGE)
 			skip_gear |= EXAMINE_SKIPSUITSTORAGE
 
-		if(get_equipped_item(SLOT_ID_WEAR_SUIT).flags_inv & HIDEJUMPSUIT)
+		if(get_equipped_item(SLOT_ID_SUIT).flags_inv & HIDEJUMPSUIT)
 			skip_body |= EXAMINE_SKIPARMS | EXAMINE_SKIPLEGS | EXAMINE_SKIPBODY | EXAMINE_SKIPGROIN
 			skip_gear |= EXAMINE_SKIPJUMPSUIT | EXAMINE_SKIPTIE | EXAMINE_SKIPHOLSTER
 
-		else if(get_equipped_item(SLOT_ID_WEAR_SUIT).flags_inv & HIDETIE)
+		else if(get_equipped_item(SLOT_ID_SUIT).flags_inv & HIDETIE)
 			skip_gear |= EXAMINE_SKIPTIE | EXAMINE_SKIPHOLSTER
 
-		else if(get_equipped_item(SLOT_ID_WEAR_SUIT).flags_inv & HIDEHOLSTER)
+		else if(get_equipped_item(SLOT_ID_SUIT).flags_inv & HIDEHOLSTER)
 			skip_gear |= EXAMINE_SKIPHOLSTER
 
-		if(get_equipped_item(SLOT_ID_WEAR_SUIT).flags_inv & HIDESHOES)
+		if(get_equipped_item(SLOT_ID_SUIT).flags_inv & HIDESHOES)
 			skip_gear |= EXAMINE_SKIPSHOES
 			skip_body |= EXAMINE_SKIPFEET
 
-		if(get_equipped_item(SLOT_ID_WEAR_SUIT).flags_inv & HIDEGLOVES)
+		if(get_equipped_item(SLOT_ID_SUIT).flags_inv & HIDEGLOVES)
 			skip_gear |= EXAMINE_SKIPGLOVES
 			skip_body |= EXAMINE_SKIPHANDS
 
-	if(get_equipped_item(SLOT_ID_W_UNIFORM))
-		if(get_equipped_item(SLOT_ID_W_UNIFORM).body_parts_covered & LEGS)
+	if(get_equipped_item(SLOT_ID_UNIFORM))
+		if(get_equipped_item(SLOT_ID_UNIFORM).body_parts_covered & LEGS)
 			skip_body |= EXAMINE_SKIPLEGS
-		if(get_equipped_item(SLOT_ID_W_UNIFORM).body_parts_covered & ARMS)
+		if(get_equipped_item(SLOT_ID_UNIFORM).body_parts_covered & ARMS)
 			skip_body |= EXAMINE_SKIPARMS
-		if(get_equipped_item(SLOT_ID_W_UNIFORM).body_parts_covered & UPPER_TORSO)
+		if(get_equipped_item(SLOT_ID_UNIFORM).body_parts_covered & UPPER_TORSO)
 			skip_body |= EXAMINE_SKIPBODY
-		if(get_equipped_item(SLOT_ID_W_UNIFORM).body_parts_covered & LOWER_TORSO)
+		if(get_equipped_item(SLOT_ID_UNIFORM).body_parts_covered & LOWER_TORSO)
 			skip_body |= EXAMINE_SKIPGROIN
 
 	if(get_equipped_item(SLOT_ID_GLOVES) && (get_equipped_item(SLOT_ID_GLOVES).body_parts_covered & HANDS))
@@ -60,7 +60,7 @@
 		if(get_equipped_item(SLOT_ID_HEAD).flags_inv & HIDEFACE)
 			skip_body |= EXAMINE_SKIPFACE
 
-	if(get_equipped_item(SLOT_ID_WEAR_MASK) && (get_equipped_item(SLOT_ID_WEAR_MASK).flags_inv & HIDEFACE))
+	if(get_equipped_item(SLOT_ID_MASK) && (get_equipped_item(SLOT_ID_MASK).flags_inv & HIDEFACE))
 		skip_body |= EXAMINE_SKIPFACE
 
 	//This is what hides what
@@ -96,11 +96,11 @@
 	var/list/msg = list("This is [icon2html(src, user.client)] <EM>[src.name]</EM>[name_ender]")
 
 	//uniform
-	if(get_equipped_item(SLOT_ID_W_UNIFORM) && !(skip_gear & EXAMINE_SKIPJUMPSUIT) && get_equipped_item(SLOT_ID_W_UNIFORM).show_examine)
+	if(get_equipped_item(SLOT_ID_UNIFORM) && !(skip_gear & EXAMINE_SKIPJUMPSUIT) && get_equipped_item(SLOT_ID_UNIFORM).show_examine)
 		//Ties
 		var/tie_msg
-		if(istype(get_equipped_item(SLOT_ID_W_UNIFORM),/obj/item/clothing/under) && !(skip_gear & EXAMINE_SKIPTIE))
-			var/obj/item/clothing/under/U = get_equipped_item(SLOT_ID_W_UNIFORM)
+		if(istype(get_equipped_item(SLOT_ID_UNIFORM),/obj/item/clothing/under) && !(skip_gear & EXAMINE_SKIPTIE))
+			var/obj/item/clothing/under/U = get_equipped_item(SLOT_ID_UNIFORM)
 			if(LAZYLEN(U.accessories))
 				tie_msg += ". Attached to it is"
 				var/list/accessory_descs = list()
@@ -114,10 +114,10 @@
 							accessory_descs += "<a href='byond://?src=\ref[src];lookitem_desc_only=\ref[A]'>\a [A]</a>"
 
 				tie_msg += " [lowertext(english_list(accessory_descs))]."
-		if(get_equipped_item(SLOT_ID_W_UNIFORM).forensic_data?.has_blooddna())
-			msg += span_warning("[p_Theyre()] wearing [icon2html(get_equipped_item(SLOT_ID_W_UNIFORM),user.client)] [get_equipped_item(SLOT_ID_W_UNIFORM).gender==PLURAL?"some":"a"] [(dq_get_blood_color(get_equipped_item(SLOT_ID_W_UNIFORM)) != "#030303") ? "blood" : "oil"]-stained <a href='byond://?src=\ref[src];lookitem_desc_only=\ref[get_equipped_item(SLOT_ID_W_UNIFORM)]'>[get_equipped_item(SLOT_ID_W_UNIFORM).name]</a>![tie_msg]")
+		if(get_equipped_item(SLOT_ID_UNIFORM).forensic_data?.has_blooddna())
+			msg += span_warning("[p_Theyre()] wearing [icon2html(get_equipped_item(SLOT_ID_UNIFORM),user.client)] [get_equipped_item(SLOT_ID_UNIFORM).gender==PLURAL?"some":"a"] [(dq_get_blood_color(get_equipped_item(SLOT_ID_UNIFORM)) != "#030303") ? "blood" : "oil"]-stained <a href='byond://?src=\ref[src];lookitem_desc_only=\ref[get_equipped_item(SLOT_ID_UNIFORM)]'>[get_equipped_item(SLOT_ID_UNIFORM).name]</a>![tie_msg]")
 		else
-			msg += "[p_Theyre()] wearing [icon2html(get_equipped_item(SLOT_ID_W_UNIFORM),user.client)] <a href='byond://?src=\ref[src];lookitem_desc_only=\ref[get_equipped_item(SLOT_ID_W_UNIFORM)]'>\a [get_equipped_item(SLOT_ID_W_UNIFORM)]</a>.[tie_msg]"
+			msg += "[p_Theyre()] wearing [icon2html(get_equipped_item(SLOT_ID_UNIFORM),user.client)] <a href='byond://?src=\ref[src];lookitem_desc_only=\ref[get_equipped_item(SLOT_ID_UNIFORM)]'>\a [get_equipped_item(SLOT_ID_UNIFORM)]</a>.[tie_msg]"
 
 	//head
 	if(get_equipped_item(SLOT_ID_HEAD) && !(skip_gear & EXAMINE_SKIPHELMET) && get_equipped_item(SLOT_ID_HEAD).show_examine)
@@ -127,10 +127,10 @@
 			msg += "[p_Theyre()] wearing [icon2html(get_equipped_item(SLOT_ID_HEAD),user.client)] <a href='byond://?src=\ref[src];lookitem_desc_only=\ref[get_equipped_item(SLOT_ID_HEAD)]'>\a [get_equipped_item(SLOT_ID_HEAD)]</a> on [p_their()] head."
 
 	//suit/armour
-	if(get_equipped_item(SLOT_ID_WEAR_SUIT))
+	if(get_equipped_item(SLOT_ID_SUIT))
 		var/tie_msg
-		if(istype(get_equipped_item(SLOT_ID_WEAR_SUIT),/obj/item/clothing/suit))
-			var/obj/item/clothing/suit/U = get_equipped_item(SLOT_ID_WEAR_SUIT)
+		if(istype(get_equipped_item(SLOT_ID_SUIT),/obj/item/clothing/suit))
+			var/obj/item/clothing/suit/U = get_equipped_item(SLOT_ID_SUIT)
 			if(LAZYLEN(U.accessories))
 				tie_msg += ". Attached to it is"
 				var/list/accessory_descs = list()
@@ -138,17 +138,17 @@
 					accessory_descs += "<a href='byond://?src=\ref[src];lookitem_desc_only=\ref[accessory]'>\a [accessory]</a>"
 				tie_msg += " [lowertext(english_list(accessory_descs))]."
 
-		if(get_equipped_item(SLOT_ID_WEAR_SUIT).forensic_data?.has_blooddna())
-			msg += span_warning("[p_Theyre()] wearing [icon2html(get_equipped_item(SLOT_ID_WEAR_SUIT),user.client)] [get_equipped_item(SLOT_ID_WEAR_SUIT).gender==PLURAL?"some":"a"] [(dq_get_blood_color(get_equipped_item(SLOT_ID_WEAR_SUIT)) != "#030303") ? "blood" : "oil"]-stained <a href='byond://?src=\ref[src];lookitem_desc_only=\ref[get_equipped_item(SLOT_ID_WEAR_SUIT)]'>[get_equipped_item(SLOT_ID_WEAR_SUIT).name]</a>![tie_msg]")
+		if(get_equipped_item(SLOT_ID_SUIT).forensic_data?.has_blooddna())
+			msg += span_warning("[p_Theyre()] wearing [icon2html(get_equipped_item(SLOT_ID_SUIT),user.client)] [get_equipped_item(SLOT_ID_SUIT).gender==PLURAL?"some":"a"] [(dq_get_blood_color(get_equipped_item(SLOT_ID_SUIT)) != "#030303") ? "blood" : "oil"]-stained <a href='byond://?src=\ref[src];lookitem_desc_only=\ref[get_equipped_item(SLOT_ID_SUIT)]'>[get_equipped_item(SLOT_ID_SUIT).name]</a>![tie_msg]")
 		else
-			msg += "[p_Theyre()] wearing [icon2html(get_equipped_item(SLOT_ID_WEAR_SUIT),user.client)] <a href='byond://?src=\ref[src];lookitem_desc_only=\ref[get_equipped_item(SLOT_ID_WEAR_SUIT)]'>\a [get_equipped_item(SLOT_ID_WEAR_SUIT)]</a>.[tie_msg]"
+			msg += "[p_Theyre()] wearing [icon2html(get_equipped_item(SLOT_ID_SUIT),user.client)] <a href='byond://?src=\ref[src];lookitem_desc_only=\ref[get_equipped_item(SLOT_ID_SUIT)]'>\a [get_equipped_item(SLOT_ID_SUIT)]</a>.[tie_msg]"
 
 		//suit/armour storage
-		if(get_equipped_item(SLOT_ID_S_STORE) && !(skip_gear & EXAMINE_SKIPSUITSTORAGE) && get_equipped_item(SLOT_ID_S_STORE).show_examine)
-			if(get_equipped_item(SLOT_ID_S_STORE).forensic_data?.has_blooddna())
-				msg += span_warning("[p_Theyre()] carrying [icon2html(get_equipped_item(SLOT_ID_S_STORE),user.client)] [get_equipped_item(SLOT_ID_S_STORE).gender==PLURAL?"some":"a"] [(dq_get_blood_color(get_equipped_item(SLOT_ID_S_STORE)) != "#030303") ? "blood" : "oil"]-stained <a href='byond://?src=\ref[src];lookitem_desc_only=\ref[get_equipped_item(SLOT_ID_S_STORE)]'>[get_equipped_item(SLOT_ID_S_STORE).name]</a> on [p_their()] [get_equipped_item(SLOT_ID_WEAR_SUIT).name]!")
+		if(get_equipped_item(SLOT_ID_SUIT_STORAGE) && !(skip_gear & EXAMINE_SKIPSUITSTORAGE) && get_equipped_item(SLOT_ID_SUIT_STORAGE).show_examine)
+			if(get_equipped_item(SLOT_ID_SUIT_STORAGE).forensic_data?.has_blooddna())
+				msg += span_warning("[p_Theyre()] carrying [icon2html(get_equipped_item(SLOT_ID_SUIT_STORAGE),user.client)] [get_equipped_item(SLOT_ID_SUIT_STORAGE).gender==PLURAL?"some":"a"] [(dq_get_blood_color(get_equipped_item(SLOT_ID_SUIT_STORAGE)) != "#030303") ? "blood" : "oil"]-stained <a href='byond://?src=\ref[src];lookitem_desc_only=\ref[get_equipped_item(SLOT_ID_SUIT_STORAGE)]'>[get_equipped_item(SLOT_ID_SUIT_STORAGE).name]</a> on [p_their()] [get_equipped_item(SLOT_ID_SUIT).name]!")
 			else
-				msg += "[p_Theyre()] carrying [icon2html(get_equipped_item(SLOT_ID_S_STORE),user.client)] <a href='byond://?src=\ref[src];lookitem_desc_only=\ref[get_equipped_item(SLOT_ID_S_STORE)]'>\a [get_equipped_item(SLOT_ID_S_STORE)]</a> on [p_their()] [get_equipped_item(SLOT_ID_WEAR_SUIT).name]."
+				msg += "[p_Theyre()] carrying [icon2html(get_equipped_item(SLOT_ID_SUIT_STORAGE),user.client)] <a href='byond://?src=\ref[src];lookitem_desc_only=\ref[get_equipped_item(SLOT_ID_SUIT_STORAGE)]'>\a [get_equipped_item(SLOT_ID_SUIT_STORAGE)]</a> on [p_their()] [get_equipped_item(SLOT_ID_SUIT).name]."
 
 	//back
 	if(get_equipped_item(SLOT_ID_BACK) && !(skip_gear & EXAMINE_SKIPBACKPACK) && get_equipped_item(SLOT_ID_BACK).show_examine)
@@ -158,18 +158,18 @@
 			msg += "[p_They()] [p_have()] [icon2html(get_equipped_item(SLOT_ID_BACK),user.client)] <a href='byond://?src=\ref[src];lookitem_desc_only=\ref[get_equipped_item(SLOT_ID_BACK)]'>\a [get_equipped_item(SLOT_ID_BACK)]</a> on [p_their()] back."
 
 	//left hand
-	if(get_equipped_item(SLOT_ID_L_HAND) && get_equipped_item(SLOT_ID_L_HAND).show_examine)
-		if(get_equipped_item(SLOT_ID_L_HAND).forensic_data?.has_blooddna())
-			msg += span_warning("[p_Theyre()] holding [icon2html(get_equipped_item(SLOT_ID_L_HAND),user.client)] [get_equipped_item(SLOT_ID_L_HAND).gender==PLURAL?"some":"a"] [(dq_get_blood_color(get_equipped_item(SLOT_ID_L_HAND)) != "#030303") ? "blood" : "oil"]-stained <a href='byond://?src=\ref[src];lookitem_desc_only=\ref[get_equipped_item(SLOT_ID_L_HAND)]'>[get_equipped_item(SLOT_ID_L_HAND).name]</a> in [p_their()] left hand!")
+	if(get_equipped_item(SLOT_ID_HAND_L) && get_equipped_item(SLOT_ID_HAND_L).show_examine)
+		if(get_equipped_item(SLOT_ID_HAND_L).forensic_data?.has_blooddna())
+			msg += span_warning("[p_Theyre()] holding [icon2html(get_equipped_item(SLOT_ID_HAND_L),user.client)] [get_equipped_item(SLOT_ID_HAND_L).gender==PLURAL?"some":"a"] [(dq_get_blood_color(get_equipped_item(SLOT_ID_HAND_L)) != "#030303") ? "blood" : "oil"]-stained <a href='byond://?src=\ref[src];lookitem_desc_only=\ref[get_equipped_item(SLOT_ID_HAND_L)]'>[get_equipped_item(SLOT_ID_HAND_L).name]</a> in [p_their()] left hand!")
 		else
-			msg += "[p_Theyre()] holding [icon2html(get_equipped_item(SLOT_ID_L_HAND),user.client)] <a href='byond://?src=\ref[src];lookitem_desc_only=\ref[get_equipped_item(SLOT_ID_L_HAND)]'>\a [get_equipped_item(SLOT_ID_L_HAND)]</a> in [p_their()] left hand."
+			msg += "[p_Theyre()] holding [icon2html(get_equipped_item(SLOT_ID_HAND_L),user.client)] <a href='byond://?src=\ref[src];lookitem_desc_only=\ref[get_equipped_item(SLOT_ID_HAND_L)]'>\a [get_equipped_item(SLOT_ID_HAND_L)]</a> in [p_their()] left hand."
 
 	//right hand
-	if(get_equipped_item(SLOT_ID_R_HAND) && get_equipped_item(SLOT_ID_R_HAND).show_examine)
-		if(get_equipped_item(SLOT_ID_R_HAND).forensic_data?.has_blooddna())
-			msg += span_warning("[p_Theyre()] holding [icon2html(get_equipped_item(SLOT_ID_R_HAND),user.client)] [get_equipped_item(SLOT_ID_R_HAND).gender==PLURAL?"some":"a"] [(dq_get_blood_color(get_equipped_item(SLOT_ID_R_HAND)) != "#030303") ? "blood" : "oil"]-stained <a href='byond://?src=\ref[src];lookitem_desc_only=\ref[get_equipped_item(SLOT_ID_R_HAND)]'>[get_equipped_item(SLOT_ID_R_HAND).name]</a> in [p_their()] right hand!")
+	if(get_equipped_item(SLOT_ID_HAND_R) && get_equipped_item(SLOT_ID_HAND_R).show_examine)
+		if(get_equipped_item(SLOT_ID_HAND_R).forensic_data?.has_blooddna())
+			msg += span_warning("[p_Theyre()] holding [icon2html(get_equipped_item(SLOT_ID_HAND_R),user.client)] [get_equipped_item(SLOT_ID_HAND_R).gender==PLURAL?"some":"a"] [(dq_get_blood_color(get_equipped_item(SLOT_ID_HAND_R)) != "#030303") ? "blood" : "oil"]-stained <a href='byond://?src=\ref[src];lookitem_desc_only=\ref[get_equipped_item(SLOT_ID_HAND_R)]'>[get_equipped_item(SLOT_ID_HAND_R).name]</a> in [p_their()] right hand!")
 		else
-			msg += "[p_Theyre()] holding [icon2html(get_equipped_item(SLOT_ID_R_HAND),user.client)] <a href='byond://?src=\ref[src];lookitem_desc_only=\ref[get_equipped_item(SLOT_ID_R_HAND)]'>\a [get_equipped_item(SLOT_ID_R_HAND)]</a> in [p_their()] right hand."
+			msg += "[p_Theyre()] holding [icon2html(get_equipped_item(SLOT_ID_HAND_R),user.client)] <a href='byond://?src=\ref[src];lookitem_desc_only=\ref[get_equipped_item(SLOT_ID_HAND_R)]'>\a [get_equipped_item(SLOT_ID_HAND_R)]</a> in [p_their()] right hand."
 
 	//gloves
 	if(get_equipped_item(SLOT_ID_GLOVES) && !(skip_gear & EXAMINE_SKIPGLOVES) && get_equipped_item(SLOT_ID_GLOVES).show_examine)
@@ -219,34 +219,34 @@
 		msg += span_warning("[p_They()] [p_have()] [(feet_blood_color != SYNTH_BLOOD_COLOUR) ? "blood" : "oil"]-stained feet!")
 
 	//mask
-	if(get_equipped_item(SLOT_ID_WEAR_MASK) && !(skip_gear & EXAMINE_SKIPMASK) && get_equipped_item(SLOT_ID_WEAR_MASK).show_examine)
+	if(get_equipped_item(SLOT_ID_MASK) && !(skip_gear & EXAMINE_SKIPMASK) && get_equipped_item(SLOT_ID_MASK).show_examine)
 		var/descriptor = "on [p_their()] face"
-		if(istype(get_equipped_item(SLOT_ID_WEAR_MASK), /obj/item/grenade) && check_has_mouth())
+		if(istype(get_equipped_item(SLOT_ID_MASK), /obj/item/grenade) && check_has_mouth())
 			descriptor = "in [p_their()] mouth"
 
-		if(get_equipped_item(SLOT_ID_WEAR_MASK).forensic_data?.has_blooddna())
-			msg += span_warning("[p_They()] [p_have()] [icon2html(get_equipped_item(SLOT_ID_WEAR_MASK),user.client)] [get_equipped_item(SLOT_ID_WEAR_MASK).gender==PLURAL?"some":"a"] [(dq_get_blood_color(get_equipped_item(SLOT_ID_WEAR_MASK)) != "#030303") ? "blood" : "oil"]-stained <a href='byond://?src=\ref[src];lookitem_desc_only=\ref[get_equipped_item(SLOT_ID_WEAR_MASK)]'>[get_equipped_item(SLOT_ID_WEAR_MASK).name]</a> [descriptor]!")
+		if(get_equipped_item(SLOT_ID_MASK).forensic_data?.has_blooddna())
+			msg += span_warning("[p_They()] [p_have()] [icon2html(get_equipped_item(SLOT_ID_MASK),user.client)] [get_equipped_item(SLOT_ID_MASK).gender==PLURAL?"some":"a"] [(dq_get_blood_color(get_equipped_item(SLOT_ID_MASK)) != "#030303") ? "blood" : "oil"]-stained <a href='byond://?src=\ref[src];lookitem_desc_only=\ref[get_equipped_item(SLOT_ID_MASK)]'>[get_equipped_item(SLOT_ID_MASK).name]</a> [descriptor]!")
 		else
-			msg += "[p_They()] [p_have()] [icon2html(get_equipped_item(SLOT_ID_WEAR_MASK),user.client)] <a href='byond://?src=\ref[src];lookitem_desc_only=\ref[get_equipped_item(SLOT_ID_WEAR_MASK)]'>\a [get_equipped_item(SLOT_ID_WEAR_MASK)]</a> [descriptor]."
+			msg += "[p_They()] [p_have()] [icon2html(get_equipped_item(SLOT_ID_MASK),user.client)] <a href='byond://?src=\ref[src];lookitem_desc_only=\ref[get_equipped_item(SLOT_ID_MASK)]'>\a [get_equipped_item(SLOT_ID_MASK)]</a> [descriptor]."
 
 	//eyes
-	if(get_equipped_item(SLOT_ID_GLASSES) && !(skip_gear & EXAMINE_SKIPEYEWEAR) && get_equipped_item(SLOT_ID_GLASSES).show_examine)
-		if(get_equipped_item(SLOT_ID_GLASSES).forensic_data?.has_blooddna())
-			msg += span_warning("[p_They()] [p_have()] [icon2html(get_equipped_item(SLOT_ID_GLASSES),user.client)] [get_equipped_item(SLOT_ID_GLASSES).gender==PLURAL?"some":"a"] [(dq_get_blood_color(get_equipped_item(SLOT_ID_GLASSES)) != "#030303") ? "blood" : "oil"]-stained <a href='byond://?src=\ref[src];lookitem_desc_only=\ref[get_equipped_item(SLOT_ID_GLASSES)]'>[get_equipped_item(SLOT_ID_GLASSES)]</a> covering [p_their()] eyes!")
+	if(get_equipped_item(SLOT_ID_EYES) && !(skip_gear & EXAMINE_SKIPEYEWEAR) && get_equipped_item(SLOT_ID_EYES).show_examine)
+		if(get_equipped_item(SLOT_ID_EYES).forensic_data?.has_blooddna())
+			msg += span_warning("[p_They()] [p_have()] [icon2html(get_equipped_item(SLOT_ID_EYES),user.client)] [get_equipped_item(SLOT_ID_EYES).gender==PLURAL?"some":"a"] [(dq_get_blood_color(get_equipped_item(SLOT_ID_EYES)) != "#030303") ? "blood" : "oil"]-stained <a href='byond://?src=\ref[src];lookitem_desc_only=\ref[get_equipped_item(SLOT_ID_EYES)]'>[get_equipped_item(SLOT_ID_EYES)]</a> covering [p_their()] eyes!")
 		else
-			msg += "[p_They()] [p_have()] [icon2html(get_equipped_item(SLOT_ID_GLASSES),user.client)] <a href='byond://?src=\ref[src];lookitem_desc_only=\ref[get_equipped_item(SLOT_ID_GLASSES)]'>\a [get_equipped_item(SLOT_ID_GLASSES)]</a> covering [p_their()] eyes."
+			msg += "[p_They()] [p_have()] [icon2html(get_equipped_item(SLOT_ID_EYES),user.client)] <a href='byond://?src=\ref[src];lookitem_desc_only=\ref[get_equipped_item(SLOT_ID_EYES)]'>\a [get_equipped_item(SLOT_ID_EYES)]</a> covering [p_their()] eyes."
 
 	//left ear
-	if(get_equipped_item(SLOT_ID_L_EAR) && !(skip_gear & EXAMINE_SKIPEARS) && get_equipped_item(SLOT_ID_L_EAR).show_examine)
-		msg += "[p_They()] [p_have()] [icon2html(get_equipped_item(SLOT_ID_L_EAR),user.client)] <a href='byond://?src=\ref[src];lookitem_desc_only=\ref[get_equipped_item(SLOT_ID_L_EAR)]'>\a [get_equipped_item(SLOT_ID_L_EAR)]</a> on [p_their()] left ear."
+	if(get_equipped_item(SLOT_ID_EAR_L) && !(skip_gear & EXAMINE_SKIPEARS) && get_equipped_item(SLOT_ID_EAR_L).show_examine)
+		msg += "[p_They()] [p_have()] [icon2html(get_equipped_item(SLOT_ID_EAR_L),user.client)] <a href='byond://?src=\ref[src];lookitem_desc_only=\ref[get_equipped_item(SLOT_ID_EAR_L)]'>\a [get_equipped_item(SLOT_ID_EAR_L)]</a> on [p_their()] left ear."
 
 	//right ear
-	if(get_equipped_item(SLOT_ID_R_EAR) && !(skip_gear & EXAMINE_SKIPEARS) && get_equipped_item(SLOT_ID_R_EAR).show_examine)
-		msg += "[p_They()] [p_have()] [icon2html(get_equipped_item(SLOT_ID_R_EAR),user.client)] <a href='byond://?src=\ref[src];lookitem_desc_only=\ref[get_equipped_item(SLOT_ID_R_EAR)]'>\a [get_equipped_item(SLOT_ID_R_EAR)]</a> on [p_their()] right ear."
+	if(get_equipped_item(SLOT_ID_EAR_R) && !(skip_gear & EXAMINE_SKIPEARS) && get_equipped_item(SLOT_ID_EAR_R).show_examine)
+		msg += "[p_They()] [p_have()] [icon2html(get_equipped_item(SLOT_ID_EAR_R),user.client)] <a href='byond://?src=\ref[src];lookitem_desc_only=\ref[get_equipped_item(SLOT_ID_EAR_R)]'>\a [get_equipped_item(SLOT_ID_EAR_R)]</a> on [p_their()] right ear."
 
 	//ID
-	if(get_equipped_item(SLOT_ID_WEAR_ID) && get_equipped_item(SLOT_ID_WEAR_ID).show_examine)
-		msg += "[p_Theyre()] wearing [icon2html(get_equipped_item(SLOT_ID_WEAR_ID),user.client)]<a href='byond://?src=\ref[src];lookitem_desc_only=\ref[get_equipped_item(SLOT_ID_WEAR_ID)]'>\a [get_equipped_item(SLOT_ID_WEAR_ID)]</a>."
+	if(get_equipped_item(SLOT_ID_ID) && get_equipped_item(SLOT_ID_ID).show_examine)
+		msg += "[p_Theyre()] wearing [icon2html(get_equipped_item(SLOT_ID_ID),user.client)]<a href='byond://?src=\ref[src];lookitem_desc_only=\ref[get_equipped_item(SLOT_ID_ID)]'>\a [get_equipped_item(SLOT_ID_ID)]</a>."
 
 	//Jitters
 	var/jitter = get_jittery()
@@ -396,12 +396,12 @@
 		var/perpname = name
 		var/criminal = "None"
 
-		if(get_equipped_item(SLOT_ID_WEAR_ID))
-			if(istype(get_equipped_item(SLOT_ID_WEAR_ID), /obj/item/card/id))
-				var/obj/item/card/id/I = get_equipped_item(SLOT_ID_WEAR_ID)
+		if(get_equipped_item(SLOT_ID_ID))
+			if(istype(get_equipped_item(SLOT_ID_ID), /obj/item/card/id))
+				var/obj/item/card/id/I = get_equipped_item(SLOT_ID_ID)
 				perpname = I.registered_name
-			else if(istype(get_equipped_item(SLOT_ID_WEAR_ID), /obj/item/pda))
-				var/obj/item/pda/P = get_equipped_item(SLOT_ID_WEAR_ID)
+			else if(istype(get_equipped_item(SLOT_ID_ID), /obj/item/pda))
+				var/obj/item/pda/P = get_equipped_item(SLOT_ID_ID)
 				perpname = P.owner
 
 		for (var/datum/data/record/R in GLOB.data_core.security)
@@ -415,12 +415,12 @@
 		var/perpname = name
 		var/medical = "None"
 
-		if(get_equipped_item(SLOT_ID_WEAR_ID))
-			if(istype(get_equipped_item(SLOT_ID_WEAR_ID), /obj/item/card/id))
-				var/obj/item/card/id/I = get_equipped_item(SLOT_ID_WEAR_ID)
+		if(get_equipped_item(SLOT_ID_ID))
+			if(istype(get_equipped_item(SLOT_ID_ID), /obj/item/card/id))
+				var/obj/item/card/id/I = get_equipped_item(SLOT_ID_ID)
 				perpname = I.registered_name
-			else if(istype(get_equipped_item(SLOT_ID_WEAR_ID), /obj/item/pda))
-				var/obj/item/pda/P = get_equipped_item(SLOT_ID_WEAR_ID)
+			else if(istype(get_equipped_item(SLOT_ID_ID), /obj/item/pda))
+				var/obj/item/pda/P = get_equipped_item(SLOT_ID_ID)
 				perpname = P.owner
 
 		for (var/datum/data/record/R in GLOB.data_core.medical)
@@ -463,9 +463,9 @@
 		if(hasHUD_vr(H,hudtype)) return 1 //Added records access for certain modes of omni-hud glasses
 		switch(hudtype)
 			if("security")
-				return istype(H.get_equipped_item(SLOT_ID_GLASSES), /obj/item/clothing/glasses/hud/security) || istype(H.get_equipped_item(SLOT_ID_GLASSES), /obj/item/clothing/glasses/sunglasses/sechud)
+				return istype(H.get_equipped_item(SLOT_ID_EYES), /obj/item/clothing/glasses/hud/security) || istype(H.get_equipped_item(SLOT_ID_EYES), /obj/item/clothing/glasses/sunglasses/sechud)
 			if("medical")
-				return istype(H.get_equipped_item(SLOT_ID_GLASSES), /obj/item/clothing/glasses/hud/health)
+				return istype(H.get_equipped_item(SLOT_ID_EYES), /obj/item/clothing/glasses/hud/health)
 	else if(isrobot(M))
 		var/mob/living/silicon/robot/R = M
 		return R.sensor_type //Borgo sensors are now binary so just have them on or off
@@ -544,8 +544,8 @@
 				if(H.nif.flag_check(NIF_V_AR_MEDICAL,NIF_FLAGS_VISION))
 					return TRUE
 
-	if(istype(H.get_equipped_item(SLOT_ID_GLASSES), /obj/item/clothing/glasses/omnihud))
-		var/obj/item/clothing/glasses/omnihud/omni = H.get_equipped_item(SLOT_ID_GLASSES)
+	if(istype(H.get_equipped_item(SLOT_ID_EYES), /obj/item/clothing/glasses/omnihud))
+		var/obj/item/clothing/glasses/omnihud/omni = H.get_equipped_item(SLOT_ID_EYES)
 		switch(hudtype)
 			if("security")
 				if(omni.mode == "sec" || omni.mode == "best")

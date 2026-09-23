@@ -25,7 +25,7 @@
 	var/mob/living/carbon/human/H = over_object
 	if(!istype(H) || !Adjacent(H))
 		return ..()
-	if(IS_GRABBING(H) && hat && !(H.get_equipped_item(SLOT_ID_L_HAND) && H.get_equipped_item(SLOT_ID_R_HAND)))
+	if(IS_GRABBING(H) && hat && !(H.get_equipped_item(SLOT_ID_HAND_L) && H.get_equipped_item(SLOT_ID_HAND_R)))
 		var/obj/item/removed_hat = remove_hat(get_turf(src))
 		H.put_in_hands(removed_hat)
 		H.visible_message(span_danger("\The [H] removes \the [src]'s [removed_hat]."))

@@ -244,7 +244,7 @@
 				else
 					src.show_message("My [org.name] is " + span_notice("OK."),1)
 
-			if((SKELETON in H.mutations) && (!H.get_equipped_item(SLOT_ID_W_UNIFORM)) && (!H.get_equipped_item(SLOT_ID_WEAR_SUIT)))
+			if((SKELETON in H.mutations) && (!H.get_equipped_item(SLOT_ID_UNIFORM)) && (!H.get_equipped_item(SLOT_ID_SUIT)))
 				H.play_xylophone()
 		else if (on_fire)
 			playsound(src, 'sound/weapons/thudswoosh.ogg', 50, 1, -1)
@@ -271,8 +271,8 @@
 		else
 			if (ishuman(src))
 				var/mob/living/carbon/human/H = src
-				if(H.get_equipped_item(SLOT_ID_W_UNIFORM))
-					H.get_equipped_item(SLOT_ID_W_UNIFORM).add_fingerprint(M)
+				if(H.get_equipped_item(SLOT_ID_UNIFORM))
+					H.get_equipped_item(SLOT_ID_UNIFORM).add_fingerprint(M)
 
 			var/show_ssd
 			var/mob/living/carbon/human/H = src
@@ -454,10 +454,10 @@
 // Clears blood overlays
 /mob/living/carbon/wash(clean_types)
 	. = ..()
-	if(get_equipped_item(SLOT_ID_R_HAND))
-		get_equipped_item(SLOT_ID_R_HAND).wash(clean_types)
-	if(get_equipped_item(SLOT_ID_L_HAND))
-		get_equipped_item(SLOT_ID_L_HAND).wash(clean_types)
+	if(get_equipped_item(SLOT_ID_HAND_R))
+		get_equipped_item(SLOT_ID_HAND_R).wash(clean_types)
+	if(get_equipped_item(SLOT_ID_HAND_L))
+		get_equipped_item(SLOT_ID_HAND_L).wash(clean_types)
 	if(get_equipped_item(SLOT_ID_BACK))
 		if(get_equipped_item(SLOT_ID_BACK).wash(clean_types))
 			src.update_inv_back(0)
@@ -470,31 +470,31 @@
 		var/washears = 1
 		var/washglasses = 1
 
-		if(H.get_equipped_item(SLOT_ID_WEAR_SUIT))
-			washgloves = !(H.get_equipped_item(SLOT_ID_WEAR_SUIT).flags_inv & HIDEGLOVES)
-			washshoes = !(H.get_equipped_item(SLOT_ID_WEAR_SUIT).flags_inv & HIDESHOES)
+		if(H.get_equipped_item(SLOT_ID_SUIT))
+			washgloves = !(H.get_equipped_item(SLOT_ID_SUIT).flags_inv & HIDEGLOVES)
+			washshoes = !(H.get_equipped_item(SLOT_ID_SUIT).flags_inv & HIDESHOES)
 
 		if(H.get_equipped_item(SLOT_ID_HEAD))
 			washmask = !(H.get_equipped_item(SLOT_ID_HEAD).flags_inv & HIDEMASK)
 			washglasses = !(H.get_equipped_item(SLOT_ID_HEAD).flags_inv & HIDEEYES)
 			washears = !(H.get_equipped_item(SLOT_ID_HEAD).flags_inv & HIDEEARS)
 
-		if(H.get_equipped_item(SLOT_ID_WEAR_MASK))
+		if(H.get_equipped_item(SLOT_ID_MASK))
 			if (washears)
-				washears = !(H.get_equipped_item(SLOT_ID_WEAR_MASK).flags_inv & HIDEEARS)
+				washears = !(H.get_equipped_item(SLOT_ID_MASK).flags_inv & HIDEEARS)
 			if (washglasses)
-				washglasses = !(H.get_equipped_item(SLOT_ID_WEAR_MASK).flags_inv & HIDEEYES)
+				washglasses = !(H.get_equipped_item(SLOT_ID_MASK).flags_inv & HIDEEYES)
 
 		if(H.get_equipped_item(SLOT_ID_HEAD))
 			if(H.get_equipped_item(SLOT_ID_HEAD).wash(clean_types))
 				H.update_inv_head()
 
-		if(H.get_equipped_item(SLOT_ID_WEAR_SUIT))
-			if(H.get_equipped_item(SLOT_ID_WEAR_SUIT).wash(clean_types))
+		if(H.get_equipped_item(SLOT_ID_SUIT))
+			if(H.get_equipped_item(SLOT_ID_SUIT).wash(clean_types))
 				H.update_inv_wear_suit()
 
-		else if(H.get_equipped_item(SLOT_ID_W_UNIFORM))
-			if(H.get_equipped_item(SLOT_ID_W_UNIFORM).wash(clean_types))
+		else if(H.get_equipped_item(SLOT_ID_UNIFORM))
+			if(H.get_equipped_item(SLOT_ID_UNIFORM).wash(clean_types))
 				H.update_inv_w_uniform()
 
 		if(H.get_equipped_item(SLOT_ID_GLOVES) && washgloves)
@@ -505,20 +505,20 @@
 			if(H.get_equipped_item(SLOT_ID_SHOES).wash(clean_types))
 				H.update_inv_shoes(0)
 
-		if(H.get_equipped_item(SLOT_ID_WEAR_MASK) && washmask)
-			if(H.get_equipped_item(SLOT_ID_WEAR_MASK).wash(clean_types))
+		if(H.get_equipped_item(SLOT_ID_MASK) && washmask)
+			if(H.get_equipped_item(SLOT_ID_MASK).wash(clean_types))
 				H.update_inv_wear_mask(0)
 
-		if(H.get_equipped_item(SLOT_ID_GLASSES) && washglasses)
-			if(H.get_equipped_item(SLOT_ID_GLASSES).wash(clean_types))
+		if(H.get_equipped_item(SLOT_ID_EYES) && washglasses)
+			if(H.get_equipped_item(SLOT_ID_EYES).wash(clean_types))
 				H.update_inv_glasses(0)
 
-		if(H.get_equipped_item(SLOT_ID_L_EAR) && washears)
-			if(H.get_equipped_item(SLOT_ID_L_EAR).wash(clean_types))
+		if(H.get_equipped_item(SLOT_ID_EAR_L) && washears)
+			if(H.get_equipped_item(SLOT_ID_EAR_L).wash(clean_types))
 				H.update_inv_ears(0)
 
-		if(H.get_equipped_item(SLOT_ID_R_EAR) && washears)
-			if(H.get_equipped_item(SLOT_ID_R_EAR).wash(clean_types))
+		if(H.get_equipped_item(SLOT_ID_EAR_R) && washears)
+			if(H.get_equipped_item(SLOT_ID_EAR_R).wash(clean_types))
 				H.update_inv_ears(0)
 
 		if(H.get_equipped_item(SLOT_ID_BELT))
@@ -526,8 +526,8 @@
 				H.update_inv_belt(0)
 
 	else
-		if(get_equipped_item(SLOT_ID_WEAR_MASK))						//if the mob is not human, it cleans the mask without asking for bitflags
-			if(get_equipped_item(SLOT_ID_WEAR_MASK).wash(clean_types))
+		if(get_equipped_item(SLOT_ID_MASK))						//if the mob is not human, it cleans the mask without asking for bitflags
+			if(get_equipped_item(SLOT_ID_MASK).wash(clean_types))
 				src.update_inv_wear_mask(0)
 
 /mob/living/carbon/proc/food_preference(allergen_type) //RS edit

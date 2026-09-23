@@ -122,7 +122,7 @@ This saves us from having to call add_fingerprint() any time something is put in
 				update_inv_wear_mask(0)
 			if(inserted && istype(I, /obj/item/clothing/head/kitty))
 				I.update_icon(src)
-		if(SLOT_ID_WEAR_MASK)
+		if(SLOT_ID_MASK)
 			if(istype(I) && (I.flags_inv & (BLOCKHAIR|BLOCKHEADHAIR)))
 				update_hair(0)	//rebuild hair
 				update_inv_ears(0)
@@ -131,19 +131,19 @@ This saves us from having to call add_fingerprint() any time something is put in
 				if(internals)
 					internals.icon_state = "internal0"
 				internal = null
-		if(SLOT_ID_WEAR_ID)
+		if(SLOT_ID_ID)
 			BITSET(hud_updateflag, ID_HUD)
 			BITSET(hud_updateflag, WANTED_HUD)
 
 /mob/living/carbon/human/slot_vacated(slot_id, obj/item/I)
 	..()
 	switch(slot_id)
-		if(SLOT_ID_WEAR_SUIT)
-			drop_from_inventory(get_equipped_item(SLOT_ID_S_STORE))
-		if(SLOT_ID_W_UNIFORM)
-			drop_from_inventory(get_equipped_item(SLOT_ID_R_STORE))
-			drop_from_inventory(get_equipped_item(SLOT_ID_L_STORE))
-			drop_from_inventory(get_equipped_item(SLOT_ID_WEAR_ID))
+		if(SLOT_ID_SUIT)
+			drop_from_inventory(get_equipped_item(SLOT_ID_SUIT_STORAGE))
+		if(SLOT_ID_UNIFORM)
+			drop_from_inventory(get_equipped_item(SLOT_ID_POCKET_R))
+			drop_from_inventory(get_equipped_item(SLOT_ID_POCKET_L))
+			drop_from_inventory(get_equipped_item(SLOT_ID_ID))
 
 /mob/living/carbon/human/equipped_to_slot(obj/item/W, slot)
 	..()
@@ -154,7 +154,7 @@ This saves us from having to call add_fingerprint() any time something is put in
 /mob/living/carbon/human/proc/equip_offear(obj/item/W, slot)
 	if(!(W.slot_flags & SLOT_TWOEARS) || istype(W, /obj/item/clothing/ears/offear))
 		return
-	var/other = (slot == slot_l_ear) ? SLOT_ID_R_EAR : SLOT_ID_L_EAR
+	var/other = (slot == slot_l_ear) ? SLOT_ID_EAR_R : SLOT_ID_EAR_L
 	if(get_equipped_item(other))
 		return
 	var/obj/item/clothing/ears/offear/O = new(W)
@@ -177,7 +177,7 @@ This saves us from having to call add_fingerprint() any time something is put in
 			covering = get_equipped_item(SLOT_ID_HEAD)
 			check_flags = EYES
 		if(slot_gloves, slot_w_uniform)
-			covering = get_equipped_item(SLOT_ID_WEAR_SUIT)
+			covering = get_equipped_item(SLOT_ID_SUIT)
 
 	if(covering && (covering.body_parts_covered & (I.body_parts_covered|check_flags)))
 		to_chat(user, span_warning("\The [covering] is in the way."))

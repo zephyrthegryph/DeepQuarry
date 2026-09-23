@@ -83,11 +83,11 @@
 
 /mob/living/carbon/human/get_ear_protection()
 	var/sum = 0
-	if(istype(get_equipped_item(SLOT_ID_L_EAR), /obj/item/clothing/ears))
-		var/obj/item/clothing/ears/L = get_equipped_item(SLOT_ID_L_EAR)
+	if(istype(get_equipped_item(SLOT_ID_EAR_L), /obj/item/clothing/ears))
+		var/obj/item/clothing/ears/L = get_equipped_item(SLOT_ID_EAR_L)
 		sum += L.ear_protection
-	if(istype(get_equipped_item(SLOT_ID_R_EAR), /obj/item/clothing/ears))
-		var/obj/item/clothing/ears/R = get_equipped_item(SLOT_ID_R_EAR)
+	if(istype(get_equipped_item(SLOT_ID_EAR_R), /obj/item/clothing/ears))
+		var/obj/item/clothing/ears/R = get_equipped_item(SLOT_ID_EAR_R)
 		sum += R.ear_protection
 	if(istype(get_equipped_item(SLOT_ID_HEAD), /obj/item/clothing/head))
 		var/obj/item/clothing/head/H = get_equipped_item(SLOT_ID_HEAD)
@@ -122,8 +122,8 @@
 			return 1
 
 	//Look at their torso
-	if(!get_equipped_item(SLOT_ID_WEAR_SUIT) || (get_equipped_item(SLOT_ID_WEAR_SUIT) && !(get_equipped_item(SLOT_ID_WEAR_SUIT).flags_inv & HIDEJUMPSUIT)))
-		if(!get_equipped_item(SLOT_ID_W_UNIFORM) || (get_equipped_item(SLOT_ID_W_UNIFORM) && !(get_equipped_item(SLOT_ID_W_UNIFORM).body_parts_covered & UPPER_TORSO)))
+	if(!get_equipped_item(SLOT_ID_SUIT) || (get_equipped_item(SLOT_ID_SUIT) && !(get_equipped_item(SLOT_ID_SUIT).flags_inv & HIDEJUMPSUIT)))
+		if(!get_equipped_item(SLOT_ID_UNIFORM) || (get_equipped_item(SLOT_ID_UNIFORM) && !(get_equipped_item(SLOT_ID_UNIFORM).body_parts_covered & UPPER_TORSO)))
 			if(T && T.robotic == ORGAN_ROBOT)
 				return 1
 

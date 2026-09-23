@@ -257,9 +257,9 @@
 
 /obj/item/proc/is_held_twohanded(mob/living/M)
 	var/check_hand
-	if(M.get_equipped_item(SLOT_ID_L_HAND) == src && !M.get_equipped_item(SLOT_ID_R_HAND))
+	if(M.get_equipped_item(SLOT_ID_HAND_L) == src && !M.get_equipped_item(SLOT_ID_HAND_R))
 		check_hand = BP_R_HAND //item in left hand, check right hand
-	else if(M.get_equipped_item(SLOT_ID_R_HAND) == src && !M.get_equipped_item(SLOT_ID_L_HAND))
+	else if(M.get_equipped_item(SLOT_ID_HAND_R) == src && !M.get_equipped_item(SLOT_ID_HAND_L))
 		check_hand = BP_L_HAND //item in right hand, check left hand
 	else
 		return FALSE
@@ -282,9 +282,9 @@
 /obj/item/proc/update_held_icon()
 	if(isliving(src.loc))
 		var/mob/living/M = src.loc
-		if(M.get_equipped_item(SLOT_ID_L_HAND) == src)
+		if(M.get_equipped_item(SLOT_ID_HAND_L) == src)
 			M.update_inv_l_hand()
-		else if(M.get_equipped_item(SLOT_ID_R_HAND) == src)
+		else if(M.get_equipped_item(SLOT_ID_HAND_R) == src)
 			M.update_inv_r_hand()
 
 /obj/item/verb/move_to_top()
@@ -604,7 +604,7 @@
 	var/mob/living/carbon/human/H = M
 	var/mob/living/carbon/human/U = user
 	if(istype(H))
-		for(var/obj/item/protection in list(H.get_equipped_item(SLOT_ID_HEAD), H.get_equipped_item(SLOT_ID_WEAR_MASK), H.get_equipped_item(SLOT_ID_GLASSES)))
+		for(var/obj/item/protection in list(H.get_equipped_item(SLOT_ID_HEAD), H.get_equipped_item(SLOT_ID_MASK), H.get_equipped_item(SLOT_ID_EYES)))
 			if(protection && (protection.body_parts_covered & EYES))
 				// you can't stab someone in the eyes wearing a mask!
 				to_chat(user, span_warning("You're going to need to remove the eye covering first."))

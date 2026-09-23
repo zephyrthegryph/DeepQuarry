@@ -608,10 +608,10 @@
 	return !(W in internal_organs) && ..()
 
 /mob/living/proc/drop_both_hands()
-	if(get_equipped_item(SLOT_ID_L_HAND))
-		unEquip(get_equipped_item(SLOT_ID_L_HAND))
-	if(get_equipped_item(SLOT_ID_R_HAND))
-		unEquip(get_equipped_item(SLOT_ID_R_HAND))
+	if(get_equipped_item(SLOT_ID_HAND_L))
+		unEquip(get_equipped_item(SLOT_ID_HAND_L))
+	if(get_equipped_item(SLOT_ID_HAND_R))
+		unEquip(get_equipped_item(SLOT_ID_HAND_R))
 	return
 
 /mob/living/touch_map_edge()

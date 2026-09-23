@@ -14,8 +14,7 @@
 //   inventory_slot_id(I)       the SLOT_ID_* id I is equipped in, or null
 //   get_equipped_items()       worn and held items
 //
-// Which slots a mob has is declared by slot_def_types() (for now in
-// inventory_slots_interim.dm; the body plans take it over). Icon and HUD
+// Which slots a mob has is its body plan's (code/modules/body/slots.dm). Icon and HUD
 // updates follow the slot signals (on_slot_changed), so a move that bypasses
 // these procs still leaves the mob consistent.
 
@@ -45,29 +44,29 @@ GLOBAL_LIST_INIT(slot_id_by_num, dq_build_slot_id_table())
 GLOBAL_LIST_INIT(slot_num_by_id, dq_build_slot_num_table())
 /// The slots get_equipped_items() reports (worn and held; not pockets, suit
 /// storage or restraints, as before).
-GLOBAL_LIST_INIT(slot_ids_equipped_items, list(SLOT_ID_BACK, SLOT_ID_L_HAND, SLOT_ID_R_HAND, SLOT_ID_WEAR_MASK, SLOT_ID_BELT, SLOT_ID_L_EAR, SLOT_ID_R_EAR, SLOT_ID_GLASSES, SLOT_ID_GLOVES, SLOT_ID_HEAD, SLOT_ID_SHOES, SLOT_ID_WEAR_ID, SLOT_ID_WEAR_SUIT, SLOT_ID_W_UNIFORM))
+GLOBAL_LIST_INIT(slot_ids_equipped_items, list(SLOT_ID_BACK, SLOT_ID_HAND_L, SLOT_ID_HAND_R, SLOT_ID_MASK, SLOT_ID_BELT, SLOT_ID_EAR_L, SLOT_ID_EAR_R, SLOT_ID_EYES, SLOT_ID_GLOVES, SLOT_ID_HEAD, SLOT_ID_SHOES, SLOT_ID_ID, SLOT_ID_SUIT, SLOT_ID_UNIFORM))
 /// Worn-clothing slots, whose items make up a human's worn_clothing.
-GLOBAL_LIST_INIT(slot_ids_worn_clothing, list(SLOT_ID_BACK, SLOT_ID_WEAR_MASK, SLOT_ID_BELT, SLOT_ID_GLASSES, SLOT_ID_GLOVES, SLOT_ID_HEAD, SLOT_ID_SHOES, SLOT_ID_WEAR_SUIT, SLOT_ID_W_UNIFORM))
+GLOBAL_LIST_INIT(slot_ids_worn_clothing, list(SLOT_ID_BACK, SLOT_ID_MASK, SLOT_ID_BELT, SLOT_ID_EYES, SLOT_ID_GLOVES, SLOT_ID_HEAD, SLOT_ID_SHOES, SLOT_ID_SUIT, SLOT_ID_UNIFORM))
 
 /proc/dq_build_slot_id_table()
 	. = new /list(SLOT_TOTAL)
-	.[slot_l_hand] = SLOT_ID_L_HAND
-	.[slot_r_hand] = SLOT_ID_R_HAND
+	.[slot_l_hand] = SLOT_ID_HAND_L
+	.[slot_r_hand] = SLOT_ID_HAND_R
 	.[slot_back] = SLOT_ID_BACK
 	.[slot_belt] = SLOT_ID_BELT
-	.[slot_wear_id] = SLOT_ID_WEAR_ID
-	.[slot_s_store] = SLOT_ID_S_STORE
-	.[slot_l_store] = SLOT_ID_L_STORE
-	.[slot_r_store] = SLOT_ID_R_STORE
-	.[slot_glasses] = SLOT_ID_GLASSES
-	.[slot_wear_mask] = SLOT_ID_WEAR_MASK
+	.[slot_wear_id] = SLOT_ID_ID
+	.[slot_s_store] = SLOT_ID_SUIT_STORAGE
+	.[slot_l_store] = SLOT_ID_POCKET_L
+	.[slot_r_store] = SLOT_ID_POCKET_R
+	.[slot_glasses] = SLOT_ID_EYES
+	.[slot_wear_mask] = SLOT_ID_MASK
 	.[slot_gloves] = SLOT_ID_GLOVES
 	.[slot_head] = SLOT_ID_HEAD
 	.[slot_shoes] = SLOT_ID_SHOES
-	.[slot_wear_suit] = SLOT_ID_WEAR_SUIT
-	.[slot_w_uniform] = SLOT_ID_W_UNIFORM
-	.[slot_l_ear] = SLOT_ID_L_EAR
-	.[slot_r_ear] = SLOT_ID_R_EAR
+	.[slot_wear_suit] = SLOT_ID_SUIT
+	.[slot_w_uniform] = SLOT_ID_UNIFORM
+	.[slot_l_ear] = SLOT_ID_EAR_L
+	.[slot_r_ear] = SLOT_ID_EAR_R
 	.[slot_handcuffed] = SLOT_ID_HANDCUFFED
 	.[slot_legcuffed] = SLOT_ID_LEGCUFFED
 
@@ -156,10 +155,10 @@ GLOBAL_LIST_INIT(slot_ids_worn_clothing, list(SLOT_ID_BACK, SLOT_ID_WEAR_MASK, S
 /// Items held in hands.
 /mob/proc/get_all_held_items()
 	. = list()
-	var/obj/item/I = get_equipped_item(SLOT_ID_L_HAND)
+	var/obj/item/I = get_equipped_item(SLOT_ID_HAND_L)
 	if(I)
 		. += I
-	I = get_equipped_item(SLOT_ID_R_HAND)
+	I = get_equipped_item(SLOT_ID_HAND_R)
 	if(I)
 		. += I
 
@@ -181,7 +180,7 @@ GLOBAL_LIST_INIT(slot_ids_worn_clothing, list(SLOT_ID_BACK, SLOT_ID_WEAR_MASK, S
 
 /mob/on_slot_changed(slot_id, atom/movable/thing, inserted)
 	. = ..()
-	if(slot_id == CONTAINER_SLOT_INTERIOR || QDELETED(src))
+	if(slot_id == SLOT_ID_BODY || QDELETED(src))
 		return
 	inventory_slot_changed(slot_id, thing, inserted)
 
@@ -190,13 +189,13 @@ GLOBAL_LIST_INIT(slot_ids_worn_clothing, list(SLOT_ID_BACK, SLOT_ID_WEAR_MASK, S
 /// move anything. Behaviour that moves other things is in slot_vacated().
 /mob/proc/inventory_slot_changed(slot_id, atom/movable/thing, inserted)
 	switch(slot_id)
-		if(SLOT_ID_L_HAND)
+		if(SLOT_ID_HAND_L)
 			update_inv_l_hand()
-		if(SLOT_ID_R_HAND)
+		if(SLOT_ID_HAND_R)
 			update_inv_r_hand()
 		if(SLOT_ID_BACK)
 			update_inv_back()
-		if(SLOT_ID_WEAR_MASK)
+		if(SLOT_ID_MASK)
 			update_inv_wear_mask()
 		if(SLOT_ID_HANDCUFFED)
 			update_inv_handcuffed()
@@ -204,9 +203,9 @@ GLOBAL_LIST_INIT(slot_ids_worn_clothing, list(SLOT_ID_BACK, SLOT_ID_WEAR_MASK, S
 			update_inv_legcuffed()
 		if(SLOT_ID_BELT)
 			update_inv_belt()
-		if(SLOT_ID_WEAR_ID)
+		if(SLOT_ID_ID)
 			update_inv_wear_id()
-		if(SLOT_ID_GLASSES)
+		if(SLOT_ID_EYES)
 			update_inv_glasses()
 		if(SLOT_ID_GLOVES)
 			update_inv_gloves()
@@ -214,13 +213,13 @@ GLOBAL_LIST_INIT(slot_ids_worn_clothing, list(SLOT_ID_BACK, SLOT_ID_WEAR_MASK, S
 			update_inv_head()
 		if(SLOT_ID_SHOES)
 			update_inv_shoes()
-		if(SLOT_ID_WEAR_SUIT)
+		if(SLOT_ID_SUIT)
 			update_inv_wear_suit()
-		if(SLOT_ID_W_UNIFORM)
+		if(SLOT_ID_UNIFORM)
 			update_inv_w_uniform()
-		if(SLOT_ID_S_STORE)
+		if(SLOT_ID_SUIT_STORAGE)
 			update_inv_s_store()
-		if(SLOT_ID_L_EAR, SLOT_ID_R_EAR)
+		if(SLOT_ID_EAR_L, SLOT_ID_EAR_R)
 			update_inv_ears()
 
 /// An item left equip slot `slot_id` through the inventory procs. What that
@@ -370,7 +369,7 @@ GLOBAL_LIST_INIT(slot_ids_worn_clothing, list(SLOT_ID_BACK, SLOT_ID_WEAR_MASK, S
 
 /* Hands */
 
-/// Puts `W` in hand slot `id` (SLOT_ID_L_HAND or SLOT_ID_R_HAND): a ledger
+/// Puts `W` in hand slot `id` (SLOT_ID_HAND_L or SLOT_ID_HAND_R): a ledger
 /// move, then equipped(). Returns TRUE on success.
 /mob/proc/put_in_hand_slot(obj/item/W, id)
 	if(!istype(W))
@@ -392,11 +391,11 @@ GLOBAL_LIST_INIT(slot_ids_worn_clothing, list(SLOT_ID_BACK, SLOT_ID_WEAR_MASK, S
 
 //Puts the item into your l_hand if possible and calls all necessary triggers/updates. returns 1 on success.
 /mob/proc/put_in_l_hand(obj/item/W)
-	return put_in_hand_slot(W, SLOT_ID_L_HAND)
+	return put_in_hand_slot(W, SLOT_ID_HAND_L)
 
 //Puts the item into your r_hand if possible and calls all necessary triggers/updates. returns 1 on success.
 /mob/proc/put_in_r_hand(obj/item/W)
-	return put_in_hand_slot(W, SLOT_ID_R_HAND)
+	return put_in_hand_slot(W, SLOT_ID_HAND_R)
 
 //Puts the item into our active hand if possible. returns 1 on success.
 /mob/proc/put_in_active_hand(obj/item/W)
@@ -467,7 +466,7 @@ GLOBAL_LIST_INIT(slot_ids_worn_clothing, list(SLOT_ID_BACK, SLOT_ID_WEAR_MASK, S
 	if(!force && !canUnEquip(I))
 		return FALSE
 	// From its equip slot to the interior: still ours, no longer worn or held.
-	if(!I.move_into(src, CONTAINER_SLOT_INTERIOR, src))
+	if(!I.move_into(src, SLOT_ID_BODY, src))
 		return FALSE
 	if(client)
 		client.screen -= I

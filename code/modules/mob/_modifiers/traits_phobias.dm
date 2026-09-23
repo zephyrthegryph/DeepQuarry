@@ -135,9 +135,9 @@
 					human_blood_fear_amount += 1
 
 				// List of slots.  Some slots like pockets are omitted due to not being visible, if H isn't the holder.
-				var/list/clothing_slots = list(H.get_equipped_item(SLOT_ID_BACK), H.get_equipped_item(SLOT_ID_WEAR_MASK), H.get_equipped_item(SLOT_ID_L_HAND), H.get_equipped_item(SLOT_ID_R_HAND), H.get_equipped_item(SLOT_ID_WEAR_ID), H.get_equipped_item(SLOT_ID_GLASSES), H.get_equipped_item(SLOT_ID_GLOVES), H.get_equipped_item(SLOT_ID_HEAD), H.get_equipped_item(SLOT_ID_SHOES), H.get_equipped_item(SLOT_ID_BELT), H.get_equipped_item(SLOT_ID_WEAR_SUIT), H.get_equipped_item(SLOT_ID_W_UNIFORM), H.get_equipped_item(SLOT_ID_S_STORE), H.get_equipped_item(SLOT_ID_L_EAR), H.get_equipped_item(SLOT_ID_R_EAR))
+				var/list/clothing_slots = list(H.get_equipped_item(SLOT_ID_BACK), H.get_equipped_item(SLOT_ID_MASK), H.get_equipped_item(SLOT_ID_HAND_L), H.get_equipped_item(SLOT_ID_HAND_R), H.get_equipped_item(SLOT_ID_ID), H.get_equipped_item(SLOT_ID_EYES), H.get_equipped_item(SLOT_ID_GLOVES), H.get_equipped_item(SLOT_ID_HEAD), H.get_equipped_item(SLOT_ID_SHOES), H.get_equipped_item(SLOT_ID_BELT), H.get_equipped_item(SLOT_ID_SUIT), H.get_equipped_item(SLOT_ID_UNIFORM), H.get_equipped_item(SLOT_ID_SUIT_STORAGE), H.get_equipped_item(SLOT_ID_EAR_L), H.get_equipped_item(SLOT_ID_EAR_R))
 				if(H == holder)
-					clothing_slots += list(H.get_equipped_item(SLOT_ID_L_STORE), H.get_equipped_item(SLOT_ID_R_STORE))
+					clothing_slots += list(H.get_equipped_item(SLOT_ID_POCKET_L), H.get_equipped_item(SLOT_ID_POCKET_R))
 
 				for(var/obj/item/clothing/C in clothing_slots)
 					if(C.forensic_data?.has_blooddna() && dq_get_blood_color(C) && dq_get_blood_color(C) != SYNTH_BLOOD_COLOUR)
@@ -549,10 +549,10 @@
 				continue
 			if(ishuman(L))
 				var/mob/living/carbon/human/H = L
-				if(H.get_equipped_item(SLOT_ID_L_HAND) && istype(H.get_equipped_item(SLOT_ID_L_HAND), /obj/item/reagent_containers/syringe) || H.get_equipped_item(SLOT_ID_R_HAND) && istype(H.get_equipped_item(SLOT_ID_R_HAND), /obj/item/reagent_containers/syringe))
+				if(H.get_equipped_item(SLOT_ID_HAND_L) && istype(H.get_equipped_item(SLOT_ID_HAND_L), /obj/item/reagent_containers/syringe) || H.get_equipped_item(SLOT_ID_HAND_R) && istype(H.get_equipped_item(SLOT_ID_HAND_R), /obj/item/reagent_containers/syringe))
 					fear_amount += 10
 
-				if(H.get_equipped_item(SLOT_ID_L_EAR) && istype(H.get_equipped_item(SLOT_ID_L_EAR), /obj/item/reagent_containers/syringe) || H.get_equipped_item(SLOT_ID_R_EAR) && istype(H.get_equipped_item(SLOT_ID_R_EAR), /obj/item/reagent_containers/syringe))
+				if(H.get_equipped_item(SLOT_ID_EAR_L) && istype(H.get_equipped_item(SLOT_ID_EAR_L), /obj/item/reagent_containers/syringe) || H.get_equipped_item(SLOT_ID_EAR_R) && istype(H.get_equipped_item(SLOT_ID_EAR_R), /obj/item/reagent_containers/syringe))
 					fear_amount +=10
 
 

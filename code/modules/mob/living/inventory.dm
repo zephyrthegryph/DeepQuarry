@@ -45,11 +45,11 @@
 
 //Returns the thing in our active hand
 /mob/living/get_active_hand()
-	return get_equipped_item(hand ? SLOT_ID_L_HAND : SLOT_ID_R_HAND)
+	return get_equipped_item(hand ? SLOT_ID_HAND_L : SLOT_ID_HAND_R)
 
 //Returns the thing in our inactive hand
 /mob/living/get_inactive_hand()
-	return get_equipped_item(hand ? SLOT_ID_R_HAND : SLOT_ID_L_HAND)
+	return get_equipped_item(hand ? SLOT_ID_HAND_R : SLOT_ID_HAND_L)
 
 //Drops the item in our active hand. TODO: rename this to drop_active_hand or something
 /mob/living/drop_item(atom/Target)
@@ -84,7 +84,7 @@
 
 /mob/living/proc/item_is_in_hands(obj/item/I)
 	var/id = inventory_slot_id(I)
-	return id == SLOT_ID_L_HAND || id == SLOT_ID_R_HAND
+	return id == SLOT_ID_HAND_L || id == SLOT_ID_HAND_R
 
 /mob/living/proc/update_held_icons()
 	for(var/obj/item/I as anything in get_all_held_items())
@@ -100,16 +100,16 @@
 	return null
 
 /mob/living/proc/get_left_hand() as /obj/item
-	return get_equipped_item(SLOT_ID_L_HAND)
+	return get_equipped_item(SLOT_ID_HAND_L)
 
 /mob/living/proc/get_right_hand() as /obj/item
-	return get_equipped_item(SLOT_ID_R_HAND)
+	return get_equipped_item(SLOT_ID_HAND_R)
 
 /mob/living/inventory_slot_changed(slot_id, atom/movable/thing, inserted)
 	..()
 	// A hand emptied: the other hand's item may stop being two-handed.
-	if(!inserted && (slot_id == SLOT_ID_L_HAND || slot_id == SLOT_ID_R_HAND))
-		var/obj/item/other = get_equipped_item(slot_id == SLOT_ID_L_HAND ? SLOT_ID_R_HAND : SLOT_ID_L_HAND)
+	if(!inserted && (slot_id == SLOT_ID_HAND_L || slot_id == SLOT_ID_HAND_R))
+		var/obj/item/other = get_equipped_item(slot_id == SLOT_ID_HAND_L ? SLOT_ID_HAND_R : SLOT_ID_HAND_L)
 		if(other)
 			other.update_twohanding()
 			other.update_held_icon()
@@ -121,15 +121,15 @@
 		L = list()
 
 	// Lefty grab!
-	if (istype(get_equipped_item(SLOT_ID_L_HAND), /obj/item/grab))
-		var/obj/item/grab/G = get_equipped_item(SLOT_ID_L_HAND)
+	if (istype(get_equipped_item(SLOT_ID_HAND_L), /obj/item/grab))
+		var/obj/item/grab/G = get_equipped_item(SLOT_ID_HAND_L)
 		L |= G.affecting
 		if(mobchain_limit-- > 0)
 			G.affecting?.ret_grab(L, mobchain_limit) // Recurse! They can update the list. It's the same instance as ours.
 
 	// Righty grab!
-	if (istype(get_equipped_item(SLOT_ID_R_HAND), /obj/item/grab))
-		var/obj/item/grab/G = get_equipped_item(SLOT_ID_R_HAND)
+	if (istype(get_equipped_item(SLOT_ID_HAND_R), /obj/item/grab))
+		var/obj/item/grab/G = get_equipped_item(SLOT_ID_HAND_R)
 		L |= G.affecting
 		if(mobchain_limit-- > 0)
 			G.affecting?.ret_grab(L, mobchain_limit) // Same as lefty!
@@ -166,10 +166,10 @@
 	return
 
 /mob/living/abiotic(full_body = 0)
-	if(full_body && ((get_equipped_item(SLOT_ID_L_HAND) && !( get_equipped_item(SLOT_ID_L_HAND).abstract )) || (get_equipped_item(SLOT_ID_R_HAND) && !( get_equipped_item(SLOT_ID_R_HAND).abstract )) || (get_equipped_item(SLOT_ID_BACK) || get_equipped_item(SLOT_ID_WEAR_MASK))))
+	if(full_body && ((get_equipped_item(SLOT_ID_HAND_L) && !( get_equipped_item(SLOT_ID_HAND_L).abstract )) || (get_equipped_item(SLOT_ID_HAND_R) && !( get_equipped_item(SLOT_ID_HAND_R).abstract )) || (get_equipped_item(SLOT_ID_BACK) || get_equipped_item(SLOT_ID_MASK))))
 		return 1
 
-	if((get_equipped_item(SLOT_ID_L_HAND) && !( get_equipped_item(SLOT_ID_L_HAND).abstract )) || (get_equipped_item(SLOT_ID_R_HAND) && !( get_equipped_item(SLOT_ID_R_HAND).abstract )))
+	if((get_equipped_item(SLOT_ID_HAND_L) && !( get_equipped_item(SLOT_ID_HAND_L).abstract )) || (get_equipped_item(SLOT_ID_HAND_R) && !( get_equipped_item(SLOT_ID_HAND_R).abstract )))
 		return 1
 	return 0
 
@@ -244,17 +244,17 @@
 	var/list/slots = list()
 	slots.Add(list(list(
 		"name" = "Head (Mask)",
-		"item" = host.get_equipped_item(SLOT_ID_WEAR_MASK),
+		"item" = host.get_equipped_item(SLOT_ID_MASK),
 		"act" = "mask",
 	)))
 	slots.Add(list(list(
 		"name" = "Left Hand",
-		"item" = host.get_equipped_item(SLOT_ID_L_HAND),
+		"item" = host.get_equipped_item(SLOT_ID_HAND_L),
 		"act" = "l_hand",
 	)))
 	slots.Add(list(list(
 		"name" = "Right Hand",
-		"item" = host.get_equipped_item(SLOT_ID_R_HAND),
+		"item" = host.get_equipped_item(SLOT_ID_HAND_R),
 		"act" = "r_hand",
 	)))
 	slots.Add(list(list(
@@ -270,7 +270,7 @@
 	data["slots"] = slots
 
 	data["internals"] = host.internals
-	data["internalsValid"] = istype(host.get_equipped_item(SLOT_ID_WEAR_MASK), /obj/item/clothing/mask) && istype(host.get_equipped_item(SLOT_ID_BACK), /obj/item/tank)
+	data["internalsValid"] = istype(host.get_equipped_item(SLOT_ID_MASK), /obj/item/clothing/mask) && istype(host.get_equipped_item(SLOT_ID_BACK), /obj/item/tank)
 
 	return data
 
@@ -315,8 +315,8 @@
 	var/mob/living/carbon/human/H = host // Not my fault if this runtimes, a human inventory panel should never be created without a human attached.
 
 	var/obj/item/clothing/under/suit = null
-	if(istype(H.get_equipped_item(SLOT_ID_W_UNIFORM), /obj/item/clothing/under))
-		suit = H.get_equipped_item(SLOT_ID_W_UNIFORM)
+	if(istype(H.get_equipped_item(SLOT_ID_UNIFORM), /obj/item/clothing/under))
+		suit = H.get_equipped_item(SLOT_ID_UNIFORM)
 
 	var/list/slots = list()
 	for(var/entry in H.species.hud.gear)
@@ -337,22 +337,22 @@
 	if(H.species.hud.has_hands)
 		UNTYPED_LIST_ADD(specialSlots, list(
 			"name" = "Left Hand",
-			"item" = H.get_equipped_item(SLOT_ID_L_HAND),
-			"icon" = H.get_equipped_item(SLOT_ID_L_HAND) ? icon2base64(icon(H.get_equipped_item(SLOT_ID_L_HAND).icon, H.get_equipped_item(SLOT_ID_L_HAND).icon_state, frame = 1)) : null,
+			"item" = H.get_equipped_item(SLOT_ID_HAND_L),
+			"icon" = H.get_equipped_item(SLOT_ID_HAND_L) ? icon2base64(icon(H.get_equipped_item(SLOT_ID_HAND_L).icon, H.get_equipped_item(SLOT_ID_HAND_L).icon_state, frame = 1)) : null,
 			"act" = "targetSlot",
 			"params" = list("slot" = slot_l_hand),
 		))
 		UNTYPED_LIST_ADD(specialSlots, list(
 			"name" = "Right Hand",
-			"item" = H.get_equipped_item(SLOT_ID_R_HAND),
-			"icon" = H.get_equipped_item(SLOT_ID_R_HAND) ? icon2base64(icon(H.get_equipped_item(SLOT_ID_R_HAND).icon, H.get_equipped_item(SLOT_ID_R_HAND).icon_state, frame = 1)) : null,
+			"item" = H.get_equipped_item(SLOT_ID_HAND_R),
+			"icon" = H.get_equipped_item(SLOT_ID_HAND_R) ? icon2base64(icon(H.get_equipped_item(SLOT_ID_HAND_R).icon, H.get_equipped_item(SLOT_ID_HAND_R).icon_state, frame = 1)) : null,
 			"act" = "targetSlot",
 			"params" = list("slot" = slot_r_hand),
 		))
 	data["specialSlots"] = specialSlots
 
 	data["internals"] = H.internals
-	data["internalsValid"] = (istype(H.get_equipped_item(SLOT_ID_WEAR_MASK), /obj/item/clothing/mask) || istype(H.get_equipped_item(SLOT_ID_HEAD), /obj/item/clothing/head/helmet/space)) && (istype(H.get_equipped_item(SLOT_ID_BACK), /obj/item/tank) || istype(H.get_equipped_item(SLOT_ID_BELT), /obj/item/tank) || istype(H.get_equipped_item(SLOT_ID_S_STORE), /obj/item/tank))
+	data["internalsValid"] = (istype(H.get_equipped_item(SLOT_ID_MASK), /obj/item/clothing/mask) || istype(H.get_equipped_item(SLOT_ID_HEAD), /obj/item/clothing/head/helmet/space)) && (istype(H.get_equipped_item(SLOT_ID_BACK), /obj/item/tank) || istype(H.get_equipped_item(SLOT_ID_BELT), /obj/item/tank) || istype(H.get_equipped_item(SLOT_ID_SUIT_STORAGE), /obj/item/tank))
 
 	data["sensors"] = FALSE
 	if(istype(suit) && suit.has_sensor == 1)

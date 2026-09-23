@@ -21,7 +21,7 @@
 	if(changeling.is_on_cooldown(ESCAPE_RESTRAINTS))
 		to_chat(src, span_notice("We are still recovering from our last escape. We will be able to escape again in [(changeling.get_cooldown(ESCAPE_RESTRAINTS) - world.time)/10] seconds."))
 		return FALSE
-	if(!(C.get_equipped_item(SLOT_ID_HANDCUFFED) || C.get_equipped_item(SLOT_ID_LEGCUFFED) || istype(C.get_equipped_item(SLOT_ID_WEAR_SUIT),/obj/item/clothing/suit/straight_jacket)))	// No need to waste chems if there's nothing to break out of
+	if(!(C.get_equipped_item(SLOT_ID_HANDCUFFED) || C.get_equipped_item(SLOT_ID_LEGCUFFED) || istype(C.get_equipped_item(SLOT_ID_SUIT),/obj/item/clothing/suit/straight_jacket)))	// No need to waste chems if there's nothing to break out of
 		to_chat(C, span_warning("We are are not restrained in a way we can escape..."))
 		return FALSE
 
@@ -33,8 +33,8 @@
 		C.drop_from_inventory(C.get_equipped_item(SLOT_ID_HANDCUFFED), C.loc)
 	if(C.get_equipped_item(SLOT_ID_LEGCUFFED))
 		C.drop_from_inventory(C.get_equipped_item(SLOT_ID_LEGCUFFED), C.loc)
-	if(istype(C.get_equipped_item(SLOT_ID_WEAR_SUIT), /obj/item/clothing/suit/straight_jacket))
-		C.drop_from_inventory(C.get_equipped_item(SLOT_ID_WEAR_SUIT), C.loc)
+	if(istype(C.get_equipped_item(SLOT_ID_SUIT), /obj/item/clothing/suit/straight_jacket))
+		C.drop_from_inventory(C.get_equipped_item(SLOT_ID_SUIT), C.loc)
 		escape_cooldown *= 1.5	// Straight jackets are tedious compared to cuffs.
 
 	if(changeling.recursive_enhancement)

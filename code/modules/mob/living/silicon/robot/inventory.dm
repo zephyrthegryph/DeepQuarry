@@ -26,7 +26,7 @@
 
 // --- Module slots ------------------------------------------------------------------------
 // The three module slots are ledger slots on the robot, SLOT_ID_MODULE(1..3)
-// (inventory_slots_interim.dm declares them). An inactive module lives in the
+// (the machine body plan declares them, code/modules/body/slots.dm). An inactive module lives in the
 // module holder (src.module); activating one is a ledger move into a free slot,
 // deactivating it a move back out.
 

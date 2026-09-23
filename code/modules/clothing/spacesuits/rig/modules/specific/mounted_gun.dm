@@ -95,7 +95,7 @@
 
 	var/mob/living/M = holder.wearer
 
-	if(M.get_equipped_item(SLOT_ID_L_HAND) && M.get_equipped_item(SLOT_ID_R_HAND))
+	if(M.get_equipped_item(SLOT_ID_HAND_L) && M.get_equipped_item(SLOT_ID_HAND_R))
 		to_chat(M, span_danger("Your hands are full."))
 		deactivate()
 		return
@@ -153,7 +153,7 @@
 
 	var/mob/living/M = holder.wearer
 
-	if(M.get_equipped_item(SLOT_ID_L_HAND) && M.get_equipped_item(SLOT_ID_R_HAND))
+	if(M.get_equipped_item(SLOT_ID_HAND_L) && M.get_equipped_item(SLOT_ID_HAND_R))
 		to_chat(M, span_danger("Your hands are full."))
 		deactivate()
 		return

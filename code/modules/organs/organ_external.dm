@@ -1166,12 +1166,12 @@ Note that amputating the affected organ does in fact remove the infection from t
 			M.Turn(rand(180))
 			transform = M
 
-	if(victim.get_equipped_item(SLOT_ID_L_HAND))
-		if(istype(victim.get_equipped_item(SLOT_ID_L_HAND),/obj/item/material/twohanded)) //if they're holding a two-handed weapon, drop it now they've lost a hand
-			victim.get_equipped_item(SLOT_ID_L_HAND).update_held_icon()
-	if(victim.get_equipped_item(SLOT_ID_R_HAND))
-		if(istype(victim.get_equipped_item(SLOT_ID_R_HAND),/obj/item/material/twohanded))
-			victim.get_equipped_item(SLOT_ID_R_HAND).update_held_icon()
+	if(victim.get_equipped_item(SLOT_ID_HAND_L))
+		if(istype(victim.get_equipped_item(SLOT_ID_HAND_L),/obj/item/material/twohanded)) //if they're holding a two-handed weapon, drop it now they've lost a hand
+			victim.get_equipped_item(SLOT_ID_HAND_L).update_held_icon()
+	if(victim.get_equipped_item(SLOT_ID_HAND_R))
+		if(istype(victim.get_equipped_item(SLOT_ID_HAND_R),/obj/item/material/twohanded))
+			victim.get_equipped_item(SLOT_ID_HAND_R).update_held_icon()
 
 /****************************************************
 			   HELPERS
@@ -1295,8 +1295,8 @@ Note that amputating the affected organ does in fact remove the infection from t
 	// TODO: consider moving this to a suit proc or process() or something during
 	// hardsuit rewrite.
 
-	if(!(splinted) && owner && istype(owner.get_equipped_item(SLOT_ID_WEAR_SUIT), /obj/item/clothing/suit/space))
-		var/obj/item/clothing/suit/space/suit = owner.get_equipped_item(SLOT_ID_WEAR_SUIT)
+	if(!(splinted) && owner && istype(owner.get_equipped_item(SLOT_ID_SUIT), /obj/item/clothing/suit/space))
+		var/obj/item/clothing/suit/space/suit = owner.get_equipped_item(SLOT_ID_SUIT)
 		suit.handle_fracture(owner, src)
 
 	return 1
@@ -1634,7 +1634,7 @@ Note that amputating the affected organ does in fact remove the infection from t
 		target_covering = src.body_part
 
 	if(owner)
-		var/list/protective_gear = list(owner.get_equipped_item(SLOT_ID_HEAD), owner.get_equipped_item(SLOT_ID_WEAR_MASK), owner.get_equipped_item(SLOT_ID_WEAR_SUIT), owner.get_equipped_item(SLOT_ID_W_UNIFORM), owner.get_equipped_item(SLOT_ID_GLOVES), owner.get_equipped_item(SLOT_ID_SHOES), owner.get_equipped_item(SLOT_ID_GLASSES))
+		var/list/protective_gear = list(owner.get_equipped_item(SLOT_ID_HEAD), owner.get_equipped_item(SLOT_ID_MASK), owner.get_equipped_item(SLOT_ID_SUIT), owner.get_equipped_item(SLOT_ID_UNIFORM), owner.get_equipped_item(SLOT_ID_GLOVES), owner.get_equipped_item(SLOT_ID_SHOES), owner.get_equipped_item(SLOT_ID_EYES))
 		for(var/obj/item/clothing/gear in protective_gear)
 			if(gear.body_parts_covered & target_covering)
 				covering_clothing |= gear

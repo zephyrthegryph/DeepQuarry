@@ -31,7 +31,7 @@
 	icon_state = "[initial(icon_state)]_on"
 	if(ishuman(loc))
 		var/mob/living/carbon/human/H = loc
-		if(H.get_equipped_item(SLOT_ID_L_EAR) == src || H.get_equipped_item(SLOT_ID_R_EAR) == src)
+		if(H.get_equipped_item(SLOT_ID_EAR_L) == src || H.get_equipped_item(SLOT_ID_EAR_R) == src)
 			H.update_inv_ears()
 		else if(H.get_equipped_item(SLOT_ID_HEAD) == src)
 			H.update_inv_head()
@@ -45,7 +45,7 @@
 	icon_state = "[initial(icon_state)]"
 	if(ishuman(loc))
 		var/mob/living/carbon/human/H = loc
-		if(H.get_equipped_item(SLOT_ID_L_EAR) == src || H.get_equipped_item(SLOT_ID_R_EAR) == src)
+		if(H.get_equipped_item(SLOT_ID_EAR_L) == src || H.get_equipped_item(SLOT_ID_EAR_R) == src)
 			H.update_inv_ears()
 		else if(H.get_equipped_item(SLOT_ID_HEAD) == src)
 			H.update_inv_head()

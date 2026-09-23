@@ -91,35 +91,6 @@
 #define slot_in_backpack 22
 #define SLOT_TOTAL       22
 
-// Inventory slot ids on the containment ledger (C3, doc/rewrite/containment.md
-// §6). Mobs hold their equipment in ledger slots with these ids; the numeric
-// slot_* above stay the equip API's argument and dq_slot_id() maps one to the
-// other. slot_legs, slot_tie and slot_in_backpack are actions, not slots.
-#define SLOT_ID_L_HAND     "l_hand"
-#define SLOT_ID_R_HAND     "r_hand"
-#define SLOT_ID_BACK       "back"
-#define SLOT_ID_BELT       "belt"
-#define SLOT_ID_WEAR_ID    "wear_id"
-#define SLOT_ID_S_STORE    "s_store"
-#define SLOT_ID_L_STORE    "l_store"
-#define SLOT_ID_R_STORE    "r_store"
-#define SLOT_ID_GLASSES    "glasses"
-#define SLOT_ID_WEAR_MASK  "wear_mask"
-#define SLOT_ID_GLOVES     "gloves"
-#define SLOT_ID_HEAD       "head"
-#define SLOT_ID_SHOES      "shoes"
-#define SLOT_ID_WEAR_SUIT  "wear_suit"
-#define SLOT_ID_W_UNIFORM  "w_uniform"
-#define SLOT_ID_L_EAR      "l_ear"
-#define SLOT_ID_R_EAR      "r_ear"
-#define SLOT_ID_HANDCUFFED "handcuffed"
-#define SLOT_ID_LEGCUFFED  "legcuffed"
-/// Robot module slots, numbered 1-3 (the old module_state_1..3).
-#define SLOT_ID_MODULE_1   "module_1"
-#define SLOT_ID_MODULE_2   "module_2"
-#define SLOT_ID_MODULE_3   "module_3"
-/// Module slot `n` (1-3), computed.
-#define SLOT_ID_MODULE(n)  "module_[n]"
 
 // Inventory slot strings.
 // since numbers cannot be used as associative list keys.

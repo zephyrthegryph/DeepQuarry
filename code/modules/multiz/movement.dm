@@ -153,7 +153,7 @@
 		var/mob/living/L = src
 		if(L.pulling && !L.pulling.anchored)
 			pulling |= L.pulling
-		for(var/obj/item/grab/G in list(L.get_equipped_item(SLOT_ID_L_HAND), L.get_equipped_item(SLOT_ID_R_HAND)))
+		for(var/obj/item/grab/G in list(L.get_equipped_item(SLOT_ID_HAND_L), L.get_equipped_item(SLOT_ID_HAND_R)))
 			pulling |= G.affecting
 		if(direction == UP)
 			src.audible_message(span_notice("[src] moves up."))
@@ -620,17 +620,17 @@
 	if(get_equipped_item(SLOT_ID_BACK) && get_equipped_item(SLOT_ID_BACK).isParachute())
 		get_equipped_item(SLOT_ID_BACK).handleParachute()
 		return TRUE
-	if(get_equipped_item(SLOT_ID_S_STORE) && get_equipped_item(SLOT_ID_S_STORE).isParachute())
-		get_equipped_item(SLOT_ID_S_STORE).handleParachute()
+	if(get_equipped_item(SLOT_ID_SUIT_STORAGE) && get_equipped_item(SLOT_ID_SUIT_STORAGE).isParachute())
+		get_equipped_item(SLOT_ID_SUIT_STORAGE).handleParachute()
 		return TRUE
 	if(get_equipped_item(SLOT_ID_BELT) && get_equipped_item(SLOT_ID_BELT).isParachute())
 		get_equipped_item(SLOT_ID_BELT).handleParachute()
 		return TRUE
-	if(get_equipped_item(SLOT_ID_WEAR_SUIT) && get_equipped_item(SLOT_ID_WEAR_SUIT).isParachute())
-		get_equipped_item(SLOT_ID_WEAR_SUIT).handleParachute()
+	if(get_equipped_item(SLOT_ID_SUIT) && get_equipped_item(SLOT_ID_SUIT).isParachute())
+		get_equipped_item(SLOT_ID_SUIT).handleParachute()
 		return TRUE
-	if(get_equipped_item(SLOT_ID_W_UNIFORM) && get_equipped_item(SLOT_ID_W_UNIFORM).isParachute())
-		get_equipped_item(SLOT_ID_W_UNIFORM).handleParachute()
+	if(get_equipped_item(SLOT_ID_UNIFORM) && get_equipped_item(SLOT_ID_UNIFORM).isParachute())
+		get_equipped_item(SLOT_ID_UNIFORM).handleParachute()
 		return TRUE
 	else
 		return dq_get_parachuting(src)
@@ -806,7 +806,7 @@
 		var/mob/living/carbon/human/H = L
 		if(H.species.climbing_delay < H.climbing_delay)
 			climbing_delay_min = H.species.climbing_delay
-		var/list/gear = list(H.get_equipped_item(SLOT_ID_HEAD), H.get_equipped_item(SLOT_ID_WEAR_MASK), H.get_equipped_item(SLOT_ID_WEAR_SUIT), H.get_equipped_item(SLOT_ID_W_UNIFORM),
+		var/list/gear = list(H.get_equipped_item(SLOT_ID_HEAD), H.get_equipped_item(SLOT_ID_MASK), H.get_equipped_item(SLOT_ID_SUIT), H.get_equipped_item(SLOT_ID_UNIFORM),
 		H.get_equipped_item(SLOT_ID_GLOVES), H.get_equipped_item(SLOT_ID_SHOES), H.get_equipped_item(SLOT_ID_BELT), H.get_active_hand(), H.get_inactive_hand())
 		if(H.can_climb || H.species.can_climb)
 			permit_human = TRUE
@@ -930,7 +930,7 @@
 		var/mob/living/carbon/human/H = src
 		if(H.species.climbing_delay < H.climbing_delay)
 			climbing_delay_min = H.species.climbing_delay
-		var/list/gear = list(H.get_equipped_item(SLOT_ID_HEAD), H.get_equipped_item(SLOT_ID_WEAR_MASK), H.get_equipped_item(SLOT_ID_WEAR_SUIT), H.get_equipped_item(SLOT_ID_W_UNIFORM),
+		var/list/gear = list(H.get_equipped_item(SLOT_ID_HEAD), H.get_equipped_item(SLOT_ID_MASK), H.get_equipped_item(SLOT_ID_SUIT), H.get_equipped_item(SLOT_ID_UNIFORM),
 		H.get_equipped_item(SLOT_ID_GLOVES), H.get_equipped_item(SLOT_ID_SHOES), H.get_equipped_item(SLOT_ID_BELT), H.get_active_hand(), H.get_inactive_hand())
 		if(H.can_climb || H.species.can_climb)
 			permit_human = TRUE

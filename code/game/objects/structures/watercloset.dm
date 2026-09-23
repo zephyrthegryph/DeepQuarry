@@ -962,10 +962,10 @@
 			H.update_inv_gloves()
 			H.get_equipped_item(SLOT_ID_GLOVES).germ_level = 0
 		else
-			if(H.get_equipped_item(SLOT_ID_R_HAND))
-				H.get_equipped_item(SLOT_ID_R_HAND).wash(CLEAN_SCRUB)
-			if(H.get_equipped_item(SLOT_ID_L_HAND))
-				H.get_equipped_item(SLOT_ID_L_HAND).wash(CLEAN_SCRUB)
+			if(H.get_equipped_item(SLOT_ID_HAND_R))
+				H.get_equipped_item(SLOT_ID_HAND_R).wash(CLEAN_SCRUB)
+			if(H.get_equipped_item(SLOT_ID_HAND_L))
+				H.get_equipped_item(SLOT_ID_HAND_L).wash(CLEAN_SCRUB)
 			H.bloody_hands = 0
 			H.germ_level = 0
 			H.hand_blood_color = null

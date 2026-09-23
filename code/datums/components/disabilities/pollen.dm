@@ -26,11 +26,11 @@
 	// Check for masks or internals
 	if(istype(owner.get_equipped_item(SLOT_ID_HEAD),/obj/item/clothing/head/helmet/space) && owner.internal) // Hardsuits
 		return
-	if(owner.get_equipped_item(SLOT_ID_WEAR_MASK)) // masks block it entirely
-		if(owner.get_equipped_item(SLOT_ID_WEAR_MASK).item_flags & AIRTIGHT)
+	if(owner.get_equipped_item(SLOT_ID_MASK)) // masks block it entirely
+		if(owner.get_equipped_item(SLOT_ID_MASK).item_flags & AIRTIGHT)
 			if(owner.internal) // gas on
 				return
-		if(owner.get_equipped_item(SLOT_ID_WEAR_MASK).item_flags & BLOCK_GAS_SMOKE_EFFECT)
+		if(owner.get_equipped_item(SLOT_ID_MASK).item_flags & BLOCK_GAS_SMOKE_EFFECT)
 			return
 
 	// Time to ENGAGE THE ALLERGY
@@ -41,10 +41,10 @@
 	// Hand check
 	var/list/things = list()
 	if(prob(32))
-		if(!isnull(owner.get_equipped_item(SLOT_ID_R_HAND)))
-			things += owner.get_equipped_item(SLOT_ID_R_HAND)
-		if(!isnull(owner.get_equipped_item(SLOT_ID_L_HAND)))
-			things += owner.get_equipped_item(SLOT_ID_L_HAND)
+		if(!isnull(owner.get_equipped_item(SLOT_ID_HAND_R)))
+			things += owner.get_equipped_item(SLOT_ID_HAND_R)
+		if(!isnull(owner.get_equipped_item(SLOT_ID_HAND_L)))
+			things += owner.get_equipped_item(SLOT_ID_HAND_L)
 
 	// terrain tests
 	things += owner.loc.contents

@@ -6,7 +6,7 @@
 
 	var/mob/living/carbon/human/M = src
 
-	if(istype(M.get_equipped_item(SLOT_ID_WEAR_SUIT), armor_type) || istype(M.get_equipped_item(SLOT_ID_HEAD), helmet_type) || istype(M.get_equipped_item(SLOT_ID_SHOES), boot_type))
+	if(istype(M.get_equipped_item(SLOT_ID_SUIT), armor_type) || istype(M.get_equipped_item(SLOT_ID_HEAD), helmet_type) || istype(M.get_equipped_item(SLOT_ID_SHOES), boot_type))
 		chem_cost = 0
 
 	var/datum/component/antag/changeling/changeling = changeling_power(chem_cost, 1, 100, CONSCIOUS)
@@ -15,12 +15,12 @@
 		return
 
 	//First, check if we're already wearing the armor, and if so, take it off.
-	if(istype(M.get_equipped_item(SLOT_ID_WEAR_SUIT), armor_type) || istype(M.get_equipped_item(SLOT_ID_HEAD), helmet_type) || istype(M.get_equipped_item(SLOT_ID_SHOES), boot_type))
-		M.visible_message(span_warning("[M] casts off their [M.get_equipped_item(SLOT_ID_WEAR_SUIT).name]!"),
-		span_warning("We cast off our [M.get_equipped_item(SLOT_ID_WEAR_SUIT).name]"),
+	if(istype(M.get_equipped_item(SLOT_ID_SUIT), armor_type) || istype(M.get_equipped_item(SLOT_ID_HEAD), helmet_type) || istype(M.get_equipped_item(SLOT_ID_SHOES), boot_type))
+		M.visible_message(span_warning("[M] casts off their [M.get_equipped_item(SLOT_ID_SUIT).name]!"),
+		span_warning("We cast off our [M.get_equipped_item(SLOT_ID_SUIT).name]"),
 		span_warningplain("You hear the organic matter ripping and tearing!"))
-		if(istype(M.get_equipped_item(SLOT_ID_WEAR_SUIT), armor_type))
-			remove_from_mob(M.get_equipped_item(SLOT_ID_WEAR_SUIT))
+		if(istype(M.get_equipped_item(SLOT_ID_SUIT), armor_type))
+			remove_from_mob(M.get_equipped_item(SLOT_ID_SUIT))
 		if(istype(M.get_equipped_item(SLOT_ID_HEAD), helmet_type))
 			remove_from_mob(M.get_equipped_item(SLOT_ID_HEAD))
 		if(istype(M.get_equipped_item(SLOT_ID_SHOES), boot_type))
@@ -31,7 +31,7 @@
 		M.update_inv_shoes()
 		return 1
 
-	if(M.get_equipped_item(SLOT_ID_HEAD) || M.get_equipped_item(SLOT_ID_WEAR_SUIT)) //Make sure our slots aren't full
+	if(M.get_equipped_item(SLOT_ID_HEAD) || M.get_equipped_item(SLOT_ID_SUIT)) //Make sure our slots aren't full
 		to_chat(src, span_warning("We require nothing to be on our head, and we cannot wear any external suits, or shoes."))
 		return 0
 
@@ -72,14 +72,14 @@
 				qdel(M.get_equipped_item(SLOT_ID_HEAD))
 				success = 1
 
-		if(M.get_equipped_item(SLOT_ID_WEAR_ID) && stuff_to_equip["wear_id"])
-			if(istype(M.get_equipped_item(SLOT_ID_WEAR_ID), stuff_to_equip["wear_id"]))
-				qdel(M.get_equipped_item(SLOT_ID_WEAR_ID))
+		if(M.get_equipped_item(SLOT_ID_ID) && stuff_to_equip["wear_id"])
+			if(istype(M.get_equipped_item(SLOT_ID_ID), stuff_to_equip["wear_id"]))
+				qdel(M.get_equipped_item(SLOT_ID_ID))
 				success = 1
 
-		if(M.get_equipped_item(SLOT_ID_WEAR_SUIT) && stuff_to_equip["wear_suit"])
-			if(istype(M.get_equipped_item(SLOT_ID_WEAR_SUIT), stuff_to_equip["wear_suit"]))
-				qdel(M.get_equipped_item(SLOT_ID_WEAR_SUIT))
+		if(M.get_equipped_item(SLOT_ID_SUIT) && stuff_to_equip["wear_suit"])
+			if(istype(M.get_equipped_item(SLOT_ID_SUIT), stuff_to_equip["wear_suit"]))
+				qdel(M.get_equipped_item(SLOT_ID_SUIT))
 				success = 1
 
 		if(M.get_equipped_item(SLOT_ID_GLOVES) && stuff_to_equip["gloves"])
@@ -96,14 +96,14 @@
 				qdel(M.get_equipped_item(SLOT_ID_BELT))
 				success = 1
 
-		if(M.get_equipped_item(SLOT_ID_GLASSES) && stuff_to_equip["glasses"])
-			if(istype(M.get_equipped_item(SLOT_ID_GLASSES), stuff_to_equip["glasses"]))
-				qdel(M.get_equipped_item(SLOT_ID_GLASSES))
+		if(M.get_equipped_item(SLOT_ID_EYES) && stuff_to_equip["glasses"])
+			if(istype(M.get_equipped_item(SLOT_ID_EYES), stuff_to_equip["glasses"]))
+				qdel(M.get_equipped_item(SLOT_ID_EYES))
 				success = 1
 
-		if(M.get_equipped_item(SLOT_ID_WEAR_MASK) && stuff_to_equip["wear_mask"])
-			if(istype(M.get_equipped_item(SLOT_ID_WEAR_MASK), stuff_to_equip["wear_mask"]))
-				qdel(M.get_equipped_item(SLOT_ID_WEAR_MASK))
+		if(M.get_equipped_item(SLOT_ID_MASK) && stuff_to_equip["wear_mask"])
+			if(istype(M.get_equipped_item(SLOT_ID_MASK), stuff_to_equip["wear_mask"]))
+				qdel(M.get_equipped_item(SLOT_ID_MASK))
 				success = 1
 
 		if(M.get_equipped_item(SLOT_ID_BACK) && stuff_to_equip["back"])
@@ -113,9 +113,9 @@
 				qdel(M.get_equipped_item(SLOT_ID_BACK))
 				success = 1
 
-		if(M.get_equipped_item(SLOT_ID_W_UNIFORM) && stuff_to_equip["w_uniform"])
-			if(istype(M.get_equipped_item(SLOT_ID_W_UNIFORM), stuff_to_equip["w_uniform"]))
-				qdel(M.get_equipped_item(SLOT_ID_W_UNIFORM))
+		if(M.get_equipped_item(SLOT_ID_UNIFORM) && stuff_to_equip["w_uniform"])
+			if(istype(M.get_equipped_item(SLOT_ID_UNIFORM), stuff_to_equip["w_uniform"]))
+				qdel(M.get_equipped_item(SLOT_ID_UNIFORM))
 				success = 1
 
 		if(success)
@@ -141,7 +141,7 @@
 			sleep(1 SECOND)
 
 		t = stuff_to_equip["w_uniform"]
-		if(!M.get_equipped_item(SLOT_ID_W_UNIFORM) && t)
+		if(!M.get_equipped_item(SLOT_ID_UNIFORM) && t)
 			var/I = new t
 			M.equip_to_slot_or_del(I, slot_w_uniform)
 			grown_items_list.Add("a uniform")
@@ -177,7 +177,7 @@
 			sleep(1 SECOND)
 
 		t = stuff_to_equip["glasses"]
-		if(!M.get_equipped_item(SLOT_ID_GLASSES) && t)
+		if(!M.get_equipped_item(SLOT_ID_EYES) && t)
 			var/I = new t
 			M.equip_to_slot_or_del(I, slot_glasses)
 			grown_items_list.Add("some glasses")
@@ -186,7 +186,7 @@
 			sleep(1 SECOND)
 
 		t = stuff_to_equip["wear_mask"]
-		if(!M.get_equipped_item(SLOT_ID_WEAR_MASK) && t)
+		if(!M.get_equipped_item(SLOT_ID_MASK) && t)
 			var/I = new t
 			M.equip_to_slot_or_del(I, slot_wear_mask)
 			grown_items_list.Add("a mask")
@@ -204,7 +204,7 @@
 			sleep(1 SECOND)
 
 		t = stuff_to_equip["wear_suit"]
-		if(!M.get_equipped_item(SLOT_ID_WEAR_SUIT) && t)
+		if(!M.get_equipped_item(SLOT_ID_SUIT) && t)
 			var/I = new t
 			M.equip_to_slot_or_del(I, slot_wear_suit)
 			grown_items_list.Add("an exosuit")
@@ -213,7 +213,7 @@
 			sleep(1 SECOND)
 
 		t = stuff_to_equip["wear_id"]
-		if(!M.get_equipped_item(SLOT_ID_WEAR_ID) && t)
+		if(!M.get_equipped_item(SLOT_ID_ID) && t)
 			var/I = new t
 			M.equip_to_slot_or_del(I, slot_wear_id)
 			grown_items_list.Add("an ID card")

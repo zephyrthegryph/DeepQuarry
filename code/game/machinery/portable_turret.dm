@@ -266,8 +266,8 @@
 
 	if(ishuman(L))
 		var/mob/living/carbon/human/M = L
-		if(is_type_in_list(M.get_equipped_item(SLOT_ID_WEAR_SUIT), vests_to_target)) // Checks if they are a red player
-			var/obj/item/clothing/suit/lasertag/tag_suit = M.get_equipped_item(SLOT_ID_WEAR_SUIT)
+		if(is_type_in_list(M.get_equipped_item(SLOT_ID_SUIT), vests_to_target)) // Checks if they are a red player
+			var/obj/item/clothing/suit/lasertag/tag_suit = M.get_equipped_item(SLOT_ID_SUIT)
 			if(tag_suit.lasertag_health > 0)
 				return TURRET_PRIORITY_TARGET
 		return TURRET_NOT_TARGET

@@ -324,7 +324,7 @@
 					else
 
 						var/no_mask
-						if(!(C.get_equipped_item(SLOT_ID_WEAR_MASK) && C.get_equipped_item(SLOT_ID_WEAR_MASK).item_flags & AIRTIGHT))
+						if(!(C.get_equipped_item(SLOT_ID_MASK) && C.get_equipped_item(SLOT_ID_MASK).item_flags & AIRTIGHT))
 							var/mob/living/carbon/human/H = C
 							if(!(H.get_equipped_item(SLOT_ID_HEAD) && H.get_equipped_item(SLOT_ID_HEAD).item_flags & AIRTIGHT))
 								no_mask = 1
@@ -343,10 +343,10 @@
 								var/mob/living/carbon/human/H = C
 								breathes = H.species.breath_type
 								nicename = list ("suit", "back", "belt", "right hand", "left hand", "left pocket", "right pocket")
-								tankcheck = list (H.get_equipped_item(SLOT_ID_S_STORE), C.get_equipped_item(SLOT_ID_BACK), H.get_equipped_item(SLOT_ID_BELT), C.get_equipped_item(SLOT_ID_R_HAND), C.get_equipped_item(SLOT_ID_L_HAND), H.get_equipped_item(SLOT_ID_L_STORE), H.get_equipped_item(SLOT_ID_R_STORE))
+								tankcheck = list (H.get_equipped_item(SLOT_ID_SUIT_STORAGE), C.get_equipped_item(SLOT_ID_BACK), H.get_equipped_item(SLOT_ID_BELT), C.get_equipped_item(SLOT_ID_HAND_R), C.get_equipped_item(SLOT_ID_HAND_L), H.get_equipped_item(SLOT_ID_POCKET_L), H.get_equipped_item(SLOT_ID_POCKET_R))
 							else
 								nicename = list("right hand", "left hand", "back")
-								tankcheck = list(C.get_equipped_item(SLOT_ID_R_HAND), C.get_equipped_item(SLOT_ID_L_HAND), C.get_equipped_item(SLOT_ID_BACK))
+								tankcheck = list(C.get_equipped_item(SLOT_ID_HAND_R), C.get_equipped_item(SLOT_ID_HAND_L), C.get_equipped_item(SLOT_ID_BACK))
 
 							// Rigs are a fucking pain since they keep an air tank in nullspace.
 							var/obj/item/rig/Rig = C.get_rig()

@@ -13,13 +13,13 @@
 	return dq_spec_join(..(), list(REQ_ON(PRED_TARGET, /obj/item/clothing/gloves/arm_guard/proc/suit_clearance, null)))
 
 /obj/item/clothing/gloves/arm_guard/proc/suit_clearance(mob/living/carbon/human/H)
-	if(!istype(H) || !H.get_equipped_item(SLOT_ID_WEAR_SUIT))
+	if(!istype(H) || !H.get_equipped_item(SLOT_ID_SUIT))
 		return TRUE
-	if(H.get_equipped_item(SLOT_ID_WEAR_SUIT).body_parts_covered & ARMS)
-		return "\the [H.get_equipped_item(SLOT_ID_WEAR_SUIT)] is in the way"
-	for(var/obj/item/clothing/accessory/A in H.get_equipped_item(SLOT_ID_WEAR_SUIT))
+	if(H.get_equipped_item(SLOT_ID_SUIT).body_parts_covered & ARMS)
+		return "\the [H.get_equipped_item(SLOT_ID_SUIT)] is in the way"
+	for(var/obj/item/clothing/accessory/A in H.get_equipped_item(SLOT_ID_SUIT))
 		if(A.body_parts_covered & ARMS)
-			return "\the [H.get_equipped_item(SLOT_ID_WEAR_SUIT)]'s [A] is in the way"
+			return "\the [H.get_equipped_item(SLOT_ID_SUIT)]'s [A] is in the way"
 	return TRUE
 
 /obj/item/clothing/gloves/arm_guard/laserproof

@@ -36,7 +36,7 @@
 				if(!H.has_eyes())
 					to_chat(user, span_warning("\The [H] doesn't have any eyes."))
 					return ITEM_INTERACT_FAILURE
-				if(H.get_equipped_item(SLOT_ID_GLASSES))
+				if(H.get_equipped_item(SLOT_ID_EYES))
 					to_chat(user, span_warning("\The [H] is already wearing something on their eyes."))
 					return ITEM_INTERACT_FAILURE
 				if(H.get_equipped_item(SLOT_ID_HEAD) && (H.get_equipped_item(SLOT_ID_HEAD).body_parts_covered & FACE))
@@ -50,7 +50,7 @@
 				if(!can_place(H, user))
 					return ITEM_INTERACT_FAILURE
 
-				if(!H || !src || !H.organs_by_name[BP_HEAD] || !H.has_eyes() || H.get_equipped_item(SLOT_ID_GLASSES) || (H.get_equipped_item(SLOT_ID_HEAD) && (H.get_equipped_item(SLOT_ID_HEAD).body_parts_covered & FACE)))
+				if(!H || !src || !H.organs_by_name[BP_HEAD] || !H.has_eyes() || H.get_equipped_item(SLOT_ID_EYES) || (H.get_equipped_item(SLOT_ID_HEAD) && (H.get_equipped_item(SLOT_ID_HEAD).body_parts_covered & FACE)))
 					return ITEM_INTERACT_FAILURE
 
 				user.visible_message(span_danger("\The [user] has taped up \the [H]'s eyes!"))
@@ -65,7 +65,7 @@
 				if(!H.check_has_mouth())
 					to_chat(user, span_warning("\The [H] doesn't have a mouth."))
 					return ITEM_INTERACT_FAILURE
-				if(H.get_equipped_item(SLOT_ID_WEAR_MASK))
+				if(H.get_equipped_item(SLOT_ID_MASK))
 					to_chat(user, span_warning("\The [H] is already wearing a mask."))
 					return ITEM_INTERACT_FAILURE
 				if(H.get_equipped_item(SLOT_ID_HEAD) && (H.get_equipped_item(SLOT_ID_HEAD).body_parts_covered & FACE))

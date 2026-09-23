@@ -65,15 +65,15 @@
 
 /proc/hassensorlevel(A, level)
 	var/mob/living/carbon/human/H = A
-	if(istype(H) && istype(H.get_equipped_item(SLOT_ID_W_UNIFORM), /obj/item/clothing/under))
-		var/obj/item/clothing/under/U = H.get_equipped_item(SLOT_ID_W_UNIFORM)
+	if(istype(H) && istype(H.get_equipped_item(SLOT_ID_UNIFORM), /obj/item/clothing/under))
+		var/obj/item/clothing/under/U = H.get_equipped_item(SLOT_ID_UNIFORM)
 		return U.sensor_mode >= level
 	return 0
 
 /proc/getsensorlevel(A)
 	var/mob/living/carbon/human/H = A
-	if(istype(H) && istype(H.get_equipped_item(SLOT_ID_W_UNIFORM), /obj/item/clothing/under))
-		var/obj/item/clothing/under/U = H.get_equipped_item(SLOT_ID_W_UNIFORM)
+	if(istype(H) && istype(H.get_equipped_item(SLOT_ID_UNIFORM), /obj/item/clothing/under))
+		var/obj/item/clothing/under/U = H.get_equipped_item(SLOT_ID_UNIFORM)
 		return U.sensor_mode
 	return SUIT_SENSOR_OFF
 
@@ -548,10 +548,10 @@ It's fairly easy to fix if dealing with single letters but not so much with comp
 		threatcount += 4
 
 	if(auth_weapons && !access_obj.allowed(src))
-		if(istype(get_equipped_item(SLOT_ID_L_HAND), /obj/item/gun) || istype(get_equipped_item(SLOT_ID_L_HAND), /obj/item/melee) && !istype(get_equipped_item(SLOT_ID_L_HAND), /obj/item/gun/energy/floragun) && !istype(get_equipped_item(SLOT_ID_L_HAND), /obj/item/gun/energy/sizegun) && !istype(get_equipped_item(SLOT_ID_L_HAND), /obj/item/gun/launcher/confetti_cannon) && !istype(get_equipped_item(SLOT_ID_L_HAND), /obj/item/gun/energy/lasertag)) //Specific guns to the exclusion list.
+		if(istype(get_equipped_item(SLOT_ID_HAND_L), /obj/item/gun) || istype(get_equipped_item(SLOT_ID_HAND_L), /obj/item/melee) && !istype(get_equipped_item(SLOT_ID_HAND_L), /obj/item/gun/energy/floragun) && !istype(get_equipped_item(SLOT_ID_HAND_L), /obj/item/gun/energy/sizegun) && !istype(get_equipped_item(SLOT_ID_HAND_L), /obj/item/gun/launcher/confetti_cannon) && !istype(get_equipped_item(SLOT_ID_HAND_L), /obj/item/gun/energy/lasertag)) //Specific guns to the exclusion list.
 			threatcount += 4
 
-		if(istype(get_equipped_item(SLOT_ID_R_HAND), /obj/item/gun) || istype(get_equipped_item(SLOT_ID_R_HAND), /obj/item/melee))
+		if(istype(get_equipped_item(SLOT_ID_HAND_R), /obj/item/gun) || istype(get_equipped_item(SLOT_ID_HAND_R), /obj/item/melee))
 			threatcount += 4
 
 		if(istype(get_equipped_item(SLOT_ID_BELT), /obj/item/gun) || istype(get_equipped_item(SLOT_ID_BELT), /obj/item/melee))

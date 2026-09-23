@@ -342,7 +342,7 @@
 	var/queue_first = FALSE
 	if(istype(user, /mob/living/carbon/human))
 		var/mob/living/carbon/human/human_user = user
-		var/list/access = human_user.get_equipped_item(SLOT_ID_WEAR_ID)?.GetAccess()
+		var/list/access = human_user.get_equipped_item(SLOT_ID_ID)?.GetAccess()
 		if(ACCESS_RD in access)
 			queue_first = TRUE
 

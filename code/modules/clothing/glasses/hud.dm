@@ -141,7 +141,7 @@
 		return FALSE
 
 	var/mob/living/carbon/human/H = user
-	if(!H.get_equipped_item(SLOT_ID_GLASSES) || !(H.get_equipped_item(SLOT_ID_GLASSES) == src))
+	if(!H.get_equipped_item(SLOT_ID_EYES) || !(H.get_equipped_item(SLOT_ID_EYES) == src))
 		to_chat(user, span_warning("You must be wearing the [src] to see the display."))
 	else
 		if(!ar_interact(H))

@@ -536,8 +536,8 @@
 		if(M.get_equipped_item(SLOT_ID_HEAD))
 			if((M.get_equipped_item(SLOT_ID_HEAD).body_parts_covered & FACE) || (M.get_equipped_item(SLOT_ID_HEAD).flags_inv & HIDEFACE)) // Need to check both because a lot of items set one or the other, rather than both as you'd expect
 				covered_mouth = TRUE
-		if(M.get_equipped_item(SLOT_ID_WEAR_MASK))
-			if((M.get_equipped_item(SLOT_ID_WEAR_MASK).body_parts_covered & FACE) || (M.get_equipped_item(SLOT_ID_WEAR_MASK).flags_inv & HIDEFACE))
+		if(M.get_equipped_item(SLOT_ID_MASK))
+			if((M.get_equipped_item(SLOT_ID_MASK).body_parts_covered & FACE) || (M.get_equipped_item(SLOT_ID_MASK).flags_inv & HIDEFACE))
 				covered_mouth = TRUE
 	if(target.is_muzzled())
 		covered_mouth = TRUE
@@ -658,7 +658,7 @@
 
 // Impliments different trails for species depending on if they're wearing shoes.
 /datum/species/proc/get_move_trail(mob/living/carbon/human/H)
-	if( H.get_equipped_item(SLOT_ID_SHOES) || ( H.get_equipped_item(SLOT_ID_WEAR_SUIT) && (H.get_equipped_item(SLOT_ID_WEAR_SUIT).body_parts_covered & FEET) ) )
+	if( H.get_equipped_item(SLOT_ID_SHOES) || ( H.get_equipped_item(SLOT_ID_SUIT) && (H.get_equipped_item(SLOT_ID_SUIT).body_parts_covered & FEET) ) )
 		return /obj/effect/decal/cleanable/blood/tracks/footprints
 	else
 		return move_trail

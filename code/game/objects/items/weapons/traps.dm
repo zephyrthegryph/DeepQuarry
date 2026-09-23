@@ -369,7 +369,7 @@
 		if(H.species.siemens_coefficient<0.5) //Thick skin.
 			return
 
-		if( H.get_equipped_item(SLOT_ID_SHOES) || ( H.get_equipped_item(SLOT_ID_WEAR_SUIT) && (H.get_equipped_item(SLOT_ID_WEAR_SUIT).body_parts_covered & FEET) ) )
+		if( H.get_equipped_item(SLOT_ID_SHOES) || ( H.get_equipped_item(SLOT_ID_SUIT) && (H.get_equipped_item(SLOT_ID_SUIT).body_parts_covered & FEET) ) )
 			return
 
 		if(H.species.flags & NO_MINOR_CUT)
@@ -412,7 +412,7 @@
 /obj/item/beartrap/equipped()
 	if(ishuman(src.loc))
 		var/mob/living/carbon/human/H = src.loc
-		if(H.get_equipped_item(SLOT_ID_WEAR_MASK) == src)
+		if(H.get_equipped_item(SLOT_ID_MASK) == src)
 			add_verb(H, /mob/living/proc/shred_limb_temp)
 		else
 			remove_verb(H, /mob/living/proc/shred_limb_temp)

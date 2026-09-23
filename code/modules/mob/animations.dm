@@ -160,10 +160,10 @@
 
 	// What icon do we use for the attack?
 	var/obj/used_item
-	if(hand && get_equipped_item(SLOT_ID_L_HAND)) // Attacked with item in left hand.
-		used_item = get_equipped_item(SLOT_ID_L_HAND)
-	else if (!hand && get_equipped_item(SLOT_ID_R_HAND)) // Attacked with item in right hand.
-		used_item = get_equipped_item(SLOT_ID_R_HAND)
+	if(hand && get_equipped_item(SLOT_ID_HAND_L)) // Attacked with item in left hand.
+		used_item = get_equipped_item(SLOT_ID_HAND_L)
+	else if (!hand && get_equipped_item(SLOT_ID_HAND_R)) // Attacked with item in right hand.
+		used_item = get_equipped_item(SLOT_ID_HAND_R)
 
 	//Couldn't find an item, do they have a sprite specified (like animal claw stuff?)
 	if(!used_item && !(attack_icon && attack_icon_state))

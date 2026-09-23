@@ -204,7 +204,7 @@ would spawn and follow the beaker, even if it is carried or thrown.
 /obj/effect/effect/smoke/proc/affect(mob/living/carbon/M)
 	if (!istype(M))
 		return 0
-	if(M.get_equipped_item(SLOT_ID_WEAR_MASK) && (M.get_equipped_item(SLOT_ID_WEAR_MASK).item_flags & AIRTIGHT))
+	if(M.get_equipped_item(SLOT_ID_MASK) && (M.get_equipped_item(SLOT_ID_MASK).item_flags & AIRTIGHT))
 		return 0
 	if(ishuman(M))
 		var/mob/living/carbon/human/H = M

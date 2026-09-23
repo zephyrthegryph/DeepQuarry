@@ -69,14 +69,14 @@
 			/obj/item/clothing/gloves/sterile
 		)
 
-	if(src == user.get_equipped_item(SLOT_ID_L_HAND))
+	if(src == user.get_equipped_item(SLOT_ID_HAND_L))
 		active_hand = BP_L_HAND
-	else if(src == user.get_equipped_item(SLOT_ID_R_HAND))
+	else if(src == user.get_equipped_item(SLOT_ID_HAND_R))
 		active_hand = BP_R_HAND
 	else
 		return // If it's not actually in our hands anymore, we were probably gentle with it
 
-	active_hand = (src == user.get_equipped_item(SLOT_ID_L_HAND)) ? BP_L_HAND : BP_R_HAND // May not actually be faster than an if-else block, but a little bit cleaner -Ater
+	active_hand = (src == user.get_equipped_item(SLOT_ID_HAND_L)) ? BP_L_HAND : BP_R_HAND // May not actually be faster than an if-else block, but a little bit cleaner -Ater
 
 	if(prob(75))
 		will_break = TRUE
@@ -119,7 +119,7 @@
 			if(H.species.siemens_coefficient<0.5) //Thick skin.
 				return
 
-			if( H.get_equipped_item(SLOT_ID_SHOES) || ( H.get_equipped_item(SLOT_ID_WEAR_SUIT) && (H.get_equipped_item(SLOT_ID_WEAR_SUIT).body_parts_covered & FEET) ) )
+			if( H.get_equipped_item(SLOT_ID_SHOES) || ( H.get_equipped_item(SLOT_ID_SUIT) && (H.get_equipped_item(SLOT_ID_SUIT).body_parts_covered & FEET) ) )
 				return
 
 			if(H.species.flags & NO_MINOR_CUT)

@@ -691,7 +691,7 @@ SUBSYSTEM_DEF(job)
 	if(human_mob.disabilities & NEARSIGHTED)
 		var/equipped = human_mob.equip_to_slot_or_del(new /obj/item/clothing/glasses/regular(human_mob), slot_glasses)
 		if(equipped != 1)
-			var/obj/item/clothing/glasses/worn_glasses = human_mob.get_equipped_item(SLOT_ID_GLASSES)
+			var/obj/item/clothing/glasses/worn_glasses = human_mob.get_equipped_item(SLOT_ID_EYES)
 			worn_glasses.prescription = TRUE
 
 	BITSET(human_mob.hud_updateflag, ID_HUD)

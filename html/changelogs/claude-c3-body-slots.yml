@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - code_imp: "Mobs declare their equipment slots per body plan, and worn armour, conductivity and heat and cold protection are cached per body zone instead of scanned on every hit and tick."

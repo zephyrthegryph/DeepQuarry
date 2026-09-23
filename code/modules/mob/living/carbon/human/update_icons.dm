@@ -451,7 +451,7 @@ GLOBAL_LIST_EMPTY(damage_icon_parts) //see UpdateDamageIcon()
 		return
 
 	//masks and helmets can obscure our hair.
-	if( (get_equipped_item(SLOT_ID_HEAD) && (get_equipped_item(SLOT_ID_HEAD).flags_inv & BLOCKHAIR)) || (get_equipped_item(SLOT_ID_WEAR_MASK) && (get_equipped_item(SLOT_ID_WEAR_MASK).flags_inv & BLOCKHAIR)))
+	if( (get_equipped_item(SLOT_ID_HEAD) && (get_equipped_item(SLOT_ID_HEAD).flags_inv & BLOCKHAIR)) || (get_equipped_item(SLOT_ID_MASK) && (get_equipped_item(SLOT_ID_MASK).flags_inv & BLOCKHAIR)))
 		return
 
 	//base icons
@@ -539,7 +539,7 @@ GLOBAL_LIST_EMPTY(damage_icon_parts) //see UpdateDamageIcon()
 		return
 
 	//Our glowy eyes should be hidden if some equipment hides them.
-	if((!should_have_organ(O_EYES) && !species.dispersed_eyes) || (get_equipped_item(SLOT_ID_HEAD) && (get_equipped_item(SLOT_ID_HEAD).flags_inv & BLOCKHAIR)) || (get_equipped_item(SLOT_ID_WEAR_MASK) && (get_equipped_item(SLOT_ID_WEAR_MASK).flags_inv & BLOCKHAIR)))
+	if((!should_have_organ(O_EYES) && !species.dispersed_eyes) || (get_equipped_item(SLOT_ID_HEAD) && (get_equipped_item(SLOT_ID_HEAD).flags_inv & BLOCKHAIR)) || (get_equipped_item(SLOT_ID_MASK) && (get_equipped_item(SLOT_ID_MASK).flags_inv & BLOCKHAIR)))
 		return
 
 	//Get the head, we'll need it later.
@@ -638,13 +638,13 @@ GLOBAL_LIST_EMPTY(damage_icon_parts) //see UpdateDamageIcon()
 	//Shoes can be affected by uniform being drawn onto them
 	update_inv_shoes()
 
-	if(!get_equipped_item(SLOT_ID_W_UNIFORM))
+	if(!get_equipped_item(SLOT_ID_UNIFORM))
 		return
 
-	if(get_equipped_item(SLOT_ID_WEAR_SUIT) && (get_equipped_item(SLOT_ID_WEAR_SUIT).flags_inv & HIDEJUMPSUIT) && !istype(get_equipped_item(SLOT_ID_WEAR_SUIT), /obj/item/clothing/suit/space/rig))
+	if(get_equipped_item(SLOT_ID_SUIT) && (get_equipped_item(SLOT_ID_SUIT).flags_inv & HIDEJUMPSUIT) && !istype(get_equipped_item(SLOT_ID_SUIT), /obj/item/clothing/suit/space/rig))
 		return //Wearing a suit that prevents uniform rendering
 
-	var/obj/item/clothing/under/under = get_equipped_item(SLOT_ID_W_UNIFORM)
+	var/obj/item/clothing/under/under = get_equipped_item(SLOT_ID_UNIFORM)
 
 	var/uniform_sprite
 	if(istype(under) && !isnull(under.update_icon_define))
@@ -655,10 +655,10 @@ GLOBAL_LIST_EMPTY(damage_icon_parts) //see UpdateDamageIcon()
 	//Build a uniform sprite
 	var/icon/c_mask = tail_style?.clip_mask
 	if(c_mask)
-		var/obj/item/clothing/suit/S = get_equipped_item(SLOT_ID_WEAR_SUIT)
-		if((get_equipped_item(SLOT_ID_WEAR_SUIT)?.flags_inv & HIDETAIL) || (istype(S) && S.taurized)) // Reasons to not mask: 1. If you're wearing a suit that hides the tail or if you're wearing a taurized suit.
+		var/obj/item/clothing/suit/S = get_equipped_item(SLOT_ID_SUIT)
+		if((get_equipped_item(SLOT_ID_SUIT)?.flags_inv & HIDETAIL) || (istype(S) && S.taurized)) // Reasons to not mask: 1. If you're wearing a suit that hides the tail or if you're wearing a taurized suit.
 			c_mask = null
-	overlays_standing[UNIFORM_LAYER] = get_equipped_item(SLOT_ID_W_UNIFORM).make_worn_icon(body_type = species.get_bodytype(src), slot_name = slot_w_uniform_str, default_icon = uniform_sprite, default_layer = UNIFORM_LAYER, clip_mask = c_mask)
+	overlays_standing[UNIFORM_LAYER] = get_equipped_item(SLOT_ID_UNIFORM).make_worn_icon(body_type = species.get_bodytype(src), slot_name = slot_w_uniform_str, default_icon = uniform_sprite, default_layer = UNIFORM_LAYER, clip_mask = c_mask)
 	apply_layer(UNIFORM_LAYER)
 
 /mob/living/carbon/human/update_inv_wear_id()
@@ -667,14 +667,14 @@ GLOBAL_LIST_EMPTY(damage_icon_parts) //see UpdateDamageIcon()
 
 	remove_layer(ID_LAYER)
 
-	if(!get_equipped_item(SLOT_ID_WEAR_ID))
+	if(!get_equipped_item(SLOT_ID_ID))
 		return //Not wearing an ID
 
 	//Only draw the ID on the mob if the uniform allows for it
-	if(get_equipped_item(SLOT_ID_W_UNIFORM) && istype(get_equipped_item(SLOT_ID_W_UNIFORM), /obj/item/clothing/under))
-		var/obj/item/clothing/under/U = get_equipped_item(SLOT_ID_W_UNIFORM)
+	if(get_equipped_item(SLOT_ID_UNIFORM) && istype(get_equipped_item(SLOT_ID_UNIFORM), /obj/item/clothing/under))
+		var/obj/item/clothing/under/U = get_equipped_item(SLOT_ID_UNIFORM)
 		if(U.displays_id)
-			overlays_standing[ID_LAYER] = get_equipped_item(SLOT_ID_WEAR_ID).make_worn_icon(body_type = species.get_bodytype(src), slot_name = slot_wear_id_str, default_icon = INV_WEAR_ID_DEF_ICON, default_layer = ID_LAYER)
+			overlays_standing[ID_LAYER] = get_equipped_item(SLOT_ID_ID).make_worn_icon(body_type = species.get_bodytype(src), slot_name = slot_wear_id_str, default_icon = INV_WEAR_ID_DEF_ICON, default_layer = ID_LAYER)
 
 	apply_layer(ID_LAYER)
 
@@ -698,16 +698,16 @@ GLOBAL_LIST_EMPTY(damage_icon_parts) //see UpdateDamageIcon()
 	remove_layer(GLASSES_LAYER)
 	remove_layer(GLASSES_LAYER_ALT)
 
-	if(!get_equipped_item(SLOT_ID_GLASSES) || hide_glasses)
+	if(!get_equipped_item(SLOT_ID_EYES) || hide_glasses)
 		return //Not wearing glasses, no need to update anything.
 
 	var/glasses_layer = GLASSES_LAYER
-	if(istype(get_equipped_item(SLOT_ID_GLASSES), /obj/item/clothing/glasses))
-		var/obj/item/clothing/glasses/our_glasses = get_equipped_item(SLOT_ID_GLASSES)
+	if(istype(get_equipped_item(SLOT_ID_EYES), /obj/item/clothing/glasses))
+		var/obj/item/clothing/glasses/our_glasses = get_equipped_item(SLOT_ID_EYES)
 		if(our_glasses.glasses_layer_above)
 			glasses_layer = GLASSES_LAYER_ALT
 
-	overlays_standing[glasses_layer] = get_equipped_item(SLOT_ID_GLASSES).make_worn_icon(body_type = species.get_bodytype(src), slot_name = slot_glasses_str, default_icon = INV_EYES_DEF_ICON, default_layer = glasses_layer)
+	overlays_standing[glasses_layer] = get_equipped_item(SLOT_ID_EYES).make_worn_icon(body_type = species.get_bodytype(src), slot_name = slot_glasses_str, default_icon = INV_EYES_DEF_ICON, default_layer = glasses_layer)
 
 	apply_layer(glasses_layer)
 
@@ -717,39 +717,39 @@ GLOBAL_LIST_EMPTY(damage_icon_parts) //see UpdateDamageIcon()
 
 	remove_layer(EARS_LAYER)
 
-	if((get_equipped_item(SLOT_ID_HEAD) && get_equipped_item(SLOT_ID_HEAD).flags_inv & (BLOCKHAIR | BLOCKHEADHAIR)) || (get_equipped_item(SLOT_ID_WEAR_MASK) && get_equipped_item(SLOT_ID_WEAR_MASK).flags_inv & (BLOCKHAIR | BLOCKHEADHAIR)))
+	if((get_equipped_item(SLOT_ID_HEAD) && get_equipped_item(SLOT_ID_HEAD).flags_inv & (BLOCKHAIR | BLOCKHEADHAIR)) || (get_equipped_item(SLOT_ID_MASK) && get_equipped_item(SLOT_ID_MASK).flags_inv & (BLOCKHAIR | BLOCKHEADHAIR)))
 		return //Ears are blocked (by hair being blocked, overloaded)
 
-	if(!get_equipped_item(SLOT_ID_L_EAR) && !get_equipped_item(SLOT_ID_R_EAR))
+	if(!get_equipped_item(SLOT_ID_EAR_L) && !get_equipped_item(SLOT_ID_EAR_R))
 		return //Why bother, if no ear sprites
 
 	if(hide_headset)
-		if(get_equipped_item(SLOT_ID_L_EAR) && istype(get_equipped_item(SLOT_ID_L_EAR), /obj/item/radio/headset)) //No need to generate blank images if only headsets are present.
-			if(!get_equipped_item(SLOT_ID_R_EAR) || istype(get_equipped_item(SLOT_ID_R_EAR), /obj/item/radio/headset))
+		if(get_equipped_item(SLOT_ID_EAR_L) && istype(get_equipped_item(SLOT_ID_EAR_L), /obj/item/radio/headset)) //No need to generate blank images if only headsets are present.
+			if(!get_equipped_item(SLOT_ID_EAR_R) || istype(get_equipped_item(SLOT_ID_EAR_R), /obj/item/radio/headset))
 				return
-		if(get_equipped_item(SLOT_ID_R_EAR) && istype(get_equipped_item(SLOT_ID_R_EAR), /obj/item/radio/headset))
-			if(!get_equipped_item(SLOT_ID_L_EAR) || istype(get_equipped_item(SLOT_ID_L_EAR), /obj/item/radio/headset))
+		if(get_equipped_item(SLOT_ID_EAR_R) && istype(get_equipped_item(SLOT_ID_EAR_R), /obj/item/radio/headset))
+			if(!get_equipped_item(SLOT_ID_EAR_L) || istype(get_equipped_item(SLOT_ID_EAR_L), /obj/item/radio/headset))
 				return
 
 	// Blank image upon which to layer left & right overlays.
 	var/image/both = image(icon = 'icons/effects/effects.dmi', icon_state = "nothing", layer = BODY_LAYER+EARS_LAYER)
 
-	if(get_equipped_item(SLOT_ID_L_EAR))
-		if(istype(get_equipped_item(SLOT_ID_L_EAR), /obj/item/radio/headset))
+	if(get_equipped_item(SLOT_ID_EAR_L))
+		if(istype(get_equipped_item(SLOT_ID_EAR_L), /obj/item/radio/headset))
 			if(!hide_headset)
-				var/image/standing = get_equipped_item(SLOT_ID_L_EAR).make_worn_icon(body_type = species.get_bodytype(src), slot_name = slot_l_ear_str, default_icon = INV_EARS_DEF_ICON, default_layer = EARS_LAYER)
+				var/image/standing = get_equipped_item(SLOT_ID_EAR_L).make_worn_icon(body_type = species.get_bodytype(src), slot_name = slot_l_ear_str, default_icon = INV_EARS_DEF_ICON, default_layer = EARS_LAYER)
 				both.add_overlay(standing)
 		else
-			var/image/standing = get_equipped_item(SLOT_ID_L_EAR).make_worn_icon(body_type = species.get_bodytype(src), slot_name = slot_l_ear_str, default_icon = INV_EARS_DEF_ICON, default_layer = EARS_LAYER)
+			var/image/standing = get_equipped_item(SLOT_ID_EAR_L).make_worn_icon(body_type = species.get_bodytype(src), slot_name = slot_l_ear_str, default_icon = INV_EARS_DEF_ICON, default_layer = EARS_LAYER)
 			both.add_overlay(standing)
 
-	if(get_equipped_item(SLOT_ID_R_EAR))
-		if(istype(get_equipped_item(SLOT_ID_R_EAR), /obj/item/radio/headset))
+	if(get_equipped_item(SLOT_ID_EAR_R))
+		if(istype(get_equipped_item(SLOT_ID_EAR_R), /obj/item/radio/headset))
 			if(!hide_headset)
-				var/image/standing = get_equipped_item(SLOT_ID_R_EAR).make_worn_icon(body_type = species.get_bodytype(src), slot_name = slot_r_ear_str, default_icon = INV_EARS_DEF_ICON, default_layer = EARS_LAYER)
+				var/image/standing = get_equipped_item(SLOT_ID_EAR_R).make_worn_icon(body_type = species.get_bodytype(src), slot_name = slot_r_ear_str, default_icon = INV_EARS_DEF_ICON, default_layer = EARS_LAYER)
 				both.add_overlay(standing)
 		else
-			var/image/standing = get_equipped_item(SLOT_ID_R_EAR).make_worn_icon(body_type = species.get_bodytype(src), slot_name = slot_r_ear_str, default_icon = INV_EARS_DEF_ICON, default_layer = EARS_LAYER)
+			var/image/standing = get_equipped_item(SLOT_ID_EAR_R).make_worn_icon(body_type = species.get_bodytype(src), slot_name = slot_r_ear_str, default_icon = INV_EARS_DEF_ICON, default_layer = EARS_LAYER)
 			both.add_overlay(standing)
 
 	overlays_standing[EARS_LAYER] = both
@@ -762,7 +762,7 @@ GLOBAL_LIST_EMPTY(damage_icon_parts) //see UpdateDamageIcon()
 	remove_layer(SHOES_LAYER)
 	remove_layer(SHOES_LAYER_ALT) //Dumb alternate layer for shoes being under the uniform.
 
-	if(!get_equipped_item(SLOT_ID_SHOES) || (get_equipped_item(SLOT_ID_WEAR_SUIT) && get_equipped_item(SLOT_ID_WEAR_SUIT).flags_inv & HIDESHOES) || (get_equipped_item(SLOT_ID_W_UNIFORM) && get_equipped_item(SLOT_ID_W_UNIFORM).flags_inv & HIDESHOES))
+	if(!get_equipped_item(SLOT_ID_SHOES) || (get_equipped_item(SLOT_ID_SUIT) && get_equipped_item(SLOT_ID_SUIT).flags_inv & HIDESHOES) || (get_equipped_item(SLOT_ID_UNIFORM) && get_equipped_item(SLOT_ID_UNIFORM).flags_inv & HIDESHOES))
 		return //Either nothing to draw, or it'd be hidden.
 
 	for(var/f in list(BP_L_FOOT, BP_R_FOOT))
@@ -797,14 +797,14 @@ GLOBAL_LIST_EMPTY(damage_icon_parts) //see UpdateDamageIcon()
 
 	remove_layer(SUIT_STORE_LAYER)
 
-	if(!get_equipped_item(SLOT_ID_S_STORE))
+	if(!get_equipped_item(SLOT_ID_SUIT_STORAGE))
 		return //Why bother, nothing there.
 
 	//TODO, this is unlike the rest of the things
 	//Basically has no variety in slot icon choices at all. WHY SPECIES ONLY??
-	var/t_state = get_equipped_item(SLOT_ID_S_STORE).item_state
+	var/t_state = get_equipped_item(SLOT_ID_SUIT_STORAGE).item_state
 	if(!t_state)
-		t_state = get_equipped_item(SLOT_ID_S_STORE).icon_state
+		t_state = get_equipped_item(SLOT_ID_SUIT_STORAGE).icon_state
 	overlays_standing[SUIT_STORE_LAYER]	= image(icon = species.suit_storage_icon, icon_state = t_state, layer = BODY_LAYER+SUIT_STORE_LAYER)
 
 	apply_layer(SUIT_STORE_LAYER)
@@ -858,10 +858,10 @@ GLOBAL_LIST_EMPTY(damage_icon_parts) //see UpdateDamageIcon()
 	update_tail_showing()
 	update_wing_showing()
 
-	if(!get_equipped_item(SLOT_ID_WEAR_SUIT))
+	if(!get_equipped_item(SLOT_ID_SUIT))
 		return //No point, no suit.
 
-	var/obj/item/clothing/suit/suit = get_equipped_item(SLOT_ID_WEAR_SUIT)
+	var/obj/item/clothing/suit/suit = get_equipped_item(SLOT_ID_SUIT)
 	var/suit_sprite
 
 	if(istype(suit) && !isnull(suit.update_icon_define))
@@ -875,7 +875,7 @@ GLOBAL_LIST_EMPTY(damage_icon_parts) //see UpdateDamageIcon()
 
 	if(tail_is_rendered && valid_clip_mask && !(istype(suit) && suit.taurized)) //Clip the lower half of the suit off using the tail's clip mask for taurs since taur bodies aren't hidden.
 		c_mask = valid_clip_mask
-	overlays_standing[SUIT_LAYER] = get_equipped_item(SLOT_ID_WEAR_SUIT).make_worn_icon(body_type = species.get_bodytype(src), slot_name = slot_wear_suit_str, default_icon = suit_sprite, default_layer = SUIT_LAYER, clip_mask = c_mask)
+	overlays_standing[SUIT_LAYER] = get_equipped_item(SLOT_ID_SUIT).make_worn_icon(body_type = species.get_bodytype(src), slot_name = slot_wear_suit_str, default_icon = suit_sprite, default_layer = SUIT_LAYER, clip_mask = c_mask)
 
 	apply_layer(SUIT_LAYER)
 
@@ -888,10 +888,10 @@ GLOBAL_LIST_EMPTY(damage_icon_parts) //see UpdateDamageIcon()
 
 	remove_layer(FACEMASK_LAYER)
 
-	if(!get_equipped_item(SLOT_ID_WEAR_MASK) || (get_equipped_item(SLOT_ID_HEAD) && get_equipped_item(SLOT_ID_HEAD).flags_inv & HIDEMASK))
+	if(!get_equipped_item(SLOT_ID_MASK) || (get_equipped_item(SLOT_ID_HEAD) && get_equipped_item(SLOT_ID_HEAD).flags_inv & HIDEMASK))
 		return //Why bother, nothing in mask slot.
 
-	overlays_standing[FACEMASK_LAYER] = get_equipped_item(SLOT_ID_WEAR_MASK).make_worn_icon(body_type = species.get_bodytype(src), slot_name = slot_wear_mask_str, default_icon = INV_MASK_DEF_ICON, default_layer = FACEMASK_LAYER)
+	overlays_standing[FACEMASK_LAYER] = get_equipped_item(SLOT_ID_MASK).make_worn_icon(body_type = species.get_bodytype(src), slot_name = slot_wear_mask_str, default_icon = INV_MASK_DEF_ICON, default_layer = FACEMASK_LAYER)
 
 	apply_layer(FACEMASK_LAYER)
 
@@ -968,10 +968,10 @@ GLOBAL_LIST_EMPTY(damage_icon_parts) //see UpdateDamageIcon()
 
 	remove_layer(R_HAND_LAYER)
 
-	if(!get_equipped_item(SLOT_ID_R_HAND))
+	if(!get_equipped_item(SLOT_ID_HAND_R))
 		return //No hand, no bother.
 
-	overlays_standing[R_HAND_LAYER] = get_equipped_item(SLOT_ID_R_HAND).make_worn_icon(body_type = species.get_bodytype(src), inhands = TRUE, slot_name = slot_r_hand_str, default_icon = INV_R_HAND_DEF_ICON, default_layer = R_HAND_LAYER)
+	overlays_standing[R_HAND_LAYER] = get_equipped_item(SLOT_ID_HAND_R).make_worn_icon(body_type = species.get_bodytype(src), inhands = TRUE, slot_name = slot_r_hand_str, default_icon = INV_R_HAND_DEF_ICON, default_layer = R_HAND_LAYER)
 
 	apply_layer(R_HAND_LAYER)
 
@@ -981,10 +981,10 @@ GLOBAL_LIST_EMPTY(damage_icon_parts) //see UpdateDamageIcon()
 
 	remove_layer(L_HAND_LAYER)
 
-	if(!get_equipped_item(SLOT_ID_L_HAND))
+	if(!get_equipped_item(SLOT_ID_HAND_L))
 		return //No hand, no bother.
 
-	overlays_standing[L_HAND_LAYER] = get_equipped_item(SLOT_ID_L_HAND).make_worn_icon(body_type = species.get_bodytype(src), inhands = TRUE, slot_name = slot_l_hand_str, default_icon = INV_L_HAND_DEF_ICON, default_layer = L_HAND_LAYER)
+	overlays_standing[L_HAND_LAYER] = get_equipped_item(SLOT_ID_HAND_L).make_worn_icon(body_type = species.get_bodytype(src), inhands = TRUE, slot_name = slot_l_hand_str, default_icon = INV_L_HAND_DEF_ICON, default_layer = L_HAND_LAYER)
 
 	apply_layer(L_HAND_LAYER)
 
@@ -1029,7 +1029,7 @@ GLOBAL_LIST_EMPTY(damage_icon_parts) //see UpdateDamageIcon()
 	var/species_tail = species?.get_tail(src) // Species tail icon_state prefix.
 
 	//This one is actually not that bad I guess.
-	if(species_tail && !(get_equipped_item(SLOT_ID_WEAR_SUIT) && get_equipped_item(SLOT_ID_WEAR_SUIT).flags_inv & HIDETAIL))
+	if(species_tail && !(get_equipped_item(SLOT_ID_SUIT) && get_equipped_item(SLOT_ID_SUIT).flags_inv & HIDETAIL))
 		var/icon/tail_s = get_tail_icon()
 		tail_image = image(icon = tail_s, icon_state = "[species_tail]_s", layer = BODY_LAYER+tail_layer)
 		tail_image.alpha = chest?.transparent ? 180 : 255
@@ -1236,7 +1236,7 @@ GLOBAL_LIST_EMPTY(damage_icon_parts) //see UpdateDamageIcon()
 		return working
 
 	//If you have custom wings selected
-	if(wing_style && !(get_equipped_item(SLOT_ID_WEAR_SUIT) && get_equipped_item(SLOT_ID_WEAR_SUIT).flags_inv & HIDETAIL) && !wings_hidden)
+	if(wing_style && !(get_equipped_item(SLOT_ID_SUIT) && get_equipped_item(SLOT_ID_SUIT).flags_inv & HIDETAIL) && !wings_hidden)
 		var/wing_state = (flapping && wing_style.ani_state) ? wing_style.ani_state : wing_style.icon_state
 		if(wing_style.multi_dir)
 			wing_state += "_[under_layer ? "back" : "front"]"
@@ -1331,7 +1331,7 @@ GLOBAL_LIST_EMPTY(damage_icon_parts) //see UpdateDamageIcon()
 		return image(tail_s)
 
 	//If you have a custom tail selected
-	if(tail_style && !(get_equipped_item(SLOT_ID_WEAR_SUIT) && get_equipped_item(SLOT_ID_WEAR_SUIT).flags_inv & HIDETAIL && !istaurtail(tail_style)) && !tail_hidden)
+	if(tail_style && !(get_equipped_item(SLOT_ID_SUIT) && get_equipped_item(SLOT_ID_SUIT).flags_inv & HIDETAIL && !istaurtail(tail_style)) && !tail_hidden)
 		var/icon/tail_s = new/icon("icon" = (tail_style.can_loaf && resting) ? tail_style.icon_loaf : tail_style.icon, "icon_state" = (wagging && tail_style.ani_state ? tail_style.ani_state : tail_style.icon_state))
 		if(tail_style.can_loaf && !is_shifted)
 			pixel_y = (resting) ? -tail_style.loaf_offset*size_multiplier : default_pixel_y //move player down, then taur up, to fit the overlays correctly. Taur Loafing
@@ -1407,7 +1407,7 @@ GLOBAL_LIST_EMPTY(damage_icon_parts) //see UpdateDamageIcon()
 	apply_layer(VORE_BELLY_LAYER)
 
 /mob/living/carbon/human/proc/get_vore_belly_image()
-	if(!(get_equipped_item(SLOT_ID_WEAR_SUIT) && get_equipped_item(SLOT_ID_WEAR_SUIT).flags_inv & HIDETAIL))
+	if(!(get_equipped_item(SLOT_ID_SUIT) && get_equipped_item(SLOT_ID_SUIT).flags_inv & HIDETAIL))
 		var/vs_fullness = vore_fullness_ex["stomach"]
 		var/icon/vorebelly_s = new/icon(icon = 'icons/mob/vore/Bellies.dmi', icon_state = "[species.vore_belly_default_variant]Belly[vs_fullness][struggle_anim_stomach ? "" : " idle"]")
 		vorebelly_s.Blend(vore_sprite_color["stomach"], vore_sprite_multiply["stomach"] ? ICON_MULTIPLY : ICON_ADD)

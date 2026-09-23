@@ -70,7 +70,7 @@
 		return ..(freq, level)
 	if(ishuman(src.loc))
 		var/mob/living/carbon/human/H = src.loc
-		if(H.get_equipped_item(SLOT_ID_L_EAR) == src || H.get_equipped_item(SLOT_ID_R_EAR) == src)
+		if(H.get_equipped_item(SLOT_ID_EAR_L) == src || H.get_equipped_item(SLOT_ID_EAR_R) == src)
 			playsound(loc, 'sound/effects/radio_common.ogg', 20, 1, 1, preference = /datum/preference/toggle/radio_sounds)
 			return ..(freq, level)
 	return -1
@@ -729,7 +729,7 @@
 /obj/item/radio/headset/event/equipped(mob/living/carbon/human/H, slot)
 	worn_factors = slowdown_to_set ? alist(BF_SLOWDOWN = slowdown_to_set) : null
 	. = ..()
-	if(H && ((H.get_equipped_item(SLOT_ID_L_EAR) == src) || (H.get_equipped_item(SLOT_ID_R_EAR) == src)))
+	if(H && ((H.get_equipped_item(SLOT_ID_EAR_L) == src) || (H.get_equipped_item(SLOT_ID_EAR_R) == src)))
 		wearer = H
 		if(light_power)
 			set_light(light_range,light_power,light_color,1)

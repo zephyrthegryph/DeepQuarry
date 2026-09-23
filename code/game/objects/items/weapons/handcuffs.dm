@@ -121,10 +121,10 @@
 	if (!H.get_equipped_item(SLOT_ID_HANDCUFFED)) return
 	if (!IS_HARMING(H)) return
 	if (H.zone_sel.selecting != O_MOUTH) return
-	if (H.get_equipped_item(SLOT_ID_WEAR_MASK)) return
-	if (istype(H.get_equipped_item(SLOT_ID_WEAR_SUIT), /obj/item/clothing/suit/straight_jacket)) return
-	if (istype(H.get_equipped_item(SLOT_ID_WEAR_SUIT), /obj/item/clothing/suit/shibari))
-		var/obj/item/clothing/suit/shibari/s = get_equipped_item(SLOT_ID_WEAR_SUIT)
+	if (H.get_equipped_item(SLOT_ID_MASK)) return
+	if (istype(H.get_equipped_item(SLOT_ID_SUIT), /obj/item/clothing/suit/straight_jacket)) return
+	if (istype(H.get_equipped_item(SLOT_ID_SUIT), /obj/item/clothing/suit/shibari))
+		var/obj/item/clothing/suit/shibari/s = get_equipped_item(SLOT_ID_SUIT)
 		if(s.rope_mode == "Arms" || s.rope_mode == "Arms and Legs")
 			return
 

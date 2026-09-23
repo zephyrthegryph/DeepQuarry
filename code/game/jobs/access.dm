@@ -94,8 +94,8 @@
 		var/id = I.GetID()
 		if(id)
 			return id
-	if(get_equipped_item(SLOT_ID_WEAR_ID))
-		var/id = get_equipped_item(SLOT_ID_WEAR_ID).GetID()
+	if(get_equipped_item(SLOT_ID_ID))
+		var/id = get_equipped_item(SLOT_ID_ID).GetID()
 		if(id)
 			return id
 
