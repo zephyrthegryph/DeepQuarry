@@ -1,0 +1,201 @@
+# Interactions and input (track I)
+
+Every interaction is a definition, not a proc override. So every interaction can be listed, can say why it isn't available, and can be bound to a key. Physical inputs map to a small set of abstract actions, and the interaction code never mentions mouse buttons or modifier keys.
+
+## 1. Today
+
+**Click handling**
+- There is a tg-style chain already: `item_interaction` → `tool_interaction` → `tool_act` → `*_act`, falling back to `attackby` (`code/_onclick/item_attack.dm`).
+- The modifier ladder is copied three times: `click.dm:61-87`, `observer.dm:54-80` and `ai.dm:52`. Borgs have their own dispatcher (`cyborg.dm:12`).
+
+**Legacy handlers**
+
+| Proc | Overrides |
+|---|---|
+| `attackby` | 874 |
+| `attack_hand` | 635 |
+| `attack_self` | 500 |
+| `click_alt` | 88 |
+
+- There are also 375 object verbs and 487 dynamic `verbs +=` calls.
+- About 68 `*_act` handlers bounce back into `attackby`, and 6 construction state machines route through `focused_tool_stage`.
+
+**Keybinds**
+- There's no `/datum/keybinding` and no keybind preferences.
+- Four macro sets are hardcoded in `interface/skin.dmf`, and they only call verbs on the player's own mob.
+
+**Right-click** probably never reaches the game's secondary click chain (B21).
+
+**Help text and screentips**
+- Examine hints are 397 hand-written `description_info` strings, maintained separately from what the code does.
+- The screentip signals are defined but unused.
+
+**Non-player actors**
+- 151 `attack_ai` overrides, about 83 of which just call `attack_hand`.
+- 31 `attack_robot` overrides, 53 `attack_ghost`, 57 `attack_generic` and 19 `attack_tk`.
+
+**Other patterns**
+- Tools: 823 `do_after` calls, each doing sound, speed and fuel by hand.
+- Intents: 211 `a_intent ==` gates.
+- Surgery is the only place that already lists candidate interactions and lets the player choose. It belongs to the body rewrite.
+
+## 2. Abstract actions
+
+**Target actions** go through the target's interactions:
+
+| Action | Meaning | Default binding (reproduces today) |
+|---|---|---|
+| **Use** | The default interaction | Left click |
+| **Alternate** | The secondary interaction | Alt-click, and right-click once enabled |
+| **Menu** | List every interaction, with availability and reasons | New: a key, or a modifier plus right-click |
+| **Inspect** | Examine | Shift-click |
+| **Drag** | Move or transfer from one thing to another | Drag and drop |
+| **Self-use** | Use the held item on itself | Z, or clicking the held item |
+
+**Mob actions** are not object interactions: pull, point, throw, swap hands, resist, rest, combat mode, movement.
+
+**Categories** can be bound to keys: Toggle, Open/Close, Eject, Insert, Lock, Configure (opens a UI), Repair, Maintain, Attack.
+- A category key runs the best available interaction in that category on the hovered target, or on the tile in front of the player.
+- Every interaction declares a category and a priority, and optionally whether it answers **Use** or **Alternate** by default.
+
+## 3. Bindings
+
+- `/datum/keybinding` records map physical inputs to actions. A physical input is a key, or a mouse button plus modifiers.
+- Bindings are stored in preferences and applied per client with `winset`, replacing the four static macro sets in `skin.dmf`.
+- Default bindings reproduce today's controls. Players can rebind everything, and the Menu action is always available as a fallback.
+- **Hover tracking.** `MouseEntered` on map atoms, throttled, records the hovered atom for category keys and screentips. It is only active for clients with screentips or hover-targeted bindings.
+- **Right-click.** Enabled on the map element (B21), and routed to Alternate or Menu according to the player's binding.
+
+## 4. The input router and actors
+
+- One router turns physical inputs into actions for every mob. It replaces the three modifier ladders and the borg dispatcher.
+- **Capability adapters.** Non-player actors (AI, borgs, ghosts, telekinesis, simple mobs) produce the same actions. An adapter decides which interactions are available: "remote, no hands, needs camera sight" for the AI, "observer-only" for ghosts, and so on.
+- **Deletes the forwarding overrides:** the ~83 `attack_ai` → `attack_hand` forwards, ~13 of the `attack_robot` forwards, and the ghost UI openers.
+
+## 5. Interaction definitions
+
+```dm
+/datum/interaction/toggle_power
+	id = "toggle_power"
+	name = "Toggle power"
+	category = INTERACTION_CAT_TOGGLE
+	priority = 10
+	default_action = ACTION_ALTERNATE
+	requires = list(REQ_REACH_ADJACENT, REQ_HAND_FREE, REQ_TARGET_STATE(/obj/machinery/proc/can_toggle_power))
+	effect = /obj/machinery/proc/toggle_power
+```
+
+| Field | Meaning |
+|---|---|
+| `id`, `name`, `category` | Identity and grouping |
+| `priority`, `default_action` | Which interaction Use or Alternate picks |
+| `requires` | A predicate with reasons ([rules.md §2](rules.md#2-predicates)): tool quality and tier, a free hand, reach, which actors, access, target state |
+| `cost` | A duration through the tool pipeline (§9), plus fuel, charge or resources |
+| `effect` | A proc on the target, or a data transform |
+| `feedback` | Messages, sounds and balloon alerts, generated from the definition unless overridden |
+| `tags` | For filtering, e.g. `hostile` |
+
+Definitions are shared singletons: a type lists or inherits them, and it costs no memory per instance.
+
+## 6. Where interactions come from
+
+- **Type declarations.**
+- **Behaviours:**
+  - **Maintainable** machines get open panel, anchor, deconstruct and repair. This replaces `maintenance_flags` and its four `*_act` procs in `machinery.dm:183-230`.
+  - **Slot holders** get insert and eject for each slot ([containment.md](containment.md)).
+  - **tgui** gives open UI (Configure).
+  - **Construction graphs** give the next step (§10).
+  - **Wires** give hack (§11).
+- **Abilities** are interactions on oneself ([rules.md §5](rules.md#5-abilities)).
+- **Surgery** is built on this by the body rewrite (their phase 9).
+
+## 7. Resolver and the Menu action
+
+- `interactions_for(actor, target, held, modifiers)` returns two lists:
+  - the interactions available now, ordered by priority;
+  - the blocked ones, each with the reason from its first failing clause.
+- **Use** and **Alternate** run the top available interaction for that action. If several are tied, they open the Menu.
+- **Menu** shows both lists, with the player's bound keys, in a context panel. It replaces BYOND's native verb popup and most radial menus.
+
+## 8. Examine and screentips
+
+- Examine gets a generated "Interactions" section: what you can do now, with its keys, and what you can't, with why. The 397 hand-written `description_info` strings are deleted as each type converts, so hints can't drift from behaviour.
+- Screentips show the Use and Alternate interactions for the hovered target and the held item, from the same resolver. They update only when the hovered atom or the held item changes.
+
+## 9. Tools
+
+**`use_tool(actor, tool, target, interaction)`** is the one pipeline. It:
+1. checks tool quality and tier;
+2. checks fuel or charge;
+3. plays the tool's sound;
+4. runs `do_after`, scaled by the tool speed and a skill factor, so skills can be added later;
+5. consumes resources;
+6. sends generated messages.
+
+**What goes away**
+- the hand-written sound, `do_after` and fuel code at 155 tool sites;
+- the deprecated `is_screwdriver()` helpers, and about 126 `istype(W, /obj/item/tool…)` checks.
+
+**Tool qualities**
+- `tool_qualities` and `has_tool_quality()` stay as the identity model.
+- All 20 `TOOL_*` qualities route through interactions. Today `tool_act` routes only 6.
+
+## 10. Construction graphs
+
+**The graph.** Machines, frames, walls, girders, windows, mechs and vehicles declare construction graphs:
+- **States:** frame, wired, board installed, panel closed, and so on.
+- **Edges:** interactions with tool requirements and costs.
+
+The resolver shows the next steps, and examine explains them ("Next: weld the frame, needs a welder").
+
+**Deleted**
+- the `focused_tool_stage` and `run_focused_tool` state machines (walls, floors, mecha, mecha wreckage, vehicle construction, secbot);
+- the 68 `*_act` handlers that bounce back into `attackby`.
+
+## 11. Wires
+
+**Hacking state**
+- Wire state becomes a bitmask on the holder: which wires are cut or pulsed. It is zero, and costs nothing, until someone touches it.
+- Wire definitions and colours are per type and read-only. Per-round randomization lives in a per-type table, and per-instance randomization is stored as a delta.
+- Attached signalers sit in an external slot on the panel.
+
+**Effects**
+- The wires UI is built from the definitions plus the bitmask. The ~2,500 holders nobody opens get no wires datum at all.
+- This also fixes B7, where changing one machine's colours changed them for its whole type.
+
+## 12. Combat mode
+
+- Intents are replaced by a combat mode toggle, which is a mob action, plus choosing an interaction.
+- With combat mode on, attack interactions take priority on Use.
+- The 211 `a_intent ==` gates become interaction requirements, or combat-mode checks in the melee swing (`melee_swing.dm`).
+
+## 13. Migration, one domain at a time (I7)
+
+**Order of conversion**
+1. machinery;
+2. structures;
+3. items;
+4. mobs;
+5. turfs.
+
+**What each domain converts**
+- `attackby`, `attack_hand`, `attack_self`, `click_alt`, `MouseDrop_T` and object verbs.
+- The domain's `description_info` strings are deleted.
+- Its interaction snapshot is recorded.
+
+**Order within the plan**
+- The tool pipeline (I4) and construction graphs (I5) come first.
+- Legacy procs are deleted in each domain as it converts. Once every domain is done, the fallback to `attackby` is removed.
+
+## 14. Tests and lint
+
+**Tests**
+- **Interaction snapshots.** For each type, the resolved list for a standard set of actors and held items is recorded, and changes show up in review.
+- Every interaction definition has a test.
+- Every binding default has a test.
+
+**Lint**
+- No forwarding `attack_ai`/`attack_robot`/`attack_ghost` overrides (I3).
+- No `*_act` that calls `attackby` (I4).
+- No new `attackby`, `attack_hand` or `attack_self` overrides in domains that have converted (I7).
+- No `description_info` in converted domains (I2).
