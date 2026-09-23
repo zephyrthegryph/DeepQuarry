@@ -138,8 +138,8 @@
 	var/custom_exclaim = null
 	var/custom_whisper = null
 //custom temperature discomfort vars
-	var/list/custom_heat = list()
-	var/list/custom_cold = list()
+	var/list/custom_heat // Lazy; per-mob preference override, usually unset.
+	var/list/custom_cold // Lazy; per-mob preference override, usually unset.
 
 //YW Add Start
 /mob
