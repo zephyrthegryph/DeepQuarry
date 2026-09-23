@@ -373,7 +373,20 @@ accident or assume they work:
   add a system, or a variant whose path mirrors the mob path (`breathing/carbon/human`). Code
   outside Life uses `refresh_hud()`, `refresh_vision()`, `refresh_glow()` or
   `run_life_system()`. Components tick via `add_trait_life_system()` (there is no
-  `COMSIG_LIVING_LIFE`). Hibernation plumbing exists but is off (`MOB_HIBERNATION_ENABLED`).
+  `COMSIG_LIVING_LIFE`).
+  **Mobs are event-driven and hibernate, players included** (§4.9):
+  - A system sleeps when its `idle(self)` holds after it ticks. `rewake_delay()` sets a slow
+    timer for work that still drifts, and `woken_by` documents what wakes it. The default
+    `idle()` is FALSE, so a new system stays awake until you give it a rule.
+  - A mob with nothing awake leaves `SSmobs`.
+  - Anything that changes what a system reads must call `L.life_wake(bits, reason)`, or go
+    through a producer that does: `injure`/`mend`, `body.invalidate()`, the status setters,
+    `Moved`, equip/unequip, `set_stat`, Login.
+  - `life_wake()` and `life_hibernate()` are the only procs that change a mob's run state.
+    `check_grep.sh` rejects direct writes.
+  - A 30 s audit logs `MOB_HIBERNATE_AUDIT: MISSED WAKE` and wakes the mob when a producer
+    was forgotten. Treat that log line as a bug to fix.
+  - Transition tracing is `GLOB.mob_hibernation_trace`.
 - **verdigris (Rust FFI)** is a build artifact, gitignored per-platform. If `cargo` is absent
   the build warns and skips it, and **both** subsystems that depend on it fail at runtime:
   cave-gen (expedition) and — since the auxmos cutover — **atmospherics** (gas math + turf
