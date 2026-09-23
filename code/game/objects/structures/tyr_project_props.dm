@@ -9,9 +9,22 @@
 	var/descendx
 	var/descendy
 
-/obj/structure/prop/tyr_elevator/attackby(obj/item/W as obj, mob/user as mob)
+/obj/structure/prop/tyr_elevator/declare_interactions(list/into)
+	into += list(
+		/datum/interaction/entry_item/tyr_elevator_item,
+	)
+	..()
+
+/// Old attackby: pry the doors open and teleport away.
+/datum/interaction/entry_item/tyr_elevator_item
+	id = "tyr_elevator_item"
+	name = "Use"
+	effect = /obj/structure/prop/tyr_elevator/proc/interaction_item
+
+/obj/structure/prop/tyr_elevator/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
 	if (do_after(user, 30, target = src))
 		do_teleport(user, locate(descendx,descendy,src.z), channel = TELEPORT_CHANNEL_QUANTUM)
+	return TRUE
 
 /obj/machinery/door/blast/puzzle/tyrdoor
 	name = "strange door"

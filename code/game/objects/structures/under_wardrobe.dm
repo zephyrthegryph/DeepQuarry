@@ -9,11 +9,23 @@
 	. = ..()
 	AddElement(/datum/element/climbable)
 
-/obj/structure/undies_wardrobe/attack_hand(mob/user)
+/obj/structure/undies_wardrobe/declare_interactions(list/into)
+	into += list(
+		/datum/interaction/entry_hand/undies_wardrobe_open_ui,
+	)
+	..()
+
+/datum/interaction/entry_hand/undies_wardrobe_open_ui
+	id = "undies_wardrobe_open_ui"
+	name = "Use"
+	effect = /obj/structure/undies_wardrobe/proc/interaction_open_ui
+
+/obj/structure/undies_wardrobe/proc/interaction_open_ui(mob/user, obj/item/held, datum/interaction/interaction)
 	if(!human_who_can_use_underwear(user))
 		to_chat(user, span_warning("Sadly there's nothing in here for you to wear."))
-		return
+		return TRUE
 	interact(user)
+	return TRUE
 
 // TGUI migration. interact opens UndiesWardrobe.tsx; Topic
 // handlers move to tgui_act below.

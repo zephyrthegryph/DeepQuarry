@@ -91,7 +91,19 @@
 				return
 
 
-/obj/structure/transit_tube/station/attack_hand(mob/user as mob)
+/obj/structure/transit_tube/station/declare_interactions(list/into)
+	into += list(
+		/datum/interaction/entry_hand/transit_tube_toggle,
+	)
+	..()
+
+/// Old attack_hand: open/close the pod door.
+/datum/interaction/entry_hand/transit_tube_toggle
+	id = "transit_tube_toggle"
+	name = "Toggle"
+	effect = /obj/structure/transit_tube/station/proc/interaction_toggle
+
+/obj/structure/transit_tube/station/proc/interaction_toggle(mob/user, obj/item/held, datum/interaction/interaction)
 	if(!pod_moving)
 		for(var/obj/structure/transit_tube_pod/pod in loc)
 			if(!pod.moving && (pod.dir in directions()))
@@ -100,6 +112,7 @@
 
 				else if(icon_state == "open")
 					close_animation()
+	return TRUE
 
 
 
