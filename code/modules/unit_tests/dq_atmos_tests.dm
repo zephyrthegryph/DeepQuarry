@@ -3996,6 +3996,13 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 			T = candidate
 			break
 	TEST_ASSERT_NOTNULL(T, "no floor for gas dependency test")
+	// Seal T so the air alarm's baseline is the standard mixture set below, not
+	// whatever pressure the surrounding room was left at by earlier tests. An
+	// alarm already at its worst danger level correctly ignores more plasma.
+	dq_atmos_test_snapshot_air(T)
+	dq_atmos_test_isolate_pair(T, T)
+	T.immediate_calculate_adjacent_turfs()
+	SSair.auxmos_topology_barrier()
 	for(var/datum/gas/g as anything in T.air.get_gases())
 		T.air.set_moles(g, 0)
 	T.air.adjust_gas(/datum/gas/oxygen, MOLES_O2STANDARD)
@@ -4223,6 +4230,11 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	dq_atmos_test_isolate_pair(T, T)
 	T.immediate_calculate_adjacent_turfs()
 	SSair.auxmos_topology_barrier()
+	// Start from room temperature. Earlier tests can leave this turf warm, and
+	// +10 K from there may cross the firedoor's hot threshold, which is a real
+	// alarm rather than harmless drift.
+	T.air.set_temperature(T20C)
+	dq_atmos_test_drain_dependency_queue()
 	drain_dirty_gas_mixtures()
 	var/obj/machinery/door/firedoor/F = new(T)
 	F.density = TRUE
@@ -7188,7 +7200,7 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 /datum/unit_test/dq_space_turfs_share_vacuum_mixture/Run()
 	var/turf/space/first = null
 	var/turf/space/second = null
-	for(var/turf/space/candidate as anything in world)
+	for(var/turf/space/candidate in world)
 		if(candidate.blocks_air)
 			continue
 		if(!first)
@@ -7217,7 +7229,7 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	// Find an existing space turf to use as our sharing witness, and a floor
 	// turf whose position we can safely round-trip through space.
 	var/turf/space/witness = null
-	for(var/turf/space/candidate as anything in world)
+	for(var/turf/space/candidate in world)
 		if(!candidate.blocks_air)
 			witness = candidate
 			break
