@@ -14,12 +14,29 @@
 	flags = REMOTEVIEW_ON_ENTER
 	dir = 0
 
+// C11: one slot, accepting anything (a holder in transit carries whatever was
+// flushed into it), drop policy left to this type's own Destroy() below,
+// which already spills everything onto qdelloc before ..() reaches the base
+// Destroy()'s generic drop-policy pass. Legacy forceMove()s into and out of
+// the holder (move(), the disposal machine's flush, pipe transit) are still
+// accounted for by doMove()'s bookkeeping, so nothing else here needs to
+// change to make slot_contents() correct.
+/obj/structure/disposalholder/slot_def_types()
+	var/static/list/types = list(/datum/slot_def/disposal_holder)
+	return types
+
+/datum/slot_def/disposal_holder
+	id = CONTAINER_SLOT_DISPOSAL
+	name = "contents"
+	drop_policy = SLOT_DROP_HOLDER
+	exposure = SLOT_EXPOSURE_SEALED
+
 /obj/structure/disposalholder/Destroy()
 	QDEL_NULL(gas)
-	if(contents.len)
+	if(length(slot_contents(CONTAINER_SLOT_DISPOSAL)))
 		var/turf/qdelloc = get_turf(src)
 		if(qdelloc)
-			for(var/atom/movable/AM in contents)
+			for(var/atom/movable/AM in slot_contents(CONTAINER_SLOT_DISPOSAL))
 				AM.forceMove(qdelloc)
 		else
 			log_runtime("A disposal holder was deleted with contents in nullspace") //ideally, this should never happen

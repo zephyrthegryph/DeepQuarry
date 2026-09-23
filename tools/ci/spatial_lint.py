@@ -55,7 +55,17 @@ PATTERNS = [
     ("contents_loop", re.compile(r"\bin\s+[\w.:]*\.contents\b")),
     ("implicit_loop", re.compile(r"\bin\s+" + IMPLICIT_IDENTS + r"\s*\)")),
     ("contents_len", re.compile(r"\bcontents\s*\.\s*len\b|\blength\s*\(\s*contents\s*\)")),
-    ("locate_in", re.compile(r"\blocate\s*\([^()]*\)\s*in\b")),
+    # A negative lookahead excludes the correct idiom: `locate(X) in
+    # slot_contents(...)` (or any other ledger/spatial read call) is not a
+    # raw contents/turf/area read -- it's a locate over a list the approved
+    # API already returned. Without this, the count could never reach zero
+    # even for fully-converted code, since every ledger-holder locate still
+    # needs some `in <list>` clause.
+    ("locate_in", re.compile(
+        r"\blocate\s*\([^()]*\)\s*in\s+"
+        r"(?!(?:[\w.]+\.)?(?:slot_contents|latent_entries|latent_materialize_all|get_all_contents|"
+        r"turf_contents_of_type|area_contents_of_type|contents_property)\s*\()"
+    )),
 ]
 
 

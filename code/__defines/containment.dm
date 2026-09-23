@@ -15,6 +15,10 @@
 #define CONTAINER_SLOT_INTERNALS "internals"
 /// A storage item's interior (/obj/item/storage, C4).
 #define CONTAINER_SLOT_STORAGE "storage"
+/// A disposal bin's or in-transit holder's contents (C11).
+#define CONTAINER_SLOT_DISPOSAL "disposal"
+/// A vehicle cage's one vehicle (C11).
+#define CONTAINER_SLOT_VEHICLE_CAGE "vehicle"
 
 // ---- Occupant machines (C8, containment.md §10) ----
 /// The sealed occupant slot of a cryopod-family despawner.

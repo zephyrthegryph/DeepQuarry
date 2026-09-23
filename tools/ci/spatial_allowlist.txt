@@ -5,7 +5,7 @@
 # the ledger read API or the spatial API (doc/rewrite/containment.md
 # section 2a) and lower the count; `python tools/ci/spatial_lint.py
 # --update` rewrites it.
-# Total: 1461 sites in 598 files.
+# Total: 1417 sites in 595 files.
 code/ATMOSPHERICS/components/binary_devices/pipeturbine.dm 1
 code/ATMOSPHERICS/components/unary/unary_base.dm 1
 code/ATMOSPHERICS/environmental/LINDA_turf_tile.dm 1
@@ -140,11 +140,11 @@ code/game/mecha/combat/fighter.dm 4
 code/game/mecha/equipment/tools/clamp.dm 1
 code/game/mecha/equipment/tools/drill.dm 4
 code/game/mecha/equipment/tools/jetpack.dm 1
-code/game/mecha/equipment/tools/passenger.dm 4
-code/game/mecha/equipment/tools/sleeper.dm 3
-code/game/mecha/mecha.dm 5
+code/game/mecha/equipment/tools/passenger.dm 2
+code/game/mecha/equipment/tools/sleeper.dm 1
+code/game/mecha/mecha.dm 4
 code/game/mecha/micro/micro_equipment.dm 5
-code/game/mecha/working/ripley.dm 3
+code/game/mecha/working/ripley.dm 2
 code/game/objects/effects/alien/aliens.dm 2
 code/game/objects/effects/anomalies/_anomalies.dm 1
 code/game/objects/effects/anomalies/anomalies_gravity.dm 1
@@ -202,7 +202,6 @@ code/game/objects/structures/alien/alien.dm 2
 code/game/objects/structures/catwalk.dm 3
 code/game/objects/structures/cliff.dm 1
 code/game/objects/structures/crates_lockers/closets/syndicate.dm 1
-code/game/objects/structures/crates_lockers/vehiclecage.dm 1
 code/game/objects/structures/droppod.dm 3
 code/game/objects/structures/grille.dm 2
 code/game/objects/structures/janicart.dm 2
@@ -507,12 +506,10 @@ code/modules/reagents/reagents/_helpers.dm 1
 code/modules/reagents/reagents/medicine.dm 2
 code/modules/reagents/reagents/other.dm 1
 code/modules/recycling/conveyor2.dm 4
-code/modules/recycling/disposal-construction.dm 1
-code/modules/recycling/disposal.dm 12
-code/modules/recycling/disposal_holder.dm 2
-code/modules/recycling/disposal_junctions.dm 8
-code/modules/recycling/disposal_machines.dm 22
-code/modules/recycling/disposal_outlet.dm 1
+code/modules/recycling/disposal.dm 5
+code/modules/recycling/disposal_holder.dm 1
+code/modules/recycling/disposal_junctions.dm 1
+code/modules/recycling/disposal_machines.dm 2
 code/modules/recycling/recycling.dm 1
 code/modules/recycling/v_garbosystem.dm 2
 code/modules/refinery/core/industrial_reagent_filter.dm 2

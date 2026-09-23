@@ -20,7 +20,7 @@
 
 	update_target()
 
-	var/obj/structure/disposalpipe/trunk/trunk = locate() in get_turf(src)
+	var/obj/structure/disposalpipe/trunk/trunk = locate_on(get_turf(src), /obj/structure/disposalpipe/trunk)
 	AddComponent(/datum/component/disposal_system_connection)
 	RegisterSignal(src, COMSIG_DISPOSAL_RECEIVE, PROC_REF(packet_expel))
 	if(trunk)
