@@ -1,17 +1,16 @@
 use bitflags::bitflags;
 
-/// kPa*L/(K*mol)
-pub const R_IDEAL_GAS_EQUATION: f32 = 8.31;
+// R_IDEAL_GAS_EQUATION/TCMB/T0C/T20C moved to vg_core::units::consts
+// (`rust_architecture.md` §4.11: this crate used to keep its own copy,
+// exactly matching heat's, with nothing enforcing that it stayed so).
+// Re-exported so every existing unqualified reference in this crate keeps
+// working.
+pub use vg_core::units::consts::{R_IDEAL_GAS_EQUATION, T0C, T20C, TCMB};
+
 /// kPa
 pub const ONE_ATMOSPHERE: f32 = 101.325;
-///  -270.3degC
-pub const TCMB: f32 = 2.7;
 ///  -48.15degC
 pub const TCRYO: f32 = 225.0;
-///  0degC
-pub const T0C: f32 = 273.15;
-///  20degC
-pub const T20C: f32 = 293.15;
 /// Amount of gas below which any amounts will be truncated to 0.
 pub const GAS_MIN_MOLES: f32 = 0.0001;
 /// Heat capacities below which heat will be considered 0.
