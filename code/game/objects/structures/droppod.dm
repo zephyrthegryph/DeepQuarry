@@ -108,13 +108,26 @@
 	QDEL_NULL(air)
 	finished = TRUE
 
-/obj/structure/drop_pod/attack_hand(mob/living/user)
+/obj/structure/drop_pod/declare_interactions(list/into)
+	into += list(
+		/datum/interaction/entry_hand/drop_pod_open,
+	)
+	..()
+
+/// Old attack_hand: open the pod.
+/datum/interaction/entry_hand/drop_pod_open
+	id = "drop_pod_open"
+	name = "Open"
+	effect = /obj/structure/drop_pod/proc/interaction_open
+
+/obj/structure/drop_pod/proc/interaction_open(mob/living/user, obj/item/held, datum/interaction/interaction)
 	if(istype(user) && (Adjacent(user) || (user in src)) && !user.incapacitated())
 		if(finished)
 			to_chat(user, span_warning("Nothing left to do with it now. Maybe you can break it down into materials."))
 		else
 			open_pod()
 			user.visible_message(span_infoplain(span_bold("[user]") + " opens \the [src]!"),span_infoplain("You open \the [src]!"))
+	return TRUE
 
 /obj/structure/drop_pod/wrench_act(mob/user, obj/item/O)
 	if(!finished)
