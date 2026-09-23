@@ -440,7 +440,8 @@ GLOBAL_LIST_INIT(vore_words_snake, list("snake","serpent","reptilian","noodle","
 	var/list/raw_list
 
 	if(islist(raw_text))
-		raw_list = raw_text.Copy() // It may be a shared list; this one becomes the belly's own.
+		var/list/given = raw_text
+		raw_list = given.Copy() // It may be a shared list; this one becomes the belly's own.
 	else if(findtext(raw_text, delim))
 		raw_list = splittext(raw_text, delim)
 	else

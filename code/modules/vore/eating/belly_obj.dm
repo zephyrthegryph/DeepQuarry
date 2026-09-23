@@ -309,6 +309,8 @@
 // Called whenever an atom enters this belly
 /obj/belly/Entered(atom/movable/thing, atom/OldLoc)
 	. = ..()
+	if(QDELETED(thing)) // Parts a deleted body drops on its way out
+		return
 	if(!owner)
 		thing.forceMove(get_turf(src))
 		return
@@ -320,7 +322,8 @@
 		if(S)
 			playsound(owner.loc, S, sound_volume * (reagents.total_volume / 100), FALSE, frequency = noise_freq, preference = /datum/preference/toggle/digestion_noises)
 			cycle_sloshed = TRUE
-	dq_set_belly_cycles(thing, 0) //reset cycle count
+	if(dq_get_belly_cycles(thing)) // Reset only a count that exists: no component per eaten thing.
+		dq_set_belly_cycles(thing, 0) //reset cycle count
 	if(istype(thing, /mob/observer)) //Ports CHOMPStation PR#3072
 		if(desc) //Ports CHOMPStation PR#4772
 			//Allow ghosts see where they are if they're still getting squished along inside.
@@ -905,7 +908,8 @@
 /obj/belly/proc/transfer_contents(atom/movable/content, obj/belly/target, silent = FALSE)
 	if(!(content in src) || !istype(target))
 		return
-	dq_set_belly_cycles(content, 0)
+	if(dq_get_belly_cycles(content)) // Reset only a count that exists: no component per eaten thing.
+		dq_set_belly_cycles(content, 0)
 	var/old_entrance_logs = target.entrance_logs
 	if(silent)
 		target.entrance_logs = FALSE
@@ -966,7 +970,8 @@
 			if(isitem(prey) && autotransfer_filter(prey, autotransfer_whitelist_items, autotransfer_blacklist_items))
 				dest_belly = pick(transfer_locations["primary"])
 	if(!dest_belly) // Didn't transfer, so wait before retrying
-		dq_set_belly_cycles(prey, 0)
+		if(dq_get_belly_cycles(prey)) // Reset only a count that exists: no component per eaten thing.
+			dq_set_belly_cycles(prey, 0)
 		return FALSE
 	if(ismob(prey))
 		var/autotransfer_owner_message

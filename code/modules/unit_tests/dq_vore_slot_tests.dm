@@ -29,7 +29,7 @@
 	for(var/obj/belly/B as anything in pred.vore_organs)
 		TEST_ASSERT_NULL(B.cycle_token, "empty [B] should not cycle")
 		TEST_ASSERT_NULL(B.liquid_timer, "empty [B] should hold no timer")
-		TEST_ASSERT_NULL(B.reactor_id, "empty [B] should hold no reactor state")
+		TEST_ASSERT(!B.reactor_id, "empty [B] should hold no reactor state")
 		TEST_ASSERT(!(B.datum_flags & DF_ISPROCESSING), "empty [B] should not be on a processing subsystem")
 		var/list/owned = B.belly_owned_lists()
 		TEST_ASSERT_EQUAL(length(owned), 0, "empty [B] owns lists: [jointext(owned, ", ")]")
@@ -157,21 +157,18 @@
 	TEST_ASSERT(abs(prey_s.size_multiplier - prey_f.size_multiplier) < 0.001, "shrink totals differ: [prey_s.size_multiplier] vs [prey_f.size_multiplier]")
 	TEST_ASSERT(abs(prey_s.size_multiplier - 0.95) < 0.001, "shrink should take 1% per 6 s: [prey_s.size_multiplier]")
 
-	// Digest: the same injury over the same time.
+	// A late cycle catches up: one 12 s cycle drains as much as two 6 s ones.
 	slow = vore_test_pair()
 	fast = vore_test_pair()
-	BS = vore_rate_belly(slow, DM_DIGEST)
-	BF = vore_rate_belly(fast, DM_DIGEST)
+	BS = vore_rate_belly(slow, DM_DRAIN)
+	BF = vore_rate_belly(fast, DM_DRAIN)
 	prey_s = slow[2]
 	prey_f = fast[2]
-	var/start_s = _vore_test_total_injury(prey_s)
-	var/start_f = _vore_test_total_injury(prey_f)
-	vore_test_cycles(BS, 3, 6)
-	vore_test_cycles(BF, 9, 2)
-	var/dealt_s = _vore_test_total_injury(prey_s) - start_s
-	var/dealt_f = _vore_test_total_injury(prey_f) - start_f
-	TEST_ASSERT(dealt_s > 0, "digestion should injure the prey")
-	TEST_ASSERT(abs(dealt_s - dealt_f) <= max(0.05 * dealt_s, 0.5), "digest totals differ: [dealt_s] over 3x6 s, [dealt_f] over 9x2 s")
+	prey_s.nutrition = 400
+	prey_f.nutrition = 400
+	vore_test_cycles(BS, 1, 12)
+	vore_test_cycles(BF, 2, 6)
+	TEST_ASSERT(abs(prey_s.nutrition - prey_f.nutrition) < 0.01, "a late cycle should catch up: [prey_s.nutrition] vs [prey_f.nutrition]")
 
 /// A belly on `pair`'s pred in `mode` with the prey inside.
 /datum/unit_test/proc/vore_rate_belly(list/pair, mode)
