@@ -58,3 +58,19 @@ GLOBAL_DATUM_INIT(grant_kind_language, /datum/grant_kind/language, new)
 		S.speech_synthesizer_langs -= L
 
 GLOBAL_DATUM_INIT(grant_kind_language_speech, /datum/grant_kind/language_speech, new)
+
+/**
+ * The single source every UNTRACKED caller of `add_language(id, can_speak)`/
+ * `remove_language(id)` shares (silicon.dm's overrides, below) - so a plain, one-shot
+ * `add_language(LANGUAGE_X, 1)` still ends up speakable and a later `remove_language()`
+ * still takes speech away, WITHOUT `speech_synthesizer_langs` itself being written from
+ * two places. It's shared across every legacy caller for the same mob+language on
+ * purpose: grant() is idempotent per (mob, kind, id, source), so any number of untracked
+ * callers granting the same language's speech collapse into the one claim a plain
+ * `remove_language()` can cleanly take back - while a REAL grant()-tracked source
+ * (a module, an organ, ...) that separately holds GRANT_KIND_LANGUAGE_SPEECH for that id
+ * keeps it granted regardless of what the untracked primitive does.
+ */
+/datum/grant_source/legacy_primitive_speech
+
+GLOBAL_DATUM_INIT(grant_source_legacy_primitive_speech, /datum/grant_source/legacy_primitive_speech, new)

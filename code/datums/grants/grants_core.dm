@@ -34,6 +34,12 @@
 
 /mob/var/list/grants // GRANT_KIND_* -> (id -> list of sources). LAZYLIST: null on a mob with no grants.
 
+/// Base type for a source that exists only to be a grant()/revoke() source - no
+/// behaviour of its own, just an identity. Use this instead of a bare /datum when a
+/// source doesn't otherwise need to be anything (see kind_language.dm's
+/// legacy_primitive_speech sentinel).
+/datum/grant_source
+
 /// `source` now grants `id` (a GRANT_KIND_* `kind`) to `M`. Idempotent: granting the
 /// same (kind, id, source) twice is a no-op. Calls the kind's on_grant() the first
 /// time ANY source grants this (kind, id) to `M`.

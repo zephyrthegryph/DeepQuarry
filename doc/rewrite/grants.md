@@ -134,8 +134,34 @@ only ever grants understanding - `on_grant()` calls `add_language(id, FALSE)`
 (the `FALSE` is read by the silicon override and ignored by everyone else's
 one-arg `add_language()`), so it never toggles the synthesizer as a side
 effect. Voicing is `GRANT_KIND_LANGUAGE_SPEECH`, same `id` space, refcounted
-the same way, whose `on_grant()`/`on_revoke()` add/remove the language
-directly from `speech_synthesizer_langs`:
+the same way.
+
+**`speech_synthesizer_langs` has exactly one writer: `GRANT_KIND_LANGUAGE_SPEECH`'s
+`on_grant()`/`on_revoke()`.** The silicon `add_language()`/`remove_language()`
+overrides (`code/modules/mob/living/silicon/silicon.dm`) never touch the list
+themselves anymore - when `can_speak`, `add_language()` grants
+`GRANT_KIND_LANGUAGE_SPEECH` from a shared sentinel source,
+`GLOB.grant_source_legacy_primitive_speech` (a bare `/datum/grant_source`,
+`kind_language.dm`), and `remove_language()` revokes only that sentinel's own
+claim. Every untracked, one-shot `add_language(LANGUAGE_X, 1)` call already in
+the codebase (species defaults, AI/pAI/robot base kits, ...) still ends up
+speakable and a later `remove_language()` still takes it away - the sentinel
+is shared across every such caller for the same mob+language, and `grant()`
+is idempotent per `(mob, kind, id, source)`, so any number of untracked
+grants collapse into the one claim a plain `remove_language()` can cleanly
+revoke. Meanwhile a REAL grant()-tracked source (a module, an organ, ...)
+that independently holds `GRANT_KIND_LANGUAGE_SPEECH` for the same id keeps
+it granted regardless of what the untracked primitive does - the caveat this
+section used to document (an earlier revision left `speech_synthesizer_langs`
+partly written by the primitives, which could desync) is fixed, not just
+flagged.
+
+(One pre-existing exception, unrelated to `add_language()`/`remove_language()`:
+`robot_remote_control.dm`'s AI Shell deploy does a wholesale
+`speech_synthesizer_langs = AI.speech_synthesizer_langs.Copy()` - and the same
+for `languages` - to snapshot the whole AI's language state onto the shell
+body, bypassing grants entirely for both lists. Out of scope here; flagged for
+whoever converts that flow onto grants.)
 
 ```dm
 grant(R, GRANT_KIND_LANGUAGE, LANGUAGE_UNATHI, src)         // understands it
@@ -186,18 +212,6 @@ source that can go away independently of the mob):
 creation with no matching removal (species defaults, the rest of AI/pAI/robot
 base kits, ghost-pod character creation, `transform_procs.dm`) - there's no
 source to track because nothing ever un-grants them.
-
-**Known caveat:** `remove_language()` (the silicon override) unconditionally
-clears `speech_synthesizer_langs` for that language, regardless of whether a
-`GRANT_KIND_LANGUAGE_SPEECH` grant is still active for it from some other
-source. In practice every current caller grants both kinds together from the
-same source, so this never triggers - but a future source that grants ONLY
-`GRANT_KIND_LANGUAGE_SPEECH` for a language some other source still grants
-plain `GRANT_KIND_LANGUAGE` for could see its speech grant silently desync
-from `speech_synthesizer_langs` if that other source revokes first. Flagged
-here rather than solved: fixing it needs `remove_language()` itself to stop
-being unconditional, which is outside a "no shims, keep it generic" grants-only
-change.
 
 ### FACTORS
 

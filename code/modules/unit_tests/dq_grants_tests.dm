@@ -227,4 +227,29 @@
 	TEST_ASSERT(robot_talk in R.speech_synthesizer_langs, "...still speakable too")
 	qdel(module)
 
+/// speech_synthesizer_langs has exactly one writer, GRANT_KIND_LANGUAGE_SPEECH -
+/// GRANT_KIND_LANGUAGE's on_revoke() (add_language()/remove_language()) must not
+/// touch it, or a language granted by one source and voiced by another would lose
+/// its speech the moment the FIRST source revokes understanding.
+/datum/unit_test/dq_grants_language_speech_survives_understanding_revoke
+
+/datum/unit_test/dq_grants_language_speech_survives_understanding_revoke/Run()
+	var/mob/living/silicon/robot/R = allocate(/mob/living/silicon/robot, test_floor())
+	var/datum/language/unathi = GLOB.all_languages[LANGUAGE_UNATHI]
+	var/datum/understanding_source = new /datum()
+	var/datum/speech_source = new /datum()
+	grant(R, GRANT_KIND_LANGUAGE, LANGUAGE_UNATHI, understanding_source)
+	grant(R, GRANT_KIND_LANGUAGE_SPEECH, LANGUAGE_UNATHI, speech_source)
+	TEST_ASSERT(unathi in R.languages, "understood, via understanding_source")
+	TEST_ASSERT(unathi in R.speech_synthesizer_langs, "and speakable, via speech_source")
+
+	revoke(R, GRANT_KIND_LANGUAGE, LANGUAGE_UNATHI, understanding_source)
+	TEST_ASSERT(!(unathi in R.languages), "no longer understood - its only understanding source revoked")
+	TEST_ASSERT(unathi in R.speech_synthesizer_langs, "still speakable - speech_source never revoked its own grant")
+
+	revoke(R, GRANT_KIND_LANGUAGE_SPEECH, LANGUAGE_UNATHI, speech_source)
+	TEST_ASSERT(!(unathi in R.speech_synthesizer_langs), "gone once the speech grant is revoked too")
+	qdel(understanding_source)
+	qdel(speech_source)
+
 #undef GRANT_KIND_DQ_TEST_COUNTER

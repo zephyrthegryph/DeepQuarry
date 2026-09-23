@@ -185,23 +185,35 @@
 		return TRUE
 	return FALSE
 
+/**
+ * `speech_synthesizer_langs` has exactly one writer: GRANT_KIND_LANGUAGE_SPEECH
+ * (code/datums/grants/kind_language.dm). This override never touches the list
+ * itself - when `can_speak`, it grants GRANT_KIND_LANGUAGE_SPEECH from a shared
+ * sentinel source (GLOB.grant_source_legacy_primitive_speech), so a plain,
+ * untracked `add_language(LANGUAGE_X, 1)` still ends up speakable without
+ * conflicting with a REAL grant()-tracked source (a module, an organ, ...) that
+ * might independently hold the same language's speech grant.
+ */
 /mob/living/silicon/add_language(language, can_speak=1)
 	var/datum/language/added_language = GLOB.all_languages[language]
 	if(!added_language)
 		return
 
 	. = ..(language)
-	if (can_speak && (added_language in languages) && !(added_language in speech_synthesizer_langs))
-		speech_synthesizer_langs += added_language
+	if(can_speak && (added_language in languages))
+		grant(src, GRANT_KIND_LANGUAGE_SPEECH, language, GLOB.grant_source_legacy_primitive_speech)
 		return 1
 
+/// See add_language() above: this only revokes the SHARED sentinel's own claim on
+/// GRANT_KIND_LANGUAGE_SPEECH, never writes speech_synthesizer_langs directly. A
+/// language still voiceable through a real grant()-tracked source stays voiceable.
 /mob/living/silicon/remove_language(rem_language)
 	var/datum/language/removed_language = GLOB.all_languages[rem_language]
 	if(!removed_language)
 		return
 
 	..(rem_language)
-	speech_synthesizer_langs -= removed_language
+	revoke(src, GRANT_KIND_LANGUAGE_SPEECH, rem_language, GLOB.grant_source_legacy_primitive_speech)
 
 /mob/living/silicon/check_lang_data()
 	. = ""
