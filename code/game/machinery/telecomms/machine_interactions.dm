@@ -30,9 +30,6 @@
 	attack_hand(user)
 	return ITEM_INTERACT_SUCCESS
 
-/obj/machinery/telecomms/attack_ai(mob/user as mob)
-	attack_hand(user)
-
 /obj/machinery/telecomms/tgui_data(mob/user)
 	var/list/data = list()
 

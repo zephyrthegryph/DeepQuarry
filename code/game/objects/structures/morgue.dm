@@ -62,9 +62,8 @@
 		A.forceMove(loc)
 	return ..()
 
-/obj/structure/morgue/attack_robot(mob/user)
-	if(Adjacent(user))
-		attack_hand(user)
+/obj/structure/morgue
+	silicon_use = ROBOT_USE_HAND_ADJACENT
 
 /obj/structure/morgue/attack_hand(mob/user as mob)
 	if (src.connected)
@@ -144,9 +143,8 @@
 	connected = null
 	return ..()
 
-/obj/structure/m_tray/attack_robot(mob/user)
-	if(Adjacent(user))
-		attack_hand(user)
+/obj/structure/m_tray
+	silicon_use = ROBOT_USE_HAND_ADJACENT
 
 /obj/structure/m_tray/attack_hand(mob/user as mob)
 	if (src.connected)

@@ -272,9 +272,6 @@
 	visible_message(span_danger("[name] was hit by [source]."))
 	playsound(src, hitsound, 100, 1)
 
-/obj/machinery/door/attack_ai(mob/user)
-	return attack_hand(user)
-
 /obj/machinery/door/attack_hand(mob/user)
 	. = ..()
 	if(.)

@@ -22,9 +22,6 @@ GLOBAL_VAR_INIT(prison_shuttle_timeleft, 0)
 	var/allowedtocall = 0
 	var/prison_break = 0
 
-/obj/machinery/computer/prison_shuttle/attack_ai(mob/user as mob)
-	return src.attack_hand(user)
-
 // TGUI migration. Replaces the browse() + Topic dispatch
 // UI with PrisonShuttleConsole.tsx. Drops the `temp` "Shuttle sent"
 // notification state — the to_chat() notice already covers that flow.

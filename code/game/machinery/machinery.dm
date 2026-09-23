@@ -91,6 +91,7 @@ Class Procs:
 	material_template = /datum/material_template/machine_part
 	material_total = 5 * SHEET_MATERIAL_AMOUNT
 	name = "machinery"
+	silicon_use = SILICON_USE_HAND
 	icon = 'icons/obj/stationobjs.dmi'
 	w_class = ITEMSIZE_NO_CONTAINER
 	layer = UNDER_JUNK_LAYER
@@ -258,14 +259,12 @@ REGISTRY_MEMBERSHIP(/obj/machinery, REGISTRY_MACHINES)
 
 ////////////////////////////////////////////////////////////////////////////////////////////
 
+/// Machines take the AI's Use as a hand's (silicon_use), but a cyborg looking
+/// through a camera can't remotely control them.
 /obj/machinery/attack_ai(mob/user as mob)
-	if(isrobot(user))
-		// For some reason attack_robot doesn't work
-		// This is to stop robots from using cameras to remotely control machines.
-		if(user.client && !user.is_remote_viewing())
-			return attack_hand(user)
-	else
-		return attack_hand(user)
+	if(isrobot(user) && (!user.client || user.is_remote_viewing()))
+		return
+	return ..()
 
 /obj/machinery/attack_hand(mob/user as mob)
 

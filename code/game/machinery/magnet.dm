@@ -222,9 +222,6 @@
 			if(M.freq == frequency && M.code == code)
 				magnets.Add(M)
 
-/obj/machinery/magnetic_controller/attack_ai(mob/user as mob)
-	return attack_hand(user)
-
 /obj/machinery/magnetic_controller/attack_hand(mob/user as mob)
 	// structured TGUI MagneticConsole (see
 	// code/modules/admin/magnetic_console_panel.dm).

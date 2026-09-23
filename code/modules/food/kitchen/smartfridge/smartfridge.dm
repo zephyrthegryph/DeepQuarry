@@ -229,9 +229,6 @@
 	SStgui.update_uis(src)
 	update_icon()
 
-/obj/machinery/smartfridge/attack_ai(mob/user as mob)
-	attack_hand(user)
-
 /obj/machinery/smartfridge/attack_hand(mob/user as mob)
 	if(stat & (NOPOWER|BROKEN))
 		return

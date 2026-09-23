@@ -25,8 +25,8 @@
 	light_color = "#00cc00"
 	density = 0
 
-/obj/machinery/computer/atmoscontrol/attack_ai(mob/user as mob)
-	tgui_interact(user)
+/obj/machinery/computer/atmoscontrol
+	silicon_use = SILICON_USE_UI
 
 /obj/machinery/computer/atmoscontrol/attack_hand(mob/user)
 	if(..())

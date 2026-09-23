@@ -12,7 +12,22 @@
  * reaches the resolver again for tool interactions), attack_hand through
  * UnarmedAttack, attack_ai, attack_robot, attack_ghost, attack_tk, click_alt.
  * allows_interaction() is where each kind of actor limits what it can do.
+ *
+ * I3: the AI, cyborg, ghost and telekinesis adapters produce the same actions
+ * as hands, filtered through what the actor can do:
+ * - AI: remote, no hands, needs camera sight. Only INTERACTION_TAG_REMOTE.
+ * - Cyborg: its modules are its held items; everything but observer-only.
+ * - Ghost: observer-only (INTERACTION_TAG_OBSERVER); Use opens UIs to view.
+ * - Telekinesis: at range, no tools.
+ * Their Use tries the resolver first, then the legacy proc. Where that legacy
+ * proc only forwarded to the hand's (attack_ai -> attack_hand and friends), the
+ * override is gone and the type sets `silicon_use` instead (SILICON_USE_*).
  */
+
+/atom
+	/// SILICON_USE_* / ROBOT_USE_*: what the AI's and cyborgs' plain Use does when
+	/// the type doesn't override attack_ai or attack_robot. A type var: no per-instance cost.
+	var/silicon_use = NONE
 /datum/input_adapter
 	var/name = "abstract"
 
@@ -90,8 +105,13 @@ GLOBAL_LIST_INIT(input_adapters, init_input_adapters())
 		call(user, handler)(target, params)
 
 /// Whether this kind of actor can ever do `interaction`. Excluded ones aren't even listed as blocked.
+/// Observer-only interactions are for ghosts alone.
 /datum/input_adapter/proc/allows_interaction(mob/user, atom/target, datum/interaction/interaction)
-	return TRUE
+	return !(INTERACTION_TAG_OBSERVER in interaction.tags)
+
+/// Use through the resolver with nothing in hand. TRUE if an interaction answered.
+/datum/input_adapter/proc/use_interaction(mob/user, atom/target)
+	return try_interaction(user, target, null, INPUT_ACTION_USE, null, TRUE, src) ? TRUE : FALSE
 
 /// The Use action.
 /datum/input_adapter/proc/use(mob/user, atom/target, list/modifiers, params)
@@ -257,11 +277,21 @@ GLOBAL_LIST_INIT(input_adapters, init_input_adapters())
 /datum/input_adapter/telekinesis
 	name = "telekinesis"
 
+/// Telekinesis reaches, but holds no tools: only tool-less interactions.
+/datum/input_adapter/telekinesis/allows_interaction(mob/user, atom/target, datum/interaction/interaction)
+	if(interaction.tool)
+		return FALSE
+	return ..()
+
 /// Use at range: grab or poke the target telekinetically.
 /datum/input_adapter/telekinesis/use(mob/user, atom/target, list/modifiers, params)
 	if(get_dist(user, target) > TK_MAXRANGE)
 		to_chat(user, TK_OUTRANGED_MESSAGE)
 		return
+	if(user.stat)
+		return
+	if(use_interaction(user, target))
+		return TRUE
 	target.attack_tk(user)
 
 // ---------------------------------------------------------------------------
@@ -270,12 +300,16 @@ GLOBAL_LIST_INIT(input_adapters, init_input_adapters())
 /datum/input_adapter/ghost
 	name = "ghost"
 
-/// Ghosts only observe: no interaction is theirs to do (I3 adds observer-only ones).
+/// Ghosts only observe: they get observer-only interactions and nothing else.
 /datum/input_adapter/ghost/allows_interaction(mob/user, atom/target, datum/interaction/interaction)
-	return FALSE
+	return (INTERACTION_TAG_OBSERVER in interaction.tags) ? TRUE : FALSE
 
+/// Observer-only interactions first; then attack_ghost, which on /obj opens the
+/// UI to view (so types no longer override it just to call tgui_interact).
 /// Checking config.ghost_interaction is the responsibility of attack_ghost overrides.
 /datum/input_adapter/ghost/use(mob/user, atom/target, list/modifiers, params)
+	if(use_interaction(user, target))
+		return TRUE
 	target.attack_ghost(user)
 
 // ---------------------------------------------------------------------------
@@ -317,9 +351,11 @@ GLOBAL_LIST_INIT(input_adapters, init_input_adapters())
 	)
 	return table
 
-/// The AI has no hands: only interactions tagged remote (I3 widens this with camera sight).
-/datum/input_adapter/ai/allows_interaction(mob/user, atom/target, datum/interaction/interaction)
-	return (INTERACTION_TAG_REMOTE in interaction.tags) ? TRUE : FALSE
+/// The AI has no hands: only tool-less interactions tagged remote, on what its cameras can see.
+/datum/input_adapter/ai/allows_interaction(mob/living/silicon/ai/user, atom/target, datum/interaction/interaction)
+	if(interaction.tool || !(INTERACTION_TAG_REMOTE in interaction.tags))
+		return FALSE
+	return istype(user) ? user.has_camera_sight(target) : TRUE
 
 /datum/input_adapter/ai/use(mob/living/silicon/ai/user, atom/target, list/modifiers, params)
 	var/obj/effect/overlay/aiholo/hologram = user.holo ? LAZYACCESS(user.holo.masters, user) : null
@@ -332,6 +368,9 @@ GLOBAL_LIST_INIT(input_adapters, init_input_adapters())
 		return
 
 	target.add_hiddenprint(user)
+	if(use_interaction(user, target))
+		return TRUE
+	// attack_ai: the type's override, or the hand's Use per its silicon_use.
 	target.attack_ai(user)
 
 // ---------------------------------------------------------------------------
@@ -377,6 +416,9 @@ GLOBAL_LIST_INIT(input_adapters, init_input_adapters())
 		if(user.get_restraining_bolt() && A.loc != user.module)
 			return
 		A.add_hiddenprint(user)
+		if(use_interaction(user, A))
+			return TRUE
+		// attack_robot: the type's override, or silicon_use (the hand's Use, or interfacing like the AI).
 		A.attack_robot(user)
 		return
 	// buckled cannot prevent machine interlinking but stops arm movement
@@ -409,3 +451,19 @@ GLOBAL_LIST_INIT(input_adapters, init_input_adapters())
 		else
 			W.afterattack(A, user, 0, params)
 			return
+
+/**
+ * Whether the AI can see `target` to act on it: in its own view, or (installed
+ * in a core) on the camera network, or (carded) within view range. The same
+ * rule as the AI's tgui state (default_can_use_tgui_topic).
+ */
+/mob/living/silicon/ai/proc/has_camera_sight(atom/target)
+	var/turf/T = get_turf(target)
+	if(!T)
+		return FALSE
+	var/range = client ? client.view : world.view
+	if(target in dview(range, get_turf(src))) // line of sight from its core, whatever the lighting
+		return TRUE
+	if(is_in_chassis())
+		return (GLOB.cameranet && GLOB.cameranet.checkTurfVis(T)) ? TRUE : FALSE
+	return get_dist(target, src) <= (isnum(range) ? range : world.view)

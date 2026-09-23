@@ -11,9 +11,8 @@
 		icon_state = "privacy1"
 	. = ..()
 
-/obj/structure/privacyswitch/attack_ai(mob/user)
-	attack_hand()
-	return
+/obj/structure/privacyswitch
+	silicon_use = SILICON_USE_HAND
 
 /obj/structure/privacyswitch/attack_hand(mob/user)
 	if(nextUse - world.time > 0)

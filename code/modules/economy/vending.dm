@@ -319,9 +319,6 @@ GLOBAL_LIST_EMPTY(vending_products)
 /obj/machinery/vending/attack_ghost(mob/user)
 	return attack_hand(user)
 
-/obj/machinery/vending/attack_ai(mob/user as mob)
-	return attack_hand(user)
-
 /obj/machinery/vending/attack_hand(mob/user as mob)
 	if(stat & (BROKEN|NOPOWER))
 		return

@@ -236,9 +236,6 @@
 		update_icon()
 		system_error("Resources depleted.")
 
-/obj/machinery/mining/drill/attack_ai(mob/user as mob)
-	return src.attack_hand(user)
-
 /obj/machinery/mining/drill/attackby(obj/item/O as obj, mob/user as mob)
 	if(!active)
 		if(default_part_replacement(user, O))

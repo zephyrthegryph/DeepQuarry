@@ -135,9 +135,6 @@
 		return
 	..()
 
-/obj/machinery/computer/guestpass/attack_ai(mob/user as mob)
-	return attack_hand(user)
-
 /obj/machinery/computer/guestpass/verb/eject_id()
 	set category = "Object"
 	set name = "Eject ID Card"

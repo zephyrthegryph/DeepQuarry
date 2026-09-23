@@ -79,9 +79,6 @@
 /obj/machinery/computer/telescience/proc/get_max_allowed_distance()
 	return FLOOR((crystals.len * telepad.efficiency * powerCoefficient), 1)
 
-/obj/machinery/computer/telescience/attack_ai(mob/user)
-	src.attack_hand(user)
-
 /obj/machinery/computer/telescience/attack_hand(mob/user)
 	if(..())
 		return

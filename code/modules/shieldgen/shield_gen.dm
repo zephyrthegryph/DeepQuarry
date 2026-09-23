@@ -91,9 +91,6 @@
 			capacitor.owned_gen = null
 	return ITEM_INTERACT_SUCCESS
 
-/obj/machinery/shield_gen/attack_ai(user as mob)
-	return src.attack_hand(user)
-
 /obj/machinery/shield_gen/attack_hand(mob/user)
 	if(stat & (BROKEN))
 		return

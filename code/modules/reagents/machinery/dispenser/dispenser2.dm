@@ -287,9 +287,6 @@
 		return
 	tgui_interact(user)
 
-/obj/machinery/chemical_dispenser/attack_ai(mob/user)
-	attack_hand(user)
-
 /obj/machinery/chemical_dispenser/attack_hand(mob/user)
 	if(stat & BROKEN)
 		return

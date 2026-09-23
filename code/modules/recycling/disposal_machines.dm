@@ -392,10 +392,8 @@
 	user.forceMove(get_turf(src))
 	update_icon()
 
-// ai as human but can't flush
-/obj/machinery/disposal/attack_ai(mob/user)
-	add_hiddenprint(user)
-	tgui_interact(user)
+/obj/machinery/disposal
+	silicon_use = SILICON_USE_UI
 /*
 /obj/machinery/disposal/attack_paw()
 	if(stat & BROKEN)

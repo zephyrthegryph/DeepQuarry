@@ -47,9 +47,6 @@
 			return attack_hand(user)
 	..()
 
-/obj/machinery/computer/security/attack_ai(mob/user)
-	attack_hand(user)
-
 /obj/machinery/computer/security/proc/set_network(list/new_network)
 	network = new_network
 	camera.network = network

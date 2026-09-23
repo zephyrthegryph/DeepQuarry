@@ -323,8 +323,8 @@
 		return
 	tgui_interact(user)
 
-/obj/machinery/power/port_gen/pacman/attack_ai(mob/user as mob)
-	tgui_interact(user)
+/obj/machinery/power/port_gen/pacman
+	silicon_use = SILICON_USE_UI
 
 /obj/machinery/power/port_gen/tgui_status(mob/user, datum/tgui_state/state)
 	if(IsBroken())

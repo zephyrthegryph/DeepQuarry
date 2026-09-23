@@ -346,9 +346,8 @@ REGISTRY_MEMBERSHIP(/obj/machinery/power/smes, REGISTRY_SMES)
 	return drained
 
 
-/obj/machinery/power/smes/attack_ai(mob/user)
-	add_hiddenprint(user)
-	tgui_interact(user)
+/obj/machinery/power/smes
+	silicon_use = SILICON_USE_UI
 
 /obj/machinery/power/smes/attack_hand(mob/user)
 	add_fingerprint(user)
