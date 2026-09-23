@@ -210,7 +210,10 @@ impl FieldKind for GasToy {
 
     fn flux(a: Side<'_, GasCell>, b: Side<'_, GasCell>, dt: f32) -> Amounts<3> {
         let (oa, ob) = (gas_operand(&a), gas_operand(&b));
-        let (pa, pb) = (a.cell.pressure_in(a.capacity), b.cell.pressure_in(b.capacity));
+        let (pa, pb) = (
+            a.cell.pressure_in(a.capacity),
+            b.cell.pressure_in(b.capacity),
+        );
         // Two kernels: each may take half of a donor's share.
         let (oa, ob) = (oa.with_share(0.5), ob.with_share(0.5));
         pressure_flow(oa, pa, ob, pb, 2, GAS_FLOW, dt) + diffusion(oa, ob, GAS_DIFFUSION, dt)

@@ -33,3 +33,7 @@ harness = false
 [[bench]]
 name = "watch"
 harness = false
+
+[[bench]]
+name = "field"
+harness = false

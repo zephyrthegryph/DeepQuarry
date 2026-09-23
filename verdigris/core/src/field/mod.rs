@@ -591,8 +591,7 @@ impl<K: FieldKind> FieldState<K> {
     ) -> bool {
         match (cells.chunk(chunk), start.chunk(chunk)) {
             (Some(now), Some(then)) => {
-                now.as_ptr() != then.as_ptr()
-                    && now.iter().zip(then).any(|(a, b)| !K::quiet(b, a))
+                now.as_ptr() != then.as_ptr() && now.iter().zip(then).any(|(a, b)| !K::quiet(b, a))
             }
             (None, None) => false,
             _ => true,
@@ -649,7 +648,9 @@ impl<K: FieldKind> FieldState<K> {
         self.for_live_edges(chunk, geom, |_, _, a, ga, b, gb| {
             let s = cells
                 .with(a, |va| {
-                    cells.with(b, |vb| K::stiffness(side(va, ga, self.faces), side(vb, gb, self.faces)))
+                    cells.with(b, |vb| {
+                        K::stiffness(side(va, ga, self.faces), side(vb, gb, self.faces))
+                    })
                 })
                 .flatten()
                 .unwrap_or(0.0);
@@ -722,7 +723,11 @@ fn side<V>(cell: &V, g: Geom, faces: f32) -> Side<'_, V> {
         capacity: g.capacity,
         inv_capacity: g.inv_capacity(),
         reservoir: g.reservoir,
-        share: if g.reservoir { f32::INFINITY } else { 1.0 / faces },
+        share: if g.reservoir {
+            f32::INFINITY
+        } else {
+            1.0 / faces
+        },
     }
 }
 

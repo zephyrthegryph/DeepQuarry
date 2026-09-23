@@ -148,7 +148,8 @@ fn a_cosine_mode_decays_at_the_discrete_and_analytic_rate() {
     for i in 0..N {
         w.geom.set(i, Geom::cell(1.0));
         #[allow(clippy::cast_possible_truncation)]
-        w.cells.set(i, HeatCell::at(1.0, (1000.0 + 100.0 * mode(i)) as f32));
+        w.cells
+            .set(i, HeatCell::at(1.0, (1000.0 + 100.0 * mode(i)) as f32));
     }
     let pool = pool(1);
     let steps = 400;
@@ -158,7 +159,10 @@ fn a_cosine_mode_decays_at_the_discrete_and_analytic_rate() {
     }
     // Project onto the mode to measure its amplitude.
     let norm: f64 = (0..N).map(|i| mode(i) * mode(i)).sum();
-    let amp = (0..N).map(|i| (temperature(&w, i) - 1000.0) * mode(i)).sum::<f64>() / norm;
+    let amp = (0..N)
+        .map(|i| (temperature(&w, i) - 1000.0) * mode(i))
+        .sum::<f64>()
+        / norm;
     let r = f64::from(HEAT_CONDUCTANCE) * f64::from(dt);
     let discrete = 100.0 * (1.0 - 2.0 * r * (1.0 - k.cos())).powi(steps);
     let t = f64::from(dt) * f64::from(steps);
@@ -240,7 +244,10 @@ fn walled_regions_equilibrate_separately_then_together_when_opened() {
     // step at 2e-6); over thousands of steps near equilibrium the rounding
     // random-walks, so the long-run bound is looser.
     let after = w.totals()[0];
-    assert!((after - before).abs() < 1e-4 * before, "{after} vs {before}");
+    assert!(
+        (after - before).abs() < 1e-4 * before,
+        "{after} vs {before}"
+    );
 }
 
 #[test]
@@ -261,7 +268,11 @@ fn a_reservoir_pulls_its_neighbours_to_its_temperature_and_books_the_flow() {
     }
     let initial = w.conserved()[0];
     run_to_sleep(&mut w, &pool(2), 20_000);
-    assert_eq!(w.cell(0), HeatCell::at(1.0, 100.0), "reservoirs never change");
+    assert_eq!(
+        w.cell(0),
+        HeatCell::at(1.0, 100.0),
+        "reservoirs never change"
+    );
     for i in 1..20 {
         assert!((temperature(&w, i) - 100.0).abs() < 0.3);
     }
@@ -310,8 +321,8 @@ fn gas_reaches_uniform_pressure_and_composition() {
     let n = f64::from(w.len());
     for i in 0..w.len() {
         let c = w.cell(i);
-        for q in 0..3 {
-            let want = sum[q] / n;
+        for (q, total) in sum.iter().enumerate() {
+            let want = total / n;
             assert!(
                 (f64::from(c.amounts[q]) - want).abs() < 2e-3 * want.max(1.0),
                 "cell {i} quantity {q}: {} vs {want}",
@@ -382,12 +393,13 @@ fn command<K: FieldKind>(w: &mut World<K>, cell: u32, cmd: &K::Command) -> f32 {
 /// Runs a setup, applying sources, sinks, takes and geometry changes
 /// between steps, and checks cells + reservoirs + net transfers stay
 /// constant. `make` builds a cell from a seed and capacity, `source`
-/// turns an event into a command and its signed transfer.
+/// turns an event into a source or sink command (the check measures
+/// what it actually changed).
 fn check_conservation<K: FieldKind>(
     s: &Setup,
     threads: usize,
     make: impl Fn(u16, f32) -> K::Value,
-    source: impl Fn(u8, u16) -> (K::Command, Vec<f64>),
+    source: impl Fn(u8, u16) -> K::Command,
 ) -> Result<(), TestCaseError> {
     let dims = GridDims::new(s.x, s.y, s.z).unwrap();
     let mut w = World::<K>::new(
@@ -415,7 +427,7 @@ fn check_conservation<K: FieldKind>(
             match what % 4 {
                 0 | 1 => {
                     // A source or sink. Removal clamps; count what it took.
-                    let (cmd, delta) = source(what, amount);
+                    let cmd = source(what, amount);
                     let before = w.cell(cell);
                     command(&mut w, cell, &cmd);
                     if !reservoir {
@@ -426,7 +438,6 @@ fn check_conservation<K: FieldKind>(
                         for q in 0..K::QUANTITIES {
                             expected[q] += a[q] - b[q];
                         }
-                        let _ = delta;
                     }
                 }
                 2 => {
@@ -471,7 +482,10 @@ fn check_conservation<K: FieldKind>(
         for i in 0..len {
             let mut t = vec![0.0; K::QUANTITIES];
             K::totals(&w.cell(i), &mut t);
-            prop_assert!(t.iter().all(|v| v.is_finite() && *v >= -1e-3), "cell {i}: {t:?}");
+            prop_assert!(
+                t.iter().all(|v| v.is_finite() && *v >= -1e-3),
+                "cell {i}: {t:?}"
+            );
         }
     }
     Ok(())
@@ -481,12 +495,12 @@ fn heat_cell(seed: u16, capacity: f32) -> HeatCell {
     HeatCell::at(capacity, f32::from(seed % 2000))
 }
 
-fn heat_source(what: u8, amount: u16) -> (HeatCmd, Vec<f64>) {
+fn heat_source(what: u8, amount: u16) -> HeatCmd {
     let e = f32::from(amount % 5000);
     if what % 4 == 0 {
-        (HeatCmd::Add(e), vec![f64::from(e)])
+        HeatCmd::Add(e)
     } else {
-        (HeatCmd::Remove(e), vec![])
+        HeatCmd::Remove(e)
     }
 }
 
@@ -500,13 +514,13 @@ fn gas_cell(seed: u16, capacity: f32) -> GasCell {
     }
 }
 
-fn gas_source(what: u8, amount: u16) -> (GasCmd, Vec<f64>) {
+fn gas_source(what: u8, amount: u16) -> GasCmd {
     let m = f32::from(amount % 300) / 10.0;
     let amounts = [m, m / 2.0, m * 1.5 * 300.0];
     if what % 4 == 0 {
-        (GasCmd::Add(amounts), vec![])
+        GasCmd::Add(amounts)
     } else {
-        (GasCmd::Remove(amounts), vec![])
+        GasCmd::Remove(amounts)
     }
 }
 
@@ -529,7 +543,11 @@ fn busy_gas_world() -> World<GasToy> {
     let mut w = World::<GasToy>::new(dims, FieldConfig::default());
     for i in 0..w.len() {
         let seed = u16::try_from((u64::from(i) * 2_654_435_761 % 65_521) as u32 % 60_000).unwrap();
-        let g = geom_of(u8::try_from(seed % 251).unwrap(), (seed % 200) as u8, (seed % 97) as u8);
+        let g = geom_of(
+            u8::try_from(seed % 251).unwrap(),
+            (seed % 200) as u8,
+            (seed % 97) as u8,
+        );
         w.geom.set(i, g);
         w.cells.set(i, gas_cell(seed, g.capacity.max(0.5)));
     }
@@ -550,7 +568,13 @@ fn results_are_bit_identical_across_thread_counts() {
     let first = &runs[0];
     for w in &runs[1..] {
         assert!(w.cells.values_eq(&first.cells));
-        let bits = |w: &World<GasToy>| w.field.ledger().iter().map(|v| v.to_bits()).collect::<Vec<_>>();
+        let bits = |w: &World<GasToy>| {
+            w.field
+                .ledger()
+                .iter()
+                .map(|v| v.to_bits())
+                .collect::<Vec<_>>()
+        };
         assert_eq!(bits(w), bits(first));
         assert_eq!(w.field.stats(), first.field.stats());
     }
@@ -638,7 +662,9 @@ fn a_field_runs_in_the_sim_with_commands_takes_and_watches() {
     let len = dims.layer_len();
     for i in 0..len {
         sim.port(key.geometry).put(i, Geom::cell(2.0)).unwrap();
-        sim.port(key.cells).put(i, HeatCell::at(2.0, 280.0)).unwrap();
+        sim.port(key.cells)
+            .put(i, HeatCell::at(2.0, 280.0))
+            .unwrap();
     }
     let probe = dims.index(12, 10, 0).unwrap();
     let source = dims.index(10, 10, 0).unwrap();
@@ -665,9 +691,15 @@ fn a_field_runs_in_the_sim_with_commands_takes_and_watches() {
         sim.begin_tick();
         let out = sim.drain(key.cells);
         fired += out.wakes().iter().filter(|w| w.subscriber == 1).count();
-        taken += out.takes().iter().map(|t| f64::from(t.value.energy)).sum::<f64>();
+        taken += out
+            .takes()
+            .iter()
+            .map(|t| f64::from(t.value.energy))
+            .sum::<f64>();
         if tick < 20 {
-            sim.port(key.cells).submit(source, HeatCmd::Add(400.0)).unwrap();
+            sim.port(key.cells)
+                .submit(source, HeatCmd::Add(400.0))
+                .unwrap();
             added += 400.0;
         }
         if tick % 10 == 5 {
@@ -692,5 +724,8 @@ fn a_field_runs_in_the_sim_with_commands_takes_and_watches() {
         "field + taken = before + added: {after} + {taken} vs {before} + {added}"
     );
     let v = Arc::clone(sim.port(key.cells).pinned());
-    assert!(v.get(probe).unwrap().temperature > 280.0, "refresh caches T");
+    assert!(
+        v.get(probe).unwrap().temperature > 280.0,
+        "refresh caches T"
+    );
 }
