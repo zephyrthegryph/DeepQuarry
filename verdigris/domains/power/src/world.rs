@@ -31,7 +31,7 @@ use crate::kind::{Cables, Load, Summary, sum};
 use crate::smes::{SMESRATE, Smes, SmesConfig};
 
 /// Keys are dense indices below this.
-pub const MAX_KEY: u32 = vg_core::handle::MAX_SLOTS;
+pub const MAX_KEY: u32 = vg_core::slot::MAX_SLOTS;
 
 /// Event record types in [`PowerWorld::step`]'s output. Every record is
 /// `[type, n, n values...]`.

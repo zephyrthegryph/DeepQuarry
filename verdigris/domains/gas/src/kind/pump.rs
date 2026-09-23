@@ -1,12 +1,12 @@
-//! The pump component (`doc/rewrite/rust_bindings.md` §2, §14 — the
+//! The pump component (`doc/rewrite/rust_architecture.md` §5, §6 — the
 //! reference component for the whole binding layer).
 //!
-//! `Pump`'s config and state live in its own `MainPort<PumpKind>` (R4), one
-//! cell per bound pump; the entity table (`vg_ffi::entity`) is what lets a
-//! DM `vg_entity` handle find that cell, checked for staleness and for
-//! holding a pump at all (§5, §9). The flow law itself (M2) reads and writes
-//! this same store from its own frame task once it lands; nothing here
-//! assumes it has.
+//! `Pump`'s config and state live in one [`vg_core::store::KindStore`] (R4's
+//! `MainPort`, generalized off gas), one row per bound pump; the entity
+//! table (`vg_ffi::entity`) is what lets a DM `vg_entity` handle find that
+//! row, checked for staleness and for holding a pump at all (§5, §9). The
+//! flow law itself (M2) reads and writes this same store from its own frame
+//! task once it lands; nothing here assumes it has.
 
 use std::cell::{Cell, RefCell};
 use std::rc::Rc;
@@ -14,12 +14,11 @@ use std::rc::Rc;
 use byondapi::prelude::*;
 use eyre::{Result, eyre};
 use vg_core::component::QueryValue;
-use vg_core::cow::ChunkLayout;
-use vg_core::entity::{CellAllocator, ComponentRef};
-use vg_core::owner::DomainKey;
-use vg_core::sim::{Sim, SimBuilder, SimConfig};
+use vg_core::entity::ComponentRef;
+use vg_core::store::KindStore;
 use vg_core::vg;
-use vg_ffi::entity::{self, EntityDomain};
+use vg_ffi::entity;
+use vg_ffi::registry::{self, DomainRegistry};
 
 /// This component's domain index in the entity table (§1). Gas is domain 0;
 /// later domains (power, heat, ...) take 1, 2, ... as they land.
@@ -50,50 +49,27 @@ pub enum PumpEvent {
     Starved,
 }
 
-// `VG_GAS_PUMP` is generated from the `#[vg::component(kind = 1, ...)]`
-// attribute above (component scan), not from an `@dm-define` line: the two
-// generators must never disagree on a kind's numeric id.
+/// `@dm-define VG_GAS_PUMP`
 pub const KIND: u16 = Pump::KIND;
 
-struct World {
-    sim: Sim,
-    key: DomainKey<PumpKind>,
-    cells: CellAllocator,
-}
+/// Shares one store between this module's `thread_local` (used by every
+/// bind below) and the boxed [`DomainRegistry`] the entity table drives, so
+/// `vg_entity_unbind`/`vg_entity_tick_all`/reset act on the exact same
+/// storage the get/set binds read and write.
+struct Shared(Rc<RefCell<KindStore<PumpKind>>>);
 
-impl World {
-    fn new() -> Self {
-        let mut builder = SimBuilder::new(SimConfig {
-            // A component kind's own store needs no worker parallelism
-            // today (the flow law is a separate frame task M2 adds later);
-            // one thread keeps the pool footprint minimal.
-            threads: 1,
-            ..SimConfig::default()
-        });
-        let key = builder.add_domain::<PumpKind>(ChunkLayout::linear(1 << 16));
-        let sim = builder
-            .build()
-            .unwrap_or_else(|e| unreachable!("static pump domain config always builds: {e}"));
-        Self {
-            sim,
-            key,
-            cells: CellAllocator::new(),
-        }
-    }
-
-    fn detach_component(&mut self, comp: ComponentRef) {
+impl DomainRegistry for Shared {
+    fn detach(&mut self, comp: ComponentRef) {
         if comp.kind != KIND {
             return;
         }
-        let _ = self.sim.port(self.key).take(comp.cell);
-        self.cells.free_cell(comp.cell);
+        self.0.borrow_mut().detach(comp.cell);
     }
-
-    fn describe_component(&self, comp: ComponentRef) -> Vec<(String, String)> {
+    fn describe(&self, comp: ComponentRef) -> Vec<(String, String)> {
         if comp.kind != KIND {
             return Vec::new();
         }
-        let Some(p) = self.sim.port_ref(self.key).read(comp.cell) else {
+        let Some(p) = self.0.borrow().read(comp.cell) else {
             return Vec::new();
         };
         vec![
@@ -104,44 +80,33 @@ impl World {
             ("flow_rate".into(), format!("{} mol/s", p.flow_rate)),
         ]
     }
-}
-
-/// Shares one `World` between this module's `thread_local` (used by every
-/// bind below) and the boxed [`EntityDomain`] the entity table drives, so
-/// `vg_entity_unbind`/`vg_entity_tick_all`/reset act on the exact same
-/// storage the get/set binds read and write.
-struct Shared(Rc<RefCell<World>>);
-
-impl EntityDomain for Shared {
-    fn detach(&mut self, comp: ComponentRef) {
-        self.0.borrow_mut().detach_component(comp);
-    }
-    fn describe(&self, comp: ComponentRef) -> Vec<(String, String)> {
-        self.0.borrow().describe_component(comp)
-    }
     fn tick(&mut self) {
-        let mut w = self.0.borrow_mut();
-        w.sim.begin_tick();
-        w.sim.dispatch_frame();
+        self.0.borrow_mut().tick();
     }
     fn reset(&mut self) {
-        *self.0.borrow_mut() = World::new();
+        *self.0.borrow_mut() = KindStore::new();
+    }
+    fn drain_events(&mut self, out: &mut Vec<(u16, f32, u8)>) {
+        let mut raw = Vec::new();
+        self.0.borrow_mut().drain_events(&mut raw);
+        out.extend(raw.into_iter().map(|(entity, id)| (KIND, entity, id)));
     }
 }
 
 thread_local! {
-    static WORLD: Rc<RefCell<World>> = Rc::new(RefCell::new(World::new()));
+    static STORE: Rc<RefCell<KindStore<PumpKind>>> = Rc::new(RefCell::new(KindStore::new()));
     static REGISTERED: Cell<bool> = const { Cell::new(false) };
 }
 
-fn with<T>(f: impl FnOnce(&mut World) -> Result<T>) -> Result<T> {
+fn with<T>(f: impl FnOnce(&mut KindStore<PumpKind>) -> Result<T>) -> Result<T> {
     REGISTERED.with(|done| {
         if !done.get() {
-            WORLD.with(|w| entity::register_entity_domain(DOMAIN, Box::new(Shared(Rc::clone(w)))));
+            #[allow(clippy::cast_possible_truncation)]
+            STORE.with(|s| registry::register_domain(DOMAIN as u32, Box::new(Shared(Rc::clone(s)))));
             done.set(true);
         }
     });
-    WORLD.with(|w| f(&mut w.borrow_mut()))
+    STORE.with(|s| f(&mut s.borrow_mut()))
 }
 
 fn num(v: &ByondValue) -> Result<f32> {
@@ -156,10 +121,14 @@ fn bool_value(b: bool) -> ByondValue {
     ByondValue::from(if b { 1.0f32 } else { 0.0f32 })
 }
 
-/// Resolves `entity` to this pump's cell.
+/// Resolves `entity` to this pump's row.
 fn cell_of(entity: &ByondValue) -> Result<u32> {
     let comp = entity::resolve(num(entity)?, DOMAIN, KIND)?;
     Ok(comp.cell)
+}
+
+fn read(cell: u32) -> Result<Pump> {
+    with(|w| w.read(cell).ok_or_else(|| eyre!("pump row {cell} out of range")))
 }
 
 // --- Lifecycle: bind and query-string of the entity table --------------
@@ -187,31 +156,18 @@ fn pump_bind(
         operable: truthy(&operable)?,
         flow_rate: 0.0,
     };
-    let h = entity::bind_or_reuse(num(&entity)?)?;
-    let cell = with(|w| {
-        let cell = w.cells.alloc();
-        w.sim
-            .port(w.key)
-            .put(cell, value.clone())
-            .map_err(|e| eyre!("pump bind: {e}"))?;
-        Ok(cell)
-    })?;
-    entity::attach(h, DOMAIN, ComponentRef::new(KIND, cell)).map_err(|e| eyre!("{e}"))?;
-    Ok(ByondValue::from(entity::entity_value(h)))
+    let id = entity::bind_or_reuse(num(&entity)?)?;
+    let entity_v = entity::entity_value(id);
+    let cell = with(|w| w.bind(entity_v, value).map_err(|e| eyre!("pump bind: {e}")))?;
+    entity::attach(id, DOMAIN, ComponentRef::new(KIND, cell)).map_err(|e| eyre!("{e}"))?;
+    Ok(ByondValue::from(entity_v))
 }
 
 // --- Config: get/set -----------------------------------------------------
 
 #[auxmacros::bind("/obj/machinery/atmospherics/binary/pump/proc/get_target_pressure")]
 fn pump_get_target_pressure(entity: ByondValue) -> Result<ByondValue> {
-    let cell = cell_of(&entity)?;
-    let p = with(|w| {
-        w.sim
-            .port(w.key)
-            .read(cell)
-            .ok_or_else(|| eyre!("pump cell {cell} out of range"))
-    })?;
-    Ok(ByondValue::from(p.target_pressure))
+    Ok(ByondValue::from(read(cell_of(&entity)?)?.target_pressure))
 }
 
 #[auxmacros::bind("/obj/machinery/atmospherics/binary/pump/proc/set_target_pressure")]
@@ -219,62 +175,33 @@ fn pump_set_target_pressure(entity: ByondValue, value: ByondValue) -> Result<Byo
     let cell = cell_of(&entity)?;
     let v =
         Pump::validate_target_pressure(num(&value)?).map_err(|e| eyre!("field `target_pressure`: {e}"))?;
-    with(|w| {
-        w.sim
-            .port(w.key)
-            .submit(cell, PumpCommand::TargetPressure(v))
-            .map_err(|e| eyre!("{e}"))
-    })?;
+    with(|w| w.submit(cell, PumpCommand::TargetPressure(v)).map_err(|e| eyre!("{e}")))?;
     Ok(ByondValue::from(v))
 }
 
 #[auxmacros::bind("/obj/machinery/atmospherics/binary/pump/proc/get_power_rating")]
 fn pump_get_power_rating(entity: ByondValue) -> Result<ByondValue> {
-    let cell = cell_of(&entity)?;
-    let p = with(|w| {
-        w.sim
-            .port(w.key)
-            .read(cell)
-            .ok_or_else(|| eyre!("pump cell {cell} out of range"))
-    })?;
-    Ok(ByondValue::from(p.power_rating))
+    Ok(ByondValue::from(read(cell_of(&entity)?)?.power_rating))
 }
 
 #[auxmacros::bind("/obj/machinery/atmospherics/binary/pump/proc/set_power_rating")]
 fn pump_set_power_rating(entity: ByondValue, value: ByondValue) -> Result<ByondValue> {
     let cell = cell_of(&entity)?;
     let v = Pump::validate_power_rating(num(&value)?).map_err(|e| eyre!("field `power_rating`: {e}"))?;
-    with(|w| {
-        w.sim
-            .port(w.key)
-            .submit(cell, PumpCommand::PowerRating(v))
-            .map_err(|e| eyre!("{e}"))
-    })?;
+    with(|w| w.submit(cell, PumpCommand::PowerRating(v)).map_err(|e| eyre!("{e}")))?;
     Ok(ByondValue::from(v))
 }
 
 #[auxmacros::bind("/obj/machinery/atmospherics/binary/pump/proc/get_on")]
 fn pump_get_on(entity: ByondValue) -> Result<ByondValue> {
-    let cell = cell_of(&entity)?;
-    let p = with(|w| {
-        w.sim
-            .port(w.key)
-            .read(cell)
-            .ok_or_else(|| eyre!("pump cell {cell} out of range"))
-    })?;
-    Ok(bool_value(p.on))
+    Ok(bool_value(read(cell_of(&entity)?)?.on))
 }
 
 #[auxmacros::bind("/obj/machinery/atmospherics/binary/pump/proc/set_on")]
 fn pump_set_on(entity: ByondValue, value: ByondValue) -> Result<ByondValue> {
     let cell = cell_of(&entity)?;
     let v = truthy(&value)?;
-    with(|w| {
-        w.sim
-            .port(w.key)
-            .submit(cell, PumpCommand::On(v))
-            .map_err(|e| eyre!("{e}"))
-    })?;
+    with(|w| w.submit(cell, PumpCommand::On(v)).map_err(|e| eyre!("{e}")))?;
     Ok(bool_value(v))
 }
 
@@ -282,14 +209,7 @@ fn pump_set_on(entity: ByondValue, value: ByondValue) -> Result<ByondValue> {
 
 #[auxmacros::bind("/obj/machinery/atmospherics/binary/pump/proc/get_flow_rate")]
 fn pump_get_flow_rate(entity: ByondValue) -> Result<ByondValue> {
-    let cell = cell_of(&entity)?;
-    let p = with(|w| {
-        w.sim
-            .port(w.key)
-            .read(cell)
-            .ok_or_else(|| eyre!("pump cell {cell} out of range"))
-    })?;
-    Ok(ByondValue::from(p.flow_rate))
+    Ok(ByondValue::from(read(cell_of(&entity)?)?.flow_rate))
 }
 
 // --- Input: read-only get (reconciler, §7), pushed by generated wiring ----
@@ -298,14 +218,7 @@ fn pump_get_flow_rate(entity: ByondValue) -> Result<ByondValue> {
 /// this against what `pump_input_operable()` recomputes on the DM side.
 #[auxmacros::bind("/obj/machinery/atmospherics/binary/pump/proc/get_operable")]
 fn pump_get_operable(entity: ByondValue) -> Result<ByondValue> {
-    let cell = cell_of(&entity)?;
-    let p = with(|w| {
-        w.sim
-            .port(w.key)
-            .read(cell)
-            .ok_or_else(|| eyre!("pump cell {cell} out of range"))
-    })?;
-    Ok(bool_value(p.operable))
+    Ok(bool_value(read(cell_of(&entity)?)?.operable))
 }
 
 /// Pushes a recomputed `operable` (class 3/4 sources: construction,
@@ -315,12 +228,7 @@ fn pump_get_operable(entity: ByondValue) -> Result<ByondValue> {
 fn pump_push_operable(entity: ByondValue, value: ByondValue) -> Result<ByondValue> {
     let cell = cell_of(&entity)?;
     let v = truthy(&value)?;
-    with(|w| {
-        w.sim
-            .port(w.key)
-            .submit(cell, PumpCommand::Operable(v))
-            .map_err(|e| eyre!("{e}"))
-    })?;
+    with(|w| w.submit(cell, PumpCommand::Operable(v)).map_err(|e| eyre!("{e}")))?;
     Ok(bool_value(v))
 }
 
@@ -332,13 +240,7 @@ fn pump_push_operable(entity: ByondValue, value: ByondValue) -> Result<ByondValu
 /// `tools/build/lib/verdigris_bindings.ts`'s component-binding convention.
 #[auxmacros::bind("/obj/machinery/atmospherics/binary/pump/proc/pump_query_ui")]
 fn pump_query_ui(entity: ByondValue) -> Result<ByondValue> {
-    let cell = cell_of(&entity)?;
-    let p = with(|w| {
-        w.sim
-            .port(w.key)
-            .read(cell)
-            .ok_or_else(|| eyre!("pump cell {cell} out of range"))
-    })?;
+    let p = read(cell_of(&entity)?)?;
     let values: Vec<ByondValue> = p
         .query_ui()
         .into_iter()
@@ -358,13 +260,12 @@ fn pump_query_ui(entity: ByondValue) -> Result<ByondValue> {
 mod tests {
     use super::*;
 
-    /// The world builds and round-trips a bind/read/write/detach cycle
-    /// without going through byondapi at all (the FFI wrappers above are
-    /// thin; this exercises the storage and validation they call into).
+    /// The store binds, reads, writes and detaches a row correctly, without
+    /// going through byondapi at all (the FFI wrappers above are thin; this
+    /// exercises the storage and validation they call into).
     #[test]
-    fn world_binds_reads_writes_and_detaches() {
-        let mut world = World::new();
-        let cell = world.cells.alloc();
+    fn store_binds_reads_writes_and_detaches() {
+        let mut store = KindStore::<PumpKind>::new();
         let seeded = Pump {
             target_pressure: 101.325,
             power_rating: 7500.0,
@@ -372,22 +273,48 @@ mod tests {
             operable: true,
             flow_rate: 0.0,
         };
-        world.sim.port(world.key).put(cell, seeded.clone()).unwrap();
-        assert_eq!(world.sim.port(world.key).read(cell), Some(seeded));
+        let cell = store.bind(1.0, seeded.clone()).unwrap();
+        assert_eq!(store.read(cell), Some(seeded));
 
         let clamped = Pump::validate_target_pressure(999_999.0).unwrap();
-        world
-            .sim
-            .port(world.key)
-            .submit(cell, PumpCommand::TargetPressure(clamped))
-            .unwrap();
-        assert_eq!(world.sim.port(world.key).read(cell).unwrap().target_pressure, 15000.0);
+        store.submit(cell, PumpCommand::TargetPressure(clamped)).unwrap();
+        assert_eq!(store.read(cell).unwrap().target_pressure, 15000.0);
 
-        world.detach_component(ComponentRef::new(KIND, cell));
-        assert_eq!(
-            world.sim.port(world.key).read(cell),
-            Some(Pump::default()),
-            "take() resets the cell to Value::default()"
-        );
+        store.detach(cell);
+        assert_eq!(store.read(cell), Some(Pump::default()), "detach resets the row to Value::default()");
+    }
+
+    /// Events raised against a row are attributed to the entity bound there,
+    /// and vanish once that entity detaches (§8): the whole path a future
+    /// law's `push_event` will exercise, tested independent of one.
+    #[test]
+    fn events_are_attributed_to_the_bound_entity_and_drain_once() {
+        let mut store = KindStore::<PumpKind>::new();
+        let cell = store.bind(42.0, Pump::default()).unwrap();
+
+        // No bound entity yet at a different row: nothing to attribute to.
+        store.push_event(cell + 1, PumpEvent::Starved.id());
+        let mut out = Vec::new();
+        store.drain_events(&mut out);
+        assert!(out.is_empty(), "an event on an unbound row must not be attributed to anything");
+
+        store.push_event(cell, PumpEvent::TargetReached.id());
+        store.push_event(cell, PumpEvent::Starved.id());
+        let mut out = Vec::new();
+        store.drain_events(&mut out);
+        assert_eq!(out, vec![(42.0, PumpEvent::TargetReached.id()), (42.0, PumpEvent::Starved.id())]);
+
+        // Drained once: nothing left the second time.
+        let mut out2 = Vec::new();
+        store.drain_events(&mut out2);
+        assert!(out2.is_empty());
+
+        // Detaching clears the attribution: a later event on the same
+        // (reused) row is never mistaken for the old entity's.
+        store.detach(cell);
+        store.push_event(cell, PumpEvent::TargetReached.id());
+        let mut out3 = Vec::new();
+        store.drain_events(&mut out3);
+        assert!(out3.is_empty(), "a detached row's event must not resurrect the old entity");
     }
 }

@@ -4,7 +4,7 @@
 use std::fmt;
 
 use crate::arena::{Arena, ArenaError};
-use crate::handle::{Handle, RawHandle};
+use crate::slot::{Handle, RawHandle};
 
 /// An additive per-region aggregate of node data (total volume, supply and
 /// demand, storage capacity). Must behave like a sum: `add` then `sub` of

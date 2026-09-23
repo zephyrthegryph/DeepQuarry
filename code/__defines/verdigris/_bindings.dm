@@ -24,7 +24,7 @@
 #endif
 
 /// Bind-set hash shared with verdigris/ffi/src/abi.rs; checked by verdigris_init().
-#define VERDIGRIS_ABI "69648782eba8ec20"
+#define VERDIGRIS_ABI "97ed1d2f56e0bd66"
 
 // Numeric registry (@dm-define constants in the Rust sources).
 
@@ -442,6 +442,14 @@
 // verdigris/ffi/src/heat_mob.rs
 #define VG_DOMAIN_HEAT_MOB 1
 
+/// The bits of a `vg_entity` value (after subtracting the raw-plus-one
+/// offset) that carry the slot index, matching `vg_core::entity::INDEX_BITS`
+/// (checked in this module's tests). DM computes an entity's table index
+/// with it to look up the bound atom for event dispatch, without needing to
+/// know anything else about id packing.
+// verdigris/ffi/src/entity.rs
+#define VG_ENTITY_INDEX_MASK 524287
+
 /// This component's kind id within its domain (only one kind lives in this
 /// domain so far).
 // verdigris/ffi/src/heat_mob.rs
@@ -643,7 +651,7 @@
 	VG_COUNT_FFI_CALL
 	return call_ext(__f)()
 
-/// `vg_describe(atom)` (§3): every attached component's fields, as one
+/// `vg_describe(atom)`: every attached component's fields, as one
 /// semicolon-joined line (`domain field=value, field=value; domain ...`).
 // /proc/entity_describe (verdigris/ffi/src/entity.rs)
 /proc/vg_entity_describe(entity)
@@ -651,9 +659,37 @@
 	VG_COUNT_FFI_CALL
 	return call_ext(__f)(entity)
 
-/// `SSvg`'s per-sweep maintenance: ticks every registered domain's `Sim`
-/// once (publishing a view, pruning the overlay), so state is never more
-/// than one sweep old even though nothing sets it per idle tick.
+/// `SSvg`'s per-domain event drain (§4.8): every event raised by that
+/// domain's components since the last drain, as a flat
+/// `[kind, entity, event_id, ...]` list. SSreactor/SSvg calls this once per
+/// domain per tick (or sweep), then resolves each `entity` to its bound
+/// atom and calls the generated dispatcher, checking `atom.vg_entity ==
+/// entity` first (a component detached between the event firing and the
+/// drain is a stale record, silently dropped by that check).
+// /proc/entity_drain_domain_events (verdigris/ffi/src/entity.rs)
+/proc/vg_entity_drain_domain_events(domain)
+	var/static/__f = load_ext(VERDIGRIS, "byond:entity_drain_domain_events_ffi")
+	VG_COUNT_FFI_CALL
+	return call_ext(__f)(domain)
+
+/// A safe probe for whether `entity_v` currently resolves to a live
+/// component of `domain`/`kind`: `FALSE` for stale, out-of-range, unbound
+/// (0), wrong-component or wrong-kind, never a runtime. `resolve()` (used
+/// by every generated `get_*`/`set_*`) is deliberately not this: those must
+/// error loudly (§5, §9). This exists for callers — admin tools, and tests
+/// that check a handle is correctly rejected — that want the answer without
+/// risking one (this codebase's test harness fails a "clean" run on any
+/// runtime at all, caught or not).
+// /proc/entity_is_valid (verdigris/ffi/src/entity.rs)
+/proc/vg_entity_is_valid(entity, domain, kind)
+	var/static/__f = load_ext(VERDIGRIS, "byond:entity_is_valid_ffi")
+	VG_COUNT_FFI_CALL
+	return call_ext(__f)(entity, domain, kind)
+
+/// `SSvg`'s per-sweep maintenance: ticks every registered domain once
+/// (publishing a view, pruning the overlay for worker-owned kinds), so
+/// state is never more than one sweep old even though nothing sets it per
+/// idle tick.
 // /proc/entity_tick_all (verdigris/ffi/src/entity.rs)
 /proc/vg_entity_tick_all()
 	var/static/__f = load_ext(VERDIGRIS, "byond:entity_tick_all_ffi")

@@ -18,7 +18,6 @@ pub mod entity;
 pub mod field;
 pub mod frame;
 pub mod grid;
-pub mod handle;
 pub mod intern;
 pub mod jobs;
 pub mod law;
@@ -35,14 +34,16 @@ pub mod replay;
 pub mod revision;
 pub mod rng;
 pub mod sim;
+pub mod slot;
+pub mod store;
 pub mod thermo;
 pub mod timer;
 pub mod units;
 pub mod watch;
 
 pub use arena::Arena;
-pub use entity::{CellAllocator, ComponentRef, EntityError, EntitySlots, EntityTable};
-pub use handle::{Handle, RawHandle};
+pub use entity::{CellAllocator, ComponentRef, EntityError, EntityId, EntitySlots, EntityTable};
+pub use slot::{Handle, RawHandle};
 
 /// The `#[vg::component]`, `#[vg::query]` and `#[vg::events]` attributes
 /// (`rust_bindings.md` §2), re-exported under this short name so a domain

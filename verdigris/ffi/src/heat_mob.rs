@@ -33,7 +33,8 @@ use eyre::{Result, bail, eyre};
 use vg_core::entity::ComponentRef;
 use vg_heat::mob::{MOB_EXTERNAL_SOURCES, MobHeatConfig, MobHeatWorld};
 
-use crate::entity::{self, EntityDomain};
+use crate::entity;
+use crate::registry::{self, DomainRegistry};
 
 /// This component's domain index in the entity table. Gas's pump is domain
 /// 0; this is the first non-gas domain to register.
@@ -54,7 +55,7 @@ const MOB_HEAT_DT: f32 = 1.0;
 
 struct Shared(Rc<RefCell<MobHeatWorld>>);
 
-impl EntityDomain for Shared {
+impl DomainRegistry for Shared {
     fn detach(&mut self, comp: ComponentRef) {
         if comp.kind != KIND {
             return;
@@ -108,7 +109,8 @@ thread_local! {
 fn with<T>(f: impl FnOnce(&mut MobHeatWorld) -> T) -> T {
     REGISTERED.with(|done| {
         if !done.get() {
-            WORLD.with(|w| entity::register_entity_domain(DOMAIN, Box::new(Shared(Rc::clone(w)))));
+            #[allow(clippy::cast_possible_truncation)]
+            WORLD.with(|w| registry::register_domain(DOMAIN as u32, Box::new(Shared(Rc::clone(w)))));
             done.set(true);
         }
     });
