@@ -89,6 +89,20 @@ pub struct FrameRecord {
     batches: Vec<Option<Box<dyn Any + Send + Sync>>>,
 }
 
+impl FrameRecord {
+    /// A record from its parts (the replay codec's decoder builds these).
+    #[must_use]
+    pub fn new(frame: u64, batches: Vec<Option<Box<dyn Any + Send + Sync>>>) -> Self {
+        Self { frame, batches }
+    }
+
+    /// Each domain's batch, by domain index (`None`: no commands).
+    #[must_use]
+    pub fn batches(&self) -> &[Option<Box<dyn Any + Send + Sync>>] {
+        &self.batches
+    }
+}
+
 /// The flight-recorder log (§3.9): enough to replay a session.
 #[derive(Default)]
 pub struct FrameLog {
