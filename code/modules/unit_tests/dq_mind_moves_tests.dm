@@ -12,13 +12,12 @@
 // --- Brain death is not repairable -----------------------------------------------------
 
 /// A brain at 100% damage refuses every repair path: mend(), continuous drug
-/// treatment, operative repair and the brainstem "realign tissue" step.
+/// treatment, operative repair and the organ repair surgical step.
 /datum/unit_test/dq_mind_dead_brain_refuses_repair
 
 /datum/unit_test/dq_mind_dead_brain_refuses_repair/Run()
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human)
 	var/mob/living/carbon/human/surgeon = allocate(/mob/living/carbon/human)
-	var/obj/item/surgical/hemostat/tool = allocate(/obj/item/surgical/hemostat)
 	var/obj/item/organ/internal/brain/brain = H.internal_organs_by_name[O_BRAIN]
 	dq_test_injure_organ(H, brain, brain.max_damage, /datum/affliction/lesion/contusion)
 	TEST_ASSERT(brain.is_brain_dead(), "setup: a brain at 100% is brain dead")
@@ -30,12 +29,9 @@
 	TEST_ASSERT_EQUAL(H.surgically_repair_organ(brain), 0, "operative repair can't repair a dead brain")
 	TEST_ASSERT_EQUAL(brain.damage, brain.max_damage, "the dead brain keeps its damage")
 
-	var/datum/surgery_step/brainstem/realign_tissue/realign = new
-	H.op_stage.brainstem = 5
-	realign.end_step(surgeon, H, brain.parent_organ, tool)
-	TEST_ASSERT(brain.is_brain_dead(), "realigning tissue doesn't revive a dead brain")
-	TEST_ASSERT_EQUAL(brain.damage, brain.max_damage, "realigning tissue doesn't repair a dead brain")
-	qdel(realign)
+	_surgery_perform(/datum/surgical_step/treat/organ/suture, surgeon, H, BP_HEAD, null, brain)
+	TEST_ASSERT(brain.is_brain_dead(), "organ repair surgery doesn't revive a dead brain")
+	TEST_ASSERT_EQUAL(brain.damage, brain.max_damage, "organ repair surgery doesn't repair a dead brain")
 
 /// A dead brain organ (ORGAN_DEAD) below 100% damage is brain dead too: its
 /// status can't be cleared and its lesions can't be repaired.
@@ -44,7 +40,6 @@
 /datum/unit_test/dq_mind_dead_brain_organ_stays_dead/Run()
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human)
 	var/mob/living/carbon/human/surgeon = allocate(/mob/living/carbon/human)
-	var/obj/item/surgical/hemostat/tool = allocate(/obj/item/surgical/hemostat)
 	var/obj/item/organ/internal/brain/brain = H.internal_organs_by_name[O_BRAIN]
 	dq_test_injure_organ(H, brain, 30, /datum/affliction/lesion/contusion)
 	brain.status |= ORGAN_DEAD
@@ -54,21 +49,17 @@
 	TEST_ASSERT(brain.status & ORGAN_DEAD, "the brain stays dead")
 	TEST_ASSERT_EQUAL(H.mend(TREAT_NEURAL_REPAIR, 50, brain), 0, "a dead brain organ can't be mended")
 
-	var/datum/surgery_step/brainstem/realign_tissue/realign = new
-	H.op_stage.brainstem = 5
-	realign.end_step(surgeon, H, brain.parent_organ, tool)
+	_surgery_perform(/datum/surgical_step/treat/organ/suture, surgeon, H, BP_HEAD, null, brain)
 	TEST_ASSERT(brain.status & ORGAN_DEAD, "surgery doesn't clear a dead brain's status")
 	TEST_ASSERT_EQUAL(brain.damage, 30, "surgery doesn't repair a dead brain organ")
-	qdel(realign)
 
 /// Brain damage short of brain death stays repairable: neural repair and the
-/// realign step both still work.
+/// organ repair surgical step both still work.
 /datum/unit_test/dq_mind_damaged_brain_still_repairable
 
 /datum/unit_test/dq_mind_damaged_brain_still_repairable/Run()
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human)
 	var/mob/living/carbon/human/surgeon = allocate(/mob/living/carbon/human)
-	var/obj/item/surgical/hemostat/tool = allocate(/obj/item/surgical/hemostat)
 	var/obj/item/organ/internal/brain/brain = H.internal_organs_by_name[O_BRAIN]
 	dq_test_injure_organ(H, brain, brain.max_damage - 1, /datum/affliction/lesion/contusion)
 	TEST_ASSERT(!brain.is_brain_dead(), "setup: a brain at 99% is not brain dead")
@@ -76,11 +67,9 @@
 	TEST_ASSERT(H.mend(TREAT_NEURAL_REPAIR, 5, brain) > 0, "neural repair mends a living brain")
 	TEST_ASSERT(brain.damage < brain.max_damage - 1, "the living brain heals")
 
-	var/datum/surgery_step/brainstem/realign_tissue/realign = new
-	H.op_stage.brainstem = 5
-	realign.end_step(surgeon, H, brain.parent_organ, tool)
-	TEST_ASSERT_EQUAL(brain.damage, 0, "realigning tissue repairs a living brain")
-	qdel(realign)
+	var/before = brain.damage
+	_surgery_perform(/datum/surgical_step/treat/organ/suture, surgeon, H, BP_HEAD, null, brain)
+	TEST_ASSERT(brain.damage < before, "organ repair surgery repairs a living brain")
 
 
 // --- Dominate prey / predator: minds move, identities come back ------------------------

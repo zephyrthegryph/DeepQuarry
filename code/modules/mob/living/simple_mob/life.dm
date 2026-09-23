@@ -167,7 +167,7 @@
 /datum/life_system/environment/simple_mob/idle(mob/living/simple_mob/self)
 	if(type != /datum/life_system/environment/simple_mob)
 		return FALSE
-	if(self.in_stasis || self.is_incorporeal() || !self.loc)
+	if(self.is_incorporeal() || !self.loc)
 		return TRUE
 	if(LAZYLEN(self.body?.afflictions))
 		return FALSE

@@ -93,7 +93,6 @@
 // Vital-system mechanisms (code/modules/medical/conditions/vital_systems.dm).
 #define TREAT_AIRWAY           "airway"  // clears / secures the airway (Heimlich, airway kit)
 #define TREAT_DECOMPRESSION    "decompression"  // vents trapped pleural air (decompression needle, chest tube)
-#define TREAT_OCCLUSIVE_SEAL "occlusive_seal"
 #define TREAT_DEFIBRILLATION   "defibrillation"  // electrical cardioversion of a shockable rhythm (defibrillator)
 #define TREAT_CHEST_COMPRESSION "chest_compression"  // CPR compressions: partial perfusion while the heart is stopped
 #define TREAT_VASOPRESSOR      "vasopressor"  // epinephrine-type: coaxes asystole toward VF, shrinks airway swelling

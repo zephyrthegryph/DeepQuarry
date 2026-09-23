@@ -322,12 +322,9 @@
 
 // --- Hook for organs past saving ------------------------------------------------------------
 
-/// Is this organ past any surgical repair? The single gate in the organ
-/// repair path: the step still runs, the surgeon perceives why nothing takes,
-/// and nothing heals. A dead organ is past saving; the brain-death slice
-/// overrides this on /obj/item/organ/internal/brain (is_brain_dead()).
-/obj/item/organ/internal/proc/is_beyond_repair()
-	return (status & ORGAN_DEAD) ? TRUE : FALSE
+// is_beyond_repair() (organ_integrity.dm, brain override in brain.dm) is the
+// single gate in the organ repair path: the step still runs, the surgeon
+// perceives why nothing takes, and nothing heals.
 
 /// What the surgeon sees in an organ past saving (in character, never rules).
 /obj/item/organ/internal/proc/beyond_repair_perception(mob/living/user)

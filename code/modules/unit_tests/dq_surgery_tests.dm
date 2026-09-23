@@ -191,15 +191,15 @@
 /datum/unit_test/dq_surgery_organ_beyond_repair_heals_nothing/Run()
 	var/mob/living/carbon/human/surgeon = allocate(/mob/living/carbon/human)
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human)
-	var/obj/item/organ/internal/kidneys = H.internal_organs_by_name[O_KIDNEYS]
-	TEST_ASSERT_NOTNULL(kidneys, "no kidneys")
-	H.injure(INJURY_CUT, 10, kidneys, affliction = /datum/affliction/lesion/laceration, flags = INJURE_IGNORE_RESISTANCE)
-	kidneys.status |= ORGAN_DEAD
-	TEST_ASSERT(kidneys.is_beyond_repair(), "a dead organ is beyond repair")
+	var/obj/item/organ/internal/brain/brain = H.internal_organs_by_name[O_BRAIN]
+	TEST_ASSERT_NOTNULL(brain, "no brain")
+	H.injure(INJURY_CUT, 10, brain, affliction = /datum/affliction/lesion/laceration, flags = INJURE_IGNORE_RESISTANCE)
+	brain.status |= ORGAN_DEAD
+	TEST_ASSERT(brain.is_beyond_repair(), "a dead brain is beyond repair")
 	var/datum/surgical_step/treat/organ/suture = surgical_step(/datum/surgical_step/treat/organ/suture)
-	TEST_ASSERT(suture.location_needs_treatment(H, kidneys), "the surgeon can still work on it")
-	_surgery_perform(/datum/surgical_step/treat/organ/suture, surgeon, H, BP_GROIN, null, kidneys)
-	TEST_ASSERT_NOTNULL(kidneys.find_lesion(/datum/affliction/lesion/laceration), "nothing heals in an organ beyond repair")
+	TEST_ASSERT(suture.location_needs_treatment(H, brain), "the surgeon can still work on it")
+	_surgery_perform(/datum/surgical_step/treat/organ/suture, surgeon, H, BP_HEAD, null, brain)
+	TEST_ASSERT_NOTNULL(brain.find_lesion(/datum/affliction/lesion/laceration), "nothing heals in an organ beyond repair")
 
 
 // --- conditions that need surgery -----------------------------------------------------------
