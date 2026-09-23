@@ -261,7 +261,7 @@ GLOBAL_LIST_INIT(digest_modes, list())
 				var/obj/item/I = C
 				B.ownegg.w_class = I.w_class
 				B.ownegg.max_storage_space = B.ownegg.w_class
-				I.forceMove(B.ownegg)
+				B.slot_remove(I, B.ownegg)
 				if(B.egg_size)
 					B.ownegg.icon_scale_x = B.egg_size
 					B.ownegg.icon_scale_y = B.egg_size
@@ -275,7 +275,7 @@ GLOBAL_LIST_INIT(digest_modes, list())
 			if(isitem(C))
 				var/obj/item/I = C
 				B.ownegg.w_class += I.w_class //Let's assume a regular outfit can reach total w_class of 16.
-				I.forceMove(B.ownegg)
+				B.slot_remove(I, B.ownegg)
 			if(isliving(C))
 				var/mob/living/M = C
 				var/mob_holder_type = M.holder_type || /obj/item/holder
