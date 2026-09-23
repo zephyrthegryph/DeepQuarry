@@ -43,7 +43,7 @@
 
 /datum/unit_test/dq_s2_wake_apc/Run()
 	var/obj/machinery/power/apc/A
-	for(var/obj/machinery/power/apc/candidate as anything in GLOB.apcs)
+	for(var/obj/machinery/power/apc/candidate as anything in REGISTRY_MEMBERS(REGISTRY_APCS))
 		if(candidate.terminal?.powernet && candidate.cell)
 			A = candidate
 			break

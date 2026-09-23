@@ -170,13 +170,13 @@
 	TEST_ASSERT(QDELETED(binding), "and the binding is deleted")
 
 	// A rule whose level the object lacks does not subscribe: a cooler bottle
-	// with no matter has no melting point.
+	// with no material has no melting point.
 	var/obj/item/reagent_containers/glass/cooler_bottle/bare = allocate(/obj/item/reagent_containers/glass/cooler_bottle)
 	var/datum/rule_binding/bare_binding = dq_rule_binding_of(bare)
 	TEST_ASSERT(bare_binding, "a cooler bottle subscribes")
 	bare.dematerialize()
 	TEST_ASSERT(QDELETED(bare_binding), "dematerializing drops the subscriptions")
-	bare.matter = null
+	bare.material_template = null
 	TEST_ASSERT_NULL(dq_rules_on_materialize(bare), "without a melting point there is nothing to watch")
 
 // ---- Time above threshold, bands, data transforms ----
