@@ -564,5 +564,7 @@ GLOBAL_LIST_INIT(state_builtin_vars, list(
 /// ledger's order (slots in declaration order, each in insertion order), so a
 /// child's ID doesn't depend on unrelated contents order.
 /proc/state_children(atom/A)
-	var/datum/ledger/L = dq_ledger(A)
+	// Peek only: a holder that was never used still has no ledger, and reading
+	// its children for serialization must not be what creates one.
+	var/datum/ledger/L = dq_ledger_peek(A)
 	return L ? L.ordered() : A.contents

@@ -1167,7 +1167,7 @@ REGISTRY_MEMBERSHIP(/obj/mecha, REGISTRY_MECHAS)
 			if(amount <= 0)
 				continue
 		var/before = get_integrity()
-		take_damage(amount, packet.armor_flag || damage_kind_armor_key(kind))
+		take_damage(amount, damage_kind_obj_damage_type(kind))
 		if(QDELETED(src))
 			return . + before
 		. += before - get_integrity()

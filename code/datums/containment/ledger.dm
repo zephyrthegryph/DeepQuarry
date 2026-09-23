@@ -34,6 +34,15 @@
 	L.sync()
 	return L
 
+/// The existing ledger for `holder`, synced, or null. Unlike dq_ledger(), never
+/// creates one -- for read paths (rolling up a nested holder's contribution,
+/// walking a holder's children) that must not be what makes an empty holder
+/// start owning a ledger of its own.
+/proc/dq_ledger_peek(atom/holder)
+	var/datum/ledger/L = holder?.ledger
+	L?.sync()
+	return L
+
 /// The measures the ledger aggregates: every registered measure with an
 /// aggregator, in a fixed order. Tag words follow them in a snapshot.
 /proc/dq_ledger_measure_ids()
@@ -72,7 +81,7 @@
 	var/count = length(ids)
 	var/words = dq_ledger_tag_words()
 	var/list/nested
-	var/datum/ledger/inner = dq_ledger(thing)
+	var/datum/ledger/inner = dq_ledger_peek(thing)
 	if(inner)
 		nested = from_scratch ? inner.recompute() : inner.totals()
 	var/list/snapshot = new /list(count + words)
