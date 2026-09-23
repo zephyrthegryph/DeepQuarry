@@ -40,16 +40,9 @@
 	pulse_information.threshold = threshold
 	pulse_information.chance = chance
 	pulse_information.minimum_exposure_time = minimum_exposure_time
-	// Radiation only has gameplay consumers in these explicit registries. Do not
-	// allocate and scan thousands of empty turfs for every high-power pulse.
-	// Living mobs are walked in place by index (see SSradiation.pulse) rather than
-	// copied; only the small device registries are snapshotted.
-	pulse_information.living_index = length(GLOB.living_mob_list)
-	pulse_information.targets_to_process = GLOB.rad_collectors.Copy()
-	pulse_information.targets_to_process |= GLOB.geiger_counters
-	pulse_information.targets_to_process |= GLOB.material_radiovoltaic_items
 	pulse_information.strength = strength
-
+	// Targets (living mobs and the collector, geiger and radiovoltaic registries)
+	// are collected and traced in one Rust call when the pulse first processes.
 	SSradiation.processing += pulse_information
 
 	return TRUE
@@ -60,27 +53,35 @@
 	var/threshold
 	var/chance
 	var/minimum_exposure_time
-	/// Device targets (collectors, geigers, radiovoltaics) still to process.
-	var/list/targets_to_process
-	/// Next GLOB.living_mob_list index to process, counting down; 0 when done.
-	var/living_index = 0
 	var/strength
+	/// Targets on the source's z-level, set when the pulse is traced.
+	var/list/targets
+	/// Path transmission to each of `targets` (-1 = out of range); null until traced.
+	var/list/transmissions
+	/// Index into `targets` of the next one to apply.
+	var/next_target = 1
 
 /datum/radiation_pulse_information/Destroy(force)
 	. = ..()
 	source_ref = null
-	targets_to_process = null
+	targets = null
+	transmissions = null
 
 /// How many targets this pulse still has to visit.
 /datum/radiation_pulse_information/proc/remaining_targets()
-	return length(targets_to_process) + living_index
+	return max(length(targets) - next_target + 1, 0)
 
-/// Sets rad_insulation and invalidates cached radiation paths if the value changed.
+/// Sets rad_insulation and marks the shielding layer dirty if the value changed.
 /atom/proc/set_rad_insulation(new_insulation)
 	if(rad_insulation == new_insulation)
 		return
 	rad_insulation = new_insulation
-	RAD_SHIELDING_CHANGED
+	RAD_SHIELDING_CHANGED(isturf(src) ? src : loc)
+
+/turf/simulated/Initialize(mapload)
+	. = ..()
+	if(rad_insulation != RAD_NO_INSULATION)
+		RAD_SHIELDING_CHANGED(src)
 
 #define MEDIUM_RADIATION_THRESHOLD_RANGE 0.5
 #define EXTREME_RADIATION_CHANCE 30

@@ -431,3 +431,51 @@
 		metric(name, best[name], "us/call")
 	if(call_ext(hash_handle)(RUSTG_HASH_XXH64, text) != RUSTG_CALL(RUST_G, "hash_string")(RUSTG_HASH_XXH64, text))
 		fail("cached and by-name hash_string disagree")
+
+/// Radiation: pulses from many sources over a walled fixture full of mobs and
+/// insulating objects. Reports the time SSradiation spent inside pulses.
+/datum/benchmark/radiation
+	id = "radiation"
+	description = "Radiation pulse cost: rays from 20 sources to mobs through walls (bench_rounds, default 30)"
+
+/datum/benchmark/radiation/Run()
+	wait_for_assets()
+	var/list/turf/floors = build_floor_fixture(48)
+	var/turf/corner = floors[1]
+	var/fixture_z = corner.z
+	// Interior walls and windows so rays have shielding to cross.
+	for(var/y in 4 to 46)
+		if(y % 6)
+			var/turf/wall_turf = locate(18, y, fixture_z)
+			wall_turf.ChangeTurf(/turf/simulated/wall)
+			new /obj/structure/window/reinforced/full(locate(34, y, fixture_z))
+	var/list/sources = list()
+	for(var/i in 1 to 20)
+		sources += new /obj/item/stack/material/steel(locate(3 + (i * 7) % 46, 3 + (i * 13) % 46, fixture_z))
+	for(var/i in 1 to 120)
+		var/mob/living/simple_mob/animal/passive/mouse/white/mouse = new(locate(3 + (i * 11) % 46, 3 + (i * 17) % 46, fixture_z))
+		mouse.ai_brain?.go_sleep()
+	var/rounds = param("rounds", 30)
+	stoplag()
+	var/cost_before = 0
+	for(var/key in SSradiation.profile_source_cost_ms)
+		cost_before += SSradiation.profile_source_cost_ms[key]
+	var/pulses_before = SSradiation.profile_pulses_completed
+	begin_window()
+	for(var/round in 1 to rounds)
+		for(var/atom/source as anything in sources)
+			radiation_pulse(source, 14, 0.05, 10, 0, 1)
+		var/deadline = REALTIMEOFDAY + 600
+		while(length(SSradiation.processing))
+			if(REALTIMEOFDAY > deadline)
+				fail("radiation pulses did not drain within 60s")
+			stoplag()
+	end_window("radiation")
+	var/cost_after = 0
+	for(var/key in SSradiation.profile_source_cost_ms)
+		cost_after += SSradiation.profile_source_cost_ms[key]
+	var/pulses = SSradiation.profile_pulses_completed - pulses_before
+	metric("radiation_pulses", pulses, "pulses", "none")
+	metric("radiation_pulse_ms_total", cost_after - cost_before, "ms")
+	metric("radiation_pulse_ms_each", pulses ? (cost_after - cost_before) / pulses : 0, "ms")
+	detail("radiation_diagnostics", SSradiation.performance_diagnostics())

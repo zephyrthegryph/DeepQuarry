@@ -11,6 +11,7 @@ pub mod bitset;
 pub mod channel;
 pub mod command;
 pub mod cow;
+pub mod field;
 pub mod frame;
 pub mod grid;
 pub mod handle;
