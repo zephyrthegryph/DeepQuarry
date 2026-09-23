@@ -145,7 +145,7 @@
 /// Handle interacting with and taking damage from atmos.
 /datum/life_system/environment/simple_mob/exchange(mob/living/simple_mob/self, datum/gas_mixture/environment)
 
-	if(self.in_stasis)
+	if(self.inStasisNow())
 		return 1 // return early to skip atmos checks
 	if(self.is_incorporeal())
 		return 1

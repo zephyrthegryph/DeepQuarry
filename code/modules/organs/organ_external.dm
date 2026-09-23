@@ -115,6 +115,10 @@
 		qdel(splinted)
 	splinted = null
 
+	if(tourniquet && tourniquet.loc == src)
+		qdel(tourniquet)
+	tourniquet = null
+
 	if(istype(owner))
 		owner.organs -= src
 		owner.organs_by_name[organ_tag] = null
@@ -987,7 +991,7 @@ Note that amputating the affected organ does in fact remove the infection from t
 		clamped |= W.clamped
 
 	//things tend to bleed if they are CUT OPEN
-	if (open && !clamped && (H && H.should_have_organ(O_HEART)))
+	if (open && !clamped && (H && H.should_have_organ(O_HEART)) && !flow_occluded())
 		status |= ORGAN_BLEEDING
 
 	//Bone fractures
@@ -1314,6 +1318,7 @@ Note that amputating the affected organ does in fact remove the infection from t
 		splinted = splint
 		if(!applied_pressure)
 			applied_pressure = splint
+		refresh_fracture_support()
 		return 1
 	return 0
 
@@ -1324,6 +1329,7 @@ Note that amputating the affected organ does in fact remove the infection from t
 		if(applied_pressure == splinted)
 			applied_pressure = null
 		splinted = null
+		refresh_fracture_support()
 		return 1
 	return 0
 

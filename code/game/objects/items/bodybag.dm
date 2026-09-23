@@ -177,7 +177,8 @@
 	var/used = 0
 	var/obj/item/tank/tank = null
 	var/tank_type = /obj/item/tank/stasis/oxygen
-	var/stasis_level = 3 //Every 'this' life ticks are applied to the mob (when life_ticks%stasis_level == 1)
+	/// Stasis modifier (/datum/modifier/stasis/*) applied to whoever lies inside.
+	var/stasis_level = /datum/modifier/stasis/deep
 	var/obj/item/reagent_containers/syringe/syringe
 
 /obj/structure/closet/body_bag/cryobag/Initialize(mapload)
@@ -219,10 +220,11 @@
 		syringe = null
 
 /obj/structure/closet/body_bag/cryobag/Entered(atom/movable/AM)
-	ADD_TRAIT(AM, TRAIT_STASIS, REF(src))
+	if(isliving(AM))
+		var/mob/living/L = AM
+		L.set_stasis(stasis_level, src)
 	if(ishuman(AM))
 		var/mob/living/carbon/human/H = AM
-		H.Stasis(stasis_level)
 		src.used = 1
 		inject_occupant(H)
 
@@ -234,10 +236,9 @@
 	..()
 
 /obj/structure/closet/body_bag/cryobag/Exited(atom/movable/AM)
-	REMOVE_TRAIT(AM, TRAIT_STASIS, REF(src))
-	if(ishuman(AM))
-		var/mob/living/carbon/human/H = AM
-		H.Stasis(0)
+	if(isliving(AM))
+		var/mob/living/L = AM
+		L.set_stasis(null, src)
 
 	if(istype(AM, /obj/item/organ))
 		var/obj/item/organ/O = AM

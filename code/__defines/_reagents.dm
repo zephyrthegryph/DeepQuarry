@@ -387,6 +387,8 @@
 #define REAGENT_ID_ADRENALINE "adrenaline"
 #define REAGENT_EPINEPHRINE "Epinephrine"
 #define REAGENT_ID_EPINEPHRINE "epinephrine"
+#define REAGENT_NOREPINEPHRINE "Norepinephrine"
+#define REAGENT_ID_NOREPINEPHRINE "norepinephrine"
 #define REAGENT_HOLYWATER "Holy Water"
 #define REAGENT_ID_HOLYWATER "holywater"
 #define REAGENT_AMMONIA "Ammonia"

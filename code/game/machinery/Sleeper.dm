@@ -105,8 +105,9 @@
 	var/max_chem = 20
 	var/initial_bin_rating = 1
 	var/obj/machinery/sleep_console/console
-	var/stasis_level = 0 //Every 'this' life ticks are applied to the mob (when life_ticks%stasis_level == 1)
-	var/stasis_choices = list("Complete (1%)" = 100, "Deep (10%)" = 10, "Moderate (20%)" = 5, "Light (50%)" = 2, "None (100%)" = 0)
+	/// Stasis modifier (/datum/modifier/stasis/*) applied to the occupant, or null for none.
+	var/stasis_level = null
+	var/static/list/stasis_choices = list("Complete (1%)" = /datum/modifier/stasis/complete, "Deep (10%)" = /datum/modifier/stasis/deep, "Moderate (20%)" = /datum/modifier/stasis/moderate, "Light (50%)" = /datum/modifier/stasis/light, "None (100%)" = null)
 	var/controls_inside = FALSE
 	var/auto_eject_dead = FALSE
 
@@ -326,8 +327,9 @@
 			go_out()
 		if("changestasis")
 			var/new_stasis = tgui_input_list(ui.user, "Levels deeper than 50% stasis level will render the patient unconscious.","Stasis Level", stasis_choices)
-			if(new_stasis)
+			if(new_stasis && (new_stasis in stasis_choices))
 				stasis_level = stasis_choices[new_stasis]
+				log_game("STASIS: [key_name(ui.user)] set [src] at [AREACOORD(src)] to [new_stasis] (occupant: [key_name(occupant)]).")
 		if("auto_eject_dead_on")
 			auto_eject_dead = TRUE
 		if("auto_eject_dead_off")
@@ -346,7 +348,7 @@
 			playsound(loc, 'sound/machines/buzz-sigh.ogg', 40)
 			go_out()
 			return
-		occupant.Stasis(stasis_level)
+		occupant.set_stasis(stasis_level, src)
 
 		if(filtering > 0)
 			if(beaker)
@@ -495,7 +497,7 @@
 		occupant?.cozyloop?.stop() // Cozy Music
 		occupant = null // JUST IN CASE
 		return
-	occupant.Stasis(0)
+	occupant.set_stasis(null, src)
 	occupant.forceMove(get_turf(src))
 	occupant.cozyloop.stop() // Cozy Music
 	occupant = null
@@ -542,7 +544,7 @@
 /obj/machinery/sleeper/survival_pod
 	desc = "A limited functionality sleeper, all it can do is put patients into stasis. It lacks the medication and configuration of the larger units."
 	icon_state = "sleeper"
-	stasis_level = 100 //Just one setting
+	stasis_level = /datum/modifier/stasis/complete //Just one setting
 
 /obj/machinery/sleeper/survival_pod/Initialize(mapload)
 	. = ..()

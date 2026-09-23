@@ -149,6 +149,9 @@ BLOOD_VOLUME_SURVIVE = 40
 		///First, we make sure it's not robotic.
 		if(temp.robotic >= ORGAN_ROBOT)
 			continue
+		///A tourniquet above the limb stops every bleed below it.
+		if(temp.flow_occluded())
+			continue
 
 		///Second, we process internal bleeding.
 		if(bleed || count_internal)

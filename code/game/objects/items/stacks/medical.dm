@@ -141,7 +141,7 @@
 				else
 					user.balloon_alert_visible("\the [user] places a bandage over \a [W.desc] on [M]'s [affecting.name].", \
 												"you place a bandage over \a [W.desc] on [M]'s [affecting.name]." )
-				W.bandage()
+				W.receive_tagged_treatment(TREAT_WOUND_PACKING, 1)
 				playsound(src, pick(apply_sounds), 25)
 				used++
 			affecting.update_damages()
@@ -214,7 +214,7 @@
 				else
 					user.balloon_alert_visible("\the [user] places a bandaid over \a [W.desc] on [M]'s [affecting.name].", \
 												"placed bandaid over \a [W.desc] on [M]'s [affecting.name]." )
-				W.bandage()
+				W.receive_tagged_treatment(TREAT_WOUND_PACKING, 1)
 				// W.disinfect() // Tech1 should not disinfect
 				playsound(src, pick(apply_sounds), 25)
 				used++
@@ -331,7 +331,7 @@
 				else
 					user.balloon_alert_visible("\the [user] smears some bioglue over \a [W.desc] on [M]'s [affecting.name].", \
 												"smeared bioglue over \a [W.desc] on [M]'s [affecting.name]." )
-				W.bandage()
+				W.receive_tagged_treatment(TREAT_WOUND_PACKING, 1)
 				W.disinfect()
 				H.mend(TREAT_TISSUE_REPAIR, heal_brute, affecting.organ_tag)
 				playsound(src, pick(apply_sounds), 25)
@@ -522,7 +522,7 @@
 				continue
 			if(W.current_stage <= W.max_bleeding_stage)
 				clotted++
-			W.bandage()
+			W.receive_tagged_treatment(TREAT_WOUND_PACKING, 1)
 
 	var/healmessage = span_notice("You spray [src] onto [H], sealing [clotted ? clotted : "no"] wounds.")
 	if(too_far_gone)

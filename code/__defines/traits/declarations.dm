@@ -80,9 +80,6 @@ Remember to update _globalvars/traits.dm if you're adding/removing/renaming trai
 #define TRAIT_RADIATION_PROTECTED_CLOTHING "radiation_protected_clothing"
 /// Trait applied by MODsuits.
 #define MOD_TRAIT "mod"
-/// The mob has the stasis effect.
-/// Does nothing on its own, applied via status effect.
-#define TRAIT_STASIS "in_stasis"
 /// Harmful radiation effects, the toxin damage and the burns, will not occur while this trait is active
 #define TRAIT_HALT_RADIATION_EFFECTS "halt_radiation_effects"
 /// Trait applied to mobs when on Critical condition

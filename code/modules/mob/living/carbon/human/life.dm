@@ -14,7 +14,6 @@
 #define HUMAN_COMBUSTION_TEMP 524 //524k is the sustained combustion temperature of human fat
 
 /mob/living/carbon/human
-	var/in_stasis = 0
 	var/heartbeat = 0
 	var/chemical_darksight = 0
 
@@ -76,7 +75,7 @@
 	// change from too many scattered sites to hook safely without behavior risk.
 	self.voice = self.GetVoice()
 
-/// Deep stasis puts the body to sleep. Reads the cycle's stasis state for the vitals gate.
+/// Deep stasis (BF_STASIS above STASIS_SLEEP_THRESHOLD) puts the body to sleep.
 /datum/life_system/stasis_sleep
 	name = "stasis sleep"
 	bit = LIFE_SYS_BODY
@@ -85,8 +84,7 @@
 	mob_type = /mob/living/carbon/human
 
 /datum/life_system/stasis_sleep/tick(mob/living/carbon/human/self, datum/life_context/ctx)
-	ctx.in_stasis(self)
-	if(self.getStasis() > 2)
+	if(self.factor(BF_STASIS) > STASIS_SLEEP_THRESHOLD)
 		self.Sleeping(20)
 
 /// Falling (prevents people from floating).

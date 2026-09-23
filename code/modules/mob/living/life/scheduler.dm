@@ -25,6 +25,7 @@
 
 	var/datum/life_composition/comp = life_composition || recompose_life()
 	var/datum/life_context/ctx = new(seconds, profile)
+	ctx.stasis = body ? body.advance_stasis() : FALSE
 	life_cycle++
 	for(var/datum/life_system/S as anything in comp.ordered)
 		if(!(life_awake & S.bit))

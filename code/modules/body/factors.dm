@@ -122,6 +122,7 @@
 		list(BF_IMMUNE_SUPPRESSION, "Immune suppression", BF_RULE_ADD, 0, 0, INFINITY, "points", "Suppresses the immune response."),
 		list(BF_O2_CARRIAGE, "Oxygen carriage", BF_RULE_MULT, 1, 0, 2, "percent", "How much oxygen the blood carries."),
 		list(BF_TISSUE_UPTAKE, "Tissue oxygen uptake", BF_RULE_MULT, 1, 0, 2, "percent", "How well the tissues use the oxygen that reaches them."),
+		list(BF_STASIS, "Stasis", BF_RULE_MAX, 0, 0, 1, "points", "Share of life processes suspended: conditions, metabolism and breathing slow by this much."),
 	)
 	for(var/list/row as anything in rows)
 		defs[row[1]] = new /datum/body_factor_def(row[1], row[2], row[3], row[4], row[5], row[6], row[7], row[8])

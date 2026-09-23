@@ -72,17 +72,16 @@
 	var/core_result
 	/// The air this mob sits in (turf air, belly air or null), captured at the placed gate.
 	var/datum/gas_mixture/environment
-	/// Cached stasis state for this cycle; null until first read.
-	var/stasis
+	/// TRUE when the body's stasis clock paused this cycle. Set once by Life()
+	/// from /datum/body/proc/advance_stasis().
+	var/stasis = FALSE
 
 /datum/life_context/New(seconds, profile)
 	src.seconds = seconds
 	src.profile = profile
 
-/// Stasis for this cycle, read once (replaces the repeated inStasisNow() calls).
+/// Did stasis pause this cycle?
 /datum/life_context/proc/in_stasis(mob/living/self)
-	if(isnull(stasis))
-		stasis = self.inStasisNow() ? TRUE : FALSE
 	return stasis
 
 // --- Registry ---------------------------------------------------------------------------------

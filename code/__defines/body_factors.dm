@@ -100,10 +100,18 @@
 // --- Oxygen transport (physiology, code/modules/body/physiology.dm) --------------------------
 #define BF_O2_CARRIAGE       67 // mult: oxygen the blood carries per unit of saturation (carbon monoxide lowers it; oximeters can't see it)
 #define BF_TISSUE_UPTAKE     68 // mult: oxygen the tissues can use from what arrives (cyanide lowers it)
+// --- Stabilisation ----------------------------------------------------------------------
+/// max: share of life processes suspended, 0..1 (stasis bags, sleepers, cryopods).
+/// The body's stasis clock (code/modules/medical/stabilisation/stasis.dm) reads it once
+/// per Life() cycle; afflictions, metabolism, breathing and blood skip paused cycles.
+#define BF_STASIS            69
+/// Stasis deeper than this keeps the patient asleep.
+#define STASIS_SLEEP_THRESHOLD 0.5
 // --- Armour -----------------------------------------------------------------------------
 /// Armour points against one armour kind (INJURY_* or ARMOR_BLAST), added to
 /// worn / natural armour. BF_ARMOR(INJURY_BLUNT) .. BF_ARMOR(ARMOR_BLAST).
-#define BF_ARMOR_BASE        68
+/// BF_ARMOR(1) is the first id after the last named factor.
+#define BF_ARMOR_BASE        69
 #define BF_ARMOR(kind)       (BF_ARMOR_BASE + (kind))
 #define BF_COUNT             (BF_ARMOR_BASE + ARMOR_KIND_COUNT)
 

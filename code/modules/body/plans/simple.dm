@@ -23,6 +23,9 @@
 /datum/body/simple/life_tick()
 	if(!LAZYLEN(afflictions) && !(dirty & BODY_DIRTY_VITALS))
 		return
+	// A cycle the stasis clock paused: afflictions hold still (advance_stasis()).
+	if(stasis_paused)
+		return
 	invalidate(BODY_DIRTY_TREATMENT)
 	for(var/datum/affliction/A as anything in afflictions?.Copy())
 		if(A.body != src)

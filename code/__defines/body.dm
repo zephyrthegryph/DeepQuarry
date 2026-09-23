@@ -98,6 +98,9 @@
 #define TREAT_CHEST_COMPRESSION "chest_compression"  // CPR compressions: partial perfusion while the heart is stopped
 #define TREAT_VASOPRESSOR      "vasopressor"  // epinephrine-type: coaxes asystole toward VF, shrinks airway swelling
 #define TREAT_DIGESTIVE        "digestive"  // stomach / intestine / appendix tissue repair
+// Field stabilisation mechanisms (code/modules/medical/stabilisation/).
+#define TREAT_WOUND_PACKING    "wound_packing"  // packs / dresses a bleeding wound shut (hemostatic gauze, pressure bandage); amount = wounds
+#define TREAT_OCCLUSIVE_SEAL   "occlusive_seal"  // airtight seal over an open chest wound (chest seal); amount = wounds
 // Body-provided mechanisms.
 #define TREAT_REGENERATION     "regeneration"  // natural regeneration: species x nutrition x sleep (body.regeneration_level())
 #define TREAT_RESTORATION      "restoration"  // admin / magic / species restoration: every biology, full repair of every restorable affliction

@@ -189,6 +189,65 @@
 	min_symptoms = 1
 	max_symptoms = 2
 
+/// Fracture pain and slowdown are body factors, by region and by whether a
+/// splint holds the bone still. A splint doesn't knit the bone; it cuts the
+/// grinding (pain) and the limp.
+/datum/affliction/untreated_fracture/get_stages()
+	var/static/list/S = list(
+		"Unset leg" = list(
+			"name" = "untreated fracture",
+			"description" = "A broken leg bone, unset and unsupported. Every step grinds the fragments.",
+			"symptom_pool" = list(/datum/affliction_symptom/sharp_pain = 80, /datum/affliction_symptom/throbbing_pain = 60),
+			"factors" = alist(BF_SLOWDOWN = 1.5, BF_PAIN = 15),
+		),
+		"Splinted leg" = list(
+			"name" = "splinted fracture",
+			"description" = "A broken leg bone held still by a splint.",
+			"symptom_pool" = list(/datum/affliction_symptom/throbbing_pain = 40),
+			"factors" = alist(BF_SLOWDOWN = 0.5, BF_PAIN = 5),
+		),
+		"Unset arm" = list(
+			"name" = "untreated fracture",
+			"description" = "A broken arm bone, unset and unsupported.",
+			"symptom_pool" = list(/datum/affliction_symptom/sharp_pain = 80, /datum/affliction_symptom/throbbing_pain = 60),
+			"factors" = alist(BF_ACCURACY = -15, BF_PAIN = 15),
+		),
+		"Splinted arm" = list(
+			"name" = "splinted fracture",
+			"description" = "A broken arm bone held still by a splint.",
+			"symptom_pool" = list(/datum/affliction_symptom/throbbing_pain = 40),
+			"factors" = alist(BF_ACCURACY = -5, BF_PAIN = 5),
+		),
+		"Unset" = list(
+			"name" = "untreated fracture",
+			"description" = "A broken bone, unset and unsupported.",
+			"symptom_pool" = list(/datum/affliction_symptom/sharp_pain = 80, /datum/affliction_symptom/throbbing_pain = 60),
+			"factors" = alist(BF_SLOWDOWN = 0.5, BF_PAIN = 15),
+		),
+		"Splinted" = list(
+			"name" = "splinted fracture",
+			"description" = "A broken bone held still by a splint.",
+			"symptom_pool" = list(/datum/affliction_symptom/throbbing_pain = 40),
+			"factors" = alist(BF_PAIN = 5),
+		),
+	)
+	return S
+
+/datum/affliction/untreated_fracture/on_added()
+	. = ..()
+	recompute_stage_from_severity()
+
+/datum/affliction/untreated_fracture/recompute_stage_from_severity()
+	var/obj/item/organ/external/E = location
+	var/region = ""
+	if(istype(E))
+		switch(E.organ_tag)
+			if(BP_L_LEG, BP_R_LEG, BP_L_FOOT, BP_R_FOOT)
+				region = " leg"
+			if(BP_L_ARM, BP_R_ARM, BP_L_HAND, BP_R_HAND)
+				region = " arm"
+	_apply_stage("[(istype(E) && E.splinted) ? "Splinted" : "Unset"][region]")
+
 /datum/affliction/untreated_fracture/damage_scaling()
 	. = 1.0
 	if(location)
