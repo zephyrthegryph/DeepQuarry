@@ -153,12 +153,14 @@ fn apply(w: &mut PowerWorld, op: u32, a: &[f32]) -> Result<()> {
                 link: small(a[8]),
             };
             let p = pos(small(a[1]), small(a[2]), small(a[3]));
-            w.add_cable(key_of(a[0])?, p, shape).map_err(|e| eyre::eyre!(e))?;
+            w.add_cable(key_of(a[0])?, p, shape)
+                .map_err(|e| eyre::eyre!(e))?;
         }
         OP_MACHINE => {
             need(4)?;
             let p = pos(small(a[1]), small(a[2]), small(a[3]));
-            w.add_machine(key_of(a[0])?, p).map_err(|e| eyre::eyre!(e))?;
+            w.add_machine(key_of(a[0])?, p)
+                .map_err(|e| eyre::eyre!(e))?;
         }
         OP_REMOVE => {
             need(1)?;
@@ -220,7 +222,10 @@ fn apply(w: &mut PowerWorld, op: u32, a: &[f32]) -> Result<()> {
                 input_enabled: flags & SMES_INPUT != 0,
                 output_enabled: flags & SMES_OUTPUT != 0,
             };
-            let terminals = a[6..].iter().map(|&t| key_of(t)).collect::<Result<Vec<u32>>>()?;
+            let terminals = a[6..]
+                .iter()
+                .map(|&t| key_of(t))
+                .collect::<Result<Vec<u32>>>()?;
             w.set_smes(key_of(a[0])?, config, terminals, keep(a[5]).map(f64::from));
         }
         OP_CHARGE => {

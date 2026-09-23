@@ -15,6 +15,10 @@ auxcallback = { path = "callback" }
 vg-layout = { path = "../domains/layout" }
 vg-core = { path = "../core" }
 vg-power = { path = "../domains/power" }
+# The mob heat-body component (H2): heat's FFI moving out of vg-gas starts
+# here, on the R10 entity table, rather than adding a 30th bind to
+# domains/gas/src/heat.rs's positional-kind style (rust_core.md §15).
+vg-heat = { path = "../domains/heat" }
 
 [build-dependencies]
 bosion = "2.0.0"

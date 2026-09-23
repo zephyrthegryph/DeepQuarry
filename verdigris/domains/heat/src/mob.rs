@@ -282,6 +282,15 @@ fn unpack(h: MobHandle) -> (u32, u8) {
     (h & (MAX_MOB_BODIES - 1), (h >> 12) as u8)
 }
 
+/// This handle's slot, with its generation stripped -- for a caller (the
+/// FFI layer) that stores identity elsewhere (the R10 entity table's
+/// `ComponentRef::cell`) and only needs [`MobHeatWorld::handle_at`] to
+/// reconstruct a full handle later.
+#[must_use]
+pub fn slot_of(h: MobHandle) -> u32 {
+    unpack(h).0
+}
+
 #[derive(Clone, Debug, Default)]
 struct Slot {
     generation: u8,
@@ -302,6 +311,7 @@ pub struct MobHeatWorld {
     bodies: DomainKey<MobHeat>,
     watch: WatchKey<MobHeat>,
     dt: f32,
+    accum: f32,
     slots: Vec<Slot>,
     free: Vec<u32>,
     next_slot: u32,
@@ -327,11 +337,34 @@ impl MobHeatWorld {
             bodies,
             watch,
             dt,
+            accum: 0.0,
             slots: Vec::new(),
             free: Vec::new(),
             next_slot: 0,
             wakes: Vec::new(),
         })
+    }
+
+    /// DM's tick, paced against real elapsed time like
+    /// [`crate::world::HeatWorld::tick`]: accumulates `elapsed` and, once a
+    /// full `dt` has built up, runs exactly one frame synchronously
+    /// (correctness over throughput -- a station's mob count is small next
+    /// to turf/gas cells). Returns whether a frame ran.
+    pub fn tick(&mut self, elapsed: f32) -> bool {
+        if elapsed.is_finite() && elapsed > 0.0 {
+            self.accum = (self.accum + elapsed).min(self.dt * 4.0);
+        }
+        if self.accum + 1e-6 < self.dt {
+            return false;
+        }
+        self.accum = (self.accum - self.dt).max(0.0);
+        self.sim.wait_for_frame();
+        self.sim.begin_tick();
+        self.sim.dispatch_frame();
+        self.sim.wait_for_frame();
+        self.sim.begin_tick();
+        self.collect();
+        true
     }
 
     fn alloc_slot(&mut self) -> u32 {
@@ -349,6 +382,19 @@ impl MobHeatWorld {
         let (slot, generation) = unpack(h);
         let rec = self.slots.get(slot as usize)?;
         (rec.live && rec.generation == generation).then_some(slot)
+    }
+
+    /// This slot's current handle, if live. For a caller that identifies a
+    /// body by its own generation-checked reference (the R10 entity
+    /// table's `ComponentRef::cell`, in the FFI layer) rather than by a
+    /// [`MobHandle`] it already holds -- the entity table already checked
+    /// the caller's handle is live and names this slot, so reconstructing
+    /// ours here (rather than threading a second handle format through
+    /// every accessor) is exact, not a second independent check.
+    #[must_use]
+    pub fn handle_at(&self, slot: u32) -> Option<MobHandle> {
+        let rec = self.slots.get(slot as usize)?;
+        rec.live.then(|| pack(slot, rec.generation))
     }
 
     /// Creates a body. Errors if the table is full.
@@ -545,6 +591,23 @@ impl MobHeatWorld {
     /// Takes the wakes collected so far.
     pub fn drain_wakes(&mut self) -> Vec<Wake> {
         std::mem::take(&mut self.wakes)
+    }
+
+    /// Takes the wakes collected so far, as `[subscriber, watch, reason,
+    /// source]` quads (matches [`crate::world::HeatWorld::take_wakes`]'s
+    /// convention exactly, for one shared DM-side wake reader). `source` is
+    /// this slot's internal index, a diagnostic value only -- the caller
+    /// already holds the entity handle it registered the watch for.
+    #[allow(clippy::cast_precision_loss)]
+    pub fn take_wakes(&mut self, out: &mut Vec<f32>) {
+        for w in self.wakes.drain(..) {
+            out.extend_from_slice(&[
+                w.subscriber as f32,
+                w.watch.index as f32,
+                w.reason as f32,
+                (w.source & 0x00ff_ffff) as f32,
+            ]);
+        }
     }
 }
 

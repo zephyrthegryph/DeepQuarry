@@ -70,14 +70,20 @@ pub fn bind_or_reuse(existing: f32) -> Result<Handle<EntitySlots>> {
         }
         bail!("entity {existing} is not live");
     }
-    ENTITIES.with_borrow_mut(EntityTable::bind).map_err(|e| eyre!("{e}"))
+    ENTITIES
+        .with_borrow_mut(EntityTable::bind)
+        .map_err(|e| eyre!("{e}"))
 }
 
 /// Attaches `comp` to `entity`'s `domain` slot.
 ///
 /// # Errors
 /// As [`vg_core::entity::EntityTable::attach`].
-pub fn attach(entity: Handle<EntitySlots>, domain: usize, comp: ComponentRef) -> Result<(), EntityError> {
+pub fn attach(
+    entity: Handle<EntitySlots>,
+    domain: usize,
+    comp: ComponentRef,
+) -> Result<(), EntityError> {
     ENTITIES.with_borrow_mut(|t| t.attach(entity, domain, comp))
 }
 
@@ -117,7 +123,9 @@ fn entity_unbind(entity: ByondValue) -> Result<ByondValue> {
         return Ok(ByondValue::null());
     }
     let h = decode(v)?;
-    let slots = ENTITIES.with_borrow(|t| t.components(h)).map_err(|e| eyre!("{e}"))?;
+    let slots = ENTITIES
+        .with_borrow(|t| t.components(h))
+        .map_err(|e| eyre!("{e}"))?;
     for (domain, comp) in slots.iter() {
         DOMAINS.with_borrow_mut(|domains| {
             if let Some(handler) = domains.get_mut(&domain) {
@@ -126,7 +134,9 @@ fn entity_unbind(entity: ByondValue) -> Result<ByondValue> {
         });
         let _ = ENTITIES.with_borrow_mut(|t| t.detach(h, domain));
     }
-    ENTITIES.with_borrow_mut(|t| t.unbind(h)).map_err(|e| eyre!("{e}"))?;
+    ENTITIES
+        .with_borrow_mut(|t| t.unbind(h))
+        .map_err(|e| eyre!("{e}"))?;
     Ok(ByondValue::null())
 }
 
@@ -139,7 +149,9 @@ fn entity_describe(entity: ByondValue) -> Result<ByondValue> {
         return Ok(ByondValue::new_str("(unbound)")?);
     }
     let h = decode(v)?;
-    let slots = ENTITIES.with_borrow(|t| t.components(h)).map_err(|e| eyre!("{e}"))?;
+    let slots = ENTITIES
+        .with_borrow(|t| t.components(h))
+        .map_err(|e| eyre!("{e}"))?;
     let mut parts = Vec::new();
     for (domain, comp) in slots.iter() {
         DOMAINS.with_borrow(|domains| {
@@ -149,7 +161,11 @@ fn entity_describe(entity: ByondValue) -> Result<ByondValue> {
                     .into_iter()
                     .map(|(k, val)| format!("{k}={val}"))
                     .collect();
-                parts.push(format!("domain {domain} kind {}: {}", comp.kind, fields.join(", ")));
+                parts.push(format!(
+                    "domain {domain} kind {}: {}",
+                    comp.kind,
+                    fields.join(", ")
+                ));
             }
         });
     }

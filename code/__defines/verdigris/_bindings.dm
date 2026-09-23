@@ -24,7 +24,7 @@
 #endif
 
 /// Bind-set hash shared with verdigris/ffi/src/abi.rs; checked by verdigris_init().
-#define VERDIGRIS_ABI "415759240b85d7a1"
+#define VERDIGRIS_ABI "802fa98ca5c85110"
 
 // Numeric registry (@dm-define constants in the Rust sources).
 
@@ -374,16 +374,19 @@
 // verdigris/domains/heat/src/consts.rs
 #define STEFAN_BOLTZMANN_CONSTANT 0.00000005670374419
 
-/// 0 °C, K.
-// verdigris/domains/heat/src/consts.rs
+/// 0 °C, K. Single source for gas and heat.
+// verdigris/core/src/units.rs
 #define T0C 273.15
 
-/// 20 °C, K.
-// verdigris/domains/heat/src/consts.rs
+/// 20 °C, K. Single source for gas and heat.
+// verdigris/core/src/units.rs
 #define T20C 293.15
 
-/// Cosmic microwave background, K. The floor of every body and gas.
-// verdigris/domains/heat/src/consts.rs
+/// Cosmic microwave background, K. The floor of every body and gas. Single
+/// source for gas and heat (`rust_core.md` §15 core consolidation; H1 dedup
+/// audit finding); both `vg_heat::consts::TCMB` and `vg_gas`'s copy
+/// re-export this.
+// verdigris/core/src/units.rs
 #define TCMB 2.7
 
 /// Default heat capacity of an atom that declares no thermal properties, J/K.
@@ -410,6 +413,16 @@
 /// later domains (power, heat, ...) take 1, 2, ... as they land.
 // verdigris/domains/gas/src/kind/pump.rs
 #define VG_DOMAIN_GAS 0
+
+/// This component's domain index in the entity table. Gas's pump is domain
+/// 0; this is the first non-gas domain to register.
+// verdigris/ffi/src/heat_mob.rs
+#define VG_DOMAIN_HEAT_MOB 1
+
+/// This component's kind id within its domain (only one kind lives in this
+/// domain so far).
+// verdigris/ffi/src/heat_mob.rs
+#define VG_HEAT_MOB_KIND 1
 
 // Binds.
 
@@ -851,6 +864,67 @@
 	var/static/__f = load_ext(VERDIGRIS, "byond:heat_debug_run_frames_ffi")
 	VG_COUNT_FFI_CALL
 	return call_ext(__f)(frames)
+
+/// Creates the entity (if `entity` is 0) or reuses it, attaches a mob
+/// heat-body component seeded from the `init_*` values, and returns the
+/// entity handle. DM's base `on_materialize()` calls this once per
+/// component the type declares (§4).
+// /proc/heat_mob_bind (verdigris/ffi/src/heat_mob.rs)
+/proc/vg_heat_mob_bind(entity, init_capacity, init_temperature, init_metabolic_watts, init_coolant, init_insulation, init_ambient, init_setpoint, init_sweat_capacity_w, init_shiver_capacity_w, init_time_scale)
+	var/static/__f = load_ext(VERDIGRIS, "byond:heat_mob_bind_ffi")
+	VG_COUNT_FFI_CALL
+	return call_ext(__f)(entity, init_capacity, init_temperature, init_metabolic_watts, init_coolant, init_insulation, init_ambient, init_setpoint, init_sweat_capacity_w, init_shiver_capacity_w, init_time_scale)
+
+/// `body_heat_add(watts, source)`: one external flux source's current rate
+/// (reagents, cryo, bellies, items, afflictions, ... DQ Medical's own small
+/// `source` enum, `< MOB_EXTERNAL_SOURCES`), set to 0 to clear it. Persists
+/// like a rate, not a one-shot amount, until the source updates it again.
+// /mob/proc/heat_mob_body_heat_add (verdigris/ffi/src/heat_mob.rs)
+/proc/vg_heat_mob_body_heat_add(entity, watts, source)
+	var/static/__f = load_ext(VERDIGRIS, "byond:heat_mob_body_heat_add_ffi")
+	VG_COUNT_FFI_CALL
+	return call_ext(__f)(entity, watts, source)
+
+/// Drains and returns this cycle's wakes as a flat `[subscriber, watch,
+/// reason, source]`-quad list (matching `vg_heat`'s `heat_take_wakes`
+/// convention exactly) -- a comfort-band crossing shows up here; DM
+/// re-reads the temperature/band with `heat_mob_get_temperature`.
+// /proc/heat_mob_drain_wakes (verdigris/ffi/src/heat_mob.rs)
+/proc/vg_heat_mob_drain_wakes()
+	var/static/__f = load_ext(VERDIGRIS, "byond:heat_mob_drain_wakes_ffi")
+	VG_COUNT_FFI_CALL
+	return call_ext(__f)()
+
+// /mob/proc/heat_mob_get_temperature (verdigris/ffi/src/heat_mob.rs)
+/proc/vg_heat_mob_get_temperature(entity)
+	var/static/__f = load_ext(VERDIGRIS, "byond:heat_mob_get_temperature_ffi")
+	VG_COUNT_FFI_CALL
+	return call_ext(__f)(entity)
+
+/// Registers (replacing any previous one) this body's comfort bands.
+/// `levels` is a DM list of ascending temperatures; `subscriber` is who
+/// gets woken (`vg_wakes()`, matching turf/object heat watches) on the
+/// starting band and every crossing.
+// /mob/proc/heat_mob_set_bands (verdigris/ffi/src/heat_mob.rs)
+/proc/vg_heat_mob_set_bands(entity, subscriber, lane, levels)
+	var/static/__f = load_ext(VERDIGRIS, "byond:heat_mob_set_bands_ffi")
+	VG_COUNT_FFI_CALL
+	return call_ext(__f)(entity, subscriber, lane, levels)
+
+// /mob/proc/heat_mob_set_coolant (verdigris/ffi/src/heat_mob.rs)
+/proc/vg_heat_mob_set_coolant(entity, value)
+	var/static/__f = load_ext(VERDIGRIS, "byond:heat_mob_set_coolant_ffi")
+	VG_COUNT_FFI_CALL
+	return call_ext(__f)(entity, value)
+
+/// SSheat/SSmobs' per-cycle pump: paces frames against `elapsed` seconds of
+/// game time (`vg_heat_tick`'s pattern), and appends this cycle's wakes to
+/// the shared wake buffer `heat_mob_drain_wakes` empties.
+// /proc/heat_mob_tick (verdigris/ffi/src/heat_mob.rs)
+/proc/vg_heat_mob_tick(elapsed)
+	var/static/__f = load_ext(VERDIGRIS, "byond:heat_mob_tick_ffi")
+	VG_COUNT_FFI_CALL
+	return call_ext(__f)(elapsed)
 
 /// Drops the heat world (world boot, before `auxmos_configure_world`), so a
 /// rebooted world starts with no stale cells or bodies.
@@ -1413,16 +1487,12 @@
 	VG_COUNT_FFI_CALL
 	return call_ext(__f)(domain, sub, lane, cell, mask)
 
-/// `REACT_WHEN` difference: `a - b` (or `|a - b|` with `abs`) on channel
-/// `ch` crosses `value` like a threshold.
 // /proc/react_watch_difference (verdigris/ffi/src/reactor.rs)
 /proc/vg_react_watch_difference(domain, sub, lane, a, b, ch, cmp, value, hysteresis, abs)
 	var/static/__f = load_ext(VERDIGRIS, "byond:react_watch_difference_ffi")
 	VG_COUNT_FFI_CALL
 	return call_ext(__f)(domain, sub, lane, a, b, ch, cmp, value, hysteresis, abs)
 
-/// `REACT_WHEN` threshold: `cmp` 0 above / 1 below `value` on channel `ch`;
-/// `hysteresis` < 0 takes the channel's; `both_edges` also wakes on leaving.
 // /proc/react_watch_threshold (verdigris/ffi/src/reactor.rs)
 /proc/vg_react_watch_threshold(domain, sub, lane, cell, ch, cmp, value, hysteresis, both_edges)
 	var/static/__f = load_ext(VERDIGRIS, "byond:react_watch_threshold_ffi")
