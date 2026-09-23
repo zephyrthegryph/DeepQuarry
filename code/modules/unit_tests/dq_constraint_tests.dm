@@ -48,6 +48,7 @@
 	return (nibble & (1 << ((index - 1) % 4))) ? 1 : 0
 
 /datum/unit_test/dq_constraint_parity
+	abstract_type = /datum/unit_test/dq_constraint_parity
 	priority = TEST_LONGER
 	var/mismatches = 0
 	var/list/report
@@ -250,7 +251,17 @@
 	var/turf/T = run_loc_floor_bottom_left
 	var/list/kinds = list(CONSTRAINT_HOLD, CONSTRAINT_SUIT_STORAGE, CONSTRAINT_FIT, CONSTRAINT_EQUIP)
 	var/checked = 0
-	for(var/path in subtypesof(/obj/item/storage) + subtypesof(/obj/item/clothing) + subtypesof(/obj/item/rig))
+	// The types the parity fixture could create: every storage, suit and
+	// equip type that initializes cleanly on a bare floor.
+	var/list/fixture = dq_parity_fixture()
+	var/list/names = list()
+	for(var/group in list("storage", "suit", "holster"))
+		names |= fixture[group]
+	names |= fixture["equip_items"]
+	for(var/name in names)
+		var/path = text2path(name)
+		if(!path)
+			continue
 		var/obj/item/I = dq_parity_make(path, T)
 		if(!I)
 			continue
@@ -259,6 +270,8 @@
 			if(P && P.errors)
 				TEST_FAIL("[path] [kind]: [jointext(P.errors, "; ")]")
 			checked++
+		for(var/atom/movable/A in I)
+			qdel(A)
 		qdel(I)
 		CHECK_TICK
 	for(var/path in subtypesof(/datum/predicate/equip_slot))
