@@ -208,7 +208,11 @@
 	for(var/datum/interaction/interaction as anything in interaction_candidates(target))
 		if(interaction.held_type)
 			var/path = islist(interaction.held_type) ? interaction.held_type[1] : interaction.held_type
-			held_types |= path
+			// Only sample plain items: a standalone /obj/item/grab or /mob (drag targets
+			// for machine_drag interactions) isn't safe to allocate on a bare turf, so
+			// those combinations are skipped; the id still shows up via the no-item case.
+			if(ispath(path, /obj/item) && !ispath(path, /obj/item/grab))
+				held_types |= path
 	var/list/combinations = list(list("human", null), list("robot", null), list("ai", null), list("ghost", null))
 	for(var/path in held_types)
 		combinations += list(list("human", path))
@@ -240,6 +244,8 @@
 		qdel(target)
 	for(var/line in actual)
 		TEST_ASSERT(line in expected, "new or changed snapshot: [line]")
+	for(var/line in expected)
+		TEST_ASSERT(line in actual, "missing snapshot: [line]")
 	for(var/line in expected)
 		TEST_ASSERT(line in actual, "missing snapshot: [line]")
 
