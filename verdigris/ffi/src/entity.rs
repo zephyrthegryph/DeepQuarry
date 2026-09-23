@@ -44,8 +44,16 @@ pub fn register_entity_domain(domain: usize, handler: Box<dyn EntityDomain>) {
     });
 }
 
+// DM's `vg_entity == 0` means "unbound". A raw handle's packed bits can
+// themselves be 0 (index 0, generation 0 is a perfectly ordinary handle), so
+// crossing it as-is would make the first-ever bound entity indistinguishable
+// from "no entity" — a hand-rolled sentinel collision. Every `vg_entity`
+// value is the raw handle plus one; callers never see the offset.
 fn decode(v: f32) -> Result<Handle<EntitySlots>> {
-    Handle::from_f32(v).ok_or_else(|| eyre!("bad entity handle {v}"))
+    if v < 1.0 {
+        bail!("entity handle {v} is not bound (0 means unbound; call sites must check that first)");
+    }
+    Handle::from_f32(v - 1.0).ok_or_else(|| eyre!("bad entity handle {v}"))
 }
 
 /// Reserves a new entity, or reuses `existing` if it already names a live
@@ -73,10 +81,11 @@ pub fn attach(entity: Handle<EntitySlots>, domain: usize, comp: ComponentRef) ->
     ENTITIES.with_borrow_mut(|t| t.attach(entity, domain, comp))
 }
 
-/// The `f32` DM should store in `vg_entity`.
+/// The `f32` DM should store in `vg_entity` (the raw handle plus one; see
+/// [`decode`]).
 #[must_use]
 pub fn entity_value(h: Handle<EntitySlots>) -> f32 {
-    h.to_f32()
+    h.to_f32() + 1.0
 }
 
 /// Resolves a `vg_entity` number to a live component, checked against the
@@ -190,7 +199,7 @@ fn entity_debug_list() -> Result<ByondValue> {
         for (h, slots) in t.iter() {
             for (domain, comp) in slots.iter() {
                 flat.extend_from_slice(&[
-                    h.to_f32(),
+                    entity_value(h),
                     domain as f32,
                     f32::from(comp.kind),
                     comp.cell as f32,
