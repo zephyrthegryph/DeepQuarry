@@ -18,7 +18,7 @@ FAILED=0
 if command -v rg >/dev/null 2>&1; then
 	grep=rg
 	pcre2_support=1
-	if [ ! rg -P '' >/dev/null 2>&1 ] ; then
+	if ! rg -P '' >/dev/null 2>&1 ; then
 		pcre2_support=0
 	fi
 	code_files=(code/**/**.dm)
@@ -727,8 +727,8 @@ if [ "$pcre2_support" -eq 1 ]; then
 		FAILED=1
 	fi;
 else
-	echo -e "${RED}pcre2 not supported, skipping checks requiring pcre2"
-	echo -e "if you want to run these checks install ripgrep with pcre2 support.${NC}"
+	echo -e "${RED}ERROR: ripgrep was built without PCRE2 support, so the PCRE2-only checks (section \"regexes requiring PCRE2\") cannot run. Install a pcre2-capable ripgrep (the bundled tools/install_ripgrep.sh does this) and re-run.${NC}"
+	FAILED=1
 fi;
 
 if [ $FAILED = 0 ]; then

@@ -133,13 +133,15 @@
 	return nodes
 
 /datum/dq_rx_nodes
+	// dq_rx_nodes() only ever constructs one of these (a process-wide singleton), so
+	// these tables are effectively global state, not per-instance allocations.
 	var/next_node = 1
 	var/next_watch = 1
 	/// "[node]" -> weakref to its atom.
-	var/list/owners = list()
+	var/static/list/owners = list()
 	/// REF(atom) -> node, and back.
-	var/list/by_atom = list()
-	var/list/keys = list()
+	var/static/list/by_atom = list()
+	var/static/list/keys = list()
 	/// "[node]" -> its watch tokens.
 	var/list/node_watches = list()
 	/// token -> list(D, node, kind, params, live heat watch, body it is on).
