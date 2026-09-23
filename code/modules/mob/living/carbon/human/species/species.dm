@@ -637,7 +637,7 @@
 //CheckHighDamage returns the damage value of the attack if it meets at least the noted value
 /datum/species/proc/can_shred(mob/living/carbon/human/H, ignore_intent, checkhighdamage = 0)
 
-	if(!ignore_intent && H.a_intent != I_HURT)
+	if(!ignore_intent && !IS_HARMING(H))
 		return 0
 
 	if(H.get_feralness())

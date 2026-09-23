@@ -101,7 +101,7 @@
 		to_chat(user, span_warning("This syringe is broken!"))
 		return
 
-	if(user.a_intent == I_HURT && ismob(target))
+	if(IS_HARMING(user) && ismob(target))
 		if(CLUMSY_HARM_CHANCE(user))
 			target = user
 		syringestab(target, user)
@@ -351,8 +351,9 @@
 	if(mode == SYRINGE_DRAW && ismob(target)) // No drawing 50 units of blood at once
 		to_chat(user, span_notice("This needle isn't designed for drawing blood."))
 		return
-	if(user.a_intent == "hurt" && ismob(target)) // No instant injecting
+	if(IS_HARMING(user) && ismob(target)) // No instant injecting
 		to_chat(user, span_notice("This syringe is too big to stab someone with it."))
+		return
 	..()
 
 ////////////////////////////////////////////////////////////////////////////////
