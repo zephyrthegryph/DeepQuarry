@@ -117,7 +117,15 @@
 	// Sleeping devices are held through weakrefs, but their subscription buckets
 	// and arena watches must be removed synchronously. Leaving these until the
 	// next dirty publication kept deleted injectors alive in GC diagnostics.
-	var/datum/weakref/self_ref = WEAKREF(src)
+	//
+	// WEAKREF(src) cannot be used here: qdel() sets gc_destroyed before calling
+	// Destroy(), and WEAKREF() refuses to hand out a weakref to a QDELETED datum
+	// (it just returns null). That silently no-ops every cleanup below. Read the
+	// weakref this device already holds instead -- register_gas_dependencies()/
+	// hibernate_vent() always create one before a device can be asleep, and
+	// /datum/Destroy() (called via ..() below) doesn't null it out until after
+	// we're done with it.
+	var/datum/weakref/self_ref = weak_reference
 	unregister_gas_dependencies(self_ref)
 	// A device destroyed while asleep must also drop out of the sleeping/hibernating
 	// registries directly -- those are only cleared on wake, and Destroy() is not
