@@ -173,7 +173,7 @@ impl GasType {
 						Some(FireProductInfo::Generic(
 							product_info
 								.iter()
-								.unwrap()
+								.ok()?
 								.filter_map(|(k, v)| {
 									k.get_string().ok().and_then(|s_str| {
 										v.get_number()
@@ -207,7 +207,9 @@ pub fn initialize_gas_info_structs() {
 }
 
 pub fn destroy_gas_info_structs() {
-	GAS_INFO_BY_IDX.write().as_mut().unwrap().clear();
+	if let Some(gases) = GAS_INFO_BY_IDX.write().as_mut() {
+		gases.clear();
+	}
 }
 
 /// Installs the gas roster. Each gas lands at the fixed ID of its type path
@@ -267,20 +269,23 @@ fn hook_init(gas_data: ByondValue) -> Result<ByondValue> {
 		.collect::<Result<Vec<_>>>()
 		.wrap_err("auxtools_atmos_init failed to register gas")?;
 	install_gases(gases)?;
-	*REACTION_INFO.write() = Some(get_reaction_info());
+	*REACTION_INFO.write() = Some(get_reaction_info()?);
 	install_gate();
 	Ok(true.into())
 }
 
-fn get_reaction_info() -> BTreeMap<ReactionPriority, Reaction> {
+fn get_reaction_info() -> Result<BTreeMap<ReactionPriority, Reaction>> {
 	let gas_reactions = ByondValue::new_global_ref()
 		.read_var_id(byond_string!("SSair"))
-		.unwrap()
+		.wrap_err("get_reaction_info: couldn't read global SSair")?
 		.read_var_id(byond_string!("gas_reactions"))
-		.unwrap();
+		.wrap_err("get_reaction_info: SSair has no gas_reactions var")?;
 	let mut reaction_cache: BTreeMap<ReactionPriority, Reaction> = Default::default();
 	let sender = byond_callback_sender();
-	for (reaction, _) in gas_reactions.iter().unwrap() {
+	for (reaction, _) in gas_reactions
+		.iter()
+		.wrap_err("get_reaction_info: SSair.gas_reactions is not a list")?
+	{
 		match Reaction::from_byond_reaction(reaction) {
 			Ok(reaction) => {
 				if let std::collections::btree_map::Entry::Vacant(e) =
@@ -302,13 +307,13 @@ fn get_reaction_info() -> BTreeMap<ReactionPriority, Reaction> {
 			}
 		}
 	}
-	reaction_cache
+	Ok(reaction_cache)
 }
 
 /// For updating reaction informations for auxmos, only call this when it is changed.
 #[auxmacros::bind("/datum/controller/subsystem/air/proc/auxtools_update_reactions")]
 fn update_reactions() -> Result<ByondValue> {
-	*REACTION_INFO.write() = Some(get_reaction_info());
+	*REACTION_INFO.write() = Some(get_reaction_info()?);
 	install_gate();
 	Ok(true.into())
 }
@@ -374,9 +379,10 @@ pub fn gas_visibility(idx: usize) -> Option<f32> {
 		.read()
 		.as_ref()
 		.unwrap_or_else(|| panic!("Gases not loaded yet! Uh oh!"))
+		// `idx` comes from FFI callers (gas cell indices), so an out-of-range
+		// value must fall through to "not visible" rather than panic.
 		.get(idx)
-		.unwrap()
-		.moles_visible
+		.and_then(|gas| gas.moles_visible)
 }
 
 /// Gets a copy of all the gas visibilities.
@@ -405,26 +411,30 @@ pub fn with_gas_info<T>(f: impl FnOnce(&[GasType]) -> T) -> T {
 }
 
 /// Updates all the `GasRef`s in the global gas info vec with proper indices instead of strings.
+///
+/// # Errors
+/// If a `GasRef::Deferred` doesn't resolve to a registered gas.
 /// # Panics
 /// If gas info is not loaded yet.
-pub fn update_gas_refs() {
+pub fn update_gas_refs() -> Result<()> {
 	GAS_INFO_BY_IDX
 		.write()
 		.as_mut()
 		.unwrap_or_else(|| panic!("Gases not loaded yet! Uh oh!"))
 		.iter_mut()
-		.for_each(|gas| {
+		.try_for_each(|gas| {
 			if let Some(FireProductInfo::Generic(products)) = gas.fire_products.as_mut() {
 				for product in products.iter_mut() {
-					product.0.update().unwrap();
+					product.0.update()?;
 				}
 			}
-		});
+			Ok(())
+		})
 }
 /// For updating reagent gas fire products, do not use for now.
 #[auxmacros::bind("/proc/finalize_gas_refs")]
 fn finalize_gas_refs() -> Result<ByondValue> {
-	update_gas_refs();
+	update_gas_refs()?;
 	Ok(ByondValue::null())
 }
 
