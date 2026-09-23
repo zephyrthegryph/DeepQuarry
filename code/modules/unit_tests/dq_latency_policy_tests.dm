@@ -189,6 +189,25 @@
 	TEST_ASSERT(!can_be_latent(product), "an idle item in the stock slot must not be latent-eligible (C9 owns it)")
 	qdel(machine)
 
+/// Worn/held pin path (containment.md §4.7): equipped()/dropped() pin and
+/// unpin, independent of whether mobs are latent_contents holders yet (C3
+/// hasn't landed, so can_be_latent() never even reaches this for a worn
+/// item today -- but the pin bookkeeping itself must already be correct so
+/// nothing has to change here once C3 does).
+/datum/unit_test/dq_latency_worn_held_pins
+
+/datum/unit_test/dq_latency_worn_held_pins/Run()
+	var/obj/holder = new()
+	var/mob/living/carbon/human/H = new(holder)
+	H.set_species(SPECIES_HUMAN)
+	var/obj/item/dq_latency_test_item/item = new(holder)
+	TEST_ASSERT(!dq_latent_pinned(item), "an unworn item should not be pinned")
+	TEST_ASSERT(H.equip_to_slot_if_possible(item, slot_l_hand), "the item should equip into a hand")
+	TEST_ASSERT(dq_latent_pinned(item), "a held item must be pinned")
+	H.unEquip(item)
+	TEST_ASSERT(!dq_latent_pinned(item), "dropping should release the pin")
+	qdel(holder)
+
 // ---- Collapse/materialize round trip, and the audit ----
 
 /datum/unit_test/dq_latency_round_trip
