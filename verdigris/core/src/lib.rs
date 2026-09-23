@@ -10,6 +10,7 @@ pub mod arena;
 pub mod bitset;
 pub mod channel;
 pub mod command;
+pub mod conservation;
 pub mod cow;
 pub mod field;
 pub mod frame;
