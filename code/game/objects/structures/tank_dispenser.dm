@@ -42,8 +42,21 @@
 		return attack_hand(user)
 	..()
 
-/obj/structure/dispenser/attack_hand(mob/user)
+/obj/structure/dispenser/declare_interactions(list/into)
+	into += list(
+		/datum/interaction/entry_hand/dispenser_open_ui,
+		/datum/interaction/entry_item/dispenser_item,
+	)
+	..()
+
+/datum/interaction/entry_hand/dispenser_open_ui
+	id = "dispenser_open_ui"
+	name = "Use"
+	effect = /obj/structure/dispenser/proc/interaction_open_ui
+
+/obj/structure/dispenser/proc/interaction_open_ui(mob/user, obj/item/held, datum/interaction/interaction)
 	tgui_interact(user)
+	return TRUE
 
 /obj/structure/dispenser/tgui_state(mob/user)
 	return GLOB.tgui_physical_state
@@ -61,7 +74,13 @@
 
 	return data
 
-/obj/structure/dispenser/attackby(obj/item/I, mob/user)
+/// Old attackby: store a tank, or take a hit on harm intent.
+/datum/interaction/entry_item/dispenser_item
+	id = "dispenser_item"
+	name = "Use"
+	effect = /obj/structure/dispenser/proc/interaction_item
+
+/obj/structure/dispenser/proc/interaction_item(mob/user, obj/item/I, datum/interaction/interaction)
 	var/full
 	if(istype(I, /obj/item/tank/oxygen) || istype(I, /obj/item/tank/air) || istype(I, /obj/item/tank/anesthetic))
 		if(oxygentanks < TANK_DISPENSER_CAPACITY)
@@ -75,18 +94,19 @@
 			full = TRUE
 	else if(!IS_HARMING(user))
 		to_chat(user, span_notice("[I] does not fit into [src]."))
-		return
+		return TRUE
 	else
-		return ..()
+		return TRUE
 
 	if(full)
 		to_chat(user, span_notice("[src] can't hold any more of [I]."))
-		return
+		return TRUE
 
 	if(!user.unEquip(I, target = src))
-		return
+		return TRUE
 	to_chat(user, span_notice("You put [I] in [src]."))
 	update_icon()
+	return TRUE
 
 /obj/structure/dispenser/wrench_act(mob/user, obj/item/I)
 	anchored = !anchored
