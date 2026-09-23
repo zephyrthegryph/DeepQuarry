@@ -159,7 +159,7 @@
 	category = INTERACTION_CAT_CONFIGURE
 	effect = /obj/machinery/computer/message_monitor/proc/interaction_open_ui
 
-/obj/machinery/computer/message_monitor/proc/interaction_open_ui(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/machinery/computer/message_monitor/interaction_open_ui(mob/user, obj/item/held, datum/interaction/interaction)
 	if(stat & (NOPOWER|BROKEN))
 		return TRUE
 	if(!istype(user))

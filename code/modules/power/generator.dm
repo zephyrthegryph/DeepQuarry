@@ -234,7 +234,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery/power/generator, REGISTRY_TURBINES)
 	name = "Use"
 	effect = /obj/machinery/power/generator/proc/interaction_open_ui
 
-/obj/machinery/power/generator/proc/interaction_open_ui(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/machinery/power/generator/interaction_open_ui(mob/user, obj/item/held, datum/interaction/interaction)
 	add_fingerprint(user)
 	if(stat & (BROKEN|NOPOWER) || !anchored)
 		return TRUE

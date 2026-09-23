@@ -46,7 +46,7 @@
 	name = "Use"
 	effect = /obj/machinery/computer/security/proc/interaction_open_ui
 
-/obj/machinery/computer/security/proc/interaction_open_ui(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/machinery/computer/security/interaction_open_ui(mob/user, obj/item/held, datum/interaction/interaction)
 	add_fingerprint(user)
 	if(stat & (BROKEN|NOPOWER))
 		return TRUE

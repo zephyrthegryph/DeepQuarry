@@ -59,7 +59,7 @@
 	name = "Use"
 	effect = /obj/machinery/computer/pod/proc/interaction_open_ui
 
-/obj/machinery/computer/pod/proc/interaction_open_ui(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/machinery/computer/pod/interaction_open_ui(mob/user, obj/item/held, datum/interaction/interaction)
 	if(!Adjacent(user) && !issilicon(user))
 		return TRUE
 	tgui_interact(user)

@@ -333,7 +333,7 @@
 /obj/machinery/power/port_gen/pacman/proc/pacman_not_active(mob/actor, atom/target, obj/item/held)
 	return !active
 
-/obj/machinery/power/port_gen/pacman/proc/interaction_part_replacement(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/machinery/power/port_gen/pacman/interaction_part_replacement(mob/user, obj/item/held, datum/interaction/interaction)
 	return default_part_replacement(user, held) ? TRUE : FALSE
 
 /obj/machinery/power/port_gen/pacman/screwdriver_act(mob/user, obj/item/O)
@@ -369,7 +369,7 @@
 /obj/machinery/power/port_gen/pacman/proc/pacman_anchored(mob/actor, atom/target, obj/item/held)
 	return !!anchored
 
-/obj/machinery/power/port_gen/pacman/proc/interaction_open_ui(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/machinery/power/port_gen/pacman/interaction_open_ui(mob/user, obj/item/held, datum/interaction/interaction)
 	tgui_interact(user)
 	return TRUE
 
