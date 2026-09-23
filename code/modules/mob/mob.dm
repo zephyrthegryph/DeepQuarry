@@ -539,10 +539,10 @@
 	var/list/targets = list()
 
 
-	targets += observe_list_format(GLOB.nuke_disks)
-	targets += observe_list_format(GLOB.all_singularities)
+	targets += observe_list_format(REGISTRY_MEMBERS(REGISTRY_NUKE_DISKS))
+	targets += observe_list_format(REGISTRY_MEMBERS(REGISTRY_SINGULARITIES))
 	targets += getmobs()
-	targets += observe_list_format(sort_names(GLOB.mechas_list))
+	targets += observe_list_format(sort_names(REGISTRY_MEMBERS(REGISTRY_MECHAS)))
 	targets += observe_list_format(SSshuttles.ships)
 
 	client.perspective = EYE_PERSPECTIVE

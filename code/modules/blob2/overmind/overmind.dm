@@ -57,7 +57,7 @@ GLOBAL_LIST_EMPTY(overminds)
 	return ..()
 
 /mob/observer/blob/Destroy()
-	for(var/obj/structure/blob/B as anything in GLOB.all_blobs)
+	for(var/obj/structure/blob/B as anything in REGISTRY_MEMBERS(REGISTRY_BLOBS))
 		if(B && B.overmind == src)
 			B.overmind = null
 			B.update_icon() //reset anything that was ours
@@ -77,7 +77,7 @@ GLOBAL_LIST_EMPTY(overminds)
 	if(blob_core)
 		. += "Core Health: [blob_core.get_integrity()]"
 	. += "Power Stored: [blob_points]/[max_blob_points]"
-	. += "Total Blobs: [GLOB.all_blobs.len]"
+	. += "Total Blobs: [REGISTRY_COUNT(REGISTRY_BLOBS)]"
 
 /mob/observer/blob/Move(atom/NewLoc, Dir = 0)
 	if(placed)

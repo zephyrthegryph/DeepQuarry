@@ -3,8 +3,8 @@
 // Handles control UI, but also coordinates their fire to avoid overkill.
 //
 
-GLOBAL_LIST_BOILERPLATE(pointdefense_controllers, /obj/machinery/pointdefense_control)
-GLOBAL_LIST_BOILERPLATE(pointdefense_turrets, /obj/machinery/pointdefense)
+REGISTRY_MEMBERSHIP(/obj/machinery/pointdefense_control, REGISTRY_POINTDEFENSE_CONTROLLERS)
+REGISTRY_MEMBERSHIP(/obj/machinery/pointdefense, REGISTRY_POINTDEFENSE_TURRETS)
 
 /obj/machinery/pointdefense_control
 	maintenance_flags = MACHINE_MAINT_STANDARD
@@ -26,7 +26,7 @@ GLOBAL_LIST_BOILERPLATE(pointdefense_turrets, /obj/machinery/pointdefense)
 	. = ..()
 	if(id_tag)
 		//No more than 1 controller please.
-		for(var/obj/machinery/pointdefense_control/PC as anything in GLOB.pointdefense_controllers)
+		for(var/obj/machinery/pointdefense_control/PC as anything in REGISTRY_MEMBERS(REGISTRY_POINTDEFENSE_CONTROLLERS))
 			if(PC != src && PC.id_tag == id_tag)
 				WARNING("Two [src] with the same id_tag of [id_tag]")
 				id_tag = null
@@ -76,8 +76,8 @@ GLOBAL_LIST_BOILERPLATE(pointdefense_turrets, /obj/machinery/pointdefense)
 	var/list/turrets = list()
 	if(id_tag)
 		var/list/connected_z_levels = GetConnectedZlevels(get_z(src))
-		for(var/i = 1 to LAZYLEN(GLOB.pointdefense_turrets))
-			var/obj/machinery/pointdefense/PD = GLOB.pointdefense_turrets[i]
+		for(var/i = 1 to LAZYLEN(REGISTRY_MEMBERS(REGISTRY_POINTDEFENSE_TURRETS)))
+			var/obj/machinery/pointdefense/PD = REGISTRY_MEMBERS(REGISTRY_POINTDEFENSE_TURRETS)[i]
 			if(!(PD.id_tag == id_tag && (get_z(PD) in connected_z_levels)))
 				continue
 			var/list/turret = list()
@@ -96,7 +96,7 @@ GLOBAL_LIST_BOILERPLATE(pointdefense_turrets, /obj/machinery/pointdefense)
 /obj/machinery/pointdefense_control/multitool_act(mob/user, obj/item/tool)
 	var/new_ident = tgui_input_text(user, "Enter a new ident tag.", "[src]", id_tag, MAX_NAME_LEN)
 	if(new_ident && new_ident != id_tag && user.Adjacent(src) && CanInteract(user, GLOB.tgui_physical_state))
-		for(var/obj/machinery/pointdefense_control/PC as anything in GLOB.pointdefense_controllers)
+		for(var/obj/machinery/pointdefense_control/PC as anything in REGISTRY_MEMBERS(REGISTRY_POINTDEFENSE_CONTROLLERS))
 			if(PC != src && PC.id_tag == new_ident)
 				to_chat(user, span_warning("The [new_ident] network already has a controller."))
 				return ITEM_INTERACT_BLOCKING
@@ -166,7 +166,7 @@ GLOBAL_LIST_BOILERPLATE(pointdefense_turrets, /obj/machinery/pointdefense)
 	if(!id_tag)
 		return null
 	var/list/connected_z_levels = GetConnectedZlevels(get_z(src))
-	for(var/obj/machinery/pointdefense_control/PDC as anything in GLOB.pointdefense_controllers)
+	for(var/obj/machinery/pointdefense_control/PDC as anything in REGISTRY_MEMBERS(REGISTRY_POINTDEFENSE_CONTROLLERS))
 		if(PDC.id_tag == id_tag && (get_z(PDC) in connected_z_levels))
 			return PDC
 
@@ -236,14 +236,14 @@ GLOBAL_LIST_BOILERPLATE(pointdefense_turrets, /obj/machinery/pointdefense)
 	if(dir != desiredir)
 		set_dir(desiredir)
 
-	if(!LAZYLEN(GLOB.meteor_list))
+	if(!LAZYLEN(REGISTRY_MEMBERS(REGISTRY_METEORS)))
 		sleep_until_keys(list(REACT_KEY_METEORS, 1, REACT_KEY_CHANGED))
 		return PROCESS_KILL
 	find_and_shoot()
 
 /obj/machinery/pointdefense/proc/find_and_shoot()
 	// There ARE meteors to shoot
-	if(LAZYLEN(GLOB.meteor_list) == 0)
+	if(LAZYLEN(REGISTRY_MEMBERS(REGISTRY_METEORS)) == 0)
 		return
 	// We can shoot
 	if(engaging || ((world.time - last_shot) < charge_cooldown))
@@ -260,7 +260,7 @@ GLOBAL_LIST_BOILERPLATE(pointdefense_turrets, /obj/machinery/pointdefense)
 		existing_targets += M
 
 	// First, try and acquire new targets
-	var/list/potential_targets = GLOB.meteor_list.Copy() - existing_targets
+	var/list/potential_targets = REGISTRY_COPY(REGISTRY_METEORS) - existing_targets
 	for(var/obj/effect/meteor/M in potential_targets)
 		if(targeting_check(M))
 			var/datum/weakref/target = WEAKREF(M)
@@ -329,6 +329,6 @@ GLOBAL_LIST_BOILERPLATE(pointdefense_turrets, /obj/machinery/pointdefense)
 /obj/machinery/pointdefense/react_sleep_violation()
 	if(!asleep_on_keys() || (stat & BROKEN) || !active)
 		return null
-	if(LAZYLEN(GLOB.meteor_list))
-		return "asleep with [LAZYLEN(GLOB.meteor_list)] meteors about"
+	if(LAZYLEN(REGISTRY_MEMBERS(REGISTRY_METEORS)))
+		return "asleep with [LAZYLEN(REGISTRY_MEMBERS(REGISTRY_METEORS))] meteors about"
 	return null

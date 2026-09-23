@@ -16,12 +16,12 @@ GLOBAL_VAR_INIT(narsie_cometh, 0)
 	consume_range = 3 //How many tiles out do we eat
 
 
+REGISTRY_MEMBERSHIP(/obj/singularity/narsie, REGISTRY_NARSIE)
+
 /obj/singularity/narsie/Initialize(mapload)
 	. = ..()
-	GLOB.narsie_list.Add(src)
 
 /obj/singularity/narsie/Destroy()
-	GLOB.narsie_list.Remove(src)
 	. = ..()
 
 /obj/singularity/narsie/large

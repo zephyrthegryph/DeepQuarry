@@ -269,7 +269,7 @@
 						//scan radios in the world to try and find one
 						var/turf/T = get_turf(src)
 						var/cur_dist = 999
-						for(var/obj/item/radio/beacon/R in GLOB.all_beacons)
+						for(var/obj/item/radio/beacon/R in REGISTRY_MEMBERS(REGISTRY_BEACONS))
 							if(R.z == T.z && R.frequency == src.frequency)
 								var/check_dist = get_dist(T,R)
 								if(check_dist < cur_dist)

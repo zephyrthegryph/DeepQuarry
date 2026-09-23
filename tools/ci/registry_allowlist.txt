@@ -1,0 +1,47 @@
+# Global lists that objects still add themselves to (tools/ci/registry_lint.py).
+# New ones are refused: declare REGISTRY_MEMBERSHIP() instead (L3,
+# code/__defines/registries.dm). Every entry needs a reason; remove entries as
+# they migrate. The lint fails on an entry that no longer matches anything.
+
+# Owned by the body/medical/mob Life session (not editable from L3). Mob
+# lists move with life state (alive, dead, logged in), not with the lifecycle.
+mob_list # mob lifecycle; mob Life owner
+living_mob_list # changes on death and revival
+dead_mob_list # changes on death and revival
+human_mob_list # body owner (human.dm)
+silicon_mob_list # mob owner
+ai_list # mob owner
+observer_mob_list # mob owner
+new_player_list # joins on Login, not creation
+player_list # joins on Login, not creation
+existing_solargrubs # simple_mob owner
+overminds # blob overmind is a mob
+available_ai_shells # borg shell state
+active_ghost_pods # pod and mob state (ghost joinable), not lifecycle
+all_brain_organs # GLOBAL_LIST_BOILERPLATE in organs/internal/brain.dm; readers in human.dm
+
+# Membership follows a state, not the lifecycle. Needs conditional
+# registries (a registry_key() or state-keyed index) before it can move.
+listening_objects # radios join in on_materialize(); communicators, implants, translators join by state
+active_radio_jammers # on while switched on
+mapping_units # while updating
+mapping_beacons # while switched on
+item_tf_spawnpoints # while set as a spawnpoint
+solars_list # while connected to a powernet
+landmarks_list # conditional on the landmark name; letmelive Destroy
+latejoin # landmarks by name
+
+# Not atoms: datums and clients have no materialize hooks. Registries are for
+# atoms for now; these stay plain lists.
+all_exonet_connections # /datum/exonet_protocol
+all_objectives # /datum/objective
+all_waypoints # /datum/computer_file/data/waypoint
+comm_message_listeners # /datum/comm_message_listener
+damage_packet_pool # object pool, not membership
+experiment_handlers # /datum/component
+map_reports # /datum/map_report
+persistent_clients # /datum/persistent_client
+running_demand_events # /datum/event
+ship_engines # /datum/ship_engine
+visual_nets # /datum/visualnet
+clients # clients

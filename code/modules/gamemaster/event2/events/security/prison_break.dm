@@ -194,7 +194,7 @@
 	within approximately three minutes. Direct intervention is required immediately. Disabling the \
 	main breaker in the APCs will protect the APC's room from being compromised."
 
-	for(var/obj/machinery/message_server/MS in GLOB.machines)
+	for(var/obj/machinery/message_server/MS in REGISTRY_MEMBERS(REGISTRY_MACHINES))
 		MS.send_rc_message(DEPARTMENT_ENGINEERING, my_department, "[message]<br>", "", "", 2)
 
 	// Nobody reads the requests consoles so lets use the radio as well.

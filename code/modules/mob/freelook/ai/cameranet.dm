@@ -3,15 +3,12 @@
 // The datum containing all the chunks.
 
 /datum/visualnet/camera
-	// The cameras on the map, no matter if they work or not. Updated in obj/machinery/camera.dm by New() and Destroy().
-	var/list/cameras = list()
-	var/cameras_unsorted = 1
 	chunk_type = /datum/chunk/camera
 
+/// Sorts the camera registry once, the first time a sorted view is needed.
 /datum/visualnet/camera/proc/process_sort()
-	if(cameras_unsorted)
-		cameras = dd_sortedObjectList(cameras)
-		cameras_unsorted = 0
+	var/datum/registry/cameras/registry = get_registry(REGISTRY_CAMERAS)
+	registry.sort()
 
 // Removes a camera from a chunk.
 

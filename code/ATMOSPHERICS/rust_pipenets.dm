@@ -172,7 +172,7 @@
 	next_rust_pipe_port_id = 1
 	var/operations = rust_pipe_operation(RUST_PIPE_OP_CLEAR, 0, 0)
 
-	for(var/obj/machinery/atmospherics/machine in SSmachines.all_machines)
+	for(var/obj/machinery/atmospherics/machine in REGISTRY_MEMBERS(REGISTRY_MACHINES))
 		machine.rust_allocate_pipe_ports()
 		for(var/index = 1 to machine.rust_pipe_port_count())
 			var/datum/gas_mixture/port_air = machine.rust_pipe_port_air(index)
@@ -183,7 +183,7 @@
 			stoplag()
 
 	var/list/seen_edges = list()
-	for(var/obj/machinery/atmospherics/machine in SSmachines.all_machines)
+	for(var/obj/machinery/atmospherics/machine in REGISTRY_MEMBERS(REGISTRY_MACHINES))
 		for(var/index = 1 to machine.rust_pipe_port_count())
 			for(var/obj/machinery/atmospherics/neighbor as anything in machine.rust_pipe_port_neighbors(index))
 				if(!neighbor)

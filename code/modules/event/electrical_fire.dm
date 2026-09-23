@@ -1,9 +1,9 @@
 /datum/event/electrical_fire/start()
-	if(!GLOB.machines.len)
+	if(!REGISTRY_COUNT(REGISTRY_MACHINES))
 		return
 
 	var/list/possible_machines = list()
-	for(var/obj/machinery/M in GLOB.machines)
+	for(var/obj/machinery/M in REGISTRY_MEMBERS(REGISTRY_MACHINES))
 		var/area/A = get_area(M)
 		if(!A)
 			continue

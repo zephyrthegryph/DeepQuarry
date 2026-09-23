@@ -1,7 +1,6 @@
 // the SMES
 // stores power
 
-GLOBAL_LIST_EMPTY(smeses)
 
 //# define SMESMAXCHARGELEVEL 250000 Unused
 //# define SMESMAXOUTPUT 250000 Unused
@@ -69,9 +68,10 @@ GLOBAL_LIST_EMPTY(smeses)
 	charge -= smes_amt
 	return smes_amt / SMESRATE
 
+REGISTRY_MEMBERSHIP(/obj/machinery/power/smes, REGISTRY_SMES)
+
 /obj/machinery/power/smes/Initialize(mapload)
 	. = ..()
-	GLOB.smeses += src
 	add_nearby_terminals()
 	soundloop = new(list(src), FALSE) // hmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmm
 	soundloop.extra_range = -6 // Doing this here bc we're reusing the generator hum, and can't directly edit that one
@@ -127,7 +127,6 @@ GLOBAL_LIST_EMPTY(smeses)
 		T.powernet?.unregister_storage_terminal(T)
 		T.master = null
 	terminals = null
-	GLOB.smeses -= src
 	QDEL_NULL(soundloop)
 	return ..()
 

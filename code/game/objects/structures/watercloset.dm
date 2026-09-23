@@ -736,7 +736,7 @@
 		add_fingerprint(user)
 		if(honk_text)
 			audible_message(span_maroon("[honk_text]"))
-		for(var/obj/machinery/light/L in GLOB.machines)
+		for(var/obj/machinery/light/L in REGISTRY_MEMBERS(REGISTRY_MACHINES))
 			if(L.z != user.z || get_dist(user,L) > 10)
 				continue
 			else

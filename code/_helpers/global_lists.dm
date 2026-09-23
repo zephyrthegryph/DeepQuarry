@@ -12,13 +12,9 @@ GLOBAL_LIST_EMPTY(observer_mob_list)				//List of all /mob/observer/dead, includ
 GLOBAL_LIST_EMPTY(listening_objects)				//List of all objects which care about receiving messages (communicators, radios, etc)
 GLOBAL_LIST_EMPTY(cleanbot_reserved_turfs)			//List of all turfs currently targeted by some cleanbot
 
-GLOBAL_LIST_EMPTY(cable_list)						//Index for all cables, so that powernets don't have to look through the entire world all the time
 GLOBAL_LIST_EMPTY(landmarks_list)					//list of all landmarks created
 GLOBAL_LIST_EMPTY(event_triggers)					//Associative list of creator_ckey:list(landmark references) for event triggers
 
-GLOBAL_LIST_EMPTY(mechas_list)						//list of all mechs. Used by hostile mobs target tracking.
-GLOBAL_LIST_EMPTY_TYPED(PDAs, /obj/item/pda)
-GLOBAL_LIST_EMPTY_TYPED(all_communicators, /obj/item/communicator)
 
 // Those networks can only be accessed by pre-existing terminals. AIs and new terminals can't use them.
 GLOBAL_LIST_INIT(restricted_camera_networks, list(NETWORK_ERT,NETWORK_MERCENARY,"Secret", NETWORK_COMMUNICATORS))
@@ -70,10 +66,8 @@ GLOBAL_LIST_INIT(backbaglist, list("Nothing", "Backpack", "Satchel", "Satchel Al
 GLOBAL_LIST_INIT(pdachoicelist, list("Default", "Slim", "Old", "Rugged", "Holographic", "Wrist-Bound","Slider", "Vintage"))
 GLOBAL_LIST_INIT(exclude_jobs, list(/datum/job/ai,/datum/job/cyborg))
 
-GLOBAL_LIST_EMPTY_TYPED(message_servers, /obj/machinery/message_server)
 GLOBAL_LIST_INIT_TYPED(supply_drop, /datum/supply_drop_loot, dd_sortedObjectList(init_subtypes(/datum/supply_drop_loot)))
 // Runes
-GLOBAL_LIST_EMPTY(rune_list)
 GLOBAL_LIST_EMPTY(escape_list)
 GLOBAL_LIST_EMPTY(endgame_exits)
 GLOBAL_LIST_EMPTY(endgame_safespawns)
@@ -608,7 +602,6 @@ GLOBAL_LIST_EMPTY(stool_cache) //haha stool
 GLOBAL_LIST_EMPTY(emotes_by_key)
 GLOBAL_LIST_EMPTY(random_maps)
 GLOBAL_LIST_EMPTY(map_count)
-GLOBAL_LIST_EMPTY(narsie_list)
 GLOBAL_LIST_EMPTY(id_card_states)
 GLOBAL_LIST_EMPTY(allocated_gamma_loot)
 GLOBAL_LIST_EMPTY(semirandom_mob_spawner_decisions)
@@ -661,7 +654,6 @@ GLOBAL_LIST_INIT(all_technomancer_gambit_spells, typesof(/obj/item/spell) - list
 	/obj/item/spell/summon,
 	/obj/item/spell/modifier))
 
-GLOBAL_LIST_EMPTY_TYPED(telecomms_list, /obj/machinery/telecomms)
 
 // color-dir-dry
 GLOBAL_LIST_EMPTY_TYPED(fluidtrack_cache, /image)
@@ -702,7 +694,7 @@ GLOBAL_LIST_INIT(radio_channels_by_freq, list(
 	num2text(EXP_FREQ) = CHANNEL_EXPLORATION
 	))
 
-GLOBAL_LIST_BOILERPLATE(all_pai_cards, /obj/item/paicard)
+REGISTRY_MEMBERSHIP(/obj/item/paicard, REGISTRY_PAI_CARDS)
 
 // Access check is of the type requires one. These have been carefully selected to avoid allowing the janitor to see channels he shouldn't
 GLOBAL_LIST_INIT(default_internal_channels, list(
@@ -1299,7 +1291,6 @@ GLOBAL_LIST_INIT(MOVE_KEY_MAPPINGS, list(
 	"Alt" = ALT_KEY,
 ))
 
-GLOBAL_LIST_EMPTY(total_extraction_beacons)
 
 GLOBAL_LIST_INIT(possible_ghost_sprites, list(
 	"Clear" = "blank",
@@ -1594,8 +1585,6 @@ GLOBAL_LIST_INIT(global_ammo_types, list(
 //Rad collectors in the world (kept for fusion engine compatibility; under the
 //LINDA migration the collectors are stub-only — see code/
 //atmospherics/deleted_engine_stubs.dm).
-GLOBAL_LIST_EMPTY(rad_collectors)
-GLOBAL_LIST_EMPTY(geiger_counters)
 // algae/ten stack stub — used by hydroponics; algae generator was deleted with
 // ZAS but the stack subtype is still referenced.
 
@@ -1624,7 +1613,7 @@ GLOBAL_LIST_INIT(ventcrawl_machinery, list(
 	/obj/machinery/atmospherics/unary/vent_scrubber
 	))
 
-GLOBAL_LIST_BOILERPLATE(papers_dockingcode, /obj/item/paper/dockingcodes)
+REGISTRY_MEMBERSHIP(/obj/item/paper/dockingcodes, REGISTRY_DOCKING_CODE_PAPERS)
 
 //Chamelion clothing was all stupid so it's done here instead.
 //Jumpsuit
@@ -1680,7 +1669,6 @@ GLOBAL_LIST_EMPTY(latejoin_fueldepot) //NYI - Used downstream
 GLOBAL_LIST_EMPTY(latejoin_tyrvillage) //NYI - Used downstream
 GLOBAL_LIST_EMPTY(latejoin_thedark) //NYI - Used downstream
 // Every visitable overmap object; Flight Operations uses it to list destinations.
-GLOBAL_LIST_EMPTY(visitable_overmap_object_instances)
 
 GLOBAL_LIST_INIT(sensorpreflist, list("Off", "Binary", "Vitals", "Tracking", "No Preference"))
 

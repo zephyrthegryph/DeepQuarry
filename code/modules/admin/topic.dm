@@ -1401,7 +1401,7 @@
 					WANTED.backup_author = src.admincaster_signature                  //Submitted by
 					WANTED.is_admin_message = 1
 					GLOB.news_network.wanted_issue = WANTED
-					for(var/obj/machinery/newscaster/NEWSCASTER in GLOB.allCasters)
+					for(var/obj/machinery/newscaster/NEWSCASTER in REGISTRY_MEMBERS(REGISTRY_CASTERS))
 						NEWSCASTER.newsAlert()
 						NEWSCASTER.update_icon()
 					src.admincaster_screen = 15
@@ -1417,7 +1417,7 @@
 		var/choice = tgui_alert(usr, "Please confirm Wanted Issue removal","Network Security Handler",list("Confirm","Cancel"))
 		if(choice=="Confirm")
 			GLOB.news_network.wanted_issue = null
-			for(var/obj/machinery/newscaster/NEWSCASTER in GLOB.allCasters)
+			for(var/obj/machinery/newscaster/NEWSCASTER in REGISTRY_MEMBERS(REGISTRY_CASTERS))
 				NEWSCASTER.update_icon()
 			src.admincaster_screen=17
 		SSadmin_verbs.dynamic_invoke_verb(usr.client, /datum/admin_verb/access_news_network)

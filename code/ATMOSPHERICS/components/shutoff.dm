@@ -1,4 +1,3 @@
-GLOBAL_LIST_EMPTY(shutoff_valves)
 
 /// Tells the automatic shutoff valves that border `network` about a leak or split there
 /// (Q14, reactor.md §9): it publishes the network's REACT_KEY_PIPE_NETWORK key, which only
@@ -33,16 +32,16 @@ GLOBAL_LIST_EMPTY(shutoff_valves)
 	. = ..()
 	. += "The automatic shutoff circuit is [close_on_leaks ? "enabled" : "disabled"]."
 
+REGISTRY_MEMBERSHIP(/obj/machinery/atmospherics/valve/shutoff, REGISTRY_SHUTOFF_VALVES)
+
 /obj/machinery/atmospherics/valve/shutoff/Initialize(mapload)
 	. = ..()
 	open()
-	GLOB.shutoff_valves += src
 	hide(1)
 	global_leak_token = REACT_ON_KEY(src, REACT_KEY_PIPE_NETWORK, REACT_ID_GLOBAL, REACT_PIPE_LEAKS)
 	subscribe_network_keys()
 
 /obj/machinery/atmospherics/valve/shutoff/Destroy()
-	GLOB.shutoff_valves -= src
 	. = ..()
 
 /obj/machinery/atmospherics/valve/shutoff/attack_ai(mob/user as mob)

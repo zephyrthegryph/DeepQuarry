@@ -82,7 +82,7 @@
 	var/obj/machinery/pointdefense/PD = allocate(/obj/machinery/pointdefense, test_floor())
 	PD.stat = 0
 	PD.active = TRUE
-	if(LAZYLEN(GLOB.meteor_list))
+	if(LAZYLEN(REGISTRY_MEMBERS(REGISTRY_METEORS)))
 		return
 	PD.process()
 	TEST_ASSERT(PD.asleep_on_keys(), "idle point defense did not sleep on the meteor key")

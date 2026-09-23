@@ -1,4 +1,3 @@
-GLOBAL_LIST_EMPTY(holoposters)
 /obj/machinery/holoposter
 	name = "Holographic Poster"
 	desc = "A wall-mounted holographic projector displaying advertisements by all manner of factions. How much do they pay to advertise here?"
@@ -25,15 +24,15 @@ GLOBAL_LIST_EMPTY(holoposters)
 		"moebius" = list(LIGHT_COLOR_PURPLE, "Moebius. One of the few companies worth merit beyond their local bubble staffed completely by synthetics. 'For synths, by synths.'")
 	)
 
+REGISTRY_MEMBERSHIP(/obj/machinery/holoposter, REGISTRY_HOLOPOSTERS)
+
 /obj/machinery/holoposter/Initialize(mapload)
 	. = ..()
 	set_rand_sprite()
-	GLOB.holoposters += src
 	mytimer = addtimer(CALLBACK(src, PROC_REF(set_rand_sprite)), 30 MINUTES + rand(0, 5 MINUTES), TIMER_STOPPABLE | TIMER_LOOP)
 
 /obj/machinery/holoposter/Destroy()
 	deltimer(mytimer)
-	GLOB.holoposters -= src
 	return ..()
 
 /obj/machinery/holoposter/process()

@@ -4,7 +4,6 @@
 	max_power = 500000
 	thermal_efficiency = 0.40 // 25% less effective around 1400 kw with 24 shots
 
-GLOBAL_LIST_EMPTY(all_turbines)
 
 /obj/machinery/power/generator
 	name = "thermoelectric generator"
@@ -34,10 +33,11 @@ GLOBAL_LIST_EMPTY(all_turbines)
 	var/datum/looping_sound/generator/soundloop
 	var/list/sleeping_mixture_ids
 
+REGISTRY_MEMBERSHIP(/obj/machinery/power/generator, REGISTRY_TURBINES)
+
 /obj/machinery/power/generator/Initialize(mapload)
 	soundloop = new(list(src), FALSE)
 	desc = initial(desc) + " Rated for [round(max_power/1000)] kW."
-	GLOB.all_turbines += src
 	AddElement(/datum/element/rotatable)
 	..() //Not returned, because...
 	return INITIALIZE_HINT_LATELOAD
@@ -48,7 +48,6 @@ GLOBAL_LIST_EMPTY(all_turbines)
 /obj/machinery/power/generator/Destroy()
 	clear_gas_dependencies()
 	QDEL_NULL(soundloop)
-	GLOB.all_turbines -= src
 	return ..()
 
 //generators connect in dir and GLOB.reverse_dir(dir) directions

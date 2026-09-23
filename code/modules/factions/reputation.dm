@@ -337,7 +337,7 @@ GLOBAL_DATUM_INIT(station_faction_relations, /datum/station_faction_relations, n
 /proc/notify_faction_agent_account(account_number, message)
 	if(!account_number || !message)
 		return
-	for(var/obj/item/pda/device in GLOB.PDAs)
+	for(var/obj/item/pda/device in REGISTRY_MEMBERS(REGISTRY_PDAS))
 		if(device.id?.associated_account_number != account_number)
 			continue
 		var/datum/data/pda/app/contracts/app = device.find_program(/datum/data/pda/app/contracts)

@@ -23,7 +23,7 @@
 /datum/event/meteor_wave/start()
 	affecting_z -= using_map.sealed_levels // Space levels only please!
 	// fills gaps
-	for(var/obj/machinery/shield_gen/gen in GLOB.machines)
+	for(var/obj/machinery/shield_gen/gen in REGISTRY_MEMBERS(REGISTRY_MACHINES))
 		gen.fill_diffused()
 	..()
 
@@ -38,7 +38,7 @@
 /datum/event/meteor_wave/tick()
 	// Begin sending the alarm signals to shield diffusers so the field is already regenerated (if it exists) by the time actual meteors start flying around.
 	if(activeFor >= alarmWhen)
-		for(var/obj/machinery/shield_diffuser/SD in GLOB.machines)
+		for(var/obj/machinery/shield_diffuser/SD in REGISTRY_MEMBERS(REGISTRY_MACHINES))
 			if(SD.z in affecting_z)
 				SD.meteor_alarm(10)
 
@@ -64,7 +64,7 @@
 /datum/event/meteor_wave/end()
 	..()
 	// fills gaps
-	for(var/obj/machinery/shield_gen/gen in GLOB.machines)
+	for(var/obj/machinery/shield_gen/gen in REGISTRY_MEMBERS(REGISTRY_MACHINES))
 		gen.fill_diffused()
 	if(!victim)
 		switch(severity)

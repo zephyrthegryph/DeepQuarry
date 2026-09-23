@@ -10,7 +10,7 @@
 
 	switch(action)
 		if("toggle_active")
-			var/obj/machinery/fusion_fuel_injector/FI = locate(params["fuel"]) in GLOB.fuel_injectors
+			var/obj/machinery/fusion_fuel_injector/FI = locate(params["fuel"]) in REGISTRY_MEMBERS(REGISTRY_FUEL_INJECTORS)
 			if(!istype(FI))
 				return FALSE
 
@@ -30,7 +30,7 @@
 	var/list/data = list()
 	var/list/fuels = list()
 
-	for(var/obj/machinery/fusion_fuel_injector/FI in GLOB.fuel_injectors)
+	for(var/obj/machinery/fusion_fuel_injector/FI in REGISTRY_MEMBERS(REGISTRY_FUEL_INJECTORS))
 		if(FI.id_tag == fuel_tag)
 			fuels.Add(list(list(
 				"name" = FI.name,

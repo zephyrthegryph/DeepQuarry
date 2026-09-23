@@ -136,11 +136,12 @@ Class Procs:
 
 	blocks_emissive = EMISSIVE_BLOCK_GENERIC
 
+REGISTRY_MEMBERSHIP(/obj/machinery, REGISTRY_MACHINES)
+
 /obj/machinery/Initialize(mapload, d=0)
 	. = ..()
 	if(isnum(d))
 		set_dir(d)
-	SSmachines.all_machines += src
 	if(ispath(circuit))
 		circuit = new circuit(src)
 	if(!speed_process)
@@ -156,7 +157,6 @@ Class Procs:
 		STOP_MACHINE_PROCESSING(src)
 	else
 		STOP_PROCESSING(SSfastprocess, src)
-	SSmachines.all_machines -= src
 	// Constructed machinery owns its installed board. Clear the typed reference
 	// immediately when destruction starts; otherwise the board spends an extra GC
 	// generation retained by an already-deleting machine (and reference tracking

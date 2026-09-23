@@ -1,4 +1,3 @@
-GLOBAL_LIST_EMPTY(fuel_injectors)
 
 /obj/machinery/fusion_fuel_injector
 	maintenance_flags = MACHINE_MAINT_STANDARD_MOVABLE
@@ -19,9 +18,10 @@ GLOBAL_LIST_EMPTY(fuel_injectors)
 	var/injecting = 0
 	var/obj/item/fuel_assembly/cur_assembly
 
+REGISTRY_MEMBERSHIP(/obj/machinery/fusion_fuel_injector, REGISTRY_FUEL_INJECTORS)
+
 /obj/machinery/fusion_fuel_injector/Initialize(mapload)
 	. = ..()
-	GLOB.fuel_injectors += src
 	default_apply_parts()
 	AddElement(/datum/element/rotatable)
 
@@ -29,7 +29,6 @@ GLOBAL_LIST_EMPTY(fuel_injectors)
 	if(cur_assembly)
 		cur_assembly.forceMove(get_turf(src))
 		cur_assembly = null
-	GLOB.fuel_injectors -= src
 	return ..()
 
 /obj/machinery/fusion_fuel_injector/mapped

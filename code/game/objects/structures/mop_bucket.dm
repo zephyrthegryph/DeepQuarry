@@ -9,7 +9,7 @@
 	flags = OPENCONTAINER
 	var/amount_per_transfer_from_this = 5	//shit I dunno, adding this so syringes stop runtime erroring. --NeoFite
 
-GLOBAL_LIST_BOILERPLATE(all_mopbuckets, /obj/structure/mopbucket)
+REGISTRY_MEMBERSHIP(/obj/structure/mopbucket, REGISTRY_MOP_BUCKETS)
 
 /obj/structure/mopbucket/Initialize(mapload, ...)
 	create_reagents(300)

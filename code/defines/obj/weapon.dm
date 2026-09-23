@@ -216,7 +216,7 @@
 		return
 
 	var/list/cameras = new/list()
-	for (var/obj/machinery/camera/C in GLOB.cameranet.cameras)
+	for (var/obj/machinery/camera/C in REGISTRY_MEMBERS(REGISTRY_CAMERAS))
 		if (C.bugged && C.status)
 			cameras.Add(C)
 	if (length(cameras) == 0)

@@ -1,4 +1,4 @@
-GLOBAL_LIST_BOILERPLATE(all_portals, /obj/effect/portal)
+REGISTRY_MEMBERSHIP(/obj/effect/portal, REGISTRY_PORTALS)
 
 /obj/effect/portal
 	name = "portal"

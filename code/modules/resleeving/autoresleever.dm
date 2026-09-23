@@ -1,4 +1,3 @@
-GLOBAL_LIST_EMPTY(active_autoresleevers)
 
 /obj/machinery/transhuman/autoresleever
 	name = "automatic resleever"
@@ -15,13 +14,13 @@ GLOBAL_LIST_EMPTY(active_autoresleevers)
 	var/spawn_slots = -1				//How many people can be spawned from this? If -1 it's unlimited
 	var/spawntype						//The kind of mob that will be spawned, if set.
 
+REGISTRY_MEMBERSHIP(/obj/machinery/transhuman/autoresleever, REGISTRY_AUTORESLEEVERS)
+
 /obj/machinery/transhuman/autoresleever/Initialize(mapload)
 	. = ..()
-	GLOB.active_autoresleevers += src
 
 /obj/machinery/transhuman/autoresleever/Destroy()
 	. = ..()
-	GLOB.active_autoresleevers -= src
 
 /obj/machinery/transhuman/autoresleever/update_icon()
 	. = ..()

@@ -309,7 +309,7 @@
 	if(.)
 		return TRUE
 	if(loc_network)
-		for(var/obj/item/perfect_tele_beacon/stationary/nb in GLOB.premade_tele_beacons)
+		for(var/obj/item/perfect_tele_beacon/stationary/nb in REGISTRY_MEMBERS(REGISTRY_TELE_BEACONS_PREMADE))
 			if(nb.tele_network == loc_network)
 				beacons[nb.tele_name] = nb
 		loc_network = null //Consumed

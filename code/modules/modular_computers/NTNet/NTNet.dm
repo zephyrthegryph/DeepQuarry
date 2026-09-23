@@ -41,7 +41,7 @@
 	if(GLOB.ntnet_global && (GLOB.ntnet_global != src))
 		GLOB.ntnet_global = src // There can be only one.
 	if (SSatoms && SSatoms.initialized > INITIALIZATION_INSSATOMS)
-		for(var/obj/machinery/ntnet_relay/R in GLOB.machines)
+		for(var/obj/machinery/ntnet_relay/R in REGISTRY_MEMBERS(REGISTRY_MACHINES))
 			relays.Add(R)
 			R.NTNet = src
 	build_software_lists()

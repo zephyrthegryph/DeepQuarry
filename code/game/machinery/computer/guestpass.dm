@@ -69,10 +69,14 @@
 
 /obj/item/card/id/guest/Initialize(mapload)
 	. = ..()
-	START_PROCESSING(SSobj, src)
 	update_icon()
 
-/obj/item/card/id/guest/Destroy()
+/// Expiry ticking is world registration (L3): start it when the pass is live.
+/obj/item/card/id/guest/on_materialize()
+	. = ..()
+	START_PROCESSING(SSobj, src)
+
+/obj/item/card/id/guest/on_dematerialize()
 	STOP_PROCESSING(SSobj, src)
 	return ..()
 

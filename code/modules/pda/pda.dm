@@ -110,9 +110,10 @@
 		close(user)
 	return 0
 
+REGISTRY_MEMBERSHIP(/obj/item/pda, REGISTRY_PDAS)
+
 /obj/item/pda/Initialize(mapload)
 	. = ..()
-	GLOB.PDAs += src
 	update_programs()
 	if(default_cartridge)
 		cartridge = new default_cartridge(src)
@@ -479,7 +480,6 @@
 	return
 
 /obj/item/pda/Destroy()
-	GLOB.PDAs -= src
 	if (id && !delete_id && id.loc == src)
 		id.forceMove(get_turf(loc))
 	else

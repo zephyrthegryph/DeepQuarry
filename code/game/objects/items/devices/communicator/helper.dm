@@ -195,7 +195,7 @@
 	var/turf/T = get_turf(src)
 	if(T)
 		var/list/levels = using_map.get_map_levels(T.z, FALSE)
-		for(var/obj/machinery/power/sensor/S in GLOB.machines)
+		for(var/obj/machinery/power/sensor/S in REGISTRY_MEMBERS(REGISTRY_MACHINES))
 			if((S.long_range) || (S.loc.z in levels) || (S.loc.z == T.z)) // Consoles have range on their Z-Level. Sensors with long_range var will work between Z levels.
 				if(S.name_tag == "#UNKN#") // Default name. Shouldn't happen!
 					warning("Powernet sensor with unset ID Tag! [S.x]X [S.y]Y [S.z]Z")
@@ -261,7 +261,7 @@
 	// Fetch janitorial locator
 	var/janidata[0]
 	var/list/cleaningList = list()
-	cleaningList += GLOB.all_mops + GLOB.all_mopbuckets + GLOB.all_janitorial_carts
+	cleaningList += REGISTRY_MEMBERS(REGISTRY_MOPS) + REGISTRY_MEMBERS(REGISTRY_MOP_BUCKETS) + REGISTRY_MEMBERS(REGISTRY_JANITORIAL_CARTS)
 
 	// User's location
 	var/turf/userloc = get_turf(src)
@@ -350,7 +350,7 @@
 
 	var/list/gps_list = list()
 	var/z_level_det = using_map.get_map_levels(curr.z, cumulative.long_range)
-	for(var/obj/item/gps/G in GLOB.GPS_list - cumulative)
+	for(var/obj/item/gps/G in REGISTRY_MEMBERS(REGISTRY_GPS) - cumulative)
 
 		if(!cumulative.can_track(G, z_level_det))
 			continue
@@ -533,7 +533,7 @@
 
 /obj/item/commcard/proc/find_blast_doors()
 	var/target_doors[0]
-	for(var/obj/machinery/door/blast/B in GLOB.machines)
+	for(var/obj/machinery/door/blast/B in REGISTRY_MEMBERS(REGISTRY_MACHINES))
 		if(B.id == internal_data["shuttle_door_code"])
 			target_doors += B
 

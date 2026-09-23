@@ -479,7 +479,7 @@ GLOBAL_LIST_INIT(ai_verbs_default, list(
 		// legacy browse(null) close removed; see /mob/Topic.
 		unset_machine()
 	if (href_list["switchcamera"])
-		switchCamera(locate(href_list["switchcamera"]) in GLOB.cameranet.cameras)
+		switchCamera(locate(href_list["switchcamera"]) in REGISTRY_MEMBERS(REGISTRY_CAMERAS))
 	if (href_list["showalerts"])
 		subsystem_alarm_monitor()
 	//Carn: holopad requests
@@ -568,7 +568,7 @@ GLOBAL_LIST_INIT(ai_verbs_default, list(
 		return
 
 	var/list/cameralist = new()
-	for (var/obj/machinery/camera/C in GLOB.cameranet.cameras)
+	for (var/obj/machinery/camera/C in REGISTRY_MEMBERS(REGISTRY_CAMERAS))
 		if(!C.can_use())
 			continue
 		var/list/tempnetwork = difflist(C.network, GLOB.restricted_camera_networks, 1)
@@ -592,7 +592,7 @@ GLOBAL_LIST_INIT(ai_verbs_default, list(
 
 	src.network = network
 
-	for(var/obj/machinery/camera/C in GLOB.cameranet.cameras)
+	for(var/obj/machinery/camera/C in REGISTRY_MEMBERS(REGISTRY_CAMERAS))
 		if(!C.can_use())
 			continue
 		if(network in C.network)

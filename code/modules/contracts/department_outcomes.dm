@@ -165,7 +165,7 @@
 		if("supermatter_performance")
 			if(user)
 				var/has_station_crystal = FALSE
-				for(var/obj/machinery/power/supermatter/crystal in GLOB.machines)
+				for(var/obj/machinery/power/supermatter/crystal in REGISTRY_MEMBERS(REGISTRY_MACHINES))
 					if(crystal.stationcrystal && (crystal.z in using_map.station_levels))
 						has_station_crystal = TRUE
 						break

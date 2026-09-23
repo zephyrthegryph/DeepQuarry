@@ -42,15 +42,15 @@
 	return INITIALIZE_HINT_LATELOAD
 
 /obj/machinery/door_timer/LateInitialize()
-	for(var/obj/machinery/door/window/brigdoor/M in GLOB.machines)
+	for(var/obj/machinery/door/window/brigdoor/M in REGISTRY_MEMBERS(REGISTRY_MACHINES))
 		if(M.id == id)
 			LAZYADD(targets,M)
 
-	for(var/obj/machinery/flasher/F in GLOB.machines)
+	for(var/obj/machinery/flasher/F in REGISTRY_MEMBERS(REGISTRY_MACHINES))
 		if(F.id == id)
 			LAZYADD(targets,F)
 
-	for(var/obj/structure/closet/secure_closet/brig/C in GLOB.all_brig_closets)
+	for(var/obj/structure/closet/secure_closet/brig/C in REGISTRY_MEMBERS(REGISTRY_BRIG_CLOSETS))
 		if(C.id == id)
 			LAZYADD(targets,C)
 	for(var/atom/movable/target as anything in targets)

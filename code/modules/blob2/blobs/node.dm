@@ -1,4 +1,3 @@
-GLOBAL_LIST_EMPTY(blob_nodes)
 
 /obj/structure/blob/node
 	name = "blob node"
@@ -9,14 +8,14 @@ GLOBAL_LIST_EMPTY(blob_nodes)
 	health_regen = 3
 	point_return = 50
 
+REGISTRY_MEMBERSHIP(/obj/structure/blob/node, REGISTRY_BLOB_NODES)
+
 /obj/structure/blob/node/Initialize(mapload, new_overmind)
 	. = ..()
-	GLOB.blob_nodes += src
 	START_PROCESSING(SSobj, src)
 	update_icon()
 
 /obj/structure/blob/node/Destroy()
-	GLOB.blob_nodes -= src
 	STOP_PROCESSING(SSobj, src)
 	return ..()
 

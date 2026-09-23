@@ -134,7 +134,7 @@
 
 /obj/machinery/keycard_auth/proc/broadcast_request(mob/user)
 	icon_state = "auth_on"
-	for(var/obj/machinery/keycard_auth/KA in GLOB.machines)
+	for(var/obj/machinery/keycard_auth/KA in REGISTRY_MEMBERS(REGISTRY_MACHINES))
 		if(KA == src) continue
 		KA.reset()
 		spawn()

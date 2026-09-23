@@ -1,4 +1,3 @@
-GLOBAL_LIST_EMPTY(all_blobs)
 
 /obj/structure/blob
 	name = "blob"
@@ -18,12 +17,13 @@ GLOBAL_LIST_EMPTY(all_blobs)
 	var/base_name = "blob" // The name that gets appended along with the blob_type's name.
 	var/faction = FACTION_BLOB
 
+REGISTRY_MEMBERSHIP(/obj/structure/blob, REGISTRY_BLOBS)
+
 /obj/structure/blob/Initialize(mapload, new_overmind)
 	if(new_overmind)
 		overmind = new_overmind
 		faction = overmind.blob_type.faction
 	set_dir(pick(GLOB.cardinal))
-	GLOB.all_blobs += src
 	consume_tile()
 	. = ..()
 	update_icon()
@@ -31,7 +31,6 @@ GLOBAL_LIST_EMPTY(all_blobs)
 
 /obj/structure/blob/Destroy()
 	playsound(src, 'sound/effects/splat.ogg', 50, 1) //Expand() is no longer broken, no check necessary.
-	GLOB.all_blobs -= src
 	overmind = null
 	return ..()
 
@@ -123,7 +122,7 @@ GLOBAL_LIST_EMPTY(all_blobs)
 		if(overmind)
 			expand_probablity *= overmind.blob_type.spread_modifier
 			if(overmind.blob_type.slow_spread_with_size)
-				expand_probablity /= (GLOB.all_blobs.len / 10)
+				expand_probablity /= (REGISTRY_COUNT(REGISTRY_BLOBS) / 10)
 
 		if(distance <= expand_range)
 			var/can_expand = TRUE

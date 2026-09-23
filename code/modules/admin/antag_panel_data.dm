@@ -30,7 +30,7 @@
 	var/list/disks
 	if(flags & ANTAG_HAS_NUKE)
 		disks = list()
-		for(var/obj/item/disk/nuclear/N in GLOB.nuke_disks)
+		for(var/obj/item/disk/nuclear/N in REGISTRY_MEMBERS(REGISTRY_NUKE_DISKS))
 			disks += list(list(
 				"name" = N.name,
 				"location" = describe_disk_location(N),

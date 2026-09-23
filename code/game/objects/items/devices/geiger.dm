@@ -23,13 +23,13 @@
 
 	var/mounted = FALSE
 
+REGISTRY_MEMBERSHIP(/obj/item/geiger, REGISTRY_GEIGER_COUNTERS)
+
 /obj/item/geiger/Initialize(mapload)
 	. = ..()
-	GLOB.geiger_counters += src
 	RegisterSignal(src, COMSIG_IN_RANGE_OF_IRRADIATION, PROC_REF(on_pre_potential_irradiation))
 
 /obj/item/geiger/Destroy()
-	GLOB.geiger_counters -= src
 	UnregisterSignal(src, COMSIG_IN_RANGE_OF_IRRADIATION)
 	return ..()
 

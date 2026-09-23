@@ -24,12 +24,12 @@
 				cam.wires.cut_wire(WIRE_CAM_ALARM)
 
 /datum/event2/event/camera_damage/proc/acquire_random_camera(remaining_attempts = 5)
-	if(!GLOB.cameranet.cameras.len)
+	if(!REGISTRY_COUNT(REGISTRY_CAMERAS))
 		return
 	if(!remaining_attempts)
 		return
 
-	var/obj/machinery/camera/C = pick(GLOB.cameranet.cameras)
+	var/obj/machinery/camera/C = pick(REGISTRY_MEMBERS(REGISTRY_CAMERAS))
 	if(is_valid_camera(C))
 		return C
 	// It is very important to use --var and not var-- for recursive calls, as var-- will cause an infinite loop.

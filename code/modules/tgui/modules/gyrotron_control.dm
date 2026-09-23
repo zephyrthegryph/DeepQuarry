@@ -12,7 +12,7 @@
 	// If the command requires a gyrotron, and we can't find it, we don't need to check any further
 	var/obj/machinery/power/emitter/gyrotron/G = null
 	if(params["gyro"])
-		G = locate(params["gyro"]) in GLOB.gyrotrons
+		G = locate(params["gyro"]) in REGISTRY_MEMBERS(REGISTRY_GYROTRONS)
 		if(!istype(G))
 			return FALSE
 
@@ -49,7 +49,7 @@
 	var/list/data = list()
 	var/list/gyros = list()
 
-	for(var/obj/machinery/power/emitter/gyrotron/G in GLOB.gyrotrons)
+	for(var/obj/machinery/power/emitter/gyrotron/G in REGISTRY_MEMBERS(REGISTRY_GYROTRONS))
 		if(G.id_tag == gyro_tag)// && (get_dist(get_turf(G), get_turf(src)) <= scan_range))
 			gyros.Add(list(list(
 				"name" = G.name,

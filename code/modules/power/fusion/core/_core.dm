@@ -2,7 +2,6 @@
 	TODO README
 */
 
-GLOBAL_LIST_EMPTY(fusion_cores)
 
 #define MAX_FIELD_STR 1000
 #define MIN_FIELD_STR 1
@@ -34,9 +33,10 @@ GLOBAL_LIST_EMPTY(fusion_cores)
 /obj/machinery/power/fusion_core/mapped
 	anchored = TRUE
 
+REGISTRY_MEMBERSHIP(/obj/machinery/power/fusion_core, REGISTRY_FUSION_CORES)
+
 /obj/machinery/power/fusion_core/Initialize(mapload)
 	. = ..()
-	GLOB.fusion_cores += src
 
 	AddComponent(/datum/component/hose_connector/output)
 
@@ -52,11 +52,10 @@ GLOBAL_LIST_EMPTY(fusion_cores)
 	if(material_sample && !QDELETED(material_sample))
 		material_sample.forceMove(get_turf(src))
 	material_sample = null
-	for(var/obj/machinery/computer/fusion_core_control/FCC in GLOB.machines)
+	for(var/obj/machinery/computer/fusion_core_control/FCC in REGISTRY_MEMBERS(REGISTRY_MACHINES))
 		FCC.connected_devices -= src
 		if(FCC.cur_viewed_device == src)
 			FCC.cur_viewed_device = null
-	GLOB.fusion_cores -= src
 	return ..()
 
 /obj/machinery/power/fusion_core/proc/check_core_status()
