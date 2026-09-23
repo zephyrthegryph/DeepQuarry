@@ -184,9 +184,6 @@
 		target.faction = user.faction
 		target.revivedby = user.name
 		target.revive()
-		target.sight = initial(target.sight)
-		target.see_in_dark = initial(target.see_in_dark)
-		target.see_invisible = initial(target.see_invisible)
 		target.update_icon()
 		visible_message("[target] lifts its head and looks at [user].", runemessage = "lifts its head and looks at [user]")
 		log_and_message_admins("used a denecrotizer to revive a simple mob: [target]. [ADMIN_FLW(src)]", user)
@@ -205,9 +202,6 @@
 	user.visible_message("[user] presses [src] to [target]...", runemessage = "presses [src] to [target]")
 	if(do_after(user, revive_time, target = target))
 		target.revive()
-		target.sight = initial(target.sight)
-		target.see_in_dark = initial(target.see_in_dark)
-		target.see_invisible = initial(target.see_invisible)
 		target.update_icon()
 		visible_message("[target] lifts its head and looks at [user].", runemessage = "lifts its head and looks at [user]")
 		last_used = world.time
