@@ -31,6 +31,7 @@ pub mod replay;
 pub mod rng;
 pub mod sim;
 pub mod slot;
+pub mod store;
 pub mod thermo;
 pub mod timer;
 pub mod units;
