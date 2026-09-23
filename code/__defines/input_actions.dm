@@ -70,7 +70,7 @@
 #define KEYBIND_CAT_MOVEMENT "Movement"
 #define KEYBIND_CAT_MOB "Mob"
 #define KEYBIND_CAT_COMMS "Communication"
-#define KEYBIND_CAT_INTENTS "Intents"
+#define KEYBIND_CAT_COMBAT "Combat"
 #define KEYBIND_CAT_TARGETING "Targeting"
 #define KEYBIND_CAT_ITEMS "Items"
 #define KEYBIND_CAT_ROBOT "Robot"

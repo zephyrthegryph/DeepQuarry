@@ -62,7 +62,7 @@ GLOBAL_LIST_EMPTY(solars_list)
 	control = null
 
 /obj/machinery/power/solar/attackby(obj/item/W, mob/user)
-	if(W && user.a_intent == I_HURT)
+	if(W && IS_HARMING(user))
 		user.visible_message(span_warning("[user] strikes the solar panel with [W]."))
 		user.setClickCooldown(user.get_attack_speed(W))
 		add_fingerprint(user)

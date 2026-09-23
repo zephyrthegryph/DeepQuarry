@@ -207,7 +207,7 @@
 		to_chat(user, span_notice("The toilet is still refilling its tank."))
 		playsound(src, 'sound/machines/door_locked.ogg', 30, 1)
 		//Even while it's flushing, you can repeatedly pull down the lever for a bigger flush.
-		if(user.a_intent == I_HURT)
+		if(IS_HARMING(user))
 			if(COOLDOWN_FINISHED(src, panic_flush))
 				panic_mult++
 				COOLDOWN_START(src, panic_flush, 1 SECOND) //Let's not encourage hitting the click-cap.

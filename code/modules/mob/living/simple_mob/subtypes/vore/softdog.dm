@@ -218,7 +218,7 @@
 /mob/living/simple_mob/vore/woof/cass/attack_hand(mob/living/carbon/human/M as mob)
 	if(stat != DEAD)
 		return ..()
-	if(M.a_intent == I_HELP)
+	if(IS_HELPING(M))
 		M.visible_message("[M] pets [src].", runemessage = "pets [src]")
 		if(do_after(M, 30 SECONDS, target = src))
 			faction = M.faction

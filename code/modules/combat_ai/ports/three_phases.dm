@@ -5,13 +5,13 @@
 //   - on_engagement(): kept its distance from the target, stepping closer only
 //     when farther than closest_desired_distance (6 tiles). It is a ranged
 //     bullet-hell mob and wants to keep a kiting distance.
-//   - pre_special_attack(): a phase machine that set a_intent purely off the
+//   - pre_special_attack(): a phase machine that set the intent purely off the
 //     boss's HP fraction:  <=0.35 -> DISARM (phase 3), <=0.7 -> GRAB (phase 2),
 //     else HURT (phase 1).  The base eclipse's do_special_attack() runs the
 //     same bullet_heck(A, 3, 3) regardless of intent, so the intent is a
 //     flavor/telegraph hook the subtypes (battle_top / ufo / janus) override.
-//     We faithfully reproduce the a_intent phase-set so any subtype that keys
-//     off a_intent in its do_special_attack still phases correctly.
+//     We faithfully reproduce the phase-set (set_use_stance()) so any subtype that keys
+//     off use_stance() in its do_special_attack still phases correctly.
 //
 // The boss fires its special almost constantly (special_attack_cooldown = 10),
 // so the special-attack behavior is the centerpiece; melee is a fallback for
@@ -44,7 +44,7 @@
 // ---------------------------------------------------------------------------
 // Phase machine + bullet-hell special attack.
 //
-// One behavior maps the legacy "pre_special_attack picks a_intent by phase,
+// One behavior maps the legacy "pre_special_attack picks the stance by phase,
 // then do_special_attack() fires" loop. It gates on can_special_attack /
 // should_special_attack (the mob's own range + cooldown logic via the legacy
 // shim) and sets the phase intent before firing.
@@ -76,11 +76,11 @@
 	// exactly as legacy pre_special_attack() did.
 	var/hp_frac = E.vitality()
 	if(hp_frac <= 0.35)
-		E.a_intent = I_DISARM   // Phase three
+		E.set_use_stance(I_DISARM)   // Phase three
 	else if(hp_frac <= 0.7)
-		E.a_intent = I_GRAB     // Phase two
+		E.set_use_stance(I_GRAB)     // Phase two
 	else
-		E.a_intent = I_HURT     // Phase one
+		E.set_use_stance(I_HURT)     // Phase one
 	E.special_attack_target(target)
 	brain.last_attack_at = world.time
 	return DQ_BEHAVIOR_DONE

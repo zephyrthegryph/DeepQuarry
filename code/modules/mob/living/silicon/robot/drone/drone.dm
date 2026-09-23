@@ -213,7 +213,7 @@ GLOBAL_LIST_EMPTY(mob_hat_cache)
 
 //Drones cannot be upgraded with borg modules so we need to catch some items before they get used in ..().
 /mob/living/silicon/robot/drone/attackby(obj/item/W, mob/user)
-	if(user.a_intent == I_HELP && istype(W, /obj/item/clothing/head))
+	if(IS_HELPING(user) && istype(W, /obj/item/clothing/head))
 		if(hat)
 			to_chat(user, span_warning("\The [src] is already wearing \the [hat]."))
 			return

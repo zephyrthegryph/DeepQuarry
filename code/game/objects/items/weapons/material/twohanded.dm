@@ -370,7 +370,7 @@
 	if(istype(damage_source, /obj/item/projectile))	//can't block ranged attacks, only melee!
 		return 0
 	if(src.wielded == 1)
-		if(user.a_intent == I_DISARM)
+		if(IS_DISARMING(user))
 			parry_chance = base_parry_chance * disarm_defense
 		else
 			parry_chance = base_parry_chance
@@ -382,6 +382,6 @@
 
 /obj/item/material/twohanded/staff/apply_hit_effect(mob/living/target, mob/living/user, hit_zone)
 	. = ..()
-	if(src.wielded == 1 && user.a_intent == I_DISARM && prob(stun_chance))
+	if(src.wielded == 1 && IS_DISARMING(user) && prob(stun_chance))
 		target.Weaken(stun_duration)
 		user.visible_message(span_danger("\The [user] trips [target] with \the [src]!"))

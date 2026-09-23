@@ -30,7 +30,7 @@
 		to_chat(user, span_warning("They don't seem to have DNA!"))
 		return ITEM_INTERACT_FAILURE
 
-	if(user != H && H.a_intent != I_HELP && !H.lying)
+	if(user != H && !IS_HELPING(H) && !H.lying)
 		user.visible_message(span_danger("\The [user] tries to take a swab sample from \the [H], but they move away."))
 		return ITEM_INTERACT_FAILURE
 

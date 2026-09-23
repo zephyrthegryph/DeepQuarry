@@ -184,7 +184,7 @@ avoid code duplication. This includes items that may sometimes act as a standard
 	// Phased melee: a harm-intent attack with a real weapon winds up, telegraphs its swing
 	// tiles, then resolves (see code/modules/mob/living/melee_swing.dm). Diverts the instant
 	// attack. Non-harm intents, unarmed, and item-use on objects never reach this branch.
-	if(isliving(user) && user.a_intent == I_HURT && I.force && !(I.flags & NOBLUDGEON))
+	if(isliving(user) && IS_HARMING(user) && I.force && !(I.flags & NOBLUDGEON))
 		var/mob/living/attacker = user
 		if(attacker.is_swinging)
 			return FALSE // already mid-swing — ignore the queued attack click
@@ -215,7 +215,7 @@ avoid code duplication. This includes items that may sometimes act as a standard
 /obj/item/proc/attack(mob/living/M, mob/living/user, target_zone, attack_modifier)
 	if(!force || (flags & NOBLUDGEON))
 		return ITEM_INTERACT_FAILURE
-	if(M == user && user.a_intent != I_HURT)
+	if(M == user && !IS_HARMING(user))
 		return ITEM_INTERACT_FAILURE
 	if(M.is_incorporeal()) // No attacking phased entities :)
 		return ITEM_INTERACT_FAILURE
@@ -225,7 +225,7 @@ avoid code duplication. This includes items that may sometimes act as a standard
 	M.lastattacker = user
 
 	if(!no_attack_log)
-		add_attack_logs(user,M,"attacked with [name] (INTENT: [uppertext(user.a_intent)]) (KIND: [injury_kind_name(injury_kind)])")
+		add_attack_logs(user,M,"attacked with [name] (STANCE: [uppertext(user.use_stance())]) (KIND: [injury_kind_name(injury_kind)])")
 	/////////////////////////
 
 	user.setClickCooldown(user.get_attack_speed(src))

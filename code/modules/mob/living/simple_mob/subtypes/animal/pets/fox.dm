@@ -74,7 +74,7 @@
 	var/mob/living/carbon/H = over_object
 	if(!istype(H) || !Adjacent(H)) return ..()
 
-	if(H.a_intent == I_HELP)
+	if(IS_HELPING(H))
 		get_scooped(H)
 		return
 	else

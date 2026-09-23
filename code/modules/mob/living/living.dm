@@ -1021,10 +1021,10 @@
 		return FALSE //Grab processing has a chance of returning null
 
 	// Help intent + Adjacent = pass item to other
-	if(a_intent == I_HELP && Adjacent(target) && isitem(item) && ishuman(target) && target != src)
+	if(IS_HELPING(src) && Adjacent(target) && isitem(item) && ishuman(target) && target != src)
 		var/obj/item/I = item
 		var/mob/living/carbon/human/H = target
-		if(H.in_throw_mode && H.a_intent == I_HELP && unEquip(I))
+		if(H.in_throw_mode && IS_HELPING(H) && unEquip(I))
 			H.put_in_hands(I) // If this fails it will just end up on the floor, but that's fitting for things like dionaea.
 			visible_message(span_filter_notice(span_bold("[src]") + " hands \the [H] \a [I]."), span_notice("You give \the [target] \a [I]."))
 		else

@@ -3,7 +3,7 @@
 // subtype (deleted from subtypes/vore/bigdragon.dm).
 //
 // In the legacy engine the healbelly holder overrode can_attack() so that
-// allies became valid "targets," then melee_attack() swapped a_intent to HELP
+// allies became valid "targets," then melee_attack() swapped the stance to HELP
 // and PounceTarget()'d the ally into a healing belly (injecting a few medical
 // chems on humans). The mob would also bark "Hey [name], hold still!" at hurt
 // patients.
@@ -61,8 +61,8 @@
 /mob/living/simple_mob/proc/dq_heal_pounce(mob/living/L)
 	if(!istype(L) || !will_eat(L))
 		return FALSE
-	var/old_intent = a_intent
-	a_intent = I_HELP
+	var/old_stance = use_stance()
+	set_use_stance(I_HELP)
 	PounceTarget(L)
 	if(ishuman(L) && L.reagents)
 		var/list/to_inject = list(
@@ -77,7 +77,7 @@
 			if(!L.reagents.has_reagent(RG))
 				L.reagents.add_reagent(RG, 10)
 	L.extinguish_mob()
-	a_intent = old_intent
+	set_use_stance(old_stance)
 	return TRUE
 
 /mob/living/simple_mob

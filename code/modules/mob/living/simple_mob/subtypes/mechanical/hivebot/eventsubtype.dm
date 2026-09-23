@@ -211,7 +211,7 @@
 
 /mob/living/simple_mob/mechanical/mecha/eclipse/hivebot/cyan/do_special_attack(atom/A)
 	. = TRUE // So we don't fire a bolt as well.
-	switch(a_intent)
+	switch(use_stance())
 		if(I_DISARM) // Phase 3
 			if(attackcycle == 1)
 				say("PROTOCOL: MAELSTORM.")
@@ -253,7 +253,7 @@
 
 /mob/living/simple_mob/mechanical/mecha/eclipse/hivebot/green/do_special_attack(atom/A)
 	. = TRUE // So we don't fire a bolt as well.
-	switch(a_intent)
+	switch(use_stance())
 		if(I_DISARM) // Phase 3
 			if(attackcycle == 1)
 				say("PROTOCOL: LASERBLADE.")
@@ -401,7 +401,7 @@
 /*
 /mob/living/simple_mob/mechanical/mecha/eclipse/hivebot/green/do_special_attack(atom/A)
 	. = TRUE // So we don't fire a bolt as well.
-	switch(a_intent)
+	switch(use_stance())
 		if(I_DISARM) // Phase 3 1 safe zone
 			if(attackcycle == 1)
 				say("PROTOCOL: LASERBLADE.")

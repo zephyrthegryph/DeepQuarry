@@ -234,10 +234,10 @@
 		return FALSE
 	if(istype(Vac) && A.Adjacent(src))
 		face_atom(A)
-		if(src.a_intent == I_DISARM && A == src) //Only if on disarm intent.
+		if(IS_DISARMING(src) && A == src) //Only if on disarm intent.
 			Vac.attack_self(src)
 			return TRUE
-		if(src.a_intent == I_GRAB && Vac.vac_power != 0) //Only on grab intent. if someone needs to use grab intent they can just turn off the vac
+		if(IS_GRABBING(src) && Vac.vac_power != 0) //Only on grab intent. if someone needs to use grab intent they can just turn off the vac
 			if(istype(A, /obj/machinery/disposal)) //You used that bin when the bird was right there? How inconsiderate!
 				var/obj/machinery/disposal/D = A
 				if(D.flushing)
@@ -267,10 +267,10 @@
 /mob/living/simple_mob/vore/aggressive/corrupthound/swoopie/attack_hand(mob/living/L)
 	if(stat) //Make sure we're alive
 		return ..()
-	if(L.a_intent == I_DISARM && Vac)
+	if(IS_DISARMING(L) && Vac)
 		Vac.attack_self(L)
 		return
-	if(L.a_intent == I_GRAB && Vac && Vac.loc == src)
+	if(IS_GRABBING(L) && Vac && Vac.loc == src)
 		if(L.zone_sel.selecting == BP_HEAD)
 			if(L.put_in_active_hand(Vac))
 				L.visible_message(span_warning("[L] grabs [src] by the neck, brandishing the thing like a regular vacuum cleaner!"))

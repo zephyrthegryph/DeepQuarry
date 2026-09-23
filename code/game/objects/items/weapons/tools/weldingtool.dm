@@ -68,7 +68,7 @@
 		. += "It contains [get_fuel()]/[src.max_fuel] units of fuel!"
 
 /obj/item/weldingtool/attack(mob/living/M, mob/living/user, target_zone, attack_modifier)
-	if(ishuman(M) && user.a_intent == I_HELP)
+	if(ishuman(M) && IS_HELPING(user))
 		var/mob/living/carbon/human/H = M
 		var/obj/item/organ/external/S = H.organs_by_name[user.zone_sel.selecting]
 

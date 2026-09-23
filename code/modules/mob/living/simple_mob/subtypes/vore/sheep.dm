@@ -86,7 +86,7 @@
 
 /mob/living/simple_mob/vore/sheep/attackby(obj/item/O as obj, mob/user as mob)
 	if(istype(O, /obj/item/material/knife) || istype(O, /obj/item/tool/wirecutters))
-		if(user.a_intent != I_HELP)
+		if(!IS_HELPING(user))
 			return ..()
 		if(!harvestable_wool)
 			return ..()

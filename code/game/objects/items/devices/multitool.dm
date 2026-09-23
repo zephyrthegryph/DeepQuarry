@@ -111,7 +111,7 @@
 /// for processor corruption. Only synthetic parts respond — the body gates
 /// treatment by the part's biology.
 /obj/item/multitool/attack(mob/living/M, mob/living/user, target_zone, attack_modifier)
-	if(!ishuman(M) || user.a_intent != I_HELP)
+	if(!ishuman(M) || !IS_HELPING(user))
 		return ..()
 	var/mob/living/carbon/human/H = M
 	var/obj/item/organ/external/E = H.get_organ(target_zone)

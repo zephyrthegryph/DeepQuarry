@@ -218,7 +218,7 @@
 
 /mob/living/simple_mob/vore/alienanimals/succlet/poison/attack_hand(mob/user)
 	. = ..()
-	if(user.a_intent != I_HELP)
+	if(!IS_HELPING(user))
 		if(isliving(user))
 			var/mob/living/l = user
 			to_chat(l, span_warning("You feel \the [src]'s sting!!!"))

@@ -250,7 +250,7 @@ emp_act
 		C.clothing_impact(I, effective_force)
 
 	// Handle striking to cripple.
-	if(user.a_intent == I_DISARM)
+	if(IS_DISARMING(user))
 		effective_force *= 0.5 //reduced effective force...
 		if(!..(I, user, effective_force, blocked, hit_zone))
 			return 0

@@ -20,7 +20,7 @@
 	else if(user.weight < 70) // Add weight loss to old fitness equipment
 		to_chat(user, span_notice("You're too skinny to risk losing any more weight!"))
 	else
-		if(user.a_intent == I_HURT)
+		if(IS_HARMING(user))
 			user.setClickCooldown(user.get_attack_speed())
 			flick("[icon_state]_hit", src)
 			playsound(src, 'sound/effects/woodhit.ogg', 25, 1, -1)

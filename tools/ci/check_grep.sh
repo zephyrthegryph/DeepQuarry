@@ -186,6 +186,21 @@ if $grep -n '\bmodifiers\[\s*"(shift|ctrl|alt|middle|right|left|xbutton1|xbutton
 	FAILED=1
 fi;
 
+part "combat mode: a_intent"
+# Intents were replaced by combat mode (roadmap I6, doc/rewrite/interactions.md §12).
+# Read what a Use does with IS_HELPING/IS_HARMING/IS_DISARMING/IS_GRABBING or
+# use_stance(), and set it with set_combat_mode()/set_use_stance(). `a_intent`
+# survives only as a read-only mirror (code/modules/mob/combat_mode.dm) for
+# files other work owns and has not converted yet: the body rewrite's medical,
+# surgery, organ and species files, and the tool *_act procs I4 is migrating.
+# These must not grow; delete an entry once its file is converted.
+a_intent_allowlist='code/modules/mob/combat_mode\.dm|code/modules/medical/instruments/resuscitation\.dm|code/modules/surgery/surgery\.dm|code/modules/organs/organ\.dm|code/game/objects/items/weapons/surgery_tools\.dm|code/game/objects/items/devices/scanners/health\.dm|code/modules/reagents/reagent_containers/(hypospray|syringes|blood_pack)\.dm|code/modules/mob/living/carbon/human/species/(species|station/teshari|station/station_special_abilities|station/traits/weaver_objs)\.dm|code/game/machinery/doors/(airlock|windowdoor)\.dm|code/game/mecha/mecha\.dm|code/game/objects/items/devices/spy_bug\.dm|code/game/objects/structures/window\.dm|code/modules/maintenance_panels/maintenance_panel\.dm|code/modules/mob/living/silicon/robot/robot\.dm'
+if $grep -n '\ba_intent\b' "${code_files[@]}" | grep -vE "^($a_intent_allowlist):"; then
+	echo
+	echo -e "${RED}ERROR: a_intent is gone. Use combat mode: IS_HARMING(M), IS_HELPING(M), IS_DISARMING(M), IS_GRABBING(M) or M.use_stance() to read it, and set_combat_mode()/set_use_stance() to set it (code/__defines/combat_mode.dm).${NC}"
+	FAILED=1
+fi;
+
 part "robot cell writes outside the power ledger"
 # A robot's cell charge is written only by draw_power()/add_power() in robot.dm, so the
 # ledger (used_power_this_tick, part power states) sees every joule. Robot code under

@@ -150,7 +150,7 @@
 		return TRUE
 	if(special_handling && !special_pass)
 		return FALSE
-	if(!is_open_container() && !(is_can && user.a_intent == I_HURT))
+	if(!is_open_container() && !(is_can && IS_HARMING(user)))
 		open(user)
 
 /obj/item/reagent_containers/food/drinks/proc/open(mob/user)
@@ -164,7 +164,7 @@
 		name = "\improper can't of [initial(name)]"	//don't update the name until they try to open it
 
 /obj/item/reagent_containers/food/drinks/attack(mob/living/M, mob/living/user, target_zone, attack_modifier)
-	if(force && !(flags & NOBLUDGEON) && user.a_intent == I_HURT)
+	if(force && !(flags & NOBLUDGEON) && IS_HARMING(user))
 		return ..()
 
 	if(standard_feed_mob(user, M))

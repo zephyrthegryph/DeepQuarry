@@ -2,7 +2,7 @@
 	var/mob/living/carbon/human/H = over_object
 	if(!istype(H) || !Adjacent(H))
 		return ..()
-	if(H.a_intent == I_GRAB && hat && !H.hands_are_full())
+	if(IS_GRABBING(H) && hat && !H.hands_are_full())
 		hat.loc = get_turf(src)
 		H.put_in_hands(hat)
 		H.visible_message(span_danger("\The [H] removes \the [src]'s [hat]."))
@@ -12,7 +12,7 @@
 		return ..()
 
 /mob/living/carbon/alien/diona/attackby(obj/item/W, mob/user)
-	if(user.a_intent == I_HELP && istype(W, /obj/item/clothing/head))
+	if(IS_HELPING(user) && istype(W, /obj/item/clothing/head))
 		if(hat)
 			to_chat(user, span_warning("\The [src] is already wearing \the [hat]."))
 			return

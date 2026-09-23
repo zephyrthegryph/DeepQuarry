@@ -90,11 +90,11 @@
 	user.setClickCooldown(DEFAULT_ATTACK_COOLDOWN)
 	if(!Adjacent(user))
 		return
-	else if(user.a_intent == I_HURT)
+	else if(IS_HARMING(user))
 		src.visible_message(span_warning("[user] hammers on \the [src]!"), span_warning("Someone hammers loudly on \the [src]!"))
 		src.add_fingerprint(user)
 		playsound(src, knock_hammer_sound, 50, 0, 3)
-	else if(user.a_intent == I_HELP)
+	else if(IS_HELPING(user))
 		src.visible_message("[user] knocks on \the [src].", "Someone knocks on \the [src].")
 		src.add_fingerprint(user)
 		playsound(src, knock_sound, 50, 0, 3)
@@ -361,7 +361,7 @@
 
 		// Carbons can get straight through these.
 		if(istype(usr,/mob/living/carbon))
-			if(user.a_intent == I_HURT)
+			if(IS_HARMING(user))
 				var/mob/living/carbon/M = usr
 				if(locate(/obj/item/organ/internal/xenos/hivenode) in M.internal_organs)
 					visible_message (span_warning("[usr] strokes the [name] and it melts away!"), 1)

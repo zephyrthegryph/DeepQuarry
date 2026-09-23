@@ -275,7 +275,7 @@
 
 /mob/living/simple_mob/vore/otie/attack_hand(mob/living/carbon/human/M as mob)
 
-	switch(M.a_intent)
+	switch(M.use_stance())
 		if(I_HELP)
 			if(stat != DEAD)
 				if(M.zone_sel.selecting == BP_GROIN)

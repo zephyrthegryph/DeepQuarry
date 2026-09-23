@@ -144,7 +144,7 @@
 	return ITEM_INTERACT_BLOCKING
 
 /obj/machinery/power/tesla_coil/attack_hand(mob/user)
-	if(user.a_intent == I_GRAB && user_buckle_mob(user.pulling, user))
+	if(IS_GRABBING(user) && user_buckle_mob(user.pulling, user))
 		return
 	..()
 
@@ -357,7 +357,7 @@
 	return ..()
 
 /obj/machinery/power/grounding_rod/attack_hand(mob/user)
-	if(user.a_intent == I_GRAB && user_buckle_mob(user.pulling, user))
+	if(IS_GRABBING(user) && user_buckle_mob(user.pulling, user))
 		return
 	..()
 

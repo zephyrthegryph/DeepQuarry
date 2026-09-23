@@ -63,7 +63,7 @@
 */
 /mob/proc/RangedAttack(atom/A, params)
 	if(!mutations.len) return
-	if((LASER_EYES in mutations) && a_intent == I_HURT)
+	if((LASER_EYES in mutations) && IS_HARMING(src))
 		LaserEyes(A) // moved into a proc below
 	else if(has_telegrip())
 		var/datum/input_adapter/telekinesis/telekinesis = INPUT_ADAPTER(telekinesis)

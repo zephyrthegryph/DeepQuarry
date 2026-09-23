@@ -374,50 +374,6 @@ It's fairly easy to fix if dealing with single letters but not so much with comp
 /mob/proc/abiotic(full_body = 0)
 	return 0
 
-//converts intent-strings into numbers and back
-/proc/intent_numeric(argument)
-	if(istext(argument))
-		switch(argument)
-			if(I_HELP)		return 0
-			if(I_DISARM)	return 1
-			if(I_GRAB)		return 2
-			else			return 3
-	else
-		switch(argument)
-			if(0)			return I_HELP
-			if(1)			return I_DISARM
-			if(2)			return I_GRAB
-			else			return I_HURT
-
-//change a mob's act-intent. Input the intent as a string such as I_HELP or use "right"/"left
-/mob/verb/a_intent_change(input as text)
-	set name = "a-intent"
-	set hidden = 1
-
-	if(isliving(src) && !isrobot(src))
-		switch(input)
-			if(I_HELP,I_DISARM,I_GRAB,I_HURT)
-				a_intent = input
-			if("right")
-				a_intent = intent_numeric((intent_numeric(a_intent)+1) % 4)
-			if("left")
-				a_intent = intent_numeric((intent_numeric(a_intent)+3) % 4)
-		if(hud_used && hud_used.action_intent)
-			hud_used.action_intent.icon_state = "intent_[a_intent]"
-
-	else if(isrobot(src))
-		switch(input)
-			if(I_HELP)
-				a_intent = I_HELP
-			if(I_HURT)
-				a_intent = I_HURT
-			if("right","left")
-				a_intent = intent_numeric(intent_numeric(a_intent) - 3)
-		if(hud_used && hud_used.action_intent)
-			if(a_intent == I_HURT)
-				hud_used.action_intent.icon_state = I_HURT
-			else
-				hud_used.action_intent.icon_state = I_HELP
 
 /proc/is_blind(A)
 	if(istype(A, /mob/living/carbon))

@@ -97,47 +97,12 @@
 
 	var/atom/movable/screen/pai/using
 
-	//Small intent quarters
-
-	using = new /atom/movable/screen()
-	using.name = I_HELP
-	using.icon = ui_style
-	using.icon_state = "intent_help-s"
-	using.screen_loc = ui_acti
-	using.alpha = ui_alpha
-	using.layer = LAYER_HUD_ITEM //These sit on the intent box
-	HUD.adding += using
-	HUD.help_intent = using
-
-	using = new /atom/movable/screen()
-	using.name = I_DISARM
-	using.icon = ui_style
-	using.icon_state = "intent_disarm-n"
-	using.screen_loc = ui_acti
-	using.alpha = ui_alpha
-	using.layer = LAYER_HUD_ITEM
-	HUD.adding += using
-	HUD.disarm_intent = using
-
-	using = new /atom/movable/screen()
-	using.name = I_GRAB
-	using.icon = ui_style
-	using.icon_state = "intent_grab-n"
-	using.screen_loc = ui_acti
-	using.alpha = ui_alpha
-	using.layer = LAYER_HUD_ITEM
-	HUD.adding += using
-	HUD.grab_intent = using
-
-	using = new /atom/movable/screen()
-	using.name = I_HURT
-	using.icon = ui_style
-	using.icon_state = "intent_harm-n"
-	using.screen_loc = ui_acti
-	using.alpha = ui_alpha
-	using.layer = LAYER_HUD_ITEM
-	HUD.adding += using
-	HUD.hurt_intent = using
+	// The combat mode button (it replaced the intent selector).
+	var/atom/movable/screen/combat_mode/combat_button = HUD.make_combat_mode_button(src, "intent_help-s", "intent_harm-s")
+	combat_button.icon = ui_style
+	combat_button.alpha = ui_alpha
+	combat_button.layer = LAYER_HUD_ITEM
+	HUD.adding += combat_button
 
 	//Move intent (walk/run)
 	using = new /atom/movable/screen()
@@ -461,7 +426,6 @@
 		if(hud_used.hud_elements)
 			client.screen |= hud_used.hud_elements
 
-		hud_used?.action_intent.screen_loc = ui_acti //Restore intent selection to the original position
 		client.screen += zone_sel				//This one is a special snowflake
 
 	hud_used.hidden_inventory_update()

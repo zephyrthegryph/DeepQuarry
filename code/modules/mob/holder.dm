@@ -311,7 +311,7 @@
 
 /obj/item/holder/attackby(obj/item/W as obj, mob/user as mob)
 	// ITION: MicroHandCrush
-	if(W == src && user.a_intent == I_HURT)
+	if(W == src && IS_HARMING(user))
 		for(var/mob/living/M in src.contents)
 			if(user.size_multiplier > M.size_multiplier)
 				var/dam = (user.size_multiplier - M.size_multiplier)*(rand(2,5))
@@ -328,7 +328,7 @@
 
 /mob/living/MouseDrop(atom/over_object)
 	var/mob/living/carbon/human/H = over_object
-	if(holder_type && issmall(src) && istype(H) && !H.lying && Adjacent(H) && (src.a_intent == I_HELP && H.a_intent == I_HELP))
+	if(holder_type && issmall(src) && istype(H) && !H.lying && Adjacent(H) && (IS_HELPING(src) && IS_HELPING(H)))
 		if(!issmall(H) || !ishuman(src))
 			get_scooped(H, (usr == src))
 		return

@@ -85,7 +85,7 @@
 /mob/living/simple_mob/vore/rabbit/attack_hand(mob/user)
 	. = ..()
 
-	if(user.a_intent == I_HELP) // only patpet on help. :p
+	if(IS_HELPING(user)) // only patpet on help. :p
 		grumpiness = CLAMP(grumpiness + rand(5, 10), 0, 120)
 		last_pet = world.time
 

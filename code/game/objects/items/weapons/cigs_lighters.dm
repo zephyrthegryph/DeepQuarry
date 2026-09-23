@@ -327,7 +327,7 @@ CIGARETTE PACKETS ARE IN FANCY.DM
 	if(.)
 		return TRUE
 	if(lit == 1)
-		if(user.a_intent == I_HURT)
+		if(IS_HARMING(user))
 			user.visible_message(span_notice("[user] drops and treads on the lit [src], putting it out instantly."))
 			playsound(src, 'sound/items/cigs_lighters/cig_snuff.ogg', 50, 1)
 			die(1)
@@ -439,7 +439,7 @@ CIGARETTE PACKETS ARE IN FANCY.DM
 	if(.)
 		return TRUE
 	if(lit == 1)
-		if(user.a_intent == I_HURT)
+		if(IS_HARMING(user))
 			user.visible_message(span_notice("[user] empties the lit [src] on the floor!."))
 			playsound(src, 'sound/items/cigs_lighters/cig_snuff.ogg', 50, 1)
 			die(1)

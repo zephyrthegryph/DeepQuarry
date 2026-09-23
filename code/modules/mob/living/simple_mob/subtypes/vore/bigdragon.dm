@@ -684,7 +684,7 @@ I think I covered everything.
 
 /mob/living/simple_mob/vore/bigdragon/do_special_attack(atom/A)
 	. = TRUE
-	switch(a_intent)
+	switch(use_stance())
 		if(I_DISARM)
 			if(!nospecial)
 				if(specialtoggle)

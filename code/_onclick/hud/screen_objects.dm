@@ -432,32 +432,6 @@
 									C.internals.icon_state = "internal1"
 							else
 								to_chat(C, span_notice("You don't have a[breathes==GAS_O2 ? "n " + GAS_O2 : addtext(" ",breathes)] tank."))
-		if("act_intent")
-			usr.a_intent_change("right")
-		if(I_HELP)
-			usr.a_intent = I_HELP
-			if(ispAI(usr))
-				usr.a_intent_change(I_HELP)
-			else
-				usr.hud_used.action_intent.icon_state = "intent_help"
-		if(I_HURT)
-			usr.a_intent = I_HURT
-			if(ispAI(usr))
-				usr.a_intent_change(I_HURT)
-			else
-				usr.hud_used.action_intent.icon_state = "intent_harm"
-		if(I_GRAB)
-			usr.a_intent = I_GRAB
-			if(ispAI(usr))
-				usr.a_intent_change(I_GRAB)
-			else
-				usr.hud_used.action_intent.icon_state = "intent_grab"
-		if(I_DISARM)
-			usr.a_intent = I_DISARM
-			if(ispAI(usr))
-				usr.a_intent_change(I_DISARM)
-			else
-				usr.hud_used.action_intent.icon_state = "intent_disarm"
 
 		if("pull")
 			usr.stop_pulling()

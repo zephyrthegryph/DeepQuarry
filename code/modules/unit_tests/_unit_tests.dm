@@ -199,6 +199,7 @@
 #include "dq_reactor_s2_tests.dm"
 #include "dq_reactor_poller_tests.dm"
 #include "dq_actor_adapter_tests.dm"
+#include "dq_combat_mode_tests.dm"
 #include "dq_input_tests.dm"
 #include "dq_interaction_tests.dm"
 #include "xgm_total_moles_test.dm"

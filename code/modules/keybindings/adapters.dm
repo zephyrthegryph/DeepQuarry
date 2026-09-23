@@ -117,6 +117,13 @@ GLOBAL_LIST_INIT(input_adapters, init_input_adapters())
 /datum/input_adapter/proc/use(mob/user, atom/target, list/modifiers, params)
 	return
 
+/**
+ * One Use run as a Disarm or Grab (use_attack_variant() has set the variant).
+ * Only actors with hands have the variants; others do nothing.
+ */
+/datum/input_adapter/proc/use_variant(mob/user, atom/target, variant)
+	return FALSE
+
 /// The Self-use action: the held item used on itself.
 /datum/input_adapter/proc/self_use(mob/user, obj/item/held, list/modifiers)
 	held.attack_self(user, modifiers)
@@ -149,6 +156,9 @@ GLOBAL_LIST_INIT(input_adapters, init_input_adapters())
 		build_click(user, user.client.buildmode, params, target)
 		return FALSE
 	return TRUE
+
+/datum/input_adapter/hands/use_variant(mob/user, atom/target, variant)
+	return use(user, target, list(), "")
 
 /*
 	Use for a mob with hands. Checks state, whether an item is held and whether

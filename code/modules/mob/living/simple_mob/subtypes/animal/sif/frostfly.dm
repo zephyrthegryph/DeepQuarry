@@ -118,7 +118,7 @@
 
 /mob/living/simple_mob/animal/sif/frostfly/do_special_attack(atom/A)
 	. = TRUE
-	switch(a_intent)
+	switch(use_stance())
 		if(I_DISARM)
 			if(energy < 20)
 				return FALSE

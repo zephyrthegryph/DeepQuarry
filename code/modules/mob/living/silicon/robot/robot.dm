@@ -1183,7 +1183,7 @@
 
 /// Petting, punching, tapping and vore on a closed chassis.
 /mob/living/silicon/robot/proc/hand_interact(mob/living/carbon/human/H)
-	switch(H.a_intent)
+	switch(H.use_stance())
 		if(I_HELP)
 			if(grabbable)
 				attempt_to_scoop(H)
