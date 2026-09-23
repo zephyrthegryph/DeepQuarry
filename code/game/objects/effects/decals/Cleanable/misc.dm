@@ -151,7 +151,7 @@
 	icon = 'icons/effects/blood.dmi'
 	icon_state = "vomit_1"
 	random_icon_states = list("vomit_1", "vomit_2", "vomit_3", "vomit_4")
-	var/list/datum/disease/viruses = list()
+	var/list/datum/disease/viruses
 
 /obj/effect/decal/cleanable/vomit/old
 	name = "crusty dried vomit"
@@ -161,10 +161,10 @@
 	. = ..()
 	icon_state += "-old"
 	if(length(diseases))
-		viruses += diseases
+		LAZYADD(viruses, diseases)
 	if(prob(65))
 		var/datum/disease/advance/new_disease = new /datum/disease/advance/random(rand(2, 4), rand(7, 9), 4)
-		src.viruses += new_disease
+		LAZYADD(viruses, new_disease)
 
 /obj/effect/decal/cleanable/vomit/old/Crossed(mob/living/carbon/human/perp)
 	return // Don't spread our viruses
@@ -178,10 +178,10 @@
 	basecolor = get_random_colour(rand(0, 1))
 	update_icon()
 	if(length(diseases))
-		viruses += diseases
+		LAZYADD(viruses, diseases)
 	if(prob(75))
 		var/datum/disease/advance/new_disease = new /datum/disease/advance/random(rand(2, 4), rand(7, 9), 4)
-		src.viruses += new_disease
+		LAZYADD(viruses, new_disease)
 	dry()
 
 /obj/effect/decal/cleanable/blood/old/Crossed(mob/living/carbon/human/perp)

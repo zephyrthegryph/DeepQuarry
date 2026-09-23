@@ -141,7 +141,7 @@
 		playsound(src, pick('sound/hallucinations/wail.ogg','sound/hallucinations/veryfar_noise.ogg','sound/hallucinations/far_noise.ogg'), 50, 1, -3)
 		LAZYADD(nearby_mobs, M)
 
-		var/target = pick(M.organs_by_name)
+		var/target = length(M.organs_by_name) ? pick(M.organs_by_name) : null
 		M.injure(INJURY_CUT, rand(5, 10), target, src)
 		to_chat(M, span_red("The skin on your [parse_zone(target)] feels like it's ripping apart, and a stream of blood flies out."))
 		var/obj/effect/decal/cleanable/blood/splatter/animated/B = new(M.loc)

@@ -60,7 +60,7 @@
 				eggcount++
 			if(!eggcount)
 				var/obj/effect/spider/eggcluster/eggs = new egg_type(O, src)
-				O.implants += eggs
+				LAZYADD(O.implants, eggs)
 				eggs.faction = faction
 				to_chat(H, span_critical("\The [src] injects something into your [O.name]!") ) // Oh god its laying eggs in me!
 

@@ -1,4 +1,11 @@
 /mob/living/carbon/human
+	// Every human has a body plan with limbs and organs; species setup refills these.
+	organs = list()
+	internal_organs = list()
+	organs_by_name = list()
+	internal_organs_by_name = list()
+	bad_external_organs = list()
+
 	//Hair colour and style
 	var/r_hair = 0
 	var/g_hair = 0

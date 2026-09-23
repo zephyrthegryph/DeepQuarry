@@ -203,7 +203,7 @@ GLOBAL_LIST_EMPTY(damage_icon_parts) //see UpdateDamageIcon()
 		icon_key += "nolips"
 	var/obj/item/organ/internal/eyes/eyes = internal_organs_by_name[O_EYES]
 	if(eyes)
-		icon_key += "[rgb(eyes.eye_colour[1], eyes.eye_colour[2], eyes.eye_colour[3])]"
+		icon_key += "[eyes.eye_rgb()]"
 	else
 		icon_key += "[r_eyes], [g_eyes], [b_eyes]"
 	var/obj/item/organ/external/head/head = organs_by_name[BP_HEAD]
@@ -557,7 +557,7 @@ GLOBAL_LIST_EMPTY(damage_icon_parts) //see UpdateDamageIcon()
 		if(species.dispersed_eyes) // Set so all species who would lack eye organs still have glowing eyes colored correctly
 			eyes_icon.Blend(rgb(r_eyes, g_eyes, b_eyes))
 		else if(eyes)
-			eyes_icon.Blend(rgb(eyes.eye_colour[1], eyes.eye_colour[2], eyes.eye_colour[3]), ICON_ADD)
+			eyes_icon.Blend(eyes.eye_rgb(), ICON_ADD)
 		else
 			eyes_icon.Blend(rgb(128,0,0), ICON_ADD)
 

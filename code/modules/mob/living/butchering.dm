@@ -50,7 +50,7 @@
 				butchery_loot = null
 
 		if(LAZYLEN(organs) && butchery_drops_organs)
-			organs_by_name.Cut()
+			organs_by_name?.Cut()
 
 			for(var/path in organs)
 				if(ispath(path))
@@ -69,16 +69,10 @@
 				OR.removed()
 				organs -= OR
 
+		if(butchery_drops_organs)
+			spawn_butchery_organs()
 		if(LAZYLEN(internal_organs) && butchery_drops_organs)
-			internal_organs_by_name.Cut()
-
-			for(var/path in internal_organs)
-				if(ispath(path))
-					var/obj/item/organ/neworg = new path(src, TRUE)
-					neworg.name = "[name] [neworg.name]"
-					neworg.meat_type = meat_type
-					internal_organs |= neworg
-					internal_organs -= path
+			internal_organs_by_name?.Cut()
 
 			for(var/obj/item/organ/OR in internal_organs)
 				OR.removed()

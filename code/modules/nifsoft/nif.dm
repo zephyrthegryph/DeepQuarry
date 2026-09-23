@@ -153,7 +153,7 @@ You can also set the stat of a NIF to NIF_TEMPFAIL without any issues to disable
 		if(!istype(parent))
 			return FALSE
 		forceMove(parent)
-		parent.implants += src
+		LAZYADD(parent.implants, src)
 		addtimer(CALLBACK(src, PROC_REF(quick_install), H), 1)
 		return TRUE
 
@@ -690,7 +690,7 @@ You can also set the stat of a NIF to NIF_TEMPFAIL without any issues to disable
 		if(do_after(user, 20 SECONDS, T, target_zone = BP_TORSO))
 			user.unEquip(src)
 			forceMove(eo)
-			eo.implants |= src
+			LAZYOR(eo.implants, src)
 			implant(T)
 			playsound(T,'sound/effects/slime_squish.ogg',50,1)
 			return ITEM_INTERACT_SUCCESS

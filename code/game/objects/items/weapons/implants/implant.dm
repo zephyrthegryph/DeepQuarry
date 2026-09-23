@@ -31,7 +31,7 @@
 		var/mob/living/carbon/human/H = source
 		var/obj/item/organ/external/affected = H.get_organ(target_zone)
 		if(affected)
-			affected.implants |= src
+			LAZYOR(affected.implants, src)
 			part = affected
 	if(part)
 		forceMove(part)
@@ -70,7 +70,7 @@
 
 /obj/item/implant/Destroy()
 	if(part)
-		part.implants.Remove(src)
+		LAZYREMOVE(part.implants, src)
 		part = null
 	GLOB.listening_objects.Remove(src)
 	imp_in = null
@@ -115,7 +115,7 @@ REGISTRY_MEMBERSHIP(/obj/item/implant/tracking, REGISTRY_TRACKING_IMPLANTS)
 /obj/item/implant/tracking/Destroy()
 	STOP_PROCESSING(SSobj, src)
 	if(part)
-		part.implants -= src
+		LAZYREMOVE(part.implants, src)
 	part = imp_in = null
 	return ..()
 
