@@ -1,6 +1,7 @@
 //! Conservation, ledger, topology and storage tests for the power domain.
 
 use proptest::prelude::*;
+use vg_core::units::Watts;
 
 use crate::apc::{ApcConfig, ApcState, CELLRATE, chan, status};
 use crate::geom::{CableShape, EAST, NORTH, WEST, pos};
@@ -408,7 +409,7 @@ fn a_reused_key_starts_with_no_leftover_state() {
 
     // No leftover generator supply or pulse from the old occupant.
     let info = w.region_info(10).unwrap();
-    assert_eq!(info.avail, 0.0, "the reused key must not inherit the old supply");
+    assert_eq!(info.avail, Watts(0.0), "the reused key must not inherit the old supply");
     let regions = records(&events, ev::REGION);
     assert!(
         regions.iter().all(|r| r[1] == 0.0),

@@ -290,9 +290,9 @@ fn power_region(key: ByondValue) -> Result<ByondValue> {
     #[allow(clippy::cast_possible_truncation, clippy::cast_precision_loss)]
     let values = [
         info.region as f32,
-        info.avail as f32,
-        info.load as f32,
-        info.netexcess as f32,
+        f32::from(info.avail),
+        f32::from(info.load),
+        f32::from(info.netexcess),
         info.summary[0] as f32,
         info.summary[1] as f32,
         info.summary[2] as f32,

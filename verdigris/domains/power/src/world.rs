@@ -25,6 +25,7 @@ use std::collections::{BTreeMap, HashMap};
 use vg_core::RawHandle;
 use vg_core::conservation::Ledger as ConservationLedger;
 use vg_core::network::{Network, NodeId, RegionEvent, RegionId};
+use vg_core::units::Watts;
 
 use crate::apc::{Apc, ApcConfig, ApcState, CELLRATE, Grid};
 use crate::geom::CableShape;
@@ -109,13 +110,15 @@ struct Ledger {
     reported_brown: Option<bool>,
 }
 
-/// Region numbers as DM reads them.
+/// Region numbers as DM reads them. `avail`/`load`/`netexcess` are
+/// [`Watts`]: the only way a physical quantity crosses the FFI boundary
+/// (`rust_core.md` §15/§16).
 #[derive(Clone, Copy, Debug, Default, PartialEq)]
 pub struct RegionInfo {
     pub region: u32,
-    pub avail: f64,
-    pub load: f64,
-    pub netexcess: f64,
+    pub avail: Watts,
+    pub load: Watts,
+    pub netexcess: Watts,
     pub summary: Summary,
     pub members: u32,
     pub pool: f64,
@@ -553,9 +556,9 @@ impl PowerWorld {
         let l = self.ledgers.get(&r.raw()).copied().unwrap_or_default();
         Some(RegionInfo {
             region: region_id(r),
-            avail: l.avail,
-            load: l.load,
-            netexcess: l.netexcess,
+            avail: Watts(l.avail),
+            load: Watts(l.load),
+            netexcess: Watts(l.netexcess),
             summary: *region.summary(),
             members: region.members(),
             pool: *region.payload(),
