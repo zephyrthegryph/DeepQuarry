@@ -279,14 +279,16 @@
 // First argument is the list name/path desired, e.g. 'all_candles' would be 'var/list/all_candles = list()'.
 // Second argument is the path the list is expected to contain. Note that children will also get added to the global list.
 // If the GLOB system is ever ported, you can change this macro in one place and have less work to do than you otherwise would.
+// Membership follows the lifecycle (L2, doc/rewrite/state.md section 6): on_materialize()
+// joins, on_dematerialize() leaves, and /atom/Destroy() dematerializes. L3 replaces these lists.
 #define GLOBAL_LIST_BOILERPLATE(LIST_NAME, PATH)\
 GLOBAL_LIST_EMPTY(##LIST_NAME);\
-##PATH/Initialize(mapload, ...)\
+##PATH/on_materialize()\
 	{\
+	. = ..();\
 	GLOB.##LIST_NAME += src;\
-	return ..();\
 	}\
-##PATH/Destroy(force, ...)\
+##PATH/on_dematerialize()\
 	{\
 	GLOB.##LIST_NAME -= src;\
 	return ..();\

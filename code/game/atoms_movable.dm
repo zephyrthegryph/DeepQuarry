@@ -37,8 +37,6 @@
 
 /atom/movable/Initialize(mapload)
 	. = ..()
-	if(rad_insulation != RAD_NO_INSULATION)
-		RAD_SHIELDING_CHANGED(loc)
 
 #if EMISSIVE_BLOCK_GENERIC != 0
 	#error EMISSIVE_BLOCK_GENERIC is expected to be 0 to facilitate a weird optimization hack where we rely on it being the most common.
@@ -65,14 +63,30 @@
 	if(icon_scale_x != DEFAULT_ICON_SCALE_X || icon_scale_y != DEFAULT_ICON_SCALE_Y || icon_rotation != DEFAULT_ICON_ROTATION)
 		update_transform()
 	switch(light_system)
-		if(STATIC_LIGHT)
-			update_light()
 		if(MOVABLE_LIGHT)
 			AddComponent(/datum/component/overlay_lighting, starts_on = light_on)
 		if(MOVABLE_LIGHT_DIRECTIONAL)
 			AddComponent(/datum/component/overlay_lighting, is_directional = TRUE, starts_on = light_on)
+
+/// World registration moved out of Initialize() (L2): radiation shielding,
+/// static lighting and recursive listening reach outside the object.
+/atom/movable/on_materialize()
+	. = ..()
+	if(rad_insulation != RAD_NO_INSULATION)
+		RAD_SHIELDING_CHANGED(loc)
+	if(light_system == STATIC_LIGHT)
+		update_light()
+	// Unchanged from Initialize(): set_listening() is a no-op when the var is
+	// already set, so this never registered anything. Destroy() clears it.
 	if (listening_recursive)
 		set_listening(listening_recursive)
+
+/atom/movable/on_dematerialize()
+	if(rad_insulation != RAD_NO_INSULATION)
+		RAD_SHIELDING_CHANGED(loc)
+	if(light_system == STATIC_LIGHT && light)
+		QDEL_NULL(light)
+	return ..()
 
 /atom/movable/Destroy()
 	if(em_block)
