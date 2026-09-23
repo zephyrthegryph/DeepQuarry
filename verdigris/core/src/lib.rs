@@ -10,7 +10,9 @@ pub mod arena;
 pub mod bitset;
 pub mod channel;
 pub mod command;
+pub mod component;
 pub mod cow;
+pub mod entity;
 pub mod field;
 pub mod frame;
 pub mod grid;
@@ -36,4 +38,12 @@ pub mod units;
 pub mod watch;
 
 pub use arena::Arena;
+pub use entity::{CellAllocator, ComponentRef, EntityError, EntitySlots, EntityTable};
 pub use handle::{Handle, RawHandle};
+
+/// The `#[vg::component]`, `#[vg::query]` and `#[vg::events]` attributes
+/// (`rust_bindings.md` §2), re-exported under this short name so a domain
+/// crate can `use vg_core::vg;` and write `#[vg::component(...)]`.
+pub mod vg {
+    pub use auxmacros::{component, events, query};
+}
