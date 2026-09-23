@@ -23,7 +23,21 @@
 	open_sound = 'sound/effects/wooden_closet_open.ogg'
 	close_sound = 'sound/effects/wooden_closet_close.ogg'
 
-/obj/structure/closet/grave/attack_hand(mob/user as mob)
+// Grave's Use and item overrides fully replace closet's (the original overrides never
+// called ..() into it either), so it declares its own interactions.
+/obj/structure/closet/grave/declare_interactions(list/into)
+	into += list(
+		/datum/interaction/entry_hand/grave_hand,
+		/datum/interaction/entry_item/grave_item,
+	)
+
+/// Old attack_hand: climb into the open grave.
+/datum/interaction/entry_hand/grave_hand
+	id = "grave_hand"
+	name = "Use"
+	effect = /obj/structure/closet/grave/proc/interaction_grave_hand
+
+/obj/structure/closet/grave/proc/interaction_grave_hand(mob/user, obj/item/held, datum/interaction/interaction)
 	if(opened)
 		visible_message(span_notice("[user] starts to climb into \the [src.name]."), \
 						span_notice("You start to lower yourself into \the [src.name]."))
@@ -34,7 +48,7 @@
 		else
 			visible_message(span_notice("[user] decides not to climb into \the [src.name]."), \
 							span_notice("You stop climbing into \the [src.name]."))
-	return
+	return TRUE
 
 /obj/structure/closet/grave/CanPass(atom/movable/mover, turf/target)
 	if(opened && ismob(mover))
@@ -66,7 +80,13 @@
 		var/limb_damage = rand(5,25)
 		H.injure(INJURY_BLUNT, limb_damage, null, src)
 
-/obj/structure/closet/grave/attackby(obj/item/W as obj, mob/user as mob)
+/// Old attackby: fill in with a shovel, smooth over/dig out, or drop items in.
+/datum/interaction/entry_item/grave_item
+	id = "grave_item"
+	name = "Use"
+	effect = /obj/structure/closet/grave/proc/interaction_grave_item
+
+/obj/structure/closet/grave/proc/interaction_grave_item(mob/user, obj/item/W, datum/interaction/interaction)
 	if(src.opened)
 		if(istype(W, /obj/item/shovel))
 			user.visible_message(span_notice("[user] piles dirt into \the [src.name]."), \
@@ -76,17 +96,17 @@
 				user.visible_message(span_notice("[user] pats down the dirt on top of \the [src.name]."), \
 									span_notice("You finish filling in \the [src.name]."))
 				close()
-				return
+				return TRUE
 			else
 				user.visible_message(span_notice("[user] stops filling in \the [src.name]."), \
 									span_notice("You change your mind and stop filling in \the [src.name]."))
-				return
+				return TRUE
 		if(istype(W, /obj/item/grab))
 			var/obj/item/grab/G = W
 			src.MouseDrop_T(G.affecting, user)      //act like they were dragged onto the closet
-			return 0
+			return TRUE
 		if(istype(W,/obj/item/tk_grab))
-			return 0
+			return TRUE
 		if(istype(W, /obj/item/storage/laundry_basket) && W.contents.len)
 			var/obj/item/storage/laundry_basket/LB = W
 			var/turf/T = get_turf(src)
@@ -95,11 +115,11 @@
 			user.visible_message(span_notice("[user] empties \the [LB] into \the [src]."), \
 									span_notice("You empty \the [LB] into \the [src]."), \
 									span_notice("You hear rustling of clothes."))
-			return
+			return TRUE
 		if(isrobot(user))
-			return
+			return TRUE
 		if(W.loc != user) // This should stop mounted modules ending up outside the module.
-			return
+			return TRUE
 		user.drop_item()
 		if(W)
 			W.forceMove(src.loc)
@@ -116,11 +136,11 @@
 						alpha = 40	// If we've got stuff inside, like maybe a person, just make it hard to see us
 					else
 						qdel(src)	// Else, go away
-					return
+					return TRUE
 				else
 					user.visible_message(span_notice("[user] stops concealing \the [src.name]."), \
 											span_notice("You stop concealing \the [src.name]."))
-					return
+					return TRUE
 			else
 				user.visible_message(span_notice("[user] begins to unearth \the [src.name]."), \
 										span_notice("You start to unearth \the [src.name]."), \
@@ -129,12 +149,12 @@
 					user.visible_message(span_notice("[user] reaches the bottom of \the [src.name]."), \
 											span_notice("You finish digging out \the [src.name]."))
 					break_open()
-					return
+					return TRUE
 				else
 					user.visible_message(span_notice("[user] stops digging out \the [src.name]."), \
 											span_notice("You stop digging out \the [src.name]."))
-					return
-	return
+					return TRUE
+	return TRUE
 
 /obj/structure/closet/grave/close()
 	..()

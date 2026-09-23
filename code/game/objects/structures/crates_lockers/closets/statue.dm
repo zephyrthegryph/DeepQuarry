@@ -101,10 +101,12 @@
 /obj/structure/closet/statue/explosion_contents_severity(severity)
 	return severity
 
-/obj/structure/closet/statue/attackby(obj/item/I as obj, mob/user as mob)
+/// Overrides closet's interaction_item(): a statue takes weapon hits instead of storing items.
+/obj/structure/closet/statue/interaction_item(mob/user, obj/item/I, datum/interaction/interaction)
 	user.do_attack_animation(src)
 	visible_message(span_danger("[user] strikes [src] with [I]."))
 	receive_weapon_hit(I, user)
+	return TRUE
 
 /obj/structure/closet/statue/MouseDrop_T()
 	return
@@ -112,8 +114,9 @@
 /obj/structure/closet/statue/relaymove()
 	return
 
-/obj/structure/closet/statue/attack_hand()
-	return
+/// Overrides closet's interaction_hand(): a statue doesn't open.
+/obj/structure/closet/statue/interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
+	return TRUE
 
 /obj/structure/closet/statue/verb_toggleopen()
 	return
