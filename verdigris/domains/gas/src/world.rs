@@ -34,6 +34,7 @@ use vg_core::frame::{Res, Task};
 use vg_core::grid::{DirMask, Face, GridDims};
 use vg_core::outbox::{Event, EventKind, Lane, Outbox, Wake, WatchId};
 use vg_core::owner::{DomainState, View};
+use vg_core::revision::Counter;
 use vg_core::sim::{Mode, Sim, SimBuilder, SimConfig, WatchKey};
 use vg_core::watch::{Cond, WatchPort, WatchState};
 
@@ -120,7 +121,7 @@ impl MixRef {
 
 struct Slot {
 	mix: Mixture,
-	revision: u32,
+	revision: Counter,
 	live: bool,
 }
 
@@ -143,7 +144,7 @@ impl Mains {
 		if let Some(i) = self.free.pop() {
 			let slot = &mut self.slots[i as usize];
 			slot.mix = mix;
-			slot.revision = slot.revision.wrapping_add(1);
+			slot.revision.bump();
 			slot.live = true;
 			return Ok(i);
 		}
@@ -154,7 +155,7 @@ impl Mains {
 		}
 		self.slots.push(Slot {
 			mix,
-			revision: 0,
+			revision: Counter::new(),
 			live: true,
 		});
 		Ok(i)
@@ -165,7 +166,7 @@ impl Mains {
 			if slot.live {
 				slot.live = false;
 				slot.mix = Mixture::new();
-				slot.revision = slot.revision.wrapping_add(1);
+				slot.revision.bump();
 				self.free.push(i);
 				self.live -= 1;
 			}
@@ -189,13 +190,13 @@ impl Mains {
 
 	fn bump(&mut self, i: u32) {
 		if let Some(s) = self.slots.get_mut(i as usize) {
-			s.revision = s.revision.wrapping_add(1);
+			s.revision.bump();
 		}
 	}
 
 	#[must_use]
 	pub fn revision(&self, i: u32) -> u32 {
-		self.slots.get(i as usize).map_or(0, |s| s.revision)
+		self.slots.get(i as usize).map_or(0, |s| s.revision.get())
 	}
 
 	#[must_use]

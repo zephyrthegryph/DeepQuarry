@@ -369,21 +369,22 @@
 // verdigris/domains/gas/src/turf.rs
 #define SIMULATION_ANY 3
 
-/// Stefan–Boltzmann constant, W/(m²·K⁴). Written out in decimal because the
-/// define scanner reads plain literals only.
-// verdigris/domains/heat/src/consts.rs
+/// Stefan-Boltzmann constant, W/(m^2*K^4). Written out in decimal
+/// because the define scanner reads plain literals only.
+// verdigris/core/src/units.rs
 #define STEFAN_BOLTZMANN_CONSTANT 0.00000005670374419
 
-/// 0 °C, K.
-// verdigris/domains/heat/src/consts.rs
+/// 0 degrees Celsius, K.
+// verdigris/core/src/units.rs
 #define T0C 273.15
 
-/// 20 °C, K.
-// verdigris/domains/heat/src/consts.rs
+/// 20 degrees Celsius, K ("room temperature").
+// verdigris/core/src/units.rs
 #define T20C 293.15
 
-/// Cosmic microwave background, K. The floor of every body and gas.
-// verdigris/domains/heat/src/consts.rs
+/// Cosmic microwave background temperature, K. The floor every body and
+/// gas cools toward.
+// verdigris/core/src/units.rs
 #define TCMB 2.7
 
 /// Default heat capacity of an atom that declares no thermal properties, J/K.

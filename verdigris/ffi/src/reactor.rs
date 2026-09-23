@@ -805,14 +805,14 @@ fn react_watch_changed(
 
 /// `REACT_WHEN` threshold: `cmp` 0 above / 1 below `value` on channel `ch`;
 /// `hysteresis` < 0 takes the channel's; `both_edges` also wakes on leaving.
+#[auxmacros::bind("/proc/react_watch_threshold")]
 // One Rust parameter per DM call argument -- bundling these into a struct
 // would require the generated DM binding (owned by the rewrite/bindings
 // branch, not touched here) to change its call convention too. See the
-// file-level `#![allow(clippy::too_many_arguments)]` below: an item-level
+// file-level `#![allow(clippy::too_many_arguments)]` above: an item-level
 // #[allow] here doesn't reach the function clippy actually flags, because
 // it's generated inside `::byondapi::bind`'s own expansion (a macro this
 // audit doesn't touch) and doesn't inherit this fn's outer attributes.
-#[auxmacros::bind("/proc/react_watch_threshold")]
 fn react_watch_threshold(
     domain: ByondValue,
     sub: ByondValue,
@@ -862,10 +862,10 @@ fn react_watch_band(
 
 /// `REACT_WHEN` difference: `a - b` (or `|a - b|` with `abs`) on channel
 /// `ch` crosses `value` like a threshold.
+#[auxmacros::bind("/proc/react_watch_difference")]
 // See react_watch_threshold above: one Rust parameter per DM call
 // argument, so this can't be bundled without a binding-generator change,
 // and (also as above) needs the file-level allow, not an item-level one.
-#[auxmacros::bind("/proc/react_watch_difference")]
 fn react_watch_difference(
     domain: ByondValue,
     sub: ByondValue,
