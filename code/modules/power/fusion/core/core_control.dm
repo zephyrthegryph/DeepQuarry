@@ -8,7 +8,7 @@
 
 	var/id_tag = ""
 	var/scan_range = 25
-	var/list/connected_devices = list()
+	var/list/connected_devices
 	var/obj/machinery/power/fusion_core/cur_viewed_device
 	var/datum/tgui_module/rustcore_monitor/monitor
 

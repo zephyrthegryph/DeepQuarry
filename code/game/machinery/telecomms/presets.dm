@@ -61,7 +61,7 @@
 	//Common and other radio frequencies for people to freely use
 /obj/machinery/telecomms/receiver/preset_right/Initialize(mapload)
 	for(var/i = PUBLIC_LOW_FREQ, i < PUBLIC_HIGH_FREQ, i += 2)
-		freq_listening |= i
+		LAZYOR(freq_listening, i)
 	. = ..()
 
 /obj/machinery/telecomms/receiver/preset_cent
@@ -90,7 +90,7 @@
 	for(var/i = PUBLIC_LOW_FREQ, i < PUBLIC_HIGH_FREQ, i += 2)
 		if(i == PUB_FREQ)
 			continue
-		freq_listening |= i
+		LAZYOR(freq_listening, i)
 	. = ..()
 
 /obj/machinery/telecomms/bus/preset_three
@@ -176,14 +176,13 @@
 // "Unused" channels, AKA all others.
 /obj/machinery/telecomms/server/presets/unused
 	id = "Unused Server"
-	freq_listening = list()
 	autolinkers = list("unused")
 
 /obj/machinery/telecomms/server/presets/unused/Initialize(mapload)
 	for(var/i = PUBLIC_LOW_FREQ, i < PUBLIC_HIGH_FREQ, i += 2)
 		if(i == AI_FREQ || i == PUB_FREQ)
 			continue
-		freq_listening |= i
+		LAZYOR(freq_listening, i)
 	. = ..()
 
 /obj/machinery/telecomms/server/presets/command

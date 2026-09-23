@@ -10,8 +10,8 @@
 	icon_state = "generator0"
 	circuit = /obj/item/circuitboard/shield_generator
 	density = TRUE
-	var/list/field_segments = list()    // List of all shield segments owned by this generator.
-	var/list/damaged_segments = list()  // List of shield segments that have failed and are currently regenerating.
+	var/list/field_segments    // List of all shield segments owned by this generator.
+	var/list/damaged_segments  // List of shield segments that have failed and are currently regenerating.
 	var/shield_modes = 0                // Enabled shield mode flags
 	var/mitigation_em = 0               // Current EM mitigation
 	var/mitigation_physical = 0         // Current Physical mitigation
@@ -114,7 +114,7 @@
 		var/obj/effect/shield/S = new(T)
 		S.gen = src
 		S.flags_updated()
-		field_segments |= S
+		LAZYOR(field_segments, S)
 
 	//Hull shield chaos icon generation
 	if(check_flag(MODEFLAG_HULL))
@@ -320,7 +320,7 @@
 	mitigation_physical = between(0, mitigation_physical - MITIGATION_LOSS_PASSIVE, mitigation_max)
 
 	if(running == SHIELD_RUNNING)
-		upkeep_power_usage = round((field_segments.len - damaged_segments.len) * ENERGY_UPKEEP_PER_TILE * upkeep_multiplier)
+		upkeep_power_usage = round((length(field_segments) - length(damaged_segments)) * ENERGY_UPKEEP_PER_TILE * upkeep_multiplier)
 	else if(running > SHIELD_RUNNING)
 		upkeep_power_usage = round(ENERGY_UPKEEP_IDLE * idle_multiplier * (field_radius * 8) * upkeep_multiplier) // Approximates number of turfs.
 

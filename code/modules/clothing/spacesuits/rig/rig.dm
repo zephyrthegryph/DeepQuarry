@@ -59,7 +59,7 @@
 	var/obj/item/rig_module/voice/speech                      // As above.
 	var/mob/living/carbon/human/wearer                        // The person currently wearing the rig.
 	var/image/mob_icon                                        // Holder for on-mob icon.
-	var/list/installed_modules = list()                       // Power consumption/use bookkeeping.
+	var/list/installed_modules                       // Power consumption/use bookkeeping.
 
 	// Cooling system vars.
 	var/cooling_on = 0					//is it turned on?
@@ -545,7 +545,7 @@
 
 	if(chest)
 		chest.cut_overlays()
-		if(installed_modules.len)
+		if(length(installed_modules))
 			for(var/obj/item/rig_module/module in installed_modules)
 				if(module.suit_overlay)
 					chest.add_overlay(image(module.suit_overlay_icon, icon_state = "[module.suit_overlay]", dir = SOUTH))
@@ -758,7 +758,7 @@
 
 /obj/item/rig/proc/take_hit(damage, source, is_emp=0)
 
-	if(!installed_modules.len)
+	if(!length(installed_modules))
 		return
 
 	var/chance
@@ -767,7 +767,7 @@
 	else
 		//Want this to be roughly independant of the number of modules, meaning that X emp hits will disable Y% of the suit's modules on average.
 		//that way people designing hardsuits don't have to worry (as much) about how adding that extra module will affect emp resiliance by 'soaking' hits for other modules
-		chance = 2*max(0, damage - emp_protection)*min(installed_modules.len/15, 1)
+		chance = 2*max(0, damage - emp_protection)*min(length(installed_modules)/15, 1)
 
 	if(!prob(chance))
 		return

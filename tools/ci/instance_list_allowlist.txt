@@ -3,20 +3,423 @@
 # New entries need a real reason (see AGENTS.md 3a): prefer a static var or getter
 # for constant tables, a lazy list for usually-empty data, or a shared
 # copy-on-write list for rarely-written data. Remove an entry when you convert it.
-# The "baseline" section is the audit backlog (doc/rewrite/memory_lists_audit.md),
-# not an endorsement: shrink it, don't grow it.
+# Every entry is classified (doc/rewrite/memory_lists_audit.md); the old baseline
+# backlog is gone, so a new entry needs its own reason.
 
-# Kept: class (d), or already shared at runtime.
+# Kept: class (d) per-instance state, class (c) read-only per-subtype tables, or shared at runtime.
+/atom/movable/ref_holder/test_assoc_list # d: unit-test fixture; the ref-tracking test needs a real list to find
+/atom/movable/ref_holder/test_list # d: unit-test fixture; the ref-tracking test needs a real list to find
+/client/department_hours # d: one per connected client; loaded from the database on login
+/client/misc_cache # d: one per connected client; protean code indexes it directly
+/client/misc_tabs # d: one per connected client; stat panel tabs
+/client/panel_tabs # d: one per connected client; rebuilt on every verb refresh
+/client/play_hours # d: one per connected client; loaded from the database on login
+/client/screen_maps # d: one per connected client; nested per-map lists edited in place
+/client/sent_assets # d: one per connected client; every client is sent assets on login
+/datum/accessory_slot_registry/slot_names # d: singleton registry, filled at init
+/datum/action/viewers # d: per-action viewer set; every shown action has viewers
+/datum/ai_laws/inherent_laws # d: per law set; every silicon has inherent laws
+/datum/ai_laws/ion_laws # d: per law set, edited through the law procs; one per silicon
+/datum/ai_laws/state_inherent # d: per law set, written through the internal law procs; one per silicon
+/datum/ai_laws/state_ion # d: per law set, written through the internal law procs; one per silicon
+/datum/ai_laws/state_supplied # d: per law set, written through get/set_state_internal(); one per silicon
+/datum/ai_laws/supplied_laws # d: per law set, edited through the law procs; one per silicon
+/datum/alarm_handler/alarms # d: alarm handler singletons, one per alarm kind
+/datum/alternate_appearance/viewers # d: every alternate appearance is shown to someone
+/datum/antagonist/candidates # d: antagonist template state; filled every roundstart selection
+/datum/antagonist/cultist/startwords # d: edited in place per instance (1 writers)
+/datum/artifact_effect/feelings/messages # d: every feelings effect defines its messages
+/datum/asset/simple/icon_states/directions # d: replaced per instance at runtime (1 assignments)
+/datum/beam_components_cache/beam_components # d: beam cache state
+/datum/belly/digest_messages_owner # never instantiated: legacy /datum/belly (nothing creates it or calls copy()); no runtime cost, delete the type instead
+/datum/belly/digest_messages_prey # never instantiated: legacy /datum/belly (nothing creates it or calls copy()); no runtime cost, delete the type instead
+/datum/belly/digest_modes # never instantiated: legacy /datum/belly (nothing creates it or calls copy()); no runtime cost, delete the type instead
+/datum/belly/emote_lists # never instantiated: legacy /datum/belly (nothing creates it or calls copy()); no runtime cost, delete the type instead
+/datum/belly/examine_messages # never instantiated: legacy /datum/belly (nothing creates it or calls copy()); no runtime cost, delete the type instead
+/datum/belly/internal_contents # never instantiated: legacy /datum/belly (nothing creates it or calls copy()); no runtime cost, delete the type instead
+/datum/belly/items_preserved # never instantiated: legacy /datum/belly (nothing creates it or calls copy()); no runtime cost, delete the type instead
+/datum/belly/slots # never instantiated: legacy /datum/belly (nothing creates it or calls copy()); no runtime cost, delete the type instead
+/datum/belly/struggle_messages_inside # never instantiated: legacy /datum/belly (nothing creates it or calls copy()); no runtime cost, delete the type instead
+/datum/belly/struggle_messages_outside # never instantiated: legacy /datum/belly (nothing creates it or calls copy()); no runtime cost, delete the type instead
+/datum/belly_overlay_tgui/state # d: UI state (generic name, too many ambiguous call sites)
+/datum/board_game/checkers/current_board # d: board state
+/datum/board_game/chess/current_board # d: board state
+/datum/board_game/nine_mens/current_board # d: edited in place per instance (6 writers)
+/datum/board_game/space_battle/ships_placed_pone # d: board state written through an alias; one per game table
+/datum/board_game/space_battle/ships_placed_ptwo # d: board state written through an alias; one per game table
+/datum/board_game/space_battle/shots_fired_pone # d: board state written through an alias (current_shots[key] = hit); one per game table
+/datum/board_game/space_battle/shots_fired_ptwo # d: board state written through an alias (current_shots[key] = hit); one per game table
+/datum/chunk/camera/cameras # d: camera chunk visibility state
+/datum/chunk/obscuredTurfs # d: camera/ghost chunk visibility state, rebuilt on every update with &=
+/datum/chunk/turfs # d: every visibility chunk tracks its turfs
+/datum/chunk/visibleTurfs # d: camera/ghost chunk visibility state, rebuilt on every update with &=
+/datum/cinematic/locked # d: cinematics exist to lock viewers
+/datum/codex_tree/current_page # d: codex browser page stack, always non-empty while open
+/datum/codex_tree/history # d: codex browser history, filled as pages are opened; one per codex item
+/datum/component/antag/changeling/absorbed_dna # d: changeling state; starts with the changeling's own DNA
+/datum/component/antag/changeling/changeling_cooldowns # d: edited in place per instance (1 writers)
+/datum/component/bluespace_connection/connections # d: the component exists because of its connections
+/datum/component/connect_range/turfs # d: the component's tracked turf set; always populated while attached
+/datum/component/personal_crafting/categories # d: edited in place per instance (2 writers)
+/datum/component/reactive_icon_update/triggering_mobs # d: edited in place per instance (1 writers)
+/datum/component/schizophrenia/episode # d: edited in place per instance (21 writers)
+/datum/component/shadekin/shadekin_abilities # d: edited in place per instance (1 writers)
+/datum/computer_file/data/email_account/deleted # d: mailbox state
+/datum/computer_file/data/email_account/inbox # d: mailbox state
+/datum/computer_file/data/email_account/spam # d: mailbox state
+/datum/contract_definition/social/program/engineering_qualification/thresholds # c: read-only per-subtype constant table (2 subtype overrides); a getter would share it, not worth it on a rare type
+/datum/controller/master/perf_outliers # d: MC singleton, filled every tick
+/datum/controller/master/perf_tick_realtime # d: MC singleton, filled every tick
+/datum/controller/master/perf_tick_usage # d: MC singleton, filled every tick
+/datum/controller/subsystem/machines/power_dirty_areas # d: SSmachines singleton (M3 power); one instance
+/datum/controller/subsystem/machines/power_material_cables # d: SSmachines singleton (M3 power); one instance
+/datum/controller/subsystem/machines/power_ops # d: SSmachines singleton (M3 power); one instance
+/datum/controller/subsystem/machines/power_regions # d: SSmachines singleton (M3 power); one instance
+/datum/controller/subsystem/mapping/multiz_levels # d: subsystem singleton; one entry per z-level
+/datum/controller/subsystem/mapping/z_list # d: subsystem singleton; one entry per z-level
+/datum/controller/subsystem/rolling_usage # d: one per subsystem; the usage ring buffer is always in use
+/datum/data/pda/app/notekeeper/storednotes # d: edited in place per instance (2 writers)
+/datum/data/pda/app/notekeeper/storedtitles # d: edited in place per instance (2 writers)
+/datum/data/record/fields # d: every record has fields
+/datum/decl/chemical_reaction/distilling/temp_range # c: read-only per-subtype constant table (54 subtype overrides); a getter would share it, not worth it on a rare type
+/datum/decl/fusion_reaction/products # d: reaction singleton table
+/datum/decl/mob_organ_names/hit_zones # c: read-only per-subtype constant table (55 subtype overrides); a getter would share it, not worth it on a rare type
+/datum/decl/overmap_event_handler/ship_events # d: singleton; nested per-ship lists edited in place
+/datum/design_techweb/category # d: every design is in a category (singletons)
+/datum/dimension_theme/replace_floors # d: edited in place per instance (1 writers)
+/datum/dimension_theme/replace_objs # c: read-only per-subtype constant table (8 subtype overrides); a getter would share it, not worth it on a rare type
+/datum/disease/advance/symptoms # d: every advanced disease has symptoms
+/datum/disease/cures # d: every disease defines its cures
+/datum/dna/SE # d: fixed-size DNA block list, always filled
+/datum/dna/UI # d: fixed-size DNA block list, always filled
+/datum/dna/custom_cold # d: per-mob DNA copy of the custom cold table
+/datum/dna/custom_heat # d: per-mob DNA copy of the custom heat table
+/datum/element/footstep_override/occupied_turfs # d: element singleton; nested per-turf lists edited in place
+/datum/embedded_program/memory # d: every embedded program keeps its state in memory
+/datum/error_viewer/error_cache/errors # d: error viewer state
+/datum/error_viewer/error_source/errors # d: error viewer state
+/datum/event/prison_break/areaName # c: read-only per-subtype constant table (3 subtype overrides); a getter would share it, not worth it on a rare type
+/datum/event/prison_break/areaType # c: read-only per-subtype constant table (3 subtype overrides); a getter would share it, not worth it on a rare type
+/datum/event2/meta/departments # d: edited in place per instance (12 writers)
+/datum/eventkit/fake_pdaconvos/names # d: event kit state, one instance
+/datum/events/events # d: event bus state
+/datum/experiment/scanning/scanned # d: one sub-list per requirement, filled when the experiment is set up
+/datum/feed_channel/messages # d: newscaster channel posts
+/datum/ghost_query/candidates # d: ghost query responses; the query exists to collect them
+/datum/ghosttrap/ban_checks # c: read-only per-subtype constant table (1 subtype overrides); a getter would share it, not worth it on a rare type
 /datum/hud_data/gear # kept: nested table shared per type in New(); the eager copy is dropped
+/datum/industry/title_templates # c: read-only per-subtype constant table (1 subtype overrides); a getter would share it, not worth it on a rare type
+/datum/industry/title_templates_ooc # c: read-only per-subtype constant table (1 subtype overrides); a getter would share it, not worth it on a rare type
+/datum/industry/tokens # d: stock market singleton state
 /datum/internal_wiki/page/data # d: every page fills its data table
+/datum/job/access # d: every job defines its access (singletons)
+/datum/job/departments # d: every job belongs to departments (singletons)
+/datum/language/scramble_cache # d: one per language singleton; the cache fills as soon as the language is heard
+/datum/loadout_category/gear # d: every loadout category holds its gear (singletons)
+/datum/locations/contents # d: location tree children (generic name, too many ambiguous call sites)
+/datum/lootpanel/contents # d: loot panel state (generic name, too many ambiguous call sites)
+/datum/lore/codex/category/children # d: codex categories exist to hold children
+/datum/lore/codex/keywords # d: codex page keywords, filled at init
+/datum/lore/organization/flight_types # c: read-only per-subtype constant table (8 subtype overrides); a getter would share it, not worth it on a rare type
+/datum/lore/organization/ship_names # d: edited in place per instance (7 writers)
+/datum/material_batch/contributors # d: batch provenance, filled when the batch is made
+/datum/material_batch/cost_ledger # d: edited in place per instance (6 writers)
+/datum/material_batch/structure # d: edited in place per instance (32 writers)
+/datum/metric/departments # d: edited in place per instance (12 writers)
+/datum/mind/objectives # d: mind objectives; many call sites index it
+/datum/moduletypes/modcount # d: singleton bitmask table
+/datum/n_Parser/errors # d: parser state (generic name, too many ambiguous call sites)
+/datum/n_Parser/tokens # d: parser working state, filled on every parse
+/datum/n_Scanner/errors # d: scanner state (generic name, too many ambiguous call sites)
+/datum/n_Scanner/nS_Scanner/ignore # d: edited in place per instance (1 writers)
+/datum/n_scriptOptions/nS_Options/keywords # d: edited in place per instance (3 writers)
+/datum/n_scriptOptions/nS_Options/symbols # d: edited in place per instance (2 writers)
+/datum/nifsoft/soulcatcher/brainmobs # d: soulcatcher occupants, edited in place through many paths
+/datum/node/BlockDefinition/functions # d: script AST node state
+/datum/node/expression/FunctionCall/parameters # d: script AST node state
+/datum/node/statement/FunctionCall/parameters # d: script AST node state
+/datum/node/statement/FunctionDefinition/parameters # d: script AST node state
+/datum/ntnet_conversation//messages # d: chat channel history
+/datum/ore/xarch_ages # c: read-only per-subtype constant table (4 subtype overrides); a getter would share it, not worth it on a rare type
+/datum/parsed_map/gridSets # d: map parser state, filled on parse
+/datum/parsed_map/grid_models # d: map parser state, filled on parse
+/datum/persistent_client/logging # d: one per connected client; logs fill on login
 /datum/pipe_network/gases # d: pipe network membership; atmos agents own this area
 /datum/pipe_network/leaks # atmos area (M1a/S1): listed in memory_lists_audit.md, not edited here
 /datum/pipe_network/line_members # d: pipe network membership; atmos agents own this area
 /datum/pipe_network/normal_members # d: pipe network membership; atmos agents own this area
+/datum/plane_holder/plane_masters # d: fixed-size list/x[VIS_COUNT] indexed by plane slot; every plane holder fills it
+/datum/planet/sun # d: edited in place per instance (2 writers)
+/datum/powernet/cables # d: powernets exist because cables joined them; never empty
+/datum/predicate_compiler/errors # d: compiler state (generic name, too many ambiguous call sites)
+/datum/predicate_compiler/watchable # d: singleton compiler table
+/datum/property_registry/contributors # d: registry singleton, filled at init
 /datum/radio_frequency/devices # d: frequencies exist because devices joined them
+/datum/random_map/map # d: the generated map grid
+/datum/react_test_subscriber/every_runs # d: unit-test fixture; a handful of instances per test run
+/datum/react_test_subscriber/wakes # d: unit-test fixture; a handful of instances per test run
+/datum/reagent/drugs/high_message_list # kept: interned by contents in New() (intern_list); read-only
+/datum/reagent/drugs/sober_message_list # kept: interned by contents in New() (intern_list); read-only
+/datum/robot_sprite/belly_capacity_list # d: tested for truth (!belly_capacity_list), so an empty list and null behave differently
+/datum/robot_sprite/belly_light_list # d: tested for truth (!belly_light_list), so an empty list and null behave differently
+/datum/robot_sprite/hat_offset # kept: interned by contents in New() (intern_list); read-only
+/datum/say_list/speak # d: every say list defines its lines
+/datum/seed/traits # d: every seed has traits
+/datum/seed_pile/seeds # d: a seed pile holds seeds
+/datum/shuttle_web_master/destinations # d: web shuttle destinations, built at init
+/datum/signal/data # d: every signal carries data
+/datum/song/allowed_instrument_ids # d: replaced per instance at runtime (3 assignments)
+/datum/sort_instance/runBases # d: sort scratch state; one sort instance at a time, always used
+/datum/sort_instance/runLens # d: sort scratch state; one sort instance at a time, always used
+/datum/space_level/traits # d: every z-level has traits
+/datum/species/assisted_langs # kept: shared per species type in share_type_tables(); writers assign a new list
+/datum/species/cold_discomfort_strings # kept: shared per species type in share_type_tables(); writers assign a new list
+/datum/species/genders # kept: shared per species type in share_type_tables(); writers assign a new list
+/datum/species/has_limbs # d: nested per-limb data ("descriptor", "has_children") is written per mob copy during organ creation (body/medical code)
+/datum/species/has_organ # kept: shared per species type in share_type_tables(); writers assign a new list
+/datum/species/heat_discomfort_strings # kept: shared per species type in share_type_tables(); writers assign a new list
+/datum/species/lleill/lleill_ability_datums # d: New() fills it with this instance's power datums
+/datum/species/lleill/valid_transform_species # kept: shared per species type in share_type_tables()
+/datum/species/shapeshifter/hanner/lleill_ability_datums # d: New() fills it with this instance's power datums
+/datum/species/traits # d: per-mob trait selection; produceCopy() assigns it and genes Add/Remove in place
+/datum/species/unarmed_types # kept: shared per species type in share_type_tables(); give_numbing_bite() assigns a new list
+/datum/spell/spell_levels # d: edited in place per instance (1 writers)
+/datum/spell/targeted/genetic/mutations # d: every genetic spell defines its mutations
+/datum/sprite_accessory/species_allowed # kept: interned by contents in New() (intern_list); read-only
+/datum/sprite_accessory/tail/lower_layer_dirs # d: replaced per instance at runtime (1 assignments)
+/datum/stack/contents # d: stack datum contents (generic name, too many ambiguous call sites)
+/datum/stock/events # d: stock market singleton state
+/datum/stock/products # d: stock market singleton state
+/datum/stock/values # d: stock market singleton state
+/datum/stockMarket/stocks # d: stock market singleton state
+/datum/supply_pack/contains # d: one per supply pack singleton; every pack has contents
+/datum/supply_pack/manifest # d: one per supply pack singleton, built from contains
+/datum/symptom/bodies # d: reset with initial() in severityset(); few symptom datums
+/datum/symptom/prefixes # d: reset with initial() in severityset(); few symptom datums
+/datum/symptom/suffixes # d: reset with initial() in severityset(); few symptom datums
+/datum/talking_atom/heard_words # d: speech memory of a talking item, filled as it hears
+/datum/tgui/children # d: tgui window tree; many call sites
+/datum/tgui_module/atmos_control/monitored_alarms # d: UI module state, filled on open
+/datum/tgui_module/camera/network # d: camera console network filter; many call sites
+/datum/tgui_module/communications/req_access # d: access list; an empty list and null differ for access checks
+/datum/tickets/active_tickets # d: ticket singleton; ListInsert() writes through an alias
+/datum/tickets/closed_tickets # d: ticket singleton; ListInsert() writes through an alias
+/datum/tickets/resolved_tickets # d: ticket singleton; ListInsert() writes through an alias
+/datum/trackable/cameras # d: tracking scratch state rebuilt on every search
+/datum/trackable/names # d: tracking scratch state rebuilt on every search
+/datum/trade_destination/temp_price_change # d: fixed-size per-category price table (list/x[N]), always indexed
+/datum/trait/neutral/food_pref/our_allergens # c: read-only per-subtype constant table (11 subtype overrides); a getter would share it, not worth it on a rare type
+/datum/transcore_db/backed_up # d: one per transcore database (a handful); re-sorted on every write
+/datum/transcore_db/body_scans # d: one per transcore database (a handful); re-sorted on every write
+/datum/transcore_db/implants # d: one per transcore database (a handful)
+/datum/transhuman/body_record/limb_data # d: edited in place per instance (4 writers)
+/datum/transhuman/body_record/organ_data # d: edited in place per instance (6 writers)
+/datum/transhuman/mind_record/nif_savedata # d: per mind record, passed to the new NIF as its save data
+/datum/turbolift/doors # d: every lift has doors
+/datum/turbolift/floors # d: filled when the lift is built
+/datum/turbolift_floor/doors # d: every lift floor has doors
 /datum/unarmed_attack/attack_noun # kept: interned with string_list() in New()
 /datum/unarmed_attack/attack_verb # kept: interned with string_list() in New()
+/datum/unit_test/dq_containment_conservation_fuzz/holders # d: unit-test fixture; a handful of instances per test run
+/datum/unit_test/dq_containment_conservation_fuzz/made # d: unit-test fixture; a handful of instances per test run
+/datum/unit_test/dq_containment_conservation_fuzz/things # d: unit-test fixture; a handful of instances per test run
+/datum/unit_test/dq_stock_sheets/made # d: unit-test fixture; a handful of instances per test run
+/datum/unit_test/dq_stock_smartfridge/made # d: unit-test fixture; a handful of instances per test run
+/datum/unit_test/dq_stock_vending/made # d: unit-test fixture; a handful of instances per test run
+/datum/unit_test/template_noops/log # d: unit-test state
+/datum/vore_preferences/nutrition_messages # d: edited in place per instance (1 writers)
+/datum/vore_preferences/weight_messages # d: edited in place per instance (1 writers)
+/datum/weather_holder/forecast # d: build_forecast() always keeps it filled
+/datum/xgm_gas_data/flags # d: gas data singleton (atmos compat), filled at init
+/datum/xgm_gas_data/gases # d: gas data singleton (atmos compat), filled at init
+/datum/xgm_gas_data/molar_mass # d: gas data singleton (atmos compat), filled at init
+/datum/xgm_gas_data/molar_specific_volume # d: gas data singleton (atmos compat), filled at init
+/datum/xgm_gas_data/name # d: gas data singleton (atmos compat), filled at init
+/datum/xgm_gas_data/overlay_limit # d: gas data singleton (atmos compat), filled at init
+/datum/xgm_gas_data/overlays # d: gas data singleton (atmos compat), filled at init
+/datum/xgm_gas_data/specific_heat # d: gas data singleton (atmos compat), filled at init
+/datum/xgm_gas_data/tile_overlay # d: gas data singleton (atmos compat), filled at init
+/obj/dq_combat_probe/done # d: unit-test fixture; a handful of instances per test run
+/obj/dq_emp_probe/severities # d: unit-test fixture; a handful of instances per test run
+/obj/dq_interaction_probe/done # d: unit-test fixture; a handful of instances per test run
+/obj/dq_tool_target/done # d: unit-test fixture; a handful of instances per test run
+/obj/effect/decal/mecha_wreckage/welder_salvage # d: edited in place per instance (6 writers)
+/obj/effect/fake_sun/possible_light_setups # c: read-only per-subtype constant table (4 subtype overrides); a getter would share it, not worth it on a rare type
+/obj/effect/fusion_em_field/dormant_reactant_quantities # d: live reactor state
+/obj/effect/map_effect/interval/sound_emitter/sounds_to_play # c: read-only per-subtype constant table (12 subtype overrides); a getter would share it, not worth it on a rare type
+/obj/effect/overmap/visitable/map_z # d: the sector's z-levels, filled when the sector registers
+/obj/effect/overmap/visitable/ship/speed # d: replaced per instance at runtime (13 assignments)
+/obj/effect/spider/spiderling/grow_as # c: read-only per-subtype constant table (10 subtype overrides); a getter would share it, not worth it on a rare type
+/obj/effect/step_trigger/thrower/affecting # d: live thrower state (generic name, too many ambiguous call sites)
+/obj/item/ammo_magazine/stored_ammo # d: magazines are filled with rounds on creation
 /obj/item/armor # kept: interned per contents in Initialize(); own_armor() before writes
+/obj/item/backup_implanter/imps # d: the implanter's loaded implants, filled in New()
+/obj/item/bedsheet/dream_messages # c: read-only per-subtype constant table (17 subtype overrides); a getter would share it, not worth it on a rare type
+/obj/item/book/bundle/pages # d: a bundle holds pages
+/obj/item/book/tome/words # d: edited in place per instance (1 writers)
+/obj/item/bug_monitor/cameras # d: the monitor's linked bugs
+/obj/item/card/id/access # d: ID access; an empty list and null differ for access checks
+/obj/item/card/initial_sprite_stack # d: replaced per instance at runtime (2 assignments)
+/obj/item/card_fluff/initial_sprite_stack # d: replaced per instance at runtime (2 assignments)
+/obj/item/card_fluff/sprite_stack # d: edited in place per instance (22 writers)
+/obj/item/cartridge/stored_data # d: cartridge program data
+/obj/item/clothing/mask/gas/filtered_gases # c: read-only per-subtype constant table (2 subtype overrides); a getter would share it, not worth it on a rare type
+/obj/item/clothing/shoes/mech_shoes/squeak_sound # c: read-only per-subtype constant table (3 subtype overrides); a getter would share it, not worth it on a rare type
+/obj/item/commcard/internal_data # d: per-card UI state keyed by dynamic strings; few communicators
+/obj/item/communicator/modules # d: edited in place per instance (346 writers)
+/obj/item/deck/cards # d: a deck always holds cards
+/obj/item/detective_scanner/stored # d: scanner evidence store
+/obj/item/disk/transcore/stored # d: the disk's stored records
+/obj/item/dogborg/sleeper/deliverylists # d: nested per-slot lists created with the sleeper and edited in place
+/obj/item/dogborg/sleeper/injection_chems # c: read-only per-subtype constant table (10 subtype overrides); a getter would share it, not worth it on a rare type
+/obj/item/dogborg/sleeper/items_preserved # d: sleeper contents bookkeeping, edited in place through many paths
+/obj/item/encryptionkey//channels # d: every key defines its channels
+/obj/item/floor_painter/decals # d: edited in place per instance (3 writers)
+/obj/item/fuel_assembly/rod_quantities # d: filled in New() with the rod's reagent amounts
+/obj/item/glass_jar/accept_mobs # c: read-only per-subtype constant table (1 subtype overrides); a getter would share it, not worth it on a rare type
+/obj/item/grenade/chem_grenade/allowed_containers # c: read-only per-subtype constant table (1 subtype overrides); a getter would share it, not worth it on a rare type
+/obj/item/grenade/shooter/projectile_types # c: read-only per-subtype constant table (12 subtype overrides); a getter would share it, not worth it on a rare type
+/obj/item/gripper/pockets # d: gripper pockets are created in Initialize and always present
+/obj/item/gun/projectile/loaded # d: guns spawn loaded; the chamber list is indexed everywhere
+/obj/item/gun/projectile/revolver/lemat/secondary_loaded # d: swapped with loaded (ammo state) when the cylinder flips
+/obj/item/gun/projectile/revolver/lemat/tertiary_loaded # d: swapped with loaded (ammo state) when the cylinder flips
+/obj/item/hand/cards # d: a hand of cards always holds cards
+/obj/item/implant/language/languages # d: edited in place per instance (10 writers)
+/obj/item/implant/organ/limbaugment/possible_targets # c: read-only per-subtype constant table (2 subtype overrides); a getter would share it, not worth it on a rare type
+/obj/item/implant/reagent_generator/emote_descriptor # d: replaced per instance at runtime (2 assignments)
+/obj/item/implant/reagent_generator/empty_message # d: replaced per instance at runtime (1 assignments)
+/obj/item/implant/reagent_generator/generated_reagents # d: replaced per instance at runtime (1 assignments)
+/obj/item/implant/reagent_generator/self_emote_descriptor # c: read-only per-subtype constant table (1 subtype overrides); a getter would share it, not worth it on a rare type
+/obj/item/integrated_circuit/activators # d: every circuit defines its activator pins; setup_io() rebuilds it in place
+/obj/item/integrated_circuit/inputs # d: every circuit defines its input pins; setup_io() rebuilds it in place
+/obj/item/integrated_circuit/outputs # d: every circuit defines its output pins; setup_io() rebuilds it in place
+/obj/item/lasertagknife/allowed_suits # c: read-only per-subtype constant table (2 subtype overrides); a getter would share it, not worth it on a rare type
+/obj/item/mail/stamps # d: mail items are stamped on creation
+/obj/item/material/fishing_net/accepted_mobs # c: read-only per-subtype constant table (1 subtype overrides); a getter would share it, not worth it on a rare type
+/obj/item/mecha_parts/component/armor/damage_absorption # c: read-only per-subtype constant table (9 subtype overrides); a getter would share it, not worth it on a rare type
+/obj/item/megaphone/insultmsg # c: read-only per-subtype constant table (1 subtype overrides); a getter would share it, not worth it on a rare type
+/obj/item/megaphone/super/color_options # d: replaced per instance at runtime (1 assignments)
+/obj/item/megaphone/super/font_options # d: replaced per instance at runtime (1 assignments)
+/obj/item/megaphone/super/volume_options # d: replaced per instance at runtime (1 assignments)
+/obj/item/nif/nifsofts # d: fixed-slot software table indexed by list_pos
+/obj/item/nif/starting_software # d: replaced per instance at runtime (1 assignments)
+/obj/item/ore_bag/stored_ore # d: edited in place per instance (14 writers)
+/obj/item/ore_chunk/stored_ore # d: edited in place per instance (11 writers)
+/obj/item/pack//cards # d: a card pack always holds cards
+/obj/item/paper/offset_x # d: stamp and photo offsets indexed in step with ico
+/obj/item/paper/offset_y # d: stamp and photo offsets indexed in step with ico
+/obj/item/paper_bundle/pages # d: a bundle holds pages
+/obj/item/pda/programs # d: edited in place per instance (1 writers)
+/obj/item/pizzabox/boxes # d: stacked pizza boxes, edited in place
+/obj/item/projectile/arc/fragmentation/fragment_types # d: edited in place per instance (2 writers)
+/obj/item/projectile/arc/vial/my_chems # c: read-only per-subtype constant table (4 subtype overrides); a getter would share it, not worth it on a rare type
+/obj/item/projectile/beam/lasertag/allowed_suits # d: replaced per instance at runtime (2 assignments)
+/obj/item/projectile/energy/blob/my_chems # c: read-only per-subtype constant table (6 subtype overrides); a getter would share it, not worth it on a rare type
+/obj/item/projectile/permutated # d: filled as the projectile crosses atoms; projectiles are short-lived
+/obj/item/radio/channels # d: radios are given channels on creation
+/obj/item/rcd/modes # c: read-only per-subtype constant table (1 subtype overrides); a getter would share it, not worth it on a rare type
+/obj/item/reagent_containers/borghypo/reagent_ids # c: read-only per-subtype constant table (8 subtype overrides); a getter would share it, not worth it on a rare type
+/obj/item/reagent_containers/borghypo/reagent_volumes # d: filled in Initialize() with every reagent the hypo carries
+/obj/item/reagent_containers/borghypo/transfer_amounts # c: read-only per-subtype constant table (1 subtype overrides); a getter would share it, not worth it on a rare type
+/obj/item/reagent_containers/cooking_container/insertable # d: edited in place per instance (2 writers)
+/obj/item/reagent_containers/food/snacks/donkpocket/heated_reagents # c: read-only per-subtype constant table (3 subtype overrides); a getter would share it, not worth it on a rare type
+/obj/item/reagent_containers/food/snacks/nutriment_desc # d: add_reagent() stores it by reference as the nutriment data, and nutriment mix_data() edits that list; sharing it gains nothing (see memory_lists_audit.md)
+/obj/item/reagent_containers/glass/beaker/vial/culture/data # d: edited in place per instance (191 writers)
+/obj/item/reagent_containers/glass/beaker/vial/random/random_reagent_list # c: read-only per-subtype constant table (1 subtype overrides); a getter would share it, not worth it on a rare type
+/obj/item/rectape/timestamp # d: index-parallel with storedinfo
+/obj/item/research_sample/resource_list # c: read-only per-subtype constant table (3 subtype overrides); a getter would share it, not worth it on a rare type
+/obj/item/retail_scanner/item_list # d: current transaction, index-parallel with price_list
+/obj/item/retail_scanner/price_list # d: current transaction, index-parallel with item_list
+/obj/item/rig_module/vision/vision_modes # d: replaced per instance at runtime (1 assignments)
+/obj/item/robot_module/emag # d: robot module item lists, filled per module type
+/obj/item/robot_module/modules # d: every robot module holds its items
+/obj/item/robot_module/subsystems # d: filled per module type when the module is created
+/obj/item/robot_module/synths # d: filled per module type when the module is created
+/obj/item/robotic_multibelt/cyborg_integrated_tools # d: edited in place per instance (10 writers)
+/obj/item/selectable_item/item_options # c: read-only per-subtype constant table (2 subtype overrides); a getter would share it, not worth it on a rare type
+/obj/item/self_repair_system/target_components # d: edited in place per instance (4 writers)
+/obj/item/spell/energy_siphon/things_to_siphon # d: rebuilt in place every cast and passed to recursive_content_check() to fill
+/obj/item/stack/medical/splint/splintable_organs # c: read-only per-subtype constant table (1 subtype overrides); a getter would share it, not worth it on a rare type
+/obj/item/toy/eight_ball/possible_answers # c: read-only per-subtype constant table (1 subtype overrides); a getter would share it, not worth it on a rare type
+/obj/item/universal_translator/limited/known_languages # c: read-only per-subtype constant table (24 subtype overrides); a getter would share it, not worth it on a rare type
+/obj/item/vac_attachment/vac_settings # c: read-only per-subtype constant table (1 subtype overrides); a getter would share it, not worth it on a rare type
+/obj/machinery/abstract_grub_machine/active_power_usages # d: replaced per instance at runtime (1 assignments)
+/obj/machinery/abstract_grub_machine/idle_power_usages # d: replaced per instance at runtime (1 assignments)
+/obj/machinery/atmospherics/binary/algae_farm/storage_capacity # d: edited in place per instance (1 writers)
+/obj/machinery/atmospherics/binary/algae_farm/stored_material # d: edited in place per instance (5 writers)
+/obj/machinery/blackbox_recorder/feedback # d: blackbox singleton; feedback datums fill it every round
+/obj/machinery/blackbox_recorder/messages # d: blackbox singleton log
+/obj/machinery/camera/network # d: replaced per instance at runtime (26 assignments)
+/obj/machinery/cash_register/item_list # d: current transaction, index-parallel with price_list
+/obj/machinery/cash_register/price_list # d: current transaction, index-parallel with item_list
+/obj/machinery/casino_prize_dispenser/log # d: machine log (generic name, too many ambiguous call sites)
+/obj/machinery/chemical_dispenser/cartridges # d: cartridges are spawned into it at init
+/obj/machinery/chemical_synthesizer/cartridges # d: cartridges are spawned into it at init
+/obj/machinery/chemical_synthesizer/dispense_reagents # d: edited in place per instance (1 writers)
+/obj/machinery/chemical_synthesizer/queue # d: synthesizer build queue, many call sites index it
+/obj/machinery/chemical_synthesizer/recipes # d: saved recipes; many call sites
+/obj/machinery/computer/arcade/orion_trail/events # d: edited in place per instance (1 writers)
+/obj/machinery/computer/arcade/orion_trail/settlers # d: edited in place per instance (5 writers)
+/obj/machinery/computer/arcade/prizes # d: edited in place per instance (1 writers)
+/obj/machinery/computer/area_atmos/connectedscrubbers # d: filled when the console scans; atmos console
+/obj/machinery/computer/scan_consolenew/buffers # d: fixed three buffer slots (list/x[3]) indexed by slot number
+/obj/machinery/computer/security/network # d: camera console network filter; many call sites
+/obj/machinery/computer/shuttle/authorized # d: per-console authorisation state
+/obj/machinery/computer/shuttle_control/emergency/authorized # d: per-console authorisation state; one emergency console
+/obj/machinery/door/blast/puzzle/tyrdoor/keypad/code # d: the keypad code, generated in New()
+/obj/machinery/door_timer/targets # d: the timer's linked doors and flashers, filled at init
+/obj/machinery/floorlayer/mode # d: edited in place per instance (3 writers)
+/obj/machinery/food_replicator/products # d: the replicator menu, filled at init
+/obj/machinery/gear_dispenser/dispenses # d: replaced per instance at runtime (2 assignments)
+/obj/machinery/maint_vendor/product_datums # d: filled in Initialize with the vendor stock and shuffled
+/obj/machinery/mecha_part_fabricator_tg/queue # d: the build queue; kept index-parallel with queue_producer_accounts
+/obj/machinery/mecha_part_fabricator_tg/queue_producer_accounts # d: kept index-parallel with queue (Cut() by index)
+/obj/machinery/message_server/spamfilter # d: edited in place per instance (4 writers)
+/obj/machinery/mineral/processing_unit/ores_stored # d: filled in New() with an entry per ore
+/obj/machinery/mining/drill/ore_types # d: edited in place per instance (4 writers)
+/obj/machinery/mining/drill/stored_ore # d: edited in place per instance (13 writers)
+/obj/machinery/partslathe/materials # d: edited in place per instance (7 writers)
+/obj/machinery/partslathe/queue # d: the build queue; kept index-parallel with queue_producer_accounts
+/obj/machinery/partslathe/queue_producer_accounts # d: kept index-parallel with queue (Cut() by index)
+/obj/machinery/partslathe/storage_capacity # d: edited in place per instance (2 writers)
+/obj/machinery/pointdefense_control/targets # d: live targeting state
+/obj/machinery/porta_turret/lasertag/vests_to_target # c: read-only per-subtype constant table (2 subtype overrides); a getter would share it, not worth it on a rare type
+/obj/machinery/portable_atmospherics/powered/scrubber/scrubbing_gas # d: replaced per instance at runtime (4 assignments)
+/obj/machinery/recycling/sorter/materials # d: sorter filter table set at init
+/obj/machinery/replicator/clothing/viable_items # d: edited in place per instance (1 writers)
+/obj/machinery/replicator/spawning_types # d: filled in New() with the replicator's output table
+/obj/machinery/replicator/stored_materials # d: consumed with pop() in step with spawning_types
+/obj/machinery/replicator/vore/viable_mobs # d: edited in place per instance (1 writers)
+/obj/machinery/seed_storage/piles # d: seed piles are filled at init and are the machine's stock
+/obj/machinery/smartfridge/item_records # d: the fridge's live stock records
+/obj/machinery/suit_cycler/limit_departments # d: replaced per instance at runtime (1 assignments)
+/obj/machinery/telecomms/server/memory # d: telecomms server state
+/obj/machinery/transhuman/synthprinter/stored_material # d: edited in place per instance (3 writers)
+/obj/machinery/vending/product_records # d: the vendor's live stock records (C9 turns these into slots)
+/obj/mecha/combat/phazon/inherent_damage_absorption # c: read-only per-subtype constant table (1 subtype overrides); a getter would share it, not worth it on a rare type
+/obj/mecha/equipment # d: mech equipment list; many call sites index and edit it directly
+/obj/mecha/internal_components # d: edited in place per instance (2 writers)
+/obj/mecha/log # d: mech log (generic name, too many ambiguous call sites)
+/obj/mecha/operation_req_access # d: access list passed to check_access(); an empty list and null differ for some checks
+/obj/mecha/starting_components # c: read-only per-subtype constant table (9 subtype overrides); a getter would share it, not worth it on a rare type
+/obj/random/mob/semirandom_mob_spawner/possible_mob_types # c: read-only per-subtype constant table (9 subtype overrides); a getter would share it, not worth it on a rare type
+/obj/soulgem/brainmobs # d: soulgem occupants, edited in place through many paths
+/obj/structure/bedsheetbin/sheets # d: the bin's live stock
+/obj/structure/candybowl/candy # d: edited in place per instance (5 writers)
+/obj/structure/closet/crate/secure/loot/code # d: the lock code, generated in New()
+/obj/structure/closet/crate/secure/lootsafe/devillock/code # d: the lock code, generated in New()
+/obj/structure/closet/crate/secure/lootsafe/numberlock/code # d: the lock code, generated in New()
+/obj/structure/coatrack/allowed # d: replaced per instance at runtime (2 assignments)
+/obj/structure/event_collector/possible_ingredients # c: read-only per-subtype constant table (1 subtype overrides); a getter would share it, not worth it on a rare type
+/obj/structure/event_collector_blocker/active_repair_steps # d: event prop repair state
+/obj/structure/gargoyle/tail_lower_dirs # d: edited in place per instance (1 writers)
+/obj/structure/loot_pile/searchedby # d: passed to the lootable element, which adds the searcher's ckey to it in place
+/obj/structure/mob_spawner/spawn_types # c: read-only per-subtype constant table (10 subtype overrides); a getter would share it, not worth it on a rare type
+/obj/structure/musician/allowed_instrument_ids # d: replaced per instance at runtime (2 assignments)
+/obj/structure/ore_box/stored_ore # d: edited in place per instance (13 writers)
+/obj/structure/reflector/allowed_projectile_typecache # d: replaced per instance at runtime (2 assignments)
+/obj/structure/trash_pile/searchedby # d: passed to the lootable element, which adds the searcher's ckey to it in place
+/obj/trader/products # d: the trader's live stock
 /turf/simulated/wall/tgmc/blend_log # rare: tgmc walls are unmapped; debug log
 
 # Medical session areas (not edited here).
@@ -37,6 +440,34 @@
 /obj/item/organ/trace_chemicals # medical session owns code/modules/organs/organ.dm; see memory_lists_audit.md
 /obj/item/organ/will_assist_languages # medical session owns code/modules/organs/organ.dm; see memory_lists_audit.md
 /obj/item/rig_module/protean/armor/armor_settings # medical session owns code/modules/clothing/spacesuits/rig/modules/protean.dm; see memory_lists_audit.md
+
+# Other active areas (listed in memory_lists_audit.md, not edited here).
+/datum/design_techweb/materials # composition rewrite: design materials are being replaced; not edited here
+/datum/dq_containment_listener/events # containment (C1/C4): landed on master unlisted; not edited here
+/datum/dq_rx_nodes/cells # reactive nodes: landed on master unlisted; singleton-like engine state, not edited here
+/datum/dq_rx_nodes/node_watches # reactive nodes: landed on master unlisted; not edited here
+/datum/dq_rx_nodes/values # reactive nodes: landed on master unlisted; not edited here
+/datum/dq_rx_nodes/watches # reactive nodes: landed on master unlisted; not edited here
+/datum/hot_group/spot_list # atmos area (M1a): LINDA fire hotspot groups; listed in memory_lists_audit.md, not edited here
+/datum/interaction_resolution/available # interaction area (I3/I4/I6): resolver result lists; listed in memory_lists_audit.md, not edited here
+/datum/interaction_resolution/blocked # interaction area (I3/I4/I6): resolver result lists; listed in memory_lists_audit.md, not edited here
+/datum/interaction_resolution/priorities # interaction area (I3/I4/I6): resolver result lists; not edited here
+/datum/pipeline/leaks # atmos area (M1a): pipeline leaks; listed in memory_lists_audit.md, not edited here
+/datum/powernet/nodes # M3 power (Rust): powernet.dm was rewritten on master; not edited here
+/datum/rule_compiler/errors # constraints (P3): compiler state; landed on master unlisted, not edited here
+/datum/rule_compiler/triggers # constraints (P3): compiler state; landed on master unlisted, not edited here
+/obj/effect/decal/cleanable/blood/drip/drips # medical session: merged in code/modules/organs/blood.dm; listed in memory_lists_audit.md, not edited here
+/obj/effect/decal/cleanable/blood/viruses # medical session: disease data on blood decals; listed in memory_lists_audit.md, not edited here
+/obj/effect/decal/cleanable/mucus/viruses # medical session: disease data on decals; listed in memory_lists_audit.md, not edited here
+/obj/effect/decal/cleanable/vomit/viruses # medical session: disease data on decals; listed in memory_lists_audit.md, not edited here
+/obj/item/organ/internal/fruitgland/poison_options # medical session: organ subtype; listed in memory_lists_audit.md, not edited here
+/obj/machinery/atmospherics/omni/atmos_filter/atmos_filters # atmos area (M1a): omni filter pipe device; listed in memory_lists_audit.md, not edited here
+/obj/machinery/atmospherics/omni/atmos_filter/filtering_outputs # atmos area (M1a): omni filter pipe device; listed in memory_lists_audit.md, not edited here
+/obj/machinery/atmospherics/omni/mixer/inputs # atmos area (M1a): omni mixer pipe device; listed in memory_lists_audit.md, not edited here
+/obj/machinery/atmospherics/omni/mixer/mixing_inputs # atmos area (M1a): omni mixer pipe device; listed in memory_lists_audit.md, not edited here
+/obj/machinery/atmospherics/omni/ports # atmos area (M1a): omni pipe device ports; listed in memory_lists_audit.md, not edited here
+/obj/machinery/atmospherics/trinary/atmos_filter/filtered_out # atmos area (M1a): trinary filter pipe device; listed in memory_lists_audit.md, not edited here
+/obj/machinery/power/sensor/history # M3 power (Rust): sensor code rewritten on master; not edited here
 
 # Mobs: few at boot.
 /mob/active_genes # mob: 15 mobs at boot; per-instance state, see audit
@@ -138,1126 +569,3 @@
 /mob/vore_icon_bellies # mob: 15 mobs at boot; per-instance state, see audit
 /mob/weight_messages # mob: 15 mobs at boot; per-instance state, see audit
 
-# Baseline: rare types not yet converted.
-/area/ambience # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/area/looking_glass/our_optional_turfs # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/area/looking_glass/our_turfs # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/area/redgate/stardog/eyes/our_eyes # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/area/turret_controls # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/area/valid_flora # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/area/valid_mobs # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/area/valid_spawn_turfs # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/atom/movable/ref_holder/test_assoc_list # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/atom/movable/ref_holder/test_list # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/atom/movable/screen/inventory/object_overlays # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/atom/movable/screen/map_view_tg/viewing_clients # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/atom/movable/screen/movable/ability_master/ability_objects # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/atom/movable/screen/movable/pic_in_pic/shown_to # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/atom/movable/screen/movable/pic_in_pic/viewing_turfs # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/atom/movable/screen/movable/spell_master/spell_objects # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/client/completed_asset_jobs # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/client/department_hours # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/client/misc_cache # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/client/misc_tabs # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/client/panel_tabs # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/client/play_hours # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/client/screen_maps # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/client/sent_assets # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/client/spell_tabs # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/accessory_slot_registry/slot_names # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/action/viewers # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/ai_laws/inherent_laws # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/ai_laws/ion_laws # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/ai_laws/sorted_laws # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/ai_laws/state_inherent # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/ai_laws/state_ion # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/ai_laws/state_supplied # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/ai_laws/supplied_laws # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/alarm/sources # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/alarm/sources_assoc # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/alarm_handler/alarms # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/alarm_handler/alarms_assoc # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/alarm_handler/listeners # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/alternate_appearance/viewers # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/antagonist/candidates # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/antagonist/cultist/harvested # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/antagonist/cultist/sacrificed # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/antagonist/cultist/startwords # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/antagonist/current_antagonists # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/antagonist/faction_members # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/antagonist/global_objectives # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/antagonist/pending_antagonists # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/antagonist/protected_jobs # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/antagonist/restricted_jobs # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/antagonist/roundstart_restricted # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/antagonist/starting_locations # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/antagonist/valid_species # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/artifact_effect/feelings/drastic_messages # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/artifact_effect/feelings/messages # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/artifact_effect/forcefield/created_field # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/artifact_effect/gaia/my_glitterflies # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/artifact_effect/vampire/nearby_mobs # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/asset/simple/icon_states/directions # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/asset/simple/namespaced/parents # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/asset/spritesheet/sizes # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/asset/spritesheet/sprites # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/asset/spritesheet/to_generate # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/asset/spritesheet_batched/entries # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/asset/spritesheet_batched/sizes # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/asset/spritesheet_batched/sprites # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/autopsy_data_scanner/organs_scanned # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/beam/elements # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/beam_components_cache/beam_components # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/belly/digest_messages_owner # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/belly/digest_messages_prey # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/belly/digest_modes # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/belly/emote_lists # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/belly/examine_messages # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/belly/internal_contents # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/belly/items_preserved # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/belly/slots # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/belly/struggle_messages_inside # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/belly/struggle_messages_outside # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/belly_overlay_tgui/state # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/benchmark/details # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/benchmark/metrics # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/benchmark/phases # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/blob_type/ectoplasmic_horror/active_beams # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/board_game/checkers/current_board # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/board_game/checkers/possible_jumps # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/board_game/checkers/selected_figure # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/board_game/checkers/valid_moves # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/board_game/chess/current_board # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/board_game/chess/last_double_pawn_move # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/board_game/chess/selected_figure # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/board_game/chess/valid_moves # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/board_game/four_row/placed_chips_pone # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/board_game/four_row/placed_chips_ptwo # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/board_game/four_row/winning_tiles # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/board_game/nine_mens/current_board # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/board_game/nine_mens/valid_moves # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/board_game/nine_mens/valid_removes # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/board_game/rpg_dice/last_rolls # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/board_game/space_battle/destroyed_ships_pone # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/board_game/space_battle/destroyed_ships_ptwo # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/board_game/space_battle/ship_count_pone # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/board_game/space_battle/ship_count_ptwo # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/board_game/space_battle/ships_placed_pone # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/board_game/space_battle/ships_placed_ptwo # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/board_game/space_battle/shots_fired_pone # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/board_game/space_battle/shots_fired_ptwo # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/board_game/vore_sweeper/placed_flags # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/board_game/vore_sweeper/placed_mines # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/board_game/vore_sweeper/revealed_fields # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/category_item/underwear/tweaks # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/chunk/camera/cameras # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/chunk/ghost/hidden_areas # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/chunk/obscured # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/chunk/obscuredTurfs # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/chunk/seenby # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/chunk/turfs # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/chunk/visibleTurfs # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/cinematic/locked # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/cinematic/watching # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/codex_tree/current_page # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/codex_tree/history # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/codex_tree/indexed_pages # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/component/antag/changeling/absorbed_dna # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/component/antag/changeling/absorbed_languages # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/component/antag/changeling/changeling_cooldowns # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/component/antag/changeling/purchased_powers # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/component/antag/changeling/purchased_powers_history # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/component/bluespace_connection/connections # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/component/connect_range/turfs # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/component/personal_crafting/categories # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/component/reactive_icon_update/triggering_mobs # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/component/recursive_move/parents # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/component/schizophrenia/episode # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/component/shadekin/active_dark_maws # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/component/shadekin/shadekin_abilities # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/component/shadekin/shadekin_ability_datums # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/component/swarming/swarm_members # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/component/tourettes_disability/motor_tics # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/computer_file/data/email_account/deleted # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/computer_file/data/email_account/inbox # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/computer_file/data/email_account/outbox # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/computer_file/data/email_account/spam # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/computer_file/program/chatclient/channel_history # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/computer_file/program/ntnetdownload/downloads_queue # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/computer_file/program/nttransfer/connected_clients # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/contract_definition/social/program/engineering_qualification/thresholds # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/controller/master/perf_outliers # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/controller/master/perf_tick_breakdown # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/controller/master/perf_tick_realtime # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/controller/master/perf_tick_usage # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/controller/master/perf_worst_tick # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/controller/rogue/all_zones # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/controller/rogue/clean_zones # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/controller/rogue/ready_zones # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/controller/subsystem/air/pending_automatic_shutoff_valves # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/controller/subsystem/dependencies # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/controller/subsystem/mapping/multiz_levels # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/controller/subsystem/mapping/z_list # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/controller/subsystem/rolling_usage # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/crafting_recipe/blacklist # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/crafting_recipe/chem_catalysts # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/crafting_recipe/parts # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/crafting_recipe/reqs # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/custom_item/req_titles # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/data/pda/app/messenger/conversations # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/data/pda/app/messenger/fakepdas # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/data/pda/app/messenger/tnote # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/data/pda/app/nerdle/guesses # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/data/pda/app/nerdle/serialized_guesses # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/data/pda/app/notekeeper/storednotes # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/data/pda/app/notekeeper/storedtitles # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/data/record/fields # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/datacore/warrants # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/decl/chemical_reaction/catalysts # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/decl/chemical_reaction/distilling/temp_range # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/decl/chemical_reaction/inhibitors # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/decl/chemical_reaction/required_reagents # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/decl/fusion_reaction/products # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/decl/hierarchy/outfit/backpack_contents # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/decl/hierarchy/outfit/uniform_accessories # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/decl/mob_organ_names/hit_zones # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/decl/overmap_event_handler/hazard_by_turf # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/decl/overmap_event_handler/ship_events # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/department/default_access # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/department/jobs # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/department/primary_jobs # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/department/specialized_access # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/design_techweb/category # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/design_techweb/materials # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/dimension_theme/replace_floors # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/dimension_theme/replace_objs # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/disease/advance/symptoms # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/disease/cures # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/disease/required_organs # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/disease/roanoke/organ_list # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/disease/strain_data # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/disease/viable_mobtypes # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/dna/SE # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/dna/UI # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/dna/body_markings # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/dna/custom_cold # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/dna/custom_heat # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/dna/species_traits # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/dq_preview_flattener/runtime_paths # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/element/footstep/steps_for_living # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/element/footstep_override/occupied_turfs # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/element/lootable/common_loot # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/element/lootable/rare_loot # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/element/lootable/uncommon_loot # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/element/lootable/unlucky_loot # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/embedded_program/memory # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/entity_narrate/entity_names # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/entity_narrate/entity_refs # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/entity_narrate/tgui_selected_id_multi # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/error_viewer/error_cache/error_sources # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/error_viewer/error_cache/errors # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/error_viewer/error_cache/errors_silenced # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/error_viewer/error_source/errors # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/event/atmos_leak/excluded # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/event/bluespace_locker/excluded # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/event/brand_intelligence/infectedVendingMachines # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/event/brand_intelligence/vendingMachines # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/event/carp_migration/spawned_carp # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/event/economic_event/cheaper_goods # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/event/economic_event/dearer_goods # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/event/electrified_door/excluded # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/event/gnat_migration/spawned_gnat # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/event/gravity/generators # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/event/grub_infestation/vents # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/event/horde_infestation/alive_metroids # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/event/horde_infestation/vents # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/event/hostile_runtime/target_airlocks # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/event/ionstorm/players # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/event/jellyfish_migration/spawned_jellyfish # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/event/metroid_infestation/alive_metroids # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/event/metroid_infestation/vents # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/event/prison_break/areaName # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/event/prison_break/areaNotType # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/event/prison_break/areaType # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/event/prison_break/areas # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/event/ray_migration/spawned_ray # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/event/rogue_drone/drones_list # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/event/shark_migration/spawned_shark # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/event/spacefish_migration/spawned_fish # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/event/spider_migration/spawned_spider # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/event/supply_demand/required_items # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/event2/event/airlock_failure/affected_areas # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/event2/event/blob/blobs # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/event2/event/blob/excluded # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/event2/event/blob/open_turfs # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/event2/event/brand_intelligence/infected_vending_machines # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/event2/event/brand_intelligence/vending_machines # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/event2/event/ghost_pod_spawner/desired_turf_areas # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/event2/event/ghost_pod_spawner/free_turfs # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/event2/event/gravity/generators # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/event2/event/infestation/things_to_spawn # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/event2/event/infestation/turfs # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/event2/event/mob_spawning/spawned_mobs # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/event2/event/prison_break/areas_to_break # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/event2/event/window_break/collateral_windows # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/event2/meta/departments # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/event2/meta/prison_break/irrelevant_areas # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/event2/meta/prison_break/relevant_areas # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/event_container/last_event_time # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/eventkit/fake_pdaconvos/fakeJobs # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/eventkit/fake_pdaconvos/fakeRefs # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/eventkit/fake_pdaconvos/names # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/events/events # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/experiment/scanning/random/possible_types # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/experiment/scanning/required_atoms # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/experiment/scanning/scanned # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/feed_channel/messages # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/feed_network/network_channels # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/firemode/settings # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/game_mode/antag_tags # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/game_mode/disabled_jobs # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/game_mode/latejoin_templates # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/gear/gear_tweaks # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/geosample/find_presence # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/getrev/testmerge # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/ghost_query/candidates # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/ghost_query/check_bans # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/ghosttrap/ban_checks # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/hot_group/spot_list # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/hud/ammo_hud_list # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/hud/hud_elements # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/hud/minihuds # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/identification/naming_lists # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/industry/title_templates # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/industry/title_templates_ooc # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/industry/tokens # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/instrument/songs_using # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/job/access # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/job/departments # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/job/minimal_access # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/job/restricted_keys # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/job/shift_keys # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/language/scramble_cache # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/loadout_category/gear # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/locations/contents # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/log_category/log_ring # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/log_holder/data_cache # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/log_holder/verified_log_files # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/lootpanel/contents # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/lootpanel/to_image # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/lore/codex/category/children # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/lore/codex/keywords # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/lore/loremaster/organizations # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/lore/organization/added_ship_names # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/lore/organization/destination_names # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/lore/organization/flight_types # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/lore/organization/ship_names # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/lore/organization/ship_prefixes # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/magazine_appearance/state_names # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/magazine_appearance/thresholds # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/map_report/bad_keys # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/map_report/bad_paths # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/map_template/shelter/door_locations # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/material/window_options # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/material_batch/composition # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/material_batch/contributors # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/material_batch/cost_ledger # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/material_batch/dissolved_gases # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/material_batch/feedstock_lots # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/material_batch/field_treatments # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/material_batch/impurities # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/material_batch/process_counts # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/material_batch/process_history # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/material_batch/structure # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/material_batch/surface_layers # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/material_batch/test_results # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/metric/departments # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/mind/objectives # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/mind/purchase_log # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/mind/special_verbs # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/modifier/trait/phobia/full_fear_down # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/modifier/trait/phobia/full_fear_up # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/modifier/trait/phobia/half_fear_down # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/modifier/trait/phobia/half_fear_up # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/modifier/trait/phobia/zero_fear_down # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/modifier/trait/phobia/zero_fear_up # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/moduletypes/modcount # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/money_account/transaction_log # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/n_Parser/errors # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/n_Parser/tokens # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/n_Parser/warnings # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/n_Scanner/errors # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/n_Scanner/nS_Scanner/delim # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/n_Scanner/nS_Scanner/ignore # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/n_Scanner/warnings # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/n_scriptOptions/nS_Options/keywords # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/n_scriptOptions/nS_Options/symbols # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/nifsoft/package/software # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/nifsoft/soulcatcher/brainmobs # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/node/BlockDefinition/functions # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/node/BlockDefinition/initial_variables # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/node/BlockDefinition/statements # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/node/expression/FunctionCall/parameters # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/node/statement/FunctionCall/parameters # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/node/statement/FunctionDefinition/parameters # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/ntnet/available_antag_software # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/ntnet/available_news # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/ntnet/available_station_software # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/ntnet/banned_nids # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/ntnet/chat_channels # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/ntnet/email_accounts # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/ntnet/fileservers # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/ntnet/logs # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/ntnet/registered_nids # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/ntnet/relays # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/ntnet_conversation//clients # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/ntnet_conversation//messages # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/ore/xarch_ages # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/parsed_map/gridSets # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/parsed_map/grid_models # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/parsed_map/loaded_areas # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/persistent_client/logging # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/persistent_client/played_names # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/persistent_client/player_actions # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/persistent_client/post_login_callbacks # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/persistent_client/post_logout_callbacks # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/pipeline/leaks # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/plane_holder/plane_masters # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/planet/expected_z_levels # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/planet/planet_floors # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/planet/planet_walls # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/planet/sun # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/planet_sunlight_handler/shandlers # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/player_tips/HasReceived # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/powernet/cables # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/powernet/inputting # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/powernet/nodes # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/powernet/registered_source_refs # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/powernet/registered_sources # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/powernet/registered_storage_demands # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/powernet/sleeping_apc_dynamic_loads # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/powernet/sleeping_apc_loads # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/powernet/sleeping_apc_power_classes # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/powernet/smes_nodes # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/powernet_topology_job/components # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/powernet_topology_job/frontier # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/powernet_topology_job/remaining # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/powernet_topology_job/target_nets # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/predicate_compiler/errors # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/predicate_compiler/watchable # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/preference_middleware/action_delegations # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/preferences/middleware # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/preferences/randomise # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/preferences/recently_updated_keys # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/priority_queue/array # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/property_registry/base_providers # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/property_registry/contributors # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/property_registry/defs # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/property_registry/interned # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/property_registry/measure_ids # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/property_registry/resolved_base # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/property_registry/tag_bits # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/property_registry/type_tables # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/radial_menu/choice_datums # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/radial_menu/choices # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/radial_menu/choices_icons # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/radial_menu/choices_values # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/radial_menu/elements # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/radial_menu/page_data # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/random_map/automata/cave_system/ore_turfs # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/random_map/droppod/supplied_drop_types # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/random_map/map # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/random_map/maze/checked_coord_cache # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/random_map/maze/closedlist # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/random_map/maze/openlist # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/reagent/drugs/high_message_list # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/reagent/drugs/sober_message_list # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/receptions/receiver_reception # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/robot_sprite/belly_capacity_list # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/robot_sprite/belly_light_list # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/robot_sprite/hat_offset # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/robot_sprite/sprite_animations # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/robot_sprite/sprite_decals # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/rogue/zonemaster/mineral_rocks # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/rogue/zonemaster/mobspawns # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/rogue/zonemaster/rockspawns # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/rogue/zonemaster/spawned_mobs # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/say_list/emote_hear # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/say_list/emote_see # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/say_list/say_cannot # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/say_list/say_escalate # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/say_list/say_got_target # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/say_list/say_maybe_target # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/say_list/say_stand_down # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/say_list/say_threaten # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/say_list/say_understood # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/say_list/speak # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/seed/traits # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/seed_pile/seeds # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/shuttle/autodock/multi/destinations_cache # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/shuttle_autopath/path_nodes # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/shuttle_destination/destinations_to_create # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/shuttle_destination/routes # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/shuttle_destination/routes_to_make # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/shuttle_web_master/autopaths # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/shuttle_web_master/destinations # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/signal/data # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/song/allowed_instrument_ids # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/song/channels_idle # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/song/channels_playing # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/sort_instance/runBases # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/sort_instance/runLens # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/space_level/traits # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/species/assisted_langs # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/species/cold_discomfort_strings # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/species/default_emotes # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/species/env_traits # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/species/food_preference # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/species/genders # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/species/has_limbs # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/species/has_organ # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/species/heat_discomfort_strings # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/species/inherent_verbs # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/species/lleill/lleill_ability_datums # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/species/lleill/valid_transform_species # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/species/secondary_langs # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/species/shapeshifter/hanner/lleill_ability_datums # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/species/shapeshifter/valid_transform_species # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/species/skin_overlays # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/species/species_component # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/species/species_language # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/species/speech_chance # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/species/speech_sounds # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/species/traits # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/species/unarmed_types # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/spell/aoe_turf/conjure/newVars # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/spell/aoe_turf/conjure/summon_type # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/spell/level_max # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/spell/spell_levels # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/spell/targeted/compatible_mobs # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/spell/targeted/equip_item/equipped_summons # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/spell/targeted/equip_item/summoned_items # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/spell/targeted/genetic/mutations # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/sprite_accessory/hide_body_parts # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/sprite_accessory/species_allowed # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/sprite_accessory/tail/lower_layer_dirs # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/stack/contents # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/status_effect/grouped/sources # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/stock/articles # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/stock/borrow_brokers # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/stock/borrows # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/stock/events # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/stock/products # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/stock/shareholders # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/stock/values # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/stockMarket/balances # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/stockMarket/last_read # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/stockMarket/logs # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/stockMarket/stockBrokers # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/stockMarket/stocks # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/supply_pack/contains # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/supply_pack/manifest # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/symptom/bodies # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/symptom/prefixes # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/symptom/suffixes # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/symptom/viralincubate/captives # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/talking_atom/heard_words # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/techweb/available_experiments # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/techweb/available_nodes # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/techweb/boosted_nodes # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/techweb/completed_experiments # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/techweb/consoles_accessing # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/techweb/custom_designs # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/techweb/deconstructed_items # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/techweb/deferred_tier_roots # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/techweb/discovered_mutations # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/techweb/hidden_nodes # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/techweb/last_bitcoins # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/techweb/research_logs # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/techweb/research_points # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/techweb/research_queue_nodes # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/techweb/researched_designs # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/techweb/researched_nodes # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/techweb/skipped_experiment_types # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/techweb/techweb_servers # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/techweb/tiers # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/techweb/visible_nodes # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/techweb_node/design_ids # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/techweb_node/prereq_ids # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/techweb_node/research_costs # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/tgs_api/v5/chunked_topics # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/tgs_api/v5/pending_events # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/tgui/children # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/tgui_module/appearance_changer/valid_earstyles # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/tgui_module/appearance_changer/valid_facial_hairstyles # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/tgui_module/appearance_changer/valid_gradstyles # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/tgui_module/appearance_changer/valid_hairstyles # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/tgui_module/appearance_changer/valid_species # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/tgui_module/appearance_changer/valid_tailstyles # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/tgui_module/appearance_changer/valid_wingstyles # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/tgui_module/atmos_control/monitored_alarms # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/tgui_module/camera/additional_networks # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/tgui_module/camera/concurrent_users # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/tgui_module/camera/network # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/tgui_module/communications/req_access # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/tgui_module/ship/fullmonty/known_sectors # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/tgui_window/oversized_payloads # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/tickets/active_tickets # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/tickets/closed_tickets # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/tickets/resolved_tickets # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/trackable/cameras # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/trackable/humans # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/trackable/namecounts # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/trackable/names # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/trackable/others # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/trade_destination/temp_price_change # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/trade_destination/viable_random_events # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/trait/neutral/food_pref/our_allergens # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/trait/primitive_expression_messages # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/transcore_db/backed_up # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/transcore_db/body_scans # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/transcore_db/has_left # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/transcore_db/implants # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/transhuman/body_record/limb_data # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/transhuman/body_record/organ_data # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/transhuman/mind_record/nif_savedata # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/turbolift/doors # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/turbolift/floors # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/turbolift/music # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/turbolift/queued_floors # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/turbolift_floor/doors # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/unit_test/chemical_reactions_shall_not_conflict/result_reactions # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/unit_test/template_noops/log # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/unit_test/wire_test/cable_turfs # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/unit_test/wire_test/dirs_checked # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/unit_test/wire_test/exempt_from_wires # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/uplink_item/crated/paths # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/visualnet/camera/cameras # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/visualnet/chunks # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/vore_preferences/belly_prefs # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/vore_preferences/nutrition_messages # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/vore_preferences/soulcatcher_prefs # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/vore_preferences/weight_messages # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/vote/choices # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/vote/voted # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/weather/transition_messages # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/weather_holder/allowed_weather_types # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/weather_holder/forecast # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/weather_holder/roundstart_weather_chances # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/xgm_gas_data/flags # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/xgm_gas_data/gases # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/xgm_gas_data/molar_mass # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/xgm_gas_data/molar_specific_volume # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/xgm_gas_data/name # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/xgm_gas_data/overlay_limit # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/xgm_gas_data/overlays # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/xgm_gas_data/specific_heat # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/datum/xgm_gas_data/tile_overlay # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/image/client_only/clients # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/effect/anomaly/dimensional/target_turfs # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/effect/anomaly/weather/affected_areas # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/effect/anomaly/weather/affected_turfs # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/effect/bmode/buildholder/selected_mobs # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/effect/decal/cleanable/blood/drip/drips # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/effect/decal/cleanable/blood/tracks/stack # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/effect/decal/cleanable/blood/viruses # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/effect/decal/cleanable/mucus/viruses # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/effect/decal/cleanable/random_icon_states # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/effect/decal/cleanable/vomit/viruses # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/effect/decal/mecha_wreckage/crowbar_salvage # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/effect/decal/mecha_wreckage/welder_salvage # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/effect/env_message/message_list # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/effect/fake_sun/possible_light_setups # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/effect/fusion_em_field/dormant_reactant_quantities # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/effect/fusion_em_field/particle_catchers # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/effect/gibspawner/gibamounts # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/effect/gibspawner/gibdirections # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/effect/gibspawner/gibtypes # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/effect/map_effect/beam_point/my_beams # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/effect/map_effect/interval/sound_emitter/sounds_to_play # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/effect/map_effect/portal/master/portal_lines # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/effect/overmap/visitable/generic_waypoints # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/effect/overmap/visitable/map_z # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/effect/overmap/visitable/possible_descriptors # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/effect/overmap/visitable/restricted_waypoints # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/effect/overmap/visitable/ship/engines # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/effect/overmap/visitable/ship/speed # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/effect/plant/neighbors # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/effect/rune/converting # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/effect/shut_controller/parts # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/effect/spider/spiderling/grow_as # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/effect/step_trigger/thrower/affecting # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/effect/temporary_effect/pulse/snake/iterated_turfs # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/item/ammo_magazine/ammo_states # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/item/ammo_magazine/cell_mag/modes # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/item/ammo_magazine/icon_keys # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/item/ammo_magazine/stored_ammo # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/item/areaeditor/areaColor_turfs # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/item/autopsy_scanner/chemtraces # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/item/autopsy_scanner/wdata # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/item/backup_implanter/imps # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/item/bedsheet/dream_messages # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/item/book/bundle/pages # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/item/book/tome/words # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/item/bug_monitor/cameras # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/item/camera/picture_planes # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/item/camera/siliconcam/aipictures # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/item/card/files # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/item/card/id/access # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/item/card/id/event/title_strings # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/item/card/initial_sprite_stack # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/item/card_fluff/initial_sprite_stack # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/item/card_fluff/sprite_stack # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/item/cartridge/messenger_plugins # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/item/cartridge/programs # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/item/cartridge/stored_data # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/item/clothing/mask/chewable/filling # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/item/clothing/mask/gas/filtered_gases # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/item/clothing/mask/gas/poltergeist/heard_talk # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/item/clothing/mask/paper/papermask_designs # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/item/clothing/shoes/clown_shoes/squeak_sound # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/item/clothing/shoes/inside_emotes # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/item/clothing/shoes/mech_shoes/squeak_sound # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/item/commcard/active_devices # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/item/commcard/internal_data # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/item/commcard/internal_devices # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/item/commcard/ui_templates # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/item/communicator/communicating # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/item/communicator/im_contacts # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/item/communicator/im_list # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/item/communicator/known_devices # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/item/communicator/modules # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/item/communicator/voice_invites # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/item/communicator/voice_mobs # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/item/communicator/voice_requests # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/item/computer_hardware/hard_drive//stored_files # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/item/deck/cards # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/item/depth_scanner/positive_locations # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/item/detective_scanner/stored # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/item/disk/botany/genes # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/item/disk/design_disk/blueprints # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/item/disk/transcore/stored # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/item/dnalockingchip/stored_dna # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/item/dogborg/sleeper/deliverylists # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/item/dogborg/sleeper/deliveryslot_1 # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/item/dogborg/sleeper/deliveryslot_2 # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/item/dogborg/sleeper/deliveryslot_3 # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/item/dogborg/sleeper/injection_chems # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/item/dogborg/sleeper/items_preserved # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/item/dogborg/stasis_clamp/clamps # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/item/electronic_assembly/component_positions # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/item/encryptionkey//channels # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/item/extrapolator/extracted_ids # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/item/floor_painter/decals # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/item/fuel_assembly/rod_quantities # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/item/glass_jar/accept_mobs # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/item/grenade/chem_grenade/allowed_containers # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/item/grenade/chem_grenade/beakers # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/item/grenade/shooter/projectile_types # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/item/gripper/can_hold # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/item/gripper/pockets # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/item/gun/burst_accuracy # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/item/gun/dispersion # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/item/gun/energy/kinetic_accelerator/modkits # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/item/gun/energy/modular/guncomponents # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/item/gun/firemodes # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/item/gun/launcher/grenade/grenades # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/item/gun/launcher/rocket/rockets # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/item/gun/launcher/syringe/darts # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/item/gun/projectile/dartgun/beakers # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/item/gun/projectile/dartgun/mixing # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/item/gun/projectile/loaded # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/item/gun/projectile/revolver/lemat/secondary_loaded # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/item/gun/projectile/revolver/lemat/tertiary_loaded # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/item/hand/cards # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/item/holosign_creator/signs # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/item/implant/language/languages # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/item/implant/organ/limbaugment/possible_targets # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/item/implant/reagent_generator/emote_descriptor # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/item/implant/reagent_generator/empty_message # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/item/implant/reagent_generator/generated_reagents # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/item/implant/reagent_generator/random_emote # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/item/implant/reagent_generator/self_emote_descriptor # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/item/integrated_circuit/activators # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/item/integrated_circuit/input/microphone/sign/my_langs # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/item/integrated_circuit/input/video_camera_input/paired_cameras # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/item/integrated_circuit/inputs # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/item/integrated_circuit/inputs_default # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/item/integrated_circuit/output/sound/sounds # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/item/integrated_circuit/outputs # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/item/integrated_circuit/outputs_default # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/item/integrated_circuit/passive/power/chemical_cell/fuel # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/item/kit/allowed_types # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/item/lasertagknife/allowed_suits # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/item/mail/stamps # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/item/mapping_unit/icon_image_cache # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/item/mapping_unit/map_image_cache # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/item/material/fishing_net/accepted_mobs # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/item/mecha_parts/component/armor/damage_absorption # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/item/megaphone/insultmsg # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/item/megaphone/super/color_options # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/item/megaphone/super/font_options # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/item/megaphone/super/volume_options # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/item/melee/artifact_blade/abilities # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/item/melee/cursedblade/voice_mobs # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/item/modular_computer/idle_threads # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/item/multitool/modes # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/item/newspaper/news_content # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/item/nif/nifsofts # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/item/nif/nifsofts_life # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/item/nif/planes_visible # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/item/nif/starting_software # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/item/ore_bag/stored_ore # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/item/ore_chunk/stored_ore # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/item/organ/internal/fruitgland/poison_options # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/item/pack//cards # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/item/paper/ico # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/item/paper/offset_x # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/item/paper/offset_y # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/item/paper_bin/papers # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/item/paper_bundle/pages # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/item/pda/multicaster/cartridges_to_send_to # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/item/pda/notifying_programs # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/item/pda/programs # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/item/pda/shortcut_cache # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/item/pda/shortcut_cat_order # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/item/perfect_tele/beacons # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/item/perfect_tele/logged_events # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/item/perfect_tele/radial_images # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/item/perfect_tele/warned_users # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/item/pizzabox/boxes # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/item/projectile/arc/fragmentation/fragment_types # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/item/projectile/arc/vial/my_chems # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/item/projectile/beam/chain_lightning/hit_mobs # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/item/projectile/beam/lasertag/allowed_suits # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/item/projectile/energy/blob/my_chems # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/item/projectile/impacted_mobs # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/item/projectile/permutated # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/item/projectile/spell_projectile/trails # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/item/projectile/submunitions # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/item/projectile/test/hit # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/item/radio/channels # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/item/radio/headset/event/remove_spells # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/item/radio/headset/event/spells # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/item/rcd/effects # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/item/rcd/modes # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/item/reagent_containers/borghypo/reagent_ids # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/item/reagent_containers/borghypo/reagent_names # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/item/reagent_containers/borghypo/reagent_volumes # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/item/reagent_containers/borghypo/saved_recipes # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/item/reagent_containers/borghypo/transfer_amounts # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/item/reagent_containers/cooking_container/insertable # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/item/reagent_containers/food/drinks/glass2/extras # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/item/reagent_containers/food/snacks/csandwich/ingredients # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/item/reagent_containers/food/snacks/customizable/ingredients # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/item/reagent_containers/food/snacks/donkpocket/heated_reagents # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/item/reagent_containers/food/snacks/nutriment_desc # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/item/reagent_containers/food/snacks/rhubarbcustard/color_options # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/item/reagent_containers/food/snacks/saucer/color_options # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/item/reagent_containers/glass/beaker/vial/culture/data # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/item/reagent_containers/glass/beaker/vial/culture/diseases # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/item/reagent_containers/glass/beaker/vial/random/random_reagent_list # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/item/reagent_containers/hypospray/filled_reagents # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/item/rectape/storedinfo # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/item/rectape/timestamp # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/item/research_sample/resource_list # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/item/retail_scanner/item_list # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/item/retail_scanner/price_list # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/item/retail_scanner/transaction_logs # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/item/rig/installed_modules # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/item/rig_module/stat_modules # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/item/rig_module/vision/vision_modes # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/item/rms/modes # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/item/robot_module/added_networks # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/item/robot_module/emag # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/item/robot_module/modules # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/item/robot_module/original_languages # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/item/robot_module/subsystems # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/item/robot_module/supported_upgrades # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/item/robot_module/synths # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/item/robotic_multibelt/cyborg_integrated_tools # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/item/sample/evidence # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/item/selectable_item/item_options # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/item/self_repair_system/target_components # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/item/shield_projector/active_shields # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/item/slime_grinder/to_be_processed # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/item/spell/control/controlled_mobs # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/item/spell/energy_siphon/things_to_siphon # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/item/spell/summon/summon_options # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/item/stack/medical/splint/splintable_organs # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/item/storage/box/fluff/has_items # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/item/survivalcapsule/superpose/template_ids # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/item/t_scanner/active_scanned # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/item/target/bulletholes # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/item/taskmanager/scanned # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/item/technomancer_catalog/assistance_instances # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/item/technomancer_catalog/consumable_instances # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/item/technomancer_catalog/equipment_instances # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/item/technomancer_catalog/spell_instances # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/item/technomancer_core/appearances # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/item/technomancer_core/spells # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/item/technomancer_core/summoned_mobs # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/item/technomancer_core/wards_in_use # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/item/tool/transforming/possible_tooltypes # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/item/toy/eight_ball/possible_answers # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/item/tray/carrying # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/item/universal_translator/limited/known_languages # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/item/uv_light/reset_objects # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/item/uv_light/scanned # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/item/uv_light/stored_alpha # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/item/vac_attachment/vac_settings # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/item/vampiric/nearby_mobs # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/item/vampiric/shadow_wights # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/machinery/abstract_grub_machine/active_power_usages # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/machinery/abstract_grub_machine/idle_power_usages # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/machinery/appliance/cooking_objs # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/machinery/appliance/output_options # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/machinery/atmospherics/binary/algae_farm/storage_capacity # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/machinery/atmospherics/binary/algae_farm/stored_material # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/machinery/atmospherics/omni/atmos_filter/atmos_filters # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/machinery/atmospherics/omni/atmos_filter/filtering_outputs # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/machinery/atmospherics/omni/mixer/inputs # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/machinery/atmospherics/omni/mixer/mixing_inputs # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/machinery/atmospherics/omni/ports # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/machinery/atmospherics/trinary/atmos_filter/filtered_out # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/machinery/autolathe/imported_designs # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/machinery/beehive/frames # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/machinery/blackbox_recorder/feedback # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/machinery/blackbox_recorder/messages # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/machinery/blackbox_recorder/messages_admin # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/machinery/blackbox_recorder/msg_cargo # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/machinery/blackbox_recorder/msg_command # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/machinery/blackbox_recorder/msg_common # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/machinery/blackbox_recorder/msg_deathsquad # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/machinery/blackbox_recorder/msg_engineering # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/machinery/blackbox_recorder/msg_explorer # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/machinery/blackbox_recorder/msg_medical # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/machinery/blackbox_recorder/msg_raider # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/machinery/blackbox_recorder/msg_science # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/machinery/blackbox_recorder/msg_security # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/machinery/blackbox_recorder/msg_service # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/machinery/blackbox_recorder/msg_syndicate # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/machinery/camera/network # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/machinery/cash_register/item_list # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/machinery/cash_register/price_list # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/machinery/cash_register/transaction_logs # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/machinery/casino_prize_dispenser/log # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/machinery/chemical_analyzer/found_reagents # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/machinery/chemical_dispenser/cartridges # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/machinery/chemical_dispenser/dispense_reagents # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/machinery/chemical_dispenser/saved_recipes # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/machinery/chemical_synthesizer/cartridges # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/machinery/chemical_synthesizer/catalyst_ids # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/machinery/chemical_synthesizer/dispense_reagents # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/machinery/chemical_synthesizer/queue # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/machinery/chemical_synthesizer/recipes # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/machinery/chemical_synthesizer/spawn_cartridges # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/machinery/clonepod/containers # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/machinery/computer/HolodeckControl/holographic_mobs # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/machinery/computer/HolodeckControl/holographic_objs # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/machinery/computer/HolodeckControl/supported_programs # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/machinery/computer/arcade/orion_trail/events # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/machinery/computer/arcade/orion_trail/settlers # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/machinery/computer/arcade/orion_trail/stopblurbs # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/machinery/computer/arcade/orion_trail/stops # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/machinery/computer/arcade/prizes # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/machinery/computer/arcade/special_prizes # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/machinery/computer/area_atmos/connectedscrubbers # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/machinery/computer/cryopod/_admin_logs # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/machinery/computer/cryopod/frozen_crew # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/machinery/computer/cryopod/frozen_items # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/machinery/computer/fusion_core_control/connected_devices # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/machinery/computer/general_air_control/sensor_information # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/machinery/computer/general_air_control/sensors # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/machinery/computer/guestpass/accesses # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/machinery/computer/guestpass/internal_log # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/machinery/computer/mecha/located # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/machinery/computer/scan_consolenew/buffers # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/machinery/computer/security/network # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/machinery/computer/ship/helm/known_sectors # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/machinery/computer/shuttle/authorized # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/machinery/computer/shuttle_control/emergency/authorized # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/machinery/computer/supplycomp/expanded_packs # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/machinery/computer/telecomms/monitor/machinelist # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/machinery/computer/telecomms/server/servers # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/machinery/computer/telecomms/traffic/servers # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/machinery/computer/telecomms/traffic/viewingcode # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/machinery/computer/telescience/crystals # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/machinery/contraband_scanner/contraband # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/machinery/door/blast/puzzle/locks # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/machinery/door/blast/puzzle/tyrdoor/keypad/code # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/machinery/door/blast/puzzle/tyrdoor/keypad/lastattempt # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/machinery/door_timer/targets # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/machinery/doppler_array/detected_explosions # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/machinery/embedded_controller/radio/airlock/dummy_terminals # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/machinery/embedded_controller/radio/docking_port_multi/child_names # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/machinery/embedded_controller/valid_actions # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/machinery/exonet_node/logs # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/machinery/floorlayer/mode # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/machinery/food_replicator/products # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/machinery/gear_dispenser/dispenses # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/machinery/gear_painter/allowed_types # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/machinery/gravity_generator/main/areas # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/machinery/gravity_generator/main/levels # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/machinery/gravity_generator/main/parts # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/machinery/hyperpad/centre/linked # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/machinery/icecream_vat/product_types # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/machinery/implantchair/implant_list # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/machinery/injector_maker/beaker_reagents_list # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/machinery/librarycomp/checkouts # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/machinery/librarycomp/inventory # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/machinery/magnetic_controller/magnets # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/machinery/magnetic_controller/rpath # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/machinery/maint_recycler/granted_points # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/machinery/maint_recycler/hostile_towards # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/machinery/maint_vendor/product_datums # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/machinery/mecha_part_fabricator_tg/queue # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/machinery/mecha_part_fabricator_tg/queue_producer_accounts # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/machinery/media/jukebox/ghost/custom_tracks # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/machinery/message_server/pda_msgs # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/machinery/message_server/rc_msgs # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/machinery/message_server/spamfilter # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/machinery/meter/pipes_on_turf # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/machinery/mineral/processing_unit/ores_processing # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/machinery/mineral/processing_unit/ores_stored # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/machinery/mineral/stacking_machine/stack_paths # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/machinery/mineral/stacking_machine/stack_storage # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/machinery/mining/drill/gas_field # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/machinery/mining/drill/ore_types # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/machinery/mining/drill/resource_field # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/machinery/mining/drill/stored_ore # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/machinery/mining/drill/supports # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/machinery/navbeacon/codes # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/machinery/ntnet_relay/dos_sources # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/machinery/nuclearbomb/wires_list # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/machinery/ore_silo/holds # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/machinery/ore_silo/ore_connected_machines # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/machinery/organ_printer/anomalous_products # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/machinery/organ_printer/complex_products # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/machinery/organ_printer/engineered_products # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/machinery/organ_printer/products # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/machinery/partslathe/materials # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/machinery/partslathe/queue # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/machinery/partslathe/queue_producer_accounts # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/machinery/partslathe/storage_capacity # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/machinery/pda_multicaster/internal_PDAs # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/machinery/petrification/remotes # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/machinery/pointdefense_control/targets # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/machinery/porta_turret/lasertag/vests_to_target # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/machinery/portable_atmospherics/powered/scrubber/scrubbing_gas # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/machinery/power/hydromagnetic_trap/active_field # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/machinery/power/hydromagnetic_trap/fields_in_range # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/machinery/power/hydromagnetic_trap/things_in_range # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/machinery/power/sensor/history # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/machinery/power/shield_generator/damaged_segments # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/machinery/power/shield_generator/field_segments # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/machinery/power/smes/batteryrack/internal_cells # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/machinery/processor/to_be_processed # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/machinery/reagentgrinder/holdingitems # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/machinery/recycling/sorter/materials # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/machinery/replicator/clothing/created_items # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/machinery/replicator/clothing/tgui_vore_selection # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/machinery/replicator/clothing/viable_items # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/machinery/replicator/construction # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/machinery/replicator/spawning_types # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/machinery/replicator/stored_materials # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/machinery/replicator/tgui_construction # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/machinery/replicator/vore/created_mobs # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/machinery/replicator/vore/tgui_vore_selection # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/machinery/replicator/vore/viable_mobs # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/machinery/requests_console/message_log # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/machinery/seed_storage/contraband_seeds # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/machinery/seed_storage/piles # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/machinery/seed_storage/piles_contra # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/machinery/seed_storage/scanner # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/machinery/seed_storage/starting_seeds # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/machinery/shield_gen/capacitors # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/machinery/shield_gen/field # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/machinery/shieldgen/deployed_shields # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/machinery/shieldgen/regenerating # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/machinery/sleeper/available_chemicals # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/machinery/sleeper/base_chemicals # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/machinery/smartfridge/item_records # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/machinery/suit_cycler/limit_departments # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/machinery/telecomms/allinone/linked_radios_weakrefs # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/machinery/telecomms/autolinkers # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/machinery/telecomms/broadcaster/linked_radios_weakrefs # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/machinery/telecomms/freq_listening # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/machinery/telecomms/links # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/machinery/telecomms/receiver/linked_radios_weakrefs # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/machinery/telecomms/server/TrafficActions # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/machinery/telecomms/server/log_entries # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/machinery/telecomms/server/memory # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/machinery/telecomms/server/stored_names # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/machinery/transhuman/synthprinter/stored_material # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/machinery/vending/contraband # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/machinery/vending/premium # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/machinery/vending/prices # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/machinery/vending/product_records # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/machinery/vending/products # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/machinery/vending/refill # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/machinery/washing_machine/washing # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/mecha/cargo # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/mecha/combat/phazon/inherent_damage_absorption # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/mecha/equipment # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/mecha/hull_equipment # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/mecha/internal_components # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/mecha/log # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/mecha/micro_utility_equipment # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/mecha/micro_weapon_equipment # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/mecha/operation_req_access # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/mecha/proc_res # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/mecha/special_equipment # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/mecha/starting_components # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/mecha/universal_equipment # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/mecha/utility_equipment # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/mecha/weapon_equipment # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/random/mob/semirandom_mob_spawner/possible_mob_types # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/singularity/energy_ball/orbiting_balls # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/soulgem/brainmobs # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/structure/bedsheetbin/sheets # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/structure/blob/factory/spores # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/structure/boxpile/ckeys_that_took # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/structure/candybowl/candy # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/structure/candybowl/treated # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/structure/closet/crate/secure/loot/code # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/structure/closet/crate/secure/loot/lastattempt # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/structure/closet/crate/secure/lootsafe/devillock/code # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/structure/closet/crate/secure/lootsafe/devillock/lastattempt # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/structure/closet/crate/secure/lootsafe/numberlock/code # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/structure/closet/crate/secure/lootsafe/numberlock/lastattempt # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/structure/coatrack/allowed # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/structure/event/santa_sack/ckey_log # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/structure/event/santa_sack/nice_list_log # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/structure/event_collector/possible_ingredients # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/structure/event_collector_blocker/active_repair_steps # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/structure/flora/tree/pine/xmas/presents/ckeys_that_took # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/structure/frame/components # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/structure/gargoyle/tail_lower_dirs # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/structure/janitorialcart/tgui_icons # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/structure/loot_pile/icon_states_to_use # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/structure/loot_pile/searchedby # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/structure/medical_stand/transfer_amounts # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/structure/mob_spawner/scanner/mobs_in_range # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/structure/mob_spawner/spawn_types # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/structure/mob_spawner/spawned_mobs # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/structure/morgue/crematorium/vr/allowed_items # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/structure/morgue/occupants # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/structure/musician/allowed_instrument_ids # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/structure/ore_box/stored_ore # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/structure/picnic_blanket_deployed/attached_blankets # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/structure/prop/dark_node/children_effects # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/structure/prop/lock/linked_objects # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/structure/prop/prismcontrol/my_turrets # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/structure/reflector/allowed_projectile_typecache # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/structure/reflector/has_projectiles # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/structure/toilet/currently_held_objects # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/structure/trash_pile/searchedby # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/trader/bank # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/trader/interact_sound # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/trader/multiple # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/trader/prices # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/trader/products # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/trader/start_products # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/obj/turbolift_map_holder/areas_to_use # rare: under ~50 instances at boot, not converted yet (audit baseline)
-/turf/snow/crossed_dirs # rare: under ~50 instances at boot, not converted yet (audit baseline)

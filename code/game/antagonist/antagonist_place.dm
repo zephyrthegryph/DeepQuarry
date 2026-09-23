@@ -3,7 +3,7 @@
 		starting_locations = list()
 		for(var/obj/effect/landmark/L in GLOB.landmarks_list)
 			if(L.name == landmark_id)
-				starting_locations |= get_turf(L)
+				LAZYOR(starting_locations, get_turf(L))
 
 /datum/antagonist/proc/announce_antagonist_spawn()
 
@@ -21,7 +21,7 @@
 	return
 
 /datum/antagonist/proc/place_mob(mob/living/mob)
-	if(!starting_locations || !starting_locations.len)
+	if(!starting_locations || !length(starting_locations))
 		return
 	var/turf/T = pick_mobless_turf_if_exists(starting_locations)
 	mob.forceMove(T)

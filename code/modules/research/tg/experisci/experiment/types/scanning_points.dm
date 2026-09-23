@@ -15,9 +15,9 @@
 	var/point_val_cache = list()
 	for (var/a_type in required_atoms)
 		var/atom/req_atom = a_type
-		if (!point_val_cache["[required_atoms[a_type]]"])
-			point_val_cache["[required_atoms[a_type]]"] = list()
-		point_val_cache["[required_atoms[a_type]]"] += initial(req_atom.name)
+		if (!point_val_cache["[LAZYACCESS(required_atoms, a_type)]"])
+			point_val_cache["[LAZYACCESS(required_atoms, a_type)]"] = list()
+		point_val_cache["[LAZYACCESS(required_atoms, a_type)]"] += initial(req_atom.name)
 
 	for (var/point_amt in point_val_cache)
 		var/list/types = point_val_cache[point_amt]
@@ -43,4 +43,4 @@
 
 /datum/experiment/scanning/points/do_after_experiment(atom/target, typepath)
 	. = ..()
-	points = min(required_points, points + required_atoms[typepath])
+	points = min(required_points, points + LAZYACCESS(required_atoms, typepath))

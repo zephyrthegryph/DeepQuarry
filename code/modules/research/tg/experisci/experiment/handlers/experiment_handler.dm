@@ -340,7 +340,7 @@
 			web_org = techwebs.organization,
 			selected = (techwebs == linked_web),
 			ref = REF(techwebs),
-			all_servers = techwebs.techweb_servers,
+			all_servers = (techwebs.techweb_servers || list()),
 		)
 		.["techwebs"] += list(data)
 	.["experiments"] = list()

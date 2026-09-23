@@ -75,7 +75,7 @@
 	icon = 'icons/mob/pai_hud.dmi'
 
 /datum/hud
-	var/list/hud_elements = list()
+	var/list/hud_elements
 
 /mob/living/silicon/pai/create_mob_hud(datum/hud/HUD)
 	..()
@@ -132,7 +132,7 @@
 	pullin.name = "pull"
 	pullin.screen_loc = ui_movi
 	HUD.hotkeybuttons += pullin
-	HUD.hud_elements |= pullin
+	LAZYOR(HUD.hud_elements, pullin)
 
 	//Health status
 	healths = new /atom/movable/screen()
@@ -140,7 +140,7 @@
 	healths.icon_state = "health0"
 	healths.name = "health"
 	healths.screen_loc = ui_health
-	HUD.hud_elements |= healths
+	LAZYOR(HUD.hud_elements, healths)
 
 	pain = new /atom/movable/screen( null )
 
@@ -150,12 +150,12 @@
 	zone_sel.alpha = ui_alpha
 	zone_sel.cut_overlays()
 	zone_sel.update_icon()
-	HUD.hud_elements |= zone_sel
+	LAZYOR(HUD.hud_elements, zone_sel)
 
 	pai_fold_display = new /atom/movable/screen/pai/pai_fold_display()
 	pai_fold_display.screen_loc = ui_health
 	pai_fold_display.icon_state = "folded"
-	HUD.hud_elements |= pai_fold_display
+	LAZYOR(HUD.hud_elements, pai_fold_display)
 
 	//Choose chassis button
 	using = new /atom/movable/screen/pai()
@@ -424,7 +424,7 @@
 		if(gun_setting_icon)
 			client.screen |= gun_setting_icon
 		if(hud_used.hud_elements)
-			client.screen |= hud_used.hud_elements
+			if(length(hud_used.hud_elements)) client.screen |= hud_used.hud_elements
 
 		client.screen += zone_sel				//This one is a special snowflake
 

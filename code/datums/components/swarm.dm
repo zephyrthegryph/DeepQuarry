@@ -2,7 +2,7 @@
 	var/offset_x = 0
 	var/offset_y = 0
 	var/is_swarming = FALSE
-	var/list/swarm_members = list()
+	var/list/swarm_members
 	var/static/list/swarming_loc_connections = list(
 		COMSIG_ATOM_EXITED = PROC_REF(leave_swarm),
 		COMSIG_ATOM_ENTERED = PROC_REF(join_swarm)
@@ -20,7 +20,7 @@
 /datum/component/swarming/Destroy()
 	for(var/other in swarm_members)
 		var/datum/component/swarming/other_swarm = other
-		other_swarm.swarm_members -= src
+		LAZYREMOVE(other_swarm.swarm_members, src)
 		if(!length(other_swarm.swarm_members))
 			other_swarm.unswarm()
 	swarm_members = null
@@ -31,18 +31,18 @@
 	if(!other_swarm)
 		return
 	swarm()
-	swarm_members |= other_swarm
+	LAZYOR(swarm_members, other_swarm)
 	other_swarm.swarm()
-	other_swarm.swarm_members |= src
+	LAZYOR(other_swarm.swarm_members, src)
 
 /datum/component/swarming/proc/leave_swarm(datum/source, atom/movable/gone, direction)
 	var/datum/component/swarming/other_swarm = gone.GetComponent(/datum/component/swarming)
 	if(!other_swarm || !(other_swarm in swarm_members))
 		return
-	swarm_members -= other_swarm
+	LAZYREMOVE(swarm_members, other_swarm)
 	if(!length(swarm_members))
 		unswarm()
-	other_swarm.swarm_members -= src
+	LAZYREMOVE(other_swarm.swarm_members, src)
 	if(!length(other_swarm.swarm_members))
 		other_swarm.unswarm()
 

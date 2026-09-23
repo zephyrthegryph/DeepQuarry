@@ -7,7 +7,6 @@
 	name = "Shadekin Abilities"
 	icon = 'icons/mob/screen_spells.dmi'
 	icon_state = "grey_spell_ready"
-	ability_objects = list()
 	showing = 0
 
 	open_state = "master_open"
@@ -43,7 +42,7 @@
 	A.name = name_given
 	if(arguments)
 		A.arguments_to_use = arguments
-	ability_objects.Add(A)
+	LAZYADD(ability_objects, A)
 	if(my_mob && my_mob.client) //If a shadekin is made (mannequins) prior to initialize being finished, my_mob won't be assigned and this will runtime. Mannequins need massive fixing because they shouldn't be getting all these special huds and overlays when they don't need them.
 		toggle_open(2) //forces the icons to refresh on screen
 
@@ -56,7 +55,7 @@
 	var/atom/movable/screen/ability/verb_based/shadekin/A = get_ability_by_proc_ref(verb_given)
 	if(!A)
 		return // We don't have the ability, so ignore it.
-	ability_objects.Remove(A)
+	LAZYREMOVE(ability_objects, A)
 	qdel(A)
 	if(my_mob && my_mob.client) //If a shadekin is made (mannequins) prior to initialize being finished, my_mob won't be assigned and this will runtime. Mannequins need massive fixing because they shouldn't be getting all these special huds and overlays when they don't need them.
 		toggle_open(2) //forces the icons to refresh on screen

@@ -7,7 +7,7 @@
 // per-row actions via tgui_act.
 
 /datum/antagonist/proc/get_check_antag_data(datum/admins/requester)
-	if(!current_antagonists || !current_antagonists.len)
+	if(!current_antagonists || !length(current_antagonists))
 		return null
 
 	var/list/members = list()

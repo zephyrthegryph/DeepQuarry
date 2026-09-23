@@ -27,7 +27,7 @@ GLOBAL_DATUM(mercs, /datum/antagonist/mercenary)
 	if(!..())
 		return 0
 	global_objectives = list()
-	global_objectives |= new /datum/objective/nuclear
+	LAZYOR(global_objectives, new /datum/objective/nuclear)
 	return 1
 
 /datum/antagonist/mercenary/equip(mob/living/carbon/human/player)

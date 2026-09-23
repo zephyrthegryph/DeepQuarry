@@ -10,7 +10,6 @@
 	icon_state = "asval"
 	icon_expected_height = 32
 	icon_expected_width = 64
-	firemodes = list()
 	var/is_picked_up = FALSE
 	var/is_long = TRUE
 

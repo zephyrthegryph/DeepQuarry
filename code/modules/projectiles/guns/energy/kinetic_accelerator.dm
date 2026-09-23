@@ -74,7 +74,7 @@
 	// knife_y_offset = 12
 
 	var/max_mod_capacity = 100
-	var/list/modkits = list()
+	var/list/modkits
 
 	var/recharge_timerid
 
@@ -112,7 +112,7 @@
 		M.uninstall(src, FALSE)
 
 /obj/item/gun/energy/kinetic_accelerator/crowbar_act(mob/user, obj/item/tool)
-	if(modkits.len)
+	if(length(modkits))
 		to_chat(user, span_notice("You pry the modifications out."))
 		playsound(loc, tool.usesound, 100, 1)
 		for(var/obj/item/borg/upgrade/modkit/M in modkits)
@@ -395,7 +395,7 @@
 				// return FALSE
 			to_chat(user, span_notice("You install the modkit."))
 			playsound(loc, 'sound/items/Screwdriver.ogg', 100, 1)
-			KA.modkits += src
+			LAZYADD(KA.modkits, src)
 		else
 			to_chat(user, span_notice("The modkit you're trying to install would conflict with an already installed modkit. Use a crowbar to remove existing modkits."))
 	else
@@ -403,7 +403,7 @@
 		. = FALSE
 
 /obj/item/borg/upgrade/modkit/proc/uninstall(obj/item/gun/energy/kinetic_accelerator/KA, forcemove = TRUE)
-	KA.modkits -= src
+	LAZYREMOVE(KA.modkits, src)
 	if(forcemove)
 		forceMove(get_turf(KA))
 

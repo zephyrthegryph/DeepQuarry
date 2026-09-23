@@ -1036,7 +1036,7 @@ GLOBAL_LIST_INIT(common_tools, list(
 				return 0
 		if(/obj/item/tool/transforming)
 			var/obj/item/tool/transforming/TT = W
-			if(TT.possible_tooltypes[TT.current_tooltype] == TOOL_WELDER)
+			if(LAZYACCESS(TT.possible_tooltypes, TT.current_tooltype) == TOOL_WELDER)
 				return 3800
 			else
 				return 0

@@ -187,7 +187,7 @@
 	if(manual_chamber) // Gun Rework
 		if(do_after(user, 0.4 SECONDS, src)) // Gun Rework
 			bolt_handle(user) // Gun Rework
-	else if(firemodes.len > 1) // Gun Rework
+	else if(length(firemodes) > 1) // Gun Rework
 		switch_firemodes(user)
 	else
 		unload_ammo(user)

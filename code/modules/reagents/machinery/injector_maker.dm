@@ -15,7 +15,7 @@
 	active_power_usage = 100
 	circuit = /obj/item/circuitboard/injector_maker
 	var/obj/item/reagent_containers/beaker = null
-	var/list/beaker_reagents_list = list()
+	var/list/beaker_reagents_list
 
 
 	var/count_large_injector = 0

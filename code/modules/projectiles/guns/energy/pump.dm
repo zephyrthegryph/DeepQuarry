@@ -38,7 +38,7 @@
 		)
 
 /obj/item/gun/energy/gun/martin/proc/update_mode()
-	var/datum/firemode/current_mode = firemodes[sel_mode]
+	var/datum/firemode/current_mode = LAZYACCESS(firemodes, sel_mode)
 	switch(current_mode.name)
 		if("stun") add_overlay("taser_pdw")
 		if("lethal") add_overlay("lazer_pdw")

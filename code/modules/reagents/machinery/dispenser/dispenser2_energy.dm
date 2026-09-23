@@ -1,7 +1,7 @@
 
 /obj/machinery/chemical_dispenser
 	var/_recharge_reagents = 1
-	var/list/dispense_reagents = list()
+	var/list/dispense_reagents
 	var/process_tick = 0
 
 /obj/machinery/chemical_dispenser/process()
@@ -16,7 +16,7 @@
 			var/datum/reagent/R = SSchemistry.chemical_reagents[id]
 			if(!R)
 				stack_trace("[src] at [x],[y],[z] failed to find reagent '[id]'!")
-				dispense_reagents -= id
+				LAZYREMOVE(dispense_reagents, id)
 				continue
 			var/obj/item/reagent_containers/chem_disp_cartridge/C = cartridges[R.name]
 			if(C && C.reagents.total_volume < C.reagents.maximum_volume)

@@ -38,7 +38,7 @@
 	if(holder.initial_modules && holder.initial_modules.len)
 		for(var/path in holder.initial_modules)
 			var/obj/item/rig_module/module = new path(holder)
-			holder.installed_modules += module
+			LAZYADD(holder.installed_modules, module)
 			module.installed(holder)
 
 	// Spawn the six physical components

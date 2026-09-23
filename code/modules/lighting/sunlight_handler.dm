@@ -368,10 +368,10 @@
 		return
 	sleeping = val
 	if(val)
-		pshandler.shandlers -= src
+		LAZYREMOVE(pshandler.shandlers, src)
 		SSlighting.sunlight_queue -= src
 	else
-		pshandler.shandlers |= src
+		LAZYOR(pshandler.shandlers, src)
 		SSlighting.sunlight_queue |= src //Just in case somehow gets set to false twice use |=
 
 /datum/sunlight_handler/proc/wake_sleepers(val)
@@ -383,7 +383,7 @@
 	if(sun) return TRUE
 	if(!sleeping && SSlighting.get_pshandler_z(holder.z))
 		pshandler = SSlighting.get_pshandler_z(holder.z)
-		pshandler.shandlers += src
+		LAZYADD(pshandler.shandlers, src)
 		sun = pshandler.sun
 		return TRUE
 	else

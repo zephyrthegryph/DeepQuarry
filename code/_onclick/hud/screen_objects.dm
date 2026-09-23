@@ -37,7 +37,7 @@
 
 /atom/movable/screen/inventory
 	var/slot_id	//The indentifier for the slot. It has nothing to do with ID cards.
-	var/list/object_overlays = list() // Required for inventory/screen overlays.
+	var/list/object_overlays // Required for inventory/screen overlays.
 
 /atom/movable/screen/inventory/MouseEntered()
 	..()
@@ -45,8 +45,8 @@
 
 /atom/movable/screen/inventory/MouseExited()
 	..()
-	cut_overlay(object_overlays)
-	object_overlays.Cut()
+	if(object_overlays) cut_overlay(object_overlays)
+	LAZYCLEARLIST(object_overlays)
 
 
 /atom/movable/screen/close
@@ -1100,5 +1100,5 @@
 		else
 			item_overlay.color = "#00ff00"
 
-		object_overlays += item_overlay
+		LAZYADD(object_overlays, item_overlay)
 		add_overlay(object_overlays)

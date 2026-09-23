@@ -9,9 +9,9 @@
 	item_state = "electronic"
 	w_class = ITEMSIZE_TINY
 
-	var/list/internal_devices = list() // Devices that can be toggled on to trigger on attack()
-	var/list/active_devices = list()   // Devices that will be triggered on attack()
-	var/list/ui_templates = list()     // List of ui templates the commcard can access
+	var/list/internal_devices // Devices that can be toggled on to trigger on attack()
+	var/list/active_devices   // Devices that will be triggered on attack()
+	var/list/ui_templates     // List of ui templates the commcard can access
 	var/list/internal_data = list()	   // Data that shouldn't be updated every time nanoUI updates, or needs to persist between updates
 
 
@@ -382,7 +382,7 @@
 
 /obj/item/commcard/engineering/Initialize(mapload)
 	..()
-	internal_devices |= new /obj/item/halogen_counter(src)
+	LAZYOR(internal_devices, new /obj/item/halogen_counter(src))
 	return INITIALIZE_HINT_LATELOAD
 
 /obj/item/commcard/engineering/LateInitialize()
@@ -405,7 +405,7 @@
 
 /obj/item/commcard/atmos/Initialize(mapload)
 	. = ..()
-	internal_devices += new /obj/item/analyzer(src)
+	LAZYADD(internal_devices, new /obj/item/analyzer(src))
 
 
 // Medical Cartridge:
@@ -421,8 +421,8 @@
 
 /obj/item/commcard/medical/Initialize(mapload)
 	. = ..()
-	internal_devices += new /obj/item/healthanalyzer(src)
-	internal_devices += new /obj/item/halogen_counter(src)
+	LAZYADD(internal_devices, new /obj/item/healthanalyzer(src))
+	LAZYADD(internal_devices, new /obj/item/halogen_counter(src))
 
 /obj/item/commcard/medical/get_data()
 	return list(list("field" = "med_records", "value" = get_med_records()))
@@ -441,7 +441,7 @@
 
 /obj/item/commcard/medical/chemistry/Initialize(mapload)
 	. = ..()
-	internal_devices += new /obj/item/reagent_scanner(src)
+	LAZYADD(internal_devices, new /obj/item/reagent_scanner(src))
 
 
 // Detective Cartridge:
@@ -533,7 +533,7 @@
 
 /obj/item/commcard/signal/Initialize(mapload)
 	. = ..()
-	internal_devices += new /obj/item/assembly/signaler(src)
+	LAZYADD(internal_devices, new /obj/item/assembly/signaler(src))
 
 /obj/item/commcard/signal/get_data()
 	return list(
@@ -556,8 +556,8 @@
 
 /obj/item/commcard/signal/science/Initialize(mapload)
 	. = ..()
-	internal_devices += new /obj/item/reagent_scanner(src)
-	internal_devices += new /obj/item/analyzer(src)
+	LAZYADD(internal_devices, new /obj/item/reagent_scanner(src))
+	LAZYADD(internal_devices, new /obj/item/analyzer(src))
 
 
 // Supply Cartridge:
@@ -734,9 +734,9 @@
 
 /obj/item/commcard/head/rd/Initialize(mapload)
 	. = ..()
-	internal_devices += new /obj/item/analyzer(src)
-	internal_devices += new /obj/item/reagent_scanner(src)
-	internal_devices += new /obj/item/assembly/signaler(src)
+	LAZYADD(internal_devices, new /obj/item/analyzer(src))
+	LAZYADD(internal_devices, new /obj/item/reagent_scanner(src))
+	LAZYADD(internal_devices, new /obj/item/assembly/signaler(src))
 
 /obj/item/commcard/head/rd/get_data()
 	var/list/data = ..()
@@ -765,9 +765,9 @@
 
 /obj/item/commcard/head/cmo/Initialize(mapload)
 	. = ..()
-	internal_devices += new /obj/item/healthanalyzer(src)
-	internal_devices += new /obj/item/reagent_scanner(src)
-	internal_devices += new /obj/item/halogen_counter(src)
+	LAZYADD(internal_devices, new /obj/item/healthanalyzer(src))
+	LAZYADD(internal_devices, new /obj/item/reagent_scanner(src))
+	LAZYADD(internal_devices, new /obj/item/halogen_counter(src))
 
 /obj/item/commcard/head/cmo/get_data()
 	var/list/data = ..()
@@ -794,8 +794,8 @@
 
 /obj/item/commcard/head/ce/Initialize(mapload)
 	..()
-	internal_devices |= new /obj/item/analyzer(src)
-	internal_devices |= new /obj/item/halogen_counter(src)
+	LAZYOR(internal_devices, new /obj/item/analyzer(src))
+	LAZYOR(internal_devices, new /obj/item/halogen_counter(src))
 	return INITIALIZE_HINT_LATELOAD
 
 /obj/item/commcard/head/ce/LateInitialize()
@@ -849,11 +849,11 @@
 
 /obj/item/commcard/head/captain/Initialize(mapload)
 	. = ..()
-	internal_devices += new /obj/item/analyzer(src)
-	internal_devices += new /obj/item/healthanalyzer(src)
-	internal_devices += new /obj/item/reagent_scanner(src)
-	internal_devices += new /obj/item/halogen_counter(src)
-	internal_devices += new /obj/item/assembly/signaler(src)
+	LAZYADD(internal_devices, new /obj/item/analyzer(src))
+	LAZYADD(internal_devices, new /obj/item/healthanalyzer(src))
+	LAZYADD(internal_devices, new /obj/item/reagent_scanner(src))
+	LAZYADD(internal_devices, new /obj/item/halogen_counter(src))
+	LAZYADD(internal_devices, new /obj/item/assembly/signaler(src))
 
 /obj/item/commcard/head/captain/get_data()
 	var/list/data = ..()
@@ -947,7 +947,7 @@
 
 /obj/item/commcard/explorer/Initialize(mapload)
 	. = ..()
-	internal_devices += new /obj/item/gps/explorer(src)
+	LAZYADD(internal_devices, new /obj/item/gps/explorer(src))
 
 /obj/item/commcard/explorer/get_data()
 	var/list/GPS = get_GPS_lists()

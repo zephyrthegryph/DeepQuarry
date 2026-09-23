@@ -325,7 +325,7 @@
 	body_parts_covered = FACE
 	icon_state = "papermask"
 	actions_types = list(/datum/action/item_action/hands_free/redraw_design)
-	var/list/papermask_designs = list()
+	var/list/papermask_designs
 	special_handling = TRUE
 
 /obj/item/clothing/mask/paper/Initialize(mapload)
@@ -375,7 +375,7 @@
 							"Good" = "goodmask", "Bad" = "badmask", "Happy" = "happymask", "Sad" = "sadmask"
 							)
 
-	var/choice = show_radial_menu(user, src, papermask_designs, custom_check = FALSE, radius = 36, require_near = TRUE)
+	var/choice = show_radial_menu(user, src, papermask_designs || list(), custom_check = FALSE, radius = 36, require_near = TRUE)
 
 	if(src && choice && !user.incapacitated() && in_range(user,src))
 		icon_state = options[choice]

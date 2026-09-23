@@ -12,7 +12,7 @@
 
 /datum/experiment/scanning/random/artifact_destruction/serialize_progress_stage(atom/target, list/seen_instances)
 	return EXPERIMENT_PROG_INT("Destroy artifacts.", \
-		traits & EXPERIMENT_TRAIT_DESTRUCTIVE ? scanned[target] : seen_instances.len, required_atoms[target])
+		traits & EXPERIMENT_TRAIT_DESTRUCTIVE ? scanned[target] : seen_instances.len, LAZYACCESS(required_atoms, target))
 
 /// Bluespace crystal
 /datum/experiment/scanning/bluespace_crystal
@@ -25,7 +25,7 @@
 
 /datum/experiment/scanning/bluespace_crystal/serialize_progress_stage(atom/target, list/seen_instances)
 	return EXPERIMENT_PROG_INT("Destroy bluespace crystal.", \
-		traits & EXPERIMENT_TRAIT_DESTRUCTIVE ? scanned[target] : seen_instances.len, required_atoms[target])
+		traits & EXPERIMENT_TRAIT_DESTRUCTIVE ? scanned[target] : seen_instances.len, LAZYACCESS(required_atoms, target))
 
 /// Mech parts to start off robotics
 /datum/experiment/scanning/random/destruct_ripley_parts
@@ -48,7 +48,7 @@
 
 /datum/experiment/scanning/random/destruct_ripley_parts/serialize_progress_stage(atom/target, list/seen_instances)
 	return EXPERIMENT_PROG_INT("Destroy basic mechatronics components.", \
-		traits & EXPERIMENT_TRAIT_DESTRUCTIVE ? scanned[target] : seen_instances.len, required_atoms[target])
+		traits & EXPERIMENT_TRAIT_DESTRUCTIVE ? scanned[target] : seen_instances.len, LAZYACCESS(required_atoms, target))
 
 /// Basic circuitboard
 /datum/experiment/scanning/destruct_circuitboard
@@ -63,6 +63,6 @@
 
 /datum/experiment/scanning/destruct_circuitboard/serialize_progress_stage(atom/target, list/seen_instances)
 	return EXPERIMENT_PROG_INT("Destroy a circuitboard.", \
-		traits & EXPERIMENT_TRAIT_DESTRUCTIVE ? scanned[target] : seen_instances.len, required_atoms[target])
+		traits & EXPERIMENT_TRAIT_DESTRUCTIVE ? scanned[target] : seen_instances.len, LAZYACCESS(required_atoms, target))
 
 #undef DESTRUCTIVE_DEVICES

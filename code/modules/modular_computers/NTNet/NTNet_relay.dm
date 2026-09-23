@@ -12,7 +12,7 @@
 	var/datum/ntnet/NTNet = null // This is mostly for backwards reference and to allow varedit modifications from ingame.
 	var/enabled = 1				// Set to 0 if the relay was turned off
 	var/dos_failure = 0			// Set to 1 if the relay failed due to (D)DoS attack
-	var/list/dos_sources = list()	// Backwards reference for qdel() stuff
+	var/list/dos_sources	// Backwards reference for qdel() stuff
 
 	// Denial of Service attack variables
 	var/dos_overload = 0		// Amount of DoS "packets" in this relay's buffer
@@ -99,7 +99,7 @@
 			update_icon()
 			. = TRUE
 		if("purge")
-			GLOB.ntnet_global.banned_nids.Cut()
+			LAZYCLEARLIST(GLOB.ntnet_global.banned_nids)
 			GLOB.ntnet_global.add_log("Manual override: Network blacklist cleared.")
 			. = TRUE
 
@@ -108,9 +108,9 @@
 	assign_uid()
 	default_apply_parts()
 	if(GLOB.ntnet_global)
-		GLOB.ntnet_global.relays.Add(src)
+		LAZYADD(GLOB.ntnet_global.relays, src)
 		NTNet = GLOB.ntnet_global
-		GLOB.ntnet_global.add_log("New quantum relay activated. Current amount of linked relays: [NTNet.relays.len]")
+		GLOB.ntnet_global.add_log("New quantum relay activated. Current amount of linked relays: [length(NTNet.relays)]")
 	soundloop = new(list(src), FALSE)
 	if(prob(60)) // 60% chance to change the midloop
 		if(prob(40))
@@ -126,8 +126,8 @@
 
 /obj/machinery/ntnet_relay/Destroy()
 	if(GLOB.ntnet_global)
-		GLOB.ntnet_global.relays.Remove(src)
-		GLOB.ntnet_global.add_log("Quantum relay connection severed. Current amount of linked relays: [NTNet.relays.len]")
+		LAZYREMOVE(GLOB.ntnet_global.relays, src)
+		GLOB.ntnet_global.add_log("Quantum relay connection severed. Current amount of linked relays: [length(NTNet.relays)]")
 		NTNet = null
 	for(var/datum/computer_file/program/ntnet_dos/D in dos_sources)
 		D.target = null

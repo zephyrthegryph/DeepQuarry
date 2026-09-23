@@ -79,8 +79,8 @@
 	if(gameStatus == ORION_STATUS_NORMAL)
 		data["screen"] = ORION_SCREEN_NORMAL
 		data["turn"] = turns
-		data["stop_name"] = stops[turns]
-		data["stop_blurb"] = stopblurbs[turns]
+		data["stop_name"] = LAZYACCESS(stops, turns)
+		data["stop_blurb"] = LAZYACCESS(stopblurbs, turns)
 		data["crew"] = settlers.Copy()
 		data["food"] = food
 		data["fuel"] = fuel

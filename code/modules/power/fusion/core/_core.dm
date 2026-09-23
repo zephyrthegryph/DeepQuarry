@@ -53,7 +53,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery/power/fusion_core, REGISTRY_FUSION_CORES)
 		material_sample.forceMove(get_turf(src))
 	material_sample = null
 	for(var/obj/machinery/computer/fusion_core_control/FCC in REGISTRY_MEMBERS(REGISTRY_MACHINES))
-		FCC.connected_devices -= src
+		LAZYREMOVE(FCC.connected_devices, src)
 		if(FCC.cur_viewed_device == src)
 			FCC.cur_viewed_device = null
 	return ..()
@@ -195,7 +195,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery/power/fusion_core, REGISTRY_FUSION_CORES)
 	if(!batch)
 		return
 	var/field_work = clamp(round(field_strength / 25 + owned_field.plasma_temperature / 2500), 2, 30)
-	var/old_fusion_strength = batch.field_treatments[MATERIAL_FIELD_FUSION] || 0
+	var/old_fusion_strength = LAZYACCESS(batch.field_treatments, MATERIAL_FIELD_FUSION) || 0
 	batch.add_field_treatment(MATERIAL_FIELD_FUSION, field_work)
 	batch.homogeneity = clamp(batch.homogeneity + round(field_work / 6), 0, 100)
 	batch.add_thermal_energy(max(100, owned_field.plasma_temperature * batch.amount * 0.04))
@@ -220,7 +220,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery/power/fusion_core, REGISTRY_FUSION_CORES)
 	material_sample = replacement
 	if(material_sample)
 		material_sample.forceMove(src)
-	if(round(old_fusion_strength / 25) != round((batch.field_treatments[MATERIAL_FIELD_FUSION] || 0) / 25))
+	if(round(old_fusion_strength / 25) != round((LAZYACCESS(batch.field_treatments, MATERIAL_FIELD_FUSION) || 0) / 25))
 		visible_message(span_notice("Colored bands crawl across [src]'s sample cradle as the fusion field changes the stock's lattice."))
 	qdel(batch)
 

@@ -39,19 +39,19 @@
 /obj/item/mecha_parts/mecha_equipment/tesla_energy_relay/detach()
 	STOP_PROCESSING(SSfastprocess, src)
 //	chassis.proc_res["dynusepower"] = null
-	chassis.proc_res["dyngetcharge"] = null
+	LAZYSET(chassis.proc_res, "dyngetcharge", null)
 	..()
 	return
 
 /obj/item/mecha_parts/mecha_equipment/tesla_energy_relay/attach(obj/mecha/M)
 	..()
-	chassis.proc_res["dyngetcharge"] = src
+	LAZYSET(chassis.proc_res, "dyngetcharge", src)
 //	chassis.proc_res["dynusepower"] = src
 	return
 
 /obj/item/mecha_parts/mecha_equipment/tesla_energy_relay/can_attach(obj/mecha/M)
 	if(..())
-		if(!M.proc_res["dyngetcharge"])// && !M.proc_res["dynusepower"])
+		if(!LAZYACCESS(M.proc_res, "dyngetcharge"))// && !LAZYACCESS(M.proc_res, "dynusepower"))
 			return 1
 	return 0
 

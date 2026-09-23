@@ -31,16 +31,16 @@
 
 		if(!Adjacent(floor) || !floor.Enter(src))
 			continue
-		neighbors |= floor
+		LAZYOR(neighbors, floor)
 
-	if(neighbors.len)
+	if(length(neighbors))
 		SSplants.add_plant(src)	//if we have neighbours again, start processing
 
 	// Update all of our friends.
 	var/turf/T = get_turf(src)
 	for(var/obj/effect/plant/neighbor in range(1,src))
 		if(neighbor.seed == src.seed)
-			neighbor.neighbors -= T
+			LAZYREMOVE(neighbor.neighbors, T)
 
 /obj/effect/plant/process()
 
@@ -112,11 +112,11 @@
 						break
 					if(QDELETED(src)) // we sleep, might get deleted!
 						return
-					spread_to(pick(neighbors))
+					spread_to(DEFAULTPICK(neighbors, null))
 
 	// We shouldn't have spawned if the controller doesn't exist.
 	check_health()
-	if(has_buckled_mobs() || neighbors.len)
+	if(has_buckled_mobs() || length(neighbors))
 		SSplants.add_plant(src)
 
 //spreading vines aren't created on their final turf.
@@ -166,7 +166,7 @@
 		// Update neighboring squares.
 		for(var/obj/effect/plant/neighbor in range(1, child.loc)) //can use the actual final child loc now
 			if(child.seed == neighbor.seed) //neighbors of different seeds will continue to try to overrun each other
-				neighbor.neighbors -= target_turf
+				LAZYREMOVE(neighbor.neighbors, target_turf)
 
 		child.finish_spreading()
 
@@ -178,7 +178,7 @@
 		if(!istype(check_turf))
 			continue
 		for(var/obj/effect/plant/neighbor in check_turf.contents)
-			neighbor.neighbors |= check_turf
+			LAZYOR(neighbor.neighbors, check_turf)
 			SSplants.add_plant(neighbor)
 	spawn(1) if(src) qdel(src)
 

@@ -16,7 +16,7 @@
 	var/ignore_density = FALSE
 
 // The turfs this snake has already crossed.
-	var/list/iterated_turfs = list()
+	var/list/iterated_turfs
 // How many turfs this snake should remember.
 	var/total_turf_memory = 5
 // Is the snake hunting a specific atom? (Will always try to meander toward this target.)
@@ -44,7 +44,7 @@
 /obj/effect/temporary_effect/pulse/snake/on_pulse()
 	var/list/possible_turfs = list()
 
-	if(LAZYLEN(iterated_turfs) && iterated_turfs.len > total_turf_memory)
+	if(LAZYLEN(iterated_turfs) && length(iterated_turfs) > total_turf_memory)
 		iterated_turfs.Cut(total_turf_memory + 1)
 
 	for(var/direction in GLOB.alldirs - turn(src.dir,180))
@@ -78,7 +78,7 @@
 		Target = pick(possible_turfs)
 
 	if(Target)
-		iterated_turfs.Insert(1, Target)
+		LAZYINITLIST(iterated_turfs); iterated_turfs.Insert(1, Target)
 		on_leave_turf(get_turf(src))
 		dir = get_dir(src, Target)
 		forceMove(Target)

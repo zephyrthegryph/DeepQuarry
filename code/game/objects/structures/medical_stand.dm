@@ -18,7 +18,7 @@
 	var/mob/living/carbon/attached
 	var/mode = 1 // 1 is injecting, 0 is taking blood.
 	var/obj/item/reagent_containers/beaker
-	var/list/transfer_amounts = list(REM, 1, 2)
+	var/static/list/transfer_amounts = list(REM, 1, 2)
 	var/transfer_amount = 1
 
 /obj/structure/medical_stand/Initialize(mapload)

@@ -457,7 +457,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery, REGISTRY_MACHINES)
 		for(var/obj/D in component_parts)
 			D.forceMove(src.loc)
 		if(A.components)
-			A.components.Cut()
+			LAZYCLEARLIST(A.components)
 		else
 			A.components = list()
 		component_parts = list()

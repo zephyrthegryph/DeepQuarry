@@ -55,8 +55,8 @@
 	var/track_magazine = 1
 	auto_eject = 0
 
-	var/list/beakers = list() //All containers inside the gun.
-	var/list/mixing = list() //Containers being used for mixing.
+	var/list/beakers //All containers inside the gun.
+	var/list/mixing //Containers being used for mixing.
 	var/max_beakers = 3
 	var/dart_reagent_amount = 15
 	var/container_type = /obj/item/reagent_containers/glass/beaker
@@ -69,7 +69,7 @@
 		for(var/chem in starting_chems)
 			var/obj/B = new container_type(src)
 			B.reagents.add_reagent(chem, 60)
-			beakers += B
+			LAZYADD(beakers, B)
 	update_icon()
 
 /obj/item/gun/projectile/dartgun/update_icon()
@@ -95,7 +95,7 @@
 
 /obj/item/gun/projectile/dartgun/examine(mob/user)
 	. = ..()
-	if(beakers.len)
+	if(length(beakers))
 		. += span_notice("[src] contains:")
 		for(var/obj/item/reagent_containers/glass/beaker/B in beakers)
 			if(B.reagents && B.reagents.reagent_list.len)
@@ -107,13 +107,13 @@
 		if(!istype(I, container_type))
 			to_chat(user, span_blue("[I] doesn't seem to fit into [src]."))
 			return
-		if(beakers.len >= max_beakers)
+		if(length(beakers) >= max_beakers)
 			to_chat(user, span_blue("[src] already has [max_beakers] beakers in it - another one isn't going to fit!"))
 			return
 		var/obj/item/reagent_containers/glass/beaker/B = I
 		user.drop_item()
 		B.loc = src
-		beakers += B
+		LAZYADD(beakers, B)
 		to_chat(user, span_blue("You slot [B] into [src]."))
 		updateUsrDialog(user)
 		return 1
@@ -121,7 +121,7 @@
 
 //fills the given dart with reagents
 /obj/item/gun/projectile/dartgun/proc/fill_dart(obj/item/projectile/bullet/chemdart/dart)
-	if(mixing.len)
+	if(length(mixing))
 		var/mix_amount = dart.reagent_amount/mixing.len
 		for(var/obj/item/reagent_containers/glass/beaker/B in mixing)
 			B.reagents.trans_to_obj(dart, mix_amount)
@@ -148,23 +148,23 @@
 	src.add_fingerprint(usr)
 	if(href_list["stop_mix"])
 		var/index = text2num(href_list["stop_mix"])
-		if(index <= beakers.len)
+		if(index <= length(beakers))
 			for(var/obj/item/M in mixing)
-				if(M == beakers[index])
-					mixing -= M
+				if(M == LAZYACCESS(beakers, index))
+					LAZYREMOVE(mixing, M)
 					break
 	else if (href_list["mix"])
 		var/index = text2num(href_list["mix"])
-		if(index <= beakers.len)
-			mixing += beakers[index]
+		if(index <= length(beakers))
+			LAZYADD(mixing, LAZYACCESS(beakers, index))
 	else if (href_list["eject"])
 		var/index = text2num(href_list["eject"])
-		if(index <= beakers.len)
-			if(beakers[index])
-				var/obj/item/reagent_containers/glass/beaker/B = beakers[index]
+		if(index <= length(beakers))
+			if(LAZYACCESS(beakers, index))
+				var/obj/item/reagent_containers/glass/beaker/B = LAZYACCESS(beakers, index)
 				to_chat(usr, "You remove [B] from [src].")
-				mixing -= B
-				beakers -= B
+				LAZYREMOVE(mixing, B)
+				LAZYREMOVE(beakers, B)
 				B.loc = get_turf(src)
 	else if (href_list["eject_cart"])
 		unload_ammo(usr)

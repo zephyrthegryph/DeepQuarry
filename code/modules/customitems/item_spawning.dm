@@ -28,7 +28,7 @@ GLOBAL_LIST_INIT(custom_items, load_custom_items())
 	var/name
 	var/item_path = /obj/item
 	var/req_access = 0
-	var/list/req_titles = list()
+	var/list/req_titles
 	var/kit_name
 	var/kit_desc
 	var/kit_icon
@@ -196,7 +196,7 @@ GLOBAL_LIST_INIT(custom_items, load_custom_items())
 				continue
 
 		// Check for required job title.
-		if(citem.req_titles && citem.req_titles.len > 0)
+		if(citem.req_titles && length(citem.req_titles) > 0)
 			var/has_title
 			var/current_title = M.mind.role_alt_title ? M.mind.role_alt_title : M.mind.assigned_role
 			for(var/title in citem.req_titles)

@@ -4,7 +4,7 @@
 	var/account_number = 0
 	var/remote_access_pin = 0
 	var/money = 0
-	var/list/transaction_log = list()
+	var/list/transaction_log
 	var/suspended = 0
 	var/security_level = 0	//0 - auto-identify from worn ID, require only account number
 							//1 - require manual login / account number and pin
@@ -49,7 +49,7 @@
 	transaction.date = GLOB.current_date_string
 	transaction.time = stationtime2text()
 	transaction.source_terminal = terminal_id
-	transaction_log.Add(transaction)
+	LAZYADD(transaction_log, transaction)
 
 /datum/money_account/proc/credit(amount, source_name, purpose, terminal_id = "Station budget ledger", external = TRUE, allow_suspended = FALSE)
 	if(!isnum(amount) || amount <= 0 || (suspended && !allow_suspended))
@@ -253,7 +253,7 @@
 		R.stamps += "<HR><i>This paper has been stamped by the Accounts Database.</i>"
 
 	//add the account
-	M.transaction_log.Add(T)
+	LAZYADD(M.transaction_log, T)
 	GLOB.all_money_accounts.Add(M)
 
 	return M

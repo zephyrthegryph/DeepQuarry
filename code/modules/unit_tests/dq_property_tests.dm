@@ -197,7 +197,7 @@ GLOBAL_LIST_INIT(dq_variants_property_test, list(
 	for(var/error in registry.errors)
 		TEST_FAIL("property registry: [error]")
 	for(var/id in list(PROP_SIZE_CLASS, PROP_MASS, PROP_MELTING_POINT, PROP_IGNITION_POINT, PROP_MAX_HEAT_PROTECTION, TAG_SHARP, TAG_CONDUCTIVE, TAG_FLAMMABLE))
-		TEST_ASSERT(registry.defs[id], "[id] should be registered")
+		TEST_ASSERT(LAZYACCESS(registry.defs, id), "[id] should be registered")
 
 	// A registry of broken fixtures reports each problem.
 	var/list/defs = list()
@@ -227,7 +227,7 @@ GLOBAL_LIST_INIT(dq_variants_property_test, list(
 	var/datum/property_registry/registry = dq_property_registry()
 	var/failures = 0
 	for(var/id in registry.base_providers)
-		for(var/datum/property_provider/provider as anything in registry.base_providers[id])
+		for(var/datum/property_provider/provider as anything in LAZYACCESS(registry.base_providers, id))
 			if(provider.state_var)
 				var/datum/sample = allocate(provider.applies_to)
 				TEST_ASSERT(dq_property_state_has_var(sample, provider.state_var), "[provider.type] reads [provider.state_var], which is not saved state on [provider.applies_to]")
