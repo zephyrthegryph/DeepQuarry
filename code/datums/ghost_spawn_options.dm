@@ -39,7 +39,7 @@
 	var/mob/living/simple_mob/animal/passive/mouse/host
 	var/obj/machinery/atmospherics/unary/vent_pump/vent_found
 	var/list/found_vents = list()
-	for(var/obj/machinery/atmospherics/unary/vent_pump/v in GLOB.machines)
+	for(var/obj/machinery/atmospherics/unary/vent_pump/v in REGISTRY_MEMBERS(REGISTRY_MACHINES))
 		if(!v.welded && v.z == T.z && v.network && v.network.normal_members.len > MOUSE_VENT_NETWORK_LENGTH)
 			found_vents.Add(v)
 	if(found_vents.len)
@@ -94,7 +94,7 @@
 		to_chat(user, "You must wait 5 minutes to respawn as a drone!")
 		return
 
-	var/obj/machinery/drone_fabricator/chosen_fabricator = locate(fabricator) in GLOB.all_drone_fabricators
+	var/obj/machinery/drone_fabricator/chosen_fabricator = locate(fabricator) in REGISTRY_MEMBERS(REGISTRY_DRONE_FABRICATORS)
 
 	if(!chosen_fabricator)
 		return

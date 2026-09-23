@@ -206,7 +206,7 @@
 	attackby(tool, user, TOOL_WIRECUTTER)
 	return TRUE
 
-GLOBAL_LIST_BOILERPLATE(all_deactivated_AI_cores, /obj/structure/AIcore/deactivated)
+REGISTRY_MEMBERSHIP(/obj/structure/AIcore/deactivated, REGISTRY_AI_CORES_DEACTIVATED)
 
 /obj/structure/AIcore/deactivated
 	name = "inactive AI"
@@ -282,7 +282,7 @@ GLOBAL_LIST_BOILERPLATE(all_deactivated_AI_cores, /obj/structure/AIcore/deactiva
 
 ADMIN_VERB(empty_ai_core_toggle_latejoin, R_ADMIN|R_SERVER|R_EVENT, "Toggle AI Core Latejoin", "Toggles the option to latejoin as AI core.", ADMIN_CATEGORY_SILICON)
 	var/list/cores = list()
-	for(var/obj/structure/AIcore/deactivated/current_ai_struct in GLOB.all_deactivated_AI_cores)
+	for(var/obj/structure/AIcore/deactivated/current_ai_struct in REGISTRY_MEMBERS(REGISTRY_AI_CORES_DEACTIVATED))
 		cores["[current_ai_struct] ([current_ai_struct.loc.loc])"] = current_ai_struct
 
 	var/id = tgui_input_list(user, "Which core?", "Toggle AI Core Latejoin", cores)

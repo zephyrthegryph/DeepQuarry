@@ -43,23 +43,23 @@
 		src.set_light(0)
 		GLOB.cameranet.removeCamera(src)
 
-/obj/machinery/camera/Initialize(mapload)
+REGISTRY_MEMBERSHIP(/obj/machinery/camera, REGISTRY_CAMERAS)
+
+/// Joins the camera net (L3): the registry join above lists it, this covers chunks.
+/obj/machinery/camera/on_materialize()
 	. = ..()
-	//Camera must be added to global list of all cameras no matter what...
-	if(GLOB.cameranet.cameras_unsorted || !SSticker)
-		GLOB.cameranet.cameras += src
-		GLOB.cameranet.cameras_unsorted = 1
-	else
-		dd_insertObjectList(GLOB.cameranet.cameras, src)
 	update_coverage(1)
 
-/obj/machinery/camera/Destroy()
-	// QDELETING cameras fail can_use(), so removeCamera() intentionally becomes a
-	// no-op. Remove the camera from every chunk before the deletion flag can make
-	// that guard hide it; otherwise each covered chunk retains a hard reference.
+/obj/machinery/camera/on_dematerialize()
+	// QDELETING cameras fail can_use(), so removeCamera() would be a no-op.
+	// Remove the camera from every chunk directly; otherwise each covered chunk
+	// retains a hard reference.
 	GLOB.cameranet.majorChunkChange(src, 0)
+	on_open_network = 0
+	return ..()
+
+/obj/machinery/camera/Destroy()
 	clear_all_networks()
-	GLOB.cameranet.cameras -= src
 	return ..()
 
 // Mobs

@@ -22,7 +22,7 @@
 GLOBAL_VAR_INIT(camera_range_display_status, FALSE)
 GLOBAL_VAR_INIT(intercom_range_display_status, FALSE)
 
-GLOBAL_LIST_BOILERPLATE(all_debugging_effects, /obj/effect/debugging)
+REGISTRY_MEMBERSHIP(/obj/effect/debugging, REGISTRY_DEBUGGING_EFFECTS)
 
 /obj/effect/debugging/camera_range
 	icon = 'icons/480x480.dmi'
@@ -47,11 +47,11 @@ ADMIN_VERB(camera_view, R_DEBUG, "Camera Range Display", "Globally changes the c
 	else
 		GLOB.camera_range_display_status = TRUE
 
-	for(var/obj/effect/debugging/camera_range/C in GLOB.all_debugging_effects)
+	for(var/obj/effect/debugging/camera_range/C in REGISTRY_MEMBERS(REGISTRY_DEBUGGING_EFFECTS))
 		qdel(C)
 
 	if(GLOB.camera_range_display_status)
-		for(var/obj/machinery/camera/C in GLOB.cameranet.cameras)
+		for(var/obj/machinery/camera/C in REGISTRY_MEMBERS(REGISTRY_CAMERAS))
 			new/obj/effect/debugging/camera_range(C.loc)
 	feedback_add_details("admin_verb","mCRD") //If you are copy-pasting this, ensure the 2nd parameter is unique to the new proc!
 
@@ -63,7 +63,7 @@ ADMIN_VERB(sec_camera_report, R_DEBUG, "Camera Report", "Gives a report of the c
 
 	var/list/obj/machinery/camera/CL = list()
 
-	for(var/obj/machinery/camera/C in GLOB.cameranet.cameras)
+	for(var/obj/machinery/camera/C in REGISTRY_MEMBERS(REGISTRY_CAMERAS))
 		CL += C
 
 	var/output = span_bold("CAMERA ANNOMALITIES REPORT") + {"<HR>
@@ -102,11 +102,11 @@ ADMIN_VERB(intercom_view, R_DEBUG, "Intercom Range Display", "Displays the inter
 	else
 		GLOB.intercom_range_display_status = TRUE
 
-	for(var/obj/effect/debugging/marker/M in GLOB.all_debugging_effects)
+	for(var/obj/effect/debugging/marker/M in REGISTRY_MEMBERS(REGISTRY_DEBUGGING_EFFECTS))
 		qdel(M)
 
 	if(GLOB.intercom_range_display_status)
-		for(var/obj/item/radio/intercom/I in GLOB.machines)
+		for(var/obj/item/radio/intercom/I in REGISTRY_MEMBERS(REGISTRY_MACHINES))
 			for(var/turf/T in orange(7,I))
 				var/obj/effect/debugging/marker/F = new/obj/effect/debugging/marker(T)
 				if (!(F in view(7,I.loc)))

@@ -46,7 +46,7 @@
 /obj/machinery/conveyor/Destroy()
 	if(loc)
 		UnregisterSignal(loc, COMSIG_ATOM_ENTERED)
-	for(var/obj/machinery/conveyor_switch/conveyor_switch in GLOB.machines)
+	for(var/obj/machinery/conveyor_switch/conveyor_switch in REGISTRY_MEMBERS(REGISTRY_MACHINES))
 		LAZYREMOVE(conveyor_switch.conveyors, src)
 	return ..()
 
@@ -167,7 +167,7 @@
 		to_chat(user, "No input found. Please hang up and try your call again.")
 		return ITEM_INTERACT_BLOCKING
 	id = input
-	for(var/obj/machinery/conveyor_switch/C in GLOB.machines)
+	for(var/obj/machinery/conveyor_switch/C in REGISTRY_MEMBERS(REGISTRY_MACHINES))
 		if(C.id == id)
 			C.conveyors |= src
 	return ITEM_INTERACT_SUCCESS
@@ -258,7 +258,7 @@
 
 /obj/machinery/conveyor_switch/LateInitialize()
 	conveyors = list()
-	for(var/obj/machinery/conveyor/C in GLOB.machines)
+	for(var/obj/machinery/conveyor/C in REGISTRY_MEMBERS(REGISTRY_MACHINES))
 		if(C.id == id)
 			conveyors += C
 
@@ -320,7 +320,7 @@
 	update()
 
 	// find any switches with same id as this one, and set their positions to match us
-	for(var/obj/machinery/conveyor_switch/S in GLOB.machines)
+	for(var/obj/machinery/conveyor_switch/S in REGISTRY_MEMBERS(REGISTRY_MACHINES))
 		if(S.id == src.id)
 			S.position = position
 			S.update()
@@ -352,7 +352,7 @@
 		return ITEM_INTERACT_BLOCKING
 	id = input
 	conveyors = list()
-	for(var/obj/machinery/conveyor/C in GLOB.machines)
+	for(var/obj/machinery/conveyor/C in REGISTRY_MEMBERS(REGISTRY_MACHINES))
 		if(C.id == id)
 			conveyors += C
 	return ITEM_INTERACT_SUCCESS

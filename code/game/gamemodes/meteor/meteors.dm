@@ -131,10 +131,11 @@ GLOBAL_LIST_INIT(meteors_catastrophic, list(
 	// Multiply this and the hits var to get a rough idea of how penetrating a meteor is.
 	var/wall_power = 100
 
+REGISTRY_MEMBERSHIP(/obj/effect/meteor, REGISTRY_METEORS)
+
 /obj/effect/meteor/Initialize(mapload)
 	. = ..()
 	z_original = z
-	GLOB.meteor_list += src
 	SSmachines.publish_reactive_dependency("meteors")
 	SpinAnimation()
 
@@ -155,7 +156,6 @@ GLOBAL_LIST_INIT(meteors_catastrophic, list(
 
 /obj/effect/meteor/Destroy()
 	walk(src,FALSE) //this cancels the walk_towards() proc
-	GLOB.meteor_list -= src
 	SSmachines.publish_reactive_dependency("meteors")
 	return ..()
 

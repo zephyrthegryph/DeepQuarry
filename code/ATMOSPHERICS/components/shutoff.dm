@@ -1,4 +1,3 @@
-GLOBAL_LIST_EMPTY(shutoff_valves)
 
 /// Wakes the automatic shutoff valves that border `network`, so they can react
 /// to a leak or split there. With no network (a change whose network is not
@@ -12,7 +11,7 @@ GLOBAL_LIST_EMPTY(shutoff_valves)
 		else
 			wake_all_automatic_shutoff_valves()
 		return
-	for(var/obj/machinery/atmospherics/valve/shutoff/valve as anything in GLOB.shutoff_valves)
+	for(var/obj/machinery/atmospherics/valve/shutoff/valve as anything in REGISTRY_MEMBERS(REGISTRY_SHUTOFF_VALVES))
 		if(valve.network_node1 != network && valve.network_node2 != network)
 			continue
 		if(bulk)
@@ -21,7 +20,7 @@ GLOBAL_LIST_EMPTY(shutoff_valves)
 			START_MACHINE_PROCESSING(valve)
 
 /proc/wake_all_automatic_shutoff_valves()
-	for(var/obj/machinery/atmospherics/valve/shutoff/valve as anything in GLOB.shutoff_valves)
+	for(var/obj/machinery/atmospherics/valve/shutoff/valve as anything in REGISTRY_MEMBERS(REGISTRY_SHUTOFF_VALVES))
 		START_MACHINE_PROCESSING(valve)
 
 /obj/machinery/atmospherics/valve/shutoff
@@ -42,14 +41,14 @@ GLOBAL_LIST_EMPTY(shutoff_valves)
 	. = ..()
 	. += "The automatic shutoff circuit is [close_on_leaks ? "enabled" : "disabled"]."
 
+REGISTRY_MEMBERSHIP(/obj/machinery/atmospherics/valve/shutoff, REGISTRY_SHUTOFF_VALVES)
+
 /obj/machinery/atmospherics/valve/shutoff/Initialize(mapload)
 	. = ..()
 	open()
-	GLOB.shutoff_valves += src
 	hide(1)
 
 /obj/machinery/atmospherics/valve/shutoff/Destroy()
-	GLOB.shutoff_valves -= src
 	SSair.pending_automatic_shutoff_valves -= src
 	. = ..()
 

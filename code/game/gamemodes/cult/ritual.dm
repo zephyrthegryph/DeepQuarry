@@ -62,6 +62,8 @@ ADMIN_VERB(check_words, R_ADMIN|R_EVENT, "Check Rune Words", "Check the rune-wor
 
 // self other technology - Communication rune  //was other hear blood
 // join hide technology - stun rune. Rune color: bright pink.
+REGISTRY_MEMBERSHIP(/obj/effect/rune, REGISTRY_RUNES)
+
 /obj/effect/rune/Initialize(mapload)
 	. = ..()
 	blood_image = image(loc = src)
@@ -69,7 +71,6 @@ ADMIN_VERB(check_words, R_ADMIN|R_EVENT, "Check Rune Words", "Check the rune-wor
 	for(var/mob/living/silicon/ai/our_ai in GLOB.player_list)
 		if(our_ai.client)
 			our_ai.client.images += blood_image
-	GLOB.rune_list.Add(src)
 
 /obj/effect/rune/Destroy()
 	for(var/mob/living/silicon/ai/our_ai in GLOB.player_list)
@@ -77,7 +78,6 @@ ADMIN_VERB(check_words, R_ADMIN|R_EVENT, "Check Rune Words", "Check the rune-wor
 			our_ai.client.images -= blood_image
 	qdel(blood_image)
 	blood_image = null
-	GLOB.rune_list.Remove(src)
 	. = ..()
 
 /obj/effect/rune/examine(mob/user)
@@ -326,7 +326,7 @@ ADMIN_VERB(check_words, R_ADMIN|R_EVENT, "Check Rune Words", "Check the rune-wor
 		runerandom()
 	if(iscultist(user))
 		var/C = 0
-		for(var/obj/effect/rune/N in GLOB.rune_list)
+		for(var/obj/effect/rune/N in REGISTRY_MEMBERS(REGISTRY_RUNES))
 			C++
 		if (!istype(user.loc,/turf))
 			to_chat(user, span_warning("You do not have enough space to write a proper rune."))

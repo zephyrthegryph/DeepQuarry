@@ -3,7 +3,7 @@ SUBSYSTEM_DEF(air)
 	dependencies = list(
 		/datum/controller/subsystem/mapping,
 		/datum/controller/subsystem/atoms,
-		// setup_atmos_machinery iterates SSmachines.all_machines, so
+		// setup_atmos_machinery iterates REGISTRY_MEMBERS(REGISTRY_MACHINES), so
 		// SSmachines must finish populating that list before SSair inits.
 		/datum/controller/subsystem/machines,
 	)
@@ -656,12 +656,12 @@ SUBSYSTEM_DEF(air)
 // single-pass init for every map-loaded /obj/machinery/atmospherics.
 // /tg/ ran this off SSair.atmos_machinery (which doubled as the per-tick
 // process queue). On this fork devices process via SSmachines, so we don't
-// need a duplicate registry — SSmachines.all_machines already holds every
+// need a duplicate registry — REGISTRY_MEMBERS(REGISTRY_MACHINES) already holds every
 // /obj/machinery, and /obj/machinery/Initialize populates it during SSatoms.
 // SSair runs after SSatoms (mapping/atoms deps), so by the time this fires
 // every atmos device exists with init_dir() done; it's safe to wire nodes.
 /datum/controller/subsystem/air/proc/setup_atmos_machinery()
-	for (var/obj/machinery/atmospherics/AM in SSmachines.all_machines)
+	for (var/obj/machinery/atmospherics/AM in REGISTRY_MEMBERS(REGISTRY_MACHINES))
 		AM.atmos_init()
 		if(length(GLOB.clients) && TICK_CHECK)
 			stoplag()

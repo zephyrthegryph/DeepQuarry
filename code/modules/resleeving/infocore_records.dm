@@ -111,7 +111,7 @@
 	limb_data.Cut()
 	organ_data.Cut()
 	..()
-	return QDEL_HINT_HARDDEL // For now at least there is no easy way to clear references to this in GLOB.machines etc.
+	return QDEL_HINT_HARDDEL // For now at least there is no easy way to clear references to this in REGISTRY_MEMBERS(REGISTRY_MACHINES) etc.
 
 /datum/transhuman/body_record/proc/init_from_mob(mob/living/carbon/human/M, add_to_db = 0, ckeylock = 0, database_key)
 	ASSERT(!QDELETED(M))

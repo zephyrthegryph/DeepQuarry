@@ -435,7 +435,7 @@
 			preserve = 1
 
 		if(istype(W,/obj/item/implant/health))
-			for(var/obj/machinery/computer/cloning/com in GLOB.machines)
+			for(var/obj/machinery/computer/cloning/com in REGISTRY_MEMBERS(REGISTRY_MACHINES))
 				for(var/datum/dna2/record/R in com.records)
 					if(locate(R.implant) == W)
 						qdel(R)

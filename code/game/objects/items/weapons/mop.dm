@@ -1,4 +1,4 @@
-GLOBAL_LIST_BOILERPLATE(all_mops, /obj/item/mop)
+REGISTRY_MEMBERSHIP(/obj/item/mop, REGISTRY_MOPS)
 
 /*
  * Mop

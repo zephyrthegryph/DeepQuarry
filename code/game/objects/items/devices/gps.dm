@@ -1,4 +1,3 @@
-GLOBAL_LIST_EMPTY(GPS_list)
 
 /obj/item/gps
 	name = "global positioning system"
@@ -29,10 +28,11 @@ GLOBAL_LIST_EMPTY(GPS_list)
 	///Var for attack_self chain
 	var/special_handling = FALSE
 
+REGISTRY_MEMBERSHIP(/obj/item/gps, REGISTRY_GPS)
+
 /obj/item/gps/Initialize(mapload)
 	. = ..()
 	compass = new(src)
-	GLOB.GPS_list += src
 	name = "global positioning system ([gps_tag])"
 	update_holder()
 	update_icon()
@@ -96,7 +96,6 @@ GLOBAL_LIST_EMPTY(GPS_list)
 /obj/item/gps/Destroy()
 	STOP_PROCESSING(SSobj, src)
 	is_in_processing_list = FALSE
-	GLOB.GPS_list -= src
 	update_holder()
 	QDEL_NULL(compass)
 	. = ..()
@@ -232,7 +231,7 @@ GLOBAL_LIST_EMPTY(GPS_list)
 
 	var/z_level_det = using_map.get_map_levels(curr.z, long_range)
 	var/list/gps_list = list()
-	for(var/obj/item/gps/current_gps in GLOB.GPS_list - src)
+	for(var/obj/item/gps/current_gps in REGISTRY_MEMBERS(REGISTRY_GPS) - src)
 
 		if(!can_track(current_gps, z_level_det))
 			continue

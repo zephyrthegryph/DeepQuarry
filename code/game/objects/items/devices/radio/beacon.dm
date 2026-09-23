@@ -5,7 +5,7 @@
 	item_state = "signaler"
 	var/code = "electronic"
 
-GLOBAL_LIST_BOILERPLATE(all_beacons, /obj/item/radio/beacon)
+REGISTRY_MEMBERSHIP(/obj/item/radio/beacon, REGISTRY_BEACONS)
 
 /obj/item/radio/beacon/hear_talk()
 	return

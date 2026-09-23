@@ -58,29 +58,41 @@
 	secure_radio_connections = new
 	if(frequency < RADIO_LOW_FREQ || frequency > RADIO_HIGH_FREQ)
 		frequency = sanitize_frequency(frequency, RADIO_LOW_FREQ, RADIO_HIGH_FREQ)
-	set_frequency(frequency)
-
-	for (var/ch_name in channels)
-		secure_radio_connections[ch_name] = SSradio.add_object(src, GLOB.radiochannels[ch_name],  RADIO_CHAT)
 
 	set_wires(new /datum/wires/radio(src))
 	internal_channels = GLOB.default_internal_channels.Copy()
-	GLOB.listening_objects += src
 
 	if(bluespace_radio && (bs_tx_preload_id || bs_rx_preload_id))
 		return INITIALIZE_HINT_LATELOAD
 
+/// Radio joins (L3): the frequency and channel connections, and hearing.
+/obj/item/radio/on_materialize()
+	. = ..()
+	set_frequency(frequency)
+	for (var/ch_name in channels)
+		secure_radio_connections[ch_name] = SSradio.add_object(src, GLOB.radiochannels[ch_name],  RADIO_CHAT)
+	GLOB.listening_objects += src
+
+/obj/item/radio/on_dematerialize()
+	GLOB.listening_objects -= src
+	if(SSradio)
+		SSradio.remove_object(src, frequency)
+		for (var/ch_name in channels)
+			SSradio.remove_object(src, GLOB.radiochannels[ch_name])
+	radio_connection = null
+	return ..()
+
 /obj/item/radio/LateInitialize()
 	if(bs_tx_preload_id)
 		//Try to find a receiver
-		for(var/obj/machinery/telecomms/receiver/RX in GLOB.telecomms_list)
+		for(var/obj/machinery/telecomms/receiver/RX in REGISTRY_MEMBERS(REGISTRY_TELECOMMS))
 			if(RX.id == bs_tx_preload_id) //Again, bs_tx is the thing to TRANSMIT TO, so a receiver.
 				bs_tx_weakref = WEAKREF(RX)
 				RX.link_radio(src)
 				break
 		//Hmm, howabout an AIO machine
 		if(!bs_tx_weakref)
-			for(var/obj/machinery/telecomms/allinone/AIO in GLOB.telecomms_list)
+			for(var/obj/machinery/telecomms/allinone/AIO in REGISTRY_MEMBERS(REGISTRY_TELECOMMS))
 				if(AIO.id == bs_tx_preload_id)
 					bs_tx_weakref = WEAKREF(AIO)
 					AIO.link_radio(src)
@@ -91,14 +103,14 @@
 	if(bs_rx_preload_id)
 		var/found = 0
 		//Try to find a transmitter
-		for(var/obj/machinery/telecomms/broadcaster/TX in GLOB.telecomms_list)
+		for(var/obj/machinery/telecomms/broadcaster/TX in REGISTRY_MEMBERS(REGISTRY_TELECOMMS))
 			if(TX.id == bs_rx_preload_id) //Again, bs_rx is the thing to RECEIVE FROM, so a transmitter.
 				TX.link_radio(src)
 				found = 1
 				break
 		//Hmm, howabout an AIO machine
 		if(!found)
-			for(var/obj/machinery/telecomms/allinone/AIO in GLOB.telecomms_list)
+			for(var/obj/machinery/telecomms/allinone/AIO in REGISTRY_MEMBERS(REGISTRY_TELECOMMS))
 				if(AIO.id == bs_rx_preload_id)
 					AIO.link_radio(src)
 					found = 1
@@ -109,11 +121,6 @@
 /obj/item/radio/Destroy()
 	qdel(wires)
 	wires = null
-	GLOB.listening_objects -= src
-	if(SSradio)
-		SSradio.remove_object(src, frequency)
-		for (var/ch_name in channels)
-			SSradio.remove_object(src, GLOB.radiochannels[ch_name])
 	bs_tx_weakref = null
 	return ..()
 
@@ -497,11 +504,11 @@ GLOBAL_DATUM(autospeaker, /mob/living/silicon/ai/announcer)
 		signal.transmission_method = TRANSMISSION_SUBSPACE
 
 		//#### Sending the signal to all subspace receivers ####//
-		for(var/obj/machinery/telecomms/receiver/R in GLOB.telecomms_list)
+		for(var/obj/machinery/telecomms/receiver/R in REGISTRY_MEMBERS(REGISTRY_TELECOMMS))
 			R.receive_signal(signal)
 
 		// Allinone can act as receivers.
-		for(var/obj/machinery/telecomms/allinone/R in GLOB.telecomms_list)
+		for(var/obj/machinery/telecomms/allinone/R in REGISTRY_MEMBERS(REGISTRY_TELECOMMS))
 			R.receive_signal(signal)
 
 		// Receiving code can be located in Telecommunications.dm
@@ -525,11 +532,11 @@ GLOBAL_DATUM(autospeaker, /mob/living/silicon/ai/announcer)
 		signal.transmission_method = TRANSMISSION_SUBSPACE
 		signal.data["compression"] = 0
 
-		for(var/obj/machinery/telecomms/receiver/R in GLOB.telecomms_list)
+		for(var/obj/machinery/telecomms/receiver/R in REGISTRY_MEMBERS(REGISTRY_TELECOMMS))
 			R.receive_signal(signal)
 
 		// Allinone can act as receivers.
-		for(var/obj/machinery/telecomms/allinone/R in GLOB.telecomms_list)
+		for(var/obj/machinery/telecomms/allinone/R in REGISTRY_MEMBERS(REGISTRY_TELECOMMS))
 			R.receive_signal(signal)
 
 		if(signal.data["done"] && (pos_z in signal.data["level"]))

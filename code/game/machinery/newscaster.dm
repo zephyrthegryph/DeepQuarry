@@ -99,7 +99,7 @@
 	alert_readers(FC.announcement)
 
 /datum/feed_network/proc/alert_readers(annoncement)
-	for(var/obj/machinery/newscaster/NEWSCASTER in GLOB.allCasters)
+	for(var/obj/machinery/newscaster/NEWSCASTER in REGISTRY_MEMBERS(REGISTRY_CASTERS))
 		NEWSCASTER.newsAlert(annoncement)
 		NEWSCASTER.update_icon()
 
@@ -120,7 +120,6 @@
 
 	// 		PDA.new_news(annoncement)
 
-GLOBAL_LIST_BOILERPLATE(allCasters, /obj/machinery/newscaster)
 /obj/machinery/newscaster
 	name = "newscaster"
 	desc = "A standard newsfeed handler for use on commercial space stations. All the news you absolutely have no use for, in one place!"
@@ -171,9 +170,10 @@ GLOBAL_LIST_BOILERPLATE(allCasters, /obj/machinery/newscaster)
 	name = "Security Newscaster"
 	securityCaster = 1
 
+REGISTRY_MEMBERSHIP(/obj/machinery/newscaster, REGISTRY_CASTERS)
+
 /obj/machinery/newscaster/Initialize(mapload)
 	..()
-	GLOB.allCasters += src
 	unit_no = ++unit_no_cur
 	paper_remaining = 15
 	update_icon()
@@ -184,7 +184,6 @@ GLOBAL_LIST_BOILERPLATE(allCasters, /obj/machinery/newscaster)
 	update_icon()
 
 /obj/machinery/newscaster/Destroy()
-	GLOB.allCasters -= src
 	node = null
 	return ..()
 
@@ -533,7 +532,7 @@ GLOBAL_LIST_BOILERPLATE(allCasters, /obj/machinery/newscaster)
 			var/choice = tgui_alert(ui.user, "Please confirm Wanted Issue removal","Network Security Handler",list("Confirm","Cancel"))
 			if(choice=="Confirm")
 				GLOB.news_network.wanted_issue = null
-				for(var/obj/machinery/newscaster/NEWSCASTER in GLOB.allCasters)
+				for(var/obj/machinery/newscaster/NEWSCASTER in REGISTRY_MEMBERS(REGISTRY_CASTERS))
 					NEWSCASTER.update_icon()
 				set_temp("Wanted issue taken down.", "success", FALSE)
 			return TRUE

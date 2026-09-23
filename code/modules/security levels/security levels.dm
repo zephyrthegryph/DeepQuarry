@@ -69,13 +69,13 @@ GLOBAL_DATUM_INIT(security_announcement_down, /datum/announcement/priority/secur
 				GLOB.security_level = SEC_LEVEL_DELTA
 
 		var/newlevel = get_security_level()
-		for(var/obj/machinery/firealarm/FA in GLOB.machines)
+		for(var/obj/machinery/firealarm/FA in REGISTRY_MEMBERS(REGISTRY_MACHINES))
 			if(FA.z in using_map.contact_levels)
 				FA.set_security_level(newlevel)
-		for(var/obj/machinery/status_display/FA in GLOB.machines)
+		for(var/obj/machinery/status_display/FA in REGISTRY_MEMBERS(REGISTRY_MACHINES))
 			if(FA.z in using_map.contact_levels)
 				FA.on_alert_changed(newlevel)
-		for(var/obj/machinery/holoposter/HP as anything in GLOB.holoposters)
+		for(var/obj/machinery/holoposter/HP as anything in REGISTRY_MEMBERS(REGISTRY_HOLOPOSTERS))
 			HP.update_icon()
 
 		spawn()

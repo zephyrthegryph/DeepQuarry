@@ -28,7 +28,7 @@
 	var/list/data = list()
 	var/list/valves = list()
 
-	for(var/obj/machinery/atmospherics/valve/shutoff/S in GLOB.shutoff_valves)
+	for(var/obj/machinery/atmospherics/valve/shutoff/S in REGISTRY_MEMBERS(REGISTRY_SHUTOFF_VALVES))
 		valves.Add(list(list(
 			"name" = S.name,
 			"enabled" = S.close_on_leaks,

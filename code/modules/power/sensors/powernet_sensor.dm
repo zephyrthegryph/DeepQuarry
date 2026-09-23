@@ -36,7 +36,7 @@
 	auto_set_name()
 	history["supply"] = list()
 	history["demand"] = list()
-	for(var/obj/machinery/computer/power_monitor/PM in GLOB.machines)
+	for(var/obj/machinery/computer/power_monitor/PM in REGISTRY_MEMBERS(REGISTRY_MACHINES))
 		PM.power_monitor?.refresh_sensors()
 		START_MACHINE_PROCESSING(PM)
 
@@ -52,7 +52,7 @@
 		record_timer = null
 	. = ..()
 	// TODO - Switch power_monitor to register deletion events instead of this.
-	for(var/obj/machinery/computer/power_monitor/PM in GLOB.machines)
+	for(var/obj/machinery/computer/power_monitor/PM in REGISTRY_MEMBERS(REGISTRY_MACHINES))
 		if(PM.power_monitor)
 			PM.power_monitor.refresh_sensors()
 			START_MACHINE_PROCESSING(PM)

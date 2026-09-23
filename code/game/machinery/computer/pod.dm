@@ -17,7 +17,7 @@
 	return INITIALIZE_HINT_LATELOAD
 
 /obj/machinery/computer/pod/LateInitialize()
-	for(var/obj/machinery/mass_driver/M in GLOB.machines)
+	for(var/obj/machinery/mass_driver/M in REGISTRY_MEMBERS(REGISTRY_MACHINES))
 		if(M.id == id)
 			connected = M
 			break
@@ -30,19 +30,19 @@
 		to_chat(viewers(null, null),"Cannot locate mass driver connector. Cancelling firing sequence!")
 		return
 
-	for(var/obj/machinery/door/blast/M in GLOB.machines)
+	for(var/obj/machinery/door/blast/M in REGISTRY_MEMBERS(REGISTRY_MACHINES))
 		if(M.id == id)
 			M.open()
 
 	sleep(20)
 
-	for(var/obj/machinery/mass_driver/M in GLOB.machines)
+	for(var/obj/machinery/mass_driver/M in REGISTRY_MEMBERS(REGISTRY_MACHINES))
 		if(M.id == id)
 			M.power = connected.power
 			M.drive()
 
 	sleep(50)
-	for(var/obj/machinery/door/blast/M in GLOB.machines)
+	for(var/obj/machinery/door/blast/M in REGISTRY_MEMBERS(REGISTRY_MACHINES))
 		if(M.id == id)
 			M.close()
 			return
@@ -83,7 +83,7 @@
 
 	switch(action)
 		if("toggle_door")
-			for(var/obj/machinery/door/blast/M in GLOB.machines)
+			for(var/obj/machinery/door/blast/M in REGISTRY_MEMBERS(REGISTRY_MACHINES))
 				if(M.id == id)
 					if(M.density)
 						M.open()
@@ -99,7 +99,7 @@
 			alarm()
 			return TRUE
 		if("test_drive")
-			for(var/obj/machinery/mass_driver/M in GLOB.machines)
+			for(var/obj/machinery/mass_driver/M in REGISTRY_MEMBERS(REGISTRY_MACHINES))
 				if(M.id == id)
 					M.power = connected.power
 					M.drive()

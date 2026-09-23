@@ -185,6 +185,8 @@
 	var/list/micro_utility_equipment = list()
 	var/list/micro_weapon_equipment = list()
 
+REGISTRY_MEMBERSHIP(/obj/mecha, REGISTRY_MECHAS)
+
 /obj/mecha/Initialize(mapload)
 	. = ..()
 
@@ -238,7 +240,6 @@
 	removeVerb(/obj/mecha/verb/disconnect_from_port)
 	src.mecha_log_message("[src.name] created.")
 	loc.Entered(src)
-	GLOB.mechas_list += src //global mech list
 
 /obj/mecha/drain_power(drain_check)
 
@@ -333,7 +334,6 @@
 
 	STOP_PROCESSING(SSobj, src)
 
-	GLOB.mechas_list -= src //global mech list
 	. = ..()
 
 // The main process loop to replace the ancient global iterators.

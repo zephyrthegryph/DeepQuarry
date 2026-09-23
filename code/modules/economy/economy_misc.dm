@@ -23,7 +23,6 @@ GLOBAL_LIST_EMPTY_TYPED(department_accounts, /datum/money_account)
 GLOBAL_VAR_INIT(num_financial_terminals, 1)
 GLOBAL_VAR_INIT(next_account_number, 0)
 GLOBAL_LIST_EMPTY(all_money_accounts)
-GLOBAL_LIST_EMPTY(transaction_devices)
 GLOBAL_VAR_INIT(economy_init, 0)
 
 /proc/setup_economy()
@@ -46,10 +45,10 @@ GLOBAL_VAR_INIT(economy_init, 0)
 	create_department_account("Vendor")
 	GLOB.vendor_account = GLOB.department_accounts["Vendor"]
 
-	for(var/obj/item/retail_scanner/RS in GLOB.transaction_devices)
+	for(var/obj/item/retail_scanner/RS in REGISTRY_MEMBERS(REGISTRY_TRANSACTION_DEVICES))
 		if(RS.account_to_connect)
 			RS.linked_account = GLOB.department_accounts[RS.account_to_connect]
-	for(var/obj/machinery/cash_register/CR in GLOB.transaction_devices)
+	for(var/obj/machinery/cash_register/CR in REGISTRY_MEMBERS(REGISTRY_TRANSACTION_DEVICES))
 		if(CR.account_to_connect)
 			CR.linked_account = GLOB.department_accounts[CR.account_to_connect]
 

@@ -44,10 +44,11 @@
 	var/list/active_repair_steps = list()
 
 
+REGISTRY_MEMBERSHIP(/obj/structure/event_collector_blocker, REGISTRY_EVENT_COLLECTOR_BLOCKERS)
+
 /obj/structure/event_collector_blocker/Initialize(mapload)
 	. = ..()
 
-	GLOB.event_collector_blockers |= src
 
 	if(GLOB.event_collector_associations == null)
 		GLOB.event_collector_associations = list()
@@ -59,7 +60,6 @@
 
 /obj/structure/event_collector_blocker/Destroy()
 
-	GLOB.event_collector_blockers -= src
 
 	if(GLOB.event_collector_associations[blocker_channel])
 		GLOB.event_collector_associations[blocker_channel] -= src

@@ -22,7 +22,7 @@
 /obj/machinery/computer/ship/sensors/proc/find_sensors()
 	if(!linked)
 		return
-	for(var/obj/machinery/shipsensors/S in GLOB.machines)
+	for(var/obj/machinery/shipsensors/S in REGISTRY_MEMBERS(REGISTRY_MACHINES))
 		if(linked.check_ownership(S))
 			sensors = S
 			refresh_sensor_light()
@@ -157,7 +157,7 @@
 
 /obj/machinery/shipsensors/Destroy()
 	update_use_power(USE_POWER_OFF)
-	for(var/obj/machinery/computer/ship/sensors/console in GLOB.machines)
+	for(var/obj/machinery/computer/ship/sensors/console in REGISTRY_MEMBERS(REGISTRY_MACHINES))
 		if(console.sensors != src)
 			continue
 		console.sensors = null
@@ -165,7 +165,7 @@
 	return ..()
 
 /obj/machinery/shipsensors/proc/refresh_linked_consoles()
-	for(var/obj/machinery/computer/ship/sensors/console in GLOB.machines)
+	for(var/obj/machinery/computer/ship/sensors/console in REGISTRY_MEMBERS(REGISTRY_MACHINES))
 		if(console.sensors == src)
 			console.refresh_sensor_light()
 

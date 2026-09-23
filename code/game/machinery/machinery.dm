@@ -140,7 +140,6 @@ Class Procs:
 		ensure_material_construction(MATERIAL_APPLICATION_MACHINE_PART, 5 * SHEET_MATERIAL_AMOUNT)
 	if(isnum(d))
 		set_dir(d)
-	SSmachines.all_machines += src
 	if(ispath(circuit))
 		circuit = new circuit(src)
 	if(!speed_process)
@@ -156,7 +155,6 @@ Class Procs:
 		STOP_MACHINE_PROCESSING(src)
 	else
 		STOP_PROCESSING(SSfastprocess, src)
-	SSmachines.all_machines -= src
 	// Constructed machinery owns its installed board. Clear the typed reference
 	// immediately when destruction starts; otherwise the board spends an extra GC
 	// generation retained by an already-deleting machine (and reference tracking

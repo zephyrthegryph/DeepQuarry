@@ -197,7 +197,7 @@
  * Crematorium
  */
 
-GLOBAL_LIST_BOILERPLATE(all_crematoriums, /obj/structure/morgue/crematorium)
+REGISTRY_MEMBERSHIP(/obj/structure/morgue/crematorium, REGISTRY_CREMATORIUMS)
 
 /obj/structure/morgue/crematorium
 	name = "crematorium"
@@ -343,7 +343,7 @@ GLOBAL_LIST_BOILERPLATE(all_crematoriums, /obj/structure/morgue/crematorium)
 	if(..())
 		return
 	if(src.allowed(user))
-		for (var/obj/structure/morgue/crematorium/C in GLOB.all_crematoriums)
+		for (var/obj/structure/morgue/crematorium/C in REGISTRY_MEMBERS(REGISTRY_CREMATORIUMS))
 			if (C.id == id)
 				if (!C.cremating)
 					C.cremate(null, user)

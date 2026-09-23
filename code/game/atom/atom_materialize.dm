@@ -57,13 +57,13 @@
 /atom/proc/on_materialize()
 	SHOULD_CALL_PARENT(TRUE)
 	SHOULD_NOT_SLEEP(TRUE)
-	return
+	join_registries() // L3: code/__defines/registries.dm
 
 /// The exact inverse of on_materialize(). See the top of this file.
 /atom/proc/on_dematerialize()
 	SHOULD_CALL_PARENT(TRUE)
 	SHOULD_NOT_SLEEP(TRUE)
-	return
+	leave_registries() // L3: code/__defines/registries.dm
 
 /// Creates `path` at `loc` and runs its Initialize() without materializing it.
 /// Extra arguments go to Initialize(). The result is a sandboxed object: it has

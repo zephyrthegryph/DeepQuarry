@@ -1,5 +1,5 @@
-GLOBAL_LIST_BOILERPLATE(all_darkportal_hubs, /obj/structure/dark_portal/hub)
-GLOBAL_LIST_BOILERPLATE(all_darkportal_minions, /obj/structure/dark_portal/minion)
+REGISTRY_MEMBERSHIP(/obj/structure/dark_portal/hub, REGISTRY_DARKPORTAL_HUBS)
+REGISTRY_MEMBERSHIP(/obj/structure/dark_portal/minion, REGISTRY_DARKPORTAL_MINIONS)
 /obj/structure/dark_portal
 	name = "Dark portal"
 	icon = 'icons/obj/shadekin_portal.dmi'
@@ -65,12 +65,12 @@ GLOBAL_LIST_BOILERPLATE(all_darkportal_minions, /obj/structure/dark_portal/minio
 			if(!confirm || confirm == "Cancel")
 				return
 		var/list/L = list()
-		for(var/obj/structure/dark_portal/hub/H in GLOB.all_darkportal_hubs)
+		for(var/obj/structure/dark_portal/hub/H in REGISTRY_MEMBERS(REGISTRY_DARKPORTAL_HUBS))
 			if(H == src)
 				L["This Portal"] = H
 			else
 				L[H.name] = H
-		for(var/obj/structure/dark_portal/minion/M in GLOB.all_darkportal_minions)
+		for(var/obj/structure/dark_portal/minion/M in REGISTRY_MEMBERS(REGISTRY_DARKPORTAL_MINIONS))
 			var/tmpname = "Dark Portal ([get_area(M)])"
 			L[tmpname] = M
 		var/desc = tgui_input_list(user, "Please select a hub portal to connect to.", "Portal Menu", L)
@@ -158,19 +158,19 @@ GLOBAL_LIST_BOILERPLATE(all_darkportal_minions, /obj/structure/dark_portal/minio
 		if(SK.shadekin_get_energy() < 10)
 			to_chat(user, span_warning("Not enough energy to open up the portal! (10 required)"))
 			return
-		if(!LAZYLEN(GLOB.all_darkportal_hubs))
+		if(!LAZYLEN(REGISTRY_MEMBERS(REGISTRY_DARKPORTAL_HUBS)))
 			to_chat(user, span_warning("No hub portals exist!"))
 			return
-		if(LAZYLEN(GLOB.all_darkportal_hubs) == 1)
+		if(LAZYLEN(REGISTRY_MEMBERS(REGISTRY_DARKPORTAL_HUBS)) == 1)
 			SK.shadekin_adjust_energy(-10)
-			var/obj/structure/dark_portal/target = GLOB.all_darkportal_hubs[1]
+			var/obj/structure/dark_portal/target = REGISTRY_MEMBERS(REGISTRY_DARKPORTAL_HUBS)[1]
 			locked = target
 			locked_name = target.name
 			icon_state = "minion1"
 			addtimer(CALLBACK(src, PROC_REF(check_to_close),target), 5 MINUTES, TIMER_DELETE_ME)
 			return
 		var/list/L = list()
-		for(var/obj/structure/dark_portal/hub/H in GLOB.all_darkportal_hubs)
+		for(var/obj/structure/dark_portal/hub/H in REGISTRY_MEMBERS(REGISTRY_DARKPORTAL_HUBS))
 			L[H.name] = H
 		var/desc = tgui_input_list(user, "Please select a hub portal to connect to.", "Portal Menu", L)
 		if(!desc)

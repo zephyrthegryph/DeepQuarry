@@ -2814,8 +2814,8 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_air_snapshots)
 
 /datum/unit_test/dq_sleeping_apc_load_reservation/Run()
 	var/datum/powernet/P = new
-	TEST_ASSERT(length(GLOB.apcs), "tiny map has no APC for reservation test")
-	var/obj/machinery/power/apc/A = GLOB.apcs[1]
+	TEST_ASSERT(length(REGISTRY_MEMBERS(REGISTRY_APCS)), "tiny map has no APC for reservation test")
+	var/obj/machinery/power/apc/A = REGISTRY_MEMBERS(REGISTRY_APCS)[1]
 	P.reserve_sleeping_apc_load(A, 1250)
 	TEST_ASSERT_EQUAL(P.sleeping_apc_load_total, 1250, \
 		"powernet did not retain sleeping APC demand")
@@ -2845,7 +2845,7 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_air_snapshots)
 
 /datum/unit_test/dq_stable_full_apc_hibernates/Run()
 	var/obj/machinery/power/apc/A
-	for(var/obj/machinery/power/apc/candidate as anything in GLOB.apcs)
+	for(var/obj/machinery/power/apc/candidate as anything in REGISTRY_MEMBERS(REGISTRY_APCS))
 		if(candidate.terminal?.powernet && candidate.cell)
 			A = candidate
 			break
@@ -4945,7 +4945,7 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	var/obj/machinery/camera/network/engine/test_camera = new(T)
 	test_camera.update_coverage(1)
 	qdel(test_camera)
-	TEST_ASSERT(!(test_camera in GLOB.cameranet.cameras), "deleted camera remained in the global camera registry")
+	TEST_ASSERT(!(test_camera in REGISTRY_MEMBERS(REGISTRY_CAMERAS)), "deleted camera remained in the global camera registry")
 	for(var/chunk_key in GLOB.cameranet.chunks)
 		var/datum/chunk/camera/chunk = GLOB.cameranet.chunks[chunk_key]
 		TEST_ASSERT(!(test_camera in chunk.cameras), "deleted camera remained retained by camera chunk [chunk_key]")

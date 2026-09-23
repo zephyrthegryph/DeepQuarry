@@ -1194,7 +1194,7 @@ About the new airlock wires panel:
 	. = ..()
 
 	if(closeOtherId != null)
-		for (var/obj/machinery/door/airlock/A in GLOB.machines)
+		for (var/obj/machinery/door/airlock/A in REGISTRY_MEMBERS(REGISTRY_MACHINES))
 			if(A.closeOtherId == closeOtherId && A != src)
 				closeOther = A
 				break

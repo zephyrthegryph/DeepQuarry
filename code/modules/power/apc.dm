@@ -1,4 +1,3 @@
-GLOBAL_LIST_EMPTY(apcs)
 
 // the Area Power Controller (APC), formerly Power Distribution Unit (PDU)
 // one per area, needs wire connection to power network through a terminal
@@ -171,10 +170,11 @@ GLOBAL_LIST_EMPTY(apcs)
 // Lifecycle
 // ─────────────────────────────────────────────────────────────────────────────
 
+REGISTRY_MEMBERSHIP(/obj/machinery/power/apc, REGISTRY_APCS)
+
 /obj/machinery/power/apc/Initialize(mapload, ndir, building)
 	. = ..()
 	set_wires(new /datum/wires/apc(src))
-	GLOB.apcs += src
 
 	power_distributor = new /datum/apc_power_distributor(src)
 	icon_renderer     = new /datum/apc_icon_renderer()
@@ -203,7 +203,6 @@ GLOBAL_LIST_EMPTY(apcs)
 	update()
 
 /obj/machinery/power/apc/Destroy()
-	GLOB.apcs -= src
 	if(charging_wake_timer)
 		deltimer(charging_wake_timer)
 		charging_wake_timer = null

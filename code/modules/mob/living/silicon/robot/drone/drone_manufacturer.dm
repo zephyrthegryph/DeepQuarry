@@ -34,13 +34,13 @@
 	fabricator_tag = "Upper Level Mining"
 	drone_type = /mob/living/silicon/robot/drone/mining
 
+REGISTRY_MEMBERSHIP(/obj/machinery/drone_fabricator, REGISTRY_DRONE_FABRICATORS)
+
 /obj/machinery/drone_fabricator/Initialize(mapload)
 	. = ..()
-	GLOB.all_drone_fabricators += src
 
 
 /obj/machinery/drone_fabricator/Destroy()
-	GLOB.all_drone_fabricators -= src
 	. = ..()
 
 /obj/machinery/drone_fabricator/power_change()

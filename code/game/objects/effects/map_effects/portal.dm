@@ -1,4 +1,3 @@
-GLOBAL_LIST_EMPTY(all_portal_masters)
 
 /*
 
@@ -145,8 +144,9 @@ when portals are shortly lived, or when portals are made to be obvious with spec
 	var/portal_id = "test" // For a portal to be made, both the A and B sides need to share the same ID value.
 	var/list/portal_lines = list()
 
+REGISTRY_MEMBERSHIP(/obj/effect/map_effect/portal/master, REGISTRY_PORTAL_MASTERS)
+
 /obj/effect/map_effect/portal/master/Initialize(mapload)
-	GLOB.all_portal_masters += src
 	find_lines()
 	..()
 	return INITIALIZE_HINT_LATELOAD
@@ -157,7 +157,6 @@ when portals are shortly lived, or when portals are made to be obvious with spec
 	apply_offset()
 
 /obj/effect/map_effect/portal/master/Destroy()
-	GLOB.all_portal_masters -= src
 	for(var/thing in portal_lines)
 		qdel(thing)
 	return ..()
@@ -178,7 +177,7 @@ when portals are shortly lived, or when portals are made to be obvious with spec
 
 // Connects both sides of a portal together.
 /obj/effect/map_effect/portal/master/proc/find_counterparts()
-	for(var/obj/effect/map_effect/portal/master/M as anything in GLOB.all_portal_masters)
+	for(var/obj/effect/map_effect/portal/master/M as anything in REGISTRY_MEMBERS(REGISTRY_PORTAL_MASTERS))
 		if(M == src)
 			continue
 		if(M.counterpart)

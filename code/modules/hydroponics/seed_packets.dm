@@ -1,6 +1,6 @@
 GLOBAL_LIST_EMPTY(plant_seed_sprites)
 
-GLOBAL_LIST_BOILERPLATE(all_seed_packs, /obj/item/seeds)
+REGISTRY_MEMBERSHIP(/obj/item/seeds, REGISTRY_SEED_PACKS)
 
 //Seed packet object/procs.
 /obj/item/seeds

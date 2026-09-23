@@ -1,6 +1,4 @@
 GLOBAL_LIST_INIT(event_collector_associations,list())
-GLOBAL_LIST_INIT(event_collectors,list()) //for the verbs
-GLOBAL_LIST_INIT(event_collector_blockers,list()) //ditto
 
 
 /obj/structure/event_collector //set anchored, solid, etc to taste.
@@ -61,14 +59,14 @@ GLOBAL_LIST_INIT(event_collector_blockers,list()) //ditto
 	var/list/active_recipe //volatile, when given an item it removes it
 	var/current_step = 0 //current step for icon states
 
+REGISTRY_MEMBERSHIP(/obj/structure/event_collector, REGISTRY_EVENT_COLLECTORS)
+
 /obj/structure/event_collector/Initialize(mapload)
 	. = ..()
-	GLOB.event_collectors |= src
 	START_PROCESSING(SSobj, src)
 
 /obj/structure/event_collector/Destroy()
 	STOP_PROCESSING(SSobj, src)
-	GLOB.event_collectors -= src
 	. = ..()
 
 

@@ -11,7 +11,7 @@ GLOBAL_VAR_INIT(hadevent, 0)
 	//command_alert("Unidentified lifesigns detected coming aboard [station_name()]. Secure any exterior access, including ducting and ventilation.", "Lifesign Alert")
 	// play_simple_announcement(world, ANNOUNCER_MSG_UNIDENTIFIED_LIFESIGNS)
 	var/list/vents = list()
-	for(var/obj/machinery/atmospherics/unary/vent_pump/temp_vent in GLOB.machines)
+	for(var/obj/machinery/atmospherics/unary/vent_pump/temp_vent in REGISTRY_MEMBERS(REGISTRY_MACHINES))
 		if(!temp_vent.welded && temp_vent.network && (temp_vent.loc.z in using_map.station_levels))
 			if(temp_vent.network.normal_members.len > 50) // Stops Aliens getting stuck in small networks. See: Security, Virology
 				vents += temp_vent
@@ -37,7 +37,7 @@ GLOBAL_VAR_INIT(hadevent, 0)
 /proc/high_radiation_event()
 
 /* // Haha, this is way too laggy. I'll keep the prison break though.
-	for(var/obj/machinery/light/L in GLOB.machines)
+	for(var/obj/machinery/light/L in REGISTRY_MEMBERS(REGISTRY_MACHINES))
 		if(isNotStationLevel(L.z)) continue
 		L.flicker(50)
 
@@ -138,7 +138,7 @@ GLOBAL_VAR_INIT(hadevent, 0)
 				apc.overload_lighting()
 
 	else
-		for(var/obj/machinery/power/apc/apc in GLOB.apcs)
+		for(var/obj/machinery/power/apc/apc in REGISTRY_MEMBERS(REGISTRY_APCS))
 			apc.overload_lighting()
 
 	return
@@ -249,7 +249,7 @@ Would like to add a law like "Law x is _______" where x = a number, and _____ is
 					M.add_ion_law("THE STATION IS [who2pref] [who2]")
 /*
 	if(botEmagChance)
-		for(var/mob/living/bot/bot in GLOB.machines)
+		for(var/mob/living/bot/bot in REGISTRY_MEMBERS(REGISTRY_MACHINES))
 			if(prob(botEmagChance))
 				bot.emag_act(1)
 */
@@ -271,14 +271,14 @@ Would like to add a law like "Law x is _______" where x = a number, and _____ is
 		to_world("Finished processing APCs. Processed: [apcnum]")
 	spawn(0)
 		to_world("Started processing SMES")
-		for (var/obj/machinery/power/smes/SMES in GLOB.smeses)
+		for (var/obj/machinery/power/smes/SMES in REGISTRY_MEMBERS(REGISTRY_SMES))
 			if(SMES.z in station_levels)
 				SMES.ion_act()
 				smesnum++
 		to_world("Finished processing SMES. Processed: [smesnum]")
 	spawn(0)
 		to_world("Started processing AIRLOCKS")
-		for (var/obj/machinery/door/airlock/D in GLOB.machines)
+		for (var/obj/machinery/door/airlock/D in REGISTRY_MEMBERS(REGISTRY_MACHINES))
 			if(D.z in station_levels)
 				//if(length(D.req_access) > 0 && !(12 in D.req_access)) //not counting general access and maintenance airlocks
 				airlocknum++
@@ -287,7 +287,7 @@ Would like to add a law like "Law x is _______" where x = a number, and _____ is
 		to_world("Finished processing AIRLOCKS. Processed: [airlocknum]")
 	spawn(0)
 		to_world("Started processing FIREDOORS")
-		for (var/obj/machinery/door/firedoor/D in GLOB.machines)
+		for (var/obj/machinery/door/firedoor/D in REGISTRY_MEMBERS(REGISTRY_MACHINES))
 			if(D.z in station_levels)
 				firedoornum++;
 				spawn(0)

@@ -184,7 +184,7 @@
 // Parameters: None
 // Description: Helper proc to get a reference to an Exonet node.
 /proc/get_exonet_node()
-	for(var/obj/machinery/exonet_node/E in GLOB.machines)
+	for(var/obj/machinery/exonet_node/E in REGISTRY_MEMBERS(REGISTRY_MACHINES))
 		if(E.on)
 			return E
 

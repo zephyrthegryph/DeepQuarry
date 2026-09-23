@@ -772,7 +772,7 @@ ADMIN_VERB(despawn_player, R_ADMIN|R_EVENT, "Cryo Player", "Removes a player fro
 	var/list/human_cryopods = list()
 	var/list/robot_cryopods = list()
 
-	for(var/obj/machinery/cryopod/selected_cryopod in GLOB.machines)
+	for(var/obj/machinery/cryopod/selected_cryopod in REGISTRY_MEMBERS(REGISTRY_MACHINES))
 		if(!selected_cryopod.control_computer)
 			continue //Broken pod w/o computer, move on.
 

@@ -113,6 +113,8 @@ GLOBAL_LIST_INIT(possible_cable_coil_colours, list(
 /obj/structure/cable/white
 	color = COLOR_WHITE
 
+REGISTRY_MEMBERSHIP(/obj/structure/cable, REGISTRY_CABLES)
+
 /obj/structure/cable/Initialize(mapload)
 	. = ..()
 	ensure_material_construction(MATERIAL_APPLICATION_CABLE)
@@ -127,7 +129,6 @@ GLOBAL_LIST_INIT(possible_cable_coil_colours, list(
 
 	var/turf/T = src.loc			// hide if turf is not intact
 	if(level==1) hide(!T.is_plating())
-	GLOB.cable_list += src //add it to the global cable list
 
 
 /obj/structure/cable/Destroy()
@@ -141,7 +142,6 @@ GLOBAL_LIST_INIT(possible_cable_coil_colours, list(
 	// Null the ref in case cut_cable_from_powernet left it set (e.g. the
 	// powernet was qdel'd but the cable's var wasn't cleared by remove_cable).
 	powernet = null
-	GLOB.cable_list -= src
 	return ..()									// then go ahead and delete the cable
 
 /obj/structure/cable/examine(mob/user)

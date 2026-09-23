@@ -46,7 +46,6 @@ SUBSYSTEM_DEF(machines)
 	var/last_pump_commit_operations = 0
 	var/last_pump_commit_turfs = 0
 
-	var/list/all_machines = list()
 	var/list/hibernating_vents = list()
 	var/list/sleeping_gas_devices = list()
 	/// Rust gas arena ID -> assoc list of weakrefs for sleeping gas-dependent devices.
@@ -293,7 +292,7 @@ SUBSYSTEM_DEF(machines)
 	for(var/datum/powernet/PN as anything in powernets)
 		qdel(PN)
 	powernets.Cut()
-	setup_powernets_for_cables(GLOB.cable_list)
+	setup_powernets_for_cables(REGISTRY_MEMBERS(REGISTRY_CABLES))
 
 /datum/controller/subsystem/machines/proc/setup_powernets_for_cables(list/cables)
 	for(var/obj/structure/cable/PC as anything in cables)
@@ -694,7 +693,6 @@ SUBSYSTEM_DEF(machines)
 			log_world("## ERROR Found wrong type during SSmachinery recovery: list=SSmachines.powerobjs, item=[D], type=[D?.type]")
 			SSmachines.powerobjs -= D
 
-	all_machines = SSmachines.all_machines
 	processing_machines = SSmachines.processing_machines
 	powernets = SSmachines.powernets
 	active_powernets = SSmachines.active_powernets

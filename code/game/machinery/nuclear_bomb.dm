@@ -504,12 +504,10 @@ GLOBAL_VAR(bomb_set)
 
 #undef NUKERANGE
 
-/obj/item/disk/nuclear/Initialize(mapload)
-	. = ..()
-	GLOB.nuke_disks += src
+REGISTRY_MEMBERSHIP(/obj/item/disk/nuclear, REGISTRY_NUKE_DISKS)
 
 /obj/item/disk/nuclear/Destroy()
-	if(!GLOB.nuke_disks.len && GLOB.blobstart.len > 0)
+	if(!REGISTRY_COUNT(REGISTRY_NUKE_DISKS) && GLOB.blobstart.len > 0)
 		var/obj/D = new /obj/item/disk/nuclear(pick(GLOB.blobstart))
 		message_admins("[src], the last authentication disk, has been destroyed. Spawning [D] at ([D.x], [D.y], [D.z]).")
 		log_game("[src], the last authentication disk, has been destroyed. Spawning [D] at ([D.x], [D.y], [D.z]).")

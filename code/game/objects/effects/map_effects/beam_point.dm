@@ -1,4 +1,3 @@
-GLOBAL_LIST_EMPTY(all_beam_points)
 
 // Creates and manages a beam attached to itself and another beam_point.
 // You can do cool things with these such as moving the beam_point to move the beam, turning them on and off on a timer, triggered by external input, and more.
@@ -31,8 +30,9 @@ GLOBAL_LIST_EMPTY(all_beam_points)
 	var/beam_type = /obj/effect/ebeam // The type of beam. Default has no special properties. Some others may do things like hurt things touching it.
 	var/beam_sleep_time = 3 // How often the beam updates visually. Suggested to leave this alone, 3 is already fast.
 
+REGISTRY_MEMBERSHIP(/obj/effect/map_effect/beam_point, REGISTRY_BEAM_POINTS)
+
 /obj/effect/map_effect/beam_point/Initialize(mapload)
-	GLOB.all_beam_points += src
 	if(make_beams_on_init)
 		create_beams()
 	if(use_timer)
@@ -42,7 +42,6 @@ GLOBAL_LIST_EMPTY(all_beam_points)
 /obj/effect/map_effect/beam_point/Destroy()
 	destroy_all_beams()
 	use_timer = FALSE
-	GLOB.all_beam_points -= src
 	return ..()
 
 // This is the top level proc to make the magic happen.
@@ -58,7 +57,7 @@ GLOBAL_LIST_EMPTY(all_beam_points)
 
 // Finds a suitable beam point.
 /obj/effect/map_effect/beam_point/proc/seek_beam_point()
-	for(var/obj/effect/map_effect/beam_point/point in GLOB.all_beam_points)
+	for(var/obj/effect/map_effect/beam_point/point in REGISTRY_MEMBERS(REGISTRY_BEAM_POINTS))
 		if(id != point.id)
 			continue // Not linked together by ID.
 		if(has_active_beam(point))
