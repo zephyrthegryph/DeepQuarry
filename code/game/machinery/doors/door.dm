@@ -355,15 +355,12 @@
 			to_chat(user, span_warning("You will need more plasteel to reinforce \the [src]."))
 			return ITEM_INTERACT_BLOCKING
 
-		var/obj/item/weldingtool/welder = tool.get_welder()
-		if(welder.remove_fuel(0,user))
-			to_chat(user, span_notice("You start welding the plasteel into place."))
-			playsound(src, welder.usesound, 50, 1)
-			if(do_after(user, 1 SECOND * welder.toolspeed, target = src) && welder && welder.isOn())
-				to_chat(user, span_notice("You finish reinforcing \the [src]."))
-				heat_proof = TRUE
-				update_icon()
-				reinforcing = 0
+		if(use_tool(user, tool, src, delay = 1 SECOND, quality = TOOL_WELDER, volume = 50, amount = 0,
+				message_self = "You start welding the plasteel into place."))
+			to_chat(user, span_notice("You finish reinforcing \the [src]."))
+			heat_proof = TRUE
+			update_icon()
+			reinforcing = 0
 		return ITEM_INTERACT_SUCCESS
 
 	if(get_integrity() < max_integrity)
@@ -371,16 +368,12 @@
 			to_chat(user, span_warning("\The [src] must be closed before you can repair it."))
 			return ITEM_INTERACT_BLOCKING
 
-		var/obj/item/weldingtool/welder = tool.get_welder()
-		if(welder.remove_fuel(0,user))
-			to_chat(user, span_notice("You start to fix dents and repair \the [src]."))
-			playsound(src, welder.usesound, 50, 1)
-			var/repairtime = max_integrity - get_integrity()
-			if(do_after(user, repairtime * welder.toolspeed, target = src) && welder && welder.isOn())
-				to_chat(user, span_notice("You finish repairing the damage to \the [src]."))
-				repair_damage(max_integrity)
-				stat &= ~BROKEN
-				update_icon()
+		var/repairtime = max_integrity - get_integrity()
+		if(use_tool(user, tool, src, delay = repairtime, quality = TOOL_WELDER, volume = 50, amount = 0,
+				message_self = "You start to fix dents and repair \the [src]."))
+			to_chat(user, span_notice("You finish repairing the damage to \the [src]."))
+			repair_damage(max_integrity)
+			atom_fix()
 		return ITEM_INTERACT_SUCCESS
 	return NONE
 
@@ -425,33 +418,21 @@
 
 /obj/machinery/door/atom_break(damage_flag)
 	. = ..()
-	set_broken()
-
-/obj/machinery/door/atom_fix()
-	. = ..()
-	stat &= ~BROKEN
-	update_icon()
+	if(.)
+		on_broken()
 
 
 /obj/machinery/door/examine(mob/user)
 	. = ..()
 	if(stat & BROKEN)
 		. += "It is broken!"
-	else if(get_integrity() < max_integrity / 4)
-		. += "It looks like it's about to break!"
-	else if(get_integrity() < max_integrity / 2)
-		. += "It looks seriously damaged!"
-	else if(get_integrity() < max_integrity * 3/4)
-		. += "It shows signs of damage!"
 
 
-/obj/machinery/door/proc/set_broken()
-	stat |= BROKEN
+/// What a door does when it breaks, after the base machinery break.
+/obj/machinery/door/proc/on_broken()
 	for (var/mob/O in viewers(src, null))
 		if ((O.client && !( O.blinded )))
 			O.show_message("[name] breaks!" )
-	update_icon()
-	return
 
 
 /obj/machinery/door/emp_act(severity, recursive)

@@ -48,8 +48,11 @@
 	icon = 'icons/inventory/ears/item.dmi'
 	w_class = ITEMSIZE_TINY
 	slot_flags = SLOT_EARS
-	species_restricted = list(SPECIES_SKRELL)
 	resistance_flags = FIRE_PROOF
+
+/obj/item/clothing/ears/skrell/fit_constraint()
+	var/list/bodytypes = list(SPECIES_SKRELL)
+	return list(REQ_FITS_BODYTYPES(bodytypes))
 
 /obj/item/clothing/ears/skrell/chain
 	name = "Gold headtail chains"

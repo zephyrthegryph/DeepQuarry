@@ -331,7 +331,8 @@
 	var/datum/form/F = H.current_form()
 	if(F)
 		acc = body_factor_accumulate(acc, F.factors)
-	for(var/obj/item/I in list(H.back, H.belt, H.l_ear, H.r_ear, H.glasses, H.gloves, H.head, H.shoes, H.wear_id, H.wear_mask, H.wear_suit, H.w_uniform, H.s_store))
+	// The worn slots (BODY_SLOT_WORN, code/modules/body/slots.dm): the same set the worn protection cache reads.
+	for(var/obj/item/I as anything in H.body_slot_items(BODY_SLOT_WORN))
 		if(I.worn_factors)
 			acc = body_factor_accumulate(acc, I.worn_factors)
 	return acc

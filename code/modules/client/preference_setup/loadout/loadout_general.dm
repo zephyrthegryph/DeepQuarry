@@ -4,7 +4,7 @@
 
 /datum/gear/plushieteshcolor/New()
 	..()
-	gear_tweaks += GLOB.gear_tweak_free_color_choice
+	LAZYADD(gear_tweaks, GLOB.gear_tweak_free_color_choice)
 
 /datum/gear/medication
 	display_name = "medication selection"
@@ -23,4 +23,4 @@
 	"Pill Bottle (Bliss)" = /obj/item/storage/pill_bottle/happy,
 	"Pill Bottle (Aphrodisiac)" = /obj/item/storage/pill_bottle/aphrodisiac
 	)
-	gear_tweaks += new/datum/gear_tweak/path(medications)
+	LAZYADD(gear_tweaks, new/datum/gear_tweak/path(medications))

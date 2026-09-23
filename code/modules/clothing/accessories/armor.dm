@@ -13,15 +13,15 @@
 /obj/item/clothing/accessory/armor/on_attached(obj/item/clothing/S, mob/user)
 	if(ishuman(user))
 		var/mob/living/carbon/human/H = user
-		if(H.wear_suit == S)
-			if((body_parts_covered & ARMS) && istype(H.gloves, /obj/item/clothing))
-				var/obj/item/clothing/G = H.gloves
+		if(H.get_equipped_item(SLOT_ID_SUIT) == S)
+			if((body_parts_covered & ARMS) && istype(H.get_equipped_item(SLOT_ID_GLOVES), /obj/item/clothing))
+				var/obj/item/clothing/G = H.get_equipped_item(SLOT_ID_GLOVES)
 				if(G.body_parts_covered & ARMS)
 					to_chat(H, span_warning("You can't wear \the [src] with \the [G], it's in the way."))
 					S.accessories -= src
 					return
-			else if((body_parts_covered & LEGS) && istype(H.shoes, /obj/item/clothing))
-				var/obj/item/clothing/Sh = H.shoes
+			else if((body_parts_covered & LEGS) && istype(H.get_equipped_item(SLOT_ID_SHOES), /obj/item/clothing))
+				var/obj/item/clothing/Sh = H.get_equipped_item(SLOT_ID_SHOES)
 				if(Sh.body_parts_covered & LEGS)
 					to_chat(H, span_warning("You can't wear \the [src] with \the [Sh], it's in the way."))
 					S.accessories -= src

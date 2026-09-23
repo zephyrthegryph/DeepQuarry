@@ -3,9 +3,9 @@
 	name = "ref pin"
 
 /datum/integrated_io/ref/ask_for_pin_data(mob/user, obj/item/I)
-	if(istype(I, /obj/item/multitool))
-		var/obj/item/multitool/tool = I
-		write_data_to_pin(tool.weakref_wiring)
+	var/obj/item/multitool/multitool = I?.get_multitool()
+	if(multitool)
+		write_data_to_pin(multitool.weakref_wiring)
 	else if(istype(I, /obj/item/integrated_electronics/debugger))
 		var/obj/item/integrated_electronics/debugger/tool = I
 		write_data_to_pin(tool.data_to_write)

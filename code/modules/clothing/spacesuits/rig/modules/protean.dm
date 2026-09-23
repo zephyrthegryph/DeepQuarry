@@ -113,6 +113,7 @@ These should come standard with the Protean rigsuit, unless you want them to wor
 			piece.armor = temparmor.Copy()
 		holder.slowdown = slowdown
 		active = 1
+		H.worn_protection_changed()
 	else
 		return 0
 
@@ -125,6 +126,7 @@ These should come standard with the Protean rigsuit, unless you want them to wor
 			piece.armor = list("melee" = 0, "bullet" = 0, "laser" = 0,"energy" = 0, "bomb" = 0, "bio" = 100, "rad" = 100)
 		holder.slowdown = initial(slowdown)
 		active = 0
+		holder.wearer?.worn_protection_changed()
 		return
 	var/mob/living/carbon/human/H = holder.wearer
 	if(H)
@@ -135,6 +137,7 @@ These should come standard with the Protean rigsuit, unless you want them to wor
 			piece.armor = list("melee" = 0, "bullet" = 0, "laser" = 0,"energy" = 0, "bomb" = 0, "bio" = 100, "rad" = 100)
 		holder.slowdown = initial(slowdown)
 		active = 0
+		H.worn_protection_changed()
 	else
 		return 0
 

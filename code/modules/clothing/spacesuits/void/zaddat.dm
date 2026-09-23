@@ -8,7 +8,10 @@
 	armor = list(melee = 0, bullet = 0, laser = 0, energy = 0, bomb = 0, bio = 100, rad = 70) //realistically would have some armor but balance.
 	siemens_coefficient = 1
 
-	species_restricted = list(SPECIES_ZADDAT, SPECIES_PROMETHEAN) //on request from maintainer
+/obj/item/clothing/head/helmet/space/void/zaddat/fit_constraint()
+	var/list/bodytypes = list(SPECIES_ZADDAT, SPECIES_PROMETHEAN)
+	return list(REQ_FITS_BODYTYPES(bodytypes))
+
 
 /obj/item/clothing/suit/space/void/zaddat
 	name = "\improper Hegemony Shroud"
@@ -16,14 +19,19 @@
 	slowdown = 1
 	armor = list(melee = 0, bullet = 0, laser = 0,energy = 0, bomb = 0, bio = 100, rad = 70)
 	siemens_coefficient = 1
-	allowed = list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_ALL_TANKS)
 	icon_state = "zaddat_hegemony"
 	hood = new/obj/item/clothing/head/helmet/space/void/zaddat //shrouds come with helmets built-in
 	var/has_been_customized = FALSE
 
-	species_restricted = list(SPECIES_ZADDAT, SPECIES_PROMETHEAN)
-
 	breach_threshold = 12
+
+/obj/item/clothing/suit/space/void/zaddat/fit_constraint()
+	var/list/bodytypes = list(SPECIES_ZADDAT, SPECIES_PROMETHEAN)
+	return list(REQ_FITS_BODYTYPES(bodytypes))
+
+/obj/item/clothing/suit/space/void/zaddat/suit_storage_constraint()
+	var/list/stores = list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_ALL_TANKS)
+	return list(HOLD_ONLY(stores))
 
 /obj/item/clothing/suit/space/void/zaddat/verb/custom_suit()
 	set name = "Customize Shroud"

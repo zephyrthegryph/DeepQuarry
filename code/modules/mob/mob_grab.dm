@@ -11,7 +11,7 @@
 			L.resist() //shortcut for resisting grabs
 
 		//if we are grabbing someone
-		for(var/obj/item/grab/G in list(L.l_hand, L.r_hand))
+		for(var/obj/item/grab/G in list(L.get_equipped_item(SLOT_ID_HAND_L), L.get_equipped_item(SLOT_ID_HAND_R)))
 			G.reset_kill_state() //no wandering across the station/asteroid while choking someone
 
 /obj/item/grab
@@ -85,7 +85,7 @@
 	if(QDELETED(src))
 		return
 	if(affecting)
-		if(assailant.r_hand == src)
+		if(assailant.get_equipped_item(SLOT_ID_HAND_R) == src)
 			hud.screen_loc = ui_rhand
 		else
 			hud.screen_loc = ui_lhand
@@ -106,12 +106,12 @@
 	if(state <= GRAB_AGGRESSIVE)
 		allow_upgrade = 1
 		//disallow upgrading if we're grabbing more than one person
-		if((assailant.l_hand && assailant.l_hand != src && istype(assailant.l_hand, /obj/item/grab)))
-			var/obj/item/grab/G = assailant.l_hand
+		if((assailant.get_equipped_item(SLOT_ID_HAND_L) && assailant.get_equipped_item(SLOT_ID_HAND_L) != src && istype(assailant.get_equipped_item(SLOT_ID_HAND_L), /obj/item/grab)))
+			var/obj/item/grab/G = assailant.get_equipped_item(SLOT_ID_HAND_L)
 			if(G.affecting != affecting)
 				allow_upgrade = 0
-		if((assailant.r_hand && assailant.r_hand != src && istype(assailant.r_hand, /obj/item/grab)))
-			var/obj/item/grab/G = assailant.r_hand
+		if((assailant.get_equipped_item(SLOT_ID_HAND_R) && assailant.get_equipped_item(SLOT_ID_HAND_R) != src && istype(assailant.get_equipped_item(SLOT_ID_HAND_R), /obj/item/grab)))
+			var/obj/item/grab/G = assailant.get_equipped_item(SLOT_ID_HAND_R)
 			if(G.affecting != affecting)
 				allow_upgrade = 0
 

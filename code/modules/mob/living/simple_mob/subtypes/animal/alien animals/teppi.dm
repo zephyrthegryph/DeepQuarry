@@ -176,6 +176,7 @@ GLOBAL_VAR_INIT(teppi_count, 0)	// How mant teppi DO we have?
 	B.absorbchance = 1
 	B.escapechance = 15
 
+	B.own_emote_lists()
 	B.emote_lists[DM_DRAIN] = list(
 		"The walls press in heavily over you, holding you tightly and grinding, churning against your body powerfully!! You can feel %pred's heartbeat through the flesh, pounding in your ears, and the groaning gurgles of the gastric chamber rolling around you, eagerly pressing in against you.",
 		"The squeezing touch of the practically molten walls form to your figure, pressing in close and gliding across the shapes of your body, pressing, bending, and churning you casually! The intensity of it all is almost hard to comprehend. It is not painful, so much as just, almost completely overpowering, exhausting...",
@@ -188,6 +189,7 @@ GLOBAL_VAR_INIT(teppi_count, 0)	// How mant teppi DO we have?
 		"Thick rolling waves of flesh batter against and form to you as you're smothered briefly against the doughy walls of %pred's %belly. The hold goes on for a little too long, but just as you start to worry, it eases up a little bit and gives you an ounce of space. … For about three seconds, before the chamber collapses in on you again, grinding and squeezing and churning you around idly. The grumbling symphony of that gut working on you is impossible to tune out as the burbling sound of slick flesh and goopy insides fill your ears.",
 		"The walls that separate you from the outside world are thick, and not just because of the few inches of doughy, stretchy %belly lining that's containing you immediately. Beyond that there are other organs unseen, glooping and churning and glorgling outside of your chamber, then there are layers of muscle and bone, and finally a thick hide and ample fluff. This all means that, for your part, you're likely a small shifting shape under that fluffy exterior, packed away deep at the core of all of those layers, so far from the outside world as that chamber grinds and smothers over you, smearing you in slime and keeping you nice and tucked deep into the rumbling darkness.")
 
+	B.own_emote_lists()
 	B.emote_lists[DM_DIGEST] = list(
 		"The walls close in on you in thick, heavy waves, smearing you in a thick slime. Working hard to churn over your figure intensely. The heat of the chamber soaks into you along with the fluids you're being lathered in. A telling tingle sets in the longer you are exposed to those fluids, while no part of you is spared from the probing churns and deep kneads of %pred's insistent %belly. . .",
 		"The doughy press of %pred's %belly almost seems to feel over you, actively seeking you within that gloomy humid chamber. The sloppy burbling of that thick flesh gliding and smearing over you is impossible to ignore, the sound of your own body slapping and slurping amid those active pulsing folds and the bubbling slime a sign that you are indeed held deep within the organic confines of another's hungry gut… and it's focused on you.",
@@ -200,6 +202,7 @@ GLOBAL_VAR_INIT(teppi_count, 0)	// How mant teppi DO we have?
 		"The walls around you flex inward briefly, burbling and squelching heavily as everything rushed together, wringing you powerfully for a few moments while, somewhere far above you can hear the bassy rumble of a casual belch, much of the small amount of acrid air available rushing out with the sound. After several long moments held in the tight embrace of that pulsing flesh, things ease up a bit again and resume their insistent, tingly churnings.",
 		"It's pitch black and completely slimy in here, %pred sways their %belly a bit here and there to toss you from one end to the other, tumbling you end over end as you're churned in that active %belly. It's all so slick and squishy, so it is really hard to get any footing or grip on things to stabilize your position, which means that you're left at the mercy of those gloomy gastric affections and the tingling touch of those sticky syrupy slimes that the walls lather into your body.")
 
+	B.own_emote_lists()
 	B.emote_lists[DM_HOLD] = list(
 		"The burbling %belly rocks and glides over you gently as you're held deep within %pred, the deep thumping of their heart pulses all around you as you're caressed and pressed by heavy, doughy walls.",
 		"%pred's %belly glorgles around you idly as you're held gently by the slick, wrinkled flesh.",
@@ -212,6 +215,7 @@ GLOBAL_VAR_INIT(teppi_count, 0)	// How mant teppi DO we have?
 		"Held within the pitch black gloom of this gently churning organic chamber it's hard to get much room to yourself. The walls are always prone to rolling in and squeezing over you for long moments.",
 		"Despite the constant motion of fleshy waves gliding in against you and the burbling sounds of the inner workings of all those tubes and organs, the steady beating of %pred's heart, and the gentle whooshing of their breath were surprisingly relaxing.")
 
+	B.own_emote_lists()
 	B.emote_lists[DM_ABSORB] = list(
 		"The intensity of the flesh pumping in against you makes it somewhat hard to tell how soft and tarry the surfaces pressing into you have gotten. As your extremities disappear between the folds of flesh inside there it's so difficult to pull them back out, like squirming against  hot, gooey quicksand! %pred's %belly seems quite insistent on sinking you deeper, and claiming you entirely.",
 		"The pressure is intense, the slimy walls rolling over you again and again, really clinging to your figure, sticky and slurpy, you can feel the tug of the flesh drawing you in, and the flickers of another presence along the edges of your mind.",
@@ -224,6 +228,7 @@ GLOBAL_VAR_INIT(teppi_count, 0)	// How mant teppi DO we have?
 		"The rippling touch of %pred's wrinkled flesh folding in against you is hard to escape. No matter where you turn, it's all closing in on you, pressing to you. Practically molten, the pressure of it all molds to you and leaves no part of your figure untouched, and yet, even as it forms skin tight in against you, it doesn't stop there. You seem to still sink further into the squish, the surface of it all flows over your figure and submerges you deeper, and deeper… and deeper, until there's nothing but the heat and the throb of %pred's heart all around you.",
 		"The pressure is intense. The throbbing of %pred's heart in your ears is impossible to ignore as the weight of your predator shifts when they move. You might notice that, as you sink deeper into the pressure of %pred, you're more conscious of those shifts and wobbles, as if they were your own, and the appreciative flickerings of consciousness that seems to have claimed you. You can feel each shift and jiggle of the fluffy critter's movements as you're absorbed...")
 
+	B.own_emote_lists()
 	B.emote_lists[DM_HEAL] = list(
 		"The walls glide over you tenderly, gently. Lightly kneading and massaging against your figure, smooth and pillowy soft. You can sink in a ways, but it's not hard to extract yourself from these caressing touches. The burbling of %pred's %belly fills your ears as you're rocked and cradled within.",
 		"As you soak within %pred's %belly you can feel some of your strength returning, aches and pains easing some as time goes on. The walls knead over you gently, but are never rough. They're soft and smushy, like a jiggly padding, protecting you from the outside world.",
@@ -303,14 +308,19 @@ GLOBAL_VAR_INIT(teppi_count, 0)	// How mant teppi DO we have?
 	p.vore_verb = "nyomp"
 	friend_zone = p
 
+	p.own_emote_lists()
 	p.emote_lists[DM_DRAIN] = B.emote_lists[DM_DRAIN]
 
+	p.own_emote_lists()
 	p.emote_lists[DM_DIGEST] = B.emote_lists[DM_DIGEST]
 
+	p.own_emote_lists()
 	p.emote_lists[DM_HOLD] = B.emote_lists[DM_HOLD]
 
+	p.own_emote_lists()
 	p.emote_lists[DM_ABSORB] = B.emote_lists[DM_ABSORB]
 
+	p.own_emote_lists()
 	p.emote_lists[DM_HEAL] = B.emote_lists[DM_HEAL]
 
 	p.struggle_messages_inside = B.struggle_messages_inside
@@ -711,7 +721,7 @@ GLOBAL_VAR_INIT(teppi_count, 0)	// How mant teppi DO we have?
 		return
 	playsound(src, pick(GLOB.teppi_sound), 75, 1)
 
-/mob/living/simple_mob/vore/alienanimals/teppi/proc/teppi_shear(mob/user as mob, tool)
+/mob/living/simple_mob/vore/alienanimals/teppi/proc/teppi_shear(mob/user as mob, obj/item/tool)
 	var/sheartime = 3 SECONDS
 	if(istype(tool, /obj/item/material/knife))
 		var/obj/item/material/knife/K = tool
@@ -723,7 +733,7 @@ GLOBAL_VAR_INIT(teppi_count, 0)	// How mant teppi DO we have?
 			sheartime *= 2
 		if(K.edge)
 			sheartime *= 0.5
-	else if(istype(tool, /obj/item/tool/wirecutters))
+	else if(tool.has_tool_quality(TOOL_WIRECUTTER))
 		sheartime *= 2
 	else
 		return FALSE

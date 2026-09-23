@@ -82,6 +82,7 @@
 		The slick flesh that surrounds you barely gives you room to move, and constantly flexes over your form as the rest of you is pushed inside of the \
 		cramped, organic space.  The stomach you now inhabited seemed quite content to treat you like the tiny rodent's normal diet of nuts and berries, \
 		constantly squeezing in an attempt to compact you down, to better fit in your new home."
+		B.own_emote_lists()
 		B.emote_lists[DM_DIGEST] = list(
 			"Low grumbles fill your ears as the squirrel's stomach begins the herculean task of digesting you.",
 			"The squirrel's stomach begins to secrete fluids that make your skin tingle on contact.",
@@ -93,6 +94,7 @@
 			"You cant help but feel like a nut, given the squirrel's stomach seems to have no issue with treating you like one."
 			)
 
+		B.own_emote_lists()
 		B.emote_lists[DM_HOLD] = list(
 			"The squirrel insides that surround you gently sway from side to side as the squirrel goes on with its day.",
 			"Various harmless stomach fluids pool around you, as you sit within the belly of the squirrel.",
@@ -111,6 +113,7 @@
 			)
 	else
 		B.desc = "With relative ease, you slid down the throat of the massive rodent, and came to a rest deep inside its spacious tummy!  Immediately, the gluttonous rodent's stomach begins to squeeze and compress you into a more manageable shape, all in an attempt to keep you down, deep within the squirrel's gastric embrace.  The air is humid, the slick walls are powerful, and oppressive, and the stomach fluids you're soaking in cling to every inch of your body.  Unfortunately for you, you're squirrel food."
+		B.own_emote_lists()
 		B.emote_lists[DM_DIGEST] = list(
 			"The squirrel's stomach seems content to treat you like a very large nut, as it works to soften you up to feed the squirrel for the long winter.",
 			"Tingling fluids drip over your form as the squirrel's body attempts to work yours down into a more usable form.",
@@ -122,6 +125,7 @@
 			"The sounds of the outside world are drowned out by the constant grumbles and gurgles of this fleshy prison, as you're put through the slow process of digesting a nutrient rich slurry."
 			)
 
+		B.own_emote_lists()
 		B.emote_lists[DM_HOLD] = list(
 			"The powerful stomach walls surrounding you press inwards so tightly you can hardly move, before relaxing, and letting you resume struggling against this squirrel's insides.",
 			"The sauna-like insides slowly sap your strength, as hot, harmless stomach fluids pool around you, turning the stomach into a personal hot tub.",

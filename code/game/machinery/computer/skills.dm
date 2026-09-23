@@ -74,7 +74,7 @@
 	var/list/rows = list()
 	var/start = max(1, length(account.transaction_log) - 49)
 	for(var/index = length(account.transaction_log), index >= start, index--)
-		var/datum/transaction/transaction = account.transaction_log[index]
+		var/datum/transaction/transaction = LAZYACCESS(account.transaction_log, index)
 		rows.Add(list(list(
 			"date" = transaction.date,
 			"time" = transaction.time,

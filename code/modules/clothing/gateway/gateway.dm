@@ -23,7 +23,10 @@
 	min_pressure_protection = 0 * ONE_ATMOSPHERE
 	max_pressure_protection = 3 * ONE_ATMOSPHERE
 	max_heat_protection_temperature = SPACE_SUIT_MAX_HEAT_PROTECTION_TEMPERATURE
-	allowed = list(POCKET_SECURITY, POCKET_EMERGENCY, /obj/item/melee/baton,/obj/item/melee/energy/sword,/obj/item/handcuffs)
+
+/obj/item/clothing/suit/vrwizard/suit_storage_constraint()
+	var/list/stores = list(POCKET_SECURITY, POCKET_EMERGENCY, /obj/item/melee/baton,/obj/item/melee/energy/sword,/obj/item/handcuffs)
+	return list(HOLD_ONLY(stores))
 
 /obj/item/clothing/head/darkvrwizard
 	name = "wizard hat"
@@ -50,9 +53,12 @@
 	min_pressure_protection = 0 * ONE_ATMOSPHERE
 	max_pressure_protection = 3 * ONE_ATMOSPHERE
 	max_heat_protection_temperature = SPACE_SUIT_MAX_HEAT_PROTECTION_TEMPERATURE
-	allowed = list(POCKET_SECURITY, POCKET_EMERGENCY, /obj/item/melee/baton,/obj/item/melee/energy/sword)
 
 //Candy section
+
+/obj/item/clothing/suit/darkvrwizard/suit_storage_constraint()
+	var/list/stores = list(POCKET_SECURITY, POCKET_EMERGENCY, /obj/item/melee/baton,/obj/item/melee/energy/sword)
+	return list(HOLD_ONLY(stores))
 /obj/item/clothing/head/psy_crown/candycrown
 	name = "candy crown"
 	desc = "A crown smelling oddly sweet"
@@ -78,7 +84,7 @@
 /obj/item/clothing/gloves/stamina/equipped(mob/user, slot)
 	..()
 	var/mob/living/carbon/human/H = wearer?.resolve()
-	if(H && H.gloves == src)
+	if(H && H.get_equipped_item(SLOT_ID_GLOVES) == src)
 		if(H.can_feel_pain())
 			to_chat(H, span_danger("You feel strange as hunger vanishes!"))
 			H.custom_pain("Your hands feel strange!",1)
@@ -129,7 +135,7 @@
 
 /obj/item/clothing/suit/armor/buffvest/equipped(mob/living/carbon/human/H, slot)
 	..()
-	if(istype(H) && H.wear_suit == src && H.is_sentient())
+	if(istype(H) && H.get_equipped_item(SLOT_ID_SUIT) == src && H.is_sentient())
 		START_PROCESSING(SSobj, src)
 		if(flavor_equip)
 			to_chat(H, span_info(flavor_equip))

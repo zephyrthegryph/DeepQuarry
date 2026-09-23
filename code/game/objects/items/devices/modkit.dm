@@ -40,8 +40,9 @@
 		to_chat(user, span_notice("[src] is unable to modify that."))
 		return
 
-	var/excluding = ("exclude" in I.species_restricted)
-	var/in_list = (target_species in I.species_restricted)
+	var/list/bodytypes = dq_fit_bodytypes(I)
+	var/excluding = ("exclude" in bodytypes)
+	var/in_list = (target_species in bodytypes)
 	if (excluding ^ in_list)
 		to_chat(user, span_notice("[I] is already modified."))
 		return

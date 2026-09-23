@@ -6,7 +6,6 @@
 	icon_state = "lockbox+l"
 	item_state_slots = list(slot_r_hand_str = "syringe_kit", slot_l_hand_str = "syringe_kit")
 	w_class = ITEMSIZE_LARGE
-	max_w_class = ITEMSIZE_NORMAL
 	max_storage_space = ITEMSIZE_COST_NORMAL * 4 //The sum of the w_classes of all the items in this storage item.
 	req_access = list(ACCESS_ARMORY)
 	preserve_item = 1
@@ -15,6 +14,9 @@
 	var/icon_locked = "lockbox+l"
 	var/icon_closed = "lockbox"
 	var/icon_broken = "lockbox+b"
+
+/obj/item/storage/lockbox/hold_constraint()
+	return list(HOLD_MAX_SIZE(ITEMSIZE_NORMAL))
 
 
 /obj/item/storage/lockbox/attackby(obj/item/W as obj, mob/user as mob)

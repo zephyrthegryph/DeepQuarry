@@ -302,7 +302,7 @@
 				if(my_effect.trigger == TRIGGER_FORCE)
 					my_effect.ToggleActivate()
 
-		else if(ishuman(M) && !istype(M:gloves,/obj/item/clothing/gloves))
+		else if(ishuman(M) && !istype(bumper_gloves(M),/obj/item/clothing/gloves))
 			if(my_effect.trigger == TRIGGER_TOUCH)
 				my_effect.ToggleActivate(M)
 				warn = 1
@@ -328,7 +328,7 @@
 
 	var/triggered = FALSE
 
-	if(ishuman(user) && !istype(user:gloves,/obj/item/clothing/gloves))
+	if(ishuman(user) && !istype(user.get_equipped_item(SLOT_ID_GLOVES),/obj/item/clothing/gloves))
 		for(var/datum/artifact_effect/my_effect in my_effects)
 			if(my_effect.trigger == TRIGGER_TOUCH)
 				triggered = TRUE
@@ -381,14 +381,14 @@
 				istype(W,/obj/item/melee/energy) ||\
 				istype(W,/obj/item/melee/cultblade) ||\
 				istype(W,/obj/item/card/emag) ||\
-				istype(W,/obj/item/multitool))
+				W.has_tool_quality(TOOL_MULTITOOL))
 
 			if (my_effect.trigger == TRIGGER_ENERGY)
 				my_effect.ToggleActivate()
 
 		//If we weren't hit by energy, let's see if we were hit by a lighter or welding tool and if we are heat.
 		else if (istype(W,/obj/item/flame) && W:lit ||\
-				istype(W,/obj/item/weldingtool) && W:welding)
+				dq_held_welder_lit(null, null, W))
 			if(my_effect.trigger == TRIGGER_HEAT)
 				my_effect.ToggleActivate()
 
@@ -479,3 +479,7 @@
 #undef HYDROPHORON_PATH
 #undef THERMITE_PATH
 #undef TOXIN_PATH
+
+/// What a mob bumping into an artifact wears on its hands.
+/datum/component/artifact_master/proc/bumper_gloves(mob/M)
+	return M.get_equipped_item(SLOT_ID_GLOVES)

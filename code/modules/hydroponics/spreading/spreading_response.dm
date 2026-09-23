@@ -47,7 +47,7 @@
 	var/mob/living/carbon/human/H = victim
 	if(prob(round(seed.get_trait(TRAIT_POTENCY)/3)))
 		entangle(victim)
-	if(istype(H) && H.shoes)
+	if(istype(H) && H.get_equipped_item(SLOT_ID_SHOES))
 		return
 	seed.do_thorns(victim,src)
 	seed.do_sting(victim,src,pick(BP_R_FOOT,BP_L_FOOT,BP_R_LEG,BP_L_LEG))
@@ -107,7 +107,7 @@
 		var/can_grab = 1
 		if(ishuman(victim))
 			var/mob/living/carbon/human/H = victim
-			if(istype(H.shoes, /obj/item/clothing/shoes/magboots) && (H.shoes.item_flags & NOSLIP))
+			if(istype(H.get_equipped_item(SLOT_ID_SHOES), /obj/item/clothing/shoes/magboots) && (H.get_equipped_item(SLOT_ID_SHOES).item_flags & NOSLIP))
 				can_grab = 0
 		if(can_grab)
 			src.visible_message(span_danger("Tendrils lash out from \the [src] and drag \the [victim] in!"))

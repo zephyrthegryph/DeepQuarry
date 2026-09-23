@@ -22,7 +22,7 @@
 
 // Clumsy folks can't take the mask off themselves.
 /obj/item/clothing/mask/muzzle/attack_hand(mob/living/user as mob)
-	if(user.wear_mask == src && !user.IsAdvancedToolUser())
+	if(user.get_equipped_item(SLOT_ID_MASK) == src && !user.IsAdvancedToolUser())
 		return 0
 	..()
 
@@ -56,6 +56,7 @@
 			armor_owned = FALSE
 			to_chat(user, "You pull the mask up to cover your face.")
 		update_clothing_icon()
+		worn_protection_changed()
 
 /obj/item/clothing/mask/surgical/verb/toggle()
 	set category = "Object"
@@ -324,7 +325,7 @@
 	body_parts_covered = FACE
 	icon_state = "papermask"
 	actions_types = list(/datum/action/item_action/hands_free/redraw_design)
-	var/list/papermask_designs = list()
+	var/list/papermask_designs
 	special_handling = TRUE
 
 /obj/item/clothing/mask/paper/Initialize(mapload)
@@ -374,7 +375,7 @@
 							"Good" = "goodmask", "Bad" = "badmask", "Happy" = "happymask", "Sad" = "sadmask"
 							)
 
-	var/choice = show_radial_menu(user, src, papermask_designs, custom_check = FALSE, radius = 36, require_near = TRUE)
+	var/choice = show_radial_menu(user, src, papermask_designs || list(), custom_check = FALSE, radius = 36, require_near = TRUE)
 
 	if(src && choice && !user.incapacitated() && in_range(user,src))
 		icon_state = options[choice]

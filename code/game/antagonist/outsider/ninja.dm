@@ -111,8 +111,8 @@ GLOBAL_DATUM(ninjas, /datum/antagonist/ninja)
 		ninjasuit.toggle_seals(player,TRUE,TRUE)
 		ninjasuit.seal_delay = initial(ninjasuit.seal_delay)
 
-	if(istype(player.back,/obj/item/rig))
-		var/obj/item/rig/rig = player.back
+	if(istype(player.get_equipped_item(SLOT_ID_BACK),/obj/item/rig))
+		var/obj/item/rig/rig = player.get_equipped_item(SLOT_ID_BACK)
 		if(rig.air_supply)
 			player.internal = rig.air_supply
 

@@ -22,7 +22,7 @@
 
 	var/mode_index = 1
 	var/toolmode = MULTITOOL_MODE_STANDARD
-	var/list/modes = list(MULTITOOL_MODE_STANDARD, MULTITOOL_MODE_INTCIRCUITS)
+	var/static/list/modes = list(MULTITOOL_MODE_STANDARD, MULTITOOL_MODE_INTCIRCUITS)
 
 	var/obj/machinery/telecomms/buffer // simple machine buffer for device linkage
 	var/obj/machinery/clonepod/connecting //same for cryopod linkage
@@ -126,3 +126,6 @@
 		treated += H.mend(TREAT_SYSTEM_RESTORE, 20, BP_HEAD)
 	to_chat(user, treated ? span_notice("Calibration offsets corrected.") : span_notice("Everything already reads within tolerance."))
 	return ITEM_INTERACT_SUCCESS
+
+/obj/item/multitool/get_multitool()
+	return src

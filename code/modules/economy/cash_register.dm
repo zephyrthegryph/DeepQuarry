@@ -13,7 +13,7 @@
 	var/machine_id = ""
 	var/transaction_amount = 0 // cumulatd amount of money to pay in a single purchase
 	var/transaction_purpose = null // text that gets used in ATM transaction logs
-	var/list/transaction_logs = list() // list of strings using html code to visualise data
+	var/list/transaction_logs // list of strings using html code to visualise data
 	var/list/item_list = list()  // entities and according
 	var/list/price_list = list() // prices for each purchase
 	/// Physical objects scanned into this ticket, keyed by object with scanned price.
@@ -88,7 +88,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery/cash_register, REGISTRY_TRANSACTION_DEVICES)
 		"machine_id" = machine_id,
 		"department_checkout" = department_checkout,
 		"subsidized_checkout" = linked_account?.department_id == DEPARTMENT_CIVILIAN,
-		"transaction_logs" = linked_account?.is_department_budget() ? SSsupply.service_invoice_rows(0, linked_account.department_id) : transaction_logs,
+		"transaction_logs" = linked_account?.is_department_budget() ? SSsupply.service_invoice_rows(0, linked_account.department_id) : (transaction_logs || list()),
 		"current_transactioon" = get_current_transaction()
 	)
 
@@ -226,7 +226,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery/cash_register, REGISTRY_TRANSACTION_DEVICES)
 		if("reset_log")
 			if(linked_account?.department_id == DEPARTMENT_CIVILIAN)
 				return FALSE
-			transaction_logs.Cut()
+			LAZYCLEARLIST(transaction_logs)
 			to_chat(user, "[icon2html(src, user.client)]" + span_notice("Transaction log reset."))
 			return TRUE
 
@@ -557,14 +557,9 @@ REGISTRY_MEMBERSHIP(/obj/machinery/cash_register, REGISTRY_TRANSACTION_DEVICES)
 /obj/machinery/cash_register/proc/toggle_anchors(obj/item/W, mob/user)
 	if(manipulating) return
 	manipulating = 1
-	if(!anchored)
-		user.visible_message("\The [user] begins securing \the [src] to the floor.",
-							"You begin securing \the [src] to the floor.")
-	else
-		user.visible_message(span_warning("\The [user] begins unsecuring \the [src] from the floor."),
-							"You begin unsecuring \the [src] from the floor.")
-	playsound(src, W.usesound, 50, 1)
-	if(!do_after(user, 2 SECONDS * W.toolspeed, target = src))
+	if(!use_tool(user, W, src, delay = 2 SECONDS, volume = 50, \
+			message_self = anchored ? "You begin unsecuring \the [src] from the floor." : "You begin securing \the [src] to the floor.", \
+			message_others = anchored ? "\The [user] begins unsecuring \the [src] from the floor." : "\The [user] begins securing \the [src] to the floor."))
 		manipulating = 0
 		return
 	if(!anchored)

@@ -121,7 +121,7 @@
 
 	new_character.update_transform()
 
-	new_character.forceMove(target_belly)		// Now that they're all setup and configured, send them to their destination.
+	target_belly.belly_insert(new_character)		// Now that they're all setup and configured, send them to their destination.
 
 	if(absorbed)
 		target_belly.absorb_living(new_character)	// Glorp.

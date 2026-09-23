@@ -91,9 +91,6 @@
 			new_belly.mode_flags = 0
 			new_belly.slow_digestion = FALSE
 			new_belly.speedy_mob_processing = FALSE
-			STOP_PROCESSING(SSbellies, new_belly)
-			STOP_PROCESSING(SSobj, new_belly)
-			START_PROCESSING(SSbellies, new_belly)
 			for(var/addon in belly_data["addons"])
 				new_belly.mode_flags += new_belly.mode_flag_list[addon]
 				switch(addon)
@@ -101,8 +98,6 @@
 						new_belly.slow_digestion = TRUE
 					if("TURBO MODE")
 						new_belly.speedy_mob_processing = TRUE
-						STOP_PROCESSING(SSbellies, new_belly)
-						START_PROCESSING(SSobj, new_belly)
 
 		// Descriptions
 		if(istext(belly_data["desc"]))
@@ -1189,7 +1184,7 @@
 				new_belly.set_messages(new_fullness5_messages,BELLY_LIQUID_MESSAGE5, limit = BELLIES_MESSAGE_MAX)
 
 		// After import updates
-		new_belly.items_preserved.Cut()
+		new_belly.items_preserved = null
 		new_belly.update_internal_overlay()
 
 	host.handle_belly_update()

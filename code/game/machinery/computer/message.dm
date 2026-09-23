@@ -254,9 +254,9 @@
 		//Delete the log.
 		if("delete")
 			if(params["type"] == "pda")
-				linkedServer.pda_msgs -= locate(params["id"])
+				LAZYREMOVE(linkedServer.pda_msgs, locate(params["id"]))
 			else
-				linkedServer.rc_msgs -= locate(params["id"])
+				LAZYREMOVE(linkedServer.rc_msgs, locate(params["id"]))
 			set_temp("NOTICE: Log Deleted!", "average")
 			. = TRUE
 		//Fake messaging selection - KEY REQUIRED

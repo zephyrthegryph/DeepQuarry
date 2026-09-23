@@ -199,7 +199,7 @@ SUBSYSTEM_DEF(time_track)
 			SSmachines.cost_powernets,
 			SSmachines.cost_power_objects,
 			length(SSmachines.processing_machines),
-			length(SSmachines.powernets),
+			length(SSmachines.power_regions),
 			SSmachines.cost,
 			SSmachines.ticks,
 			SSmachines.tick_overrun,

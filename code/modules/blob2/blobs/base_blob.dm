@@ -261,9 +261,9 @@ REGISTRY_MEMBERSHIP(/obj/structure/blob, REGISTRY_BLOBS)
 		var/real_damage = rand(3,6)
 		var/hit_kind = attack.injury_kind
 		real_damage += attack.get_unarmed_damage(H)
-		if(H.gloves)
-			if(istype(H.gloves, /obj/item/clothing/gloves))
-				var/obj/item/clothing/gloves/G = H.gloves
+		if(H.get_equipped_item(SLOT_ID_GLOVES))
+			if(istype(H.get_equipped_item(SLOT_ID_GLOVES), /obj/item/clothing/gloves))
+				var/obj/item/clothing/gloves/G = H.get_equipped_item(SLOT_ID_GLOVES)
 				real_damage += G.punch_force
 				hit_kind = G.punch_injury_kind || hit_kind
 		if(HULK in H.mutations)

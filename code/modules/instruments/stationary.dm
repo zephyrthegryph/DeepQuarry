@@ -75,9 +75,9 @@
 
 
 /obj/structure/musician/wrench_act(mob/user, obj/item/tool)
-	playsound(src, tool.usesound, 100, TRUE)
-	user.visible_message(span_filter_notice("[user] begins [anchored ? "un" : ""]securing \the [src] from the floor."), span_notice("You start [anchored ? "un" : ""]securing \the [src] from the floor."))
-	if(!do_after(user, 2 SECONDS * tool.toolspeed, target = src))
+	if(!use_tool(user, tool, src, delay = 2 SECONDS, volume = 100, \
+			message_self = "You start [anchored ? "un" : ""]securing \the [src] from the floor.", \
+			message_others = "[user] begins [anchored ? "un" : ""]securing \the [src] from the floor."))
 		return ITEM_INTERACT_BLOCKING
 	to_chat(user, span_notice("You [anchored ? "un" : ""]secured \the [src]!"))
 	anchored = !anchored

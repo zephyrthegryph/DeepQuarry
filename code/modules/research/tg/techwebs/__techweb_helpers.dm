@@ -32,9 +32,9 @@
 		return
 	var/list/point_value = techweb_item_point_check(thing)
 	//If it has a point value and we haven't deconstructed it OR we've deconstructed it but it's a repeatable.
-	if(point_value && (!target_techweb.deconstructed_items[thing.type] || (target_techweb.deconstructed_items[thing.type] && (thing.type in SSresearch.techweb_repeatable_items))))
+	if(point_value && (!LAZYACCESS(target_techweb.deconstructed_items, thing.type) || (LAZYACCESS(target_techweb.deconstructed_items, thing.type) && (thing.type in SSresearch.techweb_repeatable_items))))
 		if(SSresearch.techweb_point_items[thing.type]) //Don't add things that have the deconstructable_research component
-			target_techweb.deconstructed_items[thing.type] = TRUE
+			LAZYSET(target_techweb.deconstructed_items, thing.type, TRUE)
 		target_techweb.add_point_list(point_value)
 
 /proc/techweb_point_display_generic(pointlist)

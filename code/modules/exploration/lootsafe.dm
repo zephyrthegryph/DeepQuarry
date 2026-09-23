@@ -91,7 +91,7 @@
 /obj/structure/closet/crate/secure/lootsafe/numberlock
 	desc = "A huge chunk of metal with a keypad embedded in it. Fine print above the keypad reads, Guaranteed thermite resistant, explosion resistant, and assistant resistant.\""
 	var/list/code = list()
-	var/list/lastattempt = list()
+	var/list/lastattempt
 	var/attempts = 10
 	var/codelen = 5
 
@@ -150,35 +150,35 @@
 		return 0
 
 	. = 1
-	lastattempt.Cut()
+	LAZYCLEARLIST(lastattempt)
 	for(var/i in 1 to codelen)
 		var/guesschar = copytext(input, i, i+1)
-		lastattempt += guesschar
+		LAZYADD(lastattempt, guesschar)
 		if(guesschar != code[i])
 			. = 0
 
 /obj/structure/closet/crate/secure/lootsafe/numberlock/attackby(obj/item/W as obj, mob/user as mob)
 	if(locked)
-		if (istype(W, /obj/item/multitool)) // Greetings Urist McProfessor, how about a nice game of cows and bulls?
+		if (W.has_tool_quality(TOOL_MULTITOOL)) // Greetings Urist McProfessor, how about a nice game of cows and bulls?
 			to_chat(user, span_notice("DECA-CODE LOCK ANALYSIS:"))
 			if (attempts == 1)
 				to_chat(user, span_warning("* Anti-Tamper system will activate on the next failed access attempt."))
 			else
 				to_chat(user, span_notice("* Anti-Tamper system will activate after [src.attempts] failed access attempts."))
-			if(lastattempt.len)
+			if(length(lastattempt))
 				var/bulls = 0
 				var/cows = 0
 
 				var/list/code_contents = code.Copy()
 				for(var/i in 1 to codelen)
-					if(lastattempt[i] == code[i])
+					if(LAZYACCESS(lastattempt, i) == code[i])
 						++bulls
-					else if(lastattempt[i] in code_contents)
+					else if(LAZYACCESS(lastattempt, i) in code_contents)
 						++cows
-					code_contents -= lastattempt[i]
+					code_contents -= LAZYACCESS(lastattempt, i)
 				var/previousattempt = null //convert back to string for readback
 				for(var/i in 1 to codelen)
-					previousattempt = addtext(previousattempt, lastattempt[i])
+					previousattempt = addtext(previousattempt, LAZYACCESS(lastattempt, i))
 				to_chat(user, span_notice("Last code attempt, [previousattempt], had [bulls] correct digits at correct positions and [cows] correct digits at incorrect positions."))
 			return
 	..()
@@ -191,7 +191,7 @@
 	hackguard = 45
 	req_access = list(150)
 	var/list/code = list()
-	var/list/lastattempt = list()
+	var/list/lastattempt
 	var/attempts = 100
 	var/codelen = 10
 
@@ -252,35 +252,35 @@
 		return 0
 
 	. = 1
-	lastattempt.Cut()
+	LAZYCLEARLIST(lastattempt)
 	for(var/i in 1 to codelen)
 		var/guesschar = copytext(input, i, i+1)
-		lastattempt += guesschar
+		LAZYADD(lastattempt, guesschar)
 		if(guesschar != code[i])
 			. = 0
 
 /obj/structure/closet/crate/secure/lootsafe/devillock/attackby(obj/item/W as obj, mob/user as mob)
 	if(locked)
-		if (istype(W, /obj/item/multitool)) // Greetings Urist McProfessor, how about a nice game of cows and bulls?
+		if (W.has_tool_quality(TOOL_MULTITOOL)) // Greetings Urist McProfessor, how about a nice game of cows and bulls?
 			to_chat(user, span_notice("DECA-CODE LOCK ANALYSIS:"))
 			if (attempts == 1)
 				to_chat(user, span_warning("* Anti-Tamper system will activate on the next failed access attempt."))
 			else
 				to_chat(user, span_notice("* Anti-Tamper system will activate after [src.attempts] failed access attempts."))
-			if(lastattempt.len)
+			if(length(lastattempt))
 				var/bulls = 0
 				var/cows = 0
 
 				var/list/code_contents = code.Copy()
 				for(var/i in 1 to codelen)
-					if(lastattempt[i] == code[i])
+					if(LAZYACCESS(lastattempt, i) == code[i])
 						++bulls
-					else if(lastattempt[i] in code_contents)
+					else if(LAZYACCESS(lastattempt, i) in code_contents)
 						++cows
-					code_contents -= lastattempt[i]
+					code_contents -= LAZYACCESS(lastattempt, i)
 				var/previousattempt = null //convert back to string for readback
 				for(var/i in 1 to codelen)
-					previousattempt = addtext(previousattempt, lastattempt[i])
+					previousattempt = addtext(previousattempt, LAZYACCESS(lastattempt, i))
 				to_chat(user, span_notice("Last code attempt, [previousattempt], had [bulls] correct digits at correct positions and [cows] correct digits at incorrect positions."))
 			return
 	..()

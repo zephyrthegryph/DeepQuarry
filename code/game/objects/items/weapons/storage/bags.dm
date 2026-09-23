@@ -47,11 +47,12 @@
 	pickup_sound = 'sound/items/pickup/wrapper.ogg'
 
 	w_class = ITEMSIZE_LARGE
-	max_w_class = ITEMSIZE_SMALL
 	max_storage_space = ITEMSIZE_SMALL * 21
-	can_hold = list() // any
-	cant_hold = list(/obj/item/disk/nuclear)
 	resistance_flags = FLAMMABLE
+
+/obj/item/storage/bag/trash/hold_constraint()
+	var/list/refuses = list(/obj/item/disk/nuclear)
+	return list(HOLD_NOT(refuses), HOLD_MAX_SIZE(ITEMSIZE_SMALL))
 
 /obj/item/storage/bag/trash/update_icon()
 	if(contents.len == 0)
@@ -66,9 +67,12 @@
 	name = "trash bag of holding"
 	desc = "The latest and greatest in custodial convenience, a trashbag that is capable of holding vast quantities of garbage."
 	icon_state = "bluetrashbag"
-	max_w_class = ITEMSIZE_NORMAL
 	max_storage_space = ITEMSIZE_COST_NORMAL * 10 // Slightly less than BoH
 	resistance_flags = FIRE_PROOF
+
+/obj/item/storage/bag/trash/holding/hold_constraint()
+	var/list/refuses = list(/obj/item/disk/nuclear)
+	return list(HOLD_NOT(refuses), HOLD_MAX_SIZE(ITEMSIZE_NORMAL))
 
 /obj/item/storage/bag/trash/holding/update_icon()
 	return
@@ -85,24 +89,27 @@
 	pickup_sound = 'sound/items/pickup/wrapper.ogg'
 
 	w_class = ITEMSIZE_LARGE
-	max_w_class = ITEMSIZE_SMALL
-	can_hold = list() // any
-	cant_hold = list(/obj/item/disk/nuclear)
 	resistance_flags = FLAMMABLE
 
 // -----------------------------
 //          Plant bag
 // -----------------------------
+
+/obj/item/storage/bag/plasticbag/hold_constraint()
+	var/list/refuses = list(/obj/item/disk/nuclear)
+	return list(HOLD_NOT(refuses), HOLD_MAX_SIZE(ITEMSIZE_SMALL))
 /obj/item/storage/bag/plants
 	name = "plant bag"
 	icon = 'icons/obj/hydroponics_machines.dmi'
 	icon_state = "plantbag"
 	desc = "A sturdy bag used to transport fresh produce with ease."
 	max_storage_space = ITEMSIZE_COST_NORMAL * 25
-	max_w_class = ITEMSIZE_NORMAL
 	w_class = ITEMSIZE_SMALL
-	can_hold = list(/obj/item/reagent_containers/food/snacks/grown,/obj/item/seeds,/obj/item/grown)
 	resistance_flags = FLAMMABLE
+
+/obj/item/storage/bag/plants/hold_constraint()
+	var/list/holds = list(/obj/item/reagent_containers/food/snacks/grown,/obj/item/seeds,/obj/item/grown)
+	return list(HOLD_ONLY(holds), HOLD_MAX_SIZE(ITEMSIZE_NORMAL))
 
 /obj/item/storage/bag/plants/large
 	name = "large plant bag"
@@ -129,110 +136,81 @@
 	allow_quick_empty = 1 // this function is superceded
 	resistance_flags = FIRE_PROOF
 
-/obj/item/storage/bag/sheetsnatcher/can_be_inserted(obj/item/W as obj, stop_messages = 0)
-	if(!istype(W,/obj/item/stack/material))
-		if(!stop_messages)
-			to_chat(usr, "The snatcher does not accept [W].")
-		return 0
-	var/current = 0
-	for(var/obj/item/stack/material/S in contents)
-		current += S.get_amount()
-	if(capacity == current)//If it's full, you're done
-		if(!stop_messages)
-			to_chat(usr, span_warning("The snatcher is full."))
-		return 0
-	return 1
+/obj/item/storage/bag/sheetsnatcher/hold_constraint()
+	var/list/holds = list(/obj/item/stack/material)
+	return list(HOLD_ONLY(holds))
 
+/obj/item/storage/bag/sheetsnatcher/slot_def_types()
+	var/static/list/types = list(/datum/slot_def/storage/sheets)
+	return types
 
-// Modified handle_item_insertion.  Would prefer not to, but...
-/obj/item/storage/bag/sheetsnatcher/handle_item_insertion(obj/item/W as obj, prevent_warning = 0)
+/// Sheets only, counted by the sheet rather than by size or slot.
+/datum/slot_def/storage/sheets
+	capacity_model = SLOT_CAPACITY_NONE
+
+/datum/slot_def/storage/sheets/refusal(obj/item/storage/bag/sheetsnatcher/holder, atom/movable/thing, mob/actor)
+	if(!istype(thing, /obj/item/stack/material))
+		return "it only takes sheets"
+	. = dq_constraint_refusal(holder, CONSTRAINT_HOLD, thing, actor)
+	if(.)
+		return .
+	if(holder.sheets_held() >= holder.capacity)
+		return "the snatcher is full"
+	return null
+
+/obj/item/storage/bag/sheetsnatcher/proc/sheets_held()
+	. = 0
+	for(var/obj/item/stack/material/S in stored_items())
+		. += S.get_amount()
+
+/// Sheets merge into a stack of the same type already inside, up to capacity.
+/obj/item/storage/bag/sheetsnatcher/insert_item(obj/item/W, mob/user, prevent_warning = FALSE)
 	var/obj/item/stack/material/S = W
-	if(!istype(S)) return 0
-
-	var/amount
-	var/inserted = 0
-	var/current = 0
-	for(var/obj/item/stack/material/S2 in contents)
-		current += S2.get_amount()
-	if(capacity < current + S.get_amount())//If the stack will fill it up
-		amount = capacity - current
-	else
-		amount = S.get_amount()
-
-	for(var/obj/item/stack/material/sheet in contents)
+	if(!istype(S) || insert_refusal(S, user))
+		return FALSE
+	var/amount = min(S.get_amount(), capacity - sheets_held())
+	for(var/obj/item/stack/material/sheet in stored_items())
 		if(S.type == sheet.type)
 			// we are violating the amount limitation because these are not sane objects
 			sheet.set_amount(sheet.get_amount() + amount, TRUE)
+			ledger?.refresh(sheet)
 			S.use(amount) // will qdel() if we use it all
-			inserted = 1
-			break
+			refresh_hud()
+			update_icon()
+			return TRUE
+	if(amount < S.get_amount())
+		var/obj/item/stack/F = S.split(amount)
+		if(!F?.move_into(src, CONTAINER_SLOT_STORAGE, user))
+			return FALSE
+		update_icon()
+		return TRUE
+	return ..()
 
-	if(!inserted)
-		if(capacity < current + S.get_amount())
-			var/obj/item/stack/F = S.split(amount)
-			F.loc = src
-		else
-			usr.remove_from_mob(S)
-			if (usr.client && usr.s_active != src)
-				usr.client.screen -= S
-			S.dropped(usr)
-			S.loc = src
+// Numbered display shows each stack's sheet count.
+/obj/item/storage/bag/sheetsnatcher/hud_group_key(obj/item/I)
+	return I
 
-	orient2hud(usr)
-	if(usr.s_active)
-		usr.s_active.show_to(usr)
-	update_icon()
-	return 1
+/obj/item/storage/bag/sheetsnatcher/hud_group_amount(obj/item/stack/material/I)
+	return I.get_amount()
 
-// Sets up numbered display to show the stack size of each stored mineral
-// NOTE: numbered display is turned off currently because it's broken
-/obj/item/storage/bag/sheetsnatcher/orient2hud(mob/user as mob)
-	var/adjusted_contents = contents.len
-
-	//Numbered contents display
-	var/list/datum/numbered_display/numbered_contents
-	if(display_contents_with_number)
-		numbered_contents = list()
-		adjusted_contents = 0
-		for(var/obj/item/stack/material/I in contents)
-			adjusted_contents++
-			var/datum/numbered_display/D = new/datum/numbered_display(I)
-			D.number = I.get_amount()
-			numbered_contents.Add( D )
-
-	var/row_num = 0
-	var/col_count = min(7,storage_slots) -1
-	if (adjusted_contents > 7)
-		row_num = round((adjusted_contents-1) / 7) // 7 is the maximum allowed width.
-	src.slot_orient_objs(row_num, col_count, numbered_contents)
-	return
-
-// Modified quick_empty verb drops appropriate sized stacks
-/obj/item/storage/bag/sheetsnatcher/quick_empty()
-	. = list()
+// Quick-empty drops full-size stacks.
+/obj/item/storage/bag/sheetsnatcher/drop_contents(mob/user)
+	if(user)
+		hide_from(user)
 	var/location = get_turf(src)
-	for(var/obj/item/stack/material/S in contents)
+	for(var/obj/item/stack/material/S in stored_items())
 		var/cur_amount = S.get_amount()
 		var/full_stacks = round(cur_amount / S.max_amount) // Floor of current/max is amount of full stacks we make
 		var/remainder = cur_amount % S.max_amount // Current mod max is remainder after full sheets removed
 		for(var/i = 1 to full_stacks)
-			. += new S.type(location, S.max_amount)
+			new S.type(location, S.max_amount)
 		if(remainder)
-			. += new S.type(location, remainder)
-		S.set_amount(0)
-		for(var/mob/M in is_seeing)
-			if(!M.client || QDELETED(M))
-				hide_from(M)
-			else
-				M.client.screen -= S
-
-	orient2hud(usr)
-	if(usr.s_active)
-		usr.s_active.show_to(usr)
+			new S.type(location, remainder)
+		qdel(S)
 	update_icon()
 
 // Instead of removing
-/obj/item/storage/bag/sheetsnatcher/remove_from_storage(obj/item/W as obj, atom/new_location)
+/obj/item/storage/bag/sheetsnatcher/remove_from_storage(obj/item/W, atom/new_location, mob/user)
 	var/obj/item/stack/material/S = W
 	if(!istype(S)) return 0
 
@@ -245,8 +223,9 @@
 		var/newstack_amt = S.get_amount() - S.max_amount
 		new S.type(src, newstack_amt) // The one we'll keep to replace the one we give
 		S.set_amount(S.max_amount) // The one we hand to the clicker
+		ledger?.refresh(S)
 
-	return ..(S,new_location)
+	return ..()
 
 // -----------------------------
 //    Sheet Snatcher (Bluespace)
@@ -282,14 +261,16 @@
 	icon_state = "cashbag"
 	desc = "A bag for carrying lots of cash. It's got a big dollar sign printed on the front."
 	max_storage_space = ITEMSIZE_COST_NORMAL * 25
-	max_w_class = ITEMSIZE_NORMAL
 	w_class = ITEMSIZE_SMALL
-	can_hold = list(/obj/item/coin,/obj/item/spacecash,/obj/item/spacecasinocash)
 	resistance_flags = FLAMMABLE
 
 // -----------------------------
 //         Chemistry Bag
 // -----------------------------
+
+/obj/item/storage/bag/cash/hold_constraint()
+	var/list/holds = list(/obj/item/coin,/obj/item/spacecash,/obj/item/spacecasinocash)
+	return list(HOLD_ONLY(holds), HOLD_MAX_SIZE(ITEMSIZE_NORMAL))
 /obj/item/storage/bag/chemistry
 	name = "chemistry bag"
 	icon = 'icons/obj/storage_vr.dmi'
@@ -298,84 +279,97 @@
 	max_storage_space = 200
 	w_class = ITEMSIZE_LARGE
 	slowdown = 1 //you probably shouldn't be running with chemicals
-	can_hold = list(/obj/item/reagent_containers/pill,/obj/item/reagent_containers/glass/beaker,/obj/item/reagent_containers/glass/bottle, /obj/item/reagent_containers/hypospray/autoinjector)
 	resistance_flags = FLAMMABLE
 
 // -----------------------------
 //           Xeno Bag
 // -----------------------------
+
+/obj/item/storage/bag/chemistry/hold_constraint()
+	var/list/holds = list(/obj/item/reagent_containers/pill,/obj/item/reagent_containers/glass/beaker,/obj/item/reagent_containers/glass/bottle, /obj/item/reagent_containers/hypospray/autoinjector)
+	return list(HOLD_ONLY(holds), HOLD_MAX_SIZE(ITEMSIZE_SMALL))
 /obj/item/storage/bag/xeno
 	name = "xenobiology bag"
 	icon = 'icons/obj/storage_vr.dmi'
 	icon_state = "xenobag"
 	desc = "A bag for storing various slime products."
 	max_storage_space = ITEMSIZE_COST_SMALL * 12
-	max_w_class = ITEMSIZE_NORMAL
 	w_class = ITEMSIZE_SMALL
-	can_hold = list(/obj/item/slime_extract,/obj/item/slimepotion, /obj/item/reagent_containers/food/snacks/monkeycube)
 	resistance_flags = FLAMMABLE
 
 // -----------------------------
 //         Virology Bag
 // -----------------------------
+
+/obj/item/storage/bag/xeno/hold_constraint()
+	var/list/holds = list(/obj/item/slime_extract,/obj/item/slimepotion, /obj/item/reagent_containers/food/snacks/monkeycube)
+	return list(HOLD_ONLY(holds), HOLD_MAX_SIZE(ITEMSIZE_NORMAL))
 /obj/item/storage/bag/virology
 	name = "virology bag"
 	icon = 'icons/obj/storage_vr.dmi'
 	icon_state = "biobag"
 	desc = "A bag for storing various biological products."
 	max_storage_space = ITEMSIZE_COST_SMALL * 12
-	max_w_class = ITEMSIZE_NORMAL
 	w_class = ITEMSIZE_SMALL
-	can_hold = list(/obj/item/reagent_containers/glass/beaker/vial)
 	resistance_flags = FLAMMABLE
 
 // -----------------------------
 //           Food Bag
 // -----------------------------
+
+/obj/item/storage/bag/virology/hold_constraint()
+	var/list/holds = list(/obj/item/reagent_containers/glass/beaker/vial)
+	return list(HOLD_ONLY(holds), HOLD_MAX_SIZE(ITEMSIZE_NORMAL))
 /obj/item/storage/bag/food
 	name = "food bag"
 	icon = 'icons/obj/storage_vr.dmi'
 	icon_state = "foodbag"
 	desc = "A bag for storing foods of all kinds."
 	max_storage_space = ITEMSIZE_COST_NORMAL * 25
-	max_w_class = ITEMSIZE_NORMAL
 	w_class = ITEMSIZE_SMALL
-	can_hold = list(/obj/item/reagent_containers/food/snacks,/obj/item/reagent_containers/food/condiment)
 	resistance_flags = FLAMMABLE
 
 // -----------------------------
 //    Food Bag (Service Hound)
 // -----------------------------
+
+/obj/item/storage/bag/food/hold_constraint()
+	var/list/holds = list(/obj/item/reagent_containers/food/snacks,/obj/item/reagent_containers/food/condiment)
+	return list(HOLD_ONLY(holds), HOLD_MAX_SIZE(ITEMSIZE_NORMAL))
 /obj/item/storage/bag/serviceborg
 	name = "service bag"
 	icon = 'icons/obj/storage_vr.dmi'
 	icon_state = "foodbag"
 	desc = "An intergrated bag for storing things of all kinds."
 	max_storage_space = ITEMSIZE_COST_NORMAL * 25
-	max_w_class = ITEMSIZE_NORMAL
 	w_class = ITEMSIZE_SMALL
-	can_hold = list(/obj/item/reagent_containers/food/snacks,/obj/item/reagent_containers/food/condiment,
-	/obj/item/reagent_containers/glass/beaker,/obj/item/reagent_containers/glass/bottle,/obj/item/coin,/obj/item/spacecash,
-	/obj/item/reagent_containers/food/snacks/grown,/obj/item/seeds,/obj/item/grown,/obj/item/reagent_containers/pill)
 	resistance_flags = FIRE_PROOF
 
 // -----------------------------
 //           Evidence Bag
 // -----------------------------
+
+/obj/item/storage/bag/serviceborg/hold_constraint()
+	var/list/holds = list(/obj/item/reagent_containers/food/snacks,/obj/item/reagent_containers/food/condiment,
+	/obj/item/reagent_containers/glass/beaker,/obj/item/reagent_containers/glass/bottle,/obj/item/coin,/obj/item/spacecash,
+	/obj/item/reagent_containers/food/snacks/grown,/obj/item/seeds,/obj/item/grown,/obj/item/reagent_containers/pill)
+	return list(HOLD_ONLY(holds), HOLD_MAX_SIZE(ITEMSIZE_NORMAL))
 /obj/item/storage/bag/detective
 	name = "secure satchel"
 	icon = 'icons/obj/storage_vr.dmi'
 	icon_state = "detbag"
 	desc = "A bag for storing investigation things. You know, securely."
 	max_storage_space = ITEMSIZE_COST_NORMAL * 15
-	max_w_class = ITEMSIZE_NORMAL
 	w_class = ITEMSIZE_SMALL
-	can_hold = list(/obj/item/forensics/swab,/obj/item/sample/print,/obj/item/sample/fibers,/obj/item/evidencebag)
 	resistance_flags = FLAMMABLE
 
 // -----------------------------
 //          Santa bag
 // -----------------------------
+
+/obj/item/storage/bag/detective/hold_constraint()
+	var/list/holds = list(/obj/item/forensics/swab,/obj/item/sample/print,/obj/item/sample/fibers,/obj/item/evidencebag)
+	return list(HOLD_ONLY(holds), HOLD_MAX_SIZE(ITEMSIZE_NORMAL))
 /obj/item/storage/bag/santabag
 	name = "\improper Santa's gift bag"
 	desc = "Space Santa uses this to deliver toys to all the nice children in space in Christmas! Wow, it's pretty big!"
@@ -384,11 +378,12 @@
 	item_state_slots = list(slot_r_hand_str = "giftbag", slot_l_hand_str = "giftbag")
 
 	w_class = ITEMSIZE_LARGE
-	max_w_class = ITEMSIZE_NORMAL
 	max_storage_space = ITEMSIZE_COST_NORMAL * 100 // can store a ton of shit!
-	can_hold = list() // any
-	cant_hold = list(/obj/item/disk/nuclear)
 	resistance_flags = FIRE_PROOF //ho ho ho
+
+/obj/item/storage/bag/santabag/hold_constraint()
+	var/list/refuses = list(/obj/item/disk/nuclear)
+	return list(HOLD_NOT(refuses), HOLD_MAX_SIZE(ITEMSIZE_NORMAL))
 
 /obj/item/storage/bag/santabag/update_icon()
 	if(contents.len < 10)

@@ -20,7 +20,7 @@
 	var/destructible = 0
 	max_integrity = 50
 
-	var/list/spawned_mobs = list()
+	var/list/spawned_mobs
 
 /obj/structure/mob_spawner/Initialize(mapload)
 	. = ..()
@@ -36,7 +36,7 @@
 		if(istype(spawned, /obj/structure/closet/crate/mimic))
 			var/obj/structure/closet/crate/mimic/O = spawned
 			O.nest = null
-	spawned_mobs.Cut()
+	LAZYCLEARLIST(spawned_mobs)
 	return ..()
 
 /obj/structure/mob_spawner/process()
@@ -49,7 +49,7 @@
 /obj/structure/mob_spawner/proc/can_spawn()
 	if(!total_spawns)
 		return 0
-	if(spawned_mobs.len >= simultaneous_spawns)
+	if(length(spawned_mobs) >= simultaneous_spawns)
 		return 0
 	if(world.time < last_spawn + spawn_delay)
 		return 0
@@ -69,20 +69,20 @@
 	if(ispath(mob_path, /mob/living))
 		var/mob/living/L = new mob_path(get_turf(src))
 		L.nest = src
-		spawned_mobs.Add(L)
+		LAZYADD(spawned_mobs, L)
 		if(mob_faction)
 			L.faction = mob_faction
 		return L
 	if(ispath(mob_path, /obj/structure/closet/crate/mimic))
 		var/obj/structure/closet/crate/mimic/O = new mob_path(get_turf(src))
-		spawned_mobs.Add(O)
+		LAZYADD(spawned_mobs, O)
 		O.nest = src
 		return O
 	return 0
 
 /obj/structure/mob_spawner/proc/get_death_report(mob/living/L)
 	if(L in spawned_mobs)
-		spawned_mobs.Remove(L)
+		LAZYREMOVE(spawned_mobs, L)
 
 /obj/structure/mob_spawner/attackby(obj/item/I, mob/living/user)
 	if(!I.force || I.flags & NOBLUDGEON || !destructible)
@@ -127,7 +127,7 @@ It also makes it so a ghost wont know where all the goodies/mobs are.
 	name ="Lazy Mob Spawner"
 	var/range = 10 //range in tiles from the spawner to detect moving stuff
 	var/datum/proximity_monitor/mobspawner/prox
-	var/list/mobs_in_range = list()
+	var/list/mobs_in_range
 
 /obj/structure/mob_spawner/scanner/Initialize(mapload)
 	. = ..()
@@ -155,25 +155,25 @@ It also makes it so a ghost wont know where all the goodies/mobs are.
 	if(ispath(mob_path, /mob/living))
 		var/mob/living/L = new mob_path(get_turf(spawn_turf))
 		L.nest = src
-		spawned_mobs.Add(L)
+		LAZYADD(spawned_mobs, L)
 		if(mob_faction)
 			L.faction = mob_faction
 		return L
 	if(ispath(mob_path, /obj/structure/closet/crate/mimic))
 		var/obj/structure/closet/crate/mimic/O = new mob_path(get_turf(spawn_turf))
-		spawned_mobs.Add(O)
+		LAZYADD(spawned_mobs, O)
 		O.nest = src
 		return O
 	return 0
 
 /obj/structure/mob_spawner/scanner/proc/NewProximity(atom/movable/AM)
 	if(istype(AM,/mob/living) && !(AM in mobs_in_range))
-		mobs_in_range += AM
+		LAZYADD(mobs_in_range, AM)
 
 
 /obj/structure/mob_spawner/scanner/proc/CheckProximity(atom/movable/AM,turf/new_loc)
 	if((AM in mobs_in_range) && (!AM || get_dist(src,new_loc) > range))
-		mobs_in_range -= AM
+		LAZYREMOVE(mobs_in_range, AM)
 
 
 /obj/structure/mob_spawner/scanner/process()
@@ -300,7 +300,7 @@ It also makes it so a ghost wont know where all the goodies/mobs are.
 
 /obj/structure/mob_spawner/proc/get_used_report(obj/structure/closet/crate/mimic/O)
 	if(O in spawned_mobs)
-		spawned_mobs.Remove(O)
+		LAZYREMOVE(spawned_mobs, O)
 
 /obj/structure/mob_spawner/mouse_nest/mousehole
 	name = "small hole"

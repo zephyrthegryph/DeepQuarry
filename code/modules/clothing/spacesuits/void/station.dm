@@ -17,7 +17,6 @@
 	icon_state = "rig-engineering"
 	item_state_slots = list(slot_r_hand_str = "eng_voidsuit", slot_l_hand_str = "eng_voidsuit")
 	armor = list(melee = 30, bullet = 5, laser = 20, energy = 5, bomb = 35, bio = 100, rad = 70)
-	allowed = list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_SUIT_REGULATORS, POCKET_ALL_TANKS, POCKET_MINING, POCKET_ENGINEERING, POCKET_CE)
 	min_pressure_protection = 0  * ONE_ATMOSPHERE
 	max_pressure_protection = 15 * ONE_ATMOSPHERE
 	max_heat_protection_temperature = SPACE_SUIT_MAX_HEAT_PROTECTION_TEMPERATURE+5000
@@ -25,6 +24,10 @@
 	slowdown = 1
 
 //Engineering HAZMAT Voidsuit
+
+/obj/item/clothing/suit/space/void/engineering/suit_storage_constraint()
+	var/list/stores = list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_SUIT_REGULATORS, POCKET_ALL_TANKS, POCKET_MINING, POCKET_ENGINEERING, POCKET_CE)
+	return list(HOLD_ONLY(stores))
 
 /obj/item/clothing/head/helmet/space/void/engineering/hazmat
 	name = "HAZMAT voidsuit helmet"
@@ -100,10 +103,13 @@
 	desc = "A hand-me-down salvage voidsuit. It has obviously had a lot of repair work done to its radiation shielding."
 	icon_state = "rig-engineeringsav"
 	armor = list(melee = 50, bullet = 15, laser = 25, energy = 15, bomb = 45, bio = 100, rad = 100)
-	allowed = list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_SUIT_REGULATORS, POCKET_ALL_TANKS, POCKET_ENGINEERING, POCKET_CE)
 	slowdown = 0.5
 
 //Mining
+
+/obj/item/clothing/suit/space/void/engineering/salvage/suit_storage_constraint()
+	var/list/stores = list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_SUIT_REGULATORS, POCKET_ALL_TANKS, POCKET_ENGINEERING, POCKET_CE)
+	return list(HOLD_ONLY(stores))
 /obj/item/clothing/head/helmet/space/void/mining
 	name = "mining voidsuit helmet"
 	desc = "A special helmet designed for work in a hazardous, low pressure environment. Has reinforced plating."
@@ -118,13 +124,16 @@
 	desc = "A special suit that protects against hazardous, low pressure environments. Has reinforced plating."
 	icon_state = "rig-mining"
 	item_state_slots = list(slot_r_hand_str = "mining_voidsuit", slot_l_hand_str = "mining_voidsuit")
-	allowed = list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_SUIT_REGULATORS, POCKET_ALL_TANKS, POCKET_MINING)
 	armor = list(melee = 50, bullet = 15, laser = 25, energy = 15, bomb = 55, bio = 100, rad = 50)
 	breach_threshold = 14 //These are kinda thicc
 	resilience = 0.15 //Armored
 	slowdown = 1
 
 //Mining Surplus Voidsuit
+
+/obj/item/clothing/suit/space/void/mining/suit_storage_constraint()
+	var/list/stores = list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_SUIT_REGULATORS, POCKET_ALL_TANKS, POCKET_MINING)
+	return list(HOLD_ONLY(stores))
 
 /obj/item/clothing/head/helmet/space/void/mining/alt
 	name = "frontier mining voidsuit helmet"
@@ -151,10 +160,13 @@
 	desc = "A special suit that protects against hazardous, low pressure environments. Has minor radiation shielding."
 	icon_state = "rig-medical"
 	item_state_slots = list(slot_r_hand_str = "medical_voidsuit", slot_l_hand_str = "medical_voidsuit")
-	allowed = list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_SUIT_REGULATORS, POCKET_ALL_TANKS, POCKET_MEDICAL)
 	armor = list(melee = 30, bullet = 5, laser = 20, energy = 5, bomb = 25, bio = 100, rad = 80)
 
 //Medical EMT Voidsuit
+
+/obj/item/clothing/suit/space/void/medical/suit_storage_constraint()
+	var/list/stores = list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_SUIT_REGULATORS, POCKET_ALL_TANKS, POCKET_MEDICAL)
+	return list(HOLD_ONLY(stores))
 
 /obj/item/clothing/head/helmet/space/void/medical/emt
 	name = "emergency medical response voidsuit helmet"
@@ -202,8 +214,11 @@
 	icon_state = "rig0-medicalalt"
 	armor = list(melee = 20, bullet = 5, laser = 20,energy = 5, bomb = 15, bio = 100, rad = 30)
 	light_overlay = "helmet_light_dual_blue"
-	species_restricted = list("exclude",SPECIES_DIONA,SPECIES_VOX)	//this thing can autoadapt to most species, but diona/vox are too weird
 	no_cycle = TRUE
+
+/obj/item/clothing/head/helmet/space/void/medical/veymed/fit_constraint()
+	var/list/bodytypes = list("exclude",SPECIES_DIONA,SPECIES_VOX)
+	return list(REQ_FITS_BODYTYPES(bodytypes))
 
 /obj/item/clothing/suit/space/void/medical/veymed
 	name = "lightweight medical voidsuit"
@@ -211,8 +226,11 @@
 	icon_state = "rig-medicalalt"
 	slowdown = 0
 	armor = list(melee = 20, bullet = 5, laser = 20,energy = 5, bomb = 15, bio = 100, rad = 30)
-	species_restricted = list("exclude",SPECIES_DIONA,SPECIES_VOX)	//this thing can autoadapt, but diona/vox are too weird
 	no_cycle = TRUE
+
+/obj/item/clothing/suit/space/void/medical/veymed/fit_constraint()
+	var/list/bodytypes = list("exclude",SPECIES_DIONA,SPECIES_VOX)
+	return list(REQ_FITS_BODYTYPES(bodytypes))
 
 /obj/item/clothing/head/helmet/space/void/medical/veymed_static
 	name = "nonadaptive lightweight medical voidsuit helmet"
@@ -245,13 +263,16 @@
 	icon_state = "rig-sec"
 	item_state_slots = list(slot_r_hand_str = "sec_voidsuit", slot_l_hand_str = "sec_voidsuit")
 	armor = list(melee = 50, bullet = 25, laser = 25, energy = 15, bomb = 45, bio = 100, rad = 10)
-	allowed = list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_SUIT_REGULATORS, POCKET_ALL_TANKS, POCKET_EXPLO)
 	siemens_coefficient = 0.7
 	breach_threshold = 14 //These are kinda thicc
 	resilience = 0.15 //Armored
 	slowdown = 1
 
 //Security Crowd Control Voidsuit
+
+/obj/item/clothing/suit/space/void/security/suit_storage_constraint()
+	var/list/stores = list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_SUIT_REGULATORS, POCKET_ALL_TANKS, POCKET_EXPLO)
+	return list(HOLD_ONLY(stores))
 
 /obj/item/clothing/head/helmet/space/void/security/riot
 	name = "crowd control voidsuit helmet"
@@ -343,11 +364,14 @@
 	icon_state = "void_explorer"
 	item_state_slots = list(slot_r_hand_str = "skrell_suit_black", slot_l_hand_str = "skrell_suit_black")
 	armor = list(melee = 50, bullet = 15, laser = 35, energy = 25, bomb = 30, bio = 100, rad = 70)
-	allowed = list(POCKET_ALL_TANKS, POCKET_GENERIC, POCKET_EMERGENCY, POCKET_SUIT_REGULATORS, POCKET_MINING, POCKET_MEDICAL, POCKET_EXPLO)
 	breach_threshold = 14 //These are kinda thicc
 	resilience = 0.15 //Armored
 
 //SAR
+
+/obj/item/clothing/suit/space/void/exploration/suit_storage_constraint()
+	var/list/stores = list(POCKET_ALL_TANKS, POCKET_GENERIC, POCKET_EMERGENCY, POCKET_SUIT_REGULATORS, POCKET_MINING, POCKET_MEDICAL, POCKET_EXPLO)
+	return list(HOLD_ONLY(stores))
 /obj/item/clothing/head/helmet/space/void/expedition_medical
 	name = "field medic voidsuit helmet"
 	desc = "A radiation-resistant helmet made especially for exploring unknown planetary environments. Has a reinforced high-vis bubble style visor."
@@ -364,10 +388,13 @@
 	icon_state = "void_exp_medic"
 	item_state_slots = list(slot_r_hand_str = "skrell_suit_black", slot_l_hand_str = "skrell_suit_black")
 	armor = list(melee = 50, bullet = 15, laser = 25, energy = 15, bomb = 30, bio = 100, rad = 90)
-	allowed = list(POCKET_ALL_TANKS, POCKET_GENERIC, POCKET_EMERGENCY, POCKET_SUIT_REGULATORS, POCKET_MINING, POCKET_MEDICAL, POCKET_EXPLO)
 	breach_threshold = 14 //These are kinda thicc
 	resilience = 0.15 //Armored
 	max_heat_protection_temperature = SPACE_SUIT_MAX_HEAT_PROTECTION_TEMPERATURE+5000
+
+/obj/item/clothing/suit/space/void/expedition_medical/suit_storage_constraint()
+	var/list/stores = list(POCKET_ALL_TANKS, POCKET_GENERIC, POCKET_EMERGENCY, POCKET_SUIT_REGULATORS, POCKET_MINING, POCKET_MEDICAL, POCKET_EXPLO)
+	return list(HOLD_ONLY(stores))
 
 /obj/item/clothing/head/helmet/space/void/exploration/alt
 	desc = "A radiation-resistant helmet retrofitted for exploring unknown planetary environments."
@@ -397,7 +424,10 @@
 	item_state_slots = list(slot_r_hand_str = "atmos_voidsuit", slot_l_hand_str = "atmos_voidsuit")
 	name = "pilot voidsuit"
 	armor = list(melee = 40, bullet = 10, laser = 25, energy = 15, bomb = 25, bio = 100, rad = 60)
-	allowed = list(POCKET_ALL_TANKS, POCKET_GENERIC, POCKET_EMERGENCY, POCKET_SUIT_REGULATORS, /obj/item/storage/toolbox, /obj/item/storage/briefcase/inflatable)
+
+/obj/item/clothing/suit/space/void/pilot/suit_storage_constraint()
+	var/list/stores = list(POCKET_ALL_TANKS, POCKET_GENERIC, POCKET_EMERGENCY, POCKET_SUIT_REGULATORS, /obj/item/storage/toolbox, /obj/item/storage/briefcase/inflatable)
+	return list(HOLD_ONLY(stores))
 
 /obj/item/clothing/head/helmet/space/void/pilot/alt
 	icon_state = "rig0_pilot2"

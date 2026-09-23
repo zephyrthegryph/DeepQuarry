@@ -184,7 +184,7 @@
 				span_warning("[user] is trying to stuff a beacon into you!"))
 			if(do_after(user, 3 SECONDS, target = src))
 				user.drop_item()
-				I.forceMove(B)
+				B.belly_insert(I, user)
 				return TRUE
 			else
 				return TRUE //You don't get to hit someone 'later'
@@ -317,7 +317,7 @@
 		if(soulgem)
 			src.soulgem.release_mobs()
 			QDEL_NULL(soulgem)
-		if(P.soulcatcher_prefs.len)
+		if(length(P.soulcatcher_prefs))
 			var/list/errors = list()
 			soulgem = state_materialize(P.soulcatcher_prefs, src, NONE, errors)
 			if(!soulgem)
@@ -424,14 +424,14 @@
 
 /mob/living/carbon/human/show_pudge()
 	//A uniform could hide it.
-	if(istype(w_uniform,/obj/item/clothing))
-		var/obj/item/clothing/under = w_uniform
+	if(istype(get_equipped_item(SLOT_ID_UNIFORM),/obj/item/clothing))
+		var/obj/item/clothing/under = get_equipped_item(SLOT_ID_UNIFORM)
 		if(istype(under) && under.hides_bulges)
 			return FALSE
 
 	//We return as soon as we find one, no need for 'else' really.
-	if(istype(wear_suit,/obj/item/clothing))
-		var/obj/item/clothing/suit = wear_suit
+	if(istype(get_equipped_item(SLOT_ID_SUIT),/obj/item/clothing))
+		var/obj/item/clothing/suit = get_equipped_item(SLOT_ID_SUIT)
 		if(istype(suit) && suit.hides_bulges)
 			return FALSE
 

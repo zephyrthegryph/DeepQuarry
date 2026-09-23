@@ -1036,7 +1036,7 @@ GLOBAL_LIST_INIT(common_tools, list(
 				return 0
 		if(/obj/item/tool/transforming)
 			var/obj/item/tool/transforming/TT = W
-			if(TT.possible_tooltypes[TT.current_tooltype] == TOOL_WELDER)
+			if(LAZYACCESS(TT.possible_tooltypes, TT.current_tooltype) == TOOL_WELDER)
 				return 3800
 			else
 				return 0
@@ -1089,7 +1089,7 @@ GLOBAL_LIST_INIT(common_tools, list(
 	return ( \
 		W.has_tool_quality(TOOL_SCREWDRIVER)		     				              || \
 		istype(W, /obj/item/pen)                           || \
-		istype(W, /obj/item/weldingtool)					  || \
+		W.has_tool_quality(TOOL_WELDER)					  || \
 		istype(W, /obj/item/flame/lighter/zippo)			  || \
 		istype(W, /obj/item/flame/match)            		  || \
 		istype(W, /obj/item/clothing/mask/smokable/cigarette) 		      || \

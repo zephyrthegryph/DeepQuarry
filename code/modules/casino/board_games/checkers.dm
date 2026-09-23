@@ -32,9 +32,9 @@
 		list("wM", null, "wM", null, "wM", null, "wM", null)
 	)
 	var/list/current_board = list()
-	var/list/valid_moves = list()
-	var/list/selected_figure = list()
-	var/list/possible_jumps = list()
+	var/list/valid_moves
+	var/list/selected_figure
+	var/list/possible_jumps
 	var/turn_start_time = 0
 	var/winner
 
@@ -62,12 +62,12 @@
 		"player_one_time" = player_one_time + (game_state == GAME_PLAYER_ONE ? world.time - turn_start_time : 0),
 		"player_two_time" = player_two_time + (game_state == GAME_PLAYER_TWO ? world.time - turn_start_time : 0),
 		"current_board" = current_board,
-		"selected_figure" = selected_figure,
-		"valid_moves" = valid_moves,
+		"selected_figure" = (selected_figure || list()),
+		"valid_moves" = (valid_moves || list()),
 		"game_state" = game_state,
 		"winner" = winner,
 		"has_won" = winner == ui.user.name,
-		"possible_jumps" = possible_jumps
+		"possible_jumps" = (possible_jumps || list())
 	)
 
 /datum/board_game/checkers/tgui_act(action, list/params, datum/tgui/ui, datum/tgui_state/state)
@@ -154,8 +154,8 @@
 	winner = null
 	player_one_time = 0
 	player_two_time = 0
-	selected_figure.Cut()
-	valid_moves.Cut()
+	LAZYCLEARLIST(selected_figure)
+	LAZYCLEARLIST(valid_moves)
 	if(full)
 		current_board.Cut()
 		game_state = GAME_SETUP
@@ -196,8 +196,8 @@
 			if(!valid_move(to_x, to_y))
 				return GAME_ACTION_NONE
 
-			var/from_x = selected_figure[1]
-			var/from_y = selected_figure[2]
+			var/from_x = LAZYACCESS(selected_figure, 1)
+			var/from_y = LAZYACCESS(selected_figure, 2)
 			var/moving_piece = current_board[from_y][from_x]
 
 			if(moving_piece[2] == "M" && ((moving_piece[1] == "w" && to_y == 1) || (moving_piece[1] == "b" && to_y == GRID_SIZE)))
@@ -235,13 +235,13 @@
 			else if(game_state == GAME_PLAYER_TWO)
 				player_two_time += turn_duration
 
-			selected_figure.Cut()
+			LAZYCLEARLIST(selected_figure)
 			update_valid_moves()
 			validate_victory(active_color)
 			if(game_state != GAME_OVER)
 				possible_jumps = get_mandatory_jumps(active_color == "w" ? "b" : "w")
 			else
-				possible_jumps.Cut()
+				LAZYCLEARLIST(possible_jumps)
 			return GAME_ACTION_END_TURN
 
 /datum/board_game/checkers/proc/get_mandatory_jumps(active_color)
@@ -259,10 +259,10 @@
 	return jumping_pieces
 
 /datum/board_game/checkers/proc/update_valid_moves()
-	valid_moves.Cut()
+	LAZYCLEARLIST(valid_moves)
 	if(length(selected_figure))
-		var/x = selected_figure[1]
-		var/y = selected_figure[2]
+		var/x = LAZYACCESS(selected_figure, 1)
+		var/y = LAZYACCESS(selected_figure, 2)
 		valid_moves = generate_valid_moves(x, y)
 
 /datum/board_game/checkers/proc/piece_can_jump_again(x, y)

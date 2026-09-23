@@ -91,6 +91,7 @@
 #define slot_in_backpack 22
 #define SLOT_TOTAL       22
 
+
 // Inventory slot strings.
 // since numbers cannot be used as associative list keys.
 //icon_back, icon_l_hand, etc would be much better names for these...

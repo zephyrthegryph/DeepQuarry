@@ -141,7 +141,7 @@
 	shadekin_ability_datums = list()
 	for(var/power in shadekin_abilities)
 		var/datum/power/shadekin/SKP = new power(src)
-		shadekin_ability_datums.Add(SKP)
+		LAZYADD(shadekin_ability_datums, SKP)
 
 ///Gets rid of any old ability master if we have one and replaces it with a shadekin ability master.
 /datum/component/shadekin/proc/create_shadekin_abilities()

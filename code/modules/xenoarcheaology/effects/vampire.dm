@@ -7,7 +7,7 @@
 	var/last_eat = 0
 	var/eat_interval = 100
 	var/charges = 0
-	var/list/nearby_mobs = list()
+	var/list/nearby_mobs
 	var/harvested = FALSE
 
 	effect_state = "gravisphere"
@@ -54,16 +54,16 @@
 		holder = holder.loc
 	if(isliving(holder.loc))
 		holder = holder.loc
-	if(nearby_mobs.len)
-		nearby_mobs.Cut()
+	if(length(nearby_mobs))
+		LAZYCLEARLIST(nearby_mobs)
 	var/turf/T = get_turf(holder)
 
 	for(var/mob/living/L in oview(effectrange, T))
 		if(!L.stat && L.mind)
-			nearby_mobs |= L
+			LAZYOR(nearby_mobs, L)
 
 	if(world.time - bloodcall_interval >= last_bloodcall && LAZYLEN(nearby_mobs))
-		var/mob/living/carbon/human/M = pick(nearby_mobs)
+		var/mob/living/carbon/human/M = DEFAULTPICK(nearby_mobs, null)
 		if(get_dist(M, T) <= effectrange && M.vitality() > 0.6)
 			bloodcall(M)
 			holder.Beam(M, icon_state = "drainbeam", time = 1 SECOND)
@@ -93,8 +93,8 @@
 			new spawn_type(pick(RANGE_TURFS(1,T)))
 			playsound(holder, pick('sound/hallucinations/growl1.ogg','sound/hallucinations/growl2.ogg','sound/hallucinations/growl3.ogg'), 50, 1, -3)
 
-	if(charges >= 1 && nearby_mobs.len && prob(15 * nearby_mobs.len))
-		var/mob/living/L = pick(nearby_mobs)
+	if(charges >= 1 && length(nearby_mobs) && prob(15 * length(nearby_mobs)))
+		var/mob/living/L = DEFAULTPICK(nearby_mobs, null)
 
 		holder.Beam(L, icon_state = "drainbeam", time = 1 SECOND)
 

@@ -557,7 +557,7 @@ SUBSYSTEM_DEF(contracts)
 		for(var/option_id in clause.options)
 			var/datum/contract_clause_option/option = clause.options[option_id]
 			var/station_reputation = option.station_reputation_delta
-			var/list/raw_other_reputation = option.effects["other_faction_reputation"]
+			var/list/raw_other_reputation = LAZYACCESS(option.effects, "other_faction_reputation")
 			var/list/distinct_other_reputation = raw_other_reputation?.Copy()
 			var/issuer_reputation = distinct_other_reputation?[contract.issuer_faction]
 			if(isnum(issuer_reputation))

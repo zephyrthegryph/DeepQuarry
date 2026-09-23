@@ -51,6 +51,15 @@ GLOBAL_LIST_EMPTY(dq_rule_bindings)
 	var/datum/rule_binding/binding = GLOB.dq_rule_bindings[REF(thing)]
 	binding?.evaluate()
 
+/// The live binding of `thing` if one of its rules replaces the legacy path `flag`.
+/// Objects of a rule-driven type that never materialized (sandboxed, latent)
+/// have none, and keep the legacy path.
+/proc/dq_rules_binding_replacing(atom/thing, flag)
+	if(!RULES_REPLACE(thing.type, flag))
+		return null
+	var/datum/rule_binding/binding = GLOB.dq_rule_bindings[REF(thing)]
+	return binding?.replaces(flag) ? binding : null
+
 /// A DM-owned property of `thing` changed: publish its key if anything subscribed.
 /proc/dq_rules_publish(datum/thing, key_kind)
 	var/datum/rule_binding/binding = GLOB.dq_rule_bindings[REF(thing)]
@@ -124,6 +133,14 @@ GLOBAL_LIST_EMPTY(dq_rule_bindings)
 	owner = null
 	owner_ref = null
 	return ..()
+
+/// Whether a live rule on this binding replaces the RULE_REPLACES_* `flag`.
+/datum/rule_binding/proc/replaces(flag)
+	for(var/i in 1 to length(rules))
+		var/datum/rule/rule = rules[i]
+		if((rule.replaces & flag) && tokens[i])
+			return TRUE
+	return FALSE
 
 /datum/rule_binding/proc/active_count()
 	. = 0

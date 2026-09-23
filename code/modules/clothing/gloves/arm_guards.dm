@@ -9,17 +9,18 @@
 	pickup_sound = 'sound/items/pickup/axe.ogg'
 	resistance_flags = FIRE_PROOF
 
-/obj/item/clothing/gloves/arm_guard/mob_can_equip(mob/living/carbon/human/H, slot, disable_warning = FALSE, ignore_obstruction, go_over_slot = TRUE)
-	if(..()) //This will only run if no other problems occured when equiping.
-		if(H.wear_suit)
-			if(H.wear_suit.body_parts_covered & ARMS)
-				to_chat(H, span_warning("You can't wear \the [src] with \the [H.wear_suit], it's in the way."))
-				return 0
-			for(var/obj/item/clothing/accessory/A in H.wear_suit)
-				if(A.body_parts_covered & ARMS)
-					to_chat(H, span_warning("You can't wear \the [src] with \the [H.wear_suit]'s [A], it's in the way."))
-					return 0
-		return 1
+/obj/item/clothing/gloves/arm_guard/equip_constraint()
+	return dq_spec_join(..(), list(REQ_ON(PRED_TARGET, /obj/item/clothing/gloves/arm_guard/proc/suit_clearance, null)))
+
+/obj/item/clothing/gloves/arm_guard/proc/suit_clearance(mob/living/carbon/human/H)
+	if(!istype(H) || !H.get_equipped_item(SLOT_ID_SUIT))
+		return TRUE
+	if(H.get_equipped_item(SLOT_ID_SUIT).body_parts_covered & ARMS)
+		return "\the [H.get_equipped_item(SLOT_ID_SUIT)] is in the way"
+	for(var/obj/item/clothing/accessory/A in H.get_equipped_item(SLOT_ID_SUIT))
+		if(A.body_parts_covered & ARMS)
+			return "\the [H.get_equipped_item(SLOT_ID_SUIT)]'s [A] is in the way"
+	return TRUE
 
 /obj/item/clothing/gloves/arm_guard/laserproof
 	name = "ablative arm guards"

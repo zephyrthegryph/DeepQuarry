@@ -42,10 +42,11 @@
 
 /obj/machinery/power/port_gen/process()
 	if(active && HasFuel() && !IsBroken() && anchored && powernet)
-		add_avail(power_gen * power_output)
+		set_power_supply(power_gen * power_output)
 		UseFuel()
 	else
 		active = FALSE
+		set_power_supply(0)
 		update_icon()
 		if(!handleInactive())
 			return PROCESS_KILL

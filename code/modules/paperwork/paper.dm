@@ -28,7 +28,7 @@
 	var/fields		//Amount of user created fields
 	var/free_space = MAX_PAPER_MESSAGE_LEN
 	var/list/stamped
-	var/list/ico[0]      //Icons and
+	var/list/ico      //Icons and
 	var/list/offset_x[0] //offsets stored for later
 	var/list/offset_y[0] //usage by the photocopier
 	var/rigged = 0
@@ -254,8 +254,8 @@
 		i = user.get_active_hand()
 	if(!istype(i, /obj/item/pen))
 		var/mob/living/M = user
-		if(istype(M) && M.back && istype(M.back, /obj/item/rig))
-			var/obj/item/rig/r = M.back
+		if(istype(M) && M.get_equipped_item(SLOT_ID_BACK) && istype(M.get_equipped_item(SLOT_ID_BACK), /obj/item/rig))
+			var/obj/item/rig/r = M.get_equipped_item(SLOT_ID_BACK)
 			var/obj/item/rig_module/device/pen/m = locate(/obj/item/rig_module/device/pen) in r.installed_modules
 			if(!r.offline && m)
 				i = m.device
@@ -604,22 +604,22 @@
 		user.drop_from_inventory(P)
 		if(ishuman(user))
 			var/mob/living/carbon/human/h_user = user
-			if (h_user.r_hand == src)
+			if (h_user.get_equipped_item(SLOT_ID_HAND_R) == src)
 				h_user.drop_from_inventory(src)
 				h_user.put_in_r_hand(B)
-			else if (h_user.l_hand == src)
+			else if (h_user.get_equipped_item(SLOT_ID_HAND_L) == src)
 				h_user.drop_from_inventory(src)
 				h_user.put_in_l_hand(B)
-			else if (h_user.l_store == src)
+			else if (h_user.get_equipped_item(SLOT_ID_POCKET_L) == src)
 				h_user.drop_from_inventory(src)
 				if(!h_user.equip_to_slot_if_possible(B, slot_l_store))
 					h_user.drop_from_inventory(B)
-			else if (h_user.r_store == src)
+			else if (h_user.get_equipped_item(SLOT_ID_POCKET_R) == src)
 				h_user.drop_from_inventory(src)
 				if(!h_user.equip_to_slot_if_possible(B, slot_r_store))
 					h_user.drop_from_inventory(B)
-			else if (h_user.head == src)
-				h_user.u_equip(src)
+			else if (h_user.get_equipped_item(SLOT_ID_HEAD) == src)
+				h_user.drop_from_inventory(src)
 				h_user.put_in_hands(B)
 			else if (!istype(src.loc, /turf))
 				src.loc = get_turf(h_user)
@@ -685,7 +685,7 @@
 
 		if(!ico)
 			ico = new
-		ico += "paper_[P.icon_state]"
+		LAZYADD(ico, "paper_[P.icon_state]")
 		stampoverlay.icon_state = "paper_[P.icon_state]"
 
 		if(!stamped)

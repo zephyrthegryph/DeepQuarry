@@ -214,11 +214,11 @@
 		return FALSE
 
 	var/turf/message_turf = get_turf(user)	//We use this to ensure everyone can see it!
-	if(istype(I, /obj/item/tool/screwdriver))
+	if(I.has_tool_quality(TOOL_SCREWDRIVER))
 		unscrewed = !unscrewed
 		to_chat(user, "You screw the blackbox panel [unscrewed ? "off" : "on"]")
 
-	if(istype(I, /obj/item/tool/wirecutters))
+	if(I.has_tool_quality(TOOL_WIRECUTTER))
 		wirecutted = !wirecutted
 		to_chat(user, "You [wirecutted ? "cut" : "mend"] the power wire to the blackbox")
 
@@ -230,7 +230,7 @@
 		else
 			to_chat(user, span_notice("[src] cannot hold more than 1 sheet of paper."))
 
-	if(istype(I, /obj/item/multitool))
+	if(I.has_tool_quality(TOOL_MULTITOOL))
 		if(!unscrewed && !wirecutted)
 			to_chat(user, span_notice("You cannot access the debug interface with the panel screwed on!"))
 		else if(unscrewed && !wirecutted)

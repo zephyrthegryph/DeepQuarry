@@ -29,12 +29,12 @@
 	var/obj/machinery/camera/communicator/video_source	// Their camera
 	var/obj/machinery/camera/communicator/camera		// Our camera
 
-	var/list/voice_mobs = list()
-	var/list/voice_requests = list()
-	var/list/voice_invites = list()
+	var/list/voice_mobs
+	var/list/voice_requests
+	var/list/voice_invites
 
-	var/list/im_contacts = list()
-	var/list/im_list = list()
+	var/list/im_contacts
+	var/list/im_list
 
 	var/note = "Thank you for choosing the T-14.2 Communicator, this is your notepad!" //Current note in the notepad function
 	var/notehtml = ""
@@ -63,9 +63,9 @@
 	var/target_address_name = ""
 	var/network_visibility = 1
 	var/ringer = 1
-	var/list/known_devices = list()
+	var/list/known_devices
 	var/datum/exonet_protocol/exonet = null
-	var/list/communicating = list()
+	var/list/communicating
 	var/update_ticks = 0
 	var/newsfeed_channel = 0
 
@@ -258,17 +258,17 @@ REGISTRY_MEMBERSHIP(/obj/item/communicator, REGISTRY_COMMUNICATORS)
 /obj/item/communicator/proc/populate_known_devices(mob/user)
 	if(!exonet)
 		exonet = new(src)
-	src.known_devices.Cut()
+	LAZYCLEARLIST(src.known_devices)
 	if(!get_connection_to_tcomms()) //If the network's down, we can't see anything.
 		return
 	for(var/obj/item/communicator/comm in REGISTRY_MEMBERS(REGISTRY_COMMUNICATORS))
 		if(!comm || !comm.exonet || !comm.exonet.address || comm.exonet.address == src.exonet.address) //Don't add addressless devices, and don't add ourselves.
 			continue
-		src.known_devices |= comm
+		LAZYOR(src.known_devices, comm)
 	for(var/mob/observer/dead/O in GLOB.dead_mob_list)
 		if(!O.client || !O.client.prefs.read_preference(/datum/preference/toggle/human/communicator_visibility)) // migrated pref
 			continue
-		src.known_devices |= O
+		LAZYOR(src.known_devices, O)
 
 // Proc: get_connection_to_tcomms()
 // Parameters: None
@@ -387,15 +387,15 @@ REGISTRY_MEMBERSHIP(/obj/item/communicator, REGISTRY_COMMUNICATORS)
 	// ITION END
 	// Snapshot: qdel pulls the voice out of contents mid-iteration.
 	for(var/mob/living/voice/voice in contents.Copy())
-		voice_mobs.Remove(voice)
+		LAZYREMOVE(voice_mobs, voice)
 		to_chat(voice, span_danger("[icon2html(src, voice.client)] Connection timed out with remote host."))
 		qdel(voice)
 	close_connection(reason = "Connection timed out")
 
 	//Clean up all references we might have to others
-	communicating.Cut()
-	voice_requests.Cut()
-	voice_invites.Cut()
+	LAZYCLEARLIST(communicating)
+	LAZYCLEARLIST(voice_requests)
+	LAZYCLEARLIST(voice_invites)
 	node = null
 
 	//Clean up references that might point at us
@@ -419,7 +419,7 @@ REGISTRY_MEMBERSHIP(/obj/item/communicator, REGISTRY_COMMUNICATORS)
 		icon_state = "communicator-video"
 		return
 
-	if(voice_mobs.len || communicating.len)
+	if(length(voice_mobs) || length(communicating))
 		icon_state = "communicator-active"
 		return
 
@@ -452,7 +452,7 @@ REGISTRY_MEMBERSHIP(/obj/item/communicator, REGISTRY_COMMUNICATORS)
 		icon_state = "commwatch-video"
 		return
 
-	if(voice_mobs.len || communicating.len)
+	if(length(voice_mobs) || length(communicating))
 		icon_state = "commwatch-active"
 		return
 

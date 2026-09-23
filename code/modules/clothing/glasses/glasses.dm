@@ -184,8 +184,11 @@ BLIND     // can't see anything
 
 /obj/item/clothing/glasses/night/vox
 	name = "Alien Optics"
-	species_restricted = list("Vox")
 	flags = PHORONGUARD
+
+/obj/item/clothing/glasses/night/vox/fit_constraint()
+	var/list/bodytypes = list("Vox")
+	return list(REQ_FITS_BODYTYPES(bodytypes))
 
 /obj/item/clothing/glasses/night/Initialize(mapload)
 	. = ..()
@@ -562,7 +565,7 @@ BLIND     // can't see anything
 	if(ishuman(src.loc))
 		var/mob/living/carbon/human/M = src.loc
 		to_chat(M, span_red("The Optical Thermal Scanner overloads and blinds you!"))
-		if(M.glasses == src)
+		if(M.get_equipped_item(SLOT_ID_EYES) == src)
 			M.Blind(3)
 			M.eye_blurry = 5
 			// Don't cure being nearsighted
@@ -621,8 +624,11 @@ BLIND     // can't see anything
 	var/up = 0
 	item_flags = AIRTIGHT
 	body_parts_covered = EYES
-	species_restricted = list(SPECIES_TESHARI)
 	specialty_goggles = TRUE
+
+/obj/item/clothing/glasses/aerogelgoggles/fit_constraint()
+	var/list/bodytypes = list(SPECIES_TESHARI)
+	return list(REQ_FITS_BODYTYPES(bodytypes))
 
 /obj/item/clothing/glasses/aerogelgoggles/attack_self(mob/user)
 	. = ..(user)
@@ -698,7 +704,7 @@ BLIND     // can't see anything
 	//We're getting a prescription
 	else if(ishuman(target))
 		var/mob/living/carbon/human/T = target
-		if(T.glasses || (T.head && T.head.flags_inv & HIDEEYES))
+		if(T.get_equipped_item(SLOT_ID_EYES) || (T.get_equipped_item(SLOT_ID_HEAD) && T.get_equipped_item(SLOT_ID_HEAD).flags_inv & HIDEEYES))
 			to_chat(user, span_warning("The person's eyes can't be covered!"))
 			return
 

@@ -93,6 +93,7 @@
 	R.chest.forceMove(wearer)
 	TEST_ASSERT(wearer.equip_to_slot_if_possible(R.chest, slot_wear_suit, 0, 1), "the chest piece should deploy onto the wearer")
 	R.chest.armor["melee"] = 50
+	R.chest.worn_protection_changed()
 	load_before = H.injury_load(INJURY_CATEGORY_PHYSICAL)
 	wearer.injure(INJURY_BLUNT, 20, BP_TORSO, flags = INJURE_ARMORED | INJURE_SILENT)
 	TEST_ASSERT(H.injury_load(INJURY_CATEGORY_PHYSICAL) > load_before, "what the cluster's armour stops should land on the protean")

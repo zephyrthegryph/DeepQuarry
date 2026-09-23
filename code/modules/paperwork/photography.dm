@@ -110,7 +110,10 @@ GLOBAL_VAR_INIT(photo_count, 0)
 	icon = 'icons/obj/items.dmi'
 	icon_state = "album"
 	item_state = "briefcase"
-	can_hold = list(/obj/item/photo)
+
+/obj/item/storage/photo_album/hold_constraint()
+	var/list/holds = list(/obj/item/photo)
+	return list(HOLD_ONLY(holds), HOLD_MAX_SIZE(ITEMSIZE_SMALL))
 
 /obj/item/storage/photo_album/MouseDrop(obj/over_object as obj)
 
@@ -119,7 +122,7 @@ GLOBAL_VAR_INIT(photo_count, 0)
 		if(!( istype(over_object, /atom/movable/screen) ))
 			return ..()
 		playsound(src, "rustle", 50, 1, -5)
-		if((!( M.restrained() ) && !( M.stat ) && M.back == src))
+		if((!( M.restrained() ) && !( M.stat ) && M.get_equipped_item(SLOT_ID_BACK) == src))
 			switch(over_object.name)
 				if("r_hand")
 					M.unEquip(src)
@@ -154,7 +157,7 @@ GLOBAL_VAR_INIT(photo_count, 0)
 	var/icon_on = "camera"
 	var/icon_off = "camera_off"
 	var/size = 3
-	var/list/picture_planes = list()
+	var/list/picture_planes
 
 /obj/item/camera/verb/change_size()
 	set name = "Set Photo Focus"
@@ -247,13 +250,13 @@ GLOBAL_VAR_INIT(photo_count, 0)
 	for(var/mob/living/carbon/A in the_turf)
 		if(A.invisibility) continue
 		var/holding = null
-		if(A.l_hand || A.r_hand)
-			if(A.l_hand) holding = "They are holding \a [A.l_hand]"
-			if(A.r_hand)
+		if(A.get_equipped_item(SLOT_ID_HAND_L) || A.get_equipped_item(SLOT_ID_HAND_R))
+			if(A.get_equipped_item(SLOT_ID_HAND_L)) holding = "They are holding \a [A.get_equipped_item(SLOT_ID_HAND_L)]"
+			if(A.get_equipped_item(SLOT_ID_HAND_R))
 				if(holding)
-					holding += " and \a [A.r_hand]"
+					holding += " and \a [A.get_equipped_item(SLOT_ID_HAND_R)]"
 				else
-					holding = "They are holding \a [A.r_hand]"
+					holding = "They are holding \a [A.get_equipped_item(SLOT_ID_HAND_R)]"
 
 		if(!mob_detail)
 			mob_detail = "You can see [A] on the photo[A.vitality() < 0.75 ? " - [A] looks hurt":""].[holding ? " [holding]":"."]. "

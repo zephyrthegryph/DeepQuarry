@@ -19,7 +19,6 @@
 	min_pressure_protection = 0 * ONE_ATMOSPHERE
 	max_pressure_protection = 2 * ONE_ATMOSPHERE
 	siemens_coefficient = 0.9
-	species_restricted = list("exclude",SPECIES_DIONA)
 	preserve_item = 1
 	flash_protection = FLASH_PROTECTION_MAJOR
 	valid_accessory_slots = null
@@ -31,6 +30,10 @@
 	actions_types = list(/datum/action/item_action/toggle_helmet_light)
 	light_overlay = "helmet_light"
 	light_range = 4
+
+/obj/item/clothing/head/helmet/space/fit_constraint()
+	var/list/bodytypes = list("exclude",SPECIES_DIONA)
+	return list(REQ_FITS_BODYTYPES(bodytypes))
 
 /obj/item/clothing/head/helmet/space/Initialize(mapload)
 	. = ..()
@@ -77,7 +80,6 @@
 	flags = PHORONGUARD
 	item_flags = THICKMATERIAL
 	body_parts_covered = CHEST|LEGS|FEET|ARMS|HANDS
-	allowed = list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_SUIT_REGULATORS)
 	slowdown = 1 // 1.5 to 1. More sane movespeed delay. Voidsuits are still faster.
 	armor = list(melee = 0, bullet = 0, laser = 0,energy = 0, bomb = 0, bio = 100, rad = 50)
 	flags_inv = HIDEGLOVES|HIDESHOES|HIDEJUMPSUIT|HIDETAIL|HIDETIE|HIDEHOLSTER
@@ -87,13 +89,20 @@
 	min_pressure_protection = 0 * ONE_ATMOSPHERE
 	max_pressure_protection = 2 * ONE_ATMOSPHERE
 	siemens_coefficient = 0.9
-	species_restricted = list("exclude",SPECIES_DIONA)
 	preserve_item = 1
 	valid_accessory_slots = (ACCESSORY_SLOT_OVER | ACCESSORY_SLOT_ARMBAND | ACCESSORY_SLOT_DECOR)
 	var/list/supporting_limbs //If not-null, automatically splints breaks. Checked when removing the suit.
 	resistance_flags = FIRE_PROOF | ACID_PROOF
 
 // start - use the specially refitted sprites by KBraid. Done this way to avoid breaking subtypes.
+
+/obj/item/clothing/suit/space/fit_constraint()
+	var/list/bodytypes = list("exclude",SPECIES_DIONA)
+	return list(REQ_FITS_BODYTYPES(bodytypes))
+
+/obj/item/clothing/suit/space/suit_storage_constraint()
+	var/list/stores = list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_SUIT_REGULATORS)
+	return list(HOLD_ONLY(stores))
 /obj/item/clothing/suit/space/Initialize(mapload)
 	. = ..()
 	if(type == /obj/item/clothing/suit/space)
@@ -118,7 +127,7 @@
 	if(!istype(user) || isnull(supporting_limbs))
 		return
 
-	if(user.wear_suit == src)
+	if(user.get_equipped_item(SLOT_ID_SUIT) == src)
 		for(var/obj/item/organ/external/E in user.bad_external_organs)
 			if(E.is_broken() && E.apply_splint(src))
 				to_chat(user, "You feel [src] constrict about your [E.name], supporting it.")

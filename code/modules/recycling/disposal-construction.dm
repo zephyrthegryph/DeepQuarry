@@ -276,15 +276,9 @@
 	if(!anchored)
 		to_chat(user, "You need to attach it to the plating first!")
 		return ITEM_INTERACT_BLOCKING
-	var/obj/item/weldingtool/W = I.get_welder()
-	if(!W.remove_fuel(0,user))
-		to_chat(user, "You need more welding fuel to complete this task.")
-		return ITEM_INTERACT_BLOCKING
-	playsound(src, W.usesound, 100, 1)
-	to_chat(user, "Welding the [nicetype] in place.")
-	if(!do_after(user, 2 SECONDS * W.toolspeed, target = src))
+	if(!use_tool(user, I, src, delay = 2 SECONDS, quality = TOOL_WELDER, volume = 100, message_self = "Welding the [nicetype] in place."))
 		return ITEM_INTERACT_SUCCESS
-	if(!src || !W.isOn())
+	if(!src)
 		return ITEM_INTERACT_BLOCKING
 	to_chat(user, "The [nicetype] has been welded in place!")
 	update()

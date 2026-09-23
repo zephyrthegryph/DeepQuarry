@@ -117,13 +117,13 @@
 	if(!istype(M))
 		return 0 //not equipped
 
-	if((slot_flags & SLOT_BACK) && M.get_equipped_item(slot_back) == src)
+	if(HAS_TAG(src, TAG_WEAR_BACK) && M.get_equipped_item(slot_back) == src)
 		return 1
-	if((slot_flags & SLOT_BELT) && M.get_equipped_item(slot_belt) == src)
+	if(HAS_TAG(src, TAG_WEAR_BELT) && M.get_equipped_item(slot_belt) == src)
 		return 1
-	if((slot_flags & SLOT_BACK) && M.get_equipped_item(slot_s_store) == src)
+	if(HAS_TAG(src, TAG_WEAR_BACK) && M.get_equipped_item(slot_s_store) == src)
 		return 1
-	if((slot_flags & SLOT_BELT) && M.get_equipped_item(slot_s_store) == src)
+	if(HAS_TAG(src, TAG_WEAR_BELT) && M.get_equipped_item(slot_s_store) == src)
 		return 1
 
 	return 0
@@ -288,7 +288,7 @@
 
 /obj/item/shockpaddles/proc/check_contact(mob/living/carbon/human/H)
 	if(!combat)
-		for(var/obj/item/clothing/cloth in list(H.wear_suit, H.w_uniform))
+		for(var/obj/item/clothing/cloth in list(H.get_equipped_item(SLOT_ID_SUIT), H.get_equipped_item(SLOT_ID_UNIFORM)))
 			if((cloth.body_parts_covered & UPPER_TORSO) && (cloth.item_flags & THICKMATERIAL))
 				return FALSE
 	return TRUE

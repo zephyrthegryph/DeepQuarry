@@ -5,22 +5,19 @@
 	slot = ACCESSORY_SLOT_WEAPON
 	concealed_holster = 1
 	var/obj/item/holstered = null
-	var/list/can_hold
 	var/holster_in = 'sound/items/holsterin.ogg'
 	var/holster_out = 'sound/items/holsterout.ogg'
 	w_class = ITEMSIZE_NORMAL
+
+/// Holsters take holsterable things; sheaths and special holsters list what they take.
+/obj/item/clothing/accessory/holster/hold_constraint()
+	return list(REQ_BECAUSE(REQ_TAG(PRED_TARGET, TAG_HOLSTERABLE), "it isn't made for a holster"))
 
 /obj/item/clothing/accessory/holster/proc/holster(obj/item/I, mob/living/user)
 	if(holstered && istype(user))
 		to_chat(user, span_warning("There is already \a [holstered] holstered here!"))
 		return
-	// Machete sheath support
-	if (LAZYLEN(can_hold))
-		if(!is_type_in_list(I,can_hold))
-			to_chat(user, span_warning("[I] won't fit in [src]!"))
-			return
-
-	else if (!(I.slot_flags & SLOT_HOLSTER))
+	if(dq_constraint_refusal(src, CONSTRAINT_HOLD, I, user))
 		to_chat(user, span_warning("[I] won't fit in [src]!"))
 		return
 
@@ -50,7 +47,7 @@
 		// begin
 		if(iscarbon(user))
 			var/mob/living/carbon/C = user
-			if(C.handcuffed)
+			if(C.get_equipped_item(SLOT_ID_HANDCUFFED))
 				to_chat(C, span_warning("You cannot draw \the [holstered] while handcuffed!"))
 				return
 			else if(istype(C, /mob/living/carbon/human))
@@ -189,18 +186,24 @@
 /obj/item/clothing/accessory/holster/waist/kinetic_accelerator
 	name = "KA holster"
 	desc = "A specialized holster, made specifically for Kinetic Accelerators."
-	can_hold = list(/obj/item/gun/energy/kinetic_accelerator)
+
+/obj/item/clothing/accessory/holster/waist/kinetic_accelerator/hold_constraint()
+	var/list/holds = list(/obj/item/gun/energy/kinetic_accelerator)
+	return list(HOLD_ONLY(holds))
 
 /obj/item/clothing/accessory/holster/waist/lanyard
 	name = "baton lanyard"
 	desc = "A sturdy tether with quick-release carabiner that can keep several patterns of standard-issue security baton ready for quick usage."
 	icon_state = "holster_lanyard"
 	overlay_state = "holster_lanyard"
-	can_hold = list(
+
+/obj/item/clothing/accessory/holster/waist/lanyard/hold_constraint()
+	var/list/holds = list(
 		/obj/item/melee/baton,
 		/obj/item/melee/classic_baton,
 		/obj/item/melee/telebaton
 		)
+	return list(HOLD_ONLY(holds))
 
 /obj/item/clothing/accessory/holster/machete/rapier
 	name = "rapier sheath"
@@ -209,12 +212,17 @@
 	slot_flags = SLOT_BELT|ACCESSORY_SLOT_WEAPON
 	var/has_full_icon = 1
 	overlay_state = "sheath"
-	can_hold = list(/obj/item/melee/rapier)
+
+/obj/item/clothing/accessory/holster/machete/rapier/hold_constraint()
+	var/list/holds = list(/obj/item/melee/rapier)
+	return list(HOLD_ONLY(holds))
 
 /obj/item/clothing/accessory/holster/machete/rapier/swords
 	name = "sword sheath"
 	desc = "A beautiful red sheath, probably for a beautiful blade."
-	can_hold = list(
+
+/obj/item/clothing/accessory/holster/machete/rapier/swords/hold_constraint()
+	var/list/holds = list(
 		/obj/item/melee/rapier,
 		/obj/item/material/sword/katana,
 		/obj/item/toy/cultsword,
@@ -222,6 +230,7 @@
 		/obj/item/melee/cursedblade,
 		/obj/item/melee/cultblade
 		)
+	return list(HOLD_ONLY(holds))
 
 /obj/item/clothing/accessory/holster/machete/rapier/proc/occupied()
 	if(!has_full_icon)
@@ -272,4 +281,7 @@
 	icon = 'icons/inventory/accessory/item.dmi'
 	icon_state = "instrument"
 	concealed_holster = 0
-	can_hold = list(/obj/item/instrument)
+
+/obj/item/clothing/accessory/holster/case/hold_constraint()
+	var/list/holds = list(/obj/item/instrument)
+	return list(HOLD_ONLY(holds))

@@ -2,7 +2,7 @@
 	var/commit  // git rev-parse HEAD
 	var/date
 	var/originmastercommit  // git rev-parse origin/master
-	var/list/testmerge = list()
+	var/list/testmerge
 
 /datum/getrev/New()
 	commit = rustg_git_revparse("HEAD")
@@ -42,7 +42,7 @@
 	return msg.Join("\n")
 
 /datum/getrev/proc/GetTestMergeInfo(header = TRUE)
-	if(!testmerge.len)
+	if(!length(testmerge))
 		return ""
 	. = header ? "The following pull requests are currently test merged:<br>" : ""
 	for(var/line in testmerge)

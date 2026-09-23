@@ -90,7 +90,7 @@ GLOBAL_VAR_INIT(moth_amount, 0)
 				sparks.set_up(5, 0, get_turf(self))
 				sparks.start()
 			self.anchored = TRUE
-			self.PN = self.attached.powernet
+			self.PN = self.attached.get_powernet()
 			self.PN.draw_power(self.powerdraw)
 			self.charge = self.charge + (self.powerdraw/1000) //This adds raw powerdraw to charge(Charge is in Ks as in 1 = 1000)
 			var/apc_drain_rate = 750 //Going to see if grubs are better as a minimal bother. previous value : 4000
@@ -189,6 +189,7 @@ GLOBAL_VAR_INIT(moth_amount, 0)
 	B.belly_fullscreen = "VBOanim_belly1"
 	B.colorization_enabled = TRUE
 
+	B.own_emote_lists()
 	B.emote_lists[DM_HOLD] = list(
 		"The air trapped within the solargrub is hot, humid, and tinged with ozone, but otherwise mercifully harmless to you aside from being heavy on the lungs.",
 		"Your doughy, squishy surroundings heavily pulse around your body as the solargrub attempts to wriggle elsewhere, its solid prey weighing it down quite a bit.",
@@ -197,6 +198,7 @@ GLOBAL_VAR_INIT(moth_amount, 0)
 		"For a moment, the solargrub's stomach walls clench down even more firmly than before, working its subtle inner vibrations into your muscles, steadily relaxing them down.",
 		"The incredible heat trapped within the solargrub helps daze and disorient you, ensuring that its new filling wouldn't interfere in its power-draining.")
 
+	B.own_emote_lists()
 	B.emote_lists[DM_DIGEST] = list(
 		"Every breath taken inside the solargrub is swelteringly hot, painfully thick, and more than subtly caustic, worsening with every passing moment spent inside!",
 		"As the solargrub wriggles off somewhere quiet to digest its meal, the resulting undulations help crush you down into a more compact, easier to handle morsel!",

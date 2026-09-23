@@ -54,6 +54,10 @@
 	/// object whose rules are all heat-only subscribes when it first gets a
 	/// heat body, not when it materializes: at rest it cannot cross anything.
 	var/heat_only = FALSE
+	// Shared parents (abstract_type == type) are skipped like test_only.
+	abstract_type = /datum/rule
+	/// Damage-flavour rules: the DAMAGE_BAND_* they set.
+	var/band
 
 	// Compiled
 	var/datum/predicate/predicate
@@ -309,7 +313,7 @@
 		rules = list()
 		for(var/path in subtypesof(/datum/rule))
 			var/datum/rule/rule = new path
-			if(rule.test_only || rule.abstract_type == path)
+			if(rule.test_only || rule.type == rule.abstract_type)
 				continue
 			if(!rule.compile())
 				stack_trace("rule [path] failed to compile: [jointext(rule.errors, "; ")]")
@@ -364,8 +368,13 @@
 			for(var/excluded in rule.excludes)
 				if(ispath(path, excluded))
 					return FALSE
-			return TRUE
+			return rule.applies_to_type(path)
 	return FALSE
+
+/// Per-type filter under applies_to, read from type vars once and cached with
+/// the type index. A type it rejects has no binding and costs nothing.
+/datum/rule/proc/applies_to_type(path)
+	return TRUE
 
 /// RULE_REPLACES_* flags of the rules on `path`. Cached per type.
 /proc/dq_rules_replace_flags(path)
@@ -383,7 +392,7 @@
 	. = list()
 	for(var/path in subtypesof(/datum/rule))
 		var/datum/rule/rule = new path
-		if(rule.test_only || rule.abstract_type == path)
+		if(rule.test_only || rule.type == rule.abstract_type)
 			continue
 		if(!rule.compile())
 			for(var/error in rule.errors)

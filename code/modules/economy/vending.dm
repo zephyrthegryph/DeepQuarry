@@ -34,18 +34,19 @@
 	/*
 		Variables used to initialize the product list
 		These are used for initialization only, and so are optional if
-		product_records is specified
+		product_records is specified. build_inventory() drops them after use.
 	*/
-	var/list/products	= list() // For each, use the following pattern:
-	var/list/contraband	= list() // list(/type/path = amount,/type/path2 = amount2)
-	var/list/premium 	= list() // No specified amount = only one in stock
+	var/list/products // For each, use the following pattern:
+	var/list/contraband // list(/type/path = amount,/type/path2 = amount2)
+	var/list/premium // No specified amount = only one in stock
 	/// Set automatically, allows coin use
 	var/has_premium = FALSE
-	var/list/prices     = list() // Prices for each item, list(/type/path = price), items not in the list don't have a price.
+	var/list/prices // Prices for each item, list(/type/path = price), items not in the list don't have a price.
 	/// Set automatically, enables pricing
 	var/has_prices = FALSE
 	// This one is used for refill cartridge use.
-	var/list/refill	= list() // For each, use the following pattern:
+	/// Read-only once built: identical tables are shared between vendors (see share_refill_table()).
+	var/list/refill // For each, use the following pattern:
 	// Enables refilling with appropriate cartridges
 	var/refillable = TRUE
 
@@ -139,13 +140,29 @@ GLOBAL_LIST_EMPTY(vending_products)
 
 
 	if(!LAZYLEN(refill) && refillable)			// Manually setting refill list prevents the automatic population. By default filled with all entries from normal product.
-		refill += products
+		refill = products
+	share_refill_table()
 
-	LAZYCLEARLIST(products)
-	LAZYCLEARLIST(contraband)
-	LAZYCLEARLIST(premium)
-	LAZYCLEARLIST(prices)
+	// Consumed: drop the references (products may now be the refill table, so don't Cut() it).
+	products = null
+	contraband = null
+	premium = null
+	prices = null
 	all_products.Cut()
+
+/// Vendors of one type (and the same mapped overrides) carry identical refill
+/// tables, so they share one list. Nothing edits refill after init; copy it first if that changes.
+/obj/machinery/vending/proc/share_refill_table()
+	var/static/list/refill_tables = list()
+	if(!LAZYLEN(refill))
+		refill = null
+		return
+	var/key = "[type]|[json_encode(refill)]"
+	var/list/shared = refill_tables[key]
+	if(shared)
+		refill = shared
+	else
+		refill_tables[key] = refill
 
 /obj/machinery/vending/proc/refill_inventory()
 	if(!(LAZYLEN(refill)))		//This shouldn't happen, but just in case...
@@ -704,7 +721,7 @@ GLOBAL_LIST_EMPTY(vending_products)
 			R.get_product(loc)
 		break
 
-	stat |= BROKEN
+	atom_break()
 	icon_state = "[initial(icon_state)]-broken"
 	return
 

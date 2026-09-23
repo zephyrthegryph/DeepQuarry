@@ -14,7 +14,7 @@
 	/// The scanning module installed in the extrapolator. Used to determine extraction speed, and the stealthiest virus that's possible to extract.
 	var/obj/item/stock_parts/scanning_module/scanner
 	/// A list of advance IDs that this extrapolator has already extracted.
-	var/list/extracted_ids = list()
+	var/list/extracted_ids
 	/// How long it takes for the extrapolator to extract a virus.
 	var/extract_time = 10 SECONDS
 	/// How long it tkaes for the extrapolator to isolate a symptom.
@@ -168,7 +168,7 @@
 				if(global_flag_check(advance_disease.virus_modifiers, FALTERED))
 					LAZYADD(properties, "faltered")
 				message += span_info("<b>[advance_disease.name]</b>[LAZYLEN(properties) ? " ([properties.Join(", ")])" : ""], [global_flag_check(advance_disease.virus_modifiers, DORMANT) ? "<i>dormant virus</i>" : "stage [advance_disease.stage]/5"]")
-				if(extracted_ids[advance_disease.GetDiseaseID()])
+				if(LAZYACCESS(extracted_ids, advance_disease.GetDiseaseID()))
 					message += "This virus has been extracted by \the [src] previously."
 				message += "[advance_disease.name] has the following symptoms:"
 				for(var/datum/symptom/symptom in advance_disease.symptoms)
@@ -251,7 +251,7 @@
 	user.put_in_hands(culture_bottle)
 	playsound(src, 'sound/machines/ping.ogg', vol = 30, vary = TRUE)
 	COOLDOWN_START(src, usage_cooldown, 1 SECONDS)
-	extracted_ids[disease.GetDiseaseID()] = TRUE
+	LAZYSET(extracted_ids, disease.GetDiseaseID(), TRUE)
 	return TRUE
 
 /obj/item/extrapolator/tier5

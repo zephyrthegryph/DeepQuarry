@@ -28,11 +28,11 @@
 	var/cooked_sound = 'sound/machines/ding.ogg'				// Sound played when cooking completes.
 	var/can_burn_food = FALSE		// Can the object burn food that is left inside?
 	var/burn_chance = 10			// How likely is the food to burn?
-	var/list/cooking_objs = list()	// List of things being cooked
+	var/list/cooking_objs	// List of things being cooked
 
 	// If the machine has multiple output modes, define them here.
 	var/selected_option
-	var/list/output_options = list()
+	var/list/output_options
 
 	var/container_type = null
 
@@ -54,7 +54,7 @@
 /obj/machinery/appliance/Destroy()
 	for(var/datum/cooking_item/CI as anything in cooking_objs)
 		qdel(CI.container)//Food is fragile, it probably doesnt survive the destruction of the machine
-		cooking_objs -= CI
+		LAZYREMOVE(cooking_objs, CI)
 		qdel(CI)
 	return ..()
 
@@ -64,7 +64,7 @@
 		. += list_contents(user)
 
 /obj/machinery/appliance/proc/list_contents(mob/user)
-	if (cooking_objs.len)
+	if (length(cooking_objs))
 		var/string = "Contains..."
 		for(var/datum/cooking_item/CI as anything in cooking_objs)
 			string += "-\a [CI.container.label(null, CI.combine_target)], [report_progress(CI)]</br>"
@@ -120,7 +120,7 @@
 		return span_danger("It is burning!")
 
 /obj/machinery/appliance/update_icon()
-	if (!stat && cooking_objs.len)
+	if (!stat && length(cooking_objs))
 		icon_state = on_icon
 
 	else
@@ -170,7 +170,7 @@
 		to_chat(user, span_filter_notice("You lack the dexterity to do that!"))
 		return
 
-	if(!output_options[new_output])
+	if(!LAZYACCESS(output_options, new_output))
 		return
 
 	if(new_output == "Default")
@@ -230,7 +230,7 @@
 
 //This function is overridden by cookers that do stuff with containers
 /obj/machinery/appliance/proc/has_space(obj/item/I)
-	if(cooking_objs.len >= max_contents)
+	if(length(cooking_objs) >= max_contents)
 		return FALSE
 
 	return TRUE
@@ -282,7 +282,7 @@
 		var/obj/item/reagent_containers/cooking_container/CC = I
 		CI = new /datum/cooking_item/(CC)
 		I.forceMove(src)
-		cooking_objs.Add(CI)
+		LAZYADD(cooking_objs, CI)
 		user.visible_message(span_infoplain(span_bold("\The [user]") + " puts \the [I] into \the [src]."))
 		if (CC.check_contents() == 0)//If we're just putting an empty container in, then dont start any processing.
 			return TRUE
@@ -420,7 +420,7 @@
 	return jointext(results, ", ")
 
 /obj/machinery/appliance/proc/predict_combination(datum/cooking_item/CI)
-	var/obj/cook_path = output_options[CI.combine_target]
+	var/obj/cook_path = LAZYACCESS(output_options, CI.combine_target)
 
 	var/list/words = list()
 
@@ -504,7 +504,7 @@
 //Combination cooking involves combining the names and reagents of ingredients into a predefined output object
 //The ingredients represent flavours or fillings. EG: donut pizza, cheese bread
 /obj/machinery/appliance/proc/combination_cook(datum/cooking_item/CI)
-	var/cook_path = output_options[CI.combine_target]
+	var/cook_path = LAZYACCESS(output_options, CI.combine_target)
 
 	var/list/words = list()
 	var/datum/reagents/buffer = new /datum/reagents(1000)
@@ -649,13 +649,13 @@
 	data["safety"] = food_safety
 	data["containersRemovable"] = can_remove_items(user, show_warning = FALSE)
 	data["selected_option"] = selected_option
-	data["output_options"] = output_options
+	data["output_options"] = (output_options || list())
 
 	var/list/our_contents = list()
 	for(var/i in 1 to max_contents)
 		UNTYPED_LIST_ADD(our_contents, list("empty" = TRUE))
 		if(i <= LAZYLEN(cooking_objs))
-			var/datum/cooking_item/CI = cooking_objs[i]
+			var/datum/cooking_item/CI = LAZYACCESS(cooking_objs, i)
 			if(istype(CI))
 				our_contents[i] = list()
 				our_contents[i]["progress"] = 0
@@ -689,7 +689,7 @@
 			var/slot = params["slot"]
 			var/obj/item/I = ui.user.get_active_hand()
 			if(slot <= LAZYLEN(cooking_objs)) // Inserting
-				var/datum/cooking_item/CI = cooking_objs[slot]
+				var/datum/cooking_item/CI = LAZYACCESS(cooking_objs, slot)
 
 				if(istype(I) && can_insert(I)) // Why do hard work when we can just make them smack us?
 					attackby(I, ui.user)
@@ -750,7 +750,7 @@
 		thing.forceMove(get_turf(src))
 
 	if (delete)
-		cooking_objs -= CI
+		LAZYREMOVE(cooking_objs, CI)
 		qdel(CI)
 	else
 		CI.reset()//reset instead of deleting if the container is left inside

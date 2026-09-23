@@ -142,7 +142,7 @@ when portals are shortly lived, or when portals are made to be obvious with spec
 	name = "portal master"
 	show_messages = TRUE // So portals can hear and see, and relay to the other side.
 	var/portal_id = "test" // For a portal to be made, both the A and B sides need to share the same ID value.
-	var/list/portal_lines = list()
+	var/list/portal_lines
 
 REGISTRY_MEMBERSHIP(/obj/effect/map_effect/portal/master, REGISTRY_PORTAL_MASTERS)
 
@@ -170,7 +170,7 @@ REGISTRY_MEMBERSHIP(/obj/effect/map_effect/portal/master, REGISTRY_PORTAL_MASTER
 			current_T = get_step(current_T, dir_to_search)
 			var/obj/effect/map_effect/portal/line/line = locate() in current_T
 			if(line)
-				portal_lines += line
+				LAZYADD(portal_lines, line)
 				line.my_master = src
 			else
 				break
@@ -186,10 +186,10 @@ REGISTRY_MEMBERSHIP(/obj/effect/map_effect/portal/master, REGISTRY_PORTAL_MASTER
 		if(M.portal_id == src.portal_id)
 			counterpart = M
 			M.counterpart = src
-			if(portal_lines.len)
-				for(var/i = 1 to portal_lines.len)
-					var/obj/effect/map_effect/portal/line/our_line = portal_lines[i]
-					var/obj/effect/map_effect/portal/line/their_line = M.portal_lines[i]
+			if(length(portal_lines))
+				for(var/i = 1 to length(portal_lines))
+					var/obj/effect/map_effect/portal/line/our_line = LAZYACCESS(portal_lines, i)
+					var/obj/effect/map_effect/portal/line/their_line = LAZYACCESS(M.portal_lines, i)
 					our_line.counterpart = their_line
 					their_line.counterpart = our_line
 			break
@@ -199,7 +199,7 @@ REGISTRY_MEMBERSHIP(/obj/effect/map_effect/portal/master, REGISTRY_PORTAL_MASTER
 
 /obj/effect/map_effect/portal/master/proc/make_visuals()
 	var/list/observed_turfs = list()
-	for(var/obj/effect/map_effect/portal/P as anything in portal_lines + src)
+	for(var/obj/effect/map_effect/portal/P as anything in (portal_lines || list()) + src)
 		P.name = null
 		P.icon_state = null
 
@@ -223,7 +223,7 @@ REGISTRY_MEMBERSHIP(/obj/effect/map_effect/portal/master, REGISTRY_PORTAL_MASTER
 // Shifts the portal's pixels in order to line up properly, as BYOND offsets the sprite when it holds multiple turfs inside `vis_contents`.
 // This undos the shift that BYOND did.
 /obj/effect/map_effect/portal/master/proc/apply_offset()
-	for(var/obj/effect/map_effect/portal/P as anything in portal_lines + src)
+	for(var/obj/effect/map_effect/portal/P as anything in (portal_lines || list()) + src)
 
 		P.pixel_x = WORLD_ICON_SIZE * P.portal_distance_x
 		P.pixel_y = WORLD_ICON_SIZE * P.portal_distance_y
@@ -285,7 +285,7 @@ REGISTRY_MEMBERSHIP(/obj/effect/map_effect/portal/master, REGISTRY_PORTAL_MASTER
 	var/obj/effect/map_effect/portal/master/other_master = counterpart
 
 	var/in_vis_contents = FALSE
-	for(var/obj/effect/map_effect/portal/P as anything in other_master.portal_lines + other_master)
+	for(var/obj/effect/map_effect/portal/P as anything in (other_master.portal_lines || list()) + other_master)
 		if(P in true_turf.vis_locs)
 			in_vis_contents = TRUE
 			break
@@ -325,7 +325,7 @@ REGISTRY_MEMBERSHIP(/obj/effect/map_effect/portal/master, REGISTRY_PORTAL_MASTER
 
 /obj/effect/map_effect/portal/line/Destroy()
 	if(my_master)
-		my_master.portal_lines -= src
+		LAZYREMOVE(my_master.portal_lines, src)
 		my_master = null
 	return ..()
 

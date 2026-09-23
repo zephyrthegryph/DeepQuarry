@@ -1,8 +1,11 @@
 /obj/item/clothing/under/vox
 	has_sensor = 0
-	species_restricted = list(SPECIES_VOX)
 	starting_accessories = list(/obj/item/clothing/accessory/storage/vox)	// Dont' start with a backback, so free webbing
 	flags = PHORONGUARD
+
+/obj/item/clothing/under/vox/fit_constraint()
+	var/list/bodytypes = list(SPECIES_VOX)
+	return list(REQ_FITS_BODYTYPES(bodytypes))
 
 /obj/item/clothing/under/vox/vox_casual
 	name = "alien clothing"
@@ -30,4 +33,4 @@
 /obj/item/clothing/accessory/storage/vox/Initialize(mapload)
 	. = ..()
 	hold.max_storage_space = slots * ITEMSIZE_COST_NORMAL
-	hold.max_w_class = ITEMSIZE_NORMAL
+	hold.restrict_hold(null, ITEMSIZE_NORMAL)

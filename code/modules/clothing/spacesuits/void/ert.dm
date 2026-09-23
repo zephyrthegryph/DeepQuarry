@@ -6,7 +6,6 @@
 	armor = list(melee = 65, bullet = 55, laser = 55,energy = 15, bomb = 50, bio = 100, rad = 100)
 	slowdown = 0.5
 	siemens_coefficient = 0.5
-	species_restricted = list("exclude",SPECIES_DIONA,SPECIES_VOX,SPECIES_TESHARI,SPECIES_ALTEVIAN)	//this thing can autoadapt
 	default_worn_icon = 'icons/inventory/suit/mob.dmi'
 	w_class = ITEMSIZE_NORMAL //the mark vii packs itself down when not in use, thanks future-materials
 	breach_threshold = 16 //Extra Thicc
@@ -14,7 +13,14 @@
 	min_pressure_protection = 0 * ONE_ATMOSPHERE
 	max_pressure_protection = 15* ONE_ATMOSPHERE
 	max_heat_protection_temperature = SPACE_SUIT_MAX_HEAT_PROTECTION_TEMPERATURE+10000
-	allowed = list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_ALL_TANKS, POCKET_SUIT_REGULATORS, POCKET_SECURITY)
+
+/obj/item/clothing/suit/space/void/responseteam/fit_constraint()
+	var/list/bodytypes = list("exclude",SPECIES_DIONA,SPECIES_VOX,SPECIES_TESHARI,SPECIES_ALTEVIAN)
+	return list(REQ_FITS_BODYTYPES(bodytypes))
+
+/obj/item/clothing/suit/space/void/responseteam/suit_storage_constraint()
+	var/list/stores = list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_ALL_TANKS, POCKET_SUIT_REGULATORS, POCKET_SECURITY)
+	return list(HOLD_ONLY(stores))
 
 /obj/item/clothing/suit/space/void/responseteam/command
 	name = "Mark VII-C Emergency Response Team Commander Suit"
@@ -63,8 +69,37 @@
 	attach_helmet(new /obj/item/clothing/head/helmet/space/void/responseteam/janitor) //autoinstall the helmet
 
 
-//override the attackby screwdriver proc so that people can't remove the helmet
-/obj/item/clothing/suit/space/void/responseteam/attackby(obj/item/W as obj, mob/user as mob, tool_quality)
+// Overrides the voidsuit screwdriver so people can't remove the helmet.
+/obj/item/clothing/suit/space/void/responseteam/screwdriver_act(mob/user, obj/item/tool)
+	if(!isliving(user))
+		return ITEM_INTERACT_BLOCKING
+	if(user.get_inventory_slot(src) == slot_wear_suit)
+		to_chat(user, span_warning("You cannot modify \the [src] while it is being worn."))
+		return ITEM_INTERACT_SUCCESS
+	if(boots || tank || cooler)
+		var/choice = tgui_input_list(user, "What component would you like to remove?", "Remove Component", list(boots,tank,cooler))
+		if(!choice) return ITEM_INTERACT_SUCCESS
+
+		if(choice == tank)	//No, a switch doesn't work here. Sorry. ~Techhead
+			to_chat(user, "You pop \the [tank] out of \the [src]'s storage compartment.")
+			tank.forceMove(get_turf(src))
+			playsound(src, tool.usesound, 50, 1)
+			src.tank = null
+		else if(choice == cooler)
+			to_chat(user, "You pop \the [cooler] out of \the [src]'s storage compartment.")
+			cooler.forceMove(get_turf(src))
+			playsound(src, tool.usesound, 50, 1)
+			src.cooler = null
+		else if(choice == boots)
+			to_chat(user, "You detach \the [boots] from \the [src]'s boot mounts.")
+			boots.forceMove(get_turf(src))
+			playsound(src, tool.usesound, 50, 1)
+			src.boots = null
+	else
+		to_chat(user, "\The [src] does not have anything installed.")
+	return ITEM_INTERACT_SUCCESS
+
+/obj/item/clothing/suit/space/void/responseteam/attackby(obj/item/W as obj, mob/user as mob)
 
 	if(!isliving(user))
 		return
@@ -76,38 +111,14 @@
 		to_chat(user, span_warning("You cannot modify \the [src] while it is being worn."))
 		return
 
-	if(tool_quality == TOOL_SCREWDRIVER)
-		if(boots || tank || cooler)
-			var/choice = tgui_input_list(usr, "What component would you like to remove?", "Remove Component", list(boots,tank,cooler))
-			if(!choice) return
-
-			if(choice == tank)	//No, a switch doesn't work here. Sorry. ~Techhead
-				to_chat(user, "You pop \the [tank] out of \the [src]'s storage compartment.")
-				tank.forceMove(get_turf(src))
-				playsound(src, W.usesound, 50, 1)
-				src.tank = null
-			else if(choice == cooler)
-				to_chat(user, "You pop \the [cooler] out of \the [src]'s storage compartment.")
-				cooler.forceMove(get_turf(src))
-				playsound(src, W.usesound, 50, 1)
-				src.cooler = null
-			else if(choice == boots)
-				to_chat(user, "You detach \the [boots] from \the [src]'s boot mounts.")
-				boots.forceMove(get_turf(src))
-				playsound(src, W.usesound, 50, 1)
-				src.boots = null
-		else
-			to_chat(user, "\The [src] does not have anything installed.")
-		return
-
 	..()
+
 
 /obj/item/clothing/head/helmet/space/void/responseteam
 	name = "Mark VII Emergency Response Helmet"
 	desc = "As a vital part of the Mark VII suit, the integral helmet cannot be removed - so don't try."
 	icon_state = "erthelmet"
 	item_state = "erthelmet"
-	species_restricted = list("exclude",SPECIES_DIONA,SPECIES_VOX,SPECIES_TESHARI,SPECIES_ALTEVIAN)	//this thing can autoadapt too
 	armor = list(melee = 60, bullet = 50, laser = 30,energy = 15, bomb = 30, bio = 100, rad = 100)
 	siemens_coefficient = 0.5
 	enables_planes = list(VIS_CH_ID,VIS_CH_HEALTH_VR,VIS_AUGMENTED)
@@ -118,6 +129,10 @@
 	min_pressure_protection = 0 * ONE_ATMOSPHERE
 	max_pressure_protection = 15* ONE_ATMOSPHERE
 	max_heat_protection_temperature = SPACE_SUIT_MAX_HEAT_PROTECTION_TEMPERATURE+10000
+
+/obj/item/clothing/head/helmet/space/void/responseteam/fit_constraint()
+	var/list/bodytypes = list("exclude",SPECIES_DIONA,SPECIES_VOX,SPECIES_TESHARI,SPECIES_ALTEVIAN)
+	return list(REQ_FITS_BODYTYPES(bodytypes))
 
 /obj/item/clothing/head/helmet/space/void/responseteam/verb/toggle()
 	set category = "Object"

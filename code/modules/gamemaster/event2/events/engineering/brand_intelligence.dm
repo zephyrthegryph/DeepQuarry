@@ -13,8 +13,8 @@
 /datum/event2/event/brand_intelligence
 	var/malware_spread_cooldown = 30 SECONDS
 
-	var/list/vending_machines = list() // List of venders that can potentially be infected.
-	var/list/infected_vending_machines = list() // List of venders that have been infected.
+	var/list/vending_machines // List of venders that can potentially be infected.
+	var/list/infected_vending_machines // List of venders that have been infected.
 	var/obj/machinery/vending/vender_zero = null // The first vending machine infected. If that one gets fixed, all other infected machines will be cured.
 	var/last_malware_spread_time = null
 
@@ -22,14 +22,14 @@
 	for(var/obj/machinery/vending/V in REGISTRY_MEMBERS(REGISTRY_MACHINES))
 		if(!(V.z in using_map.station_levels))
 			continue
-		vending_machines += V
+		LAZYADD(vending_machines, V)
 
-	if(!vending_machines.len)
+	if(!length(vending_machines))
 		log_game("Brand intelligence event: Could not find any vending machines on station Z levels. Aborting.")
 		abort()
 		return
 
-	vender_zero = pick(vending_machines)
+	vender_zero = DEFAULTPICK(vending_machines, null)
 
 /datum/event2/event/brand_intelligence/announce()
 	if(prob(90))
@@ -44,8 +44,8 @@
 		return // Still on cooldown.
 	last_malware_spread_time = world.time
 
-	if(vending_machines.len)
-		var/next_victim = pick(vending_machines)
+	if(length(vending_machines))
+		var/next_victim = DEFAULTPICK(vending_machines, null)
 		infect_vender(next_victim)
 
 		// Every time Vender Zero infects, it says something.
@@ -59,7 +59,7 @@
 
 
 /datum/event2/event/brand_intelligence/should_end()
-	if(!vending_machines.len)
+	if(!length(vending_machines))
 		return TRUE
 	if(!can_propagate(vender_zero))
 		return TRUE
@@ -76,13 +76,13 @@
 		cure_vender(vender)
 
 /datum/event2/event/brand_intelligence/proc/infect_vender(obj/machinery/vending/V)
-	vending_machines -= V
-	infected_vending_machines += V
+	LAZYREMOVE(vending_machines, V)
+	LAZYADD(infected_vending_machines, V)
 	V.shut_up = FALSE
 	V.shoot_inventory = TRUE
 
 /datum/event2/event/brand_intelligence/proc/cure_vender(obj/machinery/vending/V)
-	infected_vending_machines -= V
+	LAZYREMOVE(infected_vending_machines, V)
 	V.shut_up = TRUE
 	V.shoot_inventory = FALSE
 

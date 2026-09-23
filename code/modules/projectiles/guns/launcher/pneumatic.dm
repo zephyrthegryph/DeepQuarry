@@ -15,7 +15,7 @@
 	fire_sound = 'sound/weapons/grenade_launcher.ogg' // Formerly tablehit1.ogg but I like this better -Ace
 
 	var/fire_pressure									// Used in fire checks/pressure checks.
-	var/max_w_class = ITEMSIZE_NORMAL					// Hopper intake size.
+	var/hopper_size = ITEMSIZE_NORMAL					// Hopper intake size.
 	var/max_storage_space = ITEMSIZE_COST_NORMAL * 5	// Total internal storage size.
 	var/obj/item/tank/tank = null						// Tank of gas for use in firing the cannon.
 
@@ -31,7 +31,7 @@
 	. = ..()
 	item_storage = new(src)
 	item_storage.name = "hopper"
-	item_storage.max_w_class = max_w_class
+	item_storage.restrict_hold(null, hopper_size)
 	item_storage.max_storage_space = max_storage_space
 	item_storage.use_sound = null
 
@@ -57,7 +57,7 @@
 /obj/item/gun/launcher/pneumatic/proc/unload_hopper(mob/user)
 	if(item_storage.contents.len > 0)
 		var/obj/item/removing = item_storage.contents[item_storage.contents.len]
-		item_storage.remove_from_storage(removing, src.loc)
+		item_storage.remove_from_storage(removing, src.loc, user)
 		user.put_in_hands(removing)
 		to_chat(user, "You remove [removing] from the hopper.")
 		playsound(src, 'sound/weapons/empty.ogg', 50, 1)
@@ -76,8 +76,8 @@
 		tank = W
 		user.visible_message("[user] jams [W] into [src]'s valve and twists it closed.","You jam [W] into [src]'s valve and twist it closed.")
 		update_icon()
-	else if(istype(W) && item_storage.can_be_inserted(W))
-		item_storage.handle_item_insertion(W)
+	else if(istype(W))
+		item_storage.try_insert(W, user)
 
 /obj/item/gun/launcher/pneumatic/attack_self(mob/user)
 	. = ..(user)
@@ -176,10 +176,31 @@
 			. += "It has a transfer valve installed."
 
 /obj/item/cannonframe/welder_act(mob/user, obj/item/tool)
-	attackby(tool, user, TOOL_WELDER)
-	return TRUE
+	var/obj/item/weldingtool/T = tool.get_welder()
+	if(buildstate == 1)
+		if(T.remove_fuel(0,user))
+			if(!src || !T.isOn()) return ITEM_INTERACT_SUCCESS
+			playsound(src, tool.usesound, 100, 1)
+			to_chat(user, span_notice("You weld the pipe into place."))
+			buildstate++
+			update_icon()
+	if(buildstate == 3)
+		if(T.remove_fuel(0,user))
+			if(!src || !T.isOn()) return ITEM_INTERACT_SUCCESS
+			playsound(src, tool.usesound, 100, 1)
+			to_chat(user, span_notice("You weld the metal chassis together."))
+			buildstate++
+			update_icon()
+	if(buildstate == 5)
+		if(T.remove_fuel(0,user))
+			if(!src || !T.isOn()) return ITEM_INTERACT_SUCCESS
+			playsound(src, tool.usesound, 100, 1)
+			to_chat(user, span_notice("You weld the valve into place."))
+			new /obj/item/gun/launcher/pneumatic(get_turf(src))
+			qdel(src)
+	return ITEM_INTERACT_SUCCESS
 
-/obj/item/cannonframe/attackby(obj/item/W as obj, mob/user as mob, tool_quality)
+/obj/item/cannonframe/attackby(obj/item/W as obj, mob/user as mob)
 	if(istype(W,/obj/item/pipe))
 		if(buildstate == 0)
 			user.drop_from_inventory(W)
@@ -206,29 +227,5 @@
 			buildstate++
 			update_icon()
 			return
-	else if(tool_quality == TOOL_WELDER)
-		var/obj/item/weldingtool/T = W.get_welder()
-		if(buildstate == 1)
-			if(T.remove_fuel(0,user))
-				if(!src || !T.isOn()) return
-				playsound(src, W.usesound, 100, 1)
-				to_chat(user, span_notice("You weld the pipe into place."))
-				buildstate++
-				update_icon()
-		if(buildstate == 3)
-			if(T.remove_fuel(0,user))
-				if(!src || !T.isOn()) return
-				playsound(src, W.usesound, 100, 1)
-				to_chat(user, span_notice("You weld the metal chassis together."))
-				buildstate++
-				update_icon()
-		if(buildstate == 5)
-			if(T.remove_fuel(0,user))
-				if(!src || !T.isOn()) return
-				playsound(src, W.usesound, 100, 1)
-				to_chat(user, span_notice("You weld the valve into place."))
-				new /obj/item/gun/launcher/pneumatic(get_turf(src))
-				qdel(src)
-		return
 	else
 		..()

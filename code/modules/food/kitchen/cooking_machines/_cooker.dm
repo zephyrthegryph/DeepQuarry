@@ -48,7 +48,7 @@
 			. += span_warning("It is switched off.")
 
 /obj/machinery/appliance/cooker/list_contents(mob/user)
-	if (cooking_objs.len)
+	if (length(cooking_objs))
 		var/string = "Contains...</br>"
 		var/num = 0
 		for (var/a in cooking_objs)
@@ -68,7 +68,7 @@
 	. = ..()
 	cooking_objs = list()
 	for (var/i = 0, i < max_contents, i++)
-		cooking_objs.Add(new /datum/cooking_item/(new container_type(src)))
+		LAZYADD(cooking_objs, new /datum/cooking_item/(new container_type(src)))
 	cooking = FALSE
 
 	update_icon() // this probably won't cause issues, but Aurora used SSIcons and queue_icon_update() instead
@@ -232,7 +232,7 @@
 /obj/machinery/appliance/cooker/has_space(obj/item/I)
 	if(istype(I, /obj/item/reagent_containers/cooking_container))
 		//Containers can go into an empty slot
-		if(cooking_objs.len < max_contents)
+		if(length(cooking_objs) < max_contents)
 			return 1
 	else
 		//Any food items directly added need an empty container. A slot without a container cant hold food

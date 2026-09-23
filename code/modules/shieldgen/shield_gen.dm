@@ -6,7 +6,7 @@
 	var/active = 0
 	var/field_radius = 3
 	var/max_field_radius = 150
-	var/list/field = list()
+	var/list/field
 	density = TRUE
 	var/locked = 0
 	var/average_field_strength = 0
@@ -16,7 +16,7 @@
 	var/min_dissipation = 0.01		//will dissipate by at least this rate in renwicks per field tile (otherwise field would never dissipate completely as dissipation is a percentage)
 	var/powered = 0
 	var/check_powered = 1
-	var/list/capacitors = list()
+	var/list/capacitors
 	var/target_field_strength = 10
 	var/max_field_strength = 10
 	var/time_since_fail = 100
@@ -40,7 +40,7 @@
 			if(cap.owned_gen)
 				continue
 			if(get_dir(cap, src) == cap.dir)
-				capacitors |= cap
+				LAZYOR(capacitors, cap)
 				cap.owned_gen = src
 	shield_hum = new(list(src), FALSE)
 	. = ..()
@@ -84,7 +84,7 @@
 				if(cap.owned_gen)
 					continue
 				if(get_dir(cap, src) == cap.dir && src.anchored)
-					capacitors |= cap
+					LAZYOR(capacitors, cap)
 					cap.owned_gen = src
 	else
 		for(var/obj/machinery/shield_capacitor/capacitor in capacitors)
@@ -131,10 +131,10 @@
 		lockedData["target_field_strength"] = target_field_strength
 		lockedData["max_field_strength"] = max_field_strength
 		lockedData["shields"] = LAZYLEN(field)
-		lockedData["upkeep"] = round(field.len * max(average_field_strength * dissipation_rate, min_dissipation) / energy_conversion_rate)
+		lockedData["upkeep"] = round(length(field) * max(average_field_strength * dissipation_rate, min_dissipation) / energy_conversion_rate)
 		lockedData["strengthen_rate"] = strengthen_rate
 		lockedData["max_strengthen_rate"] = max_strengthen_rate
-		lockedData["gen_power"] = round(field.len * min(strengthen_rate, target_field_strength - average_field_strength) / energy_conversion_rate)
+		lockedData["gen_power"] = round(length(field) * min(strengthen_rate, target_field_strength - average_field_strength) / energy_conversion_rate)
 
 	return list("locked" = locked, "lockedData" = lockedData)
 
@@ -146,13 +146,13 @@
 
 	average_field_strength = max(average_field_strength, 0)
 
-	if(field.len)
+	if(length(field))
 		time_since_fail++
 		var/total_renwick_increase = 0 //the amount of renwicks that the generator can add this tick, over the entire field
 		var/renwick_upkeep_per_field = max(average_field_strength * dissipation_rate, min_dissipation)
 
 		//figure out how much energy we need to draw from the capacitor
-		if(active && capacitors.len)
+		if(active && length(capacitors))
 			// Get a list of active capacitors to drain from.
 			var/list/active_capacitors = list()
 			for(var/obj/machinery/shield_capacitor/capacitor in capacitors) // Some capacitors might be off.  Exclude them.
@@ -161,7 +161,7 @@
 
 			var/target_renwick_increase = min(target_field_strength - average_field_strength, strengthen_rate) + renwick_upkeep_per_field //per field tile
 
-			var/required_energy = field.len * target_renwick_increase / energy_conversion_rate
+			var/required_energy = length(field) * target_renwick_increase / energy_conversion_rate
 
 			// Gets the charge for all capacitors
 			var/sum_charge = 0
@@ -192,7 +192,7 @@
 
 			average_field_strength += E.get_strength()
 
-		average_field_strength /= field.len
+		average_field_strength /= length(field)
 		if(average_field_strength < 1)
 			time_since_fail = 0
 	else
@@ -241,7 +241,7 @@
 			covered_turfs.Remove(T)
 		for(var/turf/O in covered_turfs)
 			var/obj/effect/energy_field/E = new(O, src)
-			field.Add(E)
+			LAZYADD(field, E)
 		covered_turfs = null
 
 		for(var/mob/M in view(5,src))
@@ -251,7 +251,7 @@
 		shield_hum.start()
 	else
 		for(var/obj/effect/energy_field/D in field)
-			field.Remove(D)
+			LAZYREMOVE(field, D)
 			//D.loc = null
 			qdel(D)
 

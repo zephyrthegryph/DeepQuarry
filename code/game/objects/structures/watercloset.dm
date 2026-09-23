@@ -28,7 +28,7 @@
 	var/refilling = FALSE
 	var/datum/weakref/swirlie_mob = null //the mob being given a swirlie
 	var/datum/weakref/teleplumb_dest_ref //the destination of this toilet if it's teleplumbed
-	var/list/currently_held_objects = list() //List of objects currently in the toilet, used for flushing.
+	var/list/currently_held_objects //List of objects currently in the toilet, used for flushing.
 	COOLDOWN_DECLARE(panic_flush)
 
 /obj/structure/toilet/Initialize(mapload)
@@ -268,7 +268,7 @@
 /obj/structure/toilet/proc/tertiary_flush(atom/movable/flushed, flush_completed)
 	if(flushed.loc == loc)
 		flushed.forceMove(src)
-		currently_held_objects += flushed
+		LAZYADD(currently_held_objects, flushed)
 
 	if(flush_completed) //Flushed it all.
 		addtimer(CALLBACK(src, PROC_REF(flush_send), currently_held_objects), 1 SECOND, TIMER_DELETE_ME)
@@ -957,15 +957,15 @@
 
 	if(ishuman(user))
 		var/mob/living/carbon/human/H = user
-		if(H.gloves)
-			H.gloves.wash(CLEAN_SCRUB)
+		if(H.get_equipped_item(SLOT_ID_GLOVES))
+			H.get_equipped_item(SLOT_ID_GLOVES).wash(CLEAN_SCRUB)
 			H.update_inv_gloves()
-			H.gloves.germ_level = 0
+			H.get_equipped_item(SLOT_ID_GLOVES).germ_level = 0
 		else
-			if(H.r_hand)
-				H.r_hand.wash(CLEAN_SCRUB)
-			if(H.l_hand)
-				H.l_hand.wash(CLEAN_SCRUB)
+			if(H.get_equipped_item(SLOT_ID_HAND_R))
+				H.get_equipped_item(SLOT_ID_HAND_R).wash(CLEAN_SCRUB)
+			if(H.get_equipped_item(SLOT_ID_HAND_L))
+				H.get_equipped_item(SLOT_ID_HAND_L).wash(CLEAN_SCRUB)
 			H.bloody_hands = 0
 			H.germ_level = 0
 			H.hand_blood_color = null

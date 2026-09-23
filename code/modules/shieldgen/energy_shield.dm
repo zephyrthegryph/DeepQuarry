@@ -68,9 +68,9 @@
 	. = ..()
 	if(gen)
 		if(src in gen.field_segments)
-			gen.field_segments -= src
+			LAZYREMOVE(gen.field_segments, src)
 		if(src in gen.damaged_segments)
-			gen.damaged_segments -= src
+			LAZYREMOVE(gen.damaged_segments, src)
 		gen = null
 
 // Temporarily collapses this shield segment.
@@ -79,7 +79,7 @@
 		return
 
 	if(gen)
-		gen.damaged_segments |= src
+		LAZYOR(gen.damaged_segments, src)
 	disabled_for += duration
 
 	set_density(0)
@@ -103,7 +103,7 @@
 		update_visuals()
 		update_nearby_tiles() //Force ZAS update
 		update_explosion_resistance()
-		gen.damaged_segments -= src
+		LAZYREMOVE(gen.damaged_segments, src)
 
 /obj/effect/shield/proc/diffuse(duration)
 	// The shield is trying to counter diffusers. Cause lasting stress on the shield.
@@ -112,7 +112,7 @@
 		return
 
 	diffused_for = max(duration, 0)
-	gen?.damaged_segments |= src
+	LAZYOR(gen?.damaged_segments, src)
 
 	set_density(0)
 	update_visuals()

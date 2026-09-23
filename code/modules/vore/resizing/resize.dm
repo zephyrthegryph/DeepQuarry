@@ -377,7 +377,7 @@
 	if(!nofetish) // Brings back mandatory step mechanics, circumvents the fetish stuff if no pref match
 		if(IS_GRABBING(src))
 			// You can only grab prey if you have no shoes on. And both of you are cool with it.
-			if(pred.shoes || !(pred.pickup_pref && prey.pickup_pref))
+			if(pred.get_equipped_item(SLOT_ID_SHOES) || !(pred.pickup_pref && prey.pickup_pref))
 				message_pred = "You step down onto [prey], squishing them and forcing them down to the ground!"
 				message_prey = "[pred] steps down and squishes you with their foot, forcing you down to the ground!"
 				if(tail)

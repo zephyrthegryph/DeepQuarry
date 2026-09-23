@@ -32,8 +32,8 @@
 
 		if(ishuman(X))
 			var/mob/living/carbon/human/H = X
-			if(istype(H.shoes, /obj/item/clothing/shoes/magboots))
-				var/obj/item/clothing/shoes/magboots/M = H.shoes
+			if(istype(H.get_equipped_item(SLOT_ID_SHOES), /obj/item/clothing/shoes/magboots))
+				var/obj/item/clothing/shoes/magboots/M = H.get_equipped_item(SLOT_ID_SHOES)
 				if(M.magpulse)
 					step_towards(H, location) //step just once with magboots
 					continue

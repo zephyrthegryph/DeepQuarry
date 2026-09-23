@@ -3,7 +3,7 @@
 	announceWhen	= 45	// Adjusted by setup
 	endWhen			= 75	// Adjusted by setup
 	var/shark_cap	= 10
-	var/list/spawned_shark = list()
+	var/list/spawned_shark
 
 /datum/event/shark_migration/setup()
 	announceWhen = rand(30, 60) // 1 to 2 minutes
@@ -19,7 +19,7 @@
 	if(severity == EVENT_LEVEL_MAJOR)
 		announcement = "Massive migration of unknown biological entities has been detected near [location_name()], please stand-by."
 	else
-		announcement = "Unknown biological [spawned_shark.len == 1 ? "entity has" : "entities have"] been detected near [location_name()], please stand-by."
+		announcement = "Unknown biological [length(spawned_shark) == 1 ? "entity has" : "entities have"] been detected near [location_name()], please stand-by."
 	GLOB.command_announcement.Announce(announcement, "Lifesign Alert", new_sound = ANNOUNCER_MSG_UNIDENTIFIED_LIFESIGNS)
 
 /datum/event/shark_migration/tick()
@@ -71,7 +71,7 @@
 /datum/event/shark_migration/proc/spawn_one_shark(loc)
 	var/mob/living/simple_mob/animal/M = new /mob/living/simple_mob/animal/space/shark/event(loc)
 	RegisterSignal(M, COMSIG_OBSERVER_DESTROYED, PROC_REF(on_shark_destruction))
-	spawned_shark.Add(M)
+	LAZYADD(spawned_shark, M)
 	return M
 
 // Counts living shark spawned by this event.
@@ -84,7 +84,7 @@
 // If shark is bomphed, remove it from the list.
 /datum/event/shark_migration/proc/on_shark_destruction(mob/M)
 	SIGNAL_HANDLER
-	spawned_shark -= M
+	LAZYREMOVE(spawned_shark, M)
 	UnregisterSignal(M, COMSIG_OBSERVER_DESTROYED)
 
 /datum/event/shark_migration/end()

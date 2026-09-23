@@ -18,7 +18,7 @@
 
 /obj/effect/decal/cleanable/blood/tracks/reveal_blood()
 	if(!dq_get_fluorescent(src))
-		if(stack && stack.len)
+		if(stack && length(stack))
 			for(var/datum/fluidtrack/track in stack)
 				track.basecolor = COLOR_LUMINOL
 		..()
@@ -49,7 +49,7 @@
 	)
 
 	// List of laid tracks and their colors.
-	var/list/datum/fluidtrack/stack=list()
+	var/list/datum/fluidtrack/stack
 
 	/**
 	* Add tracks to an existing trail.
@@ -81,14 +81,14 @@
 			// If not wet or not set
 			if(dirs&b)
 				var/sid=setdirs["[b]"]
-				track=stack[sid]
+				track=LAZYACCESS(stack, sid)
 				if(track.wet==t && track.basecolor==bloodcolor)
 					continue
 				// Remove existing stack entry
-				stack.Remove(track)
+				LAZYREMOVE(stack, track)
 			track=new /datum/fluidtrack(b,bloodcolor,t)
-			stack.Add(track)
-			setdirs["[b]"]=stack.Find(track)
+			LAZYADD(stack, track)
+			setdirs["[b]"]=LAZYFIND(stack, track)
 			updatedtracks |= b
 			updated=1
 
@@ -98,14 +98,14 @@
 			// If not wet or not set
 			if(dirs&b)
 				var/sid=setdirs["[b]"]
-				track=stack[sid]
+				track=LAZYACCESS(stack, sid)
 				if(track.wet==t && track.basecolor==bloodcolor)
 					continue
 				// Remove existing stack entry
-				stack.Remove(track)
+				LAZYREMOVE(stack, track)
 			track=new /datum/fluidtrack(b,bloodcolor,t)
-			stack.Add(track)
-			setdirs["[b]"]=stack.Find(track)
+			LAZYADD(stack, track)
+			setdirs["[b]"]=LAZYFIND(stack, track)
 			updatedtracks |= b
 			updated=1
 
@@ -135,7 +135,7 @@
 
 		track.fresh=0
 		track.overlay=I
-		stack[stack_idx]=track
+		LAZYSET(stack, stack_idx, track)
 		add_overlay(I)
 	updatedtracks=0 // Clear our memory of updated tracks.
 	add_janitor_hud_overlay()

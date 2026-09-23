@@ -58,7 +58,9 @@
 	desc = "Modified pair of jackboots, particularly friendly to those species whose toes hold claws."
 	icon_state = "digiboots"
 	item_state_slots = list(slot_r_hand_str = "jackboots", slot_l_hand_str = "jackboots")
-	species_restricted = null
+
+/obj/item/clothing/shoes/boots/jackboots/toeless/fit_constraint()
+	return null
 
 /obj/item/clothing/shoes/boots/jackboots/knee
 	name = "knee-length jackboots"
@@ -73,9 +75,11 @@
 	desc = "Modified pair of taller boots, particularly friendly to those species whose toes hold claws."
 	icon_state = "digikneeboots"
 	item_state_slots = list(slot_r_hand_str = "jackboots", slot_l_hand_str = "jackboots")
-	species_restricted = null
 	heat_protection = FEET|LEGS
 	cold_protection = FEET|LEGS
+
+/obj/item/clothing/shoes/boots/jackboots/toeless/knee/fit_constraint()
+	return null
 
 /obj/item/clothing/shoes/boots/jackboots/thigh
 	name = "thigh-length jackboots"
@@ -90,9 +94,11 @@
 	desc = "Modified pair of even taller boots, particularly friendly to those species whose toes hold claws."
 	icon_state = "digithighboots"
 	item_state_slots = list(slot_r_hand_str = "jackboots", slot_l_hand_str = "jackboots")
-	species_restricted = null
 	heat_protection = FEET|LEGS
 	cold_protection = FEET|LEGS
+
+/obj/item/clothing/shoes/boots/jackboots/toeless/thigh/fit_constraint()
+	return null
 
 /obj/item/clothing/shoes/boots/jackboots/recolorable
 	icon_state = "boots_recolor"
@@ -111,7 +117,9 @@
 	desc = "A pair of toeless work boots designed for use in industrial settings. Modified for species whose toes have claws."
 	icon_state = "workbootstoeless"
 	item_state_slots = list(slot_r_hand_str = "workboots", slot_l_hand_str = "workboots")
-	species_restricted = null
+
+/obj/item/clothing/shoes/boots/workboots/toeless/fit_constraint()
+	return null
 
 /obj/item/clothing/shoes/boots/winter
 	name = "winter boots"

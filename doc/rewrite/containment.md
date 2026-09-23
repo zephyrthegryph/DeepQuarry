@@ -62,7 +62,7 @@ The code is in `code/datums/containment/`; defines are in `code/__defines/contai
   - an exposure;
   - a capacity model: none, count, size class, mass, or custom units through `cost()`;
   - `capacity_for(holder)`, which gives the capacity per instance;
-  - an `accepts` predicate;
+  - an `accepts` predicate, plus an optional `holder_constraint` (P3): a `CONSTRAINT_*` kind read from the holder, for holders whose acceptance varies by type ([rules.md §3.1](rules.md#31-as-built-p3));
   - a drop policy: spill, delete, or transfer.
   The ledger itself (`/datum/ledger`) is created the first time the holder is used, so a closet nobody touches has none.
 - **Drop policies.** `/atom/movable/Destroy()` calls `ledger_apply_drop_policies()` before anything else.
@@ -80,6 +80,7 @@ The code is in `code/datums/containment/`; defines are in `code/__defines/contai
 - **Migrated holders.**
   - Closets, crates and lockers (`/obj/structure/closet`): one interior slot with custom units (`storage_cost_of()`) and the spill policy. `open()`, `close()`, `ex_act`, `examine` and `LateInitialize` all go through the API.
   - Folders: one pages slot that accepts `TAG_PAPERWORK` and uses the delete policy.
+  - Storage items (`/obj/item/storage`, C4): one `storage` slot, section 8.
 - **Stock slots (C9)** (`stock.dm`, `code/datums/vending/stored_item.dm`):
   - Vending machines and smartfridges declare an `internals` slot (parts, circuit, coin; policy `SLOT_DROP_HOLDER`, left to the machine's Destroy until C6) and a custom-units `stock` slot.
   - Each product is a `/datum/stored_item` record: type path, latent `amount`, and deltas (price, category, variant, or a shared state blob). A real item is made only when one is taken out; cartridge restock adds to `amount`.
@@ -169,7 +170,7 @@ The code is in `code/datums/containment/paths.dm`, with the heat coupling in `he
   - Clothing sets `insulation` from its heat-protection data. `worn_factors` and zone armour then read the path instead of scanning.
   - Route mob hits to the covering layers through `dq_path_step`, with zones (`zones covered` in §3 is not built yet).
   - Decide `reaches_mobs` for anything that holds a mob.
-- **C4 (storage).** `/obj/item/storage` gets an internal slot, and bags then take the default shares. Until then a bag passes nothing.
+- **C4 (storage), done.** `/obj/item/storage` has an internal slot with no damage override, so bags take the default shares.
 - **C5 (latent).** A damage share that reaches a slot holding entries resolves them, with one roll per group (§4.2). Heat stays on the container's body.
 - **C6 (machine internals).** Internals are internal slots. Circuit boards and parts expressed as tiers take shares only once they are materialized.
 - **C7 (vore).** A belly is a sealed slot with `reaches_mobs = TRUE` and its own damage and heat rules, replacing digestion's direct damage.
@@ -298,6 +299,20 @@ These are interactions that perform ledger moves, so each one is a single atomic
 - **Screen objects** are created for whoever opens the storage and pooled per viewer, instead of 2–4 per storage at init.
 - **The UI can show latent entries** using each type's appearance, materializing an item only when it is clicked or dragged.
 
+### 8.1 As built (C4)
+
+- **The slot.** `/datum/slot_def/storage` (`storage.dm`): internal, units capacity (`get_storage_cost()` against `max_storage_space`), `holder_constraint = CONSTRAINT_HOLD`, delete policy (contents went with the bag before too). Its `refusal()` adds the count limit (`storage_slots`, through `count_used()`, which adds `latent_count()` for C5), "a container as big as this", no-drop and a held item that can't be let go. Nothing re-adds the contents.
+  - The sheet snatcher declares `/datum/slot_def/storage/sheets`: sheets only, no units, counted by sheet.
+- **API** (`/obj/item/storage`):
+  - `insert_refusal(W, user)`: one `dq_ledger_refusal()` call.
+  - `insert_item(W, user, prevent_warning)`: checks, runs `stall_insertion()` when there is a user (pouch delays), checks again, then moves. A held item leaves through `remove_from_mob(W, src)` (mob inventory is C3's); anything else goes through `move_into()`.
+  - `try_insert()`: the same, but it tells the user why a refused item didn't go in.
+  - `remove_from_storage(W, dest, user)`: goes through `slot_remove()`. A null `dest` means the floor.
+  - `gather_all(turf, user)` and `drop_contents(user)` are built on those. The quick-empty verb goes through `try_quick_empty(user)`, so `usr` is read only in verbs and `MouseDrop`.
+- **HUD.** `/datum/storage_hud` holds the backdrop (one "block", or the bar's start, continue and end), the close button and a click catcher per shown item. `show_to()` makes it when the first viewer opens the storage, and `hide_from()` deletes it when the last viewer leaves. `on_slot_changed()` lays it out again for every viewer after any move in or out. `GLOB.storage_hud_count` counts the live ones. Subtypes change the order with `hud_order()` (the excavation case sorts its picks) and the grouping with `hud_group_key()` / `hud_group_amount()`.
+- **Legacy wrappers**, kept only for the mob inventory callers (C3): `can_be_inserted()` in `mob/living/inventory.dm` (3), `human/inventory.dm` and `protean_rig.dm`, and `handle_item_insertion()` at the same sites. The mover is whoever holds the item. `orient2hud()` is kept only as an alias of `refresh_hud()` for the vore egg (C7).
+- **C5.** Capacity already includes `latent_used()`. The count limit calls `latent_count()`. The HUD lists `stored_items()`, which reads `slot_contents()`, so latent entries can be added there.
+
 ## 9. Vore (C7)
 
 - **A belly stays an atom**, because a prey mob needs an atom as its `loc`. It becomes an **internal, sealed slot** on the predator.
@@ -311,6 +326,14 @@ These are interactions that perform ledger moves, so each one is a single atomic
 - **Message lists** are shared per preset and copied only when customized.
 - **Serialization.** The belly serializer becomes a client of the generic serializer.
 - **What stays in the vore module:** the vore UI, messages and preferences.
+
+**As built (C7).** Code: `code/modules/vore/eating/belly_slot.dm`, `belly_shared_lists.dm`, `vore_consent.dm`; tests in `code/modules/unit_tests/dq_vore_slot_tests.dm`.
+- **Slot.** `/datum/slot_def/belly_interior` (`BELLY_SLOT_INTERIOR`): sealed, `reaches_mobs`, no heat or damage share from outside (the belly's own modes act on its contents). Eating, releasing, transfers, absorbing, egging and in-belly spawning go through `belly_insert()` (`move_into`), `belly_release_to()` (`slot_remove`, falling back to the turf when a full holder refuses) and `slot_transfer()`. The ledger is made on first use.
+- **Scheduling.** SSbellies is deleted. `belly_reschedule()` declares one `REACT_EVERY` (6 s, 2 s in turbo) when something enters and cancels it when the belly empties; an empty belly that makes liquid from nutrition waits on a `REACT_AT` for its next batch. Callers: `Initialize`, `Entered`/`Exited`, `state_post_apply`, the vore panel's attribute setters and the belly preview.
+- **Rates.** `belly_cycle(seconds)` replaces `process()`. Every mode's per-cycle amount is a rate per `BELLY_BASELINE_TICK`, scaled by the reactor's elapsed seconds, so late and turbo cycles give the same totals (drain and resize exactly). Digestion damage goes through `injure()`, as before. The body's `injure()` is not linear in the size of a hit (many small hits land more than a few big ones), so turbo digestion still lands more injury than normal digestion over the same time; that is the body's to settle.
+- **Modes as rules.** A mode is trigger (the cycle), condition (its `consent` predicate) and effect (`process_mob()`). The mode datums stay: they do not fit P4's compiled watches, which need channel-backed properties.
+- **Consent.** `/datum/predicate/vore_devour`, `vore_digest`, `vore_absorb`, `vore_heal`, `vore_strip`, `vore_affect_worn`, with reasons. `vore_sanity_checks()` shows the devour reason; a prey who refuses the belly's mode is held, and the predator is told why on entry.
+- **Shared lists.** 43 message lists, the 5 fullness lists, `emote_lists`, `generated_reagents`, both extra autotransfer lists and the vore-spawn whitelist point at one copy per type or the base default (`belly_default_lists()`). They are replaced, never edited; `own_emote_lists()` comes before a keyed emote write. Saves leave out lists still shared, and a load swaps equal lists back to the shared copy. `items_preserved` and `belly_surrounding` are lazy; `autotransfer_queue` was unused and is gone. A default empty belly owns no lists.
 
 ## 10. Occupants and mechs (C8, with the body rewrite)
 

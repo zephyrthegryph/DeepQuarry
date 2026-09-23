@@ -1,6 +1,6 @@
 /datum/component/tourettes_disability
 	var/mob/living/owner
-	var/list/motor_tics = list()
+	var/list/motor_tics
 
 /datum/component/tourettes_disability/Initialize()
 	if (!ishuman(parent))
@@ -37,7 +37,7 @@
 		"rshoulder"
 	)
 	for(var/i = 0, i < rand(4, 6), i++)
-		motor_tics += pick(possible_tics)
+		LAZYADD(motor_tics, pick(possible_tics))
 	RegisterSignal(owner, COMSIG_HANDLE_DISABILITIES, PROC_REF(process_component))
 
 /datum/component/tourettes_disability/proc/process_component()
@@ -57,7 +57,7 @@
 		return
 	if(owner.paralysis <= 1 && (H.pulse <= PULSE_NORM ? (prob(1)) : (prob(50))))
 		owner.make_jittery(30 + rand(10, 30))
-		owner.emote(pick(motor_tics))
+		owner.emote(DEFAULTPICK(motor_tics, null))
 
 /datum/component/tourettes_disability/Destroy(force = FALSE)
 	UnregisterSignal(owner, COMSIG_HANDLE_DISABILITIES)

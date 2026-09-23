@@ -308,9 +308,9 @@
 		// Put out cigarettes if splashed.
 		if(ishuman(L))
 			var/mob/living/carbon/human/H = L
-			if(H.wear_mask)
-				if(istype(H.wear_mask, /obj/item/clothing/mask/smokable))
-					var/obj/item/clothing/mask/smokable/S = H.wear_mask
+			if(H.get_equipped_item(SLOT_ID_MASK))
+				if(istype(H.get_equipped_item(SLOT_ID_MASK), /obj/item/clothing/mask/smokable))
+					var/obj/item/clothing/mask/smokable/S = H.get_equipped_item(SLOT_ID_MASK)
 					if(S.lit)
 						S.quench()
 						H.visible_message(span_notice("[H]\'s [S.name] is put out."))

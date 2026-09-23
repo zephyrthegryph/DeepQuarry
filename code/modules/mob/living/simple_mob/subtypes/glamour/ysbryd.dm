@@ -88,6 +88,7 @@
 	B.escape_stun = 5
 	B.belly_fullscreen = "VBO_belly8"
 
+	B.own_emote_lists()
 	B.emote_lists[DM_HOLD] = list(
 		"The creature idly runs what feels like bony hands over your form.",
 		"The pressure from the walls around you suddenly increases.",
@@ -96,6 +97,7 @@
 		"It's hot in here, intensely so, and it's hard to think straight.",
 		"You feel the gut lurch about you as if the creature were casually moving.")
 
+	B.own_emote_lists()
 	B.emote_lists[DM_DIGEST] = list(
 		"The pressure squeezes the life out of your curled up body.",
 		"You can't orient yourself, the grinding of the walls roughly turns you over and over.",

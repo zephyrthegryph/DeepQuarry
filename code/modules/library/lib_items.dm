@@ -49,9 +49,7 @@
 	return ITEM_INTERACT_SUCCESS
 
 /obj/structure/bookcase/screwdriver_act(mob/user, obj/item/tool)
-	playsound(src, tool.usesound, 75, 1)
-	to_chat(user, span_notice("You begin dismantling \the [src]."))
-	if(!do_after(user, 2.5 SECONDS * tool.toolspeed, target = src))
+	if(!use_tool(user, tool, src, delay = 2.5 SECONDS, volume = 75, message_self = "You begin dismantling \the [src]."))
 		return ITEM_INTERACT_BLOCKING
 	to_chat(user, span_notice("You dismantle \the [src]."))
 	new /obj/item/stack/material/wood(get_turf(src), 3)
@@ -288,7 +286,7 @@ Book Cart End
 					scanner.book = src
 					for(var/datum/borrowbook/b in scanner.computer.checkouts)
 						if(b.bookname == src.name)
-							scanner.computer.checkouts.Remove(b)
+							LAZYREMOVE(scanner.computer.checkouts, b)
 							to_chat(user, "[W]'s screen flashes: 'Book stored in buffer. Book has been checked in.'")
 							return
 					to_chat(user, "[W]'s screen flashes: 'Book stored in buffer. No active check-out record found for current title.'")
@@ -298,7 +296,7 @@ Book Cart End
 						if(book == src)
 							to_chat(user, "[W]'s screen flashes: 'Book stored in buffer. Title already present in inventory, aborting to avoid duplicate entry.'")
 							return
-					scanner.computer.inventory.Add(src)
+					LAZYADD(scanner.computer.inventory, src)
 					to_chat(user, "[W]'s screen flashes: 'Book stored in buffer. Title added to general inventory.'")
 	else if(istype(W, /obj/item/material/knife))
 		return carve_pages(user)

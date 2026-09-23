@@ -4,7 +4,7 @@
 	var/delay_modifier = 1
 	var/next_event_time = 0
 	var/list/available_events
-	var/list/last_event_time = list()
+	var/list/last_event_time
 	var/datum/event_meta/next_event = null
 
 	var/last_world_time = 0
@@ -30,7 +30,7 @@
 	// Has an event been acquired?
 	if(next_event)
 		// Set when the event of this type was last fired, and prepare the next event start
-		last_event_time[next_event] = world.time
+		LAZYSET(last_event_time, next_event, world.time)
 		set_event_delay()
 		next_event.enabled = !next_event.one_shot	// This event will no longer be available in the random rotation if one shot
 
@@ -70,7 +70,7 @@
 		return 0
 
 	var/weight = EM.get_weight(active_with_role)
-	var/last_time = last_event_time[EM]
+	var/last_time = LAZYACCESS(last_event_time, EM)
 	if(last_time)
 		var/time_passed = world.time - last_time
 		var/weight_modifier = max(0, round((CONFIG_GET(number/expected_round_length) - time_passed) / 300))

@@ -45,6 +45,7 @@
 	B.escapechance = 7
 	B.escape_stun = 5
 
+	B.own_emote_lists()
 	B.emote_lists[DM_HOLD] = list(
 		"The unicorn's idle trotting helps its stomach gently churn around you, slimily squelching against your figure.",
 		"The equine predator takes a moment to intentionally clench its gut around you, encapsulating you in a strange, fleshy hug.",
@@ -53,6 +54,7 @@
 		"The thick, humid atmosphere within the unicorn's hanging belly works in tandem with its steady, metronome-like heartbeat to soothe you.",
 		"Your surroundings sway from side to side as the unicorn trots about, as if it is showing off its newest catch.")
 
+	B.own_emote_lists()
 	B.emote_lists[DM_DIGEST] = list(
 		"The unicorn huffs in annoyance before clenching those wrinkled walls tight against your form, grinding away at you!",
 		"As the beast trots about, you're forced to slip and slide around amidst a pool of thick digestive goop!",

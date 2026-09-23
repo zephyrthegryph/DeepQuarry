@@ -204,13 +204,13 @@ would spawn and follow the beaker, even if it is carried or thrown.
 /obj/effect/effect/smoke/proc/affect(mob/living/carbon/M)
 	if (!istype(M))
 		return 0
-	if(M.wear_mask && (M.wear_mask.item_flags & AIRTIGHT))
+	if(M.get_equipped_item(SLOT_ID_MASK) && (M.get_equipped_item(SLOT_ID_MASK).item_flags & AIRTIGHT))
 		return 0
 	if(ishuman(M))
 		var/mob/living/carbon/human/H = M
 		if(!M.get_organ(O_LUNGS)) // Making sure smoke doesn't affect lungless people
 			return 0
-		if(H.head && (H.head.item_flags & AIRTIGHT))
+		if(H.get_equipped_item(SLOT_ID_HEAD) && (H.get_equipped_item(SLOT_ID_HEAD).item_flags & AIRTIGHT))
 			return 0
 	return 1
 

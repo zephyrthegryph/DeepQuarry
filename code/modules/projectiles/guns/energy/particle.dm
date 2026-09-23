@@ -139,7 +139,7 @@
 		safetycatch = 1
 		return
 
-	if(istype(A, /obj/item/tool/screwdriver))
+	if(A.has_tool_quality(TOOL_SCREWDRIVER))
 		if(safetycatch && attached_safety)
 			to_chat(user, span_notice("You begin removing \the [attached_safety] from \the [src]."))
 			if(do_after(user, 25, target = src))

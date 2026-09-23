@@ -16,13 +16,13 @@
 	if(!destination)
 		message_admins("ERROR: planetary_fall step trigger lacks a planet to fall onto.")
 		return
-	if(!destination.planet_floors.len)
+	if(!length(destination.planet_floors))
 		message_admins("ERROR: planetary_fall step trigger's list of outdoor floors was empty.")
 		return
 	var/turf/simulated/T = null
 	var/safety = 100 // Infinite loop protection.
 	while(!T && safety)
-		var/turf/simulated/candidate = pick(destination.planet_floors)
+		var/turf/simulated/candidate = DEFAULTPICK(destination.planet_floors, null)
 		if(!istype(candidate) || istype(candidate, /turf/simulated/sky))
 			safety--
 			continue

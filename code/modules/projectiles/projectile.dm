@@ -95,7 +95,7 @@
 	// Sub-munitions. Basically, multi-projectile shotgun, rather than pellets.
 	var/use_submunitions = FALSE
 	var/only_submunitions = FALSE // Will the projectile delete itself after firing the submunitions?
-	var/list/submunitions = list() // Assoc list of the paths of any submunitions, and how many they are. [projectilepath] = [projectilecount].
+	var/list/submunitions // Assoc list of the paths of any submunitions, and how many they are. [projectilepath] = [projectilecount].
 	var/submunition_spread_max = 30 // Divided by 10 to get the percentile dispersion.
 	var/submunition_spread_min = 5 // Above.
 	var/force_max_submunition_spread = FALSE // Do we just force the maximum?
@@ -139,7 +139,7 @@
 	// This is distinct from the hitscan's "impact_type" var.
 	var/impact_effect_type = null
 
-	var/list/impacted_mobs = list()
+	var/list/impacted_mobs
 
 	// TGMC Ammo HUD Port
 	var/hud_state = "unknown" // What HUD state we use when we have ammunition.
@@ -485,7 +485,7 @@
 
 	if(impacted_mobs)
 		if(LAZYLEN(impacted_mobs))
-			impacted_mobs.Cut()
+			LAZYCLEARLIST(impacted_mobs)
 		impacted_mobs = null
 
 	QDEL_NULL(trajectory)
@@ -762,7 +762,7 @@
 
 	// Safe to add the target to the list that is soon to be poofed. No double jeopardy, pixel projectiles.
 	if(islist(impacted_mobs))
-		impacted_mobs |= target_mob
+		LAZYOR(impacted_mobs, target_mob)
 
 	if(result == PROJECTILE_FORCE_MISS)
 		if(!silenced)
@@ -819,7 +819,7 @@
 	if(get_turf(target) == get_turf(src))
 		direct_target = target
 
-	if(use_submunitions && submunitions.len)
+	if(use_submunitions && length(submunitions))
 		var/temp_min_spread = 0
 		if(force_max_submunition_spread)
 			temp_min_spread = submunition_spread_max
@@ -836,12 +836,12 @@
 			var/projectile_count = 0
 
 			for(var/proj in submunitions)
-				projectile_count += submunitions[proj]
+				projectile_count += LAZYACCESS(submunitions, proj)
 
 			damage_override = round(damage_override / max(1, projectile_count))
 
 		for(var/path in submunitions)
-			for(var/count = 1 to submunitions[path])
+			for(var/count = 1 to LAZYACCESS(submunitions, path))
 				var/obj/item/projectile/SM = new path(get_turf(loc))
 				SM.shot_from = shot_from
 				SM.silenced = silenced
@@ -871,7 +871,7 @@
 	if(get_turf(target) == get_turf(src))
 		direct_target = target
 
-	if(use_submunitions && submunitions.len)
+	if(use_submunitions && length(submunitions))
 		var/temp_min_spread = 0
 		if(force_max_submunition_spread)
 			temp_min_spread = submunition_spread_max
@@ -888,12 +888,12 @@
 			var/projectile_count = 0
 
 			for(var/proj in submunitions)
-				projectile_count += submunitions[proj]
+				projectile_count += LAZYACCESS(submunitions, proj)
 
 			damage_override = round(damage_override / max(1, projectile_count))
 
 		for(var/path in submunitions)
-			for(var/count = 1 to submunitions[path])
+			for(var/count = 1 to LAZYACCESS(submunitions, path))
 				var/obj/item/projectile/SM = new path(get_turf(loc))
 				SM.shot_from = shot_from
 				SM.silenced = silenced

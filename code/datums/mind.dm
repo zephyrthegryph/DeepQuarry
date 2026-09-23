@@ -38,7 +38,7 @@
 	var/datum/job/assigned_job
 
 	var/list/datum/objective/objectives = list()
-	var/list/datum/objective/special_verbs = list()
+	var/list/datum/objective/special_verbs
 
 	var/has_been_rev = 0//Tracks if this mind has been a rev or not
 
@@ -46,7 +46,7 @@
 
 	var/rev_cooldown = 0
 	var/tcrystals = 0
-	var/list/purchase_log = list()
+	var/list/purchase_log
 	var/used_TC = 0
 
 	var/list/learned_recipes //List of learned recipe TYPES.
@@ -356,15 +356,9 @@
 					R.emagged = 0
 					if (R.activated(R.module.emag))
 						R.module_active = null
-					if(R.module_state_1 == R.module.emag)
-						R.module_state_1 = null
-						R.contents -= R.module.emag
-					else if(R.module_state_2 == R.module.emag)
-						R.module_state_2 = null
-						R.contents -= R.module.emag
-					else if(R.module_state_3 == R.module.emag)
-						R.module_state_3 = null
-						R.contents -= R.module.emag
+					var/emag_slot = R.module_slot_of(R.module.emag)
+					if(emag_slot)
+						R.clear_module_slot(emag_slot)
 					log_admin("[key_name_admin(usr)] has unemag'ed [R].")
 
 			if("unemagcyborgs")
@@ -375,15 +369,9 @@
 						if (R.module)
 							if (R.activated(R.module.emag))
 								R.module_active = null
-							if(R.module_state_1 == R.module.emag)
-								R.module_state_1 = null
-								R.contents -= R.module.emag
-							else if(R.module_state_2 == R.module.emag)
-								R.module_state_2 = null
-								R.contents -= R.module.emag
-							else if(R.module_state_3 == R.module.emag)
-								R.module_state_3 = null
-								R.contents -= R.module.emag
+							var/emag_slot = R.module_slot_of(R.module.emag)
+							if(emag_slot)
+								R.clear_module_slot(emag_slot)
 					log_admin("[key_name_admin(usr)] has unemag'ed [ai]'s Cyborgs.")
 
 	else if (href_list["common"])

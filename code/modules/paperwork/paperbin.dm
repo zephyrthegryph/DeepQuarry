@@ -15,7 +15,7 @@
 	pressure_resistance = 10
 	layer = OBJ_LAYER - 0.1
 	var/amount = 30					//How much paper is in the bin.
-	var/list/papers = new/list()	//List of papers put in the bin for reference.
+	var/list/papers	//List of papers put in the bin for reference.
 	drop_sound = 'sound/items/drop/cardboardbox.ogg'
 	pickup_sound = 'sound/items/pickup/cardboardbox.ogg'
 
@@ -48,7 +48,7 @@
 			to_chat(user, span_notice("You try to move your [temp.name], but cannot!"))
 			return
 	var/response = ""
-	if(!papers.len > 0)
+	if(!length(papers) > 0)
 		response = tgui_alert(user, "Do you take regular paper, or Carbon copy paper?", "Paper type request", list("Regular", "Carbon-Copy", "Cancel"))
 		if (response != "Regular" && response != "Carbon-Copy")
 			add_fingerprint(user)
@@ -59,9 +59,9 @@
 			update_icon()
 
 		var/obj/item/paper/P
-		if(papers.len > 0)	//If there's any custom paper on the stack, use that instead of creating a new paper.
-			P = papers[papers.len]
-			papers.Remove(P)
+		if(length(papers) > 0) //If there's any custom paper on the stack, use that instead of creating a new paper.
+			P = papers[length(papers)]
+			LAZYREMOVE(papers, P)
 		else
 			if(response == "Regular")
 				P = new /obj/item/paper
@@ -90,7 +90,7 @@
 	user.drop_item()
 	i.loc = src
 	to_chat(user, span_notice("You put [i] in [src]."))
-	papers.Add(i)
+	LAZYADD(papers, i)
 	update_icon()
 	amount++
 

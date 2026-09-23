@@ -243,14 +243,14 @@
 
 /obj/structure/gargoyle/attackby(obj/item/W as obj, mob/living/user as mob)
 	var/mob/living/carbon/human/gargoyle = WR_gargoyle.resolve()
-	if(W.is_wrench())
+	if(W.has_tool_quality(TOOL_WRENCH))
 		if(isspace(loc) || isopenspace(loc))
 			to_chat(user, span_warning("You can't anchor that here!"))
 			anchored = FALSE
 			return ..()
-		playsound(src, W.usesound, 50, 1)
-		if(do_after(user, (2 SECONDS) * W.toolspeed, target = src))
-			to_chat(user, span_notice("You [anchored ? "un" : ""]anchor the [src]."))
+		var/was_anchored = anchored
+		if(use_tool(user, W, src, delay = 2 SECONDS, quality = TOOL_WRENCH, volume = 50))
+			to_chat(user, span_notice("You [was_anchored ? "un" : ""]anchor the [src]."))
 			anchored = !anchored
 	else if(!isrobot(user) && gargoyle && gargoyle.vore_selected && gargoyle.trash_catching)
 		if(istype(W, /obj/item/grab) || istype(W, /obj/item/holder))
