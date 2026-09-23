@@ -359,8 +359,19 @@ accident or assume they work:
   heal only via `treatment_tags` (`code/modules/body/treatment.dm`). Triggers
   (`/datum/affliction_trigger`) create afflictions; symptoms are singletons that ACCUMULATE.
   Vital systems (airway / breathing / cardiac rhythm, `medical/conditions/vital_systems.dm`)
-  are afflictions too; see the doc. Not yet built: tourniquets, surgery redesign,
-  stasis & field stabilisation.
+  are afflictions too; see the doc. Also BUILT (all in the doc):
+  - **Physiology / oxygen debt** (`code/modules/body/physiology.dm`): ventilation,
+    oxygenation, perfusion and an oxygen debt; there is no `INJURY_ASPHYXIA` — express a
+    cause as a factor, support/restriction or breath quality, else `add_oxygen_debt()`.
+  - **Stabilisation** (`code/modules/medical/stabilisation/`): tourniquets
+    (`flow_occluded()`), field items, and stasis via `BF_STASIS`, read once per cycle by
+    `body.advance_stasis()`; systems check `ctx.in_stasis()` / `inStasisNow()`.
+  - **Surgery as treatments** (`code/modules/surgery/`): steps deliver `TREAT_*` through
+    `mend()`; access state is the `surgical_incision` affliction (no `op_stage`); organs
+    past saving answer `is_beyond_repair()`.
+  - **Diagnosis** (`code/modules/medical/diagnosis/`): readouts go through
+    `diagnose(profile)` and renderers; no four-number damage readouts.
+  - **Hibernation**: life systems sleep by rule and wake on events (see the Mob life entry).
 - **Body factors — every numeric mob stat.** `code/modules/body/factors.dm`, defines in
   `code/__defines/body_factors.dm`. Slowdown, accuracy, evasion, attack speed, incoming
   injury per category, stun duration, healing received, metabolism, bleeding, analgesia,
