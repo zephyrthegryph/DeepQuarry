@@ -39,10 +39,24 @@ GLOBAL_DATUM(basic_robolimb, /datum/robolimb)
 	var/modular_bodyparts = MODULAR_BODYPART_PROSTHETIC // Whether or not this limb allows attaching/detaching, and whether or not it checks its parent as well. // Let's just do full detachment/reattachment by default.
 	var/robo_brute_mod = 1                               // Multiplier for incoming brute damage.
 	var/robo_burn_mod = 1                                // As above for burn.
-	// Species in this list cannot take these prosthetics.
-	var/list/species_cannot_use = list(SPECIES_TESHARI, SPECIES_PROMETHEAN, SPECIES_DIONA, SPECIES_XENOCHIMERA)
+	// Species in this list cannot take these prosthetics. Null means the shared
+	// default (see New()); a subtype that edits it assigns its own list first.
+	var/list/species_cannot_use
 	// "Species Name" = "Robolimb Company", List, when initialized, will become "Species Name" = RobolimbDatum, used for alternate species sprites.
-	var/list/species_alternates = list(SPECIES_TAJARAN = "Unbranded - Tajaran", SPECIES_UNATHI = "Unbranded - Unathi")
+	// Null means the shared default (see New()).
+	var/list/species_alternates
+
+/// Brands that don't declare their own tables share these. populate_robolimb_list()
+/// resolves the alternates' company names to datums in place, which gives the same
+/// result for every brand sharing the table.
+/datum/robolimb/New()
+	var/static/list/default_cannot_use = list(SPECIES_TESHARI, SPECIES_PROMETHEAN, SPECIES_DIONA, SPECIES_XENOCHIMERA)
+	var/static/list/default_alternates = list(SPECIES_TAJARAN = "Unbranded - Tajaran", SPECIES_UNATHI = "Unbranded - Unathi")
+	if(isnull(species_cannot_use))
+		species_cannot_use = default_cannot_use
+	if(isnull(species_alternates))
+		species_alternates = default_alternates
+	return ..()
 
 /datum/robolimb/unbranded_monitor
 	company = "Unbranded Monitor"
@@ -607,10 +621,6 @@ GLOBAL_DATUM(basic_robolimb, /datum/robolimb)
 
 /datum/robolimb/dsi_fennec
 	can_be_digitigrade = TRUE
-
-/datum/robolimb/dsi_teshari/New()
-	. = ..()
-	species_cannot_use -= SPECIES_PROTEAN
 
 /datum/robolimb/dsi_other
 	company = "DSI - Adaptive"
