@@ -499,7 +499,11 @@
 		mobs += M
 		CHECK_TICK
 	for(var/i in 1 to humans)
-		mobs += new /mob/living/carbon/human(pick(turfs))
+		var/mob/living/carbon/human/H = new(pick(turfs))
+		// Humans are low priority NPCs: keep them in the run on a z-level with no players, so
+		// hibernation, not the NPC skip, is what is measured.
+		H.low_priority = FALSE
+		mobs += H
 		CHECK_TICK
 	metric("idle_mobs_spawned", length(mobs), "mobs", "none")
 	var/was_enabled = GLOB.mob_hibernation_enabled
