@@ -100,7 +100,12 @@ pub struct Wake {
 #[repr(u8)]
 pub enum EventKind {
     PressureJump = 1,
-    ReactionCheck = 2,
+    /// A cell's gating law found a reaction whose requirements hold. `key`
+    /// = cell/region index, `extra` = the reaction's dense registry index
+    /// (stable for one boot; DM resolves it against its own registration
+    /// order, the same order it built the gate from - no id round-trips
+    /// through Rust).
+    ReactionReady = 2,
     VisualChange = 3,
     Ignite = 4,
     Melt = 5,

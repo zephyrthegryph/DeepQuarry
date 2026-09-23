@@ -43,7 +43,7 @@ pub const GAS_EVENT_VISUAL: u32 = 3;
 pub const GAS_EVENT_PRESSURE: u32 = 1;
 
 const _: () = {
-	assert!(GAS_EVENT_REACT == vg_core::outbox::EventKind::ReactionCheck as u32);
+	assert!(GAS_EVENT_REACT == vg_core::outbox::EventKind::ReactionReady as u32);
 	assert!(GAS_EVENT_VISUAL == vg_core::outbox::EventKind::VisualChange as u32);
 	assert!(GAS_EVENT_PRESSURE == vg_core::outbox::EventKind::PressureJump as u32);
 	assert!(OBSERVATION_STRIDE == crate::GAS_OBSERVATION_STRIDE);

@@ -594,7 +594,7 @@ impl PipeNet {
 			if activity.asleep && activity.rev_a == rev_a && activity.rev_b == rev_b {
 				continue;
 			}
-			let params = dev.data.clone();
+			let params = dev.data;
 			let Ok(region_a) = self.net.region(ra) else { continue };
 			let Ok(region_b) = self.net.region(rb) else { continue };
 			let vol_a = *region_a.summary();

@@ -408,12 +408,12 @@ impl Post {
 				if g.reservoir {
 					continue;
 				}
-				if cell.flags & flags::REACT != 0 {
+				if cell.ready != crate::cell::NO_REACTION {
 					events.push(Event {
-						kind: EventKind::ReactionCheck,
+						kind: EventKind::ReactionReady,
 						key: index,
 						value: 0.0,
-						extra: 0,
+						extra: cell.ready,
 						generation: 0,
 					});
 				}
@@ -1348,7 +1348,7 @@ impl GasWorld {
 				_ => continue,
 			};
 			let key = dev.key;
-			let params = dev.data.clone();
+			let params = dev.data;
 			let Side::Region(region) = self.pipes.net.resolve(Endpoint::Node(node)) else {
 				continue;
 			};
@@ -1781,7 +1781,7 @@ impl GasWorld {
 		}
 		for e in out.events() {
 			match e.kind {
-				EventKind::ReactionCheck => self.stats.reactions += 1,
+				EventKind::ReactionReady => self.stats.reactions += 1,
 				EventKind::VisualChange => self.stats.visuals += 1,
 				EventKind::PressureJump => self.stats.pressure += 1,
 				_ => {}

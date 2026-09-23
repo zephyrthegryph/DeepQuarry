@@ -390,11 +390,13 @@ fn visual_and_reaction_events_reach_dm() {
 	let visual_b = events
 		.chunks_exact(4)
 		.any(|e| e[0] as u32 == 3 && e[1] as u32 == b);
+	// kind 2 (ReactionReady), key = a; extra (events[3]) is the dense gate
+	// index of the ready reaction - 0, the only one this test registered.
 	let react_a = events
 		.chunks_exact(4)
-		.any(|e| e[0] as u32 == 2 && e[1] as u32 == a);
+		.any(|e| e[0] as u32 == 2 && e[1] as u32 == a && e[3] as u32 == 0);
 	assert!(visual_b, "no VisualChange for b: {events:?}");
-	assert!(react_a, "no ReactionCheck for a");
+	assert!(react_a, "no ReactionReady(index 0) for a: {events:?}");
 }
 
 #[test]

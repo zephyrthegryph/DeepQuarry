@@ -97,12 +97,13 @@ const STIFF_PRESSURE: f32 = 1.0;
 pub mod flags {
 	/// Space and immutable air: commands never change it.
 	pub const IMMUTABLE: u8 = 1;
-	/// The last `local` step found a reaction whose requirements hold.
-	pub const REACT: u8 = 2;
 	/// DM changed the cell since the last frame (its visuals must be
 	/// refreshed even if the frame's start and end look alike).
 	pub const TOUCHED: u8 = 4;
 }
+
+/// No reaction is ready ([`GasCell::ready`]'s sentinel).
+pub const NO_REACTION: u32 = u32::MAX;
 
 /// One turf's gas.
 #[derive(Clone, Copy, Debug, PartialEq)]
@@ -130,6 +131,12 @@ pub struct GasCell {
 	pub planet: u8,
 	/// Visible-gas signature (a changed signature is a `VisualChange`).
 	pub vis: u16,
+	/// The dense registry index of the highest-priority reaction the last
+	/// `local` step found ready ([`NO_REACTION`]: none). Set by
+	/// `TurfGas::local`, read by the world to emit
+	/// `EventKind::ReactionReady` - the pure gating law's only output,
+	/// replacing the old flag-only "check this cell" signal.
+	pub ready: u32,
 }
 
 impl Default for GasCell {
@@ -144,6 +151,7 @@ impl Default for GasCell {
 			flags: 0,
 			planet: 0,
 			vis: 0,
+			ready: NO_REACTION,
 		}
 	}
 }
@@ -385,12 +393,7 @@ impl FieldKind for TurfGas {
 	}
 
 	fn local(cell: &mut GasCell, _capacity: f32, _dt: f32) -> bool {
-		let react = crate::gate::can_react(cell);
-		if react {
-			cell.flags |= flags::REACT;
-		} else {
-			cell.flags &= !flags::REACT;
-		}
+		cell.ready = crate::gate::ready(cell).map_or(NO_REACTION, |i| i as u32);
 		false
 	}
 

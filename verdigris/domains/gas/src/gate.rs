@@ -80,7 +80,20 @@ impl Gate {
 	/// Whether any reaction's requirements hold.
 	#[must_use]
 	pub fn can_react(&self, moles: &[f32; N], energy: f32, temperature: f32) -> bool {
-		self.reactions.iter().any(|r| {
+		self.ready(moles, energy, temperature).is_some()
+	}
+
+	/// The dense registry index (`reactions`' position, DM's own
+	/// registration order - see `types.rs::install_gate`) of the
+	/// highest-priority reaction whose requirements hold, if any. This is
+	/// the pure gating law: the field emits it as `EventKind::ReactionReady`
+	/// (`key`: cell, `extra`: this index) and DM's own generated dispatch
+	/// resolves the index against the same list it built the gate from and
+	/// runs its `/datum/gas_reaction` directly - Rust never holds a handle
+	/// to the reaction datum for this path.
+	#[must_use]
+	pub fn ready(&self, moles: &[f32; N], energy: f32, temperature: f32) -> Option<usize> {
+		self.reactions.iter().position(|r| {
 			r.min_temp.is_none_or(|t| temperature >= t)
 				&& r.max_temp.is_none_or(|t| temperature <= t)
 				&& r.gases
@@ -154,11 +167,18 @@ fn with<T>(f: impl FnOnce(&Gate) -> T) -> Option<T> {
 /// Whether any registered reaction's requirements hold for the cell.
 #[must_use]
 pub fn can_react(cell: &GasCell) -> bool {
+	ready(cell).is_some()
+}
+
+/// The dense index (see [`Gate::ready`]) of the highest-priority reaction
+/// ready on this cell, if any.
+#[must_use]
+pub fn ready(cell: &GasCell) -> Option<usize> {
 	if cell.total_moles() <= GAS_MIN_MOLES {
-		return false;
+		return None;
 	}
 	let t = temperature_of(&cell.moles, cell.energy, cell.temperature);
-	with(|g| g.can_react(&cell.moles, cell.energy, t)).unwrap_or(false)
+	with(|g| g.ready(&cell.moles, cell.energy, t)).flatten()
 }
 
 /// Visible-gas signature of a mole vector (0: nothing visible).
