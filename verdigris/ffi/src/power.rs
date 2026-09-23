@@ -88,10 +88,10 @@ pub const EV_SMES: u32 = 5;
 /// @dm-define POWER_EV_BROWNOUT
 pub const EV_BROWNOUT: u32 = 6;
 
-/// Numbers in a `vg_power_region` reply: region, avail, load, viewavail,
-/// viewload, netexcess, supply, eqp, lgt, env, capacity, members.
+/// Numbers in a `vg_power_region` reply: region, avail, load, netexcess,
+/// supply, eqp, lgt, env, capacity, members.
 /// @dm-define POWER_REGION_STRIDE
-pub const REGION_STRIDE: u32 = 12;
+pub const REGION_STRIDE: u32 = 10;
 
 const _: () = {
     assert!(EV_BIND == vg_power::ev::BIND);
@@ -100,7 +100,7 @@ const _: () = {
     assert!(EV_APC == vg_power::ev::APC);
     assert!(EV_SMES == vg_power::ev::SMES);
     assert!(EV_BROWNOUT == vg_power::ev::BROWNOUT);
-    assert!(REGION_STRIDE == 12);
+    assert!(REGION_STRIDE == 10);
 };
 
 thread_local! {
@@ -186,6 +186,7 @@ fn apply(w: &mut PowerWorld, op: u32, a: &[f32]) -> Result<()> {
                 chargemode: flags & APC_CHARGEMODE != 0,
                 max_charge: f64::from(a[3].max(0.0)),
                 chargelevel: f64::from(a[4].max(0.0)),
+                ..ApcConfig::default()
             };
             let old = w.apc(key).map(|x| x.state);
             let mut state = old.unwrap_or_default();
@@ -291,8 +292,6 @@ fn power_region(key: ByondValue) -> Result<ByondValue> {
         info.region as f32,
         info.avail as f32,
         info.load as f32,
-        info.viewavail as f32,
-        info.viewload as f32,
         info.netexcess as f32,
         info.summary[0] as f32,
         info.summary[1] as f32,

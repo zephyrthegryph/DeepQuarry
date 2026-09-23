@@ -27,6 +27,41 @@ pub mod status {
 /// `CELLRATE`: watts per tick to cell units.
 pub const CELLRATE: f64 = 0.002;
 
+/// A channel-shedding policy: as the cell's stored fraction falls, lower
+/// priority channels turn off before higher priority ones. Config, not
+/// hard-coded logic: `update_channels` only evaluates these thresholds
+/// and per-tier channel requests (`chan::*`'s `on` argument to
+/// [`autoset`]), so a different consumer+storage pairing can carry a
+/// different policy without new code.
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub struct SheddingPolicy {
+    /// Above this stored percent (or while charge trends up), every
+    /// channel in `full_allow` is requested.
+    pub full_above_pct: f64,
+    /// Below `full_above_pct` but above this, while charge trends down,
+    /// `partial_allow` is requested; at or below it, `min_allow` is.
+    /// Between the two thresholds with charge flat, `neutral_allow` is
+    /// requested.
+    pub partial_below_pct: f64,
+    pub full_allow: [u8; 3],
+    pub partial_allow: [u8; 3],
+    pub min_allow: [u8; 3],
+    pub neutral_allow: [u8; 3],
+}
+
+impl Default for SheddingPolicy {
+    fn default() -> Self {
+        Self {
+            full_above_pct: 30.0,
+            partial_below_pct: 15.0,
+            full_allow: [1, 1, 1],
+            partial_allow: [2, 1, 1],
+            min_allow: [2, 2, 1],
+            neutral_allow: [0, 0, 0],
+        }
+    }
+}
+
 /// What DM sets (settings and conditions); changes come as commands.
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct ApcConfig {
@@ -43,6 +78,7 @@ pub struct ApcConfig {
     pub chargemode: bool,
     pub max_charge: f64,
     pub chargelevel: f64,
+    pub policy: SheddingPolicy,
 }
 
 impl Default for ApcConfig {
@@ -56,6 +92,7 @@ impl Default for ApcConfig {
             chargemode: true,
             max_charge: 0.0,
             chargelevel: 0.0005,
+            policy: SheddingPolicy::default(),
         }
     }
 }
@@ -264,39 +301,44 @@ impl Apc {
 
     /// `_update_channels()`: shedding tiers from the cell level and trend.
     fn update_channels(&mut self) {
-        let max = self.config.max_charge;
+        let policy = self.config.policy;
+        let store = RateStore {
+            charge: self.state.charge,
+            capacity: self.config.max_charge,
+            rate: CELLRATE,
+        };
         let s = &mut self.state;
         if s.charging != 0 && s.longtermpower < 10 {
             s.longtermpower += 1;
         } else if s.longtermpower > -10 {
             s.longtermpower -= 2;
         }
-        let pct = if max > 0.0 { 100.0 * s.charge / max } else { 0.0 };
-        let set = |s: &mut ApcState, e: u8, l: u8, v: u8| {
-            s.channels[Channel::Equip.idx()] = autoset(s.channels[Channel::Equip.idx()], e);
-            s.channels[Channel::Light.idx()] = autoset(s.channels[Channel::Light.idx()], l);
-            s.channels[Channel::Environ.idx()] = autoset(s.channels[Channel::Environ.idx()], v);
+        let pct = 100.0 * store.fraction();
+        let set = |s: &mut ApcState, allow: [u8; 3]| {
+            for c in Channel::ALL {
+                s.channels[c.idx()] = autoset(s.channels[c.idx()], allow[c.idx()]);
+            }
         };
-        if pct > 30.0 || s.longtermpower > 0 {
+        if pct > policy.full_above_pct || s.longtermpower > 0 {
             if s.autoflag != 3 {
-                set(s, 1, 1, 1);
+                set(s, policy.full_allow);
                 s.autoflag = 3;
                 s.alarm = false;
             }
-        } else if pct <= 30.0 && pct > 15.0 && s.longtermpower < 0 {
+        } else if pct <= policy.full_above_pct && pct > policy.partial_below_pct && s.longtermpower < 0 {
             if s.autoflag != 2 {
-                set(s, 2, 1, 1);
+                set(s, policy.partial_allow);
                 s.alarm = true;
                 s.autoflag = 2;
             }
-        } else if pct <= 15.0 {
+        } else if pct <= policy.partial_below_pct {
             if s.autoflag > 1 {
-                set(s, 2, 2, 1);
+                set(s, policy.min_allow);
                 s.alarm = true;
                 s.autoflag = 1;
             }
         } else if s.autoflag != 0 {
-            set(s, 0, 0, 0);
+            set(s, policy.neutral_allow);
             s.alarm = true;
             s.autoflag = 0;
         }

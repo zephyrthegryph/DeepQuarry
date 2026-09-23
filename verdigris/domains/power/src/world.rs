@@ -39,8 +39,9 @@ pub mod ev {
     /// A machine node's region changed: `key, region, members` (region 0:
     /// on no cable).
     pub const BIND: u32 = 1;
-    /// A region's published numbers changed: `region, avail, load,
-    /// viewavail, viewload, netexcess`.
+    /// A region's raw numbers changed: `region, avail, load, netexcess`.
+    /// No smoothing: any display easing is the presenter's job, not the
+    /// step's (`rust_core.md` §15).
     pub const REGION: u32 = 2;
     /// A region no longer exists: `region`.
     pub const RETIRED: u32 = 3;
@@ -78,20 +79,23 @@ struct Obj {
     shape: Option<CableShape>,
 }
 
-/// One region's accounting.
+/// One region's accounting. No presentation state: raw supply/load only
+/// (`rust_core.md` §15 — a domain step doesn't build its own display
+/// smoothing or dedup view).
 #[derive(Clone, Copy, Debug, Default, PartialEq)]
 struct Ledger {
     avail: f64,
     smes_avail: f64,
     load: f64,
-    viewavail: f64,
-    viewload: f64,
     netexcess: f64,
     brown: bool,
-    /// Last published numbers.
-    shown: [f64; 5],
-    shown_brown: bool,
-    fresh: bool,
+    /// The last `(avail, load, netexcess)` reported to DM, so a step that
+    /// changed nothing doesn't re-emit a `REGION` record; `None` before
+    /// the first report (always emits once).
+    reported: Option<[f64; 3]>,
+    /// The last brownout state reported, for edge-triggered
+    /// [`ev::BROWNOUT`].
+    reported_brown: Option<bool>,
 }
 
 /// Region numbers as DM reads them.
@@ -100,8 +104,6 @@ pub struct RegionInfo {
     pub region: u32,
     pub avail: f64,
     pub load: f64,
-    pub viewavail: f64,
-    pub viewload: f64,
     pub netexcess: f64,
     pub summary: Summary,
     pub members: u32,
@@ -179,15 +181,6 @@ pub fn region_id(r: RegionId<Cables>) -> u32 {
 
 fn raw_id(r: RawHandle) -> u32 {
     r.bits() + 1
-}
-
-/// A monitor-visible change: any number moving by more than 1% (or 1 W), or
-/// crossing zero. The smoothed view settles geometrically; without this each
-/// region would publish for ~50 steps after every change.
-fn visibly_changed(old: &[f64; 5], new: &[f64; 5]) -> bool {
-    old.iter().zip(new).any(|(&a, &b)| {
-        (a > 0.0) != (b > 0.0) || (a - b).abs() > (0.01 * a.abs().max(b.abs())).max(1.0)
-    })
 }
 
 fn push(out: &mut Vec<f32>, kind: u32, values: &[f64]) {
@@ -377,8 +370,6 @@ impl PowerWorld {
                     let gone = self.ledgers.remove(&from.raw()).unwrap_or_default();
                     let l = self.ledgers.entry(into.raw()).or_default();
                     l.load += gone.load;
-                    l.viewavail += gone.viewavail;
-                    l.viewload += gone.viewload;
                     retired.push(from.raw());
                     touched_regions.push(into);
                 }
@@ -388,8 +379,7 @@ impl PowerWorld {
                         into.raw(),
                         Ledger {
                             brown: parent.brown,
-                            shown_brown: parent.shown_brown,
-                            fresh: true,
+                            reported_brown: parent.reported_brown,
                             ..Ledger::default()
                         },
                     );
@@ -525,8 +515,6 @@ impl PowerWorld {
             region: region_id(r),
             avail: l.avail,
             load: l.load,
-            viewavail: l.viewavail,
-            viewload: l.viewload,
             netexcess: l.netexcess,
             summary: *region.summary(),
             members: region.members(),
@@ -817,33 +805,29 @@ impl PowerWorld {
             self.books.storage_out += delivered;
         }
 
-        // Monitor view, brownouts, then next step's supply.
+        // Brownouts, then next step's supply. No display smoothing or
+        // dedup-view state lives here (`rust_core.md` §15): the raw
+        // numbers are reported every step they change at all.
         let regions: Vec<RegionId<Cables>> = self.net.regions().map(|(r, _)| r).collect();
         for r in &regions {
             let l = self.ledgers.entry(r.raw()).or_default();
             self.books.generated += l.avail - l.smes_avail;
             self.books.storage_offered += l.smes_avail;
             l.netexcess = l.avail - l.load;
-            l.viewavail = (0.8f64.mul_add(l.viewavail, 0.2 * l.avail)).round();
-            l.viewload = (0.8f64.mul_add(l.viewload, 0.2 * l.load)).round();
             l.brown = l.avail <= 0.0 || l.netexcess < -1.0;
         }
         self.pulses.clear();
         self.plan_supply(None);
         for r in &regions {
             let l = self.ledgers.get_mut(&r.raw()).expect("entered above");
-            let shown = [l.avail, l.load, l.viewavail, l.viewload, l.netexcess];
+            let raw = [l.avail, l.load, l.netexcess];
             let id = f64::from(region_id(*r));
-            if !l.fresh {
-                l.shown_brown = l.brown;
+            if l.reported != Some(raw) {
+                l.reported = Some(raw);
+                push(&mut self.out, ev::REGION, &[id, raw[0], raw[1], raw[2]]);
             }
-            if !l.fresh || visibly_changed(&l.shown, &shown) {
-                l.shown = shown;
-                l.fresh = true;
-                push(&mut self.out, ev::REGION, &[id, shown[0], shown[1], shown[2], shown[3], shown[4]]);
-            }
-            if l.brown != l.shown_brown {
-                l.shown_brown = l.brown;
+            if l.reported_brown != Some(l.brown) {
+                l.reported_brown = Some(l.brown);
                 push(&mut self.out, ev::BROWNOUT, &[id, f64::from(u8::from(l.brown))]);
             }
             l.load = 0.0;

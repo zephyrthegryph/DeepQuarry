@@ -24,7 +24,7 @@
 #endif
 
 /// Bind-set hash shared with verdigris/ffi/src/abi.rs; checked by verdigris_init().
-#define VERDIGRIS_ABI "415759240b85d7a1"
+#define VERDIGRIS_ABI "2751dac6600e8d2a"
 
 // Numeric registry (@dm-define constants in the Rust sources).
 
@@ -316,10 +316,10 @@
 // verdigris/ffi/src/power.rs
 #define POWER_OP_SUPPLY 4
 
-/// Numbers in a `vg_power_region` reply: region, avail, load, viewavail,
-/// viewload, netexcess, supply, eqp, lgt, env, capacity, members.
+/// Numbers in a `vg_power_region` reply: region, avail, load, netexcess,
+/// supply, eqp, lgt, env, capacity, members.
 // verdigris/ffi/src/power.rs
-#define POWER_REGION_STRIDE 12
+#define POWER_REGION_STRIDE 10
 
 /// SMES flags.
 // verdigris/ffi/src/power.rs

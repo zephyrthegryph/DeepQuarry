@@ -101,7 +101,7 @@ GLOBAL_VAR_INIT(power_next_key, 1)
 		return null
 	power_flush(TRUE)
 	var/list/info = vg_power_region(key)
-	if(!info || (connected_only && info[12] <= 1))
+	if(!info || (connected_only && info[10] <= 1))
 		return null
 	var/datum/powernet/network = power_facade(info[1], key)
 	network.read_info(info)
