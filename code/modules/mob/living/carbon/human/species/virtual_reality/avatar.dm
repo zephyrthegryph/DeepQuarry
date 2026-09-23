@@ -100,7 +100,7 @@
 	// Tally human damage
 	if(ishuman(src))
 		var/mob/living/carbon/human/H = src
-		total_damage = H.injury_load(INJURY_CATEGORY_PHYSICAL) + H.injury_load(INJURY_CATEGORY_THERMAL) + H.injury_load(INJURY_CATEGORY_ASPHYXIA) + H.injury_load(INJURY_CATEGORY_TOXIC)
+		total_damage = H.injury_load(INJURY_CATEGORY_PHYSICAL) + H.injury_load(INJURY_CATEGORY_THERMAL) + H.oxygen_debt() + H.injury_load(INJURY_CATEGORY_TOXIC)
 
 	// Move the mind back to the original mob
 //	vr_holder.Sleeping(1)

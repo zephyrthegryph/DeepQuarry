@@ -639,7 +639,7 @@
 			"brute" = round(subject.injury_load(INJURY_CATEGORY_PHYSICAL), 0.1),
 			"burn" = round(subject.injury_load(INJURY_CATEGORY_THERMAL), 0.1),
 			"toxin" = round(subject.injury_load(INJURY_CATEGORY_TOXIC), 0.1),
-			"oxygen" = round(subject.injury_load(INJURY_CATEGORY_ASPHYXIA), 0.1),
+			"oxygen" = round(subject.oxygen_debt(), 0.1),
 		),
 		"exposures" = subject.clinical_exposure_history?.Copy() || list(),
 	)

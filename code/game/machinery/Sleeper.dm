@@ -192,7 +192,7 @@
 		occupantData["vitality"] = round(occupant.vitality() * 100)
 		occupantData["critical"] = occupant.is_critical()
 		occupantData["physicalLoad"] = occupant.injury_load(INJURY_CATEGORY_PHYSICAL)
-		occupantData["asphyxiaLoad"] = occupant.injury_load(INJURY_CATEGORY_ASPHYXIA)
+		occupantData["asphyxiaLoad"] = occupant.oxygen_debt()
 		occupantData["toxicLoad"] = occupant.injury_load(INJURY_CATEGORY_TOXIC)
 		occupantData["thermalLoad"] = occupant.injury_load(INJURY_CATEGORY_THERMAL)
 		occupantData["paralysis"] = occupant.paralysis

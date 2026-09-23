@@ -160,7 +160,7 @@
 
 	if(user.injury_load(INJURY_CATEGORY_TOXIC) > 0)
 		problems |= TOXIN_DAMAGE
-	if(user.injury_load(INJURY_CATEGORY_ASPHYXIA) > 0)
+	if(user.oxygen_debt() > 0)
 		problems |= OXY_DAMAGE
 	if(user.radiation > 0)
 		problems |= ACUTE_RADIATION_DOSE

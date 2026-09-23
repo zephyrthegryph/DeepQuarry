@@ -196,6 +196,17 @@ if $grep -n '\b(add_chemical_effect|remove_chemical_effect|chem_effects)\b' "${c
 	FAILED=1
 fi;
 
+part "physiology: no asphyxia injury"
+# Lack of oxygen is an outcome the physiology computes (code/modules/body/physiology.dm),
+# not an injury. Express the cause as a mechanism: an airway / breathing restriction, breath
+# quality, a factor (BF_O2_CARRIAGE, BF_TISSUE_UPTAKE, ...) or, with no mechanism at all,
+# add_oxygen_debt(). Read it with oxygen_debt().
+if $grep -n '(INJURY_ASPHYXIA|INJURY_CATEGORY_ASPHYXIA|BF_INCOMING_ASPHYXIA)' $code_files; then
+	echo
+	echo -e "${RED}ERROR: asphyxia injury detected. Model the mechanism (restriction, breath quality, factor) or use add_oxygen_debt() / oxygen_debt().${NC}"
+	FAILED=1
+fi;
+
 part "body factors: no mechanical effects"
 # Affliction effects are body factors (`factors`, or a stage's "factors").
 if $grep -n '\b(mechanical_effects|vital_effects|od_boost|get_vital_effects)\b' "${code_files[@]}"; then

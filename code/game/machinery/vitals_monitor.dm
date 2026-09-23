@@ -53,7 +53,7 @@
 
 			var/obj/item/organ/internal/lungs/lungs = victim.internal_organs_by_name[O_LUNGS]
 			if(istype(lungs))
-				var/hypoxia = victim.injury_load(INJURY_CATEGORY_ASPHYXIA)
+				var/hypoxia = victim.oxygen_debt()
 				if(victim.breath_blocked())
 					breathing = "none"
 				else if(hypoxia > 50)
@@ -126,7 +126,7 @@
 
 	var/obj/item/organ/internal/lungs/lungs = victim.internal_organs_by_name[O_LUNGS]
 	if(istype(lungs) && victim.stat != DEAD && !(victim.status_flags & FAKEDEATH))
-		var/hypoxia = victim.injury_load(INJURY_CATEGORY_ASPHYXIA)
+		var/hypoxia = victim.oxygen_debt()
 		if(hypoxia > 50)
 			add_overlay("breathing_shallow")
 			add_overlay("breathing_warning")

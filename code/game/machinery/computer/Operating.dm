@@ -71,7 +71,7 @@
 		occupantData["maxHealth"] = 100
 		occupantData["minHealth"] = 0
 		occupantData["bruteLoss"] = occupant.injury_load(INJURY_CATEGORY_PHYSICAL)
-		occupantData["oxyLoss"] = occupant.injury_load(INJURY_CATEGORY_ASPHYXIA)
+		occupantData["oxyLoss"] = occupant.oxygen_debt()
 		occupantData["toxLoss"] = occupant.injury_load(INJURY_CATEGORY_TOXIC)
 		occupantData["fireLoss"] = occupant.injury_load(INJURY_CATEGORY_THERMAL)
 		occupantData["paralysis"] = occupant.paralysis
@@ -180,7 +180,7 @@
 				nextTick=world.time + OP_COMPUTER_COOLDOWN
 				if(crit && victim.is_critical())
 					playsound(src.loc, 'sound/machines/defib_success.ogg', 50, 0)
-				if(oxy && victim.injury_load(INJURY_CATEGORY_ASPHYXIA) > oxyAlarm)
+				if(oxy && victim.oxygen_debt() > oxyAlarm)
 					playsound(src.loc, 'sound/machines/defib_safetyOff.ogg', 50, 0)
 				if(healthAnnounce && victim.vitality() * 100 <= healthAlarm)
 					atom_say("[round(victim.vitality() * 100)]% vitality.")

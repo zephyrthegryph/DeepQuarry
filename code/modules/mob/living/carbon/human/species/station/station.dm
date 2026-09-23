@@ -1750,7 +1750,7 @@
 	if(adjusted_pressure2 <= 20)
 		H.injure(INJURY_BLUNT, LOW_PRESSURE_DAMAGE) // Decompression
 	//they handle areas where they can't breathe better than most, but it still lowers their effective health as well as all the other bad stuff that comes with unbreathable environments
-	if(H.injury_load(INJURY_CATEGORY_ASPHYXIA) >= 50)
+	if(H.oxygen_debt() >= 50)
 		H.does_not_breathe = TRUE
 
 	//Cold hurts and gives them pain messages, eventually weakening and paralysing, but doesn't damage or trigger feral.
@@ -2012,7 +2012,7 @@
 			return 1
 
 	// Next, heal external damage.
-	if (H.injury_load(INJURY_CATEGORY_PHYSICAL) || H.injury_load(INJURY_CATEGORY_THERMAL) || H.injury_load(INJURY_CATEGORY_ASPHYXIA) || H.injury_load(INJURY_CATEGORY_TOXIC))
+	if (H.injury_load(INJURY_CATEGORY_PHYSICAL) || H.injury_load(INJURY_CATEGORY_THERMAL) || H.oxygen_debt() || H.injury_load(INJURY_CATEGORY_TOXIC))
 		H.mend(TREAT_TISSUE_REPAIR, heal_rate)
 		H.mend(TREAT_BURN_CARE, heal_rate)
 		H.mend(TREAT_OXYGENATION, heal_rate)

@@ -200,7 +200,7 @@
 		set_pin_data(IC_OUTPUT, 3, H.injury_load(INJURY_CATEGORY_PHYSICAL))
 		set_pin_data(IC_OUTPUT, 4, H.injury_load(INJURY_CATEGORY_THERMAL))
 		set_pin_data(IC_OUTPUT, 5, H.injury_load(INJURY_CATEGORY_TOXIC))
-		set_pin_data(IC_OUTPUT, 6, H.injury_load(INJURY_CATEGORY_ASPHYXIA))
+		set_pin_data(IC_OUTPUT, 6, H.oxygen_debt())
 		set_pin_data(IC_OUTPUT, 7, H.injury_load(INJURY_CATEGORY_GENETIC))
 
 	push_data()

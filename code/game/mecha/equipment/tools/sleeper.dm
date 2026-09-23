@@ -133,7 +133,7 @@
 			data["status"] = "Unknown"
 	data["health_percent"] = round(occupant.vitality()*100)
 	data["brute"] = occupant.injury_load(INJURY_CATEGORY_PHYSICAL)
-	data["oxy"] = occupant.injury_load(INJURY_CATEGORY_ASPHYXIA)
+	data["oxy"] = occupant.oxygen_debt()
 	data["tox"] = occupant.injury_load(INJURY_CATEGORY_TOXIC)
 	data["fire"] = occupant.injury_load(INJURY_CATEGORY_THERMAL)
 	data["body_temp_c"] = round(occupant.bodytemperature - T0C, 0.1)
@@ -226,8 +226,8 @@
 	text += occupant.injury_load(INJURY_CATEGORY_PHYSICAL) < 60 ? span_blue(entry) : span_red(entry)
 	text += "<br />"
 
-	entry = span_bold("Respiratory Damage:") + " [occupant.injury_load(INJURY_CATEGORY_ASPHYXIA)]%"
-	text += occupant.injury_load(INJURY_CATEGORY_ASPHYXIA) < 60 ? span_blue(entry) : span_red(entry)
+	entry = span_bold("Respiratory Damage:") + " [occupant.oxygen_debt()]%"
+	text += occupant.oxygen_debt() < 60 ? span_blue(entry) : span_red(entry)
 	text += "<br />"
 
 	entry = span_bold("Toxin Content:") + " [occupant.injury_load(INJURY_CATEGORY_TOXIC)]%"

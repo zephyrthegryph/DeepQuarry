@@ -243,7 +243,7 @@
 		var/health_text = "\tHealth %: [round(occupant.vitality() * 100)], ([t1])"
 		var/brute_load = round(occupant.injury_load(INJURY_CATEGORY_PHYSICAL))
 		var/burn_load = round(occupant.injury_load(INJURY_CATEGORY_THERMAL))
-		var/oxy_load = round(occupant.injury_load(INJURY_CATEGORY_ASPHYXIA))
+		var/oxy_load = round(occupant.oxygen_debt())
 		var/tox_load = round(occupant.injury_load(INJURY_CATEGORY_TOXIC))
 		var/genetic_load = round(occupant.injury_load(INJURY_CATEGORY_GENETIC))
 		var/neural_load = round(occupant.injury_load(INJURY_CATEGORY_NEURAL))

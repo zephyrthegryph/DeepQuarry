@@ -140,7 +140,7 @@
 		if(species.emp_sensitivity & EMP_TOX_DMG)
 			injure(INJURY_TOXIN, rand(25-(severity*5),35-(severity*5)) * species.emp_dmg_mod)
 		if(species.emp_sensitivity & EMP_OXY_DMG)
-			injure(INJURY_ASPHYXIA, rand(25-(severity*5),35-(severity*5)) * species.emp_dmg_mod)
+			add_oxygen_debt(rand(25-(severity*5),35-(severity*5)) * species.emp_dmg_mod, "EMP")
 
 /mob/living/carbon/electrocute_act(shock_damage, obj/source, siemens_coeff = 1.0, def_zone = null, stun = 1)
 	if(SEND_SIGNAL(src, COMSIG_BEING_ELECTROCUTED, shock_damage, source, siemens_coeff, def_zone, stun) & COMPONENT_CARBON_CANCEL_ELECTROCUTE)

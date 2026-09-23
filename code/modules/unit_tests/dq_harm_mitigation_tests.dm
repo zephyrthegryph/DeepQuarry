@@ -182,7 +182,7 @@
 		TEST_ASSERT_EQUAL(injury_kind_obj_damage_type(kind), BRUTE, "[injury_kind_name(kind)] should dent objects (BRUTE)")
 	for(var/kind in list(INJURY_BURN, INJURY_CORROSIVE))
 		TEST_ASSERT_EQUAL(injury_kind_obj_damage_type(kind), BURN, "[injury_kind_name(kind)] should scorch objects (BURN)")
-	for(var/kind in list(INJURY_PAIN, INJURY_TOXIN, INJURY_ELECTRIC, INJURY_RADIATION, INJURY_NEURAL, INJURY_ASPHYXIA, INJURY_CELLULAR))
+	for(var/kind in list(INJURY_PAIN, INJURY_TOXIN, INJURY_ELECTRIC, INJURY_RADIATION, INJURY_NEURAL, INJURY_CELLULAR))
 		TEST_ASSERT_NULL(injury_kind_obj_damage_type(kind), "[injury_kind_name(kind)] shouldn't damage objects")
 
 	var/obj/item/material/knife/knife = allocate(/obj/item/material/knife)

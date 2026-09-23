@@ -464,7 +464,7 @@
 	var/physical = H.injury_load(INJURY_CATEGORY_PHYSICAL)
 	var/thermal = H.injury_load(INJURY_CATEGORY_THERMAL)
 	var/toxic = H.injury_load(INJURY_CATEGORY_TOXIC)
-	var/asphyxia = H.injury_load(INJURY_CATEGORY_ASPHYXIA)
+	var/asphyxia = H.oxygen_debt()
 	if(reagent_glass && use_beaker && ((physical >= heal_threshold) || (toxic >= heal_threshold) || (thermal >= heal_threshold) || (asphyxia >= (heal_threshold + 15))))
 		for(var/datum/reagent/R in reagent_glass.reagents.reagent_list)
 			if(!H.reagents.has_reagent(R))

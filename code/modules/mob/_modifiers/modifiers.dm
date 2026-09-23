@@ -370,8 +370,8 @@
 //MISC VARIANTS
 
 /datum/modifier/shield_projection/biohazard //The odd-ball damage types. Provides near-complete immunity while it's up.
-	resist_full = alist(INJURY_CATEGORY_TOXIC = 0, INJURY_CATEGORY_ASPHYXIA = 0, INJURY_CATEGORY_GENETIC = 0)
-	resist_empty = alist(INJURY_CATEGORY_TOXIC = 0.25, INJURY_CATEGORY_ASPHYXIA = 0.25, INJURY_CATEGORY_GENETIC = 0.25)
+	resist_full = alist(INJURY_CATEGORY_TOXIC = 0, INJURY_CATEGORY_GENETIC = 0)
+	resist_empty = alist(INJURY_CATEGORY_TOXIC = 0.25, INJURY_CATEGORY_GENETIC = 0.25)
 
 /datum/modifier/shield_projection/admin // Adminbus.
 	on_created_text = span_notice("Your shield generator activates and you feel the power of the tesla buzzing around you.")

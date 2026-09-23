@@ -494,7 +494,7 @@
 	else
 		if(isliving(implanted))
 			var/mob/living/L = implanted
-			healthstring = "[round(L.injury_load(INJURY_CATEGORY_ASPHYXIA))] - [round(L.injury_load(INJURY_CATEGORY_THERMAL))] - [round(L.injury_load(INJURY_CATEGORY_TOXIC))] - [round(L.injury_load(INJURY_CATEGORY_PHYSICAL))]"
+			healthstring = "[round(L.oxygen_debt())] - [round(L.injury_load(INJURY_CATEGORY_THERMAL))] - [round(L.injury_load(INJURY_CATEGORY_TOXIC))] - [round(L.injury_load(INJURY_CATEGORY_PHYSICAL))]"
 		if(!healthstring)
 			healthstring = "ERROR"
 		return healthstring

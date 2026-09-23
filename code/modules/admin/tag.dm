@@ -47,7 +47,7 @@
 					" + span_brute("[round(X.injury_load(INJURY_CATEGORY_PHYSICAL), 0.1)]") + " \
 					" + span_burn("[round(X.injury_load(INJURY_CATEGORY_THERMAL), 0.1)]") + " \
 					" + span_tox("[round(X.injury_load(INJURY_CATEGORY_TOXIC), 0.1)]") + " \
-					" + span_oxy("[round(X.injury_load(INJURY_CATEGORY_ASPHYXIA), 0.1)]") + " \
+					" + span_oxy("[round(X.oxygen_debt(), 0.1)]") + " \
 					" + span_clone("[round(X.injury_load(INJURY_CATEGORY_GENETIC), 0.1)]")
 
 ADMIN_VERB(display_tags, R_ADMIN, "View Tags", "Display all of the tagged datums.", ADMIN_CATEGORY_GAME)
