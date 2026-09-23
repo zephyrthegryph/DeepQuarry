@@ -200,7 +200,7 @@
 
 /// Coarse suit-sensor status from vitality and criticality alone.
 /proc/sensor_status(mob/living/L)
-	if(L.stat == DEAD)
+	if(L.is_dead())
 		return DIAG_STATUS_DEAD
 	if(L.is_critical())
 		return DIAG_STATUS_CRITICAL

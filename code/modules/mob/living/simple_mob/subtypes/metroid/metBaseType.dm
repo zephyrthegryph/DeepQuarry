@@ -116,6 +116,6 @@
 	"The metroid swells as it absorbs the rest of your life force and nutrients into its body, making it stronger and even hungry for more."
 	)
 
-/mob/living/simple_mob/metroid/death()
+/mob/living/simple_mob/metroid/on_death(gibbed)
 	// playsound(src, 'sound/metroid/metroiddeath.ogg', 75, 1)
 	..()

@@ -31,12 +31,8 @@
 		to_chat(src, span_danger("You have no genomes, not even your own, and cannot revive."))
 		return FALSE
 
-	if(src.stat == DEAD)
-		GLOB.dead_mob_list -= src
-		GLOB.living_mob_list += src
 	var/mob/living/carbon/C = src
 
-	C.tod = null
 	C.fully_heal()
 	C.SetParalysis(0)
 	C.SetStunned(0)
@@ -70,12 +66,13 @@
 		H.UpdateAppearance()
 
 	C.shock_stage = 0 //Pain
+	var/revived = C.return_from_death("changeling regeneration", changeling, REVIVE_IGNORE_WINDOW)
+	if(revived != TRUE)
+		to_chat(C, span_danger("Our regeneration failed: [revived]."))
+		return FALSE
 	to_chat(C, span_notice("We have regenerated."))
-	C.update_canmove()
 	feedback_add_details("changeling_powers","CR")
-	C.set_stat(CONSCIOUS)
 	C.forbid_seeing_deadchat = FALSE
-	C.timeofdeath = null
 	changeling.is_reviving = FALSE
 
 	return TRUE

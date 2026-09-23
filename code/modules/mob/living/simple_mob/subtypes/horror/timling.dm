@@ -28,7 +28,7 @@
 
 	say_list_type = /datum/say_list/TinyTim
 
-/mob/living/simple_mob/horror/TinyTim/death()
+/mob/living/simple_mob/horror/TinyTim/on_death(gibbed)
 	playsound(src, 'sound/h_sounds/shitty_tim.ogg', 50, 1)
 	..()
 

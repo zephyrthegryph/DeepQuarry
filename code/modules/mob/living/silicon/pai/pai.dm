@@ -482,7 +482,8 @@
 	SHOULD_NOT_OVERRIDE(TRUE)
 	PRIVATE_PROC(TRUE)
 	card.setEmotion(16)
-	stat = CONSCIOUS
+	if(stat == DEAD)
+		return_from_death("pAI restored", card, REVIVE_IGNORE_WINDOW)
 	addtimer(CALLBACK(src, PROC_REF(restore_delay_end)), 1 SECONDS, TIMER_DELETE_ME)
 
 /mob/living/silicon/pai/proc/restore_delay_end()

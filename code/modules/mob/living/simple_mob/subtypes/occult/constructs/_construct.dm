@@ -110,9 +110,12 @@
 		add_glow()
 */
 
-/mob/living/simple_mob/construct/death()
+/mob/living/simple_mob/construct
+	death_message = "collapses in a shattered heap."
+
+/mob/living/simple_mob/construct/on_death(gibbed)
 	new /obj/item/ectoplasm (src.loc)
-	..(null,"collapses in a shattered heap.")
+	..()
 	ghostize()
 	qdel(src)
 

@@ -385,29 +385,32 @@
 
 /// Apply death / consciousness from the cached vitals.
 /datum/body/proc/evaluate_status()
-	if(owner.stat == DEAD || (owner.status_flags & GODMODE))
+	if(owner.is_dead() || (owner.status_flags & GODMODE))
 		return
 	if(SEND_SIGNAL(owner, COMSIG_LIVING_BODY_STATUS) & COMPONENT_BODY_KEEP_ALIVE)
 		if(HAS_TRAIT(owner, TRAIT_CRITICAL_CONDITION))
 			REMOVE_TRAIT(owner, TRAIT_CRITICAL_CONDITION, STAT_TRAIT)
 		return
-	if(is_dead())
+	if(is_lethal())
 		owner.death()
 		return
 	update_consciousness()
 
 /// Death only; no consciousness. Returns TRUE if the mob died.
 /datum/body/proc/check_death()
-	if(owner.stat == DEAD || (owner.status_flags & GODMODE))
+	if(owner.is_dead() || (owner.status_flags & GODMODE))
 		return FALSE
-	if(!is_dead())
+	if(!is_lethal())
 		return FALSE
 	if(SEND_SIGNAL(owner, COMSIG_LIVING_BODY_STATUS) & COMPONENT_BODY_KEEP_ALIVE)
 		return FALSE
 	owner.death()
 	return TRUE
 
-/datum/body/proc/is_dead()
+/// Are this body's injuries lethal? A question about damage, not about stat: the mob may still be
+/// alive (death is applied on the next status check) or already dead. Ask the mob's vital-state
+/// predicates (is_dead(), is_dying(), vital_band(); code/modules/body/vital_state.dm) for stat.
+/datum/body/proc/is_lethal()
 	return FALSE
 
 /datum/body/proc/is_unconscious()

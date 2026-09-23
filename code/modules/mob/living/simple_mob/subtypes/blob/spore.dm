@@ -63,10 +63,13 @@
 		infested = null
 	return ..()
 
-/mob/living/simple_mob/blob/spore/death(gibbed, deathmessage = "bursts!")
+/mob/living/simple_mob/blob/spore
+	death_message = "bursts!"
+
+/mob/living/simple_mob/blob/spore/on_death(gibbed)
+	. = ..()
 	if(overmind)
 		overmind.blob_type.on_spore_death(src)
-	..(gibbed, deathmessage)
 	qdel(src)
 
 /mob/living/simple_mob/blob/spore/update_icons()

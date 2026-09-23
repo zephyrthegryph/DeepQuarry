@@ -422,7 +422,7 @@
 	icon_living = "flamer"
 	projectiletype = /obj/item/projectile/energy/astral_collective/fire
 
-/mob/living/simple_mob/humanoid/astral_collective/mind/fire/death()
+/mob/living/simple_mob/humanoid/astral_collective/mind/fire/on_death(gibbed)
 	explosion(src.loc, 0, 2, 0, 0)
 	return ..()
 

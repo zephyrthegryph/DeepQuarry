@@ -146,7 +146,7 @@
 		movement_cooldown = initial(movement_cooldown)
 	update_icon()
 
-/mob/living/simple_mob/animal/space/space_worm/death()
+/mob/living/simple_mob/animal/space/space_worm/on_death(gibbed)
 	..()
 
 	DumpStomach()

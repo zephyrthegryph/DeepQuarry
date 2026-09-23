@@ -48,17 +48,22 @@
 	else
 		..()
 
-/mob/living/carbon/human/death(gibbed)
+/// Species with their own ending (diona nymph split, shadekin retreat) take over here.
+/mob/living/carbon/human/replace_death(gibbed)
+	return species.handle_death(src)
 
-	if(stat == DEAD) return
+/mob/living/carbon/human/get_death_message(gibbed)
+	return species.get_death_message(src)
 
+/mob/living/carbon/human/death_sound_volume()
+	return species.death_volume
+
+/mob/living/carbon/human/on_death(gibbed)
+	. = ..()
 	mark_hud_dirty(HEALTH_HUD)
 	mark_hud_dirty(STATUS_HUD)
 	mark_hud_dirty(LIFE_HUD)
 
-	//Handle species-specific deaths.
-	if(species.handle_death(src))
-		return
 	animate_tail_stop()
 	stop_flying()
 
@@ -108,14 +113,10 @@
 	if(mind)
 		var/area/A = get_area(src)
 		if(!(A?.flag_check(AREA_BLOCK_SUIT_SENSORS)) && isbelly(loc))
-			// SSgame_master.adjust_danger(gibbed ? 40 : 20)  // We don't use SSgame_master yet.
 			if(!isbelly(loc) || !vore_death_privacy)
 				for(var/mob/observer/dead/O in GLOB.mob_list)
 					if(O.client?.prefs?.read_preference(/datum/preference/toggle/show_dsay))
 						to_chat(O, span_deadsay(span_bold("[src]") + " has died in " + span_bold(strip_improper("[A]")) + ". [ghost_follow_link(src, O)] "))
-
-	if(!gibbed && !isbelly(loc))
-		playsound(src, pick(get_species_sound(get_gendered_sound(src))["death"]), src.species.death_volume, 1, 20, volume_channel = VOLUME_CHANNEL_DEATH_SOUNDS)
 
 	SSmobs.report_death(src)
 
@@ -137,8 +138,6 @@
 		vr_link.vr_holder = null
 		vr_link = null
 		to_chat(src, span_danger("Everything abruptly stops."))
-
-	return ..(gibbed,species.get_death_message(src))
 
 /mob/living/carbon/human/proc/ChangeToHusk()
 	if(HUSK in mutations)	return

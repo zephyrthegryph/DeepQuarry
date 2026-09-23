@@ -106,7 +106,7 @@
 
 	D.complete_revival()
 	TEST_ASSERT_NULL(H.body.find_affliction(/datum/affliction/core_dormancy), "revival should end dormancy")
-	TEST_ASSERT(!H.body.is_dead(), "revival should rebuild the body")
+	TEST_ASSERT(!H.body.is_lethal(), "revival should rebuild the body")
 
 /// Regeneration is funded by refactory steel, charged by what mend() repaired,
 /// only in forms that regenerate, and it never revives a dead organ (bug 11).

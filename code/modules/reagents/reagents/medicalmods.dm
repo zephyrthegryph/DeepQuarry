@@ -82,14 +82,8 @@
 		holder.mend(TREAT_BURN_CARE, 150)
 		holder.mend(TREAT_WIRING_REPAIR, 150)
 		holder.mend(TREAT_OXYGENATION, 200)
-		GLOB.dead_mob_list.Remove(holder)
-		if((holder in GLOB.living_mob_list) || (holder in GLOB.dead_mob_list))
-			WARNING("Mob [holder] was defibbed but already in the living or dead list still!")
-		GLOB.living_mob_list += holder
-		holder.timeofdeath = 0
 		holder.set_stat(CONSCIOUS)
 		holder.failed_last_breath = 0
-		holder.reload_fullscreen()
 		expire()
 
 /datum/modifier/life_cloak_exhaustion

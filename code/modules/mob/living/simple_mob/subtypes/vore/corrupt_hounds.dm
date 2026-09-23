@@ -108,7 +108,10 @@
 	else
 		..()
 
-/mob/living/simple_mob/vore/aggressive/corrupthound/death(gibbed, deathmessage = "shudders and collapses!")
+/mob/living/simple_mob/vore/aggressive/corrupthound
+	death_message = "shudders and collapses!"
+
+/mob/living/simple_mob/vore/aggressive/corrupthound/on_death(gibbed)
 	.=..()
 	resting = 0
 	icon_state = icon_dead
@@ -351,7 +354,10 @@
 	else
 		..()
 
-/mob/living/simple_mob/vore/retaliate/corrupthound/janihound/death(gibbed, deathmessage = "shudders and collapses!")
+/mob/living/simple_mob/vore/retaliate/corrupthound/janihound
+	death_message = "shudders and collapses!"
+
+/mob/living/simple_mob/vore/retaliate/corrupthound/janihound/on_death(gibbed)
 	.=..()
 	resting = 0
 	icon_state = icon_dead

@@ -804,7 +804,7 @@ This function completely restores a damaged organ to perfect condition.
 	if(owner)
 
 		// Process wounds, doing healing etc. Only do this every few ticks to save processing power
-		if(owner.stat != DEAD && owner.life_tick % wound_update_accuracy == 0)
+		if(owner.is_alive() && owner.life_tick % wound_update_accuracy == 0)
 			update_wounds()
 
 		//Chem traces slowly vanish

@@ -246,7 +246,7 @@ GLOBAL_VAR_INIT(woof_current, 0)
 	GLOB.woof_current--
 	. = ..()
 
-/mob/living/simple_mob/vore/woof/hostile/aweful/death()
+/mob/living/simple_mob/vore/woof/hostile/aweful/on_death(gibbed)
 	. = ..()
 	var/thismany = rand(0,3)
 	if(!thismany || killswitch || GLOB.woof_maximum >= 20)

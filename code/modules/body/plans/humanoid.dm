@@ -82,7 +82,7 @@
 /// its own, twice as fast asleep. Scaled by the server's regeneration config.
 /datum/body/humanoid/regeneration_level()
 	var/mob/living/carbon/human/H = owner
-	if(H.stat == DEAD || H.nutrition < REGENERATION_STARVING_NUTRITION)
+	if(H.is_dead() || H.nutrition < REGENERATION_STARVING_NUTRITION)
 		return 0
 	. = REGENERATION_BASE_LEVEL * CONFIG_GET(number/organ_regeneration_multiplier)
 	if(H.nutrition < REGENERATION_HUNGRY_NUTRITION)
@@ -273,7 +273,7 @@
 		if(E.vital && E.max_damage)
 			. = max(., (E.get_trauma() + E.get_burn()) / E.max_damage)
 
-/datum/body/humanoid/is_dead()
+/datum/body/humanoid/is_lethal()
 	var/mob/living/carbon/human/H = owner
 	if(H.should_have_organ(O_BRAIN) && (!H.has_brain() || H.is_brain_dead()))
 		return TRUE

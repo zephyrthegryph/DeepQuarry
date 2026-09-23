@@ -200,7 +200,7 @@ tuning number. Afflictions are whole-body `load` afflictions in points
 plan's oxygen debt, fed by `add_oxygen_debt()`). Regeneration and repair
 call `mend()`. `vitality()` = `1 - total_load/endurance`.
 
-## 5. Consciousness & death (`/datum/body` + each plan's `recompute_vitals()` / `is_dead()`)
+## 5. Consciousness & death (`/datum/body` + each plan's `recompute_vitals()` / `is_lethal()`)
 
 Invalidation is one bitfield, `body.dirty` (`BODY_DIRTY_*`), set through
 `body.invalidate()`: `VITALS` (the cached vitals), `TREATMENT` (the treatment
@@ -221,7 +221,7 @@ Each Life tick, `body.life_tick()`:
      penalty (`max(0, pain − tolerance)`).
    - `vitality` — the worst of vital-organ and vital-part failure, injury
      afflictions and lost consciousness.
-4. `evaluate_status()`: dead? (`is_dead()` per plan) → `death()`.
+4. `evaluate_status()`: lethal? (`is_lethal()` per plan) → `death()`.
    Unconscious if `consciousness <= 0` → `set_stat(UNCONSCIOUS)` + crit trait.
 
 Afflictions contribute through two declarative vars scaled by severity:
@@ -231,12 +231,25 @@ There are no special-cased thresholds anywhere else.
 A component can veto death and unconsciousness by answering
 `COMSIG_LIVING_BODY_STATUS` with `COMPONENT_BODY_KEEP_ALIVE` (lite godmode).
 
+**Death and revival have one path each.** `/mob/proc/death()` (`code/modules/mob/death.dm`)
+is sealed (`SHOULD_NOT_OVERRIDE`): guard (already dead or deleted: no side effects) →
+`replace_death()` (vanish/split/retreat instead) → one `set_stat(DEAD)` + lists → message,
+`death_links()` (soul links, nests, vore flags), `play_death_sound()`, senses, drops, diseases,
+mind memory → `COMSIG_MOB_DEATH` → subtype `on_death()` → HUD/icon refresh → antag win check →
+`COMSIG_LIVING_DEATH_FINAL`. Subtypes set `death_message` or override `get_death_message()`, never
+`death()`. The way back is `L.return_from_death(reason, source, REVIVE_*)`
+(`code/modules/body/revival.dm`), gated by `can_return_from_death()`; `set_stat()` refuses to
+leave `DEAD` anywhere else, and `check_grep.sh` rejects hand-rolled list swaps.
+
 Queries every other system uses instead of `health`:
 
 | Question | API |
 |---|---|
-| Alive/dead | `stat` (unchanged) |
+| Alive/dead | `L.is_alive()` / `L.is_dead()` (stat) |
 | In crit / unconscious from injury | `L.is_critical()` |
+| Alive but lethally hurt | `L.is_dying()` |
+| One summary band (HUDs, AI flee, bosses, bellies) | `L.vital_band()` → `VITAL_BAND_*` (`code/__defines/vital_state.dm`) |
+| Would these injuries kill? (damage, not stat) | `L.body.is_lethal()` |
 | Fraction of wellness left (HUD, AI flee, phases, belly bars, stat panel) | `L.vitality()` → 0..1 |
 | Endurance (for scaling damage to a mob's toughness) | `L.get_endurance()` (with modifiers) |
 | How hurt by category (medbot, vore payout, analyzers) | `L.injury_load(INJURY_CATEGORY_*)` |
@@ -249,7 +262,7 @@ Queries every other system uses instead of `health`:
 **Brain death** is decided in one place:
 `/obj/item/organ/internal/brain/proc/is_brain_dead()` — the brain is at 100%
 damage or the organ is `ORGAN_DEAD`. Brain death needs a resleeve. The
-humanoid plan's `is_dead()`, the defibrillator (`can_revive()`),
+humanoid plan's `is_lethal()`, the defibrillator (`can_revive()`),
 `check_vital_organs()`, the scanners, the MMI and the brain view all ask it.
 
 **Identity.** `/datum/character_identity` (`code/datums/character_identity.dm`)

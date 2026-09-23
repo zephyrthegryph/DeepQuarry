@@ -216,7 +216,7 @@
 	var/oursize = rand(90, 200) / 100
 	resize(oursize)
 
-/mob/living/simple_mob/vore/wolftaur/syndicate/death()
+/mob/living/simple_mob/vore/wolftaur/syndicate/on_death(gibbed)
 	visible_message(span_critical("\The [src]'s explosive implant lets out a shrill beep!!!"))
 	var/delay = rand(explosion_delay_lower, explosion_delay_upper)
 	spawn(0)

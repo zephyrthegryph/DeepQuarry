@@ -73,7 +73,7 @@
 	// thresholds. Returns list(systolic, diastolic) or null if no
 	// detectable blood pressure (dead, no heart).
 	var/obj/item/organ/internal/heart/H = internal_organs_by_name?[O_HEART]
-	if(!H || H.is_broken() || stat == DEAD || !has_cardiac_output())
+	if(!H || H.is_broken() || is_dead() || !has_cardiac_output())
 		return null
 	var/sys = 120
 	var/dia = 80
@@ -94,7 +94,7 @@
 
 /mob/living/carbon/human/proc/get_o2_sat_reading()
 	// Pulse oximetry. 99% normal; drops as tissue hypoxia climbs.
-	if(stat == DEAD)
+	if(is_dead())
 		return 0
 	var/sat = 99
 	var/hypoxia = oxygen_debt()
@@ -107,7 +107,7 @@
 /mob/living/carbon/human/proc/get_respiratory_rate()
 	// Respirations per minute. Conditions add via "resp_mod". A dead
 	// or non-breathing patient returns 0.
-	if(stat == DEAD)
+	if(is_dead())
 		return 0
 	if(!should_have_organ(O_LUNGS))
 		return 0

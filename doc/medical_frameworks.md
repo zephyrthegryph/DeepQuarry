@@ -875,6 +875,53 @@ Excluded: `mob.dm:10,90` (list bookkeeping on creation and deletion), `death.dm:
 `human_species.dm:13,25` (death bookkeeping), and `combat_ai/ports/possum.dm:73` (fake death
 ending, not a revive).
 
+#### 2.7a O5 as built (deviations from the plan above)
+
+- **Signature and refusal.** `return_from_death(reason, source, flags)` returns TRUE or a refusal
+  string from `can_return_from_death(flags)`: "not dead", "lethal injuries" (`body.is_lethal()`,
+  the renamed `body.is_dead()`), or `revival_window_refusal()` (human: no brain, brain dead,
+  brain decayed, husked, brain stem, a failed vital organ). The vorepanel's hand-written
+  eligibility is gone (P2-D2). By user decision vore reform never refuses: both reform paths
+  pass `REVIVE_RESTORE | REVIVE_IGNORE_WINDOW | REVIVE_HEAL | REVIVE_UNCONSCIOUS`.
+  `REVIVE_RESTORE` (new) calls `restore_for_revival()`, which for humans regrows missing
+  vital organs (brain included), clears brain death, brain decay, husk and brain-stem damage,
+  then heals, so `can_return_from_death()` cannot refuse a dead, undeleted mob. Both reform
+  paths (ghost and MMI) call `H.reform_restore()`: `return_from_death()` with
+  `REVIVE_RESTORE | REVIVE_IGNORE_WINDOW | REVIVE_HEAL`, then `rejuvenate()`, so the stored
+  body comes back fully restored. The incremental `reform_treatments` loop and the MMI path's
+  partial mends are deleted; the MMI path still installs the MMI as the brain holder first.
+- **Extra flag `REVIVE_UNCONSCIOUS`.** Defib, CPR, the buzzer ring, vore reform and redspace
+  corruption all landed the patient UNCONSCIOUS; step 4's `set_stat(CONSCIOUS)` would have
+  changed that, so the flag keeps it.
+- **`can_defib = TRUE` is not set on revive.** It is a human flag for brain-stem damage that
+  the window check reads; clearing it on revive would hide an injury the revive didn't fix.
+- **Enforcement at runtime, not just lint.** `/mob/living/set_stat()` refuses DEAD -> alive
+  (with a stack trace) unless `revival_in_progress`, which only `return_from_death()` sets.
+- **`COMSIG_LIVING_REVIVE` is replaced** by `COMSIG_LIVING_REVIVED (source, reason)`; the
+  contracts subsystem listens to the new one. `revive()`/`rejuvenate()` stay as heal
+  routines and revive through `return_from_death("rejuvenated", ..., REVIVE_IGNORE_WINDOW)`.
+- **Not revives, left alone:** `body/plans/machine.dm:57` (UNCONSCIOUS -> CONSCIOUS only),
+  `nanoform.dm complete_revival` (dormancy is never DEAD), `epinephrine_overdose.dm`
+  (usable only while alive), the life-status systems (all skip DEAD mobs). The soulcatcher,
+  NIF soulcatcher and digital-MMI `stat = 0` / `dead_mob_list -=` lines were no-ops on fresh
+  (CONSCIOUS) views and are deleted.
+- **`life_cloak`** only fires on a living holder; its list swap was dead code and is deleted.
+- **Death pipeline** (audit P2-D4, A8): `/mob/proc/death()` is sealed (`SHOULD_NOT_OVERRIDE`)
+  and ordered: guard, `replace_death()`, one `set_stat(DEAD)`, message, `death_links()`,
+  `play_death_sound()`, senses and drops, `COMSIG_MOB_DEATH`, `on_death()`, refresh, win check,
+  `COMSIG_LIVING_DEATH_FINAL`. The ~130 `death()` overrides became `on_death()` (or
+  `replace_death()` for mobs that vanished without dying: bots, cockroaches, broodlings,
+  homunculus, ysbryd, bluespace cat, fake glitch boss, airlock/floor mimics, shadekin
+  retreat, human `species.handle_death()`). Messages moved to the `death_message` var or a
+  `get_death_message()` override. `COMSIG_MOB_DEATH` now fires after the stat transition (it
+  fired before). The targeting and cultnet `death()` overrides are folded into
+  `/mob/living/on_death()`; the AI camera update into the AI's. Simple mobs restore
+  density, eye glow and icon in `on_revived()`; `ghostjoin` is not restored.
+- **Vital predicates** (NEW:VITALS): `is_alive()`, `is_dead()`, `is_critical()`,
+  `is_dying()`, `is_brain_dead()`, `vital_band()` (`VITAL_BAND_*`, `VITALITY_SERIOUS`/`_HURT`).
+  Medical, body, organ and diagnosis `stat ==/!= DEAD` reads are migrated. The robot/brain
+  HUD band tables (P2-D10) and the 46 vitality thresholds outside those folders are not.
+
 ### 2.8 File layout
 
 ```

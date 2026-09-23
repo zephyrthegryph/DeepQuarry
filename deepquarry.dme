@@ -339,6 +339,7 @@
 #include "code\__defines\constraints.dm"
 #include "code\__defines\properties.dm"
 #include "code\__defines\rules.dm"
+#include "code\__defines\vital_state.dm"
 // Medical symptom/audience #defines — kept in the early defines block so
 // SYMPTOM_AUDIENCE_* etc. are available to every consumer (incl. unit tests,
 // which are included before the medical module under CIBUILDING).
@@ -5194,6 +5195,8 @@
 #include "code\modules\body\factors.dm"
 #include "code\modules\body\injury.dm"
 #include "code\modules\body\physiology.dm"
+#include "code\modules\body\revival.dm"
+#include "code\modules\body\vital_state.dm"
 #include "code\modules\body\slots.dm"
 #include "code\modules\body\treatment.dm"
 #include "code\modules\body\worn_protection.dm"

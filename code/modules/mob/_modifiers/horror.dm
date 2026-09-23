@@ -559,7 +559,7 @@ GLOBAL_LIST_INIT(redspace_areas, list(
 		return
 	if(lethal_blood) //Blood volume is low enough we'd immediately die upon revival.
 		return
-	if(unfortunate_soul.body?.is_dead() || unfortunate_soul.vitality() <= 0.33) //Too injured to revive. We want to be a bit JUST before hardcrit.
+	if(unfortunate_soul.can_return_from_death(REVIVE_IGNORE_WINDOW) || unfortunate_soul.vitality() <= VITALITY_SERIOUS) //Too injured to revive. We want to be a bit JUST before hardcrit.
 		return
 	if(unfortunate_soul.check_vital_organs()) //Missing a vital organ.
 		return
@@ -578,15 +578,8 @@ GLOBAL_LIST_INIT(redspace_areas, list(
 	//Force us back into the body.
 	unfortunate_soul.grab_ghost(TRUE)
 
-	//Defib stuff here.
-	GLOB.dead_mob_list.Remove(unfortunate_soul)
-	if((unfortunate_soul in GLOB.living_mob_list) || (unfortunate_soul in GLOB.dead_mob_list))
-		WARNING("Mob [unfortunate_soul] was revived but already in the living or dead list still!")
-	GLOB.living_mob_list += unfortunate_soul
-	unfortunate_soul.timeofdeath = 0
-	unfortunate_soul.set_stat(UNCONSCIOUS) //Life() can bring them back to consciousness if it needs to.
-	unfortunate_soul.failed_last_breath = 0 //So mobs that died of oxyloss don't revive and have perpetual out of breath.
-	unfortunate_soul.reload_fullscreen()
+	if(unfortunate_soul.return_from_death("redspace corruption", src, REVIVE_IGNORE_WINDOW | REVIVE_UNCONSCIOUS) != TRUE)
+		return
 
 	//Awaken!
 	unfortunate_soul.emote("gasp")

@@ -101,7 +101,7 @@
 		if(L.can_inject(src, null, target_zone))
 			inject_poison(L, target_zone)
 
-/mob/living/simple_mob/vore/oregrub/death()
+/mob/living/simple_mob/vore/oregrub/on_death(gibbed)
 	visible_message(span_warning("\The [src] shudders and collapses, expelling the ores it had devoured!"))
 	var/i = rand(min_ore,max_ore)
 	while(i>1)
@@ -121,7 +121,7 @@
 	else if(self.is_dead())
 		self.glow_override = FALSE
 
-/mob/living/simple_mob/vore/oregrub/lava/death()
+/mob/living/simple_mob/vore/oregrub/lava/on_death(gibbed)
 	set_light(0)
 	var/p = rand(lava_min_ore,lava_max_ore)
 	while(p>1)

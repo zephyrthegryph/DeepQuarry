@@ -136,7 +136,7 @@
 	var/leech = 50
 	var/chain_number = 0
 
-/mob/living/simple_mob/vore/boss_jellyfish/death()
+/mob/living/simple_mob/vore/boss_jellyfish/on_death(gibbed)
 	..()
 	qdel(src)
 

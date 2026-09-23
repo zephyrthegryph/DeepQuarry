@@ -68,11 +68,7 @@
 		if(stat != DEAD)
 			death()
 		return
-	if(stat == DEAD)
-		GLOB.dead_mob_list -= src
-		GLOB.living_mob_list |= src
-		timeofdeath = 0
-		set_stat(CONSCIOUS)
+	if(stat == DEAD && return_from_death("brain tissue recovered", tissue, REVIVE_IGNORE_WINDOW) == TRUE)
 		blinded = 0
 	update_canmove()
 

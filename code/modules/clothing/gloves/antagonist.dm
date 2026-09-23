@@ -129,15 +129,8 @@
 	if(!istype(H))
 		return 0
 
-	GLOB.dead_mob_list.Remove(H)
-	if((H in GLOB.living_mob_list) || (H in GLOB.dead_mob_list))
-		WARNING("Mob [H] was ring-defibbed but already in the living or dead list still!")
-	GLOB.living_mob_list += H
-
-	H.timeofdeath = 0
-	H.set_stat(UNCONSCIOUS)
-	H.failed_last_breath = 0
-	H.reload_fullscreen()
+	if(H.return_from_death("buzzer ring", src, REVIVE_UNCONSCIOUS) != TRUE)
+		return 0
 
 	H.emote("gasp")
 	H.Weaken(rand(10,25))

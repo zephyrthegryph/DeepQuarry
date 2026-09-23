@@ -30,6 +30,8 @@
 	var/mob/living/cameraFollow = null
 
 	var/tod = null // Time of death
+	/// TRUE only inside return_from_death(): the one place set_stat() may leave DEAD.
+	var/tmp/revival_in_progress = FALSE
 	var/update_slimes = 1
 
 	/// Helper vars for quick access to firestacks, these should be updated every time firestacks are adjusted

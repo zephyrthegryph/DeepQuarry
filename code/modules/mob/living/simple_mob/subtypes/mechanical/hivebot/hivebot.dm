@@ -19,7 +19,7 @@
 	say_list_type = /datum/say_list/hivebot
 
 
-/mob/living/simple_mob/mechanical/hivebot/death()
+/mob/living/simple_mob/mechanical/hivebot/on_death(gibbed)
 	..()
 	visible_message(span_warning("\The [src] blows apart!"))
 	new /obj/effect/decal/cleanable/blood/gibs/robot(src.loc)

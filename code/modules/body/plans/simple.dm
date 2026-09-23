@@ -86,7 +86,7 @@
 	pain = 0
 	consciousness = 100
 
-/datum/body/simple/is_dead()
+/datum/body/simple/is_lethal()
 	ensure_vitals()
 	return total_load >= owner.get_endurance()
 

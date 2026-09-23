@@ -14,8 +14,7 @@
 /obj/item/organ/internal/cell/replaced()
 	..()
 	// This is very ghetto way of rebooting an IPC. TODO better way.
-	if(owner && owner.stat == DEAD)
-		owner.set_stat(CONSCIOUS)
+	if(owner && owner.is_dead() && owner.return_from_death("power cell replaced", src) == TRUE)
 		owner.visible_message(span_danger("\The [owner] twitches visibly!"))
 
 /obj/item/organ/internal/cell/emp_act(severity, recursive)
@@ -26,7 +25,7 @@
 
 /obj/item/organ/internal/cell/machine/handle_organ_proc_special()
 	..()
-	if(owner && owner.stat != DEAD)
+	if(owner && owner.is_alive())
 		owner.bodytemperature += round(owner.robobody_count * 0.5, 0.1)
 
 	return
@@ -86,10 +85,7 @@
 	stored_mmi.icon_state = "mmi_full"
 	icon_state = stored_mmi.icon_state
 
-	if(owner && owner.stat == DEAD)
-		owner.set_stat(CONSCIOUS)
-		GLOB.dead_mob_list -= owner
-		GLOB.living_mob_list |= owner
+	if(owner && owner.is_dead() && owner.return_from_death("MMI installed", stored_mmi) == TRUE)
 		owner.visible_message(span_danger("\The [owner] twitches visibly!"))
 
 /obj/item/organ/internal/mmi_holder/removed(mob/living/user)

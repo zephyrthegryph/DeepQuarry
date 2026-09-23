@@ -11,11 +11,13 @@
 	adjust_scale(0.75)
 	addtimer(CALLBACK(src, PROC_REF(death)), 2 MINUTES)
 
-/mob/living/simple_mob/animal/giant_spider/frost/broodling/death()
+/// Vanishes instead of dying.
+/mob/living/simple_mob/animal/giant_spider/frost/broodling/replace_death(gibbed)
 	new /obj/effect/decal/cleanable/spiderling_remains(src.loc)
 
 	if(!QDELETED(src))
 		qdel(src)
+	return TRUE
 
 /mob/living/simple_mob/animal/giant_spider/electric/broodling
 	endurance = 30
@@ -30,11 +32,13 @@
 	adjust_scale(0.75)
 	addtimer(CALLBACK(src, PROC_REF(death)), 2 MINUTES)
 
-/mob/living/simple_mob/animal/giant_spider/electric/broodling/death()
+/// Vanishes instead of dying.
+/mob/living/simple_mob/animal/giant_spider/electric/broodling/replace_death(gibbed)
 	new /obj/effect/decal/cleanable/spiderling_remains(src.loc)
 
 	if(!QDELETED(src))
 		qdel(src)
+	return TRUE
 
 /mob/living/simple_mob/animal/giant_spider/hunter/broodling
 	endurance = 40
@@ -46,11 +50,13 @@
 	adjust_scale(0.75)
 	addtimer(CALLBACK(src, PROC_REF(death)), 2 MINUTES)
 
-/mob/living/simple_mob/animal/giant_spider/hunter/broodling/death()
+/// Vanishes instead of dying.
+/mob/living/simple_mob/animal/giant_spider/hunter/broodling/replace_death(gibbed)
 	new /obj/effect/decal/cleanable/spiderling_remains(src.loc)
 
 	if(!QDELETED(src))
 		qdel(src)
+	return TRUE
 
 /mob/living/simple_mob/animal/giant_spider/lurker/broodling
 	endurance = 40
@@ -62,11 +68,13 @@
 	adjust_scale(0.75)
 	addtimer(CALLBACK(src, PROC_REF(death)), 2 MINUTES)
 
-/mob/living/simple_mob/animal/giant_spider/lurker/broodling/death()
+/// Vanishes instead of dying.
+/mob/living/simple_mob/animal/giant_spider/lurker/broodling/replace_death(gibbed)
 	new /obj/effect/decal/cleanable/spiderling_remains(src.loc)
 
 	if(!QDELETED(src))
 		qdel(src)
+	return TRUE
 
 /mob/living/simple_mob/animal/giant_spider/nurse/broodling
 	endurance = 60
@@ -78,11 +86,13 @@
 	adjust_scale(0.75)
 	addtimer(CALLBACK(src, PROC_REF(death)), 2 MINUTES)
 
-/mob/living/simple_mob/animal/giant_spider/nurse/broodling/death()
+/// Vanishes instead of dying.
+/mob/living/simple_mob/animal/giant_spider/nurse/broodling/replace_death(gibbed)
 	new /obj/effect/decal/cleanable/spiderling_remains(src.loc)
 
 	if(!QDELETED(src))
 		qdel(src)
+	return TRUE
 
 /mob/living/simple_mob/animal/giant_spider/pepper/broodling
 	endurance = 40
@@ -94,11 +104,13 @@
 	adjust_scale(0.75)
 	addtimer(CALLBACK(src, PROC_REF(death)), 2 MINUTES)
 
-/mob/living/simple_mob/animal/giant_spider/pepper/broodling/death()
+/// Vanishes instead of dying.
+/mob/living/simple_mob/animal/giant_spider/pepper/broodling/replace_death(gibbed)
 	new /obj/effect/decal/cleanable/spiderling_remains(src.loc)
 
 	if(!QDELETED(src))
 		qdel(src)
+	return TRUE
 
 /mob/living/simple_mob/animal/giant_spider/thermic/broodling
 	endurance = 40
@@ -113,11 +125,13 @@
 	adjust_scale(0.75)
 	addtimer(CALLBACK(src, PROC_REF(death)), 2 MINUTES)
 
-/mob/living/simple_mob/animal/giant_spider/thermic/broodling/death()
+/// Vanishes instead of dying.
+/mob/living/simple_mob/animal/giant_spider/thermic/broodling/replace_death(gibbed)
 	new /obj/effect/decal/cleanable/spiderling_remains(src.loc)
 
 	if(!QDELETED(src))
 		qdel(src)
+	return TRUE
 
 /mob/living/simple_mob/animal/giant_spider/tunneler/broodling
 	endurance = 40
@@ -129,11 +143,13 @@
 	adjust_scale(0.75)
 	addtimer(CALLBACK(src, PROC_REF(death)), 2 MINUTES)
 
-/mob/living/simple_mob/animal/giant_spider/tunneler/broodling/death()
+/// Vanishes instead of dying.
+/mob/living/simple_mob/animal/giant_spider/tunneler/broodling/replace_death(gibbed)
 	new /obj/effect/decal/cleanable/spiderling_remains(src.loc)
 
 	if(!QDELETED(src))
 		qdel(src)
+	return TRUE
 
 /mob/living/simple_mob/animal/giant_spider/webslinger/broodling
 	endurance = 30
@@ -147,11 +163,13 @@
 	adjust_scale(0.75)
 	addtimer(CALLBACK(src, PROC_REF(death)), 2 MINUTES)
 
-/mob/living/simple_mob/animal/giant_spider/webslinger/broodling/death()
+/// Vanishes instead of dying.
+/mob/living/simple_mob/animal/giant_spider/webslinger/broodling/replace_death(gibbed)
 	new /obj/effect/decal/cleanable/spiderling_remains(src.loc)
 
 	if(!QDELETED(src))
 		qdel(src)
+	return TRUE
 
 /mob/living/simple_mob/animal/giant_spider/broodling
 	endurance = 60
@@ -174,8 +192,10 @@
 		deathtimer = null
 	. = ..()
 
-/mob/living/simple_mob/animal/giant_spider/broodling/death()
+/// Vanishes instead of dying.
+/mob/living/simple_mob/animal/giant_spider/broodling/replace_death(gibbed)
 	new /obj/effect/decal/cleanable/spiderling_remains(src.loc)
 
 	if(!QDELETED(src))
 		qdel(src)
+	return TRUE

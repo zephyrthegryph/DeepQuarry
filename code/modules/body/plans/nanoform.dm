@@ -68,7 +68,7 @@
 	return has_affliction(/datum/affliction/core_dormancy)
 
 /datum/body/humanoid/nanoform/proc/go_dormant_if_dying()
-	if(owner.stat == DEAD || (owner.status_flags & GODMODE) || is_dormant() || !is_dead())
+	if(owner.is_dead() || (owner.status_flags & GODMODE) || is_dormant() || !is_lethal())
 		return
 	log_game("NANOFORM: [key_name(owner)] took lethal damage[istype(owner.loc, /obj/item/rig/protean) ? " while folded into their control cluster" : ""]; going dormant.")
 	afflict(/datum/affliction/core_dormancy)
@@ -78,7 +78,7 @@
 /// refactory. Returns the points repaired.
 /datum/body/humanoid/nanoform/proc/regenerate()
 	var/mob/living/carbon/human/H = owner
-	if(H.stat == DEAD || is_dormant())
+	if(H.is_dead() || is_dormant())
 		return 0
 	var/datum/form/F = H.current_form()
 	if(!F || F.regeneration <= 0 || !is_injured())
@@ -111,7 +111,7 @@
 
 /// Per-tick state the swarm reacts to: foreign reagents contaminate it.
 /datum/body/humanoid/nanoform/proc/state_triggers()
-	if(owner.stat == DEAD)
+	if(owner.is_dead())
 		return
 	var/foreign = foreign_reagent_volume()
 	if(foreign <= 0)

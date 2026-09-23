@@ -33,10 +33,7 @@
 				var/mob/living/simple_mob/SM = L
 				SM.fully_heal()
 				SM.injure(INJURY_BLUNT, SM.get_endurance() * 2 / 3, flags = INJURE_IGNORE_RESISTANCE | INJURE_SILENT) // back at a third of its strength
-				SM.set_stat(CONSCIOUS)
-				GLOB.dead_mob_list -= SM
-				GLOB.living_mob_list += SM
-				SM.update_icon()
+				SM.return_from_death("technomancer resurrection", src, REVIVE_IGNORE_WINDOW)
 				adjust_instability(15)
 			else if(ishuman(L))
 				var/mob/living/carbon/human/H = L
@@ -52,11 +49,8 @@
 				H.mend(TREAT_BURN_CARE, 40)
 
 				sleep(10 SECONDS)
-				if(H.client)
-					L.set_stat(CONSCIOUS) //Note that if whatever killed them in the first place wasn't fixed, they're likely to die again.
-					GLOB.dead_mob_list -= H
-					GLOB.living_mob_list += H
-					H.timeofdeath = null
+				//Note that if whatever killed them in the first place wasn't fixed, they're likely to die again.
+				if(H.client && H.return_from_death("technomancer resurrection", src, REVIVE_IGNORE_WINDOW) == TRUE)
 					visible_message(span_danger("\The [H]'s eyes open!"))
 					to_chat(user, span_notice("It's alive!"))
 					adjust_instability(50)

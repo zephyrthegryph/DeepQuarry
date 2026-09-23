@@ -116,8 +116,10 @@
 		if(open)
 			. += span_info("You can use a <b>crowbar</b> to remove it.")
 */
-/mob/living/bot/death()
+/// Bots don't leave a corpse: they blow apart instead of dying.
+/mob/living/bot/replace_death(gibbed)
 	explode()
+	return TRUE
 
 /mob/living/bot/attackby(obj/item/O, mob/user)
 	if(O.GetID())

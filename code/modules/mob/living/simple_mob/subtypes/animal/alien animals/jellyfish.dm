@@ -120,7 +120,7 @@ GLOBAL_VAR_INIT(jellyfish_count, 0)
 	if(parent)
 		parent.faction = faction
 
-/mob/living/simple_mob/vore/alienanimals/space_jellyfish/death()
+/mob/living/simple_mob/vore/alienanimals/space_jellyfish/on_death(gibbed)
 	. = ..()
 	new /obj/item/reagent_containers/food/snacks/jellyfishcore(loc, nutrition)
 	qdel(src)

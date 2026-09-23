@@ -1201,47 +1201,7 @@
 					var/mob/living/body_backup = T.body_backup
 					if(ishuman(body_backup))
 						var/mob/living/carbon/human/H = body_backup
-						H.mend(TREAT_OXYGENATION, 1000)
-						H.mend(TREAT_ANTITOXIN, 25)
-						H.mend(TREAT_SYSTEM_RESTORE, 1000)
-						if(H.vitality() <= 0)
-							var/static/list/reform_treatments = list(TREAT_ANTITOXIN, TREAT_BURN_CARE, TREAT_WIRING_REPAIR, TREAT_TISSUE_REPAIR, TREAT_PLATING_REPAIR, TREAT_GENETIC_REPAIR)
-							for(var/treat_tag in reform_treatments)
-								H.mend(treat_tag, 25)
-							//Heal up to 'barely in crit', starting with toxins and moving up to the harder to heal types.
-							//Once one mechanism has nothing left to fix, move on to the next; stop as soon as the body is viable again.
-							for(var/treat_tag in reform_treatments)
-								var/guard = 20
-								while(H.vitality() <= 0 && guard-- > 0)
-									if(!H.mend(treat_tag, 10))
-										break
-								if(H.vitality() > 0)
-									break
-						// Now we do the check to see if we should revive...
-						var/should_proceed_with_revive = TRUE
-						var/obj/item/organ/internal/brain/brain = H.internal_organs_by_name[O_BRAIN]
-						should_proceed_with_revive &&= !H.should_have_organ(O_BRAIN) || (brain && (!istype(brain) || brain.defib_timer > 0))
-						if(!H.isSynthetic())
-							should_proceed_with_revive &&= !(HUSK in H.mutations) && H.can_defib
-						if(should_proceed_with_revive)
-							for(var/organ_tag in H.species.has_organ)
-								var/obj/item/organ/O = H.species.has_organ[organ_tag]
-								var/vital = initial(O.vital) //check for vital organs
-								if(vital)
-									O = H.internal_organs_by_name[organ_tag]
-									if(!O || O.damage > O.max_damage)
-										should_proceed_with_revive = FALSE
-										break
-						if(should_proceed_with_revive)
-							GLOB.dead_mob_list.Remove(H)
-							if((H in GLOB.living_mob_list) || (H in GLOB.dead_mob_list))
-								WARNING("Mob [H] was reformed but already in the living or dead list still!")
-							GLOB.living_mob_list += H
-
-							H.timeofdeath = 0
-							H.set_stat(UNCONSCIOUS) //Life() can bring them back to consciousness if it needs to.
-							H.failed_last_breath = 0 //So mobs that died of oxyloss don't revive and have perpetual out of breath.
-							H.reload_fullscreen()
+						H.reform_restore("reformed in [host]", host)
 					else
 						body_backup.revive()
 					body_backup.forceMove(T.loc)
@@ -1303,36 +1263,7 @@
 						mmi_host.release_mind(body_backup, "reformed by [key_name(user)]")
 						//You've hopefully already named yourself, so... not implementing that bit.
 						var/mob/living/carbon/human/H = body_backup
-						body_backup.mend(TREAT_TISSUE_REPAIR, 6)
-						body_backup.mend(TREAT_PLATING_REPAIR, 6)
-						body_backup.mend(TREAT_BURN_CARE, 6)
-						body_backup.mend(TREAT_WIRING_REPAIR, 6)
-						body_backup.mend(TREAT_OXYGENATION, 1000)
-						H.mend(TREAT_ANTITOXIN, 1000)
-						body_backup.mend(TREAT_GENETIC_REPAIR, 6)
-						// Now we do the check to see if we should revive...
-						var/should_proceed_with_revive = TRUE
-						var/obj/item/organ/internal/brain/brain = H.internal_organs_by_name[O_BRAIN]
-						should_proceed_with_revive &&= !H.should_have_organ(O_BRAIN) || (brain && brain.defib_timer > 0 )
-						if(should_proceed_with_revive)
-							for(var/organ_tag in H.species.has_organ)
-								var/obj/item/organ/O = H.species.has_organ[organ_tag]
-								var/vital = initial(O.vital) //check for vital organs
-								if(vital)
-									O = H.internal_organs_by_name[organ_tag]
-									if(!O || O.damage > O.max_damage)
-										should_proceed_with_revive = FALSE
-										break
-						if(should_proceed_with_revive)
-							GLOB.dead_mob_list.Remove(H)
-							if((H in GLOB.living_mob_list) || (H in GLOB.dead_mob_list))
-								WARNING("Mob [H] was defibbed but already in the living or dead list still!")
-							GLOB.living_mob_list += H
-
-							H.timeofdeath = 0
-							H.set_stat(UNCONSCIOUS) //Life() can bring them back to consciousness if it needs to.
-							H.failed_last_breath = 0 //So mobs that died of oxyloss don't revive and have perpetual out of breath.
-							H.reload_fullscreen()
+						H.reform_restore("reformed around [MMI] in [host]", host)
 					MMI.body_backup = null
 			return TRUE
 		if("Health")

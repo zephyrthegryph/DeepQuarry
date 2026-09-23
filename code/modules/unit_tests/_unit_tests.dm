@@ -228,6 +228,7 @@
 #include "xgm_total_moles_test.dm"
 #include "dq_harm_time_invariance_tests.dm"
 #include "dq_w5_loose_tests.dm"
+#include "dq_vital_lifecycle_tests.dm"
 #include "../balance/_balance_harness.dm"
 #include "../balance/balance_scenarios.dm"
 #include "dq_balance_harness_tests.dm"

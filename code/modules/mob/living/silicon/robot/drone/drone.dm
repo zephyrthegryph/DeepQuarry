@@ -277,7 +277,7 @@ GLOBAL_LIST_EMPTY(mob_hat_cache)
 /// The machine plan decides that a drone dies; the drone only chooses its
 /// remains. Destroyed by damage, it breaks apart; shut down, it leaves an
 /// intact shell that an ID swipe can reboot.
-/mob/living/silicon/robot/drone/death(gibbed)
+/mob/living/silicon/robot/drone/on_death(gibbed)
 	. = ..()
 	if(!gibbed && vitality() <= 0)
 		INVOKE_ASYNC(src, TYPE_PROC_REF(/mob, gib))
