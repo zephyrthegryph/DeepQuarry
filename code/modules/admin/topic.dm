@@ -1071,9 +1071,9 @@
 			return
 
 		H.equip_to_slot_or_del( new /obj/item/reagent_containers/food/snacks/cookie(H), slot_l_hand )
-		if(!(istype(H.l_hand,/obj/item/reagent_containers/food/snacks/cookie)))
+		if(!(istype(H.get_equipped_item(SLOT_ID_L_HAND),/obj/item/reagent_containers/food/snacks/cookie)))
 			H.equip_to_slot_or_del( new /obj/item/reagent_containers/food/snacks/cookie(H), slot_r_hand )
-			if(!(istype(H.r_hand,/obj/item/reagent_containers/food/snacks/cookie)))
+			if(!(istype(H.get_equipped_item(SLOT_ID_R_HAND),/obj/item/reagent_containers/food/snacks/cookie)))
 				log_admin("[key_name(H)] has their hands full, so they did not receive their cookie, spawned by [key_name(src.owner)].")
 				message_admins("[key_name(H)] has their hands full, so they did not receive their cookie, spawned by [key_name(src.owner)].")
 				return
@@ -1137,7 +1137,7 @@
 		if(!istype(H))
 			to_chat(usr, span_filter_adminlog("This can only be used on instances of type /mob/living/carbon/human"))
 			return
-		if(!istype(H.l_ear, /obj/item/radio/headset) && !istype(H.r_ear, /obj/item/radio/headset))
+		if(!istype(H.get_equipped_item(SLOT_ID_L_EAR), /obj/item/radio/headset) && !istype(H.get_equipped_item(SLOT_ID_R_EAR), /obj/item/radio/headset))
 			to_chat(usr, span_filter_adminlog("The person you are trying to contact is not wearing a headset"))
 			return
 
@@ -1551,7 +1551,7 @@
 	return 0
 
 /mob/living/carbon/human/can_centcom_reply()
-	return istype(l_ear, /obj/item/radio/headset) || istype(r_ear, /obj/item/radio/headset)
+	return istype(get_equipped_item(SLOT_ID_L_EAR), /obj/item/radio/headset) || istype(get_equipped_item(SLOT_ID_R_EAR), /obj/item/radio/headset)
 
 /mob/living/silicon/ai/can_centcom_reply()
 	return common_radio != null && !check_unable(2)

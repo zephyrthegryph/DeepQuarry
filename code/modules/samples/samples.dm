@@ -66,8 +66,8 @@
 	var/burn_user = TRUE
 	if(ishuman(M))
 		var/mob/living/carbon/human/H = user
-		var/obj/item/clothing/gloves/G = H.gloves
-		var/obj/item/clothing/suit/S = H.wear_suit
+		var/obj/item/clothing/gloves/G = H.get_equipped_item(SLOT_ID_GLOVES)
+		var/obj/item/clothing/suit/S = H.get_equipped_item(SLOT_ID_WEAR_SUIT)
 		var/gloves_permeability	= 1
 		var/suit_permeability = 1
 		if(istype(G))
@@ -124,8 +124,8 @@
 	var/burn_user = TRUE
 	if(ishuman(M))
 		var/mob/living/carbon/human/H = user
-		var/obj/item/clothing/gloves/G = H.gloves
-		var/obj/item/clothing/suit/S = H.wear_suit
+		var/obj/item/clothing/gloves/G = H.get_equipped_item(SLOT_ID_GLOVES)
+		var/obj/item/clothing/suit/S = H.get_equipped_item(SLOT_ID_WEAR_SUIT)
 		var/gloves_permeability	= 1
 		var/suit_permeability = 1
 		if(istype(G))

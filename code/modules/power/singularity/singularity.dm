@@ -419,7 +419,7 @@ REGISTRY_MEMBERSHIP(/obj/singularity, REGISTRY_SINGULARITIES)
 		if(M.stat == CONSCIOUS)
 			if (ishuman(M))
 				var/mob/living/carbon/human/H = M
-				if(istype(H.glasses,/obj/item/clothing/glasses/meson) && current_size != STAGE_SUPER)
+				if(istype(H.get_equipped_item(SLOT_ID_GLASSES),/obj/item/clothing/glasses/meson) && current_size != STAGE_SUPER)
 					to_chat(H, span_notice("You look directly into The [src.name], good thing you had your protective eyewear on!"))
 					return
 				else

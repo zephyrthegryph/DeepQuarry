@@ -406,13 +406,8 @@
 	if(iscarbon(src))
 		var/mob/living/carbon/C = src
 
-		if (C.handcuffed && !initial(C.handcuffed))
-			C.drop_from_inventory(C.handcuffed)
-		C.handcuffed = initial(C.handcuffed)
-
-		if (C.legcuffed && !initial(C.legcuffed))
-			C.drop_from_inventory(C.legcuffed)
-		C.legcuffed = initial(C.legcuffed)
+		C.drop_from_inventory(C.get_equipped_item(SLOT_ID_HANDCUFFED))
+		C.drop_from_inventory(C.get_equipped_item(SLOT_ID_LEGCUFFED))
 	BITSET(hud_updateflag, HEALTH_HUD)
 	BITSET(hud_updateflag, STATUS_HUD)
 	BITSET(hud_updateflag, LIFE_HUD)
@@ -613,10 +608,10 @@
 	return !(W in internal_organs) && ..()
 
 /mob/living/proc/drop_both_hands()
-	if(l_hand)
-		unEquip(l_hand)
-	if(r_hand)
-		unEquip(r_hand)
+	if(get_equipped_item(SLOT_ID_L_HAND))
+		unEquip(get_equipped_item(SLOT_ID_L_HAND))
+	if(get_equipped_item(SLOT_ID_R_HAND))
+		unEquip(get_equipped_item(SLOT_ID_R_HAND))
 	return
 
 /mob/living/touch_map_edge()
@@ -862,7 +857,7 @@
 
 // Mob holders in these slots will be spilled if the mob goes prone.
 /mob/living/proc/get_mob_riding_slots()
-	return list(back)
+	return list(get_equipped_item(SLOT_ID_BACK))
 
 // Adds overlays for specific modifiers.
 // You'll have to add your own implementation for non-humans currently, just override this proc.

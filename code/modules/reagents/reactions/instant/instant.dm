@@ -792,7 +792,7 @@
 			if(0 to 3)
 				if(ishuman(M))
 					var/mob/living/carbon/human/target = M
-					if(istype(target.glasses, /obj/item/clothing/glasses/sunglasses))
+					if(istype(target.get_equipped_item(SLOT_ID_GLASSES), /obj/item/clothing/glasses/sunglasses))
 						continue
 
 				M.flash_eyes()
@@ -801,7 +801,7 @@
 			if(4 to 5)
 				if(ishuman(M))
 					var/mob/living/carbon/human/target = M
-					if(istype(target.glasses, /obj/item/clothing/glasses/sunglasses))
+					if(istype(target.get_equipped_item(SLOT_ID_GLASSES), /obj/item/clothing/glasses/sunglasses))
 						continue
 
 				M.flash_eyes()

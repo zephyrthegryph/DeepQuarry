@@ -158,9 +158,9 @@
 				damage_guess += 5
 			else
 				damage_guess += attack.get_unarmed_damage(H)
-			if(H.gloves)
-				if(istype(H.gloves, /obj/item/clothing/gloves))
-					var/obj/item/clothing/gloves/G = H.gloves
+			if(H.get_equipped_item(SLOT_ID_GLOVES))
+				if(istype(H.get_equipped_item(SLOT_ID_GLOVES), /obj/item/clothing/gloves))
+					var/obj/item/clothing/gloves/G = H.get_equipped_item(SLOT_ID_GLOVES)
 					damage_guess += G.punch_force
 
 		else

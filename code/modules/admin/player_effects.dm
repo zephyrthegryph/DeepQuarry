@@ -264,10 +264,10 @@ ADMIN_VERB_AND_CONTEXT_MENU(player_effects, R_FUN, "Player Effects", "Modify a p
 			if(!ishuman(target))
 				return
 			var/mob/living/carbon/human/H = target
-			if(H.head)
-				H.unEquip(H.head)
-			if(H.wear_suit)
-				H.unEquip(H.wear_suit)
+			if(H.get_equipped_item(SLOT_ID_HEAD))
+				H.unEquip(H.get_equipped_item(SLOT_ID_HEAD))
+			if(H.get_equipped_item(SLOT_ID_WEAR_SUIT))
+				H.unEquip(H.get_equipped_item(SLOT_ID_WEAR_SUIT))
 			var/obj/item/clothing/suit = new /obj/item/clothing/suit/storage/hooded/foodcostume/hotdog
 			var/obj/item/clothing/hood = new /obj/item/clothing/head/hood_vr/hotdog_hood
 			H.equip_to_slot_if_possible(suit, slot_wear_suit, 0, 0, 1)

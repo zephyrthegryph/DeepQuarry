@@ -2,7 +2,7 @@
 	if (transforming)
 		return
 	for(var/obj/item/W in src)
-		if (W==w_uniform) // will be torn
+		if (W==get_equipped_item(SLOT_ID_W_UNIFORM)) // will be torn
 			continue
 		drop_from_inventory(W)
 	regenerate_icons()

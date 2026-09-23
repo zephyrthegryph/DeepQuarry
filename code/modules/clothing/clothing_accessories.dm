@@ -42,7 +42,7 @@
 		return
 	if (ishuman(user) && src.loc == user)
 		var/mob/living/carbon/human/H = user
-		if(src == H.w_uniform) // Un-equip on single click, but not on uniform.
+		if(src == H.get_equipped_item(SLOT_ID_W_UNIFORM)) // Un-equip on single click, but not on uniform.
 			return
 	return ..()
 
@@ -133,7 +133,7 @@
 	// begin
 	if(iscarbon(usr))
 		var/mob/living/carbon/C = usr
-		if(C.handcuffed)
+		if(C.get_equipped_item(SLOT_ID_HANDCUFFED))
 			to_chat(C, span_warning("You cannot remove accessories while handcuffed!"))
 			return
 		else if(istype(C, /mob/living/carbon/human))

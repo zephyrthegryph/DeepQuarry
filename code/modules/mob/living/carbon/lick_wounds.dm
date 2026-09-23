@@ -32,13 +32,13 @@
 			return
 
 		if(affecting.organ_tag == BP_HEAD)
-			if(H.head && istype(H.head,/obj/item/clothing/head/helmet/space))
-				to_chat(src, span_warning("You can't seem to lick through [H.head]!"))
+			if(H.get_equipped_item(SLOT_ID_HEAD) && istype(H.get_equipped_item(SLOT_ID_HEAD),/obj/item/clothing/head/helmet/space))
+				to_chat(src, span_warning("You can't seem to lick through [H.get_equipped_item(SLOT_ID_HEAD)]!"))
 				return
 
 		else
-			if(H.wear_suit && istype(H.wear_suit,/obj/item/clothing/suit/space))
-				to_chat(src, span_warning("You can't lick your way through [H.wear_suit]!"))
+			if(H.get_equipped_item(SLOT_ID_WEAR_SUIT) && istype(H.get_equipped_item(SLOT_ID_WEAR_SUIT),/obj/item/clothing/suit/space))
+				to_chat(src, span_warning("You can't lick your way through [H.get_equipped_item(SLOT_ID_WEAR_SUIT)]!"))
 				return
 
 		if(affecting.robotic == ORGAN_ROBOT)

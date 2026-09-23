@@ -69,30 +69,30 @@
 			/obj/item/clothing/gloves/sterile
 		)
 
-	if(src == user.l_hand)
+	if(src == user.get_equipped_item(SLOT_ID_L_HAND))
 		active_hand = BP_L_HAND
-	else if(src == user.r_hand)
+	else if(src == user.get_equipped_item(SLOT_ID_R_HAND))
 		active_hand = BP_R_HAND
 	else
 		return // If it's not actually in our hands anymore, we were probably gentle with it
 
-	active_hand = (src == user.l_hand) ? BP_L_HAND : BP_R_HAND // May not actually be faster than an if-else block, but a little bit cleaner -Ater
+	active_hand = (src == user.get_equipped_item(SLOT_ID_L_HAND)) ? BP_L_HAND : BP_R_HAND // May not actually be faster than an if-else block, but a little bit cleaner -Ater
 
 	if(prob(75))
 		will_break = TRUE
 
-	if(user.gloves && (user.gloves.body_parts_covered & HANDS) && istype(user.gloves, /obj/item/clothing/gloves)) // Not-gloves aren't gloves, and therefore don't protect us
+	if(user.get_equipped_item(SLOT_ID_GLOVES) && (user.get_equipped_item(SLOT_ID_GLOVES).body_parts_covered & HANDS) && istype(user.get_equipped_item(SLOT_ID_GLOVES), /obj/item/clothing/gloves)) // Not-gloves aren't gloves, and therefore don't protect us
 		protected_hands = TRUE // If we're wearing gloves we can probably handle it just fine
 		for(var/I in forbidden_gloves)
-			if(istype(user.gloves, I)) // forbidden_gloves is a blacklist, so if we match anything in there, our hands are not protected
+			if(istype(user.get_equipped_item(SLOT_ID_GLOVES), I)) // forbidden_gloves is a blacklist, so if we match anything in there, our hands are not protected
 				protected_hands = FALSE
 				break
 
-	if(user.gloves && !protected_hands)
+	if(user.get_equipped_item(SLOT_ID_GLOVES) && !protected_hands)
 		to_chat(user, span_warning("\The [src] partially cuts into your hand through your gloves as you hit \the [target]!"))
 		user.injure(injury_kind, light_glove_d + (will_break ? break_damage : 0), active_hand, src) // Ternary to include break damage
 
-	else if(!user.gloves)
+	else if(!user.get_equipped_item(SLOT_ID_GLOVES))
 		to_chat(user, span_warning("\The [src] cuts into your hand as you hit \the [target]!"))
 		user.injure(injury_kind, no_glove_d + (will_break ? break_damage : 0), active_hand, src)
 
@@ -119,7 +119,7 @@
 			if(H.species.siemens_coefficient<0.5) //Thick skin.
 				return
 
-			if( H.shoes || ( H.wear_suit && (H.wear_suit.body_parts_covered & FEET) ) )
+			if( H.get_equipped_item(SLOT_ID_SHOES) || ( H.get_equipped_item(SLOT_ID_WEAR_SUIT) && (H.get_equipped_item(SLOT_ID_WEAR_SUIT).body_parts_covered & FEET) ) )
 				return
 
 			if(H.species.flags & NO_MINOR_CUT)

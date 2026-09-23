@@ -83,7 +83,7 @@
 /obj/item/clothing/mask/smokable/ecig/process()
 	if(ishuman(loc))
 		var/mob/living/carbon/human/C = loc
-		if (src == C.wear_mask && C.check_has_mouth()) // if it's in the human/monkey mouth, transfer reagents to the mob
+		if (src == C.get_equipped_item(SLOT_ID_WEAR_MASK) && C.check_has_mouth()) // if it's in the human/monkey mouth, transfer reagents to the mob
 			if (!active || !ec_cartridge || !ec_cartridge.reagents.total_volume)//no cartridge
 				to_chat(C, span_notice("[src] turns off."))
 				active=0//autodisable the cigarette

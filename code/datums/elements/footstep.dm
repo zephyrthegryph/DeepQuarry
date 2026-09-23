@@ -152,10 +152,10 @@
 	//cache for sanic speed (lists are references anyways)
 	var/footstep_sounds = GLOB.footstep
 
-	if ( istype(source.shoes, /obj/item/clothing/shoes) || ( source.wear_suit && (source.wear_suit.body_parts_covered & FEET) ) )
+	if ( istype(source.get_equipped_item(SLOT_ID_SHOES), /obj/item/clothing/shoes) || ( source.get_equipped_item(SLOT_ID_WEAR_SUIT) && (source.get_equipped_item(SLOT_ID_WEAR_SUIT).body_parts_covered & FEET) ) )
 		// we are wearing shoes
 
-		var/obj/item/clothing/shoes/feet = source.shoes
+		var/obj/item/clothing/shoes/feet = source.get_equipped_item(SLOT_ID_SHOES)
 		if(istype(feet) && feet.blocks_footsteps)
 			var/shoestep_type = prepared_steps[FOOTSTEP_MOB_SHOE]
 			if(!isnull(shoestep_type) && footstep_sounds[shoestep_type]) // shoestep type can be null

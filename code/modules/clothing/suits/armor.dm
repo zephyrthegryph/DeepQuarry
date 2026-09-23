@@ -21,7 +21,7 @@
 /obj/item/clothing/suit/proc/limb_clearance(mob/living/carbon/human/H)
 	if(!istype(H))
 		return TRUE
-	for(var/obj/item/clothing/I in list(H.gloves, H.shoes))
+	for(var/obj/item/clothing/I in list(H.get_equipped_item(SLOT_ID_GLOVES), H.get_equipped_item(SLOT_ID_SHOES)))
 		if(I && (src.body_parts_covered & ARMS && I.body_parts_covered & ARMS))
 			return "\the [I] [I.gender == PLURAL ? "are" : "is"] in the way"
 		if(I && (src.body_parts_covered & LEGS && I.body_parts_covered & LEGS))
@@ -501,14 +501,14 @@
 /obj/item/clothing/suit/armor/pcarrier/proc/plate_clearance(mob/living/carbon/human/H)
 	if(!istype(H))
 		return TRUE
-	if(H.gloves && (H.gloves.body_parts_covered & ARMS))
+	if(H.get_equipped_item(SLOT_ID_GLOVES) && (H.get_equipped_item(SLOT_ID_GLOVES).body_parts_covered & ARMS))
 		for(var/obj/item/clothing/accessory/A in src)
 			if(A.body_parts_covered & ARMS)
-				return "\the [A] and \the [H.gloves] are in each other's way"
-	if(H.shoes && (H.shoes.body_parts_covered & LEGS))
+				return "\the [A] and \the [H.get_equipped_item(SLOT_ID_GLOVES)] are in each other's way"
+	if(H.get_equipped_item(SLOT_ID_SHOES) && (H.get_equipped_item(SLOT_ID_SHOES).body_parts_covered & LEGS))
 		for(var/obj/item/clothing/accessory/A in src)
 			if(A.body_parts_covered & LEGS)
-				return "\the [A] and \the [H.shoes] are in each other's way"
+				return "\the [A] and \the [H.get_equipped_item(SLOT_ID_SHOES)] are in each other's way"
 	return TRUE
 
 /obj/item/clothing/suit/armor/pcarrier/explorer

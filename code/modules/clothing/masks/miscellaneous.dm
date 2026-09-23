@@ -22,7 +22,7 @@
 
 // Clumsy folks can't take the mask off themselves.
 /obj/item/clothing/mask/muzzle/attack_hand(mob/living/user as mob)
-	if(user.wear_mask == src && !user.IsAdvancedToolUser())
+	if(user.get_equipped_item(SLOT_ID_WEAR_MASK) == src && !user.IsAdvancedToolUser())
 		return 0
 	..()
 

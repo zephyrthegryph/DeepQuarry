@@ -1,62 +1,63 @@
 /mob/living
 	var/hand = null
-	var/obj/item/l_hand = null
-	var/obj/item/r_hand = null
-	var/obj/item/back = null//Human/Monkey
 	var/obj/item/tank/internal = null//Human/Monkey
-	var/obj/item/clothing/mask/wear_mask = null//Carbon
 
 /mob/living/equip_to_storage(obj/item/newitem, user_initiated = FALSE)
 	// Try put it in their backpack
-	if(istype(src.back,/obj/item/storage))
-		var/obj/item/storage/backpack = src.back
-		if(backpack.can_be_inserted(newitem, 1))
+	var/obj/item/back = get_equipped_item(SLOT_ID_BACK)
+	if(istype(back, /obj/item/storage))
+		var/obj/item/storage/backpack = back
+		if(!backpack.insert_refusal(newitem, user_initiated ? src : null))
 			if(user_initiated)
 				backpack.handle_item_insertion(newitem)
 			else
-				newitem.forceMove(src.back)
-			return src.back
+				store_in(newitem, backpack)
+			return back
 
 	// Try to place it in any item that can store stuff, on the mob.
 	for(var/obj/item/storage/S in src.contents)
-		if (S.can_be_inserted(newitem, 1))
+		if(!S.insert_refusal(newitem, user_initiated ? src : null))
 			if(user_initiated)
 				S.handle_item_insertion(newitem)
 			else
-				newitem.forceMove(S)
+				store_in(newitem, S)
 			return S
 
-	if(istype(src.back,/obj/item/rig))	//This would be much cooler if we had componentized storage datums
-		var/obj/item/rig/R = src.back
+	if(istype(back, /obj/item/rig))	//This would be much cooler if we had componentized storage datums
+		var/obj/item/rig/R = back
 		if(R.rig_storage)
 			var/obj/item/storage/backpack = R.rig_storage
-			if(backpack.can_be_inserted(newitem, 1))
+			if(!backpack.insert_refusal(newitem, user_initiated ? src : null))
 				if(user_initiated)
 					backpack.handle_item_insertion(newitem)
 				else
-					newitem.forceMove(src.back)
+					store_in(newitem, back)
 				return backpack
 	return 0
 
+/// Puts `I` into storage `S` without the user-facing insertion (no sounds or
+/// messages): out of our slots if it is in one, as a ledger move.
+/mob/living/proc/store_in(obj/item/I, atom/S)
+	if(inventory_slot_id(I))
+		remove_from_mob(I, S)
+	else if(!I.move_into(S, null, src))
+		I.forceMove(S)
+
 //Returns the thing in our active hand
 /mob/living/get_active_hand()
-	if(hand)	return l_hand
-	else		return r_hand
+	return get_equipped_item(hand ? SLOT_ID_L_HAND : SLOT_ID_R_HAND)
 
 //Returns the thing in our inactive hand
 /mob/living/get_inactive_hand()
-	if(hand)	return r_hand
-	else		return l_hand
+	return get_equipped_item(hand ? SLOT_ID_R_HAND : SLOT_ID_L_HAND)
 
 //Drops the item in our active hand. TODO: rename this to drop_active_hand or something
 /mob/living/drop_item(atom/Target)
-	var/obj/item/item_dropped = null
+	var/obj/item/item_dropped = get_active_hand()
 
 	if (hand)
-		item_dropped = l_hand
 		. = drop_l_hand(Target)
 	else
-		item_dropped = r_hand
 		. = drop_r_hand(Target)
 
 	if (istype(item_dropped) && !QDELETED(item_dropped) && check_sound_preference(/datum/preference/toggle/drop_sounds))
@@ -72,59 +73,47 @@
 
 //Drops the item in our left hand
 /mob/living/drop_l_hand(atom/Target)
-	return drop_from_inventory(l_hand, Target)
+	return drop_from_inventory(get_left_hand(), Target)
 
 //Drops the item in our right hand
 /mob/living/drop_r_hand(atom/Target)
-	return drop_from_inventory(r_hand, Target)
+	return drop_from_inventory(get_right_hand(), Target)
 
 /mob/living/proc/hands_are_full()
-	return (r_hand && l_hand)
+	return (get_right_hand() && get_left_hand())
 
 /mob/living/proc/item_is_in_hands(obj/item/I)
-	return (I == r_hand || I == l_hand)
+	var/id = inventory_slot_id(I)
+	return id == SLOT_ID_L_HAND || id == SLOT_ID_R_HAND
 
 /mob/living/proc/update_held_icons()
-	if(l_hand)
-		l_hand.update_held_icon()
-	if(r_hand)
-		r_hand.update_held_icon()
+	for(var/obj/item/I as anything in get_all_held_items())
+		I.update_held_icon()
 
 /mob/living/proc/get_type_in_hands(T)
-	if(istype(l_hand, T))
-		return l_hand
-	if(istype(r_hand, T))
-		return r_hand
+	var/obj/item/I = get_left_hand()
+	if(istype(I, T))
+		return I
+	I = get_right_hand()
+	if(istype(I, T))
+		return I
 	return null
 
-/mob/living/proc/get_left_hand()
-	return l_hand
+/mob/living/proc/get_left_hand() as /obj/item
+	return get_equipped_item(SLOT_ID_L_HAND)
 
-/mob/living/proc/get_right_hand()
-	return r_hand
+/mob/living/proc/get_right_hand() as /obj/item
+	return get_equipped_item(SLOT_ID_R_HAND)
 
-/mob/living/u_equip(obj/W as obj)
-	if (W == r_hand)
-		r_hand = null
-		update_inv_r_hand()
-	else if (W == l_hand)
-		l_hand = null
-		update_inv_l_hand()
-	else if (W == back)
-		back = null
-		update_inv_back()
-	else if (W == wear_mask)
-		wear_mask = null
-		update_inv_wear_mask()
-	return
-
-/mob/living/get_equipped_item(slot)
-	switch(slot)
-		if(slot_l_hand) return l_hand
-		if(slot_r_hand) return r_hand
-		if(slot_back) return back
-		if(slot_wear_mask) return wear_mask
-	return null
+/mob/living/inventory_slot_changed(slot_id, atom/movable/thing, inserted)
+	..()
+	// A hand emptied: the other hand's item may stop being two-handed.
+	if(!inserted && (slot_id == SLOT_ID_L_HAND || slot_id == SLOT_ID_R_HAND))
+		var/obj/item/other = get_equipped_item(slot_id == SLOT_ID_L_HAND ? SLOT_ID_R_HAND : SLOT_ID_L_HAND)
+		if(other)
+			other.update_twohanding()
+			other.update_held_icon()
+			update_inv_l_hand()
 
 /mob/living/ret_grab(list/L, mobchain_limit = 5)
 	// We're the first!
@@ -132,15 +121,15 @@
 		L = list()
 
 	// Lefty grab!
-	if (istype(l_hand, /obj/item/grab))
-		var/obj/item/grab/G = l_hand
+	if (istype(get_equipped_item(SLOT_ID_L_HAND), /obj/item/grab))
+		var/obj/item/grab/G = get_equipped_item(SLOT_ID_L_HAND)
 		L |= G.affecting
 		if(mobchain_limit-- > 0)
 			G.affecting?.ret_grab(L, mobchain_limit) // Recurse! They can update the list. It's the same instance as ours.
 
 	// Righty grab!
-	if (istype(r_hand, /obj/item/grab))
-		var/obj/item/grab/G = r_hand
+	if (istype(get_equipped_item(SLOT_ID_R_HAND), /obj/item/grab))
+		var/obj/item/grab/G = get_equipped_item(SLOT_ID_R_HAND)
 		L |= G.affecting
 		if(mobchain_limit-- > 0)
 			G.affecting?.ret_grab(L, mobchain_limit) // Same as lefty!
@@ -177,10 +166,10 @@
 	return
 
 /mob/living/abiotic(full_body = 0)
-	if(full_body && ((src.l_hand && !( src.l_hand.abstract )) || (src.r_hand && !( src.r_hand.abstract )) || (src.back || src.wear_mask)))
+	if(full_body && ((get_equipped_item(SLOT_ID_L_HAND) && !( get_equipped_item(SLOT_ID_L_HAND).abstract )) || (get_equipped_item(SLOT_ID_R_HAND) && !( get_equipped_item(SLOT_ID_R_HAND).abstract )) || (get_equipped_item(SLOT_ID_BACK) || get_equipped_item(SLOT_ID_WEAR_MASK))))
 		return 1
 
-	if((src.l_hand && !( src.l_hand.abstract )) || (src.r_hand && !( src.r_hand.abstract )))
+	if((get_equipped_item(SLOT_ID_L_HAND) && !( get_equipped_item(SLOT_ID_L_HAND).abstract )) || (get_equipped_item(SLOT_ID_R_HAND) && !( get_equipped_item(SLOT_ID_R_HAND).abstract )))
 		return 1
 	return 0
 
@@ -255,22 +244,22 @@
 	var/list/slots = list()
 	slots.Add(list(list(
 		"name" = "Head (Mask)",
-		"item" = host.wear_mask,
+		"item" = host.get_equipped_item(SLOT_ID_WEAR_MASK),
 		"act" = "mask",
 	)))
 	slots.Add(list(list(
 		"name" = "Left Hand",
-		"item" = host.l_hand,
+		"item" = host.get_equipped_item(SLOT_ID_L_HAND),
 		"act" = "l_hand",
 	)))
 	slots.Add(list(list(
 		"name" = "Right Hand",
-		"item" = host.r_hand,
+		"item" = host.get_equipped_item(SLOT_ID_R_HAND),
 		"act" = "r_hand",
 	)))
 	slots.Add(list(list(
 		"name" = "Back",
-		"item" = host.back,
+		"item" = host.get_equipped_item(SLOT_ID_BACK),
 		"act" = "back",
 	)))
 	slots.Add(list(list(
@@ -281,7 +270,7 @@
 	data["slots"] = slots
 
 	data["internals"] = host.internals
-	data["internalsValid"] = istype(host.wear_mask, /obj/item/clothing/mask) && istype(host.back, /obj/item/tank)
+	data["internalsValid"] = istype(host.get_equipped_item(SLOT_ID_WEAR_MASK), /obj/item/clothing/mask) && istype(host.get_equipped_item(SLOT_ID_BACK), /obj/item/tank)
 
 	return data
 
@@ -326,8 +315,8 @@
 	var/mob/living/carbon/human/H = host // Not my fault if this runtimes, a human inventory panel should never be created without a human attached.
 
 	var/obj/item/clothing/under/suit = null
-	if(istype(H.w_uniform, /obj/item/clothing/under))
-		suit = H.w_uniform
+	if(istype(H.get_equipped_item(SLOT_ID_W_UNIFORM), /obj/item/clothing/under))
+		suit = H.get_equipped_item(SLOT_ID_W_UNIFORM)
 
 	var/list/slots = list()
 	for(var/entry in H.species.hud.gear)
@@ -348,34 +337,34 @@
 	if(H.species.hud.has_hands)
 		UNTYPED_LIST_ADD(specialSlots, list(
 			"name" = "Left Hand",
-			"item" = H.l_hand,
-			"icon" = H.l_hand ? icon2base64(icon(H.l_hand.icon, H.l_hand.icon_state, frame = 1)) : null,
+			"item" = H.get_equipped_item(SLOT_ID_L_HAND),
+			"icon" = H.get_equipped_item(SLOT_ID_L_HAND) ? icon2base64(icon(H.get_equipped_item(SLOT_ID_L_HAND).icon, H.get_equipped_item(SLOT_ID_L_HAND).icon_state, frame = 1)) : null,
 			"act" = "targetSlot",
 			"params" = list("slot" = slot_l_hand),
 		))
 		UNTYPED_LIST_ADD(specialSlots, list(
 			"name" = "Right Hand",
-			"item" = H.r_hand,
-			"icon" = H.r_hand ? icon2base64(icon(H.r_hand.icon, H.r_hand.icon_state, frame = 1)) : null,
+			"item" = H.get_equipped_item(SLOT_ID_R_HAND),
+			"icon" = H.get_equipped_item(SLOT_ID_R_HAND) ? icon2base64(icon(H.get_equipped_item(SLOT_ID_R_HAND).icon, H.get_equipped_item(SLOT_ID_R_HAND).icon_state, frame = 1)) : null,
 			"act" = "targetSlot",
 			"params" = list("slot" = slot_r_hand),
 		))
 	data["specialSlots"] = specialSlots
 
 	data["internals"] = H.internals
-	data["internalsValid"] = (istype(H.wear_mask, /obj/item/clothing/mask) || istype(H.head, /obj/item/clothing/head/helmet/space)) && (istype(H.back, /obj/item/tank) || istype(H.belt, /obj/item/tank) || istype(H.s_store, /obj/item/tank))
+	data["internalsValid"] = (istype(H.get_equipped_item(SLOT_ID_WEAR_MASK), /obj/item/clothing/mask) || istype(H.get_equipped_item(SLOT_ID_HEAD), /obj/item/clothing/head/helmet/space)) && (istype(H.get_equipped_item(SLOT_ID_BACK), /obj/item/tank) || istype(H.get_equipped_item(SLOT_ID_BELT), /obj/item/tank) || istype(H.get_equipped_item(SLOT_ID_S_STORE), /obj/item/tank))
 
 	data["sensors"] = FALSE
 	if(istype(suit) && suit.has_sensor == 1)
 		data["sensors"] = TRUE
 
 	data["handcuffed"] = FALSE
-	if(H.handcuffed)
+	if(H.get_equipped_item(SLOT_ID_HANDCUFFED))
 		data["handcuffed"] = TRUE
 		data["handcuffedParams"] = list("slot" = slot_handcuffed)
 
 	data["legcuffed"] = FALSE
-	if(H.legcuffed)
+	if(H.get_equipped_item(SLOT_ID_LEGCUFFED))
 		data["legcuffed"] = TRUE
 		data["legcuffedParams"] = list("slot" = slot_legcuffed)
 

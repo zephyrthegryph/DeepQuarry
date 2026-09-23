@@ -822,8 +822,8 @@ GLOBAL_LIST_EMPTY(sacrificed)
 		if (cultist == user) //just to be sure.
 			return
 		if(!(cultist.buckled || \
-			cultist.handcuffed || \
-			istype(cultist.wear_mask, /obj/item/clothing/mask/muzzle) || \
+			cultist.get_equipped_item(SLOT_ID_HANDCUFFED) || \
+			istype(cultist.get_equipped_item(SLOT_ID_WEAR_MASK), /obj/item/clothing/mask/muzzle) || \
 			(istype(cultist.loc, /obj/structure/closet)&&cultist.loc:welded) || \
 			(istype(cultist.loc, /obj/structure/closet/secure_closet)&&cultist.loc:locked) || \
 			(istype(cultist.loc, /obj/machinery/dna_scannernew)&&cultist.loc:locked) \
@@ -831,12 +831,12 @@ GLOBAL_LIST_EMPTY(sacrificed)
 			to_chat(user, span_warning("The [cultist] is already free."))
 			return
 		cultist.buckled = null
-		if (cultist.handcuffed)
-			cultist.drop_from_inventory(cultist.handcuffed)
-		if (cultist.legcuffed)
-			cultist.drop_from_inventory(cultist.legcuffed)
-		if (istype(cultist.wear_mask, /obj/item/clothing/mask/muzzle))
-			cultist.drop_from_inventory(cultist.wear_mask)
+		if (cultist.get_equipped_item(SLOT_ID_HANDCUFFED))
+			cultist.drop_from_inventory(cultist.get_equipped_item(SLOT_ID_HANDCUFFED))
+		if (cultist.get_equipped_item(SLOT_ID_LEGCUFFED))
+			cultist.drop_from_inventory(cultist.get_equipped_item(SLOT_ID_LEGCUFFED))
+		if (istype(cultist.get_equipped_item(SLOT_ID_WEAR_MASK), /obj/item/clothing/mask/muzzle))
+			cultist.drop_from_inventory(cultist.get_equipped_item(SLOT_ID_WEAR_MASK))
 		if(istype(cultist.loc, /obj/structure/closet)&&cultist.loc:welded)
 			cultist.loc:welded = 0
 		if(istype(cultist.loc, /obj/structure/closet/secure_closet)&&cultist.loc:locked)
@@ -866,7 +866,7 @@ GLOBAL_LIST_EMPTY(sacrificed)
 			return fizzle(user)
 		if (cultist == user) //just to be sure.
 			return
-		if(cultist.buckled || cultist.handcuffed || (!isturf(cultist.loc) && !istype(cultist.loc, /obj/structure/closet)))
+		if(cultist.buckled || cultist.get_equipped_item(SLOT_ID_HANDCUFFED) || (!isturf(cultist.loc) && !istype(cultist.loc, /obj/structure/closet)))
 			to_chat(user, span_warning("You cannot summon \the [cultist], for [cultist.p_their()] shackles of blood are strong."))
 			return fizzle(user)
 		cultist.forceMove(src.loc)

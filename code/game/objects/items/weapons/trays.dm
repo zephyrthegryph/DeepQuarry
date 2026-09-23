@@ -69,14 +69,14 @@
 				M.Weaken(2)
 		else
 			to_chat(M, span_warning("You get slammed in the face with the tray, against your mask!"))
-			if(M.wear_mask && prob(33))
-				M.wear_mask.add_blood(M)
+			if(M.get_equipped_item(SLOT_ID_WEAR_MASK) && prob(33))
+				M.get_equipped_item(SLOT_ID_WEAR_MASK).add_blood(M)
 			if(ishuman(M))
 				var/mob/living/carbon/human/H = M
-				if(H.head && prob(33))
-					H.head.add_blood(H)
-				if(H.glasses && prob(33))
-					H.glasses.add_blood(H)
+				if(H.get_equipped_item(SLOT_ID_HEAD) && prob(33))
+					H.get_equipped_item(SLOT_ID_HEAD).add_blood(H)
+				if(H.get_equipped_item(SLOT_ID_GLASSES) && prob(33))
+					H.get_equipped_item(SLOT_ID_GLASSES).add_blood(H)
 
 			if(prob(10))
 				M.Stun(rand(1,3))

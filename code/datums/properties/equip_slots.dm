@@ -6,11 +6,11 @@
 // jumpsuit, suit storage asks the worn suit, ...). C3's body-part slot_defs
 // use these as their `accepts`.
 //
-// equip_refusal() adds what isn't a property of the item: whether the species
-// has the slot, whether it is free, whether it can be reached, and then the
-// item's own constraints (CONSTRAINT_FIT except in pockets and suit storage,
-// and CONSTRAINT_EQUIP everywhere). It replaces mob_can_equip(); the answer is
-// the same, and the reason says why.
+// equip_refusal() asks the mob's ledger slot (C3): the mob's slot list says
+// whether it has the slot, the slot's refusal() whether its body part is there
+// and its predicate takes the item, its capacity whether it is free. Then
+// reachability and the item's own constraints (CONSTRAINT_FIT except in pockets
+// and suit storage, and CONSTRAINT_EQUIP everywhere).
 
 /datum/predicate/equip_slot
 	name = "equip slot"
@@ -176,28 +176,47 @@
 /proc/dq_equip_refusal(obj/item/I, mob/M, slot, disable_warning, ignore_obstruction, go_over_slot)
 	if(!slot || !M)
 		return "there's nowhere to put it"
-	if(!ishuman(M))
-		return "you can't wear things"
-	var/mob/living/carbon/human/H = M
-	if(H.species && !(slot in dq_equip_slots_of(H)))
-		return "you have nowhere to wear it"
-	var/datum/predicate/slot_rules = dq_equip_slot_predicate(slot)
-	// The slot's tag first, as before: a slot that doesn't suit the item says so.
-	. = slot_rules?.why_not(H, I, null)
-	if(.)
-		return .
-	if(isnull(go_over_slot))
-		go_over_slot = HAS_TAG(I, TAG_WEAR_OVER)
-	var/obj/item/present = H.get_equipped_item(slot)
-	if(present && !go_over_slot)
-		return "you're already wearing \the [present] there"
-	if(!ignore_obstruction && !H.slot_is_accessible(slot, I, disable_warning ? null : H))
-		return "something is in the way"
-	if(slot != slot_l_store && slot != slot_r_store && slot != slot_s_store)
-		. = dq_constraint_refusal(I, CONSTRAINT_FIT, I, H)
+	var/id = dq_slot_id(slot)
+	if(!id)
+		// Action slots (backpack, accessory): the slot rules are all there is.
+		if(ishuman(M))
+			var/mob/living/carbon/human/H = M
+			if(H.species && !(slot in dq_equip_slots_of(H)))
+				return "you have nowhere to wear it"
+		var/datum/predicate/slot_rules = dq_equip_slot_predicate(slot)
+		if(!slot_rules)
+			return "you have nowhere to wear it"
+		. = slot_rules.why_not(M, I, null)
 		if(.)
 			return .
-	return dq_constraint_refusal(I, CONSTRAINT_EQUIP, I, H)
+		return dq_equip_item_refusal(I, M, slot)
+	// The mob's slot list says whether it has the slot; the slot's definition
+	// (its body part, then its equip_slot predicate) whether it takes the item.
+	var/datum/ledger/L = dq_ledger(M)
+	var/datum/slot_def/def = L?.def_by_id(id)
+	if(!def)
+		return ishuman(M) ? "you have nowhere to wear it" : "you can't wear things"
+	. = def.refusal(M, I, M)
+	if(.)
+		return .
+	// Capacity: one item per equip slot, unless this one goes on over it.
+	if(isnull(go_over_slot))
+		go_over_slot = HAS_TAG(I, TAG_WEAR_OVER)
+	var/obj/item/present = M.get_equipped_item(id)
+	if(present && present != I && !go_over_slot)
+		return "you're already wearing 	he [present] there"
+	if(!ignore_obstruction && !M.slot_is_accessible(slot, I, disable_warning ? null : M))
+		return "something is in the way"
+	return dq_equip_item_refusal(I, M, slot)
+
+/// The item's own constraints on its wearer: fit (except in pockets and suit
+/// storage) and equip.
+/proc/dq_equip_item_refusal(obj/item/I, mob/M, slot)
+	if(slot != slot_l_store && slot != slot_r_store && slot != slot_s_store)
+		. = dq_constraint_refusal(I, CONSTRAINT_FIT, I, M)
+		if(.)
+			return .
+	return dq_constraint_refusal(I, CONSTRAINT_EQUIP, I, M)
 
 /// The equip slots a human's species has.
 /proc/dq_equip_slots_of(mob/living/carbon/human/H)
@@ -207,14 +226,14 @@
 // ---- Slot rules (REQ_PROC clauses: (actor, target, held) -> TRUE or a reason) ----
 
 /proc/dq_equip_has_uniform(mob/living/carbon/human/H, obj/item/I)
-	if(!ishuman(H) || H.w_uniform || !(slot_w_uniform in dq_equip_slots_of(H)))
+	if(!ishuman(H) || H.get_equipped_item(SLOT_ID_W_UNIFORM) || !(slot_w_uniform in dq_equip_slots_of(H)))
 		return TRUE
 	return "you need a jumpsuit first"
 
 /proc/dq_equip_suit_storage_takes(mob/living/carbon/human/H, obj/item/I)
 	if(!ishuman(H))
 		return "there's nowhere to put it"
-	var/obj/item/suit = H.wear_suit
+	var/obj/item/suit = H.get_equipped_item(SLOT_ID_WEAR_SUIT)
 	if(!suit)
 		return "you need a suit first"
 	var/datum/predicate/P = dq_constraint(suit, CONSTRAINT_SUIT_STORAGE)
@@ -228,12 +247,12 @@
 	if(!ishuman(H) || !istype(I, /obj/item/clothing/gloves))
 		return TRUE
 	var/obj/item/clothing/gloves/new_gloves = I
-	if(istype(H.gloves, /obj/item/clothing/accessory))
-		var/obj/item/clothing/accessory/ring = H.gloves
+	if(istype(H.get_equipped_item(SLOT_ID_GLOVES), /obj/item/clothing/accessory))
+		var/obj/item/clothing/accessory/ring = H.get_equipped_item(SLOT_ID_GLOVES)
 		if(ring.glove_level >= new_gloves.glove_level)
 			return "\the [ring] is in the way"
-	else if(istype(H.gloves, /obj/item/clothing/gloves))
-		var/obj/item/clothing/gloves/worn = H.gloves
+	else if(istype(H.get_equipped_item(SLOT_ID_GLOVES), /obj/item/clothing/gloves))
+		var/obj/item/clothing/gloves/worn = H.get_equipped_item(SLOT_ID_GLOVES)
 		if(worn.glove_level >= new_gloves.glove_level || worn.overgloves)
 			return "\the [worn] are in the way"
 	return TRUE
@@ -252,7 +271,7 @@
 	return "you're not wearing anything you can attach it to"
 
 /proc/dq_equip_backpack_takes(mob/living/carbon/human/H, obj/item/I)
-	if(!ishuman(H) || !istype(H.back, /obj/item/storage/backpack))
+	var/obj/item/storage/backpack/B = ishuman(H) ? H.get_equipped_item(SLOT_ID_BACK) : null
+	if(!istype(B))
 		return "you have no backpack"
-	var/obj/item/storage/backpack/B = H.back
 	return B.insert_refusal(I, H) || TRUE

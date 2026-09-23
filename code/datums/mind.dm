@@ -356,15 +356,9 @@
 					R.emagged = 0
 					if (R.activated(R.module.emag))
 						R.module_active = null
-					if(R.module_state_1 == R.module.emag)
-						R.module_state_1 = null
-						R.contents -= R.module.emag
-					else if(R.module_state_2 == R.module.emag)
-						R.module_state_2 = null
-						R.contents -= R.module.emag
-					else if(R.module_state_3 == R.module.emag)
-						R.module_state_3 = null
-						R.contents -= R.module.emag
+					var/emag_slot = R.module_slot_of(R.module.emag)
+					if(emag_slot)
+						R.clear_module_slot(emag_slot)
 					log_admin("[key_name_admin(usr)] has unemag'ed [R].")
 
 			if("unemagcyborgs")
@@ -375,15 +369,9 @@
 						if (R.module)
 							if (R.activated(R.module.emag))
 								R.module_active = null
-							if(R.module_state_1 == R.module.emag)
-								R.module_state_1 = null
-								R.contents -= R.module.emag
-							else if(R.module_state_2 == R.module.emag)
-								R.module_state_2 = null
-								R.contents -= R.module.emag
-							else if(R.module_state_3 == R.module.emag)
-								R.module_state_3 = null
-								R.contents -= R.module.emag
+							var/emag_slot = R.module_slot_of(R.module.emag)
+							if(emag_slot)
+								R.clear_module_slot(emag_slot)
 					log_admin("[key_name_admin(usr)] has unemag'ed [ai]'s Cyborgs.")
 
 	else if (href_list["common"])

@@ -91,7 +91,7 @@
 
 	if(!istype(H)) return
 
-	if(H.wear_suit != src)
+	if(H.get_equipped_item(SLOT_ID_WEAR_SUIT) != src)
 		return
 
 	if(boots)
@@ -99,14 +99,14 @@
 			boots.canremove = FALSE
 
 	if(hood)
-		if(H.head)
-			to_chat(M, "You are unable to deploy your suit's helmet as \the [H.head] is in the way.")
+		if(H.get_equipped_item(SLOT_ID_HEAD))
+			to_chat(M, "You are unable to deploy your suit's helmet as \the [H.get_equipped_item(SLOT_ID_HEAD)] is in the way.")
 		else if (H.equip_to_slot_if_possible(hood, slot_head))
 			to_chat(M, "Your suit's helmet deploys with a hiss.")
 			hood.canremove = FALSE
 
 	if(cooler)
-		if(H.s_store) //Ditto
+		if(H.get_equipped_item(SLOT_ID_S_STORE)) //Ditto
 			to_chat(M, "Alarmingly, the cooling unit installed into your suit fails to deploy.")
 		else if (H.equip_to_slot_if_possible(cooler, slot_s_store))
 			to_chat(M, "Your suit's cooling unit deploys.")
@@ -121,7 +121,7 @@
 		hood.canremove = TRUE
 		H = hood.loc
 		if(istype(H))
-			if(hood && H.head == hood)
+			if(hood && H.get_equipped_item(SLOT_ID_HEAD) == hood)
 				H.drop_from_inventory(hood)
 				hood.forceMove(src)
 
@@ -129,7 +129,7 @@
 		boots.canremove = TRUE
 		H = boots.loc
 		if(istype(H))
-			if(boots && H.shoes == boots)
+			if(boots && H.get_equipped_item(SLOT_ID_SHOES) == boots)
 				H.drop_from_inventory(boots)
 				boots.forceMove(src)
 
@@ -178,21 +178,21 @@
 
 	if(!istype(H)) return
 	if(H.stat) return
-	if(H.wear_suit != src) return
+	if(H.get_equipped_item(SLOT_ID_WEAR_SUIT) != src) return
 
 	if(hood.light_on)
 		to_chat(H, span_notice("The helmet light shuts off as it retracts."))
 		hood.update_flashlight(H)
 
-	if(H.head == hood)
+	if(H.get_equipped_item(SLOT_ID_HEAD) == hood)
 		to_chat(H, span_notice("You retract your suit helmet."))
 		hood.canremove = TRUE
 		H.drop_from_inventory(hood)
 		hood.forceMove(src)
 		playsound(src.loc, 'sound/machines/click2.ogg', 75, 1)
 	else
-		if(H.head)
-			to_chat(H, span_danger("You cannot deploy your helmet while wearing \the [H.head]."))
+		if(H.get_equipped_item(SLOT_ID_HEAD))
+			to_chat(H, span_danger("You cannot deploy your helmet while wearing \the [H.get_equipped_item(SLOT_ID_HEAD)]."))
 			return
 		if(H.equip_to_slot_if_possible(hood, slot_head))
 			hood.canremove = FALSE
@@ -217,7 +217,7 @@
 
 	if(!istype(H)) return
 	if(H.stat) return
-	if(H.wear_suit != src) return
+	if(H.get_equipped_item(SLOT_ID_WEAR_SUIT) != src) return
 
 	var/obj/item/removing = null
 	if(tank)

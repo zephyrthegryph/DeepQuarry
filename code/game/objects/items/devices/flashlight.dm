@@ -130,7 +130,7 @@
 
 		var/mob/living/carbon/human/H = M	//mob has protective eyewear
 		if(istype(H))
-			for(var/obj/item/clothing/C in list(H.head,H.wear_mask,H.glasses))
+			for(var/obj/item/clothing/C in list(H.get_equipped_item(SLOT_ID_HEAD),H.get_equipped_item(SLOT_ID_WEAR_MASK),H.get_equipped_item(SLOT_ID_GLASSES)))
 				if(istype(C) && (C.body_parts_covered & EYES))
 					to_chat(user, span_warning("You're going to need to remove [C.name] first."))
 					return ITEM_INTERACT_FAILURE
@@ -215,10 +215,8 @@
 
 		switch(over_object.name)
 			if("r_hand")
-				usr.u_equip(src)
 				usr.put_in_r_hand(src)
 			if("l_hand")
-				usr.u_equip(src)
 				usr.put_in_l_hand(src)
 		src.add_fingerprint(usr)
 

@@ -38,23 +38,23 @@
 		var/obj/item/holder/H = loc
 		if(ishuman(H.loc))
 			var/mob/living/carbon/human/HH = H.loc
-			if(HH.l_hand == H)
+			if(HH.get_equipped_item(SLOT_ID_L_HAND) == H)
 				location = "[HH]'s left hand"
-			else if(HH.r_hand == H)
+			else if(HH.get_equipped_item(SLOT_ID_R_HAND) == H)
 				location = "[HH]'s right hand"
-			else if(HH.r_store == H || HH.l_store == H)
+			else if(HH.get_equipped_item(SLOT_ID_R_STORE) == H || HH.get_equipped_item(SLOT_ID_L_STORE) == H)
 				location = "[HH]'s pocket"
-			else if(HH.head == H)
+			else if(HH.get_equipped_item(SLOT_ID_HEAD) == H)
 				location = "[HH]'s head"
-			else if(HH.shoes == H)
+			else if(HH.get_equipped_item(SLOT_ID_SHOES) == H)
 				location = "[HH]'s feet"
 			else
 				location = "[HH]"
 		else if(ismob(H.loc))
 			var/mob/living/M = H.loc
-			if(M.l_hand == H)
+			if(M.get_equipped_item(SLOT_ID_L_HAND) == H)
 				location = "[M]'s left hand"
-			else if(M.r_hand == H)
+			else if(M.get_equipped_item(SLOT_ID_R_HAND) == H)
 				location = "[M]'s right hand"
 			else
 				location = "[M]"

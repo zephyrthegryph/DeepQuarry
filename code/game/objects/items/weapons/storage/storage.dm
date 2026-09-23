@@ -471,15 +471,6 @@
 		return
 	to_chat(user, span_notice("\The [W] won't go in \the [src]: [reason]."))
 
-/// Legacy entry point, kept only for mob inventory code (C3 moves those callers
-/// onto slots): /mob/living/proc/equip_to_storage and friends in
-/// code/modules/mob/living/inventory.dm, human/inventory.dm and protean_rig.dm.
-/obj/item/storage/proc/can_be_inserted(obj/item/W, stop_messages = FALSE)
-	var/reason = insert_refusal(W, usr)
-	if(reason && !stop_messages)
-		refuse_insert(W, usr, reason)
-	return !reason
-
 //This proc handles items being inserted. It does not perform any checks of whether an item can or can't be inserted. That's done by insert_refusal()
 //The stop_warning parameter will stop the insertion message from being displayed. It is intended for cases where you are inserting multiple items at once,
 //such as when picking up all the items on a tile with one click.
@@ -610,13 +601,11 @@
 /obj/item/storage/attack_hand(mob/user as mob)
 	if(ishuman(user) && !pocketable)
 		var/mob/living/carbon/human/H = user
-		if(H.l_store == src && !H.get_active_hand())	//Prevents opening if it's in a pocket.
+		if(H.get_equipped_item(SLOT_ID_L_STORE) == src && !H.get_active_hand())	//Prevents opening if it's in a pocket.
 			H.put_in_hands(src)
-			H.l_store = null
 			return
-		if(H.r_store == src && !H.get_active_hand())
+		if(H.get_equipped_item(SLOT_ID_R_STORE) == src && !H.get_active_hand())
 			H.put_in_hands(src)
-			H.r_store = null
 			return
 
 	if (src.loc == user)

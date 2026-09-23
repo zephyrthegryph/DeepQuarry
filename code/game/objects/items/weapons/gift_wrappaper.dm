@@ -173,7 +173,7 @@
 		return ITEM_INTERACT_FAILURE
 	var/mob/living/carbon/human/H = target
 
-	if (istype(H.wear_suit, /obj/item/clothing/suit/straight_jacket) || istype(H.wear_suit, /obj/item/clothing/suit/shibari) || H.stat)
+	if (istype(H.get_equipped_item(SLOT_ID_WEAR_SUIT), /obj/item/clothing/suit/straight_jacket) || istype(H.get_equipped_item(SLOT_ID_WEAR_SUIT), /obj/item/clothing/suit/shibari) || H.stat)
 		if (src.amount >= 2)
 			var/obj/effect/spresent/present = new /obj/effect/spresent (H.loc)
 			src.amount -= 2

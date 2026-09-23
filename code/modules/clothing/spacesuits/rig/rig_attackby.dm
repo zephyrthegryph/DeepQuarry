@@ -50,7 +50,7 @@
 		else if(istype(W,/obj/item/rig_module))
 			if(ishuman(src.loc))
 				var/mob/living/carbon/human/H = src.loc
-				if(H.back == src || H.belt == src)
+				if(H.get_equipped_item(SLOT_ID_BACK) == src || H.get_equipped_item(SLOT_ID_BELT) == src)
 					to_chat(user, span_danger("You can't install a hardsuit module while the suit is being worn."))
 					return 1
 
@@ -141,7 +141,7 @@
 		return ITEM_INTERACT_BLOCKING
 	if(ishuman(loc) && to_remove != "cell")
 		var/mob/living/carbon/human/wearer = loc
-		if(wearer.back == src || wearer.belt == src)
+		if(wearer.get_equipped_item(SLOT_ID_BACK) == src || wearer.get_equipped_item(SLOT_ID_BELT) == src)
 			to_chat(user, "You can't remove an installed device while the hardsuit is being worn.")
 			return ITEM_INTERACT_BLOCKING
 	if(to_remove == "cell")

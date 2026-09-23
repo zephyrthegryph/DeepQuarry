@@ -19,7 +19,7 @@
 /obj/item/clothing/suit/shibari/attack_hand(mob/living/user as mob)
 	if(ishuman(user))
 		var/mob/living/carbon/human/H = user
-		if(src == H.wear_suit)
+		if(src == H.get_equipped_item(SLOT_ID_WEAR_SUIT))
 			to_chat(H, span_notice("You need help taking this off!"))
 			return
 	..()
@@ -46,13 +46,14 @@
 				user.drop_r_hand()
 			if(ishuman(user))
 				var/mob/living/carbon/human/H = user
-				H.drop_from_inventory(H.handcuffed)
+				H.drop_from_inventory(H.get_equipped_item(SLOT_ID_HANDCUFFED))
 	if((rope_mode == SHIBARI_LEGS) || (rope_mode == SHIBARI_BOTH))
 		if(slot == slot_wear_suit)
 			if(ishuman(user))
 				var/mob/living/carbon/human/H = user
-				H.drop_from_inventory(H.legcuffed)
-				H.legcuffed = src
+				// The ropes bind the legs, but the suit can't also sit in the legcuff
+				// slot (an item is in one slot): it only forces walking.
+				H.drop_from_inventory(H.get_equipped_item(SLOT_ID_LEGCUFFED))
 				if(user.m_intent != I_WALK)
 					user.m_intent = I_WALK
 					if(user.hud_used && user.hud_used.move_intent)
@@ -60,10 +61,6 @@
 
 /obj/item/clothing/suit/shibari/dropped(mob/user, equipping, slot)
 	..()
-	if(ishuman(user))
-		var/mob/living/carbon/human/H = user
-		if(H.legcuffed == src)
-			H.legcuffed = FALSE
 
 /obj/item/clothing/suit/shibari/red
 	color = "#ff0000"

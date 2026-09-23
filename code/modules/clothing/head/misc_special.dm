@@ -141,7 +141,7 @@
 	var/turf/location = src.loc
 	if(istype(location, /mob/))
 		var/mob/living/carbon/human/M = location
-		if(ishuman(M) && (M.item_is_in_hands(src) || M.head == src))
+		if(ishuman(M) && (M.item_is_in_hands(src) || M.get_equipped_item(SLOT_ID_HEAD) == src))
 			location = M.loc
 
 	if (istype(location, /turf))
@@ -283,7 +283,7 @@
 
 /obj/item/clothing/head/psy_crown/equipped(mob/living/carbon/human/user)
 	..()
-	if(istype(user) && user.head == src && user.is_sentient())
+	if(istype(user) && user.get_equipped_item(SLOT_ID_HEAD) == src && user.is_sentient())
 		START_PROCESSING(SSobj, src)
 		if(flavor_equip)
 			to_chat(user, flavor_equip)

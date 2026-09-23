@@ -111,7 +111,7 @@
 			fingerprintslast = M.key
 		return FALSE
 	var/mob/living/carbon/human/H = M
-	if(H.gloves)
+	if(H.get_equipped_item(SLOT_ID_GLOVES))
 		if(fingerprintslast != H.key)
 			fingerprintshidden += text("\[[time_stamp()]\] (Wearing gloves). Real name: [], Key: []",H.real_name, H.key)
 			fingerprintslast = H.key
@@ -156,18 +156,18 @@
 	var/fibertext = null
 	var/item_multiplier = istype(src,/obj/item)?1.2:1
 	var/suit_coverage = 0
-	if(M.wear_suit)
+	if(M.get_equipped_item(SLOT_ID_WEAR_SUIT))
 		if(prob(10*item_multiplier))
-			fibertext = "Material from \a [M.wear_suit]."
-		suit_coverage = M.wear_suit.body_parts_covered
+			fibertext = "Material from \a [M.get_equipped_item(SLOT_ID_WEAR_SUIT)]."
+		suit_coverage = M.get_equipped_item(SLOT_ID_WEAR_SUIT).body_parts_covered
 
-	if(M.w_uniform && (M.w_uniform.body_parts_covered & ~suit_coverage))
+	if(M.get_equipped_item(SLOT_ID_W_UNIFORM) && (M.get_equipped_item(SLOT_ID_W_UNIFORM).body_parts_covered & ~suit_coverage))
 		if(prob(15*item_multiplier))
-			fibertext = "Fibers from \a [M.w_uniform]."
+			fibertext = "Fibers from \a [M.get_equipped_item(SLOT_ID_W_UNIFORM)]."
 
-	if(M.gloves && (M.gloves.body_parts_covered & ~suit_coverage))
+	if(M.get_equipped_item(SLOT_ID_GLOVES) && (M.get_equipped_item(SLOT_ID_GLOVES).body_parts_covered & ~suit_coverage))
 		if(prob(20*item_multiplier))
-			fibertext = "Material from a pair of [M.gloves.name]."
+			fibertext = "Material from a pair of [M.get_equipped_item(SLOT_ID_GLOVES).name]."
 
 	if(!fibertext)
 		return

@@ -25,27 +25,22 @@
 	toggle_module(module)
 
 // --- Module slots ------------------------------------------------------------------------
-// The three module slots are module_state_1..3. Slot logic is written once,
-// here, and reached by slot number.
+// The three module slots are ledger slots on the robot, SLOT_ID_MODULE(1..3)
+// (inventory_slots_interim.dm declares them). An inactive module lives in the
+// module holder (src.module); activating one is a ledger move into a free slot,
+// deactivating it a move back out.
 
-/mob/living/silicon/robot/proc/get_module_slot(slot)
-	switch(slot)
-		if(1)
-			return module_state_1
-		if(2)
-			return module_state_2
-		if(3)
-			return module_state_3
-	return null
+/mob/living/silicon/robot/proc/get_module_slot(slot) as /obj/item
+	if(!isnum(slot) || slot < 1 || slot > 3)
+		return null
+	return get_equipped_item(SLOT_ID_MODULE(slot))
 
-/mob/living/silicon/robot/proc/set_module_slot(slot, obj/item/I)
-	switch(slot)
-		if(1)
-			module_state_1 = I
-		if(2)
-			module_state_2 = I
-		if(3)
-			module_state_3 = I
+/// The module slot number (1-3) `I` is active in, or 0.
+/mob/living/silicon/robot/proc/module_slot_of(obj/item/I)
+	for(var/slot in 1 to 3)
+		if(I && get_module_slot(slot) == I)
+			return slot
+	return 0
 
 /mob/living/silicon/robot/proc/get_module_slot_screen(slot)
 	switch(slot)
@@ -75,21 +70,14 @@
 	if(isrobotmultibelt(I))
 		var/obj/item/robotic_multibelt/toolbelt = I
 		toolbelt.original_state()
-	if(istype(I, /obj/item/borg/sight))
-		var/obj/item/borg/sight/S = I
-		sight_mode &= ~S.sight_mode
 	if(client)
 		client.screen -= I
-	contents -= I
-	if(module_active == I)
-		module_active = null
 	for(var/datum/action/A as anything in I.actions)
 		A.Remove(src)
-	I.loc = module //So it can be used again later (no Moved side effects, as before)
-	set_module_slot(slot, null)
-	var/atom/movable/screen/slot_screen = get_module_slot_screen(slot)
-	if(slot_screen)
-		slot_screen.icon_state = "inv[slot]"
+	// Back into the module holder so it can be used again later. The slot
+	// signal clears module_active and the sight mode (inventory_slot_changed).
+	if(!slot_remove(I, module, src))
+		I.forceMove(module)
 	return I
 
 /mob/living/silicon/robot/proc/uneq_specific(obj/item/I)
@@ -128,27 +116,13 @@
 
 // Just used for pretty display in TGUI
 /mob/living/silicon/robot/proc/get_slot_from_module(obj/item/I)
-	if(module_state_1 == I)
-		return 1
-	else if(module_state_2 == I)
-		return 2
-	else if(module_state_3 == I)
-		return 3
-	else
-		return 0
+	return module_slot_of(I)
 
 /mob/living/silicon/robot/proc/activated(obj/item/O)
 	var/belt_check = using_multibelt(O)
 	if(belt_check)
 		return belt_check
-	if(module_state_1 == O)
-		return 1
-	else if(module_state_2 == O)
-		return 1
-	else if(module_state_3 == O)
-		return 1
-	else
-		return 0
+	return module_slot_of(O) ? 1 : 0
 
 /mob/living/silicon/robot/proc/using_multibelt(obj/item/O)
 	for(var/obj/item/robotic_multibelt/materials/material_belt in contents)
@@ -160,7 +134,7 @@
 	return FALSE
 
 /mob/living/silicon/robot/proc/get_active_modules()
-	return list(module_state_1, module_state_2, module_state_3)
+	return list(get_module_slot(1), get_module_slot(2), get_module_slot(3))
 
 // This one takes an object's type instead of an instance, as above.
 /mob/living/silicon/robot/proc/has_active_type(type_to_compare, explicit = FALSE)
@@ -209,14 +183,7 @@
 
 //get_selected_module() - Returns the slot number of the currently selected module.  Returns 0 if no modules are selected.
 /mob/living/silicon/robot/proc/get_selected_module()
-	if(module_state_1 && module_active == module_state_1)
-		return 1
-	else if(module_state_2 && module_active == module_state_2)
-		return 2
-	else if(module_state_3 && module_active == module_state_3)
-		return 3
-
-	return 0
+	return module_active ? module_slot_of(module_active) : 0
 
 //select_module(module) - Selects the module slot specified by "module"
 /mob/living/silicon/robot/proc/select_module(module) //Module is 1-3
@@ -291,16 +258,17 @@
 	for(var/slot in 1 to 3)
 		if(get_module_slot(slot))
 			continue
-		set_module_slot(slot, O)
+		if(!O.move_into(src, SLOT_ID_MODULE(slot), src))
+			return
 		O.hud_layerise()
 		var/atom/movable/screen/slot_screen = get_module_slot_screen(slot)
 		O.screen_loc = slot_screen?.screen_loc
-		contents += O
 		if(istype(O, /obj/item/borg/sight))
 			var/obj/item/borg/sight/S = O
 			sight_mode |= S.sight_mode
 		update_icon()
 		after_equip(O)
+		on_equipment_changed()
 		return
 	to_chat(src, span_notice("You need to disable a module first!"))
 
@@ -324,7 +292,7 @@
 	return 1
 
 /mob/living/silicon/robot/is_holding_item_of_type(typepath)
-	for(var/obj/item/I in list(module_state_1, module_state_2, module_state_3))
+	for(var/obj/item/I as anything in get_all_held_items())
 		if(istype(I, typepath))
 			return I
 	return FALSE
@@ -332,9 +300,27 @@
 // Returns a list of all held items in a borg's 'hands'.
 /mob/living/silicon/robot/get_all_held_items()
 	. = list()
-	if(module_state_1)
-		. += module_state_1
-	if(module_state_2)
-		. += module_state_2
-	if(module_state_3)
-		. += module_state_3
+	for(var/slot in 1 to 3)
+		var/obj/item/I = get_module_slot(slot)
+		if(I)
+			. += I
+
+/// A module left its slot, by whatever means: it is no longer active or seen.
+/mob/living/silicon/robot/inventory_slot_changed(slot_id, atom/movable/thing, inserted)
+	..()
+	if(inserted)
+		return
+	var/slot = 0
+	for(var/i in 1 to 3)
+		if(slot_id == SLOT_ID_MODULE(i))
+			slot = i
+	if(!slot)
+		return
+	if(module_active == thing)
+		module_active = null
+	if(istype(thing, /obj/item/borg/sight))
+		var/obj/item/borg/sight/S = thing
+		sight_mode &= ~S.sight_mode
+	var/atom/movable/screen/slot_screen = get_module_slot_screen(slot)
+	if(slot_screen)
+		slot_screen.icon_state = "inv[slot]"

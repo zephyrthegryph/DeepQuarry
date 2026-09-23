@@ -153,7 +153,7 @@
 
 			if(ishuman(M))
 				var/mob/living/carbon/human/H = M
-				if(H.shoes && H.shoes.item_flags & NOSLIP)
+				if(H.get_equipped_item(SLOT_ID_SHOES) && H.get_equipped_item(SLOT_ID_SHOES).item_flags & NOSLIP)
 					return
 
 			M.stop_pulling()
@@ -334,7 +334,7 @@
 		return
 	if(seed.get_trait(TRAIT_STINGS))
 		var/mob/living/carbon/human/H = user
-		if(istype(H) && H.gloves)
+		if(istype(H) && H.get_equipped_item(SLOT_ID_GLOVES))
 			return
 		if(!reagents || reagents.total_volume <= 0)
 			return

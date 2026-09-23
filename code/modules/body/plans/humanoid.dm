@@ -331,7 +331,7 @@
 	var/datum/form/F = H.current_form()
 	if(F)
 		acc = body_factor_accumulate(acc, F.factors)
-	for(var/obj/item/I in list(H.back, H.belt, H.l_ear, H.r_ear, H.glasses, H.gloves, H.head, H.shoes, H.wear_id, H.wear_mask, H.wear_suit, H.w_uniform, H.s_store))
+	for(var/obj/item/I in list(H.get_equipped_item(SLOT_ID_BACK), H.get_equipped_item(SLOT_ID_BELT), H.get_equipped_item(SLOT_ID_L_EAR), H.get_equipped_item(SLOT_ID_R_EAR), H.get_equipped_item(SLOT_ID_GLASSES), H.get_equipped_item(SLOT_ID_GLOVES), H.get_equipped_item(SLOT_ID_HEAD), H.get_equipped_item(SLOT_ID_SHOES), H.get_equipped_item(SLOT_ID_WEAR_ID), H.get_equipped_item(SLOT_ID_WEAR_MASK), H.get_equipped_item(SLOT_ID_WEAR_SUIT), H.get_equipped_item(SLOT_ID_W_UNIFORM), H.get_equipped_item(SLOT_ID_S_STORE)))
 		if(I.worn_factors)
 			acc = body_factor_accumulate(acc, I.worn_factors)
 	return acc

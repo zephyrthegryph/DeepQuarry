@@ -241,10 +241,10 @@ ADMIN_VERB(cmd_admin_grantfullaccess, (R_ADMIN|R_EVENT), "Grant Full Access", "G
 	if (!SSticker)
 		tgui_alert_async(user, "Wait until the game starts")
 		return
-	if (H.wear_id)
-		var/obj/item/card/id/id = H.wear_id
-		if(istype(H.wear_id, /obj/item/pda))
-			var/obj/item/pda/pda = H.wear_id
+	if (H.get_equipped_item(SLOT_ID_WEAR_ID))
+		var/obj/item/card/id/id = H.get_equipped_item(SLOT_ID_WEAR_ID)
+		if(istype(H.get_equipped_item(SLOT_ID_WEAR_ID), /obj/item/pda))
+			var/obj/item/pda/pda = H.get_equipped_item(SLOT_ID_WEAR_ID)
 			id = pda.id
 		id.icon_state = "gold"
 		id.access = SSaccess.get_all_accesses().Copy()

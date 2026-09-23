@@ -70,8 +70,8 @@
 	if(!ishuman(user))
 		return
 	var/mob/living/carbon/human/H = user
-	if(H.gloves)
-		to_chat(user, span_warning("Take \the [H.gloves] off first."))
+	if(H.get_equipped_item(SLOT_ID_GLOVES))
+		to_chat(user, span_warning("Take \the [H.get_equipped_item(SLOT_ID_GLOVES)] off first."))
 		return
 
 	to_chat(user, span_notice("You firmly press your fingertips onto the card."))
@@ -90,7 +90,7 @@
 
 	var/mob/living/carbon/human/H = M
 
-	if(H.gloves)
+	if(H.get_equipped_item(SLOT_ID_GLOVES))
 		to_chat(user, span_warning("\The [H] is wearing gloves."))
 		return ITEM_INTERACT_FAILURE
 

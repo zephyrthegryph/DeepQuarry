@@ -101,9 +101,9 @@
 
 	if(!is_weak)
 		var/bodypart_type
-		if(feeder.l_hand == source)
+		if(feeder.get_equipped_item(SLOT_ID_L_HAND) == source)
 			bodypart_type = BP_R_ARM
-		else if(feeder.r_hand == source)
+		else if(feeder.get_equipped_item(SLOT_ID_R_HAND) == source)
 			bodypart_type = BP_L_ARM
 		else
 			bodypart_type = BP_TORSO

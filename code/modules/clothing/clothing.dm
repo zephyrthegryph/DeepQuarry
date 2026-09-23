@@ -213,7 +213,7 @@
 		return
 
 	var/mob/living/carbon/human/H = user
-	if(H.l_ear != src && H.r_ear != src)
+	if(H.get_equipped_item(SLOT_ID_L_EAR) != src && H.get_equipped_item(SLOT_ID_R_EAR) != src)
 		..()
 		return
 
@@ -222,8 +222,8 @@
 
 	var/obj/item/clothing/ears/O
 	if(HAS_TAG(src, TAG_WEAR_TWO_EARS))
-		O = (H.l_ear == src ? H.r_ear : H.l_ear)
-		user.u_equip(O)
+		O = (H.get_equipped_item(SLOT_ID_L_EAR) == src ? H.get_equipped_item(SLOT_ID_R_EAR) : H.get_equipped_item(SLOT_ID_L_EAR))
+		user.drop_from_inventory(O)
 		if(!istype(src,/obj/item/clothing/ears/offear))
 			qdel(O)
 			O = src
@@ -249,7 +249,7 @@
 		var/mob/living/carbon/human/H = usr
 		// If this covers both ears, we want to return the result of unequipping the primary object, and kill the off-ear one
 		if(HAS_TAG(src, TAG_WEAR_TWO_EARS))
-			var/obj/item/clothing/ears/O = (H.l_ear == src ? H.r_ear : H.l_ear)
+			var/obj/item/clothing/ears/O = (H.get_equipped_item(SLOT_ID_L_EAR) == src ? H.get_equipped_item(SLOT_ID_R_EAR) : H.get_equipped_item(SLOT_ID_L_EAR))
 			if(istype(src, /obj/item/clothing/ears/offear))
 				. = O.MouseDrop(over_object)
 				H.drop_from_inventory(src)
@@ -363,16 +363,16 @@
 
 	//Equipping to our glove slot? Cover our former gloves, if applicable.
 	if(equipping && slot && slot == slot_gloves)
-		var/obj/item/clothing/G = H.gloves
+		var/obj/item/clothing/G = H.get_equipped_item(SLOT_ID_GLOVES)
 		if(istype(G))
-			to_chat(user, "You slip \the [src] on over \the [H.gloves].")
+			to_chat(user, "You slip \the [src] on over \the [H.get_equipped_item(SLOT_ID_GLOVES)].")
 			if(istype(G, /obj/item/clothing/gloves))
-				gloves = H.gloves
+				gloves = H.get_equipped_item(SLOT_ID_GLOVES)
 			else if(istype(G, /obj/item/clothing/accessory))
-				ring = H.gloves
+				ring = H.get_equipped_item(SLOT_ID_GLOVES)
 			else
-				gloves = H.gloves //Fallback
-			H.unEquip(H.gloves, TRUE, src)
+				gloves = H.get_equipped_item(SLOT_ID_GLOVES) //Fallback
+			H.unEquip(H.get_equipped_item(SLOT_ID_GLOVES), TRUE, src)
 			if(!(flags & THICKMATERIAL))
 				if(istype(G, /obj/item/clothing/gloves) || istype(G, /obj/item/clothing/accessory)) //Because sometimes you can wear non-glove items on your hands.
 					punch_force += ring.punch_force
@@ -851,7 +851,7 @@
 	var/escape_message_macro = "Something is trying to climb out of your [src]!"
 	var/escape_time = 60
 
-	if(macro.shoes == src)
+	if(macro.get_equipped_item(SLOT_ID_SHOES) == src)
 		escape_message_micro = "You start to climb around the larger creature's feet and ankles!"
 		escape_time = 100
 
@@ -972,10 +972,10 @@
 		return
 	if(ishuman(loc))
 		var/mob/living/carbon/human/H = src.loc
-		if(H.wear_suit != src)
+		if(H.get_equipped_item(SLOT_ID_WEAR_SUIT) != src)
 			to_chat(H, span_warning("You must be wearing [src] to put up the hood!"))
 			return
-		if(H.head)
+		if(H.get_equipped_item(SLOT_ID_HEAD))
 			to_chat(H, span_warning("You're already wearing something on your head!"))
 			return
 		else
@@ -1515,7 +1515,7 @@
 		if(isvoice(user)) //Is this a possessed item? Spooky. It can move on it's own!
 			to_chat(H, span_red("The [src] shifts about, almost as if squirming!"))
 			to_chat(user, span_red("You cause the [src] to shift against [H]'s form! Well, what little you can get to, given your current state!"))
-		else if(H.shoes == src)
+		else if(H.get_equipped_item(SLOT_ID_SHOES) == src)
 			to_chat(H, span_red("[user]'s tiny body presses against you in \the [src], squirming!"))
 			to_chat(user, span_red("Your body presses out against [H]'s form! Well, what little you can get to!"))
 		else

@@ -149,7 +149,7 @@
 	if(state < GRAB_NECK)
 		to_chat(attacker, span_warning("You require a better grab to do this."))
 		return
-	for(var/obj/item/protection in list(target.head, target.wear_mask, target.glasses))
+	for(var/obj/item/protection in list(target.get_equipped_item(SLOT_ID_HEAD), target.get_equipped_item(SLOT_ID_WEAR_MASK), target.get_equipped_item(SLOT_ID_GLASSES)))
 		if(protection && (protection.body_parts_covered & EYES))
 			to_chat(attacker, span_danger("You're going to need to remove the eye covering first."))
 			return
@@ -169,7 +169,7 @@
 	attacker.visible_message(span_danger("[attacker] thrusts [attacker.p_their()] head into [target]'s skull!"))
 
 	var/damage = 20
-	var/obj/item/clothing/hat = attacker.head
+	var/obj/item/clothing/hat = attacker.get_equipped_item(SLOT_ID_HEAD)
 	if(istype(hat))
 		damage += hat.force * 3
 

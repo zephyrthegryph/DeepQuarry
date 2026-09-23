@@ -513,41 +513,41 @@
 		return
 	if(ishuman(M) && !isbelly(M.loc))
 		var/mob/living/carbon/human/H = M
-		if(H.head)
-			if(H.head.unacidable || is_type_in_list(H.head, GLOB.item_digestion_blacklist))
-				to_chat(H, span_danger("Your [H.head] protects you from the acid."))
+		if(H.get_equipped_item(SLOT_ID_HEAD))
+			if(H.get_equipped_item(SLOT_ID_HEAD).unacidable || is_type_in_list(H.get_equipped_item(SLOT_ID_HEAD), GLOB.item_digestion_blacklist))
+				to_chat(H, span_danger("Your [H.get_equipped_item(SLOT_ID_HEAD)] protects you from the acid."))
 				remove_self(volume)
 				return
 			else if(removed > meltdose)
-				to_chat(H, span_danger("Your [H.head] melts away!"))
-				qdel(H.head)
+				to_chat(H, span_danger("Your [H.get_equipped_item(SLOT_ID_HEAD)] melts away!"))
+				qdel(H.get_equipped_item(SLOT_ID_HEAD))
 				H.update_inv_head(1)
 				H.update_hair(1)
 				removed -= meltdose
 		if(removed <= 0)
 			return
 
-		if(H.wear_mask)
-			if(H.wear_mask.unacidable || is_type_in_list(H.wear_mask, GLOB.item_digestion_blacklist))
-				to_chat(H, span_danger("Your [H.wear_mask] protects you from the acid."))
+		if(H.get_equipped_item(SLOT_ID_WEAR_MASK))
+			if(H.get_equipped_item(SLOT_ID_WEAR_MASK).unacidable || is_type_in_list(H.get_equipped_item(SLOT_ID_WEAR_MASK), GLOB.item_digestion_blacklist))
+				to_chat(H, span_danger("Your [H.get_equipped_item(SLOT_ID_WEAR_MASK)] protects you from the acid."))
 				remove_self(volume)
 				return
 			else if(removed > meltdose)
-				to_chat(H, span_danger("Your [H.wear_mask] melts away!"))
-				qdel(H.wear_mask)
+				to_chat(H, span_danger("Your [H.get_equipped_item(SLOT_ID_WEAR_MASK)] melts away!"))
+				qdel(H.get_equipped_item(SLOT_ID_WEAR_MASK))
 				H.update_inv_wear_mask(1)
 				H.update_hair(1)
 				removed -= meltdose
 		if(removed <= 0)
 			return
 
-		if(H.glasses)
-			if(H.glasses.unacidable || is_type_in_list(H.glasses, GLOB.item_digestion_blacklist))
-				to_chat(H, span_danger("Your [H.glasses] partially protect you from the acid!"))
+		if(H.get_equipped_item(SLOT_ID_GLASSES))
+			if(H.get_equipped_item(SLOT_ID_GLASSES).unacidable || is_type_in_list(H.get_equipped_item(SLOT_ID_GLASSES), GLOB.item_digestion_blacklist))
+				to_chat(H, span_danger("Your [H.get_equipped_item(SLOT_ID_GLASSES)] partially protect you from the acid!"))
 				removed /= 2
 			else if(removed > meltdose)
-				to_chat(H, span_danger("Your [H.glasses] melt away!"))
-				qdel(H.glasses)
+				to_chat(H, span_danger("Your [H.get_equipped_item(SLOT_ID_GLASSES)] melt away!"))
+				qdel(H.get_equipped_item(SLOT_ID_GLASSES))
 				H.update_inv_glasses(1)
 				removed -= meltdose / 2
 		if(removed <= 0)

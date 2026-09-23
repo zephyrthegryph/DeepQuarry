@@ -957,15 +957,15 @@
 
 	if(ishuman(user))
 		var/mob/living/carbon/human/H = user
-		if(H.gloves)
-			H.gloves.wash(CLEAN_SCRUB)
+		if(H.get_equipped_item(SLOT_ID_GLOVES))
+			H.get_equipped_item(SLOT_ID_GLOVES).wash(CLEAN_SCRUB)
 			H.update_inv_gloves()
-			H.gloves.germ_level = 0
+			H.get_equipped_item(SLOT_ID_GLOVES).germ_level = 0
 		else
-			if(H.r_hand)
-				H.r_hand.wash(CLEAN_SCRUB)
-			if(H.l_hand)
-				H.l_hand.wash(CLEAN_SCRUB)
+			if(H.get_equipped_item(SLOT_ID_R_HAND))
+				H.get_equipped_item(SLOT_ID_R_HAND).wash(CLEAN_SCRUB)
+			if(H.get_equipped_item(SLOT_ID_L_HAND))
+				H.get_equipped_item(SLOT_ID_L_HAND).wash(CLEAN_SCRUB)
 			H.bloody_hands = 0
 			H.germ_level = 0
 			H.hand_blood_color = null

@@ -113,9 +113,9 @@
 	// Canes and crutches help you stand (if the latter is ever added)
 	// One cane mitigates a broken leg+foot, or a missing foot.
 	// Two canes are needed for a lost leg. If you are missing both legs, canes aren't gonna help you.
-	if (l_hand && istype(l_hand, /obj/item/cane))
+	if (get_equipped_item(SLOT_ID_L_HAND) && istype(get_equipped_item(SLOT_ID_L_HAND), /obj/item/cane))
 		stance_damage -= 2
-	if (r_hand && istype(r_hand, /obj/item/cane))
+	if (get_equipped_item(SLOT_ID_R_HAND) && istype(get_equipped_item(SLOT_ID_R_HAND), /obj/item/cane))
 		stance_damage -= 2
 
 	// Jetpacks in zeroG count for holding you up
@@ -133,28 +133,28 @@
 			Weaken(5)
 
 /mob/living/carbon/human/proc/handle_grasp()
-	if(!l_hand && !r_hand)
+	if(!get_equipped_item(SLOT_ID_L_HAND) && !get_equipped_item(SLOT_ID_R_HAND))
 		return
 
 	// You should not be able to pick anything up, but stranger things have happened.
-	if(l_hand)
+	if(get_equipped_item(SLOT_ID_L_HAND))
 		for(var/limb_tag in list(BP_L_HAND, BP_L_ARM))
 			var/obj/item/organ/external/E = get_organ(limb_tag)
 			if(!E)
-				visible_message(span_danger("Lacking a functioning left hand, \the [src] drops \the [l_hand]."))
-				drop_from_inventory(l_hand)
+				visible_message(span_danger("Lacking a functioning left hand, \the [src] drops \the [get_equipped_item(SLOT_ID_L_HAND)]."))
+				drop_from_inventory(get_equipped_item(SLOT_ID_L_HAND))
 				break
 
-	if(r_hand)
+	if(get_equipped_item(SLOT_ID_R_HAND))
 		for(var/limb_tag in list(BP_R_HAND, BP_R_ARM))
 			var/obj/item/organ/external/E = get_organ(limb_tag)
 			if(!E)
-				visible_message(span_danger("Lacking a functioning right hand, \the [src] drops \the [r_hand]."))
-				drop_from_inventory(r_hand)
+				visible_message(span_danger("Lacking a functioning right hand, \the [src] drops \the [get_equipped_item(SLOT_ID_R_HAND)]."))
+				drop_from_inventory(get_equipped_item(SLOT_ID_R_HAND))
 				break
 
 	// Check again...
-	if(!l_hand && !r_hand)
+	if(!get_equipped_item(SLOT_ID_L_HAND) && !get_equipped_item(SLOT_ID_R_HAND))
 		return
 	var/adrenaline = has_modifier_of_type(/datum/modifier/adrenaline)
 	for (var/obj/item/organ/external/E in organs)
@@ -164,13 +164,13 @@
 		if((E.is_broken() || E.is_dislocated()) && !E.splinted && !adrenaline)
 			switch(E.body_part)
 				if(HAND_LEFT, ARM_LEFT)
-					if(!l_hand)
+					if(!get_equipped_item(SLOT_ID_L_HAND))
 						continue
-					drop_from_inventory(l_hand)
+					drop_from_inventory(get_equipped_item(SLOT_ID_L_HAND))
 				if(HAND_RIGHT, ARM_RIGHT)
-					if(!r_hand)
+					if(!get_equipped_item(SLOT_ID_R_HAND))
 						continue
-					drop_from_inventory(r_hand)
+					drop_from_inventory(get_equipped_item(SLOT_ID_R_HAND))
 
 			if(!isbelly(loc))
 				var/emote_scream = pick("screams in pain and ", "lets out a sharp cry and ", "cries out and ")
@@ -181,13 +181,13 @@
 		else if(E.is_malfunctioning())
 			switch(E.body_part)
 				if(HAND_LEFT, ARM_LEFT)
-					if(!l_hand)
+					if(!get_equipped_item(SLOT_ID_L_HAND))
 						continue
-					drop_from_inventory(l_hand)
+					drop_from_inventory(get_equipped_item(SLOT_ID_L_HAND))
 				if(HAND_RIGHT, ARM_RIGHT)
-					if(!r_hand)
+					if(!get_equipped_item(SLOT_ID_R_HAND))
 						continue
-					drop_from_inventory(r_hand)
+					drop_from_inventory(get_equipped_item(SLOT_ID_R_HAND))
 
 			if(!isbelly(loc))
 				automatic_custom_emote(VISIBLE_MESSAGE, "drops what they were holding, their [E.name] malfunctioning!", check_stat = TRUE)

@@ -116,8 +116,8 @@
 		else if(user.zone_sel.selecting == O_MOUTH) //Check player target location, provided the rag is not on fire. Then check if mouth is exposed.
 			if(ishuman(target)) //Added this since player species process reagents in majority of cases.
 				var/mob/living/carbon/human/H = target
-				if(H.head && (H.head.body_parts_covered & FACE)) //Check human head coverage.
-					to_chat(user, span_warning("Remove their [H.head] first."))
+				if(H.get_equipped_item(SLOT_ID_HEAD) && (H.get_equipped_item(SLOT_ID_HEAD).body_parts_covered & FACE)) //Check human head coverage.
+					to_chat(user, span_warning("Remove their [H.get_equipped_item(SLOT_ID_HEAD)] first."))
 					return ITEM_INTERACT_FAILURE
 				else if(reagents.total_volume) //Final check. If the rag is not on fire and their face is uncovered, smother target.
 					user.do_attack_animation(src)

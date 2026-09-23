@@ -658,12 +658,12 @@ REGISTRY_MEMBERSHIP(/obj/structure/cable, REGISTRY_CABLES)
 			return ..()
 
 		if(S.organ_tag == BP_HEAD)
-			if(H.head && istype(H.head,/obj/item/clothing/head/helmet/space))
-				to_chat(user, span_warning("You can't apply [src] through [H.head]!"))
+			if(H.get_equipped_item(SLOT_ID_HEAD) && istype(H.get_equipped_item(SLOT_ID_HEAD),/obj/item/clothing/head/helmet/space))
+				to_chat(user, span_warning("You can't apply [src] through [H.get_equipped_item(SLOT_ID_HEAD)]!"))
 				return ITEM_INTERACT_FAILURE
 		else
-			if(H.wear_suit && istype(H.wear_suit,/obj/item/clothing/suit/space))
-				to_chat(user, span_warning("You can't apply [src] through [H.wear_suit]!"))
+			if(H.get_equipped_item(SLOT_ID_WEAR_SUIT) && istype(H.get_equipped_item(SLOT_ID_WEAR_SUIT),/obj/item/clothing/suit/space))
+				to_chat(user, span_warning("You can't apply [src] through [H.get_equipped_item(SLOT_ID_WEAR_SUIT)]!"))
 				return ITEM_INTERACT_FAILURE
 
 		var/use_amt = min(src.amount, CEILING(S.get_burn()/5, 1), 5)

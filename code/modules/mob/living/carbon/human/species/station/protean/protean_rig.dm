@@ -81,8 +81,8 @@
 		F.rig.myprotean = null
 	F.rig = src
 	myprotean = P
-	if(P.back)
-		addtimer(CALLBACK(src, PROC_REF(AssimilateBag), P, 1, P.back), 3)
+	if(P.get_equipped_item(SLOT_ID_BACK))
+		addtimer(CALLBACK(src, PROC_REF(AssimilateBag), P, 1, P.get_equipped_item(SLOT_ID_BACK)), 3)
 	else
 		to_chat(P, span_notice("You should have spawned with a backpack to assimilate into your RIG. Try clicking it with a backpack."))
 
@@ -101,8 +101,8 @@
 /obj/item/rig/proc/AssimilateBag(mob/living/carbon/human/P, spawned, obj/item/storage/backpack/B)
 	if(istype(B,/obj/item/storage/backpack))
 		if(spawned)
-			B = P.back
-			P.unEquip(P.back)
+			B = P.get_equipped_item(SLOT_ID_BACK)
+			P.unEquip(P.get_equipped_item(SLOT_ID_BACK))
 		if(QDELETED(B)) // for mannequins or such
 			return
 		B.forceMove(src)
@@ -339,7 +339,7 @@
 			return
 	if(rig_storage)
 		var/obj/item/storage/backpack = rig_storage
-		if(backpack.can_be_inserted(W, 1))
+		if(!backpack.insert_refusal(W, user))
 			backpack.handle_item_insertion(W)
 	else
 		if(istype(W,/obj/item/storage/backpack))
@@ -351,7 +351,7 @@
 	if(!air_supply)
 		to_chat(user, "There is no tank to remove.")
 		return ITEM_INTERACT_BLOCKING
-	if(user.r_hand && user.l_hand)
+	if(user.get_equipped_item(SLOT_ID_R_HAND) && user.get_equipped_item(SLOT_ID_L_HAND))
 		air_supply.forceMove(get_turf(user))
 	else
 		user.put_in_hands(air_supply)
@@ -621,7 +621,7 @@
 		unremovable = FALSE
 	else
 		unremovable = TRUE //It's like glue! If you put them on your back, YOU can't take them off!
-	if(istype(M) && (M.back == src || M.belt == src))
+	if(istype(M) && (M.get_equipped_item(SLOT_ID_BACK) == src || M.get_equipped_item(SLOT_ID_BELT) == src))
 		start_soaking(M)
 
 /obj/item/rig/protean/ai_can_move_suit(mob/user, check_user_module = 0, check_for_ai = 0)
@@ -631,7 +631,7 @@
 		if(user)
 			to_chat(user, span_warning("Your host rig is unpowered and unresponsive."))
 		return 0
-	if(!wearer || (wearer.back != src && wearer.belt != src))
+	if(!wearer || (wearer.get_equipped_item(SLOT_ID_BACK) != src && wearer.get_equipped_item(SLOT_ID_BELT) != src))
 		if(user)
 			to_chat(user, span_warning("Your host rig is not being worn."))
 		return 0

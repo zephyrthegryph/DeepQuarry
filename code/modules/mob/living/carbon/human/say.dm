@@ -105,7 +105,7 @@
 		if(rig.speech && rig.speech.voice_holder && rig.speech.voice_holder.active && rig.speech.voice_holder.voice)
 			voice_sub = rig.speech.voice_holder.voice
 	if(!voice_sub)	// If the rig has a voice changer, then we use that. Otherwise, use this
-		for(var/obj/item/gear in list(wear_mask,wear_suit,head))
+		for(var/obj/item/gear in list(get_equipped_item(SLOT_ID_WEAR_MASK),get_equipped_item(SLOT_ID_WEAR_SUIT),get_equipped_item(SLOT_ID_HEAD)))
 			if(!gear)
 				continue
 			var/obj/item/voice_changer/changer = locate() in gear
@@ -156,8 +156,8 @@
 		message_data[1] = ""
 		return 1
 
-	if(istype(wear_mask, /obj/item/clothing/mask))
-		var/obj/item/clothing/mask/M = wear_mask
+	if(istype(get_equipped_item(SLOT_ID_WEAR_MASK), /obj/item/clothing/mask))
+		var/obj/item/clothing/mask/M = get_equipped_item(SLOT_ID_WEAR_MASK)
 		if(M.voicechange) //only horsemasks do this.
 			message_data[1] = pick(M.say_messages)
 			message_data[2] = pick(M.say_verbs)
@@ -187,45 +187,45 @@
 					used_radios += I
 		if("headset")
 			var/obj/item/radio/R = null
-			if(isradio(l_ear))
-				R = l_ear
+			if(isradio(get_equipped_item(SLOT_ID_L_EAR)))
+				R = get_equipped_item(SLOT_ID_L_EAR)
 				if(R.talk_into(src, message_pieces, null, verb))
 					used_radios += R
 					return
 
-			if(isradio(r_ear))
-				R = r_ear
+			if(isradio(get_equipped_item(SLOT_ID_R_EAR)))
+				R = get_equipped_item(SLOT_ID_R_EAR)
 				if(R.talk_into(src, message_pieces, null, verb))
 					used_radios += R
 					return
 		if("right ear")
 			var/obj/item/radio/R = null
-			if(isradio(r_ear))
-				R = r_ear
-			if(isradio(r_hand))
-				R = r_hand
+			if(isradio(get_equipped_item(SLOT_ID_R_EAR)))
+				R = get_equipped_item(SLOT_ID_R_EAR)
+			if(isradio(get_equipped_item(SLOT_ID_R_HAND)))
+				R = get_equipped_item(SLOT_ID_R_HAND)
 			if(istype(R))
 				if(R.talk_into(src, message_pieces, null, verb))
 					used_radios += R
 		if("left ear")
 			var/obj/item/radio/R = null
-			if(isradio(l_ear))
-				R = l_ear
-			if(isradio(l_hand))
-				R = l_hand
+			if(isradio(get_equipped_item(SLOT_ID_L_EAR)))
+				R = get_equipped_item(SLOT_ID_L_EAR)
+			if(isradio(get_equipped_item(SLOT_ID_L_HAND)))
+				R = get_equipped_item(SLOT_ID_L_HAND)
 			if(istype(R))
 				if(R.talk_into(src, message_pieces, null, verb))
 					used_radios += R
 		else
 			if(message_mode)
-				if(isradio(l_ear))
-					if(l_ear.talk_into(src, message_pieces, message_mode, verb))
-						used_radios += l_ear
+				if(isradio(get_equipped_item(SLOT_ID_L_EAR)))
+					if(get_equipped_item(SLOT_ID_L_EAR).talk_into(src, message_pieces, message_mode, verb))
+						used_radios += get_equipped_item(SLOT_ID_L_EAR)
 						return
 
-				if(isradio(r_ear))
-					if(r_ear.talk_into(src, message_pieces, message_mode, verb))
-						used_radios += r_ear
+				if(isradio(get_equipped_item(SLOT_ID_R_EAR)))
+					if(get_equipped_item(SLOT_ID_R_EAR).talk_into(src, message_pieces, message_mode, verb))
+						used_radios += get_equipped_item(SLOT_ID_R_EAR)
 
 /mob/living/carbon/human/handle_speech_sound()
 	var/list/returns[2]
@@ -237,12 +237,12 @@
 /mob/living/carbon/human/binarycheck()
 	. = FALSE
 	var/obj/item/radio/headset/R = null
-	if(istype(l_ear, /obj/item/radio/headset))
-		R = l_ear
+	if(istype(get_equipped_item(SLOT_ID_L_EAR), /obj/item/radio/headset))
+		R = get_equipped_item(SLOT_ID_L_EAR)
 		if(R.translate_binary)
 			. = TRUE
 
-	if(istype(r_ear, /obj/item/radio/headset))
-		R = r_ear
+	if(istype(get_equipped_item(SLOT_ID_R_EAR), /obj/item/radio/headset))
+		R = get_equipped_item(SLOT_ID_R_EAR)
 		if(R.translate_binary)
 			. = TRUE

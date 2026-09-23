@@ -1166,12 +1166,12 @@ Note that amputating the affected organ does in fact remove the infection from t
 			M.Turn(rand(180))
 			transform = M
 
-	if(victim.l_hand)
-		if(istype(victim.l_hand,/obj/item/material/twohanded)) //if they're holding a two-handed weapon, drop it now they've lost a hand
-			victim.l_hand.update_held_icon()
-	if(victim.r_hand)
-		if(istype(victim.r_hand,/obj/item/material/twohanded))
-			victim.r_hand.update_held_icon()
+	if(victim.get_equipped_item(SLOT_ID_L_HAND))
+		if(istype(victim.get_equipped_item(SLOT_ID_L_HAND),/obj/item/material/twohanded)) //if they're holding a two-handed weapon, drop it now they've lost a hand
+			victim.get_equipped_item(SLOT_ID_L_HAND).update_held_icon()
+	if(victim.get_equipped_item(SLOT_ID_R_HAND))
+		if(istype(victim.get_equipped_item(SLOT_ID_R_HAND),/obj/item/material/twohanded))
+			victim.get_equipped_item(SLOT_ID_R_HAND).update_held_icon()
 
 /****************************************************
 			   HELPERS
@@ -1185,16 +1185,16 @@ Note that amputating the affected organ does in fact remove the infection from t
 		holder = owner
 	if(!holder)
 		return
-	if (holder.handcuffed && (body_part in list(ARM_LEFT, ARM_RIGHT, HAND_LEFT, HAND_RIGHT)))
+	if (holder.get_equipped_item(SLOT_ID_HANDCUFFED) && (body_part in list(ARM_LEFT, ARM_RIGHT, HAND_LEFT, HAND_RIGHT)))
 		holder.visible_message(\
-			"\The [holder.handcuffed.name] falls off of [holder.name].",\
-			"\The [holder.handcuffed.name] falls off you.")
-		holder.drop_from_inventory(holder.handcuffed)
-	if (holder.legcuffed && (body_part in list(FOOT_LEFT, FOOT_RIGHT, LEG_LEFT, LEG_RIGHT)))
+			"\The [holder.get_equipped_item(SLOT_ID_HANDCUFFED).name] falls off of [holder.name].",\
+			"\The [holder.get_equipped_item(SLOT_ID_HANDCUFFED).name] falls off you.")
+		holder.drop_from_inventory(holder.get_equipped_item(SLOT_ID_HANDCUFFED))
+	if (holder.get_equipped_item(SLOT_ID_LEGCUFFED) && (body_part in list(FOOT_LEFT, FOOT_RIGHT, LEG_LEFT, LEG_RIGHT)))
 		holder.visible_message(\
-			"\The [holder.legcuffed.name] falls off of [holder.name].",\
-			"\The [holder.legcuffed.name] falls off you.")
-		holder.drop_from_inventory(holder.legcuffed)
+			"\The [holder.get_equipped_item(SLOT_ID_LEGCUFFED).name] falls off of [holder.name].",\
+			"\The [holder.get_equipped_item(SLOT_ID_LEGCUFFED).name] falls off you.")
+		holder.drop_from_inventory(holder.get_equipped_item(SLOT_ID_LEGCUFFED))
 
 // checks if all wounds on the organ are bandaged
 /obj/item/organ/external/proc/is_bandaged()
@@ -1295,8 +1295,8 @@ Note that amputating the affected organ does in fact remove the infection from t
 	// TODO: consider moving this to a suit proc or process() or something during
 	// hardsuit rewrite.
 
-	if(!(splinted) && owner && istype(owner.wear_suit, /obj/item/clothing/suit/space))
-		var/obj/item/clothing/suit/space/suit = owner.wear_suit
+	if(!(splinted) && owner && istype(owner.get_equipped_item(SLOT_ID_WEAR_SUIT), /obj/item/clothing/suit/space))
+		var/obj/item/clothing/suit/space/suit = owner.get_equipped_item(SLOT_ID_WEAR_SUIT)
 		suit.handle_fracture(owner, src)
 
 	return 1
@@ -1634,7 +1634,7 @@ Note that amputating the affected organ does in fact remove the infection from t
 		target_covering = src.body_part
 
 	if(owner)
-		var/list/protective_gear = list(owner.head, owner.wear_mask, owner.wear_suit, owner.w_uniform, owner.gloves, owner.shoes, owner.glasses)
+		var/list/protective_gear = list(owner.get_equipped_item(SLOT_ID_HEAD), owner.get_equipped_item(SLOT_ID_WEAR_MASK), owner.get_equipped_item(SLOT_ID_WEAR_SUIT), owner.get_equipped_item(SLOT_ID_W_UNIFORM), owner.get_equipped_item(SLOT_ID_GLOVES), owner.get_equipped_item(SLOT_ID_SHOES), owner.get_equipped_item(SLOT_ID_GLASSES))
 		for(var/obj/item/clothing/gear in protective_gear)
 			if(gear.body_parts_covered & target_covering)
 				covering_clothing |= gear

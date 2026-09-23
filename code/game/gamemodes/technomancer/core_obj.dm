@@ -61,8 +61,8 @@
 	return 0
 
 /mob/living/carbon/human/technomancer_pay_energy(amount)
-	if(istype(back, /obj/item/technomancer_core))
-		var/obj/item/technomancer_core/TC = back
+	if(istype(get_equipped_item(SLOT_ID_BACK), /obj/item/technomancer_core))
+		var/obj/item/technomancer_core/TC = get_equipped_item(SLOT_ID_BACK)
 		return TC.pay_energy(amount)
 	return 0
 
@@ -158,8 +158,8 @@
 /mob/living/carbon/human/get_status_tab_items()
 	. = ..()
 
-	if(. && istype(back,/obj/item/technomancer_core))
-		var/obj/item/technomancer_core/core = back
+	if(. && istype(get_equipped_item(SLOT_ID_BACK),/obj/item/technomancer_core))
+		var/obj/item/technomancer_core/core = get_equipped_item(SLOT_ID_BACK)
 		. += setup_technomancer_stat(core)
 
 /mob/living/carbon/human/proc/setup_technomancer_stat(obj/item/technomancer_core/core)
@@ -206,8 +206,8 @@
 
 /mob/living/carbon/human/proc/wiz_energy_update_hud()
 	if(client && hud_used)
-		if(istype(back, /obj/item/technomancer_core)) //I reckon there's a better way of doing this.
-			var/obj/item/technomancer_core/core = back
+		if(istype(get_equipped_item(SLOT_ID_BACK), /obj/item/technomancer_core)) //I reckon there's a better way of doing this.
+			var/obj/item/technomancer_core/core = get_equipped_item(SLOT_ID_BACK)
 			wiz_energy_display.invisibility = INVISIBILITY_NONE
 			var/ratio = core.energy / core.max_energy
 			ratio = max(round(ratio, 0.05) * 100, 5)

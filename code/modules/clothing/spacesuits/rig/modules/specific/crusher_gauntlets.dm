@@ -29,7 +29,7 @@
 	if(!M)
 		return
 
-	if(M.l_hand && M.r_hand)
+	if(M.get_equipped_item(SLOT_ID_L_HAND) && M.get_equipped_item(SLOT_ID_R_HAND))
 		to_chat(M, span_danger("Your hands are full."))
 		deactivate()
 		return

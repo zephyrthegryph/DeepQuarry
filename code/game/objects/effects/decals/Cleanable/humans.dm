@@ -85,8 +85,8 @@
 	var/hasfeet = 1
 	if((!l_foot || l_foot.is_stump()) && (!r_foot || r_foot.is_stump()))
 		hasfeet = 0
-	if(perp.shoes && !perp.buckled)//Adding blood to shoes
-		var/obj/item/clothing/shoes/S = perp.shoes
+	if(perp.get_equipped_item(SLOT_ID_SHOES) && !perp.buckled)//Adding blood to shoes
+		var/obj/item/clothing/shoes/S = perp.get_equipped_item(SLOT_ID_SHOES)
 		if(istype(S))
 			dq_set_blood_color(S, basecolor)
 			S.track_blood = max(amount,S.track_blood)
@@ -130,7 +130,7 @@
 	if (amount && istype(user))
 		add_fingerprint(user)
 
-		if (user.gloves)
+		if (user.get_equipped_item(SLOT_ID_GLOVES))
 			return
 		var/taken = rand(1,amount)
 		amount -= taken

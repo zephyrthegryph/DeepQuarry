@@ -328,7 +328,7 @@
 
 	var/triggered = FALSE
 
-	if(ishuman(user) && !istype(user:gloves,/obj/item/clothing/gloves))
+	if(ishuman(user) && !istype(user.get_equipped_item(SLOT_ID_GLOVES),/obj/item/clothing/gloves))
 		for(var/datum/artifact_effect/my_effect in my_effects)
 			if(my_effect.trigger == TRIGGER_TOUCH)
 				triggered = TRUE

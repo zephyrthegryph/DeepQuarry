@@ -218,26 +218,26 @@
 	var/susceptibility = 1
 
 	//anomaly suits give best protection, but excavation suits are almost as good
-	if(istype(H.back,/obj/item/rig/hazmat))
-		var/obj/item/rig/hazmat/rig = H.back
+	if(istype(H.get_equipped_item(SLOT_ID_BACK),/obj/item/rig/hazmat))
+		var/obj/item/rig/hazmat/rig = H.get_equipped_item(SLOT_ID_BACK)
 		if(rig.suit_is_deployed() && !rig.offline)
 			protected += 1
 
-	if(istype(H.wear_suit,/obj/item/clothing/suit/bio_suit/anomaly))
+	if(istype(H.get_equipped_item(SLOT_ID_WEAR_SUIT),/obj/item/clothing/suit/bio_suit/anomaly))
 		protected += 0.6
-	else if(istype(H.wear_suit,/obj/item/clothing/suit/space/anomaly))
+	else if(istype(H.get_equipped_item(SLOT_ID_WEAR_SUIT),/obj/item/clothing/suit/space/anomaly))
 		protected += 0.5
 
-	if(istype(H.head,/obj/item/clothing/head/bio_hood/anomaly))
+	if(istype(H.get_equipped_item(SLOT_ID_HEAD),/obj/item/clothing/head/bio_hood/anomaly))
 		protected += 0.3
-	else if(istype(H.head,/obj/item/clothing/head/helmet/space/anomaly))
+	else if(istype(H.get_equipped_item(SLOT_ID_HEAD),/obj/item/clothing/head/helmet/space/anomaly))
 		protected += 0.2
 
 	//latex gloves and science goggles also give a bit of bonus protection
-	if(istype(H.gloves,/obj/item/clothing/gloves/sterile))
+	if(istype(H.get_equipped_item(SLOT_ID_GLOVES),/obj/item/clothing/gloves/sterile))
 		protected += 0.1
 
-	if(istype(H.glasses,/obj/item/clothing/glasses/science))
+	if(istype(H.get_equipped_item(SLOT_ID_GLASSES),/obj/item/clothing/glasses/science))
 		protected += 0.1
 
 	susceptibility = CLAMP01(susceptibility - protected) //Clamp the susceptibility to be between 0 and 1. No negative numbers allowed.

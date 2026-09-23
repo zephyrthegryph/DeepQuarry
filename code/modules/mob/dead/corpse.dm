@@ -135,8 +135,8 @@
 					O.robotize(corpsesynthbrand)
 	if(src.corpseuniform)
 		M.equip_to_slot_or_del(new src.corpseuniform(M), slot_w_uniform)
-		if(istype(M.w_uniform, /obj/item/clothing/under))
-			var/obj/item/clothing/under/corpse_uniform = M.w_uniform
+		if(istype(M.get_equipped_item(SLOT_ID_W_UNIFORM), /obj/item/clothing/under))
+			var/obj/item/clothing/under/corpse_uniform = M.get_equipped_item(SLOT_ID_W_UNIFORM)
 			corpse_uniform.sensor_mode = corpsesensormode
 	if(src.corpsesuit)
 		M.equip_to_slot_or_del(new src.corpsesuit(M), slot_wear_suit)

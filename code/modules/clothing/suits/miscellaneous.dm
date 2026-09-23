@@ -271,7 +271,7 @@
 /obj/item/clothing/suit/straight_jacket/attack_hand(mob/living/user as mob)
 	if(ishuman(user))
 		var/mob/living/carbon/human/H = user
-		if(src == H.wear_suit)
+		if(src == H.get_equipped_item(SLOT_ID_WEAR_SUIT))
 			to_chat(H, span_notice("You need help taking this off!"))
 			return
 	..()
@@ -283,7 +283,7 @@
 		user.drop_r_hand()
 		if(ishuman(user))
 			var/mob/living/carbon/human/H = user
-			H.drop_from_inventory(H.handcuffed)
+			H.drop_from_inventory(H.get_equipped_item(SLOT_ID_HANDCUFFED))
 
 /obj/item/clothing/suit/ianshirt
 	name = "worn corgi shirt"

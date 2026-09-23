@@ -275,11 +275,11 @@
 		return
 	var/mob/living/carbon/human/H = owner
 	var/blocks = factors[BF_ACTION_BLOCKS]
-	if((blocks & ACTION_BLOCK_HOLD_LEFT) && H.l_hand)
-		to_chat(H, span_warning("Your left hand won't close around \the [H.l_hand]."))
+	if((blocks & ACTION_BLOCK_HOLD_LEFT) && H.get_equipped_item(SLOT_ID_L_HAND))
+		to_chat(H, span_warning("Your left hand won't close around \the [H.get_equipped_item(SLOT_ID_L_HAND)]."))
 		H.drop_l_hand()
-	if((blocks & ACTION_BLOCK_HOLD_RIGHT) && H.r_hand)
-		to_chat(H, span_warning("Your right hand won't close around \the [H.r_hand]."))
+	if((blocks & ACTION_BLOCK_HOLD_RIGHT) && H.get_equipped_item(SLOT_ID_R_HAND))
+		to_chat(H, span_warning("Your right hand won't close around \the [H.get_equipped_item(SLOT_ID_R_HAND)]."))
 		H.drop_r_hand()
 	var/motor = factors[BF_MOTOR_CONTROL]
 	if(motor < 1 && prob(min(BF_MAX_DROP_CHANCE, (1 - motor) * 100)))

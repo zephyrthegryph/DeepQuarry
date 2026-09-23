@@ -12,13 +12,13 @@
 /proc/handle_lasertag_attack(target, mob/living/carbon/human/attacker, tag_damage, vest_override, required_vest, list/allowed_suits)
 	//So, attacker should ALWAYS be true, but there's a problem. The code doesn't actually set 'thrower' which we used for thrown laser knives.
 	//Instead of this PR getting massively out of scope and refactoring throwing code, we're just going to have thrown knives do vest override.
-	if(vest_override || (attacker && istype(attacker) && (!required_vest || istype(attacker.wear_suit, required_vest))))
+	if(vest_override || (attacker && istype(attacker) && (!required_vest || istype(attacker.get_equipped_item(SLOT_ID_WEAR_SUIT), required_vest))))
 		if(ishuman(target))
 			var/mob/living/carbon/human/human_target = target
 			if(!allowed_suits) //Wasn't fed a suit. Let's just affect everything.
 				allowed_suits = list(/obj/item/clothing/suit/lasertag)
-			if(is_type_in_list(human_target.wear_suit, allowed_suits))
-				var/obj/item/clothing/suit/lasertag/laser_suit = human_target.wear_suit
+			if(is_type_in_list(human_target.get_equipped_item(SLOT_ID_WEAR_SUIT), allowed_suits))
+				var/obj/item/clothing/suit/lasertag/laser_suit = human_target.get_equipped_item(SLOT_ID_WEAR_SUIT)
 				laser_suit.handle_hit(tag_damage)
 				return TRUE
 		//We allow allow demonstrations of shooting it while it's on the ground.
@@ -46,10 +46,10 @@
 
 /obj/item/gun/energy/lasertag/special_check(mob/living/carbon/human/M)
 	if(ishuman(M) && !vest_override)
-		if(!istype(M.wear_suit, required_vest))
+		if(!istype(M.get_equipped_item(SLOT_ID_WEAR_SUIT), required_vest))
 			to_chat(M, span_warning("You need to be wearing your laser tag vest!"))
 			return FALSE
-		var/obj/item/clothing/suit/lasertag/tag_vest = M.wear_suit
+		var/obj/item/clothing/suit/lasertag/tag_vest = M.get_equipped_item(SLOT_ID_WEAR_SUIT)
 		if(tag_vest.lasertag_health <= 0)
 			to_chat(M, span_warning("You're out of health!"))
 			return FALSE

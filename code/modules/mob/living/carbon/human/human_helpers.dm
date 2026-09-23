@@ -59,8 +59,8 @@
 	var/datum/component/antag/changeling/comp = is_changeling(src)
 	if(comp) //Changeling visible camo
 		comp.cloaked = 0
-	if(istype(back, /obj/item/rig)) //Ninja cloak
-		var/obj/item/rig/suit = back
+	if(istype(get_equipped_item(SLOT_ID_BACK), /obj/item/rig)) //Ninja cloak
+		var/obj/item/rig/suit = get_equipped_item(SLOT_ID_BACK)
 		for(var/obj/item/rig_module/stealth_field/cloaker in suit.installed_modules)
 			if(cloaker.active)
 				cloaker.deactivate()
@@ -71,8 +71,8 @@
 	var/datum/component/antag/changeling/comp = is_changeling(src)
 	if(comp && comp.cloaked) // Ling camo.
 		return TRUE
-	else if(istype(back, /obj/item/rig)) //Ninja cloak
-		var/obj/item/rig/suit = back
+	else if(istype(get_equipped_item(SLOT_ID_BACK), /obj/item/rig)) //Ninja cloak
+		var/obj/item/rig/suit = get_equipped_item(SLOT_ID_BACK)
 		for(var/obj/item/rig_module/stealth_field/cloaker in suit.installed_modules)
 			if(cloaker.active)
 				return TRUE
@@ -83,14 +83,14 @@
 
 /mob/living/carbon/human/get_ear_protection()
 	var/sum = 0
-	if(istype(l_ear, /obj/item/clothing/ears))
-		var/obj/item/clothing/ears/L = l_ear
+	if(istype(get_equipped_item(SLOT_ID_L_EAR), /obj/item/clothing/ears))
+		var/obj/item/clothing/ears/L = get_equipped_item(SLOT_ID_L_EAR)
 		sum += L.ear_protection
-	if(istype(r_ear, /obj/item/clothing/ears))
-		var/obj/item/clothing/ears/R = r_ear
+	if(istype(get_equipped_item(SLOT_ID_R_EAR), /obj/item/clothing/ears))
+		var/obj/item/clothing/ears/R = get_equipped_item(SLOT_ID_R_EAR)
 		sum += R.ear_protection
-	if(istype(head, /obj/item/clothing/head))
-		var/obj/item/clothing/head/H = head
+	if(istype(get_equipped_item(SLOT_ID_HEAD), /obj/item/clothing/head))
+		var/obj/item/clothing/head/H = get_equipped_item(SLOT_ID_HEAD)
 		sum += H.ear_protection
 	return sum
 
@@ -117,13 +117,13 @@
 	var/obj/item/organ/external/H = organs_by_name[BP_HEAD]
 
 	//Look at their head
-	if(!head || !(head && (head.flags_inv & HIDEFACE)))
+	if(!get_equipped_item(SLOT_ID_HEAD) || !(get_equipped_item(SLOT_ID_HEAD) && (get_equipped_item(SLOT_ID_HEAD).flags_inv & HIDEFACE)))
 		if(H && H.robotic == ORGAN_ROBOT) //Exactly robotic, not higher as lifelike is higher
 			return 1
 
 	//Look at their torso
-	if(!wear_suit || (wear_suit && !(wear_suit.flags_inv & HIDEJUMPSUIT)))
-		if(!w_uniform || (w_uniform && !(w_uniform.body_parts_covered & UPPER_TORSO)))
+	if(!get_equipped_item(SLOT_ID_WEAR_SUIT) || (get_equipped_item(SLOT_ID_WEAR_SUIT) && !(get_equipped_item(SLOT_ID_WEAR_SUIT).flags_inv & HIDEJUMPSUIT)))
+		if(!get_equipped_item(SLOT_ID_W_UNIFORM) || (get_equipped_item(SLOT_ID_W_UNIFORM) && !(get_equipped_item(SLOT_ID_W_UNIFORM).body_parts_covered & UPPER_TORSO)))
 			if(T && T.robotic == ORGAN_ROBOT)
 				return 1
 
@@ -188,7 +188,7 @@
 	//Check to see if we have a rig (ugh, blame rigs, desnowflake this)
 	var/obj/item/rig/rig = get_rig()
 	if(istype(rig) && rig.visor)
-		if(!rig.helmet || (head && rig.helmet == head))
+		if(!rig.helmet || (get_equipped_item(SLOT_ID_HEAD) && rig.helmet == get_equipped_item(SLOT_ID_HEAD)))
 			if(rig.visor && rig.visor.vision && rig.visor.active && rig.visor.vision.glasses)
 				var/obj/item/clothing/glasses/V = rig.visor.vision.glasses
 				compiled_vis |= V.enables_planes

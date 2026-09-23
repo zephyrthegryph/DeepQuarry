@@ -530,7 +530,7 @@
 
 /proc/dq_drop_random_held(mob/living/carbon/human/H)
 	var/list/candidates = list()
-	for(var/obj/item/I in list(H.l_hand, H.r_hand))
+	for(var/obj/item/I in list(H.get_equipped_item(SLOT_ID_L_HAND), H.get_equipped_item(SLOT_ID_R_HAND)))
 		candidates += I
 	if(!length(candidates))
 		return

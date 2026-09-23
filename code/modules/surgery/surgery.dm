@@ -200,8 +200,8 @@ GLOBAL_PROTECT(surgical_steps)
 /// Covered by a spacesuit or helmet?
 /datum/surgical_step/proc/coverage_check(mob/living/user, mob/living/carbon/human/target, obj/item/organ/external/part)
 	if(part.organ_tag == BP_HEAD)
-		return istype(target.head, /obj/item/clothing/head/helmet/space)
-	return istype(target.wear_suit, /obj/item/clothing/suit/space)
+		return istype(target.get_equipped_item(SLOT_ID_HEAD), /obj/item/clothing/head/helmet/space)
+	return istype(target.get_equipped_item(SLOT_ID_WEAR_SUIT), /obj/item/clothing/suit/space)
 
 // --- Target selection ---------------------------------------------------------------
 
@@ -446,6 +446,6 @@ GLOBAL_PROTECT(surgical_steps)
 	if(!istype(user) || !istype(E))
 		return
 	var/germ_level = user.germ_level
-	if(user.gloves)
-		germ_level = user.gloves.germ_level
+	if(user.get_equipped_item(SLOT_ID_GLOVES))
+		germ_level = user.get_equipped_item(SLOT_ID_GLOVES).germ_level
 	E.germ_level = max(germ_level, E.germ_level)

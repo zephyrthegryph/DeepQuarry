@@ -61,33 +61,12 @@
 		BITSET(H.hud_updateflag, STATUS_HUD)
 		BITSET(H.hud_updateflag, LIFE_HUD)
 
-		if(H.handcuffed)
-			var/obj/item/W = H.handcuffed
-			H.handcuffed = null
-			if(H.buckled && H.buckled.buckle_require_restraints)
-				H.buckled.unbuckle_mob()
-			H.update_handcuffed()
-			if (H.client)
-				H.client.screen -= W
-			W.forceMove(H.loc)
-			W.dropped(H)
-			if(W)
-				W.layer = initial(W.layer)
-		if(H.legcuffed)
-			var/obj/item/W = H.legcuffed
-			H.legcuffed = null
-			H.update_inv_legcuffed()
-			if(H.client)
-				H.client.screen -= W
-			W.forceMove(H.loc)
-			W.dropped(H)
-			if(W)
-				W.layer = initial(W.layer)
-		if(istype(H.wear_suit, /obj/item/clothing/suit/straight_jacket))
-			var/obj/item/clothing/suit/straight_jacket/SJ = H.wear_suit
-			SJ.forceMove(H.loc)
-			SJ.dropped(H)
-			H.wear_suit = null
+		if(H.get_equipped_item(SLOT_ID_HANDCUFFED))
+			H.drop_from_inventory(H.get_equipped_item(SLOT_ID_HANDCUFFED), H.loc)
+		if(H.get_equipped_item(SLOT_ID_LEGCUFFED))
+			H.drop_from_inventory(H.get_equipped_item(SLOT_ID_LEGCUFFED), H.loc)
+		if(istype(H.get_equipped_item(SLOT_ID_WEAR_SUIT), /obj/item/clothing/suit/straight_jacket))
+			H.drop_from_inventory(H.get_equipped_item(SLOT_ID_WEAR_SUIT), H.loc)
 		H.UpdateAppearance()
 
 	C.shock_stage = 0 //Pain

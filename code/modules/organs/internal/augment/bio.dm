@@ -45,16 +45,16 @@
 
 	var/obj/item/organ/internal/augment/aug = internal_organs_by_name[O_AUG_EYES]
 
-	if(glasses)
-		if(aug && aug.integrated_object == glasses)
-			drop_from_inventory(glasses)
+	if(get_equipped_item(SLOT_ID_GLASSES))
+		if(aug && aug.integrated_object == get_equipped_item(SLOT_ID_GLASSES))
+			drop_from_inventory(get_equipped_item(SLOT_ID_GLASSES))
 			aug.integrated_object.forceMove(aug)
-			if(!glasses)
+			if(!get_equipped_item(SLOT_ID_GLASSES))
 				to_chat(src, span_alien("Your [aug.integrated_object] retract into your skull."))
-		else if(!istype(glasses, /obj/item/clothing/glasses/hud/security/jensenshades))
-			to_chat(src, span_notice("\The [glasses] block your shades from deploying."))
-		else if(istype(glasses, /obj/item/clothing/glasses/hud/security/jensenshades))
-			var/obj/item/G = glasses
+		else if(!istype(get_equipped_item(SLOT_ID_GLASSES), /obj/item/clothing/glasses/hud/security/jensenshades))
+			to_chat(src, span_notice("\The [get_equipped_item(SLOT_ID_GLASSES)] block your shades from deploying."))
+		else if(istype(get_equipped_item(SLOT_ID_GLASSES), /obj/item/clothing/glasses/hud/security/jensenshades))
+			var/obj/item/G = get_equipped_item(SLOT_ID_GLASSES)
 			if(G.canremove)
 				to_chat(src, span_notice("\The [G] are not your integrated shades."))
 			else
@@ -66,7 +66,7 @@
 		if(aug && aug.integrated_object)
 			to_chat(src, span_alien("Your [aug.integrated_object] deploy."))
 			equip_to_slot(aug.integrated_object, slot_glasses, 0, 1)
-			if(!glasses || glasses != aug.integrated_object)
+			if(!get_equipped_item(SLOT_ID_GLASSES) || get_equipped_item(SLOT_ID_GLASSES) != aug.integrated_object)
 				aug.integrated_object.forceMove(aug)
 		else
 			var/obj/item/clothing/glasses/hud/security/jensenshades/J = new(get_turf(src))
