@@ -6,9 +6,9 @@
 GLOBAL_DATUM(rm_controller, /datum/controller/rogue)
 
 /datum/controller/rogue
-	var/list/datum/rogue/zonemaster/all_zones = list()
+	var/list/datum/rogue/zonemaster/all_zones
 	var/list/datum/rogue/zonemaster/clean_zones = list()
-	var/list/datum/rogue/zonemaster/ready_zones = list()
+	var/list/datum/rogue/zonemaster/ready_zones
 
 	//So I don't have to do absurd list[list[thing]] over and over.
 	var/static/list/diffstep_nums = list(
@@ -103,7 +103,7 @@ GLOBAL_DATUM(rm_controller, /datum/controller/rogue)
 /datum/controller/rogue/New()
 	//How many zones are we working with here
 	for(var/area/asteroid/rogue/A in world)
-		all_zones += new /datum/rogue/zonemaster(A)
+		LAZYADD(all_zones, new /datum/rogue/zonemaster(A))
 	//decay() //Decay removed for now, since people aren't getting high scores as it is.
 
 /datum/controller/rogue/proc/decay(manual = 0)
@@ -158,7 +158,7 @@ GLOBAL_DATUM(rm_controller, /datum/controller/rogue)
 	if(ZM in clean_zones)
 		GLOB.rm_controller.dbg("RMC(mr): Finite state machine broken.")
 
-	ready_zones += ZM
+	LAZYADD(ready_zones, ZM)
 
 /datum/controller/rogue/proc/unmark_clean(datum/rogue/zonemaster/ZM)
 	if(!(ZM in all_zones)) //What? Who?
@@ -176,7 +176,7 @@ GLOBAL_DATUM(rm_controller, /datum/controller/rogue)
 	if(!(ZM in ready_zones))
 		GLOB.rm_controller.dbg("RMC(umr): Finite state machine broken.")
 
-	ready_zones -= ZM
+	LAZYREMOVE(ready_zones, ZM)
 
 /datum/controller/rogue/proc/prepare_new_zone()
 	var/datum/rogue/zonemaster/ZM_target

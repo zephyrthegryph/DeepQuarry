@@ -16,7 +16,7 @@
 	var/last_message
 	var/username
 	var/active_channel
-	var/list/channel_history = list()
+	var/list/channel_history
 	/// Channel operator mode
 	var/operator_mode = FALSE
 	/// Administrator mode (invisible to other users + bypasses passwords)

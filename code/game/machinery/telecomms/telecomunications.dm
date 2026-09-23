@@ -22,14 +22,14 @@
 /obj/machinery/telecomms
 	icon = 'icons/obj/stationobjs.dmi'
 	unacidable = TRUE
-	var/list/links = list() // list of machines this machine is linked to
+	var/list/links // list of machines this machine is linked to
 	var/traffic = 0 // value increases as traffic increases
 	var/netspeed = 5 // how much traffic to lose per tick (50 gigabytes/second * netspeed)
-	var/list/autolinkers = list() // list of text/number values to link with
+	var/list/autolinkers // list of text/number values to link with
 	var/id = "NULL" // identification string
 	var/network = "NULL" // the network of the machinery
 
-	var/list/freq_listening = list() // list of frequencies to tune into: if none, will listen to all
+	var/list/freq_listening // list of frequencies to tune into: if none, will listen to all
 
 	var/machinetype = 0 // just a hacky way of preventing alike machines from pairing
 	var/toggled = 1 	// Is it toggled on
@@ -122,7 +122,7 @@
 	// return 1 if found, 0 if not found
 	if(!signal)
 		return 0
-	if((signal.frequency in freq_listening) || (!freq_listening.len))
+	if((signal.frequency in freq_listening) || (!length(freq_listening)))
 		return 1
 	else
 		return 0
@@ -142,7 +142,7 @@
 		var/turf/position = get_turf(src)
 		listening_level = position.z
 
-	if(autolinkers.len)
+	if(length(autolinkers))
 		// Links nearby machines
 		if(!long_range_link)
 			for(var/obj/machinery/telecomms/T in orange(20, src))
@@ -169,7 +169,7 @@
 		thermal_timer = null
 	GLOB.telecomms_list -= src
 	for(var/obj/machinery/telecomms/comm in GLOB.telecomms_list)
-		comm.links -= src
+		LAZYREMOVE(comm.links, src)
 	links = list()
 	QDEL_NULL(soundloop)
 	. = ..()
@@ -180,9 +180,9 @@
 	var/tpos_z = get_z(T)
 	if((pos_z == tpos_z) || (src.long_range_link && T.long_range_link))
 		for(var/x in autolinkers)
-			if(T.autolinkers.Find(x))
+			if(LAZYFIND(T.autolinkers, x))
 				if(src != T)
-					links |= T
+					LAZYOR(links, T)
 
 /obj/machinery/telecomms/update_icon()
 	if(on)
@@ -334,12 +334,12 @@
 	var/overmap_range_min = 0
 	var/overmap_range_max = 5
 
-	var/list/linked_radios_weakrefs = list()
+	var/list/linked_radios_weakrefs
 
 /obj/machinery/telecomms/receiver/proc/link_radio(obj/item/radio/R)
 	if(!istype(R))
 		return
-	linked_radios_weakrefs |= WEAKREF(R)
+	LAZYOR(linked_radios_weakrefs, WEAKREF(R))
 
 /obj/machinery/telecomms/receiver/receive_signal(datum/signal/signal)
 	if(!on) // has to be on to receive messages
@@ -591,9 +591,9 @@
 	idle_power_usage = 300
 	machinetype = 4
 	circuit = /obj/item/circuitboard/telecomms/server
-	var/list/log_entries = list()
-	var/list/stored_names = list()
-	var/list/TrafficActions = list()
+	var/list/log_entries
+	var/list/stored_names
+	var/list/TrafficActions
 	var/logs = 0 // number of logs
 	var/totaltraffic = 0 // gigabytes (if > 1024, divide by 1024 -> terrabytes)
 
@@ -678,9 +678,9 @@
 					log.input_type = "Corrupt File"
 
 				// Log and store everything that needs to be logged
-				log_entries.Add(log)
+				LAZYADD(log_entries, log)
 				if(!(signal.data["name"] in stored_names))
-					stored_names.Add(signal.data["name"])
+					LAZYADD(stored_names, signal.data["name"])
 				logs++
 				signal.data["server"] = src
 
@@ -709,9 +709,9 @@
 	// start deleting the very first log entry
 	if(logs >= 400)
 		for(var/i = 1, i <= logs, i++) // locate the first garbage collectable log entry and remove it
-			var/datum/comm_log_entry/L = log_entries[i]
+			var/datum/comm_log_entry/L = LAZYACCESS(log_entries, i)
 			if(L.garbage_collector)
-				log_entries.Remove(L)
+				LAZYREMOVE(log_entries, L)
 				logs--
 				break
 
@@ -722,7 +722,7 @@
 	log.input_type = input
 	log.parameters["message"] = content
 	log.parameters["timecode"] = stationtime2text()
-	log_entries.Add(log)
+	LAZYADD(log_entries, log)
 	update_logs()
 
 

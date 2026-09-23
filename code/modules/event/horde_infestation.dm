@@ -5,7 +5,7 @@
 	var/list/vents = list()
 	var/spiders = FALSE
 	var/metroids = FALSE
-	var/list/alive_metroids = list()
+	var/list/alive_metroids
 
 /datum/event/horde_infestation/setup()
 	announceWhen = rand(announceWhen, announceWhen + 60)
@@ -72,7 +72,7 @@
 				/mob/living/simple_mob/metroid/juvenile/zeta = 2,
 				/mob/living/simple_mob/metroid/juvenile/omega = 1,
 				))
-			alive_metroids.Add(new spawn_metroids(get_turf(vent)))
+			LAZYADD(alive_metroids, new spawn_metroids(get_turf(vent)))
 			vents -= vent
 			spawncount--
 		vents.Cut()

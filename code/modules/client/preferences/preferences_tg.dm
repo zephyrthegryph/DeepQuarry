@@ -4,7 +4,7 @@
 	var/list/character_data
 
 	/// A list of keys that have been updated since the last save.
-	var/list/recently_updated_keys = list()
+	var/list/recently_updated_keys
 
 	/// A cache of preference entries to values.
 	/// Used to avoid expensive READ_FILE every time a preference is retrieved.

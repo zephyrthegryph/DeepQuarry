@@ -400,7 +400,7 @@ SUBSYSTEM_DEF(job)
 
 			// Loop through all jobs
 			for(var/datum/job/job in shuffledoccupations) // SHUFFLE ME BABY
-				if(!job || SSticker.mode.disabled_jobs.Find(job.title) )
+				if(!job || LAZYFIND(SSticker.mode.disabled_jobs, job.title) )
 					continue
 
 				if(jobban_isbanned(player, job.title))

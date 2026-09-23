@@ -30,8 +30,8 @@
 	var/seeds_initialized = 0 // Map-placed ones break if seeds are loaded right at the start of the round, so we do it on the first interaction
 	var/list/datum/seed_pile/piles = list()
 	var/list/datum/seed_pile/piles_contra = list() //Hacked.
-	var/list/starting_seeds = list()
-	var/list/contraband_seeds = list() //Seeds we only show if we've been hacked.
+	var/list/starting_seeds
+	var/list/contraband_seeds //Seeds we only show if we've been hacked.
 	var/list/scanner = list() // What properties we can view
 	var/seconds_electrified = 0 //Shock users like an airlock.
 	var/smart = 0 //Used for hacking. Overrides the scanner.
@@ -41,7 +41,7 @@
 /obj/machinery/seed_storage/Initialize(mapload)
 	. = ..()
 	set_wires(new /datum/wires/seedstorage(src))
-	if(!contraband_seeds.len)
+	if(!length(contraband_seeds))
 		contraband_seeds = pick( 	/// Some form of ambrosia in all lists.
 			prob(30);list( /// General produce
 				/obj/item/seeds/ambrosiavulgarisseed = 3,
@@ -222,14 +222,14 @@
 /obj/machinery/seed_storage/tgui_interact(mob/user, datum/tgui/ui)
 	if(!seeds_initialized)
 		for(var/typepath in starting_seeds)
-			var/amount = starting_seeds[typepath]
+			var/amount = LAZYACCESS(starting_seeds, typepath)
 			if(isnull(amount)) amount = 1
 
 			for(var/i = 1 to amount)
 				var/O = new typepath
 				add(O)
 		for(var/typepath in contraband_seeds)
-			var/amount = contraband_seeds[typepath]
+			var/amount = LAZYACCESS(contraband_seeds, typepath)
 			if(isnull(amount)) amount = 1
 
 			for (var/i = 1 to amount)

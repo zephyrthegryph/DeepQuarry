@@ -3,8 +3,8 @@
 	endWhen = 50			//this will be set randomly, later
 	announceWhen = 15
 	var/event_type = 0
-	var/list/cheaper_goods = list()
-	var/list/dearer_goods = list()
+	var/list/cheaper_goods
+	var/list/dearer_goods
 	var/datum/trade_destination/affected_dest
 
 /datum/event/economic_event/start()

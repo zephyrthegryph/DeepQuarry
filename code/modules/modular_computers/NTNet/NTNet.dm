@@ -3,16 +3,16 @@
 
 // This is the NTNet datum. There can be only one NTNet datum in game at once. Modular computers read data from this.
 /datum/ntnet
-	var/list/relays = list()
-	var/list/logs = list()
-	var/list/available_station_software = list()
-	var/list/available_antag_software = list()
-	var/list/available_news = list()
-	var/list/chat_channels = list()
-	var/list/fileservers = list()
+	var/list/relays
+	var/list/logs
+	var/list/available_station_software
+	var/list/available_antag_software
+	var/list/available_news
+	var/list/chat_channels
+	var/list/fileservers
 	/// Holds all the email accounts that exists. Hopefully won't exceed 999
-	var/list/email_accounts = list()
-	var/list/banned_nids = list()
+	var/list/email_accounts
+	var/list/banned_nids
 	/// A list of nid - os datum pairs. An OS in this list is not necessarily connected to NTNet or visible on it.
 	var/list/registered_nids = list()
 	/// Amount of log entries the system tries to keep in memory. Keep below 999 to prevent byond from acting weirdly. High values make displaying logs much laggier.
@@ -42,7 +42,7 @@
 		GLOB.ntnet_global = src // There can be only one.
 	if (SSatoms && SSatoms.initialized > INITIALIZATION_INSSATOMS)
 		for(var/obj/machinery/ntnet_relay/R in GLOB.machines)
-			relays.Add(R)
+			LAZYADD(relays, R)
 			R.NTNet = src
 	build_software_lists()
 	build_news_list()
@@ -61,13 +61,13 @@
 	else
 		log_text += "*SYSTEM* - "
 	log_text += log_string
-	logs.Add(log_text)
+	LAZYADD(logs, log_text)
 
-	if(logs.len > setting_maxlogcount)
+	if(length(logs) > setting_maxlogcount)
 		// We have too many logs, remove the oldest entries until we get into the limit
 		for(var/L in logs)
-			if(logs.len > setting_maxlogcount)
-				logs.Remove(L)
+			if(length(logs) > setting_maxlogcount)
+				LAZYREMOVE(logs, L)
 			else
 				break
 
@@ -78,7 +78,7 @@
 	registered_nids -= "[NID]"
 
 /datum/ntnet/proc/check_banned(NID)
-	if(!relays || !relays.len)
+	if(!relays || !length(relays))
 		return FALSE
 
 	for(var/obj/machinery/ntnet_relay/R in relays)
@@ -89,7 +89,7 @@
 
 // Checks whether NTNet operates. If parameter is passed checks whether specific function is enabled.
 /datum/ntnet/proc/check_function(specific_action = 0)
-	if(!relays || !relays.len) // No relays found. NTNet is down
+	if(!relays || !length(relays)) // No relays found. NTNet is down
 		return 0
 
 	var/operating = 0
@@ -124,9 +124,9 @@
 			continue
 		// Check whether the program should be available for station/antag download, if yes, add it to lists.
 		if(prog.available_on_ntnet)
-			available_station_software.Add(prog)
+			LAZYADD(available_station_software, prog)
 		if(prog.available_on_syndinet)
-			available_antag_software.Add(prog)
+			LAZYADD(available_antag_software, prog)
 
 // Builds lists that contain downloadable software.
 /datum/ntnet/proc/build_news_list()
@@ -134,12 +134,12 @@
 	for(var/F in typesof(/datum/computer_file/data/news_article/))
 		var/datum/computer_file/data/news_article/news = new F(1)
 		if(news.stored_data)
-			available_news.Add(news)
+			LAZYADD(available_news, news)
 
 // Generates service email list. Currently only used by broadcaster service
 /datum/ntnet/proc/build_emails_list()
 	for(var/F in subtypesof(/datum/computer_file/data/email_account/service))
-		email_accounts += new F(TRUE)
+		LAZYADD(email_accounts, new F(TRUE))
 
 // Attempts to find a downloadable file according to filename var
 /datum/ntnet/proc/find_ntnet_file_by_name(filename)

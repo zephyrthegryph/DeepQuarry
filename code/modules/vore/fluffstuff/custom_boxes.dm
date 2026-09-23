@@ -6,10 +6,10 @@
 	name = "Undefined Fluff Box"
 	desc = "This should have a description. Tell an admin."
 	storage_slots = 7
-	var/list/has_items = list()
+	var/list/has_items
 
 /obj/item/storage/box/fluff/Initialize(mapload)
-	storage_slots = has_items.len
+	storage_slots = length(has_items)
 	allowed = list()
 	for(var/P in has_items)
 		allowed += P
@@ -168,7 +168,6 @@
 //Razerwing:Archer Maximus
 /obj/item/storage/box/fluff/archermaximus
 	desc = "Personal Effects"
-	has_items = list()
 
 //Xsdew:Penelope Allen
 /obj/item/storage/box/fluff/penelope

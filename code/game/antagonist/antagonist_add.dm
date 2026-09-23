@@ -41,7 +41,7 @@
 
 	// Handle only adding a mind and not bothering with gear etc.
 	if(nonstandard_role_type)
-		faction_members |= player
+		LAZYOR(faction_members, player)
 		to_chat(player.current, span_danger(span_large("You are \a [nonstandard_role_type]!")))
 		player.special_role = nonstandard_role_type
 		if(nonstandard_role_msg)
@@ -55,7 +55,7 @@
 	if(player in current_antagonists)
 		to_chat(player.current, span_danger(span_large("You are no longer a [role_text]!")))
 		current_antagonists -= player
-		faction_members -= player
+		LAZYREMOVE(faction_members, player)
 		player.special_role = null
 		update_icons_removed(player)
 		BITSET(player.current.hud_updateflag, SPECIALROLE_HUD)

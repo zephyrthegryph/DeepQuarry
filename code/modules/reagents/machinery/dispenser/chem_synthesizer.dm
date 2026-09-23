@@ -36,7 +36,7 @@
 
 	var/list/recipes = list() // This holds chemical recipes up to a maximum determined by SYNTHESIZER_MAX_RECIPES. Two-dimensional.
 	var/list/queue = list() // This holds the recipe id's for queued up recipes.
-	var/list/catalyst_ids = list() // This keeps track of the chemicals in the catalyst to remove before bottling.
+	var/list/catalyst_ids // This keeps track of the chemicals in the catalyst to remove before bottling.
 	var/list/cartridges = list() // Associative, label -> cartridge
 
 	var/list/spawn_cartridges = list(
@@ -585,7 +585,7 @@
 	if(use_catalyst)
 		// Populate the list of catalyst chems. This is important when it's time to bottle_product().
 		for(var/datum/reagent/chem in catalyst.reagents.reagent_list)
-			catalyst_ids += chem.id
+			LAZYADD(catalyst_ids, chem.id)
 
 		// Transfer the catalyst to the synthesizer's reagent holder.
 		catalyst.reagents.trans_to_holder(src.reagents, catalyst.reagents.total_volume)
@@ -726,7 +726,7 @@
 	if(queue.len)
 		if(use_catalyst)
 			for(var/datum/reagent/chem in catalyst.reagents.reagent_list)
-				catalyst_ids += chem.id
+				LAZYADD(catalyst_ids, chem.id)
 			catalyst.reagents.trans_to_holder(src.reagents, catalyst.reagents.total_volume)
 		update_icon()
 		follow_recipe(queue[1], 1)

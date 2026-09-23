@@ -12,7 +12,7 @@
 	icon_state = "map_filter"
 	pipe_state = "omni_filter"
 
-	var/list/atmos_filters = new()
+	var/list/atmos_filters
 	var/datum/omni_port/input
 	var/datum/omni_port/output
 
@@ -35,7 +35,7 @@
 /obj/machinery/atmospherics/omni/atmos_filter/Destroy()
 	input = null
 	output = null
-	atmos_filters.Cut()
+	LAZYCLEARLIST(atmos_filters)
 	return ..()
 
 /obj/machinery/atmospherics/omni/atmos_filter/sort_ports()
@@ -47,8 +47,8 @@
 				output = null
 			if(input == P)
 				input = null
-			if(atmos_filters.Find(P))
-				atmos_filters -= P
+			if(LAZYFIND(atmos_filters, P))
+				LAZYREMOVE(atmos_filters, P)
 
 			P.air.set_volume(200)
 			switch(P.mode)
@@ -57,14 +57,14 @@
 				if(ATM_OUTPUT)
 					output = P
 				if(ATM_O2 to ATM_LASTGAS)
-					atmos_filters += P
+					LAZYADD(atmos_filters, P)
 	if(any_updated)
 		rebuild_filtering_list()
 
 /obj/machinery/atmospherics/omni/atmos_filter/error_check()
 	if(!input || !output || !atmos_filters)
 		return 1
-	if(atmos_filters.len < 1) //requires at least 1 atmos_filter ~otherwise why are you using a filter?
+	if(length(atmos_filters) < 1) //requires at least 1 atmos_filter ~otherwise why are you using a filter?
 		return 1
 
 	return 0

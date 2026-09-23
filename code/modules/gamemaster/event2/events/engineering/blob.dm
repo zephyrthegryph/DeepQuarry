@@ -82,7 +82,7 @@
 	var/list/open_turfs = list()
 	var/spawn_blob_type = /obj/structure/blob/core/random_medium
 	var/number_of_blobs = 1
-	var/list/blobs = list() // A list containing weakrefs to blob cores created. Weakrefs mean this event won't interfere with qdel.
+	var/list/blobs // A list containing weakrefs to blob cores created. Weakrefs mean this event won't interfere with qdel.
 
 /datum/event2/event/blob/hard_blob
 	spawn_blob_type = /obj/structure/blob/core/random_hard
@@ -106,7 +106,7 @@
 	for(var/i = 1 to number_of_blobs)
 		var/turf/T = pick(open_turfs)
 		var/obj/structure/blob/core/new_blob = new spawn_blob_type(T)
-		blobs += WEAKREF(new_blob)
+		LAZYADD(blobs, WEAKREF(new_blob))
 		open_turfs -= T // So we can't put two cores on the same tile if doing multiblob.
 		log_game("Spawned [new_blob.overmind.blob_type.name] blob at [get_area(new_blob)].")
 
@@ -122,7 +122,7 @@
 		var/obj/structure/blob/core/B = weakref.resolve()
 		if(istype(B))
 			qdel(B)
-	blobs.Cut()
+	LAZYCLEARLIST(blobs)
 
 /datum/event2/event/blob/announce()
 	if(!ended) // Don't announce if the blobs die early.

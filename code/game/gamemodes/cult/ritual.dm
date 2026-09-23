@@ -31,7 +31,7 @@ ADMIN_VERB(check_words, R_ADMIN|R_EVENT, "Check Rune Words", "Check the rune-wor
 	var/word2
 	var/word3
 	var/image/blood_image
-	var/list/converting = list()
+	var/list/converting
 
 // Places these combos are mentioned: this file - twice in the rune code, once in imbued tome, once in tome's HTML runes.dm - in the imbue rune code. If you change a combination - dont forget to change it everywhere.
 

@@ -104,7 +104,7 @@ GLOBAL_VAR_INIT(economy_init, 0)
 	T.source_terminal = "Biesel GalaxyNet Terminal #277"
 
 	//add the account
-	department_account.transaction_log.Add(T)
+	LAZYADD(department_account.transaction_log, T)
 	GLOB.all_money_accounts.Add(department_account)
 
 	GLOB.department_accounts[department] = department_account

@@ -21,8 +21,8 @@
 	one_way = _oneway
 
 /datum/shuttle_route/Destroy()
-	start.routes -= src
-	end.routes -= src
+	LAZYREMOVE(start.routes, src)
+	LAZYREMOVE(end.routes, src)
 	return ..()
 
 /datum/shuttle_route/proc/get_other_side(datum/shuttle_destination/PoV)
@@ -52,7 +52,7 @@
 	var/name = "a place"				// Name of the destination, used for the flight computer.
 	var/obj/effect/shuttle_landmark/my_landmark = null // Where the shuttle will move to when it actually arrives.
 	var/datum/shuttle_web_master/master = null // The datum that does the coordination with the actual shuttle datum.
-	var/list/routes = list()			// Routes that are connected to this destination.
+	var/list/routes			// Routes that are connected to this destination.
 	var/preferred_interim_tag = null	// When building a new route, use interim landmark with this tag.
 	var/skip_me = FALSE					// We will not autocreate this one. Some map must be doing it.
 
@@ -63,11 +63,11 @@
 
 	// When this destination is instantiated, it will go and instantiate other destinations in this assoc list and build routes between them.
 	// The list format is '/datum/shuttle_destination/subtype = 1 MINUTES'
-	var/list/destinations_to_create = list()
+	var/list/destinations_to_create
 
 	// When the web_master finishes creating all the destinations, it will go and build routes between this and them if they're on this list.
 	// The list format is '/datum/shuttle_destination/subtype = 1 MINUTES'
-	var/list/routes_to_make = list()
+	var/list/routes_to_make
 
 /datum/shuttle_destination/New(new_master)
 	var/landmark_tag = my_landmark // Subtypes set this to the tag string; resolve it to the landmark obj.
@@ -100,7 +100,7 @@
 		already_made += new_dest.build_destinations(already_made)
 
 		// Now link our new destination to us.
-		var/travel_delay = destinations_to_create[type_to_make]
+		var/travel_delay = LAZYACCESS(destinations_to_create, type_to_make)
 		link_destinations(new_dest, preferred_interim_tag, travel_delay)
 		to_chat(world, "SHUTTLES: [name] has linked themselves to [new_dest.name]")
 
@@ -145,8 +145,8 @@
 
 	// Now we can connect them.
 	var/datum/shuttle_route/new_route = new(src, other_place, interim_tag, travel_time)
-	routes += new_route
-	other_place.routes += new_route
+	LAZYADD(routes, new_route)
+	LAZYADD(other_place.routes, new_route)
 
 // Depending on certain circumstances, the shuttles can fail.
 // What happens depends on where the shuttle is.  If it's in space, it just can't move until its fixed.
@@ -216,7 +216,7 @@
 			var/datum/shuttle_destination/other = get_destination_by_type(type_to_link)
 			if(!other) // Pruned above (or a typo'd type) — skip the route instead of building a half-null one.
 				continue
-			var/travel_delay = D.routes_to_make[type_to_link]
+			var/travel_delay = LAZYACCESS(D.routes_to_make, type_to_link)
 			D.link_destinations(other, D.preferred_interim_tag, travel_delay)
 
 /datum/shuttle_web_master/proc/on_shuttle_departure()
@@ -230,7 +230,7 @@
 
 /datum/shuttle_web_master/proc/get_available_routes()
 	if(current_destination)
-		return current_destination.routes.Copy()
+		return LAZYCOPY(current_destination.routes)
 
 /datum/shuttle_web_master/proc/get_current_destination()
 	RETURN_TYPE(/datum/shuttle_destination)
@@ -325,7 +325,7 @@
 /datum/shuttle_autopath
 	var/datum/shuttle_web_master/master = null
 	var/datum/shuttle_destination/start = null
-	var/list/path_nodes = list()
+	var/list/path_nodes
 	var/index = 1
 
 /datum/shuttle_autopath/Destroy()
@@ -336,11 +336,11 @@
 	index = 1
 
 /datum/shuttle_autopath/proc/get_next_node()
-	return path_nodes[index]
+	return LAZYACCESS(path_nodes, index)
 
 /datum/shuttle_autopath/proc/walk_path()
 	index++
-	if(index > path_nodes.len)
+	if(index > length(path_nodes))
 		finish_path()
 
 /datum/shuttle_autopath/proc/finish_path()

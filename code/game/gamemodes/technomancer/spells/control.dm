@@ -20,7 +20,7 @@
 	cast_methods = CAST_RANGED|CAST_USE
 	aspect = ASPECT_BIOMED //Not sure if this should be something else.
 	var/image/control_overlay = null
-	var/list/controlled_mobs = list()
+	var/list/controlled_mobs
 	var/allowed_mob_classes = MOB_CLASS_ANIMAL|MOB_CLASS_SYNTHETIC
 
 //This unfortunately is gonna be rather messy due to the various mobtypes involved.
@@ -42,7 +42,7 @@
 
 	// Note, this should be refactored to drop priority overlays
 	L.add_overlay(control_overlay, TRUE)
-	controlled_mobs |= L
+	LAZYOR(controlled_mobs, L)
 
 /obj/item/spell/control/proc/deselect(mob/living/L)
 	if(!(L in controlled_mobs))
@@ -60,7 +60,7 @@
 		SM.friends -= owner
 
 	L.cut_overlay(control_overlay, TRUE)
-	controlled_mobs.Remove(L)
+	LAZYREMOVE(controlled_mobs, L)
 
 /obj/item/spell/control/proc/move_all(turf/T)
 	for(var/mob/living/L in controlled_mobs)
@@ -87,7 +87,7 @@
 	return ..()
 
 /obj/item/spell/control/on_use_cast(mob/living/user)
-	if(controlled_mobs.len != 0)
+	if(length(controlled_mobs) != 0)
 		var/choice = tgui_alert(user,"Would you like to release control of the entities you are controlling? They won't be friendly to you anymore if you do this, so be careful.","Release Control?",list("No","Yes"))
 		if(choice == "Yes")
 			for(var/mob/living/L in controlled_mobs)
@@ -98,7 +98,7 @@
 /obj/item/spell/control/on_ranged_cast(atom/hit_atom, mob/living/user)
 	if(isliving(hit_atom))
 		var/mob/living/L = hit_atom
-		if(L == user && !controlled_mobs.len)
+		if(L == user && !length(controlled_mobs))
 			to_chat(user, span_warning("This function doesn't work on higher-intelligence entities, however since you're \
 			trying to use it on yourself, perhaps you're an exception?  Regardless, nothing happens."))
 			return 0
@@ -119,25 +119,25 @@
 				to_chat(user, span_notice("You free \the [L] from your grasp."))
 
 		else //Let's attack
-			if(!controlled_mobs.len)
+			if(!length(controlled_mobs))
 				to_chat(user, span_warning("You have no entities under your control to command."))
 				return 0
-			if(pay_energy(25 * controlled_mobs.len))
+			if(pay_energy(25 * length(controlled_mobs)))
 				attack_all(L)
 				add_attack_logs(user,L,"Commanded their army of [controlled_mobs.len]")
-				to_chat(user, span_notice("You command your [controlled_mobs.len > 1 ? "entities" : "[controlled_mobs[1]]"] to \
+				to_chat(user, span_notice("You command your [controlled_mobs.len > 1 ? "entities" : "[LAZYACCESS(controlled_mobs, 1)]"] to \
 				attack \the [L]."))
 				//This is to stop someone from controlling beepsky and getting him to stun someone 5 times a second.
 				user.setClickCooldown(8)
-				adjust_instability(controlled_mobs.len)
+				adjust_instability(length(controlled_mobs))
 
 	else if(isturf(hit_atom))
 		var/turf/T = hit_atom
-		if(!controlled_mobs.len)
+		if(!length(controlled_mobs))
 			to_chat(user, span_warning("You have no entities under your control to command."))
 			return 0
-		if(pay_energy(10 * controlled_mobs.len))
+		if(pay_energy(10 * length(controlled_mobs)))
 			move_all(T)
-			adjust_instability(controlled_mobs.len)
-			to_chat(user, span_notice("You command your [controlled_mobs.len > 1 ? "entities" : "[controlled_mobs[1]]"] to move \
+			adjust_instability(length(controlled_mobs))
+			to_chat(user, span_notice("You command your [controlled_mobs.len > 1 ? "entities" : "[LAZYACCESS(controlled_mobs, 1)]"] to move \
 			towards \the [T]."))

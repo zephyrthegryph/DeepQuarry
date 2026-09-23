@@ -27,10 +27,10 @@ SUBSYSTEM_DEF(planets)
 		var/datum/planet/NP = new P()
 		planets += NP
 		for(var/index in 1 to length(NP.expected_z_levels))
-			var/Z = NP.expected_z_levels[index]
+			var/Z = LAZYACCESS(NP.expected_z_levels, index)
 			if(!isnum(Z))
 				Z = GLOB.map_templates_loaded[Z]
-				NP.expected_z_levels[index] = Z
+				LAZYSET(NP.expected_z_levels, index, Z)
 			if(Z > length(z_to_planet))
 				z_to_planet.len = Z
 			if(z_to_planet[Z])
@@ -47,7 +47,7 @@ SUBSYSTEM_DEF(planets)
 		if(!istype(P))
 			return
 		if(istype(T, /turf/unsimulated/wall/planetary))
-			P.planet_walls += T
+			LAZYADD(P.planet_walls, T)
 		else if(istype(T, /turf/simulated) && T.is_outdoors())
 			P.planet_floors += T
 			P.weather_holder.apply_to_turf(T)
@@ -58,7 +58,7 @@ SUBSYSTEM_DEF(planets)
 		if(!P)
 			return
 		if(istype(T, /turf/unsimulated/wall/planetary))
-			P.planet_walls -= T
+			LAZYREMOVE(P.planet_walls, T)
 		else
 			P.planet_floors -= T
 			P.weather_holder.remove_from_turf(T)

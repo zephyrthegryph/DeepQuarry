@@ -209,9 +209,9 @@ GLOBAL_LIST_INIT(global_huds, list(
 	var/ui_alpha
 
 	// TGMC Ammo HUD Port
-	var/list/atom/movable/screen/ammo_hud_list = list()
+	var/list/atom/movable/screen/ammo_hud_list
 
-	var/list/minihuds = list()
+	var/list/minihuds
 
 /datum/hud/New(mob/owner)
 	mymob = owner
@@ -417,7 +417,7 @@ GLOBAL_LIST_INIT(global_huds, list(
 /datum/hud/proc/apply_minihud(datum/mini_hud/MH)
 	if(MH in minihuds)
 		return
-	minihuds += MH
+	LAZYADD(minihuds, MH)
 	if(mymob.client)
 		mymob.client.screen -= miniobjs
 	miniobjs += MH.get_screen_objs()
@@ -427,7 +427,7 @@ GLOBAL_LIST_INIT(global_huds, list(
 /datum/hud/proc/remove_minihud(datum/mini_hud/MH)
 	if(!(MH in minihuds))
 		return
-	minihuds -= MH
+	LAZYREMOVE(minihuds, MH)
 	if(mymob.client)
 		mymob.client.screen -= miniobjs
 	miniobjs -= MH.get_screen_objs()
@@ -588,7 +588,7 @@ GLOBAL_LIST_INIT(global_huds, list(
 	if(length(ammo_hud_list) >= MAX_AMMO_HUD_POSSIBLE)
 		return
 	var/atom/movable/screen/ammo/ammo_hud = new
-	ammo_hud_list[G] = ammo_hud
+	LAZYSET(ammo_hud_list, G, ammo_hud)
 	ammo_hud.screen_loc = ammo_hud.ammo_screen_loc_list[length(ammo_hud_list)]
 	ammo_hud.our_gun = WEAKREF(G)
 	ammo_hud.add_hud(user, G)
@@ -596,22 +596,22 @@ GLOBAL_LIST_INIT(global_huds, list(
 
 ///Remove the ammo hud related to the gun G from the user
 /datum/hud/proc/remove_ammo_hud(mob/living/user, obj/item/gun/G)
-	var/atom/movable/screen/ammo/ammo_hud = ammo_hud_list[G]
+	var/atom/movable/screen/ammo/ammo_hud = LAZYACCESS(ammo_hud_list, G)
 	if(isnull(ammo_hud))
 		return
 	ammo_hud.our_gun = null
 	ammo_hud.remove_hud(user, G)
 	qdel(ammo_hud)
-	ammo_hud_list -= G
+	LAZYREMOVE(ammo_hud_list, G)
 	var/i = 1
 	for(var/key in ammo_hud_list)
-		ammo_hud = ammo_hud_list[key]
+		ammo_hud = LAZYACCESS(ammo_hud_list, key)
 		ammo_hud.screen_loc = ammo_hud.ammo_screen_loc_list[i]
 		i++
 
 ///Update the ammo hud related to the gun G
 /datum/hud/proc/update_ammo_hud(mob/living/user, obj/item/gun/G)
-	var/atom/movable/screen/ammo/ammo_hud = ammo_hud_list[G]
+	var/atom/movable/screen/ammo/ammo_hud = LAZYACCESS(ammo_hud_list, G)
 	ammo_hud?.update_hud(user, G)
 
 #undef MAX_AMMO_HUD_POSSIBLE

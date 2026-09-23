@@ -122,29 +122,19 @@
 
 	//// Object-holding variables
 	//struggle_messages_outside - strings
-	new_belly.struggle_messages_outside.Cut()
-	for(var/I in struggle_messages_outside)
-		new_belly.struggle_messages_outside += I
+	new_belly.struggle_messages_outside = struggle_messages_outside.Copy() // assign: the belly's default table is shared
 
 	//struggle_messages_inside - strings
-	new_belly.struggle_messages_inside.Cut()
-	for(var/I in struggle_messages_inside)
-		new_belly.struggle_messages_inside += I
+	new_belly.struggle_messages_inside = struggle_messages_inside.Copy() // assign: the belly's default table is shared
 
 	//digest_messages_owner - strings
-	new_belly.digest_messages_owner.Cut()
-	for(var/I in digest_messages_owner)
-		new_belly.digest_messages_owner += I
+	new_belly.digest_messages_owner = digest_messages_owner.Copy() // assign: the belly's default table is shared
 
 	//digest_messages_prey - strings
-	new_belly.digest_messages_prey.Cut()
-	for(var/I in digest_messages_prey)
-		new_belly.digest_messages_prey += I
+	new_belly.digest_messages_prey = digest_messages_prey.Copy() // assign: the belly's default table is shared
 
 	//examine_messages - strings
-	new_belly.examine_messages.Cut()
-	for(var/I in examine_messages)
-		new_belly.examine_messages += I
+	new_belly.examine_messages = examine_messages.Copy() // assign: the belly's default table is shared
 
 	//emote_lists - index: digest mode, key: list of strings
 	new_belly.emote_lists.Cut()

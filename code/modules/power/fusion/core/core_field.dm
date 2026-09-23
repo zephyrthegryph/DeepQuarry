@@ -25,7 +25,7 @@
 
 	var/obj/machinery/power/fusion_core/owned_core
 	var/list/dormant_reactant_quantities = list()
-	var/list/particle_catchers = list()
+	var/list/particle_catchers
 
 	var/static/list/ignore_types = list(
 		/obj/item/projectile,
@@ -62,46 +62,46 @@
 	catcher = new (locate(src.x,src.y,src.z))
 	catcher.parent = src
 	catcher.SetSize(1)
-	particle_catchers.Add(catcher)
+	LAZYADD(particle_catchers, catcher)
 
 	catcher = new (locate(src.x-1,src.y,src.z))
 	catcher.parent = src
 	catcher.SetSize(3)
-	particle_catchers.Add(catcher)
+	LAZYADD(particle_catchers, catcher)
 	catcher = new (locate(src.x+1,src.y,src.z))
 	catcher.parent = src
 	catcher.SetSize(3)
-	particle_catchers.Add(catcher)
+	LAZYADD(particle_catchers, catcher)
 	catcher = new (locate(src.x,src.y+1,src.z))
 	catcher.parent = src
 	catcher.SetSize(3)
-	particle_catchers.Add(catcher)
+	LAZYADD(particle_catchers, catcher)
 	catcher = new (locate(src.x,src.y-1,src.z))
 	catcher.parent = src
 	catcher.SetSize(3)
-	particle_catchers.Add(catcher)
+	LAZYADD(particle_catchers, catcher)
 
 	catcher = new (locate(src.x-2,src.y,src.z))
 	catcher.parent = src
 	catcher.SetSize(5)
-	particle_catchers.Add(catcher)
+	LAZYADD(particle_catchers, catcher)
 	catcher = new (locate(src.x+2,src.y,src.z))
 	catcher.parent = src
 	catcher.SetSize(5)
-	particle_catchers.Add(catcher)
+	LAZYADD(particle_catchers, catcher)
 	catcher = new (locate(src.x,src.y+2,src.z))
 	catcher.parent = src
 	catcher.SetSize(5)
-	particle_catchers.Add(catcher)
+	LAZYADD(particle_catchers, catcher)
 	catcher = new (locate(src.x,src.y-2,src.z))
 	catcher.parent = src
 	catcher.SetSize(5)
-	particle_catchers.Add(catcher)
+	LAZYADD(particle_catchers, catcher)
 
 	catcher = new (locate(src.x-3,src.y,src.z))
 	catcher.parent = src
 	catcher.SetSize(7)
-	particle_catchers.Add(catcher)
+	LAZYADD(particle_catchers, catcher)
 
 	// Idle traps do not scan their surroundings. Field creation is the dependency
 	// that wakes only traps close enough to use it.
@@ -110,15 +110,15 @@
 	catcher = new (locate(src.x+3,src.y,src.z))
 	catcher.parent = src
 	catcher.SetSize(7)
-	particle_catchers.Add(catcher)
+	LAZYADD(particle_catchers, catcher)
 	catcher = new (locate(src.x,src.y+3,src.z))
 	catcher.parent = src
 	catcher.SetSize(7)
-	particle_catchers.Add(catcher)
+	LAZYADD(particle_catchers, catcher)
 	catcher = new (locate(src.x,src.y-3,src.z))
 	catcher.parent = src
 	catcher.SetSize(7)
-	particle_catchers.Add(catcher)
+	LAZYADD(particle_catchers, catcher)
 
 /obj/effect/fusion_em_field/process()
 	//make sure the field generator is still intact

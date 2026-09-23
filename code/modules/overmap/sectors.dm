@@ -28,7 +28,7 @@
 	var/list/initial_generic_waypoints //store landmark_tag of landmarks that should be added to the actual lists below on init.
 	var/list/initial_restricted_waypoints //For use with non-automatic landmarks (automatic ones add themselves).
 
-	var/list/generic_waypoints = list()    //waypoints that any shuttle can use
+	var/list/generic_waypoints    //waypoints that any shuttle can use
 	var/list/restricted_waypoints = list() //waypoints for specific shuttles
 	var/docking_codes
 
@@ -44,7 +44,7 @@
 	var/list/levels_for_distress
 	var/list/unowned_areas // areas we don't own despite them being present on our z
 
-	var/list/possible_descriptors = list() //While only affects sectors for now, initialized here for proc definition convenience.
+	var/list/possible_descriptors //While only affects sectors for now, initialized here for proc definition convenience.
 	var/visitable_renamed = FALSE //changed if non-default name is assigned.
 
 	var/unique_identifier //Define this for objs that we want to be able to rename. Needed to avoid compiler errors if not included.
@@ -189,14 +189,14 @@
 	if(shuttle_name)
 		LAZYADD(restricted_waypoints[shuttle_name], landmark)
 	else
-		generic_waypoints += landmark
+		LAZYADD(generic_waypoints, landmark)
 
 /obj/effect/overmap/visitable/proc/remove_landmark(obj/effect/shuttle_landmark/landmark, shuttle_name)
 	if(shuttle_name)
 		var/list/shuttles = restricted_waypoints[shuttle_name]
 		LAZYREMOVE(shuttles, landmark)
 	else
-		generic_waypoints -= landmark
+		LAZYREMOVE(generic_waypoints, landmark)
 
 /obj/effect/overmap/visitable/proc/get_waypoints(shuttle_name)
 	. = list()

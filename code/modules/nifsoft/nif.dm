@@ -34,7 +34,7 @@ You can also set the stat of a NIF to NIF_TEMPFAIL without any issues to disable
 	var/tmp/power_usage = 0						// Nifsoft adds to this
 	var/tmp/mob/living/carbon/human/human		// Our owner!
 	var/tmp/list/nifsofts[TOTAL_NIF_SOFTWARE]	// All our nifsofts
-	var/tmp/list/nifsofts_life = list()			// Ones that want to be talked to on life()
+	var/tmp/list/nifsofts_life			// Ones that want to be talked to on life()
 	var/owner									// Owner character name
 	var/owner_key								// Account associated with the nif
 	var/examine_msg								//Message shown on examine.
@@ -112,7 +112,7 @@ You can also set the stat of a NIF to NIF_TEMPFAIL without any issues to disable
 		human = null
 	QDEL_LIST_NULL(nifsofts)
 	QDEL_NULL(comm)
-	nifsofts_life.Cut()
+	LAZYCLEARLIST(nifsofts_life)
 	return ..()
 
 //Being implanted in some mob
@@ -454,7 +454,7 @@ You can also set the stat of a NIF to NIF_TEMPFAIL without any issues to disable
 	power_usage += new_soft.p_drain
 
 	if(new_soft.tick_flags == NIF_ALWAYSTICK)
-		nifsofts_life += new_soft
+		LAZYADD(nifsofts_life, new_soft)
 
 	return TRUE
 
@@ -475,7 +475,7 @@ You can also set the stat of a NIF to NIF_TEMPFAIL without any issues to disable
 	power_usage -= old_soft.p_drain
 
 	if(old_soft.tick_flags == NIF_ALWAYSTICK)
-		nifsofts_life -= old_soft
+		LAZYREMOVE(nifsofts_life, old_soft)
 
 	if(old_soft.active)
 		old_soft.deactivate(force = TRUE)
@@ -505,7 +505,7 @@ You can also set the stat of a NIF to NIF_TEMPFAIL without any issues to disable
 		return FALSE
 
 	if(soft.tick_flags == NIF_ACTIVETICK)
-		nifsofts_life += soft
+		LAZYADD(nifsofts_life, soft)
 
 	power_usage += soft.a_drain
 
@@ -518,7 +518,7 @@ You can also set the stat of a NIF to NIF_TEMPFAIL without any issues to disable
 		human << click_sound
 
 	if(soft.tick_flags == NIF_ACTIVETICK)
-		nifsofts_life -= soft
+		LAZYREMOVE(nifsofts_life, soft)
 
 	power_usage -= soft.a_drain
 

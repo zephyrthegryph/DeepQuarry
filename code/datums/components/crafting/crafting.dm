@@ -187,7 +187,7 @@
 /datum/component/personal_crafting/proc/check_reagents(atom/source, datum/crafting_recipe/R, list/surroundings)
 	var/list/reagents = surroundings["other"]
 	for(var/requirement_path in R.chem_catalysts)
-		if(reagents[requirement_path] < R.chem_catalysts[requirement_path])
+		if(reagents[requirement_path] < LAZYACCESS(R.chem_catalysts, requirement_path))
 			return FALSE
 	return TRUE
 

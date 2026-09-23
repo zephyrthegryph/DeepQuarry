@@ -34,7 +34,7 @@
 	matter = list(MAT_STEEL = 30, MAT_GLASS = 10)
 
 	///List of all `/datum/design` stored on the disk.
-	var/list/blueprints = list()
+	var/list/blueprints
 
 /obj/item/disk/design_disk/Initialize(mapload)
 	. = ..()

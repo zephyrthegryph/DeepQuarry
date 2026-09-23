@@ -3,9 +3,9 @@
 
 /obj/effect/gibspawner
 	var/sparks = 0 //whether sparks spread on Gib()
-	var/list/gibtypes = list()
-	var/list/gibamounts = list()
-	var/list/gibdirections = list() //of lists
+	var/list/gibtypes
+	var/list/gibamounts
+	var/list/gibdirections //of lists
 	var/fleshcolor //Used for gibbed humans.
 	var/bloodcolor //Used for gibbed humans.
 	invisibility = INVISIBILITY_BADMIN // So a badmin can go view these by changing their see_invisible.
@@ -21,7 +21,7 @@
 	return INITIALIZE_HINT_QDEL
 
 /obj/effect/gibspawner/proc/Gib(atom/location, datum/dna/MobDNA = null)
-	if(gibtypes.len != gibamounts.len || gibamounts.len != gibdirections.len)
+	if(length(gibtypes) != gibamounts.len || length(gibamounts) != gibdirections.len)
 		to_chat(world, span_filter_system(span_warning("Gib list length mismatch!")))
 		log_world("Gib list length mismatch!")
 		return
@@ -33,10 +33,10 @@
 		s.set_up(2, 1, get_turf(location)) // Not sure if it's safe to pass an arbitrary object to set_up, todo
 		s.start()
 
-	for(var/i = 1, i<= gibtypes.len, i++)
-		if(gibamounts[i])
-			for(var/j = 1, j<= gibamounts[i], j++)
-				var/gibType = gibtypes[i]
+	for(var/i = 1, i<= length(gibtypes), i++)
+		if(LAZYACCESS(gibamounts, i))
+			for(var/j = 1, j<= LAZYACCESS(gibamounts, i), j++)
+				var/gibType = LAZYACCESS(gibtypes, i)
 				gib = new gibType(location)
 
 				// Apply human species colouration to masks.
@@ -51,6 +51,6 @@
 				gib.add_blooddna(MobDNA,null)
 
 				if(istype(location,/turf/))
-					var/list/directions = gibdirections[i]
+					var/list/directions = LAZYACCESS(gibdirections, i)
 					if(directions.len)
 						gib.streak(directions)

@@ -272,11 +272,11 @@
 		to_chat(user, span_notice("You stare at the book some more, but there doesn't seem to be anything else to learn..."))
 		return
 
-	if(user.mind.special_verbs.len)
+	if(length(user.mind.special_verbs))
 		for(var/V in user.mind.special_verbs)
 			remove_verb(user, V)
 
-	if(stored_swap.mind.special_verbs.len)
+	if(length(stored_swap.mind.special_verbs))
 		for(var/V in stored_swap.mind.special_verbs)
 			remove_verb(stored_swap, V)
 
@@ -286,14 +286,14 @@
 	move_player(user, stored_swap, "spellbook body swap")
 	stored_swap.spell_list = user.spell_list
 
-	if(stored_swap.mind.special_verbs.len)
+	if(length(stored_swap.mind.special_verbs))
 		for(var/V in user.mind.special_verbs)
 			add_verb(user, V)
 
 	transfer_mind(ghost.mind, user, "spellbook body swap", force = TRUE)
 	user.spell_list = ghost.spell_list
 
-	if(user.mind.special_verbs.len)
+	if(length(user.mind.special_verbs))
 		for(var/V in user.mind.special_verbs)
 			add_verb(user, V)
 

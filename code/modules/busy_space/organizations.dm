@@ -9,7 +9,7 @@
 	var/headquarters = ""		// Location of the organization's HQ.  Currently unused.
 	var/motto = ""				// A motto/jingle/whatever, if they have one.  Currently unused.
 
-	var/list/ship_prefixes = list()	//Some might have more than one! Like NanoTrasen. Value is the mission they perform, e.g. ("ABC" = "mission desc")
+	var/list/ship_prefixes	//Some might have more than one! Like NanoTrasen. Value is the mission they perform, e.g. ("ABC" = "mission desc")
 	var/complex_tasks = FALSE	//enables complex task generation
 
 	//how does it work? simple: if you have complex tasks enabled, it goes; PREFIX + TASK_TYPE + FLIGHT_TYPE

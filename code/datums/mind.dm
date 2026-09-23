@@ -38,7 +38,7 @@
 	var/datum/job/assigned_job
 
 	var/list/datum/objective/objectives = list()
-	var/list/datum/objective/special_verbs = list()
+	var/list/datum/objective/special_verbs
 
 	var/has_been_rev = 0//Tracks if this mind has been a rev or not
 

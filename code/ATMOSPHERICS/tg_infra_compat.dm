@@ -78,7 +78,7 @@ GLOBAL_LIST_INIT(contrast_colors, list("#ff0000", "#00ff00", "#0000ff", "#ffff00
 
 // === SSmapping multi-z helpers (CHOMP doesn't expose these as GLOB lists) ===
 /datum/controller/subsystem/mapping
-	var/list/z_list = list()
+	var/list/z_list
 	var/max_plane_offset = 0
 	var/list/multiz_levels = list()
 

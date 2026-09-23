@@ -64,7 +64,7 @@ GLOBAL_LIST_EMPTY_TYPED(dna_genes_bad, /datum/gene/trait)
 
 	// New stuff
 	var/species = SPECIES_HUMAN
-	var/list/body_markings = list()
+	var/list/body_markings
 
 // Make a copy of this strand.
 // USE THIS WHEN COPYING STUFF OR YOU'LL GET CORRUPTION!
@@ -82,7 +82,7 @@ GLOBAL_LIST_EMPTY_TYPED(dna_genes_bad, /datum/gene/trait)
 				dirtySE=1
 				continue
 			if("body_markings")
-				var/list/body_markings_genetic = body_markings.Copy()
+				var/list/body_markings_genetic = LAZYCOPY(body_markings)
 				body_markings_genetic -= GLOB.body_marking_nopersist_list
 				new_dna.vars[A] = body_markings_genetic
 				continue
@@ -271,10 +271,10 @@ GLOBAL_LIST_EMPTY_TYPED(dna_genes_bad, /datum/gene/trait)
 	SetUIValueRange(DNA_UI_HAIR_STYLE,  hair,  GLOB.hair_styles_list.len,       1)
 	SetUIValueRange(DNA_UI_BEARD_STYLE, beard, GLOB.facial_hair_styles_list.len,1)
 
-	body_markings.Cut()
+	LAZYCLEARLIST(body_markings)
 	for(var/obj/item/organ/external/E in character.organs)
 		if(E.markings.len)
-			body_markings[E.organ_tag] = E.markings.Copy()
+			LAZYSET(body_markings, E.organ_tag, E.markings.Copy())
 
 	UpdateUI()
 
@@ -320,7 +320,7 @@ GLOBAL_LIST_EMPTY_TYPED(dna_genes_bad, /datum/gene/trait)
 	for(var/tag in body_markings)
 		var/obj/item/organ/external/E = H.organs_by_name[tag]
 		if(E)
-			var/list/marklist = body_markings[tag]
+			var/list/marklist = LAZYACCESS(body_markings, tag)
 			E.markings = marklist.Copy()
 
 	//Hair style

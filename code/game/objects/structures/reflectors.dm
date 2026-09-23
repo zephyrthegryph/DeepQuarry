@@ -20,7 +20,7 @@
 	var/list/allowed_projectile_typecache = list(/obj/item/projectile/beam)
 	var/rotation_angle = -1
 	var/can_decon = TRUE
-	var/list/has_projectiles = list()
+	var/list/has_projectiles
 	var/bullet_act_in_progress = FALSE
 
 /obj/structure/reflector/Initialize(mapload)
@@ -55,7 +55,7 @@
 	UNTIL(!bullet_act_in_progress)
 	var/list/angles = list()
 	for(var/obj/item/projectile/P in has_projectiles)
-		angles[num2text(has_projectiles[P])] += P.damage
+		angles[num2text(LAZYACCESS(has_projectiles, P))] += P.damage
 	for(var/angle in angles)
 		var/obj/item/projectile/P = new fires_projectile(src)
 		P.firer = src
@@ -74,7 +74,7 @@
 			add_overlay(deflector_overlay)
 
 /obj/structure/reflector/proc/redirect_projectile(obj/item/projectile/P,pangle)
-	has_projectiles[P] = pangle
+	LAZYSET(has_projectiles, P, pangle)
 	qdel(P)
 
 /obj/structure/reflector/set_dir(new_dir)

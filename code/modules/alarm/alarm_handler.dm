@@ -4,8 +4,8 @@
 /datum/alarm_handler
 	var/category = ""
 	var/list/datum/alarm/alarms = new		// All alarms, to handle cases when an origin has been deleted with one or more active alarms
-	var/list/datum/alarm/alarms_assoc = new	// Associative list of alarms, to efficiently acquire them based on origin.
-	var/list/listeners = new				// A list of all objects interested in alarm changes.
+	var/list/datum/alarm/alarms_assoc	// Associative list of alarms, to efficiently acquire them based on origin.
+	var/list/listeners				// A list of all objects interested in alarm changes.
 
 /datum/alarm_handler/process()
 	for(var/datum/alarm/A in alarms)
@@ -27,7 +27,7 @@
 
 	new_alarm = 0
 	//see if there is already an alarm of this origin
-	var/datum/alarm/existing = alarms_assoc[origin]
+	var/datum/alarm/existing = LAZYACCESS(alarms_assoc, origin)
 	if(existing)
 		existing.set_source_data(source, duration, severity, hidden)
 	else
@@ -35,7 +35,7 @@
 		new_alarm = 1
 
 	alarms |= existing
-	alarms_assoc[origin] = existing
+	LAZYSET(alarms_assoc, origin, existing)
 	if(new_alarm)
 		alarms = dd_sortedObjectList(alarms)
 		on_alarm_change(existing, ALARM_RAISED)
@@ -48,7 +48,7 @@
 		return
 	origin = origin.get_alarm_origin()
 
-	var/datum/alarm/existing = alarms_assoc[origin]
+	var/datum/alarm/existing = LAZYACCESS(alarms_assoc, origin)
 	if(existing)
 		existing.clear(source)
 		return check_alarm_cleared(existing)
@@ -62,7 +62,7 @@
 	var/list/datum/alarm/check_alarms = alarms.Copy()
 	for(var/datum/alarm/alarm as anything in check_alarms)
 		if(alarm.origin == departing)
-			alarms_assoc -= alarm.origin
+			LAZYREMOVE(alarms_assoc, alarm.origin)
 			alarm.origin = null
 		alarm.clear(departing)
 		if(alarm.cameras)
@@ -84,7 +84,7 @@
 /datum/alarm_handler/proc/check_alarm_cleared(datum/alarm/alarm)
 	if ((alarm.end_time && world.time > alarm.end_time) || !alarm.sources.len)
 		alarms -= alarm
-		alarms_assoc -= alarm.origin
+		LAZYREMOVE(alarms_assoc, alarm.origin)
 		on_alarm_change(alarm, ALARM_CLEARED)
 		qdel(alarm)
 		return 1
@@ -106,7 +106,7 @@
 		return
 
 	origin = origin.get_alarm_origin()
-	var/datum/alarm/existing = alarms_assoc[origin]
+	var/datum/alarm/existing = LAZYACCESS(alarms_assoc, origin)
 	if(!existing)
 		return
 
@@ -119,14 +119,14 @@
 	return get_area(src)
 
 /datum/alarm_handler/proc/register_alarm(object, procName)
-	listeners[object] = procName
+	LAZYSET(listeners, object, procName)
 
 /datum/alarm_handler/proc/unregister_alarm(object)
-	listeners -= object
+	LAZYREMOVE(listeners, object)
 
 /datum/alarm_handler/proc/notify_listeners(alarm, was_raised)
 	for(var/listener in listeners)
-		call(listener, listeners[listener])(src, alarm, was_raised)
+		call(listener, LAZYACCESS(listeners, listener))(src, alarm, was_raised)
 
 /datum/alarm_handler/proc/visible_alarms(z)
 	if(!LAZYLEN(alarms))

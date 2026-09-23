@@ -14,7 +14,7 @@
 	var/malware_spread_cooldown = 30 SECONDS
 
 	var/list/vending_machines = list() // List of venders that can potentially be infected.
-	var/list/infected_vending_machines = list() // List of venders that have been infected.
+	var/list/infected_vending_machines // List of venders that have been infected.
 	var/obj/machinery/vending/vender_zero = null // The first vending machine infected. If that one gets fixed, all other infected machines will be cured.
 	var/last_malware_spread_time = null
 
@@ -77,12 +77,12 @@
 
 /datum/event2/event/brand_intelligence/proc/infect_vender(obj/machinery/vending/V)
 	vending_machines -= V
-	infected_vending_machines += V
+	LAZYADD(infected_vending_machines, V)
 	V.shut_up = FALSE
 	V.shoot_inventory = TRUE
 
 /datum/event2/event/brand_intelligence/proc/cure_vender(obj/machinery/vending/V)
-	infected_vending_machines -= V
+	LAZYREMOVE(infected_vending_machines, V)
 	V.shut_up = TRUE
 	V.shoot_inventory = FALSE
 

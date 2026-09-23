@@ -8,7 +8,7 @@
 	desc = "View communication logs here. Translation not guaranteed."
 	icon_screen = "comm_logs"
 
-	var/list/servers = list()	// the servers located by the computer
+	var/list/servers	// the servers located by the computer
 	var/obj/machinery/telecomms/server/SelectedServer
 	circuit = /obj/item/circuitboard/comm_server
 
@@ -99,15 +99,15 @@
 			. = TRUE
 
 		if("scan")
-			if(servers.len > 0)
+			if(length(servers) > 0)
 				set_temp("FAILED: CANNOT PROBE WHEN BUFFER FULL", "bad")
 				return TRUE
 
 			for(var/obj/machinery/telecomms/server/T in range(25, src))
 				if(T.network == network)
-					servers.Add(T)
+					LAZYADD(servers, T)
 
-			if(!servers.len)
+			if(!length(servers))
 				set_temp("FAILED: UNABLE TO LOCATE SERVERS IN \[[network]\]", "bad")
 			else
 				set_temp("[servers.len] SERVERS PROBED & BUFFERED", "good")
@@ -122,9 +122,9 @@
 				var/idx = text2num(params["id"])
 				if(!idx || idx < 1 || idx > length(SelectedServer.log_entries))
 					return
-				var/datum/comm_log_entry/D = SelectedServer.log_entries[idx]
+				var/datum/comm_log_entry/D = LAZYACCESS(SelectedServer.log_entries, idx)
 				set_temp("DELETED ENTRY: [D.name]", "bad")
-				SelectedServer.log_entries.Remove(D)
+				LAZYREMOVE(SelectedServer.log_entries, D)
 				qdel(D)
 			else
 				set_temp("FAILED: NO SELECTED MACHINE", "bad")

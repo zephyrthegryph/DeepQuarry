@@ -665,7 +665,7 @@
 	spawn_flags = IC_SPAWN_RESEARCH
 	power_draw_per_use = 30
 
-	var/list/my_langs = list()
+	var/list/my_langs
 	var/static/list/readable_langs = list(
 		LANGUAGE_GALCOM,
 		LANGUAGE_SOL_COMMON,
@@ -679,7 +679,7 @@
 	. = ..()
 	for(var/lang in readable_langs)
 		var/datum/language/newlang = GLOB.all_languages[lang]
-		my_langs |= newlang
+		LAZYOR(my_langs, newlang)
 
 /obj/item/integrated_circuit/input/microphone/sign/hear_talk(mob/M, list/message_pieces, verb)
 	var/msg = multilingual_to_message(message_pieces)

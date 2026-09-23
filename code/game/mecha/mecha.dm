@@ -39,7 +39,7 @@
 	var/add_req_access = 1
 	var/maint_access = 1
 	var/dna								//Dna-locking the mech
-	var/list/proc_res = list() 			//Stores proc owners, like proc_res["functionname"] = owner reference
+	var/list/proc_res 			//Stores proc owners, like proc_res["functionname"] = owner reference
 	var/datum/effect/effect/system/spark_spread/spark_system
 	var/lights = 0
 	var/lights_power = 6
@@ -91,7 +91,7 @@
 	var/list/hull_equipment = list()
 	var/list/weapon_equipment = list()
 	var/list/utility_equipment = list()
-	var/list/universal_equipment = list()
+	var/list/universal_equipment
 	var/list/special_equipment = list()
 	var/max_hull_equip = 2
 	var/max_weapon_equip = 2
@@ -118,7 +118,7 @@
 		)
 
 //Working exosuit vars
-	var/list/cargo = list()
+	var/list/cargo
 	var/cargo_capacity = 3
 
 	var/static/image/radial_image_eject = image(icon = 'icons/mob/radial.dmi', icon_state = "radial_eject")
@@ -280,7 +280,7 @@
 		hull_equipment.Cut()
 		weapon_equipment.Cut()
 		utility_equipment.Cut()
-		universal_equipment.Cut()
+		LAZYCLEARLIST(universal_equipment)
 		special_equipment.Cut()
 		for(var/obj/item/mecha_parts/mecha_equipment/E in equipment)
 			if(E.salvageable && prob(30))
@@ -770,7 +770,7 @@
 
 /obj/mecha/proc/domove(direction)
 
-	return call((proc_res["dyndomove"]||src), "dyndomove")(direction)
+	return call((LAZYACCESS(proc_res, "dyndomove")||src), "dyndomove")(direction)
 
 /obj/mecha/proc/get_step_delay()
 	var/tally = 0
@@ -1077,7 +1077,7 @@
 		return AC.damage_absorption
 
 /obj/mecha/proc/absorbDamage(damage,damage_type)
-	return call((proc_res["dynabsorbdamage"]||src), "dynabsorbdamage")(damage,damage_type)
+	return call((LAZYACCESS(proc_res, "dynabsorbdamage")||src), "dynabsorbdamage")(damage,damage_type)
 
 /obj/mecha/proc/dynabsorbdamage(damage,damage_type)
 	return damage*(listgetindex(get_damage_absorption(),damage_type) || 1)
@@ -1183,7 +1183,7 @@
 /obj/mecha/hitby(atom/movable/source, datum/thrownthing/throwingdatum) //wrapper
 	..()
 	src.mecha_log_message("Hit by [source].",1)
-	call((proc_res["dynhitby"]||src), "dynhitby")(source)
+	call((LAZYACCESS(proc_res, "dynhitby")||src), "dynhitby")(source)
 	return
 
 //I think this is relative to throws.
@@ -1256,7 +1256,7 @@
 		return
 
 	src.mecha_log_message("Hit by projectile. Type: [Proj.name]([armor_kind_name(Proj.injury_kind)]).",1)
-	call((proc_res["dynbulletdamage"]||src), "dynbulletdamage")(Proj) //calls equipment
+	call((LAZYACCESS(proc_res, "dynbulletdamage")||src), "dynbulletdamage")(Proj) //calls equipment
 	..()
 	return
 
@@ -1691,7 +1691,7 @@
 			return
 
 	else
-		call((proc_res["dynattackby"]||src), "dynattackby")(W,user)
+		call((LAZYACCESS(proc_res, "dynattackby")||src), "dynattackby")(W,user)
 /*
 		src.mecha_log_message("Attacked by [W]. Attacker - [user]")
 		if(prob(src.deflect_chance))
@@ -2443,7 +2443,7 @@
 		list("label" = "Micro Weapon",  "used" = micro_weapon_equipment.len,  "max" = max_micro_weapon_equip),
 		list("label" = "Utility",       "used" = utility_equipment.len,       "max" = max_utility_equip),
 		list("label" = "Micro Utility", "used" = micro_utility_equipment.len, "max" = max_micro_utility_equip),
-		list("label" = "Universal",     "used" = universal_equipment.len,     "max" = max_universal_equip),
+		list("label" = "Universal",     "used" = length(universal_equipment),     "max" = max_universal_equip),
 		list("label" = "Special",       "used" = special_equipment.len,       "max" = max_special_equip),
 	)
 	data["can_eject"] = (/obj/mecha/verb/eject in verbs)
@@ -2597,7 +2597,7 @@
 
 //Cargo components. Keep this last otherwise it does weird alignment issues.
 	output += span_bold("Cargo Compartment Contents:") + "<div style=\"margin-left: 15px;\">"
-	if(src.cargo.len)
+	if(length(src.cargo))
 		for(var/obj/O in src.cargo)
 			output += "<a href='byond://?src=\ref[src];drop_from_cargo=\ref[O]'>Unload</a> : [O]<br>"
 	else
@@ -2961,7 +2961,7 @@
 		if(O && (O in src.cargo))
 			src.occupant_message(span_notice("You unload [O]."))
 			O.forceMove(get_turf(src))
-			src.cargo -= O
+			LAZYREMOVE(src.cargo, O)
 			var/turf/T = get_turf(O)
 			if(T)
 				T.Entered(O)
@@ -3027,14 +3027,14 @@
 	return (get_charge()>=amount)
 
 /obj/mecha/proc/get_charge()
-	return call((proc_res["dyngetcharge"]||src), "dyngetcharge")()
+	return call((LAZYACCESS(proc_res, "dyngetcharge")||src), "dyngetcharge")()
 
 /obj/mecha/proc/dyngetcharge()//returns null if no powercell, else returns cell.charge
 	if(!src.cell) return
 	return max(0, src.cell.charge)
 
 /obj/mecha/proc/use_power(amount)
-	return call((proc_res["dynusepower"]||src), "dynusepower")(amount)
+	return call((LAZYACCESS(proc_res, "dynusepower")||src), "dynusepower")(amount)
 
 /obj/mecha/proc/dynusepower(amount)
 	update_cell_alerts()

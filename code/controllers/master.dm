@@ -89,7 +89,7 @@ GLOBAL_REAL(Master, /datum/controller/master)
 	var/list/perf_tick_realtime = list()
 	var/list/perf_outliers = list()
 	/// Breakdown for the highest-usage tick since the last explicit reset.
-	var/list/perf_worst_tick = list()
+	var/list/perf_worst_tick
 	var/perf_history_limit = 12000
 	/// Every sample ever recorded, so callers can hold a position that survives trimming.
 	var/perf_samples_total = 0
@@ -370,7 +370,7 @@ ADMIN_VERB(cmd_controller_view_ui, R_SERVER|R_DEBUG, "Controller Overview", "Vie
 				stack_trace("ERROR: MC: subsystem `[subsystem.type]` has an invalid dependent: `[dependent_type]`. Skipping")
 				continue
 			var/datum/controller/subsystem/dependent = type_to_subsystem[dependent_type]
-			dependent.dependencies |= subsystem.type
+			LAZYOR(dependent.dependencies, subsystem.type)
 		subsystem.dependents = list()
 
 	// Constructs a reverse-dependency graph.
@@ -835,7 +835,7 @@ ADMIN_VERB(cmd_controller_view_ui, R_SERVER|R_DEBUG, "Controller Overview", "Vie
 		var/trim_count = min(1000, perf_tick_usage.len - 1)
 		perf_tick_usage.Cut(1, trim_count + 1)
 		perf_tick_realtime.Cut(1, trim_count + 1)
-	var/previous_worst_usage = perf_worst_tick["usage"] || 0
+	var/previous_worst_usage = LAZYACCESS(perf_worst_tick, "usage") || 0
 	if(usage > previous_worst_usage || usage > 100)
 		var/list/breakdown = performance_tick_breakdown(usage)
 		var/list/tick_record = list(

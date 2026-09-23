@@ -13,7 +13,7 @@
 	var/door_type =  /obj/machinery/door/airlock/lift
 	var/firedoor_type = /obj/machinery/door/firedoor/glass //for adding a firedoor to the exterior door
 
-	var/list/areas_to_use = list()
+	var/list/areas_to_use
 
 /obj/turbolift_map_holder/Destroy()
 	GLOB.turbolifts -= src
@@ -211,12 +211,12 @@
 			light2.set_dir(NORTH)
 
 		// Update area.
-		if(az > areas_to_use.len)
+		if(az > length(areas_to_use))
 			log_mapping("[name] at [ux],[uy],[uz] requires [depth] floor areas but has [areas_to_use.len]; failed while creating z=[cz]. Aborting.")
 			qdel(src)
 			return
 
-		var/area_path = areas_to_use[az]
+		var/area_path = LAZYACCESS(areas_to_use, az)
 		for(var/thing in floor_turfs)
 			new area_path(thing)
 		var/area/A = locate(area_path)

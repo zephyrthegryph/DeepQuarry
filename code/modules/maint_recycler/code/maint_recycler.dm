@@ -42,7 +42,7 @@
 
 	var/obj/item/inserted_item
 
-	var/list/hostile_towards = list() //we remember mean people. do NOT recycle scugs. list of user keys
+	var/list/hostile_towards //we remember mean people. do NOT recycle scugs. list of user keys
 	var/list/granted_points = list() //assoc list. key to points given
 
 
@@ -277,7 +277,7 @@
 /obj/machinery/maint_recycler/proc/evil_act(obj/item/O,mob/user)
 	var/isRepeat = is_user_hostile(user)
 	if(!isRepeat && user.key)
-		hostile_towards |= user.key
+		LAZYOR(hostile_towards, user.key)
 
 	if(istype(O,/obj/item/holder) || istype(O,/mob/)) //just in case.
 		var/obj/item/holder/h = O

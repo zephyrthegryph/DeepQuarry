@@ -22,8 +22,8 @@
 	icon_state = "santasack"
 
 	var/santa_ckey = null //The ckey set for the person acting as Santa, will be the only one able to anchor/unachor as well as retrieve presents.
-	var/list/nice_list_log = list() //The log that will contain all characters and their ckeys that the santa has given a gift to.
-	var/list/ckey_log = list() //The log that ensures nobody is naughty and tries to trick Santa into giving them twice!
+	var/list/nice_list_log //The log that will contain all characters and their ckeys that the santa has given a gift to.
+	var/list/ckey_log //The log that ensures nobody is naughty and tries to trick Santa into giving them twice!
 	anchored = 1.0
 	density = 1
 
@@ -59,7 +59,7 @@
 	if(!T || !T.ckey)
 		return
 
-	if(ckey_log[T.ckey])
+	if(LAZYACCESS(ckey_log, T.ckey))
 		to_chat(usr, span_warning("This one already got a present!"))
 		return
 
@@ -68,6 +68,6 @@
 		O.show_message(span_warning("Santa pulls out a present for [T.name]! \"Merry Christmas!"),1)
 
 	var/santa_log = "[T.ckey] playing as [T.name] got a present!"
-	nice_list_log[++nice_list_log.len] = santa_log
-	ckey_log[T.ckey] = TRUE
+	LAZYSET(nice_list_log, ++length(nice_list_log), santa_log)
+	LAZYSET(ckey_log, T.ckey, TRUE)
 	//Currently doesnt have an ingame way to show. Can only be viewed through View-Variables, to ensure theres no chance of players ckeys exposed - Jack

@@ -12,7 +12,7 @@
 	icon_screen = "comm_monitor"
 
 	var/screen = 0				// the screen number:
-	var/list/machinelist = list()	// the machines located by the computer
+	var/list/machinelist	// the machines located by the computer
 	var/obj/machinery/telecomms/SelectedMachine
 	circuit = /obj/item/circuitboard/comm_monitor
 
@@ -85,15 +85,15 @@
 			. = TRUE
 
 		if("scan")
-			if(machinelist.len > 0)
+			if(length(machinelist) > 0)
 				set_temp("FAILED: CANNOT PROBE WHEN BUFFER FULL", "bad")
 				return TRUE
 
 			for(var/obj/machinery/telecomms/T in range(25, src))
 				if(T.network == network)
-					machinelist.Add(T)
+					LAZYADD(machinelist, T)
 
-			if(!machinelist.len)
+			if(!length(machinelist))
 				set_temp("FAILED: UNABLE TO LOCATE NETWORK ENTITIES IN \[[network]\]", "bad")
 			else
 				set_temp("[machinelist.len] ENTITIES LOCATED & BUFFERED", "good")

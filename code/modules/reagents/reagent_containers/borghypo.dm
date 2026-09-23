@@ -31,7 +31,7 @@
 	var/list/reagent_ids = list(REAGENT_ID_TRICORDRAZINE, REAGENT_ID_INAPROVALINE, REAGENT_ID_BICARIDINE, REAGENT_ID_ANTITOXIN, REAGENT_ID_KELOTANE, REAGENT_ID_TRAMADOL, REAGENT_ID_DEXALIN, REAGENT_ID_SPACEACILLIN)
 	var/list/reagent_volumes = list()
 	/// Associated list of the names of each of our reagents. Indexed via `mode`.
-	var/list/reagent_names = list()
+	var/list/reagent_names
 	/// If we're currently recording a recipe, this will be set to a list containing the recipe's steps.
 	var/list/recording_recipe
 	/// Associated list of the recipes we have saved. Indexed via the string ID of the recipe.
@@ -102,7 +102,7 @@
 	for(var/T in reagent_ids)
 		reagent_volumes[T] = volume
 		var/datum/reagent/hypo_reagent = SSchemistry.chemical_reagents[T]
-		reagent_names += hypo_reagent.name
+		LAZYADD(reagent_names, hypo_reagent.name)
 
 	START_PROCESSING(SSobj, src)
 

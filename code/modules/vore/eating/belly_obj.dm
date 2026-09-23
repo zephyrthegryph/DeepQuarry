@@ -119,7 +119,7 @@
 	var/autotransfer_enabled = FALSE		// Player toggle
 	var/autotransfer_min_amount = 0			// Minimum amount of things to pass at once.
 	var/autotransfer_max_amount = 0			// Maximum amount of things to pass at once.
-	var/tmp/list/autotransfer_queue = list()// Reserve for above things.
+	var/tmp/list/autotransfer_queue// Reserve for above things.
 	//Auto-transfer flags for whitelist
 	var/tmp/static/list/autotransfer_flags_list = list("Creatures" = AT_FLAG_CREATURES, "Absorbed" = AT_FLAG_ABSORBED, "Carbon" = AT_FLAG_CARBON, "Silicon" = AT_FLAG_SILICON, "Mobs" = AT_FLAG_MOBS, "Animals" = AT_FLAG_ANIMALS, "Mice" = AT_FLAG_MICE, "Dead" = AT_FLAG_DEAD, "Digestable Creatures" = AT_FLAG_CANDIGEST, "Absorbable Creatures" = AT_FLAG_CANABSORB, "Full Health" = AT_FLAG_HEALTHY)
 	var/tmp/static/list/autotransfer_flags_list_items = list("Items" = AT_FLAG_ITEMS, "Trash" = AT_FLAG_TRASH, "Eggs" = AT_FLAG_EGGS, "Remains" = AT_FLAG_REMAINS, "Indigestible Items" = AT_FLAG_INDIGESTIBLE, "Recyclable Items" = AT_FLAG_RECYCLABLE, "Ores" = AT_FLAG_ORES, "Clothes and Bags" = AT_FLAG_CLOTHES, "Food" = AT_FLAG_FOOD)
@@ -283,6 +283,12 @@
 	if(!save_digest_mode)
 		. += "digest_mode"
 
+// New(), not Initialize(): callers customise a belly right after creating it, and
+// Initialize() can be deferred past that during map load.
+/obj/belly/New(loc, ...)
+	share_default_tables()
+	return ..()
+
 /obj/belly/Initialize(mapload)
 	. = ..()
 	//If not, we're probably just in a prefs list or something.
@@ -297,6 +303,23 @@
 
 	create_reagents(300)	// So we can have some liquids in bellies
 	AddElement(/datum/element/empprotection, EMP_PROTECT_ALL)
+
+/// Message and reagent tables that are only ever replaced whole (the vore panel,
+/// imports and mob setup assign new lists). Every belly of a type starts with the
+/// same defaults, so they share the first belly's lists instead of holding ~50 each.
+/// Never edit these in place: assign a new list.
+/obj/belly/proc/share_default_tables()
+	var/static/list/table_vars = list("absorb_chance_messages_owner", "absorb_chance_messages_prey", "absorb_messages_owner", "absorb_messages_prey", "absorbed_struggle_messages_inside", "absorbed_struggle_messages_outside", "digest_chance_messages_owner", "digest_chance_messages_prey", "digest_messages_owner", "digest_messages_prey", "escape_absorbed_messages_outside", "escape_absorbed_messages_owner", "escape_absorbed_messages_prey", "escape_attempt_absorbed_messages_owner", "escape_attempt_absorbed_messages_prey", "escape_attempt_messages_owner", "escape_attempt_messages_prey", "escape_fail_absorbed_messages_owner", "escape_fail_absorbed_messages_prey", "escape_fail_messages_owner", "escape_fail_messages_prey", "escape_item_messages_outside", "escape_item_messages_owner", "escape_item_messages_prey", "escape_messages_outside", "escape_messages_owner", "escape_messages_prey", "examine_messages", "examine_messages_absorbed", "fullness1_messages", "fullness2_messages", "fullness3_messages", "fullness4_messages", "fullness5_messages", "generated_reagents", "primary_autotransfer_messages_owner", "primary_autotransfer_messages_prey", "primary_transfer_messages_owner", "primary_transfer_messages_prey", "secondary_autotransfer_messages_owner", "secondary_autotransfer_messages_prey", "secondary_transfer_messages_owner", "secondary_transfer_messages_prey", "struggle_messages_inside", "struggle_messages_outside", "trash_eater_in", "trash_eater_out", "unabsorb_messages_owner", "unabsorb_messages_prey")
+	var/static/list/tables_by_type = list()
+	var/list/shared = tables_by_type[type]
+	if(shared)
+		for(var/name in shared)
+			vars[name] = shared[name]
+		return
+	shared = list()
+	for(var/name in table_vars)
+		shared[name] = vars[name]
+	tables_by_type[type] = shared
 
 /obj/belly/Destroy()
 	if(mode_flags & DM_FLAG_TURBOMODE)

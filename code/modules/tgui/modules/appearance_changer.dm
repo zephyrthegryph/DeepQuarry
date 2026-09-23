@@ -20,9 +20,9 @@
 	tgui_id = "AppearanceChanger"
 	var/flags = APPEARANCE_ALL_HAIR
 	var/mob/living/carbon/human/owner = null
-	var/list/valid_species = list()
-	var/list/valid_hairstyles = list()
-	var/list/valid_facial_hairstyles = list()
+	var/list/valid_species
+	var/list/valid_hairstyles
+	var/list/valid_facial_hairstyles
 
 	var/check_whitelist
 	var/list/whitelist
@@ -910,8 +910,8 @@
 
 /datum/tgui_module/appearance_changer/proc/cut_data()
 	// Making the assumption that the available species remain constant
-	valid_hairstyles.Cut()
-	valid_facial_hairstyles.Cut()
+	LAZYCLEARLIST(valid_hairstyles)
+	LAZYCLEARLIST(valid_facial_hairstyles)
 	valid_earstyles.Cut()
 	valid_tailstyles.Cut()
 	valid_wingstyles.Cut()

@@ -38,7 +38,7 @@
 	var/list/current_board = list()
 	var/list/valid_moves = list()
 	var/list/selected_figure = list()
-	var/list/last_double_pawn_move = list()
+	var/list/last_double_pawn_move
 	var/game_flags = NONE
 	var/turn_start_time = 0
 	var/winner
@@ -161,7 +161,7 @@
 	player_two_time = 0
 	selected_figure.Cut()
 	valid_moves.Cut()
-	last_double_pawn_move.Cut()
+	LAZYCLEARLIST(last_double_pawn_move)
 	game_flags = NONE
 	if(full)
 		current_board.Cut()
@@ -227,7 +227,7 @@
 			if(moving_piece[2] == "P" && abs(to_y - from_y) == 2)
 				last_double_pawn_move = list(to_x, to_y, moving_piece[1])
 			else
-				last_double_pawn_move.Cut()
+				LAZYCLEARLIST(last_double_pawn_move)
 
 			if(moving_piece[2] == "P")
 				if((moving_piece[1] == "w" && to_y == 1) || (moving_piece[1] == "b" && to_y == GRID_SIZE))
@@ -481,7 +481,7 @@
 			else if(abs_dx == 1 && dy == dir && target)
 				can_move = TRUE
 			else if(abs_dx == 1 && dy == dir && !target && length(last_double_pawn_move))
-				if(last_double_pawn_move[1] == to_x && last_double_pawn_move[2] == from_y && last_double_pawn_move[3] == (color == "w" ? "b" : "w"))
+				if(LAZYACCESS(last_double_pawn_move, 1) == to_x && LAZYACCESS(last_double_pawn_move, 2) == from_y && LAZYACCESS(last_double_pawn_move, 3) == (color == "w" ? "b" : "w"))
 					can_move = TRUE
 		if("N")
 			if((abs_dx == 2 && abs_dy == 1) || (abs_dx == 1 && abs_dy == 2))
@@ -524,7 +524,7 @@
 /datum/board_game/chess/proc/can_en_passant(from_x, from_y, to_x, to_y)
 	if(!last_double_pawn_move)
 		return FALSE
-	return last_double_pawn_move[1] == to_x && last_double_pawn_move[2] == from_y && last_double_pawn_move[3] == (current_board[from_y][from_x][1] == "w" ? "b" : "w")
+	return LAZYACCESS(last_double_pawn_move, 1) == to_x && LAZYACCESS(last_double_pawn_move, 2) == from_y && LAZYACCESS(last_double_pawn_move, 3) == (current_board[from_y][from_x][1] == "w" ? "b" : "w")
 
 /datum/board_game/chess/proc/field_check(new_x_location, new_y_location)
 	if(new_x_location < 1 || new_x_location > GRID_SIZE)

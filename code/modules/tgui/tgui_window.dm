@@ -41,7 +41,7 @@
 	var/initial_inline_js
 	var/initial_inline_css
 
-	var/list/oversized_payloads = list()
+	var/list/oversized_payloads
 
 /**
  * public
@@ -556,10 +556,10 @@
 	return var_name != NAMEOF(src, id) && ..()
 
 /datum/tgui_window/proc/create_oversized_payload(payload_id, message_type, chunk_count)
-	if(oversized_payloads[payload_id])
+	if(LAZYACCESS(oversized_payloads, payload_id))
 		stack_trace("Attempted to create oversized tgui payload with duplicate ID.")
 		return
-	oversized_payloads[payload_id] = list(
+	LAZYSET(oversized_payloads, payload_id, list()
 		"type" = message_type,
 		"count" = chunk_count,
 		"chunks" = list(),
@@ -567,7 +567,7 @@
 	)
 
 /datum/tgui_window/proc/append_payload_chunk(payload_id, chunk)
-	var/list/payload = oversized_payloads[payload_id]
+	var/list/payload = LAZYACCESS(oversized_payloads, payload_id)
 	if(!payload)
 		return
 	var/list/chunks = payload["chunks"]
@@ -585,4 +585,4 @@
 		payload["timeout"] = addtimer(CALLBACK(src, PROC_REF(remove_oversized_payload), payload_id), 10 SECONDS, TIMER_UNIQUE|TIMER_OVERRIDE|TIMER_STOPPABLE)
 
 /datum/tgui_window/proc/remove_oversized_payload(payload_id)
-	oversized_payloads -= payload_id
+	LAZYREMOVE(oversized_payloads, payload_id)

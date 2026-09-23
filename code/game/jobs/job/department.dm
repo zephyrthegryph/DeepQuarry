@@ -23,7 +23,7 @@
 	/// The full set of access flags associated with this department's facilities.
 	/// Not all jobs receive all of these; the list exists so designers can see the
 	/// complete department access space and choose appropriate subsets per job.
-	var/list/specialized_access = list()
+	var/list/specialized_access
 
 /datum/department/command
 	name = DEPARTMENT_COMMAND

@@ -3,7 +3,7 @@
 	var/datum/turbolift_floor/target_floor              // Where are we going?
 	var/datum/turbolift_floor/current_floor             // Where is the lift currently?
 	var/list/doors = list()                             // Doors inside the lift structure.
-	var/list/queued_floors = list()                     // Where are we moving to next?
+	var/list/queued_floors                     // Where are we moving to next?
 	var/list/floors = list()                            // All floors in this system.
 	var/move_delay = 30                                 // Time between floor changes.
 	var/floor_wait_delay = 85                           // Time to wait at floor stops.
@@ -69,7 +69,7 @@
 	for(var/datum/turbolift_floor/floor in queued_floors)
 		if(floor.ext_panel)
 			floor.ext_panel.reset()
-	queued_floors.Cut()
+	LAZYCLEARLIST(queued_floors)
 
 // Update the icons of all exterior panels (after we change modes etc)
 /datum/turbolift/proc/update_ext_panel_icons()
@@ -121,7 +121,7 @@
 			next_process = world.time + floor_wait_delay
 			busy_state = LIFT_WAITING_B
 		if(LIFT_WAITING_B)
-			if(queued_floors.len)
+			if(length(queued_floors))
 				busy_state = LIFT_MOVING
 			else
 				busy_state = null
@@ -137,10 +137,10 @@
 	var/current_floor_index = floors.Find(current_floor)
 
 	if(!target_floor)
-		if(!queued_floors || !queued_floors.len)
+		if(!queued_floors || !length(queued_floors))
 			return 0
-		target_floor = queued_floors[1]
-		queued_floors -= target_floor
+		target_floor = LAZYACCESS(queued_floors, 1)
+		LAZYREMOVE(queued_floors, target_floor)
 		if(current_floor_index < floors.Find(target_floor))
 			moving_upwards = 1
 		else
@@ -211,7 +211,7 @@
 	if(!floor || !(floor in floors) || (floor in queued_floors))
 		return // STOP PRESSING THE BUTTON.
 	floor.pending_move(src)
-	queued_floors |= floor
+	LAZYOR(queued_floors, floor)
 	busy_state = LIFT_MOVING
 	START_PROCESSING(SSprocessing, src)
 

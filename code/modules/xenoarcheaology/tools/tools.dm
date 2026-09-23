@@ -104,7 +104,7 @@
 	matter = list(MAT_STEEL = 1000,MAT_GLASS = 1000)
 	w_class = ITEMSIZE_SMALL
 	slot_flags = SLOT_BELT
-	var/list/positive_locations = list()
+	var/list/positive_locations
 	var/datum/depth_scan/current
 
 /datum/depth_scan
@@ -125,7 +125,7 @@
 			var/datum/depth_scan/D = new()
 			D.coords = "[M.x]:[M.y]:[M.z]"
 			D.time = stationtime2text()
-			D.record_index = positive_locations.len + 1
+			D.record_index = length(positive_locations) + 1
 			D.material = M.mineral ? M.mineral.display_name : "Rock"
 
 			//find the first artifact and store it
@@ -134,7 +134,7 @@
 				D.depth = "[F.excavation_required]"
 				D.material = get_responsive_reagent(F.find_type)
 
-			positive_locations.Add(D)
+			LAZYADD(positive_locations, D)
 
 			to_chat(user, span_notice("[icon2html(src, user.client)] [src] pings."))
 
@@ -145,12 +145,12 @@
 			var/datum/depth_scan/D = new()
 			D.coords = "[B.x]:[B.y]:[B.z]"
 			D.time = stationtime2text()
-			D.record_index = positive_locations.len + 1
+			D.record_index = length(positive_locations) + 1
 
 			//these values are arbitrary
 			D.depth = rand(150, 200)
 
-			positive_locations.Add(D)
+			LAZYADD(positive_locations, D)
 
 			to_chat(user, span_notice("[icon2html(src, user.client)] [src] pings [pick("madly","wildly","excitedly","crazily")]!"))
 
@@ -194,7 +194,7 @@
 	var/list/plocs = list()
 	data["positive_locations"] = plocs
 	for(var/i in 1 to LAZYLEN(positive_locations))
-		var/datum/depth_scan/D = positive_locations[i]
+		var/datum/depth_scan/D = LAZYACCESS(positive_locations, i)
 		plocs.Add(list(list(
 			"index" = i,
 			"time" = D.time,
@@ -211,14 +211,14 @@
 		if("select")
 			var/index = text2num(params["select"])
 			if(index && index <= LAZYLEN(positive_locations))
-				current = positive_locations[index]
+				current = LAZYACCESS(positive_locations, index)
 			return TRUE
 		if("clear")
 			var/index = text2num(params["clear"])
 			if(index)
 				if(index <= LAZYLEN(positive_locations))
-					var/datum/depth_scan/D = positive_locations[index]
-					positive_locations.Remove(D)
+					var/datum/depth_scan/D = LAZYACCESS(positive_locations, index)
+					LAZYREMOVE(positive_locations, D)
 					qdel(D)
 					current = null
 			else

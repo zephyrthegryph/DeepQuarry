@@ -3,7 +3,7 @@
 	announceWhen	= 45	// Adjusted by setup
 	endWhen			= 75	// Adjusted by setup
 	var/jellyfish_cap	= 20
-	var/list/spawned_jellyfish = list()
+	var/list/spawned_jellyfish
 
 /datum/event/jellyfish_migration/setup()
 	announceWhen = rand(30, 60) // 1 to 2 minutes
@@ -71,7 +71,7 @@
 /datum/event/jellyfish_migration/proc/spawn_one_jellyfish(loc)
 	var/mob/living/simple_mob/animal/M = new /mob/living/simple_mob/vore/alienanimals/space_jellyfish(loc)
 	RegisterSignal(M, COMSIG_OBSERVER_DESTROYED, PROC_REF(on_jellyfish_destruction))
-	spawned_jellyfish.Add(M)
+	LAZYADD(spawned_jellyfish, M)
 	return M
 
 // Counts living jellyfish spawned by this event.
@@ -84,7 +84,7 @@
 // If jellyfish is bomphed, remove it from the list.
 /datum/event/jellyfish_migration/proc/on_jellyfish_destruction(mob/M)
 	SIGNAL_HANDLER
-	spawned_jellyfish -= M
+	LAZYREMOVE(spawned_jellyfish, M)
 	UnregisterSignal(M, COMSIG_OBSERVER_DESTROYED)
 
 /datum/event/jellyfish_migration/end()

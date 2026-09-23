@@ -5,7 +5,7 @@
 	var/list/vents = list()
 	var/give_positions = 0
 	var/active_metroid_event = TRUE
-	var/list/alive_metroids = list()
+	var/list/alive_metroids
 
 /datum/event/metroid_infestation/setup()
 	active_metroid_event = TRUE
@@ -36,7 +36,7 @@
 			/mob/living/simple_mob/metroid/juvenile/zeta = 2,
 			/mob/living/simple_mob/metroid/juvenile/omega = 1,
 			))
-		alive_metroids.Add(new spawn_metroids(get_turf(vent)))
+		LAZYADD(alive_metroids, new spawn_metroids(get_turf(vent)))
 		vents -= vent
 		spawncount--
 	vents.Cut()

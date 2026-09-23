@@ -20,7 +20,7 @@
 /datum/alarm
 	var/atom/origin					//Used to identify the alarm area.
 	var/list/sources = new()		//List of sources triggering the alarm. Used to determine when the alarm should be cleared.
-	var/list/sources_assoc = new()	//Associative list of source triggers. Used to efficiently acquire the alarm source.
+	var/list/sources_assoc	//Associative list of source triggers. Used to efficiently acquire the alarm source.
 	var/list/cameras				//List of cameras that can be switched to, if the player has that capability.
 	var/area/last_area				//The last acquired area, used should origin be lost (for example a destroyed borg containing an alarming camera).
 	var/area/last_name				//The last acquired name, used should origin be lost
@@ -59,11 +59,11 @@
 #undef ALARM_RESET_DELAY
 
 /datum/alarm/proc/set_source_data(atom/source, duration, severity, hidden)
-	var/datum/alarm_source/AS = sources_assoc[source]
+	var/datum/alarm_source/AS = LAZYACCESS(sources_assoc, source)
 	if(!AS)
 		AS = new/datum/alarm_source(source)
 		sources += AS
-		sources_assoc[source] = AS
+		LAZYSET(sources_assoc, source, AS)
 		src.hidden = hidden
 	// Currently only non-0 durations can be altered (normal alarms VS EMP blasts)
 	if(AS.duration)
@@ -73,9 +73,9 @@
 	src.hidden = min(src.hidden, hidden)
 
 /datum/alarm/proc/clear(source)
-	var/datum/alarm_source/AS = sources_assoc[source]
+	var/datum/alarm_source/AS = LAZYACCESS(sources_assoc, source)
 	sources -= AS
-	sources_assoc -= source
+	LAZYREMOVE(sources_assoc, source)
 	if(AS)
 		AS.source = null
 		qdel(AS)

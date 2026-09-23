@@ -45,6 +45,8 @@
 #define LAZYINITLIST(L) do { if (!L) { L = list(); } } while(0)
 ///Returns the key of the submitted item in the list
 #define LAZYFIND(L, V) (L ? L.Find(V) : 0)
+///Returns a copy of the lazylist, or a new empty list if it is null
+#define LAZYCOPY(L) (L ? L.Copy() : list())
 
 /// Returns the top (last) element from the list, does not remove it from the list. Stack functionality.
 /proc/peek(list/target_list)

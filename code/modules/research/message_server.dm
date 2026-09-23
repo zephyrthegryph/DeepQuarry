@@ -59,8 +59,8 @@
 	active_power_usage = 100
 	circuit = /obj/item/circuitboard/message_server
 
-	var/list/datum/data_pda_msg/pda_msgs = list()
-	var/list/datum/data_rc_msg/rc_msgs = list()
+	var/list/datum/data_pda_msg/pda_msgs
+	var/list/datum/data_rc_msg/rc_msgs
 	var/active = 1
 	var/decryptkey = "password"
 
@@ -127,11 +127,11 @@
 		if (findtextEx(message,token))
 			message = span_red("[message]")	//Rejected messages will be indicated by red color.
 			result = token										//Token caused rejection (if there are multiple, last will be chosen>.
-	pda_msgs += new/datum/data_pda_msg(recipient,sender,message)
+	LAZYADD(pda_msgs, new/datum/data_pda_msg(recipient,sender,message))
 	return result
 
 /obj/machinery/message_server/proc/send_rc_message(recipient = "",sender = "",message = "",stamp = "", id_auth = "", priority = 1)
-	rc_msgs += new/datum/data_rc_msg(recipient,sender,message,stamp,id_auth,priority)
+	LAZYADD(rc_msgs, new/datum/data_rc_msg(recipient,sender,message,stamp,id_auth,priority))
 	var/authmsg = "[message]\n"
 	if (id_auth)
 		authmsg += "([id_auth])\n"
@@ -273,10 +273,10 @@ GLOBAL_DATUM(blackbox, /obj/machinery/blackbox_recorder)
 	var/list/msg_security = list()
 	var/list/msg_deathsquad = list()
 	var/list/msg_syndicate = list()
-	var/list/msg_raider = list()
+	var/list/msg_raider
 	var/list/msg_cargo = list()
 	var/list/msg_service = list()
-	var/list/msg_explorer = list()
+	var/list/msg_explorer
 
 	var/list/datum/feedback_variable/feedback = new()
 
@@ -324,10 +324,10 @@ GLOBAL_DATUM(blackbox, /obj/machinery/blackbox_recorder)
 	var/rc_msg_amt = 0
 
 	for(var/obj/machinery/message_server/MS in GLOB.machines)
-		if(MS.pda_msgs.len > pda_msg_amt)
-			pda_msg_amt = MS.pda_msgs.len
-		if(MS.rc_msgs.len > rc_msg_amt)
-			rc_msg_amt = MS.rc_msgs.len
+		if(length(MS.pda_msgs) > pda_msg_amt)
+			pda_msg_amt = length(MS.pda_msgs)
+		if(length(MS.rc_msgs) > rc_msg_amt)
+			rc_msg_amt = length(MS.rc_msgs)
 
 	feedback_set_details("radio_usage","")
 

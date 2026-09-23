@@ -19,7 +19,7 @@ How they spawn stuff is decided by behaviour vars, which are explained below
 	var/summon_amt = 1 //amount of objects summoned
 	var/summon_exclusive = 0 //spawn one of everything, instead of random things
 
-	var/list/newVars = list() //vars of the summoned objects will be replaced with those where they meet
+	var/list/newVars //vars of the summoned objects will be replaced with those where they meet
 	//should have format of list("emagged" = 1,"name" = "Wizard's Justicebot"), for example
 
 	cast_sound = 'sound/items/Welder.ogg'
@@ -62,7 +62,7 @@ How they spawn stuff is decided by behaviour vars, which are explained below
 
 		for(var/varName in newVars)
 			if(varName in summoned_object.vars)
-				summoned_object.vars[varName] = newVars[varName]
+				summoned_object.vars[varName] = LAZYACCESS(newVars, varName)
 
 		if(duration)
 			spawn(duration)

@@ -9,7 +9,7 @@
 	var/accepts = "coin"				// "coin" - "money" - "item" - determines the 'kind' of thing the machine will accept
 	var/accepted_itemtype				//only for use with "item" mode - if set to a type path, it will count anything with that type path
 	var/accepted_item_worth = 1			//only for use with "item" mode - when counted, things of the appropriate type will add this much to the banked funds
-	var/list/bank = list()					//Anything accepted by "money" or "item" mode will be marked down here
+	var/list/bank					//Anything accepted by "money" or "item" mode will be marked down here
 	var/coinbalance = 0					//only for use with coin mode - when you put a curious coin in, it adds the coins value to this number
 	var/list/start_products = list()	//Type paths entered here will spawn inside the trader and add themselves to the products list.
 	var/list/products = list()			//Anything in this list will be listed for sale
@@ -163,13 +163,13 @@
 					return
 				user.drop_item()
 				w.forceMove(src.contents)
-				bank += w
+				LAZYADD(bank, w)
 				visible_message(span_notice("\The [src] accepts \the [user]'s [w]."))
 		if("item")
 			if(istype(O, /obj))
 				user.drop_item()
 				O.forceMove(src.contents)
-				bank += O
+				LAZYADD(bank, O)
 				visible_message(span_notice("\The [src] accepts \the [user]'s [O]."))
 
 /obj/trader/proc/get_value(kind)
@@ -205,7 +205,7 @@
 					a.worth -= amount
 					a.update_icon()
 					if(a.worth <= 0)
-						bank -= a
+						LAZYREMOVE(bank, a)
 						qdel(a)
 		if("item")
 			// Guard against a non-positive item worth, which would never decrement v
@@ -249,12 +249,12 @@
 			for(var/obj/c in bank)
 				u_get_refund = TRUE
 				c.forceMove(get_turf(loc))
-				bank -= c
+				LAZYREMOVE(bank, c)
 		if("item")
 			for(var/obj/c in bank)
 				u_get_refund = TRUE
 				c.forceMove(get_turf(loc))
-				bank -= c
+				LAZYREMOVE(bank, c)
 	if(u_get_refund)
 		visible_message(span_notice("\The [src] drops the banked [welcome_accepts_name]."))
 	else

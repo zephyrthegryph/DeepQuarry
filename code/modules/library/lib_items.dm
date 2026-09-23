@@ -301,7 +301,7 @@ Book Cart End
 					scanner.book = src
 					for(var/datum/borrowbook/b in scanner.computer.checkouts)
 						if(b.bookname == src.name)
-							scanner.computer.checkouts.Remove(b)
+							LAZYREMOVE(scanner.computer.checkouts, b)
 							to_chat(user, "[W]'s screen flashes: 'Book stored in buffer. Book has been checked in.'")
 							return
 					to_chat(user, "[W]'s screen flashes: 'Book stored in buffer. No active check-out record found for current title.'")
@@ -311,7 +311,7 @@ Book Cart End
 						if(book == src)
 							to_chat(user, "[W]'s screen flashes: 'Book stored in buffer. Title already present in inventory, aborting to avoid duplicate entry.'")
 							return
-					scanner.computer.inventory.Add(src)
+					LAZYADD(scanner.computer.inventory, src)
 					to_chat(user, "[W]'s screen flashes: 'Book stored in buffer. Title added to general inventory.'")
 	else if(istype(W, /obj/item/material/knife))
 		return carve_pages(user)

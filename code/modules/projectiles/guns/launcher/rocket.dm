@@ -13,7 +13,7 @@
 	release_force = 15
 	throw_distance = 30
 	var/max_rockets = 1
-	var/list/rockets = new/list()
+	var/list/rockets
 
 /obj/item/gun/launcher/rocket/examine(mob/user)
 	. = ..()
@@ -22,19 +22,19 @@
 
 /obj/item/gun/launcher/rocket/attackby(obj/item/I, mob/user)
 	if(istype(I, /obj/item/ammo_casing/rocket))
-		if(rockets.len < max_rockets)
+		if(length(rockets) < max_rockets)
 			user.drop_item()
 			I.loc = src
-			rockets += I
+			LAZYADD(rockets, I)
 			to_chat(user, span_blue("You put the rocket in [src]."))
 			to_chat(user, span_blue("[rockets.len] / [max_rockets] rockets."))
 		else
 			to_chat(user, span_red(">[src] cannot hold more rockets."))
 
 /obj/item/gun/launcher/rocket/consume_next_projectile()
-	if(rockets.len)
-		var/obj/item/ammo_casing/rocket/I = rockets[1]
-		rockets -= I
+	if(length(rockets))
+		var/obj/item/ammo_casing/rocket/I = LAZYACCESS(rockets, 1)
+		LAZYREMOVE(rockets, I)
 		return new I.projectile_type(src)
 	return null
 

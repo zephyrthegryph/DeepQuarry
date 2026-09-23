@@ -13,7 +13,7 @@
 	var/max_spawn_time = 50
 	var/last_process_time = 0
 
-	var/list/construction = list()
+	var/list/construction
 	var/list/tgui_construction = list()
 	var/list/spawning_types = list()
 	var/list/stored_materials = list()
@@ -90,7 +90,7 @@
 		var/button_desc = "a [background], [icon] shaped [color]"
 		var/type = pick(viables)
 		viables.Remove(type)
-		construction[button_desc] = type
+		LAZYSET(construction, button_desc, type)
 		tgui_construction.Add(list(list(
 			"key" = button_desc,
 			"background" = background,
@@ -164,7 +164,7 @@
 						visible_message(span_notice("[icon2html(src,viewers(src))] a [pick("light","dial","display","meter","pad")] on [src]'s front [pick("blinks","flashes")] [pick("red","yellow","blue","orange","purple","green","white")]."))
 					else
 						visible_message(span_notice("[icon2html(src,viewers(src))] [src]'s front compartment slides shut."))
-					spawning_types.Add(construction[key])
+					spawning_types.Add(LAZYACCESS(construction, key))
 					spawn_progress_time = 0
 					update_use_power(USE_POWER_ACTIVE)
 					icon_state = "borgcharger1(old)"
@@ -191,7 +191,7 @@
 	icon = 'icons/obj/xenoarchaeology.dmi'
 	icon_state = "borgcharger0(old)"
 	var/quantity = 18 //This needs to be replaced with a GUI that lets you select the item you want.
-	var/list/created_mobs = list()
+	var/list/created_mobs
 	var/list/tgui_vore_selection = list()
 	var/list/viable_mobs = list(
 	/mob/living/simple_mob/animal/passive/fox,
@@ -244,7 +244,7 @@
 		var/button_desc = "a [background], [icon] shaped [color]"
 		var/generated_mob = pick(viable_mobs)
 		viable_mobs.Remove(generated_mob)
-		created_mobs[button_desc] = generated_mob
+		LAZYSET(created_mobs, button_desc, generated_mob)
 		tgui_vore_selection.Add(list(list(
 			"key" = button_desc,
 			"background" = background,
@@ -410,7 +410,7 @@
 						visible_message(span_notice("[icon2html(src,viewers(src))] a [pick("light","dial","display","meter","pad")] on [src]'s front [pick("blinks","flashes")] [pick("red","yellow","blue","orange","purple","green","white")]."))
 					else
 						visible_message(span_notice("[icon2html(src,viewers(src))] [src]'s front compartment slides shut."))
-					spawning_types.Add(created_mobs[key])
+					spawning_types.Add(LAZYACCESS(created_mobs, key))
 					spawn_progress_time = 0
 					update_use_power(USE_POWER_ACTIVE)
 					icon_state = "borgcharger1(old)"
@@ -429,7 +429,7 @@
 	icon = 'icons/obj/xenoarchaeology.dmi'
 	icon_state = "borgcharger0(old)"
 	var/quantity = 35 //This needs to be replaced with a GUI that lets you select the item you want.
-	var/list/created_items = list()
+	var/list/created_items
 	var/list/tgui_vore_selection = list()
 	var/list/viable_items = list(
 	/obj/item/clothing/accessory/ring,
@@ -494,7 +494,7 @@
 		var/button_desc = "a [background], [icon] shaped [color]"
 		var/generated_item = pick(viable_items)
 		viable_items.Remove(generated_item)
-		created_items[button_desc] = generated_item
+		LAZYSET(created_items, button_desc, generated_item)
 		tgui_vore_selection.Add(list(list(
 			"key" = button_desc,
 			"background" = background,
@@ -658,7 +658,7 @@
 						visible_message(span_notice("[icon2html(src,viewers(src))] a [pick("light","dial","display","meter","pad")] on [src]'s front [pick("blinks","flashes")] [pick("red","yellow","blue","orange","purple","green","white")]."))
 					else
 						visible_message(span_notice("[icon2html(src,viewers(src))] [src]'s front compartment slides shut."))
-					spawning_types.Add(created_items[key])
+					spawning_types.Add(LAZYACCESS(created_items, key))
 					spawn_progress_time = 0
 					update_use_power(USE_POWER_ACTIVE)
 					icon_state = "borgcharger1(old)"

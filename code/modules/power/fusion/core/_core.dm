@@ -53,7 +53,7 @@ GLOBAL_LIST_EMPTY(fusion_cores)
 		material_sample.forceMove(get_turf(src))
 	material_sample = null
 	for(var/obj/machinery/computer/fusion_core_control/FCC in GLOB.machines)
-		FCC.connected_devices -= src
+		LAZYREMOVE(FCC.connected_devices, src)
 		if(FCC.cur_viewed_device == src)
 			FCC.cur_viewed_device = null
 	GLOB.fusion_cores -= src

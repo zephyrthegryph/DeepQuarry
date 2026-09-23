@@ -128,7 +128,7 @@
 	/// list of all tabs
 	var/list/panel_tabs = list()
 	/// list of tabs containing spells and abilities
-	var/list/spell_tabs = list()
+	var/list/spell_tabs
 	/// list of misc tabs from mob
 	var/list/misc_tabs = list()
 	///A lazy list of atoms we've examined in the last RECENT_EXAMINE_MAX_WINDOW (default 2) seconds, so that we will call [/atom/proc/examine_more] instead of [/atom/proc/examine] on them when examining
@@ -136,7 +136,7 @@
 	///Our object window datum. It stores info about and handles behavior for the object tab
 	var/datum/object_window_info/obj_window
 
-	var/list/misc_cache = list()
+	var/list/misc_cache
 
 	var/atom/examine_icon //Holder for examine icon, useful for statpanel
 

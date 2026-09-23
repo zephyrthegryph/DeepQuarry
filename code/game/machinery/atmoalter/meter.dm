@@ -4,7 +4,7 @@
 	icon = 'icons/obj/meter.dmi'
 	icon_state = "meterX"
 	var/obj/machinery/atmospherics/pipe/target = null
-	var/list/pipes_on_turf = list()
+	var/list/pipes_on_turf
 	anchored = TRUE
 	power_channel = ENVIRON
 	var/frequency = 0
@@ -22,7 +22,7 @@
 
 /obj/machinery/meter/Destroy()
 	unregister_gas_dependency(WEAKREF(src))
-	pipes_on_turf.Cut()
+	LAZYCLEARLIST(pipes_on_turf)
 	target = null
 	return ..()
 
@@ -170,12 +170,12 @@
 			multitool.connectable = src
 		return ITEM_INTERACT_SUCCESS
 	for(var/obj/machinery/atmospherics/pipe/pipe in loc)
-		pipes_on_turf |= pipe
+		LAZYOR(pipes_on_turf, pipe)
 	if(!length(pipes_on_turf))
 		return ITEM_INTERACT_BLOCKING
-	target = pipes_on_turf[1]
-	pipes_on_turf.Remove(target)
-	pipes_on_turf.Add(target)
+	target = LAZYACCESS(pipes_on_turf, 1)
+	LAZYREMOVE(pipes_on_turf, target)
+	LAZYADD(pipes_on_turf, target)
 	to_chat(user, span_notice("Pipe meter set to monitor \the [target]."))
 	return ITEM_INTERACT_SUCCESS
 

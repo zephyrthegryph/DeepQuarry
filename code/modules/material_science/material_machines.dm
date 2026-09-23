@@ -25,7 +25,7 @@
 		// field treatments are deliberately destroyed by remelting, but the
 		// recovered metal is now economically and contractually traceable.
 		batch.record_recovery(max(0.1, source.unit_production_cost() * 0.5))
-		batch.process_history += "remelted reclaimed [source.display_name()]"
+		LAZYADD(batch.process_history, "remelted reclaimed [source.display_name()]")
 	else
 		batch.add_material(stack.material.name, 1, null, stack.feedstock_purity, stack.feedstock_lot_id)
 		if(stack.feedstock_trace)
@@ -267,7 +267,7 @@
 	for(var/datum/reagent/reagent in reagents.reagent_list)
 		if(!(reagent.id in list(REAGENT_ID_CARBON, REAGENT_ID_SILICON, REAGENT_ID_LITHIUM, REAGENT_ID_COOLANT, REAGENT_ID_FROSTOIL, REAGENT_ID_SACID, REAGENT_ID_PACID)))
 			batch.add_additive(reagent.name, min(reagent.volume, 6), max(reagent.supply_conversion_value, 0.05), MATERIAL_COST_CHEMICALS)
-	batch.process_history += "chemically treated in [round(reagents.total_volume, 0.1)]u medium"
+	LAZYADD(batch.process_history, "chemically treated in [round(reagents.total_volume, 0.1)]u medium")
 	reagents.clear_reagents()
 
 /obj/machinery/material_furnace/proc/apply_real_atmosphere(datum/material_batch/batch)

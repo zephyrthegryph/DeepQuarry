@@ -22,7 +22,7 @@
 // Description: Typechecks the candidate, then calls the correct proc for further connecting.
 /obj/item/communicator/proc/open_connection(mob/user, atom/candidate)
 	if(isobserver(candidate))
-		voice_invites.Remove(candidate)
+		LAZYREMOVE(voice_invites, candidate)
 		open_connection_to_ghost(user, candidate)
 	else
 		if(istype(candidate, /obj/item/communicator))
@@ -35,8 +35,8 @@
 	if(!istype(candidate, /obj/item/communicator))
 		return
 	var/obj/item/communicator/comm = candidate
-	voice_invites.Remove(candidate)
-	comm.voice_requests.Remove(src)
+	LAZYREMOVE(voice_invites, candidate)
+	LAZYREMOVE(comm.voice_requests, src)
 
 	if(user)
 		comm.visible_message(span_notice("[icon2html(src,viewers(src))] Connecting to [src]."))
@@ -61,8 +61,8 @@
 		return
 	//Handle moving the ghost into the new shell.
 	announce_ghost_joinleave(candidate, 0, "They are occupying a personal communications device now.")
-	voice_requests.Remove(candidate)
-	voice_invites.Remove(candidate)
+	LAZYREMOVE(voice_requests, candidate)
+	LAZYREMOVE(voice_invites, candidate)
 	var/mob/living/voice/new_voice = new /mob/living/voice(src) 	//Make the voice mob the ghost is going to be.
 	new_voice.transfer_identity(candidate) 	//Now make the voice mob load from the ghost's active character in preferences.
 	//Do some simple logging since this is a tad risky as a concept.
@@ -153,12 +153,12 @@
 	else if(istype(candidate, /obj/item/communicator))
 		var/obj/item/communicator/comm = candidate
 		who = comm.owner
-		comm.voice_invites |= src
+		LAZYOR(comm.voice_invites, src)
 
 	if(!who)
 		return
 
-	voice_requests |= candidate
+	LAZYOR(voice_requests, candidate)
 
 	if(ringer)
 		playsound(src, 'sound/machines/twobeep.ogg', 50, 1)
@@ -187,9 +187,9 @@
 		to_chat(candidate, span_warning("Your communicator call request was declined."))
 	else if(istype(candidate, /obj/item/communicator))
 		var/obj/item/communicator/comm = candidate
-		comm.voice_invites -= src
+		LAZYREMOVE(comm.voice_invites, src)
 
-	voice_requests -= candidate
+	LAZYREMOVE(voice_requests, candidate)
 
 	//Search for holder of our device.
 	var/mob/living/us = null

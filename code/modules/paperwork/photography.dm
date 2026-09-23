@@ -154,7 +154,7 @@ GLOBAL_VAR_INIT(photo_count, 0)
 	var/icon_on = "camera"
 	var/icon_off = "camera_off"
 	var/size = 3
-	var/list/picture_planes = list()
+	var/list/picture_planes
 
 /obj/item/camera/verb/change_size()
 	set name = "Set Photo Focus"

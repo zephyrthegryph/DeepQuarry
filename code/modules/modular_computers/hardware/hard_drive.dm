@@ -8,7 +8,7 @@
 	var/max_capacity = 128
 	var/used_capacity = 0
 	/// List of stored files on this drive. DO NOT MODIFY DIRECTLY!
-	var/list/stored_files = list()
+	var/list/stored_files
 	/// Whether drive is protected against changes
 	var/read_only = FALSE
 

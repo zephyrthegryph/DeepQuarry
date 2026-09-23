@@ -29,8 +29,8 @@ GLOBAL_LIST_INIT(all_technomancer_assistance, subtypesof(/datum/technomancer/ass
 	var/budget = 1000
 	var/max_budget = 1000
 	var/mob/living/carbon/human/owner = null
-	var/list/spell_instances = list()
-	var/list/equipment_instances = list()
+	var/list/spell_instances
+	var/list/equipment_instances
 	var/list/consumable_instances = list()
 	var/list/assistance_instances = list()
 	var/tab = 4 // Info tab, so new players can read it before doing anything.
@@ -75,12 +75,12 @@ GLOBAL_LIST_INIT(all_technomancer_assistance, subtypesof(/datum/technomancer/ass
 // Parameters: 0
 // Description: Instantiates all the catalog datums for everything that can be bought.
 /obj/item/technomancer_catalog/proc/set_up()
-	if(!spell_instances.len)
+	if(!length(spell_instances))
 		for(var/S in GLOB.all_technomancer_spells)
-			spell_instances += new S()
-	if(!equipment_instances.len)
+			LAZYADD(spell_instances, new S())
+	if(!length(equipment_instances))
 		for(var/E in GLOB.all_technomancer_equipment)
-			equipment_instances += new E()
+			LAZYADD(equipment_instances, new E())
 	if(!consumable_instances.len)
 		for(var/C in GLOB.all_technomancer_consumables)
 			consumable_instances += new C()

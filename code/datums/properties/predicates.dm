@@ -237,7 +237,7 @@
 
 /// The measure definition for `id`, or null after reporting why not.
 /datum/predicate_compiler/proc/measure(id)
-	var/datum/property_def/def = registry.defs[id]
+	var/datum/property_def/def = LAZYACCESS(registry.defs, id)
 	if(!def)
 		error("unknown property [id]")
 		return null
@@ -266,7 +266,7 @@
 /datum/predicate_compiler/proc/compile_tag(list/clause, negate)
 	if(!arity(clause, 3) || !valid_subject(clause[2]))
 		return null
-	var/datum/property_def/def = registry.defs[clause[3]]
+	var/datum/property_def/def = LAZYACCESS(registry.defs, clause[3])
 	if(!def)
 		error("unknown tag [clause[3]]")
 		return null

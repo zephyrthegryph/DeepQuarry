@@ -20,8 +20,8 @@
 
 	//Used for logging people entering cryosleep and important items they are carrying.
 	var/list/frozen_crew = list()
-	var/list/frozen_items = list()
-	var/list/_admin_logs = list() // _ so it shows first in VV
+	var/list/frozen_items
+	var/list/_admin_logs // _ so it shows first in VV
 
 	var/storage_type = "crewmembers"
 	var/storage_name = "Cryogenic Oversight Control"
@@ -133,7 +133,7 @@
 			visible_message(span_notice("The console beeps happily as it disgorges [I]."))
 
 			I.forceMove(get_turf(src))
-			frozen_items -= I
+			LAZYREMOVE(frozen_items, I)
 		if("allitems")
 			if(!allow_items)
 				return
@@ -146,7 +146,7 @@
 
 			for(var/obj/item/I in frozen_items)
 				I.forceMove(get_turf(src))
-				frozen_items -= I
+				LAZYREMOVE(frozen_items, I)
 	*/
 
 /obj/item/circuitboard/cryopodcontrol
@@ -447,7 +447,7 @@
 			log_special_item(W,to_despawn)
 			/* We do our own thing.
 			if(control_computer && control_computer.allow_items)
-				control_computer.frozen_items += W
+				LAZYADD(control_computer.frozen_items, W)
 				W.loc = control_computer
 			else
 				W.forceMove(src.loc)
@@ -521,7 +521,7 @@
 
 		//Make an announcement and log the person entering storage.
 		control_computer.frozen_crew += "[to_despawn.real_name], [to_despawn.mind.role_alt_title] - [stationtime2text()]"
-		control_computer._admin_logs += "[key_name(to_despawn)] ([to_despawn.mind.role_alt_title]) at [stationtime2text()]"
+		LAZYADD(control_computer._admin_logs, "[key_name(to_despawn)] ([to_despawn.mind.role_alt_title]) at [stationtime2text()]")
 		log_and_message_admins("([to_despawn.mind.role_alt_title]) entered cryostorage.", to_despawn)
 
 		var/depart_announce = TRUE
@@ -812,7 +812,7 @@
 	qdel(item)
 
 	if(control_computer && control_computer.allow_items)
-		control_computer.frozen_items += "[item_name] ([char_name])"
+		LAZYADD(control_computer.frozen_items, "[item_name] ([char_name])")
 
 
 /obj/machinery/cryopod/robot/door/gateway/quiet

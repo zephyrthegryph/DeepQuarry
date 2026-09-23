@@ -100,10 +100,10 @@ GENERAL_PROTECT_DATUM(/datum/log_entry)
 
 #define CHECK_AND_TRY_FILE_ERROR_RECOVERY(file) \
 	var/static/in_error_recovery = FALSE; \
-	var/last_verified = logger.verified_log_files[##file]; \
+	var/last_verified = LAZYACCESS(logger.verified_log_files, ##file); \
 	if(isnull(last_verified) || world.time - last_verified >= LOG_FILE_RECHECK_INTERVAL) { \
 		if(!fexists(##file)) { \
-			logger.verified_log_files -= ##file; \
+			LAZYREMOVE(logger.verified_log_files, ##file; \)
 			if(in_error_recovery) { \
 				in_error_recovery = FALSE; \
 				CRASH("Failed to error recover log file: [file]"); \
@@ -114,7 +114,7 @@ GENERAL_PROTECT_DATUM(/datum/log_entry)
 			call(src, __PROC__)(arglist(args)); \
 			return; \
 		}; \
-		logger.verified_log_files[##file] = world.time; \
+		LAZYSET(logger.verified_log_files, ##file, world.time; \)
 	}; \
 	in_error_recovery = FALSE;
 

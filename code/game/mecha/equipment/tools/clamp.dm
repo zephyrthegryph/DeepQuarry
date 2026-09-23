@@ -70,7 +70,7 @@
 			else
 				occupant_message(span_warning("[target] is firmly secured."))
 			return
-		if(cargo_holder.cargo.len >= cargo_holder.cargo_capacity)
+		if(length(cargo_holder.cargo) >= cargo_holder.cargo_capacity)
 			occupant_message(span_warning("Not enough room in cargo compartment."))
 			return
 
@@ -82,7 +82,7 @@
 		var/T = chassis.loc
 		if(do_after_cooldown(target))
 			if(T == chassis.loc && src == chassis.selected)
-				cargo_holder.cargo += O
+				LAZYADD(cargo_holder.cargo, O)
 				O.loc = chassis
 				O.anchored = FALSE
 				occupant_message(span_notice("[target] succesfully loaded."))
@@ -132,7 +132,7 @@
 	if(istype(target,/obj))
 		var/obj/O = target
 		if(!O.anchored)
-			if(cargo_holder.cargo.len < cargo_holder.cargo_capacity)
+			if(length(cargo_holder.cargo) < cargo_holder.cargo_capacity)
 				chassis.occupant_message("You lift [target] and start to load it into cargo compartment.")
 				chassis.visible_message("[chassis] lifts [target] and starts to load it into cargo compartment.")
 				set_ready_state(FALSE)
@@ -141,7 +141,7 @@
 				var/T = chassis.loc
 				if(do_after_cooldown(target))
 					if(T == chassis.loc && src == chassis.selected)
-						cargo_holder.cargo += O
+						LAZYADD(cargo_holder.cargo, O)
 						O.loc = chassis
 						O.anchored = FALSE
 						chassis.occupant_message(span_notice("[target] succesfully loaded."))

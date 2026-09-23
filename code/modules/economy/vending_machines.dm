@@ -667,6 +667,12 @@
 			product_records.Add(product)
 			GLOB.vending_products[entry] = 1
 
+	// Consumed, as in the base proc.
+	products = null
+	contraband = null
+	premium = null
+	prices = null
+
 /obj/machinery/vending/magivend
 	name = "MagiVend"
 	desc = "A magic vending machine."

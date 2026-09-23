@@ -37,9 +37,9 @@
 	var/outside_shareholders = 10000		// The amount of offstation people holding shares in this company. The higher it is, the more fluctuation it causes.
 	var/available_shares = 500000
 
-	var/list/borrow_brokers = list()
+	var/list/borrow_brokers
 	var/list/shareholders = list()
-	var/list/borrows = list()
+	var/list/borrows
 	var/list/events = list()
 	var/list/articles = list()
 	var/fluctuation_rate = 15
@@ -185,7 +185,7 @@
 		var/datum/borrow/borrow = B
 		if (world.time > borrow.grace_expires)
 			modifyAccount(borrow.borrower, -max(current_value * borrow.share_debt, 0), 1)
-			borrows -= borrow
+			LAZYREMOVE(borrows, borrow)
 			if (borrow.borrower in GLOB.FrozenAccounts)
 				GLOB.FrozenAccounts[borrow.borrower] -= borrow
 				if (length(GLOB.FrozenAccounts[borrow.borrower]) == 0)
@@ -196,7 +196,7 @@
 				var/amt = shareholders[borrow.borrower]
 				if (amt > borrow.share_debt)
 					shareholders[borrow.borrower] -= borrow.share_debt
-					borrows -= borrow
+					LAZYREMOVE(borrows, borrow)
 					if (borrow.borrower in GLOB.FrozenAccounts)
 						GLOB.FrozenAccounts[borrow.borrower] -= borrow
 					if (length(GLOB.FrozenAccounts[borrow.borrower]) == 0)
@@ -210,7 +210,7 @@
 	for (var/B in borrow_brokers)
 		var/datum/borrow/borrow = B
 		if (borrow.offer_expires < world.time)
-			borrow_brokers -= borrow
+			LAZYREMOVE(borrow_brokers, borrow)
 			qdel(borrow)
 	if (prob(100 * (1 - (0.95 ** elapsed_steps))))
 		generateBrokers()
@@ -223,7 +223,7 @@
 		fluctuate()
 
 /datum/stock/proc/generateBrokers()
-	if (borrow_brokers.len > 2)
+	if (length(borrow_brokers) > 2)
 		return
 	if (!GLOB.stockExchange.stockBrokers.len)
 		GLOB.stockExchange.generateBrokers()
@@ -237,7 +237,7 @@
 	B.deposit = rand(20, 70) / 100
 	B.share_debt = B.share_amount
 	B.offer_expires = rand(5, 10) * 600 + world.time
-	borrow_brokers += B
+	LAZYADD(borrow_brokers, B)
 
 /datum/stock/proc/modifyAccount(whose, by, force=0)
 	var/datum/money_account/account = GLOB.department_accounts[DEPARTMENT_CARGO]
@@ -263,8 +263,8 @@
 		shareholders[who] = B.share_amount
 	else
 		shareholders[who] += B.share_amount
-	borrow_brokers -= B
-	borrows += B
+	LAZYREMOVE(borrow_brokers, B)
+	LAZYADD(borrows, B)
 	B.borrower = who
 	B.grace_expires = B.lease_expires + B.grace_time
 	if (!(who in GLOB.FrozenAccounts))

@@ -126,7 +126,7 @@
 	metric("[prefix]_reactor_wakes", reactor["window_wakes"], "wakes", "lower")
 	detail("[prefix]_reactor", reactor)
 	detail("[prefix]_outliers", Master.perf_outliers.Copy())
-	detail("[prefix]_worst_tick", Master.perf_worst_tick.Copy())
+	detail("[prefix]_worst_tick", LAZYCOPY(Master.perf_worst_tick))
 	if(profiling)
 		SSprofiler.StopProfiling()
 		SSprofiler.DumpFile(allow_yield = FALSE)

@@ -11,8 +11,8 @@
 	var/area/linkedholodeck = null
 	var/area/target = null
 	var/active = 0
-	var/list/holographic_objs = list()
-	var/list/holographic_mobs = list()
+	var/list/holographic_objs
+	var/list/holographic_mobs
 	var/damaged = 0
 	var/safety_disabled = 0
 	var/mob/last_to_emag = null
@@ -207,13 +207,13 @@
 
 	for(var/mob/living/simple_mob/animal/space/carp/holodeck/C in holographic_mobs)
 		if (get_area(C.loc) != linkedholodeck)
-			holographic_mobs -= C
+			LAZYREMOVE(holographic_mobs, C)
 			C.derez()
 
 	if(stat & (NOPOWER|BROKEN))
 		return
 	if(active)
-		use_power(item_power_usage * (holographic_objs.len + holographic_mobs.len))
+		use_power(item_power_usage * (length(holographic_objs) + length(holographic_mobs)))
 
 		if(!checkInteg(linkedholodeck))
 			damaged = 1
@@ -233,7 +233,7 @@
 				T.hotspot_expose(1000,500,1)
 
 /obj/machinery/computer/HolodeckControl/proc/derez(obj/obj , silent = 1)
-	holographic_objs.Remove(obj)
+	LAZYREMOVE(holographic_objs, obj)
 
 	if(obj == null)
 		return
@@ -302,7 +302,7 @@
 		derez(item)
 
 	for(var/mob/living/simple_mob/animal/space/carp/holodeck/C in holographic_mobs)
-		holographic_mobs -= C
+		LAZYREMOVE(holographic_mobs, C)
 		C.derez()
 
 	for(var/obj/effect/decal/cleanable/blood/B in linkedholodeck)
@@ -344,11 +344,11 @@
 					T.set_temperature(5000)  // arena-authoritative; not the stale DM mirror
 					T.hotspot_expose(50000,50000,1)
 		if(L.name=="Holocarp Spawn")
-			holographic_mobs += new /mob/living/simple_mob/animal/space/carp/holodeck(L.loc)
+			LAZYADD(holographic_mobs, new /mob/living/simple_mob/animal/space/carp/holodeck(L.loc))
 
 		if(L.name=="Holocarp Spawn Random")
 			if(prob(4)) //With 4 spawn points, carp should only appear 15% of the time.
-				holographic_mobs += new /mob/living/simple_mob/animal/space/carp/holodeck(L.loc)
+				LAZYADD(holographic_mobs, new /mob/living/simple_mob/animal/space/carp/holodeck(L.loc))
 		qdel(L)
 
 		update_projections()

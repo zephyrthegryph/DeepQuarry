@@ -30,11 +30,11 @@
 	var/obj/machinery/camera/communicator/camera		// Our camera
 
 	var/list/voice_mobs = list()
-	var/list/voice_requests = list()
-	var/list/voice_invites = list()
+	var/list/voice_requests
+	var/list/voice_invites
 
-	var/list/im_contacts = list()
-	var/list/im_list = list()
+	var/list/im_contacts
+	var/list/im_list
 
 	var/note = "Thank you for choosing the T-14.2 Communicator, this is your notepad!" //Current note in the notepad function
 	var/notehtml = ""
@@ -63,7 +63,7 @@
 	var/target_address_name = ""
 	var/network_visibility = 1
 	var/ringer = 1
-	var/list/known_devices = list()
+	var/list/known_devices
 	var/datum/exonet_protocol/exonet = null
 	var/list/communicating = list()
 	var/update_ticks = 0
@@ -257,17 +257,17 @@
 /obj/item/communicator/proc/populate_known_devices(mob/user)
 	if(!exonet)
 		exonet = new(src)
-	src.known_devices.Cut()
+	LAZYCLEARLIST(src.known_devices)
 	if(!get_connection_to_tcomms()) //If the network's down, we can't see anything.
 		return
 	for(var/obj/item/communicator/comm in GLOB.all_communicators)
 		if(!comm || !comm.exonet || !comm.exonet.address || comm.exonet.address == src.exonet.address) //Don't add addressless devices, and don't add ourselves.
 			continue
-		src.known_devices |= comm
+		LAZYOR(src.known_devices, comm)
 	for(var/mob/observer/dead/O in GLOB.dead_mob_list)
 		if(!O.client || !O.client.prefs.read_preference(/datum/preference/toggle/human/communicator_visibility)) // migrated pref
 			continue
-		src.known_devices |= O
+		LAZYOR(src.known_devices, O)
 
 // Proc: get_connection_to_tcomms()
 // Parameters: None
@@ -393,8 +393,8 @@
 
 	//Clean up all references we might have to others
 	communicating.Cut()
-	voice_requests.Cut()
-	voice_invites.Cut()
+	LAZYCLEARLIST(voice_requests)
+	LAZYCLEARLIST(voice_invites)
 	node = null
 
 	//Clean up references that might point at us

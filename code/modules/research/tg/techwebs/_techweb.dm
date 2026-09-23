@@ -25,9 +25,9 @@
 	/// Already boosted nodes that can't be boosted again. node id = path of boost object.
 	var/list/boosted_nodes = list()
 	/// Hidden nodes. id = TRUE. Used for unhiding nodes when requirements are met by removing the entry of the node.
-	var/list/hidden_nodes = list()
+	var/list/hidden_nodes
 	/// List of items already deconstructed for research points, preventing infinite research point generation.
-	var/list/deconstructed_items = list()
+	var/list/deconstructed_items
 	/// Available research points, type = number
 	var/list/research_points = list()
 	/// Game logs of research nodes, "node_name" "node_cost" "node_researcher" "node_research_location"
@@ -35,9 +35,9 @@
 	/// Current per-second production, used for display only.
 	var/list/last_bitcoins = list()
 	/// Mutations discovered by genetics, this way they are shared and cant be destroyed by destroying a single console
-	var/list/discovered_mutations = list()
+	var/list/discovered_mutations
 	/// Assoc list, id = number, 1 is available, 2 is all reqs are 1, so on
-	var/list/tiers = list()
+	var/list/tiers
 	/// When >0, update_node_status() defers tier recomputation instead of running a
 	/// full descendant BFS per call. Set of node datums whose tiers must be refreshed
 	/// is accumulated in deferred_tier_roots and flushed once via flush_deferred_tiers().
@@ -45,16 +45,16 @@
 	/// Node datums queued for a deferred update_tiers() sweep; see tier_recompute_deferred.
 	var/list/deferred_tier_roots = list()
 	/// This is a list of all incomplete experiment datums that are accessible for scientists to complete
-	var/list/datum/experiment/available_experiments = list()
+	var/list/datum/experiment/available_experiments
 	/// A list of all experiment datums that have been complete
-	var/list/datum/experiment/completed_experiments = list()
+	var/list/datum/experiment/completed_experiments
 	/// Assoc list of all experiment datums that have been skipped, to tech point reward for completing them -
 	/// That is, upon researching a node without completing its associated discounts, their experiments go here.
 	/// Completing these experiments will have a refund.
-	var/list/datum/experiment/skipped_experiment_types = list()
+	var/list/datum/experiment/skipped_experiment_types
 
 	///All RD consoles connected to this individual techweb.
-	var/list/obj/machinery/computer/rdconsole_tg/consoles_accessing = list()
+	var/list/obj/machinery/computer/rdconsole_tg/consoles_accessing
 	///All research servers connected to this individual techweb.
 	var/list/obj/machinery/rnd/server/techweb_servers = list()
 
@@ -155,7 +155,7 @@
 	for(var/i in receiver.hidden_nodes)
 		CHECK_TICK
 		if(get_available_nodes()[i] || get_researched_nodes()[i] || get_visible_nodes()[i])
-			receiver.hidden_nodes -= i //We can see it so let them see it too.
+			LAZYREMOVE(receiver.hidden_nodes, i) //We can see it so let them see it too.
 	for(var/i in researched_nodes - receiver.researched_nodes)
 		CHECK_TICK
 		receiver.research_node_id(i, TRUE, FALSE, FALSE)
@@ -170,7 +170,7 @@
 	returned.visible_nodes = visible_nodes.Copy()
 	returned.available_nodes = available_nodes.Copy()
 	returned.researched_designs = researched_designs.Copy()
-	returned.hidden_nodes = hidden_nodes.Copy()
+	returned.hidden_nodes = LAZYCOPY(hidden_nodes)
 	return returned
 
 /datum/techweb/proc/get_visible_nodes() //The way this is set up is shit but whatever.
@@ -229,7 +229,7 @@
 		researched_designs[design.id] = TRUE
 
 	for(var/node_id as anything in design.unlocked_by)
-		hidden_nodes -= node_id
+		LAZYREMOVE(hidden_nodes, node_id)
 
 	return TRUE
 
@@ -265,7 +265,7 @@
 /datum/techweb/proc/have_experiments_for_node(datum/techweb_node/node)
 	. = TRUE
 	for (var/experiment_type in node.required_experiments)
-		if (!completed_experiments[experiment_type])
+		if (!LAZYACCESS(completed_experiments, experiment_type))
 			return FALSE
 
 /**
@@ -295,7 +295,7 @@
 		var/datum/experiment/experiment = completed_experiment
 		if (experiment == experiment_type)
 			return FALSE
-	available_experiments += new experiment_type(src)
+	LAZYADD(available_experiments, new experiment_type(src))
 
 /**
  * Adds a list of experiments to this techweb by their types, ensures that no duplicates are added.
@@ -315,16 +315,16 @@
  * * completed_experiment - the experiment which was completed
  */
 /datum/techweb/proc/complete_experiment(datum/experiment/completed_experiment)
-	available_experiments -= completed_experiment
-	completed_experiments[completed_experiment.type] = completed_experiment
+	LAZYREMOVE(available_experiments, completed_experiment)
+	LAZYSET(completed_experiments, completed_experiment.type, completed_experiment)
 
 	var/result_text = "[completed_experiment] has been completed"
-	var/refund = skipped_experiment_types[completed_experiment.type] || 0
+	var/refund = LAZYACCESS(skipped_experiment_types, completed_experiment.type) || 0
 	if(refund > 0)
 		add_point_list(list(TECHWEB_POINT_TYPE_GENERIC = refund))
 		result_text += ", refunding [refund] points"
 		// Nothing more to gain here, but we keep it in the list to prevent double dipping
-		skipped_experiment_types[completed_experiment.type] = -1
+		LAZYSET(skipped_experiment_types, completed_experiment.type, -1)
 	var/points_rewarded
 	if(completed_experiment.points_reward)
 		add_point_list(completed_experiment.points_reward)
@@ -401,9 +401,9 @@
 
 	// Track any experiments we skipped relating to this
 	for(var/missed_experiment in node.discount_experiments)
-		if(completed_experiments[missed_experiment] || skipped_experiment_types[missed_experiment])
+		if(LAZYACCESS(completed_experiments, missed_experiment) || LAZYACCESS(skipped_experiment_types, missed_experiment))
 			continue
-		skipped_experiment_types[missed_experiment] = node.discount_experiments[missed_experiment]
+		LAZYSET(skipped_experiment_types, missed_experiment, node.discount_experiments[missed_experiment])
 
 	// Gain the experiments from the new node
 	for(var/id in node.unlock_ids)
@@ -459,7 +459,7 @@
 /datum/techweb/proc/unhide_node(datum/techweb_node/node)
 	if(!istype(node))
 		return FALSE
-	hidden_nodes -= node.id
+	LAZYREMOVE(hidden_nodes, node.id)
 	///Make it available if the prereq ids are already researched
 	update_node_status(node)
 	return TRUE
@@ -473,11 +473,11 @@
 			var/tier = 0
 			if (!researched_nodes[node.id])  // researched is tier 0
 				for (var/id in node.prereq_ids)
-					var/prereq_tier = tiers[id]
+					var/prereq_tier = LAZYACCESS(tiers, id)
 					tier = max(tier, prereq_tier + 1)
 
 			if (tier != tiers[node.id])
-				tiers[node.id] = tier
+				LAZYSET(tiers, node.id, tier)
 				for (var/id in node.unlock_ids)
 					next += SSresearch.techweb_node_by_id(id)
 		current = next
@@ -519,7 +519,7 @@
 	researched_nodes -= node.id
 	available_nodes -= node.id
 	visible_nodes -= node.id
-	if(hidden_nodes[node.id]) //Hidden.
+	if(LAZYACCESS(hidden_nodes, node.id)) //Hidden.
 		return
 	if(researched)
 		researched_nodes[node.id] = TRUE

@@ -304,7 +304,7 @@
 	var/list/molar_mass = list()
 	var/list/gases = list()
 	var/list/tile_overlay = list()
-	var/list/molar_specific_volume = list()
+	var/list/molar_specific_volume
 	var/list/flags = list()
 	var/list/overlay_limit = list()
 	/// Rust turf visuals (update_visuals) reads GLOB.gas_data.overlays[gas_id][vis_factor].
@@ -352,7 +352,7 @@ GLOBAL_LIST_INIT(dq_linda_only_molar_masses, list(
 		tile_overlay[id] = initial(d.tile_overlay)
 		flags[id] = initial(d.flags)
 		overlay_limit[id] = initial(d.overlay_limit)
-		molar_specific_volume[id] = 0.001
+		LAZYSET(molar_specific_volume, id, 0.001)
 	// Fill in /datum/gas LINDA subtypes that don't have a matching xgm_gas decl.
 	// Use real molar masses from dq_linda_only_molar_masses for accurate entropy
 	// and exhaust-mass calculations. Tag /tg/ tritium/plasma/etc. as flammable
@@ -365,7 +365,7 @@ GLOBAL_LIST_INIT(dq_linda_only_molar_masses, list(
 		specific_heat[id] = initial(g.specific_heat)
 		molar_mass[id] = GLOB.dq_linda_only_molar_masses[id] || initial(g.specific_heat) * 0.05
 		gases[id] = g
-		molar_specific_volume[id] = 0.001
+		LAZYSET(molar_specific_volume, id, 0.001)
 		// LINDA-only flammables → XGM_GAS_FUEL so combustion checks see them.
 		if(id == "tritium" || id == "hydrogen" || id == "methane" || id == "miasma")
 			flags[id] = XGM_GAS_FUEL

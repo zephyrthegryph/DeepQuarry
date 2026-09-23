@@ -112,7 +112,7 @@
 /datum/unit_test/chemical_reactions_shall_not_conflict
 	var/obj/fake_beaker = null
 	var/obj/instant_beaker = null // For distilling only
-	var/list/result_reactions = list()
+	var/list/result_reactions
 
 /datum/unit_test/chemical_reactions_shall_not_conflict/Run()
 	var/failed = FALSE
@@ -183,7 +183,7 @@
 	do
 		// clear for inhibitor searches
 		fake_beaker.reagents.clear_reagents()
-		result_reactions.Cut()
+		LAZYCLEARLIST(result_reactions)
 
 		if(inhib.len) // taken from argument and not reaction! Put in FIRST!
 			for(var/RR in inhib)
@@ -220,7 +220,7 @@
 		// So we've absolutely failed this time. There is no way to make this...
 		return RESULT_REACTION_FAILED
 
-	if(!result_reactions.len)
+	if(!length(result_reactions))
 		// Nothing to check for inhibitors...
 		for(var/datum/decl/chemical_reaction/test_react in result_reactions)
 		return RESULT_REACTION_FAILED
@@ -246,7 +246,7 @@
 
 /datum/unit_test/chemical_reactions_shall_not_conflict/proc/get_signal_data(atom/source, list/data = list())
 	SIGNAL_HANDLER
-	result_reactions += data // Append the reactions that happened, then use that to check their inhibitors
+	LAZYADD(result_reactions, data) // Append the reactions that happened, then use that to check their inhibitors
 
 /datum/unit_test/chemical_reactions_shall_not_conflict/proc/check_instants()
 	instant_beaker.reagents.clear_reagents()

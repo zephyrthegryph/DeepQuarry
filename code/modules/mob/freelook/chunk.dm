@@ -14,7 +14,7 @@
 	var/list/visibleTurfs = list()
 	var/list/obscured = list()
 	var/list/turfs = list()
-	var/list/seenby = list()
+	var/list/seenby
 	var/visible = 0
 	var/changed = 0
 	var/updating = 0
@@ -32,7 +32,7 @@
 			client.images += obscured
 	eye.visibleChunks += src
 	visible++
-	seenby += eye
+	LAZYADD(seenby, eye)
 	if(changed && !updating)
 		update()
 
@@ -44,7 +44,7 @@
 		if(client)
 			client.images -= obscured
 	eye.visibleChunks -= src
-	seenby -= eye
+	LAZYREMOVE(seenby, eye)
 	if(visible > 0)
 		visible--
 
@@ -105,7 +105,7 @@
 			obscured += t.obfuscations[obfuscation.type]
 			for(var/mob/observer/eye/m as anything in seenby)
 				if(!m)
-					seenby -= m
+					LAZYREMOVE(seenby, m)
 					continue
 				var/client/client = m.GetViewerClient()
 				if(client)

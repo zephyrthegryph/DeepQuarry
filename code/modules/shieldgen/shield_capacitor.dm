@@ -63,10 +63,10 @@
 			for(var/obj/machinery/shield_gen/gen in range(1, src))
 				if(get_dir(src, gen) == src.dir)
 					owned_gen = gen
-					owned_gen.capacitors |= src
+					LAZYOR(owned_gen.capacitors, src)
 	else
 		if(owned_gen && (src in owned_gen.capacitors))
-			owned_gen.capacitors -= src
+			LAZYREMOVE(owned_gen.capacitors, src)
 		owned_gen = null
 	return ITEM_INTERACT_SUCCESS
 

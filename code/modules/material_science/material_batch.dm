@@ -3,10 +3,10 @@
 /datum/material_batch
 	var/list/composition = list()
 	var/list/impurities = list()
-	var/list/process_history = list()
+	var/list/process_history
 	var/list/contributors = list()
 	var/list/feedstock_lots = list()
-	var/list/test_results = list()
+	var/list/test_results
 	var/list/process_counts = list()
 	/// Persistent physical surface treatments. These are layers, not bulk ingredients.
 	var/list/surface_layers = list()
@@ -97,7 +97,7 @@
 	var/concentration = units / max(amount, 1)
 	purity = clamp(purity - round(concentration * 0.4), 20, 100)
 	homogeneity = clamp(homogeneity - round(concentration * 0.2), 0, 100)
-	process_history += "alloyed with [units]u [additive_name]"
+	LAZYADD(process_history, "alloyed with [units]u [additive_name]")
 	var/additive_cost = max(unit_cost, 0) * units
 	cost_basis += additive_cost
 	record_cost(cost_category, additive_cost)
@@ -110,7 +110,7 @@
 	surface_layers[layer_name] = clamp((surface_layers[layer_name] || 0) + strength, 0, 100)
 	if(additive_name && additive_units > 0)
 		impurities[additive_name] = (impurities[additive_name] || 0) + additive_units
-	process_history += "applied [layer_name]"
+	LAZYADD(process_history, "applied [layer_name]")
 	recalculate()
 	return TRUE
 
@@ -118,7 +118,7 @@
 	if(!gas_name || units <= 0)
 		return FALSE
 	dissolved_gases[gas_name] = clamp((dissolved_gases[gas_name] || 0) + units, 0, 100)
-	process_history += "infused with [gas_name]"
+	LAZYADD(process_history, "infused with [gas_name]")
 	recalculate()
 	return TRUE
 
@@ -126,7 +126,7 @@
 	if(!treatment_name || strength <= 0)
 		return FALSE
 	field_treatments[treatment_name] = clamp((field_treatments[treatment_name] || 0) + strength, 0, 100)
-	process_history += treatment_name
+	LAZYADD(process_history, treatment_name)
 	recalculate()
 	return TRUE
 
@@ -203,7 +203,7 @@
 			structure[MATERIAL_STRUCTURE_SOFT] = clamp(structure[MATERIAL_STRUCTURE_SOFT] + 10, 0, 100)
 		else
 			return FALSE
-	process_history += option ? "[process] ([option])" : process
+	LAZYADD(process_history, option ? "[process] ([option])" : process)
 	process_counts[process] = (process_counts[process] || 0) + 1
 	if(yield_fraction < old_yield)
 		record_yield_loss(old_yield - yield_fraction)
@@ -443,10 +443,10 @@
 	var/datum/material_batch/copy = new
 	copy.composition = composition.Copy()
 	copy.impurities = impurities.Copy()
-	copy.process_history = process_history.Copy()
+	copy.process_history = LAZYCOPY(process_history)
 	copy.contributors = contributors.Copy()
 	copy.feedstock_lots = feedstock_lots.Copy()
-	copy.test_results = test_results.Copy()
+	copy.test_results = LAZYCOPY(test_results)
 	copy.process_counts = process_counts.Copy()
 	copy.surface_layers = surface_layers.Copy()
 	copy.dissolved_gases = dissolved_gases.Copy()

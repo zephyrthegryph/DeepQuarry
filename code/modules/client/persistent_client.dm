@@ -17,18 +17,18 @@ GLOBAL_LIST_EMPTY_TYPED(persistent_clients, /datum/persistent_client)
 	var/byond_build
 
 	/// Action datums assigned to this player
-	var/list/datum/action/player_actions = list()
+	var/list/datum/action/player_actions
 	/// Tracks client action logging
 	var/list/logging = list()
 
 	/// Callbacks invoked when this client logs in again
-	var/list/post_login_callbacks = list()
+	var/list/post_login_callbacks
 	/// Callbacks invoked when this client logs out
-	var/list/post_logout_callbacks = list()
+	var/list/post_logout_callbacks
 
 	/// List of names this key played under this round
 	/// assoc list of name -> mob tag
-	var/list/played_names = list()
+	var/list/played_names
 	/// Lazylist of preference slots this client has joined the round under
 	/// Numbers are stored as strings
 	var/list/joined_as_slots
@@ -101,7 +101,7 @@ GLOBAL_LIST_EMPTY_TYPED(persistent_clients, /datum/persistent_client)
 			continue
 		var/mob_tag = data[name]
 		var/encoded_name = html_encode(name)
-		if(writable.played_names.Find("[encoded_name]"))
+		if(LAZYFIND(writable.played_names, "[encoded_name]"))
 			continue
 
-		writable.played_names += list("[encoded_name]" = mob_tag)
+		LAZYADD(writable.played_names, list("[encoded_name]" = mob_tag))

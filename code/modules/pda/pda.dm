@@ -57,7 +57,7 @@
 		new/datum/data/pda/utility/flashlight)
 	var/list/shortcut_cache = list()
 	var/list/shortcut_cat_order = list()
-	var/list/notifying_programs = list()
+	var/list/notifying_programs
 	var/retro_mode = 0
 
 	///Var for attack_self chain
@@ -325,7 +325,7 @@
 
 	if(can_use(usr))
 		start_program(find_program(/datum/data/pda/app/main_menu))
-		notifying_programs.Cut()
+		LAZYCLEARLIST(notifying_programs)
 		cut_overlay("pda-r")
 		to_chat(usr, span_notice("You press the reset button on \the [src]."))
 	else

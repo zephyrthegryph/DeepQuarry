@@ -3,7 +3,7 @@
 	endWhen			= 1000	//Ends when all vending machines are subverted anyway.
 
 	var/list/obj/machinery/vending/vendingMachines = list()
-	var/list/obj/machinery/vending/infectedVendingMachines = list()
+	var/list/obj/machinery/vending/infectedVendingMachines
 	var/obj/machinery/vending/originMachine
 
 	var/static/list/rampant_speeches = list("try our aggressive new marketing strategies!", \
@@ -50,7 +50,7 @@
 		if(prob(15))
 			var/obj/machinery/vending/infectedMachine = pick(vendingMachines)
 			vendingMachines.Remove(infectedMachine)
-			infectedVendingMachines.Add(infectedMachine)
+			LAZYADD(infectedVendingMachines, infectedMachine)
 			infectedMachine.shut_up = 0
 			infectedMachine.shoot_inventory = 1
 

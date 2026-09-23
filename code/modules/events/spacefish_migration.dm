@@ -6,7 +6,7 @@
 	var/fish_base_cap = 2
 	var/fish_cap_mult = 3
 	var/fish_cap	= 10
-	var/list/spawned_fish = list()
+	var/list/spawned_fish
 	// Possible fish types. First is the path, second is base cap, third is cap severity multiplier
 	var/static/list/possible_fish_types = list(
 										list(/mob/living/simple_mob/animal/space/carp/event, 			2,	3),
@@ -86,7 +86,7 @@
 /datum/event/spacefish_migration/proc/spawn_one_fish(loc)
 	var/mob/living/simple_mob/animal/M = new fish_type(loc)
 	RegisterSignal(M, COMSIG_OBSERVER_DESTROYED, PROC_REF(on_fish_destruction))
-	spawned_fish.Add(M)
+	LAZYADD(spawned_fish, M)
 	return M
 
 // Counts living fish spawned by this event.
@@ -99,7 +99,7 @@
 // If fish is bomphed, remove it from the list.
 /datum/event/spacefish_migration/proc/on_fish_destruction(mob/M)
 	SIGNAL_HANDLER
-	spawned_fish -= M
+	LAZYREMOVE(spawned_fish, M)
 	UnregisterSignal(M, COMSIG_OBSERVER_DESTROYED)
 
 /datum/event/spacefish_migration/end()

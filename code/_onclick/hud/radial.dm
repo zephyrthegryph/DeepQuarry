@@ -80,13 +80,13 @@ GLOBAL_LIST_EMPTY(radial_menus)
 	var/list/choices = list()
 
 	/// choice_id -> icon
-	var/list/choices_icons = list()
+	var/list/choices_icons
 
 	/// choice_id -> choice
-	var/list/choices_values = list()
+	var/list/choices_values
 
 	/// choice_id -> /datum/radial_menu_choice
-	var/list/choice_datums = list()
+	var/list/choice_datums
 
 	var/list/page_data = list() //list of choices per page
 
@@ -244,22 +244,22 @@ GLOBAL_LIST_EMPTY(radial_menus)
 		E.add_overlay("radial_next")
 	else
 		//This isn't granted to exist, so use the ?. operator for conditionals that use it.
-		var/datum/radial_menu_choice/choice_datum = choice_datums[choice_id]
+		var/datum/radial_menu_choice/choice_datum = LAZYACCESS(choice_datums, choice_id)
 		if(choice_datum?.name)
 			E.name = choice_datum.name
-		else if(istext(choices_values[choice_id]))
-			E.name = choices_values[choice_id]
-		else if(ispath(choices_values[choice_id],/atom))
-			var/atom/A = choices_values[choice_id]
+		else if(istext(LAZYACCESS(choices_values, choice_id)))
+			E.name = LAZYACCESS(choices_values, choice_id)
+		else if(ispath(LAZYACCESS(choices_values, choice_id),/atom))
+			var/atom/A = LAZYACCESS(choices_values, choice_id)
 			E.name = initial(A.name)
 		else
-			var/atom/movable/AM = choices_values[choice_id] //Movables only
+			var/atom/movable/AM = LAZYACCESS(choices_values, choice_id) //Movables only
 			E.name = AM.name
 		E.choice = choice_id
 		E.maptext = null
 		E.next_page = FALSE
-		if(choices_icons[choice_id])
-			E.add_overlay(choices_icons[choice_id])
+		if(LAZYACCESS(choices_icons, choice_id))
+			E.add_overlay(LAZYACCESS(choices_icons, choice_id))
 		if (choice_datum?.info)
 			var/obj/effect/abstract/info/info_button = new(E, choice_datum.info)
 			info_button.plane = PLANE_PLAYER_HUD_ABOVE
@@ -272,13 +272,13 @@ GLOBAL_LIST_EMPTY(radial_menus)
 
 /datum/radial_menu/proc/Reset()
 	choices.Cut()
-	choices_icons.Cut()
-	choices_values.Cut()
-	choice_datums.Cut()
+	LAZYCLEARLIST(choices_icons)
+	LAZYCLEARLIST(choices_values)
+	LAZYCLEARLIST(choice_datums)
 	current_page = 1
 
 /datum/radial_menu/proc/element_chosen(choice_id,mob/user)
-	selected_choice = choices_values[choice_id]
+	selected_choice = LAZYACCESS(choices_values, choice_id)
 
 /datum/radial_menu/proc/get_next_id()
 	return "c_[choices.len]"
@@ -289,14 +289,14 @@ GLOBAL_LIST_EMPTY(radial_menus)
 	for(var/E in new_choices)
 		var/id = get_next_id()
 		choices += id
-		choices_values[id] = E
+		LAZYSET(choices_values, id, E)
 		if(new_choices[E])
 			var/I = extract_image(new_choices[E])
 			if(I)
-				choices_icons[id] = I
+				LAZYSET(choices_icons, id, I)
 
 			if (istype(new_choices[E], /datum/radial_menu_choice))
-				choice_datums[id] = new_choices[E]
+				LAZYSET(choice_datums, id, new_choices[E])
 	setup_menu(use_tooltips, set_page, click_on_hover)
 
 /datum/radial_menu/proc/extract_image(to_extract_from)

@@ -152,7 +152,7 @@ GLOBAL_DATUM_INIT(uplink, /datum/uplink, new)
 
 /datum/uplink_item/crated
 	var/crate_path = /obj/structure/largecrate
-	var/list/paths = list()	// List of paths to be spawned into the crate.
+	var/list/paths	// List of paths to be spawned into the crate.
 
 /datum/uplink_item/crated/get_goods(obj/item/uplink/U, location, mob/user)
 	var/obj/L = new crate_path(get_turf(location))

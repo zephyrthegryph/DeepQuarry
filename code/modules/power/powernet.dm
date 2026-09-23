@@ -2,7 +2,7 @@
 	var/list/cables = list()   // all cables & junctions
 	var/list/nodes  = list()   // all connected machines
 	var/apc_count = 0
-	var/list/smes_nodes = list()
+	var/list/smes_nodes
 
 	var/load     = 0           // current load; increased by each machine during processing
 	var/newavail = 0           // power gathered this tick; becomes avail at tick end
@@ -17,7 +17,7 @@
 	var/smes_newavail  = 0     // as above, for newavail
 	/// Persistent source rates. Republishing an unchanged rate is free.
 	var/list/registered_sources = list()
-	var/list/registered_source_refs = list()
+	var/list/registered_source_refs
 	var/registered_supply_total = 0
 	var/registered_smes_total = 0
 	/// Persistent SMES charge requests keyed by their input terminal. Entry:
@@ -38,7 +38,7 @@
 	var/list/sleeping_apc_loads = list()
 	/// Last semantic supply class observed by each sleeping APC. Accounting
 	/// jitter which remains inside a class never wakes the APC.
-	var/list/sleeping_apc_power_classes = list()
+	var/list/sleeping_apc_power_classes
 	/// One-tick machine usage folded into sleeping APC reservations.
 	var/list/sleeping_apc_dynamic_loads = list()
 	var/sleeping_apc_load_total = 0
@@ -97,7 +97,7 @@
 	for(var/obj/machinery/power/apc/A as anything in sleeping_apc_loads)
 		A?.wake_for_power_dependency()
 	sleeping_apc_loads.Cut()
-	sleeping_apc_power_classes.Cut()
+	LAZYCLEARLIST(sleeping_apc_power_classes)
 	sleeping_apc_dynamic_loads.Cut()
 	for(var/obj/structure/cable/C in cables)
 		cables -= C
@@ -123,7 +123,7 @@
 	if(!entry)
 		entry = list(0, is_smes, 0)
 		registered_sources[source] = entry
-		registered_source_refs[source] = WEAKREF(source)
+		LAZYSET(registered_source_refs, source, WEAKREF(source))
 	var/old_amount = entry[1]
 	var/old_smes = entry[2]
 	if(old_amount == amount && old_smes == is_smes)
@@ -186,7 +186,7 @@
 	if(entry[2])
 		registered_smes_total = max(registered_smes_total - entry[1], 0)
 	registered_sources.Remove(source)
-	registered_source_refs.Remove(source)
+	LAZYREMOVE(registered_source_refs, source)
 	newavail = registered_supply_total
 	smes_newavail = registered_smes_total
 	rebuild_material_sources()
@@ -236,7 +236,7 @@
 	for(var/obj/machinery/power/source as anything in registered_sources)
 		var/list/entry = registered_sources[source]
 		if(entry[1] > 0)
-			material_sources[registered_source_refs[source]] = entry[1]
+			material_sources[LAZYACCESS(registered_source_refs, source)] = entry[1]
 	material_flow_dirty = TRUE
 
 /// Integrate actual SMES energy usage over elapsed machinery intervals. Stable
@@ -275,12 +275,12 @@
 	// wake. Preserve the supply class which caused that wake. Recomputing it
 	// against the previous accounting window here made the completed window flip
 	// it back again, waking every APC on the station in an endless two-state loop.
-	var/previous_supply_class = sleeping_apc_power_classes[A]
+	var/previous_supply_class = LAZYACCESS(sleeping_apc_power_classes, A)
 	unreserve_sleeping_apc_load(A)
 	amount = max(amount, 0)
 	sleeping_apc_loads[A] = amount
 	sleeping_apc_load_total += amount
-	sleeping_apc_power_classes[A] = isnull(previous_supply_class) ? apc_supply_class(amount) : previous_supply_class
+	LAZYSET(sleeping_apc_power_classes, A, isnull(previous_supply_class) ? apc_supply_class(amount) : previous_supply_class)
 	material_flow_dirty = TRUE
 	mark_accounting_dirty()
 
@@ -291,7 +291,7 @@
 	sleeping_apc_load_total -= reserved
 	load = max(load - reserved, 0)
 	sleeping_apc_loads.Remove(A)
-	sleeping_apc_power_classes.Remove(A)
+	LAZYREMOVE(sleeping_apc_power_classes, A)
 	sleeping_apc_dynamic_loads.Remove(A)
 	material_flow_dirty = TRUE
 	mark_accounting_dirty()
@@ -392,9 +392,9 @@
 		if(!A || QDELETED(A))
 			continue
 		var/new_class = apc_supply_class(sleeping_apc_loads[A])
-		if(sleeping_apc_power_classes[A] == new_class)
+		if(LAZYACCESS(sleeping_apc_power_classes, A) == new_class)
 			continue
-		sleeping_apc_power_classes[A] = new_class
+		LAZYSET(sleeping_apc_power_classes, A, new_class)
 		SSmachines.publish_reactive_dependency("apc-power:[REF(A)]")
 
 /// last_surplus() — excess power before refunds to SMESes, from last tick.
@@ -473,7 +473,7 @@
 		if(istype(terminal.master, /obj/machinery/power/apc))
 			apc_count++
 	else if(istype(machine, /obj/machinery/power/smes))
-		smes_nodes |= machine
+		LAZYOR(smes_nodes, machine)
 	machine.power_supply_generation = 0
 	START_MACHINE_PROCESSING(machine)
 
@@ -619,7 +619,7 @@
 			unreserve_sleeping_apc_load(A)
 			apc_count = max(apc_count - 1, 0)
 	else if(istype(M, /obj/machinery/power/smes))
-		smes_nodes -= M
+		LAZYREMOVE(smes_nodes, M)
 	nodes -= M
 	if(!topology_batch_depth)
 		invalidate_material_cache()
@@ -645,7 +645,7 @@
 		if(istype(T.master, /obj/machinery/power/apc))
 			apc_count++
 	else if(istype(M, /obj/machinery/power/smes))
-		smes_nodes |= M
+		LAZYOR(smes_nodes, M)
 	if(!topology_batch_depth)
 		publish_dependency()
 

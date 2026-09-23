@@ -17,7 +17,7 @@
 	var/list/tool_paths
 	var/time = 30 //time in deciseconds
 	var/list/parts = list() //type paths of items that will be placed in the result
-	var/list/chem_catalysts = list() //like tool_behaviors but for reagents
+	var/list/chem_catalysts //like tool_behaviors but for reagents
 	var/category = CAT_NONE //where it shows up in the crafting UI
 	var/subcategory = CAT_NONE
 	var/always_available = TRUE //Set to FALSE if it needs to be learned first.

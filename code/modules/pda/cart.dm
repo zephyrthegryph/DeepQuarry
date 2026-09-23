@@ -60,7 +60,7 @@ GLOBAL_LIST_INIT(civilian_cartridges, list(
 
 	var/list/stored_data = list()
 	var/list/programs = list()
-	var/list/messenger_plugins = list()
+	var/list/messenger_plugins
 
 /obj/item/cartridge/Destroy()
 	QDEL_NULL(radio)

@@ -336,8 +336,8 @@
 						   ORION_TRAIL_COLLISION	= 1,
 						   ORION_TRAIL_SPACEPORT	= 2
 						   )
-	var/list/stops = list()
-	var/list/stopblurbs = list()
+	var/list/stops
+	var/list/stopblurbs
 	var/traitors_aboard = 0
 	var/spaceport_raided = 0
 	var/spaceport_freebie = 0

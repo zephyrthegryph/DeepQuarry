@@ -60,7 +60,7 @@
 	var/last_eat = 0
 	var/eat_interval = 100
 	var/wight_check_index = 1
-	var/list/shadow_wights = list()
+	var/list/shadow_wights
 
 /obj/item/vampiric/Initialize(mapload)
 	. = ..()
@@ -106,8 +106,8 @@
 			playsound(src, pick('sound/hallucinations/growl1.ogg','sound/hallucinations/growl2.ogg','sound/hallucinations/growl3.ogg'), 50, 1, -3)
 
 	if(charges >= 1)
-		if(shadow_wights.len < 5 && prob(5))
-			shadow_wights.Add(new /obj/effect/shadow_wight(src.loc))
+		if(length(shadow_wights) < 5 && prob(5))
+			LAZYADD(shadow_wights, new /obj/effect/shadow_wight(src.loc))
 			playsound(src, 'sound/effects/ghost.ogg', 50, 1, -3)
 			charges -= 0.1
 
@@ -117,18 +117,18 @@
 			charges -= 0.1
 
 	//check on our shadow wights
-	if(shadow_wights.len)
+	if(length(shadow_wights))
 		wight_check_index++
-		if(wight_check_index > shadow_wights.len)
+		if(wight_check_index > length(shadow_wights))
 			wight_check_index = 1
 
-		var/obj/effect/shadow_wight/W = shadow_wights[wight_check_index]
+		var/obj/effect/shadow_wight/W = LAZYACCESS(shadow_wights, wight_check_index)
 		if(isnull(W))
-			shadow_wights.Remove(W)
+			LAZYREMOVE(shadow_wights, W)
 		else if(isnull(W.loc))
-			shadow_wights.Remove(W)
+			LAZYREMOVE(shadow_wights, W)
 		else if(get_dist(W, src) > 10)
-			shadow_wights.Remove(W)
+			LAZYREMOVE(shadow_wights, W)
 
 /obj/item/vampiric/hear_talk(mob/M, list/message_pieces, verb)
 	..()

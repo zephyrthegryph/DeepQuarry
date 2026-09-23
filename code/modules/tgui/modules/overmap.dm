@@ -150,7 +150,7 @@
 	// HELM
 	var/autopilot = 0
 	var/autopilot_disabled = TRUE
-	var/list/known_sectors = list()
+	var/list/known_sectors
 	var/dx		//desitnation
 	var/dy		//coordinates
 	var/speedlimit = 1/(20 SECONDS) //top speed for autopilot, 5
@@ -180,7 +180,7 @@
 			R.fields["name"] = S.name
 			R.fields["x"] = S.x
 			R.fields["y"] = S.y
-			known_sectors[S.name] = R
+			LAZYSET(known_sectors, S.name, R)
 	// SENSORS
 	for(var/obj/machinery/shipsensors/S in GLOB.machines)
 		if(linked.check_ownership(S))
@@ -235,7 +235,7 @@
 
 	var/list/locations[0]
 	for (var/key in known_sectors)
-		var/datum/computer_file/data/waypoint/R = known_sectors[key]
+		var/datum/computer_file/data/waypoint/R = LAZYACCESS(known_sectors, key)
 		var/list/rdata[0]
 		rdata["name"] = R.fields["name"]
 		rdata["x"] = R.fields["x"]
@@ -335,13 +335,13 @@
 					var/newy = tgui_input_number(ui.user, "Input new entry y coordinate", "Coordinate input", linked.y, world.maxy, 1)
 					R.fields["x"] = CLAMP(newx, 1, world.maxx)
 					R.fields["y"] = CLAMP(newy, 1, world.maxy)
-			known_sectors[sec_name] = R
+			LAZYSET(known_sectors, sec_name, R)
 			. = TRUE
 
 		if("remove")
 			var/datum/computer_file/data/waypoint/R = locate(params["remove"])
 			if(R)
-				known_sectors.Remove(R.fields["name"])
+				LAZYREMOVE(known_sectors, R.fields["name"])
 				qdel(R)
 			. = TRUE
 

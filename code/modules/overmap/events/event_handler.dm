@@ -1,7 +1,7 @@
 GLOBAL_DATUM_INIT(overmap_event_handler, /datum/decl/overmap_event_handler, new)
 
 /datum/decl/overmap_event_handler
-	var/list/hazard_by_turf = list()
+	var/list/hazard_by_turf
 	var/list/ship_events = list()
 
 // Populates overmap with random events!  Should be called once at startup at some point.
@@ -108,7 +108,7 @@ GLOBAL_DATUM_INIT(overmap_event_handler, /datum/decl/overmap_event_handler, new)
 		return
 
 	for(var/obj/effect/overmap/event/E in hazard_by_turf[old_loc])
-		if(is_event_included(hazard_by_turf[new_loc], E))
+		if(is_event_included(LAZYACCESS(hazard_by_turf, new_loc), E))
 			continue // If new turf has the same event as well... keep it going!
 		stop_hazard(ship, E)
 
@@ -123,10 +123,10 @@ GLOBAL_DATUM_INIT(overmap_event_handler, /datum/decl/overmap_event_handler, new)
 		active_hazards += E
 
 	if(!active_hazards.len)
-		hazard_by_turf -= T
+		LAZYREMOVE(hazard_by_turf, T)
 	else
-		hazard_by_turf |= T
-		hazard_by_turf[T] = active_hazards
+		LAZYOR(hazard_by_turf, T)
+		LAZYSET(hazard_by_turf, T, active_hazards)
 
 	for(var/obj/effect/overmap/visitable/ship/ship in T)
 		for(var/datum/event/E in ship_events[ship])

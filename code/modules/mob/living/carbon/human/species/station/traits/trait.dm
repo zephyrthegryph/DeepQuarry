@@ -78,7 +78,7 @@
 		H.sdisabilities |= sdisability // bitflag
 	add_verb(H, /mob/living/carbon/human/proc/trait_tutorial)
 	if(special_env)
-		S.env_traits += src
+		LAZYADD(S.env_traits, src)
 	if(added_component_path && !H.GetComponent(added_component_path))
 		H.AddComponent(added_component_path)
 	return
@@ -112,7 +112,7 @@
 	if(sdisability)
 		H.sdisabilities &= ~sdisability // bitflag
 	if(special_env)
-		S.env_traits -= src
+		LAZYREMOVE(S.env_traits, src)
 	if(added_component_path)
 		var/datum/component/C = H.GetComponent(added_component_path)
 		if(C)

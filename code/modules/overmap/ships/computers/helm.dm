@@ -22,7 +22,7 @@ GLOBAL_LIST_EMPTY(all_waypoints)
 	circuit = /obj/item/circuitboard/helm
 	var/autopilot = 0
 	var/autopilot_disabled = TRUE
-	var/list/known_sectors = list()
+	var/list/known_sectors
 	var/dx		//desitnation
 	var/dy		//coordinates
 	var/speedlimit = 1/(20 SECONDS) //top speed for autopilot, 5
@@ -51,7 +51,7 @@ GLOBAL_LIST_EMPTY(all_waypoints)
 			R.fields["name"] = S.name
 			R.fields["x"] = S.x
 			R.fields["y"] = S.y
-			known_sectors[S.name] = R
+			LAZYSET(known_sectors, S.name, R)
 
 /obj/machinery/computer/ship/helm/process()
 	..()
@@ -152,7 +152,7 @@ GLOBAL_LIST_EMPTY(all_waypoints)
 
 	var/list/locations[0]
 	for (var/key in known_sectors)
-		var/datum/computer_file/data/waypoint/R = known_sectors[key]
+		var/datum/computer_file/data/waypoint/R = LAZYACCESS(known_sectors, key)
 		var/list/rdata[0]
 		rdata["name"] = R.fields["name"]
 		rdata["x"] = R.fields["x"]
@@ -202,13 +202,13 @@ GLOBAL_LIST_EMPTY(all_waypoints)
 						return FALSE
 					R.fields["x"] = CLAMP(newx, 1, world.maxx)
 					R.fields["y"] = CLAMP(newy, 1, world.maxy)
-			known_sectors[sec_name] = R
+			LAZYSET(known_sectors, sec_name, R)
 			. = TRUE
 
 		if("remove")
 			var/datum/computer_file/data/waypoint/R = locate(params["remove"])
 			if(R)
-				known_sectors.Remove(R.fields["name"])
+				LAZYREMOVE(known_sectors, R.fields["name"])
 				qdel(R)
 			. = TRUE
 

@@ -315,7 +315,7 @@
 		loc_network = null //Consumed
 
 	if(!(user.ckey in warned_users))
-		warned_users |= user.ckey
+		LAZYOR(warned_users, user.ckey)
 		tgui_alert_async(user,{"
 This device can be easily used to break ERP preferences due to the nature of teleporting and tele-vore.
 Make sure you carefully examine someone's OOC prefs before teleporting them if you are going to use this device for ERP purposes.

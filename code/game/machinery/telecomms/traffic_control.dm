@@ -10,7 +10,7 @@
 	icon_screen = "generic"
 
 	var/screen = 0				// the screen number:
-	var/list/servers = list()	// the servers located by the computer
+	var/list/servers	// the servers located by the computer
 	var/mob/editingcode
 	var/mob/lasteditor
 	var/list/viewingcode = list()
@@ -104,15 +104,15 @@
 				screen = 0
 
 			if("scan")
-				if(servers.len > 0)
+				if(length(servers) > 0)
 					temp = span_red("- FAILED: CANNOT PROBE WHEN BUFFER FULL -")
 
 				else
 					for(var/obj/machinery/telecomms/server/T in range(25, src))
 						if(T.network == network)
-							servers.Add(T)
+							LAZYADD(servers, T)
 
-					if(!servers.len)
+					if(!length(servers))
 						temp = span_red("- FAILED: UNABLE TO LOCATE SERVERS IN \[[network]\] -")
 					else
 						temp = span_blue("- [servers.len] SERVERS PROBED & BUFFERED -")

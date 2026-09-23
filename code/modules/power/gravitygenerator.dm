@@ -120,8 +120,8 @@ GLOBAL_LIST_EMPTY(gravity_generators)
 	var/charge_count = 100
 	var/current_overlay = null
 	var/broken_state = 0
-	var/list/levels = list()
-	var/list/areas = list()
+	var/list/levels
+	var/list/areas
 
 /obj/machinery/gravity_generator/main/Initialize(mapload)
 	..()
@@ -409,7 +409,7 @@ GLOBAL_LIST_EMPTY(gravity_generators)
 	return FALSE
 
 /obj/machinery/gravity_generator/main/proc/update_list()
-	levels.Cut()
+	LAZYCLEARLIST(levels)
 	var/my_z = get_z(src)
 
 	//Actually doing it special this time instead of letting using_map decide
@@ -431,12 +431,12 @@ GLOBAL_LIST_EMPTY(gravity_generators)
 			GLOB.gravity_generators["[z]"] -= src
 
 /obj/machinery/gravity_generator/main/proc/update_areas()
-	areas.Cut()
+	LAZYCLEARLIST(areas)
 	for(var/area/A)
 		if(istype(A, /area/shuttle))
 			continue //Skip shuttle areas
 		if(A.z in levels)
-			areas += A
+			LAZYADD(areas, A)
 
 // Misc
 // Taking out the comments on this. It will be needed.

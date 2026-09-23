@@ -75,7 +75,7 @@
 				chassis.micro_weapon_equipment -= src
 				listclearnulls(chassis.micro_weapon_equipment)
 			// ition end: MICROMECHS
-		chassis.universal_equipment -= src
+		LAZYREMOVE(chassis.universal_equipment, src)
 		chassis.equipment -= src
 		listclearnulls(chassis.equipment)
 		if(chassis.selected == src)
@@ -163,7 +163,7 @@
 	if(equip_type == EQUIP_MICRO_WEAPON && M.micro_weapon_equipment.len < M.max_micro_weapon_equip)
 		return 1
 	// ition end: MICROMECHS
-	if(equip_type != EQUIP_SPECIAL && M.universal_equipment.len < M.max_universal_equip) //The exosuit needs to be military grade to actually have a universal slot capable of accepting a true weapon.
+	if(equip_type != EQUIP_SPECIAL && length(M.universal_equipment) < M.max_universal_equip) //The exosuit needs to be military grade to actually have a universal slot capable of accepting a true weapon.
 		if(equip_type == EQUIP_WEAPON && !istype(M, /obj/mecha/combat))
 			return 0
 		return 1
@@ -192,8 +192,8 @@
 		M.micro_weapon_equipment += src
 		has_equipped = 1
 	// ition end: MICROMECHS
-	if(equip_type != EQUIP_SPECIAL && M.universal_equipment.len < M.max_universal_equip && !has_equipped)
-		M.universal_equipment += src
+	if(equip_type != EQUIP_SPECIAL && length(M.universal_equipment) < M.max_universal_equip && !has_equipped)
+		LAZYADD(M.universal_equipment, src)
 	M.equipment += src
 	chassis = M
 	src.loc = M
@@ -217,7 +217,7 @@
 	moveto = moveto || get_turf(chassis)
 	forceMove(moveto)
 	chassis.equipment -= src
-	chassis.universal_equipment -= src
+	LAZYREMOVE(chassis.universal_equipment, src)
 	if(equip_type)
 		switch(equip_type)
 			if(EQUIP_HULL)

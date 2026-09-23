@@ -36,7 +36,7 @@
 
 /datum/property_registry
 	/// id -> /datum/property_def
-	var/list/defs = list()
+	var/list/defs
 	/// Every provider.
 	var/list/providers
 	/// id -> list of base providers.
@@ -44,17 +44,17 @@
 	/// id -> list of contributors.
 	var/list/contributors = list()
 	/// Tag id -> bit number (0-based, across words).
-	var/list/tag_bits = list()
+	var/list/tag_bits
 	/// Measure ids, sorted, in table order.
-	var/list/measure_ids = list()
+	var/list/measure_ids
 	/// Validation errors found at build.
 	var/list/errors
 	/// "[type]" or "[type]:[variant]" -> interned per-type table.
-	var/list/type_tables = list()
+	var/list/type_tables
 	/// Canonical text -> the shared table with those values.
-	var/list/interned = list()
+	var/list/interned
 	/// "[type]|[id]" -> the base provider for that type, or FALSE.
-	var/list/resolved_base = list()
+	var/list/resolved_base
 
 /datum/property_registry/New(list/def_list, list/provider_list)
 	..()
@@ -63,19 +63,19 @@
 	var/list/sorted_defs = sortTim(def_list.Copy(), GLOBAL_PROC_REF(cmp_property_def))
 	var/tag_count = 0
 	for(var/datum/property_def/def as anything in sorted_defs)
-		var/datum/property_def/existing = defs[def.id]
+		var/datum/property_def/existing = LAZYACCESS(defs, def.id)
 		if(existing)
 			errors += "property [def.id] is declared twice ([existing.type] and [def.type])"
 			continue
-		defs[def.id] = def
+		LAZYSET(defs, def.id, def)
 		base_providers[def.id] = list()
 		contributors[def.id] = list()
 		if(def.kind == PROP_KIND_TAG)
-			tag_bits[def.id] = tag_count++
+			LAZYSET(tag_bits, def.id, tag_count++)
 		else
-			measure_ids += def.id
+			LAZYADD(measure_ids, def.id)
 	for(var/datum/property_provider/provider as anything in providers)
-		if(!defs[provider.property])
+		if(!LAZYACCESS(defs, provider.property))
 			continue // reported by validate()
 		if(provider.is_base())
 			base_providers[provider.property] += provider
@@ -93,7 +93,7 @@
 	var/list/out = list()
 	var/list/units = dq_property_units()
 	for(var/id in defs)
-		var/datum/property_def/def = defs[id]
+		var/datum/property_def/def = LAZYACCESS(defs, id)
 		if(!dq_property_valid_aggregator(def.aggregator))
 			out += "property [id] has an unknown aggregator [def.aggregator]"
 		if(def.min_value > def.max_value)
@@ -114,7 +114,7 @@
 		if(!length(base_providers[id]) && !length(contributors[id]))
 			out += "property [id] has no provider"
 	for(var/datum/property_provider/provider as anything in providers)
-		var/datum/property_def/def = defs[provider.property]
+		var/datum/property_def/def = LAZYACCESS(defs, provider.property)
 		var/label = "[provider.type]"
 		if(!def)
 			out += "[label] provides unknown property [provider.property]"
@@ -159,7 +159,7 @@
 /datum/property_registry/proc/check_value(id, value)
 	if(isnull(value))
 		return null
-	var/datum/property_def/def = defs[id]
+	var/datum/property_def/def = LAZYACCESS(defs, id)
 	if(!isnum(value))
 		return "[id] = [value] is not a number"
 	if(def.kind == PROP_KIND_TAG && value != TRUE && value != FALSE)
@@ -173,7 +173,7 @@
 /// The base provider answering `id` for `path`: the deepest applies_to.
 /datum/property_registry/proc/base_provider(path, id)
 	var/key = "[path]|[id]"
-	. = resolved_base[key]
+	. = LAZYACCESS(resolved_base, key)
 	if(!isnull(.))
 		return . || null
 	var/datum/property_provider/best
@@ -182,14 +182,14 @@
 			continue
 		if(!best || ispath(provider.applies_to, best.applies_to))
 			best = provider
-	resolved_base[key] = best || FALSE
+	LAZYSET(resolved_base, key, best || FALSE)
 	return best
 
 /// The interned per-type table for `path` and `variant`: measure id -> value,
 /// plus "#tags" -> list of tag words. Shared: never mutate.
 /datum/property_registry/proc/type_table(path, variant)
 	var/key = isnull(variant) ? "[path]" : "[path]:[variant]"
-	. = type_tables[key]
+	. = LAZYACCESS(type_tables, key)
 	if(.)
 		return .
 	var/list/variant_vars = dq_variant_vars(path, variant)
@@ -207,7 +207,7 @@
 		var/datum/property_provider/provider = base_provider(path, id)
 		if(!provider?.type_value(path, variant_vars))
 			continue
-		var/bit = tag_bits[id]
+		var/bit = LAZYACCESS(tag_bits, id)
 		var/word = round(bit / PROP_TAG_WORD_BITS) + 1
 		if(!words)
 			words = list()
@@ -218,11 +218,11 @@
 		table["#tags"] = words
 		canonical += "#tags=[jointext(words, ",")]"
 	var/canonical_text = jointext(canonical, ";")
-	var/list/shared = interned[canonical_text]
+	var/list/shared = LAZYACCESS(interned, canonical_text)
 	if(!shared)
 		shared = table
-		interned[canonical_text] = shared
-	type_tables[key] = shared
+		LAZYSET(interned, canonical_text, shared)
+	LAZYSET(type_tables, key, shared)
 	return shared
 
 // ---- Public reads ----
@@ -230,7 +230,7 @@
 /// Per-type value of property `id` for `path` (and variant), with no instance.
 /proc/dq_type_property(path, id, variant = null)
 	var/datum/property_registry/registry = dq_property_registry()
-	var/datum/property_def/def = registry.defs[id]
+	var/datum/property_def/def = LAZYACCESS(registry.defs, id)
 	if(!def)
 		CRASH("unknown property [id]")
 	if(def.kind == PROP_KIND_TAG)
@@ -240,7 +240,7 @@
 /// Whether `path` (and variant) has tag `tag`, with no instance.
 /proc/dq_type_has_tag(path, tag, variant = null)
 	var/datum/property_registry/registry = dq_property_registry()
-	var/bit = registry.tag_bits[tag]
+	var/bit = LAZYACCESS(registry.tag_bits, tag)
 	if(isnull(bit))
 		CRASH("unknown tag [tag]")
 	var/list/words = registry.type_table(path, variant)["#tags"]
@@ -253,7 +253,7 @@
 /// contributor folded in with the property's aggregator.
 /proc/dq_property(datum/thing, id)
 	var/datum/property_registry/registry = dq_property_registry()
-	var/datum/property_def/def = registry.defs[id]
+	var/datum/property_def/def = LAZYACCESS(registry.defs, id)
 	if(!def)
 		CRASH("unknown property [id]")
 	var/datum/property_provider/base = registry.base_provider(thing.type, id)

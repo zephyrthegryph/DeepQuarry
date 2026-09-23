@@ -95,7 +95,7 @@
 	flags = REMOTEVIEW_ON_ENTER
 	circuit = /obj/item/circuitboard/sleeper
 	var/mob/living/carbon/human/occupant = null
-	var/list/available_chemicals = list()
+	var/list/available_chemicals
 	var/list/base_chemicals = list(REAGENT_ID_INAPROVALINE = REAGENT_INAPROVALINE, REAGENT_ID_PARACETAMOL = REAGENT_PARACETAMOL, REAGENT_ID_ANTITOXIN = REAGENT_ANTITOXIN, REAGENT_ID_DEXALIN = REAGENT_DEXALIN)
 	var/amounts = list(5, 10)
 	var/obj/item/reagent_containers/glass/beaker = null
@@ -129,7 +129,7 @@
 	var/man_rating = 0
 	var/cap_rating = 0
 
-	available_chemicals.Cut()
+	LAZYCLEARLIST(available_chemicals)
 	available_chemicals = base_chemicals.Copy()
 
 	for(var/obj/item/stock_parts/P in component_parts)
@@ -164,7 +164,7 @@
 			new_chemicals[REAGENT_ID_LEPORAZINE] = REAGENT_LEPORAZINE
 
 		if(new_chemicals.len)
-			available_chemicals += new_chemicals
+			LAZYADD(available_chemicals, new_chemicals)
 		return
 
 /obj/machinery/sleeper/attack_hand(mob/user)

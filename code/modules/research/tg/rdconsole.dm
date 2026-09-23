@@ -43,11 +43,11 @@ Nothing else in the console has ID requirements.
 	if(!stored_research)
 		CONNECT_TO_RND_SERVER_ROUNDSTART(stored_research, src)
 	if(stored_research)
-		stored_research.consoles_accessing += src
+		LAZYADD(stored_research.consoles_accessing, src)
 
 /obj/machinery/computer/rdconsole_tg/Destroy()
 	if(stored_research)
-		stored_research.consoles_accessing -= src
+		LAZYREMOVE(stored_research.consoles_accessing, src)
 		stored_research = null
 	if(t_disk)
 		t_disk.forceMove(get_turf(src))
@@ -206,7 +206,7 @@ Nothing else in the console has ID requirements.
 			enqueued_by_user = TRUE
 
 		// Ensure node is supposed to be visible
-		if (stored_research.hidden_nodes[v])
+		if (LAZYACCESS(stored_research.hidden_nodes, v))
 			continue
 
 		data["nodes"] += list(list(
@@ -214,14 +214,14 @@ Nothing else in the console has ID requirements.
 			"is_free" = n.is_free(stored_research),
 			"can_unlock" = stored_research.can_unlock_node(n),
 			"have_experiments_done" = stored_research.have_experiments_for_node(n),
-			"tier" = stored_research.tiers[n.id],
+			"tier" = LAZYACCESS(stored_research.tiers, n.id),
 			"enqueued_by_user" = enqueued_by_user
 		))
 
 	// Get experiments and serialize them
-	var/list/exp_to_process = stored_research.available_experiments.Copy()
+	var/list/exp_to_process = LAZYCOPY(stored_research.available_experiments)
 	for (var/e in stored_research.completed_experiments)
-		exp_to_process += stored_research.completed_experiments[e]
+		exp_to_process += LAZYACCESS(stored_research.completed_experiments, e)
 	for (var/e in exp_to_process)
 		var/datum/experiment/ex = e
 		data["experiments"][ex.type] = list(

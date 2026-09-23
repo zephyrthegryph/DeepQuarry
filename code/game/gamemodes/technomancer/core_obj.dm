@@ -28,8 +28,8 @@
 
 	// Some spell-specific variables go here, since spells themselves are temporary.  Cores are more long term and more accessable than
 	// mind datums.  It may also allow creative players to try to pull off a 'soul jar' scenario.
-	var/list/summoned_mobs = list()	// Maintained horribly with maintain_summon_list().
-	var/list/wards_in_use = list()	// Wards don't count against the cap for other summons.
+	var/list/summoned_mobs	// Maintained horribly with maintain_summon_list().
+	var/list/wards_in_use	// Wards don't count against the cap for other summons.
 	var/max_summons = 10			// Maximum allowed summoned entities.  Some cores will have different caps.
 	var/universal = FALSE // Allows non-technomancers to use the core -
 
@@ -98,24 +98,24 @@
 
 // We pay for on-going effects here.
 /obj/item/technomancer_core/proc/pay_dues()
-	if(summoned_mobs.len)
-		pay_energy( round(summoned_mobs.len * 5) )
+	if(length(summoned_mobs))
+		pay_energy( round(length(summoned_mobs) * 5) )
 
 // Because sometimes our summoned mobs will stop existing and leave a null entry in the list, we need to do cleanup every
 // so often so .len remains reliable.
 /obj/item/technomancer_core/proc/maintain_summon_list()
-	if(!summoned_mobs.len) // No point doing work if there's no work to do.
+	if(!length(summoned_mobs)) // No point doing work if there's no work to do.
 		return
 	for(var/A in summoned_mobs)
 		// First, a null check.
 		if(isnull(A))
-			summoned_mobs -= A
+			LAZYREMOVE(summoned_mobs, A)
 			continue
 		// Now check for dead mobs who shouldn't be on the list.
 		if(isliving(A))
 			var/mob/living/L = A
 			if(L.stat == DEAD)
-				summoned_mobs -= L
+				LAZYREMOVE(summoned_mobs, L)
 				spawn(1)
 					L.visible_message(span_infoplain(span_bold("\The [L]") + " begins to fade away..."))
 					animate(L, alpha = 255, alpha = 0, time = 30) // Makes them fade into nothingness.
@@ -124,10 +124,10 @@
 // Deletes all the summons and wards from the core, so that Destroy() won't have issues.
 /obj/item/technomancer_core/proc/dismiss_all_summons()
 	for(var/mob/living/L in summoned_mobs)
-		summoned_mobs -= L
+		LAZYREMOVE(summoned_mobs, L)
 		qdel(L)
 	for(var/mob/living/ward in wards_in_use)
-		wards_in_use -= ward
+		LAZYREMOVE(wards_in_use, ward)
 		qdel(ward)
 
 // This is what is clicked on to place a spell in the user's hands.
@@ -301,8 +301,8 @@
 	spell_power_modifier = 1.2
 
 /obj/item/technomancer_core/summoner/pay_dues()
-	if(summoned_mobs.len)
-		pay_energy( round(summoned_mobs.len) )
+	if(length(summoned_mobs))
+		pay_energy( round(length(summoned_mobs)) )
 
 // For those who hate instability.
 /obj/item/technomancer_core/safety

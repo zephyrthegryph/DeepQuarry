@@ -31,7 +31,7 @@ GLOBAL_REAL(logger, /datum/log_holder)
 	var/shutdown = FALSE
 
 	/// Log file path -> world.time it was last confirmed to exist. Saves an fexists() per entry (Q8).
-	var/list/verified_log_files = list()
+	var/list/verified_log_files
 
 GENERAL_PROTECT_DATUM(/datum/log_holder)
 

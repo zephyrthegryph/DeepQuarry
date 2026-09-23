@@ -17,7 +17,7 @@
 	var/supported = 0
 	var/active = 0
 	var/list/resource_field = list()
-	var/list/gas_field = list()
+	var/list/gas_field
 	var/obj/item/radio/intercom/faultreporter
 	var/drill_range = 5
 	var/offset = 2
@@ -164,7 +164,7 @@
 		M.GetDrilled()
 	// Extract gasses!
 	else if(istype(get_turf(src), /turf/simulated/floor/gas_crack))
-		if(gas_field.len)
+		if(length(gas_field))
 			//Create gas mixture to hold data for passing
 			var/datum/gas_mixture/GM = new
 			for(var/gas in gas_field)
@@ -230,7 +230,7 @@
 			harvesting.resources = null
 			resource_field -= harvesting
 
-	else if(!gas_field.len) // Won't stop digging if gas pressure is detected
+	else if(!length(gas_field)) // Won't stop digging if gas pressure is detected
 		active = 0
 		need_player_check = 1
 		update_icon()
@@ -415,8 +415,8 @@
 					if(!G.gas_type)
 						continue
 					drill_moles_per_tick += 2
-					gas_field.Add(G.gas_type)
-	if(!resource_field.len && !gas_field.len)
+					LAZYADD(gas_field, G.gas_type)
+	if(!resource_field.len && !length(gas_field))
 		system_error("Resources depleted.")
 
 /obj/machinery/mining/drill/proc/use_cell_power()

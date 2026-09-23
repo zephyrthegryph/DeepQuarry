@@ -1,9 +1,9 @@
 /datum/stockMarket
 	var/list/stocks = list()
 	var/list/balances = list()
-	var/list/last_read = list()
-	var/list/stockBrokers = list()
-	var/list/logs = list()
+	var/list/last_read
+	var/list/stockBrokers
+	var/list/logs
 	var/process_timer
 
 /datum/stockMarket/New()
@@ -51,7 +51,7 @@
 		if (pname in stockBrokers)
 			i--
 			continue
-		stockBrokers += pname
+		LAZYADD(stockBrokers, pname)
 
 /datum/stockMarket/proc/generateDesignation(name)
 	if (length(name) <= 4)
@@ -116,7 +116,7 @@
 		S.generateIndustry()
 		S.generateEvents()
 		stocks += S
-		last_read[S] = list()
+		LAZYSET(last_read, S, list())
 
 /datum/stockMarket/process()
 	process_timer = null
@@ -133,7 +133,7 @@
 	L.shareprice = shareprice
 	L.money = money
 	L.time = time2text(world.timeofday, "hh:mm")
-	logs += L
+	LAZYADD(logs, L)
 
 GLOBAL_DATUM_INIT(stockExchange, /datum/stockMarket, new)
 // plotBarGraph deleted; StockChart TGUI panel renders typed values directly.

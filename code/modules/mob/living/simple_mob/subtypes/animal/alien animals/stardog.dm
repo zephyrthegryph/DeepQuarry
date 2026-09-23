@@ -937,7 +937,7 @@
 	name = "eye"
 	icon_state = "bluwhicir"
 
-	var/list/our_eyes = list()
+	var/list/our_eyes
 
 
 /area/redgate/stardog/eyes/Entered(mob/M)
@@ -1000,7 +1000,7 @@
 	. = ..()
 	var/area/redgate/stardog/eyes/e = get_area(src)
 	if(istype(e,/area/redgate/stardog/eyes))
-		e.our_eyes |= src
+		LAZYOR(e.our_eyes, src)
 
 /obj/effect/dog_teleporter	//look, I could have just used a bump teleporter, and I don't have an excuse, also everyone is going to be angry but it hurts too much for me to care right now, hopefully I will finish this before I start caring
 	name = "mouth"

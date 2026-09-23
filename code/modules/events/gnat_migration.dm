@@ -3,7 +3,7 @@
 	announceWhen	= 45	// Adjusted by setup
 	endWhen			= 75	// Adjusted by setup
 	var/gnat_cap	= 10
-	var/list/spawned_gnat = list()
+	var/list/spawned_gnat
 
 /datum/event/gnat_migration/setup()
 	announceWhen = rand(30, 60) // 1 to 2 minutes
@@ -71,7 +71,7 @@
 /datum/event/gnat_migration/proc/spawn_one_gnat(loc)
 	var/mob/living/simple_mob/animal/M = new /mob/living/simple_mob/animal/space/gnat(loc)
 	RegisterSignal(M, COMSIG_OBSERVER_DESTROYED, PROC_REF(on_gnat_destruction))
-	spawned_gnat.Add(M)
+	LAZYADD(spawned_gnat, M)
 	return M
 
 // Counts living gnat spawned by this event.
@@ -84,7 +84,7 @@
 // If gnat is bomphed, remove it from the list.
 /datum/event/gnat_migration/proc/on_gnat_destruction(mob/M)
 	SIGNAL_HANDLER
-	spawned_gnat -= M
+	LAZYREMOVE(spawned_gnat, M)
 	UnregisterSignal(M, COMSIG_OBSERVER_DESTROYED)
 
 /datum/event/gnat_migration/end()

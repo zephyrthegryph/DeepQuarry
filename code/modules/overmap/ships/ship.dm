@@ -35,7 +35,7 @@
 	var/burn_delay = 1 SECOND           //how often ship can do burns
 	var/fore_dir = NORTH                //what dir ship flies towards for purpose of moving stars effect procs
 
-	var/list/engines = list()
+	var/list/engines
 	var/engines_state = 0 //global on/off toggle for all engines
 	var/thrust_limit = 1  //global thrust limit for all engines, 0..1
 	var/halted = 0        //admin halt or other stop.
@@ -258,7 +258,7 @@
 		S.attempt_hook_up(src)
 	for(var/datum/ship_engine/E in GLOB.ship_engines)
 		if(check_ownership(E.holder))
-			engines |= E
+			LAZYOR(engines, E)
 
 /obj/effect/overmap/visitable/ship/proc/get_landed_info()
 	return "This ship cannot land."

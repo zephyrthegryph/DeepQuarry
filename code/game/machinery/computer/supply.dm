@@ -14,7 +14,7 @@
 	var/can_order_contraband = 0
 	var/active_category = null
 	var/menu_tab = 0
-	var/list/expanded_packs = list()
+	var/list/expanded_packs
 
 // Supply control console
 /obj/machinery/computer/supplycomp/control

@@ -23,10 +23,10 @@ fundamental differences
 
 /obj/machinery/appliance/mixer/Initialize(mapload)
 	. = ..()
-	cooking_objs += new /datum/cooking_item(new /obj/item/reagent_containers/cooking_container(src))
+	LAZYADD(cooking_objs, new /datum/cooking_item(new /obj/item/reagent_containers/cooking_container(src)))
 	cooking = FALSE
 	selected_option = pick(output_options)
-	var/datum/cooking_item/CI = cooking_objs[1]
+	var/datum/cooking_item/CI = LAZYACCESS(cooking_objs, 1)
 	CI.combine_target = selected_option
 
 	mixer_loop = new(list(src), FALSE)
@@ -47,12 +47,12 @@ fundamental differences
 
 	selected_option = new_output
 	to_chat(user, span_notice("You prepare \the [src] to make \a [selected_option]."))
-	var/datum/cooking_item/CI = cooking_objs[1]
+	var/datum/cooking_item/CI = LAZYACCESS(cooking_objs, 1)
 	CI.combine_target = selected_option
 
 
 /obj/machinery/appliance/mixer/has_space(obj/item/I)
-	var/datum/cooking_item/CI = cooking_objs[1]
+	var/datum/cooking_item/CI = LAZYACCESS(cooking_objs, 1)
 	if (!CI || !CI.container)
 		return 0
 
@@ -101,7 +101,7 @@ fundamental differences
 	set name = "Toggle Power"
 	set category = "Object"
 
-	var/datum/cooking_item/CI = cooking_objs[1]
+	var/datum/cooking_item/CI = LAZYACCESS(cooking_objs, 1)
 	if(!CI.container.check_contents())
 		to_chat(usr, span_filter_notice("There's nothing in it! Add ingredients before turning [src] on!"))
 		return

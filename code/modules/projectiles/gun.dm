@@ -7,7 +7,7 @@
 */
 /datum/firemode
 	var/name = "default"
-	var/list/settings = list()
+	var/list/settings
 
 /datum/firemode/New(obj/item/gun/gun, list/properties = null)
 	..()
@@ -19,13 +19,13 @@
 		if(propname == "mode_name")
 			name = propvalue
 		if(isnull(propvalue))
-			settings[propname] = gun.vars[propname] //better than initial() as it handles list vars like burst_accuracy
+			LAZYSET(settings, propname, gun.vars[propname]) //better than initial() as it handles list vars like burst_accuracy
 		else
-			settings[propname] = propvalue
+			LAZYSET(settings, propname, propvalue)
 
 /datum/firemode/proc/apply_to(obj/item/gun/gun)
 	for(var/propname in settings)
-		gun.vars[propname] = settings[propname]
+		gun.vars[propname] = LAZYACCESS(settings, propname)
 
 //Parent gun type. Guns are weapons that can be aimed at mobs and act over a distance
 /obj/item/gun
@@ -66,8 +66,8 @@
 	var/muzzle_flash = 3
 	var/accuracy = 0   //Accuracy is measured in percents. +15 accuracy means that everything is effectively one tile closer for the purpose of miss chance, -15 means the opposite. launchers are not supported, at the moment.
 	var/scoped_accuracy = null
-	var/list/burst_accuracy = list(0) //allows for different accuracies for each shot in a burst. Applied on top of accuracy
-	var/list/dispersion = list(0)
+	var/list/burst_accuracy //allows for different accuracies for each shot in a burst. Applied on top of accuracy. Null means 0 for every shot.
+	var/list/dispersion // Per-shot dispersion in a burst. Null means 0 for every shot.
 	var/mode_name = null
 	var/projectile_type = /obj/item/projectile	//On ballistics, only used to check for the cham gun
 
@@ -519,8 +519,8 @@
 			return
 
 		else
-			var/acc = burst_accuracy[min(ticker, burst_accuracy.len)]
-			var/disp = dispersion[min(ticker, dispersion.len)]
+			var/acc = LAZYACCESS(burst_accuracy, min(ticker, length(burst_accuracy))) || 0
+			var/disp = LAZYACCESS(dispersion, min(ticker, length(dispersion))) || 0
 
 			P.accuracy = accuracy + acc
 			P.dispersion = disp
@@ -662,8 +662,8 @@
 	if(!istype(P))
 		return //default behaviour only applies to true projectiles
 
-	var/acc_mod = burst_accuracy[min(burst, burst_accuracy.len)]
-	var/disp_mod = dispersion[min(burst, dispersion.len)]
+	var/acc_mod = LAZYACCESS(burst_accuracy, min(burst, length(burst_accuracy))) || 0
+	var/disp_mod = LAZYACCESS(dispersion, min(burst, length(dispersion))) || 0
 
 	if(one_handed_penalty)
 		if(!held_twohanded)

@@ -2,7 +2,7 @@
 	announceWhen	= 50
 	endWhen 		= 900
 
-	var/list/spawned_spider = list()
+	var/list/spawned_spider
 
 /datum/event/spider_migration/setup()
 	announceWhen = rand(40, 60)
@@ -37,7 +37,7 @@
 	while (i <= num_groups)
 		var/group_size = rand(group_size_min, group_size_max)
 		for (var/j = 1, j <= group_size, j++)
-			spawned_spider.Add(new /mob/living/simple_mob/animal/giant_spider/frost/event(spawn_locations[i]))
+			LAZYADD(spawned_spider, new /mob/living/simple_mob/animal/giant_spider/frost/event(spawn_locations[i]))
 		i++
 
 /datum/event/spider_migration/end()

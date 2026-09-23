@@ -5,7 +5,7 @@
 	var/atom/center
 	var/width = 0
 	var/height = 0
-	var/list/shown_to = list()
+	var/list/shown_to
 	var/list/viewing_turfs = list()
 	var/atom/movable/screen/component_button/button_x
 	var/atom/movable/screen/component_button/button_expand
@@ -163,12 +163,12 @@
 
 /atom/movable/screen/movable/pic_in_pic/proc/show_to(client/C)
 	if(C)
-		shown_to[C] = 1
+		LAZYSET(shown_to, C, 1)
 		C.screen += src
 
 /atom/movable/screen/movable/pic_in_pic/proc/unshow_to(client/C)
 	if(C)
-		shown_to -= C
+		LAZYREMOVE(shown_to, C)
 		C.screen -= src
 
 /atom/movable/screen/movable/pic_in_pic/proc/pop_to_screen()

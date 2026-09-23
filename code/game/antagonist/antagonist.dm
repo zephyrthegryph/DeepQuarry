@@ -1,9 +1,9 @@
 /datum/antagonist
 
 	// Text shown when becoming this antagonist.
-	var/list/restricted_jobs =     list()   // Jobs that cannot be this antagonist (depending on config)
+	var/list/restricted_jobs   // Jobs that cannot be this antagonist (depending on config)
 	var/list/protected_jobs =      list()   // As above.
-	var/list/roundstart_restricted =      list()	//Jobs that can be this antag, but not at roundstart
+	var/list/roundstart_restricted	//Jobs that can be this antag, but not at roundstart
 	var/avoid_silicons = FALSE				// If we won't hand this antag role to silicons (AI, borg, etc)
 
 	// Strings.
@@ -66,7 +66,7 @@
 	var/list/starting_locations =  list()   // Spawn points.
 	var/list/global_objectives =   list()   // Universal objectives if any.
 	var/list/candidates =          list()   // Potential candidates.
-	var/list/faction_members =     list()   // Semi-antags (in-round revs, borer thralls)
+	var/list/faction_members   // Semi-antags (in-round revs, borer thralls)
 
 	var/allow_latejoin = 0					//Determines whether or not the game mode will allow for the template to spawn try_latespawn
 
@@ -92,7 +92,7 @@
 	if(!role_text_plural)
 		role_text_plural = role_text
 	if(CONFIG_GET(flag/protect_roles_from_antagonist))
-		restricted_jobs |= protected_jobs
+		LAZYOR(restricted_jobs, protected_jobs)
 	if(antaghud_indicator)
 		if(!GLOB.hud_icon_reference)
 			GLOB.hud_icon_reference = list()
