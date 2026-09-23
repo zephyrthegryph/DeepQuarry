@@ -1,4 +1,4 @@
-// Regression tests for track F quick fixes (doc/rewrite/fixes.md): B5, B15, B18, B19.
+// Regression tests for track F quick fixes (doc/rewrite/fixes.md): B5, B18, B19.
 
 /// Records who ctrl-shift-clicked it.
 /obj/dq_test_ctrl_shift_probe
@@ -31,32 +31,7 @@
 	var/list/boxes = outer.get_all_contents_type(/obj/item/storage/box)
 	TEST_ASSERT((outer in boxes) && (inner in boxes), "the root and nested containers should both match their type")
 
-/// B15: the radiation path cache is invalidated by shielding changes, not by time.
-/datum/unit_test/dq_radiation_cache_tracks_shielding
-
-/datum/unit_test/dq_radiation_cache_tracks_shielding/Run()
-	var/obj/item/stack/material/steel/shield = allocate(/obj/item/stack/material/steel, test_floor())
-	var/before = SSradiation.shielding_revision
-	shield.set_rad_insulation(shield.rad_insulation)
-	TEST_ASSERT_EQUAL(SSradiation.shielding_revision, before, "setting the same insulation should keep the cache")
-	shield.set_rad_insulation(0.5)
-	TEST_ASSERT(SSradiation.shielding_revision > before, "changing insulation should invalidate the cache")
-
-	var/turf/T = test_floor()
-	var/turf/far = locate(T.x + 2, T.y, T.z)
-	TEST_ASSERT_NOTNULL(far, "test needs a turf two tiles east")
-	SSradiation.path_insulation_cache.Cut()
-	SSradiation.path_insulation_cache_revision = SSradiation.shielding_revision
-	var/misses = SSradiation.profile_insulation_cache_misses
-	var/hits = SSradiation.profile_insulation_cache_hits
-	SSradiation.cached_path_insulation(T, far, 0)
-	SSradiation.cached_path_insulation(T, far, 0)
-	TEST_ASSERT_EQUAL(SSradiation.profile_insulation_cache_misses, misses + 1, "the first lookup should miss")
-	TEST_ASSERT_EQUAL(SSradiation.profile_insulation_cache_hits, hits + 1, "a repeat lookup with no shielding change should hit")
-
-	before = SSradiation.shielding_revision
-	shield.forceMove(far)
-	TEST_ASSERT(SSradiation.shielding_revision > before, "moving an insulating object should invalidate the cache")
+/// B15 (radiation shielding by revision) moved to the Rust insulation layer in M5; see dq_propagation_tests.dm.
 
 /// B19: an empty belly reuses its surrounding list instead of allocating one each tick.
 /datum/unit_test/dq_empty_belly_does_not_allocate

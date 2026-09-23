@@ -15,7 +15,7 @@
 #define VERDIGRIS (__verdigris || __detect_verdigris())
 
 /// Bind-set hash shared with verdigris/ffi/src/abi.rs; checked by verdigris_init().
-#define VERDIGRIS_ABI "7c7bd57e182705e1"
+#define VERDIGRIS_ABI "27252a65cae967e3"
 
 // Numeric registry (@dm-define constants in the Rust sources).
 
@@ -141,6 +141,15 @@
 /proc/vg_drop_material_power_graph(handle)
 	var/static/__f = load_ext(VERDIGRIS, "byond:drop_material_power_graph_ffi")
 	return call_ext(__f)(handle)
+
+/// EMP severity around (`x`, `y`, `z`) with the four band radii in `ranges`
+/// (non-decreasing). Returns `list(min_x, min_y, max_x, max_y, severity...)`
+/// with severities in `block()` order over that square, clipped to the map:
+/// 1 heavy .. 4 harmless, `n.5` a coin flip between `n` and `n + 1`.
+// /proc/emp_falloff (verdigris/ffi/src/propagate.rs)
+/proc/vg_emp_falloff(x, y, z, max_x, max_y, max_z, ranges)
+	var/static/__f = load_ext(VERDIGRIS, "byond:emp_falloff_ffi")
+	return call_ext(__f)(x, y, z, max_x, max_y, max_z, ranges)
 
 /// Args: (list). Takes every gas in the list and makes them all identical, scaled to their respective volumes. The total heat and amount of substance in all of the combined gases is conserved.
 // /proc/equalize_all_gases_in_list (verdigris/domains/gas/src/lib.rs)
@@ -361,6 +370,23 @@
 /proc/vg_process_turf_hook(src_ref, remaining)
 	var/static/__f = load_ext(VERDIGRIS, "byond:process_turf_hook_ffi")
 	return call_ext(__f)(src_ref, remaining)
+
+/// One radiation pulse from (`x`, `y`, `z`): returns the path transmission
+/// to each target in `targets` (a flat list of `x, y, z`), or -1 for targets
+/// out of `range`, on another z-level or off the grid. Rays stop early once
+/// the transmission drops below `threshold`.
+// /proc/radiation_pulse (verdigris/ffi/src/propagate.rs)
+/proc/vg_radiation_pulse(x, y, z, range, threshold, targets)
+	var/static/__f = load_ext(VERDIGRIS, "byond:radiation_pulse_ffi")
+	return call_ext(__f)(x, y, z, range, threshold, targets)
+
+/// Writes radiation transmission for changed turfs. `cells` is a flat list of
+/// `x, y, z, transmission`. The field is sized to the plane `max_x` by
+/// `max_y` (z-levels are added as written) and reset if the plane changes.
+// /proc/radiation_set_cells (verdigris/ffi/src/propagate.rs)
+/proc/vg_radiation_set_cells(max_x, max_y, cells)
+	var/static/__f = load_ext(VERDIGRIS, "byond:radiation_set_cells_ffi")
+	return call_ext(__f)(max_x, max_y, cells)
 
 /// Args: (holder). Runs all reactions on this gas mixture. Holder is used by the reactions, and can be any arbitrary datum or null.
 // /datum/gas_mixture/proc/react (verdigris/domains/gas/src/lib.rs)
