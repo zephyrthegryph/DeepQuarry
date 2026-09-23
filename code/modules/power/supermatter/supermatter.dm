@@ -584,12 +584,26 @@
 /obj/machinery/power/supermatter
 	silicon_use = SILICON_USE_UI
 
-/obj/machinery/power/supermatter/attack_hand(mob/user as mob)
+/obj/machinery/power/supermatter/declare_interactions(list/into)
+	into += list(
+		/datum/interaction/machine_item/supermatter_touch_item,
+		/datum/interaction/machine_hand/ungated/supermatter_touch,
+	)
+	..()
+
+/// Old attack_hand: never called ..(), so ungated.
+/datum/interaction/machine_hand/ungated/supermatter_touch
+	id = "supermatter_touch"
+	name = "Touch"
+	effect = /obj/machinery/power/supermatter/proc/interaction_touch
+
+/obj/machinery/power/supermatter/proc/interaction_touch(mob/user, obj/item/held, datum/interaction/interaction)
 	user.visible_message(span_warning("\The [user] reaches out and touches \the [src], inducing a resonance... [user.p_Their()] body starts to glow and bursts into flames before flashing into ash."),\
 		span_danger("You reach out and touch \the [src]. Everything starts burning and all you can hear is ringing. Your last thought is \"That was not a wise decision.\""),\
 		span_warning("You hear an uneartly ringing, then what sounds like a shrilling kettle as you are washed with a wave of heat."))
 
 	Consume(user)
+	return TRUE
 
 /obj/machinery/power/supermatter/tgui_interact(mob/user, datum/tgui/ui)
 	ui = SStgui.try_update_ui(user, src, ui)
@@ -617,7 +631,14 @@
 	return data
 
 
-/obj/machinery/power/supermatter/attackby(obj/item/W as obj, mob/living/user as mob)
+/// Old attackby: never called ..(), so the whole thing stays in the effect.
+/datum/interaction/machine_item/supermatter_touch_item
+	id = "supermatter_touch_item"
+	name = "Touch"
+	held_type = /obj/item
+	effect = /obj/machinery/power/supermatter/proc/interaction_touch_item
+
+/obj/machinery/power/supermatter/proc/interaction_touch_item(mob/user, obj/item/W, datum/interaction/interaction)
 	user.visible_message(span_warning("\The [user] touches \a [W] to \the [src] as a silence fills the room..."),\
 		span_danger("You touch \the [W] to \the [src] when everything suddenly goes silent.\"") + "\n" + span_notice("\The [W] flashes into dust as you flinch away from \the [src]."),\
 		span_warning("Everything suddenly goes silent."))
@@ -626,6 +647,7 @@
 	Consume(W)
 
 	user.apply_effect(150, IRRADIATE)
+	return TRUE
 
 
 /obj/machinery/power/supermatter/Bumped(atom/AM as mob|obj)

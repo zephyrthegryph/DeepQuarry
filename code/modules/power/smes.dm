@@ -349,38 +349,71 @@ REGISTRY_MEMBERSHIP(/obj/machinery/power/smes, REGISTRY_SMES)
 /obj/machinery/power/smes
 	silicon_use = SILICON_USE_UI
 
-/obj/machinery/power/smes/attack_hand(mob/user)
+/obj/machinery/power/smes/declare_interactions(list/into)
+	into += list(
+		/datum/interaction/machine_item/smes_add_cable,
+		/datum/interaction/machine_item/smes_use_item,
+		/datum/interaction/machine_hand/ungated/smes_use,
+	)
+	..()
+
+/// Old attack_hand (never called ..()).
+/datum/interaction/machine_hand/ungated/smes_use
+	id = "smes_use"
+	name = "Use"
+	effect = /obj/machinery/power/smes/proc/interaction_use
+
+/obj/machinery/power/smes/proc/interaction_use(mob/user, obj/item/held, datum/interaction/interaction)
 	add_fingerprint(user)
 	tgui_interact(user)
+	return TRUE
 
+/// Old attackby: /obj/item/fusion_coil was deleted with the fusion subsystem, so the
+/// charge-from-coil branch is gone. SMES is still chargeable by other means.
+/// Attach a terminal with cable coil. Requires the panel to be open.
+/datum/interaction/machine_item/smes_add_cable
+	id = "smes_add_cable"
+	name = "Add cables"
+	held_type = /obj/item/stack/cable_coil
+	offered_when = list(REQ_ON(PRED_TARGET, /obj/machinery/power/smes/proc/not_building_terminal, null))
+	requires = list(REQ_INTERACTION_REACH, REQ_ON(PRED_TARGET, /obj/machinery/power/smes/proc/panel_is_open, "you need to open the access hatch first"))
+	effect = /obj/machinery/power/smes/proc/interaction_add_cable
 
-/obj/machinery/power/smes/attackby(obj/item/W as obj, mob/user as mob)
-	if (!panel_open)
-		to_chat(user, span_filter_notice(span_warning("You need to open access hatch on [src] first!")))
-		return FALSE
+/obj/machinery/power/smes/proc/not_building_terminal(mob/actor, atom/target, obj/item/held)
+	return !building_terminal
 
-	// /obj/item/fusion_coil was deleted with the fusion subsystem; the
-	// charge-from-coil branch is removed. SMES still chargeable by other means.
-	if(istype(W, /obj/item/stack/cable_coil) && !building_terminal)
-		building_terminal = 1
-		var/obj/item/stack/cable_coil/CC = W
-		if (CC.get_amount() < 10)
-			to_chat(user, span_filter_notice(span_warning("You need more cables.")))
-			building_terminal = 0
-			return FALSE
-		if (make_terminal(user))
-			building_terminal = 0
-			return FALSE
+/obj/machinery/power/smes/proc/panel_is_open(mob/actor, atom/target, obj/item/held)
+	return panel_open
+
+/obj/machinery/power/smes/proc/interaction_add_cable(mob/user, obj/item/stack/cable_coil/CC, datum/interaction/interaction)
+	building_terminal = 1
+	if (CC.get_amount() < 10)
+		to_chat(user, span_filter_notice(span_warning("You need more cables.")))
 		building_terminal = 0
-		CC.use(10)
-		user.visible_message(\
-				span_filter_notice(span_notice("[user.name] has added cables to the [src].")),\
-				span_filter_notice(span_notice("You added cables to the [src].")))
-		stat = 0
-		if(!powernet)
-			connect_to_network()
-		return FALSE
+		return TRUE
+	if (make_terminal(user))
+		building_terminal = 0
+		return TRUE
+	building_terminal = 0
+	CC.use(10)
+	user.visible_message(\
+			span_filter_notice(span_notice("[user.name] has added cables to the [src].")),\
+			span_filter_notice(span_notice("You added cables to the [src].")))
+	stat = 0
+	if(!powernet)
+		connect_to_network()
+	return TRUE
 
+/// Any other item, or a cable coil while a terminal is already being built: swallowed
+/// silently (the old attackby never called ..(), so nothing further ran).
+/datum/interaction/machine_item/smes_use_item
+	id = "smes_use_item"
+	name = "Use"
+	held_type = /obj/item
+	requires = list(REQ_INTERACTION_REACH, REQ_ON(PRED_TARGET, /obj/machinery/power/smes/proc/panel_is_open, "you need to open the access hatch first"))
+	effect = /obj/machinery/power/smes/proc/interaction_swallow
+
+/obj/machinery/power/smes/proc/interaction_swallow(mob/user, obj/item/held, datum/interaction/interaction)
 	return TRUE
 
 /obj/machinery/power/smes/screwdriver_act(mob/user, obj/item/tool)

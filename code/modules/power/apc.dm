@@ -534,21 +534,37 @@ REGISTRY_MEMBERSHIP(/obj/machinery/power/apc, REGISTRY_APCS)
 		reboot()
 	return ITEM_INTERACT_SUCCESS
 
-/obj/machinery/power/apc/attackby(obj/item/W, mob/user)
+/obj/machinery/power/apc/declare_interactions(list/into)
+	into += list(
+		/datum/interaction/machine_item/apc_use_item,
+		/datum/interaction/machine_alt/apc_toggle_lock,
+		/datum/interaction/machine_hand/ungated/apc_use,
+	)
+	..()
+
+/// Old attackby: kept as one effect (never called ..(), so it always fully handled the item).
+/datum/interaction/machine_item/apc_use_item
+	id = "apc_use_item"
+	name = "Use"
+	held_type = /obj/item
+	effect = /obj/machinery/power/apc/proc/interaction_use_item
+
+/obj/machinery/power/apc/proc/interaction_use_item(mob/user, obj/item/W, datum/interaction/interaction)
 	wake_for_power_dependency()
 	if(issilicon(user) && get_dist(src, user) > 1)
-		return attack_hand(user)
+		attack_hand(user)
+		return TRUE
 	add_fingerprint(user)
 	if(istype(W, /obj/item/cell) && opened)
 		if(cell)
 			to_chat(user, "The [name] already has a power cell installed.")
-			return
+			return TRUE
 		if(stat & MAINT)
 			to_chat(user, span_warning("You need to install the wiring and electronics first."))
-			return
+			return TRUE
 		if(W.w_class != ITEMSIZE_NORMAL)
 			to_chat(user, "\The [W] is too [W.w_class < 3 ? "small" : "large"] to work here.")
-			return
+			return TRUE
 		user.drop_item()
 		W.forceMove(src)
 		cell = W
@@ -565,11 +581,11 @@ REGISTRY_MEMBERSHIP(/obj/machinery/power/apc, REGISTRY_APCS)
 		var/turf/T = loc
 		if(istype(T) && !T.is_plating())
 			to_chat(user, span_warning("You must remove the floor plating in front of the APC first."))
-			return
+			return TRUE
 		var/obj/item/stack/cable_coil/C = W
 		if(C.get_amount() < 10)
 			to_chat(user, span_warning("You need ten lengths of cable for that."))
-			return
+			return TRUE
 		user.visible_message(span_warning("[user.name] adds cables to the APC frame."), \
 			"You start adding cables to the APC frame...")
 		playsound(src, 'sound/items/Deconstruct.ogg', 50, 1)
@@ -581,7 +597,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery/power/apc, REGISTRY_APCS)
 					s.set_up(5, 1, src)
 					s.start()
 					if(user.stunned)
-						return
+						return TRUE
 				C.use(10)
 				user.visible_message(\
 					span_warning("[user.name] has added cables to the APC frame!"),\
@@ -600,12 +616,12 @@ REGISTRY_MEMBERSHIP(/obj/machinery/power/apc, REGISTRY_APCS)
 				qdel(W)
 	else if(istype(W, /obj/item/module/power_control) && opened && has_electronics == APC_HAS_ELECTRONICS_NONE && (stat & BROKEN))
 		to_chat(user, span_warning("The [src] is too broken for that. Repair it first."))
-		return
+		return TRUE
 	else if(opened && ((stat & BROKEN) || hacker || emagged))
 		if(istype(W, /obj/item/frame/apc) && (stat & BROKEN))
 			if(cell)
 				to_chat(user, span_warning("You need to remove the power cell first."))
-				return
+				return TRUE
 			user.visible_message(span_warning("[user.name] begins replacing the damaged APC cover with a new one."),\
 				"You begin to replace the damaged APC cover...")
 			if(do_after(user, 5 SECONDS, target = src))
@@ -633,10 +649,13 @@ REGISTRY_MEMBERSHIP(/obj/machinery/power/apc, REGISTRY_APCS)
 				update_icon()
 		else
 			if(istype(user, /mob/living/silicon))
-				return attack_hand(user)
+				attack_hand(user)
+				return TRUE
 			if(!opened && wiresexposed && istype(W, /obj/item/assembly/signaler))
-				return attack_hand(user)
+				attack_hand(user)
+				return TRUE
 			to_chat(user, span_notice("The [name] looks too sturdy to bash open with \the [W.name]."))
+	return TRUE
 
 /obj/machinery/power/apc/proc/togglelock(mob/user)
 	if(emagged)
@@ -657,9 +676,16 @@ REGISTRY_MEMBERSHIP(/obj/machinery/power/apc, REGISTRY_APCS)
 		else
 			to_chat(user, span_warning("Access denied."))
 
-/obj/machinery/power/apc/click_alt(mob/user)
-	..()
+/// Old click_alt fell through (no return) to the loot panel afterwards.
+/datum/interaction/machine_alt/apc_toggle_lock
+	id = "apc_toggle_lock"
+	name = "Toggle lock"
+	consumes_input = FALSE
+	effect = /obj/machinery/power/apc/proc/interaction_toggle_lock
+
+/obj/machinery/power/apc/proc/interaction_toggle_lock(mob/user, obj/item/held, datum/interaction/interaction)
 	togglelock(user)
+	return TRUE
 
 /obj/machinery/power/apc/emag_act(remaining_charges, mob/user)
 	if(!(emagged || hacker))
@@ -683,9 +709,15 @@ REGISTRY_MEMBERSHIP(/obj/machinery/power/apc, REGISTRY_APCS)
 	wiresexposed = TRUE
 	update_icon()
 
-/obj/machinery/power/apc/attack_hand(mob/user)
+/// Old attack_hand (never called ..()).
+/datum/interaction/machine_hand/ungated/apc_use
+	id = "apc_use"
+	name = "Use"
+	effect = /obj/machinery/power/apc/proc/interaction_use
+
+/obj/machinery/power/apc/proc/interaction_use(mob/user, obj/item/held, datum/interaction/interaction)
 	if(!user)
-		return
+		return TRUE
 	add_fingerprint(user)
 
 	if(ishuman(user))
@@ -704,7 +736,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery/power/apc, REGISTRY_APCS)
 				visible_message(span_warning("The [name]'s wires are shredded!"))
 			else
 				beenhit += 1
-			return
+			return TRUE
 
 	if(usr == user && opened && (!issilicon(user)))
 		if(cell)
@@ -718,10 +750,11 @@ REGISTRY_MEMBERSHIP(/obj/machinery/power/apc, REGISTRY_APCS)
 				power_distributor.charging = 0
 			charging = 0
 			update_icon()
-		return
+		return TRUE
 	if(stat & (BROKEN | MAINT))
-		return
+		return TRUE
 	interact(user)
+	return TRUE
 
 /obj/machinery/power/apc/attack_ghost(mob/user)
 	if(panel_open)
