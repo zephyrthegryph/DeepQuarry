@@ -205,7 +205,7 @@
 	var/list/expected = list(
 		/datum/affliction/chem_side_effect = list("Side effect", 10),
 		/datum/affliction/chem_interaction = list("Interaction", 7),
-		/datum/affliction/overdose = list("Overdose", 36),
+		/datum/affliction/overdose = list("Overdose", 37),
 	)
 	for(var/family in expected)
 		TEST_ASSERT(!(family in catalogued), "the abstract [family] shouldn't be catalogued")
