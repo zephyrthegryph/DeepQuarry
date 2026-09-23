@@ -631,7 +631,7 @@
 /obj/item/shockpaddles/standalone/Destroy()
 	. = ..()
 	if(fail_counter)
-		STOP_PROCESSING(SSobj, src)
+		REACT_PROCESS_STOP(src)
 
 /obj/item/shockpaddles/standalone/check_charge(charge_amt)
 	return 1
@@ -657,7 +657,7 @@
 		)
 		fail_counter--
 	else
-		STOP_PROCESSING(SSobj, src)
+		REACT_PROCESS_STOP(src)
 
 /obj/item/shockpaddles/standalone/emp_act(severity, recursive)
 	. = ..()
@@ -674,7 +674,7 @@
 				to_chat(loc, span_warning("\The [src] feel pleasantly warm."))
 
 	if(new_fail && !fail_counter)
-		START_PROCESSING(SSobj, src)
+		REACT_PROCESS(src, 2 SECONDS, "irradiates nearby mobs each tick while its reactor is overloaded from an EMP")
 	fail_counter = new_fail
 
 /* From the Bay port, this doesn't seem to have a sprite.

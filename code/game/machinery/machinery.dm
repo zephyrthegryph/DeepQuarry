@@ -133,7 +133,9 @@ Class Procs:
 	/// pass is stamped with that pass so it waits for the next one.
 	var/tmp/machine_processing_pass = 0
 
-	var/speed_process = FALSE			//If false, SSmachines. If true, SSfastprocess.
+	/// If FALSE, SSmachines polls process(). If TRUE, it is declared continuous at 0.2 s
+	/// (REACT_PROCESS), for the few machines whose per-tick work is visible (moving items).
+	var/speed_process = FALSE
 
 	blocks_emissive = EMISSIVE_BLOCK_GENERIC
 
@@ -148,7 +150,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery, REGISTRY_MACHINES)
 	if(!speed_process)
 		START_MACHINE_PROCESSING(src)
 	else
-		START_PROCESSING(SSfastprocess, src)
+		REACT_PROCESS(src, 0.2 SECONDS, "a speed_process machine moves or animates things every fifth of a second while it runs")
 	if(!mapload)
 		power_change()
 
@@ -157,7 +159,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery, REGISTRY_MACHINES)
 	if(!speed_process)
 		STOP_MACHINE_PROCESSING(src)
 	else
-		STOP_PROCESSING(SSfastprocess, src)
+		REACT_PROCESS_STOP(src)
 	// Constructed machinery owns its installed board. Clear the typed reference
 	// immediately when destruction starts; otherwise the board spends an extra GC
 	// generation retained by an already-deleting machine (and reference tracking

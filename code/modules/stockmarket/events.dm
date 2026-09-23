@@ -11,11 +11,26 @@
 	var/finished = 0
 	var/last_change = 0
 
+	/// REACT_AT token for `next_phase`; null once finished or before the first phase is armed.
+	var/tmp/phase_timer
+
 /datum/stockEvent/process()
-	if (finished)
+	// Phases are driven by phase_timer/on_react(); nothing left to poll here.
+	return
+
+/// Re-arms `phase_timer` for `next_phase`, or cancels it once `finished`.
+/datum/stockEvent/proc/reschedule_phase()
+	phase_timer = REACT_REARM(src, phase_timer, finished ? null : next_phase)
+
+/datum/stockEvent/on_react(reason, source, source_kind)
+	. = ..()
+	if(!(reason & REACT_REASON_TIMER) || source != phase_timer)
 		return
-	if (world.time > next_phase)
-		transition()
+	phase_timer = null
+	if(finished)
+		return
+	transition()
+	reschedule_phase()
 
 /datum/stockEvent/proc/transition()
 	return
@@ -39,6 +54,7 @@
 	current_title = "Product demo"
 	current_desc = S.industry.detokenize("[S.name] will unveil a new product on an upcoming %industrial% conference held at spacetime [spacetime(next_phase)]")
 	S.addEvent(src)
+	reschedule_phase()
 
 
 /datum/stockEvent/product/transition()
@@ -77,6 +93,7 @@
 	current_title = ""
 	current_desc = ""
 	S.addEvent(src)
+	reschedule_phase()
 
 /datum/stockEvent/bankruptcy/transition()
 	switch (phase_id)
@@ -176,6 +193,7 @@
 			offenses += ", [offense]"
 	offenses += " and [prob(20) ? "attempted " : null][pick(O)]" // lazy
 	S.addEvent(src)
+	reschedule_phase()
 
 /datum/stockEvent/arrest/transition()
 	switch (phase_id)

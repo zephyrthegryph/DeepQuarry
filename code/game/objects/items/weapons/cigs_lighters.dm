@@ -67,7 +67,7 @@ CIGARETTE PACKETS ARE IN FANCY.DM
 	icon_state = "match_lit"
 	name = "burning match"
 	desc = "A match. This one is presently on fire."
-	START_PROCESSING(SSobj, src)
+	REACT_PROCESS(src, 2 SECONDS, "burns down and exposes its turf to a hotspot every period while lit")
 
 /obj/item/flame/match/proc/burn_out()
 	lit = 0
@@ -77,7 +77,7 @@ CIGARETTE PACKETS ARE IN FANCY.DM
 	item_state = "cigoff"
 	name = "burnt match"
 	desc = "A match. This one has seen better days."
-	STOP_PROCESSING(SSobj, src)
+	REACT_PROCESS_STOP(src)
 
 //////////////////
 //FINE SMOKABLES//
@@ -188,13 +188,13 @@ CIGARETTE PACKETS ARE IN FANCY.DM
 		T.visible_message(flavor_text)
 		update_icon()
 		set_light(2, 0.25, "#E38F46")
-		START_PROCESSING(SSobj, src)
+		REACT_PROCESS(src, 2 SECONDS, "burns down its smoketime, transfers reagents to the smoker, and exposes its turf to a hotspot every period while lit")
 
 /obj/item/clothing/mask/smokable/proc/die(nomessage = 0)
 	var/turf/T = get_turf(src)
 	set_light(0)
 	playsound(src, 'sound/items/cigs_lighters/cig_snuff.ogg', 50, 1)
-	STOP_PROCESSING(SSobj, src)
+	REACT_PROCESS_STOP(src)
 	if (type_butt)
 		var/obj/item/butt = new type_butt(T)
 		transfer_fingerprints_to(butt)
@@ -229,7 +229,7 @@ CIGARETTE PACKETS ARE IN FANCY.DM
 
 /obj/item/clothing/mask/smokable/proc/quench()
 	lit = 0
-	STOP_PROCESSING(SSobj, src)
+	REACT_PROCESS_STOP(src)
 	update_icon()
 
 /obj/item/clothing/mask/smokable/attack(mob/living/M, mob/living/user, target_zone, attack_modifier)
@@ -649,7 +649,7 @@ CIGARETTE PACKETS ARE IN FANCY.DM
 		user.visible_message(span_notice("After a few attempts, [user] manages to light the [src]."))
 
 		set_light(2, 0.5, "#FF9933")
-		START_PROCESSING(SSobj, src)
+		REACT_PROCESS(src, 2 SECONDS, "exposes its turf to a hotspot every period while lit")
 		update_icon()
 	else
 		lit = FALSE
@@ -658,7 +658,7 @@ CIGARETTE PACKETS ARE IN FANCY.DM
 		user.visible_message(span_notice("[user] quietly shuts off the [src]."))
 
 		set_light(0)
-		STOP_PROCESSING(SSobj, src)
+		REACT_PROCESS_STOP(src)
 		update_icon()
 	return
 
@@ -716,7 +716,7 @@ CIGARETTE PACKETS ARE IN FANCY.DM
 		user.visible_message(span_notice(span_rose("Without even breaking stride, [user] flips open and lights [src] in one smooth movement.")))
 
 		set_light(2, 0.5, "#FF9933")
-		START_PROCESSING(SSobj, src)
+		REACT_PROCESS(src, 2 SECONDS, "exposes its turf to a hotspot every period while lit")
 	else
 		lit = FALSE
 		icon_state = "[base_state]"
@@ -725,7 +725,7 @@ CIGARETTE PACKETS ARE IN FANCY.DM
 		user.visible_message(span_notice(span_rose("You hear a quiet click, as [user] shuts off [src] without even looking at what they're doing.")))
 
 		set_light(0)
-		STOP_PROCESSING(SSobj, src)
+		REACT_PROCESS_STOP(src)
 	return
 
 //Here we add Zippo skins.
@@ -859,7 +859,7 @@ CIGARETTE PACKETS ARE IN FANCY.DM
 				user.visible_message(span_notice("After a few attempts, [user] manages to activate the [src], they however sting themselves on the shielding!"))
 
 		set_light(2)
-		START_PROCESSING(SSobj, src)
+		REACT_PROCESS(src, 2 SECONDS, "exposes its turf to a hotspot every period while lit")
 	else
 		lit = 0
 		icon_state = "[base_state]"
@@ -871,7 +871,7 @@ CIGARETTE PACKETS ARE IN FANCY.DM
 			user.visible_message(span_notice("[user] quietly shuts the [src]."))
 
 		set_light(0)
-		STOP_PROCESSING(SSobj, src)
+		REACT_PROCESS_STOP(src)
 	return ITEM_INTERACT_SUCCESS
 
 
@@ -932,7 +932,7 @@ CIGARETTE PACKETS ARE IN FANCY.DM
 				user.visible_message(span_notice("After a few attempts, [user] manages to activate the [src], they however burn themselves with the heated phoron field!"))
 
 		set_light(2)
-		START_PROCESSING(SSobj, src)
+		REACT_PROCESS(src, 2 SECONDS, "exposes its turf to a hotspot every period while lit")
 	else
 		lit = 0
 		icon_state = "[base_state]"
@@ -944,7 +944,7 @@ CIGARETTE PACKETS ARE IN FANCY.DM
 			user.visible_message(span_notice("[user] quietly shuts the [src]."))
 
 		set_light(0)
-		STOP_PROCESSING(SSobj, src)
+		REACT_PROCESS_STOP(src)
 	return ITEM_INTERACT_SUCCESS
 
 
@@ -1109,7 +1109,7 @@ CIGARETTE PACKETS ARE IN FANCY.DM
 					strength = 300
 				)
 		set_light(5)
-		START_PROCESSING(SSobj, src)
+		REACT_PROCESS(src, 2 SECONDS, "exposes its turf to a hotspot every period while lit")
 	else
 		lit = 0
 		icon_state = "[base_state]"
@@ -1121,7 +1121,7 @@ CIGARETTE PACKETS ARE IN FANCY.DM
 			user.visible_message(span_notice("[user] quietly shuts the [src]."))
 
 		set_light(0)
-		STOP_PROCESSING(SSobj, src)
+		REACT_PROCESS_STOP(src)
 	return ITEM_INTERACT_SUCCESS
 
 /obj/item/flame/lighter/supermatter/expsmzippo/attack(mob/living/M, mob/living/user, target_zone, attack_modifier)

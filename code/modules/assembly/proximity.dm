@@ -23,11 +23,11 @@
 /obj/item/assembly/prox_sensor/toggle_secure()
 	secured = !secured
 	if(secured)
-		START_PROCESSING(SSobj, src)
+		REACT_PROCESS(src, 2 SECONDS, "scans for nearby movers and counts down its timing delay")
 	else
 		scanning = 0
 		timing = 0
-		STOP_PROCESSING(SSobj, src)
+		REACT_PROCESS_STOP(src)
 	update_icon()
 	return secured
 

@@ -150,7 +150,7 @@ REGISTRY_MEMBERSHIP(/obj/structure/cable, REGISTRY_CABLES)
 		. += span_warning("[powernet?.avail > 0 ? "[DisplayPower(powernet.avail)] in power network." : "The cable is not powered."]")
 	if(engineered_material_id)
 		var/datum/material/material = engineered_material()
-		. += span_notice("Conductor: [material?.display_name || engineered_material_id], currently [round(material_service?.temperature || T20C, 0.1)] K; [round(material_current, 0.1)] A.")
+		. += span_notice("Conductor: [material?.display_name || engineered_material_id], currently [round(material_service ? material_service.current_temperature() : T20C, 0.1)] K; [round(material_current, 0.1)] A.")
 		if(material?.critical_temperature)
 			. += span_notice("Superconducting envelope: below [round(material.critical_temperature, 0.1)] K and [round(material.critical_current_density)] relative current density.")
 

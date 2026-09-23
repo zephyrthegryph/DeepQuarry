@@ -34,13 +34,18 @@
 	w_class = ITEMSIZE_SMALL
 	var/datum/weakref/leash_pet_ref
 	var/datum/weakref/leash_master_ref
+	/// REACT_AT token for the periodic leash-validity recheck; null when none.
+	var/tmp/leash_recheck_timer
 
 /obj/item/leash/Destroy()
 	// Just in case
 	clear_leash()
 	return ..()
 
-/obj/item/leash/process()
+/obj/item/leash/on_react(reason, source, source_kind)
+	if(source != leash_recheck_timer)
+		return ..()
+	leash_recheck_timer = null
 	var/mob/living/leash_pet = leash_pet_ref?.resolve()
 	var/mob/living/leash_master = leash_master_ref?.resolve()
 	if(!leash_pet)
@@ -65,6 +70,8 @@
 	if(!leash_pet || !leash_master) //If there is no pet, there is no dom. Loop breaks.
 		clear_leash()
 		return
+
+	leash_recheck_timer = REACT_REARM(src, leash_recheck_timer, world.time + 2 SECONDS)
 
 //Called when someone is clicked with the leash
 /obj/item/leash/attack(mob/living/C, mob/living/user, target_zone, attack_modifier) //C is the target, user is the one with the leash
@@ -116,7 +123,7 @@
 	user.throw_alert("leash", /atom/movable/screen/alert/leash_dom, new_master = src)//Has now been leashed
 	RegisterSignal(user, COMSIG_MOVABLE_MOVED, PROC_REF(on_master_move))
 
-	START_PROCESSING(SSobj, src)
+	leash_recheck_timer = REACT_REARM(src, leash_recheck_timer, world.time + 2 SECONDS)
 	return ITEM_INTERACT_SUCCESS
 
 //Called when the leash is used in hand
@@ -237,7 +244,7 @@
 		UnregisterSignal(leash_master, COMSIG_MOVABLE_MOVED)
 	leash_master = null
 
-	STOP_PROCESSING(SSobj, src)
+	leash_recheck_timer = REACT_REARM(src, leash_recheck_timer, null)
 
 /obj/item/leash/proc/struggle_leash()
 	var/mob/living/leash_pet = leash_pet_ref?.resolve()

@@ -211,7 +211,7 @@
 	if(energy <= max_energy)
 		if(!recharging)
 			recharging = TRUE
-			START_PROCESSING(SSobj, src)
+			REACT_PROCESS(src, 2 SECONDS, "recharges its energy cell by chance every period while recharging")
 		if(energy <= 0)
 			to_chat(user, span_warning("You've overused the battery of [src], now it needs time to recharge!"))
 			recharge_locked = TRUE

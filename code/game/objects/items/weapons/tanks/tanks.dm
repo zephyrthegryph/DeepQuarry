@@ -74,7 +74,7 @@ GLOBAL_LIST_EMPTY(tank_gauge_cache)
 /obj/item/tank/Destroy()
 	QDEL_NULL(air_contents)
 
-	STOP_PROCESSING(SSobj, src)
+	REACT_PROCESS_STOP(src)
 	QDEL_NULL(src.proxyassembly)
 
 	if(istype(loc, /obj/item/transfer_valve))
@@ -85,7 +85,7 @@ GLOBAL_LIST_EMPTY(tank_gauge_cache)
 
 /obj/item/tank/material_environment_begin_leak()
 	leaking = TRUE
-	START_PROCESSING(SSobj, src)
+	REACT_PROCESS(src, 2 SECONDS, "reacts its gas mix and checks for rupture/leak every period")
 	return ..()
 
 /obj/item/tank/material_environment_repaired()
@@ -101,7 +101,7 @@ GLOBAL_LIST_EMPTY(tank_gauge_cache)
 	// explosion strength. Drive it by state instead of bypassing it with qdel.
 	update_integrity(0)
 	leaking = TRUE
-	START_PROCESSING(SSobj, src)
+	REACT_PROCESS(src, 2 SECONDS, "reacts its gas mix and checks for rupture/leak every period")
 	check_status()
 
 /obj/item/tank/equipped() // Note that even grabbing into a hand calls this, so it should be fine as a 'has a player touched this'
@@ -109,7 +109,7 @@ GLOBAL_LIST_EMPTY(tank_gauge_cache)
 	// An attempt at optimization. There are MANY tanks during rounds that will never get touched.
 	// Don't see why any of those would explode spontaneously. So only tanks that players touch get processed.
 	// This could be optimized more, but it's a start!
-	START_PROCESSING(SSobj, src) // This has a built in safety to avoid multi-processing
+	REACT_PROCESS(src, 2 SECONDS, "reacts its gas mix and checks for rupture/leak every period") // This has a built in safety to avoid multi-processing
 
 /obj/item/tank/examine(mob/user)
 	. = ..()
@@ -566,7 +566,7 @@ GLOBAL_LIST_EMPTY(tank_gauge_cache)
 /obj/item/tank/atom_destruction(damage_flag)
 	if(damage_flag == FIRE || damage_flag == ACID)
 		return ..()
-	START_PROCESSING(SSobj, src)
+	REACT_PROCESS(src, 2 SECONDS, "reacts its gas mix and checks for rupture/leak every period")
 
 /////////////////////////////////
 ///Prewelded tanks

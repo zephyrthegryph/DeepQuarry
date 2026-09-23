@@ -17,11 +17,11 @@
 	reagents = R
 	R.my_atom = src
 	R.add_reagent(REAGENT_ID_FUEL, max_fuel)
-	START_PROCESSING(SSobj, src)
+	REACT_PROCESS(src, 2 SECONDS, "burns fuel every period while running")
 	. = ..()
 
 /obj/item/chainsaw/Destroy()
-	STOP_PROCESSING(SSobj, src)
+	REACT_PROCESS_STOP(src)
 	. = ..()
 
 /obj/item/chainsaw/proc/turnOn(mob/user as mob)

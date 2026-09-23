@@ -29,8 +29,13 @@
 	VAR_FINAL/atom/movable/screen/alert/status_effect/linked_alert
 	/// If TRUE, and we have an alert, we will show a duration on the alert
 	var/show_duration = FALSE
-	/// Used to define if the status effect should be using SSfastprocess or SSprocessing
+	/// The period of an auto-ticking (STATUS_EFFECT_AUTO_TICK) effect's continuous declaration:
+	/// fast 0.2 s, normal 1 s, priority 2 ticks. Timed ticks and expiry are REACT_AT timers.
 	var/processing_speed = STATUS_EFFECT_FAST_PROCESS
+	/// The REACT_AT token for the next tick, expiry or shown-duration refresh (null: none).
+	var/tmp/react_timer
+	/// The REACT_EVERY token of an auto-ticking effect (null: none).
+	var/tmp/react_every_token
 	/// Do we self-terminate when a fullheal is called?
 	var/remove_on_fullheal = FALSE
 	/// If remove_on_fullheal is TRUE, what flag do we need to be removed?
@@ -60,7 +65,7 @@
 		duration = STATUS_EFFECT_PERMANENT
 	if(duration != STATUS_EFFECT_PERMANENT)
 		duration = world.time + duration
-	if(tick_interval != STATUS_EFFECT_NO_TICK)
+	if(tick_interval != STATUS_EFFECT_NO_TICK && tick_interval != STATUS_EFFECT_AUTO_TICK)
 		tick_interval = world.time + tick_interval
 
 	if(alert_type)
@@ -69,26 +74,16 @@
 		linked_alert = new_alert //so we can reference the alert, if we need to
 		update_shown_duration()
 
-	if(duration > world.time || tick_interval > world.time) //don't process if we don't care
-		switch(processing_speed)
-			if(STATUS_EFFECT_FAST_PROCESS)
-				START_PROCESSING(SSfastprocess, src)
-			if(STATUS_EFFECT_NORMAL_PROCESS)
-				START_PROCESSING(SSprocessing, src)
-			if(STATUS_EFFECT_PRIORITY)
-				START_PROCESSING(SSpriority_effects, src)
+	if(tick_interval == STATUS_EFFECT_AUTO_TICK)
+		react_every_token = REACT_EVERY(src, auto_tick_period(), "an auto-ticking status effect calls tick() every processing period by definition")
+	schedule_next()
 
 	update_particles()
 	return TRUE
 
 /datum/status_effect/Destroy()
-	switch(processing_speed)
-		if(STATUS_EFFECT_FAST_PROCESS)
-			STOP_PROCESSING(SSfastprocess, src)
-		if(STATUS_EFFECT_NORMAL_PROCESS)
-			STOP_PROCESSING(SSprocessing, src)
-		if(STATUS_EFFECT_PRIORITY)
-			STOP_PROCESSING(SSpriority_effects, src)
+	react_timer = null // REACT_CLEAR in the base Destroy() drops the timer and the declaration
+	react_every_token = null
 	if(owner)
 		linked_alert = null
 		owner.clear_alert(id)
@@ -108,32 +103,67 @@
 
 	linked_alert.maptext = MAPTEXT("<span style='text-align:center'>[round((duration - world.time)/10, 1)]s</span>")
 
-// Status effect process. Handles adjusting its duration and ticks.
-// If you're adding processed effects, put them in [proc/tick]
-// instead of extending / overriding the process() proc.
-/datum/status_effect/process(seconds_per_tick)
-	SHOULD_NOT_OVERRIDE(TRUE)
+/// The auto-tick period for this effect's processing_speed.
+/datum/status_effect/proc/auto_tick_period()
+	switch(processing_speed)
+		if(STATUS_EFFECT_NORMAL_PROCESS)
+			return 1 SECOND
+		if(STATUS_EFFECT_PRIORITY)
+			return 2 * world.tick_lag
+	return 0.2 SECONDS
 
+/// The next world.time this effect has work: its next timed tick, its expiry, or the next
+/// second of a shown duration. Null when it has none.
+/datum/status_effect/proc/next_deadline()
+	var/next
+	if(tick_interval != STATUS_EFFECT_NO_TICK && tick_interval != STATUS_EFFECT_AUTO_TICK)
+		next = tick_interval
+	if(duration != STATUS_EFFECT_PERMANENT)
+		next = isnull(next) ? duration : min(next, duration)
+		if(show_duration && linked_alert)
+			next = min(next, world.time + 1 SECOND)
+	return next
+
+/// Keeps the one REACT_AT on next_deadline(). Call after changing duration or tick_interval.
+/datum/status_effect/proc/schedule_next()
+	if(QDELING(src))
+		return
+	react_timer = REACT_REARM(src, react_timer, next_deadline())
+
+// Status effect timing (doc/rewrite/reactor.md §3). Timed ticks, expiry and the shown
+// duration are one REACT_AT on the earliest; an auto-ticking effect is declared continuous.
+// If you're adding processed effects, put them in [proc/tick].
+/datum/status_effect/on_react(reason, source, source_kind)
+	SHOULD_NOT_OVERRIDE(TRUE)
+	react_timer = null
 	if(QDELETED(owner))
 		qdel(src)
 		return
-
-	if(tick_interval == STATUS_EFFECT_AUTO_TICK)
-		tick(seconds_per_tick)
-	else if(tick_interval != STATUS_EFFECT_NO_TICK && tick_interval < world.time)
+	if(tick_interval != STATUS_EFFECT_NO_TICK && tick_interval != STATUS_EFFECT_AUTO_TICK && tick_interval <= world.time)
 		var/tick_length = (tick_interval_upperbound && tick_interval_lowerbound) ? rand(tick_interval_lowerbound, tick_interval_upperbound) : initial(tick_interval)
 		tick(tick_length / (1 SECONDS))
 		tick_interval = world.time + tick_length
-
-	if(QDELING(src))
-		// tick deleted us, no need to continue
-		return
-
+		if(QDELING(src))
+			return
 	if(duration != STATUS_EFFECT_PERMANENT)
-		if(duration < world.time)
+		if(duration <= world.time)
 			qdel(src)
 			return
 		update_shown_duration()
+	schedule_next()
+
+/datum/status_effect/react_every(seconds, token)
+	SHOULD_NOT_OVERRIDE(TRUE)
+	if(QDELETED(owner))
+		qdel(src)
+		return
+	tick(seconds)
+
+/datum/status_effect/react_sleep_violation()
+	var/next = next_deadline()
+	if(!isnull(next) && isnull(react_timer))
+		return "work due at [next] but no timer"
+	return null
 
 /// Called whenever the effect is applied in on_created
 /// Returning FALSE will cause it to delete itself during creation instead.
@@ -187,6 +217,7 @@
 	if(original_duration == STATUS_EFFECT_PERMANENT)
 		return
 	duration = world.time + original_duration
+	schedule_next()
 
 /// Adds nextmove modifier multiplicatively to the owner while applied
 /datum/status_effect/proc/nextmove_modifier()
@@ -217,6 +248,7 @@
 		return TRUE
 
 	update_shown_duration()
+	schedule_next()
 	return FALSE
 
 /**
@@ -235,9 +267,11 @@
 		if(var_value == INFINITY)
 			duration = STATUS_EFFECT_PERMANENT
 		update_shown_duration()
+		schedule_next()
 
 	if(var_name == NAMEOF(src, show_duration))
 		update_shown_duration()
+		schedule_next()
 
 /// Alert base type for status effect alerts
 /atom/movable/screen/alert/status_effect

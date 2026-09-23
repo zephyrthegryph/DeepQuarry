@@ -139,6 +139,8 @@
 	var/eject_delay = 10	//give latecomers some time to get out of the way if they don't make it onto the pod
 	var/eject_time = null
 	var/closing = 0
+	/// REACT_AT token for `eject_time`; null when no ejection is pending.
+	var/tmp/eject_timer
 
 /datum/embedded_program/docking/simple/escape_pod_berth/proc/arm()
 	if(!armed)
@@ -153,7 +155,13 @@
 
 /datum/embedded_program/docking/simple/escape_pod_berth/process()
 	..()
-	if (eject_time && world.time >= eject_time && !closing)
+
+/datum/embedded_program/docking/simple/escape_pod_berth/on_react(reason, source, source_kind)
+	. = ..()
+	if(!(reason & REACT_REASON_TIMER) || source != eject_timer)
+		return
+	eject_timer = null
+	if(!closing)
 		close_door()
 		closing = 1
 
@@ -168,3 +176,4 @@
 
 /datum/embedded_program/docking/simple/escape_pod_berth/prepare_for_undocking()
 	eject_time = world.time + eject_delay*10
+	eject_timer = REACT_REARM(src, eject_timer, eject_time)

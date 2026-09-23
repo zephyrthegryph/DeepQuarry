@@ -92,7 +92,7 @@ GLOBAL_LIST_EMPTY(material_radiovoltaic_items)
 /datum/component/material_response/proc/ambient_temperature()
 	var/obj/assembly = parent
 	if(assembly.material_service)
-		return assembly.material_service.temperature
+		return assembly.material_service.current_temperature()
 	var/turf/turf = get_turf(parent)
 	var/datum/gas_mixture/air = turf?.return_air()
 	return air ? air.return_temperature() : T20C

@@ -288,7 +288,7 @@
 				germ_level = 0
 				status &= ~ORGAN_DEAD
 				damage = 0 //Fix the damage on it as well.
-				START_PROCESSING(SSobj, src) //Dead limbs stop processing, so we restart the process.
+				REACT_PROCESS(src, 2 SECONDS, "an organ outside a body decays every period (body rewrite owns this; S4 swapped the macro only)") //Dead limbs stop processing, so we restart the process.
 				stage-- //Go back to stage 2
 				return
 	..()

@@ -1,4 +1,6 @@
 #define SHIP_MOVE_RESOLUTION 0.00001
+/// Period between drift-decay wakes for a moving ship (was SSprocessing's 1 SECOND wait).
+#define SHIP_DRIFT_DECAY_PERIOD 1 SECOND
 #define MOVING(speed) abs(speed) >= min_speed
 #define SANITIZE_SPEED(speed) SIGN(speed) * CLAMP(abs(speed), 0, max_speed)
 #define CHANGE_SPEED_BY(speed_var, v_diff) \
@@ -49,6 +51,9 @@
 	var/flight_vessel_id
 	render_map = TRUE
 
+	/// REACT_AT token for the drift-decay wake while the ship is moving; null when none.
+	var/tmp/drift_decay_timer
+
 /obj/effect/overmap/visitable/ship/Initialize(mapload)
 	. = ..()
 	min_speed = round(min_speed, SHIP_MOVE_RESOLUTION)
@@ -62,7 +67,6 @@
 	SSflight_operations?.register_vessel(src)
 
 /obj/effect/overmap/visitable/ship/Destroy()
-	STOP_PROCESSING(SSprocessing, src)
 	remove_vis_overlay(vector)
 	SSshuttles.ships -= src
 	if(SSflight_operations && flight_vessel_id)
@@ -142,7 +146,7 @@
 		return
 	// If it is now still, stopped moving
 	else if(still)
-		STOP_PROCESSING(SSprocessing, src)
+		drift_decay_timer = REACT_REARM(src, drift_decay_timer, null)
 		for(var/zz in map_z)
 			SSstarmover.toggle_move_stars(zz)
 		if(last_sound + sound_cooldown >= world.time)
@@ -154,8 +158,8 @@
 
 	// If it started moving
 	else
-		START_PROCESSING(SSprocessing, src)
-		glide_size = WORLD_ICON_SIZE/max(DS2TICKS(SSprocessing.wait), 1) //Down to whatever decimal
+		drift_decay_timer = REACT_REARM(src, drift_decay_timer, world.time + SHIP_DRIFT_DECAY_PERIOD)
+		glide_size = WORLD_ICON_SIZE/max(DS2TICKS(SHIP_DRIFT_DECAY_PERIOD), 1) //Down to whatever decimal
 		for(var/zz in map_z)
 			SSstarmover.toggle_move_stars(zz, fore_dir)
 		if(last_sound + sound_cooldown >= world.time)
@@ -184,9 +188,12 @@
 /obj/effect/overmap/visitable/ship/proc/accelerate(direction, accel_limit)
 	return
 
-/obj/effect/overmap/visitable/ship/process(wait)
+/obj/effect/overmap/visitable/ship/on_react(reason, source, source_kind)
+	. = ..()
+	if(!(reason & REACT_REASON_TIMER) || source != drift_decay_timer)
+		return
+	drift_decay_timer = null
 	adjust_speed(-speed[1], -speed[2])
-	return PROCESS_KILL
 
 // If we get moved, update our internal tracking to account for it
 /obj/effect/overmap/visitable/ship/Moved(atom/old_loc, direction, forced = FALSE)

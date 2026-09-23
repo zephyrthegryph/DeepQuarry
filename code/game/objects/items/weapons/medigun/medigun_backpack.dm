@@ -230,7 +230,7 @@
 		sbin = new sbin(src)
 	if(ispath(smodule))
 		smodule = new smodule(src)
-		START_PROCESSING(SSobj, src)
+		REACT_PROCESS(src, 2 SECONDS, "regenerates and recharges stored medigun chems and cell power every period while fully assembled")
 	if(ispath(smanipulator))
 		smanipulator = new smanipulator(src)
 	if(ispath(scapacitor))
@@ -240,7 +240,7 @@
 	update_icon()
 
 /obj/item/medigun_backpack/Destroy()
-	STOP_PROCESSING(SSobj, src)
+	REACT_PROCESS_STOP(src)
 	QDEL_NULL(bcell)
 	QDEL_NULL(smodule)
 	QDEL_NULL(smanipulator)
@@ -287,7 +287,7 @@
 			smodule = null
 
 		if(smanipulator)
-			STOP_PROCESSING(SSobj, src)
+			REACT_PROCESS_STOP(src)
 			smanipulator.forceMove(get_turf(loc))
 			smanipulator = null
 			smaniptier = 0
@@ -297,12 +297,12 @@
 			slaser = null
 
 		if(scapacitor)
-			STOP_PROCESSING(SSobj, src)
+			REACT_PROCESS_STOP(src)
 			scapacitor.forceMove(get_turf(loc))
 			scapacitor = null
 
 		if(sbin)
-			STOP_PROCESSING(SSobj, src)
+			REACT_PROCESS_STOP(src)
 			sbin.forceMove(get_turf(loc))
 			sbin = null
 			sbintier = 0
@@ -355,7 +355,7 @@
 			W.forceMove(src)
 			smanipulator = W
 			smaniptier = smanipulator.get_rating()
-			if(sbin && scapacitor)START_PROCESSING(SSobj, src)
+			if(sbin && scapacitor)REACT_PROCESS(src, 2 SECONDS, "regenerates and recharges stored medigun chems and cell power every period while fully assembled")
 			to_chat(user, span_notice("You install the [W] into \the [src]."))
 			update_icon()
 			return
@@ -407,7 +407,7 @@
 				if(bcell.charge > chargecap)
 					bcell.charge = chargecap
 
-			if(sbin && smanipulator)START_PROCESSING(SSobj, src)
+			if(sbin && smanipulator)REACT_PROCESS(src, 2 SECONDS, "regenerates and recharges stored medigun chems and cell power every period while fully assembled")
 			to_chat(user, span_notice("You install the [W] into \the [src]."))
 			update_icon()
 			return
@@ -439,7 +439,7 @@
 				burncharge = tankmax
 			if(toxcharge > tankmax)
 				toxcharge = tankmax
-			if(scapacitor && smanipulator)START_PROCESSING(SSobj, src)
+			if(scapacitor && smanipulator)REACT_PROCESS(src, 2 SECONDS, "regenerates and recharges stored medigun chems and cell power every period while fully assembled")
 			to_chat(user, span_notice("You install the [W] into \the [src]."))
 			update_icon()
 			return

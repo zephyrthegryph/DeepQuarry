@@ -75,8 +75,8 @@ GLOBAL_VAR_INIT(next_material_assembly_id, 0)
 		material_service = new(src)
 	material_last_service_event = event
 	material_service.last_admission_event = event
-	if(isnum(observed_temperature) && observed_temperature > material_service.temperature)
-		material_service.temperature = observed_temperature
+	if(isnum(observed_temperature) && observed_temperature > material_service.current_temperature())
+		material_service.set_temperature(observed_temperature)
 	material_service.schedule(0)
 	return material_service
 
@@ -114,7 +114,7 @@ GLOBAL_VAR_INIT(next_material_assembly_id, 0)
 	var/turf/location = get_turf(src)
 	var/datum/gas_mixture/ambient = location?.return_air()
 	var/ambient_temperature = ambient?.return_temperature() || T20C
-	return abs(service.temperature - ambient_temperature) < MATERIAL_THERMAL_RESOLUTION
+	return abs(service.current_temperature() - ambient_temperature) < MATERIAL_THERMAL_RESOLUTION
 
 /obj/proc/material_service_gases()
 	return null
@@ -179,11 +179,17 @@ GLOBAL_VAR_INIT(next_material_assembly_id, 0)
 	var/list/mixture_corrosion
 	var/list/movement_sources
 	var/turf/watched_turf
+	/// REACT_AT token of the next advance() (null: none scheduled). Replaces SSmaterial_services.
 	var/timer
 	var/next_update = 0
 	var/last_update
-	var/temperature = T20C
-	var/buffer_energy = 0
+	/// The owner's thermal state is its heat body (owner.heat_body, doc/rewrite/temperature.md):
+	/// capacity thermal_capacity, the thermal stock's phase plateau, exothermic power, coupling 0
+	/// to the surroundings and coupling 1 to the contents' gas. Rust relaxes it; this datum
+	/// reads current_temperature() and wakes on heat_watch (stress, melting, critical temperature).
+	var/heat_watch
+	/// The levels heat_watch is a band over (to know when to re-register).
+	var/list/heat_watch_levels
 	var/chemical_rate = 0
 	var/chemical_last_update = 0
 	var/input_joules = 0
@@ -202,6 +208,8 @@ GLOBAL_VAR_INIT(next_material_assembly_id, 0)
 	var/datum/material/thermal_stock
 	var/datum/material/electrical_stock
 	var/thermal_capacity = 1000
+	/// The body needs its capacity, phase, power and couplings pushed again.
+	var/body_dirty = TRUE
 	var/watches_dirty = TRUE
 	var/last_environment_temperature = T20C
 	/// The first observation establishes a baseline. Time spent waiting in the
@@ -222,9 +230,12 @@ GLOBAL_VAR_INIT(next_material_assembly_id, 0)
 
 /datum/material_service/Destroy()
 	unregister_diagnostics()
-	SSmaterial_services.unqueue(src)
-	if(SSmaterial_services.currentrun)
-		SSmaterial_services.currentrun -= src
+	timer = null // REACT_CLEAR in the base Destroy() drops the timer
+	clear_heat_watch()
+	// The body outlives the service only as an ordinary relaxing body.
+	if(!QDELETED(owner) && !isnull(owner.heat_body))
+		vg_heat_body_keep(owner.heat_body, FALSE)
+		vg_heat_body_power(owner.heat_body, 0)
 	clear_watches()
 	if(owner?.material_service == src)
 		owner.material_service = null
@@ -234,18 +245,127 @@ GLOBAL_VAR_INIT(next_material_assembly_id, 0)
 	electrical_stock = null
 	return ..()
 
+/// Schedules advance() `delay` from now: one REACT_AT, moved only earlier.
 /datum/material_service/proc/schedule(delay = MATERIAL_SERVICE_INTERVAL)
-	if(QDELETED(owner))
+	if(QDELETED(owner) || QDELETED(src))
 		return
 	var/due = world.time + delay
-	if(!timer)
-		SSmaterial_services.queue(src, due)
-		next_update = due
-		timer = TRUE
+	if(!isnull(timer) && due >= next_update)
+		return
+	next_update = due
+	timer = REACT_REARM(src, timer, due)
+
+/datum/material_service/on_react(reason, source, source_kind)
+	timer = null
+	advance()
+
+/datum/material_service/react_sleep_violation()
+	if(QDELETED(owner) || !isnull(timer))
+		return null
+	if(active)
+		return "active assembly with no scheduled advance"
+	return null
+
+/// The assembly's temperature: its heat body's, or its surroundings' without one.
+/datum/material_service/proc/current_temperature()
+	if(QDELETED(owner))
+		return T20C
+	return owner.get_temperature()
+
+/// Creates (or re-configures) the owner's heat body for this assembly. Returns the handle.
+/datum/material_service/proc/ensure_body()
+	if(QDELETED(owner))
+		return null
+	if(!isnull(owner.heat_body) && isnull(vg_heat_body_temperature(owner.heat_body)))
+		owner.heat_body = null
+	if(isnull(owner.heat_body))
+		var/list/coupling = owner.heat_coupling()
+		owner.heat_body = vg_heat_body_create(thermal_capacity, owner.get_ambient_temperature(), coupling[1], coupling[2], ambient_conductance(), TRUE)
+		if(isnull(owner.heat_body))
+			return null
+		body_dirty = TRUE
+	if(body_dirty)
+		configure_body()
+	return owner.heat_body
+
+/// Conductance (W/K) between the assembly and its surroundings (coupling 0).
+/datum/material_service/proc/ambient_conductance()
+	return max(owner.construction_thermal_conductance(0.1, 0.004, T20C) || 0, 0)
+
+/// Pushes capacity, the thermal stock's phase plateau, exothermic power and the contents' gas
+/// coupling into the body.
+/datum/material_service/proc/configure_body()
+	var/h = owner.heat_body
+	if(isnull(h))
+		return
+	body_dirty = FALSE
+	vg_heat_body_keep(h, TRUE)
+	vg_heat_body_capacity(h, thermal_capacity)
+	var/datum/material/thermal = thermal_stock
+	var/phase_temperature = thermal?.phase_change_temperature || 0
+	vg_heat_body_phase(h, phase_temperature, phase_temperature ? (thermal.phase_change_capacity || 0) : 0)
+	var/datum/material/thermal_output = owner.material_for_role(MATERIAL_ROLE_THERMAL) || owner.primary_construction_material()
+	vg_heat_body_power(h, max(thermal_output?.exothermic_heat_rate || 0, 0))
+	var/list/coupling = owner.heat_coupling()
+	vg_heat_body_couple(h, 0, coupling[1], coupling[2], ambient_conductance())
+	var/datum/gas_mixture/contents = owner.material_service_conducts_contents() ? first_port_gas() : null
+	if(contents)
+		var/conductance = owner.construction_thermal_conductance(0.25, max(owner.material_service_thickness() / 1000, 0.001), T20C) || 0
+		vg_heat_body_couple(h, 1, HEAT_TARGET_MIXTURE, contents.arena_id(), max(conductance, 0))
 	else
-		if(due < next_update)
-			next_update = due
-			SSmaterial_services.queue(src, due)
+		vg_heat_body_couple(h, 1, HEAT_TARGET_NONE, 0, 0)
+
+/// The gas the assembly contains (its first port with gas), for coupling 1.
+/datum/material_service/proc/first_port_gas()
+	for(var/datum/gas_mixture/air as anything in owner.material_service_gases())
+		if(air)
+			return air
+
+/// Sets the assembly's temperature (DM authority: admission at an observed temperature,
+/// rebuilding an assembly from another).
+/datum/material_service/proc/set_temperature(new_temperature)
+	var/h = ensure_body()
+	if(!isnull(h))
+		vg_heat_body_set_temperature(h, new_temperature)
+
+/// A band watch over the temperatures that change the assembly's behaviour: thermal stress
+/// (0.8 of melting), melting, and the conductor's superconducting transition.
+/datum/material_service/proc/update_heat_watch()
+	if(QDELETED(owner))
+		return
+	var/list/levels = list()
+	var/datum/material/structure = owner.material_for_role(MATERIAL_ROLE_STRUCTURE) || owner.primary_construction_material()
+	if(structure?.melting_point)
+		levels |= structure.melting_point * 0.8
+		levels |= structure.melting_point
+	var/datum/material/conductor = electrical_stock
+	if(conductor?.critical_temperature)
+		levels |= conductor.critical_temperature
+	sortTim(levels, GLOBAL_PROC_REF(cmp_numeric_asc))
+	if(!isnull(heat_watch) && heat_watch_levels ~= levels)
+		return
+	clear_heat_watch()
+	if(!length(levels) || isnull(ensure_body()))
+		return
+	heat_watch_levels = levels
+	heat_watch = heat_watch_band(owner, levels)
+
+/datum/material_service/proc/clear_heat_watch()
+	if(!isnull(heat_watch))
+		heat_unwatch(heat_watch)
+		heat_watch = null
+	heat_watch_levels = null
+	heat_unsubscribe()
+
+/// The body crossed a stress, melting or critical level: re-evaluate now.
+/datum/material_service/on_heat_wake(watch, reason, source)
+	if(watch != heat_watch || QDELETED(owner))
+		return
+	if(istype(owner, /obj/structure/cable))
+		var/obj/structure/cable/cable = owner
+		cable.powernet?.material_graph?.invalidate_cable(cable)
+		electrical_reference_temperature = current_temperature()
+	schedule(0)
 
 /datum/material_service/proc/clear_watches()
 	if(watched_turf)
@@ -288,7 +408,9 @@ GLOBAL_VAR_INIT(next_material_assembly_id, 0)
 /// relevant only to pressure-rated objects, so ordinary machine housings do not
 /// wake whenever their turf's atmos revision advances.
 /datum/material_service/proc/gas_dependency_interest_mask()
-	var/mask = GAS_DEPENDENCY_TEMPERATURE | GAS_DEPENDENCY_COMPOSITION
+	// Thermal exchange with the gas is the heat body's coupling (Rust), so gas temperature
+	// alone never wakes the service; composition (corrosion) and pressure still do.
+	var/mask = GAS_DEPENDENCY_COMPOSITION
 	if(owner.material_service_rating() > 0)
 		mask |= GAS_DEPENDENCY_PRESSURE
 	return mask
@@ -315,8 +437,6 @@ GLOBAL_VAR_INIT(next_material_assembly_id, 0)
 		mixture_corrosion["[mixture_id]"] = new_corrosion
 		if(abs(new_corrosion - old_corrosion) > 0.000001)
 			return TRUE
-	if((change_mask & GAS_DEPENDENCY_TEMPERATURE) && abs(new_temperature - temperature) >= MATERIAL_THERMAL_RESOLUTION)
-		return TRUE
 	var/rating = owner.material_service_rating()
 	if(!(change_mask & GAS_DEPENDENCY_PRESSURE) || rating <= 0)
 		return FALSE
@@ -326,7 +446,7 @@ GLOBAL_VAR_INIT(next_material_assembly_id, 0)
 		var/pressure = mixture_pressures[id]
 		lowest = min(lowest, pressure)
 		highest = max(highest, pressure)
-	var/limit = owner.material_environment_pressure_limit(rating, owner.material_service_radius(), owner.material_service_thickness(), temperature)
+	var/limit = owner.material_environment_pressure_limit(rating, owner.material_service_radius(), owner.material_service_thickness(), current_temperature())
 	return owner.material_environment_leaking || (highest - lowest) / max(limit, ONE_ATMOSPHERE) >= MATERIAL_PRESSURE_STRESS_RATIO
 
 /datum/material_service/proc/rebind()
@@ -360,6 +480,8 @@ GLOBAL_VAR_INIT(next_material_assembly_id, 0)
 	for(var/id in next_ids)
 		if(!(id in mixture_ids))
 			SSmachines.subscribe_gas_dependency(id, reference)
+	if(!(mixture_ids ~= next_ids))
+		body_dirty = TRUE
 	mixture_ids = next_ids
 	mixture_pressures = next_pressures
 	mixture_corrosion = next_corrosion
@@ -386,7 +508,7 @@ GLOBAL_VAR_INIT(next_material_assembly_id, 0)
 	var/datum/material/liner = owner.material_for_role(MATERIAL_ROLE_LINER)
 	if(liner && owner.reagents?.total_volume)
 		for(var/datum/reagent/chemical in owner.reagents.reagent_list)
-			chemical_rate += liner.material_corrosion_rate(chemical.id, temperature) * chemical.volume / owner.reagents.total_volume
+			chemical_rate += liner.material_corrosion_rate(chemical.id, current_temperature()) * chemical.volume / owner.reagents.total_volume
 	if(chemical_rate)
 		schedule()
 
@@ -407,67 +529,31 @@ GLOBAL_VAR_INIT(next_material_assembly_id, 0)
 	thermal_stock = thermal
 	electrical_stock = owner.material_for_role(MATERIAL_ROLE_CONDUCTOR)
 	thermal_capacity = max((thermal?.specific_heat || 125) * MATERIAL_SERVICE_REFERENCE_MASS, 1000)
-	if(thermal_material_id == thermal?.name)
-		return
 	thermal_material_id = thermal?.name
-	// Fresh stock is at the assembly temperature. A cryogenic phase material
-	// starts discharged at room temperature and must actually be cooled first.
-	buffer_energy = thermal?.phase_change_temperature && temperature >= thermal.phase_change_temperature ? thermal.phase_change_capacity : 0
+	// Fresh stock is at the assembly temperature. A phase plateau below that temperature is
+	// full (the body's phase model): a cryogenic material must actually be cooled first.
+	body_dirty = TRUE
+	if(!isnull(owner.heat_body))
+		configure_body()
+	update_heat_watch()
 
-/// Positive heat enters this solid, negative heat leaves. Phase storage belongs
-/// to this assembly and survives material recalculation.
+/// Positive heat enters this solid, negative heat leaves: a command to the owner's heat
+/// body, applied at the next heat frame. Returns the joules accepted.
 /datum/material_service/proc/add_heat(joules)
 	if(!joules || QDELETED(owner))
 		return 0
-	var/datum/material/thermal = thermal_stock
-	var/mass = thermal_mass()
-	var/old_temperature = temperature
-	var/phase = thermal?.phase_change_temperature || 0
-	var/capacity = thermal?.phase_change_capacity || 0
-	var/accepted = joules
-	if(joules > 0 && phase > 0 && capacity > buffer_energy)
-		var/to_phase = max(0, phase - temperature) * mass
-		var/sensible = min(joules, to_phase)
-		temperature += sensible / mass
-		joules -= sensible
-		if(temperature >= phase)
-			var/buffered = min(joules, capacity - buffer_energy)
-			buffer_energy += buffered
-			joules -= buffered
-	else if(joules < 0 && buffer_energy > 0)
-		var/above_phase = max(temperature - phase, 0) * mass
-		var/sensible = min(-joules, above_phase)
-		temperature -= sensible / mass
-		joules += sensible
-		var/released = min(-joules, buffer_energy)
-		buffer_energy -= released
-		joules += released
-	var/minimum_heat = (TCMB - temperature) * mass
-	if(joules < minimum_heat)
-		accepted -= minimum_heat - joules
-		joules = minimum_heat
-	temperature += joules / mass
-	if(temperature != old_temperature && owner.reagents?.total_volume)
-		// Temperature is an input to chemical attack. Settle the previous rate
-		// and publish the new one at the mutation, not at the next reagent edit.
-		contents_changed()
-	if(istype(owner, /obj/structure/cable))
-		var/obj/structure/cable/cable = owner
-		var/datum/material/conductor = electrical_stock
-		var/crossed_critical = conductor?.critical_temperature && ((temperature < conductor.critical_temperature) != (electrical_reference_temperature < conductor.critical_temperature))
-		if(abs(temperature - electrical_reference_temperature) >= 0.1 || crossed_critical)
-			if(cable.powernet?.material_graph)
-				cable.powernet.material_graph.invalidate_cable(cable)
-			electrical_reference_temperature = temperature
-	// Retain sub-resolution heat in the solid instead of scheduling every cable
-	// for fractions of a millikelvin. No energy is discarded by this coalescing.
-	if(active || monitor_tool || abs(temperature - last_environment_temperature) >= MATERIAL_THERMAL_RESOLUTION)
+	var/h = ensure_body()
+	if(isnull(h) || !vg_heat_body_add(h, joules))
+		return 0
+	if(owner.reagents?.total_volume)
+		// Temperature is an input to chemical attack: re-rate after the frame applied the heat.
+		schedule(1 SECOND)
+	if(active || monitor_tool)
 		schedule()
-	return accepted
+	return joules
 
 /datum/material_service/proc/tick()
-	SSmaterial_services.unqueue(src)
-	timer = null
+	timer = REACT_REARM(src, timer, null)
 	advance()
 
 /datum/material_service/proc/advance()
@@ -487,9 +573,15 @@ GLOBAL_VAR_INIT(next_material_assembly_id, 0)
 	var/datum/gas_mixture/ambient = location?.return_air()
 	active = chemical_rate > 0
 	var/datum/material/thermal_output = owner.material_for_role(MATERIAL_ROLE_THERMAL) || owner.primary_construction_material()
-	if(elapsed > 0 && thermal_output?.exothermic_heat_rate > 0)
-		add_heat(thermal_output.exothermic_heat_rate * elapsed)
-		active = TRUE
+	if(thermal_output?.exothermic_heat_rate > 0 || body_dirty)
+		ensure_body() // exothermic stock heats itself through the body's power
+	if(chemical_rate > 0 && owner.material_for_role(MATERIAL_ROLE_LINER))
+		contents_changed() // re-rate chemical attack at the body's current temperature
+		if(QDELETED(owner))
+			updating = FALSE
+			return
+		active = chemical_rate > 0
+	var/temperature = current_temperature()
 	var/list/air_ports = owner.material_service_gases()
 	var/datum/gas_mixture/highest_load_port
 	var/highest_pressure_delta = -1
@@ -504,8 +596,6 @@ GLOBAL_VAR_INIT(next_material_assembly_id, 0)
 	last_pressure_load = effective_limit > 0 ? highest_pressure_delta / effective_limit : 0
 	for(var/datum/gas_mixture/air as anything in air_ports)
 		active = owner.process_material_environment(air, ambient, elapsed, owner.material_service_rating(), owner.material_service_radius(), owner.material_service_thickness(), air == highest_load_port, TRUE, 1 / length(air_ports)) || active
-		if(!QDELETED(owner) && owner.material_service_conducts_contents())
-			active = exchange_with_gas(air, elapsed / length(air_ports)) || active
 		if(QDELETED(owner))
 			updating = FALSE
 			return
@@ -514,19 +604,17 @@ GLOBAL_VAR_INIT(next_material_assembly_id, 0)
 	if(QDELETED(owner))
 		updating = FALSE
 		return
-	if(ambient && elapsed > 0)
-		var/ambient_capacity = ambient.heat_capacity()
-		var/conductance = owner.construction_thermal_conductance(0.1, 0.004, temperature) || 0
-		if(ambient_capacity > 0 && conductance > 0)
-			var/equilibrium = (temperature - ambient.return_temperature()) / (1 / thermal_mass() + 1 / ambient_capacity)
-			var/exchange = equilibrium * (1 - 2.718281828 ** (-conductance * elapsed * (1 / thermal_mass() + 1 / ambient_capacity)))
-			if(abs(temperature - ambient.return_temperature()) >= MATERIAL_THERMAL_RESOLUTION && abs(exchange) > 0.01)
-				var/converted = convert_transferred_heat(exchange, ambient.return_temperature())
-				if(exchange > 0)
-					ambient.add_thermal_energy(-add_heat(-exchange) - converted)
-				else
-					ambient.add_thermal_energy(-add_heat(-exchange - converted) - converted)
-				active = TRUE
+	if(elapsed > 0 && !isnull(owner.heat_body))
+		convert_body_flow(elapsed)
+	if(istype(owner, /obj/structure/cable))
+		var/obj/structure/cable/cable = owner
+		var/datum/material/conductor = electrical_stock
+		var/crossed_critical = conductor?.critical_temperature && ((temperature < conductor.critical_temperature) != (electrical_reference_temperature < conductor.critical_temperature))
+		if(abs(temperature - electrical_reference_temperature) >= 0.1 || crossed_critical)
+			cable.powernet?.material_graph?.invalidate_cable(cable)
+			electrical_reference_temperature = temperature
+	if(abs(temperature - (ambient?.return_temperature() || T20C)) >= MATERIAL_THERMAL_RESOLUTION)
+		update_heat_watch()
 	var/datum/material/structure = owner.material_for_role(MATERIAL_ROLE_STRUCTURE) || owner.primary_construction_material()
 	last_stress = structure ? temperature / max(structure.melting_point, 1) : 0
 	status = owner.material_environment_leaking ? "Leaking" : (last_stress >= 1 ? "Overheated" : (last_pressure_load >= MATERIAL_PRESSURE_FATIGUE_RATIO ? "Pressure fatigue" : (last_pressure_load >= MATERIAL_PRESSURE_STRESS_RATIO ? "Pressure stress" : (last_stress > 0.8 ? "Thermal stress" : "Nominal"))))
@@ -540,6 +628,9 @@ GLOBAL_VAR_INIT(next_material_assembly_id, 0)
 		schedule(monitor_tool ? 1 SECOND : MATERIAL_SERVICE_INTERVAL)
 	else if(owner.material_service_can_retire(src))
 		qdel(src)
+	else if(abs(temperature - (ambient?.return_temperature() || T20C)) >= MATERIAL_THERMAL_RESOLUTION)
+		// Its body is still relaxing (Rust); look again later to retire at equilibrium.
+		schedule(MATERIAL_SERVICE_INTERVAL)
 
 /obj/proc/material_service_conducts_contents()
 	return TRUE
@@ -549,37 +640,32 @@ GLOBAL_VAR_INIT(next_material_assembly_id, 0)
 /obj/machinery/atmospherics/pipe/simple/heat_exchanging/material_service_conducts_contents()
 	return FALSE
 
-/datum/material_service/proc/exchange_with_gas(datum/gas_mixture/air, elapsed)
-	if(!air || elapsed <= 0 || air.heat_capacity() <= 0)
-		return FALSE
-	if(abs(air.return_temperature() - temperature) < MATERIAL_THERMAL_RESOLUTION)
-		return FALSE
-	var/capacity = air.heat_capacity()
-	var/conductance = owner.construction_thermal_conductance(0.25, max(owner.material_service_thickness() / 1000, 0.001), temperature) || 0
-	var/equilibrium = (air.return_temperature() - temperature) / (1 / thermal_mass() + 1 / capacity)
-	var/exchange = equilibrium * (1 - 2.718281828 ** (-conductance * elapsed * (1 / thermal_mass() + 1 / capacity)))
-	if(abs(exchange) < 0.01)
-		return FALSE
-	air.add_thermal_energy(-add_heat(exchange))
-	return TRUE
-
-/// A thermoelectric cell converts only a fraction of actual hot-to-cold heat
-/// flow, bounded by Carnot efficiency and available charge capacity.
-/datum/material_service/proc/convert_transferred_heat(heat, ambient_temperature)
-	if(!istype(owner, /obj/item/cell) || !heat)
+/// A thermoelectric cell converts a fraction of the heat actually flowing between it and
+/// its surroundings (the body's coupling-0 flow), bounded by Carnot efficiency and the charge
+/// it can take. The converted energy leaves the body as electricity.
+/datum/material_service/proc/convert_body_flow(elapsed)
+	if(!istype(owner, /obj/item/cell))
 		return 0
 	var/obj/item/cell/cell = owner
 	var/datum/material/conductor = owner.material_for_role(MATERIAL_ROLE_CONDUCTOR)
 	if(!conductor?.thermoelectric_coefficient)
 		return 0
+	var/flow = vg_heat_body_flow(owner.heat_body) // J per heat frame (1 s)
+	if(!flow)
+		return 0
+	var/temperature = current_temperature()
+	var/ambient_temperature = owner.get_ambient_temperature()
 	var/hot = max(temperature, ambient_temperature, TCMB)
 	var/cold = min(temperature, ambient_temperature)
 	var/efficiency = min(clamp(conductor.thermoelectric_coefficient, 0, 1), 1 - cold / hot)
-	var/converted = min(abs(heat) * efficiency, cell.amount_missing() / CELLRATE)
-	return cell.give(converted * CELLRATE) / CELLRATE
+	var/converted = min(abs(flow) * elapsed * efficiency, cell.amount_missing() / CELLRATE)
+	converted = cell.give(converted * CELLRATE) / CELLRATE
+	if(converted > 0 && flow > 0)
+		vg_heat_body_add(owner.heat_body, -converted)
+	return converted
 
 /datum/material_service/proc/summary()
-	return "[status]. Assembly [round(temperature, 0.1)] K; pressure load [round(last_pressure_load * 100, 0.1)]%; thermal buffer [round(buffer_energy)] J. Liner [round(owner.material_environment_liner_integrity)]%, exterior [round(owner.material_environment_exterior_integrity)]%. Fatigue [round(owner.material_environment_fatigue)]%."
+	return "[status]. Assembly [round(current_temperature(), 0.1)] K; pressure load [round(last_pressure_load * 100, 0.1)]%; thermal buffer [thermal_stock?.phase_change_capacity ? "[round(thermal_stock.phase_change_capacity)] J at [round(thermal_stock.phase_change_temperature, 0.1)] K" : "none"]. Liner [round(owner.material_environment_liner_integrity)]%, exterior [round(owner.material_environment_exterior_integrity)]%. Fatigue [round(owner.material_environment_fatigue)]%."
 
 /obj/proc/material_service_changed()
 	material_configuration_revision++
@@ -600,4 +686,5 @@ GLOBAL_VAR_INIT(next_material_assembly_id, 0)
 	material_service?.initialize_thermal_stock()
 	if(material_service)
 		material_service.watches_dirty = TRUE
+		material_service.body_dirty = TRUE
 	material_service?.schedule(0)

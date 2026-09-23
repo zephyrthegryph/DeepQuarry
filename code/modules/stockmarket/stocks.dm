@@ -11,6 +11,75 @@
 	var/deposit = 0
 	var/offer_expires = 0
 
+	/// REACT_AT token for the deadline currently in play: offer_expires while unleased,
+	/// then lease_expires, then (if the lease-expiry settlement couldn't fully clear the
+	/// debt) grace_expires.
+	var/tmp/deadline_timer
+	/// Whether the lease-expiry settlement attempt (handle_lease_expiry()) has already run.
+	var/tmp/lease_phase_done = FALSE
+
+/// Re-arms `deadline_timer` for whichever deadline is next: offer_expires (not yet leased),
+/// lease_expires (leased, lease-expiry settlement not yet attempted), or grace_expires
+/// (lease-expiry settlement attempted but couldn't fully clear the debt).
+/datum/borrow/proc/reschedule()
+	var/deadline
+	if(!lease_expires)
+		deadline = offer_expires
+	else if(!lease_phase_done)
+		deadline = lease_expires
+	else
+		deadline = grace_expires
+	deadline_timer = REACT_REARM(src, deadline_timer, deadline)
+
+/datum/borrow/on_react(reason, source, source_kind)
+	. = ..()
+	if(!(reason & REACT_REASON_TIMER) || source != deadline_timer)
+		return
+	deadline_timer = null
+	if(!lease_expires)
+		handle_offer_expiry()
+	else if(!lease_phase_done)
+		handle_lease_expiry()
+	else
+		handle_grace_expiry()
+
+/datum/borrow/proc/handle_offer_expiry()
+	if(!stock)
+		return
+	stock.borrow_brokers -= src
+	qdel(src)
+
+/datum/borrow/proc/handle_lease_expiry()
+	lease_phase_done = TRUE
+	if(!stock)
+		return
+	if(borrower in stock.shareholders)
+		var/amt = stock.shareholders[borrower]
+		if(amt > share_debt)
+			stock.shareholders[borrower] -= share_debt
+			stock.borrows -= src
+			if(borrower in GLOB.FrozenAccounts)
+				GLOB.FrozenAccounts[borrower] -= src
+				if(length(GLOB.FrozenAccounts[borrower]) == 0)
+					GLOB.FrozenAccounts -= borrower
+			qdel(src)
+			return
+		else
+			stock.shareholders -= borrower
+			share_debt -= amt
+	reschedule()
+
+/datum/borrow/proc/handle_grace_expiry()
+	if(!stock)
+		return
+	stock.modifyAccount(borrower, -max(stock.current_value * share_debt, 0), 1)
+	stock.borrows -= src
+	if(borrower in GLOB.FrozenAccounts)
+		GLOB.FrozenAccounts[borrower] -= src
+		if(length(GLOB.FrozenAccounts[borrower]) == 0)
+			GLOB.FrozenAccounts -= borrower
+	qdel(src)
+
 /datum/stock
 	var/name = "Stock"
 	var/short_name = "STK"
@@ -181,44 +250,16 @@
 	last_unification = world.time
 
 /datum/stock/process(elapsed_steps = 1)
-	for (var/B in borrows)
-		var/datum/borrow/borrow = B
-		if (world.time > borrow.grace_expires)
-			modifyAccount(borrow.borrower, -max(current_value * borrow.share_debt, 0), 1)
-			borrows -= borrow
-			if (borrow.borrower in GLOB.FrozenAccounts)
-				GLOB.FrozenAccounts[borrow.borrower] -= borrow
-				if (length(GLOB.FrozenAccounts[borrow.borrower]) == 0)
-					GLOB.FrozenAccounts -= borrow.borrower
-			qdel(borrow)
-		else if (world.time > borrow.lease_expires)
-			if (borrow.borrower in shareholders)
-				var/amt = shareholders[borrow.borrower]
-				if (amt > borrow.share_debt)
-					shareholders[borrow.borrower] -= borrow.share_debt
-					borrows -= borrow
-					if (borrow.borrower in GLOB.FrozenAccounts)
-						GLOB.FrozenAccounts[borrow.borrower] -= borrow
-					if (length(GLOB.FrozenAccounts[borrow.borrower]) == 0)
-						GLOB.FrozenAccounts -= borrow.borrower
-					qdel(borrow)
-				else
-					shareholders -= borrow.borrower
-					borrow.share_debt -= amt
+	// Borrow lifecycle deadlines (offer_expires, lease_expires, grace_expires) are now
+	// driven by each /datum/borrow's own deadline_timer/on_react(); see reschedule().
 	if (bankrupt)
 		return
-	for (var/B in borrow_brokers)
-		var/datum/borrow/borrow = B
-		if (borrow.offer_expires < world.time)
-			borrow_brokers -= borrow
-			qdel(borrow)
 	if (prob(100 * (1 - (0.95 ** elapsed_steps))))
 		generateBrokers()
 	fluctuation_counter += elapsed_steps
 	if (fluctuation_counter >= fluctuation_rate)
-		for (var/E in events)
-			var/datum/stockEvent/EV = E
-			EV.process()
+		// Event phases are driven by each /datum/stockEvent's own phase_timer/on_react();
+		// they no longer need to be polled here.
 		fluctuation_counter = 0
 		fluctuate()
 
@@ -238,6 +279,7 @@
 	B.share_debt = B.share_amount
 	B.offer_expires = rand(5, 10) * 600 + world.time
 	borrow_brokers += B
+	B.reschedule()
 
 /datum/stock/proc/modifyAccount(whose, by, force=0)
 	var/datum/money_account/account = GLOB.department_accounts[DEPARTMENT_CARGO]
@@ -267,6 +309,7 @@
 	borrows += B
 	B.borrower = who
 	B.grace_expires = B.lease_expires + B.grace_time
+	B.reschedule()
 	if (!(who in GLOB.FrozenAccounts))
 		GLOB.FrozenAccounts[who] = list(B)
 	else

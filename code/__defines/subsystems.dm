@@ -132,14 +132,12 @@
 #define FIRE_PRIORITY_AIRFLOW		30
 #define FIRE_PRIORITY_AIR			35
 #define FIRE_PRIORITY_BURNING		40
-#define FIRE_PRIORITY_OBJ			40
 #define FIRE_PRIORITY_PROCESS		45
 #define FIRE_PRIORITY_THROWING 		45
 #define FIRE_PRIORITY_DEFAULT		50
 #define FIRE_PRIORITY_TICKER		60
 #define FIRE_PRIORITY_PLANETS		75
 #define FIRE_PRIORITY_SOLARS		76
-#define FIRE_PRIORITY_PRIORITY_EFFECTS 90
 #define FIRE_PRIORITY_EXPLOSIONS 	90
 #define FIRE_PRIORITY_MACHINES		100
 #define FIRE_PRIORITY_MOBS			100
@@ -206,7 +204,6 @@
 // #define SSFLUIDS_DT (SSplumbing.wait/10)
 #define SSMACHINES_DT (SSmachines.wait/10)
 #define SSMOBS_DT (SSmobs.wait/10)
-#define SSOBJ_DT (SSobj.wait/10)
 
 // SCALE_PROCESS_DELTA(wait, scale)
 // Converts a processing subsystem's raw wait (in deciseconds) to the scaled

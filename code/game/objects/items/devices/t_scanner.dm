@@ -32,10 +32,10 @@
 /obj/item/t_scanner/proc/set_active(active)
 	on = active
 	if(on)
-		START_PROCESSING(SSobj, src)
+		REACT_PROCESS(src, 2 SECONDS, "rescans and flickers the underfloor overlay for the current viewer while switched on")
 		flicker = 0
 	else
-		STOP_PROCESSING(SSobj, src)
+		REACT_PROCESS_STOP(src)
 		set_user_client(null)
 	update_icon()
 

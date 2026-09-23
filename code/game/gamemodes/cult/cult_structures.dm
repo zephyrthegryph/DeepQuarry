@@ -31,10 +31,12 @@
 
 	var/activation_cooldown = 30 SECONDS
 	var/last_activation = 0
+	/// REACT_AT token for the pylon's next activation attempt; null when not scheduled.
+	var/tmp/pylon_timer
 
 /obj/structure/cult/pylon/Initialize(mapload)
 	. = ..()
-	START_PROCESSING(SSobj, src)
+	schedule_pylon_activation(world.time)
 
 /obj/structure/cult/pylon/attack_hand(mob/M as mob)
 	attackpylon(M, 5)
@@ -55,7 +57,7 @@
 	if(!isbroken)
 		if(prob(1+ damage * 5))
 			visible_message(span_danger("[shatter_message]"))
-			STOP_PROCESSING(SSobj, src)
+			pylon_timer = REACT_REARM(src, pylon_timer, null)
 			playsound(src,shatter_sound, 75, 1)
 			isbroken = 1
 			density = FALSE
@@ -70,7 +72,7 @@
 				span_warning("You hit \the [src], and its crystal breaks apart!"),
 				"You hear a tinkle of crystal shards."
 				)
-			STOP_PROCESSING(SSobj, src)
+			pylon_timer = REACT_REARM(src, pylon_timer, null)
 			user.do_attack_animation(src)
 			playsound(src,shatter_sound, 75, 1)
 			isbroken = 1

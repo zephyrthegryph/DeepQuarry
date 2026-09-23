@@ -232,8 +232,7 @@
 		material_assembly_id = source.material_assembly_id
 	material_service_changed()
 	if(source.material_service && material_service)
-		material_service.temperature = source.material_service.temperature
-		material_service.buffer_energy = source.material_service.buffer_energy
+		material_service.set_temperature(source.material_service.current_temperature())
 	return has_functional_construction()
 
 /obj/proc/construction_summary()

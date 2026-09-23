@@ -11,11 +11,11 @@
 
 /datum/component/xenoqueenbuff/process()
 	if(QDELETED(xeno))
-		STOP_PROCESSING(SSprocessing, src)
+		REACT_PROCESS_STOP(src)
 		aura_active = 0  //Turn off the aura if our host gets deleted
 		return
 	if(xeno.stat == DEAD)
-		STOP_PROCESSING(SSprocessing, src)
+		REACT_PROCESS_STOP(src)
 		aura_active = 0  //Turn off the aura when we die.
 		return
 
@@ -58,10 +58,10 @@
 	var/datum/component/xenoqueenbuff/X = GetComponent(/datum/component/xenoqueenbuff)
 	if(X)
 		if(X.aura_active)
-			STOP_PROCESSING(SSprocessing,X)
+			REACT_PROCESS_STOP(X)
 			X.aura_active = 0
 			to_chat (src, span_notice("You cease empowering those around you."))
 		else
-			START_PROCESSING(SSprocessing,X)
+			REACT_PROCESS(X, 1 SECOND, "buffs nearby allies every tick while the queen aura is active")
 			X.aura_active = 1
 			to_chat (src, span_notice("You begin empowering those around you."))

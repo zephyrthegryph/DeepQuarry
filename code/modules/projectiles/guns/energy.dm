@@ -20,8 +20,13 @@
 	var/self_recharge = 0	//if set, the weapon will recharge itself
 	var/use_external_power = 0 //if set, the weapon will look for an external power source to draw from, otherwise it recharges magically
 	var/use_organic_power = 0 // If set, the weapon will draw from nutrition or blood.
+	/// Self-recharge: one step of 20% every recharge_time periods of ENERGY_RECHARGE_PERIOD, once
+	/// charge_delay has passed since the last shot. Each step is a REACT_AT.
 	var/recharge_time = 4
+	/// Unused since S4 (steps are timers); kept for subtypes and var edits that set it.
 	var/charge_tick = 0
+	/// REACT_AT token of the next recharge step (null: none).
+	var/tmp/recharge_timer
 	var/charge_delay = 75	//delay between firing and charging
 	var/shot_counter = TRUE // does this gun tell you how many shots it has?
 
@@ -32,7 +37,7 @@
 	. = ..()
 	if(self_recharge)
 		power_supply = new /obj/item/cell/device/weapon(src)
-		START_PROCESSING(SSobj, src)
+		schedule_recharge()
 	else
 		if(cell_type)
 			power_supply = new cell_type(src)
@@ -44,8 +49,7 @@
 	update_icon()
 
 /obj/item/gun/energy/Destroy()
-	if(self_recharge)
-		STOP_PROCESSING(SSobj, src)
+	recharge_timer = null // REACT_CLEAR in the base Destroy() drops it
 	if(power_supply?.loc == src && !QDELETED(power_supply))
 		qdel(power_supply)
 	power_supply = null
@@ -54,57 +58,76 @@
 /obj/item/gun/energy/get_cell()
 	return power_supply
 
-/obj/item/gun/energy/process()
-	if(self_recharge) //Every [recharge_time] ticks, recharge a shot for the battery
-		if(world.time > last_shot + charge_delay)	//Doesn't work if you've fired recently
-			if(!power_supply || power_supply.charge >= power_supply.maxcharge)
-				return PROCESS_KILL
+/// A recharge step used to take recharge_time SSobj fires (2 s each).
+#define ENERGY_RECHARGE_PERIOD (2 SECONDS)
 
-			charge_tick++
-			if(charge_tick < recharge_time) return 0
-			charge_tick = 0
+/// Arms the next recharge step: recharge_time periods after the later of now and the end of
+/// charge_delay after the last shot. Nothing while full or not self-recharging.
+/obj/item/gun/energy/proc/schedule_recharge()
+	if(!self_recharge || !power_supply || power_supply.charge >= power_supply.maxcharge || QDELETED(src))
+		recharge_timer = REACT_REARM(src, recharge_timer, null)
+		return
+	var/start = max(world.time, last_shot + charge_delay)
+	recharge_timer = REACT_REARM(src, recharge_timer, start + recharge_time * ENERGY_RECHARGE_PERIOD)
 
-			var/rechargeamt = power_supply.maxcharge*0.2
+/obj/item/gun/energy/on_react(reason, source, source_kind)
+	. = ..()
+	if(!(reason & REACT_REASON_TIMER) || source != recharge_timer)
+		return
+	recharge_timer = null
+	if(!self_recharge || !power_supply || power_supply.charge >= power_supply.maxcharge)
+		return
+	if(world.time < last_shot + charge_delay) // fired since the step was armed
+		schedule_recharge()
+		return
+	recharge_step()
+	schedule_recharge()
 
-			if(use_external_power)
-				var/obj/item/cell/external = get_external_power_supply()
-				if(!external || !external.use(rechargeamt)) //Take power from the borg...
-					return 0
+/obj/item/gun/energy/react_sleep_violation()
+	if(self_recharge && power_supply && power_supply.charge < power_supply.maxcharge && isnull(recharge_timer))
+		return "self-recharging gun below full with no recharge timer"
+	return null
 
-			if(use_organic_power)
-				var/mob/living/carbon/human/H
-				if(ishuman(loc))
-					H = loc
+/// One recharge step: 20% of the cell, paid from external power or the wielder's body if set.
+/obj/item/gun/energy/proc/recharge_step()
+	var/rechargeamt = power_supply.maxcharge*0.2
 
-				if(istype(loc, /obj/item/organ))
-					var/obj/item/organ/O = loc
-					if(O.owner)
-						H = O.owner
+	if(use_external_power)
+		var/obj/item/cell/external = get_external_power_supply()
+		if(!external || !external.use(rechargeamt)) //Take power from the borg...
+			return
 
-				if(istype(H))
-					var/start_nutrition = H.nutrition
-					var/end_nutrition = 0
+	if(use_organic_power)
+		var/mob/living/carbon/human/H
+		if(ishuman(loc))
+			H = loc
 
-					H.adjust_nutrition(-rechargeamt / 15)
+		if(istype(loc, /obj/item/organ))
+			var/obj/item/organ/O = loc
+			if(O.owner)
+				H = O.owner
 
-					end_nutrition = H.nutrition
+		if(istype(H))
+			var/start_nutrition = H.nutrition
+			var/end_nutrition = 0
 
-					var/deficit = (rechargeamt / 15) - (start_nutrition - max(0, end_nutrition))
-					if(deficit > 0)
-						// The shortfall is drawn from the host. Biology decides the cost:
-						// the power fault only lands on synthetic parts, and bloodless
-						// bodies lose no blood.
-						H.injure(INJURY_ELECTRIC, deficit, BP_TORSO, src, affliction = /datum/affliction/synthetic/power_fault, flags = INJURE_SILENT)
-						H.remove_blood(deficit)
+			H.adjust_nutrition(-rechargeamt / 15)
 
-			power_supply.give(rechargeamt) //... to recharge 1/5th the battery
-			update_icon()
-			var/mob/living/M = loc // TGMC Ammo HUD
-			if(istype(M)) // TGMC Ammo HUD
-				M.hud_used?.update_ammo_hud(M, src) // TGMC Ammo HUD
-		else
-			charge_tick = 0
-	return 1
+			end_nutrition = H.nutrition
+
+			var/deficit = (rechargeamt / 15) - (start_nutrition - max(0, end_nutrition))
+			if(deficit > 0)
+				// The shortfall is drawn from the host. Biology decides the cost:
+				// the power fault only lands on synthetic parts, and bloodless
+				// bodies lose no blood.
+				H.injure(INJURY_ELECTRIC, deficit, BP_TORSO, src, affliction = /datum/affliction/synthetic/power_fault, flags = INJURE_SILENT)
+				H.remove_blood(deficit)
+
+	power_supply.give(rechargeamt) //... to recharge 1/5th the battery
+	update_icon()
+	var/mob/living/M = loc // TGMC Ammo HUD
+	if(istype(M)) // TGMC Ammo HUD
+		M.hud_used?.update_ammo_hud(M, src) // TGMC Ammo HUD
 
 /obj/item/gun/energy/switch_firemodes(mob/user)
 	if(..())
@@ -124,7 +147,7 @@
 	if(!power_supply.checked_use(enhanced_cost)) return null
 	power_supply.material_record_enhanced_output(charge_cost, output_envelope)
 	if(self_recharge)
-		START_PROCESSING(SSobj, src)
+		schedule_recharge() // last_shot is set after this returns; the step re-checks it
 	var/mob/living/M = loc // TGMC Ammo HUD
 	if(istype(M)) // TGMC Ammo HUD
 		M?.hud_used.update_ammo_hud(M, src)
@@ -244,7 +267,7 @@
 	if(power_supply == null)
 		power_supply = new /obj/item/cell/device/weapon(src)
 	self_recharge = 1
-	START_PROCESSING(SSobj, src)
+	schedule_recharge()
 	update_icon()
 
 /obj/item/gun/energy/get_description_interaction()

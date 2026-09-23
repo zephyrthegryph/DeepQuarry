@@ -23,6 +23,11 @@ SUBSYSTEM_DEF(timer)
 		/datum/controller/subsystem/machines
 	)
 
+	/// Timer census (S4, doc/rewrite/reactor.md §3): while on, inserts are counted by
+	/// "owner type:proc" so the heavy per-object users can be found and moved to REACT_AT.
+	/// Off by default; the benchmarks turn it on for their windows.
+	var/census_enabled = FALSE
+	var/list/census_inserts
 	/// Queue used for storing timers that do not fit into the current buckets
 	var/list/datum/timedevent/second_queue = list()
 	/// A hashlist dictionary used for storing unique timers
@@ -619,6 +624,11 @@ SUBSYSTEM_DEF(timer)
 		CRASH("Attempted to create timer with INFINITY delay")
 
 	timer_subsystem = timer_subsystem || SStimer
+	if(timer_subsystem.census_enabled)
+		var/datum/census_object = callback.object
+		var/census_key = "[census_object == GLOBAL_PROC ? "global" : census_object?.type]:[callback.delegate]"
+		LAZYINITLIST(timer_subsystem.census_inserts)
+		timer_subsystem.census_inserts[census_key]++
 
 	// Generate hash if relevant for timed events with the TIMER_UNIQUE flag
 	var/hash
@@ -719,3 +729,12 @@ SUBSYSTEM_DEF(timer)
 #undef BUCKET_LEN
 #undef BUCKET_POS
 #undef TIMER_MAX
+
+/// The census: the `limit` callbacks inserted most since it was last taken, and resets it.
+/datum/controller/subsystem/timer/proc/take_census(limit = 25)
+	var/list/sorted = census_inserts ? census_inserts.Copy() : list()
+	sortTim(sorted, GLOBAL_PROC_REF(cmp_numeric_desc), TRUE)
+	if(length(sorted) > limit)
+		sorted.Cut(limit + 1)
+	census_inserts = null
+	return sorted

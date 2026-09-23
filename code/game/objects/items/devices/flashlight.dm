@@ -51,7 +51,7 @@
 	update_brightness()
 
 /obj/item/flashlight/Destroy()
-	STOP_PROCESSING(SSobj, src)
+	REACT_PROCESS_STOP(src)
 	QDEL_NULL(cell)
 	return ..()
 
@@ -113,9 +113,9 @@
 			return FALSE
 	on = !on
 	if(on && power_use)
-		START_PROCESSING(SSobj, src)
+		REACT_PROCESS(src, 2 SECONDS, "drains its cell every period while lit")
 	else if(power_use)
-		STOP_PROCESSING(SSobj, src)
+		REACT_PROCESS_STOP(src)
 	playsound(src, 'sound/weapons/empty.ogg', 15, 1, -3)
 	update_brightness()
 	user.update_mob_action_buttons()
@@ -435,7 +435,7 @@
 		turn_off()
 		if(!fuel)
 			src.icon_state = "[initial(icon_state)]-empty"
-		STOP_PROCESSING(SSobj, src)
+		REACT_PROCESS_STOP(src)
 
 /obj/item/flashlight/flare/proc/turn_off()
 	on = 0
@@ -456,14 +456,14 @@
 		user.visible_message(span_notice("[user] activates the flare."), span_notice("You pull the cord on the flare, activating it!"))
 		force = on_damage
 		injury_kind = INJURY_BURN
-		START_PROCESSING(SSobj, src)
+		REACT_PROCESS(src, 2 SECONDS, "burns fuel, heats the turf under it, and stays hot while lit")
 
 /obj/item/flashlight/flare/proc/ignite() //Used for flare launchers.
 	on = !on
 	update_brightness()
 	force = on_damage
 	injury_kind = INJURY_BURN
-	START_PROCESSING(SSobj, src)
+	REACT_PROCESS(src, 2 SECONDS, "burns fuel, heats the turf under it, and stays hot while lit")
 	return 1
 
 /*
@@ -494,7 +494,7 @@
 		turn_off()
 		if(!fuel)
 			src.icon_state = "[initial(icon_state)]-empty"
-		STOP_PROCESSING(SSobj, src)
+		REACT_PROCESS_STOP(src)
 
 /obj/item/flashlight/glowstick/proc/turn_off()
 	on = FALSE
@@ -510,7 +510,7 @@
 
 	if(. == CAN_USE)
 		user.visible_message(span_notice("[user] cracks and shakes \the [name]."), span_notice("You crack and shake \the [src], turning it on!"))
-		START_PROCESSING(SSobj, src)
+		REACT_PROCESS(src, 2 SECONDS, "burns down its fuel supply every period while lit")
 
 /obj/item/flashlight/glowstick/red
 	name = "red glowstick"

@@ -461,11 +461,11 @@
 	spark_system.set_up(5, 0, src)
 	spark_system.attach(src)
 
-	START_PROCESSING(SSobj, src)
+	REACT_PROCESS(src, 2 SECONDS, "self-destructs if it stops being held by its creator every period")
 	set_light(lrange, lpower, lcolor)
 
 /obj/item/melee/energy/blade/Destroy()
-	STOP_PROCESSING(SSobj, src)
+	REACT_PROCESS_STOP(src)
 	. = ..()
 
 /obj/item/melee/energy/blade/attack_self(mob/user)

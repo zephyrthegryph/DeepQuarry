@@ -6,21 +6,37 @@
 	var/atom/holder_atom
 	var/talk_interval = 50
 	var/talk_chance = 10
+	/// REACT_AT token of the next spontaneous talk (null: none).
+	var/tmp/talk_timer
 
 /datum/talking_atom/New(atom/holder)
 	holder_atom = holder
 	init()
 
 /datum/talking_atom/proc/init()
-	if(holder_atom)
-		START_PROCESSING(SSobj, src)
+	schedule_talk()
 
-/datum/talking_atom/process()
-	if(!holder_atom)
-		STOP_PROCESSING(SSobj, src)
+/// The old poll tried every 2 s (SSobj) with talk_chance% once talk_interval had passed since the
+/// last talk. That is a geometric number of tries: draw it once and set one REACT_AT.
+#define TALK_TRY_PERIOD (2 SECONDS)
 
-	else if(heard_words.len >= 1 && world.time > last_talk_time + talk_interval && prob(talk_chance))
-		SaySomething()
+/datum/talking_atom/proc/schedule_talk()
+	if(!holder_atom || !length(heard_words))
+		talk_timer = REACT_REARM(src, talk_timer, null)
+		return
+	var/tries = 1
+	if(talk_chance < 100)
+		tries = max(1, CEILING(log(max(rand(), 0.0001)) / log(1 - max(talk_chance, 1) / 100), 1))
+	var/start = max(world.time, last_talk_time + talk_interval)
+	talk_timer = REACT_REARM(src, talk_timer, start + tries * TALK_TRY_PERIOD)
+
+#undef TALK_TRY_PERIOD
+
+/datum/talking_atom/on_react(reason, source, source_kind)
+	talk_timer = null
+	if(!holder_atom || !length(heard_words))
+		return
+	SaySomething() // sets last_talk_time and schedules the next talk
 
 /datum/talking_atom/proc/catchMessage(msg, mob/source)
 	if(!holder_atom)
@@ -49,6 +65,9 @@
 		if(w)
 			w.Add("[lowertext(seperate[next])]")
 		//to_world("Adding [lowertext(seperate[next])] to [lowertext(seperate[Xa])]")
+
+	if(isnull(talk_timer))
+		schedule_talk()
 
 	if(prob(30))
 		var/list/options = list("[holder_atom] seems to be listening intently to [source]...",\
@@ -105,3 +124,4 @@
 	for(var/mob/M in listening)
 		to_chat(M, "[icon2html(holder_atom,M.client)] " + span_bold("[holder_atom] reverberates") +" , \"[span_blue(msg)]\"")
 	last_talk_time = world.time
+	schedule_talk()

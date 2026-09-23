@@ -19,7 +19,7 @@
 /obj/item/mop_deploy/Initialize(mapload)
 	. = ..()
 	create_reagents(5)
-	START_PROCESSING(SSobj, src)
+	REACT_PROCESS(src, 2 SECONDS, "self-destructs if it stops being held by its creator every period")
 
 /turf/proc/clean_deploy(atom/source)
 	if(source.reagents.has_reagent(REAGENT_ID_WATER, 1))
@@ -51,7 +51,7 @@
 	..()
 
 /obj/item/mop_deploy/Destroy()
-	STOP_PROCESSING(SSobj, src)
+	REACT_PROCESS_STOP(src)
 	. = ..()
 
 /obj/item/mop_deploy/attack_self(mob/user)

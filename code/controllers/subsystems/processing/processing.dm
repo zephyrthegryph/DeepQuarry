@@ -1,9 +1,11 @@
-//Used to process objects. Fires once every second.
-
-SUBSYSTEM_DEF(processing)
-	name = "Processing"
-	priority = FIRE_PRIORITY_PROCESS
-	flags = SS_BACKGROUND|SS_POST_FIRE_TIMING|SS_NO_INIT
+// The shared base of the few dedicated processing subsystems that remain (SSprojectiles,
+// SSinstruments, and H3's SSburning until it retires). It is abstract: SSprocessing, SSobj,
+// SSfastprocess and SSturfs are retired (S4); their users are SSreactor timers, rate models,
+// keys, or declared continuous work (REACT_PROCESS / REACT_EVERY, doc/rewrite/reactor.md).
+/datum/controller/subsystem/processing
+	name = "Processing (abstract)"
+	abstract_subsystem = /datum/controller/subsystem/processing
+	flags = SS_NO_INIT|SS_NO_FIRE
 	wait = 10
 
 	var/stat_tag = "P" //Used for logging
@@ -31,13 +33,7 @@ SUBSYSTEM_DEF(processing)
 	var/profile_next_dump = 0
 
 /datum/controller/subsystem/processing/Recover()
-	log_runtime("[name] subsystem Recover().")
-	if(SSprocessing.current_thing)
-		log_runtime("current_thing was: (\ref[SSprocessing.current_thing])[SSprocessing.current_thing]([SSprocessing.current_thing.type]) - currentrun: [length(SSprocessing.currentrun)] vs total: [length(SSprocessing.processing)]")
-	var/list/old_processing = SSprocessing.processing.Copy()
-	for(var/datum/D in old_processing)
-		if(CHECK_BITFIELD(D.datum_flags, DF_ISPROCESSING))
-			processing |= D
+	log_runtime("[name] subsystem Recover().") // each concrete subtype recovers its own list
 
 /datum/controller/subsystem/processing/stat_entry(msg)
 	msg = "[stat_tag]:[length(processing)] S:1/[profile_sample_stride]"

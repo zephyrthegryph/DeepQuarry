@@ -57,7 +57,7 @@ GLOBAL_LIST_EMPTY(ashtray_cache)
 			var/obj/item/clothing/mask/smokable/cigarette/cig = W
 			if (cig.lit == 1)
 				src.visible_message("[user] crushes [cig] in \the [src], putting it out.")
-				STOP_PROCESSING(SSobj, cig)
+				REACT_PROCESS_STOP(cig)
 				var/obj/item/butt = new cig.type_butt(src)
 				cig.transfer_fingerprints_to(butt)
 				// Turn mind bound cigs into butts

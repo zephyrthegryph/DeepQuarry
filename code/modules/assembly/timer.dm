@@ -24,18 +24,18 @@
 /obj/item/assembly/timer/toggle_secure()
 	secured = !secured
 	if(secured)
-		START_PROCESSING(SSobj, src)
+		REACT_PROCESS(src, 2 SECONDS, "counts down its timer while running")
 	else
 		timing = 0
-		STOP_PROCESSING(SSobj, src)
+		REACT_PROCESS_STOP(src)
 	update_icon()
 	return secured
 
 /obj/item/assembly/timer/proc/set_state(state)
 	if(state && !timing) //Not running, starting though
-		START_PROCESSING(SSobj, src)
+		REACT_PROCESS(src, 2 SECONDS, "counts down its timer while running")
 	else if(timing && !state) //Running, stopping though
-		STOP_PROCESSING(SSobj, src)
+		REACT_PROCESS_STOP(src)
 	timing = state
 
 /obj/item/assembly/timer/proc/timer_end()

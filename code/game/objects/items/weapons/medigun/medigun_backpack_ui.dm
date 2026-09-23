@@ -106,7 +106,7 @@
 		if("rem_mani")
 			if(!smanipulator || !maintenance)
 				return FALSE
-			STOP_PROCESSING(SSobj, src)
+			REACT_PROCESS_STOP(src)
 			smanipulator.forceMove(get_turf(loc))
 			to_chat(ui.user, span_notice("You remove the [smanipulator] from \the [src]."))
 			smanipulator = null
@@ -126,7 +126,7 @@
 		if("rem_cap")
 			if(!scapacitor || !maintenance)
 				return FALSE
-			STOP_PROCESSING(SSobj, src)
+			REACT_PROCESS_STOP(src)
 			scapacitor.forceMove(get_turf(loc))
 			to_chat(ui.user, span_notice("You remove the [scapacitor] from \the [src]."))
 			scapacitor = null
@@ -136,7 +136,7 @@
 		if("rem_bin")
 			if(!sbin || !maintenance)
 				return FALSE
-			STOP_PROCESSING(SSobj, src)
+			REACT_PROCESS_STOP(src)
 			sbin.forceMove(get_turf(loc))
 			to_chat(ui.user, span_notice("You remove the [sbin] from \the [src]."))
 			sbin = null

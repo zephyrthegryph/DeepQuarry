@@ -101,6 +101,8 @@ REGISTRY_MEMBERSHIP(/obj/item/implant/tracking, REGISTRY_TRACKING_IMPLANTS)
 	known_implant = TRUE
 	var/id = 1
 	var/degrade_time = 10 MINUTES	//How long before the implant stops working outside of a living body.
+	/// REACT_AT token for the post-death degrade deadline; null when none.
+	var/tmp/degrade_timer
 
 /obj/item/implant/tracking/weak	//This is for the loadout
 	degrade_time = 2.5 MINUTES
@@ -110,29 +112,27 @@ REGISTRY_MEMBERSHIP(/obj/item/implant/tracking, REGISTRY_TRACKING_IMPLANTS)
 	id = rand(1, 1000)
 
 /obj/item/implant/tracking/post_implant(mob/source)
-	START_PROCESSING(SSobj, src)
+	RegisterSignal(source, COMSIG_MOB_DEATH, PROC_REF(on_host_death))
 
 /obj/item/implant/tracking/Destroy()
-	STOP_PROCESSING(SSobj, src)
+	if(imp_in)
+		UnregisterSignal(imp_in, COMSIG_MOB_DEATH)
 	if(part)
 		part.implants -= src
 	part = imp_in = null
 	return ..()
 
-/obj/item/implant/tracking/process()
-	var/mob/living/implant_mob // Get implant's mob from our host organ
-	if(istype(loc, /obj/item/organ))
-		var/obj/item/organ/O = loc
-		implant_mob = O.owner
+/// The host died; the implant degrades and melts after `degrade_time` outside a living body.
+/obj/item/implant/tracking/proc/on_host_death(mob/living/M, gibbed)
+	SIGNAL_HANDLER
+	degrade_timer = REACT_REARM(src, degrade_timer, world.time + degrade_time)
 
-	if(ismob(implant_mob) && implant_mob.stat == DEAD)
-		if(world.time >= implant_mob.timeofdeath + degrade_time)
-			name = "melted implant"
-			desc = "Charred circuit in melted plastic case. Wonder what that used to be..."
-			icon_state = "implant_melted"
-			malfunction = MALFUNCTION_PERMANENT
-			STOP_PROCESSING(SSobj, src)
-	return 1
+/obj/item/implant/tracking/on_react(reason, source, source_kind)
+	degrade_timer = null
+	name = "melted implant"
+	desc = "Charred circuit in melted plastic case. Wonder what that used to be..."
+	icon_state = "implant_melted"
+	malfunction = MALFUNCTION_PERMANENT
 
 /obj/item/implant/tracking/get_data()
 	var/dat = {""} +span_bold("Implant Specifications:") + {"<BR>
@@ -518,23 +518,24 @@ the implant may become unstable and either pre-maturely inject the subject or si
 	return dat
 
 /obj/item/implant/death_alarm/Destroy()
-	STOP_PROCESSING(SSobj, src)
+	if(imp_in)
+		UnregisterSignal(imp_in, COMSIG_MOB_DEATH)
 	. = ..()
 
-/obj/item/implant/death_alarm/process()
-	if (!implanted) return
-	var/mob/M = imp_in
-
-	if(isnull(M)) // If the mob got gibbed
+/// The host died (or was gibbed); fire the alarm.
+/obj/item/implant/death_alarm/proc/on_host_death(mob/living/M, gibbed)
+	SIGNAL_HANDLER
+	if(!implanted)
+		return
+	if(gibbed)
 		activate()
-	else if(M.stat == 2)
+	else
 		activate("death")
 
 /obj/item/implant/death_alarm/activate(cause)
 	var/mob/M = imp_in
 	var/area/t = get_area(M)
 	if(!t) // Failsafe
-		STOP_PROCESSING(SSobj, src)
 		return
 	switch (cause)
 		if("death")
@@ -549,7 +550,6 @@ the implant may become unstable and either pre-maturely inject the subject or si
 //				a.autosay("[mobname] has died in [t.name]!", "[mobname]'s Death Alarm", "Security")
 //				a.autosay("[mobname] has died in [t.name]!", "[mobname]'s Death Alarm", "Medical")
 			qdel(a)
-			STOP_PROCESSING(SSobj, src)
 		if ("emp")
 			var/obj/item/radio/headset/a = new /obj/item/radio/headset/heads/captain(null)
 			var/name = prob(50) ? t.name : pick(GLOB.teleportlocs)
@@ -563,7 +563,6 @@ the implant may become unstable and either pre-maturely inject the subject or si
 //			a.autosay("[mobname] has died-zzzzt in-in-in...", "[mobname]'s Death Alarm", "Security")
 //			a.autosay("[mobname] has died-zzzzt in-in-in...", "[mobname]'s Death Alarm", "Medical")
 			qdel(a)
-			STOP_PROCESSING(SSobj, src)
 
 /obj/item/implant/death_alarm/emp_act(severity, recursive)			//for some reason alarms stop going off in case they are emp'd, even without this
 	. = ..()
@@ -577,14 +576,13 @@ the implant may become unstable and either pre-maturely inject the subject or si
 			meltdown()
 		else if (prob(60))	//but more likely it will just quietly die
 			malfunction = MALFUNCTION_PERMANENT
-		STOP_PROCESSING(SSobj, src)
 
 	spawn(20)
 		malfunction--
 
 /obj/item/implant/death_alarm/post_implant(mob/source as mob)
 	mobname = source.real_name
-	START_PROCESSING(SSobj, src)
+	RegisterSignal(source, COMSIG_MOB_DEATH, PROC_REF(on_host_death))
 
 //////////////////////////////
 //	Compressed Matter Implant

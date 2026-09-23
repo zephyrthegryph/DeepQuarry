@@ -52,11 +52,11 @@
 	R.add_reagent(REAGENT_ID_FUEL, max_fuel)
 	update_icon()
 	if(always_process)
-		START_PROCESSING(SSobj, src)
+		REACT_PROCESS(src, 2 SECONDS, "burns fuel and exposes its turf to a hotspot every period while lit")
 
 /obj/item/weldingtool/Destroy()
 	if(welding || always_process)
-		STOP_PROCESSING(SSobj, src)
+		REACT_PROCESS_STOP(src)
 	return ..()
 
 /obj/item/weldingtool/get_welder()
@@ -283,7 +283,7 @@
 			welding = 1
 			update_icon()
 			if(!always_process)
-				START_PROCESSING(SSobj, src)
+				REACT_PROCESS(src, 2 SECONDS, "burns fuel and exposes its turf to a hotspot every period while lit")
 		else
 			if(M)
 				var/msg = max_fuel ? "welding fuel" : "charge"
@@ -292,7 +292,7 @@
 	//Otherwise
 	else if(!set_welding && welding)
 		if(!always_process)
-			STOP_PROCESSING(SSobj, src)
+			REACT_PROCESS_STOP(src)
 		if(M)
 			to_chat(M, span_notice("You switch \the [src] off."))
 		else if(T)
@@ -438,13 +438,26 @@
 	change_icons = 0
 	flame_intensity = 3
 	always_process = TRUE
-	var/nextrefueltick = 0
+	/// REACT_AT token for the next fuel-regen tick; null when none.
+	var/tmp/regen_timer
 
-/obj/item/weldingtool/experimental/process()
-	..()
-	if(get_fuel() < get_max_fuel() && nextrefueltick < world.time)
-		nextrefueltick = world.time + 10
-		reagents.add_reagent(REAGENT_ID_FUEL, 1)
+/obj/item/weldingtool/experimental/Initialize(mapload)
+	. = ..()
+	arm_regen()
+
+/obj/item/weldingtool/experimental/proc/arm_regen()
+	if(get_fuel() < get_max_fuel())
+		regen_timer = REACT_REARM(src, regen_timer, world.time + 1 SECOND)
+	else
+		regen_timer = REACT_REARM(src, regen_timer, null)
+
+/obj/item/weldingtool/experimental/on_react(reason, source, source_kind)
+	. = ..()
+	if(source != regen_timer)
+		return
+	regen_timer = null
+	reagents.add_reagent(REAGENT_ID_FUEL, 1)
+	arm_regen()
 
 /obj/item/weldingtool/experimental/hybrid
 	name = "strange welding tool"

@@ -37,6 +37,17 @@
 	var/material_superconducting = FALSE
 	var/material_quenched = FALSE
 	var/material_feedback_cooldown = 0
+	/// Self-recharge (doc/rewrite/reactor.md §5). While recharging, the charge is a rate model
+	/// (RATE_LINEAR at charge_amount per SELF_RECHARGE_PERIOD): `charge` is settled from it by
+	/// the cell's own procs and at each display level the model crosses. Null when not recharging.
+	var/tmp/charge_model
+	/// The charge last written from (or into) charge_model: a direct write to `charge` since then
+	/// wins over the model at the next settle.
+	var/tmp/charge_model_base
+	/// REACT_RATE token for the next display level (null: none).
+	var/tmp/charge_level_token
+	/// REACT_AT token for the end of charge_delay after the last use (null: none).
+	var/tmp/recharge_timer
 
 
 	drop_sound = 'sound/items/drop/component.ogg'
@@ -57,11 +68,10 @@
 	c_uid = cell_uid++
 	update_icon()
 	if(self_recharge)
-		START_PROCESSING(SSobj, src)
+		schedule_self_recharge()
 
 /obj/item/cell/Destroy()
-	if(self_recharge)
-		STOP_PROCESSING(SSobj, src)
+	stop_self_recharge()
 	// Cells are normally owned through loc, but APCs also keep an explicit typed
 	// reference.  A blast may delete the cell without deleting its APC first.
 	if(istype(loc, /obj/machinery/power/apc))
@@ -73,20 +83,94 @@
 /obj/item/cell/get_cell()
 	return src
 
-/obj/item/cell/process()
-	if(self_recharge)
-		if(charge >= maxcharge)
-			return PROCESS_KILL
-		if(world.time >= last_use + charge_delay)
-			give(charge_amount)
-			// TGMC Ammo HUD - Update the HUD every time we're called to recharge.
-			if(istype(loc, /obj/item/gun/energy)) // Are we in a gun currently?
-				var/obj/item/gun/energy/gun = loc
-				var/mob/living/user = gun.loc
-				if(istype(user))
-					user?.hud_used.update_ammo_hud(user, gun) // Update the HUD
-	else
-		return PROCESS_KILL
+/// Self-recharge used to give charge_amount once per SSobj fire (2 s); the rate model keeps
+/// that average rate.
+#define SELF_RECHARGE_PERIOD (2 SECONDS)
+
+/// Arms the self-recharge: a REACT_AT at the end of charge_delay after the last use, or the
+/// rate model at once if that has passed. A no-op for a full or non-recharging cell.
+/obj/item/cell/proc/schedule_self_recharge()
+	if(!self_recharge || QDELETED(src))
+		return
+	settle_charge()
+	if(charge >= maxcharge)
+		stop_self_recharge()
+		return
+	var/start = last_use + charge_delay
+	if(start > world.time)
+		stop_recharge_model()
+		recharge_timer = REACT_REARM(src, recharge_timer, start)
+		return
+	recharge_timer = REACT_REARM(src, recharge_timer, null)
+	if(isnull(charge_model))
+		charge_model = RATE_LINEAR(charge, charge_amount / (SELF_RECHARGE_PERIOD / (1 SECOND)), 0, maxcharge)
+		charge_model_base = charge
+	watch_next_charge_level()
+
+/// Wakes at the next level the display cares about: the next quarter of the charge meter
+/// (update_icon() rounds to quarters), or full.
+/obj/item/cell/proc/watch_next_charge_level()
+	if(!isnull(charge_level_token))
+		REACT_CANCEL(src, charge_level_token)
+		charge_level_token = null
+	if(isnull(charge_model) || maxcharge <= 0)
+		return
+	var/quarter = maxcharge / 4
+	var/level = min(maxcharge, (round(charge / quarter) + 1) * quarter)
+	charge_level_token = REACT_RATE(src, charge_model, REACT_CMP_ABOVE, level)
+
+/// Brings `charge` up to date with the recharge model. Every cell proc that reads or writes
+/// the charge calls this first.
+/obj/item/cell/proc/settle_charge()
+	if(isnull(charge_model))
+		return
+	if(charge != charge_model_base)
+		RATE_SET(charge_model, charge) // someone wrote charge directly: that wins
+	charge = RATE_READ(charge_model)
+	charge_model_base = charge
+
+/obj/item/cell/proc/stop_recharge_model()
+	if(!isnull(charge_level_token))
+		REACT_CANCEL(src, charge_level_token)
+		charge_level_token = null
+	if(isnull(charge_model))
+		return
+	settle_charge()
+	RATE_REMOVE(charge_model)
+	charge_model = null
+	charge_model_base = null
+
+/obj/item/cell/proc/stop_self_recharge()
+	stop_recharge_model()
+	recharge_timer = REACT_REARM(src, recharge_timer, null)
+
+/obj/item/cell/on_react(reason, source, source_kind)
+	. = ..()
+	if(!self_recharge)
+		stop_self_recharge()
+		return
+	if(reason & REACT_REASON_TIMER)
+		if(source == recharge_timer)
+			recharge_timer = null
+	if(reason & REACT_REASON_RATE)
+		charge_level_token = null
+	settle_charge()
+	update_icon()
+	// TGMC Ammo HUD: update the HUD as the charge climbs.
+	if(istype(loc, /obj/item/gun/energy))
+		var/obj/item/gun/energy/gun = loc
+		var/mob/living/user = gun.loc
+		if(istype(user))
+			user.hud_used?.update_ammo_hud(user, gun)
+	schedule_self_recharge()
+
+/obj/item/cell/react_sleep_violation()
+	if(!self_recharge || QDELETED(src))
+		return null
+	settle_charge()
+	if(charge < maxcharge && isnull(recharge_timer) && isnull(charge_level_token))
+		return "self-recharging cell below full with neither a delay timer nor a level watch"
+	return null
 
 /obj/item/cell/drain_power(drain_check, surge, power = 0)
 
@@ -121,16 +205,19 @@
 #undef OVERLAY_EMPTY
 
 /obj/item/cell/proc/percent()		// return % charge of cell
+	settle_charge()
 	var/charge_percent = 0
 	if(maxcharge > 0)
 		charge_percent = 100.0 * charge / maxcharge
 	return charge_percent
 
 /obj/item/cell/proc/fully_charged()
+	settle_charge()
 	return (charge == maxcharge)
 
 // checks if the power cell is able to provide the specified amount of charge
 /obj/item/cell/proc/check_charge(amount)
+	settle_charge()
 	refresh_material_discharge()
 	return amount >= 0 && charge >= amount / material_delivery_efficiency(amount) && material_discharge_credit >= amount
 
@@ -142,7 +229,7 @@
 	material_discharge_updated = world.time
 
 /obj/item/cell/proc/material_delivery_efficiency(amount)
-	var/temperature = material_service?.temperature || T20C
+	var/temperature = material_service ? material_service.current_temperature() : T20C
 	var/current = max(amount / CELLRATE, 0) / MATERIAL_SERVICE_NOMINAL_VOLTAGE
 	var/resistance = construction_electrical_resistance(0.1, MATERIAL_CABLE_REFERENCE_AREA, temperature, current / MATERIAL_CABLE_REFERENCE_AREA) || 0
 	return 1 / (1 + resistance * current / MATERIAL_SERVICE_NOMINAL_VOLTAGE)
@@ -156,7 +243,7 @@
 		material_superconducting = FALSE
 		material_quenched = FALSE
 		return FALSE
-	var/temperature = material_service.temperature
+	var/temperature = material_service.current_temperature()
 	var/current_density = max(requested_output / CELLRATE, 0) / MATERIAL_SERVICE_NOMINAL_VOLTAGE / MATERIAL_CABLE_REFERENCE_AREA
 	var/within_current = current_density <= conductor.critical_current_density
 	if(material_quenched)
@@ -204,7 +291,7 @@
 		return
 	material_service.add_heat((base_cost * (multiplier - 1) / CELLRATE) * MATERIAL_SUPERCONDUCTING_OVERDRIVE_HEAT)
 	var/datum/material/conductor = material_for_role(MATERIAL_ROLE_CONDUCTOR)
-	if(conductor?.critical_temperature && material_service.temperature >= conductor.critical_temperature)
+	if(conductor?.critical_temperature && material_service.current_temperature() >= conductor.critical_temperature)
 		material_superconducting = FALSE
 		material_quenched = TRUE
 		material_phase_feedback(TRUE)
@@ -221,9 +308,9 @@
 	if(!thermal?.heat_pump_coefficient || !conductor?.critical_temperature)
 		return 0
 	var/target_temperature = conductor.critical_temperature - MATERIAL_SUPERCONDUCTING_RECOVERY_MARGIN
-	if(material_service.temperature <= target_temperature)
+	if(material_service.current_temperature() <= target_temperature)
 		return 0
-	var/available_cooling = (material_service.temperature - target_temperature) * material_service.thermal_mass()
+	var/available_cooling = (material_service.current_temperature() - target_temperature) * material_service.thermal_mass()
 	var/requested_cooling = min(available_cooling, delivered_charge / CELLRATE * thermal.heat_pump_coefficient * 6)
 	var/work_joules = requested_cooling / max(thermal.heat_pump_coefficient, 0.1)
 	var/work_charge = min(charge, work_joules * CELLRATE)
@@ -248,6 +335,7 @@
 
 // Returns how much charge is missing from the cell, useful to make sure not overdraw from the grid when recharging.
 /obj/item/cell/proc/amount_missing()
+	settle_charge()
 	return max(maxcharge - charge, 0)
 
 // use power from a cell, returns the amount actually used
@@ -255,6 +343,7 @@
 	if(rigged && amount > 0)
 		explode()
 		return 0
+	settle_charge()
 	refresh_material_discharge()
 	if(amount > 0)
 		material_service_event(MATERIAL_EVENT_ELECTRICAL, amount / max(material_discharge_limit, 1))
@@ -288,7 +377,9 @@
 	update_superconducting_state(amount)
 	last_use = world.time
 	if(used && self_recharge)
-		START_PROCESSING(SSobj, src)
+		schedule_self_recharge() // the delay restarts from this use
+	else if(!isnull(charge_model))
+		charge_model_base = null // charge changed under the model: settle rebases it
 	if(used && istype(loc, /obj/machinery/power/apc))
 		var/obj/machinery/power/apc/A = loc
 		if(!(A in SSmachines.processing_machines))
@@ -310,8 +401,12 @@
 		explode()
 		return 0
 
+	settle_charge()
 	var/amount_used = clamp(amount, 0, maxcharge - charge)
 	charge += amount_used
+	if(!isnull(charge_model))
+		RATE_SET(charge_model, charge)
+		charge_model_base = charge
 	if(amount_used && istype(loc, /obj/machinery/power/apc))
 		var/obj/machinery/power/apc/A = loc
 		if(!(A in SSmachines.processing_machines))

@@ -113,13 +113,13 @@
 		return
 
 	on = 1
-	START_PROCESSING(SSobj, src)
+	REACT_PROCESS(src, 2 SECONDS, "cools its wearer's body temperature and drains its cell every period while running")
 	update_icon()
 
 /obj/item/suit_cooling_unit/proc/turn_off(failed)
 	if(failed) visible_message("\The [src] clicks and whines as it powers down.")
 	on = 0
-	STOP_PROCESSING(SSobj, src)
+	REACT_PROCESS_STOP(src)
 	update_icon()
 
 /obj/item/suit_cooling_unit/attack_self(mob/user)

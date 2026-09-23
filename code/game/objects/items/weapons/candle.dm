@@ -51,7 +51,7 @@
 		lit = TRUE
 		visible_message(flavor_text)
 		set_light(CANDLE_LUM)
-		START_PROCESSING(SSobj, src)
+		REACT_PROCESS(src, 2 SECONDS, "burns down its wax and exposes its turf to a hotspot every period while lit")
 
 /obj/item/flame/candle/process()
 	if(!lit)
@@ -130,8 +130,9 @@
 	light(span_notice("\The [src] mysteriously lights itself!."))
 
 /obj/item/flame/candle/everburn/process()
-	// The permanent light has no fuel state to advance. Leaving it in SSobj also
-	// exposed its turf as a 700 K hotspot forever, keeping whole atmos regions awake.
+	// The permanent light has no fuel state to advance. Leaving it on SSreactor's
+	// continuous lane also exposed its turf as a 700 K hotspot forever, keeping
+	// whole atmos regions awake.
 	return PROCESS_KILL
 
 /obj/item/flame/candle/candelabra/everburn/process()

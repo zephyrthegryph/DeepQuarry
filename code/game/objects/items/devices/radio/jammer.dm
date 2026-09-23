@@ -50,7 +50,7 @@ GLOBAL_LIST_EMPTY(active_radio_jammers)
 /obj/item/radio_jammer/proc/turn_off(mob/user)
 	if(user)
 		to_chat(user,span_warning("\The [src] deactivates."))
-	STOP_PROCESSING(SSobj, src)
+	REACT_PROCESS_STOP(src)
 	GLOB.active_radio_jammers -= src
 	on = FALSE
 	update_icon()
@@ -58,7 +58,7 @@ GLOBAL_LIST_EMPTY(active_radio_jammers)
 /obj/item/radio_jammer/proc/turn_on(mob/user)
 	if(user)
 		to_chat(user,span_notice("\The [src] is now active."))
-	START_PROCESSING(SSobj, src)
+	REACT_PROCESS(src, 2 SECONDS, "drains its power source every period while jamming is active")
 	GLOB.active_radio_jammers += src
 	on = TRUE
 	update_icon()

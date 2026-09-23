@@ -9,6 +9,9 @@
 
 	var/last_world_time = 0
 
+	/// REACT_AT token for `next_event_time`; null while paused/disabled or between arming.
+	var/tmp/next_event_timer
+
 /datum/event_container/process()
 	if(!GLOB.round_start_time)
 		return //don't do events if the round hasn't even started yet
@@ -17,11 +20,22 @@
 		set_event_delay()
 
 	if(delayed || !CONFIG_GET(flag/allow_random_events))
+		// Paused/disabled: keep the countdown frozen against world.time and drop any timer.
 		next_event_time += (world.time - last_world_time)
-	else if(world.time > next_event_time)
-		start_event()
+		next_event_timer = REACT_REARM(src, next_event_timer, null)
+	else if(isnull(next_event_timer))
+		next_event_timer = REACT_REARM(src, next_event_timer, next_event_time)
 
 	last_world_time = world.time
+
+/datum/event_container/on_react(reason, source, source_kind)
+	. = ..()
+	if(!(reason & REACT_REASON_TIMER) || source != next_event_timer)
+		return
+	next_event_timer = null
+	start_event() // does not sleep: set_event_delay() and `new` on the event type only
+	if(!delayed && CONFIG_GET(flag/allow_random_events))
+		next_event_timer = REACT_REARM(src, next_event_timer, next_event_time)
 
 /datum/event_container/proc/start_event()
 	if(!next_event)	// If non-one has explicitly set an event, randomly pick one

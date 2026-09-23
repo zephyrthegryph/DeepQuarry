@@ -67,15 +67,15 @@
 	else if(old_luminescence > 0)
 		I.set_light(0)
 	if((radioactivity > 0 || toxicity > 0) && !processing)
-		START_PROCESSING(SSobj, src)
+		REACT_PROCESS(src, 2 SECONDS, "a radioactive or toxic material pulses radiation and doses its bare-handed holder every period")
 		processing = TRUE
 	else if(radioactivity <= 0 && toxicity <= 0 && processing)
-		STOP_PROCESSING(SSobj, src)
+		REACT_PROCESS_STOP(src)
 		processing = FALSE
 
 /datum/component/material_behaviors/Destroy(force)
 	if(processing)
-		STOP_PROCESSING(SSobj, src)
+		REACT_PROCESS_STOP(src)
 	var/obj/item/I = parent
 	if(istype(I) && luminescence > 0)
 		I.set_light(0)
@@ -95,9 +95,8 @@
 			strength = radioactivity,
 		)
 	if(toxicity > 0)
-		// Sub-lethal but real, only while held bare in hand (loc is the mob). Dose is
-		// per fixed SSobj tick (wait = 20 ds); SSobj passes a deciseconds delta, not
-		// seconds, so this is deliberately NOT multiplied by the process arg.
+		// Sub-lethal but real, only while held bare in hand (loc is the mob). The dose is
+		// toxicity * 0.01 per 2 s period; the process arg is the elapsed deciseconds.
 		var/mob/living/carbon/human/H = I.loc
 		if(istype(H))
-			H.injure(INJURY_TOXIN, toxicity * 0.01, null, I, 0, null, INJURE_SILENT)
+			H.injure(INJURY_TOXIN, toxicity * 0.01 * (seconds_per_tick / (2 SECONDS)), null, I, 0, null, INJURE_SILENT)

@@ -58,7 +58,7 @@
 
 /obj/Destroy()
 	QDEL_NULL(material_service)
-	STOP_PROCESSING(SSobj, src)
+	// Continuous declarations and timers are dropped by REACT_CLEAR in /datum/Destroy().
 
 	// I really am an idiot why did I make it this way
 	if(micro_target)

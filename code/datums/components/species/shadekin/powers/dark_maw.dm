@@ -101,7 +101,7 @@
 		if(SK)
 			SK.active_dark_maws += src
 		flick("dark_maw", src)
-		START_PROCESSING(SSobj, src)
+		REACT_PROCESS(src, 2 SECONDS, "watches ambient light on its turf every tick to dispel when lit")
 
 ///Called when we get a signal that our owner is being qdel'd
 /obj/effect/abstract/dark_maw/proc/drop_everything_and_delete()
@@ -109,7 +109,7 @@
 	qdel(src)
 
 /obj/effect/abstract/dark_maw/Destroy()
-	STOP_PROCESSING(SSobj, src)
+	REACT_PROCESS_STOP(src)
 	if(owner)
 		if(has_signal)
 			UnregisterSignal(owner, COMSIG_QDELETING)
@@ -144,7 +144,7 @@
 	qdel(src)
 
 /obj/effect/abstract/dark_maw/proc/triggered_by(mob/living/L, triggered_instantly = 0)
-	STOP_PROCESSING(SSobj, src)
+	REACT_PROCESS_STOP(src)
 	icon_state = "dark_maw_used"
 	flick("dark_maw_tr", src)
 	L.AdjustStunned(4)

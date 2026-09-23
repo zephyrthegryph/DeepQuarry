@@ -13,6 +13,10 @@
 	/// Name of the subsystem - you must change this
 	name = "fire coderbus"
 
+	/// Set to the type itself on an abstract base (e.g. /datum/controller/subsystem/processing):
+	/// the MC never instantiates that exact type, only its subtypes.
+	var/abstract_subsystem
+
 	/// Determines which subsystems this subsystem is dependant on to initialize. Will initialize after all specified subsystems.
 	/// If init_stage is earlier than a dependent subsystem, will throw an error and push the init stage forward to that subsystem.
 	/// Usage: Put the typepaths of the subsystems that need to init before this one in this list.

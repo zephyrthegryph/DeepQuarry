@@ -108,7 +108,7 @@
 
 	if(allow_pressure && base_pressure > 0)
 		var/pressure_delta = abs(internal.return_pressure() - (external?.return_pressure() || 0))
-		var/pressure_limit = material_environment_pressure_limit(base_pressure, radius_mm, wall_thickness_mm, service_owns_heat ? material_service.temperature : internal_temperature)
+		var/pressure_limit = material_environment_pressure_limit(base_pressure, radius_mm, wall_thickness_mm, service_owns_heat ? material_service.current_temperature() : internal_temperature)
 		var/load_ratio = pressure_delta / max(pressure_limit, ONE_ATMOSPHERE)
 		if(load_ratio >= MATERIAL_PRESSURE_BURST_RATIO)
 			material_environment_rupture()

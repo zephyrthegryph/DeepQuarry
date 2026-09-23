@@ -91,6 +91,8 @@
 	window_start_ffi_calls = __verdigris_ffi_calls
 	window_subsystem_fires = list()
 	window_reactor_wakes = SSreactor.total_wakes
+	SStimer.census_enabled = TRUE
+	SStimer.census_inserts = null
 	for(var/datum/controller/subsystem/subsystem as anything in Master.subsystems)
 		window_subsystem_fires[subsystem] = subsystem.times_fired
 	if(profiling)
@@ -129,6 +131,9 @@
 	reactor["window_wakes"] = SSreactor.total_wakes - window_reactor_wakes
 	metric("[prefix]_reactor_wakes", reactor["window_wakes"], "wakes", "lower")
 	detail("[prefix]_reactor", reactor)
+	// Timer inserts by owner type and proc in this window (the heavy SStimer users, S4).
+	detail("[prefix]_timer_census", SStimer.take_census())
+	SStimer.census_enabled = FALSE
 	detail("[prefix]_outliers", Master.perf_outliers.Copy())
 	detail("[prefix]_worst_tick", Master.perf_worst_tick.Copy())
 	if(profiling)

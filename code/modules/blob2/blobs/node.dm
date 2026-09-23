@@ -12,12 +12,8 @@ REGISTRY_MEMBERSHIP(/obj/structure/blob/node, REGISTRY_BLOB_NODES)
 
 /obj/structure/blob/node/Initialize(mapload, new_overmind)
 	. = ..()
-	START_PROCESSING(SSobj, src)
+	REACT_PROCESS(src, 2 SECONDS, "pulses its area and runs the blob type's node tick")
 	update_icon()
-
-/obj/structure/blob/node/Destroy()
-	STOP_PROCESSING(SSobj, src)
-	return ..()
 
 /obj/structure/blob/node/update_icon()
 	cut_overlays()

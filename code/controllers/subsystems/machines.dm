@@ -864,7 +864,7 @@ SUBSYSTEM_DEF(machines)
 				var/datum/observed = WR?.resolve()
 				if(istype(observed, /datum/material_service))
 					var/datum/material_service/service = observed
-					if(!service.timer && service.gas_dependency_changed(mixture_id, change_mask, pending_dirty_gas_mixtures, observation_index))
+					if(isnull(service.timer) && service.gas_dependency_changed(mixture_id, change_mask, pending_dirty_gas_mixtures, observation_index))
 						service.environment_changed(FALSE)
 					continue
 				if(!sleeping_gas_devices[WR?.reference])

@@ -145,13 +145,13 @@
 // BEGIN re-adds stealth removal
 /obj/item/assembly/signaler/process()
 	if(!deadman)
-		STOP_PROCESSING(SSobj, src)
+		REACT_PROCESS_STOP(src)
 	var/mob/M = src.loc
 	if(!M || !ismob(M))
 		if(prob(5))
 			signal()
 		deadman = FALSE
-		STOP_PROCESSING(SSobj, src)
+		REACT_PROCESS_STOP(src)
 	else if(prob(5))
 		M.visible_message("[M]'s finger twitches a bit over [src]'s signal button!")
 
@@ -160,7 +160,7 @@
 	set name = "Threaten to push the button!"
 	set desc = "BOOOOM!"
 	deadman = TRUE
-	START_PROCESSING(SSobj, src)
+	REACT_PROCESS(src, 2 SECONDS, "rolls a chance each tick to trigger the deadman's signal")
 	log_and_message_admins("is threatening to trigger a signaler deadman's switch")
 	usr.visible_message("<font color='red'>[usr] moves their finger over [src]'s signal button...</font>")
 // end

@@ -134,7 +134,9 @@ GLOBAL_REAL(Master, /datum/controller/master)
 					existing_subsystems += global.vars[global_var]
 
 			//Either init a new SS or if an existing one was found use that
-			for(var/I in subsystem_types)
+			for(var/datum/controller/subsystem/I as anything in subsystem_types)
+				if(initial(I.abstract_subsystem) == I)
+					continue
 				var/ss_idx = existing_subsystems.Find(I)
 				if (ss_idx)
 					_subsystems += existing_subsystems[ss_idx]

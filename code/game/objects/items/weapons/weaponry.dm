@@ -118,7 +118,7 @@
 
 /obj/effect/energy_net/Initialize(mapload)
 	. = ..()
-	START_PROCESSING(SSobj, src)
+	REACT_PROCESS(src, 2 SECONDS, "self-destructs once no mob remains buckled to it every period")
 
 /obj/effect/energy_net/Destroy()
 	if(has_buckled_mobs())
@@ -126,7 +126,7 @@
 			to_chat(A, span_notice("You are free of the net!"))
 			unbuckle_mob(A)
 
-	STOP_PROCESSING(SSobj, src)
+	REACT_PROCESS_STOP(src)
 	return ..()
 
 /obj/effect/energy_net/process()

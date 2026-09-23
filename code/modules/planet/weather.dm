@@ -17,6 +17,10 @@
 
 	var/firework_override = FALSE
 
+	/// REACT_AT token for the next weather-shift check (imminent_weather_shift when an
+	/// imminent shift is queued, else next_weather_shift).
+	var/tmp/weather_shift_timer
+
 /datum/weather_holder/New(source)
 	..()
 	our_planet = source
@@ -26,6 +30,7 @@
 			W.holder = src
 	visuals = new()
 	special_visuals = new()
+	reschedule_shift()
 
 /datum/weather_holder/proc/apply_to_turf(turf/T)
 	if(visuals in T.vis_contents)
@@ -49,6 +54,7 @@
 		old_weather = current_weather
 	current_weather = allowed_weather_types[new_weather]
 	next_weather_shift = world.time + rand(current_weather.timer_low_bound, current_weather.timer_high_bound) MINUTES
+	reschedule_shift()
 	if(current_weather != old_weather)
 		if(istype(old_weather)) // At roundstart this is null.
 			old_weather.process_sounds() // Ensure that people who should hear the ending sound will hear it.
@@ -66,16 +72,28 @@
 	log_game("[our_planet.name]'s weather is now [new_weather], with a temperature of [temperature]&deg;K ([temperature - T0C]&deg;C | [temperature * 1.8 - 459.67]&deg;F).")
 
 /datum/weather_holder/process()
-	if(imminent_weather && world.time >= imminent_weather_shift)
-		proceed_to_imminent_weather()
-	else if(!imminent_weather && world.time >= next_weather_shift)
-		if(!current_weather) // Roundstart (hopefully).
-			initialize_weather()
-		else
-			advance_forecast()
-	else
+	if(current_weather)
 		current_weather.process_effects()
 		current_weather.process_sounds()
+
+/// Re-arms `weather_shift_timer` for whichever deadline is active: `imminent_weather_shift`
+/// while an imminent shift is queued, else `next_weather_shift` (or now, if neither has been
+/// set yet, matching the roundstart poll firing on its very first check).
+/datum/weather_holder/proc/reschedule_shift()
+	var/deadline = imminent_weather ? imminent_weather_shift : (next_weather_shift || world.time)
+	weather_shift_timer = REACT_REARM(src, weather_shift_timer, deadline)
+
+/datum/weather_holder/on_react(reason, source, source_kind)
+	. = ..()
+	if(!(reason & REACT_REASON_TIMER) || source != weather_shift_timer)
+		return
+	weather_shift_timer = null
+	if(imminent_weather)
+		proceed_to_imminent_weather()
+	else if(!current_weather) // Roundstart (hopefully).
+		initialize_weather()
+	else
+		advance_forecast()
 
 
 // Should only have to be called once.

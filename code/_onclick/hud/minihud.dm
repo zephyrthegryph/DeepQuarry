@@ -6,12 +6,12 @@
 /datum/mini_hud/New(datum/hud/other)
 	apply_to_hud(other)
 	if(needs_processing)
-		START_PROCESSING(SSprocessing, src)
+		REACT_PROCESS(src, 1 SECOND, "mini HUD subtypes may drive per-tick screen object updates")
 
 /datum/mini_hud/Destroy()
 	unapply_to_hud()
 	if(needs_processing)
-		STOP_PROCESSING(SSprocessing, src)
+		REACT_PROCESS_STOP(src)
 	QDEL_LIST_NULL(screenobjs)
 	return ..()
 

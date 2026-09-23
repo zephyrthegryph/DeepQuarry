@@ -24,10 +24,10 @@
 	// It's really really unlikely for the view range to change.  But why not be futureproof anyways?
 	range_alert = world.view
 	range_warning = world.view * 2
-	START_PROCESSING(SSobj, src)
+	REACT_PROCESS(src, 2 SECONDS, "continuously polls AI eye and camera proximity around its holder")
 
 /obj/item/multitool/ai_detector/Destroy()
-	STOP_PROCESSING(SSobj, src)
+	REACT_PROCESS_STOP(src)
 	return ..()
 
 /obj/item/multitool/ai_detector/process()

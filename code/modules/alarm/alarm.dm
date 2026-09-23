@@ -7,6 +7,11 @@
 	var/severity 	= 1		// How severe the alarm from this source is.
 	var/start_time	= 0		// When this source began alarming.
 	var/end_time	= 0		// Use to set when this trigger should clear, in case the source is lost.
+	/// The /datum/alarm that owns this source, so its expiry timer can drop itself from `sources`.
+	var/datum/alarm/owner
+	/// REACT_AT token for the deadline (end_time, or start_time + duration) that clears this
+	/// source; null when neither is set (an indefinite source).
+	var/tmp/expire_timer
 
 /datum/alarm_source/New(atom/source)
 	src.source = source
@@ -15,7 +20,26 @@
 
 /datum/alarm_source/Destroy()
 	source = null
+	owner = null
 	return ..()
+
+/// Re-arms `expire_timer` for whichever deadline is currently set (end_time takes priority
+/// over start_time + duration, matching the poll this replaced); null if neither is set.
+/datum/alarm_source/proc/reschedule_expiry()
+	var/deadline = null
+	if(end_time)
+		deadline = end_time
+	else if(duration)
+		deadline = start_time + duration
+	expire_timer = REACT_REARM(src, expire_timer, deadline)
+
+/datum/alarm_source/on_react(reason, source, source_kind)
+	. = ..()
+	if(!(reason & REACT_REASON_TIMER) || source != expire_timer)
+		return
+	expire_timer = null
+	if(owner)
+		owner.sources -= src
 
 /datum/alarm
 	var/atom/origin					//Used to identify the alarm area.
@@ -48,13 +72,11 @@
 	if(!origin && !end_time)
 		end_time = world.time + ALARM_RESET_DELAY
 	for(var/datum/alarm_source/AS in sources)
-		// Has the alarm passed its best before date?
-		if((AS.end_time && world.time > AS.end_time) || (AS.duration && world.time > (AS.start_time + AS.duration)))
-			sources -= AS
 		// Has the source gone missing?	Then reset the normal duration and set end_time
 		if(!AS.source && !AS.end_time)	// end_time is used instead of duration to ensure the reset doesn't remain in the future indefinetely.
 			AS.duration = 0
 			AS.end_time = world.time + ALARM_RESET_DELAY
+			AS.reschedule_expiry()
 
 #undef ALARM_RESET_DELAY
 
@@ -62,6 +84,7 @@
 	var/datum/alarm_source/AS = sources_assoc[source]
 	if(!AS)
 		AS = new/datum/alarm_source(source)
+		AS.owner = src
 		sources += AS
 		sources_assoc[source] = AS
 		src.hidden = hidden
@@ -70,6 +93,7 @@
 		duration = duration SECONDS
 		AS.duration = duration
 	AS.severity = severity
+	AS.reschedule_expiry()
 	src.hidden = min(src.hidden, hidden)
 
 /datum/alarm/proc/clear(source)

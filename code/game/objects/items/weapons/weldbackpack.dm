@@ -46,12 +46,12 @@
 	var/obj/item/F = nozzle
 	H.put_in_hands(F)
 	nozzle_attached = 0
-	START_PROCESSING(SSobj, nozzle)
+	REACT_PROCESS(nozzle, 2 SECONDS, "burns fuel and retracts to its pack when unmounted, every period while deployed")
 
 	return 1
 
 /obj/item/weldpack/proc/return_nozzle(mob/living/user)
-	STOP_PROCESSING(SSobj, nozzle)
+	REACT_PROCESS_STOP(nozzle)
 	nozzle.forceMove(src)
 	nozzle_attached = 1
 

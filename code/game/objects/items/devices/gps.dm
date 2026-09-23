@@ -55,8 +55,8 @@ REGISTRY_MEMBERSHIP(/obj/item/gps, REGISTRY_GPS)
 		//GLOB.dir_set_event.register(holder, src, PROC_REF(update_compass))
 
 	if(holder && tracking)
-		if(!is_in_processing_list)
-			START_PROCESSING(SSobj, src)
+		if(!REACT_PROCESSING(src))
+			REACT_PROCESS(src, 2 SECONDS, "rebuilds its holder's compass overlay while tracking is on")
 			is_in_processing_list = TRUE
 		if(holder.client)
 			if(check_visible_to_holder())
@@ -64,7 +64,7 @@ REGISTRY_MEMBERSHIP(/obj/item/gps, REGISTRY_GPS)
 			else
 				holder.client.screen -= compass
 	else
-		STOP_PROCESSING(SSobj, src)
+		REACT_PROCESS_STOP(src)
 		is_in_processing_list = FALSE
 		if(holder?.client)
 			holder.client.screen -= compass
@@ -94,7 +94,7 @@ REGISTRY_MEMBERSHIP(/obj/item/gps, REGISTRY_GPS)
 		update_compass(src, TRUE)
 
 /obj/item/gps/Destroy()
-	STOP_PROCESSING(SSobj, src)
+	REACT_PROCESS_STOP(src)
 	is_in_processing_list = FALSE
 	update_holder()
 	QDEL_NULL(compass)
@@ -155,11 +155,11 @@ REGISTRY_MEMBERSHIP(/obj/item/gps, REGISTRY_GPS)
 	if(tracking)
 		if(!is_in_processing_list)
 			is_in_processing_list = TRUE
-			START_PROCESSING(SSobj, src)
+			REACT_PROCESS(src, 2 SECONDS, "rebuilds its holder's compass overlay while tracking is on")
 			update_compass(src, TRUE)
 	else
 		is_in_processing_list = FALSE
-		STOP_PROCESSING(SSobj, src)
+		REACT_PROCESS_STOP(src)
 		update_compass(src)
 	update_holder()
 	update_icon()

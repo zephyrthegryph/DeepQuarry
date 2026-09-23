@@ -93,14 +93,14 @@
 	for(var/obj/machinery/computer/security/telescreen/entertainment/ES as anything in REGISTRY_MEMBERS(REGISTRY_ENTERTAINMENT_SCREENS))
 		ES.show_thing(thing)
 
-	START_PROCESSING(SSobj, src)
+	REACT_PROCESS(src, 2 SECONDS, "keeps its televised feed synced to what it is aimed at while showing")
 
 /obj/item/tvcamera/proc/hide_tvs()
 	if(!showing)
 		return
 	for(var/obj/machinery/computer/security/telescreen/entertainment/ES as anything in REGISTRY_MEMBERS(REGISTRY_ENTERTAINMENT_SCREENS))
 		ES.maybe_stop_showing(showing)
-	STOP_PROCESSING(SSobj, src)
+	REACT_PROCESS_STOP(src)
 	showing = null
 	showing_name = null
 
@@ -253,14 +253,14 @@
 	for(var/obj/machinery/computer/security/telescreen/bodycamera/ES as anything in REGISTRY_MEMBERS(REGISTRY_BODYCAMERA_SCREENS))
 		ES.show_thing(thing, src)
 
-	START_PROCESSING(SSobj, src)
+	REACT_PROCESS(src, 2 SECONDS, "keeps its televised bodycam feed synced to its wearer's location while showing")
 
 /obj/item/clothing/accessory/bodycam/proc/hide_bodycamera_tvs()
 	if(!showing)
 		return
 	for(var/obj/machinery/computer/security/telescreen/bodycamera/ES as anything in REGISTRY_MEMBERS(REGISTRY_BODYCAMERA_SCREENS))
 		ES.maybe_stop_showing(showing)
-	STOP_PROCESSING(SSobj, src)
+	REACT_PROCESS_STOP(src)
 	showing = null
 	showing_name = null
 

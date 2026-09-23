@@ -28,6 +28,9 @@
 	var/moon_name = null // Purely for flavor. Null means no moon exists.
 	var/moon_phase = null // Set if above is defined.
 
+	/// REACT_AT token for the next `update_sun()` call, `sun_process_interval` after the last.
+	var/tmp/sun_update_timer
+
 /datum/planet/New()
 	..()
 	weather_holder = new(src)
@@ -45,14 +48,21 @@
 			MOON_PHASE_WANING_CRESCENT
 			))
 	update_sun()
+	sun_update_timer = REACT_REARM(src, sun_update_timer, world.time + sun_process_interval)
 
 /datum/planet/process(last_fire)
 	if(current_time)
 		var/difference = world.time - last_fire
 		current_time = current_time.add_seconds((difference / 10) * PLANET_TIME_MODIFIER)
 	update_weather() // We update this first, because some weather types decease the brightness of the sun.
-	if(sun_last_process <= world.time - sun_process_interval)
-		update_sun()
+
+/datum/planet/on_react(reason, source, source_kind)
+	. = ..()
+	if(!(reason & REACT_REASON_TIMER) || source != sun_update_timer)
+		return
+	sun_update_timer = null
+	update_sun()
+	sun_update_timer = REACT_REARM(src, sun_update_timer, world.time + sun_process_interval)
 
 // This changes the position of the sun on the planet.
 /datum/planet/proc/update_sun()

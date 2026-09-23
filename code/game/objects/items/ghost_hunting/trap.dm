@@ -23,7 +23,6 @@
 	if(deployed)
 		update_icon()
 	ghost_reporter = new(null)
-	START_PROCESSING(SSobj, src)
 
 	var/static/list/ghost_signals = list(
 		COMSIG_GLOB_GHOST_CAPTURED = TYPE_PROC_REF(/datum/component/experiment_handler, try_run_spectral_experiment),
@@ -37,9 +36,9 @@
 		experiment_signals = ghost_signals)
 
 /obj/item/ghost_trap/Destroy()
-	STOP_PROCESSING(SSobj, src)
 	var/mob/our_entity = captured_entity?.resolve()
 	if(our_entity)
+		UnregisterSignal(our_entity, COMSIG_MOVABLE_MOVED)
 		REMOVE_TRAIT(our_entity, TRAIT_NO_TRANSFORM, src)
 		our_entity.forceMove(get_turf(src))
 	captured_entity = null
@@ -63,6 +62,7 @@
 	if(captured_entity)
 		var/mob/our_entity = captured_entity.resolve()
 		if(our_entity && (our_entity.loc == src))
+			UnregisterSignal(our_entity, COMSIG_MOVABLE_MOVED)
 			REMOVE_TRAIT(our_entity, TRAIT_NO_TRANSFORM, src)
 			captured_entity = null
 			our_entity.forceMove(get_turf(src))
@@ -93,14 +93,18 @@
 /obj/item/ghost_trap/start_active
 	deployed = TRUE
 
-/obj/item/ghost_trap/process()
-	if(captured_entity)
-		var/mob/our_entity = captured_entity.resolve()
-		if(our_entity && our_entity.loc != src)
-			REMOVE_TRAIT(our_entity, TRAIT_NO_TRANSFORM, src)
-			captured_entity = null
-			announce_escape(our_entity)
-			update_icon()
+/// Fired when a captured entity moves; the only way it can leave containment is escaping.
+/obj/item/ghost_trap/proc/on_captured_moved(mob/our_entity, atom/old_loc, direction, forced, list/old_locs, momentum_change)
+	SIGNAL_HANDLER
+	if(!captured_entity || captured_entity.resolve() != our_entity)
+		return
+	if(our_entity.loc == src)
+		return
+	UnregisterSignal(our_entity, COMSIG_MOVABLE_MOVED)
+	REMOVE_TRAIT(our_entity, TRAIT_NO_TRANSFORM, src)
+	captured_entity = null
+	announce_escape(our_entity)
+	update_icon()
 
 /obj/item/ghost_trap/proc/announce_escape(mob/our_entity)
 	var/area/our_area = get_area(src)
@@ -145,6 +149,7 @@
 		return
 	visible_message(span_danger("Lights flicker and buzzers beep from \the [src], alerting that a containment breach is imminent!"))
 	if(do_after(escapee, 2 MINUTES, target = src)) //Escape!
+		UnregisterSignal(escapee, COMSIG_MOVABLE_MOVED)
 		REMOVE_TRAIT(escapee, TRAIT_NO_TRANSFORM, src)
 		captured_entity = null
 		escapee.forceMove(get_turf(src))
@@ -197,6 +202,7 @@
 	var/area/our_area = get_area(src)
 	ghost_reporter.autosay("Attention: Spectral event detected. Trap activated at [our_area.name]", "Spectral Trap", "Science", using_map.get_map_levels(z))
 	ADD_TRAIT(passing_entity, TRAIT_NO_TRANSFORM, src)
+	RegisterSignal(passing_entity, COMSIG_MOVABLE_MOVED, PROC_REF(on_captured_moved))
 
 	to_chat(passing_entity, span_danger("You feel a sudden sensation pulling you into \the [src]!"))
 	if(isobserver(passing_entity))
@@ -252,6 +258,7 @@
 	if(captured_entity)
 		var/mob/our_entity = captured_entity.resolve()
 		if(our_entity && (our_entity.loc == src) && our_entity.devourable)
+			UnregisterSignal(our_entity, COMSIG_MOVABLE_MOVED)
 			REMOVE_TRAIT(our_entity, TRAIT_NO_TRANSFORM, src)
 			captured_entity = null
 			user.begin_instant_nom(user, our_entity, user, user.vore_selected)

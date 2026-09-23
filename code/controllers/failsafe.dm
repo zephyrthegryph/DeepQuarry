@@ -153,7 +153,9 @@ GLOBAL_REAL(Failsafe, /datum/controller/failsafe)
 	del(Master)
 	var/list/subsytem_types = subtypesof(/datum/controller/subsystem)
 	sortTim(subsytem_types, GLOBAL_PROC_REF(cmp_subsystem_init_stage))
-	for(var/I in subsytem_types)
+	for(var/datum/controller/subsystem/I as anything in subsytem_types)
+		if(initial(I.abstract_subsystem) == I)
+			continue
 		new I
 	. = Recreate_MC()
 	if (. == 1) //We were able to create a new master

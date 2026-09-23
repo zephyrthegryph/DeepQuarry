@@ -143,7 +143,7 @@
 	if(robotic < ORGAN_ROBOT)
 		status |= ORGAN_DEAD
 	saturate_damage()
-	STOP_PROCESSING(SSobj, src)
+	REACT_PROCESS_STOP(src)
 	handle_organ_mod_special(TRUE)
 	if(owner && vital)
 		owner.can_defib = FALSE
@@ -473,7 +473,7 @@
 		if(affected) affected.internal_organs -= src
 
 		owner.remove_from_mob(src, owner.drop_location())
-		START_PROCESSING(SSobj, src)
+		REACT_PROCESS(src, 2 SECONDS, "an organ outside a body decays every period (body rewrite owns this; S4 swapped the macro only)")
 		rejecting = null
 
 	if(istype(owner))
@@ -518,7 +518,7 @@
 
 	owner = target
 	loc = owner
-	STOP_PROCESSING(SSobj, src)
+	REACT_PROCESS_STOP(src)
 	target.internal_organs |= src
 	affected.internal_organs |= src
 	target.internal_organs_by_name[organ_tag] = src
@@ -582,7 +582,7 @@
 			else
 				damage--
 			//Fix JUST enough damage so it doesn't immediately die again. For full repair, use denec removal surgery.
-			START_PROCESSING(SSobj, src) //When an organ dies, it stops processing. This restarts it.
+			REACT_PROCESS(src, 2 SECONDS, "an organ outside a body decays every period (body rewrite owns this; S4 swapped the macro only)") //When an organ dies, it stops processing. This restarts it.
 			container.reagents.remove_reagent(REAGENT_ID_PERIDAXON, 5)
 			to_chat(user, "You use the [container] to revive \the [src]")
 			return

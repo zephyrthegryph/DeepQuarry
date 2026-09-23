@@ -39,9 +39,9 @@
 		on = !on
 
 	if(secured && on)
-		START_PROCESSING(SSobj, src)
+		REACT_PROCESS(src, 2 SECONDS, "recreates its beam while armed and on")
 	else
-		STOP_PROCESSING(SSobj, src)
+		REACT_PROCESS_STOP(src)
 		QDEL_LIST_NULL(i_beams)
 	return on
 
@@ -148,10 +148,9 @@
 
 /obj/effect/beam/i_beam/Initialize(mapload)
 	. = ..()
-	START_PROCESSING(SSobj, src)
+	REACT_PROCESS(src, 2 SECONDS, "checks whether its beam is blocked or its master is gone")
 
 /obj/effect/beam/i_beam/Destroy()
-	STOP_PROCESSING(SSobj, src)
 	master = null
 	return ..()
 

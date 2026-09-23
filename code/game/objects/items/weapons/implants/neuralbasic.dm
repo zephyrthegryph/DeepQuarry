@@ -17,22 +17,22 @@
 		if(H.isSynthetic() && H.get_FBP_type() != FBP_CYBORG)		//If this on an FBP, it's just an extra inefficient attachment to whatever their brain is.
 			robotic_brain = TRUE
 	if(istype(my_brain) && my_brain.can_assist())
-		START_PROCESSING(SSobj, src)
+		RegisterSignal(my_brain, COMSIG_MOVABLE_MOVED, PROC_REF(on_brain_moved))
 
 /obj/item/implant/neural/Destroy()
 	if(my_brain)
 		if(my_brain.owner)
 			to_chat(my_brain.owner, span_critical("You feel a pressure in your mind as something is ripped away."))
-	STOP_PROCESSING(SSobj, src)
+		UnregisterSignal(my_brain, COMSIG_MOVABLE_MOVED)
 	my_brain = null
 	return ..()
 
-/obj/item/implant/neural/process()
-	if(my_brain && part)
-		if(my_brain.loc != part.loc)
-			to_chat(my_brain.owner, span_critical("You feel a pressure in your mind as something is ripped away."))
-			meltdown()
-	return 1
+/// The brain moved; melt down if it's no longer where our host organ is.
+/obj/item/implant/neural/proc/on_brain_moved(atom/movable/mover, atom/oldloc, dir, forced)
+	SIGNAL_HANDLER
+	if(my_brain && part && my_brain.loc != part.loc)
+		to_chat(my_brain.owner, span_critical("You feel a pressure in your mind as something is ripped away."))
+		meltdown()
 
 /obj/item/implant/neural/get_data()
 	var/dat = {"<b>Implant Specifications:</b><BR>
@@ -92,7 +92,8 @@ Implant Specifics:<BR>"}
 
 /obj/item/implant/neural/meltdown()
 	..()
-	STOP_PROCESSING(SSobj, src)
+	if(my_brain)
+		UnregisterSignal(my_brain, COMSIG_MOVABLE_MOVED)
 	var/mob/living/carbon/human/H = null
 	if(my_brain && my_brain.owner)
 		if(ishuman(my_brain.owner))

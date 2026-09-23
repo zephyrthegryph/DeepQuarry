@@ -20,11 +20,11 @@
 #define STATUS_EFFECT_ID_ABSTRACT "abstract"
 
 ///Processing flags - used to define the speed at which the status will work
-/// This is fast - 0.2s between ticks (I believe!)
+/// An auto-ticking (STATUS_EFFECT_AUTO_TICK) effect runs every 0.2 s
 #define STATUS_EFFECT_FAST_PROCESS 0
-/// This is slower and better for more intensive status effects - 1s between ticks
+/// An auto-ticking effect runs every 1 s
 #define STATUS_EFFECT_NORMAL_PROCESS 1
-/// Similar speed to STATUS_EFFECT_FAST_PROCESS, but uses a high priority subsystem (SSpriority_effects)
+/// An auto-ticking effect runs every 2 ticks. (Timed ticks and expiry are REACT_AT timers at tick precision for every speed.)
 #define STATUS_EFFECT_PRIORITY 2
 
 //several flags for the Necropolis curse status effect

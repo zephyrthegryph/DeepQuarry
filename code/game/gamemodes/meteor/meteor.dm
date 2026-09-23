@@ -8,12 +8,24 @@
 	required_players = 0
 	votable = 0
 	deny_respawn = 0
-	var/next_wave = METEOR_DELAY
+	/// REACT_AT token for the next meteor wave; null when none is armed.
+	var/tmp/wave_timer
+
+/datum/game_mode/meteor/New()
+	..()
+	wave_timer = REACT_REARM(src, wave_timer, METEOR_DELAY)
 
 /datum/game_mode/meteor/process()
-	if(world.time >= next_wave)
-		next_wave = world.time + GLOB.meteor_wave_delay
-		spawn() spawn_meteors(6, GLOB.meteors_normal)
+	// Meteor waves are driven by wave_timer/on_react(); nothing left to poll here.
+	return
+
+/datum/game_mode/meteor/on_react(reason, source, source_kind)
+	. = ..()
+	if(!(reason & REACT_REASON_TIMER) || source != wave_timer)
+		return
+	wave_timer = null
+	wave_timer = REACT_REARM(src, wave_timer, world.time + GLOB.meteor_wave_delay)
+	INVOKE_ASYNC(GLOBAL_PROC, GLOBAL_PROC_REF(spawn_meteors), 6, GLOB.meteors_normal)
 
 /datum/game_mode/meteor/declare_completion()
 	var/text

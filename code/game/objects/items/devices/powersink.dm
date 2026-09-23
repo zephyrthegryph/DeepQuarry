@@ -27,7 +27,7 @@
 	drop_sound = 'sound/items/drop/device.ogg'
 
 /obj/item/powersink/Destroy()
-	STOP_PROCESSING(SSobj, src)
+	REACT_PROCESS_STOP(src)
 	STOP_PROCESSING_POWER_OBJECT(src)
 	. = ..()
 
@@ -47,7 +47,7 @@
 		playsound(src, tool.usesound, 50, 1)
 		return ITEM_INTERACT_SUCCESS
 	if(mode == 2)
-		STOP_PROCESSING(SSobj, src)
+		REACT_PROCESS_STOP(src)
 		STOP_PROCESSING_POWER_OBJECT(src)
 	anchored = FALSE
 	mode = 0
@@ -68,7 +68,7 @@
 			src.visible_message(span_notice("[user] activates [src]!"))
 			mode = 2
 			icon_state = "powersink1"
-			START_PROCESSING(SSobj, src)
+			REACT_PROCESS(src, 2 SECONDS, "dissipates and drains power from its attached powernet every period while active")
 			datum_flags &= ~DF_ISPROCESSING // Have to reset this flag so that PROCESSING_POWER_OBJECT can re-add it. It fails if the flag is already present. - Ater
 			START_PROCESSING_POWER_OBJECT(src)
 		if(2)  //This switch option wasn't originally included. It exists now. --NeoFite
@@ -76,7 +76,7 @@
 			mode = 1
 			set_light(0)
 			icon_state = "powersink0"
-			STOP_PROCESSING(SSobj, src)
+			REACT_PROCESS_STOP(src)
 			STOP_PROCESSING_POWER_OBJECT(src)
 
 /obj/item/powersink/pwr_drain()

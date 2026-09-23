@@ -16,6 +16,12 @@
 	var/obj/effect/shuttle_landmark/landmark_transition  //This variable is type-abused initially: specify the landmark_tag, not the actual landmark.
 	var/move_time = 240		//the time spent in the transition area
 
+	/// REACT_AT token for the WAIT_FINISH docking timeout, armed by dock().
+	var/tmp/dock_finish_timer
+	/// Set by dock_finish_timer's on_react; checked (and cleared) alongside check_docked()
+	/// in the WAIT_FINISH state instead of polling world.time against last_dock_attempt_time.
+	var/tmp/dock_timed_out = FALSE
+
 	category = /datum/shuttle/autodock
 	flags = SHUTTLE_FLAGS_PROCESS | SHUTTLE_FLAGS_ZERO_G
 
@@ -102,6 +108,15 @@
 	if(active_docking_controller && shuttle_docking_controller)
 		shuttle_docking_controller.initiate_docking(active_docking_controller.id_tag)
 		last_dock_attempt_time = world.time
+		dock_timed_out = FALSE
+		dock_finish_timer = REACT_REARM(src, dock_finish_timer, last_dock_attempt_time + DOCK_ATTEMPT_TIMEOUT)
+
+/datum/shuttle/autodock/on_react(reason, source, source_kind)
+	. = ..()
+	if(!(reason & REACT_REASON_TIMER) || source != dock_finish_timer)
+		return
+	dock_finish_timer = null
+	dock_timed_out = TRUE
 
 /datum/shuttle/autodock/undock()
 	if(shuttle_docking_controller)
@@ -155,7 +170,7 @@
 				set_process_state(WAIT_FINISH)
 
 		if (WAIT_FINISH)
-			if (world.time > last_dock_attempt_time + DOCK_ATTEMPT_TIMEOUT || check_docked())
+			if (dock_timed_out || check_docked())
 				//*** all done here
 				set_process_state(IDLE_STATE)
 				arrived()

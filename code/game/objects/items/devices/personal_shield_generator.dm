@@ -55,7 +55,7 @@
 			active_weapon.power_supply = bcell
 	else
 		verbs -= /obj/item/personal_shield_generator/verb/weapon_toggle
-	STOP_PROCESSING(SSobj, src) //We do this so it doesn't start processing until it's first used.
+	REACT_PROCESS_STOP(src) //We do this so it doesn't start processing until it's first used.
 	update_icon()
 
 /obj/item/personal_shield_generator/Destroy()
@@ -111,7 +111,7 @@
 						else //It won't blow up unless you turn it back on again. Upside of using non-charging cells.
 							to_chat(src.loc, span_critical("Your shield generator sparks and suddenly goes down! A warning message pops up on screen: \
 							'WARNING, INTERNAL CELL CRITICALLY DAMAGED. REPLACE CELL IMMEDIATELY.'"))
-						STOP_PROCESSING(SSobj, src)
+						REACT_PROCESS_STOP(src)
 						update_icon()
 			else
 				if(prob(25))
@@ -230,7 +230,7 @@
 			shield_active = !shield_active //Deactivate the shield!
 			to_chat(user, span_warning("You deactive the shield!"))
 			user.remove_modifiers_of_type(/datum/modifier/shield_projection)
-			STOP_PROCESSING(SSobj, src)
+			REACT_PROCESS_STOP(src)
 			playsound(src, 'sound/weapons/saberoff.ogg', 50, 1) //Shield turning off! PLACEHOLDER
 		else
 			shield_active = !shield_active
@@ -238,7 +238,7 @@
 			user.remove_modifiers_of_type(/datum/modifier/shield_projection) //Just to make sure they aren't using two at once!
 			user.add_modifier(modifier_type)
 			user.update_modifier_visuals() //Forces coloration to WORK.
-			START_PROCESSING(SSobj, src) //Let's only bother draining power when we're being used!
+			REACT_PROCESS(src, 2 SECONDS, "drains its cell every period while the shield is active") //Let's only bother draining power when we're being used!
 			playsound(src, 'sound/weapons/saberon.ogg', 50, 1) //Shield turning off! PLACEHOLDER
 	update_icon()
 
@@ -278,7 +278,7 @@
 			to_chat(user, span_warning("The shield deactivates! An error message pops up on screen: 'Cell missing. Cell replacement required.'"))
 			user.remove_modifiers_of_type(/datum/modifier/shield_projection)
 		shield_active = 0
-		STOP_PROCESSING(SSobj, src)
+		REACT_PROCESS_STOP(src)
 		update_icon()
 		playsound(src, 'sound/weapons/saberoff.ogg', 50, 1) //Shield turning off! PLACEHOLDER
 		return
@@ -297,7 +297,7 @@
 			bcell.use(generator_active_cost) //Causes it to go boom.
 			bcell = null
 			shield_active = 0
-			STOP_PROCESSING(SSobj, src)
+			REACT_PROCESS_STOP(src)
 			update_icon()
 			return
 
@@ -310,7 +310,7 @@
 			var/mob/living/carbon/human/user = loc
 			to_chat(user, span_warning("The shield deactivates, an error message popping up on screen: 'Cell out of charge.'"))
 			user.remove_modifiers_of_type(/datum/modifier/shield_projection)
-		STOP_PROCESSING(SSobj, src)
+		REACT_PROCESS_STOP(src)
 		update_icon()
 		playsound(src, 'sound/weapons/saberoff.ogg', 50, 1) //Shield turning off! PLACEHOLDER
 		return

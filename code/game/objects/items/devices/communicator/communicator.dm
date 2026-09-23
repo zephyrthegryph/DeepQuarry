@@ -66,7 +66,8 @@
 	var/list/known_devices = list()
 	var/datum/exonet_protocol/exonet = null
 	var/list/communicating = list()
-	var/update_ticks = 0
+	/// REACT_AT token for the connection-maintenance recheck; null when none.
+	var/tmp/connection_check_timer
 	var/newsfeed_channel = 0
 
 	var/obj/item/card/id/id = null // ITION: Making it possible to slot an ID card into the Communicator so it can function as both.
@@ -88,7 +89,7 @@ REGISTRY_MEMBERSHIP(/obj/item/communicator, REGISTRY_COMMUNICATORS)
 /obj/item/communicator/Initialize(mapload)
 	. = ..()
 	node = get_exonet_node()
-	START_PROCESSING(SSobj, src)
+	connection_check_timer = REACT_REARM(src, connection_check_timer, world.time + 10 SECONDS)
 	camera = new(src)
 	camera.name = "[src] #[rand(100,999)]"
 	camera.c_tag = camera.name
@@ -278,18 +279,19 @@ REGISTRY_MEMBERSHIP(/obj/item/communicator, REGISTRY_COMMUNICATORS)
 		return can_telecomm(src,node)
 	return 0
 
-// Proc: process()
-// Parameters: None
-// Description: Ticks the update_ticks variable, and checks to see if it needs to disconnect communicators every five ticks..
-/obj/item/communicator/process()
-	update_ticks++
-	// Connection maintenance is the five-tick watchdog, not four of every five
-	// ticks. State-changing exonet paths update immediately.
-	if(!(update_ticks % 5))
-		if(!node)
-			node = get_exonet_node()
-		if(!get_connection_to_tcomms())
-			close_connection(reason = "Connection timed out")
+// Proc: on_react()
+// Parameters: reason, source, source_kind
+// Description: Connection-maintenance watchdog, once every 10 seconds. State-changing exonet
+//				paths update immediately outside of this.
+/obj/item/communicator/on_react(reason, source, source_kind)
+	if(source != connection_check_timer)
+		return ..()
+	connection_check_timer = null
+	if(!node)
+		node = get_exonet_node()
+	if(!get_connection_to_tcomms())
+		close_connection(reason = "Connection timed out")
+	connection_check_timer = REACT_REARM(src, connection_check_timer, world.time + 10 SECONDS)
 
 // Proc: attackby()
 // Parameters: 2 (C - what is used on the communicator. user - the mob that has the communicator)
@@ -399,7 +401,6 @@ REGISTRY_MEMBERSHIP(/obj/item/communicator, REGISTRY_COMMUNICATORS)
 	node = null
 
 	//Clean up references that might point at us
-	STOP_PROCESSING(SSobj, src)
 	GLOB.listening_objects.Remove(src)
 	QDEL_NULL(camera)
 	QDEL_NULL(exonet)

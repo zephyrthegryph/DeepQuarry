@@ -157,11 +157,11 @@
 /obj/effect/ebeam/reactive
 
 /obj/effect/ebeam/reactive/Initialize(mapload)
-	START_PROCESSING(SSobj, src)
+	REACT_PROCESS(src, 2 SECONDS, "reacts every tick to whatever is standing in the beam")
 	return ..()
 
 /obj/effect/ebeam/reactive/Destroy()
-	STOP_PROCESSING(SSobj, src)
+	REACT_PROCESS_STOP(src)
 	return ..()
 
 /obj/effect/ebeam/reactive/on_drawn()

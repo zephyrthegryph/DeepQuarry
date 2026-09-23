@@ -15,7 +15,8 @@
 
 	var/tmp/moving_upwards
 	var/tmp/busy_state									// Used for controller processing.
-	var/tmp/next_process								// world.time process() should next do something
+	var/tmp/next_process								// world.time run_lift_step() should next do something
+	var/tmp/lift_timer									// REACT_AT token for next_process; null while idle
 
 /datum/turbolift/proc/emergency_stop()
 	cancel_pending_floors()
@@ -101,9 +102,18 @@
 #define LIFT_WAITING_A 2	// Waiting 15ds after arrival to announce, then goto LIFT_WAITING_B
 #define LIFT_WAITING_B 3	// Waiting floor_wait_delay after announcement before potentially moving again.
 
-/datum/turbolift/process()
-	if(world.time < next_process)
+/datum/turbolift/on_react(reason, source, source_kind)
+	. = ..()
+	if(!(reason & REACT_REASON_TIMER) || source != lift_timer)
 		return
+	lift_timer = null
+	run_lift_step()
+
+// Runs one step of the lift state machine, at whichever deadline next_process names.
+// Replaces the old subsystem-polled process(): each step either re-arms lift_timer
+// for the next next_process it computes, or returns early to stop the chain (the old
+// process()'s PROCESS_KILL).
+/datum/turbolift/proc/run_lift_step()
 	switch(busy_state)
 		if(LIFT_MOVING)
 			if(!do_move())
@@ -111,10 +121,10 @@
 					// TODO - This logic copied from old processor.  Would be better to have error states.
 					target_floor.ext_panel.reset()
 					target_floor = null
-				return PROCESS_KILL
+				return
 			else if(!next_process)
 				log_runtime("Turbolift [src] do_move() returned 1 but next_process = null; busy_state=[busy_state]")
-				return PROCESS_KILL
+				return
 		if(LIFT_WAITING_A)
 			var/area/turbolift/origin = locate(current_floor.area_ref)
 			control_panel_interior.visible_message(span_infoplain(span_bold("The elevator") + " announces, \"[origin.lift_announce_str]\""))
@@ -125,10 +135,11 @@
 				busy_state = LIFT_MOVING
 			else
 				busy_state = null
-				return PROCESS_KILL
+				return
 		else
 			log_runtime("Turbolift [src] process() called with unknown busy_state='[busy_state]'")
-			return PROCESS_KILL
+			return
+	lift_timer = REACT_REARM(src, lift_timer, next_process)
 
 // Called by process when in LIFT_MOVING
 /datum/turbolift/proc/do_move()
@@ -213,7 +224,7 @@
 	floor.pending_move(src)
 	queued_floors |= floor
 	busy_state = LIFT_MOVING
-	START_PROCESSING(SSprocessing, src)
+	lift_timer = REACT_REARM(src, lift_timer, world.time)
 
 // TODO: dummy machine ('lift mechanism') in powered area for functionality/blackout checks.
 /datum/turbolift/proc/is_functional()

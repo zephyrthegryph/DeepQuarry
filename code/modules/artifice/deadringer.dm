@@ -15,11 +15,10 @@
 
 /obj/item/deadringer/Initialize(mapload)
 	. = ..()
-	START_PROCESSING(SSobj, src)
+	REACT_PROCESS(src, 2 SECONDS, "tracks its owner's injuries and counts down its reveal timer")
 
 /obj/item/deadringer/Destroy() //just in case some smartass tries to stay invisible by destroying the watch
 	reveal()
-	STOP_PROCESSING(SSobj, src)
 	. = ..()
 
 /obj/item/deadringer/dropped(mob/user, equipping, slot)

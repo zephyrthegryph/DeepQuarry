@@ -78,7 +78,7 @@
 		update_force()
 
 /obj/item/material/Destroy()
-	STOP_PROCESSING(SSobj, src)
+	REACT_PROCESS_STOP(src)
 	. = ..()
 
 /obj/item/material/apply_hit_effect(mob/living/target, mob/living/user, hit_zone, attack_modifier)

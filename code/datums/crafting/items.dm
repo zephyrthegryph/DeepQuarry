@@ -277,11 +277,11 @@
 
 /obj/item/clothing/gloves/toxinregen/Initialize(mapload)
 	. = ..()
-	START_PROCESSING(SSobj, src)
+	REACT_PROCESS(src, 2 SECONDS, "heals the wearer of antitoxin damage every tick while worn")
 
 /obj/item/clothing/gloves/toxinregen/Destroy()
 	wearer = null
-	STOP_PROCESSING(SSobj, src)
+	REACT_PROCESS_STOP(src)
 	return ..()
 
 /obj/item/clothing/gloves/toxinregen/process()

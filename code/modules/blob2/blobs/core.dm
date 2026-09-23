@@ -19,6 +19,8 @@
 	var/ai_controlled = TRUE
 	var/datum/ghost_query/Q //This is used so we can unregister ourself.
 	var/client/controller = null //Whoever is set to be controlling the blob. Used when the blob is created.
+	/// REACT_AT token for our pulse/growth tick; null when none.
+	var/tmp/react_timer
 
 // Spawn this if you want a ghost to be able to play as the blob.
 /obj/structure/blob/core/player
@@ -100,7 +102,7 @@ REGISTRY_MEMBERSHIP(/obj/structure/blob/core, REGISTRY_BLOB_CORES)
 
 /obj/structure/blob/core/Initialize(mapload, client/new_overmind = null, new_rate = 2, placed = 0)
 	. = ..()
-	START_PROCESSING(SSobj, src)
+	react_timer = REACT_REARM(src, react_timer, world.time + 2 SECONDS)
 	update_icon() //so it atleast appears
 	point_rate = new_rate
 	controller = new_overmind
@@ -121,7 +123,6 @@ REGISTRY_MEMBERSHIP(/obj/structure/blob/core, REGISTRY_BLOB_CORES)
 		overmind.blob_core = null
 		qdel(overmind)
 	overmind = null
-	STOP_PROCESSING(SSobj, src)
 	return ..()
 
 /obj/structure/blob/core/update_icon()
@@ -134,13 +135,12 @@ REGISTRY_MEMBERSHIP(/obj/structure/blob/core, REGISTRY_BLOB_CORES)
 	add_overlay(blob_overlay)
 	add_overlay("blob_core_overlay")
 
-/obj/structure/blob/core/process()
-	set waitfor = FALSE
+/obj/structure/blob/core/on_react(reason, source, source_kind)
+	react_timer = null
 	if(QDELETED(src))
 		return
 	if(!overmind)
-		spawn(0)
-			create_overmind()
+		INVOKE_ASYNC(src, PROC_REF(create_overmind))
 	else
 		if(resource_delay <= world.time)
 			resource_delay = world.time + 1 SECOND
@@ -155,6 +155,7 @@ REGISTRY_MEMBERSHIP(/obj/structure/blob/core, REGISTRY_BLOB_CORES)
 
 	if(overmind) //Doing this as we might be alive for a bit before a ghost possesses us.
 		overmind.blob_type.on_core_process(src)
+	react_timer = REACT_REARM(src, react_timer, world.time + 2 SECONDS)
 
 /obj/structure/blob/core/proc/create_overmind(client/new_overmind, override_delay)
 	if(overmind_get_delay > world.time && !override_delay)

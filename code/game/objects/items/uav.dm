@@ -60,7 +60,7 @@
 	QDEL_NULL(cell)
 	QDEL_NULL(ion_trail)
 	LAZYCLEARLIST(masters)
-	STOP_PROCESSING(SSobj, src)
+	REACT_PROCESS_STOP(src)
 	return ..()
 
 /obj/item/uav/examine(mob/user)
@@ -247,7 +247,7 @@
 	update_icon()
 	start_hover()
 	set_light_on(TRUE)
-	START_PROCESSING(SSobj, src)
+	REACT_PROCESS(src, 2 SECONDS, "drains its cell and tracks its masters every period while hovering")
 	no_masters_time = 0
 	visible_message(span_notice("[nickname] buzzes and lifts into the air."))
 
@@ -260,7 +260,7 @@
 	stop_hover()
 	set_light_on(FALSE)
 	LAZYCLEARLIST(masters)
-	STOP_PROCESSING(SSobj, src)
+	REACT_PROCESS_STOP(src)
 	visible_message(span_notice("[nickname] gracefully settles onto the ground."))
 
 //////////////// Helpers

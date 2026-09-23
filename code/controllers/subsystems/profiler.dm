@@ -45,16 +45,13 @@ SUBSYSTEM_DEF(profiler)
 	var/list/subsystems = list(
 		"atmos" = subsystem_diagnostics(SSair),
 		"machines" = subsystem_diagnostics(SSmachines),
-		"material_exposure" = subsystem_diagnostics(SSmaterial_services),
 		"mobs" = subsystem_diagnostics(SSmobs),
-		"objects" = subsystem_diagnostics(SSobj),
 		"garbage" = subsystem_diagnostics(SSgarbage),
 		"shuttles" = subsystem_diagnostics(SSshuttles),
 		"radiation" = subsystem_diagnostics(SSradiation),
 		"explosions" = subsystem_diagnostics(SSexplosions),
 		"reactor" = subsystem_diagnostics(SSreactor),
 	)
-	subsystems["material_exposure"] += SSmaterial_services.performance_diagnostics()
 	var/list/material_graphs = list()
 	for(var/datum/powernet/network as anything in SSmachines.powernets)
 		var/datum/material_power_graph/graph = network.material_graph
@@ -118,7 +115,6 @@ SUBSYSTEM_DEF(profiler)
 		"gas_wakes" = list("dirty" = SSmachines.gas_dirty_last, "subscribers_checked" = SSmachines.gas_wake_subscribers_last, "scan_ms" = SSmachines.gas_wake_scan_last_ms, "woken" = SSmachines.gas_woken_last, "dead" = SSmachines.gas_dead_last, "pending" = length(SSmachines.pending_dirty_gas_mixtures)),
 	)
 	subsystems["mobs"] += list("counts" = list("world" = length(GLOB.mob_list), "current" = length(SSmobs.currentrun), "slept" = SSmobs.slept_mobs, "deaths_pending" = length(SSmobs.death_list)))
-	subsystems["objects"] += list("counts" = list("processing" = length(SSobj.processing), "current" = length(SSobj.currentrun)))
 	subsystems["garbage"] += SSgarbage.performance_diagnostics()
 	subsystems["shuttles"] += SSshuttles.performance_diagnostics()
 	subsystems["radiation"] += SSradiation.performance_diagnostics()

@@ -14,7 +14,7 @@
 	var/cascade
 
 /obj/item/implant/reagent_generator/egg/post_implant(mob/living/carbon/source)
-	START_PROCESSING(SSobj, src)
+	REACT_PROCESS(src, 2 SECONDS, "generates and stores reagents from the host's nutrition every period")
 	to_chat(source, span_notice("You implant [source] with \the [src]."))
 	add_verb(source,assigned_proc) // TGPanel
 	add_verb(source,/mob/living/carbon/human/proc/toggle_cascade) // TGPanel
@@ -176,7 +176,7 @@
 	update()
 
 /obj/item/implant/reagent_generator/post_implant(mob/living/carbon/source)
-	START_PROCESSING(SSobj, src)
+	REACT_PROCESS(src, 2 SECONDS, "generates and stores reagents from the host's nutrition every period")
 	to_chat(source, span_notice("You implant [source] with \the [src]."))
 	assigned_proc = new assigned_proc(source, verb_name, verb_desc)
 	return 1

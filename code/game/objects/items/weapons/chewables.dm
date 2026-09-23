@@ -42,17 +42,17 @@
 	if(slot == slot_wear_mask)
 		var/mob/living/carbon/human/C = user
 		if(C.check_has_mouth())
-			START_PROCESSING(SSprocessing, src)
+			REACT_PROCESS(src, 1 SECOND, "transfers its reagents into the wearer's mouth every period while worn and chewed")
 		else
 			to_chat(user, span_notice("You don't have a mouth, and can't make much use of \the [src]."))
 
 /obj/item/clothing/mask/chewable/dropped(mob/user, equipping, slot)
-	STOP_PROCESSING(SSprocessing, src)
+	REACT_PROCESS_STOP(src)
 	..()
 
 /obj/item/clothing/mask/chewable/Destroy()
 	. = ..()
-	STOP_PROCESSING(SSprocessing, src)
+	REACT_PROCESS_STOP(src)
 
 /obj/item/clothing/mask/chewable/proc/chew()
 	chewtime--
@@ -62,7 +62,7 @@
 			if (src == C.wear_mask && C.check_has_mouth())
 				reagents.trans_to_mob(C, REM, CHEM_INGEST, 0.2)
 		else
-			STOP_PROCESSING(SSprocessing, src)
+			REACT_PROCESS_STOP(src)
 
 /obj/item/clothing/mask/chewable/process()
 	chew()
@@ -101,7 +101,7 @@
 					M.update_inv_l_hand(0)
 					M.update_inv_r_hand(1)
 					M.put_in_hands(butt)
-	STOP_PROCESSING(SSprocessing, src)
+	REACT_PROCESS_STOP(src)
 	qdel(src)
 
 /obj/item/clothing/mask/chewable/tobacco/cheap

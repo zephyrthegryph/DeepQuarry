@@ -265,40 +265,87 @@ GLOBAL_LIST_EMPTY(processed_material_dedup)
 		batch_state = processed.batch_template.copy_for_amount(amount)
 
 /obj/item/stack/material/processed_alloy/Destroy()
-	STOP_PROCESSING(SSobj, src)
+	stop_cooling()
 	QDEL_NULL(batch_state)
 	return ..()
 
 /obj/item/stack/material/processed_alloy/proc/physical_batch() as /datum/material_batch
 	if(batch_state)
+		settle_cooling()
 		return batch_state
 	var/datum/material/processed_alloy/processed = material
 	batch_state = processed?.batch_template?.copy_for_amount(amount)
 	return batch_state
 
+/// A hot batch cools toward the air around it: a relaxation rate model (8% of the difference
+/// per 2 s, as the old SSobj poll did), read back through physical_batch(). It stops glowing
+/// and drops the model when it is within 5 K of the air.
+/obj/item/stack/material/processed_alloy
+	/// RATE_RELAX model of the batch temperature while cooling (null: not cooling).
+	var/tmp/cooling_model
+	/// The air temperature the model relaxes toward.
+	var/tmp/cooling_target
+	/// REACT_RATE token for "within 5 K of the air".
+	var/tmp/cooling_token
+
+#define ALLOY_COOLING_K (-log(0.92) / 2)
+
 /obj/item/stack/material/processed_alloy/proc/update_thermal_processing()
 	var/datum/material_batch/batch = physical_batch()
 	if(batch?.temperature > T20C + 40)
 		set_light(2, 1, "#ff7b22")
-		START_PROCESSING(SSobj, src)
+		start_cooling(batch)
 	else
 		set_light(0)
-		STOP_PROCESSING(SSobj, src)
+		stop_cooling()
 
-/obj/item/stack/material/processed_alloy/process()
-	var/datum/material_batch/batch = physical_batch()
-	if(!batch)
-		return PROCESS_KILL
+/obj/item/stack/material/processed_alloy/proc/start_cooling(datum/material_batch/batch)
+	stop_cooling()
 	var/ambient_temperature = T20C
 	var/turf/open/turf = get_turf(src)
 	if(istype(turf) && turf.air)
 		ambient_temperature = turf.air.return_temperature()
-	batch.temperature += (ambient_temperature - batch.temperature) * 0.08
 	if(abs(batch.temperature - ambient_temperature) < 5)
 		batch.temperature = ambient_temperature
 		set_light(0)
-		return PROCESS_KILL
-	return
+		return
+	cooling_target = ambient_temperature
+	cooling_model = RATE_RELAX(batch.temperature, ambient_temperature, ALLOY_COOLING_K)
+	if(batch.temperature > ambient_temperature)
+		cooling_token = REACT_RATE(src, cooling_model, REACT_CMP_BELOW, ambient_temperature + 5)
+	else
+		cooling_token = REACT_RATE(src, cooling_model, REACT_CMP_ABOVE, ambient_temperature - 5)
+
+/// Writes the model's current temperature into the batch.
+/obj/item/stack/material/processed_alloy/proc/settle_cooling()
+	if(isnull(cooling_model) || !batch_state)
+		return
+	batch_state.temperature = RATE_READ(cooling_model)
+
+/obj/item/stack/material/processed_alloy/proc/stop_cooling()
+	if(!isnull(cooling_token))
+		REACT_CANCEL(src, cooling_token)
+		cooling_token = null
+	if(isnull(cooling_model))
+		return
+	settle_cooling()
+	RATE_REMOVE(cooling_model)
+	cooling_model = null
+	cooling_target = null
+
+/// Within 5 K of the air: done cooling.
+/obj/item/stack/material/processed_alloy/on_react(reason, source, source_kind)
+	. = ..()
+	if(!(reason & REACT_REASON_RATE) || isnull(cooling_model))
+		return
+	cooling_token = null
+	var/target = cooling_target
+	stop_cooling()
+	if(batch_state)
+		batch_state.temperature = target
+	set_light(0)
+
+#undef ALLOY_COOLING_K
 
 /obj/item/stack/material/processed_alloy/split(tamount)
 	var/old_amount = get_amount()
