@@ -173,13 +173,14 @@
 	if(!welder.isOn())
 		to_chat(user, "\The [tool] is off.")
 		return ITEM_INTERACT_BLOCKING
-	if(!damage)
+	var/missing = get_integrity_damage()
+	if(!missing)
 		to_chat(user, "\The [src] does not require repairs.")
 		return ITEM_INTERACT_BLOCKING
 	to_chat(user, "You begin repairing damage to \the [src]...")
-	if(!welder.remove_fuel(round(damage / 75)) || !do_after(user, damage / 10, target = src))
+	if(!welder.remove_fuel(round(missing / 75)) || !do_after(user, missing / 10, target = src))
 		return ITEM_INTERACT_BLOCKING
-	damage = 0
+	repair_damage(max_integrity)
 	to_chat(user, "You repair \the [src].")
 	return ITEM_INTERACT_SUCCESS
 

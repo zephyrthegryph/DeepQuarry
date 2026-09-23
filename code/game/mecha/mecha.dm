@@ -1058,7 +1058,7 @@
 	var/obj/item/mecha_parts/component/hull/HC = internal_components[MECH_HULL]
 
 	if(HC)
-		if(HC.integrity)
+		if(HC.get_integrity())
 			var/hull_absorb = round(rand(5, 10) / 10, 0.1) * damage
 			HC.damage_part(hull_absorb, type)
 			damage -= hull_absorb
@@ -1145,10 +1145,39 @@
 		src.log_append_to_last("Armor saved.")
 	return
 
-/// Mechs take damage through their own model (dynbulletdamage, dynhitby,
-/// absorbDamage) until D3 moves them onto the body model; the base adapters'
-/// packets stop here so a hit is not applied twice.
+/// The mech's packet sink. Each kind lands through the mech's own absorption
+/// and component model (take_damage: absorbDamage, then
+/// components_handle_damage), keyed by the kind's armour key. The body-model
+/// step (damage.md §5, with the body rewrite) replaces this with the machine
+/// body plan. Projectiles and throws keep their own entry points
+/// (dynbulletdamage, dynhitby), which apply deflection and penetration first.
 /obj/mecha/receive_damage(datum/damage_packet/packet)
+	if(QDELETED(src))
+		return 0
+	var/list/amounts = packet.amounts
+	. = 0
+	for(var/kind in 1 to DAMAGE_KIND_COUNT)
+		var/amount = amounts[kind]
+		if(amount <= 0)
+			continue
+		if(!damage_kind_obj_damage_type(kind))
+			continue
+		if(kind == DAMAGE_IONIC)
+			amount *= emp_integrity_factor
+			if(amount <= 0)
+				continue
+		var/before = get_integrity()
+		take_damage(amount, packet.armor_flag || damage_kind_armor_key(kind))
+		if(QDELETED(src))
+			return . + before
+		. += before - get_integrity()
+
+/// dynbulletdamage() already applied the round (deflection, penetration, equipment).
+/obj/mecha/projectile_damage(obj/item/projectile/P, def_zone)
+	return 0
+
+/// dynhitby() already applied the throw.
+/obj/mecha/thrown_damage(atom/movable/source, datum/thrownthing/throwingdatum)
 	return 0
 
 /obj/mecha/hitby(atom/movable/source, datum/thrownthing/throwingdatum) //wrapper
@@ -1603,18 +1632,18 @@
 				to_chat(user, span_notice("You repair the damaged gas tank."))
 		else
 			return
-		if((get_integrity()<max_integrity) || (HC.integrity<HC.max_integrity) || (AC.integrity<AC.max_integrity))
+		if((get_integrity()<max_integrity) || (HC.get_integrity()<HC.max_integrity) || (AC.get_integrity()<AC.max_integrity))
 			if(get_integrity()<max_integrity)
 				to_chat(user, span_notice("You repair some damage to [src.name]."))
 				repair_damage(min(10, max_integrity - get_integrity()))
 				update_damage_alerts()
-			else	if(HC.integrity<HC.max_integrity)
+			else	if(HC.get_integrity()<HC.max_integrity)
 				to_chat(user, span_notice("You repair some damage to [HC.name]."))
-				HC.integrity += min(10, HC.max_integrity-HC.integrity)
+				HC.repair_damage(10)
 				update_damage_alerts()
-			else	if(AC.integrity<AC.max_integrity)
+			else	if(AC.get_integrity()<AC.max_integrity)
 				to_chat(user, span_notice("You repair some damage to [AC.name]."))
-				AC.integrity += min(10, AC.max_integrity-AC.integrity)
+				AC.repair_damage(10)
 				update_damage_alerts()
 
 		else
@@ -1638,17 +1667,17 @@
 					to_chat(user, span_notice("There are no components installed!"))
 					return
 
-				if(C.integrity >= C.max_integrity)
+				if(C.get_integrity() >= C.max_integrity)
 					to_chat(user, span_notice("\The [C] does not require repairs."))
 
-				else if(C.integrity < C.max_integrity)
+				else if(C.get_integrity() < C.max_integrity)
 					to_chat(user, span_notice("You start to repair damage to \the [C]."))
-					while(C.integrity < C.max_integrity && NP)
+					while(C.get_integrity() < C.max_integrity && NP)
 						if(do_after(user, 1 SECOND, target = src))
 							NP.use(1)
 							C.adjust_integrity(NP.mech_repair)
 
-							if(C.integrity >= C.max_integrity)
+							if(C.get_integrity() >= C.max_integrity)
 								to_chat(user, span_notice("You finish repairing \the [C]."))
 								break
 
@@ -2346,9 +2375,9 @@
 	var/obj/item/mecha_parts/component/hull/HC = internal_components[MECH_HULL]
 	var/obj/item/mecha_parts/component/armor/AC = internal_components[MECH_ARMOR]
 	data["has_armor"] = !!AC
-	data["armor_percent"] = AC ? round(AC.integrity / AC.max_integrity * 100, 0.1) : 0
+	data["armor_percent"] = AC ? round(AC.get_integrity() / AC.max_integrity * 100, 0.1) : 0
 	data["has_hull"] = !!HC
-	data["hull_percent"] = HC ? round(HC.integrity / HC.max_integrity * 100, 0.1) : 0
+	data["hull_percent"] = HC ? round(HC.get_integrity() / HC.max_integrity * 100, 0.1) : 0
 	data["integrity_percent"] = round(get_integrity() / max_integrity * 100, 0.1)
 	// Power.
 	var/cell_charge = get_charge()
@@ -2542,8 +2571,8 @@
 	var/obj/item/mecha_parts/component/armor/AC = internal_components[MECH_ARMOR]
 
 	var/output = {"[report_internal_damage()]
-						<b>Armor Integrity: </b>[AC?"[round(AC.integrity / AC.max_integrity * 100, 0.1)]%":span_warning("ARMOR MISSING")]<br>
-						<b>Hull Integrity: </b>[HC?"[round(HC.integrity / HC.max_integrity * 100, 0.1)]%":span_warning("HULL MISSING")]<br>
+						<b>Armor Integrity: </b>[AC?"[round(AC.get_integrity() / AC.max_integrity * 100, 0.1)]%":span_warning("ARMOR MISSING")]<br>
+						<b>Hull Integrity: </b>[HC?"[round(HC.get_integrity() / HC.max_integrity * 100, 0.1)]%":span_warning("HULL MISSING")]<br>
 						[integrity<30? span_red(span_bold("DAMAGE LEVEL CRITICAL")) + "<br>":null]
 						<b>Chassis Integrity: </b> [integrity]%<br>
 						<b>Powercell charge: </b>[isnull(cell_charge)?"No powercell installed":"[cell.percent()]%"]<br>
@@ -3144,7 +3173,7 @@
 	visible_message(span_danger("\The [B] [blob.attack_verb] \the [src]!"), span_danger("[blob.attack_message_synth]!"))
 	playsound(src, 'sound/effects/attackblob.ogg', 50, 1)
 
-	return ..()
+	return TRUE
 
 #undef MECHA_OPERATING
 #undef MECHA_BOLTS_SECURED

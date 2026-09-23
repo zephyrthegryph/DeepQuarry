@@ -1,3 +1,6 @@
+// A simple door's integrity is its material's integrity, rounded to tens
+// (the old "hardness" was integrity / 10; one hardness point is 10 integrity).
+
 /obj/structure/simple_door
 	name = "door"
 	description_info = "If you hold left alt whilst left-clicking on a door, you can knock on it to announce your presence to anyone on the other side! Alternately if you are on HARM intent when doing this, you will bang loudly on the door!"
@@ -12,7 +15,9 @@
 	var/datum/material/material
 	var/state = 0 //closed, 1 == open
 	var/isSwitchingStates = 0
-	var/hardness = 1
+	/// D5 shim: the explosion ladder (ex_act) still subtracts old hardness points
+	/// here; CheckHardness() moves them onto integrity. Delete with the ladder.
+	var/hardness = 0
 	var/oreAmount = 7
 	var/knock_sound = 'sound/machines/door/knock_glass.ogg'
 	var/knock_hammer_sound = 'sound/weapons/sonic_jackhammer.ogg'
@@ -29,8 +34,9 @@
 	TemperatureAct(exposed_temperature)
 
 /obj/structure/simple_door/proc/TemperatureAct(temperature)
-	hardness -= material.combustion_effect(get_turf(src),temperature, 0.3)
-	CheckHardness()
+	var/burnt = material.combustion_effect(get_turf(src),temperature, 0.3)
+	if(burnt > 0)
+		take_damage(burnt * 10, BURN, FIRE, FALSE)
 
 /obj/structure/simple_door/Initialize(mapload, material_name)
 	. = ..()
@@ -49,7 +55,8 @@
 	material = get_material_by_name(material_name)
 	if(!material)
 		return
-	hardness = max(1,round(material.integrity/10))
+	max_integrity = max(1,round(material.integrity/10)) * 10
+	update_integrity(max_integrity)
 	icon_state = material.door_icon_base
 	name = "[material.display_name] door"
 	color = material.icon_colour
@@ -175,11 +182,10 @@
 	if(istype(W,/obj/item/pickaxe) && breakable)
 		var/obj/item/pickaxe/digTool = W
 		visible_message(span_danger("[user] starts digging [src]!"))
-		if(do_after(user,digTool.digspeed*hardness, target = src) && src)
+		if(do_after(user,digTool.digspeed*get_integrity()/10, target = src) && src)
 			visible_message(span_danger("[user] finished digging [src]!"))
 			Dismantle()
 	else if(istype(W,/obj/item) && breakable) //not sure, can't not just weapons get passed to this proc?
-		hardness -= W.force/10
 		visible_message(span_danger("[user] hits [src] with [W]!"))
 		if(material == get_material_by_name(MAT_RESIN))
 			playsound(src, 'sound/effects/attackblob.ogg', 100, 1)
@@ -187,7 +193,7 @@
 			playsound(src, 'sound/effects/woodcutting.ogg', 100, 1)
 		else
 			playsound(src, 'sound/weapons/smash.ogg', 50, 1)
-		CheckHardness()
+		receive_weapon_hit(W, user)
 	else
 		attack_hand(user)
 	return
@@ -200,13 +206,9 @@
 		TemperatureAct(150)
 	return TRUE
 
-/obj/structure/simple_door/bullet_act(obj/item/projectile/Proj)
-	take_damage(Proj.damage/10)
-	CheckHardness()
-
-/obj/structure/simple_door/take_damage(damage)
-	hardness -= damage/10
-	CheckHardness()
+/// Projectile adapter: a door soaks most of a round.
+/obj/structure/simple_door/projectile_damage(obj/item/projectile/P, def_zone)
+	return receive_projectile(P, def_zone, 0.1)
 
 /obj/structure/simple_door/attack_generic(mob/user, damage, attack_verb)
 	visible_message(span_danger("[user] [attack_verb] the [src]!"))
@@ -217,17 +219,21 @@
 	else
 		playsound(src, 'sound/weapons/smash.ogg', 50, 1)
 	user.do_attack_animation(src)
-	hardness -= damage/10
-	CheckHardness()
+	receive_generic_attack(user, damage)
 
+/// Moves hardness the explosion ladder subtracted onto integrity (see `hardness`).
 /obj/structure/simple_door/proc/CheckHardness()
-	if(hardness <= 0)
-		Dismantle(1)
+	var/pending = hardness
+	hardness = 0
+	if(pending < 0)
+		take_damage(-pending * 10, BRUTE, BOMB, FALSE)
 
 /obj/structure/simple_door/proc/Dismantle(devastated = 0)
+	deconstruct(!devastated)
+
+/obj/structure/simple_door/handle_deconstruct(disassembled = TRUE)
 	material.place_dismantled_product(get_turf(src))
 	visible_message(span_danger("The [src] is destroyed!"))
-	qdel(src)
 
 /obj/structure/simple_door/ex_act(severity = 1)
 	switch(severity)
@@ -374,7 +380,8 @@
 	usr.setClickCooldown(DEFAULT_ATTACK_COOLDOWN)
 	if (HULK in usr.mutations)
 		visible_message(span_warning("[usr] destroys the [name]!"))
-		hardness = 0
+		Dismantle(1)
+		return
 	else
 
 		// Carbons can get straight through these.
@@ -383,15 +390,12 @@
 				var/mob/living/carbon/M = usr
 				if(locate(/obj/item/organ/internal/xenos/hivenode) in M.internal_organs)
 					visible_message (span_warning("[usr] strokes the [name] and it melts away!"), 1)
-					hardness = 0
-					CheckHardness()
+					Dismantle(1)
 					return
 				else
 					visible_message(span_warning("[usr] tears at the [name]!"))
-					hardness -= 2
-					CheckHardness()
+					take_damage(20, BRUTE, MELEE, FALSE)
 					return
-	CheckHardness()
 	TryToSwitchState(user)
 	return
 // end.

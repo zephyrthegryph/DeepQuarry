@@ -88,6 +88,10 @@
 /atom/proc/get_integrity()
 	return atom_integrity
 
+/// How much integrity the atom is missing (0 when intact).
+/atom/proc/get_integrity_damage()
+	return max(0, max_integrity - atom_integrity)
+
 /// Repairs the atom by repair_amount, clamped to max_integrity. Fires atom_fix() when crossing
 /// back above the integrity_failure threshold. Returns the new integrity.
 /atom/proc/repair_damage(repair_amount)

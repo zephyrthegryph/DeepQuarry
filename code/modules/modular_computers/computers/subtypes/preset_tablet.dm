@@ -34,8 +34,8 @@
 	icon = 'icons/obj/modular_tablet.dmi'
 	icon_state = "rugged"
 	icon_state_unpowered = "rugged"
-	max_damage = 300
-	broken_damage = 200
+	max_integrity = 300
+	integrity_failure = 1/3 // Stops working below 100 integrity.
 
 /obj/item/modular_computer/tablet/preset/custom_loadout/rugged/install_default_hardware()
 	..()

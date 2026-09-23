@@ -10,6 +10,10 @@
 	if(!material)
 		material = get_material_by_name(DEFAULT_WALL_MATERIAL)
 	if(material)
+		// The material cap is the wall's integrity; the wall keeps the damage it already has.
+		var/missing = max_integrity - get_integrity()
+		max_integrity = material_integrity_cap()
+		update_integrity(max(1, max_integrity - missing))
 		explosion_resistance = material.explosion_resistance
 		// A wall is geometry around a material, not a hard-coded thermal type.
 		var/material_temperature = SSair?.initialized ? return_temperature() : temperature
@@ -88,12 +92,9 @@
 	if(texture)
 		add_overlay(texture)
 
-	if(damage != 0)
-		var/integrity = material.integrity
-		if(reinf_material)
-			integrity += reinf_material.integrity
-
-		var/overlay = round(damage / integrity * damage_overlays.len) + 1
+	var/damage_fraction = wall_damage_fraction()
+	if(damage_fraction > 0)
+		var/overlay = round(damage_fraction * damage_overlays.len) + 1
 		if(overlay > damage_overlays.len)
 			overlay = damage_overlays.len
 

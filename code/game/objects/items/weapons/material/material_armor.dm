@@ -27,7 +27,8 @@
 		qdel(src)
 	else
 		name = "[material.display_name] [initial(name)]"
-		health = round(material.integrity/10)
+		max_integrity = max(1, round(material.integrity/10)) * MATERIAL_WEAR_UNIT
+		update_integrity(max_integrity)
 		if(applies_material_color)
 			color = material.icon_colour
 		material.dq_apply_material_behaviors(src) // light + a self-processing rad/tox component.
@@ -54,18 +55,28 @@
 			if(material.opacity - 0.3 <= 0)
 				return // Lasers ignore 'fully' transparent material.
 
+	var/wear = 0
 	if(material.is_brittle())
-		health = 0
+		wear = get_integrity()
 	else if(!prob(material.hardness))
-		health--
+		wear = MATERIAL_WEAR_UNIT
 	if(material.shape_recovery_rate > 0)
 		var/turf/turf = get_turf(src)
 		var/datum/gas_mixture/air = turf?.return_air()
 		if(air && air.return_temperature() >= material.shape_recovery_temperature)
-			health = min(round(material.integrity / 10), health + 1)
+			wear -= MATERIAL_WEAR_UNIT
 
-	if(health <= 0)
-		shatter()
+	// Wear is not a blow from outside, so the armour's own armour doesn't apply.
+	if(wear > 0)
+		take_damage(wear, BRUTE, null, FALSE)
+	else if(wear < 0)
+		repair_damage(-wear)
+
+/// Material armour worn out by hits shatters. Fire and acid destroy it outright.
+/obj/item/clothing/atom_destruction(damage_flag)
+	if(!material || damage_flag == FIRE || damage_flag == ACID)
+		return ..()
+	shatter()
 
 /obj/item/clothing/proc/shatter()
 	if(!material)

@@ -80,7 +80,7 @@
 		damage_upper = S.melee_damage_upper
 	to_chat(user, span_danger("You smash against the wall!"))
 	user.do_attack_animation(src)
-	take_damage(rand(damage_lower,damage_upper))
+	receive_generic_attack(user, rand(damage_lower,damage_upper))
 
 /turf/simulated/wall/proc/success_smash(mob/user)
 	to_chat(user, span_danger("You smash through the wall!"))
@@ -238,7 +238,7 @@
 
 	var/turf/T = user.loc	//get user's location for delay checks
 
-	if(damage && focused_tool_stage == TOOL_WELDER)
+	if(get_integrity() < max_integrity && focused_tool_stage == TOOL_WELDER)
 
 		var/obj/item/weldingtool/WT = W.get_welder()
 
@@ -248,9 +248,9 @@
 		if(WT.remove_fuel(0,user))
 			to_chat(user, span_notice("You start repairing the damage to [src]."))
 			playsound(src, WT.usesound, 100, 1)
-			if(do_after(user, max(5, damage / 5) * WT.toolspeed, target = src) && WT && WT.isOn())
+			if(do_after(user, max(5, (max_integrity - get_integrity()) / 5) * WT.toolspeed, target = src) && WT && WT.isOn())
 				to_chat(user, span_notice("You finish repairing the damage to [src]."))
-				take_damage(-damage)
+				repair_damage(max_integrity)
 		else
 			to_chat(user, span_notice("You need more welding fuel to complete this task."))
 			return

@@ -281,7 +281,7 @@
 					EF.visible_message(span_danger("Something begins forcing itself through \the [EF]!"))
 				else
 					EF.visible_message(span_danger("\The [src] begins forcing itself through \the [EF]!"))
-				if(do_after(src, EF.strength * 5, target))
+				if(do_after(src, EF.get_strength() * 5, target))
 					EF.adjust_strength(rand(-8, -10))
 					EF.visible_message(span_danger("\The [src] crashes through \the [EF]!"))
 				else

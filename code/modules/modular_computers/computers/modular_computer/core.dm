@@ -32,7 +32,7 @@
 		last_power_usage = 0
 		return 0
 
-	if(damage > broken_damage)
+	if(computer_broken())
 		shutdown_computer()
 		return 0
 
@@ -83,7 +83,8 @@
 	for(var/obj/item/computer_hardware/CH in src.get_all_components())
 		uninstall_component(null, CH)
 		qdel(CH)
-	paired_uavs.Cut()
+	if(paired_uavs)
+		paired_uavs.Cut()
 	return ..()
 
 /obj/item/modular_computer/emag_act(remaining_charges, mob/user)
@@ -133,7 +134,7 @@
 	if(tesla_link)
 		tesla_link.enabled = 1
 	var/issynth = issilicon(user) // Robots and AIs get different activation messages.
-	if(damage > broken_damage)
+	if(computer_broken())
 		if(issynth)
 			to_chat(user, "You send an activation signal to \the [src], but it responds with an error code. It must be damaged.")
 		else
