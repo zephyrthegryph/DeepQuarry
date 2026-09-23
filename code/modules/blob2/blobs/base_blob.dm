@@ -266,7 +266,7 @@ REGISTRY_MEMBERSHIP(/obj/structure/blob, REGISTRY_BLOBS)
 				var/obj/item/clothing/gloves/G = H.get_equipped_item(SLOT_ID_GLOVES)
 				real_damage += G.punch_force
 				hit_kind = G.punch_injury_kind || hit_kind
-		if(HULK in H.mutations)
+		if(H.has_mutation(HULK))
 			real_damage *= 2 // Hulks do twice the damage
 
 		real_damage = max(1, real_damage)

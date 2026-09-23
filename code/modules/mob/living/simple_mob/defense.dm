@@ -61,7 +61,7 @@
 						var/obj/item/clothing/accessory/G = attacker.get_equipped_item(SLOT_ID_GLOVES)
 						real_damage += G.punch_force
 						hit_kind = G.punch_injury_kind || hit_kind
-					if(HULK in attacker.mutations)
+					if(attacker.has_mutation(HULK))
 						real_damage *= 2
 				if(real_damage <= damage_threshold)
 					L.visible_message(span_warning("\The [L] uselessly hits \the [src]!"))

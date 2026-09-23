@@ -37,7 +37,7 @@
 			M.bloody_hands--
 
 	//He has no prints!
-	if(mFingerprints in M.mutations)
+	if(M.has_mutation(mFingerprints))
 		if(C.get_lastprint() != M.key)
 			C.add_hiddenprints(M)
 			C.set_lastprint(M.key)

@@ -57,7 +57,7 @@
 		if("underwear")
 			var/datum/category_group/underwear/UWC = tgui_input_list(user, "Choose underwear. (Do not do this without OOC permission from the other player)", "Show/hide underwear", GLOB.global_underwear.categories)
 			if(!UWC) return
-			var/datum/category_item/underwear/UWI = all_underwear[UWC.name]
+			var/datum/category_item/underwear/UWI = LAZYACCESS(all_underwear, UWC.name)
 			if(!UWI || UWI.name == "None")
 				to_chat(user, span_notice("\The [src] does not have [UWC.gender==PLURAL ? "[UWC.display_name]" : "a [UWC.display_name]"]."))
 				return

@@ -97,7 +97,7 @@
 	mob_type = /mob/living/carbon/alien
 
 /datum/life_system/vision/carbon/alien/tick(mob/living/carbon/alien/self, datum/life_context/ctx)
-	if (self.stat == 2 || (XRAY in self.mutations))
+	if (self.stat == 2 || (self.has_mutation(XRAY)))
 		self.sight |= SEE_TURFS
 		self.sight |= SEE_MOBS
 		self.sight |= SEE_OBJS

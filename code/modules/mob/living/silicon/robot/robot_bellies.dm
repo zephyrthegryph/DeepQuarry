@@ -8,7 +8,7 @@
 			vore_fullness_ex[belly] = 0 //set the lists equal to the old lists
 			vore_icon_bellies += belly
 		for(var/belly in sprite_datum.belly_light_list)
-			vore_light_states[belly] = 0
+			LAZYSET(vore_light_states, belly, 0)
 	else if(sprite_datum.has_vore_belly_sprites)
 		vore_capacity_ex = list("sleeper" = 1)
 		vore_fullness_ex = list("sleeper" = 0)
@@ -20,11 +20,11 @@
 
 /mob/living/silicon/robot/proc/reset_belly_lights(b_class)
 	if(length(sprite_datum.belly_light_list) && LAZYFIND(sprite_datum.belly_light_list, b_class))
-		vore_light_states[b_class] = 0
+		LAZYSET(vore_light_states, b_class, 0)
 
 /mob/living/silicon/robot/proc/update_belly_lights(b_class)
 	if(length(sprite_datum.belly_light_list) && LAZYFIND(sprite_datum.belly_light_list, b_class))
-		vore_light_states[b_class] = 2
+		LAZYSET(vore_light_states, b_class, 2)
 		for (var/belly in vore_organs)
 			var/obj/belly/B = belly
 			if(b_class == "sleeper" && (B.silicon_belly_overlay_preference == "Vorebelly" || B.silicon_belly_overlay_preference == "Both") || b_class != "sleeper")
@@ -32,7 +32,7 @@
 					continue
 				for(var/contents in B.contents)
 					if(isliving(contents))
-						vore_light_states[b_class] = 1
+						LAZYSET(vore_light_states, b_class, 1)
 						return
 
 /mob/living/silicon/robot/vs_animate(belly_class)

@@ -190,6 +190,7 @@
 	var/mob/living/simple_mob/SM = M
 	if(istype(SM))
 		var/list/fl = expedition_faction_loot_pool(faction)
+		SM.loot_list = SM.loot_list ? SM.loot_list.Copy() : list()
 		for(var/p in fl)
 			SM.loot_list[p] = fl[p]
 	return M
@@ -202,5 +203,6 @@
 	var/mob/M = new boss_path(T)
 	var/mob/living/simple_mob/SM = M
 	if(istype(SM))
+		SM.loot_list = SM.loot_list ? SM.loot_list.Copy() : list()
 		SM.loot_list[expedition_faction_boss_loot(faction)] = 100
 	return M

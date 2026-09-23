@@ -349,7 +349,7 @@ GLOBAL_LIST_EMPTY(PDA_Manifest)
 			G.fields["brain_type"] = H.get_FBP_type()
 		else
 			G.fields["brain_type"] = "Organic"
-		G.fields["fingerprint"]	= md5(H.dna.uni_identity)
+		G.fields["fingerprint"]	= md5(H.dna.GetUniIdentity())
 		G.fields["p_stat"]		= "Active"
 		G.fields["m_stat"]		= "Stable"
 		G.fields["sex"]			= gender2text(H.gender)
@@ -403,7 +403,7 @@ GLOBAL_LIST_EMPTY(PDA_Manifest)
 		L.fields["rank"] 		= H.mind.assigned_role
 		L.fields["age"]			= H.age
 		L.fields["languages"] = list2text(H.languages,", ")
-		L.fields["fingerprint"]	= md5(H.dna.uni_identity)
+		L.fields["fingerprint"]	= md5(H.dna.GetUniIdentity())
 		L.fields["sex"]			= gender2text(H.gender)
 		L.fields["id_gender"]	= gender2text(H.identifying_gender)
 		if(H.get_FBP_type())
