@@ -130,6 +130,12 @@ contents, so call sites stop hand-rolling `locate(TYPE) in loc` and
   for hot paths that only need a side effect per atom (radiation, EMP,
   explosion falloff) and would otherwise call `turf_contents_of_type()` and
   throw the list away.
+- `area_contents_of_type(A, type)` and `locate_in_area(A, type)` are the same
+  two shapes one level up: every, or the first, atom of `type` anywhere in
+  area `A`. BYOND iterates an area's atoms directly (`for(x in area)`), the
+  same engine-maintained mechanism as a turf's contents, just wider; this is
+  not a per-turf loop under the hood, so it stays a single centralizing wrapper
+  rather than a `turf_contents_of_type()` call per member turf.
 
 Because every caller goes through these three procs, the *implementation* can
 change later — e.g. to consult a Rust-side spatial index for a specific hot

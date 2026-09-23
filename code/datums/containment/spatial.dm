@@ -45,3 +45,27 @@
 			continue
 		. += 1
 		callback.Invoke(AM)
+
+/// Every atom of `type` (and subtypes) anywhere in area `A`, as a new list.
+/// Equivalent to `for(var/type/A in Area)`, one level up from
+/// `turf_contents_of_type()`.
+///
+/// # Examples
+///
+/// ```
+/// var/list/obj/machinery/light/L = area_contents_of_type(A, /obj/machinery/light)
+/// ```
+/proc/area_contents_of_type(area/A, type)
+	. = list()
+	if(!A)
+		return
+	for(var/atom/movable/AM in A)
+		if(istype(AM, type))
+			. += AM
+
+/// The first atom of `type` anywhere in area `A`, or null. Equivalent to
+/// `locate(type) in A`.
+/proc/locate_in_area(area/A, type)
+	if(!A)
+		return null
+	return locate(type) in A

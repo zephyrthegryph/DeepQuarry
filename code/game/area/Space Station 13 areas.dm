@@ -996,10 +996,10 @@ NOTE: there are two lists of areas in the end of this file: centcom and station 
 	icon_state = "brig"
 
 /area/security/brig/prison_break()
-	for(var/obj/structure/closet/secure_closet/brig/temp_closet in src)
+	for(var/obj/structure/closet/secure_closet/brig/temp_closet in area_contents_of_type(src, /obj/structure/closet/secure_closet/brig))
 		temp_closet.locked = 0
 		temp_closet.icon_state = "closed_unlocked"
-	for(var/obj/machinery/door_timer/temp_timer in src)
+	for(var/obj/machinery/door_timer/temp_timer in area_contents_of_type(src, /obj/machinery/door_timer))
 		temp_timer.timer_duration = 1
 	..()
 
@@ -1008,10 +1008,10 @@ NOTE: there are two lists of areas in the end of this file: centcom and station 
 	icon_state = "sec_prison"
 
 /area/security/prison/prison_break()
-	for(var/obj/structure/closet/secure_closet/brig/temp_closet in src)
+	for(var/obj/structure/closet/secure_closet/brig/temp_closet in area_contents_of_type(src, /obj/structure/closet/secure_closet/brig))
 		temp_closet.locked = 0
 		temp_closet.icon_state = "closed_unlocked"
-	for(var/obj/machinery/door_timer/temp_timer in src)
+	for(var/obj/machinery/door_timer/temp_timer in area_contents_of_type(src, /obj/machinery/door_timer))
 		temp_timer.timer_duration = 1
 	..()
 
@@ -1079,7 +1079,7 @@ NOTE: there are two lists of areas in the end of this file: centcom and station 
 		..()
 
 		spawn(10) //let objects set up first
-			for(var/turf/turfToGrayscale in src)
+			for(var/turf/turfToGrayscale in area_contents_of_type(src, /turf))
 				if(turfToGrayscale.icon)
 					var/icon/newIcon = icon(turfToGrayscale.icon)
 					newIcon.GrayScale()
