@@ -173,10 +173,10 @@ This design is sent to DQ Medical for review before code lands.
 
 | Step | Scope | Owner |
 |---|---|---|
-| L1 | `destroy_transaction()` in `qdel` with phases 0–8; `SLOT_DROP_HOLDER` removed and policies for every slot; nested children-first resolution; `TRANSFER(resolver)`; processor recording and auto-stop; screen release | ledger-joint (replaces J1) |
-| L2 | Links framework: `REF_OWNED`/`REF_PAIR`/`REF_BACKLIST`, boot-time tables, `link_set`/`link_clear`, the declared-reference lint and its ratchet | ledger-joint |
-| L3 | Verbs: `consume`, `replace_with`, `lifetime`/`expire`, `slot_clear`, `delete_on_death`, plus the `destroy_effects` data | ledger-joint |
-| L4 | Mechanical sweeps: delete the ~200 redundant overrides; convert overrides and qdel sites domain by domain; ratchet the lints to the floor | conversion agents, after the core systems land |
+| LC1 | `destroy_transaction()` in `qdel` with phases 0–8; `SLOT_DROP_HOLDER` removed and policies for every slot; nested children-first resolution; `TRANSFER(resolver)`; processor recording and auto-stop; screen release | ledger-joint (replaces J1) |
+| LC2 | Links framework: `REF_OWNED`/`REF_PAIR`/`REF_BACKLIST`, boot-time tables, `link_set`/`link_clear`, the declared-reference lint and its ratchet | ledger-joint |
+| LC3 | Verbs: `consume`, `replace_with`, `lifetime`/`expire`, `slot_clear`, `delete_on_death`, plus the `destroy_effects` data | ledger-joint |
+| LC4 | Mechanical sweeps: delete the ~200 redundant overrides; convert overrides and qdel sites domain by domain; ratchet the lints to the floor | conversion agents, after the core systems land |
 
 Tests (written now, run when the testing freeze lifts):
 - phase ordering;
