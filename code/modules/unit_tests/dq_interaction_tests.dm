@@ -366,6 +366,11 @@
 	var/list/actual = list()
 	for(var/type in snapshot_types)
 		var/atom/target = allocate(type, T)
+		// See dq_snapshot_lines(): newly-allocated machinery can briefly read as
+		// unpowered until the power subsystem's next tick in a full-suite run.
+		if(ismachinery(target))
+			var/obj/machinery/M = target
+			M.stat &= ~(NOPOWER|BROKEN)
 		for(var/list/combination as anything in combinations)
 			var/datum/interaction_resolution/resolution = interactions_for(actors[combination[1]], target, held_items[combination[2]])
 			actual += "[type]|[combination[1]]|[combination[2]] => [dq_resolution_text(resolution)]"

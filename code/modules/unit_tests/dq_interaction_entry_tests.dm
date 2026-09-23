@@ -204,6 +204,13 @@
  */
 /datum/unit_test/proc/dq_snapshot_lines(atom/target, turf/T, list/actors)
 	. = list()
+	// Newly-allocated machinery can briefly read as unpowered until the power
+	// subsystem's next tick, which raced this snapshot in a full-suite run
+	// (never in a focused run, which skips that wait): clear NOPOWER/BROKEN so
+	// the recorded snapshot reflects the interaction wiring, not power timing.
+	if(ismachinery(target))
+		var/obj/machinery/M = target
+		M.stat &= ~(NOPOWER|BROKEN)
 	var/list/held_types = list()
 	for(var/datum/interaction/interaction as anything in interaction_candidates(target))
 		if(interaction.held_type)
