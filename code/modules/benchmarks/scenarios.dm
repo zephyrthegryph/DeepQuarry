@@ -38,6 +38,25 @@
 	for(var/kind in types)
 		metric("types_[kind]", types[kind], "types")
 	metric("init_seconds", Master.initializations_seconds, "s")
+	// Per-instance matter lists: null unless the item differs from its type's DEFAULT_MATTER.
+	var/items = 0
+	var/matter_lists = 0
+	var/matter_entries = 0
+	var/list/matter_owners = list()
+	for(var/obj/item/I in world)
+		items++
+		if(I.matter)
+			matter_lists++
+			matter_entries += length(I.matter)
+			matter_owners["[I.type]"]++
+		CHECK_TICK
+	metric("items_total", items, "instances")
+	metric("item_matter_lists", matter_lists, "lists")
+	metric("item_matter_entries", matter_entries, "entries")
+	matter_owners = sortTim(matter_owners, GLOBAL_PROC_REF(cmp_numeric_desc), associative = TRUE)
+	if(length(matter_owners) > 20)
+		matter_owners.Cut(21)
+	detail("item_matter_owner_types", matter_owners)
 	// Weakrefs never get cleaned up while their target lives, so count them by target type.
 	var/list/weakref_targets = list()
 	var/weakrefs = 0
