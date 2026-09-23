@@ -246,6 +246,8 @@ fn pump_query_ui(entity: ByondValue) -> Result<ByondValue> {
         .into_iter()
         .map(|v| match v {
             QueryValue::F32(f) => ByondValue::from(f),
+            #[allow(clippy::cast_possible_truncation)]
+            QueryValue::F64(f) => ByondValue::from(f as f32),
             QueryValue::Bool(b) => bool_value(b),
         })
         .collect();
