@@ -39,6 +39,11 @@
 
 // ---- Predicates ----
 
+/// The prey's devourable preference alone (spontaneous and automatic vore, can_vore()).
+/datum/predicate/vore_devourable
+	name = "devourable"
+	spec = list(REQ_BECAUSE(REQ_ON(PRED_TARGET, /mob/living/proc/vore_pref_devourable, null), "They aren't able to be devoured."))
+
 /// Being eaten at all.
 /datum/predicate/vore_devour
 	name = "devour"
