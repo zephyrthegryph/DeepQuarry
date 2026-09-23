@@ -102,28 +102,14 @@
 	)
 	min_symptoms = 1
 	max_symptoms = 3
-	// Pulse and BP both derive from actual blood volume already; only
-	// the perfusion-related o2 sat needs an extra hit.
 	// Damages the heart at high severity (poor coronary perfusion);
 	// downstream cardiac damage spawns cardiac_arrest via the emergent
-	// system. We also stack hypoxia directly — see the proc override
-	// below.
+	// system. The collapse itself is BF_CIRCULATION in the band tables:
+	// the physiology turns lost perfusion into oxygen debt.
 	organ_damage_threshold = 60
 	organ_damage_type = "internal"
 	organ_damage_per_tick = 2
 	organ_damage_targets = list(O_HEART)
-
-// Hypovolemic shock stacks hypoxia on top of the heart damage. Low
-// blood means low perfusion means O2 transport collapses; upstream
-// code converts that hypoxia into brain damage, which is what spawns
-// anoxic_brain_injury via the emergent system. This is the natural
-// path: bleed → shock → hypoxia → brain damage → ABI.
-/datum/affliction/hypovolemic_shock/_apply_organ_damage()
-	..()
-	if(!owner || severity < 60)
-		return
-	var/scale = clamp((severity - 60) / 40, 0, 1)
-	owner.injure(INJURY_ASPHYXIA, 2.5 * scale, flags = INJURE_IGNORE_RESISTANCE | INJURE_SILENT)
 
 // Severity-scaled mechanical effects: even at low severity (perfusion
 // just starting to fail), the patient feels weak. At high severity
@@ -160,8 +146,8 @@
 	// path so the body treats them as the band's own table.
 	var/static/list/bands = list(
 		list("factors" = alist(BF_SLOWDOWN = 0.3), "spontaneous_emotes" = list("sigh"), "spontaneous_emote_prob" = 2),
-		list("factors" = alist(BF_SLOWDOWN = 0.8, BF_ACCURACY = -12, BF_MOTOR_CONTROL = 0.99), "spontaneous_emotes" = list("wobble", "shake"), "spontaneous_emote_prob" = 3),
-		list("factors" = alist(BF_SLOWDOWN = 1.5, BF_ACCURACY = -25, BF_MOTOR_CONTROL = 0.96), "spontaneous_emotes" = list("stagger", "collapse", "groan"), "spontaneous_emote_prob" = 6),
+		list("factors" = alist(BF_SLOWDOWN = 0.8, BF_ACCURACY = -12, BF_MOTOR_CONTROL = 0.99, BF_CIRCULATION = 0.85), "spontaneous_emotes" = list("wobble", "shake"), "spontaneous_emote_prob" = 3),
+		list("factors" = alist(BF_SLOWDOWN = 1.5, BF_ACCURACY = -25, BF_MOTOR_CONTROL = 0.96, BF_CIRCULATION = 0.5), "spontaneous_emotes" = list("stagger", "collapse", "groan"), "spontaneous_emote_prob" = 6),
 	)
 	var/list/entry = bands[band + 1]
 	band_factors = entry["factors"]
@@ -270,10 +256,7 @@
 	min_symptoms = 1
 	max_symptoms = 2
 	// Severe stage-3 burns crash the body's ability to hold fluid
-	// balance; we model that as systemic hypoxia above stage 3.
-	organ_damage_threshold = 70
-	organ_damage_type = INJURY_ASPHYXIA
-	organ_damage_per_tick = 3
+	// balance: stage 3 lowers BF_CIRCULATION.
 
 /datum/affliction/burn_shock/New()
 	..()
@@ -316,7 +299,7 @@
 			),
 			"min_symptoms" = 3,
 			"max_symptoms" = 4,
-			"factors" = alist(BF_SLOWDOWN = 1.4, BF_ACCURACY = -20, BF_MOTOR_CONTROL = 0.97, BF_HEART_RATE = 40, BF_BP_SYSTOLIC = -35, BF_BP_DIASTOLIC = -20, BF_O2_SAT = -8),
+			"factors" = alist(BF_SLOWDOWN = 1.4, BF_ACCURACY = -20, BF_MOTOR_CONTROL = 0.97, BF_HEART_RATE = 40, BF_BP_SYSTOLIC = -35, BF_BP_DIASTOLIC = -20, BF_CIRCULATION = 0.5),
 			"spontaneous_emotes" = list("groan in pain", "collapse", "shudder"),
 			"spontaneous_emote_prob" = 7,
 		),

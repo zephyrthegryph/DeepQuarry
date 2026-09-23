@@ -36,7 +36,7 @@
 		patientbruteloss = H.injury_load(INJURY_CATEGORY_PHYSICAL)
 		patientfireloss = H.injury_load(INJURY_CATEGORY_THERMAL)
 		patienttoxloss = H.injury_load(INJURY_CATEGORY_TOXIC)
-		patientoxyloss = H.injury_load(INJURY_CATEGORY_ASPHYXIA)
+		patientoxyloss = H.oxygen_debt()
 		patientstatus = H.stat
 		if(H.vessel)
 			bloodData["volume"] = round(H.vessel.get_reagent_amount("blood"))

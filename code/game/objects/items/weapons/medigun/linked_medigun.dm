@@ -183,8 +183,8 @@
 					H.mend(TREAT_ANTITOXIN, healmod)
 					medigun_base_unit.toxcharge -= healmod
 					ishealing = TRUE
-		if(H.injury_load(INJURY_CATEGORY_ASPHYXIA))
-			healmod = min(10*lastier,H.injury_load(INJURY_CATEGORY_ASPHYXIA))
+		if(H.oxygen_debt())
+			healmod = min(10*lastier,H.oxygen_debt())
 			if(!checked_use(min(10,healmod)))
 				to_chat(user, span_warning("\The [src] doesn't have enough charge left to do that."))
 				return

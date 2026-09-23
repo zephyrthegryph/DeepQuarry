@@ -273,9 +273,17 @@
 
 /obj/item/projectile/bullet/suffocationbullet//How does this even work?
 	name = "co bullet"
-	damage = 20
-	injury_kind = INJURY_ASPHYXIA
+	damage = 5
+	injury_kind = INJURY_PIERCE
 	hud_state = "pistol_tranq"
+
+/// Carbon monoxide: binds the blood's haemoglobin, so it carries little oxygen
+/// even at a normal saturation.
+/obj/item/projectile/bullet/suffocationbullet/on_hit(atom/target, blocked = 0)
+	. = ..()
+	var/mob/living/L = target
+	if(istype(L) && blocked < 100)
+		L.body?.add_restriction(src, BF_O2_CARRIAGE, 0.3, 30 SECONDS)
 
 /obj/item/projectile/bullet/cyanideround
 	name = "poison bullet"

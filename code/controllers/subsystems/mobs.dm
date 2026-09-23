@@ -230,7 +230,7 @@ SUBSYSTEM_DEF(mobs)
 	"bruteloss" = L.injury_load(INJURY_CATEGORY_PHYSICAL),
 	"fireloss" = L.injury_load(INJURY_CATEGORY_THERMAL),
 	"brainloss" = L.injury_load(INJURY_CATEGORY_NEURAL),
-	"oxyloss" = L.injury_load(INJURY_CATEGORY_ASPHYXIA),
+	"oxyloss" = L.oxygen_debt(),
 	"coord" = "[L.x], [L.y], [L.z]"
 	)
 	death_list += list(data)

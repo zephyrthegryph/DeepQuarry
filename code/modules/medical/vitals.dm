@@ -97,7 +97,7 @@
 	if(stat == DEAD)
 		return 0
 	var/sat = 99
-	var/hypoxia = injury_load(INJURY_CATEGORY_ASPHYXIA)
+	var/hypoxia = oxygen_debt()
 	// Linear drop: every 5 points of hypoxia = 1% sat lost (rough mapping).
 	sat -= round(hypoxia / 5)
 	sat += factor(BF_O2_SAT)

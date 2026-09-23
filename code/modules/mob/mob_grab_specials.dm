@@ -33,7 +33,7 @@
 		if(H.injury_load(INJURY_CATEGORY_TOXIC) >= 40)
 			to_chat(user, span_warning("[H] has an unhealthy skin discoloration."))
 			bad = 1
-		if(H.injury_load(INJURY_CATEGORY_ASPHYXIA) >= 20)
+		if(H.oxygen_debt() >= 20)
 			to_chat(user, span_warning("[H]'s skin is unusaly pale."))
 			bad = 1
 		if(E.status & ORGAN_DEAD)

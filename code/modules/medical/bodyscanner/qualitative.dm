@@ -79,7 +79,7 @@
 	var/neural_max = brain?.max_damage || 100
 	out += list(list("kind" = "brute",     "label" = "Trauma",        "band" = dq_qualitative_damage_band(H.injury_load(INJURY_CATEGORY_PHYSICAL), 100)))
 	out += list(list("kind" = "fire",      "label" = "Burns",         "band" = dq_qualitative_damage_band(H.injury_load(INJURY_CATEGORY_THERMAL), 100)))
-	out += list(list("kind" = "oxy",       "label" = "Respiratory",   "band" = dq_qualitative_damage_band(H.injury_load(INJURY_CATEGORY_ASPHYXIA), 100)))
+	out += list(list("kind" = "oxy",       "label" = "Respiratory",   "band" = dq_qualitative_damage_band(H.oxygen_debt(), 100)))
 	out += list(list("kind" = "tox",       "label" = "Toxin",         "band" = dq_qualitative_damage_band(H.injury_load(INJURY_CATEGORY_TOXIC), 100)))
 	out += list(list("kind" = "brain",     "label" = "Neurological",  "band" = dq_qualitative_damage_band(H.injury_load(INJURY_CATEGORY_NEURAL), neural_max)))
 	out += list(list("kind" = "clone",     "label" = "Genetic",       "band" = dq_qualitative_damage_band(H.injury_load(INJURY_CATEGORY_GENETIC), 100)))

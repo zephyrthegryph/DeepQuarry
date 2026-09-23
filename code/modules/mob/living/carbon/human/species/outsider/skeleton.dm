@@ -24,7 +24,7 @@
 	blood_volume = null
 	taste_sensitivity = TASTE_DULL
 	hunger_factor = 0
-	factor_baseline = alist(BF_METABOLISM = 0, BF_INCOMING_THERMAL = 0, BF_INCOMING_TOXIC = 0, BF_INCOMING_ASPHYXIA = 0)
+	factor_baseline = alist(BF_METABOLISM = 0, BF_INCOMING_THERMAL = 0, BF_INCOMING_TOXIC = 0, BF_DEMAND = 0)
 
 	virus_immune = 1
 

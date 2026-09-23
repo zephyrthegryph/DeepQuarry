@@ -58,7 +58,7 @@
 		dat += span_bold("Surface Bleeding") + " - Apply bandages or administer Bicaridine.<br>"
 	if(bleeding_internal)
 		dat += span_bold("Internal Bleeding") + " - Commence an internal vein repair operation or administer coagulants, such as Myelamine.<br>"
-	if(M.injury_load(INJURY_CATEGORY_ASPHYXIA))
+	if(M.oxygen_debt())
 		dat += span_bold("Suffocation") + " - Administer Dexalin or Dexalin Plus. Check for heart or lung damage.<br>"
 	if(infection)
 		dat += span_bold("Infection") + " - Administer Spaceacillin. If severe, use Corophizine or overdose on Spaceacillin and monitor until well.<br>"

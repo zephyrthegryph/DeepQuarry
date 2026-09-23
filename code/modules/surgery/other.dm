@@ -72,7 +72,7 @@
 	max_duration = 40
 
 /datum/surgery_step/internal/detoxify/can_use(mob/living/user, mob/living/carbon/human/target, target_zone, obj/item/tool)
-	return ..() && target_zone == BP_TORSO && (target.injury_load(INJURY_CATEGORY_TOXIC) || target.injury_load(INJURY_CATEGORY_ASPHYXIA) || target.injury_load(INJURY_CATEGORY_GENETIC))
+	return ..() && target_zone == BP_TORSO && (target.injury_load(INJURY_CATEGORY_TOXIC) || target.oxygen_debt() || target.injury_load(INJURY_CATEGORY_GENETIC))
 
 /datum/surgery_step/internal/detoxify/begin_step(mob/living/user, mob/living/carbon/human/target, target_zone, obj/item/tool)
 	user.visible_message(span_notice("[user] begins to pull toxins from, and restore oxygen to [target]'s musculature and organs with \the [tool]."), \

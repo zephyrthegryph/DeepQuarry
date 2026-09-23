@@ -189,7 +189,7 @@
 				self.host.reagents.add_reagent(REAGENT_ID_LEPORAZINE, 2)
 				self.chemicals -= 50
 
-			if(self.host.injury_load(INJURY_CATEGORY_ASPHYXIA) >= 30 && self.chemicals > 50)
+			if(self.host.oxygen_debt() >= 30 && self.chemicals > 50)
 				self.host.reagents.add_reagent(REAGENT_ID_IRON, 10)
 				self.chemicals -= 40
 

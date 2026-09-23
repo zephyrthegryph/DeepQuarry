@@ -50,7 +50,7 @@
 				C.regenerate_icons()
 			else
 				to_chat(C, span_danger("A painful discharge of energy strikes you!"))
-				C.injure(INJURY_ASPHYXIA, rand(5,25) * weakness)
+				C.add_oxygen_debt(rand(5,25) * weakness, src)
 				C.injure(INJURY_TOXIN, rand(5,25) * weakness)
 				C.injure(INJURY_BLUNT, rand(5,25) * weakness)
 				C.injure(INJURY_BURN, rand(5,25) * weakness)
@@ -80,7 +80,7 @@
 					C.injure(INJURY_BLUNT, 1 * weakness, null, null, 0, null, INJURE_SILENT)
 					C.injure(INJURY_BURN, 1 * weakness, null, null, 0, null, INJURE_SILENT)
 					C.injure(INJURY_TOXIN, 1 * weakness, null, null, 0, null, INJURE_SILENT)
-					C.injure(INJURY_ASPHYXIA, 1 * weakness, null, null, 0, null, INJURE_SILENT)
+					C.add_oxygen_debt(1 * weakness)
 					C.injure(INJURY_NEURAL, 0.1 * weakness, null, null, 0, null, INJURE_SILENT)
 
 /datum/artifact_effect/health/DoEffectPulse()
@@ -100,7 +100,7 @@
 					C.injure(INJURY_BLUNT, 3 * weakness, null, null, 0, null, INJURE_SILENT)
 					C.injure(INJURY_BURN, 3 * weakness, null, null, 0, null, INJURE_SILENT)
 					C.injure(INJURY_TOXIN, 3 * weakness, null, null, 0, null, INJURE_SILENT)
-					C.injure(INJURY_ASPHYXIA, 3 * weakness, null, null, 0, null, INJURE_SILENT)
+					C.add_oxygen_debt(3 * weakness)
 					C.injure(INJURY_NEURAL, 0.1 * weakness, null, null, 0, null, INJURE_SILENT)
 
 #undef EFFECT_HEAL

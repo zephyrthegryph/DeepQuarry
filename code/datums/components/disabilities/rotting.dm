@@ -28,7 +28,7 @@
 			if(3)
 				owner.add_modifier(/datum/modifier/numbness/mild, 3 SECONDS)
 			else
-				owner.injure(INJURY_ASPHYXIA, rand(13, 26))
+				owner.add_oxygen_debt(rand(13, 26), src)
 		// external organs need to fall off if damaged enough
 		var/obj/item/organ/O = pick(owner.organs)
 		if(O && !(O.organ_tag == BP_GROIN || O.organ_tag == BP_TORSO) && istype(O,/obj/item/organ/external))

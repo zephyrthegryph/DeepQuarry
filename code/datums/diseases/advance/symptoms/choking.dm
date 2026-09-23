@@ -69,12 +69,13 @@ Bonus
 			M.emote("gasp")
 	return
 
+/// The windpipe narrows for a while: an airway restriction.
 /datum/symptom/choking/proc/Choke_stage_3_4(mob/living/M, datum/disease/advance/A)
-	var/get_damage = rand(5, 10) * power
-	M.injure(INJURY_ASPHYXIA, get_damage)
+	M.body?.add_restriction(A, BF_AIRWAY, 0.5 / power, rand(5, 10) SECONDS)
 	return TRUE
 
+/// The lungs shrink: breathing restriction on top of the narrowed airway.
 /datum/symptom/choking/proc/Choke(mob/living/M, datum/disease/advance/A)
-	var/get_damage = rand(2, 5) * power
-	M.injure(INJURY_ASPHYXIA, get_damage)
+	M.body?.add_restriction(A, BF_AIRWAY, 0.5 / power, rand(5, 10) SECONDS)
+	M.body?.add_restriction(src, BF_LUNG_MECHANICS, 0.6 / power, rand(4, 8) SECONDS)
 	return TRUE

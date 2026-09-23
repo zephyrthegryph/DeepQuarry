@@ -178,10 +178,11 @@
 	flush = TRUE
 	our_ai.suiciding = TRUE
 	to_chat(our_ai, "Your power has been disabled!")
+	var/power_lost = 0
 	while(our_ai && our_ai.stat != DEAD)
 		// This is absolutely evil and I love it.
-		if(our_ai.deployed_shell && prob(our_ai.injury_load(INJURY_CATEGORY_ASPHYXIA))) //You feel it creeping? Eventually will reach 100, resulting in the second half of the AI's remaining life being lonely.
+		if(our_ai.deployed_shell && prob(power_lost)) //You feel it creeping? Eventually will reach 100, resulting in the second half of the AI's remaining life being lonely.
 			our_ai.disconnect_shell("Disconnecting from remote shell due to insufficent power.")
-		our_ai.injure(INJURY_ASPHYXIA, 2, source = src)
+		power_lost += 2
 		sleep(1 SECOND)
 	flush = FALSE

@@ -57,7 +57,7 @@
 	if(T && !is_type_in_list(T, GLOB.suitable_fish_turf_types))
 		if(prob(50))
 			self.say(pick("Blub", "Glub", "Burble"))
-		self.injure(INJURY_ASPHYXIA, self.unsuitable_atoms_damage, source = T)
+		self.add_oxygen_debt(self.unsuitable_atoms_damage, T)
 
 // Subtypes.
 /mob/living/simple_mob/animal/passive/fish/bass

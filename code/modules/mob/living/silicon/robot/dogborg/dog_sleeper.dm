@@ -293,7 +293,7 @@
 			"health" = round((2 * patient.vitality() - 1) * 100),
 			"max_health" = 100,
 			"brute" = round(patient.injury_load(INJURY_CATEGORY_PHYSICAL), 0.1),
-			"oxy" = round(patient.injury_load(INJURY_CATEGORY_ASPHYXIA), 0.1),
+			"oxy" = round(patient.oxygen_debt(), 0.1),
 			"tox" = round(patient.injury_load(INJURY_CATEGORY_TOXIC), 0.1),
 			"burn" = round(patient.injury_load(INJURY_CATEGORY_THERMAL), 0.1),
 			"paralysis" = patient.paralysis,

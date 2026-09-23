@@ -85,8 +85,12 @@
 				kind = INJURY_TOXIN
 				heal_tags = list(TREAT_ANTITOXIN)
 			if("oxygen")
-				kind = INJURY_ASPHYXIA
-				heal_tags = list(TREAT_OXYGENATION)
+				// Not an injury: oxygen debt, added or paid down directly.
+				if(amount > 0)
+					L.add_oxygen_debt(amount, "admin [key_name(usr)]")
+				else if(amount < 0)
+					L.mend(TREAT_OXYGENATION, -amount)
+				newamt = L.oxygen_debt()
 			if("brain")
 				kind = INJURY_NEURAL
 				heal_tags = list(TREAT_NEURAL_REPAIR, TREAT_SYSTEM_RESTORE)
@@ -102,12 +106,13 @@
 			else
 				to_chat(usr, "You caused an error. DEBUG: Text:[Text] Mob:[L]", confidential = TRUE)
 				return
-		if(amount > 0)
-			L.injure(kind, amount, flags = INJURE_IGNORE_RESISTANCE)
-		else if(amount < 0)
-			for(var/tag in heal_tags)
-				L.mend(tag, -amount)
-		newamt = L.injury_load(injury_category(kind))
+		if(kind)
+			if(amount > 0)
+				L.injure(kind, amount, flags = INJURE_IGNORE_RESISTANCE)
+			else if(amount < 0)
+				for(var/tag in heal_tags)
+					L.mend(tag, -amount)
+			newamt = L.injury_load(injury_category(kind))
 
 		if(amount != 0)
 			var/log_msg = "[key_name(usr)] dealt [amount] amount of [Text] damage to [key_name(L)]"

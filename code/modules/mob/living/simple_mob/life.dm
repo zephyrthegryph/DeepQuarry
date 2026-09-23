@@ -213,7 +213,7 @@
 		self.clear_alert("temp")
 
 	if(atmos_unsuitable)
-		self.injure(INJURY_ASPHYXIA, self.unsuitable_atoms_damage, source = self.loc)
+		self.add_oxygen_debt(self.unsuitable_atoms_damage, self.loc)
 	else
 		self.mend(TREAT_OXYGENATION, self.unsuitable_atoms_damage)
 

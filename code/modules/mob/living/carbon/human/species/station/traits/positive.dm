@@ -719,7 +719,7 @@
 	// Heart is in overdrive
 	// Bleed more with higher blood pressure.
 	// Metabolism in overdrive
-	factors = alist(BF_METABOLISM = 2.5, BF_BLEEDING = 1.25, BF_SLOWDOWN = -11, BF_ACCURACY = 25, BF_DISPERSION = -25, BF_EVASION = 20, BF_ATTACK_SPEED = 0.5, BF_MELEE_DAMAGE = 2, BF_INCOMING_ALL = 0.8, BF_INCOMING_ASPHYXIA = 0.1, BF_DISABLE_DURATION = 0, BF_ENDURANCE_FLAT = 25, BF_PAIN_IMMUNITY = 1, BF_PULSE_SHIFT = 2)
+	factors = alist(BF_METABOLISM = 2.5, BF_BLEEDING = 1.25, BF_SLOWDOWN = -11, BF_ACCURACY = 25, BF_DISPERSION = -25, BF_EVASION = 20, BF_ATTACK_SPEED = 0.5, BF_MELEE_DAMAGE = 2, BF_INCOMING_ALL = 0.8, BF_DEMAND = 0.1, BF_DISABLE_DURATION = 0, BF_ENDURANCE_FLAT = 25, BF_PAIN_IMMUNITY = 1, BF_PULSE_SHIFT = 2)
 
 
 	var/original_length
@@ -750,7 +750,7 @@
 	on_created_text = span_danger("Your body aches and groans, forcing you into a period of rest as it recovers from the intense adrenaline rush.")
 	on_expired_text = span_notice("You finally recover from your adrenaline rush, your body returning to its normal state.")
 
-	factors = alist(BF_METABOLISM = 0.5, BF_BLEEDING = 0.8, BF_SLOWDOWN = 2, BF_ACCURACY = -25, BF_DISPERSION = 25, BF_EVASION = -20, BF_ATTACK_SPEED = 2, BF_MELEE_DAMAGE = 0.75, BF_INCOMING_ASPHYXIA = 1.25, BF_INCOMING_PAIN = 1.75, BF_DISABLE_DURATION = 1.35, BF_PULSE_SHIFT = 0.5)
+	factors = alist(BF_METABOLISM = 0.5, BF_BLEEDING = 0.8, BF_SLOWDOWN = 2, BF_ACCURACY = -25, BF_DISPERSION = 25, BF_EVASION = -20, BF_ATTACK_SPEED = 2, BF_MELEE_DAMAGE = 0.75, BF_DEMAND = 1.25, BF_INCOMING_PAIN = 1.75, BF_DISABLE_DURATION = 1.35, BF_PULSE_SHIFT = 0.5)
 
 /datum/trait/positive/insect_sting
 	name = "Insect Sting"

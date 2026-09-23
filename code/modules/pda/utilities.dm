@@ -47,7 +47,7 @@
 /datum/data/pda/utility/scanmode/medical/scan_mob(mob/living/C, mob/living/user)
 	C.visible_message(span_warning("[user] has analyzed [C]'s vitals!"))
 	user.show_message(span_notice("Analyzing Results for [C]:"))
-	var/oxy = round(C.injury_load(INJURY_CATEGORY_ASPHYXIA), 0.1)
+	var/oxy = round(C.oxygen_debt(), 0.1)
 	var/tox = round(C.injury_load(INJURY_CATEGORY_TOXIC), 0.1)
 	var/burn = round(C.injury_load(INJURY_CATEGORY_THERMAL), 0.1)
 	var/brute = round(C.injury_load(INJURY_CATEGORY_PHYSICAL), 0.1)

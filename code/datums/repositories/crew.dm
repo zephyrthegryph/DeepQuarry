@@ -44,7 +44,7 @@ GLOBAL_DATUM_INIT(crew_repository, /datum/repository/crew, new)
 				if(C.sensor_mode >= SUIT_SENSOR_VITAL)
 					crewmemberData["stat"] = H.stat
 					// UI keys kept for the CrewMonitor interface; sourced from injury load per category.
-					crewmemberData["oxy"] = round(H.injury_load(INJURY_CATEGORY_ASPHYXIA), 1)
+					crewmemberData["oxy"] = round(H.oxygen_debt(), 1)
 					crewmemberData["tox"] = round(H.injury_load(INJURY_CATEGORY_TOXIC), 1)
 					crewmemberData["fire"] = round(H.injury_load(INJURY_CATEGORY_THERMAL), 1)
 					crewmemberData["brute"] = round(H.injury_load(INJURY_CATEGORY_PHYSICAL), 1)

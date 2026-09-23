@@ -72,7 +72,7 @@
 		user.show_message(dat, 1)
 		return
 
-	var/oxy_load = round(M.injury_load(INJURY_CATEGORY_ASPHYXIA))
+	var/oxy_load = round(M.oxygen_debt())
 	var/tox_load = round(M.injury_load(INJURY_CATEGORY_TOXIC))
 	var/burn_load = round(M.injury_load(INJURY_CATEGORY_THERMAL))
 	var/brute_load = round(M.injury_load(INJURY_CATEGORY_PHYSICAL))
