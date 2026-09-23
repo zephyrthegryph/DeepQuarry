@@ -526,3 +526,149 @@
 	TEST_ASSERT_EQUAL(jointext(order, ","), jointext(L.ordered(), ","), "state children follow the ledger")
 	TEST_ASSERT_EQUAL(order[length(order)], steel, "the re-inserted item is numbered last")
 
+// ---- J2: spill and transfer are real ledger transactions ----
+
+/datum/unit_test/dq_containment_j2_forced_spill
+
+/datum/unit_test/dq_containment_j2_forced_spill/Run()
+	var/turf/T = dq_containment_floor()
+	var/obj/structure/closet/closet = allocate(/obj/structure/closet, T)
+	var/obj/item/dq_containment_test/steel = allocate(/obj/item/dq_containment_test, T)
+	closet.open()
+	TEST_ASSERT(steel.move_into(closet), "steel in")
+	closet.close()
+
+	// A blocked pre-remove would normally refuse the move; the forced spill
+	// must not be refusable, so it still leaves.
+	var/datum/dq_containment_listener/listener = allocate(/datum/dq_containment_listener)
+	listener.watch(closet)
+	listener.block_remove = TRUE
+	listener.block_insert = TRUE
+	qdel(closet)
+	TEST_ASSERT(QDELETED(closet), "closet with a blocking listener still deletes")
+	TEST_ASSERT_EQUAL(steel.loc, T, "steel spilled to the drop location despite the blocks")
+	TEST_ASSERT_EQUAL(jointext(listener.events, ","), "out:[CONTAINER_SLOT_INTERIOR]", "the forced move still fires the commit signals")
+
+/datum/unit_test/dq_containment_j2_forced_transfer
+
+/datum/unit_test/dq_containment_j2_forced_transfer/Run()
+	var/turf/T = dq_containment_floor()
+	var/obj/item/dq_containment_box/outer = allocate(/obj/item/dq_containment_box, T)
+	var/obj/item/dq_containment_box/inner = allocate(/obj/item/dq_containment_box, T)
+	TEST_ASSERT(inner.move_into(outer, "pocket"), "the inner box into the outer one's pocket")
+	var/obj/item/dq_containment_test/wood/knife = allocate(/obj/item/dq_containment_test/wood, T)
+	// "pocket" is the slot with SLOT_DROP_TRANSFER; "main" spills instead.
+	TEST_ASSERT(knife.move_into(inner, "pocket"), "knife into the inner box's transferring slot")
+	TEST_ASSERT_EQUAL(inner.loc, outer, "the inner box is inside the outer one")
+	qdel(inner)
+	TEST_ASSERT_EQUAL(knife.loc, outer, "SLOT_DROP_TRANSFER moved the knife into the outer box's default slot")
+	dq_verify_ledger(outer, "after a forced transfer")
+
+// ---- J4: keyed slots ----
+
+/// A single keyed slot: unlimited capacity, keyed on the item's name.
+/obj/item/dq_containment_test/keyed
+	name = "keyed test item"
+
+/obj/item/dq_containment_test/keyed/slot_key()
+	return name
+
+/obj/item/dq_containment_keyring
+	name = "keyring"
+	w_class = ITEMSIZE_NORMAL
+
+/obj/item/dq_containment_keyring/slot_def_types()
+	var/static/list/types = list(/datum/slot_def/dq_test_keyed)
+	return types
+
+/datum/slot_def/dq_test_keyed
+	id = "keyed"
+	is_default = TRUE
+	keyed = TRUE
+
+/datum/unit_test/dq_containment_j4_keyed_slots
+
+/datum/unit_test/dq_containment_j4_keyed_slots/Run()
+	var/turf/T = dq_containment_floor()
+	var/obj/item/dq_containment_keyring/ring = allocate(/obj/item/dq_containment_keyring, T)
+	var/obj/item/dq_containment_test/keyed/red = allocate(/obj/item/dq_containment_test/keyed, T)
+	red.name = "red key"
+	var/obj/item/dq_containment_test/keyed/red2 = allocate(/obj/item/dq_containment_test/keyed, T)
+	red2.name = "red key"
+	var/obj/item/dq_containment_test/keyed/blue = allocate(/obj/item/dq_containment_test/keyed, T)
+	blue.name = "blue key"
+
+	TEST_ASSERT(red.move_into(ring), "the first red key goes in")
+	TEST_ASSERT_EQUAL(ring.slot_lookup("keyed", "red key"), red, "O(1) lookup finds it by key")
+	TEST_ASSERT_EQUAL(dq_ledger_refusal(red2, ring), "[red] already has that", "a duplicate key is refused")
+	TEST_ASSERT(!red2.move_into(ring), "and the move fails")
+	TEST_ASSERT(blue.move_into(ring), "an unrelated key still goes in")
+	dq_verify_ledger(ring, "with two distinct keys")
+
+	// Rekeying: renaming red frees its old key and claims the new one.
+	red.name = "renamed key"
+	red.ledger_rekey()
+	TEST_ASSERT_NULL(ring.slot_lookup("keyed", "red key"), "the old key is gone")
+	TEST_ASSERT_EQUAL(ring.slot_lookup("keyed", "renamed key"), red, "the new key resolves")
+	TEST_ASSERT(red2.move_into(ring), "the freed key can be reused by another thing")
+	dq_verify_ledger(ring, "after a rekey")
+
+	// Leaving frees the key.
+	TEST_ASSERT(ring.slot_remove(blue, T), "blue leaves")
+	TEST_ASSERT_NULL(ring.slot_lookup("keyed", "blue key"), "its key is freed")
+	dq_verify_ledger(ring, "after a removal")
+
+// ---- J6: thing-side commit hooks ----
+
+/obj/item/dq_containment_test/hooked
+	name = "hooked test item"
+	has_slot_hooks = TRUE
+	sharp = TRUE // so it can enter the box's sharp-only "main" slot too
+	var/list/log = list()
+
+/obj/item/dq_containment_test/hooked/on_slotted(atom/holder, slot_id)
+	log += "on:[holder]:[slot_id]"
+
+/obj/item/dq_containment_test/hooked/on_unslotted(atom/holder, slot_id)
+	log += "off:[holder]:[slot_id]"
+
+/datum/unit_test/dq_containment_j6_commit_hooks
+
+/datum/unit_test/dq_containment_j6_commit_hooks/Run()
+	var/turf/T = dq_containment_floor()
+	var/obj/item/dq_containment_box/box = allocate(/obj/item/dq_containment_box, T)
+	var/obj/item/dq_containment_test/hooked/thing = allocate(/obj/item/dq_containment_test/hooked, T)
+	var/obj/item/dq_containment_test/plain = allocate(/obj/item/dq_containment_test, T)
+
+	TEST_ASSERT(thing.move_into(box, "pocket"), "into the pocket")
+	TEST_ASSERT_EQUAL(jointext(thing.log, ","), "on:[box]:pocket", "on_slotted fires on insert")
+
+	thing.log.Cut()
+	TEST_ASSERT(thing.move_into(box, "main"), "reslot from pocket to the sharp-only main slot")
+	TEST_ASSERT_EQUAL(jointext(thing.log, ","), "off:[box]:pocket,on:[box]:main", "reslot fires leave-then-enter, on the same move")
+
+	thing.log.Cut()
+	TEST_ASSERT(box.slot_remove(thing, T), "out of the box entirely")
+	TEST_ASSERT_EQUAL(jointext(thing.log, ","), "off:[box]:main", "on_unslotted fires on removal")
+
+	// A type that never overrides the hooks (has_slot_hooks stays FALSE)
+	// pays no proc call: nothing to observe, but this must not runtime.
+	TEST_ASSERT(plain.move_into(box, "pocket"), "an unhooked item moves normally")
+	TEST_ASSERT(box.slot_remove(plain, T), "and leaves normally")
+
+// ---- J8: slot_item ----
+
+/datum/unit_test/dq_containment_j8_slot_item
+
+/datum/unit_test/dq_containment_j8_slot_item/Run()
+	var/turf/T = dq_containment_floor()
+	var/obj/item/dq_containment_box/box = allocate(/obj/item/dq_containment_box, T)
+	TEST_ASSERT_NULL(box.slot_item("pocket"), "empty slot: null")
+	var/obj/item/dq_containment_test/wood/knife = allocate(/obj/item/dq_containment_test/wood, T)
+	TEST_ASSERT(knife.move_into(box, "main"), "knife into main")
+	TEST_ASSERT_EQUAL(box.slot_item("main"), knife, "slot_item returns the one thing in it")
+	var/obj/item/dq_containment_test/wood/knife2 = allocate(/obj/item/dq_containment_test/wood, T)
+	TEST_ASSERT(knife2.move_into(box, "main"), "a second sharp item into main")
+	TEST_ASSERT_EQUAL(box.slot_item("main"), knife, "slot_item still returns the first (insertion order)")
+	TEST_ASSERT_NULL(box.slot_item("lid"), "an unknown slot: null, not a runtime")
+

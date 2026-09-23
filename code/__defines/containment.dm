@@ -132,7 +132,18 @@
 /// Snapshot of the thing's contribution to the aggregates: measure values in
 /// the ledger's measure order, then tag words.
 #define LEDGER_E_SNAPSHOT 4
-#define LEDGER_E_LEN 4
+/// The thing's `slot_key()` at insert time, for a keyed slot (J4). Null for
+/// an unkeyed slot, or a keyed slot whose thing has no key right now.
+#define LEDGER_E_KEY 5
+#define LEDGER_E_LEN 5
 
 /// Separates a slot id from the serial in an entry id: "interior#12".
 #define LEDGER_ENTRY_SEPARATOR "#"
+
+// ---- slot_remove() flags (J2) ----
+/// Skip the removal refusal, the acceptance refusal and both pre signals.
+/// The commit bookkeeping (note_exit/note_enter, COMSIG_SLOT_*, on_slotted/
+/// on_unslotted) still runs. Used to spill or transfer a holder's contents
+/// while it is being destroyed (ledger_apply_drop_policies()), where the
+/// move must not be refusable.
+#define LEDGER_MOVE_FORCED (1<<0)

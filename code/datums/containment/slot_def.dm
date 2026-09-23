@@ -28,6 +28,10 @@
 	/// default slot. The first declared slot is the default unless another
 	/// sets this.
 	var/is_default = FALSE
+	/// Keyed slot (J4): a thing's `slot_key()` is stored on its ledger entry
+	/// at insert and indexed for O(1) `slot_lookup()`. A second thing with
+	/// the same key is refused. Only keyed slots pay for the index.
+	var/keyed = FALSE
 
 	// ---- Propagation (containment.md §3.2, C2; paths.dm walks these) ----
 	/// SLOT_LAYER_*: order among this holder's layered slots, higher is further
