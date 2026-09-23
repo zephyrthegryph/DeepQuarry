@@ -70,11 +70,24 @@
 	else
 		icon_state = "[icontype][anchored]"
 
-/obj/machinery/power/tesla_coil/attackby(obj/item/W, mob/user, params)
+/obj/machinery/power/tesla_coil/declare_interactions(list/into)
+	into += list(
+		/datum/interaction/machine_item/tesla_coil_fingerprint,
+		/datum/interaction/machine_item/part_replacement,
+		/datum/interaction/machine_hand/tesla_coil_buckle_grabbed,
+	)
+	..()
+
+/// Old attackby: added a fingerprint for any item before trying the part replacer.
+/datum/interaction/machine_item/tesla_coil_fingerprint
+	id = "tesla_coil_fingerprint"
+	name = "Touch"
+	held_type = /obj/item
+	effect = /obj/machinery/power/tesla_coil/proc/interaction_fingerprint
+
+/obj/machinery/power/tesla_coil/proc/interaction_fingerprint(mob/user, obj/item/held, datum/interaction/interaction)
 	add_fingerprint(user)
-	if(default_part_replacement(user, W))
-		return
-	return ..()
+	return FALSE
 
 /obj/machinery/power/tesla_coil/screwdriver_act(mob/user, obj/item/W)
 	return ..()
@@ -143,10 +156,17 @@
 
 	return ITEM_INTERACT_BLOCKING
 
-/obj/machinery/power/tesla_coil/attack_hand(mob/user)
-	if(IS_GRABBING(user) && user_buckle_mob(user.pulling, user))
-		return
-	..()
+/datum/interaction/machine_hand/tesla_coil_buckle_grabbed
+	id = "tesla_coil_buckle_grabbed"
+	name = "Buckle"
+	offered_when = list(REQ_ON(PRED_ACTOR, /obj/machinery/power/tesla_coil/proc/actor_is_grabbing, null))
+	effect = /obj/machinery/power/tesla_coil/proc/interaction_buckle_grabbed
+
+/obj/machinery/power/tesla_coil/proc/actor_is_grabbing(mob/actor, atom/target, obj/item/held)
+	return IS_GRABBING(actor)
+
+/obj/machinery/power/tesla_coil/proc/interaction_buckle_grabbed(mob/user, obj/item/held, datum/interaction/interaction)
+	return user_buckle_mob(user.pulling, user) ? TRUE : FALSE
 
 /obj/machinery/power/tesla_coil/proc/coil_act(power, explosive, current_jumps)
 	var/power_produced = power / power_loss
@@ -351,15 +371,24 @@
 	else
 		icon_state = "grounding_rod[anchored]"
 
-/obj/machinery/power/grounding_rod/attackby(obj/item/W, mob/user, params)
-	if(default_part_replacement(user, W))
-		return
-	return ..()
-
-/obj/machinery/power/grounding_rod/attack_hand(mob/user)
-	if(IS_GRABBING(user) && user_buckle_mob(user.pulling, user))
-		return
+/obj/machinery/power/grounding_rod/declare_interactions(list/into)
+	into += list(
+		/datum/interaction/machine_item/part_replacement,
+		/datum/interaction/machine_hand/grounding_rod_buckle_grabbed,
+	)
 	..()
+
+/datum/interaction/machine_hand/grounding_rod_buckle_grabbed
+	id = "grounding_rod_buckle_grabbed"
+	name = "Buckle"
+	offered_when = list(REQ_ON(PRED_ACTOR, /obj/machinery/power/grounding_rod/proc/actor_is_grabbing, null))
+	effect = /obj/machinery/power/grounding_rod/proc/interaction_buckle_grabbed
+
+/obj/machinery/power/grounding_rod/proc/actor_is_grabbing(mob/actor, atom/target, obj/item/held)
+	return IS_GRABBING(actor)
+
+/obj/machinery/power/grounding_rod/proc/interaction_buckle_grabbed(mob/user, obj/item/held, datum/interaction/interaction)
+	return user_buckle_mob(user.pulling, user) ? TRUE : FALSE
 
 //Mapspawn variants of each.
 /obj/machinery/power/tesla_coil/pre_mapped

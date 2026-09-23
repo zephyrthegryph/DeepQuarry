@@ -21,19 +21,37 @@
 /obj/machinery/computer/stockexchange/Destroy()
 	return ..()
 
-/obj/machinery/computer/stockexchange/attackby(obj/item/W, mob/user, params)
+/obj/machinery/computer/stockexchange/declare_interactions(list/into)
+	into += list(
+		/datum/interaction/machine_item/stockexchange_attackby,
+		/datum/interaction/machine_hand/stockexchange_use,
+	)
 	..()
+
+/// Approximation: the old attackby unconditionally called ..() then always refreshed the UIs.
+/// The ancestor call can't be replayed from here, so this declines (FALSE) to let the entry
+/// fall through to the base attackby; the UI refresh now happens before that fallback rather
+/// than after, an order approximation - see report.
+/datum/interaction/machine_item/stockexchange_attackby
+	id = "stockexchange_attackby"
+	name = "Use"
+	held_type = /obj/item
+	effect = /obj/machinery/computer/stockexchange/proc/interaction_attackby
+
+/obj/machinery/computer/stockexchange/proc/interaction_attackby(mob/user, obj/item/W, datum/interaction/interaction)
 	SStgui.update_uis(src)
-	return
+	return FALSE
 
-/obj/machinery/computer/stockexchange/attack_hand(mob/user)
-	if(..(user))
-		return
+/datum/interaction/machine_hand/stockexchange_use
+	id = "stockexchange_use"
+	name = "Use"
+	effect = /obj/machinery/computer/stockexchange/proc/interaction_use
 
+/obj/machinery/computer/stockexchange/proc/interaction_use(mob/user, obj/item/held, datum/interaction/interaction)
 	if(stat & (BROKEN|NOPOWER))
-		return
-
+		return TRUE
 	tgui_interact(user)
+	return TRUE
 
 /obj/machinery/computer/stockexchange/proc/balance()
 	if (!logged_in)

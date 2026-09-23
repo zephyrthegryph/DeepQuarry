@@ -57,8 +57,21 @@
 	if(Adjacent(user))
 		. += "A light switch. It is [on? "on" : "off"]."
 
-/obj/machinery/light_switch/attack_hand(mob/user)
+/obj/machinery/light_switch/declare_interactions(list/into)
+	into += list(
+		/datum/interaction/machine_hand/ungated/lightswitch_toggle,
+		/datum/interaction/machine_item/lightswitch_fingerprint,
+	)
+	..()
 
+/// The old attack_hand: never called ..(), toggled the lights for the whole area.
+/datum/interaction/machine_hand/ungated/lightswitch_toggle
+	id = "lightswitch_toggle"
+	name = "Toggle"
+	category = INTERACTION_CAT_TOGGLE
+	effect = /obj/machinery/light_switch/proc/interaction_toggle
+
+/obj/machinery/light_switch/proc/interaction_toggle(mob/user, obj/item/held, datum/interaction/interaction)
 	on = !on
 
 	area.lightswitch = on
@@ -71,6 +84,7 @@
 
 	area.power_change()
 	GLOB.lights_switched_on_roundstat++
+	return TRUE
 
 /obj/machinery/light_switch/allow_pai_interaction(mob/living/silicon/pai/user, proximity_flag)
 	return proximity_flag

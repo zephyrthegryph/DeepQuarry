@@ -125,35 +125,68 @@ GLOBAL_LIST_INIT(recharger_battery_exempt, list(
 			return
 	return TRUE
 
-/obj/machinery/recharger/MouseDrop_T(obj/item/G as obj, mob/user as mob)
-	if((!small && is_type_in_list(G, GLOB.allowed_recharger_devices)) || (small && is_type_in_list(G, GLOB.allowed_wallcharger_devices)))
-		if(!do_allowed_checks(G, user))
-			return
+/obj/machinery/recharger/declare_interactions(list/into)
+	into += list(
+		/datum/interaction/machine_item/recharger_insert,
+		/datum/interaction/machine_item/part_replacement,
+		/datum/interaction/machine_hand/ungated/recharger_take,
+		/datum/interaction/machine_drag/recharger_insert,
+	)
+	..()
 
-		G.forceMove(src)
-		charging = G
-		START_MACHINE_PROCESSING(src)
-		update_icon()
-		user.visible_message("[user] inserts [charging] into [src].", "You insert [charging] into [src].")
+/// Put a chargeable device in the recharger.
+/datum/interaction/machine_item/recharger_insert
+	id = "recharger_insert"
+	name = "Insert to charge"
+	offered_when = list(REQ_ON(PRED_TARGET, /obj/machinery/recharger/proc/takes_device, "it doesn't charge that"))
+	effect = /obj/machinery/recharger/proc/interaction_insert
 
-/obj/machinery/recharger/attackby(obj/item/G as obj, mob/user as mob)
-	if((!small && is_type_in_list(G, GLOB.allowed_recharger_devices)) || (small && is_type_in_list(G, GLOB.allowed_wallcharger_devices)))
-		if(!do_allowed_checks(G, user))
-			return
-		if(HAS_TRAIT(user, TRAIT_UNLUCKY) && prob(10))
-			user.visible_message("[user] inserts [charging] into [src] backwards!", "You insert [charging] into [src] backwards!")
-			user.drop_item()
-			G.forceMove(get_turf(src))
-			return
+/// Drag a chargeable device onto the recharger.
+/datum/interaction/machine_drag/recharger_insert
+	id = "recharger_drag_insert"
+	name = "Insert to charge"
+	offered_when = list(REQ_ON(PRED_TARGET, /obj/machinery/recharger/proc/takes_device, "it doesn't charge that"))
+	effect = /obj/machinery/recharger/proc/interaction_drag_insert
+
+/// Take the charging device out.
+/datum/interaction/machine_hand/ungated/recharger_take
+	id = "recharger_take"
+	name = "Take out"
+	category = INTERACTION_CAT_EJECT
+	requires = list(REQ_REACH_ADJACENT)
+	effect = /obj/machinery/recharger/proc/interaction_take
+
+/// Whether `held` is a device this recharger (or wall charger) takes.
+/obj/machinery/recharger/proc/takes_device(mob/actor, atom/target, atom/held)
+	if(!held)
+		return FALSE
+	return is_type_in_list(held, small ? GLOB.allowed_wallcharger_devices : GLOB.allowed_recharger_devices)
+
+/obj/machinery/recharger/proc/interaction_insert(mob/user, obj/item/G, datum/interaction/interaction)
+	if(!do_allowed_checks(G, user))
+		return TRUE
+	if(HAS_TRAIT(user, TRAIT_UNLUCKY) && prob(10))
+		user.visible_message("[user] inserts [charging] into [src] backwards!", "You insert [charging] into [src] backwards!")
 		user.drop_item()
-		G.forceMove(src)
-		charging = G
-		START_MACHINE_PROCESSING(src)
-		update_icon()
-		user.visible_message("[user] inserts [charging] into [src].", "You insert [charging] into [src].")
+		G.forceMove(get_turf(src))
+		return TRUE
+	user.drop_item()
+	G.forceMove(src)
+	charging = G
+	START_MACHINE_PROCESSING(src)
+	update_icon()
+	user.visible_message("[user] inserts [charging] into [src].", "You insert [charging] into [src].")
+	return TRUE
 
-	else if(default_part_replacement(user, G))
-		return
+/obj/machinery/recharger/proc/interaction_drag_insert(mob/user, obj/item/G, datum/interaction/interaction)
+	if(!do_allowed_checks(G, user))
+		return TRUE
+	G.forceMove(src)
+	charging = G
+	START_MACHINE_PROCESSING(src)
+	update_icon()
+	user.visible_message("[user] inserts [charging] into [src].", "You insert [charging] into [src].")
+	return TRUE
 
 /obj/machinery/recharger/wrench_act(mob/user, obj/item/tool)
 	if(!portable)
@@ -166,17 +199,15 @@ GLOBAL_LIST_INIT(recharger_battery_exempt, list(
 	playsound(src, tool.usesound, 75, TRUE)
 	return ITEM_INTERACT_SUCCESS
 
-/obj/machinery/recharger/attack_hand(mob/user as mob)
-	if(!Adjacent(user))
-		return FALSE
+/obj/machinery/recharger/proc/interaction_take(mob/user, obj/item/held, datum/interaction/interaction)
 	add_fingerprint(user)
-
 	if(charging)
 		user.visible_message("[user] removes [charging] from [src].", "You remove [charging] from [src].")
 		charging.update_icon()
 		user.put_in_hands(charging)
 		charging = null
 		update_icon()
+	return TRUE
 
 /obj/machinery/recharger/attack_ai(mob/user)
 	if(isrobot(user) && Adjacent(user)) // Borgs can remove the cell if they are near enough

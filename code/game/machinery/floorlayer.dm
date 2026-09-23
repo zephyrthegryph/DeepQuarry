@@ -28,19 +28,38 @@
 
 	old_turf = loc
 
-/obj/machinery/floorlayer/attack_hand(mob/user as mob)
-	on=!on
-	user.visible_message(span_notice("[user] has [!on?"de":""]activated \the [src]."), span_notice("You [!on?"de":""]activate \the [src]."))
-	return
-
-/obj/machinery/floorlayer/attackby(obj/item/W as obj, mob/user as mob)
-	if(istype(W, /obj/item/stack/tile))
-		to_chat(user, span_notice("\The [W] successfully loaded."))
-		user.drop_item(W)
-		TakeTile(W)
-		return
-
+/obj/machinery/floorlayer/declare_interactions(list/into)
+	into += list(
+		/datum/interaction/machine_hand/ungated/floorlayer_toggle,
+		/datum/interaction/machine_item/floorlayer_load_tile,
+	)
 	..()
+
+/// Old attack_hand: never called ..(), so it works without power.
+/datum/interaction/machine_hand/ungated/floorlayer_toggle
+	id = "floorlayer_toggle"
+	name = "Toggle"
+	category = INTERACTION_CAT_TOGGLE
+	effect = /obj/machinery/floorlayer/proc/interaction_toggle
+
+/obj/machinery/floorlayer/proc/interaction_toggle(mob/user, obj/item/held, datum/interaction/interaction)
+	on = !on
+	user.visible_message(span_notice("[user] has [!on?"de":""]activated \the [src]."), span_notice("You [!on?"de":""]activate \the [src]."))
+	return TRUE
+
+/// Old attackby: load a tile stack.
+/datum/interaction/machine_item/floorlayer_load_tile
+	id = "floorlayer_load_tile"
+	name = "Load tile"
+	category = INTERACTION_CAT_INSERT
+	held_type = /obj/item/stack/tile
+	effect = /obj/machinery/floorlayer/proc/interaction_load_tile
+
+/obj/machinery/floorlayer/proc/interaction_load_tile(mob/user, obj/item/W, datum/interaction/interaction)
+	to_chat(user, span_notice("\The [W] successfully loaded."))
+	user.drop_item(W)
+	TakeTile(W)
+	return TRUE
 
 /obj/machinery/floorlayer/wrench_act(mob/user, obj/item/tool)
 	var/selected_mode = tgui_input_list(user, "Choose work mode", "Mode", mode)

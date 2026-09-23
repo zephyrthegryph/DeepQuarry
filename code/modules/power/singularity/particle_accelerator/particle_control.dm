@@ -33,11 +33,24 @@
 	wires = null
 	return ..()
 
-/obj/machinery/particle_accelerator/control_box/attack_hand(mob/user as mob)
+/obj/machinery/particle_accelerator/control_box/declare_interactions(list/into)
+	into += list(
+		/datum/interaction/machine_hand/ungated/particle_control_use,
+	)
+	..()
+
+/// Old attack_hand: never called ..().
+/datum/interaction/machine_hand/ungated/particle_control_use
+	id = "particle_control_use"
+	name = "Use"
+	effect = /obj/machinery/particle_accelerator/control_box/proc/interaction_use
+
+/obj/machinery/particle_accelerator/control_box/proc/interaction_use(mob/user, obj/item/held, datum/interaction/interaction)
 	if(construction_state >= 3)
 		tgui_interact(user)
 	else if(construction_state == 2) // Wires exposed
 		wires.Interact(user)
+	return TRUE
 
 /obj/machinery/particle_accelerator/control_box/update_state()
 	if(construction_state < 3)

@@ -52,39 +52,63 @@
 			LAZYREMOVE(locks, L)
 	. = ..()
 
-/obj/machinery/door/blast/puzzle/attack_hand(mob/user as mob)
+/obj/machinery/door/blast/puzzle/declare_interactions(list/into)
+	into += list(
+		/datum/interaction/machine_hand/ungated/puzzle_door_touch,
+		/datum/interaction/machine_item/puzzle_door_use,
+	)
+	..()
+
+/// Old attack_hand (never called ..()): try the puzzle door's locks.
+/datum/interaction/machine_hand/ungated/puzzle_door_touch
+	id = "puzzle_door_touch"
+	name = "Open"
+	effect = /obj/machinery/door/blast/puzzle/proc/interaction_touch
+
+/obj/machinery/door/blast/puzzle/proc/interaction_touch(mob/user, obj/item/held, datum/interaction/interaction)
 	if(check_locks())
 		force_toggle(1, user)
 	else
 		to_chat(user, span_notice("\The [src] does not respond to your touch."))
+	return TRUE
 
-/obj/machinery/door/blast/puzzle/attackby(obj/item/C as obj, mob/user as mob)
-	if(istype(C, /obj/item))
-		if(C.pry == 1 && (!IS_HARMING(user) || (stat & BROKEN)))
-			if(istype(C,/obj/item/material/twohanded/fireaxe))
-				var/obj/item/material/twohanded/fireaxe/F = C
-				if(!F.wielded)
-					to_chat(user, span_warning("You need to be wielding \the [F] to do that."))
-					return
+/**
+ * Old attackby: pry it, hit it or plastique it. Kept as one interaction with the whole
+ * old body, since the branches share overlapping conditions (pry vs combat mode vs item type).
+ */
+/datum/interaction/machine_item/puzzle_door_use
+	id = "puzzle_door_use"
+	name = "Use"
+	held_type = /obj/item
+	effect = /obj/machinery/door/blast/puzzle/proc/interaction_use
 
-			if(check_locks())
-				force_toggle(1, user)
+/obj/machinery/door/blast/puzzle/proc/interaction_use(mob/user, obj/item/C, datum/interaction/interaction)
+	if(C.pry == 1 && (!IS_HARMING(user) || (stat & BROKEN)))
+		if(istype(C,/obj/item/material/twohanded/fireaxe))
+			var/obj/item/material/twohanded/fireaxe/F = C
+			if(!F.wielded)
+				to_chat(user, span_warning("You need to be wielding \the [F] to do that."))
+				return TRUE
 
-			else
-				to_chat(user, span_notice("[src]'s arcane workings resist your effort."))
-			return
+		if(check_locks())
+			force_toggle(1, user)
 
-		else if(src.density && (IS_HARMING(user)))
-			var/obj/item/W = C
-			user.setClickCooldown(user.get_attack_speed(W))
-			if(W.obj_damage_type())
-				user.do_attack_animation(src)
-				user.visible_message(span_danger("\The [user] hits \the [src] with \the [W] with no visible effect."))
+		else
+			to_chat(user, span_notice("[src]'s arcane workings resist your effort."))
+		return TRUE
 
-		else if(istype(C, /obj/item/plastique))
-			to_chat(user, span_danger("On contacting \the [src], a flash of light envelops \the [C] as it is turned to ash. Oh."))
-			qdel(C)
-			return 0
+	else if(src.density && (IS_HARMING(user)))
+		var/obj/item/W = C
+		user.setClickCooldown(user.get_attack_speed(W))
+		if(W.obj_damage_type())
+			user.do_attack_animation(src)
+			user.visible_message(span_danger("\The [user] hits \the [src] with \the [W] with no visible effect."))
+
+	else if(istype(C, /obj/item/plastique))
+		to_chat(user, span_danger("On contacting \the [src], a flash of light envelops \the [C] as it is turned to ash. Oh."))
+		qdel(C)
+		return TRUE
+	return TRUE
 
 /obj/machinery/door/blast/puzzle/attack_generic(mob/user, damage)
 	if(check_locks())

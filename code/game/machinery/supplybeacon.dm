@@ -58,18 +58,32 @@
 	playsound(src, tool.usesound, 50, TRUE)
 	return ITEM_INTERACT_SUCCESS
 
-/obj/machinery/power/supply_beacon/attack_hand(mob/user)
+/obj/machinery/power/supply_beacon/declare_interactions(list/into)
+	into += list(
+		/datum/interaction/machine_hand/ungated/supply_beacon_use,
+	)
+	..()
 
+/// Old attack_hand, which never called ..() (ungated: no machinery hand gate).
+/datum/interaction/machine_hand/ungated/supply_beacon_use
+	id = "supply_beacon_use"
+	name = "Use"
+	category = INTERACTION_CAT_CONFIGURE
+	effect = /obj/machinery/power/supply_beacon/proc/interaction_use
+
+/obj/machinery/power/supply_beacon/proc/interaction_use(mob/user, obj/item/held, datum/interaction/interaction)
 	if(expended)
 		update_use_power(USE_POWER_OFF)
-		to_chat (user, span_warning("\The [src] has used up its charge."))
-		return
-
+		to_chat(user, span_warning("\The [src] has used up its charge."))
+		return TRUE
 	if(anchored)
-		return use_power ? deactivate(user) : activate(user)
-	else
-		to_chat(user, span_warning("You need to secure the beacon with a wrench first!"))
-		return
+		if(use_power)
+			deactivate(user)
+		else
+			activate(user)
+		return TRUE
+	to_chat(user, span_warning("You need to secure the beacon with a wrench first!"))
+	return TRUE
 
 /obj/machinery/power/supply_beacon/attack_ai(mob/user)
 	if(user.Adjacent(src))

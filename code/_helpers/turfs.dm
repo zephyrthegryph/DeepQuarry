@@ -85,7 +85,6 @@
 	return turf_map
 
 /proc/translate_turfs(list/translation, area/base_area = null, turf/base_turf)
-	vg_topology_transaction_begin()
 	var/list/changed_turfs = list()
 	for(var/turf/source in translation)
 
@@ -110,7 +109,6 @@
 	// neighbours need no update of their own.
 	for(var/turf/changed as anything in changed_turfs)
 		changed.air_update_turf(TRUE, FALSE)
-	vg_topology_transaction_commit()
 
 	//change the old turfs (Currently done by translate_turf for us)
 	//for(var/turf/source in translation)

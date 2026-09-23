@@ -1,7 +1,6 @@
 /obj/machinery/shield_diffuser
 	name = "shield diffuser"
 	desc = "A small underfloor device specifically designed to disrupt energy barriers."
-	description_info = "This device disrupts shields on directly adjacent tiles (in a + shaped pattern). They are commonly installed around exterior airlocks to prevent shields from blocking EVA access."
 	icon = 'icons/obj/machines/shielding.dmi'
 	icon_state = "fdiffuser_on"
 	circuit = /obj/item/circuitboard/shield_diffuser
@@ -59,24 +58,32 @@
 	else
 		icon_state = "fdiffuser_on"
 
-/obj/machinery/shield_diffuser/attack_hand(mob/user as mob)
-	if((. = ..()))
-		return
+/obj/machinery/shield_diffuser/declare_interactions(list/into)
+	into += list(
+		/datum/interaction/machine_hand/shield_diffuser_toggle,
+		/datum/interaction/machine_item/part_replacement,
+	)
+	..()
+
+/// Old attack_hand: silence the alarm, or toggle the diffuser.
+/datum/interaction/machine_hand/shield_diffuser_toggle
+	id = "shield_diffuser_toggle"
+	name = "Toggle"
+	category = INTERACTION_CAT_TOGGLE
+	effect = /obj/machinery/shield_diffuser/proc/interaction_toggle
+
+/obj/machinery/shield_diffuser/proc/interaction_toggle(mob/user, obj/item/held, datum/interaction/interaction)
 	if(alarm)
 		to_chat(user, "You press an override button on \the [src], re-enabling it.")
 		alarm = 0
 		update_icon()
-		return
+		return TRUE
 	enabled = !enabled
 	START_MACHINE_PROCESSING(src)
 	update_use_power(enabled ? USE_POWER_ACTIVE : USE_POWER_IDLE)
 	update_icon()
 	to_chat(user, "You turn \the [src] [enabled ? "on" : "off"].")
-
-/obj/machinery/shield_diffuser/attackby(obj/item/W, mob/user)
-	if(default_part_replacement(user, W))
-		return
-	return ..()
+	return TRUE
 
 /obj/machinery/shield_diffuser/proc/meteor_alarm(duration)
 	if(!duration)

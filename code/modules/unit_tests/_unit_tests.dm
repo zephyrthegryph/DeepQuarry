@@ -213,7 +213,9 @@
 #include "dq_actor_adapter_tests.dm"
 #include "dq_combat_mode_tests.dm"
 #include "dq_input_tests.dm"
+#include "dq_i7_bulk_capture.dm"
 #include "dq_interaction_tests.dm"
+#include "dq_interaction_entry_tests.dm"
 #include "dq_tool_tests.dm"
 #include "xgm_total_moles_test.dm"
 // END_INCLUDE

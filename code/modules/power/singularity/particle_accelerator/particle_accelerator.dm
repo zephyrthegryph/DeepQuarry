@@ -256,11 +256,22 @@ So, hopefully this is helpful if any more icons are to be added/changed/wonderin
 			. += "It is assembled."
 
 
-/obj/machinery/particle_accelerator/attackby(obj/item/W, mob/user)
-	if(istype(W, /obj/item/stack/cable_coil) && process_tool_hit(W, user))
-		return
+/obj/machinery/particle_accelerator/declare_interactions(list/into)
+	into += list(
+		/datum/interaction/machine_item/particle_accelerator_use,
+	)
 	..()
-	return
+
+/datum/interaction/machine_item/particle_accelerator_use
+	id = "particle_accelerator_use"
+	name = "Use"
+	held_type = /obj/item/stack/cable_coil
+	effect = /obj/machinery/particle_accelerator/proc/interaction_attackby
+
+/obj/machinery/particle_accelerator/proc/interaction_attackby(mob/user, obj/item/held, datum/interaction/interaction)
+	if(process_tool_hit(held, user))
+		return TRUE
+	return FALSE
 
 /obj/machinery/particle_accelerator/wrench_act(mob/user, obj/item/W)
 	return process_tool_hit(W, user, TOOL_WRENCH) ? ITEM_INTERACT_SUCCESS : ITEM_INTERACT_BLOCKING

@@ -59,26 +59,44 @@
 		inserted.forceMove(drop_location())
 	return ..()
 
-/obj/machinery/gear_painter/attackby(obj/item/I, mob/living/user)
-	if(inserted)
-		to_chat(user, span_warning("The machine is already loaded."))
-		return
-	if(is_type_in_list(I, allowed_types) && !inoperable())
-		if(istype(I,/obj/item/stack/material/cyborg)) //Needs an exception for borg materials to avoid glitches.
-			return
-		user.visible_message(span_notice("[user] inserts \the [I] into the Color Mate receptable."))
-		user.drop_from_inventory(I)
-		I.forceMove(src)
-		inserted = I
-		SStgui.update_uis(src)
+/obj/machinery/gear_painter/declare_interactions(list/into)
+	into += list(
+		/datum/interaction/machine_item/gear_painter_insert,
+		/datum/interaction/machine_hand/open_ui,
+		/datum/interaction/machine_alt/gear_painter_alt_drop,
+	)
+	..()
 
-	else
-		return ..()
+/// Old attackby: insert an item of an allowed type into the Color Mate.
+/datum/interaction/machine_item/gear_painter_insert
+	id = "gear_painter_insert"
+	name = "Insert"
+	held_type = list(
+		/obj/item/clothing,
+		/obj/item/storage/backpack,
+		/obj/item/storage/belt,
+		/obj/item/toy,
+		/obj/item/stack/material,
+	)
+	offered_when = list(REQ_ON(PRED_TARGET, /obj/machinery/gear_painter/proc/gear_painter_operable, null))
+	requires = list(REQ_INTERACTION_REACH, REQ_ON(PRED_TARGET, /obj/machinery/gear_painter/proc/gear_painter_empty, "the machine is already loaded"))
+	effect = /obj/machinery/gear_painter/proc/interaction_insert
 
-/obj/machinery/gear_painter/attack_hand(mob/user)
-	if(..())
-		return
-	tgui_interact(user)
+/obj/machinery/gear_painter/proc/gear_painter_operable(mob/actor, atom/target, obj/item/held)
+	return !inoperable()
+
+/obj/machinery/gear_painter/proc/gear_painter_empty(mob/actor, atom/target, obj/item/held)
+	return !inserted
+
+/obj/machinery/gear_painter/proc/interaction_insert(mob/user, obj/item/I, datum/interaction/interaction)
+	if(istype(I,/obj/item/stack/material/cyborg)) //Needs an exception for borg materials to avoid glitches.
+		return TRUE
+	user.visible_message(span_notice("[user] inserts \the [I] into the Color Mate receptable."))
+	user.drop_from_inventory(I)
+	I.forceMove(src)
+	inserted = I
+	SStgui.update_uis(src)
+	return TRUE
 
 /obj/machinery/gear_painter/proc/insert_mob(mob/victim, mob/user)
 	if(inserted)
@@ -91,9 +109,22 @@
 /obj/machinery/gear_painter/AllowDrop()
 	return FALSE
 
-/obj/machinery/gear_painter/click_alt(mob/user)
-	. = ..()
+/**
+ * Old click_alt: `. = ..(); drop_item(user)` — the default alt-click behaviour always ran,
+ * then the item was dropped regardless. Approximated: drop_item() now runs first and
+ * declines, so the base alt-click default still runs after it (order reversed from the
+ * original, which is not expected to matter here — drop_item() and the base alt-click
+ * default don't interact).
+ */
+/datum/interaction/machine_alt/gear_painter_alt_drop
+	id = "gear_painter_alt_drop"
+	name = "Remove item"
+	consumes_input = FALSE
+	effect = /obj/machinery/gear_painter/proc/interaction_alt_drop
+
+/obj/machinery/gear_painter/proc/interaction_alt_drop(mob/user, obj/item/held, datum/interaction/interaction)
 	drop_item(user)
+	return FALSE
 
 /obj/machinery/gear_painter/proc/drop_item(mob/user)
 	if(!oview(1,src))

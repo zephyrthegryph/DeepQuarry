@@ -52,11 +52,23 @@
 	attack_hand(user)
 	return ITEM_INTERACT_SUCCESS
 
-/obj/machinery/power/grid_checker/attack_hand(mob/user)
+/obj/machinery/power/grid_checker/declare_interactions(list/into)
+	into += list(
+		/datum/interaction/machine_hand/ungated/grid_checker_use,
+	)
+	..()
+
+/datum/interaction/machine_hand/ungated/grid_checker_use
+	id = "grid_checker_use"
+	name = "Use"
+	effect = /obj/machinery/power/grid_checker/proc/interaction_grid_checker_use
+
+/obj/machinery/power/grid_checker/proc/interaction_grid_checker_use(mob/user, obj/item/held, datum/interaction/interaction)
 	if(!user)
-		return
+		return TRUE
 	add_fingerprint(user)
 	interact(user)
+	return TRUE
 
 /obj/machinery/power/grid_checker/interact(mob/user)
 	if(!user)

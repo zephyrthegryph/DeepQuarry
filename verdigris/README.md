@@ -23,10 +23,11 @@ verdigris/                  <- workspace root (this dir)
 ├── core/                   <- vg-core: domain-agnostic primitives (grid, ...).
 │                              Host-buildable, no byondapi, no global statics.
 ├── domains/
-│   ├── gas/                <- vg-gas: vendored auxmos (gas arena, turf diffusion);
-│   │                          i686 only until its binds move to vg-ffi. Also holds
-│   │                          the heat binds and gas adapter (turfs/heat.rs).
-│   │                          See domains/gas/UPSTREAM.md.
+│   ├── gas/                <- vg-gas: the gas domain (M1b): turf gas field,
+│   │                          pipe network, the gas world and its binds; i686
+│   │                          only until its binds move to vg-ffi. Also holds the
+│   │                          heat binds (heat.rs). Mixture maths vendored from
+│   │                          auxmos (domains/gas/UPSTREAM.md).
 │   ├── heat/               <- vg-heat: the heat domain (M4): turf solid field,
 │   │                          heat bodies, couplings, regulator. Host-buildable.
 │   ├── power/              <- vg-power: the power domain (M3): cables as an R7
@@ -55,7 +56,7 @@ verdigris/                  <- workspace root (this dir)
 | `verdigris` `material_power` | Double-precision electrical solve for material-engineering power networks. |
 | `vg-ffi` `allocator` | Tracking allocator: live/peak Rust heap overall and per `AllocTag`, with a thread-local tag scope (`allocator::tagged`); each block carries its tag in a small header so frees are charged correctly. |
 | `vg-ffi` `allocator` | Tracking allocator that reports live Rust memory to the profiler. |
-| `vg-gas` | Gas arena, turf adjacency (built from DM air-block masks), turf diffusion, decompression. Numeric gas registry in `gas/ids.rs`. Reactions stay in DM; see `code/ATMOSPHERICS/README.md`. | `turfs/heat.rs` holds the heat domain's binds and implements `vg_heat::GasExchange` over the arena. |
+| `vg-gas` | The gas domain (M1b, `simulation.md` §4): `cell` (turf gas as an R6 `FieldKind`: exponential bulk-flow and diffusion kernels, reservoirs, reaction check in `local`, channels), `pipes` (pipes as an R7 `NetworkKind`, main-owned until M2), `world` (the gas world: main-owned mixtures, the field's `Sim`, the pipe network, gas handles, the heat exchange buffer, dirty observations, gas watches), `turf` (turf and SSair binds), `gate` (reaction and visibility data for frame threads). Numeric gas registry in `gas/ids.rs`. Reactions run in DM; see `code/ATMOSPHERICS/README.md`. `heat.rs` holds the heat domain's binds. |
 | `vg-power` | The power domain (M3, `simulation.md` §6): `kind` (`Cables`, the R7 network kind: summary = supply, demand per APC channel, storage capacity; payload = pooled storage split by capacity), `geom` (the `get_connections()` rule, so Rust derives the graph from each piece's turf and directions), `apc` (the APC distributor), `smes` (SMES units) and `world` (`PowerWorld`: keys, batched edits, the ledger, one `step()` per machinery tick returning DM's events). Binds in `vg-ffi` (`ffi/src/power.rs`). |
 | `vg-heat` | The heat domain (M4, `simulation.md` §7, `temperature.md`): `solid` (the turf solid heat field on R6's framework, with conduction, Stefan–Boltzmann radiation to space reservoirs and planet reservoirs), `body` (heat bodies created on first divergence, analytic relaxation on reservoirs, exact two-body steps otherwise, phase plateau, power, two couplings), `couple` (the `GasExchange` trait, exact pair exchange, the energy ledger, the solid ↔ turf gas task), `regulator` (the thermal regulator primitive) and `world` (`HeatWorld`, the main-thread host with watches). Replaces `superconduct.rs`. |
 | `vg-core` `grid` | Bounds-checked turf-index neighbour arithmetic, 16x16 chunked layers, per-kind blocked-direction layers (`Grid`). |
@@ -155,8 +156,8 @@ verdigris/                  <- workspace root (this dir)
   `Totals::conserved()` is constant under the physics; tests check every
   coupling type with property tests.
 - **Gas coupling.** Only through `GasExchange` (probe, exchange with a closure,
-  changed turfs). M1b replaces `ArenaGas` in `turfs/heat.rs` with a coupling
-  task on the gas field's cells; nothing in vg-heat changes. The adapter never
+  changed turfs). Since M1b this is `world::HeatGas`, an exchange buffer over
+  the gas field's views (see the M1b notes); nothing in vg-heat changed. The adapter never
   blocks a frame thread: every lock is a `try`, and a miss retries next frame.
 - **Bodies for H2/H3/H4.** `Body` has capacity, a phase plateau, power (W), two
   couplings (solid cell, turf air, gas mixture by id, another body), a `KEEP`
@@ -176,6 +177,80 @@ verdigris/                  <- workspace root (this dir)
   defines (T0C, BODYTEMP_NORMAL, HUMAN_HEAT_CAPACITY, the THERMAL_* defaults,
   …); DM must not redefine them (check_grep.sh). `vg_heat_constants()` returns
   the same values at runtime for `dq_heat_constants_match_rust`.
+
+### M1b notes (for M2, M3, S2 and H4)
+
+- **Ownership.** Every `/datum/gas_mixture` holds one gas handle (`world::MixRef`,
+  in `_extools_pointer_gasmixture`): below `GAS_HANDLE_PIPE_BASE` a main-owned
+  mixture (tanks, lungs, device buffers, scratch), then a pipe region, then from
+  `GAS_HANDLE_TURF_BASE` a turf's field cell. `gas::with_mix` / `with_mix_mut`
+  dispatch on it, so every DM gas bind works on every owner and the DM gas API
+  did not change. The gas world is a main-thread thread local: no locks on the
+  DM path.
+- **Turf gas** is `cell::TurfGas` on `field::add_field`, in its own `Sim` (up to
+  four pool threads). One SSair fire is one frame of 0.5 s: `vg_gas_tick()` pins
+  the newest view, drains the outbox (events, `Take` results, watch wakes),
+  applies heat, and dispatches the next frame without waiting. DM reads the
+  pinned view plus the overlay; a DM write is one `GasCmd::Delta` with the
+  absolute difference DM computed, so DM keeps exactly what it saw removed. A
+  removal that races the worker clamps and counts the shortfall (`vg_gas_stats`).
+  `GasWorld::take_turf` moves a whole cell out with a `Take`; the exact value
+  arrives in the outbox and the difference is reconciled into the destination.
+- **Flux.** Two exponential kernels, exact over any `dt` (so they never
+  overshoot, whatever the sub-step): bulk flow toward pressure equality at
+  `G (pa/na + pb/nb)`, carrying the upwind composition and energy per mole, and
+  diffusion of each gas and the energy density. Against vacuum the bulk kernel is
+  `n (1 - e^(-G p/n dt))`: decompression is the same law as every other gradient,
+  and the stiffness gives up to 16 sub-steps for breach-scale gradients. Space is
+  an immutable reservoir cell; planet cells are reservoirs DM may disturb, and a
+  post-field task relaxes them back (25 % per frame). What flows into reservoirs
+  is in the field's ledger (`vg_gas_totals`).
+- **Events.** A `gas:post` task after the field emits `ReactionCheck` (the
+  reaction requirements held in `local`), `VisualChange` (a changed visible-gas
+  signature, or any DM-touched cell) and `PressureJump` (spacewind, the old
+  `0.125 * dp > 5` rule). DM dispatches them in `SSair.process_gas_events`.
+- **Adjacency** is the geometry domain: a DM air-block mask (with the z-level
+  links) is one `GeomCmd::Blocked` per change, visible to DM's adjacency reads at
+  once through the overlay. There are no topology barriers or transactions.
+- **Pipes** are `pipes::Pipes` on a `Network` driven on the main thread
+  (`PipeNet`): until M2 only DM devices move pipe gas, so pipe regions are
+  main-owned (`rust_core.md` §3.1) and DM reads and writes them synchronously.
+  `auxmos_pipenet_topology_batch` applies a DM batch, commits, and returns the
+  regions DM rebuilds (region handle, member ports, prior regions, volume). A
+  removed port's share is `Released` into the mixture DM named
+  (`REMOVE_TO_MIXTURE`).
+- **Watches.** Gas is reactor domain `REACT_DOMAIN_GAS`
+  (`vg_ffi::reactor::ExternalDomain`): turf handles go to the field's watch port
+  (evaluated in the frame), main-owned mixtures to a synchronous port evaluated
+  at each reactor step. DM: `REACT_ON` / `REACT_WHEN` on `REACT_GAS(mixture)`
+  with the `CH_GAS_*` channels. Pipe regions are not watchable until M2 moves
+  them into the frame.
+- **Heat.** `world::HeatGas` is the heat world's `GasExchange`: probes read the
+  pinned gas views (and main-owned probes refreshed each gas tick), energy is
+  queued and applied as gas commands at the next gas tick, and the `gas:post`
+  task reports turf cells whose temperature moved. The heat world keeps its own
+  `Sim` until S1 merges the frame graphs.
+- **Test hook.** `vg_gas_run_frames(n)` (DM: `SSair.run_gas_frames(n)`) runs
+  `n` frames to completion, one after another, and returns their events: atmos
+  tests no longer wait on the wall clock.
+- **Overlay or fallback.** Overlay. `DQ_GAS_FALLBACK=<budget cells>` builds the
+  field in fallback mode for measurement. `tests::overlay_vs_fallback` (release,
+  a 20x20 breached room, DM writing a sixth of the cells every tick, 200 ticks):
+  overlay 74 us average / 191 us p99 main-thread time per tick and conserves
+  (-0.007 mol drift on 72 mol added); fallback 1,281 us / 2,173 us, and because
+  a rejected piece drops a chunk's half of a cross-chunk flux, it does not
+  conserve (+254,689 mol drift). Overlay stays.
+- **For M2.** Devices still move gas in DM (`process()`, `pump_gas_to`,
+  `auxmos_batch_transfer`). M2 turns them into `Network` device edges: move
+  `PipeNet` into the frame with `network::host::add_network`, give `Pipes` a
+  `Command` (gas deltas) and an overlay for region payloads, and integrate device
+  flows in a task between the pipe network and the gas field. Region channels
+  then mirror into a cell domain for watches (R7 notes).
+- **Left for M2/S2.** `machines.dm`'s gas subscribers still use the dirty
+  observations (`watch_dirty_gas_mixture`, `drain_dirty_gas_observations`),
+  which the gas world keeps: main and pipe writes are checked as they happen,
+  watched turf cells once per gas tick against the pinned view. Moving them to
+  gas watches is S2's.
 
 ## Building
 

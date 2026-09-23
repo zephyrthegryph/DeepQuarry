@@ -9,7 +9,20 @@
 	density = TRUE
 	layer = ABOVE_JUNK_LAYER
 
-/obj/machinery/giga_drill/attack_hand(mob/user as mob)
+/obj/machinery/giga_drill/declare_interactions(list/into)
+	into += list(
+		/datum/interaction/machine_hand/ungated/giga_drill_toggle,
+	)
+	..()
+
+/// Old attack_hand: never called ..().
+/datum/interaction/machine_hand/ungated/giga_drill_toggle
+	id = "giga_drill_toggle"
+	name = "Toggle"
+	category = INTERACTION_CAT_TOGGLE
+	effect = /obj/machinery/giga_drill/proc/interaction_toggle
+
+/obj/machinery/giga_drill/proc/interaction_toggle(mob/user, obj/item/held, datum/interaction/interaction)
 	if(active)
 		active = 0
 		icon_state = "gigadrill"
@@ -18,6 +31,7 @@
 		active = 1
 		icon_state = "gigadrill_mov"
 		to_chat(user, span_notice("You press a button and \the [src] shudders to life."))
+	return TRUE
 
 /obj/machinery/giga_drill/Bump(atom/A)
 	if(active && !drilling_turf)

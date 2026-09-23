@@ -40,17 +40,19 @@
 	s.set_up(5, 1, src)
 	s.start()
 
-/obj/machinery/shield_capacitor/attackby(obj/item/W, mob/user)
+/datum/interaction/machine_item/shield_capacitor_id_swipe
+	id = "shield_capacitor_id_swipe"
+	name = "Swipe ID"
+	held_type = /obj/item/card/id
+	effect = /obj/machinery/shield_capacitor/proc/interaction_id_swipe
 
-	if(istype(W, /obj/item/card/id))
-		var/obj/item/card/id/C = W
-		if((ACCESS_CAPTAIN in C.GetAccess()) || (ACCESS_SECURITY in C.GetAccess()) || (ACCESS_ENGINE in C.GetAccess()))
-			src.locked = !src.locked
-			to_chat(user, "Controls are now [src.locked ? "locked." : "unlocked."]")
-		else
-			to_chat(user, span_red("Access denied."))
+/obj/machinery/shield_capacitor/proc/interaction_id_swipe(mob/user, obj/item/card/id/W, datum/interaction/interaction)
+	if((ACCESS_CAPTAIN in W.GetAccess()) || (ACCESS_SECURITY in W.GetAccess()) || (ACCESS_ENGINE in W.GetAccess()))
+		src.locked = !src.locked
+		to_chat(user, "Controls are now [src.locked ? "locked." : "unlocked."]")
 	else
-		..()
+		to_chat(user, span_red("Access denied."))
+	return TRUE
 
 /obj/machinery/shield_capacitor/wrench_act(mob/user, obj/item/W)
 	anchored = !anchored
@@ -70,10 +72,24 @@
 		owned_gen = null
 	return ITEM_INTERACT_SUCCESS
 
-/obj/machinery/shield_capacitor/attack_hand(mob/user)
+/obj/machinery/shield_capacitor/declare_interactions(list/into)
+	into += list(
+		/datum/interaction/machine_item/shield_capacitor_id_swipe,
+		/datum/interaction/machine_hand/ungated/shield_capacitor_use,
+	)
+	..()
+
+/// Old attack_hand: never called ..(), so ungated.
+/datum/interaction/machine_hand/ungated/shield_capacitor_use
+	id = "shield_capacitor_use"
+	name = "Use"
+	effect = /obj/machinery/shield_capacitor/proc/interaction_use
+
+/obj/machinery/shield_capacitor/proc/interaction_use(mob/user, obj/item/held, datum/interaction/interaction)
 	if(stat & (BROKEN))
-		return
+		return TRUE
 	tgui_interact(user)
+	return TRUE
 
 /obj/machinery/shield_capacitor/tgui_interact(mob/user, datum/tgui/ui)
 	ui = SStgui.try_update_ui(user, src, ui)

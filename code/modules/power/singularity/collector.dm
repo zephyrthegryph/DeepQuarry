@@ -47,44 +47,69 @@ REGISTRY_MEMBERSHIP(/obj/machinery/power/rad_collector, REGISTRY_RAD_COLLECTORS)
 	return
 
 
-/obj/machinery/power/rad_collector/attack_hand(mob/user as mob)
+/obj/machinery/power/rad_collector/declare_interactions(list/into)
+	into += list(
+		/datum/interaction/machine_item/rad_collector_load_tank,
+		/datum/interaction/machine_item/rad_collector_lock,
+		/datum/interaction/machine_hand/ungated/rad_collector_toggle,
+	)
+	..()
+
+/datum/interaction/machine_hand/ungated/rad_collector_toggle
+	id = "rad_collector_toggle"
+	name = "Toggle"
+	category = INTERACTION_CAT_TOGGLE
+	effect = /obj/machinery/power/rad_collector/proc/interaction_toggle
+
+/obj/machinery/power/rad_collector/proc/interaction_toggle(mob/user, obj/item/held, datum/interaction/interaction)
 	if(anchored)
 		if(!src.locked)
 			toggle_power()
 			user.visible_message("[user.name] turns the [src.name] [active? "on":"off"].", \
 			"You turn the [src.name] [active? "on":"off"].")
 			investigate_log("turned [active?span_green("on"): span_red("off")] by [user.key]. [P?"Fuel: [round(LINDA_GAS_AMT(P.air_contents, GAS_PHORON)/0.29)]%":span_red("It is empty")].","singulo")
-			return
+			return TRUE
 		else
 			to_chat(user, span_red("The controls are locked!"))
-			return
+			return TRUE
+	return TRUE
 
+/datum/interaction/machine_item/rad_collector_load_tank
+	id = "rad_collector_load_tank"
+	name = "Load phoron tank"
+	held_type = /obj/item/tank/phoron
+	effect = /obj/machinery/power/rad_collector/proc/interaction_load_tank
 
-/obj/machinery/power/rad_collector/attackby(obj/item/W, mob/user)
-	if(istype(W, /obj/item/tank/phoron))
-		if(!src.anchored)
-			to_chat(user, span_red("The [src] needs to be secured to the floor first."))
-			return 1
-		if(src.P)
-			to_chat(user, span_red("There's already a phoron tank loaded."))
-			return 1
-		user.drop_item()
-		src.P = W
-		W.loc = src
-		update_icons()
-		return 1
-	else if(istype(W, /obj/item/card/id)||istype(W, /obj/item/pda))
-		if (src.allowed(user))
-			if(active)
-				src.locked = !src.locked
-				to_chat(user, "The controls are now [src.locked ? "locked." : "unlocked."]")
-			else
-				src.locked = 0 //just in case it somehow gets locked
-				to_chat(user, span_red("The controls can only be locked when the [src] is active."))
+/obj/machinery/power/rad_collector/proc/interaction_load_tank(mob/user, obj/item/tank/phoron/W, datum/interaction/interaction)
+	if(!src.anchored)
+		to_chat(user, span_red("The [src] needs to be secured to the floor first."))
+		return TRUE
+	if(src.P)
+		to_chat(user, span_red("There's already a phoron tank loaded."))
+		return TRUE
+	user.drop_item()
+	src.P = W
+	W.loc = src
+	update_icons()
+	return TRUE
+
+/datum/interaction/machine_item/rad_collector_lock
+	id = "rad_collector_lock"
+	name = "Toggle lock"
+	held_type = list(/obj/item/card/id, /obj/item/pda)
+	effect = /obj/machinery/power/rad_collector/proc/interaction_lock
+
+/obj/machinery/power/rad_collector/proc/interaction_lock(mob/user, obj/item/W, datum/interaction/interaction)
+	if (src.allowed(user))
+		if(active)
+			src.locked = !src.locked
+			to_chat(user, "The controls are now [src.locked ? "locked." : "unlocked."]")
 		else
-			to_chat(user, span_red("Access denied!"))
-		return 1
-	return ..()
+			src.locked = 0 //just in case it somehow gets locked
+			to_chat(user, span_red("The controls can only be locked when the [src] is active."))
+	else
+		to_chat(user, span_red("Access denied!"))
+	return TRUE
 
 /obj/machinery/power/rad_collector/crowbar_act(mob/user, obj/item/W)
 	if(P && !locked)

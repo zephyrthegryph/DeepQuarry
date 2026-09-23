@@ -11,7 +11,6 @@ edition = "2021"
 
 [features]
 default = ["turf_processing"]
-zas_hooks = []
 turf_processing = []
 # The heat domain (M4, vg-heat): turf solid heat, bodies and couplings.
 heat = ["turf_processing"]
@@ -26,24 +25,19 @@ crate-type = ["rlib"]
 
 [dependencies]
 byondapi = { workspace = true }
-flume = { workspace = true }
-coarsetime = { workspace = true }
 eyre = { workspace = true }
 auxcallback = { path = "../../ffi/callback" }
 auxmacros = { path = "../../ffi/macros" }
 vg-core = { path = "../../core" }
 vg-heat = { path = "../heat" }
+vg-ffi = { path = "../../ffi" }
 itertools = "0.14.0"
-rayon = "1.10.0"
 float-ord = "0.3.2"
 parking_lot = "0.12.3"
 rustc-hash = "2.1.0"
 ahash = "0.8.11"
-indexmap = { version = "2.5.0", features = ["rayon"] }
-dashmap = { version = "6.1.0", features = ["rayon"] }
 hashbrown = "0.15.2"
 atomic_float = "1.1.0"
-petgraph = "0.7.0"
 bitflags = "2.6.0"
 nom = "7.1.3"
 # DQEdit: mimalloc removed — the global allocator is set in the cdylib (verdigris) crate, not here.
@@ -51,6 +45,9 @@ nom = "7.1.3"
 tracing = { version = "0.1.41", optional = true }
 tracing-tracy = { version = "0.11.4", optional = true }
 tracing-subscriber = { version = "0.3.19", optional = true }
+
+[dev-dependencies]
+proptest = "1.5"
 
 [dependencies.tinyvec]
 version = "1.8.1"

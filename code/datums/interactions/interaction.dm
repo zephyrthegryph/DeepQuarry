@@ -52,17 +52,60 @@
 	var/message_others
 	/// INTERACTION_TAG_* for filtering.
 	var/list/tags
+	/// INTERACTION_ENTRY_*: the legacy input proc that dispatches it (I7), or null for resolver-native ones.
+	var/entry
+	/// A type, or a list of types, the held item must be (subtypes count). Like `tool`, it says what the player meant.
+	var/held_type
+	/// Clauses that pick this interaction: when one fails the player didn't mean it, so an entry
+	/// falls through to the next candidate (as a legacy `if` fell through to `..()`). Listed in the Menu as blocked.
+	var/list/offered_when
+	/// For entries: whether the input is used up when it runs. FALSE mirrors a legacy handler that returned
+	/// nothing, after which the item's afterattack (or the alt-click loot panel) still ran.
+	var/consumes_input = TRUE
+	/// For hand entries: whether the type's hand_gate() (signal, unbuckling, the machinery checks) runs first.
+	/// FALSE mirrors a legacy attack_hand that never called ..().
+	var/behind_gate = TRUE
 	/// The compiled requirement predicate, made on first use.
 	var/tmp/datum/predicate/compiled
+	/// The compiled selector (tool, held_type, offered_when), made on first use.
+	var/tmp/datum/predicate/compiled_selector
 
-/// The full predicate spec: the tool clause first, then `requires`.
-/datum/interaction/proc/full_spec()
+/// The clauses that say whether the player meant this interaction: tool, held type, offered_when.
+/datum/interaction/proc/selector_spec()
 	var/list/spec = list()
 	if(tool)
 		spec += list(REQ_TOOL_TIER(tool, tool_tier))
+	if(held_type)
+		var/list/types = islist(held_type) ? held_type : list(held_type)
+		var/list/names = list()
+		for(var/atom/path as anything in types)
+			names |= dq_pred_article(initial(path.name))
+		spec += list(REQ_BECAUSE(REQ_TYPE(PRED_HELD, types), "needs [english_list(names, and_text = " or ")]"))
+	if(length(offered_when))
+		spec += offered_when
+	return spec
+
+/// The full predicate spec: the selector clauses first, then `requires`.
+/datum/interaction/proc/full_spec()
+	var/list/spec = selector_spec()
 	if(length(requires))
 		spec += requires
 	return spec
+
+/// The shared compiled selector, or null when anything selects it.
+/datum/interaction/proc/selector()
+	if(compiled_selector)
+		return compiled_selector
+	var/list/spec = selector_spec()
+	if(!length(spec))
+		return null
+	compiled_selector = dq_predicate_for("interaction_selector:[type]", spec, "interaction [id] selector")
+	return compiled_selector
+
+/// Whether the player meant this interaction: the right tool or item, and its offered_when clauses hold.
+/datum/interaction/proc/is_meant(mob/actor, atom/target, obj/item/held)
+	var/datum/predicate/pred = selector()
+	return pred ? pred.check(actor, target, held) : TRUE
 
 /// The shared compiled predicate, or null when the interaction has no requirements.
 /datum/interaction/proc/predicate()
@@ -120,20 +163,30 @@
  * Returns TRUE if the effect ran.
  */
 /datum/interaction/proc/perform(mob/actor, atom/target, obj/item/held)
+	return attempt(actor, target, held) == INTERACTION_TRY_RAN
+
+/**
+ * perform() with the outcome spelled out: INTERACTION_TRY_RAN when the effect
+ * ran (or the wait was interrupted, which still used the input),
+ * INTERACTION_TRY_BLOCKED when a requirement failed (the actor is told why), or
+ * null when the effect declined (it returned FALSE), so an entry moves on to
+ * the next candidate as a legacy handler fell through to `..()`.
+ */
+/datum/interaction/proc/attempt(mob/actor, atom/target, obj/item/held)
 	var/reason = why_not(actor, target, held)
 	if(reason)
 		tell_blocked(actor, target, reason)
-		return FALSE
+		return INTERACTION_TRY_BLOCKED
 	if(!pay_cost(actor, target, held) || QDELETED(target))
-		return FALSE
+		return (duration > 0 || tool) ? INTERACTION_TRY_BLOCKED : null
 	reason = why_not(actor, target, held)
 	if(reason)
 		tell_blocked(actor, target, reason)
-		return FALSE
+		return INTERACTION_TRY_BLOCKED
 	var/list/feedback = messages(actor, target, held)
 	var/shown_name = display_name(actor, target)
 	if(!call(target, effect)(actor, held, src))
-		return FALSE
+		return null
 	log_input("Interaction: [key_name(actor)] did [id] ([shown_name]) on [target] ([target.type]).")
 	var/self_text = fill_message(feedback[1], actor, target)
 	var/others_text = fill_message(feedback[2], actor, target)
@@ -141,7 +194,7 @@
 		actor.visible_message(span_notice(others_text), span_notice(self_text))
 	else if(self_text)
 		to_chat(actor, span_notice(self_text))
-	return TRUE
+	return INTERACTION_TRY_RAN
 
 /// Tells the actor why they can't do this right now.
 /datum/interaction/proc/tell_blocked(mob/actor, atom/target, reason)

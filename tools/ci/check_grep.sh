@@ -272,6 +272,28 @@ if $grep -n '\ba_intent\b' "${code_files[@]}" | grep -vE "^($a_intent_allowlist)
 	FAILED=1
 fi;
 
+part "interactions: converted domains (I7)"
+# Converted domains' input handlers are interaction definitions (roadmap I7,
+# doc/rewrite/interactions.md section 13): no attackby, attack_hand, attack_self,
+# click_alt or MouseDrop_T overrides and no object verbs on their types, and no
+# hand-written description_info in their directories (examine text is generated).
+# The old procs are the entry points; declare interactions with an `entry` instead.
+# The allowlist holds files other work owns (the body rewrite's medical code,
+# cooking, vore) and test fixtures. It must not grow.
+i7_converted_types='/obj/machinery'
+i7_converted_dirs='code/game/machinery/|code/ATMOSPHERICS/|code/modules/power/'
+i7_allowlist='code/modules/unit_tests/|code/game/dna/dna_modifier\.dm|code/game/machinery/(OpTable|Sleeper|adv_med|bioprinter|cloning|cryo|iv_drip|medical_kiosk|oxygen_pump|protean_reconstitutor|vitals_monitor)\.dm|code/game/machinery/computer/(Operating|cloning|medical)\.dm|code/modules/resleeving/|code/modules/food/kitchen/|code/modules/vore/|code/modules/examine/descriptions/medical\.dm'
+if $grep -nE "^($i7_converted_types)(/[A-Za-z0-9_]+)*/(attackby|attack_hand|attack_self|click_alt|MouseDrop_T|verb/[A-Za-z0-9_]+)\(" "${code_files[@]}" | grep -vE "^($i7_allowlist)"; then
+	echo
+	echo -e "${RED}ERROR: converted domains take interactions, not handler overrides or object verbs. Declare an interaction with an entry (code/datums/interactions/entries.dm).${NC}"
+	FAILED=1
+fi;
+if $grep -nE '^\s*description_info\s*=' "${code_files[@]}" | grep -E "^($i7_converted_dirs)" | grep -vE "^($i7_allowlist)"; then
+	echo
+	echo -e "${RED}ERROR: description_info in a converted domain. Examine text is generated from the interactions.${NC}"
+	FAILED=1
+fi;
+
 part "robot cell writes outside the power ledger"
 # A robot's cell charge is written only by draw_power()/add_power() in robot.dm, so the
 # ledger (used_power_this_tick, part power states) sees every joule. Robot code under

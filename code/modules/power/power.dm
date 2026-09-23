@@ -161,25 +161,29 @@
 
 // attach a wire to a power machine - leads from the turf you are standing on
 //almost never called, overwritten by all power machines but terminal and generator
-/obj/machinery/power/attackby(obj/item/W, mob/user)
+/obj/machinery/power/declare_interactions(list/into)
+	into += list(
+		/datum/interaction/machine_item/power_cable_place,
+	)
+	..()
 
-	if(istype(W, /obj/item/stack/cable_coil))
+/datum/interaction/machine_item/power_cable_place
+	id = "power_cable_place"
+	name = "Lay cable"
+	held_type = /obj/item/stack/cable_coil
+	effect = /obj/machinery/power/proc/interaction_cable_place
 
-		var/obj/item/stack/cable_coil/coil = W
+/obj/machinery/power/proc/interaction_cable_place(mob/user, obj/item/stack/cable_coil/coil, datum/interaction/interaction)
+	var/turf/T = user.loc
 
-		var/turf/T = user.loc
+	if(!T.is_plating() || !istype(T, /turf/simulated/floor))
+		return TRUE
 
-		if(!T.is_plating() || !istype(T, /turf/simulated/floor))
-			return
+	if(get_dist(src, user) > 1)
+		return TRUE
 
-		if(get_dist(src, user) > 1)
-			return
-
-		coil.turf_place(T, user)
-		return
-	else
-		..()
-	return
+	coil.turf_place(T, user)
+	return TRUE
 
 // Power machinery should also connect/disconnect from the network.
 /obj/machinery/power/wrench_act(mob/user, obj/item/W)

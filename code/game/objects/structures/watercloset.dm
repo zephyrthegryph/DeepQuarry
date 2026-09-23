@@ -464,27 +464,66 @@
 
 //add heat controls? when emagged, you can freeze to death in it?
 
-/obj/machinery/shower/attack_hand(mob/M)
+/obj/machinery/shower/declare_interactions(list/into)
+	into += list(
+		/datum/interaction/machine_hand/ungated/shower_toggle,
+		/datum/interaction/machine_item/shower_analyze,
+		/datum/interaction/machine_item/shower_swallow,
+		/datum/interaction/machine_alt/shower_set_temperature,
+	)
+	..()
+
+/datum/interaction/machine_hand/ungated/shower_toggle
+	id = "shower_toggle"
+	name = "Toggle"
+	category = INTERACTION_CAT_TOGGLE
+	effect = /obj/machinery/shower/proc/interaction_toggle
+
+/obj/machinery/shower/proc/interaction_toggle(mob/user, obj/item/held, datum/interaction/interaction)
 	on = !on
 	update_icon()
 	handle_mist()
-	add_fingerprint(M)
+	add_fingerprint(user)
 	if(on)
 		START_MACHINE_PROCESSING(src)
 		process()
 		soundloop.start()
 	else
 		soundloop.stop()
+	return TRUE
 
-/obj/machinery/shower/attackby(obj/item/I, mob/user)
-	if(istype(I, /obj/item/analyzer)) //Lol? Why...
-		to_chat(user, span_notice("The water temperature seems to be [current_temperature]."))
+/datum/interaction/machine_item/shower_analyze
+	id = "shower_analyze"
+	name = "Check water temperature"
+	held_type = /obj/item/analyzer
+	effect = /obj/machinery/shower/proc/interaction_analyze
+
+/obj/machinery/shower/proc/interaction_analyze(mob/user, obj/item/held, datum/interaction/interaction)
+	to_chat(user, span_notice("The water temperature seems to be [current_temperature]."))
+	return TRUE
+
+/// The old attackby never chained to ..() for a non-analyzer item, so it silently swallowed the hit.
+/datum/interaction/machine_item/shower_swallow
+	id = "shower_swallow"
+	name = "Use"
+	held_type = /obj/item
+	effect = /obj/machinery/shower/proc/interaction_swallow
+
+/obj/machinery/shower/proc/interaction_swallow(mob/user, obj/item/held, datum/interaction/interaction)
+	return TRUE
 
 /obj/machinery/shower/allow_pai_interaction(mob/living/silicon/pai/user, proximity_flag)
 	return proximity_flag
 
-/obj/machinery/shower/click_alt(mob/user)
-	..()
+/// Old click_alt called ..() then always ran its own logic regardless, and never returned a
+/// CLICK_ACTION_* constant, so the loot panel still ran afterwards: consumes_input = FALSE.
+/datum/interaction/machine_alt/shower_set_temperature
+	id = "shower_set_temperature"
+	name = "Set temperature"
+	consumes_input = FALSE
+	effect = /obj/machinery/shower/proc/interaction_set_temperature
+
+/obj/machinery/shower/proc/interaction_set_temperature(mob/user, obj/item/held, datum/interaction/interaction)
 	var/list/temperature_settings = list(SHOWER_NORMAL, SHOWER_BOILING, SHOWER_FREEZING)
 	var/newtemp = tgui_input_list(user, "What setting would you like to set the temperature valve to?", "Water Temperature Valve", temperature_settings)
 	to_chat(user, span_notice("You begin to adjust the temperature..."))
@@ -493,6 +532,7 @@
 		user.visible_message(span_notice("[user] adjusts the shower."), span_notice("You adjust the shower to [current_temperature] temperature."))
 		add_fingerprint(user)
 	handle_mist()
+	return TRUE
 
 /obj/machinery/shower/examine(mob/user)
 	. = ..()

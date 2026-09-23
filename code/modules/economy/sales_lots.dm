@@ -202,23 +202,44 @@
 	. = ..()
 	. += "It deposits revenue into the [department_id] budget. Department staff can stock it by using an item on it."
 
-/obj/machinery/department_storefront/attack_hand(mob/user)
-	tgui_interact(user)
+/obj/machinery/department_storefront/declare_interactions(list/into)
+	into += list(
+		/datum/interaction/machine_item/storefront_id_fallthrough,
+		/datum/interaction/machine_item/storefront_stock,
+		/datum/interaction/machine_hand/ungated/open_ui,
+	)
+	..()
 
-/obj/machinery/department_storefront/attackby(obj/item/item, mob/user)
-	if(istype(item, /obj/item/card/id))
-		return ..()
+/// The old attackby's leading branch: an ID card always fell through to ..().
+/datum/interaction/machine_item/storefront_id_fallthrough
+	id = "storefront_id_fallthrough"
+	name = "Use"
+	held_type = /obj/item/card/id
+	effect = /obj/machinery/department_storefront/proc/interaction_id_fallthrough
+
+/obj/machinery/department_storefront/proc/interaction_id_fallthrough(mob/user, obj/item/item, datum/interaction/interaction)
+	return FALSE
+
+/// The old attackby: stocks the storefront with an offered item.
+/datum/interaction/machine_item/storefront_stock
+	id = "storefront_stock"
+	name = "Stock"
+	category = INTERACTION_CAT_INSERT
+	held_type = /obj/item
+	effect = /obj/machinery/department_storefront/proc/interaction_stock
+
+/obj/machinery/department_storefront/proc/interaction_stock(mob/user, obj/item/item, datum/interaction/interaction)
 	if(!storefront_staff_authorized(user))
 		to_chat(user, span_warning("Only [department_id] staff may stock this storefront."))
-		return
+		return TRUE
 	if(item.anchored || istype(item, /obj/item/paper) || istype(item, /obj/item/card/id))
 		to_chat(user, span_warning("[item] cannot be offered through this storefront."))
-		return
+		return TRUE
 	var/suggested = storefront_suggested_price(item)
 	var/price = max(1, round(suggested * (100 + markup_percent) / 100))
 	if(!user.drop_from_inventory(item, src))
 		to_chat(user, span_warning("You cannot release [item] into the storefront."))
-		return
+		return TRUE
 	item.forceMove(src)
 	var/item_ref = REF(item)
 	stock_suggested_prices[item_ref] = suggested
@@ -226,7 +247,7 @@
 	stock_stocker_accounts[item_ref] = user.mind?.initial_account?.account_number || 0
 	to_chat(user, span_notice("You stock [item] at [price] Thalers (suggested [suggested])."))
 	SStgui.update_uis(src)
-	return
+	return TRUE
 
 /obj/machinery/department_storefront/proc/storefront_staff_authorized(mob/living/user)
 	return storefront_department_authorized(user, department_id)

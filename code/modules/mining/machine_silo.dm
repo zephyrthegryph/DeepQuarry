@@ -62,9 +62,6 @@
 
 	silo_log(context, "ejected", -sheets.amount, "[sheets.singular_name]", list(GET_MATERIAL_REF(sheets.default_type) = sheets.amount * SHEET_MATERIAL_AMOUNT))
 
-/obj/machinery/ore_silo/attackby(obj/item/W, mob/user, attack_modifier, click_parameters)
-	. = ..()
-
 /obj/machinery/ore_silo/screwdriver_act(mob/user, obj/item/tool)
 	return ..()
 
@@ -77,8 +74,11 @@
 	balloon_alert(user, "saved to multitool buffer")
 	return ITEM_INTERACT_SUCCESS
 
-/obj/machinery/ore_silo/attack_hand(mob/user)
-	return tgui_interact(user)
+/obj/machinery/ore_silo/declare_interactions(list/into)
+	into += list(
+		/datum/interaction/machine_hand/ungated/open_ui,
+	)
+	..()
 
 /obj/machinery/ore_silo/ui_assets(mob/user)
 	return list(

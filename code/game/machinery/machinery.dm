@@ -269,7 +269,8 @@ REGISTRY_MEMBERSHIP(/obj/machinery, REGISTRY_MACHINES)
 		return
 	return ..()
 
-/obj/machinery/attack_hand(mob/user as mob)
+/// The checks every machine's hand interactions pass behind (see machine_use_blocker() for the Menu's version).
+/obj/machinery/hand_gate(mob/user as mob)
 
 	if(inoperable(MAINT))
 		return 1

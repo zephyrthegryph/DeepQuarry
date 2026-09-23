@@ -13,12 +13,30 @@
 /obj/machinery/fusion_fuel_compressor/Initialize(mapload)
 	. = ..()
 	default_apply_parts()
-	verbs -= /obj/machinery/fusion_fuel_compressor/verb/eject_sheet
 
-/obj/machinery/fusion_fuel_compressor/MouseDrop_T(atom/movable/target, mob/user)
-	if(user.incapacitated() || !user.Adjacent(src))
-		return
-	return do_special_fuel_compression(target, user)
+/obj/machinery/fusion_fuel_compressor/declare_interactions(list/into)
+	into += list(
+		/datum/interaction/machine_item/part_replacement,
+		/datum/interaction/machine_item/fuel_compressor_stack_material,
+		/datum/interaction/machine_item/fuel_compressor_special,
+		/datum/interaction/machine_drag/fuel_compressor_compress,
+		/datum/interaction/machine_verb/fuel_compressor_eject_sheet,
+	)
+	..()
+
+/// Old MouseDrop_T.
+/datum/interaction/machine_drag/fuel_compressor_compress
+	id = "fuel_compressor_compress"
+	name = "Compress"
+	requires = list(REQ_INTERACTION_REACH, REQ_ON(PRED_ACTOR, /obj/machinery/fusion_fuel_compressor/proc/actor_can_act, "you can't do that right now"))
+	effect = /obj/machinery/fusion_fuel_compressor/proc/interaction_compress
+
+/obj/machinery/fusion_fuel_compressor/proc/actor_can_act(mob/actor, atom/target, obj/item/held)
+	return !actor.incapacitated()
+
+/obj/machinery/fusion_fuel_compressor/proc/interaction_compress(mob/user, atom/movable/dropping, datum/interaction/interaction)
+	do_special_fuel_compression(dropping, user)
+	return TRUE
 
 /obj/machinery/fusion_fuel_compressor/proc/do_special_fuel_compression(obj/item/thing, mob/user)
 	if(istype(thing) && thing.reagents && thing.reagents.total_volume && thing.is_open_container())
@@ -42,58 +60,72 @@
 		return 1
 	return 0
 
-/obj/machinery/fusion_fuel_compressor/attackby(obj/item/thing, mob/user)
+/// Old attackby's stack/material branch (part_replacement checked first, matching the old body's first check).
+/datum/interaction/machine_item/fuel_compressor_stack_material
+	id = "fuel_compressor_stack_material"
+	name = "Compress into fuel rod"
+	held_type = /obj/item/stack/material
+	effect = /obj/machinery/fusion_fuel_compressor/proc/interaction_stack_material
 
-	if(default_part_replacement(user, thing))
-		return
-	if(istype(thing, /obj/item/stack/material))
-		var/obj/item/stack/material/M = thing
-		var/datum/material/mat = M.get_material()
-		if(!blitzprogress)
-			if(!mat.is_fusion_fuel)
-				to_chat(user, span_warning("It would be pointless to make a fuel rod out of [mat.use_name]."))
-				return
-			if(M.get_amount() < FUSION_ROD_SHEET_AMT)
-				if(mat.name==MAT_SUPERMATTER)
-					visible_message(span_notice("\The [user] places the [mat.use_name] into the compressor."))
-					M.use(1)
-					blitzprogress = 1
-					verbs |= /obj/machinery/fusion_fuel_compressor/verb/eject_sheet
-					return
-				to_chat(user, span_warning("You need at least 25 [mat.sheet_plural_name] to make a fuel rod."))
-				return
-			var/obj/item/fuel_assembly/F = new(get_turf(src), mat.name)
-			visible_message(span_infoplain(span_bold("\The [src]") + " compresses \the [thing] into a new fuel assembly."))
-			M.use(FUSION_ROD_SHEET_AMT)
+/obj/machinery/fusion_fuel_compressor/proc/interaction_stack_material(mob/user, obj/item/stack/material/M, datum/interaction/interaction)
+	var/datum/material/mat = M.get_material()
+	if(!blitzprogress)
+		if(!mat.is_fusion_fuel)
+			to_chat(user, span_warning("It would be pointless to make a fuel rod out of [mat.use_name]."))
+			return TRUE
+		if(M.get_amount() < FUSION_ROD_SHEET_AMT)
+			if(mat.name==MAT_SUPERMATTER)
+				visible_message(span_notice("\The [user] places the [mat.use_name] into the compressor."))
+				M.use(1)
+				blitzprogress = 1
+				return TRUE
+			to_chat(user, span_warning("You need at least 25 [mat.sheet_plural_name] to make a fuel rod."))
+			return TRUE
+		var/obj/item/fuel_assembly/F = new(get_turf(src), mat.name)
+		visible_message(span_infoplain(span_bold("\The [src]") + " compresses \the [M] into a new fuel assembly."))
+		M.use(FUSION_ROD_SHEET_AMT)
+		user.put_in_hands(F)
+	else
+		if(mat.name==MAT_PHORON)
+			if(M.get_amount() < 25)
+				to_chat(user, span_warning("You need at least 25 phoron sheets to make a blitz rod!"))
+				return TRUE
+			var/obj/item/fuel_assembly/blitz/unshielded/F = new(get_turf(src))
+			visible_message(span_notice("\The [src] compresses the supermatter and phoron into a new blitz rod! It looks unstable, maybe you should be careful with it."))
+			M.use(25)
 			user.put_in_hands(F)
+			blitzprogress = 0
 		else
-			if(mat.name==MAT_PHORON)
-				if(M.get_amount() < 25)
-					to_chat(user, span_warning("You need at least 25 phoron sheets to make a blitz rod!"))
-					return
-				var/obj/item/fuel_assembly/blitz/unshielded/F = new(get_turf(src))
-				visible_message(span_notice("\The [src] compresses the supermatter and phoron into a new blitz rod! It looks unstable, maybe you should be careful with it."))
-				M.use(25)
-				user.put_in_hands(F)
-				blitzprogress = 0
-				verbs -= /obj/machinery/fusion_fuel_compressor/verb/eject_sheet
-			else
-				to_chat(user, span_warning("A blitz rod is currently in progress! Either add 25 phoron sheets to complete it, or eject the supermatter sheet!"))
-				return
+			to_chat(user, span_warning("A blitz rod is currently in progress! Either add 25 phoron sheets to complete it, or eject the supermatter sheet!"))
+			return TRUE
+	return TRUE
 
-	else if(do_special_fuel_compression(thing, user))
-		return
+/// Old attackby's final else/return ..() branch: try the special compression, else fall through.
+/datum/interaction/machine_item/fuel_compressor_special
+	id = "fuel_compressor_special"
+	name = "Compress"
+	held_type = /obj/item
+	effect = /obj/machinery/fusion_fuel_compressor/proc/interaction_special_or_base
 
-	return ..()
+/obj/machinery/fusion_fuel_compressor/proc/interaction_special_or_base(mob/user, obj/item/thing, datum/interaction/interaction)
+	if(do_special_fuel_compression(thing, user))
+		return TRUE
+	return FALSE
 
-/obj/machinery/fusion_fuel_compressor/verb/eject_sheet()
-	set name = "Eject Supermatter Sheet"
-	set category = "Object"
-	set src in view(1)
+/// Old verb, offered only while a blitz rod is in progress (the old code added/removed it dynamically).
+/datum/interaction/machine_verb/fuel_compressor_eject_sheet
+	id = "fuel_compressor_eject_sheet"
+	name = "Eject Supermatter Sheet"
+	offered_when = list(REQ_ON(PRED_TARGET, /obj/machinery/fusion_fuel_compressor/proc/has_blitz_progress, "nothing to eject"))
+	effect = /obj/machinery/fusion_fuel_compressor/proc/interaction_eject_sheet
 
+/obj/machinery/fusion_fuel_compressor/proc/has_blitz_progress(mob/actor, atom/target, obj/item/held)
+	return blitzprogress
+
+/obj/machinery/fusion_fuel_compressor/proc/interaction_eject_sheet(mob/user, obj/item/held, datum/interaction/interaction)
 	if(blitzprogress)
 		new/obj/item/stack/material/supermatter(get_turf(src))
 		blitzprogress = 0
-	verbs -= /obj/machinery/fusion_fuel_compressor/verb/eject_sheet
+	return TRUE
 
 #undef FUSION_ROD_SHEET_AMT

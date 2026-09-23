@@ -167,10 +167,26 @@
 // Proc: attack_hand()
 // Parameters: None
 // Description: Opens the UI as usual, and if cover is removed opens the wiring panel.
-/obj/machinery/power/smes/buildable/attack_hand(mob/user)
+/obj/machinery/power/smes/buildable/declare_interactions(list/into)
+	into += list(
+		/datum/interaction/machine_hand/smes_buildable_wires,
+	)
 	..()
+
+/// Approximation: the old attack_hand unconditionally called ..() (the ancestor SMES's own
+/// attack_hand, out of this file's scope) and then always opened the wire panel if open.
+/// The ancestor call can't be replayed from here, so this declines (FALSE) to let the entry
+/// fall through to whatever the ancestor/base machinery attack_hand still provides; the wire
+/// panel now opens before that fallback runs rather than after, an order approximation - see report.
+/datum/interaction/machine_hand/smes_buildable_wires
+	id = "smes_buildable_wires"
+	name = "Use"
+	effect = /obj/machinery/power/smes/buildable/proc/interaction_wires
+
+/obj/machinery/power/smes/buildable/proc/interaction_wires(mob/user, obj/item/held, datum/interaction/interaction)
 	if(panel_open)
 		wires.Interact(user)
+	return FALSE
 
 /obj/machinery/power/smes/buildable/RefreshParts()
 	recalc_coils()
@@ -331,48 +347,79 @@
 // Proc: attackby()
 // Parameters: 2 (W - object that was used on this machine, user - person which used the object)
 // Description: Handles tool interaction. Allows deconstruction/upgrading/fixing.
-/obj/machinery/power/smes/buildable/attackby(obj/item/W, mob/user)
-	// No more disassembling of overloaded SMESs. You broke it, now enjoy the consequences.
-	if (failing)
-		to_chat(user, span_warning("The [src]'s indicator lights are flashing wildly. It seems to be overloaded! Touching it now is probably not a good idea."))
-		return
-	// If parent returned 1:
-	// - Hatch is open, so we can modify the SMES
-	// - No action was taken in parent function (terminal de/construction atm).
-	if (..())
+/obj/machinery/power/smes/buildable/declare_interactions(list/into)
+	into += list(
+		/datum/interaction/machine_item/smes_buildable_failing_block,
+		/datum/interaction/machine_item/smes_buildable_install_coil,
+	)
+	..()
 
-		// Charged above 1% and safeties are enabled.
-		if((charge > (capacity/100)) && safeties_enabled)
-			to_chat(user, span_warning("The safety circuit of [src] is preventing modifications while there is charge stored!"))
-			return
+// No more disassembling of overloaded SMESs. You broke it, now enjoy the consequences.
+/datum/interaction/machine_item/smes_buildable_failing_block
+	id = "smes_buildable_failing_block"
+	name = "Use"
+	held_type = /obj/item
+	offered_when = list(REQ_ON(PRED_TARGET, /obj/machinery/power/smes/buildable/proc/is_failing, null))
+	effect = /obj/machinery/power/smes/buildable/proc/interaction_failing_block
 
-		if (output_attempt || input_attempt)
-			to_chat(user, span_warning("Turn off the [src] first!"))
-			return
+/obj/machinery/power/smes/buildable/proc/is_failing(mob/actor, atom/target, obj/item/held)
+	return failing
 
-		// Probability of failure if safety circuit is disabled (in %)
-		var/failure_probability = round((charge / capacity) * 100)
+/obj/machinery/power/smes/buildable/proc/interaction_failing_block(mob/user, obj/item/held, datum/interaction/interaction)
+	to_chat(user, span_warning("The [src]'s indicator lights are flashing wildly. It seems to be overloaded! Touching it now is probably not a good idea."))
+	return TRUE
 
-		// If failure probability is below 5% it's usually safe to do modifications
-		if (failure_probability < 5)
-			failure_probability = 0
+/**
+ * Approximation: the old attackby gated everything below on `if(..())` - the ancestor SMES's
+ * own attackby (out of this file's scope), which per the comment returns truthy only when
+ * the maintenance hatch is open and it took no action itself (terminal de/construction).
+ * That can't be replayed from here, so this is offered only when the panel is open (see
+ * report); when not offered, the entry falls through to the base/ancestor attackby, matching
+ * the old "..() returned falsy, nothing else happens" path.
+ */
+/datum/interaction/machine_item/smes_buildable_install_coil
+	id = "smes_buildable_install_coil"
+	name = "Install coil"
+	held_type = /obj/item/smes_coil
+	offered_when = list(REQ_ON(PRED_TARGET, /obj/machinery/power/smes/buildable/proc/panel_is_open_impl, null))
+	effect = /obj/machinery/power/smes/buildable/proc/interaction_install_coil
 
-		// Superconducting Magnetic Coil - Upgrade the SMES
-		if(istype(W, /obj/item/smes_coil))
-			if (cur_coils < max_coils)
+/obj/machinery/power/smes/buildable/proc/panel_is_open_impl(mob/actor, atom/target, obj/item/held)
+	return panel_open
 
-				if (failure_probability && prob(failure_probability))
-					total_system_failure(failure_probability, user)
-					return
+/obj/machinery/power/smes/buildable/proc/interaction_install_coil(mob/user, obj/item/W, datum/interaction/interaction)
+	// Charged above 1% and safeties are enabled.
+	if((charge > (capacity/100)) && safeties_enabled)
+		to_chat(user, span_warning("The safety circuit of [src] is preventing modifications while there is charge stored!"))
+		return TRUE
 
-				to_chat(user, "You install the coil into the SMES unit!")
-				user.drop_item()
-				cur_coils ++
-				component_parts += W
-				W.loc = src
-				recalc_coils()
-			else
-				to_chat(user, span_red("You can't insert more coils into this SMES unit!"))
+	if (output_attempt || input_attempt)
+		to_chat(user, span_warning("Turn off the [src] first!"))
+		return TRUE
+
+	// Probability of failure if safety circuit is disabled (in %)
+	var/failure_probability = round((charge / capacity) * 100)
+
+	// If failure probability is below 5% it's usually safe to do modifications
+	if (failure_probability < 5)
+		failure_probability = 0
+
+	// Superconducting Magnetic Coil - Upgrade the SMES
+	if (cur_coils < max_coils)
+
+		if (failure_probability && prob(failure_probability))
+			total_system_failure(failure_probability, user)
+			return TRUE
+
+		to_chat(user, "You install the coil into the SMES unit!")
+		user.drop_item()
+		cur_coils ++
+		component_parts += W
+		W.loc = src
+		recalc_coils()
+	else
+		to_chat(user, span_red("You can't insert more coils into this SMES unit!"))
+	return TRUE
 
 /obj/machinery/power/smes/buildable/multitool_act(mob/user, obj/item/tool)
 	if(failing || !panel_open)

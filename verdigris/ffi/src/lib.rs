@@ -13,4 +13,4 @@ mod lifecycle;
 mod metrics;
 mod power;
 mod propagate;
-mod reactor;
+pub mod reactor;

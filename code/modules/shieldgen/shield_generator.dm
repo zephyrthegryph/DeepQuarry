@@ -353,17 +353,28 @@
 	else if (field_integrity() > 25)
 		overloaded = 0
 
-/obj/machinery/power/shield_generator/attackby(obj/item/O as obj, mob/user as mob)
-	if(istype(O, /obj/item/storage/part_replacer))
-		if(offline_for)
-			to_chat(user, span_warning("Wait until \the [src] cools down from emergency shutdown first!"))
-			return
-		if(running)
-			to_chat(user, span_notice("Turn off \the [src] first!"))
-			return
-	if(default_part_replacement(user, O))
-		return
-	return ..()
+/obj/machinery/power/shield_generator/declare_interactions(list/into)
+	into += list(
+		/datum/interaction/machine_item/shield_generator_part_replacement,
+		/datum/interaction/machine_hand/shield_generator_use,
+	)
+	..()
+
+/// Old attackby's part_replacer checks, running the shared part-replacement effect.
+/datum/interaction/machine_item/shield_generator_part_replacement
+	id = "shield_generator_part_replacement"
+	name = "Replace parts"
+	category = INTERACTION_CAT_MAINTAIN
+	held_type = /obj/item/storage/part_replacer
+	requires = list(REQ_INTERACTION_REACH, REQ_ON(PRED_TARGET, /obj/machinery/power/shield_generator/proc/can_replace_parts, null))
+	effect = /obj/machinery/proc/interaction_part_replacement
+
+/obj/machinery/power/shield_generator/proc/can_replace_parts(mob/actor, atom/target, obj/item/held)
+	if(offline_for)
+		return "wait until it cools down from emergency shutdown first"
+	if(running)
+		return "turn it off first"
+	return TRUE
 
 /obj/machinery/power/shield_generator/screwdriver_act(mob/user, obj/item/O)
 	return ..()
@@ -456,13 +467,17 @@
 
 	return data
 
-/obj/machinery/power/shield_generator/attack_hand(mob/user)
-	if((. = ..()))
-		return
+/datum/interaction/machine_hand/shield_generator_use
+	id = "shield_generator_use"
+	name = "Use"
+	effect = /obj/machinery/power/shield_generator/proc/interaction_use
+
+/obj/machinery/power/shield_generator/proc/interaction_use(mob/user, obj/item/held, datum/interaction/interaction)
 	if(panel_open && Adjacent(user))
 		wires.Interact(user)
-		return
-	tgui_interact(user)
+	else
+		tgui_interact(user)
+	return TRUE
 
 /obj/machinery/power/shield_generator/tgui_status(mob/user)
 	if(issilicon(user) && !Adjacent(user) && ai_control_disabled)

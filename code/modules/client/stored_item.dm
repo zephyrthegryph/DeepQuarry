@@ -55,15 +55,33 @@
 /obj/machinery/item_bank/Initialize(mapload)
 	. = ..()
 
-/obj/machinery/item_bank/attack_hand(mob/living/user)
-	. = ..()
+/obj/machinery/item_bank/declare_interactions(list/into)
+	into += list(
+		/datum/interaction/machine_hand/ungated/item_bank_use,
+		/datum/interaction/machine_item/item_bank_store,
+	)
+	..()
+
+/**
+ * Old attack_hand: `. = ..()` but never checked `.` before continuing, so the gate never
+ * actually stopped it; approximated here as ungated with its own inoperable()/panel_open
+ * checks, which is what the gate would otherwise have caught. Any message or side effect
+ * the base gated attack_hand used to produce is no longer shown; note in the I7 report.
+ */
+/datum/interaction/machine_hand/ungated/item_bank_use
+	id = "item_bank_use"
+	name = "Use"
+	effect = /obj/machinery/item_bank/proc/interaction_use
+
+/obj/machinery/item_bank/proc/interaction_use(mob/living/user, obj/item/held, datum/interaction/interaction)
 	if(!ishuman(user))
-		return
+		return TRUE
 	if(istype(user) && Adjacent(user))
 		if(inoperable() || panel_open)
 			to_chat(user, span_warning("\The [src] seems to be nonfunctional..."))
 		else
 			start_using(user)
+	return TRUE
 
 /obj/machinery/item_bank/proc/start_using(mob/living/user)
 	if(!ishuman(user))
@@ -121,34 +139,42 @@
 		to_chat(user, span_warning("\The [src] doesn't seem to have anything for you..."))
 		busy_bank = FALSE
 
-/obj/machinery/item_bank/attackby(obj/item/O, mob/living/user)
+/// Old attackby: entirely self-contained, never called ..(), so it catches every item.
+/datum/interaction/machine_item/item_bank_store
+	id = "item_bank_store"
+	name = "Store"
+	category = INTERACTION_CAT_INSERT
+	held_type = /obj/item
+	effect = /obj/machinery/item_bank/proc/interaction_store
+
+/obj/machinery/item_bank/proc/interaction_store(mob/living/user, obj/item/O, datum/interaction/interaction)
 	if(!ishuman(user))
-		return
+		return TRUE
 	if(busy_bank)
 		to_chat(user, span_warning("\The [src] is already in use."))
-		return
+		return TRUE
 	busy_bank = TRUE
 	var/I = persist_item_savefile_load(user, "type")
 	if(!istool(O) && O.persist_storable)
 		if(ispath(I))
 			to_chat(user, span_warning("You cannot store \the [O]. You already have something stored."))
 			busy_bank = FALSE
-			return
+			return TRUE
 		var/choice = tgui_alert(user, "If you store \the [O], anything it contains may be lost to \the [src]. Are you sure?", "[src]", list("Store", "Cancel"), timeout = 10 SECONDS)
 		if(!choice || choice == "Cancel" || !Adjacent(user) || inoperable() || panel_open)
 			busy_bank = FALSE
-			return
+			return TRUE
 		for(var/obj/item/check in O.contents)
 			if(!check.persist_storable || check.tethered_host_item)
 				to_chat(user, span_warning("\The [src] buzzes. \The [O] contains [check], which cannot be stored. Please remove this item before attempting to store \the [O]. As a reminder, any contents of \the [O] will be lost if you store it with contents."))
 				busy_bank = FALSE
-				return
+				return TRUE
 		user.visible_message(span_notice("\The [user] begins storing \the [O] in \the [src]."),span_notice("You begin storing \the [O] in \the [src]."))
 		icon_state = "item_bank_o"
 		if(!do_after(user, 10 SECONDS, target = src) || inoperable())
 			busy_bank = FALSE
 			icon_state = "item_bank"
-			return
+			return TRUE
 		src.persist_item_savefile_save(user, O)
 		user.visible_message(span_notice("\The [user] stores \the [O] in \the [src]."),span_notice("You stored \the [O] in \the [src]."))
 		log_admin("[key_name_admin(user)] stored [O] in the item bank.")
@@ -158,6 +184,7 @@
 	else
 		to_chat(user, span_warning("You cannot store \the [O]. \The [src] either does not accept that, or it has already been retrieved from storage this shift."))
 		busy_bank = FALSE
+	return TRUE
 
 /////STORABLE ITEMS AND ALL THAT JAZZ/////
 //I am only really intending this to be used for single items. Mostly stuff you got right now, but can't/don't want to use right now.
