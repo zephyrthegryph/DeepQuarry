@@ -114,6 +114,34 @@ fn the_field_conserves_gas_and_energy_including_space() {
 	assert!(ledger[GAS_OXYGEN] > 0.0, "{ledger:?}");
 }
 
+/// Same scenario as above, checked through the shared
+/// `vg_core::conservation::Ledger` instead of a by-hand `close()` diff --
+/// wiring gas into the generic conservation audit (`rust_core.md` §15).
+/// `totals()` already folds the field's reservoir ledger (what space took)
+/// into the sum, so no external source/sink events are expected here: the
+/// energy total should hold across the run within the ledger's tolerance.
+#[test]
+fn the_field_conserves_energy_through_the_shared_ledger() {
+	let mut w = world(Mode::Overlay);
+	build(&mut w, 99, true);
+	w.run_frames(1);
+	let mut ledger = vg_core::conservation::Ledger::new();
+	// Relative tolerance (as `close()` above uses), scaled to the current
+	// total's magnitude: an absolute epsilon would be meaninglessly tight
+	// or loose depending on how much energy is in the system.
+	let tolerance = |total: f64| 1e-4 * total.abs().max(1.0);
+	let energy = totals(&w)[N];
+	// Primes the baseline; nothing to compare against yet.
+	ledger
+		.check("gas_energy_j", energy, tolerance(energy))
+		.expect("priming never fails");
+	for _ in 0..40 {
+		w.run_frames(1);
+		let energy = totals(&w)[N];
+		vg_core::conservation::assert_conserved(&mut ledger, "gas_energy_j", energy, tolerance(energy));
+	}
+}
+
 #[test]
 fn a_breach_drains_a_room_and_settles() {
 	let mut w = world(Mode::Overlay);
@@ -260,8 +288,8 @@ proptest! {
 			}
 			let (_, rel) = w.pipes.commit();
 			for r in rel {
-				for g in 0..N {
-					released[g] += r.gas.moles[g];
+				for (slot, &moles) in released.iter_mut().zip(r.gas.moles.iter()).take(N) {
+					*slot += moles;
 				}
 				released[N] += r.gas.energy;
 			}

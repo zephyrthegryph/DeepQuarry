@@ -228,9 +228,13 @@ impl Mains {
 /// What the heat world's frame threads see of gas (`vg_heat::GasExchange`),
 /// and the energy they move, applied to gas as commands on the main thread
 /// (an exchange buffer, `rust_core.md` §3.6). Frame threads only `try_lock`.
+/// The turf-field views (gas cells, geometry) the heat world reads, swapped
+/// in together each frame.
+type FieldViews = Option<(Arc<View<GasCell>>, Arc<View<Geom>>)>;
+
 #[derive(Default)]
 pub struct Exchange {
-	views: Mutex<Option<(Arc<View<GasCell>>, Arc<View<Geom>>)>>,
+	views: Mutex<FieldViews>,
 	/// Probes of main-owned and pipe gas, by handle, refreshed each tick.
 	probes: Mutex<HashMap<u32, vg_heat::GasProbe>>,
 	requests: Mutex<Vec<u32>>,
@@ -1351,7 +1355,7 @@ impl GasWorld {
 				continue;
 			};
 			let vol_region = *r.summary();
-			let mut region_gas = r.payload().clone();
+			let mut region_gas = *r.payload();
 
 			let Some(before_mix) = self.load(MixRef::Turf(cell)) else {
 				continue;
@@ -1405,7 +1409,7 @@ impl GasWorld {
 				.field
 				.as_ref()
 				.and_then(|f| f.read(c))
-				.map_or(0, |(cell, _)| cell.revision),
+				.map_or(0, |(cell, _)| cell.revision()),
 		}
 	}
 
@@ -1453,8 +1457,8 @@ impl GasWorld {
 			}
 			MixRef::Pipe(s) => {
 				if let Some((gas, _)) = self.pipes.gas_mut(s) {
-					for i in 0..N {
-						gas.moles[i] = (gas.moles[i] + f64::from(amounts[i])).max(0.0);
+					for (moles, &amount) in gas.moles.iter_mut().zip(amounts.iter()).take(N) {
+						*moles = (*moles + f64::from(amount)).max(0.0);
 					}
 					gas.energy = (gas.energy + f64::from(amounts[N])).max(0.0);
 					if gas.total() > 0.0 && temperature_hint > 0.0 && gas.energy == 0.0 {

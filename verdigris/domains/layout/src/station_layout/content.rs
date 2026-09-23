@@ -20,20 +20,6 @@ struct FixtureSpec {
     layer: FixtureLayer,
 }
 
-#[derive(Clone, Copy)]
-struct CompositionCell {
-    dx: i16,
-    dy: i16,
-    spec: FixtureSpec,
-}
-
-#[derive(Clone, Copy)]
-struct CompositionPlacement {
-    at: Point,
-    facing: Facing,
-    spec: FixtureSpec,
-}
-
 #[derive(Clone)]
 struct AuthoredCompositionPlacement {
     at: Point,
@@ -43,15 +29,7 @@ struct AuthoredCompositionPlacement {
 }
 
 #[derive(Clone, Copy)]
-enum CompositionAnchor {
-    Center,
-    Perimeter,
-    Entrance,
-}
-
-#[derive(Clone, Copy)]
 struct CounterpartProfile {
-    anchor: CompositionAnchor,
     minimum_cluster_micros: u32,
     minimum_unique_fixtures: usize,
     minimum_occupancy_micros: u32,
@@ -170,9 +148,11 @@ pub fn generate_station_blueprint(
             if let Some((at, facing)) = wall_candidates.get(candidate_index).copied() {
                 used_wall_points.insert(at);
                 push_fixture(
-                    &mut fixtures,
-                    &mut room_fixture_ids,
-                    &mut next_fixture_id,
+                    &mut FixtureSink {
+                        fixtures: &mut fixtures,
+                        room_ids: &mut room_fixture_ids,
+                        next: &mut next_fixture_id,
+                    },
                     *spec,
                     at,
                     facing,
@@ -192,9 +172,11 @@ pub fn generate_station_blueprint(
         for (index, (at, facing)) in extra_light_candidates.into_iter().enumerate() {
             used_wall_points.insert(at);
             push_fixture(
-                &mut fixtures,
-                &mut room_fixture_ids,
-                &mut next_fixture_id,
+                &mut FixtureSink {
+                    fixtures: &mut fixtures,
+                    room_ids: &mut room_fixture_ids,
+                    next: &mut next_fixture_id,
+                },
                 FixtureSpec {
                     id: "wall_light",
                     layer: FixtureLayer::Wall,
@@ -246,9 +228,11 @@ pub fn generate_station_blueprint(
                     .into(),
                 );
                 push_fixture(
-                    &mut fixtures,
-                    &mut room_fixture_ids,
-                    &mut next_fixture_id,
+                    &mut FixtureSink {
+                        fixtures: &mut fixtures,
+                        room_ids: &mut room_fixture_ids,
+                        next: &mut next_fixture_id,
+                    },
                     FixtureSpec {
                         id: fixture_id,
                         layer: FixtureLayer::Machine,
@@ -341,18 +325,21 @@ pub fn generate_station_blueprint(
             .map(|placement| placement.at)
             .chain(occupied.iter().copied())
             .collect::<BTreeSet<_>>();
+        let room_placement_ctx = RoomPlacementContext {
+            layout: &layout,
+            tiles: &tiles,
+            reserved: &reserved,
+            doors: &door_tiles,
+            center,
+            protected_approaches: &protected_approaches,
+        };
         let program_with_fragments = fragments_valid.then(|| {
             place_room_program(
-                &layout,
+                &room_placement_ctx,
                 &program,
-                &tiles,
-                &reserved,
-                &door_tiles,
-                center,
                 &fragment_blocking,
                 &fragment_access,
                 &fragment_occupied,
-                &protected_approaches,
             )
         });
         let (program_placements, use_fragments) = match program_with_fragments {
@@ -367,16 +354,11 @@ pub fn generate_station_blueprint(
             }
             _ => {
                 let primary = place_room_program(
-                    &layout,
+                    &room_placement_ctx,
                     &program,
-                    &tiles,
-                    &reserved,
-                    &door_tiles,
-                    center,
                     &blocking,
                     &required_access,
                     &occupied,
-                    &protected_approaches,
                 );
                 match primary {
                     Ok(placements) => (placements, false),
@@ -395,16 +377,11 @@ pub fn generate_station_blueprint(
                             layout.seed ^ u64::from(room.id),
                         );
                         let placements = place_room_program(
-                            &layout,
+                            &room_placement_ctx,
                             &compact,
-                            &tiles,
-                            &reserved,
-                            &door_tiles,
-                            center,
                             &blocking,
                             &required_access,
                             &occupied,
-                            &protected_approaches,
                         )
                         .map_err(|compact_error| {
                             LayoutError(format!(
@@ -429,9 +406,11 @@ pub fn generate_station_blueprint(
                 }
                 occupied.insert(placement.at);
                 push_authored_fixture(
-                    &mut fixtures,
-                    &mut room_fixture_ids,
-                    &mut next_fixture_id,
+                    &mut FixtureSink {
+                        fixtures: &mut fixtures,
+                        room_ids: &mut room_fixture_ids,
+                        next: &mut next_fixture_id,
+                    },
                     &placement.fixture_id,
                     placement.layer,
                     placement.at,
@@ -457,9 +436,11 @@ pub fn generate_station_blueprint(
                 required_access.insert(step_facing(placement.at, placement.facing));
             }
             push_authored_fixture(
-                &mut fixtures,
-                &mut room_fixture_ids,
-                &mut next_fixture_id,
+                &mut FixtureSink {
+                    fixtures: &mut fixtures,
+                    room_ids: &mut room_fixture_ids,
+                    next: &mut next_fixture_id,
+                },
                 &placement.fixture_id,
                 placement.layer,
                 placement.at,
@@ -649,7 +630,6 @@ fn relocate_wall_services_away_from_furniture(
                 fixture.room_id == room_id
                     && fixture.layer == FixtureLayer::Wall
                     && fixture_is_wall_mounted(&fixture.fixture_id)
-                    && fixture.layer == FixtureLayer::Wall
             })
             .map(|(index, _)| index)
             .collect::<Vec<_>>();
@@ -767,6 +747,11 @@ fn orient_seats_toward_supports(rooms: &[RoomBlueprint], fixtures: &mut [Fixture
     }
 }
 
+// This function's args are the room-fill working set threaded through a
+// single call site (generate_station_blueprint): splitting them into a
+// context struct plus a separate output-accumulator struct would shuffle
+// the same 15 pieces of state one level deeper without reducing what the
+// caller has to assemble. Not bundled.
 #[allow(clippy::too_many_arguments)]
 fn fill_to_counterpart_density(
     layout: &StationLayout,
@@ -928,9 +913,11 @@ fn fill_to_counterpart_density(
         }
         let variant = room_fixture_ids.len() as u16;
         push_fixture(
-            fixtures,
-            room_fixture_ids,
-            next_fixture_id,
+            &mut FixtureSink {
+                fixtures,
+                room_ids: room_fixture_ids,
+                next: next_fixture_id,
+            },
             spec,
             at,
             facing,
@@ -945,18 +932,35 @@ fn fill_to_counterpart_density(
     Ok(())
 }
 
-fn place_room_program(
-    layout: &StationLayout,
-    program: &RoomProgram,
-    tiles: &BTreeSet<Point>,
-    reserved: &BTreeSet<Point>,
-    doors: &BTreeSet<Point>,
+/// The part of a room's placement context that stays the same across every
+/// `place_room_program` attempt for that room (primary program, fragment
+/// retry, compact fallback), grouped so the function stays under clippy's
+/// argument limit instead of taking each of these separately.
+#[derive(Clone, Copy)]
+struct RoomPlacementContext<'a> {
+    layout: &'a StationLayout,
+    tiles: &'a BTreeSet<Point>,
+    reserved: &'a BTreeSet<Point>,
+    doors: &'a BTreeSet<Point>,
     center: Point,
+    protected_approaches: &'a BTreeSet<Point>,
+}
+
+fn place_room_program(
+    ctx: &RoomPlacementContext<'_>,
+    program: &RoomProgram,
     initial_blocking: &BTreeSet<Point>,
     initial_required_access: &BTreeSet<Point>,
     initial_occupied: &BTreeSet<Point>,
-    protected_approaches: &BTreeSet<Point>,
 ) -> Result<Vec<AuthoredCompositionPlacement>, LayoutError> {
+    let RoomPlacementContext {
+        layout,
+        tiles,
+        reserved,
+        doors,
+        center,
+        protected_approaches,
+    } = *ctx;
     let entrance = doors
         .iter()
         .copied()
@@ -1024,99 +1028,32 @@ fn place_room_program(
         });
         let rotation_offset =
             usize::try_from(layout.seed ^ stable_text_hash(zone.id)).unwrap_or_default() % 4;
+        let env = ZonePlacementEnv {
+            layout,
+            tiles,
+            doors,
+            center,
+        };
         let mut selected = None;
         'candidate: for anchor in anchors {
+            // Try all 4 quarter-turns for this anchor (starting from
+            // `rotation_offset`'s own rotation) before giving up on it: a
+            // rotation that doesn't fit at this anchor may still fit once
+            // turned. See `try_place_zone_at`.
             for turn_offset in 0..4 {
                 let turns = (rotation_offset + turn_offset) % 4;
-                let mut placements = Vec::with_capacity(zone.fixtures.len());
-                let mut local = BTreeSet::new();
-                let mut trial_blocking = blocking.clone();
-                let mut trial_access = required_access.clone();
-                for fixture in &zone.fixtures {
-                    let (dx, dy) = program_rotate_offset(fixture.dx, fixture.dy, turns);
-                    let x = i32::from(anchor.x) + i32::from(dx);
-                    let y = i32::from(anchor.y) + i32::from(dy);
-                    if x < 0 || y < 0 {
-                        continue 'candidate;
-                    }
-                    let at = Point {
-                        x: u16::try_from(x).unwrap_or(u16::MAX),
-                        y: u16::try_from(y).unwrap_or(u16::MAX),
-                    };
-                    if !tiles.contains(&at)
-                        || doors.contains(&at)
-                        || occupied.contains(&at)
-                        || required_access.contains(&at)
-                        || !local.insert(at)
-                    {
-                        continue 'candidate;
-                    }
-                    let wall_mounted = fixture_is_wall_mounted(fixture.id);
-                    let layer = if wall_mounted {
-                        FixtureLayer::Wall
-                    } else {
-                        match fixture.layer {
-                            ProgramLayer::Furniture => FixtureLayer::Furniture,
-                            ProgramLayer::Machine => FixtureLayer::Machine,
-                            ProgramLayer::Wall => FixtureLayer::Wall,
-                        }
-                    };
-                    let facing = if wall_mounted || fixture.layer == ProgramLayer::Wall {
-                        let Some(facing) = wall_fixture_facing(layout, at) else {
-                            continue 'candidate;
-                        };
-                        facing
-                    } else if zone.anchor == ProgramAnchor::Perimeter {
-                        wall_fixture_facing(layout, anchor)
-                            .map(opposite_facing)
-                            .unwrap_or_else(|| face_toward(at, center))
-                    } else {
-                        face_toward(at, anchor)
-                    };
-                    if !wall_mounted && fixture_blocks(fixture.id) {
-                        trial_blocking.insert(at);
-                    }
-                    placements.push(AuthoredCompositionPlacement {
-                        at,
-                        facing,
-                        fixture_id: fixture.id.into(),
-                        layer,
-                    });
+                if let Some(placed) = try_place_zone_at(
+                    &env,
+                    &occupied,
+                    &required_access,
+                    &blocking,
+                    zone,
+                    anchor,
+                    turns,
+                ) {
+                    selected = Some(placed);
+                    break 'candidate;
                 }
-                for placement in &mut placements {
-                    if !fixture_blocks_on_layer(&placement.fixture_id, placement.layer) {
-                        continue;
-                    }
-                    let preferred = placement.facing;
-                    let candidate_facings = if fixture_requires_fixed_facing(&placement.fixture_id)
-                    {
-                        vec![preferred]
-                    } else {
-                        vec![
-                            preferred,
-                            Facing::North,
-                            Facing::East,
-                            Facing::South,
-                            Facing::West,
-                        ]
-                    };
-                    let Some((access, facing)) = candidate_facings
-                        .into_iter()
-                        .map(|facing| (step_facing(placement.at, facing), facing))
-                        .find(|(access, _)| {
-                            tiles.contains(access) && !trial_blocking.contains(access)
-                        })
-                    else {
-                        continue 'candidate;
-                    };
-                    placement.facing = facing;
-                    trial_access.insert(access);
-                }
-                if !room_walkable_connected(tiles, &trial_blocking, layout.width, layout.height) {
-                    continue 'candidate;
-                }
-                selected = Some((placements, trial_blocking, trial_access));
-                break 'candidate;
             }
         }
         if let Some((placements, trial_blocking, trial_access)) = selected {
@@ -1160,6 +1097,116 @@ fn place_room_program(
     Ok(result)
 }
 
+/// The parts of a zone-placement attempt that don't change across anchors or
+/// rotations, grouped so `try_place_zone_at` stays under clippy's argument
+/// limit instead of taking each of these separately.
+struct ZonePlacementEnv<'a> {
+    layout: &'a StationLayout,
+    tiles: &'a BTreeSet<Point>,
+    doors: &'a BTreeSet<Point>,
+    center: Point,
+}
+
+/// Tries to place every fixture of `zone`, anchored at `anchor` and rotated
+/// `turns` quarter-turns (see `program_rotate_offset`), without colliding
+/// with `occupied`/`env.doors`/`blocking`/`required_access` and without
+/// leaving the room's walkable area disconnected. Returns the placements
+/// plus the blocking/access point sets they would add, or `None` if this
+/// anchor/rotation doesn't fit -- the caller then retries with the next
+/// rotation, and failing all 4, the next anchor.
+fn try_place_zone_at(
+    env: &ZonePlacementEnv<'_>,
+    occupied: &BTreeSet<Point>,
+    required_access: &BTreeSet<Point>,
+    blocking: &BTreeSet<Point>,
+    zone: &ActivityZone,
+    anchor: Point,
+    turns: usize,
+) -> Option<(Vec<AuthoredCompositionPlacement>, BTreeSet<Point>, BTreeSet<Point>)> {
+    let mut placements = Vec::with_capacity(zone.fixtures.len());
+    let mut local = BTreeSet::new();
+    let mut trial_blocking = blocking.clone();
+    let mut trial_access = required_access.clone();
+    for fixture in &zone.fixtures {
+        let (dx, dy) = program_rotate_offset(fixture.dx, fixture.dy, turns);
+        let x = i32::from(anchor.x) + i32::from(dx);
+        let y = i32::from(anchor.y) + i32::from(dy);
+        if x < 0 || y < 0 {
+            return None;
+        }
+        let at = Point {
+            x: u16::try_from(x).unwrap_or(u16::MAX),
+            y: u16::try_from(y).unwrap_or(u16::MAX),
+        };
+        if !env.tiles.contains(&at)
+            || env.doors.contains(&at)
+            || occupied.contains(&at)
+            || required_access.contains(&at)
+            || !local.insert(at)
+        {
+            return None;
+        }
+        let wall_mounted = fixture_is_wall_mounted(fixture.id);
+        let layer = if wall_mounted {
+            FixtureLayer::Wall
+        } else {
+            match fixture.layer {
+                ProgramLayer::Furniture => FixtureLayer::Furniture,
+                ProgramLayer::Machine => FixtureLayer::Machine,
+                ProgramLayer::Wall => FixtureLayer::Wall,
+            }
+        };
+        let facing = if wall_mounted || fixture.layer == ProgramLayer::Wall {
+            wall_fixture_facing(env.layout, at)?
+        } else if zone.anchor == ProgramAnchor::Perimeter {
+            wall_fixture_facing(env.layout, anchor)
+                .map(opposite_facing)
+                .unwrap_or_else(|| face_toward(at, env.center))
+        } else {
+            face_toward(at, anchor)
+        };
+        if !wall_mounted && fixture_blocks(fixture.id) {
+            trial_blocking.insert(at);
+        }
+        placements.push(AuthoredCompositionPlacement {
+            at,
+            facing,
+            fixture_id: fixture.id.into(),
+            layer,
+        });
+    }
+    for placement in &mut placements {
+        if !fixture_blocks_on_layer(&placement.fixture_id, placement.layer) {
+            continue;
+        }
+        let preferred = placement.facing;
+        let candidate_facings = if fixture_requires_fixed_facing(&placement.fixture_id) {
+            vec![preferred]
+        } else {
+            vec![
+                preferred,
+                Facing::North,
+                Facing::East,
+                Facing::South,
+                Facing::West,
+            ]
+        };
+        let (access, facing) = candidate_facings
+            .into_iter()
+            .map(|facing| (step_facing(placement.at, facing), facing))
+            .find(|(access, _)| env.tiles.contains(access) && !trial_blocking.contains(access))?;
+        placement.facing = facing;
+        trial_access.insert(access);
+    }
+    if !room_walkable_connected(env.tiles, &trial_blocking, env.layout.width, env.layout.height) {
+        return None;
+    }
+    Some((placements, trial_blocking, trial_access))
+}
+
+// Thin dispatcher: forwards straight into
+// place_adaptive_fixture_sequence's recursion below, so its argument list
+// exists only because that one does. Not bundled for the same reason.
 #[allow(clippy::too_many_arguments)]
 fn place_adaptive_activity_zone(
     layout: &StationLayout,
@@ -1193,6 +1240,10 @@ fn place_adaptive_activity_zone(
     )
 }
 
+// Recursive backtracking search: most of these args are per-call-frame
+// accumulators (occupied/blocking/access/placements) or loop state
+// (fixture_index/cluster_target) that change on every recursive step, not
+// a fixed context a struct would factor out cleanly. Not bundled.
 #[allow(clippy::too_many_arguments)]
 fn place_adaptive_fixture_sequence(
     layout: &StationLayout,
@@ -1919,10 +1970,17 @@ pub fn validate_station_blueprint(
     Ok(quality)
 }
 
+/// The output accumulators every fixture placed in a room is pushed into,
+/// grouped so `push_fixture`/`push_authored_fixture` stay under clippy's
+/// argument limit instead of threading each of these through separately.
+struct FixtureSink<'a> {
+    fixtures: &'a mut Vec<FixturePlacement>,
+    room_ids: &'a mut Vec<u32>,
+    next: &'a mut u32,
+}
+
 fn push_fixture(
-    fixtures: &mut Vec<FixturePlacement>,
-    room_ids: &mut Vec<u32>,
-    next: &mut u32,
+    sink: &mut FixtureSink<'_>,
     spec: FixtureSpec,
     at: Point,
     facing: Facing,
@@ -1930,9 +1988,9 @@ fn push_fixture(
     network_id: Option<String>,
     variant: u16,
 ) {
-    let id = *next;
-    *next += 1;
-    fixtures.push(FixturePlacement {
+    let id = *sink.next;
+    *sink.next += 1;
+    sink.fixtures.push(FixturePlacement {
         id,
         fixture_id: spec.id.into(),
         at,
@@ -1949,13 +2007,11 @@ fn push_fixture(
             Vec::new()
         },
     });
-    room_ids.push(id);
+    sink.room_ids.push(id);
 }
 
 fn push_authored_fixture(
-    fixtures: &mut Vec<FixturePlacement>,
-    room_ids: &mut Vec<u32>,
-    next: &mut u32,
+    sink: &mut FixtureSink<'_>,
     fixture_id: &str,
     layer: FixtureLayer,
     at: Point,
@@ -1963,10 +2019,10 @@ fn push_authored_fixture(
     room: &Room,
     variant: u16,
 ) {
-    let id = *next;
-    *next += 1;
+    let id = *sink.next;
+    *sink.next += 1;
     let blocks_movement = fixture_blocks_on_layer(fixture_id, layer);
-    fixtures.push(FixturePlacement {
+    sink.fixtures.push(FixturePlacement {
         id,
         fixture_id: fixture_id.to_string(),
         at,
@@ -1983,7 +2039,7 @@ fn push_authored_fixture(
             Vec::new()
         },
     });
-    room_ids.push(id);
+    sink.room_ids.push(id);
 }
 
 fn room_center(room: &Room, tiles: &BTreeSet<Point>) -> Point {
@@ -2156,7 +2212,7 @@ fn authored_fragment_composition(
 fn fragment_feature_point(origin: Point, feature: &FragmentFeatureWire) -> Option<Point> {
     let x = i32::from(origin.x) + i32::from(feature.dx) - 1;
     let y = i32::from(origin.y) + i32::from(feature.dy) - 1;
-    (x >= 0 && y >= 0 && x <= i32::from(u16::MAX) && y <= i32::from(u16::MAX)).then(|| Point {
+    (x >= 0 && y >= 0 && x <= i32::from(u16::MAX) && y <= i32::from(u16::MAX)).then_some(Point {
         x: x as u16,
         y: y as u16,
     })
@@ -2336,488 +2392,49 @@ fn plan_networks(
         .collect()
 }
 
-fn semantic_composition(
-    role: &str,
-    seed: u64,
-    tiles: &BTreeSet<Point>,
-    reserved: &BTreeSet<Point>,
-    doors: &BTreeSet<Point>,
-    center: Point,
-) -> Vec<CompositionPlacement> {
-    let profile = counterpart_profile(role);
-    let furniture = |id| FixtureSpec {
-        id,
-        layer: FixtureLayer::Furniture,
-    };
-    let machine = |id| FixtureSpec {
-        id,
-        layer: FixtureLayer::Machine,
-    };
-    let cells = if has(role, &["surgery", "treatment", "exam", "medical"]) {
-        vec![
-            CompositionCell {
-                dx: 0,
-                dy: 0,
-                spec: furniture("operating_table"),
-            },
-            CompositionCell {
-                dx: 1,
-                dy: 0,
-                spec: machine("anesthetic"),
-            },
-            CompositionCell {
-                dx: -1,
-                dy: 0,
-                spec: machine("medical_console"),
-            },
-            CompositionCell {
-                dx: 0,
-                dy: 1,
-                spec: furniture("instrument_table"),
-            },
-            CompositionCell {
-                dx: 2,
-                dy: 0,
-                spec: furniture("medical_cabinet"),
-            },
-        ]
-    } else if has(role, &["laboratory", "research", "analysis"]) {
-        vec![
-            CompositionCell {
-                dx: 0,
-                dy: 0,
-                spec: furniture("experiment_table"),
-            },
-            CompositionCell {
-                dx: 1,
-                dy: 0,
-                spec: machine("analyzer"),
-            },
-            CompositionCell {
-                dx: -1,
-                dy: 0,
-                spec: machine("research_console"),
-            },
-            CompositionCell {
-                dx: 0,
-                dy: 1,
-                spec: furniture("reagent_storage"),
-            },
-            CompositionCell {
-                dx: 0,
-                dy: -1,
-                spec: furniture("stool"),
-            },
-        ]
-    } else if has(role, &["security", "armory", "brig", "evidence"]) {
-        vec![
-            CompositionCell {
-                dx: 0,
-                dy: 0,
-                spec: machine("security_console"),
-            },
-            CompositionCell {
-                dx: 1,
-                dy: 0,
-                spec: furniture("weapon_rack"),
-            },
-            CompositionCell {
-                dx: 2,
-                dy: 0,
-                spec: furniture("secure_locker"),
-            },
-            CompositionCell {
-                dx: 0,
-                dy: 1,
-                spec: furniture("chair"),
-            },
-            CompositionCell {
-                dx: -1,
-                dy: 0,
-                spec: furniture("evidence_cabinet"),
-            },
-        ]
-    } else if has(role, &["engineering", "workshop", "equipment", "power"]) {
-        vec![
-            CompositionCell {
-                dx: 0,
-                dy: 0,
-                spec: furniture("workbench"),
-            },
-            CompositionCell {
-                dx: 1,
-                dy: 0,
-                spec: furniture("tool_rack"),
-            },
-            CompositionCell {
-                dx: 2,
-                dy: 0,
-                spec: furniture("parts_bin"),
-            },
-            CompositionCell {
-                dx: -1,
-                dy: 0,
-                spec: machine("engineering_console"),
-            },
-            CompositionCell {
-                dx: 0,
-                dy: 1,
-                spec: furniture("stool"),
-            },
-        ]
-    } else if has(role, &["command", "operations", "meeting", "briefing"]) {
-        vec![
-            CompositionCell {
-                dx: 0,
-                dy: 0,
-                spec: furniture("conference_table"),
-            },
-            CompositionCell {
-                dx: 1,
-                dy: 0,
-                spec: furniture("conference_table"),
-            },
-            CompositionCell {
-                dx: -1,
-                dy: 0,
-                spec: furniture("executive_chair"),
-            },
-            CompositionCell {
-                dx: 2,
-                dy: 0,
-                spec: furniture("executive_chair"),
-            },
-            CompositionCell {
-                dx: 0,
-                dy: 1,
-                spec: machine("command_console"),
-            },
-        ]
-    } else if has(role, &["kitchen", "galley", "food"]) {
-        vec![
-            CompositionCell {
-                dx: -1,
-                dy: 0,
-                spec: machine("grill"),
-            },
-            CompositionCell {
-                dx: 0,
-                dy: 0,
-                spec: furniture("food_prep"),
-            },
-            CompositionCell {
-                dx: 1,
-                dy: 0,
-                spec: furniture("sink"),
-            },
-            CompositionCell {
-                dx: 2,
-                dy: 0,
-                spec: furniture("fridge"),
-            },
-            CompositionCell {
-                dx: 0,
-                dy: 1,
-                spec: furniture("serving_counter"),
-            },
-        ]
-    } else if has(role, &["hydro", "garden", "botany"]) {
-        vec![
-            CompositionCell {
-                dx: -1,
-                dy: 0,
-                spec: furniture("hydroponics_tray"),
-            },
-            CompositionCell {
-                dx: 0,
-                dy: 0,
-                spec: furniture("hydroponics_tray"),
-            },
-            CompositionCell {
-                dx: 1,
-                dy: 0,
-                spec: furniture("hydroponics_tray"),
-            },
-            CompositionCell {
-                dx: -1,
-                dy: 1,
-                spec: furniture("hydroponics_tray"),
-            },
-            CompositionCell {
-                dx: 0,
-                dy: 1,
-                spec: machine("plant_analyzer"),
-            },
-            CompositionCell {
-                dx: 1,
-                dy: 1,
-                spec: furniture("produce_bin"),
-            },
-        ]
-    } else if has(role, &["warehouse", "sorting", "inventory"]) {
-        vec![
-            CompositionCell {
-                dx: -1,
-                dy: 0,
-                spec: machine("disposal_unit"),
-            },
-            CompositionCell {
-                dx: 0,
-                dy: 0,
-                spec: furniture("supply_crate"),
-            },
-            CompositionCell {
-                dx: 1,
-                dy: 0,
-                spec: furniture("loading_table"),
-            },
-            CompositionCell {
-                dx: 0,
-                dy: 1,
-                spec: furniture("crate_rack"),
-            },
-            CompositionCell {
-                dx: 0,
-                dy: -1,
-                spec: machine("cargo_console"),
-            },
-        ]
-    } else if has(role, &["cargo", "storage"]) {
-        vec![
-            CompositionCell {
-                dx: -1,
-                dy: 0,
-                spec: furniture("crate_rack"),
-            },
-            CompositionCell {
-                dx: 0,
-                dy: 0,
-                spec: furniture("loading_table"),
-            },
-            CompositionCell {
-                dx: 1,
-                dy: 0,
-                spec: furniture("crate_rack"),
-            },
-            CompositionCell {
-                dx: 0,
-                dy: 1,
-                spec: machine("package_scanner"),
-            },
-            CompositionCell {
-                dx: 0,
-                dy: -1,
-                spec: furniture("freight_cart"),
-            },
-        ]
-    } else if has(role, &["ai", "core", "satellite", "monitoring"]) {
-        vec![
-            CompositionCell {
-                dx: 0,
-                dy: 0,
-                spec: machine("ai_core"),
-            },
-            CompositionCell {
-                dx: 1,
-                dy: 0,
-                spec: furniture("server_rack"),
-            },
-            CompositionCell {
-                dx: -1,
-                dy: 0,
-                spec: furniture("server_rack"),
-            },
-            CompositionCell {
-                dx: 0,
-                dy: 1,
-                spec: machine("coolant_unit"),
-            },
-            CompositionCell {
-                dx: 0,
-                dy: -1,
-                spec: machine("control_console"),
-            },
-        ]
-    } else if has(role, &["reception", "foyer", "liaison"]) {
-        vec![
-            CompositionCell {
-                dx: -1,
-                dy: 0,
-                spec: furniture("reception_desk"),
-            },
-            CompositionCell {
-                dx: 0,
-                dy: 0,
-                spec: machine("visitor_console"),
-            },
-            CompositionCell {
-                dx: 1,
-                dy: 0,
-                spec: furniture("reception_desk"),
-            },
-            CompositionCell {
-                dx: -1,
-                dy: 2,
-                spec: furniture("waiting_bench"),
-            },
-            CompositionCell {
-                dx: 1,
-                dy: 2,
-                spec: furniture("waiting_bench"),
-            },
-        ]
-    } else {
-        vec![
-            CompositionCell {
-                dx: 0,
-                dy: 0,
-                spec: furniture("worktable"),
-            },
-            CompositionCell {
-                dx: 1,
-                dy: 0,
-                spec: machine("role_console"),
-            },
-            CompositionCell {
-                dx: -1,
-                dy: 0,
-                spec: furniture("department_locker"),
-            },
-            CompositionCell {
-                dx: 0,
-                dy: 1,
-                spec: furniture("chair"),
-            },
-        ]
-    };
-
-    let mut anchors = tiles
-        .iter()
-        .copied()
-        .filter(|point| !reserved.contains(point) && !doors.contains(point))
-        .collect::<Vec<_>>();
-    anchors.sort_by_key(|point| {
-        let center_distance = distance(*point, center);
-        let perimeter_distance = tiles
-            .iter()
-            .filter(|tile| {
-                point_neighbors(**tile, u16::MAX, u16::MAX)
-                    .into_iter()
-                    .any(|neighbor| !tiles.contains(&neighbor))
-            })
-            .map(|edge| distance(*point, *edge))
-            .min()
-            .unwrap_or(0);
-        let entrance_distance = doors
-            .iter()
-            .map(|door| distance(*point, *door))
-            .min()
-            .unwrap_or(center_distance);
-        let anchor_score = match profile.anchor {
-            CompositionAnchor::Center => center_distance,
-            CompositionAnchor::Perimeter => perimeter_distance,
-            CompositionAnchor::Entrance => entrance_distance,
-        };
-        (
-            anchor_score,
-            composition_hash(seed, *point),
-            point.y,
-            point.x,
-        )
-    });
-    let start_rotation = usize::try_from(seed & 3).unwrap_or(0);
-    let composition_sizes = [cells.len(), cells.len().min(3)];
-    for composition_size in composition_sizes {
-        for rotation_offset in 0..4 {
-            let rotation = (start_rotation + rotation_offset) % 4;
-            for anchor in &anchors {
-                let transformed = cells
-                    .iter()
-                    .take(composition_size)
-                    .filter_map(|cell| {
-                        let (dx, dy) = rotate_offset(cell.dx, cell.dy, rotation);
-                        let x = i32::from(anchor.x) + i32::from(dx);
-                        let y = i32::from(anchor.y) + i32::from(dy);
-                        if x < 0 || y < 0 {
-                            return None;
-                        }
-                        Some((
-                            Point {
-                                x: u16::try_from(x).ok()?,
-                                y: u16::try_from(y).ok()?,
-                            },
-                            cell.spec,
-                        ))
-                    })
-                    .collect::<Vec<_>>();
-                if transformed.len() != composition_size
-                    || transformed.iter().any(|(at, _)| {
-                        !tiles.contains(at) || reserved.contains(at) || doors.contains(at)
-                    })
-                {
-                    continue;
-                }
-                return transformed
-                    .into_iter()
-                    .map(|(at, spec)| CompositionPlacement {
-                        at,
-                        facing: if at == *anchor {
-                            face_toward(at, center)
-                        } else {
-                            face_toward(at, *anchor)
-                        },
-                        spec,
-                    })
-                    .collect();
-            }
-        }
-    }
-    Vec::new()
-}
-
 fn counterpart_profile(role: &str) -> CounterpartProfile {
-    let (reference_role, anchor, minimum_cluster_micros) = if has(role, &["surgery"]) {
-        ("surgery", CompositionAnchor::Center, 650_000)
+    let (reference_role, minimum_cluster_micros) = if has(role, &["surgery"]) {
+        ("surgery", 650_000)
     } else if has(role, &["treatment", "exam", "emergency"]) {
-        ("treatment", CompositionAnchor::Center, 650_000)
+        ("treatment", 650_000)
     } else if has(role, &["ward", "recovery"]) {
-        ("ward", CompositionAnchor::Perimeter, 600_000)
+        ("ward", 600_000)
     } else if has(role, &["laboratory", "research", "analysis"]) {
-        ("laboratory", CompositionAnchor::Center, 650_000)
+        ("laboratory", 650_000)
     } else if has(role, &["ai", "core", "server"]) {
-        ("ai", CompositionAnchor::Center, 650_000)
+        ("ai", 650_000)
     } else if has(role, &["armory"]) {
-        ("armory", CompositionAnchor::Perimeter, 650_000)
+        ("armory", 650_000)
     } else if has(role, &["brig", "interrogation", "checkpoint"]) {
-        ("brig", CompositionAnchor::Entrance, 600_000)
+        ("brig", 600_000)
     } else if has(role, &["security", "evidence", "locker-room"]) {
-        ("security", CompositionAnchor::Entrance, 600_000)
+        ("security", 600_000)
     } else if has(
         role,
         &["operations", "communications", "briefing", "meeting"],
     ) {
-        ("operations", CompositionAnchor::Center, 650_000)
+        ("operations", 650_000)
     } else if has(role, &["office", "records", "liaison"]) {
-        ("office", CompositionAnchor::Center, 600_000)
+        ("office", 600_000)
     } else if has(role, &["reception", "foyer"]) {
-        ("reception", CompositionAnchor::Entrance, 600_000)
+        ("reception", 600_000)
     } else if has(
         role,
         &["storage", "warehouse", "cargo", "inventory", "equipment"],
     ) {
-        ("storage", CompositionAnchor::Perimeter, 600_000)
+        ("storage", 600_000)
     } else if has(role, &["workshop", "engineering", "power", "tool-room"]) {
-        ("workshop", CompositionAnchor::Perimeter, 600_000)
+        ("workshop", 600_000)
     } else if has(role, &["atmospherics", "maintenance"]) {
-        ("atmospherics", CompositionAnchor::Perimeter, 550_000)
+        ("atmospherics", 550_000)
     } else if has(role, &["dispatch", "processing", "cargo"]) {
-        ("cargo", CompositionAnchor::Perimeter, 600_000)
+        ("cargo", 600_000)
     } else if has(role, &["docking", "customs", "control"]) {
-        ("docking", CompositionAnchor::Entrance, 550_000)
+        ("docking", 550_000)
     } else if has(role, &["robotics"]) {
-        ("robotics", CompositionAnchor::Center, 600_000)
+        ("robotics", 600_000)
     } else {
-        ("general", CompositionAnchor::Center, 550_000)
+        ("general", 550_000)
     };
     let measured = southern_cross_reference()
         .profiles
@@ -2825,7 +2442,6 @@ fn counterpart_profile(role: &str) -> CounterpartProfile {
         .or_else(|| southern_cross_reference().profiles.get("general"))
         .expect("Southern Cross reference must contain a general profile");
     CounterpartProfile {
-        anchor,
         minimum_cluster_micros,
         // The DMM contains incidental item subfamilies that the blueprint
         // intentionally represents as one semantic fixture category.
@@ -2838,15 +2454,6 @@ fn counterpart_profile(role: &str) -> CounterpartProfile {
         // Absolute counts are size-sensitive; cap the mapped p25 while density
         // and empty-region ratios carry the scale-independent comparison.
         minimum_fixture_count: measured.fixture_count_p25.clamp(4, 12),
-    }
-}
-
-fn rotate_offset(dx: i16, dy: i16, rotation: usize) -> (i16, i16) {
-    match rotation % 4 {
-        0 => (dx, dy),
-        1 => (-dy, dx),
-        2 => (-dx, -dy),
-        _ => (dy, -dx),
     }
 }
 
@@ -3010,31 +2617,6 @@ fn semantic_fixture_program(role: &str) -> Vec<FixtureSpec> {
         .collect()
 }
 
-fn compact_department_fixture_program(department_id: &str) -> Vec<FixtureSpec> {
-    let ids: &[&str] = match department_id {
-        "command" => &["role_console", "filing_cabinet"],
-        "ai" => &["ai_core", "filing_cabinet"],
-        "security" => &["server_rack", "secure_locker"],
-        "medical" => &["sleeper", "medical_locker"],
-        "engineering" => &["autolathe", "electrical_locker"],
-        "logistics" => &["cargo_console", "supply_crate"],
-        "docking" => &["communications_console", "secure_locker"],
-        _ => &["role_console", "filing_cabinet"],
-    };
-    ids.iter()
-        .map(|id| FixtureSpec {
-            id,
-            layer: if id.contains("console")
-                || matches!(*id, "ai_core" | "server_rack" | "sleeper" | "autolathe")
-            {
-                FixtureLayer::Machine
-            } else {
-                FixtureLayer::Furniture
-            },
-        })
-        .collect()
-}
-
 fn semantic_fillers(role: &str) -> Vec<FixtureSpec> {
     let ids: &[&str] = if has(
         role,
@@ -3154,87 +2736,6 @@ fn semantic_fillers(role: &str) -> Vec<FixtureSpec> {
         .collect()
 }
 
-fn target_density(role: &str) -> u32 {
-    if has(role, &["storage", "warehouse", "workshop", "laboratory"]) {
-        540_000
-    } else if has(role, &["foyer", "reception", "meeting"]) {
-        420_000
-    } else {
-        480_000
-    }
-    .clamp(MIN_OCCUPANCY_MICROS, MAX_OCCUPANCY_MICROS)
-}
-fn safe_spread_candidate(
-    candidates: &[Point],
-    blocking: &BTreeSet<Point>,
-    required_access: &BTreeSet<Point>,
-    tiles: &BTreeSet<Point>,
-    center: Point,
-    salt: usize,
-    width: u16,
-    height: u16,
-    fixture_id: &str,
-    prefer_cluster: bool,
-) -> Option<usize> {
-    let mut allowed: Vec<usize> = (0..candidates.len())
-        .filter(|index| {
-            let candidate = candidates[*index];
-            if required_access.contains(&candidate) {
-                return false;
-            }
-            if !fixture_blocks(fixture_id) {
-                return true;
-            }
-            let access = step_facing(candidate, face_toward(candidate, center));
-            tiles.contains(&access)
-                && !blocking.contains(&access)
-                && placement_preserves_walkability(tiles, blocking, candidate, width, height)
-        })
-        .collect();
-    allowed.sort_by_key(|index| {
-        let point = candidates[*index];
-        let spread = blocking
-            .iter()
-            .map(|other| distance(point, *other))
-            .min()
-            .unwrap_or(distance(point, center));
-        let spread_key = if prefer_cluster {
-            spread
-        } else {
-            u16::MAX - spread
-        };
-        (spread_key, (*index + salt) % 7, distance(point, center))
-    });
-    allowed.into_iter().next()
-}
-
-fn placement_preserves_walkability(
-    tiles: &BTreeSet<Point>,
-    blocking: &BTreeSet<Point>,
-    candidate: Point,
-    width: u16,
-    height: u16,
-) -> bool {
-    let remaining: BTreeSet<Point> = tiles
-        .iter()
-        .copied()
-        .filter(|point| !blocking.contains(point) && *point != candidate)
-        .collect();
-    let Some(start) = remaining.iter().next().copied() else {
-        return false;
-    };
-    let mut reached = BTreeSet::from([start]);
-    let mut queue = VecDeque::from([start]);
-    while let Some(point) = queue.pop_front() {
-        for next in point_neighbors(point, width, height) {
-            if remaining.contains(&next) && reached.insert(next) {
-                queue.push_back(next);
-            }
-        }
-    }
-    reached.len() == remaining.len()
-}
-
 fn fixture_blocks(id: &str) -> bool {
     // Be conservative here: this flag protects actual player navigation, not
     // visual overlap. Most live furniture and machinery types are dense (and
@@ -3309,9 +2810,8 @@ fn fixture_requires_fixed_facing(id: &str) -> bool {
 fn fixture_repeat_limit(id: &str) -> usize {
     if id == "wall_light" {
         16
-    } else if matches!(id, "vent" | "scrubber" | "air_alarm" | "fire_alarm" | "apc") {
-        4
-    } else if id.contains("chair")
+    } else if matches!(id, "vent" | "scrubber" | "air_alarm" | "fire_alarm" | "apc")
+        || id.contains("chair")
         || id.contains("table")
         || id.contains("bed")
         || matches!(id, "stool" | "visitor_bench" | "supply_crate" | "pallet")
@@ -3472,6 +2972,9 @@ fn fixture_supports_seat(id: &str) -> bool {
             || matches!(id, "visitor_bench" | "waiting_bench" | "side_table"))
 }
 
+// Mutates 5 independent pieces of the same room-fill working set in
+// place; bundling them into a struct here would just move the same
+// 8-field initializer into the single call site instead of removing it.
 #[allow(clippy::too_many_arguments)]
 fn prune_excess_room_repetitions(
     role: &str,
@@ -3812,5 +3315,71 @@ mod tests {
             fixture_repeat_limit_for_role("records", "filing_cabinet"),
             6
         );
+    }
+
+    #[test]
+    fn zone_placement_retries_every_rotation_before_giving_up_on_an_anchor() {
+        // Regression test for a bug clippy::never_loop caught during the
+        // rewrite/rustaudit pass: the rotation retry used to always try only
+        // `rotation_offset`'s own turn and give up on the whole anchor
+        // instead of trying the other 3 rotations. Two tiles in a vertical
+        // strip; a fixture offset one cell to the *east* of the anchor only
+        // lands on a real tile once rotated a quarter turn (which redirects
+        // the offset to the *north* tile instead).
+        let layout = StationLayout {
+            seed: 1,
+            width: 1,
+            height: 2,
+            archetype: MacroArchetype::Cross,
+            tiles: vec![TileCell::default(); 2],
+            departments: vec![],
+            rooms: vec![],
+            doors: vec![],
+            public_circulation: vec![],
+            maintenance: vec![],
+            structure: vec![],
+            hull: vec![],
+            graph: LayoutGraph::default(),
+            metadata: BTreeMap::new(),
+        };
+        let tiles = BTreeSet::from([Point { x: 0, y: 0 }, Point { x: 0, y: 1 }]);
+        let env = ZonePlacementEnv {
+            layout: &layout,
+            tiles: &tiles,
+            doors: &BTreeSet::new(),
+            center: Point { x: 0, y: 0 },
+        };
+        let empty = BTreeSet::new();
+        let zone = ActivityZone {
+            id: "test-zone",
+            anchor: ProgramAnchor::Center,
+            required: true,
+            repeatable: false,
+            fixtures: vec![super::super::program::ProgramFixture {
+                id: "vent",
+                dx: 1,
+                dy: 0,
+                layer: ProgramLayer::Furniture,
+            }],
+        };
+        let anchor = Point { x: 0, y: 0 };
+
+        // Unrotated (turns = 0), the fixture's (dx=1, dy=0) offset lands on
+        // (1, 0), which isn't one of the room's two tiles: this rotation
+        // must fail.
+        assert!(
+            try_place_zone_at(&env, &empty, &empty, &empty, &zone, anchor, 0).is_none(),
+            "turns=0 should not fit: (1,0) is not a tile in this room"
+        );
+
+        // Rotated one quarter turn, (dx=1, dy=0) becomes (0, 1) (see
+        // `program_rotate_offset`), landing on the room's other tile: this
+        // rotation must succeed. Before the fix, the caller never reached
+        // this rotation at all for a given anchor.
+        let placed = try_place_zone_at(&env, &empty, &empty, &empty, &zone, anchor, 1);
+        let (placements, _blocking, _access) =
+            placed.expect("turns=1 should fit: (0,1) is the room's other tile");
+        assert_eq!(placements.len(), 1);
+        assert_eq!(placements[0].at, Point { x: 0, y: 1 });
     }
 }

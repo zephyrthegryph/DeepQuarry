@@ -1673,6 +1673,7 @@ checksum = "ba73ea9cf16a25df0c8caa16c51acb937d5712a8429db78a3ee29d5dcacd3a65"
 name = "verdigris"
 version = "0.1.0"
 dependencies = [
+ "auxcallback",
  "auxmacros",
  "byondapi",
  "eyre",
@@ -1709,6 +1710,7 @@ dependencies = [
 name = "vg-ffi"
 version = "0.1.0"
 dependencies = [
+ "auxcallback",
  "auxmacros",
  "bosion",
  "byondapi",

@@ -125,6 +125,9 @@ jobs:
       - name: Check Deadline Polling
         if: steps.linter-setup.conclusion == 'success' && !cancelled()
         run: python3 tools/ci/check_deadline_polling.py
+      - name: Check Rust core consolidation
+        if: steps.linter-setup.conclusion == 'success' && !cancelled()
+        run: python3 tools/ci/check_rust_core_consolidation.py
       - name: Check Breakpoints
         if: steps.linter-setup.conclusion == 'success' && !cancelled()
         run: python3 tools/ci/breakpoint_lint.py
@@ -143,8 +146,13 @@ jobs:
         uses: dtolnay/rust-toolchain@stable
         with:
           components: rustfmt, clippy
-      # Linting is scoped to verdigris-the-crate (not the whole workspace) so vendored
-      # auxmos stays on upstream's lint level. See verdigris/atmos/UPSTREAM.md.
+      # Linting is scoped to the host-buildable, non-vendored crates (not the
+      # whole workspace): vg-gas is vendored auxmos and stays on upstream's
+      # lint level (see domains/gas/UPSTREAM.md), and vg-gas/vg-ffi both need
+      # byondapi (i686/32-bit only -- see verdigris/Cargo.toml), which this
+      # runner has no cross toolchain for. `cargo test`'s default-members
+      # (core, domains/heat, domains/layout, domains/power, verdigris,
+      # tools/bench, tools/replay) already matches this clippy package list.
       - name: Verdigris cargo fmt
         if: steps.linter-setup.conclusion == 'success' && !cancelled()
         working-directory: verdigris
@@ -152,7 +160,7 @@ jobs:
       - name: Verdigris cargo clippy
         if: steps.linter-setup.conclusion == 'success' && !cancelled()
         working-directory: verdigris
-        run: cargo clippy --package verdigris --package vg-core --all-targets -- -D warnings
+        run: cargo clippy --package verdigris --package vg-core --package vg-layout --package vg-heat --package vg-power --all-targets -- -D warnings
       - name: Verdigris cargo test
         if: steps.linter-setup.conclusion == 'success' && !cancelled()
         working-directory: verdigris
