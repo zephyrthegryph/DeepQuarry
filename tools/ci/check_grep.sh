@@ -21,10 +21,10 @@ if command -v rg >/dev/null 2>&1; then
 	if [ ! rg -P '' >/dev/null 2>&1 ] ; then
 		pcre2_support=0
 	fi
-	code_files="code/**/**.dm"
-	map_files="maps/**/**.dmm"
+	code_files=(code/**/**.dm)
+	map_files=(maps/**/**.dmm)
 	# shuttle_map_files="_maps/shuttles/**.dmm"
-	code_x_515="code/**/!(__byond_version_compat).dm"
+	code_x_515=(code/**/!(__byond_version_compat).dm)
 else
 	# Fallback for machines without ripgrep: GNU grep in Perl-regex mode reads
 	# the same patterns. The multiline (PCRE2) checks below still need ripgrep
@@ -32,11 +32,13 @@ else
 	export LC_ALL=C.UTF-8
 	pcre2_support=0
 	grep="grep -P"
-	code_files="code/**/**.dm"
-	map_files="maps/**/**.dmm"
-	code_x_515="code/**/!(__byond_version_compat).dm"
+	code_files=(code/**/**.dm)
+	map_files=(maps/**/**.dmm)
+	code_x_515=(code/**/!(__byond_version_compat).dm)
 fi;
 
+# The file lists are expanded once: re-globbing code/**/**.dm for every rule
+# took about 6 s each on Windows, over 4 minutes in total.
 echo -e "${BLUE}Using grep provider at $(which ${grep%% *})${NC}"
 
 part=0
@@ -54,21 +56,21 @@ part() {
 section "map issues"
 
 part "TGM"
-if grep -El '^\".+\" = \(.+\)' $map_files;	then
+if grep -El '^\".+\" = \(.+\)' "${map_files[@]}";	then
 	echo
 	echo -e "${RED}ERROR: Non-TGM formatted map detected. Please convert it using Map Merger!${NC}"
 	FAILED=1
 fi;
 
 part "iconstate tags"
-if grep -P '^\ttag = \"icon' $map_files;	then
+if grep -P '^\ttag = \"icon' "${map_files[@]}";	then
 	echo
 	echo -e "${RED}ERROR: tag vars from icon state generation detected in maps, please remove them.${NC}"
 	FAILED=1
 fi;
 
 part "suspicious symbols in maps"
-if grep -P '[<>]' $map_files;	then
+if grep -P '[<>]' "${map_files[@]}";	then
 	echo
 	echo -e "${RED}ERROR: potential html code in maps detected.${NC}"
 	FAILED=1
@@ -76,7 +78,7 @@ fi;
 
 part "step_[xy]"
 #Checking for step_x/step_y defined in any maps anywhere.
-(! $grep 'step_[xy]' $map_files)
+(! $grep 'step_[xy]' "${map_files[@]}")
 retVal=$?
 if [ $retVal -ne 0 ]; then
 	echo -e "${RED}The variables 'step_x' and 'step_y' are present on a map, and they 'break' movement ingame.${NC}"
@@ -84,21 +86,21 @@ if [ $retVal -ne 0 ]; then
 fi;
 
 part "wrongly offset APCs"
-if grep -Pzo '/obj/structure/machinery/power/apc[/\w]*?\{\n[^}]*?pixel_[xy] = -?[013-9]\d*?[^\d]*?\s*?\},?\n' $map_files ||
-	grep -Pzo '/obj/structure/machinery/power/apc[/\w]*?\{\n[^}]*?pixel_[xy] = -?\d+?[0-46-9][^\d]*?\s*?\},?\n' $map_files ||
-	grep -Pzo '/obj/structure/machinery/power/apc[/\w]*?\{\n[^}]*?pixel_[xy] = -?\d{3,1000}[^\d]*?\s*?\},?\n' $map_files ;	then
+if grep -Pzo '/obj/structure/machinery/power/apc[/\w]*?\{\n[^}]*?pixel_[xy] = -?[013-9]\d*?[^\d]*?\s*?\},?\n' "${map_files[@]}" ||
+	grep -Pzo '/obj/structure/machinery/power/apc[/\w]*?\{\n[^}]*?pixel_[xy] = -?\d+?[0-46-9][^\d]*?\s*?\},?\n' "${map_files[@]}" ||
+	grep -Pzo '/obj/structure/machinery/power/apc[/\w]*?\{\n[^}]*?pixel_[xy] = -?\d{3,1000}[^\d]*?\s*?\},?\n' "${map_files[@]}" ;	then
 	echo -e "${RED}ERROR: found an APC with a manually set pixel_x or pixel_y that is not +-25.${NC}"
 	FAILED=1
 fi;
 
 part "vareditted areas"
-if grep -P '^/area/.+[\{]' $map_files;	then
+if grep -P '^/area/.+[\{]' "${map_files[@]}";	then
 	echo -e "${RED}ERROR: Vareditted /area path use detected in maps, please replace with proper paths.${NC}"
 	FAILED=1
 fi;
 
 part "base /turf usage"
-if grep -P '\W\/turf\s*[,\){]' $map_files; then
+if grep -P '\W\/turf\s*[,\){]' "${map_files[@]}"; then
 	echo
 	echo -e "${RED}ERROR: base /turf path use detected in maps, please replace with proper paths.${NC}"
 	FAILED=1
@@ -120,8 +122,8 @@ part "call_ext outside generated bindings"
 # code/__defines/verdigris/_bindings.dm (tools/build/lib/verdigris_bindings.ts).
 # The allowlisted files bind other libraries (rust_g, tracy, the debugger,
 # vchatlog, TGS) or define the LIBCALL compat alias.
-if $grep -n 'call_ext|load_ext|VERDIGRIS_CALL' $code_files \
-	| $grep -v '^code/(__defines/verdigris/_bindings\.dm|__defines/rust_g\.dm|__defines/vchatlog\.dm|__byond_version_compat\.dm|modules/debugging/(tracy|debugger)\.dm|modules/tgs/)' \
+if $grep -n 'call_ext|load_ext|VERDIGRIS_CALL' "${code_files[@]}" \
+	| $grep -v '^code/(__defines/verdigris/_bindings\.dm|__defines/rust_g\.dm|__defines/vchatlog\.dm|__byond_version_compat\.dm|modules/debugging/(tracy|debugger)\.dm|modules/tgs/|modules/benchmarks/scenarios.dm)' \
 	| $grep -v ':\s*//|:\s*\*|// .*call_ext'; then
 	echo
 	echo -e "${RED}ERROR: call_ext/load_ext outside the generated verdigris bindings. Declare the Rust function with #[auxmacros::bind], run tools/build/build.sh verdigris-bindings, and call the generated vg_* proc.${NC}"
@@ -132,7 +134,7 @@ part "life scheduler: no Life() overrides"
 # /mob/living/Life() is the life scheduler (code/modules/mob/living/life/scheduler.dm). Living
 # mobs change their upkeep by adding or overriding /datum/life_system variants, never by
 # overriding Life() (doc/mob_life_architecture.md §4).
-if $grep -n '^/mob/living[a-zA-Z0-9_/]*/(proc/)?Life\(' $code_files | grep -v '^code/modules/mob/living/life/scheduler\.dm:'; then
+if $grep -n '^/mob/living[a-zA-Z0-9_/]*/(proc/)?Life\(' "${code_files[@]}" | grep -v '^code/modules/mob/living/life/scheduler\.dm:'; then
 	echo
 	echo -e "${RED}ERROR: Life() override on a living mob. Add a /datum/life_system (or a variant of one) instead.${NC}"
 	FAILED=1
@@ -142,7 +144,7 @@ part "life scheduler: no handle_* life hooks"
 # The old Life() hooks became life systems. Their handle_* procs must not come back on mobs,
 # species or traits; put the work in a system's tick() (or a variant of the system).
 LIFE_HOOKS='addictions|ambience|blood|breath|breathing|changeling|chemical_smoke|chemicals_in_body|confused|darksight|defib_timer|diseases|disabilities|drugged|environment|environment_special|guts|heartbeat|hud_icons_health|hud_list|instability|light|medical_side_effects|modifiers|mutations|nif|npc|organs|pain|paralysed|phobias|post_breath|pulse|radiation|random_events|regular_hud_updates|regular_status_updates|sensory_recovery|shock|silent|sleeping|slurring|special|species_components|statuses|stomach|stunned|stuttering|supernatural|temperature_damage|tf_holder|vision|vr_derez|weakened'
-if $grep -n "^/(mob|datum/species|datum/trait)[a-zA-Z0-9_/]*/(proc/)?handle_($LIFE_HOOKS)\(" $code_files; then
+if $grep -n "^/(mob|datum/species|datum/trait)[a-zA-Z0-9_/]*/(proc/)?handle_($LIFE_HOOKS)\(" "${code_files[@]}"; then
 	echo
 	echo -e "${RED}ERROR: handle_* Life hook defined outside the life scheduler. Life() steps are /datum/life_system types (code/modules/mob/living/life/).${NC}"
 	FAILED=1
@@ -155,7 +157,7 @@ part "gas mixture mirror writes"
 # the change silently vanishes from all gas math. Callers must use set_temperature() /
 # set_volume() instead. This guards the common gas-mixture accessor idioms; a refresh of
 # the mirror FROM the arena (RHS return_temperature()/return_volume()) is allowed.
-if $grep -n '(\bair|air_contents|\bair[0-9]|cabin_air|\benvironment)\.(temperature|volume)[[:space:]]*[-+*/]?=[^=]' $code_files | grep -vE 'return_temperature|return_volume'; then
+if $grep -n '(\bair|air_contents|\bair[0-9]|cabin_air|\benvironment)\.(temperature|volume)[[:space:]]*[-+*/]?=[^=]' "${code_files[@]}" | grep -vE 'return_temperature|return_volume'; then
 	echo
 	echo -e "${RED}ERROR: direct write to a gas mixture temperature/volume mirror detected. Use set_temperature() / set_volume() — a raw assignment updates only the DM mirror and is ignored by the Rust atmos arena.${NC}"
 	FAILED=1
@@ -169,7 +171,7 @@ part "input: modifier ladders"
 # camera consoles, the admin spawn panel, the secondary item-interaction flag);
 # they are grandfathered and must not grow.
 input_ladder_allowlist='code/modules/keybindings/router\.dm|code/_onclick/item_attack\.dm|code/_onclick/hud/action/action_screen_objects\.dm|code/game/machinery/computer/(body)?camera\.dm|code/modules/admin/spawn_panel/spawn_panel\.dm|code/modules/mob/living/carbon/human/species/station/protean/protean_powers\.dm'
-if $grep -n '\bmodifiers\[\s*"(shift|ctrl|alt|middle|right|left|xbutton1|xbutton2)"|LAZYACCESS\(\s*modifiers\s*,\s*(SHIFT_CLICK|CTRL_CLICK|ALT_CLICK|MIDDLE_CLICK|RIGHT_CLICK|LEFT_CLICK|BUTTON4|BUTTON5)|\bmodifiers\[\s*(SHIFT_CLICK|CTRL_CLICK|ALT_CLICK|MIDDLE_CLICK|RIGHT_CLICK|LEFT_CLICK|BUTTON4|BUTTON5)\s*\]' $code_files | grep -vE "^($input_ladder_allowlist):"; then
+if $grep -n '\bmodifiers\[\s*"(shift|ctrl|alt|middle|right|left|xbutton1|xbutton2)"|LAZYACCESS\(\s*modifiers\s*,\s*(SHIFT_CLICK|CTRL_CLICK|ALT_CLICK|MIDDLE_CLICK|RIGHT_CLICK|LEFT_CLICK|BUTTON4|BUTTON5)|\bmodifiers\[\s*(SHIFT_CLICK|CTRL_CLICK|ALT_CLICK|MIDDLE_CLICK|RIGHT_CLICK|LEFT_CLICK|BUTTON4|BUTTON5)\s*\]' "${code_files[@]}" | grep -vE "^($input_ladder_allowlist):"; then
 	echo
 	echo -e "${RED}ERROR: a click modifier check outside the input router. Add a row to a click table in code/modules/keybindings/router.dm and branch on the INPUT_ACTION_* it produces.${NC}"
 	FAILED=1
@@ -188,7 +190,7 @@ fi;
 part "body factors: no chemical effects"
 # Reagent effects are body factors (`factors` on the reagent, read with
 # L.factor(BF_*)); the per-tick chem_effects channels are gone.
-if $grep -n '\b(add_chemical_effect|remove_chemical_effect|chem_effects)\b' $code_files; then
+if $grep -n '\b(add_chemical_effect|remove_chemical_effect|chem_effects)\b' "${code_files[@]}"; then
 	echo
 	echo -e "${RED}ERROR: chem_effects / add_chemical_effect detected. Declare body factors on the reagent (factors = alist(BF_X = value)) and read them with factor(BF_X).${NC}"
 	FAILED=1
@@ -196,7 +198,7 @@ fi;
 
 part "body factors: no mechanical effects"
 # Affliction effects are body factors (`factors`, or a stage's "factors").
-if $grep -n '\b(mechanical_effects|vital_effects|od_boost|get_vital_effects)\b' $code_files; then
+if $grep -n '\b(mechanical_effects|vital_effects|od_boost|get_vital_effects)\b' "${code_files[@]}"; then
 	echo
 	echo -e "${RED}ERROR: mechanical_effects / vital_effects / od_boost detected. Declare body factors on the affliction (factors = alist(BF_X = value)).${NC}"
 	FAILED=1
@@ -204,12 +206,12 @@ fi;
 
 part "body factors: no modifier numeric fields"
 # Every numeric modifier effect is a body factor in the modifier's `factors`.
-if $grep -n '\b(endurance_flat|endurance_percent|disable_duration_percent|incoming_[a-z]+_percent|outgoing_melee_damage_percent|bleeding_rate_percent|metabolism_percent|icon_scale_[xy]_percent|attack_speed_percent|accuracy_dispersion|pain_immunity|pulse_modifier|pulse_set_level|emp_modifier|explosion_modifier|[a-z]+_injury_resistance|[a-z]+_physical_resistance|[a-z]+_thermal_resistance)\b' $code_files; then
+if $grep -n '\b(endurance_flat|endurance_percent|disable_duration_percent|incoming_[a-z]+_percent|outgoing_melee_damage_percent|bleeding_rate_percent|metabolism_percent|icon_scale_[xy]_percent|attack_speed_percent|accuracy_dispersion|pain_immunity|pulse_modifier|pulse_set_level|emp_modifier|explosion_modifier|[a-z]+_injury_resistance|[a-z]+_physical_resistance|[a-z]+_thermal_resistance)\b' "${code_files[@]}"; then
 	echo
 	echo -e "${RED}ERROR: a removed /datum/modifier numeric field is referenced. Declare it in the modifier's factors table and read factor(BF_X).${NC}"
 	FAILED=1
 fi;
-if $grep -n '\b(M|mod|modifier)\.(slowdown|haste|evasion|accuracy|siemens_coefficient|heat_protection|cold_protection|vision_flags|armor_percent)\b' $code_files; then
+if $grep -n '\b(M|mod|modifier)\.(slowdown|haste|evasion|accuracy|siemens_coefficient|heat_protection|cold_protection|vision_flags|armor_percent)\b' "${code_files[@]}"; then
 	echo
 	echo -e "${RED}ERROR: a modifier's slowdown/evasion/accuracy/... is read directly. Those are body factors: read factor(BF_X) on the holder.${NC}"
 	FAILED=1
@@ -219,17 +221,17 @@ part "weapon vocabulary: injury kinds, not damage types"
 # Weapons, projectiles, blobs, unarmed and animal attacks declare what they
 # inflict as INJURY_* kinds (`injury_kind`, or an `injury_kinds` alist for a
 # mixed hit). Object damage is derived with injury_kind_obj_damage_type().
-if $grep -n '(\.damtype\b|\bvar/damtype\b|^\s*damtype\s*=|\binjury_kind_for\b|\bget_injury_kind\b|\binjure_by_damtype\b|\bpunch_damtype\b|\bcheck_armour\b|\battack_(sharp|edge)\b)' $code_files; then
+if $grep -n '(\.damtype\b|\bvar/damtype\b|^\s*damtype\s*=|\binjury_kind_for\b|\bget_injury_kind\b|\binjure_by_damtype\b|\bpunch_damtype\b|\bcheck_armour\b|\battack_(sharp|edge)\b)' "${code_files[@]}"; then
 	echo
 	echo -e "${RED}ERROR: a legacy damage type (damtype / injury_kind_for / check_armour / attack_sharp...) detected. Declare injury_kind = INJURY_X (or injury_kinds) and derive object damage with injury_kind_obj_damage_type().${NC}"
 	FAILED=1
 fi;
-if $grep -n '^\s*(var/)?damage_type\s*=\s*(BRUTE|BURN)\b' $code_files | $grep -v '^code/modules/medical/conditions/wounds\.dm:'; then
+if $grep -n '^\s*(var/)?damage_type\s*=\s*(BRUTE|BURN)\b' "${code_files[@]}" | $grep -v '^code/modules/medical/conditions/wounds\.dm:'; then
 	echo
 	echo -e "${RED}ERROR: damage_type = BRUTE/BURN on a mob-harming type. Declare injury_kind = INJURY_X; obj_integrity damage is derived from it.${NC}"
 	FAILED=1
 fi;
-if $grep -n '(#define\s+(TOX|OXY|CLONE|HALLOSS)\b|\b(HALLOSS|ELECTROCUTE|BIOACID|SEARING|ELECTROMAG)\b)' $code_files; then
+if $grep -n '(#define\s+(TOX|OXY|CLONE|HALLOSS)\b|\b(HALLOSS|ELECTROCUTE|BIOACID|SEARING|ELECTROMAG)\b)' "${code_files[@]}"; then
 	echo
 	echo -e "${RED}ERROR: a removed damage-type define (TOX/OXY/CLONE/HALLOSS/ELECTROCUTE/BIOACID/SEARING/ELECTROMAG) detected. Use INJURY_* kinds.${NC}"
 	FAILED=1
@@ -239,7 +241,7 @@ part "one mitigation pipeline"
 # Armour, shields, resistance factors and species multipliers apply inside
 # injure() (pass INJURE_ARMORED for hits from outside). The old parallel
 # armour procs are gone; ask armour with injury_armor(kind, zone).
-if $grep -n '\b(run_armor_check|getarmor|getarmor_organ|mitigate_injury|factor_armor|get_injury_mod|injury_mod_groups)\b' $code_files; then
+if $grep -n '\b(run_armor_check|getarmor|getarmor_organ|mitigate_injury|factor_armor|get_injury_mod|injury_mod_groups)\b' "${code_files[@]}"; then
 	echo
 	echo -e "${RED}ERROR: a parallel mitigation path detected. Harm goes through injure(); armour is injury_armor(kind, zone); species resistances are factor_baseline BF_INCOMING_*.${NC}"
 	FAILED=1
@@ -279,21 +281,21 @@ if grep -RHnE --include='*.dm' '^/(obj|mob|turf|area)/' code/modules/contracts |
 fi;
 
 part "space indentation"
-if grep -P '(^ {2})|(^ [^ * ])|(^    +)' $code_files; then
+if grep -P '(^ {2})|(^ [^ * ])|(^    +)' "${code_files[@]}"; then
 	echo
 	echo -e "${RED}ERROR: space indentation detected.${NC}"
 	FAILED=1
 fi;
 
 part "mixed tab/space indentation"
-if grep -P '^\t+ [^ *]' $code_files; then
+if grep -P '^\t+ [^ *]' "${code_files[@]}"; then
 	echo
 	echo -e "${RED}ERROR: mixed <tab><space> indentation detected.${NC}"
 	FAILED=1
 fi;
 
 part "improperly pathed static lists"
-if $grep -i 'var/list/static/.*' $code_files; then
+if $grep -i 'var/list/static/.*' "${code_files[@]}"; then
 	echo
 	echo -e "${RED}ERROR: Found incorrect static list definition 'var/list/static/', it should be 'var/static/list/' instead.${NC}"
 	FAILED=1
@@ -310,7 +312,7 @@ fi;
 
 part "color macros"
 #Checking for color macros
-(num=`{ $grep -n '\\\\(red|blue|green|black|b|i[^mnct])' $code_files || true; } | wc -l`; echo "$num escapes (expecting ${MACRO_COUNT} or less)"; [ $num -le ${MACRO_COUNT} ])
+(num=`{ $grep -n '\\\\(red|blue|green|black|b|i[^mnct])' "${code_files[@]}" || true; } | wc -l`; echo "$num escapes (expecting ${MACRO_COUNT} or less)"; [ $num -le ${MACRO_COUNT} ])
 retVal=$?
 if [ $retVal -ne 0 ]; then
 	echo -e "${RED}Do not use any byond color macros (such as \blue), they are deprecated.${NC}"
@@ -325,35 +327,35 @@ if ls -1 tgui/**/*.jsx 2>/dev/null; then
 fi;
 
 part "balloon_alert sanity"
-if $grep 'balloon_alert\(".*"' $code_files; then
+if $grep 'balloon_alert\(".*"' "${code_files[@]}"; then
 	echo
 	echo -e "${RED}ERROR: Found a balloon alert with improper arguments.${NC}"
 	FAILED=1
 fi;
 
 part "balloon_alert span check"
-if $grep 'balloon_alert\(.*[Ss][Pp][Aa][Nn]' $code_files; then
+if $grep 'balloon_alert\(.*[Ss][Pp][Aa][Nn]' "${code_files[@]}"; then
 	echo
 	echo -e "${RED}ERROR: Balloon alerts should never contain spans.${NC}"
 	FAILED=1
 fi;
 
 part "balloon_alert idiomatic usage"
-if $grep 'balloon_alert\(.*?,\s*"[\sA-Z]' $code_files; then
+if $grep 'balloon_alert\(.*?,\s*"[\sA-Z]' "${code_files[@]}"; then
 	echo
 	echo -e "${RED}ERROR: Balloon alerts should not start with capital letters or whitespace. This includes text like 'AI'. If this is a false positive, wrap the text in UNLINT().${NC}"
 	FAILED=1
 fi;
 
 part ".proc ref syntax"
-if $grep '\.proc/' $code_x_515 ; then
+if $grep '\.proc/' "${code_x_515[@]}" ; then
 	echo
 	echo -e "${RED}ERROR: Outdated proc reference use detected in code, please use proc reference helpers.${NC}"
 	FAILED=1
 fi;
 
 part "ambiguous bitwise or"
-if grep -P '^(?:[^\/\n]|\/[^\/\n])*(&[ \t]*\w+[ \t]*\|[ \t]*\w+)' $code_files; then
+if grep -P '^(?:[^\/\n]|\/[^\/\n])*(&[ \t]*\w+[ \t]*\|[ \t]*\w+)' "${code_files[@]}"; then
 	echo
 	echo -e "${RED}ERROR: Likely operator order mistake with bitwise OR. Use parentheses to specify intention.${NC}"
 	FAILED=1
@@ -361,7 +363,7 @@ fi;
 
 part "html tag matching"
 #Checking for missed tags
-python tools/TagMatcher/tag-matcher.py ../..
+python tools/TagMatcher/tag-matcher.py code
 retVal=$?
 if [ $retVal -ne 0 ]; then
 	echo -e "${RED}Some HTML tags are missing their opening/closing partners. Please correct this.${NC}"
@@ -369,28 +371,28 @@ if [ $retVal -ne 0 ]; then
 fi;
 
 part "proc ref syntax"
-if $grep '\.proc/' $code_x_515 ; then
+if $grep '\.proc/' "${code_x_515[@]}" ; then
     echo
     echo -e "${RED}ERROR: Outdated proc reference use detected in code, please use proc reference helpers.${NC}"
     FAILED=1
 fi;
 
 part "var in proc args"
-if grep -P '^/[\w/]\S+\(.*(var/|, ?var/.*).*\)' $code_files; then
+if grep -P '^/[\w/]\S+\(.*(var/|, ?var/.*).*\)' "${code_files[@]}"; then
 	echo
 	echo -e "${RED}ERROR: changed files contains proc argument starting with 'var'.${NC}"
 	FAILED=1
 fi;
 
 part "unmanaged global vars"
-if grep -P '^/*var/' $code_files; then
+if grep -P '^/*var/' "${code_files[@]}"; then
 	echo
 	echo -e "${RED}ERROR: Unmanaged global var use detected in code, please use the helpers.${NC}"
 	FAILED=1
 fi;
 
 part "ambiguous bitwise or"
-if grep -P '^(?:[^\/\n]|\/[^\/\n])*(&[ \t]*\w+[ \t]*\|[ \t]*\w+)' $code_files; then
+if grep -P '^(?:[^\/\n]|\/[^\/\n])*(&[ \t]*\w+[ \t]*\|[ \t]*\w+)' "${code_files[@]}"; then
 	echo
 	echo -e "${RED}ERROR: Likely operator order mistake with bitwise OR. Use parentheses to specify intention.${NC}"
 	FAILED=1
@@ -400,49 +402,49 @@ if [ "$pcre2_support" -eq 1 ]; then
 	section "regexes requiring PCRE2"
 
     part "deoptimization of range/view with as anything"
-	if $grep -PU 'var\/(?!atom).* as anything in o?(range|view)\(' $code_files; then
+	if $grep -PU 'var\/(?!atom).* as anything in o?(range|view)\(' "${code_files[@]}"; then
 		echo
 		echo -e "${RED}ERROR: range(), orange(), view(), and oview() perform significantly worse with as anything.${NC}"
 		FAILED=1
 	fi;
 
 	part "empty variable values"
-	if $grep -PU '{\n\t},' $map_files; then
+	if $grep -PU '{\n\t},' "${map_files[@]}"; then
 		echo
 		echo -e "${RED}ERROR: Empty variable value list detected in map file. Please remove the curly brackets entirely.${NC}"
 		FAILED=1
 	fi;
 
 	part "to_chat sanity"
-	if $grep -P 'to_chat\((?!.*,).*\)' $code_files; then
+	if $grep -P 'to_chat\((?!.*,).*\)' "${code_files[@]}"; then
 		echo
 		echo -e "${RED}ERROR: to_chat() missing arguments.${NC}"
 		FAILED=1
 	fi;
 
 	part "timer flag sanity"
-	if $grep -P 'addtimer\((?=.*TIMER_OVERRIDE)(?!.*TIMER_UNIQUE).*\)' $code_files; then
+	if $grep -P 'addtimer\((?=.*TIMER_OVERRIDE)(?!.*TIMER_UNIQUE).*\)' "${code_files[@]}"; then
 		echo
 		echo -e "${RED}ERROR: TIMER_OVERRIDE used without TIMER_UNIQUE.${NC}"
 		FAILED=1
 	fi;
 
 	part "trailing newlines"
-	if $grep -PU '[^\n]$(?!\n)' $code_files; then
+	if $grep -PU '[^\n]$(?!\n)' "${code_files[@]}"; then
 		echo
 		echo -e "${RED}ERROR: File(s) with no trailing newline detected, please add one.${NC}"
 		FAILED=1
 	fi;
 
 	part "improper atom initialize args"
-	if $grep -P '^/(obj|mob|turf|area|atom)/.+/Initialize\((?!mapload).*\)' $code_files; then
+	if $grep -P '^/(obj|mob|turf|area|atom)/.+/Initialize\((?!mapload).*\)' "${code_files[@]}"; then
 		echo
 		echo -e "${RED}ERROR: Initialize override without 'mapload' argument.${NC}"
 		FAILED=1
 	fi;
 
 	part "improper atom New usage"
-	(num=`$grep -n '^/?(obj|mob|turf|area|atom)/?.*/New\(' $code_files | wc -l`; echo "$num New (expecting 2 or less)"; [ $num -le 2 ])
+	(num=`$grep -n '^/?(obj|mob|turf|area|atom)/?.*/New\(' "${code_files[@]}" | wc -l`; echo "$num New (expecting 2 or less)"; [ $num -le 2 ])
 	retVal=$?
 	if [ $retVal -ne 0 ]; then
 		echo -e "${RED}Do not use any New() calls, they've been replaced by Initialize(mapload).${NC}"
@@ -450,7 +452,7 @@ if [ "$pcre2_support" -eq 1 ]; then
 	fi;
 
 	part "legacy machinery structural damage overrides"
-	if $grep -Pn '^/obj/machinery[^\n]*/(take_damage|fall_apart)\(' $code_files; then
+	if $grep -Pn '^/obj/machinery[^\n]*/(take_damage|fall_apart)\(' "${code_files[@]}"; then
 		echo
 		echo -e "${RED}ERROR: machinery must use obj_integrity and atom_break/atom_fix/atom_destruction; private take_damage/fall_apart handlers are forbidden.${NC}"
 		FAILED=1
@@ -465,7 +467,7 @@ if [ "$pcre2_support" -eq 1 ]; then
 		echo -e "${RED}ERROR: machinery attackby() must not dispatch common tools or legacy deconstruction helpers; use focused *_act hooks/declarative maintenance.${NC}"
 		FAILED=1
 	fi;
-	if $grep -Pn '\b(default_deconstruction_screwdriver|default_deconstruction_crowbar|default_unfasten_wrench|computer_deconstruction_screwdriver|alarm_deconstruction_screwdriver|alarm_deconstruction_wirecutters)\s*\(' $code_files; then
+	if $grep -Pn '\b(default_deconstruction_screwdriver|default_deconstruction_crowbar|default_unfasten_wrench|computer_deconstruction_screwdriver|alarm_deconstruction_screwdriver|alarm_deconstruction_wirecutters)\s*\(' "${code_files[@]}"; then
 		echo
 		echo -e "${RED}ERROR: removed machinery maintenance helpers must not return; use declarative maintenance flags and focused tool hooks.${NC}"
 		FAILED=1
@@ -486,14 +488,14 @@ if [ "$pcre2_support" -eq 1 ]; then
 
 	part "tag"
 	#Checking for 'tag' set to something on maps
-	(! $grep -Pn '( |\t|;|{)tag( ?)=' $map_files)
+	(! $grep -Pn '( |\t|;|{)tag( ?)=' "${map_files[@]}")
 	retVal=$?
 	if [ $retVal -ne 0 ]; then
 		echo -e "${RED}A map has 'tag' set on an atom. It may cause problems and should be removed.${NC}"
 		FAILED=1
 	fi;
 
-	(! $grep -Pn '( |\t|;|{)tag( ?)=' $map_files)
+	(! $grep -Pn '( |\t|;|{)tag( ?)=' "${map_files[@]}")
 	retVal=$?
 	if [ $retVal -ne 0 ]; then
 		echo -e "${RED}A map has 'tag' set on an atom. It may cause problems and should be removed.${NC}"
@@ -503,7 +505,7 @@ if [ "$pcre2_support" -eq 1 ]; then
 	part "broken html"
 	# echo -e "${RED}DISABLED"
 	#Checking for broken HTML tags (didn't close the quote for class)
-	(! $grep -Pn "<\s*span\s+class\s*=\s*('[^'>]+|[^'>]+')\s*>" $code_files)
+	(! $grep -Pn "<\s*span\s+class\s*=\s*('[^'>]+|[^'>]+')\s*>" "${code_files[@]}")
 	retVal=$?
 	if [ $retVal -ne 0 ]; then
 		echo -e "${RED}A broken span tag class is present (check quotes).${NC}"
@@ -511,7 +513,7 @@ if [ "$pcre2_support" -eq 1 ]; then
 	fi;
 
 	part "old style hrefs"
-	(! $grep -Pn "href[\s='\"\\ ]*\?" $code_files)
+	(! $grep -Pn "href[\s='\"\\ ]*\?" "${code_files[@]}")
 	retVal=$?
 	if [ $retVal -ne 0 ]; then
 		echo -e "${RED}old-style hrefs detected, see ripgrep output.${NC}"
