@@ -354,7 +354,7 @@
 	name = "magazine (.380)"
 	icon_state = "m92"
 	mag_type = MAGAZINE
-	matter = list(MAT_STEEL = 480)
+	DEFAULT_MATTER(list(MAT_STEEL = 480))
 	caliber = ".380"
 	ammo_type = /obj/item/ammo_casing/a380
 	max_ammo = 8

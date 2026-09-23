@@ -63,26 +63,27 @@ GLOBAL_LIST_INIT(name_to_material, populate_material_list())
  */
 /obj/item/proc/get_material_composition(breakdown_flags=NONE)
 	. = list()
-	for(var/mat in matter)
+	var/list/item_matter = get_matter()
+	for(var/mat in item_matter)
 		var/datum/material/M = GET_MATERIAL_REF(mat)
 		if(M.composite_material && M.composite_material.len)
 			for(var/submat in M.composite_material)
 				var/datum/material/SM = GET_MATERIAL_REF(submat)
 				if(SM in .)
-					.[SM] += matter[mat]*(M.composite_material[submat]/SHEET_MATERIAL_AMOUNT)
+					.[SM] += item_matter[mat]*(M.composite_material[submat]/SHEET_MATERIAL_AMOUNT)
 				else
-					.[SM] = matter[mat]*(M.composite_material[submat]/SHEET_MATERIAL_AMOUNT)
+					.[SM] = item_matter[mat]*(M.composite_material[submat]/SHEET_MATERIAL_AMOUNT)
 		else
 			if(M in .)
-				.[M] += matter[mat]
+				.[M] += item_matter[mat]
 			else
-				.[M] = matter[mat]
+				.[M] = item_matter[mat]
 
 /obj/item/proc/set_custom_materials(list/materials, multiplier = 1)
 	SHOULD_NOT_OVERRIDE(TRUE)
 
 	if(!LAZYLEN(materials))
-		matter = null
+		set_matter(list()) // made of nothing; null would mean the type default
 		return
 
 	materials = materials.Copy()
@@ -91,7 +92,7 @@ GLOBAL_LIST_INIT(name_to_material, populate_material_list())
 		for(var/x in materials)
 			materials[x] *= multiplier
 
-	matter = materials
+	set_matter(materials)
 
 
 // Builds the datum list above.
@@ -228,6 +229,8 @@ GLOBAL_LIST_INIT(name_to_material, populate_material_list())
 	var/conductive = 1           // Objects without this var add NOCONDUCT to flags on spawn.
 	// conductivity moved into the property system below.
 	var/list/composite_material  // If set, object matter var will be a list containing these values.
+	/// get_shared_matter()'s cached table. Read-only once built.
+	var/tmp/list/shared_matter
 	var/radiation_resistance = 0 // Radiation resistance, which is added on top of a material's density for blocking radiation. Needed to make lead special without superrobust weapons.
 	var/supply_conversion_value  // Supply points per sheet that this material sells for.
 	var/can_sharpen = TRUE // Is this material compatible with a sharpening kit?
@@ -383,6 +386,13 @@ GLOBAL_LIST_INIT(name_to_material, populate_material_list())
 	return density // was `weight`, renamed to density in the new system.
 
 // Return the matter comprising this material.
+/// Like get_matter(), but one cached list per material, shared by everything made of it. Read-only.
+/datum/material/proc/get_shared_matter()
+	RETURN_TYPE(/list)
+	if(isnull(shared_matter))
+		shared_matter = get_matter()
+	return shared_matter
+
 /datum/material/proc/get_matter()
 	var/list/temp_matter = list()
 	if(islist(composite_material))

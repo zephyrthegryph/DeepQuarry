@@ -4,7 +4,7 @@
 	w_class = ITEMSIZE_NORMAL
 	blocks_emissive = EMISSIVE_BLOCK_GENERIC
 
-	//matter = list(MAT_STEEL = 1)
+	//DEFAULT_MATTER(list(MAT_STEEL = 1))
 
 	var/image/blood_overlay = null //this saves our blood splatter overlay, which will be processed not to go over the edges of the sprite
 	var/randpixel = 6
@@ -35,6 +35,7 @@
 	var/catchable = TRUE
 	var/can_cleave = FALSE // If true, a 'cleaving' attack will occur.
 	var/pry = 0			//Used in attackby() to open doors
+	/// Per-instance material override, or null for the type default. Read with get_matter(); edit after own_matter(). See item_matter.dm.
 	var/list/matter
 	var/heat_protection = 0 //flags which determine which body parts are protected from heat. Use the HEAD, UPPER_TORSO, LOWER_TORSO, etc. flags. See setup.dm
 	var/cold_protection = 0 //flags which determine which body parts are protected from cold. Use the HEAD, UPPER_TORSO, LOWER_TORSO, etc. flags. See setup.dm

@@ -27,7 +27,7 @@
 		return FALSE
 	engineered_material_id = primary.name
 	engineered_material_profile = application_profile
-	matter = list()
+	var/list/new_matter = list()
 	var/total_amount = 0
 	var/weighted_density = 0
 	var/weighted_dielectric = 0
@@ -41,7 +41,8 @@
 		weighted_dielectric += part_material.dielectric_strength * part_amount
 		var/list/part_matter = part_material.get_matter()
 		for(var/material_id in part_matter)
-			matter[material_id] = (matter[material_id] || 0) + part_matter[material_id] * part_amount / SHEET_MATERIAL_AMOUNT
+			new_matter[material_id] = (new_matter[material_id] || 0) + part_matter[material_id] * part_amount / SHEET_MATERIAL_AMOUNT
+	set_matter(new_matter)
 	if(total_amount > 0)
 		material_effective_density = weighted_density / total_amount
 		material_effective_electrical_resistance = weighted_dielectric / total_amount

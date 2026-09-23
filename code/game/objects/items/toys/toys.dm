@@ -2115,7 +2115,7 @@
 /obj/item/handcuffs/fake
 	name = "plastic handcuffs"
 	desc = "Use this to keep plastic prisoners in line."
-	matter = list(PLASTIC = 500)
+	DEFAULT_MATTER(list(PLASTIC = 500))
 	drop_sound = 'sound/items/drop/accessory.ogg'
 	pickup_sound = 'sound/items/pickup/accessory.ogg'
 	breakouttime = 30

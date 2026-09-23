@@ -36,7 +36,7 @@
 	var/material_quenched = FALSE
 	var/material_feedback_cooldown = 0
 
-	matter = list(MAT_STEEL = 700, MAT_GLASS = 50)
+	DEFAULT_MATTER(list(MAT_STEEL = 700, MAT_GLASS = 50))
 
 	drop_sound = 'sound/items/drop/component.ogg'
 	pickup_sound = 'sound/items/pickup/component.ogg'

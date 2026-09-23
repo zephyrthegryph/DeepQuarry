@@ -36,11 +36,11 @@
 	if(!material)
 		return INITIALIZE_HINT_QDEL
 
-	matter = material.get_matter()
-	if(matter.len)
-		for(var/material_type in matter)
-			if(!isnull(matter[material_type]))
-				matter[material_type] *= force_divisor // May require a new var instead.
+	var/list/new_matter = material.get_matter()
+	for(var/material_type in new_matter)
+		if(!isnull(new_matter[material_type]))
+			new_matter[material_type] *= force_divisor // May require a new var instead.
+	set_matter(new_matter)
 
 	if(!(material.conductive))
 		src.flags |= NOCONDUCT

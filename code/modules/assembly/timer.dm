@@ -2,7 +2,7 @@
 	name = "timer"
 	desc = "Used to time things. Works well with contraptions which has to count down. Tick tock."
 	icon_state = "timer"
-	matter = list(MAT_STEEL = 500, MAT_GLASS = 50)
+	DEFAULT_MATTER(list(MAT_STEEL = 500, MAT_GLASS = 50))
 
 	wires_type = WIRE_PULSE
 

@@ -615,7 +615,7 @@ GLOBAL_LIST_INIT(possible_cable_coil_colours, list(
 	w_class = ITEMSIZE_SMALL
 	throw_speed = 2
 	throw_range = 5
-	matter = list(MAT_STEEL = 50, MAT_GLASS = 20)
+	DEFAULT_MATTER(list(MAT_STEEL = 50, MAT_GLASS = 20))
 	slot_flags = SLOT_BELT
 	item_state = "coil"
 	attack_verb = list("whipped", "lashed", "disciplined", "flogged")
@@ -1062,7 +1062,7 @@ GLOBAL_LIST_INIT(possible_cable_coil_colours, list(
 	w_class = ITEMSIZE_SMALL
 	throw_speed = 2
 	throw_range = 5
-	matter = list(MAT_STEEL = 50, MAT_GLASS = 20)
+	DEFAULT_MATTER(list(MAT_STEEL = 50, MAT_GLASS = 20))
 	slot_flags = SLOT_BELT
 	attack_verb = list("whipped", "lashed", "disciplined", "flogged")
 	stacktype = null

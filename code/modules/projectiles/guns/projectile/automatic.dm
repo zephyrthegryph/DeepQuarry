@@ -765,7 +765,7 @@
 	icon = 'icons/obj/ammo_vr.dmi'
 	icon_state = "smg"
 	mag_type = MAGAZINE
-	matter = list(MAT_STEEL = 1800)
+	DEFAULT_MATTER(list(MAT_STEEL = 1800))
 	caliber = "9mm"
 	ammo_type = /obj/item/ammo_casing/a9mm
 	max_ammo = 30

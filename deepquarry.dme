@@ -1429,6 +1429,7 @@
 #include "code\game\objects\empulse.dm"
 #include "code\game\objects\explosion_recursive.dm"
 #include "code\game\objects\items.dm"
+#include "code\game\objects\item_matter.dm"
 #include "code\game\objects\items\fantasy_items.dm"
 #include "code\game\objects\mail.dm"
 #include "code\game\objects\micro_event.dm"

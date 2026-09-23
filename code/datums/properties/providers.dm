@@ -81,7 +81,12 @@
 	return from_matter(dq_property_type_matter(path))
 
 /datum/property_provider/material/instance_value(datum/D)
-	return from_matter(dq_property_state_value(D, state_var))
+	var/list/instance_matter = dq_property_state_value(D, state_var)
+	// Null saved state means "no override": the item uses its (possibly instance-dependent) default.
+	if(isnull(instance_matter) && isitem(D))
+		var/obj/item/I = D
+		instance_matter = I.default_matter()
+	return from_matter(instance_matter)
 
 /// Fold a matter list (material name -> amount) into a value: calls fold()
 /// once per known material.
@@ -98,13 +103,10 @@
 /datum/property_provider/material/proc/fold(datum/material/M, amount, acc)
 	return acc
 
-/// A type's compile-time `matter` list. The one place per-type matter is read.
-/// initial() of a list var is null in BYOND, so this is null today and
-/// matter-derived values are per instance only, until matter moves to a
-/// static per-type table.
+/// A type's declared default matter (DEFAULT_MATTER), read without an instance.
+/// The one place per-type matter is read.
 /proc/dq_property_type_matter(path)
-	var/obj/item/I = path
-	return initial(I.matter)
+	return dq_type_default_matter(path)
 
 // ---- Components ----
 

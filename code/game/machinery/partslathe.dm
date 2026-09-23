@@ -192,9 +192,10 @@
 		new_item.set_economic_provenance(DEPARTMENT_RESEARCH, 15, producer_account)
 		new_item.loc = loc
 		if(mat_efficiency < 1) // No matter out of nowhere
-			if(new_item.matter && new_item.matter.len > 0)
-				for(var/i in new_item.matter)
-					new_item.matter[i] = CEILING((new_item.matter[i] * mat_efficiency), 1)
+			if(length(new_item.get_matter()))
+				var/list/item_matter = new_item.own_matter()
+				for(var/i in item_matter)
+					item_matter[i] = CEILING((item_matter[i] * mat_efficiency), 1)
 	return new_item
 
 // 0 amount = 0 means ejecting a full stack; -1 means eject everything
@@ -352,7 +353,8 @@
 		var/list/paths = subtypesof(/obj/item/stock_parts) - typesof(/obj/item/stock_parts/subspace)
 		for(var/type in paths)
 			var/obj/item/stock_parts/I = new type()
-			if(!I.matter || I.rating > 1)
+			var/list/part_matter = I.get_matter()
+			if(!part_matter || I.rating > 1)
 				qdel(I)
 				continue // Ignore parts we can't build
 
@@ -360,8 +362,8 @@
 			recipie.name = I.name
 			recipie.path = type
 			recipie.resources = list()
-			for(var/material in I.matter)
-				recipie.resources[material] = I.matter[material]*1.25 // More expensive to produce than they are to recycle.
+			for(var/material in part_matter)
+				recipie.resources[material] = part_matter[material]*1.25 // More expensive to produce than they are to recycle.
 			partslathe_recipies[type] = recipie
 			qdel(I)
 

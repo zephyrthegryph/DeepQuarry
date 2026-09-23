@@ -48,12 +48,15 @@
 	if(!material.conductive)
 		flags |= NOCONDUCT
 
-	matter = material.get_matter()
 	update_strings()
 
 /obj/item/stack/material/Destroy()
 	material = null
 	. = ..()
+
+/// A sheet's composition follows its material: one shared table per material, not a list per stack.
+/obj/item/stack/material/default_matter()
+	return material ? material.get_shared_matter() : ..()
 
 /obj/item/stack/material/get_material()
 	return material

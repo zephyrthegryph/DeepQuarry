@@ -80,7 +80,8 @@
 		return
 	if(istype(W, /obj/item/pipe))
 		// NOTE - We must check for matter, otherwise the (free) pipe dispenser can be used to get infinite steel.
-		if(!W.matter || W.matter[MAT_STEEL] < pipe_cost * SHEET_MATERIAL_AMOUNT)
+		var/list/pipe_matter = W.get_matter()
+		if(!pipe_matter || pipe_matter[MAT_STEEL] < pipe_cost * SHEET_MATERIAL_AMOUNT)
 			to_chat(user, span_warning("\The [W] doesn't contain enough [MAT_STEEL] to recycle."))
 		else if(metal + pipe_cost > max_metal)
 			to_chat(user, span_notice("\The [src] is full."))
@@ -181,7 +182,7 @@
 	var/obj/item/pipe/P = new pi_type(w_turf, p_type, p_dir)
 	P.setPipingLayer(p_layer)
 	// We used metal to make these, so should be reclaimable!
-	P.matter = list(MAT_STEEL = pipe_cost * SHEET_MATERIAL_AMOUNT)
+	P.set_matter(list(MAT_STEEL = pipe_cost * SHEET_MATERIAL_AMOUNT))
 	P.attackby(W , src)
 
 	return 1

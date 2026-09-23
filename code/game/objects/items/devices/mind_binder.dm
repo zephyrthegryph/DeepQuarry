@@ -7,7 +7,7 @@
 	item_state = "healthanalyzer"
 	slot_flags = SLOT_BELT
 	w_class = ITEMSIZE_SMALL
-	matter = list(MAT_STEEL = 200)
+	DEFAULT_MATTER(list(MAT_STEEL = 200))
 	possessed_voice = list()
 	var/self_bind = FALSE
 	flags = NOBLUDGEON
