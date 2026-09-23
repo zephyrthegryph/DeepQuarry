@@ -59,7 +59,7 @@
 	if(!opened)		// if closed, any item at the crate's loc is put in the contents
 		if(isliving(loc)) return
 		var/list/loose = list()
-		for(var/obj/item/I in loc)
+		for(var/obj/item/I in turf_contents_of_type(loc, /obj/item))
 			if(I.density || I.anchored) continue
 			loose += I
 		// adjust locker size to hold everything with 5 units of free store room.
@@ -249,25 +249,25 @@
 //Cham Projector Exception
 /obj/structure/closet/proc/store_misc()
 	. = 0
-	for(var/obj/effect/dummy/chameleon/AD in loc)
+	for(var/obj/effect/dummy/chameleon/AD in turf_contents_of_type(loc, /obj/effect/dummy/chameleon))
 		if(AD.move_into(src))
 			.++
 
 /obj/structure/closet/proc/store_items()
 	. = 0
-	for(var/obj/item/I in loc)
+	for(var/obj/item/I in turf_contents_of_type(loc, /obj/item))
 		if(I.move_into(src))
 			.++
 
 /obj/structure/closet/proc/store_mobs()
 	. = 0
-	for(var/mob/living/M in loc)
+	for(var/mob/living/M in turf_contents_of_type(loc, /mob/living))
 		if(M.move_into(src))
 			.++
 
 /obj/structure/closet/proc/store_closets()
 	. = 0
-	for(var/obj/structure/closet/C in loc)
+	for(var/obj/structure/closet/C in turf_contents_of_type(loc, /obj/structure/closet))
 		if(C == src)	//Don't store ourself
 			continue
 		if(C.max_closets)	//Prevents recursive storage
@@ -295,10 +295,10 @@
 			return 0
 		if(istype(W,/obj/item/tk_grab))
 			return 0
-		if(istype(W, /obj/item/storage/laundry_basket) && W.contents.len)
+		if(istype(W, /obj/item/storage/laundry_basket) && length(W.slot_contents()))
 			var/obj/item/storage/laundry_basket/LB = W
 			var/turf/T = get_turf(src)
-			for(var/obj/item/I in LB.contents)
+			for(var/obj/item/I in LB.slot_contents())
 				LB.remove_from_storage(I, T)
 			user.visible_message(span_notice("[user] empties \the [LB] into \the [src]."), \
 									span_notice("You empty \the [LB] into \the [src]."), \
@@ -568,13 +568,13 @@
 	if(!isliving(usr)) //no ghosts
 		return
 
-	if(!(usr in src.contents))
+	if(!(usr in slot_contents()))
 		to_chat(usr, span_warning("You need to be inside \the [src] to do this."))
 		return
 
 	var/list/targets = list() //IF IT IS NOT BROKEN. DO NOT FIX IT.
 
-	for(var/mob/living/L in src.contents)
+	for(var/mob/living/L in slot_contents())
 		if(!isliving(L)) //Don't eat anything that isn't mob/living. Failsafe.
 			continue
 		if(L == usr) //no eating yourself. 1984.

@@ -87,10 +87,10 @@
 			return 0
 		if(istype(W,/obj/item/tk_grab))
 			return 0
-		if(istype(W, /obj/item/storage/laundry_basket) && W.contents.len)
+		if(istype(W, /obj/item/storage/laundry_basket) && length(W.slot_contents()))
 			var/obj/item/storage/laundry_basket/LB = W
 			var/turf/T = get_turf(src)
-			for(var/obj/item/I in LB.contents)
+			for(var/obj/item/I in LB.slot_contents())
 				LB.remove_from_storage(I, T)
 			user.visible_message(span_notice("[user] empties \the [LB] into \the [src]."), \
 									span_notice("You empty \the [LB] into \the [src]."), \

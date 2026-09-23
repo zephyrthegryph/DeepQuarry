@@ -46,7 +46,7 @@
 		desc = "The BS-500, a bluespace rift-rotation-based waste disposal unit for small matter. This one seems remarkably clean."
 
 	// Non-bluespace plumbing. For POIs and player construction n' stuff.
-	var/obj/structure/disposalpipe/trunk/trunk = locate() in get_turf(src)
+	var/obj/structure/disposalpipe/trunk/trunk = locate_on(get_turf(src), /obj/structure/disposalpipe/trunk)
 	AddComponent(/datum/component/disposal_system_connection, FALSE, FALSE) //Dont show our disposal connection, and we want to handle failed flushes on our own.
 	RegisterSignal(src, COMSIG_DISPOSAL_RECEIVE, PROC_REF(toilet_reflux))
 	if(trunk)
@@ -227,10 +227,10 @@
 	playsound(src, 'sound/mecha/powerup.ogg', 30, 1)
 
 	var/list/bowl_contents = list()
-	for(var/obj/item/I in loc.contents)
+	for(var/obj/item/I in turf_contents_of_type(loc, /obj/item))
 		if(istype(I) && !I.anchored)
 			bowl_contents += I
-	for(var/mob/living/L in loc.contents)
+	for(var/mob/living/L in turf_contents_of_type(loc, /mob/living))
 		if(L.buckled || !(L.resting || L.lying))
 			continue
 		var/bin_bonus = 0.15
@@ -551,7 +551,7 @@
 /obj/machinery/shower/proc/handle_mist()
 	// If there is no mist, and the shower was turned on (on a non-freezing temp): make mist in 5 seconds
 	// If there was already mist, and the shower was turned off (or made cold): remove the existing mist in 25 sec
-	var/obj/effect/mist/mist = locate() in loc
+	var/obj/effect/mist/mist = locate_on(loc, /obj/effect/mist)
 	if(!mist && on && current_temperature != SHOWER_FREEZING)
 		addtimer(CALLBACK(src, PROC_REF(make_mist)), 5 SECONDS, TIMER_DELETE_ME)
 
@@ -561,14 +561,14 @@
 /obj/machinery/shower/proc/make_mist()
 	PRIVATE_PROC(TRUE)
 	SHOULD_NOT_OVERRIDE(TRUE)
-	var/obj/effect/mist/mist = locate() in loc
+	var/obj/effect/mist/mist = locate_on(loc, /obj/effect/mist)
 	if(!mist && on && current_temperature != SHOWER_FREEZING)
 		new /obj/effect/mist(loc)
 
 /obj/machinery/shower/proc/clear_mist()
 	PRIVATE_PROC(TRUE)
 	SHOULD_NOT_OVERRIDE(TRUE)
-	var/obj/effect/mist/mist = locate() in loc
+	var/obj/effect/mist/mist = locate_on(loc, /obj/effect/mist)
 	if(mist && (!on || current_temperature == SHOWER_FREEZING))
 		qdel(mist)
 
@@ -605,7 +605,7 @@
 	if(on)
 		if(isturf(loc)) //Wash the turf.
 			wash_atom(loc)
-		for(var/AM in loc) //Wash everything in the same loc (technically doesnt need to be a turf.)
+		for(var/AM in turf_contents_of_type(loc, /atom/movable)) //Wash everything in the same loc (technically doesnt need to be a turf.)
 			wash_atom(AM)
 	else
 		return PROCESS_KILL
@@ -1121,7 +1121,7 @@
 /obj/structure/toilet/item/LateInitialize()
 	if(istype(loc, /mob/living)) return
 	var/obj/item/I
-	for(I in loc)
+	for(I in turf_contents_of_type(loc, /obj/item))
 		if(I.density || I.anchored || I == src) continue
 		I.forceMove(src)
 
@@ -1155,9 +1155,9 @@
 		qdel(thing)
 		return
 	if(istype(thing, /obj/item/storage/vore_egg))
-		if(thing.contents.len)
-			for(var/atom/movable/C in thing.contents)
-				C.forceMove(src)
+		var/obj/item/storage/vore_egg/egg = thing
+		for(var/atom/movable/C in egg.slot_contents())
+			C.forceMove(src)
 		qdel(thing)
 		return
 	if(istype(crusher) && istype(thing, /obj/item/debris_pack))
