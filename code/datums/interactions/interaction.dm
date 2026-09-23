@@ -155,7 +155,8 @@ GLOBAL_LIST_INIT(interactions_by_type, init_interactions_by_type())
 /proc/init_interactions_by_type()
 	var/list/by_type = list()
 	for(var/datum/interaction/path as anything in subtypesof(/datum/interaction))
-		if(!initial(path.id))
+		// Construction edges belong to their graphs (construction.dm), not this registry.
+		if(!initial(path.id) || ispath(path, /datum/interaction/construction))
 			continue
 		by_type[path] = new path
 	return by_type
@@ -171,7 +172,7 @@ GLOBAL_LIST_INIT(interactions_by_type, init_interactions_by_type())
 				stack_trace("Duplicate interaction id [interaction.id] ([path])")
 				continue
 			by_id[interaction.id] = interaction
-	return by_id[id]
+	return by_id[id] || construction_edge_by_id(id)
 
 /**
  * Adds the interaction types this atom offers to `into`. Types add theirs and

@@ -86,7 +86,8 @@
 	var/list/available = list()
 	var/list/blocked = list()
 	var/list/priorities = resolution.priorities
-	for(var/datum/interaction/interaction as anything in interaction_candidates(target))
+	// The type's interactions, then the construction edges leaving its current state (construction.dm).
+	for(var/datum/interaction/interaction as anything in interaction_candidates(target) + construction_edges_for(target))
 		if(!interaction.applies_to(target) || !adapter.allows_interaction(actor, target, interaction))
 			continue
 		priorities[interaction] = interaction_priority_for(actor, interaction)

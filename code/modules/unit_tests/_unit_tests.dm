@@ -208,6 +208,7 @@
 #include "dq_input_tests.dm"
 #include "dq_interaction_tests.dm"
 #include "dq_tool_tests.dm"
+#include "dq_construction_tests.dm"
 #include "xgm_total_moles_test.dm"
 // END_INCLUDE
 #if defined(BENCHMARK) || defined(SPACEMAN_DMM)
