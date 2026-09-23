@@ -23,6 +23,14 @@
 	if(wires)
 		wires.holder = src
 
+// constraint_overrides holds compiled /datum/predicate instances (rules.md
+// §3), each a cached, shared-by-key singleton rather than owned by this item
+// (C5); excluded rather than refused, so a latent-safe item with one (a
+// refitted suit, an exact-fit box) still serializes.
+/obj/item/state_exclude()
+	. = ..()
+	. += "constraint_overrides"
+
 // Variants (code/datums/variants/): a variant's own vars are left out of the
 // delta, and restored by applying the variant before the delta is written.
 /obj/item/state_variant_baseline()

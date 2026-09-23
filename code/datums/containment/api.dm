@@ -175,9 +175,24 @@
 /// The base Destroy() calls this first. Each slot's drop policy decides what
 /// happens to what it holds; things with nowhere to go are deleted.
 /atom/movable/proc/ledger_apply_drop_policies()
-	var/datum/ledger/L = dq_ledger(src)
+	// dq_ledger()'s QDELETED guard exists to stop a stray reference from
+	// reviving a ledger on an object that already finished dying. That guard
+	// wrongly blocks this call too: qdel() sets gc_destroyed before calling
+	// Destroy(), which is the only place this runs, always on src, always
+	// legitimately -- an ungenerated latent holder (declared but never asked
+	// an exact question) must still resolve its generator here so its
+	// declared entries spill as data instead of vanishing. Build it directly.
+	var/datum/ledger/L = ledger
+	if(!L)
+		var/list/defs = dq_slot_defs_for(src)
+		if(defs)
+			L = new /datum/ledger(src, defs)
+			ledger = L
+			if(latent_contents)
+				dq_latent_resolve(src, L)
 	if(!L)
 		return
+	L.sync()
 	var/atom/drop = drop_location()
 	for(var/datum/slot_def/def as anything in L.defs)
 		if(def.drop_policy == SLOT_DROP_HOLDER)

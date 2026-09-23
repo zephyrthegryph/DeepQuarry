@@ -77,6 +77,10 @@
 		if(!holder)
 			mismatch("[holder_name]: can't be created any more")
 			continue
+		// A holder may keep mapped starts_with as latent entries (C5);
+		// materialize before clearing so none of it counts against capacity.
+		if(holder.has_latent())
+			holder.latent_materialize_all()
 		for(var/atom/movable/A in holder)
 			qdel(A)
 		var/hex = patterns[holders[holder_name] + 1]

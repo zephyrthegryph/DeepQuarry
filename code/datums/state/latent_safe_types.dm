@@ -387,6 +387,11 @@
 /obj/item/storage/box/halloween/vampirehunter
 	latent_safe = FALSE
 
+// starts_with holds an inline new-with-vars literal (a clothing item with
+// starting_accessories set), which the generic list encoder can't serialize.
+/obj/item/storage/box/halloween/whiteout
+	latent_safe = FALSE
+
 /obj/item/storage/box/ids
 	latent_safe = FALSE
 
