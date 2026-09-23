@@ -385,7 +385,8 @@ accident or assume they work:
   - `life_wake()` and `life_hibernate()` are the only procs that change a mob's run state.
     `check_grep.sh` rejects direct writes.
   - A 30 s audit logs `MOB_HIBERNATE_AUDIT: MISSED WAKE` and wakes the mob when a producer
-    was forgotten. Treat that log line as a bug to fix.
+    was forgotten. It always runs in test builds and fails the run on a miss. On servers it's off
+    unless the `MOB_HIBERNATION_AUDIT` config flag or the "Toggle Hibernation Audit" verb turns it on.
   - Transition tracing is `GLOB.mob_hibernation_trace`.
 - **verdigris (Rust FFI)** is a build artifact, gitignored per-platform. If `cargo` is absent
   the build warns and skips it, and **both** subsystems that depend on it fail at runtime:

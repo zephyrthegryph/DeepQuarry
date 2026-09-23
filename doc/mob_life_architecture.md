@@ -454,7 +454,13 @@ work, diagnosis, cyborg phases).
 statuses systems run only while a counter or alert is live. Moving them onto
 `/datum/status_effect` (§4.7) is still to do.
 
-**Missed-wake safety net.** Every `MOB_HIBERNATION_AUDIT_INTERVAL` (30 s),
+**Missed-wake safety net.** The audit is a debugging aid, not a production feature:
+- In unit test and `TESTING` builds it always runs, and a missed wake fails the run
+  (`stack_trace()` plus `Fail()` on the current test).
+- On servers it's off unless the `MOB_HIBERNATION_AUDIT` config flag is set, or an admin
+  uses the Debug verb "Toggle Hibernation Audit" for the round (logged with the admin's key).
+
+When enabled, every `MOB_HIBERNATION_AUDIT_INTERVAL` (30 s),
 `SSmobs.audit_hibernation()` checks two groups:
 - up to 400 hibernating mobs, round robin
 - up to 100 awake mobs that have sleeping systems

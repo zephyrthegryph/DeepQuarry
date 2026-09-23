@@ -368,7 +368,7 @@
 	M.stunned = 3
 	TEST_ASSERT(M.life_hibernating, "a direct write must not wake the mob (that is the bug the audit catches)")
 	var/missed_before = SSmobs.hibernation_audit_missed
-	var/datum/life_system/S = SSmobs.audit_mob(M)
+	var/datum/life_system/S = SSmobs.audit_mob(M, expected = TRUE)
 	TEST_ASSERT_NOTNULL(S, "the audit should find the system with pending work")
 	TEST_ASSERT_EQUAL(S.bit, LIFE_SYS_STATUS, "the statuses system should be the one flagged, got [S?.type]")
 	TEST_ASSERT_EQUAL(SSmobs.hibernation_audit_missed, missed_before + 1, "the audit should count the missed wake")

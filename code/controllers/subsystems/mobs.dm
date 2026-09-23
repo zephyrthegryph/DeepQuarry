@@ -58,6 +58,8 @@ SUBSYSTEM_DEF(mobs)
 	var/hibernation_audits = 0
 	var/hibernation_audit_checked = 0
 	var/hibernation_audit_missed = 0
+	/// Set by the "Toggle Hibernation Audit" admin verb for the current round.
+	var/hibernation_audit_forced = FALSE
 
 /datum/controller/subsystem/mobs/stat_entry(msg)
 	msg = "P: [length(GLOB.mob_list)] | S: [slept_mobs] | H: [length(hibernating_mobs)] | D: [length(death_list)]"
@@ -70,7 +72,7 @@ SUBSYSTEM_DEF(mobs)
 			profile_run_index = 0
 			life_cycle++
 		slice_budget_remaining = max(1, CEILING(length(src.currentrun) / life_slices, 1))
-		if(world.time >= next_hibernation_audit)
+		if(world.time >= next_hibernation_audit && hibernation_audit_enabled())
 			next_hibernation_audit = world.time + MOB_HIBERNATION_AUDIT_INTERVAL
 			audit_hibernation()
 		process_z.len = length(GLOB.living_players_by_zlevel)
@@ -207,8 +209,18 @@ SUBSYSTEM_DEF(mobs)
 			continue
 		audit_mob(L)
 
-/// Audits one mob. Returns the system that should have been woken, or null.
-/datum/controller/subsystem/mobs/proc/audit_mob(mob/living/L)
+/// The audit runs in unit test and TESTING builds always; on servers only with the
+/// MOB_HIBERNATION_AUDIT config flag or the admin verb (it is a debugging aid, not a feature).
+/datum/controller/subsystem/mobs/proc/hibernation_audit_enabled()
+#if defined(UNIT_TESTS) || defined(TESTING)
+	return TRUE
+#else
+	return hibernation_audit_forced || CONFIG_GET(flag/mob_hibernation_audit)
+#endif
+
+/// Audits one mob. Returns the system that should have been woken, or null. `expected` is for
+/// the audit's own test, which misses a wake on purpose.
+/datum/controller/subsystem/mobs/proc/audit_mob(mob/living/L, expected = FALSE)
 	hibernation_audit_checked++
 	var/datum/life_system/S = L.life_missed_wake()
 	if(!S)
@@ -217,6 +229,15 @@ SUBSYSTEM_DEF(mobs)
 	var/message = "MOB_HIBERNATE_AUDIT: MISSED WAKE [key_name(L)] ([L.type]) [L.life_hibernating ? "hibernating since [DisplayTimeText(world.time - hibernating_mobs[L])] ago" : "awake bits [L.life_awake]"]: system [S.type] ([S.name], bit [S.bit]) has work but was asleep. Woken by: [S.woken_by || "undeclared"]. A producer changed this mob without life_wake()."
 	log_runtime(message)
 	log_world(message)
+#if defined(UNIT_TESTS)
+	if(!expected)
+		// A missed wake is a bug: fail the run, not just the log.
+		stack_trace(message)
+		if(GLOB.current_test)
+			GLOB.current_test.Fail(message, __FILE__, __LINE__)
+		else
+			GLOB.failed_any_test = TRUE
+#endif
 	L.life_wake(S.bit, "audit: [S.name]")
 	return S
 
@@ -295,3 +316,8 @@ SUBSYSTEM_DEF(mobs)
 	"coord" = "[L.x], [L.y], [L.z]"
 	)
 	death_list += list(data)
+
+ADMIN_VERB(toggle_hibernation_audit, R_DEBUG, "Toggle Hibernation Audit", "Turns the mob hibernation missed-wake audit on or off for this round.", ADMIN_CATEGORY_DEBUG_MISC)
+	SSmobs.hibernation_audit_forced = !SSmobs.hibernation_audit_forced
+	log_admin("[key_name(user)] turned the mob hibernation audit [SSmobs.hibernation_audit_forced ? "on" : "off"] for this round.")
+	message_admins("[key_name_admin(user)] turned the mob hibernation audit [SSmobs.hibernation_audit_forced ? "on" : "off"] for this round.")
