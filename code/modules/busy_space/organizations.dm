@@ -17,7 +17,7 @@
 	//this overrides the standard PREFIX = TASK logic and allows you to use the ship prefix for subfactions (warbands, religions, whatever) within a faction, and define task_types at the faction level
 	//task_types are picked from completely at random in air_traffic.dm, much like flight_types, so be careful not to potentially create combos that make no sense!
 
-	var/list/task_types = list(
+	var/static/list/task_types = list(
 			"logistics",
 			"patrol",
 			"training",

@@ -753,7 +753,7 @@
 	icon_state = "rubberducky_green"
 	item_state = "rubberducky_green"
 	honk_sound = 'sound/arcade/mana.ogg'
-	var/list/flora = list(/obj/structure/flora/ausbushes,
+	var/static/list/flora = list(/obj/structure/flora/ausbushes,
 						/obj/structure/flora/ausbushes/reedbush,
 						/obj/structure/flora/ausbushes/leafybush,
 						/obj/structure/flora/ausbushes/palebush,

@@ -348,7 +348,7 @@
 
 	var/list/traits = list()
 	//Vars that need to be copied when producing a copy of species.
-	var/list/copy_vars = list("base_species", "icobase", "deform", "tail", "tail_animation", "icobase_tail", "color_mult", "primitive_form", "appearance_flags", "flesh_color", "base_color", "blood_mask", "damage_mask", "damage_overlays", "move_trail", "has_floating_eyes")
+	var/static/list/copy_vars = list("base_species", "icobase", "deform", "tail", "tail_animation", "icobase_tail", "color_mult", "primitive_form", "appearance_flags", "flesh_color", "base_color", "blood_mask", "damage_mask", "damage_overlays", "move_trail", "has_floating_eyes")
 	var/trait_points = 0
 
 	var/ideal_air_type = null	// Set to something else if you breathe something else from default composition. Used for inbelly air.

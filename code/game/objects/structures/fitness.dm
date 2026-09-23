@@ -9,7 +9,7 @@
 	desc = "A punching bag."
 	icon_state = "punchingbag"
 	density = TRUE
-	var/list/hit_message = list("hit", "punch", "kick", "robust")
+	var/static/list/hit_message = list("hit", "punch", "kick", "robust")
 
 /obj/structure/fitness/punchingbag/attack_hand(mob/living/carbon/human/user)
 	if(!istype(user))
@@ -35,7 +35,7 @@
 	icon_state = "weightlifter"
 	blocks_emissive = EMISSIVE_BLOCK_UNIQUE
 	var/weight = 1
-	var/list/qualifiers = list("with ease", "without any trouble", "with great effort")
+	var/static/list/qualifiers = list("with ease", "without any trouble", "with great effort")
 
 /obj/structure/fitness/weightlifter/wrench_act(mob/user, obj/item/W)
 	playsound(src, 'sound/items/Deconstruct.ogg', 75, 1)

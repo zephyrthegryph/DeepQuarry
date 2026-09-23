@@ -27,7 +27,7 @@
 	var/list/dormant_reactant_quantities = list()
 	var/list/particle_catchers = list()
 
-	var/list/ignore_types = list(
+	var/static/list/ignore_types = list(
 		/obj/item/projectile,
 		/obj/effect,
 		/obj/structure/cable,

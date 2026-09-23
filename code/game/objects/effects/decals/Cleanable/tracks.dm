@@ -37,7 +37,7 @@
 	generic_filth = FALSE
 
 	// dir = id in stack
-	var/list/setdirs=list(
+	var/static/list/setdirs=list(
 		"1"=0,
 		"2"=0,
 		"4"=0,

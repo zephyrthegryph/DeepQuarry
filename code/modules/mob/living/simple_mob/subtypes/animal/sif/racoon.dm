@@ -54,7 +54,7 @@
 	say_list_type = /datum/say_list/sakimm
 
 	var/obj/item/clothing/head/hat = null // The hat the Sakimm may be wearing.
-	var/list/friend_loot_list = list(/obj/item/coin)	// What will make this animal non-hostile if held?
+	var/static/list/friend_loot_list = list(/obj/item/coin)	// What will make this animal non-hostile if held?
 	var/randomize_size = TRUE
 	can_be_drop_prey = TRUE
 	species_sounds = "Raccoon"

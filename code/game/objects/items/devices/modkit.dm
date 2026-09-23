@@ -10,7 +10,7 @@
 	var/parts = MODKIT_FULL
 	var/target_species = SPECIES_HUMAN
 
-	var/list/permitted_types = list(
+	var/static/list/permitted_types = list(
 		/obj/item/clothing/head/helmet/space/void,
 		/obj/item/clothing/suit/space/void
 		)

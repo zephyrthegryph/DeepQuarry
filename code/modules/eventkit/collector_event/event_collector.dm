@@ -31,8 +31,8 @@ GLOBAL_LIST_INIT(event_collector_blockers,list()) //ditto
 	var/completion_time = 60  //how long to "complete" a recipe before starting the next one - this is in processing calls, 2 seconds if no time dialation
 
 	var/step_insertion_time = 2 SECONDS //how long it takes to put an object into us!
-	var/list/step_insertion_verbs = list("inserts") //X inserts Item into [Src], picks from the list! Tosses, inserts, throws, etc
-	var/list/step_initiation_verbs = list("insert") //when we start it. X starts to insert Item into [src]. picks from list. put, insert, shove, etc
+	var/static/list/step_insertion_verbs = list("inserts") //X inserts Item into [Src], picks from the list! Tosses, inserts, throws, etc
+	var/static/list/step_initiation_verbs = list("insert") //when we start it. X starts to insert Item into [src]. picks from list. put, insert, shove, etc
 
 	var/automatic_recipe_restart = TRUE //do we start a new recipe as soon as the active one's done? if not, admin only!
 
@@ -51,7 +51,7 @@ GLOBAL_LIST_INIT(event_collector_blockers,list()) //ditto
 
 	var/type_to_spawn_on_complete
 
-	var/list/recipe_process_sounds = list('sound/effects/smoke.ogg', 'sound/effects/bubbles.ogg')
+	var/static/list/recipe_process_sounds = list('sound/effects/smoke.ogg', 'sound/effects/bubbles.ogg')
 	var/recipe_process_sound_chance = 50 //prob(50) per active process tick
 
 	//internal stuff, don't touch this with subtypes.

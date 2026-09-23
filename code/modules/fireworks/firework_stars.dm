@@ -88,8 +88,8 @@
 /obj/item/firework_star/aesthetic
 	name = "aesthetic firework star"
 	desc = "A firework star designed to paint the sky with pretty lights."
-	var/list/firework_adjectives = list("beautiful", "pretty", "fancy", "colorful", "bright", "shimmering")
-	var/list/firework_colors = list("red", "orange", "yellow", "green", "cyan", "blue", "purple", "pink", "beige", "white")
+	var/static/list/firework_adjectives = list("beautiful", "pretty", "fancy", "colorful", "bright", "shimmering")
+	var/static/list/firework_colors = list("red", "orange", "yellow", "green", "cyan", "blue", "purple", "pink", "beige", "white")
 
 /obj/item/firework_star/aesthetic/trigger_firework(datum/weather_holder/w_holder)
 	if(!w_holder)
@@ -105,7 +105,7 @@
 	icon_state = "config"
 	var/current_color = "white"
 	var/current_shape = "Random"
-	var/list/firework_shapes = list("none", "Random",
+	var/static/list/firework_shapes = list("none", "Random",
 								"a circle", "an oval", "a triangle", "a square", "a pentagon", "a hexagon", "an octagon", "a plus sign", "an x", "a star", "a spiral", "a heart", "a teardrop",
 								"a smiling face", "a winking face", "a mouse", "a cat", "a dog", "a fox", "a bird", "a fish", "a lizard", "a bug", "a butterfly", "a robot", "a dragon", "a teppi", "a catslug",
 								"a tree", "a leaf", "a flower", "a lightning bolt", "a cloud", "a sun", "a gemstone", "a flame", "a wrench", "a beaker", "a syringe", "a pickaxe", "a pair of handcuffs", "a crown",

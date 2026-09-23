@@ -629,7 +629,7 @@
 
 	var/mob_chance = 10
 	var/treasure_chance = 50
-	var/list/valid_treasure = list(
+	var/static/list/valid_treasure = list(
 		/obj/item/cell/infinite = 5,
 		/obj/item/cell/device/weapon/recharge/alien = 5,
 		/obj/item/nif/authentic = 1,
@@ -1336,7 +1336,7 @@
 	var/isSwitchingStates = 0
 	var/countdown = 0
 	var/knock_sound = 'sound/effects/attackblob.ogg'
-	var/list/open_sounds = list(
+	var/static/list/open_sounds = list(
 		'sound/vore/sunesound/prey/squish_01.ogg',
 		'sound/vore/sunesound/prey/squish_02.ogg',
 		'sound/vore/sunesound/prey/squish_03.ogg',

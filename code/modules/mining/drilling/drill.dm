@@ -71,7 +71,7 @@
 	var/obj/item/cell/cell = null
 
 	// Found with an advanced laser. exotic_drilling >= 1
-	var/list/ore_types_uncommon = list(
+	var/static/list/ore_types_uncommon = list(
 		ORE_MARBLE = /obj/item/ore/marble,
 		ORE_PAINITE = /obj/item/ore/painite,
 		ORE_QUARTZ = /obj/item/ore/quartz,
@@ -82,7 +82,7 @@
 		)
 
 	// Found with an ultra laser. exotic_drilling >= 2
-	var/list/ore_types_rare = list(
+	var/static/list/ore_types_rare = list(
 		ORE_VOPAL = /obj/item/ore/void_opal,
 		ORE_VERDANTIUM = /obj/item/ore/verdantium,
 		ORE_WOLFRAMITE = /obj/item/ore/wolframite

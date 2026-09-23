@@ -34,7 +34,7 @@ GLOBAL_DATUM(cult, /datum/antagonist/cultist)
 	var/allow_narsie = 1
 	var/datum/mind/sacrifice_target
 	var/list/startwords = list("blood","join","self","hell")
-	var/list/allwords = list("travel","self","see","hell","blood","join","tech","destroy", "other", "hide")
+	var/static/list/allwords = list("travel","self","see","hell","blood","join","tech","destroy", "other", "hide")
 	var/list/sacrificed = list()
 	var/list/harvested = list()
 

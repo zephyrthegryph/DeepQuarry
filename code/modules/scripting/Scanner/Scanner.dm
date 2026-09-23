@@ -71,7 +71,7 @@
 	Default Value:
 	Semicolon
 */
-	var/list/end_stmt = list(";")
+	var/static/list/end_stmt = list(";")
 /*
 	Variable: string_delim
 	A list of characters that can start and end strings.
@@ -79,7 +79,7 @@
 	Default Value:
 	Double and single quotes.
 */
-	var/list/string_delim = list("\"", "'")
+	var/static/list/string_delim = list("\"", "'")
 /*
 	Variable: delim
 	A list of characters that denote the start of a new token. This list is automatically populated.

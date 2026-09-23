@@ -72,7 +72,7 @@
 	var/internal_damage = 0 			//Contains bitflags
 
 	var/list/operation_req_access = list()								//Required access level for mecha operation
-	var/list/internals_req_access = list(ACCESS_ENGINE,ACCESS_ROBOTICS)	//Required access level to open cell compartment
+	var/static/list/internals_req_access = list(ACCESS_ENGINE,ACCESS_ROBOTICS)	//Required access level to open cell compartment
 
 	var/wreckage
 

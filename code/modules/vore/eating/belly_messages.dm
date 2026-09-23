@@ -117,10 +117,10 @@
 	var/list/absorb_chance_messages_prey = list(
 		"In response to your struggling, %pred's %belly begins to cling more tightly...")
 
-	var/tmp/list/select_chance_messages_owner = list(
+	var/static/list/select_chance_messages_owner = list(
 		"You feel your %belly beginning to become active!")
 
-	var/tmp/list/select_chance_messages_prey = list(
+	var/static/list/select_chance_messages_prey = list(
 		"In response to your struggling, %pred's %belly begins to get more active...")
 
 	var/list/digest_messages_owner = list(

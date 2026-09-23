@@ -15,7 +15,7 @@
 	var/metal = 0			// Current amount in internal metal storage
 	var/pipe_cost = 0.25	// Cost in steel for each pipe.
 	var/obj/item/tool/wrench/W // Internal wrench used for wrenching down the pipes
-	var/list/Pipes = list(
+	var/static/list/Pipes = list(
 		"regular pipes" = /obj/machinery/atmospherics/pipe/simple,
 		"scrubbers pipes" = /obj/machinery/atmospherics/pipe/simple/hidden/scrubbers,
 		"supply pipes" = /obj/machinery/atmospherics/pipe/simple/hidden/supply,

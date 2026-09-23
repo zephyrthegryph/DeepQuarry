@@ -149,27 +149,27 @@ I think I covered everything.
 		"Eyes" = "#FFFFFF"
 	)
 	//If you add any more, it's as easy as adding the icons to these lists
-	var/list/underbelly_styles = list(
+	var/static/list/underbelly_styles = list(
 		"Smooth",
 		"Plated"
 	)
 	var/under
-	var/list/body_styles = list(
+	var/static/list/body_styles = list(
 		"Smooth",
 		"Scaled"
 	)
 	var/body_style
-	var/list/ear_styles = list(
+	var/static/list/ear_styles = list(
 		"Normal"
 	)
 	var/ears
-	var/list/mane_styles = list(
+	var/static/list/mane_styles = list(
 		"None",
 		"Shaggy",
 		"Dorsalfin"
 	)
 	var/mane
-	var/list/horn_styles = list(
+	var/static/list/horn_styles = list(
 		"Pointy",
 		"Curved",
 		"Curved2",
@@ -178,7 +178,7 @@ I think I covered everything.
 		"Skull"
 	)
 	var/horns
-	var/list/eye_styles = list(
+	var/static/list/eye_styles = list(
 		"Normal"
 	)
 	var/eyes

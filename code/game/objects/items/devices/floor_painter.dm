@@ -27,7 +27,7 @@
 		"Psy" =               list("path" = /obj/effect/floor_decal/sign/p),
 		"remove all decals" = list("path" = /obj/effect/floor_decal/reset)
 		)
-	var/list/paint_dirs = list(
+	var/static/list/paint_dirs = list(
 		"north" =       NORTH,
 		"northwest" =   NORTHWEST,
 		"west" =        WEST,

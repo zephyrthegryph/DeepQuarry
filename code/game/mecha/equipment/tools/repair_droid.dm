@@ -7,7 +7,7 @@
 	range = 0
 	var/health_boost = 2
 	var/icon/droid_overlay
-	var/list/repairable_damage = list(MECHA_INT_TEMP_CONTROL,MECHA_INT_TANK_BREACH)
+	var/static/list/repairable_damage = list(MECHA_INT_TEMP_CONTROL,MECHA_INT_TANK_BREACH)
 
 	step_delay = 1
 

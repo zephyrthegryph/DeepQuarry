@@ -14,7 +14,7 @@
 	var/scan_duration = 50
 	var/obj/scanned_object
 	var/report_num = 0
-	var/list/priority_objects = list(/obj/machinery/artifact,
+	var/static/list/priority_objects = list(/obj/machinery/artifact,
 										/obj/machinery/auto_cloner,
 										/obj/machinery/power/supermatter,
 										/obj/structure/constructshell,

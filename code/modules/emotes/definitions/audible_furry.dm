@@ -156,8 +156,8 @@
 	key = "gyoh"
 	emote_message_3p = "gyohs."
 	emote_sound = 'sound/voice/teppi/whine1.ogg'
-	var/list/bigsound = list('sound/voice/teppi/gyooh1.ogg', 'sound/voice/teppi/gyooh2.ogg', 'sound/voice/teppi/gyooh3.ogg',  'sound/voice/teppi/gyooh4.ogg', 'sound/voice/teppi/gyooh5.ogg','sound/voice/teppi/gyooh6.ogg')
-	var/list/smolsound = list('sound/voice/teppi/whine1.ogg', 'sound/voice/teppi/whine2.ogg')
+	var/static/list/bigsound = list('sound/voice/teppi/gyooh1.ogg', 'sound/voice/teppi/gyooh2.ogg', 'sound/voice/teppi/gyooh3.ogg',  'sound/voice/teppi/gyooh4.ogg', 'sound/voice/teppi/gyooh5.ogg','sound/voice/teppi/gyooh6.ogg')
+	var/static/list/smolsound = list('sound/voice/teppi/whine1.ogg', 'sound/voice/teppi/whine2.ogg')
 
 /datum/decl/emote/audible/gyoh/get_emote_sound(mob/living/user)
 	if(istype(user, /mob/living/simple_mob/vore/alienanimals/teppi))
@@ -183,8 +183,8 @@
 	key = "rumble"
 	emote_message_3p = "rumbles contentedly."
 	emote_sound = 'sound/voice/teppi/whine1.ogg'
-	var/list/bigsound = list('sound/voice/teppi/rumble.ogg')
-	var/list/smolsound = list('sound/voice/teppi/cute_rumble.ogg')
+	var/static/list/bigsound = list('sound/voice/teppi/rumble.ogg')
+	var/static/list/smolsound = list('sound/voice/teppi/cute_rumble.ogg')
 
 /datum/decl/emote/audible/rumble/get_emote_sound(mob/living/user)
 	if(istype(user, /mob/living/simple_mob/vore/alienanimals/teppi))

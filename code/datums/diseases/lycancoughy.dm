@@ -12,8 +12,8 @@
 	desc = "If left untreated subject will regurgitate... puppies."
 	danger = DISEASE_HARMFUL
 	var/barklimit = 10
-	var/list/puppy_types = list(/mob/living/simple_mob/animal/passive/dog/corgi/puppy)
-	var/list/plush_types = list(/obj/item/toy/plushie/orange_fox, /obj/item/toy/plushie/corgi, /obj/item/toy/plushie/robo_corgi, /obj/item/toy/plushie/pink_fox)
+	var/static/list/puppy_types = list(/mob/living/simple_mob/animal/passive/dog/corgi/puppy)
+	var/static/list/plush_types = list(/obj/item/toy/plushie/orange_fox, /obj/item/toy/plushie/corgi, /obj/item/toy/plushie/robo_corgi, /obj/item/toy/plushie/pink_fox)
 
 /datum/disease/lycan/stage_act()
 	if(!..())

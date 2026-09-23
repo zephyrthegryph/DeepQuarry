@@ -13,7 +13,7 @@
 	desc = "If left untreated the subject... Won't stop dancing!"
 	danger = DISEASE_MINOR
 
-	var/list/dance = list(2,4,8,2,4,8,2,4,8,2,4,8,1,4,1,4,1,4,2,4,8,2)
+	var/static/list/dance = list(2,4,8,2,4,8,2,4,8,2,4,8,1,4,1,4,1,4,2,4,8,2)
 
 /datum/disease/choreomania/stage_act()
 	..()

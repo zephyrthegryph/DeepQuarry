@@ -324,13 +324,13 @@ GLOBAL_DATUM_INIT(gear_tweak_free_digestable, /datum/gear_tweak/toggle_digestabl
 //end of custom description
 
 /datum/gear_tweak/tablet
-	var/list/ValidProcessors = list(/obj/item/computer_hardware/processor_unit/small)
-	var/list/ValidBatteries = list(/obj/item/computer_hardware/battery_module/nano, /obj/item/computer_hardware/battery_module/micro, /obj/item/computer_hardware/battery_module)
-	var/list/ValidHardDrives = list(/obj/item/computer_hardware/hard_drive/micro, /obj/item/computer_hardware/hard_drive/small, /obj/item/computer_hardware/hard_drive)
-	var/list/ValidNetworkCards = list(/obj/item/computer_hardware/network_card, /obj/item/computer_hardware/network_card/advanced)
-	var/list/ValidNanoPrinters = list(null, /obj/item/computer_hardware/nano_printer)
-	var/list/ValidCardSlots = list(null, /obj/item/computer_hardware/card_slot)
-	var/list/ValidTeslaLinks = list(null, /obj/item/computer_hardware/tesla_link)
+	var/static/list/ValidProcessors = list(/obj/item/computer_hardware/processor_unit/small)
+	var/static/list/ValidBatteries = list(/obj/item/computer_hardware/battery_module/nano, /obj/item/computer_hardware/battery_module/micro, /obj/item/computer_hardware/battery_module)
+	var/static/list/ValidHardDrives = list(/obj/item/computer_hardware/hard_drive/micro, /obj/item/computer_hardware/hard_drive/small, /obj/item/computer_hardware/hard_drive)
+	var/static/list/ValidNetworkCards = list(/obj/item/computer_hardware/network_card, /obj/item/computer_hardware/network_card/advanced)
+	var/static/list/ValidNanoPrinters = list(null, /obj/item/computer_hardware/nano_printer)
+	var/static/list/ValidCardSlots = list(null, /obj/item/computer_hardware/card_slot)
+	var/static/list/ValidTeslaLinks = list(null, /obj/item/computer_hardware/tesla_link)
 
 /datum/gear_tweak/tablet/get_contents(list/metadata)
 	var/list/names = list()
@@ -473,13 +473,13 @@ GLOBAL_DATUM_INIT(gear_tweak_free_digestable, /datum/gear_tweak/toggle_digestabl
 	I.update_verbs()
 
 /datum/gear_tweak/laptop
-	var/list/ValidProcessors = list(/obj/item/computer_hardware/processor_unit/small, /obj/item/computer_hardware/processor_unit)
-	var/list/ValidBatteries = list(/obj/item/computer_hardware/battery_module, /obj/item/computer_hardware/battery_module/advanced, /obj/item/computer_hardware/battery_module/super)
-	var/list/ValidHardDrives = list(/obj/item/computer_hardware/hard_drive, /obj/item/computer_hardware/hard_drive/advanced, /obj/item/computer_hardware/hard_drive/super)
-	var/list/ValidNetworkCards = list(/obj/item/computer_hardware/network_card, /obj/item/computer_hardware/network_card/advanced)
-	var/list/ValidNanoPrinters = list(null, /obj/item/computer_hardware/nano_printer)
-	var/list/ValidCardSlots = list(null, /obj/item/computer_hardware/card_slot)
-	var/list/ValidTeslaLinks = list(null, /obj/item/computer_hardware/tesla_link)
+	var/static/list/ValidProcessors = list(/obj/item/computer_hardware/processor_unit/small, /obj/item/computer_hardware/processor_unit)
+	var/static/list/ValidBatteries = list(/obj/item/computer_hardware/battery_module, /obj/item/computer_hardware/battery_module/advanced, /obj/item/computer_hardware/battery_module/super)
+	var/static/list/ValidHardDrives = list(/obj/item/computer_hardware/hard_drive, /obj/item/computer_hardware/hard_drive/advanced, /obj/item/computer_hardware/hard_drive/super)
+	var/static/list/ValidNetworkCards = list(/obj/item/computer_hardware/network_card, /obj/item/computer_hardware/network_card/advanced)
+	var/static/list/ValidNanoPrinters = list(null, /obj/item/computer_hardware/nano_printer)
+	var/static/list/ValidCardSlots = list(null, /obj/item/computer_hardware/card_slot)
+	var/static/list/ValidTeslaLinks = list(null, /obj/item/computer_hardware/tesla_link)
 
 /datum/gear_tweak/laptop/get_contents(list/metadata)
 	var/list/names = list()

@@ -61,7 +61,7 @@
 	var/point_cap = 150; //with the "baseline" for a scene item being about 50, this is 3 scene items per round. fair enough for me I think
 	var/default_value = 5 //if something doesn't have a value, it's put to this. considering we use the whitelist to figure this out, it SHOULD never happen, but you never know.
 
-	var/list/item_whitelist = list(
+	var/static/list/item_whitelist = list(
 		/obj/item/holder/mouse = 1, //easy to get, and mostly just for comedic effect/justified mouse murder anyway
 		/mob/living = 1, //default for all mobs tbh
 		/obj/item/holder/micro = 1,
@@ -90,12 +90,12 @@
 		/obj/item/material/fishing_net/butterfly_net = 10
 	)
 
-	var/list/item_blacklist_general = list(
+	var/static/list/item_blacklist_general = list(
 		/obj/item/card/id,
 
 	) //anything that's passively blacklisted - even if they're part of the above, they'll be denied. this is in case you want to say, allow mice getting recycled, but not brown mice because that's racist
 
-	var/list/item_blacklist_hostile = list(
+	var/static/list/item_blacklist_hostile = list(
 		/obj/item/holder/catslug, //no scugs
 		/obj/item/holder/cat, //no murdering jones or runtime
 		/obj/item/organ/internal/brain, //posibrain murder
@@ -107,13 +107,13 @@
 	) //an active list of things that'll make the machine mad at you. Will refuse service, make an annoucement over sec comms (akin to the tipped medibot over med comms), and blast with a stun or two. no recycling scugs. Think of this as a super high priority no-touchy list.
 
 
-	var/list/success_sounds = list(
+	var/static/list/success_sounds = list(
 		'code/modules/maint_recycler/sfx/voice/thankyou/reduce-reuse-recycle.ogg',
 		'code/modules/maint_recycler/sfx/voice/thankyou/thankyouforkeepingclean.ogg',
 		'code/modules/maint_recycler/sfx/voice/thankyou/the-ecosystem-thanks-you.ogg'
 	)
 
-	var/list/angry_sounds = list(
+	var/static/list/angry_sounds = list(
 		'code/modules/maint_recycler/sfx/voice/mad/denied.ogg',
 		'code/modules/maint_recycler/sfx/voice/mad/die die die die.ogg',
 		'code/modules/maint_recycler/sfx/voice/mad/this will not stand.ogg'

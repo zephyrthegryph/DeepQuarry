@@ -17,7 +17,7 @@
 	circuit = /obj/item/circuitboard/papershredder
 	var/max_paper = 10
 	var/paperamount = 0
-	var/list/shred_amounts = list(
+	var/static/list/shred_amounts = list(
 		/obj/item/photo = 1,
 		/obj/item/shreddedp = 1,
 		/obj/item/paper = 1,

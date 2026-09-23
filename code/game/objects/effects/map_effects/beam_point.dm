@@ -15,8 +15,8 @@ GLOBAL_LIST_EMPTY(all_beam_points)
 	// Controls how and when the beam is created.
 	var/make_beams_on_init = FALSE
 	var/use_timer = FALSE // Sadly not the /tg/ timers.
-	var/list/on_duration = list(2 SECONDS, 2 SECONDS, 2 SECONDS) // How long the beam should stay on for, if use_timer is true. Alternates between each duration in the list.
-	var/list/off_duration = list(3 SECONDS, 0.5 SECOND, 0.5 SECOND) // How long it should stay off for. List length is not needed to be the same as on_duration.
+	var/static/list/on_duration = list(2 SECONDS, 2 SECONDS, 2 SECONDS) // How long the beam should stay on for, if use_timer is true. Alternates between each duration in the list.
+	var/static/list/off_duration = list(3 SECONDS, 0.5 SECOND, 0.5 SECOND) // How long it should stay off for. List length is not needed to be the same as on_duration.
 	var/timer_on_index = 1 // Index to use for on_duration list.
 	var/timer_off_index = 1// Ditto, for off_duration list.
 	var/initial_delay = 0 // How long to wait before first turning on the beam, to sync beam times or create a specific pattern.

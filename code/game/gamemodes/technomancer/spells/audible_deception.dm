@@ -15,7 +15,7 @@
 	cast_methods = CAST_RANGED | CAST_USE
 	aspect = ASPECT_AIR
 	cooldown = 10
-	var/list/available_sounds = list(
+	var/static/list/available_sounds = list(
 		"Blade Slice"			=	'sound/weapons/bladeslice.ogg',
 		"Energy Blade Slice"	=	'sound/weapons/blade1.ogg',
 		"Explosions"			=	"explosion",

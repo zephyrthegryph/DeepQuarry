@@ -16,7 +16,7 @@
 	var/goodie_count = 1
 	// Goodies which can be given to anyone.
 	/// Weight sum will be 1000
-	var/list/generic_goodies = list(
+	var/static/list/generic_goodies = list(
 		/obj/item/spacecash/c50 = 75,
 		/obj/item/reagent_containers/food/drinks/cans/cola = 75,
 		/obj/item/reagent_containers/food/snacks/chips = 75,

@@ -5,7 +5,7 @@
 	icon_state = "extraction_pack"
 	w_class = ITEMSIZE_NORMAL
 	var/obj/structure/extraction_point/beacon
-	var/list/beacon_networks = list("station")
+	var/static/list/beacon_networks = list("station")
 	var/uses_left = 3
 	var/can_use_indoors = TRUE // Can be used anywhere.
 	var/safe_for_living_creatures = 1

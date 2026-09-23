@@ -7,19 +7,19 @@
 									"Does %product_name% threaten to reorganize the %industrial% status quo?", \
 									"%company_name% headed toward corporate renaissance with %product_name%")
 
-	var/list/title_templates_neutral = list("%product_name%: as if nothing happened", \
+	var/static/list/title_templates_neutral = list("%product_name%: as if nothing happened", \
 											"Nothing new but the name: %product_name% not quite exciting %jobs%", \
 											"Same old %company_name%, same old product", \
 											"%product_name% underwhelms, but sells")
 
-	var/list/title_templates_bad = list("%product_name% shaping up to be the disappointment of the century", \
+	var/static/list/title_templates_bad = list("%product_name% shaping up to be the disappointment of the century", \
 										"Recipe for disaster: %company_name% releases %product_name%", \
 										"Atrocious quality - %jobs% boycott %product_name%", \
 										"%product_name%: Inside the worst product launch in recent history")
 
 	var/list/title_templates_ooc = list("%company_name% is looking to enter the %industry% playing field with %product_name%", \
 										"%company_name% broadens spectrum, %product_name% is their latest and greatest")
-	var/list/subtitle_templates = list(	"%author% investigates whether or not you should invest!", \
+	var/static/list/subtitle_templates = list(	"%author% investigates whether or not you should invest!", \
 										"%outlet%'s very own %author% takes it to the magnifying glass", \
 										"%outlet% lets you know if you should use it", \
 										"Read our top tips for investors", \

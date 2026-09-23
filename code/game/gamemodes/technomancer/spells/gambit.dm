@@ -15,7 +15,7 @@
 	icon_state = "gambit"
 	cast_methods = CAST_USE
 	aspect = ASPECT_UNSTABLE
-	var/list/rare_spells = list(
+	var/static/list/rare_spells = list(
 		/obj/item/spell/modifier/mend_all
 	)
 

@@ -11,7 +11,7 @@ GLOBAL_DATUM(rm_controller, /datum/controller/rogue)
 	var/list/datum/rogue/zonemaster/ready_zones = list()
 
 	//So I don't have to do absurd list[list[thing]] over and over.
-	var/list/diffstep_nums = list(
+	var/static/list/diffstep_nums = list(
 		100,
 		350,
 		600,
@@ -19,7 +19,7 @@ GLOBAL_DATUM(rm_controller, /datum/controller/rogue)
 		1250,
 		1700)
 
-	var/list/diffstep_chances = list(
+	var/static/list/diffstep_chances = list(
 		10,
 		20,
 		30,
@@ -27,7 +27,7 @@ GLOBAL_DATUM(rm_controller, /datum/controller/rogue)
 		60,
 		80)
 
-	var/list/diffstep_strs = list(
+	var/static/list/diffstep_strs = list(
 		"Low",
 		"Moderate",
 		"High",

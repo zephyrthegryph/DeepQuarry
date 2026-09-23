@@ -3,7 +3,7 @@
 	var/list/obj/machinery/door/airlock/target_airlocks = list()
 	var/obj/machinery/power/apc/apc
 
-	var/list/excluded = list(
+	var/static/list/excluded = list(
 		/area/shuttle,
 		/area/crew_quarters,
 		/area/holodeck,

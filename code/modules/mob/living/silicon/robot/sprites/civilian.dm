@@ -204,7 +204,7 @@
 	rest_sprite_options = list("Default")
 	has_extra_customization = TRUE
 
-	var/list/booze_options = list(REAGENT_BEER = "booze",
+	var/static/list/booze_options = list(REAGENT_BEER = "booze",
 								  "Space Mountain Wind" = "boozegreen",
 								  "Curacao" = "boozeblue",
 								  REAGENT_GRAPESODA = "boozepurple",
