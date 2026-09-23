@@ -20,8 +20,6 @@
 GLOBAL_DATUM_INIT(world_clock, /datum/clock/world, new)
 /// Log CLOCK: lines for rebinds, schedules and fires (speed changes and late events always log).
 GLOBAL_VAR_INIT(clock_trace, FALSE)
-/// Unit tests only: the world time clocks read (CLOCK_WORLD_TIME). Null in play.
-GLOBAL_VAR_INIT(clock_time_override, null)
 
 /// One pending event. The event itself is the handle: a fired or cancelled event has a null
 /// `clock`, so a stale handle never cancels anything, and it drops its target so a caller that
@@ -70,7 +68,7 @@ GLOBAL_VAR_INIT(clock_time_override, null)
 	src.kind = kind
 	src.own_speed = max(own_speed, 0)
 	src.provider = provider
-	base_world = CLOCK_WORLD_TIME
+	base_world = parent ? parent.world_now() : world.time
 	speed = src.own_speed
 	if(parent)
 		set_parent(parent)
@@ -110,13 +108,18 @@ GLOBAL_VAR_INIT(clock_time_override, null)
 	provider = null
 	return ..()
 
+/// The world time (deciseconds) this clock reads: world.time, or its root clock's time source.
+/// Only test clocks (dq_clock_tests.dm) override it; nothing global is ever shifted.
+/datum/clock/proc/world_now()
+	return parent ? parent.world_now() : world.time
+
 /// Clock seconds now.
 /datum/clock/proc/now()
-	return base_clock + CLOCK_SECONDS(CLOCK_WORLD_TIME - base_world) * speed
+	return base_clock + CLOCK_SECONDS(world_now() - base_world) * speed
 
 /// Fold elapsed time into the base: base_* := now.
 /datum/clock/proc/rebase()
-	var/t = CLOCK_WORLD_TIME
+	var/t = world_now()
 	base_clock += CLOCK_SECONDS(t - base_world) * speed
 	base_world = t
 
@@ -145,9 +148,16 @@ GLOBAL_VAR_INIT(clock_time_override, null)
 	parent = new_parent
 	if(parent)
 		LAZYADD(parent.children, src)
+	// Folded at the old time source above; restart the bases on the new one.
+	restart_base_tree()
 	respeed_tree()
 	if(GLOB.clock_trace)
 		log_runtime("CLOCK: [debug_name()] composed on [parent ? parent.debug_name() : "nothing"], speed [speed]")
+
+/datum/clock/proc/restart_base_tree()
+	base_world = world_now()
+	for(var/datum/clock/child as anything in children)
+		child.restart_base_tree()
 
 /datum/clock/proc/rebase_tree()
 	rebase()
@@ -258,10 +268,8 @@ GLOBAL_VAR_INIT(clock_time_override, null)
 		return
 	// A deadline in the past fires on the next reactor step (reactor.md §3).
 	react_due = world_time_of(first.at_clock)
-	var/due = react_due
-	if(!isnull(GLOB.clock_time_override))
-		// Tests pin the clocks' time; the reactor still runs on real time.
-		due = world.time + (react_due - GLOB.clock_time_override)
+	// The reactor runs on world.time; a test clock's time source is offset from it.
+	var/due = world.time + (react_due - world_now())
 	react_token = REACT_AT(src, due)
 
 /datum/clock/on_react(reason, source, source_kind)
@@ -288,7 +296,7 @@ GLOBAL_VAR_INIT(clock_time_override, null)
 			log_runtime("CLOCK: [debug_name()] skipped [proc_ref] for a deleted [target?.type]: its Destroy() did not cancel it")
 			continue
 		if(!isnull(react_due) && speed > 0)
-			var/late = CLOCK_WORLD_TIME - world_time_of(at_clock)
+			var/late = world_now() - world_time_of(at_clock)
 			if(late > world.tick_lag * 2)
 				log_runtime("CLOCK: [debug_name()] fired [proc_ref] on [target.type] [late / (1 SECONDS)]s late")
 		if(GLOB.clock_trace)

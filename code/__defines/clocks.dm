@@ -18,10 +18,6 @@
 /// Probability for an event with chance `p_nominal` per nominal Life cycle, over `seconds`.
 #define PROB_OVER(p_nominal, seconds) (100 * (1 - (1 - (p_nominal) / 100) ** ((seconds) / LIFE_NOMINAL_SECONDS)))
 
-/// The world time clocks read. Unit tests pin it with GLOB.clock_time_override so the clock
-/// arithmetic can be checked without waiting; it is always null in play.
-#define CLOCK_WORLD_TIME (isnull(GLOB.clock_time_override) ? world.time : GLOB.clock_time_override)
-
 /// Event record slots in /datum/clock/var/events[handle].
 #define CLOCK_EVENT_AT 1
 #define CLOCK_EVENT_TARGET 2

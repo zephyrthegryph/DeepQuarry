@@ -2,9 +2,10 @@
 // speed 0, composition, rebinding, cancellation on deletion, nested holders, split invariance
 // of every clocked type, the reactor path, life_wake_in() on clocks, and PROB_OVER.
 //
-// Most tests pin the clocks' world time with GLOB.clock_time_override and call fire_due()
-// directly, so the arithmetic is checked exactly and without waiting. One test goes through
-// the real REACT_AT path.
+// Most tests run on a private test clock (/datum/clock/test) whose time source is a var the
+// test owns, and call fire_due() directly, so the arithmetic is checked exactly and without
+// waiting. Nothing global is shifted: GLOB.world_clock and world.time are never touched. One
+// test goes through the real REACT_AT path on real time.
 
 #if defined(UNIT_TESTS) || defined(SPACEMAN_DMM)
 
@@ -49,20 +50,49 @@
 /obj/clock_test_plain
 	name = "clock test bag"
 
-/// Base: pins clock time; subtypes move it with advance().
+/// A root clock with an injected time source: it reads `test_time`, which only its test moves.
+/// Clocks composed on it read the same source (world_now() walks to the root).
+/datum/clock/test
+	var/test_time = 0
+
+/datum/clock/test/New(kind, own_speed, datum/clock/parent, datum/provider)
+	test_time = world.time
+	..(kind, own_speed, null, provider)
+
+/datum/clock/test/world_now()
+	return test_time
+
+/datum/clock/test/set_parent(datum/clock/new_parent)
+	return
+
+/// The test's stand-in for the floor: provides the private test clock at speed 1.
+/obj/clock_test_root
+	name = "clock test root"
+
+/obj/clock_test_root/provided_clock()
+	if(!own_clock)
+		own_clock = new /datum/clock/test(CLOCK_KIND_HOLDER, 1, null, src)
+		own_clock.tie(src)
+	return own_clock
+
+/// Base: every Run() starts with pin(), which makes the private root; advance() moves only its
+/// time source.
 /datum/unit_test/dq_clock
 	abstract_type = /datum/unit_test/dq_clock
+	var/obj/clock_test_root/root
+	var/datum/clock/test/time
 
-/// Pins clock time at the current world time. Every Run() starts with it.
 /datum/unit_test/dq_clock/proc/pin()
-	GLOB.clock_time_override = world.time
+	root = allocate(/obj/clock_test_root)
+	time = root.provided_clock()
 
 /datum/unit_test/dq_clock/Destroy()
-	GLOB.clock_time_override = null
+	root = null
+	time = null
 	return ..()
 
 /datum/unit_test/dq_clock/proc/advance(seconds)
-	GLOB.clock_time_override += seconds SECONDS
+	time.test_time += seconds SECONDS
 
 /datum/unit_test/dq_clock/proc/fire(datum/clock/C)
 	return C.fire_due()
@@ -73,9 +103,9 @@
 
 /datum/unit_test/dq_clock/speed_change/Run()
 	pin()
-	var/datum/clock/C = allocate(/datum/clock, CLOCK_KIND_HOLDER, 1)
+	var/datum/clock/C = allocate(/datum/clock, CLOCK_KIND_HOLDER, 1, time)
 	var/datum/clock_test_recorder/R = allocate(/datum/clock_test_recorder)
-	var/start = GLOB.clock_time_override
+	var/start = time.test_time
 	var/datum/clock_event/E = C.schedule_in(R, 100, TYPE_PROC_REF(/datum/clock_test_recorder, on_clock), "a")
 	TEST_ASSERT_EQUAL(C.world_time_of(E.at_clock), start + 100 SECONDS, "at speed 1 the event maps to world +100 s")
 	TEST_ASSERT(C.react_token, "a pending event arms one reactor token")
@@ -112,7 +142,7 @@
 
 /datum/unit_test/dq_clock/ordering_and_cancel/Run()
 	pin()
-	var/datum/clock/C = allocate(/datum/clock, CLOCK_KIND_HOLDER, 1)
+	var/datum/clock/C = allocate(/datum/clock, CLOCK_KIND_HOLDER, 1, time)
 	var/datum/clock_test_recorder/R = allocate(/datum/clock_test_recorder)
 	var/on_clock = TYPE_PROC_REF(/datum/clock_test_recorder, on_clock)
 	C.schedule_in(R, 30, on_clock, "third")
@@ -136,7 +166,7 @@
 
 /datum/unit_test/dq_clock/composition/Run()
 	pin()
-	var/obj/clock_test_holder/freezer = allocate(/obj/clock_test_holder)
+	var/obj/clock_test_holder/freezer = allocate(/obj/clock_test_holder, root)
 	var/obj/clock_test_holder/cryobag = allocate(/obj/clock_test_holder, freezer)
 	cryobag.clock_speed = 0.01
 	var/obj/clock_test_probe/in_bag = allocate(/obj/clock_test_probe, cryobag)
@@ -146,7 +176,7 @@
 	TEST_ASSERT(abs(bag_clock.speed - 0.001) < 1e-9, "composed speed is the product ([bag_clock.speed])")
 
 	in_bag.clock_bind()
-	var/start = GLOB.clock_time_override
+	var/start = time.test_time
 	var/datum/clock_event/E = in_bag.clock_schedule_in(1, TYPE_PROC_REF(/obj/clock_test_probe, threshold_reached))
 	TEST_ASSERT(abs(bag_clock.world_time_of(E.at_clock) - (start + 1000 SECONDS)) < 0.01, "1 clock second at 0.001 is 1000 world seconds")
 	advance(100)
@@ -171,7 +201,7 @@
 
 /datum/unit_test/dq_clock/rebind/Run()
 	pin()
-	var/obj/clock_test_holder/holder = allocate(/obj/clock_test_holder)
+	var/obj/clock_test_holder/holder = allocate(/obj/clock_test_holder, root)
 	var/obj/clock_test_probe/P = allocate(/obj/clock_test_probe, holder)
 	P.threshold = 30
 	P.clock_bind()
@@ -180,11 +210,11 @@
 	advance(100)
 	P.forceMove(holder.loc)
 	P.clock_on_moved() // The J5 move hook's clock side.
-	TEST_ASSERT_EQUAL(P.bound_clock, GLOB.world_clock, "on the floor it runs on the world clock")
+	TEST_ASSERT_EQUAL(P.bound_clock, time, "out of the holder it runs on the root clock (speed 1)")
 	TEST_ASSERT(abs(P.decay - 10) < 1e-6, "settled at 0.1 up to the move ([P.decay])")
 	var/datum/clock_event/E = P.clock_handles
-	TEST_ASSERT(istype(E) && E.clock == GLOB.world_clock, "the threshold event moved with it")
-	TEST_ASSERT(abs(E.at_clock - GLOB.world_clock.now() - 20) < 1e-6, "with its remaining 20 clock seconds")
+	TEST_ASSERT(istype(E) && E.clock == time, "the threshold event moved with it")
+	TEST_ASSERT(abs(E.at_clock - time.now() - 20) < 1e-6, "with its remaining 20 clock seconds")
 	advance(100)
 	P.clock_settle()
 	TEST_ASSERT(abs(P.decay - 110) < 1e-6, "and at 1 after it ([P.decay])")
@@ -197,7 +227,7 @@
 
 /datum/unit_test/dq_clock/deletion/Run()
 	pin()
-	var/datum/clock/C = allocate(/datum/clock, CLOCK_KIND_HOLDER, 1)
+	var/datum/clock/C = allocate(/datum/clock, CLOCK_KIND_HOLDER, 1, time)
 	var/datum/clock_test_recorder/R = new
 	C.schedule_in(R, 5, TYPE_PROC_REF(/datum/clock_test_recorder, on_clock))
 	TEST_ASSERT(C in R.clock_ties, "the target is tied to the clock")
@@ -209,7 +239,7 @@
 
 	// A holder that stops providing a clock: its contents rebind to the parent clock and keep
 	// their events.
-	var/obj/clock_test_holder/outer = allocate(/obj/clock_test_holder)
+	var/obj/clock_test_holder/outer = allocate(/obj/clock_test_holder, root)
 	outer.clock_speed = 0.5
 	var/obj/clock_test_holder/inner = allocate(/obj/clock_test_holder, outer)
 	var/obj/clock_test_probe/P = allocate(/obj/clock_test_probe, inner)
@@ -230,11 +260,11 @@
 	TEST_ASSERT(abs(P.decay - 10) < 1e-6, "at the threshold level ([P.decay])")
 
 	// A deleted provider deletes its clock, and nothing keeps it.
-	var/obj/clock_test_holder/gone = new(run_loc_floor_bottom_left)
+	var/obj/clock_test_holder/gone = new(root)
 	var/datum/clock/gone_clock = gone.provided_clock()
 	qdel(gone)
 	TEST_ASSERT(QDELETED(gone_clock), "deleting the provider deleted its clock")
-	TEST_ASSERT(!(gone_clock in GLOB.world_clock.children), "and unhooked it from its parent")
+	TEST_ASSERT(!(gone_clock in time.children), "and unhooked it from its parent")
 
 /// Split invariance: settling N times over T gives the same state as settling once over T, for
 /// every clocked type (generated over `clocked` types).
@@ -248,7 +278,7 @@
 		if(!initial(prototype.clocked))
 			continue
 		checked++
-		var/obj/clock_test_holder/holder = allocate(/obj/clock_test_holder)
+		var/obj/clock_test_holder/holder = allocate(/obj/clock_test_holder, root)
 		var/obj/split = allocate(path, holder)
 		var/obj/once = allocate(path, holder)
 		split.clock_bind()
@@ -274,7 +304,7 @@
 
 /datum/unit_test/dq_clock/life_wake_in/Run()
 	pin()
-	var/obj/clock_test_holder/holder = allocate(/obj/clock_test_holder)
+	var/obj/clock_test_holder/holder = allocate(/obj/clock_test_holder, root)
 	holder.clock_speed = 0.5
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human, holder)
 	H.life_wake_in(LIFE_SYS_BODY, 10 SECONDS)
@@ -285,11 +315,11 @@
 	H.life_wake_in(LIFE_SYS_BODY, 10 SECONDS, CLOCK_KIND_BODY)
 	var/datum/life_timed_wake/B = H.life_timed_wakes[CLOCK_KIND_BODY]
 	TEST_ASSERT_EQUAL(B.clock, holder.own_clock, "body kind is on the mob's body clock (its holder's until K2)")
-	TEST_ASSERT(abs(B.clock.world_time_of(B.at) - (GLOB.clock_time_override + 20 SECONDS)) < 0.01, "a half-speed clock stretches a 10 s body wake to 20 s")
+	TEST_ASSERT(abs(B.clock.world_time_of(B.at) - (time.test_time + 20 SECONDS)) < 0.01, "a half-speed clock stretches a 10 s body wake to 20 s")
 	H.life_awake &= ~LIFE_SYS_BODY
 	advance(10)
-	// Fire only this mob's wake (firing the whole world clock would run other mobs' wakes).
-	TEST_ASSERT(W.at <= GLOB.world_clock.now(), "the world wake is due at 10 s")
+	// The world clock runs on real time and is shared, so fire only this mob's world wake by
+	// hand rather than moving it.
 	H.life_timed_wake_fired(CLOCK_KIND_WORLD)
 	TEST_ASSERT(H.life_awake & LIFE_SYS_BODY, "the world wake woke its systems")
 	TEST_ASSERT_EQUAL(H.life_timed_wake_bits(CLOCK_KIND_WORLD), NONE, "and is spent")

@@ -456,9 +456,11 @@ K1 lands first. K2 to K5 run in parallel after it.
   `life_body_clock()`, which is `provided_clock() || holder_clock()`; K2's
   `/mob/living/provided_clock()` makes it the body clock. `rewake_delay()` is unchanged (every
   caller is world kind); K2 converts it to `rewake()`.
-- **Test time.** `GLOB.clock_time_override` (null in play) pins the world time clocks read, so
-  the clock tests check the arithmetic exactly by calling `fire_due()`. One test goes through
-  the real `REACT_AT` path.
+- **Time source.** A clock reads world time through `world_now()`, which walks to its root clock
+  (`world.time` for real clocks). The tests use a private root, `/datum/clock/test`, whose
+  `world_now()` reads a var the test owns, and call `fire_due()` directly, so the arithmetic is
+  checked exactly. Nothing global is shifted; `GLOB.world_clock` is never pinned. One test goes
+  through the real `REACT_AT` path on real time.
 - **Lint.** `tools/ci/check_body_time.py` with `tools/ci/body_time_allowlist.txt`
   (`rule<TAB>file<TAB>count`, a per-file ratchet; `--update` rewrites it). Rules 1-3 and 5 are
   ratcheted; rule 4 (`world.time` in `on_settle`/`life_tick`) has no allowlist. Rule 3 scans all
