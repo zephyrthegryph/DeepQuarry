@@ -45,8 +45,11 @@
 	melee_damage_upper = 7
 
 
-/mob/living/simple_mob/homunculus/evil/Life()
-	handle_homunculus()
+/datum/life_system/type_pre/simple_mob/homunculus/evil
+	mob_type = /mob/living/simple_mob/homunculus/evil
+
+/datum/life_system/type_pre/simple_mob/homunculus/evil/tick(mob/living/simple_mob/homunculus/evil/self, datum/life_context/ctx)
+	self.handle_homunculus()
 	return ..()
 
 /mob/living/simple_mob/homunculus/evil/proc/handle_homunculus()

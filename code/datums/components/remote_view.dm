@@ -68,8 +68,8 @@
 
 /datum/component/remote_view/RegisterWithParent()
 	// Update the mob's vision after we attach.
-	host_mob.handle_vision()
-	host_mob.handle_regular_hud_updates()
+	host_mob.refresh_vision()
+	host_mob.refresh_hud()
 	settings.attached_to_mob(src, host_mob)
 
 /datum/component/remote_view/Destroy(force)
@@ -120,8 +120,8 @@
 	if(!QDELETED(host_mob))
 		settings.detatch_from_mob(src, host_mob)
 		settings.handle_remove_visuals(src, host_mob)
-		host_mob.handle_vision()
-		host_mob.handle_regular_hud_updates()
+		host_mob.refresh_vision()
+		host_mob.refresh_hud()
 	host_mob = null
 	remote_view_target = null
 	// Clear settings
@@ -321,7 +321,7 @@
 	show_message = show_visible_messages
 	if(show_message)
 		host_mob.visible_message(span_filter_notice("[host_mob] peers through the [host_item.zoomdevicename ? "[host_item.zoomdevicename] of the [host_item.name]" : "[host_item.name]"]."))
-	host_mob.handle_vision()
+	host_mob.refresh_vision()
 
 /datum/component/remote_view/item_zoom/Destroy(force)
 	// Feedback
@@ -332,7 +332,7 @@
 	if(host_mob.client)
 		host_mob.client.pixel_x = 0
 		host_mob.client.pixel_y = 0
-	host_mob.handle_vision()
+	host_mob.refresh_vision()
 	// decouple
 	UnregisterSignal(host_item, COMSIG_QDELETING)
 	UnregisterSignal(host_item, COMSIG_MOVABLE_MOVED)

@@ -10,7 +10,7 @@ jittery process - wiggles the mob's pixel offset over time
 	if (!ismob(parent))
 		return COMPONENT_INCOMPATIBLE
 	owner = parent
-	RegisterSignal(owner, COMSIG_LIVING_LIFE, PROC_REF(process_life))
+	add_trait_life_system(owner, /datum/life_system/trait/jittery_shake)
 	RegisterSignal(owner, COMSIG_MOB_DEATH, PROC_REF(mob_death))
 	addtimer(CALLBACK(src, PROC_REF(handle_tick)), 1, TIMER_DELETE_ME) // Needs to be a LOT faster than life ticks
 
@@ -54,7 +54,7 @@ jittery process - wiggles the mob's pixel offset over time
 	qdel(src)
 
 /datum/component/jittery_shake/Destroy(force = FALSE)
-	UnregisterSignal(owner, COMSIG_LIVING_LIFE)
+	remove_trait_life_system(owner, /datum/life_system/trait/jittery_shake)
 	UnregisterSignal(owner, COMSIG_MOB_DEATH)
 	// Reset the pixel offsets to zero
 	owner.pixel_x = owner.old_x
@@ -91,3 +91,11 @@ below 100 is not jittery
 
 /mob/living/silicon/get_jittery()
 	return 0
+
+/// Trait system: jitters wear off. Was a COMSIG_LIVING_LIFE listener.
+/datum/life_system/trait/jittery_shake
+	name = "jittery shake"
+	component_type = /datum/component/jittery_shake
+
+/datum/life_system/trait/jittery_shake/tick_component(mob/living/self, datum/component/jittery_shake/component)
+	component.process_life()

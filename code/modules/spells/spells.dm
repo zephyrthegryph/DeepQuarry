@@ -3,6 +3,10 @@
 
 /mob/Life()
 	..()
+	update_spell_masters()
+
+/// Refreshes the spell HUD buttons. Part of every mob's upkeep (living mobs: the upkeep system).
+/mob/proc/update_spell_masters()
 	if(spell_masters && spell_masters.len)
 		for(var/atom/movable/screen/movable/spell_master/spell_master in spell_masters)
 			spell_master.update_spells(0, src)

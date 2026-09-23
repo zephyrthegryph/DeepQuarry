@@ -90,9 +90,12 @@
 /mob/living/simple_mob/animal/space/space_worm/head/long
 	segment_count = 10
 
-/mob/living/simple_mob/animal/space/space_worm/head/handle_special()
+/datum/life_system/special/animal/space/space_worm/head
+	mob_type = /mob/living/simple_mob/animal/space/space_worm/head
+
+/datum/life_system/special/animal/space/space_worm/head/tick(mob/living/simple_mob/animal/space/space_worm/head/self, datum/life_context/ctx)
 	..()
-	update_body_faction()
+	self.update_body_faction()
 
 /mob/living/simple_mob/animal/space/space_worm/head/update_icon()
 	..()
@@ -151,27 +154,30 @@
 	if(previous)
 		previous.death()
 
-/mob/living/simple_mob/animal/space/space_worm/handle_special()	// Processed in life. Nicer to have it modular incase something in Life change(d)(s)
+/datum/life_system/special/animal/space/space_worm
+	mob_type = /mob/living/simple_mob/animal/space/space_worm
+
+/datum/life_system/special/animal/space/space_worm/tick(mob/living/simple_mob/animal/space/space_worm/self, datum/life_context/ctx)
 	..()
 
-	if(world.time > time_maw_opened + maw_cooldown)	// Auto-stop eating.
-		if(open_maw)
-			to_chat(src, span_notice("Your jaws cannot remain open.."))
-			set_maw(FALSE)
+	if(world.time > self.time_maw_opened + self.maw_cooldown)	// Auto-stop eating.
+		if(self.open_maw)
+			to_chat(self, span_notice("Your jaws cannot remain open.."))
+			self.set_maw(FALSE)
 
-	if(next && !(next in view(src,1)) && !z_transitioning)
-		Detach(1)
+	if(self.next && !(self.next in view(self,1)) && !self.z_transitioning)
+		self.Detach(1)
 
-	if(stat == DEAD && sever_chunks) // Dead chunks fall off and die immediately if we sever_chunks
-		if(previous)
-			previous.Detach(1)
-		if(next)
-			Detach(1)
+	if(self.stat == DEAD && self.sever_chunks) // Dead chunks fall off and die immediately if we sever_chunks
+		if(self.previous)
+			self.previous.Detach(1)
+		if(self.next)
+			self.Detach(1)
 
-	if(prob(stomachProcessProbability))
-		ProcessStomach()
+	if(prob(self.stomachProcessProbability))
+		self.ProcessStomach()
 
-	update_icon()
+	self.update_icon()
 
 	return
 

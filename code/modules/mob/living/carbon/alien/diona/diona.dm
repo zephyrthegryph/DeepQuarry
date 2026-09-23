@@ -67,7 +67,7 @@ GLOBAL_LIST_INIT(nymph_default_emotes, list(
 	new_hat.loc = src
 	update_icons()
 
-/mob/living/carbon/alien/diona/proc/handle_npc(mob/living/carbon/alien/diona/D)
+/mob/living/carbon/alien/diona/proc/npc_behaviour(mob/living/carbon/alien/diona/D)
 	if(D.stat != CONSCIOUS)
 		return
 	if(prob(33) && D.canmove && isturf(D.loc) && !D.pulledby) //won't move if being pulled

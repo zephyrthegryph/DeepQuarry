@@ -44,8 +44,11 @@
 				"bio" = 100,
 				"rad" = 100)
 
-/mob/living/simple_mob/construct/juggernaut/Life()
-	SetWeakened(0)
+/datum/life_system/type_pre/simple_mob/construct/juggernaut
+	mob_type = /mob/living/simple_mob/construct/juggernaut
+
+/datum/life_system/type_pre/simple_mob/construct/juggernaut/tick(mob/living/simple_mob/construct/juggernaut/self, datum/life_context/ctx)
+	self.SetWeakened(0)
 	..()
 
 /mob/living/simple_mob/construct/juggernaut/bullet_act(obj/item/projectile/P)

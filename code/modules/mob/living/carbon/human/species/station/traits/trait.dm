@@ -201,5 +201,5 @@
 		return default_value_for_pref(pref)
 	return input
 
-/datum/trait/proc/handle_environment_special(mob/living/carbon/human/H)
+/datum/trait/proc/environment_effects(mob/living/carbon/human/H)
 	return

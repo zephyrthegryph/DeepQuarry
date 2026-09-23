@@ -1,5 +1,5 @@
 /datum/component/burninlight
-	// This is a merge of the old shadow species light burning life code, and Zaddat's handle_environment_special() proc.
+	// This is a merge of the old shadow species light burning life code, and Zaddat's environment_effects() proc.
 	// It handles both cases, but shadows behave more like Zaddat do now. By default this code follows Zaddat damage with no healing.
 	var/threshold = 0.2 // percent from 0 to 1
 	// Damage or healing per life tick
@@ -16,10 +16,10 @@
 		return COMPONENT_INCOMPATIBLE
 
 /datum/component/burninlight/RegisterWithParent()
-	RegisterSignal(parent, COMSIG_LIVING_LIFE, PROC_REF(process_component))
+	add_trait_life_system(parent, /datum/life_system/trait/burninlight)
 
 /datum/component/burninlight/UnregisterFromParent()
-	UnregisterSignal(parent, list(COMSIG_LIVING_LIFE))
+	remove_trait_life_system(parent, /datum/life_system/trait/burninlight)
 
 /datum/component/burninlight/proc/process_component()
 	SIGNAL_HANDLER
@@ -58,3 +58,11 @@
 	else if(heal_rate > 0)
 		owner.mend(TREAT_TISSUE_REPAIR, heal_rate)
 		owner.mend(TREAT_BURN_CARE, heal_rate)
+
+/// Trait system: light burns. Was a COMSIG_LIVING_LIFE listener.
+/datum/life_system/trait/burninlight
+	name = "burninlight"
+	component_type = /datum/component/burninlight
+
+/datum/life_system/trait/burninlight/tick_component(mob/living/self, datum/component/burninlight/component)
+	component.process_component()

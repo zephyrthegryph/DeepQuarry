@@ -186,30 +186,33 @@
 		"The chaos of being digested fades as you're snuffed out by a harsh clench! You're steadily broken down into a thick paste, processed and absorbed by the predator!"
 		)
 
-/mob/living/simple_mob/shadekin/Life()
+/datum/life_system/type_post/simple_mob/shadekin
+	mob_type = /mob/living/simple_mob/shadekin
+
+/datum/life_system/type_post/simple_mob/shadekin/tick(mob/living/simple_mob/shadekin/self, datum/life_context/ctx)
 	. = ..()
-	if(comp.in_phase)
-		density = FALSE
+	if(self.comp.in_phase)
+		self.density = FALSE
 
 	//Convert spare nutrition into energy at a certain ratio
-	if(. && nutrition > initial(nutrition) && comp.dark_energy < 100)
-		nutrition = max(0, nutrition-5)
-		comp.dark_energy = min(100,comp.dark_energy+1)
-	if(!client && check_for_observer && check_timer++ > 5)
-		check_timer = 0
+	if(. && self.nutrition > initial(self.nutrition) && self.comp.dark_energy < 100)
+		self.nutrition = max(0, self.nutrition-5)
+		self.comp.dark_energy = min(100,self.comp.dark_energy+1)
+	if(!self.client && self.check_for_observer && self.check_timer++ > 5)
+		self.check_timer = 0
 		var/non_kin_count = 0
-		for(var/mob/living/M in view(6,src))
+		for(var/mob/living/M in view(6,self))
 			if(!issimplekin(M))
 				non_kin_count ++
 		// Technically can be combined with ||, they call the same function, but readability is poor
-		if(!non_kin_count && (comp.in_phase))
-			phase_shift() // shifting back in, nobody present
-		else if (non_kin_count && !(comp.in_phase))
-			phase_shift() // shifting out, scaredy
+		if(!non_kin_count && (self.comp.in_phase))
+			self.phase_shift() // shifting back in, nobody present
+		else if (non_kin_count && !(self.comp.in_phase))
+			self.phase_shift() // shifting out, scaredy
 
 	//They reach nutritional equilibrium (important for blue-eyes healbelly)
 	if(.)
-		comp.handle_comp()
+		self.comp.handle_comp()
 
 /mob/living/simple_mob/shadekin/update_icon()
 	. = ..()

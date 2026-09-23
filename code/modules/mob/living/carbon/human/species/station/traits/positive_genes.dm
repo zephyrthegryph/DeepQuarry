@@ -138,7 +138,7 @@
 	activation_message="Your muscles hurt."
 	deactivation_message=span_warning("You suddenly feel very weak.")
 
-/datum/trait/positive/superpower_hulk/handle_environment_special(mob/living/carbon/human/H)
+/datum/trait/positive/superpower_hulk/environment_effects(mob/living/carbon/human/H)
 	if(H.vitality() <= 0.25)
 		if(H.dna)
 			H.dna.SetSEState(linked_gene.block, FALSE, FALSE) // Turn this thing off or so help me--

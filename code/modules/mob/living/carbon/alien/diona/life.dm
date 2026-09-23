@@ -1,19 +1,22 @@
 //Dionaea regenerate health and nutrition in light.
-/mob/living/carbon/alien/diona/handle_environment(datum/gas_mixture/environment)
+/datum/life_system/environment/carbon/alien/diona
+	mob_type = /mob/living/carbon/alien/diona
+
+/datum/life_system/environment/carbon/alien/diona/exchange(mob/living/carbon/alien/diona/self, datum/gas_mixture/environment)
 
 	var/light_amount = 0 //how much light there is in the place, affects receiving nutrition and healing
-	if(isturf(loc)) //else, there's considered to be no light
-		var/turf/T = loc
+	if(isturf(self.loc)) //else, there's considered to be no light
+		var/turf/T = self.loc
 		light_amount = T.get_lumcount() * 5
 
-	adjust_nutrition(light_amount)
+	self.adjust_nutrition(light_amount)
 
 	if(light_amount > 2) //if there's enough light, heal
-		mend(TREAT_TISSUE_REPAIR, 1)
-		mend(TREAT_BURN_CARE, 1)
-		mend(TREAT_ANTITOXIN, 1)
-		mend(TREAT_OXYGENATION, 1)
+		self.mend(TREAT_TISSUE_REPAIR, 1)
+		self.mend(TREAT_BURN_CARE, 1)
+		self.mend(TREAT_ANTITOXIN, 1)
+		self.mend(TREAT_OXYGENATION, 1)
 
 
-	if(!client)
-		handle_npc(src)
+	if(!self.client)
+		self.npc_behaviour(self)

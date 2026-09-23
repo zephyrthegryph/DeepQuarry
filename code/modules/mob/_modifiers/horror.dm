@@ -529,8 +529,8 @@ GLOBAL_LIST_INIT(redspace_areas, list(
 
 	//Circulate chems.
 	for(var/i in 1 to 5)
-		unfortunate_soul.handle_chemicals_in_body()
-	unfortunate_soul.handle_organs()
+		unfortunate_soul.process_chemicals()
+	unfortunate_soul.process_organs()
 
 	//Slowly come back from the dead.
 	unfortunate_soul.mend(TREAT_TISSUE_REPAIR, 2)

@@ -1,3 +1,3 @@
 // Species Components
-///from /datum/species/proc/handle_species_components()
+///from the species components life system
 #define COMSIG_SHADEKIN_COMPONENT "shadekin_component"

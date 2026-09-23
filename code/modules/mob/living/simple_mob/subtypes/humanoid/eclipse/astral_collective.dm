@@ -469,9 +469,12 @@
 	mend(TREAT_TISSUE_REPAIR, 200)
 	mend(TREAT_BURN_CARE, 200)
 
-/mob/living/simple_mob/humanoid/astral_collective/soul/shield_projector/handle_special()
-	if(stat != DEAD)
-		protection_aura()
+/datum/life_system/special/humanoid/astral_collective/soul/shield_projector
+	mob_type = /mob/living/simple_mob/humanoid/astral_collective/soul/shield_projector
+
+/datum/life_system/special/humanoid/astral_collective/soul/shield_projector/tick(mob/living/simple_mob/humanoid/astral_collective/soul/shield_projector/self, datum/life_context/ctx)
+	if(self.stat != DEAD)
+		self.protection_aura()
 	..()
 
 /mob/living/simple_mob/humanoid/astral_collective/soul/shield_projector/proc/protection_aura()

@@ -3,26 +3,61 @@
 // edits are mechanical and span the whole file; the commit SHA
 // is the source of truth for per-line diff context.
 
-/mob/living/simple_mob/Life()
-	..()
+// Simple mob Life: the living core, then these TAIL systems in the old order:
+//	vitals (health display; `if(stat >= DEAD) return FALSE` -> LIFE_SEG_SIMPLE),
+//	statuses, supernatural, special, guts, healing, then the type_post variants.
 
+/// Health display, then the dead check that ended the old simple mob Life().
+/datum/life_system/simple_vitals
+	name = "simple vitals"
+	bit = LIFE_SYS_HUD
+	phase = LIFE_PHASE_TAIL
+	order = 100
+	mob_type = /mob/living/simple_mob
+
+/datum/life_system/simple_vitals/tick(mob/living/simple_mob/self, datum/life_context/ctx)
 	// Death is decided by the body (evaluate_status -> death()); we only refresh displays here.
-	update_health_display()
-	if(stat >= DEAD)
-		return FALSE
+	self.update_health_display()
+	if(self.stat >= DEAD)
+		ctx.core_result = FALSE
+		ctx.blocked |= LIFE_SEG_SIMPLE
+		return
+	ctx.core_result = TRUE
 
-	handle_sleeping()
-	handle_stunned()
-	handle_weakened()
-	handle_paralysed()
-	handle_supernatural()
+/// Sleep, stun, weakness and paralysis wear off.
+/datum/life_system/simple_statuses
+	name = "simple statuses"
+	bit = LIFE_SYS_STATUS
+	phase = LIFE_PHASE_TAIL
+	order = 110
+	segment = LIFE_SEG_SIMPLE
+	mob_type = /mob/living/simple_mob
 
-	handle_special()
+/datum/life_system/simple_statuses/tick(mob/living/simple_mob/self, datum/life_context/ctx)
+	var/datum/life_system/statuses/statuses = life_statuses()
+	statuses.sleeping(self)
+	statuses.stunned(self)
+	statuses.weakened(self)
+	statuses.paralysed(self)
 
-	handle_guts()
-	do_healing()
+/// Passive healing while fed.
+/datum/life_system/simple_healing
+	name = "simple healing"
+	bit = LIFE_SYS_BODY
+	phase = LIFE_PHASE_TAIL
+	order = 150
+	segment = LIFE_SEG_SIMPLE
+	mob_type = /mob/living/simple_mob
 
-	return TRUE
+/datum/life_system/simple_healing/tick(mob/living/simple_mob/self, datum/life_context/ctx)
+	self.do_healing()
+
+/// Simple mob Life() returned TRUE alive, FALSE dead.
+/datum/life_system/type_post/simple_mob
+	mob_type = /mob/living/simple_mob
+
+/datum/life_system/type_post/simple_mob/tick(mob/living/simple_mob/self, datum/life_context/ctx)
+	return ctx?.core_result
 
 
 /// Refreshes the health HUD, nutrition alert and injury slowdown. Death itself
@@ -92,95 +127,124 @@
 			mend(TREAT_WIRING_REPAIR, amount)
 // ADD END
 
-// Override for special bullshit.
-/mob/living/simple_mob/proc/handle_special()
+/datum/life_system/special
+	name = "special"
+	bit = LIFE_SYS_BEHAVIOUR
+	phase = LIFE_PHASE_TAIL
+	order = 130
+	segment = LIFE_SEG_SIMPLE
+	mob_type = /mob/living/simple_mob
+
+/// Per-type behaviour (the old handle_special() overrides). Variants mirror the mob path.
+/datum/life_system/special/tick(mob/living/simple_mob/self, datum/life_context/ctx)
 	return
 
-// Handle interacting with and taking damage from atmos
-/mob/living/simple_mob/handle_environment(datum/gas_mixture/environment)
+/datum/life_system/environment/simple_mob
+	mob_type = /mob/living/simple_mob
 
-	if(in_stasis)
+/// Handle interacting with and taking damage from atmos.
+/datum/life_system/environment/simple_mob/exchange(mob/living/simple_mob/self, datum/gas_mixture/environment)
+
+	if(self.in_stasis)
 		return 1 // return early to skip atmos checks
-	if(is_incorporeal())
+	if(self.is_incorporeal())
 		return 1
 
 	var/env_temperature = environment.return_temperature()
-	if( abs(env_temperature - bodytemperature) > temperature_range )
-		bodytemperature += ((env_temperature - bodytemperature) / 5)
+	if( abs(env_temperature - self.bodytemperature) > self.temperature_range )
+		self.bodytemperature += ((env_temperature - self.bodytemperature) / 5)
 
 	// Accumulate (|=) failures across gas blocks so an earlier failing gas
 	// isn't masked by a later passing one.
 	var/atmos_unsuitable = 0
-	if(min_oxy && LINDA_GAS_AMT(environment, GAS_O2) < min_oxy)
+	if(self.min_oxy && LINDA_GAS_AMT(environment, GAS_O2) < self.min_oxy)
 		atmos_unsuitable |= 1
-		throw_alert("oxy", /atom/movable/screen/alert/not_enough_oxy)
-	else if(max_oxy && LINDA_GAS_AMT(environment, GAS_O2) > max_oxy)
+		self.throw_alert("oxy", /atom/movable/screen/alert/not_enough_oxy)
+	else if(self.max_oxy && LINDA_GAS_AMT(environment, GAS_O2) > self.max_oxy)
 		atmos_unsuitable |= 1
-		throw_alert("oxy", /atom/movable/screen/alert/too_much_oxy)
+		self.throw_alert("oxy", /atom/movable/screen/alert/too_much_oxy)
 	else
-		clear_alert("oxy")
+		self.clear_alert("oxy")
 
-	if(min_tox && LINDA_GAS_AMT(environment, GAS_PHORON) < min_tox)
+	if(self.min_tox && LINDA_GAS_AMT(environment, GAS_PHORON) < self.min_tox)
 		atmos_unsuitable |= 2
-		throw_alert("tox_in_air", /atom/movable/screen/alert/not_enough_tox)
-	else if(max_tox && LINDA_GAS_AMT(environment, GAS_PHORON) > max_tox)
+		self.throw_alert("tox_in_air", /atom/movable/screen/alert/not_enough_tox)
+	else if(self.max_tox && LINDA_GAS_AMT(environment, GAS_PHORON) > self.max_tox)
 		atmos_unsuitable |= 2
-		throw_alert("tox_in_air", /atom/movable/screen/alert/tox_in_air)
+		self.throw_alert("tox_in_air", /atom/movable/screen/alert/tox_in_air)
 	else
-		clear_alert("tox_in_air")
+		self.clear_alert("tox_in_air")
 
-	if(min_n2 && LINDA_GAS_AMT(environment, GAS_N2) < min_n2)
+	if(self.min_n2 && LINDA_GAS_AMT(environment, GAS_N2) < self.min_n2)
 		atmos_unsuitable |= 1
-		throw_alert("n2o", /atom/movable/screen/alert/not_enough_nitro)
-	else if(max_n2 && LINDA_GAS_AMT(environment, GAS_N2) > max_n2)
+		self.throw_alert("n2o", /atom/movable/screen/alert/not_enough_nitro)
+	else if(self.max_n2 && LINDA_GAS_AMT(environment, GAS_N2) > self.max_n2)
 		atmos_unsuitable |= 1
-		throw_alert("n2o", /atom/movable/screen/alert/too_much_nitro)
+		self.throw_alert("n2o", /atom/movable/screen/alert/too_much_nitro)
 	else
-		clear_alert("n2o")
+		self.clear_alert("n2o")
 
-	if(min_co2 && LINDA_GAS_AMT(environment, GAS_CO2) < min_co2)
+	if(self.min_co2 && LINDA_GAS_AMT(environment, GAS_CO2) < self.min_co2)
 		atmos_unsuitable |= 1
-		throw_alert("co2", /atom/movable/screen/alert/not_enough_co2)
-	else if(max_co2 && LINDA_GAS_AMT(environment, GAS_CO2) > max_co2)
+		self.throw_alert("co2", /atom/movable/screen/alert/not_enough_co2)
+	else if(self.max_co2 && LINDA_GAS_AMT(environment, GAS_CO2) > self.max_co2)
 		atmos_unsuitable |= 1
-		throw_alert("co2", /atom/movable/screen/alert/too_much_co2)
+		self.throw_alert("co2", /atom/movable/screen/alert/too_much_co2)
 	else
-		clear_alert("co2")
+		self.clear_alert("co2")
 
-	if(min_ch4 && LINDA_GAS_AMT(environment, GAS_CH4) < min_ch4)
+	if(self.min_ch4 && LINDA_GAS_AMT(environment, GAS_CH4) < self.min_ch4)
 		atmos_unsuitable |= 2
-		throw_alert("methane_in_air", /atom/movable/screen/alert/not_enough_methane)
-	else if(max_ch4 && LINDA_GAS_AMT(environment, GAS_CH4) > max_ch4)
+		self.throw_alert("methane_in_air", /atom/movable/screen/alert/not_enough_methane)
+	else if(self.max_ch4 && LINDA_GAS_AMT(environment, GAS_CH4) > self.max_ch4)
 		atmos_unsuitable |= 2
-		throw_alert("methane_in_air", /atom/movable/screen/alert/methane_in_air)
+		self.throw_alert("methane_in_air", /atom/movable/screen/alert/methane_in_air)
 	else
-		clear_alert("methane_in_air")
+		self.clear_alert("methane_in_air")
 
 	//Atmos effect
-	if(bodytemperature < minbodytemp)
-		injure(INJURY_FROSTBITE, cold_damage_per_tick, source = loc)
-		throw_alert("temp", /atom/movable/screen/alert/cold, COLD_ALERT_SEVERITY_MAX)
-	else if(bodytemperature > maxbodytemp)
-		injure(INJURY_BURN, heat_damage_per_tick, source = loc)
-		throw_alert("temp", /atom/movable/screen/alert/hot, HOT_ALERT_SEVERITY_MAX)
+	if(self.bodytemperature < self.minbodytemp)
+		self.injure(INJURY_FROSTBITE, self.cold_damage_per_tick, source = self.loc)
+		self.throw_alert("temp", /atom/movable/screen/alert/cold, COLD_ALERT_SEVERITY_MAX)
+	else if(self.bodytemperature > self.maxbodytemp)
+		self.injure(INJURY_BURN, self.heat_damage_per_tick, source = self.loc)
+		self.throw_alert("temp", /atom/movable/screen/alert/hot, HOT_ALERT_SEVERITY_MAX)
 	else
-		clear_alert("temp")
+		self.clear_alert("temp")
 
 	if(atmos_unsuitable)
-		injure(INJURY_ASPHYXIA, unsuitable_atoms_damage, source = loc)
+		self.injure(INJURY_ASPHYXIA, self.unsuitable_atoms_damage, source = self.loc)
 	else
-		mend(TREAT_OXYGENATION, unsuitable_atoms_damage)
+		self.mend(TREAT_OXYGENATION, self.unsuitable_atoms_damage)
 
-/mob/living/simple_mob/proc/handle_guts()
-	for(var/obj/item/organ/OR in internal_organs)
+/datum/life_system/guts
+	name = "guts"
+	bit = LIFE_SYS_ORGANS
+	phase = LIFE_PHASE_TAIL
+	order = 140
+	segment = LIFE_SEG_SIMPLE
+	mob_type = /mob/living/simple_mob
+
+/// Organ processing.
+/datum/life_system/guts/tick(mob/living/simple_mob/self, datum/life_context/ctx)
+	for(var/obj/item/organ/OR in self.internal_organs)
 		OR.process()
 
-	for(var/obj/item/organ/OR in organs)
+	for(var/obj/item/organ/OR in self.organs)
 		OR.process()
 
-/mob/living/simple_mob/proc/handle_supernatural()
-	if(purge)
-		purge -= 1
+/datum/life_system/supernatural
+	name = "supernatural"
+	bit = LIFE_SYS_STATUS
+	phase = LIFE_PHASE_TAIL
+	order = 120
+	segment = LIFE_SEG_SIMPLE
+	mob_type = /mob/living/simple_mob
+
+/// Holy purge wears off.
+/datum/life_system/supernatural/tick(mob/living/simple_mob/self, datum/life_context/ctx)
+	if(self.purge)
+		self.purge -= 1
 
 /mob/living/simple_mob/
 	var/update_icon_timer

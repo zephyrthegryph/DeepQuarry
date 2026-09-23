@@ -8,10 +8,10 @@
 		return COMPONENT_INCOMPATIBLE
 
 /datum/component/photosynth/RegisterWithParent()
-	RegisterSignal(parent, COMSIG_LIVING_LIFE, PROC_REF(process_component))
+	add_trait_life_system(parent, /datum/life_system/trait/photosynth)
 
 /datum/component/photosynth/UnregisterFromParent()
-	UnregisterSignal(parent, list(COMSIG_LIVING_LIFE))
+	remove_trait_life_system(parent, /datum/life_system/trait/photosynth)
 
 /datum/component/photosynth/proc/process_component()
 	SIGNAL_HANDLER
@@ -30,3 +30,11 @@
 		return
 	var/turf/T = owner.loc
 	owner.adjust_nutrition(T.get_lumcount() / 10)
+
+/// Trait system: photosynthesis. Was a COMSIG_LIVING_LIFE listener.
+/datum/life_system/trait/photosynth
+	name = "photosynth"
+	component_type = /datum/component/photosynth
+
+/datum/life_system/trait/photosynth/tick_component(mob/living/self, datum/component/photosynth/component)
+	component.process_component()

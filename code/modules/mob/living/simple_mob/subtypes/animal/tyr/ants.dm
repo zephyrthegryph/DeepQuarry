@@ -294,10 +294,13 @@
 	nutrition = 150
 	var/build_type = /obj/random/ant_building
 
-/mob/living/simple_mob/animal/tyr/mineral_ants/builder/handle_special()
+/datum/life_system/special/animal/tyr/mineral_ants/builder
+	mob_type = /mob/living/simple_mob/animal/tyr/mineral_ants/builder
+
+/datum/life_system/special/animal/tyr/mineral_ants/builder/tick(mob/living/simple_mob/animal/tyr/mineral_ants/builder/self, datum/life_context/ctx)
 	set waitfor = FALSE
-	if((ai_brain ? (ai_brain.primary_threat ? STANCE_FIGHT : STANCE_IDLE) : STANCE_IDLE) == STANCE_IDLE && !(ai_brain && ai_brain.busy) && isturf(loc))
-		build_tile(loc)
+	if((self.ai_brain ? (self.ai_brain.primary_threat ? STANCE_FIGHT : STANCE_IDLE) : STANCE_IDLE) == STANCE_IDLE && !(self.ai_brain && self.ai_brain.busy) && isturf(self.loc))
+		self.build_tile(self.loc)
 
 /mob/living/simple_mob/animal/tyr/mineral_ants/builder/proc/build_tile(turf/T)
 	if(nutrition < 75)
@@ -380,10 +383,13 @@
 	var/build_type = /obj/effect/spider/spiderling/antling
 
 
-/mob/living/simple_mob/animal/tyr/mineral_ants/queen/handle_special()
+/datum/life_system/special/animal/tyr/mineral_ants/queen
+	mob_type = /mob/living/simple_mob/animal/tyr/mineral_ants/queen
+
+/datum/life_system/special/animal/tyr/mineral_ants/queen/tick(mob/living/simple_mob/animal/tyr/mineral_ants/queen/self, datum/life_context/ctx)
 	set waitfor = FALSE
-	if((ai_brain ? (ai_brain.primary_threat ? STANCE_FIGHT : STANCE_IDLE) : STANCE_IDLE) == STANCE_IDLE && !(ai_brain && ai_brain.busy) && isturf(loc))
-		build_tile(loc)
+	if((self.ai_brain ? (self.ai_brain.primary_threat ? STANCE_FIGHT : STANCE_IDLE) : STANCE_IDLE) == STANCE_IDLE && !(self.ai_brain && self.ai_brain.busy) && isturf(self.loc))
+		self.build_tile(self.loc)
 
 /mob/living/simple_mob/animal/tyr/mineral_ants/queen/proc/build_tile(turf/T)
 	if(nutrition < 30)

@@ -49,13 +49,13 @@
 /datum/component/forms/RegisterWithParent()
 	var/mob/living/carbon/human/H = parent
 	prior_holder_type = H.holder_type
-	RegisterSignal(parent, COMSIG_LIVING_LIFE, PROC_REF(on_life))
+	add_trait_life_system(parent, /datum/life_system/trait/forms)
 	current.on_enter(src, H)
 	H.invalidate_factors()
 
 /datum/component/forms/UnregisterFromParent()
 	var/mob/living/carbon/human/H = parent
-	UnregisterSignal(parent, COMSIG_LIVING_LIFE)
+	remove_trait_life_system(parent, /datum/life_system/trait/forms)
 	if(current)
 		current.on_exit(src, H)
 	H.invalidate_factors()
@@ -244,3 +244,11 @@
 		remove_micros(I, root)
 		if(istype(I, /obj/item/holder))
 			root.remove_from_mob(I)
+
+/// Trait system: form upkeep. Was a COMSIG_LIVING_LIFE listener.
+/datum/life_system/trait/forms
+	name = "forms"
+	component_type = /datum/component/forms
+
+/datum/life_system/trait/forms/tick_component(mob/living/self, datum/component/forms/component)
+	component.on_life(self)

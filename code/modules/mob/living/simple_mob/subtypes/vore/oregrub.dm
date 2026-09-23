@@ -126,13 +126,16 @@
 		i--
 	..()
 
-/mob/living/simple_mob/vore/oregrub/lava/handle_light()
+/datum/life_system/light/simple_mob/vore/oregrub/lava
+	mob_type = /mob/living/simple_mob/vore/oregrub/lava
+
+/datum/life_system/light/simple_mob/vore/oregrub/lava/tick(mob/living/simple_mob/vore/oregrub/lava/self, datum/life_context/ctx)
 	. = ..()
-	if(. == 0 && !is_dead())
-		set_light(2.5, 1, COLOR_ORANGE)
+	if(. == 0 && !self.is_dead())
+		self.set_light(2.5, 1, COLOR_ORANGE)
 		return 1
-	else if(is_dead())
-		glow_override = FALSE
+	else if(self.is_dead())
+		self.glow_override = FALSE
 
 /mob/living/simple_mob/vore/oregrub/lava/death()
 	set_light(0)

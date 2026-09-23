@@ -7,35 +7,73 @@
 	/// Timer id of the pending power-restore step, or null.
 	var/power_restore_timer
 
-/mob/living/silicon/ai/Life()
-	if(stat == DEAD)
-		return
+/mob/living/silicon/ai
+	life_set = LIFE_SET_AI
 
-	if(stat != CONSCIOUS)
-		cameraFollow = null
-		reset_perspective()
-		disconnect_shell("Disconnecting from remote shell due to local system failure.")
+/// `if(stat == DEAD) return`, local failure cleanup and power.
+/datum/life_system/ai_power
+	name = "ai power"
+	bit = LIFE_SYS_MACHINE
+	phase = LIFE_PHASE_INPUT
+	order = 0
+	life_sets = LIFE_SET_AI
+	mob_type = /mob/living/silicon/ai
+
+/datum/life_system/ai_power/tick(mob/living/silicon/ai/self, datum/life_context/ctx)
+	if(self.stat == DEAD)
+		return LIFE_HALT
+
+	if(self.stat != CONSCIOUS)
+		self.cameraFollow = null
+		self.reset_perspective()
+		self.disconnect_shell("Disconnecting from remote shell due to local system failure.")
 
 	// If our powersupply object was destroyed somehow, create new one.
-	if(!psupply)
-		create_powersupply()
+	if(!self.psupply)
+		self.create_powersupply()
 
-	process_ai_power()
+	self.process_ai_power()
 
-	// Hardware integrity, capacitor and death are decided by the machine body.
-	body?.life_tick()
-	if(stat == DEAD)
-		return
+/// Hardware integrity, capacitor and death are decided by the machine body.
+/datum/life_system/ai_body
+	name = "ai body"
+	bit = LIFE_SYS_BODY
+	phase = LIFE_PHASE_INPUT
+	order = 10
+	life_sets = LIFE_SET_AI
+	mob_type = /mob/living/silicon/ai
 
-	handle_stunned()	// Handle EMP-stun
-	lying = 0			// Handle lying down
+/datum/life_system/ai_body/tick(mob/living/silicon/ai/self, datum/life_context/ctx)
+	self.body?.life_tick()
+	if(self.stat == DEAD)
+		return LIFE_HALT
 
-	malf_process()
-	process_apu()
+/// EMP stun wears off.
+/datum/life_system/statuses/silicon/ai
+	mob_type = /mob/living/silicon/ai
+	phase = LIFE_PHASE_BODY
+	order = 0
+	segment = NONE
 
-	process_queued_alarms()
-	handle_regular_hud_updates()
-	handle_vision()
+/datum/life_system/statuses/silicon/ai/tick(mob/living/silicon/ai/self, datum/life_context/ctx)
+	stunned(self)	// Handle EMP-stun
+
+/// Lying down, malfunction, APU and queued alarms.
+/datum/life_system/ai_upkeep
+	name = "ai upkeep"
+	bit = LIFE_SYS_MACHINE
+	phase = LIFE_PHASE_BODY
+	order = 10
+	life_sets = LIFE_SET_AI
+	mob_type = /mob/living/silicon/ai
+
+/datum/life_system/ai_upkeep/tick(mob/living/silicon/ai/self, datum/life_context/ctx)
+	self.lying = 0			// Handle lying down
+
+	self.malf_process()
+	self.process_apu()
+
+	self.process_queued_alarms()
 
 // --- Power ---------------------------------------------------------------------------------------
 

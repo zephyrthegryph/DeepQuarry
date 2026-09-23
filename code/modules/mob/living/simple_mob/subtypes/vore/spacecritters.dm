@@ -86,24 +86,27 @@
 	copy = "/mob/living/simple_mob/vore/spacecritter/solarray"
 
 
-/mob/living/simple_mob/vore/spacecritter/solarray/Life()
+/datum/life_system/type_post/simple_mob/vore/spacecritter/solarray
+	mob_type = /mob/living/simple_mob/vore/spacecritter/solarray
+
+/datum/life_system/type_post/simple_mob/vore/spacecritter/solarray/tick(mob/living/simple_mob/vore/spacecritter/solarray/self, datum/life_context/ctx)
 	. = ..()
-	if(icon_state != icon_dead) //I mean on death() Life() should disable but i guess doesnt hurt to make sure -shark
-		var/turf/moth_loc = get_turf(src)
+	if(self.icon_state != self.icon_dead) //I mean on death() Life() should disable but i guess doesnt hurt to make sure -shark
+		var/turf/moth_loc = get_turf(self)
 		if(isturf(moth_loc) && moth_loc.return_air()) // XGM turf.air → LINDA return_air()
 			var/datum/gas_mixture/env = moth_loc.return_air() //Gets all the information on the local air.
 			var/transfer_moles = 0.25 * env.total_moles() //The bigger the room, the harder it is to heat the room.
 			var/datum/gas_mixture/removed = env.remove(transfer_moles)
 			if(removed)
-				var/heat_transfer = removed.get_thermal_energy_change(set_temperature)
+				var/heat_transfer = removed.get_thermal_energy_change(self.set_temperature)
 				var/environment_temperature = env.return_temperature()
 				if(heat_transfer > 0 && environment_temperature < T0C + 200)	//This should start heating the room at a moderate pace up to 200 degrees celsius.
-					heat_transfer = min(heat_transfer , heating_power) //limit by the power rating of the heater
+					heat_transfer = min(heat_transfer , self.heating_power) //limit by the power rating of the heater
 					removed.add_thermal_energy(heat_transfer)
 
-				else if(heat_transfer > 0 && environment_temperature < set_temperature) //Set temperature is 10,000 degrees celsius. So this thing will start cooking crazy hot between the temperatures of 200C and 10,000C.
-					heating_power = original_temp*100 //Changed to work variable -shark //FLAME ON! This will make the moth heat up the room at an incredible rate.
-					heat_transfer = min(heat_transfer , heating_power) //limit by the power rating of the heater. Except it's hot, so yeah.
+				else if(heat_transfer > 0 && environment_temperature < self.set_temperature) //Set temperature is 10,000 degrees celsius. So this thing will start cooking crazy hot between the temperatures of 200C and 10,000C.
+					self.heating_power = self.original_temp*100 //Changed to work variable -shark //FLAME ON! This will make the moth heat up the room at an incredible rate.
+					heat_transfer = min(heat_transfer , self.heating_power) //limit by the power rating of the heater. Except it's hot, so yeah.
 					removed.add_thermal_energy(heat_transfer)
 
 				else
@@ -114,7 +117,7 @@
 
 
 	//Since I'm changing hyper mode to be variable we need to store old power
-	original_temp = heating_power
+	self.original_temp = self.heating_power
 
 /mob/living/simple_mob/vore/spacecritter/solarray/galaxyray
 	name = "galaxy ray"
@@ -145,9 +148,12 @@
 
 	var/chilltemp = -20
 
-/mob/living/simple_mob/vore/spacecritter/livingice/handle_special()
-	if(stat != DEAD)
-		cold_aura()
+/datum/life_system/special/vore/spacecritter/livingice
+	mob_type = /mob/living/simple_mob/vore/spacecritter/livingice
+
+/datum/life_system/special/vore/spacecritter/livingice/tick(mob/living/simple_mob/vore/spacecritter/livingice/self, datum/life_context/ctx)
+	if(self.stat != DEAD)
+		self.cold_aura()
 	..()
 
 /mob/living/simple_mob/vore/spacecritter/livingice/proc/cold_aura()
@@ -184,9 +190,12 @@
 	evolvekey = "/obj/item/stack/material/uranium"
 	copy = "/mob/living/simple_mob/vore/spacecritter/radcrab"
 
-/mob/living/simple_mob/vore/spacecritter/radcrab/handle_special()
-	if(stat != DEAD)
-		irradiate()
+/datum/life_system/special/vore/spacecritter/radcrab
+	mob_type = /mob/living/simple_mob/vore/spacecritter/radcrab
+
+/datum/life_system/special/vore/spacecritter/radcrab/tick(mob/living/simple_mob/vore/spacecritter/radcrab/self, datum/life_context/ctx)
+	if(self.stat != DEAD)
+		self.irradiate()
 	..()
 
 /mob/living/simple_mob/vore/spacecritter/radcrab/proc/irradiate()

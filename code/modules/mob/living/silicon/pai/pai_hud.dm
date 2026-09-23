@@ -385,42 +385,45 @@
 	HUD.inventory_shown = 0
 
 
-/mob/living/silicon/pai/handle_regular_hud_updates()
+/datum/life_system/hud/silicon/pai
+	mob_type = /mob/living/silicon/pai
+
+/datum/life_system/hud/silicon/pai/tick(mob/living/silicon/pai/self, datum/life_context/ctx)
 	. = ..()
 	if(!.)
 		return
 
-	if(pai_fold_display)
-		if(loc == card)
-			pai_fold_display.icon_state = "folded"
+	if(self.pai_fold_display)
+		if(self.loc == self.card)
+			self.pai_fold_display.icon_state = "folded"
 		else
-			pai_fold_display.icon_state = "unfolded"
+			self.pai_fold_display.icon_state = "unfolded"
 
-/mob/living/silicon/pai/handle_hud_icons_health()
+/datum/life_system/hud/silicon/pai/health_icons(mob/living/silicon/pai/self)
 	. = ..()
-	if(!. || !healths)
+	if(!. || !self.healths)
 		return
 
-	if(stat == DEAD || (status_flags & FAKEDEATH))
-		healths.icon_state = "health7"
+	if(self.stat == DEAD || (self.status_flags & FAKEDEATH))
+		self.healths.icon_state = "health7"
 		return
 
-	var/heal_per = vitality() * 100
+	var/heal_per = self.vitality() * 100
 	switch(heal_per)
 		if(100 to INFINITY)
-			healths.icon_state = "health0"
+			self.healths.icon_state = "health0"
 		if(80 to 100)
-			healths.icon_state = "health1"
+			self.healths.icon_state = "health1"
 		if(60 to 80)
-			healths.icon_state = "health2"
+			self.healths.icon_state = "health2"
 		if(40 to 60)
-			healths.icon_state = "health3"
+			self.healths.icon_state = "health3"
 		if(20 to 40)
-			healths.icon_state = "health4"
+			self.healths.icon_state = "health4"
 		if(0 to 20)
-			healths.icon_state = "health5"
+			self.healths.icon_state = "health5"
 		else
-			healths.icon_state = "health6"
+			self.healths.icon_state = "health6"
 
 /mob/living/silicon/pai/toggle_hud_vis(full)
 	if(!client)

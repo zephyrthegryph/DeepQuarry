@@ -1,38 +1,83 @@
-/mob/living/silicon/pai/Life()
-	check_retract_cable()
+/mob/living/silicon/pai
+	life_set = LIFE_SET_PAI
 
-	if(stat == DEAD)
-		return
+/// Cable retraction and `if(stat == DEAD) return`.
+/datum/life_system/pai_cable
+	name = "pai cable"
+	bit = LIFE_SYS_MACHINE
+	phase = LIFE_PHASE_INPUT
+	order = 0
+	life_sets = LIFE_SET_PAI
+	mob_type = /mob/living/silicon/pai
 
-	// Death from injury is decided by the body (see death.dm for card damage).
-	body?.life_tick()
-	if(stat == DEAD)
-		return
+/datum/life_system/pai_cable/tick(mob/living/silicon/pai/self, datum/life_context/ctx)
+	self.check_retract_cable()
 
+	if(self.stat == DEAD)
+		return LIFE_HALT
+
+/// Death from injury is decided by the body (see death.dm for card damage); card faults.
+/datum/life_system/pai_body
+	name = "pai body"
+	bit = LIFE_SYS_BODY
+	phase = LIFE_PHASE_INPUT
+	order = 10
+	life_sets = LIFE_SET_PAI
+	mob_type = /mob/living/silicon/pai
+
+/datum/life_system/pai_body/tick(mob/living/silicon/pai/self, datum/life_context/ctx)
+	self.body?.life_tick()
+	if(self.stat == DEAD)
+		return LIFE_HALT
+
+	var/obj/item/paicard/card = self.card
 	if(card.cell != PP_FUNCTIONAL|| card.processor != PP_FUNCTIONAL || card.board != PP_FUNCTIONAL || card.capacitor != PP_FUNCTIONAL)
-		death()
+		self.death()
 
 	if(card.projector != PP_FUNCTIONAL && card.emitter != PP_FUNCTIONAL)
-		if(loc != card)
-			close_up()
-			to_chat(src, span_warning("ERROR: System malfunction. Service required!"))
+		if(self.loc != card)
+			self.close_up()
+			to_chat(self, span_warning("ERROR: System malfunction. Service required!"))
 	else if(card.projector  != PP_FUNCTIONAL|| card.emitter != PP_FUNCTIONAL)
 		if(prob(5))
-			close_up()
-			to_chat(src, span_warning("ERROR: System malfunction. Service recommended!"))
+			self.close_up()
+			to_chat(self, span_warning("ERROR: System malfunction. Service recommended!"))
 
-	handle_regular_hud_updates()
-	handle_vision()
+/// The communication circuit comes back after a silence.
+/datum/life_system/pai_silence
+	name = "pai silence"
+	bit = LIFE_SYS_MACHINE
+	phase = LIFE_PHASE_OUTPUT
+	order = 40
+	life_sets = LIFE_SET_PAI
+	mob_type = /mob/living/silicon/pai
 
-	if(silence_time)
-		if(world.timeofday >= silence_time)
-			silence_time = null
-			to_chat(src, span_green("Communication circuit reinitialized. Speech and messaging functionality restored."))
+/datum/life_system/pai_silence/tick(mob/living/silicon/pai/self, datum/life_context/ctx)
+	if(self.silence_time)
+		if(world.timeofday >= self.silence_time)
+			self.silence_time = null
+			to_chat(self, span_green("Communication circuit reinitialized. Speech and messaging functionality restored."))
 
-	handle_statuses()
-	handle_sleeping()
+/datum/life_system/statuses/silicon/pai
+	mob_type = /mob/living/silicon/pai
+	phase = LIFE_PHASE_OUTPUT
+	order = 50
+	segment = NONE
 
-	// Folded into the card, the pAI slowly self-repairs.
-	if(is_injured() && istype(src.loc, /obj/item/paicard))
-		mend(TREAT_PLATING_REPAIR, 0.5)
-		mend(TREAT_WIRING_REPAIR, 0.5)
+/datum/life_system/statuses/silicon/pai/tick(mob/living/silicon/pai/self, datum/life_context/ctx)
+	..()
+	sleeping(self)
+
+/// Folded into the card, the pAI slowly self-repairs.
+/datum/life_system/pai_repair
+	name = "pai repair"
+	bit = LIFE_SYS_BODY
+	phase = LIFE_PHASE_OUTPUT
+	order = 60
+	life_sets = LIFE_SET_PAI
+	mob_type = /mob/living/silicon/pai
+
+/datum/life_system/pai_repair/tick(mob/living/silicon/pai/self, datum/life_context/ctx)
+	if(self.is_injured() && istype(self.loc, /obj/item/paicard))
+		self.mend(TREAT_PLATING_REPAIR, 0.5)
+		self.mend(TREAT_WIRING_REPAIR, 0.5)

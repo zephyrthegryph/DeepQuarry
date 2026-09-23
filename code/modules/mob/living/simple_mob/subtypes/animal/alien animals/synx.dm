@@ -403,19 +403,25 @@
 	if(message=="Honk!")
 		bikehorn()
 
-/mob/living/simple_mob/animal/synx/ai/pet/clown/Life()
+/datum/life_system/type_post/simple_mob/animal/synx/ai/pet/clown
+	mob_type = /mob/living/simple_mob/animal/synx/ai/pet/clown
+
+/datum/life_system/type_post/simple_mob/animal/synx/ai/pet/clown/tick(mob/living/simple_mob/animal/synx/ai/pet/clown/self, datum/life_context/ctx)
 	..()
-	if(vore_fullness)
-		size_multiplier = 1+(0.5*vore_fullness)
-		update_icons()
-	if(!vore_fullness && size_multiplier != 1)
-		size_multiplier = 1
-		update_icons()
-/mob/living/simple_mob/animal/synx/Life()
+	if(self.vore_fullness)
+		self.size_multiplier = 1+(0.5*self.vore_fullness)
+		self.update_icons()
+	if(!self.vore_fullness && self.size_multiplier != 1)
+		self.size_multiplier = 1
+		self.update_icons()
+/datum/life_system/type_post/simple_mob/animal/synx
+	mob_type = /mob/living/simple_mob/animal/synx
+
+/datum/life_system/type_post/simple_mob/animal/synx/tick(mob/living/simple_mob/animal/synx/self, datum/life_context/ctx)
 	..()
 //mob/living/simple_mob/animal/synx/ai/handle_idle_speaking() //Only ai-controlled synx will randomly speak
-	if(voices && prob(speak_chance/2))
-		randomspeech()
+	if(self.voices && prob(self.speak_chance/2))
+		self.randomspeech()
 
 /mob/living/simple_mob/animal/synx/perform_the_nom(mob/living/user, mob/living/prey, mob/living/pred, obj/belly/belly, delay) //Synx can only eat people if their organs are on the inside.
 	if(stomach_distended)

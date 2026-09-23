@@ -131,11 +131,14 @@
 		disconnect_target()
 	qdel(src)
 
-/mob/living/simple_mob/ysbryd/Life()
-	if(chosen_target)
-		handle_target()
-	if(vitality() * get_endurance() <= boost_health)
-		movement_cooldown = -2
+/datum/life_system/type_pre/simple_mob/ysbryd
+	mob_type = /mob/living/simple_mob/ysbryd
+
+/datum/life_system/type_pre/simple_mob/ysbryd/tick(mob/living/simple_mob/ysbryd/self, datum/life_context/ctx)
+	if(self.chosen_target)
+		self.handle_target()
+	if(self.vitality() * self.get_endurance() <= self.boost_health)
+		self.movement_cooldown = -2
 	return ..()
 
 /mob/living/simple_mob/ysbryd/proc/handle_target()

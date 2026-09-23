@@ -24,14 +24,18 @@
 	human_parent = parent
 
 /datum/component/crowd_detection/RegisterWithParent()
-	RegisterSignal(parent, COMSIG_LIVING_LIFE, PROC_REF(handle_life))
+	add_trait_life_system(parent, /datum/life_system/trait/crowd_detection)
 
 /datum/component/crowd_detection/UnregisterFromParent()
-	UnregisterSignal(parent, list(COMSIG_LIVING_LIFE))
+	remove_trait_life_system(parent, /datum/life_system/trait/crowd_detection)
 
 /datum/component/crowd_detection/Destroy(force = FALSE)
 	human_parent = null
 	. = ..()
+
+/// Called by the crowd detection trait system each Life() cycle.
+/datum/component/crowd_detection/proc/life_tick()
+	handle_life()
 
 /datum/component/crowd_detection/proc/handle_life()
 	SIGNAL_HANDLER
@@ -298,3 +302,11 @@
 	return in_range
 
 #undef MIN_DISCOMFORT_MESSAGE
+
+/// Trait system: crowd and loneliness effects. Was a COMSIG_LIVING_LIFE listener.
+/datum/life_system/trait/crowd_detection
+	name = "crowd detection"
+	component_type = /datum/component/crowd_detection
+
+/datum/life_system/trait/crowd_detection/tick_component(mob/living/self, datum/component/crowd_detection/component)
+	component.life_tick()

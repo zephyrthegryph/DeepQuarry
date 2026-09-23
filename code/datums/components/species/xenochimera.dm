@@ -141,7 +141,7 @@
 			update_xenochimera_hud(danger, feral_state)
 			return
 
-		//If they lose enough health to hit softcrit, handle_shock() will keep resetting this. Otherwise, pissed off critters will lose shock faster than they gain it.
+		//If they lose enough health to hit softcrit, the shock life system will keep resetting this. Otherwise, pissed off critters will lose shock faster than they gain it.
 		owner.shock_stage = max(owner.shock_stage-(feral/20), 0)
 
 		//Handle light/dark areas

@@ -102,10 +102,13 @@
 		leave_host()
 	. = ..()
 
-/mob/living/simple_mob/animal/borer/handle_special()
-	handle_chemicals()
-	handle_docile()
-	handle_braindamage()
+/datum/life_system/special/animal/borer
+	mob_type = /mob/living/simple_mob/animal/borer
+
+/datum/life_system/special/animal/borer/tick(mob/living/simple_mob/animal/borer/self, datum/life_context/ctx)
+	self.handle_chemicals()
+	self.handle_docile()
+	self.handle_braindamage()
 
 /mob/living/simple_mob/animal/borer/get_status_tab_items()
 	. = ..()
@@ -200,31 +203,34 @@
 	to_chat(controlling ? host : src, span_info("You use [amount] chemicals, [FLOOR(chemicals,1)] remain."))
 	return TRUE
 
-/mob/living/simple_mob/animal/borer/handle_regular_hud_updates()
+/datum/life_system/hud/simple_mob/animal/borer
+	mob_type = /mob/living/simple_mob/animal/borer
+
+/datum/life_system/hud/simple_mob/animal/borer/tick(mob/living/simple_mob/animal/borer/self, datum/life_context/ctx)
 	. = ..()
 	if(!.)
 		return
-	if(borer_chem_display)
-		borer_chem_display.invisibility = INVISIBILITY_NONE
-		switch(chemicals)
+	if(self.borer_chem_display)
+		self.borer_chem_display.invisibility = INVISIBILITY_NONE
+		switch(self.chemicals)
 			if(0 to 9)
-				borer_chem_display.icon_state = "ling_chems0e"
+				self.borer_chem_display.icon_state = "ling_chems0e"
 			if(10 to 19)
-				borer_chem_display.icon_state = "ling_chems10e"
+				self.borer_chem_display.icon_state = "ling_chems10e"
 			if(20 to 29)
-				borer_chem_display.icon_state = "ling_chems20e"
+				self.borer_chem_display.icon_state = "ling_chems20e"
 			if(30 to 39)
-				borer_chem_display.icon_state = "ling_chems30e"
+				self.borer_chem_display.icon_state = "ling_chems30e"
 			if(40 to 49)
-				borer_chem_display.icon_state = "ling_chems40e"
+				self.borer_chem_display.icon_state = "ling_chems40e"
 			if(50 to 59)
-				borer_chem_display.icon_state = "ling_chems50e"
+				self.borer_chem_display.icon_state = "ling_chems50e"
 			if(60 to 69)
-				borer_chem_display.icon_state = "ling_chems60e"
+				self.borer_chem_display.icon_state = "ling_chems60e"
 			if(70 to 79)
-				borer_chem_display.icon_state = "ling_chems70e"
+				self.borer_chem_display.icon_state = "ling_chems70e"
 			if(80 to INFINITY)
-				borer_chem_display.icon_state = "ling_chems80e"
+				self.borer_chem_display.icon_state = "ling_chems80e"
 
 /mob/living/simple_mob/animal/borer/proc/detatch()
 	if(!host || !controlling)

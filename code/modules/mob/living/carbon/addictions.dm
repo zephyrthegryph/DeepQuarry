@@ -34,11 +34,25 @@
 			continue
 		addict_to_reagent(T.addiction, TRUE)
 
-/mob/living/proc/handle_addictions()
-	PROTECTED_PROC(TRUE)
-	// Empty so it can be overridden
+/datum/life_system/addictions
+	name = "addictions"
+	bit = LIFE_SYS_ADDICTION
+	phase = LIFE_PHASE_MIND
+	order = 20
+	segment = LIFE_SEG_LIVING | LIFE_SEG_LIVING_STATUS
 
-/mob/living/carbon/handle_addictions()
+/// Cravings and withdrawal.
+/datum/life_system/addictions/tick(mob/living/self, datum/life_context/ctx)
+	return
+
+/datum/life_system/addictions/carbon
+	mob_type = /mob/living/carbon
+
+/datum/life_system/addictions/carbon/tick(mob/living/carbon/self, datum/life_context/ctx)
+	self.process_addictions()
+
+/// Builds, feeds and withdraws addictions from the reagents in the blood and gut.
+/mob/living/carbon/proc/process_addictions()
 	// Don't process during vore stuff... It was originally just absorbed, but lets give some mercy to rp focused servers.
 	if(isbelly(loc))
 		return

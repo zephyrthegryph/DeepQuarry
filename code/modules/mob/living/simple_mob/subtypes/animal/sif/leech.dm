@@ -128,87 +128,90 @@
 				if(ai_brain) ai_brain.busy = TRUE
 				do_infest(src, A)
 				if(ai_brain) ai_brain.busy = FALSE
-/mob/living/simple_mob/animal/sif/leech/handle_special()
+/datum/life_system/special/animal/sif/leech
+	mob_type = /mob/living/simple_mob/animal/sif/leech
+
+/datum/life_system/special/animal/sif/leech/tick(mob/living/simple_mob/animal/sif/leech/self, datum/life_context/ctx)
 	if(prob(5))
-		randomized_reagent = pick(produceable_chemicals)
+		self.randomized_reagent = pick(self.produceable_chemicals)
 
-	var/turf/T = get_turf(src)
-	if(istype(T, /turf/simulated/floor/water) && src.loc == T && !stat)	// Are we sitting in water, and alive?
-		alpha = max(5, alpha - 10)
-		if(chemicals + 1 < max_chemicals / 3)
-			chemicals++
+	var/turf/T = get_turf(self)
+	if(istype(T, /turf/simulated/floor/water) && self.loc == T && !self.stat)	// Are we sitting in water, and alive?
+		self.alpha = max(5, self.alpha - 10)
+		if(self.chemicals + 1 < self.max_chemicals / 3)
+			self.chemicals++
 	else
-		alpha = min(255, alpha + 20)
+		self.alpha = min(255, self.alpha + 20)
 
-	if(!client && !host)
-		infest_target = pick(bodypart_targets)
+	if(!self.client && !self.host)
+		self.infest_target = pick(self.bodypart_targets)
 
-	if(host && !stat && !host.stat)
-		if(ai_brain)
-			ai_brain.set_hostile(FALSE)
-			ai_brain.lose_target()
-		alpha = 5
-		if(host.reagents.has_reagent(REAGENT_ID_CORDRADAXON) && !docile)	// Overwhelms the leech with food.
+	if(self.host && !self.stat && !self.host.stat)
+		if(self.ai_brain)
+			self.ai_brain.set_hostile(FALSE)
+			self.ai_brain.lose_target()
+		self.alpha = 5
+		if(self.host.reagents.has_reagent(REAGENT_ID_CORDRADAXON) && !self.docile)	// Overwhelms the leech with food.
 			var/message = "We feel the rush of cardiac pluripotent cells in your host's blood, lulling us into docility."
-			to_chat(src, span_warning(message))
-			docile = TRUE
-			if(chemicals + 5 <= max_chemicals)
-				chemicals += 5
+			to_chat(self, span_warning(message))
+			self.docile = TRUE
+			if(self.chemicals + 5 <= self.max_chemicals)
+				self.chemicals += 5
 
-		else if(docile)
+		else if(self.docile)
 			var/message = "We shake off our lethargy as the pluripotent cell count declines in our host's blood."
-			to_chat(src, span_notice(message))
-			docile = FALSE
+			to_chat(self, span_notice(message))
+			self.docile = FALSE
 
-		if(!host.reagents.has_reagent(passive_reagent))
-			host.reagents.add_reagent(passive_reagent, 5)
-			chemicals -= 3
+		if(!self.host.reagents.has_reagent(self.passive_reagent))
+			self.host.reagents.add_reagent(self.passive_reagent, 5)
+			self.chemicals -= 3
 
-		if(!docile && ishuman(host) && chemicals < max_chemicals)
-			var/mob/living/carbon/human/H = host
+		if(!self.docile && ishuman(self.host) && self.chemicals < self.max_chemicals)
+			var/mob/living/carbon/human/H = self.host
 			H.remove_blood(1)
 			if(!H.reagents.has_reagent(REAGENT_ID_INAPROVALINE))
 				H.reagents.add_reagent(REAGENT_ID_INAPROVALINE, 1)
-			chemicals += 2
+			self.chemicals += 2
 
-		if(!client && !docile)	// Automatic 'AI' to manage damage levels.
-			if(host.injury_load(INJURY_CATEGORY_PHYSICAL) >= 30 && chemicals > 50)
-				host.reagents.add_reagent(REAGENT_ID_BICARIDINE, 5)
-				chemicals -= 30
+		if(!self.client && !self.docile)	// Automatic 'AI' to manage damage levels.
+			if(self.host.injury_load(INJURY_CATEGORY_PHYSICAL) >= 30 && self.chemicals > 50)
+				self.host.reagents.add_reagent(REAGENT_ID_BICARIDINE, 5)
+				self.chemicals -= 30
 
-			if(host.injury_load(INJURY_CATEGORY_TOXIC) >= 30 && chemicals > 50)
+			if(self.host.injury_load(INJURY_CATEGORY_TOXIC) >= 30 && self.chemicals > 50)
 				var/randomchem = pickweight(list(REAGENT_ID_TRAMADOL = 7, REAGENT_ID_ANTITOXIN = 15, REAGENT_ID_FROSTOIL = 3))
-				host.reagents.add_reagent(randomchem, 5)
-				chemicals -= 50
+				self.host.reagents.add_reagent(randomchem, 5)
+				self.chemicals -= 50
 
-			if(host.injury_load(INJURY_CATEGORY_THERMAL) >= 30 && chemicals > 50)
-				host.reagents.add_reagent(REAGENT_ID_KELOTANE, 5)
-				host.reagents.add_reagent(REAGENT_ID_LEPORAZINE, 2)
-				chemicals -= 50
+			if(self.host.injury_load(INJURY_CATEGORY_THERMAL) >= 30 && self.chemicals > 50)
+				self.host.reagents.add_reagent(REAGENT_ID_KELOTANE, 5)
+				self.host.reagents.add_reagent(REAGENT_ID_LEPORAZINE, 2)
+				self.chemicals -= 50
 
-			if(host.injury_load(INJURY_CATEGORY_ASPHYXIA) >= 30 && chemicals > 50)
-				host.reagents.add_reagent(REAGENT_ID_IRON, 10)
-				chemicals -= 40
+			if(self.host.injury_load(INJURY_CATEGORY_ASPHYXIA) >= 30 && self.chemicals > 50)
+				self.host.reagents.add_reagent(REAGENT_ID_IRON, 10)
+				self.chemicals -= 40
 
-			if(host.injury_load(INJURY_CATEGORY_NEURAL) >= 10 && chemicals > 100)
-				host.reagents.add_reagent(REAGENT_ID_ALKYSINE, 5)
-				host.reagents.add_reagent(REAGENT_ID_TRAMADOL, 3)
-				chemicals -= 100
+			if(self.host.injury_load(INJURY_CATEGORY_NEURAL) >= 10 && self.chemicals > 100)
+				self.host.reagents.add_reagent(REAGENT_ID_ALKYSINE, 5)
+				self.host.reagents.add_reagent(REAGENT_ID_TRAMADOL, 3)
+				self.chemicals -= 100
 
-			if(prob(30) && chemicals > 50)
-				inject_meds(randomized_reagent)
+			if(prob(30) && self.chemicals > 50)
+				self.inject_meds(self.randomized_reagent)
 
 			var/heartless_mod = 0
-			if(ishuman(host))	// Species without hearts mean the worm gets hungry faster, if AI controlled.
-				var/mob/living/carbon/human/H = host
+			if(ishuman(self.host))	// Species without hearts mean the worm gets hungry faster, if AI controlled.
+				var/mob/living/carbon/human/H = self.host
 				if(!H.species.has_organ[O_HEART])
 					heartless_mod = 1
 
 			if(prob(15 + (20 * heartless_mod)))
-				feed_on_organ()
+				self.feed_on_organ()
 	//legacy else-clause emptied (was ai_holder reset).
-	if(host && host.stat == DEAD && istype(get_turf(host), /turf/simulated/floor/water))
-		leave_host()
+	if(self.host && self.host.stat == DEAD && istype(get_turf(self.host), /turf/simulated/floor/water))
+		self.leave_host()
 
 /mob/living/simple_mob/animal/sif/leech/verb/infest()
 	set category = "Abilities.Leech"

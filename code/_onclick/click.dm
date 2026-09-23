@@ -131,7 +131,7 @@
 	if(nutrition>0)
 		..()
 		nutrition = max(nutrition - rand(1,5),0)
-		handle_regular_hud_updates()
+		refresh_hud()
 	else
 		to_chat(src, span_warning("You're out of energy!  You need food!"))
 

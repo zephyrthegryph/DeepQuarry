@@ -12,12 +12,19 @@
 
 	cozyloop = new(list(src), FALSE)
 
-/mob/living/carbon/Life()
-	..()
+/// Skin germs creep up to the ambient level. Runs every cycle, even while transforming or in
+/// nullspace (it followed ..() in the old carbon Life()).
+/datum/life_system/germs
+	name = "germs"
+	bit = LIFE_SYS_BODY
+	phase = LIFE_PHASE_TAIL
+	order = 10
+	mob_type = /mob/living/carbon
 
+/datum/life_system/germs/tick(mob/living/carbon/self, datum/life_context/ctx)
 	// Increase germ_level regularly
-	if(germ_level < GERM_LEVEL_AMBIENT && prob(30))	//if you're just standing there, you shouldn't get more germs beyond an ambient level
-		germ_level++
+	if(self.germ_level < GERM_LEVEL_AMBIENT && prob(30))	//if you're just standing there, you shouldn't get more germs beyond an ambient level
+		self.germ_level++
 
 /mob/living/carbon/Destroy()
 	QDEL_NULL(ingested)
@@ -535,13 +542,16 @@
 		return species.food_preference_bonus
 	return FALSE
 
-/mob/living/carbon/handle_diseases()
-	for(var/thing in GetViruses())
+/datum/life_system/diseases/carbon
+	mob_type = /mob/living/carbon
+
+/datum/life_system/diseases/carbon/progress(mob/living/carbon/self)
+	for(var/thing in self.GetViruses())
 		var/datum/disease/D = thing
 		if(prob(D.infectivity))
 			D.spread()
 
-		if(stat != DEAD || global_flag_check(D.virus_modifiers, SPREAD_DEAD))
+		if(self.stat != DEAD || global_flag_check(D.virus_modifiers, SPREAD_DEAD))
 			D.stage_act()
 
 /mob/living/carbon/vv_get_dropdown()

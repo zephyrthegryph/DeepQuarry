@@ -128,6 +128,26 @@ if $grep -n 'call_ext|load_ext|VERDIGRIS_CALL' $code_files \
 	FAILED=1
 fi;
 
+part "life scheduler: no Life() overrides"
+# /mob/living/Life() is the life scheduler (code/modules/mob/living/life/scheduler.dm). Living
+# mobs change their upkeep by adding or overriding /datum/life_system variants, never by
+# overriding Life() (doc/mob_life_architecture.md §4).
+if $grep -n '^/mob/living[a-zA-Z0-9_/]*/(proc/)?Life\(' $code_files | grep -v '^code/modules/mob/living/life/scheduler\.dm:'; then
+	echo
+	echo -e "${RED}ERROR: Life() override on a living mob. Add a /datum/life_system (or a variant of one) instead.${NC}"
+	FAILED=1
+fi;
+
+part "life scheduler: no handle_* life hooks"
+# The old Life() hooks became life systems. Their handle_* procs must not come back on mobs,
+# species or traits; put the work in a system's tick() (or a variant of the system).
+LIFE_HOOKS='addictions|ambience|blood|breath|breathing|changeling|chemical_smoke|chemicals_in_body|confused|darksight|defib_timer|diseases|disabilities|drugged|environment|environment_special|guts|heartbeat|hud_icons_health|hud_list|instability|light|medical_side_effects|modifiers|mutations|nif|npc|organs|pain|paralysed|phobias|post_breath|pulse|radiation|random_events|regular_hud_updates|regular_status_updates|sensory_recovery|shock|silent|sleeping|slurring|special|species_components|statuses|stomach|stunned|stuttering|supernatural|temperature_damage|tf_holder|vision|vr_derez|weakened'
+if $grep -n "^/(mob|datum/species|datum/trait)[a-zA-Z0-9_/]*/(proc/)?handle_($LIFE_HOOKS)\(" $code_files; then
+	echo
+	echo -e "${RED}ERROR: handle_* Life hook defined outside the life scheduler. Life() steps are /datum/life_system types (code/modules/mob/living/life/).${NC}"
+	FAILED=1
+fi;
+
 part "gas mixture mirror writes"
 # /datum/gas_mixture temperature/volume are READ-ONLY mirrors of the Rust atmos arena
 # (the authoritative store). A bare `air.temperature = x` / `air_contents.volume = y`

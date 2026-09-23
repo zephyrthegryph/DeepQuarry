@@ -93,17 +93,20 @@
 	else
 		. = ..()
 
-/mob/living/simple_mob/vore/alienanimals/succlet/Life()
+/datum/life_system/type_post/simple_mob/vore/alienanimals/succlet
+	mob_type = /mob/living/simple_mob/vore/alienanimals/succlet
+
+/datum/life_system/type_post/simple_mob/vore/alienanimals/succlet/tick(mob/living/simple_mob/vore/alienanimals/succlet/self, datum/life_context/ctx)
 	. = ..()
-	if(stat)
+	if(self.stat)
 		return
-	if(client)
+	if(self.client)
 		return
-	if(isbelly(loc))	//No teleporting out of bellies
+	if(isbelly(self.loc))	//No teleporting out of bellies
 		return
-	if(prob(succlet_move_chance) || vitality() < succlet_last_health)	//This chance can be adjusted, but moving is probably pretty resource expensive on the server, so the chance should stay low
+	if(prob(self.succlet_move_chance) || self.vitality() < self.succlet_last_health)	//This chance can be adjusted, but moving is probably pretty resource expensive on the server, so the chance should stay low
 		var/list/mylist = list()	//Look I'm just saying, you can make it higher if you want but don't cry to me if the server lags, I made this as a joke
-		for(var/mob/M in view(world.view, get_turf(src)))	//Is there anyone nearby to target?
+		for(var/mob/M in view(world.view, get_turf(self)))	//Is there anyone nearby to target?
 			if(istype(M, /mob/living/simple_mob/vore/alienanimals/succlet))
 				continue
 			if(isobserver(M))
@@ -113,14 +116,14 @@
 			if(ismob(M))
 				mylist |= M
 		if(mylist.len > 0)
-			succlet_move(pick(mylist))
+			self.succlet_move(pick(mylist))
 		else
-			for(var/turf/T in view(world.view, get_turf(src)))	//No, so let's pick a turf to travel to
+			for(var/turf/T in view(world.view, get_turf(self)))	//No, so let's pick a turf to travel to
 				if(isturf(T))
 					mylist |= T
 			if(mylist.len)
-				succlet_move(pick(mylist))
-	succlet_last_health = vitality()	//The succlet will try to move if it has taken damage
+				self.succlet_move(pick(mylist))
+	self.succlet_last_health = self.vitality()	//The succlet will try to move if it has taken damage
 
 /mob/living/simple_mob/vore/alienanimals/succlet/death(gibbed, deathmessage = "shrieks in agony as it is eradicated from reality.")
 	. = ..()

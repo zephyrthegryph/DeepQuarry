@@ -447,10 +447,11 @@
 											BITSET(hud_updateflag, WANTED_HUD)
 											if(ishuman(usr))
 												var/mob/living/carbon/human/U = usr
-												U.handle_hud_list()
+												var/datum/life_system/hud/carbon/human/hud_system = U.life_system_for(/datum/life_system/hud)
+												hud_system.hud_list(U)
 											if(istype(usr,/mob/living/silicon/robot))
 												var/mob/living/silicon/robot/U = usr
-												U.handle_regular_hud_updates()
+												U.refresh_hud()
 
 			if(!modified)
 				to_chat(usr, span_filter_notice("[span_red("Unable to locate a data core entry for this person.")]"))
@@ -566,10 +567,10 @@
 									spawn()
 										if(ishuman(usr))
 											var/mob/living/carbon/human/U = usr
-											U.handle_regular_hud_updates()
+											U.refresh_hud()
 										if(istype(usr,/mob/living/silicon/robot))
 											var/mob/living/silicon/robot/U = usr
-											U.handle_regular_hud_updates()
+											U.refresh_hud()
 
 			if(!modified)
 				to_chat(usr, span_filter_notice("[span_red("Unable to locate a data core entry for this person.")]"))

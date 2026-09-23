@@ -185,36 +185,39 @@
 
 	size_factor_for_sprite = 5
 
-/mob/living/simple_mob/vore/aggressive/corrupthound/swoopie/Life()
+/datum/life_system/type_post/simple_mob/vore/aggressive/corrupthound/swoopie
+	mob_type = /mob/living/simple_mob/vore/aggressive/corrupthound/swoopie
+
+/datum/life_system/type_post/simple_mob/vore/aggressive/corrupthound/swoopie/tick(mob/living/simple_mob/vore/aggressive/corrupthound/swoopie/self, datum/life_context/ctx)
 	. =..()
-	var/turf/T = get_turf(src)
-	if(istype(Vac))
-		if(Vac.loc != src)
-			var/turf/VT = get_turf(Vac)
-			if(!T.Adjacent(VT) || isturf(Vac.loc))
-				if(isliving(Vac.loc))
-					var/mob/living/L = Vac.loc
-					L.remove_from_mob(Vac, src)
+	var/turf/T = get_turf(self)
+	if(istype(self.Vac))
+		if(self.Vac.loc != self)
+			var/turf/VT = get_turf(self.Vac)
+			if(!T.Adjacent(VT) || isturf(self.Vac.loc))
+				if(isliving(self.Vac.loc))
+					var/mob/living/L = self.Vac.loc
+					L.remove_from_mob(self.Vac, self)
 				else
-					Vac.forceMove(src)
-		var/atom/movable/vac_output = Vac.output_dest?.resolve()
+					self.Vac.forceMove(self)
+		var/atom/movable/vac_output = self.Vac.output_dest?.resolve()
 		if(!vac_output)
-			if(isbelly(vore_selected))
-				Vac.output_dest = WEAKREF(vore_selected)
-	if(!istype(T) || !istype(Vac) || !(ai_brain != null) || Vac.loc != src || stat)
+			if(isbelly(self.vore_selected))
+				self.Vac.output_dest = WEAKREF(self.vore_selected)
+	if(!istype(T) || !istype(self.Vac) || !(self.ai_brain != null) || self.Vac.loc != self || self.stat)
 		return
 	if(istype(T, /turf/simulated))
 		var/turf/simulated/S = T
 		if(S.dirt > 50)
-			Vac.afterattack(S, src, 1)
+			self.Vac.afterattack(S, self, 1)
 			return
 	for(var/obj/O in T)
 		if(is_type_in_list(O, GLOB.edible_trash) && !O.anchored)
-			Vac.afterattack(T, src, 1)
+			self.Vac.afterattack(T, self, 1)
 			return
 	for(var/mob/living/L in T)
-		if(!L.anchored && L.devourable && L != src && !L.buckled && L.can_be_drop_prey)
-			Vac.afterattack(L, src, 1)
+		if(!L.anchored && L.devourable && L != self && !L.buckled && L.can_be_drop_prey)
+			self.Vac.afterattack(L, self, 1)
 			return
 
 /datum/say_list/swoopie

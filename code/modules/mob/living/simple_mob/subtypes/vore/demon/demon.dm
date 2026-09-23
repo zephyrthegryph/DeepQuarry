@@ -85,13 +85,20 @@
 		return TRUE
 	. = ..()
 
-/mob/living/simple_mob/vore/demon/Life()
-	. = ..()
-	if(shifted_out)
-		density = FALSE
+/datum/life_system/type_post/simple_mob/vore/demon
+	mob_type = /mob/living/simple_mob/vore/demon
 
-/mob/living/simple_mob/vore/demon/handle_environment(datum/gas_mixture/environment) // TODO - Refactor demons to use is_incorporeal()
-	if(shifted_out)
+/datum/life_system/type_post/simple_mob/vore/demon/tick(mob/living/simple_mob/vore/demon/self, datum/life_context/ctx)
+	. = ..()
+	if(self.shifted_out)
+		self.density = FALSE
+
+/datum/life_system/environment/simple_mob/vore/demon
+	mob_type = /mob/living/simple_mob/vore/demon
+
+/// TODO - Refactor demons to use is_incorporeal()
+/datum/life_system/environment/simple_mob/vore/demon/exchange(mob/living/simple_mob/vore/demon/self, datum/gas_mixture/environment)
+	if(self.shifted_out)
 		return
 	. = ..()
 

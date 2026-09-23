@@ -99,7 +99,7 @@
 		)
 
 
-/datum/species/alraune/handle_environment_special(mob/living/carbon/human/H)
+/datum/species/alraune/environment_effects(mob/living/carbon/human/H)
 	if(H.inStasisNow()) // if they're in stasis, they won't need this stuff.
 		return
 
@@ -134,7 +134,8 @@
 
 		if(environment2)
 			breath = environment2.remove_volume(BREATH_VOLUME)
-			H.handle_chemical_smoke(environment2) //handle chemical smoke while we're at it
+			var/datum/life_system/breathing/carbon/breathing = H.life_system_for(/datum/life_system/breathing)
+			breathing.inhale_smoke(H, environment2) //handle chemical smoke while we're at it
 
 	// NOW a crude copypasta of handle_breath. Leaving some things out that don't apply to plants.
 	if(H.does_not_breathe)

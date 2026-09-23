@@ -12,6 +12,7 @@
 		return name
 
 /mob/living/Destroy()
+	clear_life_systems()
 	remove_all_modifiers(TRUE)
 	// The character's DNA outlives this body when the identity references it.
 	if(dna && identity?.dna == dna)
@@ -1132,7 +1133,7 @@
 // Tries to turn off things that let you see through walls, like mesons.
 // Each mob does vision a bit differently so this is just for inheritence and also so overrided procs can make the vision apply instantly if they call `..()`.
 /mob/living/proc/disable_spoiler_vision()
-	handle_vision()
+	refresh_vision()
 
 /**
  * Small helper component to manage the character setup HUD icon

@@ -3,31 +3,46 @@
 // tissue of its mind host (refresh_host_status()); what's left here is what a
 // client in a container needs: EMP interference on an MMI's I/O, vision and HUD.
 
-/mob/living/carbon/brain/handle_breathing()
+/datum/life_system/breathing/carbon/brain
+	mob_type = /mob/living/carbon/brain
+
+/datum/life_system/breathing/carbon/brain/tick(mob/living/carbon/brain/self, datum/life_context/ctx)
 	return
 
-/mob/living/carbon/brain/handle_radiation()
+/datum/life_system/radiation/carbon/brain
+	mob_type = /mob/living/carbon/brain
+
+/datum/life_system/radiation/carbon/brain/applies(mob/living/carbon/brain/self)
+	return FALSE
+
+/datum/life_system/environment/carbon/brain
+	mob_type = /mob/living/carbon/brain
+
+/datum/life_system/environment/carbon/brain/tick(mob/living/carbon/brain/self, datum/life_context/ctx)
 	return
 
-/mob/living/carbon/brain/handle_environment(datum/gas_mixture/environment)
+/datum/life_system/chemicals/carbon/brain
+	mob_type = /mob/living/carbon/brain
+
+/datum/life_system/chemicals/carbon/brain/tick(mob/living/carbon/brain/self, datum/life_context/ctx)
 	return
 
-/mob/living/carbon/brain/handle_chemicals_in_body()
-	return
+/datum/life_system/status/carbon/brain
+	mob_type = /mob/living/carbon/brain
 
-/mob/living/carbon/brain/handle_regular_status_updates()
-	if(host)
-		refresh_host_status()
-	else if(stat != DEAD)
-		body?.life_tick() // tissue-less views (souls) keep a simple body
+/datum/life_system/status/carbon/brain/update_status(mob/living/carbon/brain/self)
+	if(self.host)
+		self.refresh_host_status()
+	else if(self.stat != DEAD)
+		self.body?.life_tick() // tissue-less views (souls) keep a simple body
 
-	if(stat == DEAD)
-		blinded = 1
-		silent = 0
-		deaf_loop.stop()
+	if(self.stat == DEAD)
+		self.blinded = 1
+		self.silent = 0
+		self.deaf_loop.stop()
 		return 1
 
-	handle_emp_interference()
+	self.handle_emp_interference()
 	return 1
 
 /// EMP interference with an MMI's sensors and speech. Not damage: the MMI's
@@ -88,60 +103,66 @@
 			to_chat(src, span_red("All systems restored."))
 			emp_damage -= 1
 
-/mob/living/carbon/brain/handle_vision()
-	if (stat == DEAD || (XRAY in src.mutations))
-		sight |= SEE_TURFS
-		sight |= SEE_MOBS
-		sight |= SEE_OBJS
-		see_in_dark = 8
-		see_invisible = SEE_INVISIBLE_LEVEL_TWO
-	else if (stat != DEAD)
-		sight &= ~SEE_TURFS
-		sight &= ~SEE_MOBS
-		sight &= ~SEE_OBJS
-		see_in_dark = 2
-		see_invisible = SEE_INVISIBLE_LIVING
+/datum/life_system/vision/carbon/brain
+	mob_type = /mob/living/carbon/brain
+
+/datum/life_system/vision/carbon/brain/tick(mob/living/carbon/brain/self, datum/life_context/ctx)
+	if (self.stat == DEAD || (XRAY in self.mutations))
+		self.sight |= SEE_TURFS
+		self.sight |= SEE_MOBS
+		self.sight |= SEE_OBJS
+		self.see_in_dark = 8
+		self.see_invisible = SEE_INVISIBLE_LEVEL_TWO
+	else if (self.stat != DEAD)
+		self.sight &= ~SEE_TURFS
+		self.sight &= ~SEE_MOBS
+		self.sight &= ~SEE_OBJS
+		self.see_in_dark = 2
+		self.see_invisible = SEE_INVISIBLE_LIVING
 
 	// Call parent to handle signals
 	..()
 
-/mob/living/carbon/brain/handle_regular_hud_updates()
+/datum/life_system/hud/carbon/brain
+	mob_type = /mob/living/carbon/brain
+
+/datum/life_system/hud/carbon/brain/tick(mob/living/carbon/brain/self, datum/life_context/ctx)
 	. = ..()
 	if(!.)
 		return
 
-	client.screen.Remove(GLOB.global_hud.blurry,GLOB.global_hud.druggy,GLOB.global_hud.vimpaired)
+	self.client.screen.Remove(GLOB.global_hud.blurry,GLOB.global_hud.druggy,GLOB.global_hud.vimpaired)
 
-	if (stat != DEAD)
-		if ((blinded))
-			overlay_fullscreen("blind", /atom/movable/screen/fullscreen/blind)
+	if (self.stat != DEAD)
+		if ((self.blinded))
+			self.overlay_fullscreen("blind", /atom/movable/screen/fullscreen/blind)
 		else
-			clear_fullscreen("blind")
-			set_fullscreen(disabilities & NEARSIGHTED, "impaired", /atom/movable/screen/fullscreen/impaired, 1)
-			set_fullscreen(eye_blurry, "blurry", /atom/movable/screen/fullscreen/blurry)
-			set_fullscreen(druggy, "high", /atom/movable/screen/fullscreen/high)
+			self.clear_fullscreen("blind")
+			self.set_fullscreen(self.disabilities & NEARSIGHTED, "impaired", /atom/movable/screen/fullscreen/impaired, 1)
+			self.set_fullscreen(self.eye_blurry, "blurry", /atom/movable/screen/fullscreen/blurry)
+			self.set_fullscreen(self.druggy, "high", /atom/movable/screen/fullscreen/high)
 
-/mob/living/carbon/brain/handle_hud_icons_health()
+/datum/life_system/hud/carbon/brain/health_icons(mob/living/carbon/brain/self)
 	. = ..()
-	if(!. || !healths)
+	if(!. || !self.healths)
 		return
 
-	if(stat == DEAD || (status_flags & FAKEDEATH))
-		healths.icon_state = "health7"
+	if(self.stat == DEAD || (self.status_flags & FAKEDEATH))
+		self.healths.icon_state = "health7"
 		return
 
-	switch(vitality() * 100)
+	switch(self.vitality() * 100)
 		if(100 to INFINITY)
-			healths.icon_state = "health0"
+			self.healths.icon_state = "health0"
 		if(80 to 100)
-			healths.icon_state = "health1"
+			self.healths.icon_state = "health1"
 		if(60 to 80)
-			healths.icon_state = "health2"
+			self.healths.icon_state = "health2"
 		if(40 to 60)
-			healths.icon_state = "health3"
+			self.healths.icon_state = "health3"
 		if(20 to 40)
-			healths.icon_state = "health4"
+			self.healths.icon_state = "health4"
 		if(0 to 20)
-			healths.icon_state = "health5"
+			self.healths.icon_state = "health5"
 		else
-			healths.icon_state = "health6"
+			self.healths.icon_state = "health6"

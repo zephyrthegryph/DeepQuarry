@@ -127,32 +127,35 @@
 	makes_dirt = FALSE // no more dirt
 	holder_type = /obj/item/holder/corgi
 
-/mob/living/simple_mob/animal/passive/dog/corgi/Ian/Life()
+/datum/life_system/type_post/simple_mob/animal/passive/dog/corgi/Ian
+	mob_type = /mob/living/simple_mob/animal/passive/dog/corgi/Ian
+
+/datum/life_system/type_post/simple_mob/animal/passive/dog/corgi/Ian/tick(mob/living/simple_mob/animal/passive/dog/corgi/Ian/self, datum/life_context/ctx)
 	..()
 
 	//Not replacing with SA FollowTarget mechanics because Ian behaves... very... specifically.
 
 	//Feeding, chasing food, FOOOOODDDD
-	if(!stat && !resting && !buckled)
-		turns_since_scan++
-		if(turns_since_scan > 5)
-			turns_since_scan = 0
-			if((movement_target) && !(isturf(movement_target.loc) || ishuman(movement_target.loc) ))
-				movement_target = null
-			if(!movement_target || !(movement_target.loc in oview(src, 7)) )
-				movement_target = null
-				for(var/obj/item/reagent_containers/food/snacks/S in oview(src,7))
+	if(!self.stat && !self.resting && !self.buckled)
+		self.turns_since_scan++
+		if(self.turns_since_scan > 5)
+			self.turns_since_scan = 0
+			if((self.movement_target) && !(isturf(self.movement_target.loc) || ishuman(self.movement_target.loc) ))
+				self.movement_target = null
+			if(!self.movement_target || !(self.movement_target.loc in oview(self, 7)) )
+				self.movement_target = null
+				for(var/obj/item/reagent_containers/food/snacks/S in oview(self,7))
 					if(isturf(S.loc) || ishuman(S.loc))
-						movement_target = S
+						self.movement_target = S
 						break
-			if(movement_target)
-				chase_target()
+			if(self.movement_target)
+				self.chase_target()
 
 		if(prob(1))
-			visible_emote(pick("dances around","chases their tail"))
+			self.visible_emote(pick("dances around","chases their tail"))
 			spawn(0)
 				for(var/i in list(1,2,4,8,4,2,1,2,4,8,4,2,1,2,4,8,4,2))
-					set_dir(i)
+					self.set_dir(i)
 					sleep(1)
 
 //LISA! SQUEEEEEEEEE~
@@ -178,16 +181,19 @@
 		return
 	..()
 
-/mob/living/simple_mob/animal/passive/dog/corgi/Lisa/Life()
+/datum/life_system/type_post/simple_mob/animal/passive/dog/corgi/Lisa
+	mob_type = /mob/living/simple_mob/animal/passive/dog/corgi/Lisa
+
+/datum/life_system/type_post/simple_mob/animal/passive/dog/corgi/Lisa/tick(mob/living/simple_mob/animal/passive/dog/corgi/Lisa/self, datum/life_context/ctx)
 	..()
 
-	if(!stat && !resting && !buckled)
-		turns_since_scan++
-		if(turns_since_scan > 15)
-			turns_since_scan = 0
+	if(!self.stat && !self.resting && !self.buckled)
+		self.turns_since_scan++
+		if(self.turns_since_scan > 15)
+			self.turns_since_scan = 0
 			var/alone = TRUE
 			var/ian = FALSE
-			for(var/mob/M in oviewers(7, src))
+			for(var/mob/M in oviewers(7, self))
 				if(istype(M, /mob/living/simple_mob/animal/passive/dog/corgi/Ian))
 					if(M.client)
 						alone = FALSE
@@ -197,16 +203,16 @@
 				else
 					alone = FALSE
 					break
-			if(alone && ian && puppies < 4)
-				if(near_camera(src) || near_camera(ian))
+			if(alone && ian && self.puppies < 4)
+				if(self.near_camera(self) || self.near_camera(ian))
 					return
-				new /mob/living/simple_mob/animal/passive/dog/corgi/puppy(loc)
+				new /mob/living/simple_mob/animal/passive/dog/corgi/puppy(self.loc)
 
 		if(prob(1))
-			visible_emote(pick("dances around","chases her tail"))
+			self.visible_emote(pick("dances around","chases her tail"))
 			spawn(0)
 				for(var/i in list(1,2,4,8,4,2,1,2,4,8,4,2,1,2,4,8,4,2))
-					set_dir(i)
+					self.set_dir(i)
 					sleep(1)
 
 //NARSIAN HAS COME

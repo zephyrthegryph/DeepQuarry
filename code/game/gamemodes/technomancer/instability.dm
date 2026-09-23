@@ -43,34 +43,34 @@
 			if(100 to 200)
 				wiz_instability_display.icon_state = "instability3"
 
-// Proc: Life()
-// Parameters: 0
-// Description: Makes instability tick along with Life().
-/mob/living/Life()
-	. = ..()
-	handle_instability()
-
-// Proc: handle_instability()
-// Parameters: 0
-// Description: Makes instability decay.  instability_effects() handles the bad effects for having instability.  It will also hold back
+// Instability system: makes instability decay.  instability_effects() handles the bad effects for having instability.  It will also hold back
 // from causing bad effects more than one every ten seconds, to prevent sudden death from angry RNG.
-/mob/living/proc/handle_instability()
-	instability = between(0, round(instability, TECHNOMANCER_INSTABILITY_PRECISION), 200)
-	last_instability = instability
+/datum/life_system/instability
+	name = "instability"
+	phase = LIFE_PHASE_INPUT
+	order = 30
+	life_sets = LIFE_SET_LIVING | LIFE_SET_ROBOT
+
+/datum/life_system/instability/tick(mob/living/self, datum/life_context/ctx)
+	self.instability = between(0, round(self.instability, TECHNOMANCER_INSTABILITY_PRECISION), 200)
+	self.last_instability = self.instability
 
 	//This should cushon against really bad luck.
-	if(instability && last_instability_event < (world.time - 5 SECONDS) && prob(50))
-		instability_effects()
+	if(self.instability && self.last_instability_event < (world.time - 5 SECONDS) && prob(50))
+		self.instability_effects()
 
-	var/instability_decayed = abs( round(instability * TECHNOMANCER_INSTABILITY_DECAY, TECHNOMANCER_INSTABILITY_PRECISION) - instability )
+	var/instability_decayed = abs( round(self.instability * TECHNOMANCER_INSTABILITY_DECAY, TECHNOMANCER_INSTABILITY_PRECISION) - self.instability )
 	instability_decayed = max(instability_decayed, TECHNOMANCER_INSTABILITY_MIN_DECAY)
 
-	adjust_instability(-instability_decayed)
-	radiate_instability(instability_decayed)
+	self.adjust_instability(-instability_decayed)
+	self.radiate_instability(instability_decayed)
 
-/mob/living/carbon/human/handle_instability()
+/datum/life_system/instability/carbon/human
+	mob_type = /mob/living/carbon/human
+
+/datum/life_system/instability/carbon/human/tick(mob/living/carbon/human/self, datum/life_context/ctx)
 	..()
-	instability_update_hud()
+	self.instability_update_hud()
 
 /*
 [16:18:08] <PsiOmegaDelta> Sparks

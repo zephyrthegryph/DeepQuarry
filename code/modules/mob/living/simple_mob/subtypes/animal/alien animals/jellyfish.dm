@@ -129,11 +129,14 @@ GLOBAL_VAR_INIT(jellyfish_count, 0)
 	GLOB.jellyfish_count --
 	return ..()
 
-/mob/living/simple_mob/vore/alienanimals/space_jellyfish/Life()
+/datum/life_system/type_post/simple_mob/vore/alienanimals/space_jellyfish
+	mob_type = /mob/living/simple_mob/vore/alienanimals/space_jellyfish
+
+/datum/life_system/type_post/simple_mob/vore/alienanimals/space_jellyfish/tick(mob/living/simple_mob/vore/alienanimals/space_jellyfish/self, datum/life_context/ctx)
 	. = ..()
-	if(client)
+	if(self.client)
 		return
-	reproduce()
+	self.reproduce()
 
 /mob/living/simple_mob/vore/alienanimals/space_jellyfish/proc/reproduce()
 	if(reproduction_cooldown > 0)

@@ -13,12 +13,17 @@
 	GLOB.dead_mob_list -= src
 	GLOB.human_mob_list -= src
 
-/mob/living/carbon/human/dummy/Life()
-	GLOB.mob_list -= src
-	GLOB.living_mob_list -= src
-	GLOB.dead_mob_list -= src
-	GLOB.human_mob_list -= src
-	return
+/mob/living/carbon/human/dummy
+	life_set = LIFE_SET_DELIST
+
+/datum/life_system/delist/carbon/human/dummy
+	mob_type = /mob/living/carbon/human/dummy
+
+/datum/life_system/delist/carbon/human/dummy/tick(mob/living/carbon/human/dummy/self, datum/life_context/ctx)
+	GLOB.mob_list -= self
+	GLOB.living_mob_list -= self
+	GLOB.dead_mob_list -= self
+	GLOB.human_mob_list -= self
 
 /mob/living/carbon/human/dummy/mannequin/Initialize(mapload)
 	. = ..()

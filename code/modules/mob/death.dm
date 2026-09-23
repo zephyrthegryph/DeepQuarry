@@ -140,8 +140,8 @@
 
 	set_respawn_timer()
 	update_icon()
-	handle_regular_hud_updates()
-	handle_vision()
+	refresh_hud()
+	refresh_vision()
 
 	if(SSticker && SSticker.mode)
 		SSticker.mode.check_win()

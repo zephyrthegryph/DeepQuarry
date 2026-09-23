@@ -690,7 +690,7 @@
 	can_take = ORGANICS
 	var/last_adrenaline_rush
 
-/datum/trait/positive/adrenaline_rush/handle_environment_special(mob/living/carbon/human/H)
+/datum/trait/positive/adrenaline_rush/environment_effects(mob/living/carbon/human/H)
 	if(!(H.is_critical() || H.vitality() <= 0.5)) // Critically hurt
 		return
 	if(last_adrenaline_rush && last_adrenaline_rush + (30 MINUTES) > world.time)

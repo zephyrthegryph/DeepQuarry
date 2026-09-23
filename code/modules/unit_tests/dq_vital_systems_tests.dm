@@ -19,7 +19,7 @@
 	H.failed_last_breath = 0
 	H.losebreath = 0
 	var/hypoxia_before = H.injury_load(INJURY_CATEGORY_ASPHYXIA)
-	H.breathe()
+	life_test_breathe(H)
 	TEST_ASSERT(H.failed_last_breath, "breathing through a closed airway should fail")
 	TEST_ASSERT(H.injury_load(INJURY_CATEGORY_ASPHYXIA) > hypoxia_before, "a failed breath should build tissue hypoxia")
 	TEST_ASSERT_EQUAL(H.get_respiratory_rate(), 0, "a choking patient should have no respiratory rate")

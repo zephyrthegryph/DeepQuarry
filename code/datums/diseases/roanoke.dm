@@ -84,7 +84,7 @@
 				var/obj/item/organ/external/E = O.parent_organ
 				var/datum/affliction/wound/internal_bleeding/W = new(5)
 				E.add_wound(W)
-				M.handle_organs(TRUE) //Force an update so we start processing the internal bleeding.
+				M.process_organs(TRUE) //Force an update so we start processing the internal bleeding.
 
 			if(M.stat == DEAD || M.allow_spontaneous_tf)
 				M.LoadComponent(/datum/component/xenochimera)

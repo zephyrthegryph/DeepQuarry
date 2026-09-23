@@ -16,47 +16,59 @@
 		. = TRUE
 	last_dam = damage_this_tick
 
-// Takes care of organ related updates, such as broken and missing limbs
-/mob/living/carbon/human/proc/handle_organs(force = FALSE)
+/datum/life_system/organs
+	name = "organs"
+	bit = LIFE_SYS_ORGANS
+	phase = LIFE_PHASE_TAIL
+	order = 150
+	segment = LIFE_SEG_HUMAN_LIVE
+	mob_type = /mob/living/carbon/human
 
-	var/force_process = recheck_bad_external_organs()
+/datum/life_system/organs/tick(mob/living/carbon/human/self, datum/life_context/ctx)
+	process_organs(self)
+
+/// Takes care of organ related updates, such as broken and missing limbs. `force` rebuilds the
+/// list of external organs that need processing.
+/datum/life_system/organs/proc/process_organs(mob/living/carbon/human/self, force = FALSE)
+
+	var/force_process = self.recheck_bad_external_organs()
 
 	if(force_process || force)
 		// Populate directly from organs that need processing instead of adding all
 		// then pruning the ones that don't (the old "Silly and slow" approach).
-		bad_external_organs.Cut()
-		for(var/obj/item/organ/external/Ex in organs)
+		self.bad_external_organs.Cut()
+		for(var/obj/item/organ/external/Ex in self.organs)
 			if(Ex.need_process())
-				bad_external_organs += Ex
+				self.bad_external_organs += Ex
 
 	//processing internal organs is pretty cheap, do that first.
-	for(var/obj/item/organ/I in internal_organs)
+	for(var/obj/item/organ/I in self.internal_organs)
 		I.process()
 
-	handle_stance()
-	handle_grasp()
+	self.handle_stance()
+	self.handle_grasp()
 
-	if(!force_process && !bad_external_organs.len)
+	if(!force_process && !self.bad_external_organs.len)
 		return
 
-	number_wounds = 0
-	for(var/obj/item/organ/external/E in bad_external_organs)
+	self.number_wounds = 0
+	for(var/obj/item/organ/external/E in self.bad_external_organs)
 		if(!E)
 			continue
 		if(!E.need_process())
-			bad_external_organs -= E
+			self.bad_external_organs -= E
 			continue
 		else
 			E.process()
-			number_wounds += length(E.get_wounds())
+			self.number_wounds += length(E.get_wounds())
 
-			if (!lying && !buckled && world.time - l_move_time < 15)
+			if (!self.lying && !self.buckled && world.time - self.l_move_time < 15)
 			//Moving around with fractured ribs won't do you any good
-				if (prob(10) && !stat && can_feel_pain() && factor(BF_ANALGESIA) < 50 && E.is_broken() && E.internal_organs.len)
-					custom_pain("Pain jolts through your broken [E.encased ? E.encased : E.name], staggering you!", 50)
-					emote("scream")
-					drop_item(loc)
-					Stun(2)
+				if (prob(10) && !self.stat && self.can_feel_pain() && self.factor(BF_ANALGESIA) < 50 && E.is_broken() && E.internal_organs.len)
+					self.custom_pain("Pain jolts through your broken [E.encased ? E.encased : E.name], staggering you!", 50)
+					self.emote("scream")
+					self.drop_item(self.loc)
+					self.Stun(2)
 
 				//Moving makes open wounds get infected much faster
 				for(var/datum/affliction/wound/W as anything in E.get_wounds())
@@ -232,3 +244,8 @@
 	if(dna.GetUIState(DNA_UI_GENDER) ^ gender == FEMALE) // XOR will catch both cases where they do not match
 		dna.SetUIState(DNA_UI_GENDER, gender == FEMALE)
 		sync_organ_dna(dna)
+
+/// Runs the organs system now. `force` rebuilds the list of external organs needing processing.
+/mob/living/carbon/human/proc/process_organs(force = FALSE)
+	var/datum/life_system/organs/S = life_system_for(/datum/life_system/organs)
+	S?.process_organs(src, force)

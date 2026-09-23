@@ -38,10 +38,15 @@ SUBSYSTEM_DEF(mobs)
 	var/profile_sample_stride = 16
 	var/list/profile_type_cost = list()
 	var/list/profile_type_calls = list()
+	/// Per life system (doc/mob_life_architecture.md §4.3): "[system type]" -> estimated ms.
+	var/list/profile_system_cost = list()
+	var/list/profile_system_calls = list()
 	var/profile_next_dump = 0
+	/// Mobs currently hibernating (no awake life systems). Empty unless MOB_HIBERNATION_ENABLED.
+	var/list/hibernating_mobs = list()
 
 /datum/controller/subsystem/mobs/stat_entry(msg)
-	msg = "P: [length(GLOB.mob_list)] | S: [slept_mobs] | D: [length(death_list)]"
+	msg = "P: [length(GLOB.mob_list)] | S: [slept_mobs] | H: [length(hibernating_mobs)] | D: [length(death_list)]"
 	return ..()
 
 /datum/controller/subsystem/mobs/fire(resumed = 0)
@@ -66,7 +71,6 @@ SUBSYSTEM_DEF(mobs)
 
 	//cache for sanic speed (lists are references anyways)
 	var/list/currentrun = src.currentrun
-	var/times_fired = src.life_cycle
 	while(length(currentrun) && slice_budget_remaining-- > 0)
 		var/mob/M = currentrun[length(currentrun)]
 		currentrun.len--
@@ -81,6 +85,13 @@ SUBSYSTEM_DEF(mobs)
 		else if(!M.enabled)
 			slept_mobs++
 			continue
+		else if(M.life_hibernating)
+			slept_mobs++
+			continue
+
+		// Elapsed seconds since this mob's last Life(); systems scale by it.
+		var/seconds = M.life_last_time ? (world.time - M.life_last_time) / (1 SECONDS) : LIFE_NOMINAL_SECONDS
+		M.life_last_time = world.time
 
 		profile_run_index++
 		if(!((profile_run_index + profile_sample_phase) % profile_sample_stride))
@@ -88,11 +99,11 @@ SUBSYSTEM_DEF(mobs)
 			// Life() is legacy code and may sleep. Wall-clock timing attributes the
 			// scheduler pause to the sampled mob; tick usage measures actual work.
 			var/profile_start = TICK_USAGE
-			M.Life(times_fired)
+			M.Life(seconds, TRUE)
 			profile_type_cost[mob_type] += TICK_DELTA_TO_MS(TICK_USAGE - profile_start) * profile_sample_stride
 			profile_type_calls[mob_type] += profile_sample_stride
 		else
-			M.Life(times_fired)
+			M.Life(seconds)
 
 		if (MC_TICK_CHECK)
 			return
@@ -113,7 +124,40 @@ SUBSYSTEM_DEF(mobs)
 			break
 	profile_type_cost.Cut()
 	profile_type_calls.Cut()
+	var/list/sorted_systems = profile_system_cost.Copy()
+	sortTim(sorted_systems, /proc/cmp_numeric_desc, TRUE)
+	rank = 0
+	for(var/system_type in sorted_systems)
+		log_runtime("MOB_SYSTEM_PROFILE system=[system_type] estimated_cost_ms=[round(profile_system_cost[system_type], 0.01)] estimated_calls=[profile_system_calls[system_type]]")
+		if(++rank >= 30)
+			break
+	profile_system_cost.Cut()
+	profile_system_calls.Cut()
 	profile_next_dump = world.time + 2 MINUTES
+
+/// Adds one sampled system run (tick usage delta) to the per-system profile.
+/datum/controller/subsystem/mobs/proc/record_system_cost(datum/life_system/S, tick_delta)
+	var/key = "[S.type]"
+	profile_system_cost[key] += TICK_DELTA_TO_MS(tick_delta) * profile_sample_stride
+	profile_system_calls[key] += profile_sample_stride
+
+/// A mob with no awake life systems leaves the run until wake() (doc §4.3, stage 2).
+/// Disabled by MOB_HIBERNATION_ENABLED until systems have sleep conditions.
+/datum/controller/subsystem/mobs/proc/hibernate(mob/living/L)
+	if(!MOB_HIBERNATION_ENABLED || L.life_hibernating)
+		return
+	L.life_hibernating = TRUE
+	hibernating_mobs[L] = world.time
+	log_runtime("MOB_HIBERNATE: [key_name(L)] ([L.type]) hibernating; [length(hibernating_mobs)] hibernating")
+
+/// Brings a hibernating mob back into the run. Called by /mob/living/proc/wake().
+/datum/controller/subsystem/mobs/proc/wake_mob(mob/living/L)
+	if(!L.life_hibernating)
+		return
+	L.life_hibernating = FALSE
+	var/slept_since = hibernating_mobs[L]
+	hibernating_mobs -= L
+	log_runtime("MOB_HIBERNATE: [key_name(L)] ([L.type]) woke after [DisplayTimeText(world.time - slept_since)]; [length(hibernating_mobs)] hibernating")
 
 /datum/controller/subsystem/mobs/proc/log_recent()
 	var/msg = "Debug output from the [name] subsystem:\n"
