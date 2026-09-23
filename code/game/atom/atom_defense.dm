@@ -52,8 +52,12 @@
 
 	var/integrity_failure_amount = integrity_failure * max_integrity
 
-	//BREAKING FIRST
-	if(integrity_failure && previous_atom_integrity > integrity_failure_amount && atom_integrity <= integrity_failure_amount)
+	//BREAKING FIRST (types with a breaking-point rule break through the rule)
+	// Settling runs the rule here, in the same order as the check it replaces.
+	var/rule_breaks = RULES_REPLACE(type, RULE_REPLACES_INTEGRITY_BREAK)
+	if(rule_breaks)
+		dq_rules_settle(src)
+	else if(integrity_failure && previous_atom_integrity > integrity_failure_amount && atom_integrity <= integrity_failure_amount)
 		atom_break(damage_flag)
 
 	//DESTROYING SECOND
@@ -82,6 +86,7 @@
 		return
 	atom_integrity = new_value
 	on_update_integrity(old_value, new_value)
+	dq_rules_publish(src, RULE_KEY_INTEGRITY)
 	return new_value
 
 /// Returns the atom's current integrity. Use this instead of reading atom_integrity (which is private).
@@ -103,7 +108,9 @@
 	var/previous_atom_integrity = atom_integrity
 	update_integrity(min(max_integrity, atom_integrity + repair_amount))
 	contract_report_station_repair(src, atom_integrity - previous_atom_integrity)
-	if(integrity_failure && previous_atom_integrity <= integrity_failure_amount && atom_integrity > integrity_failure_amount)
+	if(RULES_REPLACE(type, RULE_REPLACES_INTEGRITY_BREAK))
+		dq_rules_settle(src)
+	else if(integrity_failure && previous_atom_integrity <= integrity_failure_amount && atom_integrity > integrity_failure_amount)
 		atom_fix()
 	return atom_integrity
 

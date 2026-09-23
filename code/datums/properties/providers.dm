@@ -47,6 +47,11 @@
 /datum/property_provider/proc/contribute(datum/D)
 	return null
 
+/// Generated rule tests: set this property's value on `D` to `value` the way
+/// the game would. FALSE if this provider can't (the test then fails).
+/datum/property_provider/proc/test_write(datum/D, value)
+	return FALSE
+
 /// Turns a raw var value into the property's value. Tags become TRUE/FALSE.
 /datum/property_provider/proc/normalize(raw)
 	return raw

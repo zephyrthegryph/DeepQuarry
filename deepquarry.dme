@@ -335,6 +335,7 @@
 #include "code\__defines\atmospherics_linda\reactions.dm"
 #include "code\__defines\predicates.dm"
 #include "code\__defines\properties.dm"
+#include "code\__defines\rules.dm"
 // Medical symptom/audience #defines — kept in the early defines block so
 // SYMPTOM_AUDIENCE_* etc. are available to every consumer (incl. unit tests,
 // which are included before the medical module under CIBUILDING).
@@ -5145,12 +5146,17 @@
 #include "code\datums\components\sparse_vars\update_on_z.dm"
 #include "code\datums\properties\aggregators.dm"
 #include "code\datums\properties\families\item_physical.dm"
+#include "code\datums\properties\families\dynamic_state.dm"
 #include "code\datums\properties\families\temperature_thresholds.dm"
 #include "code\datums\properties\predicates.dm"
 #include "code\datums\properties\property_def.dm"
 #include "code\datums\properties\providers.dm"
 #include "code\datums\properties\registry.dm"
 #include "code\datums\properties\state_adapter.dm"
+#include "code\datums\rules\binding.dm"
+#include "code\datums\rules\declarations.dm"
+#include "code\datums\rules\reactor_adapter.dm"
+#include "code\datums\rules\rule.dm"
 #include "code\modules\map_stubs\map_stubs.dm"
 #include "code\modules\body\affliction.dm"
 #include "code\modules\body\body.dm"

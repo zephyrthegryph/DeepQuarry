@@ -48,6 +48,9 @@
 #define PROP_IGNITION_POINT "ignition_point"
 #define PROP_MAX_HEAT_PROTECTION "max_heat_protection"
 #define PROP_HEAT_CAPACITY "heat_capacity"
+#define PROP_TEMPERATURE "temperature"
+#define PROP_INTEGRITY_RATIO "integrity_ratio"
+#define PROP_INTEGRITY_FAILURE "integrity_failure"
 // Tag ids.
 #define TAG_SHARP "sharp"
 #define TAG_FLAMMABLE "flammable"
