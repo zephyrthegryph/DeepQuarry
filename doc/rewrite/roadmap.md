@@ -112,6 +112,8 @@ The lead compiles and runs the suite between waves, and agents stay inside their
 | C8a | Occupant and mech containment: sealed occupant slots, mech pilot, hardpoint and cargo slots, and blast shares. Medical machines (cryo, sleepers, scanners) wait for the body rewrite's automation work | C2, D5 | The duplicated go-in, go-out and eject code is deleted |
 | C8b | Mech damage through the body model. The body rewrite provides the body host interface; it also owns occupant behaviour in medical machines | C8a, D3 | Mech damage goes through `injure()` |
 | C9 | Vending and smartfridge stock become stock slots | C1 | Vending no longer materializes a product's whole amount at once |
+| C10 | Latency policy: an atom is latent when its slot is not rendered or interactive, nobody views the holder, it has no timers, processing, signals, outside refs or live weakrefs, its type is verified storable, and it has been idle past a delay. A budgeted reactor sweep collapses, events materialize. The sandbox CI verifies storability per type instead of the hand-kept `latent_safe` list. Test and dev builds run a round-trip audit, and a config kill switch turns collapse off | C5, C6, S1 | `latent_contents` and `latent_safe_types.dm` are gone; the fuzz and round-trip audits pass |
+| C11 | No raw contents access: every holder access goes through the ledger API, and tile queries go through a spatial API (`in T`, `locate() in T`). A lint caps raw uses and the count only goes down | C1, I7 | The raw-access count reaches 0 outside the ledger and spatial API |
 
 ### I: interactions and input
 
