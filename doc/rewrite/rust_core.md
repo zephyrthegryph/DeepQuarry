@@ -476,6 +476,19 @@ process-global) and `Latest<T>`'s mailbox (already sound/documented); no
   would immediately fail on the pre-existing warnings above. **Not changed
   this pass**; recommend widening the clippy package list in the same PR
   that removes the dead layout functions.
+- **Also found, pre-existing, unrelated to this pass**: `cargo fmt --all
+  --check` (the CI job right above the clippy one, unscoped) already fails
+  on master — `ffi/callback` and `ffi/macros` are tab-indented with no
+  local `rustfmt.toml` (unlike `domains/gas`, which has one matching
+  vendored auxmos's own tab style), so default rustfmt's 4-space style
+  disagrees with every line. Confirmed via `git show
+  59ca56beef:verdigris/ffi/callback/src/lib.rs` — predates this audit
+  entirely. New/edited code in those two crates on this branch matches
+  their existing (tabs) style rather than default rustfmt, i.e. doesn't
+  make the pre-existing gap any worse, but doesn't fix it either: that's
+  either a repo-wide "add hard_tabs=true rustfmt.toml at the verdigris
+  workspace root" decision or a reformat of those two crates, neither of
+  which this audit's scope covers. Flagged, not touched.
 - The `auxmacros` doctest failure noted in the worktree brief (missing
   `ByondValue`/`bind` context) was actually two doctests (the `bind` macro's
   own example was already `ignore`d): `auxcallback::callback_processing_hook`'s
