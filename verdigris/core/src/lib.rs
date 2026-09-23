@@ -27,6 +27,7 @@ pub mod outbox;
 pub mod overlay;
 pub mod owner;
 pub mod propagate;
+pub mod rate;
 pub mod reactor;
 pub mod recorder;
 pub mod replay;
