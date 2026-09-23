@@ -68,7 +68,7 @@
 		// Transfer our player to their new body, if RNG provided one.
 		if(new_spiders.len && client)
 			var/mob/living/simple_mob/animal/giant_spider/new_body = pick(new_spiders)
-			new_body.key = src.key
+			move_player(src, new_body, "carrier spider burst into spiderlings")
 	return ..()
 
 // Note that this isn't required for the 'scan all spiders' entry since its essentially a meme.

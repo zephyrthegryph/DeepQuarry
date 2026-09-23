@@ -40,8 +40,9 @@
 
 	qdel(host_brain)
 	host_brain = new(src)
-	host_brain.ckey = host.ckey
 	host_brain.name = host.name
+	// The host's mind is pushed aside into the captive brain, keeping its identity.
+	move_player(host, host_brain, "pushed aside by borer [src]", share = TRUE)
 
 	if(!host_brain.computer_id)
 		host_brain.computer_id = h2b_id
@@ -55,7 +56,8 @@
 	src.computer_id = null
 	src.lastKnownIP = null
 
-	host.ckey = src.ckey
+	// The borer wears the host's body without rewriting the host's identity.
+	move_player(src, host, "borer [src] took control of [host]", share = TRUE)
 
 	if(!host.computer_id)
 		host.computer_id = s2h_id

@@ -7,14 +7,14 @@
 	icon_state = "brain1"
 	forced_psay = TRUE
 	var/mob/living/prey_body		//The body of the person who dominated the brain
-	var/prey_ckey					//The ckey of the person who dominated the brain
+	/// The prey's mind. It carries the prey's identity wherever it goes.
+	var/datum/mind/prey_mind
 	var/prey_name					//In case the body is missing. ;3c
 	var/list/prey_langs = list()
 	var/mob/living/pred_body		//The body of the person who was dominated
-	var/pred_ckey					//The ckey of the person who was dominated
-	/// The identities of the two characters, carried by reference across key moves.
-	var/datum/character_identity/pred_identity
-	var/datum/character_identity/prey_identity
+	/// The predator's mind (null when the predator was an unplayed mob).
+	var/datum/mind/pred_mind
+	/// The predator had no mind: this back seat is kept even while empty.
 	var/was_mob
 
 /mob/living/dominated_brain/Initialize(mapload, mob/living/pred, preyname, mob/living/prey)
@@ -32,7 +32,7 @@
 	. = ..()
 	if(!isliving(loc))
 		qdel(src)
-	if(!ckey)
+	if(!mind && !was_mob)
 		qdel(src)
 
 /mob/living/dominated_brain/say_understands(mob/other, datum/language/speaking = null)
@@ -63,16 +63,16 @@
 
 /mob/living/dominated_brain/Destroy()
 	lets_unregister_our_signals()
-	pred_identity = null
-	prey_identity = null
+	prey_mind = null
+	pred_mind = null
 	. = ..()
 
 /mob/living/dominated_brain/process_resist()
 	//Resisting control by an alien mind.
-	if(pred_body.ckey == pred_ckey)
+	if(pred_mind && pred_body.mind == pred_mind)
 		dominate_predator()
 		return
-	if(pred_ckey == ckey && pred_body.prey_controlled)
+	if(mind == pred_mind && pred_body.prey_controlled)
 		if(tgui_alert(src, "Do you want to wrest control over your body back from \the [prey_name]?", "Regain Control",list("No","Yes")) != "Yes")
 			return
 
@@ -102,10 +102,8 @@
 	else if(prey_body)	//It exists, but it's not here, let's spawn them a temporary home.
 		var/mob/living/dominated_brain/ndb = new /mob/living/dominated_brain(pred_body, pred_body, prey_name, prey_body)
 		ndb.name = prey_name
-		ndb.prey_ckey = src.prey_ckey
-		ndb.pred_ckey = src.pred_ckey
-		ndb.prey_identity = prey_identity
-		ndb.pred_identity = pred_identity
+		ndb.prey_mind = prey_mind
+		ndb.pred_mind = pred_mind
 
 		prey_goes_here = ndb
 		prey_goes_here.real_name = src.prey_name
@@ -117,10 +115,8 @@
 	else		//The prey body does not exist, let's put them in the back seat instead!
 		var/mob/living/dominated_brain/ndb = new /mob/living/dominated_brain(pred_body, pred_body, prey_name)
 		ndb.name = prey_name
-		ndb.prey_ckey = src.prey_ckey
-		ndb.pred_ckey = src.pred_ckey
-		ndb.prey_identity = prey_identity
-		ndb.pred_identity = pred_identity
+		ndb.prey_mind = prey_mind
+		ndb.pred_mind = pred_mind
 
 		prey_goes_here = ndb
 		src.languages -= src.temp_languages
@@ -132,12 +128,14 @@
 	// Handle Pred
 	remove_verb(pred_body, /mob/proc/release_predator)
 
-	//Now actually put the people in the mobs
-	prey_goes_here.ckey = src.prey_ckey
-	pred_body.ckey = src.pred_ckey
-	prey_goes_here.share_identity(prey_identity)
-	pred_body.share_identity(pred_identity)
-	log_and_message_admins("is now controlled by [pred_body.ckey]. They were restored to control through prey domination, and had been controlled by [prey_ckey].", pred_body)
+	//Now actually put the people in the mobs. The prey wears its own identity
+	//in a back seat and binds it again in its own body; the predator gets its
+	//body back.
+	var/datum/mind/returning_prey = prey_mind
+	var/datum/mind/returning_pred = pred_mind
+	move_player_mind(returning_prey, prey_goes_here, "prey domination of [pred_body] ended", share = (prey_goes_here != prey_body))
+	move_player_mind(returning_pred, pred_body, "regained control of own body from [prey_name]")
+	log_and_message_admins("is now controlled by [pred_body.ckey]. They were restored to control through prey domination, and had been controlled by [returning_prey?.key].", pred_body)
 	pred_body.absorb_langs()
 	pred_body.prey_controlled = FALSE
 	qdel(src)
@@ -170,7 +168,6 @@
 	set category = "Abilities.Vore"
 	set name = "Dominate Predator"
 	set desc = "Connect to and dominate the brain of your predator."
-	var/is_mob = FALSE // - tracks if character is a non player mob TODO: Add
 
 	var/mob/living/pred
 	var/mob/living/prey = src
@@ -216,11 +213,6 @@
 			return
 	else if(!pred.client && ("original_player" in pred.vars)) //check if the body belonged to a player and give proper log about it while preparing it
 		log_and_message_admins("[key_name_admin(prey)] is taking control over [pred] while they are out of their body.")
-		pred.ckey="DOMPLY[rand(100000,999999)]"
-		is_mob = TRUE
-	else //at this point we end up with a mob
-		pred.ckey = "DOMMOB[rand(100000,999999)]" //this is cursed, but it does work and is cleaned up after
-		is_mob = TRUE
 
 	to_chat(pred, span_warning("You can feel the will of another overwriting your own, control of your body being sapped away from you..."))
 	to_chat(prey, span_warning("You can feel the will of your host diminishing as you exert your will over them!"))
@@ -231,45 +223,7 @@
 
 	to_chat(prey, span_danger("You plunge your conciousness into \the [pred], assuming control over their very body, leaving your own behind within \the [pred]'s [loc]."))
 	to_chat(pred, span_danger("You feel your body move on its own, as you are pushed to the background, and an alien consciousness displaces yours."))
-	var/mob/living/dominated_brain/pred_brain
-	var/delete_source = FALSE
-	if(istype(prey, /mob/living/dominated_brain))
-		var/mob/living/dominated_brain/punished_prey = prey
-		if(punished_prey.prey_body)
-			pred_brain = new /mob/living/dominated_brain(pred, pred, name, punished_prey.prey_body)
-		else
-			pred_brain = new /mob/living/dominated_brain(pred, pred, name)	//We have to play musical chairs with 3 bodies, or everyone gets d/ced
-		delete_source = TRUE
-	else
-		pred_brain = new /mob/living/dominated_brain(pred, pred, name, prey)
-
-	pred_brain.prey_identity = prey.identity
-	pred_brain.pred_identity = pred.identity
-
-	pred_brain.name = pred.name
-	var/list/preylangs = list()
-	preylangs |= prey.languages
-	preylangs -= prey.temp_languages
-	pred_brain.prey_langs |= preylangs
-	pred_brain.prey_ckey = prey.ckey
-	pred_brain.pred_ckey = pred.ckey
-	pred_brain.pred_body.absorb_langs()
-
-	add_verb(pred, /mob/proc/release_predator)
-
-	//Now actually put the people in the mobs
-	pred_brain.ckey = pred_brain.pred_ckey
-	pred_brain.real_name = pred.real_name
-	pred.ckey = pred_brain.prey_ckey
-	pred_brain.share_identity(pred_brain.pred_identity)
-	pred.share_identity(pred_brain.prey_identity)
-	pred.prey_controlled = TRUE
-	log_and_message_admins("is now controlled by [pred.ckey], they were taken over via prey domination, and were originally controlled by [pred_brain.pred_ckey].", pred)
-	if(delete_source)
-		qdel(prey)
-
-	if(is_mob == 1)
-		pred_brain.was_mob = TRUE
+	take_over_predator(prey, pred, "prey domination")
 
 /mob/proc/release_predator()
 	set category = "Abilities.Vore"
@@ -279,15 +233,10 @@
 	for(var/I in contents)
 		if(istype(I, /mob/living/dominated_brain))
 			var/mob/living/dominated_brain/db = I
-			if(db.ckey == db.pred_ckey)
+			if(db.mind == db.pred_mind)
 				to_chat(src, span_notice("You ease off of your control, releasing \the [db]."))
 				to_chat(db, span_notice("You feel the alien presence fade, and restore control of your body to you of their own will..."))
-				if(db.was_mob)
-					db.pred_ckey = null
-					db.ckey = null
-					db.restore_control()
-				else
-					db.restore_control()
+				db.restore_control()
 				return
 			else
 				continue
@@ -299,11 +248,11 @@
 	set name = "Resist Control"
 	set desc = "Attempt to resist control."
 
-	if(pred_body.ckey == pred_ckey)
+	if(pred_mind && pred_body.mind == pred_mind)
 		dominate_predator()
 		return
 
-	if(pred_ckey == ckey && pred_body.prey_controlled)
+	if(mind == pred_mind && pred_body.prey_controlled)
 		to_chat(src, span_danger("You begin to resist \the [prey_name]'s control!!!"))
 		to_chat(pred_body, span_danger("You feel the captive mind of [src] begin to resist your control."))
 
@@ -372,27 +321,7 @@
 		to_chat(src, span_notice("Your attempt to gather [M]'s mind has been interrupted."))
 		return
 
-	var/mob/living/dominated_brain/db = new /mob/living/dominated_brain(src, src, M.name, M)
-
-
-	db.name = M.name
-	db.prey_ckey = M.ckey
-	db.pred_ckey = src.ckey
-
-
-	db.real_name = M.real_name
-
-	M.languages -= M.temp_languages
-	db.languages |= M.languages
-	db.prey_identity = M.identity
-	db.pred_identity = identity
-	add_verb(db, /mob/living/dominated_brain/proc/cease_this_foolishness)
-
-	absorb_langs()
-
-	db.ckey = db.prey_ckey
-	db.share_identity(db.prey_identity)
-	log_admin("[db] ([db.ckey]) has agreed to [src]'s dominate prey attempt, and so no longer occupies their original body.")
+	gather_prey_mind(M)
 	to_chat(src, span_notice("You feel your mind expanded as [M] is incorporated into you."))
 	to_chat(M, span_warning("Your mind is gathered into \the [src], becoming part of them..."))
 	if(istype(G) && M == G.affecting)
@@ -409,12 +338,7 @@
 		if(do_after(src, 10 SECONDS, target = pred_body))
 			if(prey_body && prey_body.loc.loc == pred_body)
 
-				prey_body.ckey = prey_ckey
-				pred_body.absorb_langs()
-				to_chat(src, span_warning("Your connection to [pred_body] fades, and you awaken back in your own body!"))
-				to_chat(pred_body, span_warning("You feel as though a piece of yourself is missing, as \the [src] returns to their body."))
-				log_admin("[src] ([src.ckey]) has returned to their body, [prey_body].")
-				qdel(src)
+				return_to_body()
 			else
 				to_chat(src, span_warning("Your attempt to regain your body has been interrupted..."))
 		else
@@ -480,38 +404,67 @@
 
 	to_chat(prey, span_danger("You plunge your conciousness into \the [pred], assuming control over their very body, leaving your own behind within \the [pred]'s [loc]."))
 	to_chat(pred, span_danger("You feel your body move on its own, as you move to the background, and an alien consciousness displaces yours."))
-	var/mob/living/dominated_brain/pred_brain
-	var/delete_source = FALSE
-	if(istype(prey, /mob/living/dominated_brain))
-		var/mob/living/dominated_brain/punished_prey = prey
-		if(punished_prey.prey_body)
-			pred_brain = new /mob/living/dominated_brain(pred, pred, name, punished_prey.prey_body)
-		else
-			pred_brain = new /mob/living/dominated_brain(pred, pred, name)	//We have to play musical chairs with 3 bodies, or everyone gets d/ced
-		delete_source = TRUE
-	else
-		pred_brain = new /mob/living/dominated_brain(pred, pred, name, prey)
+	take_over_predator(prey, pred, "pred submission")
 
-	pred_brain.prey_identity = prey.identity
-	pred_brain.pred_identity = pred.identity
+/// The mind-move half of prey domination and pred submission: `prey`'s mind
+/// takes `pred`'s body and the predator's mind (if any) moves into a back seat.
+/// Both minds keep their own identity (shared, not bound) while in the other's
+/// seat. Returns the back seat.
+/proc/take_over_predator(mob/living/prey, mob/living/pred, method)
+	var/mob/living/dominated_brain/pred_brain
+	var/mob/living/dominated_brain/punished_prey = istype(prey, /mob/living/dominated_brain) ? prey : null
+	if(punished_prey)
+		//We have to play musical chairs with 3 bodies, or everyone gets d/ced
+		pred_brain = new /mob/living/dominated_brain(pred, pred, prey.name, punished_prey.prey_body)
+	else
+		pred_brain = new /mob/living/dominated_brain(pred, pred, prey.name, prey)
+
+	pred_brain.prey_mind = prey.ensure_mind()
+	pred_brain.pred_mind = pred.mind
+	pred_brain.was_mob = isnull(pred_brain.pred_mind)
 	pred_brain.name = pred.name
+	pred_brain.real_name = pred.real_name
 	var/list/preylangs = list()
 	preylangs |= prey.languages
 	preylangs -= prey.temp_languages
 	pred_brain.prey_langs |= preylangs
-	pred_brain.prey_ckey = prey.ckey
-	pred_brain.pred_ckey = pred.ckey
 	pred_brain.pred_body.absorb_langs()
 
 	add_verb(pred, /mob/proc/release_predator)
 
-	//Now actually put the people in the mobs
-	pred_brain.ckey = pred_brain.pred_ckey
-	pred_brain.real_name = pred.real_name
-	pred.ckey = pred_brain.prey_ckey
-	pred_brain.share_identity(pred_brain.pred_identity)
-	pred.share_identity(pred_brain.prey_identity)
+	move_player_mind(pred_brain.pred_mind, pred_brain, "pushed back by [prey] ([method])", share = TRUE)
+	move_player_mind(pred_brain.prey_mind, pred, "took control of [pred] ([method])", share = TRUE)
 	pred.prey_controlled = TRUE
-	log_and_message_admins("is now controlled by [pred.ckey], they were taken over via pred submission, and were originally controlled by [pred_brain.pred_ckey].", pred)
-	if(delete_source)
-		qdel(prey)
+	log_and_message_admins("is now controlled by [pred.ckey], they were taken over via [method], and were originally controlled by [pred_brain.pred_mind?.key].", pred)
+	if(punished_prey)
+		qdel(punished_prey)
+	return pred_brain
+
+/// The mind-move half of dominate prey: `M`'s mind is gathered into a back
+/// seat inside this predator, keeping its own identity. Returns the back seat.
+/mob/living/proc/gather_prey_mind(mob/living/M)
+	var/mob/living/dominated_brain/db = new /mob/living/dominated_brain(src, src, M.name, M)
+	db.name = M.name
+	db.real_name = M.real_name
+	db.prey_mind = M.ensure_mind()
+	db.pred_mind = mind
+
+	M.languages -= M.temp_languages
+	db.languages |= M.languages
+	add_verb(db, /mob/living/dominated_brain/proc/cease_this_foolishness)
+
+	absorb_langs()
+
+	move_player_mind(db.prey_mind, db, "gathered by [src] (dominate prey)", share = TRUE)
+	log_admin("[db] ([db.ckey]) has agreed to [src]'s dominate prey attempt, and so no longer occupies their original body.")
+	return db
+
+/// The prey's mind leaves this back seat for its own body, binding its
+/// identity there again.
+/mob/living/dominated_brain/proc/return_to_body()
+	move_player_mind(mind, prey_body, "returned to own body from [pred_body]")
+	pred_body.absorb_langs()
+	to_chat(prey_body, span_warning("Your connection to [pred_body] fades, and you awaken back in your own body!"))
+	to_chat(pred_body, span_warning("You feel as though a piece of yourself is missing, as \the [src] returns to their body."))
+	log_admin("[prey_body] ([prey_body.ckey]) has returned to their body from [pred_body].")
+	qdel(src)

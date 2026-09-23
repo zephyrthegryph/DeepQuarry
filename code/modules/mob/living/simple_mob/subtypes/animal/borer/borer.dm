@@ -253,7 +253,7 @@
 		host.computer_id = null
 		host.lastKnownIP = null
 
-		src.ckey = host.ckey
+		move_player(host, src, "borer [src] released control of [host]")
 
 		if(!src.computer_id)
 			src.computer_id = h2s_id
@@ -267,7 +267,7 @@
 		host_brain.computer_id = null
 		host_brain.lastKnownIP = null
 
-		host.ckey = host_brain.ckey
+		move_player_mind(host_brain.mind, host, "regained control of [host] from borer [src]")
 
 		if(!host.computer_id)
 			host.computer_id = b2h_id

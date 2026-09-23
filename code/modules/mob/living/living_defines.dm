@@ -112,7 +112,10 @@
 	var/virtual_reality_mob = FALSE // gross boolean for keeping VR mobs in VR
 
 	var/mob/living/tf_form // Shapeshifter shenanigans
-	var/tf_form_ckey
+	/// The mind that occupied this shapeshift form before its owner took it.
+	var/datum/mind/tf_form_mind
+	/// Whether that mind's body held its key (a key move follows it).
+	var/tf_form_holds_key = FALSE
 
 
 	///a list of all status effects the mob has

@@ -56,6 +56,13 @@
 /mob/living
 	var/mob/living/tf_mob_holder = null
 
+/// The player in this transformed form goes back to its original body
+/// (tf_mob_holder) through its mind, binding its identity there again.
+/mob/living/proc/return_player_to_tf_holder(reason)
+	if(!tf_mob_holder)
+		return FALSE
+	return move_player(src, tf_mob_holder, "[reason] (reverted from [src] to [tf_mob_holder])")
+
 /mob/living/proc/revert_mob_tf()
 	if(!tf_mob_holder)
 		return
@@ -80,27 +87,25 @@
 				src.mind = null
 				ourmind.current = null
 				theirmind.current = null
-				ourmind.active = TRUE
-				ourmind.transfer_to(ourmob)
-				theirmind.active = TRUE
-				theirmind.transfer_to(src)
+				transfer_mind(ourmind, ourmob, "mob transform body swap with [src]", force = TRUE)
+				transfer_mind(theirmind, src, "mob transform body swap with [ourmob]", force = TRUE)
 				ourmob.tf_mob_holder = null
 				src.tf_mob_holder = null
 			else
 				to_chat(src,span_notice("Your body appears to be in someone else's control."))
 			return
-		src.mind.transfer_to(ourmob)
+		move_player(src, ourmob, "reverted mob transform from [src]")
 		tf_mob_holder = null
 		return
 	new /obj/effect/effect/teleport_greyscale(src.loc)
 	//legacy ai_holder.set_stance(STANCE_SLEEP) removed; brain auto-sleeps
 	// when the mob's stat changes via its COMSIG_MOB_STATCHANGE handler.
+	return_player_to_tf_holder("reverted mob transform")
 	tf_mob_holder = null
-	ourmob.ckey = ckey
 	var/turf/get_dat_turf = get_turf(src)
 	ourmob.loc = get_dat_turf
 	ourmob.forceMove(get_dat_turf)
-	if(!tf_form_ckey)
+	if(!tf_form_mind)
 		ourmob.vore_selected = vore_selected
 		vore_selected = null
 		ourmob.mob_belly_transfer(src)
@@ -114,10 +119,9 @@
 			src.drop_from_inventory(W)
 
 	if(tf_form == ourmob)
-		if(tf_form_ckey)
-			src.ckey = tf_form_ckey
-		else
-			src.mind = null
+		if(tf_form_mind)
+			transfer_mind(tf_form_mind, src, "returned to shapeshift form [src]", tf_form_holds_key)
+			tf_form_mind = null
 		ourmob.tf_form = src
 		src.forceMove(ourmob)
 	else
@@ -168,8 +172,9 @@
 			new_mob.tf_form = src
 			new_mob.forceMove(src.loc)
 			visible_message(span_warning("[src] twists and contorts, shapeshifting into a different form!"))
-			if(new_mob.ckey)
-				new_mob.tf_form_ckey = new_mob.ckey
+			if(new_mob.ensure_mind())
+				new_mob.tf_form_mind = new_mob.mind
+				new_mob.tf_form_holds_key = new_mob.key == new_mob.mind.key
 		else
 			if(isliving(new_form))
 				new_mob = new_form
@@ -186,9 +191,12 @@
 			if(!new_mob.ckey)
 				transfer_mob_identity(new_mob)
 
-			new_mob.ckey = src.ckey
-			if(new_mob.tf_form_ckey)
-				src.ckey = new_mob.tf_form_ckey
+			// The player wears the new form: the mind moves, the character's
+			// identity is shared (not bound) so the form keeps its own body.
+			var/datum/mind/form_mind = new_mob.tf_form_mind
+			move_player(src, new_mob, "transformed into [new_mob]", share = TRUE)
+			if(form_mind)
+				transfer_mind(form_mind, src, "displaced from shapeshift form [new_mob] into [src]", new_mob.tf_form_holds_key)
 			//legacy ai_holder state transfer between original and TF'd mob
 			// no longer needed; modern brain spawns fresh on the new mob.
 			src.loc = new_mob

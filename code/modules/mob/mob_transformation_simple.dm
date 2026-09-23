@@ -43,10 +43,10 @@
 	if(src.dna)
 		QDEL_SWAP(M.dna, src.dna.Clone())
 
-	if(mind)
-		mind.transfer_to(M)
+	if(isliving(src) && isliving(M))
+		move_player(src, M, "admin changed mob type to [new_type]")
 	else
-		M.key = key
+		M.key = key // admin tool on an observer or into a non-living mob: first assignment
 
 	if(subspecies && ishuman(M))
 		var/mob/living/carbon/human/H = M

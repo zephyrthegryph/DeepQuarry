@@ -79,12 +79,11 @@
 			if(istype(I,/mob/living/simple_mob/animal/borer))
 				B = I
 	if(B)
-		if(!B.ckey && ckey && B.controlling)
-			B.ckey = ckey
+		if(!B.key && key && B.controlling)
+			move_player(src, B, "host [src] died under borer control")
 			B.controlling = 0
-		if(B.host_brain.ckey)
-			ckey = B.host_brain.ckey
-			B.host_brain.ckey = null
+		if(B.host_brain.mind)
+			move_player_mind(B.host_brain.mind, src, "returned to own dead body from borer [B]")
 			B.host_brain.name = "host brain"
 			B.host_brain.real_name = "host brain"
 

@@ -52,7 +52,8 @@
 	var/atom/movable/form = null
 	var/morph_time = 0
 	var/our_size_multiplier = 1
-	var/original_ckey
+	/// The morph's own mind while it wears a prey's body.
+	var/datum/mind/original_mind
 	var/chosen_color
 	var/static/list/blacklist_typecache = typecacheof(list(
 	/atom/movable/screen,
@@ -293,9 +294,9 @@
 					if(L.pulledby)
 						L.pulledby.stop_pulling()
 					stop_pulling()
-					original_ckey = ckey
+					original_mind = ensure_mind()
 					log_and_message_admins("has swapped bodies with [key_name_admin(L)] as a morph at [get_area(src)] - [COORD(src)].", src)
-					new /mob/living/simple_mob/vore/morph/dominated_prey(L.vore_selected, L.ckey, src, L)
+					new /mob/living/simple_mob/vore/morph/dominated_prey(L.vore_selected, L.ensure_mind(), src, L)
 				else
 					to_chat(src, span_warning("\The [L] declined your request for control."))
 			else
@@ -308,23 +309,25 @@
 	devourable = 0
 	var/mob/living/simple_mob/vore/morph/parent_morph
 	var/mob/living/carbon/human/prey_body
-	var/prey_ckey
+	/// The prey's mind, held in this node while the morph wears the prey.
+	var/datum/mind/prey_mind
 	vore_active = FALSE
 
 
-/mob/living/simple_mob/vore/morph/dominated_prey/Initialize(mapload, pckey, parent, prey)
+/mob/living/simple_mob/vore/morph/dominated_prey/Initialize(mapload, datum/mind/pmind, parent, prey)
 	. = ..()
-	if(!pckey)
+	if(!pmind)
 		return INITIALIZE_HINT_QDEL
-	prey_ckey = pckey
+	prey_mind = pmind
 	parent_morph = parent
 	prey_body = prey
 	prey_body.forceMove(get_turf(parent_morph))
 	prey_body.muffled = FALSE
 	prey_body.absorbed = FALSE
 	absorbed = TRUE
-	ckey = prey_ckey
-	prey_body.ckey = parent_morph.original_ckey
+	// Both keep their own identity while in the other's seat.
+	move_player_mind(prey_mind, src, "taken over by morph [parent_morph]", share = TRUE)
+	move_player_mind(parent_morph.original_mind, prey_body, "morph took over [prey_body]", share = TRUE)
 	parent_morph.forceMove(src)
 	name = "[prey_body.name]"
 	to_chat(prey_body, span_notice("You have completely assumed the form of [prey_body]. Your form is now unable to change anymore until you restore control back to them. You can do this by 'ejecting' them from your [prey_body.vore_selected]. This will not actually release them from your body in this state, but instead return control to them, and restore you to your original form."))
@@ -338,6 +341,7 @@
 	. = ..()
 	parent_morph = null
 	prey_body = null
+	prey_mind = null
 
 /mob/living/simple_mob/vore/morph/dominated_prey/proc/undo_prey_takeover(ooc_escape)
 	if(buckled)
@@ -359,15 +363,19 @@
 	if(ooc_escape)
 		prey_body.forceMove(get_turf(src))
 		parent_morph.forceMove(get_turf(src))
-		parent_morph.ckey = parent_morph.original_ckey
-		prey_body.ckey = prey_ckey
+		return_bodies()
 		log_and_message_admins("used the OOC escape button to get out of [key_name_admin(parent_morph)]. They have been returned to their original bodies. [ADMIN_FLW(src)]", prey_body)
 	else
 		parent_morph.forceMove(get_turf(prey_body))
-		parent_morph.ckey = parent_morph.original_ckey
-		prey_body.ckey = prey_ckey
+		return_bodies()
 		parent_morph.vore_selected.nom_atom(prey_body)
 		log_and_message_admins("and [key_name_admin(parent_morph)] have been returned to their original bodies. [get_area(src)] - [COORD(src)].", prey_body)
 	qdel(src)
+
+/// Each mind goes home: the morph's into the morph, the prey's into its body.
+/mob/living/simple_mob/vore/morph/dominated_prey/proc/return_bodies()
+	move_player_mind(parent_morph.original_mind, parent_morph, "morph released [prey_body]")
+	move_player_mind(prey_mind, prey_body, "returned to own body from morph [parent_morph]")
+	parent_morph.original_mind = null
 
 #undef MORPH_COOLDOWN

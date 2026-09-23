@@ -84,10 +84,7 @@
 				new_mob.add_spell(new S.type)
 
 			new_mob.a_intent = "hurt"
-			if(M.mind)
-				M.mind.transfer_to(new_mob)
-			else
-				new_mob.key = M.key
+			move_player(M, new_mob, "polymorphed by [src]")
 
 			to_chat(new_mob, span_warning("Your form morphs into that of \a [lowertext(randomize)]."))
 

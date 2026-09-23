@@ -202,10 +202,7 @@
 
 			var/mob/living/simple_mob/slime/new_slime = pick(babies)
 			new_slime.universal_speak = universal_speak
-			if(src.mind)
-				src.mind.transfer_to(new_slime)
-			else
-				new_slime.key = src.key
+			move_player(src, new_slime, "slime split")
 			qdel(src)
 		else
 			to_chat(src, span_warning("I am not ready to reproduce yet..."))

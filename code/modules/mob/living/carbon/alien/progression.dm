@@ -33,8 +33,7 @@
 	if(src.faction != "neutral")
 		adult.faction = src.faction
 
-	if(mind)
-		mind.transfer_to(adult)
+	if(move_player(src, adult, "grew into [adult]"))
 		if (can_namepick_as_adult)
 			var/newname = tgui_input_text(adult, "You have become an adult. Choose a name for yourself.", "Adult Name", null, MAX_NAME_LEN)
 
@@ -42,8 +41,6 @@
 				adult.fully_replace_character_name(name, "[src.adult_name] ([instance_num])")
 			else
 				adult.fully_replace_character_name(name, newname)
-	else
-		adult.key = src.key
 
 	for (var/obj/item/W in src.contents)
 		src.drop_from_inventory(W)

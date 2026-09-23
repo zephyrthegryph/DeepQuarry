@@ -665,7 +665,7 @@
 
 	// Reverts TF on death. This fixes a bug with posibrains or similar, and also makes reforming easier.
 	if(M.tf_mob_holder && M.tf_mob_holder.loc == M)
-		M.tf_mob_holder.ckey = M.ckey
+		M.return_player_to_tf_holder("digested in [src]")
 		M.tf_mob_holder.enabled = TRUE
 		M.tf_mob_holder.loc = M.loc
 		M.tf_mob_holder.forceMove(M.loc)
