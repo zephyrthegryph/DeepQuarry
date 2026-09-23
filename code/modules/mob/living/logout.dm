@@ -1,5 +1,6 @@
 /mob/living/Logout()
 	..()
+	on_client_changed("logout")
 	if (mind)
 		//Per BYOND docs key remains set if the player DCs, becomes null if switching bodies.
 		if(!key)	//key and mind have become seperated.

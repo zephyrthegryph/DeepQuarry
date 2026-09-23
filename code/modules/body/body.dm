@@ -94,6 +94,7 @@
 /// Mark `domains` (BODY_DIRTY_*) stale.
 /datum/body/proc/invalidate(domains)
 	dirty |= domains
+	owner?.life_wake(LIFE_WAKE_BODY, "body invalidate")
 
 
 // --- Affliction bookkeeping -------------------------------------------------

@@ -118,6 +118,7 @@
 	if(!.)
 		return
 	BITSET(hud_updateflag, HEALTH_HUD)
+	life_wake(LIFE_WAKE_BODY, "injure")
 	if(!(flags & INJURE_SILENT) && injury_category(kind) != INJURY_CATEGORY_ASPHYXIA)
 		flash_weak_pain()
 	body.on_status_changed()
@@ -246,6 +247,7 @@
 	. = body.mend(tag, amount, target)
 	if(.)
 		BITSET(hud_updateflag, HEALTH_HUD)
+		life_wake(LIFE_WAKE_BODY, "mend")
 
 /// Clear every affliction and restore the body plan's parts. Admin heal,
 /// rejuvenate, resleeve.
@@ -253,6 +255,7 @@
 	body?.clear_afflictions()
 	body?.restore()
 	BITSET(hud_updateflag, HEALTH_HUD)
+	life_wake(LIFE_WAKE_BODY, "fully healed")
 
 
 // --- Questions ----------------------------------------------------------------------
