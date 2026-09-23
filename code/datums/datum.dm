@@ -115,6 +115,11 @@
 				continue
 			qdel(timer)
 
+	// Clock events, binding and provided clock (doc/medical_frameworks.md §1.6). Integration
+	// point for framework-owned destruction: it calls clock_teardown() instead.
+	if(clock_ties)
+		clock_teardown(src)
+
 	// Reactor subscriptions, timers and continuous declarations (doc/rewrite/reactor.md §1).
 	REACT_CLEAR(src)
 
