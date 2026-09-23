@@ -911,4 +911,82 @@ mod tests {
 		let steps = net.step_devices(1.0);
 		assert!(steps.is_empty());
 	}
+
+	// Property tests for `impl NetworkKind for Pipes`'s split/merge
+	// (`rust_architecture.md` §7: "split/merge conserving moles and
+	// energy"). `graph.rs`'s trait already documents split and merge as
+	// "must conserve"; these hold that to arbitrary inputs, not just the
+	// hand-picked cases above.
+	use proptest::prelude::*;
+
+	fn arb_gas() -> impl Strategy<Value = PipeGas> {
+		(0.0f64..10_000.0, 0.0f64..10_000.0, 0.0f64..10_000.0, 0.0f64..2000.0).prop_map(
+			|(o2, co2, plasma, energy)| {
+				let mut g = PipeGas::default();
+				g.moles[GAS_OXYGEN] = o2;
+				g.moles[crate::gas::ids::GAS_CARBON_DIOXIDE] = co2;
+				g.moles[crate::gas::ids::GAS_PLASMA] = plasma;
+				g.energy = energy;
+				g
+			},
+		)
+	}
+
+	/// A `(whole, part)` pair with `0 <= part <= whole` and `whole > 0`,
+	/// `Pipes::split`'s documented domain (a region summary and one
+	/// member's share of it).
+	fn arb_whole_part() -> impl Strategy<Value = (f64, f64)> {
+		(1.0f64..1_000_000.0).prop_flat_map(|whole| (Just(whole), 0.0..=whole))
+	}
+
+	proptest! {
+		#[test]
+		fn split_then_merge_round_trips_moles_and_energy(
+			mut whole_gas in arb_gas(),
+			(whole, part) in arb_whole_part(),
+		) {
+			let before = whole_gas.total();
+			let before_energy = whole_gas.energy;
+			let carved = Pipes::split(&mut whole_gas, &whole, &part);
+			// Conserves at the moment of the split...
+			prop_assert!((carved.total() + whole_gas.total() - before).abs() < 1e-6 * before.max(1.0));
+			prop_assert!((carved.energy + whole_gas.energy - before_energy).abs() < 1e-3 * before_energy.max(1.0));
+			prop_assert!(carved.total() >= -1e-9, "split never returns negative moles");
+			prop_assert!(whole_gas.total() >= -1e-9, "split never leaves negative moles behind");
+			// ...and merging the two pieces back restores the original.
+			Pipes::merge(&mut whole_gas, carved);
+			prop_assert!((whole_gas.total() - before).abs() < 1e-6 * before.max(1.0));
+			prop_assert!((whole_gas.energy - before_energy).abs() < 1e-3 * before_energy.max(1.0));
+		}
+
+		#[test]
+		fn merge_is_commutative_for_totals(a in arb_gas(), b in arb_gas()) {
+			// PipeGas is Copy, so `a`/`b` are still usable after seeding
+			// `ab`/`ba` - each gets merged with the *other* original value,
+			// not a value already mutated by the first merge.
+			let expected = a.total() + b.total();
+			let expected_energy = a.energy + b.energy;
+			let mut ab = a;
+			Pipes::merge(&mut ab, b);
+			let mut ba = b;
+			Pipes::merge(&mut ba, a);
+			prop_assert!((ab.total() - expected).abs() < 1e-6 * expected.max(1.0));
+			prop_assert!((ba.total() - expected).abs() < 1e-6 * expected.max(1.0));
+			prop_assert!((ab.energy - expected_energy).abs() < 1e-3 * expected_energy.max(1.0));
+			prop_assert!((ba.energy - expected_energy).abs() < 1e-3 * expected_energy.max(1.0));
+		}
+
+		#[test]
+		fn split_never_exceeds_the_donor_and_whole_collapses_the_region(
+			mut whole_gas in arb_gas(),
+			whole in 1.0f64..1_000_000.0,
+		) {
+			let before = whole_gas.total();
+			// part == whole: the documented "last node of a region" case -
+			// the whole payload moves, nothing is left behind.
+			let carved = Pipes::split(&mut whole_gas, &whole, &whole);
+			prop_assert!((carved.total() - before).abs() < 1e-6 * before.max(1.0));
+			prop_assert!(whole_gas.total() < 1e-6 * before.max(1.0) + 1e-9);
+		}
+	}
 }
