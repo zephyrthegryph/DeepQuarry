@@ -125,8 +125,10 @@ REGISTRY_MEMBERSHIP(/obj/effect/engine_setup, REGISTRY_ENGINE_SETUP_MARKERS)
 	if(!P)
 		log_and_message_admins("## WARNING: Unable to locate pump at [x] [y] [z]!")
 		return SETUP_WARNING
-	P.target_pressure = P.max_pressure_setting
+	P.set_target_pressure(P.max_pressure_setting)
+	P.set_on(TRUE)
 	P.update_use_power(USE_POWER_IDLE)
+	P.update_rust_device()
 	P.update_icon()
 	return SETUP_OK
 
