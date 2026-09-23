@@ -1021,10 +1021,10 @@
 		return FALSE //Grab processing has a chance of returning null
 
 	// Help intent + Adjacent = pass item to other
-	if(a_intent == I_HELP && Adjacent(target) && isitem(item) && ishuman(target) && target != src)
+	if(IS_HELPING(src) && Adjacent(target) && isitem(item) && ishuman(target) && target != src)
 		var/obj/item/I = item
 		var/mob/living/carbon/human/H = target
-		if(H.in_throw_mode && H.a_intent == I_HELP && unEquip(I))
+		if(H.in_throw_mode && IS_HELPING(H) && unEquip(I))
 			H.put_in_hands(I) // If this fails it will just end up on the floor, but that's fitting for things like dionaea.
 			visible_message(span_filter_notice(span_bold("[src]") + " hands \the [H] \a [I]."), span_notice("You give \the [target] \a [I]."))
 		else
@@ -1117,7 +1117,7 @@
 			PHYSICAL:"} + span_small("<a href='byond://?_src_=vars;[HrefToken()];mobToDamage=[refid];adjustDamage=brute' id='brute'>[round(injury_load(INJURY_CATEGORY_PHYSICAL), 0.1)]</a>") + {"
 			THERMAL:"} + span_small("<a href='byond://?_src_=vars;[HrefToken()];mobToDamage=[refid];adjustDamage=fire' id='fire'>[round(injury_load(INJURY_CATEGORY_THERMAL), 0.1)]</a>") + {"
 			TOXIC:"} + span_small("<a href='byond://?_src_=vars;[HrefToken()];mobToDamage=[refid];adjustDamage=toxin' id='toxin'>[round(injury_load(INJURY_CATEGORY_TOXIC), 0.1)]</a>") + {"
-			ASPHYXIA:"} + span_small("<a href='byond://?_src_=vars;[HrefToken()];mobToDamage=[refid];adjustDamage=oxygen' id='oxygen'>[round(injury_load(INJURY_CATEGORY_ASPHYXIA), 0.1)]</a>") + {"
+			OXYGEN DEBT:"} + span_small("<a href='byond://?_src_=vars;[HrefToken()];mobToDamage=[refid];adjustDamage=oxygen' id='oxygen'>[round(oxygen_debt(), 0.1)]</a>") + {"
 			NEURAL:"} + span_small("<a href='byond://?_src_=vars;[HrefToken()];mobToDamage=[refid];adjustDamage=brain' id='brain'>[round(injury_load(INJURY_CATEGORY_NEURAL), 0.1)]</a>") + {"
 			GENETIC:"} + span_small("<a href='byond://?_src_=vars;[HrefToken()];mobToDamage=[refid];adjustDamage=clone' id='clone'>[round(injury_load(INJURY_CATEGORY_GENETIC), 0.1)]</a>") + {"
 		"})

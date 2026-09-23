@@ -20,10 +20,6 @@ GLOBAL_LIST_INIT(global_huds, list(
 		GLOB.global_hud.holomap
 ))
 
-/datum/hud/var/atom/movable/screen/grab_intent
-/datum/hud/var/atom/movable/screen/hurt_intent
-/datum/hud/var/atom/movable/screen/disarm_intent
-/datum/hud/var/atom/movable/screen/help_intent
 
 /datum/global_hud
 	var/atom/movable/screen/druggy
@@ -181,7 +177,8 @@ GLOBAL_LIST_INIT(global_huds, list(
 	var/atom/movable/screen/blobhealthdisplay
 	var/atom/movable/screen/r_hand_hud_object
 	var/atom/movable/screen/l_hand_hud_object
-	var/atom/movable/screen/action_intent
+	/// The combat mode toggle (code/modules/mob/combat_mode.dm).
+	var/atom/movable/screen/combat_mode/combat_mode_button
 	var/atom/movable/screen/move_intent
 	var/atom/movable/screen/control_vtec
 
@@ -232,10 +229,6 @@ GLOBAL_LIST_INIT(global_huds, list(
 	QDEL_NULL(listed_actions)
 	QDEL_LIST(floating_actions)
 
-	grab_intent = null
-	hurt_intent = null
-	disarm_intent = null
-	help_intent = null
 	lingchemdisplay = null
 	wiz_instability_display = null
 	wiz_energy_display = null
@@ -243,7 +236,7 @@ GLOBAL_LIST_INIT(global_huds, list(
 	blobhealthdisplay = null
 	r_hand_hud_object = null
 	l_hand_hud_object = null
-	action_intent = null
+	combat_mode_button = null
 	move_intent = null
 	control_vtec = null
 	adding = null
@@ -407,8 +400,6 @@ GLOBAL_LIST_INIT(global_huds, list(
 		ic = hud_used.ui_style
 
 	for(var/atom/movable/screen/I in icons)
-		if(I.name in list(I_HELP, I_HURT, I_DISARM, I_GRAB))
-			continue
 		if(!(I.name in list("check known languages", "autowhisper", "autowhisper mode", "move downwards", "move upwards", "set pose")))
 			I.icon = ic
 		I.color = UI_style_color_new
@@ -480,7 +471,8 @@ GLOBAL_LIST_INIT(global_huds, list(
 		if(gun_setting_icon)
 			client.screen |= gun_setting_icon
 
-		hud_used?.action_intent.screen_loc = ui_acti //Restore intent selection to the original position
+		if(hud_used?.combat_mode_button)
+			hud_used.combat_mode_button.screen_loc = ui_acti //Restore the combat mode button to its original position
 		client.screen += zone_sel				//This one is a special snowflake
 		client.screen += hud_used.toggle_palette
 
@@ -501,8 +493,9 @@ GLOBAL_LIST_INIT(global_huds, list(
 		if(!full)
 			client.screen += hud_used.l_hand_hud_object	//we want the hands to be visible
 			client.screen += hud_used.r_hand_hud_object	//we want the hands to be visible
-			client.screen += hud_used.action_intent		//we want the intent swticher visible
-			hud_used?.action_intent.screen_loc = ui_acti_alt	//move this to the alternative position, where zone_select usually is.
+			if(hud_used.combat_mode_button)
+				client.screen += hud_used.combat_mode_button		//we want the combat mode button visible
+				hud_used.combat_mode_button.screen_loc = ui_acti_alt	//move this to the alternative position, where zone_select usually is.
 		else
 			client.screen -= healths
 			client.screen -= internals
@@ -531,7 +524,8 @@ GLOBAL_LIST_INIT(global_huds, list(
 		if(src.hud_used.hotkeybuttons)
 			src.client.screen -= src.hud_used.hotkeybuttons
 		src.client.screen -= src.internals
-		src.client.screen += src.hud_used.action_intent		//we want the intent swticher visible
+		if(src.hud_used.combat_mode_button)
+			src.client.screen += src.hud_used.combat_mode_button		//we want the combat mode button visible
 	else
 		hud_used.hud_shown = 1
 		if(src.hud_used.adding)
@@ -542,7 +536,8 @@ GLOBAL_LIST_INIT(global_huds, list(
 			src.client.screen += src.hud_used.hotkeybuttons
 		if(src.internals)
 			src.client.screen |= src.internals
-		src.hud_used.action_intent.screen_loc = ui_acti //Restore intent selection to the original position
+		if(src.hud_used.combat_mode_button)
+			src.hud_used.combat_mode_button.screen_loc = ui_acti //Restore the combat mode button to its original position
 
 	hud_used.hidden_inventory_update()
 	hud_used.persistant_inventory_update()

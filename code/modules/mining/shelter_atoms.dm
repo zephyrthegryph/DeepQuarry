@@ -752,7 +752,7 @@ GLOBAL_LIST_EMPTY(unique_deployable)
 	desc = "A limited functionality sleeper, all it can do is put patients into stasis. It lacks the medication and configuration of the larger units."
 	icon = 'icons/obj/survival_pod.dmi'
 	icon_state = "sleeper"
-	stasis_level = 100 //Just one setting
+	stasis_level = /datum/modifier/stasis/complete //Just one setting
 
 /obj/machinery/sleeper/survival_pod/update_icon()
 	if(occupant)
@@ -861,6 +861,7 @@ GLOBAL_LIST_EMPTY(unique_deployable)
 	buildstackamount = 2
 
 /obj/structure/fans/hardlight
+	resistance_flags = BOMB_PROOF
 	name = "hardlight shield"
 	desc = "Retains air, allows passage."
 	plane = TURF_PLANE
@@ -874,9 +875,6 @@ GLOBAL_LIST_EMPTY(unique_deployable)
 	light_power = 1
 	light_color = "#FFFFFF"
 	light_on = TRUE
-
-/obj/structure/fans/hardlight/ex_act()
-	return
 
 /obj/structure/fans/hardlight/colorable
 	name = "hardlight shield"

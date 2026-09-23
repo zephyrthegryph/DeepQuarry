@@ -29,9 +29,6 @@
 			monitor.core_tag = new_ident
 		return
 
-/obj/machinery/computer/fusion_core_control/attack_ai(mob/user)
-	attack_hand(user)
-
 /obj/machinery/computer/fusion_core_control/attack_hand(mob/user as mob)
 	..()
 	if(stat & (BROKEN|NOPOWER))

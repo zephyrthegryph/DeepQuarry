@@ -26,7 +26,7 @@
 	var/gibs_ready = FALSE
 	var/obj/crayon
 	var/list/washing = list()
-	var/list/disallowed_types = list(
+	var/static/list/disallowed_types = list(
 		/obj/item/clothing/suit/space,
 		/obj/item/clothing/head/helmet/space
 		)

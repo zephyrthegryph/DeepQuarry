@@ -14,7 +14,7 @@
 	throw_range = 4
 	actions_types = list(/datum/action/item_action/toggle_heatsink)
 
-	matter = list(MAT_STEEL = 15000, MAT_GLASS = 3500)
+	MATERIAL_MIX(list(MAT_STEEL = 15000, MAT_GLASS = 3500))
 
 	var/on = 0				//is it turned on?
 	var/cover_open = 0		//is the cover open?

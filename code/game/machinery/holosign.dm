@@ -74,7 +74,7 @@
 	active = !active
 	icon_state = "light[active]"
 
-	for(var/obj/machinery/holosign/M in GLOB.machines)
+	for(var/obj/machinery/holosign/M in REGISTRY_MEMBERS(REGISTRY_MACHINES))
 		if(M.id == id)
 			M.toggle()
 

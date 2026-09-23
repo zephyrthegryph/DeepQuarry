@@ -7,7 +7,7 @@
 	item_state = "electronic"
 	throw_speed = 4
 	throw_range = 20
-	matter = list(MAT_STEEL = 500)
+	MATERIAL_BULK(MAT_STEEL, 500)
 	preserve_item = 1
 	var/obj/item/disk/nuclear/the_disk = null
 	var/active = 0
@@ -64,7 +64,7 @@
 
 /obj/item/pinpointer/examine(mob/user)
 	. = ..()
-	for(var/obj/machinery/nuclearbomb/bomb in GLOB.machines)
+	for(var/obj/machinery/nuclearbomb/bomb in REGISTRY_MEMBERS(REGISTRY_MACHINES))
 		if(bomb.timing)
 			. += "Extreme danger.  Arming signal detected.   Time remaining: [bomb.timeleft]"
 
@@ -303,7 +303,7 @@
 		return PROCESS_KILL
 
 	if(!our_shuttle)
-		for(var/obj/machinery/computer/shuttle_control/S in GLOB.machines)
+		for(var/obj/machinery/computer/shuttle_control/S in REGISTRY_MEMBERS(REGISTRY_MACHINES))
 			if(S.shuttle_tag == shuttle_comp_id) // Shuttle tags are used so that it will work if the computer path changes, as it does on the southern cross map.
 				our_shuttle = S
 				break

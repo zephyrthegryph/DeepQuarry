@@ -4,7 +4,7 @@
 	name = "infrared emitter"
 	desc = "Emits a visible or invisible beam and is triggered when the beam is interrupted."
 	icon_state = "infrared"
-	matter = list(MAT_STEEL = 1000, MAT_GLASS = 500)
+	MATERIAL_MIX(list(MAT_STEEL = 1000, MAT_GLASS = 500))
 
 	wires_type = WIRE_PULSE
 

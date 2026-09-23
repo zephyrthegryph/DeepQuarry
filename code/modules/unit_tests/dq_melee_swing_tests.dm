@@ -76,7 +76,7 @@
 	weapon.force = 8
 	weapon.w_class = ITEMSIZE_SMALL
 	attacker.put_in_active_hand(weapon)
-	attacker.a_intent = I_HURT
+	attacker.set_combat_mode(TRUE)
 	TEST_ASSERT_EQUAL(attacker.get_active_hand(), weapon, "weapon should be in the attacker's active hand")
 	TEST_ASSERT(attacker.Adjacent(victim), "attacker should be adjacent to the victim")
 
@@ -93,7 +93,7 @@
 	var/mob/living/carbon/human/victim = allocate(/mob/living/carbon/human, north)
 	var/obj/item/material/knife/knife = new(base)
 	attacker.put_in_active_hand(knife)
-	attacker.a_intent = I_HURT
+	attacker.set_combat_mode(TRUE)
 	TEST_ASSERT(knife.force > 0, "a newly initialized kitchen knife has no melee force")
 	TEST_ASSERT_EQUAL(attacker.get_active_hand(), knife, "the kitchen knife was not held in the active hand")
 	var/before = victim.injury_load(INJURY_CATEGORY_PHYSICAL)
@@ -117,7 +117,7 @@
 	weapon.force = 8
 	weapon.w_class = ITEMSIZE_HUGE // long windup for timing headroom
 	attacker.put_in_active_hand(weapon)
-	attacker.a_intent = I_HURT
+	attacker.set_combat_mode(TRUE)
 
 	var/before = victim.vitality()
 	INVOKE_ASYNC(attacker, TYPE_PROC_REF(/mob/living, begin_melee_swing), victim, weapon)
@@ -139,7 +139,7 @@
 	weapon.force = 5
 	weapon.w_class = ITEMSIZE_NORMAL
 	attacker.put_in_active_hand(weapon)
-	attacker.a_intent = I_HURT
+	attacker.set_combat_mode(TRUE)
 
 	attacker.begin_melee_swing(victim, weapon)
 	TEST_ASSERT(attacker.next_click > world.time, "a recovery cooldown should be active immediately after the swing")

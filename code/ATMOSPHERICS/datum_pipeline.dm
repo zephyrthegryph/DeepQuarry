@@ -174,7 +174,9 @@
 					(partial_heat_capacity*modeled_location.heat_capacity/(partial_heat_capacity+modeled_location.heat_capacity))
 
 				air.set_temperature(air.return_temperature() - heat/total_heat_capacity)
-				modeled_location.set_temperature(wall_temp + heat/modeled_location.heat_capacity)
+				// The same joules into the wall's solid heat cell (a set would
+				// overwrite whatever the field conducted since the read).
+				modeled_location.add_heat(heat)
 
 		else
 			// collapsed ZAS zone branch. zone is always null under LINDA;

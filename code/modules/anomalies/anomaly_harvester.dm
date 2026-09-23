@@ -143,9 +143,6 @@
 			else
 				add_overlay("harvester_grow")
 
-/obj/machinery/anomaly_harvester/attack_ai(mob/user)
-	return attack_hand(user)
-
 /obj/machinery/anomaly_harvester/attack_hand(mob/user)
 	if(..())
 		return

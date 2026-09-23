@@ -1000,7 +1000,7 @@ This is the proc mobs get to turn into a ghost. Forked from ghostize due to comp
 
 /mob/observer/dead/proc/pai_card_ping()
 	var/count = 0
-	for(var/obj/item/paicard/p in GLOB.all_pai_cards)
+	for(var/obj/item/paicard/p in REGISTRY_MEMBERS(REGISTRY_PAI_CARDS))
 		var/obj/item/paicard/PP = p
 		if(PP.pai)
 			continue
@@ -1109,7 +1109,7 @@ This is the proc mobs get to turn into a ghost. Forked from ghostize due to comp
 
 	// Set up an assorted list of auto-resleevers using their area name as the key, (as there should only ever be one per area)
 	var/list/autoresleevers = list()
-	for(var/obj/machinery/transhuman/autoresleever/A in GLOB.active_autoresleevers)
+	for(var/obj/machinery/transhuman/autoresleever/A in REGISTRY_MEMBERS(REGISTRY_AUTORESLEEVERS))
 		if(A.spawntype)
 			continue
 		else

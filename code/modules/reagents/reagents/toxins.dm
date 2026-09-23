@@ -244,14 +244,15 @@
 	strength = 15
 	poison_affliction = /datum/affliction/poisoning/cyanide
 	metabolism = REM * 0.5
+	// Blocks cellular respiration: the blood arrives saturated and the tissues
+	// can't use it (normal SpO2, climbing oxygen debt).
+	factors = alist(BF_TISSUE_UPTAKE = 0.1)
 	supply_conversion_value = REFINERYEXPORT_VALUE_PROCESSED
 	industrial_use = REFINERYEXPORT_REASON_PRECURSOR
 
 /datum/reagent/toxin/cyanide/affect_blood(mob/living/carbon/M, alien, removed)
 	..()
-	M.injure(INJURY_ASPHYXIA, 10 * removed, source = src)
-	M.AdjustLosebreath(5) //Asphyxia with no losebreath adjustment is useless.
-	if(dose > 5) //Puts you to sleep if its in your system for too long. This is equivalent to 100 seconds (50 ticks). By this point, you have 75 toxins, ~100 asphyxia, and are good as dead w/o treatment.
+	if(dose > 5) //Puts you to sleep if its in your system for too long. This is equivalent to 100 seconds (50 ticks).
 		M.Sleeping(1)
 
 /datum/reagent/toxin/mold
@@ -350,11 +351,10 @@
 	..()
 	if(ishuman(M))
 		var/mob/living/carbon/human/H = M
-		H.induce_arrhythmia(CARDIAC_RHYTHM_VF) // Hyperkalaemia fibrillates the heart.
+		H.induce_arrhythmia(CARDIAC_RHYTHM_VF) // Hyperkalaemia fibrillates the heart; the arrest does the rest.
 		if(H.stat != 1)
 			if(H.losebreath >= 10)
 				H.losebreath = max(10, H.losebreath - 10)
-			H.injure(INJURY_ASPHYXIA, 2, source = src)
 			H.Weaken(10)
 
 /datum/reagent/toxin/potassium_chlorophoride
@@ -375,11 +375,10 @@
 	..()
 	if(ishuman(M))
 		var/mob/living/carbon/human/H = M
-		H.induce_arrhythmia(CARDIAC_RHYTHM_ASYSTOLE) // A lethal-injection flatline.
+		H.induce_arrhythmia(CARDIAC_RHYTHM_ASYSTOLE) // A lethal-injection flatline; the arrest does the rest.
 		if(H.stat != 1)
 			if(H.losebreath >= 10)
 				H.losebreath = max(10, M.losebreath-10)
-			H.injure(INJURY_ASPHYXIA, 2, source = src)
 			H.Weaken(10)
 	if(alien == IS_SLIME)
 		M.injure(INJURY_BURN, removed * 3, source = src)
@@ -396,6 +395,8 @@
 	strength = 3
 	mrate_static = TRUE
 	scannable = SCANNABLE_SECRETIVE
+	// The death-like state: breathing all but stops.
+	factors = alist(BF_RESP_DRIVE = 0.2)
 	supply_conversion_value = REFINERYEXPORT_VALUE_HIGHREFINED
 	industrial_use = REFINERYEXPORT_REASON_MEDSCI
 
@@ -408,7 +409,6 @@
 		M.tod = stationtime2text()
 		M.timeofdeath = world.time
 	M.status_flags |= FAKEDEATH
-	M.injure(INJURY_ASPHYXIA, 1 * removed, source = src)
 	M.silent = max(M.silent, 10)
 	M.paralysis = max(M.paralysis, 10)
 
@@ -885,8 +885,7 @@
 
 /datum/reagent/chloralhydrate/overdose(mob/living/carbon/M, alien, removed)
 	..()
-	M.SetLosebreath(10)
-	M.injure(INJURY_ASPHYXIA, removed * overdose_mod, source = src)
+	M.SetLosebreath(10) // Respiratory depression: no breaths are drawn.
 
 /datum/reagent/chloralhydrate/beer2 //disguised as normal beer for use by emagged brobots
 	name = REAGENT_BEER2
@@ -1100,10 +1099,11 @@
 	wiki_flag = WIKI_SPOILER
 	supply_conversion_value = REFINERYEXPORT_VALUE_NO
 	industrial_use = REFINERYEXPORT_REASON_BIOHAZARD
+	// They shred the alveoli too.
+	factors = alist(BF_GAS_EXCHANGE = 0.4)
 
 /datum/reagent/shredding_nanites/affect_blood(mob/living/carbon/M, alien, removed)
 	M.injure(INJURY_CUT, 4 * removed, source = src)
-	M.injure(INJURY_ASPHYXIA, 4 * removed, source = src)
 
 /datum/reagent/irradiated_nanites
 	name = REAGENT_IRRADIATEDNANITES

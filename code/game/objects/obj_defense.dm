@@ -2,6 +2,13 @@
 /obj/fire_act(exposed_temperature, exposed_volume)
 	if(HAS_TRAIT(src, TRAIT_UNDERFLOOR))
 		return
+	// Objects whose rules watch their temperature take the exposure on their heat node.
+	dq_rule_expose_heat(src, exposed_temperature)
+	// Heat reaches the holder's contents through its slots' paths (C2).
+	if(length(contents))
+		propagate_fire(exposed_temperature, exposed_volume)
+		if(QDELETED(src))
+			return
 	// Generic map machinery remains dormant under nominal room conditions, but
 	// crossing into an actual thermal hazard activates its material assembly so
 	// continued exposure, cooling, diagnostics, and repair use the same model as
@@ -21,14 +28,15 @@
 		deal_damage(DAMAGE_THERMAL, clamp(potential_damage, 0, 20), FIRE, flags = DAMAGE_PACKET_SILENT)
 	if(QDELETED(src)) // take_damage() can send our obj to an early grave, let's stop here if that happens
 		return
-	if(!(resistance_flags & ON_FIRE) && (resistance_flags & FLAMMABLE) && !(resistance_flags & FIRE_PROOF))
+	// Types with an ignition rule (code/datums/rules/declarations.dm) catch fire from the rule instead.
+	if(!(resistance_flags & ON_FIRE) && (resistance_flags & FLAMMABLE) && !(resistance_flags & FIRE_PROOF) && !RULES_REPLACE(type, RULE_REPLACES_IGNITION))
 		AddComponent(/datum/component/burning, custom_fire_overlay() || GLOB.fire_overlay, burning_particles)
 		SEND_SIGNAL(src, COMSIG_ATOM_FIRE_ACT, exposed_temperature, exposed_volume)
 		return TRUE
 	return ..()
 
-/// Explosion adapter: blast from the propagated severity. Structures and items
-/// still run their own "prob then qdel" ladders until D5 batches explosions.
+/// Explosion adapter: blast from the propagated severity, delivered in type
+/// batches by SSexplosions. Objects are destroyed by integrity.
 /obj/ex_act(severity)
 	if(..())
 		return

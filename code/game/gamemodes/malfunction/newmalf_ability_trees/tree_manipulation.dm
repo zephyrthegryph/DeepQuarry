@@ -47,14 +47,14 @@
 	if(!ability_prechecks(user, price) || !ability_pay(user,price))
 		return
 	to_chat(user, "Sending feedback pulse...")
-	for(var/obj/machinery/power/apc/AP in GLOB.apcs)
+	for(var/obj/machinery/power/apc/AP in REGISTRY_MEMBERS(REGISTRY_APCS))
 		if(prob(5))
 			AP.overload_lighting()
 		if(prob(1) && prob(1)) // Very very small chance to actually destroy the APC.
 			AP.set_broken()
 
 
-/datum/game_mode/malfunction/verb/hack_camera(obj/machinery/camera/target in GLOB.cameranet.cameras)
+/datum/game_mode/malfunction/verb/hack_camera(obj/machinery/camera/target in REGISTRY_MEMBERS(REGISTRY_CAMERAS))
 	set name = "Hack Camera"
 	set desc = "100 CPU - Hacks existing camera, allowing you to add upgrade of your choice to it. Alternatively it lets you reactivate broken camera."
 	set category = "Software"
@@ -129,7 +129,7 @@
 		user.hacking = 0
 
 
-/datum/game_mode/malfunction/verb/machine_overload(obj/machinery/M in GLOB.machines)
+/datum/game_mode/malfunction/verb/machine_overload(obj/machinery/M in REGISTRY_MEMBERS(REGISTRY_MACHINES))
 	set name = "Machine Overload"
 	set desc = "400 CPU - Causes cyclic short-circuit in machine, resulting in weak explosion after some time."
 	set category = "Software"

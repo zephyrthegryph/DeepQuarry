@@ -125,21 +125,6 @@ So, hopefully this is helpful if any more icons are to be added/changed/wonderin
 		log_game("PACCEL([x],[y],[z]) Was moved while active and turned off.")
 		investigate_log("was moved whilst active; it " + span_red("powered down") + ".","singulo")
 
-/obj/structure/particle_accelerator/ex_act(severity)
-	switch(severity)
-		if(1.0)
-			qdel(src)
-			return
-		if(2.0)
-			if (prob(50))
-				qdel(src)
-				return
-		if(3.0)
-			if (prob(25))
-				qdel(src)
-				return
-	return
-
 /obj/structure/particle_accelerator/update_icon()
 	switch(construction_state)
 		if(0,1)

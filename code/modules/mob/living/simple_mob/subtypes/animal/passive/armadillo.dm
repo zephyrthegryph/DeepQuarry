@@ -66,7 +66,7 @@
 
 // Clicked on by empty hand.
 /mob/living/simple_mob/animal/passive/armadillo/attack_hand(mob/living/L)
-	if(L.a_intent == I_GRAB && hat)
+	if(IS_GRABBING(L) && hat)
 		remove_hat(L)
 	else
 		..()

@@ -639,11 +639,11 @@ SUBSYSTEM_DEF(supply)
 				else if(islist(SP.access) && SP.one_access)
 					var/list/L = SP.access // access var is a plain var, we need a list
 					A.req_one_access = L.Copy()
-					LAZYCLEARLIST(A.req_access)
+					A.req_access = null
 				else if(islist(SP.access) && !SP.one_access)
 					var/list/L = SP.access
 					A.req_access = L.Copy()
-					LAZYCLEARLIST(A.req_one_access)
+					A.req_one_access = null
 				else
 					log_runtime(span_danger("Supply pack with invalid access restriction [SP.access] encountered!"))
 
@@ -746,7 +746,7 @@ SUBSYSTEM_DEF(supply)
 /datum/controller/subsystem/supply/proc/notify_personal_order(datum/supply_order/O, message)
 	if(!O?.personal_order || !O.funding_account_number)
 		return
-	for(var/obj/item/pda/device in GLOB.PDAs)
+	for(var/obj/item/pda/device in REGISTRY_MEMBERS(REGISTRY_PDAS))
 		if(device.id?.associated_account_number != O.funding_account_number)
 			continue
 		var/datum/data/pda/app/supply_orders/app = device.find_program(/datum/data/pda/app/supply_orders)

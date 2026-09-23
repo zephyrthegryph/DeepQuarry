@@ -4,6 +4,7 @@
 
 //if powernetless_only = 1, will only get connections without powernet
 /obj/structure/cable/ender
+	resistance_flags = BOMB_PROOF
 	// Pretend to be heavy duty power cable
 	icon = 'icons/obj/power_cond_heavy.dmi'
 	name = "large power cable"
@@ -17,7 +18,7 @@
 /obj/structure/cable/ender/get_connections(powernetless_only = 0)
 	. = ..() // Do the normal stuff
 	if(id)
-		for(var/obj/structure/cable/ender/target in GLOB.cable_list)
+		for(var/obj/structure/cable/ender/target in REGISTRY_MEMBERS(REGISTRY_CABLES))
 			if(target.id == id)
 				if (!powernetless_only || !target.powernet)
 					. |= target
@@ -35,5 +36,3 @@
 	return ITEM_INTERACT_BLOCKING
 
 // Because they cannot be rebuilt, they are hard to destroy
-/obj/structure/cable/ender/ex_act(severity)
-	return

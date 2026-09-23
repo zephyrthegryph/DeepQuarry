@@ -1,4 +1,4 @@
-GLOBAL_LIST_BOILERPLATE(nanite_turfs, /turf/simulated/floor/water/digestive_enzymes/nanites)
+REGISTRY_MEMBERSHIP(/turf/simulated/floor/water/digestive_enzymes/nanites, REGISTRY_NANITE_TURFS)
 
 //half of this code is ripped from digestive enzymes themselves, with runtimes and such trimmed
 /turf/simulated/floor/water/digestive_enzymes/nanites //i just wanted to map, why has it come to making such terrible crimes against humanity
@@ -32,7 +32,7 @@ GLOBAL_LIST_BOILERPLATE(nanite_turfs, /turf/simulated/floor/water/digestive_enzy
 
 /turf/simulated/floor/water/digestive_enzymes/nanites/Initialize(mapload)
 	. = ..()
-	for(var/obj/machinery/power/smes/tolink in GLOB.smeses)
+	for(var/obj/machinery/power/smes/tolink in REGISTRY_MEMBERS(REGISTRY_SMES))
 		if(!tolink)
 			continue
 		if(!get_area(tolink))
@@ -282,7 +282,7 @@ GLOBAL_LIST_BOILERPLATE(nanite_turfs, /turf/simulated/floor/water/digestive_enzy
 
 /turf/simulated/floor/water/digestive_enzymes/nanites/proc/toggle_all(on = TRUE, digest = FALSE, robot = FALSE, synth = FALSE)
 	var/mob/living/nutrienttarget = moblink?.resolve()
-	for(var/turf/simulated/floor/water/digestive_enzymes/nanites/nanites in GLOB.nanite_turfs)
+	for(var/turf/simulated/floor/water/digestive_enzymes/nanites/nanites in REGISTRY_MEMBERS(REGISTRY_NANITE_TURFS))
 		if(nanites.id == id)
 			nanites.moblink = null
 			if(on)

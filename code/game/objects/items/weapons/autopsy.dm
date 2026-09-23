@@ -157,7 +157,7 @@
 	if(!istype(M))
 		return 0
 
-	if (user.a_intent == I_HELP)
+	if (IS_HELPING(user))
 		return ..()
 
 	if(target_name != M.name)

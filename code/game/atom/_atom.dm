@@ -30,7 +30,8 @@
 	///Our local copy of (non-priority) overlays without byond magic. Use procs in SSoverlays to manipulate
 	var/tmp/list/our_overlays
 	///Overlays that should remain on top and not normally removed when using cut_overlay functions, like c4.
-	var/tmp/list/priority_overlays
+	/// A list, or a single overlay when there is only one (see add_overlay()).
+	var/tmp/priority_overlays
 	///vis overlays managed by SSvis_overlays to automaticaly turn them like other overlays
 	var/tmp/list/managed_vis_overlays
 
@@ -57,6 +58,8 @@
 	var/datum/wires/wires = null
 
 /atom/Destroy()
+	if(!isnull(heat_body))
+		release_heat_body()
 	// ---- L2 lifecycle: leave the live world (state.md section 6). ----
 	// The only L2 line in this proc; the containment ledger (C1) owns the rest.
 	dematerialize()
@@ -72,8 +75,10 @@
 		overlays.Cut()
 	if (length(our_overlays))
 		our_overlays.Cut()
-	if (length(priority_overlays))
-		priority_overlays.Cut()
+	if (islist(priority_overlays))
+		var/list/prio = priority_overlays
+		prio.Cut()
+	priority_overlays = null
 	if (length(managed_vis_overlays))
 		managed_vis_overlays.Cut()
 	if (length(original_atom))
@@ -531,9 +536,9 @@
 
 /// Removes an instance of colour_type from the atom's atom_colours list
 /atom/proc/remove_atom_colour(colour_priority, coloration)
-	if(!atom_colours)
-		atom_colours = list()
-		atom_colours.len = COLOUR_PRIORITY_AMOUNT //four priority levels currently.
+	if(!atom_colours) // Nothing to remove; don't allocate the priority list just to find that out.
+		update_atom_colour()
+		return
 	if(colour_priority > atom_colours.len)
 		return
 	if(coloration && atom_colours[colour_priority] != coloration)
@@ -543,9 +548,6 @@
 
 /// Resets the atom's color to null, and then sets it to the highest priority colour available
 /atom/proc/update_atom_colour()
-	if(!atom_colours)
-		atom_colours = list()
-		atom_colours.len = COLOUR_PRIORITY_AMOUNT //four priority levels currently.
 	color = null
 	for(var/C in atom_colours)
 		if(islist(C))

@@ -277,7 +277,7 @@
 				if(T.stat == DEAD)
 					if(soulgem?.flag_check(SOULGEM_ACTIVE | SOULGEM_CATCHING_DRAIN, TRUE))
 						soulgem.catch_mob(T)
-					T.injure(INJURY_ASPHYXIA, 500, null, src) //Bit of fluff.
+					T.add_oxygen_debt(PHYSIOLOGY_DEBT_MAX, src) //Bit of fluff.
 					absorbing_prey = 0
 					to_chat(src, span_notice("You have completely drained [T], killing them."))
 					to_chat(T, span_danger(span_giant("You feel... So... Weak...")))
@@ -293,7 +293,7 @@
 			if(100) //They shouldn't  survive long enough to get here, but just in case.
 				if(soulgem?.flag_check(SOULGEM_ACTIVE | SOULGEM_CATCHING_DRAIN, TRUE))
 					soulgem.catch_mob(T)
-				T.injure(INJURY_ASPHYXIA, 500, null, src) //Kill them.
+				T.add_oxygen_debt(PHYSIOLOGY_DEBT_MAX, src) //Kill them.
 				if(T.stat != DEAD)
 					T.death()
 				absorbing_prey = FALSE

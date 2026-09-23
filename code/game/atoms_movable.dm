@@ -89,6 +89,9 @@
 	return ..()
 
 /atom/movable/Destroy()
+	// Contents go where each slot's drop policy says (containment ledger, C1).
+	if(length(contents) && (ledger || dq_slot_defs_for(src)))
+		ledger_apply_drop_policies()
 	if(em_block)
 		cut_overlay(em_block)
 		UnregisterSignal(em_block, COMSIG_QDELETING)
@@ -107,6 +110,7 @@
 	// never run Destroy() and keep a loc ref to this deleted container.
 	for(var/atom/movable/AM in contents.Copy())
 		qdel(AM)
+	QDEL_NULL(ledger)
 
 	moveToNullspace()
 
@@ -283,22 +287,15 @@
 		riding_datum.handle_vehicle_offsets()
 	for (var/datum/light_source/light as anything in light_sources) // Cycle through the light sources on this atom and tell them to update.
 		light.source_atom.update_light()
+	if(!isnull(heat_body))
+		heat_recouple()
 	return TRUE
 
 /mob/Moved(atom/old_loc, direction, forced, movetime)
 	. = ..()
-	// Both publishers return before any turf lookup while nothing is subscribed (Q12).
-	if(SSmachines?.mob_chunk_subscriptions || length(SSai?.chunk_subscribers) || (client && length(SSsounds?.dormant_loops_by_chunk)))
-		var/turf/old_turf = get_turf(old_loc)
-		var/turf/new_turf = get_turf(src)
-		if(client)
-			SSsounds?.publish_mob_chunk(new_turf)
-		// A step inside one chunk only needs one publish: the first wakes every subscriber.
-		if(old_turf && (!new_turf || old_turf.z != new_turf.z || MOB_CHUNK_COORD(old_turf.x) != MOB_CHUNK_COORD(new_turf.x) || MOB_CHUNK_COORD(old_turf.y) != MOB_CHUNK_COORD(new_turf.y)))
-			SSmachines?.publish_mob_chunk(old_turf)
-			SSai?.publish_mob_chunk(old_turf)
-		SSmachines?.publish_mob_chunk(new_turf)
-		SSai?.publish_mob_chunk(new_turf)
+	// One publish; it returns before any turf lookup while nothing is subscribed (Q12).
+	if(SSreactor?.mob_chunk_subscriptions || (client && SSreactor?.player_chunk_subscriptions))
+		SSreactor.publish_mob_move(old_loc, src, !!client)
 	//If we return focus to our own mob, but we are still inside something with an inherent remote view. Restart it.
 	if(client)
 		restore_remote_views()
@@ -363,6 +360,13 @@
 		glide_for(movetime)
 		last_move = isnull(direction) ? 0 : direction
 		loc = destination
+		// The containment ledger's commit point: account for the move before
+		// anything else can react to it.
+		if(!same_loc)
+			if(oldloc?.ledger)
+				oldloc.ledger.note_exit(src)
+			if(destination.ledger)
+				destination.ledger.note_enter(src)
 
 		// Unset this in case it was set in some other proc. We're no longer moving diagonally for sure.
 		moving_diagonally = 0
@@ -422,6 +426,7 @@
 	//If no destination, move the atom into nullspace (don't do this unless you know what you're doing)
 	else if(oldloc)
 		loc = null
+		oldloc.ledger?.note_exit(src)
 
 		// Uncross everything where we left (no multitile safety like above because we are definitely not still there)
 		for(var/atom/movable/AM as anything in oldloc)

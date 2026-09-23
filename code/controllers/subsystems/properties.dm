@@ -1,5 +1,5 @@
 /// Builds the property registry at boot, compiles every declared predicate
-/// against it, and reports every validation error (code/datums/properties/).
+/// and every rule against it, and reports every validation error (code/datums/properties/).
 /// dq_property_registry_validates and dq_predicates_validate_at_boot fail the
 /// unit tests on any of them.
 SUBSYSTEM_DEF(properties)
@@ -16,6 +16,10 @@ SUBSYSTEM_DEF(properties)
 	for(var/error in predicate_errors)
 		log_world("Predicates: [error]")
 		stack_trace("Predicates: [error]")
-	if(length(errors) || length(predicate_errors))
+	var/list/rule_errors = dq_rules_validate()
+	for(var/error in rule_errors)
+		log_world("Rules: [error]")
+		stack_trace("Rules: [error]")
+	if(length(errors) || length(predicate_errors) || length(rule_errors))
 		return SS_INIT_FAILURE
 	return SS_INIT_SUCCESS

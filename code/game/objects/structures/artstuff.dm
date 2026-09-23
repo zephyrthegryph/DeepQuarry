@@ -120,7 +120,7 @@
 			update_appearance()
 			return
 
-	if(user.a_intent == I_HELP)
+	if(IS_HELPING(user))
 		tgui_interact(user)
 	else
 		return ..()

@@ -3,7 +3,7 @@
 	desc = "A gun that fires bullets."
 	icon_state = "revolver"
 	w_class = ITEMSIZE_NORMAL
-	matter = list(MAT_STEEL = 1000)
+	MATERIAL_BULK(MAT_STEEL, 1000)
 	recoil = 1
 	projectile_type = /obj/item/projectile/bullet/pistol/strong	//Only used for chameleon guns
 
@@ -417,7 +417,7 @@
 			playsound(src, sound_chamber, 50, 0)
 			if(unlocked)
 				if(bolt_release)
-					if(user.a_intent == I_HURT && CHECK_BITFIELD(auto_loading_type,LOCK_SLAPPABLE))
+					if(IS_HARMING(user) && CHECK_BITFIELD(auto_loading_type,LOCK_SLAPPABLE))
 						user.visible_message(span_notice("[user] slaps the [bolt_release], causing \the [bolt_name] to slide forward[casing_chambered]!"), \
 						span_notice("You slap the [bolt_release], causing \the [bolt_name] to slide forward[casing_chambered]!"))
 					else

@@ -18,14 +18,14 @@
 
 	var/underlayRotation = 45
 	//TODO: make this generic so it's easier for other stuff to use. ideally there's a magical thing that just has all the various greebles set up so u can pick and choose which ones are rendered traditionally
-	var/list/tail_data = list( DATA_X_OFFSET = 2, DATA_Y_OFFSET = -2,DATA_SCALE = 1.6, DATA_ROTATION = 45)
-	var/list/taur_data = list( DATA_X_OFFSET = 2, DATA_Y_OFFSET = 2, DATA_SCALE = 1.1, DATA_ROTATION = 45)
-	var/list/wing_data = list( DATA_X_OFFSET = 2, DATA_Y_OFFSET = -2,DATA_SCALE = 1,   DATA_ROTATION = 45)
-	var/list/ear_data =  list( DATA_X_OFFSET = 0, DATA_Y_OFFSET = 1, DATA_SCALE = 1.5,   DATA_ROTATION = 45)
-	var/list/hat_data =  list( DATA_X_OFFSET = 0, DATA_Y_OFFSET = 3, DATA_SCALE = 1,   DATA_ROTATION = 45)
+	var/static/list/tail_data = list( DATA_X_OFFSET = 2, DATA_Y_OFFSET = -2,DATA_SCALE = 1.6, DATA_ROTATION = 45)
+	var/static/list/taur_data = list( DATA_X_OFFSET = 2, DATA_Y_OFFSET = 2, DATA_SCALE = 1.1, DATA_ROTATION = 45)
+	var/static/list/wing_data = list( DATA_X_OFFSET = 2, DATA_Y_OFFSET = -2,DATA_SCALE = 1,   DATA_ROTATION = 45)
+	var/static/list/ear_data =  list( DATA_X_OFFSET = 0, DATA_Y_OFFSET = 1, DATA_SCALE = 1.5,   DATA_ROTATION = 45)
+	var/static/list/hat_data =  list( DATA_X_OFFSET = 0, DATA_Y_OFFSET = 3, DATA_SCALE = 1,   DATA_ROTATION = 45)
 	var/outline_size = 1
 
-	var/list/discarded_layer_indicies = list(
+	var/static/list/discarded_layer_indicies = list(
 		VORE_BELLY_LAYER, //not even gonna try with this lmfao
 		TAIL_LOWER_LAYER,
 		TAIL_UPPER_LAYER,

@@ -75,7 +75,7 @@
 	AddElement(/datum/element/rotatable)
 
 /obj/structure/smoletrack/attack_hand(mob/user)
-	if(user.a_intent == I_DISARM)
+	if(IS_DISARMING(user))
 		if(HAS_TRAIT(user, TRAIT_AMBIENT_PEST_MOB) || (isobserver(user) && !CONFIG_GET(flag/ghost_interaction)))
 			return
 		to_chat(user, span_notice("[src] was dismantaled into bricks."))
@@ -151,12 +151,11 @@
 	anchored = TRUE
 	color = "#ffffff"
 	micro_target = TRUE	//Now micros can enter and navigate these things!!!
-	var/health = 75
-	var/damage
+	max_integrity = 75 // Three stomps.
 
 //makes it so buildings can be dismaintaled or GodZilla style attacked
 /obj/structure/smolebuilding/attack_hand(mob/user)
-	if(user.a_intent == I_DISARM)
+	if(IS_DISARMING(user))
 		if(HAS_TRAIT(user, TRAIT_AMBIENT_PEST_MOB) || (isobserver(user) && !CONFIG_GET(flag/ghost_interaction)))
 			return
 		to_chat(user, span_notice("[src] was dismantaled into bricks."))
@@ -166,39 +165,30 @@
 			new /obj/item/stack/material/smolebricks(loc)
 		qdel(src)
 
-	else if (user.a_intent == I_HURT)
+	else if (IS_HARMING(user))
 
 		if(HAS_TRAIT(user, TRAIT_AMBIENT_PEST_MOB) || (isobserver(user) && !CONFIG_GET(flag/ghost_interaction)))
 			return
 
-		take_damage()
 		playsound(src, 'sound/items/smolebuildinghit2.ogg', 50, 1)
 		user.do_attack_animation(src)
 		user.visible_message(span_danger("\The [user] bangs against \the [src]!"),
 							span_danger("You bang against \the [src]!"),
 							"You hear a banging sound.")
+		take_damage(25, BRUTE, MELEE, FALSE)
 	else
 		user.visible_message("[user.name] knocks on the [src.name].",
 							"You knock on the [src.name].")
 	return
 
-//takes 3 normal attacks
-/obj/structure/smolebuilding/take_damage()
-	damage = 25
-	health = health - damage
-
-	if(health <= 0)
-		dismantle()
-	else
-		return
-	return
-//results of attacks will remove building and spawn in ruins.
-/obj/structure/smolebuilding/proc/dismantle()
+/// Stomped flat: the building leaves ruins.
+/obj/structure/smolebuilding/handle_deconstruct(disassembled = TRUE)
 	visible_message(span_danger("\The [src] falls apart!"))
 	playsound(src, 'sound/items/smolebuildingdestoryed.ogg', 50, 1, -1, volume_channel = VOLUME_CHANNEL_MASTER)
 	new /obj/structure/smoleruins(loc)
-	qdel(src)
-	return
+//results of attacks will remove building and spawn in ruins.
+/obj/structure/smolebuilding/proc/dismantle()
+	deconstruct(FALSE)
 
 //checks for items and does the same as dismaintle but spawns material instead.
 /obj/structure/smolebuilding/attackby(obj/item/W as obj, mob/user as mob)
@@ -219,7 +209,7 @@
 
 //get material from ruins
 /obj/structure/smoleruins/attack_hand(mob/user)
-	if(user.a_intent == I_DISARM)
+	if(IS_DISARMING(user))
 		if(HAS_TRAIT(user, TRAIT_AMBIENT_PEST_MOB) || (isobserver(user) && !CONFIG_GET(flag/ghost_interaction)))
 			return
 		to_chat(user, span_notice("[src] was dismantaled into bricks."))

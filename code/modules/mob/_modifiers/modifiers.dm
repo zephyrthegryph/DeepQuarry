@@ -92,6 +92,11 @@
 	order = 50
 	segment = LIFE_SEG_LIVING
 	life_sets = LIFE_SET_LIVING | LIFE_SET_ROBOT
+	woken_by = "add_modifier()"
+
+/// Continuous while the mob has any modifier (they expire and tick); asleep otherwise.
+/datum/life_system/modifiers/idle(mob/living/self)
+	return !length(self.modifiers)
 
 /// Modifier expiry and ticks. Runs even in nullspace.
 /datum/life_system/modifiers/tick(mob/living/self, datum/life_context/ctx)
@@ -133,6 +138,7 @@
 	if(mod.on_created_text)
 		to_chat(src, mod.on_created_text)
 	modifiers.Add(mod)
+	life_wake(LIFE_SYS_UPKEEP, "modifier")
 	if(mod.flags & MODIFIER_GENETIC)
 		record_genetic_modifier(mod.type, TRUE)
 	if(mod.factors)
@@ -370,8 +376,8 @@
 //MISC VARIANTS
 
 /datum/modifier/shield_projection/biohazard //The odd-ball damage types. Provides near-complete immunity while it's up.
-	resist_full = alist(INJURY_CATEGORY_TOXIC = 0, INJURY_CATEGORY_ASPHYXIA = 0, INJURY_CATEGORY_GENETIC = 0)
-	resist_empty = alist(INJURY_CATEGORY_TOXIC = 0.25, INJURY_CATEGORY_ASPHYXIA = 0.25, INJURY_CATEGORY_GENETIC = 0.25)
+	resist_full = alist(INJURY_CATEGORY_TOXIC = 0, INJURY_CATEGORY_GENETIC = 0)
+	resist_empty = alist(INJURY_CATEGORY_TOXIC = 0.25, INJURY_CATEGORY_GENETIC = 0.25)
 
 /datum/modifier/shield_projection/admin // Adminbus.
 	on_created_text = span_notice("Your shield generator activates and you feel the power of the tesla buzzing around you.")

@@ -354,7 +354,10 @@ ADMIN_VERB_AND_CONTEXT_MENU(player_effects, R_FUN, "Player Effects", "Modify a p
 			var/mob/living/Tar = target
 			if(!istype(Tar))
 				return
-			Tar.scan_mob(ui.user)
+			var/datum/diagnosis/D = Tar.diagnose(/datum/diagnostic_profile/admin)
+			if(D)
+				to_chat(ui.user, D.render_chat())
+				qdel(D)
 
 		if("appendicitis")
 			var/mob/living/carbon/human/Tar = target
@@ -462,13 +465,13 @@ ADMIN_VERB_AND_CONTEXT_MENU(player_effects, R_FUN, "Player Effects", "Modify a p
 			our_organ.fracture()
 
 		if("stasis")
-			var/mob/living/carbon/human/Tar = target
+			var/mob/living/Tar = target
 			if(!istype(Tar))
 				return
-			if(Tar.in_stasis)
-				Tar.Stasis(0)
+			if(Tar.has_stasis_from(null))
+				Tar.set_stasis(null, null)
 			else
-				Tar.Stasis(100000)
+				Tar.set_stasis(/datum/modifier/stasis/total, null)
 
 		if("give_chem")
 			var/mob/living/carbon/human/Tar = target
@@ -816,7 +819,9 @@ ADMIN_VERB_AND_CONTEXT_MENU(player_effects, R_FUN, "Player Effects", "Modify a p
 				qdel(old_brain)	//Only way I could make #TESTING - Unable to be GC'd to stop. del() logs show it works.
 			L.initialize_ai_brain()
 			L.faction = tgui_input_text(ui.user, "Please input AI faction", "AI faction", "neutral", MAX_MESSAGE_LEN)
-			L.a_intent = tgui_input_list(ui.user, "Please choose AI intent", "AI intent", list(I_HURT, I_HELP))
+			var/stance = tgui_input_list(ui.user, "Please choose AI combat mode", "AI combat mode", list(I_HURT, I_HELP))
+			if(stance)
+				L.set_use_stance(stance)
 			if(tgui_alert(ui.user, "Make mob wake up? This is needed for carbon mobs.", "Wake mob?", list("Yes", "No")) == "Yes")
 				L.AdjustSleeping(-100)
 

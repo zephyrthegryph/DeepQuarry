@@ -129,9 +129,6 @@ GLOBAL_LIST_EMPTY(suit_cycler_typecache)
 
 	return loaded
 
-/obj/machinery/suit_cycler/attack_ai(mob/user)
-	return attack_hand(user)
-
 /obj/machinery/suit_cycler/attackby(obj/item/I, mob/user)
 
 	if(electrified != 0)

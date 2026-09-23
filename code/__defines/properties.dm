@@ -47,10 +47,17 @@
 #define PROP_MELTING_POINT "melting_point"
 #define PROP_IGNITION_POINT "ignition_point"
 #define PROP_MAX_HEAT_PROTECTION "max_heat_protection"
+#define PROP_HEAT_CAPACITY "heat_capacity"
+#define PROP_TEMPERATURE "temperature"
+#define PROP_INTEGRITY_RATIO "integrity_ratio"
+#define PROP_INTEGRITY_FAILURE "integrity_failure"
+/// Fraction of heat a holder's shell (or a worn layer) keeps from what it covers, 0..1.
+#define PROP_INSULATION "insulation"
 // Tag ids.
 #define TAG_SHARP "sharp"
 #define TAG_FLAMMABLE "flammable"
 #define TAG_CONDUCTIVE "conductive"
+#define TAG_PAPERWORK "paperwork"
 
 /// Mass of one unit of an item's `matter` list. Matter amounts are treated as
 /// grams of that material (a sheet is SHEET_MATERIAL_AMOUNT = 2000, so 2 kg).

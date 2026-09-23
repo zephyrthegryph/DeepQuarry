@@ -29,7 +29,7 @@
 
 /datum/event2/event/security_screening
 	var/victim = null
-	var/list/species_weights = list(
+	var/static/list/species_weights = list(
 		SPECIES_SKRELL = 9,
 		SPECIES_UNATHI = 15,
 		SPECIES_HUMAN_VATBORN = 6,
@@ -40,7 +40,7 @@
 		SPECIES_PROMETHEAN = 30
 	)
 
-	var/list/synth_weights = list(
+	var/static/list/synth_weights = list(
 		FBP_CYBORG = 15,
 		FBP_DRONE = 30,
 		FBP_POSI = 25

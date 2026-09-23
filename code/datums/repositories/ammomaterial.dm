@@ -12,7 +12,7 @@ GLOBAL_DATUM_INIT(ammo_repository, /datum/repository/ammomaterial, new)
 	if(!(I in ammotypes))
 		ammotypes += I
 		var/obj/item/ammo_casing/temp = new I
-		ammotypes[I] = temp.matter
+		ammotypes[I] = temp.material_totals()
 		qdel(temp)
 
 	return ammotypes[I]

@@ -26,7 +26,7 @@
 			var/list/L = list()
 			var/list/areaindex = list()
 
-			for(var/obj/item/radio/beacon/R in GLOB.all_beacons)
+			for(var/obj/item/radio/beacon/R in REGISTRY_MEMBERS(REGISTRY_BEACONS))
 				var/turf/T = get_turf(R)
 				if(!T)
 					continue
@@ -39,7 +39,7 @@
 					areaindex[tmpname] = 1
 				L[tmpname] = R
 
-			for(var/obj/item/implant/tracking/I in GLOB.all_tracking_implants)
+			for(var/obj/item/implant/tracking/I in REGISTRY_MEMBERS(REGISTRY_TRACKING_IMPLANTS))
 				if(!I.implanted || !ismob(I.loc) || is_vore_jammed(I))
 					continue
 				else

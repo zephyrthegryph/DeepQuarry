@@ -3,20 +3,6 @@
 	var/list/rust_pipe_ports
 	var/list/rust_pipe_region_networks
 	var/rust_pipe_pending_operations = ""
-	/// Set during a bulk blast when a change of unknown network asked for every valve to wake.
-	var/pending_automatic_shutoff_wake_all = FALSE
-	/// Automatic shutoff valves (as keys) woken by network-local changes during a bulk blast.
-	var/list/pending_automatic_shutoff_valves = list()
-
-/datum/controller/subsystem/air/proc/flush_automatic_shutoff_wake()
-	var/list/valves = pending_automatic_shutoff_valves
-	pending_automatic_shutoff_valves = list()
-	if(pending_automatic_shutoff_wake_all)
-		pending_automatic_shutoff_wake_all = FALSE
-		wake_all_automatic_shutoff_valves()
-		return
-	for(var/obj/machinery/atmospherics/valve/shutoff/valve as anything in valves)
-		START_MACHINE_PROCESSING(valve)
 
 /obj/machinery/atmospherics
 	/// Stable IDs for this machine's physical gas ports. Rust owns connectivity.
@@ -186,7 +172,7 @@
 	next_rust_pipe_port_id = 1
 	var/operations = rust_pipe_operation(RUST_PIPE_OP_CLEAR, 0, 0)
 
-	for(var/obj/machinery/atmospherics/machine in SSmachines.all_machines)
+	for(var/obj/machinery/atmospherics/machine in REGISTRY_MEMBERS(REGISTRY_MACHINES))
 		machine.rust_allocate_pipe_ports()
 		for(var/index = 1 to machine.rust_pipe_port_count())
 			var/datum/gas_mixture/port_air = machine.rust_pipe_port_air(index)
@@ -197,7 +183,7 @@
 			stoplag()
 
 	var/list/seen_edges = list()
-	for(var/obj/machinery/atmospherics/machine in SSmachines.all_machines)
+	for(var/obj/machinery/atmospherics/machine in REGISTRY_MEMBERS(REGISTRY_MACHINES))
 		for(var/index = 1 to machine.rust_pipe_port_count())
 			for(var/obj/machinery/atmospherics/neighbor as anything in machine.rust_pipe_port_neighbors(index))
 				if(!neighbor)

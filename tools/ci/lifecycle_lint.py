@@ -33,6 +33,17 @@ FORBIDDEN = [
     ("radio join", re.compile(r"\bSSradio\.add_object\(|\bset_frequency\(")),
 ]
 
+# Not latent-safe yet, but registering only in on_materialize() (L3). Keep in
+# step with GLOB.dq_lifecycle_clean_types in dq_lifecycle_tests.dm.
+CLEAN_TYPES = [
+    "/obj/item/pda",
+    "/obj/item/radio",
+    "/obj/item/gps",
+    "/obj/item/implant/tracking",
+    "/obj/item/card/id",
+    "/obj/item/card/id/guest",
+]
+
 PROC_HEAD = re.compile(r"^(/[\w/]+?)/(?:proc/)?Initialize\(")
 
 
@@ -62,6 +73,8 @@ def main():
     # An ancestor's Initialize() runs for every latent-safe descendant.
     ancestors = set()
     for t in safe_roots:
+        ancestors.update(schema.chain(t))
+    for t in CLEAN_TYPES:
         ancestors.update(schema.chain(t))
 
     failures, checked = [], 0

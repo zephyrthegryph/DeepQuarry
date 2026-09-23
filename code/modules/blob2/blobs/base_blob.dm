@@ -1,4 +1,3 @@
-GLOBAL_LIST_EMPTY(all_blobs)
 
 /obj/structure/blob
 	name = "blob"
@@ -9,7 +8,6 @@ GLOBAL_LIST_EMPTY(all_blobs)
 	opacity = FALSE
 	anchored = TRUE
 	layer = MOB_LAYER + 0.1
-	var/integrity = 0
 	var/point_return = 0 //How many points the blob gets back when it removes a blob of that type. If less than 0, blob cannot be removed.
 	max_integrity = 30
 	var/health_regen = 2 //how much health this blob regens when pulsed
@@ -19,22 +17,20 @@ GLOBAL_LIST_EMPTY(all_blobs)
 	var/base_name = "blob" // The name that gets appended along with the blob_type's name.
 	var/faction = FACTION_BLOB
 
+REGISTRY_MEMBERSHIP(/obj/structure/blob, REGISTRY_BLOBS)
+
 /obj/structure/blob/Initialize(mapload, new_overmind)
 	if(new_overmind)
 		overmind = new_overmind
 		faction = overmind.blob_type.faction
-	update_icon()
-	if(!integrity)
-		integrity = max_integrity
 	set_dir(pick(GLOB.cardinal))
-	GLOB.all_blobs += src
 	consume_tile()
-	return ..()
+	. = ..()
+	update_icon()
 
 
 /obj/structure/blob/Destroy()
 	playsound(src, 'sound/effects/splat.ogg', 50, 1) //Expand() is no longer broken, no check necessary.
-	GLOB.all_blobs -= src
 	overmind = null
 	return ..()
 
@@ -126,7 +122,7 @@ GLOBAL_LIST_EMPTY(all_blobs)
 		if(overmind)
 			expand_probablity *= overmind.blob_type.spread_modifier
 			if(overmind.blob_type.slow_spread_with_size)
-				expand_probablity /= (GLOB.all_blobs.len / 10)
+				expand_probablity /= (REGISTRY_COUNT(REGISTRY_BLOBS) / 10)
 
 		if(distance <= expand_range)
 			var/can_expand = TRUE
@@ -248,8 +244,6 @@ GLOBAL_LIST_EMPTY(all_blobs)
 
 	adjust_integrity(-damage)
 
-	return
-
 /obj/structure/blob/attack_hand(mob/living/M as mob)
 	if(ishuman(M))
 		var/mob/living/carbon/human/H = M
@@ -342,10 +336,27 @@ GLOBAL_LIST_EMPTY(all_blobs)
 	adjust_integrity(-damage)
 	return
 
-/// Blobs keep their own integrity pool (adjust_integrity) until D3; the base
-/// adapters' packets stop here so a hit is not applied twice.
+/// Packet sink for the adapters with nothing blob-specific to say (fire,
+/// explosions, shocks): each kind is scaled by the blob type's brute or burn
+/// multiplier and offered to its on_received_damage() before it lands on integrity.
 /obj/structure/blob/receive_damage(datum/damage_packet/packet)
-	return 0
+	if(QDELETED(src))
+		return 0
+	var/list/amounts = packet.amounts
+	. = 0
+	for(var/kind in 1 to DAMAGE_KIND_COUNT)
+		var/amount = amounts[kind]
+		if(amount <= 0)
+			continue
+		var/damage_type = damage_kind_obj_damage_type(kind)
+		if(!damage_type || (kind == DAMAGE_IONIC && !emp_integrity_factor))
+			continue
+		if(overmind)
+			amount *= damage_type == BURN ? overmind.blob_type.burn_multiplier : overmind.blob_type.brute_multiplier
+			amount = overmind.blob_type.on_received_damage(src, amount, damage_type, packet.attacker)
+		. += adjust_integrity(-amount)
+		if(QDELETED(src))
+			return
 
 /obj/structure/blob/bullet_act(obj/item/projectile/P)
 	if(!P)
@@ -354,9 +365,13 @@ GLOBAL_LIST_EMPTY(all_blobs)
 	if(istype(P.firer) && P.firer.faction == faction)
 		return
 
-	var/damage = P.get_structure_damage() // So tasers don't hurt the blob.
+	return ..()
+
+/// Projectile adapter: only a round's structural damage hurts a blob, so tasers don't.
+/obj/structure/blob/projectile_damage(obj/item/projectile/P, def_zone)
+	var/damage = P.get_structure_damage()
 	if(!damage)
-		return
+		return 0
 
 	switch(P.obj_damage_type())
 		if(BRUTE)
@@ -369,17 +384,13 @@ GLOBAL_LIST_EMPTY(all_blobs)
 	if(overmind)
 		damage = overmind.blob_type.on_received_damage(src, damage, P.obj_damage_type(), P.firer)
 
-	adjust_integrity(-damage)
-
-	return ..()
+	return adjust_integrity(-damage)
 
 /obj/structure/blob/water_act(amount)
 	if(overmind)
 		overmind.blob_type.on_water(src, amount)
 
 /obj/structure/blob/blob_act(obj/structure/blob/B)
-	. = ..()
-
 	if(B)
 
 		if(!B.overmind)
@@ -402,15 +413,27 @@ GLOBAL_LIST_EMPTY(all_blobs)
 
 	return
 
+/// Heals (positive) or hurts (negative) the blob's integrity. Blob damage is
+/// already scaled by the blob type, so it skips armour. Returns the damage dealt.
 /obj/structure/blob/proc/adjust_integrity(amount)
-	integrity = between(0, integrity + amount, max_integrity)
-	if(integrity == 0)
-		playsound(src, 'sound/effects/splat.ogg', 50, 1)
-		if(overmind)
-			overmind.blob_type.on_death(src)
-		qdel(src)
-	else
-		update_icon()
+	if(amount > 0)
+		repair_damage(amount)
+		return 0
+	if(amount < 0)
+		return take_damage(-amount, BRUTE, null, FALSE)
+	return 0
+
+/obj/structure/blob/on_update_integrity(old_value, new_value)
+	. = ..()
+	update_icon()
+
+/// Integrity depletion: the blob type gets its death hook, and no debris is left.
+/obj/structure/blob/handle_deconstruct(disassembled = TRUE)
+	if(disassembled)
+		return
+	playsound(src, 'sound/effects/splat.ogg', 50, 1)
+	if(overmind)
+		overmind.blob_type.on_death(src)
 
 /obj/effect/temporary_effect/blob_attack
 	name = "blob"
@@ -425,5 +448,5 @@ GLOBAL_LIST_EMPTY(all_blobs)
 /obj/structure/grille/blob_act()
 	qdel(src)
 
-/turf/simulated/wall/blob_act()
-	take_damage(100)
+/turf/simulated/wall/blob_act(obj/structure/blob/B)
+	deal_damage(DAMAGE_BLUNT, 100, MELEE, B, B?.overmind)

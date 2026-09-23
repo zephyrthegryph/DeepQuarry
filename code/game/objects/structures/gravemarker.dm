@@ -78,20 +78,6 @@
 		dismantle()
 	return TRUE
 
-/obj/structure/gravemarker/ex_act(severity)
-	switch(severity)
-		if(1.0)
-			visible_message(span_danger("\The [src] is blown apart!"))
-			qdel(src)
-			return
-		if(2.0)
-			visible_message(span_danger("\The [src] is blown apart!"))
-			if(prob(50))
-				dismantle()
-			else
-				qdel(src)
-			return
-
 /obj/structure/gravemarker/atom_destruction(damage_flag)
 	visible_message(span_danger("\The [src] falls apart!"))
 	dismantle()

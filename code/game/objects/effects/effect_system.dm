@@ -246,7 +246,8 @@ would spawn and follow the beaker, even if it is carried or thrown.
 	if (!..())
 		return 0
 	if(L.needs_to_breathe())
-		L.injure(INJURY_ASPHYXIA, 1, null, src)
+		// Choking smoke in the lungs: gas exchange falters while it's breathed.
+		L.body?.add_restriction(src, BF_GAS_EXCHANGE, 0.5, 4 SECONDS)
 		if(prob(25))
 			L.emote("cough")
 

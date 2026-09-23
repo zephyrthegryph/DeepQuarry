@@ -7,7 +7,7 @@
 	center_of_mass_x = 16
 	center_of_mass_y = 10
 	flags = OPENCONTAINER|NOBLUDGEON
-	matter = list(MAT_GLASS = 300, MAT_STEEL = 300)
+	MATERIAL_MIX(list(MAT_GLASS = 300, MAT_STEEL = 300))
 	slot_flags = SLOT_BELT
 	throwforce = 3
 	w_class = ITEMSIZE_SMALL
@@ -17,7 +17,7 @@
 	unacidable = TRUE //plastic
 	max_transfer_amount = 10 //Set to null instead of list, if there is only one.
 	var/spray_size = 3
-	var/list/spray_sizes = list(1,3)
+	var/static/list/spray_sizes = list(1,3)
 	volume = 250
 
 /obj/item/reagent_containers/spray/Initialize(mapload)

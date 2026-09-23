@@ -28,13 +28,6 @@ export const BodyScannerMainOrgansExternal = (props: {
         {organs.map((o, i) => {
           const band = (o.injuryBand as DamageBand) ?? 'uninjured';
           const info = BAND_INFO[band];
-          // Suffix the band label with whether it's blunt/burn/mixed so
-          // medics still know what kind of injury they're treating —
-          // just not the exact number.
-          const injuryKindParts: string[] = [];
-          if (o.hasBrute) injuryKindParts.push('trauma');
-          if (o.hasBurn) injuryKindParts.push('burns');
-          const injuryKind = injuryKindParts.join(' + ');
           return (
             <Table.Row key={i} style={{ textTransform: 'capitalize' }}>
               <Table.Cell width="30%">{o.name}</Table.Cell>
@@ -42,11 +35,6 @@ export const BodyScannerMainOrgansExternal = (props: {
                 <Box color={info.color} bold inline>
                   {info.label}
                 </Box>
-                {injuryKind && band !== 'uninjured' ? (
-                  <Box color="label" inline ml={1}>
-                    ({injuryKind})
-                  </Box>
-                ) : null}
               </Table.Cell>
               <Table.Cell textAlign="right" width="40%">
                 <Box color="average" inline>

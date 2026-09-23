@@ -1,8 +1,8 @@
 /obj/item/modular_computer/examine(mob/user)
 	. = ..()
-	if(damage > broken_damage)
+	if(computer_broken())
 		. += span_danger("It is heavily damaged!")
-	else if(damage)
+	else if(get_integrity_damage())
 		. += "It is damaged."
 
 /obj/item/modular_computer/proc/break_apart()
@@ -13,37 +13,54 @@
 		uninstall_component(null, H)
 		H.forceMove(newloc)
 		if(prob(25))
-			H.take_damage(rand(10,30))
+			H.take_damage(rand(10,30), BRUTE, null, FALSE)
 	qdel(src)
 
-/obj/item/modular_computer/take_damage(amount, component_probability, damage_casing = 1, randomize = 1)
+/// Below integrity_failure the computer ceases to operate.
+/obj/item/modular_computer/proc/computer_broken()
+	return get_integrity() < max_integrity * integrity_failure
+
+/obj/item/modular_computer/atom_break(damage_flag)
+	. = ..()
+	if(enabled)
+		shutdown_computer()
+
+/// At zero integrity the chassis breaks apart and drops its parts. Fire and acid still destroy it outright.
+/obj/item/modular_computer/atom_destruction(damage_flag)
+	if(damage_flag == FIRE || damage_flag == ACID)
+		return ..()
+	break_apart()
+
+/// Damages the casing and, with `component_probability`% chance each, the
+/// installed hardware (half as hard). The casing takes no armour.
+/obj/item/modular_computer/proc/damage_computer(amount, component_probability, damage_casing = TRUE, randomize = TRUE)
 	if(randomize)
 		// 75%-125%, rand() works with integers, apparently.
 		amount *= (rand(75, 125) / 100.0)
 	amount = round(amount)
-	if(damage_casing)
-		damage += amount
-		damage = between(0, damage, max_damage)
+	if(amount <= 0)
+		return 0
 
 	if(component_probability)
 		for(var/obj/item/computer_hardware/H in get_all_components())
 			if(prob(component_probability))
-				H.take_damage(round(amount / 2))
+				H.take_damage(round(amount / 2), BRUTE, null, FALSE)
 
-	if(damage >= max_damage)
-		break_apart()
+	if(damage_casing)
+		return take_damage(amount, BRUTE, null, FALSE)
+	return 0
 
 // Stronger explosions cause serious damage to internal components
 // Minor explosions are mostly mitigitated by casing.
 /obj/item/modular_computer/ex_act(severity)
-	take_damage(rand(100,200) / severity, 30 / severity)
+	damage_computer(rand(100,200) / severity, 30 / severity, TRUE)
 
 // EMPs are similar to explosions, but don't cause physical damage to the casing. Instead they screw up the components
 /obj/item/modular_computer/emp_act(severity, recursive)
 	. = ..()
 	if (. & EMP_PROTECT_SELF)
 		return
-	take_damage(rand(100,200) / severity, 50 / severity, 0)
+	damage_computer(rand(100,200) / severity, 50 / severity, FALSE)
 
 // "Stun" weapons can cause minor damage to components (short-circuits?)
 // "Burn" damage is equally strong against internal components and exterior casing
@@ -57,9 +74,9 @@
 	var/thermal = amounts[DAMAGE_THERMAL] + amounts[DAMAGE_CORROSIVE]
 	var/pain = amounts[DAMAGE_PAIN]
 	if(physical > 0)
-		take_damage(physical, physical / 2)
-	if(thermal > 0)
-		take_damage(thermal, thermal / 1.5)
-	if(pain > 0)
-		take_damage(pain, pain / 3, 0)
+		damage_computer(physical, physical / 2)
+	if(thermal > 0 && !QDELETED(src))
+		damage_computer(thermal, thermal / 1.5)
+	if(pain > 0 && !QDELETED(src))
+		damage_computer(pain, pain / 3, FALSE)
 	return physical + thermal

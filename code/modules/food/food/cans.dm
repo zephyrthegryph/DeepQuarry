@@ -12,7 +12,7 @@
 	. = ..(user)
 	if(.)
 		return TRUE
-	if(user.a_intent == I_HURT && !is_open_container())
+	if(IS_HARMING(user) && !is_open_container())
 		to_chat(user, span_warning("You shake [src]."))
 		if(!shaken)
 			START_PROCESSING(SSobj, src)

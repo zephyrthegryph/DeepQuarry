@@ -39,7 +39,7 @@
 
 /mob/living/simple_mob/mechanical/mecha/imperion/phase1/do_special_attack(atom/A)
 	. = TRUE // So we don't fire a bolt as well.
-	switch(a_intent)
+	switch(use_stance())
 		if(I_DISARM) // Side gun
 			electric_defense(A)
 		if(I_HURT) // Rockets
@@ -49,7 +49,7 @@
 
 /mob/living/simple_mob/mechanical/mecha/imperion/phase2/do_special_attack(atom/A)
 	. = TRUE // So we don't fire a bolt as well.
-	switch(a_intent)
+	switch(use_stance())
 		if(I_DISARM) // Side gun
 			electric_defense(A)
 		if(I_HURT) // Rockets
@@ -59,7 +59,7 @@
 
 /mob/living/simple_mob/mechanical/mecha/imperion/phase4/do_special_attack(atom/A)
 	. = TRUE // So we don't fire a bolt as well.
-	switch(a_intent)
+	switch(use_stance())
 		if(I_DISARM) // Side gun
 			electric_defense(A)
 		if(I_HURT) // Rockets
@@ -69,7 +69,7 @@
 
 /mob/living/simple_mob/mechanical/mecha/imperion/phase5/do_special_attack(atom/A)
 	. = TRUE // So we don't fire a bolt as well.
-	switch(a_intent)
+	switch(use_stance())
 		if(I_DISARM) // Side gun
 			electric_defense(A)
 		if(I_HURT) // Rockets
@@ -426,8 +426,7 @@
 	return ..()
 
 /obj/item/shield_projector/rectangle/automatic/imperion
-	shield_health = 250
-	max_shield_health = 250
+	max_integrity = 250
 	shield_regen_delay = 60 SECONDS
 	shield_regen_amount = 50
 	size_x = 2

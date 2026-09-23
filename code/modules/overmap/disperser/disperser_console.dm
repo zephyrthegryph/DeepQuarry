@@ -38,7 +38,7 @@
 	if(is_valid_setup())
 		return TRUE
 
-	for(var/obj/machinery/disperser/front/F in GLOB.machines)
+	for(var/obj/machinery/disperser/front/F in REGISTRY_MEMBERS(REGISTRY_MACHINES))
 		if(get_dist(src, F) >= link_range)
 			continue
 		var/backwards = turn(F.dir, 180)

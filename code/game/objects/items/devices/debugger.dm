@@ -18,7 +18,7 @@
 	pickup_sound = 'sound/items/pickup/device.ogg'
 	drop_sound = 'sound/items/drop/device.ogg'
 
-	matter = list(MAT_STEEL = 50,MAT_GLASS = 20)
+	MATERIAL_MIX(list(MAT_STEEL = 50,MAT_GLASS = 20))
 	var/obj/machinery/telecomms/buffer // simple machine buffer for device linkage
 
 /obj/item/debugger/is_used_on(obj/O, mob/user)

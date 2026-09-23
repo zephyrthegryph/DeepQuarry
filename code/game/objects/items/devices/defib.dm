@@ -260,8 +260,8 @@
 				return "buzzes, \"Resuscitation failed - Patient's brain has naturally degraded past a recoverable state. Further attempts futile.\""
 
 	// Structural damage (physical + thermal + cellular) at twice the patient's endurance or more
-	// means the body can't sustain a restarted heart. Asphyxia and toxins don't count - the
-	// shock and the post-revive oxygenation deal with those.
+	// means the body can't sustain a restarted heart. Oxygen debt and toxins don't count - the
+	// restored circulation repays the debt, and the shock deals with the toxins.
 	var/structural_damage = H.injury_load(INJURY_CATEGORY_PHYSICAL) + H.injury_load(INJURY_CATEGORY_THERMAL) + H.injury_load(INJURY_CATEGORY_GENETIC)
 	var/too_damaged = structural_damage >= 2 * H.get_endurance()
 	if(too_damaged && H.isSynthetic())
@@ -339,7 +339,7 @@
 
 /obj/item/shockpaddles/attack(mob/living/M, mob/living/user, target_zone, attack_modifier)
 	var/mob/living/carbon/human/H = M
-	if(!istype(H) || user.a_intent == I_HURT)
+	if(!istype(H) || IS_HARMING(user))
 		return ..() //Do a regular attack. Harm intent shocking happens as a hit effect
 
 	if(can_use(user, H))
@@ -437,8 +437,7 @@
 		playsound(src, 'sound/machines/defib_failed.ogg', 50, 0)
 		return
 
-	// Reoxygenate the patient, and flush synthetic system faults (a no-op on organic parts).
-	H.mend(TREAT_OXYGENATION, H.injury_load(INJURY_CATEGORY_ASPHYXIA))
+	// Flush synthetic system faults (a no-op on organic parts).
 	H.mend(TREAT_SYSTEM_RESTORE, H.injury_load(INJURY_CATEGORY_TOXIC))
 
 	make_announcement("pings, \"Resuscitation successful.\"", "notice")

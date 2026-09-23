@@ -91,13 +91,13 @@
 	// Thermal injuries.
 	// Toxic injuries.
 	// Asphyxiation.
-	factors = alist(BF_INCOMING_ALL = 2, BF_INCOMING_PHYSICAL = 2, BF_INCOMING_THERMAL = 2, BF_INCOMING_TOXIC = 2, BF_INCOMING_ASPHYXIA = 2)
+	factors = alist(BF_INCOMING_ALL = 2, BF_INCOMING_PHYSICAL = 2, BF_INCOMING_THERMAL = 2, BF_INCOMING_TOXIC = 2, BF_DEMAND = 2)
 
 //Trying to learn from the AADG's ai and make my own
 
 /mob/living/simple_mob/vr/alchemistbee/do_special_attack(atom/A)
 	. = TRUE
-	switch(a_intent)
+	switch(use_stance())
 		if(I_DISARM)
 			chemblast(A)
 		if(I_HURT)

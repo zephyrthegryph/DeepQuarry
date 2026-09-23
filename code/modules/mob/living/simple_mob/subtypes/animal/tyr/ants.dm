@@ -61,7 +61,7 @@
 /mob/living/simple_mob/animal/tyr/mineral_ants/bronze/apply_melee_effects(atom/A)
 	..()
 
-	if(isliving(A) && a_intent == I_HURT)
+	if(isliving(A) && IS_HARMING(src))
 		var/mob/living/L = A
 		if(L.mob_size <= MOB_MEDIUM)
 			visible_message(span_danger("\The [src] sends \the [L] flying with the impact!"))

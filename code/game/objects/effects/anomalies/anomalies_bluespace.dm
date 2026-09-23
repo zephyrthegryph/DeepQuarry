@@ -33,7 +33,7 @@
 
 	var/obj/item/radio/beacon/chosen
 	var/list/possible = list()
-	for(var/obj/item/radio/beacon in GLOB.all_beacons)
+	for(var/obj/item/radio/beacon in REGISTRY_MEMBERS(REGISTRY_BEACONS))
 		var/turf/turf = get_turf(beacon)
 		if(!turf)
 			continue
@@ -113,7 +113,7 @@
 /obj/effect/anomaly/bluespace/proc/pulse_teleport(range, count)
 	var/list/possible = list()
 
-	for(var/obj/item/radio/beacon in GLOB.all_beacons)
+	for(var/obj/item/radio/beacon in REGISTRY_MEMBERS(REGISTRY_BEACONS))
 		var/turf/turf = get_turf(beacon)
 		if(!turf)
 			continue

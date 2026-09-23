@@ -13,6 +13,8 @@ Thus, the two variables affect pump operation are set in New():
 */
 
 /obj/machinery/atmospherics/binary/pump
+	material_template = /datum/material_template/pump
+	material_total = 4 * SHEET_MATERIAL_AMOUNT
 	icon = 'icons/atmos/pump.dmi'
 	icon_state = "map_off"
 	construction_type = /obj/item/pipe/directional
@@ -46,7 +48,6 @@ Thus, the two variables affect pump operation are set in New():
 
 /obj/machinery/atmospherics/binary/pump/Initialize(mapload)
 	. = ..()
-	ensure_pump_materials()
 
 	air1.set_volume(ATMOS_DEFAULT_VOLUME_PUMP)
 	air2.set_volume(ATMOS_DEFAULT_VOLUME_PUMP)
@@ -272,9 +273,6 @@ Thus, the two variables affect pump operation are set in New():
 	addtimer(CALLBACK(src, PROC_REF(broadcast_status)), 2, TIMER_DELETE_ME)
 	update_icon()
 	return
-
-/obj/machinery/atmospherics/binary/pump/attack_ghost(mob/user)
-	tgui_interact(user)
 
 /obj/machinery/atmospherics/binary/pump/attack_hand(mob/user)
 	if(..())

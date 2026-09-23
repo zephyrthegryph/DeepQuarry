@@ -126,7 +126,7 @@
 	if(special_handling)
 		return FALSE
 	if(loc_network)
-		for(var/obj/item/perfect_tele_beacon/stationary/nb in GLOB.premade_tele_beacons)
+		for(var/obj/item/perfect_tele_beacon/stationary/nb in REGISTRY_MEMBERS(REGISTRY_TELE_BEACONS_PREMADE))
 			if(nb.tele_network == loc_network)
 				beacons[nb.tele_name] = nb
 		loc_network = null //Consumed
@@ -271,7 +271,7 @@ This device records all warnings given and teleport events for admin review in c
 		var/mob/living/L = target
 		if(!L.stat)
 			if(L != user)
-				if(L.a_intent != I_HELP || (L.ai_brain != null))
+				if(!IS_HELPING(L) || (L.ai_brain != null))
 					to_chat(user, span_notice("[L] is resisting your attempt to teleport them with \the [src]."))
 					to_chat(L, span_danger(" [user] is trying to teleport you with \the [src]!"))
 					if(!do_after(user, 3 SECONDS, target = L))
@@ -415,7 +415,7 @@ not carry this around."}, "OOC Warning", list("Take It","Leave It"))
 	w_class = ITEMSIZE_HUGE
 	anchored = TRUE
 
-GLOBAL_LIST_BOILERPLATE(premade_tele_beacons, /obj/item/perfect_tele_beacon/stationary)
+REGISTRY_MEMBERSHIP(/obj/item/perfect_tele_beacon/stationary, REGISTRY_TELE_BEACONS_PREMADE)
 
 /obj/item/perfect_tele_beacon/attack_self(mob/user)
 	. = ..(user)

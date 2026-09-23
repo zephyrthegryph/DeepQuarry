@@ -79,8 +79,8 @@
 		breather = null
 		update_use_power(USE_POWER_IDLE)
 
-/obj/machinery/oxygen_pump/attack_ai(mob/user as mob)
-	tgui_interact(user)
+/obj/machinery/oxygen_pump
+	silicon_use = SILICON_USE_UI
 
 /obj/machinery/oxygen_pump/proc/attach_mask(mob/living/carbon/C)
 	if(C && istype(C))
@@ -362,6 +362,10 @@
 
 				else
 					H.add_modifier(/datum/modifier/bloodpump, 6 SECONDS)
+					// A ventilator and circulatory pump: floors under the
+					// breathing drive and cardiac output while attached.
+					H.body?.add_support(src, BF_RESP_DRIVE, 1, 6 SECONDS)
+					H.body?.add_support(src, BF_PUMP, 1, 6 SECONDS)
 
 	var/turf/T = get_turf(src)
 

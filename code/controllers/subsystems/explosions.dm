@@ -28,21 +28,30 @@ SUBSYSTEM_DEF(explosions)
 	VAR_PRIVATE/epoch_submissions = 0
 	VAR_PRIVATE/epoch_visuals = 0
 	VAR_PRIVATE/last_epoch_ms = 0
-	/// Epoch-wide atom queue. Turfs collect strongest severity first; atoms are
-	/// resolved only after all turf transformations complete.
-	VAR_PRIVATE/list/resolve_atom_queue
-	VAR_PRIVATE/resolve_atom_index = 1
+	/// Epoch-wide blast batches (damage.md §7): type -> list of atoms. Turfs
+	/// collect strongest severity first; atoms receive their packets only after
+	/// all turf transformations complete, one type batch at a time.
+	VAR_PRIVATE/list/blast_batches = list()
+	/// Every batch (a list of atoms) in the order it was opened. A type whose
+	/// batch is already delivered opens a new one (contents spilled late).
+	VAR_PRIVATE/list/blast_batch_order = list()
+	VAR_PRIVATE/blast_batch_type_index = 1
+	VAR_PRIVATE/blast_batch_atom_index = 2
+	/// Most atoms that receive a blast packet in one fire(); the rest resume next fire.
+	var/blast_batch_budget = 1024
+	VAR_PRIVATE/epoch_blast_batches = 0
 	/// Atoms may move between affected turfs or be reached by several nested cell
 	/// blasts. Strongest-first resolution plus this epoch set guarantees one
 	/// ex_act per atom instead of repeatedly destroying the same ownership graph.
 	VAR_PRIVATE/list/resolved_atoms = list()
 	VAR_PRIVATE/epoch_atoms_resolved = 0
 	VAR_PRIVATE/epoch_atoms_deduplicated = 0
+	/// Changed turfs (turf -> TRUE, in insertion order). Turfs are changed in
+	/// place, so the ref itself is the key; no coordinate strings.
 	VAR_PRIVATE/list/deferred_turf_updates = list()
-	VAR_PRIVATE/list/deferred_turf_update_keys = list()
 	VAR_PRIVATE/deferred_turf_update_index = 1
+	/// Changed turfs and their neighbours, for one appearance update each.
 	VAR_PRIVATE/list/deferred_appearance_updates = list()
-	VAR_PRIVATE/list/deferred_appearance_update_keys = list()
 	VAR_PRIVATE/deferred_appearance_update_index = 1
 	VAR_PRIVATE/bulk_resolution_active = FALSE
 	VAR_PRIVATE/list/explosion_resistance_cache = list()
@@ -83,10 +92,11 @@ SUBSYSTEM_DEF(explosions)
 		"epoch_visuals" = epoch_visuals,
 		"epoch_atoms_resolved" = epoch_atoms_resolved,
 		"epoch_atoms_deduplicated" = epoch_atoms_deduplicated,
+		"epoch_blast_batches" = epoch_blast_batches,
 		"epoch_atom_collect_ms" = epoch_atom_collect_ms,
 		"epoch_atom_resolve_ms" = epoch_atom_resolve_ms,
-		"deferred_turf_updates" = max(0, length(deferred_turf_update_keys) - deferred_turf_update_index + 1),
-		"deferred_appearance_updates" = max(0, length(deferred_appearance_update_keys) - deferred_appearance_update_index + 1),
+		"deferred_turf_updates" = max(0, length(deferred_turf_updates) - deferred_turf_update_index + 1),
+		"deferred_appearance_updates" = max(0, length(deferred_appearance_updates) - deferred_appearance_update_index + 1),
 		"last_epoch_wall_ms" = last_epoch_ms,
 		"topology_batch_open" = atmos_topology_batch_open,
 	)
@@ -152,7 +162,7 @@ SUBSYSTEM_DEF(explosions)
 			return
 	record_turf_phase_cost(profile_resolve_phase, phase_profile_start)
 
-	if(resolve_explosions && !flush_resolve_atom_queue())
+	if(resolve_explosions && !deliver_blast_batches())
 		return
 	if(resolve_explosions && !flush_deferred_turf_updates())
 		return
@@ -223,15 +233,10 @@ SUBSYSTEM_DEF(explosions)
 			currentrun_keys += key
 	currentrun_index = 1
 
-/datum/controller/subsystem/explosions/proc/coordinate_key(x, y, z)
-	SHOULD_NOT_OVERRIDE(TRUE)
-	PRIVATE_PROC(TRUE)
-	// BYOND treats numeric list keys as positional indices. A single packed text
-	// key avoids three interpolations while retaining associative-list semantics.
-	return num2text(x + ((y - 1) * world.maxx) + ((z - 1) * world.maxx * world.maxy))
-
 /datum/controller/subsystem/explosions/proc/queue_sound_event(turf/epicenter, devastation_range, heavy_impact_range, light_impact_range, flash_range)
-	var/key = coordinate_key(epicenter.x, epicenter.y, epicenter.z)
+	// Every per-turf table is keyed by the turf itself: turfs change in place,
+	// so the ref is stable, and it costs no key string per visit.
+	var/key = epicenter
 	var/list/prior = pending_sound_events[key]
 	if(!prior || max(devastation_range, heavy_impact_range, light_impact_range) > max(prior[2], prior[3], prior[4]))
 		pending_sound_events[key] = list(epicenter, devastation_range, heavy_impact_range, light_impact_range, flash_range)
@@ -282,7 +287,7 @@ SUBSYSTEM_DEF(explosions)
 	var/turf/epicenter = locate(data[1],data[2],data[3])
 	if(!epicenter)
 		return
-	var/list/res_explo = resolving_explosions[coordinate_key(epicenter.x, epicenter.y, epicenter.z)] // check if this has already resolved
+	var/list/res_explo = resolving_explosions[epicenter] // check if this has already resolved
 	if(res_explo && res_explo[4] >= pwr)
 		return
 	if(direction)
@@ -292,13 +297,13 @@ SUBSYSTEM_DEF(explosions)
 			// Fan outward from the original explosion
 			var/turf/T = get_step(epicenter, direction)
 			if(T)
-				append_currentrun(T.x,T.y,T.z,spread_power,direction,starting_power)
+				append_currentrun(T,spread_power,direction,starting_power)
 				T = get_step(epicenter, turn(direction,90))
 				if(T)
-					append_currentrun(T.x,T.y,T.z,spread_power,direction,starting_power)
+					append_currentrun(T,spread_power,direction,starting_power)
 				T = get_step(epicenter, turn(direction,-90))
 				if(T)
-					append_currentrun(T.x,T.y,T.z,spread_power,direction,starting_power)
+					append_currentrun(T,spread_power,direction,starting_power)
 			// Make these feel a little more flashy
 			if(epoch_visuals < 64 && spread_power > 3 && spread_power < GLOB.max_explosion_range && prob(6)) // bombs above maxcap are probably badmins, lets not make 10000 effects
 				epoch_visuals++
@@ -311,7 +316,7 @@ SUBSYSTEM_DEF(explosions)
 					P.set_up(2,epicenter,direction)
 					P.start()
 	// Build the final explosion list, will be processed when we get to final resolution
-	finalize_explosion(data[1],data[2],data[3],pwr,starting_power)
+	finalize_explosion(epicenter,pwr,starting_power)
 
 /datum/controller/subsystem/explosions/proc/fire_resolve_explosions(list/data)
 	var/pwr = data[4]
@@ -327,44 +332,95 @@ SUBSYSTEM_DEF(explosions)
 							//															want each one to take up a third of the crater
 	var/collect_start = TICK_USAGE
 	for(var/atom/movable/AM as anything in T)
-		if(AM && !QDELETED(AM) && AM.simulated)
-			var/prior_severity = resolved_atoms[AM]
-			if(prior_severity)
-				epoch_atoms_deduplicated++
-				if(severity < prior_severity)
-					resolved_atoms[AM] = severity
-			else
-				resolved_atoms[AM] = severity
-				resolve_atom_queue += AM
+		queue_blast(AM, severity)
 	epoch_atom_collect_ms += TICK_DELTA_TO_MS(TICK_USAGE - collect_start)
 	T.ex_act(severity)
 	return TRUE
 
-/datum/controller/subsystem/explosions/proc/flush_resolve_atom_queue()
+/// Queue `AM` for a blast packet this epoch. Each atom is hit once, at the
+/// strongest severity that reached it. Bomb-proof atoms are never queued.
+/datum/controller/subsystem/explosions/proc/queue_blast(atom/movable/AM, severity)
+	if(!AM || QDELETED(AM) || !AM.simulated)
+		return
+	if(isobj(AM))
+		var/obj/O = AM
+		if(O.resistance_flags & BOMB_PROOF)
+			return
+	var/prior_severity = resolved_atoms[AM]
+	if(prior_severity)
+		epoch_atoms_deduplicated++
+		if(severity < prior_severity)
+			resolved_atoms[AM] = severity
+		return
+	resolved_atoms[AM] = severity
+	var/list/batch = blast_batches[AM.type]
+	if(!batch)
+		batch = list(AM.type) // [1] is the batch's type; atoms follow
+		blast_batches[AM.type] = batch
+		blast_batch_order[++blast_batch_order.len] = batch
+	batch += AM
+
+/// Deliver queued blast packets, one type batch at a time, to at most
+/// `budget` atoms. Containers queue their contents into the same epoch, in
+/// bulk, before their own packet lands (a destroyed container spills them).
+/// Returns TRUE once every batch is delivered.
+/datum/controller/subsystem/explosions/proc/deliver_blast_batches(budget = blast_batch_budget, tick_checked = TRUE)
 	var/profile_start = TICK_USAGE
-	while(resolve_atom_index <= length(resolve_atom_queue))
-		var/atom/movable/AM = resolve_atom_queue[resolve_atom_index++]
-		if(AM && !QDELETED(AM) && AM.simulated)
+	var/delivered = 0
+	while(blast_batch_type_index <= length(blast_batch_order))
+		var/list/batch = blast_batch_order[blast_batch_type_index]
+		if(blast_batch_atom_index == 2)
+			epoch_blast_batches++
+		while(blast_batch_atom_index <= length(batch))
+			if(delivered >= budget || (tick_checked && MC_TICK_CHECK))
+				epoch_atom_resolve_ms += TICK_DELTA_TO_MS(TICK_USAGE - profile_start)
+				return FALSE
+			var/atom/movable/AM = batch[blast_batch_atom_index++]
+			delivered++
+			if(!AM || QDELETED(AM))
+				continue
 			var/severity = resolved_atoms[AM]
-			if(severity)
-				epoch_atoms_resolved++
-				atom_profile_index++
-				if(profile_atom_types && !(atom_profile_index % atom_profile_stride))
-					var/atom_type = "[AM.type]"
-					var/atom_started = TICK_USAGE
-					AM.ex_act(severity)
-					atom_profile_cost[atom_type] += TICK_DELTA_TO_MS(TICK_USAGE - atom_started) * atom_profile_stride
-					atom_profile_calls[atom_type] += atom_profile_stride
-				else
-					AM.ex_act(severity)
-		if(MC_TICK_CHECK)
-			epoch_atom_resolve_ms += TICK_DELTA_TO_MS(TICK_USAGE - profile_start)
-			return FALSE
+			if(!severity)
+				continue
+			var/contents_severity = length(AM.contents) ? AM.explosion_contents_severity(severity) : 0
+			if(contents_severity)
+				for(var/atom/movable/inner as anything in AM.contents)
+					queue_blast(inner, contents_severity)
+			epoch_atoms_resolved++
+			atom_profile_index++
+			if(profile_atom_types && !(atom_profile_index % atom_profile_stride))
+				var/atom_type = "[AM.type]"
+				var/atom_started = TICK_USAGE
+				AM.ex_act(severity)
+				atom_profile_cost[atom_type] += TICK_DELTA_TO_MS(TICK_USAGE - atom_started) * atom_profile_stride
+				atom_profile_calls[atom_type] += atom_profile_stride
+			else
+				AM.ex_act(severity)
+		// Later atoms of this type (spilled contents) open a fresh batch.
+		var/batch_type = batch[1]
+		if(blast_batches[batch_type] == batch)
+			blast_batches -= batch_type
+		blast_batch_type_index++
+		blast_batch_atom_index = 2
 	epoch_atom_resolve_ms += TICK_DELTA_TO_MS(TICK_USAGE - profile_start)
-	resolve_atom_queue.Cut()
-	resolve_atom_index = 1
-	resolved_atoms.Cut()
+	clear_blast_batches()
 	return TRUE
+
+/datum/controller/subsystem/explosions/proc/clear_blast_batches()
+	blast_batches.Cut()
+	blast_batch_order.Cut()
+	blast_batch_type_index = 1
+	blast_batch_atom_index = 2
+	resolved_atoms.Cut()
+
+/// Pending atoms, for tests and diagnostics.
+/datum/controller/subsystem/explosions/proc/pending_blast_count()
+	. = 0
+	for(var/i in blast_batch_type_index to length(blast_batch_order))
+		var/list/batch = blast_batch_order[i]
+		. += length(batch) - 1
+	if(blast_batch_type_index <= length(blast_batch_order))
+		. -= blast_batch_atom_index - 2
 
 /datum/controller/subsystem/explosions/proc/dump_atom_profile()
 	if(!profile_atom_types || !length(atom_profile_cost))
@@ -378,22 +434,19 @@ SUBSYSTEM_DEF(explosions)
 			break
 
 /datum/controller/subsystem/explosions/proc/cached_explosion_resistance(turf/T)
-	var/key = coordinate_key(T.x, T.y, T.z)
-	if(!isnull(explosion_resistance_cache[key]))
-		return explosion_resistance_cache[key]
-	var/resistance = T.explosion_resistance
+	. = explosion_resistance_cache[T]
+	if(!isnull(.))
+		return
+	. = T.explosion_resistance
 	for(var/obj/O in T)
-		resistance += O.explosion_resistance
-	explosion_resistance_cache[key] = resistance
-	return resistance
+		. += O.explosion_resistance
+	explosion_resistance_cache[T] = .
 
 /datum/controller/subsystem/explosions/proc/start_resolve()
 	SHOULD_NOT_OVERRIDE(TRUE)
 	PRIVATE_PROC(TRUE)
 	resolve_explosions = TRUE
 	bulk_resolution_active = TRUE
-	resolve_atom_queue = list()
-	resolve_atom_index = 1
 
 /datum/controller/subsystem/explosions/proc/end_resolve()
 	SHOULD_NOT_OVERRIDE(TRUE)
@@ -407,36 +460,26 @@ SUBSYSTEM_DEF(explosions)
 /datum/controller/subsystem/explosions/proc/defer_turf_update(turf/T)
 	if(!T)
 		return
-	var/key = coordinate_key(T.x, T.y, T.z)
-	if(!deferred_turf_updates[key])
-		deferred_turf_update_keys += key
-	deferred_turf_updates[key] = T
+	if(deferred_turf_updates[T])
+		return // its neighbourhood is already queued too
+	deferred_turf_updates[T] = TRUE
 	for(var/turf/neighbor as anything in RANGE_TURFS(1, T))
-		var/neighbor_key = coordinate_key(neighbor.x, neighbor.y, neighbor.z)
-		if(!deferred_appearance_updates[neighbor_key])
-			deferred_appearance_update_keys += neighbor_key
-		deferred_appearance_updates[neighbor_key] = neighbor
+		deferred_appearance_updates[neighbor] = TRUE
 
 /datum/controller/subsystem/explosions/proc/flush_deferred_turf_updates()
-	while(deferred_turf_update_index <= length(deferred_turf_update_keys))
-		var/key = deferred_turf_update_keys[deferred_turf_update_index++]
-		var/turf/T = deferred_turf_updates[key]
-		if(T)
-			T.finalize_explosion_deferred_change(FALSE)
+	while(deferred_turf_update_index <= length(deferred_turf_updates))
+		var/turf/T = deferred_turf_updates[deferred_turf_update_index++]
+		T?.finalize_explosion_deferred_change(FALSE)
 		if(MC_TICK_CHECK)
 			return FALSE
 	deferred_turf_updates.Cut()
-	deferred_turf_update_keys.Cut()
 	deferred_turf_update_index = 1
-	while(deferred_appearance_update_index <= length(deferred_appearance_update_keys))
-		var/key = deferred_appearance_update_keys[deferred_appearance_update_index++]
-		var/turf/T = deferred_appearance_updates[key]
-		if(T)
-			T.finalize_explosion_deferred_appearance()
+	while(deferred_appearance_update_index <= length(deferred_appearance_updates))
+		var/turf/T = deferred_appearance_updates[deferred_appearance_update_index++]
+		T?.finalize_explosion_deferred_appearance()
 		if(MC_TICK_CHECK)
 			return FALSE
 	deferred_appearance_updates.Cut()
-	deferred_appearance_update_keys.Cut()
 	deferred_appearance_update_index = 1
 	return TRUE
 
@@ -459,18 +502,17 @@ SUBSYSTEM_DEF(explosions)
 	epoch_visuals = 0
 	epoch_atoms_resolved = 0
 	epoch_atoms_deduplicated = 0
+	epoch_blast_batches = 0
 	epoch_atom_collect_ms = 0
 	epoch_atom_resolve_ms = 0
 	atom_profile_index = 0
 	atom_profile_cost.Cut()
 	atom_profile_calls.Cut()
-	resolved_atoms.Cut()
+	clear_blast_batches()
 	explosion_resistance_cache.Cut()
 	deferred_turf_updates.Cut()
-	deferred_turf_update_keys.Cut()
 	deferred_turf_update_index = 1
 	deferred_appearance_updates.Cut()
-	deferred_appearance_update_keys.Cut()
 	deferred_appearance_update_index = 1
 	current_signal_keys = null
 	current_signal_index = 1
@@ -482,7 +524,6 @@ SUBSYSTEM_DEF(explosions)
 		atmos_topology_batch_open = FALSE
 		vg_topology_batch_commit()
 		SSair.rust_commit_pending_pipenets()
-	SSair.flush_automatic_shutoff_wake()
 	SSmachines.flush_gas_watch_updates()
 	// Awaiting the rust powernet rebuild so this can be called normally...
 	INVOKE_ASYNC(SSmachines, TYPE_PROC_REF(/datum/controller/subsystem/machines,release_powernet_defer))
@@ -503,13 +544,12 @@ SUBSYSTEM_DEF(explosions)
 	currentrun_index = 1
 
 // INTERNAL explosion proc, meant for GROWING a currently processing blast.
-/datum/controller/subsystem/explosions/proc/append_currentrun(x0,y0,z0,pwr,direction,starting_power)
+/datum/controller/subsystem/explosions/proc/append_currentrun(turf/key,pwr,direction,starting_power)
 	SHOULD_NOT_OVERRIDE(TRUE)
 	PRIVATE_PROC(TRUE)
 	if(pwr <= 0)
 		return
 	// check if there is already an explosion calculated by our current run...
-	var/key = coordinate_key(x0, y0, z0)
 	var/final_data = resolving_explosions[key]
 	var/final_power = 0
 	if(final_data)
@@ -525,7 +565,7 @@ SUBSYSTEM_DEF(explosions)
 	if(isnull(dat) || pwr >= dat[4])
 		if(isnull(dat))
 			currentrun_keys += key
-		currentrun[key] = list(x0,y0,z0,pwr,direction,max_starting)
+		currentrun[key] = list(key.x,key.y,key.z,pwr,direction,max_starting)
 
 // Queue explosion event, call this from explosion() ONLY
 /datum/controller/subsystem/explosions/proc/append_explosion(turf/epicenter, pwr, devastation_range, heavy_impact_range, light_impact_range, flash_range, z_transfer)
@@ -537,7 +577,7 @@ SUBSYSTEM_DEF(explosions)
 	var/z0 = epicenter.z
 	// actual explosion. Do not allow multiple, just take the highest power explosion hitting that turf
 	var/max_starting = pwr
-	var/key = coordinate_key(x0, y0, z0)
+	var/key = epicenter
 	var/list/dat = pending_explosions[key]
 	if(!isnull(dat) && dat[6] > max_starting)
 		max_starting = dat[6]
@@ -549,13 +589,12 @@ SUBSYSTEM_DEF(explosions)
 		for(var/direction in GLOB.cardinal)
 			var/turf/T = get_step(epicenter, direction)
 			if(T)
-				var/turf_key = coordinate_key(T.x, T.y, T.z)
-				dat = pending_explosions[turf_key]
+				dat = pending_explosions[T]
 				max_starting = pwr
 				if(!isnull(dat) && dat[6] > max_starting)
 					max_starting = dat[6]
 				if(isnull(dat) || rad_power >= dat[4])
-					pending_explosions[turf_key] = list(T.x,T.y,T.z,rad_power,direction,max_starting)
+					pending_explosions[T] = list(T.x,T.y,T.z,rad_power,direction,max_starting)
 
 	// send signals to dopplers
 	var/list/prior_signal = explosion_signals[key]
@@ -566,15 +605,14 @@ SUBSYSTEM_DEF(explosions)
 	epoch_submissions++
 
 // Collect prepared explosions for BLAST PROCESSING
-/datum/controller/subsystem/explosions/proc/finalize_explosion(x0,y0,z0,pwr,max_starting)
+/datum/controller/subsystem/explosions/proc/finalize_explosion(turf/key,pwr,max_starting)
 	SHOULD_NOT_OVERRIDE(TRUE)
 	PRIVATE_PROC(TRUE)
 	if(pwr <= 0)
 		return
-	var/key = coordinate_key(x0, y0, z0)
 	var/list/dat = resolving_explosions[key]
 	if(isnull(dat) || pwr >= dat[4])
-		resolving_explosions[key] = list(x0,y0,z0,pwr,max_starting)
+		resolving_explosions[key] = list(key.x,key.y,key.z,pwr,max_starting)
 
 /proc/explosion(turf/epicenter, devastation_range, heavy_impact_range, light_impact_range, flash_range, adminlog = 1, z_transfer = UP|DOWN, shaped)
 	// Rarely objects might explode during init... Don't.

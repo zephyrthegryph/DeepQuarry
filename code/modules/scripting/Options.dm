@@ -56,7 +56,7 @@ associated values are <nS_Keyword> types of which the <n_Keyword.Parse()> proc w
 		"def"		= /datum/n_Keyword/nS_Keyword/kwDef
 	)
 
-	var/list/assign_operators = list(
+	var/static/list/assign_operators = list(
 		"="  = null,
 		"&=" = "&",
 		"|=" = "|",
@@ -69,13 +69,13 @@ associated values are <nS_Keyword> types of which the <n_Keyword.Parse()> proc w
 		"%=" = "%"
 	)
 
-	var/list/unary_operators =list(
+	var/static/list/unary_operators =list(
 		"!"  = /datum/node/expression/op/unary/LogicalNot,
 		"~"  = /datum/node/expression/op/unary/BitwiseNot,
 		"-"  = /datum/node/expression/op/unary/Minus
 	)
 
-	var/list/binary_operators=list(
+	var/static/list/binary_operators=list(
 		"=="	= /datum/node/expression/op/binary/Equal,
 		"!="	= /datum/node/expression/op/binary/NotEqual,
 		">"		= /datum/node/expression/op/binary/Greater,

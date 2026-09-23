@@ -54,7 +54,7 @@
 	say_list_type = /datum/say_list/sakimm
 
 	var/obj/item/clothing/head/hat = null // The hat the Sakimm may be wearing.
-	var/list/friend_loot_list = list(/obj/item/coin)	// What will make this animal non-hostile if held?
+	var/static/list/friend_loot_list = list(/obj/item/coin)	// What will make this animal non-hostile if held?
 	var/randomize_size = TRUE
 	can_be_drop_prey = TRUE
 	species_sounds = "Raccoon"
@@ -114,7 +114,7 @@
 				var/obj/item/clothing/head/newhat = H.get_active_hand()
 				H.drop_from_inventory(newhat, get_turf(src))
 				if(!stat)
-					a_intent = I_HELP
+					set_use_stance(I_HELP)
 					newhat.attack_hand(src)
 			else if(src.get_active_hand())
 				to_chat(user, span_notice("\The [src] seems busy with \the [get_active_hand()] already!"))

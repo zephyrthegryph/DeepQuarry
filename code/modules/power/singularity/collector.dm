@@ -16,14 +16,14 @@
 	var/drainratio = 1
 	rad_insulation = RAD_EXTREME_INSULATION //It sucks up the radiation. If you're standing behind it, you're pretty safe.
 
+REGISTRY_MEMBERSHIP(/obj/machinery/power/rad_collector, REGISTRY_RAD_COLLECTORS)
+
 /obj/machinery/power/rad_collector/Initialize(mapload)
 	. = ..()
-	GLOB.rad_collectors += src
 	AddElement(/datum/element/climbable)
 	RegisterSignal(src, COMSIG_IN_RANGE_OF_IRRADIATION, PROC_REF(process_rads))
 
 /obj/machinery/power/rad_collector/Destroy()
-	GLOB.rad_collectors -= src
 	UnregisterSignal(src, COMSIG_IN_RANGE_OF_IRRADIATION)
 	return ..()
 

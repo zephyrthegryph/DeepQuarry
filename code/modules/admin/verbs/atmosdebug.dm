@@ -9,17 +9,17 @@ ADMIN_VERB(atmosscan, R_DEBUG, "Check Piping", "Check all pipes in game (Only us
 
 	to_chat(user, span_debug_info("Checking for disconnected pipes..."))
 	//all plumbing - yes, some things might get stated twice, doesn't matter.
-	for (var/obj/machinery/atmospherics/plumbing in GLOB.machines)
+	for (var/obj/machinery/atmospherics/plumbing in REGISTRY_MEMBERS(REGISTRY_MACHINES))
 		if (plumbing.nodealert)
 			to_chat(user, span_filter_adminlog(span_warning("Unconnected [plumbing.name] located at [plumbing.x],[plumbing.y],[plumbing.z] ([get_area(plumbing.loc)])")))
 
 	//Manifolds
-	for (var/obj/machinery/atmospherics/pipe/manifold/pipe in GLOB.machines)
+	for (var/obj/machinery/atmospherics/pipe/manifold/pipe in REGISTRY_MEMBERS(REGISTRY_MACHINES))
 		if (!pipe.node1 || !pipe.node2 || !pipe.node3)
 			to_chat(user, span_filter_adminlog(span_warning("Unconnected [pipe.name] located at [pipe.x],[pipe.y],[pipe.z] ([get_area(pipe.loc)])")))
 
 	//Pipes
-	for (var/obj/machinery/atmospherics/pipe/simple/pipe in GLOB.machines)
+	for (var/obj/machinery/atmospherics/pipe/simple/pipe in REGISTRY_MEMBERS(REGISTRY_MACHINES))
 		if (!pipe.node1 || !pipe.node2)
 			to_chat(user, span_filter_adminlog(span_warning("Unconnected [pipe.name] located at [pipe.x],[pipe.y],[pipe.z] ([get_area(pipe.loc)])")))
 

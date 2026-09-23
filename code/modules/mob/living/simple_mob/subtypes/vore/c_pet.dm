@@ -34,7 +34,7 @@
 	can_be_drop_prey = FALSE
 
 /mob/living/simple_mob/animal/passive/honkpet/attack_hand(mob/living/user as mob)
-	if(user.a_intent == I_DISARM)
+	if(IS_DISARMING(user))
 		return icon_state = pick("c_pet", "m_pet")
 	.=..()
 
@@ -71,6 +71,6 @@
 				)
 
 /mob/living/simple_mob/animal/passive/mimepet/attack_hand(mob/living/user as mob)
-	if(user.a_intent == I_DISARM)
+	if(IS_DISARMING(user))
 		icon_state = pick("dave1", "dave2", "dave3", "dave5" , "dave6" , "dave7" , "dave8" , "dave9" , "dave10")
 	.=..()

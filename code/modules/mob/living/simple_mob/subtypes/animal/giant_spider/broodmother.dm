@@ -25,7 +25,7 @@
 	projectiletype = /obj/item/projectile/energy/spidertoxin
 	projectilesound = 'sound/weapons/pierce.ogg'
 
-	var/list/possible_brood_types = list(
+	var/static/list/possible_brood_types = list(
 		/mob/living/simple_mob/animal/giant_spider/frost/broodling,
 		/mob/living/simple_mob/animal/giant_spider/electric/broodling,
 		/mob/living/simple_mob/animal/giant_spider/hunter/broodling,
@@ -37,7 +37,7 @@
 		/mob/living/simple_mob/animal/giant_spider/webslinger/broodling,
 		/mob/living/simple_mob/animal/giant_spider/broodling)
 
-	var/list/possible_death_brood_types = list(
+	var/static/list/possible_death_brood_types = list(
 		/mob/living/simple_mob/animal/giant_spider/frost,
 		/mob/living/simple_mob/animal/giant_spider/electric,
 		/mob/living/simple_mob/animal/giant_spider/hunter,
@@ -125,7 +125,7 @@
 
 /mob/living/simple_mob/animal/giant_spider/broodmother/do_special_attack(atom/A)
 	. = TRUE
-	switch(a_intent)
+	switch(use_stance())
 		if(I_DISARM)
 			spawn_brood(A)
 		if(I_HURT)

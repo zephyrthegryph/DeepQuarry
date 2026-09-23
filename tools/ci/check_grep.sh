@@ -150,6 +150,15 @@ if $grep -n "^/(mob|datum/species|datum/trait)[a-zA-Z0-9_/]*/(proc/)?handle_($LI
 	FAILED=1
 fi;
 
+part "life scheduler: wake and hibernate in one place"
+# Only /mob/living/proc/life_wake() and life_hibernate() (scheduler.dm) change whether a mob
+# runs; producers call life_wake() (doc/mob_life_architecture.md §4.9).
+if $grep -n '(life_hibernating|life_awake)\s*[|&]?=[^=]|hibernating_mobs(\[[^]]*\])?\s*[-+]?=[^=]' "${code_files[@]}" | grep -v '^code/modules/mob/living/life/scheduler\.dm:' | grep -v '^code/modules/unit_tests/' | grep -v 'var/'; then
+	echo
+	echo -e "${RED}ERROR: direct write to a mob's wake state. Call life_wake(bits, reason) or life_hibernate(reason).${NC}"
+	FAILED=1
+fi;
+
 part "gas mixture mirror writes"
 # /datum/gas_mixture temperature/volume are READ-ONLY mirrors of the Rust atmos arena
 # (the authoritative store). A bare `air.temperature = x` / `air_contents.volume = y`
@@ -211,6 +220,21 @@ if $grep -n '\.is_(screwdriver|wrench|crowbar|wirecutter|multitool|welder)\(\)' 
 	FAILED=1
 fi;
 
+part "combat mode: a_intent"
+# Intents were replaced by combat mode (roadmap I6, doc/rewrite/interactions.md §12).
+# Read what a Use does with IS_HELPING/IS_HARMING/IS_DISARMING/IS_GRABBING or
+# use_stance(), and set it with set_combat_mode()/set_use_stance(). `a_intent`
+# survives only as a read-only mirror (code/modules/mob/combat_mode.dm) for
+# files other work owns and has not converted yet: the body rewrite's medical,
+# surgery, organ and species files, and the tool *_act procs I4 is migrating.
+# These must not grow; delete an entry once its file is converted.
+a_intent_allowlist='code/modules/mob/combat_mode\.dm|code/modules/medical/instruments/resuscitation\.dm|code/modules/surgery/surgery\.dm|code/modules/organs/organ\.dm|code/game/objects/items/weapons/surgery_tools\.dm|code/game/objects/items/devices/scanners/health\.dm|code/modules/reagents/reagent_containers/(hypospray|syringes|blood_pack)\.dm|code/modules/mob/living/carbon/human/species/(species|station/teshari|station/station_special_abilities|station/traits/weaver_objs)\.dm|code/game/machinery/doors/(airlock|windowdoor)\.dm|code/game/mecha/mecha\.dm|code/game/objects/items/devices/spy_bug\.dm|code/game/objects/structures/window\.dm|code/modules/maintenance_panels/maintenance_panel\.dm|code/modules/mob/living/silicon/robot/robot\.dm'
+if $grep -n '\ba_intent\b' "${code_files[@]}" | grep -vE "^($a_intent_allowlist):"; then
+	echo
+	echo -e "${RED}ERROR: a_intent is gone. Use combat mode: IS_HARMING(M), IS_HELPING(M), IS_DISARMING(M), IS_GRABBING(M) or M.use_stance() to read it, and set_combat_mode()/set_use_stance() to set it (code/__defines/combat_mode.dm).${NC}"
+	FAILED=1
+fi;
+
 part "robot cell writes outside the power ledger"
 # A robot's cell charge is written only by draw_power()/add_power() in robot.dm, so the
 # ledger (used_power_this_tick, part power states) sees every joule. Robot code under
@@ -227,6 +251,17 @@ part "body factors: no chemical effects"
 if $grep -n '\b(add_chemical_effect|remove_chemical_effect|chem_effects)\b' "${code_files[@]}"; then
 	echo
 	echo -e "${RED}ERROR: chem_effects / add_chemical_effect detected. Declare body factors on the reagent (factors = alist(BF_X = value)) and read them with factor(BF_X).${NC}"
+	FAILED=1
+fi;
+
+part "physiology: no asphyxia injury"
+# Lack of oxygen is an outcome the physiology computes (code/modules/body/physiology.dm),
+# not an injury. Express the cause as a mechanism: an airway / breathing restriction, breath
+# quality, a factor (BF_O2_CARRIAGE, BF_TISSUE_UPTAKE, ...) or, with no mechanism at all,
+# add_oxygen_debt(). Read it with oxygen_debt().
+if $grep -n '(INJURY_ASPHYXIA|INJURY_CATEGORY_ASPHYXIA|BF_INCOMING_ASPHYXIA)' "${code_files[@]}"; then
+	echo
+	echo -e "${RED}ERROR: asphyxia injury detected. Model the mechanism (restriction, breath quality, factor) or use add_oxygen_debt() / oxygen_debt().${NC}"
 	FAILED=1
 fi;
 
@@ -291,6 +326,17 @@ if grep -RInE --include='*.dm' '\.severity[[:space:]]*[-+*/]?=[^=]' code/modules
 	FAILED=1
 fi;
 
+part "diagnosis: no four-number readouts"
+# Every scanner, monitor, HUD and UI renders body.diagnose(profile): vitals
+# plus findings (code/modules/medical/diagnosis/). The brute/burn/tox/oxy
+# readouts and their helpers are gone; injury_load() is an internal query,
+# not a UI.
+if grep -RInE --exclude-dir=node_modules --include='*.dm' --include='*.ts' --include='*.tsx' '\b(bruteLoss|oxyLoss|toxLoss|fireLoss|patient_brute|patient_burn|patient_tox|patient_oxy|physicalLoad|asphyxiaLoad|toxicLoad|thermalLoad|damagePanel|scannerFindings|dq_qualitative_damage_panel|dq_qualitative_scanner_findings|dq_crude_scan_readout|dq_externally_visible_symptom_lines)\b|Damage Specifics|Suffocation/Toxin/Burns/Brute' code tgui/packages/tgui/interfaces; then
+	echo
+	echo -e "${RED}ERROR: a four-number (brute/burn/tox/oxy) readout detected. Render a diagnosis instead: M.diagnose(/datum/diagnostic_profile/...) and its render_chat() / report_data().${NC}"
+	FAILED=1
+fi;
+
 part "organ damage outside the body"
 # Organ and limb integrity belong to the body (doc/body_architecture.md): harm
 # goes through injure(kind, amount, organ) and healing through
@@ -300,6 +346,33 @@ part "organ damage outside the body"
 if grep -RInE --include='*.dm' '\b(organ|internal_organ|external_organ|our_organ|affecting|affected|bodypart|brain|my_brain|heart|ht|liver|lungs|kidneys|eyes|stomach|st|limb|[a-z_]*_organ)\??\.(take_damage|heal_damage|damage[[:space:]]*([-+*/]?=[^=]|\+\+|--))|(take_damage|heal_damage)\(.*(LESION_HEAL|/datum/affliction/lesion)|internal_organs_by_name\[[^]]*\]\??\.(take_damage|heal_damage)\(|\.(apply_lesion_damage|apply_wound_damage|restore_lesions|heal_wound_damage)\(|LESION_HEAL_' code | grep -vE '^code/modules/(body|organs)/'; then
 	echo
 	echo -e "${RED}ERROR: organ or limb damage/healing outside the body detected. Use injure(kind, amount, organ) to harm and mend(tag, amount, organ) to heal.${NC}"
+	FAILED=1
+fi;
+
+part "separate object health pools"
+# Every object's hit points are its integrity (doc/rewrite/damage.md Â§5, D3):
+# take_damage() to harm, repair_damage() to repair, integrity_failure for a
+# broken state, atom_destruction()/handle_deconstruct() for what zero does.
+# These are the deleted per-type pools; don't bring them back.
+d3_pools=0
+d3_pool() { # <pattern> <path...>
+	local pattern="$1"; shift
+	if grep -RInE --include='*.dm' "$pattern" "$@"; then d3_pools=1; fi
+}
+d3_pool '^[[:space:]]*var/(damage|damage_overlay)\b' code/game/turfs/simulated/walls.dm
+d3_pool '^/turf/simulated/wall[^[:space:]]*/(take_damage|update_damage)\(' code/game/turfs
+d3_pool '^[[:space:]]+var/integrity\b|\bintegrity[[:space:]]*([-+*/]?=[^=]|\+\+|--)' code/modules/blob2
+d3_pool '\bblob_(max_)?health\b' code/modules/blob
+d3_pool '^[[:space:]]+var/(damage|max_damage|broken_damage|damage_failure)\b|\b(max_damage|broken_damage|damage_failure)\b' code/modules/modular_computers
+d3_pool '\b(maxintegrity|integrity[[:space:]]*([-+*/]?=[^=]|\+\+|--))|^[[:space:]]+var/integrity\b' code/game/objects/items/weapons/tanks
+d3_pool '\bshield_health\b' code
+d3_pool '^[[:space:]]+var/hp\b|\bhp[[:space:]]*[-+]?=[^=]' code/game/objects/items/shooting_range.dm
+d3_pool '^[[:space:]]+var/(strength|max_strength)\b|\.(strength|max_strength)\b' code/modules/shieldgen/energy_field.dm code/modules/shieldgen/shield_gen.dm code/modules/xenoarcheaology/effects/forcefield.dm
+d3_pool '\bhealth\b' code/game/objects/items/weapons/material code/game/objects/items/weapons/traps.dm code/modules/vore/smoleworld
+d3_pool '\.integrity[[:space:]]*([-+*/]?=[^=]|\+\+|--)' code/game/mecha
+if [ $d3_pools -ne 0 ]; then
+	echo
+	echo -e "${RED}ERROR: a separate object health pool was reintroduced. Objects use integrity: take_damage()/repair_damage()/get_integrity(), integrity_failure and atom_destruction().${NC}"
 	FAILED=1
 fi;
 
@@ -395,6 +468,30 @@ if grep -P '^(?:[^\/\n]|\/[^\/\n])*(&[ \t]*\w+[ \t]*\|[ \t]*\w+)' "${code_files[
 	FAILED=1
 fi;
 
+part "DM copies of Rust state"
+# Rust owns turf adjacency (built from DM air-block masks; see
+# code/ATMOSPHERICS/environmental/LINDA_system.dm) and the gas registry. DM must
+# not keep its own copy of that state: no per-turf adjacency lists, no
+# superconductivity direction caches, no gas-ID string round trips. Ask Rust
+# through the generated vg_* binds (vg_atmos_adjacent_turfs, *_bulk,
+# vg_atmos_turfs_share) and pass GAS_ID_* numbers.
+if $grep -n '\batmos_adjacent_turfs\b|\batmos_supeconductivity\b|\bcurrent_cycle\b|__update_auxtools_turf_adjacency_info|immediate_calculate_adjacent_turfs' "${code_files[@]}" \
+	| $grep -v '^code/__defines/verdigris/_bindings\.dm' \
+	| $grep -v ':\s*//|:\s*\*'; then
+	echo
+	echo -e "${RED}ERROR: DM copy of Rust atmos state. Turf adjacency lives in Rust: publish air-block masks with air_update_turf(TRUE) and read with get_atmos_adjacent_turfs() / atmos_adjacent_turfs_bulk() / SSair.air_blocked().${NC}"
+	FAILED=1
+fi;
+# Gas IDs cross the FFI as GAS_ID_* numbers (GAS_IDX() converts a /datum/gas
+# path); a stringified argument to a vg_* bind is a string round trip.
+if $grep -n 'vg_[a-z0-9_]+\([^)]*"\[' "${code_files[@]}" \
+	| $grep -v '^code/__defines/verdigris/_bindings\.dm' \
+	| $grep -v ':\s*//|:\s*\*'; then
+	echo
+	echo -e "${RED}ERROR: stringified argument passed to a verdigris bind. Pass numbers (GAS_ID_*, GAS_IDX(path)) across the FFI.${NC}"
+	FAILED=1
+fi;
+
 part "html tag matching"
 #Checking for missed tags
 python tools/TagMatcher/tag-matcher.py code
@@ -460,6 +557,13 @@ if [ "$pcre2_support" -eq 1 ]; then
 	if $grep -P 'addtimer\((?=.*TIMER_OVERRIDE)(?!.*TIMER_UNIQUE).*\)' "${code_files[@]}"; then
 		echo
 		echo -e "${RED}ERROR: TIMER_OVERRIDE used without TIMER_UNIQUE.${NC}"
+		FAILED=1
+	fi;
+
+	part "string-built reactive keys"
+	if $grep -P '(publish_reactive_dependency|hibernate_reactive_machine|wake_reactive_machine)\(|REACT_(PUBLISH|ON_KEY)\([^)]*"' "${code_files[@]}"; then
+		echo
+		echo -e "${RED}ERROR: Reactive keys are numeric (REACT_PUBLISH / REACT_ON_KEY with REACT_KEY_* and REACT_ID), never strings (reactor.md §10).${NC}"
 		FAILED=1
 	fi;
 

@@ -46,7 +46,6 @@ SUBSYSTEM_DEF(machines)
 	var/last_pump_commit_operations = 0
 	var/last_pump_commit_turfs = 0
 
-	var/list/all_machines = list()
 	var/list/hibernating_vents = list()
 	var/list/sleeping_gas_devices = list()
 	/// Rust gas arena ID -> assoc list of weakrefs for sleeping gas-dependent devices.
@@ -83,16 +82,6 @@ SUBSYSTEM_DEF(machines)
 	var/gas_wake_subscribers_last = 0
 	var/current_gas_wake_scan_ms = 0
 	var/current_gas_wake_subscribers = 0
-	/// Resource key -> monotonic generation for non-gas reactive dependencies.
-	var/list/reactive_revisions = list()
-	/// Resource key -> weakref map of sleeping machinery.
-	var/list/reactive_subscribers = list()
-	/// Number of "mob-chunk:" keys in reactive_subscribers; mob movement skips the key build while it is 0 (Q12).
-	var/mob_chunk_subscriptions = 0
-	/// Weakref reference -> captured resource generations for sleeping machinery.
-	var/list/reactive_sleepers = list()
-	/// Diagnostic provenance for dependency-driven scheduling.
-	var/list/machine_wake_reason_counts = list()
 	var/list/machine_noop_counts = list()
 
 	/// Machines polled every pass. Order is not stable: removal swaps the last
@@ -293,7 +282,7 @@ SUBSYSTEM_DEF(machines)
 	for(var/datum/powernet/PN as anything in powernets)
 		qdel(PN)
 	powernets.Cut()
-	setup_powernets_for_cables(GLOB.cable_list)
+	setup_powernets_for_cables(REGISTRY_MEMBERS(REGISTRY_CABLES))
 
 /datum/controller/subsystem/machines/proc/setup_powernets_for_cables(list/cables)
 	for(var/obj/structure/cable/PC as anything in cables)
@@ -573,13 +562,6 @@ SUBSYSTEM_DEF(machines)
 		if(!PN || QDELETED(PN) || powernets_logged++ >= machine_profile_detail_limit)
 			continue
 		log_runtime("MACHINE_PROFILE_POWERNET nodes=[length(PN.nodes)] cables=[length(PN.cables)] load=[round(PN.load, 0.01)] supply=[round(PN.registered_supply_total, 0.01)] storage_demand=[round(PN.registered_storage_demand_total, 0.01)] custom=[PN.material_graph?.has_custom_conductors || FALSE] superconductors=[PN.material_graph?.has_superconductors || FALSE] wake=[PN.last_accounting_wake_reason] wakes=[PN.accounting_wake_count]")
-	var/list/sorted_wakes = machine_wake_reason_counts.Copy()
-	sortTim(sorted_wakes, /proc/cmp_numeric_desc, TRUE)
-	rank = 0
-	for(var/reason in sorted_wakes)
-		log_runtime("MACHINE_PROFILE_WAKE reason=[reason] count=[machine_wake_reason_counts[reason]]")
-		if(++rank >= 20)
-			break
 	var/list/sorted_predicates = gas_predicate_profile_cost.Copy()
 	sortTim(sorted_predicates, /proc/cmp_numeric_desc, TRUE)
 	rank = 0
@@ -626,7 +608,6 @@ SUBSYSTEM_DEF(machines)
 	machine_profile_productive = list()
 	gas_predicate_profile_cost = list()
 	gas_predicate_profile_calls = list()
-	machine_wake_reason_counts = list()
 	machine_noop_counts = list()
 	machine_profile_dumping = FALSE
 	if(machine_profile_one_shot)
@@ -694,7 +675,6 @@ SUBSYSTEM_DEF(machines)
 			log_world("## ERROR Found wrong type during SSmachinery recovery: list=SSmachines.powerobjs, item=[D], type=[D?.type]")
 			SSmachines.powerobjs -= D
 
-	all_machines = SSmachines.all_machines
 	processing_machines = SSmachines.processing_machines
 	powernets = SSmachines.powernets
 	active_powernets = SSmachines.active_powernets
@@ -714,10 +694,6 @@ SUBSYSTEM_DEF(machines)
 	pending_dirty_gas_mixtures = SSmachines.pending_dirty_gas_mixtures
 	pending_dirty_gas_index = SSmachines.pending_dirty_gas_index
 	gas_wake_complete = SSmachines.gas_wake_complete
-	reactive_revisions = SSmachines.reactive_revisions
-	reactive_subscribers = SSmachines.reactive_subscribers
-	mob_chunk_subscriptions = SSmachines.mob_chunk_subscriptions
-	reactive_sleepers = SSmachines.reactive_sleepers
 	powernet_topology_jobs = SSmachines.powernet_topology_jobs
 	powernet_topology_jobs_by_net = SSmachines.powernet_topology_jobs_by_net
 	deferred_powernet_splits = SSmachines.deferred_powernet_splits
@@ -861,80 +837,6 @@ SUBSYSTEM_DEF(machines)
 		if(work_done >= POWER_TOPOLOGY_WORK_SLICE)
 			break
 	return work_done
-
-/// Advances a dependency generation and immediately wakes its exact subscribers.
-/datum/controller/subsystem/machines/proc/publish_reactive_dependency(resource_key)
-	if(isnull(resource_key))
-		return
-	resource_key = "[resource_key]"
-	var/list/subscribers = reactive_subscribers[resource_key]
-	if(!length(subscribers))
-		// Revisions only matter to sleepers that captured them; with none, the
-		// key would just sit in the table for the rest of the round.
-		reactive_revisions -= resource_key
-		return
-	reactive_revisions[resource_key] = (reactive_revisions[resource_key] || 0) + 1
-	for(var/subscriber_key in subscribers.Copy())
-		wake_reactive_machine(subscribers[subscriber_key], resource_key)
-
-/datum/controller/subsystem/machines/proc/mob_chunk_key(atom/location)
-	var/turf/T = get_turf(location)
-	if(!T)
-		return
-	return "mob-chunk:[T.z]:[FLOOR(T.x - 1, CHUNK_SIZE) / CHUNK_SIZE]:[FLOOR(T.y - 1, CHUNK_SIZE) / CHUNK_SIZE]"
-
-/datum/controller/subsystem/machines/proc/publish_mob_chunk(atom/location)
-	if(!mob_chunk_subscriptions)
-		return
-	var/resource_key = mob_chunk_key(location)
-	if(resource_key && length(reactive_subscribers[resource_key]))
-		publish_reactive_dependency(resource_key)
-
-/// Atomically subscribes to the supplied resources before removing a machine from polling.
-/datum/controller/subsystem/machines/proc/hibernate_reactive_machine(obj/machinery/M, list/resource_keys)
-	if(!M || QDELETED(M) || !length(resource_keys))
-		return FALSE
-	var/datum/weakref/WR = WEAKREF(M)
-	var/list/captured = list()
-	for(var/raw_key in resource_keys)
-		var/resource_key = "[raw_key]"
-		captured[resource_key] = reactive_revisions[resource_key] || 0
-		var/list/subscribers = reactive_subscribers[resource_key]
-		if(!subscribers)
-			subscribers = list()
-			reactive_subscribers[resource_key] = subscribers
-			if(findtext(resource_key, "mob-chunk:", 1, 11))
-				mob_chunk_subscriptions++
-		subscribers[WR.reference] = WR
-	reactive_sleepers[WR.reference] = captured
-	// Subscribe-before-sleep validation closes changes introduced by callbacks.
-	for(var/resource_key in captured)
-		if(captured[resource_key] != (reactive_revisions[resource_key] || 0))
-			wake_reactive_machine(WR)
-			return FALSE
-	STOP_MACHINE_PROCESSING(M)
-	return TRUE
-
-/datum/controller/subsystem/machines/proc/wake_reactive_machine(datum/weakref/WR, reason = "explicit")
-	if(!WR?.reference)
-		return
-	var/list/captured = reactive_sleepers[WR.reference]
-	if(!captured)
-		return
-	for(var/resource_key in captured)
-		var/list/subscribers = reactive_subscribers[resource_key]
-		subscribers?.Remove(WR.reference)
-		if(subscribers && !length(subscribers))
-			reactive_subscribers.Remove(resource_key)
-			reactive_revisions -= resource_key
-			if(findtext(resource_key, "mob-chunk:", 1, 11))
-				mob_chunk_subscriptions--
-	reactive_sleepers.Remove(WR.reference)
-	var/obj/machinery/M = WR.resolve()
-	if(M && !QDELETED(M))
-		if(profile_machine_types)
-			machine_wake_reason_counts["[M.type]|[reason]"]++
-		START_MACHINE_PROCESSING(M)
 
 /datum/controller/subsystem/machines/proc/wake_dirty_gas_subscribers()
 	var/scan_started = TICK_USAGE
@@ -1234,8 +1136,6 @@ SUBSYSTEM_DEF(machines)
 	if(istype(subscriber, /obj/machinery))
 		var/obj/machinery/woken_machine = subscriber
 		woken_machine.gas_dependency_wake_count++
-		if(profile_machine_types)
-			machine_wake_reason_counts["[woken_machine.type]|[reason]"]++
 	if(istype(subscriber, /obj/machinery/atmospherics/unary))
 		var/obj/machinery/atmospherics/unary/V = subscriber
 		// Unary devices usually settle again in one fire. Keep their arena

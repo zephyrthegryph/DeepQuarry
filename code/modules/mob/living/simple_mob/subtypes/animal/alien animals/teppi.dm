@@ -471,7 +471,7 @@ GLOBAL_VAR_INIT(teppi_count, 0)	// How mant teppi DO we have?
 		return ..()
 	if(istype(O, /obj/item/holder))
 		return ..()
-	if(user.a_intent != I_HELP) //be gentle
+	if(!IS_HELPING(user)) //be gentle
 		if(resting)
 			lay_down()
 		handle_affinity(user, -5)
@@ -571,13 +571,13 @@ GLOBAL_VAR_INIT(teppi_count, 0)	// How mant teppi DO we have?
 /mob/living/simple_mob/vore/alienanimals/teppi/attack_hand(mob/living/carbon/human/M as mob)
 	if(stat == DEAD)
 		return ..()
-	if(M.a_intent == I_GRAB && item_type)
+	if(IS_GRABBING(M) && item_type)
 		if(affinity[M.real_name] >= 30)
 			M.visible_message(span_notice("\The [M.name] removes \the [src]'s [item_type]."),span_notice("You remove \the [src]'s [item_type]."))
 			item_type = null
 			update_icon()
 			return
-	if(M.a_intent != I_HELP) //be gentle
+	if(!IS_HELPING(M)) //be gentle
 		handle_affinity(M, -5)
 		to_chat(M, span_notice("\The [src] fusses at your rough treatment!!"))
 		if(resting)

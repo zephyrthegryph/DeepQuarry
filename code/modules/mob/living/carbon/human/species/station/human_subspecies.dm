@@ -10,7 +10,7 @@
 
 	flash_mod =     0.9
 	radiation_mod = 0.5
-	factor_baseline = alist(BF_SLOWDOWN = 1, BF_INCOMING_PHYSICAL = 0.85, BF_INCOMING_ASPHYXIA = 1.1)
+	factor_baseline = alist(BF_SLOWDOWN = 1, BF_INCOMING_PHYSICAL = 0.85, BF_DEMAND = 1.1)
 
 /datum/species/human/spacer
 	name = "space-adapted Human"
@@ -20,7 +20,7 @@
 	toxins, but they suffer from weakened bone structure and a marked vulnerability to bright lights."
 	icobase = 'icons/mob/human_races/subspecies/r_spacer.dmi'
 
-	factor_baseline = alist(BF_INCOMING_PHYSICAL = 1.1, BF_INCOMING_THERMAL = 1.1, BF_INCOMING_TOXIC = 0.9, BF_INCOMING_ASPHYXIA = 0.8)
+	factor_baseline = alist(BF_INCOMING_PHYSICAL = 1.1, BF_INCOMING_THERMAL = 1.1, BF_INCOMING_TOXIC = 0.9, BF_DEMAND = 0.8)
 	flash_mod = 1.2
 
 /datum/species/human/vatgrown

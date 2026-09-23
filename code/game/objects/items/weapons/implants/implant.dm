@@ -93,7 +93,7 @@
 //////////////////////////////
 //	Tracking Implant
 //////////////////////////////
-GLOBAL_LIST_BOILERPLATE(all_tracking_implants, /obj/item/implant/tracking)
+REGISTRY_MEMBERSHIP(/obj/item/implant/tracking, REGISTRY_TRACKING_IMPLANTS)
 
 /obj/item/implant/tracking
 	name = "tracking implant"
@@ -348,7 +348,7 @@ Implant Specifics:<BR>"}
 //////////////////////////////
 //	Chemical Implant
 //////////////////////////////
-GLOBAL_LIST_BOILERPLATE(all_chem_implants, /obj/item/implant/chem)
+REGISTRY_MEMBERSHIP(/obj/item/implant/chem, REGISTRY_CHEM_IMPLANTS)
 
 /obj/item/implant/chem
 	name = "chemical implant"

@@ -188,14 +188,14 @@
 	slot = ACCESSORY_SLOT_TIE
 
 /obj/item/clothing/accessory/stethoscope/do_surgery(mob/living/carbon/human/M, mob/living/user)
-	if(user.a_intent != I_HELP) //in case it is ever used as a surgery tool
+	if(!IS_HELPING(user)) //in case it is ever used as a surgery tool
 		return ..()
 	attack(M, user) //default surgery behaviour is just to scan as usual
 	return 1
 
 /obj/item/clothing/accessory/stethoscope/attack(mob/living/carbon/human/M, mob/living/user)
 	if(ishuman(M) && isliving(user))
-		if(user.a_intent == I_HELP)
+		if(IS_HELPING(user))
 			var/body_part = parse_zone(user.zone_sel.selecting)
 
 			var/message_holder	//Holds pervy message
@@ -263,7 +263,7 @@
 							var/obj/item/organ/internal/lungs/L = M.internal_organs_by_name[O_LUNGS]
 							if(!L || M.losebreath)
 								sound += span_warning(" and no respiration")
-							else if(M.is_lung_ruptured() || M.injury_load(INJURY_CATEGORY_ASPHYXIA) > 50)
+							else if(M.is_lung_ruptured() || M.oxygen_debt() > 50)
 								sound += span_warning(" and [pick("wheezing","gurgling")] sounds")
 							else
 								sound += " and healthy respiration"
@@ -849,7 +849,7 @@
 	icon_state = "collar_holo"
 	item_state = "collar_holo"
 	overlay_state = "collar_holo"
-	matter = list(MAT_STEEL = 50)
+	MATERIAL_BULK(MAT_STEEL, 50)
 
 /obj/item/clothing/accessory/collar/holo/indigestible
 	desc = "A special variety of the holo-collar that seems to be made of a very durable fabric that fits around the neck."

@@ -47,9 +47,6 @@ GLOBAL_VAR_INIT(Recycled_Items, 0)
 	operating = !operating
 	update()
 
-/obj/machinery/v_garbosystem/attack_ai(mob/user as mob)
-	return attack_hand(user)
-
 /obj/machinery/v_garbosystem/power_change()
 	if((. = ..()))
 		update()

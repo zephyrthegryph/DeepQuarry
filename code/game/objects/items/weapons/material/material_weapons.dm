@@ -2,7 +2,6 @@
 // This class of weapons takes force and appearance data from a material datum.
 // They are also fragile based on material data and many can break/smash apart.
 /obj/item/material
-	health = 10
 	hitsound = 'sound/weapons/bladeslice.ogg'
 	gender = NEUTER
 	throw_speed = 3
@@ -16,7 +15,7 @@
 			)
 
 	var/applies_material_colour = 1
-	var/unbreakable = 0		//Doesn't lose health
+	var/unbreakable = 0		//Doesn't wear down
 	var/fragile = 0			//Shatters when it dies
 	var/dulled = 0			//Has gone dull
 	var/can_dull = 0
@@ -36,11 +35,15 @@
 	if(!material)
 		return INITIALIZE_HINT_QDEL
 
-	matter = material.get_matter()
-	if(matter.len)
-		for(var/material_type in matter)
-			if(!isnull(matter[material_type]))
-				matter[material_type] *= force_divisor // May require a new var instead.
+	// A material weapon is made of its material, scaled by force_divisor.
+	var/list/new_matter = material.get_matter()
+	for(var/material_type in new_matter)
+		if(!isnull(new_matter[material_type]))
+			new_matter[material_type] *= force_divisor // May require a new var instead.
+	if(length(new_matter) == 1)
+		set_bulk_material(new_matter[1], new_matter[new_matter[1]])
+	else
+		set_material_mix(new_matter)
 
 	if(!(material.conductive))
 		src.flags |= NOCONDUCT
@@ -67,7 +70,8 @@
 	else
 		if(named_from_material)
 			name = "[material.display_name] [initial(name)]"
-		health = round(material.integrity/10)
+		max_integrity = max(1, round(material.integrity/10)) * MATERIAL_WEAR_UNIT
+		update_integrity(max_integrity)
 		if(applies_material_colour)
 			color = material.icon_colour
 		material.dq_apply_material_behaviors(src) // light + a self-processing rad/tox component.
@@ -84,10 +88,9 @@
 	material_response_impact(get_turf(target), target)
 	if(!unbreakable)
 		if(material.is_brittle())
-			health = 0
+			material_wear(get_integrity())
 		else if(!prob(material.hardness))
-			health--
-		check_health()
+			material_wear(MATERIAL_WEAR_UNIT)
 
 /obj/item/material/throw_impact(atom/hit_atom)
 	. = ..()
@@ -102,14 +105,20 @@
 		repair(SK.repair_amount, SK.repair_time, user)
 	..()
 
-/obj/item/material/proc/check_health(consumed)
-	if(health<=0)
-		health = 0
+/// Wear from use. Wear is not a blow from outside, so armour doesn't apply.
+/obj/item/material/proc/material_wear(amount)
+	if(amount > 0)
+		take_damage(amount, BRUTE, null, FALSE)
 
-		if(fragile)
-			shatter(consumed)
-		else if(!dulled && can_dull)
-			dull()
+/// Worn out: fragile things shatter, things that can dull go dull, the rest
+/// stay worn out until repaired. Fire and acid destroy it outright.
+/obj/item/material/atom_destruction(damage_flag)
+	if(damage_flag == FIRE || damage_flag == ACID)
+		return ..()
+	if(fragile)
+		shatter()
+	else if(!dulled && can_dull)
+		dull()
 
 /obj/item/material/proc/shatter(consumed)
 	var/turf/T = get_turf(src)
@@ -126,17 +135,17 @@
 	T.visible_message(span_danger("\The [src] goes dull!"))
 	playsound(src, "shatter", 70, 1)
 	dulled = 1
-	if(is_sharp() || has_edge())
+	if(is_sharp(src) || has_edge(src))
 		sharp = FALSE
 		edge = FALSE
 
 /obj/item/material/proc/repair(repair_amount, repair_time, mob/living/user)
 	if(!fragile)
-		if(health < initial(health))
+		if(get_integrity() < max_integrity)
 			user.visible_message("[user] begins repairing \the [src].", "You begin repairing \the [src].")
 			if(do_after(user, repair_time, target = src))
 				user.visible_message("[user] has finished repairing \the [src]", "You finish repairing \the [src].")
-				health = min(health + repair_amount, initial(health))
+				repair_damage(repair_amount * MATERIAL_WEAR_UNIT)
 				dulled = 0
 				sharp = initial(sharp)
 				edge = initial(edge)
@@ -148,7 +157,7 @@
 
 /obj/item/material/proc/sharpen(material, sharpen_time, kit, mob/living/M)
 	if(!fragile && src.material.can_sharpen)
-		if(health < initial(health))
+		if(get_integrity() < max_integrity)
 			to_chat(M, "You should repair [src] first. Try using [kit] on it.")
 			return FALSE
 		M.visible_message("[M] begins to replace parts of [src] with [kit].", "You begin to replace parts of [src] with [kit].")

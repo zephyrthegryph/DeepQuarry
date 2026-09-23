@@ -88,7 +88,10 @@ Class Procs:
 */
 
 /obj/machinery
+	material_template = /datum/material_template/machine_part
+	material_total = 5 * SHEET_MATERIAL_AMOUNT
 	name = "machinery"
+	silicon_use = SILICON_USE_HAND
 	icon = 'icons/obj/stationobjs.dmi'
 	w_class = ITEMSIZE_NO_CONTAINER
 	layer = UNDER_JUNK_LAYER
@@ -134,13 +137,12 @@ Class Procs:
 
 	blocks_emissive = EMISSIVE_BLOCK_GENERIC
 
+REGISTRY_MEMBERSHIP(/obj/machinery, REGISTRY_MACHINES)
+
 /obj/machinery/Initialize(mapload, d=0)
 	. = ..()
-	if(!istype(src, /obj/machinery/atmospherics) && !istype(src, /obj/machinery/portable_atmospherics) && !istype(src, /obj/machinery/power/emitter))
-		ensure_material_construction(MATERIAL_APPLICATION_MACHINE_PART, 5 * SHEET_MATERIAL_AMOUNT)
 	if(isnum(d))
 		set_dir(d)
-	SSmachines.all_machines += src
 	if(ispath(circuit))
 		circuit = new circuit(src)
 	if(!speed_process)
@@ -151,12 +153,11 @@ Class Procs:
 		power_change()
 
 /obj/machinery/Destroy()
-	SSmachines.wake_reactive_machine(WEAKREF(src))
+	cancel_sleep_keys()
 	if(!speed_process)
 		STOP_MACHINE_PROCESSING(src)
 	else
 		STOP_PROCESSING(SSfastprocess, src)
-	SSmachines.all_machines -= src
 	// Constructed machinery owns its installed board. Clear the typed reference
 	// immediately when destruction starts; otherwise the board spends an extra GC
 	// generation retained by an already-deleting machine (and reference tracking
@@ -258,14 +259,12 @@ Class Procs:
 
 ////////////////////////////////////////////////////////////////////////////////////////////
 
+/// Machines take the AI's Use as a hand's (silicon_use), but a cyborg looking
+/// through a camera can't remotely control them.
 /obj/machinery/attack_ai(mob/user as mob)
-	if(isrobot(user))
-		// For some reason attack_robot doesn't work
-		// This is to stop robots from using cameras to remotely control machines.
-		if(user.client && !user.is_remote_viewing())
-			return attack_hand(user)
-	else
-		return attack_hand(user)
+	if(isrobot(user) && (!user.client || user.is_remote_viewing()))
+		return
+	return ..()
 
 /obj/machinery/attack_hand(mob/user as mob)
 
@@ -499,3 +498,36 @@ Class Procs:
 	sparks.start()
 	qdel(sparks)
 	return ..()
+
+// --- Sleeping on DM-owned keys (reactor.md §4, S2) ----------------------------------------------
+
+/obj/machinery
+	/// While asleep on keys: the (token, kind) pairs from SSreactor.sleep_on_keys().
+	var/tmp/list/react_sleep_tokens
+
+/**
+ * Stops polling until any key in `keys` (a flat list of (kind, id, mask) triples) is published.
+ * Replaces any keys the machine already slept on. The wake arrives through on_react() at the
+ * next reactor step, so a publication after this call (even in the same tick) is never missed.
+ */
+/obj/machinery/proc/sleep_until_keys(list/keys)
+	cancel_sleep_keys()
+	if(QDELETED(src) || !length(keys))
+		return FALSE
+	react_sleep_tokens = SSreactor.sleep_on_keys(src, keys)
+	STOP_MACHINE_PROCESSING(src)
+	return TRUE
+
+/obj/machinery/proc/cancel_sleep_keys()
+	if(react_sleep_tokens)
+		SSreactor.cancel_keys(src, react_sleep_tokens)
+		react_sleep_tokens = null
+
+/// TRUE while the machine sleeps on keys and is not polled.
+/obj/machinery/proc/asleep_on_keys()
+	return react_sleep_tokens && !(datum_flags & DF_ISPROCESSING)
+
+/obj/machinery/on_react(reason, source, source_kind)
+	if((reason & REACT_REASON_KEY) && react_sleep_tokens)
+		cancel_sleep_keys()
+		START_MACHINE_PROCESSING(src)

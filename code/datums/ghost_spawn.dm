@@ -141,7 +141,7 @@ GLOBAL_VAR_INIT(allowed_ghost_spawns, 2)
 	if(user.client.time_died_as_mouse && timedifference_mouse <= CONFIG_GET(number/mouse_respawn_time) MINUTES)
 		timedifference_mouse_text = time2text(CONFIG_GET(number/mouse_respawn_time) MINUTES - timedifference_mouse,"mm:ss")
 	var/found_vents = FALSE
-	for(var/obj/machinery/atmospherics/unary/vent_pump/v in GLOB.machines)
+	for(var/obj/machinery/atmospherics/unary/vent_pump/v in REGISTRY_MEMBERS(REGISTRY_MACHINES))
 		if(!v.welded && v.z == T.z && v.network && v.network.normal_members.len > MOUSE_VENT_NETWORK_LENGTH)
 			found_vents = TRUE
 			break
@@ -161,7 +161,7 @@ GLOBAL_VAR_INIT(allowed_ghost_spawns, 2)
 	var/time_diff = 5 MINUTES - deathtime
 	var/timedifference_text = time_diff > 0 ? time2text(time_diff, "mm:ss") : ""
 	var/list/all_fabricators = list()
-	for(var/obj/machinery/drone_fabricator/DF in GLOB.all_drone_fabricators)
+	for(var/obj/machinery/drone_fabricator/DF in REGISTRY_MEMBERS(REGISTRY_DRONE_FABRICATORS))
 		if(DF.stat & NOPOWER || !DF.produce_drones)
 			continue
 		if(DF.drone_progress >= 100)

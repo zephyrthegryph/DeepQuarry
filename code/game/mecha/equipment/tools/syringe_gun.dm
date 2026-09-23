@@ -402,7 +402,7 @@
 			Target = null
 
 		if(Target)
-			TargDamage = (Targ.injury_load(INJURY_CATEGORY_ASPHYXIA) + Targ.injury_load(INJURY_CATEGORY_THERMAL) + Targ.injury_load(INJURY_CATEGORY_PHYSICAL) + Targ.injury_load(INJURY_CATEGORY_TOXIC))
+			TargDamage = (Targ.oxygen_debt() + Targ.injury_load(INJURY_CATEGORY_THERMAL) + Targ.injury_load(INJURY_CATEGORY_PHYSICAL) + Targ.injury_load(INJURY_CATEGORY_TOXIC))
 
 		for(var/mob/living/Potential in viewers(max_distance, chassis))
 			if(!valid_target(Potential))
@@ -453,7 +453,7 @@
 /obj/item/mecha_parts/mecha_equipment/crisis_drone/proc/treatable_damage(mob/living/L)
 	. = 0
 	if(oxy_heal)
-		. += L.injury_load(INJURY_CATEGORY_ASPHYXIA)
+		. += L.oxygen_debt()
 	if(burn_heal)
 		. += L.injury_load(INJURY_CATEGORY_THERMAL)
 	if(brute_heal)

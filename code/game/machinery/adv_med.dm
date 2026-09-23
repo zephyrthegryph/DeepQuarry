@@ -139,10 +139,8 @@
 	SStgui.update_uis(src)
 	return
 
-/obj/machinery/bodyscanner/ex_act(severity)
-	for(var/atom/movable/occupant as mob|obj in src)
-		occupant.ex_act(severity)
-	return ..()
+/obj/machinery/bodyscanner/explosion_contents_severity(severity)
+	return severity
 
 /obj/machinery/bodyscanner/tgui_host(mob/user)
 	if(user == occupant)
@@ -210,289 +208,67 @@
 		else
 			return FALSE
 
+/// The printed report: the body scanner diagnosis (paper renderer) plus the
+/// patient details a printout carries (species, reagents, allergens, implants).
 /obj/machinery/bodyscanner/proc/generate_printing_text()
-	var/dat = ""
-
-	dat = span_blue(span_bold("Occupant Statistics:")) + "<br>" //Blah obvious
-	if(istype(occupant)) //is there REALLY someone in there?
-		var/has_withdrawl = ""
-		if(ishuman(occupant))
-			var/mob/living/carbon/human/H = occupant
-			var/speciestext = H.species.name
-			if(H.custom_species)
-				if(H.species.name == SPECIES_CUSTOM)
-					// Fully custom species
-					speciestext = "[H.custom_species]"
-					dat += span_blue("Sapient Species: [speciestext]") + "<BR>"
-				else
-					speciestext = "[H.custom_species] \[Similar biology to [H.species.name]\]"
-					dat += span_blue("Sapient Species: [speciestext]") + "<BR>"
-			for(var/addic in H.get_all_addictions())
-				if(H.get_addiction_to_reagent(addic) > 0 && H.get_addiction_to_reagent(addic) < 80)
-					var/datum/reagent/R = SSchemistry.chemical_reagents[addic]
-					has_withdrawl = R.name
-					break
-		var/t1
-		switch(occupant.stat) // obvious, see what their status is
-			if(0)
-				t1 = "Conscious"
-			if(1)
-				t1 = "Unconscious"
-			else
-				t1 = "*dead*"
-		var/health_text = "\tHealth %: [round(occupant.vitality() * 100)], ([t1])"
-		var/brute_load = round(occupant.injury_load(INJURY_CATEGORY_PHYSICAL))
-		var/burn_load = round(occupant.injury_load(INJURY_CATEGORY_THERMAL))
-		var/oxy_load = round(occupant.injury_load(INJURY_CATEGORY_ASPHYXIA))
-		var/tox_load = round(occupant.injury_load(INJURY_CATEGORY_TOXIC))
-		var/genetic_load = round(occupant.injury_load(INJURY_CATEGORY_GENETIC))
-		var/neural_load = round(occupant.injury_load(INJURY_CATEGORY_NEURAL))
-		var/fake_death = FALSE
-		if(occupant.status_flags & FAKEDEATH)
-			t1 = "*dead*"
-			health_text = "\tHealth %: -100, ([t1])"
-			fake_death = TRUE
-			dat += (span_red(health_text))
-			dat += "<br>"
+	if(!istype(occupant))
+		return span_blue(span_bold("Occupant Statistics:")) + "<br>\The [src] is empty."
+	var/list/dat = list(span_blue(span_bold("Occupant Statistics:")))
+	if(occupant.custom_species)
+		if(occupant.species.name == SPECIES_CUSTOM)
+			dat += span_blue("Sapient Species: [occupant.custom_species]")
 		else
-			dat += (occupant.vitality() > 0.5 ? span_blue(health_text) : span_red(health_text))
-			dat += "<br>"
-
-		if(occupant.IsInfected())
-			for(var/datum/disease/D in occupant.GetViruses())
-				if(D.visibility_flags & HIDDEN_SCANNER)
-					continue
-				else
-					dat += span_red("Disease detected in blood stream.") + "<BR>"
-
-		var/damage_string = null
-		damage_string = "\t-Brute Damage %: [brute_load]"
-		dat += (brute_load < 60 ? span_blue(damage_string) : span_red(damage_string)) + "<br>"
-		damage_string = "\t-Respiratory Damage %: [oxy_load]"
-		/* //Alternative oxygen based fakedeath
-		if(fake_death)
-			damage_string = "\t-Respiratory Damage %: [fake_oxy]"
-			dat += (span_red(damage_string)) + "<br>"
-		else*/
-		dat += (oxy_load < 60 ? span_blue(damage_string) : span_red(damage_string)) + "<br>"
-
-		if(fake_death)
-			damage_string = "\t-Toxin Content %: 0"
-			dat += span_blue(damage_string) + "<br>"
-		else
-			damage_string = "\t-Toxin Content %: [tox_load]"
-			dat += (tox_load < 60 ? span_blue(damage_string) : span_red(damage_string)) + "<br>"
-
-		damage_string = "\t-Burn Severity %: [burn_load]"
-		dat += (burn_load < 60 ? span_blue(damage_string) : span_red(damage_string)) + "<br>"
-
-		damage_string = "\tRadiation Level %: [occupant.radiation]"
-		dat += (occupant.radiation < 10 ? span_blue(damage_string) : span_red(damage_string)) + "<br>"
-
-		damage_string = "\tGenetic Tissue Damage %: [genetic_load]"
-		dat += (genetic_load < 1 ? span_blue(damage_string) : span_red(damage_string)) + "<br>"
-
-		if(fake_death)
-			damage_string = "\tApprox. Brain Damage %: 100"
-			dat += (span_red(damage_string)) + "<br>"
-		else
-			damage_string = "\tApprox. Brain Damage %: [neural_load]"
-			dat += (neural_load < 1 ? span_blue(damage_string) : span_red(damage_string)) + "<br>"
-
-		var/occupant_paralysis = occupant.paralysis
-		var/paralysis_duration = round(occupant.paralysis * 0.25)
-		if(fake_death)
-			occupant_paralysis = 0
-			paralysis_duration = 0
-
-		dat += "Paralysis Summary %: [occupant_paralysis] ([paralysis_duration] seconds left!)<br>"
-		dat += "Body Temperature: [occupant.bodytemperature-T0C]&deg;C ([occupant.bodytemperature*1.8-459.67]&deg;F)<br>"
-
-		if(ishuman(occupant))
-			var/mob/living/carbon/human/H = occupant
-			var/list/allergen_list = assembly_allergy_list(H.species.allergens, H.species.medallergens)
-			if(length(allergen_list))
-				dat += "Allergens: [english_list(allergen_list)]<BR>"
-
-		dat += "<hr>"
-
-		if(occupant.has_brain_worms())
-			dat += "Large growth detected in frontal lobe, possibly cancerous. Surgical removal is recommended.<br>"
-
-		if(occupant.vessel)
-			var/blood_volume = round(occupant.vessel.get_reagent_amount(REAGENT_ID_BLOOD))
-			var/blood_max = occupant.species.blood_volume
-			var/blood_percent =  blood_volume / blood_max
-			blood_percent *= 100
-
-			damage_string = "\tBlood Level %: [blood_percent] ([blood_volume] units)"
-			dat += (blood_volume > 448 ? span_blue(damage_string) : span_red(damage_string)) + "<br>"
-
-		if(occupant.reagents)
-			for(var/datum/reagent/R in occupant.reagents.reagent_list)
-				if(!R.scannable && !(scan_level >= 8)) //Requires minimum of 2 T3 and 1 T2 scanning module, or 2 T4 scanning modules.
-					continue
-				dat += "Reagent: [R.name], Amount: [R.volume]<br>"
-
-		if(occupant.ingested)
-			for(var/datum/reagent/R in occupant.ingested.reagent_list)
-				if(!R.scannable && !(scan_level >= 8)) //Requires minimum of 2 T3 and 1 T2 scanning module, or 2 T4 scanning modules.
-					continue
-				dat += "Stomach: [R.name], Amount: [R.volume]<br>"
-
-		dat += "<hr><table border='1'>"
-		dat += "<tr>"
-		dat += "<th>Organ</th>"
-		dat += "<th>Burn Damage</th>"
-		dat += "<th>Brute Damage</th>"
-		dat += "<th>Other Wounds</th>"
-		dat += "</tr>"
-
-		for(var/obj/item/organ/external/e in occupant.organs)
-			dat += "<tr>"
-			var/AN = ""
-			var/open = ""
-			var/infected = ""
-			var/robot = ""
-			var/imp = ""
-			var/bled = ""
-			var/splint = ""
-			var/internal_bleeding = ""
-			var/lung_ruptured = ""
-			var/o_dead = ""
-			var/mi = ""
-			if(length(dq_limb_internal_bleeds(e)))
-				internal_bleeding = "<br>Internal bleeding"
-			if(istype(e, /obj/item/organ/external/chest) && occupant.is_lung_ruptured())
-				lung_ruptured = "Lung ruptured:"
-			if(e.splinted)
-				splint = "Splinted:"
-			if(e.status & ORGAN_BLEEDING)
-				bled = "Bleeding:"
-			if(e.status & ORGAN_BROKEN)
-				AN = "[e.broken_description]:"
-			if(e.robotic >= ORGAN_ROBOT)
-				robot = "Prosthetic:"
-			if(e.status & ORGAN_DEAD)
-				o_dead = "Necrotic:"
-			if(e.open)
-				open = "Open:"
-			switch (e.germ_level)
-				if (INFECTION_LEVEL_ONE to INFECTION_LEVEL_ONE + 200)
-					infected = "Mild Infection:"
-				if (INFECTION_LEVEL_ONE + 200 to INFECTION_LEVEL_ONE + 300)
-					infected = "Mild Infection+:"
-				if (INFECTION_LEVEL_ONE + 300 to INFECTION_LEVEL_ONE + 400)
-					infected = "Mild Infection++:"
-				if (INFECTION_LEVEL_TWO to INFECTION_LEVEL_TWO + 200)
-					infected = "Acute Infection:"
-				if (INFECTION_LEVEL_TWO + 200 to INFECTION_LEVEL_TWO + 300)
-					infected = "Acute Infection+:"
-				if (INFECTION_LEVEL_TWO + 300 to INFECTION_LEVEL_THREE - 50)
-					infected = "Acute Infection++:"
-				if (INFECTION_LEVEL_THREE -49 to INFINITY)
-					infected = "Gangrene Detected:"
-
-			var/unknown_body = 0
-			for(var/obj/item/implant/I as anything in e.implants)
-				var/obj/item/nif/N = I // NIFs
-				if(istype(I) && I.known_implant)
-					imp += "[I] implanted:"
-				else if(istype(N) && N.known_implant) // NIFs
-					imp += "[N] implanted:"
-				else
-					unknown_body++
-
-			for(var/datum/affliction/custom/A as anything in dq_custom_afflictions_on(e))
-				if(A.showscanner)
-					mi += "[A.name] detected:"
-
-			if(unknown_body)
-				imp += "Unknown body present:"
-			if(!AN && !open && !infected && !imp && !mi)
-				AN = "None:"
-			if(!(e.status & ORGAN_DESTROYED))
-				dat += "<td>[e.name]</td><td>[round(e.get_burn())]</td><td>[round(e.get_trauma())]</td><td>[robot][bled][AN][splint][open][infected][imp][mi][internal_bleeding][lung_ruptured][o_dead]</td>"
+			dat += span_blue("Sapient Species: [occupant.custom_species] \[Similar biology to [occupant.species.name]\]")
+	var/datum/diagnosis/D = occupant.diagnose(/datum/diagnostic_profile/body_scanner)
+	dat += D.render_chat()
+	qdel(D)
+	dat += "<hr>"
+	if(occupant.paralysis && !(occupant.status_flags & FAKEDEATH))
+		dat += "Paralysis: [round(occupant.paralysis * 0.25)] seconds left."
+	var/list/allergen_list = assembly_allergy_list(occupant.species.allergens, occupant.species.medallergens)
+	if(length(allergen_list))
+		dat += "Allergens: [english_list(allergen_list)]"
+	if(occupant.has_brain_worms())
+		dat += "Large growth detected in frontal lobe, possibly cancerous. Surgical removal is recommended."
+	for(var/datum/reagent/R as anything in occupant.reagents?.reagent_list)
+		if(R.scannable > scan_level)
+			continue
+		dat += "Reagent: [R.name], Amount: [R.volume]"
+	for(var/datum/reagent/R as anything in occupant.ingested?.reagent_list)
+		if(R.scannable > scan_level)
+			continue
+		dat += "Stomach: [R.name], Amount: [R.volume]"
+	for(var/obj/item/organ/external/E as anything in occupant.organs)
+		var/unknown_body = 0
+		for(var/obj/thing in E.implants)
+			var/obj/item/implant/I = thing
+			var/obj/item/nif/N = thing
+			if(istype(I) && I.known_implant)
+				dat += "[capitalize(E.name)]: [I] implanted."
+			else if(istype(N) && N.known_implant)
+				dat += "[capitalize(E.name)]: [N] implanted."
 			else
-				dat += "<td>[e.name]</td><td>-</td><td>-</td><td>Not Found</td>"
-			dat += "</tr>"
-		var/hasMalignants = "" // malignant organs
-		for(var/obj/item/organ/i in occupant.internal_organs)
-			var/mech = ""
-			var/i_dead = ""
-			var/mi = ""
-			if(i.status & ORGAN_ASSISTED)
-				mech = "Assisted:"
-			if(i.robotic >= ORGAN_ROBOT)
-				mech = "Mechanical:"
-			if(i.status & ORGAN_DEAD)
-				i_dead = "Necrotic"
-			var/infection = "None"
-			switch (i.germ_level)
-				if (INFECTION_LEVEL_ONE to INFECTION_LEVEL_ONE + 200)
-					infection = "Mild Infection"
-				if (INFECTION_LEVEL_ONE + 200 to INFECTION_LEVEL_ONE + 300)
-					infection = "Mild Infection+"
-				if (INFECTION_LEVEL_ONE + 300 to INFECTION_LEVEL_ONE + 400)
-					infection = "Mild Infection++"
-				if (INFECTION_LEVEL_TWO to INFECTION_LEVEL_TWO + 200)
-					infection = "Acute Infection"
-				if (INFECTION_LEVEL_TWO + 200 to INFECTION_LEVEL_TWO + 300)
-					infection = "Acute Infection+"
-				if (INFECTION_LEVEL_TWO + 300 to INFECTION_LEVEL_THREE - 50)
-					infection = "Acute Infection++"
-				if (INFECTION_LEVEL_THREE -49 to INFINITY)
-					infection = "Necrosis Detected"
-
-			if(istype(i, /obj/item/organ/internal/appendix))
-				var/obj/item/organ/internal/appendix/A = i
-				if(A.inflamed)
-					infection = "Inflammation detected!"
-			for(var/datum/affliction/custom/A as anything in dq_custom_afflictions_on(i))
-				if(A.showscanner)
-					mi += "[A.name] detected:"
-
-			// begin - malignant organs
-			if(istype(i, /obj/item/organ/internal/malignant))
-				var/obj/item/organ/external/ORG = occupant.organs_by_name[i.parent_organ]
-				hasMalignants += span_red(" -[ORG.name]") + "<BR>"
-			// end
-
-			dat += "<tr>"
-			if(fake_death && istype(i, /obj/item/organ/internal/brain))
-				dat += "<td>[i.name]</td><td>N/A</td><td>200</td><td>[infection]:[mi][mech][i_dead]</td><td></td>"
-			else if(fake_death && istype(i, /obj/item/organ/internal/lungs))
-				dat += "<td>[i.name]</td><td>N/A</td><td>25</td><td>[infection]:[mi][mech][i_dead]</td><td></td>"
-			else
-				dat += "<td>[i.name]</td><td>N/A</td><td>[i.damage]</td><td>[infection]:[mi][mech][i_dead]</td><td></td>"
-			dat += "</tr>"
-		for(var/organ_tag in occupant.species.has_organ) //Check to see if we are missing any organs
-			var/organData[0]
+				unknown_body++
+		if(unknown_body)
+			dat += "[capitalize(E.name)]: unknown body present."
+	for(var/obj/item/organ/internal/malignant/M in occupant.internal_organs)
+		var/obj/item/organ/external/parent = occupant.organs_by_name[M.parent_organ]
+		dat += span_red("Unknown anatomy detected[parent ? " in the [parent.name]" : ""]!")
+	for(var/organ_tag in occupant.species.has_organ)
+		if(!occupant.internal_organs_by_name[organ_tag])
 			var/obj/item/organ/O = occupant.species.has_organ[organ_tag]
-			var/name = initial(O.name)
-			organData["name"] = name
-			O = occupant.internal_organs_by_name[organ_tag]
-			if(!O) // Missing organ
-				dat += "<tr>"
-				dat += "<td>[name]</td><td>N/A</td><td>NA</td><td>MISSING</td><td></td>"
-				dat += "</tr>"
-		dat += "</table>"
-		if(occupant.sdisabilities & BLIND)
-			dat += span_red("Cataracts detected.") + "<BR>"
-		if(occupant.disabilities & NEARSIGHTED)
-			dat += span_red("Retinal misalignment detected.") + "<BR>"
-		// begin - malignant organs
-		if(hasMalignants != "")
-			dat += span_red("Unknown anatomy detected!") + "<BR>[hasMalignants]"
-		// end
-		if(has_withdrawl != "")
-			dat += span_red("Experiencing withdrawal symptoms!") + "<BR>[has_withdrawl]"
-		if(HUSK in occupant.mutations) // VOREstation edit
-			dat += span_red("Anatomical structure lost, resuscitation not possible!") + "<BR>"
-	else
-		dat += "\The [src] is empty."
-
-	return dat
+			dat += span_red("[capitalize(initial(O.name))]: MISSING")
+	if(occupant.sdisabilities & BLIND)
+		dat += span_red("Cataracts detected.")
+	if(occupant.disabilities & NEARSIGHTED)
+		dat += span_red("Retinal misalignment detected.")
+	for(var/addic in occupant.get_all_addictions())
+		var/level = occupant.get_addiction_to_reagent(addic)
+		if(level > 0 && level < 80)
+			var/datum/reagent/R = SSchemistry.chemical_reagents[addic]
+			dat += span_red("Experiencing withdrawal symptoms: [R.name]")
+			break
+	return dat.Join("<br>")
 
 //Body Scan Console
 /obj/machinery/body_scanconsole

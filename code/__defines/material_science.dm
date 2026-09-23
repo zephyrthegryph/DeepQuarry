@@ -194,3 +194,25 @@
 #define MATERIAL_POWER_UNITS_PER_THALER 1000
 #define MATERIAL_LABOR_COST_PER_SECOND 0.25
 #define MATERIAL_EQUIPMENT_COST_PER_SECOND 0.1
+
+/// Role of the single-role bulk template, and of each material in a mix template.
+#define MATERIAL_ROLE_BULK "bulk"
+#define MATERIAL_BULK_ROLE(material_id) "bulk [material_id]"
+
+/**
+ * An object made of one plain material: MATERIAL_BULK(MAT_STEEL, 500) in its type body.
+ * No lists: the template, material and total are plain type vars.
+ */
+#define MATERIAL_BULK(material_id, total) material_template = /datum/material_template/bulk; material_bulk_material = material_id; material_total = total
+
+/**
+ * An object made of a fixed mix of plain materials, in its type body:
+ *     MATERIAL_MIX(list(MAT_STEEL = 500, MAT_GLASS = 250))
+ * Expands to a declared_material_mix() override returning a proc-local static, interned
+ * mix template (one per distinct mix, shared by every instance). The static initialiser
+ * also registers it by type at world start, so it can be read without an instance.
+ */
+#define MATERIAL_MIX(L) material_template = /datum/material_template/mix; declared_material_mix() { var/static/datum/material_template/mix/_material_mix = dq_register_material_mix(__TYPE__, L); return _material_mix; }
+
+/// An object with no material composition, clearing any inherited one.
+#define MATERIAL_NONE material_template = null

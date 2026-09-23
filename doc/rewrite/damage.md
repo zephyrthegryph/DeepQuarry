@@ -134,6 +134,24 @@ These are applied in order:
 - **Borgs** already use the body model (machine plan).
 - **Simple vehicles** stay on integrity.
 
+**D3 status (Sept 2026).** Done:
+- **Walls** use integrity. `max_integrity` is the material cap (plating plus reinforcement), set by `update_material()`, which keeps damage already taken. Projectiles, throws, generic attacks and blobs reach walls through the turf adapters (`projectile_damage`, `thrown_damage`, `receive_generic_attack`, `deal_damage`). Wall-rot multiplies each hit by ten in `run_atom_armor()`. Welder repair calls `repair_damage()`, and zero integrity dismantles the wall.
+- **Pools converted:** blob2 `integrity`, the old `/obj/effect/blob` `blob_health`, energy-field `strength` (20 integrity to the Renwick; the field drops below one Renwick and is never destroyed), simple-door `hardness` (10 integrity to the point), target `hp`, tank `integrity` (the pressure seal, ten per old point), shield-projector `shield_health`, modular-computer and hardware `damage`/`max_damage`/`broken_damage`/`damage_failure` (now `integrity_failure`), material weapon, armour, ashtray and barbed-wire item `health` (`MATERIAL_WEAR_UNIT` integrity per blow), smoleworld building `health`, and mech component `integrity`.
+- The **energy shield** segment has no pool of its own: it drains the generator's shared energy. It gains a `receive_damage()` sink that maps kinds to shield damage types.
+- **Mechs:** `receive_damage()` now applies packets through the mech's own model (`take_damage` → `absorbDamage` → `components_handle_damage`). Projectiles and throws keep `dynbulletdamage`/`dynhitby`. The body-model step above is still to do.
+
+**D5 shims.** Some explosion and EMP procs still read or write an old var, so a mirror or accumulator survives until D5 deletes the ladder:
+- simple door `hardness`: `ex_act` subtracts from it, and `CheckHardness()` moves it onto integrity;
+- shield projector `max_shield_health`: `emp_act` reads it, and it mirrors `max_integrity`;
+- mech component `integrity`: `emp_act` reads it, and it mirrors `get_integrity()`;
+- modular computer `take_damage(amount, component_probability, damage_casing)`: `ex_act` and `emp_act` still make this legacy call, and the override forwards it to `damage_computer()`;
+- energy shield `take_damage(damage, SHIELD_DAMTYPE_*, hitby)`: `ex_act`, `emp_act` and `fire_act` still call it.
+
+**Not converted (listed):**
+- **Growth or other stats, not integrity:** hydroponics tray `health`, spreading-vine `health`/`max_health` (they drive growth stage and maturity), `/obj/effect/dark` `health` (a light balance), anomaly `curr_health`, laser-tag hits and supermatter `damage` (instability).
+- **Equipment on mobs** (the body rewrite): rig `take_hit()`, space-suit breaches and NIF `durability`.
+- **Organs:** item `health` survives only for them.
+
 ## 6. Thresholds and destruction
 
 Each type declares its breakpoints as rules ([rules.md §4](rules.md#4-rules)):
@@ -148,6 +166,10 @@ Each type declares its breakpoints as rules ([rules.md §4](rules.md#4-rules)):
 - **Batched delivery.** The affected atoms receive their packets in budgeted batches, grouped by type. Containers resolve their latent contents in bulk.
 - **What's deleted:** the `ex_act` severity ladders, the structure and item base "`prob` then `qdel`" behaviour, and the duplicated EMP ladder (`living_defense.dm:261` and `projectile.dm:711`).
 - **Batched power topology.** Explosions batch their power topology changes (M3) instead of calling `makepowernets()`.
+
+**Done in D5.** `SSexplosions.queue_blast()` collects each reached atom once, at its strongest severity, into per-type batches; `deliver_blast_batches()` hands them their packets under `blast_batch_budget` atoms per fire. A container declares `explosion_contents_severity()` (closets shield one step; morgues, pods, scanners and APCs pass the blast through) and its contents join the same epoch before its own packet lands, so a destroyed container spills survivors. Immune types are `BOMB_PROOF` and never queued. The EMP ladder is `emp_ladder()`: `emp_ionic_damage()` reads it forwards for pulses and `emp_severity_for_ionic()` reads it backwards for ion rounds (`receive_ionic()`), for objects and mobs alike. The powernet defer and atmos topology batch stay open for the whole epoch, so an epoch is one topology commit.
+
+Still on severity ladders, owned elsewhere: turfs and walls (D3), the separate health pools of blobs, plants, shields, simple doors and modular computers (D3), and mob `ex_act`s (the body rewrite).
 
 ## 8. Repair
 

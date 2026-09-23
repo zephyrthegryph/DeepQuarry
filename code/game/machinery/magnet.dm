@@ -206,7 +206,7 @@
 	. = ..()
 
 	if(autolink)
-		for(var/obj/machinery/magnetic_module/M in GLOB.machines)
+		for(var/obj/machinery/magnetic_module/M in REGISTRY_MEMBERS(REGISTRY_MACHINES))
 			if(M.freq == frequency && M.code == code)
 				magnets.Add(M)
 
@@ -218,12 +218,9 @@
 
 /obj/machinery/magnetic_controller/process()
 	if(magnets.len == 0 && autolink)
-		for(var/obj/machinery/magnetic_module/M in GLOB.machines)
+		for(var/obj/machinery/magnetic_module/M in REGISTRY_MEMBERS(REGISTRY_MACHINES))
 			if(M.freq == frequency && M.code == code)
 				magnets.Add(M)
-
-/obj/machinery/magnetic_controller/attack_ai(mob/user as mob)
-	return attack_hand(user)
 
 /obj/machinery/magnetic_controller/attack_hand(mob/user as mob)
 	// structured TGUI MagneticConsole (see

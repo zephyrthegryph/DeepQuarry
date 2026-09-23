@@ -42,8 +42,24 @@ SUBSYSTEM_DEF(mobs)
 	var/list/profile_system_cost = list()
 	var/list/profile_system_calls = list()
 	var/profile_next_dump = 0
-	/// Mobs currently hibernating (no awake life systems). Empty unless MOB_HIBERNATION_ENABLED.
+	/// Mobs currently hibernating (no awake life systems) -> world.time they went to sleep.
+	/// Maintained only by /mob/living/proc/life_hibernate() and life_wake().
 	var/list/hibernating_mobs = list()
+	/// Hibernations since the last summary.
+	var/hibernations = 0
+	/// Wakes of hibernating mobs since the last summary, and reason -> count.
+	var/hibernation_wakes = 0
+	var/list/hibernation_wake_reasons = list()
+	/// Hibernation audit (doc/mob_life_architecture.md §4.9): next run, round-robin
+	/// cursors, and totals since the last summary.
+	var/next_hibernation_audit = 0
+	var/hibernation_audit_cursor = 0
+	var/hibernation_audit_awake_cursor = 0
+	var/hibernation_audits = 0
+	var/hibernation_audit_checked = 0
+	var/hibernation_audit_missed = 0
+	/// Set by the "Toggle Hibernation Audit" admin verb for the current round.
+	var/hibernation_audit_forced = FALSE
 
 /datum/controller/subsystem/mobs/stat_entry(msg)
 	msg = "P: [length(GLOB.mob_list)] | S: [slept_mobs] | H: [length(hibernating_mobs)] | D: [length(death_list)]"
@@ -56,6 +72,9 @@ SUBSYSTEM_DEF(mobs)
 			profile_run_index = 0
 			life_cycle++
 		slice_budget_remaining = max(1, CEILING(length(src.currentrun) / life_slices, 1))
+		if(world.time >= next_hibernation_audit && hibernation_audit_enabled())
+			next_hibernation_audit = world.time + MOB_HIBERNATION_AUDIT_INTERVAL
+			audit_hibernation()
 		process_z.len = length(GLOB.living_players_by_zlevel)
 		slept_mobs = 0
 		for(var/level in 1 to length(process_z))
@@ -133,7 +152,25 @@ SUBSYSTEM_DEF(mobs)
 			break
 	profile_system_cost.Cut()
 	profile_system_calls.Cut()
+	dump_hibernation_summary()
 	profile_next_dump = world.time + 2 MINUTES
+
+/// One MOB_HIBERNATE_SUMMARY line per profile dump: always on, one line per two minutes.
+/datum/controller/subsystem/mobs/proc/dump_hibernation_summary()
+	var/list/reasons = list()
+	var/list/sorted_reasons = hibernation_wake_reasons.Copy()
+	sortTim(sorted_reasons, /proc/cmp_numeric_desc, TRUE)
+	for(var/reason in sorted_reasons)
+		reasons += "[reason]=[sorted_reasons[reason]]"
+		if(length(reasons) >= 12)
+			break
+	log_runtime("MOB_HIBERNATE_SUMMARY enabled=[GLOB.mob_hibernation_enabled] hibernating=[length(hibernating_mobs)] hibernations=[hibernations] wakes=[hibernation_wakes] audits=[hibernation_audits] audited=[hibernation_audit_checked] missed_wakes=[hibernation_audit_missed] wake_reasons=[jointext(reasons, ",")]")
+	hibernations = 0
+	hibernation_wakes = 0
+	hibernation_wake_reasons.Cut()
+	hibernation_audits = 0
+	hibernation_audit_checked = 0
+	hibernation_audit_missed = 0
 
 /// Adds one sampled system run (tick usage delta) to the per-system profile.
 /datum/controller/subsystem/mobs/proc/record_system_cost(datum/life_system/S, tick_delta)
@@ -141,23 +178,68 @@ SUBSYSTEM_DEF(mobs)
 	profile_system_cost[key] += TICK_DELTA_TO_MS(tick_delta) * profile_sample_stride
 	profile_system_calls[key] += profile_sample_stride
 
-/// A mob with no awake life systems leaves the run until wake() (doc §4.3, stage 2).
-/// Disabled by MOB_HIBERNATION_ENABLED until systems have sleep conditions.
-/datum/controller/subsystem/mobs/proc/hibernate(mob/living/L)
-	if(!MOB_HIBERNATION_ENABLED || L.life_hibernating)
-		return
-	L.life_hibernating = TRUE
-	hibernating_mobs[L] = world.time
-	log_runtime("MOB_HIBERNATE: [key_name(L)] ([L.type]) hibernating; [length(hibernating_mobs)] hibernating")
+/// Counts one wake of a hibernating mob. Called by /mob/living/proc/life_wake().
+/datum/controller/subsystem/mobs/proc/note_wake(reason)
+	hibernation_wakes++
+	hibernation_wake_reasons[reason || "unspecified"]++
 
-/// Brings a hibernating mob back into the run. Called by /mob/living/proc/wake().
-/datum/controller/subsystem/mobs/proc/wake_mob(mob/living/L)
-	if(!L.life_hibernating)
-		return
-	L.life_hibernating = FALSE
-	var/slept_since = hibernating_mobs[L]
-	hibernating_mobs -= L
-	log_runtime("MOB_HIBERNATE: [key_name(L)] ([L.type]) woke after [DisplayTimeText(world.time - slept_since)]; [length(hibernating_mobs)] hibernating")
+/// The safety net for missed wakes. Samples hibernating mobs (and some awake mobs with
+/// sleeping systems) and re-checks every sleeping system's sleep rule. A rule that no longer
+/// holds means some producer changed the mob without calling life_wake(): log it loudly and
+/// wake the mob, so the gap shows up in the logs instead of as a frozen mob.
+/datum/controller/subsystem/mobs/proc/audit_hibernation()
+	hibernation_audits++
+	var/list/sample = list()
+	var/count = length(hibernating_mobs)
+	if(count)
+		var/take = min(count, MOB_HIBERNATION_AUDIT_SAMPLE)
+		for(var/i in 1 to take)
+			hibernation_audit_cursor = (hibernation_audit_cursor % count) + 1
+			sample += hibernating_mobs[hibernation_audit_cursor]
+	var/mob_count = length(GLOB.mob_list)
+	if(mob_count)
+		var/take = min(mob_count, MOB_HIBERNATION_AUDIT_AWAKE_SAMPLE)
+		for(var/i in 1 to take)
+			hibernation_audit_awake_cursor = (hibernation_audit_awake_cursor % mob_count) + 1
+			var/mob/living/L = GLOB.mob_list[hibernation_audit_awake_cursor]
+			if(istype(L) && !L.life_hibernating && (L.life_awake | LIFE_SYS_GATE) != LIFE_SYS_ALL)
+				sample += L
+	for(var/mob/living/L as anything in sample)
+		if(QDELETED(L))
+			continue
+		audit_mob(L)
+
+/// The audit runs in unit test and TESTING builds always; on servers only with the
+/// MOB_HIBERNATION_AUDIT config flag or the admin verb (it is a debugging aid, not a feature).
+/datum/controller/subsystem/mobs/proc/hibernation_audit_enabled()
+#if defined(UNIT_TESTS) || defined(TESTING)
+	return TRUE
+#else
+	return hibernation_audit_forced || CONFIG_GET(flag/mob_hibernation_audit)
+#endif
+
+/// Audits one mob. Returns the system that should have been woken, or null. `expected` is for
+/// the audit's own test, which misses a wake on purpose.
+/datum/controller/subsystem/mobs/proc/audit_mob(mob/living/L, expected = FALSE)
+	hibernation_audit_checked++
+	var/datum/life_system/S = L.life_missed_wake()
+	if(!S)
+		return null
+	hibernation_audit_missed++
+	var/message = "MOB_HIBERNATE_AUDIT: MISSED WAKE [key_name(L)] ([L.type]) [L.life_hibernating ? "hibernating since [DisplayTimeText(world.time - hibernating_mobs[L])] ago" : "awake bits [L.life_awake]"]: system [S.type] ([S.name], bit [S.bit]) has work but was asleep. Woken by: [S.woken_by || "undeclared"]. A producer changed this mob without life_wake()."
+	log_runtime(message)
+	log_world(message)
+#if defined(UNIT_TESTS)
+	if(!expected)
+		// A missed wake is a bug: fail the run, not just the log.
+		stack_trace(message)
+		if(GLOB.current_test)
+			GLOB.current_test.Fail(message, __FILE__, __LINE__)
+		else
+			GLOB.failed_any_test = TRUE
+#endif
+	L.life_wake(S.bit, "audit: [S.name]")
+	return S
 
 /datum/controller/subsystem/mobs/proc/log_recent()
 	var/msg = "Debug output from the [name] subsystem:\n"
@@ -230,7 +312,12 @@ SUBSYSTEM_DEF(mobs)
 	"bruteloss" = L.injury_load(INJURY_CATEGORY_PHYSICAL),
 	"fireloss" = L.injury_load(INJURY_CATEGORY_THERMAL),
 	"brainloss" = L.injury_load(INJURY_CATEGORY_NEURAL),
-	"oxyloss" = L.injury_load(INJURY_CATEGORY_ASPHYXIA),
+	"oxyloss" = L.oxygen_debt(),
 	"coord" = "[L.x], [L.y], [L.z]"
 	)
 	death_list += list(data)
+
+ADMIN_VERB(toggle_hibernation_audit, R_DEBUG, "Toggle Hibernation Audit", "Turns the mob hibernation missed-wake audit on or off for this round.", ADMIN_CATEGORY_DEBUG_MISC)
+	SSmobs.hibernation_audit_forced = !SSmobs.hibernation_audit_forced
+	log_admin("[key_name(user)] turned the mob hibernation audit [SSmobs.hibernation_audit_forced ? "on" : "off"] for this round.")
+	message_admins("[key_name_admin(user)] turned the mob hibernation audit [SSmobs.hibernation_audit_forced ? "on" : "off"] for this round.")

@@ -14,9 +14,6 @@
 	integrity_failure = 0.375
 	var/destroyed = FALSE
 
-/obj/structure/grille/ex_act(severity)
-	qdel(src)
-
 /obj/structure/grille/update_icon()
 	if(destroyed)
 		icon_state = "[initial(icon_state)]-b"

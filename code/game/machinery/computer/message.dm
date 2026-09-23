@@ -72,8 +72,8 @@
 /obj/machinery/computer/message_monitor/LateInitialize()
 	//Is the server isn't linked to a server, and there's a server available, default it to the first one in the list.
 	if(!linkedServer)
-		if(GLOB.message_servers && GLOB.message_servers.len > 0)
-			linkedServer = GLOB.message_servers[1]
+		if(REGISTRY_MEMBERS(REGISTRY_MESSAGE_SERVERS) && REGISTRY_COUNT(REGISTRY_MESSAGE_SERVERS) > 0)
+			linkedServer = REGISTRY_MEMBERS(REGISTRY_MESSAGE_SERVERS)[1]
 
 /obj/machinery/computer/message_monitor/tgui_interact(mob/user, datum/tgui/ui)
 	ui = SStgui.try_update_ui(user, src, ui)
@@ -133,7 +133,7 @@
 
 		//Get out list of viable PDAs
 		var/list/obj/item/pda/sendPDAs = list()
-		for(var/obj/item/pda/P in GLOB.PDAs)
+		for(var/obj/item/pda/P in REGISTRY_MEMBERS(REGISTRY_PDAS))
 			if(!P.owner || P.hidden)
 				continue
 			var/datum/data/pda/app/messenger/M = P.find_program(/datum/data/pda/app/messenger)
@@ -152,9 +152,6 @@
 	if(!istype(user))
 		return
 	tgui_interact(user)
-
-/obj/machinery/computer/message_monitor/attack_ai(mob/user as mob)
-	return attack_hand(user)
 
 /obj/machinery/computer/message_monitor/proc/BruteForce(mob/user as mob)
 	if(isnull(linkedServer))
@@ -197,11 +194,11 @@
 			. = TRUE
 		//Find a server
 		if("find")
-			if(GLOB.message_servers && GLOB.message_servers.len > 1)
-				linkedServer = tgui_input_list(ui.user,"Please select a server.", "Select a server.", GLOB.message_servers)
+			if(REGISTRY_MEMBERS(REGISTRY_MESSAGE_SERVERS) && REGISTRY_COUNT(REGISTRY_MESSAGE_SERVERS) > 1)
+				linkedServer = tgui_input_list(ui.user,"Please select a server.", "Select a server.", REGISTRY_MEMBERS(REGISTRY_MESSAGE_SERVERS))
 				set_temp("NOTICE: Server selected.", "alert")
-			else if(GLOB.message_servers && GLOB.message_servers.len > 0)
-				linkedServer = GLOB.message_servers[1]
+			else if(REGISTRY_MEMBERS(REGISTRY_MESSAGE_SERVERS) && REGISTRY_COUNT(REGISTRY_MESSAGE_SERVERS) > 0)
+				linkedServer = REGISTRY_MEMBERS(REGISTRY_MESSAGE_SERVERS)[1]
 				set_temp("NOTICE: Only Single Server Detected - Server selected.", "average")
 			else
 				temp = noserver
@@ -296,7 +293,7 @@
 				return TRUE
 
 			var/obj/item/pda/PDARec = null
-			for(var/obj/item/pda/P in GLOB.PDAs)
+			for(var/obj/item/pda/P in REGISTRY_MEMBERS(REGISTRY_PDAS))
 				if(!P.owner || P.hidden)
 					continue
 				var/datum/data/pda/app/messenger/M = P.find_program(/datum/data/pda/app/messenger)
@@ -343,7 +340,7 @@
 	return INITIALIZE_HINT_LATELOAD
 
 /obj/item/paper/monitorkey/LateInitialize()
-	for(var/obj/machinery/message_server/server in GLOB.message_servers)
+	for(var/obj/machinery/message_server/server in REGISTRY_MEMBERS(REGISTRY_MESSAGE_SERVERS))
 		if(!isnull(server.decryptkey))
 			info = "<center><h2>Daily Key Reset</h2></center><br>The new message monitor key is '[server.decryptkey]'.<br>Please keep this a secret and away from the clown.<br>If necessary, change the password to a more secure one."
 			info_links = info

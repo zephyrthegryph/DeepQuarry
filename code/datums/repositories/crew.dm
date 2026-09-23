@@ -31,7 +31,7 @@ GLOBAL_DATUM_INIT(crew_repository, /datum/repository/crew, new)
 				if(H.w_uniform != C)
 					continue
 
-				var/list/crewmemberData = list("dead"=0, "oxy"=-1, "tox"=-1, "fire"=-1, "brute"=-1, "area"="", "x"=-1, "y"=-1, "realZ"=-1, "z"="", "ref" = "\ref[H]")
+				var/list/crewmemberData = list("dead"=0, "area"="", "x"=-1, "y"=-1, "realZ"=-1, "z"="", "ref" = "\ref[H]")
 
 				crewmemberData["sensor_type"] = C.sensor_mode
 				crewmemberData["name"] = H.get_authentification_name(if_no_id="Unknown")
@@ -43,13 +43,16 @@ GLOBAL_DATUM_INIT(crew_repository, /datum/repository/crew, new)
 
 				if(C.sensor_mode >= SUIT_SENSOR_VITAL)
 					crewmemberData["stat"] = H.stat
-					// UI keys kept for the CrewMonitor interface; sourced from injury load per category.
-					crewmemberData["oxy"] = round(H.injury_load(INJURY_CATEGORY_ASPHYXIA), 1)
-					crewmemberData["tox"] = round(H.injury_load(INJURY_CATEGORY_TOXIC), 1)
-					crewmemberData["fire"] = round(H.injury_load(INJURY_CATEGORY_THERMAL), 1)
-					crewmemberData["brute"] = round(H.injury_load(INJURY_CATEGORY_PHYSICAL), 1)
+					// Coarse status from vitality / criticality, plus the vitals
+					// the sensors measure.
+					crewmemberData["condition"] = sensor_status(H)
 					crewmemberData["vitality"] = round(H.vitality() * 100, 1)
-					crewmemberData["critical"] = H.is_critical()
+					var/datum/diagnosis/D = H.diagnose(/datum/diagnostic_profile/suit_sensors)
+					if(D)
+						crewmemberData["heartRate"] = D.heart_rate
+						crewmemberData["oxygenation"] = D.oxygenation
+						crewmemberData["temperature"] = D.temperature
+						qdel(D)
 
 				if(C.sensor_mode >= SUIT_SENSOR_TRACKING)
 					var/area/A = get_area(H)

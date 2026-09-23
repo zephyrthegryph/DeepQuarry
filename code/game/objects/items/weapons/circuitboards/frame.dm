@@ -178,7 +178,7 @@
 	name = T_BOARD("teleporter hub")
 	build_path = /obj/machinery/teleport/hub
 	board_type = new /datum/frame/frame_types/machine // makes buildable
-	matter = list(MAT_STEEL = 50, MAT_GLASS = 50, MAT_GOLD = 100)
+	MATERIAL_MIX(list(MAT_STEEL = 50, MAT_GLASS = 50, MAT_GOLD = 100))
 // Balance
 	req_components = list(
 							/obj/item/bluespace_crystal = 2,
@@ -192,7 +192,7 @@
 	name = T_BOARD("teleporter station")
 	build_path = /obj/machinery/teleport/station
 	board_type = new /datum/frame/frame_types/machine // makes buildable
-	matter = list(MAT_STEEL = 50, MAT_GLASS = 50, MAT_GOLD = 100)
+	MATERIAL_MIX(list(MAT_STEEL = 50, MAT_GLASS = 50, MAT_GOLD = 100))
 	req_components = list(
 							/obj/item/stock_parts/console_screen = 1,
 							/obj/item/stock_parts/capacitor = 2,
@@ -416,7 +416,7 @@
 	name = T_BOARD("deluxe microwave")
 	build_path = /obj/machinery/microwave/advanced
 	board_type = new /datum/frame/frame_types/microwave
-	matter = list(MAT_STEEL = 50, MAT_GLASS = 50)
+	MATERIAL_MIX(list(MAT_STEEL = 50, MAT_GLASS = 50))
 	req_components = list(
 							/obj/item/stock_parts/console_screen = 1,
 							/obj/item/stock_parts/motor = 1,

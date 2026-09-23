@@ -146,7 +146,8 @@
 		affecting.Stun(3)
 		if(isliving(affecting))
 			var/mob/living/L = affecting
-			L.injure(INJURY_ASPHYXIA, 1, null, assailant)
+			// A chokehold squeezes the airway for as long as it's held.
+			L.body?.add_restriction(src, BF_AIRWAY, (state >= GRAB_KILL ? 0 : 0.3), 3 SECONDS)
 
 	if(state >= GRAB_KILL)
 		//affecting.apply_effect(STUTTER, 5) //would do this, but affecting isn't declared as mob/living for some stupid reason.
@@ -173,7 +174,7 @@
 				affecting.Blind(3)
 		if(BP_HEAD)
 			if(force_down)
-				if(user.a_intent == I_HELP)
+				if(IS_HELPING(user))
 					if(announce)
 						assailant.visible_message(span_warning("[assailant] sits on [target]'s face!"))
 
@@ -314,7 +315,7 @@
 			var/mob/living/carbon/human/H = affecting
 			var/hit_zone = assailant.zone_sel.selecting
 			flick(hud.icon_state, hud)
-			switch(assailant.a_intent)
+			switch(assailant.use_stance())
 				if(I_HELP)
 					if(force_down)
 						to_chat(assailant, span_warning("You are no longer pinning [affecting] to the ground."))

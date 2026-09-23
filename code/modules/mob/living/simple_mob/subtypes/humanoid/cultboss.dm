@@ -47,7 +47,7 @@
 
 /mob/living/simple_mob/humanoid/cultist/magus/rift/do_special_attack(atom/A)
 	. = TRUE // So we don't fire a bolt as well.
-	switch(a_intent)
+	switch(use_stance())
 		if(I_DISARM) // Side gun
 			electric_defense(A)
 		if(I_HURT) // Rockets

@@ -305,7 +305,7 @@
 /datum/controller/subsystem/contracts/proc/notify_contract(datum/contract/contract, message)
 	if(!contract || !message)
 		return
-	for(var/obj/item/pda/device in GLOB.PDAs)
+	for(var/obj/item/pda/device in REGISTRY_MEMBERS(REGISTRY_PDAS))
 		var/datum/data/pda/app/contracts/app = device.find_program(/datum/data/pda/app/contracts)
 		if(!app)
 			continue

@@ -66,7 +66,7 @@
 	switch(attackcycle)
 		if(1)
 			attackcycle = 0
-			switch(a_intent)
+			switch(use_stance())
 				if(I_HURT)
 					addtimer(CALLBACK(src, PROC_REF(bomb_lines), A, 2), 1.5 SECONDS, TIMER_DELETE_ME)
 				if(I_GRAB)
@@ -75,7 +75,7 @@
 					addtimer(CALLBACK(src, PROC_REF(bomb_chaos), A, 2), 0.75 SECONDS, TIMER_DELETE_ME)
 		if(2)
 			attackcycle = 0
-			switch(a_intent)
+			switch(use_stance())
 				if(I_HURT)
 					addtimer(CALLBACK(src, PROC_REF(summon_puddles), A, 3, /datum/modifier/mmo_drop/blade_boss_long), 1.5 SECONDS, TIMER_DELETE_ME)
 				if(I_GRAB)
@@ -84,7 +84,7 @@
 					addtimer(CALLBACK(src, PROC_REF(bomb_lines), A, 3), 0.75 SECONDS, TIMER_DELETE_ME)
 		if(3)
 			attackcycle = 0
-			switch(a_intent)
+			switch(use_stance())
 				if(I_HURT)
 					addtimer(CALLBACK(src, PROC_REF(cutoff), A, 4, 5, 10), 0.5 SECONDS, TIMER_DELETE_ME)
 				if(I_GRAB)
@@ -93,7 +93,7 @@
 					addtimer(CALLBACK(src, PROC_REF(summon_puddles), A, 4, /datum/modifier/mmo_drop/blade_boss_long), 1 SECOND, TIMER_DELETE_ME)
 		if(4)
 			attackcycle = 0
-			switch(a_intent)
+			switch(use_stance())
 				if(I_HURT)
 					addtimer(CALLBACK(src, PROC_REF(summon_puddles), A, 1, /datum/modifier/mmo_drop/blade_boss_short), 1.5 SECONDS, TIMER_DELETE_ME)
 				if(I_GRAB)
@@ -115,7 +115,7 @@
 	switch(attackcycle)
 		if(1)
 			attackcycle = 0
-			switch(a_intent)
+			switch(use_stance())
 				if(I_HURT)
 					addtimer(CALLBACK(src, PROC_REF(cutoff), A, 2, 5, 10), 0.5 SECONDS, TIMER_DELETE_ME)
 				if(I_GRAB)
@@ -124,7 +124,7 @@
 					addtimer(CALLBACK(src, PROC_REF(quad_random_firing), A, 6, 2, 12), 0.5 SECONDS, TIMER_DELETE_ME)
 		if(2)
 			attackcycle = 0
-			switch(a_intent)
+			switch(use_stance())
 				if(I_HURT)
 					addtimer(CALLBACK(src, PROC_REF(cutoff), A, 3, 5, 10), 0.5 SECONDS, TIMER_DELETE_ME)
 				if(I_GRAB)
@@ -133,7 +133,7 @@
 					addtimer(CALLBACK(src, PROC_REF(quad_random_firing), A, 6, 3, 9), 0.5 SECONDS, TIMER_DELETE_ME)
 		if(3)
 			attackcycle = 0
-			switch(a_intent)
+			switch(use_stance())
 				if(I_HURT)
 					addtimer(CALLBACK(src, PROC_REF(cutoff_ulti), A, 1, 5, 10), 0.5 SECONDS, TIMER_DELETE_ME)
 				if(I_GRAB)

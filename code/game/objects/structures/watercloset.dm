@@ -145,7 +145,7 @@
 					if(!refilling)
 						user.visible_message(span_danger("[user] gives [GM] a swirlie!"), span_notice("You give [GM] a swirlie!"), "You hear a toilet flushing.")
 						if(!GM.internal)
-							GM.injure(INJURY_ASPHYXIA, 5, null, src)
+							GM.body?.add_restriction(src, BF_AIRWAY, 0, 5 SECONDS) // a faceful of water
 						if(GM.size_multiplier <= 0.75)
 							GM.visible_message(span_danger("[GM] gets sucked into \the [src] due to their small size!"), span_userdanger("You get sucked into \the [src]!"))
 							GM.forceMove(get_turf(src))
@@ -207,7 +207,7 @@
 		to_chat(user, span_notice("The toilet is still refilling its tank."))
 		playsound(src, 'sound/machines/door_locked.ogg', 30, 1)
 		//Even while it's flushing, you can repeatedly pull down the lever for a bigger flush.
-		if(user.a_intent == I_HURT)
+		if(IS_HARMING(user))
 			if(COOLDOWN_FINISHED(src, panic_flush))
 				panic_mult++
 				COOLDOWN_START(src, panic_flush, 1 SECOND) //Let's not encourage hitting the click-cap.
@@ -736,7 +736,7 @@
 		add_fingerprint(user)
 		if(honk_text)
 			audible_message(span_maroon("[honk_text]"))
-		for(var/obj/machinery/light/L in GLOB.machines)
+		for(var/obj/machinery/light/L in REGISTRY_MEMBERS(REGISTRY_MACHINES))
 			if(L.z != user.z || get_dist(user,L) > 10)
 				continue
 			else
@@ -753,7 +753,7 @@
 	icon_state = "rubberducky_green"
 	item_state = "rubberducky_green"
 	honk_sound = 'sound/arcade/mana.ogg'
-	var/list/flora = list(/obj/structure/flora/ausbushes,
+	var/static/list/flora = list(/obj/structure/flora/ausbushes,
 						/obj/structure/flora/ausbushes/reedbush,
 						/obj/structure/flora/ausbushes/leafybush,
 						/obj/structure/flora/ausbushes/palebush,

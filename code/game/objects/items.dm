@@ -4,13 +4,12 @@
 	w_class = ITEMSIZE_NORMAL
 	blocks_emissive = EMISSIVE_BLOCK_GENERIC
 
-	//matter = list(MAT_STEEL = 1)
 
 	var/tmp/image/blood_overlay = null //this saves our blood splatter overlay, which will be processed not to go over the edges of the sprite
 	var/randpixel = 6
 	var/abstract = 0
 	// r_speed removed (dead, 0 refs)
-	var/health = null // generic per-item value (food freshness, organ/instrument condition, …); NOT the obj_integrity damage system
+	var/health = null // organ condition (the body rewrite owns it). Object hit points are integrity (take_damage/get_integrity), never this.
 	// burn_point removed (dead, 0 refs)
 	var/burning = null
 	var/hitsound = "swing_hit"
@@ -35,7 +34,6 @@
 	var/catchable = TRUE
 	var/can_cleave = FALSE // If true, a 'cleaving' attack will occur.
 	var/pry = 0			//Used in attackby() to open doors
-	var/list/matter
 	var/heat_protection = 0 //flags which determine which body parts are protected from heat. Use the HEAD, UPPER_TORSO, LOWER_TORSO, etc. flags. See setup.dm
 	var/cold_protection = 0 //flags which determine which body parts are protected from cold. Use the HEAD, UPPER_TORSO, LOWER_TORSO, etc. flags. See setup.dm
 	var/max_heat_protection_temperature //Set this variable to determine up to which temperature (IN KELVIN) the item protects against heat damage. Keep at null to disable protection. Only protects areas set by heat_protection flags
@@ -60,7 +58,10 @@
 	var/siemens_coefficient = 1 // for electrical admittance/conductance (electrocution checks and shit)
 	var/slowdown = 0 // How much clothing is slowing you down. Negative values speeds you up
 	var/canremove = TRUE //Mostly for Ninja code at this point but basically will not allow the item to be removed if set to 0. /N
+	/// Shared between items with the same values after Initialize(); call own_armor() before writing to it.
 	var/list/armor = list("melee" = 0, "bullet" = 0, "laser" = 0,"energy" = 0, "bomb" = 0, "bio" = 0, "rad" = 0)
+	/// TRUE once armor is this item's own list rather than the shared table.
+	var/tmp/armor_owned = FALSE
 	var/list/allowed = null //suit storage stuff.
 	var/obj/item/uplink/hidden/hidden_uplink = null // All items can have an uplink hidden inside, just remember to add the triggers.
 	var/zoomdevicename = null //name used for message when binoculars/scope is used
@@ -151,6 +152,8 @@
 
 /obj/item/Initialize(mapload)
 	. = ..()
+	if(islist(armor) && !armor_owned)
+		armor = string_assoc_list(armor)
 
 	for(var/path in actions_types)
 		add_item_action(path)
@@ -284,17 +287,6 @@
 			M.update_inv_l_hand()
 		else if(M.r_hand == src)
 			M.update_inv_r_hand()
-
-/obj/item/ex_act(severity)
-	switch(severity)
-		if(1.0)
-			qdel(src)
-		if(2.0)
-			if (prob(50))
-				qdel(src)
-		if(3.0)
-			if (prob(5))
-				qdel(src)
 
 /obj/item/verb/move_to_top()
 	set name = "Move To Top"
@@ -506,6 +498,7 @@
 			playsound(src, pickup_sound, 20, preference = /datum/preference/toggle/pickup_sounds)
 	SEND_SIGNAL(src, COMSIG_ITEM_EQUIPPED, user, slot)
 	SEND_SIGNAL(user, COMSIG_MOB_EQUIPPED_ITEM, src, slot)
+	user.on_equipment_changed()
 	var/mob/living/M = loc
 	if(!istype(M))
 		return
@@ -1259,3 +1252,10 @@ Note: This proc can be overwritten to allow for different types of auto-alignmen
 		if(B.mode_flags & DM_FLAG_MUFFLEITEMS)
 			return TRUE
 	return FALSE
+
+/// Copy-on-write: give this item a private armor list before editing it.
+/obj/item/proc/own_armor()
+	if(armor_owned)
+		return
+	armor = islist(armor) ? armor.Copy() : list()
+	armor_owned = TRUE

@@ -92,6 +92,7 @@ GLOBAL_LIST_EMPTY(areas_by_type)
 	// NOTE: BayStation calles area.Exited/Entered for the TURF T.  So far we don't do that.s
 	// NOTE: There probably won't be any atoms in these turfs, but just in case we should call these procs.
 	A.contents.Add(T)
+	T.reactor_area_changed()
 	if(old_area)
 		// Handle dynamic lighting update if
 		if(SSlighting.initialized && T.dynamic_lighting && old_area.dynamic_lighting != A.dynamic_lighting)
@@ -264,6 +265,9 @@ GLOBAL_LIST_EMPTY(areas_by_type)
 
 // called when power status changes
 /area/proc/power_change()
+	// Lights (and anything else that subscribes) hear this through the reactor key; the scan
+	// below stays for the other machines until M3's area channel event replaces it.
+	REACT_PUBLISH(REACT_KEY_AREA_POWER, REACT_ID(src), REACT_AREA_POWER_CHANGED)
 	for(var/obj/machinery/M in src)	// for each machine in the area
 		M.power_change()			// reverify power status (to update icons etc.)
 	if (fire || eject || party)
@@ -302,7 +306,7 @@ GLOBAL_LIST_EMPTY(areas_by_type)
 		if(ENVIRON)
 			oneoff_environ += amount
 	if(amount)
-		SSmachines.publish_reactive_dependency("area_power:[REF(src)]")
+		REACT_PUBLISH_OWN(src, REACT_KEY_AREA_POWER, REACT_KEY_CHANGED)
 	return amount
 
 // This is used by machines to properly update the area of power changes.
@@ -319,7 +323,7 @@ GLOBAL_LIST_EMPTY(areas_by_type)
 		if(ENVIRON)
 			static_environ += amount
 	if(amount)
-		SSmachines.publish_reactive_dependency("area_power:[REF(src)]")
+		REACT_PUBLISH_OWN(src, REACT_KEY_AREA_POWER, REACT_KEY_CHANGED)
 
 // This recomputes the continued power usage; can be used for testing or error recovery, but is not called every tick.
 /area/proc/retally_power()

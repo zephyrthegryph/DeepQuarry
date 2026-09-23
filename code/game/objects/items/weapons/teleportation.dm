@@ -19,7 +19,7 @@
 	item_state = "electronic"
 	throw_speed = 4
 	throw_range = 20
-	matter = list(MAT_STEEL = 400)
+	MATERIAL_BULK(MAT_STEEL, 400)
 	pickup_sound = 'sound/items/pickup/device.ogg'
 	drop_sound = 'sound/items/drop/device.ogg'
 	// last scan results for TGUI. Replaces the legacy `temp`
@@ -85,7 +85,7 @@
 			if(!sr)
 				return TRUE
 			var/list/b = list()
-			for(var/obj/item/radio/beacon/W in GLOB.all_beacons)
+			for(var/obj/item/radio/beacon/W in REGISTRY_MEMBERS(REGISTRY_BEACONS))
 				if(W.frequency != frequency)
 					continue
 				var/turf/tr = get_turf(W)
@@ -98,7 +98,7 @@
 					"strength" = strength_label(distance),
 				))
 			var/list/i = list()
-			for(var/obj/item/implant/tracking/W in GLOB.all_tracking_implants)
+			for(var/obj/item/implant/tracking/W in REGISTRY_MEMBERS(REGISTRY_TRACKING_IMPLANTS))
 				if(!W.implanted || !(istype(W.loc, /obj/item/organ/external) || ismob(W.loc) || W.malfunction) || is_vore_jammed(W))
 					continue
 				var/turf/tr = get_turf(W)
@@ -131,7 +131,7 @@
 	w_class = ITEMSIZE_SMALL
 	throw_speed = 3
 	throw_range = 5
-	matter = list(MAT_STEEL = 10000)
+	MATERIAL_BULK(MAT_STEEL, 10000)
 	preserve_item = 1
 
 /obj/item/hand_tele/attack_self(mob/user)
@@ -143,7 +143,7 @@
 		to_chat(user, span_notice("\The [src] is malfunctioning."))
 		return
 	var/list/L = list(  )
-	for(var/obj/machinery/teleport/hub/R in GLOB.machines)
+	for(var/obj/machinery/teleport/hub/R in REGISTRY_MEMBERS(REGISTRY_MACHINES))
 		var/obj/machinery/computer/teleporter/com
 		var/obj/machinery/teleport/station/station
 		for(var/direction in GLOB.cardinal)
@@ -173,7 +173,7 @@
 	if ((user.get_active_hand() != src || user.stat || user.restrained()))
 		return
 	var/count = 0	//num of portals from this teleport in world
-	for(var/obj/effect/portal/PO in GLOB.all_portals)
+	for(var/obj/effect/portal/PO in REGISTRY_MEMBERS(REGISTRY_PORTALS))
 		if(PO.creator == src)	count++
 	if(count >= 3)
 		user.show_message(span_notice("\The [src] is recharging!"))

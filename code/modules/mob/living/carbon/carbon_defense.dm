@@ -33,7 +33,7 @@
 
 // Attacking someone with a weapon while they are neck-grabbed
 /mob/living/carbon/proc/check_neckgrab_attack(obj/item/W, mob/user, hit_zone)
-	if(user.a_intent == I_HURT)
+	if(IS_HARMING(user))
 		for(var/obj/item/grab/G in src.grabbed_by)
 			if(G.assailant == user)
 				if(G.state >= GRAB_AGGRESSIVE)
@@ -72,14 +72,13 @@
 		receive_weapon_hit(W, user, damage, zone = BP_HEAD, silent = FALSE, armored = FALSE)
 		total_damage += damage
 
-	var/asphyxia = total_damage
-	if(total_damage >= 40) //threshold to make someone pass out
-		asphyxia = 60 // Brain lacks oxygen immediately, pass out
-
-	injure(INJURY_ASPHYXIA, min(asphyxia, 100 - injury_load(INJURY_CATEGORY_ASPHYXIA)), null, W) //don't put them over 100 asphyxia
+	// Blood floods the cut airway: a deep enough cut closes it.
+	var/aspirated = total_damage >= 40 ? 60 : total_damage
+	if(aspirated)
+		body?.afflict(/datum/affliction/airway_obstruction, null, aspirated)
 
 	if(total_damage)
-		if(asphyxia >= 40)
+		if(aspirated >= 40)
 			user.visible_message(span_danger("\The [user] slit [src]'s throat open with \the [W]!"))
 		else
 			user.visible_message(span_danger("\The [user] cut [src]'s neck with \the [W]!"))
@@ -157,8 +156,6 @@
 /// Post-injury reactions. `amount` is what the body actually received.
 /mob/living/carbon/proc/on_injured(kind, amount, zone, atom/source, flags)
 	if(flags & INJURE_SILENT)
-		return
-	if(injury_category(kind) == INJURY_CATEGORY_ASPHYXIA)
 		return
 	if(!(can_feel_pain() || (isSynthetic() && synth_cosmetic_pain)))
 		return

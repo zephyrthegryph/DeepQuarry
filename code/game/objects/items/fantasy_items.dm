@@ -2,7 +2,7 @@
 /obj/item/healthanalyzer/scroll //reports all of the above, as well as name and quantity of nonmed reagents in stomach
 	name = "scroll of divination"
 	desc = "An unusual scroll that appears to report all of the details of a person's health when waved near them. Oddly, it seems to have a little metal chip up near the handles..."
-	advscan = SCANNABLE_SECRETIVE
+	profile_type = /datum/diagnostic_profile/health_analyzer/phasic
 	icon_state = "health_scroll"
 
 
@@ -159,7 +159,7 @@
 					if(do_after(user, 3 SECONDS, target = GM))
 						user.visible_message(span_danger("[user] gives [GM.name] a swirlie!"), span_notice("You give [GM.name] a swirlie!"), "You hear a toilet flushing.")
 						if(!GM.internal)
-							GM.injure(INJURY_ASPHYXIA, 5, source = src)
+							GM.body?.add_restriction(src, BF_AIRWAY, 0, 5 SECONDS) // a faceful of water
 					swirlie_mob = null
 				else
 					user.visible_message(span_danger("[user] slams [GM.name] into the [src]!"), span_notice("You slam [GM.name] into the [src]!"))
@@ -309,7 +309,7 @@
 	if(.)
 		return TRUE
 	if(loc_network)
-		for(var/obj/item/perfect_tele_beacon/stationary/nb in GLOB.premade_tele_beacons)
+		for(var/obj/item/perfect_tele_beacon/stationary/nb in REGISTRY_MEMBERS(REGISTRY_TELE_BEACONS_PREMADE))
 			if(nb.tele_network == loc_network)
 				beacons[nb.tele_name] = nb
 		loc_network = null //Consumed

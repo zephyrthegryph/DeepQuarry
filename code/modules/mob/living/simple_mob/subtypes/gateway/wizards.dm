@@ -199,7 +199,7 @@
 	on_created_text = span_warning("You feel like the end is nigh.")
 	on_expired_text = span_notice("You feel safe for now.")
 	aura_max_distance = 4
-	factors = alist(BF_INCOMING_ALL = 1.2, BF_INCOMING_ASPHYXIA = 2, BF_INCOMING_PAIN = 2, BF_DISABLE_DURATION = 1.2, BF_HEALING_RECEIVED = 0.8, BF_ENDURANCE_MULT = 0.9)
+	factors = alist(BF_INCOMING_ALL = 1.2, BF_DEMAND = 2, BF_INCOMING_PAIN = 2, BF_DISABLE_DURATION = 1.2, BF_HEALING_RECEIVED = 0.8, BF_ENDURANCE_MULT = 0.9)
 
 /datum/modifier/aura/crumbling/superboss
 	aura_max_distance = 16

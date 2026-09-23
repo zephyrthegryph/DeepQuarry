@@ -6,7 +6,7 @@
 
 /datum/event/meteor_wave/meatyores/tick()
 	if(activeFor >= alarmWhen)
-		for(var/obj/machinery/shield_diffuser/SD in GLOB.machines)
+		for(var/obj/machinery/shield_diffuser/SD in REGISTRY_MEMBERS(REGISTRY_MACHINES))
 			if(SD.z in affecting_z)
 				SD.meteor_alarm(10)
 

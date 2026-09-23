@@ -28,7 +28,6 @@
 
 /obj/machinery/portable_atmospherics/canister/Initialize(mapload)
 	. = ..()
-	ensure_material_construction(MATERIAL_APPLICATION_PRESSURE, 2 * SHEET_MATERIAL_AMOUNT)
 	AddElement(/datum/element/climbable)
 
 /obj/machinery/portable_atmospherics/canister/proc/effective_maximum_pressure()
@@ -366,9 +365,6 @@ update_flag
 			disconnect()
 		qdel(src)
 	return ITEM_INTERACT_SUCCESS
-
-/obj/machinery/portable_atmospherics/canister/attack_ai(mob/user as mob)
-	return src.attack_hand(user)
 
 /obj/machinery/portable_atmospherics/canister/attack_hand(mob/user as mob)
 	return tgui_interact(user)

@@ -7,7 +7,8 @@
 	filling_states = list(10, 20, 30, 40, 50, 60, 70, 80, 90, 100)
 	volume = 120
 	max_transfer_amount = 60
-	matter = list(MAT_GLASS = 50)
+	material_template = /datum/material_template/container
+	material_total = 50
 
 /obj/item/reagent_containers/food/drinks/glass2/pitcher
 	name = "plastic pitcher"
@@ -18,4 +19,4 @@
 	filling_states = list(15, 30, 50, 70, 85, 100)
 	volume = 120
 	max_transfer_amount = 60
-	matter = list(MAT_PLASTIC = 50)
+	MATERIAL_BULK(MAT_PLASTIC, 50)

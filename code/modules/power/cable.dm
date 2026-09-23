@@ -44,6 +44,8 @@ GLOBAL_LIST_INIT(possible_cable_coil_colours, list(
 	))
 
 /obj/structure/cable
+	material_template = /datum/material_template/cable
+	material_total = SHEET_MATERIAL_AMOUNT
 	level = 1
 	anchored =TRUE
 	unacidable = TRUE
@@ -70,9 +72,8 @@ GLOBAL_LIST_INIT(possible_cable_coil_colours, list(
 
 /obj/structure/cable/proc/set_engineered_material(material_id)
 	engineered_material_id = material_id
-	if(material_id && !length(construction_materials))
-		var/list/slots = default_material_slots(MATERIAL_APPLICATION_CABLE, SHEET_MATERIAL_AMOUNT)
-		apply_material_construction(list(MATERIAL_ROLE_CONDUCTOR = material_id), slots, MATERIAL_APPLICATION_CABLE)
+	if(material_id && !material_overrides)
+		apply_material_construction(list(MATERIAL_ROLE_CONDUCTOR = material_id), /datum/material_template/cable, SHEET_MATERIAL_AMOUNT)
 	var/datum/material/material = engineered_material()
 	if(material?.icon_colour)
 		color = material.icon_colour
@@ -113,9 +114,10 @@ GLOBAL_LIST_INIT(possible_cable_coil_colours, list(
 /obj/structure/cable/white
 	color = COLOR_WHITE
 
+REGISTRY_MEMBERSHIP(/obj/structure/cable, REGISTRY_CABLES)
+
 /obj/structure/cable/Initialize(mapload)
 	. = ..()
-	ensure_material_construction(MATERIAL_APPLICATION_CABLE)
 
 	// ensure d1 & d2 reflect the icon_state for entering and exiting cable
 
@@ -127,7 +129,6 @@ GLOBAL_LIST_INIT(possible_cable_coil_colours, list(
 
 	var/turf/T = src.loc			// hide if turf is not intact
 	if(level==1) hide(!T.is_plating())
-	GLOB.cable_list += src //add it to the global cable list
 
 
 /obj/structure/cable/Destroy()
@@ -141,7 +142,6 @@ GLOBAL_LIST_INIT(possible_cable_coil_colours, list(
 	// Null the ref in case cut_cable_from_powernet left it set (e.g. the
 	// powernet was qdel'd but the cable's var wasn't cleared by remove_cable).
 	powernet = null
-	GLOB.cable_list -= src
 	return ..()									// then go ahead and delete the cable
 
 /obj/structure/cable/examine(mob/user)
@@ -292,20 +292,11 @@ GLOBAL_LIST_INIT(possible_cable_coil_colours, list(
 	return 0
 
 //explosion handling
-/obj/structure/cable/ex_act(severity)
-	switch(severity)
-		if(1.0)
-			qdel(src)
-		if(2.0)
-			if (prob(50))
-				recover_coil(src.loc, src.d1 ? 2 : 1)
-				qdel(src)
-
-		if(3.0)
-			if (prob(25))
-				recover_coil(src.loc, src.d1 ? 2 : 1)
-				qdel(src)
-	return
+/// Blasted cables leave a length of coil behind.
+/obj/structure/cable/atom_destruction(damage_flag)
+	if(damage_flag == BOMB)
+		recover_coil(loc, d1 ? 2 : 1)
+	return ..()
 
 /obj/structure/cable/proc/cableColor(colorC)
 	var/color_n = "#DD0000"
@@ -603,6 +594,8 @@ GLOBAL_LIST_INIT(possible_cable_coil_colours, list(
 #define MAXCOIL 30
 
 /obj/item/stack/cable_coil
+	material_template = /datum/material_template/cable
+	material_total = SHEET_MATERIAL_AMOUNT
 	name = "cable coil"
 	icon = 'icons/obj/power.dmi'
 	icon_state = "coil"
@@ -615,7 +608,6 @@ GLOBAL_LIST_INIT(possible_cable_coil_colours, list(
 	w_class = ITEMSIZE_SMALL
 	throw_speed = 2
 	throw_range = 5
-	matter = list(MAT_STEEL = 50, MAT_GLASS = 20)
 	slot_flags = SLOT_BELT
 	item_state = "coil"
 	attack_verb = list("whipped", "lashed", "disciplined", "flogged")
@@ -628,7 +620,7 @@ GLOBAL_LIST_INIT(possible_cable_coil_colours, list(
 
 /obj/item/stack/cable_coil/Initialize(mapload, length = MAXCOIL, param_color = null, material_id)
 	. = ..()
-	ensure_material_construction(MATERIAL_APPLICATION_CABLE)
+	apply_blueprint_effects()
 	amount = length
 	engineered_material_id = material_id
 	if (param_color) // It should be red by default, so only recolor it if parameter was specified.
@@ -654,7 +646,7 @@ GLOBAL_LIST_INIT(possible_cable_coil_colours, list(
 
 //you can use wires to heal robotics
 /obj/item/stack/cable_coil/attack(mob/living/A, mob/living/user, target_zone, attack_modifier)
-	if(ishuman(A) && user.a_intent == I_HELP)
+	if(ishuman(A) && IS_HELPING(user))
 		var/mob/living/carbon/human/H = A
 		var/obj/item/organ/external/S = H.organs_by_name[user.zone_sel.selecting]
 
@@ -1062,7 +1054,6 @@ GLOBAL_LIST_INIT(possible_cable_coil_colours, list(
 	w_class = ITEMSIZE_SMALL
 	throw_speed = 2
 	throw_range = 5
-	matter = list(MAT_STEEL = 50, MAT_GLASS = 20)
 	slot_flags = SLOT_BELT
 	attack_verb = list("whipped", "lashed", "disciplined", "flogged")
 	stacktype = null

@@ -23,6 +23,9 @@
 /datum/body/simple/life_tick()
 	if(!LAZYLEN(afflictions) && !(dirty & BODY_DIRTY_VITALS))
 		return
+	// A cycle the stasis clock paused: afflictions hold still (advance_stasis()).
+	if(stasis_paused)
+		return
 	invalidate(BODY_DIRTY_TREATMENT)
 	for(var/datum/affliction/A as anything in afflictions?.Copy())
 		if(A.body != src)
@@ -55,8 +58,6 @@
 			return simple_load_type_for(INJURY_TOXIN, biology)
 		if(INJURY_CATEGORY_GENETIC)
 			return simple_load_type_for(INJURY_CELLULAR, biology)
-		if(INJURY_CATEGORY_ASPHYXIA)
-			return simple_load_type_for(INJURY_ASPHYXIA, biology)
 	return null
 
 /// Which load affliction an injury kind feeds, or null if this biology is
@@ -72,8 +73,6 @@
 			return synthetic ? null : /datum/affliction/load/burn
 		if(INJURY_TOXIN, INJURY_CELLULAR)
 			return synthetic ? null : /datum/affliction/load/toxin
-		if(INJURY_ASPHYXIA)
-			return synthetic ? null : /datum/affliction/load/asphyxia
 	// Pain: simple creatures fight through it.
 	return null
 
@@ -165,7 +164,29 @@
 	injury_category = INJURY_CATEGORY_TOXIC
 	treated_by = list(TREAT_ANTITOXIN = 1, TREAT_GENETIC_REPAIR = 1)
 
-/datum/affliction/load/asphyxia
-	name = "asphyxiation"
-	injury_category = INJURY_CATEGORY_ASPHYXIA
+/// A simple body's oxygen debt, as load: suffocating creatures (fish out of
+/// water, bad air) die of it like any other load. Not an injury category.
+/datum/affliction/load/hypoxia
+	name = "hypoxia"
 	treated_by = list(TREAT_OXYGENATION = 1)
+
+
+// --- Oxygen debt ----------------------------------------------------------------------
+// Simple creatures have no respiration model (their physiology queries return
+// null): unsuitable air and suffocation arrive as explicit debt, carried as load.
+
+/datum/body/simple/add_oxygen_debt(amount, source)
+	if(amount <= 0 || !(owner.biology & BIOLOGY_ORGANIC))
+		return 0
+	var/datum/affliction/load/L = afflict(/datum/affliction/load/hypoxia)
+	return L ? L.receive_injury(amount * get_factor(BF_DEMAND), null, source) : 0
+
+/datum/body/simple/oxygen_debt()
+	if(!(owner.biology & BIOLOGY_ORGANIC))
+		return null
+	var/datum/affliction/load/L = find_affliction(/datum/affliction/load/hypoxia)
+	return L ? L.load : 0
+
+/datum/body/simple/pay_oxygen_debt(amount)
+	var/datum/affliction/load/L = find_affliction(/datum/affliction/load/hypoxia)
+	return L ? L.receive_treatment(amount) : 0

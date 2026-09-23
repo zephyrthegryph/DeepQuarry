@@ -123,7 +123,7 @@
 	var/obj/item/implant/restrainingbolt/bolt	// The restraining bolt installed into the cyborg.
 	var/datum/tgui_module/robot_ui/robotact
 
-	var/list/robot_verbs_default = list(
+	var/static/list/robot_verbs_default = list(
 		/mob/living/silicon/robot/proc/sensor_mode,
 		/mob/living/silicon/robot/proc/robot_checklaws,
 		/mob/living/silicon/robot/proc/robot_mount,
@@ -1183,7 +1183,7 @@
 
 /// Petting, punching, tapping and vore on a closed chassis.
 /mob/living/silicon/robot/proc/hand_interact(mob/living/carbon/human/H)
-	switch(H.a_intent)
+	switch(H.use_stance())
 		if(I_HELP)
 			if(grabbable)
 				attempt_to_scoop(H)

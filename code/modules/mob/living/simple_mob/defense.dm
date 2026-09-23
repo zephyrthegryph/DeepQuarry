@@ -11,7 +11,7 @@
 /mob/living/simple_mob/attack_hand(mob/living/L)
 	..()
 
-	switch(L.a_intent)
+	switch(L.use_stance())
 		if(I_HELP)
 			if(stat != DEAD)
 				if(L.zone_sel.selecting == BP_GROIN)
@@ -94,7 +94,7 @@
 		harvest(user, O)
 		return
 
-	if(user.a_intent == I_HELP && harvest_tool && istype(O, harvest_tool) && stat != DEAD)
+	if(IS_HELPING(user) && harvest_tool && istype(O, harvest_tool) && stat != DEAD)
 		if(world.time > (harvest_recent + harvest_cooldown))
 			livestock_harvest(O, user)
 			return

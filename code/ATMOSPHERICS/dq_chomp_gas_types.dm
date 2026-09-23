@@ -11,6 +11,7 @@
 // be added when needed.
 
 /datum/gas/methane
+	idx = GAS_ID_METHANE
 	id = GAS_CH4
 	specific_heat = 34	// matches CHOMP /datum/decl/xgm_gas/methane
 	name = "Methane"
@@ -21,6 +22,7 @@
 	primary_color = "#664422"
 
 /datum/gas/volatile_fuel
+	idx = GAS_ID_VOLATILE_FUEL
 	id = GAS_VOLATILE_FUEL
 	specific_heat = 30
 	name = "Volatile Fuel"

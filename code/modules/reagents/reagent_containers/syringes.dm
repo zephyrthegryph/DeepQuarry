@@ -18,7 +18,8 @@
 	icon_state = "0"
 	center_of_mass_x = 16
 	center_of_mass_y = 14
-	matter = list(MAT_GLASS = 150)
+	material_template = /datum/material_template/container
+	material_total = 150
 	amount_per_transfer_from_this = 5
 	max_transfer_amount = null
 	volume = 15
@@ -158,8 +159,7 @@
 						drawing = FALSE
 
 					if (B)
-						reagents.reagent_list += B
-						reagents.reagent_by_id[B.id] = B  // keep O(1) index in sync with direct list mutation
+						reagents.adopt_reagent(B)
 						reagents.update_total()
 						on_reagent_change()
 						reagents.handle_reactions()

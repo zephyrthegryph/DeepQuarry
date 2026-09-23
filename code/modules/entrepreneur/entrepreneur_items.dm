@@ -13,7 +13,7 @@
 	icon = 'icons/obj/entrepreneur.dmi'
 	icon_state = "horoscope"
 	desc = "A book with a years worth of horoscope readings in it, each one perfectly tailored to the phase of the stars and planets for every sign."
-	var/list/stars_list = list("Due to Mercuary being in retrograde, you are recieving a powerful energy.",
+	var/static/list/stars_list = list("Due to Mercuary being in retrograde, you are recieving a powerful energy.",
 					"The sun, Sol, of the Sol system, the birthplace of humanity, is your sign right now.",
 					"Jupiter is in antegrade, affecting your energy directly.",
 					"La luna has swung into virgo, be prepared!",
@@ -47,7 +47,7 @@
 					"The stars of Elysium have caught you in their sights.",
 					"The burning planet of Zehtir in the virgo-erigone system twists against Gemini.",
 					"The purple soul of Geret Baht hungers for you.")
-	var/list/prediction_list = list("This leads you to listen to your own wants above those of others.",
+	var/static/list/prediction_list = list("This leads you to listen to your own wants above those of others.",
 					"Prepare for this to lead you towards dark temptations.",
 					"Your soul is being filled with a glorious love for life.",
 					"Expect this to boost your confidence for a short while!",
@@ -79,7 +79,7 @@
 					"Expect a feeling of intense fulfilment.",
 					"There's a high likelyhood of you getting caught up in a sticky situation, one way or another.",
 					"Liberty is strong today, but beware it is fleeting for some.")
-	var/list/advice_list = list("You will have a lot of compassionate energy today. Use it on a needy friend.",
+	var/static/list/advice_list = list("You will have a lot of compassionate energy today. Use it on a needy friend.",
 					"It's wisest if you just admit to any anxieties or insecurities you have up front.",
 					"New beginnings are important, but don't lose your appreciation for old connections.",
 					"Your creativity could use a nice workout -- the kitchen is the perfect place for it.",
@@ -121,7 +121,7 @@
 	var/capricorn = ""
 	var/aquarius = ""
 	var/pisces = ""
-	var/list/zodiacs = list("aries","taurus","gemini","cancer","leo","virgo","libra","scorpio","sagittarius","capricorn","aquarius","pisces")
+	var/static/list/zodiacs = list("aries","taurus","gemini","cancer","leo","virgo","libra","scorpio","sagittarius","capricorn","aquarius","pisces")
 
 /obj/item/entrepreneur/horoscope/Initialize(mapload)
 	. = ..()
@@ -227,7 +227,7 @@
 	w_class = ITEMSIZE_TINY
 
 /obj/item/entrepreneur/dentist_mirror/attack(mob/living/M, mob/living/user, target_zone, attack_modifier)
-	if(user.a_intent == I_HELP)	//A tad messy, but this should stop people from smacking their patients in surgery
+	if(IS_HELPING(user))	//A tad messy, but this should stop people from smacking their patients in surgery
 		to_chat(user, span_notice("You use the mirror to get a good look inside of [M]'s mouth."))
 		to_chat(M, span_notice("[user] uses a small mirror to look inside of your mouth."))
 		return ITEM_INTERACT_SUCCESS
@@ -241,7 +241,7 @@
 	w_class = ITEMSIZE_TINY
 
 /obj/item/entrepreneur/dentist_probe/attack(mob/living/M, mob/living/user, target_zone, attack_modifier)
-	if(user.a_intent == I_HELP)	//A tad messy, but this should stop people from smacking their patients in surgery
+	if(IS_HELPING(user))	//A tad messy, but this should stop people from smacking their patients in surgery
 		to_chat(user, span_notice("You use the probe to poke about inside of [M]'s mouth."))
 		to_chat(M, span_notice("[user] examines the inside of your mouth with a sharp probe, it hurts a little being prodded."))
 		return ITEM_INTERACT_SUCCESS
@@ -255,7 +255,7 @@
 	w_class = ITEMSIZE_TINY
 
 /obj/item/entrepreneur/dentist_sickle/attack(mob/living/M, mob/living/user, target_zone, attack_modifier)
-	if(user.a_intent == I_HELP)	//A tad messy, but this should stop people from smacking their patients in surgery
+	if(IS_HELPING(user))	//A tad messy, but this should stop people from smacking their patients in surgery
 		to_chat(user, span_notice("You loosen some stuck debris from [M]'s mouth with the hook."))
 		to_chat(M, span_notice("[user] uses a hook to scrape out something stuck in your mouth, it's pretty uncomfortable."))
 		return ITEM_INTERACT_SUCCESS
@@ -269,7 +269,7 @@
 	w_class = ITEMSIZE_TINY
 
 /obj/item/entrepreneur/dentist_scaler/attack(mob/living/M, mob/living/user, target_zone, attack_modifier)
-	if(user.a_intent == I_HELP)	//A tad messy, but this should stop people from smacking their patients in surgery
+	if(IS_HELPING(user))	//A tad messy, but this should stop people from smacking their patients in surgery
 		to_chat(user, span_notice("You scrape debris out from [M]'s mouth."))
 		to_chat(M, span_notice("[user] scrapes debris from out of your mouth."))
 		return ITEM_INTERACT_SUCCESS
@@ -415,7 +415,7 @@
 	desc = "A wooden board with an alphabet at numbers on it, used to contact the dead. You need to use a glass to contact the spirit world. (It can be alt-clicked to decide the next letter in the sequence. This item does not canonise ghosts/souls in this setting, it's just a bit of fun!)"
 	icon = 'icons/obj/entrepreneur.dmi'
 	icon_state = "spirit_board"
-	var/list/possible_results = list("A","B","C","D","E","F","G","H","I","J","K","L","M","N","O","P","Q","R","S","T","U","V","W","X","Y","Z","Yes","No","1","2","3","4","5","6","7","8","9","0","Nothing")
+	var/static/list/possible_results = list("A","B","C","D","E","F","G","H","I","J","K","L","M","N","O","P","Q","R","S","T","U","V","W","X","Y","Z","Yes","No","1","2","3","4","5","6","7","8","9","0","Nothing")
 	///What the next letter/number will be.
 	var/next_result = 0
 	///If ghosts can interact with it.

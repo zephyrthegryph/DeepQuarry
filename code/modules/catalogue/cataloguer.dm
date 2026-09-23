@@ -1,4 +1,3 @@
-GLOBAL_LIST_EMPTY(all_cataloguers)
 
 /*
 	This is a special scanner which exists to give explorers something to do besides shoot things.
@@ -56,12 +55,12 @@ GLOBAL_LIST_EMPTY(all_cataloguers)
 	debug = TRUE
 
 
+REGISTRY_MEMBERSHIP(/obj/item/cataloguer, REGISTRY_CATALOGUERS)
+
 /obj/item/cataloguer/Initialize(mapload)
-	GLOB.all_cataloguers += src
 	return ..()
 
 /obj/item/cataloguer/Destroy()
-	GLOB.all_cataloguers -= src
 	displayed_data = null
 	partial_scanned = null
 	return ..()

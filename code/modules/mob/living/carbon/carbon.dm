@@ -140,7 +140,7 @@
 		if(species.emp_sensitivity & EMP_TOX_DMG)
 			injure(INJURY_TOXIN, rand(25-(severity*5),35-(severity*5)) * species.emp_dmg_mod)
 		if(species.emp_sensitivity & EMP_OXY_DMG)
-			injure(INJURY_ASPHYXIA, rand(25-(severity*5),35-(severity*5)) * species.emp_dmg_mod)
+			add_oxygen_debt(rand(25-(severity*5),35-(severity*5)) * species.emp_dmg_mod, "EMP")
 
 /mob/living/carbon/electrocute_act(shock_damage, obj/source, siemens_coeff = 1.0, def_zone = null, stun = 1)
 	if(SEND_SIGNAL(src, COMSIG_BEING_ELECTROCUTED, shock_damage, source, siemens_coeff, def_zone, stun) & COMPONENT_CARBON_CANCEL_ELECTROCUTE)
@@ -284,7 +284,6 @@
 				AdjustSleeping(-5)
 				if(src.sleeping == 0)
 					src.resting = 0
-				if(H) H.in_stasis = 0 // Just In Case
 				M.visible_message(span_notice("[M] shakes [src] trying to wake [H.p_them()] up!"), \
 									span_notice("You shake [src] trying to wake [H.p_them()] up!"))
 			else

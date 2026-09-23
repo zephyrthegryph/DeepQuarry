@@ -20,7 +20,7 @@
 	if(!owner.checkClickCooldown())
 		return
 	owner.setClickCooldown(5) // Spam prevention, essentially.
-	if(owner.a_intent == I_HELP && owner.client?.prefs?.read_preference(/datum/preference/toggle/safefiring))
+	if(IS_HELPING(owner) && owner.client?.prefs?.read_preference(/datum/preference/toggle/safefiring))
 		to_chat(owner, span_warning("You refrain from firing \the [aiming_with] as your intent is set to help."))
 		return
 	owner.visible_message(span_danger("\The [owner] pulls the trigger reflexively!"))

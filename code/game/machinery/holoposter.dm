@@ -1,4 +1,3 @@
-GLOBAL_LIST_EMPTY(holoposters)
 /obj/machinery/holoposter
 	name = "Holographic Poster"
 	desc = "A wall-mounted holographic projector displaying advertisements by all manner of factions. How much do they pay to advertise here?"
@@ -14,7 +13,7 @@ GLOBAL_LIST_EMPTY(holoposters)
 	var/mytimer
 	var/alerting = FALSE
 
-	var/list/postertypes = list(
+	var/static/list/postertypes = list(
 		"hephaestus" = list(LIGHT_COLOR_CYAN, "Hephaestus Aeronautics, a subsidiary of Hephaestus Industries. Known to make the best - if pricy - atmospheric to orbit shuttles and gliders for the consumer market."),
 		"aether" = list(LIGHT_COLOR_CYAN, "Aether Atmospherics, one of the lesser-known TSCs. They're ubiquitious in the Periphery - the very air you're breathing was probably sold and delivered by them."),
 		"moreau" = list(LIGHT_COLOR_ORANGE, "Children of Moreau. The hologram is a call to action by the local Moreau sect. 'Terraform, Prosper, and Be Sustainable, children!'"),
@@ -25,15 +24,15 @@ GLOBAL_LIST_EMPTY(holoposters)
 		"moebius" = list(LIGHT_COLOR_PURPLE, "Moebius. One of the few companies worth merit beyond their local bubble staffed completely by synthetics. 'For synths, by synths.'")
 	)
 
+REGISTRY_MEMBERSHIP(/obj/machinery/holoposter, REGISTRY_HOLOPOSTERS)
+
 /obj/machinery/holoposter/Initialize(mapload)
 	. = ..()
 	set_rand_sprite()
-	GLOB.holoposters += src
 	mytimer = addtimer(CALLBACK(src, PROC_REF(set_rand_sprite)), 30 MINUTES + rand(0, 5 MINUTES), TIMER_STOPPABLE | TIMER_LOOP)
 
 /obj/machinery/holoposter/Destroy()
 	deltimer(mytimer)
-	GLOB.holoposters -= src
 	return ..()
 
 /obj/machinery/holoposter/process()
@@ -101,9 +100,6 @@ GLOBAL_LIST_EMPTY(holoposters)
 	stat &= ~BROKEN
 	update_icon()
 	return ITEM_INTERACT_SUCCESS
-
-/obj/machinery/holoposter/attack_ai(mob/user as mob)
-	return attack_hand(user)
 
 /obj/machinery/holoposter/power_change()
 	var/wasUnpowered = stat & NOPOWER

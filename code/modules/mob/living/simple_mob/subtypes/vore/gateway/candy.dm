@@ -226,7 +226,7 @@
 /mob/living/simple_mob/vore/candy/redcabold/apply_melee_effects(atom/A)
 	..()
 
-	if(isliving(A) && a_intent == I_HURT)
+	if(isliving(A) && IS_HARMING(src))
 		var/mob/living/L = A
 		if(L.mob_size <= MOB_MEDIUM)
 			visible_message(span_danger("\The [src] sends \the [L] flying with the impact!"))
@@ -453,7 +453,7 @@
 		..()
 
 /mob/living/simple_mob/vore/candy/ouroboros/do_special_attack(atom/A)
-	switch(a_intent)
+	switch(use_stance())
 		if(I_GRAB)
 			summon_combo(A)
 		if(I_HURT)

@@ -57,10 +57,10 @@
 	var/product_slogans = "" //String of slogans spoken out loud, separated by semicolons
 	var/product_ads = "" //String of small ad messages in the vending screen
 
-	var/list/ads_list = list()
+	var/list/ads_list // Lazy
 
 	// Stuff relating vocalizations
-	var/list/slogan_list = list()
+	var/list/slogan_list // Lazy
 	var/shut_up = 1 //Stop spouting those godawful pitches!
 	var/vend_reply //Thank you for shopping!
 	var/last_reply = 0
@@ -76,7 +76,7 @@
 	var/scan_id = 1
 	var/obj/item/coin/coin
 
-	var/list/log = list()
+	var/list/log // Lazy: purchase log entries.
 	var/req_log_access = ACCESS_CARGO //default access for checking logs is cargo
 	var/has_logs = 0 //defaults to 0, set to anything else for vendor to have logs
 	var/can_rotate = 1 //Defaults to yes, can be set to 0 for vendors without or with unwanted directionals.
@@ -86,7 +86,7 @@
 	. = ..()
 	set_wires(new /datum/wires/vending(src))
 	if(product_slogans)
-		slogan_list += splittext(product_slogans, ";")
+		LAZYADD(slogan_list, splittext(product_slogans, ";"))
 
 		// So not all machines speak at the exact same time.
 		// The first time this machine says something will be at slogantime + this random value,
@@ -94,7 +94,7 @@
 		last_slogan = world.time + rand(0, slogan_delay)
 
 	if(product_ads)
-		ads_list += splittext(product_ads, ";")
+		LAZYADD(ads_list, splittext(product_ads, ";"))
 
 	build_inventory()
 	power_change()
@@ -160,7 +160,24 @@ GLOBAL_LIST_EMPTY(vending_products)
 		if(!current_product)
 			continue
 		else
-			current_product.refill_products(refill[entry])
+			// Restocking adds to the latent count; nothing is created.
+			var/list/spec = dq_resolve_spawn_value(refill[entry])
+			current_product.refill_products(spec["count"])
+
+// Stock is a stock slot (roadmap C9, code/datums/containment/stock.dm): each
+// product is a record with a latent count, and a real item is made only when
+// one is vended. Items stocked by hand stay real when their state is their own.
+/obj/machinery/vending/slot_def_types()
+	var/static/list/types = list(/datum/slot_def/machine_internals, /datum/slot_def/stock/vending)
+	return types
+
+/obj/machinery/vending/stock_records()
+	return product_records
+
+/obj/machinery/vending/on_slot_changed(slot_id, atom/movable/thing, inserted)
+	if(!inserted && slot_id == CONTAINER_SLOT_STOCK)
+		for(var/datum/stored_item/R as anything in product_records)
+			R.forget(thing)
 
 /obj/machinery/vending/Destroy()
 	qdel(wires)
@@ -317,9 +334,6 @@ GLOBAL_LIST_EMPTY(vending_products)
 	GLOB.vendor_account.credit(currently_vending.price, target, "Purchase of [currently_vending.item_name]", name)
 
 /obj/machinery/vending/attack_ghost(mob/user)
-	return attack_hand(user)
-
-/obj/machinery/vending/attack_ai(mob/user as mob)
 	return attack_hand(user)
 
 /obj/machinery/vending/attack_hand(mob/user as mob)
@@ -520,7 +534,7 @@ GLOBAL_LIST_EMPTY(vending_products)
 		flick("[icon_state]-deny",src)
 		playsound(src, 'sound/machines/deniedbeep.ogg', 50, 0)
 		return FALSE
-	if(R.amount < 1)
+	if(R.get_amount() < 1)
 		return FALSE
 	return TRUE
 
@@ -528,7 +542,7 @@ GLOBAL_LIST_EMPTY(vending_products)
 	if(!can_buy(R, user))
 		return
 
-	if(!R.amount)
+	if(!R.get_amount())
 		to_chat(user, span_warning("[src] has ran out of that product."))
 		vend_ready = TRUE
 		return
@@ -599,7 +613,7 @@ GLOBAL_LIST_EMPTY(vending_products)
 		list_item += tempid.registered_name
 		list_item += stationtime2text()
 		list_item += R.item_name
-		log[++log.len] = list_item
+		LAZYADD(log, list(list_item))
 
 /obj/machinery/vending/proc/show_log(mob/user as mob)
 	if(user.GetIdCard())
@@ -651,7 +665,7 @@ GLOBAL_LIST_EMPTY(vending_products)
 		seconds_electrified--
 
 	//Pitch to the people!  Really sell it!
-	if(((last_slogan + slogan_delay) <= world.time) && (slogan_list.len > 0) && (!shut_up) && prob(5))
+	if(((last_slogan + slogan_delay) <= world.time) && length(slogan_list) && (!shut_up) && prob(5))
 		var/slogan = pick(slogan_list)
 		speak(slogan)
 		last_slogan = world.time

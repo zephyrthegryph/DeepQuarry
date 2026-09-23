@@ -60,7 +60,7 @@
 					return
 		// end
 		var/sound_vol = 25
-		if(user.a_intent == I_HURT)
+		if(IS_HARMING(user))
 			sound_vol = 50
 			user.visible_message(
 				span_danger("[user] draws \the [holstered], ready to go!"),
@@ -82,7 +82,7 @@
 
 //YW change start
 /obj/item/clothing/accessory/holster/attack_hand(mob/user)
-	if (user.a_intent == I_HURT && has_suit && (slot & SLOT_HOLSTER ))	//if we are part of a suit and are using harm intent
+	if (IS_HARMING(user) && has_suit && (slot & SLOT_HOLSTER ))	//if we are part of a suit and are using harm intent
 		if (holstered)
 			unholster(user)
 		return

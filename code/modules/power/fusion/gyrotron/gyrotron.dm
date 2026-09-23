@@ -1,5 +1,4 @@
 
-GLOBAL_LIST_EMPTY(gyrotrons)
 
 /obj/machinery/power/emitter/gyrotron
 	maintenance_flags = MACHINE_MAINT_STANDARD
@@ -22,13 +21,13 @@ GLOBAL_LIST_EMPTY(gyrotrons)
 	anchored = TRUE
 	state = 2
 
+REGISTRY_MEMBERSHIP(/obj/machinery/power/emitter/gyrotron, REGISTRY_GYROTRONS)
+
 /obj/machinery/power/emitter/gyrotron/Initialize(mapload)
-	GLOB.gyrotrons += src
 	default_apply_parts()
 	return ..()
 
 /obj/machinery/power/emitter/gyrotron/Destroy()
-	GLOB.gyrotrons -= src
 	return ..()
 
 /obj/machinery/power/emitter/gyrotron/proc/set_beam_power(new_power)

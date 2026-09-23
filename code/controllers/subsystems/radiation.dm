@@ -106,7 +106,7 @@ SUBSYSTEM_DEF(radiation)
 	var/turf/source_turf = get_turf(source)
 	if(source_turf)
 		var/z = source_turf.z
-		for(var/list/registry as anything in list(GLOB.rad_collectors, GLOB.geiger_counters, GLOB.material_radiovoltaic_items, GLOB.living_mob_list))
+		for(var/list/registry as anything in list(REGISTRY_MEMBERS(REGISTRY_RAD_COLLECTORS), REGISTRY_MEMBERS(REGISTRY_GEIGER_COUNTERS), GLOB.material_radiovoltaic_items, GLOB.living_mob_list))
 			for(var/atom/target as anything in registry)
 				var/turf/target_turf = get_turf(target)
 				if(!target_turf || target_turf.z != z)

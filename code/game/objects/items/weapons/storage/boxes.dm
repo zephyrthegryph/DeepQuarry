@@ -63,7 +63,7 @@
 
 	//try to crush it
 	if(ispath(trash))
-		if(contents.len &&  user.a_intent == I_HURT)  // only crumple with things inside on harmintent.
+		if(contents.len &&  IS_HARMING(user))  // only crumple with things inside on harmintent.
 			user.visible_message(span_danger("[user] crushes \the [src], spilling its contents everywhere!"), span_danger("You crush \the [src], spilling its contents everywhere!"))
 			spill()
 		else

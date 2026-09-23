@@ -239,7 +239,7 @@
 			return invoice
 
 /datum/controller/subsystem/supply/proc/notify_service_invoice(datum/service_invoice/invoice, message)
-	for(var/obj/item/pda/device in GLOB.PDAs)
+	for(var/obj/item/pda/device in REGISTRY_MEMBERS(REGISTRY_PDAS))
 		if(device.id?.associated_account_number != invoice.customer_account_number)
 			continue
 		var/datum/data/pda/app/service_receipts/app = device.find_program(/datum/data/pda/app/service_receipts)

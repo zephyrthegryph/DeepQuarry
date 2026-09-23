@@ -10,9 +10,6 @@
 	idle_power_usage = 2
 	active_power_usage = 4
 
-/obj/machinery/igniter/attack_ai(mob/user as mob)
-	return attack_hand(user)
-
 /obj/machinery/igniter/attack_hand(mob/user as mob)
 	if(..())
 		return
@@ -128,11 +125,11 @@
 	active = TRUE
 	icon_state = "launcheract"
 
-	for(var/obj/machinery/sparker/M in GLOB.machines)
+	for(var/obj/machinery/sparker/M in REGISTRY_MEMBERS(REGISTRY_MACHINES))
 		if(M.id == id)
 			INVOKE_ASYNC(M, TYPE_PROC_REF(/obj/machinery/sparker, ignite))
 
-	for(var/obj/machinery/igniter/M in GLOB.machines)
+	for(var/obj/machinery/igniter/M in REGISTRY_MEMBERS(REGISTRY_MACHINES))
 		if(M.id == id)
 			use_power(50)
 			M.on = !(M.on)

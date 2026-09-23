@@ -155,7 +155,7 @@ SUBSYSTEM_DEF(radio)
 	if (!devices_line)
 		devices_line = new
 		devices[radio_filter] = devices_line
-	devices_line+=device
+	devices_line |= device // idempotent: on_materialize() may rejoin what Initialize() already joined
 
 /datum/radio_frequency/proc/remove_listener(obj/device)
 	for (var/devices_filter in devices)

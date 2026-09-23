@@ -102,7 +102,7 @@
 	if(istype(SM, /mob/living/simple_mob/slime/xenobio))
 		var/mob/living/simple_mob/slime/xenobio/X = SM
 		if(X.slime_state && X.slime_state.discipline && !X.slime_state.rabid)
-			SM.a_intent = I_HELP
+			SM.set_use_stance(I_HELP)
 			return null
 	return DQAI_RESULT(45, threat)
 
@@ -115,11 +115,11 @@
 		var/mob/living/simple_mob/slime/xenobio/my_slime = SM
 		var/always_stun = my_slime.slime_state && my_slime.slime_state.always_stun
 		if((!L.lying && prob(30 + (my_slime.power_charge * 7))) || (!L.lying && always_stun))
-			my_slime.a_intent = I_DISARM
+			my_slime.set_use_stance(I_DISARM)
 		else if(my_slime.can_consume(L) && L.lying)
-			my_slime.a_intent = I_GRAB
+			my_slime.set_use_stance(I_GRAB)
 		else
-			my_slime.a_intent = I_HURT
+			my_slime.set_use_stance(I_HURT)
 	SM.attack_target(target)
 	brain.last_attack_at = world.time
 	return DQ_BEHAVIOR_DONE

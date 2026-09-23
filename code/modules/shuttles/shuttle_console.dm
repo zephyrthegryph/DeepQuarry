@@ -151,9 +151,6 @@
 /obj/machinery/computer/shuttle_control/bullet_act(obj/item/projectile/Proj)
 	visible_message("\The [Proj] ricochets off \the [src]!")
 
-/obj/machinery/computer/shuttle_control/ex_act()
-	return
-
 /obj/item/paper/dockingcodes
 	name = "Docking Codes"
 	var/codes_from_z = null //So you can put codes from the station other places to give to antags or whatever

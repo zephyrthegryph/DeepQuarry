@@ -3,7 +3,7 @@
 	var/area/target_turfs = list()
 	var/infected_tiles
 
-	var/list/excluded = list(
+	var/static/list/excluded = list(
 		/area/shuttle,
 		/area/crew_quarters,
 		/area/holodeck,

@@ -405,11 +405,8 @@
 		return TRUE
 	return FALSE
 
-/obj/machinery/porta_turret/attack_ai(mob/user)
-	tgui_interact(user)
-
-/obj/machinery/porta_turret/attack_ghost(mob/user)
-	tgui_interact(user)
+/obj/machinery/porta_turret
+	silicon_use = SILICON_USE_UI
 
 /obj/machinery/porta_turret/attack_hand(mob/user)
 	tgui_interact(user)
@@ -453,7 +450,7 @@
 		return TRUE
 	if(isLocked(ui.user))
 		return TRUE
-	SSmachines.publish_reactive_dependency("turret:[REF(src)]")
+	REACT_PUBLISH_OWN(src, REACT_KEY_TURRET, REACT_KEY_CHANGED)
 	. = TRUE
 
 	switch(action)
@@ -482,7 +479,7 @@
 				check_down = !check_down
 
 /obj/machinery/porta_turret/power_change()
-	SSmachines.publish_reactive_dependency("turret:[REF(src)]")
+	REACT_PUBLISH_OWN(src, REACT_KEY_TURRET, REACT_KEY_CHANGED)
 	if(powered())
 		stat &= ~NOPOWER
 		update_icon()
@@ -658,7 +655,7 @@
 /obj/machinery/porta_turret/proc/emp_reenable()
 	if(!enabled)
 		enabled = TRUE
-	SSmachines.publish_reactive_dependency("turret:[REF(src)]")
+	REACT_PUBLISH_OWN(src, REACT_KEY_TURRET, REACT_KEY_CHANGED)
 
 /obj/machinery/porta_turret/ai_defense/emp_act(severity, recursive)
 	. = ..()
@@ -683,13 +680,13 @@
 	if(stat & (NOPOWER|BROKEN))
 		//if the turret has no power or is broken, make the turret pop down if it hasn't already
 		popDown()
-		SSmachines.hibernate_reactive_machine(src, list("turret:[REF(src)]"))
+		sleep_until_keys(list(REACT_KEY_TURRET, REACT_ID(src), REACT_KEY_CHANGED))
 		return PROCESS_KILL
 
 	if(!enabled)
 		//if the turret is off, make it pop down
 		popDown()
-		SSmachines.hibernate_reactive_machine(src, list("turret:[REF(src)]"))
+		sleep_until_keys(list(REACT_KEY_TURRET, REACT_ID(src), REACT_KEY_CHANGED))
 		return PROCESS_KILL
 
 	var/shot_targets = FALSE
@@ -699,14 +696,14 @@
 		var/list/nearby_mobs = mobs_in_view(world.view, src)
 		if(!length(nearby_mobs) && !speed_process && !(auto_repair && get_integrity() < max_integrity))
 			popDown()
-			SSmachines.hibernate_reactive_machine(src, reactive_mob_chunk_keys())
+			sleep_until_keys(reactive_mob_chunk_keys())
 			return PROCESS_KILL
 
 		for(var/mob/M in nearby_mobs)
 			assess_and_assign(M, targets, secondarytargets)
 		if(!length(targets) && !length(secondarytargets) && !speed_process && !(auto_repair && get_integrity() < max_integrity))
 			popDown()
-			SSmachines.hibernate_reactive_machine(src, reactive_mob_chunk_keys())
+			sleep_until_keys(reactive_mob_chunk_keys())
 			return PROCESS_KILL
 
 		shot_targets = tryToShootAt(targets) || tryToShootAt(secondarytargets)
@@ -714,15 +711,15 @@
 	slow_process(shot_targets)
 
 /obj/machinery/porta_turret/proc/reactive_mob_chunk_keys()
-	var/list/keys = list("turret:[REF(src)]")
+	var/list/keys = list(REACT_KEY_TURRET, REACT_ID(src), REACT_KEY_CHANGED)
 	var/range = isnum(world.view) ? world.view : 7
 	var/min_x = max(1, x - range)
 	var/max_x = min(world.maxx, x + range)
 	var/min_y = max(1, y - range)
 	var/max_y = min(world.maxy, y + range)
-	for(var/chunk_x = FLOOR(min_x - 1, CHUNK_SIZE); chunk_x <= FLOOR(max_x - 1, CHUNK_SIZE); chunk_x += CHUNK_SIZE)
-		for(var/chunk_y = FLOOR(min_y - 1, CHUNK_SIZE); chunk_y <= FLOOR(max_y - 1, CHUNK_SIZE); chunk_y += CHUNK_SIZE)
-			keys += "mob-chunk:[z]:[chunk_x / CHUNK_SIZE]:[chunk_y / CHUNK_SIZE]"
+	for(var/chunk_x in MOB_CHUNK_COORD(min_x) to MOB_CHUNK_COORD(max_x))
+		for(var/chunk_y in MOB_CHUNK_COORD(min_y) to MOB_CHUNK_COORD(max_y))
+			keys += list(REACT_KEY_MOB_CHUNK, MOB_CHUNK_NUMERIC_KEY(z, chunk_x, chunk_y), REACT_CHUNK_ANY_MOB)
 	return keys
 
 /obj/machinery/porta_turret/proc/slow_process(shot_targets)
@@ -1204,6 +1201,15 @@
 /atom/movable/porta_turret_cover
 	icon = 'icons/obj/turrets.dmi'
 
+/// Audit: an enabled, powered turret must not sleep with a target in view.
+/obj/machinery/porta_turret/react_sleep_violation()
+	if(!asleep_on_keys() || (stat & (NOPOWER|BROKEN)) || !enabled || speed_process)
+		return null
+	for(var/mob/living/L in mobs_in_view(world.view, src))
+		if(assess_living(L) != TURRET_NOT_TARGET)
+			return "asleep with target [L] in view"
+	return null
+
 #undef TURRET_PRIORITY_TARGET
 #undef TURRET_SECONDARY_TARGET
 #undef TURRET_NOT_TARGET
@@ -1319,3 +1325,4 @@
 /obj/machinery/porta_turret/rcd/die()
 	spark_system.start()
 	qdel(src)
+

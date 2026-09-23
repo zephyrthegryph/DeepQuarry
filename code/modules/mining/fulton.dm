@@ -5,7 +5,7 @@
 	icon_state = "extraction_pack"
 	w_class = ITEMSIZE_NORMAL
 	var/obj/structure/extraction_point/beacon
-	var/list/beacon_networks = list("station")
+	var/static/list/beacon_networks = list("station")
 	var/uses_left = 3
 	var/can_use_indoors = TRUE // Can be used anywhere.
 	var/safe_for_living_creatures = 1
@@ -19,7 +19,7 @@
 	if(.)
 		return TRUE
 	var/list/possible_beacons = list()
-	for(var/obj/structure/extraction_point/EP as anything in GLOB.total_extraction_beacons)
+	for(var/obj/structure/extraction_point/EP as anything in REGISTRY_MEMBERS(REGISTRY_EXTRACTION_BEACONS))
 		if(EP.beacon_network in beacon_networks)
 			possible_beacons += EP
 
@@ -166,13 +166,13 @@
 	density = FALSE
 	var/beacon_network = "station"
 
+REGISTRY_MEMBERSHIP(/obj/structure/extraction_point, REGISTRY_EXTRACTION_BEACONS)
+
 /obj/structure/extraction_point/Initialize(mapload)
 	. = ..()
 	name += " ([rand(100,999)]) ([get_area_name(src, TRUE)])"
-	GLOB.total_extraction_beacons += src
 
 /obj/structure/extraction_point/Destroy()
-	GLOB.total_extraction_beacons -= src
 	. = ..()
 
 /obj/effect/extraction_holder

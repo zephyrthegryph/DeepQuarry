@@ -32,16 +32,16 @@
 
 
 // Claim machine ID
+REGISTRY_MEMBERSHIP(/obj/machinery/cash_register, REGISTRY_TRANSACTION_DEVICES)
+
 /obj/machinery/cash_register/Initialize(mapload)
 	machine_id = "[station_name()] RETAIL #[GLOB.num_financial_terminals++]"
 	. = ..()
 	cash_stored = rand(10, 70)*10
-	GLOB.transaction_devices += src // Global reference list to be properly set up by /proc/setup_economy()
 	if(GLOB.economy_init && account_to_connect)
 		linked_account = GLOB.department_accounts[account_to_connect]
 
 /obj/machinery/cash_register/Destroy()
-	GLOB.transaction_devices -= src
 	. = ..()
 
 /obj/machinery/cash_register/examine(mob/user)

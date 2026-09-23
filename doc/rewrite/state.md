@@ -88,6 +88,15 @@ Ad-hoc global lists (radios, PDAs and the messenger, trackers, cameras, machine 
 - **Capability queries** can include latent entries. A type that declares a capability ("contains a tracking beacon", "has a radio") shows up in its container's aggregate. A query returns the holder and the entry, and materializes the entry if the caller needs the object.
 - **Hard deletes.** Registries remove a common cause of them: a global list still holding a deleted object. The profiled round had 428, at about 140 ms each.
 
+**As built (L3).** `code/__defines/registries.dm` has the API; `code/datums/registries.dm` the datum.
+- A registry is a `/datum/registry` singleton per id (`REGISTRY_PDAS`, `REGISTRY_MACHINES`, …), declared in `code/datums/registry_declarations.dm`. It has `add`, `remove`, `members`, `count`, and optional keyed filing (`keyed = TRUE`, `registry_key()`, `rekey()`, `REGISTRY_KEYED(id, key)`).
+- A type declares membership with `REGISTRY_MEMBERSHIP(/type, REGISTRY_X)` next to its definition; subtypes inherit it. The declared set is cached per type. `/atom/on_materialize()` joins and `/atom/on_dematerialize()` leaves; nothing else writes a registry. `skips_registry(id)` is a rare per-instance opt-out fixed at Initialize() (energy-ball miniballs).
+- Readers use `REGISTRY_MEMBERS(id)`: the registry's own list in join order (cameras keep their name-sorted order after the first sort). Copy before deleting members while iterating.
+- Members are strong references, not IDs. Removal is guaranteed instead: `Destroy()` always dematerializes. `dq_registry_no_deleted_members` checks no registry holds a deleted object.
+- A member is still registered while its own `Destroy()` body runs (it leaves in `/atom/Destroy()`), so a Destroy() that scans its own registry must skip `src`.
+- `tools/ci/registry_lint.py` refuses new self-adding global lists; `tools/ci/registry_allowlist.txt` lists what is left and why (mob lists, state-driven lists, datum lists).
+- Radios, PDAs, GPS units, tracking implants and ID cards (including guest passes) now register only in `on_materialize()`, and the sandbox test and lifecycle lint cover them (`dq_lifecycle_clean_types`). None is marked latent-safe yet: their state has not been through the serializer round trip. Cameras register in `on_materialize()` too, but `/obj/machinery` still starts processing in `Initialize()`.
+
 ## 8. Signals
 
 | Signal use | Example | Can the object be latent? |

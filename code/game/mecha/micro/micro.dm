@@ -6,7 +6,7 @@
 	step_energy_drain = 2 // They're light and small. A compact is gonna get better MPG than a truck.
 	var/melee_cooldown = 10
 	var/melee_can_hit = 1
-	var/list/destroyable_obj = list(/obj/mecha, /obj/structure/window, /obj/structure/grille, /turf/simulated/wall)
+	var/static/list/destroyable_obj = list(/obj/mecha, /obj/structure/window, /obj/structure/grille, /turf/simulated/wall)
 	internal_damage_threshold = 50
 	maint_access = 0
 	max_hull_equip = 1
@@ -28,7 +28,7 @@
 	if(!melee_can_hit || !istype(target, /atom)) return
 	if(isliving(target))
 		var/mob/living/M = target
-		if(src.occupant.a_intent == I_HURT)
+		if(IS_HARMING(src.occupant))
 			playsound(src, 'sound/weapons/punch4.ogg', 50, 1)
 			if(melee_injury_kind == INJURY_BLUNT)
 				step_away(M,src,15)

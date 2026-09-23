@@ -1,4 +1,3 @@
-GLOBAL_LIST_EMPTY(blob_cores)
 
 /obj/structure/blob/core
 	name = "blob core"
@@ -97,9 +96,10 @@ GLOBAL_LIST_EMPTY(blob_cores)
 /obj/structure/blob/core/classic
 	desired_blob_type = /datum/blob_type/classic
 
+REGISTRY_MEMBERSHIP(/obj/structure/blob/core, REGISTRY_BLOB_CORES)
+
 /obj/structure/blob/core/Initialize(mapload, client/new_overmind = null, new_rate = 2, placed = 0)
 	. = ..()
-	GLOB.blob_cores += src
 	START_PROCESSING(SSobj, src)
 	update_icon() //so it atleast appears
 	point_rate = new_rate
@@ -117,7 +117,6 @@ GLOBAL_LIST_EMPTY(blob_cores)
 	var/turf/T = get_turf(src)
 	new /obj/item/blobcore_chunk(T, overmind?.blob_type)
 
-	GLOB.blob_cores -= src
 	if(overmind)
 		overmind.blob_core = null
 		qdel(overmind)
@@ -146,7 +145,7 @@ GLOBAL_LIST_EMPTY(blob_cores)
 		if(resource_delay <= world.time)
 			resource_delay = world.time + 1 SECOND
 			overmind.add_points(point_rate)
-	integrity = min(max_integrity, integrity + core_regen)
+	repair_damage(core_regen)
 //	if(overmind)
 //		overmind.update_health_hud()
 	pulse_area(overmind, 15, BLOB_CORE_PULSE_RANGE, BLOB_CORE_EXPAND_RANGE)

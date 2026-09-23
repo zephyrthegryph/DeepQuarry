@@ -30,11 +30,15 @@
 		to_chat(user, span_notice("You must stand still to check [H]'s skin for abnormalities."))
 	else
 		var/bad = 0
-		if(H.injury_load(INJURY_CATEGORY_TOXIC) >= 40)
-			to_chat(user, span_warning("[H] has an unhealthy skin discoloration."))
+		// Palpation: the signs a hands-on examination picks up.
+		var/datum/diagnosis/D = H.diagnose(/datum/diagnostic_profile/palpation)
+		for(var/datum/diagnosis_finding/F as anything in D?.findings_of(DIAG_FINDING_SIGN))
+			to_chat(user, span_warning(F.name))
 			bad = 1
-		if(H.injury_load(INJURY_CATEGORY_ASPHYXIA) >= 20)
-			to_chat(user, span_warning("[H]'s skin is unusaly pale."))
+		qdel(D)
+		var/saturation = H.body?.oxygenation()
+		if(!isnull(saturation) && saturation < 90)
+			to_chat(user, span_warning("[H]'s skin is unusually pale."))
 			bad = 1
 		if(E.status & ORGAN_DEAD)
 			to_chat(user, span_warning("[E] is decaying!"))

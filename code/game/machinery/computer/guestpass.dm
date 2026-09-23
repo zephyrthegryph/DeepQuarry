@@ -48,7 +48,7 @@
 	. = ..(user)
 	if(.)
 		return TRUE
-	if(user.a_intent == I_HURT)
+	if(IS_HARMING(user))
 		if(icon_state == "guest-invalid")
 			to_chat(user, span_warning("This guest pass is already deactivated!"))
 			return
@@ -69,10 +69,14 @@
 
 /obj/item/card/id/guest/Initialize(mapload)
 	. = ..()
-	START_PROCESSING(SSobj, src)
 	update_icon()
 
-/obj/item/card/id/guest/Destroy()
+/// Expiry ticking is world registration (L3): start it when the pass is live.
+/obj/item/card/id/guest/on_materialize()
+	. = ..()
+	START_PROCESSING(SSobj, src)
+
+/obj/item/card/id/guest/on_dematerialize()
 	STOP_PROCESSING(SSobj, src)
 	return ..()
 
@@ -130,9 +134,6 @@
 			to_chat(user, span_warning("There is already ID card inside."))
 		return
 	..()
-
-/obj/machinery/computer/guestpass/attack_ai(mob/user as mob)
-	return attack_hand(user)
 
 /obj/machinery/computer/guestpass/verb/eject_id()
 	set category = "Object"

@@ -2,7 +2,7 @@
 	name = "mousetrap"
 	desc = "A handy little spring-loaded trap for catching pesty rodents."
 	icon_state = "mousetrap"
-	matter = list(MAT_STEEL = 100)
+	MATERIAL_BULK(MAT_STEEL, 100)
 	var/armed = 0
 	special_handling = TRUE
 

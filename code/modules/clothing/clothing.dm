@@ -804,7 +804,7 @@
 	var/message_pred = null
 	var/message_prey = null
 
-	switch(pred.a_intent)
+	switch(pred.use_stance())
 		if(I_HELP)
 			if(prob(10)) //Reducing spam exclusively on I_HELP. Still more frequent than old pitiful prob(1)
 				if(pred.m_intent == I_RUN)
@@ -1487,7 +1487,7 @@
 
 
 /obj/item/clothing
-	matter = list(MAT_FIBERS = 50)
+	MATERIAL_BULK(MAT_FIBERS, 50)
 
 /obj/item/clothing/shoes/MouseDrop_T(mob/living/target, mob/living/user)
 	if(!istype(user)) return ..() // If the user passed in isn't a living mob, exit

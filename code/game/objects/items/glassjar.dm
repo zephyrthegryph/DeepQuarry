@@ -10,7 +10,7 @@
 	icon = 'icons/obj/items.dmi'
 	icon_state = "jar"
 	w_class = ITEMSIZE_SMALL
-	matter = list(MAT_GLASS = 200)
+	MATERIAL_BULK(MAT_GLASS, 200)
 	flags = NOBLUDGEON
 	var/list/accept_mobs = list(/mob/living/simple_mob/animal/passive/lizard, /mob/living/simple_mob/animal/passive/mouse, /mob/living/simple_mob/animal/sif/leech, /mob/living/simple_mob/animal/sif/frostfly, /mob/living/simple_mob/animal/sif/glitterfly)
 	var/contains = 0 // 0 = nothing, 1 = money, 2 = animal, 3 = spiderling
@@ -31,7 +31,7 @@
 		return
 	if(can_fill && !filled)
 		if(istype(A, /obj/structure/sink) || istype(A, /turf/simulated/floor/water))
-			if(contains && user.a_intent == I_HELP)
+			if(contains && IS_HELPING(user))
 				to_chat(user, span_warning("That probably isn't the best idea."))
 				return
 
@@ -70,7 +70,7 @@
 	//For the fish jars
 	if(can_fill && filled)
 		if(contains == JAR_ANIMAL)
-			if(user.a_intent == I_HELP)
+			if(IS_HELPING(user))
 				to_chat(user, span_notice("Maybe you shouldn't empty the water..."))
 				return
 
@@ -222,7 +222,7 @@
 /obj/item/glass_jar/fish/plastic
 	name = "plastic tank"
 	desc = "A large plastic tank."
-	matter = list(MAT_PLASTIC = 4000)
+	MATERIAL_BULK(MAT_PLASTIC, 4000)
 
 #undef JAR_NOTHING
 #undef JAR_MONEY

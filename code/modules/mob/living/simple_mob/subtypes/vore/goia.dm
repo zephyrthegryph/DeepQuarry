@@ -70,48 +70,48 @@
 		"zorgoia_spike" = "#FFFFFF"
 	)
 
-	var/list/ear_styles = list(
+	var/static/list/ear_styles = list(
 		"null",
 		"zorgoia_ears",
 		"zorgoia_ears2"
 	)
-	var/list/spots_styles = list(
+	var/static/list/spots_styles = list(
 		"null",
 		"zorgoia_spots",
 		"zorgoia_stripes",
 		"zorgoia_backline",
 		"zorgoia_stars"
 	)
-	var/list/claws_styles = list(
+	var/static/list/claws_styles = list(
 		"null",
 		"zorgoia_claws",
 		"zorgoia_justfangs",
 		"zorgoia_feetpaws"
 	)
-	var/list/spines_styles = list(
+	var/static/list/spines_styles = list(
 		"null",
 		"zorgoia_spines",
 		"zorgoia_tailfade"
 	)
-	var/list/fluff_styles = list(
+	var/static/list/fluff_styles = list(
 		"null",
 		"zorgoia_fluff",
 		"zorgoia_fullhead"
 	)
-	var/list/underbelly_styles = list(
+	var/static/list/underbelly_styles = list(
 		"zorgoia_underbelly",
 		"zorgoia_underbellystripe",
 		"null"
 	)
-	var/list/eyes_styles = list(
+	var/static/list/eyes_styles = list(
 		"zorgoia_eyes",
 		"zorgoia_eyes2"
 	)
-	var/list/spiky_styles = list(
+	var/static/list/spiky_styles = list(
 		"zorgoia_spike",
 		"zorgoia_spike2"
 	)
-	var/list/belly_styles = list(
+	var/static/list/belly_styles = list(
 		"zorgoia_belly"
 	)
 
@@ -412,7 +412,7 @@
 	qdel(I)
 
 /mob/living/simple_mob/vore/zorgoia/attack_hand(mob/living/carbon/human/M as mob)
-	switch(M.a_intent)
+	switch(M.use_stance())
 		if(I_HELP)
 			if(stat != DEAD)
 				if(M.zone_sel.selecting == BP_GROIN)

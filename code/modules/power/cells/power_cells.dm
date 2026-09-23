@@ -14,7 +14,6 @@
 	icon_state = "crap"
 	charge = 500
 	maxcharge = 500
-	matter = list(MAT_STEEL = 700, MAT_GLASS = 40)
 	robot_durability = 20
 
 /* 
@@ -33,7 +32,6 @@
 	icon_state = "apc"
 	charge = 5000
 	maxcharge = 5000
-	matter = list(MAT_STEEL = 700, MAT_GLASS = 50)
 
 /*
  * Robot
@@ -51,7 +49,6 @@
 	icon_state = "b_hi"
 	charge = 10000
 	maxcharge = 10000
-	matter = list(MAT_STEEL = 700, MAT_GLASS = 60)
 	robot_durability = 55
 
 /obj/item/cell/high/empty
@@ -65,7 +62,6 @@
 	icon_state = "b_sup"
 	charge = 20000
 	maxcharge = 20000
-	matter = list(MAT_STEEL = 700, MAT_GLASS = 70)
 	robot_durability = 60
 
 /obj/item/cell/super/empty
@@ -90,7 +86,6 @@
 	icon_state = "b_hy"
 	charge = 30000
 	maxcharge = 30000
-	matter = list(MAT_STEEL = 700, MAT_GLASS = 80)
 	robot_durability = 70
 
 /obj/item/cell/hyper/empty
@@ -105,7 +100,6 @@
 	connector_type = "mech"
 	charge = 15000
 	maxcharge = 15000
-	matter = list(MAT_STEEL = 800, MAT_GLASS = 60)
 
 /obj/item/cell/mech/lead
 	name = "lead acid battery"
@@ -113,7 +107,6 @@
 	icon_state = "lead"
 	charge = 8000
 	maxcharge = 8000
-	matter = list(MAT_STEEL = 300, MAT_GLASS = 10)
 
 /obj/item/cell/mech/lead/update_icon() //No visible charge indicator
 	return
@@ -123,14 +116,12 @@
 	icon_state = "exs_m"
 	charge = 20000
 	maxcharge = 20000
-	matter = list(MAT_STEEL = 800, MAT_GLASS = 80)
 
 /obj/item/cell/mech/super
 	name = "super-capacity mecha power cell"
 	icon_state = "exs_l"
 	charge = 25000
 	maxcharge = 25000
-	matter = list(MAT_STEEL = 800, MAT_GLASS = 100)
 
 /*
  * Infinite
@@ -140,7 +131,6 @@
 	icon_state = "infinite_b"
 	charge = 30000
 	maxcharge = 30000 //determines how badly mobs get shocked
-	matter = list(MAT_STEEL = 700, MAT_GLASS = 80)
 	robot_durability = 200
 
 /obj/item/cell/infinite/Initialize(mapload)
@@ -178,7 +168,6 @@
 	charge = 20000
 	maxcharge = 20000
 	charge_amount = 500 // 2.5%.
-	matter = null
 	self_recharge = TRUE
 	standard_overlays = FALSE
 
@@ -190,7 +179,6 @@
 	desc = "A tiny power cell with a very low power capacity. Used in light fixtures to power them in the event of an outage."
 	charge = 360
 	maxcharge = 360 // Emergency lights use 0.2 W per tick, meaning ~30 minutes of emergency power from a cell //
-	matter = list(MAT_GLASS = 20)
 	icon_state = "em_light"
 	connector_type = "emergency"
 	w_class = ITEMSIZE_TINY
@@ -261,7 +249,6 @@
 	charge_amount = 500
 	self_recharge = TRUE
 	charge_delay = 50
-	matter = null
 	standard_overlays = FALSE
 	var/swaps_to = /obj/item/cell/device/weapon/recharge/alien
 	robot_durability = 100
@@ -292,7 +279,6 @@
 	icon_state = "secborg"
 	charge = 2400
 	maxcharge = 2400
-	matter = list(MAT_STEEL = 700, MAT_GLASS = 40)
 
 /obj/item/cell/secborg/empty
 	charge = 0
@@ -305,7 +291,6 @@
 	icon_state = "meb_b_hi"
 	charge = 40000
 	maxcharge = 40000
-	matter = list(MAT_STEEL = 1000, MAT_GLASS = 100)
 
 /obj/item/cell/giga/empty
 	charge = 0

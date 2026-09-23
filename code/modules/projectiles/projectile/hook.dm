@@ -22,7 +22,7 @@
 
 	var/disarm_chance = 60		// Chance for a successful disarm hit. The inverse is a throw away from the firer.
 
-	var/list/help_messages = list("slaps", "pokes", "nudges", "bumps", "pinches")
+	var/static/list/help_messages = list("slaps", "pokes", "nudges", "bumps", "pinches")
 	var/done_mob_unique = FALSE	// Has the projectile already done something to a mob?
 
 	var/datum/beam/chain = null
@@ -32,7 +32,7 @@
 	range = expected_distance // So the hook hits the ground if no mob is hit.
 	target_distance = expected_distance
 	if(firer)	// Needed to ensure later checks in impact and on hit function.
-		launcher_intent = firer.a_intent
+		launcher_intent = firer.use_stance()
 		chain = firer.Beam(src,icon_state=beam_state,icon='icons/effects/beam.dmi',time=60, maxdistance=10,beam_type=/obj/effect/ebeam,beam_sleep_time=1)
 
 	if(launcher_intent)

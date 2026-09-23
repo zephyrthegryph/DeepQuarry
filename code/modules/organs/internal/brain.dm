@@ -100,6 +100,9 @@ GLOBAL_LIST_BOILERPLATE(all_brain_organs, /obj/item/organ/internal/brain)
 /obj/item/organ/internal/brain/is_beyond_repair()
 	return is_brain_dead()
 
+/obj/item/organ/internal/brain/beyond_repair_perception(mob/living/user)
+	return "The tissue stays grey and slack; the brain has already died."
+
 /obj/item/organ/internal/brain/examine(mob/user) // -- TLE
 	. = ..()
 	var/mob/living/carbon/brain/view = hosted_view()

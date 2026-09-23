@@ -28,9 +28,6 @@
 	if(Adjacent(user))
 		. += "The screen shows there's [toner ? "[toner]" : "no"] toner left in the printer."
 
-/obj/machinery/photocopier/attack_ai(mob/user as mob)
-	return attack_hand(user)
-
 /obj/machinery/photocopier/attack_hand(mob/user as mob)
 	tgui_interact(user)
 

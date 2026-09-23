@@ -96,6 +96,23 @@ State that only DM changes (door modes, area alarms, turret targets) is publishe
 - Keys are numeric, built from registry IDs rather than strings, so publishing costs no string building. Today every `use_power_*` call builds an `area_power:[REF]` string.
 - A key with no subscribers is never stored.
 
+As built (S2): the key kinds are in `code/__defines/reactor.dm` (`REACT_KEY_APC`, `_POWERNET`,
+`_TURRET`, `_DISPOSAL`, `_METEORS`, `_MOB_CHUNK`, with `REACT_KEY_AREA_POWER` from S1). Ids are
+the owner's `REACT_ID`; a mob chunk's id is `MOB_CHUNK_NUMERIC_KEY`, a meteor's is 1.
+- Publishers use `REACT_PUBLISH_OWN(owner, kind, mask)`, which skips the bind call when the
+  owner has no registry id: a subscriber builds the key with `REACT_ID(owner)`, so no id means
+  no subscriber. `use_power_*` no longer builds an `area_power:[REF]` string.
+- A sleeping machine calls `sleep_until_keys(list(kind, id, mask, ...))`, which subscribes,
+  keeps the tokens in `react_sleep_tokens` and stops polling. `/obj/machinery/on_react()`
+  cancels them and restarts polling; `Destroy()` cancels them. Calm AI brains do the same
+  with `hibernate_calm()` / `wake_from_chunks()` on mob-chunk keys.
+- Wakes arrive at the next reactor step, not inside the publishing call. The old
+  revision capture (subscribe, then re-check) is not needed: a publication after the
+  subscription always wakes.
+- `SSreactor.mob_chunk_subscriptions` counts live mob-chunk subscriptions, so mob movement
+  skips the turf lookup and the bind call while nothing sleeps on a chunk (Q12).
+- The wake tests are in `code/modules/unit_tests/dq_reactor_s2_tests.dm`.
+
 ## 5. Rate models for DM-owned quantities
 
 Quantities that change at a known rate use the main-side rate models ([rust_core.md §7](rust_core.md#7-the-main-side-reactor)): item rot, consumable fuel, cooldown meters, digestion progress. DM reads the current value, and thresholds become timers at the exact crossing time.
@@ -180,11 +197,45 @@ As built:
 | SSobj (190 `START_PROCESSING` sites), SSprocessing, SSfastprocess users, SSbellies, SSburning, SSmaterial_services | Watches, timers, rate models, or declared continuous work | S4 |
 | Every machine auto-starting in `Initialize()` (`machinery.dm:140`) | Machines start asleep and declare their activation | S5 |
 
+As built (S3):
+- **Airlocks and doors.** `close_door_at`, `main_power_lost_until`, `backup_power_lost_until` and
+  `electrified_until` share one `REACT_AT` on the earliest (`next_door_deadline()`,
+  `schedule_door_timer()`); `door_deadlines_due()` is the old poll body. Airlocks publish
+  `REACT_KEY_DOOR_MODE` (`REACT_DOOR_BOLTS`/`POWER`/`ELECTRIFIED`). `airlock_control.dm`'s
+  `cur_command` retry is not a deadline and still processes while a command is pending.
+- **Cameras.** EMP recovery and the motion-alarm delay are one `REACT_AT`; losing a motion target is
+  signals on the target (moved, stat change, deleted) instead of a per-tick range check.
+- **Lights.** `/area/proc/power_change()` publishes `REACT_KEY_AREA_POWER`; lights subscribe and
+  act only when their own power changed (`light/power_change()` is a no-op, so the area's scan of
+  its machines no longer reaches them). Emergency discharge, recharge and the auto-flicker recheck
+  are one `REACT_AT`; an auto-flicker light on its cell waits on the player chunk keys within 12 tiles.
+- **Status displays.** Redraw on a signal, alert, power change or `REACT_KEY_SHUTTLE_SCHEDULE`
+  (`REACT_SHUTTLE_EVAC`/`SUPPLY`, published when a countdown starts or stops or a shuttle warms up),
+  plus one `REACT_AT` only for content that moves by itself (a countdown, the clock at the next
+  station minute, a scrolling message).
+- **Looping sounds.** Each loop is a `REACT_AT`; a loop nobody can hear parks on the
+  player chunk keys in hearing range with a 10 s recheck timer. SSsounds'
+  `dormant_loops_by_chunk` is gone.
+- **Shutoff valves.** `wake_automatic_shutoff_valves(network)` publishes `REACT_KEY_PIPE_NETWORK`
+  for that network (`REACT_ID_GLOBAL` for construction of unknown network); each valve subscribes
+  to its two networks' keys and the global one and re-subscribes on `reassign_network()`,
+  `rust_bind_pipe_port()` and `disconnect()`. SSair's bulk-blast batching is gone: publications merge.
+- **Mob chunk keys (merged with S2).** One key, `REACT_KEY_MOB_CHUNK` (id
+  `MOB_CHUNK_NUMERIC_KEY`), with two mask bits: `REACT_CHUNK_ANY_MOB` (sleeping turrets, calm AI
+  brains; subscribed through `sleep_on_keys()`, counted in `SSreactor.mob_chunk_subscriptions`) and
+  `REACT_CHUNK_PLAYER` (looping sounds, auto-flicker lights; `subscribe_player_chunks()`, counted
+  in `player_chunk_subscriptions`). `/mob/Moved()` makes one call, `SSreactor.publish_mob_move()`,
+  gated on the two counters: the new chunk gets the any-mob bit plus the player bit for a mob with
+  a client, and the old chunk gets the any-mob bit when the step crossed a chunk edge.
+- **Lint.** `tools/ci/check_deadline_polling.py` (CI: "Check Deadline Polling") flags `process()`
+  bodies comparing `world.time` with a variable. The rest (S4's SSobj/SSprocessing users and S5's
+  machines) are in `tools/ci/deadline_polling_allowlist.txt`; a stale entry fails the check.
+
 ## 10. Lint rules
 
 | Rule | On after |
 |---|---|
-| No `world.time` deadline comparisons inside `process()` | S3 |
+| No `world.time` deadline comparisons inside `process()` (`tools/ci/check_deadline_polling.py`) | S3 (on) |
 | No `START_PROCESSING`/`STOP_PROCESSING`/`START_MACHINE_PROCESSING` outside the reactor | S4, S5 |
 | No `process()` unless it is declared with `REACT_EVERY` | S5 |
 | No string-built reactive keys | S2 |

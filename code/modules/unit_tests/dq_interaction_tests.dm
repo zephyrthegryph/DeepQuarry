@@ -101,6 +101,9 @@
 	var/static/list/tested_ids = list(
 		"machine_panel", "machine_deconstruct", "machine_anchor", "machine_repair",
 		"dq_test_high", "dq_test_tie_a", "dq_test_tie_b", "dq_test_low", "dq_test_blocked", "dq_test_ghostly",
+		"dq_actor_observe", "dq_actor_handless", "dq_actor_tool", // dq_actor_adapter_tests.dm
+		// Combat mode (dq_combat_mode_tests.dm): the Disarm and Grab interactions and its fixtures.
+		"disarm", "grab", "dq_combat_friendly", "dq_combat_hostile", "dq_combat_needs_combat", "dq_combat_needs_peace",
 		"dq_tool_weld", "dq_tool_dig", // dq_tool_tests.dm
 	)
 
@@ -232,6 +235,7 @@
 	var/mob/observer/dead/ghost = allocate(/mob/observer/dead, T)
 	TEST_ASSERT_EQUAL(dq_resolution_text(interactions_for(ghost, probe, null)), "|", "ghosts are offered nothing")
 	var/mob/living/silicon/ai/AI = allocate(/mob/living/silicon/ai, T)
+	AI.forceMove(T) // in sight of the probe (I3: the AI needs camera sight)
 	TEST_ASSERT_EQUAL(dq_resolution_text(interactions_for(AI, probe, null)), "dq_test_ghostly|", "the AI is offered only remote interactions")
 
 	var/obj/dq_input_probe/plain = allocate(/obj/dq_input_probe, T)

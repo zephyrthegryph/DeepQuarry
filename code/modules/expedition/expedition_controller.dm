@@ -520,13 +520,22 @@ SUBSYSTEM_DEF(expedition)
 	var/wiped = 0
 	var/area/space/space_area = generated_station_space_area()
 	for(var/turf/T in block(locate(1, 1, z), locate(world.maxx, world.maxy, z)))
-		for(var/atom/movable/AM in T)
-			if(ismob(AM))
-				var/mob/M = AM
-				if(M.client)
-					continue
-			qdel(AM)
-			job?.checkpoint()
+		// Deleting a closet or crate spills what it holds onto the turf (its
+		// drop policy), so sweep again until only connected players are left.
+		for(var/pass in 1 to 8)
+			var/list/doomed = list()
+			for(var/atom/movable/AM in T)
+				if(ismob(AM))
+					var/mob/M = AM
+					if(M.client)
+						continue
+				doomed += AM
+			if(!length(doomed))
+				break
+			for(var/atom/movable/AM as anything in doomed)
+				if(!QDELETED(AM))
+					qdel(AM)
+				job?.checkpoint()
 		if(!istype(T, /turf/space))
 			T.ChangeTurf(/turf/space, tell_universe = FALSE)
 		ChangeArea(T, space_area)

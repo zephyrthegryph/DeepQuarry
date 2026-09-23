@@ -1,4 +1,3 @@
-GLOBAL_LIST_EMPTY_TYPED(allfaxes, /obj/machinery/photocopier/faxmachine)
 GLOBAL_LIST_INIT(admin_departments, list("[using_map.boss_name]", "Solar Central Government", "Central Command Job Boards", "Supply"))
 GLOBAL_LIST_EMPTY(alldepartments)
 GLOBAL_VAR(last_fax_role_request)
@@ -28,9 +27,10 @@ GLOBAL_LIST_EMPTY(adminfaxes)	//cache for faxes that have been sent to admins
 	var/destination = null // the department we're sending to
 	var/talon = 0 // So that the talon can access their own crew roles for the request
 
+REGISTRY_MEMBERSHIP(/obj/machinery/photocopier/faxmachine, REGISTRY_FAXES)
+
 /obj/machinery/photocopier/faxmachine/Initialize(mapload)
 	. = ..()
-	GLOB.allfaxes += src
 	if(!destination) destination = "[using_map.boss_name]"
 	if( !(("[department]" in GLOB.alldepartments) || ("[department]" in GLOB.admin_departments)) )
 		GLOB.alldepartments |= department
@@ -331,7 +331,7 @@ Extracted to its own procedure for easier logic handling with paper bundles.
 
 	var/obj/item/card/id/authenticated_id = scan
 	var/success = process_contract_fax(copyitem, destination, authenticated_id?.associated_account_number, sender)
-	for(var/obj/machinery/photocopier/faxmachine/F in GLOB.allfaxes)
+	for(var/obj/machinery/photocopier/faxmachine/F in REGISTRY_MEMBERS(REGISTRY_FAXES))
 		if( F.department == destination )
 			success = F.receivefax(copyitem) || success
 

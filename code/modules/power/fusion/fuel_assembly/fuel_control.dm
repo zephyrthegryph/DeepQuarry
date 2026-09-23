@@ -19,9 +19,6 @@
 	QDEL_NULL(monitor)
 	. = ..()
 
-/obj/machinery/computer/fusion_fuel_control/attack_ai(mob/user)
-	attack_hand(user)
-
 /obj/machinery/computer/fusion_fuel_control/attack_hand(mob/user as mob)
 	..()
 	if(stat & (BROKEN|NOPOWER))

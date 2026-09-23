@@ -74,3 +74,31 @@
 
 /datum/property_provider/material/conductive/fold(datum/material/M, amount, acc)
 	return (acc || M.conductive) ? TRUE : FALSE
+
+/datum/property_def/heat_capacity
+	id = PROP_HEAT_CAPACITY
+	name = "Heat capacity"
+	desc = "Heat capacity of the material an object is made of. Containers sum their contents."
+	unit = PROP_UNIT_HEAT_CAPACITY
+	aggregator = PROP_AGG_SUM
+	min_value = 0
+
+/datum/property_provider/material/heat_capacity
+	property = PROP_HEAT_CAPACITY
+	unit = PROP_UNIT_HEAT_CAPACITY
+
+/// Specific heat is J/(kg K), so each material adds kg x specific heat.
+/datum/property_provider/material/heat_capacity/fold(datum/material/M, amount, acc)
+	return (acc || 0) + amount * MATTER_UNIT_KG * M.specific_heat
+
+/datum/property_def/tag/paperwork
+	id = TAG_PAPERWORK
+	name = "Paperwork"
+	desc = "Paper, photos and bundles: what folders and clipboards hold."
+
+/datum/property_provider/type_var/tag/paperwork
+	property = TAG_PAPERWORK
+	applies_to = /obj/item
+
+/datum/property_provider/type_var/tag/paperwork/read_initial(path)
+	return ispath(path, /obj/item/paper) || ispath(path, /obj/item/photo) || ispath(path, /obj/item/paper_bundle)

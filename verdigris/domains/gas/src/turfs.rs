@@ -1,8 +1,8 @@
 pub mod processing;
 /*
 */
-#[cfg(feature = "superconductivity")]
-pub(crate) mod superconduct;
+#[cfg(feature = "heat")]
+pub(crate) mod heat;
 
 use crate::{constants::*, gas::Mixture, GasArena};
 use bitflags::bitflags;
@@ -40,11 +40,6 @@ bitflags! {
 		const SIMULATION_DIFFUSE = 0b1;
 		const SIMULATION_ALL = 0b10;
 		const SIMULATION_ANY = Self::SIMULATION_DIFFUSE.bits() | Self::SIMULATION_ALL.bits();
-	}
-
-	#[derive(Default, Debug, Clone, Copy)]
-	pub struct AdjacentFlags: u8 {
-		const ATMOS_ADJACENT_FIRELOCK = 0b10;
 	}
 
 	#[derive(Default, Debug, Clone, Copy)]
@@ -271,7 +266,7 @@ type TurfGraphMap = IndexMap<TurfID, NodeIndex, FxBuildHasher>;
 //adjacency/turf infos goes here
 #[derive(Debug)]
 struct TurfGases {
-	graph: StableDiGraph<TurfMixture, AdjacentFlags>,
+	graph: StableDiGraph<TurfMixture, ()>,
 	map: TurfGraphMap,
 	generations: FxHashMap<TurfID, u64>,
 }
@@ -300,64 +295,55 @@ impl TurfGases {
 			self.graph.remove_node(index);
 		}
 	}
-	fn update_adjacencies_from_ids(&mut self, idx: TurfID, adjacent: &[(TurfID, u8)]) {
-		if let Some(&this_index) = self.map.get(&idx) {
-			self.remove_adjacencies(this_index);
-			// DM callers may report the same neighbor through more than one legacy
-			// adjacency path. Parallel graph edges make the diffusion stencil count
-			// one physical face multiple times, which is both non-conservative and
-			// topology-order dependent. Canonicalize every published face here.
-			let mut resolved_by_node = FxHashMap::default();
-			for (adj_ref, flag) in adjacent.iter().copied() {
-				if let Some(&adj_index) = self.map.get(&adj_ref) {
-					resolved_by_node
-						.entry(adj_index)
-						.and_modify(|existing| *existing |= flag)
-						.or_insert(flag);
+	/// Makes this cell's solver edges match the published air-block masks: one
+	/// edge each way to every open face neighbour that is in the graph, none
+	/// elsewhere. Edges only ever join grid neighbours, so a face is counted once
+	/// and the result does not depend on registration order. Returns whether any
+	/// edge changed.
+	fn sync_edges(&mut self, id: TurfID, cells: &AirCells) -> bool {
+		let (Some(node), Some(dims)) = (self.get_id(id), cells.dims) else {
+			return false;
+		};
+		let mut changed = false;
+		for face in Face::ALL {
+			let Some(other_id) = dims.neighbor(id, face) else {
+				continue;
+			};
+			let Some(other) = self.get_id(other_id) else {
+				continue;
+			};
+			// Two immutable cells (space, planet boundaries) never exchange gas,
+			// so the solver gets no edge between them. Queries still see the
+			// adjacency through AirCells.
+			let both_immutable = self.get(node).is_some_and(TurfMixture::is_immutable)
+				&& self.get(other).is_some_and(TurfMixture::is_immutable);
+			let open = !both_immutable && cells.open_neighbor(id, face) == Some(other_id);
+			for (from, to) in [(node, other), (other, node)] {
+				match (open, self.graph.find_edge(from, to)) {
+					(true, None) => {
+						self.graph.add_edge(from, to, ());
+						changed = true;
+					}
+					(false, Some(edge)) => {
+						self.graph.remove_edge(edge);
+						changed = true;
+					}
+					_ => {}
 				}
 			}
-			let resolved = resolved_by_node
-				.into_iter()
-				.map(|(adj_index, flag)| (adj_index, flag))
-				.collect::<Vec<_>>();
-			// Diffusion across an edge is physically bidirectional even though the
-			// graph stores separately published directed lists. Remove stale reverse
-			// edges from neighbors that DM no longer considers adjacent, while
-			// retaining valid reverse edges regardless of bulk publication order.
-			let stale_incoming = self
-				.graph
-				.edges_directed(this_index, Direction::Incoming)
-				.filter(|edge| !resolved.iter().any(|(node, _)| *node == edge.source()))
-				.map(|edge| edge.id())
-				.collect::<Vec<_>>();
-			for edge in stale_incoming {
-				self.graph.remove_edge(edge);
-			}
-			resolved.into_iter().for_each(|(adj_index, flag)| {
-				let flags = AdjacentFlags::from_bits_truncate(flag);
-				self.graph.add_edge(this_index, adj_index, flags);
-				// Diffusion is physically undirected. Construct the reverse edge in
-				// Rust instead of relying on a second, correctly ordered DM callback.
-				if self.graph.find_edge(adj_index, this_index).is_none() {
-					self.graph.add_edge(adj_index, this_index, flags);
-				}
-			})
 		}
+		changed
 	}
 
-	pub fn remove_adjacencies(&mut self, index: NodeIndex) {
-		// Each turf publishes its own directed adjacency list. Incoming edges are
-		// owned by neighboring turfs and must survive this replacement; deleting
-		// them here makes a bulk republish order-dependent (each later turf would
-		// erase the reverse edge just installed by an earlier one).
-		let edges = self
-			.graph
-			.edges_directed(index, Direction::Outgoing)
-			.map(|edgeref| edgeref.id())
-			.collect::<Vec<_>>();
-		edges.into_iter().for_each(|edgeindex| {
-			self.graph.remove_edge(edgeindex);
-		});
+	/// Test helper: joins two cells with an edge each way.
+	#[cfg(test)]
+	pub(super) fn link(&mut self, a: TurfID, b: TurfID) {
+		let (a, b) = (self.get_id(a).unwrap(), self.get_id(b).unwrap());
+		for (from, to) in [(a, b), (b, a)] {
+			if self.graph.find_edge(from, to).is_none() {
+				self.graph.add_edge(from, to, ());
+			}
+		}
 	}
 
 	pub fn get(&self, idx: NodeIndex) -> Option<&TurfMixture> {
@@ -452,6 +438,87 @@ impl TurfGases {
 }
 
 static TURF_GASES: RwLock<Option<TurfGases>> = const_rwlock(None);
+
+/// Every face a mask can block (`NORTH|SOUTH|EAST|WEST|UP|DOWN`).
+/// @dm-define AIR_BLOCK_ALL
+pub const AIR_BLOCK_ALL: u8 = 63;
+
+/// Mask argument meaning "keep the mask Rust already has for this turf".
+/// @dm-define AIR_BLOCK_KEEP
+pub const AIR_BLOCK_KEEP: i32 = -1;
+
+/// Turf adjacency, built from air-block masks DM publishes.
+///
+/// A turf's mask is the OR of the faces the turf itself and each atom on it
+/// block (see `/turf/proc/air_block_mask`). Two registered face neighbours share
+/// air when neither blocks the shared face and, for UP/DOWN, the z-levels are
+/// linked. This replaces the per-turf DM `atmos_adjacent_turfs` lists.
+///
+/// DM queries read this directly and so always see the latest publication;
+/// the solver graph in `TurfGases` catches up when queued topology updates are
+/// applied. Lock order: `TURF_GASES` before `AIR_CELLS`, never the reverse.
+#[derive(Default)]
+struct AirCells {
+	dims: Option<GridDims>,
+	/// Registered cells and the faces they block.
+	masks: FxHashMap<TurfID, u8>,
+	/// Per zero-based z: the `UP`/`DOWN` bits of linked z-levels.
+	z_links: Vec<u8>,
+}
+
+impl AirCells {
+	/// The neighbour across `face` if both cells are registered and air crosses.
+	fn open_neighbor(&self, id: TurfID, face: Face) -> Option<TurfID> {
+		let dims = self.dims?;
+		let mask = *self.masks.get(&id)?;
+		if mask & face.bit() != 0 {
+			return None;
+		}
+		let other = dims.neighbor(id, face)?;
+		if matches!(face, Face::Up | Face::Down) {
+			let (lower, upper) = if face == Face::Up {
+				(id, other)
+			} else {
+				(other, id)
+			};
+			let link = |cell: TurfID| {
+				self.z_links
+					.get((cell / dims.layer_len()) as usize)
+					.copied()
+					.unwrap_or(0)
+			};
+			if link(lower) & Face::Up.bit() == 0 || link(upper) & Face::Down.bit() == 0 {
+				return None;
+			}
+		}
+		let other_mask = *self.masks.get(&other)?;
+		(other_mask & face.opposite().bit() == 0).then_some(other)
+	}
+
+	fn open_neighbors(&self, id: TurfID) -> impl Iterator<Item = TurfID> + '_ {
+		Face::ALL
+			.into_iter()
+			.filter_map(move |face| self.open_neighbor(id, face))
+	}
+
+	/// Bits of the faces across which `id` shares air.
+	fn open_dirs(&self, id: TurfID) -> u8 {
+		Face::ALL
+			.into_iter()
+			.filter(|&face| self.open_neighbor(id, face).is_some())
+			.fold(0, |acc, face| acc | face.bit())
+	}
+}
+
+static AIR_CELLS: RwLock<Option<AirCells>> = const_rwlock(None);
+
+fn with_air_cells<T>(f: impl FnOnce(&AirCells) -> T) -> T {
+	f(AIR_CELLS.read().as_ref().unwrap())
+}
+
+fn with_air_cells_mut<T>(f: impl FnOnce(&mut AirCells) -> T) -> T {
+	f(AIR_CELLS.write().as_mut().unwrap())
+}
 
 // We store planetary atmos by hash of the initial atmos string here for speed.
 static PLANETARY_ATMOS: RwLock<Option<IndexMap<u32, Mixture, FxBuildHasher>>> = const_rwlock(None);
@@ -724,10 +791,11 @@ static MIX_TO_TURF: RwLock<Option<FxHashMap<usize, CellHandle>>> = const_rwlock(
 
 #[derive(Debug)]
 enum PendingTopologyUpdate {
+	/// Register or refresh a cell, then sync its edges from `AIR_CELLS`.
 	Insert(TurfMixture),
 	Remove(TurfID),
-	Adjacencies(TurfID, Vec<(TurfID, u8)>),
-	RemoveAdjacencies(TurfID),
+	/// The z-level links changed: re-sync every cell's edges.
+	ResyncAll,
 }
 
 static PENDING_TOPOLOGY: RwLock<Vec<PendingTopologyUpdate>> = const_rwlock(Vec::new());
@@ -839,26 +907,6 @@ pub(crate) fn mark_mix_active(mix: usize) {
 		// held by the heat worker; recursively taking TURF_GASES.read() deadlocks
 		// if an explosion/topology writer queued between the two reads. Immutable
 		// boundary cells are harmlessly filtered when the active queue is consumed.
-		ACTIVE_TURFS
-			.write()
-			.as_mut()
-			.unwrap()
-			.activate_fresh(handle);
-	}
-}
-
-fn mark_turf_active(turf: TurfID) {
-	// Immutable space/planet mixtures are boundary conditions, not processing
-	// cells. A mutable neighbor still shares against them through its edge; adding
-	// every freshly wiped space turf to the active set needlessly creates enormous
-	// generations and can starve unrelated components.
-	let handle = with_turf_gases_read(|arena| {
-		arena.get_id(turf).and_then(|node| {
-			let mixture = arena.get(node)?;
-			(!mixture.is_immutable()).then_some(mixture.handle())
-		})
-	});
-	if let Some(handle) = handle {
 		ACTIVE_TURFS
 			.write()
 			.as_mut()
@@ -1018,12 +1066,17 @@ pub fn initialize_turfs() {
 	*PLANETARY_ATMOS.write() = Some(Default::default());
 	*ACTIVE_TURFS.write() = Some(Default::default());
 	*MIX_TO_TURF.write() = Some(Default::default());
+	*AIR_CELLS.write() = Some(Default::default());
 }
 
 pub(super) fn reserve_turf_capacity(nodes: usize, _edges: usize) {
 	with_turf_gases_write(|arena| {
 		let map_capacity = arena.map.capacity();
 		arena.map.reserve(nodes.saturating_sub(map_capacity));
+	});
+	with_air_cells_mut(|cells| {
+		let capacity = cells.masks.capacity();
+		cells.masks.reserve(nodes.saturating_sub(capacity));
 	});
 }
 
@@ -1033,6 +1086,10 @@ pub fn shutdown_turfs() {
 	PLANETARY_ATMOS.write().as_mut().unwrap().clear();
 	*ACTIVE_TURFS.write() = Some(Default::default());
 	MIX_TO_TURF.write().as_mut().unwrap().clear();
+	with_air_cells_mut(|cells| {
+		cells.masks.clear();
+		cells.z_links.clear();
+	});
 }
 
 fn with_turf_gases_read<T, F>(f: F) -> T
@@ -1091,6 +1148,9 @@ fn apply_topology_update(arena: &mut TurfGases, update: PendingTopologyUpdate) {
 					.unwrap()
 					.activate_fresh(handle);
 			}
+			if with_air_cells(|cells| arena.sync_edges(id, cells)) {
+				activate_topology_change(arena, id);
+			}
 		}
 		PendingTopologyUpdate::Remove(id) => {
 			// Turf IDs can be reused by BYOND after ChangeTurf. Never leave the old
@@ -1113,42 +1173,55 @@ fn apply_topology_update(arena: &mut TurfGases, update: PendingTopologyUpdate) {
 					map.remove(&mix);
 				}
 			}
+			// The cells that shared air with this one lost a face: wake them.
+			let neighbours = arena
+				.get_id(id)
+				.map(|node| {
+					arena
+						.adjacent_node_ids(node)
+						.filter_map(|n| arena.get(n).filter(|c| !c.is_immutable()))
+						.map(TurfMixture::handle)
+						.collect::<Vec<_>>()
+				})
+				.unwrap_or_default();
 			arena.remove_turf(id);
+			reactivate_cells(neighbours);
 		}
-		PendingTopologyUpdate::Adjacencies(id, adjacent) => {
-			arena.update_adjacencies_from_ids(id, &adjacent);
-			// A topology change is itself an atmospheric mutation. Activate both
-			// endpoints after the graph is authoritative, and promote a mutable cell
-			// beside a large immutable pressure reservoir directly to the urgent
-			// queue. This makes a newly blasted space boundary impossible to miss even
-			// when DM only republishes the replacement turf's adjacency list.
-			let mut handles = Vec::new();
-			if let Some(node) = arena.get_id(id) {
-				if let Some(cell) = arena.get(node).filter(|cell| !cell.is_immutable()) {
-					handles.push((cell.handle(), topology_pressure_urgency(arena, node)));
+		PendingTopologyUpdate::ResyncAll => {
+			let ids = arena.map.keys().copied().collect::<Vec<_>>();
+			with_air_cells(|cells| {
+				for id in ids {
+					arena.sync_edges(id, cells);
 				}
-				for neighbor in arena.adjacent_node_ids(node) {
-					if let Some(cell) = arena.get(neighbor).filter(|cell| !cell.is_immutable()) {
-						handles.push((cell.handle(), topology_pressure_urgency(arena, neighbor)));
-					}
-				}
-			}
-			let mut active = ACTIVE_TURFS.write();
-			let active = active.as_mut().unwrap();
-			for (handle, urgency) in handles {
-				if urgency >= 20.0 {
-					PRESSURE_URGENCY_MILLIKPA
-						.fetch_max((urgency * 1_000.0) as u32, Ordering::AcqRel);
-					active.activate_urgent(handle);
-				} else {
-					active.activate_fresh(handle);
-				}
+			});
+		}
+	}
+}
+
+/// A topology change is itself an atmospheric mutation. Activate both endpoints
+/// once the graph is authoritative, and promote a mutable cell beside a large
+/// immutable pressure reservoir straight to the urgent queue, so a freshly
+/// breached space boundary cannot be missed.
+fn activate_topology_change(arena: &TurfGases, id: TurfID) {
+	let mut handles = Vec::new();
+	if let Some(node) = arena.get_id(id) {
+		if let Some(cell) = arena.get(node).filter(|cell| !cell.is_immutable()) {
+			handles.push((cell.handle(), topology_pressure_urgency(arena, node)));
+		}
+		for neighbor in arena.adjacent_node_ids(node) {
+			if let Some(cell) = arena.get(neighbor).filter(|cell| !cell.is_immutable()) {
+				handles.push((cell.handle(), topology_pressure_urgency(arena, neighbor)));
 			}
 		}
-		PendingTopologyUpdate::RemoveAdjacencies(id) => {
-			if let Some(&node) = arena.map.get(&id) {
-				arena.remove_adjacencies(node);
-			}
+	}
+	let mut active = ACTIVE_TURFS.write();
+	let active = active.as_mut().unwrap();
+	for (handle, urgency) in handles {
+		if urgency >= 20.0 {
+			PRESSURE_URGENCY_MILLIKPA.fetch_max((urgency * 1_000.0) as u32, Ordering::AcqRel);
+			active.activate_urgent(handle);
+		} else {
+			active.activate_fresh(handle);
 		}
 	}
 }
@@ -1220,13 +1293,76 @@ where
 	f(PLANETARY_ATMOS.upgradable_read())
 }
 
-/// Returns: null. Updates turf air infos, whether the turf is closed, is space or a regular turf, or even a planet turf is decided here.
+/// World dimensions for turf-index neighbour arithmetic. Reading world vars
+/// from Rust is unreliable on BYOND 516, so DM pushes them.
+fn set_world_dims_impl(max_x: i32, max_y: i32) {
+	let dims = u32::try_from(max_x)
+		.ok()
+		.zip(u32::try_from(max_y).ok())
+		.and_then(|(x, y)| GridDims::planar(x, y));
+	with_air_cells_mut(|cells| cells.dims = dims);
+}
+
+/// Args: (maxx, maxy). Called by SSair init before any turf registers.
+#[auxmacros::bind("/datum/controller/subsystem/air/proc/auxmos_set_world_dims")]
+fn set_world_dims(max_x: ByondValue, max_y: ByondValue) -> Result<ByondValue> {
+	set_world_dims_impl(max_x.get_number()? as i32, max_y.get_number()? as i32);
+	Ok(ByondValue::null())
+}
+
+/// Args: (maxx, maxy, maxz). Sets the world dimensions and reserves arena room
+/// for a whole map. Called at world start and when the map grows.
+#[auxmacros::bind("/proc/auxmos_configure_world")]
+fn configure_world(max_x: ByondValue, max_y: ByondValue, max_z: ByondValue) -> Result<ByondValue> {
+	let max_x = max_x.get_number()? as i32;
+	let max_y = max_y.get_number()? as i32;
+	let max_z = max_z.get_number()? as i32;
+	set_world_dims_impl(max_x, max_y);
+	let tiles = (max_x.max(1) as usize)
+		.saturating_mul(max_y.max(1) as usize)
+		.saturating_mul(max_z.max(1) as usize);
+	let edges = tiles.saturating_mul(4);
+	reserve_turf_capacity(tiles, edges);
+	#[cfg(feature = "heat")]
+	heat::configure_heat(max_x.max(1) as u32, max_y.max(1) as u32, max_z.max(1) as u32)?;
+	crate::gas::reserve_gas_capacity(tiles.saturating_add(8192));
+	Ok(ByondValue::null())
+}
+
+/// Args: (links). A positional list with one entry per z-level: the `UP`/`DOWN`
+/// bits of the levels air may cross into. Vertical adjacency needs both sides
+/// linked. Every cell's edges are re-synced.
+#[auxmacros::bind("/datum/controller/subsystem/air/proc/auxmos_set_z_links")]
+fn set_z_links(links: ByondValue) -> Result<ByondValue> {
+	// get_list_values, not iter(): iter() indexes the list by each item, so a
+	// plain list of numbers stops at the first 0.
+	let links = links
+		.get_list_values()?
+		.iter()
+		.map(|value| value.get_number().unwrap_or(0.0) as u8)
+		.collect::<Vec<_>>();
+	with_air_cells_mut(|cells| cells.z_links = links);
+	apply_or_queue_topology_update(PendingTopologyUpdate::ResyncAll);
+	Ok(ByondValue::null())
+}
+
+/// Args: (flag, mask). Registers (flag >= 0) or removes (flag < 0) this turf's
+/// air in the arena and publishes its air-block mask (`AIR_BLOCK_KEEP` keeps the
+/// current one). Rust reads blocks_air, air, immutable_atmos, planetary_atmos
+/// and initial_gas_mix, and rebuilds the turf's adjacency from the masks.
 #[auxmacros::bind("/turf/proc/update_air_ref")]
-fn hook_register_turf(src: ByondValue, flag: ByondValue) -> Result<ByondValue> {
+fn hook_register_turf(src: ByondValue, flag: ByondValue, mask: ByondValue) -> Result<ByondValue> {
 	let flag = flag.get_number()? as i32;
 	let visibility = crate::gas::visibility_copies();
-	register_turf_impl(src, flag, &visibility)?;
+	register_turf_impl(src, flag, mask_from_value(&mask), &visibility)?;
 	Ok(ByondValue::null())
+}
+
+fn mask_from_value(mask: &ByondValue) -> Option<u8> {
+	mask.get_number()
+		.ok()
+		.filter(|&m| m >= 0.0)
+		.map(|m| (m as u8) & AIR_BLOCK_ALL)
 }
 
 /// Monotonic revision of this turf's gas mixture. Consumers can skip expensive
@@ -1243,39 +1379,45 @@ fn hook_air_revision(src: ByondValue) -> Result<ByondValue> {
 	Ok((revision as f32).into())
 }
 
-/// Bulk form of hook_register_turf: takes a /list of turfs and registers each
-/// with the given flag in ONE FFI entry. Roundstart setup_allturfs used to make
-/// one call_ext per turf (~327k on a 5-z station) — the call dispatch overhead
-/// alone dominated SSair init.
+/// Bulk registration for round start and map loads. Args: (turfs, flag), where
+/// `turfs` is an assoc list of turf -> air-block mask. One FFI entry registers the
+/// whole batch and builds its adjacency; afterwards only cells that actually
+/// differ from a neighbour stay scheduled, so equal station air is not queued.
 #[auxmacros::bind("/proc/_auxmos_register_turfs_bulk")]
 fn hook_register_turfs_bulk(list: ByondValue, flag: ByondValue) -> Result<ByondValue> {
 	let flag = flag.get_number()? as i32;
 	let visibility = crate::gas::visibility_copies();
-	for (turf, _) in list.iter()? {
-		register_turf_impl(turf, flag, &visibility)?;
-		// Round-start bulk registration precedes adjacency publication. Merely
-		// existing is not atmospheric work, so do not enqueue every station turf.
-		// The following bulk-adjacency pass selectively activates real gradients.
+	let turfs = list.iter()?.collect::<Vec<_>>();
+	for (turf, mask) in &turfs {
+		register_turf_impl(*turf, flag, mask_from_value(mask), &visibility)?;
+	}
+	for (turf, _) in turfs {
 		let id = turf.get_ref()?;
-		if let Some(handle) = with_turf_gases_read(|arena| {
-			arena
-				.get_id(id)
-				.and_then(|node| arena.get(node))
-				.map(TurfMixture::handle)
-		}) {
-			remove_active_handle(handle);
+		if !turf_has_material_gradient(id) {
+			if let Some(handle) = with_turf_gases_read(|arena| {
+				arena
+					.get_id(id)
+					.and_then(|node| arena.get(node))
+					.map(TurfMixture::handle)
+			}) {
+				remove_active_handle(handle);
+			}
 		}
 	}
 	Ok(ByondValue::null())
 }
 
-fn register_turf_impl(src: ByondValue, flag: i32, visibility: &[Option<f32>]) -> Result<()> {
+fn register_turf_impl(
+	src: ByondValue,
+	flag: i32,
+	mask: Option<u8>,
+	visibility: &[Option<f32>],
+) -> Result<()> {
 	let id = src.get_ref()?;
 	if let Ok(blocks) = src.read_number_id(byond_string!("blocks_air")) {
 		if blocks > 0.0 {
+			with_air_cells_mut(|cells| cells.masks.remove(&id));
 			apply_or_queue_topology_update(PendingTopologyUpdate::Remove(id));
-			#[cfg(feature = "superconductivity")]
-			superconduct::supercond_update_ref(src)?;
 			return Ok(());
 		}
 	}
@@ -1338,71 +1480,23 @@ fn register_turf_impl(src: ByondValue, flag: i32, visibility: &[Option<f32>]) ->
 				}
 			}
 		}
+		// A re-registration that keeps the mask (a device waking the turf) changes
+		// no topology, so it must not touch the heat graph either.
+		let topology_changed = with_air_cells_mut(|cells| match cells.masks.get_mut(&id) {
+			Some(current) => mask.is_some_and(|mask| std::mem::replace(current, mask) != mask),
+			None => {
+				cells.masks.insert(id, mask.unwrap_or(0));
+				true
+			}
+		});
 		apply_or_queue_topology_update(PendingTopologyUpdate::Insert(to_insert));
+		// Heat takes turf values from DM (update_heat_cell), not from here.
+		let _ = topology_changed;
 	} else {
+		with_air_cells_mut(|cells| cells.masks.remove(&id));
 		apply_or_queue_topology_update(PendingTopologyUpdate::Remove(id));
 	}
-
-	#[cfg(feature = "superconductivity")]
-	superconduct::supercond_update_ref(src)?;
 	Ok(())
-}
-
-/* will come back to you later
-const PLANET_TURF: i32 = 1;
-const SPACE_TURF: i32 = 0;
-const CLOSED_TURF: i32 = -1;
-const OPEN_TURF: i32 = 2;
-
-//hardcoded because we can't have nice things
-fn determine_turf_flag(src: &ByondValue) -> i32 {
-	let path = src
-		.read_string_id(byond_string!("("type")
-		.unwrap_or_else(|_| "TYPPENOTFOUND".to_string());
-	if !path.as_str().starts_with("/turf/open") {
-		CLOSED_TURF
-	} else if src.read_number_id(byond_string!("planetary_atmos")).unwrap_or(0.0) > 0.0 {
-		PLANET_TURF
-	} else if path.as_str().starts_with("/turf/open/space") {
-		SPACE_TURF
-	} else {
-		OPEN_TURF
-	}
-}
-*/
-/// Updates adjacency infos for turfs, only use this in immediateupdateturfs.
-#[auxmacros::bind("/turf/proc/__update_auxtools_turf_adjacency_info")]
-fn hook_infos(src: ByondValue) -> Result<ByondValue> {
-	infos_impl(src)?;
-	Ok(ByondValue::null())
-}
-
-/// Bulk form of hook_infos: pushes the adjacency graph for a whole /list of
-/// turfs in one FFI entry (see hook_register_turfs_bulk for why).
-#[auxmacros::bind("/proc/_auxmos_update_adjacencies_bulk")]
-fn hook_infos_bulk(list: ByondValue) -> Result<ByondValue> {
-	// Publish the entire graph first. infos_impl() activates both endpoints of
-	// each changed edge, so pruning inline is order-dependent: a later neighbor
-	// would re-enqueue an already-pruned stable cell and leave most of the map in
-	// the startup queue. The second pass evaluates the completed graph once.
-	let turfs = list.iter()?.collect::<Vec<_>>();
-	for (turf, _) in &turfs {
-		infos_impl(*turf)?;
-	}
-	for (turf, _) in turfs {
-		let id = turf.get_ref()?;
-		if !turf_has_material_gradient(id) {
-			if let Some(handle) = with_turf_gases_read(|arena| {
-				arena
-					.get_id(id)
-					.and_then(|node| arena.get(node))
-					.map(TurfMixture::handle)
-			}) {
-				remove_active_handle(handle);
-			}
-		}
-	}
-	Ok(ByondValue::null())
 }
 
 /// True when a newly published round-start cell actually differs from one of
@@ -1432,50 +1526,103 @@ fn turf_has_material_gradient(id: TurfID) -> bool {
 	})
 }
 
-fn infos_impl(src: ByondValue) -> Result<ByondValue> {
-	let id = src.get_ref()?;
-	let update = if let Some(adjacent_list) = src
-		.read_var_id(byond_string!("atmos_adjacent_turfs"))
-		.ok()
-		.and_then(|adjs| adjs.is_list().then_some(adjs))
-	{
-		PendingTopologyUpdate::Adjacencies(
-			id,
-			adjacent_list
-				.iter()?
-				.filter_map(|(key, value)| {
-					Some((key.get_ref().ok()?, value.get_number().unwrap_or(0.0) as u8))
-				})
-				.collect(),
-		)
-	} else {
-		PendingTopologyUpdate::RemoveAdjacencies(id)
-	};
-	apply_or_queue_topology_update(update);
-	mark_turf_active(id);
-
-	#[cfg(feature = "superconductivity")]
-	superconduct::supercond_update_adjacencies(id)?;
-	Ok(ByondValue::null())
+fn turf_value(id: TurfID) -> ByondValue {
+	ByondValue::new_ref(ValueType::Turf, id)
 }
 
-/// Diagnostic invariant used by shuttle/atmos tests: Rust's authoritative
-/// outgoing edge set for this turf must exactly match DM's published list.
+fn adjacent_turf_list(id: TurfID, cells: &AirCells) -> Result<ByondValue> {
+	let list = ByondValue::new_list()?;
+	let turfs = cells.open_neighbors(id).map(turf_value).collect::<Vec<_>>();
+	list.write_list(&turfs)?;
+	Ok(list)
+}
+
+/// Returns: the turfs this turf shares air with (face neighbours only).
+#[auxmacros::bind("/proc/atmos_adjacent_turfs")]
+fn atmos_adjacent_turfs(turf: ByondValue) -> Result<ByondValue> {
+	let id = turf.get_ref()?;
+	with_air_cells(|cells| adjacent_turf_list(id, cells))
+}
+
+/// Batched form of `atmos_adjacent_turfs`. Args: (list of turfs). Returns a list
+/// of lists, one per input turf, in order.
+#[auxmacros::bind("/proc/atmos_adjacent_turfs_bulk")]
+fn atmos_adjacent_turfs_bulk(turfs: ByondValue) -> Result<ByondValue> {
+	let ids = turfs
+		.get_list_values()?
+		.iter()
+		.map(ByondValue::get_ref)
+		.collect::<Result<Vec<_>, _>>()?;
+	with_air_cells(|cells| {
+		let lists = ids
+			.into_iter()
+			.map(|id| adjacent_turf_list(id, cells))
+			.collect::<Result<Vec<_>>>()?;
+		let out = ByondValue::new_list()?;
+		out.write_list(&lists)?;
+		Ok(out)
+	})
+}
+
+/// Returns: the direction bits (NORTH..DOWN) across which this turf shares air.
+#[auxmacros::bind("/proc/atmos_open_dirs")]
+fn atmos_open_dirs(turf: ByondValue) -> Result<ByondValue> {
+	let id = turf.get_ref()?;
+	Ok(f32::from(with_air_cells(|cells| cells.open_dirs(id))).into())
+}
+
+/// Diagnostic: what Rust holds for this turf, as list(registered, mask, z-level
+/// links, zero-based z). Tests use it to explain a missing edge.
+#[auxmacros::bind("/proc/atmos_cell_info")]
+fn atmos_cell_info(turf: ByondValue) -> Result<ByondValue> {
+	let id = turf.get_ref()?;
+	let values = with_air_cells(|cells| {
+		let z = cells.dims.map_or(0, |dims| id / dims.layer_len());
+		let mask = cells.masks.get(&id).copied();
+		[
+			f32::from(u8::from(mask.is_some())),
+			f32::from(mask.unwrap_or(AIR_BLOCK_ALL)),
+			f32::from(cells.z_links.get(z as usize).copied().unwrap_or(0)),
+			z as f32,
+		]
+	});
+	let list = ByondValue::new_list()?;
+	list.write_list(&values.map(ByondValue::from))?;
+	Ok(list)
+}
+
+/// Returns: whether two turfs are face neighbours that share air.
+#[auxmacros::bind("/proc/atmos_turfs_share")]
+fn atmos_turfs_share(first: ByondValue, second: ByondValue) -> Result<ByondValue> {
+	let (first, second) = (first.get_ref()?, second.get_ref()?);
+	Ok(with_air_cells(|cells| cells.open_neighbors(first).any(|n| n == second)).into())
+}
+
+/// Diagnostic invariant for shuttle/atmos tests: once queued updates apply, the
+/// solver graph's edges for this turf (both directions) match the adjacency the
+/// masks describe, and the graph holds the turf's current mixture.
 #[auxmacros::bind("/proc/_auxmos_topology_matches")]
 fn topology_matches(src: ByondValue) -> Result<ByondValue> {
+	if let Some(_task_barrier) = TASKS.try_write() {
+		apply_pending_topology_updates();
+	}
 	let id = src.get_ref()?;
 	let expected_mix = src
 		.read_var_id(byond_string!("air"))?
 		.read_number_id(byond_string!("_extools_pointer_gasmixture"))? as usize;
-	let mut expected = Vec::new();
-	if let Ok(list) = src.read_var_id(byond_string!("atmos_adjacent_turfs")) {
-		if list.is_list() {
-			for (key, _) in list.iter()? {
-				expected.push(key.get_ref()?);
-			}
-		}
-	}
-	let (mut actual, mut incoming, actual_mix) = with_turf_gases_read(|arena| {
+	let open = with_air_cells(|cells| cells.open_neighbors(id).collect::<Vec<_>>());
+	let (mut expected, mut actual, mut incoming, actual_mix) = with_turf_gases_read(|arena| {
+		// sync_edges gives two immutable cells no solver edge.
+		let immutable = |cell: TurfID| {
+			arena
+				.get_from_id(cell)
+				.is_some_and(TurfMixture::is_immutable)
+		};
+		let expected = open
+			.iter()
+			.copied()
+			.filter(|&other| !(immutable(id) && immutable(other)))
+			.collect::<Vec<_>>();
 		let outgoing = arena
 			.get_id(id)
 			.into_iter()
@@ -1492,10 +1639,9 @@ fn topology_matches(src: ByondValue) -> Result<ByondValue> {
 			.get_id(id)
 			.and_then(|node| arena.get(node))
 			.map(|turf| turf.mix);
-		(outgoing, reverse, mix)
+		(expected, outgoing, reverse, mix)
 	});
 	expected.sort_unstable();
-	expected.dedup();
 	actual.sort_unstable();
 	actual.dedup();
 	incoming.sort_unstable();
@@ -1513,7 +1659,7 @@ fn update_visuals(src: ByondValue) -> Result<ByondValue> {
 	use super::gas;
 	match src.read_var_id(byond_string!("air")) {
 		Ok(air) if !air.is_null() => {
-			// gas_overlays: list( GAS_ID = list( VIS_FACTORS = OVERLAYS )) got it? I don't
+			// gas_overlays: a positional list, entry GAS_ID + 1 = list(VIS_FACTOR = OVERLAY).
 			let gas_overlays = ByondValue::new_global_ref()
 				.read_var_id(byond_string!("GLOB"))
 				.wrap_err("Unable to get GLOB from BYOND globals")?
@@ -1533,10 +1679,7 @@ fn update_visuals(src: ByondValue) -> Result<ByondValue> {
 					.filter(|(_, moles, amt)| moles > amt)
 					// getting the list(VIS_FACTORS = OVERLAYS) with GAS_ID
 					.filter_map(|(idx, moles, _)| {
-						Some((
-							gas_overlays.read_list_index(gas::gas_idx_to_id(idx)).ok()?,
-							moles,
-						))
+						Some((gas_overlays.read_list_index((idx + 1) as f32).ok()?, moles))
 					})
 					// getting the OVERLAYS with VIS_FACTOR
 					.filter_map(|(this_overlay_list, moles)| {
@@ -1671,50 +1814,105 @@ mod tests {
 		assert!(arena.get_handle(second).is_some());
 	}
 
-	#[test]
-	fn adjacency_publication_is_symmetric_and_authoritative() {
+	/// A 3x3x2 world; masks for the given ids, z-levels 0 and 1 linked.
+	fn cells(masks: &[(TurfID, u8)]) -> AirCells {
+		AirCells {
+			dims: GridDims::planar(3, 3),
+			masks: masks.iter().copied().collect(),
+			z_links: vec![Face::Up.bit(), Face::Down.bit()],
+		}
+	}
+
+	fn arena_with(ids: &[TurfID]) -> TurfGases {
 		let mut arena = empty_arena();
-		for id in [1, 2, 3] {
+		for &id in ids {
 			arena.insert_turf(TurfMixture {
 				id,
 				mix: id as usize,
 				..Default::default()
 			});
 		}
-		arena.update_adjacencies_from_ids(1, &[(2, 0)]);
-		let one = arena.get_id(1).unwrap();
-		let two = arena.get_id(2).unwrap();
-		assert!(arena.graph.find_edge(one, two).is_some());
-		assert!(arena.graph.find_edge(two, one).is_some());
+		arena
+	}
 
-		arena.update_adjacencies_from_ids(1, &[(3, 0)]);
-		let three = arena.get_id(3).unwrap();
-		assert!(arena.graph.find_edge(one, two).is_none());
-		assert!(arena.graph.find_edge(two, one).is_none());
-		assert!(arena.graph.find_edge(one, three).is_some());
-		assert!(arena.graph.find_edge(three, one).is_some());
+	fn linked(arena: &TurfGases, a: TurfID, b: TurfID) -> (bool, bool) {
+		let (a, b) = (arena.get_id(a).unwrap(), arena.get_id(b).unwrap());
+		(
+			arena.graph.find_edge(a, b).is_some(),
+			arena.graph.find_edge(b, a).is_some(),
+		)
 	}
 
 	#[test]
-	fn adjacency_publication_cannot_create_parallel_physical_faces() {
-		let mut arena = empty_arena();
-		for id in [1, 2] {
-			arena.insert_turf(TurfMixture {
-				id,
-				mix: id as usize,
-				..Default::default()
-			});
+	fn masks_build_symmetric_face_edges_in_any_order() {
+		// Row 0: cells 0, 1, 2. Sync in both orders; the result is the same.
+		let air = cells(&[(0, 0), (1, 0), (2, 0)]);
+		for order in [[0, 1, 2], [2, 1, 0]] {
+			let mut arena = arena_with(&[0, 1, 2]);
+			for id in order {
+				arena.sync_edges(id, &air);
+			}
+			assert_eq!(linked(&arena, 0, 1), (true, true));
+			assert_eq!(linked(&arena, 1, 2), (true, true));
+			assert_eq!(arena.graph.edge_count(), 4, "one edge each way per face");
 		}
-		arena.update_adjacencies_from_ids(1, &[(2, 1), (2, 2), (2, 1)]);
-		arena.update_adjacencies_from_ids(2, &[(1, 2), (1, 1)]);
-		let one = arena.get_id(1).unwrap();
-		let two = arena.get_id(2).unwrap();
-		assert_eq!(arena.graph.edges_connecting(one, two).count(), 1);
-		assert_eq!(arena.graph.edges_connecting(two, one).count(), 1);
+	}
+
+	#[test]
+	fn either_side_blocking_a_face_removes_both_edges() {
+		let mut arena = arena_with(&[0, 1]);
+		arena.sync_edges(0, &cells(&[(0, 0), (1, 0)]));
+		assert_eq!(linked(&arena, 0, 1), (true, true));
+		// A door on cell 1 closes its WEST face (towards cell 0).
+		let closed = cells(&[(0, 0), (1, Face::West.bit())]);
+		assert!(arena.sync_edges(1, &closed));
+		assert_eq!(linked(&arena, 0, 1), (false, false));
+		// A directional blocker on cell 0's EAST face blocks the same edge.
+		let directional = cells(&[(0, Face::East.bit()), (1, 0)]);
+		assert!(!arena.sync_edges(0, &directional), "already closed");
+		assert_eq!(directional.open_neighbor(0, Face::East), None);
+		assert_eq!(directional.open_neighbor(1, Face::West), None);
+		// Blocking an unrelated face leaves the edge alone.
+		let open = cells(&[(0, Face::North.bit()), (1, 0)]);
+		assert!(arena.sync_edges(0, &open));
+		assert_eq!(linked(&arena, 0, 1), (true, true));
+	}
+
+	#[test]
+	fn unregistered_cells_and_map_edges_have_no_neighbours() {
+		let air = cells(&[(2, 0), (5, 0)]);
+		// Cell 2 is the east end of row 0: no east neighbour, and cell 3 (the
+		// next row's west end) must not be reached by wrapping.
+		assert_eq!(air.open_neighbor(2, Face::East), None);
+		assert_eq!(
+			air.open_neighbor(2, Face::West),
+			None,
+			"cell 1 is unregistered"
+		);
+		assert_eq!(air.open_neighbor(2, Face::North), Some(5));
+		assert_eq!(air.open_dirs(2), Face::North.bit());
+	}
+
+	#[test]
+	fn vertical_adjacency_needs_linked_levels_and_open_faces() {
+		// Cell 4 on z0 and cell 13 above it on z1.
+		let mut air = cells(&[(4, 0), (13, 0)]);
+		assert_eq!(air.open_neighbor(4, Face::Up), Some(13));
+		assert_eq!(air.open_neighbor(13, Face::Down), Some(4));
+		// A floor on the upper cell blocks its DOWN face.
+		air.masks.insert(13, Face::Down.bit());
+		assert_eq!(air.open_neighbor(4, Face::Up), None);
+		air.masks.insert(13, 0);
+		// Unlinked levels never connect.
+		air.z_links = vec![0, 0];
+		assert_eq!(air.open_neighbor(4, Face::Up), None);
+		assert_eq!(air.open_neighbor(13, Face::Down), None);
 	}
 
 	#[test]
 	fn topology_updates_wait_for_generation_barrier() {
+		// initialize_turfs() resets process-wide statics other tests use.
+		let _globals = crate::gas::types::TEST_GAS_GLOBALS_LOCK.lock().unwrap();
 		initialize_turfs();
 		let id = 42;
 		let mixture = TurfMixture {
@@ -1744,6 +1942,8 @@ mod tests {
 	/// that mix id.
 	#[test]
 	fn shared_immutable_mix_survives_sibling_removal() {
+		// initialize_turfs() resets process-wide statics other tests use.
+		let _globals = crate::gas::types::TEST_GAS_GLOBALS_LOCK.lock().unwrap();
 		initialize_turfs();
 		const SHARED_MIX: usize = 999;
 

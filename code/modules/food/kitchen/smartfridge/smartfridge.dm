@@ -15,6 +15,8 @@
 	var/list/item_records = list()
 	var/datum/stored_item/currently_vending = null	//What we're putting out of the machine.
 	var/stored_datum_type = /datum/stored_item
+	/// Whether inserted items with identical state fold into counts (C9).
+	var/collapse_stock = TRUE
 	var/seconds_electrified = 0;
 	var/shoot_inventory = 0
 	var/locked = 0
@@ -45,7 +47,26 @@
 	update_icon()
 	default_apply_parts()
 
+// Stock is a stock slot (roadmap C9, code/datums/containment/stock.dm).
+// Inserted items whose state serializes and matches the record's fold into
+// its count; items with state of their own stay real in the stock slot.
+// Deconstruction spills everything, latent copies made real.
+/obj/machinery/smartfridge/slot_def_types()
+	var/static/list/types = list(/datum/slot_def/machine_internals, /datum/slot_def/stock)
+	return types
+
+/obj/machinery/smartfridge/stock_records()
+	return item_records
+
+/obj/machinery/smartfridge/on_slot_changed(slot_id, atom/movable/thing, inserted)
+	if(!inserted && slot_id == CONTAINER_SLOT_STOCK)
+		for(var/datum/stored_item/I as anything in item_records)
+			I.forget(thing)
+
 /obj/machinery/smartfridge/Destroy()
+	// Spill the stock before the records go. The base Destroy runs this again,
+	// by then with nothing left to do.
+	ledger_apply_drop_policies()
 	qdel(wires)
 	for(var/A in item_records)	//Get rid of item records.
 		qdel(A)
@@ -213,6 +234,7 @@
 	var/datum/stored_item/I = find_record(O)
 	if(!istype(I))
 		I = new stored_datum_type(src, O.type, O.name)
+		I.collapsible = collapse_stock
 		item_records.Add(I)
 	I.add_product(O)
 	SStgui.update_uis(src)
@@ -228,9 +250,6 @@
 		I.get_product(get_turf(src))
 	SStgui.update_uis(src)
 	update_icon()
-
-/obj/machinery/smartfridge/attack_ai(mob/user as mob)
-	attack_hand(user)
 
 /obj/machinery/smartfridge/attack_hand(mob/user as mob)
 	if(stat & (NOPOWER|BROKEN))

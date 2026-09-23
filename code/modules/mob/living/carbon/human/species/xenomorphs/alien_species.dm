@@ -135,7 +135,7 @@
 		mend_prob = 1
 
 	//first heal damages
-	if (H.injury_load(INJURY_CATEGORY_PHYSICAL) || H.injury_load(INJURY_CATEGORY_THERMAL) || H.injury_load(INJURY_CATEGORY_ASPHYXIA) || H.injury_load(INJURY_CATEGORY_TOXIC))
+	if (H.injury_load(INJURY_CATEGORY_PHYSICAL) || H.injury_load(INJURY_CATEGORY_THERMAL) || H.oxygen_debt() || H.injury_load(INJURY_CATEGORY_TOXIC))
 		H.mend(TREAT_TISSUE_REPAIR, heal_rate)
 		H.mend(TREAT_BURN_CARE, heal_rate)
 		H.mend(TREAT_OXYGENATION, heal_rate)

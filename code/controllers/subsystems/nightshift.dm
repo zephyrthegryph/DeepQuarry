@@ -57,7 +57,7 @@ SUBSYSTEM_DEF(nightshift)
 
 /datum/controller/subsystem/nightshift/proc/update_nightshift(active, announce = TRUE, resumed = FALSE, forced = FALSE)
 	if(!resumed)
-		currentrun = GLOB.apcs.Copy()
+		currentrun = REGISTRY_COPY(REGISTRY_APCS)
 		nightshift_active = active
 		if(announce)
 			if (active)

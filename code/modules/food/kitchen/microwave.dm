@@ -288,7 +288,7 @@
 	. = ..()
 
 /obj/machinery/microwave/attack_hand(mob/user as mob)
-	if(user.a_intent == I_GRAB)
+	if(IS_GRABBING(user))
 		if(paicard)
 			ejectpai(user)
 			return

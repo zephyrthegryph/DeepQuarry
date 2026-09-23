@@ -66,5 +66,5 @@
 		drying = null
 		update_icon()
 
-/obj/structure/tanning_rack/attack_robot(mob/user)
-	attack_hand(user) // That has checks to
+/obj/structure/tanning_rack
+	silicon_use = ROBOT_USE_HAND // attack_hand has the adjacency checks

@@ -65,7 +65,8 @@
 	/// brain uses a long discovery cadence while combat stays responsive.
 	var/next_strategic_at = 0
 	var/idle_strategic_interval = 10 SECONDS
-	var/sleeping_reference
+	/// While hibernating: the (token, kind) pairs from SSreactor.sleep_on_keys().
+	var/tmp/list/react_sleep_tokens
 
 /datum/ai_brain/New(mob/living/owner)
 	if(!owner)
@@ -88,7 +89,7 @@
 	return ..()
 
 /datum/ai_brain/Destroy()
-	SSai?.forget_brain(src)
+	cancel_chunk_sleep()
 	if(active_behavior_type)
 		var/datum/ai_behavior/B = dq_get_behavior(active_behavior_type)
 		B.stop(src, active_target, active_source, DQ_BEHAVIOR_STOP_QDEL)
@@ -148,7 +149,7 @@
 	selection_dirty = TRUE
 	next_strategic_at = world.time + (primary_threat ? 2 SECONDS : idle_strategic_interval)
 	if(!primary_threat)
-		SSai.hibernate_calm_brain(src)
+		hibernate_calm()
 
 /// Tactical tick. Fast — 250ms.
 /datum/ai_brain/proc/handle_tactics()
@@ -336,9 +337,7 @@
 /datum/ai_brain/proc/invalidate_selection()
 	selection_dirty = TRUE
 	next_strategic_at = 0
-	var/datum/weakref/WR = WEAKREF(src)
-	if(SSai.sleeping_brains[WR.reference])
-		SSai.wake_brain(WR)
+	wake_from_chunks()
 	sync_fast_processing()
 
 /// Keeps the quarter-second tactical loop limited to brains with a combat target.

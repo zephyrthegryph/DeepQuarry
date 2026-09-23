@@ -94,7 +94,7 @@
 /mob/living/simple_mob/vore/pakkun/attack_hand(mob/user)
 	if(stat == DEAD)
 		return ..()
-	if(user.a_intent != I_HELP)
+	if(!IS_HELPING(user))
 		return ..()
 	if(resting)
 		playsound(src, 'sound/weapons/thudswoosh.ogg', 50, 1, -1)
@@ -207,7 +207,7 @@
 	var/list/petters = list()
 
 /mob/living/simple_mob/vore/pakkun/snapdragon/snappy/attack_hand(mob/living/carbon/human/M as mob)
-	if(M.a_intent == I_HELP && !(M in petters))
+	if(IS_HELPING(M) && !(M in petters))
 		to_chat(M, span_notice("\The [src] gets a mischievous glint in her eye!!"))
 		petters += M //YOU HAVE OFFERED YOURSELF TO THE LIZARD
 	return ..()

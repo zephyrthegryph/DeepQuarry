@@ -27,9 +27,6 @@
 	//Properties for airtight tiles (/wall)
 	var/thermal_conductivity = 0.05
 	var/heat_capacity = 1
-	/// Bitfield of cardinal/multiz dirs where heat conduction is blocked (read by the
-	/// Rust superconductivity arena; 0 = conduct in every direction).
-	var/conductivity_blocked_directions = 0
 
 	//Properties for both
 	var/temperature = T20C      // Initial turf temperature.
@@ -132,8 +129,8 @@
 		stack_trace("Improper turf qdel. Do not qdel turfs directly.")
 	changing_turf = FALSE
 	GLOB.cleanbot_reserved_turfs -= src
-	// ZAS connections.erase_all() removed. LINDA tracks turf-to-turf
-	// links via atmos_adjacent_turfs (cleared in /turf/open/Destroy already).
+	// ZAS connections.erase_all() removed. Rust owns turf adjacency; the
+	// /turf/open/Destroy unregister drops it.
 	..()
 	return QDEL_HINT_IWILLGC
 
@@ -190,9 +187,8 @@
 			S.gather_all(src, user)
 	return ..()
 
-/turf/attack_robot(mob/user)
-	if(!isAI(user))
-		attack_hand(user)
+/turf
+	silicon_use = ROBOT_USE_HAND
 
 // Hits a mob on the tile.
 /turf/proc/attack_tile(obj/item/W, mob/living/user)

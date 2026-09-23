@@ -452,10 +452,8 @@
 	malfunction()
 	..()
 
-/obj/machinery/clonepod/ex_act(severity)
-	for(var/atom/movable/occupant as mob|obj in src)
-		occupant.ex_act(severity)
-	return ..()
+/obj/machinery/clonepod/explosion_contents_severity(severity)
+	return severity
 
 /obj/machinery/clonepod/update_icon()
 	..()
@@ -494,7 +492,7 @@
 	else
 		if(isliving(implanted))
 			var/mob/living/L = implanted
-			healthstring = "[round(L.injury_load(INJURY_CATEGORY_ASPHYXIA))] - [round(L.injury_load(INJURY_CATEGORY_THERMAL))] - [round(L.injury_load(INJURY_CATEGORY_TOXIC))] - [round(L.injury_load(INJURY_CATEGORY_PHYSICAL))]"
+			healthstring = "[round(L.oxygen_debt())] - [round(L.injury_load(INJURY_CATEGORY_THERMAL))] - [round(L.injury_load(INJURY_CATEGORY_TOXIC))] - [round(L.injury_load(INJURY_CATEGORY_PHYSICAL))]"
 		if(!healthstring)
 			healthstring = "ERROR"
 		return healthstring

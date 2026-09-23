@@ -1,30 +1,13 @@
 import type { BooleanLike } from 'tgui-core/react';
 
+import type { Diagnosis, DiagnosisBand } from '../common/Diagnosis';
+
 export type Data = {
   occupied: BooleanLike;
   occupant: occupant;
 };
 
-export type DamageBand =
-  | 'uninjured'
-  | 'minor'
-  | 'moderate'
-  | 'severe'
-  | 'critical';
-
-export type DamagePanelEntry = {
-  kind: string;
-  label: string;
-  band: DamageBand;
-};
-
-export type ScannerFinding = {
-  phrase: string;
-  organ: string;
-  severity: DamageBand;
-  trend: 'new' | 'worsening' | 'improving' | 'stable';
-  stage?: string | null;
-};
+export type DamageBand = DiagnosisBand;
 
 export type occupant = {
   name: string;
@@ -34,11 +17,8 @@ export type occupant = {
   healthBand: DamageBand;
   hasVirus: number;
   paralysisSeconds: number;
-  bodyTempC: number;
-  bodyTempF: number;
   hasBorer: BooleanLike;
   colourblind: BooleanLike;
-  blood: { volume: number; percent: number };
   reagents: reagent[];
   ingested: reagent[];
   extOrgan: externalOrgan[];
@@ -54,8 +34,7 @@ export type occupant = {
   hasWithdrawl: BooleanLike;
   hasAllergens: BooleanLike;
   allergens: string[] | null;
-  damagePanel: DamagePanelEntry[];
-  scannerFindings: ScannerFinding[];
+  diagnosis: Diagnosis;
   worstFinding: DamageBand;
 };
 
@@ -77,8 +56,6 @@ export type externalOrgan = {
   open: BooleanLike;
   germ_level: number;
   injuryBand: DamageBand;
-  hasBrute: BooleanLike;
-  hasBurn: BooleanLike;
   implants: { name: string; known: BooleanLike }[];
   implants_len: number;
   status: {

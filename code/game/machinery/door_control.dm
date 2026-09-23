@@ -30,8 +30,8 @@
 
 /obj/machinery/button/remote/emag_act(remaining_charges, mob/user)
 	if(LAZYLEN(req_access) || LAZYLEN(req_one_access))
-		LAZYCLEARLIST(req_access)
-		LAZYCLEARLIST(req_one_access)
+		req_access = null
+		req_one_access = null
 		playsound(src, "sparks", 100, 1)
 		return 1
 
@@ -93,7 +93,7 @@
 	*/
 
 /obj/machinery/button/remote/airlock/trigger()
-	for(var/obj/machinery/door/airlock/D in GLOB.machines)
+	for(var/obj/machinery/door/airlock/D in REGISTRY_MEMBERS(REGISTRY_MACHINES))
 		if(D.id_tag == id)
 			if(specialfunctions & OPEN)
 				if(D.density)
@@ -137,7 +137,7 @@
 	desc = "It controls blast doors, remotely."
 
 /obj/machinery/button/remote/blast_door/trigger()
-	for(var/obj/machinery/door/blast/M in GLOB.machines)
+	for(var/obj/machinery/door/blast/M in REGISTRY_MEMBERS(REGISTRY_MACHINES))
 		if(M.id == id)
 			if(M.density)
 				M.open()
@@ -187,7 +187,7 @@
 	desc = "It controls emitters, remotely."
 
 /obj/machinery/button/remote/emitter/trigger(mob/user as mob)
-	for(var/obj/machinery/power/emitter/E in GLOB.machines)
+	for(var/obj/machinery/power/emitter/E in REGISTRY_MEMBERS(REGISTRY_MACHINES))
 		if(E.id == id)
 			E.activate(user)
 
@@ -207,14 +207,14 @@
 	active = TRUE
 	update_icon()
 
-	for(var/obj/machinery/door/blast/M in GLOB.machines)
+	for(var/obj/machinery/door/blast/M in REGISTRY_MEMBERS(REGISTRY_MACHINES))
 		if(M.id == id)
 			M.open()
 	addtimer(CALLBACK(src, PROC_REF(trigger_step_one)), 2 SECONDS, TIMER_DELETE_ME|TIMER_UNIQUE)
 
 /obj/machinery/button/remote/driver/proc/trigger_step_one()
 	PRIVATE_PROC(TRUE)
-	for(var/obj/machinery/mass_driver/M in GLOB.machines)
+	for(var/obj/machinery/mass_driver/M in REGISTRY_MEMBERS(REGISTRY_MACHINES))
 		if(M.id == id)
 			M.drive()
 	addtimer(CALLBACK(src, PROC_REF(trigger_step_two)), 5 SECONDS, TIMER_DELETE_ME|TIMER_UNIQUE)
@@ -222,7 +222,7 @@
 /obj/machinery/button/remote/driver/proc/trigger_step_two()
 	PRIVATE_PROC(TRUE)
 
-	for(var/obj/machinery/door/blast/M in GLOB.machines)
+	for(var/obj/machinery/door/blast/M in REGISTRY_MEMBERS(REGISTRY_MACHINES))
 		if(M.id == id)
 			M.close()
 
@@ -259,7 +259,7 @@
 	icon = 'icons/obj/stationobjs.dmi'
 
 /obj/machinery/button/remote/shields/trigger(mob/user)
-	for(var/obj/machinery/shield_gen/SG in GLOB.machines)
+	for(var/obj/machinery/shield_gen/SG in REGISTRY_MEMBERS(REGISTRY_MACHINES))
 		if(SG.id == id)
 			if(SG?.anchored)
 				SG.toggle()
@@ -274,7 +274,7 @@
 	active_power_usage = 0
 
 /obj/machinery/button/remote/airlock/release/trigger()
-	for(var/obj/machinery/door/airlock/D in GLOB.machines)
+	for(var/obj/machinery/door/airlock/D in REGISTRY_MEMBERS(REGISTRY_MACHINES))
 		if(D.id_tag == id)
 			if(D.locked)
 				D.unlock(1)

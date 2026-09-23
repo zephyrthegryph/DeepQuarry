@@ -32,7 +32,7 @@
 	RegisterSignal(owner, COMSIG_ATOM_EXAMINE, PROC_REF(examine_service))
 
 /obj/proc/material_diagnostics_tool_act(mob/user, obj/item/tool)
-	if(!length(construction_materials) || !tool?.has_tool_quality(TOOL_MULTITOOL))
+	if(!has_functional_construction() || !tool?.has_tool_quality(TOOL_MULTITOOL))
 		return NONE
 	var/datum/material_service/service = material_service_event(MATERIAL_EVENT_MONITORING)
 	if(!service)
@@ -100,12 +100,12 @@
 	if(!can_service(user) || !stock || stock.loc != user)
 		return
 	var/list/roles = list()
-	for(var/role in owner.construction_materials)
+	for(var/role in owner.material_roles())
 		roles += role
 	var/role = tgui_input_list(user, "Which component should be replaced?", "Service assembly", roles)
-	if(!role || !can_service(user) || !maintenance_open || QDELETED(stock) || stock.loc != user || !(role in owner.construction_materials))
+	if(!role || !can_service(user) || !maintenance_open || QDELETED(stock) || stock.loc != user || !(role in owner.material_roles()))
 		return
-	var/quantity = max(1, CEILING((owner.construction_material_amounts?[role] || SHEET_MATERIAL_AMOUNT) / SHEET_MATERIAL_AMOUNT, 1))
+	var/quantity = max(1, CEILING((owner.role_amount(role) || SHEET_MATERIAL_AMOUNT) / SHEET_MATERIAL_AMOUNT, 1))
 	if(stock.get_amount() < quantity)
 		to_chat(user, span_warning("This component requires [quantity] sheets."))
 		return
@@ -145,7 +145,7 @@
 
 /datum/material_service/tgui_data(mob/user)
 	var/list/parts = list()
-	for(var/role in owner.construction_materials)
+	for(var/role in owner.material_roles())
 		var/datum/material/material = owner.material_for_role(role)
 		parts += list(list("role" = role, "material" = material.display_name || material.name, "meltingPoint" = material.melting_point, "corrosion" = material.corrosion_resistance, "purpose" = describe_part(role, material)))
 	var/list/data = list("status" = status, "temperature" = temperature, "buffer" = buffer_energy, "input" = last_input_watts, "output" = last_output_watts, "lossEnergy" = loss_joules, "parts" = parts, "limiting" = limiting_role, "configuration" = owner.material_configuration_revision, "liner" = owner.material_environment_liner_integrity, "shell" = owner.material_environment_exterior_integrity, "fatigue" = owner.material_environment_fatigue, "monitoring" = !!monitor_tool, "reading" = last_reading)

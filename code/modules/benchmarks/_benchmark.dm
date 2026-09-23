@@ -27,6 +27,8 @@
 	var/profiling = FALSE
 	var/window_start_position
 	var/window_start_time
+	/// __verdigris_ffi_calls when the window began.
+	var/window_start_ffi_calls = 0
 	var/list/window_subsystem_fires
 	/// SSreactor.total_wakes when the window began.
 	var/window_reactor_wakes = 0
@@ -86,6 +88,7 @@
 	Master.perf_worst_tick = list()
 	window_start_position = Master.perf_samples_total + 1
 	window_start_time = REALTIMEOFDAY
+	window_start_ffi_calls = __verdigris_ffi_calls
 	window_subsystem_fires = list()
 	window_reactor_wakes = SSreactor.total_wakes
 	for(var/datum/controller/subsystem/subsystem as anything in Master.subsystems)
@@ -107,6 +110,7 @@
 	metric("[prefix]_overruns", tick["overruns"], "ticks")
 	metric("[prefix]_overrun_ratio", tick["samples"] ? tick["overruns"] / tick["samples"] : 0, "ratio")
 	metric("[prefix]_tps", tick["tps"], "tps", "higher")
+	metric("[prefix]_ffi_calls", __verdigris_ffi_calls - window_start_ffi_calls, "calls")
 	var/list/subsystems = list()
 	for(var/datum/controller/subsystem/subsystem as anything in window_subsystem_fires)
 		var/fires = subsystem.times_fired - window_subsystem_fires[subsystem]
@@ -216,6 +220,45 @@
 	for(var/path in top_types)
 		top_counts["[path]"] = by_type[path]
 	return list("total" = total, "distinct_types" = length(by_type), "by_root" = by_root, "top_types" = top_counts)
+
+/// Counts the distinct lists held in instance vars, by owning type and var.
+/// Built-in lists (contents, overlays, verbs...) are skipped. A list shared by
+/// several instances counts once, against the first holder seen.
+/proc/benchmark_var_lists(top = 60)
+	var/static/list/skip = list("vars" = TRUE, "contents" = TRUE, "overlays" = TRUE, "underlays" = TRUE, "verbs" = TRUE, "vis_contents" = TRUE, "vis_locs" = TRUE, "locs" = TRUE, "filters" = TRUE, "screen" = TRUE, "images" = TRUE, "group" = TRUE, "client_images" = TRUE, "transform" = TRUE)
+	var/list/seen = list()
+	var/list/by_key = list()
+	var/total = 0
+	var/empty = 0
+	var/entries = 0
+	var/list/holders = list()
+	for(var/datum/thing)
+		holders += thing
+	for(var/atom/thing in world)
+		holders += thing
+	for(var/datum/thing as anything in holders)
+		for(var/name in thing.vars)
+			if(skip[name])
+				continue
+			var/list/value = thing.vars[name]
+			if(!islist(value))
+				continue
+			var/key = ref(value)
+			if(seen[key])
+				continue
+			seen[key] = TRUE
+			total++
+			var/len = length(value)
+			entries += len
+			if(!len)
+				empty++
+			by_key["[thing.type].[name]"]++
+		CHECK_TICK
+	holders.Cut()
+	by_key = sortTim(by_key, GLOBAL_PROC_REF(cmp_numeric_desc), associative = TRUE)
+	if(length(by_key) > top)
+		by_key.Cut(top + 1)
+	return list("total" = total, "empty" = empty, "entries" = entries, "top" = by_key)
 
 /// Compiled type counts; every type costs memory whether or not it's instanced.
 /proc/benchmark_type_counts()

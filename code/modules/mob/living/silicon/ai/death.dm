@@ -15,7 +15,7 @@
 
 	remove_ai_verbs(src)
 
-	for(var/obj/machinery/ai_status_display/O in GLOB.machines)
+	for(var/obj/machinery/ai_status_display/O in REGISTRY_MEMBERS(REGISTRY_MACHINES))
 		O.mode = 2
 
 	if (istype(loc, /obj/item/aicard))

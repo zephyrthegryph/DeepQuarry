@@ -140,6 +140,7 @@ GLOBAL_VAR(restart_counter)
 		del(world)
 		return
 	vg_verdigris_cleanup()
+	vg_heat_reset()
 	vg_configure_world(world.maxx, world.maxy, world.maxz)
 	log_world("Verdigris loaded: [vg_verdigris_version()] | features: [vg_verdigris_features()]")
 

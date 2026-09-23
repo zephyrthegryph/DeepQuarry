@@ -35,7 +35,7 @@
 	var/mob/living/master = null
 	var/casting = FALSE // Used to ensure the correct animation is played. Testing if a spell exists won't always work as some spells delete themselves upon use.
 
-	var/list/known_spells = list(
+	var/static/list/known_spells = list(
 		"beam"				= /obj/item/spell/projectile/beam,
 		"chain lightning"	= /obj/item/spell/projectile/chain_lightning,
 		"force missile"		= /obj/item/spell/projectile/force_missile,

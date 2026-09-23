@@ -5,19 +5,9 @@
 	// matter (most turfs are heat-able). Don't redeclare — runtime will use
 	// CHOMP's value (1) for all turfs, which means turfs CAN be heated by gas.
 	// This is closer to /tg/'s opt-OUT behavior anyway.
-	///Archived version of the temperature on a turf
-	var/temperature_archived
 	///All currently stored conductivities changes
 	var/list/thermal_conductivities
 
-	///list of turfs adjacent to us that air can flow onto
-	var/list/atmos_adjacent_turfs
-	///bitfield of dirs in which we are superconducitng
-	var/atmos_supeconductivity = NONE
-
-	///used to determine whether we should archive
-	var/archived_cycle = 0
-	var/current_cycle = 0
 
 	/**
 	 * used for mapping and for breathing while in walls (because that's a thing that needs to be accounted for...)
@@ -33,17 +23,6 @@
 	var/pressure_difference = 0
 	///Where the difference come from (from higher pressure to lower pressure)
 	var/pressure_direction = 0
-	/// katmos target turf ref, written/read by the Rust equalize pass
-	/// (turf.pressure_specific_target). Declared so the auxmos read/write_var_id
-	/// calls don't panic (NonExistentString); DM never sets it directly.
-	var/pressure_specific_target
-
-	/// Excited-group tracking moved to the Rust arena. This var is retained
-	/// (untyped) only so lingering external readers (e.g. LINDA_fire hotspot
-	/// processing) still resolve; the DM engine no longer maintains it.
-	var/excited_group
-	///Are we active? Retained for legacy readers; auxmos owns activity now.
-	var/excited = FALSE
 	///Our gas mix
 	var/datum/gas_mixture/air
 
@@ -82,33 +61,22 @@
 				SSair.planetary[initial_gas_mix] = mix
 	. = ..()
 	// Register this turf's air ref in the Rust arena. During roundstart mapload
-	// SSair isn't initialised yet — setup_allturfs/Initalize_Atmos registers every
+	// SSair isn't initialised yet — SSair.setup_allturfs registers every
 	// turf then. For turfs created AFTER SSair init (ChangeTurf, runtime spawns)
-	// we register here so auxmos picks them up. air_update_turf (called by the
-	// ChangeTurf path) then rebuilds + pushes adjacency.
+	// we register here, with the air-block mask of whatever is already on the
+	// turf, so Rust builds its adjacency.
 	if(SSair.initialized)
-		update_air_ref(0)
+		update_air_ref(0, air_block_mask())
 
 /turf/open/Destroy()
 	if(active_hotspot)
 		QDEL_NULL(active_hotspot)
-	// Unregister src's air ref from the Rust arena BEFORE clearing adjacency so the
-	// next SSair tick doesn't process this dying turf. ChangeTurf-style replacement
-	// swaps a new turf into the same world coords; unregistering here drops the old
-	// slot cleanly (remove_from_active -> update_air_ref(-1)).
+	// Unregister src from the Rust arena so the next SSair tick doesn't process
+	// this dying turf. Rust drops its adjacency and wakes the turfs that shared
+	// air with it. ChangeTurf-style replacement swaps a new turf into the same
+	// coordinates, which registers itself in Initialize.
 	if(SSair)
 		SSair.remove_from_active(src)
-	// Clear src out of each neighbour's atmos_adjacent_turfs, push the corrected
-	// adjacency to the arena, and re-register the neighbour so auxmos reconsiders
-	// it now that a bordering turf is gone.
-	for(var/turf/near_turf as anything in atmos_adjacent_turfs)
-		if(near_turf.atmos_adjacent_turfs)
-			near_turf.atmos_adjacent_turfs -= src
-			UNSETEMPTY(near_turf.atmos_adjacent_turfs)
-		if(SSair?.initialized)
-			near_turf.__update_auxtools_turf_adjacency_info()
-		SSair.add_to_active(near_turf)
-	atmos_adjacent_turfs = null
 	if(immutable_atmos)
 		// Shared vacuum (see Initialize); other turfs still use it.
 		air = null
@@ -341,31 +309,7 @@
 // solver owns convergence; nothing references a /datum/excited_group anymore.
 
 ////////////////////////SUPERCONDUCTIVITY/////////////////////////////
-// LINDA's DM superconduction engine (super_conduct, conductivity_directions,
-// neighbor_conduct_with_src, temperature_share_open_to_solid,
-// share_temperature_mutual_solid, radiate_to_spess, finish_superconduction,
-// consider_superconductivity) is DELETED. Heat conduction now runs in RUST and
-// IS live: the auxmos superconductivity feature is compiled in and SSair.fire()
-// drives it via the SSAIR_SUPERCONDUCTIVITY step (process_turf_heat() — see
-// SSair.dm). Turf heat lives in the Rust superconductivity arena; read/write it
-// via /turf/proc/return_temperature() / set_temperature(), never a raw var.
-//
-// should_conduct_to_space() is a Rust->DM callback: auxmos superconduct.rs's
-// supercond_update_ref() invokes turf.should_conduct_to_space() by name via
-// call_id to decide whether a turf radiates heat to space. Reports whether this
-// turf is space-exposed: /turf/space (and the base /turf, treated as
-// unsimulated) return TRUE; simulated open turfs return FALSE.
-
-/// Rust superconductivity hook: TRUE if this turf should radiate heat directly to space.
-/turf/proc/should_conduct_to_space()
-	return TRUE
-
-/turf/open/should_conduct_to_space()
-	for(var/direction in GLOB.cardinals)
-		var/turf/neighbor = get_step(src, direction)
-		if(istype(neighbor, /turf/space))
-			return TRUE
-	return FALSE
-
-/turf/space/should_conduct_to_space()
-	return TRUE
+// Turf heat is the heat domain (verdigris/domains/heat, code/modules/heat/heat.dm):
+// each turf pushes its thermal values with update_heat_cell(); read and write the
+// solid with get_temperature() / add_heat() / set_temperature(), never a raw var.
+// Space turfs are radiative reservoirs, so no turf asks whether it faces space.

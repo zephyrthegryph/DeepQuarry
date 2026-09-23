@@ -1,7 +1,7 @@
 import { useBackend } from 'tgui/backend';
 
 import { SleeperChemicals } from './SleeperChemicals';
-import { SleeperDamage } from './SleeperDamage';
+import { SleeperDiagnosis } from './SleeperDiagnosis';
 import { SleeperDialysisPump } from './SleeperDialysisPump';
 import { SleeperOccupant } from './SleeperOccupant';
 import type { Data } from './types';
@@ -12,7 +12,7 @@ export const SleeperMain = (props) => {
   return (
     <>
       <SleeperOccupant />
-      <SleeperDamage />
+      <SleeperDiagnosis />
       <SleeperDialysisPump
         title="Dialysis"
         active={dialysis}

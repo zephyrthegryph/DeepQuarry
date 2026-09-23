@@ -2123,7 +2123,7 @@ Departamental Swimsuits, for general use
 	// If the hat is willing to cooperate with the holder...
 	if (hat_warp_checks(target, user, proximity_flag))
 		// Silly fluffed up styles of teleporting people based on user intent.
-		switch (user.a_intent)
+		switch(user.use_stance())
 			if (I_HELP)
 				user.visible_message(span_notice("[user] guides \the [target] to the bottomless hole within \the [src]. They begin to climb inside..."))
 				if (do_after(user, 5 SECONDS, target))

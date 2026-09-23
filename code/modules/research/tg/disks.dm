@@ -6,7 +6,7 @@
 	item_state = "card-id"
 	randpixel = 5
 	w_class = ITEMSIZE_SMALL
-	matter = list(MAT_STEEL = 30, MAT_GLASS = 10)
+	MATERIAL_MIX(list(MAT_STEEL = 30, MAT_GLASS = 10))
 	var/datum/techweb/stored_research
 
 /obj/item/disk/tech_disk/Initialize(mapload)
@@ -31,7 +31,7 @@
 	item_state = "card-id"
 	randpixel = 5
 	w_class = ITEMSIZE_SMALL
-	matter = list(MAT_STEEL = 30, MAT_GLASS = 10)
+	MATERIAL_MIX(list(MAT_STEEL = 30, MAT_GLASS = 10))
 
 	///List of all `/datum/design` stored on the disk.
 	var/list/blueprints = list()

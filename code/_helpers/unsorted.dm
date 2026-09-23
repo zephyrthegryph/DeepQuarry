@@ -1101,7 +1101,7 @@ GLOBAL_LIST_INIT(common_tools, list(
 /proc/can_operate(mob/living/carbon/M, mob/living/user)
 	if(M != user)
 		. = M.lying
-	else if(user && user.allow_self_surgery && user.a_intent == I_HELP)    // You can, technically, always operate on yourself after standing still. Inadvised, but you can.
+	else if(user && user.allow_self_surgery && IS_HELPING(user))    // You can, technically, always operate on yourself after standing still. Inadvised, but you can.
 		. = TRUE
 	return .
 
@@ -1610,7 +1610,7 @@ GLOBAL_DATUM(dview_mob, /mob/dview)
 	var/list/material_map_sum = list()
 	var/list/material_map_amounts = list()
 	for(var/obj/item/object as anything in reccursive_contents)
-		var/list/item_materials = object.matter
+		var/list/item_materials = object.material_totals()
 		for(var/mat as anything in custom_materials)
 			var/mat_amount = 1 //no materials mean we assign this default amount
 			if(length(item_materials))

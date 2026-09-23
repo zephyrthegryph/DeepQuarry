@@ -348,7 +348,7 @@ ADMIN_VERB(secrets, R_HOLDER, "Secrets", "Abuse harder than you ever have before
 			//SSblackbox.record_feedback("nested tally", "admin_secrets_fun_used", 1, list("Fix All Lights"))
 			message_admins("[key_name_admin(holder)] fixed all lights")
 			//for(var/obj/machinery/light/L as anything in SSmachines.get_machines_by_type_and_subtypes(/obj/machinery/light))
-			for(var/obj/machinery/light/L in GLOB.machines)
+			for(var/obj/machinery/light/L in REGISTRY_MEMBERS(REGISTRY_MACHINES))
 				L.fix()
 				CHECK_TICK
 		if("changebombcap")

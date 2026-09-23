@@ -2,13 +2,9 @@ use super::GasIDX;
 use crate::reaction::{Reaction, ReactionPriority};
 use auxcallback::byond_callback_sender;
 use byondapi::prelude::*;
-use dashmap::DashMap;
 use eyre::{Context, Result};
-use hashbrown::HashMap;
 use parking_lot::{const_rwlock, RwLock};
-use rustc_hash::FxBuildHasher;
 use std::{
-	cell::RefCell,
 	collections::BTreeMap,
 	sync::atomic::{AtomicUsize, Ordering},
 };
@@ -207,80 +203,72 @@ impl GasType {
 	}
 }
 
-static GAS_INFO_BY_STRING: RwLock<Option<DashMap<Box<str>, GasType, FxBuildHasher>>> =
-	const_rwlock(None);
-
 static GAS_INFO_BY_IDX: RwLock<Option<Vec<GasType>>> = const_rwlock(None);
 
 static GAS_SPECIFIC_HEATS: RwLock<Option<Vec<f32>>> = const_rwlock(None);
 
 #[byondapi::init]
 pub fn initialize_gas_info_structs() {
-	*GAS_INFO_BY_STRING.write() = Some(DashMap::with_hasher(FxBuildHasher));
 	*GAS_INFO_BY_IDX.write() = Some(Vec::new());
 	*GAS_SPECIFIC_HEATS.write() = Some(Vec::new());
 }
 
 pub fn destroy_gas_info_structs() {
 	crate::turfs::wait_for_tasks();
-	GAS_INFO_BY_STRING.write().as_mut().unwrap().clear();
 	GAS_INFO_BY_IDX.write().as_mut().unwrap().clear();
 	GAS_SPECIFIC_HEATS.write().as_mut().unwrap().clear();
 	TOTAL_NUM_GASES.store(0, Ordering::Release);
-	CACHED_GAS_IDS.with_borrow_mut(|gas_ids| {
-		gas_ids.clear();
-	});
-	CACHED_IDX_TO_STRINGS.with_borrow_mut(|gas_ids| {
-		gas_ids.clear();
-	});
 }
-/// For registering gases, do not touch this.
-#[auxmacros::bind("/proc/_auxtools_register_gas")]
-fn hook_register_gas(gas: ByondValue) -> Result<ByondValue> {
-	let gas_id = gas.read_string_id(byond_string!("id"))?;
-	match GAS_INFO_BY_STRING
-		.read()
-		.as_ref()
-		.unwrap()
-		.get_mut(&gas_id as &str)
-	{
-		Some(mut old_gas) => {
-			let gas_cache = GasType::new(&gas, old_gas.idx)?;
-			*old_gas = gas_cache.clone();
-			GAS_SPECIFIC_HEATS.write().as_mut().unwrap()[old_gas.idx] = gas_cache.specific_heat;
-			GAS_INFO_BY_IDX.write().as_mut().unwrap()[old_gas.idx] = gas_cache;
-		}
-		None => {
-			let gas_cache = GasType::new(&gas, TOTAL_NUM_GASES.load(Ordering::Acquire))?;
-			let cached_id = gas_id.clone();
-			let cached_idx = gas_cache.idx;
-			GAS_INFO_BY_STRING
-				.read()
-				.as_ref()
-				.unwrap()
-				.insert(gas_id.into_boxed_str(), gas_cache.clone());
-			GAS_SPECIFIC_HEATS
-				.write()
-				.as_mut()
-				.unwrap()
-				.push(gas_cache.specific_heat);
-			GAS_INFO_BY_IDX.write().as_mut().unwrap().push(gas_cache);
-			CACHED_IDX_TO_STRINGS
-				.with_borrow_mut(|map| map.insert(cached_idx, cached_id.into_boxed_str()));
-			TOTAL_NUM_GASES.fetch_add(1, Ordering::Release); // this is the only thing that stores it other than shutdown
+
+/// Installs the gas roster. Each gas lands at the fixed ID of its type path
+/// (`ids.rs`), so DM's generated `GAS_ID_*` numbers and the arena agree without
+/// any lookup at call time.
+fn install_gases(mut gases: Vec<GasType>) -> Result<()> {
+	gases.sort_by_key(|gas| gas.idx);
+	for (expected, gas) in gases.iter().enumerate() {
+		if gas.idx != expected {
+			return Err(eyre::eyre!(
+				"gas registry is missing ID {expected} ({:?}); every entry of GAS_PATHS needs a /datum/gas",
+				super::ids::gas_path(expected)
+			));
 		}
 	}
-	Ok(ByondValue::null())
+	if gases.len() != super::ids::GAS_COUNT {
+		return Err(eyre::eyre!(
+			"gas registry has {} gases, GAS_PATHS has {}",
+			gases.len(),
+			super::ids::GAS_COUNT
+		));
+	}
+	*GAS_SPECIFIC_HEATS.write() = Some(gases.iter().map(|g| g.specific_heat).collect());
+	*GAS_INFO_BY_IDX.write() = Some(gases);
+	TOTAL_NUM_GASES.store(super::ids::GAS_COUNT, Ordering::Release);
+	Ok(())
 }
 
 /// Registers gases, and get reaction infos for auxmos, only call when ssair is initing.
 #[auxmacros::bind("/proc/auxtools_atmos_init")]
 fn hook_init(gas_data: ByondValue) -> Result<ByondValue> {
 	let data = gas_data.read_var_id(byond_string!("datums"))?;
-	data.iter()?
-		.map(|(_, gas)| hook_register_gas(gas))
-		.try_for_each(|res| res.map(drop))
+	let gases = data
+		.iter()?
+		.map(|(_, gas)| {
+			let path = gas.read_string_id(byond_string!("id"))?;
+			let idx = super::ids::gas_id_for_path(&path)
+				.ok_or_else(|| eyre::eyre!("{path} has no ID in verdigris gas/ids.rs"))?;
+			// DM sets /datum/gas/var/idx from the generated GAS_ID_* define.
+			if let Ok(dm_idx) = gas.read_number_id(byond_string!("idx")) {
+				if dm_idx as GasIDX != idx {
+					return Err(eyre::eyre!(
+						"{path}: DM idx {dm_idx} disagrees with GAS_PATHS ID {idx}"
+					));
+				}
+			}
+			GasType::new(&gas, idx)
+		})
+		.collect::<Result<Vec<_>>>()
 		.wrap_err("auxtools_atmos_init failed to register gas")?;
+	install_gases(gases)?;
 	*REACTION_INFO.write() = Some(get_reaction_info());
 	Ok(true.into())
 }
@@ -413,53 +401,37 @@ fn finalize_gas_refs() -> Result<ByondValue> {
 	Ok(ByondValue::null())
 }
 
-thread_local! {
-	static CACHED_GAS_IDS: RefCell<HashMap<u32, GasIDX, FxBuildHasher>> = const { RefCell::new(HashMap::with_hasher(FxBuildHasher)) };
-	static CACHED_IDX_TO_STRINGS: RefCell<HashMap<usize,Box<str>, FxBuildHasher>> = const { RefCell::new(HashMap::with_hasher(FxBuildHasher)) };
-}
-
-/// Returns the appropriate index to be used by auxmos for a given ID string.
+/// The ID for a gas string: its DM type path (`"/datum/gas/oxygen"`) or its
+/// short gas-string ID (`"o2"`). Used only when parsing gas strings; the FFI
+/// takes numeric IDs.
 /// # Errors
-/// If gases aren't loaded or an invalid gas ID is given.
+/// If gases aren't loaded or the string names no gas.
 pub fn gas_idx_from_string(id: &str) -> Result<GasIDX> {
-	Ok(GAS_INFO_BY_STRING
+	if let Some(idx) = super::ids::gas_id_for_path(id) {
+		return Ok(idx);
+	}
+	GAS_INFO_BY_IDX
 		.read()
 		.as_ref()
 		.ok_or_else(|| eyre::eyre!("Gases not loaded yet! Uh oh!"))?
-		.get(id)
-		.ok_or_else(|| eyre::eyre!("Invalid gas ID: {id}"))?
-		.idx)
+		.iter()
+		.find(|gas| &*gas.id == id)
+		.map(|gas| gas.idx)
+		.ok_or_else(|| eyre::eyre!("Invalid gas ID: {id}"))
 }
 
-/// Returns the appropriate index to be used by the game for a given Byond string.
+/// The gas index for a numeric `GAS_ID_*` value passed from DM.
 /// # Errors
-/// If the given string is not a string or is not a valid gas ID.
-pub fn gas_idx_from_value(string_val: &ByondValue) -> Result<GasIDX> {
-	CACHED_GAS_IDS.with_borrow_mut(|cache| {
-		if let Some(idx) = cache.get(&string_val.get_strid().unwrap()) {
-			Ok(*idx)
-		} else {
-			let id = &string_val.get_string()?;
-			let idx = gas_idx_from_string(id)?;
-			cache.insert(string_val.get_strid().unwrap(), idx);
-			Ok(idx)
-		}
-	})
-}
-
-/// Takes an index and returns a borrowed string representing the string ID of the gas datum stored in that index.
-/// # Panics
-/// If an invalid gas index is given to this. This should never happen, so we panic instead of runtiming.
-pub fn gas_idx_to_id(idx: GasIDX) -> ByondValue {
-	CACHED_IDX_TO_STRINGS.with_borrow(|stuff| {
-		ByondValue::new_str(
-			stuff
-				.get(&idx)
-				.unwrap_or_else(|| panic!("Invalid gas index: {idx}"))
-				.as_ref(),
-		)
-		.unwrap_or_else(|_| panic!("Cannot convert gas index to byond string: {idx}"))
-	})
+/// If the value is not a number or not a registered gas ID.
+pub fn gas_idx_from_value(value: &ByondValue) -> Result<GasIDX> {
+	let raw = value
+		.get_number()
+		.map_err(|_| eyre::eyre!("gas IDs are numbers (GAS_ID_*), got {value:?}"))?;
+	let idx = raw as GasIDX;
+	if raw < 0.0 || raw.fract() != 0.0 || idx >= total_num_gases() {
+		return Err(eyre::eyre!("Invalid gas ID: {raw}"));
+	}
+	Ok(idx)
 }
 
 #[cfg(test)]
@@ -477,20 +449,12 @@ pub fn register_gas_manually(gas_id: &'static str, specific_heat: f32) {
 		fire_info: FireInfo::None,
 		fire_products: None,
 	};
-	let cached_idx = gas_cache.idx;
-	GAS_INFO_BY_STRING
-		.read()
-		.as_ref()
-		.unwrap()
-		.insert(gas_id.into(), gas_cache.clone());
-
 	GAS_SPECIFIC_HEATS
 		.write()
 		.as_mut()
 		.unwrap()
 		.push(gas_cache.specific_heat);
 	GAS_INFO_BY_IDX.write().as_mut().unwrap().push(gas_cache);
-	CACHED_IDX_TO_STRINGS.with_borrow_mut(|map| map.insert(cached_idx, gas_id.into()));
 	TOTAL_NUM_GASES.fetch_add(1, Ordering::Release); // this is the only thing that stores it other than shutdown
 }
 

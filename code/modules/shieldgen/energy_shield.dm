@@ -195,6 +195,25 @@
 			return
 
 
+/// Packet sink. A segment has no integrity of its own: hits drain its
+/// generator's shared energy (deal_shield_damage) by shield damage type.
+/// take_damage() keeps its (damage, SHIELD_DAMTYPE_*, hitby) form for this sink
+/// and for fire and projectiles.
+/obj/effect/shield/receive_damage(datum/damage_packet/packet)
+	if(QDELETED(src) || disabled_for)
+		return 0
+	var/list/amounts = packet.amounts
+	var/physical = amounts[DAMAGE_BLUNT] + amounts[DAMAGE_SHARP] + amounts[DAMAGE_PIERCE] + amounts[DAMAGE_BLAST]
+	var/heat = amounts[DAMAGE_THERMAL] + amounts[DAMAGE_COLD]
+	var/electromagnetic = amounts[DAMAGE_SHOCK] + amounts[DAMAGE_IONIC]
+	if(physical > 0)
+		take_damage(physical, SHIELD_DAMTYPE_PHYSICAL, packet.source)
+	if(heat > 0 && !QDELETED(src))
+		take_damage(heat, SHIELD_DAMTYPE_HEAT, packet.source)
+	if(electromagnetic > 0 && !QDELETED(src))
+		take_damage(electromagnetic, SHIELD_DAMTYPE_EM, packet.source)
+	return physical + heat + electromagnetic
+
 // As we have various shield modes, this handles whether specific things can pass or not.
 /obj/effect/shield/CanPass(atom/movable/mover, turf/target)
 	// Somehow we don't have a generator. This shouldn't happen. Delete the shield.
@@ -221,12 +240,12 @@
 	. = ..()
 	if (. & EMP_PROTECT_SELF || disabled_for)
 		return
-	take_damage(rand(30,60) / severity, SHIELD_DAMTYPE_EM)
+	deal_damage(DAMAGE_IONIC, emp_ionic_damage(severity) * 0.45, flags = DAMAGE_PACKET_SILENT)
 
 // Explosions
 /obj/effect/shield/ex_act(severity)
 	if(!disabled_for)
-		take_damage(rand(10,15) / severity, SHIELD_DAMTYPE_PHYSICAL)
+		deal_damage(DAMAGE_BLAST, rand(10,15) / severity, flags = DAMAGE_PACKET_SILENT)
 
 
 // Fire

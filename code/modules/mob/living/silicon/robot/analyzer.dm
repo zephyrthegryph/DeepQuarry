@@ -13,7 +13,7 @@
 	w_class = ITEMSIZE_SMALL
 	throw_speed = 5
 	throw_range = 10
-	matter = list(MAT_STEEL = 500, MAT_GLASS = 200)
+	MATERIAL_MIX(list(MAT_STEEL = 500, MAT_GLASS = 200))
 	var/mode = 1;
 	pickup_sound = 'sound/items/pickup/device.ogg'
 	drop_sound = 'sound/items/drop/device.ogg'
@@ -31,10 +31,7 @@
 		to_chat(user, span_red("You try to analyze the floor's vitals!"))
 		for(var/mob/O in viewers(M, null))
 			O.show_message(span_red(text("[user] has analyzed the floor's vitals!")), 1)
-		user.show_message(span_blue(text("Analyzing Results for The floor:\n\t Overall Status: Healthy")), 1)
-		user.show_message(span_blue(text("\t Damage Specifics: [0]-[0]-[0]-[0]")), 1)
-		user.show_message(span_blue("Key: Suffocation/Toxin/Burns/Brute"), 1)
-		user.show_message(span_blue("Body Temperature: ???"), 1)
+		user.show_message(span_blue("Cyborg analyzer results for the floor: no components detected."), 1)
 		return
 
 	var/scan_type
@@ -52,16 +49,8 @@
 	switch(scan_type)
 		if("robot")
 			if(mode)
-				var/electronics_load = round(M.injury_load(INJURY_CATEGORY_THERMAL), 0.1)
-				var/structural_load = round(M.injury_load(INJURY_CATEGORY_PHYSICAL), 0.1)
-				var/BU = electronics_load > 50 	? 	span_bold("[electronics_load]") 		: electronics_load
-				var/BR = structural_load > 50 	? 	span_bold("[structural_load]") 	: structural_load
-				user.show_message(span_blue("Analyzing Results for [M]:\n\t Overall Status: [M.stat > 1 ? "fully disabled" : "[round(M.vitality() * 100)]% functional"]"))
-				user.show_message("\t Key: [span_orange("Electronics")]/[span_red("Brute")]", 1)
-				user.show_message("\t Damage Specifics: [span_orange("[BU]")] - [span_red("[BR]")]")
-				if(M.tod && M.stat == DEAD)
-					user.show_message(span_blue("Time of Disable: [M.tod]"))
 				var/mob/living/silicon/robot/R = M
+				render_diagnosis(R, user)
 				var/obj/item/cell/cell = R.get_cell()
 				if(cell)
 					var/cell_charge = round(cell.percent())
@@ -77,22 +66,8 @@
 					else
 						cell_text = span_red(span_bold("[cell_charge]"))
 					user.show_message("\t Power Cell Status: [span_blue("[capitalize(cell.name)]")] at [cell_text]% charge")
-				var/list/damaged = R.get_faulted_components(TRUE)
-				user.show_message(span_blue("Localized Damage:"),1)
-				if(length(damaged)>0)
-					for(var/datum/robot_component/org as anything in damaged)
-						user.show_message(span_blue(text("\t []: [][] - [] - [] - []",	\
-						span_blue(capitalize(org.name)),					\
-						(org.installed == ROBOT_PART_DESTROYED)	?	"[span_red(span_bold("DESTROYED"))] "					:"",\
-						(org.get_wiring_damage() > 0)	?	"[span_orange("[round(org.get_wiring_damage(), 0.1)]")]"	:0,	\
-						(org.get_structural_damage() > 0)	?	"[span_red("[round(org.get_structural_damage(), 0.1)]")]"					:0,	\
-						(org.toggled)	?	"Toggled ON"	:	"[span_red("Toggled OFF")]",\
-						(org.powered)	?	"Power ON"		:	"[span_red("Power OFF")]")),1)
-				else
-					user.show_message(span_blue("\t Components are OK."),1)
 				if(R.emagged && prob(5))
 					user.show_message(span_red("\t ERROR: INTERNAL SYSTEMS COMPROMISED"),1)
-				user.show_message(span_blue("Operating Temperature: [M.bodytemperature-T0C]&deg;C ([M.bodytemperature*1.8-459.67]&deg;F)"), 1)
 			else
 				var/mob/living/silicon/robot/R = M
 				var/obj/item/cell/cell = R.get_cell()
@@ -146,36 +121,7 @@
 				show_title = TRUE
 		if("prosthetics")
 
-			var/mob/living/carbon/human/H = M
-			to_chat(user, span_notice("Analyzing Results for \the [H]:"))
-			if(H.isSynthetic())
-				// Synthetic faults come from the body's afflictions; synthetic bodies carry no toxic load.
-				var/list/fault_names = list()
-				for(var/datum/affliction/synthetic/fault as anything in H.body?.afflictions_of(/datum/affliction/synthetic))
-					fault_names += fault.name
-				to_chat(user, "System faults: [length(fault_names) ? span_orange(english_list(fault_names)) : span_green("none detected")]")
-			to_chat(user, "Key: [span_orange("Electronics")]/[span_red("Brute")]")
-			to_chat(user, span_notice("External prosthetics:"))
-			var/organ_found
-			if(H.internal_organs.len)
-				for(var/obj/item/organ/external/E in H.organs)
-					if(!(E.robotic >= ORGAN_ROBOT))
-						continue
-					organ_found = 1
-					to_chat(user, "[E.name]: [span_red("[E.get_trauma()] ")] [span_orange("[E.get_burn()]")]")
-			if(!organ_found)
-				to_chat(user, "No prosthetics located.")
-			to_chat(user, "<hr>")
-			to_chat(user, span_notice("Internal prosthetics:"))
-			organ_found = null
-			if(H.internal_organs.len)
-				for(var/obj/item/organ/O in H.internal_organs)
-					if(!(O.robotic >= ORGAN_ROBOT))
-						continue
-					organ_found = 1
-					to_chat(user, "[O.name]: [span_red("[O.damage]")]")
-			if(!organ_found)
-				to_chat(user, "No prosthetics located.")
+			render_diagnosis(M, user)
 
 		if("mecha")
 
@@ -203,7 +149,7 @@
 			to_chat(user, span_notice("Internal Diagnostics:"))
 			for(var/slot in Mecha.internal_components)
 				var/obj/item/mecha_parts/component/MC = Mecha.internal_components[slot]
-				to_chat(user, "[MC? ("[slot]: [MC] " + span_notice("[round((MC.integrity / MC.max_integrity) * 100, 0.1)]%") + " integrity. [MC.get_efficiency() * 100] Operational capacity.") : span_warning("[slot]: Component Not Found")]")
+				to_chat(user, "[MC? ("[slot]: [MC] " + span_notice("[round((MC.get_integrity() / MC.max_integrity) * 100, 0.1)]%") + " integrity. [MC.get_efficiency() * 100] Operational capacity.") : span_warning("[slot]: Component Not Found")]")
 
 			to_chat(user, "<hr>")
 			to_chat(user, span_notice("General Statistics:"))
@@ -211,6 +157,17 @@
 
 	src.add_fingerprint(user)
 	return
+
+/// Diagnose `M` through the synthetic diagnostic bus (nanite telemetry for
+/// nanoform bodies) and print the report.
+/obj/item/robotanalyzer/proc/render_diagnosis(mob/living/M, mob/user)
+	var/profile = istype(M.body, /datum/body/humanoid/nanoform) ? /datum/diagnostic_profile/nanite : /datum/diagnostic_profile/robot_analyzer
+	var/datum/diagnosis/D = M.diagnose(profile)
+	if(!D)
+		return
+	user.show_message(D.render_chat(), 1)
+	log_diagnosis(user, M, D)
+	qdel(D)
 
 /// One upgrade line of the upgrade scan, from the upgrade's own detection.
 /obj/item/robotanalyzer/proc/show_upgrade_line(mob/user, mob/living/silicon/robot/R, upgrade_type, upgrade_name)

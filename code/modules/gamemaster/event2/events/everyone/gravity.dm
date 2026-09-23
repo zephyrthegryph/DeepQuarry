@@ -23,7 +23,7 @@
 /datum/event2/event/gravity/start()
 	GLOB.gravity_is_on = FALSE
 
-	for(var/obj/machinery/gravity_generator/main/GG in GLOB.machines)
+	for(var/obj/machinery/gravity_generator/main/GG in REGISTRY_MEMBERS(REGISTRY_MACHINES))
 		if((GG.z in get_location_z_levels()) && GG.on)
 			generators += GG
 			GG.breaker = FALSE

@@ -51,6 +51,8 @@
 
 	var/mob_announce_cooldown = 0 //Define this to make it so when visited, the ATC will announce their arrival. Only used if you have a Crossed/Uncrossed that calls announce_atc w/ announce_atc being redefined.
 
+REGISTRY_MEMBERSHIP(/obj/effect/overmap/visitable, REGISTRY_OVERMAP_VISITABLES)
+
 /obj/effect/overmap/visitable/Initialize(mapload)
 	. = ..()
 	if(. == INITIALIZE_HINT_QDEL)
@@ -75,7 +77,7 @@
 
 	if(known)
 		plane = PLANE_LIGHTING_ABOVE
-		for(var/obj/machinery/computer/ship/helm/H in GLOB.machines)
+		for(var/obj/machinery/computer/ship/helm/H in REGISTRY_MEMBERS(REGISTRY_MACHINES))
 			H.get_known_sectors()
 	else
 		real_appearance = image(icon, src, icon_state)
@@ -87,7 +89,6 @@
 		real_desc = desc
 		desc = "Scan this to find out more information."
 	//at the moment only used for the OM location renamer. Initializing here in case we want shuttles incl as well in future. Also proc definition convenience.
-	GLOB.visitable_overmap_object_instances += src
 
 	for(var/i in 1 to length(levels_for_distress))
 		var/current = levels_for_distress[i]

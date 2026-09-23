@@ -12,15 +12,9 @@
 	anchored = FALSE
 	opacity = 0
 	var/list/welder_salvage = list(/obj/item/stack/material/plasteel,/obj/item/stack/material/steel,/obj/item/stack/rods)
-	var/list/wirecutters_salvage = list(/obj/item/stack/cable_coil)
+	var/static/list/wirecutters_salvage = list(/obj/item/stack/cable_coil)
 	var/list/crowbar_salvage = list()
 	var/salvage_num = 5
-
-/obj/effect/decal/mecha_wreckage/ex_act(severity)
-	if(severity < 2)
-		spawn
-			qdel(src)
-	return
 
 /obj/effect/decal/mecha_wreckage/bullet_act(obj/item/projectile/Proj)
 	return

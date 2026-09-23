@@ -9,7 +9,7 @@
 	plane = MOB_PLANE
 	explosion_resistance = 5
 	var/can_pass_lying = TRUE
-	var/list/mobs_can_pass = list(
+	var/static/list/mobs_can_pass = list(
 		/mob/living/bot,
 		/mob/living/simple_mob/slime/xenobio,
 		/mob/living/simple_mob/animal/passive/mouse,
@@ -56,17 +56,6 @@
 		return issmall(M)
 
 	return ..()
-
-/obj/structure/plasticflaps/ex_act(severity)
-	switch(severity)
-		if (1)
-			qdel(src)
-		if (2)
-			if (prob(50))
-				qdel(src)
-		if (3)
-			if (prob(5))
-				qdel(src)
 
 /obj/structure/plasticflaps/mining //A specific type for mining that doesn't allow airflow because of them damn crates
 	name = "airtight plastic flaps"

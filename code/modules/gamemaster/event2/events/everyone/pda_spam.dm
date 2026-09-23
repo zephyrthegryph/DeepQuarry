@@ -34,7 +34,7 @@
 	var/obj/item/pda/P = null
 	var/list/viables = list()
 
-	for(var/obj/item/pda/check_pda in GLOB.PDAs)
+	for(var/obj/item/pda/check_pda in REGISTRY_MEMBERS(REGISTRY_PDAS))
 		if (!check_pda.owner || check_pda == src || check_pda.hidden)
 			continue
 
@@ -138,5 +138,5 @@
 
 
 /datum/event2/event/pda_spam/proc/pick_message_server()
-	if(LAZYLEN(GLOB.message_servers))
-		return pick(GLOB.message_servers)
+	if(LAZYLEN(REGISTRY_MEMBERS(REGISTRY_MESSAGE_SERVERS)))
+		return pick(REGISTRY_MEMBERS(REGISTRY_MESSAGE_SERVERS))

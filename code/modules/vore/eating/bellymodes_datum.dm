@@ -67,7 +67,7 @@ GLOBAL_LIST_INIT(digest_modes, list())
 	var/was_critical = L.is_critical()
 	var/actual_brute = B.digest_brute > 0 ? L.injure(INJURY_DIGESTION, B.digest_brute * delta_factor, source = B) : 0
 	var/actual_burn = B.digest_burn > 0 ? L.injure(INJURY_CORROSIVE, B.digest_burn * delta_factor, source = B) : 0
-	var/actual_oxy = B.digest_oxy > 0 ? L.injure(INJURY_ASPHYXIA, B.digest_oxy * delta_factor, source = B) : 0
+	var/actual_oxy = B.digest_oxy > 0 ? L.add_oxygen_debt(B.digest_oxy * delta_factor, B) : 0
 	var/actual_tox = B.digest_tox > 0 ? L.injure(INJURY_TOXIN, B.digest_tox * delta_factor, source = B) : 0
 	var/actual_clone = B.digest_clone > 0 ? L.injure(INJURY_CELLULAR, B.digest_clone * delta_factor, source = B) : 0
 	L.attempt_multishock(SHOCKFLAG_DIGESTION)

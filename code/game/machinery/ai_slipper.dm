@@ -52,9 +52,6 @@
 		to_chat(user, span_warning("Access denied."))
 	return
 
-/obj/machinery/ai_slipper/attack_ai(mob/user as mob)
-	return attack_hand(user)
-
 /obj/machinery/ai_slipper/attack_hand(mob/user as mob)
 	if(stat & (NOPOWER|BROKEN))
 		return

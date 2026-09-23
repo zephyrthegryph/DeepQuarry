@@ -24,7 +24,7 @@
 	icon_state = "s-casing"
 	w_class = ITEMSIZE_TINY
 	slot_flags = SLOT_BELT | SLOT_EARS
-	matter = null
+	MATERIAL_NONE
 	throwforce = 1
 	mag_type = SPEEDLOADER	//feeds revolvers / shotguns / internal-mag guns via load_ammo
 	caliber = ""			//inherited from the first round gathered

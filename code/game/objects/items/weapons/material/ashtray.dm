@@ -44,7 +44,7 @@ GLOBAL_LIST_EMPTY(ashtray_cache)
 		desc = "An ashtray made of [material.display_name]."
 
 /obj/item/material/ashtray/attackby(obj/item/W as obj, mob/user as mob)
-	if (health <= 0)
+	if (get_integrity() <= 0)
 		return
 	if (istype(W,/obj/item/trash/cigbutt) || istype(W,/obj/item/clothing/mask/smokable/cigarette) || istype(W, /obj/item/flame/match))
 		if (contents.len >= max_butts)
@@ -78,24 +78,27 @@ GLOBAL_LIST_EMPTY(ashtray_cache)
 		add_fingerprint(user)
 		update_icon()
 	else
-		health = max(0,health - W.force)
 		to_chat(user, "You hit [src] with [W].")
-		if (health < 1)
-			shatter()
+		material_wear(W.force * MATERIAL_WEAR_UNIT)
 	return
 
 /obj/item/material/ashtray/throw_impact(atom/hit_atom)
-	if (health > 0)
-		health = max(0,health - 3)
+	if (get_integrity() > 0)
 		if (contents.len)
 			src.visible_message(span_danger("\The [src] slams into [hit_atom], spilling its contents!"))
 		for (var/obj/item/O in contents) // Dump all items out, so it ejects butts too
 			O.loc = src.loc
-		if (health < 1)
-			shatter()
+		material_wear(3 * MATERIAL_WEAR_UNIT)
+		if (QDELETED(src))
 			return
 		update_icon()
 	return ..()
+
+/// An ashtray broken by blows shatters. Fire and acid destroy it outright.
+/obj/item/material/ashtray/atom_destruction(damage_flag)
+	if(damage_flag == FIRE || damage_flag == ACID)
+		return ..()
+	shatter()
 
 /obj/item/material/ashtray/plastic/Initialize(mapload)
 	. = ..(mapload, MAT_PLASTIC)

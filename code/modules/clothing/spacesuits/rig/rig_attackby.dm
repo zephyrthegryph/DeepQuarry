@@ -179,8 +179,8 @@
 
 /obj/item/rig/emag_act(remaining_charges, mob/user)
 	if(!subverted)
-		LAZYCLEARLIST(req_access)
-		LAZYCLEARLIST(req_one_access)
+		req_access = null
+		req_one_access = null
 		locked = 0
 		subverted = 1
 		to_chat(user, span_danger("You short out the access protocol for the suit."))

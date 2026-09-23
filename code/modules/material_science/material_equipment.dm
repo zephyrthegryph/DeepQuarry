@@ -1,13 +1,16 @@
 /// Operating roles extend the existing pressure construction; they are only
 /// present on devices with a motor and moving gas-working surfaces.
+/// Pump devices declare the pump template; this upgrades a pressure device that
+/// gains a drive at runtime. Its pressure-envelope overrides carry over, and the
+/// drive train adds three sheets to its total.
 /obj/machinery/proc/ensure_pump_materials(notify = TRUE)
-	ensure_material_construction(MATERIAL_APPLICATION_PRESSURE)
-	var/changed = FALSE
-	for(var/role in list(MATERIAL_ROLE_CONDUCTOR, MATERIAL_ROLE_BEARINGS, MATERIAL_ROLE_WORKING))
-		if(!construction_materials[role])
-			set_construction_material(role, role == MATERIAL_ROLE_CONDUCTOR ? MAT_COPPER : MAT_STEEL, SHEET_MATERIAL_AMOUNT)
-			changed = TRUE
-	if(changed && notify)
+	if(material_template == /datum/material_template/pump)
+		return
+	var/list/kept_overrides = material_overrides
+	material_total = get_material_total() + 3 * SHEET_MATERIAL_AMOUNT
+	material_template = /datum/material_template/pump
+	material_overrides = kept_overrides
+	if(notify)
 		material_service_changed()
 
 /obj/machinery/proc/material_pump_efficiency()

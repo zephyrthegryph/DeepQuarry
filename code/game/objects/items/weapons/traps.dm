@@ -17,7 +17,7 @@
 	center_of_mass_y = 0
 	throwforce = 0
 	w_class = ITEMSIZE_NORMAL
-	matter = list(MAT_STEEL = 18750)
+	MATERIAL_BULK(MAT_STEEL, 18750)
 	var/deployed = 0
 	var/camo_net = FALSE
 	var/stun_length = 0.25 SECONDS
@@ -193,7 +193,8 @@
 	..()
 
 	if(!QDELETED(src))
-		health = round(material.integrity / 3)
+		max_integrity = max(1, round(material.integrity / 3)) * MATERIAL_WEAR_UNIT
+		update_integrity(max_integrity)
 		name = (material.get_edge_damage() * force_divisor > 15) ?  "[material.display_name] razor wire" : "[material.display_name] [initial(name)]"
 
 /obj/item/material/barbedwire/proc/can_use(mob/user)
@@ -208,7 +209,7 @@
 			)
 		playsound(src, 'sound/machines/click.ogg', 50, 1)
 
-		if(do_after(user, health, target = src))
+		if(do_after(user, get_integrity() / MATERIAL_WEAR_UNIT, target = src))
 			user.visible_message(
 				span_danger("[user] has collected \the [src]."),
 				span_notice("You have collected \the [src]!")
@@ -257,9 +258,7 @@
 		if(W.obj_damage_type() != BRUTE)
 			inc_damage *= 0.3
 
-		health -= inc_damage
-
-	check_health()
+		material_wear(inc_damage * MATERIAL_WEAR_UNIT)
 
 	..()
 
@@ -311,7 +310,7 @@
 	..()
 
 /obj/item/material/barbedwire/proc/shock(mob/user as mob, prb, target_zone = BP_TORSO)
-	if(!anchored || health == 0)		// anchored/destroyed grilles are never connected
+	if(!anchored || get_integrity() <= 0)		// anchored/destroyed grilles are never connected
 		return 0
 	if(material.conductivity <= 0)
 		return 0
@@ -407,10 +406,9 @@
 			check -= picked
 
 	if(material.is_brittle() && prob(material.hardness))
-		health = 0
+		material_wear(get_integrity())
 	else if(!prob(material.hardness))
-		health--
-	check_health()
+		material_wear(MATERIAL_WEAR_UNIT)
 
 	return
 

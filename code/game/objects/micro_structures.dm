@@ -1,4 +1,3 @@
-GLOBAL_LIST_EMPTY(micro_tunnels)
 
 /obj/structure/micro_tunnel
 	name = "mouse hole"
@@ -20,9 +19,10 @@ GLOBAL_LIST_EMPTY(micro_tunnels)
 		/mob/living/simple_mob/slime
 	)
 
+REGISTRY_MEMBERSHIP(/obj/structure/micro_tunnel, REGISTRY_MICRO_TUNNELS)
+
 /obj/structure/micro_tunnel/Initialize(mapload)
 	. = ..()
-	GLOB.micro_tunnels.Add(src)
 	if(name == initial(name))
 		var/area/our_area = get_area(src)
 		name = "[our_area.name] [name]"
@@ -37,7 +37,6 @@ GLOBAL_LIST_EMPTY(micro_tunnels)
 		thing.forceMove(get_turf(src.loc))
 		thing.cancel_camera()
 
-	GLOB.micro_tunnels.Remove(src)
 
 	return ..()
 
@@ -67,7 +66,7 @@ GLOBAL_LIST_EMPTY(micro_tunnels)
 	for(var/datum/planet/P in SSplanets.planets)
 		if(myturf.z in P.expected_z_levels)
 			planet = P
-	for(var/obj/structure/micro_tunnel/t in GLOB.micro_tunnels)
+	for(var/obj/structure/micro_tunnel/t in REGISTRY_MEMBERS(REGISTRY_MICRO_TUNNELS))
 		if(t == src)
 			continue
 		if(magic || t.magic)
@@ -283,6 +282,7 @@ GLOBAL_LIST_EMPTY(micro_tunnels)
 
 /obj/Initialize(mapload)
 	. = ..()
+	intern_access_lists()
 	if(micro_target)
 		verbs += /obj/proc/micro_interact
 

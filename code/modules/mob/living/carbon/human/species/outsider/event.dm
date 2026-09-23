@@ -80,7 +80,7 @@ Variables you may want to make use of are:
 	vision_flags = SEE_SELF
 	darksight = 7
 
-	factor_baseline = alist(BF_INCOMING_PHYSICAL = 0.9, BF_INCOMING_THERMAL = 0.9, BF_INCOMING_TOXIC = 0.9, BF_INCOMING_ASPHYXIA = 0.9)
+	factor_baseline = alist(BF_INCOMING_PHYSICAL = 0.9, BF_INCOMING_THERMAL = 0.9, BF_INCOMING_TOXIC = 0.9, BF_DEMAND = 0.9)
 	radiation_mod = 0.9
 	flash_mod = 0.9
 	sound_mod = 0.9

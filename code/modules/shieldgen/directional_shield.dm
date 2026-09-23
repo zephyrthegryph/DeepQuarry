@@ -88,8 +88,11 @@
 	light_power = 4
 	light_on = TRUE
 	var/active = FALSE					// If it's on.
-	var/shield_health = 400				// How much damage the shield blocks before breaking.  This is a shared health pool for all shields attached to this projector.
-	var/max_shield_health = 400			// Ditto.  This is fairly high, but shields are really big, you can't miss them, and laser carbines pump out so much hurt.
+	// The projector's integrity is the shield's strength: how much damage the shield blocks before breaking.
+	// This is a shared pool for all shields attached to this projector. It is fairly high, but shields are
+	// really big, you can't miss them, and laser carbines pump out so much hurt. At zero the shield overloads;
+	// the projector itself survives and recharges.
+	max_integrity = 400
 	var/shield_regen_amount = 20		// How much to recharge every process(), after the delay.
 	var/shield_regen_delay = 5 SECONDS	// If the shield takes damage, it won't recharge for this long.
 	var/last_damaged_time = null		// world.time when the shields took damage, used for the delay.
@@ -102,6 +105,7 @@
 	var/special_handling = FALSE
 
 /obj/item/shield_projector/Initialize(mapload)
+	max_integrity = max_integrity
 	START_PROCESSING(SSobj, src)
 	AddComponent(/datum/component/recursive_move)
 	RegisterSignal(src, COMSIG_MOVABLE_ATTEMPTED_MOVE, PROC_REF(moved_event))
@@ -129,7 +133,7 @@
 /obj/item/shield_projector/proc/create_shields() // Override this for a specific shape.  Be sure to call ..() for the checks, however.
 	if(active) // Already made.
 		return FALSE
-	if(shield_health <= 0)
+	if(get_integrity() <= 0)
 		return FALSE
 	active = TRUE
 	return TRUE
@@ -146,26 +150,37 @@
 	for(var/obj/effect/directional_shield/S in active_shields)
 		S.relocate()
 
+/// Drains (negative) or recharges (positive) the shield. Shield hits skip the projector's armour.
 /obj/item/shield_projector/proc/adjust_health(amount)
-	shield_health = between(0, shield_health + amount, max_shield_health)
 	if(amount < 0)
-		if(shield_health <= 0)
-			destroy_shields()
-			var/turf/T = get_turf(src)
-			T.visible_message(span_danger("\The [src] overloads and the shield vanishes!"))
-			playsound(src, 'sound/machines/defib_failed.ogg', 75, 0)
-		else
-			if(shield_health < max_shield_health / 4) // Play a more urgent sounding beep if it's at 25% health.
+		take_damage(-amount, BRUTE, null, FALSE)
+	else if(amount > 0)
+		repair_damage(amount)
+
+/obj/item/shield_projector/on_update_integrity(old_value, new_value)
+	. = ..()
+	if(new_value < old_value)
+		last_damaged_time = world.time
+		if(new_value > 0)
+			if(new_value < max_integrity / 4) // Play a more urgent sounding beep if it's at 25% health.
 				playsound(src, 'sound/machines/defib_success.ogg', 75, 0)
 			else
 				playsound(src, 'sound/machines/defib_SafetyOn.ogg', 75, 0)
-		last_damaged_time = world.time
 	update_shield_colors()
+
+/// A drained shield overloads; the projector survives and recharges. Fire and acid still destroy it.
+/obj/item/shield_projector/atom_destruction(damage_flag)
+	if(damage_flag == FIRE || damage_flag == ACID)
+		return ..()
+	destroy_shields()
+	var/turf/T = get_turf(src)
+	T?.visible_message(span_danger("\The [src] overloads and the shield vanishes!"))
+	playsound(src, 'sound/machines/defib_failed.ogg', 75, 0)
 
 // Makes shields become gradually more red as the projector's health decreases.
 /obj/item/shield_projector/proc/update_shield_colors()
 	// This is done at the projector instead of the shields themselves to avoid needing to calculate this more than once every update.
-	var/interpolate_weight = shield_health / max_shield_health
+	var/interpolate_weight = max_integrity ? get_integrity() / max_integrity : 0
 
 	var/list/low_color_list = hex2rgb(low_color)
 	var/low_r = low_color_list[1]
@@ -212,11 +227,11 @@
 	on ? create_shields() : destroy_shields() // Harmless if called when in the wrong state.
 
 /obj/item/shield_projector/process()
-	if(shield_health < max_shield_health && ( (last_damaged_time + shield_regen_delay) < world.time) )
+	if(get_integrity() < max_integrity && ( (last_damaged_time + shield_regen_delay) < world.time) )
 		adjust_health(shield_regen_amount)
 		if(always_on && !active) // Make shields as soon as possible if this is set.
 			create_shields()
-		if(shield_health == max_shield_health)
+		if(get_integrity() >= max_integrity)
 			playsound(src, 'sound/machines/defib_ready.ogg', 75, 0)
 		else
 			playsound(src, 'sound/machines/defib_safetyOff.ogg', 75, 0)
@@ -224,13 +239,13 @@
 /obj/item/shield_projector/examine(mob/user)
 	. = ..()
 	if(Adjacent(user))
-		. += "Its shield matrix is at [round( (shield_health / max_shield_health) * 100, 0.01)]% strength."
+		. += "Its shield matrix is at [round( (get_integrity() / max_integrity) * 100, 0.01)]% strength."
 
 /obj/item/shield_projector/emp_act(severity, recursive)
 	. = ..()
 	if (. & EMP_PROTECT_SELF)
 		return
-	adjust_health(-max_shield_health / severity) // A strong EMP will kill the shield instantly, but weaker ones won't on the first hit.
+	adjust_health(-max_integrity / severity) // A strong EMP will kill the shield instantly, but weaker ones won't on the first hit.
 
 // Subtypes
 
@@ -244,8 +259,7 @@
 
 // Weaker and smaller variant.
 /obj/item/shield_projector/rectangle/weak
-	shield_health = 200 // Half as strong as the default.
-	max_shield_health = 200
+	max_integrity = 200
 	size_x = 2
 	size_y = 2
 
@@ -254,8 +268,7 @@
 	always_on = TRUE
 
 /obj/item/shield_projector/rectangle/automatic/weak
-	shield_health = 200 // Half as strong as the default.
-	max_shield_health = 200
+	max_integrity = 200
 	size_x = 2
 	size_y = 2
 
@@ -369,7 +382,7 @@
 /obj/item/shield_projector/line/exosuit //Variant for Exosuit design.
 	name = "linear exosuit shield projector"
 	offset_from_center = 1 //Snug against the exosuit.
-	max_shield_health = 200
+	max_integrity = 200
 
 	var/obj/mecha/my_mecha = null
 	var/obj/item/mecha_parts/mecha_equipment/combat_shield/my_tool = null
@@ -411,6 +424,6 @@
 /obj/item/shield_projector/line/exosuit/adjust_health(amount)
 	..()
 	my_mecha.use_power(my_tool.energy_drain)
-	if(!active && shield_health < shield_regen_amount)
+	if(!active && get_integrity() < shield_regen_amount)
 		my_tool.log_message("Shield overloaded.", LOG_GAME)
 		my_mecha.use_power(my_tool.energy_drain * 4)

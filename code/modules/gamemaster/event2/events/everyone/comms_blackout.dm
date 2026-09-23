@@ -30,14 +30,14 @@
 	if(prob(50))
 		// One in two chance for the radios to turn i%t# t&_)#%, which can be more alarming than radio silence.
 		log_game("Doing partial outage of telecomms.")
-		for(var/obj/machinery/telecomms/processor/P in GLOB.telecomms_list)
+		for(var/obj/machinery/telecomms/processor/P in REGISTRY_MEMBERS(REGISTRY_TELECOMMS))
 			P.emp_act(1)
 	else
 		// Otherwise just shut everything down, madagascar style.
 		log_game("Doing complete outage of telecomms.")
-		for(var/obj/machinery/telecomms/T in GLOB.telecomms_list)
+		for(var/obj/machinery/telecomms/T in REGISTRY_MEMBERS(REGISTRY_TELECOMMS))
 			T.emp_act(1)
 
 	// Communicators go down no matter what.
-	for(var/obj/machinery/exonet_node/N in GLOB.machines)
+	for(var/obj/machinery/exonet_node/N in REGISTRY_MEMBERS(REGISTRY_MACHINES))
 		N.emp_act(1)

@@ -543,7 +543,7 @@
  * - [I][obj/item]: the item whos materials must be retrieved
  */
 /datum/component/material_container/proc/get_item_material_amount(obj/item/I, breakdown_flags = mat_container_flags)
-	if(!istype(I) || !I.matter)
+	if(!istype(I) || !length(I.material_totals()))
 		return 0
 	var/material_amount = 0
 	var/list/item_materials = I.get_material_composition(breakdown_flags)

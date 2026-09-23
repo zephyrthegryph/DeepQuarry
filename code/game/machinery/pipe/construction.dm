@@ -4,6 +4,8 @@ Buildable meters
 */
 
 /obj/item/pipe
+	material_template = /datum/material_template/pressure
+	material_total = SHEET_MATERIAL_AMOUNT
 	name = "pipe"
 	desc = "A pipe."
 	var/pipe_type
@@ -45,7 +47,7 @@ Buildable meters
 	else
 		pipe_type = _pipe_type
 		set_dir(_dir)
-	ensure_material_construction(MATERIAL_APPLICATION_PRESSURE)
+		apply_blueprint_effects()
 
 	update()
 	pixel_x += rand(-5, 5)
@@ -174,8 +176,7 @@ Buildable meters
 			return
 		var/datum/material/material = stock.material
 		engineered_material_id = material.name
-		var/list/slots = default_material_slots(MATERIAL_APPLICATION_PRESSURE, SHEET_MATERIAL_AMOUNT)
-		apply_material_construction(list(MATERIAL_ROLE_STRUCTURE = material.name, MATERIAL_ROLE_LINER = material.name), slots, MATERIAL_APPLICATION_PRESSURE)
+		apply_material_construction(list(MATERIAL_ROLE_STRUCTURE = material.name, MATERIAL_ROLE_LINER = material.name), /datum/material_template/pressure, SHEET_MATERIAL_AMOUNT)
 		stock.use(1)
 		color = material.icon_colour
 		to_chat(user, span_notice("You form [material.display_name] around [src]. Its installed geometry will determine pressure strength, heat transfer, and chemical exposure."))

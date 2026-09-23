@@ -114,7 +114,7 @@
 								carrier.mend(TREAT_ANTITOXIN, 5)
 								total_heal += 5
 
-							if(carrier.injury_load(INJURY_CATEGORY_ASPHYXIA))
+							if(carrier.oxygen_debt())
 								carrier.mend(TREAT_OXYGENATION, 5)
 								total_heal += 5
 

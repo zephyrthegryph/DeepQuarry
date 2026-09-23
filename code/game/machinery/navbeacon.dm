@@ -1,7 +1,6 @@
 // Navigation beacon for AI robots
 // Functions as a transponder: looks for incoming signal matching
 
-GLOBAL_LIST_EMPTY(navbeacons) // no I don't like putting this in, but it will do for now
 
 /obj/machinery/navbeacon
 	icon = 'icons/obj/objects.dmi'
@@ -16,11 +15,12 @@ GLOBAL_LIST_EMPTY(navbeacons) // no I don't like putting this in, but it will do
 	var/list/codes = list()	// assoc. list of transponder codes
 	req_access = list(ACCESS_ENGINE)
 
+REGISTRY_MEMBERSHIP(/obj/machinery/navbeacon, REGISTRY_NAVBEACONS)
+
 /obj/machinery/navbeacon/Initialize(mapload)
 	. = ..()
 	var/turf/T = loc
 	hide(!T.is_plating())
-	GLOB.navbeacons += src
 
 /obj/machinery/navbeacon/hides_under_flooring()
 	return 1
@@ -59,8 +59,8 @@ GLOBAL_LIST_EMPTY(navbeacons) // no I don't like putting this in, but it will do
 	update_icon()
 	return ITEM_INTERACT_SUCCESS
 
-/obj/machinery/navbeacon/attack_ai(mob/user)
-	tgui_interact(user)
+/obj/machinery/navbeacon
+	silicon_use = SILICON_USE_UI
 
 /obj/machinery/navbeacon/attack_hand(mob/user)
 
@@ -173,7 +173,6 @@ GLOBAL_LIST_EMPTY(navbeacons) // no I don't like putting this in, but it will do
 			return TRUE
 
 /obj/machinery/navbeacon/Destroy()
-	GLOB.navbeacons.Remove(src)
 	. = ..()
 
 

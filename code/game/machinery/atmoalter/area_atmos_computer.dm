@@ -19,9 +19,6 @@
 	. = ..()
 	scanscrubbers()
 
-/obj/machinery/computer/area_atmos/attack_ai(mob/user as mob)
-	return src.attack_hand(user)
-
 /obj/machinery/computer/area_atmos/attack_hand(mob/user as mob)
 	if(..(user))
 		return

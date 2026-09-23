@@ -1,11 +1,13 @@
 #[allow(dead_code)]
 pub mod constants;
+pub mod ids;
 pub mod mixture;
 pub mod types;
 
 use crate::GAS_MIN_MOLES;
 use byondapi::prelude::*;
 use eyre::Result;
+pub use ids::*;
 pub use mixture::Mixture;
 use parking_lot::{const_mutex, const_rwlock, Mutex, MutexGuard, RwLock};
 use rustc_hash::FxHashMap;
@@ -601,8 +603,8 @@ impl GasArena {
 		}
 		if mask & GAS_CHANGE_TEMPERATURE != 0 {
 			baseline.temperature = after.temperature;
-			#[cfg(feature = "superconductivity")]
-			crate::turfs::superconduct::mark_heat_dirty();
+			#[cfg(feature = "heat")]
+			crate::turfs::heat::gas_temperature_changed(id);
 		}
 		if mask & GAS_CHANGE_COMPOSITION != 0 {
 			baseline.composition = after.composition;

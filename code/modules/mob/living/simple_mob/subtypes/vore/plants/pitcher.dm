@@ -25,7 +25,7 @@ GLOBAL_LIST_INIT(pitcher_plant_lure_messages, list(
 
 	anchored = 1 // Rooted plant. Only killing it will let you move it.
 	endurance = 200
-	a_intent = I_HELP // While this is already help by default, I'm leaving this variable here as a reminder that disarm will prevent players from swapping places with the pitcher, but interfere with vore bump.
+	// Combat mode stays off: a pitcher in combat mode would stop players swapping places with it, but interfere with vore bump.
 	faction = FACTION_PLANTS // Makes plant-b-gone deadly.
 
 	min_oxy = 0 //Immune to atmos because so are space vines. This is arbitrary and can be tweaked if desired.
@@ -184,7 +184,7 @@ GLOBAL_LIST_INIT(pitcher_plant_lure_messages, list(
 				adjust_nutrition(-NUTRITION_PITCHER)
 
 /mob/living/simple_mob/vore/pitcher_plant/attack_hand(mob/living/user)
-	if(user.a_intent == I_HELP)
+	if(IS_HELPING(user))
 		if(fruit)
 			to_chat(user, span_infoplain("You pick a fruit from \the [src]."))
 			var/obj/F = new /obj/item/reagent_containers/food/snacks/pitcher_fruit(get_turf(user)) //Drops at the user's feet if put_in_hands fails

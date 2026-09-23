@@ -5,7 +5,7 @@ GLOBAL_LIST_EMPTY(floor_light_cache)
 	desc = "A backlit floor panel, ready for installation!"
 	icon = 'icons/obj/machines/floor_light.dmi'
 	icon_state = "item"
-	matter = list(MAT_STEEL = 2500, MAT_GLASS = 2750)
+	MATERIAL_MIX(list(MAT_STEEL = 2500, MAT_GLASS = 2750))
 
 /obj/item/floor_light/attack_self(mob/user)
 	. = ..(user)
@@ -58,13 +58,13 @@ GLOBAL_LIST_EMPTY(floor_light_cache)
 	return ITEM_INTERACT_SUCCESS
 
 /obj/machinery/floor_light/attackby(obj/item/W, mob/user)
-	if(W.force && user.a_intent == "hurt")
+	if(W.force && IS_HARMING(user))
 		attack_hand(user)
 	return ..()
 
 /obj/machinery/floor_light/attack_hand(mob/user)
 
-	if(user.a_intent == I_HURT && !issmall(user))
+	if(IS_HARMING(user) && !issmall(user))
 		if(!isnull(damaged) && !(stat & BROKEN))
 			visible_message(span_danger("\The [user] smashes \the [src]!"))
 			playsound(src, "shatter", 70, 1)
