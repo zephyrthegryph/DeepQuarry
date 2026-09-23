@@ -35,53 +35,7 @@
 			stop_following()
 		forceMove(get_turf(A))
 
-/mob/observer/dead/ClickOn(atom/A, params)
-	if(!checkClickCooldown()) return
-	setClickCooldown(1)
-
-	if(check_click_intercept(params,A))
-		return
-
-	if(client && client.buildmode)
-		build_click(src, client.buildmode, params, A)
-		return
-
-	var/list/modifiers = params2list(params)
-
-	if(LAZYACCESS(modifiers, BUTTON4) || LAZYACCESS(modifiers, BUTTON5))
-		return
-
-	if(LAZYACCESS(modifiers, SHIFT_CLICK))
-		if(LAZYACCESS(modifiers, MIDDLE_CLICK))
-			ShiftMiddleClickOn(A)
-			return
-		if(LAZYACCESS(modifiers, CTRL_CLICK))
-			CtrlShiftClickOn(A)
-			return
-		if (LAZYACCESS(modifiers, ALT_CLICK))
-			alt_shift_click_on(A)
-			return
-		ShiftClickOn(A) //Should in most cases call examinate() unless we block things from examining us.
-		return
-	if(LAZYACCESS(modifiers, MIDDLE_CLICK))
-		if(LAZYACCESS(modifiers, CTRL_CLICK))
-			CtrlMiddleClickOn(A)
-		else
-			MiddleClickOn(A, params)
-		return
-	if(LAZYACCESS(modifiers, ALT_CLICK)) // alt and alt-gr (rightalt)
-		if(LAZYACCESS(modifiers, RIGHT_CLICK))
-			AltClickSecondaryOn(A)
-		else
-			AltClickOn(A)
-		return
-	if(LAZYACCESS(modifiers, CTRL_CLICK))
-		CtrlClickOn(A)
-		return
-
-	// You are responsible for checking config.ghost_interaction when you override this function
-	// Not all of them require checking, see below
-	A.attack_ghost(src)
+// Ghost clicks route through the input router; Use runs attack_ghost (adapters.dm).
 
 // Oh by the way this didn't work with old click code which is why clicking shit didn't spam you
 /atom/proc/attack_ghost(mob/observer/dead/user as mob)

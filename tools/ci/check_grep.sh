@@ -128,6 +128,20 @@ if $grep -n '(\bair|air_contents|\bair[0-9]|cabin_air|\benvironment)\.(temperatu
 	FAILED=1
 fi;
 
+part "input: modifier ladders"
+# Click modifiers (shift, ctrl, alt, middle, right, extra buttons) are read in one
+# place: the input router (code/modules/keybindings/router.dm), which turns them
+# into abstract actions for every mob (doc/rewrite/interactions.md §4). Branch on
+# the action instead. The files listed below predate the router (HUD buttons,
+# camera consoles, the admin spawn panel, the secondary item-interaction flag);
+# they are grandfathered and must not grow.
+input_ladder_allowlist='code/modules/keybindings/router\.dm|code/_onclick/item_attack\.dm|code/_onclick/hud/action/action_screen_objects\.dm|code/game/machinery/computer/(body)?camera\.dm|code/modules/admin/spawn_panel/spawn_panel\.dm|code/modules/mob/living/carbon/human/species/station/protean/protean_powers\.dm'
+if $grep -n '\bmodifiers\[\s*"(shift|ctrl|alt|middle|right|left|xbutton1|xbutton2)"|LAZYACCESS\(\s*modifiers\s*,\s*(SHIFT_CLICK|CTRL_CLICK|ALT_CLICK|MIDDLE_CLICK|RIGHT_CLICK|LEFT_CLICK|BUTTON4|BUTTON5)|\bmodifiers\[\s*(SHIFT_CLICK|CTRL_CLICK|ALT_CLICK|MIDDLE_CLICK|RIGHT_CLICK|LEFT_CLICK|BUTTON4|BUTTON5)\s*\]' $code_files | grep -vE "^($input_ladder_allowlist):"; then
+	echo
+	echo -e "${RED}ERROR: a click modifier check outside the input router. Add a row to a click table in code/modules/keybindings/router.dm and branch on the INPUT_ACTION_* it produces.${NC}"
+	FAILED=1
+fi;
+
 part "robot cell writes outside the power ledger"
 # A robot's cell charge is written only by draw_power()/add_power() in robot.dm, so the
 # ledger (used_power_this_tick, part power states) sees every joule. Robot code under
