@@ -521,15 +521,18 @@
  */
 
 /// Adds an instance of colour_type to the atom's atom_colours list
+/// atom_colours is interned (intern_list): atoms with the same colours share one
+/// read-only list, so every change builds a new list.
 /atom/proc/add_atom_colour(coloration, colour_priority)
-	if(!atom_colours || !atom_colours.len)
-		atom_colours = list()
-		atom_colours.len = COLOUR_PRIORITY_AMOUNT //four priority levels currently.
 	if(!coloration)
 		return
-	if(colour_priority > atom_colours.len)
+	if(colour_priority > COLOUR_PRIORITY_AMOUNT)
 		return
-	atom_colours[colour_priority] = coloration
+	var/list/new_colours = length(atom_colours) ? atom_colours.Copy() : list()
+	if(new_colours.len < COLOUR_PRIORITY_AMOUNT)
+		new_colours.len = COLOUR_PRIORITY_AMOUNT //four priority levels currently.
+	new_colours[colour_priority] = coloration
+	atom_colours = intern_list(new_colours)
 	update_atom_colour()
 
 /// Removes an instance of colour_type from the atom's atom_colours list
@@ -541,7 +544,9 @@
 		return
 	if(coloration && atom_colours[colour_priority] != coloration)
 		return //if we don't have the expected color (for a specific priority) to remove, do nothing
-	atom_colours[colour_priority] = null
+	var/list/new_colours = atom_colours.Copy()
+	new_colours[colour_priority] = null
+	atom_colours = intern_list(new_colours)
 	update_atom_colour()
 
 /// Resets the atom's color to null, and then sets it to the highest priority colour available

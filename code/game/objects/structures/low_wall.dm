@@ -405,8 +405,8 @@
 /obj/structure/window/bay/update_icon()
 	cut_overlays()
 	if(!anchored)
-		connections = list("0","0","0","0")
-		other_connections = list("0","0","0","0")
+		connections = string_list(list("0","0","0","0"))
+		other_connections = string_list(list("0","0","0","0"))
 	else
 		update_connections()
 
@@ -495,8 +495,8 @@
 /obj/structure/window/eris/update_icon()
 	cut_overlays()
 	if(!anchored)
-		connections = list("0","0","0","0")
-		other_connections = list("0","0","0","0")
+		connections = string_list(list("0","0","0","0"))
+		other_connections = string_list(list("0","0","0","0"))
 	else
 		update_connections()
 

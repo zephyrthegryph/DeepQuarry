@@ -94,8 +94,8 @@
 				dirs += get_dir(src, S)
 
 	if(!can_visually_connect())
-		connections = list("0", "0", "0", "0")
-		other_connections = list("0", "0", "0", "0")
+		connections = string_list(list("0", "0", "0", "0"))
+		other_connections = string_list(list("0", "0", "0", "0"))
 		return FALSE
 
 	for(var/direction in GLOB.cardinal)
@@ -132,8 +132,9 @@
 
 	refresh_neighbors()
 
-	connections = dirs_to_corner_states(dirs)
-	other_connections = dirs_to_corner_states(other_dirs)
+	// Interned: structures with the same shape share one read-only list.
+	connections = string_list(dirs_to_corner_states(dirs))
+	other_connections = string_list(dirs_to_corner_states(other_dirs))
 	return TRUE
 
 /obj/structure/proc/refresh_neighbors()
