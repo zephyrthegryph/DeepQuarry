@@ -77,6 +77,7 @@
 #define KEYBIND_CAT_INTERACTION "Interaction"
 #define KEYBIND_CAT_CLIENT "Client"
 #define KEYBIND_CAT_ADMIN "Admin"
+#define KEYBIND_CAT_ABILITIES "Abilities"
 
 /// The one skin macro set every client uses; bindings are added to it with winset.
 #define KEYBIND_MACRO_SET "default"

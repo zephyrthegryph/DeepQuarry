@@ -57,6 +57,11 @@
 		return FALSE
 	if(in_rig())
 		return TRUE
+	// Dropping the cluster on the turf would carry us out of a belly, closet, mech or holder.
+	if(!isturf(H.loc))
+		to_chat(H, span_warning("There's no room to fold into your control cluster in here."))
+		log_game("FORMS: [key_name(H)] can't fold into their control cluster inside [H.loc] ([H.loc?.type]).")
+		return FALSE
 	if(!is_form(/datum/form/protean_blob))
 		set_form(/datum/form/protean_blob, silent = TRUE)
 	var/turf/T = get_turf(H)

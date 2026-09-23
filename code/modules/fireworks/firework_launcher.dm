@@ -22,9 +22,7 @@
 
 /obj/machinery/firework_launcher/RefreshParts()
 	launch_cooldown = 5 MINUTES
-	var/rating = 0
-	for(var/obj/item/stock_parts/micro_laser/laser in component_parts)
-		rating += laser.rating - 1
+	var/rating = get_part_rating(/obj/item/stock_parts/micro_laser) - get_part_count(/obj/item/stock_parts/micro_laser)
 	launch_cooldown = max(0, (launch_cooldown - ((rating*30) SECONDS)))			// For every part tier above 1 on the two lasers, reduce cooldown by 30 seconds. 1 minute cooldown on the tier 5 parts, 3 minutes on tier 3.
 
 	. = ..()

@@ -4,7 +4,6 @@
 
 # Computed names: the quality-keyed variants are built per tool quality; only
 # some qualities have listeners.
-COMSIG_ATOM_TOOL_ACT # tool_act() sends COMSIG_ATOM_TOOL_ACT(quality); no primary-quality listener yet
 COMSIG_TOOL_ATOM_ACTED_SECONDARY # tool_interaction() sends it per quality; no secondary listener yet
 
 # Not DCS signals: ai_brain.dispatch_behavior_signal() routes these to

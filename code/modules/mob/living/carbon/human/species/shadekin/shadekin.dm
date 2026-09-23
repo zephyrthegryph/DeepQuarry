@@ -105,7 +105,7 @@
 
 /datum/species/shadekin/handle_death(mob/living/carbon/human/H)
 	var/special_handling = TRUE // varswitch for downstream // Enable.
-	H.clear_dark_maws() //clear dark maws on death or similar
+	H.dq_do_clear_dark_maws(H, null, null) //clear dark maws on death or similar
 	var/datum/component/shadekin/SK = H.get_shadekin_component()
 	if(!special_handling || (SK && SK.no_retreat))
 		spawn(1)
@@ -166,7 +166,7 @@
 			to_chat(belly.owner, span_notice("\The [H.name] suddenly vanishes within your [belly.name]"))
 			H.forceMove(pick(GLOB.latejoin_thedark))
 			if(SK.in_phase)
-				H.phase_shift()
+				H.phase_in(get_turf(H), SK)
 			else
 				var/obj/effect/temp_visual/shadekin/phase_in/phaseanim = new /obj/effect/temp_visual/shadekin/phase_in(H.loc)
 				phaseanim.dir = H.dir

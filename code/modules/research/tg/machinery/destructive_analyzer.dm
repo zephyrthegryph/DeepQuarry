@@ -45,9 +45,7 @@ It is used to destroy hand-held objects and advance technological research. Used
 	. = ..()
 
 /obj/machinery/rnd/destructive_analyzer/RefreshParts()
-	var/T = 0
-	for(var/obj/item/stock_parts/S in component_parts)
-		T += S.rating
+	var/T = total_component_rating_of_type(/obj/item/stock_parts)
 	T *= 0.1
 	decon_mod = clamp(T, 0, 1)
 
