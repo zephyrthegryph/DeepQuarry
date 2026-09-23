@@ -177,6 +177,29 @@ fn entity_count() -> Result<ByondValue> {
     Ok(ByondValue::from(n))
 }
 
+/// A safe probe for whether `entity_v` currently resolves to a live
+/// component of `domain`/`kind`: `FALSE` for stale, out-of-range, unbound
+/// (0), wrong-component or wrong-kind, never a runtime. `resolve()` (used
+/// by every generated `get_*`/`set_*`) is deliberately not this: those must
+/// error loudly (§5, §9). This exists for callers — admin tools, and tests
+/// that check a handle is correctly rejected — that want the answer without
+/// risking one (this codebase's test harness fails a "clean" run on any
+/// runtime at all, caught or not).
+#[auxmacros::bind("/proc/entity_is_valid")]
+fn entity_is_valid(entity: ByondValue, domain: ByondValue, kind: ByondValue) -> Result<ByondValue> {
+    let v = num(&entity)?;
+    #[allow(clippy::cast_possible_truncation, clippy::cast_sign_loss)]
+    let domain = num(&domain)?.max(0.0) as usize;
+    #[allow(clippy::cast_possible_truncation, clippy::cast_sign_loss)]
+    let kind = num(&kind)?.max(0.0) as u16;
+    let valid = decode(v).is_ok_and(|h| resolve(entity_value(h), domain, kind).is_ok());
+    Ok(yes(valid))
+}
+
+fn yes(b: bool) -> ByondValue {
+    ByondValue::from(if b { 1.0f32 } else { 0.0 })
+}
+
 /// World reset (`verdigris_init`/`verdigris_cleanup`, §4): every registered
 /// domain drops its components, then the entity table itself is rebuilt, so
 /// no handle survives into a new round.

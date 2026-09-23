@@ -54,7 +54,7 @@ fn defaults_and_clamp_validation() {
 #[test]
 fn schema_lists_every_field_with_its_role_and_unit() {
     let schema = Widget::schema();
-    assert_eq!(schema.domain, "gas");
+    assert_eq!(schema.domain, "test_domain");
     assert_eq!(schema.kind, 1);
     assert_eq!(schema.dm_type, "/obj/machinery/atmospherics/binary/pump");
     let names: Vec<&str> = schema.fields.iter().map(|f| f.name).collect();

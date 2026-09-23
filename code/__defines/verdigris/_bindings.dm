@@ -24,7 +24,7 @@
 #endif
 
 /// Bind-set hash shared with verdigris/ffi/src/abi.rs; checked by verdigris_init().
-#define VERDIGRIS_ABI "415759240b85d7a1"
+#define VERDIGRIS_ABI "411e81c6b5a037b1"
 
 // Numeric registry (@dm-define constants in the Rust sources).
 
@@ -614,6 +614,20 @@
 	var/static/__f = load_ext(VERDIGRIS, "byond:entity_describe_ffi")
 	VG_COUNT_FFI_CALL
 	return call_ext(__f)(entity)
+
+/// A safe probe for whether `entity_v` currently resolves to a live
+/// component of `domain`/`kind`: `FALSE` for stale, out-of-range, unbound
+/// (0), wrong-component or wrong-kind, never a runtime. `resolve()` (used
+/// by every generated `get_*`/`set_*`) is deliberately not this: those must
+/// error loudly (§5, §9). This exists for callers — admin tools, and tests
+/// that check a handle is correctly rejected — that want the answer without
+/// risking one (this codebase's test harness fails a "clean" run on any
+/// runtime at all, caught or not).
+// /proc/entity_is_valid (verdigris/ffi/src/entity.rs)
+/proc/vg_entity_is_valid(entity, domain, kind)
+	var/static/__f = load_ext(VERDIGRIS, "byond:entity_is_valid_ffi")
+	VG_COUNT_FFI_CALL
+	return call_ext(__f)(entity, domain, kind)
 
 /// `SSvg`'s per-sweep maintenance: ticks every registered domain's `Sim`
 /// once (publishing a view, pruning the overlay), so state is never more
