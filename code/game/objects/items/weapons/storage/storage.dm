@@ -699,6 +699,8 @@ GLOBAL_VAR_INIT(storage_hud_count, 0)
 	QDEL_NULL(closer)
 	for(var/obj/item/I as anything in shown)
 		I.maptext = ""
+		// The screen is gone; the item is no longer pinned by being shown (C10).
+		I.latent_unpin(src)
 	shown = null
 	storage = null
 	return ..()
@@ -734,6 +736,13 @@ GLOBAL_VAR_INIT(storage_hud_count, 0)
 		for(var/obj/item/I as anything in items - samples)
 			I.screen_loc = null
 		items = samples
+	// A shown item is pinned for as long as it's on someone's screen (C10):
+	// materializing it to show it is one thing, but it must not then be
+	// collapsed back out from under a viewer between layout passes.
+	for(var/obj/item/I as anything in shown - items)
+		I.latent_unpin(src)
+	for(var/obj/item/I as anything in items - shown)
+		I.latent_pin(src)
 	shown = items
 	if(storage.storage_slots)
 		boxes_layout(counts)
