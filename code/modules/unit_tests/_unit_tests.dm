@@ -130,6 +130,7 @@
 // DQ fork tests — need TEST_ASSERT* macros in scope, which are #undef'd at
 // the bottom of this file.
 #include "dq_atmos_tests.dm"
+#include "dq_heat_domain_tests.dm"
 #include "dq_thermal_power_fixes_tests.dm"
 #include "dq_performance_diagnostics_tests.dm"
 #include "dq_audit_tests.dm"

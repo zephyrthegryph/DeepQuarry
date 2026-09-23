@@ -2,7 +2,8 @@
 resolver = "2"
 # Crate map (see README.md and doc/rewrite/rust_core.md):
 #   core/            vg-core    domain-agnostic primitives; host-buildable, no byondapi, no global statics
-#   domains/gas/     vg-gas     gas arena, turf diffusion, heat (vendored auxmos); i686 only for now
+#   domains/gas/     vg-gas     gas arena, turf diffusion, heat binds (vendored auxmos); i686 only for now
+#   domains/heat/    vg-heat    heat domain (M4): turf solid field, bodies, couplings; host-buildable
 #   domains/layout/  vg-layout  station layout planner + cave generator; host-buildable
 #   ffi/             vg-ffi     BYOND binds (byondapi); i686 only
 #   ffi/macros       auxmacros  panic_safe bind attribute (proc macro)

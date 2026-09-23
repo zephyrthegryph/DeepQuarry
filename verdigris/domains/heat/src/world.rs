@@ -843,6 +843,17 @@ impl HeatWorld {
         }
     }
 
+    /// Wakes plus `ThresholdSet` crossings collected and not yet taken.
+    #[must_use]
+    pub fn pending_notices(&self) -> usize {
+        self.wakes.len()
+            + self
+                .events
+                .iter()
+                .filter(|e| e.kind == EventKind::ThresholdCrossed)
+                .count()
+    }
+
     /// Takes the collected wakes as records.
     pub fn drain_wakes(&mut self) -> Vec<Wake> {
         std::mem::take(&mut self.wakes)

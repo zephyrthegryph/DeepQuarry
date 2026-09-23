@@ -21,8 +21,6 @@ pub const MINIMUM_HEAT_CAPACITY: f32 = 0.0003;
 pub const CELL_VOLUME: f32 = 2500.0;
 /// moles in a 2.5 m^3 cell at 101.325 Pa and 20 degC
 pub const MOLES_CELLSTANDARD: f32 = ONE_ATMOSPHERE * CELL_VOLUME / (T20C * R_IDEAL_GAS_EQUATION);
-/// compared against for superconductivity
-pub const M_CELL_WITH_RATIO: f32 = MOLES_CELLSTANDARD * 0.005;
 /// percentage of oxygen in a normal mixture of air
 pub const O2STANDARD: f32 = 0.21;
 /// same but for nitrogen
@@ -57,8 +55,6 @@ pub const MINIMUM_TEMPERATURE_TO_MOVE: f32 = T20C + 100.0;
 pub const MINIMUM_TEMPERATURE_DELTA_TO_SUSPEND: f32 = 4.0;
 /// Minimum temperature difference before the gas temperatures are just set to be equal
 pub const MINIMUM_TEMPERATURE_DELTA_TO_CONSIDER: f32 = 0.5;
-pub const MINIMUM_TEMPERATURE_FOR_SUPERCONDUCTION: f32 = T20C + 10.0;
-pub const MINIMUM_TEMPERATURE_START_SUPERCONDUCTION: f32 = T20C + 200.0;
 
 /// The amount of gas that is diffused between tiles every tick. Must be less than 1/6.
 pub const GAS_DIFFUSION_CONSTANT: f32 = 0.125;
@@ -66,27 +62,7 @@ pub const GAS_DIFFUSION_CONSTANT: f32 = 0.125;
 /// This number minus the number of adjacent turfs is how much the original gas needs to be multiplied by to represent loss by diffusion
 pub const GAS_LOSS_CONSTANT: f32 = 1.0 / GAS_DIFFUSION_CONSTANT;
 
-/// HEAT TRANSFER COEFFICIENTS
-
-/// Must be between 0 and 1. Values closer to 1 equalize temperature faster
-
-/// Should not exceed 0.4 else the algorithm will diverge
-
-pub const WALL_HEAT_TRANSFER_COEFFICIENT: f32 = 0.0;
-pub const OPEN_HEAT_TRANSFER_COEFFICIENT: f32 = 0.4;
-/// a hack for now
-pub const WINDOW_HEAT_TRANSFER_COEFFICIENT: f32 = 0.1;
-/// a hack to help make vacuums "cold", sacrificing realism for gameplay
-pub const HEAT_CAPACITY_VACUUM: f32 = 7000.0;
-
-/// The Stefan-Boltzmann constant. M T^-3 Θ^-4
-pub const STEFAN_BOLTZMANN_CONSTANT: f64 = 5.670_373e-08; // watts/(meter^2*kelvin^4)
-
-const SPACE_TEMP: f64 = TCMB as f64;
-
-/// How much power is coming in from space per square meter. M T^-3
-pub const RADIATION_FROM_SPACE: f64 =
-	STEFAN_BOLTZMANN_CONSTANT * SPACE_TEMP * SPACE_TEMP * SPACE_TEMP * SPACE_TEMP; // watts/meter^2
+// Solid heat transfer constants live in vg-heat (domains/heat/src/consts.rs).
 
 /// FIRE
 

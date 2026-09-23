@@ -13,7 +13,8 @@ edition = "2021"
 default = ["turf_processing"]
 zas_hooks = []
 turf_processing = []
-superconductivity = ["turf_processing"]
+# The heat domain (M4, vg-heat): turf solid heat, bodies and couplings.
+heat = ["turf_processing"]
 
 # Tracing exposes a local port — opt-in only.
 tracy = ["dep:tracing-tracy", "dep:tracing-subscriber", "dep:tracing"]
@@ -31,6 +32,7 @@ eyre = { workspace = true }
 auxcallback = { path = "../../ffi/callback" }
 auxmacros = { path = "../../ffi/macros" }
 vg-core = { path = "../../core" }
+vg-heat = { path = "../heat" }
 itertools = "0.14.0"
 rayon = "1.10.0"
 float-ord = "0.3.2"

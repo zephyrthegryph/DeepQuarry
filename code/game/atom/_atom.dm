@@ -57,6 +57,8 @@
 	var/datum/wires/wires = null
 
 /atom/Destroy()
+	if(!isnull(heat_body))
+		release_heat_body()
 	if(reagents)
 		QDEL_NULL(reagents)
 	if(light)

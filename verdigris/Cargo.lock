@@ -1784,6 +1784,7 @@ dependencies = [
  "tracing-subscriber",
  "tracing-tracy",
  "vg-core",
+ "vg-heat",
 ]
 
 [[package]]

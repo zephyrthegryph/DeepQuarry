@@ -397,62 +397,6 @@ impl Mixture {
 		new_mix.immutable = false;
 		new_mix
 	}
-	/// A very simple finite difference solution to the heat transfer equation.
-	/// Works well enough for our purposes, though perhaps called less often
-	/// than it ought to be while we're working in Rust.
-	/// Differs from the original by not using archive, since we don't put the archive into the gas mix itself anymore.
-	pub fn temperature_share(&mut self, sharer: &mut Self, conduction_coefficient: f32) -> f32 {
-		let temperature_delta = self.temperature - sharer.temperature;
-		if temperature_delta.abs() > MINIMUM_TEMPERATURE_DELTA_TO_CONSIDER {
-			let self_heat_capacity = self.heat_capacity();
-			let sharer_heat_capacity = sharer.heat_capacity();
-
-			if sharer_heat_capacity > MINIMUM_HEAT_CAPACITY
-				&& self_heat_capacity > MINIMUM_HEAT_CAPACITY
-			{
-				let heat = conduction_coefficient
-					* temperature_delta
-					* (self_heat_capacity * sharer_heat_capacity
-						/ (self_heat_capacity + sharer_heat_capacity));
-				if !self.immutable {
-					self.set_temperature((self.temperature - heat / self_heat_capacity).max(TCMB));
-				}
-				if !sharer.immutable {
-					sharer.set_temperature(
-						(sharer.temperature + heat / sharer_heat_capacity).max(TCMB),
-					);
-				}
-			}
-		}
-		sharer.temperature
-	}
-	/// As above, but you may put in any arbitrary coefficient, temp, heat capacity.
-	/// Only used for superconductivity as of right now.
-	pub fn temperature_share_non_gas(
-		&mut self,
-		conduction_coefficient: f32,
-		sharer_temperature: f32,
-		sharer_heat_capacity: f32,
-	) -> f32 {
-		let temperature_delta = self.temperature - sharer_temperature;
-		if temperature_delta.abs() > MINIMUM_TEMPERATURE_DELTA_TO_CONSIDER {
-			let self_heat_capacity = self.heat_capacity();
-
-			if sharer_heat_capacity > MINIMUM_HEAT_CAPACITY
-				&& self_heat_capacity > MINIMUM_HEAT_CAPACITY
-			{
-				let heat = conduction_coefficient
-					* temperature_delta
-					* (self_heat_capacity * sharer_heat_capacity
-						/ (self_heat_capacity + sharer_heat_capacity));
-				if !self.immutable {
-					self.set_temperature((self.temperature - heat / self_heat_capacity).max(TCMB));
-				}
-				return (sharer_temperature + heat / sharer_heat_capacity).max(TCMB);
-			}
-		}
-		sharer_temperature
-	}
 	/// The second part of old compare(). Compares temperature, but only if this gas has sufficiently high moles.
 	pub fn temperature_compare(&self, sample: &Self) -> bool {
 		(self.get_temperature() - sample.get_temperature()).abs()

@@ -154,10 +154,8 @@ SUBSYSTEM_DEF(air)
 
 
 	//Special functions lists
-	// active_super_conductivity removed — LINDA's DM superconduction engine is
-	// deleted. Heat conduction runs in Rust and IS wired: the
-	// SSAIR_SUPERCONDUCTIVITY fire() step below calls process_turf_heat()
-	// (auxmos superconductivity feature, compiled in).
+	// Turf heat is the heat domain (vg-heat, code/modules/heat/heat.dm): the
+	// SSAIR_SUPERCONDUCTIVITY fire() step below calls process_turf_heat().
 	// high_pressure_delta moved up next to the auxmos tunables (auxmos appends to it).
 	// atom_process removed; see cost_atoms comment.
 	/// Reactions which will contribute to a hotspot's size.
@@ -236,12 +234,6 @@ SUBSYSTEM_DEF(air)
 	// Idempotent: in practice the very first turf air (created during mapload,
 	// before this runs) already triggered registration via gas_mixture/New().
 	ensure_auxmos_gas_registry()
-
-	// Hand the Rust superconductivity arena the map dimensions it needs to compute
-	// turf neighbours by coordinate id. MUST precede setup_allturfs(), whose turf
-	// adjacency registration reads these; reading world vars from Rust is unreliable
-	// on BYOND 516 so DM pushes them in.
-	vg_set_world_dims(world.maxx, world.maxy)
 
 	// Fill GLOB.gas_data.overlays now that meta_gas_info's overlay objects exist,
 	// so the Rust turf-processing visuals path can render gas clouds.
@@ -400,10 +392,9 @@ SUBSYSTEM_DEF(air)
 		resumed = FALSE
 		currentpart = SSAIR_SUPERCONDUCTIVITY
 
-	// Heat conduction: turf<->turf, turf<->space (radiation), turf<->gas. Runs on a
-	// detached Rust thread (process_turf_heat fires it and returns immediately); the
-	// results land via the atmos callback queue drained in SSAIR_FINALIZE_TURFS next
-	// fire(). cost_superconductivity is written back from the worker thread.
+	// The heat domain: turf<->turf conduction, radiation to space, turf<->air and
+	// heat bodies run as frames on vg-heat's pool. process_turf_heat() only
+	// collects the finished frame, starts the next, and dispatches watch wakes.
 	if(currentpart == SSAIR_SUPERCONDUCTIVITY)
 		process_turf_heat()
 		resumed = FALSE
@@ -641,7 +632,9 @@ SUBSYSTEM_DEF(air)
 	var/total = length(open_turfs)
 	var/chunk = 8192
 	for(var/start = 1, start <= total, start += chunk)
-		auxmos_register_turfs_bulk(open_turfs.Copy(start, min(start + chunk, total + 1)))
+		var/list/turf/batch = open_turfs.Copy(start, min(start + chunk, total + 1))
+		auxmos_register_turfs_bulk(batch)
+		heat_register_turfs(batch)
 		if(length(GLOB.clients) && TICK_CHECK)
 			stoplag()
 	for(var/start = 1, start <= total, start += chunk)

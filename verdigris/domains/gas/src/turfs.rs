@@ -1,8 +1,8 @@
 pub mod processing;
 /*
 */
-#[cfg(feature = "superconductivity")]
-pub(crate) mod superconduct;
+#[cfg(feature = "heat")]
+pub(crate) mod heat;
 
 use crate::{constants::*, gas::Mixture, GasArena};
 use bitflags::bitflags;
@@ -1274,8 +1274,6 @@ fn register_turf_impl(src: ByondValue, flag: i32, visibility: &[Option<f32>]) ->
 	if let Ok(blocks) = src.read_number_id(byond_string!("blocks_air")) {
 		if blocks > 0.0 {
 			apply_or_queue_topology_update(PendingTopologyUpdate::Remove(id));
-			#[cfg(feature = "superconductivity")]
-			superconduct::supercond_update_ref(src)?;
 			return Ok(());
 		}
 	}
@@ -1343,8 +1341,6 @@ fn register_turf_impl(src: ByondValue, flag: i32, visibility: &[Option<f32>]) ->
 		apply_or_queue_topology_update(PendingTopologyUpdate::Remove(id));
 	}
 
-	#[cfg(feature = "superconductivity")]
-	superconduct::supercond_update_ref(src)?;
 	Ok(())
 }
 
@@ -1453,9 +1449,6 @@ fn infos_impl(src: ByondValue) -> Result<ByondValue> {
 	};
 	apply_or_queue_topology_update(update);
 	mark_turf_active(id);
-
-	#[cfg(feature = "superconductivity")]
-	superconduct::supercond_update_adjacencies(id)?;
 	Ok(ByondValue::null())
 }
 
