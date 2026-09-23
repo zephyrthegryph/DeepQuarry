@@ -280,9 +280,7 @@
 		if(tool.obj_damage_type() != BRUTE)
 			inc_damage *= 0.3
 
-		health -= inc_damage
-
-	check_health()
+		material_wear(inc_damage * MATERIAL_WEAR_UNIT)
 
 	return ITEM_INTERACT_SUCCESS
 
