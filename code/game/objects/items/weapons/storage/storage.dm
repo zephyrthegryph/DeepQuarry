@@ -71,6 +71,9 @@
 	capacity_model = SLOT_CAPACITY_UNITS
 	holder_constraint = CONSTRAINT_HOLD
 	drop_policy = SLOT_DROP_DELETE
+	// Open storage shows and lets you click/drag its contents (C10).
+	rendered = TRUE
+	interactive = TRUE
 
 /datum/slot_def/storage/capacity_for(obj/item/storage/holder)
 	return holder.max_storage_space

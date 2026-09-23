@@ -29,6 +29,11 @@
 	heat_transmission = 0
 	radiation_transmission = 1
 	damage_transmission = list(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)
+	// Sealed machine interior: the occupant themselves is always real (mobs
+	// are never latent-safe), but this flags the slot as not a place latent
+	// items should render or be interacted with (C10).
+	rendered = FALSE
+	interactive = FALSE
 
 /// Share (0..1) of an explosion's severity that reaches `holder`'s contents,
 /// from its declared slots' own DAMAGE_BLAST share, attenuated the same way

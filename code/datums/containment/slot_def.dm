@@ -48,6 +48,18 @@
 	/// occupant rules (C8).
 	var/reaches_mobs = FALSE
 
+	// ---- Latency policy (containment.md §4.7, C10) ----
+	/// Whether contents of this slot are shown to whoever is looking at the
+	/// holder: tiles, worn layers, held items, an open storage's contents.
+	/// Off for sealed interiors, machine internals, closed containers and
+	/// bellies. A rendered slot's contents are never latent.
+	var/rendered = FALSE
+	/// Whether something in this slot can be clicked, dragged or otherwise
+	/// acted on directly without first opening or searching the holder. A
+	/// slot that's interactive but not rendered (rare) still keeps its
+	/// contents real. Off by default.
+	var/interactive = FALSE
+
 /// The singleton for a slot definition type.
 /proc/dq_slot_def(path)
 	var/static/list/cache = list()

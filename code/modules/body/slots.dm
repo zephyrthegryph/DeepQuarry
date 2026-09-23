@@ -42,6 +42,10 @@
 	drop_policy = SLOT_DROP_HOLDER
 	// Hits on the mob reach equipment through the zone armour (worn_protection.dm), not this path.
 	damage_transmission = list(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)
+	// Worn and held equipment is visible on the mob and can be clicked or
+	// dragged directly (C10); the interior slot below overrides this.
+	rendered = TRUE
+	interactive = TRUE
 	/// slot_* number the equip API names this slot by, or null.
 	var/legacy_slot
 	/// BODY_SLOT_* roles.
@@ -76,6 +80,10 @@
 	// The body model handles what reaches organs; nothing passes this way.
 	heat_transmission = 0
 	radiation_transmission = 0
+	// Organs, implants and bellies are inside the mob, not shown or reachable
+	// without surgery or a dedicated interaction (C10).
+	rendered = FALSE
+	interactive = FALSE
 
 // ---- Hands ----
 
@@ -204,10 +212,16 @@
 	accepts = /datum/predicate/equip_slot/suit_storage
 	roles = BODY_SLOT_WORN
 	required_parts = list(BP_TORSO)
+	// Clipped inside the suit: not shown or reachable until the suit is opened.
+	rendered = FALSE
+	interactive = FALSE
 
 /datum/slot_def/body/pocket
 	exposure = SLOT_EXPOSURE_INTERNAL
 	required_parts = list(BP_TORSO)
+	// A pocket's contents are hidden until searched.
+	rendered = FALSE
+	interactive = FALSE
 
 /datum/slot_def/body/pocket/left
 	id = SLOT_ID_POCKET_L

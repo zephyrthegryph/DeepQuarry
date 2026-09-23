@@ -42,6 +42,9 @@
 	heat_transmission = 0
 	radiation_transmission = 1
 	damage_transmission = list(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)
+	// A belly's interior is not shown or reachable outside its own UI (C10).
+	rendered = FALSE
+	interactive = FALSE
 
 /// Seconds per cycle for this belly: the baseline, or a third of it in turbo mode.
 /obj/belly/proc/belly_cycle_period()

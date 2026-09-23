@@ -279,6 +279,9 @@ REGISTRY_MEMBERSHIP(/obj/mecha, REGISTRY_MECHAS)
 	exposure = SLOT_EXPOSURE_EXTERNAL
 	capacity_model = SLOT_CAPACITY_NONE
 	drop_policy = SLOT_DROP_HOLDER // the wreckage salvage/detach loop in Destroy() owns it
+	// Bolted to the hull, visible and interactable (C10).
+	rendered = TRUE
+	interactive = TRUE
 
 /// Internal: the cargo compartment. Capacity stays with cargo_capacity.
 /datum/slot_def/mecha_cargo
@@ -287,6 +290,9 @@ REGISTRY_MEMBERSHIP(/obj/mecha, REGISTRY_MECHAS)
 	exposure = SLOT_EXPOSURE_INTERNAL
 	capacity_model = SLOT_CAPACITY_NONE
 	drop_policy = SLOT_DROP_HOLDER // Destroy()'s own cargo spill loop owns it
+	// Not shown until the cargo compartment is opened (C10).
+	rendered = FALSE
+	interactive = FALSE
 
 /obj/mecha/Destroy()
 	src.go_out()
